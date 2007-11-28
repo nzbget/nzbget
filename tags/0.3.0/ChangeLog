@@ -1,0 +1,188 @@
+nzbget-0.3.0:
+  - The download queue now contains newsgroup-files to be downloaded instead of 
+    nzb-jobs. By adding a new job, the nzb-file is immediately parsed and each 
+    newsgroup-file is added to download queue. Each file can therefore be 
+    managed separately (paused, deleted or moved);
+  - Current queue state is saved after every change (file is completed or the 
+    queue is changed - entries paused, deleted or moved). The state is saved on
+    disk using internal format, which allows fast loading on next program start
+    (no need to parse xml-files again);
+  - The remaining download-size is updated after every article is completed to
+    indicate the correct remaining size and time for total files in queue;
+  - Downloaded articles, which are saved in temp-directory, can be reused on
+    next program start, if the file was not completed (option "continuepartial"
+    in config-file); 
+  - Along with uulib the program has internal decoder for yEnc-format. This
+    decoder was necessary, because uulib is so slow, that it prevents using of
+    the program on not so powerful systems like linux-routers (MIPSEL CPU 200
+    MHz). The new decoder is very fast. It is controlled over option "decoder" 
+    in config-file;
+  - The decoder can be completely disabled. In this case all downloaded articles
+    are saved in unaltered form and can be joined with an external program;
+    UUDeview is one of them;
+  - If download of article fails, the program attempts to download it again so
+    many times, what the option "retries" in config-file says. This works even
+    if no servers with level higher than "0" defined. After each retry the next
+    server-level is used, if there are no more levels, the program switches to
+    level "0" again. The pause between retries can be set with config-option
+    "retryinterval";
+  - If despite of a stated connection-timeout (it can be changed via
+    config-option "connectiontimeout") connection hangs, the program tries to
+    cancel the connection (after "terminatetimeout" seconds). If it doesn't
+    work the download thread is killed and the article will be redownloaded in
+    a new thread. This ensures, that there are no long-time hanging connections
+    and all articles are downloaded, when a time to rejoin file comes;
+  - Automatic par-checking and repairing. Only reuired par-files are downloaded.
+    The program uses libpar2 and does not require any external tools. The big
+    advantage of library is, that it allows to continue par-check after new
+    par-blocks were downloaded. This were not possible with external 
+    par2cmdline-tool;
+  - There is a daemon-mode now (command-line switch "-D" (--daemon)). In this
+    mode a lock-file (default location "/tmp/nzbget.lock", can be changed via
+    option "lockfile") contains PID of daemon;
+  - The format of configuration-file was changed from xml to more common
+    text-format. It allows also using of variables like 
+    "tempdir=${MAINDIR}/tmp";
+  - Any option of config-file can be overwritten via command-line switch
+    "-o" (--option). This includes also the definition of servers. 
+    This means that the program can now be started without a configuration-file 
+    at all (all required options must be passed via command-line);
+  - The command-line switches were revised. The dedicated switches to change
+    options in config-file were eliminated, since any option can now be changed
+    via switch "-o" (--option);
+  - If the name of configuration-file was not passed via command-line the
+    program search it  in following locations: "~/.nzbget", "/etc/nzbget.conf", 
+    "/usr/etc/nzbget.conf", "/usr/local/etc/nzbget.conf", 
+    "/opt/etc/nzbget.conf";
+  - The new command-line switch "-n" (--noconfigfile) prevents the loading of
+    a config-file. All required config-options must be passed via command-line
+    (switch "-o" (--option));
+  - To start the program in server mode either "-s" (--server) or 
+    "-D" (--daemon) switch must be used. If the program started without any
+    parameters it prints help-screen. There is no a dedicated switch to start
+    in a standalone mode. If switches "-s" and "-D" are omitted and none of
+    client-request-switches used the standalone mode is default. This usage
+    of switches is more common to programs like "wget". To add a file to 
+    server's download queue use switch "-A" (--append) and a name of nzb-file
+    as last command-line parameter;
+  - There is a new switch "-Q" (--quit) to gracefully stop server. BTW the
+    SIGKIL-signal is now handled appropriately, so "killall nzbget" is also OK,
+    where "killall -9 nzbget" terminates server immediately (helpful if it
+    hangs, but it shouldn't);
+  - With new switch "-T" (--top) the file will be added to the top of download
+    queue. Use it with switch "-A" (--append);
+  - The download queue can be edited via switch "-E" (--edit). It is possible
+    to pause, unpause, delete and move files in queue. The IDs of file(s)
+    to be affected are passed via switch "-I" (fileid), either one ID or a 
+    range in a form "IDForm-IDTo". This also means, that every file in queue
+    have ID now;
+  - The switch "-L" (--list) prints IDs of files consequently. It prints also
+    name, size, percentage of completing and state (paused or not) of each file. 
+    Plus summary info: number of files, total remaining size and size of
+    paused files, server state (paused or running), number of threads on 
+    server, current speed limit;
+  - With new switch "-G" (--log) the last N lines printed to server's 
+    screen-log, can be printed on client. The max number of lines which can
+    be returned from servers depends on option "logbuffersize";
+  - The redesigned Frontends (known as outputmodes "loggable", "colored" and
+    "curses") can connect to (remote) server and behave as if you were running
+    server-instance of program itself (command-line switch "-C" (--connect)). 
+    The log-output updates constantly and even all control-functions in 
+    ncurses-mode works: pause/unpause server, set download rate limit, edit of
+    queue (pause/unpause, delete, move entries). The number of connected 
+    clients is not limited. The "outputmode" on a client can be set
+    independently from server. The client-mode is especially useful if the
+    server runs as a daemon;
+  - The writing to log-file can be disabled via option "createlog". 
+    The location of log-file controls the option "log-file";
+  - Switch "-p" (--printconfig) prints the name of configuration file being
+    used and all option/value-pairs, taking into account all used 
+    "-o" (--option) - switches;
+  - The communication protocol between server and client was optimized to
+    minimize the size of transferred data. Instead of fixing the size for
+    Filenames in data-structures to 512 bytes only in fact used data
+    are transferred;
+  - Extensions in ncurses-outputmode: scrolling in queue-list works better, 
+    navigation in queue with keys Up, Down, PgUp, PgDn, Home, End. 
+    Keys to move entries are "U" (move up), "N" (move down), "T" (move to top),
+    "B" (move to bottom). "P" to pause/unpause file. The size, percentage 
+    of completing and state (paused or not) for every file is printed. 
+    The header of queue shows number of total files, number of unpaused 
+    files and size for all and unpaused files. Better using of screen estate
+    space – no more empty lines and separate header for status (total seven
+    lines gain). The messages are printed on several lines (if they not fill
+    in one line) without trimming now;
+  - configure.ac-file updated to work with recent versions of autoconf/automake. 
+    There are new configure-options now: "--disable-uulib" to compile the 
+    program without uulib; "--disable-ncurses" to disable ncurses-support 
+    (eliminates necessity of ncurses-libs), useful on embedded systems with 
+    little resources; "--disable-parcheck" to compile without par-check;
+  - The algorithm for parsing of nzb-files now uses XMLReader instead of 
+    DOM-Parser to minimize memory usage (no mor needs to build complete DOM-tree
+    in memory). Thanks to Thierry MERLE <merlum@users.sourceforge.net> for 
+    the patch;
+  - The log-file contains now thread-ID for all entry-types and additionally 
+    for debug-entries: filename, line number and function's name of source
+    code, where the message was printed. Debug-messages can be disabled in 
+    config-file (option "debugtarget") like other messages;
+  - The program is now compatible with windows. Project file for MS Visual 
+    C++ 2005 is included. Use "nzbget -install" and "nzbget -remove" to
+    install/remove NZBGet-Service. Servers and clients can run on diferrent
+    operating systems;
+  - Improved compatibility with POSIX systems; Tested on:
+	  - Linux Debian 3.1 on x86;
+	  - Linux BusyBox with uClibc on MIPSEL;
+	  - PC-BSD 1.4 (based on FreeBSD 6.2) on x86;
+	  - Solaris 10 on x86;
+  - Many memory-leaks and thread issues were fixed;
+  - The program was thoroughly worked over. Almost every line of code was
+    revised;
+
+nzbget-0.2.3
+  - Fixed problem with losing connection to newsserver after too long idle time
+  - Added functionality for dumping lots of debug info
+
+nzbget-0.2.2
+  - Added Florian Penzkofers fix for FreeBSD, exchanging base functionality in 
+    SingleServerPool.cpp with a more elegant solution
+  - Added functionality for forcing answer to reloading queue upon startup of 
+    server
+    + use -y option to force from command-line
+	+ use "reloadqueue" option in nzbget.cfg to control behavior
+  - Added nzbget.cfg options to control where info, warnings and errors get 
+    directed to (either screen, log or both)
+  - Added option "createbrokenfilelog" in nzbget.cfg
+  
+nzbget-0.2.1
+  - Changed and extended the TCP client/server interface
+  - Added timeout on sockets which prevents certain types of nzbget hanging
+  - Added Kristian Hermansen's patch for renaming broken files
+
+nzbget-0.2.0
+  - Moved 0.1.2-alt4 to a official release as 0.2.0
+  - Small fixes
+
+nzbget-0.1.2-alt4
+  - implemented tcp/ip communication between client & server (removing the 
+    rather defunct System V IPC)
+  - added queue editing functionality in server-mode
+
+nzbget-0.1.2-alt1
+  - added new ncurses frontend
+  - added server/client-mode (using System V IPC)
+  - added functionality for queueing download requests 
+
+nzbget-0.1.2
+  - performance-improvements
+  - commandline-options
+  - fixes
+
+nzbget-0.1.1
+  - new output
+  - fixes
+
+nzbget-0.1.0a
+  - compiling-fixes
+
+nzbget-0.1.0
+  - initial release
