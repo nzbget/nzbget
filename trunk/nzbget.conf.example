@@ -1,0 +1,216 @@
+# Sample configuration file for nzbget
+# Put this file to one of the following locations:
+# ~/.nzbget
+# /etc/nzbget.conf
+# /usr/etc/nzbget.conf
+# /usr/local/etc/nzbget.conf
+# /opt/etc/nzbget.conf
+
+# For quick start change the option MAINDIR and configure one news-server
+# See section NEWS-SERVERS.
+
+
+# PROGRAM OPTIONS
+
+# Root directory for all related tasks
+# MAINDIR is a variable and therefore starts with "$"
+# The value "~/download" is example for POSIX. On Windows use 
+# absolute paths, like "C:\Download".
+$MAINDIR=~/download
+
+# Destination-directory to store the downloaded files
+destdir=${MAINDIR}/dst
+
+# Directory to store download queue
+queuedir=${MAINDIR}/queue
+
+# Directory to monitor for incoming nzb-jobs
+nzbdir=${MAINDIR}/nzb
+
+# Directory to store temporary files
+tempdir=${MAINDIR}/tmp
+
+# Lock-file for daemon-mode, contains process-id (PID)
+lockfile=/tmp/nzbget.lock
+
+# Where to store log file, if it needs to be created (see "createlog")
+logfile=${destdir}/nzbget.log
+
+# Save download queue to disk. This allows to reload it on next start (yes, no)
+savequeue=yes
+
+# Reload download queue on start, if it exists (yes, no)
+reloadqueue=yes
+
+# Create log file (yes, no)
+createlog=yes
+
+# Delete log file upon server start (only in server-mode) (yes, no)
+resetlog=no
+
+# How various messages must be printed (screen, log, both, none)
+# Debug-messages can be only printed if the programm was compiled in 
+# debug-mode: "./configure --enable-debug"
+infotarget=both
+warningtarget=both
+errortarget=both
+debugtarget=both
+
+# Create subdirectory with nzb-filename in destination-directory (yes, no)
+appendnzbdir=yes
+
+# Set screen-outputmode (loggable, colored, curses)
+outputmode=colored
+
+# Check if the destination file already exists (yes, no)
+# If the file exists it will not be added to queue.
+# If "no" the file will be downloaded and renamed to "filename_duplicate1",
+# no existing files are deleted or overwritten.
+dupecheck=no
+
+# Set the maximum download rate in KB/s, "0" means no speed control
+downloadrate=0
+
+# Visibly rename broken files on download appending "_broken" (yes, no)
+renamebroken=no
+
+# Create a log of all broken files (yes ,no)
+# It is a text file placed near downloaded files, which contains
+# the names of broken files
+createbrokenlog=yes
+
+# Set the IP on which the server listen and which client uses to contact the server
+# It could be ip-address oder dns-hostname
+serverip=127.0.0.1
+
+# Set the port which the server & client use
+serverport=6789
+
+# Set the password needed to succesfully queue a request
+serverpassword=tegbzn6789
+
+# Determine how the articles should be decoded (uulib, yenc, none)
+# uulib - use uulib to decode files. Supports many encoding formats, but is slow.
+# yenc - use internal yEnc-Decoder. Supports only yEnc-format and is very fast.
+# none - the articles will not be decoded and joined. External programs 
+# ("uudeview" is one of them) could be used to decode an join downloaded articles.
+decoder=yEnc
+
+# How much retries should be attempted if a download error occurs
+retries=4
+
+# Set the interval between retries, in seconds
+retryinterval=10
+
+# Set connection timeout, in seconds
+connectiontimeout=60
+
+# Timeout until a download-thread is killed (helps on hanging downloads), in seconds
+terminatetimeout=600
+
+# How many par2-files to load (none, all, one)
+# none - all added par2-files must be automatically paused
+# all - all added par2-files must be downloaded
+# one - only one main par2-file must be dowloaded and other must be paused
+# Paused files remain in queue and should be deleted manually,
+# when they not needed anymore
+loadpars=all
+
+# Automatic par-verification (yes, no)
+# To download only needed par2-files (smart par-files loading) set also 
+# the option "loadpars" to "one". If option "loadpars" is set to "all",
+# all par2-files will be downloaded before verification and repair starts.
+# The option "renamebroken" must be set to "no", otherwise the par-checker
+# may not find renamed files and failed.
+parcheck=no
+
+# Automatic par-repair (yes, no)
+# If option "parcheck" is enabled and "parrepair" is not, the program
+# only verify downloaded files and downloads needed par2-files, but do
+# not start repair-process. This is useful if the server does not have
+# enough CPU power, since repairing of large files may take too much
+# resources and time on a slow computers.
+# This option has effect only if the option "parcheck" is enabled.
+parrepair=yes
+
+# Use only par2-files with matching names (yes, no)
+# If par-check needs extra par-blocks it searches a par2-files
+# in download queue, which can be unpauseed and used for restore. These par2-files
+# should have the same base name as a main par2-file, currently loaded in par-checker.
+# Sometimes extra par files (especially if they were uploaded not from original poster)
+# have not matching names. Normally par-checker does not use these files, but
+# you can allow it to use these file by setting "strictparname" to "no".
+# This has however a side effect: if NZB-file contains more than one collection
+# of files (with different par-sets), par-checker may download par-files from
+# a wrong collection. This increases you traffic (but not harm par-check).
+# NOTE: par-checker always uses only par-files added from the same NZB-file.
+# Option "strictparname" does not change this behavior.
+strictparname=yes
+
+# Set path to program, that must be executed after the download of
+# nzb-file or one collection in nzb-file (if par-check enabled)
+# is completed and possibly par-checked/repaired.
+# Six arguments are being passed to this program:
+#  - path to destination dir, where downloaded files are located;
+#  - name of nzb-file processed;
+#  - name of par-file processed (if par-checked) or empty string (if not);
+#  - result of par-check:
+#      0 - not checked: par-check disabled or nzb-file does not contain any par-files;
+#      1 - checked and sucessfully repaired;
+#      2 - checked and failed to repair;
+#  - state of nzb-job:
+#      0 - there are more collection in this nzb-file queued;
+#      1 - this was the last collection in nzb-file;
+# NOTE: if par-check is enabled and nzb-file contains more than one collection
+# of files the postprocess-program is called after each collection is completed
+# and par-checked. If you want to clean up the directory (delete par-files, etc.)
+# there are two possibilities, when you can do this:
+#  1) you parse the "name of par-file processed" to find out the base name
+#     of collection and clean up only files from this collection;
+#  2) or you just check the parameter "state of nzb-job" and do clean up,
+#     only if it is equal to "1" (which means, that this was the last
+#     collection in nzb-file and all files are now completed);
+# NOTE: do not forget to uncomment next line.
+#postprocess=~/myscript.sh
+
+
+# NEWS-SERVERS
+
+# This section defines which servers nzbget should connect to.
+# The servers will be ordered by their level, i.e. nzbget will at
+# first try to download an article from the level-0-server.
+# If that server fails, nzbget proceeds with the level-1-server, etc.
+# A good idea is surely to put your major download-server at level 0
+# and your fill-servers at levels 1,2,...
+# NOTE 1: Do not leave out a level in your server-list and start with level 0!
+# NOTE 2: Several servers with the same level may be used.
+
+# First server, on level 0
+# Level of newsserver
+server1.level=0
+# Host-name of newsserver
+server1.host=my1.newsserver.com
+# Port to connect to (default 119 if not specified)
+server1.port=119
+# Username to use for authentication
+server1.username=user
+# Password to use for authentication
+server1.password=pass
+# Maximal number of simultaneous connections to this server
+server1.connections=4
+
+# Second server, on level 0
+#server2.level=0
+#server2.host=my2.newsserver.com
+#server2.port=119
+#server2.username=me
+#server2.password=mypass
+#server2.connections=4
+
+# Third server, on level 1
+#server3.level=1
+#server3.host=fills.newsserver.com
+#server3.port=119
+#server3.username=me2
+#server3.password=mypass2
+#server3.connections=1
