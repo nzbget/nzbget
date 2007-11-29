@@ -255,9 +255,7 @@ bool RemoteClient::RequestServerList()
 			char* szFilename = pBufPtr + sizeof(SNZBListRequestAnswerEntry) + pListAnswer->m_iNZBFilenameLen + pListAnswer->m_iSubjectLen;
 			
 			char szNZBNiceName[1024];
-			strncpy(szNZBNiceName, BaseFileName(szNZBFilename), 1024);
-			szNZBNiceName[1024-1] = '\0';
-			if (char* p = strrchr(szNZBNiceName, '.')) *p = '\0';
+			FileInfo::MakeNiceNZBName(szNZBFilename, szNZBNiceName, 1024);
 			
 			printf("[%i] %s%c%s (%.2f MB%s)%s\n", pListAnswer->m_iID, szNZBNiceName, (int)PATH_SEPARATOR, szFilename, pListAnswer->m_iFileSize / 1024.0 / 1024.0, szCompleted, szStatus);
 
