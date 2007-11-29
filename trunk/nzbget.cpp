@@ -372,6 +372,11 @@ void SignalProc(int iSignal)
 			debug("SIGPIPE received, ignoring");
 			break;
 			
+		case SIGSEGV:
+			signal(SIGSEGV, SIG_DFL);   // Reset the signal handler
+			debug("SIGSEGV received");
+			break;
+		
 		default:
 			debug("Signal %i received", iSignal);
 			if (SignalProcList[iSignal - 1])
