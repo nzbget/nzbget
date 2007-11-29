@@ -168,9 +168,25 @@ void FileInfo::GetNiceNZBName(char* szBuffer, int iSize)
 
 void FileInfo::MakeNiceNZBName(const char * szNZBFilename, char * szBuffer, int iSize)
 {
-	strncpy(szBuffer, BaseFileName(szNZBFilename), iSize);
+	char postname[1024];
+	const char* szBaseName = BaseFileName(szNZBFilename);
+
+	// if .nzb file has a certain structure, try to strip out certain elements
+	if (sscanf(szBaseName, "msgid_%*d_%1023s", postname) == 1)
+	{
+		// OK, using stripped name
+	}
+	else
+	{
+		// using complete filename
+		strncpy(postname, szBaseName, 1024);
+		postname[1024-1] = '\0';
+	}
+	// wipe out ".nzb"
+	if (char* p = strrchr(postname, '.')) *p = '\0';
+	
+	strncpy(szBuffer, postname, iSize);
 	szBuffer[iSize-1] = '\0';
-	if (char* p = strrchr(szBuffer, '.')) *p = '\0';
 }
 
 void FileInfo::ParseSubject()
@@ -222,23 +238,9 @@ void FileInfo::BuildDestDirName(const char* szNZBFilename)
 
 	if (g_pOptions->GetAppendNZBDir())
 	{
-		char postname[1024];
-		const char* szBaseName = BaseFileName(szNZBFilename);
-
-		// if .nzb file has a certain structure, try to strip out certain elements
-		if (sscanf(szBaseName, "msgid_%*d_%1023s", postname) == 1)
-		{
-			// wipe out certain structure
-			memset(strrchr(postname, '.'), 0, postname + strlen(postname) - strrchr(postname, '.'));
-		}
-		else
-		{
-			strncpy(postname, szBaseName, 1024);
-			postname[1024-1] = '\0';
-		}
-		// wipe out ".nzb"
-		memset(strrchr(postname, '.'), 0, postname + strlen(postname) - strrchr(postname, '.'));
-		snprintf(szBuffer, 1024, "%s%s", g_pOptions->GetDestDir(), postname);
+		char szNiceNZBName[1024];
+		MakeNiceNZBName(szNZBFilename, szNiceNZBName, 1024);
+		snprintf(szBuffer, 1024, "%s%s", g_pOptions->GetDestDir(), szNiceNZBName);
 		szBuffer[1024-1] = '\0';
 	}
 	else
