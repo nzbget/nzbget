@@ -106,6 +106,7 @@ private:
 	char*				m_szServerPassword;
 	int					m_szServerPort;
 	char*				m_szLockFile;
+	char*				m_szDaemonUserName;
 	EOutputMode			m_eOutputMode;
 	bool				m_bReloadQueue;
 	int					m_iLogBufferSize;
@@ -185,6 +186,7 @@ public:
 	char*				GetServerPassword() { return m_szServerPassword; }
 	int					GetServerPort() { return m_szServerPort; }
 	char*				GetLockFile() { return m_szLockFile; }
+	char*				GetDaemonUserName() { return m_szDaemonUserName; }
 	EOutputMode			GetOutputMode() { return m_eOutputMode; }
 	bool				GetReloadQueue() { return m_bReloadQueue; }
 	int					GetLogBufferSize() { return m_iLogBufferSize; }

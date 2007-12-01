@@ -95,6 +95,7 @@ static const char* OPTION_CREATELOG			= "createlog";
 static const char* OPTION_LOGFILE			= "logfile";
 static const char* OPTION_APPENDNZBDIR		= "appendnzbdir";
 static const char* OPTION_LOCKFILE			= "lockfile";
+static const char* OPTION_DAEMONUSERNAME	= "daemonusername";
 static const char* OPTION_OUTPUTMODE		= "outputmode";
 static const char* OPTION_DUPECHECK			= "dupecheck";
 static const char* OPTION_DOWNLOADRATE		= "downloadrate";
@@ -176,6 +177,7 @@ Options::Options(int argc, char* argv[])
 	m_szServerIP			= NULL;
 	m_szServerPassword		= NULL;
 	m_szLockFile			= NULL;
+	m_szDaemonUserName		= NULL;
 	m_eOutputMode			= omLoggable;
 	m_bReloadQueue			= false;
 	m_iLogBufferSize		= 0;
@@ -285,6 +287,10 @@ Options::~Options()
 	{
 		free(m_szLockFile);
 	}
+	if (m_szDaemonUserName)
+	{
+		free(m_szDaemonUserName);
+	}
 	if (m_szPostProcess)
 	{
 		free(m_szPostProcess);
@@ -319,6 +325,7 @@ void Options::InitDefault()
 	SetOption(OPTION_NZBDIR, "${APPDIR}\\nzb");
 	SetOption(OPTION_LOGFILE, "${APPDIR}\\nzbget.log");
 	SetOption(OPTION_LOCKFILE, "${APPDIR}\\nzbget.lock");
+	SetOption(OPTION_DAEMONUSERNAME, "");
 #else
 	SetOption(OPTION_TEMPDIR, "~/nzbget/temp");
 	SetOption(OPTION_DESTDIR, "~/nzbget/dest");
@@ -326,6 +333,7 @@ void Options::InitDefault()
 	SetOption(OPTION_NZBDIR, "~/nzbget/nzb");
 	SetOption(OPTION_LOGFILE, "~/nzbget/nzbget.log");
 	SetOption(OPTION_LOCKFILE, "/tmp/nzbget.lock");
+	SetOption(OPTION_DAEMONUSERNAME, "root");
 #endif
 	SetOption(OPTION_CREATELOG, "yes");
 	SetOption(OPTION_APPENDNZBDIR, "yes");
@@ -478,6 +486,7 @@ void Options::InitOptions()
 	m_szServerIP			= strdup(GetOption(OPTION_SERVERIP));
 	m_szServerPassword		= strdup(GetOption(OPTION_SERVERPASSWORD));
 	m_szLockFile			= strdup(GetOption(OPTION_LOCKFILE));
+	m_szDaemonUserName		= strdup(GetOption(OPTION_DAEMONUSERNAME));
 	m_iLogBufferSize		= atoi(GetOption(OPTION_LOGBUFFERSIZE));
 	m_szLogFile				= strdup(GetOption(OPTION_LOGFILE));
 	
