@@ -38,6 +38,8 @@
 #include <winsvc.h>
 #else
 #include <unistd.h>
+#include <pwd.h>
+#include <grp.h>
 #endif
 #include <sys/types.h>
 #include <sys/stat.h>
@@ -114,12 +116,13 @@ int main(int argc, char *argv[])
 
 	if (g_pOptions->GetDaemonMode())
 	{
-		info("nzbget daemon-mode");
 #ifdef WIN32
+		info("nzbget service-mode");
 		StartService(Run);
 		return 0;
 #else
 		Daemonize();
+		info("nzbget daemon-mode");
 #endif
 	}
 	else if (g_pOptions->GetServerMode())
@@ -490,6 +493,20 @@ void Daemonize()
 	lfp = open(g_pOptions->GetLockFile(), O_RDWR | O_CREAT, 0640);
 	if (lfp < 0) exit(1); /* can not open */
 	if (lockf(lfp, F_TLOCK, 0) < 0) exit(0); /* can not lock */
+
+	/* Drop user if there is one, and we were run as root */
+	if ( getuid() == 0 || geteuid() == 0 ) {
+		struct passwd *pw = getpwnam(g_pOptions->GetDaemonUserName());
+		if (pw) {
+			setgroups( 0, (const gid_t*) 0 ); /* Set aux groups to null. */
+			setgid(pw->pw_gid); /* Set primary group. */
+			/* Try setting aux groups correctly - not critical if this fails. */
+			initgroups( g_pOptions->GetDaemonUserName(),pw->pw_gid); 
+			/* Finally, set uid. */
+			setuid(pw->pw_uid);
+		}
+	}
+
 	/* first instance continues */
 	sprintf(str, "%d\n", getpid());
 	write(lfp, str, strlen(str)); /* record pid to lockfile */

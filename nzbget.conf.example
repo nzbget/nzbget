@@ -33,6 +33,15 @@ tempdir=${MAINDIR}/tmp
 # Lock-file for daemon-mode, contains process-id (PID)
 lockfile=/tmp/nzbget.lock
 
+# User name for daemon-mode (UNIX in daemon-mode only).
+# Set the user that the daemon normally runs at.
+# Set $MAINDIR with an absolute path to be sure where it will write.
+# This allows nzbget daemon to be launched in rc.local (at boot), and
+# download items as a specific user id.
+# NOTE: This option has effect only if the program is started from root-account,
+# otherwise it is ignored and the daemon runs under current user id.
+daemonusername=root
+
 # Where to store log file, if it needs to be created (see "createlog")
 logfile=${destdir}/nzbget.log
 
