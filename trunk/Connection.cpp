@@ -301,7 +301,7 @@ unsigned int Connection::ResolveHostAddr(const char* szHost)
 	{
 		struct hostent* hinfo;
 		bool err = false;
-		int h_errnop;
+		int h_errnop = 0;
 #ifdef WIN32
 		hinfo = gethostbyname(szHost);
 		err = hinfo == NULL;
@@ -312,6 +312,7 @@ unsigned int Connection::ResolveHostAddr(const char* szHost)
 		char* strbuf = (char*)malloc(strbuflen);
 #ifdef HAVE_GETHOSTBYNAME_R_6
 		err = gethostbyname_r(szHost, &hinfobuf, strbuf, strbuflen, &hinfo, &h_errnop);
+		err = err || (hinfo == NULL); // error on null hinfo (means 'no entry')
 #else
 		hinfo = gethostbyname_r(szHost, &hinfobuf, strbuf, strbuflen, &h_errnop);
 		err = hinfo == NULL;
