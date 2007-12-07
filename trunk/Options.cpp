@@ -507,27 +507,27 @@ void Options::InitOptions()
 	m_bReloadQueue			= (bool)ParseOptionValue(OPTION_RELOADQUEUE, BoolCount, BoolNames, (const int*)BoolValues);
 
 	const char* OutputModeNames[] = { "loggable", "logable", "log", "colored", "color", "ncurses", "curses" };
-	const EOutputMode OutputModeValues[] = { omLoggable, omLoggable, omLoggable, omColored, omColored, omNCurses, omNCurses };
+	const int OutputModeValues[] = { omLoggable, omLoggable, omLoggable, omColored, omColored, omNCurses, omNCurses };
 	const int OutputModeCount = 7;
-	m_eOutputMode = (EOutputMode)ParseOptionValue(OPTION_OUTPUTMODE, OutputModeCount, OutputModeNames, (const int*)OutputModeValues);
+	m_eOutputMode = (EOutputMode)ParseOptionValue(OPTION_OUTPUTMODE, OutputModeCount, OutputModeNames, OutputModeValues);
 
 	const char* DecoderNames[] = { "uulib", "yenc", "none", "ydec", "ydecoder" };
-	const EDecoder DecoderValues[] = { dcUulib, dcYenc, dcNone, dcYenc, dcYenc };
+	const int DecoderValues[] = { dcUulib, dcYenc, dcNone, dcYenc, dcYenc };
 	const int DecoderCount = 5;
-	m_eDecoder = (EDecoder)ParseOptionValue(OPTION_DECODER, DecoderCount, DecoderNames, (const int*)DecoderValues);
+	m_eDecoder = (EDecoder)ParseOptionValue(OPTION_DECODER, DecoderCount, DecoderNames, DecoderValues);
 	
 	const char* LoadParsNames[] = { "none", "one", "all", "1", "0" };
-	const ELoadPars LoadParsValues[] = { plNone, plOne, plAll, plOne, plNone };
+	const int LoadParsValues[] = { plNone, plOne, plAll, plOne, plNone };
 	const int LoadParsCount = 4;
-	m_eLoadPars = (ELoadPars)ParseOptionValue(OPTION_LOADPARS, LoadParsCount, LoadParsNames, (const int*)LoadParsValues);
+	m_eLoadPars = (ELoadPars)ParseOptionValue(OPTION_LOADPARS, LoadParsCount, LoadParsNames, LoadParsValues);
 
 	const char* TargetNames[] = { "screen", "log", "both", "none" };
-	const EMessageTarget TargetValues[] = { mtScreen, mtLog, mtBoth, mtNone };
+	const int TargetValues[] = { mtScreen, mtLog, mtBoth, mtNone };
 	const int TargetCount = 4;
-	m_eInfoTarget = (EMessageTarget)ParseOptionValue(OPTION_INFOTARGET, TargetCount, TargetNames, (const int*)TargetValues);
-	m_eWarningTarget = (EMessageTarget)ParseOptionValue(OPTION_WARNINGTARGET, TargetCount, TargetNames, (const int*)TargetValues);
-	m_eErrorTarget = (EMessageTarget)ParseOptionValue(OPTION_ERRORTARGET, TargetCount, TargetNames, (const int*)TargetValues);
-	m_eDebugTarget = (EMessageTarget)ParseOptionValue(OPTION_DEBUGTARGET, TargetCount, TargetNames, (const int*)TargetValues);
+	m_eInfoTarget = (EMessageTarget)ParseOptionValue(OPTION_INFOTARGET, TargetCount, TargetNames, TargetValues);
+	m_eWarningTarget = (EMessageTarget)ParseOptionValue(OPTION_WARNINGTARGET, TargetCount, TargetNames, TargetValues);
+	m_eErrorTarget = (EMessageTarget)ParseOptionValue(OPTION_ERRORTARGET, TargetCount, TargetNames, TargetValues);
+	m_eDebugTarget = (EMessageTarget)ParseOptionValue(OPTION_DEBUGTARGET, TargetCount, TargetNames, TargetValues);
 }
 
 int Options::ParseOptionValue(const char * OptName, int argc, const char * argn[], const int argv[])
