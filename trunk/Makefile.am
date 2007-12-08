@@ -13,6 +13,6 @@ nzbget_SOURCES = ArticleDownloader.cpp ArticleDownloader.h ColoredFrontend.cpp \
 EXTRA_DIST = nzbget.conf.example \
 	win32.h NTService.cpp NTService.h \
 	libpar2-0.2-MSVC8.patch libsigc++-2.0.18-MSVC8.patch \
-	nzbget.kdevelop nzbget.sln nzbget.vcproj
+	Makefile.cvs nzbget.kdevelop nzbget.sln nzbget.vcproj
 
 clean-bak: rm *~
