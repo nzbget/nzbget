@@ -35,6 +35,7 @@
 #include <stdlib.h>
 #include <string.h>
 
+#include "nzbget.h"
 #include "NetAddress.h"
 
 NetAddress::NetAddress(const char* szHost, int iPort)

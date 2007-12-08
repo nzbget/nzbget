@@ -35,6 +35,7 @@
 #include <stdlib.h>
 #include <string.h>
 
+#include "nzbget.h"
 #include "NewsServer.h"
 #include "Log.h"
 

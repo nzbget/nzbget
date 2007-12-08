@@ -27,9 +27,16 @@
 #ifndef MESSAGEBASE_H
 #define MESSAGEBASE_H
 
-static const int32_t NZBMESSAGE_SIGNATURE = 0x6E7A6201; // = "nzb"-version-1
+static const uint32_t NZBMESSAGE_SIGNATURE = 0x6E7A6202; // = "nzb"-version-2
 static const int NZBREQUESTFILENAMESIZE = 512;
 static const int NZBREQUESTPASSWORDSIZE = 32;
+
+/**
+ * NZBGet communication protocol uses only two basic data types: integer and char.
+ * Integer values are passed using network byte order (Big-Endian).
+ * To convert them to/from machine (host) byte order the functions
+ * "htonl" and "ntohl" can be used.
+ */
 
 // The pack-directive prevents aligning of structs.
 // This makes them more portable and allows to use together servers and clients
@@ -67,9 +74,9 @@ enum
 // The basic NZBMessageBase struct
 struct SNZBMessageBase
 {
-	int32_t					m_iId;		// Id must be 'nzbg' in integer-value
-	int32_t					m_iType;	// message type, must be > 0
-	int32_t					m_iSize;	// Size of the entire struct
+	uint32_t				m_iId;		// Id must be 'nzbg' in integer-value
+	uint32_t				m_iType;	// message type, must be > 0
+	uint32_t				m_iSize;	// Size of the entire struct
 	char					m_szPassword[ NZBREQUESTPASSWORDSIZE ];	// Password needs to be in every request
 };
 
@@ -78,44 +85,45 @@ struct SNZBDownloadRequest
 {
 	SNZBMessageBase			m_MessageBase;	// Must be the first in the struct
 	char					m_szFilename[ NZBREQUESTFILENAMESIZE ];
-	int32_t					m_bAddFirst;
-	int32_t					m_iTrailingDataLength;
+	uint32_t				m_bAddFirst;
+	uint32_t				m_iTrailingDataLength;
 };
 
 // A list request
 struct SNZBListRequest
 {
 	SNZBMessageBase			m_MessageBase;	// Must be the first in the struct
-	int32_t					m_bFileList;
-	int32_t					m_bServerState;
+	uint32_t				m_bFileList;
+	uint32_t				m_bServerState;
 };
 
 // A list request-answer
 struct SNZBListRequestAnswer
 {
-	int32_t					m_iSize;	// Size of the entire struct
-	int32_t					m_iEntrySize;	// Size of the SNZBListRequestAnswerEntry-struct
-	long long 				m_lRemainingSize;
-	float					m_fDownloadRate;
-	float					m_fDownloadLimit;
-	int32_t					m_bServerPaused;
-	int32_t					m_iThreadCount;
-	int32_t					m_iNrTrailingEntries;
-	int32_t					m_iTrailingDataLength;
+	uint32_t				m_iSize;	// Size of the entire struct
+	uint32_t				m_iEntrySize;	// Size of the SNZBListRequestAnswerEntry-struct
+	uint32_t 				m_iRemainingSizeLo;
+	uint32_t 				m_iRemainingSizeHi;
+	uint32_t				m_iDownloadRate;    // in Bytes pro Second
+	uint32_t				m_iDownloadLimit;   // in Bytes pro Second
+	uint32_t				m_bServerPaused;
+	uint32_t				m_iThreadCount;
+	uint32_t				m_iNrTrailingEntries;
+	uint32_t				m_iTrailingDataLength;
 };
 
 // A list request-answer entry
 struct SNZBListRequestAnswerEntry
 {
-	int32_t					m_iNZBFilenameLen;
-	int32_t					m_iSubjectLen;
-	int32_t					m_iFilenameLen;
-	int32_t					m_iDestDirLen;
-	int32_t					m_iFileSize;
-	int32_t					m_bFilenameConfirmed;
-	int32_t					m_iRemainingSize;
-	int32_t					m_iID;
-	int32_t					m_bPaused;
+	uint32_t				m_iNZBFilenameLen;
+	uint32_t				m_iSubjectLen;
+	uint32_t				m_iFilenameLen;
+	uint32_t				m_iDestDirLen;
+	uint32_t				m_iFileSize;
+	uint32_t				m_bFilenameConfirmed;
+	uint32_t				m_iRemainingSize;
+	uint32_t				m_iID;
+	uint32_t				m_bPaused;
 	//char					m_szNZBFilename[0]; // variable sized
 	//char					m_szSubject[0]; // variable sized
 	//char					m_szFilename[0]; // variable sized
@@ -126,26 +134,26 @@ struct SNZBListRequestAnswerEntry
 struct SNZBLogRequest
 {
 	SNZBMessageBase			m_MessageBase;	// Must be the first in the struct
-	int32_t					m_iIDFrom;      // Only one of these two parameters
-	int32_t					m_iLines;		// can be set. The another one must be set to "0".
+	uint32_t				m_iIDFrom;      // Only one of these two parameters
+	uint32_t				m_iLines;		// can be set. The another one must be set to "0".
 };
 
 // A log request-answer
 struct SNZBLogRequestAnswer
 {
-	int32_t					m_iSize;	// Size of the entire struct
-	int32_t					m_iEntrySize;	// Size of the SNZBLogRequestAnswerEntry-struct
-	int32_t					m_iNrTrailingEntries;
-	int32_t					m_iTrailingDataLength;
+	uint32_t				m_iSize;	// Size of the entire struct
+	uint32_t				m_iEntrySize;	// Size of the SNZBLogRequestAnswerEntry-struct
+	uint32_t				m_iNrTrailingEntries;
+	uint32_t				m_iTrailingDataLength;
 };
 
 // A log request-answer entry
 struct SNZBLogRequestAnswerEntry
 {
-	int32_t					m_iTextLen;
-	int32_t					m_iID;
-	int32_t					m_iKind;     // see Message::Kind in "Log.h"
-	time_t					m_tTime;
+	uint32_t				m_iTextLen;
+	uint32_t				m_iID;
+	uint32_t				m_iKind;     // see Message::Kind in "Log.h"
+	uint32_t				m_tTime;     // time since the Epoch (00:00:00 UTC, January 1, 1970), measured in seconds.
 	//char					m_szText[0]; // variable sized
 };
 
@@ -153,23 +161,23 @@ struct SNZBLogRequestAnswerEntry
 struct SNZBPauseUnpauseRequest
 {
 	SNZBMessageBase			m_MessageBase;	// Must be the first in the struct
-	int32_t					m_bPause;		// The value g_bPause should be set to
+	uint32_t				m_bPause;		// The value g_bPause should be set to
 };
 
 // Request setting the download rate
 struct SNZBSetDownloadRateRequest
 {
 	SNZBMessageBase			m_MessageBase;		// Must be the first in the struct
-	float					m_fDownloadRate;
+	uint32_t				m_iDownloadRate;    // in Bytes pro Second
 };
 
 // A download request
 struct SNZBEditQueueRequest
 {
 	SNZBMessageBase			m_MessageBase;	// Must be the first in the struct
-	int32_t					m_iIDFrom;			// ID of the first file in the range
-	int32_t					m_iIDTo;			// ID of the last file in the range, not used yet, must be same as m_iIDFrom
-	int32_t					m_iAction;			// action to be done, see later
+	uint32_t				m_iIDFrom;			// ID of the first file in the range
+	uint32_t				m_iIDTo;			// ID of the last file in the range, not used yet, must be same as m_iIDFrom
+	uint32_t				m_iAction;			// action to be done, see later
 	int32_t					m_iOffset;			// Offset to move (for m_iAction = 0)
 };
 
@@ -177,7 +185,7 @@ struct SNZBEditQueueRequest
 struct SNZBDumpDebugRequest
 {
 	SNZBMessageBase			m_MessageBase;		// Must be the first in the struct
-	int32_t					m_iLevel;			// Future use
+	uint32_t				m_iLevel;			// Future use
 };
 
 #ifdef HAVE_PRAGMA_PACK
