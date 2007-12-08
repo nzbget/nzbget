@@ -52,11 +52,23 @@ extern Options* g_pOptions;
 extern QueueCoordinator* g_pQueueCoordinator;
 extern void ExitProc();
 
-const char* g_szMessageRequests[] =
+const char* g_szMessageRequestNames[] =
     { "N/A", "Download", "Pause/Unpause", "List",
       "Set download rate", "Dump debug", "Edit queue", "Log", "Quit"
     };
 
+const unsigned int g_iMessageRequestSizes[] =
+    { 0,
+		sizeof(SNZBDownloadRequest),
+		sizeof(SNZBPauseUnpauseRequest),
+		sizeof(SNZBListRequest),
+		sizeof(SNZBSetDownloadRateRequest),
+		sizeof(SNZBDumpDebugRequest),
+		sizeof(SNZBEditQueueRequest),
+		sizeof(SNZBLogRequest),
+		sizeof(SNZBMessageBase)
+    };
+	
 //*****************************************************************
 // RemoteServer
 
@@ -133,7 +145,16 @@ void MessageCommand::ProcessRequest()
 {
 	SNZBMessageBase* pMessageBase = (SNZBMessageBase*) & m_RequestBuffer;
 
-	switch (pMessageBase->m_iType)
+	if (ntohl(pMessageBase->m_iType) >= (int)NZBMessageRequest::eRequestDownload &&
+		   ntohl(pMessageBase->m_iType) <= (int)NZBMessageRequest::eRequestShutdown &&
+		   g_iMessageRequestSizes[ntohl(pMessageBase->m_iType)] != ntohl(pMessageBase->m_iSize))
+	{
+		error("Invalid size of request: needed %i Bytes, but received %i Bytes",
+			 g_iMessageRequestSizes[ntohl(pMessageBase->m_iType)], ntohl(pMessageBase->m_iSize));
+		return;
+	}
+			
+	switch (ntohl(pMessageBase->m_iType))
 	{
 		case NZBMessageRequest::eRequestDownload:
 			{
@@ -156,7 +177,7 @@ void MessageCommand::ProcessRequest()
 		case NZBMessageRequest::eRequestPauseUnpause:
 			{
 				SNZBPauseUnpauseRequest* pPauseUnpauseRequest = (SNZBPauseUnpauseRequest*) & m_RequestBuffer;
-				g_pOptions->SetPause(pPauseUnpauseRequest->m_bPause);
+				g_pOptions->SetPause(ntohl(pPauseUnpauseRequest->m_bPause));
 				SendResponse("Pause-/Unpause-Command completed successfully");
 				break;
 			}
@@ -170,7 +191,7 @@ void MessageCommand::ProcessRequest()
 		case NZBMessageRequest::eRequestSetDownloadRate:
 			{
 				SNZBSetDownloadRateRequest* pSetDownloadRequest = (SNZBSetDownloadRateRequest*) & m_RequestBuffer;
-				g_pOptions->SetDownloadRate(pSetDownloadRequest->m_fDownloadRate);
+				g_pOptions->SetDownloadRate(ntohl(pSetDownloadRequest->m_iDownloadRate) / 1024.0);
 				SendResponse("Rate-Command completed successfully");
 				break;
 			}
@@ -198,9 +219,9 @@ void MessageCommand::ProcessRequest()
 void MessageCommand::RequestDownload()
 {
 	SNZBDownloadRequest* pDownloadRequest = (SNZBDownloadRequest*) & m_RequestBuffer;
-	const char* pExtraData = (m_iExtraDataLength > 0) ? ((char*)pDownloadRequest + pDownloadRequest->m_MessageBase.m_iSize) : NULL;
-	int NeedBytes = pDownloadRequest->m_iTrailingDataLength - m_iExtraDataLength;
-	char* pRecvBuffer = (char*)malloc(pDownloadRequest->m_iTrailingDataLength + 1);
+	const char* pExtraData = (m_iExtraDataLength > 0) ? ((char*)pDownloadRequest + ntohl(pDownloadRequest->m_MessageBase.m_iSize)) : NULL;
+	int NeedBytes = ntohl(pDownloadRequest->m_iTrailingDataLength) - m_iExtraDataLength;
+	char* pRecvBuffer = (char*)malloc(ntohl(pDownloadRequest->m_iTrailingDataLength) + 1);
 	memcpy(pRecvBuffer, pExtraData, m_iExtraDataLength);
 	char* pBufPtr = pRecvBuffer + m_iExtraDataLength;
 
@@ -221,12 +242,12 @@ void MessageCommand::RequestDownload()
 
 	if (NeedBytes == 0)
 	{
-		NZBFile* pNZBFile = NZBFile::CreateFromBuffer(pDownloadRequest->m_szFilename, pRecvBuffer, pDownloadRequest->m_iTrailingDataLength);
+		NZBFile* pNZBFile = NZBFile::CreateFromBuffer(pDownloadRequest->m_szFilename, pRecvBuffer, ntohl(pDownloadRequest->m_iTrailingDataLength));
 
 		if (pNZBFile)
 		{
 			info("Request: Queue collection %s", pDownloadRequest->m_szFilename);
-			g_pQueueCoordinator->AddNZBFileToQueue(pNZBFile, pDownloadRequest->m_bAddFirst);
+			g_pQueueCoordinator->AddNZBFileToQueue(pNZBFile, ntohl(pDownloadRequest->m_bAddFirst));
 			delete pNZBFile;
 
 			char tmp[1024];
@@ -252,13 +273,13 @@ void MessageCommand::RequestList()
 
 	SNZBListRequestAnswer ListRequestAnswer;
 	memset(&ListRequestAnswer, 0, sizeof(ListRequestAnswer));
-	ListRequestAnswer.m_iSize = sizeof(ListRequestAnswer);
-	ListRequestAnswer.m_iEntrySize = sizeof(SNZBListRequestAnswerEntry);
+	ListRequestAnswer.m_iSize = htonl(sizeof(ListRequestAnswer));
+	ListRequestAnswer.m_iEntrySize = htonl(sizeof(SNZBListRequestAnswerEntry));
 
 	char* buf = NULL;
 	int bufsize = 0;
 
-	if (pListRequest->m_bFileList)
+	if (ntohl(pListRequest->m_bFileList))
 	{
 		// Make a data structure and copy all the elements of the list into it
 		DownloadQueue* pDownloadQueue = g_pQueueCoordinator->LockQueue();
@@ -282,39 +303,41 @@ void MessageCommand::RequestList()
 		{
 			FileInfo* pFileInfo = *it;
 			SNZBListRequestAnswerEntry* pListAnswer = (SNZBListRequestAnswerEntry*) bufptr;
-			pListAnswer->m_iID				= pFileInfo->GetID();
-			pListAnswer->m_iFileSize		= (int)pFileInfo->GetSize();
-			pListAnswer->m_bFilenameConfirmed = pFileInfo->GetFilenameConfirmed();
-			pListAnswer->m_iRemainingSize	= (int)pFileInfo->GetRemainingSize();
-			pListAnswer->m_bPaused			= pFileInfo->GetPaused();
-			pListAnswer->m_iNZBFilenameLen	= strlen(pFileInfo->GetNZBFilename()) + 1;
-			pListAnswer->m_iSubjectLen		= strlen(pFileInfo->GetSubject()) + 1;
-			pListAnswer->m_iFilenameLen		= strlen(pFileInfo->GetFilename()) + 1;
-			pListAnswer->m_iDestDirLen		= strlen(pFileInfo->GetDestDir()) + 1;
+			pListAnswer->m_iID				= htonl(pFileInfo->GetID());
+			pListAnswer->m_iFileSize		= htonl(pFileInfo->GetSize());
+			pListAnswer->m_bFilenameConfirmed = htonl(pFileInfo->GetFilenameConfirmed());
+			pListAnswer->m_iRemainingSize	= htonl(pFileInfo->GetRemainingSize());
+			pListAnswer->m_bPaused			= htonl(pFileInfo->GetPaused());
+			pListAnswer->m_iNZBFilenameLen	= htonl(strlen(pFileInfo->GetNZBFilename()) + 1);
+			pListAnswer->m_iSubjectLen		= htonl(strlen(pFileInfo->GetSubject()) + 1);
+			pListAnswer->m_iFilenameLen		= htonl(strlen(pFileInfo->GetFilename()) + 1);
+			pListAnswer->m_iDestDirLen		= htonl(strlen(pFileInfo->GetDestDir()) + 1);
 			bufptr += sizeof(SNZBListRequestAnswerEntry);
 			strcpy(bufptr, pFileInfo->GetNZBFilename());
-			bufptr += pListAnswer->m_iNZBFilenameLen;
+			bufptr += ntohl(pListAnswer->m_iNZBFilenameLen);
 			strcpy(bufptr, pFileInfo->GetSubject());
-			bufptr += pListAnswer->m_iSubjectLen;
+			bufptr += ntohl(pListAnswer->m_iSubjectLen);
 			strcpy(bufptr, pFileInfo->GetFilename());
-			bufptr += pListAnswer->m_iFilenameLen;
+			bufptr += ntohl(pListAnswer->m_iFilenameLen);
 			strcpy(bufptr, pFileInfo->GetDestDir());
-			bufptr += pListAnswer->m_iDestDirLen;
+			bufptr += ntohl(pListAnswer->m_iDestDirLen);
 		}
 
 		g_pQueueCoordinator->UnlockQueue();
 
-		ListRequestAnswer.m_iNrTrailingEntries = NrEntries;
-		ListRequestAnswer.m_iTrailingDataLength = bufsize;
+		ListRequestAnswer.m_iNrTrailingEntries = htonl(NrEntries);
+		ListRequestAnswer.m_iTrailingDataLength = htonl(bufsize);
 	}
 
-	if (pListRequest->m_bServerState)
+	if (htonl(pListRequest->m_bServerState))
 	{
-		ListRequestAnswer.m_fDownloadRate = g_pQueueCoordinator->CalcCurrentDownloadSpeed();
-		ListRequestAnswer.m_lRemainingSize = g_pQueueCoordinator->CalcRemainingSize();
-		ListRequestAnswer.m_fDownloadLimit = g_pOptions->GetDownloadRate();
-		ListRequestAnswer.m_bServerPaused = g_pOptions->GetPause();
-		ListRequestAnswer.m_iThreadCount = Thread::GetThreadCount() - 1; // not counting itself
+		ListRequestAnswer.m_iDownloadRate = htonl((int)(g_pQueueCoordinator->CalcCurrentDownloadSpeed() * 1024));
+		long long lRemainingSize = g_pQueueCoordinator->CalcRemainingSize();
+		ListRequestAnswer.m_iRemainingSizeHi = htonl((unsigned int)(lRemainingSize >> 32));
+		ListRequestAnswer.m_iRemainingSizeLo = htonl((unsigned int)lRemainingSize);
+		ListRequestAnswer.m_iDownloadLimit = htonl((int)(g_pOptions->GetDownloadRate() * 1024));
+		ListRequestAnswer.m_bServerPaused = htonl(g_pOptions->GetPause());
+		ListRequestAnswer.m_iThreadCount = htonl(Thread::GetThreadCount() - 1); // not counting itself
 	}
 
 	// Send the request answer
@@ -338,8 +361,8 @@ void MessageCommand::RequestLog()
 
 	Log::Messages* pMessages = g_pLog->LockMessages();
 
-	int iNrEntries = pLogRequest->m_iLines;
-	unsigned int iIDFrom = pLogRequest->m_iIDFrom;
+	int iNrEntries = ntohl(pLogRequest->m_iLines);
+	unsigned int iIDFrom = ntohl(pLogRequest->m_iIDFrom);
 	int iStart = pMessages->size();
 	if (iNrEntries > 0)
 	{
@@ -377,22 +400,22 @@ void MessageCommand::RequestLog()
 	{
 		Message* pMessage = (*pMessages)[i];
 		SNZBLogRequestAnswerEntry* pLogAnswer = (SNZBLogRequestAnswerEntry*) bufptr;
-		pLogAnswer->m_iID = pMessage->GetID();
-		pLogAnswer->m_iKind = pMessage->GetKind();
-		pLogAnswer->m_tTime = pMessage->GetTime();
-		pLogAnswer->m_iTextLen = strlen(pMessage->GetText()) + 1;
+		pLogAnswer->m_iID = htonl(pMessage->GetID());
+		pLogAnswer->m_iKind = htonl(pMessage->GetKind());
+		pLogAnswer->m_tTime = htonl(pMessage->GetTime());
+		pLogAnswer->m_iTextLen = htonl(strlen(pMessage->GetText()) + 1);
 		bufptr += sizeof(SNZBLogRequestAnswerEntry);
 		strcpy(bufptr, pMessage->GetText());
-		bufptr += pLogAnswer->m_iTextLen;
+		bufptr += ntohl(pLogAnswer->m_iTextLen);
 	}
 
 	g_pLog->UnlockMessages();
 
 	SNZBLogRequestAnswer LogRequestAnswer;
-	LogRequestAnswer.m_iSize = sizeof(LogRequestAnswer);
-	LogRequestAnswer.m_iEntrySize = sizeof(SNZBLogRequestAnswerEntry);
-	LogRequestAnswer.m_iNrTrailingEntries = iNrEntries;
-	LogRequestAnswer.m_iTrailingDataLength = bufsize;
+	LogRequestAnswer.m_iSize = htonl(sizeof(LogRequestAnswer));
+	LogRequestAnswer.m_iEntrySize = htonl(sizeof(SNZBLogRequestAnswerEntry));
+	LogRequestAnswer.m_iNrTrailingEntries = htonl(iNrEntries);
+	LogRequestAnswer.m_iTrailingDataLength = htonl(bufsize);
 
 	// Send the request answer
 	send(m_iSocket, (char*) &LogRequestAnswer, sizeof(LogRequestAnswer), 0);
@@ -410,31 +433,31 @@ void MessageCommand::RequestEditQueue()
 {
 	SNZBEditQueueRequest* pEditQueueRequest = (SNZBEditQueueRequest*) & m_RequestBuffer;
 
-	int From = pEditQueueRequest->m_iIDFrom;
-	int To = pEditQueueRequest->m_iIDTo;
+	int From = ntohl(pEditQueueRequest->m_iIDFrom);
+	int To = ntohl(pEditQueueRequest->m_iIDTo);
 	int Step = 1;
-	if ((pEditQueueRequest->m_iAction == NZBMessageRequest::eActionMoveTop) ||
-	        ((pEditQueueRequest->m_iAction == NZBMessageRequest::eActionMoveOffset) &&
-	         (pEditQueueRequest->m_iOffset < 0)))
+	if ((ntohl(pEditQueueRequest->m_iAction) == NZBMessageRequest::eActionMoveTop) ||
+	        ((ntohl(pEditQueueRequest->m_iAction) == NZBMessageRequest::eActionMoveOffset) &&
+	         ((int)ntohl(pEditQueueRequest->m_iOffset) < 0)))
 	{
-		Step = -1;
+		Step = -1;                                        
 		int tmp = From; From = To; To = tmp;
 	}
 
 	for (int ID = From; ID != To + Step; ID += Step)
 	{
-		switch (pEditQueueRequest->m_iAction)
+		switch (ntohl(pEditQueueRequest->m_iAction))
 		{
 			case NZBMessageRequest::eActionPause:
 			case NZBMessageRequest::eActionResume:
 				{
-					g_pQueueCoordinator->EditQueuePauseUnpauseEntry(ID, pEditQueueRequest->m_iAction == NZBMessageRequest::eActionPause);
+					g_pQueueCoordinator->EditQueuePauseUnpauseEntry(ID, ntohl(pEditQueueRequest->m_iAction) == NZBMessageRequest::eActionPause);
 					break;
 				}
 
 			case NZBMessageRequest::eActionMoveOffset:
 				{
-					g_pQueueCoordinator->EditQueueMoveEntry(ID, pEditQueueRequest->m_iOffset, true);
+					g_pQueueCoordinator->EditQueueMoveEntry(ID, ntohl(pEditQueueRequest->m_iOffset), true);
 					break;
 				}
 
@@ -480,7 +503,7 @@ void MessageCommand::Run()
 	SNZBMessageBase* pMessageBase = (SNZBMessageBase*) & m_RequestBuffer;
 
 	// Make sure this is a nzbget request from a client
-	if (pMessageBase->m_iId != NZBMESSAGE_SIGNATURE)
+	if (ntohl(pMessageBase->m_iId) != NZBMESSAGE_SIGNATURE)
 	{
 		warn("Non-nzbget request received on port %i", g_pOptions->GetServerPort());
 
@@ -515,10 +538,10 @@ void MessageCommand::Run()
 		char ip[20];
 		inet_ntop(AF_INET, &PeerName.sin_addr, ip, sizeof(ip));
 #endif
-		debug("%s request received from %s", g_szMessageRequests[pMessageBase->m_iType], ip);
+		debug("%s request received from %s", g_szMessageRequestNames[ntohl(pMessageBase->m_iType)], ip);
 	}
 
-	m_iExtraDataLength = iRequestReceived - pMessageBase->m_iSize;
+	m_iExtraDataLength = iRequestReceived - ntohl(pMessageBase->m_iSize);
 
 	ProcessRequest();
 
