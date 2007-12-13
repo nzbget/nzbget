@@ -36,6 +36,7 @@ static const int NZBREQUESTPASSWORDSIZE = 32;
  * Integer values are passed using network byte order (Big-Endian).
  * To convert them to/from machine (host) byte order the functions
  * "htonl" and "ntohl" can be used.
+ * All char-strings must ends with NULL-char.
  */
 
 // The pack-directive prevents aligning of structs.
@@ -47,145 +48,146 @@ static const int NZBREQUESTPASSWORDSIZE = 32;
 
 namespace NZBMessageRequest
 {
-enum
-{
-    eRequestDownload = 1,
-    eRequestPauseUnpause,
-    eRequestList,
-    eRequestSetDownloadRate,
-    eRequestDumpDebug,
-    eRequestEditQueue,
-    eRequestLog,
-    eRequestShutdown
-};
+	// Possible values for field "m_iType" of struct "SNZBMessageBase":
+	enum
+	{
+		eRequestDownload = 1,
+		eRequestPauseUnpause,
+		eRequestList,
+		eRequestSetDownloadRate,
+		eRequestDumpDebug,
+		eRequestEditQueue,
+		eRequestLog,
+		eRequestShutdown
+	};
 
-// Possible values for field "m_iAction" of struct "SNZBEditQueueRequest":
-enum
-{
-    eActionMoveOffset = 1,	// move to m_iOffset relative to the current position in queue
-    eActionMoveTop,			// move to top of queue
-    eActionMoveBottom,		// move to bottom of queue
-    eActionPause,			// pause
-    eActionResume,			// resume (unpause)
-    eActionDelete			// delete
-};
+	// Possible values for field "m_iAction" of struct "SNZBEditQueueRequest":
+	enum
+	{
+		eActionMoveOffset = 1,	// move to m_iOffset relative to the current position in queue
+		eActionMoveTop,			// move to top of queue
+		eActionMoveBottom,		// move to bottom of queue
+		eActionPause,			// pause
+		eActionResume,			// resume (unpause)
+		eActionDelete			// delete
+	};
 }
 
 // The basic NZBMessageBase struct
 struct SNZBMessageBase
 {
-	uint32_t				m_iId;		// Id must be 'nzbg' in integer-value
-	uint32_t				m_iType;	// message type, must be > 0
-	uint32_t				m_iSize;	// Size of the entire struct
+	uint32_t				m_iSignature;			// Signature must be NZBMESSAGE_SIGNATURE in integer-value
+	uint32_t				m_iType;				// Message type, see enum in NZBMessageRequest-namespace
+	uint32_t				m_iSize;				// Size of the entire struct
 	char					m_szPassword[ NZBREQUESTPASSWORDSIZE ];	// Password needs to be in every request
 };
 
 // A download request
 struct SNZBDownloadRequest
 {
-	SNZBMessageBase			m_MessageBase;	// Must be the first in the struct
-	char					m_szFilename[ NZBREQUESTFILENAMESIZE ];
-	uint32_t				m_bAddFirst;
-	uint32_t				m_iTrailingDataLength;
+	SNZBMessageBase			m_MessageBase;			// Must be the first in the struct
+	char					m_szFilename[ NZBREQUESTFILENAMESIZE ];	// Name of nzb-file, may contain full path (local path on client) or only filename
+	uint32_t				m_bAddFirst;			// 1 - add file to the top of download queue
+	uint32_t				m_iTrailingDataLength;	// Length of nzb-file in bytes
 };
 
-// A list request
+// A list and status request
 struct SNZBListRequest
 {
-	SNZBMessageBase			m_MessageBase;	// Must be the first in the struct
-	uint32_t				m_bFileList;
-	uint32_t				m_bServerState;
+	SNZBMessageBase			m_MessageBase;			// Must be the first in the struct
+	uint32_t				m_bFileList;			// 1 - return file list
+	uint32_t				m_bServerState;			// 1 - return server state
 };
 
 // A list request-answer
 struct SNZBListRequestAnswer
 {
-	uint32_t				m_iSize;	// Size of the entire struct
-	uint32_t				m_iEntrySize;	// Size of the SNZBListRequestAnswerEntry-struct
-	uint32_t 				m_iRemainingSizeLo;
-	uint32_t 				m_iRemainingSizeHi;
-	uint32_t				m_iDownloadRate;    // in Bytes pro Second
-	uint32_t				m_iDownloadLimit;   // in Bytes pro Second
-	uint32_t				m_bServerPaused;
-	uint32_t				m_iThreadCount;
-	uint32_t				m_iNrTrailingEntries;
-	uint32_t				m_iTrailingDataLength;
+	uint32_t				m_iSize;				// Size of the entire struct
+	uint32_t				m_iEntrySize;			// Size of the SNZBListRequestAnswerEntry-struct
+	uint32_t 				m_iRemainingSizeLo;		// Remaining Size in bytes, Low 32-bits of 64-bit value
+	uint32_t 				m_iRemainingSizeHi;		// Remaining Size in bytes, High 32-bits of 64-bit value
+	uint32_t				m_iDownloadRate;		// in Bytes pro Second
+	uint32_t				m_iDownloadLimit;		// in Bytes pro Second
+	uint32_t				m_bServerPaused;		// 1 - server is currently in paused-state
+	uint32_t				m_iThreadCount;			// Number of threads running
+	uint32_t				m_iNrTrailingEntries;	// Number of List-entries, following to this structure
+	uint32_t				m_iTrailingDataLength;	// Length of all List-entries, following to this structure
 };
 
 // A list request-answer entry
 struct SNZBListRequestAnswerEntry
 {
-	uint32_t				m_iNZBFilenameLen;
-	uint32_t				m_iSubjectLen;
-	uint32_t				m_iFilenameLen;
-	uint32_t				m_iDestDirLen;
-	uint32_t				m_iFileSize;
-	uint32_t				m_bFilenameConfirmed;
-	uint32_t				m_iRemainingSize;
-	uint32_t				m_iID;
-	uint32_t				m_bPaused;
-	//char					m_szNZBFilename[0]; // variable sized
-	//char					m_szSubject[0]; // variable sized
-	//char					m_szFilename[0]; // variable sized
-	//char					m_szDestDir[0]; // variable sized
+	uint32_t				m_iNZBFilenameLen;		// Length of NZBFileName-string (m_szNZBFilename), following to this record
+	uint32_t				m_iSubjectLen;			// Length of Subject-string (m_szSubject), following to this record
+	uint32_t				m_iFilenameLen;			// Length of Filename-string (m_szFilename), following to this record
+	uint32_t				m_iDestDirLen;			// Length of DestDir-string (m_szDestDir), following to this record
+	uint32_t				m_iFileSize;			// Filesize in bytes
+	uint32_t				m_bFilenameConfirmed;	// 1 - Filename confirmed (read from article body), 0 - Filename parsed from subject (can be changed after reading of article)
+	uint32_t				m_iRemainingSize;		// Remaining Filesize in bytes
+	uint32_t				m_iID;					// Entry-ID
+	uint32_t				m_bPaused;				// 1 - file is paused
+	//char					m_szNZBFilename[0];		// variable sized, may contain full path (local path on client) or only filename
+	//char					m_szSubject[0];			// variable sized
+	//char					m_szFilename[0];		// variable sized
+	//char					m_szDestDir[0];			// variable sized
 };
 
 // A log request
 struct SNZBLogRequest
 {
-	SNZBMessageBase			m_MessageBase;	// Must be the first in the struct
-	uint32_t				m_iIDFrom;      // Only one of these two parameters
-	uint32_t				m_iLines;		// can be set. The another one must be set to "0".
+	SNZBMessageBase			m_MessageBase;			// Must be the first in the struct
+	uint32_t				m_iIDFrom;				// Only one of these two parameters
+	uint32_t				m_iLines;				// can be set. The another one must be set to "0".
 };
 
 // A log request-answer
 struct SNZBLogRequestAnswer
 {
-	uint32_t				m_iSize;	// Size of the entire struct
-	uint32_t				m_iEntrySize;	// Size of the SNZBLogRequestAnswerEntry-struct
-	uint32_t				m_iNrTrailingEntries;
-	uint32_t				m_iTrailingDataLength;
+	uint32_t				m_iSize;				// Size of the entire struct
+	uint32_t				m_iEntrySize;			// Size of the SNZBLogRequestAnswerEntry-struct
+	uint32_t				m_iNrTrailingEntries;	// Number of Log-entries, following to this structure
+	uint32_t				m_iTrailingDataLength;	// Length of all Log-entries, following to this structure
 };
 
 // A log request-answer entry
 struct SNZBLogRequestAnswerEntry
 {
-	uint32_t				m_iTextLen;
-	uint32_t				m_iID;
-	uint32_t				m_iKind;     // see Message::Kind in "Log.h"
-	uint32_t				m_tTime;     // time since the Epoch (00:00:00 UTC, January 1, 1970), measured in seconds.
-	//char					m_szText[0]; // variable sized
+	uint32_t				m_iTextLen;				// Length of Text-string (m_szText), following to this record
+	uint32_t				m_iID;					// ID of Log-entry
+	uint32_t				m_iKind;				// see Message::Kind in "Log.h"
+	uint32_t				m_tTime;				// time since the Epoch (00:00:00 UTC, January 1, 1970), measured in seconds.
+	//char					m_szText[0];			// variable sized
 };
 
 // A Pause/Unpause request
 struct SNZBPauseUnpauseRequest
 {
-	SNZBMessageBase			m_MessageBase;	// Must be the first in the struct
-	uint32_t				m_bPause;		// The value g_bPause should be set to
+	SNZBMessageBase			m_MessageBase;			// Must be the first in the struct
+	uint32_t				m_bPause;				// 1 - server must be paused, 0 - server must be unpaused
 };
 
 // Request setting the download rate
 struct SNZBSetDownloadRateRequest
 {
-	SNZBMessageBase			m_MessageBase;		// Must be the first in the struct
-	uint32_t				m_iDownloadRate;    // in Bytes pro Second
+	SNZBMessageBase			m_MessageBase;			// Must be the first in the struct
+	uint32_t				m_iDownloadRate;		// in Bytes pro Second
 };
 
 // A download request
 struct SNZBEditQueueRequest
 {
-	SNZBMessageBase			m_MessageBase;	// Must be the first in the struct
-	uint32_t				m_iIDFrom;			// ID of the first file in the range
-	uint32_t				m_iIDTo;			// ID of the last file in the range, not used yet, must be same as m_iIDFrom
-	uint32_t				m_iAction;			// action to be done, see later
-	int32_t					m_iOffset;			// Offset to move (for m_iAction = 0)
+	SNZBMessageBase			m_MessageBase;			// Must be the first in the struct
+	uint32_t				m_iIDFrom;				// ID of the first file in the range
+	uint32_t				m_iIDTo;				// ID of the last file in the range
+	uint32_t				m_iAction;				// action to be executed, see enum in NZBMessageRequest-namespace
+	int32_t					m_iOffset;				// Offset to move (for m_iAction = 0)
 };
 
 // Request dumping of debug info
 struct SNZBDumpDebugRequest
 {
-	SNZBMessageBase			m_MessageBase;		// Must be the first in the struct
-	uint32_t				m_iLevel;			// Future use
+	SNZBMessageBase			m_MessageBase;			// Must be the first in the struct
+	uint32_t				m_iLevel;				// Not used yet, must be 0
 };
 
 #ifdef HAVE_PRAGMA_PACK

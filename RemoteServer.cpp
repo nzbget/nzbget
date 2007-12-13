@@ -503,7 +503,7 @@ void MessageCommand::Run()
 	SNZBMessageBase* pMessageBase = (SNZBMessageBase*) & m_RequestBuffer;
 
 	// Make sure this is a nzbget request from a client
-	if (ntohl(pMessageBase->m_iId) != NZBMESSAGE_SIGNATURE)
+	if (ntohl(pMessageBase->m_iSignature) != NZBMESSAGE_SIGNATURE)
 	{
 		warn("Non-nzbget request received on port %i", g_pOptions->GetServerPort());
 

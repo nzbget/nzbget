@@ -122,7 +122,7 @@ bool RemoteClient::InitConnection()
 
 void RemoteClient::InitMessageBase(SNZBMessageBase* pMessageBase, int iRequest, int iSize)
 {
-	pMessageBase->m_iId	= htonl(NZBMESSAGE_SIGNATURE);
+	pMessageBase->m_iSignature	= htonl(NZBMESSAGE_SIGNATURE);
 	pMessageBase->m_iType = htonl(iRequest);
 	pMessageBase->m_iSize = htonl(iSize);
 	strncpy(pMessageBase->m_szPassword, g_pOptions->GetServerPassword(), NZBREQUESTPASSWORDSIZE - 1);
