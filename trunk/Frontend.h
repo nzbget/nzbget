@@ -80,7 +80,7 @@ protected:
 	void				ServerDumpDebug();
 	bool				RequestDumpDebug();
 	bool 				ServerEditQueue(EEditAction eAction, int iEntry);
-	bool 				RequestEditQueue(int iAction, int iOffset, int iIDFrom, int iIDTo);
+	bool 				RequestEditQueue(int iAction, int iOffset, int iID);
 
 public:
 						Frontend();

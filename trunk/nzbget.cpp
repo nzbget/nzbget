@@ -305,7 +305,7 @@ void ProcessClientRequest()
 	else if (g_pOptions->GetClientOperation() == Options::opClientRequestEditQueue)
 	{
 		Client->RequestServerEditQueue(g_pOptions->GetEditQueueAction(), g_pOptions->GetEditQueueOffset(),
-										g_pOptions->GetEditQueueIDFrom(), g_pOptions->GetEditQueueIDTo());
+										g_pOptions->GetEditQueueIDList(), g_pOptions->GetEditQueueIDCount());
 	}
 	else if (g_pOptions->GetClientOperation() == Options::opClientRequestLog)
 	{

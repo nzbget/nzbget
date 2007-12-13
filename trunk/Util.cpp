@@ -107,7 +107,10 @@ int getopt(int argc, char *argv[], char *optstring)
 	char *cp = strchr(optstring, c);
 
 	if (cp == NULL || c == ':')
+	{
+		fprintf(stderr, "Invalid option %c", c);
 		return '?';
+	}
 
 	cp++;
 	if (*cp == ':')
@@ -124,6 +127,7 @@ int getopt(int argc, char *argv[], char *optstring)
 		}
 		else
 		{
+			fprintf(stderr, "Option %c needs an argument", c);
 			return '?';
 		}
 	}

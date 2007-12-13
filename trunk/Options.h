@@ -125,8 +125,8 @@ private:
 	bool				m_bRemoteClientMode;
 	int					m_iEditQueueAction;
 	int					m_iEditQueueOffset;
-	int					m_iEditQueueIDFrom;
-	int					m_iEditQueueIDTo;
+	int*				m_pEditQueueIDList;
+	int					m_iEditQueueIDCount;
 	char*				m_szArgFilename;
 	bool				m_bPrintOptions;
 	bool				m_bAddTop;
@@ -156,6 +156,7 @@ private:
 	bool				ValidateOptionName(const char* optname);
 	void				LoadConfig(const char* configfile);
 	void				CheckDir(char** dir, const char* szOptionName);
+	void				ParseFileIDList(int argc, char* argv[], int optind);
 
 public:
 	Options(int argc, char* argv[]);
@@ -205,8 +206,8 @@ public:
 	EClientOperation	GetClientOperation() { return 	m_eClientOperation; }
 	int					GetEditQueueAction() { return m_iEditQueueAction; }
 	int					GetEditQueueOffset() { return m_iEditQueueOffset; }
-	int					GetEditQueueIDFrom() { return m_iEditQueueIDFrom; }
-	int					GetEditQueueIDTo() { return m_iEditQueueIDTo; }
+	int*				GetEditQueueIDList() { return m_pEditQueueIDList; }
+	int					GetEditQueueIDCount() { return m_iEditQueueIDCount; }
 	const char*			GetArgFilename() { return m_szArgFilename; }
 	bool				GetAddTop() { return m_bAddTop; }
 	float				GetSetRate() { return m_fSetRate; }

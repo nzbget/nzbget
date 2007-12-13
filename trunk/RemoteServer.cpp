@@ -438,31 +438,59 @@ void MessageCommand::RequestEditQueue()
 {
 	SNZBEditQueueRequest* pEditQueueRequest = (SNZBEditQueueRequest*) & m_RequestBuffer;
 
-	int From = ntohl(pEditQueueRequest->m_iIDFrom);
-	int To = ntohl(pEditQueueRequest->m_iIDTo);
-	int Step = 1;
-	if ((ntohl(pEditQueueRequest->m_iAction) == NZBMessageRequest::eActionMoveTop) ||
-	        ((ntohl(pEditQueueRequest->m_iAction) == NZBMessageRequest::eActionMoveOffset) &&
-	         ((int)ntohl(pEditQueueRequest->m_iOffset) < 0)))
+	uint32_t* m_iIDs = NULL;
+	int iNrEntries = ntohl(pEditQueueRequest->m_iNrTrailingEntries);
+
+	if (ntohl(pEditQueueRequest->m_iTrailingDataLength) > 0)
 	{
-		Step = -1;                                        
-		int tmp = From; From = To; To = tmp;
+
+		const char* pExtraData = (m_iExtraDataLength > 0) ? ((char*)pEditQueueRequest + ntohl(pEditQueueRequest->m_MessageBase.m_iStructSize)) : NULL;
+		int NeedBytes = ntohl(pEditQueueRequest->m_iTrailingDataLength) - m_iExtraDataLength;
+
+		char* pRecvBuffer = (char*)malloc(ntohl(pEditQueueRequest->m_iTrailingDataLength));
+		memcpy(pRecvBuffer, pExtraData, m_iExtraDataLength);
+		char* pBufPtr = pRecvBuffer + m_iExtraDataLength;
+
+		// Read from the socket until nothing remains
+		int iResult = 0;
+		while (NeedBytes > 0)
+		{
+			iResult = recv(m_iSocket, pBufPtr, NeedBytes, 0);
+			// Did the recv succeed?
+			if (iResult <= 0)
+			{
+				error("invalid request");
+				break;
+			}
+			pBufPtr += iResult;
+			NeedBytes -= iResult;
+		}
+
+		m_iIDs = (uint32_t*)pRecvBuffer;
 	}
 
-	for (int ID = From; ID != To + Step; ID += Step)
+	if (ntohl(pEditQueueRequest->m_bSmartOrder))
 	{
-		switch (ntohl(pEditQueueRequest->m_iAction))
+		//TODO: reorder items for smart order
+	}
+
+	int iAction = ntohl(pEditQueueRequest->m_iAction);
+	int iOffset = ntohl(pEditQueueRequest->m_iOffset);
+	for (int i = 0; i < iNrEntries; i++)
+	{
+		int ID = m_iIDs[i];
+		switch (iAction)
 		{
 			case NZBMessageRequest::eActionPause:
 			case NZBMessageRequest::eActionResume:
 				{
-					g_pQueueCoordinator->EditQueuePauseUnpauseEntry(ID, ntohl(pEditQueueRequest->m_iAction) == NZBMessageRequest::eActionPause);
+					g_pQueueCoordinator->EditQueuePauseUnpauseEntry(ID, iAction == NZBMessageRequest::eActionPause);
 					break;
 				}
 
 			case NZBMessageRequest::eActionMoveOffset:
 				{
-					g_pQueueCoordinator->EditQueueMoveEntry(ID, ntohl(pEditQueueRequest->m_iOffset), true);
+					g_pQueueCoordinator->EditQueueMoveEntry(ID, iOffset, true);
 					break;
 				}
 
@@ -485,6 +513,12 @@ void MessageCommand::RequestEditQueue()
 				}
 		}
 	}
+
+	if (m_iIDs)
+	{
+		free(m_iIDs);
+	}
+
 	SendResponse("Edit-Command completed successfully");
 }
 
