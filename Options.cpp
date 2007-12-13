@@ -74,7 +74,6 @@ static struct option long_options[] =
 	    {"log", required_argument, 0, 'G'},
 	    {"top", no_argument, 0, 'T'},
 	    {"edit", required_argument, 0, 'E'},
-	    {"fileid", required_argument, 0, 'I'},
 	    {"connect", no_argument, 0, 'C'},
 	    {"quit", no_argument, 0, 'Q'},
 #ifdef DEBUG				
@@ -84,7 +83,7 @@ static struct option long_options[] =
     };
 #endif
 
-static char short_options[] = "c:hno:psvABDCG:LPUR:TE:I:Q";
+static char short_options[] = "c:hno:psvABDCG:LPUR:TE:Q";
 
 // Program options
 static const char* OPTION_DESTDIR			= "destdir";
@@ -155,8 +154,8 @@ Options::Options(int argc, char* argv[])
 	m_bResetLog				= false;
 	m_fDownloadRate			= 0;
 	m_iEditQueueAction		= 0;
-	m_iEditQueueIDFrom		= 0;
-	m_iEditQueueIDTo		= 0;
+	m_pEditQueueIDList		= NULL;
+	m_iEditQueueIDCount		= 0;
 	m_iEditQueueOffset		= 0;
 	m_szArgFilename			= NULL;
 	m_iConnectionTimeout	= 0;
@@ -193,7 +192,11 @@ Options::Options(int argc, char* argv[])
 	m_bNoConfig				= false;
 
 	char szFilename[MAX_PATH + 1];
+#ifdef WIN32
+	GetModuleFileName(NULL, szFilename, MAX_PATH + 1);
+#else
 	strncpy(szFilename, argv[0], MAX_PATH + 1);
+#endif
 	szFilename[MAX_PATH] = '\0';
 	NormalizePathSeparators(szFilename);
 	char* end = strrchr(szFilename, PATH_SEPARATOR);
@@ -294,6 +297,10 @@ Options::~Options()
 	if (m_szPostProcess)
 	{
 		free(m_szPostProcess);
+	}
+	if (m_pEditQueueIDList)
+	{
+		free(m_pEditQueueIDList);
 	}
 
 	for (unsigned int i = 0; i < optEntries.size(); i++)
@@ -401,7 +408,7 @@ void Options::InitOptFile(int argc, char* argv[])
 		// search for config file in default locations
 #ifdef WIN32
 		char szFilename[MAX_PATH + 1];
-		strncpy(szFilename, argv[0], MAX_PATH + 1);
+		GetModuleFileName(NULL, szFilename, MAX_PATH + 1);
 		szFilename[MAX_PATH] = '\0';
 		NormalizePathSeparators(szFilename);
 		char* end = strrchr(szFilename, PATH_SEPARATOR);
@@ -663,34 +670,6 @@ void Options::InitCommandLine(int argc, char* argv[])
 				}
 				break;
 			}
-			case 'I':
-			{
-				const char* p = strchr(optarg, '-');
-				if (p)
-				{
-					char buf[101];
-					int maxlen = p - optarg < 100 ? p - optarg : 100;
-					strncpy(buf, optarg, maxlen);
-					buf[maxlen] = '\0';
-					m_iEditQueueIDFrom = atoi(buf);
-					m_iEditQueueIDTo = atoi(p + 1);
-					if (m_iEditQueueIDFrom <= 0 || m_iEditQueueIDTo <= 0 ||
-					        m_iEditQueueIDFrom > m_iEditQueueIDTo)
-					{
-						abort("FATAL ERROR: wrong value for option 'I'\n");
-					}
-				}
-				else
-				{
-					m_iEditQueueIDFrom = atoi(optarg);
-					if (m_iEditQueueIDFrom <= 0)
-					{
-						abort("FATAL ERROR: wrong value for option 'I'\n");
-					}
-					m_iEditQueueIDTo = m_iEditQueueIDFrom;
-				}
-				break;
-			}
 			case 'Q':
 				m_eClientOperation = opClientRequestShutdown;
 				break;
@@ -729,8 +708,7 @@ void Options::PrintUsage(char* com)
 	       "  -T, --top                 Add file to the top (begining) of queue\n"
 	       "                            (should be used with switch --append)\n"
 	       "  -G, --log <lines>         Request last <lines> lines from server's screen-log\n"
-	       "  -E, --edit <action>       Edit queue on the server\n"
-	       "                            (must be used with switch --fileid):\n"
+		   "  -E, --edit <action> <IDs> Edit queue on the server\n"
 	       "    where <action> is one of:\n"
 	       "      <+offset|-offset>     Move file(s) in queue relative to current position\n"
 	       "                            offset is an integer number\n"
@@ -739,8 +717,8 @@ void Options::PrintUsage(char* com)
 	       "      P                     Pause file(s)\n"
 	       "      U                     Resume (unpause) file(s)\n"
 	       "      D                     Delete file(s)\n"
-	       "  -I, --fileid <FileID|FileIDFrom-FileIDTo>   File-id(s) for switch '-E',\n"
-	       "                            as printed by switch --list\n"
+	       "    where <IDs> is a comma-separated list of file-ids or ranges of file-ids,\n"
+		   "	   for example: 1-5,3,10-22"
 	       "",
 	       com);
 }
@@ -757,6 +735,10 @@ void Options::InitFileArg(int argc, char* argv[])
 			printf("nzb-file not specified\n");
 			exit(-1);
 		}
+	}
+	else if (m_eClientOperation == opClientRequestEditQueue)
+	{
+		ParseFileIDList(argc, argv, optind);
 	}
 	else
 	{
@@ -1076,3 +1058,118 @@ void Options::CheckOptions()
 	}
 #endif
 }
+
+void Options::ParseFileIDList(int argc, char* argv[], int optind)
+{
+	std::vector<int> IDs;
+	IDs.clear();
+
+	while (optind < argc)
+	{
+		char* szWritableFileIDList = strdup(argv[optind++]);
+
+		char* optarg = strtok(szWritableFileIDList, ", ");
+		while (optarg)
+		{
+			int iEditQueueIDFrom = 0;
+			int iEditQueueIDTo = 0;
+			const char* p = strchr(optarg, '-');
+			if (p)
+			{
+				char buf[101];
+				int maxlen = p - optarg < 100 ? p - optarg : 100;
+				strncpy(buf, optarg, maxlen);
+				buf[maxlen] = '\0';
+				iEditQueueIDFrom = atoi(buf);
+				iEditQueueIDTo = atoi(p + 1);
+				if (iEditQueueIDFrom <= 0 || iEditQueueIDTo <= 0 ||
+						iEditQueueIDFrom > iEditQueueIDTo)
+				{
+					abort("FATAL ERROR: invalid list of file IDs\n");
+				}
+			}
+			else
+			{
+				iEditQueueIDFrom = atoi(optarg);
+				if (iEditQueueIDFrom <= 0)
+				{
+					abort("FATAL ERROR: invalid list of file IDs\n");
+				}
+				iEditQueueIDTo = iEditQueueIDFrom;
+			}
+
+			int iEditQueueIDCount = 0;
+			if (iEditQueueIDTo != 0)
+			{
+				iEditQueueIDCount = iEditQueueIDTo - iEditQueueIDFrom + 1;
+			}
+			else
+			{
+				iEditQueueIDCount = 1;
+			}
+
+			for (int i = 0; i < iEditQueueIDCount; i++)
+			{
+				IDs.push_back(iEditQueueIDFrom + i);
+			}
+
+			optarg = strtok(NULL, ", ");
+		}
+
+		free(szWritableFileIDList);
+	}
+
+	m_iEditQueueIDCount = IDs.size();
+	m_pEditQueueIDList = (int*)malloc(sizeof(int) * m_iEditQueueIDCount);
+	for (int i = 0; i < m_iEditQueueIDCount; i++)
+	{
+		m_pEditQueueIDList[i] = IDs[i];
+	}
+}
+
+/*
+void Options::ParseFileIDList(const char* optarg)
+{
+	int iEditQueueIDFrom = 0;
+	int iEditQueueIDTo = 0;
+
+	const char* p = strchr(optarg, '-');
+	if (p)
+	{
+		char buf[101];
+		int maxlen = p - optarg < 100 ? p - optarg : 100;
+		strncpy(buf, optarg, maxlen);
+		buf[maxlen] = '\0';
+		iEditQueueIDFrom = atoi(buf);
+		iEditQueueIDTo = atoi(p + 1);
+		if (iEditQueueIDFrom <= 0 || iEditQueueIDTo <= 0 ||
+		        iEditQueueIDFrom > iEditQueueIDTo)
+		{
+			abort("FATAL ERROR: invalid list of file IDs\n");
+		}
+	}
+	else
+	{
+		iEditQueueIDFrom = atoi(optarg);
+		if (iEditQueueIDFrom <= 0)
+		{
+			abort("FATAL ERROR: invalid list of file IDs\n");
+		}
+		iEditQueueIDTo = iEditQueueIDFrom;
+	}
+
+	if (iEditQueueIDTo != 0)
+	{
+		m_iEditQueueIDCount = iEditQueueIDTo - iEditQueueIDFrom + 1;
+	}
+	else
+	{
+		m_iEditQueueIDCount = 1;
+	}
+
+	m_pEditQueueIDList = (int*)malloc(sizeof(int) * m_iEditQueueIDCount);
+	for (int i = 0; i < m_iEditQueueIDCount; i++)
+	{
+		m_pEditQueueIDList[i] = iEditQueueIDFrom + i;
+	}
+}*/

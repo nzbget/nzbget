@@ -53,7 +53,7 @@ public:
 	bool			RequestServerPauseUnpause(bool bPause);
 	bool			RequestServerSetDownloadRate(float fRate);
 	bool			RequestServerDumpDebug();
-	bool 			RequestServerEditQueue(int iAction, int iOffset, int iIDFrom, int iIDTo);
+	bool 			RequestServerEditQueue(int iAction, int iOffset, int* pIDList, int iIDCount);
 	bool			RequestServerLog(int iLines);
 	bool			RequestServerShutdown();
 };

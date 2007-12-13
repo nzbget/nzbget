@@ -243,7 +243,7 @@ bool RemoteClient::RequestServerList()
 			szCompleted[0] = '\0';
 			if (lRemainingSize < lFileSize)
 			{
-				sprintf(szCompleted, ", %i%s", (int)(100 - lRemainingSize * 100.0 / lFileSize), "\%");
+				sprintf(szCompleted, ", %i%s", (int)(100 - lRemainingSize * 100.0 / lFileSize), "%");
 			}
 			char szStatus[100];
 			if (ntohl(pListAnswer->m_bPaused))
@@ -437,31 +437,37 @@ bool RemoteClient::RequestServerDumpDebug()
 	return true;
 }
 
-bool RemoteClient::RequestServerEditQueue(int iAction, int iOffset, int iIDFrom, int iIDTo)
+bool RemoteClient::RequestServerEditQueue(int iAction, int iOffset, int* pIDList, int iIDCount)
 {
-	if (iIDTo <= 0)
+	if (iIDCount <= 0 || pIDList == NULL)
 	{
-		printf("File(s) not specified (use option -I)\n");
+		printf("File(s) not specified\n");
 		return false;
 	}
 
 	if (!InitConnection()) return false;
 
+	int iLength = sizeof(uint32_t) * iIDCount;
+
 	SNZBEditQueueRequest EditQueueRequest;
 	InitMessageBase(&EditQueueRequest.m_MessageBase, NZBMessageRequest::eRequestEditQueue, sizeof(EditQueueRequest));
 	EditQueueRequest.m_iAction = htonl(iAction);
 	EditQueueRequest.m_iOffset = htonl((int)iOffset);
-	EditQueueRequest.m_iIDFrom = htonl(iIDFrom);
-	EditQueueRequest.m_iIDTo = htonl(iIDTo);
+	EditQueueRequest.m_bSmartOrder = htonl(true);
+	EditQueueRequest.m_iNrTrailingEntries = htonl(iIDCount);
+	EditQueueRequest.m_iTrailingDataLength = htonl(iLength);
 
-	bool OK = m_pConnection->Send((char*)(&EditQueueRequest), sizeof(EditQueueRequest)) >= 0;
-	if (OK)
+	bool OK = false;
+	if (m_pConnection->Send((char*)(&EditQueueRequest), sizeof(EditQueueRequest)) < 0)
 	{
-		ReceiveCommandResult();
+		perror("m_pConnection->Send");
 	}
 	else
 	{
-		perror("m_pConnection->Send");
+		m_pConnection->Send((char*)pIDList, iLength);
+		ReceiveCommandResult();
+		m_pConnection->Disconnect();
+		OK = true;
 	}
 
 	m_pConnection->Disconnect();

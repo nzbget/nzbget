@@ -221,17 +221,17 @@ bool Frontend::ServerEditQueue(EEditAction eAction, int iEntry)
 		switch (eAction)
 		{
 			case eaPauseUnpause:
-				return RequestEditQueue(bPause ? NZBMessageRequest::eActionPause : NZBMessageRequest::eActionResume, 0, ID, ID);
+				return RequestEditQueue(bPause ? NZBMessageRequest::eActionPause : NZBMessageRequest::eActionResume, 0, ID);
 			case eaDelete:
-				return RequestEditQueue(NZBMessageRequest::eActionDelete, 0, ID, ID);
+				return RequestEditQueue(NZBMessageRequest::eActionDelete, 0, ID);
 			case eaMoveUp:
-				return RequestEditQueue(NZBMessageRequest::eActionMoveOffset, -1, ID, ID);
+				return RequestEditQueue(NZBMessageRequest::eActionMoveOffset, -1, ID);
 			case eaMoveDown:
-				return RequestEditQueue(NZBMessageRequest::eActionMoveOffset, +1, ID, ID);
+				return RequestEditQueue(NZBMessageRequest::eActionMoveOffset, +1, ID);
 			case eaMoveTop:
-				return RequestEditQueue(NZBMessageRequest::eActionMoveTop, 0, ID, ID);
+				return RequestEditQueue(NZBMessageRequest::eActionMoveTop, 0, ID);
 			case eaMoveBottom:
-				return RequestEditQueue(NZBMessageRequest::eActionMoveBottom, 0, ID, ID);
+				return RequestEditQueue(NZBMessageRequest::eActionMoveBottom, 0, ID);
 		}
 	}
 	else
@@ -441,9 +441,9 @@ bool Frontend::RequestDumpDebug()
 	return client.RequestServerDumpDebug();
 }
 
-bool Frontend::RequestEditQueue(int iAction, int iOffset, int iIDFrom, int iIDTo)
+bool Frontend::RequestEditQueue(int iAction, int iOffset, int iID)
 {
 	RemoteClient client;
 	client.SetVerbose(false);
-	return client.RequestServerEditQueue(iAction, iOffset, iIDFrom, iIDTo);
+	return client.RequestServerEditQueue(iAction, iOffset, &iID, 1);
 }
