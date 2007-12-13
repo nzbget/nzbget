@@ -51,6 +51,11 @@
 extern QueueCoordinator* g_pQueueCoordinator;
 extern Options* g_pOptions;
 
+static const int PARSTATUS_NOT_CHECKED = 0;
+static const int PARSTATUS_FAILED = 1;
+static const int PARSTATUS_REPAIRED = 2;
+static const int PARSTATUS_REPAIR_POSSIBLE = 3;
+		
 PrePostProcessor::PrePostProcessor()
 {
 	debug("Creating PrePostProcessor");
@@ -172,7 +177,7 @@ void PrePostProcessor::QueueCoordinatorUpdate(Subject * Caller, void * Aspect)
 			else
 #endif
 			{
-				ExecPostScript(pAspect->pFileInfo->GetDestDir(), pAspect->pFileInfo->GetNZBFilename(), "", false);
+				ExecPostScript(pAspect->pFileInfo->GetDestDir(), pAspect->pFileInfo->GetNZBFilename(), "", PARSTATUS_NOT_CHECKED);
 			}
 		}
 	}
@@ -538,8 +543,21 @@ void PrePostProcessor::ParCheckerUpdate(Subject * Caller, void * Aspect)
 			}
 		}
 		
-		ExecPostScript(szPath, m_ParChecker.GetNZBFilename(), m_ParChecker.GetParFilename(),
-			m_ParChecker.GetStatus() == ParChecker::psFinished);
+		int iParStatus = 0;
+		if (m_ParChecker.GetStatus() == ParChecker::psFailed)
+		{
+			iParStatus = PARSTATUS_FAILED;
+		}
+		else if (g_pOptions->GetParRepair() || m_ParChecker.GetRepairNotNeeded())
+		{
+			iParStatus = PARSTATUS_REPAIRED;
+		}
+		else
+		{
+			iParStatus = PARSTATUS_REPAIR_POSSIBLE;
+		}
+		
+		ExecPostScript(szPath, m_ParChecker.GetNZBFilename(), m_ParChecker.GetParFilename(), iParStatus);
 
 		m_mutexParChecker.Lock();
 		m_bHasMoreJobs = !m_ParQueue.empty();
@@ -549,7 +567,7 @@ void PrePostProcessor::ParCheckerUpdate(Subject * Caller, void * Aspect)
 
 #endif
 
-void PrePostProcessor::ExecPostScript(const char * szPath, const char * szNZBFilename, const char * szParFilename, bool bParOK)
+void PrePostProcessor::ExecPostScript(const char * szPath, const char * szNZBFilename, const char * szParFilename, int iParStatus)
 {
 	const char* szScript = g_pOptions->GetPostProcess();
 	if (!szScript || strlen(szScript) == 0)
@@ -584,16 +602,19 @@ void PrePostProcessor::ExecPostScript(const char * szPath, const char * szNZBFil
 	if (bCollectionCompleted)
 	{
 		m_mutexParChecker.Lock();
-		bCollectionCompleted = m_ParQueue.empty();
+		for (ParQueue::iterator it = m_ParQueue.begin(); it != m_ParQueue.end(); it++)
+		{
+			QueuedFile* pQueuedFile = *it;
+			if (!strcmp(pQueuedFile->GetNZBFilename(), szNZBFilename))
+			{
+				bCollectionCompleted = false;
+				break;
+			}
+		}
 		m_mutexParChecker.Unlock();
 	}
 #endif
 
-	int iParStatus = 0;
-	if (strlen(szParFilename) != 0)
-	{
-		iParStatus = (int)bParOK + 1;
-	}
 	char szParStatus[10];
 	snprintf(szParStatus, 10, "%i", iParStatus);
 	szParStatus[10-1] = '\0';
