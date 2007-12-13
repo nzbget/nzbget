@@ -135,7 +135,7 @@ parcheck=no
 
 # Automatic par-repair (yes, no)
 # If option "parcheck" is enabled and "parrepair" is not, the program
-# only verify downloaded files and downloads needed par2-files, but do
+# only verifies downloaded files and downloads needed par2-files, but do
 # not start repair-process. This is useful if the server does not have
 # enough CPU power, since repairing of large files may take too much
 # resources and time on a slow computers.
@@ -165,10 +165,11 @@ strictparname=yes
 #  - name of par-file processed (if par-checked) or empty string (if not);
 #  - result of par-check:
 #      0 - not checked: par-check disabled or nzb-file does not contain any par-files;
-#      1 - checked and sucessfully repaired;
-#      2 - checked and failed to repair;
+#      1 - checked and failed to repair;
+#      2 - checked and sucessfully repaired;
+#      3 - checked and can be repaired but repair is disabled;
 #  - state of nzb-job:
-#      0 - there are more collection in this nzb-file queued;
+#      0 - there are more collections in this nzb-file queued;
 #      1 - this was the last collection in nzb-file;
 # NOTE: if par-check is enabled and nzb-file contains more than one collection
 # of files the postprocess-program is called after each collection is completed
