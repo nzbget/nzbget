@@ -215,3 +215,14 @@ void NormalizePathSeparators(char* Path)
 		}
 	}
 }
+
+long long JoinInt64(unsigned int Hi, unsigned int Lo)
+{
+	return (((long long)Hi) << 32) + Lo;
+}
+
+void SplitInt64(long long Int64, unsigned int* Hi, unsigned int* Lo)
+{
+	*Hi = (unsigned int)(Int64 >> 32);
+	*Lo = (unsigned int)Int64;
+}

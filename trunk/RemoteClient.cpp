@@ -124,7 +124,7 @@ void RemoteClient::InitMessageBase(SNZBMessageBase* pMessageBase, int iRequest, 
 {
 	pMessageBase->m_iSignature	= htonl(NZBMESSAGE_SIGNATURE);
 	pMessageBase->m_iType = htonl(iRequest);
-	pMessageBase->m_iSize = htonl(iSize);
+	pMessageBase->m_iStructSize = htonl(iSize);
 	strncpy(pMessageBase->m_szPassword, g_pOptions->GetServerPassword(), NZBREQUESTPASSWORDSIZE - 1);
 	pMessageBase->m_szPassword[NZBREQUESTPASSWORDSIZE - 1] = '\0';
 }
@@ -236,22 +236,25 @@ bool RemoteClient::RequestServerList()
 		{
 			SNZBListRequestAnswerEntry* pListAnswer = (SNZBListRequestAnswerEntry*) pBufPtr;
 
+			long long lFileSize = JoinInt64(ntohl(pListAnswer->m_iFileSizeHi), ntohl(pListAnswer->m_iFileSizeLo));
+			long long lRemainingSize = JoinInt64(ntohl(pListAnswer->m_iRemainingSizeHi), ntohl(pListAnswer->m_iRemainingSizeLo));
+
 			char szCompleted[100];
 			szCompleted[0] = '\0';
-			if (ntohl(pListAnswer->m_iRemainingSize) < ntohl(pListAnswer->m_iFileSize))
+			if (lRemainingSize < lFileSize)
 			{
-				sprintf(szCompleted, ", %i%s", (int)(100 - ntohl(pListAnswer->m_iRemainingSize) * 100.0 / ntohl(pListAnswer->m_iFileSize)), "\%");
+				sprintf(szCompleted, ", %i%s", (int)(100 - lRemainingSize * 100.0 / lFileSize), "\%");
 			}
 			char szStatus[100];
 			if (ntohl(pListAnswer->m_bPaused))
 			{
 				sprintf(szStatus, " (paused)");
-				lPaused += ntohl(pListAnswer->m_iRemainingSize);
+				lPaused += lRemainingSize;
 			}
 			else
 			{
 				szStatus[0] = '\0';
-				lRemaining += ntohl(pListAnswer->m_iRemainingSize);
+				lRemaining += lRemainingSize;
 			}
 			char* szNZBFilename = pBufPtr + sizeof(SNZBListRequestAnswerEntry);
 			char* szFilename = pBufPtr + sizeof(SNZBListRequestAnswerEntry) + ntohl(pListAnswer->m_iNZBFilenameLen) + ntohl(pListAnswer->m_iSubjectLen);
@@ -259,7 +262,7 @@ bool RemoteClient::RequestServerList()
 			char szNZBNiceName[1024];
 			FileInfo::MakeNiceNZBName(szNZBFilename, szNZBNiceName, 1024);
 			
-			printf("[%i] %s%c%s (%.2f MB%s)%s\n", ntohl(pListAnswer->m_iID), szNZBNiceName, (int)PATH_SEPARATOR, szFilename, ntohl(pListAnswer->m_iFileSize) / 1024.0 / 1024.0, szCompleted, szStatus);
+			printf("[%i] %s%c%s (%.2f MB%s)%s\n", ntohl(pListAnswer->m_iID), szNZBNiceName, (int)PATH_SEPARATOR, szFilename, lFileSize / 1024.0 / 1024.0, szCompleted, szStatus);
 
 			pBufPtr += sizeof(SNZBListRequestAnswerEntry) + ntohl(pListAnswer->m_iNZBFilenameLen) +
 				ntohl(pListAnswer->m_iSubjectLen) + ntohl(pListAnswer->m_iFilenameLen) + ntohl(pListAnswer->m_iDestDirLen);
@@ -420,7 +423,6 @@ bool RemoteClient::RequestServerDumpDebug()
 
 	SNZBDumpDebugRequest DumpDebugInfo;
 	InitMessageBase(&DumpDebugInfo.m_MessageBase, NZBMessageRequest::eRequestDumpDebug, sizeof(DumpDebugInfo));
-	DumpDebugInfo.m_iLevel = htonl(0);
 
 	if (m_pConnection->Send((char*)(&DumpDebugInfo), sizeof(DumpDebugInfo)) < 0)
 	{
@@ -470,11 +472,10 @@ bool RemoteClient::RequestServerShutdown()
 {
 	if (!InitConnection()) return false;
 
-	SNZBMessageBase QuitRequest;
+	SNZBShutdownRequest ShutdownRequest;
+	InitMessageBase(&ShutdownRequest.m_MessageBase, NZBMessageRequest::eRequestShutdown, sizeof(ShutdownRequest));
 
-	InitMessageBase(&QuitRequest, NZBMessageRequest::eRequestShutdown, sizeof(QuitRequest));
-
-	bool OK = m_pConnection->Send((char*)(&QuitRequest), sizeof(QuitRequest)) >= 0;
+	bool OK = m_pConnection->Send((char*)(&ShutdownRequest), sizeof(ShutdownRequest)) >= 0;
 	if (OK)
 	{
 		ReceiveCommandResult();

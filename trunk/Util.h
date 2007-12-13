@@ -61,4 +61,7 @@ char* BaseFileName(const char* filename);
 
 void NormalizePathSeparators(char* Path);
 
+long long JoinInt64(unsigned int Hi, unsigned int Lo);
+void SplitInt64(long long Int64, unsigned int* Hi, unsigned int* Lo);
+
 #endif
