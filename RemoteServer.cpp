@@ -147,10 +147,10 @@ void MessageCommand::ProcessRequest()
 
 	if (ntohl(pMessageBase->m_iType) >= (int)NZBMessageRequest::eRequestDownload &&
 		   ntohl(pMessageBase->m_iType) <= (int)NZBMessageRequest::eRequestShutdown &&
-		   g_iMessageRequestSizes[ntohl(pMessageBase->m_iType)] != ntohl(pMessageBase->m_iSize))
+		   g_iMessageRequestSizes[ntohl(pMessageBase->m_iType)] != ntohl(pMessageBase->m_iStructSize))
 	{
 		error("Invalid size of request: needed %i Bytes, but received %i Bytes",
-			 g_iMessageRequestSizes[ntohl(pMessageBase->m_iType)], ntohl(pMessageBase->m_iSize));
+			 g_iMessageRequestSizes[ntohl(pMessageBase->m_iType)], ntohl(pMessageBase->m_iStructSize));
 		return;
 	}
 			
@@ -219,7 +219,7 @@ void MessageCommand::ProcessRequest()
 void MessageCommand::RequestDownload()
 {
 	SNZBDownloadRequest* pDownloadRequest = (SNZBDownloadRequest*) & m_RequestBuffer;
-	const char* pExtraData = (m_iExtraDataLength > 0) ? ((char*)pDownloadRequest + ntohl(pDownloadRequest->m_MessageBase.m_iSize)) : NULL;
+	const char* pExtraData = (m_iExtraDataLength > 0) ? ((char*)pDownloadRequest + ntohl(pDownloadRequest->m_MessageBase.m_iStructSize)) : NULL;
 	int NeedBytes = ntohl(pDownloadRequest->m_iTrailingDataLength) - m_iExtraDataLength;
 	char* pRecvBuffer = (char*)malloc(ntohl(pDownloadRequest->m_iTrailingDataLength) + 1);
 	memcpy(pRecvBuffer, pExtraData, m_iExtraDataLength);
@@ -273,7 +273,7 @@ void MessageCommand::RequestList()
 
 	SNZBListRequestAnswer ListRequestAnswer;
 	memset(&ListRequestAnswer, 0, sizeof(ListRequestAnswer));
-	ListRequestAnswer.m_iSize = htonl(sizeof(ListRequestAnswer));
+	ListRequestAnswer.m_iStructSize = htonl(sizeof(ListRequestAnswer));
 	ListRequestAnswer.m_iEntrySize = htonl(sizeof(SNZBListRequestAnswerEntry));
 
 	char* buf = NULL;
@@ -301,12 +301,17 @@ void MessageCommand::RequestList()
 		char* bufptr = buf;
 		for (DownloadQueue::iterator it = pDownloadQueue->begin(); it != pDownloadQueue->end(); it++)
 		{
+			unsigned int iSizeHi, iSizeLo;
 			FileInfo* pFileInfo = *it;
 			SNZBListRequestAnswerEntry* pListAnswer = (SNZBListRequestAnswerEntry*) bufptr;
 			pListAnswer->m_iID				= htonl(pFileInfo->GetID());
-			pListAnswer->m_iFileSize		= htonl(pFileInfo->GetSize());
+			SplitInt64(pFileInfo->GetSize(), &iSizeHi, &iSizeLo);
+			pListAnswer->m_iFileSizeLo		= htonl(iSizeLo);
+			pListAnswer->m_iFileSizeHi		= htonl(iSizeHi);
+			SplitInt64(pFileInfo->GetRemainingSize(), &iSizeHi, &iSizeLo);
+			pListAnswer->m_iRemainingSizeLo	= htonl(iSizeLo);
+			pListAnswer->m_iRemainingSizeHi	= htonl(iSizeHi);
 			pListAnswer->m_bFilenameConfirmed = htonl(pFileInfo->GetFilenameConfirmed());
-			pListAnswer->m_iRemainingSize	= htonl(pFileInfo->GetRemainingSize());
 			pListAnswer->m_bPaused			= htonl(pFileInfo->GetPaused());
 			pListAnswer->m_iNZBFilenameLen	= htonl(strlen(pFileInfo->GetNZBFilename()) + 1);
 			pListAnswer->m_iSubjectLen		= htonl(strlen(pFileInfo->GetSubject()) + 1);
@@ -412,7 +417,7 @@ void MessageCommand::RequestLog()
 	g_pLog->UnlockMessages();
 
 	SNZBLogRequestAnswer LogRequestAnswer;
-	LogRequestAnswer.m_iSize = htonl(sizeof(LogRequestAnswer));
+	LogRequestAnswer.m_iStructSize = htonl(sizeof(LogRequestAnswer));
 	LogRequestAnswer.m_iEntrySize = htonl(sizeof(SNZBLogRequestAnswerEntry));
 	LogRequestAnswer.m_iNrTrailingEntries = htonl(iNrEntries);
 	LogRequestAnswer.m_iTrailingDataLength = htonl(bufsize);
@@ -541,7 +546,7 @@ void MessageCommand::Run()
 		debug("%s request received from %s", g_szMessageRequestNames[ntohl(pMessageBase->m_iType)], ip);
 	}
 
-	m_iExtraDataLength = iRequestReceived - ntohl(pMessageBase->m_iSize);
+	m_iExtraDataLength = iRequestReceived - ntohl(pMessageBase->m_iStructSize);
 
 	ProcessRequest();
 

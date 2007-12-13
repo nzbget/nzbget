@@ -48,6 +48,7 @@
 #include "MessageBase.h"
 #include "QueueCoordinator.h"
 #include "RemoteClient.h"
+#include "Util.h"
 
 extern QueueCoordinator* g_pQueueCoordinator;
 extern Options* g_pOptions;
@@ -258,7 +259,7 @@ void Frontend::InitMessageBase(SNZBMessageBase* pMessageBase, int iRequest, int 
 {
 	pMessageBase->m_iSignature	= htonl(NZBMESSAGE_SIGNATURE);
 	pMessageBase->m_iType = htonl(iRequest);
-	pMessageBase->m_iSize = htonl(iSize);
+	pMessageBase->m_iStructSize = htonl(iSize);
 	strncpy(pMessageBase->m_szPassword, g_pOptions->GetServerPassword(), NZBREQUESTPASSWORDSIZE);
 	pMessageBase->m_szPassword[NZBREQUESTPASSWORDSIZE - 1] = '\0';
 }
@@ -376,8 +377,7 @@ bool Frontend::RequestFileList()
 	if (m_bSummary)
 	{
 		m_bPause = ntohl(ListRequestAnswer.m_bServerPaused);
-		m_lRemainingSize = (((long long)ntohl(ListRequestAnswer.m_iRemainingSizeHi)) << 32) +
-				ntohl(ListRequestAnswer.m_iRemainingSizeLo);
+		m_lRemainingSize = JoinInt64(ntohl(ListRequestAnswer.m_iRemainingSizeHi), ntohl(ListRequestAnswer.m_iRemainingSizeLo));
 		m_fCurrentDownloadSpeed = ntohl(ListRequestAnswer.m_iDownloadRate) / 1024.0;
 		m_fDownloadLimit = ntohl(ListRequestAnswer.m_iDownloadLimit) / 1024.0;
 		m_iThreadCount = ntohl(ListRequestAnswer.m_iThreadCount);
@@ -397,8 +397,8 @@ bool Frontend::RequestFileList()
 			
 			FileInfo* pFileInfo = new FileInfo();
 			pFileInfo->SetID(ntohl(pListAnswer->m_iID));
-			pFileInfo->SetSize(ntohl(pListAnswer->m_iFileSize));
-			pFileInfo->SetRemainingSize(ntohl(pListAnswer->m_iRemainingSize));
+			pFileInfo->SetSize(JoinInt64(ntohl(pListAnswer->m_iFileSizeHi), ntohl(pListAnswer->m_iFileSizeLo)));
+			pFileInfo->SetRemainingSize(JoinInt64(ntohl(pListAnswer->m_iRemainingSizeHi), ntohl(pListAnswer->m_iRemainingSizeLo)));
 			pFileInfo->SetPaused(ntohl(pListAnswer->m_bPaused));
 			pFileInfo->SetNZBFilename(szNZBFilename);
 			pFileInfo->SetSubject(szSubject);
