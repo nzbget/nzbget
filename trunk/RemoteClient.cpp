@@ -453,7 +453,7 @@ bool RemoteClient::RequestServerEditQueue(int iAction, int iOffset, int* pIDList
 	InitMessageBase(&EditQueueRequest.m_MessageBase, NZBMessageRequest::eRequestEditQueue, sizeof(EditQueueRequest));
 	EditQueueRequest.m_iAction = htonl(iAction);
 	EditQueueRequest.m_iOffset = htonl((int)iOffset);
-	EditQueueRequest.m_bSmartOrder = htonl(true);
+	EditQueueRequest.m_bSmartOrder = htonl(false);
 	EditQueueRequest.m_iNrTrailingEntries = htonl(iIDCount);
 	EditQueueRequest.m_iTrailingDataLength = htonl(iLength);
 

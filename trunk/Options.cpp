@@ -1082,8 +1082,7 @@ void Options::ParseFileIDList(int argc, char* argv[], int optind)
 				buf[maxlen] = '\0';
 				iEditQueueIDFrom = atoi(buf);
 				iEditQueueIDTo = atoi(p + 1);
-				if (iEditQueueIDFrom <= 0 || iEditQueueIDTo <= 0 ||
-						iEditQueueIDFrom > iEditQueueIDTo)
+				if (iEditQueueIDFrom <= 0 || iEditQueueIDTo <= 0)
 				{
 					abort("FATAL ERROR: invalid list of file IDs\n");
 				}
@@ -1101,7 +1100,14 @@ void Options::ParseFileIDList(int argc, char* argv[], int optind)
 			int iEditQueueIDCount = 0;
 			if (iEditQueueIDTo != 0)
 			{
-				iEditQueueIDCount = iEditQueueIDTo - iEditQueueIDFrom + 1;
+				if (iEditQueueIDFrom < iEditQueueIDTo)
+				{
+					iEditQueueIDCount = iEditQueueIDTo - iEditQueueIDFrom + 1;
+				}
+				else
+				{
+					iEditQueueIDCount = iEditQueueIDFrom - iEditQueueIDTo + 1;
+				}
 			}
 			else
 			{
@@ -1110,7 +1116,14 @@ void Options::ParseFileIDList(int argc, char* argv[], int optind)
 
 			for (int i = 0; i < iEditQueueIDCount; i++)
 			{
-				IDs.push_back(iEditQueueIDFrom + i);
+				if (iEditQueueIDFrom < iEditQueueIDTo || iEditQueueIDTo == 0)
+				{
+					IDs.push_back(iEditQueueIDFrom + i);
+				}
+				else
+				{
+					IDs.push_back(iEditQueueIDFrom - i);
+				}
 			}
 
 			optarg = strtok(NULL, ", ");
@@ -1126,50 +1139,3 @@ void Options::ParseFileIDList(int argc, char* argv[], int optind)
 		m_pEditQueueIDList[i] = IDs[i];
 	}
 }
-
-/*
-void Options::ParseFileIDList(const char* optarg)
-{
-	int iEditQueueIDFrom = 0;
-	int iEditQueueIDTo = 0;
-
-	const char* p = strchr(optarg, '-');
-	if (p)
-	{
-		char buf[101];
-		int maxlen = p - optarg < 100 ? p - optarg : 100;
-		strncpy(buf, optarg, maxlen);
-		buf[maxlen] = '\0';
-		iEditQueueIDFrom = atoi(buf);
-		iEditQueueIDTo = atoi(p + 1);
-		if (iEditQueueIDFrom <= 0 || iEditQueueIDTo <= 0 ||
-		        iEditQueueIDFrom > iEditQueueIDTo)
-		{
-			abort("FATAL ERROR: invalid list of file IDs\n");
-		}
-	}
-	else
-	{
-		iEditQueueIDFrom = atoi(optarg);
-		if (iEditQueueIDFrom <= 0)
-		{
-			abort("FATAL ERROR: invalid list of file IDs\n");
-		}
-		iEditQueueIDTo = iEditQueueIDFrom;
-	}
-
-	if (iEditQueueIDTo != 0)
-	{
-		m_iEditQueueIDCount = iEditQueueIDTo - iEditQueueIDFrom + 1;
-	}
-	else
-	{
-		m_iEditQueueIDCount = 1;
-	}
-
-	m_pEditQueueIDList = (int*)malloc(sizeof(int) * m_iEditQueueIDCount);
-	for (int i = 0; i < m_iEditQueueIDCount; i++)
-	{
-		m_pEditQueueIDList[i] = iEditQueueIDFrom + i;
-	}
-}*/
