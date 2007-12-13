@@ -74,6 +74,7 @@ private:
 
 	EInputMode		m_eInputMode;
 	bool			m_bShowNZBname;
+	bool			m_bShowTimestamp;
 	float			m_QueueWindowPercentage;
 
 #ifdef WIN32

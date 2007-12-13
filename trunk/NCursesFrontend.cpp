@@ -118,6 +118,7 @@ NCursesFrontend::NCursesFrontend()
     m_iSelectedQueueEntry = 0;
 	m_iQueueScrollOffset = 0;
 	m_bShowNZBname = true;
+	m_bShowTimestamp = false;
 	m_QueueWindowPercentage = 0.5f;
 
     // Setup curses
@@ -451,7 +452,27 @@ int NCursesFrontend::PrintMessage(Message* Msg, int iRow, int iMaxLines)
     const int iMessageTypeColor[] = { NCURSES_COLORPAIR_INFO, NCURSES_COLORPAIR_WARNING,
     	NCURSES_COLORPAIR_ERROR, NCURSES_COLORPAIR_DEBUG };
 
-	const char* szText = Msg->GetText();
+	char* szText = (char*)Msg->GetText();
+
+	if (m_bShowTimestamp)
+	{
+		int iLen = strlen(szText) + 50;
+		szText = (char*)malloc(iLen);
+
+		time_t rawtime = Msg->GetTime();
+		char szTime[50];
+#ifdef HAVE_CTIME_R_3
+		ctime_r(&rawtime, szTime, 50);
+#else
+		ctime_r(&rawtime, szTime);
+#endif
+		szTime[50-1] = '\0';
+		szTime[strlen(szTime) - 1] = '\0'; // trim LF
+
+		snprintf(szText, iLen, "%s - %s", szTime, Msg->GetText());
+		szText[iLen - 1] = '\0';
+	}
+
 	int iLen = strlen(szText);
 	int iWinWidth = m_iScreenWidth - 8;
 	int iMsgLines = iLen / iWinWidth;
@@ -475,7 +496,12 @@ int NCursesFrontend::PrintMessage(Message* Msg, int iRow, int iMaxLines)
 		}
 		iLines++;
 	}
-	
+
+	if (m_bShowTimestamp)
+	{
+		free(szText);
+	}
+
 	return iLines;
 }
 
@@ -534,7 +560,7 @@ void NCursesFrontend::PrintKeyInputBar()
     switch (m_eInputMode)
     {
     case eNormal:
-        PlotLine("(Q)uit | (E)dit | (P)ause | (R)ate | n(Z)b | (W)indow", iInputBarRow, 0, NCURSES_COLORPAIR_KEYBAR);
+        PlotLine("(Q)uit | (E)dit | (P)ause | (R)ate | n(Z)b | (W)indow | (T)ime", iInputBarRow, 0, NCURSES_COLORPAIR_KEYBAR);
         break;
     case eEditQueue:
     {
@@ -744,16 +770,16 @@ void NCursesFrontend::UpdateInput()
 		{
 			switch (iKey)
 			{
-				// Key 'q' for quit
 			case 'q':
+				// Key 'q' for quit
 				ExitProc();
 				break;
-				// show/hide NZBFilename
 			case 'z':
+				// show/hide NZBFilename
 				m_bShowNZBname = !m_bShowNZBname;
 				break;
-				// swicth window sizes
 			case 'w':
+				// swicth window sizes
 				if (m_QueueWindowPercentage == 0.5)
 				{
 					m_QueueWindowPercentage = 1;
@@ -777,8 +803,8 @@ void NCursesFrontend::UpdateInput()
 		{
 			switch (iKey)
 			{
-				// Key 'p' for pause
 			case 'p':
+				// Key 'p' for pause
 				if (!IsRemoteMode())
 				{
 					info(m_bPause ? "Unpausing download" : "Pausing download");
@@ -800,11 +826,15 @@ void NCursesFrontend::UpdateInput()
 					}
 				}
 				break;
-				// Download rate
 			case 'r':
+				// Download rate
 				m_eInputMode = eDownloadRate;
 				m_iInputNumberIndex = 0;
 				m_iInputValue = 0;
+				break;
+			case 't':
+				// show/hide Timestamps
+				m_bShowTimestamp = !m_bShowTimestamp;
 				break;
 			}
 		}
@@ -814,12 +844,12 @@ void NCursesFrontend::UpdateInput()
 		{
 			switch (iKey)
 			{
-				// Key 'p' for pause
 			case 'p':
+				// Key 'p' for pause
 				ServerEditQueue(eaPauseUnpause, m_iSelectedQueueEntry);
 				break;
-				// Delete entry
 			case 'd':
+				// Delete entry
 				if (ServerEditQueue(eaDelete, m_iSelectedQueueEntry))
 				{
 					if (iQueueSize == 0)
