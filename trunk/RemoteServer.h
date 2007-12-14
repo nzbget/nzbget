@@ -70,6 +70,7 @@ protected:
 	void				SendResponse(char* szAnswer);
 
 public:
+	virtual				~MessageCommand() {};
 	virtual void		Execute() = 0;
 	void				SetSocket(SOCKET iSocket) { m_iSocket = iSocket; };
 	void				SetMessageBase(SNZBMessageBase*	pMessageBase) { m_pMessageBase = pMessageBase; };

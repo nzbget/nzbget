@@ -582,7 +582,7 @@ void EditQueueCommand::Execute()
 	}
 
 	m_iNrEntries = ntohl(EditQueueRequest.m_iNrTrailingEntries);
-	int iBufLength = ntohl(EditQueueRequest.m_iTrailingDataLength);
+	unsigned int iBufLength = ntohl(EditQueueRequest.m_iTrailingDataLength);
 	m_iAction = ntohl(EditQueueRequest.m_iAction);
 	int iOffset = ntohl(EditQueueRequest.m_iOffset);
 
@@ -615,6 +615,12 @@ void EditQueueCommand::Execute()
 			pBufPtr += iResult;
 			NeedBytes -= iResult;
 		}
+
+		for (int i = 0; i < m_iNrEntries; i++)
+		{
+			pIDs[i] = ntohl(pIDs[i]);
+		}
+		
 		PrepareList(pIDs, &IDs, ntohl(EditQueueRequest.m_bSmartOrder));
 		free(pIDs);
 	}
@@ -673,10 +679,9 @@ void EditQueueCommand::PrepareList(uint32_t* pIDs, IDList* IDs, bool bSmartOrder
 		for (DownloadQueue::iterator it = pDownloadQueue->begin(); it != pDownloadQueue->end(); it++)
 		{
 			FileInfo* pFileInfo = *it;
-			int iFileID = pFileInfo->GetID();
 			for (int i = 0; i < m_iNrEntries; i++)
 			{
-				if (pFileInfo->GetID() == pIDs[i])
+				if (pFileInfo->GetID() == (int)pIDs[i])
 				{
 					if (m_iAction == NZBMessageRequest::eActionMoveTop)
 					{

@@ -457,6 +457,13 @@ bool RemoteClient::RequestServerEditQueue(int iAction, int iOffset, int* pIDList
 	EditQueueRequest.m_iNrTrailingEntries = htonl(iIDCount);
 	EditQueueRequest.m_iTrailingDataLength = htonl(iLength);
 
+	uint32_t* pIDs = (uint32_t*)malloc(iLength);
+	
+	for (int i = 0; i < iIDCount; i++)
+	{
+		pIDs[i] = htonl(pIDList[i]);
+	}
+			
 	bool OK = false;
 	if (m_pConnection->Send((char*)(&EditQueueRequest), sizeof(EditQueueRequest)) < 0)
 	{
@@ -464,11 +471,13 @@ bool RemoteClient::RequestServerEditQueue(int iAction, int iOffset, int* pIDList
 	}
 	else
 	{
-		m_pConnection->Send((char*)pIDList, iLength);
+		m_pConnection->Send((char*)pIDs, iLength);
 		ReceiveCommandResult();
 		m_pConnection->Disconnect();
 		OK = true;
 	}
+
+	free(pIDs);
 
 	m_pConnection->Disconnect();
 	return OK;
