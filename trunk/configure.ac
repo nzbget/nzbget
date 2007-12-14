@@ -342,20 +342,6 @@ if test "$ENABLEPARCHECK" = "yes"; then
 	dnl			AC_MSG_ERROR("libpar2 library not found in $LIBVAL.")
 	dnl		fi
 
-	dnl
-	dnl Enable par-check-progress (via sigc++)? Deafult: yes
-	dnl It doesn't work on WL500gP (uClibc), so we need a way to disable it
-	dnl
-	AC_MSG_CHECKING(whether to show progress during par-check )
-	AC_ARG_ENABLE(parprogress,
-		[  --disable-parprogress		do not show progress during par-check (it must be disabled if sigc++ doesn't work correctly)],
-		[ USEPARPROGRESS=$enableval ],
-		[ USEPARPROGRESS=yes] )
-	AC_MSG_RESULT($USEPARPROGRESS)
-	if test "$USEPARPROGRESS" = "yes"; then
-		AC_DEFINE([ENABLE_PARPROGRESS],1,[Define to 1 to show progress during par-check (it must be disabled if sigc++ doesn't work correctly)])
-	fi
-	
 else
 	AC_DEFINE([DISABLE_PARCHECK],1,[Define to 1 to disable smart par-verification and restoration])
 fi
