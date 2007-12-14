@@ -41,7 +41,7 @@ NZBGet is written in C++ and was initialy developen on Linux.
 It was ported to Windows later and tested for compatibility with
 several POSIX-OS'es.
 
-The current version (0.3.0) should run at least on: 
+The current version (0.3.1) should run at least on:
 
   - Linux Debian 3.1 on x86;
   - Linux BusyBox with uClibc on MIPSEL;
@@ -54,8 +54,8 @@ each other. For example, you can use NZBGet as client on Windows to
 control your NZBGet-server running on Linux.
 
 The download-section of NZBGet web-site provides binary files
-for few platforms (including Windows), but for most POSIX-systems
-you need to compile the program yourself.
+for Windows, but for POSIX-systems you need to compile the
+program yourself.
 
 If you have downloaded binaries you can just jump to section 
 "Configuration".
@@ -129,11 +129,6 @@ You may run configure with additional arguments:
   --disable-parcheck - to make without parcheck-support. Use this option
     if you can not use libpar2 or libsigc++.
        
-  --disable-parprogress - to not show progress during par-check. This option
-    may be needed on some systems, where sigc++ does not work very well
-    (uClibc on MIPSEL is one of them). If par-check segfaults right after
-    start, then you probably need this option.
-    
   --enable-debug - to build in debug-mode, if you want to see and log
     debug-messages.
 
@@ -330,15 +325,15 @@ It prints something like:
 The numbers in square braces are ID's of files in queue. They can be used
 in edit-command. For example to move file with ID 2 to the top of queue:
 
-  nzbget -E T -I 2
+  nzbget -E T 2
   
 or to pause files with IDs from 10 to 20:
 
-  nzbget -E P -I 10-20
+  nzbget -E P 10-20
 
-or to delete file from queue:
+or to delete files from queue:
 
-  nzbget -E D -I 3
+  nzbget -E D 3 10-15 20-21 16
 
 The switch "o" is useful to override options in configuration files. 
 For example:

@@ -870,7 +870,6 @@ Optional Features:
   --disable-curses		do not use curses (removes dependency from curses-library and makes executable smaller)
   --enable-uulib		use uulib for decoding and joining
   --enable-parcheck		include code for par-checking
-  --disable-parprogress		do not show progress during par-check (it must be disabled if sigc++ doesn't work correctly)
   --enable-debug		enable debugging
 
 Optional Packages:
@@ -7595,25 +7594,6 @@ fi;
 	LDFLAGS="${LDFLAGS} -L${LIBVAL}"
 
 			LIBS="${LIBS} -lpar2"
-
-					echo "$as_me:$LINENO: checking whether to show progress during par-check " >&5
-echo $ECHO_N "checking whether to show progress during par-check ... $ECHO_C" >&6
-	# Check whether --enable-parprogress or --disable-parprogress was given.
-if test "${enable_parprogress+set}" = set; then
-  enableval="$enable_parprogress"
-   USEPARPROGRESS=$enableval
-else
-   USEPARPROGRESS=yes
-fi;
-	echo "$as_me:$LINENO: result: $USEPARPROGRESS" >&5
-echo "${ECHO_T}$USEPARPROGRESS" >&6
-	if test "$USEPARPROGRESS" = "yes"; then
-
-cat >>confdefs.h <<\_ACEOF
-#define ENABLE_PARPROGRESS 1
-_ACEOF
-
-	fi
 
 else
 

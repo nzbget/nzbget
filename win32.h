@@ -30,10 +30,6 @@
 /* Define to 1 to disable smart par-verification and restoration */
 #undef DISABLE_PARCHECK
 
-/* Define to 1 to show progress during par-check (it must be disabled if
-   sigc++ doesn't work correctly) */
-#define ENABLE_PARPROGRESS
-
 /* Define to 1 to include support for uulib */
 #undef ENABLE_UULIB
 
