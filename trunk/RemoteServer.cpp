@@ -114,7 +114,7 @@ void RemoteServer::Run()
 			continue;
 		}
 
-		MessageCommand* commandThread = new MessageCommand();
+		RequestProcessor* commandThread = new RequestProcessor();
 		commandThread->SetAutoDestroy(true);
 		commandThread->SetSocket(iSocket);
 		commandThread->Start();
@@ -134,99 +134,228 @@ void RemoteServer::Stop()
 }
 
 //*****************************************************************
-// MessageCommand
+// RequestProcessor
+
+void RequestProcessor::Run()
+{
+	int iBytesReceived = 0;
+
+	// Read the first package which needs to be a request
+
+	iBytesReceived = recv(m_iSocket, (char*) & m_MessageBase, sizeof(m_MessageBase), 0);
+	if (iBytesReceived < 0)
+	{
+		return;
+	}
+
+	// Make sure this is a nzbget request from a client
+	if (ntohl(m_MessageBase.m_iSignature) != NZBMESSAGE_SIGNATURE)
+	{
+		warn("Non-nzbget request received on port %i", g_pOptions->GetServerPort());
+
+		if (m_iSocket > -1)
+		{
+			closesocket(m_iSocket);
+		}
+
+		return;
+	}
+
+	if (strcmp(m_MessageBase.m_szPassword, g_pOptions->GetServerPassword()))
+	{
+		warn("nzbget request received on port %i, but password invalid", g_pOptions->GetServerPort());
+
+		if (m_iSocket > -1)
+		{
+			closesocket(m_iSocket);
+		}
+
+		return;
+	}
+
+	// Info - connection received
+	struct sockaddr_in PeerName;
+	int iPeerNameLength = sizeof(PeerName);
+	if (getpeername(m_iSocket, (struct sockaddr*)&PeerName, (socklen_t*) &iPeerNameLength) >= 0)
+	{
+#ifdef WIN32
+		char* ip = inet_ntoa(PeerName.sin_addr);
+#else
+		char ip[20];
+		inet_ntop(AF_INET, &PeerName.sin_addr, ip, sizeof(ip));
+#endif
+		debug("%s request received from %s", g_szMessageRequestNames[ntohl(m_MessageBase.m_iType)], ip);
+	}
+
+	Dispatch();
+
+	// Close the socket
+	closesocket(m_iSocket);
+}
+
+void RequestProcessor::Dispatch()
+{
+	if (ntohl(m_MessageBase.m_iType) >= (int)NZBMessageRequest::eRequestDownload &&
+		   ntohl(m_MessageBase.m_iType) <= (int)NZBMessageRequest::eRequestShutdown &&
+		   g_iMessageRequestSizes[ntohl(m_MessageBase.m_iType)] != ntohl(m_MessageBase.m_iStructSize))
+	{
+		error("Invalid size of request: needed %i Bytes, but received %i Bytes",
+			 g_iMessageRequestSizes[ntohl(m_MessageBase.m_iType)], ntohl(m_MessageBase.m_iStructSize));
+		return;
+	}
+	
+	MessageCommand* command = NULL;
+
+	switch (ntohl(m_MessageBase.m_iType))
+	{
+		case NZBMessageRequest::eRequestDownload:
+			{
+				command = new DownloadCommand();
+				break;
+			}
+
+		case NZBMessageRequest::eRequestList:
+			{
+				command = new ListCommand();
+				break;
+			}
+
+		case NZBMessageRequest::eRequestLog:
+			{
+				command = new LogCommand();
+				break;
+			}
+
+		case NZBMessageRequest::eRequestPauseUnpause:
+			{
+				command = new PauseUnpauseCommand();
+				break;
+			}
+
+		case NZBMessageRequest::eRequestEditQueue:
+			{
+				command = new EditQueueCommand();
+				break;
+			}
+
+		case NZBMessageRequest::eRequestSetDownloadRate:
+			{
+				command = new SetDownloadRateCommand();
+				break;
+			}
+
+		case NZBMessageRequest::eRequestDumpDebug:
+			{
+				command = new DumpDebugCommand();
+				break;
+			}
+
+		case NZBMessageRequest::eRequestShutdown:
+			{
+				command = new ShutdownCommand();
+				break;
+			}
+
+		default:
+			error("Received unsupported request %i", ntohl(m_MessageBase.m_iType));
+			break;
+	}
+
+	if (command)
+	{
+		command->SetSocket(m_iSocket);
+		command->SetMessageBase(&m_MessageBase);
+		command->Execute();
+		delete command;
+	}
+}
+
+//*****************************************************************
+// Commands
 
 void MessageCommand::SendResponse(char* szAnswer)
 {
 	send(m_iSocket, szAnswer, strlen(szAnswer), 0);
 }
 
-void MessageCommand::ProcessRequest()
+bool MessageCommand::ReceiveRequest(void* pBuffer, int iSize)
 {
-	SNZBMessageBase* pMessageBase = (SNZBMessageBase*) & m_RequestBuffer;
-
-	if (ntohl(pMessageBase->m_iType) >= (int)NZBMessageRequest::eRequestDownload &&
-		   ntohl(pMessageBase->m_iType) <= (int)NZBMessageRequest::eRequestShutdown &&
-		   g_iMessageRequestSizes[ntohl(pMessageBase->m_iType)] != ntohl(pMessageBase->m_iStructSize))
+	memcpy(pBuffer, m_pMessageBase, sizeof(SNZBMessageBase));
+	iSize -= sizeof(SNZBMessageBase);
+	if (iSize > 0)
 	{
-		error("Invalid size of request: needed %i Bytes, but received %i Bytes",
-			 g_iMessageRequestSizes[ntohl(pMessageBase->m_iType)], ntohl(pMessageBase->m_iStructSize));
-		return;
+		int iBytesReceived = recv(m_iSocket, ((char*)pBuffer) + sizeof(SNZBMessageBase), iSize, 0);
+		if (iBytesReceived != iSize)
+		{
+			error("invalid request");
+			return false;
+		}
 	}
-			
-	switch (ntohl(pMessageBase->m_iType))
-	{
-		case NZBMessageRequest::eRequestDownload:
-			{
-				RequestDownload();
-				break;
-			}
-
-		case NZBMessageRequest::eRequestList:
-			{
-				RequestList();
-				break;
-			}
-
-		case NZBMessageRequest::eRequestLog:
-			{
-				RequestLog();
-				break;
-			}
-
-		case NZBMessageRequest::eRequestPauseUnpause:
-			{
-				SNZBPauseUnpauseRequest* pPauseUnpauseRequest = (SNZBPauseUnpauseRequest*) & m_RequestBuffer;
-				g_pOptions->SetPause(ntohl(pPauseUnpauseRequest->m_bPause));
-				SendResponse("Pause-/Unpause-Command completed successfully");
-				break;
-			}
-
-		case NZBMessageRequest::eRequestEditQueue:
-			{
-				RequestEditQueue();
-				break;
-			}
-
-		case NZBMessageRequest::eRequestSetDownloadRate:
-			{
-				SNZBSetDownloadRateRequest* pSetDownloadRequest = (SNZBSetDownloadRateRequest*) & m_RequestBuffer;
-				g_pOptions->SetDownloadRate(ntohl(pSetDownloadRequest->m_iDownloadRate) / 1024.0);
-				SendResponse("Rate-Command completed successfully");
-				break;
-			}
-
-		case NZBMessageRequest::eRequestDumpDebug:
-			{
-				g_pQueueCoordinator->LogDebugInfo();
-				SendResponse("Debug-Command completed successfully");
-				break;
-			}
-
-		case NZBMessageRequest::eRequestShutdown:
-			{
-				SendResponse("Stopping server");
-				ExitProc();
-				break;
-			}
-
-		default:
-			error("NZB-Request not yet supported");
-			break;
-	}
+	return true;
 }
 
-void MessageCommand::RequestDownload()
+void PauseUnpauseCommand::Execute()
 {
-	SNZBDownloadRequest* pDownloadRequest = (SNZBDownloadRequest*) & m_RequestBuffer;
-	const char* pExtraData = (m_iExtraDataLength > 0) ? ((char*)pDownloadRequest + ntohl(pDownloadRequest->m_MessageBase.m_iStructSize)) : NULL;
-	int NeedBytes = ntohl(pDownloadRequest->m_iTrailingDataLength) - m_iExtraDataLength;
-	char* pRecvBuffer = (char*)malloc(ntohl(pDownloadRequest->m_iTrailingDataLength) + 1);
-	memcpy(pRecvBuffer, pExtraData, m_iExtraDataLength);
-	char* pBufPtr = pRecvBuffer + m_iExtraDataLength;
+	SNZBPauseUnpauseRequest PauseUnpauseRequest;
+	if (!ReceiveRequest(&PauseUnpauseRequest, sizeof(PauseUnpauseRequest)))
+	{
+		return;
+	}
+
+	g_pOptions->SetPause(ntohl(PauseUnpauseRequest.m_bPause));
+	SendResponse("Pause-/Unpause-Command completed successfully");
+}
+
+void SetDownloadRateCommand::Execute()
+{
+	SNZBSetDownloadRateRequest SetDownloadRequest;
+	if (!ReceiveRequest(&SetDownloadRequest, sizeof(SetDownloadRequest)))
+	{
+		return;
+	}
+
+	g_pOptions->SetDownloadRate(ntohl(SetDownloadRequest.m_iDownloadRate) / 1024.0);
+	SendResponse("Rate-Command completed successfully");
+}
+
+void DumpDebugCommand::Execute()
+{
+	SNZBDumpDebugRequest DumpDebugRequest;
+	if (!ReceiveRequest(&DumpDebugRequest, sizeof(DumpDebugRequest)))
+	{
+		return;
+	}
+
+	g_pQueueCoordinator->LogDebugInfo();
+	SendResponse("Debug-Command completed successfully");
+}
+
+void ShutdownCommand::Execute()
+{
+	SNZBShutdownRequest ShutdownRequest;
+	if (!ReceiveRequest(&ShutdownRequest, sizeof(ShutdownRequest)))
+	{
+		return;
+	}
+
+	SendResponse("Stopping server");
+	ExitProc();
+}
+
+void DownloadCommand::Execute()
+{
+	SNZBDownloadRequest DownloadRequest;
+	if (!ReceiveRequest(&DownloadRequest, sizeof(DownloadRequest)))
+	{
+		return;
+	}
+
+	char* pRecvBuffer = (char*)malloc(ntohl(DownloadRequest.m_iTrailingDataLength) + 1);
+	char* pBufPtr = pRecvBuffer;
 
 	// Read from the socket until nothing remains
 	int iResult = 0;
+	int NeedBytes = ntohl(DownloadRequest.m_iTrailingDataLength);
 	while (NeedBytes > 0)
 	{
 		iResult = recv(m_iSocket, pBufPtr, NeedBytes, 0);
@@ -242,23 +371,23 @@ void MessageCommand::RequestDownload()
 
 	if (NeedBytes == 0)
 	{
-		NZBFile* pNZBFile = NZBFile::CreateFromBuffer(pDownloadRequest->m_szFilename, pRecvBuffer, ntohl(pDownloadRequest->m_iTrailingDataLength));
+		NZBFile* pNZBFile = NZBFile::CreateFromBuffer(DownloadRequest.m_szFilename, pRecvBuffer, ntohl(DownloadRequest.m_iTrailingDataLength));
 
 		if (pNZBFile)
 		{
-			info("Request: Queue collection %s", pDownloadRequest->m_szFilename);
-			g_pQueueCoordinator->AddNZBFileToQueue(pNZBFile, ntohl(pDownloadRequest->m_bAddFirst));
+			info("Request: Queue collection %s", DownloadRequest.m_szFilename);
+			g_pQueueCoordinator->AddNZBFileToQueue(pNZBFile, ntohl(DownloadRequest.m_bAddFirst));
 			delete pNZBFile;
 
 			char tmp[1024];
-			snprintf(tmp, 1024, "Collection %s added to queue", BaseFileName(pDownloadRequest->m_szFilename));
+			snprintf(tmp, 1024, "Collection %s added to queue", BaseFileName(DownloadRequest.m_szFilename));
 			tmp[1024-1] = '\0';
 			SendResponse(tmp);
 		}
 		else
 		{
 			char tmp[1024];
-			snprintf(tmp, 1024, "Download Request failed for %s", BaseFileName(pDownloadRequest->m_szFilename));
+			snprintf(tmp, 1024, "Download Request failed for %s", BaseFileName(DownloadRequest.m_szFilename));
 			tmp[1024-1] = '\0';
 			SendResponse(tmp);
 		}
@@ -267,9 +396,13 @@ void MessageCommand::RequestDownload()
 	free(pRecvBuffer);
 }
 
-void MessageCommand::RequestList()
+void ListCommand::Execute()
 {
-	SNZBListRequest* pListRequest = (SNZBListRequest*) & m_RequestBuffer;
+	SNZBListRequest ListRequest;
+	if (!ReceiveRequest(&ListRequest, sizeof(ListRequest)))
+	{
+		return;
+	}
 
 	SNZBListRequestAnswer ListRequestAnswer;
 	memset(&ListRequestAnswer, 0, sizeof(ListRequestAnswer));
@@ -279,7 +412,7 @@ void MessageCommand::RequestList()
 	char* buf = NULL;
 	int bufsize = 0;
 
-	if (ntohl(pListRequest->m_bFileList))
+	if (ntohl(ListRequest.m_bFileList))
 	{
 		// Make a data structure and copy all the elements of the list into it
 		DownloadQueue* pDownloadQueue = g_pQueueCoordinator->LockQueue();
@@ -334,7 +467,7 @@ void MessageCommand::RequestList()
 		ListRequestAnswer.m_iTrailingDataLength = htonl(bufsize);
 	}
 
-	if (htonl(pListRequest->m_bServerState))
+	if (htonl(ListRequest.m_bServerState))
 	{
 		ListRequestAnswer.m_iDownloadRate = htonl((int)(g_pQueueCoordinator->CalcCurrentDownloadSpeed() * 1024));
 		long long lRemainingSize = g_pQueueCoordinator->CalcRemainingSize();
@@ -358,16 +491,21 @@ void MessageCommand::RequestList()
 	{
 		free(buf);
 	}
+
 }
 
-void MessageCommand::RequestLog()
+void LogCommand::Execute()
 {
-	SNZBLogRequest* pLogRequest = (SNZBLogRequest*) & m_RequestBuffer;
+	SNZBLogRequest LogRequest;
+	if (!ReceiveRequest(&LogRequest, sizeof(LogRequest)))
+	{
+		return;
+	}
 
 	Log::Messages* pMessages = g_pLog->LockMessages();
 
-	int iNrEntries = ntohl(pLogRequest->m_iLines);
-	unsigned int iIDFrom = ntohl(pLogRequest->m_iIDFrom);
+	int iNrEntries = ntohl(LogRequest.m_iLines);
+	unsigned int iIDFrom = ntohl(LogRequest.m_iIDFrom);
 	int iStart = pMessages->size();
 	if (iNrEntries > 0)
 	{
@@ -432,26 +570,38 @@ void MessageCommand::RequestLog()
 	}
 
 	free(buf);
+
 }
 
-void MessageCommand::RequestEditQueue()
+void EditQueueCommand::Execute()
 {
-	SNZBEditQueueRequest* pEditQueueRequest = (SNZBEditQueueRequest*) & m_RequestBuffer;
-
-	uint32_t* m_iIDs = NULL;
-	int iNrEntries = ntohl(pEditQueueRequest->m_iNrTrailingEntries);
-
-	if (ntohl(pEditQueueRequest->m_iTrailingDataLength) > 0)
+	SNZBEditQueueRequest EditQueueRequest;
+	if (!ReceiveRequest(&EditQueueRequest, sizeof(EditQueueRequest)))
 	{
+		return;
+	}
 
-		const char* pExtraData = (m_iExtraDataLength > 0) ? ((char*)pEditQueueRequest + ntohl(pEditQueueRequest->m_MessageBase.m_iStructSize)) : NULL;
-		int NeedBytes = ntohl(pEditQueueRequest->m_iTrailingDataLength) - m_iExtraDataLength;
+	m_iNrEntries = ntohl(EditQueueRequest.m_iNrTrailingEntries);
+	int iBufLength = ntohl(EditQueueRequest.m_iTrailingDataLength);
+	m_iAction = ntohl(EditQueueRequest.m_iAction);
+	int iOffset = ntohl(EditQueueRequest.m_iOffset);
 
-		char* pRecvBuffer = (char*)malloc(ntohl(pEditQueueRequest->m_iTrailingDataLength));
-		memcpy(pRecvBuffer, pExtraData, m_iExtraDataLength);
-		char* pBufPtr = pRecvBuffer + m_iExtraDataLength;
+	if (m_iNrEntries * sizeof(uint32_t) != iBufLength)
+	{
+		error("Invalid struct size");
+		return;
+	}
+
+	IDList IDs;
+	IDs.clear();
+
+	if (m_iNrEntries > 0)
+	{
+		uint32_t* pIDs = (uint32_t*)malloc(iBufLength);
 
 		// Read from the socket until nothing remains
+		char* pBufPtr = (char*)pIDs;
+		int NeedBytes = iBufLength;
 		int iResult = 0;
 		while (NeedBytes > 0)
 		{
@@ -465,26 +615,19 @@ void MessageCommand::RequestEditQueue()
 			pBufPtr += iResult;
 			NeedBytes -= iResult;
 		}
-
-		m_iIDs = (uint32_t*)pRecvBuffer;
+		PrepareList(pIDs, &IDs, ntohl(EditQueueRequest.m_bSmartOrder));
+		free(pIDs);
 	}
 
-	if (ntohl(pEditQueueRequest->m_bSmartOrder))
+	for (IDList::iterator it = IDs.begin(); it != IDs.end(); it++)
 	{
-		//TODO: reorder items for smart order
-	}
-
-	int iAction = ntohl(pEditQueueRequest->m_iAction);
-	int iOffset = ntohl(pEditQueueRequest->m_iOffset);
-	for (int i = 0; i < iNrEntries; i++)
-	{
-		int ID = m_iIDs[i];
-		switch (iAction)
+		int ID = *it;
+		switch (m_iAction)
 		{
 			case NZBMessageRequest::eActionPause:
 			case NZBMessageRequest::eActionResume:
 				{
-					g_pQueueCoordinator->EditQueuePauseUnpauseEntry(ID, iAction == NZBMessageRequest::eActionPause);
+					g_pQueueCoordinator->EditQueuePauseUnpauseEntry(ID, m_iAction == NZBMessageRequest::eActionPause);
 					break;
 				}
 
@@ -502,7 +645,7 @@ void MessageCommand::RequestEditQueue()
 
 			case NZBMessageRequest::eActionMoveBottom:
 				{
-					g_pQueueCoordinator->EditQueueMoveEntry(ID, + 1000000, true);
+					g_pQueueCoordinator->EditQueueMoveEntry(ID, +1000000, true);
 					break;
 				}
 
@@ -514,76 +657,47 @@ void MessageCommand::RequestEditQueue()
 		}
 	}
 
-	if (m_iIDs)
-	{
-		free(m_iIDs);
-	}
-
 	SendResponse("Edit-Command completed successfully");
 }
 
-void MessageCommand::SetSocket(SOCKET iSocket)
+void EditQueueCommand::PrepareList(uint32_t* pIDs, IDList* IDs, bool bSmartOrder)
 {
-	m_iSocket = iSocket;
-}
+	//NOTE: Smart-Order is currently implemented only for TOP- and BOTTOM-commands.
 
-void MessageCommand::Run()
-{
-	int iRequestReceived = 0;
-
-	// Read the first package which needs to be a request
-
-	iRequestReceived = recv(m_iSocket, (char*) & m_RequestBuffer, sizeof(m_RequestBuffer), 0);
-	if (iRequestReceived < 0)
+	if (bSmartOrder && 
+		(m_iAction == NZBMessageRequest::eActionMoveTop ||
+		m_iAction == NZBMessageRequest::eActionMoveBottom))
 	{
-		return;
-	}
-
-	SNZBMessageBase* pMessageBase = (SNZBMessageBase*) & m_RequestBuffer;
-
-	// Make sure this is a nzbget request from a client
-	if (ntohl(pMessageBase->m_iSignature) != NZBMESSAGE_SIGNATURE)
-	{
-		warn("Non-nzbget request received on port %i", g_pOptions->GetServerPort());
-
-		if (m_iSocket > -1)
+		//add IDs to IDs-list in order they currently have in download queue
+		DownloadQueue* pDownloadQueue = g_pQueueCoordinator->LockQueue();
+		for (DownloadQueue::iterator it = pDownloadQueue->begin(); it != pDownloadQueue->end(); it++)
 		{
-			closesocket(m_iSocket);
+			FileInfo* pFileInfo = *it;
+			int iFileID = pFileInfo->GetID();
+			for (int i = 0; i < m_iNrEntries; i++)
+			{
+				if (pFileInfo->GetID() == pIDs[i])
+				{
+					if (m_iAction == NZBMessageRequest::eActionMoveTop)
+					{
+						IDs->push_front(pIDs[i]);
+					}
+					else
+					{
+						IDs->push_back(pIDs[i]);
+					}
+					break;
+				}
+			}
 		}
-
-		return;
+		g_pQueueCoordinator->UnlockQueue();
 	}
-
-	if (strcmp(pMessageBase->m_szPassword, g_pOptions->GetServerPassword()))
+	else
 	{
-		warn("nzbget request received on port %i, but password invalid", g_pOptions->GetServerPort());
-
-		if (m_iSocket > -1)
+		//add IDs to IDs-list in order they were transmitted with command
+		for (int i = 0; i < m_iNrEntries; i++)
 		{
-			closesocket(m_iSocket);
+			IDs->push_back(pIDs[i]);
 		}
-
-		return;
 	}
-
-	// Info - connection received
-	struct sockaddr_in PeerName;
-	int iPeerNameLength = sizeof(PeerName);
-	if (getpeername(m_iSocket, (struct sockaddr*)&PeerName, (socklen_t*) &iPeerNameLength) >= 0)
-	{
-#ifdef WIN32
-		char* ip = inet_ntoa(PeerName.sin_addr);
-#else
-		char ip[20];
-		inet_ntop(AF_INET, &PeerName.sin_addr, ip, sizeof(ip));
-#endif
-		debug("%s request received from %s", g_szMessageRequestNames[ntohl(pMessageBase->m_iType)], ip);
-	}
-
-	m_iExtraDataLength = iRequestReceived - ntohl(pMessageBase->m_iStructSize);
-
-	ProcessRequest();
-
-	// Close the socket
-	closesocket(m_iSocket);
 }

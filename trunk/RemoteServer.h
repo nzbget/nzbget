@@ -27,12 +27,12 @@
 #ifndef REMOTESERVER_H
 #define REMOTESERVER_H
 
+#include <list>
+
 #include "Thread.h"
 #include "NetAddress.h"
 #include "Connection.h"
 #include "MessageBase.h"
-
-static int const REQUESTBUFFERSIZE = 8192;
 
 class RemoteServer : public Thread
 {
@@ -47,23 +47,87 @@ public:
 	virtual void 		Stop();
 };
 
-class MessageCommand : public Thread
+class RequestProcessor : public Thread
 {
 private:
 	SOCKET				m_iSocket;
-	char				m_RequestBuffer[REQUESTBUFFERSIZE];
-	int					m_iExtraDataLength;
+	SNZBMessageBase		m_MessageBase;
 
-	void				ProcessRequest();
-	void				RequestDownload();
-	void				RequestList();
-	void				RequestLog();
-	void				RequestEditQueue();
+	void				Dispatch();
+
+public:
+	virtual void		Run();
+	void				SetSocket(SOCKET iSocket) { m_iSocket = iSocket; };
+};
+
+class MessageCommand
+{
+protected:
+	SOCKET				m_iSocket;
+	SNZBMessageBase*	m_pMessageBase;
+
+	bool				ReceiveRequest(void* pBuffer, int iSize);
 	void				SendResponse(char* szAnswer);
 
 public:
-	void				SetSocket(SOCKET iSocket);
-	virtual void		Run();
+	virtual void		Execute() = 0;
+	void				SetSocket(SOCKET iSocket) { m_iSocket = iSocket; };
+	void				SetMessageBase(SNZBMessageBase*	pMessageBase) { m_pMessageBase = pMessageBase; };
+};
+
+class DownloadCommand: public MessageCommand
+{
+public:
+	virtual void		Execute();
+};
+
+class ListCommand: public MessageCommand
+{
+public:
+	virtual void		Execute();
+};
+
+class LogCommand: public MessageCommand
+{
+public:
+	virtual void		Execute();
+};
+
+class PauseUnpauseCommand: public MessageCommand
+{
+public:
+	virtual void		Execute();
+};
+
+class EditQueueCommand: public MessageCommand
+{
+private:
+	typedef std::list<int> IDList;
+
+	int					m_iNrEntries;
+	int					m_iAction;
+	void				PrepareList(uint32_t* pIDs, IDList* IDs, bool bSmartOrder);
+
+public:
+	virtual void		Execute();
+};
+
+class SetDownloadRateCommand: public MessageCommand
+{
+public:
+	virtual void		Execute();
+};
+
+class DumpDebugCommand: public MessageCommand
+{
+public:
+	virtual void		Execute();
+};
+
+class ShutdownCommand: public MessageCommand
+{
+public:
+	virtual void		Execute();
 };
 
 #endif
