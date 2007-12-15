@@ -1,10 +1,17 @@
 # Sample configuration file for nzbget
-# Put this file to one of the following locations:
+#
+# On POSIX put this file to one of the following locations:
 # ~/.nzbget
 # /etc/nzbget.conf
 # /usr/etc/nzbget.conf
 # /usr/local/etc/nzbget.conf
 # /opt/etc/nzbget.conf
+#
+# On Windows put this file in program's directory.
+#
+# You can also put the file into any location, if you specify the path to it
+# using switch "-c", e.g:
+#   nzbget -c /home/user/myconig.txt
 
 # For quick start change the option MAINDIR and configure one news-server
 # See section NEWS-SERVERS.
@@ -21,19 +28,19 @@ $MAINDIR=~/download
 # Destination-directory to store the downloaded files
 destdir=${MAINDIR}/dst
 
-# Directory to store download queue
-queuedir=${MAINDIR}/queue
-
 # Directory to monitor for incoming nzb-jobs
 nzbdir=${MAINDIR}/nzb
+
+# Directory to store download queue
+queuedir=${MAINDIR}/queue
 
 # Directory to store temporary files
 tempdir=${MAINDIR}/tmp
 
-# Lock-file for daemon-mode, contains process-id (PID)
+# Lock-file for daemon-mode, contains process-id (PID) (POSIX only)
 lockfile=/tmp/nzbget.lock
 
-# User name for daemon-mode (UNIX in daemon-mode only).
+# User name for daemon-mode (POSIX in daemon-mode only).
 # Set the user that the daemon normally runs at.
 # Set $MAINDIR with an absolute path to be sure where it will write.
 # This allows nzbget daemon to be launched in rc.local (at boot), and
@@ -41,6 +48,14 @@ lockfile=/tmp/nzbget.lock
 # NOTE: This option has effect only if the program is started from root-account,
 # otherwise it is ignored and the daemon runs under current user id.
 daemonusername=root
+
+# Specify default umask (affects file permissions) for newly created files (POSIX only).
+# The value should be written in octal form (the same as for "umask" shell command).
+# If umask not specified (or a value greater than 0777 used, useful to disable current
+# config-setting via command-line parameter) the umask-mode will not be set and
+# current umask-mode (set via shell) is be used.
+# NOTE: do not forget to uncomment next line.
+#umask=022
 
 # Where to store log file, if it needs to be created (see "createlog")
 logfile=${destdir}/nzbget.log
@@ -123,7 +138,7 @@ terminatetimeout=600
 # one - only one main par2-file must be dowloaded and other must be paused
 # Paused files remain in queue and should be deleted manually,
 # when they not needed anymore
-loadpars=all
+loadpars=one
 
 # Automatic par-verification (yes, no)
 # To download only needed par2-files (smart par-files loading) set also 
@@ -143,12 +158,12 @@ parcheck=no
 parrepair=yes
 
 # Use only par2-files with matching names (yes, no)
-# If par-check needs extra par-blocks it searches a par2-files
-# in download queue, which can be unpauseed and used for restore. These par2-files
-# should have the same base name as a main par2-file, currently loaded in par-checker.
+# If par-check needs extra par-blocks it searches for par2-files
+# in download queue, which can be unpaused and used for restore. These par2-files
+# should have the same base name as the main par2-file, currently loaded in par-checker.
 # Sometimes extra par files (especially if they were uploaded not from original poster)
 # have not matching names. Normally par-checker does not use these files, but
-# you can allow it to use these file by setting "strictparname" to "no".
+# you can allow it to use these files by setting "strictparname" to "no".
 # This has however a side effect: if NZB-file contains more than one collection
 # of files (with different par-sets), par-checker may download par-files from
 # a wrong collection. This increases you traffic (but not harm par-check).
