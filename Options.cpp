@@ -122,6 +122,7 @@ static const char* OPTION_PARCHECK			= "parcheck";
 static const char* OPTION_PARREPAIR			= "parrepair";
 static const char* OPTION_POSTPROCESS		= "postprocess";
 static const char* OPTION_STRICTPARNAME		= "strictparname";
+static const char* OPTION_UMASK				= "umask";
 
 #ifndef WIN32
 const char* PossibleConfigLocations[] =
@@ -190,6 +191,7 @@ Options::Options(int argc, char* argv[])
 	m_szPostProcess			= NULL;
 	m_bStrictParName		= false;
 	m_bNoConfig				= false;
+	m_iUMask				= 0;
 
 	char szFilename[MAX_PATH + 1];
 #ifdef WIN32
@@ -332,7 +334,6 @@ void Options::InitDefault()
 	SetOption(OPTION_NZBDIR, "${APPDIR}\\nzb");
 	SetOption(OPTION_LOGFILE, "${APPDIR}\\nzbget.log");
 	SetOption(OPTION_LOCKFILE, "${APPDIR}\\nzbget.lock");
-	SetOption(OPTION_DAEMONUSERNAME, "");
 #else
 	SetOption(OPTION_TEMPDIR, "~/nzbget/temp");
 	SetOption(OPTION_DESTDIR, "~/nzbget/dest");
@@ -340,7 +341,6 @@ void Options::InitDefault()
 	SetOption(OPTION_NZBDIR, "~/nzbget/nzb");
 	SetOption(OPTION_LOGFILE, "~/nzbget/nzbget.log");
 	SetOption(OPTION_LOCKFILE, "/tmp/nzbget.lock");
-	SetOption(OPTION_DAEMONUSERNAME, "root");
 #endif
 	SetOption(OPTION_CREATELOG, "yes");
 	SetOption(OPTION_APPENDNZBDIR, "yes");
@@ -371,6 +371,8 @@ void Options::InitDefault()
 	SetOption(OPTION_PARREPAIR, "no");	
 	SetOption(OPTION_POSTPROCESS, "");
 	SetOption(OPTION_STRICTPARNAME, "yes");
+	SetOption(OPTION_DAEMONUSERNAME, "root");
+	SetOption(OPTION_UMASK, "1000");
 }
 
 void Options::InitOptFile(int argc, char* argv[])
@@ -496,6 +498,7 @@ void Options::InitOptions()
 	m_szDaemonUserName		= strdup(GetOption(OPTION_DAEMONUSERNAME));
 	m_iLogBufferSize		= atoi(GetOption(OPTION_LOGBUFFERSIZE));
 	m_szLogFile				= strdup(GetOption(OPTION_LOGFILE));
+	m_iUMask				= strtol(GetOption(OPTION_UMASK), NULL, 8);
 	
 	const char* BoolNames[] = { "yes", "no", "true", "false", "1", "0", "on", "off", "enable", "disable" };
 	const int BoolValues[] = { 1, 0, 1, 0, 1, 0, 1, 0, 1, 0 };

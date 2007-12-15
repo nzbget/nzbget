@@ -47,12 +47,6 @@
 #include <stdio.h>
 #include <fcntl.h>
 
-#ifdef DEBUG
-#ifndef DISABLE_PARCHECK
-#include <sigc++/sigc++.h>
-#endif
-#endif
-
 #include "nzbget.h"
 #include "ServerPool.h"
 #include "Log.h"
@@ -108,6 +102,14 @@ int main(int argc, char *argv[])
 	debug("Options parsing");
 	g_pOptions = new Options(argc, argv);
 
+#ifndef WIN32
+	if (g_pOptions->GetUMask() < 01000)
+	{
+		/* set newly created file permissions */
+		umask(g_pOptions->GetUMask());
+	}
+#endif
+	
 	if (g_pOptions->GetServerMode() && g_pOptions->GetCreateLog() && g_pOptions->GetResetLog())
 	{
 		debug("deleting old log-file");
@@ -252,14 +254,6 @@ void Run()
 		debug("RemoteServer stopped");
 	}
 	
-
-#ifdef DEBUG
-	if (g_pOptions->GetTest())
-	{
-		DoTest();
-	}
-#endif
-
 	// Stop Frontend
 	if (g_pFrontend)
 	{
@@ -488,16 +482,17 @@ void Daemonize()
 	setsid(); /* obtain a new process group */
 	for (i = getdtablesize();i >= 0;--i) close(i); /* close all descriptors */
 	i = open("/dev/null", O_RDWR); dup(i); dup(i); /* handle standart I/O */
-	umask(027); /* set newly created file permissions */
 	chdir(g_pOptions->GetDestDir()); /* change running directory */
 	lfp = open(g_pOptions->GetLockFile(), O_RDWR | O_CREAT, 0640);
 	if (lfp < 0) exit(1); /* can not open */
 	if (lockf(lfp, F_TLOCK, 0) < 0) exit(0); /* can not lock */
 
 	/* Drop user if there is one, and we were run as root */
-	if ( getuid() == 0 || geteuid() == 0 ) {
+	if ( getuid() == 0 || geteuid() == 0 )
+	{
 		struct passwd *pw = getpwnam(g_pOptions->GetDaemonUserName());
-		if (pw) {
+		if (pw)
+		{
 			setgroups( 0, (const gid_t*) 0 ); /* Set aux groups to null. */
 			setgid(pw->pw_gid); /* Set primary group. */
 			/* Try setting aux groups correctly - not critical if this fails. */
@@ -514,38 +509,5 @@ void Daemonize()
 	signal(SIGTSTP, SIG_IGN); /* ignore tty signals */
 	signal(SIGTTOU, SIG_IGN);
 	signal(SIGTTIN, SIG_IGN);
-}
-#endif
-
-#ifdef DEBUG
-#ifndef DISABLE_PARCHECK
-/*
-class T1 { public:
-	sigc::signal<int, std::string> sig_filename;
-	int Test1() { std::string str = "test"; return sig_filename.emit(str); }
-};
-class T2 { public:
-	void Test1() {
-		T1 t1;
-		t1.sig_filename.connect(sigc::mem_fun(*this, &T2::signal_filename));
-		if (t1.Test1() == 4) {
-			printf("ok\n");
-			//exit(0);
-		} else {
-			printf("error\n");
-			//exit(-1);
-		}
-	}
-	int signal_filename(std::string str) {
-		printf("%s\n", str.c_str());
-		return str.length();
-	}
-};
-*/
-#endif
-
-void DoTest()
-{
-	printf("testing\n");
 }
 #endif
