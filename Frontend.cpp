@@ -68,6 +68,7 @@ Frontend::Frontend()
 	m_iThreadCount = 0;
 	m_RemoteMessages.clear();
 	m_RemoteQueue.clear();
+	m_iUpdateInterval = g_pOptions->GetUpdateInterval();
 }
 
 bool Frontend::PrepareData()

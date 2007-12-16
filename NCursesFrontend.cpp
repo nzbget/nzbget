@@ -108,7 +108,6 @@ NCursesFrontend::NCursesFrontend()
     m_bSummary = true;
     m_bFileList = true;
     m_iNeededLogEntries = 0;
-    m_iSkipUpdateData = 0;
 	m_iQueueWinTop = 0;
 	m_iQueueWinHeight = 0;
 	m_iQueueWinClientHeight = 0;
@@ -120,6 +119,7 @@ NCursesFrontend::NCursesFrontend()
 	m_bShowNZBname = true;
 	m_bShowTimestamp = false;
 	m_QueueWindowPercentage = 0.5f;
+	m_iDataUpdatePos = 0;
 
     // Setup curses
 #ifdef WIN32
@@ -206,17 +206,27 @@ void NCursesFrontend::Run()
 {
     debug("Entering NCursesFrontend-loop");
 
+	int iScreenUpdateInterval = 25;
+	int iScreenUpdatePos = 0;
+	m_iDataUpdatePos = 0;
+
     while (!IsStopped())
     {
-        // The data (queue and log) is updated each 200 msec,
+        // The data (queue and log) is updated each m_iUpdateInterval msec,
         // but the window is updated more often for better reaction on user's input
-        Update();
-        usleep(25 * 1000);
-        m_iSkipUpdateData -= 25;
-        if (m_iSkipUpdateData < 0)
-        {
-            m_iSkipUpdateData = 200;
-        }
+		if (iScreenUpdatePos <= 0)
+		{
+			iScreenUpdatePos = iScreenUpdateInterval;
+			Update();
+			if (m_iDataUpdatePos <= 0)
+			{
+				m_iDataUpdatePos = m_iUpdateInterval;
+			}
+		}
+
+		usleep(10 * 1000);
+		iScreenUpdatePos -= 10;
+		m_iDataUpdatePos -= 10;
     }
 
     FreeData();
@@ -229,7 +239,7 @@ void NCursesFrontend::Update()
     // Figure out how big the screen is
 	CalcWindowSizes();
 
-    if (!m_iSkipUpdateData)
+    if (m_iDataUpdatePos <= 0)
     {
         FreeData();
 		m_iNeededLogEntries = m_iMessagesWinClientHeight;

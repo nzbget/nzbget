@@ -123,6 +123,7 @@ static const char* OPTION_PARREPAIR			= "parrepair";
 static const char* OPTION_POSTPROCESS		= "postprocess";
 static const char* OPTION_STRICTPARNAME		= "strictparname";
 static const char* OPTION_UMASK				= "umask";
+static const char* OPTION_UPDATEINTERVAL	= "updateinterval";
 
 #ifndef WIN32
 const char* PossibleConfigLocations[] =
@@ -192,6 +193,7 @@ Options::Options(int argc, char* argv[])
 	m_bStrictParName		= false;
 	m_bNoConfig				= false;
 	m_iUMask				= 0;
+	m_iUpdateInterval		= 0;
 
 	char szFilename[MAX_PATH + 1];
 #ifdef WIN32
@@ -373,6 +375,7 @@ void Options::InitDefault()
 	SetOption(OPTION_STRICTPARNAME, "yes");
 	SetOption(OPTION_DAEMONUSERNAME, "root");
 	SetOption(OPTION_UMASK, "1000");
+	SetOption(OPTION_UPDATEINTERVAL, "200");
 }
 
 void Options::InitOptFile(int argc, char* argv[])
@@ -499,7 +502,8 @@ void Options::InitOptions()
 	m_iLogBufferSize		= atoi(GetOption(OPTION_LOGBUFFERSIZE));
 	m_szLogFile				= strdup(GetOption(OPTION_LOGFILE));
 	m_iUMask				= strtol(GetOption(OPTION_UMASK), NULL, 8);
-	
+	m_iUpdateInterval		= atoi(GetOption(OPTION_UPDATEINTERVAL));
+
 	const char* BoolNames[] = { "yes", "no", "true", "false", "1", "0", "on", "off", "enable", "disable" };
 	const int BoolValues[] = { 1, 0, 1, 0, 1, 0, 1, 0, 1, 0 };
 	const int BoolCount = 10;
