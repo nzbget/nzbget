@@ -119,6 +119,7 @@ private:
 	bool				m_bStrictParName;
 	bool				m_bNoConfig;
 	int					m_iUMask;
+	int					m_iUpdateInterval;
 
 	// Parsed command-line parameters
 	bool				m_bServerMode;
@@ -200,6 +201,7 @@ public:
 	const char*			GetPostProcess() { return m_szPostProcess; }
 	bool				GetStrictParName() { return m_bStrictParName; }
 	int					GetUMask() { return m_iUMask; }
+	int					GetUpdateInterval() {return m_iUpdateInterval; }
 
 	// Parsed command-line parameters
 	bool				GetServerMode() { return m_bServerMode; }

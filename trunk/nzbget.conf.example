@@ -86,6 +86,11 @@ appendnzbdir=yes
 # Set screen-outputmode (loggable, colored, curses)
 outputmode=colored
 
+# Update interval for Frontend-output in MSec (min value 25)
+# Bigger values reduce CPU usage (especially in curses-outputmode)
+# and network traffic in remote-client mode
+updateinterval=200
+
 # Check if the destination file already exists (yes, no)
 # If the file exists it will not be added to queue.
 # If "no" the file will be downloaded and renamed to "filename_duplicate1",

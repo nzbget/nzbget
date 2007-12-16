@@ -47,7 +47,7 @@ private:
 	};
 
 	bool			m_bUseColor;
-	int				m_iSkipUpdateData;
+	int				m_iDataUpdatePos;
 	int				m_iScreenHeight;
 	int				m_iScreenWidth;
 	int				m_iQueueWinTop;

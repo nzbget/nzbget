@@ -59,7 +59,7 @@ void LoggableFrontend::Run()
 	while (!IsStopped())
 	{
 		Update();
-		usleep(200 * 1000);
+		usleep(m_iUpdateInterval * 1000);
 	}
 	// Printing the last messages
 	Update();

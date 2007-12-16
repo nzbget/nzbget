@@ -55,8 +55,9 @@ private:
 protected:
 	bool				m_bSummary;
 	bool				m_bFileList;
-	unsigned int				m_iNeededLogEntries;
-	unsigned int				m_iNeededLogFirstID;
+	unsigned int		m_iNeededLogEntries;
+	unsigned int		m_iNeededLogFirstID;
+	int					m_iUpdateInterval;
 
 	// summary
 	float				m_fCurrentDownloadSpeed;
