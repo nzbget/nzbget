@@ -68,7 +68,9 @@ const unsigned int g_iMessageRequestSizes[] =
 		sizeof(SNZBLogRequest),
 		sizeof(SNZBMessageBase)
     };
-	
+
+const int MAX_ID = 100000000;
+
 //*****************************************************************
 // RemoteServer
 
@@ -582,9 +584,9 @@ void EditQueueCommand::Execute()
 	}
 
 	m_iNrEntries = ntohl(EditQueueRequest.m_iNrTrailingEntries);
-	unsigned int iBufLength = ntohl(EditQueueRequest.m_iTrailingDataLength);
 	m_iAction = ntohl(EditQueueRequest.m_iAction);
-	int iOffset = ntohl(EditQueueRequest.m_iOffset);
+	m_iOffset = ntohl(EditQueueRequest.m_iOffset);
+	unsigned int iBufLength = ntohl(EditQueueRequest.m_iTrailingDataLength);
 
 	if (m_iNrEntries * sizeof(uint32_t) != iBufLength)
 	{
@@ -592,8 +594,8 @@ void EditQueueCommand::Execute()
 		return;
 	}
 
-	IDList IDs;
-	IDs.clear();
+	ItemList cItemList;
+	cItemList.clear();
 
 	if (m_iNrEntries > 0)
 	{
@@ -621,76 +623,108 @@ void EditQueueCommand::Execute()
 			pIDs[i] = ntohl(pIDs[i]);
 		}
 		
-		PrepareList(pIDs, &IDs, ntohl(EditQueueRequest.m_bSmartOrder));
+		PrepareList(pIDs, &cItemList, ntohl(EditQueueRequest.m_bSmartOrder));
 		free(pIDs);
 	}
 
-	for (IDList::iterator it = IDs.begin(); it != IDs.end(); it++)
+	for (ItemList::iterator it = cItemList.begin(); it != cItemList.end(); it++)
 	{
-		int ID = *it;
+		EditItem* pItem = *it;
 		switch (m_iAction)
 		{
 			case NZBMessageRequest::eActionPause:
 			case NZBMessageRequest::eActionResume:
 				{
-					g_pQueueCoordinator->EditQueuePauseUnpauseEntry(ID, m_iAction == NZBMessageRequest::eActionPause);
+					g_pQueueCoordinator->EditQueuePauseUnpauseEntry(pItem->m_iID, m_iAction == NZBMessageRequest::eActionPause);
 					break;
 				}
 
 			case NZBMessageRequest::eActionMoveOffset:
-				{
-					g_pQueueCoordinator->EditQueueMoveEntry(ID, iOffset, true);
-					break;
-				}
-
 			case NZBMessageRequest::eActionMoveTop:
-				{
-					g_pQueueCoordinator->EditQueueMoveEntry(ID, -1000000, true);
-					break;
-				}
-
 			case NZBMessageRequest::eActionMoveBottom:
 				{
-					g_pQueueCoordinator->EditQueueMoveEntry(ID, +1000000, true);
+					g_pQueueCoordinator->EditQueueMoveEntry(pItem->m_iID, pItem->m_iOffset, true);
 					break;
 				}
 
 			case NZBMessageRequest::eActionDelete:
 				{
-					g_pQueueCoordinator->EditQueueDeleteEntry(ID);
+					g_pQueueCoordinator->EditQueueDeleteEntry(pItem->m_iID);
 					break;
 				}
 		}
+		delete pItem;
 	}
 
 	SendResponse("Edit-Command completed successfully");
 }
 
-void EditQueueCommand::PrepareList(uint32_t* pIDs, IDList* IDs, bool bSmartOrder)
+void EditQueueCommand::PrepareList(uint32_t* pIDs, ItemList* pItemList, bool bSmartOrder)
 {
-	//NOTE: Smart-Order is currently implemented only for TOP- and BOTTOM-commands.
-
-	if (bSmartOrder && 
-		(m_iAction == NZBMessageRequest::eActionMoveTop ||
-		m_iAction == NZBMessageRequest::eActionMoveBottom))
+	int iOffset = m_iOffset;
+	if (m_iAction == NZBMessageRequest::eActionMoveTop)
 	{
-		//add IDs to IDs-list in order they currently have in download queue
+		iOffset = -MAX_ID;
+	}
+	else if (m_iAction == NZBMessageRequest::eActionMoveBottom)
+	{
+		iOffset = +MAX_ID;
+	}
+
+	if (bSmartOrder && iOffset != 0 &&
+		(m_iAction == NZBMessageRequest::eActionMoveTop ||
+		m_iAction == NZBMessageRequest::eActionMoveBottom ||
+		m_iAction == NZBMessageRequest::eActionMoveOffset))
+	{
+		//add IDs to list in order they currently have in download queue
+		int iLastDestPos = -1;
 		DownloadQueue* pDownloadQueue = g_pQueueCoordinator->LockQueue();
-		for (DownloadQueue::iterator it = pDownloadQueue->begin(); it != pDownloadQueue->end(); it++)
+		int iStart, iEnd, iStep;
+		if (iOffset < 0)
 		{
-			FileInfo* pFileInfo = *it;
+			iStart = 0;
+			iEnd = pDownloadQueue->size();
+			iStep = 1;
+		}
+		else
+		{
+			iStart = pDownloadQueue->size() - 1;
+			iEnd = -1;
+			iStep = -1;
+		}
+		for (int iIndex = iStart; iIndex != iEnd; iIndex += iStep)
+		{
+			FileInfo* pFileInfo = (*pDownloadQueue)[iIndex];
 			for (int i = 0; i < m_iNrEntries; i++)
 			{
 				if (pFileInfo->GetID() == (int)pIDs[i])
 				{
-					if (m_iAction == NZBMessageRequest::eActionMoveTop)
+					int iWorkOffset = iOffset;
+					int iDestPos = iIndex + iWorkOffset;
+					if (iLastDestPos == -1)
 					{
-						IDs->push_front(pIDs[i]);
+						if (iDestPos < 0)
+						{
+							iWorkOffset = -iIndex;
+						}
+						else if (iDestPos > int(pDownloadQueue->size()) - 1)
+						{
+							iWorkOffset = int(pDownloadQueue->size()) - 1 - iIndex;
+						}
 					}
 					else
 					{
-						IDs->push_back(pIDs[i]);
+						if (iWorkOffset < 0 && iDestPos <= iLastDestPos)
+						{
+							iWorkOffset = iLastDestPos - iIndex + 1;
+						}
+						else if (iWorkOffset > 0 && iDestPos >= iLastDestPos)
+						{
+							iWorkOffset = iLastDestPos - iIndex - 1;
+						}
 					}
+					iLastDestPos = iIndex + iWorkOffset;
+					pItemList->push_back(new EditItem(pIDs[i], iWorkOffset));
 					break;
 				}
 			}
@@ -699,10 +733,39 @@ void EditQueueCommand::PrepareList(uint32_t* pIDs, IDList* IDs, bool bSmartOrder
 	}
 	else
 	{
-		//add IDs to IDs-list in order they were transmitted with command
+		// check ID range
+		int iMaxID = 0;
+		int iMinID = MAX_ID;
+		DownloadQueue* pDownloadQueue = g_pQueueCoordinator->LockQueue();
+		for (DownloadQueue::iterator it = pDownloadQueue->begin(); it != pDownloadQueue->end(); it++)
+		{
+			FileInfo* pFileInfo = *it;
+			int ID = pFileInfo->GetID();
+			if (ID > iMaxID)
+			{
+				iMaxID = ID;
+			}
+			if (ID < iMinID)
+			{
+				iMinID = ID;
+			}
+		}
+		g_pQueueCoordinator->UnlockQueue();
+
+		//add IDs to list in order they were transmitted in command
 		for (int i = 0; i < m_iNrEntries; i++)
 		{
-			IDs->push_back(pIDs[i]);
+			int ID = pIDs[i];
+			if (iMinID <= ID && ID <= iMaxID)
+			{
+				pItemList->push_back(new EditItem(pIDs[i], iOffset));
+			}
 		}
 	}
+}
+
+EditQueueCommand::EditItem::EditItem(int iID, int iOffset)
+{
+	m_iID = iID;
+	m_iOffset = iOffset;
 }

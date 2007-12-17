@@ -446,5 +446,5 @@ bool Frontend::RequestEditQueue(int iAction, int iOffset, int iID)
 {
 	RemoteClient client;
 	client.SetVerbose(false);
-	return client.RequestServerEditQueue(iAction, iOffset, &iID, 1);
+	return client.RequestServerEditQueue(iAction, iOffset, &iID, 1, false);
 }
