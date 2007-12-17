@@ -299,7 +299,7 @@ void ProcessClientRequest()
 	else if (g_pOptions->GetClientOperation() == Options::opClientRequestEditQueue)
 	{
 		Client->RequestServerEditQueue(g_pOptions->GetEditQueueAction(), g_pOptions->GetEditQueueOffset(),
-										g_pOptions->GetEditQueueIDList(), g_pOptions->GetEditQueueIDCount());
+			g_pOptions->GetEditQueueIDList(), g_pOptions->GetEditQueueIDCount(), true);
 	}
 	else if (g_pOptions->GetClientOperation() == Options::opClientRequestLog)
 	{

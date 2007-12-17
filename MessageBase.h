@@ -181,8 +181,8 @@ struct SNZBEditQueueRequest
 	SNZBMessageBase			m_MessageBase;			// Must be the first in the struct
 	uint32_t				m_iAction;				// Action to be executed, see enum in NZBMessageRequest-namespace
 	int32_t					m_iOffset;				// Offset to move (for m_iAction = 0)
-	int32_t					m_bSmartOrder;			// For Move-Actions: 0 - execute action for each ID in order they are placed in array (faster);
-													// 1 - smart execute to ensure that the relative order of all affected IDs are not changed (better, not yet implemented).
+	int32_t					m_bSmartOrder;			// For Move-Actions: 0 - execute action for each ID in order they are placed in array;
+													// 1 - smart execute to ensure that the relative order of all affected IDs are not changed.
 	uint32_t				m_iNrTrailingEntries;	// Number of ID-entries, following to this structure
 	uint32_t				m_iTrailingDataLength;	// Length of all ID-entries, following to this structure
 	//uint32_t				m_iIDs[0];				// variable sized
