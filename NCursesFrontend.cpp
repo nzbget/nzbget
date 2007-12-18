@@ -541,20 +541,30 @@ void NCursesFrontend::PrintStatus()
         }
         s = remain_sec;
 
-        sprintf(timeString, "(~ %.2d:%.2d:%.2d)", h, m, s);
+        sprintf(timeString, " (~ %.2d:%.2d:%.2d)", h, m, s);
     }
 
     char szDownloadLimit[128];
     if (m_fDownloadLimit > 0.0f)
     {
-        sprintf(szDownloadLimit, "Limit %.0f KB/S", m_fDownloadLimit);
+        sprintf(szDownloadLimit, ", Limit %.0f KB/S", m_fDownloadLimit);
     }
     else
     {
         szDownloadLimit[0] = 0;
     }
 
-    snprintf(tmp, MAX_SCREEN_WIDTH, " %d threads running, %.0f KB/s, %.2f MB remaining %s %s %s", m_iThreadCount, m_fCurrentDownloadSpeed, (float)(m_lRemainingSize / 1024.0 / 1024.0), timeString, m_bPause ? "Paused" : "", szDownloadLimit);
+    char szParStatus[128];
+    if (m_iParJobCount > 0)
+    {
+        sprintf(szParStatus, ", %i par", m_iParJobCount);
+    }
+    else
+    {
+        szParStatus[0] = 0;
+    }
+
+    snprintf(tmp, MAX_SCREEN_WIDTH, " %d threads, %.0f KB/s, %.2f MB remaining%s%s%s%s", m_iThreadCount, m_fCurrentDownloadSpeed, (float)(m_lRemainingSize / 1024.0 / 1024.0), timeString, szParStatus, m_bPause ? ", Paused" : "", szDownloadLimit);
 	tmp[MAX_SCREEN_WIDTH - 1] = '\0';
     PlotLine(tmp, iStatusRow, 0, NCURSES_COLORPAIR_STATUS);
 }

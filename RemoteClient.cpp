@@ -290,9 +290,10 @@ bool RemoteClient::RequestServerList()
 	{
 		printf("Speed limit: %.1f KB/s\n", (float)(ntohl(ListRequestAnswer.m_iDownloadLimit) / 1024.0));
 	}
-	else
+
+	if (ntohl(ListRequestAnswer.m_iParJobCount) > 0)
 	{
-		printf("Speed limit: Unlimited\n");
+		printf("Par-jobs: %i\n", (int)ntohl(ListRequestAnswer.m_iParJobCount));
 	}
 
 	return true;

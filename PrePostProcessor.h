@@ -38,6 +38,24 @@
 
 class PrePostProcessor : public Thread
 {
+public:
+	class ParJob
+	{
+	private:
+		char*				m_szNZBFilename;
+		char*				m_szParFilename;
+		char*				m_szInfoName;
+		
+	public:
+							ParJob(const char* szNZBFilename, const char* szParFilename, const char* szInfoName);
+							~ParJob();
+		const char*			GetNZBFilename() { return m_szNZBFilename; }
+		const char*			GetParFilename() { return m_szParFilename; }
+		const char*			GetInfoName() { return m_szInfoName; }
+	};
+
+	typedef std::deque<ParJob*> ParQueue;
+
 private:
 	typedef std::deque<char*>		FileList;
 
@@ -55,23 +73,6 @@ private:
 		PrePostProcessor* owner;
 		virtual void	Update(Subject* Caller, void* Aspect) { owner->ParCheckerUpdate(Caller, Aspect); }
 	};
-	
-	class QueuedFile
-	{
-	private:
-		char*			m_szNZBFilename;
-		char*			m_szParFilename;
-		char*			m_szInfoName;
-		
-	public:
-						QueuedFile(const char* szNZBFilename, const char* szParFilename, const char* szInfoName);
-						~QueuedFile();
-		const char*		GetNZBFilename() { return m_szNZBFilename; }
-		const char*		GetParFilename() { return m_szParFilename; }
-		const char*		GetInfoName() { return m_szInfoName; }
-	};
-	
-	typedef std::deque<QueuedFile*>		ParQueue;
 #endif
 	
 private:
@@ -83,11 +84,13 @@ private:
 	void				CheckIncomingNZBs();
 	bool				WasLastUnpausedInCollection(DownloadQueue* pDownloadQueue, FileInfo* pFileInfo);
 	void				ExecPostScript(const char* szPath, const char* szNZBFilename, const char * szParFilename, int iParStatus);
-	
-#ifndef DISABLE_PARCHECK
-	ParChecker			m_ParChecker;
+
+
 	Mutex			 	m_mutexParChecker;
 	ParQueue			m_ParQueue;
+
+#ifndef DISABLE_PARCHECK
+	ParChecker			m_ParChecker;
 	ParCheckerObserver	m_ParCheckerObserver;
 
 	void				ParCheckerUpdate(Subject* Caller, void* Aspect);
@@ -105,6 +108,8 @@ public:
 	virtual void		Stop();
 	void				QueueCoordinatorUpdate(Subject* Caller, void* Aspect);
 	bool				HasMoreJobs() { return m_bHasMoreJobs; }
+	ParQueue*			LockParQueue();
+	void				UnlockParQueue();
 };
 
 #endif
