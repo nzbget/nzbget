@@ -55,7 +55,30 @@ static const int PARSTATUS_NOT_CHECKED = 0;
 static const int PARSTATUS_FAILED = 1;
 static const int PARSTATUS_REPAIRED = 2;
 static const int PARSTATUS_REPAIR_POSSIBLE = 3;
-		
+
+PrePostProcessor::ParJob::ParJob(const char * szNZBFilename, const char * szParFilename, const char * szInfoName)
+{
+	m_szNZBFilename = strdup(szNZBFilename);
+	m_szParFilename = strdup(szParFilename);
+	m_szInfoName = strdup(szInfoName);
+}
+
+PrePostProcessor::ParJob::~ ParJob()
+{
+	if (m_szNZBFilename)
+	{
+		free(m_szNZBFilename);
+	}
+	if (m_szParFilename)
+	{
+		free(m_szParFilename);
+	}
+	if (m_szInfoName)
+	{
+		free(m_szInfoName);
+	}
+}
+
 PrePostProcessor::PrePostProcessor()
 {
 	debug("Creating PrePostProcessor");
@@ -67,9 +90,9 @@ PrePostProcessor::PrePostProcessor()
 	m_QueueCoordinatorObserver.owner = this;
 	g_pQueueCoordinator->Attach(&m_QueueCoordinatorObserver);
 
-#ifndef DISABLE_PARCHECK
 	m_ParQueue.clear();
-	
+
+#ifndef DISABLE_PARCHECK
 	m_ParCheckerObserver.owner = this;
 	m_ParChecker.Attach(&m_ParCheckerObserver);
 #endif
@@ -79,12 +102,10 @@ PrePostProcessor::~PrePostProcessor()
 {
 	debug("Destroying PrePostProcessor");
 	
-#ifndef DISABLE_PARCHECK
 	for (ParQueue::iterator it = m_ParQueue.begin(); it != m_ParQueue.end(); it++)
 	{
 		delete *it;
 	}
-#endif
 }
 
 void PrePostProcessor::Run()
@@ -347,29 +368,6 @@ bool PrePostProcessor::WasLastUnpausedInCollection(DownloadQueue* pDownloadQueue
 
 #ifndef DISABLE_PARCHECK
 
-PrePostProcessor::QueuedFile::QueuedFile(const char * szNZBFilename, const char * szParFilename, const char * szInfoName)
-{
-	m_szNZBFilename = strdup(szNZBFilename);
-	m_szParFilename = strdup(szParFilename);
-	m_szInfoName = strdup(szInfoName);
-}
-
-PrePostProcessor::QueuedFile::~ QueuedFile()
-{
-	if (m_szNZBFilename)
-	{
-		free(m_szNZBFilename);
-	}
-	if (m_szParFilename)
-	{
-		free(m_szParFilename);
-	}
-	if (m_szInfoName)
-	{
-		free(m_szInfoName);
-	}
-}
-
 void PrePostProcessor::CheckPars(DownloadQueue * pDownloadQueue, FileInfo * pFileInfo)
 {
 	char szNZBNiceName[1024];
@@ -401,8 +399,8 @@ void PrePostProcessor::CheckPars(DownloadQueue * pDownloadQueue, FileInfo * pFil
 			szParInfoName[1024-1] = '\0';
 			
 			info("Queueing %s%c%s for par-check", szNZBNiceName, (int)PATH_SEPARATOR, szInfoName);
-			QueuedFile* pQueuedFile = new QueuedFile(pFileInfo->GetNZBFilename(), szFullFilename, szParInfoName);
-			m_ParQueue.push_back(pQueuedFile);
+			ParJob* pParJob = new ParJob(pFileInfo->GetNZBFilename(), szFullFilename, szParInfoName);
+			m_ParQueue.push_back(pParJob);
 			m_bHasMoreJobs = true;
 
 			free(szParFilename);
@@ -474,22 +472,30 @@ bool PrePostProcessor::SameParCollection(const char* szFilename1, const char* sz
 		!strncasecmp(szFilename1, szFilename2, iBaseLen1);
 }
 
+PrePostProcessor::ParQueue* PrePostProcessor::LockParQueue()
+{
+	m_mutexParChecker.Lock();
+	return &m_ParQueue;
+}
+
+void PrePostProcessor::UnlockParQueue()
+{
+	m_mutexParChecker.Unlock();
+}
+
 void PrePostProcessor::CheckParQueue()
 {
 	m_mutexParChecker.Lock();
 
 	if (!m_ParChecker.IsRunning() && !m_ParQueue.empty())
 	{
-		QueuedFile* pQueuedFile = m_ParQueue.front();
+		ParJob* pParJob = m_ParQueue.front();
 
-		info("Checking pars for %s", pQueuedFile->GetInfoName());
-		m_ParChecker.SetNZBFilename(pQueuedFile->GetNZBFilename());
-		m_ParChecker.SetParFilename(pQueuedFile->GetParFilename());
-		m_ParChecker.SetInfoName(pQueuedFile->GetInfoName());
+		info("Checking pars for %s", pParJob->GetInfoName());
+		m_ParChecker.SetNZBFilename(pParJob->GetNZBFilename());
+		m_ParChecker.SetParFilename(pParJob->GetParFilename());
+		m_ParChecker.SetInfoName(pParJob->GetInfoName());
 		m_ParChecker.Start();
-		
-		m_ParQueue.pop_front();
-		delete pQueuedFile;
 	}
 	
 	m_mutexParChecker.Unlock();
@@ -560,6 +566,9 @@ void PrePostProcessor::ParCheckerUpdate(Subject * Caller, void * Aspect)
 		ExecPostScript(szPath, m_ParChecker.GetNZBFilename(), m_ParChecker.GetParFilename(), iParStatus);
 
 		m_mutexParChecker.Lock();
+		ParJob* pParJob = m_ParQueue.front();
+		m_ParQueue.pop_front();
+		delete pParJob;
 		m_bHasMoreJobs = !m_ParQueue.empty();
 		m_mutexParChecker.Unlock();
 	}
@@ -604,8 +613,8 @@ void PrePostProcessor::ExecPostScript(const char * szPath, const char * szNZBFil
 		m_mutexParChecker.Lock();
 		for (ParQueue::iterator it = m_ParQueue.begin(); it != m_ParQueue.end(); it++)
 		{
-			QueuedFile* pQueuedFile = *it;
-			if (!strcmp(pQueuedFile->GetNZBFilename(), szNZBFilename))
+			ParJob* pParJob = *it;
+			if (!strcmp(pParJob->GetNZBFilename(), szNZBFilename))
 			{
 				bCollectionCompleted = false;
 				break;

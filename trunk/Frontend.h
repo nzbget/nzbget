@@ -65,6 +65,7 @@ protected:
 	bool				m_bPause;
 	float				m_fDownloadLimit;
 	int					m_iThreadCount;
+	int					m_iParJobCount;
 
 	bool				PrepareData();
 	void				FreeData();

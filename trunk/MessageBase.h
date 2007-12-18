@@ -79,16 +79,17 @@ struct SNZBMessageBase
 	uint32_t				m_iSignature;			// Signature must be NZBMESSAGE_SIGNATURE in integer-value
 	uint32_t				m_iStructSize;			// Size of the entire struct
 	uint32_t				m_iType;				// Message type, see enum in NZBMessageRequest-namespace
-	char					m_szPassword[ NZBREQUESTPASSWORDSIZE ];	// Password needs to be in every request
+	char					m_szPassword[NZBREQUESTPASSWORDSIZE];	// Password needs to be in every request
 };
 
 // A download request
 struct SNZBDownloadRequest
 {
 	SNZBMessageBase			m_MessageBase;			// Must be the first in the struct
-	char					m_szFilename[ NZBREQUESTFILENAMESIZE ];	// Name of nzb-file, may contain full path (local path on client) or only filename
+	char					m_szFilename[NZBREQUESTFILENAMESIZE];	// Name of nzb-file, may contain full path (local path on client) or only filename
 	uint32_t				m_bAddFirst;			// 1 - add file to the top of download queue
 	uint32_t				m_iTrailingDataLength;	// Length of nzb-file in bytes
+	//char					m_szContent[m_iTrailingDataLength];	// variable sized
 };
 
 // A list and status request
@@ -110,8 +111,10 @@ struct SNZBListRequestAnswer
 	uint32_t				m_iDownloadLimit;		// Current download limit, in Bytes pro Second
 	uint32_t				m_bServerPaused;		// 1 - server is currently in paused-state
 	uint32_t				m_iThreadCount;			// Number of threads running
+	uint32_t				m_iParJobCount;			// Number of ParJobs in Par-Checker queue (including current file)
 	uint32_t				m_iNrTrailingEntries;	// Number of List-entries, following to this structure
 	uint32_t				m_iTrailingDataLength;	// Length of all List-entries, following to this structure
+	// SNZBListRequestAnswerEntry m_Entries[m_iNrTrailingEntries]		// variable sized
 };
 
 // A list request-answer entry
@@ -128,10 +131,10 @@ struct SNZBListRequestAnswerEntry
 	uint32_t				m_iSubjectLen;			// Length of Subject-string (m_szSubject), following to this record
 	uint32_t				m_iFilenameLen;			// Length of Filename-string (m_szFilename), following to this record
 	uint32_t				m_iDestDirLen;			// Length of DestDir-string (m_szDestDir), following to this record
-	//char					m_szNZBFilename[0];		// variable sized, may contain full path (local path on client) or only filename
-	//char					m_szSubject[0];			// variable sized
-	//char					m_szFilename[0];		// variable sized
-	//char					m_szDestDir[0];			// variable sized
+	//char					m_szNZBFilename[m_iNZBFilenameLen];	// variable sized, may contain full path (local path on client) or only filename
+	//char					m_szSubject[m_iSubjectLen];			// variable sized
+	//char					m_szFilename[m_iFilenameLen];		// variable sized
+	//char					m_szDestDir[m_iDestDirLen];			// variable sized
 };
 
 // A log request
@@ -149,6 +152,7 @@ struct SNZBLogRequestAnswer
 	uint32_t				m_iEntrySize;			// Size of the SNZBLogRequestAnswerEntry-struct
 	uint32_t				m_iNrTrailingEntries;	// Number of Log-entries, following to this structure
 	uint32_t				m_iTrailingDataLength;	// Length of all Log-entries, following to this structure
+	// SNZBLogRequestAnswerEntry m_Entries[m_iNrTrailingEntries]	// variable sized
 };
 
 // A log request-answer entry
@@ -158,7 +162,7 @@ struct SNZBLogRequestAnswerEntry
 	uint32_t				m_iKind;				// see Message::Kind in "Log.h"
 	uint32_t				m_tTime;				// time since the Epoch (00:00:00 UTC, January 1, 1970), measured in seconds.
 	uint32_t				m_iTextLen;				// Length of Text-string (m_szText), following to this record
-	//char					m_szText[0];			// variable sized
+	//char					m_szText[m_iTextLen];	// variable sized
 };
 
 // A Pause/Unpause request
@@ -185,7 +189,7 @@ struct SNZBEditQueueRequest
 													// 1 - smart execute to ensure that the relative order of all affected IDs are not changed.
 	uint32_t				m_iNrTrailingEntries;	// Number of ID-entries, following to this structure
 	uint32_t				m_iTrailingDataLength;	// Length of all ID-entries, following to this structure
-	//uint32_t				m_iIDs[0];				// variable sized
+	//uint32_t				m_iIDs[m_iNrTrailingEntries];	// variable sized
 };
 
 // Request dumping of debug info

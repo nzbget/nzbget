@@ -47,10 +47,12 @@
 #include "Connection.h"
 #include "MessageBase.h"
 #include "QueueCoordinator.h"
+#include "PrePostProcessor.h"
 #include "RemoteClient.h"
 #include "Util.h"
 
 extern QueueCoordinator* g_pQueueCoordinator;
+extern PrePostProcessor* g_pPrePostProcessor;
 extern Options* g_pOptions;
 
 Frontend::Frontend()
@@ -66,6 +68,7 @@ Frontend::Frontend()
 	m_bPause = false;
 	m_fDownloadLimit = 0;
 	m_iThreadCount = 0;
+	m_iParJobCount = 0;
 	m_RemoteMessages.clear();
 	m_RemoteQueue.clear();
 	m_iUpdateInterval = g_pOptions->GetUpdateInterval();
@@ -95,6 +98,9 @@ bool Frontend::PrepareData()
 			m_bPause = g_pOptions->GetPause();
 			m_fDownloadLimit = g_pOptions->GetDownloadRate();
 			m_iThreadCount = Thread::GetThreadCount();
+			PrePostProcessor::ParQueue* pParQueue = g_pPrePostProcessor->LockParQueue();
+			m_iParJobCount = pParQueue->size();
+			g_pPrePostProcessor->UnlockParQueue();
 		}
 	}
 	return true;
@@ -382,6 +388,7 @@ bool Frontend::RequestFileList()
 		m_fCurrentDownloadSpeed = ntohl(ListRequestAnswer.m_iDownloadRate) / 1024.0;
 		m_fDownloadLimit = ntohl(ListRequestAnswer.m_iDownloadLimit) / 1024.0;
 		m_iThreadCount = ntohl(ListRequestAnswer.m_iThreadCount);
+		m_iParJobCount = ntohl(ListRequestAnswer.m_iParJobCount);
 	}
 
 	if (m_bFileList && ntohl(ListRequestAnswer.m_iTrailingDataLength) > 0)

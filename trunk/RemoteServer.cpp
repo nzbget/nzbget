@@ -46,10 +46,12 @@
 #include "Log.h"
 #include "Options.h"
 #include "QueueCoordinator.h"
+#include "PrePostProcessor.h"
 #include "Util.h"
 
 extern Options* g_pOptions;
 extern QueueCoordinator* g_pQueueCoordinator;
+extern PrePostProcessor* g_pPrePostProcessor;
 extern void ExitProc();
 
 const char* g_szMessageRequestNames[] =
@@ -478,6 +480,9 @@ void ListCommand::Execute()
 		ListRequestAnswer.m_iDownloadLimit = htonl((int)(g_pOptions->GetDownloadRate() * 1024));
 		ListRequestAnswer.m_bServerPaused = htonl(g_pOptions->GetPause());
 		ListRequestAnswer.m_iThreadCount = htonl(Thread::GetThreadCount() - 1); // not counting itself
+		PrePostProcessor::ParQueue* pParQueue = g_pPrePostProcessor->LockParQueue();
+		ListRequestAnswer.m_iParJobCount = htonl(pParQueue->size());
+		g_pPrePostProcessor->UnlockParQueue();
 	}
 
 	// Send the request answer

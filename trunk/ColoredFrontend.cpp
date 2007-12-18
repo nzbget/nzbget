@@ -94,21 +94,28 @@ void ColoredFrontend::PrintStatus()
 
 		s = remain_sec;
 
-		sprintf(timeString, "(~ %.2d:%.2d:%.2d)", h, m, s);
+		sprintf(timeString, " (~ %.2d:%.2d:%.2d)", h, m, s);
 	}
-
-	const char* szPause[] = { "Paused", "" };
-	int iPauseIdx = m_bPause ? 0 : 1;
 
 	char szDownloadLimit[128];
 	if (m_fDownloadLimit > 0.0f)
 	{
-		sprintf(szDownloadLimit, "Limit %.0f KB/S", m_fDownloadLimit);
+		sprintf(szDownloadLimit, ", Limit %.0f KB/S", m_fDownloadLimit);
 	}
 	else
 	{
 		szDownloadLimit[0] = 0;
 	}
+
+    char szParStatus[128];
+    if (m_iParJobCount > 0)
+    {
+        sprintf(szParStatus, ", %i par", m_iParJobCount);
+    }
+    else
+    {
+        szParStatus[0] = 0;
+    }
 
 #ifdef WIN32
 	char* szControlSeq = "";
@@ -116,9 +123,10 @@ void ColoredFrontend::PrintStatus()
 	printf("\033[s");
 	char* szControlSeq = "\033[K";
 #endif
-	snprintf(tmp, 1024, "%d threads running, %.0f KB/s, %.2f MB remaining %s %s %s%s\n", 
+
+	snprintf(tmp, 1024, " %d threads, %.0f KB/s, %.2f MB remaining%s%s%s%s%s\n", 
 		m_iThreadCount, m_fCurrentDownloadSpeed, (float)(m_lRemainingSize / 1024.0 / 1024.0), 
-		timeString, szPause[iPauseIdx], szDownloadLimit, szControlSeq);
+		timeString, szParStatus, m_bPause ? ", Paused" : "", szDownloadLimit, szControlSeq);
 	tmp[1024-1] = '\0';
 	printf("%s", tmp);
 	m_bNeedGoBack = true;
