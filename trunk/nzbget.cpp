@@ -73,9 +73,6 @@ void ProcessClientRequest();
 void InstallSignalHandlers();
 void Daemonize();
 #endif
-#ifdef DEBUG
-void DoTest();
-#endif
 
 Thread* g_pFrontend	= NULL;
 Options* g_pOptions		= NULL;
@@ -158,7 +155,7 @@ void Run()
 	}
 
 	// Create the queue coordinator
-	if (!g_pOptions->GetRemoteClientMode() && !g_pOptions->GetTest())
+	if (!g_pOptions->GetRemoteClientMode())
 	{                                    
 		g_pQueueCoordinator = new QueueCoordinator();
 		g_pDownloadSpeedMeter = g_pQueueCoordinator;
@@ -171,7 +168,14 @@ void Run()
 		g_pRemoteServer->Start();
 	}
 
-	// Create the front-end
+	// Starting a thread with the PrePostProcessor
+	if (!g_pOptions->GetRemoteClientMode())
+	{
+		g_pPrePostProcessor = new PrePostProcessor();
+		g_pPrePostProcessor->Start();
+	}
+
+	// Create the frontend
 	if (!g_pOptions->GetDaemonMode())
 	{
 		switch (g_pOptions->GetOutputMode())
@@ -196,13 +200,9 @@ void Run()
 		g_pFrontend->Start();
 	}
 
-	// Start QueueCoordinator
-	if (!g_pOptions->GetRemoteClientMode() && !g_pOptions->GetTest())
+	// Starting QueueCoordinator
+	if (!g_pOptions->GetRemoteClientMode())
 	{
-		g_pPrePostProcessor = new PrePostProcessor();
-
-		g_pPrePostProcessor->Start();
-
 		// Standalone-mode
 		if (!g_pOptions->GetServerMode() && !g_pQueueCoordinator->AddFileToQueue(g_pOptions->GetArgFilename()))
 		{

@@ -188,7 +188,6 @@ Options::Options(int argc, char* argv[])
 	m_eLoadPars				= plAll;
 	m_bParCheck				= false;
 	m_bParRepair			= false;
-	m_bTest					= false;
 	m_szPostProcess			= NULL;
 	m_bStrictParName		= false;
 	m_bNoConfig				= false;
@@ -680,11 +679,6 @@ void Options::InitCommandLine(int argc, char* argv[])
 			case 'Q':
 				m_eClientOperation = opClientRequestShutdown;
 				break;
-#ifdef DEBUG				
-			case 't':
-				m_bTest = true;
-				break;
-#endif				
 			case '?':
 				exit(-1);
 				break;
