@@ -124,6 +124,9 @@ static const char* OPTION_POSTPROCESS		= "postprocess";
 static const char* OPTION_STRICTPARNAME		= "strictparname";
 static const char* OPTION_UMASK				= "umask";
 static const char* OPTION_UPDATEINTERVAL	= "updateinterval";
+static const char* OPTION_CURSESNZBNAME		= "cursesnzbname";
+static const char* OPTION_CURSESTIME		= "cursestime";
+static const char* OPTION_CURSESGROUP		= "cursesgroup";
 
 #ifndef WIN32
 const char* PossibleConfigLocations[] =
@@ -193,6 +196,9 @@ Options::Options(int argc, char* argv[])
 	m_bNoConfig				= false;
 	m_iUMask				= 0;
 	m_iUpdateInterval		= 0;
+	m_bCursesNZBName		= false;
+	m_bCursesTime			= false;
+	m_bCursesGroup			= false;
 
 	char szFilename[MAX_PATH + 1];
 #ifdef WIN32
@@ -375,6 +381,9 @@ void Options::InitDefault()
 	SetOption(OPTION_DAEMONUSERNAME, "root");
 	SetOption(OPTION_UMASK, "1000");
 	SetOption(OPTION_UPDATEINTERVAL, "200");
+	SetOption(OPTION_CURSESNZBNAME, "yes");
+	SetOption(OPTION_CURSESTIME, "no");
+	SetOption(OPTION_CURSESGROUP, "no");
 }
 
 void Options::InitOptFile(int argc, char* argv[])
@@ -518,6 +527,9 @@ void Options::InitOptions()
 	m_bParRepair			= (bool)ParseOptionValue(OPTION_PARREPAIR, BoolCount, BoolNames, (const int*)BoolValues);
 	m_bStrictParName		= (bool)ParseOptionValue(OPTION_STRICTPARNAME, BoolCount, BoolNames, (const int*)BoolValues);
 	m_bReloadQueue			= (bool)ParseOptionValue(OPTION_RELOADQUEUE, BoolCount, BoolNames, (const int*)BoolValues);
+	m_bCursesNZBName		= (bool)ParseOptionValue(OPTION_CURSESNZBNAME, BoolCount, BoolNames, (const int*)BoolValues);
+	m_bCursesTime			= (bool)ParseOptionValue(OPTION_CURSESTIME, BoolCount, BoolNames, (const int*)BoolValues);
+	m_bCursesGroup			= (bool)ParseOptionValue(OPTION_CURSESGROUP, BoolCount, BoolNames, (const int*)BoolValues);
 
 	const char* OutputModeNames[] = { "loggable", "logable", "log", "colored", "color", "ncurses", "curses" };
 	const int OutputModeValues[] = { omLoggable, omLoggable, omLoggable, omColored, omColored, omNCurses, omNCurses };

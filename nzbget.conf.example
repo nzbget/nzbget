@@ -86,6 +86,21 @@ appendnzbdir=yes
 # Set screen-outputmode (loggable, colored, curses)
 outputmode=colored
 
+# Shows NZB-Filename in file list in curses-outputmode (yes, no)
+# This option controls the initial state of curses-frontend,
+# it can be switched on/off in run-time with Z-key.
+cursesnzbname=yes
+
+# Show files in groups (NZB-files) in queue list in curses-outputmode (yes, no)
+# This option controls the initial state of curses-frontend,
+# it can be switched on/off in run-time with G-key.
+cursesgroup=no
+
+# Show timestamps in message list in curses-outputmode (yes, no)
+# This option controls the initial state of curses-frontend,
+# it can be switched on/off in run-time with T-key.
+cursestime=no
+
 # Update interval for Frontend-output in MSec (min value 25)
 # Bigger values reduce CPU usage (especially in curses-outputmode)
 # and network traffic in remote-client mode

@@ -49,6 +49,7 @@
 
 #include "nzbget.h"
 #include "NCursesFrontend.h"
+#include "Options.h"
 
 #ifdef HAVE_CURSES_H
 // curses.h header must be included last to avoid problems on Solaris
@@ -58,6 +59,7 @@
 #undef erase
 #endif
 
+extern Options* g_pOptions;
 extern void ExitProc();
 
 static const int NCURSES_COLORPAIR_TEXT			= 1;
@@ -133,9 +135,9 @@ NCursesFrontend::NCursesFrontend()
 	m_iMessagesWinClientHeight = 0;
     m_iSelectedQueueEntry = 0;
 	m_iQueueScrollOffset = 0;
-	m_bShowNZBname = true;
-	m_bShowTimestamp = false;
-	m_bGroupFiles = false;
+	m_bShowNZBname = g_pOptions->GetCursesNZBName();
+	m_bShowTimestamp = g_pOptions->GetCursesTime();
+	m_bGroupFiles = g_pOptions->GetCursesGroup();
 	m_QueueWindowPercentage = 0.5f;
 	m_iDataUpdatePos = 0;
 

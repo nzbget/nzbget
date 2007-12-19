@@ -120,6 +120,9 @@ private:
 	bool				m_bNoConfig;
 	int					m_iUMask;
 	int					m_iUpdateInterval;
+	bool				m_bCursesNZBName;
+	bool				m_bCursesTime;
+	bool				m_bCursesGroup;
 
 	// Parsed command-line parameters
 	bool				m_bServerMode;
@@ -201,6 +204,9 @@ public:
 	bool				GetStrictParName() { return m_bStrictParName; }
 	int					GetUMask() { return m_iUMask; }
 	int					GetUpdateInterval() {return m_iUpdateInterval; }
+	bool				GetCursesNZBName() { return m_bCursesNZBName; }
+	bool				GetCursesTime() { return m_bCursesTime; }
+	bool				GetCursesGroup() { return m_bCursesGroup; }
 
 	// Parsed command-line parameters
 	bool				GetServerMode() { return m_bServerMode; }
