@@ -13,7 +13,10 @@ nzbget-0.3.1:
     (POSIX only);
   - Extension in curses- and colored-outputmodes: status bar shows state of
     par-checker (number of par-jobs queued);
-  - Extension in curses-outputmode: key "T" shows/hides timestamps in log;
+  - Extensions in curses-outputmode: key "G" to show queue as individual files
+    or groups (NZBs); key "T" to toggle timestamps in log;
+  - Added options "cursesnzbname", "cursesgroup" and "cursestime" to define
+    initial state of curses-outputmode;
   - Communication protocol used between server and client was revised to define 
     the byte order for transferred data. This allows hosts with different 
     endianness to communicate with each other;
