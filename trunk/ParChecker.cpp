@@ -527,6 +527,4 @@ void ParChecker::signal_filename(std::string str)
 	info("%s file %s", m_bRepairing ? "Repairing" : "Verifying", str.c_str());
 }
 
-	void				signal_progress(double percent);
-
 #endif
