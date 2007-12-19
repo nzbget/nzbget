@@ -31,7 +31,12 @@
 #include "win32.h"
 #endif
 
+#include <stdlib.h>
 #include <string.h>
+#include <sys/stat.h>
+#ifdef WIN32
+#include <direct.h>
+#endif
 
 #include "nzbget.h"
 #include "Util.h"
@@ -209,15 +214,68 @@ const char* DirBrowser::Next()
 
 #endif
 
-void NormalizePathSeparators(char* Path)
+void NormalizePathSeparators(char* szPath)
 {
-	for (char* p = Path; *p; p++) 
+	for (char* p = szPath; *p; p++) 
 	{
 		if (*p == ALT_PATH_SEPARATOR) 
 		{
 			*p = PATH_SEPARATOR;
 		}
 	}
+}
+
+bool ForceDirectories(const char* szPath)
+{
+	char* szNormPath = strdup(szPath);
+	NormalizePathSeparators(szNormPath);
+	int iLen = strlen(szNormPath);
+	if ((iLen > 0) && szNormPath[iLen-1] == PATH_SEPARATOR
+#ifdef WIN32
+		&& iLen > 3
+#endif
+		)
+	{
+		szNormPath[iLen-1] = '\0';
+	}
+
+	struct stat buffer;
+	bool bOK = !stat(szNormPath, &buffer) && S_ISDIR(buffer.st_mode);
+	if (!bOK
+#ifdef WIN32
+		&& strlen(szNormPath) > 2
+#endif
+		)
+	{
+		char* szParentPath = strdup(szNormPath);
+		bOK = true;
+		char* p = (char*)strrchr(szParentPath, PATH_SEPARATOR);
+		if (p)
+		{
+#ifdef WIN32
+			if (p - szParentPath == 2 && szParentPath[1] == ':' && strlen(szParentPath) > 2)
+			{
+				szParentPath[3] = '\0';
+			}
+			else
+#endif
+			{
+				*p = '\0';
+			}
+			if (strlen(szParentPath) != strlen(szPath))
+			{
+				bOK = ForceDirectories(szParentPath);
+			}
+		}
+		if (bOK)
+		{
+			mkdir(szNormPath, S_DIRMODE);
+			bOK = !stat(szNormPath, &buffer) && S_ISDIR(buffer.st_mode);
+		}
+		free(szParentPath);
+	}
+	free(szNormPath);
+	return bOK;
 }
 
 long long JoinInt64(unsigned int Hi, unsigned int Lo)

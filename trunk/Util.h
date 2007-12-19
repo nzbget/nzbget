@@ -58,8 +58,8 @@ public:
 };
 
 char* BaseFileName(const char* filename);
-
-void NormalizePathSeparators(char* Path);
+void NormalizePathSeparators(char* szPath);
+bool ForceDirectories(const char* szPath);
 
 long long JoinInt64(unsigned int Hi, unsigned int Lo);
 void SplitInt64(long long Int64, unsigned int* Hi, unsigned int* Lo);

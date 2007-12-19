@@ -46,6 +46,7 @@
 #define	__S_ISTYPE(mode, mask)	(((mode) & _S_IFMT) == (mask))
 #define	S_ISDIR(mode)	 __S_ISTYPE((mode), _S_IFDIR)
 #define	S_ISREG(mode)	 __S_ISTYPE((mode), _S_IFREG)
+#define	S_DIRMODE NULL
 
 #define usleep(usec) Sleep((usec) / 1000)
 #define gettimeofday(tm, ignore) _ftime(tm)
@@ -66,6 +67,7 @@
 #define PATH_SEPARATOR '/'
 #define ALT_PATH_SEPARATOR '\\'
 #define MAX_PATH 1024
+#define	S_DIRMODE (S_IRUSR | S_IWUSR | S_IXUSR | S_IRGRP | S_IXGRP | S_IROTH | S_IXOTH)
 
 #endif
 
