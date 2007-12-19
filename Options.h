@@ -134,7 +134,6 @@ private:
 	bool				m_bAddTop;
 	float				m_fSetRate;
 	int					m_iLogLines;
-	bool				m_bTest;
 
 	// Current state
 	bool				m_bPause;
@@ -216,7 +215,6 @@ public:
 	bool				GetAddTop() { return m_bAddTop; }
 	float				GetSetRate() { return m_fSetRate; }
 	int					GetLogLines() { return m_iLogLines; }
-	bool				GetTest() { return m_bTest; }
 
 	// Current state
 	void				SetPause(bool bOnOff) { m_bPause = bOnOff; }

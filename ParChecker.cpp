@@ -159,9 +159,7 @@ void ParChecker::Run()
 
     Result res;
     Repairer* repairer = new Repairer();
-#ifdef ENABLE_PARPROGRESS
 	repairer->sig_filename.connect(sigc::mem_fun(*this, &ParChecker::signal_filename));
-#endif
 	
     res = repairer->PreProcess(commandLine);
     debug("ParChecker: PreProcess-result=%i", res);
@@ -528,5 +526,7 @@ void ParChecker::signal_filename(std::string str)
 {
 	info("%s file %s", m_bRepairing ? "Repairing" : "Verifying", str.c_str());
 }
+
+	void				signal_progress(double percent);
 
 #endif
