@@ -485,7 +485,10 @@ void Options::CheckDir(char** dir, const char* szOptionName)
 		abort("FATAL ERROR: Wrong value for option \"%s\"\n", szOptionName);
 	}
 	// Ensure the dir is created
-	mkdir(usedir, S_IRUSR | S_IWUSR | S_IXUSR | S_IRGRP | S_IXGRP | S_IROTH | S_IXOTH);
+	if (!ForceDirectories(usedir))
+	{
+		abort("FATAL ERROR: Directory \"%s\" (option \"%s\") does not exist and could not be created\n", usedir, szOptionName);
+	}
 	*dir = usedir;
 }
 

@@ -544,7 +544,7 @@ void ArticleDownloader::CompleteFileParts()
 	InfoFilename[1024-1] = '\0';
 
 	// Ensure the DstDir is created
-	mkdir(m_pFileInfo->GetDestDir(), S_IRUSR | S_IWUSR | S_IXUSR | S_IRGRP | S_IXGRP | S_IROTH | S_IXOTH);
+	mkdir(m_pFileInfo->GetDestDir(), S_DIRMODE);
 
 	if (g_pOptions->GetDecoder() == Options::dcNone)
 	{
@@ -585,7 +585,7 @@ void ArticleDownloader::CompleteFileParts()
 	}
 	else if (g_pOptions->GetDecoder() == Options::dcNone)
 	{
-		mkdir(ofn, S_IRUSR | S_IWUSR | S_IXUSR | S_IRGRP | S_IXGRP | S_IROTH | S_IXOTH);
+		mkdir(ofn, S_DIRMODE);
 	}
 
 	bool complete = true;
