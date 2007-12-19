@@ -1,3 +1,27 @@
+nzbget-0.3.1:
+  - Edit-command accepts list of IDs or ranges of IDs; The switch "-I" is not
+    used anymore. E.g: "nzbget -E P 2,6-10,33-39";
+  - Move-actions in Edit-command affect files in a smart order to guarantee 
+    that the relative order of files in queue is not changed after the moving;
+  - Added option "updateinterval" to adjust update interval for Frontend-output
+    (useful in remote-mode to reduce network usage);
+  - Added option "daemonusername" to set the user that the daemon (POSIX only) 
+    normally runs at. This allows nzbget daemon to be launched in rc.local 
+    (at boot), and download items as a specific user id; Thanks to Thierry 
+    MERLE <merlum@users.sourceforge.net> for the patch;
+  - Added option "umask" to specify permissions for newly created files and dirs 
+    (POSIX only);
+  - Extension in curses- and colored-outputmodes: status bar shows state of
+    par-checker (number of par-jobs queued);
+  - Extension in curses-outputmode: key "T" shows/hides timestamps in log;
+  - Communication protocol used between server and client was revised to define 
+    the byte order for transferred data. This allows hosts with different 
+    endianness to communicate with each other;
+  - Corrected a mistake in the description of parameter "result of par-check", 
+    passed to post-process-script. Extended meaning of parameter 
+    "state of nzb-job". For more info see description in nzbget.conf.example;
+  - Few bugs (seg faults) were fixed.
+
 nzbget-0.3.0:
   - The download queue now contains newsgroup-files to be downloaded instead of 
     nzb-jobs. By adding a new job, the nzb-file is immediately parsed and each 
@@ -136,7 +160,7 @@ nzbget-0.3.0:
 	  - Solaris 10 on x86;
   - Many memory-leaks and thread issues were fixed;
   - The program was thoroughly worked over. Almost every line of code was
-    revised;
+    revised.
 
 nzbget-0.2.3
   - Fixed problem with losing connection to newsserver after too long idle time
