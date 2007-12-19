@@ -99,6 +99,23 @@ static const int READKEY_EMPTY = ERR;
 
 #endif
 
+NCursesFrontend::GroupInfo::GroupInfo(int iID, const char* szNZBFilename)
+{
+	m_iID = iID;
+	m_szNZBFilename = strdup(szNZBFilename);
+	m_lSize = 0;
+	m_lRemainingSize = 0;
+	m_lPausedSize = 0;
+}
+
+NCursesFrontend::GroupInfo::~GroupInfo()
+{
+	if (m_szNZBFilename)
+	{
+		free(m_szNZBFilename);
+	}
+}
+
 NCursesFrontend::NCursesFrontend()
 {
     m_iScreenHeight = 0;
@@ -118,8 +135,11 @@ NCursesFrontend::NCursesFrontend()
 	m_iQueueScrollOffset = 0;
 	m_bShowNZBname = true;
 	m_bShowTimestamp = false;
+	m_bGroupFiles = false;
 	m_QueueWindowPercentage = 0.5f;
 	m_iDataUpdatePos = 0;
+
+	m_groupQueue.clear();
 
     // Setup curses
 #ifdef WIN32
@@ -230,8 +250,14 @@ void NCursesFrontend::Run()
     }
 
     FreeData();
+	ClearGroupQueue();
 	
     debug("Exiting NCursesFrontend-loop");
+}
+
+void NCursesFrontend::NeedUpdateData()
+{
+	m_iDataUpdatePos = 10;
 }
 
 void NCursesFrontend::Update()
@@ -242,11 +268,13 @@ void NCursesFrontend::Update()
     if (m_iDataUpdatePos <= 0)
     {
         FreeData();
+		ClearGroupQueue();
 		m_iNeededLogEntries = m_iMessagesWinClientHeight;
         if (!PrepareData())
         {
             return;
         }
+		PrepareGroupQueue();
     }
 	
     //------------------------------------------
@@ -302,9 +330,7 @@ void NCursesFrontend::CalcWindowSizes()
         m_iScreenWidth = iNrColumns;
     }
 
-	DownloadQueue* pDownloadQueue = LockQueue();
-    int iQueueSize = pDownloadQueue->size();
-    UnlockQueue();
+    int iQueueSize = CalcQueueSize();
     
 	m_iQueueWinTop = 0;
 	m_iQueueWinHeight = (int)((float) (m_iScreenHeight - 2) * m_QueueWindowPercentage);
@@ -324,6 +350,21 @@ void NCursesFrontend::CalcWindowSizes()
 	if (m_iMessagesWinClientHeight < 0)
 	{
 		m_iMessagesWinClientHeight = 0;
+	}
+}
+
+int NCursesFrontend::CalcQueueSize()
+{
+	if (m_bGroupFiles)
+	{
+		return m_groupQueue.size();
+	}
+	else
+	{
+		DownloadQueue* pDownloadQueue = LockQueue();
+		int iQueueSize = pDownloadQueue->size();
+		UnlockQueue();
+		return iQueueSize;
 	}
 }
 
@@ -547,7 +588,7 @@ void NCursesFrontend::PrintStatus()
     char szDownloadLimit[128];
     if (m_fDownloadLimit > 0.0f)
     {
-        sprintf(szDownloadLimit, ", Limit %.0f KB/S", m_fDownloadLimit);
+        sprintf(szDownloadLimit, ", Limit %.0f KB/s", m_fDownloadLimit);
     }
     else
     {
@@ -571,38 +612,42 @@ void NCursesFrontend::PrintStatus()
 
 void NCursesFrontend::PrintKeyInputBar()
 {
-    DownloadQueue* pDownloadQueue = LockQueue();
-    int iQueueSize = pDownloadQueue->size();
-    UnlockQueue();
-
+    int iQueueSize = CalcQueueSize();
 	int iInputBarRow = m_iScreenHeight - 1;
 	
     switch (m_eInputMode)
     {
     case eNormal:
-        PlotLine("(Q)uit | (E)dit | (P)ause | (R)ate | n(Z)b | (W)indow | (T)ime", iInputBarRow, 0, NCURSES_COLORPAIR_KEYBAR);
+        PlotLine("(Q)uit | (E)dit | (P)ause | (R)ate | n(Z)b | (W)indow | (T)ime | (G)roup", iInputBarRow, 0, NCURSES_COLORPAIR_KEYBAR);
         break;
     case eEditQueue:
     {
-        char* szStatus = NULL;
-        if (m_iSelectedQueueEntry > 0 && iQueueSize > 1 && m_iSelectedQueueEntry == iQueueSize - 1)
-        {
-            szStatus = "(Q)uit | (E)xit | (P)ause | (D)elete | (U)p/(T)op";
-        }
-        else if (iQueueSize > 1 && m_iSelectedQueueEntry == 0)
-        {
-            szStatus = "(Q)uit | (E)xit | (P)ause | (D)elete | dow(N)/(B)ottom";
-        }
-        else if (iQueueSize > 1)
-        {
-            szStatus = "(Q)uit | (E)xit | (P)ause | (D)elete | (U)p/dow(N)/(T)op/(B)ottom";
-        }
-        else
-        {
-            szStatus = "(Q)uit";
-        }
+		if (m_bGroupFiles)
+		{
+			PlotLine("(Q)uit | (E)xit", iInputBarRow, 0, NCURSES_COLORPAIR_KEYBAR);
+		}
+		else
+		{
+			char* szStatus = NULL;
+			if (m_iSelectedQueueEntry > 0 && iQueueSize > 1 && m_iSelectedQueueEntry == iQueueSize - 1)
+			{
+				szStatus = "(Q)uit | (E)xit | (P)ause | (D)elete | (U)p/(T)op";
+			}
+			else if (iQueueSize > 1 && m_iSelectedQueueEntry == 0)
+			{
+				szStatus = "(Q)uit | (E)xit | (P)ause | (D)elete | dow(N)/(B)ottom";
+			}
+			else if (iQueueSize > 1)
+			{
+				szStatus = "(Q)uit | (E)xit | (P)ause | (D)elete | (U)p/dow(N)/(T)op/(B)ottom";
+			}
+			else
+			{
+				szStatus = "(Q)uit";
+			}
 
-        PlotLine(szStatus, iInputBarRow, 0, NCURSES_COLORPAIR_KEYBAR);
+			PlotLine(szStatus, iInputBarRow, 0, NCURSES_COLORPAIR_KEYBAR);
+		}
         break;
     }
     case eDownloadRate:
@@ -617,6 +662,18 @@ void NCursesFrontend::PrintKeyInputBar()
 }
 
 void NCursesFrontend::PrintQueue()
+{
+	if (m_bGroupFiles)
+	{
+		PrintGroupQueue();
+	}
+	else
+	{
+		PrintFileQueue();
+	}
+}
+
+void NCursesFrontend::PrintFileQueue()
 {
 	int iLineNr = m_iQueueWinTop;
 			
@@ -735,11 +792,140 @@ void NCursesFrontend::FormatFileSize(char * szBuffer, int iBufLen, long long lFi
 	szBuffer[iBufLen - 1] = '\0';
 }
 
+void NCursesFrontend::PrintGroupQueue()
+{
+	int iLineNr = m_iQueueWinTop;
+
+	GroupQueue* pGroupQueue = &m_groupQueue;
+	if (pGroupQueue->empty())
+    {
+		char szBuffer[MAX_SCREEN_WIDTH];
+		snprintf(szBuffer, sizeof(szBuffer), "%s NZBs for downloading", m_bUseColor ? "" : "*** ");
+		szBuffer[MAX_SCREEN_WIDTH - 1] = '\0';
+	    PlotLine(szBuffer, iLineNr++, 0, NCURSES_COLORPAIR_INFOLINE);
+        PlotLine("Ready to receive nzb-job", iLineNr++, 0, NCURSES_COLORPAIR_TEXT);
+    }
+    else
+    {
+		iLineNr++;
+		long long lRemaining = 0;
+		long long lPaused = 0;
+		int i = 0;
+        for (GroupQueue::iterator it = pGroupQueue->begin(); it != pGroupQueue->end(); it++, i++)
+        {
+            GroupInfo* pGroupInfo = *it;
+
+			if (i >= m_iQueueScrollOffset && i < m_iQueueScrollOffset + m_iQueueWinHeight -1)
+			{
+				PrintGroupname(pGroupInfo, iLineNr++, i == m_iSelectedQueueEntry);
+			}
+
+			lRemaining += pGroupInfo->GetRemainingSize();
+			lPaused += pGroupInfo->GetPausedSize();
+        }
+		
+		char szRemaining[20];
+		FormatFileSize(szRemaining, sizeof(szRemaining), lRemaining);
+
+		char szUnpaused[20];
+		FormatFileSize(szUnpaused, sizeof(szUnpaused), lRemaining - lPaused);
+		
+		char szBuffer[MAX_SCREEN_WIDTH];
+		snprintf(szBuffer, sizeof(szBuffer), " %sNZBs for downloading - %i NZBs in queue - %s / %s", 
+			m_bUseColor ? "" : "*** ", pGroupQueue->size(), szRemaining, szUnpaused);
+		szBuffer[MAX_SCREEN_WIDTH - 1] = '\0';
+		PlotLine(szBuffer, m_iQueueWinTop, 0, NCURSES_COLORPAIR_INFOLINE);
+    }
+}
+
+void NCursesFrontend::PrintGroupname(GroupInfo * pGroupInfo, int iRow, bool bSelected)
+{
+	int color = 0;
+	const char* Brace1 = "[";
+	const char* Brace2 = "]";
+	if (m_eInputMode == eEditQueue && bSelected)
+	{
+		color = NCURSES_COLORPAIR_TEXTHIGHL;
+		if (!m_bUseColor)
+		{
+			Brace1 = "<";
+			Brace2 = ">";
+		}
+	}
+	else
+	{
+		color = NCURSES_COLORPAIR_TEXT;
+	}
+
+	long long lUnpausedRemainingSize = pGroupInfo->GetRemainingSize() - pGroupInfo->GetPausedSize();
+
+	char szRemaining[20];
+	FormatFileSize(szRemaining, sizeof(szRemaining), lUnpausedRemainingSize);
+
+	char szPaused[20];
+	szPaused[0] = '\0';
+	if (pGroupInfo->GetPausedSize() > 0)
+	{
+		char szPausedSize[20];
+		FormatFileSize(szPausedSize, sizeof(szPausedSize), pGroupInfo->GetPausedSize());
+		sprintf(szPaused, " + %s", szPausedSize);
+	}
+
+	char szNZBNiceName[1024];
+	FileInfo::MakeNiceNZBName(pGroupInfo->GetNZBFilename(), szNZBNiceName, 1023);
+
+	char szBuffer[MAX_SCREEN_WIDTH];
+	snprintf(szBuffer, MAX_SCREEN_WIDTH, "%s%i%s %s (%s%s)", Brace1, pGroupInfo->GetID(), Brace2, szNZBNiceName, szRemaining, szPaused);
+	szBuffer[MAX_SCREEN_WIDTH - 1] = '\0';
+
+	PlotLine(szBuffer, iRow, 0, color);
+}
+
+void NCursesFrontend::PrepareGroupQueue()
+{
+	m_groupQueue.clear();
+
+    DownloadQueue* pDownloadQueue = LockQueue();
+    for (DownloadQueue::iterator it = pDownloadQueue->begin(); it != pDownloadQueue->end(); it++)
+    {
+        FileInfo* pFileInfo = *it;
+		GroupInfo* pGroupInfo = NULL;
+		for (GroupQueue::iterator itg = m_groupQueue.begin(); itg != m_groupQueue.end(); itg++)
+		{
+			GroupInfo* pGroupInfo1 = *itg;
+			if (!strcmp(pGroupInfo1->GetNZBFilename(), pFileInfo->GetNZBFilename()))
+			{
+				pGroupInfo = pGroupInfo1;
+				break;
+			}
+		}
+		if (!pGroupInfo)
+		{
+			pGroupInfo = new GroupInfo(m_groupQueue.size() + 1, pFileInfo->GetNZBFilename());
+			m_groupQueue.push_back(pGroupInfo);
+		}
+		pGroupInfo->m_lSize += pFileInfo->GetSize();
+		pGroupInfo->m_lRemainingSize += pFileInfo->GetRemainingSize();
+		if (pFileInfo->GetPaused())
+		{
+			pGroupInfo->m_lPausedSize += pFileInfo->GetRemainingSize();
+		}
+	}
+	UnlockQueue();
+}
+
+void NCursesFrontend::ClearGroupQueue()
+{
+	for (GroupQueue::iterator it = m_groupQueue.begin(); it != m_groupQueue.end(); it++)
+	{
+		delete *it;
+	}
+	m_groupQueue.clear();
+}
+
 void NCursesFrontend::SetCurrentQueueEntry(int iEntry)
 {
-    DownloadQueue* pDownloadQueue = LockQueue();
-    int iQueueSize = pDownloadQueue->size();
-    UnlockQueue();
+    int iQueueSize = CalcQueueSize();
 
 	if (iEntry < 0)
 	{
@@ -781,9 +967,7 @@ void NCursesFrontend::UpdateInput()
     int iKey;
     while ((iKey = ReadConsoleKey()) != READKEY_EMPTY)
     {
-		DownloadQueue* pDownloadQueue = LockQueue();
-		int iQueueSize = pDownloadQueue->size();
-		UnlockQueue();
+		int iQueueSize = CalcQueueSize();
 
 		// Normal or edit queue mode
 		if (m_eInputMode == eNormal || m_eInputMode == eEditQueue)
@@ -844,6 +1028,7 @@ void NCursesFrontend::UpdateInput()
 					{
 						m_QueueWindowPercentage = 0.5;
 					}
+					return;
 				}
 				break;
 			case 'r':
@@ -851,67 +1036,30 @@ void NCursesFrontend::UpdateInput()
 				m_eInputMode = eDownloadRate;
 				m_iInputNumberIndex = 0;
 				m_iInputValue = 0;
-				break;
+				return;
 			case 't':
 				// show/hide Timestamps
 				m_bShowTimestamp = !m_bShowTimestamp;
+				break;
+			case 'g':
+				// group/ungroup files
+				m_bGroupFiles = !m_bGroupFiles;
+				SetCurrentQueueEntry(m_iSelectedQueueEntry);
+				NeedUpdateData();
 				break;
 			}
 		}
 
 		// Edit Queue mode
-		else if (m_eInputMode == eEditQueue)
+		if (m_eInputMode == eEditQueue)
 		{
 			switch (iKey)
 			{
-			case 'p':
-				// Key 'p' for pause
-				ServerEditQueue(eaPauseUnpause, m_iSelectedQueueEntry);
-				break;
-			case 'd':
-				// Delete entry
-				if (ServerEditQueue(eaDelete, m_iSelectedQueueEntry))
-				{
-					if (iQueueSize == 0)
-					{
-						m_iSelectedQueueEntry = 0;
-						m_eInputMode = eNormal;
-					}
-					else
-					{
-						SetCurrentQueueEntry(m_iSelectedQueueEntry);
-					}
-				}
-				break;
-			case 'u':
-				if (ServerEditQueue(eaMoveUp, m_iSelectedQueueEntry))
-				{
-					SetCurrentQueueEntry(m_iSelectedQueueEntry - 1);
-				}
-				break;
-			case 'n':
-				if (ServerEditQueue(eaMoveDown, m_iSelectedQueueEntry))
-				{
-					SetCurrentQueueEntry(m_iSelectedQueueEntry + 1);
-				}
-				break;
-			case 't':
-				if (ServerEditQueue(eaMoveTop, m_iSelectedQueueEntry))
-				{
-					SetCurrentQueueEntry(0);
-				}
-				break;
-			case 'b':
-				if (ServerEditQueue(eaMoveBottom, m_iSelectedQueueEntry))
-				{
-					SetCurrentQueueEntry(iQueueSize > 0 ? iQueueSize - 1 : 0);
-				}
-				break;
 			case 'e':
 			case 10: // return
 			case 13: // enter
 				m_eInputMode = eNormal;
-				break;
+				return;
 			case KEY_DOWN:
 				if (m_iSelectedQueueEntry < iQueueSize - 1)
 				{
@@ -961,8 +1109,60 @@ void NCursesFrontend::UpdateInput()
 			}
 		}
 
+		// Edit Queue mode
+		if (m_eInputMode == eEditQueue && !m_bGroupFiles)
+		{
+			switch (iKey)
+			{
+			case 'p':
+				// Key 'p' for pause
+				ServerEditQueue(eaPauseUnpause, m_iSelectedQueueEntry);
+				break;
+			case 'd':
+				// Delete entry
+				if (ServerEditQueue(eaDelete, m_iSelectedQueueEntry))
+				{
+					if (iQueueSize == 0)
+					{
+						m_iSelectedQueueEntry = 0;
+						m_eInputMode = eNormal;
+						return;
+					}
+					else
+					{
+						SetCurrentQueueEntry(m_iSelectedQueueEntry);
+					}
+				}
+				break;
+			case 'u':
+				if (ServerEditQueue(eaMoveUp, m_iSelectedQueueEntry))
+				{
+					SetCurrentQueueEntry(m_iSelectedQueueEntry - 1);
+				}
+				break;
+			case 'n':
+				if (ServerEditQueue(eaMoveDown, m_iSelectedQueueEntry))
+				{
+					SetCurrentQueueEntry(m_iSelectedQueueEntry + 1);
+				}
+				break;
+			case 't':
+				if (ServerEditQueue(eaMoveTop, m_iSelectedQueueEntry))
+				{
+					SetCurrentQueueEntry(0);
+				}
+				break;
+			case 'b':
+				if (ServerEditQueue(eaMoveBottom, m_iSelectedQueueEntry))
+				{
+					SetCurrentQueueEntry(iQueueSize > 0 ? iQueueSize - 1 : 0);
+				}
+				break;
+			}
+		}
+
 		// Edit download rate input mode
-		else if (m_eInputMode == eDownloadRate)
+		if (m_eInputMode == eDownloadRate)
 		{
 			// Numbers
 			if (m_iInputNumberIndex < 5 && iKey >= '0' && iKey <= '9')

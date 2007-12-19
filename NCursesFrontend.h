@@ -46,6 +46,29 @@ private:
 	    eDownloadRate
 	};
 
+	class GroupInfo
+	{
+	private:
+		int				m_iID;
+		char* 			m_szNZBFilename;
+
+	public:
+		long long 		m_lSize;
+		long long 		m_lRemainingSize;
+		long long 		m_lPausedSize;
+
+	public:
+						GroupInfo(int iID, const char* szNZBFilename);
+						~GroupInfo();
+		int				GetID() { return m_iID; }
+		const char*		GetNZBFilename() { return m_szNZBFilename; }
+		long long 		GetSize() { return m_lSize; }
+		long long 		GetRemainingSize() { return m_lRemainingSize; }
+		long long 		GetPausedSize() { return m_lPausedSize; }
+	};
+
+	typedef std::deque<GroupInfo*> GroupQueue;
+
 	bool			m_bUseColor;
 	int				m_iDataUpdatePos;
 	int				m_iScreenHeight;
@@ -58,6 +81,7 @@ private:
 	int				m_iMessagesWinClientHeight;
 	int				m_iSelectedQueueEntry;
 	int				m_iQueueScrollOffset;
+	GroupQueue		m_groupQueue;
 
 	// Inputting numbres
 	int				m_iInputNumberIndex;
@@ -75,6 +99,7 @@ private:
 	EInputMode		m_eInputMode;
 	bool			m_bShowNZBname;
 	bool			m_bShowTimestamp;
+	bool			m_bGroupFiles;
 	float			m_QueueWindowPercentage;
 
 #ifdef WIN32
@@ -84,7 +109,12 @@ private:
 	void			PlotText(const char * szString, int iRow, int iPos, int iColorPair, bool bBlink);
 	void			PrintMessages();
 	void			PrintQueue();
+	void			PrintFileQueue();
 	void			PrintFilename(FileInfo* pFileInfo, int iRow, bool bSelected);
+	void			PrintGroupQueue();
+	void			PrintGroupname(GroupInfo * pGroupInfo, int iRow, bool bSelected);
+	void			PrepareGroupQueue();
+	void			ClearGroupQueue();
 	int				PrintMessage(Message* Msg, int iRow, int iMaxLines);
 	void			PrintKeyInputBar();
 	void 			PrintStatus();
@@ -95,6 +125,8 @@ private:
 	void			FormatFileSize(char* szBuffer, int iBufLen, long long lFileSize);
 	void			RefreshScreen();
 	int				ReadConsoleKey();
+	int				CalcQueueSize();
+	void			NeedUpdateData();
 
 protected:
 	virtual void 	Run();
