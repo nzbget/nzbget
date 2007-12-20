@@ -30,6 +30,8 @@
 #include <vector>
 #include <deque>
 
+const int MAX_ID = 100000000;
+
 class ArticleInfo
 {
 public:

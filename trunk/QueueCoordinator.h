@@ -36,6 +36,7 @@
 #include "DownloadInfo.h"
 #include "Observer.h"
 #include "DiskState.h"
+#include "QueueEditor.h"
                                             
 class QueueCoordinator : public Thread, public Observer, public Subject, public DownloadSpeedMeter
 {
@@ -59,6 +60,7 @@ private:
 	DownloadQueue			m_DownloadQueue;
 	ActiveDownloads			m_ActiveDownloads;
 	DiskState				m_DiskState;
+	QueueEditor				m_QueueEditor;
 	Mutex			 		m_mutexDownloadQueue;
 	bool					m_bHasMoreJobs;
 
@@ -67,8 +69,6 @@ private:
 	void					BuildArticleFilename(ArticleDownloader* pArticleDownloader, FileInfo* pFileInfo, ArticleInfo* pArticleInfo);
 	bool					IsDupe(FileInfo* pFileInfo);
 	void					ArticleCompleted(ArticleDownloader* pArticleDownloader);
-	FileInfo*				FindFileInfo(int iID);
-	int						GetFileInfoEntry(int iID);
 	void					DeleteFileInfo(FileInfo* pFileInfo);
 	void					ResetHangingDownloads();
 
@@ -86,11 +86,9 @@ public:
 	void					UnlockQueue() ;
 	void					AddNZBFileToQueue(NZBFile* pNZBQueue, bool bAddFirst);
 	bool					AddFileToQueue(const char* szFileName);
-	bool					EditQueuePauseUnpauseEntry(int iID, bool bPause);
-	bool					EditQueueDeleteEntry(int iID);
-	bool					EditQueueMoveEntry(int iID, int iOffset, bool bAutoCorrection);
-	int						GetFileInfoID(unsigned int iEntry);
 	bool					HasMoreJobs() { return m_bHasMoreJobs; }
+	bool					DeleteQueueEntry(FileInfo* pFileInfo);
+	QueueEditor*			GetQueueEditor() { return &m_QueueEditor; }
 	
 	void					LogDebugInfo();
 };

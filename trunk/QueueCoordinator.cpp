@@ -57,6 +57,7 @@ QueueCoordinator::QueueCoordinator()
 	m_bHasMoreJobs = true;
 	m_DownloadQueue.clear();
 	m_ActiveDownloads.clear();
+	m_QueueEditor.SetDiskState(&m_DiskState);
 
 	Decoder::Init();
 }
@@ -291,153 +292,29 @@ long long QueueCoordinator::CalcRemainingSize()
 	return lRemainingSize;
 }
 
-int QueueCoordinator::GetFileInfoID(unsigned int iEntry)
-{
-	int ID = 0;
-	m_mutexDownloadQueue.Lock();
-
-	if (iEntry < m_DownloadQueue.size())
-	{
-		ID = m_DownloadQueue[iEntry]->GetID();
-	}
-
-	m_mutexDownloadQueue.Unlock();
-	return ID;
-}
-
-FileInfo* QueueCoordinator::FindFileInfo(int iID)
-{
-	for (DownloadQueue::iterator it = m_DownloadQueue.begin(); it != m_DownloadQueue.end(); it++)
-	{
-		FileInfo* pFileInfo = *it;
-		if (pFileInfo->GetID() == iID)
-		{
-			return pFileInfo;
-		}
-	}
-	return NULL;
-}
-
-int QueueCoordinator::GetFileInfoEntry(int iID)
-{
-	int iEntry = 0;
-	for (DownloadQueue::iterator it = m_DownloadQueue.begin(); it != m_DownloadQueue.end(); it++)
-	{
-		FileInfo* pFileInfo = *it;
-		if (pFileInfo->GetID() == iID)
-		{
-			return iEntry;
-		}
-		iEntry ++;
-	}
-	return -1;
-}
-
 /*
- * Set the pause flag of the specific entry in the queue
- * returns true if successful, false if operation is not possible
+ * NOTE: DownloadQueue must be locked prior to call of this function
+ * Returns True if Entry was deleted from Queue or False it was scheduled for Deletion.
+ * NOTE: "False" does not mean unsuccess; the entry is (or will be) deleted in any case.
  */
-bool QueueCoordinator::EditQueuePauseUnpauseEntry(int iID, bool bPause)
+bool QueueCoordinator::DeleteQueueEntry(FileInfo* pFileInfo)
 {
-	bool res = false;
-	m_mutexDownloadQueue.Lock();
-
-	FileInfo* pFileInfo = FindFileInfo(iID);
-
-	if (pFileInfo)
+	pFileInfo->SetDeleted(true);
+	bool hasDownloads = false;
+	for (ActiveDownloads::iterator it = m_ActiveDownloads.begin(); it != m_ActiveDownloads.end(); it++)
 	{
-		pFileInfo->SetPaused(bPause);
-		res = true;
-	}
-
-	if (g_pOptions->GetSaveQueue() && g_pOptions->GetServerMode())
-	{
-		m_DiskState.Save(&m_DownloadQueue, true);
-	}
-
-	m_mutexDownloadQueue.Unlock();
-	return res;
-}
-
-/*
- * Removes entry with index iEntry
- * returns true if successful, false if operation is not possible
- */
-bool QueueCoordinator::EditQueueDeleteEntry(int iID)
-{
-	debug("Deleting queue entry");
-
-	bool res = false;
-	m_mutexDownloadQueue.Lock();
-
-	FileInfo* pFileInfo = FindFileInfo(iID);
-	if (pFileInfo)
-	{
-		info("Deleting file %s from download queue", pFileInfo->GetFilename());
-		pFileInfo->SetDeleted(true);
-		bool hasDownloads = false;
-		for (ActiveDownloads::iterator it = m_ActiveDownloads.begin(); it != m_ActiveDownloads.end(); it++)
+		ArticleDownloader* pArticleDownloader = *it;
+		if (pArticleDownloader->GetFileInfo() == pFileInfo)
 		{
-			ArticleDownloader* pArticleDownloader = *it;
-			if (pArticleDownloader->GetFileInfo() == pFileInfo)
-			{
-				hasDownloads = true;
-				pArticleDownloader->Stop();
-			}
-		}
-		if (!hasDownloads)
-		{
-			DeleteFileInfo(pFileInfo);
-		}
-		res = true;
-	}
-
-	m_mutexDownloadQueue.Unlock();
-
-	debug("Queue entry deleted");
-
-	return res;
-}
-
-/*
- * Moves entry identified with iID in the queue
- * returns true if successful, false if operation is not possible
- */
-bool QueueCoordinator::EditQueueMoveEntry(int iID, int iOffset, bool bAutoCorrection)
-{
-	bool res = false;
-	m_mutexDownloadQueue.Lock();
-
-	int iEntry = GetFileInfoEntry(iID);
-	if (iEntry >= 0)
-	{
-		int iNewEntry = iEntry + iOffset;
-
-		if (bAutoCorrection && iNewEntry < 0)
-		{
-			iNewEntry = 0;
-		}
-		if (bAutoCorrection && (unsigned int)iNewEntry > m_DownloadQueue.size() - 1)
-		{
-			iNewEntry = (int)m_DownloadQueue.size() - 1;
-		}
-
-		if (iNewEntry >= 0 && (unsigned int)iNewEntry <= m_DownloadQueue.size() - 1)
-		{
-			FileInfo* fi =  m_DownloadQueue[iEntry];
-			m_DownloadQueue.erase(m_DownloadQueue.begin() + iEntry);
-			m_DownloadQueue.insert(m_DownloadQueue.begin() + iNewEntry, fi);
-			res = true;
+			hasDownloads = true;
+			pArticleDownloader->Stop();
 		}
 	}
-
-	if (g_pOptions->GetSaveQueue() && g_pOptions->GetServerMode())
+	if (!hasDownloads)
 	{
-		m_DiskState.Save(&m_DownloadQueue, true);
+		DeleteFileInfo(pFileInfo);
 	}
-
-	m_mutexDownloadQueue.Unlock();
-	return res;
+	return hasDownloads;
 }
 
 void QueueCoordinator::Stop()
