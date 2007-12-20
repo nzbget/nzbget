@@ -340,6 +340,14 @@
 			>
 		</File>
 		<File
+			RelativePath=".\QueueEditor.cpp"
+			>
+		</File>
+		<File
+			RelativePath=".\QueueEditor.h"
+			>
+		</File>
+		<File
 			RelativePath=".\RemoteClient.cpp"
 			>
 		</File>

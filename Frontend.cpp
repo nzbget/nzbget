@@ -246,17 +246,17 @@ bool Frontend::ServerEditQueue(EEditAction eAction, int iEntry)
 		switch (eAction)
 		{
 			case eaPauseUnpause:
-				return g_pQueueCoordinator->EditQueuePauseUnpauseEntry(ID, bPause);
+				return g_pQueueCoordinator->GetQueueEditor()->PauseUnpauseEntry(ID, bPause);
 			case eaDelete:
-				return g_pQueueCoordinator->EditQueueDeleteEntry(ID);
+				return g_pQueueCoordinator->GetQueueEditor()->DeleteEntry(ID);
 			case eaMoveUp:
-				return g_pQueueCoordinator->EditQueueMoveEntry(ID, -1, false);
+				return g_pQueueCoordinator->GetQueueEditor()->MoveEntry(ID, -1, false);
 			case eaMoveDown:
-				return g_pQueueCoordinator->EditQueueMoveEntry(ID, +1, false);
+				return g_pQueueCoordinator->GetQueueEditor()->MoveEntry(ID, +1, false);
 			case eaMoveTop:
-				return g_pQueueCoordinator->EditQueueMoveEntry(ID, -1000000, true);
+				return g_pQueueCoordinator->GetQueueEditor()->MoveEntry(ID, -1000000, true);
 			case eaMoveBottom:
-				return g_pQueueCoordinator->EditQueueMoveEntry(ID, +1000000, true);
+				return g_pQueueCoordinator->GetQueueEditor()->MoveEntry(ID, +1000000, true);
 		}
 	}
 	return false;

@@ -46,6 +46,7 @@
 #include "Log.h"
 #include "Options.h"
 #include "QueueCoordinator.h"
+#include "QueueEditor.h"
 #include "PrePostProcessor.h"
 #include "Util.h"
 
@@ -70,8 +71,6 @@ const unsigned int g_iMessageRequestSizes[] =
 		sizeof(SNZBLogRequest),
 		sizeof(SNZBMessageBase)
     };
-
-const int MAX_ID = 100000000;
 
 //*****************************************************************
 // RemoteServer
@@ -588,189 +587,73 @@ void EditQueueCommand::Execute()
 		return;
 	}
 
-	m_iNrEntries = ntohl(EditQueueRequest.m_iNrTrailingEntries);
-	m_iAction = ntohl(EditQueueRequest.m_iAction);
-	m_iOffset = ntohl(EditQueueRequest.m_iOffset);
+	int iNrEntries = ntohl(EditQueueRequest.m_iNrTrailingEntries);
+	int iAction = ntohl(EditQueueRequest.m_iAction);
+	int iOffset = ntohl(EditQueueRequest.m_iOffset);
+	bool bSmartOrder = ntohl(EditQueueRequest.m_bSmartOrder);
 	unsigned int iBufLength = ntohl(EditQueueRequest.m_iTrailingDataLength);
 
-	if (m_iNrEntries * sizeof(uint32_t) != iBufLength)
+	if (iNrEntries * sizeof(uint32_t) != iBufLength)
 	{
 		error("Invalid struct size");
 		return;
 	}
 
-	ItemList cItemList;
-	cItemList.clear();
-
-	if (m_iNrEntries > 0)
+	if (iNrEntries <= 0)
 	{
-		uint32_t* pIDs = (uint32_t*)malloc(iBufLength);
-
-		// Read from the socket until nothing remains
-		char* pBufPtr = (char*)pIDs;
-		int NeedBytes = iBufLength;
-		int iResult = 0;
-		while (NeedBytes > 0)
-		{
-			iResult = recv(m_iSocket, pBufPtr, NeedBytes, 0);
-			// Did the recv succeed?
-			if (iResult <= 0)
-			{
-				error("invalid request");
-				break;
-			}
-			pBufPtr += iResult;
-			NeedBytes -= iResult;
-		}
-
-		for (int i = 0; i < m_iNrEntries; i++)
-		{
-			pIDs[i] = ntohl(pIDs[i]);
-		}
-		
-		PrepareList(pIDs, &cItemList, ntohl(EditQueueRequest.m_bSmartOrder));
-		free(pIDs);
+		SendResponse("Edit-Command failed: no IDs specified");
+		return;
 	}
 
-	for (ItemList::iterator it = cItemList.begin(); it != cItemList.end(); it++)
+	int32_t* pIDs = (int32_t*)malloc(iBufLength);
+
+	// Read from the socket until nothing remains
+	char* pBufPtr = (char*)pIDs;
+	int NeedBytes = iBufLength;
+	int iResult = 0;
+	while (NeedBytes > 0)
 	{
-		EditItem* pItem = *it;
-		switch (m_iAction)
+		iResult = recv(m_iSocket, pBufPtr, NeedBytes, 0);
+		// Did the recv succeed?
+		if (iResult <= 0)
 		{
-			case NZBMessageRequest::eActionPause:
-			case NZBMessageRequest::eActionResume:
-				{
-					g_pQueueCoordinator->EditQueuePauseUnpauseEntry(pItem->m_iID, m_iAction == NZBMessageRequest::eActionPause);
-					break;
-				}
-
-			case NZBMessageRequest::eActionMoveOffset:
-			case NZBMessageRequest::eActionMoveTop:
-			case NZBMessageRequest::eActionMoveBottom:
-				{
-					g_pQueueCoordinator->EditQueueMoveEntry(pItem->m_iID, pItem->m_iOffset, true);
-					break;
-				}
-
-			case NZBMessageRequest::eActionDelete:
-				{
-					g_pQueueCoordinator->EditQueueDeleteEntry(pItem->m_iID);
-					break;
-				}
+			error("invalid request");
+			break;
 		}
-		delete pItem;
+		pBufPtr += iResult;
+		NeedBytes -= iResult;
 	}
+
+	for (int i = 0; i < iNrEntries; i++)
+	{
+		pIDs[i] = ntohl(pIDs[i]);
+	}
+	
+	switch (iAction)
+	{
+		case NZBMessageRequest::eActionPause:
+		case NZBMessageRequest::eActionResume:
+			g_pQueueCoordinator->GetQueueEditor()->PauseUnpauseList(pIDs, iNrEntries, iAction == NZBMessageRequest::eActionPause);
+			break;
+
+		case NZBMessageRequest::eActionMoveOffset:
+			g_pQueueCoordinator->GetQueueEditor()->MoveList(pIDs, iNrEntries, bSmartOrder, iOffset);
+			break;
+
+		case NZBMessageRequest::eActionMoveTop:
+			g_pQueueCoordinator->GetQueueEditor()->MoveList(pIDs, iNrEntries, bSmartOrder, -MAX_ID);
+			break;
+
+		case NZBMessageRequest::eActionMoveBottom:
+			g_pQueueCoordinator->GetQueueEditor()->MoveList(pIDs, iNrEntries, bSmartOrder, MAX_ID);
+			break;
+
+		case NZBMessageRequest::eActionDelete:
+			g_pQueueCoordinator->GetQueueEditor()->DeleteList(pIDs, iNrEntries);
+			break;
+	}
+
+	free(pIDs);
 
 	SendResponse("Edit-Command completed successfully");
-}
-
-void EditQueueCommand::PrepareList(uint32_t* pIDs, ItemList* pItemList, bool bSmartOrder)
-{
-	int iOffset = m_iOffset;
-	if (m_iAction == NZBMessageRequest::eActionMoveTop)
-	{
-		iOffset = -MAX_ID;
-	}
-	else if (m_iAction == NZBMessageRequest::eActionMoveBottom)
-	{
-		iOffset = +MAX_ID;
-	}
-
-	if (bSmartOrder && iOffset != 0 &&
-		(m_iAction == NZBMessageRequest::eActionMoveTop ||
-		m_iAction == NZBMessageRequest::eActionMoveBottom ||
-		m_iAction == NZBMessageRequest::eActionMoveOffset))
-	{
-		//add IDs to list in order they currently have in download queue
-		int iLastDestPos = -1;
-		DownloadQueue* pDownloadQueue = g_pQueueCoordinator->LockQueue();
-		int iStart, iEnd, iStep;
-		if (iOffset < 0)
-		{
-			iStart = 0;
-			iEnd = pDownloadQueue->size();
-			iStep = 1;
-		}
-		else
-		{
-			iStart = pDownloadQueue->size() - 1;
-			iEnd = -1;
-			iStep = -1;
-		}
-		for (int iIndex = iStart; iIndex != iEnd; iIndex += iStep)
-		{
-			FileInfo* pFileInfo = (*pDownloadQueue)[iIndex];
-			for (int i = 0; i < m_iNrEntries; i++)
-			{
-				if (pFileInfo->GetID() == (int)pIDs[i])
-				{
-					int iWorkOffset = iOffset;
-					int iDestPos = iIndex + iWorkOffset;
-					if (iLastDestPos == -1)
-					{
-						if (iDestPos < 0)
-						{
-							iWorkOffset = -iIndex;
-						}
-						else if (iDestPos > int(pDownloadQueue->size()) - 1)
-						{
-							iWorkOffset = int(pDownloadQueue->size()) - 1 - iIndex;
-						}
-					}
-					else
-					{
-						if (iWorkOffset < 0 && iDestPos <= iLastDestPos)
-						{
-							iWorkOffset = iLastDestPos - iIndex + 1;
-						}
-						else if (iWorkOffset > 0 && iDestPos >= iLastDestPos)
-						{
-							iWorkOffset = iLastDestPos - iIndex - 1;
-						}
-					}
-					iLastDestPos = iIndex + iWorkOffset;
-					pItemList->push_back(new EditItem(pIDs[i], iWorkOffset));
-					break;
-				}
-			}
-		}
-		g_pQueueCoordinator->UnlockQueue();
-	}
-	else
-	{
-		// check ID range
-		int iMaxID = 0;
-		int iMinID = MAX_ID;
-		DownloadQueue* pDownloadQueue = g_pQueueCoordinator->LockQueue();
-		for (DownloadQueue::iterator it = pDownloadQueue->begin(); it != pDownloadQueue->end(); it++)
-		{
-			FileInfo* pFileInfo = *it;
-			int ID = pFileInfo->GetID();
-			if (ID > iMaxID)
-			{
-				iMaxID = ID;
-			}
-			if (ID < iMinID)
-			{
-				iMinID = ID;
-			}
-		}
-		g_pQueueCoordinator->UnlockQueue();
-
-		//add IDs to list in order they were transmitted in command
-		for (int i = 0; i < m_iNrEntries; i++)
-		{
-			int ID = pIDs[i];
-			if (iMinID <= ID && ID <= iMaxID)
-			{
-				pItemList->push_back(new EditItem(pIDs[i], iOffset));
-			}
-		}
-	}
-}
-
-EditQueueCommand::EditItem::EditItem(int iID, int iOffset)
-{
-	m_iID = iID;
-	m_iOffset = iOffset;
 }

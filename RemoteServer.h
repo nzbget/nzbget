@@ -102,23 +102,6 @@ public:
 
 class EditQueueCommand: public MessageCommand
 {
-private:
-	class EditItem
-	{
-	public:
-		int		m_iID;
-		int		m_iOffset;
-
-		EditItem(int iID, int iOffset);
-	};
-
-	typedef std::list<EditItem*> ItemList;
-
-	int					m_iNrEntries;
-	int					m_iAction;
-	int					m_iOffset;
-	void				PrepareList(uint32_t* pIDs, ItemList* pItemList, bool bSmartOrder);
-
 public:
 	virtual void		Execute();
 };
