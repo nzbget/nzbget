@@ -53,6 +53,7 @@ private:
 		char* 			m_szNZBFilename;
 
 	public:
+		int		 		m_iFileCount;
 		long long 		m_lSize;
 		long long 		m_lRemainingSize;
 		long long 		m_lPausedSize;
@@ -69,23 +70,23 @@ private:
 
 	typedef std::deque<GroupInfo*> GroupQueue;
 
-	bool			m_bUseColor;
-	int				m_iDataUpdatePos;
-	int				m_iScreenHeight;
-	int				m_iScreenWidth;
-	int				m_iQueueWinTop;
-	int				m_iQueueWinHeight;
-	int				m_iQueueWinClientHeight;
-	int				m_iMessagesWinTop;
-	int				m_iMessagesWinHeight;
-	int				m_iMessagesWinClientHeight;
-	int				m_iSelectedQueueEntry;
-	int				m_iQueueScrollOffset;
-	GroupQueue		m_groupQueue;
+	bool				m_bUseColor;
+	int					m_iDataUpdatePos;
+	int					m_iScreenHeight;
+	int					m_iScreenWidth;
+	int					m_iQueueWinTop;
+	int					m_iQueueWinHeight;
+	int					m_iQueueWinClientHeight;
+	int					m_iMessagesWinTop;
+	int					m_iMessagesWinHeight;
+	int					m_iMessagesWinClientHeight;
+	int					m_iSelectedQueueEntry;
+	int					m_iQueueScrollOffset;
+	GroupQueue			m_groupQueue;
 
 	// Inputting numbres
-	int				m_iInputNumberIndex;
-	int				m_iInputValue;
+	int					m_iInputNumberIndex;
+	int					m_iInputValue;
 
 #ifdef WIN32
 	CHAR_INFO*			m_pScreenBuffer;
@@ -93,14 +94,14 @@ private:
 	int					m_iScreenBufferSize;
 	std::vector<WORD>	m_ColorAttr;
 #else
-	void* 			m_pWindow;  //  WINDOW*
+	void* 				m_pWindow;  //  WINDOW*
 #endif
 
-	EInputMode		m_eInputMode;
-	bool			m_bShowNZBname;
-	bool			m_bShowTimestamp;
-	bool			m_bGroupFiles;
-	float			m_QueueWindowPercentage;
+	EInputMode			m_eInputMode;
+	bool				m_bShowNZBname;
+	bool				m_bShowTimestamp;
+	bool				m_bGroupFiles;
+	float				m_QueueWindowPercentage;
 
 #ifdef WIN32
 	void			init_pair(int iColorNumber, WORD wForeColor, WORD wBackColor);
@@ -127,6 +128,7 @@ private:
 	int				ReadConsoleKey();
 	int				CalcQueueSize();
 	void			NeedUpdateData();
+	bool			EditQueue(EEditAction eAction);
 
 protected:
 	virtual void 	Run();

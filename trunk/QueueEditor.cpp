@@ -99,7 +99,7 @@ int QueueEditor::FindFileInfoEntry(DownloadQueue* pDownloadQueue, int iID)
  */
 bool QueueEditor::PauseUnpauseEntry(int iID, bool bPause)
 {
-	bool res = false;
+	bool bOK = false;
 	DownloadQueue* pDownloadQueue = g_pQueueCoordinator->LockQueue();
 
 	FileInfo* pFileInfo = FindFileInfo(pDownloadQueue, iID);
@@ -107,7 +107,7 @@ bool QueueEditor::PauseUnpauseEntry(int iID, bool bPause)
 	if (pFileInfo)
 	{
 		pFileInfo->SetPaused(bPause);
-		res = true;
+		bOK = true;
 	}
 
 	if (g_pOptions->GetSaveQueue() && g_pOptions->GetServerMode())
@@ -116,7 +116,7 @@ bool QueueEditor::PauseUnpauseEntry(int iID, bool bPause)
 	}
 
 	g_pQueueCoordinator->UnlockQueue();
-	return res;
+	return bOK;
 }
 
 /*
@@ -125,7 +125,7 @@ bool QueueEditor::PauseUnpauseEntry(int iID, bool bPause)
  */
 bool QueueEditor::DeleteEntry(int iID)
 {
-	bool res = false;
+	bool bOK = false;
 	DownloadQueue* pDownloadQueue = g_pQueueCoordinator->LockQueue();
 
 	FileInfo* pFileInfo = FindFileInfo(pDownloadQueue, iID);
@@ -133,20 +133,20 @@ bool QueueEditor::DeleteEntry(int iID)
 	{
 		info("Deleting file %s from download queue", pFileInfo->GetFilename());
 		g_pQueueCoordinator->DeleteQueueEntry(pFileInfo);
-		res = true;
+		bOK = true;
 	}
 
 	g_pQueueCoordinator->UnlockQueue();
-	return res;
+	return bOK;
 }
 
 /*
  * Moves entry identified with iID in the queue
  * returns true if successful, false if operation is not possible
  */
-bool QueueEditor::MoveEntry(int iID, int iOffset, bool bAutoCorrection)
+bool QueueEditor::MoveEntry(int iID, int iOffset)
 {
-	bool res = false;
+	bool bOK = false;
 	DownloadQueue* pDownloadQueue = g_pQueueCoordinator->LockQueue();
 
 	int iEntry = FindFileInfoEntry(pDownloadQueue, iID);
@@ -154,11 +154,11 @@ bool QueueEditor::MoveEntry(int iID, int iOffset, bool bAutoCorrection)
 	{
 		int iNewEntry = iEntry + iOffset;
 
-		if (bAutoCorrection && iNewEntry < 0)
+		if (iNewEntry < 0)
 		{
 			iNewEntry = 0;
 		}
-		if (bAutoCorrection && (unsigned int)iNewEntry > pDownloadQueue->size() - 1)
+		if ((unsigned int)iNewEntry > pDownloadQueue->size() - 1)
 		{
 			iNewEntry = (int)pDownloadQueue->size() - 1;
 		}
@@ -168,7 +168,7 @@ bool QueueEditor::MoveEntry(int iID, int iOffset, bool bAutoCorrection)
 			FileInfo* fi = (*pDownloadQueue)[iEntry];
 			pDownloadQueue->erase(pDownloadQueue->begin() + iEntry);
 			pDownloadQueue->insert(pDownloadQueue->begin() + iNewEntry, fi);
-			res = true;
+			bOK = true;
 		}
 	}
 
@@ -178,26 +178,26 @@ bool QueueEditor::MoveEntry(int iID, int iOffset, bool bAutoCorrection)
 	}
 
 	g_pQueueCoordinator->UnlockQueue();
-	return res;
+	return bOK;
 }
 
-bool QueueEditor::EditList(int* pIDs, int iCount, bool bSmartOrder, EAction eAction, int iOffset)
+bool QueueEditor::EditList(int* pIDs, int iCount, bool bSmartOrder, EEditAction EEditAction, int iOffset)
 {
 	ItemList cItemList;
-	PrepareList(&cItemList, pIDs, iCount, bSmartOrder, eAction, iOffset);
+	PrepareList(&cItemList, pIDs, iCount, bSmartOrder, EEditAction, iOffset);
 
 	for (ItemList::iterator it = cItemList.begin(); it != cItemList.end(); it++)
 	{
 		EditItem* pItem = *it;
-		switch (eAction)
+		switch (EEditAction)
 		{
 			case eaPause:
 			case eaResume:
-				PauseUnpauseEntry(pItem->m_iID, eAction == eaPause);
+				PauseUnpauseEntry(pItem->m_iID, EEditAction == eaPause);
 				break;
 
 			case eaMove:
-				MoveEntry(pItem->m_iID, pItem->m_iOffset, true);
+				MoveEntry(pItem->m_iID, pItem->m_iOffset);
 				break;
 
 			case eaDelete:
@@ -210,9 +210,9 @@ bool QueueEditor::EditList(int* pIDs, int iCount, bool bSmartOrder, EAction eAct
 	return cItemList.size() > 0;
 }
 
-void QueueEditor::PrepareList(ItemList* pItemList, int* pIDs, int iCount, bool bSmartOrder, EAction eAction, int iOffset)
+void QueueEditor::PrepareList(ItemList* pItemList, int* pIDs, int iCount, bool bSmartOrder, EEditAction EEditAction, int iOffset)
 {
-	if (bSmartOrder && iOffset != 0 && eAction == eaMove)
+	if (bSmartOrder && iOffset != 0 && EEditAction == eaMove)
 	{
 		//add IDs to list in order they currently have in download queue
 		int iLastDestPos = -1;
@@ -302,6 +302,47 @@ void QueueEditor::PrepareList(ItemList* pItemList, int* pIDs, int iCount, bool b
 	}
 }
 
+bool QueueEditor::EditGroup(int iID, EEditAction eAction, int iOffset)
+{
+	std::list<int> IDList;
+	IDList.clear();
+
+	DownloadQueue* pDownloadQueue = g_pQueueCoordinator->LockQueue();
+	int iQueueSize = pDownloadQueue->size();
+	FileInfo* pFirstFileInfo = FindFileInfo(pDownloadQueue, iID);
+	if (pFirstFileInfo)
+	{
+		for (DownloadQueue::iterator it = pDownloadQueue->begin(); it != pDownloadQueue->end(); it++)
+		{
+			FileInfo* pFileInfo = *it;
+			if (!strcmp(pFirstFileInfo->GetNZBFilename(), pFileInfo->GetNZBFilename()))
+			{
+				IDList.push_back(pFileInfo->GetID());
+			}
+		}
+	}
+	g_pQueueCoordinator->UnlockQueue();
+
+	if (eAction == eaMove && !(iOffset > iQueueSize || iOffset < -iQueueSize))
+	{
+		// currently Move-command can move only to Top or to Bottom, other offsets not supported
+		return false;
+	}
+
+	int* pIDs = (int*)malloc(IDList.size() * sizeof(int));
+
+	int* pPtr = pIDs;
+	for (std::list<int>::iterator it = IDList.begin(); it != IDList.end(); it++)
+	{
+		*pPtr++ = *it;
+	}
+
+	bool bOK = EditList(pIDs, IDList.size(), true, eAction, iOffset);
+
+	free(pIDs);
+	return bOK;
+}
+
 bool QueueEditor::PauseUnpauseList(int* pIDs, int iCount, bool bPause)
 {
 	return EditList(pIDs, iCount, false, bPause ? eaPause : eaResume, 0);
@@ -315,4 +356,19 @@ bool QueueEditor::DeleteList(int* pIDs, int iCount)
 bool QueueEditor::MoveList(int* pIDs, int iCount, bool SmartOrder, int iOffset)
 {
 	return EditList(pIDs, iCount, SmartOrder, eaMove, iOffset);
+}
+
+bool QueueEditor::PauseUnpauseGroup(int iID, bool bPause)
+{
+	return EditGroup(iID, bPause ? eaPause : eaResume, 0);
+}
+
+bool QueueEditor::DeleteGroup(int iID)
+{
+	return EditGroup(iID, eaDelete, 0);
+}
+
+bool QueueEditor::MoveGroup(int iID, int iOffset)
+{
+	return EditGroup(iID, eaMove, iOffset);
 }
