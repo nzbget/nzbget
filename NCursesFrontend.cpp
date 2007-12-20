@@ -105,6 +105,7 @@ NCursesFrontend::GroupInfo::GroupInfo(int iID, const char* szNZBFilename)
 {
 	m_iID = iID;
 	m_szNZBFilename = strdup(szNZBFilename);
+	m_iFileCount = 0;
 	m_lSize = 0;
 	m_lRemainingSize = 0;
 	m_lPausedSize = 0;
@@ -278,7 +279,17 @@ void NCursesFrontend::Update()
         }
 		PrepareGroupQueue();
     }
-	
+
+	if (m_eInputMode == eEditQueue)
+	{
+		int iQueueSize = CalcQueueSize();
+		if (iQueueSize == 0)
+		{
+			m_iSelectedQueueEntry = 0;
+			m_eInputMode = eNormal;
+		}
+	}
+
     //------------------------------------------
     // Print Current NZBQueue
     //------------------------------------------
@@ -600,7 +611,7 @@ void NCursesFrontend::PrintStatus()
     char szParStatus[128];
     if (m_iParJobCount > 0)
     {
-        sprintf(szParStatus, ", %i par", m_iParJobCount);
+        sprintf(szParStatus, ", processing %i par%s", m_iParJobCount, m_iParJobCount > 1 ? "s" : "");
     }
     else
     {
@@ -624,32 +635,49 @@ void NCursesFrontend::PrintKeyInputBar()
         break;
     case eEditQueue:
     {
-		if (m_bGroupFiles)
+		char* szStatus = NULL;
+		if (m_iSelectedQueueEntry > 0 && iQueueSize > 1 && m_iSelectedQueueEntry == iQueueSize - 1)
 		{
-			PlotLine("(Q)uit | (E)xit", iInputBarRow, 0, NCURSES_COLORPAIR_KEYBAR);
-		}
-		else
-		{
-			char* szStatus = NULL;
-			if (m_iSelectedQueueEntry > 0 && iQueueSize > 1 && m_iSelectedQueueEntry == iQueueSize - 1)
+			if (m_bGroupFiles)
 			{
-				szStatus = "(Q)uit | (E)xit | (P)ause | (D)elete | (U)p/(T)op";
-			}
-			else if (iQueueSize > 1 && m_iSelectedQueueEntry == 0)
-			{
-				szStatus = "(Q)uit | (E)xit | (P)ause | (D)elete | dow(N)/(B)ottom";
-			}
-			else if (iQueueSize > 1)
-			{
-				szStatus = "(Q)uit | (E)xit | (P)ause | (D)elete | (U)p/dow(N)/(T)op/(B)ottom";
+				// Up-/Down-commands for groups not supported yet
+				szStatus = "(Q)uit | (E)xit | (P)ause | (D)elete | (T)op";
 			}
 			else
 			{
-				szStatus = "(Q)uit";
+				szStatus = "(Q)uit | (E)xit | (P)ause | (D)elete | (U)p/(T)op";
 			}
-
-			PlotLine(szStatus, iInputBarRow, 0, NCURSES_COLORPAIR_KEYBAR);
 		}
+		else if (iQueueSize > 1 && m_iSelectedQueueEntry == 0)
+		{
+			if (m_bGroupFiles)
+			{
+				// Up-/Down-commands for groups not supported yet
+				szStatus = "(Q)uit | (E)xit | (P)ause | (D)elete | (B)ottom";
+			}
+			else
+			{
+				szStatus = "(Q)uit | (E)xit | (P)ause | (D)elete | dow(N)/(B)ottom";
+			}
+		}
+		else if (iQueueSize > 1)
+		{
+			if (m_bGroupFiles)
+			{
+				// Up-/Down-commands for groups not supported yet
+				szStatus = "(Q)uit | (E)xit | (P)ause | (D)elete | (T)op/(B)ottom";
+			}
+			else
+			{
+				szStatus = "(Q)uit | (E)xit | (P)ause | (D)elete | (U)p/dow(N)/(T)op/(B)ottom";
+			}
+		}
+		else
+		{
+			szStatus = "(Q)uit | (E)xit | (P)ause | (D)elete";
+		}
+
+		PlotLine(szStatus, iInputBarRow, 0, NCURSES_COLORPAIR_KEYBAR);
         break;
     }
     case eDownloadRate:
@@ -870,14 +898,15 @@ void NCursesFrontend::PrintGroupname(GroupInfo * pGroupInfo, int iRow, bool bSel
 	{
 		char szPausedSize[20];
 		FormatFileSize(szPausedSize, sizeof(szPausedSize), pGroupInfo->GetPausedSize());
-		sprintf(szPaused, " + %s", szPausedSize);
+		sprintf(szPaused, " + %s paused", szPausedSize);
 	}
 
 	char szNZBNiceName[1024];
 	FileInfo::MakeNiceNZBName(pGroupInfo->GetNZBFilename(), szNZBNiceName, 1023);
 
 	char szBuffer[MAX_SCREEN_WIDTH];
-	snprintf(szBuffer, MAX_SCREEN_WIDTH, "%s%i%s %s (%s%s)", Brace1, pGroupInfo->GetID(), Brace2, szNZBNiceName, szRemaining, szPaused);
+	snprintf(szBuffer, MAX_SCREEN_WIDTH, "%s%i%s %s (%i file%s, %s%s)", Brace1, pGroupInfo->GetID(), Brace2, szNZBNiceName, 
+		pGroupInfo->m_iFileCount, pGroupInfo->m_iFileCount > 1 ? "s" : "", szRemaining, szPaused);
 	szBuffer[MAX_SCREEN_WIDTH - 1] = '\0';
 
 	PlotLine(szBuffer, iRow, 0, color);
@@ -903,9 +932,10 @@ void NCursesFrontend::PrepareGroupQueue()
 		}
 		if (!pGroupInfo)
 		{
-			pGroupInfo = new GroupInfo(m_groupQueue.size() + 1, pFileInfo->GetNZBFilename());
+			pGroupInfo = new GroupInfo(pFileInfo->GetID(), pFileInfo->GetNZBFilename());
 			m_groupQueue.push_back(pGroupInfo);
 		}
+		pGroupInfo->m_iFileCount++;
 		pGroupInfo->m_lSize += pFileInfo->GetSize();
 		pGroupInfo->m_lRemainingSize += pFileInfo->GetRemainingSize();
 		if (pFileInfo->GetPaused())
@@ -923,6 +953,70 @@ void NCursesFrontend::ClearGroupQueue()
 		delete *it;
 	}
 	m_groupQueue.clear();
+}
+
+bool NCursesFrontend::EditQueue(EEditAction eAction)
+{
+	int ID = 0;
+	bool bPause = false;
+
+	if (m_bGroupFiles)
+	{
+		if (m_iSelectedQueueEntry >= 0 && m_iSelectedQueueEntry < (int)m_groupQueue.size())
+		{
+			GroupInfo* pGroupInfo = m_groupQueue[m_iSelectedQueueEntry];
+			ID = pGroupInfo->GetID();
+			bPause = pGroupInfo->GetRemainingSize() > pGroupInfo->GetPausedSize();
+		}
+		// map file-edit-actions to group-edit-actions
+		switch (eAction)
+		{
+			case eaPause:
+				eAction = bPause ? eaGroupPause : eaGroupResume;
+				break;
+			case eaDelete:
+				eAction = eaGroupDelete;
+				break;
+			case eaMoveTop:
+				eAction = eaGroupMoveTop;
+				break;
+			case eaMoveBottom:
+				eAction = eaGroupMoveBottom;
+				break;
+			case eaMoveUp:
+				eAction = eaGroupMoveUp;
+				break;
+			case eaMoveDown:
+				eAction = eaGroupMoveDown;
+				break;
+			default:
+				return false;
+		}
+	}
+	else
+	{
+		DownloadQueue* pDownloadQueue = LockQueue();
+		if (m_iSelectedQueueEntry >= 0 && m_iSelectedQueueEntry < (int)pDownloadQueue->size())
+		{
+			FileInfo* pFileInfo = (*pDownloadQueue)[m_iSelectedQueueEntry];
+			ID = pFileInfo->GetID();
+			bPause = !pFileInfo->GetPaused();
+		}
+		UnlockQueue();
+		if (eAction == eaPause)
+		{
+			eAction = bPause ? eaPause : eaResume;
+		}
+	}
+
+	if (ID != 0)
+	{
+		return ServerEditQueue(eAction, ID);
+	}
+	else
+	{
+		return false;
+	}
 }
 
 void NCursesFrontend::SetCurrentQueueEntry(int iEntry)
@@ -1001,6 +1095,12 @@ void NCursesFrontend::UpdateInput()
 				CalcWindowSizes();
 				SetCurrentQueueEntry(m_iSelectedQueueEntry);
 				break;
+			case 'g':
+				// group/ungroup files
+				m_bGroupFiles = !m_bGroupFiles;
+				SetCurrentQueueEntry(m_iSelectedQueueEntry);
+				NeedUpdateData();
+				break;
 			}
 		}
 		
@@ -1042,12 +1142,6 @@ void NCursesFrontend::UpdateInput()
 			case 't':
 				// show/hide Timestamps
 				m_bShowTimestamp = !m_bShowTimestamp;
-				break;
-			case 'g':
-				// group/ungroup files
-				m_bGroupFiles = !m_bGroupFiles;
-				SetCurrentQueueEntry(m_iSelectedQueueEntry);
-				NeedUpdateData();
 				break;
 			}
 		}
@@ -1108,54 +1202,37 @@ void NCursesFrontend::UpdateInput()
 			case KEY_END:
 				SetCurrentQueueEntry(iQueueSize > 0 ? iQueueSize - 1 : 0);
 				break;
-			}
-		}
-
-		// Edit Queue mode
-		if (m_eInputMode == eEditQueue && !m_bGroupFiles)
-		{
-			switch (iKey)
-			{
 			case 'p':
 				// Key 'p' for pause
-				ServerEditQueue(eaPauseUnpause, m_iSelectedQueueEntry);
+				EditQueue(eaPause);
 				break;
 			case 'd':
 				// Delete entry
-				if (ServerEditQueue(eaDelete, m_iSelectedQueueEntry))
+				if (EditQueue(eaDelete))
 				{
-					if (iQueueSize == 0)
-					{
-						m_iSelectedQueueEntry = 0;
-						m_eInputMode = eNormal;
-						return;
-					}
-					else
-					{
-						SetCurrentQueueEntry(m_iSelectedQueueEntry);
-					}
+					SetCurrentQueueEntry(m_iSelectedQueueEntry);
 				}
 				break;
 			case 'u':
-				if (ServerEditQueue(eaMoveUp, m_iSelectedQueueEntry))
+				if (EditQueue(eaMoveUp))
 				{
 					SetCurrentQueueEntry(m_iSelectedQueueEntry - 1);
 				}
 				break;
 			case 'n':
-				if (ServerEditQueue(eaMoveDown, m_iSelectedQueueEntry))
+				if (EditQueue(eaMoveDown))
 				{
 					SetCurrentQueueEntry(m_iSelectedQueueEntry + 1);
 				}
 				break;
 			case 't':
-				if (ServerEditQueue(eaMoveTop, m_iSelectedQueueEntry))
+				if (EditQueue(eaMoveTop))
 				{
 					SetCurrentQueueEntry(0);
 				}
 				break;
 			case 'b':
-				if (ServerEditQueue(eaMoveBottom, m_iSelectedQueueEntry))
+				if (EditQueue(eaMoveBottom))
 				{
 					SetCurrentQueueEntry(iQueueSize > 0 ? iQueueSize - 1 : 0);
 				}

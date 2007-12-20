@@ -37,12 +37,20 @@ class Frontend : public Thread
 public:
 	enum EEditAction
 	{
-		eaPauseUnpause,
+		eaPause,
+		eaResume,
 		eaDelete,
 		eaMoveUp,
 		eaMoveDown,
 		eaMoveTop,
-		eaMoveBottom
+		eaMoveBottom,
+		eaGroupPause,
+		eaGroupResume,
+		eaGroupDelete,
+		eaGroupMoveUp,
+		eaGroupMoveDown,
+		eaGroupMoveTop,
+		eaGroupMoveBottom
 	};
 	
 private:

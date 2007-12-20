@@ -205,58 +205,60 @@ void Frontend::ServerDumpDebug()
 	}
 }
 
-bool Frontend::ServerEditQueue(EEditAction eAction, int iEntry)
+bool Frontend::ServerEditQueue(EEditAction eAction, int iID)
 {
-	DownloadQueue* pDownloadQueue = LockQueue();
-	int ID = 0;
-	bool bPause = false;
-	if (iEntry >= 0 && iEntry < (int)pDownloadQueue->size())
-	{
-		FileInfo* pFileInfo = (*pDownloadQueue)[iEntry];
-		ID = pFileInfo->GetID();
-		bPause = !pFileInfo->GetPaused();
-	}
-	UnlockQueue();
-
-	if (ID == 0)
-	{
-		return false;
-	}
-	
 	if (IsRemoteMode())
 	{
 		switch (eAction)
 		{
-			case eaPauseUnpause:
-				return RequestEditQueue(bPause ? NZBMessageRequest::eActionPause : NZBMessageRequest::eActionResume, 0, ID);
+			case eaPause:
+				return RequestEditQueue(NZBMessageRequest::eActionPause, 0, iID);
+			case eaResume:
+				return RequestEditQueue(NZBMessageRequest::eActionResume, 0, iID);
 			case eaDelete:
-				return RequestEditQueue(NZBMessageRequest::eActionDelete, 0, ID);
+				return RequestEditQueue(NZBMessageRequest::eActionDelete, 0, iID);
 			case eaMoveUp:
-				return RequestEditQueue(NZBMessageRequest::eActionMoveOffset, -1, ID);
+				return RequestEditQueue(NZBMessageRequest::eActionMoveOffset, -1, iID);
 			case eaMoveDown:
-				return RequestEditQueue(NZBMessageRequest::eActionMoveOffset, +1, ID);
+				return RequestEditQueue(NZBMessageRequest::eActionMoveOffset, +1, iID);
 			case eaMoveTop:
-				return RequestEditQueue(NZBMessageRequest::eActionMoveTop, 0, ID);
+				return RequestEditQueue(NZBMessageRequest::eActionMoveTop, 0, iID);
 			case eaMoveBottom:
-				return RequestEditQueue(NZBMessageRequest::eActionMoveBottom, 0, ID);
+				return RequestEditQueue(NZBMessageRequest::eActionMoveBottom, 0, iID);
 		}
 	}
 	else
 	{
 		switch (eAction)
 		{
-			case eaPauseUnpause:
-				return g_pQueueCoordinator->GetQueueEditor()->PauseUnpauseEntry(ID, bPause);
+			case eaPause:
+				return g_pQueueCoordinator->GetQueueEditor()->PauseUnpauseEntry(iID, true);
+			case eaResume:
+				return g_pQueueCoordinator->GetQueueEditor()->PauseUnpauseEntry(iID, false);
 			case eaDelete:
-				return g_pQueueCoordinator->GetQueueEditor()->DeleteEntry(ID);
+				return g_pQueueCoordinator->GetQueueEditor()->DeleteEntry(iID);
 			case eaMoveUp:
-				return g_pQueueCoordinator->GetQueueEditor()->MoveEntry(ID, -1, false);
+				return g_pQueueCoordinator->GetQueueEditor()->MoveEntry(iID, -1);
 			case eaMoveDown:
-				return g_pQueueCoordinator->GetQueueEditor()->MoveEntry(ID, +1, false);
+				return g_pQueueCoordinator->GetQueueEditor()->MoveEntry(iID, +1);
 			case eaMoveTop:
-				return g_pQueueCoordinator->GetQueueEditor()->MoveEntry(ID, -1000000, true);
+				return g_pQueueCoordinator->GetQueueEditor()->MoveEntry(iID, -1000000);
 			case eaMoveBottom:
-				return g_pQueueCoordinator->GetQueueEditor()->MoveEntry(ID, +1000000, true);
+				return g_pQueueCoordinator->GetQueueEditor()->MoveEntry(iID, +1000000);
+			case eaGroupPause:
+				return g_pQueueCoordinator->GetQueueEditor()->PauseUnpauseGroup(iID, true);
+			case eaGroupResume:
+				return g_pQueueCoordinator->GetQueueEditor()->PauseUnpauseGroup(iID, false);
+			case eaGroupDelete:
+				return g_pQueueCoordinator->GetQueueEditor()->DeleteGroup(iID);
+			case eaGroupMoveUp:
+				return g_pQueueCoordinator->GetQueueEditor()->MoveGroup(iID, -1);
+			case eaGroupMoveDown:
+				return g_pQueueCoordinator->GetQueueEditor()->MoveGroup(iID, +1);
+			case eaGroupMoveTop:
+				return g_pQueueCoordinator->GetQueueEditor()->MoveGroup(iID, -1000000);
+			case eaGroupMoveBottom:
+				return g_pQueueCoordinator->GetQueueEditor()->MoveGroup(iID, +1000000);
 		}
 	}
 	return false;

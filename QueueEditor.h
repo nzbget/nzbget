@@ -45,12 +45,12 @@ private:
 
 	typedef std::list<EditItem*> ItemList;
 
-	enum EAction
+	enum EEditAction
 	{
 		eaMove,				// move to m_iOffset relative to the current position in queue
-		eaPause,			// pause
-		eaResume,			// resume (unpause)
-		eaDelete			// delete
+		eaPause,			
+		eaResume,			
+		eaDelete,			
 	};
 
 private:
@@ -58,8 +58,9 @@ private:
 
 	FileInfo*				FindFileInfo(DownloadQueue* pDownloadQueue, int iID);
 	int						FindFileInfoEntry(DownloadQueue* pDownloadQueue, int iID);
-	bool					EditList(int* pIDs, int iCount, bool bSmartOrder, EAction eAction, int iOffset);
-	void					PrepareList(ItemList* pItemList, int* pIDs, int iCount, bool bSmartOrder, EAction eAction, int iOffset);
+	bool					EditList(int* pIDs, int iCount, bool bSmartOrder, EEditAction eAction, int iOffset);
+	void					PrepareList(ItemList* pItemList, int* pIDs, int iCount, bool bSmartOrder, EEditAction eAction, int iOffset);
+	bool					EditGroup(int iID, EEditAction eAction, int iOffset);
 
 public:
 							QueueEditor();                
@@ -68,7 +69,11 @@ public:
 
 	bool					PauseUnpauseEntry(int iID, bool bPause);
 	bool					DeleteEntry(int iID);
-	bool					MoveEntry(int iID, int iOffset, bool bAutoCorrection);
+	bool					MoveEntry(int iID, int iOffset);
+
+	bool					PauseUnpauseGroup(int iID, bool bPause);
+	bool					DeleteGroup(int iID);
+	bool					MoveGroup(int iID, int iOffset);
 
 	bool					PauseUnpauseList(int* pIDs, int iCount, bool bPause);
 	bool					DeleteList(int* pIDs, int iCount);
