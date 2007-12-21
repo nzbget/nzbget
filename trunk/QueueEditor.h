@@ -26,13 +26,16 @@
 #ifndef QUEUEEDITOR_H
 #define QUEUEEDITOR_H
 
-#include <list>
+#include <vector>
 
 #include "DownloadInfo.h"
 #include "DiskState.h"
                                             
 class QueueEditor
 {
+public:
+	typedef std::vector<int> IDList;
+
 private:
 	class EditItem
 	{
@@ -43,7 +46,7 @@ private:
 		EditItem(int iID, int iOffset);
 	};
 
-	typedef std::list<EditItem*> ItemList;
+	typedef std::vector<EditItem*> ItemList;
 
 	enum EEditAction
 	{
@@ -58,8 +61,8 @@ private:
 
 	FileInfo*				FindFileInfo(DownloadQueue* pDownloadQueue, int iID);
 	int						FindFileInfoEntry(DownloadQueue* pDownloadQueue, int iID);
-	bool					EditList(int* pIDs, int iCount, bool bSmartOrder, EEditAction eAction, int iOffset);
-	void					PrepareList(ItemList* pItemList, int* pIDs, int iCount, bool bSmartOrder, EEditAction eAction, int iOffset);
+	bool					EditList(IDList* pIDList, bool bSmartOrder, EEditAction eAction, int iOffset);
+	void					PrepareList(ItemList* pItemList, IDList* pIDList, bool bSmartOrder, EEditAction eAction, int iOffset);
 	bool					EditGroup(int iID, EEditAction eAction, int iOffset);
 
 public:
@@ -75,9 +78,9 @@ public:
 	bool					DeleteGroup(int iID);
 	bool					MoveGroup(int iID, int iOffset);
 
-	bool					PauseUnpauseList(int* pIDs, int iCount, bool bPause);
-	bool					DeleteList(int* pIDs, int iCount);
-	bool					MoveList(int* pIDs, int iCount, bool SmartOrder, int iOffset);
+	bool					PauseUnpauseList(IDList* pIDList, bool bPause);
+	bool					DeleteList(IDList* pIDList);
+	bool					MoveList(IDList* pIDList, bool SmartOrder, int iOffset);
 };
 
 #endif
