@@ -181,10 +181,10 @@ bool QueueEditor::MoveEntry(int iID, int iOffset)
 	return bOK;
 }
 
-bool QueueEditor::EditList(int* pIDs, int iCount, bool bSmartOrder, EEditAction EEditAction, int iOffset)
+bool QueueEditor::EditList(IDList* pIDList, bool bSmartOrder, EEditAction EEditAction, int iOffset)
 {
 	ItemList cItemList;
-	PrepareList(&cItemList, pIDs, iCount, bSmartOrder, EEditAction, iOffset);
+	PrepareList(&cItemList, pIDList, bSmartOrder, EEditAction, iOffset);
 
 	for (ItemList::iterator it = cItemList.begin(); it != cItemList.end(); it++)
 	{
@@ -210,8 +210,9 @@ bool QueueEditor::EditList(int* pIDs, int iCount, bool bSmartOrder, EEditAction 
 	return cItemList.size() > 0;
 }
 
-void QueueEditor::PrepareList(ItemList* pItemList, int* pIDs, int iCount, bool bSmartOrder, EEditAction EEditAction, int iOffset)
+void QueueEditor::PrepareList(ItemList* pItemList, IDList* pIDList, bool bSmartOrder, EEditAction EEditAction, int iOffset)
 {
+	pItemList->reserve(pIDList->size());
 	if (bSmartOrder && iOffset != 0 && EEditAction == eaMove)
 	{
 		//add IDs to list in order they currently have in download queue
@@ -233,9 +234,10 @@ void QueueEditor::PrepareList(ItemList* pItemList, int* pIDs, int iCount, bool b
 		for (int iIndex = iStart; iIndex != iEnd; iIndex += iStep)
 		{
 			FileInfo* pFileInfo = (*pDownloadQueue)[iIndex];
-			for (int i = 0; i < iCount; i++)
+			int iID = pFileInfo->GetID();
+			for (IDList::iterator it = pIDList->begin(); it != pIDList->end(); it++)
 			{
-				if (pFileInfo->GetID() == (int)pIDs[i])
+				if (iID == *it)
 				{
 					int iWorkOffset = iOffset;
 					int iDestPos = iIndex + iWorkOffset;
@@ -262,7 +264,7 @@ void QueueEditor::PrepareList(ItemList* pItemList, int* pIDs, int iCount, bool b
 						}
 					}
 					iLastDestPos = iIndex + iWorkOffset;
-					pItemList->push_back(new EditItem(pIDs[i], iWorkOffset));
+					pItemList->push_back(new EditItem(iID, iWorkOffset));
 					break;
 				}
 			}
@@ -291,12 +293,12 @@ void QueueEditor::PrepareList(ItemList* pItemList, int* pIDs, int iCount, bool b
 		g_pQueueCoordinator->UnlockQueue();
 
 		//add IDs to list in order they were transmitted in command
-		for (int i = 0; i < iCount; i++)
+		for (IDList::iterator it = pIDList->begin(); it != pIDList->end(); it++)
 		{
-			int ID = pIDs[i];
-			if (iMinID <= ID && ID <= iMaxID)
+			int iID = *it;
+			if (iMinID <= iID && iID <= iMaxID)
 			{
-				pItemList->push_back(new EditItem(pIDs[i], iOffset));
+				pItemList->push_back(new EditItem(iID, iOffset));
 			}
 		}
 	}
@@ -304,8 +306,8 @@ void QueueEditor::PrepareList(ItemList* pItemList, int* pIDs, int iCount, bool b
 
 bool QueueEditor::EditGroup(int iID, EEditAction eAction, int iOffset)
 {
-	std::list<int> IDList;
-	IDList.clear();
+	IDList cIDList;
+	cIDList.clear();
 
 	DownloadQueue* pDownloadQueue = g_pQueueCoordinator->LockQueue();
 	int iQueueSize = pDownloadQueue->size();
@@ -317,7 +319,7 @@ bool QueueEditor::EditGroup(int iID, EEditAction eAction, int iOffset)
 			FileInfo* pFileInfo = *it;
 			if (!strcmp(pFirstFileInfo->GetNZBFilename(), pFileInfo->GetNZBFilename()))
 			{
-				IDList.push_back(pFileInfo->GetID());
+				cIDList.push_back(pFileInfo->GetID());
 			}
 		}
 	}
@@ -329,33 +331,24 @@ bool QueueEditor::EditGroup(int iID, EEditAction eAction, int iOffset)
 		return false;
 	}
 
-	int* pIDs = (int*)malloc(IDList.size() * sizeof(int));
+	bool bOK = EditList(&cIDList, true, eAction, iOffset);
 
-	int* pPtr = pIDs;
-	for (std::list<int>::iterator it = IDList.begin(); it != IDList.end(); it++)
-	{
-		*pPtr++ = *it;
-	}
-
-	bool bOK = EditList(pIDs, IDList.size(), true, eAction, iOffset);
-
-	free(pIDs);
 	return bOK;
 }
 
-bool QueueEditor::PauseUnpauseList(int* pIDs, int iCount, bool bPause)
+bool QueueEditor::PauseUnpauseList(IDList* pIDList, bool bPause)
 {
-	return EditList(pIDs, iCount, false, bPause ? eaPause : eaResume, 0);
+	return EditList(pIDList, false, bPause ? eaPause : eaResume, 0);
 }
 
-bool QueueEditor::DeleteList(int* pIDs, int iCount)
+bool QueueEditor::DeleteList(IDList* pIDList)
 {
-	return EditList(pIDs, iCount, false, eaDelete, 0);
+	return EditList(pIDList, false, eaDelete, 0);
 }
 
-bool QueueEditor::MoveList(int* pIDs, int iCount, bool SmartOrder, int iOffset)
+bool QueueEditor::MoveList(IDList* pIDList, bool SmartOrder, int iOffset)
 {
-	return EditList(pIDs, iCount, SmartOrder, eaMove, iOffset);
+	return EditList(pIDList, SmartOrder, eaMove, iOffset);
 }
 
 bool QueueEditor::PauseUnpauseGroup(int iID, bool bPause)

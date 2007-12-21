@@ -624,9 +624,11 @@ void EditQueueCommand::Execute()
 		NeedBytes -= iResult;
 	}
 
+	QueueEditor::IDList cIDList;
+	cIDList.reserve(iNrEntries);
 	for (int i = 0; i < iNrEntries; i++)
 	{
-		pIDs[i] = ntohl(pIDs[i]);
+		cIDList.push_back(ntohl(pIDs[i]));
 	}
 	
 	bool bOK = false;
@@ -634,23 +636,23 @@ void EditQueueCommand::Execute()
 	{
 		case NZBMessageRequest::eActionPause:
 		case NZBMessageRequest::eActionResume:
-			bOK = g_pQueueCoordinator->GetQueueEditor()->PauseUnpauseList(pIDs, iNrEntries, iAction == NZBMessageRequest::eActionPause);
+			bOK = g_pQueueCoordinator->GetQueueEditor()->PauseUnpauseList(&cIDList, iAction == NZBMessageRequest::eActionPause);
 			break;
 
 		case NZBMessageRequest::eActionMoveOffset:
-			bOK = g_pQueueCoordinator->GetQueueEditor()->MoveList(pIDs, iNrEntries, bSmartOrder, iOffset);
+			bOK = g_pQueueCoordinator->GetQueueEditor()->MoveList(&cIDList, bSmartOrder, iOffset);
 			break;
 
 		case NZBMessageRequest::eActionMoveTop:
-			bOK = g_pQueueCoordinator->GetQueueEditor()->MoveList(pIDs, iNrEntries, bSmartOrder, -MAX_ID);
+			bOK = g_pQueueCoordinator->GetQueueEditor()->MoveList(&cIDList, bSmartOrder, -MAX_ID);
 			break;
 
 		case NZBMessageRequest::eActionMoveBottom:
-			bOK = g_pQueueCoordinator->GetQueueEditor()->MoveList(pIDs, iNrEntries, bSmartOrder, MAX_ID);
+			bOK = g_pQueueCoordinator->GetQueueEditor()->MoveList(&cIDList, bSmartOrder, MAX_ID);
 			break;
 
 		case NZBMessageRequest::eActionDelete:
-			bOK = g_pQueueCoordinator->GetQueueEditor()->DeleteList(pIDs, iNrEntries);
+			bOK = g_pQueueCoordinator->GetQueueEditor()->DeleteList(&cIDList);
 			break;
 	}
 
