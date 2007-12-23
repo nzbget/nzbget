@@ -128,7 +128,7 @@ private:
 	int				ReadConsoleKey();
 	int				CalcQueueSize();
 	void			NeedUpdateData();
-	bool			EditQueue(EEditAction eAction);
+	bool			EditQueue(QueueEditor::EEditAction eAction, int iOffset);
 
 protected:
 	virtual void 	Run();

@@ -156,7 +156,7 @@ bool RemoteClient::RequestServerDownload(const char* szName, bool bAddFirst)
 	if (OK)
 	{
 		SNZBDownloadRequest DownloadRequest;
-		InitMessageBase(&DownloadRequest.m_MessageBase, NZBMessageRequest::eRequestDownload, sizeof(DownloadRequest));
+		InitMessageBase(&DownloadRequest.m_MessageBase, eRemoteRequestDownload, sizeof(DownloadRequest));
 		DownloadRequest.m_bAddFirst = htonl(bAddFirst);
 		DownloadRequest.m_iTrailingDataLength = htonl(iLength);
 
@@ -190,7 +190,7 @@ bool RemoteClient::RequestServerList()
 	if (!InitConnection()) return false;
 
 	SNZBListRequest ListRequest;
-	InitMessageBase(&ListRequest.m_MessageBase, NZBMessageRequest::eRequestList, sizeof(ListRequest));
+	InitMessageBase(&ListRequest.m_MessageBase, eRemoteRequestList, sizeof(ListRequest));
 	ListRequest.m_bFileList = htonl(true);
 	ListRequest.m_bServerState = htonl(true);
 
@@ -304,7 +304,7 @@ bool RemoteClient::RequestServerLog(int iLines)
 	if (!InitConnection()) return false;
 
 	SNZBLogRequest LogRequest;
-	InitMessageBase(&LogRequest.m_MessageBase, NZBMessageRequest::eRequestLog, sizeof(LogRequest));
+	InitMessageBase(&LogRequest.m_MessageBase, eRemoteRequestLog, sizeof(LogRequest));
 	LogRequest.m_iLines = htonl(iLines);
 	LogRequest.m_iIDFrom = 0;
 
@@ -381,7 +381,7 @@ bool RemoteClient::RequestServerPauseUnpause(bool bPause)
 	if (!InitConnection()) return false;
 
 	SNZBPauseUnpauseRequest PauseUnpauseRequest;
-	InitMessageBase(&PauseUnpauseRequest.m_MessageBase, NZBMessageRequest::eRequestPauseUnpause, sizeof(PauseUnpauseRequest));
+	InitMessageBase(&PauseUnpauseRequest.m_MessageBase, eRemoteRequestPauseUnpause, sizeof(PauseUnpauseRequest));
 	PauseUnpauseRequest.m_bPause = htonl(bPause);
 
 	if (m_pConnection->Send((char*)(&PauseUnpauseRequest), sizeof(PauseUnpauseRequest)) < 0)
@@ -402,7 +402,7 @@ bool RemoteClient::RequestServerSetDownloadRate(float fRate)
 	if (!InitConnection()) return false;
 
 	SNZBSetDownloadRateRequest SetDownloadRateRequest;
-	InitMessageBase(&SetDownloadRateRequest.m_MessageBase, NZBMessageRequest::eRequestSetDownloadRate, sizeof(SetDownloadRateRequest));
+	InitMessageBase(&SetDownloadRateRequest.m_MessageBase, eRemoteRequestSetDownloadRate, sizeof(SetDownloadRateRequest));
 	SetDownloadRateRequest.m_iDownloadRate = htonl((unsigned int)(fRate * 1024));
 
 	if (m_pConnection->Send((char*)(&SetDownloadRateRequest), sizeof(SetDownloadRateRequest)) < 0)
@@ -423,7 +423,7 @@ bool RemoteClient::RequestServerDumpDebug()
 	if (!InitConnection()) return false;
 
 	SNZBDumpDebugRequest DumpDebugInfo;
-	InitMessageBase(&DumpDebugInfo.m_MessageBase, NZBMessageRequest::eRequestDumpDebug, sizeof(DumpDebugInfo));
+	InitMessageBase(&DumpDebugInfo.m_MessageBase, eRemoteRequestDumpDebug, sizeof(DumpDebugInfo));
 
 	if (m_pConnection->Send((char*)(&DumpDebugInfo), sizeof(DumpDebugInfo)) < 0)
 	{
@@ -451,7 +451,7 @@ bool RemoteClient::RequestServerEditQueue(int iAction, int iOffset, int* pIDList
 	int iLength = sizeof(uint32_t) * iIDCount;
 
 	SNZBEditQueueRequest EditQueueRequest;
-	InitMessageBase(&EditQueueRequest.m_MessageBase, NZBMessageRequest::eRequestEditQueue, sizeof(EditQueueRequest));
+	InitMessageBase(&EditQueueRequest.m_MessageBase, eRemoteRequestEditQueue, sizeof(EditQueueRequest));
 	EditQueueRequest.m_iAction = htonl(iAction);
 	EditQueueRequest.m_iOffset = htonl((int)iOffset);
 	EditQueueRequest.m_bSmartOrder = htonl(bSmartOrder);
@@ -489,7 +489,7 @@ bool RemoteClient::RequestServerShutdown()
 	if (!InitConnection()) return false;
 
 	SNZBShutdownRequest ShutdownRequest;
-	InitMessageBase(&ShutdownRequest.m_MessageBase, NZBMessageRequest::eRequestShutdown, sizeof(ShutdownRequest));
+	InitMessageBase(&ShutdownRequest.m_MessageBase, eRemoteRequestShutdown, sizeof(ShutdownRequest));
 
 	bool OK = m_pConnection->Send((char*)(&ShutdownRequest), sizeof(ShutdownRequest)) >= 0;
 	if (OK)

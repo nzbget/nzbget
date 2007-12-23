@@ -955,7 +955,7 @@ void NCursesFrontend::ClearGroupQueue()
 	m_groupQueue.clear();
 }
 
-bool NCursesFrontend::EditQueue(EEditAction eAction)
+bool NCursesFrontend::EditQueue(QueueEditor::EEditAction eAction, int iOffset)
 {
 	int ID = 0;
 	bool bPause = false;
@@ -968,30 +968,21 @@ bool NCursesFrontend::EditQueue(EEditAction eAction)
 			ID = pGroupInfo->GetID();
 			bPause = pGroupInfo->GetRemainingSize() > pGroupInfo->GetPausedSize();
 		}
-		// map file-edit-actions to group-edit-actions
-		switch (eAction)
+		if (eAction == QueueEditor::eaFilePause)
 		{
-			case eaPause:
-				eAction = bPause ? eaGroupPause : eaGroupResume;
-				break;
-			case eaDelete:
-				eAction = eaGroupDelete;
-				break;
-			case eaMoveTop:
-				eAction = eaGroupMoveTop;
-				break;
-			case eaMoveBottom:
-				eAction = eaGroupMoveBottom;
-				break;
-			case eaMoveUp:
-				eAction = eaGroupMoveUp;
-				break;
-			case eaMoveDown:
-				eAction = eaGroupMoveDown;
-				break;
-			default:
-				return false;
+			eAction = bPause ? QueueEditor::eaFilePause : QueueEditor::eaFileResume;
 		}
+
+		// map file-edit-actions to group-edit-actions
+		QueueEditor::EEditAction FileToGroupMap[] = {
+			(QueueEditor::EEditAction)0,
+			QueueEditor::eaGroupMoveOffset, 
+			QueueEditor::eaGroupMoveTop, 
+			QueueEditor::eaGroupMoveBottom, 
+			QueueEditor::eaGroupPause, 
+			QueueEditor::eaGroupResume, 
+			QueueEditor::eaGroupDelete };
+		eAction = FileToGroupMap[eAction];
 	}
 	else
 	{
@@ -1003,15 +994,15 @@ bool NCursesFrontend::EditQueue(EEditAction eAction)
 			bPause = !pFileInfo->GetPaused();
 		}
 		UnlockQueue();
-		if (eAction == eaPause)
+		if (eAction == QueueEditor::eaFilePause)
 		{
-			eAction = bPause ? eaPause : eaResume;
+			eAction = bPause ? QueueEditor::eaFilePause : QueueEditor::eaFileResume;
 		}
 	}
 
 	if (ID != 0)
 	{
-		return ServerEditQueue(eAction, ID);
+		return ServerEditQueue(eAction, iOffset, ID);
 	}
 	else
 	{
@@ -1204,35 +1195,35 @@ void NCursesFrontend::UpdateInput()
 				break;
 			case 'p':
 				// Key 'p' for pause
-				EditQueue(eaPause);
+				EditQueue(QueueEditor::eaFilePause, 0);
 				break;
 			case 'd':
 				// Delete entry
-				if (EditQueue(eaDelete))
+				if (EditQueue(QueueEditor::eaFileDelete, 0))
 				{
 					SetCurrentQueueEntry(m_iSelectedQueueEntry);
 				}
 				break;
 			case 'u':
-				if (EditQueue(eaMoveUp))
+				if (EditQueue(QueueEditor::eaFileMoveOffset, -1))
 				{
 					SetCurrentQueueEntry(m_iSelectedQueueEntry - 1);
 				}
 				break;
 			case 'n':
-				if (EditQueue(eaMoveDown))
+				if (EditQueue(QueueEditor::eaFileMoveOffset, +1))
 				{
 					SetCurrentQueueEntry(m_iSelectedQueueEntry + 1);
 				}
 				break;
 			case 't':
-				if (EditQueue(eaMoveTop))
+				if (EditQueue(QueueEditor::eaFileMoveTop, 0))
 				{
 					SetCurrentQueueEntry(0);
 				}
 				break;
 			case 'b':
-				if (EditQueue(eaMoveBottom))
+				if (EditQueue(QueueEditor::eaFileMoveBottom, 0))
 				{
 					SetCurrentQueueEntry(iQueueSize > 0 ? iQueueSize - 1 : 0);
 				}

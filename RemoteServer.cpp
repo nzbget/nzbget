@@ -198,8 +198,8 @@ void RequestProcessor::Run()
 
 void RequestProcessor::Dispatch()
 {
-	if (ntohl(m_MessageBase.m_iType) >= (int)NZBMessageRequest::eRequestDownload &&
-		   ntohl(m_MessageBase.m_iType) <= (int)NZBMessageRequest::eRequestShutdown &&
+	if (ntohl(m_MessageBase.m_iType) >= (int)eRemoteRequestDownload &&
+		   ntohl(m_MessageBase.m_iType) <= (int)eRemoteRequestShutdown &&
 		   g_iMessageRequestSizes[ntohl(m_MessageBase.m_iType)] != ntohl(m_MessageBase.m_iStructSize))
 	{
 		error("Invalid size of request: needed %i Bytes, but received %i Bytes",
@@ -211,49 +211,49 @@ void RequestProcessor::Dispatch()
 
 	switch (ntohl(m_MessageBase.m_iType))
 	{
-		case NZBMessageRequest::eRequestDownload:
+		case eRemoteRequestDownload:
 			{
 				command = new DownloadCommand();
 				break;
 			}
 
-		case NZBMessageRequest::eRequestList:
+		case eRemoteRequestList:
 			{
 				command = new ListCommand();
 				break;
 			}
 
-		case NZBMessageRequest::eRequestLog:
+		case eRemoteRequestLog:
 			{
 				command = new LogCommand();
 				break;
 			}
 
-		case NZBMessageRequest::eRequestPauseUnpause:
+		case eRemoteRequestPauseUnpause:
 			{
 				command = new PauseUnpauseCommand();
 				break;
 			}
 
-		case NZBMessageRequest::eRequestEditQueue:
+		case eRemoteRequestEditQueue:
 			{
 				command = new EditQueueCommand();
 				break;
 			}
 
-		case NZBMessageRequest::eRequestSetDownloadRate:
+		case eRemoteRequestSetDownloadRate:
 			{
 				command = new SetDownloadRateCommand();
 				break;
 			}
 
-		case NZBMessageRequest::eRequestDumpDebug:
+		case eRemoteRequestDumpDebug:
 			{
 				command = new DumpDebugCommand();
 				break;
 			}
 
-		case NZBMessageRequest::eRequestShutdown:
+		case eRemoteRequestShutdown:
 			{
 				command = new ShutdownCommand();
 				break;
@@ -631,30 +631,7 @@ void EditQueueCommand::Execute()
 		cIDList.push_back(ntohl(pIDs[i]));
 	}
 	
-	bool bOK = false;
-	switch (iAction)
-	{
-		case NZBMessageRequest::eActionPause:
-		case NZBMessageRequest::eActionResume:
-			bOK = g_pQueueCoordinator->GetQueueEditor()->PauseUnpauseList(&cIDList, iAction == NZBMessageRequest::eActionPause);
-			break;
-
-		case NZBMessageRequest::eActionMoveOffset:
-			bOK = g_pQueueCoordinator->GetQueueEditor()->MoveList(&cIDList, bSmartOrder, iOffset);
-			break;
-
-		case NZBMessageRequest::eActionMoveTop:
-			bOK = g_pQueueCoordinator->GetQueueEditor()->MoveList(&cIDList, bSmartOrder, -MAX_ID);
-			break;
-
-		case NZBMessageRequest::eActionMoveBottom:
-			bOK = g_pQueueCoordinator->GetQueueEditor()->MoveList(&cIDList, bSmartOrder, MAX_ID);
-			break;
-
-		case NZBMessageRequest::eActionDelete:
-			bOK = g_pQueueCoordinator->GetQueueEditor()->DeleteList(&cIDList);
-			break;
-	}
+	bool bOK = g_pQueueCoordinator->GetQueueEditor()->EditList(&cIDList, bSmartOrder, (QueueEditor::EEditAction)iAction, iOffset);
 
 	free(pIDs);
 

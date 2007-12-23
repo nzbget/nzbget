@@ -46,32 +46,38 @@ static const int NZBREQUESTPASSWORDSIZE = 32;
 #pragma pack(1)
 #endif
 
-namespace NZBMessageRequest
+// Possible values for field "m_iType" of struct "SNZBMessageBase":
+enum eRemoteRequest
 {
-	// Possible values for field "m_iType" of struct "SNZBMessageBase":
-	enum
-	{
-		eRequestDownload = 1,
-		eRequestPauseUnpause,
-		eRequestList,
-		eRequestSetDownloadRate,
-		eRequestDumpDebug,
-		eRequestEditQueue,
-		eRequestLog,
-		eRequestShutdown
-	};
+	eRemoteRequestDownload = 1,
+	eRemoteRequestPauseUnpause,
+	eRemoteRequestList,
+	eRemoteRequestSetDownloadRate,
+	eRemoteRequestDumpDebug,
+	eRemoteRequestEditQueue,
+	eRemoteRequestLog,
+	eRemoteRequestShutdown
+};
 
-	// Possible values for field "m_iAction" of struct "SNZBEditQueueRequest":
-	enum
-	{
-		eActionMoveOffset = 1,	// move to m_iOffset relative to the current position in queue
-		eActionMoveTop,			// move to top of queue
-		eActionMoveBottom,		// move to bottom of queue
-		eActionPause,			// pause
-		eActionResume,			// resume (unpause)
-		eActionDelete			// delete
-	};
-}
+// Possible values for field "m_iAction" of struct "SNZBEditQueueRequest":
+// File-Actions affect one file, Group-Actions affect all files in group.
+// Group is a list of files, added to queue from one NZB-File.
+enum eRemoteEditAction
+{
+	eRemoteEditActionFileMoveOffset = 1,	// move to m_iOffset relative to the current position in queue
+	eRemoteEditActionFileMoveTop,			// move to top of queue
+	eRemoteEditActionFileMoveBottom,		// move to bottom of queue
+	eRemoteEditActionFilePause,				// pause
+	eRemoteEditActionFileResume,			// resume (unpause)
+	eRemoteEditActionFileDelete,			// delete
+	eRemoteEditActionGroupMoveOffset,		// move to m_iOffset relative to the current position in queue
+	eRemoteEditActionGroupMoveTop,			// move to top of queue
+	eRemoteEditActionGroupMoveBottom,		// move to bottom of queue
+	eRemoteEditActionGroupPause,			// pause
+	eRemoteEditActionGroupPausePars,		// pause only pars, except main par-file (does not affect other files)
+	eRemoteEditActionGroupResume,			// resume (unpause)
+	eRemoteEditActionGroupDelete			// delete
+};
 
 // The basic NZBMessageBase struct
 struct SNZBMessageBase
@@ -189,7 +195,7 @@ struct SNZBEditQueueRequest
 													// 1 - smart execute to ensure that the relative order of all affected IDs are not changed.
 	uint32_t				m_iNrTrailingEntries;	// Number of ID-entries, following to this structure
 	uint32_t				m_iTrailingDataLength;	// Length of all ID-entries, following to this structure
-	//uint32_t				m_iIDs[m_iNrTrailingEntries];	// variable sized
+	//uint32_t				m_iIDs[m_iNrTrailingEntries];	// variable sized array of IDs. For File-Actions - ID of file, for Group-Actions - ID of any file belonging to group
 };
 
 // Request dumping of debug info

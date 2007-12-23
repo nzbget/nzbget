@@ -205,61 +205,15 @@ void Frontend::ServerDumpDebug()
 	}
 }
 
-bool Frontend::ServerEditQueue(EEditAction eAction, int iID)
+bool Frontend::ServerEditQueue(QueueEditor::EEditAction eAction, int iOffset, int iID)
 {
 	if (IsRemoteMode())
 	{
-		switch (eAction)
-		{
-			case eaPause:
-				return RequestEditQueue(NZBMessageRequest::eActionPause, 0, iID);
-			case eaResume:
-				return RequestEditQueue(NZBMessageRequest::eActionResume, 0, iID);
-			case eaDelete:
-				return RequestEditQueue(NZBMessageRequest::eActionDelete, 0, iID);
-			case eaMoveUp:
-				return RequestEditQueue(NZBMessageRequest::eActionMoveOffset, -1, iID);
-			case eaMoveDown:
-				return RequestEditQueue(NZBMessageRequest::eActionMoveOffset, +1, iID);
-			case eaMoveTop:
-				return RequestEditQueue(NZBMessageRequest::eActionMoveTop, 0, iID);
-			case eaMoveBottom:
-				return RequestEditQueue(NZBMessageRequest::eActionMoveBottom, 0, iID);
-		}
+		return RequestEditQueue(eAction, iOffset, iID);
 	}
 	else
 	{
-		switch (eAction)
-		{
-			case eaPause:
-				return g_pQueueCoordinator->GetQueueEditor()->PauseUnpauseEntry(iID, true);
-			case eaResume:
-				return g_pQueueCoordinator->GetQueueEditor()->PauseUnpauseEntry(iID, false);
-			case eaDelete:
-				return g_pQueueCoordinator->GetQueueEditor()->DeleteEntry(iID);
-			case eaMoveUp:
-				return g_pQueueCoordinator->GetQueueEditor()->MoveEntry(iID, -1);
-			case eaMoveDown:
-				return g_pQueueCoordinator->GetQueueEditor()->MoveEntry(iID, +1);
-			case eaMoveTop:
-				return g_pQueueCoordinator->GetQueueEditor()->MoveEntry(iID, -1000000);
-			case eaMoveBottom:
-				return g_pQueueCoordinator->GetQueueEditor()->MoveEntry(iID, +1000000);
-			case eaGroupPause:
-				return g_pQueueCoordinator->GetQueueEditor()->PauseUnpauseGroup(iID, true);
-			case eaGroupResume:
-				return g_pQueueCoordinator->GetQueueEditor()->PauseUnpauseGroup(iID, false);
-			case eaGroupDelete:
-				return g_pQueueCoordinator->GetQueueEditor()->DeleteGroup(iID);
-			case eaGroupMoveUp:
-				return g_pQueueCoordinator->GetQueueEditor()->MoveGroup(iID, -1);
-			case eaGroupMoveDown:
-				return g_pQueueCoordinator->GetQueueEditor()->MoveGroup(iID, +1);
-			case eaGroupMoveTop:
-				return g_pQueueCoordinator->GetQueueEditor()->MoveGroup(iID, -1000000);
-			case eaGroupMoveBottom:
-				return g_pQueueCoordinator->GetQueueEditor()->MoveGroup(iID, +1000000);
-		}
+		return g_pQueueCoordinator->GetQueueEditor()->EditEntry(iID, true, eAction, iOffset);
 	}
 	return false;
 }
@@ -285,7 +239,7 @@ bool Frontend::RequestMessages()
 	}
 
 	SNZBLogRequest LogRequest;
-	InitMessageBase(&LogRequest.m_MessageBase, NZBMessageRequest::eRequestLog, sizeof(LogRequest));
+	InitMessageBase(&LogRequest.m_MessageBase, eRemoteRequestLog, sizeof(LogRequest));
 	LogRequest.m_iLines = htonl(m_iNeededLogEntries);
 	if (m_iNeededLogEntries == 0)
 	{
@@ -354,7 +308,7 @@ bool Frontend::RequestFileList()
 	}
 
 	SNZBListRequest ListRequest;
-	InitMessageBase(&ListRequest.m_MessageBase, NZBMessageRequest::eRequestList, sizeof(ListRequest));
+	InitMessageBase(&ListRequest.m_MessageBase, eRemoteRequestList, sizeof(ListRequest));
 	ListRequest.m_bFileList = htonl(m_bFileList);
 	ListRequest.m_bServerState = htonl(m_bSummary);
 
