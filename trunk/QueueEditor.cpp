@@ -49,6 +49,8 @@
 extern QueueCoordinator* g_pQueueCoordinator;
 extern Options* g_pOptions;
 
+const int MAX_ID = 100000000;
+
 QueueEditor::EditItem::EditItem(int iID, int iOffset)
 {
 	m_iID = iID;
@@ -181,27 +183,65 @@ bool QueueEditor::MoveEntry(int iID, int iOffset)
 	return bOK;
 }
 
-bool QueueEditor::EditList(IDList* pIDList, bool bSmartOrder, EEditAction EEditAction, int iOffset)
+bool QueueEditor::EditEntry(int ID, bool bSmartOrder, EEditAction eAction, int iOffset)
+{
+	IDList cIDList;
+	cIDList.clear();
+	cIDList.push_back(ID);
+	return EditList(&cIDList, bSmartOrder, eAction, iOffset);
+}
+
+bool QueueEditor::EditList(IDList* pIDList, bool bSmartOrder, EEditAction eAction, int iOffset)
 {
 	ItemList cItemList;
-	PrepareList(&cItemList, pIDList, bSmartOrder, EEditAction, iOffset);
+	PrepareList(&cItemList, pIDList, bSmartOrder, eAction, iOffset);
 
 	for (ItemList::iterator it = cItemList.begin(); it != cItemList.end(); it++)
 	{
 		EditItem* pItem = *it;
-		switch (EEditAction)
+		switch (eAction)
 		{
-			case eaPause:
-			case eaResume:
-				PauseUnpauseEntry(pItem->m_iID, EEditAction == eaPause);
+			case eaFilePause:
+				PauseUnpauseEntry(pItem->m_iID, true);
 				break;
 
-			case eaMove:
+			case eaFileResume:
+				PauseUnpauseEntry(pItem->m_iID, false);
+				break;
+
+			case eaFileMoveOffset:
 				MoveEntry(pItem->m_iID, pItem->m_iOffset);
 				break;
 
-			case eaDelete:
+			case eaFileMoveTop:
+				MoveEntry(pItem->m_iID, -MAX_ID);
+				break;
+
+			case eaFileMoveBottom:
+				MoveEntry(pItem->m_iID, +MAX_ID);
+				break;
+
+			case eaFileDelete:
 				DeleteEntry(pItem->m_iID);
+				break;
+
+			case eaGroupPause:
+			case eaGroupResume:
+			case eaGroupDelete:
+				EditGroup(pItem->m_iID, eAction, 0);
+				break;
+
+			case eaGroupMoveOffset:
+				//MoveGroup(pItem->m_iID, iOffset); // not yet implemented
+				return false;
+				break;
+
+			case eaGroupMoveTop:
+				EditGroup(pItem->m_iID, eaGroupMoveOffset, -MAX_ID);
+				break;
+
+			case eaGroupMoveBottom:
+				EditGroup(pItem->m_iID, eaGroupMoveOffset, +MAX_ID);
 				break;
 		}
 		delete pItem;
@@ -213,7 +253,7 @@ bool QueueEditor::EditList(IDList* pIDList, bool bSmartOrder, EEditAction EEditA
 void QueueEditor::PrepareList(ItemList* pItemList, IDList* pIDList, bool bSmartOrder, EEditAction EEditAction, int iOffset)
 {
 	pItemList->reserve(pIDList->size());
-	if (bSmartOrder && iOffset != 0 && EEditAction == eaMove)
+	if (bSmartOrder && iOffset != 0 && EEditAction == eaFileMoveOffset)
 	{
 		//add IDs to list in order they currently have in download queue
 		int iLastDestPos = -1;
@@ -309,6 +349,7 @@ bool QueueEditor::EditGroup(int iID, EEditAction eAction, int iOffset)
 	IDList cIDList;
 	cIDList.clear();
 
+	// collecting files belonging to group
 	DownloadQueue* pDownloadQueue = g_pQueueCoordinator->LockQueue();
 	int iQueueSize = pDownloadQueue->size();
 	FileInfo* pFirstFileInfo = FindFileInfo(pDownloadQueue, iID);
@@ -325,43 +366,22 @@ bool QueueEditor::EditGroup(int iID, EEditAction eAction, int iOffset)
 	}
 	g_pQueueCoordinator->UnlockQueue();
 
-	if (eAction == eaMove && !(iOffset > iQueueSize || iOffset < -iQueueSize))
+	if (eAction == eaGroupMoveOffset && !(iOffset > iQueueSize || iOffset < -iQueueSize))
 	{
-		// currently Move-command can move only to Top or to Bottom, other offsets not supported
+		// currently Move-command can move only to Top or to Bottom, other offsets are not supported
 		return false;
 	}
 
-	bool bOK = EditList(&cIDList, true, eAction, iOffset);
+	if (eAction == eaGroupPausePars)
+	{
+		// Pause-pars command not yet supported
+		return false;
+	}
+
+	EEditAction GroupToFileMap[] = { (EEditAction)0, eaFileMoveOffset, eaFileMoveTop, eaFileMoveBottom, eaFilePause, eaFileResume, eaFileDelete,
+		eaFileMoveOffset, eaFileMoveTop, eaFileMoveBottom, eaFilePause, eaFilePause, eaFileResume, eaFileDelete };
+
+	bool bOK = EditList(&cIDList, true, GroupToFileMap[eAction], iOffset);
 
 	return bOK;
-}
-
-bool QueueEditor::PauseUnpauseList(IDList* pIDList, bool bPause)
-{
-	return EditList(pIDList, false, bPause ? eaPause : eaResume, 0);
-}
-
-bool QueueEditor::DeleteList(IDList* pIDList)
-{
-	return EditList(pIDList, false, eaDelete, 0);
-}
-
-bool QueueEditor::MoveList(IDList* pIDList, bool SmartOrder, int iOffset)
-{
-	return EditList(pIDList, SmartOrder, eaMove, iOffset);
-}
-
-bool QueueEditor::PauseUnpauseGroup(int iID, bool bPause)
-{
-	return EditGroup(iID, bPause ? eaPause : eaResume, 0);
-}
-
-bool QueueEditor::DeleteGroup(int iID)
-{
-	return EditGroup(iID, eaDelete, 0);
-}
-
-bool QueueEditor::MoveGroup(int iID, int iOffset)
-{
-	return EditGroup(iID, eaMove, iOffset);
 }

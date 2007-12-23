@@ -518,21 +518,21 @@ void Options::InitOptions()
 	const char* BoolNames[] = { "yes", "no", "true", "false", "1", "0", "on", "off", "enable", "disable" };
 	const int BoolValues[] = { 1, 0, 1, 0, 1, 0, 1, 0, 1, 0 };
 	const int BoolCount = 10;
-	m_bCreateBrokenLog		= (bool)ParseOptionValue(OPTION_CREATEBROKENLOG, BoolCount, BoolNames, (const int*)BoolValues);
-	m_bResetLog				= (bool)ParseOptionValue(OPTION_RESETLOG, BoolCount, BoolNames, (const int*)BoolValues);
-	m_bAppendNZBDir			= (bool)ParseOptionValue(OPTION_APPENDNZBDIR, BoolCount, BoolNames, (const int*)BoolValues);
-	m_bContinuePartial		= (bool)ParseOptionValue(OPTION_CONTINUEPARTIAL, BoolCount, BoolNames, (const int*)BoolValues);
-	m_bRenameBroken			= (bool)ParseOptionValue(OPTION_RENAMEBROKEN, BoolCount, BoolNames, (const int*)BoolValues);
-	m_bSaveQueue			= (bool)ParseOptionValue(OPTION_SAVEQUEUE, BoolCount, BoolNames, (const int*)BoolValues);
-	m_bDupeCheck			= (bool)ParseOptionValue(OPTION_DUPECHECK, BoolCount, BoolNames, (const int*)BoolValues);
-	m_bCreateLog			= (bool)ParseOptionValue(OPTION_CREATELOG, BoolCount, BoolNames, (const int*)BoolValues);
-	m_bParCheck				= (bool)ParseOptionValue(OPTION_PARCHECK, BoolCount, BoolNames, (const int*)BoolValues);
-	m_bParRepair			= (bool)ParseOptionValue(OPTION_PARREPAIR, BoolCount, BoolNames, (const int*)BoolValues);
-	m_bStrictParName		= (bool)ParseOptionValue(OPTION_STRICTPARNAME, BoolCount, BoolNames, (const int*)BoolValues);
-	m_bReloadQueue			= (bool)ParseOptionValue(OPTION_RELOADQUEUE, BoolCount, BoolNames, (const int*)BoolValues);
-	m_bCursesNZBName		= (bool)ParseOptionValue(OPTION_CURSESNZBNAME, BoolCount, BoolNames, (const int*)BoolValues);
-	m_bCursesTime			= (bool)ParseOptionValue(OPTION_CURSESTIME, BoolCount, BoolNames, (const int*)BoolValues);
-	m_bCursesGroup			= (bool)ParseOptionValue(OPTION_CURSESGROUP, BoolCount, BoolNames, (const int*)BoolValues);
+	m_bCreateBrokenLog		= (bool)ParseOptionValue(OPTION_CREATEBROKENLOG, BoolCount, BoolNames, BoolValues);
+	m_bResetLog				= (bool)ParseOptionValue(OPTION_RESETLOG, BoolCount, BoolNames, BoolValues);
+	m_bAppendNZBDir			= (bool)ParseOptionValue(OPTION_APPENDNZBDIR, BoolCount, BoolNames, BoolValues);
+	m_bContinuePartial		= (bool)ParseOptionValue(OPTION_CONTINUEPARTIAL, BoolCount, BoolNames, BoolValues);
+	m_bRenameBroken			= (bool)ParseOptionValue(OPTION_RENAMEBROKEN, BoolCount, BoolNames, BoolValues);
+	m_bSaveQueue			= (bool)ParseOptionValue(OPTION_SAVEQUEUE, BoolCount, BoolNames, BoolValues);
+	m_bDupeCheck			= (bool)ParseOptionValue(OPTION_DUPECHECK, BoolCount, BoolNames, BoolValues);
+	m_bCreateLog			= (bool)ParseOptionValue(OPTION_CREATELOG, BoolCount, BoolNames, BoolValues);
+	m_bParCheck				= (bool)ParseOptionValue(OPTION_PARCHECK, BoolCount, BoolNames, BoolValues);
+	m_bParRepair			= (bool)ParseOptionValue(OPTION_PARREPAIR, BoolCount, BoolNames, BoolValues);
+	m_bStrictParName		= (bool)ParseOptionValue(OPTION_STRICTPARNAME, BoolCount, BoolNames, BoolValues);
+	m_bReloadQueue			= (bool)ParseOptionValue(OPTION_RELOADQUEUE, BoolCount, BoolNames, BoolValues);
+	m_bCursesNZBName		= (bool)ParseOptionValue(OPTION_CURSESNZBNAME, BoolCount, BoolNames, BoolValues);
+	m_bCursesTime			= (bool)ParseOptionValue(OPTION_CURSESTIME, BoolCount, BoolNames, BoolValues);
+	m_bCursesGroup			= (bool)ParseOptionValue(OPTION_CURSESGROUP, BoolCount, BoolNames, BoolValues);
 
 	const char* OutputModeNames[] = { "loggable", "logable", "log", "colored", "color", "ncurses", "curses" };
 	const int OutputModeValues[] = { omLoggable, omLoggable, omLoggable, omColored, omColored, omNCurses, omNCurses };
@@ -660,25 +660,40 @@ void Options::InitCommandLine(int argc, char* argv[])
 			case 'E':
 			{
 				m_eClientOperation = opClientRequestEditQueue;
+				bool bGroup = !strcasecmp(optarg, "G");
+				if (bGroup)
+				{
+					optind++;
+					if (optind > argc)
+					{
+						abort("FATAL ERROR: Could not parse value of option 'E'\n");
+					}
+					optarg = argv[optind-1];
+				}
+
 				if (!strcasecmp(optarg, "T"))
 				{
-					m_iEditQueueAction = NZBMessageRequest::eActionMoveTop;
+					m_iEditQueueAction = bGroup ? eRemoteEditActionGroupMoveTop : eRemoteEditActionFileMoveTop;
 				}
 				else if (!strcasecmp(optarg, "B"))
 				{
-					m_iEditQueueAction = NZBMessageRequest::eActionMoveBottom;
+					m_iEditQueueAction = bGroup ? eRemoteEditActionGroupMoveBottom : eRemoteEditActionFileMoveBottom;
 				}
 				else if (!strcasecmp(optarg, "P"))
 				{
-					m_iEditQueueAction = NZBMessageRequest::eActionPause;
+					m_iEditQueueAction = bGroup ? eRemoteEditActionGroupPause : eRemoteEditActionFilePause;
+				}
+				else if (!strcasecmp(optarg, "A"))
+				{
+					m_iEditQueueAction = bGroup ? eRemoteEditActionGroupPausePars : eRemoteEditActionFilePause;
 				}
 				else if (!strcasecmp(optarg, "U"))
 				{
-					m_iEditQueueAction = NZBMessageRequest::eActionResume;
+					m_iEditQueueAction = bGroup ? eRemoteEditActionGroupResume : eRemoteEditActionFileResume;
 				}
 				else if (!strcasecmp(optarg, "D"))
 				{
-					m_iEditQueueAction = NZBMessageRequest::eActionDelete;
+					m_iEditQueueAction = bGroup ? eRemoteEditActionGroupDelete : eRemoteEditActionFileDelete;
 				}
 				else
 				{
@@ -687,7 +702,7 @@ void Options::InitCommandLine(int argc, char* argv[])
 					{
 						abort("FATAL ERROR: Could not parse value of option 'E'\n");
 					}
-					m_iEditQueueAction = NZBMessageRequest::eActionMoveOffset;
+					m_iEditQueueAction = bGroup ? eRemoteEditActionGroupMoveOffset : eRemoteEditActionFileMoveOffset;
 				}
 				break;
 			}
@@ -724,7 +739,7 @@ void Options::PrintUsage(char* com)
 	       "  -T, --top                 Add file to the top (begining) of queue\n"
 	       "                            (should be used with switch --append)\n"
 	       "  -G, --log <lines>         Request last <lines> lines from server's screen-log\n"
-		   "  -E, --edit <action> <IDs> Edit queue on the server\n"
+		   "  -E, --edit [G] <action> <IDs> Edit queue on the server\n"
 	       "    where <action> is one of:\n"
 	       "      <+offset|-offset>     Move file(s) in queue relative to current position\n"
 	       "                            offset is an integer number\n"
@@ -732,6 +747,7 @@ void Options::PrintUsage(char* com)
 	       "      B                     Move file(s) to the bottom of queue\n"
 	       "      P                     Pause file(s)\n"
 	       "      U                     Resume (unpause) file(s)\n"
+		   "      A                     Pause pars (only for groups)\n"
 	       "      D                     Delete file(s)\n"
 	       "    where <IDs> is a comma-separated list of file-ids or ranges of file-ids,\n"
 		   "	   for example: 1-5,3,10-22"

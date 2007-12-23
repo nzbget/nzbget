@@ -36,6 +36,23 @@ class QueueEditor
 public:
 	typedef std::vector<int> IDList;
 
+	enum EEditAction
+	{
+		eaFileMoveOffset = 1,			// move to m_iOffset relative to the current position in queue
+		eaFileMoveTop,
+		eaFileMoveBottom,
+		eaFilePause,
+		eaFileResume,
+		eaFileDelete,
+		eaGroupMoveOffset,				// move to m_iOffset relative to the current position in queue
+		eaGroupMoveTop,
+		eaGroupMoveBottom,
+		eaGroupPause,
+		eaGroupPausePars,
+		eaGroupResume,
+		eaGroupDelete
+	};
+
 private:
 	class EditItem
 	{
@@ -48,39 +65,25 @@ private:
 
 	typedef std::vector<EditItem*> ItemList;
 
-	enum EEditAction
-	{
-		eaMove,				// move to m_iOffset relative to the current position in queue
-		eaPause,			
-		eaResume,			
-		eaDelete,			
-	};
-
 private:
 	DiskState*				m_pDiskState;
 
 	FileInfo*				FindFileInfo(DownloadQueue* pDownloadQueue, int iID);
 	int						FindFileInfoEntry(DownloadQueue* pDownloadQueue, int iID);
-	bool					EditList(IDList* pIDList, bool bSmartOrder, EEditAction eAction, int iOffset);
 	void					PrepareList(ItemList* pItemList, IDList* pIDList, bool bSmartOrder, EEditAction eAction, int iOffset);
 	bool					EditGroup(int iID, EEditAction eAction, int iOffset);
+
+	bool					PauseUnpauseEntry(int iID, bool bPause);
+	bool					DeleteEntry(int iID);
+	bool					MoveEntry(int iID, int iOffset);
 
 public:
 							QueueEditor();                
 							~QueueEditor();
 	void					SetDiskState(DiskState* diskState) { m_pDiskState = diskState; };
 
-	bool					PauseUnpauseEntry(int iID, bool bPause);
-	bool					DeleteEntry(int iID);
-	bool					MoveEntry(int iID, int iOffset);
-
-	bool					PauseUnpauseGroup(int iID, bool bPause);
-	bool					DeleteGroup(int iID);
-	bool					MoveGroup(int iID, int iOffset);
-
-	bool					PauseUnpauseList(IDList* pIDList, bool bPause);
-	bool					DeleteList(IDList* pIDList);
-	bool					MoveList(IDList* pIDList, bool SmartOrder, int iOffset);
+	bool					EditEntry(int ID, bool bSmartOrder, EEditAction eAction, int iOffset);
+	bool					EditList(IDList* pIDList, bool bSmartOrder, EEditAction eAction, int iOffset);
 };
 
 #endif

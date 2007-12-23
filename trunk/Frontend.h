@@ -31,28 +31,10 @@
 #include "Log.h"
 #include "DownloadInfo.h"
 #include "MessageBase.h"
+#include "QueueEditor.h"
 
 class Frontend : public Thread
 {
-public:
-	enum EEditAction
-	{
-		eaPause,
-		eaResume,
-		eaDelete,
-		eaMoveUp,
-		eaMoveDown,
-		eaMoveTop,
-		eaMoveBottom,
-		eaGroupPause,
-		eaGroupResume,
-		eaGroupDelete,
-		eaGroupMoveUp,
-		eaGroupMoveDown,
-		eaGroupMoveTop,
-		eaGroupMoveBottom
-	};
-	
 private:
 	Log::Messages		m_RemoteMessages;
 	DownloadQueue		m_RemoteQueue;
@@ -89,7 +71,7 @@ protected:
 	bool				RequestSetDownloadRate(float fRate);
 	void				ServerDumpDebug();
 	bool				RequestDumpDebug();
-	bool 				ServerEditQueue(EEditAction eAction, int iEntry);
+	bool 				ServerEditQueue(QueueEditor::EEditAction eAction, int iOffset, int iEntry);
 	bool 				RequestEditQueue(int iAction, int iOffset, int iID);
 
 public:
