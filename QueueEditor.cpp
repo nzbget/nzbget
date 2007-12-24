@@ -17,8 +17,8 @@
  *  along with this program; if not, write to the Free Software
  *  Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  *
- * $Revision: 1 $
- * $Date: 2007-11-29 15:19:01 +0100 (Do, 29 Nov 2007) $
+ * $Revision$
+ * $Date$
  *
  */
 
