@@ -536,6 +536,19 @@ int NCursesFrontend::PrintMessage(Message* Msg, int iRow, int iMaxLines)
 		snprintf(szText, iLen, "%s - %s", szTime, Msg->GetText());
 		szText[iLen - 1] = '\0';
 	}
+	else
+	{
+		szText = strdup(szText);
+	}
+
+	// replace CR and LF characters with spaces
+	for (char* p = szText; *p; p++)
+	{
+		if (*p == '\n' || *p == '\r')
+		{
+			*p = ' ';
+		}
+	}
 
 	int iLen = strlen(szText);
 	int iWinWidth = m_iScreenWidth - 8;
@@ -561,10 +574,7 @@ int NCursesFrontend::PrintMessage(Message* Msg, int iRow, int iMaxLines)
 		iLines++;
 	}
 
-	if (m_bShowTimestamp)
-	{
-		free(szText);
-	}
+	free(szText);
 
 	return iLines;
 }
