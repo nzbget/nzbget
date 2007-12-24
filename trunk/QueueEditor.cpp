@@ -80,6 +80,21 @@ FileInfo* QueueEditor::FindFileInfo(DownloadQueue* pDownloadQueue, int iID)
 	return NULL;
 }
 
+int QueueEditor::FindFileInfoEntry(DownloadQueue* pDownloadQueue, FileInfo* pFileInfo)
+{
+	int iEntry = 0;
+	for (DownloadQueue::iterator it = pDownloadQueue->begin(); it != pDownloadQueue->end(); it++)
+	{
+		FileInfo* pFileInfo2 = *it;
+		if (pFileInfo2 == pFileInfo)
+		{
+			return iEntry;
+		}
+		iEntry ++;
+	}
+	return -1;
+}
+
 /*
  * Set the pause flag of the specific entry in the queue
  * returns true if successful, false if operation is not possible
@@ -105,19 +120,8 @@ void QueueEditor::DeleteEntry(FileInfo* pFileInfo)
  */
 void QueueEditor::MoveEntry(DownloadQueue* pDownloadQueue, FileInfo* pFileInfo, int iOffset)
 {
-	bool bFound = false;
-	int iEntry = 0;
-	for (DownloadQueue::iterator it = pDownloadQueue->begin(); it != pDownloadQueue->end(); it++)
-	{
-		if (*it == pFileInfo)
-		{
-			bFound = true;
-			break;
-		}
-		iEntry ++;
-	}
-
-	if (bFound)
+	int iEntry = FindFileInfoEntry(pDownloadQueue, pFileInfo);
+	if (iEntry > -1)
 	{
 		int iNewEntry = iEntry + iOffset;
 
@@ -150,6 +154,11 @@ bool QueueEditor::EditEntry(int ID, bool bSmartOrder, EEditAction eAction, int i
 bool QueueEditor::EditList(IDList* pIDList, bool bSmartOrder, EEditAction eAction, int iOffset)
 {
 	DownloadQueue* pDownloadQueue = g_pQueueCoordinator->LockQueue();
+
+	if (eAction == eaGroupMoveOffset)
+	{
+		AlignAffectedGroups(pDownloadQueue, pIDList, bSmartOrder, iOffset);
+	}
 
 	ItemList cItemList;
 	PrepareList(pDownloadQueue, &cItemList, pIDList, bSmartOrder, eAction, iOffset);
@@ -186,20 +195,13 @@ bool QueueEditor::EditList(IDList* pIDList, bool bSmartOrder, EEditAction eActio
 			case eaGroupPause:
 			case eaGroupResume:
 			case eaGroupDelete:
+			case eaGroupMoveTop:
+			case eaGroupMoveBottom:
 				EditGroup(pDownloadQueue, pItem->m_pFileInfo, eAction, 0);
 				break;
 
 			case eaGroupMoveOffset:
-				//MoveGroup(pDownloadQueue, pItem->m_pFileInfo, iOffset); // not yet implemented
-				return false;
-				break;
-
-			case eaGroupMoveTop:
-				EditGroup(pDownloadQueue, pItem->m_pFileInfo, eaGroupMoveOffset, -MAX_ID);
-				break;
-
-			case eaGroupMoveBottom:
-				EditGroup(pDownloadQueue, pItem->m_pFileInfo, eaGroupMoveOffset, +MAX_ID);
+				EditGroup(pDownloadQueue, pItem->m_pFileInfo, eaGroupMoveOffset, iOffset);
 				break;
 		}
 		delete pItem;
@@ -326,10 +328,50 @@ bool QueueEditor::EditGroup(DownloadQueue* pDownloadQueue, FileInfo* pFileInfo, 
 		}
 	}
 
-	if (eAction == eaGroupMoveOffset && !(iOffset > iQueueSize || iOffset < -iQueueSize))
+	if (eAction == eaGroupMoveOffset)
 	{
-		// currently Move-command can move only to Top or to Bottom, other offsets are not supported
-		return false;
+		// calculating offset in terms of files
+		FileList cGroupList;
+		BuildGroupList(pDownloadQueue, &cGroupList);
+		unsigned int iNum = 0;
+		for (FileList::iterator it = cGroupList.begin(); it != cGroupList.end(); it++, iNum++)
+		{
+			FileInfo* pGroupInfo = *it;
+			if (!strcmp(pGroupInfo->GetNZBFilename(), pFileInfo->GetNZBFilename()))
+			{
+				break;
+			}
+		}
+		int iFileOffset = 0;
+		if (iOffset > 0)
+		{
+			if (iNum + iOffset >= cGroupList.size() - 1)
+			{
+				eAction = eaGroupMoveBottom;
+			}
+			else
+			{
+				for (unsigned int i = iNum + 2; i < cGroupList.size() && iOffset > 0; i++, iOffset--)
+				{
+					iFileOffset += FindFileInfoEntry(pDownloadQueue, cGroupList[i]) - FindFileInfoEntry(pDownloadQueue, cGroupList[i-1]);
+				}
+			}
+		}
+		else
+		{
+			if (iNum + iOffset <= 0)
+			{
+				eAction = eaGroupMoveTop;
+			}
+			else
+			{
+				for (unsigned int i = iNum; i >= 0 && iOffset < 0; i--, iOffset++)
+				{
+					iFileOffset -= FindFileInfoEntry(pDownloadQueue, cGroupList[i]) - FindFileInfoEntry(pDownloadQueue, cGroupList[i-1]);
+				}
+			}
+		}
+		iOffset = iFileOffset;
 	}
 
 	if (eAction == eaGroupPausePars)
@@ -342,4 +384,126 @@ bool QueueEditor::EditGroup(DownloadQueue* pDownloadQueue, FileInfo* pFileInfo, 
 		eaFileMoveOffset, eaFileMoveTop, eaFileMoveBottom, eaFilePause, eaFilePause, eaFileResume, eaFileDelete };
 
 	return EditList(&cIDList, true, GroupToFileMap[eAction], iOffset);
+}
+
+void QueueEditor::BuildGroupList(DownloadQueue* pDownloadQueue, FileList* pGroupList)
+{
+	pGroupList->clear();
+    for (DownloadQueue::iterator it = pDownloadQueue->begin(); it != pDownloadQueue->end(); it++)
+    {
+        FileInfo* pFileInfo = *it;
+		FileInfo* pGroupInfo = NULL;
+		for (FileList::iterator itg = pGroupList->begin(); itg != pGroupList->end(); itg++)
+		{
+			FileInfo* pGroupInfo1 = *itg;
+			if (!strcmp(pGroupInfo1->GetNZBFilename(), pFileInfo->GetNZBFilename()))
+			{
+				pGroupInfo = pGroupInfo1;
+				break;
+			}
+		}
+		if (!pGroupInfo)
+		{
+			pGroupList->push_back(pFileInfo);
+		}
+	}
+}
+
+bool QueueEditor::ItemExists(FileList* pFileList, FileInfo* pFileInfo)
+{
+	for (FileList::iterator it = pFileList->begin(); it != pFileList->end(); it++)
+	{
+		if (*it == pFileInfo)
+		{
+			return true;
+		}
+	}
+	return false;
+}
+
+void QueueEditor::AlignAffectedGroups(DownloadQueue* pDownloadQueue, IDList* pIDList, bool bSmartOrder, int iOffset)
+{
+	// Build list of all groups; List contains first file of each group
+	FileList cGroupList;
+	BuildGroupList(pDownloadQueue, &cGroupList);
+
+	// Find affected groups. It includes groups being moved and groups directly
+	// above or under of these groups (those order is also changed)
+	FileList cAffectedGroupList;
+	cAffectedGroupList.clear();
+	ItemList cItemList;
+	PrepareList(pDownloadQueue, &cItemList, pIDList, bSmartOrder, eaFileMoveOffset, iOffset);
+	for (ItemList::iterator it = cItemList.begin(); it != cItemList.end(); it++)
+	{
+		EditItem* pItem = *it;
+		unsigned int iNum = 0;
+		for (FileList::iterator it = cGroupList.begin(); it != cGroupList.end(); it++, iNum++)
+		{
+			FileInfo* pFileInfo = *it;
+			if (!strcmp(pItem->m_pFileInfo->GetNZBFilename(), pFileInfo->GetNZBFilename()))
+			{
+				if (!ItemExists(&cAffectedGroupList, pFileInfo))
+				{
+					cAffectedGroupList.push_back(pFileInfo);
+				}
+				if (iOffset < 0)
+				{
+					for (int i = iNum - 1; i >= -iOffset-1; i--)
+					{
+						if (!ItemExists(&cAffectedGroupList, cGroupList[i]))
+						{
+							cAffectedGroupList.push_back(cGroupList[i]);
+						}
+					}
+				}
+				if (iOffset > 0)
+				{
+					for (unsigned int i = iNum + 1; i <= cGroupList.size() - iOffset; i++)
+					{
+						if (!ItemExists(&cAffectedGroupList, cGroupList[i]))
+						{
+							cAffectedGroupList.push_back(cGroupList[i]);
+						}
+					}
+
+					cAffectedGroupList.push_back(cGroupList[iNum + 1]);
+				}
+				break;
+			}
+		}
+	}
+	cGroupList.clear();
+
+	// Aligning groups
+	for (FileList::iterator it = cAffectedGroupList.begin(); it != cAffectedGroupList.end(); it++)
+	{
+		FileInfo* pFileInfo = *it;
+		AlignGroup(pDownloadQueue, pFileInfo);
+	}
+}
+
+void QueueEditor::AlignGroup(DownloadQueue* pDownloadQueue, FileInfo* pFirstFileInfo)
+{
+	FileInfo* pLastFileInfo = NULL;
+	unsigned int iLastNum = 0;
+	unsigned int iNum = 0;
+	while (iNum < pDownloadQueue->size())
+	{
+		FileInfo* pFileInfo = (*pDownloadQueue)[iNum];
+		if (!strcmp(pFirstFileInfo->GetNZBFilename(), pFileInfo->GetNZBFilename()))
+		{
+			if (pLastFileInfo && iNum - iLastNum > 1)
+			{
+				pDownloadQueue->erase(pDownloadQueue->begin() + iNum);
+				pDownloadQueue->insert(pDownloadQueue->begin() + iLastNum + 1, pFileInfo);
+				iLastNum++;
+			}
+			else
+			{
+				iLastNum = iNum;
+			}
+			pLastFileInfo = pFileInfo;
+		}
+		iNum++;
+	}
 }
