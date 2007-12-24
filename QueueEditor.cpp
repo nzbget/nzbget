@@ -51,9 +51,9 @@ extern Options* g_pOptions;
 
 const int MAX_ID = 100000000;
 
-QueueEditor::EditItem::EditItem(int iID, int iOffset)
+QueueEditor::EditItem::EditItem(FileInfo* pFileInfo, int iOffset)
 {
-	m_iID = iID;
+	m_pFileInfo = pFileInfo;
 	m_iOffset = iOffset;
 }
 
@@ -80,79 +80,44 @@ FileInfo* QueueEditor::FindFileInfo(DownloadQueue* pDownloadQueue, int iID)
 	return NULL;
 }
 
-int QueueEditor::FindFileInfoEntry(DownloadQueue* pDownloadQueue, int iID)
-{
-	int iEntry = 0;
-	for (DownloadQueue::iterator it = pDownloadQueue->begin(); it != pDownloadQueue->end(); it++)
-	{
-		FileInfo* pFileInfo = *it;
-		if (pFileInfo->GetID() == iID)
-		{
-			return iEntry;
-		}
-		iEntry ++;
-	}
-	return -1;
-}
-
 /*
  * Set the pause flag of the specific entry in the queue
  * returns true if successful, false if operation is not possible
  */
-bool QueueEditor::PauseUnpauseEntry(int iID, bool bPause)
+void QueueEditor::PauseUnpauseEntry(FileInfo* pFileInfo, bool bPause)
 {
-	bool bOK = false;
-	DownloadQueue* pDownloadQueue = g_pQueueCoordinator->LockQueue();
-
-	FileInfo* pFileInfo = FindFileInfo(pDownloadQueue, iID);
-
-	if (pFileInfo)
-	{
-		pFileInfo->SetPaused(bPause);
-		bOK = true;
-	}
-
-	if (g_pOptions->GetSaveQueue() && g_pOptions->GetServerMode())
-	{
-		m_pDiskState->Save(pDownloadQueue, true);
-	}
-
-	g_pQueueCoordinator->UnlockQueue();
-	return bOK;
+	pFileInfo->SetPaused(bPause);
 }
 
 /*
  * Removes entry with index iEntry
  * returns true if successful, false if operation is not possible
  */
-bool QueueEditor::DeleteEntry(int iID)
+void QueueEditor::DeleteEntry(FileInfo* pFileInfo)
 {
-	bool bOK = false;
-	DownloadQueue* pDownloadQueue = g_pQueueCoordinator->LockQueue();
-
-	FileInfo* pFileInfo = FindFileInfo(pDownloadQueue, iID);
-	if (pFileInfo)
-	{
-		info("Deleting file %s from download queue", pFileInfo->GetFilename());
-		g_pQueueCoordinator->DeleteQueueEntry(pFileInfo);
-		bOK = true;
-	}
-
-	g_pQueueCoordinator->UnlockQueue();
-	return bOK;
+	info("Deleting file %s from download queue", pFileInfo->GetFilename());
+	g_pQueueCoordinator->DeleteQueueEntry(pFileInfo);
 }
 
 /*
  * Moves entry identified with iID in the queue
  * returns true if successful, false if operation is not possible
  */
-bool QueueEditor::MoveEntry(int iID, int iOffset)
+void QueueEditor::MoveEntry(DownloadQueue* pDownloadQueue, FileInfo* pFileInfo, int iOffset)
 {
-	bool bOK = false;
-	DownloadQueue* pDownloadQueue = g_pQueueCoordinator->LockQueue();
+	bool bFound = false;
+	int iEntry = 0;
+	for (DownloadQueue::iterator it = pDownloadQueue->begin(); it != pDownloadQueue->end(); it++)
+	{
+		if (*it == pFileInfo)
+		{
+			bFound = true;
+			break;
+		}
+		iEntry ++;
+	}
 
-	int iEntry = FindFileInfoEntry(pDownloadQueue, iID);
-	if (iEntry >= 0)
+	if (bFound)
 	{
 		int iNewEntry = iEntry + iOffset;
 
@@ -170,17 +135,8 @@ bool QueueEditor::MoveEntry(int iID, int iOffset)
 			FileInfo* fi = (*pDownloadQueue)[iEntry];
 			pDownloadQueue->erase(pDownloadQueue->begin() + iEntry);
 			pDownloadQueue->insert(pDownloadQueue->begin() + iNewEntry, fi);
-			bOK = true;
 		}
 	}
-
-	if (g_pOptions->GetSaveQueue() && g_pOptions->GetServerMode())
-	{
-		m_pDiskState->Save(pDownloadQueue, true);
-	}
-
-	g_pQueueCoordinator->UnlockQueue();
-	return bOK;
 }
 
 bool QueueEditor::EditEntry(int ID, bool bSmartOrder, EEditAction eAction, int iOffset)
@@ -193,8 +149,10 @@ bool QueueEditor::EditEntry(int ID, bool bSmartOrder, EEditAction eAction, int i
 
 bool QueueEditor::EditList(IDList* pIDList, bool bSmartOrder, EEditAction eAction, int iOffset)
 {
+	DownloadQueue* pDownloadQueue = g_pQueueCoordinator->LockQueue();
+
 	ItemList cItemList;
-	PrepareList(&cItemList, pIDList, bSmartOrder, eAction, iOffset);
+	PrepareList(pDownloadQueue, &cItemList, pIDList, bSmartOrder, eAction, iOffset);
 
 	for (ItemList::iterator it = cItemList.begin(); it != cItemList.end(); it++)
 	{
@@ -202,62 +160,69 @@ bool QueueEditor::EditList(IDList* pIDList, bool bSmartOrder, EEditAction eActio
 		switch (eAction)
 		{
 			case eaFilePause:
-				PauseUnpauseEntry(pItem->m_iID, true);
+				PauseUnpauseEntry(pItem->m_pFileInfo, true);
 				break;
 
 			case eaFileResume:
-				PauseUnpauseEntry(pItem->m_iID, false);
+				PauseUnpauseEntry(pItem->m_pFileInfo, false);
 				break;
 
 			case eaFileMoveOffset:
-				MoveEntry(pItem->m_iID, pItem->m_iOffset);
+				MoveEntry(pDownloadQueue, pItem->m_pFileInfo, pItem->m_iOffset);
 				break;
 
 			case eaFileMoveTop:
-				MoveEntry(pItem->m_iID, -MAX_ID);
+				MoveEntry(pDownloadQueue, pItem->m_pFileInfo, -MAX_ID);
 				break;
 
 			case eaFileMoveBottom:
-				MoveEntry(pItem->m_iID, +MAX_ID);
+				MoveEntry(pDownloadQueue, pItem->m_pFileInfo, +MAX_ID);
 				break;
 
 			case eaFileDelete:
-				DeleteEntry(pItem->m_iID);
+				DeleteEntry(pItem->m_pFileInfo);
 				break;
 
 			case eaGroupPause:
 			case eaGroupResume:
 			case eaGroupDelete:
-				EditGroup(pItem->m_iID, eAction, 0);
+				EditGroup(pDownloadQueue, pItem->m_pFileInfo, eAction, 0);
 				break;
 
 			case eaGroupMoveOffset:
-				//MoveGroup(pItem->m_iID, iOffset); // not yet implemented
+				//MoveGroup(pDownloadQueue, pItem->m_pFileInfo, iOffset); // not yet implemented
 				return false;
 				break;
 
 			case eaGroupMoveTop:
-				EditGroup(pItem->m_iID, eaGroupMoveOffset, -MAX_ID);
+				EditGroup(pDownloadQueue, pItem->m_pFileInfo, eaGroupMoveOffset, -MAX_ID);
 				break;
 
 			case eaGroupMoveBottom:
-				EditGroup(pItem->m_iID, eaGroupMoveOffset, +MAX_ID);
+				EditGroup(pDownloadQueue, pItem->m_pFileInfo, eaGroupMoveOffset, +MAX_ID);
 				break;
 		}
 		delete pItem;
 	}
 
+	if (g_pOptions->GetSaveQueue() && g_pOptions->GetServerMode())
+	{
+		m_pDiskState->Save(pDownloadQueue, true);
+	}
+
+	g_pQueueCoordinator->UnlockQueue();
+
 	return cItemList.size() > 0;
 }
 
-void QueueEditor::PrepareList(ItemList* pItemList, IDList* pIDList, bool bSmartOrder, EEditAction EEditAction, int iOffset)
+void QueueEditor::PrepareList(DownloadQueue* pDownloadQueue, ItemList* pItemList, IDList* pIDList, bool bSmartOrder, 
+	EEditAction EEditAction, int iOffset)
 {
 	pItemList->reserve(pIDList->size());
 	if (bSmartOrder && iOffset != 0 && EEditAction == eaFileMoveOffset)
 	{
 		//add IDs to list in order they currently have in download queue
 		int iLastDestPos = -1;
-		DownloadQueue* pDownloadQueue = g_pQueueCoordinator->LockQueue();
 		int iStart, iEnd, iStep;
 		if (iOffset < 0)
 		{
@@ -304,19 +269,17 @@ void QueueEditor::PrepareList(ItemList* pItemList, IDList* pIDList, bool bSmartO
 						}
 					}
 					iLastDestPos = iIndex + iWorkOffset;
-					pItemList->push_back(new EditItem(iID, iWorkOffset));
+					pItemList->push_back(new EditItem(pFileInfo, iWorkOffset));
 					break;
 				}
 			}
 		}
-		g_pQueueCoordinator->UnlockQueue();
 	}
 	else
 	{
 		// check ID range
 		int iMaxID = 0;
 		int iMinID = MAX_ID;
-		DownloadQueue* pDownloadQueue = g_pQueueCoordinator->LockQueue();
 		for (DownloadQueue::iterator it = pDownloadQueue->begin(); it != pDownloadQueue->end(); it++)
 		{
 			FileInfo* pFileInfo = *it;
@@ -330,7 +293,6 @@ void QueueEditor::PrepareList(ItemList* pItemList, IDList* pIDList, bool bSmartO
 				iMinID = ID;
 			}
 		}
-		g_pQueueCoordinator->UnlockQueue();
 
 		//add IDs to list in order they were transmitted in command
 		for (IDList::iterator it = pIDList->begin(); it != pIDList->end(); it++)
@@ -338,33 +300,31 @@ void QueueEditor::PrepareList(ItemList* pItemList, IDList* pIDList, bool bSmartO
 			int iID = *it;
 			if (iMinID <= iID && iID <= iMaxID)
 			{
-				pItemList->push_back(new EditItem(iID, iOffset));
+				FileInfo* pFileInfo = FindFileInfo(pDownloadQueue, iID);
+				if (pFileInfo)
+				{
+					pItemList->push_back(new EditItem(pFileInfo, iOffset));
+				}
 			}
 		}
 	}
 }
 
-bool QueueEditor::EditGroup(int iID, EEditAction eAction, int iOffset)
+bool QueueEditor::EditGroup(DownloadQueue* pDownloadQueue, FileInfo* pFileInfo, EEditAction eAction, int iOffset)
 {
 	IDList cIDList;
 	cIDList.clear();
 
 	// collecting files belonging to group
-	DownloadQueue* pDownloadQueue = g_pQueueCoordinator->LockQueue();
 	int iQueueSize = pDownloadQueue->size();
-	FileInfo* pFirstFileInfo = FindFileInfo(pDownloadQueue, iID);
-	if (pFirstFileInfo)
+	for (DownloadQueue::iterator it = pDownloadQueue->begin(); it != pDownloadQueue->end(); it++)
 	{
-		for (DownloadQueue::iterator it = pDownloadQueue->begin(); it != pDownloadQueue->end(); it++)
+		FileInfo* pFileInfo2 = *it;
+		if (!strcmp(pFileInfo2->GetNZBFilename(), pFileInfo->GetNZBFilename()))
 		{
-			FileInfo* pFileInfo = *it;
-			if (!strcmp(pFirstFileInfo->GetNZBFilename(), pFileInfo->GetNZBFilename()))
-			{
-				cIDList.push_back(pFileInfo->GetID());
-			}
+			cIDList.push_back(pFileInfo2->GetID());
 		}
 	}
-	g_pQueueCoordinator->UnlockQueue();
 
 	if (eAction == eaGroupMoveOffset && !(iOffset > iQueueSize || iOffset < -iQueueSize))
 	{
@@ -381,7 +341,5 @@ bool QueueEditor::EditGroup(int iID, EEditAction eAction, int iOffset)
 	EEditAction GroupToFileMap[] = { (EEditAction)0, eaFileMoveOffset, eaFileMoveTop, eaFileMoveBottom, eaFilePause, eaFileResume, eaFileDelete,
 		eaFileMoveOffset, eaFileMoveTop, eaFileMoveBottom, eaFilePause, eaFilePause, eaFileResume, eaFileDelete };
 
-	bool bOK = EditList(&cIDList, true, GroupToFileMap[eAction], iOffset);
-
-	return bOK;
+	return EditList(&cIDList, true, GroupToFileMap[eAction], iOffset);
 }
