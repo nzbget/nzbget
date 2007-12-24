@@ -365,7 +365,7 @@ bool QueueEditor::EditGroup(DownloadQueue* pDownloadQueue, FileInfo* pFileInfo, 
 			}
 			else
 			{
-				for (unsigned int i = iNum; i >= 0 && iOffset < 0; i--, iOffset++)
+				for (unsigned int i = iNum; i > 0 && iOffset < 0; i--, iOffset++)
 				{
 					iFileOffset -= FindFileInfoEntry(pDownloadQueue, cGroupList[i]) - FindFileInfoEntry(pDownloadQueue, cGroupList[i-1]);
 				}
