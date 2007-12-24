@@ -57,10 +57,10 @@ private:
 	class EditItem
 	{
 	public:
-		int		m_iID;
-		int		m_iOffset;
+		int			m_iOffset;
+		FileInfo*	m_pFileInfo;
 
-		EditItem(int iID, int iOffset);
+		EditItem(FileInfo* pFileInfo, int iOffset);
 	};
 
 	typedef std::vector<EditItem*> ItemList;
@@ -69,13 +69,12 @@ private:
 	DiskState*				m_pDiskState;
 
 	FileInfo*				FindFileInfo(DownloadQueue* pDownloadQueue, int iID);
-	int						FindFileInfoEntry(DownloadQueue* pDownloadQueue, int iID);
-	void					PrepareList(ItemList* pItemList, IDList* pIDList, bool bSmartOrder, EEditAction eAction, int iOffset);
-	bool					EditGroup(int iID, EEditAction eAction, int iOffset);
+	void					PrepareList(DownloadQueue* pDownloadQueue, ItemList* pItemList, IDList* pIDList, bool bSmartOrder, EEditAction eAction, int iOffset);
+	bool					EditGroup(DownloadQueue* pDownloadQueue, FileInfo* pFileInfo, EEditAction eAction, int iOffset);
 
-	bool					PauseUnpauseEntry(int iID, bool bPause);
-	bool					DeleteEntry(int iID);
-	bool					MoveEntry(int iID, int iOffset);
+	void					PauseUnpauseEntry(FileInfo* pFileInfo, bool bPause);
+	void					DeleteEntry(FileInfo* pFileInfo);
+	void					MoveEntry(DownloadQueue* pDownloadQueue, FileInfo* pFileInfo, int iOffset);
 
 public:
 							QueueEditor();                
