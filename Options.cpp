@@ -144,6 +144,7 @@ Options::Options(int argc, char* argv[])
 {
 	// initialize options with default values
 
+	m_bConfigInitialized	= false;
 	m_szConfigFilename		= NULL;
 	m_szDestDir				= NULL;
 	m_szTempDir				= NULL;
@@ -213,7 +214,6 @@ Options::Options(int argc, char* argv[])
 	SetOption("APPDIR", szFilename);
 		
 	InitDefault();
-	InitOptFile(argc, argv);
 	InitCommandLine(argc, argv);
 
 	if (m_bPrintOptions)
@@ -386,37 +386,14 @@ void Options::InitDefault()
 	SetOption(OPTION_CURSESGROUP, "no");
 }
 
-void Options::InitOptFile(int argc, char* argv[])
+void Options::InitOptFile()
 {
-	while (true)
+	if (m_bConfigInitialized)
 	{
-		int c;
-
-#ifdef HAVE_GETOPT_LONG
-		int option_index  = 0;
-		c = getopt_long(argc, argv, short_options, long_options, &option_index);
-#else
-		c = getopt(argc, argv, short_options);
-#endif
-				
-		if (c == -1) break;
-
-		switch (c)
-		{
-			case 'c':
-				m_szConfigFilename = strdup(optarg);
-				break;
-			case 'n':
-				m_szConfigFilename = NULL;
-				m_bNoConfig = true;
-				return;
-			case '?':
-				exit(-1);
-				break;
-		}
+		return;
 	}
 
-	if (!m_szConfigFilename)
+	if (!m_szConfigFilename && !m_bNoConfig)
 	{
 		// search for config file in default locations
 #ifdef WIN32
@@ -457,6 +434,8 @@ void Options::InitOptFile(int argc, char* argv[])
 	{
 		LoadConfig(m_szConfigFilename);
 	}
+
+	m_bConfigInitialized = true;
 }
 
 void Options::CheckDir(char** dir, const char* szOptionName)
@@ -600,6 +579,13 @@ void Options::InitCommandLine(int argc, char* argv[])
 
 		switch (c)
 		{
+			case 'c':
+				m_szConfigFilename = strdup(optarg);
+				break;
+			case 'n':
+				m_szConfigFilename = NULL;
+				m_bNoConfig = true;
+				break;
 			case 'h':
 				PrintUsage(argv[0]);
 				exit(0);
@@ -612,6 +598,7 @@ void Options::InitCommandLine(int argc, char* argv[])
 				m_bPrintOptions = true;
 				break;
 			case 'o':
+				InitOptFile();
 				if (!SetOptionString(optarg))
 				{
 					abort("FATAL ERROR: could not set option: %s\n", optarg);
@@ -714,6 +701,8 @@ void Options::InitCommandLine(int argc, char* argv[])
 				break;
 		}
 	}
+
+	InitOptFile();
 }
 
 void Options::PrintUsage(char* com)

@@ -80,6 +80,8 @@ private:
 	
 	std::vector< struct OptEntry >	optEntries;
 
+	bool				m_bConfigInitialized;
+
 	// Options
 	char*				m_szConfigFilename;
 	char*				m_szDestDir;
@@ -144,7 +146,7 @@ private:
 	EClientOperation	m_eClientOperation;
 
 	void				InitDefault();
-	void				InitOptFile(int argc, char* argv[]);
+	void				InitOptFile();
 	void				InitCommandLine(int argc, char* argv[]);
 	void				InitOptions();
 	void				InitFileArg(int argc, char* argv[]);
