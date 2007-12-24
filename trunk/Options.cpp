@@ -127,6 +127,7 @@ static const char* OPTION_UPDATEINTERVAL	= "updateinterval";
 static const char* OPTION_CURSESNZBNAME		= "cursesnzbname";
 static const char* OPTION_CURSESTIME		= "cursestime";
 static const char* OPTION_CURSESGROUP		= "cursesgroup";
+static const char* OPTION_RETRYONCRCERROR	= "retryoncrcerror";
 
 #ifndef WIN32
 const char* PossibleConfigLocations[] =
@@ -200,6 +201,7 @@ Options::Options(int argc, char* argv[])
 	m_bCursesNZBName		= false;
 	m_bCursesTime			= false;
 	m_bCursesGroup			= false;
+	m_bRetryOnCrcError		= false;
 
 	char szFilename[MAX_PATH + 1];
 #ifdef WIN32
@@ -384,6 +386,7 @@ void Options::InitDefault()
 	SetOption(OPTION_CURSESNZBNAME, "yes");
 	SetOption(OPTION_CURSESTIME, "no");
 	SetOption(OPTION_CURSESGROUP, "no");
+	SetOption(OPTION_RETRYONCRCERROR, "no");	
 }
 
 void Options::InitOptFile()
@@ -512,6 +515,7 @@ void Options::InitOptions()
 	m_bCursesNZBName		= (bool)ParseOptionValue(OPTION_CURSESNZBNAME, BoolCount, BoolNames, BoolValues);
 	m_bCursesTime			= (bool)ParseOptionValue(OPTION_CURSESTIME, BoolCount, BoolNames, BoolValues);
 	m_bCursesGroup			= (bool)ParseOptionValue(OPTION_CURSESGROUP, BoolCount, BoolNames, BoolValues);
+	m_bRetryOnCrcError		= (bool)ParseOptionValue(OPTION_RETRYONCRCERROR, BoolCount, BoolNames, BoolValues);
 
 	const char* OutputModeNames[] = { "loggable", "logable", "log", "colored", "color", "ncurses", "curses" };
 	const int OutputModeValues[] = { omLoggable, omLoggable, omLoggable, omColored, omColored, omNCurses, omNCurses };

@@ -56,6 +56,8 @@
 #include "Options.h"
 #include "Util.h"
 
+extern Options* g_pOptions;
+
 #ifdef DEBUGDECODER
 int g_iDecoderID = 0;
 #endif
@@ -308,7 +310,8 @@ bool Decoder::DecodeYenc()
 
 	debug("Expected pcrc32=%x", expectedCRC);
 	debug("Calculated pcrc32=%x", calculatedCRC);
-	if (expectedCRC != calculatedCRC)
+	bool CrcOK = expectedCRC == calculatedCRC;
+	if (!CrcOK)
 	{
 		warn("CRC-Error for \"%s\"", m_szDestFilename);
 	}
@@ -316,7 +319,7 @@ bool Decoder::DecodeYenc()
 	fclose(infile);
 	fclose(outfile);
 
-	return body && end;
+	return body && end && (CrcOK || !g_pOptions->GetRetryOnCrcError());
 }
 
 /* from crc32.c (http://www.koders.com/c/fid699AFE0A656F0022C9D6B9D1743E697B69CE5815.aspx)

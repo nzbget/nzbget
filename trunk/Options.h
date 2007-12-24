@@ -125,6 +125,7 @@ private:
 	bool				m_bCursesNZBName;
 	bool				m_bCursesTime;
 	bool				m_bCursesGroup;
+	bool				m_bRetryOnCrcError;
 
 	// Parsed command-line parameters
 	bool				m_bServerMode;
@@ -209,6 +210,7 @@ public:
 	bool				GetCursesNZBName() { return m_bCursesNZBName; }
 	bool				GetCursesTime() { return m_bCursesTime; }
 	bool				GetCursesGroup() { return m_bCursesGroup; }
+	bool				GetRetryOnCrcError() { return m_bRetryOnCrcError; }
 
 	// Parsed command-line parameters
 	bool				GetServerMode() { return m_bServerMode; }
