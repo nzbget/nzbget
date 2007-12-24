@@ -46,15 +46,16 @@ lockfile=/tmp/nzbget.lock
 # This allows nzbget daemon to be launched in rc.local (at boot), and
 # download items as a specific user id.
 # NOTE: This option has effect only if the program is started from root-account,
-# otherwise it is ignored and the daemon runs under current user id.
+# otherwise it is ignored and the daemon runs under current user id
 daemonusername=root
 
-# Specify default umask (affects file permissions) for newly created files (POSIX only).
-# The value should be written in octal form (the same as for "umask" shell command).
-# If umask not specified (or a value greater than 0777 used, useful to disable current
-# config-setting via command-line parameter) the umask-mode will not be set and
-# current umask-mode (set via shell) is be used.
-# NOTE: do not forget to uncomment next line.
+# Specify default umask (affects file permissions) for newly created 
+# files (POSIX only).
+# The value should be written in octal form (the same as for "umask" shell 
+# command). If umask not specified (or a value greater than 0777 used, useful 
+# to disable current config-setting via command-line parameter) the umask-mode 
+# will not be set and current umask-mode (set via shell) is be used
+# NOTE: do not forget to uncomment next line
 #umask=022
 
 # Where to store log file, if it needs to be created (see "createlog")
@@ -88,17 +89,17 @@ outputmode=colored
 
 # Shows NZB-Filename in file list in curses-outputmode (yes, no)
 # This option controls the initial state of curses-frontend,
-# it can be switched on/off in run-time with Z-key.
+# it can be switched on/off in run-time with Z-key
 cursesnzbname=yes
 
 # Show files in groups (NZB-files) in queue list in curses-outputmode (yes, no)
 # This option controls the initial state of curses-frontend,
-# it can be switched on/off in run-time with G-key.
+# it can be switched on/off in run-time with G-key
 cursesgroup=no
 
 # Show timestamps in message list in curses-outputmode (yes, no)
 # This option controls the initial state of curses-frontend,
-# it can be switched on/off in run-time with T-key.
+# it can be switched on/off in run-time with T-key
 cursestime=no
 
 # Update interval for Frontend-output in MSec (min value 25)
@@ -109,7 +110,7 @@ updateinterval=200
 # Check if the destination file already exists (yes, no)
 # If the file exists it will not be added to queue.
 # If "no" the file will be downloaded and renamed to "filename_duplicate1",
-# no existing files are deleted or overwritten.
+# no existing files are deleted or overwritten
 dupecheck=no
 
 # Set the maximum download rate in KB/s, "0" means no speed control
@@ -123,8 +124,9 @@ renamebroken=no
 # the names of broken files
 createbrokenlog=yes
 
-# Set the IP on which the server listen and which client uses to contact the server
-# It could be ip-address oder dns-hostname
+# Set the IP on which the server listen and which client uses to contact 
+# the server. It could be dns-hostname or ip-address (more effective since
+# does not require dns-lookup)
 serverip=127.0.0.1
 
 # Set the port which the server & client use
@@ -134,10 +136,12 @@ serverport=6789
 serverpassword=tegbzn6789
 
 # Determine how the articles should be decoded (uulib, yenc, none)
-# uulib - use uulib to decode files. Supports many encoding formats, but is slow.
+# uulib - use uulib to decode files. Supports many encoding formats, 
+#         but is slow.
 # yenc - use internal yEnc-Decoder. Supports only yEnc-format and is very fast.
 # none - the articles will not be decoded and joined. External programs 
-# ("uudeview" is one of them) could be used to decode an join downloaded articles.
+#        ("uudeview" is one of them) could be used to decode an join downloaded 
+# articles
 decoder=yEnc
 
 # How much retries should be attempted if a download error occurs
@@ -146,10 +150,19 @@ retries=4
 # Set the interval between retries, in seconds
 retryinterval=10
 
+# Redownload article if CRC-check fails (yes, no)
+# Helps to minimize number of broken files, but may be effective 
+# only if you have multiple download servers (even from the same provider
+# but from different locations (e.g. europe, usa)).
+# In any case the option increases your traffic.
+# For slow connections loading of extra par-blocks may be more effective
+retryoncrcerror=no
+
 # Set connection timeout, in seconds
 connectiontimeout=60
 
-# Timeout until a download-thread is killed (helps on hanging downloads), in seconds
+# Timeout until a download-thread is killed (helps on hanging downloads), 
+# in seconds
 terminatetimeout=600
 
 # How many par2-files to load (none, all, one)
@@ -165,7 +178,7 @@ loadpars=one
 # the option "loadpars" to "one". If option "loadpars" is set to "all",
 # all par2-files will be downloaded before verification and repair starts.
 # The option "renamebroken" must be set to "no", otherwise the par-checker
-# may not find renamed files and failed.
+# may not find renamed files and failed
 parcheck=no
 
 # Automatic par-repair (yes, no)
@@ -174,7 +187,7 @@ parcheck=no
 # not start repair-process. This is useful if the server does not have
 # enough CPU power, since repairing of large files may take too much
 # resources and time on a slow computers.
-# This option has effect only if the option "parcheck" is enabled.
+# This option has effect only if the option "parcheck" is enabled
 parrepair=yes
 
 # Use only par2-files with matching names (yes, no)
@@ -188,7 +201,7 @@ parrepair=yes
 # of files (with different par-sets), par-checker may download par-files from
 # a wrong collection. This increases you traffic (but not harm par-check).
 # NOTE: par-checker always uses only par-files added from the same NZB-file.
-# Option "strictparname" does not change this behavior.
+# Option "strictparname" does not change this behavior
 strictparname=yes
 
 # Set path to program, that must be executed after the download of
@@ -215,7 +228,7 @@ strictparname=yes
 #  2) or you just check the parameter "state of nzb-job" and do clean up,
 #     only if it is equal to "1" (which means, that this was the last
 #     collection in nzb-file and all files are now completed);
-# NOTE: do not forget to uncomment next line.
+# NOTE: do not forget to uncomment next line
 #postprocess=~/myscript.sh
 
 
