@@ -64,13 +64,19 @@ private:
 	};
 
 	typedef std::vector<EditItem*> ItemList;
+	typedef std::vector<FileInfo*> FileList;
 
 private:
 	DiskState*				m_pDiskState;
 
 	FileInfo*				FindFileInfo(DownloadQueue* pDownloadQueue, int iID);
+	int						FindFileInfoEntry(DownloadQueue* pDownloadQueue, FileInfo* pFileInfo);
 	void					PrepareList(DownloadQueue* pDownloadQueue, ItemList* pItemList, IDList* pIDList, bool bSmartOrder, EEditAction eAction, int iOffset);
 	bool					EditGroup(DownloadQueue* pDownloadQueue, FileInfo* pFileInfo, EEditAction eAction, int iOffset);
+	void					BuildGroupList(DownloadQueue* pDownloadQueue, FileList* pGroupList);
+	void					AlignAffectedGroups(DownloadQueue* pDownloadQueue, IDList* pIDList, bool bSmartOrder, int iOffset);
+	bool					ItemExists(FileList* pFileList, FileInfo* pFileInfo);
+	void					AlignGroup(DownloadQueue* pDownloadQueue, FileInfo* pFirstFileInfo);
 
 	void					PauseUnpauseEntry(FileInfo* pFileInfo, bool bPause);
 	void					DeleteEntry(FileInfo* pFileInfo);
