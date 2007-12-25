@@ -447,19 +447,10 @@ void QueueCoordinator::ArticleCompleted(ArticleDownloader* pArticleDownloader)
 		pFileInfo->SetFilenameConfirmed(true);
 	}
 
-	m_mutexDownloadQueue.Unlock();
-
 	bool deleteFileObj = false;
 
-	if (fileCompleted && !IsStopped() && !pFileInfo->GetDeleted())
+	if (pFileInfo->GetDeleted())
 	{
-		// all jobs done
-		pArticleDownloader->CompleteFileParts();
-		deleteFileObj = true;
-	}
-	else if (pFileInfo->GetDeleted())
-	{
-		m_mutexDownloadQueue.Lock();
 		int cnt = 0;
 		for (ActiveDownloads::iterator it = m_ActiveDownloads.begin(); it != m_ActiveDownloads.end(); it++)
 		{
@@ -468,7 +459,6 @@ void QueueCoordinator::ArticleCompleted(ArticleDownloader* pArticleDownloader)
 				cnt++;
 			}
 		}
-		m_mutexDownloadQueue.Unlock();
 		if (cnt == 1)
 		{
 			// this was the last Download for a file deleted from queue
@@ -476,8 +466,16 @@ void QueueCoordinator::ArticleCompleted(ArticleDownloader* pArticleDownloader)
 		}
 	}
 
+	if (fileCompleted && !IsStopped() && !pFileInfo->GetDeleted())
+	{
+		// all jobs done
+		m_mutexDownloadQueue.Unlock();
+		pArticleDownloader->CompleteFileParts();
+		m_mutexDownloadQueue.Lock();
+		deleteFileObj = true;
+	}
+
 	// delete Download from Queue
-	m_mutexDownloadQueue.Lock();
 	for (ActiveDownloads::iterator it = m_ActiveDownloads.begin(); it != m_ActiveDownloads.end(); it++)
 	{
 		ArticleDownloader* pa = *it;
@@ -497,6 +495,7 @@ void QueueCoordinator::ArticleCompleted(ArticleDownloader* pArticleDownloader)
 		
 		DeleteFileInfo(pFileInfo);
 	}
+
 	m_mutexDownloadQueue.Unlock();
 }
 
