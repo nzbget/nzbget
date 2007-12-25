@@ -48,19 +48,9 @@
 #include <uudeview.h>
 #endif
 
-//#define USEEXTERNALDECODER	// not working
-//#define DEBUGDECODER
-
 #include "Decoder.h"
 #include "Log.h"
-#include "Options.h"
 #include "Util.h"
-
-extern Options* g_pOptions;
-
-#ifdef DEBUGDECODER
-int g_iDecoderID = 0;
-#endif
 
 Mutex Decoder::m_mutexDecoder;
 unsigned int Decoder::crc_tab[256];
@@ -84,8 +74,7 @@ Decoder::Decoder()
 	m_szDestFilename	= NULL;
 	m_szArticleFilename	= NULL;
 	m_eKind				= dcYenc;
-	m_iDebugStatus		= 0;
-	m_iDebugLines		= 0;
+	m_bCrcError			= false;
 }
 
 Decoder::~ Decoder()
@@ -120,11 +109,6 @@ bool Decoder::DecodeUulib()
 
 	m_mutexDecoder.Lock();
 
-#ifdef DEBUGDECODER
-	debug("Decoding ID %i (%s)", g_iDecoderID, szSrcFilename);
-#endif
-
-#ifndef USEEXTERNALDECODER
 	UUInitialize();
 
 	UUSetOption(UUOPT_DESPERATE, 1, NULL);
@@ -186,13 +170,6 @@ bool Decoder::DecodeUulib()
 	}
 
 	UUCleanUp();
-#else
-	execl("/usr/local/bin", "uudeview", szSrcFilename, szDestFilename);
-#endif
-
-#ifdef DEBUGDECODER
-	debug("Finished decoding ID %i (%s)", g_iDecoderID++, szDestFilename);
-#endif
 
 	m_mutexDecoder.Unlock();
 
@@ -227,10 +204,7 @@ bool Decoder::DecodeYenc()
 	bool end = false;
 	unsigned long expectedCRC = 0;
 	unsigned long calculatedCRC = 0xFFFFFFFF;
-	m_iDebugStatus = 1;
 	bool eof = !fgets(buffer, sizeof(buffer), infile);
-	m_iDebugLines++;
-	m_iDebugStatus = 2;
 	while (!eof)
 	{
 		if (body)
@@ -238,7 +212,6 @@ bool Decoder::DecodeYenc()
 			if (strstr(buffer, "=yend size="))
 			{
 				end = true;
-				m_iDebugStatus = 3;
 				char* pc = strstr(buffer, "pcrc32=");
 				if (pc)
 				{
@@ -247,7 +220,6 @@ bool Decoder::DecodeYenc()
 				}
 				break;
 			}
-			m_iDebugStatus = 4;
 			char* iptr = buffer;
 			char* optr = buffer;
 			while (*iptr)
@@ -269,57 +241,42 @@ bool Decoder::DecodeYenc()
 				}
 				iptr++;
 			}
-			m_iDebugStatus = 5;
 			calculatedCRC = crc32m(calculatedCRC, (unsigned char *)buffer, optr - buffer);
 			fwrite(buffer, 1, optr - buffer, outfile);
-			m_iDebugStatus = 6;
 		}
 		else
 		{
 			if (strstr(buffer, "=ypart begin="))
 			{
-				m_iDebugStatus = 7;
 				body = true;
 			}
 			else if (strstr(buffer, "=ybegin part="))
 			{
-				m_iDebugStatus = 8;
 				char* pb = strstr(buffer, "name=");
 				if (pb)
 				{
-					m_iDebugStatus = 9;
 					pb += 5; //=strlen("name=")
 					char* pe;
 					for (pe = pb; *pe != '\0' && *pe != '\n' && *pe != '\r'; pe++) ;
 					m_szArticleFilename = (char*)malloc(pe - pb + 1);
 					strncpy(m_szArticleFilename, pb, pe - pb);
 					m_szArticleFilename[pe - pb] = '\0';
-					m_iDebugStatus = 10;
 				}
-				m_iDebugStatus = 11;
 			}
 		}
-		m_iDebugStatus = 12;
 		eof = !fgets(buffer, sizeof(buffer), infile);
-		m_iDebugStatus = 13;
-		m_iDebugLines++;
 	}
-	m_iDebugStatus = 14;
 
 	calculatedCRC ^= 0xFFFFFFFF;
 
 	debug("Expected pcrc32=%x", expectedCRC);
 	debug("Calculated pcrc32=%x", calculatedCRC);
-	bool CrcOK = expectedCRC == calculatedCRC;
-	if (!CrcOK)
-	{
-		warn("CRC-Error for \"%s\"", m_szDestFilename);
-	}
+	m_bCrcError = expectedCRC != calculatedCRC;
 
 	fclose(infile);
 	fclose(outfile);
 
-	return body && end && (CrcOK || !g_pOptions->GetRetryOnCrcError());
+	return body && end && !m_bCrcError;
 }
 
 /* from crc32.c (http://www.koders.com/c/fid699AFE0A656F0022C9D6B9D1743E697B69CE5815.aspx)
@@ -377,10 +334,4 @@ unsigned long Decoder::crc32m(unsigned long startCrc, unsigned char *block, unsi
 		crc = ((crc >> 8) & 0x00FFFFFF) ^ crc_tab[(crc ^ *block++) & 0xFF];
 	}
 	return crc;
-}
-
-void Decoder::LogDebugInfo()
-{
-	debug("        Decoder: status=%i, lines=%i, filename=%s, ArticleFileName=%s",
-	      m_iDebugStatus, m_iDebugLines, BaseFileName(m_szSrcFilename), m_szArticleFilename);
 }

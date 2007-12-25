@@ -46,6 +46,7 @@
 #include "ArticleDownloader.h"
 #include "Log.h"
 #include "Util.h"
+#include "Decoder.h"
 
 extern Options* g_pOptions;
 extern ServerPool* g_pServerPool;

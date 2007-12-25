@@ -65,7 +65,6 @@ ArticleDownloader::ArticleDownloader()
 	m_szArticleFilename	= NULL;
 	m_szInfoName		= NULL;
 	m_pConnection		= NULL;
-	m_pDecoder			= NULL;
 	m_eStatus			= adUndefined;
 	m_iBytes			= 0;
 	memset(&m_tStartTime, 0, sizeof(m_tStartTime));
@@ -87,10 +86,6 @@ ArticleDownloader::~ArticleDownloader()
 	if (m_szInfoName)
 	{
 		free(m_szInfoName);
-	}
-	if (m_pDecoder)
-	{
-		delete m_pDecoder;
 	}
 }
 
@@ -191,7 +186,8 @@ void ArticleDownloader::Run()
 			FreeConnection();
 		}
 
-		if ((Status == adFailed) && ((retry > 1) || !connected) && !IsStopped())
+		if ((Status == adFailed || (Status == adCrcError && g_pOptions->GetRetryOnCrcError())) && 
+			((retry > 1) || !connected) && !IsStopped())
 		{
 			info("Waiting %i sec to retry", g_pOptions->GetRetryInterval());
 			int msec = 0;
@@ -207,8 +203,9 @@ void ArticleDownloader::Run()
 			Status = adFailed;
 			break;
 		}
-
-		if ((Status == adFinished) || (Status == adFatalError))
+				 
+		if ((Status == adFinished) || (Status == adFatalError) ||
+			(Status == adCrcError && !g_pOptions->GetRetryOnCrcError()))
 		{
 			break;
 		}
@@ -228,7 +225,7 @@ void ArticleDownloader::Run()
 		{
 			if (iMaxLevel > 0)
 			{
-				warn("Aticle %s @ all servers failed: Article not found", m_szInfoName);
+				warn("Article %s @ all servers failed: Article not found", m_szInfoName);
 			}
 			break;
 		}
@@ -268,12 +265,12 @@ void ArticleDownloader::Run()
 
 	SetStatus(Status);
 
-	debug("Existing ArticleDownloader-loop");
+	debug("Exiting ArticleDownloader-loop");
 }
 
 ArticleDownloader::EStatus ArticleDownloader::Download()
 {
-	// at first, change group! dryan's level wants it this way... ;-)
+	// at first, change group
 	bool grpchanged = false;
 	for (FileInfo::Groups::iterator it = m_pFileInfo->GetGroups()->begin(); it != m_pFileInfo->GetGroups()->end(); it++)
 	{
@@ -404,49 +401,42 @@ ArticleDownloader::EStatus ArticleDownloader::Download()
 	FreeConnection();
 
 	if ((g_pOptions->GetDecoder() == Options::dcUulib) ||
-	        (g_pOptions->GetDecoder() == Options::dcYenc))
+		(g_pOptions->GetDecoder() == Options::dcYenc))
 	{
-		// Give time to other threads. Help to avoid hangs on Asus WL500g router.
+		// Give time to other threads
 		usleep(10 * 1000);
 
 		SetStatus(adDecoding);
 		struct _timeval StartTime, EndTime;
 		gettimeofday(&StartTime, 0);
-		bool OK = false;
+
+		Decoder decoder;
 		if (g_pOptions->GetDecoder() == Options::dcUulib)
 		{
-			m_pDecoder = new Decoder();
-			m_pDecoder->SetKind(Decoder::dcUulib);
+			decoder.SetKind(Decoder::dcUulib);
 		}
 		else if (g_pOptions->GetDecoder() == Options::dcYenc)
 		{
-			m_pDecoder = new Decoder();
-			m_pDecoder->SetKind(Decoder::dcYenc);
+			decoder.SetKind(Decoder::dcYenc);
 		}
-		if (m_pDecoder)
-		{
-			m_pDecoder->SetSrcFilename(dnfilename);
+		decoder.SetSrcFilename(dnfilename);
+		char tmpdestfile[1024];
+		snprintf(tmpdestfile, 1024, "%s.dec", m_szResultFilename);
+		tmpdestfile[1024-1] = '\0';
+		decoder.SetDestFilename(tmpdestfile);
 
-			char tmpdestfile[1024];
-			snprintf(tmpdestfile, 1024, "%s.dec", m_szResultFilename);
-			tmpdestfile[1024-1] = '\0';
-					
-			m_pDecoder->SetDestFilename(tmpdestfile);
-			OK = m_pDecoder->Execute();
-			if (OK)
-			{
-				rename(tmpdestfile, m_szResultFilename);
-			}
-			else
-			{
-				remove(tmpdestfile);
-			}
-			if (m_pDecoder->GetArticleFilename())
-			{
-				m_szArticleFilename = strdup(m_pDecoder->GetArticleFilename());
-			}
-			delete m_pDecoder;
-			m_pDecoder = NULL;
+		bool bOK = decoder.Execute();
+		if (bOK)
+		{
+			rename(tmpdestfile, m_szResultFilename);
+		}
+		else
+		{
+			remove(tmpdestfile);
+		}
+		if (decoder.GetArticleFilename())
+		{
+			m_szArticleFilename = strdup(decoder.GetArticleFilename());
 		}
 
 		gettimeofday(&EndTime, 0);
@@ -456,7 +446,7 @@ ArticleDownloader::EStatus ArticleDownloader::Download()
 #else
 		float fDeltaTime = ((EndTime.tv_sec - StartTime.tv_sec) * 1000000 + (EndTime.tv_usec - StartTime.tv_usec)) / 1000.0;
 #endif
-		if (OK)
+		if (bOK)
 		{
 			info("Successfully downloaded %s", m_szInfoName);
 			debug("Decode time %.1f ms", fDeltaTime);
@@ -464,9 +454,17 @@ ArticleDownloader::EStatus ArticleDownloader::Download()
 		}
 		else
 		{
-			warn("Decoding %s failed", m_szInfoName);
 			remove(m_szResultFilename);
-			return adFailed;
+			if (decoder.GetCrcError())
+			{
+				warn("Decoding %s failed: CRC-Error", m_szInfoName);
+				return adCrcError;
+			}
+			else
+			{
+				warn("Decoding %s failed", m_szInfoName);
+				return adFailed;
+			}
 		}
 	}
 	else if (g_pOptions->GetDecoder() == Options::dcNone)
@@ -494,10 +492,6 @@ void ArticleDownloader::LogDebugInfo()
 #endif
 
 	debug("      Download: status=%s, LastUpdateTime=%s, filename=%s", GetStatusText(), szTime, BaseFileName(GetTempFilename()));
-	if (m_pDecoder)
-	{
-		m_pDecoder->LogDebugInfo();
-	}
 }
 
 void ArticleDownloader::Stop()
