@@ -71,6 +71,7 @@ private:
 
 	FileInfo*				FindFileInfo(DownloadQueue* pDownloadQueue, int iID);
 	int						FindFileInfoEntry(DownloadQueue* pDownloadQueue, FileInfo* pFileInfo);
+	bool					InternEditList(DownloadQueue* pDownloadQueue, IDList* pIDList, bool bSmartOrder, EEditAction eAction, int iOffset);
 	void					PrepareList(DownloadQueue* pDownloadQueue, ItemList* pItemList, IDList* pIDList, bool bSmartOrder, EEditAction eAction, int iOffset);
 	bool					EditGroup(DownloadQueue* pDownloadQueue, FileInfo* pFileInfo, EEditAction eAction, int iOffset);
 	void					BuildGroupList(DownloadQueue* pDownloadQueue, FileList* pGroupList);
