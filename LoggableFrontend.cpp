@@ -106,25 +106,33 @@ void LoggableFrontend::Update()
 
 void LoggableFrontend::PrintMessage(Message * pMessage)
 {
+#ifdef WIN32
+	char* msg = strdup(pMessage->GetText());
+	CharToOem(msg, msg);
+#else
 	const char* msg = pMessage->GetText();
+#endif
 	switch (pMessage->GetKind())
 	{
 		case Message::mkDebug:
-			fprintf(stdout, "[DEBUG] %s\n", msg);
+			printf("[DEBUG] %s\n", msg);
 			break;
 		case Message::mkError:
-			fprintf(stdout, "[ERROR] %s\n", msg);
+			printf("[ERROR] %s\n", msg);
 			break;
 		case Message::mkWarning:
-			fprintf(stdout, "[WARNING] %s\n", msg);
+			printf("[WARNING] %s\n", msg);
 			break;
 		case Message::mkInfo:
-			fprintf(stdout, "[INFO] %s\n", msg);
+			printf("[INFO] %s\n", msg);
 			break;
 	}
+#ifdef WIN32
+	free(msg);
+#endif
 }
 
 void LoggableFrontend::PrintSkip()
 {
-	fprintf(stdout, ".....\n");
+	printf(".....\n");
 }
