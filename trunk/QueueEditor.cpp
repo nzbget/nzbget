@@ -155,6 +155,20 @@ bool QueueEditor::EditList(IDList* pIDList, bool bSmartOrder, EEditAction eActio
 {
 	DownloadQueue* pDownloadQueue = g_pQueueCoordinator->LockQueue();
 
+	bool bOK = InternEditList(pDownloadQueue, pIDList, bSmartOrder, eAction, iOffset);
+
+	if (g_pOptions->GetSaveQueue() && g_pOptions->GetServerMode())
+	{
+		m_pDiskState->Save(pDownloadQueue, true);
+	}
+
+	g_pQueueCoordinator->UnlockQueue();
+
+	return bOK;
+}
+
+bool QueueEditor::InternEditList(DownloadQueue* pDownloadQueue, IDList* pIDList, bool bSmartOrder, EEditAction eAction, int iOffset)
+{
 	if (eAction == eaGroupMoveOffset)
 	{
 		AlignAffectedGroups(pDownloadQueue, pIDList, bSmartOrder, iOffset);
@@ -197,22 +211,13 @@ bool QueueEditor::EditList(IDList* pIDList, bool bSmartOrder, EEditAction eActio
 			case eaGroupDelete:
 			case eaGroupMoveTop:
 			case eaGroupMoveBottom:
-				EditGroup(pDownloadQueue, pItem->m_pFileInfo, eAction, 0);
-				break;
-
 			case eaGroupMoveOffset:
-				EditGroup(pDownloadQueue, pItem->m_pFileInfo, eaGroupMoveOffset, iOffset);
+			case eaGroupPausePars:
+				EditGroup(pDownloadQueue, pItem->m_pFileInfo, eAction, iOffset);
 				break;
 		}
 		delete pItem;
 	}
-
-	if (g_pOptions->GetSaveQueue() && g_pOptions->GetServerMode())
-	{
-		m_pDiskState->Save(pDownloadQueue, true);
-	}
-
-	g_pQueueCoordinator->UnlockQueue();
 
 	return cItemList.size() > 0;
 }
@@ -318,7 +323,6 @@ bool QueueEditor::EditGroup(DownloadQueue* pDownloadQueue, FileInfo* pFileInfo, 
 	cIDList.clear();
 
 	// collecting files belonging to group
-	int iQueueSize = pDownloadQueue->size();
 	for (DownloadQueue::iterator it = pDownloadQueue->begin(); it != pDownloadQueue->end(); it++)
 	{
 		FileInfo* pFileInfo2 = *it;
@@ -383,7 +387,7 @@ bool QueueEditor::EditGroup(DownloadQueue* pDownloadQueue, FileInfo* pFileInfo, 
 	EEditAction GroupToFileMap[] = { (EEditAction)0, eaFileMoveOffset, eaFileMoveTop, eaFileMoveBottom, eaFilePause, eaFileResume, eaFileDelete,
 		eaFileMoveOffset, eaFileMoveTop, eaFileMoveBottom, eaFilePause, eaFilePause, eaFileResume, eaFileDelete };
 
-	return EditList(&cIDList, true, GroupToFileMap[eAction], iOffset);
+	return InternEditList(pDownloadQueue, &cIDList, true, GroupToFileMap[eAction], iOffset);
 }
 
 void QueueEditor::BuildGroupList(DownloadQueue* pDownloadQueue, FileList* pGroupList)
