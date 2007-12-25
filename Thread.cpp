@@ -63,6 +63,14 @@ void Mutex::Lock()
 {
 #ifdef WIN32
 	EnterCriticalSection(&m_mutexObj);
+#ifdef DEBUG
+	// CriticalSections on Windows can be locked many times from the same thread,
+	// but we do not want this and must treat such situations as errors and detect them.
+	if (m_mutexObj.RecursionCount > 1)
+	{
+		error("Internal program error: inconsistent thread-lock detected");
+	}
+#endif
 #else
 	pthread_mutex_lock(&m_mutexObj);
 #endif
