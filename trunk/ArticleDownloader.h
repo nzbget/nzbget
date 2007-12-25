@@ -36,7 +36,6 @@
 #include "DownloadInfo.h"
 #include "Thread.h"
 #include "NNTPConnection.h"
-#include "Decoder.h"
 
 class ArticleDownloader : public Thread, public Subject
 {
@@ -47,6 +46,7 @@ public:
 		adRunning,
 		adFinished,
 		adFailed,
+		adCrcError,
 		adDecoding,
 		adJoining,
 		adNotFound,
@@ -64,7 +64,6 @@ private:
 	char*				m_szArticleFilename;
 	char*				m_szInfoName;
 	time_t				m_tLastUpdateTime;
-	Decoder*			m_pDecoder;
 	Semaphore			m_semInitialized;
 	Semaphore			m_semWaited;
 	static const char*	m_szJobStatus[];

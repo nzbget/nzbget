@@ -29,8 +29,6 @@
 
 #include "Thread.h"
 
-//#define DECODER_INTERNAL_FGETS
-
 class Decoder
 {
 public:
@@ -41,32 +39,31 @@ public:
 	};
 
 private:
-	static Mutex	m_mutexDecoder;
+	static Mutex			m_mutexDecoder;
 	static unsigned int		crc_tab[256];
-	EKind			m_eKind;
-	const char*		m_szSrcFilename;
-	const char*		m_szDestFilename;
-	char*			m_szArticleFilename;
-	int				m_iDebugStatus;
-	int				m_iDebugLines;
+	EKind					m_eKind;
+	const char*				m_szSrcFilename;
+	const char*				m_szDestFilename;
+	char*					m_szArticleFilename;
+	bool					m_bCrcError;
 
-	bool			DecodeUulib();
-	bool			DecodeYenc();
-	static void		crc32gentab();
-	unsigned long		crc32m(unsigned long startCrc, unsigned char *block, unsigned int length);
+	bool					DecodeUulib();
+	bool					DecodeYenc();
+	static void				crc32gentab();
+	unsigned long			crc32m(unsigned long startCrc, unsigned char *block, unsigned int length);
 
 public:
-	Decoder();
-	~Decoder();
-	bool			Execute();
-	void			SetKind(EKind eKind) { m_eKind = eKind; }
-	void			SetSrcFilename(const char* szSrcFilename) { m_szSrcFilename = szSrcFilename; }
-	void			SetDestFilename(const char* szDestFilename) { m_szDestFilename = szDestFilename; }
-	const char*		GetArticleFilename() { return m_szArticleFilename; }
-	void			LogDebugInfo();
+							Decoder();
+							~Decoder();
+	bool					Execute();
+	void					SetKind(EKind eKind) { m_eKind = eKind; }
+	void					SetSrcFilename(const char* szSrcFilename) { m_szSrcFilename = szSrcFilename; }
+	void					SetDestFilename(const char* szDestFilename) { m_szDestFilename = szDestFilename; }
+	const char*				GetArticleFilename() { return m_szArticleFilename; }
+	bool					GetCrcError() { return m_bCrcError; }
 
-	static void		Init();
-	static void		Final();
+	static void				Init();
+	static void				Final();
 };
 
 #endif
