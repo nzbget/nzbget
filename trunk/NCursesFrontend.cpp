@@ -402,7 +402,9 @@ void NCursesFrontend::PlotText(const char * szString, int iRow, int iPos, int iC
 	int len = strlen(szString);
 	for (int i = 0; i < len; i++)
 	{
-		m_pScreenBuffer[iBufPos + i].Char.AsciiChar = szString[i];
+		char c = szString[i];
+		CharToOemBuff(&c, &c, 1);
+		m_pScreenBuffer[iBufPos + i].Char.AsciiChar = c;
 		m_pScreenBuffer[iBufPos + i].Attributes = m_ColorAttr[iColorPair];
 	}
 #else

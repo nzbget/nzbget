@@ -134,7 +134,6 @@ void ColoredFrontend::PrintStatus()
 
 void ColoredFrontend::PrintMessage(Message * pMessage)
 {
-	const char* msg = pMessage->GetText();
 #ifdef WIN32
 	switch (pMessage->GetKind())
 	{
@@ -156,8 +155,12 @@ void ColoredFrontend::PrintMessage(Message * pMessage)
 			break;
 	}
 	SetConsoleTextAttribute(m_hConsole, 7);
+	char* msg = strdup(pMessage->GetText());
+	CharToOem(msg, msg);
 	printf(" %s\n", msg);
+	free(msg);
 #else
+	const char* msg = pMessage->GetText();
 	switch (pMessage->GetKind())
 	{
 		case Message::mkDebug:
