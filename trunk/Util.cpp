@@ -278,6 +278,38 @@ bool ForceDirectories(const char* szPath)
 	return bOK;
 }
 
+bool LoadFileIntoBuffer(const char* szFileName, char** pBuffer, int* pBufferLength)
+{
+    FILE* pFile = fopen(szFileName, "r");
+    if (!pFile)
+    {
+        return false;
+    }
+
+    // obtain file size.
+    fseek(pFile , 0 , SEEK_END);
+    int iSize  = ftell(pFile);
+    rewind(pFile);
+
+    // allocate memory to contain the whole file.
+    *pBuffer = (char*) malloc(iSize + 1);
+    if (!*pBuffer)
+    {
+        return false;
+    }
+
+    // copy the file into the buffer.
+    fread(*pBuffer, 1, iSize, pFile);
+
+    fclose(pFile);
+
+    (*pBuffer)[iSize] = 0;
+
+    *pBufferLength = iSize + 1;
+
+    return true;
+}
+
 long long JoinInt64(unsigned int Hi, unsigned int Lo)
 {
 	return (((long long)Hi) << 32) + Lo;

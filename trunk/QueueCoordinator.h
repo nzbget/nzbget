@@ -35,7 +35,6 @@
 #include "ArticleDownloader.h"
 #include "DownloadInfo.h"
 #include "Observer.h"
-#include "DiskState.h"
 #include "QueueEditor.h"
                                             
 class QueueCoordinator : public Thread, public Observer, public Subject, public DownloadSpeedMeter
@@ -59,7 +58,6 @@ public:
 private:
 	DownloadQueue			m_DownloadQueue;
 	ActiveDownloads			m_ActiveDownloads;
-	DiskState				m_DiskState;
 	QueueEditor				m_QueueEditor;
 	Mutex			 		m_mutexDownloadQueue;
 	bool					m_bHasMoreJobs;

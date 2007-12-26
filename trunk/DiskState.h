@@ -32,14 +32,16 @@ class DiskState
 {
 private:
 	bool				SaveFileInfo(FileInfo* pFileInfo, const char* szFilename);
-	bool				LoadFileInfo(FileInfo* pFileInfo, const char* szFilename);
+	bool				LoadFileInfo(FileInfo* pFileInfo, const char* szFilename, bool bFileSummary, bool bArticles);
 	
 public:
 	bool				Exists();
-	bool				Save(DownloadQueue* pDownloadQueue, bool OnlyOrder);
+	bool				Save(DownloadQueue* pDownloadQueue);
 	bool				Load(DownloadQueue* pDownloadQueue);
+	bool				SaveFile(FileInfo* pFileInfo);
+	bool				LoadArticles(FileInfo* pFileInfo);
 	bool				Discard();
-	bool				DiscardFileInfo(DownloadQueue* pDownloadQueue, FileInfo* pFileInfo);
+	bool				DiscardFile(DownloadQueue* pDownloadQueue, FileInfo* pFileInfo);
 	void				CleanupTempDir(DownloadQueue* pDownloadQueue);
 };
 

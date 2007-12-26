@@ -45,8 +45,8 @@
 
 #include "nzbget.h"
 #include "RemoteClient.h"
+#include "DownloadInfo.h"
 #include "Options.h"
-#include "NZBFile.h"
 #include "Log.h"
 #include "Util.h"
 
@@ -146,7 +146,7 @@ bool RemoteClient::RequestServerDownload(const char* szName, bool bAddFirst)
 	// Read the file into the buffer
 	char* szBuffer	= NULL;
 	int iLength		= 0;
-	if (!NZBFile::LoadFileIntoBuffer(szName, &szBuffer, &iLength))
+	if (!LoadFileIntoBuffer(szName, &szBuffer, &iLength))
 	{
 		printf("Could not load file %s\n", szName);
 		return false;

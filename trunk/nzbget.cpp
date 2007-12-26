@@ -59,6 +59,7 @@
 #include "RemoteServer.h"
 #include "RemoteClient.h"
 #include "MessageBase.h"
+#include "DiskState.h"
 #include "PrePostProcessor.h"
 #include "ParChecker.h"
 #ifdef WIN32
@@ -74,14 +75,16 @@ void InstallSignalHandlers();
 void Daemonize();
 #endif
 
-Thread* g_pFrontend	= NULL;
-Options* g_pOptions		= NULL;
+Thread* g_pFrontend = NULL;
+Options* g_pOptions = NULL;
 ServerPool* g_pServerPool = NULL;
 QueueCoordinator* g_pQueueCoordinator = NULL;
 RemoteServer* g_pRemoteServer = NULL;
 DownloadSpeedMeter* g_pDownloadSpeedMeter = NULL;
 Log* g_pLog = NULL;
-PrePostProcessor* g_pPrePostProcessor;
+PrePostProcessor* g_pPrePostProcessor = NULL;
+DiskState* g_pDiskState = NULL;
+
 
 /*
  * Main loop
@@ -208,6 +211,11 @@ void Run()
 		{
 			abort("FATAL ERROR: Parsing NZB-document %s failed!!\n\n", g_pOptions->GetArgFilename() ? g_pOptions->GetArgFilename() : "N/A");
 			return;
+		}
+
+		if (g_pOptions->GetSaveQueue() && g_pOptions->GetServerMode())
+		{
+			g_pDiskState = new DiskState();
 		}
 
 		g_pQueueCoordinator->Start();
@@ -436,6 +444,14 @@ void Cleanup()
 		g_pFrontend = NULL;
 	}
 	debug("Frontend deleted");
+
+	debug("Deleting DiskState");
+	if (g_pDiskState)
+	{
+		delete g_pDiskState;
+		g_pDiskState = NULL;
+	}
+	debug("DiskState deleted");
 
 	debug("Deleting Options");
 	if (g_pOptions)

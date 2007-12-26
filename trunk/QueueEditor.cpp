@@ -42,12 +42,14 @@
 #include "DownloadInfo.h"
 #include "QueueEditor.h"
 #include "QueueCoordinator.h"
+#include "DiskState.h"
 #include "Options.h"
 #include "Log.h"
 #include "Util.h"
 
 extern QueueCoordinator* g_pQueueCoordinator;
 extern Options* g_pOptions;
+extern DiskState* g_pDiskState;
 
 const int MAX_ID = 100000000;
 
@@ -159,7 +161,7 @@ bool QueueEditor::EditList(IDList* pIDList, bool bSmartOrder, EEditAction eActio
 
 	if (g_pOptions->GetSaveQueue() && g_pOptions->GetServerMode())
 	{
-		m_pDiskState->Save(pDownloadQueue, true);
+		g_pDiskState->Save(pDownloadQueue);
 	}
 
 	g_pQueueCoordinator->UnlockQueue();

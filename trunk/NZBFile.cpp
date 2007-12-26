@@ -32,9 +32,7 @@
 #include "win32.h"
 #endif
 
-#include <stdlib.h>
 #include <string.h>
-#include <algorithm>
 #ifdef WIN32
 #include <comutil.h>
 #import "MSXML.dll" named_guids 
@@ -48,6 +46,12 @@ using namespace MSXML;
 #include "NZBFile.h"
 #include "Log.h"
 #include "DownloadInfo.h"
+#include "Options.h"
+#include "DiskState.h"
+
+extern Options* g_pOptions;
+extern DiskState* g_pDiskState;
+
 
 bool ArticleGreater(ArticleInfo* elem1, ArticleInfo* elem2)
 {
@@ -90,38 +94,6 @@ void NZBFile::DetachFileInfos()
     m_FileInfos.clear();
 }
 
-bool NZBFile::LoadFileIntoBuffer(const char* szFileName, char** pBuffer, int* pBufferLength)
-{
-    FILE* pFile = fopen(szFileName, "r");
-    if (!pFile)
-    {
-        return false;
-    }
-
-    // obtain file size.
-    fseek(pFile , 0 , SEEK_END);
-    int iSize  = ftell(pFile);
-    rewind(pFile);
-
-    // allocate memory to contain the whole file.
-    *pBuffer = (char*) malloc(iSize + 1);
-    if (!*pBuffer)
-    {
-        return false;
-    }
-
-    // copy the file into the buffer.
-    fread(*pBuffer, 1, iSize, pFile);
-
-    fclose(pFile);
-
-    (*pBuffer)[iSize] = 0;
-
-    *pBufferLength = iSize + 1;
-
-    return true;
-}
-
 NZBFile* NZBFile::CreateFromBuffer(const char* szFileName, const char* szBuffer, int iSize)
 {
 	return Create(szFileName, szBuffer, iSize, true);
@@ -141,8 +113,9 @@ void NZBFile::AddArticle(FileInfo* pFileInfo, ArticleInfo* pArticleInfo)
 	(*pFileInfo->GetArticles())[pArticleInfo->GetPartNumber() - 1] = pArticleInfo;
 }
 
-void NZBFile::DeleteEmptyArticles(FileInfo* pFileInfo)
+void NZBFile::AddFileInfo(FileInfo* pFileInfo)
 {
+	// deleting empty articles
 	FileInfo::Articles* pArticles = pFileInfo->GetArticles();
 	int i = 0;
 	for (FileInfo::Articles::iterator it = pArticles->begin(); it != pArticles->end();)
@@ -157,6 +130,21 @@ void NZBFile::DeleteEmptyArticles(FileInfo* pFileInfo)
 			it++;
 			i++;
 		}
+	}
+
+	if (!pArticles->empty())
+	{
+		m_FileInfos.push_back(pFileInfo);
+
+		if (g_pOptions->GetSaveQueue() && g_pOptions->GetServerMode())
+		{
+			g_pDiskState->SaveFile(pFileInfo);
+			pFileInfo->ClearArticles();
+		}
+	}
+	else
+	{
+		delete pFileInfo; 
 	}
 }
 
@@ -262,8 +250,7 @@ bool NZBFile::parseNZB(IUnknown* nzb)
             }
 		}
 
-		DeleteEmptyArticles(pFileInfo);
-		m_FileInfos.push_back(pFileInfo);
+		AddFileInfo(pFileInfo);
 	}
 	return true;
 }
@@ -393,8 +380,7 @@ bool NZBFile::parseNZB(void* nzb)
                 /* Close the file element, add the new file to file-list */
                 if (!strcmp("file",(char*)name))
                 {
-					DeleteEmptyArticles(pFileInfo);
-                    m_FileInfos.push_back(pFileInfo);
+					AddFileInfo(pFileInfo);
                 }
             }
 

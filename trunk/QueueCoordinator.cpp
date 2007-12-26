@@ -44,12 +44,14 @@
 #include "Options.h"
 #include "ServerPool.h"
 #include "ArticleDownloader.h"
+#include "DiskState.h"
 #include "Log.h"
 #include "Util.h"
 #include "Decoder.h"
 
 extern Options* g_pOptions;
 extern ServerPool* g_pServerPool;
+extern DiskState* g_pDiskState;
 
 QueueCoordinator::QueueCoordinator()
 {
@@ -58,7 +60,6 @@ QueueCoordinator::QueueCoordinator()
 	m_bHasMoreJobs = true;
 	m_DownloadQueue.clear();
 	m_ActiveDownloads.clear();
-	m_QueueEditor.SetDiskState(&m_DiskState);
 
 	Decoder::Init();
 }
@@ -93,17 +94,17 @@ void QueueCoordinator::Run()
 
 	m_mutexDownloadQueue.Lock();
 
-	m_DiskState.CleanupTempDir(&m_DownloadQueue);
+	g_pDiskState->CleanupTempDir(&m_DownloadQueue);
 
-	if (g_pOptions->GetServerMode() && g_pOptions->GetSaveQueue() && m_DiskState.Exists())
+	if (g_pOptions->GetServerMode() && g_pOptions->GetSaveQueue() && g_pDiskState->Exists())
 	{
 		if (g_pOptions->GetReloadQueue())
 		{
-			m_DiskState.Load(&m_DownloadQueue);
+			g_pDiskState->Load(&m_DownloadQueue);
 		}
 		else
 		{
-			m_DiskState.Discard();
+			g_pDiskState->Discard();
 		}
 	}
 
@@ -209,7 +210,7 @@ void QueueCoordinator::AddNZBFileToQueue(NZBFile* pNZBFile, bool bAddFirst)
 	
 	if (g_pOptions->GetSaveQueue() && g_pOptions->GetServerMode())
 	{
-		m_DiskState.Save(&m_DownloadQueue, false);
+		g_pDiskState->Save(&m_DownloadQueue);
 	}
 
 	m_mutexDownloadQueue.Unlock();
@@ -226,7 +227,7 @@ bool QueueCoordinator::AddFileToQueue(const char* szFileName)
 		return false;
 	}
 
-	// Add NZBFile to Qeue
+	// Add NZBFile to Queue
 	AddNZBFileToQueue(pNZBFile, false);
 
 	delete pNZBFile;
@@ -341,6 +342,10 @@ bool QueueCoordinator::GetNextArticle(FileInfo* &pFileInfo, ArticleInfo* &pArtic
 		pFileInfo = *it;
 		if (!pFileInfo->GetPaused() && !pFileInfo->GetDeleted())
 		{
+			if (pFileInfo->GetArticles()->empty() && g_pOptions->GetSaveQueue() && g_pOptions->GetServerMode())
+			{
+				g_pDiskState->LoadArticles(pFileInfo);
+			}
 			for (FileInfo::Articles::iterator at = pFileInfo->GetArticles()->begin(); at != pFileInfo->GetArticles()->end(); at++)
 			{
 				pArticleInfo = *at;
@@ -513,7 +518,7 @@ void QueueCoordinator::DeleteFileInfo(FileInfo* pFileInfo)
 
 	if (g_pOptions->GetSaveQueue() && g_pOptions->GetServerMode())
 	{
-		m_DiskState.DiscardFileInfo(&m_DownloadQueue, pFileInfo);
+		g_pDiskState->DiscardFile(&m_DownloadQueue, pFileInfo);
 	}
 
 	delete pFileInfo;

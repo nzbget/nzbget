@@ -118,6 +118,7 @@ public:
 	void				SetCompleted(int s) { m_iCompleted = s; }
 	void				ParseSubject();
 	bool				IsDupe();
+	void				ClearArticles();
 };
                               
 typedef std::deque<FileInfo*> DownloadQueue;
