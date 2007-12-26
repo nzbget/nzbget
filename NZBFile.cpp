@@ -129,19 +129,7 @@ NZBFile* NZBFile::CreateFromBuffer(const char* szFileName, const char* szBuffer,
 
 NZBFile* NZBFile::CreateFromFile(const char* szFileName)
 {
-	//return Create(szFileName, NULL, 0, false);
-
-//	/*
-	//TEST
-	int iBufferLength	= 0;
-	char* szBuffer		= NULL;
-
-	if (!NZBFile::LoadFileIntoBuffer(szFileName, &szBuffer, &iBufferLength))
-	{
-		return false;
-	}
-	return Create(szFileName, szBuffer, iBufferLength, true);
-//	*/
+	return Create(szFileName, NULL, 0, false);
 }
 
 void NZBFile::AddArticle(FileInfo* pFileInfo, ArticleInfo* pArticleInfo)
