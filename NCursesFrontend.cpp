@@ -623,7 +623,7 @@ void NCursesFrontend::PrintStatus()
     char szParStatus[128];
     if (m_iParJobCount > 0)
     {
-        sprintf(szParStatus, ", processing %i par%s", m_iParJobCount, m_iParJobCount > 1 ? "s" : "");
+        sprintf(szParStatus, ", %i par%s", m_iParJobCount, m_iParJobCount > 1 ? "s" : "");
     }
     else
     {
@@ -643,46 +643,29 @@ void NCursesFrontend::PrintKeyInputBar()
     switch (m_eInputMode)
     {
     case eNormal:
-        PlotLine("(Q)uit | (E)dit | (P)ause | (R)ate | n(Z)b | (W)indow | (T)ime | (G)roup", iInputBarRow, 0, NCURSES_COLORPAIR_KEYBAR);
+		if (m_bGroupFiles)
+		{
+	        PlotLine("(Q)uit | (E)dit | (P)ause | (R)ate | (W)indow | (G)roup | (T)ime", iInputBarRow, 0, NCURSES_COLORPAIR_KEYBAR);
+		}
+		else
+		{
+	        PlotLine("(Q)uit | (E)dit | (P)ause | (R)ate | (W)indow | (G)roup | (T)ime | n(Z)b", iInputBarRow, 0, NCURSES_COLORPAIR_KEYBAR);
+		}
         break;
     case eEditQueue:
     {
 		char* szStatus = NULL;
 		if (m_iSelectedQueueEntry > 0 && iQueueSize > 1 && m_iSelectedQueueEntry == iQueueSize - 1)
 		{
-			if (m_bGroupFiles)
-			{
-				// Up-/Down-commands for groups not supported yet
-				szStatus = "(Q)uit | (E)xit | (P)ause | (D)elete | (T)op";
-			}
-			else
-			{
-				szStatus = "(Q)uit | (E)xit | (P)ause | (D)elete | (U)p/(T)op";
-			}
+			szStatus = "(Q)uit | (E)xit | (P)ause | (D)elete | (U)p/(T)op";
 		}
 		else if (iQueueSize > 1 && m_iSelectedQueueEntry == 0)
 		{
-			if (m_bGroupFiles)
-			{
-				// Up-/Down-commands for groups not supported yet
-				szStatus = "(Q)uit | (E)xit | (P)ause | (D)elete | (B)ottom";
-			}
-			else
-			{
-				szStatus = "(Q)uit | (E)xit | (P)ause | (D)elete | dow(N)/(B)ottom";
-			}
+			szStatus = "(Q)uit | (E)xit | (P)ause | (D)elete | dow(N)/(B)ottom";
 		}
 		else if (iQueueSize > 1)
 		{
-			if (m_bGroupFiles)
-			{
-				// Up-/Down-commands for groups not supported yet
-				szStatus = "(Q)uit | (E)xit | (P)ause | (D)elete | (T)op/(B)ottom";
-			}
-			else
-			{
-				szStatus = "(Q)uit | (E)xit | (P)ause | (D)elete | (U)p/dow(N)/(T)op/(B)ottom";
-			}
+			szStatus = "(Q)uit | (E)xit | (P)ause | (D)elete | (U)p/dow(N)/(T)op/(B)ottom";
 		}
 		else
 		{
