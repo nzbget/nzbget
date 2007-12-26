@@ -126,6 +126,7 @@ private:
 	bool				m_bCursesTime;
 	bool				m_bCursesGroup;
 	bool				m_bRetryOnCrcError;
+	int					m_iThreadLimit;
 
 	// Parsed command-line parameters
 	bool				m_bServerMode;
@@ -211,6 +212,7 @@ public:
 	bool				GetCursesTime() { return m_bCursesTime; }
 	bool				GetCursesGroup() { return m_bCursesGroup; }
 	bool				GetRetryOnCrcError() { return m_bRetryOnCrcError; }
+	int					GetThreadLimit() { return m_iThreadLimit; }
 
 	// Parsed command-line parameters
 	bool				GetServerMode() { return m_bServerMode; }

@@ -165,6 +165,14 @@ connectiontimeout=60
 # in seconds
 terminatetimeout=600
 
+# Set the maximum number of threads program may create.
+# Connection errors or fast connection with slow cpu can cause 
+# the creating of many (thousands) threads, which result in program crash.
+# Limiting the number of threads helps in such situations.
+# The option affects only download threads, so the number of existing threads
+# may be slightly more than set by the option.
+threadlimit=100
+
 # How many par2-files to load (none, all, one)
 # none - all added par2-files must be automatically paused
 # all - all added par2-files must be downloaded

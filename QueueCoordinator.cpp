@@ -117,7 +117,7 @@ void QueueCoordinator::Run()
 			usleep(500 * 1000);
 		}
 
-		if (g_pServerPool->HasFreeConnection())
+		if (g_pServerPool->HasFreeConnection() && Thread::GetThreadCount() < g_pOptions->GetThreadLimit())
 		{
 			// start download for next article
 			FileInfo* pFileInfo;
