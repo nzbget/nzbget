@@ -128,6 +128,7 @@ static const char* OPTION_CURSESNZBNAME		= "cursesnzbname";
 static const char* OPTION_CURSESTIME		= "cursestime";
 static const char* OPTION_CURSESGROUP		= "cursesgroup";
 static const char* OPTION_RETRYONCRCERROR	= "retryoncrcerror";
+static const char* OPTION_THREADLIMIT		= "threadlimit";
 
 #ifndef WIN32
 const char* PossibleConfigLocations[] =
@@ -202,6 +203,7 @@ Options::Options(int argc, char* argv[])
 	m_bCursesTime			= false;
 	m_bCursesGroup			= false;
 	m_bRetryOnCrcError		= false;
+	m_iThreadLimit			= 0;
 
 	char szFilename[MAX_PATH + 1];
 #ifdef WIN32
@@ -387,6 +389,7 @@ void Options::InitDefault()
 	SetOption(OPTION_CURSESTIME, "no");
 	SetOption(OPTION_CURSESGROUP, "no");
 	SetOption(OPTION_RETRYONCRCERROR, "no");	
+	SetOption(OPTION_THREADLIMIT, "100");	
 }
 
 void Options::InitOptFile()
@@ -496,6 +499,7 @@ void Options::InitOptions()
 	m_szLogFile				= strdup(GetOption(OPTION_LOGFILE));
 	m_iUMask				= strtol(GetOption(OPTION_UMASK), NULL, 8);
 	m_iUpdateInterval		= atoi(GetOption(OPTION_UPDATEINTERVAL));
+	m_iThreadLimit			= atoi(GetOption(OPTION_THREADLIMIT));
 
 	const char* BoolNames[] = { "yes", "no", "true", "false", "1", "0", "on", "off", "enable", "disable" };
 	const int BoolValues[] = { 1, 0, 1, 0, 1, 0, 1, 0, 1, 0 };
