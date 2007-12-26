@@ -42,7 +42,7 @@ private:
 
 						NZBFile(const char* szFileName);
 	void				AddArticle(FileInfo* pFileInfo, ArticleInfo* pArticleInfo);
-	void				DeleteEmptyArticles(FileInfo* pFileInfo);
+	void				AddFileInfo(FileInfo* pFileInfo);
 #ifdef WIN32
     bool 				parseNZB(IUnknown* nzb);
 #else
@@ -54,7 +54,6 @@ public:
 	virtual 			~NZBFile();
 	static NZBFile*		CreateFromBuffer(const char* szFileName, const char* szBuffer, int iSize);
 	static NZBFile*		CreateFromFile(const char* szFileName);
-	static bool			LoadFileIntoBuffer(const char* szFileName, char** pBuffer, int* pBufferLength);
 	const char* 		GetFileName() const { return m_szFileName; }
 	FileInfos*			GetFileInfos() { return &m_FileInfos; }
 	void				DetachFileInfos();

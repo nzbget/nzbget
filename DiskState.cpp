@@ -46,10 +46,9 @@ extern Options* g_pOptions;
 /* Save Download Queue to Disk.
  * The Disk State consists of file "queue", which contains the order of files
  * and of one diskstate-file for each file in download queue.
- * If parameter "OnlyOrder" is set to true, only the file "queue" will
- * be written to disk (It useful, if only the order of files in queue was changed).
+ * This function saves only file "queue".
  */
-bool DiskState::Save(DownloadQueue* pDownloadQueue, bool OnlyOrder)
+bool DiskState::Save(DownloadQueue* pDownloadQueue)
 {
 	debug("Saving queue to disk");
 
@@ -74,14 +73,7 @@ bool DiskState::Save(DownloadQueue* pDownloadQueue, bool OnlyOrder)
 		FileInfo* pFileInfo = *it;
 		if (!pFileInfo->GetDeleted())
 		{
-			char fileName[1024];
-			snprintf(fileName, 1024, "%s%i", g_pOptions->GetQueueDir(), pFileInfo->GetID());
-			fileName[1024-1] = '\0';
 			fprintf(outfile, "%i,%i\n", pFileInfo->GetID(), (int)pFileInfo->GetPaused());
-			if (!OnlyOrder)
-			{
-				SaveFileInfo(pFileInfo, fileName);
-			}
 			cnt++;
 		}
 	}
@@ -93,6 +85,14 @@ bool DiskState::Save(DownloadQueue* pDownloadQueue, bool OnlyOrder)
 	}
 
 	return true;
+}
+
+bool DiskState::SaveFile(FileInfo* pFileInfo)
+{
+	char fileName[1024];
+	snprintf(fileName, 1024, "%s%i", g_pOptions->GetQueueDir(), pFileInfo->GetID());
+	fileName[1024-1] = '\0';
+	return SaveFileInfo(pFileInfo, fileName);
 }
 
 bool DiskState::Load(DownloadQueue* pDownloadQueue)
@@ -123,7 +123,7 @@ bool DiskState::Load(DownloadQueue* pDownloadQueue)
 			snprintf(fileName, 1024, "%s%i", g_pOptions->GetQueueDir(), id);
 			fileName[1024-1] = '\0';
 			FileInfo* pFileInfo = new FileInfo();
-			bool res = LoadFileInfo(pFileInfo, fileName);
+			bool res = LoadFileInfo(pFileInfo, fileName, true, false);
 			if (res)
 			{
 				pFileInfo->SetID(id);
@@ -147,6 +147,14 @@ bool DiskState::Load(DownloadQueue* pDownloadQueue)
 	fclose(infile);
 
 	return res;
+}
+
+bool DiskState::LoadArticles(FileInfo* pFileInfo)
+{
+	char fileName[1024];
+	snprintf(fileName, 1024, "%s%i", g_pOptions->GetQueueDir(), pFileInfo->GetID());
+	fileName[1024-1] = '\0';
+	return LoadFileInfo(pFileInfo, fileName, false, true);
 }
 
 bool DiskState::SaveFileInfo(FileInfo* pFileInfo, const char* szFilename)
@@ -187,7 +195,7 @@ bool DiskState::SaveFileInfo(FileInfo* pFileInfo, const char* szFilename)
 	return true;
 }
 
-bool DiskState::LoadFileInfo(FileInfo* pFileInfo, const char * szFilename)
+bool DiskState::LoadFileInfo(FileInfo* pFileInfo, const char * szFilename, bool bFileSummary, bool bArticles)
 {
 	debug("Loading FileInfo from disk");
 
@@ -203,28 +211,28 @@ bool DiskState::LoadFileInfo(FileInfo* pFileInfo, const char * szFilename)
 
 	if (!fgets(buf, sizeof(buf), infile)) goto error;
 	if (buf[0] != 0) buf[strlen(buf)-1] = 0; // remove traling '\n'
-	pFileInfo->SetNZBFilename(buf);
+	if (bFileSummary) pFileInfo->SetNZBFilename(buf);
 
 	if (!fgets(buf, sizeof(buf), infile)) goto error;
 	if (buf[0] != 0) buf[strlen(buf)-1] = 0; // remove traling '\n'
-	pFileInfo->SetSubject(buf);
+	if (bFileSummary) pFileInfo->SetSubject(buf);
 
 	if (!fgets(buf, sizeof(buf), infile)) goto error;
 	if (buf[0] != 0) buf[strlen(buf)-1] = 0; // remove traling '\n'
-	pFileInfo->SetDestDir(buf);
+	if (bFileSummary) pFileInfo->SetDestDir(buf);
 
 	if (!fgets(buf, sizeof(buf), infile)) goto error;
 	if (buf[0] != 0) buf[strlen(buf)-1] = 0; // remove traling '\n'
-	pFileInfo->SetFilename(buf);
+	if (bFileSummary) pFileInfo->SetFilename(buf);
 
 	int iFilenameConfirmed;
 	if (fscanf(infile, "%i\n", &iFilenameConfirmed) != 1) goto error;
-	pFileInfo->SetFilenameConfirmed(iFilenameConfirmed);
+	if (bFileSummary) pFileInfo->SetFilenameConfirmed(iFilenameConfirmed);
 	
 	unsigned long High, Low;
 	if (fscanf(infile, "%lu,%lu\n", &High, &Low) != 2) goto error;
-	pFileInfo->SetSize((((unsigned long long)High) << 32) + Low);
-	pFileInfo->SetRemainingSize(pFileInfo->GetSize());
+	if (bFileSummary) pFileInfo->SetSize((((unsigned long long)High) << 32) + Low);
+	if (bFileSummary) pFileInfo->SetRemainingSize(pFileInfo->GetSize());
 
 	int size;
 	if (fscanf(infile, "%i\n", &size) != 1) goto error;
@@ -232,23 +240,26 @@ bool DiskState::LoadFileInfo(FileInfo* pFileInfo, const char * szFilename)
 	{
 		if (!fgets(buf, sizeof(buf), infile)) goto error;
 		if (buf[0] != 0) buf[strlen(buf)-1] = 0; // remove traling '\n'
-		pFileInfo->GetGroups()->push_back(strdup(buf));
+		if (bFileSummary) pFileInfo->GetGroups()->push_back(strdup(buf));
 	}
 
-	if (fscanf(infile, "%i\n", &size) != 1) goto error;
-	for (int i = 0; i < size; i++)
+	if (bArticles)
 	{
-		int PartNumber, PartSize;
-		if (fscanf(infile, "%i,%i\n", &PartNumber, &PartSize) != 2) goto error;
+		if (fscanf(infile, "%i\n", &size) != 1) goto error;
+		for (int i = 0; i < size; i++)
+		{
+			int PartNumber, PartSize;
+			if (fscanf(infile, "%i,%i\n", &PartNumber, &PartSize) != 2) goto error;
 
-		if (!fgets(buf, sizeof(buf), infile)) goto error;
-		if (buf[0] != 0) buf[strlen(buf)-1] = 0; // remove traling '\n'
+			if (!fgets(buf, sizeof(buf), infile)) goto error;
+			if (buf[0] != 0) buf[strlen(buf)-1] = 0; // remove traling '\n'
 
-		ArticleInfo* pArticleInfo = new ArticleInfo();
-		pArticleInfo->SetPartNumber(PartNumber);
-		pArticleInfo->SetSize(PartSize);
-		pArticleInfo->SetMessageID(buf);
-		pFileInfo->GetArticles()->push_back(pArticleInfo);
+			ArticleInfo* pArticleInfo = new ArticleInfo();
+			pArticleInfo->SetPartNumber(PartNumber);
+			pArticleInfo->SetSize(PartSize);
+			pArticleInfo->SetMessageID(buf);
+			pFileInfo->GetArticles()->push_back(pArticleInfo);
+		}
 	}
 
 	fclose(infile);
@@ -322,7 +333,7 @@ bool DiskState::Exists()
 	return fileExists;
 }
 
-bool DiskState::DiscardFileInfo(DownloadQueue* pDownloadQueue, FileInfo * pFileInfo)
+bool DiskState::DiscardFile(DownloadQueue* pDownloadQueue, FileInfo* pFileInfo)
 {
 	// delete diskstate-file
 	char fileName[1024];
@@ -330,7 +341,7 @@ bool DiskState::DiscardFileInfo(DownloadQueue* pDownloadQueue, FileInfo * pFileI
 	fileName[1024-1] = '\0';
 	remove(fileName);
 
-	return Save(pDownloadQueue, true);
+	return Save(pDownloadQueue);
 }
 
 void DiskState::CleanupTempDir(DownloadQueue* pDownloadQueue)

@@ -60,6 +60,7 @@ public:
 char* BaseFileName(const char* filename);
 void NormalizePathSeparators(char* szPath);
 bool ForceDirectories(const char* szPath);
+bool LoadFileIntoBuffer(const char* szFileName, char** pBuffer, int* pBufferLength);
 
 long long JoinInt64(unsigned int Hi, unsigned int Lo);
 void SplitInt64(long long Int64, unsigned int* Hi, unsigned int* Lo);

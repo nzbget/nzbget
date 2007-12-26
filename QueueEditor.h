@@ -29,8 +29,7 @@
 #include <vector>
 
 #include "DownloadInfo.h"
-#include "DiskState.h"
-                                            
+
 class QueueEditor
 {
 public:
@@ -67,8 +66,6 @@ private:
 	typedef std::vector<FileInfo*> FileList;
 
 private:
-	DiskState*				m_pDiskState;
-
 	FileInfo*				FindFileInfo(DownloadQueue* pDownloadQueue, int iID);
 	int						FindFileInfoEntry(DownloadQueue* pDownloadQueue, FileInfo* pFileInfo);
 	bool					InternEditList(DownloadQueue* pDownloadQueue, IDList* pIDList, bool bSmartOrder, EEditAction eAction, int iOffset);
@@ -86,7 +83,6 @@ private:
 public:
 							QueueEditor();                
 							~QueueEditor();
-	void					SetDiskState(DiskState* diskState) { m_pDiskState = diskState; };
 
 	bool					EditEntry(int ID, bool bSmartOrder, EEditAction eAction, int iOffset);
 	bool					EditList(IDList* pIDList, bool bSmartOrder, EEditAction eAction, int iOffset);

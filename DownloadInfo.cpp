@@ -124,17 +124,22 @@ FileInfo::~ FileInfo()
 		free(m_szNZBFilename);
 	}
 
-	for (Articles::iterator it = m_Articles.begin(); it != m_Articles.end() ;it++)
-	{
-		delete *it;
-	}
-	m_Articles.clear();
-
 	for (Groups::iterator it = m_Groups.begin(); it != m_Groups.end() ;it++)
 	{
 		free(*it);
 	}
 	m_Groups.clear();
+
+	ClearArticles();
+}
+
+void FileInfo::ClearArticles()
+{
+	for (Articles::iterator it = m_Articles.begin(); it != m_Articles.end() ;it++)
+	{
+		delete *it;
+	}
+	m_Articles.clear();
 }
 
 void FileInfo::SetID(int s)
