@@ -134,6 +134,7 @@ void NZBFile::AddFileInfo(FileInfo* pFileInfo)
 
 	if (!pArticles->empty())
 	{
+		pFileInfo->BuildDestDirName(m_szFileName);
 		m_FileInfos.push_back(pFileInfo);
 
 		if (g_pOptions->GetSaveQueue() && g_pOptions->GetServerMode())

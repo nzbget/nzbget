@@ -177,7 +177,6 @@ void QueueCoordinator::AddNZBFileToQueue(NZBFile* pNZBFile, bool bAddFirst)
 	for (NZBFile::FileInfos::iterator it = pNZBFile->GetFileInfos()->begin(); it != pNZBFile->GetFileInfos()->end(); it++)
 	{
 		FileInfo* pFileInfo = *it;
-		pFileInfo->BuildDestDirName(pNZBFile->GetFileName());
 		if (g_pOptions->GetDupeCheck() && IsDupe(pFileInfo))
 		{
 			warn("File \"%s\" seems to be duplicate, skipping", pFileInfo->GetFilename());
