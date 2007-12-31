@@ -14,10 +14,10 @@
 #   nzbget -c /home/user/myconig.txt
 
 # For quick start change the option MAINDIR and configure one news-server
-# See section NEWS-SERVERS.
 
 
-# PROGRAM OPTIONS
+##############################################################################
+### PATHS                                                                  ###
 
 # Root directory for all related tasks
 # MAINDIR is a variable and therefore starts with "$"
@@ -26,238 +26,26 @@
 $MAINDIR=~/download
 
 # Destination-directory to store the downloaded files
-destdir=${MAINDIR}/dst
+DestDir=${MAINDIR}/dst
 
 # Directory to monitor for incoming nzb-jobs
-nzbdir=${MAINDIR}/nzb
+NzbDir=${MAINDIR}/nzb
 
 # Directory to store download queue
-queuedir=${MAINDIR}/queue
+QueueDir=${MAINDIR}/queue
 
 # Directory to store temporary files
-tempdir=${MAINDIR}/tmp
+TempDir=${MAINDIR}/tmp
 
 # Lock-file for daemon-mode, contains process-id (PID) (POSIX only)
-lockfile=/tmp/nzbget.lock
+LockFile=/tmp/nzbget.lock
 
-# User name for daemon-mode (POSIX in daemon-mode only).
-# Set the user that the daemon normally runs at.
-# Set $MAINDIR with an absolute path to be sure where it will write.
-# This allows nzbget daemon to be launched in rc.local (at boot), and
-# download items as a specific user id.
-# NOTE: This option has effect only if the program is started from root-account,
-# otherwise it is ignored and the daemon runs under current user id
-daemonusername=root
-
-# Specify default umask (affects file permissions) for newly created 
-# files (POSIX only).
-# The value should be written in octal form (the same as for "umask" shell 
-# command). If umask not specified (or a value greater than 0777 used, useful 
-# to disable current config-setting via command-line parameter) the umask-mode 
-# will not be set and current umask-mode (set via shell) is be used
-# NOTE: do not forget to uncomment next line
-#umask=022
-
-# Where to store log file, if it needs to be created (see "createlog")
-logfile=${destdir}/nzbget.log
-
-# Save download queue to disk. This allows to reload it on next start (yes, no)
-savequeue=yes
-
-# Reload download queue on start, if it exists (yes, no)
-reloadqueue=yes
-
-# Create log file (yes, no)
-createlog=yes
-
-# Delete log file upon server start (only in server-mode) (yes, no)
-resetlog=no
-
-# How various messages must be printed (screen, log, both, none)
-# Debug-messages can be only printed if the programm was compiled in 
-# debug-mode: "./configure --enable-debug"
-infotarget=both
-warningtarget=both
-errortarget=both
-debugtarget=both
-
-# Create subdirectory with nzb-filename in destination-directory (yes, no)
-appendnzbdir=yes
-
-# Set screen-outputmode (loggable, colored, curses)
-outputmode=colored
-
-# Shows NZB-Filename in file list in curses-outputmode (yes, no)
-# This option controls the initial state of curses-frontend,
-# it can be switched on/off in run-time with Z-key
-cursesnzbname=yes
-
-# Show files in groups (NZB-files) in queue list in curses-outputmode (yes, no)
-# This option controls the initial state of curses-frontend,
-# it can be switched on/off in run-time with G-key
-cursesgroup=no
-
-# Show timestamps in message list in curses-outputmode (yes, no)
-# This option controls the initial state of curses-frontend,
-# it can be switched on/off in run-time with T-key
-cursestime=no
-
-# Update interval for Frontend-output in MSec (min value 25)
-# Bigger values reduce CPU usage (especially in curses-outputmode)
-# and network traffic in remote-client mode
-updateinterval=200
-
-# Check if the destination file already exists (yes, no)
-# If the file exists it will not be added to queue.
-# If "no" the file will be downloaded and renamed to "filename_duplicate1",
-# no existing files are deleted or overwritten
-dupecheck=no
-
-# Set the maximum download rate in KB/s, "0" means no speed control
-downloadrate=0
-
-# Visibly rename broken files on download appending "_broken" (yes, no)
-renamebroken=no
-
-# Create a log of all broken files (yes ,no)
-# It is a text file placed near downloaded files, which contains
-# the names of broken files
-createbrokenlog=yes
-
-# Set the IP on which the server listen and which client uses to contact 
-# the server. It could be dns-hostname or ip-address (more effective since
-# does not require dns-lookup)
-serverip=127.0.0.1
-
-# Set the port which the server & client use
-serverport=6789
-
-# Set the password needed to succesfully queue a request
-serverpassword=tegbzn6789
-
-# Determine how the articles should be decoded (uulib, yenc, none)
-# yenc - use internal yEnc-Decoder. Supports only yEnc-format, but is 
-#        very fast and does not create temporary files with articles' text,
-#        decoding them on the fly.
-# uulib - use uulib to decode files. Supports many encoding formats, 
-#         but is slow.
-# none - the articles will not be decoded and joined. External programs 
-#        ("uudeview" is one of them) could be used to decode an join downloaded 
-# articles
-decoder=yEnc
-
-# Write decoded articles directly into destination output file (yes, no)
-# With this option enabled the program firstly creates the output 
-# destination file with required size (total size of all articles), 
-# then writes on the fly decoded articles directly to this file 
-# without creating of any temporary files, even for decoded articles.
-# This may results in major performance improvement, but this higly depends 
-# on OS and filesystem used.
-# Can improve performance on a very fast internet connections, 
-# but you need to test if it works in your case.
-# The option works only with internal decoder ("decoder=yenc")
-# NOTE: for testing download few big files (with total size 500-1000MB)
-# and measure required time. Do not rely on the program's speed indicator,
-# it is not accurate.
-directwrite=no
-
-# How much retries should be attempted if a download error occurs
-retries=4
-
-# Set the interval between retries, in seconds
-retryinterval=10
-
-# Redownload article if CRC-check fails (yes, no)
-# Helps to minimize number of broken files, but may be effective 
-# only if you have multiple download servers (even from the same provider
-# but from different locations (e.g. europe, usa)).
-# In any case the option increases your traffic.
-# For slow connections loading of extra par-blocks may be more effective
-retryoncrcerror=no
-
-# Set connection timeout, in seconds
-connectiontimeout=60
-
-# Timeout until a download-thread is killed (helps on hanging downloads), 
-# in seconds
-terminatetimeout=600
-
-# Set the maximum number of threads program may create.
-# Connection errors or fast connection with slow cpu can cause 
-# the creating of many (thousands) threads, which result in program crash.
-# Limiting the number of threads helps in such situations.
-# The option affects only download threads, so the number of existing threads
-# may be slightly more than set by the option.
-threadlimit=100
-
-# How many par2-files to load (none, all, one)
-# none - all added par2-files must be automatically paused
-# all - all added par2-files must be downloaded
-# one - only one main par2-file must be dowloaded and other must be paused
-# Paused files remain in queue and should be deleted manually,
-# when they not needed anymore
-loadpars=one
-
-# Automatic par-verification (yes, no)
-# To download only needed par2-files (smart par-files loading) set also 
-# the option "loadpars" to "one". If option "loadpars" is set to "all",
-# all par2-files will be downloaded before verification and repair starts.
-# The option "renamebroken" must be set to "no", otherwise the par-checker
-# may not find renamed files and failed
-parcheck=no
-
-# Automatic par-repair (yes, no)
-# If option "parcheck" is enabled and "parrepair" is not, the program
-# only verifies downloaded files and downloads needed par2-files, but do
-# not start repair-process. This is useful if the server does not have
-# enough CPU power, since repairing of large files may take too much
-# resources and time on a slow computers.
-# This option has effect only if the option "parcheck" is enabled
-parrepair=yes
-
-# Use only par2-files with matching names (yes, no)
-# If par-check needs extra par-blocks it searches for par2-files
-# in download queue, which can be unpaused and used for restore. These par2-files
-# should have the same base name as the main par2-file, currently loaded in par-checker.
-# Sometimes extra par files (especially if they were uploaded not from original poster)
-# have not matching names. Normally par-checker does not use these files, but
-# you can allow it to use these files by setting "strictparname" to "no".
-# This has however a side effect: if NZB-file contains more than one collection
-# of files (with different par-sets), par-checker may download par-files from
-# a wrong collection. This increases you traffic (but not harm par-check).
-# NOTE: par-checker always uses only par-files added from the same NZB-file.
-# Option "strictparname" does not change this behavior
-strictparname=yes
-
-# Set path to program, that must be executed after the download of
-# nzb-file or one collection in nzb-file (if par-check enabled)
-# is completed and possibly par-checked/repaired.
-# Six arguments are being passed to this program:
-#  - path to destination dir, where downloaded files are located;
-#  - name of nzb-file processed;
-#  - name of par-file processed (if par-checked) or empty string (if not);
-#  - result of par-check:
-#      0 - not checked: par-check disabled or nzb-file does not contain any par-files;
-#      1 - checked and failed to repair;
-#      2 - checked and sucessfully repaired;
-#      3 - checked and can be repaired but repair is disabled;
-#  - state of nzb-job:
-#      0 - there are more collections in this nzb-file queued;
-#      1 - this was the last collection in nzb-file;
-# NOTE: if par-check is enabled and nzb-file contains more than one collection
-# of files the postprocess-program is called after each collection is completed
-# and par-checked. If you want to clean up the directory (delete par-files, etc.)
-# there are two possibilities, when you can do this:
-#  1) you parse the "name of par-file processed" to find out the base name
-#     of collection and clean up only files from this collection;
-#  2) or you just check the parameter "state of nzb-job" and do clean up,
-#     only if it is equal to "1" (which means, that this was the last
-#     collection in nzb-file and all files are now completed);
-# NOTE: do not forget to uncomment next line
-#postprocess=~/myscript.sh
+# Where to store log file, if it needs to be created (see "CreateLog")
+LogFile=${destdir}/nzbget.log
 
 
-# NEWS-SERVERS
+##############################################################################
+### NEWS-SERVERS                                                           ###
 
 # This section defines which servers nzbget should connect to.
 # The servers will be ordered by their level, i.e. nzbget will at
@@ -266,7 +54,8 @@ strictparname=yes
 # A good idea is surely to put your major download-server at level 0
 # and your fill-servers at levels 1,2,...
 # NOTE 1: Do not leave out a level in your server-list and start with level 0!
-# NOTE 2: Several servers with the same level may be used.
+# NOTE 2: Several servers with the same level may be used, they will have 
+# the same priority.
 
 # First server, on level 0
 # Level of newsserver
@@ -297,3 +86,264 @@ server1.connections=4
 #server3.username=me2
 #server3.password=mypass2
 #server3.connections=1
+
+
+##############################################################################
+### PERMISSIONS (POSIX ONLY)                                               ###
+
+# User name for daemon-mode (POSIX in daemon-mode only).
+# Set the user that the daemon normally runs at.
+# Set $MAINDIR with an absolute path to be sure where it will write.
+# This allows nzbget daemon to be launched in rc.local (at boot), and
+# download items as a specific user id.
+# NOTE: This option has effect only if the program was started from 
+# root-account, otherwise it is ignored and the daemon runs under 
+# current user id
+DaemonUserName=root
+
+# Specify default umask (affects file permissions) for newly created 
+# files (POSIX only).
+# The value should be written in octal form (the same as for "umask" shell 
+# command). If umask not specified (or a value greater than 0777 used, useful 
+# to disable current config-setting via command-line parameter) the umask-mode 
+# will not be set and current umask-mode (set via shell) will be used
+# NOTE: do not forget to uncomment the next line
+#UMask=022
+
+
+##############################################################################
+### DOWNLOAD QUEUE                                                         ###
+
+# Save download queue to disk. This allows to reload it on next start (yes, no)
+SaveQueue=yes
+
+# Reload download queue on start, if it exists (yes, no)
+ReloadQueue=yes
+
+# Reuse articles saved in temp-directory from previous program start (yes, no)
+# This allows to continue download of file, if program was exited before 
+# the file was completed.
+ContinuePartial=yes
+
+# Create subdirectory with nzb-filename in destination-directory (yes, no)
+AppendNzbDir=yes
+
+# Check if the destination file already exists (yes, no)
+# If the file exists it will not be added to queue.
+# If "no" the file will be downloaded and renamed to "filename_duplicate1",
+# no existing files are deleted or overwritten
+DupeCheck=no
+
+# Visibly rename broken files on download appending "_broken" (yes, no)
+RenameBroken=no
+
+# Create a log of all broken files (yes ,no)
+# It is a text file placed near downloaded files, which contains
+# the names of broken files
+CreateBrokenLog=yes
+
+# Determine how the articles should be decoded (yenc, uulib, none)
+# yenc - use internal yEnc-Decoder. Supports only yEnc-format, but is 
+#        very fast and does not create temporary files with articles' text
+#        decoding them on the fly.
+# uulib - use uulib to decode files. Supports many encoding formats, 
+#         but is slow. Not available in Windows-version.
+# none - the articles will not be decoded and joined. External programs 
+#        (like "uudeview") can be used to decode and join downloaded articles.
+Decoder=yEnc
+
+# Write decoded articles directly into destination output file (yes, no)
+# With this option enabled the program firstly creates the output 
+# destination file with required size (total size of all articles), 
+# then writes on the fly decoded articles directly to this file 
+# without creating of any temporary files, even for decoded articles.
+# This may results in major performance improvement, but this higly depends 
+# on OS and filesystem used.
+# Can improve performance on a very fast internet connections, 
+# but you need to test if it works in your case.
+# The option works only with internal decoder ("decoder=yenc")
+# NOTE: for testing try to download few big files (with total size 500-1000MB)
+# and measure required time. Do not rely on the program's speed indicator,
+# it is not accurate.
+DirectWrite=no
+
+# How much retries should be attempted if a download error occurs
+Retries=4
+
+# Set the interval between retries, in seconds
+RetryInterval=10
+
+# Redownload article if CRC-check fails (yes, no)
+# Helps to minimize number of broken files, but may be effective 
+# only if you have multiple download servers (even from the same provider
+# but from different locations (e.g. europe, usa)).
+# In any case the option increases your traffic.
+# For slow connections loading of extra par-blocks may be more effective
+RetryOnCrcError=no
+
+# Set connection timeout, in seconds
+ConnectionTimeout=60
+
+# Timeout until a download-thread is killed, in seconds
+# This can help on hanging downloads, but is dangerous. 
+# Do not use small values!
+TerminateTimeout=600
+
+# Set the maximum number of threads program may create.
+# Connection errors or fast connection with slow cpu can cause 
+# the creating of many (thousands) threads, which results in program crash.
+# Limiting the number of threads helps in such situations.
+# The option affects only download threads, so the number of existing threads
+# may be slightly more than set by the option.
+ThreadLimit=100
+
+# Set the maximum download rate in KB/s, "0" means no speed control
+DownloadRate=0
+
+
+##############################################################################
+### LOGGING                                                                ###
+
+# Create log file (yes, no)
+CreateLog=yes
+
+# Delete log file upon server start (only in server-mode) (yes, no)
+ResetLog=no
+
+# How various messages must be printed (screen, log, both, none)
+# Debug-messages can be only printed if the programm was compiled in 
+# debug-mode: "./configure --enable-debug"
+InfoTarget=both
+WarningTarget=both
+ErrorTarget=both
+DebugTarget=both
+
+# Number of messages stored in buffer and available for remote clients
+LogBufferSize=1000
+
+# See also option "logfile" in secion "PATHS"
+
+
+##############################################################################
+### DISPLAY                                                                ###
+
+# Set screen-outputmode (loggable, colored, curses)
+# loggable - only messages will be printed to standard output;
+# colored  - prints messages (with simple coloring for messages categories)
+#            and download progress info; uses escape-sequenses to move cursor;
+# curses   - advanced interactive iterface with the ability to edit 
+#            download queue and variaous output options;
+OutputMode=curses
+
+# Shows NZB-Filename in file list in curses-outputmode (yes, no)
+# This option controls the initial state of curses-frontend,
+# it can be switched on/off in run-time with Z-key
+CursesNzbName=yes
+
+# Show files in groups (NZB-files) in queue list in curses-outputmode (yes, no)
+# This option controls the initial state of curses-frontend,
+# it can be switched on/off in run-time with G-key
+CursesGroup=no
+
+# Show timestamps in message list in curses-outputmode (yes, no)
+# This option controls the initial state of curses-frontend,
+# it can be switched on/off in run-time with T-key
+CursesTime=no
+
+# Update interval for Frontend-output in MSec (min value 25)
+# Bigger values reduce CPU usage (especially in curses-outputmode)
+# and network traffic in remote-client mode
+UpdateInterval=200
+
+
+##############################################################################
+### CLIENT/SERVER COMMUNICATION                                            ###
+
+# Set the IP on which the server listen and which client uses to contact 
+# the server. It could be dns-hostname or ip-address (more effective since
+# does not require dns-lookup)
+ServerIp=127.0.0.1
+
+# Set the port which the server & client use
+ServerPort=6789
+
+# Set the password needed to succesfully queue a request
+ServerPassword=tegbzn6789
+
+# See also option "logbuffersize" in section "LOGGING"
+
+
+##############################################################################
+### PAR CHECK AND REPAIR                                                   ###
+
+# How many par2-files to load (none, all, one)
+# none - all added par2-files must be automatically paused
+# all - all added par2-files must be downloaded
+# one - only one main par2-file must be dowloaded and other must be paused
+# Paused files remain in queue and should be deleted manually,
+# when they not needed anymore
+LoadPars=one
+
+# Automatic par-verification (yes, no)
+# To download only needed par2-files (smart par-files loading) set also 
+# the option "loadpars" to "one". If option "loadpars" is set to "all",
+# all par2-files will be downloaded before verification and repair starts.
+# The option "renamebroken" must be set to "no", otherwise the par-checker
+# may not find renamed files and fail
+ParCheck=no
+
+# Automatic par-repair (yes, no)
+# If option "parcheck" is enabled and "parrepair" is not, the program
+# only verifies downloaded files and downloads needed par2-files, but do
+# not start repair-process. This is useful if the server does not have
+# enough CPU power, since repairing of large files may take too much
+# resources and time on a slow computers.
+# This option has effect only if the option "parcheck" is enabled
+ParRepair=yes
+
+# Use only par2-files with matching names (yes, no)
+# If par-check needs extra par-blocks it searches for par2-files
+# in download queue, which can be unpaused and used for restore. 
+# These par2-files should have the same base name as the main par2-file, 
+# currently loaded in par-checker. Sometimes extra par files (especially if 
+# they were uploaded from a different poster) have not matching names. 
+# Normally par-checker does not use these files, but you can allow it 
+# to use these files by setting "strictparname" to "no".
+# This has however a side effect: if NZB-file contains more than one collection
+# of files (with different par-sets), par-checker may download par-files from
+# a wrong collection. This increases you traffic (but not harm par-check).
+# NOTE: par-checker always uses only par-files added from the same NZB-file
+# and the option "strictparname" does not change this behavior
+StrictParName=yes
+
+
+##############################################################################
+### POSTPROCESSING                                                         ###
+
+# Set path to program, that must be executed after the download of
+# nzb-file or one collection in nzb-file (if par-check enabled)
+# is completed and possibly par-checked/repaired.
+# Six arguments are being passed to this program:
+#  - path to destination dir, where downloaded files are located;
+#  - name of nzb-file processed;
+#  - name of par-file processed (if par-checked) or empty string (if not);
+#  - result of par-check:
+#      0 - not checked: par-check disabled or nzb-file does not contain any
+#          par-files;
+#      1 - checked and failed to repair;
+#      2 - checked and sucessfully repaired;
+#      3 - checked and can be repaired but repair is disabled;
+#  - state of nzb-job:
+#      0 - there are more collections in this nzb-file queued;
+#      1 - this was the last collection in nzb-file;
+# NOTE: if par-check is enabled and nzb-file contains more than one collection
+# of files the postprocess-program is called after each collection is completed
+# and par-checked. If you want to clean up the directory (delete par-files, 
+# etc.) there are two possibilities, when you can do this:
+#  1) you parse the "name of par-file processed" to find out the base name
+#     of collection and clean up only files from this collection;
+#  2) or you just check the parameter "state of nzb-job" and do clean up,
+#     only if it is equal to "1" (which means, that this was the last
+#     collection in nzb-file and all files are now completed);
+# NOTE: do not forget to uncomment the next line
+#PostProcess=~/myscript.sh
