@@ -37,6 +37,8 @@
 #include <stdio.h>
 #ifdef WIN32
 #include <direct.h>
+#else
+#include <unistd.h>
 #endif
 
 #include "nzbget.h"
@@ -309,6 +311,49 @@ bool LoadFileIntoBuffer(const char* szFileName, char** pBuffer, int* pBufferLeng
     *pBufferLength = iSize + 1;
 
     return true;
+}
+
+bool SetFileSize(const char* szFilename, int iSize)
+{
+	bool bOK = false;
+#ifdef WIN32
+	FILE* pFile = fopen(szFilename, "a");
+	if (pFile)
+	{
+		bOK = _chsize_s(pFile->_file, iSize) == 0;
+		fclose(pFile);
+	}
+#else
+	// create file
+	FILE* pFile = fopen(szFilename, "a");
+	if (pFile)
+	{
+		fclose(pFile);
+	}
+	// there no reliable function to expand file on POSIX, so we must try different approaches,
+	// starting with the fastest one and hoping it will work
+	// 1) set file size using function "truncate" (it is fast, if works)
+	truncate(szFilename, iSize);
+	// check if it worked
+	pFile = fopen(szFilename, "a");
+	if (pFile)
+	{
+		fseek(pFile, 0, SEEK_END);
+		bOK = ftell(pFile) == iSize;
+		if (!bOK)
+		{
+			// 2) truncate did not work, expanding the file by writing in it (it is slow)
+			fclose(pFile);
+			truncate(szFilename, 0);
+			pFile = fopen(szFilename, "a");
+			char c = '0';
+			fwrite(&c, 1, iSize, pFile);
+			bOK = ftell(pFile) == iSize;
+		}
+		fclose(pFile);
+	}
+#endif
+	return bOK;
 }
 
 long long JoinInt64(unsigned int Hi, unsigned int Lo)

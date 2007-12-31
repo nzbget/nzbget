@@ -99,6 +99,7 @@ FileInfo::FileInfo()
 	m_bPaused = false;
 	m_bDeleted = false;
 	m_iCompleted = 0;
+	m_bOutputInitialized = false;
 	m_iIDGen++;
 	m_iID = m_iIDGen;
 }
@@ -276,4 +277,14 @@ bool FileInfo::IsDupe()
 	}
 
 	return exists;
+}
+
+void FileInfo::LockOutputFile()
+{
+	m_mutexOutputFile.Lock();
+}
+
+void FileInfo::UnlockOutputFile()
+{
+	m_mutexOutputFile.Unlock();
 }

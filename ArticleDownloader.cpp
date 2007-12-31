@@ -64,6 +64,7 @@ ArticleDownloader::ArticleDownloader()
 	m_szTempFilename	= NULL;
 	m_szArticleFilename	= NULL;
 	m_szInfoName		= NULL;
+	m_szOutputFilename	= NULL;
 	m_pConnection		= NULL;
 	m_eStatus			= adUndefined;
 	m_iBytes			= 0;
@@ -87,11 +88,20 @@ ArticleDownloader::~ArticleDownloader()
 	{
 		free(m_szInfoName);
 	}
+	if (m_szOutputFilename)
+	{
+		free(m_szOutputFilename);
+	}
 }
 
 void ArticleDownloader::SetTempFilename(const char* v)
 {
 	m_szTempFilename = strdup(v);
+}
+
+void ArticleDownloader::SetOutputFilename(const char* v)
+{
+	m_szOutputFilename = strdup(v);
 }
 
 void ArticleDownloader::SetInfoName(const char * v)
@@ -316,18 +326,15 @@ ArticleDownloader::EStatus ArticleDownloader::Download()
 
 	// positive answer!
 
-	const char* dnfilename = m_szTempFilename;
-	FILE* outfile = fopen(dnfilename, "w");
-                                                                        
-	if (!outfile)
+	if (g_pOptions->GetDecoder() == Options::dcYenc)
 	{
-		error("Could not create file %s", dnfilename);
-		return adFatalError;
+		m_YDecoder.Clear();
+		m_YDecoder.SetAutoSeek(g_pOptions->GetDirectWrite());
 	}
 
 	gettimeofday(&m_tStartTime, 0);
 	m_iBytes = 0;
-
+	m_pOutFile = NULL;
 	EStatus Status = adRunning;
 	const int LineBufSize = 1024*10;
 	char* szLineBuf = (char*)malloc(LineBufSize);
@@ -374,32 +381,106 @@ ArticleDownloader::EStatus ArticleDownloader::Download()
 			line++;
 		}
 
-		int wrcnt = (int)fwrite(line, 1, strlen(line), outfile);
-		if (wrcnt > 0)
+		if (!Write(line))
 		{
-			m_iBytes += wrcnt;
+			Status = adFatalError;
+			break;
 		}
 	}
 
 	free(szLineBuf);
-	fflush(outfile);
-	fclose(outfile);
+
+	if (m_pOutFile)
+	{
+		fflush(m_pOutFile);
+		fclose(m_pOutFile);
+	}
 
 	if (IsStopped())
 	{
-		remove(dnfilename);
+		remove(m_szTempFilename);
 		return adFailed;
 	}
 
 	if (Status == adFailed)
 	{
 		warn("Unexpected end of %s", m_szInfoName);
-		remove(dnfilename);
+		remove(m_szTempFilename);
+		return adFailed;
+	}
+
+	if (Status == adDecodeError)
+	{
+		warn("Decoding failed for %s", m_szInfoName);
 		return adFailed;
 	}
 
 	FreeConnection();
 
+	return Decode();
+}
+
+bool ArticleDownloader::Write(char* line)
+{
+	if (!m_pOutFile && !g_pOptions->GetDirectWrite())
+	{
+		m_pOutFile = fopen(m_szTempFilename, "w");
+		if (!m_pOutFile)
+		{
+			error("Could not create file %s", m_szTempFilename);
+			return false;
+		}
+	}
+
+	if (!m_pOutFile && g_pOptions->GetDirectWrite())
+	{
+		if (strstr(line, "=ybegin part="))
+		{
+			char* pb = strstr(line, "size=");
+			if (pb) 
+			{
+				m_pFileInfo->LockOutputFile();
+				if (!m_pFileInfo->GetOutputInitialized())
+				{
+					pb += 5; //=strlen("size=")
+					long iArticleFilesize = atol(pb);
+					if (!SetFileSize(m_szOutputFilename, iArticleFilesize))
+					{
+						error("Could not create file %s!", m_szOutputFilename);
+						return false;
+					}
+					m_pFileInfo->SetOutputInitialized(true);
+				}
+				m_pFileInfo->UnlockOutputFile();
+
+				m_pOutFile = fopen(m_szOutputFilename, "r+");
+				if (!m_pOutFile)
+				{
+					error("Could not open file %s", m_szOutputFilename);
+					return false;
+				}
+			}
+		}
+	}
+
+	int len = strlen(line);
+	bool bOK = false;
+
+	if (g_pOptions->GetDecoder() == Options::dcYenc)
+	{
+		bOK = m_YDecoder.Write(line, m_pOutFile);
+	}
+	else
+	{
+		bOK = fwrite(line, 1, len, m_pOutFile) > 0;
+	}
+
+	m_iBytes += len;
+	return bOK;
+}
+
+ArticleDownloader::EStatus ArticleDownloader::Decode()
+{
 	if ((g_pOptions->GetDecoder() == Options::dcUulib) ||
 		(g_pOptions->GetDecoder() == Options::dcYenc))
 	{
@@ -410,52 +491,80 @@ ArticleDownloader::EStatus ArticleDownloader::Download()
 		struct _timeval StartTime, EndTime;
 		gettimeofday(&StartTime, 0);
 
-		Decoder decoder;
-		if (g_pOptions->GetDecoder() == Options::dcUulib)
-		{
-			decoder.SetKind(Decoder::dcUulib);
-		}
-		else if (g_pOptions->GetDecoder() == Options::dcYenc)
-		{
-			decoder.SetKind(Decoder::dcYenc);
-		}
-		decoder.SetSrcFilename(dnfilename);
 		char tmpdestfile[1024];
-		snprintf(tmpdestfile, 1024, "%s.dec", m_szResultFilename);
-		tmpdestfile[1024-1] = '\0';
-		decoder.SetDestFilename(tmpdestfile);
+		char* szDecoderTempFilename = NULL;
+		Decoder* pDecoder = NULL;
 
-		bool bOK = decoder.Execute();
-		if (bOK)
+		if (g_pOptions->GetDecoder() == Options::dcYenc)
 		{
-			rename(tmpdestfile, m_szResultFilename);
+			pDecoder = &m_YDecoder;
+			szDecoderTempFilename = m_szTempFilename;
 		}
-		else
+		else if (g_pOptions->GetDecoder() == Options::dcUulib)
 		{
-			remove(tmpdestfile);
+			pDecoder = new UULibDecoder();
+			pDecoder->SetSrcFilename(m_szTempFilename);
+			snprintf(tmpdestfile, 1024, "%s.dec", m_szResultFilename);
+			tmpdestfile[1024-1] = '\0';
+			szDecoderTempFilename = tmpdestfile;
+			pDecoder->SetDestFilename(szDecoderTempFilename);
 		}
-		if (decoder.GetArticleFilename())
+
+		bool bOK = pDecoder->Execute();
+
+		if (!g_pOptions->GetDirectWrite())
 		{
-			m_szArticleFilename = strdup(decoder.GetArticleFilename());
+			if (bOK)
+			{
+				rename(szDecoderTempFilename, m_szResultFilename);
+			}
+			else if (g_pOptions->GetDecoder() == Options::dcUulib)
+			{
+				remove(szDecoderTempFilename);
+			}
+		}
+
+		if (pDecoder->GetArticleFilename())
+		{
+			m_szArticleFilename = strdup(pDecoder->GetArticleFilename());
 		}
 
 		gettimeofday(&EndTime, 0);
-		remove(dnfilename);
+		remove(m_szTempFilename);
 #ifdef WIN32
 		float fDeltaTime = (float)((EndTime.time - StartTime.time) * 1000 + (EndTime.millitm - StartTime.millitm));
 #else
 		float fDeltaTime = ((EndTime.tv_sec - StartTime.tv_sec) * 1000000 + (EndTime.tv_usec - StartTime.tv_usec)) / 1000.0;
 #endif
+		bool bCrcError = pDecoder->GetCrcError();
+		if (pDecoder != &m_YDecoder)
+		{
+			delete pDecoder;
+		}
+
 		if (bOK)
 		{
 			info("Successfully downloaded %s", m_szInfoName);
 			debug("Decode time %.1f ms", fDeltaTime);
+
+			if (g_pOptions->GetDirectWrite() && g_pOptions->GetContinuePartial())
+			{
+				// create empty flag-file to indicate that the artcile was downloaded
+				FILE* flagfile = fopen(m_szResultFilename, "w");
+				if (!flagfile)
+				{
+					error("Could not create file %s", m_szResultFilename);
+					// this error can be ignored
+				}
+				fclose(flagfile);
+			}
+
 			return adFinished;
 		}
 		else
 		{
 			remove(m_szResultFilename);
-			if (decoder.GetCrcError())
+			if (bCrcError)
 			{
 				warn("Decoding %s failed: CRC-Error", m_szInfoName);
 				return adCrcError;
@@ -470,7 +579,7 @@ ArticleDownloader::EStatus ArticleDownloader::Download()
 	else if (g_pOptions->GetDecoder() == Options::dcNone)
 	{
 		// rawmode
-		rename(dnfilename, m_szResultFilename);
+		rename(m_szTempFilename, m_szResultFilename);
 		info("Article %s successfully downloaded", m_szInfoName);
 		return adFinished;
 	}
@@ -504,7 +613,7 @@ void ArticleDownloader::Stop()
 		m_pConnection->Cancel();
 	}
 	m_mutexConnection.Unlock();
-	debug("ArticleDownloader stopped successfuly");
+	debug("ArticleDownloader stopped successfully");
 }
 
 void ArticleDownloader::FreeConnection()
@@ -524,11 +633,8 @@ void ArticleDownloader::CompleteFileParts()
 {
 	debug("Completing file parts");
 	debug("ArticleFilename: %s", m_pFileInfo->GetFilename());
-	SetStatus(adJoining);
 
-	char ofn[1024];
-	snprintf(ofn, 1024, "%s%c%s", m_pFileInfo->GetDestDir(), (int)PATH_SEPARATOR, m_pFileInfo->GetFilename());
-	ofn[1024-1] = '\0';
+	SetStatus(adJoining);
 
 	char szNZBNiceName[1024];
 	m_pFileInfo->GetNiceNZBName(szNZBNiceName, 1024);
@@ -537,17 +643,25 @@ void ArticleDownloader::CompleteFileParts()
 	snprintf(InfoFilename, 1024, "%s%c%s", szNZBNiceName, (int)PATH_SEPARATOR, m_pFileInfo->GetFilename());
 	InfoFilename[1024-1] = '\0';
 
-	// Ensure the DstDir is created
-	mkdir(m_pFileInfo->GetDestDir(), S_DIRMODE);
-
 	if (g_pOptions->GetDecoder() == Options::dcNone)
 	{
 		info("Moving articles for %s", InfoFilename);
+	}
+	else if (g_pOptions->GetDirectWrite())
+	{
+		info("Checking articles for %s", InfoFilename);
 	}
 	else
 	{
 		info("Joining articles for %s", InfoFilename);
 	}
+
+	char ofn[1024];
+	snprintf(ofn, 1024, "%s%c%s", m_pFileInfo->GetDestDir(), (int)PATH_SEPARATOR, m_pFileInfo->GetFilename());
+	ofn[1024-1] = '\0';
+
+	// Ensure the DstDir is created
+	mkdir(m_pFileInfo->GetDestDir(), S_DIRMODE);
 
 	// prevent overwriting existing files
 	struct stat statbuf;
@@ -560,15 +674,15 @@ void ArticleDownloader::CompleteFileParts()
 	}
 
 	FILE* outfile = NULL;
-
 	char tmpdestfile[1024];
 	snprintf(tmpdestfile, 1024, "%s.tmp", ofn);
 	tmpdestfile[1024-1] = '\0';
-	remove(tmpdestfile);
 
-	if ((g_pOptions->GetDecoder() == Options::dcUulib) ||
-	        (g_pOptions->GetDecoder() == Options::dcYenc))
+	if (((g_pOptions->GetDecoder() == Options::dcUulib) ||
+		(g_pOptions->GetDecoder() == Options::dcYenc)) &&
+		!g_pOptions->GetDirectWrite())
 	{
+		remove(tmpdestfile);
 		outfile = fopen(tmpdestfile, "w+");
 		if (!outfile)
 		{
@@ -579,13 +693,21 @@ void ArticleDownloader::CompleteFileParts()
 	}
 	else if (g_pOptions->GetDecoder() == Options::dcNone)
 	{
+		remove(tmpdestfile);
 		mkdir(ofn, S_DIRMODE);
 	}
 
 	bool complete = true;
 	int iBrokenCount = 0;
 	static const int BUFFER_SIZE = 1024 * 50;
-	char* buffer = (char*)malloc(BUFFER_SIZE);
+	char* buffer = NULL;
+
+	if (((g_pOptions->GetDecoder() == Options::dcUulib) ||
+		(g_pOptions->GetDecoder() == Options::dcYenc)) &&
+		!g_pOptions->GetDirectWrite())
+	{
+		buffer = (char*)malloc(BUFFER_SIZE);
+	}
 
 	for (FileInfo::Articles::iterator it = m_pFileInfo->GetArticles()->begin(); it != m_pFileInfo->GetArticles()->end(); it++)
 	{
@@ -595,8 +717,9 @@ void ArticleDownloader::CompleteFileParts()
 			iBrokenCount++;
 			complete = false;
 		}
-		else if ((g_pOptions->GetDecoder() == Options::dcUulib) ||
-		         (g_pOptions->GetDecoder() == Options::dcYenc))
+		else if (((g_pOptions->GetDecoder() == Options::dcUulib) ||
+		         (g_pOptions->GetDecoder() == Options::dcYenc)) && 
+				 !g_pOptions->GetDirectWrite())
 		{
 			FILE* infile;
 			const char* fn = pa->GetResultFilename();
@@ -632,19 +755,30 @@ void ArticleDownloader::CompleteFileParts()
 			rename(fn, dstFileName);
 		}
 	}
-	free(buffer);
 
-	if ((g_pOptions->GetDecoder() == Options::dcUulib) ||
-	        (g_pOptions->GetDecoder() == Options::dcYenc))
+	if (buffer)
+	{
+		free(buffer);
+	}
+
+	if (outfile)
 	{
 		fclose(outfile);
 		rename(tmpdestfile, ofn);
 	}
 
-	for (FileInfo::Articles::iterator it = m_pFileInfo->GetArticles()->begin(); it != m_pFileInfo->GetArticles()->end(); it++)
+	if (g_pOptions->GetDirectWrite())
 	{
-		ArticleInfo* pa = *it;
-		remove(pa->GetResultFilename());
+		rename(m_szOutputFilename, ofn);
+	}
+
+	if (!g_pOptions->GetDirectWrite() || g_pOptions->GetContinuePartial())
+	{
+		for (FileInfo::Articles::iterator it = m_pFileInfo->GetArticles()->begin(); it != m_pFileInfo->GetArticles()->end(); it++)
+		{
+			ArticleInfo* pa = *it;
+			remove(pa->GetResultFilename());
+		}
 	}
 
 	if (complete)

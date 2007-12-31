@@ -31,36 +31,54 @@
 
 class Decoder
 {
-public:
-	enum EKind
-	{
-	    dcUulib,
-	    dcYenc
-	};
-
-private:
-	static Mutex			m_mutexDecoder;
-	static unsigned int		crc_tab[256];
-	EKind					m_eKind;
+protected:
 	const char*				m_szSrcFilename;
 	const char*				m_szDestFilename;
 	char*					m_szArticleFilename;
 	bool					m_bCrcError;
 
-	bool					DecodeUulib();
-	bool					DecodeYenc();
-	static void				crc32gentab();
-	unsigned long			crc32m(unsigned long startCrc, unsigned char *block, unsigned int length);
-
 public:
 							Decoder();
-							~Decoder();
-	bool					Execute();
-	void					SetKind(EKind eKind) { m_eKind = eKind; }
+	virtual					~Decoder();
+	virtual bool			Execute() = 0;
 	void					SetSrcFilename(const char* szSrcFilename) { m_szSrcFilename = szSrcFilename; }
 	void					SetDestFilename(const char* szDestFilename) { m_szDestFilename = szDestFilename; }
 	const char*				GetArticleFilename() { return m_szArticleFilename; }
 	bool					GetCrcError() { return m_bCrcError; }
+};
+
+class UULibDecoder: public Decoder
+{
+private:
+	static Mutex			m_mutexDecoder;
+
+public:
+	virtual bool			Execute();
+};
+
+class YDecoder: public Decoder
+{
+protected:
+	static unsigned int		crc_tab[256];
+	bool					m_bBody;
+	bool					m_bEnd;
+	unsigned long			m_lExpectedCRC;
+	unsigned long			m_lCalculatedCRC;
+	unsigned long			m_iBegin;
+	unsigned long			m_iEnd;
+	bool					m_bAutoSeek;
+	bool					m_bNeedSetPos;
+
+	unsigned int			DecodeBuffer(char* buffer);
+	static void				crc32gentab();
+	unsigned long			crc32m(unsigned long startCrc, unsigned char *block, unsigned int length);
+
+public:
+							YDecoder();
+	virtual bool			Execute();
+	void					Clear();
+	bool					Write(char* buffer, FILE* outfile);
+	void					SetAutoSeek(bool bAutoSeek) { m_bAutoSeek = m_bNeedSetPos = bAutoSeek; }
 
 	static void				Init();
 	static void				Final();

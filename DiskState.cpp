@@ -361,11 +361,14 @@ void DiskState::CleanupTempDir(DownloadQueue* pDownloadQueue)
 	DirBrowser dir(g_pOptions->GetTempDir());
 	while (const char* filename = dir.Next())
 	{
-		bool del = strstr(filename, ".tmp") || strstr(filename, ".dec");
+		int id, part;
+		bool del = strstr(filename, ".tmp") || strstr(filename, ".dec") ||
+			((sscanf(filename, "%i.out", &id) == 1) &&
+				!(g_pOptions->GetContinuePartial() && g_pOptions->GetDirectWrite()));
 		if (!del)
 		{
-			int id, part;
-			if (sscanf(filename, "%i.%i", &id, &part) == 2)
+			if ((sscanf(filename, "%i.%i", &id, &part) == 2) ||
+				(sscanf(filename, "%i.out", &id) == 1))
 			{
 				del = true;
 				ptr = ids;

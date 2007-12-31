@@ -52,19 +52,8 @@
 #include "Log.h"
 #include "Util.h"
 
-Mutex Decoder::m_mutexDecoder;
-unsigned int Decoder::crc_tab[256];
-
-void Decoder::Init()
-{
-	debug("Initializing global decoder");
-	crc32gentab();
-}
-
-void Decoder::Final()
-{
-	debug("Finalizing global Decoder");
-}
+Mutex UULibDecoder::m_mutexDecoder;
+unsigned int YDecoder::crc_tab[256];
 
 Decoder::Decoder()
 {
@@ -73,7 +62,6 @@ Decoder::Decoder()
 	m_szSrcFilename		= NULL;
 	m_szDestFilename	= NULL;
 	m_szArticleFilename	= NULL;
-	m_eKind				= dcYenc;
 	m_bCrcError			= false;
 }
 
@@ -87,19 +75,12 @@ Decoder::~ Decoder()
 	}
 }
 
-bool Decoder::Execute()
-{
-	if (m_eKind == dcUulib)
-	{
-		return DecodeUulib();
-	}
-	else
-	{
-		return DecodeYenc();
-	}
-}
 
-bool Decoder::DecodeUulib()
+/*
+ * UULibDecoder
+ */
+
+bool UULibDecoder::Execute()
 {
 	bool res = false;
 
@@ -179,104 +160,36 @@ bool Decoder::DecodeUulib()
 }
 
 /**
+  * YDecoder
   * Very primitive (but fast) implementation of yEnc-Decoder
   */
-bool Decoder::DecodeYenc()
+
+void YDecoder::Init()
 {
-	FILE* infile = fopen(m_szSrcFilename, "r");
-	if (!infile)
-	{
-		error("Could not open file \"%s\"", m_szSrcFilename);
-		return false;
-	}
+	debug("Initializing global decoder");
+	crc32gentab();
+}
 
-	FILE* outfile = fopen(m_szDestFilename, "w");
-	if (!outfile)
-	{
-		error("Could not create file \"%s\"", m_szDestFilename);
-		fclose(infile);
-		return false;
-	}
+void YDecoder::Final()
+{
+	debug("Finalizing global Decoder");
+}
 
-	static const int MAX_LINE_LEN = 1024;
-	char buffer[MAX_LINE_LEN];
-	bool body = false;
-	bool end = false;
-	unsigned long expectedCRC = 0;
-	unsigned long calculatedCRC = 0xFFFFFFFF;
-	bool eof = !fgets(buffer, sizeof(buffer), infile);
-	while (!eof)
-	{
-		if (body)
-		{
-			if (strstr(buffer, "=yend size="))
-			{
-				end = true;
-				char* pc = strstr(buffer, "pcrc32=");
-				if (pc)
-				{
-					pc += 7; //=strlen("pcrc32=")
-					expectedCRC = strtoul(pc, NULL, 16);
-				}
-				break;
-			}
-			char* iptr = buffer;
-			char* optr = buffer;
-			while (*iptr)
-			{
-				switch (*iptr)
-				{
-					case '=':	//escape-sequence
-						iptr++;
-						*optr = *iptr - 64 - 42;
-						*optr++;
-						break;
-					case '\n':	// ignored char
-					case '\r':	// ignored char
-						break;
-					default:	// normal char
-						*optr = *iptr - 42;
-						*optr++;
-						break;
-				}
-				iptr++;
-			}
-			calculatedCRC = crc32m(calculatedCRC, (unsigned char *)buffer, optr - buffer);
-			fwrite(buffer, 1, optr - buffer, outfile);
-		}
-		else
-		{
-			if (strstr(buffer, "=ypart begin="))
-			{
-				body = true;
-			}
-			else if (strstr(buffer, "=ybegin part="))
-			{
-				char* pb = strstr(buffer, "name=");
-				if (pb)
-				{
-					pb += 5; //=strlen("name=")
-					char* pe;
-					for (pe = pb; *pe != '\0' && *pe != '\n' && *pe != '\r'; pe++) ;
-					m_szArticleFilename = (char*)malloc(pe - pb + 1);
-					strncpy(m_szArticleFilename, pb, pe - pb);
-					m_szArticleFilename[pe - pb] = '\0';
-				}
-			}
-		}
-		eof = !fgets(buffer, sizeof(buffer), infile);
-	}
+YDecoder::YDecoder()
+{
+	Clear();
+}
 
-	calculatedCRC ^= 0xFFFFFFFF;
-
-	debug("Expected pcrc32=%x", expectedCRC);
-	debug("Calculated pcrc32=%x", calculatedCRC);
-	m_bCrcError = expectedCRC != calculatedCRC;
-
-	fclose(infile);
-	fclose(outfile);
-
-	return body && end && !m_bCrcError;
+void YDecoder::Clear()
+{
+	m_bBody = false;
+	m_bEnd = false;
+	m_lExpectedCRC = 0;
+	m_lCalculatedCRC = 0xFFFFFFFF;
+	m_iBegin = 0;
+	m_iEnd = 0;
+	m_bAutoSeek = false;
+	m_bNeedSetPos = false;
 }
 
 /* from crc32.c (http://www.koders.com/c/fid699AFE0A656F0022C9D6B9D1743E697B69CE5815.aspx)
@@ -289,7 +202,7 @@ bool Decoder::DecodeYenc()
  *				calculate the crcTable for crc32-checksums.
  *				it is generated to the polynom [..]
  */
-void Decoder::crc32gentab()
+void YDecoder::crc32gentab()
 {
 	unsigned long crc, poly;
 	int i, j;
@@ -323,7 +236,7 @@ void Decoder::crc32gentab()
  *				reached. the crc32-checksum will be
  *				the result.
  */
-unsigned long Decoder::crc32m(unsigned long startCrc, unsigned char *block, unsigned int length)
+unsigned long YDecoder::crc32m(unsigned long startCrc, unsigned char *block, unsigned int length)
 {
 	register unsigned long crc;
 	unsigned long i;
@@ -334,4 +247,112 @@ unsigned long Decoder::crc32m(unsigned long startCrc, unsigned char *block, unsi
 		crc = ((crc >> 8) & 0x00FFFFFF) ^ crc_tab[(crc ^ *block++) & 0xFF];
 	}
 	return crc;
+}
+
+unsigned int YDecoder::DecodeBuffer(char* buffer)
+{
+	if (m_bBody)
+	{
+		if (strstr(buffer, "=yend size="))
+		{
+			m_bEnd = true;
+			char* pc = strstr(buffer, "pcrc32=");
+			if (pc)
+			{
+				pc += 7; //=strlen("pcrc32=")
+				m_lExpectedCRC = strtoul(pc, NULL, 16);
+			}
+			return 0;
+		}
+		char* iptr = buffer;
+		char* optr = buffer;
+		while (*iptr)
+		{
+			switch (*iptr)
+			{
+				case '=':	//escape-sequence
+					iptr++;
+					*optr = *iptr - 64 - 42;
+					*optr++;
+					break;
+				case '\n':	// ignored char
+				case '\r':	// ignored char
+					break;
+				default:	// normal char
+					*optr = *iptr - 42;
+					*optr++;
+					break;
+			}
+			iptr++;
+		}
+		m_lCalculatedCRC = crc32m(m_lCalculatedCRC, (unsigned char *)buffer, optr - buffer);
+		return optr - buffer;
+	}
+	else
+	{
+		if (strstr(buffer, "=ypart begin="))
+		{
+			m_bBody = true;
+			char* pb = strstr(buffer, "begin=");
+			if (pb) 
+			{
+				pb += 6; //=strlen("begin=")
+				m_iBegin = (int)atoi(pb);
+			}
+			pb = strstr(buffer, "end=");
+			if (pb) 
+			{
+				pb += 4; //=strlen("end=")
+				m_iEnd = (int)atoi(pb);
+			}
+		}
+		else if (strstr(buffer, "=ybegin part="))
+		{
+			char* pb = strstr(buffer, "name=");
+			if (pb)
+			{
+				pb += 5; //=strlen("name=")
+				char* pe;
+				for (pe = pb; *pe != '\0' && *pe != '\n' && *pe != '\r'; pe++) ;
+				m_szArticleFilename = (char*)malloc(pe - pb + 1);
+				strncpy(m_szArticleFilename, pb, pe - pb);
+				m_szArticleFilename[pe - pb] = '\0';
+			}
+		}
+	}
+
+	return 0;
+}
+
+bool YDecoder::Write(char* buffer, FILE* outfile)
+{
+	unsigned int wcnt = DecodeBuffer(buffer);
+	if (wcnt > 0)
+	{
+		if (m_bNeedSetPos)
+		{
+			if (m_iBegin == 0 || m_iEnd == 0 || !outfile)
+			{
+				return false;
+			}
+			if (fseek(outfile, m_iBegin - 1, SEEK_SET))
+			{
+				return false;
+			}
+			m_bNeedSetPos = false;
+		}
+		fwrite(buffer, 1, wcnt, outfile);
+	}
+	return true;
+}
+
+bool YDecoder::Execute()
+{
+	m_lCalculatedCRC ^= 0xFFFFFFFF;
+
+	debug("Expected pcrc32=%x", m_lExpectedCRC);
+	debug("Calculated pcrc32=%x", m_lCalculatedCRC);
+	m_bCrcError = m_lExpectedCRC != m_lCalculatedCRC;
+
+	return m_bBody && m_bEnd && !m_bCrcError;
 }

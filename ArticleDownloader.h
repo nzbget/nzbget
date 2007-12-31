@@ -36,6 +36,7 @@
 #include "DownloadInfo.h"
 #include "Thread.h"
 #include "NNTPConnection.h"
+#include "Decoder.h"
 
 class ArticleDownloader : public Thread, public Subject
 {
@@ -46,6 +47,7 @@ public:
 		adRunning,
 		adFinished,
 		adFailed,
+		adDecodeError,
 		adCrcError,
 		adDecoding,
 		adJoining,
@@ -63,6 +65,7 @@ private:
 	char*				m_szTempFilename;
 	char*				m_szArticleFilename;
 	char*				m_szInfoName;
+	char*				m_szOutputFilename;
 	time_t				m_tLastUpdateTime;
 	Semaphore			m_semInitialized;
 	Semaphore			m_semWaited;
@@ -73,8 +76,12 @@ private:
 	struct timeval		m_tStartTime;
 #endif
 	int					m_iBytes;
+	YDecoder			m_YDecoder;
+	FILE*				m_pOutFile;
 
 	EStatus				Download();
+	bool				Write(char* line);
+	EStatus				Decode();
 	void				FreeConnection();
 
 public:
@@ -94,6 +101,7 @@ public:
 	void				SetLastUpdateTimeNow() { m_tLastUpdateTime = ::time(NULL); }
 	const char* 		GetTempFilename() { return m_szTempFilename; }
 	void 				SetTempFilename(const char* v);
+	void 				SetOutputFilename(const char* v);
 	const char* 		GetArticleFilename() { return m_szArticleFilename; }
 	void				SetInfoName(const char* v);
 	const char*			GetInfoName() { return m_szInfoName; }
