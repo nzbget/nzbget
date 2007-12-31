@@ -136,13 +136,30 @@ serverport=6789
 serverpassword=tegbzn6789
 
 # Determine how the articles should be decoded (uulib, yenc, none)
+# yenc - use internal yEnc-Decoder. Supports only yEnc-format, but is 
+#        very fast and does not create temporary files with articles' text,
+#        decoding them on the fly.
 # uulib - use uulib to decode files. Supports many encoding formats, 
 #         but is slow.
-# yenc - use internal yEnc-Decoder. Supports only yEnc-format and is very fast.
 # none - the articles will not be decoded and joined. External programs 
 #        ("uudeview" is one of them) could be used to decode an join downloaded 
 # articles
 decoder=yEnc
+
+# Write decoded articles directly into destination output file (yes, no)
+# With this option enabled the program firstly creates the output 
+# destination file with required size (total size of all articles), 
+# then writes on the fly decoded articles directly to this file 
+# without creating of any temporary files, even for decoded articles.
+# This may results in major performance improvement, but this higly depends 
+# on OS and filesystem used.
+# Can improve performance on a very fast internet connections, 
+# but you need to test if it works in your case.
+# The option works only with internal decoder ("decoder=yenc")
+# NOTE: for testing download few big files (with total size 500-1000MB)
+# and measure required time. Do not rely on the program's speed indicator,
+# it is not accurate.
+directwrite=no
 
 # How much retries should be attempted if a download error occurs
 retries=4

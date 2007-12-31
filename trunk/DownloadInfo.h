@@ -30,6 +30,8 @@
 #include <vector>
 #include <deque>
 
+#include "Thread.h"
+
 class ArticleInfo
 {
 public:
@@ -83,6 +85,8 @@ private:
 	bool				m_bDeleted;
 	bool				m_bFilenameConfirmed;
 	int					m_iCompleted;
+	bool				m_bOutputInitialized;
+	Mutex				m_mutexOutputFile;
 
 	static int			m_iIDGen;
 
@@ -119,6 +123,10 @@ public:
 	void				ParseSubject();
 	bool				IsDupe();
 	void				ClearArticles();
+	void				LockOutputFile();
+	void				UnlockOutputFile();
+	bool				GetOutputInitialized() { return m_bOutputInitialized; }
+	void				SetOutputInitialized(bool bOutputInitialized) { m_bOutputInitialized = bOutputInitialized; }
 };
                               
 typedef std::deque<FileInfo*> DownloadQueue;

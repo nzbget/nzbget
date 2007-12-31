@@ -129,6 +129,7 @@ static const char* OPTION_CURSESTIME		= "cursestime";
 static const char* OPTION_CURSESGROUP		= "cursesgroup";
 static const char* OPTION_RETRYONCRCERROR	= "retryoncrcerror";
 static const char* OPTION_THREADLIMIT		= "threadlimit";
+static const char* OPTION_DIRECTWRITE		= "directwrite";
 
 #ifndef WIN32
 const char* PossibleConfigLocations[] =
@@ -203,6 +204,7 @@ Options::Options(int argc, char* argv[])
 	m_bCursesTime			= false;
 	m_bCursesGroup			= false;
 	m_bRetryOnCrcError		= false;
+	m_bDirectWrite			= false;
 	m_iThreadLimit			= 0;
 
 	char szFilename[MAX_PATH + 1];
@@ -388,8 +390,9 @@ void Options::InitDefault()
 	SetOption(OPTION_CURSESNZBNAME, "yes");
 	SetOption(OPTION_CURSESTIME, "no");
 	SetOption(OPTION_CURSESGROUP, "no");
-	SetOption(OPTION_RETRYONCRCERROR, "no");	
-	SetOption(OPTION_THREADLIMIT, "100");	
+	SetOption(OPTION_RETRYONCRCERROR, "no");
+	SetOption(OPTION_THREADLIMIT, "100");
+	SetOption(OPTION_DIRECTWRITE, "no");
 }
 
 void Options::InitOptFile()
@@ -520,6 +523,7 @@ void Options::InitOptions()
 	m_bCursesTime			= (bool)ParseOptionValue(OPTION_CURSESTIME, BoolCount, BoolNames, BoolValues);
 	m_bCursesGroup			= (bool)ParseOptionValue(OPTION_CURSESGROUP, BoolCount, BoolNames, BoolValues);
 	m_bRetryOnCrcError		= (bool)ParseOptionValue(OPTION_RETRYONCRCERROR, BoolCount, BoolNames, BoolValues);
+	m_bDirectWrite			= (bool)ParseOptionValue(OPTION_DIRECTWRITE, BoolCount, BoolNames, BoolValues);
 
 	const char* OutputModeNames[] = { "loggable", "logable", "log", "colored", "color", "ncurses", "curses" };
 	const int OutputModeValues[] = { omLoggable, omLoggable, omLoggable, omColored, omColored, omNCurses, omNCurses };
@@ -715,41 +719,45 @@ void Options::InitCommandLine(int argc, char* argv[])
 
 void Options::PrintUsage(char* com)
 {
-	printf("Usage: %s [switches] [<nzb-file>]\n"
-	       "Switches:\n"
-	       "  -h, --help                Print this help-message\n"
-	       "  -v, --version             Print version and exit\n"
-	       "  -c, --configfile <file>   Filename of configuration-file\n"
-	       "  -n, --noconfigfile        Prevent loading of configuration-file\n"
-	       "                            (required options must be passed with --option)\n"
-	       "  -p, --printconfig         Print configuration and exit\n"
-	       "  -o, --option <name=value> Set or override option in configuration-file\n"
-	       "  -s, --server              Start nzbget as a server in console-mode\n"
-	       "  -D, --daemon              Start nzbget as a server in daemon-mode\n"
-	       "  -Q, --quit                Shutdown the server\n"
-	       "  -A, --append              Send file to the server's download queue\n"
-	       "  -C, --connect             Attach client to server\n"
-	       "  -L, --list                Request list of downloads from the server\n"
-	       "  -P, --pause               Pause downloading on the server\n"
-	       "  -U, --unpause             Unpause downloading on the server\n"
-	       "  -R, --rate                Set the download rate on the server\n"
-	       "  -T, --top                 Add file to the top (begining) of queue\n"
-	       "                            (should be used with switch --append)\n"
-	       "  -G, --log <lines>         Request last <lines> lines from server's screen-log\n"
-		   "  -E, --edit [G] <action> <IDs> Edit queue on the server\n"
-	       "    where <action> is one of:\n"
-	       "      <+offset|-offset>     Move file(s) in queue relative to current position\n"
-	       "                            offset is an integer number\n"
-	       "      T                     Move file(s) to the top of queue\n"
-	       "      B                     Move file(s) to the bottom of queue\n"
-	       "      P                     Pause file(s)\n"
-	       "      U                     Resume (unpause) file(s)\n"
-		   "      R                     Pause pars (only for groups)\n"
-	       "      D                     Delete file(s)\n"
-	       "    where <IDs> is a comma-separated list of file-ids or ranges of file-ids,\n"
-		   "	   for example: 1-5,3,10-22"
-	       "",
-	       com);
+	printf("Usage:\n"
+		"  %s [switches] [<nzb-file>]\n\n"
+		"Switches:\n"
+	    "  -h, --help                Print this help-message\n"
+	    "  -v, --version             Print version and exit\n"
+		"  -c, --configfile <file>   Filename of configuration-file\n"
+		"  -n, --noconfigfile        Prevent loading of configuration-file\n"
+		"                            (required options must be passed with --option)\n"
+		"  -p, --printconfig         Print configuration and exit\n"
+		"  -o, --option <name=value> Set or override option in configuration-file\n"
+		"  -s, --server              Start nzbget as a server in console-mode\n"
+#ifndef WIN32
+		"  -D, --daemon              Start nzbget as a server in daemon-mode\n"
+#endif
+		"  -Q, --quit                Shutdown the server\n"
+		"  -A, --append              Send file to the server's download queue\n"
+		"  -C, --connect             Attach client to server\n"
+		"  -L, --list                Request list of downloads from the server\n"
+		"  -P, --pause               Pause downloading on the server\n"
+		"  -U, --unpause             Unpause downloading on the server\n"
+		"  -R, --rate                Set the download rate on the server\n"
+		"  -T, --top                 Add file to the top (begining) of queue\n"
+		"                            (should be used with switch --append)\n"
+		"  -G, --log <lines>         Request last <lines> lines from server's screen-log\n"
+		"  -E, --edit [G] <action> <IDs> Edit queue on the server\n"
+		"    <G>                     Affect all files in the group (same nzb-file)\n"
+		"    <action> is one of:\n"
+		"       <+offset|-offset>    Move file(s) in queue relative to current position,\n"
+		"                            offset is an integer value\n"
+		"       T                    Move file(s) to the top of queue\n"
+		"       B                    Move file(s) to the bottom of queue\n"
+		"       P                    Pause file(s)\n"
+		"       U                    Resume (unpause) file(s)\n"
+		// Pause-pars command is not yet implemented
+		//"       R                    Pause pars (only for groups)\n"
+		"       D                    Delete file(s)\n"
+		"    <IDs>                   Comma-separated list of file-ids or ranges\n"
+		"                            of file-ids, e. g.: 1-5,3,10-22\n",
+		BaseFileName(com));
 }
 
 void Options::InitFileArg(int argc, char* argv[])
@@ -1086,6 +1094,11 @@ void Options::CheckOptions()
 		abort("FATAL ERROR: Program was compiled without curses-support. Can not use \"curses\" frontend (option \"%s\")\n", OPTION_OUTPUTMODE);
 	}
 #endif
+
+	if (m_eDecoder != dcYenc)
+	{
+		m_bDirectWrite = false;
+	}
 }
 
 void Options::ParseFileIDList(int argc, char* argv[], int optind)

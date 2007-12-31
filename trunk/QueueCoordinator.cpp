@@ -61,7 +61,7 @@ QueueCoordinator::QueueCoordinator()
 	m_DownloadQueue.clear();
 	m_ActiveDownloads.clear();
 
-	Decoder::Init();
+	YDecoder::Init();
 }
 
 QueueCoordinator::~QueueCoordinator()
@@ -83,7 +83,7 @@ QueueCoordinator::~QueueCoordinator()
 	}
 	m_ActiveDownloads.clear();
 
-	Decoder::Final();
+	YDecoder::Final();
 
 	debug("QueueCoordinator destroyed");
 }
@@ -93,8 +93,6 @@ void QueueCoordinator::Run()
 	debug("Entering QueueCoordinator-loop");
 
 	m_mutexDownloadQueue.Lock();
-
-	g_pDiskState->CleanupTempDir(&m_DownloadQueue);
 
 	if (g_pOptions->GetServerMode() && g_pOptions->GetSaveQueue() && g_pDiskState->Exists())
 	{
@@ -107,6 +105,8 @@ void QueueCoordinator::Run()
 			g_pDiskState->Discard();
 		}
 	}
+
+	g_pDiskState->CleanupTempDir(&m_DownloadQueue);
 
 	m_mutexDownloadQueue.Unlock();
 
@@ -384,7 +384,7 @@ void QueueCoordinator::BuildArticleFilename(ArticleDownloader* pArticleDownloade
 	snprintf(name, 1024, "%s%i.%03i", g_pOptions->GetTempDir(), pFileInfo->GetID(), pArticleInfo->GetPartNumber());
 	name[1024-1] = '\0';
 	pArticleInfo->SetResultFilename(name);
-	
+
 	char tmpname[1024];
 	snprintf(tmpname, 1024, "%s.tmp", name);
 	tmpname[1024-1] = '\0';
@@ -396,6 +396,13 @@ void QueueCoordinator::BuildArticleFilename(ArticleDownloader* pArticleDownloade
 	snprintf(name, 1024, "%s%c%s [%i/%i]", szNZBNiceName, (int)PATH_SEPARATOR, pFileInfo->GetFilename(), pArticleInfo->GetPartNumber(), pFileInfo->GetArticles()->size());
 	name[1024-1] = '\0';
 	pArticleDownloader->SetInfoName(name);
+
+	if (g_pOptions->GetDirectWrite())
+	{
+		snprintf(name, 1024, "%s%i.out", g_pOptions->GetTempDir(), pFileInfo->GetID());
+		name[1024-1] = '\0';
+		pArticleDownloader->SetOutputFilename(name);
+	}
 }
 
 DownloadQueue* QueueCoordinator::LockQueue()
