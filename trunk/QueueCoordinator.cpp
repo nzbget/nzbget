@@ -34,6 +34,7 @@
 
 #include <stdlib.h>
 #include <string.h>
+#include <sys/stat.h>
 #ifndef WIN32
 #include <unistd.h>
 #include <sys/time.h>
@@ -173,33 +174,65 @@ void QueueCoordinator::AddNZBFileToQueue(NZBFile* pNZBFile, bool bAddFirst)
 	m_mutexDownloadQueue.Lock();
 
 	DownloadQueue tmpDownloadQueue;
+	tmpDownloadQueue.clear();
+	DownloadQueue DupeList;
+	DupeList.clear();
 
 	for (NZBFile::FileInfos::iterator it = pNZBFile->GetFileInfos()->begin(); it != pNZBFile->GetFileInfos()->end(); it++)
 	{
 		FileInfo* pFileInfo = *it;
-		if (g_pOptions->GetDupeCheck() && IsDupe(pFileInfo))
+
+		if (g_pOptions->GetDupeCheck())
 		{
-			warn("File \"%s\" seems to be duplicate, skipping", pFileInfo->GetFilename());
+			bool dupe = false;
+			if (IsDupe(pFileInfo))
+			{
+				warn("File \"%s\" seems to be duplicate, skipping", pFileInfo->GetFilename());
+				dupe = true;
+			}
+			for (NZBFile::FileInfos::iterator it2 = pNZBFile->GetFileInfos()->begin(); it2 != pNZBFile->GetFileInfos()->end(); it2++)
+			{
+				FileInfo* pFileInfo2 = *it2;
+				if (!strcmp(pFileInfo->GetFilename(), pFileInfo2->GetFilename()) &&
+					(pFileInfo->GetSize() < pFileInfo2->GetSize()))
+				{
+					warn("File \"%s\" appears twice in nzb-request, adding only the biggest file", pFileInfo->GetFilename());
+					dupe = true;
+					break;
+				}
+			}
+			if (dupe)
+			{
+				DupeList.push_back(pFileInfo);
+				continue;
+			}
+		}
+
+		if (bAddFirst)
+		{
+			tmpDownloadQueue.push_front(pFileInfo);
 		}
 		else
 		{
-			if (bAddFirst)
-			{
-				tmpDownloadQueue.push_front(pFileInfo);
-			}
-			else
-			{
-				m_DownloadQueue.push_back(pFileInfo);
-			}
+			tmpDownloadQueue.push_back(pFileInfo);
 		}
 	}
 
-	if (bAddFirst)
+	for (DownloadQueue::iterator it = tmpDownloadQueue.begin(); it != tmpDownloadQueue.end(); it++)
 	{
-		for (DownloadQueue::iterator it = tmpDownloadQueue.begin(); it != tmpDownloadQueue.end(); it++)
+		if (bAddFirst)
 		{
 			m_DownloadQueue.push_front(*it);
 		}
+		else
+		{
+			m_DownloadQueue.push_back(*it);
+		}
+	}
+
+	for (DownloadQueue::iterator it = DupeList.begin(); it != DupeList.end(); it++)
+	{
+		delete *it;
 	}
 
 	pNZBFile->DetachFileInfos();
@@ -534,11 +567,24 @@ bool QueueCoordinator::IsDupe(FileInfo* pFileInfo)
 {
 	debug("Checking if the file is already queued");
 
-	if (pFileInfo->IsDupe())
+	// checking on disk
+	struct stat buffer;
+	char fileName[1024];
+	snprintf(fileName, 1024, "%s%c%s", pFileInfo->GetDestDir(), (int)PATH_SEPARATOR, pFileInfo->GetFilename());
+	fileName[1024-1] = '\0';
+	bool exists = !stat(fileName, &buffer);
+	if (!exists)
 	{
-		return true;
+		snprintf(fileName, 1024, "%s%c%s_broken", pFileInfo->GetDestDir(), (int)PATH_SEPARATOR, pFileInfo->GetFilename());
+		fileName[1024-1] = '\0';
+		exists = !stat(fileName, &buffer);
+		if (exists)
+		{
+			return true;
+		}
 	}
 
+	// checking in queue
 	for (DownloadQueue::iterator it = m_DownloadQueue.begin(); it != m_DownloadQueue.end(); it++)
 	{
 		FileInfo* pQueueEntry = *it;

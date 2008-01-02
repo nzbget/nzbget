@@ -105,6 +105,7 @@ public:
 	void 				SetSubject(const char* szSubject);
 	const char*			GetFilename() { return m_szFilename; }
 	void 				SetFilename(const char* szFilename);
+	void				MakeValidFilename();
 	bool				GetFilenameConfirmed() { return m_bFilenameConfirmed; }
 	void				SetFilenameConfirmed(bool bFilenameConfirmed) { m_bFilenameConfirmed = bFilenameConfirmed; }
 	void 				SetSize(long long s) { m_lSize = s; m_lRemainingSize = s; }
@@ -115,13 +116,10 @@ public:
 	void				SetPaused(bool Paused) { m_bPaused = Paused; }
 	bool				GetDeleted() { return m_bDeleted; }
 	void				SetDeleted(bool Deleted) { m_bDeleted = Deleted; }
-	void				BuildDestDirName(const char* szNZBFilename);
 	const char*			GetDestDir() { return m_szDestDir; }
 	void				SetDestDir(const char* szDestDir);
 	int					GetCompleted() { return m_iCompleted; }
 	void				SetCompleted(int s) { m_iCompleted = s; }
-	void				ParseSubject();
-	bool				IsDupe();
 	void				ClearArticles();
 	void				LockOutputFile();
 	void				UnlockOutputFile();

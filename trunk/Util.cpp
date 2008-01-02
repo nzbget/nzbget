@@ -356,6 +356,20 @@ bool SetFileSize(const char* szFilename, int iSize)
 	return bOK;
 }
 
+//replace bad chars in filename
+void MakeValidFilename(char* szFilename, char cReplaceChar)
+{
+	char* p = szFilename;
+	while (*p)
+	{
+		if (strchr("\\/:*?\"><'\n\r\t", *p))
+		{
+			*p = cReplaceChar;
+		}
+		p++;
+	}
+}
+
 long long JoinInt64(unsigned int Hi, unsigned int Lo)
 {
 	return (((long long)Hi) << 32) + Lo;

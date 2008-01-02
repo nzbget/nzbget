@@ -33,6 +33,7 @@
 #endif
 
 #include <string.h>
+#include <list>
 #ifdef WIN32
 #include <comutil.h>
 #import "MSXML.dll" named_guids 
@@ -48,15 +49,10 @@ using namespace MSXML;
 #include "DownloadInfo.h"
 #include "Options.h"
 #include "DiskState.h"
+#include "Util.h"
 
 extern Options* g_pOptions;
 extern DiskState* g_pDiskState;
-
-
-bool ArticleGreater(ArticleInfo* elem1, ArticleInfo* elem2)
-{
-	return elem1->GetPartNumber() > elem2->GetPartNumber();
-}
 
 NZBFile::NZBFile(const char* szFileName)
 {
@@ -77,7 +73,7 @@ NZBFile::~NZBFile()
         free(m_szFileName);
     }
 
-    for (std::vector<FileInfo*>::iterator it = m_FileInfos.begin(); it != m_FileInfos.end(); it++)
+    for (FileInfos::iterator it = m_FileInfos.begin(); it != m_FileInfos.end(); it++)
     {
         delete *it;
     }
@@ -134,7 +130,8 @@ void NZBFile::AddFileInfo(FileInfo* pFileInfo)
 
 	if (!pArticles->empty())
 	{
-		pFileInfo->BuildDestDirName(m_szFileName);
+		ParseSubject(pFileInfo);
+		BuildDestDirName(pFileInfo);
 		m_FileInfos.push_back(pFileInfo);
 
 		if (g_pOptions->GetSaveQueue() && g_pOptions->GetServerMode())
@@ -147,6 +144,151 @@ void NZBFile::AddFileInfo(FileInfo* pFileInfo)
 	{
 		delete pFileInfo; 
 	}
+}
+
+void NZBFile::ParseSubject(FileInfo* pFileInfo)
+{
+	// tokenize subject, considering spaces as separators and quotation 
+	// marks as non separatable token delimiters.
+	// then take the last token containing dot (".") as a filename
+
+	typedef std::list<char*> TokenList;
+	TokenList tokens;
+	tokens.clear();
+
+	// tokenizing
+	char* p = (char*)pFileInfo->GetSubject();
+	char* start = p;
+	bool quot = false;
+	while (true)
+	{
+		char ch = *p;
+		bool sep = (ch == '\"') || (!quot && ch == ' ') || (ch == '\0');
+		if (sep)
+		{
+			// end of token
+			int len = p - start;
+			if (len > 0)
+			{
+				char* token = (char*)malloc(len + 1);
+				strncpy(token, start, len);
+				token[len] = '\0';
+				tokens.push_back(token);
+			}
+			start = p;
+			if (ch != '\"' || quot)
+			{
+				start++;
+			}
+			quot = *start == '\"';
+			if (quot)
+			{
+				start++;
+				char* q = strchr(start, '\"');
+				if (q)
+				{
+					p = q - 1;
+				}
+				else
+				{
+					quot = false;
+				}
+			}
+		}
+		if (ch == '\0')
+		{
+			break;
+		}
+		p++;
+	}
+
+	if (!tokens.empty())
+	{
+		// finding the best candidate for being a filename
+		char* besttoken = tokens.back();
+		for (TokenList::reverse_iterator it = tokens.rbegin(); it != tokens.rend(); it++)
+		{
+			char* s = *it;
+			char* p = strchr(s, '.');
+			if (p && (p[1] != '\0'))
+			{
+				besttoken = s;
+				break;
+			}
+		}
+		pFileInfo->SetFilename(besttoken);
+
+		// free mem
+		for (TokenList::iterator it = tokens.begin(); it != tokens.end(); it++)
+		{
+			free(*it);
+		}
+	}
+	else
+	{
+		// subject is empty or contains only separators?
+		debug("Could not extract Filename from Subject: %s. Using Subject as Filename", pFileInfo->GetSubject());
+		pFileInfo->SetFilename(pFileInfo->GetSubject());
+	}
+
+	pFileInfo->MakeValidFilename();
+}
+
+void NZBFile::BuildDestDirName(FileInfo* pFileInfo)
+{
+	char szBuffer[1024];
+
+	if (g_pOptions->GetAppendNZBDir())
+	{
+		char szNiceNZBName[1024];
+		pFileInfo->GetNiceNZBName(szNiceNZBName, 1024);
+		snprintf(szBuffer, 1024, "%s%s", g_pOptions->GetDestDir(), szNiceNZBName);
+		szBuffer[1024-1] = '\0';
+	}
+	else
+	{
+		strncpy(szBuffer, g_pOptions->GetDestDir(), 1024);
+		szBuffer[1024-1] = '\0'; // trim the last slash, always returned by GetDestDir()
+	}
+
+	pFileInfo->SetDestDir(szBuffer);
+}
+
+/**
+ * Check if the parsing of subject was correct
+ */
+void NZBFile::CheckFilenames()
+{
+    for (FileInfos::iterator it = m_FileInfos.begin(); it != m_FileInfos.end(); it++)
+    {
+        FileInfo* pFileInfo1 = *it;
+		int iDupe = 0;
+		for (FileInfos::iterator it2 = it + 1; it2 != m_FileInfos.end(); it2++)
+		{
+			FileInfo* pFileInfo2 = *it2;
+			if (!strcmp(pFileInfo1->GetFilename(), pFileInfo2->GetFilename()) &&
+				strcmp(pFileInfo1->GetSubject(), pFileInfo2->GetSubject()))
+			{
+				iDupe++;
+			}
+		}
+
+		// If more than two files have the same parsed filename but different subjects,
+		// this means, that the parsing was not correct.
+		// in this case we take subjects as filenames to prevent 
+		// false "duplicate files"-alarm.
+		// It's Ok for just two files to have the same filename, this is 
+		// an often case by posting-errors to repost bad files
+		if (iDupe > 2 || (iDupe == 2 && m_FileInfos.size() == 2))
+		{
+			for (FileInfos::iterator it2 = it; it2 != m_FileInfos.end(); it2++)
+			{
+				FileInfo* pFileInfo2 = *it2;
+				pFileInfo2->SetFilename(pFileInfo2->GetSubject());
+				pFileInfo2->MakeValidFilename();
+			}
+		}
+    }
 }
 
 #ifdef WIN32
@@ -174,7 +316,11 @@ NZBFile* NZBFile::Create(const char* szFileName, const char* szBuffer, int iSize
 	}
 	else
 	{
-		_variant_t v(szFileName);
+		// filename needs to be properly encoded
+		char* szURL = (char*)malloc(strlen(szFileName)*3 + 1);
+		EncodeURL(szFileName, szURL);
+		debug("url=\"%s\"", szURL);
+		_variant_t v(szURL);
 		success = doc->load(v);
 	} 
 	if (success == VARIANT_FALSE)
@@ -186,7 +332,11 @@ NZBFile* NZBFile::Create(const char* szFileName, const char* szBuffer, int iSize
 	}
 
     NZBFile* pFile = new NZBFile(szFileName);
-    if (!pFile->parseNZB(doc))
+    if (pFile->ParseNZB(doc))
+	{
+		pFile->CheckFilenames();
+	}
+	else
 	{
 		delete pFile;
 		pFile = NULL;
@@ -195,7 +345,29 @@ NZBFile* NZBFile::Create(const char* szFileName, const char* szBuffer, int iSize
     return pFile;
 }
 
-bool NZBFile::parseNZB(IUnknown* nzb)
+void NZBFile::EncodeURL(const char* szFilename, char* szURL)
+{
+	while (char ch = *szFilename++)
+	{
+		if (('0' <= ch && ch <= '9') ||
+			('a' <= ch && ch <= 'z') ||
+			('A' <= ch && ch <= 'Z') )
+		{
+			*szURL++ = ch;
+		}
+		else
+		{
+			*szURL++ = '%';
+			int a = ch >> 4;
+			*szURL++ = a > 9 ? a - 10 + 'a' : a + '0';
+			a = ch & 0xF;
+			*szURL++ = a > 9 ? a - 10 + 'a' : a + '0';
+		}
+	}
+	*szURL = NULL;
+}
+
+bool NZBFile::ParseNZB(IUnknown* nzb)
 {
 	MSXML::IXMLDOMDocumentPtr doc = nzb;
 	MSXML::IXMLDOMNodePtr root = doc->documentElement;
@@ -210,7 +382,6 @@ bool NZBFile::parseNZB(IUnknown* nzb)
         FileInfo* pFileInfo = new FileInfo();
         pFileInfo->SetNZBFilename(m_szFileName);
 		pFileInfo->SetSubject(subject);
-		pFileInfo->ParseSubject();
 
 		MSXML::IXMLDOMNodeListPtr groupList = node->selectNodes("groups/group");
 		for (int g = 0; g < groupList->Getlength(); g++)
@@ -263,7 +434,7 @@ NZBFile* NZBFile::Create(const char* szFileName, const char* szBuffer, int iSize
     xmlTextReaderPtr doc;
 	if (bFromBuffer)
 	{
-		doc = xmlReaderForMemory(szBuffer,iSize-1, "", NULL, 0);
+		doc = xmlReaderForMemory(szBuffer, iSize-1, "", NULL, 0);
 	}
 	else
 	{
@@ -275,7 +446,11 @@ NZBFile* NZBFile::Create(const char* szFileName, const char* szBuffer, int iSize
     }
 
     NZBFile* pFile = new NZBFile(szFileName);
-    if (!pFile->parseNZB(doc))
+    if (pFile->ParseNZB(doc))
+	{
+		pFile->CheckFilenames();
+	}
+	else
 	{
 		delete pFile;
 		pFile = NULL;
@@ -286,7 +461,7 @@ NZBFile* NZBFile::Create(const char* szFileName, const char* szBuffer, int iSize
     return pFile;
 }
 
-bool NZBFile::parseNZB(void* nzb)
+bool NZBFile::ParseNZB(void* nzb)
 {
 	FileInfo* pFileInfo = NULL;
 	xmlTextReaderPtr node = (xmlTextReaderPtr)nzb;
@@ -321,7 +496,6 @@ bool NZBFile::parseNZB(void* nzb)
 							xmlFree(value);
 							value = xmlTextReaderValue(node);
                             pFileInfo->SetSubject((char*)value);
-                            pFileInfo->ParseSubject();
                         }
                     }
                 }
