@@ -34,18 +34,11 @@
 
 #include <stdlib.h>
 #include <string.h>
-#include <sys/stat.h>
-#ifndef WIN32
-#include <unistd.h>
-#endif
 
 #include "nzbget.h"
 #include "DownloadInfo.h"
-#include "Options.h"
 #include "Log.h"
 #include "Util.h"
-
-extern Options* g_pOptions;
 
 int FileInfo::m_iIDGen = 0;
 
@@ -195,40 +188,6 @@ void FileInfo::MakeNiceNZBName(const char * szNZBFilename, char * szBuffer, int 
 	szBuffer[iSize-1] = '\0';
 }
 
-void FileInfo::ParseSubject()
-{
-	char* fnstart = strstr(m_szSubject, "\"");
-	char* fnend = NULL;
-	if (fnstart)
-	{
-		fnstart++;
-		fnend = strstr(fnstart, "\"");
-	}
-	if (fnend)
-	{
-		char fn[1024];
-		strncpy(fn, fnstart, fnend - fnstart);
-		fn[fnend - fnstart] = '\0';
-		m_szFilename = strdup(fn);
-	}
-	else
-	{
-		debug("Could not extract Filename from Subject: %s. Using Subject as Filename", m_szSubject);
-		m_szFilename = strdup(m_szSubject);
-	}
-
-	//replace bad chars in filename
-	char* p = m_szFilename;
-	while (*p)
-	{
-		if (strchr("\\/:*?\"><'\n\r\t", *p))
-		{
-			*p = '_';
-		}
-		p++;
-	}
-}
-
 void FileInfo::SetFilename(const char* szFilename)
 {
 	if (m_szFilename)
@@ -238,45 +197,9 @@ void FileInfo::SetFilename(const char* szFilename)
 	m_szFilename = strdup(szFilename);
 }
 
-void FileInfo::BuildDestDirName(const char* szNZBFilename)
+void FileInfo::MakeValidFilename()
 {
-	char szBuffer[1024];
-
-	if (g_pOptions->GetAppendNZBDir())
-	{
-		char szNiceNZBName[1024];
-		MakeNiceNZBName(szNZBFilename, szNiceNZBName, 1024);
-		snprintf(szBuffer, 1024, "%s%s", g_pOptions->GetDestDir(), szNiceNZBName);
-		szBuffer[1024-1] = '\0';
-	}
-	else
-	{
-		strncpy(szBuffer, g_pOptions->GetDestDir(), 1024);
-		szBuffer[1024-1] = '\0'; // trim the last slash, always returned by GetDestDir()
-	}
-
-	m_szDestDir = strdup(szBuffer);
-}
-
-bool FileInfo::IsDupe()
-{
-	debug("Checking if the file was already downloaded or queued");
-
-	struct stat buffer;
-	char fileName[1024];
-	bool exists = false;
-
-	snprintf(fileName, 1024, "%s%c%s", GetDestDir(), (int)PATH_SEPARATOR, GetFilename());
-	fileName[1024-1] = '\0';
-	exists = !stat(fileName, &buffer);
-	if (!exists)
-	{
-		snprintf(fileName, 1024, "%s%c%s_broken", GetDestDir(), (int)PATH_SEPARATOR, GetFilename());
-		fileName[1024-1] = '\0';
-		exists = !stat(fileName, &buffer);
-	}
-
-	return exists;
+	::MakeValidFilename(m_szFilename, '_');
 }
 
 void FileInfo::LockOutputFile()

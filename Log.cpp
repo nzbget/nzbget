@@ -269,7 +269,7 @@ void abort(const char* msg, ...)
 
 	g_pLog->m_mutexLog.Lock();
 
-	printf("%s", tmp2);
+	printf("\n%s", tmp2);
 
 	g_pLog->Filelog(tmp2);
 

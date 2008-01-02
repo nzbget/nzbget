@@ -43,10 +43,14 @@ private:
 						NZBFile(const char* szFileName);
 	void				AddArticle(FileInfo* pFileInfo, ArticleInfo* pArticleInfo);
 	void				AddFileInfo(FileInfo* pFileInfo);
+	void				ParseSubject(FileInfo* pFileInfo);
+	void				BuildDestDirName(FileInfo* pFileInfo);
+	void				CheckFilenames();
 #ifdef WIN32
-    bool 				parseNZB(IUnknown* nzb);
+    bool 				ParseNZB(IUnknown* nzb);
+	static void			EncodeURL(const char* szFilename, char* szURL);
 #else
-    bool 				parseNZB(void* nzb);
+    bool 				ParseNZB(void* nzb);
 #endif
 	static NZBFile*		Create(const char* szFileName, const char* szBuffer, int iSize, bool bFromBuffer);
 
