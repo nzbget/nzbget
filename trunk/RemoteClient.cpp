@@ -448,7 +448,7 @@ bool RemoteClient::RequestServerEditQueue(int iAction, int iOffset, int* pIDList
 
 	if (!InitConnection()) return false;
 
-	int iLength = sizeof(uint32_t) * iIDCount;
+	int iLength = sizeof(int32_t) * iIDCount;
 
 	SNZBEditQueueRequest EditQueueRequest;
 	InitMessageBase(&EditQueueRequest.m_MessageBase, eRemoteRequestEditQueue, sizeof(EditQueueRequest));
@@ -458,7 +458,7 @@ bool RemoteClient::RequestServerEditQueue(int iAction, int iOffset, int* pIDList
 	EditQueueRequest.m_iNrTrailingEntries = htonl(iIDCount);
 	EditQueueRequest.m_iTrailingDataLength = htonl(iLength);
 
-	uint32_t* pIDs = (uint32_t*)malloc(iLength);
+	int32_t* pIDs = (int32_t*)malloc(iLength);
 	
 	for (int i = 0; i < iIDCount; i++)
 	{

@@ -593,7 +593,7 @@ void EditQueueCommand::Execute()
 	bool bSmartOrder = ntohl(EditQueueRequest.m_bSmartOrder);
 	unsigned int iBufLength = ntohl(EditQueueRequest.m_iTrailingDataLength);
 
-	if (iNrEntries * sizeof(uint32_t) != iBufLength)
+	if (iNrEntries * sizeof(int32_t) != iBufLength)
 	{
 		error("Invalid struct size");
 		return;
