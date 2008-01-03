@@ -34,7 +34,6 @@
 #define strdup _strdup
 #define ctime_r(timep, buf, bufsize) ctime_s(buf, bufsize, timep)
 #define int32_t __int32
-#define uint32_t u_long
 #define mkdir(dir, flags) _mkdir(dir)
 #define strcasecmp(a, b) _stricmp(a, b)
 #define strncasecmp(a, b, c) _strnicmp(a, b, c)
