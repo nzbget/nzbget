@@ -76,7 +76,7 @@ char* NNTPConnection::Request(char* req)
 
 	WriteLine(req);
 
-	char* answer = ReadLine(m_szLineBuf, LineBufSize);
+	char* answer = ReadLine(m_szLineBuf, LineBufSize, NULL);
 
 	if (!answer)
 	{
@@ -95,7 +95,7 @@ char* NNTPConnection::Request(char* req)
 
 		//try again
 		WriteLine(req);
-		answer = ReadLine(m_szLineBuf, LineBufSize);
+		answer = ReadLine(m_szLineBuf, LineBufSize, NULL);
 		return answer;
 	}
 
@@ -127,7 +127,7 @@ int NNTPConnection::AuthInfoUser(int iRecur)
 
 	WriteLine(tmp);
 
-	char* answer = ReadLine(m_szLineBuf, LineBufSize);
+	char* answer = ReadLine(m_szLineBuf, LineBufSize, NULL);
 
 	if (!answer)
 	{
@@ -165,7 +165,7 @@ int NNTPConnection::AuthInfoPass(int iRecur)
 
 	WriteLine(tmp);
 
-	char* szAnswer = ReadLine(m_szLineBuf, LineBufSize);
+	char* szAnswer = ReadLine(m_szLineBuf, LineBufSize, NULL);
 	if (!szAnswer)
 	{
 		ReportError("authorization for %s failed: Connection closed by remote host.", m_pNetAddress->GetHost(), 0);
@@ -191,7 +191,7 @@ int NNTPConnection::DoConnect()
 	int res = Connection::DoConnect();
 	if (res < 0)
 		return res;
-	char* answer = DoReadLine(m_szLineBuf, LineBufSize);
+	char* answer = DoReadLine(m_szLineBuf, LineBufSize, NULL);
 
 	if (!answer)
 	{

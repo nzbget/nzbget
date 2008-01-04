@@ -342,7 +342,7 @@ bool DiskState::DiscardFile(DownloadQueue* pDownloadQueue, FileInfo* pFileInfo)
 	fileName[1024-1] = '\0';
 	remove(fileName);
 
-	return Save(pDownloadQueue);
+	return !pDownloadQueue || Save(pDownloadQueue);
 }
 
 void DiskState::CleanupTempDir(DownloadQueue* pDownloadQueue)

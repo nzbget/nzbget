@@ -232,7 +232,9 @@ void QueueCoordinator::AddNZBFileToQueue(NZBFile* pNZBFile, bool bAddFirst)
 
 	for (DownloadQueue::iterator it = DupeList.begin(); it != DupeList.end(); it++)
 	{
-		delete *it;
+		FileInfo* pFileInfo = *it;
+		g_pDiskState->DiscardFile(NULL, pFileInfo);
+		delete pFileInfo;
 	}
 
 	pNZBFile->DetachFileInfos();

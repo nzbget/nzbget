@@ -68,6 +68,7 @@ protected:
 	unsigned long			m_iEnd;
 	bool					m_bAutoSeek;
 	bool					m_bNeedSetPos;
+	bool					m_bCrcCheck;
 
 	unsigned int			DecodeBuffer(char* buffer);
 	static void				crc32gentab();
@@ -79,6 +80,7 @@ public:
 	void					Clear();
 	bool					Write(char* buffer, FILE* outfile);
 	void					SetAutoSeek(bool bAutoSeek) { m_bAutoSeek = m_bNeedSetPos = bAutoSeek; }
+	void					SetCrcCheck(bool bCrcCheck) { m_bCrcCheck = bCrcCheck; }
 
 	static void				Init();
 	static void				Final();

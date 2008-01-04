@@ -53,8 +53,8 @@ LogFile=${destdir}/nzbget.log
 # If that server fails, nzbget proceeds with the level-1-server, etc.
 # A good idea is surely to put your major download-server at level 0
 # and your fill-servers at levels 1,2,...
-# NOTE 1: Do not leave out a level in your server-list and start with level 0!
-# NOTE 2: Several servers with the same level may be used, they will have 
+# NOTE: Do not leave out a level in your server-list and start with level 0!
+# NOTE: Several servers with the same level may be used, they will have 
 # the same priority.
 
 # First server, on level 0
@@ -128,13 +128,22 @@ ContinuePartial=yes
 # Create subdirectory with nzb-filename in destination-directory (yes, no)
 AppendNzbDir=yes
 
-# Check if the destination file already exists (yes, no)
-# If the file exists it will not be added to queue.
-# If "no" the file will be downloaded and renamed to "filename_duplicate1",
-# no existing files are deleted or overwritten
+# Check for duplicate files (yes, no)
+# If this option is enabled the program checks by adding of a new nzb-file:
+# 1) if nzb-file contains duplicate entries. This check aims on detecting
+#    of reposted files (if first file was not fully uploaded);    
+#    If the program founds two files with identical names, only the 
+#    biggest of these files will be added to queue;
+# 2) if download queue already contains file with the same name;
+# 3) if destination file on disk already exists.
+# In last two cases: if the file exists it will not be added to queue;
+# If this option is disabled, all files are downloaded and duplcate files 
+# are renamed to "filename_duplicate1".
+# Existing files are never deleted or overwritten.
 DupeCheck=no
 
 # Visibly rename broken files on download appending "_broken" (yes, no)
+# Do not activate this option if par-check is enabled.
 RenameBroken=no
 
 # Create a log of all broken files (yes ,no)
@@ -155,17 +164,40 @@ Decoder=yEnc
 # Write decoded articles directly into destination output file (yes, no)
 # With this option enabled the program firstly creates the output 
 # destination file with required size (total size of all articles), 
-# then writes on the fly decoded articles directly to this file 
+# then writes on the fly decoded articles directly to the file 
 # without creating of any temporary files, even for decoded articles.
-# This may results in major performance improvement, but this higly depends 
-# on OS and filesystem used.
+# This may results in major performance improvement, but this higly 
+# depends on OS and filesystem used.
 # Can improve performance on a very fast internet connections, 
 # but you need to test if it works in your case.
 # The option works only with internal decoder ("decoder=yenc")
+# INFO: Tests showed, that on Linux with EXT3-partition activating of 
+# this option results in up to 20% better performance, but on Windows with NTFS 
+# or Linux with FAT32-partitions the performance were decreased. 
+# The possible reason is that on EXT3-partition Linux can create large files
+# very fast (if the content of file does not need to be initialized), 
+# but Windows on NTFS-partition and also Linux on FAT32-partition need to
+# initialize created large file with nulls, resulting in a big performace 
+# degradation.
 # NOTE: for testing try to download few big files (with total size 500-1000MB)
 # and measure required time. Do not rely on the program's speed indicator,
 # it is not accurate.
+# NOTE: if both options "DirectWrite" and "ContinuePartial" are enabled,
+# the program will create empty articles-files in temp-directrory. They
+# are used to continue download of file on a next program start. To minimize
+# disk-io it is recommended to disable option "ContinuePartial", if 
+# "DirectWrite" is enabled. Especially on a fast connections (where you
+# would want to activate "DirectWrite") it should not be a problem to 
+# redownload the interrupted file.
 DirectWrite=no
+
+# Check CRC of downloaded and decoded articles (yes, no)
+# Normallyy this option should be enabled for better detecting of download 
+# errors. However checking of CRC needs about the same CPU time as 
+# decoding of articles. On a fast connections with slow CPUs disabling of
+# CPU-check may slightly improve performance (if CPU is a limiting factor).
+# The option works only with internal decoder ("decoder=yenc")
+CrcCheck=yes
 
 # How much retries should be attempted if a download error occurs
 Retries=4
@@ -179,6 +211,7 @@ RetryInterval=10
 # but from different locations (e.g. europe, usa)).
 # In any case the option increases your traffic.
 # For slow connections loading of extra par-blocks may be more effective
+# The option "CrcCheck" must be enabled for option "RetryOnCrcError" to work.
 RetryOnCrcError=no
 
 # Set connection timeout, in seconds
@@ -347,3 +380,25 @@ StrictParName=yes
 #     collection in nzb-file and all files are now completed);
 # NOTE: do not forget to uncomment the next line
 #PostProcess=~/myscript.sh
+
+
+##############################################################################
+### PERFORMANCE                                                            ###
+
+# On a very fast connection and slow CPU and/or drive the following 
+# settings may improve performance:
+# 1) Disable par-checking and -repairing ("ParCheck=no"). VERY important,
+#    because par-checking/repairing needs a lot of CPU-power and 
+#    significantly increases disk usage;
+# 2) Use internal Decoder ("Decoder=yenc");
+# 3) Try to activate option "DirectWrite" ("DirectWrite=yes");
+# 4) Disable option "CrcCheck" ("CrcCheck=no");
+# 5) Disable option "ContinuePartial" ("ContinuePartial=no");
+# 6) Do not limit download rate ("DownloadRate=0"), because the bandwidth 
+#    throttling eats CPU time;
+# 7) Disable logging for info- and debug-messages ("InfoTarget=none", 
+#    "DebugTarget=none");
+# 8) Run the program in daemon (Posix) or service (Windows) mode and use
+#    remote client for short periods of time needed for controlling of 
+#    download process on server. Daemon/Service mode eats less CPU 
+#    resources due to not updating of output on screen.

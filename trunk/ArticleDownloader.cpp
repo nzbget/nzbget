@@ -330,6 +330,7 @@ ArticleDownloader::EStatus ArticleDownloader::Download()
 	{
 		m_YDecoder.Clear();
 		m_YDecoder.SetAutoSeek(g_pOptions->GetDirectWrite());
+		m_YDecoder.SetCrcCheck(g_pOptions->GetCrcCheck());
 	}
 
 	gettimeofday(&m_tStartTime, 0);
@@ -354,7 +355,8 @@ ArticleDownloader::EStatus ArticleDownloader::Download()
 		struct _timeval tSpeedReadingStartTime;
 		gettimeofday(&tSpeedReadingStartTime, 0);
 
-		char* line = m_pConnection->ReadLine(szLineBuf, LineBufSize);
+		int iLen = 0;
+		char* line = m_pConnection->ReadLine(szLineBuf, LineBufSize, &iLen);
 
 		// Have we encountered a timeout?
 		if (!line)
@@ -381,7 +383,7 @@ ArticleDownloader::EStatus ArticleDownloader::Download()
 			line++;
 		}
 
-		if (!Write(line))
+		if (!Write(line, iLen))
 		{
 			Status = adFatalError;
 			break;
@@ -420,7 +422,7 @@ ArticleDownloader::EStatus ArticleDownloader::Download()
 	return Decode();
 }
 
-bool ArticleDownloader::Write(char* line)
+bool ArticleDownloader::Write(char* szLine, int iLen)
 {
 	if (!m_pOutFile && !g_pOptions->GetDirectWrite())
 	{
@@ -434,9 +436,9 @@ bool ArticleDownloader::Write(char* line)
 
 	if (!m_pOutFile && g_pOptions->GetDirectWrite())
 	{
-		if (strstr(line, "=ybegin part="))
+		if (!strncmp(szLine, "=ypart begin=", 13))
 		{
-			char* pb = strstr(line, "size=");
+			char* pb = strstr(szLine, "size=");
 			if (pb) 
 			{
 				m_pFileInfo->LockOutputFile();
@@ -463,19 +465,18 @@ bool ArticleDownloader::Write(char* line)
 		}
 	}
 
-	int len = strlen(line);
 	bool bOK = false;
 
 	if (g_pOptions->GetDecoder() == Options::dcYenc)
 	{
-		bOK = m_YDecoder.Write(line, m_pOutFile);
+		bOK = m_YDecoder.Write(szLine, m_pOutFile);
 	}
 	else
 	{
-		bOK = fwrite(line, 1, len, m_pOutFile) > 0;
+		bOK = fwrite(szLine, 1, iLen, m_pOutFile) > 0;
 	}
 
-	m_iBytes += len;
+	m_iBytes += iLen;
 	return bOK;
 }
 

@@ -80,7 +80,7 @@ private:
 	FILE*				m_pOutFile;
 
 	EStatus				Download();
-	bool				Write(char* line);
+	bool				Write(char* szLine, int iLen);
 	EStatus				Decode();
 	void				FreeConnection();
 

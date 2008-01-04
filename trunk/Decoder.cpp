@@ -190,6 +190,7 @@ void YDecoder::Clear()
 	m_iEnd = 0;
 	m_bAutoSeek = false;
 	m_bNeedSetPos = false;
+	m_bCrcCheck = false;
 }
 
 /* from crc32.c (http://www.koders.com/c/fid699AFE0A656F0022C9D6B9D1743E697B69CE5815.aspx)
@@ -238,11 +239,8 @@ void YDecoder::crc32gentab()
  */
 unsigned long YDecoder::crc32m(unsigned long startCrc, unsigned char *block, unsigned int length)
 {
-	register unsigned long crc;
-	unsigned long i;
-
-	crc = startCrc;
-	for (i = 0; i < length; i++)
+	register unsigned long crc = startCrc;
+	for (unsigned long i = 0; i < length; i++)
 	{
 		crc = ((crc >> 8) & 0x00FFFFFF) ^ crc_tab[(crc ^ *block++) & 0xFF];
 	}
@@ -253,7 +251,7 @@ unsigned int YDecoder::DecodeBuffer(char* buffer)
 {
 	if (m_bBody)
 	{
-		if (strstr(buffer, "=yend size="))
+		if (!strncmp(buffer, "=yend size=", 11))
 		{
 			m_bEnd = true;
 			char* pc = strstr(buffer, "pcrc32=");
@@ -273,24 +271,27 @@ unsigned int YDecoder::DecodeBuffer(char* buffer)
 				case '=':	//escape-sequence
 					iptr++;
 					*optr = *iptr - 64 - 42;
-					*optr++;
+					optr++;
 					break;
 				case '\n':	// ignored char
 				case '\r':	// ignored char
 					break;
 				default:	// normal char
 					*optr = *iptr - 42;
-					*optr++;
+					optr++;
 					break;
 			}
 			iptr++;
 		}
-		m_lCalculatedCRC = crc32m(m_lCalculatedCRC, (unsigned char *)buffer, optr - buffer);
+		if (m_bCrcCheck)
+		{
+			m_lCalculatedCRC = crc32m(m_lCalculatedCRC, (unsigned char *)buffer, optr - buffer);
+		}
 		return optr - buffer;
 	}
 	else
 	{
-		if (strstr(buffer, "=ypart begin="))
+		if (!strncmp(buffer, "=ypart begin=", 13))
 		{
 			m_bBody = true;
 			char* pb = strstr(buffer, "begin=");
@@ -306,7 +307,7 @@ unsigned int YDecoder::DecodeBuffer(char* buffer)
 				m_iEnd = (int)atoi(pb);
 			}
 		}
-		else if (strstr(buffer, "=ybegin part="))
+		else if (!strncmp(buffer, "=ybegin part=", 13))
 		{
 			char* pb = strstr(buffer, "name=");
 			if (pb)
@@ -352,7 +353,7 @@ bool YDecoder::Execute()
 
 	debug("Expected pcrc32=%x", m_lExpectedCRC);
 	debug("Calculated pcrc32=%x", m_lCalculatedCRC);
-	m_bCrcError = m_lExpectedCRC != m_lCalculatedCRC;
+	m_bCrcError = m_bCrcCheck && (m_lExpectedCRC != m_lCalculatedCRC);
 
 	return m_bBody && m_bEnd && !m_bCrcError;
 }
