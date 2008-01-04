@@ -152,7 +152,7 @@ void RequestProcessor::Run()
 	}
 
 	// Make sure this is a nzbget request from a client
-	if (ntohl(m_MessageBase.m_iSignature) != NZBMESSAGE_SIGNATURE)
+	if ((int)ntohl(m_MessageBase.m_iSignature) != (int)NZBMESSAGE_SIGNATURE)
 	{
 		warn("Non-nzbget request received on port %i", g_pOptions->GetServerPort());
 

@@ -64,7 +64,7 @@ public:
 	int					Send(char* pBuffer, int iSize);
 	int					Recv(char* pBuffer, int iSize);
 	bool				RecvAll(char* pBuffer, int iSize);
-	char*				ReadLine(char* pBuffer, int iSize);
+	char*				ReadLine(char* pBuffer, int iSize, int* pBytesRead);
 	int					WriteLine(char* text);
 	SOCKET				Accept();
 	void				Cancel();
@@ -77,7 +77,7 @@ protected:
 	virtual int			DoDisconnect();
 	int					DoBind();
 	int					DoWriteLine(char* text);
-	char*				DoReadLine(char* pBuffer, int iSize);
+	char*				DoReadLine(char* pBuffer, int iSize, int* pBytesRead);
 	SOCKET				DoAccept();
 };
 

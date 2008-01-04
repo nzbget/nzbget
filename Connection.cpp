@@ -178,14 +178,14 @@ int Connection::Send(char* pBuffer, int iSize)
 	return iRes;
 }
 
-char* Connection::ReadLine(char* pBuffer, int iSize)
+char* Connection::ReadLine(char* pBuffer, int iSize, int* pBytesRead)
 {
 	if (m_eStatus != csConnected)
 	{
 		return NULL;
 	}
 
-	char* res = DoReadLine(pBuffer, iSize);
+	char* res = DoReadLine(pBuffer, iSize, pBytesRead);
 
 	if (res == NULL)
 		Connection::DoDisconnect();
@@ -355,11 +355,12 @@ int Connection::DoWriteLine(char* szText)
 	return send(m_iSocket, szText, strlen(szText), 0);
 }
 
-char* Connection::DoReadLine(char* pBuffer, int iSize)
+char* Connection::DoReadLine(char* pBuffer, int iSize, int* pBytesRead)
 {
 	//debug( "Connection::DoReadLine()" );
 	char* pBufPtr = pBuffer;
 	iSize--; // for trailing '0'
+	int iBytesRead = 0;
 	int iBufAvail = m_iBufAvail; // local variable is faster
 	char* szBufPtr = m_szBufPtr; // local variable is faster
 	while (iSize)
@@ -400,6 +401,7 @@ char* Connection::DoReadLine(char* pBuffer, int iSize)
 		pBufPtr += len;
 		szBufPtr += len;
 		iBufAvail -= len;
+		iBytesRead += len;
 		
 		if (p)
 		{
@@ -411,6 +413,11 @@ char* Connection::DoReadLine(char* pBuffer, int iSize)
 
 	m_iBufAvail = iBufAvail > 0 ? iBufAvail : 0; // copy back to member
 	m_szBufPtr = szBufPtr; // copy back to member
+	
+	if (pBytesRead)
+	{
+		*pBytesRead = iBytesRead;
+	}
 	
 	if (pBufPtr == pBuffer)
 	{

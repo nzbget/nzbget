@@ -127,6 +127,7 @@ static const char* OPTION_UPDATEINTERVAL	= "UpdateInterval";
 static const char* OPTION_CURSESNZBNAME		= "CursesNzbName";
 static const char* OPTION_CURSESTIME		= "CursesTime";
 static const char* OPTION_CURSESGROUP		= "CursesGroup";
+static const char* OPTION_CRCCHECK			= "CrcCheck";
 static const char* OPTION_RETRYONCRCERROR	= "RetryOnCrcError";
 static const char* OPTION_THREADLIMIT		= "ThreadLimit";
 static const char* OPTION_DIRECTWRITE		= "DirectWrite";
@@ -203,6 +204,7 @@ Options::Options(int argc, char* argv[])
 	m_bCursesNZBName		= false;
 	m_bCursesTime			= false;
 	m_bCursesGroup			= false;
+	m_bCrcCheck				= false;
 	m_bRetryOnCrcError		= false;
 	m_bDirectWrite			= false;
 	m_iThreadLimit			= 0;
@@ -390,6 +392,7 @@ void Options::InitDefault()
 	SetOption(OPTION_CURSESNZBNAME, "yes");
 	SetOption(OPTION_CURSESTIME, "no");
 	SetOption(OPTION_CURSESGROUP, "no");
+	SetOption(OPTION_CRCCHECK, "yes");
 	SetOption(OPTION_RETRYONCRCERROR, "no");
 	SetOption(OPTION_THREADLIMIT, "100");
 	SetOption(OPTION_DIRECTWRITE, "no");
@@ -522,6 +525,7 @@ void Options::InitOptions()
 	m_bCursesNZBName		= (bool)ParseOptionValue(OPTION_CURSESNZBNAME, BoolCount, BoolNames, BoolValues);
 	m_bCursesTime			= (bool)ParseOptionValue(OPTION_CURSESTIME, BoolCount, BoolNames, BoolValues);
 	m_bCursesGroup			= (bool)ParseOptionValue(OPTION_CURSESGROUP, BoolCount, BoolNames, BoolValues);
+	m_bCrcCheck				= (bool)ParseOptionValue(OPTION_CRCCHECK, BoolCount, BoolNames, BoolValues);
 	m_bRetryOnCrcError		= (bool)ParseOptionValue(OPTION_RETRYONCRCERROR, BoolCount, BoolNames, BoolValues);
 	m_bDirectWrite			= (bool)ParseOptionValue(OPTION_DIRECTWRITE, BoolCount, BoolNames, BoolValues);
 
