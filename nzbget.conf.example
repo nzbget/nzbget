@@ -132,12 +132,12 @@ AppendNzbDir=yes
 # If this option is enabled the program checks by adding of a new nzb-file:
 # 1) if nzb-file contains duplicate entries. This check aims on detecting
 #    of reposted files (if first file was not fully uploaded);    
-#    If the program founds two files with identical names, only the 
+#    If the program find two files with identical names, only the 
 #    biggest of these files will be added to queue;
 # 2) if download queue already contains file with the same name;
 # 3) if destination file on disk already exists.
 # In last two cases: if the file exists it will not be added to queue;
-# If this option is disabled, all files are downloaded and duplcate files 
+# If this option is disabled, all files are downloaded and duplicate files 
 # are renamed to "filename_duplicate1".
 # Existing files are never deleted or overwritten.
 DupeCheck=no
@@ -162,7 +162,7 @@ CreateBrokenLog=yes
 Decoder=yEnc
 
 # Write decoded articles directly into destination output file (yes, no)
-# With this option enabled the program firstly creates the output 
+# With this option enabled the program at first creates the output 
 # destination file with required size (total size of all articles), 
 # then writes on the fly decoded articles directly to the file 
 # without creating of any temporary files, even for decoded articles.
@@ -192,7 +192,7 @@ Decoder=yEnc
 DirectWrite=no
 
 # Check CRC of downloaded and decoded articles (yes, no)
-# Normallyy this option should be enabled for better detecting of download 
+# Normally this option should be enabled for better detecting of download 
 # errors. However checking of CRC needs about the same CPU time as 
 # decoding of articles. On a fast connections with slow CPUs disabling of
 # CPU-check may slightly improve performance (if CPU is a limiting factor).

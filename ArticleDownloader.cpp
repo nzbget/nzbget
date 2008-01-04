@@ -436,7 +436,7 @@ bool ArticleDownloader::Write(char* szLine, int iLen)
 
 	if (!m_pOutFile && g_pOptions->GetDirectWrite())
 	{
-		if (!strncmp(szLine, "=ypart begin=", 13))
+		if (!strncmp(szLine, "=ybegin part=", 13))
 		{
 			char* pb = strstr(szLine, "size=");
 			if (pb) 
