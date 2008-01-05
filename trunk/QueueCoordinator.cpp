@@ -348,6 +348,9 @@ bool QueueCoordinator::DeleteQueueEntry(FileInfo* pFileInfo)
 	}
 	if (!hasDownloads)
 	{
+		Aspect aspect = { eaFileDeleted, pFileInfo, &m_DownloadQueue, NULL };
+		Notify(&aspect);
+
 		DeleteFileInfo(pFileInfo);
 	}
 	return hasDownloads;
