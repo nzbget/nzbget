@@ -286,6 +286,13 @@ void NZBFile::CheckFilenames()
 				FileInfo* pFileInfo2 = *it2;
 				pFileInfo2->SetFilename(pFileInfo2->GetSubject());
 				pFileInfo2->MakeValidFilename();
+
+				if (g_pOptions->GetSaveQueue() && g_pOptions->GetServerMode())
+				{
+					g_pDiskState->LoadArticles(pFileInfo2);
+					g_pDiskState->SaveFile(pFileInfo2);
+					pFileInfo2->ClearArticles();
+				}
 			}
 		}
     }
