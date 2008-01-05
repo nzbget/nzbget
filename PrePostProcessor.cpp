@@ -189,9 +189,17 @@ void PrePostProcessor::QueueCoordinatorUpdate(Subject * Caller, void * Aspect)
 		{
 			char szNZBNiceName[1024];
 			pAspect->pFileInfo->GetNiceNZBName(szNZBNiceName, 1024);
-			info("Collection %s completely downloaded", szNZBNiceName);
+			if (pAspect->eAction == QueueCoordinator::eaFileCompleted)
+			{
+				info("Collection %s completely downloaded", szNZBNiceName);
+			}
+			else
+			{
+				info("Collection %s deleted from queue", szNZBNiceName);
+			}
 #ifndef DISABLE_PARCHECK
-			if (g_pOptions->GetParCheck())
+			if (g_pOptions->GetParCheck() &&
+				pAspect->eAction == QueueCoordinator::eaFileCompleted)
 			{
 				CheckPars(pAspect->pDownloadQueue, pAspect->pFileInfo);
 			}
