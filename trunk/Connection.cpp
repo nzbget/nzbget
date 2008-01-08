@@ -47,6 +47,8 @@
 #include "Connection.h"
 #include "Log.h"
 
+static const int CONNECTION_READBUFFER_SIZE = 1024;
+
 void Connection::Init()
 {
 	debug("Intiializing global connection data");
@@ -88,6 +90,7 @@ Connection::Connection(NetAddress* pNetAddress)
 	m_iBufAvail			= 0;
 	m_bCanceling		= false;
 	m_iTimeout			= 60;
+	m_szReadBuf			= (char*)malloc(CONNECTION_READBUFFER_SIZE + 1);
 }
 
 Connection::~Connection()
@@ -98,6 +101,7 @@ Connection::~Connection()
 	{
 		Disconnect();
 	}
+	free(m_szReadBuf);
 }
 
 int Connection::Connect()
@@ -367,7 +371,7 @@ char* Connection::DoReadLine(char* pBuffer, int iSize, int* pBytesRead)
 	{
 		if (!iBufAvail)
 		{
-			iBufAvail = recv(m_iSocket, m_szReadBuf, ReadBufLen, 0);
+			iBufAvail = recv(m_iSocket, m_szReadBuf, CONNECTION_READBUFFER_SIZE, 0);
 			if (iBufAvail < 0)
 			{
 				ReportError("Could not receive data on socket", NULL, 0);

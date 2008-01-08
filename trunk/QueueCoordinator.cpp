@@ -111,44 +111,46 @@ void QueueCoordinator::Run()
 
 	m_mutexDownloadQueue.Unlock();
 
+	int iResetCounter = 0;
+
 	while (!IsStopped())
 	{
-		while (g_pOptions->GetPause() && !IsStopped())
+		if (!g_pOptions->GetPause())
 		{
-			// Sleep for a while
-			usleep(500 * 1000);
-		}
-
-		if (g_pServerPool->HasFreeConnection() && Thread::GetThreadCount() < g_pOptions->GetThreadLimit())
-		{
-			// start download for next article
-			FileInfo* pFileInfo;
-			ArticleInfo* pArticleInfo;
-
-			m_mutexDownloadQueue.Lock();
-			bool bHasMoreArticles = GetNextArticle(pFileInfo, pArticleInfo);
-			m_bHasMoreJobs = bHasMoreArticles || !m_ActiveDownloads.empty();
-			if (bHasMoreArticles && !IsStopped())
+			NNTPConnection* pConnection = g_pServerPool->GetConnection(0, false);
+			if (pConnection)
 			{
-				StartArticleDownload(pFileInfo, pArticleInfo);
-			}
-			m_mutexDownloadQueue.Unlock();
+				// start download for next article
+				FileInfo* pFileInfo;
+				ArticleInfo* pArticleInfo;
 
-			if (!IsStopped())
-			{
-				// two possibilities:
-				// 1) hasMoreArticles==false: there are no jobs, waiting for a while
-				// 2) hasMoreArticles==true: the pause prevents starting of many threads, before the download-thread locks the connection
-				usleep(100 * 1000);
+				m_mutexDownloadQueue.Lock();
+				bool bHasMoreArticles = GetNextArticle(pFileInfo, pArticleInfo);
+				m_bHasMoreJobs = bHasMoreArticles || !m_ActiveDownloads.empty();
+				if (bHasMoreArticles && !IsStopped() && Thread::GetThreadCount() < g_pOptions->GetThreadLimit())
+				{
+					StartArticleDownload(pFileInfo, pArticleInfo, pConnection);
+				}
+				else
+				{
+					g_pServerPool->FreeConnection(pConnection, false);
+				}
+				m_mutexDownloadQueue.Unlock();
 			}
 		}
-		else
-		{
-			// there are no free connection available, waiting for a while
-			usleep(100 * 1000);
-		}
 
-		ResetHangingDownloads();
+		// sleep longer in StandBy
+		int iSleepInterval = (g_pOptions->GetPause() || !m_bHasMoreJobs) ? 100 : 5;
+		usleep(iSleepInterval * 1000);
+		iResetCounter+= iSleepInterval;
+
+		if (iResetCounter >= 1000)
+		{
+			// this code should not be called very often, once per second is OK
+			g_pServerPool->CloseUnusedConnections();
+			ResetHangingDownloads();
+			iResetCounter = 0;
+		}
 	}
 
 	// waiting for downloads
@@ -285,17 +287,9 @@ float QueueCoordinator::CalcCurrentDownloadSpeed()
 		float fSpeed = 0.0f;
 		struct _timeval* arttime = pArticleDownloader->GetStartTime();
 
-#ifdef WIN32
-		if (arttime->time != 0)
-#else
-		if (arttime->tv_sec != 0)
-#endif
+		if (!EmptyTime(arttime))
 		{
-#ifdef WIN32
-			float tdiff = (float)((curtime.time - arttime->time) + (curtime.millitm - arttime->millitm) / 1000.0);
-#else
-			float tdiff = (float)((curtime.tv_sec - arttime->tv_sec) + (curtime.tv_usec - arttime->tv_usec) / 1000000.0);
-#endif
+			float tdiff = DiffTime(&curtime, arttime);
 			if (tdiff > 0)
 			{
 				fSpeed = (pArticleDownloader->GetBytes() / tdiff / 1024);
@@ -330,7 +324,7 @@ long long QueueCoordinator::CalcRemainingSize()
 
 /*
  * NOTE: DownloadQueue must be locked prior to call of this function
- * Returns True if Entry was deleted from Queue or False it was scheduled for Deletion.
+ * Returns True if Entry was deleted from Queue or False if it was scheduled for Deletion.
  * NOTE: "False" does not mean unsuccess; the entry is (or will be) deleted in any case.
  */
 bool QueueCoordinator::DeleteQueueEntry(FileInfo* pFileInfo)
@@ -397,7 +391,7 @@ bool QueueCoordinator::GetNextArticle(FileInfo* &pFileInfo, ArticleInfo* &pArtic
 	return false;
 }
 
-void QueueCoordinator::StartArticleDownload(FileInfo* pFileInfo, ArticleInfo* pArticleInfo)
+void QueueCoordinator::StartArticleDownload(FileInfo* pFileInfo, ArticleInfo* pArticleInfo, NNTPConnection* pConnection)
 {
 	debug("Starting new ArticleDownloader");
 
@@ -406,13 +400,13 @@ void QueueCoordinator::StartArticleDownload(FileInfo* pFileInfo, ArticleInfo* pA
 	pArticleDownloader->Attach(this);
 	pArticleDownloader->SetFileInfo(pFileInfo);
 	pArticleDownloader->SetArticleInfo(pArticleInfo);
+	pArticleDownloader->SetConnection(pConnection);
 	BuildArticleFilename(pArticleDownloader, pFileInfo, pArticleInfo);
 
 	pArticleInfo->SetStatus(ArticleInfo::aiRunning);
 
 	m_ActiveDownloads.push_back(pArticleDownloader);
 	pArticleDownloader->Start();
-	pArticleDownloader->WaitInit();
 }
 
 void QueueCoordinator::BuildArticleFilename(ArticleDownloader* pArticleDownloader, FileInfo* pFileInfo, ArticleInfo* pArticleInfo)

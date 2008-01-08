@@ -36,6 +36,7 @@
 #include "DownloadInfo.h"
 #include "Observer.h"
 #include "QueueEditor.h"
+#include "NNTPConnection.h"
                                             
 class QueueCoordinator : public Thread, public Observer, public Subject, public DownloadSpeedMeter
 {
@@ -63,7 +64,7 @@ private:
 	bool					m_bHasMoreJobs;
 
 	bool					GetNextArticle(FileInfo* &pFileInfo, ArticleInfo* &pArticleInfo);
-	void					StartArticleDownload(FileInfo* pFileInfo, ArticleInfo* pArticleInfo);
+	void					StartArticleDownload(FileInfo* pFileInfo, ArticleInfo* pArticleInfo, NNTPConnection* pConnection);
 	void					BuildArticleFilename(ArticleDownloader* pArticleDownloader, FileInfo* pFileInfo, ArticleInfo* pArticleInfo);
 	bool					IsDupe(FileInfo* pFileInfo);
 	void					ArticleCompleted(ArticleDownloader* pArticleDownloader);

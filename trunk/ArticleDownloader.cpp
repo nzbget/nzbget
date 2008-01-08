@@ -130,9 +130,8 @@ void ArticleDownloader::Run()
 		{
 			// file exists from previous program's start
 			info("Article %s already downloaded, skipping", m_szInfoName);
-			m_semInitialized.Post();
-			m_semWaited.Wait();
 			SetStatus(adFinished);
+			FreeConnection(true);
 			return;
 		}
 	}
@@ -150,11 +149,6 @@ void ArticleDownloader::Run()
 	}
 	int level = 0;
 
-	m_semInitialized.Post();
-	m_semWaited.Wait();
-
-	//while (true) usleep(10); // DEBUG TEST
-
 	while (!IsStopped() && (retry > 0))
 	{
 		SetLastUpdateTimeNow();
@@ -163,7 +157,7 @@ void ArticleDownloader::Run()
 
 		if (!m_pConnection)
 		{
-			m_pConnection = g_pServerPool->GetConnection(level);
+			m_pConnection = g_pServerPool->GetConnection(level, true);
 		}
 
 		if (IsStopped())
@@ -193,7 +187,7 @@ void ArticleDownloader::Run()
 			// if the problem occurs by Connect() we do not free the connection,
 			// to prevent starting of thousands of threads (cause each of them
 			// will also free it's connection after the same connect-error).
-			FreeConnection();
+			FreeConnection(Status == adFinished);
 		}
 
 		if ((Status == adFailed || (Status == adCrcError && g_pOptions->GetRetryOnCrcError())) && 
@@ -252,7 +246,7 @@ void ArticleDownloader::Run()
 		}
 	}
 
-	FreeConnection();
+	FreeConnection(Status == adFinished);
 
 	free(LevelStatus);
 
@@ -284,7 +278,7 @@ ArticleDownloader::EStatus ArticleDownloader::Download()
 	bool grpchanged = false;
 	for (FileInfo::Groups::iterator it = m_pFileInfo->GetGroups()->begin(); it != m_pFileInfo->GetGroups()->end(); it++)
 	{
-		grpchanged = m_pConnection->JoinGroup(*it) == 0;
+		grpchanged = m_pConnection->JoinGroup(*it);
 		if (grpchanged)
 		{
 			break;
@@ -299,7 +293,9 @@ ArticleDownloader::EStatus ArticleDownloader::Download()
 
 	// now, let's begin!
 	char tmp[1024];
-	snprintf(tmp, 1024, "ARTICLE %s\r\n", m_pArticleInfo->GetMessageID());
+	snprintf(tmp, 1024, "%s %s\r\n", 
+		g_pOptions->GetDecoder() == Options::dcYenc ? "BODY" : "ARTICLE", 
+		m_pArticleInfo->GetMessageID());
 	tmp[1024-1] = '\0';
 
 	char* answer = NULL;
@@ -307,7 +303,7 @@ ArticleDownloader::EStatus ArticleDownloader::Download()
 	for (int retry = 3; retry > 0; retry--)
 	{
 		answer = m_pConnection->Request(tmp);
-		if (answer && (!strncmp(answer, "2", 1)))
+		if (answer && !strncmp(answer, "2", 1))
 		{
 			break;
 		}
@@ -318,10 +314,11 @@ ArticleDownloader::EStatus ArticleDownloader::Download()
 		warn("Article %s @ %s failed: Connection closed by remote host", m_szInfoName, m_pConnection->GetServer()->GetHost());
 		return adFailed;
 	}
+
 	if (strncmp(answer, "2", 1))
 	{
 		warn("Article %s @ %s failed: %s", m_szInfoName, m_pConnection->GetServer()->GetHost(), answer);
-		return adNotFound;
+		return (!strncmp(answer, "41", 2) || !strncmp(answer, "42", 2)) ? adNotFound : adFailed;
 	}
 
 	// positive answer!
@@ -352,9 +349,6 @@ ArticleDownloader::EStatus ArticleDownloader::Download()
 			usleep(200 * 1000);
 		}
 
-		struct _timeval tSpeedReadingStartTime;
-		gettimeofday(&tSpeedReadingStartTime, 0);
-
 		int iLen = 0;
 		char* line = m_pConnection->ReadLine(szLineBuf, LineBufSize, &iLen);
 
@@ -369,12 +363,6 @@ ArticleDownloader::EStatus ArticleDownloader::Download()
 		if ((!strcmp(line, ".\r\n")) || (!strcmp(line, ".\n")))
 		{
 			break;
-		}
-
-		// Did we meet an unexpected need for authorization?
-		if (!strncmp(line, "480", 3))
-		{
-			m_pConnection->Authenticate();
 		}
 
 		//detect lines starting with "." (marked as "..")
@@ -417,7 +405,7 @@ ArticleDownloader::EStatus ArticleDownloader::Download()
 		return adFailed;
 	}
 
-	FreeConnection();
+	FreeConnection(true);
 
 	return Decode();
 }
@@ -485,9 +473,6 @@ ArticleDownloader::EStatus ArticleDownloader::Decode()
 	if ((g_pOptions->GetDecoder() == Options::dcUulib) ||
 		(g_pOptions->GetDecoder() == Options::dcYenc))
 	{
-		// Give time to other threads
-		usleep(10 * 1000);
-
 		SetStatus(adDecoding);
 		struct _timeval StartTime, EndTime;
 		gettimeofday(&StartTime, 0);
@@ -617,14 +602,17 @@ void ArticleDownloader::Stop()
 	debug("ArticleDownloader stopped successfully");
 }
 
-void ArticleDownloader::FreeConnection()
+void ArticleDownloader::FreeConnection(bool bKeepConnected)
 {
 	if (m_pConnection)
 	{
 		debug("Releasing connection");
 		m_mutexConnection.Lock();
-		m_pConnection->Disconnect();
-		g_pServerPool->FreeConnection(m_pConnection);
+		if (!bKeepConnected)
+		{
+			m_pConnection->Disconnect();
+		}
+		g_pServerPool->FreeConnection(m_pConnection, true);
 		m_pConnection = NULL;
 		m_mutexConnection.Unlock();
 	}
@@ -735,7 +723,6 @@ void ArticleDownloader::CompleteFileParts()
 					cnt = (int)fread(buffer, 1, BUFFER_SIZE, infile);
 					fwrite(buffer, 1, cnt, outfile);
 					SetLastUpdateTimeNow();
-					usleep(10); // give time to other threads
 				}
 
 				fclose(infile);
@@ -834,15 +821,7 @@ bool ArticleDownloader::Terminate()
 	{
 		debug("Terminating connection");
 		pConnection->Cancel();
-		g_pServerPool->FreeConnection(pConnection);
+		g_pServerPool->FreeConnection(pConnection, true);
 	}
 	return terminated;
-}
-
-void ArticleDownloader::WaitInit()
-{
-	// waiting until the download becomes ready to catch connection,
-	// but no longer then 30 seconds
-	m_semInitialized.TimedWait(30000);
-	m_semWaited.Post();
 }

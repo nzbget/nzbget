@@ -64,6 +64,7 @@ public:
 							~Semaphore();
 	void					Post();
 	bool					Wait();
+	bool					TryWait();
 	bool					TimedWait(int iMSec);
 	bool					IsLocked();
 };

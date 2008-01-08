@@ -27,32 +27,28 @@
 #ifndef NNTPCONNECTION_H
 #define NNTPCONNECTION_H
 
-#include <stdio.h>
-#include <vector>
-
 #include "NewsServer.h"
 #include "Connection.h"
 
 class NNTPConnection : public Connection
 {
 private:
-	std::vector <char*> 	m_UnavailableGroups;
 	char* 					m_szActiveGroup;
-	static const int		LineBufSize = 1024*10;
 	char*					m_szLineBuf;
 
 	virtual int 			DoConnect();
 	virtual int 			DoDisconnect();
+	void					Clear();
 
 public:
 							NNTPConnection(NewsServer* server);
 							~NNTPConnection();
 	NewsServer*				GetNewsServer() { return(NewsServer*)m_pNetAddress; }
 	char* 					Request(char* req);
-	int 					Authenticate();
-	int 					AuthInfoUser(int iRecur = 0);
-	int 					AuthInfoPass(int iRecur = 0);
-	int 					JoinGroup(char* grp);
+	bool 					Authenticate();
+	bool 					AuthInfoUser(int iRecur = 0);
+	bool 					AuthInfoPass(int iRecur = 0);
+	bool 					JoinGroup(char* grp);
 };
 
 

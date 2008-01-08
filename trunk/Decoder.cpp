@@ -262,9 +262,10 @@ unsigned int YDecoder::DecodeBuffer(char* buffer)
 			}
 			return 0;
 		}
+
 		char* iptr = buffer;
 		char* optr = buffer;
-		while (*iptr)
+		while (true)
 		{
 			switch (*iptr)
 			{
@@ -276,6 +277,8 @@ unsigned int YDecoder::DecodeBuffer(char* buffer)
 				case '\n':	// ignored char
 				case '\r':	// ignored char
 					break;
+				case '\0':
+					goto BreakLoop;
 				default:	// normal char
 					*optr = *iptr - 42;
 					optr++;
@@ -283,6 +286,8 @@ unsigned int YDecoder::DecodeBuffer(char* buffer)
 			}
 			iptr++;
 		}
+BreakLoop:
+
 		if (m_bCrcCheck)
 		{
 			m_lCalculatedCRC = crc32m(m_lCalculatedCRC, (unsigned char *)buffer, optr - buffer);

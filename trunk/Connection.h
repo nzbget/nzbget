@@ -43,8 +43,7 @@ public:
 protected:
 	NetAddress* 		m_pNetAddress;
 	SOCKET				m_iSocket;
-	static const int	ReadBufLen = 1024;
-	char				m_szReadBuf[ReadBufLen + 1];
+	char*				m_szReadBuf;
 	int					m_iBufAvail;
 	char*				m_szBufPtr;
 	EStatus				m_eStatus;
@@ -71,6 +70,7 @@ public:
 	NetAddress*			GetServer() { return m_pNetAddress; }
 	SOCKET				GetSocket() { return m_iSocket; }
 	void				SetTimeout(int iTimeout) { m_iTimeout = iTimeout; }
+	EStatus				GetStatus() { return m_eStatus; }
 
 protected:
 	virtual int 		DoConnect();
