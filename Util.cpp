@@ -380,3 +380,30 @@ void SplitInt64(long long Int64, unsigned int* Hi, unsigned int* Lo)
 	*Hi = (unsigned int)(Int64 >> 32);
 	*Lo = (unsigned int)Int64;
 }
+
+float EqualTime(_timeval* t1, _timeval* t2)
+{
+#ifdef WIN32
+	return t1->time == t2->time && t1->millitm == t2->millitm;
+#else
+	return t1->tv_sec == t2->tv_sec && t1->tv_usec == t2->tv_usec;
+#endif
+}
+
+bool EmptyTime(_timeval* t)
+{
+#ifdef WIN32
+	return t->time == 0 && t->millitm == 0;
+#else
+	return t->tv_sec == 0 && t->tv_usec == 0;
+#endif
+}
+
+float DiffTime(_timeval* t1, _timeval* t2)
+{
+#ifdef WIN32
+	return ((t1->time - t2->time) + (t1->millitm - t2->millitm) / 1000.0);
+#else
+	return (float)((t1->tv_sec - t2->tv_sec) + (t1->tv_usec - t2->tv_usec) / 1000000.0);
+#endif
+}

@@ -51,6 +51,14 @@
 #include "ServerPool.h"
 #include "Log.h"
 
+static const int CONNECTION_HOLD_SECODNS = 5;
+
+ServerPool::PooledConnection::PooledConnection(NewsServer* server) : NNTPConnection(server)
+{
+	m_bInUse = false;
+	m_tFreeTime = 0;
+}
+
 ServerPool::ServerPool()
 {
 	debug("Creating ServerPool");
@@ -58,15 +66,13 @@ ServerPool::ServerPool()
 	m_iMaxLevel = 0;
 	m_iTimeout = 60;
 	m_Servers.clear();
-	m_FreeConnections.clear();
+	m_Connections.clear();
 	m_Semaphores.clear();
 }
 
 ServerPool::~ ServerPool()
 {
 	debug("Destroying ServerPool");
-
-	m_FreeConnections.clear();
 
 	for (Semaphores::iterator it = m_Semaphores.begin(); it != m_Semaphores.end(); it++)
 	{
@@ -79,6 +85,12 @@ ServerPool::~ ServerPool()
 		delete *it;
 	}
 	m_Servers.clear();
+
+	for (Connections::iterator it = m_Connections.begin(); it != m_Connections.end(); it++)
+	{
+		delete *it;
+	}
+	m_Connections.clear();
 }
 
 void ServerPool::AddServer(NewsServer* pNewsServer)
@@ -102,7 +114,9 @@ void ServerPool::InitConnections()
 		}
 		for (int i = 0; i < pNewsServer->GetMaxConnections(); i++)
 		{
-			m_FreeConnections.push_back(pNewsServer);
+			PooledConnection* pConnection = new PooledConnection(pNewsServer);
+			pConnection->SetTimeout(m_iTimeout);
+			m_Connections.push_back(pConnection);
 		}
 	}
 
@@ -123,38 +137,42 @@ void ServerPool::InitConnections()
 	}
 }
 
-NNTPConnection* ServerPool::GetConnection(int level)
+NNTPConnection* ServerPool::GetConnection(int iLevel, bool bWait)
 {
 	debug("Getting connection");
 
-	debug("sem_wait...");
-	// decrease m_Semaphore counter or block
-	bool bWaitVal = m_Semaphores[level]->Wait();
-	debug("sem_wait...OK");
+	bool bWaitVal = false;
+	if (bWait)
+	{
+		bWaitVal = m_Semaphores[iLevel]->Wait();
+	}
+	else
+	{
+		bWaitVal = m_Semaphores[iLevel]->TryWait();
+	}
 
 	if (!bWaitVal)
 	{
-		debug("semaphore error: %i", errno);
+		// signal received or wait timeout
 		return NULL;
 	}
 
-	m_mutexFree.Lock();
+	m_mutexConnections.Lock();
 
-	NNTPConnection* pConnection = NULL;
-	for (Servers::iterator it = m_FreeConnections.begin(); it != m_FreeConnections.end(); it++)
+	PooledConnection* pConnection = NULL;
+	for (Connections::iterator it = m_Connections.begin(); it != m_Connections.end(); it++)
 	{
-		NewsServer* server = *it;
-		if (server->GetLevel() == level)
+		PooledConnection* pConnection1 = *it;
+		if (!pConnection1->GetInUse() && pConnection1->GetNewsServer()->GetLevel() == iLevel)
 		{
 			// free connection found, take it!
-			pConnection = new NNTPConnection(server);
-			pConnection->SetTimeout(m_iTimeout);
-			m_FreeConnections.erase(it);
+			pConnection = pConnection1;
+			pConnection->SetInUse(true);
 			break;
 		}
 	}
 
-	m_mutexFree.Unlock();
+	m_mutexConnections.Unlock();
 
 	if (!pConnection)
 	{
@@ -164,22 +182,43 @@ NNTPConnection* ServerPool::GetConnection(int level)
 	return pConnection;
 }
 
-void ServerPool::FreeConnection(NNTPConnection* pConnection)
+void ServerPool::FreeConnection(NNTPConnection* pConnection, bool bUsed)
 {
 	debug("Freeing connection");
 
-	// give back free connection
-	m_mutexFree.Lock();
-	m_FreeConnections.push_back(pConnection->GetNewsServer());
-	m_Semaphores[pConnection->GetNewsServer()->GetLevel()]->Post();
-	m_mutexFree.Unlock();
+	m_mutexConnections.Lock();
 
-	delete pConnection;
+	((PooledConnection*)pConnection)->SetInUse(false);
+	if (bUsed)
+	{
+		((PooledConnection*)pConnection)->SetFreeTimeNow();
+	}
+	m_Semaphores[pConnection->GetNewsServer()->GetLevel()]->Post();
+
+	m_mutexConnections.Unlock();
 }
 
-bool ServerPool::HasFreeConnection()
+void ServerPool::CloseUnusedConnections()
 {
-	return !m_Semaphores[0]->IsLocked();
+	m_mutexConnections.Lock();
+
+	time_t curtime = ::time(NULL);
+
+	for (Connections::iterator it = m_Connections.begin(); it != m_Connections.end(); it++)
+	{
+		PooledConnection* pConnection = *it;
+		if (!pConnection->GetInUse() && pConnection->GetStatus() == Connection::csConnected)
+		{
+			int tdiff = curtime - pConnection->GetFreeTime();
+			if (tdiff > CONNECTION_HOLD_SECODNS)
+			{
+				debug("Closing unused connection to %s", pConnection->GetNewsServer()->GetHost());
+				pConnection->Disconnect();
+			}
+		}
+	}
+
+	m_mutexConnections.Unlock();
 }
 
 void ServerPool::LogDebugInfo()
@@ -189,12 +228,12 @@ void ServerPool::LogDebugInfo()
 
 	debug("    Max-Level: %i", m_iMaxLevel);
 
-	m_mutexFree.Lock();
+	m_mutexConnections.Lock();
 
-	debug("    Free Connections: %i", m_FreeConnections.size());
-	for (Servers::iterator it = m_FreeConnections.begin(); it != m_FreeConnections.end(); it++)
+	debug("    Connections: %i", m_Connections.size());
+	for (Connections::iterator it = m_Connections.begin(); it != m_Connections.end(); it++)
 	{
-		debug("      Free Connection: level=%i", (*it)->GetLevel());
+		debug("      Connection: Level=%i, InUse:%i", (*it)->GetNewsServer()->GetLevel(), (int)(*it)->GetInUse());
 	}
 /*
 	debug("    Semaphores: %i", m_Semaphores.size());
@@ -206,5 +245,5 @@ void ServerPool::LogDebugInfo()
 		debug("      Semaphore: level=%i, value=%i", iLevel, iSemValue);
 	}
 */
-	m_mutexFree.Unlock();
+	m_mutexConnections.Unlock();
 }

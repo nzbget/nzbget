@@ -29,6 +29,7 @@
 #ifdef WIN32
 #include <stdio.h>
 #include <io.h>
+#include <sys/timeb.h>
 #else
 #include <dirent.h>
 #endif
@@ -66,5 +67,9 @@ void MakeValidFilename(char* szFilename, char cReplaceChar);
 
 long long JoinInt64(unsigned int Hi, unsigned int Lo);
 void SplitInt64(long long Int64, unsigned int* Hi, unsigned int* Lo);
+
+float EqualTime(_timeval* t1, _timeval* t2);
+bool EmptyTime(_timeval* t);
+float DiffTime(_timeval* t1, _timeval* t2);
 
 #endif

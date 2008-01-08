@@ -28,7 +28,8 @@
 #ifndef SERVERPOOL_H
 #define SERVERPOOL_H
 
-#include <list>
+#include <vector>
+#include <time.h>
 
 #include "Thread.h"
 #include "NewsServer.h"
@@ -37,14 +38,28 @@
 class ServerPool
 {
 private:
+	class PooledConnection : public NNTPConnection
+	{
+	private:
+		bool			m_bInUse;
+		time_t			m_tFreeTime;
+	public:
+						PooledConnection(NewsServer* server);
+		bool			GetInUse() { return m_bInUse; }
+		void			SetInUse(bool bInUse) { m_bInUse = bInUse; }
+		time_t			GetFreeTime() { return m_tFreeTime; }
+		void			SetFreeTimeNow() { m_tFreeTime = ::time(NULL); }
+	};
+
 	typedef std::vector<NewsServer*>		Servers;
 	typedef std::vector<Semaphore*>			Semaphores;
+	typedef std::vector<PooledConnection*>	Connections;
 
 	Servers				m_Servers;
-	Servers				m_FreeConnections;
+	Connections			m_Connections;
 	Semaphores			m_Semaphores;
 	int					m_iMaxLevel;
-	Mutex			 	m_mutexFree;
+	Mutex			 	m_mutexConnections;
 	int					m_iTimeout;
 
 public:
@@ -54,9 +69,9 @@ public:
 	void 				AddServer(NewsServer *s);
 	void				InitConnections();
 	int					GetMaxLevel() { return m_iMaxLevel; }
-	NNTPConnection*		GetConnection(int level);
-	bool				HasFreeConnection();
-	void 				FreeConnection(NNTPConnection* con);
+	NNTPConnection*		GetConnection(int iLevel, bool bWait);
+	void 				FreeConnection(NNTPConnection* pConnection, bool bUsed);
+	void				CloseUnusedConnections();
 
 	void				LogDebugInfo();
 };

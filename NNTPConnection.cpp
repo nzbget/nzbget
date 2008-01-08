@@ -41,30 +41,22 @@
 #include "Connection.h"
 #include "NewsServer.h"
 
+static const int CONNECTION_LINEBUFFER_SIZE = 1024*10;
+
 NNTPConnection::NNTPConnection(NewsServer* server) : Connection(server)
 {
-	m_UnavailableGroups.clear();
 	m_szActiveGroup = NULL;
-	m_szLineBuf = (char*)malloc(LineBufSize);
+	m_szLineBuf = (char*)malloc(CONNECTION_LINEBUFFER_SIZE);
 }
 
 NNTPConnection::~NNTPConnection()
 {
-	for (unsigned int i = 0; i < m_UnavailableGroups.size(); i++)
-	{
-		free(m_UnavailableGroups[i]);
-		m_UnavailableGroups[i] = NULL;
-	}
-	m_UnavailableGroups.clear();
-
 	if (m_szActiveGroup)
 	{
 		free(m_szActiveGroup);
+		m_szActiveGroup = NULL;
 	}
-	if (m_szLineBuf)
-	{
-		free(m_szLineBuf);
-	}
+	free(m_szLineBuf);
 }
 
 char* NNTPConnection::Request(char* req)
@@ -76,7 +68,7 @@ char* NNTPConnection::Request(char* req)
 
 	WriteLine(req);
 
-	char* answer = ReadLine(m_szLineBuf, LineBufSize, NULL);
+	char* answer = ReadLine(m_szLineBuf, CONNECTION_LINEBUFFER_SIZE, NULL);
 
 	if (!answer)
 	{
@@ -88,56 +80,55 @@ char* NNTPConnection::Request(char* req)
 		debug("%s requested authorization", m_pNetAddress->GetHost());
 
 		//authentication required!
-		if (Authenticate() < 0)
+		if (!Authenticate())
 		{
 			return NULL;
 		}
 
 		//try again
 		WriteLine(req);
-		answer = ReadLine(m_szLineBuf, LineBufSize, NULL);
+		answer = ReadLine(m_szLineBuf, CONNECTION_LINEBUFFER_SIZE, NULL);
 		return answer;
 	}
 
 	return answer;
 }
 
-int NNTPConnection::Authenticate()
+bool NNTPConnection::Authenticate()
 {
-	if ((!((NewsServer*)m_pNetAddress)->GetUser()) ||
-	        (!((NewsServer*)m_pNetAddress)->GetPassword()))
+	if (!((NewsServer*)m_pNetAddress)->GetUser() ||
+		!((NewsServer*)m_pNetAddress)->GetPassword())
 	{
-		return -1;
+		return false;
 	}
 
 	return AuthInfoUser();
 }
 
-int NNTPConnection::AuthInfoUser(int iRecur)
+bool NNTPConnection::AuthInfoUser(int iRecur)
 {
 	if (iRecur > 10)
 	{
-		return -1;
+		return false;
 	}
 
 	char tmp[1024];
-
 	snprintf(tmp, 1024, "AUTHINFO USER %s\r\n", ((NewsServer*)m_pNetAddress)->GetUser());
 	tmp[1024-1] = '\0';
 
 	WriteLine(tmp);
 
-	char* answer = ReadLine(m_szLineBuf, LineBufSize, NULL);
-
+	char* answer = ReadLine(m_szLineBuf, CONNECTION_LINEBUFFER_SIZE, NULL);
 	if (!answer)
 	{
-		return -1;
+		ReportError("authorization for %s failed: Connection closed by remote host.", m_pNetAddress->GetHost(), 0);
+		return false;
 	}
 
 	if (!strncmp(answer, "281", 3))
 	{
 		debug("authorization for %s successful", m_pNetAddress->GetHost());
-		return 0;
+		return true;
 	}
 	else if (!strncmp(answer, "381", 3))
 	{
@@ -145,44 +136,84 @@ int NNTPConnection::AuthInfoUser(int iRecur)
 	}
 	else if (!strncmp(answer, "480", 3))
 	{
-		return AuthInfoUser();
+		return AuthInfoUser(++iRecur);
 	}
 
-	return -1;
+	error("authorization for %s failed (Answer: %s)", m_pNetAddress->GetHost(), answer);
+	return false;
 }
 
-int NNTPConnection::AuthInfoPass(int iRecur)
+bool NNTPConnection::AuthInfoPass(int iRecur)
 {
 	if (iRecur > 10)
 	{
-		return -1;
+		return false;
 	}
 
 	char tmp[1024];
-
 	snprintf(tmp, 1024, "AUTHINFO PASS %s\r\n", ((NewsServer*)m_pNetAddress)->GetPassword());
 	tmp[1024-1] = '\0';
 
 	WriteLine(tmp);
 
-	char* szAnswer = ReadLine(m_szLineBuf, LineBufSize, NULL);
-	if (!szAnswer)
+	char* answer = ReadLine(m_szLineBuf, CONNECTION_LINEBUFFER_SIZE, NULL);
+	if (!answer)
 	{
 		ReportError("authorization for %s failed: Connection closed by remote host.", m_pNetAddress->GetHost(), 0);
-		return -1;
+		return false;
 	}
-	else if (!strncmp(szAnswer, "2", 1))
+	else if (!strncmp(answer, "2", 1))
 	{
 		debug("authorization for %s successful", m_pNetAddress->GetHost());
-		return 0;
+		return true;
 	}
-	else if (!strncmp(szAnswer, "381", 3))
+	else if (!strncmp(answer, "381", 3))
 	{
 		return AuthInfoPass(++iRecur);
 	}
 
-	error("authorization for %s failed (Answer: %s)", m_pNetAddress->GetHost(), szAnswer);
-	return -1;
+	error("authorization for %s failed (Answer: %s)", m_pNetAddress->GetHost(), answer);
+	return false;
+}
+
+bool NNTPConnection::JoinGroup(char* grp)
+{
+	if ((m_szActiveGroup) && (!strcmp(m_szActiveGroup, grp)))
+	{
+		// already in group
+		return true;
+	}
+
+	char tmp[1024];
+	snprintf(tmp, 1024, "GROUP %s\r\n", grp);
+	tmp[1024-1] = '\0';
+
+	char* answer = Request(tmp);
+
+	if ((answer) && (!strncmp(answer, "2", 1)))
+	{
+		debug("Changed group to %s on %s", grp, GetServer()->GetHost());
+
+		if (m_szActiveGroup)
+		{
+			free(m_szActiveGroup);
+		}
+		m_szActiveGroup = strdup(grp);
+		return true;
+	}
+
+	if (!answer)
+	{
+		warn("Error changing group on %s: Connection closed by remote host.", 
+			GetServer()->GetHost());
+	}
+	else
+	{
+		warn("Error changing group on %s to %s: Answer was \"%s\".",
+		     GetServer()->GetHost(), grp, answer);
+	}
+
+	return false;
 }
 
 int NNTPConnection::DoConnect()
@@ -190,8 +221,11 @@ int NNTPConnection::DoConnect()
 	debug("Opening connection to %s", GetServer()->GetHost());
 	int res = Connection::DoConnect();
 	if (res < 0)
+	{
 		return res;
-	char* answer = DoReadLine(m_szLineBuf, LineBufSize, NULL);
+	}
+
+	char* answer = DoReadLine(m_szLineBuf, CONNECTION_LINEBUFFER_SIZE, NULL);
 
 	if (!answer)
 	{
@@ -215,60 +249,11 @@ int NNTPConnection::DoDisconnect()
 	if (m_eStatus == csConnected)
 	{
 		Request("quit\r\n");
-	}
-	return Connection::DoDisconnect();
-}
-
-
-int NNTPConnection::JoinGroup(char* grp)
-{
-	if (!grp)
-	{
-		debug("joinGroup called with NULL-pointer!!");
-		return -1;
-	}
-
-	if ((m_szActiveGroup) && (!strcmp(m_szActiveGroup, grp)))
-		return 0;
-
-	for (unsigned int i = 0; i < m_UnavailableGroups.size(); i++)
-	{
-		if (!strcmp(grp, m_UnavailableGroups[i]))
+		if (m_szActiveGroup)
 		{
-			debug("Group %s unavailable on %s.", grp, this->GetServer()->GetHost());
-			return -1;
+			free(m_szActiveGroup);
+			m_szActiveGroup = NULL;
 		}
 	}
-
-	char tmp[1024];
-	snprintf(tmp, 1024, "GROUP %s\r\n", grp);
-	tmp[1024-1] = '\0';
-
-	char* answer = Request(tmp);
-
-	if ((answer) && (!strncmp(answer, "2", 1)))
-	{
-		debug("Changed group to %s on %s", grp, GetServer()->GetHost());
-
-		if (m_szActiveGroup)
-			free(m_szActiveGroup);
-
-		m_szActiveGroup = strdup(grp);
-		return 0;
-	}
-
-	if (!answer)
-	{
-		warn("Error changing group on %s: Connection closed by remote host.",
-		     GetServer()->GetHost());
-		return -1;
-	}
-	else
-	{
-		warn("Error changing group on %s to %s: Answer was \"%s\".",
-		     GetServer()->GetHost(), grp, answer);
-		m_UnavailableGroups.push_back(strdup(grp));
-	}
-
-	return -1;
+	return Connection::DoDisconnect();
 }

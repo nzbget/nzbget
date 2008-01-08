@@ -67,14 +67,8 @@ private:
 	char*				m_szInfoName;
 	char*				m_szOutputFilename;
 	time_t				m_tLastUpdateTime;
-	Semaphore			m_semInitialized;
-	Semaphore			m_semWaited;
 	static const char*	m_szJobStatus[];
-#ifdef WIN32
-	struct _timeb		m_tStartTime;
-#else
-	struct timeval		m_tStartTime;
-#endif
+	_timeval			m_tStartTime;
 	int					m_iBytes;
 	YDecoder			m_YDecoder;
 	FILE*				m_pOutFile;
@@ -82,7 +76,7 @@ private:
 	EStatus				Download();
 	bool				Write(char* szLine, int iLen);
 	EStatus				Decode();
-	void				FreeConnection();
+	void				FreeConnection(bool bKeepConnected);
 
 public:
 						ArticleDownloader();
@@ -106,12 +100,8 @@ public:
 	void				SetInfoName(const char* v);
 	const char*			GetInfoName() { return m_szInfoName; }
 	void				CompleteFileParts();
-	void				WaitInit();
-#ifdef WIN32
-	struct _timeb*		GetStartTime() { return &m_tStartTime; }
-#else
-	struct timeval*		GetStartTime() { return &m_tStartTime; }
-#endif
+	void				SetConnection(NNTPConnection* pConnection) { m_pConnection = pConnection; }
+	_timeval*			GetStartTime() { return &m_tStartTime; }
 	int					GetBytes() { return m_iBytes; }
 
 	void				LogDebugInfo();

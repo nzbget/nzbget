@@ -131,6 +131,15 @@ bool Semaphore::Wait()
 #endif
 }
 
+bool Semaphore::TryWait()
+{
+#ifdef WIN32
+	return WaitForSingleObject(m_semObj, 0) == WAIT_OBJECT_0;
+#else
+	return sem_trywait(&m_semObj) == 0;
+#endif
+}
+
 bool Semaphore::TimedWait(int iMSec)
 {
 #ifdef WIN32
