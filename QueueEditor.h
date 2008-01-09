@@ -43,13 +43,16 @@ public:
 		eaFilePause,
 		eaFileResume,
 		eaFileDelete,
+		eaFilePauseAllPars,
+		eaFilePauseExtraPars,
 		eaGroupMoveOffset,				// move to m_iOffset relative to the current position in queue
 		eaGroupMoveTop,
 		eaGroupMoveBottom,
 		eaGroupPause,
-		eaGroupPausePars,
 		eaGroupResume,
-		eaGroupDelete
+		eaGroupDelete,
+		eaGroupPauseAllPars,
+		eaGroupPauseExtraPars
 	};
 
 private:
@@ -75,6 +78,8 @@ private:
 	void					AlignAffectedGroups(DownloadQueue* pDownloadQueue, IDList* pIDList, bool bSmartOrder, int iOffset);
 	bool					ItemExists(FileList* pFileList, FileInfo* pFileInfo);
 	void					AlignGroup(DownloadQueue* pDownloadQueue, FileInfo* pFirstFileInfo);
+	void					PauseParsInGroups(ItemList* pItemList, bool bExtraParsOnly);
+	void					PausePars(FileList* pFileList, bool bExtraParsOnly);
 
 	void					PauseUnpauseEntry(FileInfo* pFileInfo, bool bPause);
 	void					DeleteEntry(FileInfo* pFileInfo);
@@ -86,6 +91,8 @@ public:
 
 	bool					EditEntry(int ID, bool bSmartOrder, EEditAction eAction, int iOffset);
 	bool					EditList(IDList* pIDList, bool bSmartOrder, EEditAction eAction, int iOffset);
+
+	bool					LockedEditEntry(DownloadQueue* pDownloadQueue, int ID, bool bSmartOrder, EEditAction eAction, int iOffset);
 };
 
 #endif

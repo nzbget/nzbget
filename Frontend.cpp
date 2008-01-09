@@ -84,7 +84,7 @@ bool Frontend::PrepareData()
 		}
 		if (!RequestMessages() || ((m_bSummary || m_bFileList) && !RequestFileList()))
 		{
-			printf("Unable to send request to nzbserver at %s (port %i)    \n", g_pOptions->GetServerIP(), g_pOptions->GetServerPort());
+			printf("\nUnable to send request to nzbserver at %s (port %i)    \n", g_pOptions->GetServerIP(), g_pOptions->GetServerPort());
 			Stop();
 			return false;
 		}

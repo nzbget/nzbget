@@ -1,28 +1,62 @@
 nzbget-0.3.1:
-  - Edit-command accepts list of IDs or ranges of IDs; The switch "-I" is not
-    used anymore. E.g: "nzbget -E P 2,6-10,33-39";
+  - Greatly reduced the memory consumption by keeping articles' info on disk 
+    until the file download starts;
+  - Implemented decode-on-the-fly-technique to reduce disk-io; downloaded
+    and decoded data can be saved directly to the destination file 
+    (without any intermediate files at all); this eliminates the necessity
+    of joining of articles later (option "directwrite");
+  - Improved communication with news-servers: connections are now keeped open 
+    until all files are downloaded (or server paused); this eliminates the 
+    need for establishing of connections and authorizations for each 
+    article and improves overal download speed;
+  - Significantly better download speed is now possible on fast connection; 
+    it was limited by pauses on starting of new articles' downloads; 
+    the synchronisation mechanism was reworked to fix this issue;
+  - Speed optimisations in internal decoder (up to 25% faster);
+  - CRC-calculation can be bypassed to increase performance on slow CPUs
+    (option "crccheck");
+  - Improved parsing of artcile's subject for better extracting of filename 
+    part from it and implemented a fallback-option if the parsing was incorrect; 
+  - Improved dupe check for files from the same nzb-request to detect reposted 
+    files and download only the best from them (if option "dupecheck" is on); 
+  - Articles with incorrect CRC can be treated as "possibly recoverable errors"
+    and relaunched for download (option "retryoncrcerror"), it is useful if 
+    multiple servers are available;
+  - Extensions in curses-outputmode: added group-view-mode (key "G") to show
+    items in download queue as groups, where one group represents all files 
+    from the same nzb-file; the editing of queue works also in group-mode 
+    (for all files in this group): pause/unpause/delete/move of groups; 
+  - Another extension in curses-outputmode: key "T" toggles timestamps in log;
+  - Edit-command accepts more than one ID or range of IDs.
+    E.g: "nzbget -E P 2,6-10,33-39"; The switch "-I" is not used anymore;
   - Move-actions in Edit-command affect files in a smart order to guarantee 
     that the relative order of files in queue is not changed after the moving;
-  - Added option "updateinterval" to adjust update interval for Frontend-output
-    (useful in remote-mode to reduce network usage);
+  - Extended syntax of edit-command to edit groups (pause/unpause/delete/move 
+    of groups). E.g: "nzbget -E G P 2";
   - Added option "daemonusername" to set the user that the daemon (POSIX only) 
     normally runs at. This allows nzbget daemon to be launched in rc.local 
     (at boot), and download items as a specific user id; Thanks to Thierry 
     MERLE <merlum@users.sourceforge.net> for the patch;
   - Added option "umask" to specify permissions for newly created files and dirs 
     (POSIX only);
-  - Extension in curses- and colored-outputmodes: status bar shows state of
-    par-checker (number of par-jobs queued);
-  - Extensions in curses-outputmode: key "G" to show queue as individual files
-    or groups (NZBs); key "T" to toggle timestamps in log;
-  - Added options "cursesnzbname", "cursesgroup" and "cursestime" to define
-    initial state of curses-outputmode;
   - Communication protocol used between server and client was revised to define 
     the byte order for transferred data. This allows hosts with different 
     endianness to communicate with each other;
-  - Corrected a mistake in the description of parameter "result of par-check", 
-    passed to post-process-script. Extended meaning of parameter 
-    "state of nzb-job". For more info see description in nzbget.conf.example;
+  - Added options "cursesnzbname", "cursesgroup" and "cursestime" to define
+    initial state of curses-outputmode;
+  - Added option "updateinterval" to adjust update interval for Frontend-output
+    (useful in remote-mode to reduce network usage);
+  - The creation of necessary directories on program's start was extended 
+    with automatic creation of all parent directories or error reporting 
+    if it was not possible;
+  - Printed messages are now translated to oem-codepage to correctly print 
+    filenames with non-english characters (windows only);
+  - Added option "threadlimit" to prevent program from crash if it wants to 
+    create too many threads (sometimes may occur in special cases);
+  - Fixed error on parsing of nzb-files containing percent and other special 
+    characters in their names (bug appeared on windows only);
+  - Reformated sample configuration file and changed default optionnames 
+    from lowercase to MixedCase for better readability; 
   - Few bugs (seg faults) were fixed.
 
 nzbget-0.3.0:

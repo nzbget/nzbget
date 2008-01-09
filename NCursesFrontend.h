@@ -57,6 +57,7 @@ private:
 		long long 		m_lSize;
 		long long 		m_lRemainingSize;
 		long long 		m_lPausedSize;
+		int				m_iParCount;
 
 	public:
 						GroupInfo(int iID, const char* szNZBFilename);
@@ -81,6 +82,8 @@ private:
 	int					m_iMessagesWinHeight;
 	int					m_iMessagesWinClientHeight;
 	int					m_iSelectedQueueEntry;
+	int					m_iLastEditEntry;
+	bool				m_bLastPausePars;
 	int					m_iQueueScrollOffset;
 	GroupQueue			m_groupQueue;
 

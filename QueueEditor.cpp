@@ -153,6 +153,14 @@ bool QueueEditor::EditEntry(int ID, bool bSmartOrder, EEditAction eAction, int i
 	return EditList(&cIDList, bSmartOrder, eAction, iOffset);
 }
 
+bool QueueEditor::LockedEditEntry(DownloadQueue* pDownloadQueue, int ID, bool bSmartOrder, EEditAction eAction, int iOffset)
+{
+	IDList cIDList;
+	cIDList.clear();
+	cIDList.push_back(ID);
+	return InternEditList(pDownloadQueue, &cIDList, bSmartOrder, eAction, iOffset);
+}
+
 bool QueueEditor::EditList(IDList* pIDList, bool bSmartOrder, EEditAction eAction, int iOffset)
 {
 	DownloadQueue* pDownloadQueue = g_pQueueCoordinator->LockQueue();
@@ -179,46 +187,54 @@ bool QueueEditor::InternEditList(DownloadQueue* pDownloadQueue, IDList* pIDList,
 	ItemList cItemList;
 	PrepareList(pDownloadQueue, &cItemList, pIDList, bSmartOrder, eAction, iOffset);
 
-	for (ItemList::iterator it = cItemList.begin(); it != cItemList.end(); it++)
+	if (eAction == eaFilePauseAllPars || eAction == eaFilePauseExtraPars)
 	{
-		EditItem* pItem = *it;
-		switch (eAction)
+		PauseParsInGroups(&cItemList, eAction == eaFilePauseExtraPars);
+	}
+	else
+	{
+		for (ItemList::iterator it = cItemList.begin(); it != cItemList.end(); it++)
 		{
-			case eaFilePause:
-				PauseUnpauseEntry(pItem->m_pFileInfo, true);
-				break;
+			EditItem* pItem = *it;
+			switch (eAction)
+			{
+				case eaFilePause:
+					PauseUnpauseEntry(pItem->m_pFileInfo, true);
+					break;
 
-			case eaFileResume:
-				PauseUnpauseEntry(pItem->m_pFileInfo, false);
-				break;
+				case eaFileResume:
+					PauseUnpauseEntry(pItem->m_pFileInfo, false);
+					break;
 
-			case eaFileMoveOffset:
-				MoveEntry(pDownloadQueue, pItem->m_pFileInfo, pItem->m_iOffset);
-				break;
+				case eaFileMoveOffset:
+					MoveEntry(pDownloadQueue, pItem->m_pFileInfo, pItem->m_iOffset);
+					break;
 
-			case eaFileMoveTop:
-				MoveEntry(pDownloadQueue, pItem->m_pFileInfo, -MAX_ID);
-				break;
+				case eaFileMoveTop:
+					MoveEntry(pDownloadQueue, pItem->m_pFileInfo, -MAX_ID);
+					break;
 
-			case eaFileMoveBottom:
-				MoveEntry(pDownloadQueue, pItem->m_pFileInfo, +MAX_ID);
-				break;
+				case eaFileMoveBottom:
+					MoveEntry(pDownloadQueue, pItem->m_pFileInfo, +MAX_ID);
+					break;
 
-			case eaFileDelete:
-				DeleteEntry(pItem->m_pFileInfo);
-				break;
+				case eaFileDelete:
+					DeleteEntry(pItem->m_pFileInfo);
+					break;
 
-			case eaGroupPause:
-			case eaGroupResume:
-			case eaGroupDelete:
-			case eaGroupMoveTop:
-			case eaGroupMoveBottom:
-			case eaGroupMoveOffset:
-			case eaGroupPausePars:
-				EditGroup(pDownloadQueue, pItem->m_pFileInfo, eAction, iOffset);
-				break;
+				case eaGroupPause:
+				case eaGroupResume:
+				case eaGroupDelete:
+				case eaGroupMoveTop:
+				case eaGroupMoveBottom:
+				case eaGroupMoveOffset:
+				case eaGroupPauseAllPars:
+				case eaGroupPauseExtraPars:
+					EditGroup(pDownloadQueue, pItem->m_pFileInfo, eAction, iOffset);
+					break;
+			}
+			delete pItem;
 		}
-		delete pItem;
 	}
 
 	return cItemList.size() > 0;
@@ -380,14 +396,8 @@ bool QueueEditor::EditGroup(DownloadQueue* pDownloadQueue, FileInfo* pFileInfo, 
 		iOffset = iFileOffset;
 	}
 
-	if (eAction == eaGroupPausePars)
-	{
-		// Pause-pars command not yet supported
-		return false;
-	}
-
-	EEditAction GroupToFileMap[] = { (EEditAction)0, eaFileMoveOffset, eaFileMoveTop, eaFileMoveBottom, eaFilePause, eaFileResume, eaFileDelete,
-		eaFileMoveOffset, eaFileMoveTop, eaFileMoveBottom, eaFilePause, eaFilePause, eaFileResume, eaFileDelete };
+	EEditAction GroupToFileMap[] = { (EEditAction)0, eaFileMoveOffset, eaFileMoveTop, eaFileMoveBottom, eaFilePause, eaFileResume, eaFileDelete, eaFilePauseAllPars, eaFilePauseExtraPars,
+		eaFileMoveOffset, eaFileMoveTop, eaFileMoveBottom, eaFilePause, eaFileResume, eaFileDelete, eaFilePauseAllPars, eaFilePauseExtraPars };
 
 	return InternEditList(pDownloadQueue, &cIDList, true, GroupToFileMap[eAction], iOffset);
 }
@@ -477,6 +487,7 @@ void QueueEditor::AlignAffectedGroups(DownloadQueue* pDownloadQueue, IDList* pID
 				break;
 			}
 		}
+		delete pItem;
 	}
 	cGroupList.clear();
 
@@ -511,5 +522,122 @@ void QueueEditor::AlignGroup(DownloadQueue* pDownloadQueue, FileInfo* pFirstFile
 			pLastFileInfo = pFileInfo;
 		}
 		iNum++;
+	}
+}
+
+void QueueEditor::PauseParsInGroups(ItemList* pItemList, bool bExtraParsOnly)
+{
+	while (true)
+	{
+		FileList GroupFileList;
+		GroupFileList.clear();
+		FileInfo* pFirstFileInfo = NULL;
+
+		for (ItemList::iterator it = pItemList->begin(); it != pItemList->end(); )
+		{
+			EditItem* pItem = *it;
+			if (!pFirstFileInfo || 
+				!strcmp(pFirstFileInfo->GetNZBFilename(), pItem->m_pFileInfo->GetNZBFilename()))
+			{
+				GroupFileList.push_back(pItem->m_pFileInfo);
+				if (!pFirstFileInfo)
+				{
+					pFirstFileInfo = pItem->m_pFileInfo;
+				}
+				delete pItem;
+				pItemList->erase(it);
+				it = pItemList->begin();
+				continue;
+			}
+			it++;
+		}
+
+		if (!GroupFileList.empty())
+		{
+			PausePars(&GroupFileList, bExtraParsOnly);
+		}
+		else
+		{
+			break;
+		}
+	}
+}
+
+/**
+* If the parameter "bExtraParsOnly" is set to "false", then we pause all par2-files.
+* If the parameter "bExtraParsOnly" is set to "true", we use the following strategy:
+* At first we find all par-files, which do not have "vol" in their names, then we pause
+* all vols and do not affect all just-pars.
+* In a case, if there are no just-pars, but only vols, we find the smallest vol-file
+* and do not affect it, but pause all other pars.
+*/
+void QueueEditor::PausePars(FileList* pFileList, bool bExtraParsOnly)
+{
+	debug("QueueEditor: Pausing pars");
+	
+	FileList Pars, Vols;
+	Pars.clear();
+	Vols.clear();
+			
+	for (FileList::iterator it = pFileList->begin(); it != pFileList->end(); it++)
+	{
+		FileInfo* pFileInfo = *it;
+		char szLoFileName[1024];
+		strncpy(szLoFileName, pFileInfo->GetFilename(), 1024);
+		szLoFileName[1024-1] = '\0';
+		for (char* p = szLoFileName; *p; p++) *p = tolower(*p); // convert string to lowercase
+		
+		if (strstr(szLoFileName, ".par2"))
+		{
+			if (!bExtraParsOnly)
+			{
+				pFileInfo->SetPaused(true);
+			}
+			else
+			{
+				if (strstr(szLoFileName, ".vol"))
+				{
+					Vols.push_back(pFileInfo);
+				}
+				else
+				{
+					Pars.push_back(pFileInfo);
+				}
+			}
+		}
+	}
+	
+	if (bExtraParsOnly)
+	{
+		if (!Pars.empty())
+		{
+			for (FileList::iterator it = Vols.begin(); it != Vols.end(); it++)
+			{
+				FileInfo* pFileInfo = *it;
+				pFileInfo->SetPaused(true);
+			}
+		}
+		else
+		{
+			// pausing all Vol-files except the smallest one
+			FileInfo* pSmallest = NULL;
+			for (FileList::iterator it = Vols.begin(); it != Vols.end(); it++)
+			{
+				FileInfo* pFileInfo = *it;
+				if (!pSmallest)
+				{
+					pSmallest = pFileInfo;
+				}
+				else if (pSmallest->GetSize() > pFileInfo->GetSize())
+				{
+					pSmallest->SetPaused(true);
+					pSmallest = pFileInfo;
+				}
+				else 
+				{
+					pFileInfo->SetPaused(true);
+				}
+			}
+		}
 	}
 }
