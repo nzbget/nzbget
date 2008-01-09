@@ -212,92 +212,21 @@ void PrePostProcessor::QueueCoordinatorUpdate(Subject * Caller, void * Aspect)
 	}
 }
 
-/**
-* If the option "loadpars" is set to "none", then we pause all par2-files.
-* If the option "loadpars" is set to "one", we use the following strategy:
-* Firstly we find all par-files, which do not have "vol" in their names, then we pause
-* all vols and download all just-pars.
-* In a case, if there are no just-pars, but only vols, we find the smallest vol-file
-* and download only it.
-*/
 void PrePostProcessor::PausePars(DownloadQueue* pDownloadQueue, const char* szNZBFilename)
 {
-	debug("Pausing pars");
-	
-	DownloadQueue Pars, Vols;
-	Pars.clear();
-	Vols.clear();
-			
-	char szNZBNiceName[1024];
-	FileInfo::MakeNiceNZBName(szNZBFilename, szNZBNiceName, 1024);
+	debug("PrePostProcessor: Pausing pars");
 	
 	for (DownloadQueue::iterator it = pDownloadQueue->begin(); it != pDownloadQueue->end(); it++)
 	{
 		FileInfo* pFileInfo = *it;
 		if (!strcmp(pFileInfo->GetNZBFilename(), szNZBFilename))
 		{
-			char szLoFileName[1024];
-			strncpy(szLoFileName, pFileInfo->GetFilename(), 1024);
-			szLoFileName[1024-1] = '\0';
-			for (char* p = szLoFileName; *p; p++) *p = tolower(*p); // convert string to lowercase
-			
-			if (strstr(szLoFileName, ".par2"))
-			{
-				if (g_pOptions->GetLoadPars() == Options::plNone)
-				{
-					info("Pausing %s%c%s", szNZBNiceName, (int)PATH_SEPARATOR, pFileInfo->GetFilename());
-					pFileInfo->SetPaused(true);
-				}
-				else
-				{
-					if (strstr(szLoFileName, ".vol"))
-					{
-						Vols.push_back(pFileInfo);
-					}
-					else
-					{
-						Pars.push_back(pFileInfo);
-					}
-				}
-			}
-		}
-	}
-	
-	if (g_pOptions->GetLoadPars() == Options::plOne ||
-	   (g_pOptions->GetLoadPars() == Options::plNone && g_pOptions->GetParCheck()))
-	{
-		if (!Pars.empty())
-		{
-			for (DownloadQueue::iterator it = Vols.begin(); it != Vols.end(); it++)
-			{
-				FileInfo* pFileInfo = *it;
-				info("Pausing %s%c%s", szNZBNiceName, (int)PATH_SEPARATOR, pFileInfo->GetFilename());
-				pFileInfo->SetPaused(true);
-			}
-		}
-		else
-		{
-			// pausing all Vol-files except the smallest one
-			FileInfo* pSmallest = NULL;
-			for (DownloadQueue::iterator it = Vols.begin(); it != Vols.end(); it++)
-			{
-				FileInfo* pFileInfo = *it;
-				if (!pSmallest)
-				{
-					pSmallest = pFileInfo;
-				}
-				else if (pSmallest->GetSize() > pFileInfo->GetSize())
-				{
-					info("Pausing %s%c%s", szNZBNiceName, (int)PATH_SEPARATOR, pSmallest->GetFilename());
-					pSmallest->SetPaused(true);
-					pSmallest = pFileInfo;
-				}
-				else 
-				{
-					info("Pausing %s%c%s", szNZBNiceName, (int)PATH_SEPARATOR, pFileInfo->GetFilename());
-					pFileInfo->SetPaused(true);
-				}
-			}
+			g_pQueueCoordinator->GetQueueEditor()->LockedEditEntry(pDownloadQueue, pFileInfo->GetID(), false, 
+				(g_pOptions->GetLoadPars() == Options::plOne ||
+					(g_pOptions->GetLoadPars() == Options::plNone && g_pOptions->GetParCheck()))
+				? QueueEditor::eaGroupPauseExtraPars : QueueEditor::eaGroupPauseAllPars,
+				0);
+			break;
 		}
 	}
 }

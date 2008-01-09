@@ -109,6 +109,7 @@ NCursesFrontend::GroupInfo::GroupInfo(int iID, const char* szNZBFilename)
 	m_lSize = 0;
 	m_lRemainingSize = 0;
 	m_lPausedSize = 0;
+	m_iParCount = 0;
 }
 
 NCursesFrontend::GroupInfo::~GroupInfo()
@@ -141,6 +142,8 @@ NCursesFrontend::NCursesFrontend()
 	m_bGroupFiles = g_pOptions->GetCursesGroup();
 	m_QueueWindowPercentage = 0.5f;
 	m_iDataUpdatePos = 0;
+	m_iLastEditEntry = -1;
+	m_bLastPausePars = false;
 
 	m_groupQueue.clear();
 
@@ -937,6 +940,15 @@ void NCursesFrontend::PrepareGroupQueue()
 		{
 			pGroupInfo->m_lPausedSize += pFileInfo->GetRemainingSize();
 		}
+
+		char szLoFileName[1024];
+		strncpy(szLoFileName, pFileInfo->GetFilename(), 1024);
+		szLoFileName[1024-1] = '\0';
+		for (char* p = szLoFileName; *p; p++) *p = tolower(*p); // convert string to lowercase
+		if (strstr(szLoFileName, ".par2"))
+		{
+			pGroupInfo->m_iParCount++;
+		}
 	}
 	UnlockQueue();
 }
@@ -953,7 +965,6 @@ void NCursesFrontend::ClearGroupQueue()
 bool NCursesFrontend::EditQueue(QueueEditor::EEditAction eAction, int iOffset)
 {
 	int ID = 0;
-	bool bPause = false;
 
 	if (m_bGroupFiles)
 	{
@@ -961,11 +972,24 @@ bool NCursesFrontend::EditQueue(QueueEditor::EEditAction eAction, int iOffset)
 		{
 			GroupInfo* pGroupInfo = m_groupQueue[m_iSelectedQueueEntry];
 			ID = pGroupInfo->GetID();
-			bPause = pGroupInfo->GetRemainingSize() > pGroupInfo->GetPausedSize();
-		}
-		if (eAction == QueueEditor::eaFilePause)
-		{
-			eAction = bPause ? QueueEditor::eaFilePause : QueueEditor::eaFileResume;
+			if (eAction == QueueEditor::eaFilePause)
+			{
+				if (pGroupInfo->GetRemainingSize() == pGroupInfo->GetPausedSize())
+				{
+					eAction = QueueEditor::eaFileResume;
+				}
+				else if (pGroupInfo->GetPausedSize() == 0 && (pGroupInfo->m_iParCount > 0) &&
+					!(m_bLastPausePars && m_iLastEditEntry == m_iSelectedQueueEntry))
+				{
+					eAction = QueueEditor::eaFilePauseExtraPars;
+					m_bLastPausePars = true;
+				}
+				else
+				{
+					eAction = QueueEditor::eaFilePause;
+					m_bLastPausePars = false;
+				}
+			}
 		}
 
 		// map file-edit-actions to group-edit-actions
@@ -976,7 +1000,9 @@ bool NCursesFrontend::EditQueue(QueueEditor::EEditAction eAction, int iOffset)
 			QueueEditor::eaGroupMoveBottom, 
 			QueueEditor::eaGroupPause, 
 			QueueEditor::eaGroupResume, 
-			QueueEditor::eaGroupDelete };
+			QueueEditor::eaGroupDelete,
+			QueueEditor::eaGroupPauseAllPars,
+			QueueEditor::eaGroupPauseExtraPars };
 		eAction = FileToGroupMap[eAction];
 	}
 	else
@@ -986,14 +1012,15 @@ bool NCursesFrontend::EditQueue(QueueEditor::EEditAction eAction, int iOffset)
 		{
 			FileInfo* pFileInfo = (*pDownloadQueue)[m_iSelectedQueueEntry];
 			ID = pFileInfo->GetID();
-			bPause = !pFileInfo->GetPaused();
+			if (eAction == QueueEditor::eaFilePause)
+			{
+				eAction = !pFileInfo->GetPaused() ? QueueEditor::eaFilePause : QueueEditor::eaFileResume;
+			}
 		}
 		UnlockQueue();
-		if (eAction == QueueEditor::eaFilePause)
-		{
-			eAction = bPause ? QueueEditor::eaFilePause : QueueEditor::eaFileResume;
-		}
 	}
+
+	m_iLastEditEntry = m_iSelectedQueueEntry;
 
 	if (ID != 0)
 	{

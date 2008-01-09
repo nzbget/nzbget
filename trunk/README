@@ -30,32 +30,36 @@ Then you use client to send requests to server. The sample requests
 are: download nzb-file, list files in queue, etc.
 
 Standalone-tool, server and client are all contained in only one 
-executable file "NZBGet". The mode in which the program works 
+executable file "nzbget". The mode in which the program works 
 depends on command-line parameters passed to the program.
 
 =====================================
 2. Supported OS
 =====================================
 
-NZBGet is written in C++ and was initialy developen on Linux.
+NZBGet is written in C++ and was initialy developed on Linux.
 It was ported to Windows later and tested for compatibility with
 several POSIX-OS'es.
 
 The current version (0.3.1) should run at least on:
-
-  - Linux Debian 3.1 on x86;
+  - Linux Debian 4.0 on x86;
   - Linux BusyBox with uClibc on MIPSEL;
   - PC-BSD 1.4 (based on FreeBSD 6.2) on x86;
-  - Solaris 10 on x86;
   - Windows XP SP2 on x86.
+
+The previous version (0.3.0) was also tested on:
+  - Linux Debian 3.1 on x86;
+  - Solaris 10 on x86;
+  - Linux Debian 3.1 on SPARC (QEmu).
 
 Clients and servers running on different OS'es may communicate with
 each other. For example, you can use NZBGet as client on Windows to 
 control your NZBGet-server running on Linux.
 
 The download-section of NZBGet web-site provides binary files
-for Windows, but for POSIX-systems you need to compile the
-program yourself.
+for Windows. The binary packages for many routers and NAS devices are 
+also available in OPTWARE repository (http://www.nslu2-linux.org), 
+but for most POSIX-systems you need to compile the program yourself. 
 
 If you have downloaded binaries you can just jump to section 
 "Configuration".
@@ -65,8 +69,7 @@ If you have downloaded binaries you can just jump to section
 =====================================
 
 NZBGet is developed on a linux-system, but it should run on other
-POSIX platforms (tested on FreeBSD and Solaris for x86; although
-the par-support and uulib were not tested).
+POSIX platforms (see the list of tested platforms above).
 
 NZBGet absolutely needs the following libraries:
 
@@ -75,22 +78,24 @@ NZBGet absolutely needs the following libraries:
 
 And the following libraries are optional:
 
- - for curses-output-mode:
+ - for curses-output-mode (enabled by default):
    - libcurses   (usually part of commercial systems)
      or (better)
    - libncurses  (http://invisible-island.net/ncurses)
    
- - for par-check and -repair:
+ - for par-check and -repair (enabled by default):
    - libpar2     (http://parchive.sourceforge.net)
    - libsigc++   (http://libsigc.sourceforge.net)
 
- - for support of encoding-formats other than yEnc:
+ - for support of encoding-formats other than yEnc (disabled by default):
    - libuu       (http://www.fpx.de/fp/Software/UUDeview)
 
 All these libraries are included in modern Linux distributions and
-should be available as installable packages. On other systems you
-may need to download the libraries at the given URLs and compile
-them (see hints below).
+should be available as installable packages. Please note that you also 
+need the developer packages for these libraries too, they package names 
+have often suffix "dev" or "devel". On other systems you may need to 
+download the libraries at the given URLs and compile them (see hints below).
+
 
 =====================================
 4. Installation on POSIX
@@ -313,6 +318,15 @@ To check the status of server start client and connect it to server:
   
   nzbget -C
 
+The client have three different (display) outputmodes, which you can select
+in configuration file (on client computer) or in command line. Try them:
+
+  nzbget -o outputmode=log -C
+
+  nzbget -o outputmode=color -C
+
+  nzbget -o outputmode=curses -C
+
 To list files in server's queue:
 
   nzbget -L
@@ -334,6 +348,12 @@ or to pause files with IDs from 10 to 20:
 or to delete files from queue:
 
   nzbget -E D 3 10-15 20-21 16
+
+The edit-command has also a group-mode which affects all files from the
+same nzb-request. You need to pass one ID of any file in the group. For
+example to delete all files from the first nzb-request:
+
+  nzbget -E G D 1
 
 The switch "o" is useful to override options in configuration files. 
 For example:

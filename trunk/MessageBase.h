@@ -70,13 +70,16 @@ enum eRemoteEditAction
 	eRemoteEditActionFilePause,				// pause
 	eRemoteEditActionFileResume,			// resume (unpause)
 	eRemoteEditActionFileDelete,			// delete
+	eRemoteEditActionFilePauseAllPars,		// pause only (all) pars (does not affect other files)
+	eRemoteEditActionFilePauseExtraPars,	// pause only (almost all) pars, except main par-file (does not affect other files)
 	eRemoteEditActionGroupMoveOffset,		// move to m_iOffset relative to the current position in queue
 	eRemoteEditActionGroupMoveTop,			// move to top of queue
 	eRemoteEditActionGroupMoveBottom,		// move to bottom of queue
 	eRemoteEditActionGroupPause,			// pause
-	eRemoteEditActionGroupPausePars,		// pause only pars, except main par-file (does not affect other files)
 	eRemoteEditActionGroupResume,			// resume (unpause)
-	eRemoteEditActionGroupDelete			// delete
+	eRemoteEditActionGroupDelete,			// delete
+	eRemoteEditActionGroupPauseAllPars,		// pause only (all) pars (does not affect other files)
+	eRemoteEditActionGroupPauseExtraPars	// pause only (almost all) pars, except main par-file (does not affect other files)
 };
 
 // The basic NZBMessageBase struct

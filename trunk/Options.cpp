@@ -686,9 +686,13 @@ void Options::InitCommandLine(int argc, char* argv[])
 				{
 					m_iEditQueueAction = bGroup ? eRemoteEditActionGroupPause : eRemoteEditActionFilePause;
 				}
+				else if (!strcasecmp(optarg, "A"))
+				{
+					m_iEditQueueAction = bGroup ? eRemoteEditActionGroupPauseAllPars : eRemoteEditActionFilePauseAllPars;
+				}
 				else if (!strcasecmp(optarg, "R"))
 				{
-					m_iEditQueueAction = bGroup ? eRemoteEditActionGroupPausePars : eRemoteEditActionFilePause;
+					m_iEditQueueAction = bGroup ? eRemoteEditActionGroupPauseExtraPars : eRemoteEditActionFilePauseExtraPars;
 				}
 				else if (!strcasecmp(optarg, "U"))
 				{
@@ -756,8 +760,8 @@ void Options::PrintUsage(char* com)
 		"       B                    Move file(s) to the bottom of queue\n"
 		"       P                    Pause file(s)\n"
 		"       U                    Resume (unpause) file(s)\n"
-		// Pause-pars command is not yet implemented
-		//"       R                    Pause pars (only for groups)\n"
+		"       A                    Pause all pars (for groups)\n"
+		"       R                    Pause extra pars (for groups)\n"
 		"       D                    Delete file(s)\n"
 		"    <IDs>                   Comma-separated list of file-ids or ranges\n"
 		"                            of file-ids, e. g.: 1-5,3,10-22\n",
