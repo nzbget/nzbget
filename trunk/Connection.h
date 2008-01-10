@@ -47,7 +47,6 @@ protected:
 	int					m_iBufAvail;
 	char*				m_szBufPtr;
 	EStatus				m_eStatus;
-	bool				m_bCanceling;
 	int					m_iTimeout;
 	unsigned int		ResolveHostAddr(const char* szHost);
 	void				ReportError(const char* szMsgPrefix, const char* szMsgArg, int ErrCode);

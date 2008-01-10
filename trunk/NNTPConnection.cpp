@@ -145,7 +145,10 @@ bool NNTPConnection::AuthInfoUser(int iRecur)
 
 	if (char* p = strrchr(answer, '\r')) *p = '\0'; // remove last CRLF from error message
 
-	error("authorization for %s failed (Answer: %s)", m_pNetAddress->GetHost(), answer);
+	if (GetStatus() != csCancelled)
+	{
+		error("authorization for %s failed (Answer: %s)", m_pNetAddress->GetHost(), answer);
+	}
 	return false;
 }
 
@@ -180,7 +183,10 @@ bool NNTPConnection::AuthInfoPass(int iRecur)
 
 	if (char* p = strrchr(answer, '\r')) *p = '\0'; // remove last CRLF from error message
 
-	error("authorization for %s failed (Answer: %s)", m_pNetAddress->GetHost(), answer);
+	if (GetStatus() != csCancelled)
+	{
+		error("authorization for %s failed (Answer: %s)", m_pNetAddress->GetHost(), answer);
+	}
 	return false;
 }
 
@@ -214,15 +220,18 @@ bool NNTPConnection::JoinGroup(char* grp)
 		return true;
 	}
 
-	if (!answer)
+	if (GetStatus() != csCancelled)
 	{
-		warn("Error changing group on %s: Connection closed by remote host.", 
-			GetServer()->GetHost());
-	}
-	else
-	{
-		warn("Error changing group on %s to %s: Answer was \"%s\".",
-		     GetServer()->GetHost(), grp, answer);
+		if (!answer)
+		{
+			warn("Error changing group on %s: Connection closed by remote host.", 
+				GetServer()->GetHost());
+		}
+		else
+		{
+			warn("Error changing group on %s to %s: Answer was \"%s\".",
+				 GetServer()->GetHost(), grp, answer);
+		}
 	}
 
 	return false;

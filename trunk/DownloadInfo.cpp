@@ -34,6 +34,7 @@
 
 #include <stdlib.h>
 #include <string.h>
+#include <sys/stat.h>
 
 #include "nzbget.h"
 #include "DownloadInfo.h"
@@ -210,4 +211,26 @@ void FileInfo::LockOutputFile()
 void FileInfo::UnlockOutputFile()
 {
 	m_mutexOutputFile.Unlock();
+}
+
+bool FileInfo::IsDupe(const char* szFilename)
+{
+	struct stat buffer;
+	char fileName[1024];
+	snprintf(fileName, 1024, "%s%c%s", m_szDestDir, (int)PATH_SEPARATOR, szFilename);
+	fileName[1024-1] = '\0';
+	bool exists = !stat(fileName, &buffer);
+	if (exists)
+	{
+		return true;
+	}
+	snprintf(fileName, 1024, "%s%c%s_broken", m_szDestDir, (int)PATH_SEPARATOR, szFilename);
+	fileName[1024-1] = '\0';
+	exists = !stat(fileName, &buffer);
+	if (exists)
+	{
+		return true;
+	}
+
+	return false;
 }

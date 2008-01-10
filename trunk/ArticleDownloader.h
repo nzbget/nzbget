@@ -72,9 +72,11 @@ private:
 	int					m_iBytes;
 	YDecoder			m_YDecoder;
 	FILE*				m_pOutFile;
+	bool				m_bDuplicate;
 
 	EStatus				Download();
 	bool				Write(char* szLine, int iLen);
+	bool				PrepareFile(char* szLine);
 	EStatus				Decode();
 	void				FreeConnection(bool bKeepConnected);
 
