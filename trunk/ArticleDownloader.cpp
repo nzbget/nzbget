@@ -180,6 +180,8 @@ void ArticleDownloader::Run()
 			Status = Download();
 		}
 
+		bool bAuthError = m_pConnection && m_pConnection->GetAuthError();
+
 		if (connected)
 		{
 			// freeing connection allows other threads to start.
@@ -187,11 +189,12 @@ void ArticleDownloader::Run()
 			// if the problem occurs by Connect() we do not free the connection,
 			// to prevent starting of thousands of threads (cause each of them
 			// will also free it's connection after the same connect-error).
+
 			FreeConnection(Status == adFinished);
 		}
 
 		if ((Status == adFailed || (Status == adCrcError && g_pOptions->GetRetryOnCrcError())) && 
-			((retry > 1) || !connected) && !IsStopped())
+			((retry > 1) || !connected || bAuthError) && !IsStopped())
 		{
 			info("Waiting %i sec to retry", g_pOptions->GetRetryInterval());
 			int msec = 0;
@@ -235,7 +238,7 @@ void ArticleDownloader::Run()
 		}
 
 		// do not count connect-errors, only article- and group-errors
-		if (connected)
+		if (connected && !bAuthError)
 		{
 			level++;
 			if (level > iMaxLevel)
@@ -287,7 +290,10 @@ ArticleDownloader::EStatus ArticleDownloader::Download()
 
 	if (!grpchanged)
 	{
-		warn("Article %s @ %s failed: Could not join group", m_szInfoName, m_pConnection->GetServer()->GetHost());
+		if (!m_pConnection->GetAuthError())
+		{
+			warn("Article %s @ %s failed: Could not join group", m_szInfoName, m_pConnection->GetServer()->GetHost());
+		}
 		return adFailed;
 	}
 
@@ -311,7 +317,10 @@ ArticleDownloader::EStatus ArticleDownloader::Download()
 
 	if (!answer)
 	{
-		warn("Article %s @ %s failed: Connection closed by remote host", m_szInfoName, m_pConnection->GetServer()->GetHost());
+		if (!m_pConnection->GetAuthError())
+		{
+			warn("Article %s @ %s failed: Connection closed by remote host", m_szInfoName, m_pConnection->GetServer()->GetHost());
+		}
 		return adFailed;
 	}
 

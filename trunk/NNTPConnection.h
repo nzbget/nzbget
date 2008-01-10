@@ -35,6 +35,7 @@ class NNTPConnection : public Connection
 private:
 	char* 					m_szActiveGroup;
 	char*					m_szLineBuf;
+	bool					m_bAuthError;
 
 	virtual int 			DoConnect();
 	virtual int 			DoDisconnect();
@@ -49,6 +50,7 @@ public:
 	bool 					AuthInfoUser(int iRecur = 0);
 	bool 					AuthInfoPass(int iRecur = 0);
 	bool 					JoinGroup(char* grp);
+	bool					GetAuthError() { return m_bAuthError; }
 };
 
 
