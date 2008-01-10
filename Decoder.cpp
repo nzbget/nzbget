@@ -191,6 +191,11 @@ void YDecoder::Clear()
 	m_bAutoSeek = false;
 	m_bNeedSetPos = false;
 	m_bCrcCheck = false;
+	if (m_szArticleFilename)
+	{
+		free(m_szArticleFilename);
+	}
+	m_szArticleFilename = NULL;
 }
 
 /* from crc32.c (http://www.koders.com/c/fid699AFE0A656F0022C9D6B9D1743E697B69CE5815.aspx)
@@ -320,6 +325,10 @@ BreakLoop:
 				pb += 5; //=strlen("name=")
 				char* pe;
 				for (pe = pb; *pe != '\0' && *pe != '\n' && *pe != '\r'; pe++) ;
+				if (m_szArticleFilename)
+				{
+					free(m_szArticleFilename);
+				}
 				m_szArticleFilename = (char*)malloc(pe - pb + 1);
 				strncpy(m_szArticleFilename, pb, pe - pb);
 				m_szArticleFilename[pe - pb] = '\0';

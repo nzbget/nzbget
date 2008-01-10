@@ -125,6 +125,7 @@ public:
 	void				UnlockOutputFile();
 	bool				GetOutputInitialized() { return m_bOutputInitialized; }
 	void				SetOutputInitialized(bool bOutputInitialized) { m_bOutputInitialized = bOutputInitialized; }
+	bool				IsDupe(const char* szFilename);
 };
                               
 typedef std::deque<FileInfo*> DownloadQueue;

@@ -483,11 +483,17 @@ void QueueCoordinator::ArticleCompleted(ArticleDownloader* pArticleDownloader)
 	bool fileCompleted = (int)pFileInfo->GetArticles()->size() == pFileInfo->GetCompleted();
 
 	if (!pFileInfo->GetFilenameConfirmed() &&
-	        pArticleDownloader->GetStatus() == ArticleDownloader::adFinished &&
-	        pArticleDownloader->GetArticleFilename())
+		pArticleDownloader->GetStatus() == ArticleDownloader::adFinished &&
+		pArticleDownloader->GetArticleFilename())
 	{
 		pFileInfo->SetFilename(pArticleDownloader->GetArticleFilename());
 		pFileInfo->SetFilenameConfirmed(true);
+		if (g_pOptions->GetDupeCheck() && IsDupe(pFileInfo))
+		{
+			warn("File \"%s\" seems to be duplicate, cancelling download and deleting file from queue", pFileInfo->GetFilename());
+			fileCompleted = false;
+			DeleteQueueEntry(pFileInfo);
+		}
 	}
 
 	bool deleteFileObj = false;
@@ -567,19 +573,7 @@ bool QueueCoordinator::IsDupe(FileInfo* pFileInfo)
 	debug("Checking if the file is already queued");
 
 	// checking on disk
-	struct stat buffer;
-	char fileName[1024];
-	snprintf(fileName, 1024, "%s%c%s", pFileInfo->GetDestDir(), (int)PATH_SEPARATOR, pFileInfo->GetFilename());
-	fileName[1024-1] = '\0';
-	bool exists = !stat(fileName, &buffer);
-	if (exists)
-	{
-		return true;
-	}
-	snprintf(fileName, 1024, "%s%c%s_broken", pFileInfo->GetDestDir(), (int)PATH_SEPARATOR, pFileInfo->GetFilename());
-	fileName[1024-1] = '\0';
-	exists = !stat(fileName, &buffer);
-	if (exists)
+	if (pFileInfo->IsDupe(pFileInfo->GetFilename()))
 	{
 		return true;
 	}
@@ -589,7 +583,8 @@ bool QueueCoordinator::IsDupe(FileInfo* pFileInfo)
 	{
 		FileInfo* pQueueEntry = *it;
 		if (!strcmp(pFileInfo->GetDestDir(), pQueueEntry->GetDestDir()) &&
-		        !strcmp(pFileInfo->GetFilename(), pQueueEntry->GetFilename()))
+			!strcmp(pFileInfo->GetFilename(), pQueueEntry->GetFilename()) &&
+			pFileInfo != pQueueEntry)
 		{
 			return true;
 		}

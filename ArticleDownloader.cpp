@@ -68,6 +68,7 @@ ArticleDownloader::ArticleDownloader()
 	m_pConnection		= NULL;
 	m_eStatus			= adUndefined;
 	m_iBytes			= 0;
+	m_bDuplicate		= false;
 	memset(&m_tStartTime, 0, sizeof(m_tStartTime));
 	SetLastUpdateTimeNow();
 }
@@ -253,6 +254,11 @@ void ArticleDownloader::Run()
 
 	free(LevelStatus);
 
+	if (m_bDuplicate)
+	{
+		Status = adFinished;
+	}
+
 	if (Status != adFinished)
 	{
 		Status = adFailed;
@@ -290,7 +296,7 @@ ArticleDownloader::EStatus ArticleDownloader::Download()
 
 	if (!grpchanged)
 	{
-		if (!m_pConnection->GetAuthError())
+		if (!m_pConnection->GetAuthError() && !IsStopped())
 		{
 			warn("Article %s @ %s failed: Could not join group", m_szInfoName, m_pConnection->GetServer()->GetHost());
 		}
@@ -317,7 +323,7 @@ ArticleDownloader::EStatus ArticleDownloader::Download()
 
 	if (!answer)
 	{
-		if (!m_pConnection->GetAuthError())
+		if (!m_pConnection->GetAuthError() && !IsStopped())
 		{
 			warn("Article %s @ %s failed: Connection closed by remote host", m_szInfoName, m_pConnection->GetServer()->GetHost());
 		}
@@ -427,7 +433,100 @@ ArticleDownloader::EStatus ArticleDownloader::Download()
 
 bool ArticleDownloader::Write(char* szLine, int iLen)
 {
-	if (!m_pOutFile && !g_pOptions->GetDirectWrite())
+	if (!m_pOutFile && !PrepareFile(szLine))
+	{
+		return false;
+	}
+
+	m_iBytes += iLen;
+
+	if (g_pOptions->GetDecoder() == Options::dcYenc)
+	{
+		return m_YDecoder.Write(szLine, m_pOutFile);
+	}
+	else
+	{
+		return fwrite(szLine, 1, iLen, m_pOutFile) > 0;
+	}
+}
+
+bool ArticleDownloader::PrepareFile(char* szLine)
+{
+	// prepare file for writing
+	if (g_pOptions->GetDecoder() == Options::dcYenc)
+	{
+		if (!strncmp(szLine, "=ybegin part=", 13))
+		{
+			if (g_pOptions->GetDupeCheck())
+			{
+				m_pFileInfo->LockOutputFile();
+				if (!m_pFileInfo->GetOutputInitialized())
+				{
+					char* pb = strstr(szLine, "name=");
+					if (pb)
+					{
+						pb += 5; //=strlen("name=")
+						char* pe;
+						for (pe = pb; *pe != '\0' && *pe != '\n' && *pe != '\r'; pe++) ;
+						if (!m_szArticleFilename)
+						{
+							m_szArticleFilename = (char*)malloc(pe - pb + 1);
+							strncpy(m_szArticleFilename, pb, pe - pb);
+							m_szArticleFilename[pe - pb] = '\0';
+						}
+						if (m_pFileInfo->IsDupe(m_szArticleFilename))
+						{
+							m_bDuplicate = true;
+							return false;
+						}
+					}
+				}
+				if (!g_pOptions->GetDirectWrite())
+				{
+					m_pFileInfo->SetOutputInitialized(true);
+				}
+				m_pFileInfo->UnlockOutputFile();
+			}
+
+			if (g_pOptions->GetDirectWrite())
+			{
+				char* pb = strstr(szLine, "size=");
+				if (pb) 
+				{
+					m_pFileInfo->LockOutputFile();
+					if (!m_pFileInfo->GetOutputInitialized())
+					{
+						pb += 5; //=strlen("size=")
+						long iArticleFilesize = atol(pb);
+						if (!SetFileSize(m_szOutputFilename, iArticleFilesize))
+						{
+							error("Could not create file %s!", m_szOutputFilename);
+							return false;
+						}
+						m_pFileInfo->SetOutputInitialized(true);
+					}
+					m_pFileInfo->UnlockOutputFile();
+
+					m_pOutFile = fopen(m_szOutputFilename, "r+");
+					if (!m_pOutFile)
+					{
+						error("Could not open file %s", m_szOutputFilename);
+						return false;
+					}
+				}
+			}
+			else
+			{
+				m_pOutFile = fopen(m_szTempFilename, "w");
+				if (!m_pOutFile)
+				{
+					error("Could not create file %s", m_szTempFilename);
+					return false;
+				}
+			}
+		}
+	}
+	else
 	{
 		m_pOutFile = fopen(m_szTempFilename, "w");
 		if (!m_pOutFile)
@@ -436,51 +535,7 @@ bool ArticleDownloader::Write(char* szLine, int iLen)
 			return false;
 		}
 	}
-
-	if (!m_pOutFile && g_pOptions->GetDirectWrite())
-	{
-		if (!strncmp(szLine, "=ybegin part=", 13))
-		{
-			char* pb = strstr(szLine, "size=");
-			if (pb) 
-			{
-				m_pFileInfo->LockOutputFile();
-				if (!m_pFileInfo->GetOutputInitialized())
-				{
-					pb += 5; //=strlen("size=")
-					long iArticleFilesize = atol(pb);
-					if (!SetFileSize(m_szOutputFilename, iArticleFilesize))
-					{
-						error("Could not create file %s!", m_szOutputFilename);
-						return false;
-					}
-					m_pFileInfo->SetOutputInitialized(true);
-				}
-				m_pFileInfo->UnlockOutputFile();
-
-				m_pOutFile = fopen(m_szOutputFilename, "r+");
-				if (!m_pOutFile)
-				{
-					error("Could not open file %s", m_szOutputFilename);
-					return false;
-				}
-			}
-		}
-	}
-
-	bool bOK = false;
-
-	if (g_pOptions->GetDecoder() == Options::dcYenc)
-	{
-		bOK = m_YDecoder.Write(szLine, m_pOutFile);
-	}
-	else
-	{
-		bOK = fwrite(szLine, 1, iLen, m_pOutFile) > 0;
-	}
-
-	m_iBytes += iLen;
-	return bOK;
+	return true;
 }
 
 ArticleDownloader::EStatus ArticleDownloader::Decode()
@@ -489,8 +544,6 @@ ArticleDownloader::EStatus ArticleDownloader::Decode()
 		(g_pOptions->GetDecoder() == Options::dcYenc))
 	{
 		SetStatus(adDecoding);
-		struct _timeval StartTime, EndTime;
-		gettimeofday(&StartTime, 0);
 
 		char tmpdestfile[1024];
 		char* szDecoderTempFilename = NULL;
@@ -530,13 +583,7 @@ ArticleDownloader::EStatus ArticleDownloader::Decode()
 			m_szArticleFilename = strdup(pDecoder->GetArticleFilename());
 		}
 
-		gettimeofday(&EndTime, 0);
 		remove(m_szTempFilename);
-#ifdef WIN32
-		float fDeltaTime = (float)((EndTime.time - StartTime.time) * 1000 + (EndTime.millitm - StartTime.millitm));
-#else
-		float fDeltaTime = ((EndTime.tv_sec - StartTime.tv_sec) * 1000000 + (EndTime.tv_usec - StartTime.tv_usec)) / 1000.0;
-#endif
 		bool bCrcError = pDecoder->GetCrcError();
 		if (pDecoder != &m_YDecoder)
 		{
@@ -546,7 +593,6 @@ ArticleDownloader::EStatus ArticleDownloader::Decode()
 		if (bOK)
 		{
 			info("Successfully downloaded %s", m_szInfoName);
-			debug("Decode time %.1f ms", fDeltaTime);
 
 			if (g_pOptions->GetDirectWrite() && g_pOptions->GetContinuePartial())
 			{
@@ -617,9 +663,23 @@ void ArticleDownloader::Stop()
 	debug("ArticleDownloader stopped successfully");
 }
 
+bool ArticleDownloader::Terminate()
+{
+	NNTPConnection* pConnection = m_pConnection;
+	bool terminated = Kill();
+	if (terminated && pConnection)
+	{
+		debug("Terminating connection");
+		pConnection->Cancel();
+		pConnection->Disconnect();
+		g_pServerPool->FreeConnection(pConnection, true);
+	}
+	return terminated;
+}
+
 void ArticleDownloader::FreeConnection(bool bKeepConnected)
 {
-	if (m_pConnection)
+	if (m_pConnection)							
 	{
 		debug("Releasing connection");
 		m_mutexConnection.Lock();
@@ -826,18 +886,4 @@ void ArticleDownloader::CompleteFileParts()
 	}
 
 	SetStatus(adFinished);
-}
-
-bool ArticleDownloader::Terminate()
-{
-	NNTPConnection* pConnection = m_pConnection;
-	bool terminated = Kill();
-	if (terminated && pConnection)
-	{
-		debug("Terminating connection");
-		pConnection->Cancel();
-		pConnection->Disconnect();
-		g_pServerPool->FreeConnection(pConnection, true);
-	}
-	return terminated;
 }

@@ -88,7 +88,6 @@ Connection::Connection(NetAddress* pNetAddress)
 	m_eStatus			= csDisconnected;
 	m_iSocket			= INVALID_SOCKET;
 	m_iBufAvail			= 0;
-	m_bCanceling		= false;
 	m_iTimeout			= 60;
 	m_szReadBuf			= (char*)malloc(CONNECTION_READBUFFER_SIZE + 1);
 }
@@ -131,7 +130,6 @@ int Connection::Disconnect()
 	int iRes = DoDisconnect();
 
 	m_eStatus = csDisconnected;
-	m_bCanceling = false;
 	m_iSocket = INVALID_SOCKET;
 	m_iBufAvail = 0;
 
@@ -165,9 +163,6 @@ int Connection::WriteLine(char* line)
 
 	int iRes = DoWriteLine(line);
 
-	if (iRes == EOF)
-		Connection::DoDisconnect();
-
 	return iRes;
 }
 
@@ -193,9 +188,6 @@ char* Connection::ReadLine(char* pBuffer, int iSize, int* pBytesRead)
 	}
 
 	char* res = DoReadLine(pBuffer, iSize, pBytesRead);
-
-	if (res == NULL)
-		Connection::DoDisconnect();
 
 	return res;
 }
@@ -476,7 +468,7 @@ SOCKET Connection::DoAccept()
 
 	SOCKET iSocket = accept(GetSocket(), (struct sockaddr *) & ClientAddress, &SockLen);
 
-	if (iSocket == INVALID_SOCKET && !m_bCanceling)
+	if (iSocket == INVALID_SOCKET && m_eStatus != csCancelled)
 	{
 		ReportError("Could not accept connection", NULL, 0);
 	}
@@ -487,15 +479,14 @@ SOCKET Connection::DoAccept()
 void Connection::Cancel()
 {
 	debug("Cancelling connection");
-	m_bCanceling = true;
 	if (m_iSocket != INVALID_SOCKET)
 	{
+		m_eStatus = csCancelled;
 		int r = shutdown(m_iSocket, SHUT_RDWR);
 		if (r == -1)
 		{
 			ReportError("Could not shutdown connection", NULL, 0);
 		}
-		m_eStatus = csCancelled;
 	}
 }
 
