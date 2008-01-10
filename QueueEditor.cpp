@@ -207,15 +207,9 @@ bool QueueEditor::InternEditList(DownloadQueue* pDownloadQueue, IDList* pIDList,
 					break;
 
 				case eaFileMoveOffset:
-					MoveEntry(pDownloadQueue, pItem->m_pFileInfo, pItem->m_iOffset);
-					break;
-
 				case eaFileMoveTop:
-					MoveEntry(pDownloadQueue, pItem->m_pFileInfo, -MAX_ID);
-					break;
-
 				case eaFileMoveBottom:
-					MoveEntry(pDownloadQueue, pItem->m_pFileInfo, +MAX_ID);
+					MoveEntry(pDownloadQueue, pItem->m_pFileInfo, pItem->m_iOffset);
 					break;
 
 				case eaFileDelete:
@@ -243,8 +237,18 @@ bool QueueEditor::InternEditList(DownloadQueue* pDownloadQueue, IDList* pIDList,
 void QueueEditor::PrepareList(DownloadQueue* pDownloadQueue, ItemList* pItemList, IDList* pIDList, bool bSmartOrder, 
 	EEditAction EEditAction, int iOffset)
 {
+	if (EEditAction == eaFileMoveTop)
+	{
+		iOffset = -MAX_ID;
+	}
+	else if (EEditAction == eaFileMoveBottom)
+	{
+		iOffset = MAX_ID;
+	}
+
 	pItemList->reserve(pIDList->size());
-	if (bSmartOrder && iOffset != 0 && EEditAction == eaFileMoveOffset)
+	if (bSmartOrder && iOffset != 0 && 
+		(EEditAction == eaFileMoveOffset || EEditAction == eaFileMoveTop || EEditAction == eaFileMoveBottom))
 	{
 		//add IDs to list in order they currently have in download queue
 		int iLastDestPos = -1;

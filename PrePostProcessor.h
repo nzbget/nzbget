@@ -82,7 +82,7 @@ private:
 
 	void				PausePars(DownloadQueue* pDownloadQueue, const char* szNZBFilename);
 	void				CheckIncomingNZBs();
-	bool				WasLastUnpausedInCollection(DownloadQueue* pDownloadQueue, FileInfo* pFileInfo);
+	bool				WasLastInCollection(DownloadQueue* pDownloadQueue, FileInfo* pFileInfo, bool bIgnorePaused);
 	void				ExecPostScript(const char* szPath, const char* szNZBFilename, const char * szParFilename, int iParStatus);
 
 
