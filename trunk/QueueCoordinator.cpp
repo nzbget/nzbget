@@ -572,15 +572,16 @@ bool QueueCoordinator::IsDupe(FileInfo* pFileInfo)
 	snprintf(fileName, 1024, "%s%c%s", pFileInfo->GetDestDir(), (int)PATH_SEPARATOR, pFileInfo->GetFilename());
 	fileName[1024-1] = '\0';
 	bool exists = !stat(fileName, &buffer);
-	if (!exists)
+	if (exists)
 	{
-		snprintf(fileName, 1024, "%s%c%s_broken", pFileInfo->GetDestDir(), (int)PATH_SEPARATOR, pFileInfo->GetFilename());
-		fileName[1024-1] = '\0';
-		exists = !stat(fileName, &buffer);
-		if (exists)
-		{
-			return true;
-		}
+		return true;
+	}
+	snprintf(fileName, 1024, "%s%c%s_broken", pFileInfo->GetDestDir(), (int)PATH_SEPARATOR, pFileInfo->GetFilename());
+	fileName[1024-1] = '\0';
+	exists = !stat(fileName, &buffer);
+	if (exists)
+	{
+		return true;
 	}
 
 	// checking in queue

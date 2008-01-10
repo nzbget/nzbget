@@ -185,7 +185,7 @@ void PrePostProcessor::QueueCoordinatorUpdate(Subject * Caller, void * Aspect)
 #ifndef DISABLE_PARCHECK
 			!AddPar(pAspect->pFileInfo, pAspect->eAction == QueueCoordinator::eaFileDeleted) &&
 #endif
-			WasLastUnpausedInCollection(pAspect->pDownloadQueue, pAspect->pFileInfo))
+			WasLastInCollection(pAspect->pDownloadQueue, pAspect->pFileInfo, true))
 		{
 			char szNZBNiceName[1024];
 			pAspect->pFileInfo->GetNiceNZBName(szNZBNiceName, 1024);
@@ -193,7 +193,7 @@ void PrePostProcessor::QueueCoordinatorUpdate(Subject * Caller, void * Aspect)
 			{
 				info("Collection %s completely downloaded", szNZBNiceName);
 			}
-			else
+			else if (WasLastInCollection(pAspect->pDownloadQueue, pAspect->pFileInfo, false))
 			{
 				info("Collection %s deleted from queue", szNZBNiceName);
 			}
@@ -284,16 +284,16 @@ void PrePostProcessor::CheckIncomingNZBs()
 }
 
 /**
-* Check if the completed file was last unpaused file in nzb-collection
+* Check if the completed file was last (unpaused, if bIgnorePaused is "true") file in nzb-collection
 */
-bool PrePostProcessor::WasLastUnpausedInCollection(DownloadQueue* pDownloadQueue, FileInfo * pFileInfo)
+bool PrePostProcessor::WasLastInCollection(DownloadQueue* pDownloadQueue, FileInfo * pFileInfo, bool bIgnorePaused)
 {
 	debug("File %s completed or deleted", pFileInfo->GetFilename());
 
 	for (DownloadQueue::iterator it = pDownloadQueue->begin(); it != pDownloadQueue->end(); it++)
 	{
 		FileInfo* pFileInfo2 = *it;
-		if (pFileInfo2 != pFileInfo && !pFileInfo2->GetPaused() &&
+		if (pFileInfo2 != pFileInfo && (!bIgnorePaused || !pFileInfo2->GetPaused()) &&
 			!strcmp(pFileInfo2->GetNZBFilename(), pFileInfo->GetNZBFilename()))
 		{
 			return false;
