@@ -414,9 +414,15 @@ ArticleDownloader::EStatus ArticleDownloader::Download()
 		return adFailed;
 	}
 
-	FreeConnection(true);
-
-	return Decode();
+	if (Status == adRunning)
+	{
+		FreeConnection(true);
+		return Decode();
+	}
+	else
+	{
+		return Status;
+	}
 }
 
 bool ArticleDownloader::Write(char* szLine, int iLen)
@@ -617,7 +623,7 @@ void ArticleDownloader::FreeConnection(bool bKeepConnected)
 	{
 		debug("Releasing connection");
 		m_mutexConnection.Lock();
-		if (!bKeepConnected)
+		if (!bKeepConnected || m_pConnection->GetStatus() == Connection::csCancelled)
 		{
 			m_pConnection->Disconnect();
 		}
@@ -830,6 +836,7 @@ bool ArticleDownloader::Terminate()
 	{
 		debug("Terminating connection");
 		pConnection->Cancel();
+		pConnection->Disconnect();
 		g_pServerPool->FreeConnection(pConnection, true);
 	}
 	return terminated;
