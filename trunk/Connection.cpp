@@ -131,6 +131,9 @@ int Connection::Disconnect()
 	int iRes = DoDisconnect();
 
 	m_eStatus = csDisconnected;
+	m_bCanceling = false;
+	m_iSocket = INVALID_SOCKET;
+	m_iBufAvail = 0;
 
 	return iRes;
 }
