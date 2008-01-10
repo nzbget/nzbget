@@ -47,6 +47,7 @@ NNTPConnection::NNTPConnection(NewsServer* server) : Connection(server)
 {
 	m_szActiveGroup = NULL;
 	m_szLineBuf = (char*)malloc(CONNECTION_LINEBUFFER_SIZE);
+	m_bAuthError = false;
 }
 
 NNTPConnection::~NNTPConnection()
@@ -66,6 +67,8 @@ char* NNTPConnection::Request(char* req)
 		return NULL;
 	}
 
+	m_bAuthError = false;
+
 	WriteLine(req);
 
 	char* answer = ReadLine(m_szLineBuf, CONNECTION_LINEBUFFER_SIZE, NULL);
@@ -82,6 +85,7 @@ char* NNTPConnection::Request(char* req)
 		//authentication required!
 		if (!Authenticate())
 		{
+			m_bAuthError = true;
 			return NULL;
 		}
 
@@ -139,6 +143,8 @@ bool NNTPConnection::AuthInfoUser(int iRecur)
 		return AuthInfoUser(++iRecur);
 	}
 
+	if (char* p = strrchr(answer, '\r')) *p = '\0'; // remove last CRLF from error message
+
 	error("authorization for %s failed (Answer: %s)", m_pNetAddress->GetHost(), answer);
 	return false;
 }
@@ -172,6 +178,8 @@ bool NNTPConnection::AuthInfoPass(int iRecur)
 		return AuthInfoPass(++iRecur);
 	}
 
+	if (char* p = strrchr(answer, '\r')) *p = '\0'; // remove last CRLF from error message
+
 	error("authorization for %s failed (Answer: %s)", m_pNetAddress->GetHost(), answer);
 	return false;
 }
@@ -189,6 +197,10 @@ bool NNTPConnection::JoinGroup(char* grp)
 	tmp[1024-1] = '\0';
 
 	char* answer = Request(tmp);
+	if (m_bAuthError)
+	{
+		return false;
+	}
 
 	if ((answer) && (!strncmp(answer, "2", 1)))
 	{
