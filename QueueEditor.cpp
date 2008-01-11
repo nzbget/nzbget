@@ -216,6 +216,11 @@ bool QueueEditor::InternEditList(DownloadQueue* pDownloadQueue, IDList* pIDList,
 					DeleteEntry(pItem->m_pFileInfo);
 					break;
 
+				case eaFilePauseAllPars:
+				case eaFilePauseExtraPars:
+					// remove compiler warning "enumeration not handled in switch"
+					break;
+
 				case eaGroupPause:
 				case eaGroupResume:
 				case eaGroupDelete:
