@@ -139,11 +139,10 @@ void ServerPool::InitConnections()
 
 NNTPConnection* ServerPool::GetConnection(int iLevel, bool bWait)
 {
-	debug("Getting connection");
-
 	bool bWaitVal = false;
 	if (bWait)
 	{
+		debug("Getting connection (wait)");
 		bWaitVal = m_Semaphores[iLevel]->Wait();
 	}
 	else
@@ -184,7 +183,10 @@ NNTPConnection* ServerPool::GetConnection(int iLevel, bool bWait)
 
 void ServerPool::FreeConnection(NNTPConnection* pConnection, bool bUsed)
 {
-	debug("Freeing connection");
+	if (bUsed)
+	{
+		debug("Freeing used connection");
+	}
 
 	m_mutexConnections.Lock();
 
