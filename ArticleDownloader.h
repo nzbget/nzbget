@@ -68,8 +68,6 @@ private:
 	char*				m_szOutputFilename;
 	time_t				m_tLastUpdateTime;
 	static const char*	m_szJobStatus[];
-	_timeval			m_tStartTime;
-	int					m_iBytes;
 	YDecoder			m_YDecoder;
 	FILE*				m_pOutFile;
 	bool				m_bDuplicate;
@@ -103,8 +101,6 @@ public:
 	const char*			GetInfoName() { return m_szInfoName; }
 	void				CompleteFileParts();
 	void				SetConnection(NNTPConnection* pConnection) { m_pConnection = pConnection; }
-	_timeval*			GetStartTime() { return &m_tStartTime; }
-	int					GetBytes() { return m_iBytes; }
 
 	void				LogDebugInfo();
 };
@@ -114,6 +110,7 @@ class DownloadSpeedMeter
 public:
 	virtual				~DownloadSpeedMeter() {};
 	virtual float		CalcCurrentDownloadSpeed() = 0;
+	virtual void		AddSpeedReading(int iBytes) = 0;
 };
                       
 #endif

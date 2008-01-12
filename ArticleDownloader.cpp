@@ -67,9 +67,7 @@ ArticleDownloader::ArticleDownloader()
 	m_szOutputFilename	= NULL;
 	m_pConnection		= NULL;
 	m_eStatus			= adUndefined;
-	m_iBytes			= 0;
 	m_bDuplicate		= false;
-	memset(&m_tStartTime, 0, sizeof(m_tStartTime));
 	SetLastUpdateTimeNow();
 }
 
@@ -345,8 +343,6 @@ ArticleDownloader::EStatus ArticleDownloader::Download()
 		m_YDecoder.SetCrcCheck(g_pOptions->GetCrcCheck());
 	}
 
-	gettimeofday(&m_tStartTime, 0);
-	m_iBytes = 0;
 	m_pOutFile = NULL;
 	EStatus Status = adRunning;
 	const int LineBufSize = 1024*10;
@@ -385,6 +381,8 @@ ArticleDownloader::EStatus ArticleDownloader::Download()
 		{
 			line++;
 		}
+
+		g_pDownloadSpeedMeter->AddSpeedReading(iLen);
 
 		if (!Write(line, iLen))
 		{
@@ -437,8 +435,6 @@ bool ArticleDownloader::Write(char* szLine, int iLen)
 	{
 		return false;
 	}
-
-	m_iBytes += iLen;
 
 	if (g_pOptions->GetDecoder() == Options::dcYenc)
 	{

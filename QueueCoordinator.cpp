@@ -62,6 +62,12 @@ QueueCoordinator::QueueCoordinator()
 	m_DownloadQueue.clear();
 	m_ActiveDownloads.clear();
 
+	for (int i = 0; i < SPEEDMETER_SECONDS; i++)
+	{
+		m_iSpeedBytes[i] = 0;
+	}
+	m_iSpeedBytesIndex = 0;
+
 	YDecoder::Init();
 }
 
@@ -142,8 +148,10 @@ void QueueCoordinator::Run()
 		// sleep longer in StandBy
 		int iSleepInterval = (g_pOptions->GetPause() || !m_bHasMoreJobs) ? 100 : 5;
 		usleep(iSleepInterval * 1000);
-		iResetCounter+= iSleepInterval;
 
+		AddSpeedReading(0);
+
+		iResetCounter+= iSleepInterval;
 		if (iResetCounter >= 1000)
 		{
 			// this code should not be called very often, once per second is OK
@@ -271,37 +279,55 @@ bool QueueCoordinator::AddFileToQueue(const char* szFileName)
 	return true;
 }
 
+/*
+ * NOTE: see note to "AddSpeedReading"
+ */
 float QueueCoordinator::CalcCurrentDownloadSpeed()
 {
-	float fSpeedAllDownloads = 0;
+	int iTotal = 0;
 
-	m_mutexDownloadQueue.Lock();
-
-	struct _timeval curtime; 
-	gettimeofday(&curtime, 0);
-
-	for (ActiveDownloads::iterator it = m_ActiveDownloads.begin(); it != m_ActiveDownloads.end(); it++)
+	for (int i = 0; i < SPEEDMETER_SECONDS; i++)
 	{
-		ArticleDownloader* pArticleDownloader = *it;
-
-		float fSpeed = 0.0f;
-		struct _timeval* arttime = pArticleDownloader->GetStartTime();
-
-		if (!EmptyTime(arttime))
-		{
-			float tdiff = DiffTime(&curtime, arttime);
-			if (tdiff > 0)
-			{
-				fSpeed = (pArticleDownloader->GetBytes() / tdiff / 1024);
-			}
-		}
-
-		fSpeedAllDownloads += fSpeed;
+		iTotal += m_iSpeedBytes[i];
 	}
 
-	m_mutexDownloadQueue.Unlock();
+	float fSpeed = iTotal / 1024.0 / SPEEDMETER_SECONDS;
 
-	return fSpeedAllDownloads;
+	return fSpeed;
+}
+
+/*
+ * NOTE: we should use mutex by access to m_iSpeedBytes and m_iSpeedBytesIndex,
+ * but this would results in a big performance loss (the function 
+ * "AddSpeedReading" is called extremly often), so we better agree with calculation 
+ * errors possible because of simultaneuos access from several threads.
+ * The used algorithm is able to recover after few seconds.
+ * In any case the calculation errors can not result in fatal system 
+ * errors (segmentation faults).
+ */
+void QueueCoordinator::AddSpeedReading(int iBytes)
+{
+	int iIndex = time(NULL);
+
+	if (iIndex - m_iSpeedBytesIndex > SPEEDMETER_SECONDS)
+	{
+		m_iSpeedBytesIndex = iIndex - SPEEDMETER_SECONDS - 1;
+	}
+
+	for (int i = m_iSpeedBytesIndex + 1; i < iIndex; i++)
+	{
+		m_iSpeedBytes[i % SPEEDMETER_SECONDS] = 0;
+	}
+
+	if (iIndex > m_iSpeedBytesIndex)
+	{
+		m_iSpeedBytesIndex = iIndex;
+		m_iSpeedBytes[iIndex % SPEEDMETER_SECONDS] = iBytes;
+	}
+	else
+	{
+		m_iSpeedBytes[m_iSpeedBytesIndex % SPEEDMETER_SECONDS] += iBytes;
+	}
 }
 
 long long QueueCoordinator::CalcRemainingSize()

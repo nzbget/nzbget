@@ -12,6 +12,8 @@ nzbget-0.3.1:
   - Significantly better download speed is now possible on fast connection; 
     it was limited by pauses on starting of new articles' downloads; 
     the synchronisation mechanism was reworked to fix this issue;
+  - Download speed meter is much more accurate, especially on fast connections;
+    this also means better speed throttling;
   - Speed optimisations in internal decoder (up to 25% faster);
   - CRC-calculation can be bypassed to increase performance on slow CPUs
     (option "crccheck");
