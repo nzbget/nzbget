@@ -63,6 +63,10 @@ private:
 	Mutex			 		m_mutexDownloadQueue;
 	bool					m_bHasMoreJobs;
 
+	static const int		SPEEDMETER_SECONDS = 5;
+    int						m_iSpeedBytes[SPEEDMETER_SECONDS];
+    int						m_iSpeedBytesIndex;
+
 	bool					GetNextArticle(FileInfo* &pFileInfo, ArticleInfo* &pArticleInfo);
 	void					StartArticleDownload(FileInfo* pFileInfo, ArticleInfo* pArticleInfo, NNTPConnection* pConnection);
 	void					BuildArticleFilename(ArticleDownloader* pArticleDownloader, FileInfo* pFileInfo, ArticleInfo* pArticleInfo);
@@ -76,8 +80,9 @@ public:
 	virtual					~QueueCoordinator();
 	virtual void			Run();
 	virtual void 			Stop();
-	long long 				CalcRemainingSize();                      
+	long long 				CalcRemainingSize();
 	virtual float			CalcCurrentDownloadSpeed();
+	virtual void			AddSpeedReading(int iBytes);
 	void					Update(Subject* Caller, void* Aspect);
 
 	// Editing the queue
