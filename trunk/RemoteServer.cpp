@@ -80,40 +80,52 @@ RemoteServer::RemoteServer()
 	debug("Creating RemoteServer");
 
 	m_pNetAddress = new NetAddress(g_pOptions->GetServerIP(), g_pOptions->GetServerPort());
-	m_pConnection = new Connection(m_pNetAddress);
-	m_pConnection->SetTimeout(g_pOptions->GetConnectionTimeout());
+	m_pConnection = NULL;
 }
 
 RemoteServer::~RemoteServer()
 {
 	debug("Destroying RemoteServer");
 
+	if (m_pConnection)
+	{
+		delete m_pConnection;
+	}
 	delete m_pNetAddress;
-	delete m_pConnection;
 }
 
 void RemoteServer::Run()
 {
 	debug("Entering RemoteServer-loop");
 
-	m_pConnection->Bind();
-
 	while (!IsStopped())
 	{
-		// Accept connections and store the "new" socket value
-		SOCKET iSocket = m_pConnection->Accept();
-		if (iSocket == INVALID_SOCKET)
+		bool bBind = true;
+
+		if (!m_pConnection)
 		{
+			m_pConnection = new Connection(m_pNetAddress);
+			m_pConnection->SetTimeout(g_pOptions->GetConnectionTimeout());
+			m_pConnection->SetSuppressErrors(false);
+			bBind = m_pConnection->Bind() == 0;
+		}
+
+		// Accept connections and store the "new" socket value
+		SOCKET iSocket = INVALID_SOCKET;
+		if (bBind)
+		{
+			iSocket = m_pConnection->Accept();
+		}
+		if (!bBind || iSocket == INVALID_SOCKET)
+		{
+			// Remote server could not bind or accept connection, waiting 1/2 sec and try again
 			if (IsStopped())
 			{
 				break; 
 			}
-			// error binding on port. wait 0.5 sec. and retry
 			usleep(500 * 1000);
 			delete m_pConnection;
-			m_pConnection = new Connection(m_pNetAddress);
-			m_pConnection->SetTimeout(g_pOptions->GetConnectionTimeout());
-			m_pConnection->Bind();
+			m_pConnection = NULL;
 			continue;
 		}
 
@@ -122,7 +134,10 @@ void RemoteServer::Run()
 		commandThread->SetSocket(iSocket);
 		commandThread->Start();
 	}
-	m_pConnection->Disconnect();
+	if (m_pConnection)
+	{
+		m_pConnection->Disconnect();
+	}
 
 	debug("Exiting RemoteServer-loop");
 }
@@ -130,10 +145,14 @@ void RemoteServer::Run()
 void RemoteServer::Stop()
 {
 	Thread::Stop();
-	m_pConnection->Cancel();
+	if (m_pConnection)
+	{
+		m_pConnection->SetSuppressErrors(true);
+		m_pConnection->Cancel();
 #ifdef WIN32
-	m_pConnection->Disconnect();
+		m_pConnection->Disconnect();
 #endif
+	}
 }
 
 //*****************************************************************

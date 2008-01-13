@@ -294,7 +294,8 @@ UpdateInterval=200
 
 # Set the IP on which the server listen and which client uses to contact 
 # the server. It could be dns-hostname or ip-address (more effective since
-# does not require dns-lookup)
+# does not require dns-lookup).
+# If you want the server to listen to all interfaces, use "0.0.0.0"
 ServerIp=127.0.0.1
 
 # Set the port which the server & client use

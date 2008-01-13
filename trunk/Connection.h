@@ -48,8 +48,16 @@ protected:
 	char*				m_szBufPtr;
 	EStatus				m_eStatus;
 	int					m_iTimeout;
+	bool				m_bSuppressErrors;
+
 	unsigned int		ResolveHostAddr(const char* szHost);
 	void				ReportError(const char* szMsgPrefix, const char* szMsgArg, int ErrCode);
+	virtual int 		DoConnect();
+	virtual int			DoDisconnect();
+	int					DoBind();
+	int					DoWriteLine(char* text);
+	char*				DoReadLine(char* pBuffer, int iSize, int* pBytesRead);
+	SOCKET				DoAccept();
 
 public:
 						Connection(NetAddress* pNetAddress);
@@ -70,14 +78,8 @@ public:
 	SOCKET				GetSocket() { return m_iSocket; }
 	void				SetTimeout(int iTimeout) { m_iTimeout = iTimeout; }
 	EStatus				GetStatus() { return m_eStatus; }
-
-protected:
-	virtual int 		DoConnect();
-	virtual int			DoDisconnect();
-	int					DoBind();
-	int					DoWriteLine(char* text);
-	char*				DoReadLine(char* pBuffer, int iSize, int* pBytesRead);
-	SOCKET				DoAccept();
+	void				SetSuppressErrors(bool bSuppressErrors) { m_bSuppressErrors = bSuppressErrors; }
+	bool				GetSuppressErrors() { return m_bSuppressErrors; }
 };
 
 #endif

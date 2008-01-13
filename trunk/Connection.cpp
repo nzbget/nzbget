@@ -89,6 +89,7 @@ Connection::Connection(NetAddress* pNetAddress)
 	m_iSocket			= INVALID_SOCKET;
 	m_iBufAvail			= 0;
 	m_iTimeout			= 60;
+	m_bSuppressErrors	= true;
 	m_szReadBuf			= (char*)malloc(CONNECTION_READBUFFER_SIZE + 1);
 }
 
@@ -147,7 +148,10 @@ int Connection::Bind()
 
 	int iRes = DoBind();
 
-	m_eStatus = csListening;
+	if (iRes == 0)
+	{
+		m_eStatus = csListening;
+	}
 
 	return iRes;
 }
@@ -439,7 +443,18 @@ int Connection::DoBind()
 	struct sockaddr_in	sSocketAddress;
 	memset(&sSocketAddress, '\0', sizeof(sSocketAddress));
 	sSocketAddress.sin_family = AF_INET;
-	sSocketAddress.sin_addr.s_addr = htonl(INADDR_ANY);
+	if (!m_pNetAddress->GetHost() || strlen(m_pNetAddress->GetHost()) == 0)
+	{
+		sSocketAddress.sin_addr.s_addr = htonl(INADDR_ANY);
+	}
+	else
+	{
+		sSocketAddress.sin_addr.s_addr = ResolveHostAddr(m_pNetAddress->GetHost());
+		if (sSocketAddress.sin_addr.s_addr == (unsigned int)-1)
+		{
+			return -1;
+		}
+	}
 	sSocketAddress.sin_port = htons(m_pNetAddress->GetPort());
 	int opt = 1;
 	setsockopt(m_iSocket, SOL_SOCKET, SO_REUSEADDR, (char*)&opt, sizeof(opt));
@@ -505,9 +520,23 @@ void Connection::ReportError(const char* szMsgPrefix, const char* szMsgArg, int 
 	snprintf(szErrPrefix, 1024, szMsgPrefix, szMsgArg);
 	szErrPrefix[1024-1] = '\0';
 #ifdef WIN32
-	debug("%s: ErrNo %i", szErrPrefix, ErrCode);
+	if (m_bSuppressErrors)
+	{
+		debug("%s: ErrNo %i", szErrPrefix, ErrCode);
+	}
+	else
+	{
+		error("%s: ErrNo %i", szErrPrefix, ErrCode);
+	}
 #else
 	const char* szErrMsg = hstrerror(ErrCode);
-	debug("%s: ErrNo %i, %s", szErrPrefix, ErrCode, szErrMsg);
+	if (m_bSuppressErrors)
+	{
+		debug("%s: ErrNo %i, %s", szErrPrefix, ErrCode, szErrMsg);
+	}
+	else
+	{
+		error("%s: ErrNo %i, %s", szErrPrefix, ErrCode, szErrMsg);
+	}
 #endif
 }
