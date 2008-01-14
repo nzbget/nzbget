@@ -39,8 +39,8 @@ private:
 	bool			m_bVerbose;
 
 	bool			InitConnection();
-	void			InitMessageBase(SNZBMessageBase* pMessageBase, int iRequest, int iSize);
-	void			ReceiveCommandResult();
+	void			InitMessageBase(SNZBRequestBase* pMessageBase, int iRequest, int iSize);
+	bool			ReceiveBoolResponse();
 	void			printf(char* msg, ...);
 	void			perror(char* msg);
 

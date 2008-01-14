@@ -69,7 +69,7 @@ const unsigned int g_iMessageRequestSizes[] =
 		sizeof(SNZBDumpDebugRequest),
 		sizeof(SNZBEditQueueRequest),
 		sizeof(SNZBLogRequest),
-		sizeof(SNZBMessageBase)
+		sizeof(SNZBRequestBase)
     };
 
 //*****************************************************************
@@ -295,18 +295,29 @@ void RequestProcessor::Dispatch()
 //*****************************************************************
 // Commands
 
-void MessageCommand::SendResponse(char* szAnswer)
+void MessageCommand::SendBoolResponse(bool bSuccess, const char* szText)
 {
-	send(m_iSocket, szAnswer, strlen(szAnswer), 0);
+	// all bool-responses have the same format of structure, we use SNZBDownloadResponse here
+	SNZBDownloadResponse BoolResponse;
+	memset(&BoolResponse, 0, sizeof(BoolResponse));
+	BoolResponse.m_MessageBase.m_iSignature = htonl(NZBMESSAGE_SIGNATURE);
+	BoolResponse.m_MessageBase.m_iStructSize = htonl(sizeof(BoolResponse));
+	BoolResponse.m_bSuccess = htonl(bSuccess);
+	int iTextLen = strlen(szText) + 1;
+	BoolResponse.m_iTrailingDataLength = htonl(iTextLen);
+
+	// Send the request answer
+	send(m_iSocket, (char*) &BoolResponse, sizeof(BoolResponse), 0);
+	send(m_iSocket, (char*)szText, iTextLen, 0);
 }
 
 bool MessageCommand::ReceiveRequest(void* pBuffer, int iSize)
 {
-	memcpy(pBuffer, m_pMessageBase, sizeof(SNZBMessageBase));
-	iSize -= sizeof(SNZBMessageBase);
+	memcpy(pBuffer, m_pMessageBase, sizeof(SNZBRequestBase));
+	iSize -= sizeof(SNZBRequestBase);
 	if (iSize > 0)
 	{
-		int iBytesReceived = recv(m_iSocket, ((char*)pBuffer) + sizeof(SNZBMessageBase), iSize, 0);
+		int iBytesReceived = recv(m_iSocket, ((char*)pBuffer) + sizeof(SNZBRequestBase), iSize, 0);
 		if (iBytesReceived != iSize)
 		{
 			error("invalid request");
@@ -325,7 +336,7 @@ void PauseUnpauseCommand::Execute()
 	}
 
 	g_pOptions->SetPause(ntohl(PauseUnpauseRequest.m_bPause));
-	SendResponse("Pause-/Unpause-Command completed successfully");
+	SendBoolResponse(true, "Pause-/Unpause-Command completed successfully");
 }
 
 void SetDownloadRateCommand::Execute()
@@ -337,7 +348,7 @@ void SetDownloadRateCommand::Execute()
 	}
 
 	g_pOptions->SetDownloadRate(ntohl(SetDownloadRequest.m_iDownloadRate) / 1024.0);
-	SendResponse("Rate-Command completed successfully");
+	SendBoolResponse(true, "Rate-Command completed successfully");
 }
 
 void DumpDebugCommand::Execute()
@@ -349,7 +360,7 @@ void DumpDebugCommand::Execute()
 	}
 
 	g_pQueueCoordinator->LogDebugInfo();
-	SendResponse("Debug-Command completed successfully");
+	SendBoolResponse(true, "Debug-Command completed successfully");
 }
 
 void ShutdownCommand::Execute()
@@ -360,7 +371,7 @@ void ShutdownCommand::Execute()
 		return;
 	}
 
-	SendResponse("Stopping server");
+	SendBoolResponse(true, "Stopping server");
 	ExitProc();
 }
 
@@ -404,14 +415,14 @@ void DownloadCommand::Execute()
 			char tmp[1024];
 			snprintf(tmp, 1024, "Collection %s added to queue", BaseFileName(DownloadRequest.m_szFilename));
 			tmp[1024-1] = '\0';
-			SendResponse(tmp);
+			SendBoolResponse(true, tmp);
 		}
 		else
 		{
 			char tmp[1024];
 			snprintf(tmp, 1024, "Download Request failed for %s", BaseFileName(DownloadRequest.m_szFilename));
 			tmp[1024-1] = '\0';
-			SendResponse(tmp);
+			SendBoolResponse(false, tmp);
 		}
 	}
 
@@ -426,10 +437,11 @@ void ListCommand::Execute()
 		return;
 	}
 
-	SNZBListRequestAnswer ListRequestAnswer;
-	memset(&ListRequestAnswer, 0, sizeof(ListRequestAnswer));
-	ListRequestAnswer.m_iStructSize = htonl(sizeof(ListRequestAnswer));
-	ListRequestAnswer.m_iEntrySize = htonl(sizeof(SNZBListRequestAnswerEntry));
+	SNZBListResponse ListResponse;
+	memset(&ListResponse, 0, sizeof(ListResponse));
+	ListResponse.m_MessageBase.m_iSignature = htonl(NZBMESSAGE_SIGNATURE);
+	ListResponse.m_MessageBase.m_iStructSize = htonl(sizeof(ListResponse));
+	ListResponse.m_iEntrySize = htonl(sizeof(SNZBListResponseEntry));
 
 	char* buf = NULL;
 	int bufsize = 0;
@@ -442,7 +454,7 @@ void ListCommand::Execute()
 		int NrEntries = pDownloadQueue->size();
 
 		// calculate required buffer size
-		bufsize = NrEntries * sizeof(SNZBListRequestAnswerEntry);
+		bufsize = NrEntries * sizeof(SNZBListResponseEntry);
 		for (DownloadQueue::iterator it = pDownloadQueue->begin(); it != pDownloadQueue->end(); it++)
 		{
 			FileInfo* pFileInfo = *it;
@@ -458,7 +470,7 @@ void ListCommand::Execute()
 		{
 			unsigned int iSizeHi, iSizeLo;
 			FileInfo* pFileInfo = *it;
-			SNZBListRequestAnswerEntry* pListAnswer = (SNZBListRequestAnswerEntry*) bufptr;
+			SNZBListResponseEntry* pListAnswer = (SNZBListResponseEntry*) bufptr;
 			pListAnswer->m_iID				= htonl(pFileInfo->GetID());
 			SplitInt64(pFileInfo->GetSize(), &iSizeHi, &iSizeLo);
 			pListAnswer->m_iFileSizeLo		= htonl(iSizeLo);
@@ -472,7 +484,7 @@ void ListCommand::Execute()
 			pListAnswer->m_iSubjectLen		= htonl(strlen(pFileInfo->GetSubject()) + 1);
 			pListAnswer->m_iFilenameLen		= htonl(strlen(pFileInfo->GetFilename()) + 1);
 			pListAnswer->m_iDestDirLen		= htonl(strlen(pFileInfo->GetDestDir()) + 1);
-			bufptr += sizeof(SNZBListRequestAnswerEntry);
+			bufptr += sizeof(SNZBListResponseEntry);
 			strcpy(bufptr, pFileInfo->GetNZBFilename());
 			bufptr += ntohl(pListAnswer->m_iNZBFilenameLen);
 			strcpy(bufptr, pFileInfo->GetSubject());
@@ -485,26 +497,26 @@ void ListCommand::Execute()
 
 		g_pQueueCoordinator->UnlockQueue();
 
-		ListRequestAnswer.m_iNrTrailingEntries = htonl(NrEntries);
-		ListRequestAnswer.m_iTrailingDataLength = htonl(bufsize);
+		ListResponse.m_iNrTrailingEntries = htonl(NrEntries);
+		ListResponse.m_iTrailingDataLength = htonl(bufsize);
 	}
 
 	if (htonl(ListRequest.m_bServerState))
 	{
-		ListRequestAnswer.m_iDownloadRate = htonl((int)(g_pQueueCoordinator->CalcCurrentDownloadSpeed() * 1024));
+		ListResponse.m_iDownloadRate = htonl((int)(g_pQueueCoordinator->CalcCurrentDownloadSpeed() * 1024));
 		long long lRemainingSize = g_pQueueCoordinator->CalcRemainingSize();
-		ListRequestAnswer.m_iRemainingSizeHi = htonl((unsigned int)(lRemainingSize >> 32));
-		ListRequestAnswer.m_iRemainingSizeLo = htonl((unsigned int)lRemainingSize);
-		ListRequestAnswer.m_iDownloadLimit = htonl((int)(g_pOptions->GetDownloadRate() * 1024));
-		ListRequestAnswer.m_bServerPaused = htonl(g_pOptions->GetPause());
-		ListRequestAnswer.m_iThreadCount = htonl(Thread::GetThreadCount() - 1); // not counting itself
+		ListResponse.m_iRemainingSizeHi = htonl((unsigned int)(lRemainingSize >> 32));
+		ListResponse.m_iRemainingSizeLo = htonl((unsigned int)lRemainingSize);
+		ListResponse.m_iDownloadLimit = htonl((int)(g_pOptions->GetDownloadRate() * 1024));
+		ListResponse.m_bServerPaused = htonl(g_pOptions->GetPause());
+		ListResponse.m_iThreadCount = htonl(Thread::GetThreadCount() - 1); // not counting itself
 		PrePostProcessor::ParQueue* pParQueue = g_pPrePostProcessor->LockParQueue();
-		ListRequestAnswer.m_iParJobCount = htonl(pParQueue->size());
+		ListResponse.m_iParJobCount = htonl(pParQueue->size());
 		g_pPrePostProcessor->UnlockParQueue();
 	}
 
 	// Send the request answer
-	send(m_iSocket, (char*) &ListRequestAnswer, sizeof(ListRequestAnswer), 0);
+	send(m_iSocket, (char*) &ListResponse, sizeof(ListResponse), 0);
 
 	// Send the data
 	if (bufsize > 0)
@@ -516,7 +528,6 @@ void ListCommand::Execute()
 	{
 		free(buf);
 	}
-
 }
 
 void LogCommand::Execute()
@@ -555,7 +566,7 @@ void LogCommand::Execute()
 	}
 
 	// calculate required buffer size
-	int bufsize = iNrEntries * sizeof(SNZBLogRequestAnswerEntry);
+	int bufsize = iNrEntries * sizeof(SNZBLogResponseEntry);
 	for (unsigned int i = (unsigned int)iStart; i < pMessages->size(); i++)
 	{
 		Message* pMessage = (*pMessages)[i];
@@ -567,26 +578,27 @@ void LogCommand::Execute()
 	for (unsigned int i = (unsigned int)iStart; i < pMessages->size(); i++)
 	{
 		Message* pMessage = (*pMessages)[i];
-		SNZBLogRequestAnswerEntry* pLogAnswer = (SNZBLogRequestAnswerEntry*) bufptr;
+		SNZBLogResponseEntry* pLogAnswer = (SNZBLogResponseEntry*) bufptr;
 		pLogAnswer->m_iID = htonl(pMessage->GetID());
 		pLogAnswer->m_iKind = htonl(pMessage->GetKind());
 		pLogAnswer->m_tTime = htonl(pMessage->GetTime());
 		pLogAnswer->m_iTextLen = htonl(strlen(pMessage->GetText()) + 1);
-		bufptr += sizeof(SNZBLogRequestAnswerEntry);
+		bufptr += sizeof(SNZBLogResponseEntry);
 		strcpy(bufptr, pMessage->GetText());
 		bufptr += ntohl(pLogAnswer->m_iTextLen);
 	}
 
 	g_pLog->UnlockMessages();
 
-	SNZBLogRequestAnswer LogRequestAnswer;
-	LogRequestAnswer.m_iStructSize = htonl(sizeof(LogRequestAnswer));
-	LogRequestAnswer.m_iEntrySize = htonl(sizeof(SNZBLogRequestAnswerEntry));
-	LogRequestAnswer.m_iNrTrailingEntries = htonl(iNrEntries);
-	LogRequestAnswer.m_iTrailingDataLength = htonl(bufsize);
+	SNZBLogResponse LogResponse;
+	LogResponse.m_MessageBase.m_iSignature = htonl(NZBMESSAGE_SIGNATURE);
+	LogResponse.m_MessageBase.m_iStructSize = htonl(sizeof(LogResponse));
+	LogResponse.m_iEntrySize = htonl(sizeof(SNZBLogResponseEntry));
+	LogResponse.m_iNrTrailingEntries = htonl(iNrEntries);
+	LogResponse.m_iTrailingDataLength = htonl(bufsize);
 
 	// Send the request answer
-	send(m_iSocket, (char*) &LogRequestAnswer, sizeof(LogRequestAnswer), 0);
+	send(m_iSocket, (char*) &LogResponse, sizeof(LogResponse), 0);
 
 	// Send the data
 	if (bufsize > 0)
@@ -595,7 +607,6 @@ void LogCommand::Execute()
 	}
 
 	free(buf);
-
 }
 
 void EditQueueCommand::Execute()
@@ -620,7 +631,7 @@ void EditQueueCommand::Execute()
 
 	if (iNrEntries <= 0)
 	{
-		SendResponse("Edit-Command failed: no IDs specified");
+		SendBoolResponse(false, "Edit-Command failed: no IDs specified");
 		return;
 	}
 
@@ -656,10 +667,10 @@ void EditQueueCommand::Execute()
 
 	if (bOK)
 	{
-		SendResponse("Edit-Command completed successfully");
+		SendBoolResponse(true, "Edit-Command completed successfully");
 	}
 	else
 	{
-		SendResponse("Edit-Command failed");
+		SendBoolResponse(false, "Edit-Command failed");
 	}
 }
