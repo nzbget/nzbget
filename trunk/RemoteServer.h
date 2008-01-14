@@ -51,7 +51,7 @@ class RequestProcessor : public Thread
 {
 private:
 	SOCKET				m_iSocket;
-	SNZBMessageBase		m_MessageBase;
+	SNZBRequestBase		m_MessageBase;
 
 	void				Dispatch();
 
@@ -64,16 +64,16 @@ class MessageCommand
 {
 protected:
 	SOCKET				m_iSocket;
-	SNZBMessageBase*	m_pMessageBase;
+	SNZBRequestBase*	m_pMessageBase;
 
 	bool				ReceiveRequest(void* pBuffer, int iSize);
-	void				SendResponse(char* szAnswer);
+	void				SendBoolResponse(bool bSuccess, const char* szText);
 
 public:
 	virtual				~MessageCommand() {};
 	virtual void		Execute() = 0;
 	void				SetSocket(SOCKET iSocket) { m_iSocket = iSocket; };
-	void				SetMessageBase(SNZBMessageBase*	pMessageBase) { m_pMessageBase = pMessageBase; };
+	void				SetMessageBase(SNZBRequestBase*	pMessageBase) { m_pMessageBase = pMessageBase; };
 };
 
 class DownloadCommand: public MessageCommand

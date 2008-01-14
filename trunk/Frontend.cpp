@@ -84,7 +84,7 @@ bool Frontend::PrepareData()
 		}
 		if (!RequestMessages() || ((m_bSummary || m_bFileList) && !RequestFileList()))
 		{
-			printf("\nUnable to send request to nzbserver at %s (port %i)    \n", g_pOptions->GetServerIP(), g_pOptions->GetServerPort());
+			printf("\nUnable to send request to nzbget-server at %s (port %i)    \n", g_pOptions->GetServerIP(), g_pOptions->GetServerPort());
 			Stop();
 			return false;
 		}
@@ -218,7 +218,7 @@ bool Frontend::ServerEditQueue(QueueEditor::EEditAction eAction, int iOffset, in
 	return false;
 }
 
-void Frontend::InitMessageBase(SNZBMessageBase* pMessageBase, int iRequest, int iSize)
+void Frontend::InitMessageBase(SNZBRequestBase* pMessageBase, int iRequest, int iSize)
 {
 	pMessageBase->m_iSignature	= htonl(NZBMESSAGE_SIGNATURE);
 	pMessageBase->m_iType = htonl(iRequest);
@@ -256,17 +256,20 @@ bool Frontend::RequestMessages()
 	}
 
 	// Now listen for the returned log
-	SNZBLogRequestAnswer LogRequestAnswer;
-	if (connection.Recv((char*) &LogRequestAnswer, sizeof(LogRequestAnswer)) < 0)
+	SNZBLogResponse LogResponse;
+	int iResponseLen = connection.Recv((char*) &LogResponse, sizeof(LogResponse));
+	if (iResponseLen != sizeof(LogResponse) || 
+		(int)ntohl(LogResponse.m_MessageBase.m_iSignature) != (int)NZBMESSAGE_SIGNATURE ||
+		ntohl(LogResponse.m_MessageBase.m_iStructSize) != sizeof(LogResponse))
 	{
 		return false;
 	}
 
 	char* pBuf = NULL;
-	if (ntohl(LogRequestAnswer.m_iTrailingDataLength) > 0)
+	if (ntohl(LogResponse.m_iTrailingDataLength) > 0)
 	{
-		pBuf = (char*)malloc(ntohl(LogRequestAnswer.m_iTrailingDataLength));
-		if (!connection.RecvAll(pBuf, ntohl(LogRequestAnswer.m_iTrailingDataLength)))
+		pBuf = (char*)malloc(ntohl(LogResponse.m_iTrailingDataLength));
+		if (!connection.RecvAll(pBuf, ntohl(LogResponse.m_iTrailingDataLength)))
 		{
 			free(pBuf);
 			return false;
@@ -275,19 +278,19 @@ bool Frontend::RequestMessages()
 
 	connection.Disconnect();
 
-	if (ntohl(LogRequestAnswer.m_iTrailingDataLength) > 0)
+	if (ntohl(LogResponse.m_iTrailingDataLength) > 0)
 	{
 		char* pBufPtr = (char*)pBuf;
-		for (unsigned int i = 0; i < ntohl(LogRequestAnswer.m_iNrTrailingEntries); i++)
+		for (unsigned int i = 0; i < ntohl(LogResponse.m_iNrTrailingEntries); i++)
 		{
-			SNZBLogRequestAnswerEntry* pLogAnswer = (SNZBLogRequestAnswerEntry*) pBufPtr;
+			SNZBLogResponseEntry* pLogAnswer = (SNZBLogResponseEntry*) pBufPtr;
 
-			char* szText = pBufPtr + sizeof(SNZBLogRequestAnswerEntry);
+			char* szText = pBufPtr + sizeof(SNZBLogResponseEntry);
 
 			Message* pMessage = new Message(ntohl(pLogAnswer->m_iID), (Message::EKind)ntohl(pLogAnswer->m_iKind), ntohl(pLogAnswer->m_tTime), szText);
 			m_RemoteMessages.push_back(pMessage);
 
-			pBufPtr += sizeof(SNZBLogRequestAnswerEntry) + ntohl(pLogAnswer->m_iTextLen);
+			pBufPtr += sizeof(SNZBLogResponseEntry) + ntohl(pLogAnswer->m_iTextLen);
 		}
 
 		free(pBuf);
@@ -318,17 +321,20 @@ bool Frontend::RequestFileList()
 	}
 
 	// Now listen for the returned list
-	SNZBListRequestAnswer ListRequestAnswer;
-	if (connection.Recv((char*) &ListRequestAnswer, sizeof(ListRequestAnswer)) < 0)
+	SNZBListResponse ListResponse;
+	int iResponseLen = connection.Recv((char*) &ListResponse, sizeof(ListResponse));
+	if (iResponseLen != sizeof(ListResponse) || 
+		(int)ntohl(ListResponse.m_MessageBase.m_iSignature) != (int)NZBMESSAGE_SIGNATURE ||
+		ntohl(ListResponse.m_MessageBase.m_iStructSize) != sizeof(ListResponse))
 	{
 		return false;
 	}
 
 	char* pBuf = NULL;
-	if (ntohl(ListRequestAnswer.m_iTrailingDataLength) > 0)
+	if (ntohl(ListResponse.m_iTrailingDataLength) > 0)
 	{
-		pBuf = (char*)malloc(ntohl(ListRequestAnswer.m_iTrailingDataLength));
-		if (!connection.RecvAll(pBuf, ntohl(ListRequestAnswer.m_iTrailingDataLength)))
+		pBuf = (char*)malloc(ntohl(ListResponse.m_iTrailingDataLength));
+		if (!connection.RecvAll(pBuf, ntohl(ListResponse.m_iTrailingDataLength)))
 		{
 			free(pBuf);
 			return false;
@@ -339,25 +345,25 @@ bool Frontend::RequestFileList()
 
 	if (m_bSummary)
 	{
-		m_bPause = ntohl(ListRequestAnswer.m_bServerPaused);
-		m_lRemainingSize = JoinInt64(ntohl(ListRequestAnswer.m_iRemainingSizeHi), ntohl(ListRequestAnswer.m_iRemainingSizeLo));
-		m_fCurrentDownloadSpeed = ntohl(ListRequestAnswer.m_iDownloadRate) / 1024.0;
-		m_fDownloadLimit = ntohl(ListRequestAnswer.m_iDownloadLimit) / 1024.0;
-		m_iThreadCount = ntohl(ListRequestAnswer.m_iThreadCount);
-		m_iParJobCount = ntohl(ListRequestAnswer.m_iParJobCount);
+		m_bPause = ntohl(ListResponse.m_bServerPaused);
+		m_lRemainingSize = JoinInt64(ntohl(ListResponse.m_iRemainingSizeHi), ntohl(ListResponse.m_iRemainingSizeLo));
+		m_fCurrentDownloadSpeed = ntohl(ListResponse.m_iDownloadRate) / 1024.0;
+		m_fDownloadLimit = ntohl(ListResponse.m_iDownloadLimit) / 1024.0;
+		m_iThreadCount = ntohl(ListResponse.m_iThreadCount);
+		m_iParJobCount = ntohl(ListResponse.m_iParJobCount);
 	}
 
-	if (m_bFileList && ntohl(ListRequestAnswer.m_iTrailingDataLength) > 0)
+	if (m_bFileList && ntohl(ListResponse.m_iTrailingDataLength) > 0)
 	{
 		char* pBufPtr = (char*)pBuf;
-		for (unsigned int i = 0; i < ntohl(ListRequestAnswer.m_iNrTrailingEntries); i++)
+		for (unsigned int i = 0; i < ntohl(ListResponse.m_iNrTrailingEntries); i++)
 		{
-			SNZBListRequestAnswerEntry* pListAnswer = (SNZBListRequestAnswerEntry*) pBufPtr;
+			SNZBListResponseEntry* pListAnswer = (SNZBListResponseEntry*) pBufPtr;
 
-			char* szNZBFilename = pBufPtr + sizeof(SNZBListRequestAnswerEntry);
-			char* szSubject = pBufPtr + sizeof(SNZBListRequestAnswerEntry) + ntohl(pListAnswer->m_iNZBFilenameLen);
-			char* szFileName = pBufPtr + sizeof(SNZBListRequestAnswerEntry) + ntohl(pListAnswer->m_iNZBFilenameLen) + ntohl(pListAnswer->m_iSubjectLen);
-			char* szDestDir = pBufPtr + sizeof(SNZBListRequestAnswerEntry) + ntohl(pListAnswer->m_iNZBFilenameLen) + ntohl(pListAnswer->m_iSubjectLen) + ntohl(pListAnswer->m_iFilenameLen);
+			char* szNZBFilename = pBufPtr + sizeof(SNZBListResponseEntry);
+			char* szSubject = pBufPtr + sizeof(SNZBListResponseEntry) + ntohl(pListAnswer->m_iNZBFilenameLen);
+			char* szFileName = pBufPtr + sizeof(SNZBListResponseEntry) + ntohl(pListAnswer->m_iNZBFilenameLen) + ntohl(pListAnswer->m_iSubjectLen);
+			char* szDestDir = pBufPtr + sizeof(SNZBListResponseEntry) + ntohl(pListAnswer->m_iNZBFilenameLen) + ntohl(pListAnswer->m_iSubjectLen) + ntohl(pListAnswer->m_iFilenameLen);
 			
 			FileInfo* pFileInfo = new FileInfo();
 			pFileInfo->SetID(ntohl(pListAnswer->m_iID));
@@ -372,7 +378,7 @@ bool Frontend::RequestFileList()
 
 			m_RemoteQueue.push_back(pFileInfo);
 
-			pBufPtr += sizeof(SNZBListRequestAnswerEntry) + ntohl(pListAnswer->m_iNZBFilenameLen) +
+			pBufPtr += sizeof(SNZBListResponseEntry) + ntohl(pListAnswer->m_iNZBFilenameLen) +
 				ntohl(pListAnswer->m_iSubjectLen) + ntohl(pListAnswer->m_iFilenameLen) + ntohl(pListAnswer->m_iDestDirLen);
 		}
 	}

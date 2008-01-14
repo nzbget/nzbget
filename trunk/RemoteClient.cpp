@@ -59,14 +59,14 @@ RemoteClient::RemoteClient()
 	m_bVerbose		= true;
 
 	/*
-	printf("sizeof(SNZBMessageBase)=%i\n", sizeof(SNZBMessageBase));
+	printf("sizeof(SNZBRequestBase)=%i\n", sizeof(SNZBRequestBase));
 	printf("sizeof(SNZBDownloadRequest)=%i\n", sizeof(SNZBDownloadRequest));
 	printf("sizeof(SNZBListRequest)=%i\n", sizeof(SNZBListRequest));
-	printf("sizeof(SNZBListRequestAnswer)=%i\n", sizeof(SNZBListRequestAnswer));
-	printf("sizeof(SNZBListRequestAnswerEntry)=%i\n", sizeof(SNZBListRequestAnswerEntry));
+	printf("sizeof(SNZBListResponse)=%i\n", sizeof(SNZBListResponse));
+	printf("sizeof(SNZBListResponseEntry)=%i\n", sizeof(SNZBListResponseEntry));
 	printf("sizeof(SNZBLogRequest)=%i\n", sizeof(SNZBLogRequest));
-	printf("sizeof(SNZBLogRequestAnswer)=%i\n", sizeof(SNZBLogRequestAnswer));
-	printf("sizeof(SNZBLogRequestAnswerEntry)=%i\n", sizeof(SNZBLogRequestAnswerEntry));
+	printf("sizeof(SNZBLogResponse)=%i\n", sizeof(SNZBLogResponse));
+	printf("sizeof(SNZBLogResponseEntry)=%i\n", sizeof(SNZBLogResponseEntry));
 	printf("sizeof(SNZBPauseUnpauseRequest)=%i\n", sizeof(SNZBPauseUnpauseRequest));
 	printf("sizeof(SNZBSetDownloadRateRequest)=%i\n", sizeof(SNZBSetDownloadRateRequest));
 	printf("sizeof(SNZBEditQueueRequest)=%i\n", sizeof(SNZBEditQueueRequest));
@@ -120,7 +120,7 @@ bool RemoteClient::InitConnection()
 	return OK;
 }
 
-void RemoteClient::InitMessageBase(SNZBMessageBase* pMessageBase, int iRequest, int iSize)
+void RemoteClient::InitMessageBase(SNZBRequestBase* pMessageBase, int iRequest, int iSize)
 {
 	pMessageBase->m_iSignature	= htonl(NZBMESSAGE_SIGNATURE);
 	pMessageBase->m_iType = htonl(iRequest);
@@ -129,13 +129,35 @@ void RemoteClient::InitMessageBase(SNZBMessageBase* pMessageBase, int iRequest, 
 	pMessageBase->m_szPassword[NZBREQUESTPASSWORDSIZE - 1] = '\0';
 }
 
-void RemoteClient::ReceiveCommandResult()
+bool RemoteClient::ReceiveBoolResponse()
 {
-	char szAnswer[1024];
-	strcpy(szAnswer, "N/A");
 	printf("request sent\n");
-	m_pConnection->Recv(szAnswer, 1024);
-	printf("nzbserver returned: %s\n", szAnswer);
+
+	// all bool-responses have the same format of structure, we use SNZBDownloadResponse here
+	SNZBDownloadResponse BoolResponse;
+	memset(&BoolResponse, 0, sizeof(BoolResponse));
+
+	int iResponseLen = m_pConnection->Recv((char*)&BoolResponse, sizeof(BoolResponse));
+	if (iResponseLen != sizeof(BoolResponse) || 
+		(int)ntohl(BoolResponse.m_MessageBase.m_iSignature) != (int)NZBMESSAGE_SIGNATURE ||
+		ntohl(BoolResponse.m_MessageBase.m_iStructSize) != sizeof(BoolResponse))
+	{
+		printf("invaid response received: either not nzbget-server or wrong server version\n");
+		return false;
+	}
+
+	int iTextLen = ntohl(BoolResponse.m_iTrailingDataLength);
+	char* buf = (char*)malloc(iTextLen);
+	iResponseLen = m_pConnection->Recv(buf, iTextLen);
+	if (iResponseLen != iTextLen)
+	{
+		printf("invaid response received: either not nzbget-server or wrong server version\n");
+		return false;
+	}
+
+	printf("server returned: %s\n", buf);
+	free(buf);
+	return ntohl(BoolResponse.m_bSuccess);
 }
 
 /*
@@ -171,7 +193,7 @@ bool RemoteClient::RequestServerDownload(const char* szName, bool bAddFirst)
 		else
 		{
 			m_pConnection->Send(szBuffer, iLength);
-			ReceiveCommandResult();
+			OK = ReceiveBoolResponse();
 			m_pConnection->Disconnect();
 		}
 	}
@@ -201,17 +223,21 @@ bool RemoteClient::RequestServerList()
 	}
 
 	// Now listen for the returned list
-	SNZBListRequestAnswer ListRequestAnswer;
-	if (m_pConnection->Recv((char*) &ListRequestAnswer, sizeof(ListRequestAnswer)) < 0)
+	SNZBListResponse ListResponse;
+	int iResponseLen = m_pConnection->Recv((char*) &ListResponse, sizeof(ListResponse));
+	if (iResponseLen != sizeof(ListResponse) || 
+		(int)ntohl(ListResponse.m_MessageBase.m_iSignature) != (int)NZBMESSAGE_SIGNATURE ||
+		ntohl(ListResponse.m_MessageBase.m_iStructSize) != sizeof(ListResponse))
 	{
+		printf("invaid response received: either not nzbget-server or wrong server version\n");
 		return false;
 	}
 
 	char* pBuf = NULL;
-	if (ntohl(ListRequestAnswer.m_iTrailingDataLength) > 0)
+	if (ntohl(ListResponse.m_iTrailingDataLength) > 0)
 	{
-		pBuf = (char*)malloc(ntohl(ListRequestAnswer.m_iTrailingDataLength));
-		if (!m_pConnection->RecvAll(pBuf, ntohl(ListRequestAnswer.m_iTrailingDataLength)))
+		pBuf = (char*)malloc(ntohl(ListResponse.m_iTrailingDataLength));
+		if (!m_pConnection->RecvAll(pBuf, ntohl(ListResponse.m_iTrailingDataLength)))
 		{
 			free(pBuf);
 			return false;
@@ -220,7 +246,7 @@ bool RemoteClient::RequestServerList()
 
 	m_pConnection->Disconnect();
 
-	if (ntohl(ListRequestAnswer.m_iTrailingDataLength) == 0)
+	if (ntohl(ListResponse.m_iTrailingDataLength) == 0)
 	{
 		printf("Server has no files queued for download\n");
 	}
@@ -232,9 +258,9 @@ bool RemoteClient::RequestServerList()
 		long long lRemaining = 0;
 		long long lPaused = 0;
 		char* pBufPtr = (char*)pBuf;
-		for (unsigned int i = 0; i < ntohl(ListRequestAnswer.m_iNrTrailingEntries); i++)
+		for (unsigned int i = 0; i < ntohl(ListResponse.m_iNrTrailingEntries); i++)
 		{
-			SNZBListRequestAnswerEntry* pListAnswer = (SNZBListRequestAnswerEntry*) pBufPtr;
+			SNZBListResponseEntry* pListAnswer = (SNZBListResponseEntry*) pBufPtr;
 
 			long long lFileSize = JoinInt64(ntohl(pListAnswer->m_iFileSizeHi), ntohl(pListAnswer->m_iFileSizeLo));
 			long long lRemainingSize = JoinInt64(ntohl(pListAnswer->m_iRemainingSizeHi), ntohl(pListAnswer->m_iRemainingSizeLo));
@@ -256,20 +282,20 @@ bool RemoteClient::RequestServerList()
 				szStatus[0] = '\0';
 				lRemaining += lRemainingSize;
 			}
-			char* szNZBFilename = pBufPtr + sizeof(SNZBListRequestAnswerEntry);
-			char* szFilename = pBufPtr + sizeof(SNZBListRequestAnswerEntry) + ntohl(pListAnswer->m_iNZBFilenameLen) + ntohl(pListAnswer->m_iSubjectLen);
+			char* szNZBFilename = pBufPtr + sizeof(SNZBListResponseEntry);
+			char* szFilename = pBufPtr + sizeof(SNZBListResponseEntry) + ntohl(pListAnswer->m_iNZBFilenameLen) + ntohl(pListAnswer->m_iSubjectLen);
 			
 			char szNZBNiceName[1024];
 			FileInfo::MakeNiceNZBName(szNZBFilename, szNZBNiceName, 1024);
 			
 			printf("[%i] %s%c%s (%.2f MB%s)%s\n", ntohl(pListAnswer->m_iID), szNZBNiceName, (int)PATH_SEPARATOR, szFilename, lFileSize / 1024.0 / 1024.0, szCompleted, szStatus);
 
-			pBufPtr += sizeof(SNZBListRequestAnswerEntry) + ntohl(pListAnswer->m_iNZBFilenameLen) +
+			pBufPtr += sizeof(SNZBListResponseEntry) + ntohl(pListAnswer->m_iNZBFilenameLen) +
 				ntohl(pListAnswer->m_iSubjectLen) + ntohl(pListAnswer->m_iFilenameLen) + ntohl(pListAnswer->m_iDestDirLen);
 		}
 
 		printf("-----------------------------------\n");
-		printf("Files: %i\n", ntohl(ListRequestAnswer.m_iNrTrailingEntries));
+		printf("Files: %i\n", ntohl(ListResponse.m_iNrTrailingEntries));
 		if (lPaused > 0)
 		{
 			printf("Remaining size: %.2f MB (+%.2f MB paused)\n", lRemaining / 1024.0 / 1024.0, lPaused / 1024.0 / 1024.0);
@@ -278,22 +304,22 @@ bool RemoteClient::RequestServerList()
 		{
 			printf("Remaining size: %.2f MB\n", lRemaining / 1024.0 / 1024.0);
 		}
-		printf("Download rate: %.1f KB/s\n", (float)(ntohl(ListRequestAnswer.m_iDownloadRate) / 1024.0));
+		printf("Download rate: %.1f KB/s\n", (float)(ntohl(ListResponse.m_iDownloadRate) / 1024.0));
 
 		free(pBuf);
 	}
 
-	printf("Threads running: %i\n", ntohl(ListRequestAnswer.m_iThreadCount));
-	printf("Server state: %s\n", ntohl(ListRequestAnswer.m_bServerPaused) ? "Paused" : "Running");
+	printf("Threads running: %i\n", ntohl(ListResponse.m_iThreadCount));
+	printf("Server state: %s\n", ntohl(ListResponse.m_bServerPaused) ? "Paused" : "Running");
 
-	if (ntohl(ListRequestAnswer.m_iDownloadLimit) > 0)
+	if (ntohl(ListResponse.m_iDownloadLimit) > 0)
 	{
-		printf("Speed limit: %.1f KB/s\n", (float)(ntohl(ListRequestAnswer.m_iDownloadLimit) / 1024.0));
+		printf("Speed limit: %.1f KB/s\n", (float)(ntohl(ListResponse.m_iDownloadLimit) / 1024.0));
 	}
 
-	if (ntohl(ListRequestAnswer.m_iParJobCount) > 0)
+	if (ntohl(ListResponse.m_iParJobCount) > 0)
 	{
-		printf("Par-jobs: %i\n", (int)ntohl(ListRequestAnswer.m_iParJobCount));
+		printf("Par-jobs: %i\n", (int)ntohl(ListResponse.m_iParJobCount));
 	}
 
 	return true;
@@ -315,17 +341,21 @@ bool RemoteClient::RequestServerLog(int iLines)
 	}
 
 	// Now listen for the returned log
-	SNZBLogRequestAnswer LogRequestAnswer;
-	if (m_pConnection->Recv((char*) &LogRequestAnswer, sizeof(LogRequestAnswer)) < 0)
+	SNZBLogResponse LogResponse;
+	int iResponseLen = m_pConnection->Recv((char*) &LogResponse, sizeof(LogResponse));
+	if (iResponseLen != sizeof(LogResponse) || 
+		(int)ntohl(LogResponse.m_MessageBase.m_iSignature) != (int)NZBMESSAGE_SIGNATURE ||
+		ntohl(LogResponse.m_MessageBase.m_iStructSize) != sizeof(LogResponse))
 	{
+		printf("invaid response received: either not nzbget-server or wrong server version\n");
 		return false;
 	}
 
 	char* pBuf = NULL;
-	if (ntohl(LogRequestAnswer.m_iTrailingDataLength) > 0)
+	if (ntohl(LogResponse.m_iTrailingDataLength) > 0)
 	{
-		pBuf = (char*)malloc(ntohl(LogRequestAnswer.m_iTrailingDataLength));
-		if (!m_pConnection->RecvAll(pBuf, ntohl(LogRequestAnswer.m_iTrailingDataLength)))
+		pBuf = (char*)malloc(ntohl(LogResponse.m_iTrailingDataLength));
+		if (!m_pConnection->RecvAll(pBuf, ntohl(LogResponse.m_iTrailingDataLength)))
 		{
 			free(pBuf);
 			return false;
@@ -334,21 +364,21 @@ bool RemoteClient::RequestServerLog(int iLines)
 
 	m_pConnection->Disconnect();
 
-	if (LogRequestAnswer.m_iTrailingDataLength == 0)
+	if (LogResponse.m_iTrailingDataLength == 0)
 	{
 		printf("Log is empty\n");
 	}
 	else
 	{
-		printf("Log (last %i entries)\n", ntohl(LogRequestAnswer.m_iNrTrailingEntries));
+		printf("Log (last %i entries)\n", ntohl(LogResponse.m_iNrTrailingEntries));
 		printf("-----------------------------------\n");
 
 		char* pBufPtr = (char*)pBuf;
-		for (unsigned int i = 0; i < ntohl(LogRequestAnswer.m_iNrTrailingEntries); i++)
+		for (unsigned int i = 0; i < ntohl(LogResponse.m_iNrTrailingEntries); i++)
 		{
-			SNZBLogRequestAnswerEntry* pLogAnswer = (SNZBLogRequestAnswerEntry*) pBufPtr;
+			SNZBLogResponseEntry* pLogAnswer = (SNZBLogResponseEntry*) pBufPtr;
 
-			char* szText = pBufPtr + sizeof(SNZBLogRequestAnswerEntry);
+			char* szText = pBufPtr + sizeof(SNZBLogResponseEntry);
 			switch (ntohl(pLogAnswer->m_iKind))
 			{
 				case Message::mkDebug:
@@ -365,7 +395,7 @@ bool RemoteClient::RequestServerLog(int iLines)
 					break;
 			}
 
-			pBufPtr += sizeof(SNZBLogRequestAnswerEntry) + ntohl(pLogAnswer->m_iTextLen);
+			pBufPtr += sizeof(SNZBLogResponseEntry) + ntohl(pLogAnswer->m_iTextLen);
 		}
 
 		printf("-----------------------------------\n");
@@ -391,10 +421,10 @@ bool RemoteClient::RequestServerPauseUnpause(bool bPause)
 		return false;
 	}
 
-	ReceiveCommandResult();
+	bool OK = ReceiveBoolResponse();
 	m_pConnection->Disconnect();
 
-	return true;
+	return OK;
 }
 
 bool RemoteClient::RequestServerSetDownloadRate(float fRate)
@@ -412,10 +442,10 @@ bool RemoteClient::RequestServerSetDownloadRate(float fRate)
 		return false;
 	}
 
-	ReceiveCommandResult();
+	bool OK = ReceiveBoolResponse();
 	m_pConnection->Disconnect();
 
-	return true;
+	return OK;
 }
 
 bool RemoteClient::RequestServerDumpDebug()
@@ -432,10 +462,10 @@ bool RemoteClient::RequestServerDumpDebug()
 		return false;
 	}
 
-	ReceiveCommandResult();
+	bool OK = ReceiveBoolResponse();
 	m_pConnection->Disconnect();
 
-	return true;
+	return OK;
 }
 
 bool RemoteClient::RequestServerEditQueue(int iAction, int iOffset, int* pIDList, int iIDCount, bool bSmartOrder)
@@ -473,9 +503,8 @@ bool RemoteClient::RequestServerEditQueue(int iAction, int iOffset, int* pIDList
 	else
 	{
 		m_pConnection->Send((char*)pIDs, iLength);
-		ReceiveCommandResult();
+		OK = ReceiveBoolResponse();
 		m_pConnection->Disconnect();
-		OK = true;
 	}
 
 	free(pIDs);
@@ -494,7 +523,7 @@ bool RemoteClient::RequestServerShutdown()
 	bool OK = m_pConnection->Send((char*)(&ShutdownRequest), sizeof(ShutdownRequest)) >= 0;
 	if (OK)
 	{
-		ReceiveCommandResult();
+		OK = ReceiveBoolResponse();
 	}
 	else
 	{
