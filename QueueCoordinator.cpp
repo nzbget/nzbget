@@ -514,7 +514,7 @@ void QueueCoordinator::ArticleCompleted(ArticleDownloader* pArticleDownloader)
 	{
 		pFileInfo->SetFilename(pArticleDownloader->GetArticleFilename());
 		pFileInfo->SetFilenameConfirmed(true);
-		if (g_pOptions->GetDupeCheck() && IsDupe(pFileInfo))
+		if (g_pOptions->GetDupeCheck() && pFileInfo->IsDupe(pFileInfo->GetFilename()))
 		{
 			warn("File \"%s\" seems to be duplicate, cancelling download and deleting file from queue", pFileInfo->GetFilename());
 			fileCompleted = false;
