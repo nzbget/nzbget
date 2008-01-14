@@ -303,9 +303,7 @@ ArticleDownloader::EStatus ArticleDownloader::Download()
 
 	// now, let's begin!
 	char tmp[1024];
-	snprintf(tmp, 1024, "%s %s\r\n", 
-		g_pOptions->GetDecoder() == Options::dcYenc ? "BODY" : "ARTICLE", 
-		m_pArticleInfo->GetMessageID());
+	snprintf(tmp, 1024, "ARTICLE %s\r\n", m_pArticleInfo->GetMessageID());
 	tmp[1024-1] = '\0';
 
 	char* answer = NULL;
@@ -345,6 +343,7 @@ ArticleDownloader::EStatus ArticleDownloader::Download()
 
 	m_pOutFile = NULL;
 	EStatus Status = adRunning;
+	bool bBody = false;
 	const int LineBufSize = 1024*10;
 	char* szLineBuf = (char*)malloc(LineBufSize);
 
@@ -362,10 +361,12 @@ ArticleDownloader::EStatus ArticleDownloader::Download()
 
 		int iLen = 0;
 		char* line = m_pConnection->ReadLine(szLineBuf, LineBufSize, &iLen);
+		g_pDownloadSpeedMeter->AddSpeedReading(iLen);
 
 		// Have we encountered a timeout?
 		if (!line)
 		{
+			warn("Unexpected end of %s", m_szInfoName);
 			Status = adFailed;
 			break;
 		}
@@ -382,7 +383,24 @@ ArticleDownloader::EStatus ArticleDownloader::Download()
 			line++;
 		}
 
-		g_pDownloadSpeedMeter->AddSpeedReading(iLen);
+		// check id of returned article
+		if (!bBody)
+		{
+			if ((!strcmp(line, "\r\n")) || (!strcmp(line, "\n")))
+			{
+				bBody = true;
+			}
+			else if (!strncmp(line, "Message-ID: ", 12))
+			{
+				char* p = line + 12;
+				if (strncmp(p, m_pArticleInfo->GetMessageID(), strlen(m_pArticleInfo->GetMessageID())))
+				{
+					warn("Wrong article received for % s: expected %s, returned %s", m_szInfoName, m_pArticleInfo->GetMessageID(), p);
+					Status = adFailed;
+					break;
+				}
+			}
+		}
 
 		if (!Write(line, iLen))
 		{
@@ -407,14 +425,7 @@ ArticleDownloader::EStatus ArticleDownloader::Download()
 
 	if (Status == adFailed)
 	{
-		warn("Unexpected end of %s", m_szInfoName);
 		remove(m_szTempFilename);
-		return adFailed;
-	}
-
-	if (Status == adDecodeError)
-	{
-		warn("Decoding failed for %s", m_szInfoName);
 		return adFailed;
 	}
 
@@ -574,7 +585,7 @@ ArticleDownloader::EStatus ArticleDownloader::Decode()
 			}
 		}
 
-		if (pDecoder->GetArticleFilename())
+		if (!m_szArticleFilename && pDecoder->GetArticleFilename())
 		{
 			m_szArticleFilename = strdup(pDecoder->GetArticleFilename());
 		}
