@@ -366,7 +366,7 @@ ArticleDownloader::EStatus ArticleDownloader::Download()
 		// Have we encountered a timeout?
 		if (!line)
 		{
-			warn("Unexpected end of %s", m_szInfoName);
+			warn("Article %s @ %s failed: Unexpected end of article", m_szInfoName, m_pConnection->GetServer()->GetHost());
 			Status = adFailed;
 			break;
 		}
@@ -395,7 +395,8 @@ ArticleDownloader::EStatus ArticleDownloader::Download()
 				char* p = line + 12;
 				if (strncmp(p, m_pArticleInfo->GetMessageID(), strlen(m_pArticleInfo->GetMessageID())))
 				{
-					warn("Wrong article received for % s: expected %s, returned %s", m_szInfoName, m_pArticleInfo->GetMessageID(), p);
+					if (char* e = strrchr(p, '\r')) *e = '\0'; // remove trailing CR-character
+					warn("Article %s @ %s failed: Wrong message-id, expected %s, returned %s", m_szInfoName, m_pConnection->GetServer()->GetHost(), m_pArticleInfo->GetMessageID(), p);
 					Status = adFailed;
 					break;
 				}
