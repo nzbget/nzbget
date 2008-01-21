@@ -503,16 +503,28 @@ void ListCommand::Execute()
 
 	if (htonl(ListRequest.m_bServerState))
 	{
+		unsigned int iSizeHi, iSizeLo;
 		ListResponse.m_iDownloadRate = htonl((int)(g_pQueueCoordinator->CalcCurrentDownloadSpeed() * 1024));
-		long long lRemainingSize = g_pQueueCoordinator->CalcRemainingSize();
-		ListResponse.m_iRemainingSizeHi = htonl((unsigned int)(lRemainingSize >> 32));
-		ListResponse.m_iRemainingSizeLo = htonl((unsigned int)lRemainingSize);
+		SplitInt64(g_pQueueCoordinator->CalcRemainingSize(), &iSizeHi, &iSizeLo);
+		ListResponse.m_iRemainingSizeHi = htonl(iSizeHi);
+		ListResponse.m_iRemainingSizeLo = htonl(iSizeLo);
 		ListResponse.m_iDownloadLimit = htonl((int)(g_pOptions->GetDownloadRate() * 1024));
 		ListResponse.m_bServerPaused = htonl(g_pOptions->GetPause());
 		ListResponse.m_iThreadCount = htonl(Thread::GetThreadCount() - 1); // not counting itself
 		PrePostProcessor::ParQueue* pParQueue = g_pPrePostProcessor->LockParQueue();
 		ListResponse.m_iParJobCount = htonl(pParQueue->size());
 		g_pPrePostProcessor->UnlockParQueue();
+
+		int iUpTimeSec, iDnTimeSec;
+		long long iAllBytes;
+		bool bStandBy;
+		g_pQueueCoordinator->CalcStat(&iUpTimeSec, &iDnTimeSec, &iAllBytes, &bStandBy);
+		ListResponse.m_iUpTimeSec = htonl(iUpTimeSec);
+		ListResponse.m_iDownloadTimeSec = htonl(iDnTimeSec);
+		ListResponse.m_bServerStandBy = htonl(bStandBy);
+		SplitInt64(iAllBytes, &iSizeHi, &iSizeLo);
+		ListResponse.m_iDownloadedBytesHi = htonl(iSizeHi);
+		ListResponse.m_iDownloadedBytesLo = htonl(iSizeLo);
 	}
 
 	// Send the request answer

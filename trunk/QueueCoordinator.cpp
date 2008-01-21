@@ -68,6 +68,12 @@ QueueCoordinator::QueueCoordinator()
 	}
 	m_iSpeedBytesIndex = 0;
 
+	m_iAllBytes = 0;
+	m_tStartServer = 0;
+	m_tStartDownload = 0;
+	m_tPausedFrom = 0;
+	m_bStandBy = true;
+
 	YDecoder::Init();
 }
 
@@ -117,6 +123,9 @@ void QueueCoordinator::Run()
 
 	m_mutexDownloadQueue.Unlock();
 
+	m_tStartServer = time(NULL);
+	bool bWasStandBy = true;
+	bool bArticeDownloadsRunning = false;
 	int iResetCounter = 0;
 
 	while (!IsStopped())
@@ -132,10 +141,12 @@ void QueueCoordinator::Run()
 
 				m_mutexDownloadQueue.Lock();
 				bool bHasMoreArticles = GetNextArticle(pFileInfo, pArticleInfo);
-				m_bHasMoreJobs = bHasMoreArticles || !m_ActiveDownloads.empty();
+				bArticeDownloadsRunning = !m_ActiveDownloads.empty();
+				m_bHasMoreJobs = bHasMoreArticles || bArticeDownloadsRunning;
 				if (bHasMoreArticles && !IsStopped() && Thread::GetThreadCount() < g_pOptions->GetThreadLimit())
 				{
 					StartArticleDownload(pFileInfo, pArticleInfo, pConnection);
+					bArticeDownloadsRunning = true;
 				}
 				else
 				{
@@ -144,9 +155,22 @@ void QueueCoordinator::Run()
 				m_mutexDownloadQueue.Unlock();
 			}
 		}
+		else
+		{
+			m_mutexDownloadQueue.Lock();
+			bArticeDownloadsRunning = !m_ActiveDownloads.empty();
+			m_mutexDownloadQueue.Unlock();
+		}
+
+		bool bStandBy = !bArticeDownloadsRunning;
+		if (bStandBy ^ bWasStandBy)
+		{
+			EnterLeaveStandBy(bStandBy);
+			bWasStandBy = bStandBy;
+		}
 
 		// sleep longer in StandBy
-		int iSleepInterval = (g_pOptions->GetPause() || !m_bHasMoreJobs) ? 100 : 5;
+		int iSleepInterval = bStandBy ? 100 : 5;
 		usleep(iSleepInterval * 1000);
 
 		AddSpeedReading(0);
@@ -154,7 +178,7 @@ void QueueCoordinator::Run()
 		iResetCounter+= iSleepInterval;
 		if (iResetCounter >= 1000)
 		{
-			// this code should not be called very often, once per second is OK
+			// this code should not be called too often, once per second is OK
 			g_pServerPool->CloseUnusedConnections();
 			ResetHangingDownloads();
 			iResetCounter = 0;
@@ -328,6 +352,8 @@ void QueueCoordinator::AddSpeedReading(int iBytes)
 	{
 		m_iSpeedBytes[m_iSpeedBytesIndex % SPEEDMETER_SECONDS] += iBytes;
 	}
+
+	m_iAllBytes += iBytes;
 }
 
 long long QueueCoordinator::CalcRemainingSize()
@@ -680,4 +706,51 @@ void QueueCoordinator::ResetHangingDownloads()
 	}                                              
 
 	m_mutexDownloadQueue.Unlock();
+}
+
+void QueueCoordinator::EnterLeaveStandBy(bool bEnter)
+{
+	m_mutexStat.Lock();
+	m_bStandBy = bEnter;
+	if (bEnter)
+	{
+		m_tPausedFrom = time(NULL);
+	}
+	else
+	{
+		if (m_tStartDownload == 0)
+		{
+			m_tStartDownload = time(NULL);
+		}
+		else
+		{
+			m_tStartDownload += time(NULL) - m_tPausedFrom;
+		}
+		m_tPausedFrom = 0;
+	}
+	m_mutexStat.Unlock();
+}
+
+void QueueCoordinator::CalcStat(int* iUpTimeSec, int* iDnTimeSec, long long* iAllBytes, bool* bStandBy)
+{
+	m_mutexStat.Lock();
+	if (m_tStartServer > 0)
+	{
+		*iUpTimeSec = time(NULL) - m_tStartServer;
+	}
+	else
+	{
+		*iUpTimeSec = 0;
+	}
+	*bStandBy = m_bStandBy;
+	if (m_bStandBy)
+	{
+		*iDnTimeSec = m_tPausedFrom - m_tStartDownload;
+	}
+	else
+	{
+		*iDnTimeSec = time(NULL) - m_tStartDownload;
+	}
+	*iAllBytes = m_iAllBytes;
+	m_mutexStat.Unlock();
 }

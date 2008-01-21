@@ -69,6 +69,10 @@ Frontend::Frontend()
 	m_fDownloadLimit = 0;
 	m_iThreadCount = 0;
 	m_iParJobCount = 0;
+	m_iUpTimeSec = 0;
+	m_iDnTimeSec = 0;
+	m_iAllBytes = 0;
+	m_bStandBy = 0;
 	m_RemoteMessages.clear();
 	m_RemoteQueue.clear();
 	m_iUpdateInterval = g_pOptions->GetUpdateInterval();
@@ -101,6 +105,7 @@ bool Frontend::PrepareData()
 			PrePostProcessor::ParQueue* pParQueue = g_pPrePostProcessor->LockParQueue();
 			m_iParJobCount = pParQueue->size();
 			g_pPrePostProcessor->UnlockParQueue();
+			g_pQueueCoordinator->CalcStat(&m_iUpTimeSec, &m_iDnTimeSec, &m_iAllBytes, &m_bStandBy);
 		}
 	}
 	return true;
@@ -351,6 +356,10 @@ bool Frontend::RequestFileList()
 		m_fDownloadLimit = ntohl(ListResponse.m_iDownloadLimit) / 1024.0;
 		m_iThreadCount = ntohl(ListResponse.m_iThreadCount);
 		m_iParJobCount = ntohl(ListResponse.m_iParJobCount);
+		m_iUpTimeSec = ntohl(ListResponse.m_iUpTimeSec);
+		m_iDnTimeSec = ntohl(ListResponse.m_iDownloadTimeSec);
+		m_bStandBy = ntohl(ListResponse.m_bServerStandBy);
+		m_iAllBytes = JoinInt64(ntohl(ListResponse.m_iDownloadedBytesHi), ntohl(ListResponse.m_iDownloadedBytesLo));
 	}
 
 	if (m_bFileList && ntohl(ListResponse.m_iTrailingDataLength) > 0)

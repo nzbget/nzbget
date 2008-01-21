@@ -56,6 +56,10 @@ protected:
 	float				m_fDownloadLimit;
 	int					m_iThreadCount;
 	int					m_iParJobCount;
+	int					m_iUpTimeSec;
+	int					m_iDnTimeSec;
+	long long			m_iAllBytes;
+	bool				m_bStandBy;
 
 	bool				PrepareData();
 	void				FreeData();

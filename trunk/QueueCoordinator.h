@@ -29,6 +29,10 @@
 
 #include <deque>
 #include <list>
+#include <time.h>
+#ifdef WIN32
+#include <sys/timeb.h>
+#endif
 
 #include "Thread.h"
 #include "NZBFile.h"
@@ -63,9 +67,17 @@ private:
 	Mutex			 		m_mutexDownloadQueue;
 	bool					m_bHasMoreJobs;
 
+	// statistics
 	static const int		SPEEDMETER_SECONDS = 5;
     int						m_iSpeedBytes[SPEEDMETER_SECONDS];
     int						m_iSpeedBytesIndex;
+	long long				m_iAllBytes;
+	time_t					m_tStartServer;
+	time_t					m_tStartDownload;
+	time_t					m_tPausedFrom;
+	void					EnterLeaveStandBy(bool bEnter);
+	bool					m_bStandBy;
+	Mutex					m_mutexStat;
 
 	bool					GetNextArticle(FileInfo* &pFileInfo, ArticleInfo* &pArticleInfo);
 	void					StartArticleDownload(FileInfo* pFileInfo, ArticleInfo* pArticleInfo, NNTPConnection* pConnection);
@@ -80,10 +92,13 @@ public:
 	virtual					~QueueCoordinator();
 	virtual void			Run();
 	virtual void 			Stop();
+	void					Update(Subject* Caller, void* Aspect);
+
+	// statistics
 	long long 				CalcRemainingSize();
 	virtual float			CalcCurrentDownloadSpeed();
 	virtual void			AddSpeedReading(int iBytes);
-	void					Update(Subject* Caller, void* Aspect);
+	void					CalcStat(int* iUpTimeSec, int* iDnTimeSec, long long* iAllBytes, bool* bStandBy);
 
 	// Editing the queue
 	DownloadQueue*			LockQueue();

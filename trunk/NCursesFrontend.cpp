@@ -592,25 +592,14 @@ void NCursesFrontend::PrintStatus()
     char timeString[100];
     timeString[0] = '\0';
 
-    if (m_fCurrentDownloadSpeed > 0.0)
+	float fCurrentDownloadSpeed = m_bStandBy ? 0 : m_fCurrentDownloadSpeed;
+    if (fCurrentDownloadSpeed > 0.0 && !m_bPause)
     {
-        long long remain_sec = (long long)(m_lRemainingSize / (m_fCurrentDownloadSpeed * 1024));
-        int h = 0;
-        int m = 0;
-        int s = 0;
-        while (remain_sec > 3600)
-        {
-            h++;
-            remain_sec -= 3600;
-        }
-        while (remain_sec > 60)
-        {
-            m++;
-            remain_sec -= 60;
-        }
-        s = remain_sec;
-
-        sprintf(timeString, " (~ %.2d:%.2d:%.2d)", h, m, s);
+        long long remain_sec = (long long)(m_lRemainingSize / (fCurrentDownloadSpeed * 1024));
+		int h = remain_sec / 3600;
+		int m = (remain_sec % 3600) / 60;
+		int s = remain_sec % 60;
+		sprintf(timeString, " (~ %.2d:%.2d:%.2d)", h, m, s);
     }
 
     char szDownloadLimit[128];
@@ -633,7 +622,11 @@ void NCursesFrontend::PrintStatus()
         szParStatus[0] = 0;
     }
 
-    snprintf(tmp, MAX_SCREEN_WIDTH, " %d threads, %.0f KB/s, %.2f MB remaining%s%s%s%s", m_iThreadCount, m_fCurrentDownloadSpeed, (float)(m_lRemainingSize / 1024.0 / 1024.0), timeString, szParStatus, m_bPause ? ", Paused" : "", szDownloadLimit);
+	float fAverageSpeed = m_iDnTimeSec > 0 ? m_iAllBytes / m_iDnTimeSec / 1024 : 0;
+
+	snprintf(tmp, MAX_SCREEN_WIDTH, " %d threads, %.0f KB/s, %.2f MB remaining%s%s%s%s, Avg. %.0f KB/s", 
+		m_iThreadCount, fCurrentDownloadSpeed, (float)(m_lRemainingSize / 1024.0 / 1024.0), timeString, 
+		szParStatus, m_bPause ? (m_bStandBy ? ", Paused" : ", Pausing") : "", szDownloadLimit, fAverageSpeed);
 	tmp[MAX_SCREEN_WIDTH - 1] = '\0';
     PlotLine(tmp, iStatusRow, 0, NCURSES_COLORPAIR_STATUS);
 }
@@ -711,7 +704,7 @@ void NCursesFrontend::PrintFileQueue()
 		char szBuffer[MAX_SCREEN_WIDTH];
 		snprintf(szBuffer, sizeof(szBuffer), "%s Files for downloading", m_bUseColor ? "" : "*** ");
 		szBuffer[MAX_SCREEN_WIDTH - 1] = '\0';
-	    PlotLine(szBuffer, iLineNr++, 0, NCURSES_COLORPAIR_INFOLINE);
+		PrintTopHeader(szBuffer, iLineNr++, true);
         PlotLine("Ready to receive nzb-job", iLineNr++, 0, NCURSES_COLORPAIR_TEXT);
     }
     else
@@ -748,7 +741,7 @@ void NCursesFrontend::PrintFileQueue()
 		snprintf(szBuffer, sizeof(szBuffer), " %sFiles for downloading - %i / %i files in queue - %s / %s", 
 			m_bUseColor ? "" : "*** ", pDownloadQueue->size(), pDownloadQueue->size() - iPausedFiles, szRemaining, szUnpaused);
 		szBuffer[MAX_SCREEN_WIDTH - 1] = '\0';
-		PlotLine(szBuffer, m_iQueueWinTop, 0, NCURSES_COLORPAIR_INFOLINE);
+		PrintTopHeader(szBuffer, m_iQueueWinTop, true);
     }
     UnlockQueue();
 }
@@ -820,6 +813,66 @@ void NCursesFrontend::FormatFileSize(char * szBuffer, int iBufLen, long long lFi
 	szBuffer[iBufLen - 1] = '\0';
 }
 
+void NCursesFrontend::PrintTopHeader(char* szHeader, int iLineNr, bool bUpTime)
+{
+    char szBuffer[MAX_SCREEN_WIDTH];
+    snprintf(szBuffer, sizeof(szBuffer), "%-*s", m_iScreenWidth, szHeader);
+	szBuffer[MAX_SCREEN_WIDTH - 1] = '\0';
+	int iHeaderLen = strlen(szHeader);
+	int iCharsLeft = m_iScreenWidth - iHeaderLen - 2;
+
+	int iTime = bUpTime ? m_iUpTimeSec : m_iDnTimeSec;
+	int d = iTime / 3600 / 24;
+	int h = (iTime % (3600 * 24)) / 3600;
+	int m = (iTime % 3600) / 60;
+	int s = iTime % 60;
+	char szTime[30];
+
+	if (d == 0)
+	{
+		snprintf(szTime, 30, "%.2d:%.2d:%.2d", h, m, s);
+		if ((int)strlen(szTime) > iCharsLeft)
+		{
+			snprintf(szTime, 30, "%.2d:%.2d", h, m);
+		}
+	}
+	else 
+	{
+		snprintf(szTime, 30, "%i %s %.2d:%.2d:%.2d", d, (d == 1 ? "day" : "days"), h, m, s);
+		if ((int)strlen(szTime) > iCharsLeft)
+		{
+			snprintf(szTime, 30, "%id %.2d:%.2d:%.2d", d, h, m, s);
+		}
+		if ((int)strlen(szTime) > iCharsLeft)
+		{
+			snprintf(szTime, 30, "%id %.2d:%.2d", d, h, m);
+		}
+	}
+
+	szTime[29] = '\0';
+	const char* szShortCap = bUpTime ? " Up " : "Dn ";
+	const char* szLongCap = bUpTime ? " Uptime " : " Download-time ";
+
+	int iTimeLen = strlen(szTime);
+	int iShortCapLen = strlen(szShortCap);
+	int iLongCapLen = strlen(szLongCap);
+
+	if (iCharsLeft - iTimeLen - iLongCapLen >= 0)
+	{
+		snprintf(szBuffer + m_iScreenWidth - iTimeLen - iLongCapLen, MAX_SCREEN_WIDTH - (m_iScreenWidth - iTimeLen - iLongCapLen), "%s%s", szLongCap, szTime);
+	}
+	else if (iCharsLeft - iTimeLen - iShortCapLen >= 0)
+	{
+		snprintf(szBuffer + m_iScreenWidth - iTimeLen - iShortCapLen, MAX_SCREEN_WIDTH - (m_iScreenWidth - iTimeLen - iShortCapLen), "%s%s", szShortCap, szTime);
+	}
+	else if (iCharsLeft - iTimeLen >= 0)
+	{
+		snprintf(szBuffer + m_iScreenWidth - iTimeLen, MAX_SCREEN_WIDTH - (m_iScreenWidth - iTimeLen), "%s", szTime);
+	}
+
+    PlotLine(szBuffer, iLineNr, 0, NCURSES_COLORPAIR_INFOLINE);
+}
+
 void NCursesFrontend::PrintGroupQueue()
 {
 	int iLineNr = m_iQueueWinTop;
@@ -830,7 +883,7 @@ void NCursesFrontend::PrintGroupQueue()
 		char szBuffer[MAX_SCREEN_WIDTH];
 		snprintf(szBuffer, sizeof(szBuffer), "%s NZBs for downloading", m_bUseColor ? "" : "*** ");
 		szBuffer[MAX_SCREEN_WIDTH - 1] = '\0';
-	    PlotLine(szBuffer, iLineNr++, 0, NCURSES_COLORPAIR_INFOLINE);
+		PrintTopHeader(szBuffer, iLineNr++, false);
         PlotLine("Ready to receive nzb-job", iLineNr++, 0, NCURSES_COLORPAIR_TEXT);
     }
     else
@@ -862,7 +915,7 @@ void NCursesFrontend::PrintGroupQueue()
 		snprintf(szBuffer, sizeof(szBuffer), " %sNZBs for downloading - %i NZBs in queue - %s / %s", 
 			m_bUseColor ? "" : "*** ", pGroupQueue->size(), szRemaining, szUnpaused);
 		szBuffer[MAX_SCREEN_WIDTH - 1] = '\0';
-		PlotLine(szBuffer, m_iQueueWinTop, 0, NCURSES_COLORPAIR_INFOLINE);
+		PrintTopHeader(szBuffer, m_iQueueWinTop, false);
     }
 }
 

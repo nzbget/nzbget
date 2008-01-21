@@ -73,27 +73,14 @@ void ColoredFrontend::PrintStatus()
 	char tmp[1024];
 	char timeString[100];
 	timeString[0] = '\0';
+	float fCurrentDownloadSpeed = m_bStandBy ? 0 : m_fCurrentDownloadSpeed;
 
-	if (m_fCurrentDownloadSpeed > 0.0f)
+	if (fCurrentDownloadSpeed > 0.0 && !m_bPause)
 	{
-		long long remain_sec = m_lRemainingSize / ((long long int)(m_fCurrentDownloadSpeed * 1024));
-		int h = 0;
-		int m = 0;
-		int s = 0;
-		while (remain_sec > 3600)
-		{
-			h++;
-			remain_sec -= 3600;
-		}
-
-		while (remain_sec > 60)
-		{
-			m++;
-			remain_sec -= 60;
-		}
-
-		s = remain_sec;
-
+		long long remain_sec = m_lRemainingSize / ((long long int)(fCurrentDownloadSpeed * 1024));
+		int h = remain_sec / 3600;
+		int m = (remain_sec % 3600) / 60;
+		int s = remain_sec % 60;
 		sprintf(timeString, " (~ %.2d:%.2d:%.2d)", h, m, s);
 	}
 
@@ -125,8 +112,8 @@ void ColoredFrontend::PrintStatus()
 #endif
 
 	snprintf(tmp, 1024, " %d threads, %.0f KB/s, %.2f MB remaining%s%s%s%s%s\n", 
-		m_iThreadCount, m_fCurrentDownloadSpeed, (float)(m_lRemainingSize / 1024.0 / 1024.0), 
-		timeString, szParStatus, m_bPause ? ", Paused" : "", szDownloadLimit, szControlSeq);
+		m_iThreadCount, fCurrentDownloadSpeed, (float)(m_lRemainingSize / 1024.0 / 1024.0), 
+		timeString, szParStatus, m_bPause ? (m_bStandBy ? ", Paused" : ", Pausing") : "", szDownloadLimit, szControlSeq);
 	tmp[1024-1] = '\0';
 	printf("%s", tmp);
 	m_bNeedGoBack = true;
