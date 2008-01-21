@@ -118,6 +118,7 @@ private:
 	void			PrintGroupQueue();
 	void			PrintGroupname(GroupInfo * pGroupInfo, int iRow, bool bSelected);
 	void			PrepareGroupQueue();
+	void			PrintTopHeader(char* szHeader, int iLineNr, bool bUpTime);
 	void			ClearGroupQueue();
 	int				PrintMessage(Message* Msg, int iRow, int iMaxLines);
 	void			PrintKeyInputBar();

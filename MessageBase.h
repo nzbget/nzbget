@@ -137,6 +137,11 @@ struct SNZBListResponse
 	int32_t					m_bServerPaused;		// 1 - server is currently in paused-state
 	int32_t					m_iThreadCount;			// Number of threads running
 	int32_t					m_iParJobCount;			// Number of ParJobs in Par-Checker queue (including current file)
+	int32_t					m_iUpTimeSec;			// Server up time in seconds
+	int32_t					m_iDownloadTimeSec;		// Server download time in seconds (up_time - standby_time)
+	int32_t					m_iDownloadedBytesLo;	// Amount of data downloaded since server start, Low 32-bits of 64-bit value
+	int32_t					m_iDownloadedBytesHi;	// Amount of data downloaded since server start, High 32-bits of 64-bit value
+	int32_t					m_bServerStandBy;		// 0 - there are currently downloads running, 1 - no downloads in progress (server paused or all jobs completed)
 	int32_t					m_iNrTrailingEntries;	// Number of List-entries, following to this structure
 	int32_t					m_iTrailingDataLength;	// Length of all List-entries, following to this structure
 	// SNZBListResponseEntry m_Entries[m_iNrTrailingEntries]		// variable sized

@@ -304,22 +304,48 @@ bool RemoteClient::RequestServerList()
 		{
 			printf("Remaining size: %.2f MB\n", lRemaining / 1024.0 / 1024.0);
 		}
-		printf("Download rate: %.1f KB/s\n", (float)(ntohl(ListResponse.m_iDownloadRate) / 1024.0));
+		printf("Current download rate: %.1f KB/s\n", (float)(ntohl(ListResponse.m_iDownloadRate) / 1024.0));
 
 		free(pBuf);
 	}
 
-	printf("Threads running: %i\n", ntohl(ListResponse.m_iThreadCount));
-	printf("Server state: %s\n", ntohl(ListResponse.m_bServerPaused) ? "Paused" : "Running");
+	long long iAllBytes = JoinInt64(ntohl(ListResponse.m_iDownloadedBytesHi), ntohl(ListResponse.m_iDownloadedBytesLo));
+	float fAverageSpeed = ntohl(ListResponse.m_iDownloadTimeSec) > 0 ? iAllBytes / ntohl(ListResponse.m_iDownloadTimeSec) : 0;
+	printf("Session download rate: %.1f KB/s\n", (float)(fAverageSpeed / 1024.0));
 
 	if (ntohl(ListResponse.m_iDownloadLimit) > 0)
 	{
 		printf("Speed limit: %.1f KB/s\n", (float)(ntohl(ListResponse.m_iDownloadLimit) / 1024.0));
 	}
 
+	int sec = ntohl(ListResponse.m_iUpTimeSec);
+	int h = sec / 3600;
+	int m = (sec % 3600) / 60;
+	int s = sec % 60;
+	printf("Up time: %.2d:%.2d:%.2d\n", h, m, s);
+
+	sec = ntohl(ListResponse.m_iDownloadTimeSec);
+	h = sec / 3600;
+	m = (sec % 3600) / 60;
+	s = sec % 60;
+	printf("Download time: %.2d:%.2d:%.2d\n", h, m, s);
+
+	printf("Downloaded: %.2f MB\n", iAllBytes / 1024.0 / 1024.0);
+
+	printf("Threads running: %i\n", ntohl(ListResponse.m_iThreadCount));
+
 	if (ntohl(ListResponse.m_iParJobCount) > 0)
 	{
 		printf("Par-jobs: %i\n", (int)ntohl(ListResponse.m_iParJobCount));
+	}
+
+	if (ntohl(ListResponse.m_bServerStandBy))
+	{
+		printf("Server state: Stand-By\n");
+	}
+	else
+	{
+		printf("Server state: %s\n", ntohl(ListResponse.m_bServerPaused) ? "Paused" : "Downloading");
 	}
 
 	return true;
