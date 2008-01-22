@@ -131,6 +131,7 @@ static const char* OPTION_CRCCHECK			= "CrcCheck";
 static const char* OPTION_RETRYONCRCERROR	= "RetryOnCrcError";
 static const char* OPTION_THREADLIMIT		= "ThreadLimit";
 static const char* OPTION_DIRECTWRITE		= "DirectWrite";
+static const char* OPTION_WRITEBUFFERSIZE	= "WriteBufferSize";
 
 #ifndef WIN32
 const char* PossibleConfigLocations[] =
@@ -396,6 +397,7 @@ void Options::InitDefault()
 	SetOption(OPTION_RETRYONCRCERROR, "no");
 	SetOption(OPTION_THREADLIMIT, "100");
 	SetOption(OPTION_DIRECTWRITE, "no");
+	SetOption(OPTION_WRITEBUFFERSIZE, "0");
 }
 
 void Options::InitOptFile()
@@ -506,6 +508,7 @@ void Options::InitOptions()
 	m_iUMask				= strtol(GetOption(OPTION_UMASK), NULL, 8);
 	m_iUpdateInterval		= atoi(GetOption(OPTION_UPDATEINTERVAL));
 	m_iThreadLimit			= atoi(GetOption(OPTION_THREADLIMIT));
+	m_iWriteBufferSize		= atoi(GetOption(OPTION_WRITEBUFFERSIZE));
 
 	const char* BoolNames[] = { "yes", "no", "true", "false", "1", "0", "on", "off", "enable", "disable" };
 	const int BoolValues[] = { 1, 0, 1, 0, 1, 0, 1, 0, 1, 0 };

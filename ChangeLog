@@ -2,59 +2,67 @@ nzbget-0.3.1:
   - Greatly reduced the memory consumption by keeping articles' info on disk 
     until the file download starts;
   - Implemented decode-on-the-fly-technique to reduce disk-io; downloaded
-    and decoded data can be saved directly to the destination file 
+    and decoded data can also be saved directly to the destination file 
     (without any intermediate files at all); this eliminates the necessity
-    of joining of articles later (option "directwrite");
+    of joining of articles later (option "DirectWrite");
   - Improved communication with news-servers: connections are now keeped open 
     until all files are downloaded (or server paused); this eliminates the 
     need for establishing of connections and authorizations for each 
     article and improves overal download speed;
   - Significantly better download speed is now possible on fast connection; 
-    it was limited by pauses on starting of new articles' downloads; 
+    it was limited by delays on starting of new articles' downloads; 
     the synchronisation mechanism was reworked to fix this issue;
   - Download speed meter is much more accurate, especially on fast connections;
     this also means better speed throttling;
   - Speed optimisations in internal decoder (up to 25% faster);
   - CRC-calculation can be bypassed to increase performance on slow CPUs
-    (option "crccheck");
+    (option "CrcCheck");
   - Improved parsing of artcile's subject for better extracting of filename 
     part from it and implemented a fallback-option if the parsing was incorrect; 
   - Improved dupe check for files from the same nzb-request to detect reposted 
-    files and download only the best from them (if option "dupecheck" is on); 
+    files and download only the best from them (if option "DupeCheck" is on); 
   - Articles with incorrect CRC can be treated as "possibly recoverable errors"
-    and relaunched for download (option "retryoncrcerror"), it is useful if 
+    and relaunched for download (option "RetryOnCrcError"), it is useful if 
     multiple servers are available;
+  - Improved error-check for downloaded articles (crc-check and check for
+    received message-id) decrease the number of broken files;
   - Extensions in curses-outputmode: added group-view-mode (key "G") to show
     items in download queue as groups, where one group represents all files 
     from the same nzb-file; the editing of queue works also in group-mode 
     (for all files in this group): pause/unpause/delete/move of groups; 
-  - Another extension in curses-outputmode: key "T" toggles timestamps in log;
+  - Other extensions in curses-outputmode: key "T" toggles timestamps in log;
+    added output of statistical data: uptime, download-time, average session 
+    download speed;
   - Edit-command accepts more than one ID or range of IDs.
     E.g: "nzbget -E P 2,6-10,33-39"; The switch "-I" is not used anymore;
   - Move-actions in Edit-command affect files in a smart order to guarantee 
     that the relative order of files in queue is not changed after the moving;
   - Extended syntax of edit-command to edit groups (pause/unpause/delete/move 
     of groups). E.g: "nzbget -E G P 2";
-  - Added option "daemonusername" to set the user that the daemon (POSIX only) 
+  - Added option "DaemonUserName" to set the user that the daemon (POSIX only) 
     normally runs at. This allows nzbget daemon to be launched in rc.local 
     (at boot), and download items as a specific user id; Thanks to Thierry 
     MERLE <merlum@users.sourceforge.net> for the patch;
-  - Added option "umask" to specify permissions for newly created files and dirs 
+  - Added option "UMask" to specify permissions for newly created files and dirs 
     (POSIX only);
   - Communication protocol used between server and client was revised to define 
     the byte order for transferred data. This allows hosts with different 
     endianness to communicate with each other;
-  - Added options "cursesnzbname", "cursesgroup" and "cursestime" to define
+  - Added options "CursesNzbName", "CursesGroup" and "CursesTime" to define
     initial state of curses-outputmode;
-  - Added option "updateinterval" to adjust update interval for Frontend-output
+  - Added option "UpdateInterval" to adjust update interval for Frontend-output
     (useful in remote-mode to reduce network usage);
+  - Added option "WriteBufferSize" to reduce disk-io (but it could slightly 
+    increase memory usage and therefore disabled by default);
+  - List-command prints additional statistical info: uptime, download-time,
+    total amount of downloaded data and average session download speed;
   - The creation of necessary directories on program's start was extended 
     with automatic creation of all parent directories or error reporting 
     if it was not possible;
   - Printed messages are now translated to oem-codepage to correctly print 
     filenames with non-english characters (windows only);
-  - Added option "threadlimit" to prevent program from crash if it wants to 
-    create too many threads (sometimes may occur in special cases);
+  - Added option "ThreadLimit" to prevent program from crash if it wants to 
+    create too many threads (sometimes could occur in special cases);
   - Fixed error on parsing of nzb-files containing percent and other special 
     characters in their names (bug appeared on windows only);
   - Reformated sample configuration file and changed default optionnames 

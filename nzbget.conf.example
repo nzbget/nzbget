@@ -233,6 +233,23 @@ ThreadLimit=100
 # Set the maximum download rate in KB/s, "0" means no speed control
 DownloadRate=0
 
+# Set the size of memory buffer used by writing the articles, in Bytes.
+# Bigger values decrease disk-io, but increase memory usage.
+# Value "0" causes the OS-dependend default value to be used.
+# With value "-1" (which means "max/auto") the program sets the size of 
+# buffer according to the size of current article (typically less than 500K).
+# NOTE: the value must be written in bytes, do not use postfixes "K" or "M".
+# NOTE: to calculate the memory usage multiply WriteBufferSize by max number
+# of connections, configured in section "NEWS-SERVERS".
+# NOTE: typical article's size not exceed 500000 bytes, so using bigger values
+# (like several megabytes) will just waste memory.
+# NOTE: for desktop computers with large amount of memory value "-1" (max/auto)
+# is recommended, but for computers with very low memory (routers, NAS)
+# value "0" (default OS-dependend size) could be better alternative.
+# NOTE: write-buffer is managed by OS (system libraries) and therefore 
+# the effect of the option is highly OS-dependend.
+WriteBufferSize=0
+
 
 ##############################################################################
 ### LOGGING                                                                ###
@@ -403,3 +420,5 @@ StrictParName=yes
 #    remote client for short periods of time needed for controlling of 
 #    download process on server. Daemon/Service mode eats less CPU 
 #    resources due to not updating of output on screen.
+# 9) Increase the value of option "WriteBufferSize" or better set it to 
+#    "-1" (max/auto) if you have spare 5-20 MB of memory.
