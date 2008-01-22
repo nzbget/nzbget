@@ -84,7 +84,7 @@ private:
 	void					BuildArticleFilename(ArticleDownloader* pArticleDownloader, FileInfo* pFileInfo, ArticleInfo* pArticleInfo);
 	bool					IsDupe(FileInfo* pFileInfo);
 	void					ArticleCompleted(ArticleDownloader* pArticleDownloader);
-	void					DeleteFileInfo(FileInfo* pFileInfo);
+	void					DeleteFileInfo(FileInfo* pFileInfo, bool bCompleted);
 	void					ResetHangingDownloads();
 
 public:

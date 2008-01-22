@@ -397,7 +397,7 @@ bool QueueCoordinator::DeleteQueueEntry(FileInfo* pFileInfo)
 		Aspect aspect = { eaFileDeleted, pFileInfo, &m_DownloadQueue, NULL };
 		Notify(&aspect);
 
-		DeleteFileInfo(pFileInfo);
+		DeleteFileInfo(pFileInfo, false);
 	}
 	return hasDownloads;
 }
@@ -594,13 +594,13 @@ void QueueCoordinator::ArticleCompleted(ArticleDownloader* pArticleDownloader)
 		Aspect aspect = { fileCompleted ? eaFileCompleted : eaFileDeleted, pFileInfo, &m_DownloadQueue, NULL };
 		Notify(&aspect);
 		
-		DeleteFileInfo(pFileInfo);
+		DeleteFileInfo(pFileInfo, fileCompleted);
 	}
 
 	m_mutexDownloadQueue.Unlock();
 }
 
-void QueueCoordinator::DeleteFileInfo(FileInfo* pFileInfo)
+void QueueCoordinator::DeleteFileInfo(FileInfo* pFileInfo, bool bCompleted)
 {
 	for (DownloadQueue::iterator it = m_DownloadQueue.begin(); it != m_DownloadQueue.end(); it++)
 	{
@@ -615,6 +615,31 @@ void QueueCoordinator::DeleteFileInfo(FileInfo* pFileInfo)
 	if (g_pOptions->GetSaveQueue() && g_pOptions->GetServerMode())
 	{
 		g_pDiskState->DiscardFile(&m_DownloadQueue, pFileInfo);
+	}
+
+	if (!bCompleted)
+	{
+		// deleting temporary files
+
+		if (!g_pOptions->GetDirectWrite() || g_pOptions->GetContinuePartial())
+		{
+			for (FileInfo::Articles::iterator it = pFileInfo->GetArticles()->begin(); it != pFileInfo->GetArticles()->end(); it++)
+			{
+				ArticleInfo* pa = *it;
+				if (pa->GetResultFilename())
+				{
+					remove(pa->GetResultFilename());
+				}
+			}
+		}
+
+		if (g_pOptions->GetDirectWrite())
+		{
+			char name[1024];
+			snprintf(name, 1024, "%s%i.out", g_pOptions->GetTempDir(), pFileInfo->GetID());
+			name[1024-1] = '\0';
+			remove(name);
+		}
 	}
 
 	delete pFileInfo;
