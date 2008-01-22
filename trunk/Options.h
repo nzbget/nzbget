@@ -129,6 +129,7 @@ private:
 	bool				m_bRetryOnCrcError;
 	int					m_iThreadLimit;
 	bool				m_bDirectWrite;
+	int					m_iWriteBufferSize;
 
 	// Parsed command-line parameters
 	bool				m_bServerMode;
@@ -217,6 +218,7 @@ public:
 	bool				GetRetryOnCrcError() { return m_bRetryOnCrcError; }
 	int					GetThreadLimit() { return m_iThreadLimit; }
 	bool				GetDirectWrite() { return m_bDirectWrite; }
+	int					GetWriteBufferSize() { return m_iWriteBufferSize; }
 
 	// Parsed command-line parameters
 	bool				GetServerMode() { return m_bServerMode; }

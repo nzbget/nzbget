@@ -414,7 +414,6 @@ ArticleDownloader::EStatus ArticleDownloader::Download()
 
 	if (m_pOutFile)
 	{
-		fflush(m_pOutFile);
 		fclose(m_pOutFile);
 	}
 
@@ -460,6 +459,8 @@ bool ArticleDownloader::Write(char* szLine, int iLen)
 
 bool ArticleDownloader::PrepareFile(char* szLine)
 {
+	bool bOpen = false;
+
 	// prepare file for writing
 	if (g_pOptions->GetDecoder() == Options::dcYenc)
 	{
@@ -514,35 +515,39 @@ bool ArticleDownloader::PrepareFile(char* szLine)
 						m_pFileInfo->SetOutputInitialized(true);
 					}
 					m_pFileInfo->UnlockOutputFile();
-
-					m_pOutFile = fopen(m_szOutputFilename, "r+");
-					if (!m_pOutFile)
-					{
-						error("Could not open file %s", m_szOutputFilename);
-						return false;
-					}
+					bOpen = true;
 				}
 			}
 			else
 			{
-				m_pOutFile = fopen(m_szTempFilename, "w");
-				if (!m_pOutFile)
-				{
-					error("Could not create file %s", m_szTempFilename);
-					return false;
-				}
+				bOpen = true;
 			}
 		}
 	}
 	else
 	{
-		m_pOutFile = fopen(m_szTempFilename, "w");
+		bOpen = true;
+	}
+
+	if (bOpen)
+	{
+		const char* szFilename = g_pOptions->GetDirectWrite() ? m_szOutputFilename : m_szTempFilename;
+		m_pOutFile = fopen(szFilename, g_pOptions->GetDirectWrite() ? "r+" : "w");
 		if (!m_pOutFile)
 		{
-			error("Could not create file %s", m_szTempFilename);
+			error("Could not %s file %s", g_pOptions->GetDirectWrite() ? "open" : "create", szFilename);
 			return false;
 		}
+		if (g_pOptions->GetWriteBufferSize() == -1)
+		{
+			setvbuf(m_pOutFile, (char *)NULL, _IOFBF, m_pArticleInfo->GetSize());
+		}
+		else if (g_pOptions->GetWriteBufferSize() > 0)
+		{
+			setvbuf(m_pOutFile, (char *)NULL, _IOFBF, g_pOptions->GetWriteBufferSize());
+		}
 	}
+
 	return true;
 }
 
@@ -761,6 +766,14 @@ void ArticleDownloader::CompleteFileParts()
 			error("Could not create file %s!", tmpdestfile);
 			SetStatus(adFinished);
 			return;
+		}
+		if (g_pOptions->GetWriteBufferSize() == -1 && (*m_pFileInfo->GetArticles())[0])
+		{
+			setvbuf(outfile, (char *)NULL, _IOFBF, (*m_pFileInfo->GetArticles())[0]->GetSize());
+		}
+		else if (g_pOptions->GetWriteBufferSize() > 0)
+		{
+			setvbuf(outfile, (char *)NULL, _IOFBF, g_pOptions->GetWriteBufferSize());
 		}
 	}
 	else if (g_pOptions->GetDecoder() == Options::dcNone)
