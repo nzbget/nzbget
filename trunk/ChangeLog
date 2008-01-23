@@ -61,6 +61,7 @@ nzbget-0.3.1:
     if it was not possible;
   - Printed messages are now translated to oem-codepage to correctly print 
     filenames with non-english characters (windows only);
+  - Added remote-command "-V (--serverversion)" to print the server's version;
   - Added option "ThreadLimit" to prevent program from crash if it wants to 
     create too many threads (sometimes could occur in special cases);
   - Fixed error on parsing of nzb-files containing percent and other special 

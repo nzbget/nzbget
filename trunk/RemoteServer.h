@@ -124,4 +124,10 @@ public:
 	virtual void		Execute();
 };
 
+class VersionCommand: public MessageCommand
+{
+public:
+	virtual void		Execute();
+};
+
 #endif

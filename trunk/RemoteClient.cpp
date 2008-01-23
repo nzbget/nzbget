@@ -559,3 +559,24 @@ bool RemoteClient::RequestServerShutdown()
 	m_pConnection->Disconnect();
 	return OK;
 }
+
+bool RemoteClient::RequestServerVersion()
+{
+	if (!InitConnection()) return false;
+
+	SNZBVersionRequest VersionRequest;
+	InitMessageBase(&VersionRequest.m_MessageBase, eRemoteRequestVersion, sizeof(VersionRequest));
+
+	bool OK = m_pConnection->Send((char*)(&VersionRequest), sizeof(VersionRequest)) >= 0;
+	if (OK)
+	{
+		OK = ReceiveBoolResponse();
+	}
+	else
+	{
+		perror("m_pConnection->Send");
+	}
+
+	m_pConnection->Disconnect();
+	return OK;
+}

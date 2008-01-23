@@ -321,6 +321,10 @@ void ProcessClientRequest()
 	{
 		Client->RequestServerDownload(g_pOptions->GetArgFilename(), g_pOptions->GetAddTop());
 	}
+	else if (g_pOptions->GetClientOperation() == Options::opClientRequestVersion)
+	{
+		Client->RequestServerVersion();
+	}
 
 	delete Client;
 }
