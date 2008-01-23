@@ -64,6 +64,8 @@ nzbget-0.3.1:
   - Added remote-command "-V (--serverversion)" to print the server's version;
   - Added option "ThreadLimit" to prevent program from crash if it wants to 
     create too many threads (sometimes could occur in special cases);
+  - Added options "NzbDirInterval" and "NzbDirFileAge" to adjust interval and
+    delay by monitoring of incoming-directory for new nzb-files;
   - Fixed error on parsing of nzb-files containing percent and other special 
     characters in their names (bug appeared on windows only);
   - Reformated sample configuration file and changed default optionnames 

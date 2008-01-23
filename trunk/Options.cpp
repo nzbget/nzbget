@@ -130,6 +130,8 @@ static const char* OPTION_RETRYONCRCERROR	= "RetryOnCrcError";
 static const char* OPTION_THREADLIMIT		= "ThreadLimit";
 static const char* OPTION_DIRECTWRITE		= "DirectWrite";
 static const char* OPTION_WRITEBUFFERSIZE	= "WriteBufferSize";
+static const char* OPTION_NZBDIRINTERVAL	= "NzbDirInterval";
+static const char* OPTION_NZBDIRFILEAGE		= "NzbDirFileAge";
 
 #ifndef WIN32
 const char* PossibleConfigLocations[] =
@@ -207,6 +209,9 @@ Options::Options(int argc, char* argv[])
 	m_bRetryOnCrcError		= false;
 	m_bDirectWrite			= false;
 	m_iThreadLimit			= 0;
+	m_iWriteBufferSize		= 0;
+	m_iNzbDirInterval		= 0;
+	m_iNzbDirFileAge		= 0;
 
 	char szFilename[MAX_PATH + 1];
 #ifdef WIN32
@@ -396,6 +401,8 @@ void Options::InitDefault()
 	SetOption(OPTION_THREADLIMIT, "100");
 	SetOption(OPTION_DIRECTWRITE, "no");
 	SetOption(OPTION_WRITEBUFFERSIZE, "0");
+	SetOption(OPTION_NZBDIRINTERVAL, "5");
+	SetOption(OPTION_NZBDIRFILEAGE, "60");
 }
 
 void Options::InitOptFile()
@@ -488,7 +495,7 @@ void Options::InitOptions()
 	CheckDir(&m_szDestDir, OPTION_DESTDIR);
 	CheckDir(&m_szTempDir, OPTION_TEMPDIR);
 	CheckDir(&m_szQueueDir, OPTION_QUEUEDIR);
-	m_szNzbDir = strdup(GetOption(OPTION_NZBDIR));
+
 	m_szPostProcess = strdup(GetOption(OPTION_POSTPROCESS));
 	
 	m_fDownloadRate			= (float)atof(GetOption(OPTION_DOWNLOADRATE));
@@ -507,6 +514,13 @@ void Options::InitOptions()
 	m_iUpdateInterval		= atoi(GetOption(OPTION_UPDATEINTERVAL));
 	m_iThreadLimit			= atoi(GetOption(OPTION_THREADLIMIT));
 	m_iWriteBufferSize		= atoi(GetOption(OPTION_WRITEBUFFERSIZE));
+	m_iNzbDirInterval		= atoi(GetOption(OPTION_NZBDIRINTERVAL));
+	m_iNzbDirFileAge		= atoi(GetOption(OPTION_NZBDIRFILEAGE));
+
+	if (m_iNzbDirInterval > 0)
+	{
+		CheckDir(&m_szNzbDir, OPTION_NZBDIR);
+	}
 
 	const char* BoolNames[] = { "yes", "no", "true", "false", "1", "0", "on", "off", "enable", "disable" };
 	const int BoolValues[] = { 1, 0, 1, 0, 1, 0, 1, 0, 1, 0 };

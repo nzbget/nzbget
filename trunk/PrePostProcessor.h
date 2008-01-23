@@ -76,7 +76,6 @@ private:
 #endif
 	
 private:
-	bool				m_bCheckIncomingNZBs;
 	QueueCoordinatorObserver	m_QueueCoordinatorObserver;
 	bool				m_bHasMoreJobs;
 

@@ -128,6 +128,18 @@ ContinuePartial=yes
 # Create subdirectory with nzb-filename in destination-directory (yes, no)
 AppendNzbDir=yes
 
+# How often incoming-directory (option "NzbDir") must be checked for new 
+# nzb-files, in seconds.
+# Value "0" disables the check.
+NzbDirInterval=5
+
+# How old nzb-file should at least be for it to be loaded to queue, in seconds.
+# Nzbget checks if nzb-file was not modified in last few seconds, defined by
+# this option. That safety interval prevents the loading of files, which 
+# were not yet completely saved to disk, for example if they are still being
+# downloaded in web-browser.
+NzbDirFileAge=60
+
 # Check for duplicate files (yes, no)
 # If this option is enabled the program checks by adding of a new nzb-file:
 # 1) if nzb-file contains duplicate entries. This check aims on detecting
@@ -145,11 +157,6 @@ DupeCheck=no
 # Visibly rename broken files on download appending "_broken" (yes, no)
 # Do not activate this option if par-check is enabled.
 RenameBroken=no
-
-# Create a log of all broken files (yes ,no)
-# It is a text file placed near downloaded files, which contains
-# the names of broken files
-CreateBrokenLog=yes
 
 # Determine how the articles should be decoded (yenc, uulib, none)
 # yenc - use internal yEnc-Decoder. Supports only yEnc-format, but is 
@@ -270,6 +277,11 @@ DebugTarget=both
 
 # Number of messages stored in buffer and available for remote clients
 LogBufferSize=1000
+
+# Create a log of all broken files (yes ,no)
+# It is a text file placed near downloaded files, which contains
+# the names of broken files
+CreateBrokenLog=yes
 
 # See also option "logfile" in secion "PATHS"
 
