@@ -83,8 +83,6 @@ PrePostProcessor::PrePostProcessor()
 {
 	debug("Creating PrePostProcessor");
 
-	struct stat buffer;
-	m_bCheckIncomingNZBs = !stat(g_pOptions->GetNzbDir(), &buffer) && S_ISDIR(buffer.st_mode);
 	m_bHasMoreJobs = false;
 
 	m_QueueCoordinatorObserver.owner = this;
@@ -118,9 +116,10 @@ void PrePostProcessor::Run()
 #endif
 	while (!IsStopped())
 	{
-		if (m_bCheckIncomingNZBs && iNZBDirInterval == 5000)
+		if (g_pOptions->GetNzbDir() && g_pOptions->GetNzbDirInterval() > 0 && 
+			iNZBDirInterval == g_pOptions->GetNzbDirInterval() * 1000)
 		{
-			// check nzbdir every 5 seconds
+			// check nzbdir every g_pOptions->GetNzbDirInterval() seconds
 			CheckIncomingNZBs();
 			iNZBDirInterval = 0;
 		}
@@ -249,10 +248,10 @@ void PrePostProcessor::CheckIncomingNZBs()
 			snprintf(fullfilename, 1024, "%s%c%s", g_pOptions->GetNzbDir(), (int)PATH_SEPARATOR, filename);
 			fullfilename[1024-1] = '\0';
 			if (!stat(fullfilename, &buffer) &&
-				time(NULL) - buffer.st_mtime > 60 &&
-				time(NULL) - buffer.st_ctime > 60)
+				time(NULL) - buffer.st_mtime > g_pOptions->GetNzbDirFileAge() &&
+				time(NULL) - buffer.st_ctime > g_pOptions->GetNzbDirFileAge())
 			{
-				// the file is at least 60 seconds old, we can process it
+				// the file is at least g_pOptions->GetNzbDirFileAge() seconds old, we can process it
 				info("Collection %s found", filename);
 				char bakname[1024];
 				if (g_pQueueCoordinator->AddFileToQueue(fullfilename))

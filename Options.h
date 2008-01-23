@@ -131,6 +131,8 @@ private:
 	int					m_iThreadLimit;
 	bool				m_bDirectWrite;
 	int					m_iWriteBufferSize;
+	int					m_iNzbDirInterval;
+	int					m_iNzbDirFileAge;
 
 	// Parsed command-line parameters
 	bool				m_bServerMode;
@@ -171,8 +173,8 @@ private:
 	void				ParseFileIDList(int argc, char* argv[], int optind);
 
 public:
-	Options(int argc, char* argv[]);
-	~Options();
+						Options(int argc, char* argv[]);
+						~Options();
 
 	// Options
 	const char*			GetDestDir() { return m_szDestDir; }
@@ -220,6 +222,8 @@ public:
 	int					GetThreadLimit() { return m_iThreadLimit; }
 	bool				GetDirectWrite() { return m_bDirectWrite; }
 	int					GetWriteBufferSize() { return m_iWriteBufferSize; }
+	int					GetNzbDirInterval() { return m_iNzbDirInterval; }
+	int					GetNzbDirFileAge() { return m_iNzbDirFileAge; }
 
 	// Parsed command-line parameters
 	bool				GetServerMode() { return m_bServerMode; }
