@@ -56,7 +56,8 @@ enum eRemoteRequest
 	eRemoteRequestDumpDebug,
 	eRemoteRequestEditQueue,
 	eRemoteRequestLog,
-	eRemoteRequestShutdown
+	eRemoteRequestShutdown,
+	eRemoteRequestVersion
 };
 
 // Possible values for field "m_iAction" of struct "SNZBEditQueueRequest":
@@ -272,6 +273,21 @@ struct SNZBShutdownRequest
 
 // Shutdown server response
 struct SNZBShutdownResponse
+{
+	SNZBResponseBase		m_MessageBase;			// Must be the first in the struct
+	int32_t					m_bSuccess;				// 0 - command failed, 1 - command executed successfully
+	int32_t					m_iTrailingDataLength;	// Length of Text-string (m_szText), following to this record
+	//char					m_szText[m_iTrailingDataLength];	// variable sized
+};
+
+// Server version request
+struct SNZBVersionRequest
+{
+	SNZBRequestBase			m_MessageBase;			// Must be the first in the struct
+};
+
+// Server version  response
+struct SNZBVersionResponse
 {
 	SNZBResponseBase		m_MessageBase;			// Must be the first in the struct
 	int32_t					m_bSuccess;				// 0 - command failed, 1 - command executed successfully

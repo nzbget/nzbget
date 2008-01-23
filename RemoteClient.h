@@ -56,6 +56,7 @@ public:
 	bool 			RequestServerEditQueue(int iAction, int iOffset, int* pIDList, int iIDCount, bool bSmartOrder);
 	bool			RequestServerLog(int iLines);
 	bool			RequestServerShutdown();
+	bool			RequestServerVersion();
 };
 
 #endif

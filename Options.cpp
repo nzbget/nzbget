@@ -64,6 +64,7 @@ static struct option long_options[] =
 	    {"server", no_argument, 0, 's' },
 	    {"daemon", no_argument, 0, 'D' },
 	    {"version", no_argument, 0, 'v'},
+	    {"serverversion", no_argument, 0, 'V'},
 	    {"option", required_argument, 0, 'o'},
 	    {"append", no_argument, 0, 'A'},
 	    {"list", no_argument, 0, 'L'},
@@ -76,14 +77,11 @@ static struct option long_options[] =
 	    {"edit", required_argument, 0, 'E'},
 	    {"connect", no_argument, 0, 'C'},
 	    {"quit", no_argument, 0, 'Q'},
-#ifdef DEBUG				
-	    {"test", no_argument, 0, 't'},
-#endif		
 	    {0, 0, 0, 0}
     };
 #endif
 
-static char short_options[] = "c:hno:psvABDCG:LPUR:TE:Q";
+static char short_options[] = "c:hno:psvABDCG:LPUR:TE:QV";
 
 // Program options
 static const char* OPTION_DESTDIR			= "DestDir";
@@ -719,6 +717,9 @@ void Options::InitCommandLine(int argc, char* argv[])
 			case 'Q':
 				m_eClientOperation = opClientRequestShutdown;
 				break;
+			case 'V':
+				m_eClientOperation = opClientRequestVersion;
+				break;
 			case '?':
 				exit(-1);
 				break;
@@ -744,6 +745,7 @@ void Options::PrintUsage(char* com)
 #ifndef WIN32
 		"  -D, --daemon              Start nzbget as a server in daemon-mode\n"
 #endif
+	    "  -V, --serverversion       Print server's version and exit\n"
 		"  -Q, --quit                Shutdown the server\n"
 		"  -A, --append              Send file to the server's download queue\n"
 		"  -C, --connect             Attach client to server\n"

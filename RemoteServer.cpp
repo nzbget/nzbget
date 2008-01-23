@@ -278,6 +278,12 @@ void RequestProcessor::Dispatch()
 				break;
 			}
 
+		case eRemoteRequestVersion:
+			{
+				command = new VersionCommand();
+				break;
+			}
+
 		default:
 			error("Received unsupported request %i", ntohl(m_MessageBase.m_iType));
 			break;
@@ -373,6 +379,17 @@ void ShutdownCommand::Execute()
 
 	SendBoolResponse(true, "Stopping server");
 	ExitProc();
+}
+
+void VersionCommand::Execute()
+{
+	SNZBVersionRequest VersionRequest;
+	if (!ReceiveRequest(&VersionRequest, sizeof(VersionRequest)))
+	{
+		return;
+	}
+
+	SendBoolResponse(true, VERSION);
 }
 
 void DownloadCommand::Execute()
