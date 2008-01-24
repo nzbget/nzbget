@@ -368,6 +368,13 @@ void MakeValidFilename(char* szFilename, char cReplaceChar)
 		}
 		p++;
 	}
+
+	// remove trailing points. they are not allowed in directory names on windows,
+	// but we remove them on posix also, in a case the directory is accessed from windows via samba.
+	for (int iLen = strlen(szFilename); iLen > 0 && szFilename[iLen - 1] == '.'; iLen--) 
+	{
+		szFilename[iLen - 1] = '\0';
+	}
 }
 
 long long JoinInt64(unsigned int Hi, unsigned int Lo)
