@@ -182,9 +182,31 @@ void FileInfo::MakeNiceNZBName(const char * szNZBFilename, char * szBuffer, int 
 		strncpy(postname, szBaseName, 1024);
 		postname[1024-1] = '\0';
 	}
+
 	// wipe out ".nzb"
 	if (char* p = strrchr(postname, '.')) *p = '\0';
-	
+
+	::MakeValidFilename(postname, '_');
+
+	// if the resulting name is empty, use basename without cleaing up "msgid_"
+	if (strlen(postname) == 0)
+	{
+		// using complete filename
+		strncpy(postname, szBaseName, 1024);
+		postname[1024-1] = '\0';
+
+		// wipe out ".nzb"
+		if (char* p = strrchr(postname, '.')) *p = '\0';
+
+		::MakeValidFilename(postname, '_');
+
+		// if the resulting name is STILL empty, use "noname"
+		if (strlen(postname) == 0)
+		{
+			strncpy(postname, "noname", 1024);
+		}
+	}
+
 	strncpy(szBuffer, postname, iSize);
 	szBuffer[iSize-1] = '\0';
 }
