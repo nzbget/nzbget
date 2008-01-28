@@ -491,7 +491,10 @@ void QueueEditor::AlignAffectedGroups(DownloadQueue* pDownloadQueue, IDList* pID
 						}
 					}
 
-					cAffectedGroupList.push_back(cGroupList[iNum + 1]);
+					if (iNum + 1 < cGroupList.size())
+					{
+						cAffectedGroupList.push_back(cGroupList[iNum + 1]);
+					}
 				}
 				break;
 			}
