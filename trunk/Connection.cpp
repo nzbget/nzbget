@@ -405,12 +405,12 @@ char* Connection::DoReadLine(char* pBuffer, int iSize, int* pBytesRead)
 		szBufPtr += len;
 		iBufAvail -= len;
 		iBytesRead += len;
+		iSize -= len;
 		
 		if (p)
 		{
 			break;
 		}
-		iSize--;
 	}
 	*pBufPtr = '\0';
 
