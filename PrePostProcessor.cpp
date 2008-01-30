@@ -302,6 +302,17 @@ bool PrePostProcessor::WasLastInCollection(DownloadQueue* pDownloadQueue, FileIn
 	return true;
 }
 
+PrePostProcessor::ParQueue* PrePostProcessor::LockParQueue()
+{
+	m_mutexParChecker.Lock();
+	return &m_ParQueue;
+}
+
+void PrePostProcessor::UnlockParQueue()
+{
+	m_mutexParChecker.Unlock();
+}
+
 #ifndef DISABLE_PARCHECK
 
 void PrePostProcessor::CheckPars(DownloadQueue * pDownloadQueue, FileInfo * pFileInfo)
@@ -406,17 +417,6 @@ bool PrePostProcessor::SameParCollection(const char* szFilename1, const char* sz
 		ParChecker::ParseParFilename(szFilename2, &iBaseLen2, NULL) &&
 		iBaseLen1 == iBaseLen2 &&
 		!strncasecmp(szFilename1, szFilename2, iBaseLen1);
-}
-
-PrePostProcessor::ParQueue* PrePostProcessor::LockParQueue()
-{
-	m_mutexParChecker.Lock();
-	return &m_ParQueue;
-}
-
-void PrePostProcessor::UnlockParQueue()
-{
-	m_mutexParChecker.Unlock();
 }
 
 void PrePostProcessor::CheckParQueue()
