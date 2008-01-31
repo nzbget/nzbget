@@ -423,3 +423,14 @@ diff -urN libpar2-0.2-original/par2cmdline.h libpar2-0.2-modified/par2cmdline.h
  
  #else // WIN32
  #ifdef HAVE_CONFIG_H
+diff -urN libpar2-0.2-original/par2repairer.cpp libpar2-0.2-modified/par2repairer.cpp
+--- libpar2-0.2-original/par2repairer.cpp	2006-01-20 18:25:20.000000000 +0100
++++ libpar2-0.2-modified/par2repairer.cpp	2008-01-31 14:35:11.110360000 +0100
+@@ -78,6 +78,7 @@
+ 
+   delete mainpacket;
+   delete creatorpacket;
++  delete headers;
+ }
+ 
+ 
