@@ -328,6 +328,7 @@ NZBFile* NZBFile::Create(const char* szFileName, const char* szBuffer, int iSize
 		EncodeURL(szFileName, szURL);
 		debug("url=\"%s\"", szURL);
 		_variant_t v(szURL);
+		free(szURL);
 		success = doc->load(v);
 	} 
 	if (success == VARIANT_FALSE)
