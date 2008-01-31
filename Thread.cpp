@@ -35,6 +35,10 @@
 #include <stdlib.h>
 #include <stdio.h>
 
+#ifdef WIN32
+#include <process.h>
+#endif
+
 #include "Log.h"
 #include "Thread.h"
 
@@ -212,8 +216,7 @@ void Thread::Start()
 	m_mutexThread.Lock();
 
 #ifdef WIN32
-	DWORD ThreadId;
-	m_Thread = CreateThread(NULL, 0, Thread::thread_handler, (void *) this, 0, &ThreadId);
+	m_Thread = (HANDLE)_beginthread(Thread::thread_handler, 0, (void *)this);
 	m_bRunning = m_Thread != NULL;
 #else
 	pthread_attr_t m_Attr;
@@ -255,7 +258,7 @@ bool Thread::Kill()
 }
 
 #ifdef WIN32
-DWORD WINAPI Thread::thread_handler(void* pObject)
+void __cdecl Thread::thread_handler(void* pObject)
 #else
 void* Thread::thread_handler(void* pObject)
 #endif
@@ -284,7 +287,9 @@ void* Thread::thread_handler(void* pObject)
 	m_iThreadCount--;
 	m_mutexThread.Unlock();
 
+#ifndef WIN32
 	return NULL;
+#endif
 }
 
 int Thread::GetThreadCount()

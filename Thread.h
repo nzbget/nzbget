@@ -85,7 +85,7 @@ private:
 	bool					m_bAutoDestroy;
 
 #ifdef WIN32
-	static DWORD WINAPI		thread_handler(void* pObject);
+	static void __cdecl 	thread_handler(void* pObject);
 #else
 	static void				*thread_handler(void* pObject);
 #endif
