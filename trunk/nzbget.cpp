@@ -1,5 +1,5 @@
 /*
- *  This file if part of nzbget
+ *  This file is part of nzbget
  *
  *  Copyright (C) 2004  Sven Henkel <sidddy@users.sourceforge.net>
  *  Copyright (C) 2007  Andrei Prygounkov <hugbug@users.sourceforge.net>
@@ -92,6 +92,18 @@ DiskState* g_pDiskState = NULL;
 int main(int argc, char *argv[])
 {
 #ifdef WIN32
+#ifdef _DEBUG
+	_CrtSetReportMode(_CRT_WARN, _CRTDBG_MODE_FILE | _CRTDBG_MODE_DEBUG);
+	_CrtSetReportFile(_CRT_WARN, _CRTDBG_FILE_STDERR);
+	_CrtSetDbgFlag(_CRTDBG_ALLOC_MEM_DF
+#ifdef DEBUG_CRTMEMLEAKS
+		| _CRTDBG_CHECK_CRT_DF | _CRTDBG_CHECK_ALWAYS_DF
+#endif
+		);
+#endif
+#endif
+
+#ifdef WIN32
 	_set_fmode(_O_BINARY);
 	InstallUninstallServiceCheck(argc, argv);
 #endif
@@ -137,6 +149,13 @@ int main(int argc, char *argv[])
 	}
 
 	Run();
+
+#ifdef WIN32
+#ifdef _DEBUG
+	_CrtDumpMemoryLeaks();
+#endif
+#endif
+
 	return 0;
 }
 

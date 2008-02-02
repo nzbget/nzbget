@@ -1,5 +1,5 @@
 /*
- *  This file if part of nzbget
+ *  This file is part of nzbget
  *
  *  Copyright (C) 2007  Andrei Prygounkov <hugbug@users.sourceforge.net>
  *
@@ -61,6 +61,13 @@
 #define _CRT_NONSTDC_NO_WARNINGS
 
 #define _USE_32BIT_TIME_T
+
+#ifdef _DEBUG
+// detection of memory leaks
+#define _CRTDBG_MAP_ALLOC
+#include <stdlib.h>
+#include <crtdbg.h>
+#endif
 
 #include <windows.h>
 #include <winbase.h>
