@@ -194,6 +194,10 @@ void XmlRpcProcessor::Dispatch()
 	{
 		command = new DownloadXmlCommand();
 	}
+	else if (!strcasecmp(szMethodName, "postqueue"))
+	{
+		command = new PostQueueXmlCommand();
+	}
 	else 
 	{
 		command = new ErrorXmlCommand(1, "Invalid method");
@@ -758,4 +762,52 @@ void DownloadXmlCommand::Execute()
 	{
 		SendBoolResponse(false);
 	}
+}
+
+void PostQueueXmlCommand::Execute()
+{
+	AppendResponse("<?xml version=\"1.0\"?>\n<methodResponse>\n<params><param><value><array><data>\n");
+
+	const char* POSTQUEUE_ITEM = 
+		"<value><struct>\n"
+		"<member><name>NZBNicename</name><value><string>%s</string></value></member>\n"
+		"<member><name>NZBFilename</name><value><string>%s</string></value></member>\n"
+		"<member><name>ParFilename</name><value><string>%s</string></value></member>\n"
+		"<member><name>InfoName</name><value><string>%s</string></value></member>\n"
+		"</struct></value>\n";
+
+	PrePostProcessor::ParQueue* pParQueue = g_pPrePostProcessor->LockParQueue();
+
+	int szItemBufSize = 10240;
+	char* szItemBuf = (char*)malloc(szItemBufSize);
+
+	for (PrePostProcessor::ParQueue::iterator it = pParQueue->begin(); it != pParQueue->end(); it++)
+	{
+		PrePostProcessor::ParJob* pParJob = *it;
+		char szNZBNicename[1024];
+		FileInfo::MakeNiceNZBName(pParJob->GetNZBFilename(), szNZBNicename, sizeof(szNZBNicename));
+
+		char* xmlNZBNicename = XmlEncode(szNZBNicename);
+		char* xmlNZBFilename = XmlEncode(pParJob->GetNZBFilename());
+		char* xmlParFilename = XmlEncode(pParJob->GetParFilename());
+		char* xmlInfoName = XmlEncode(pParJob->GetInfoName());
+
+		snprintf(szItemBuf, szItemBufSize, POSTQUEUE_ITEM, szNZBNicename, xmlNZBFilename, xmlParFilename, xmlInfoName);
+		szItemBuf[szItemBufSize-1] = '\0';
+
+		free(xmlNZBNicename);
+		free(xmlNZBFilename);
+		free(xmlParFilename);
+		free(xmlInfoName);
+
+		AppendResponse(szItemBuf);
+	}
+	free(szItemBuf);
+
+	g_pPrePostProcessor->UnlockParQueue();
+
+	AppendResponse("</data></array></value></param></params>\n</methodResponse>");
+
+	debug("m_szResponse=%s", m_szResponse);
+	SendResponse(m_szResponse);
 }
