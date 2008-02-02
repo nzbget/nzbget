@@ -91,13 +91,28 @@ Connection::Connection(NetAddress* pNetAddress)
 	m_iTimeout			= 60;
 	m_bSuppressErrors	= true;
 	m_szReadBuf			= (char*)malloc(CONNECTION_READBUFFER_SIZE + 1);
+	m_bAutoClose		= true;
+}
+
+Connection::Connection(SOCKET iSocket, bool bAutoClose)
+{
+	debug("Creating Connection");
+
+	m_pNetAddress		= NULL;
+	m_eStatus			= csConnected;
+	m_iSocket			= iSocket;
+	m_iBufAvail			= 0;
+	m_iTimeout			= 60;
+	m_bSuppressErrors	= true;
+	m_szReadBuf			= (char*)malloc(CONNECTION_READBUFFER_SIZE + 1);
+	m_bAutoClose		= bAutoClose;
 }
 
 Connection::~Connection()
 {
 	debug("Destroying Connection");
 
-	if (m_eStatus == csConnected)
+	if (m_eStatus == csConnected && m_bAutoClose)
 	{
 		Disconnect();
 	}
@@ -234,6 +249,17 @@ bool Connection::RecvAll(char * pBuffer, int iSize)
 
 	char* pBufPtr = (char*)pBuffer;
 	int NeedBytes = iSize;
+
+	if (m_iBufAvail > 0)
+	{
+		int len = iSize > m_iBufAvail ? m_iBufAvail : iSize;
+		memcpy(pBufPtr, m_szBufPtr, len);
+		pBufPtr += len;
+		m_szBufPtr += len;
+		m_iBufAvail -= len;
+		NeedBytes -= len;
+	}
+
 	// Read from the socket until nothing remains
 	while (NeedBytes > 0)
 	{

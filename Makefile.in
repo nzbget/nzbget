@@ -60,7 +60,8 @@ am_nzbget_OBJECTS = ArticleDownloader.$(OBJEXT) \
 	PrePostProcessor.$(OBJEXT) QueueCoordinator.$(OBJEXT) \
 	QueueEditor.$(OBJEXT) RemoteClient.$(OBJEXT) \
 	RemoteServer.$(OBJEXT) ServerPool.$(OBJEXT) Thread.$(OBJEXT) \
-	Util.$(OBJEXT) nzbget.$(OBJEXT)
+	Util.$(OBJEXT) nzbget.$(OBJEXT) BinRpc.$(OBJEXT) \
+	XmlRpc.$(OBJEXT)
 nzbget_OBJECTS = $(am_nzbget_OBJECTS)
 nzbget_LDADD = $(LDADD)
 DEFAULT_INCLUDES = -I.@am__isrc@
@@ -208,7 +209,7 @@ nzbget_SOURCES = ArticleDownloader.cpp ArticleDownloader.h ColoredFrontend.cpp \
 	ParChecker.cpp ParChecker.h PrePostProcessor.cpp PrePostProcessor.h \
 	QueueCoordinator.cpp QueueCoordinator.h QueueEditor.cpp QueueEditor.h RemoteClient.cpp \
 	RemoteClient.h RemoteServer.cpp RemoteServer.h ServerPool.cpp ServerPool.h Thread.cpp \
-	Thread.h Util.cpp Util.h nzbget.cpp nzbget.h
+	Thread.h Util.cpp Util.h nzbget.cpp nzbget.h BinRpc.cpp BinRpc.h XmlRpc.cpp XmlRpc.h
 
 EXTRA_DIST = nzbget.conf.example \
 	win32.h NTService.cpp NTService.h \
@@ -304,6 +305,7 @@ distclean-compile:
 	-rm -f *.tab.c
 
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/ArticleDownloader.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/BinRpc.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/ColoredFrontend.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/Connection.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/Decoder.Po@am__quote@
@@ -328,6 +330,7 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/ServerPool.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/Thread.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/Util.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/XmlRpc.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/nzbget.Po@am__quote@
 
 .cpp.o:

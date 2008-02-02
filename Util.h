@@ -1,5 +1,5 @@
 /*
- *  This file if part of nzbget
+ *  This file is part of nzbget
  *
  *  Copyright (C) 2007  Andrei Prygounkov <hugbug@users.sourceforge.net>
  *
@@ -71,5 +71,30 @@ void SplitInt64(long long Int64, unsigned int* Hi, unsigned int* Lo);
 float EqualTime(_timeval* t1, _timeval* t2);
 bool EmptyTime(_timeval* t);
 float DiffTime(_timeval* t1, _timeval* t2);
+
+unsigned int DecodeBase64(char* szInputBuffer, int iInputBufferLength, char* szOutputBuffer);
+
+/*
+ * Encodes string to be used as content of xml-tag.
+ * Returns new string allocated with malloc, it need to be freed by caller.
+ */
+char* XmlEncode(const char* raw);
+
+/*
+ * Decodes string from xml.
+ * The string is decoded on the place overwriting the content of raw-data.
+ */
+void XmlDecode(char* raw);
+
+/*
+ * Returns pointer to tag-content and length of content in iValueLength
+ * The returned pointer points to the part of source-string, no additional strings are allocated.
+ */
+const char* FindTag(const char* szXml, const char* szTag, int* iValueLength);
+
+/*
+ * Parses tag-content into szValueBuf.
+ */
+bool ParseTagValue(const char* szXml, const char* szTag, char* szValueBuf, int iValueBufSize, const char** pTagEnd);
 
 #endif
