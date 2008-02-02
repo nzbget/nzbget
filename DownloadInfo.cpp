@@ -94,6 +94,8 @@ FileInfo::FileInfo()
 	m_bDeleted = false;
 	m_iCompleted = 0;
 	m_bOutputInitialized = false;
+	m_iNZBFileCount = 0;
+	m_lNZBSize = 0;
 	m_iIDGen++;
 	m_iID = m_iIDGen;
 }
@@ -188,7 +190,7 @@ void FileInfo::MakeNiceNZBName(const char * szNZBFilename, char * szBuffer, int 
 
 	::MakeValidFilename(postname, '_');
 
-	// if the resulting name is empty, use basename without cleaing up "msgid_"
+	// if the resulting name is empty, use basename without cleaning up "msgid_"
 	if (strlen(postname) == 0)
 	{
 		// using complete filename
@@ -255,4 +257,92 @@ bool FileInfo::IsDupe(const char* szFilename)
 	}
 
 	return false;
+}
+
+GroupInfo::GroupInfo()
+{
+	m_iFirstID = 0;
+	m_iLastID = 0;
+	m_szNZBFilename = NULL;
+	m_szDestDir = NULL;
+	m_iFileCount = 0;
+	m_iRemainingFileCount = 0;
+	m_lSize = 0;
+	m_lRemainingSize = 0;
+	m_lPausedSize = 0;
+	m_iParCount = 0;
+}
+
+GroupInfo::~GroupInfo()
+{
+	if (m_szNZBFilename)
+	{
+		free(m_szNZBFilename);
+	}
+	if (m_szDestDir)
+	{
+		free(m_szDestDir);
+	}
+}
+
+void GroupInfo::SetNZBFilename(const char* szNZBFilename)
+{
+	m_szNZBFilename = strdup(szNZBFilename);
+}
+
+void GroupInfo::SetDestDir(const char* szDestDir)
+{
+	m_szDestDir = strdup(szDestDir);
+}
+
+void GroupInfo::BuildGroups(DownloadQueue* pDownloadQueue, GroupQueue* pGroupQueue)
+{
+    for (DownloadQueue::iterator it = pDownloadQueue->begin(); it != pDownloadQueue->end(); it++)
+    {
+        FileInfo* pFileInfo = *it;
+		GroupInfo* pGroupInfo = NULL;
+		for (GroupQueue::iterator itg = pGroupQueue->begin(); itg != pGroupQueue->end(); itg++)
+		{
+			GroupInfo* pGroupInfo1 = *itg;
+			if (!strcmp(pGroupInfo1->GetNZBFilename(), pFileInfo->GetNZBFilename()))
+			{
+				pGroupInfo = pGroupInfo1;
+				break;
+			}
+		}
+		if (!pGroupInfo)
+		{
+			pGroupInfo = new GroupInfo();
+			pGroupInfo->SetNZBFilename(pFileInfo->GetNZBFilename());
+			pGroupInfo->SetDestDir(pFileInfo->GetDestDir());
+			pGroupInfo->m_iFileCount = pFileInfo->GetNZBFileCount();
+			pGroupInfo->m_lSize = pFileInfo->GetNZBSize();
+			pGroupInfo->m_iFirstID = pFileInfo->GetID();
+			pGroupInfo->m_iLastID = pFileInfo->GetID();
+			pGroupQueue->push_back(pGroupInfo);
+		}
+		if (pFileInfo->GetID() < pGroupInfo->GetFirstID())
+		{
+			pGroupInfo->m_iFirstID = pFileInfo->GetID();
+		}
+		if (pFileInfo->GetID() > pGroupInfo->GetLastID())
+		{
+			pGroupInfo->m_iLastID = pFileInfo->GetID();
+		}
+		pGroupInfo->m_iRemainingFileCount++;
+		pGroupInfo->m_lRemainingSize += pFileInfo->GetRemainingSize();
+		if (pFileInfo->GetPaused())
+		{
+			pGroupInfo->m_lPausedSize += pFileInfo->GetRemainingSize();
+		}
+
+		char szLoFileName[1024];
+		strncpy(szLoFileName, pFileInfo->GetFilename(), 1024);
+		szLoFileName[1024-1] = '\0';
+		for (char* p = szLoFileName; *p; p++) *p = tolower(*p); // convert string to lowercase
+		if (strstr(szLoFileName, ".par2"))
+		{
+			pGroupInfo->m_iParCount++;
+		}
+	}
 }
