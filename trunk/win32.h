@@ -52,7 +52,7 @@
 /* Define to 1 if variadic macros are supported */
 #define HAVE_VARIADIC_MACROS
 
-#define VERSION "0.3.1"
+#define VERSION "0.3.2-testing"
 
 /* Suppress warnings */
 #define _CRT_SECURE_NO_DEPRECATE
