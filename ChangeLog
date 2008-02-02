@@ -25,7 +25,7 @@ nzbget-0.3.1:
     and relaunched for download (option "RetryOnCrcError"), it is useful if 
     multiple servers are available;
   - Improved error-check for downloaded articles (crc-check and check for
-    received message-id) decrease the number of broken files;
+    received message-id) decreases the number of broken files;
   - Extensions in curses-outputmode: added group-view-mode (key "G") to show
     items in download queue as groups, where one group represents all files 
     from the same nzb-file; the editing of queue works also in group-mode 
