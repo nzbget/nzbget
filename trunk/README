@@ -311,8 +311,7 @@ mode, not to daemon mode).
 
 When the server is running it is possible to queue up downloads. This can be
 done either in terminal with "nzbget -A <nzb-file>" or by uploading
-a nzb-file into server's monitor-directory (<MAINDIR>/nzb by default, the
-directory must exist on server's start; otherwise it will not be monitored).
+a nzb-file into server's monitor-directory (<MAINDIR>/nzb by default).
 
 To check the status of server start client and connect it to server:
   
