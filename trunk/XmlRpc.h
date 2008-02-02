@@ -151,4 +151,10 @@ public:
 	virtual void		Execute();
 };
 
+class PostQueueXmlCommand: public XmlCommand
+{
+public:
+	virtual void		Execute();
+};
+
 #endif
