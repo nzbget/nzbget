@@ -1,5 +1,5 @@
 /*
- *  This file if part of nzbget
+ *  This file is part of nzbget
  *
  *  Copyright (C) 2007  Andrei Prygounkov <hugbug@users.sourceforge.net>
  *
@@ -31,7 +31,9 @@
 // WIN32
 
 #define snprintf _snprintf
+#ifndef strdup
 #define strdup _strdup
+#endif
 #define ctime_r(timep, buf, bufsize) ctime_s(buf, bufsize, timep)
 #define int32_t __int32
 #define mkdir(dir, flags) _mkdir(dir)
