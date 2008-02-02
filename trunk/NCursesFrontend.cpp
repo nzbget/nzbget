@@ -101,25 +101,6 @@ static const int READKEY_EMPTY = ERR;
 
 #endif
 
-NCursesFrontend::GroupInfo::GroupInfo(int iID, const char* szNZBFilename)
-{
-	m_iID = iID;
-	m_szNZBFilename = strdup(szNZBFilename);
-	m_iFileCount = 0;
-	m_lSize = 0;
-	m_lRemainingSize = 0;
-	m_lPausedSize = 0;
-	m_iParCount = 0;
-}
-
-NCursesFrontend::GroupInfo::~GroupInfo()
-{
-	if (m_szNZBFilename)
-	{
-		free(m_szNZBFilename);
-	}
-}
-
 NCursesFrontend::NCursesFrontend()
 {
     m_iScreenHeight = 0;
@@ -956,8 +937,8 @@ void NCursesFrontend::PrintGroupname(GroupInfo * pGroupInfo, int iRow, bool bSel
 	FileInfo::MakeNiceNZBName(pGroupInfo->GetNZBFilename(), szNZBNiceName, 1023);
 
 	char szBuffer[MAX_SCREEN_WIDTH];
-	snprintf(szBuffer, MAX_SCREEN_WIDTH, "%s%i%s %s (%i file%s, %s%s)", Brace1, pGroupInfo->GetID(), Brace2, szNZBNiceName, 
-		pGroupInfo->m_iFileCount, pGroupInfo->m_iFileCount > 1 ? "s" : "", szRemaining, szPaused);
+	snprintf(szBuffer, MAX_SCREEN_WIDTH, "%s%i-%i%s %s (%i file%s, %s%s)", Brace1, pGroupInfo->GetFirstID(), pGroupInfo->GetLastID(), Brace2, szNZBNiceName, 
+		pGroupInfo->GetRemainingFileCount(), pGroupInfo->GetRemainingFileCount() > 1 ? "s" : "", szRemaining, szPaused);
 	szBuffer[MAX_SCREEN_WIDTH - 1] = '\0';
 
 	PlotLine(szBuffer, iRow, 0, color);
@@ -968,41 +949,7 @@ void NCursesFrontend::PrepareGroupQueue()
 	m_groupQueue.clear();
 
     DownloadQueue* pDownloadQueue = LockQueue();
-    for (DownloadQueue::iterator it = pDownloadQueue->begin(); it != pDownloadQueue->end(); it++)
-    {
-        FileInfo* pFileInfo = *it;
-		GroupInfo* pGroupInfo = NULL;
-		for (GroupQueue::iterator itg = m_groupQueue.begin(); itg != m_groupQueue.end(); itg++)
-		{
-			GroupInfo* pGroupInfo1 = *itg;
-			if (!strcmp(pGroupInfo1->GetNZBFilename(), pFileInfo->GetNZBFilename()))
-			{
-				pGroupInfo = pGroupInfo1;
-				break;
-			}
-		}
-		if (!pGroupInfo)
-		{
-			pGroupInfo = new GroupInfo(pFileInfo->GetID(), pFileInfo->GetNZBFilename());
-			m_groupQueue.push_back(pGroupInfo);
-		}
-		pGroupInfo->m_iFileCount++;
-		pGroupInfo->m_lSize += pFileInfo->GetSize();
-		pGroupInfo->m_lRemainingSize += pFileInfo->GetRemainingSize();
-		if (pFileInfo->GetPaused())
-		{
-			pGroupInfo->m_lPausedSize += pFileInfo->GetRemainingSize();
-		}
-
-		char szLoFileName[1024];
-		strncpy(szLoFileName, pFileInfo->GetFilename(), 1024);
-		szLoFileName[1024-1] = '\0';
-		for (char* p = szLoFileName; *p; p++) *p = tolower(*p); // convert string to lowercase
-		if (strstr(szLoFileName, ".par2"))
-		{
-			pGroupInfo->m_iParCount++;
-		}
-	}
+	GroupInfo::BuildGroups(pDownloadQueue, &m_groupQueue);
 	UnlockQueue();
 }
 
@@ -1024,14 +971,14 @@ bool NCursesFrontend::EditQueue(QueueEditor::EEditAction eAction, int iOffset)
 		if (m_iSelectedQueueEntry >= 0 && m_iSelectedQueueEntry < (int)m_groupQueue.size())
 		{
 			GroupInfo* pGroupInfo = m_groupQueue[m_iSelectedQueueEntry];
-			ID = pGroupInfo->GetID();
+			ID = pGroupInfo->GetLastID();
 			if (eAction == QueueEditor::eaFilePause)
 			{
 				if (pGroupInfo->GetRemainingSize() == pGroupInfo->GetPausedSize())
 				{
 					eAction = QueueEditor::eaFileResume;
 				}
-				else if (pGroupInfo->GetPausedSize() == 0 && (pGroupInfo->m_iParCount > 0) &&
+				else if (pGroupInfo->GetPausedSize() == 0 && (pGroupInfo->GetParCount() > 0) &&
 					!(m_bLastPausePars && m_iLastEditEntry == m_iSelectedQueueEntry))
 				{
 					eAction = QueueEditor::eaFilePauseExtraPars;

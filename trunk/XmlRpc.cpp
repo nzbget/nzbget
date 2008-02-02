@@ -18,7 +18,7 @@
  *  Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  *
  * $Revision: $
- * $Date: 2008-01-23 19:17:00 +0100 (Mi, 23 Jan 2008) $
+ * $Date: $
  *
  */
 
@@ -181,6 +181,10 @@ void XmlRpcProcessor::Dispatch()
 	else if (!strcasecmp(szMethodName, "listfiles"))
 	{
 		command = new ListFilesXmlCommand();
+	}
+	else if (!strcasecmp(szMethodName, "listgroups"))
+	{
+		command = new ListGroupsXmlCommand();
 	}
 	else if (!strcasecmp(szMethodName, "editqueue"))
 	{
@@ -552,6 +556,85 @@ void ListFilesXmlCommand::Execute()
 	SendResponse(m_szResponse);
 }
 
+void ListGroupsXmlCommand::Execute()
+{
+	AppendResponse("<?xml version=\"1.0\"?>\n<methodResponse>\n<params><param><value><array><data>\n");
+
+	const char* LIST_ITEM = 
+		"<value><struct>\n"
+		"<member><name>FirstID</name><value><i4>%i</i4></value></member>\n"
+		"<member><name>LastID</name><value><i4>%i</i4></value></member>\n"
+		"<member><name>FileSizeLo</name><value><i4>%i</i4></value></member>\n"
+		"<member><name>FileSizeHi</name><value><i4>%i</i4></value></member>\n"
+		"<member><name>FileSizeMB</name><value><i4>%i</i4></value></member>\n"
+		"<member><name>RemainingSizeLo</name><value><i4>%i</i4></value></member>\n"
+		"<member><name>RemainingSizeHi</name><value><i4>%i</i4></value></member>\n"
+		"<member><name>RemainingSizeMB</name><value><i4>%i</i4></value></member>\n"
+		"<member><name>PausedSizeLo</name><value><i4>%i</i4></value></member>\n"
+		"<member><name>PausedSizeHi</name><value><i4>%i</i4></value></member>\n"
+		"<member><name>PausedSizeMB</name><value><i4>%i</i4></value></member>\n"
+		"<member><name>FileCount</name><value><i4>%i</i4></value></member>\n"
+		"<member><name>RemainingFileCount</name><value><i4>%i</i4></value></member>\n"
+		"<member><name>ParCount</name><value><i4>%i</i4></value></member>\n"
+		"<member><name>NZBNicename</name><value><string>%s</string></value></member>\n"
+		"<member><name>NZBFilename</name><value><string>%s</string></value></member>\n"
+		"<member><name>DestDir</name><value><string>%s</string></value></member>\n"
+		"</struct></value>\n";
+
+	GroupQueue groupQueue;
+	groupQueue.clear();
+	DownloadQueue* pDownloadQueue = g_pQueueCoordinator->LockQueue();
+	GroupInfo::BuildGroups(pDownloadQueue, &groupQueue);
+	g_pQueueCoordinator->UnlockQueue();
+
+	int szItemBufSize = 10240;
+	char* szItemBuf = (char*)malloc(szItemBufSize);
+
+	for (GroupQueue::iterator it = groupQueue.begin(); it != groupQueue.end(); it++)
+	{
+		GroupInfo* pGroupInfo = *it;
+		unsigned int iFileSizeHi, iFileSizeLo, iFileSizeMB;
+		unsigned int iRemainingSizeLo, iRemainingSizeHi, iRemainingSizeMB;
+		unsigned int iPausedSizeLo, iPausedSizeHi, iPausedSizeMB;
+		char szNZBNicename[1024];
+		SplitInt64(pGroupInfo->GetSize(), &iFileSizeHi, &iFileSizeLo);
+		iFileSizeMB = pGroupInfo->GetSize() / 1024 / 1024;
+		SplitInt64(pGroupInfo->GetRemainingSize(), &iRemainingSizeHi, &iRemainingSizeLo);
+		iRemainingSizeMB = pGroupInfo->GetRemainingSize() / 1024 / 1024;
+		SplitInt64(pGroupInfo->GetPausedSize(), &iPausedSizeHi, &iPausedSizeLo);
+		iPausedSizeMB = pGroupInfo->GetPausedSize() / 1024 / 1024;
+		FileInfo::MakeNiceNZBName(pGroupInfo->GetNZBFilename(), szNZBNicename, sizeof(szNZBNicename));
+
+		char* xmlNZBNicename = XmlEncode(szNZBNicename);
+		char* xmlNZBFilename = XmlEncode(pGroupInfo->GetNZBFilename());
+		char* xmlDestDir = XmlEncode(pGroupInfo->GetDestDir());
+
+		snprintf(szItemBuf, szItemBufSize, LIST_ITEM, pGroupInfo->GetFirstID(), pGroupInfo->GetLastID(),
+			iFileSizeLo, iFileSizeHi, iFileSizeMB, iRemainingSizeLo, iRemainingSizeHi, iRemainingSizeMB,
+			iPausedSizeLo, iPausedSizeHi, iPausedSizeMB, pGroupInfo->GetFileCount(), pGroupInfo->GetRemainingFileCount(), 
+			pGroupInfo->GetParCount(), szNZBNicename, xmlNZBFilename, xmlDestDir);
+		szItemBuf[szItemBufSize-1] = '\0';
+
+		free(xmlNZBNicename);
+		free(xmlNZBFilename);
+		free(xmlDestDir);
+
+		AppendResponse(szItemBuf);
+	}
+	free(szItemBuf);
+
+	AppendResponse("</data></array></value></param></params>\n</methodResponse>");
+
+	for (GroupQueue::iterator it = groupQueue.begin(); it != groupQueue.end(); it++)
+	{
+		delete *it;
+	}
+	groupQueue.clear();
+
+	debug("m_szResponse=%s", m_szResponse);
+	SendResponse(m_szResponse);
+}
+
 typedef struct 
 {
 	QueueEditor::EEditAction	eActionID;
@@ -676,4 +759,3 @@ void DownloadXmlCommand::Execute()
 		SendBoolResponse(false);
 	}
 }
-

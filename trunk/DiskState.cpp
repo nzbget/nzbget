@@ -66,7 +66,7 @@ bool DiskState::Save(DownloadQueue* pDownloadQueue)
 		return false;
 	}
 
-	fprintf(outfile, "nzbget diskstate file version 1\n");
+	fprintf(outfile, "nzbget diskstate file version 2\n");
 
 	int cnt = 0;
 	for (DownloadQueue::iterator it = pDownloadQueue->begin(); it != pDownloadQueue->end(); it++)
@@ -115,7 +115,7 @@ bool DiskState::Load(DownloadQueue* pDownloadQueue)
 	bool res = false;
 	char FileSignatur[128];
 	fgets(FileSignatur, sizeof(FileSignatur), infile);
-	if (!strcmp(FileSignatur, "nzbget diskstate file version 1\n"))
+	if (!strcmp(FileSignatur, "nzbget diskstate file version 2\n"))
 	{
 		int id, paused;
 		while (fscanf(infile, "%i,%i\n", &id, &paused) != EOF)
@@ -175,7 +175,8 @@ bool DiskState::SaveFileInfo(FileInfo* pFileInfo, const char* szFilename)
 	fprintf(outfile, "%s\n", pFileInfo->GetDestDir());
 	fprintf(outfile, "%s\n", pFileInfo->GetFilename());
 	fprintf(outfile, "%i\n", pFileInfo->GetFilenameConfirmed());
-
+	fprintf(outfile, "%i\n", pFileInfo->GetNZBFileCount());
+	fprintf(outfile, "%lu,%lu\n", (unsigned long)(pFileInfo->GetNZBSize() >> 32), (unsigned long)(pFileInfo->GetNZBSize()));
 	fprintf(outfile, "%lu,%lu\n", (unsigned long)(pFileInfo->GetSize() >> 32), (unsigned long)(pFileInfo->GetSize()));
 
 	fprintf(outfile, "%i\n", pFileInfo->GetGroups()->size());
@@ -230,12 +231,17 @@ bool DiskState::LoadFileInfo(FileInfo* pFileInfo, const char * szFilename, bool 
 	if (fscanf(infile, "%i\n", &iFilenameConfirmed) != 1) goto error;
 	if (bFileSummary) pFileInfo->SetFilenameConfirmed(iFilenameConfirmed);
 	
+	int size;
+	if (fscanf(infile, "%i\n", &size) != 1) goto error;
+	if (bFileSummary) pFileInfo->SetNZBFileCount(size);
+
 	unsigned long High, Low;
+	if (fscanf(infile, "%lu,%lu\n", &High, &Low) != 2) goto error;
+	if (bFileSummary) pFileInfo->SetNZBSize((((unsigned long long)High) << 32) + Low);
 	if (fscanf(infile, "%lu,%lu\n", &High, &Low) != 2) goto error;
 	if (bFileSummary) pFileInfo->SetSize((((unsigned long long)High) << 32) + Low);
 	if (bFileSummary) pFileInfo->SetRemainingSize(pFileInfo->GetSize());
 
-	int size;
 	if (fscanf(infile, "%i\n", &size) != 1) goto error;
 	for (int i = 0; i < size; i++)
 	{

@@ -76,6 +76,8 @@ private:
 	Articles			m_Articles;
 	Groups				m_Groups;
 	char* 				m_szNZBFilename;
+	int					m_iNZBFileCount;
+	long long 			m_lNZBSize;
 	char* 				m_szSubject;
 	char*				m_szFilename;
 	char*				m_szDestDir;
@@ -108,6 +110,10 @@ public:
 	void				MakeValidFilename();
 	bool				GetFilenameConfirmed() { return m_bFilenameConfirmed; }
 	void				SetFilenameConfirmed(bool bFilenameConfirmed) { m_bFilenameConfirmed = bFilenameConfirmed; }
+	int					GetNZBFileCount() { return m_iNZBFileCount; }
+	void				SetNZBFileCount(int s) { m_iNZBFileCount = s; }
+	void 				SetNZBSize(long long s) { m_lNZBSize = s; }
+	long long 			GetNZBSize() { return m_lNZBSize; }
 	void 				SetSize(long long s) { m_lSize = s; m_lRemainingSize = s; }
 	long long 			GetSize() { return m_lSize; }
 	long long 			GetRemainingSize() { return m_lRemainingSize; }
@@ -129,5 +135,42 @@ public:
 };
                               
 typedef std::deque<FileInfo*> DownloadQueue;
+
+class GroupInfo;
+typedef std::deque<GroupInfo*> GroupQueue;
+
+class GroupInfo
+{
+private:
+	int					m_iFirstID;
+	int					m_iLastID;
+	char* 				m_szNZBFilename;
+	char* 				m_szDestDir;
+	int		 			m_iFileCount;
+	int		 			m_iRemainingFileCount;
+	long long 			m_lSize;
+	long long 			m_lRemainingSize;
+	long long 			m_lPausedSize;
+	int					m_iParCount;
+
+	void				SetNZBFilename(const char* szNZBFilename);
+	void				SetDestDir(const char* szDestDir);
+
+public:
+						GroupInfo();
+						~GroupInfo();
+	int					GetFirstID() { return m_iFirstID; }
+	int					GetLastID() { return m_iLastID; }
+	const char*			GetNZBFilename() { return m_szNZBFilename; }
+	const char*			GetDestDir() { return m_szDestDir; }
+	long long 			GetSize() { return m_lSize; }
+	long long 			GetRemainingSize() { return m_lRemainingSize; }
+	long long 			GetPausedSize() { return m_lPausedSize; }
+	int					GetFileCount() { return m_iFileCount; }
+	int					GetRemainingFileCount() { return m_iRemainingFileCount; }
+	int					GetParCount() { return m_iParCount; }
+
+	static void			BuildGroups(DownloadQueue* pDownloadQueue, GroupQueue* pGroupQueue);
+};
 
 #endif

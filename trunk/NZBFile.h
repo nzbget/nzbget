@@ -46,6 +46,7 @@ private:
 	void				ParseSubject(FileInfo* pFileInfo);
 	void				BuildDestDirName(FileInfo* pFileInfo);
 	void				CheckFilenames();
+	void				UpdateGroupInfo();
 #ifdef WIN32
     bool 				ParseNZB(IUnknown* nzb);
 	static void			EncodeURL(const char* szFilename, char* szURL);

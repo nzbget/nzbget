@@ -18,7 +18,7 @@
  *  Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  *
  * $Revision: $
- * $Date: 2008-01-23 19:17:00 +0100 (Mi, 23 Jan 2008) $
+ * $Date: $
  *
  */
 
@@ -128,6 +128,12 @@ public:
 };
 
 class ListFilesXmlCommand: public XmlCommand
+{
+public:
+	virtual void		Execute();
+};
+
+class ListGroupsXmlCommand: public XmlCommand
 {
 public:
 	virtual void		Execute();

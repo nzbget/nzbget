@@ -46,31 +46,6 @@ private:
 	    eDownloadRate
 	};
 
-	class GroupInfo
-	{
-	private:
-		int				m_iID;
-		char* 			m_szNZBFilename;
-
-	public:
-		int		 		m_iFileCount;
-		long long 		m_lSize;
-		long long 		m_lRemainingSize;
-		long long 		m_lPausedSize;
-		int				m_iParCount;
-
-	public:
-						GroupInfo(int iID, const char* szNZBFilename);
-						~GroupInfo();
-		int				GetID() { return m_iID; }
-		const char*		GetNZBFilename() { return m_szNZBFilename; }
-		long long 		GetSize() { return m_lSize; }
-		long long 		GetRemainingSize() { return m_lRemainingSize; }
-		long long 		GetPausedSize() { return m_lPausedSize; }
-	};
-
-	typedef std::deque<GroupInfo*> GroupQueue;
-
 	bool				m_bUseColor;
 	int					m_iDataUpdatePos;
 	int					m_iScreenHeight;

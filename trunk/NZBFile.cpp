@@ -286,16 +286,32 @@ void NZBFile::CheckFilenames()
 				FileInfo* pFileInfo2 = *it2;
 				pFileInfo2->SetFilename(pFileInfo2->GetSubject());
 				pFileInfo2->MakeValidFilename();
-
-				if (g_pOptions->GetSaveQueue() && g_pOptions->GetServerMode())
-				{
-					g_pDiskState->LoadArticles(pFileInfo2);
-					g_pDiskState->SaveFile(pFileInfo2);
-					pFileInfo2->ClearArticles();
-				}
 			}
 		}
     }
+}
+
+void NZBFile::UpdateGroupInfo()
+{
+	long long lSize = 0;
+    for (FileInfos::iterator it = m_FileInfos.begin(); it != m_FileInfos.end(); it++)
+    {
+        FileInfo* pFileInfo = *it;
+		lSize += pFileInfo->GetSize();
+	}
+
+    for (FileInfos::iterator it = m_FileInfos.begin(); it != m_FileInfos.end(); it++)
+    {
+        FileInfo* pFileInfo = *it;
+		pFileInfo->SetNZBSize(lSize);
+		pFileInfo->SetNZBFileCount(m_FileInfos.size());
+		if (g_pOptions->GetSaveQueue() && g_pOptions->GetServerMode())
+		{
+			g_pDiskState->LoadArticles(pFileInfo);
+			g_pDiskState->SaveFile(pFileInfo);
+			pFileInfo->ClearArticles();
+		}
+	}
 }
 
 #ifdef WIN32
@@ -343,6 +359,7 @@ NZBFile* NZBFile::Create(const char* szFileName, const char* szBuffer, int iSize
     if (pFile->ParseNZB(doc))
 	{
 		pFile->CheckFilenames();
+		pFile->UpdateGroupInfo();
 	}
 	else
 	{
@@ -457,6 +474,7 @@ NZBFile* NZBFile::Create(const char* szFileName, const char* szBuffer, int iSize
     if (pFile->ParseNZB(doc))
 	{
 		pFile->CheckFilenames();
+		pFile->UpdateGroupInfo();
 	}
 	else
 	{
