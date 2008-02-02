@@ -1,5 +1,5 @@
 /*
- *  This file if part of nzbget
+ *  This file is part of nzbget
  *
  *  Copyright (C) 2007  Andrei Prygounkov <hugbug@users.sourceforge.net>
  *
@@ -413,4 +413,274 @@ float DiffTime(_timeval* t1, _timeval* t2)
 #else
 	return (float)((t1->tv_sec - t2->tv_sec) + (t1->tv_usec - t2->tv_usec) / 1000000.0);
 #endif
+}
+
+/* Base64 decryption is taken from 
+ *  Article "BASE 64 Decoding and Encoding Class 2003" by Jan Raddatz
+ *  http://www.codeguru.com/cpp/cpp/algorithms/article.php/c5099/
+ */
+
+const static char BASE64_DEALPHABET [128] = 
+	{
+	 0,  0,  0,  0,  0,  0,  0,  0,  0,  0, //   0 -   9
+	 0,  0,  0,  0,  0,  0,  0,  0,  0,  0, //  10 -  19
+	 0,  0,  0,  0,  0,  0,  0,  0,  0,  0, //  20 -  29
+	 0,  0,  0,  0,  0,  0,  0,  0,  0,  0, //  30 -  39
+	 0,  0,  0, 62,  0,  0,  0, 63, 52, 53, //  40 -  49
+	54, 55, 56, 57, 58, 59, 60, 61,  0,  0, //  50 -  59
+	 0, 61,  0,  0,  0,  0,  1,  2,  3,  4, //  60 -  69
+	 5,  6,  7,  8,  9, 10, 11, 12, 13, 14, //  70 -  79
+	15, 16, 17, 18, 19, 20, 21, 22, 23, 24, //  80 -  89
+	25,  0,  0,  0,  0,  0,  0, 26, 27, 28, //  90 -  99
+	29, 30, 31, 32, 33, 34, 35, 36, 37, 38, // 100 - 109
+	39, 40, 41, 42, 43, 44, 45, 46, 47, 48, // 110 - 119
+	49, 50, 51,  0,  0,  0,  0,  0			// 120 - 127
+	};
+
+unsigned int DecodeByteQuartet(char* szInputBuffer, char* szOutputBuffer)
+{
+	unsigned int buffer = 0;
+
+	if (szInputBuffer[3] == '=')
+	{
+		if (szInputBuffer[2] == '=')
+		{
+			buffer = (buffer | BASE64_DEALPHABET [szInputBuffer[0]]) << 6;
+			buffer = (buffer | BASE64_DEALPHABET [szInputBuffer[1]]) << 6;
+			buffer = buffer << 14;
+
+			char* temp = (char*) &buffer;
+			szOutputBuffer [0] = temp [3];
+			
+			return 1;
+		}
+		else
+		{
+			buffer = (buffer | BASE64_DEALPHABET [szInputBuffer[0]]) << 6;
+			buffer = (buffer | BASE64_DEALPHABET [szInputBuffer[1]]) << 6;
+			buffer = (buffer | BASE64_DEALPHABET [szInputBuffer[2]]) << 6;
+			buffer = buffer << 8;
+
+			char* temp = (char*) &buffer;
+			szOutputBuffer [0] = temp [3];
+			szOutputBuffer [1] = temp [2];
+			
+			return 2;
+		}
+	}
+	else
+	{
+		buffer = (buffer | BASE64_DEALPHABET [szInputBuffer[0]]) << 6;
+		buffer = (buffer | BASE64_DEALPHABET [szInputBuffer[1]]) << 6;
+		buffer = (buffer | BASE64_DEALPHABET [szInputBuffer[2]]) << 6;
+		buffer = (buffer | BASE64_DEALPHABET [szInputBuffer[3]]) << 6; 
+		buffer = buffer << 2;
+
+		char* temp = (char*) &buffer;
+		szOutputBuffer [0] = temp [3];
+		szOutputBuffer [1] = temp [2];
+		szOutputBuffer [2] = temp [1];
+
+		return 3;
+	}
+
+	return -1;
+}
+
+unsigned int DecodeBase64(char* szInputBuffer, int iInputBufferLength, char* szOutputBuffer)
+{
+	unsigned int InputBufferIndex  = 0;
+	unsigned int OutputBufferIndex = 0;
+	unsigned int InputBufferLength = iInputBufferLength > 0 ? iInputBufferLength : strlen(szInputBuffer);
+
+	char ByteQuartet [4];
+
+	while (InputBufferIndex < InputBufferLength)
+	{
+		for (int i = 0; i < 4; i++)
+		{
+			ByteQuartet [i] = szInputBuffer[InputBufferIndex];
+
+			// Ignore all characters except the ones in BASE64_ALPHABET
+			if (!((ByteQuartet [i] >= 48 && ByteQuartet [i] <=  57) ||
+				(ByteQuartet [i] >= 65 && ByteQuartet [i] <=  90) ||
+				(ByteQuartet [i] >= 97 && ByteQuartet [i] <= 122) ||
+				 ByteQuartet [i] == '+' || ByteQuartet [i] == '/' || ByteQuartet [i] == '='))
+			{
+				// Invalid character
+				i--;
+			}
+
+			InputBufferIndex++;
+		}
+
+		OutputBufferIndex += DecodeByteQuartet(ByteQuartet, szOutputBuffer + OutputBufferIndex);
+	}
+
+	// OutputBufferIndex gives us the next position of the next decoded character
+	// inside our output buffer and thus represents the number of decoded characters
+	// in our buffer.
+	return OutputBufferIndex;
+}
+
+/* END - Base64
+*/
+
+char* XmlEncode(const char* raw)
+{
+	// calculate the required outputstring-size based on number of xml-entities and their sizes
+	int iReqSize = strlen(raw);
+	for (const char* p = raw; *p; p++)
+	{
+		switch (*p)
+		{
+			case '>':
+			case '<':
+				iReqSize += 4;
+				break;
+			case '&':
+				iReqSize += 5;
+				break;
+			case '\'':
+			case '\"':
+				iReqSize += 6;
+				break;
+		}
+	}
+
+	char* result = (char*)malloc(iReqSize + 1);
+
+	// copy string
+	char* output = result;
+	for (const char* p = raw; ; p++)
+	{
+		switch (*p)
+		{
+			case '\0':
+				goto BreakLoop;
+			case '<':
+				strcpy(output, "&lt;");
+				output += 4;
+				break;
+			case '>':
+				strcpy(output, "&gt;");
+				output += 4;
+				break;
+			case '&':
+				strcpy(output, "&amp;");
+				output += 5;
+				break;
+			case '\'':
+				strcpy(output, "&apos;");
+				output += 6;
+				break;
+			case '\"':
+				strcpy(output, "&quot;");
+				output += 6;
+				break;
+			default:
+				*output++ = *p;
+				break;
+		}
+	}
+BreakLoop:
+
+	*output = '\0';
+
+	return result;
+}
+
+void XmlDecode(char* raw)
+{
+	char* output = raw;
+	for (char* p = raw;;)
+	{
+		switch (*p)
+		{
+			case '\0':
+				goto BreakLoop;
+			case '&':
+				{
+					p++;
+					if (!strncmp(p, "lt;", 3))
+					{
+						*output++ = '<';
+						p += 3;
+					}
+					else if (!strncmp(p, "gt;", 3))
+					{
+						*output++ = '>';
+						p += 3;
+					}
+					else if (!strncmp(p, "amp;", 4))
+					{
+						*output++ = '&';
+						p += 4;
+					}
+					else if (!strncmp(p, "apos;", 5))
+					{
+						*output++ = '\'';
+						p += 5;
+					}
+					else if (!strncmp(p, "quot;", 5))
+					{
+						*output++ = '\"';
+						p += 5;
+					}
+					else
+					{
+						// unknown entity
+						*output++ = *(p-1);
+						p++;
+					}
+					break;
+				}
+			default:
+				*output++ = *p++;
+				break;
+		}
+	}
+BreakLoop:
+
+	*output = '\0';
+}
+
+const char* FindTag(const char* szXml, const char* szTag, int* iValueLength)
+{
+	char szOpenTag[100];
+	snprintf(szOpenTag, 100, "<%s>", szTag);
+	szOpenTag[100-1] = '\0';
+
+	char szCloseTag[100];
+	snprintf(szCloseTag, 100, "</%s>", szTag);
+	szCloseTag[100-1] = '\0';
+
+	const char* pstart = strstr(szXml, szOpenTag);
+	if (!pstart) return NULL;
+
+	const char* pend = strstr(pstart, szCloseTag);
+	if (!pend) return NULL;
+
+	int iTagLen = strlen(szOpenTag);
+	*iValueLength = pend - pstart - iTagLen;
+
+	return pstart + iTagLen;
+}
+
+bool ParseTagValue(const char* szXml, const char* szTag, char* szValueBuf, int iValueBufSize, const char** pTagEnd)
+{
+	int iValueLen = 0;
+	const char* szValue = FindTag(szXml, szTag, &iValueLen);
+	if (!szValue)
+	{
+		return false;
+	}
+	int iLen = iValueLen < iValueBufSize ? iValueLen : iValueBufSize - 1;
+	strncpy(szValueBuf, szValue, iLen);
+	szValueBuf[iLen] = '\0';
+	if (pTagEnd)
+	{
+		*pTagEnd = szValue + iValueLen;
+	}
+	return true;
 }

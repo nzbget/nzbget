@@ -49,6 +49,7 @@ protected:
 	EStatus				m_eStatus;
 	int					m_iTimeout;
 	bool				m_bSuppressErrors;
+	bool				m_bAutoClose;
 
 	unsigned int		ResolveHostAddr(const char* szHost);
 	void				ReportError(const char* szMsgPrefix, const char* szMsgArg, int ErrCode);
@@ -61,6 +62,7 @@ protected:
 
 public:
 						Connection(NetAddress* pNetAddress);
+						Connection(SOCKET iSocket, bool bAutoClose);
 	virtual 			~Connection();
 	static void			Init();
 	static void			Final();

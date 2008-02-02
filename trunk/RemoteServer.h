@@ -1,5 +1,5 @@
 /*
- *  This file if part of nzbget
+ *  This file is part of nzbget
  *
  *  Copyright (C) 2005  Bo Cordes Petersen <placebodk@users.sourceforge.net>
  *  Copyright (C) 2007  Andrei Prygounkov <hugbug@users.sourceforge.net>
@@ -27,12 +27,9 @@
 #ifndef REMOTESERVER_H
 #define REMOTESERVER_H
 
-#include <list>
-
 #include "Thread.h"
 #include "NetAddress.h"
 #include "Connection.h"
-#include "MessageBase.h"
 
 class RemoteServer : public Thread
 {
@@ -51,83 +48,10 @@ class RequestProcessor : public Thread
 {
 private:
 	SOCKET				m_iSocket;
-	SNZBRequestBase		m_MessageBase;
-
-	void				Dispatch();
 
 public:
 	virtual void		Run();
 	void				SetSocket(SOCKET iSocket) { m_iSocket = iSocket; };
-};
-
-class MessageCommand
-{
-protected:
-	SOCKET				m_iSocket;
-	SNZBRequestBase*	m_pMessageBase;
-
-	bool				ReceiveRequest(void* pBuffer, int iSize);
-	void				SendBoolResponse(bool bSuccess, const char* szText);
-
-public:
-	virtual				~MessageCommand() {};
-	virtual void		Execute() = 0;
-	void				SetSocket(SOCKET iSocket) { m_iSocket = iSocket; };
-	void				SetMessageBase(SNZBRequestBase*	pMessageBase) { m_pMessageBase = pMessageBase; };
-};
-
-class DownloadCommand: public MessageCommand
-{
-public:
-	virtual void		Execute();
-};
-
-class ListCommand: public MessageCommand
-{
-public:
-	virtual void		Execute();
-};
-
-class LogCommand: public MessageCommand
-{
-public:
-	virtual void		Execute();
-};
-
-class PauseUnpauseCommand: public MessageCommand
-{
-public:
-	virtual void		Execute();
-};
-
-class EditQueueCommand: public MessageCommand
-{
-public:
-	virtual void		Execute();
-};
-
-class SetDownloadRateCommand: public MessageCommand
-{
-public:
-	virtual void		Execute();
-};
-
-class DumpDebugCommand: public MessageCommand
-{
-public:
-	virtual void		Execute();
-};
-
-class ShutdownCommand: public MessageCommand
-{
-public:
-	virtual void		Execute();
-};
-
-class VersionCommand: public MessageCommand
-{
-public:
-	virtual void		Execute();
 };
 
 #endif

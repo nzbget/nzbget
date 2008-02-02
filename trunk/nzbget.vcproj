@@ -176,6 +176,14 @@
 			>
 		</File>
 		<File
+			RelativePath=".\BinRpc.cpp"
+			>
+		</File>
+		<File
+			RelativePath=".\BinRpc.h"
+			>
+		</File>
+		<File
 			RelativePath=".\ColoredFrontend.cpp"
 			>
 		</File>
@@ -389,6 +397,14 @@
 		</File>
 		<File
 			RelativePath=".\win32.h"
+			>
+		</File>
+		<File
+			RelativePath=".\XmlRpc.cpp"
+			>
+		</File>
+		<File
+			RelativePath=".\XmlRpc.h"
 			>
 		</File>
 	</Files>
