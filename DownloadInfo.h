@@ -1,5 +1,5 @@
 /*
- *  This file if part of nzbget
+ *  This file is part of nzbget
  *
  *  Copyright (C) 2004  Sven Henkel <sidddy@users.sourceforge.net>
  *  Copyright (C) 2007  Andrei Prygounkov <hugbug@users.sourceforge.net>
@@ -31,6 +31,32 @@
 #include <deque>
 
 #include "Thread.h"
+
+class NZBInfo
+{
+private:
+	int					m_iRefCount;
+	char* 				m_szFilename;
+	char* 				m_szDestDir;
+	int		 			m_iFileCount;
+	long long 			m_lSize;
+
+public:
+						NZBInfo();
+						~NZBInfo();
+	void				AddReference();
+	void				Release();
+	const char*			GetFilename() { return m_szFilename; }
+	void				SetFilename(const char* szFilename);
+	void				GetNiceNZBName(char* szBuffer, int iSize);
+	static void			MakeNiceNZBName(const char* szNZBFilename, char* szBuffer, int iSize);
+	const char*			GetDestDir() { return m_szDestDir; }
+	void				SetDestDir(const char* szDestDir);
+	long long 			GetSize() { return m_lSize; }
+	void 				SetSize(long long s) { m_lSize = s; }
+	int					GetFileCount() { return m_iFileCount; }
+	void 				SetFileCount(int s) { m_iFileCount = s; }
+};
 
 class ArticleInfo
 {
@@ -73,14 +99,11 @@ public:
 
 private:
 	int					m_iID;
+	NZBInfo*			m_pNZBInfo;
 	Articles			m_Articles;
 	Groups				m_Groups;
-	char* 				m_szNZBFilename;
-	int					m_iNZBFileCount;
-	long long 			m_lNZBSize;
 	char* 				m_szSubject;
 	char*				m_szFilename;
-	char*				m_szDestDir;
 	long long 			m_lSize;
 	long long 			m_lRemainingSize;
 	bool				m_bPaused;
@@ -97,12 +120,10 @@ public:
 						~FileInfo();
 	int					GetID() { return m_iID; }
 	void				SetID(int s);
+	NZBInfo*			GetNZBInfo() { return m_pNZBInfo; }
+	void				SetNZBInfo(NZBInfo* pNZBInfo);
 	Articles* 			GetArticles() { return &m_Articles; }
 	Groups* 			GetGroups() { return &m_Groups; }
-	const char*			GetNZBFilename() { return m_szNZBFilename; }
-	void 				SetNZBFilename(const char* szNZBFilename);
-	void				GetNiceNZBName(char* szBuffer, int iSize);
-	static void			MakeNiceNZBName(const char* szNZBFilename, char* szBuffer, int iSize);
 	const char*			GetSubject() { return m_szSubject; }
 	void 				SetSubject(const char* szSubject);
 	const char*			GetFilename() { return m_szFilename; }
@@ -110,10 +131,6 @@ public:
 	void				MakeValidFilename();
 	bool				GetFilenameConfirmed() { return m_bFilenameConfirmed; }
 	void				SetFilenameConfirmed(bool bFilenameConfirmed) { m_bFilenameConfirmed = bFilenameConfirmed; }
-	int					GetNZBFileCount() { return m_iNZBFileCount; }
-	void				SetNZBFileCount(int s) { m_iNZBFileCount = s; }
-	void 				SetNZBSize(long long s) { m_lNZBSize = s; }
-	long long 			GetNZBSize() { return m_lNZBSize; }
 	void 				SetSize(long long s) { m_lSize = s; m_lRemainingSize = s; }
 	long long 			GetSize() { return m_lSize; }
 	long long 			GetRemainingSize() { return m_lRemainingSize; }
@@ -122,8 +139,6 @@ public:
 	void				SetPaused(bool Paused) { m_bPaused = Paused; }
 	bool				GetDeleted() { return m_bDeleted; }
 	void				SetDeleted(bool Deleted) { m_bDeleted = Deleted; }
-	const char*			GetDestDir() { return m_szDestDir; }
-	void				SetDestDir(const char* szDestDir);
 	int					GetCompleted() { return m_iCompleted; }
 	void				SetCompleted(int s) { m_iCompleted = s; }
 	void				ClearArticles();
@@ -142,33 +157,24 @@ typedef std::deque<GroupInfo*> GroupQueue;
 class GroupInfo
 {
 private:
+	NZBInfo*			m_pNZBInfo;
 	int					m_iFirstID;
 	int					m_iLastID;
-	char* 				m_szNZBFilename;
-	char* 				m_szDestDir;
-	int		 			m_iFileCount;
 	int		 			m_iRemainingFileCount;
-	long long 			m_lSize;
 	long long 			m_lRemainingSize;
 	long long 			m_lPausedSize;
-	int					m_iParCount;
-
-	void				SetNZBFilename(const char* szNZBFilename);
-	void				SetDestDir(const char* szDestDir);
+	int					m_iRemainingParCount;
 
 public:
 						GroupInfo();
 						~GroupInfo();
+	NZBInfo*			GetNZBInfo() { return m_pNZBInfo; }
 	int					GetFirstID() { return m_iFirstID; }
 	int					GetLastID() { return m_iLastID; }
-	const char*			GetNZBFilename() { return m_szNZBFilename; }
-	const char*			GetDestDir() { return m_szDestDir; }
-	long long 			GetSize() { return m_lSize; }
 	long long 			GetRemainingSize() { return m_lRemainingSize; }
 	long long 			GetPausedSize() { return m_lPausedSize; }
-	int					GetFileCount() { return m_iFileCount; }
 	int					GetRemainingFileCount() { return m_iRemainingFileCount; }
-	int					GetParCount() { return m_iParCount; }
+	int					GetRemainingParCount() { return m_iRemainingParCount; }
 
 	static void			BuildGroups(DownloadQueue* pDownloadQueue, GroupQueue* pGroupQueue);
 };

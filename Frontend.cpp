@@ -1,5 +1,5 @@
 /*
- *  This file if part of nzbget
+ *  This file is part of nzbget
  *
  *  Copyright (C) 2004  Sven Henkel <sidddy@users.sourceforge.net>
  *  Copyright (C) 2007  Andrei Prygounkov <hugbug@users.sourceforge.net>
@@ -364,6 +364,9 @@ bool Frontend::RequestFileList()
 
 	if (m_bFileList && ntohl(ListResponse.m_iTrailingDataLength) > 0)
 	{
+		typedef std::deque<NZBInfo*> NZBList;
+		NZBList cNZBList;
+
 		char* pBufPtr = (char*)pBuf;
 		for (unsigned int i = 0; i < ntohl(ListResponse.m_iNrTrailingEntries); i++)
 		{
@@ -379,11 +382,30 @@ bool Frontend::RequestFileList()
 			pFileInfo->SetSize(JoinInt64(ntohl(pListAnswer->m_iFileSizeHi), ntohl(pListAnswer->m_iFileSizeLo)));
 			pFileInfo->SetRemainingSize(JoinInt64(ntohl(pListAnswer->m_iRemainingSizeHi), ntohl(pListAnswer->m_iRemainingSizeLo)));
 			pFileInfo->SetPaused(ntohl(pListAnswer->m_bPaused));
-			pFileInfo->SetNZBFilename(szNZBFilename);
 			pFileInfo->SetSubject(szSubject);
 			pFileInfo->SetFilename(szFileName);
 			pFileInfo->SetFilenameConfirmed(ntohl(pListAnswer->m_bFilenameConfirmed));
-			pFileInfo->SetDestDir(szDestDir);
+
+			// find nzb-info or create new
+			NZBInfo* pNZBInfo = NULL;
+			for (NZBList::iterator it = cNZBList.begin(); it != cNZBList.end(); it++)
+			{
+				NZBInfo* pNZBInfo2 = *it;
+				if (!strcmp(pNZBInfo2->GetFilename(), szNZBFilename))
+				{
+					pNZBInfo = pNZBInfo2;
+					break;
+				}
+			}
+			if (!pNZBInfo)
+			{
+				pNZBInfo = new NZBInfo();
+				pNZBInfo->SetFilename(szNZBFilename);
+				pNZBInfo->SetDestDir(szDestDir);
+				cNZBList.push_back(pNZBInfo);
+			}
+
+			pFileInfo->SetNZBInfo(pNZBInfo);
 
 			m_RemoteQueue.push_back(pFileInfo);
 

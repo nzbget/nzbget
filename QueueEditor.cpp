@@ -1,5 +1,5 @@
 /*
- *  This file if part of nzbget
+ *  This file is part of nzbget
  *
  *  Copyright (C) 2007  Andrei Prygounkov <hugbug@users.sourceforge.net>
  *
@@ -353,7 +353,7 @@ bool QueueEditor::EditGroup(DownloadQueue* pDownloadQueue, FileInfo* pFileInfo, 
 	for (DownloadQueue::iterator it = pDownloadQueue->begin(); it != pDownloadQueue->end(); it++)
 	{
 		FileInfo* pFileInfo2 = *it;
-		if (!strcmp(pFileInfo2->GetNZBFilename(), pFileInfo->GetNZBFilename()))
+		if (pFileInfo2->GetNZBInfo() == pFileInfo->GetNZBInfo())
 		{
 			cIDList.push_back(pFileInfo2->GetID());
 		}
@@ -368,7 +368,7 @@ bool QueueEditor::EditGroup(DownloadQueue* pDownloadQueue, FileInfo* pFileInfo, 
 		for (FileList::iterator it = cGroupList.begin(); it != cGroupList.end(); it++, iNum++)
 		{
 			FileInfo* pGroupInfo = *it;
-			if (!strcmp(pGroupInfo->GetNZBFilename(), pFileInfo->GetNZBFilename()))
+			if (pGroupInfo->GetNZBInfo() == pFileInfo->GetNZBInfo())
 			{
 				break;
 			}
@@ -421,7 +421,7 @@ void QueueEditor::BuildGroupList(DownloadQueue* pDownloadQueue, FileList* pGroup
 		for (FileList::iterator itg = pGroupList->begin(); itg != pGroupList->end(); itg++)
 		{
 			FileInfo* pGroupInfo1 = *itg;
-			if (!strcmp(pGroupInfo1->GetNZBFilename(), pFileInfo->GetNZBFilename()))
+			if (pGroupInfo1->GetNZBInfo() == pFileInfo->GetNZBInfo())
 			{
 				pGroupInfo = pGroupInfo1;
 				break;
@@ -465,7 +465,7 @@ void QueueEditor::AlignAffectedGroups(DownloadQueue* pDownloadQueue, IDList* pID
 		for (FileList::iterator it = cGroupList.begin(); it != cGroupList.end(); it++, iNum++)
 		{
 			FileInfo* pFileInfo = *it;
-			if (!strcmp(pItem->m_pFileInfo->GetNZBFilename(), pFileInfo->GetNZBFilename()))
+			if (pItem->m_pFileInfo->GetNZBInfo() == pFileInfo->GetNZBInfo())
 			{
 				if (!ItemExists(&cAffectedGroupList, pFileInfo))
 				{
@@ -519,7 +519,7 @@ void QueueEditor::AlignGroup(DownloadQueue* pDownloadQueue, FileInfo* pFirstFile
 	while (iNum < pDownloadQueue->size())
 	{
 		FileInfo* pFileInfo = (*pDownloadQueue)[iNum];
-		if (!strcmp(pFirstFileInfo->GetNZBFilename(), pFileInfo->GetNZBFilename()))
+		if (pFirstFileInfo->GetNZBInfo() == pFileInfo->GetNZBInfo())
 		{
 			if (pLastFileInfo && iNum - iLastNum > 1)
 			{
@@ -549,7 +549,7 @@ void QueueEditor::PauseParsInGroups(ItemList* pItemList, bool bExtraParsOnly)
 		{
 			EditItem* pItem = *it;
 			if (!pFirstFileInfo || 
-				!strcmp(pFirstFileInfo->GetNZBFilename(), pItem->m_pFileInfo->GetNZBFilename()))
+				(pFirstFileInfo->GetNZBInfo() == pItem->m_pFileInfo->GetNZBInfo()))
 			{
 				GroupFileList.push_back(pItem->m_pFileInfo);
 				if (!pFirstFileInfo)

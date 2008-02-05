@@ -362,10 +362,10 @@ void ListBinCommand::Execute()
 		for (DownloadQueue::iterator it = pDownloadQueue->begin(); it != pDownloadQueue->end(); it++)
 		{
 			FileInfo* pFileInfo = *it;
-			bufsize += strlen(pFileInfo->GetNZBFilename()) + 1;
+			bufsize += strlen(pFileInfo->GetNZBInfo()->GetFilename()) + 1;
 			bufsize += strlen(pFileInfo->GetSubject()) + 1;
 			bufsize += strlen(pFileInfo->GetFilename()) + 1;
-			bufsize += strlen(pFileInfo->GetDestDir()) + 1;
+			bufsize += strlen(pFileInfo->GetNZBInfo()->GetDestDir()) + 1;
 		}
 
 		buf = (char*) malloc(bufsize);
@@ -384,18 +384,18 @@ void ListBinCommand::Execute()
 			pListAnswer->m_iRemainingSizeHi	= htonl(iSizeHi);
 			pListAnswer->m_bFilenameConfirmed = htonl(pFileInfo->GetFilenameConfirmed());
 			pListAnswer->m_bPaused			= htonl(pFileInfo->GetPaused());
-			pListAnswer->m_iNZBFilenameLen	= htonl(strlen(pFileInfo->GetNZBFilename()) + 1);
+			pListAnswer->m_iNZBFilenameLen	= htonl(strlen(pFileInfo->GetNZBInfo()->GetFilename()) + 1);
 			pListAnswer->m_iSubjectLen		= htonl(strlen(pFileInfo->GetSubject()) + 1);
 			pListAnswer->m_iFilenameLen		= htonl(strlen(pFileInfo->GetFilename()) + 1);
-			pListAnswer->m_iDestDirLen		= htonl(strlen(pFileInfo->GetDestDir()) + 1);
+			pListAnswer->m_iDestDirLen		= htonl(strlen(pFileInfo->GetNZBInfo()->GetDestDir()) + 1);
 			bufptr += sizeof(SNZBListResponseEntry);
-			strcpy(bufptr, pFileInfo->GetNZBFilename());
+			strcpy(bufptr, pFileInfo->GetNZBInfo()->GetFilename());
 			bufptr += ntohl(pListAnswer->m_iNZBFilenameLen);
 			strcpy(bufptr, pFileInfo->GetSubject());
 			bufptr += ntohl(pListAnswer->m_iSubjectLen);
 			strcpy(bufptr, pFileInfo->GetFilename());
 			bufptr += ntohl(pListAnswer->m_iFilenameLen);
-			strcpy(bufptr, pFileInfo->GetDestDir());
+			strcpy(bufptr, pFileInfo->GetNZBInfo()->GetDestDir());
 			bufptr += ntohl(pListAnswer->m_iDestDirLen);
 		}
 

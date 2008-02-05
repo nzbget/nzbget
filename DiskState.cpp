@@ -1,5 +1,5 @@
 /*
- *  This file if part of nzbget
+ *  This file is part of nzbget
  *
  *  Copyright (C) 2007  Andrei Prygounkov <hugbug@users.sourceforge.net>
  *
@@ -44,14 +44,41 @@
 
 extern Options* g_pOptions;
 
+static const char* FORMATVERSION_SIGNATURE = "nzbget diskstate file version 3\n";
+
 /* Save Download Queue to Disk.
  * The Disk State consists of file "queue", which contains the order of files
  * and of one diskstate-file for each file in download queue.
- * This function saves only file "queue".
+ * This function saves file "queue" and files with NZB-info. It does not
+ * save file-infos.
  */
 bool DiskState::Save(DownloadQueue* pDownloadQueue)
 {
 	debug("Saving queue to disk");
+
+	// prepare list of nzb-infos
+
+	typedef std::deque<NZBInfo*> NZBList;
+	NZBList cNZBList;
+
+	for (DownloadQueue::iterator it = pDownloadQueue->begin(); it != pDownloadQueue->end(); it++)
+	{
+		FileInfo* pFileInfo = *it;
+		bool inlist = false;
+		for (NZBList::iterator it = cNZBList.begin(); it != cNZBList.end(); it++)
+		{
+			NZBInfo* pNZBInfo = *it;
+			if (pNZBInfo == pFileInfo->GetNZBInfo())
+			{
+				inlist = true;
+				break;
+			}
+		}
+		if (!inlist)
+		{
+			cNZBList.push_back(pFileInfo->GetNZBInfo());
+		}
+	}
 
 	char fileName[1024];
 	snprintf(fileName, 1024, "%s%s", g_pOptions->GetQueueDir(), "queue");
@@ -66,21 +93,43 @@ bool DiskState::Save(DownloadQueue* pDownloadQueue)
 		return false;
 	}
 
-	fprintf(outfile, "nzbget diskstate file version 2\n");
+	fprintf(outfile, FORMATVERSION_SIGNATURE);
 
-	int cnt = 0;
+	// save nzb-infos
+	fprintf(outfile, "%i\n", cNZBList.size());
+	for (NZBList::iterator it = cNZBList.begin(); it != cNZBList.end(); it++)
+	{
+		NZBInfo* pNZBInfo = *it;
+		fprintf(outfile, "%s\n", pNZBInfo->GetFilename());
+		fprintf(outfile, "%s\n", pNZBInfo->GetDestDir());
+		fprintf(outfile, "%i\n", pNZBInfo->GetFileCount());
+		fprintf(outfile, "%lu,%lu\n", (unsigned long)(pNZBInfo->GetSize() >> 32), (unsigned long)(pNZBInfo->GetSize()));
+	}
+
+	// save file-infos
+	fprintf(outfile, "%i\n", pDownloadQueue->size());
 	for (DownloadQueue::iterator it = pDownloadQueue->begin(); it != pDownloadQueue->end(); it++)
 	{
 		FileInfo* pFileInfo = *it;
 		if (!pFileInfo->GetDeleted())
 		{
-			fprintf(outfile, "%i,%i\n", pFileInfo->GetID(), (int)pFileInfo->GetPaused());
-			cnt++;
+			// find index of nzb-info
+			int iNZBIndex = 0;
+			for (unsigned int i = 0; i < cNZBList.size(); i++)
+			{
+				iNZBIndex++;
+				if (cNZBList[i] == pFileInfo->GetNZBInfo())
+				{
+					break;
+				}
+			}
+
+			fprintf(outfile, "%i,%i,%i\n", pFileInfo->GetID(), iNZBIndex, (int)pFileInfo->GetPaused());
 		}
 	}
 	fclose(outfile);
 
-	if (cnt == 0)
+	if (pDownloadQueue->empty())
 	{
 		remove(fileName);
 	}
@@ -88,17 +137,12 @@ bool DiskState::Save(DownloadQueue* pDownloadQueue)
 	return true;
 }
 
-bool DiskState::SaveFile(FileInfo* pFileInfo)
-{
-	char fileName[1024];
-	snprintf(fileName, 1024, "%s%i", g_pOptions->GetQueueDir(), pFileInfo->GetID());
-	fileName[1024-1] = '\0';
-	return SaveFileInfo(pFileInfo, fileName);
-}
-
 bool DiskState::Load(DownloadQueue* pDownloadQueue)
 {
 	debug("Loading queue from disk");
+
+	typedef std::deque<NZBInfo*> NZBList;
+	NZBList cNZBList;
 
 	char fileName[1024];
 	snprintf(fileName, 1024, "%s%s", g_pOptions->GetQueueDir(), "queue");
@@ -115,47 +159,82 @@ bool DiskState::Load(DownloadQueue* pDownloadQueue)
 	bool res = false;
 	char FileSignatur[128];
 	fgets(FileSignatur, sizeof(FileSignatur), infile);
-	if (!strcmp(FileSignatur, "nzbget diskstate file version 2\n"))
-	{
-		int id, paused;
-		while (fscanf(infile, "%i,%i\n", &id, &paused) != EOF)
-		{
-			char fileName[1024];
-			snprintf(fileName, 1024, "%s%i", g_pOptions->GetQueueDir(), id);
-			fileName[1024-1] = '\0';
-			FileInfo* pFileInfo = new FileInfo();
-			bool res = LoadFileInfo(pFileInfo, fileName, true, false);
-			if (res)
-			{
-				pFileInfo->SetID(id);
-				pFileInfo->SetPaused(paused);
-				pDownloadQueue->push_back(pFileInfo);
-			}
-			else
-			{
-				warn("Could not load diskstate for file %s", fileName);
-				delete pFileInfo;
-			}
-		}
-		res = true;
-	}
-	else
+	if (strcmp(FileSignatur, FORMATVERSION_SIGNATURE))
 	{
 		error("Could not load diskstate due file version mismatch");
-		res = false;
+		fclose(infile);
+		return false;
+	}
+
+	int size;
+	char buf[1024];
+
+	// load nzb-infos
+	if (fscanf(infile, "%i\n", &size) != 1) goto error;
+	for (int i = 0; i < size; i++)
+	{
+		NZBInfo* pNZBInfo = new NZBInfo();
+		cNZBList.push_back(pNZBInfo);
+
+		if (!fgets(buf, sizeof(buf), infile)) goto error;
+		if (buf[0] != 0) buf[strlen(buf)-1] = 0; // remove traling '\n'
+		pNZBInfo->SetFilename(buf);
+
+		if (!fgets(buf, sizeof(buf), infile)) goto error;
+		if (buf[0] != 0) buf[strlen(buf)-1] = 0; // remove traling '\n'
+		pNZBInfo->SetDestDir(buf);
+
+		int iFileCount;
+		if (fscanf(infile, "%i\n", &iFileCount) != 1) goto error;
+		pNZBInfo->SetFileCount(iFileCount);
+
+		unsigned long High, Low;
+		if (fscanf(infile, "%lu,%lu\n", &High, &Low) != 2) goto error;
+		pNZBInfo->SetSize((((unsigned long long)High) << 32) + Low);
+	}
+
+	// load file-infos
+	if (fscanf(infile, "%i\n", &size) != 1) goto error;
+	for (int i = 0; i < size; i++)
+	{
+		unsigned int id, iNZBIndex, paused;
+		if (fscanf(infile, "%i,%i,%i\n", &id, &iNZBIndex, &paused) != 3) goto error;
+		if (iNZBIndex < 0 || iNZBIndex > cNZBList.size()) goto error;
+
+		char fileName[1024];
+		snprintf(fileName, 1024, "%s%i", g_pOptions->GetQueueDir(), id);
+		fileName[1024-1] = '\0';
+		FileInfo* pFileInfo = new FileInfo();
+		bool res = LoadFileInfo(pFileInfo, fileName, true, false);
+		if (res)
+		{
+			pFileInfo->SetID(id);
+			pFileInfo->SetPaused(paused);
+			pFileInfo->SetNZBInfo(cNZBList[iNZBIndex - 1]);
+			pDownloadQueue->push_back(pFileInfo);
+		}
+		else
+		{
+			warn("Could not load diskstate for file %s", fileName);
+			delete pFileInfo;
+		}
 	}
 
 	fclose(infile);
+	return true;
 
-	return res;
+error:
+	fclose(infile);
+	error("Error reading diskstate for file %s", fileName);
+	return false;
 }
 
-bool DiskState::LoadArticles(FileInfo* pFileInfo)
+bool DiskState::SaveFile(FileInfo* pFileInfo)
 {
 	char fileName[1024];
 	snprintf(fileName, 1024, "%s%i", g_pOptions->GetQueueDir(), pFileInfo->GetID());
 	fileName[1024-1] = '\0';
-	return LoadFileInfo(pFileInfo, fileName, false, true);
+	return SaveFileInfo(pFileInfo, fileName);
 }
 
 bool DiskState::SaveFileInfo(FileInfo* pFileInfo, const char* szFilename)
@@ -170,13 +249,9 @@ bool DiskState::SaveFileInfo(FileInfo* pFileInfo, const char* szFilename)
 		return false;
 	}
 
-	fprintf(outfile, "%s\n", pFileInfo->GetNZBFilename());
 	fprintf(outfile, "%s\n", pFileInfo->GetSubject());
-	fprintf(outfile, "%s\n", pFileInfo->GetDestDir());
 	fprintf(outfile, "%s\n", pFileInfo->GetFilename());
 	fprintf(outfile, "%i\n", pFileInfo->GetFilenameConfirmed());
-	fprintf(outfile, "%i\n", pFileInfo->GetNZBFileCount());
-	fprintf(outfile, "%lu,%lu\n", (unsigned long)(pFileInfo->GetNZBSize() >> 32), (unsigned long)(pFileInfo->GetNZBSize()));
 	fprintf(outfile, "%lu,%lu\n", (unsigned long)(pFileInfo->GetSize() >> 32), (unsigned long)(pFileInfo->GetSize()));
 
 	fprintf(outfile, "%i\n", pFileInfo->GetGroups()->size());
@@ -197,6 +272,14 @@ bool DiskState::SaveFileInfo(FileInfo* pFileInfo, const char* szFilename)
 	return true;
 }
 
+bool DiskState::LoadArticles(FileInfo* pFileInfo)
+{
+	char fileName[1024];
+	snprintf(fileName, 1024, "%s%i", g_pOptions->GetQueueDir(), pFileInfo->GetID());
+	fileName[1024-1] = '\0';
+	return LoadFileInfo(pFileInfo, fileName, false, true);
+}
+
 bool DiskState::LoadFileInfo(FileInfo* pFileInfo, const char * szFilename, bool bFileSummary, bool bArticles)
 {
 	debug("Loading FileInfo from disk");
@@ -213,15 +296,7 @@ bool DiskState::LoadFileInfo(FileInfo* pFileInfo, const char * szFilename, bool 
 
 	if (!fgets(buf, sizeof(buf), infile)) goto error;
 	if (buf[0] != 0) buf[strlen(buf)-1] = 0; // remove traling '\n'
-	if (bFileSummary) pFileInfo->SetNZBFilename(buf);
-
-	if (!fgets(buf, sizeof(buf), infile)) goto error;
-	if (buf[0] != 0) buf[strlen(buf)-1] = 0; // remove traling '\n'
 	if (bFileSummary) pFileInfo->SetSubject(buf);
-
-	if (!fgets(buf, sizeof(buf), infile)) goto error;
-	if (buf[0] != 0) buf[strlen(buf)-1] = 0; // remove traling '\n'
-	if (bFileSummary) pFileInfo->SetDestDir(buf);
 
 	if (!fgets(buf, sizeof(buf), infile)) goto error;
 	if (buf[0] != 0) buf[strlen(buf)-1] = 0; // remove traling '\n'
@@ -231,17 +306,12 @@ bool DiskState::LoadFileInfo(FileInfo* pFileInfo, const char * szFilename, bool 
 	if (fscanf(infile, "%i\n", &iFilenameConfirmed) != 1) goto error;
 	if (bFileSummary) pFileInfo->SetFilenameConfirmed(iFilenameConfirmed);
 	
-	int size;
-	if (fscanf(infile, "%i\n", &size) != 1) goto error;
-	if (bFileSummary) pFileInfo->SetNZBFileCount(size);
-
 	unsigned long High, Low;
-	if (fscanf(infile, "%lu,%lu\n", &High, &Low) != 2) goto error;
-	if (bFileSummary) pFileInfo->SetNZBSize((((unsigned long long)High) << 32) + Low);
 	if (fscanf(infile, "%lu,%lu\n", &High, &Low) != 2) goto error;
 	if (bFileSummary) pFileInfo->SetSize((((unsigned long long)High) << 32) + Low);
 	if (bFileSummary) pFileInfo->SetRemainingSize(pFileInfo->GetSize());
 
+	int size;
 	if (fscanf(infile, "%i\n", &size) != 1) goto error;
 	for (int i = 0; i < size; i++)
 	{
@@ -301,7 +371,7 @@ bool DiskState::Discard()
 	bool res = false;
 	char FileSignatur[128];
 	fgets(FileSignatur, sizeof(FileSignatur), infile);
-	if (!strcmp(FileSignatur, "nzbget diskstate file version 1\n"))
+	if (!strcmp(FileSignatur, FORMATVERSION_SIGNATURE))
 	{
 		int id, paused;
 		while (fscanf(infile, "%i,%i\n", &id, &paused) == 2)
@@ -342,7 +412,7 @@ bool DiskState::Exists()
 
 bool DiskState::DiscardFile(DownloadQueue* pDownloadQueue, FileInfo* pFileInfo)
 {
-	// delete diskstate-file
+	// delete diskstate-file for file-info
 	char fileName[1024];
 	snprintf(fileName, 1024, "%s%i", g_pOptions->GetQueueDir(), pFileInfo->GetID());
 	fileName[1024-1] = '\0';

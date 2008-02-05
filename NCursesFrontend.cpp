@@ -1,5 +1,5 @@
 /*
- *  This file if part of nzbget
+ *  This file is part of nzbget
  *
  *  Copyright (C) 2004  Sven Henkel <sidddy@users.sourceforge.net>
  *  Copyright (C) 2007  Andrei Prygounkov <hugbug@users.sourceforge.net>
@@ -221,7 +221,7 @@ void NCursesFrontend::Run()
     {
         // The data (queue and log) is updated each m_iUpdateInterval msec,
         // but the window is updated more often for better reaction on user's input
-		if (iScreenUpdatePos <= 0)
+		if (iScreenUpdatePos <= 0 || m_iDataUpdatePos <= 0)
 		{
 			iScreenUpdatePos = iScreenUpdateInterval;
 			Update();
@@ -756,7 +756,7 @@ void NCursesFrontend::PrintFilename(FileInfo * pFileInfo, int iRow, bool bSelect
 	char szNZBNiceName[1024];
 	if (m_bShowNZBname)
 	{
-		pFileInfo->GetNiceNZBName(szNZBNiceName, 1023);
+		pFileInfo->GetNZBInfo()->GetNiceNZBName(szNZBNiceName, 1023);
 		int len = strlen(szNZBNiceName);
 		szNZBNiceName[len] = PATH_SEPARATOR;
 		szNZBNiceName[len + 1] = '\0';
@@ -934,7 +934,7 @@ void NCursesFrontend::PrintGroupname(GroupInfo * pGroupInfo, int iRow, bool bSel
 	}
 
 	char szNZBNiceName[1024];
-	FileInfo::MakeNiceNZBName(pGroupInfo->GetNZBFilename(), szNZBNiceName, 1023);
+	pGroupInfo->GetNZBInfo()->GetNiceNZBName(szNZBNiceName, 1023);
 
 	char szBuffer[MAX_SCREEN_WIDTH];
 	snprintf(szBuffer, MAX_SCREEN_WIDTH, "%s%i-%i%s %s (%i file%s, %s%s)", Brace1, pGroupInfo->GetFirstID(), pGroupInfo->GetLastID(), Brace2, szNZBNiceName, 
@@ -978,7 +978,7 @@ bool NCursesFrontend::EditQueue(QueueEditor::EEditAction eAction, int iOffset)
 				{
 					eAction = QueueEditor::eaFileResume;
 				}
-				else if (pGroupInfo->GetPausedSize() == 0 && (pGroupInfo->GetParCount() > 0) &&
+				else if (pGroupInfo->GetPausedSize() == 0 && (pGroupInfo->GetRemainingParCount() > 0) &&
 					!(m_bLastPausePars && m_iLastEditEntry == m_iSelectedQueueEntry))
 				{
 					eAction = QueueEditor::eaFilePauseExtraPars;
@@ -1021,6 +1021,8 @@ bool NCursesFrontend::EditQueue(QueueEditor::EEditAction eAction, int iOffset)
 	}
 
 	m_iLastEditEntry = m_iSelectedQueueEntry;
+
+	NeedUpdateData();
 
 	if (ID != 0)
 	{
