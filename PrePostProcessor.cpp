@@ -89,6 +89,7 @@ PrePostProcessor::PrePostProcessor()
 	g_pQueueCoordinator->Attach(&m_QueueCoordinatorObserver);
 
 	m_ParQueue.clear();
+	m_FailedParJobs.clear();
 
 #ifndef DISABLE_PARCHECK
 	m_ParCheckerObserver.owner = this;
@@ -103,6 +104,11 @@ PrePostProcessor::~PrePostProcessor()
 	for (ParQueue::iterator it = m_ParQueue.begin(); it != m_ParQueue.end(); it++)
 	{
 		delete *it;
+	}
+
+	for (FileList::iterator it = m_FailedParJobs.begin(); it != m_FailedParJobs.end(); it++)
+	{
+		free(*it);
 	}
 }
 
@@ -484,7 +490,16 @@ void PrePostProcessor::ParCheckerUpdate(Subject * Caller, void * Aspect)
 				fclose(file);
 			}
 		}
-		
+
+		bool bCollectionCompleted = IsCollectionCompleted(m_ParChecker.GetNZBFilename());
+		bool bHasFailedParJobs = HasFailedParJobs(m_ParChecker.GetNZBFilename());
+
+		if (g_pOptions->GetParCleanupQueue() && m_ParChecker.GetStatus() == ParChecker::psFinished && 
+			bCollectionCompleted && !bHasFailedParJobs)
+		{
+			ParCleanupQueue(m_ParChecker.GetNZBFilename());
+		}
+
 		int iParStatus = 0;
 		if (m_ParChecker.GetStatus() == ParChecker::psFailed)
 		{
@@ -502,15 +517,141 @@ void PrePostProcessor::ParCheckerUpdate(Subject * Caller, void * Aspect)
 		ExecPostScript(szPath, m_ParChecker.GetNZBFilename(), m_ParChecker.GetParFilename(), iParStatus);
 
 		m_mutexParChecker.Lock();
+
 		ParJob* pParJob = m_ParQueue.front();
 		m_ParQueue.pop_front();
 		delete pParJob;
 		m_bHasMoreJobs = !m_ParQueue.empty();
+
+		if (m_ParChecker.GetStatus() == ParChecker::psFailed && !bCollectionCompleted)
+		{
+			m_FailedParJobs.push_back(strdup(m_ParChecker.GetNZBFilename()));
+		}
+		if (bCollectionCompleted)
+		{
+			ClearFailedParJobs(m_ParChecker.GetNZBFilename());
+		}
+
 		m_mutexParChecker.Unlock();
 	}
 }
 
+/**
+ * Delete unneeded (paused) par-files from download queue after successful par-check.
+ * If the collection has paused non-par-files, none files will be deleted (even pars).
+ */
+void PrePostProcessor::ParCleanupQueue(const char* szNZBFilename)
+{
+	// check if nzb-file has only pars paused
+	int ID = 0;
+	bool bOnlyPars = true;
+	DownloadQueue* pDownloadQueue = g_pQueueCoordinator->LockQueue();
+	for (DownloadQueue::iterator it = pDownloadQueue->begin(); it != pDownloadQueue->end(); it++)
+	{
+		FileInfo* pFileInfo = *it;
+		if (!strcmp(pFileInfo->GetNZBInfo()->GetFilename(), szNZBFilename))
+		{
+			ID = pFileInfo->GetID();
+			if (!pFileInfo->GetPaused() && !pFileInfo->GetDeleted() &&
+				!ParChecker::ParseParFilename(pFileInfo->GetFilename(), NULL, NULL))
+			{
+				bOnlyPars = false;
+				break;
+			}
+		}
+	}
+	g_pQueueCoordinator->UnlockQueue();
+
+	if (bOnlyPars && ID > 0)
+	{
+		char szNZBNiceName[1024];
+		NZBInfo::MakeNiceNZBName(szNZBFilename, szNZBNiceName, sizeof(szNZBNiceName));
+		info("Cleaning up download queue for %s", szNZBNiceName);
+		g_pQueueCoordinator->GetQueueEditor()->EditEntry(ID, false, QueueEditor::eaGroupDelete, 0);
+	}
+}
+
+/**
+ * Check if nzb-file has failures from other par-jobs
+ * (if nzb-file has more than one collections)
+ */
+bool PrePostProcessor::HasFailedParJobs(const char* szNZBFilename)
+{
+	bool bHasFailedJobs = false;
+
+	m_mutexParChecker.Lock();
+	for (FileList::iterator it = m_FailedParJobs.begin(); it != m_FailedParJobs.end(); it++)
+	{
+		char* szNZBFilename = *it;
+		if (!strcmp(szNZBFilename, m_ParChecker.GetNZBFilename()))
+		{
+			bHasFailedJobs = true;
+			break;
+		}
+	}
+	m_mutexParChecker.Unlock();
+
+	return bHasFailedJobs;
+}
+
+/**
+ * Delete info about failed par-jobs for nzb-collection after the collection is completely downloaded.
+ * Mutex "m_mutexParChecker" must be locked prior to call of this funtion.
+ */
+void PrePostProcessor::ClearFailedParJobs(const char* szNZBFilename)
+{
+	for (FileList::iterator it = m_FailedParJobs.begin(); it != m_FailedParJobs.end();)
+	{
+		char* szFailedNZBFilename = *it;
+		if (!strcmp(szNZBFilename, szFailedNZBFilename))
+		{
+			m_FailedParJobs.erase(it);
+			free(szFailedNZBFilename);
+			it = m_FailedParJobs.begin();
+			continue;
+		}
+		it++;
+	}
+}
+
 #endif
+
+bool PrePostProcessor::IsCollectionCompleted(const char* szNZBFilename)
+{
+	bool bCollectionCompleted = true;
+
+	DownloadQueue* pDownloadQueue = g_pQueueCoordinator->LockQueue();
+	for (DownloadQueue::iterator it = pDownloadQueue->begin(); it != pDownloadQueue->end(); it++)
+	{
+		FileInfo* pFileInfo = *it;
+		if (!pFileInfo->GetPaused() &&
+			!strcmp(pFileInfo->GetNZBInfo()->GetFilename(), szNZBFilename))
+		{
+			bCollectionCompleted = false;
+			break;
+		}
+	}
+	g_pQueueCoordinator->UnlockQueue();
+		
+#ifndef DISABLE_PARCHECK
+	if (bCollectionCompleted)
+	{
+		m_mutexParChecker.Lock();
+		for (ParQueue::iterator it = m_ParQueue.begin() + 1; it != m_ParQueue.end(); it++)
+		{
+			ParJob* pParJob = *it;
+			if (!strcmp(pParJob->GetNZBFilename(), szNZBFilename))
+			{
+				bCollectionCompleted = false;
+				break;
+			}
+		}
+		m_mutexParChecker.Unlock();
+	}
+#endif
+
+	return bCollectionCompleted;
+}
 
 void PrePostProcessor::ExecPostScript(const char * szPath, const char * szNZBFilename, const char * szParFilename, int iParStatus)
 {
@@ -529,36 +670,7 @@ void PrePostProcessor::ExecPostScript(const char * szPath, const char * szNZBFil
 		return;
 	}
 
-	bool bCollectionCompleted = true;
-	DownloadQueue* pDownloadQueue = g_pQueueCoordinator->LockQueue();
-	for (DownloadQueue::iterator it = pDownloadQueue->begin(); it != pDownloadQueue->end(); it++)
-	{
-		FileInfo* pFileInfo2 = *it;
-		if (!pFileInfo2->GetPaused() &&
-			!strcmp(pFileInfo2->GetNZBInfo()->GetFilename(), szNZBFilename))
-		{
-			bCollectionCompleted = false;
-			break;
-		}
-	}
-	g_pQueueCoordinator->UnlockQueue();
-		
-#ifndef DISABLE_PARCHECK
-	if (bCollectionCompleted)
-	{
-		m_mutexParChecker.Lock();
-		for (ParQueue::iterator it = m_ParQueue.begin(); it != m_ParQueue.end(); it++)
-		{
-			ParJob* pParJob = *it;
-			if (!strcmp(pParJob->GetNZBFilename(), szNZBFilename))
-			{
-				bCollectionCompleted = false;
-				break;
-			}
-		}
-		m_mutexParChecker.Unlock();
-	}
-#endif
+	bool bCollectionCompleted = IsCollectionCompleted(szNZBFilename);
 
 	char szParStatus[10];
 	snprintf(szParStatus, 10, "%i", iParStatus);

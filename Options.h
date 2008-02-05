@@ -1,5 +1,5 @@
 /*
- *  This file if part of nzbget
+ *  This file is part of nzbget
  *
  *  Copyright (C) 2004  Sven Henkel <sidddy@users.sourceforge.net>
  *  Copyright (C) 2007  Andrei Prygounkov <hugbug@users.sourceforge.net>
@@ -133,6 +133,7 @@ private:
 	int					m_iWriteBufferSize;
 	int					m_iNzbDirInterval;
 	int					m_iNzbDirFileAge;
+	bool				m_bParCleanupQueue;
 
 	// Parsed command-line parameters
 	bool				m_bServerMode;
@@ -224,6 +225,7 @@ public:
 	int					GetWriteBufferSize() { return m_iWriteBufferSize; }
 	int					GetNzbDirInterval() { return m_iNzbDirInterval; }
 	int					GetNzbDirFileAge() { return m_iNzbDirFileAge; }
+	bool				GetParCleanupQueue() { return m_bParCleanupQueue; }
 
 	// Parsed command-line parameters
 	bool				GetServerMode() { return m_bServerMode; }

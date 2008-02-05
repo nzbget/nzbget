@@ -1,5 +1,5 @@
 /*
- *  This file if part of nzbget
+ *  This file is part of nzbget
  *
  *  Copyright (C) 2004  Sven Henkel <sidddy@users.sourceforge.net>
  *  Copyright (C) 2007  Andrei Prygounkov <hugbug@users.sourceforge.net>
@@ -132,6 +132,7 @@ static const char* OPTION_DIRECTWRITE		= "DirectWrite";
 static const char* OPTION_WRITEBUFFERSIZE	= "WriteBufferSize";
 static const char* OPTION_NZBDIRINTERVAL	= "NzbDirInterval";
 static const char* OPTION_NZBDIRFILEAGE		= "NzbDirFileAge";
+static const char* OPTION_PARCLEANUPQUEUE	= "ParCleanupQueue";
 
 #ifndef WIN32
 const char* PossibleConfigLocations[] =
@@ -212,6 +213,7 @@ Options::Options(int argc, char* argv[])
 	m_iWriteBufferSize		= 0;
 	m_iNzbDirInterval		= 0;
 	m_iNzbDirFileAge		= 0;
+	m_bParCleanupQueue		= false;
 
 	char szFilename[MAX_PATH + 1];
 #ifdef WIN32
@@ -403,6 +405,7 @@ void Options::InitDefault()
 	SetOption(OPTION_WRITEBUFFERSIZE, "0");
 	SetOption(OPTION_NZBDIRINTERVAL, "5");
 	SetOption(OPTION_NZBDIRFILEAGE, "60");
+	SetOption(OPTION_PARCLEANUPQUEUE, "no");
 }
 
 void Options::InitOptFile()
@@ -543,6 +546,7 @@ void Options::InitOptions()
 	m_bCrcCheck				= (bool)ParseOptionValue(OPTION_CRCCHECK, BoolCount, BoolNames, BoolValues);
 	m_bRetryOnCrcError		= (bool)ParseOptionValue(OPTION_RETRYONCRCERROR, BoolCount, BoolNames, BoolValues);
 	m_bDirectWrite			= (bool)ParseOptionValue(OPTION_DIRECTWRITE, BoolCount, BoolNames, BoolValues);
+	m_bParCleanupQueue		= (bool)ParseOptionValue(OPTION_PARCLEANUPQUEUE, BoolCount, BoolNames, BoolValues);
 
 	const char* OutputModeNames[] = { "loggable", "logable", "log", "colored", "color", "ncurses", "curses" };
 	const int OutputModeValues[] = { omLoggable, omLoggable, omLoggable, omColored, omColored, omNCurses, omNCurses };

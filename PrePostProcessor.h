@@ -1,5 +1,5 @@
 /*
- *  This file if part of nzbget
+ *  This file is part of nzbget
  *
  *  Copyright (C) 2007  Andrei Prygounkov <hugbug@users.sourceforge.net>
  *
@@ -83,10 +83,11 @@ private:
 	void				CheckIncomingNZBs();
 	bool				WasLastInCollection(DownloadQueue* pDownloadQueue, FileInfo* pFileInfo, bool bIgnorePaused);
 	void				ExecPostScript(const char* szPath, const char* szNZBFilename, const char * szParFilename, int iParStatus);
-
+	bool				IsCollectionCompleted(const char* szNZBFilename);
 
 	Mutex			 	m_mutexParChecker;
 	ParQueue			m_ParQueue;
+	FileList			m_FailedParJobs;
 
 #ifndef DISABLE_PARCHECK
 	ParChecker			m_ParChecker;
@@ -98,6 +99,9 @@ private:
 	bool				AddPar(FileInfo* pFileInfo, bool bDeleted);
 	bool				SameParCollection(const char* szFilename1, const char* szFilename2);
 	bool				FindMainPars(const char* szPath, FileList* pFileList);
+	void				ParCleanupQueue(const char* szNZBFilename);
+	bool				HasFailedParJobs(const char* szNZBFilename);
+	void				ClearFailedParJobs(const char* szNZBFilename);
 #endif
 	
 public:
