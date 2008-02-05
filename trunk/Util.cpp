@@ -445,8 +445,8 @@ unsigned int DecodeByteQuartet(char* szInputBuffer, char* szOutputBuffer)
 	{
 		if (szInputBuffer[2] == '=')
 		{
-			buffer = (buffer | BASE64_DEALPHABET [szInputBuffer[0]]) << 6;
-			buffer = (buffer | BASE64_DEALPHABET [szInputBuffer[1]]) << 6;
+			buffer = (buffer | BASE64_DEALPHABET [(int)szInputBuffer[0]]) << 6;
+			buffer = (buffer | BASE64_DEALPHABET [(int)szInputBuffer[1]]) << 6;
 			buffer = buffer << 14;
 
 			char* temp = (char*) &buffer;
@@ -456,9 +456,9 @@ unsigned int DecodeByteQuartet(char* szInputBuffer, char* szOutputBuffer)
 		}
 		else
 		{
-			buffer = (buffer | BASE64_DEALPHABET [szInputBuffer[0]]) << 6;
-			buffer = (buffer | BASE64_DEALPHABET [szInputBuffer[1]]) << 6;
-			buffer = (buffer | BASE64_DEALPHABET [szInputBuffer[2]]) << 6;
+			buffer = (buffer | BASE64_DEALPHABET [(int)szInputBuffer[0]]) << 6;
+			buffer = (buffer | BASE64_DEALPHABET [(int)szInputBuffer[1]]) << 6;
+			buffer = (buffer | BASE64_DEALPHABET [(int)szInputBuffer[2]]) << 6;
 			buffer = buffer << 8;
 
 			char* temp = (char*) &buffer;
@@ -470,10 +470,10 @@ unsigned int DecodeByteQuartet(char* szInputBuffer, char* szOutputBuffer)
 	}
 	else
 	{
-		buffer = (buffer | BASE64_DEALPHABET [szInputBuffer[0]]) << 6;
-		buffer = (buffer | BASE64_DEALPHABET [szInputBuffer[1]]) << 6;
-		buffer = (buffer | BASE64_DEALPHABET [szInputBuffer[2]]) << 6;
-		buffer = (buffer | BASE64_DEALPHABET [szInputBuffer[3]]) << 6; 
+		buffer = (buffer | BASE64_DEALPHABET [(int)szInputBuffer[0]]) << 6;
+		buffer = (buffer | BASE64_DEALPHABET [(int)szInputBuffer[1]]) << 6;
+		buffer = (buffer | BASE64_DEALPHABET [(int)szInputBuffer[2]]) << 6;
+		buffer = (buffer | BASE64_DEALPHABET [(int)szInputBuffer[3]]) << 6; 
 		buffer = buffer << 2;
 
 		char* temp = (char*) &buffer;
