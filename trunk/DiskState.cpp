@@ -156,7 +156,6 @@ bool DiskState::Load(DownloadQueue* pDownloadQueue)
 		return false;
 	}
 
-	bool res = false;
 	char FileSignatur[128];
 	fgets(FileSignatur, sizeof(FileSignatur), infile);
 	if (strcmp(FileSignatur, FORMATVERSION_SIGNATURE))
