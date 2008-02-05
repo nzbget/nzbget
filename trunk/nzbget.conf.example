@@ -379,6 +379,14 @@ ParRepair=yes
 # and the option "strictparname" does not change this behavior
 StrictParName=yes
 
+# Cleanup download queue after successful check/repair (yes, no)
+# Enable this option for automatic deletion of unneeded (paused) par-files 
+# from download queue after successful check/repair.
+# NOTE: before cleaning up the program checks if all paused files are par-files.
+# If there are paused non-par-files (this means that you have paused them
+# manually), the cleanup will be skipped for this collection.
+ParCleanupQueue=yes
+
 
 ##############################################################################
 ### POSTPROCESSING                                                         ###
