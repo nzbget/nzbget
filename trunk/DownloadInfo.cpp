@@ -1,5 +1,5 @@
 /*
- *  This file if part of nzbget
+ *  This file is part of nzbget
  *
  *  Copyright (C) 2004  Sven Henkel <sidddy@users.sourceforge.net>
  *  Copyright (C) 2007  Andrei Prygounkov <hugbug@users.sourceforge.net>
@@ -43,71 +43,21 @@
 
 int FileInfo::m_iIDGen = 0;
 
-ArticleInfo::ArticleInfo()
+NZBInfo::NZBInfo()
 {
-	//debug("Creating ArticleInfo");
-	m_szMessageID		= NULL;
-	m_iSize 			= 0;
-	m_eStatus			= aiUndefined;
-	m_szResultFilename	= NULL;
-}
+	debug("Creating NZBInfo");
 
-ArticleInfo::~ ArticleInfo()
-{
-	//debug("Destroying ArticleInfo");
-
-	if (m_szMessageID)
-	{
-		free(m_szMessageID);
-	}
-	if (m_szResultFilename)
-	{
-		free(m_szResultFilename);
-	}
-}
-
-void ArticleInfo::SetMessageID(const char * szMessageID)
-{
-	m_szMessageID = strdup(szMessageID);
-}
-
-void ArticleInfo::SetResultFilename(const char * v)
-{
-	m_szResultFilename = strdup(v);
-}
-
-
-FileInfo::FileInfo()
-{
-	debug("Creating FileInfo");
-
-	m_Articles.clear();
-	m_Groups.clear();
-	m_szSubject = NULL;
 	m_szFilename = NULL;
-	m_bFilenameConfirmed = false;
 	m_szDestDir = NULL;
-	m_szNZBFilename = NULL;
+	m_iFileCount = 0;
 	m_lSize = 0;
-	m_lRemainingSize = 0;
-	m_bPaused = false;
-	m_bDeleted = false;
-	m_iCompleted = 0;
-	m_bOutputInitialized = false;
-	m_iNZBFileCount = 0;
-	m_lNZBSize = 0;
-	m_iIDGen++;
-	m_iID = m_iIDGen;
+	m_iRefCount = 0;
 }
 
-FileInfo::~ FileInfo()
+NZBInfo::~NZBInfo()
 {
-	debug("Destroying FileInfo");
+	debug("Destroying NZBInfo");
 
-	if (m_szSubject)
-	{
-		free(m_szSubject);
-	}
 	if (m_szFilename)
 	{
 		free(m_szFilename);
@@ -116,59 +66,38 @@ FileInfo::~ FileInfo()
 	{
 		free(m_szDestDir);
 	}
-	if (m_szNZBFilename)
-	{
-		free(m_szNZBFilename);
-	}
-
-	for (Groups::iterator it = m_Groups.begin(); it != m_Groups.end() ;it++)
-	{
-		free(*it);
-	}
-	m_Groups.clear();
-
-	ClearArticles();
 }
 
-void FileInfo::ClearArticles()
+void NZBInfo::AddReference()
 {
-	for (Articles::iterator it = m_Articles.begin(); it != m_Articles.end() ;it++)
-	{
-		delete *it;
-	}
-	m_Articles.clear();
+	m_iRefCount++;
 }
 
-void FileInfo::SetID(int s)
+void NZBInfo::Release()
 {
-	m_iID = s;
-	if (m_iIDGen < m_iID)
+	m_iRefCount--;
+	if (m_iRefCount <= 0)
 	{
-		m_iIDGen = m_iID;
+		delete this;
 	}
 }
 
-void FileInfo::SetSubject(const char* szSubject)
-{
-	m_szSubject = strdup(szSubject);
-}
-
-void FileInfo::SetDestDir(const char* szDestDir)
+void NZBInfo::SetDestDir(const char* szDestDir)
 {
 	m_szDestDir = strdup(szDestDir);
 }
 
-void FileInfo::SetNZBFilename(const char * szNZBFilename)
+void NZBInfo::SetFilename(const char * szFilename)
 {
-	m_szNZBFilename = strdup(szNZBFilename);
+	m_szFilename = strdup(szFilename);
 }
 
-void FileInfo::GetNiceNZBName(char* szBuffer, int iSize)
+void NZBInfo::GetNiceNZBName(char* szBuffer, int iSize)
 {
-	MakeNiceNZBName(m_szNZBFilename, szBuffer, iSize);
+	MakeNiceNZBName(m_szFilename, szBuffer, iSize);
 }
 
-void FileInfo::MakeNiceNZBName(const char * szNZBFilename, char * szBuffer, int iSize)
+void NZBInfo::MakeNiceNZBName(const char * szNZBFilename, char * szBuffer, int iSize)
 {
 	char postname[1024];
 	const char* szBaseName = BaseFileName(szNZBFilename);
@@ -213,6 +142,115 @@ void FileInfo::MakeNiceNZBName(const char * szNZBFilename, char * szBuffer, int 
 	szBuffer[iSize-1] = '\0';
 }
 
+ArticleInfo::ArticleInfo()
+{
+	//debug("Creating ArticleInfo");
+	m_szMessageID		= NULL;
+	m_iSize 			= 0;
+	m_eStatus			= aiUndefined;
+	m_szResultFilename	= NULL;
+}
+
+ArticleInfo::~ ArticleInfo()
+{
+	//debug("Destroying ArticleInfo");
+
+	if (m_szMessageID)
+	{
+		free(m_szMessageID);
+	}
+	if (m_szResultFilename)
+	{
+		free(m_szResultFilename);
+	}
+}
+
+void ArticleInfo::SetMessageID(const char * szMessageID)
+{
+	m_szMessageID = strdup(szMessageID);
+}
+
+void ArticleInfo::SetResultFilename(const char * v)
+{
+	m_szResultFilename = strdup(v);
+}
+
+
+FileInfo::FileInfo()
+{
+	debug("Creating FileInfo");
+
+	m_Articles.clear();
+	m_Groups.clear();
+	m_szSubject = NULL;
+	m_szFilename = NULL;
+	m_bFilenameConfirmed = false;
+	m_lSize = 0;
+	m_lRemainingSize = 0;
+	m_bPaused = false;
+	m_bDeleted = false;
+	m_iCompleted = 0;
+	m_bOutputInitialized = false;
+	m_iIDGen++;
+	m_iID = m_iIDGen;
+}
+
+FileInfo::~ FileInfo()
+{
+	debug("Destroying FileInfo");
+
+	if (m_szSubject)
+	{
+		free(m_szSubject);
+	}
+	if (m_szFilename)
+	{
+		free(m_szFilename);
+	}
+
+	for (Groups::iterator it = m_Groups.begin(); it != m_Groups.end() ;it++)
+	{
+		free(*it);
+	}
+	m_Groups.clear();
+
+	ClearArticles();
+
+	if (m_pNZBInfo)
+	{
+		m_pNZBInfo->Release();
+	}
+}
+
+void FileInfo::ClearArticles()
+{
+	for (Articles::iterator it = m_Articles.begin(); it != m_Articles.end() ;it++)
+	{
+		delete *it;
+	}
+	m_Articles.clear();
+}
+
+void FileInfo::SetID(int s)
+{
+	m_iID = s;
+	if (m_iIDGen < m_iID)
+	{
+		m_iIDGen = m_iID;
+	}
+}
+
+void FileInfo::SetNZBInfo(NZBInfo* pNZBInfo)
+{
+	m_pNZBInfo = pNZBInfo;
+	m_pNZBInfo->AddReference();
+}
+
+void FileInfo::SetSubject(const char* szSubject)
+{
+	m_szSubject = strdup(szSubject);
+}
+
 void FileInfo::SetFilename(const char* szFilename)
 {
 	if (m_szFilename)
@@ -241,14 +279,14 @@ bool FileInfo::IsDupe(const char* szFilename)
 {
 	struct stat buffer;
 	char fileName[1024];
-	snprintf(fileName, 1024, "%s%c%s", m_szDestDir, (int)PATH_SEPARATOR, szFilename);
+	snprintf(fileName, 1024, "%s%c%s", m_pNZBInfo->GetDestDir(), (int)PATH_SEPARATOR, szFilename);
 	fileName[1024-1] = '\0';
 	bool exists = !stat(fileName, &buffer);
 	if (exists)
 	{
 		return true;
 	}
-	snprintf(fileName, 1024, "%s%c%s_broken", m_szDestDir, (int)PATH_SEPARATOR, szFilename);
+	snprintf(fileName, 1024, "%s%c%s_broken", m_pNZBInfo->GetDestDir(), (int)PATH_SEPARATOR, szFilename);
 	fileName[1024-1] = '\0';
 	exists = !stat(fileName, &buffer);
 	if (exists)
@@ -263,36 +301,18 @@ GroupInfo::GroupInfo()
 {
 	m_iFirstID = 0;
 	m_iLastID = 0;
-	m_szNZBFilename = NULL;
-	m_szDestDir = NULL;
-	m_iFileCount = 0;
 	m_iRemainingFileCount = 0;
-	m_lSize = 0;
 	m_lRemainingSize = 0;
 	m_lPausedSize = 0;
-	m_iParCount = 0;
+	m_iRemainingParCount = 0;
 }
 
 GroupInfo::~GroupInfo()
 {
-	if (m_szNZBFilename)
+	if (m_pNZBInfo)
 	{
-		free(m_szNZBFilename);
+		m_pNZBInfo->Release();
 	}
-	if (m_szDestDir)
-	{
-		free(m_szDestDir);
-	}
-}
-
-void GroupInfo::SetNZBFilename(const char* szNZBFilename)
-{
-	m_szNZBFilename = strdup(szNZBFilename);
-}
-
-void GroupInfo::SetDestDir(const char* szDestDir)
-{
-	m_szDestDir = strdup(szDestDir);
 }
 
 void GroupInfo::BuildGroups(DownloadQueue* pDownloadQueue, GroupQueue* pGroupQueue)
@@ -304,7 +324,7 @@ void GroupInfo::BuildGroups(DownloadQueue* pDownloadQueue, GroupQueue* pGroupQue
 		for (GroupQueue::iterator itg = pGroupQueue->begin(); itg != pGroupQueue->end(); itg++)
 		{
 			GroupInfo* pGroupInfo1 = *itg;
-			if (!strcmp(pGroupInfo1->GetNZBFilename(), pFileInfo->GetNZBFilename()))
+			if (pGroupInfo1->GetNZBInfo() == pFileInfo->GetNZBInfo())
 			{
 				pGroupInfo = pGroupInfo1;
 				break;
@@ -313,10 +333,8 @@ void GroupInfo::BuildGroups(DownloadQueue* pDownloadQueue, GroupQueue* pGroupQue
 		if (!pGroupInfo)
 		{
 			pGroupInfo = new GroupInfo();
-			pGroupInfo->SetNZBFilename(pFileInfo->GetNZBFilename());
-			pGroupInfo->SetDestDir(pFileInfo->GetDestDir());
-			pGroupInfo->m_iFileCount = pFileInfo->GetNZBFileCount();
-			pGroupInfo->m_lSize = pFileInfo->GetNZBSize();
+			pGroupInfo->m_pNZBInfo = pFileInfo->GetNZBInfo();
+			pGroupInfo->m_pNZBInfo->AddReference();
 			pGroupInfo->m_iFirstID = pFileInfo->GetID();
 			pGroupInfo->m_iLastID = pFileInfo->GetID();
 			pGroupQueue->push_back(pGroupInfo);
@@ -342,7 +360,7 @@ void GroupInfo::BuildGroups(DownloadQueue* pDownloadQueue, GroupQueue* pGroupQue
 		for (char* p = szLoFileName; *p; p++) *p = tolower(*p); // convert string to lowercase
 		if (strstr(szLoFileName, ".par2"))
 		{
-			pGroupInfo->m_iParCount++;
+			pGroupInfo->m_iRemainingParCount++;
 		}
 	}
 }

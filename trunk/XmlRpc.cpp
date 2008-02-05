@@ -534,10 +534,10 @@ void ListFilesXmlCommand::Execute()
 		unsigned int iRemainingSizeLo, iRemainingSizeHi;
 		SplitInt64(pFileInfo->GetSize(), &iFileSizeHi, &iFileSizeLo);
 		SplitInt64(pFileInfo->GetRemainingSize(), &iRemainingSizeHi, &iRemainingSizeLo);
-		char* xmlNZBFilename = XmlEncode(pFileInfo->GetNZBFilename());
+		char* xmlNZBFilename = XmlEncode(pFileInfo->GetNZBInfo()->GetFilename());
 		char* xmlSubject = XmlEncode(pFileInfo->GetSubject());
 		char* xmlFilename = XmlEncode(pFileInfo->GetFilename());
-		char* xmlDestDir = XmlEncode(pFileInfo->GetDestDir());
+		char* xmlDestDir = XmlEncode(pFileInfo->GetNZBInfo()->GetDestDir());
 
 		snprintf(szItemBuf, szItemBufSize, LIST_ITEM, pFileInfo->GetID(), iFileSizeLo, iFileSizeHi, 
 			iRemainingSizeLo, iRemainingSizeHi, (int)pFileInfo->GetFilenameConfirmed(), (int)pFileInfo->GetPaused(),
@@ -579,7 +579,7 @@ void ListGroupsXmlCommand::Execute()
 		"<member><name>PausedSizeMB</name><value><i4>%i</i4></value></member>\n"
 		"<member><name>FileCount</name><value><i4>%i</i4></value></member>\n"
 		"<member><name>RemainingFileCount</name><value><i4>%i</i4></value></member>\n"
-		"<member><name>ParCount</name><value><i4>%i</i4></value></member>\n"
+		"<member><name>RemainingParCount</name><value><i4>%i</i4></value></member>\n"
 		"<member><name>NZBNicename</name><value><string>%s</string></value></member>\n"
 		"<member><name>NZBFilename</name><value><string>%s</string></value></member>\n"
 		"<member><name>DestDir</name><value><string>%s</string></value></member>\n"
@@ -601,22 +601,22 @@ void ListGroupsXmlCommand::Execute()
 		unsigned int iRemainingSizeLo, iRemainingSizeHi, iRemainingSizeMB;
 		unsigned int iPausedSizeLo, iPausedSizeHi, iPausedSizeMB;
 		char szNZBNicename[1024];
-		SplitInt64(pGroupInfo->GetSize(), &iFileSizeHi, &iFileSizeLo);
-		iFileSizeMB = pGroupInfo->GetSize() / 1024 / 1024;
+		SplitInt64(pGroupInfo->GetNZBInfo()->GetSize(), &iFileSizeHi, &iFileSizeLo);
+		iFileSizeMB = pGroupInfo->GetNZBInfo()->GetSize() / 1024 / 1024;
 		SplitInt64(pGroupInfo->GetRemainingSize(), &iRemainingSizeHi, &iRemainingSizeLo);
 		iRemainingSizeMB = pGroupInfo->GetRemainingSize() / 1024 / 1024;
 		SplitInt64(pGroupInfo->GetPausedSize(), &iPausedSizeHi, &iPausedSizeLo);
 		iPausedSizeMB = pGroupInfo->GetPausedSize() / 1024 / 1024;
-		FileInfo::MakeNiceNZBName(pGroupInfo->GetNZBFilename(), szNZBNicename, sizeof(szNZBNicename));
+		pGroupInfo->GetNZBInfo()->GetNiceNZBName(szNZBNicename, sizeof(szNZBNicename));
 
 		char* xmlNZBNicename = XmlEncode(szNZBNicename);
-		char* xmlNZBFilename = XmlEncode(pGroupInfo->GetNZBFilename());
-		char* xmlDestDir = XmlEncode(pGroupInfo->GetDestDir());
+		char* xmlNZBFilename = XmlEncode(pGroupInfo->GetNZBInfo()->GetFilename());
+		char* xmlDestDir = XmlEncode(pGroupInfo->GetNZBInfo()->GetDestDir());
 
 		snprintf(szItemBuf, szItemBufSize, LIST_ITEM, pGroupInfo->GetFirstID(), pGroupInfo->GetLastID(),
 			iFileSizeLo, iFileSizeHi, iFileSizeMB, iRemainingSizeLo, iRemainingSizeHi, iRemainingSizeMB,
-			iPausedSizeLo, iPausedSizeHi, iPausedSizeMB, pGroupInfo->GetFileCount(), pGroupInfo->GetRemainingFileCount(), 
-			pGroupInfo->GetParCount(), szNZBNicename, xmlNZBFilename, xmlDestDir);
+			iPausedSizeLo, iPausedSizeHi, iPausedSizeMB, pGroupInfo->GetNZBInfo()->GetFileCount(), 
+			pGroupInfo->GetRemainingFileCount(), pGroupInfo->GetRemainingParCount(), szNZBNicename, xmlNZBFilename, xmlDestDir);
 		szItemBuf[szItemBufSize-1] = '\0';
 
 		free(xmlNZBNicename);
@@ -785,7 +785,7 @@ void PostQueueXmlCommand::Execute()
 	{
 		PrePostProcessor::ParJob* pParJob = *it;
 		char szNZBNicename[1024];
-		FileInfo::MakeNiceNZBName(pParJob->GetNZBFilename(), szNZBNicename, sizeof(szNZBNicename));
+		NZBInfo::MakeNiceNZBName(pParJob->GetNZBFilename(), szNZBNicename, sizeof(szNZBNicename));
 
 		char* xmlNZBNicename = XmlEncode(szNZBNicename);
 		char* xmlNZBFilename = XmlEncode(pParJob->GetNZBFilename());

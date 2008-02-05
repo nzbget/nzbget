@@ -1,5 +1,5 @@
 /*
- *  This file if part of nzbget
+ *  This file is part of nzbget
  *
  *  Copyright (C) 2005  Bo Cordes Petersen <placebodk@users.sourceforge.net>
  *  Copyright (C) 2007  Andrei Prygounkov <hugbug@users.sourceforge.net>
@@ -475,7 +475,7 @@ void QueueCoordinator::BuildArticleFilename(ArticleDownloader* pArticleDownloade
 	pArticleDownloader->SetTempFilename(tmpname);
 
 	char szNZBNiceName[1024];
-	pFileInfo->GetNiceNZBName(szNZBNiceName, 1024);
+	pFileInfo->GetNZBInfo()->GetNiceNZBName(szNZBNiceName, 1024);
 	
 	snprintf(name, 1024, "%s%c%s [%i/%i]", szNZBNiceName, (int)PATH_SEPARATOR, pFileInfo->GetFilename(), pArticleInfo->GetPartNumber(), pFileInfo->GetArticles()->size());
 	name[1024-1] = '\0';
@@ -588,10 +588,11 @@ void QueueCoordinator::ArticleCompleted(ArticleDownloader* pArticleDownloader)
 	}
 	if (deleteFileObj)
 	{
+		bool fileDeleted = pFileInfo->GetDeleted();
 		// delete File from Queue
 		pFileInfo->SetDeleted(true);
 
-		Aspect aspect = { fileCompleted ? eaFileCompleted : eaFileDeleted, pFileInfo, &m_DownloadQueue, NULL };
+		Aspect aspect = { fileCompleted && !fileDeleted ? eaFileCompleted : eaFileDeleted, pFileInfo, &m_DownloadQueue, NULL };
 		Notify(&aspect);
 		
 		DeleteFileInfo(pFileInfo, fileCompleted);
@@ -659,7 +660,7 @@ bool QueueCoordinator::IsDupe(FileInfo* pFileInfo)
 	for (DownloadQueue::iterator it = m_DownloadQueue.begin(); it != m_DownloadQueue.end(); it++)
 	{
 		FileInfo* pQueueEntry = *it;
-		if (!strcmp(pFileInfo->GetDestDir(), pQueueEntry->GetDestDir()) &&
+		if (!strcmp(pFileInfo->GetNZBInfo()->GetDestDir(), pQueueEntry->GetNZBInfo()->GetDestDir()) &&
 			!strcmp(pFileInfo->GetFilename(), pQueueEntry->GetFilename()) &&
 			pFileInfo != pQueueEntry)
 		{

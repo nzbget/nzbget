@@ -1,5 +1,5 @@
 /*
- *  This file if part of nzbget
+ *  This file is part of nzbget
  *
  *  Copyright (C) 2007  Andrei Prygounkov <hugbug@users.sourceforge.net>
  *
@@ -187,7 +187,7 @@ void PrePostProcessor::QueueCoordinatorUpdate(Subject * Caller, void * Aspect)
 			WasLastInCollection(pAspect->pDownloadQueue, pAspect->pFileInfo, true))
 		{
 			char szNZBNiceName[1024];
-			pAspect->pFileInfo->GetNiceNZBName(szNZBNiceName, 1024);
+			pAspect->pFileInfo->GetNZBInfo()->GetNiceNZBName(szNZBNiceName, 1024);
 			if (pAspect->eAction == QueueCoordinator::eaFileCompleted)
 			{
 				info("Collection %s completely downloaded", szNZBNiceName);
@@ -205,7 +205,7 @@ void PrePostProcessor::QueueCoordinatorUpdate(Subject * Caller, void * Aspect)
 			else
 #endif
 			{
-				ExecPostScript(pAspect->pFileInfo->GetDestDir(), pAspect->pFileInfo->GetNZBFilename(), "", PARSTATUS_NOT_CHECKED);
+				ExecPostScript(pAspect->pFileInfo->GetNZBInfo()->GetDestDir(), pAspect->pFileInfo->GetNZBInfo()->GetFilename(), "", PARSTATUS_NOT_CHECKED);
 			}
 		}
 	}
@@ -218,7 +218,7 @@ void PrePostProcessor::PausePars(DownloadQueue* pDownloadQueue, const char* szNZ
 	for (DownloadQueue::iterator it = pDownloadQueue->begin(); it != pDownloadQueue->end(); it++)
 	{
 		FileInfo* pFileInfo = *it;
-		if (!strcmp(pFileInfo->GetNZBFilename(), szNZBFilename))
+		if (!strcmp(pFileInfo->GetNZBInfo()->GetFilename(), szNZBFilename))
 		{
 			g_pQueueCoordinator->GetQueueEditor()->LockedEditEntry(pDownloadQueue, pFileInfo->GetID(), false, 
 				(g_pOptions->GetLoadPars() == Options::plOne ||
@@ -293,7 +293,7 @@ bool PrePostProcessor::WasLastInCollection(DownloadQueue* pDownloadQueue, FileIn
 	{
 		FileInfo* pFileInfo2 = *it;
 		if (pFileInfo2 != pFileInfo && (!bIgnorePaused || !pFileInfo2->GetPaused()) &&
-			!strcmp(pFileInfo2->GetNZBFilename(), pFileInfo->GetNZBFilename()))
+			(pFileInfo2->GetNZBInfo() == pFileInfo->GetNZBInfo()))
 		{
 			return false;
 		}
@@ -318,12 +318,12 @@ void PrePostProcessor::UnlockParQueue()
 void PrePostProcessor::CheckPars(DownloadQueue * pDownloadQueue, FileInfo * pFileInfo)
 {
 	char szNZBNiceName[1024];
-	pFileInfo->GetNiceNZBName(szNZBNiceName, 1024);
+	pFileInfo->GetNZBInfo()->GetNiceNZBName(szNZBNiceName, 1024);
 
 	m_mutexParChecker.Lock();
 
 	FileList fileList;
-	if (FindMainPars(pFileInfo->GetDestDir(), &fileList))
+	if (FindMainPars(pFileInfo->GetNZBInfo()->GetDestDir(), &fileList))
 	{
 		for (FileList::iterator it = fileList.begin(); it != fileList.end(); it++)
 		{
@@ -331,7 +331,7 @@ void PrePostProcessor::CheckPars(DownloadQueue * pDownloadQueue, FileInfo * pFil
 			debug("Found par: %s", szParFilename);
 			
 			char szFullFilename[1024];
-			snprintf(szFullFilename, 1024, "%s%c%s", pFileInfo->GetDestDir(), (int)PATH_SEPARATOR, szParFilename);
+			snprintf(szFullFilename, 1024, "%s%c%s", pFileInfo->GetNZBInfo()->GetDestDir(), (int)PATH_SEPARATOR, szParFilename);
 			szFullFilename[1024-1] = '\0';
 
 			char szInfoName[1024];
@@ -346,7 +346,7 @@ void PrePostProcessor::CheckPars(DownloadQueue * pDownloadQueue, FileInfo * pFil
 			szParInfoName[1024-1] = '\0';
 			
 			info("Queueing %s%c%s for par-check", szNZBNiceName, (int)PATH_SEPARATOR, szInfoName);
-			ParJob* pParJob = new ParJob(pFileInfo->GetNZBFilename(), szFullFilename, szParInfoName);
+			ParJob* pParJob = new ParJob(pFileInfo->GetNZBInfo()->GetFilename(), szFullFilename, szParInfoName);
 			m_ParQueue.push_back(pParJob);
 			m_bHasMoreJobs = true;
 
@@ -390,14 +390,14 @@ bool PrePostProcessor::AddPar(FileInfo * pFileInfo, bool bDeleted)
 {
 	m_mutexParChecker.Lock();
 	bool bSameCollection = m_ParChecker.IsRunning() &&
-		!strcmp(pFileInfo->GetNZBFilename(), m_ParChecker.GetNZBFilename()) &&
+		!strcmp(pFileInfo->GetNZBInfo()->GetFilename(), m_ParChecker.GetNZBFilename()) &&
 		SameParCollection(pFileInfo->GetFilename(), BaseFileName(m_ParChecker.GetParFilename()));
 	if (bSameCollection)
 	{
 		if (!bDeleted)
 		{
 			char szFullFilename[1024];
-			snprintf(szFullFilename, 1024, "%s%c%s", pFileInfo->GetDestDir(), (int)PATH_SEPARATOR, pFileInfo->GetFilename());
+			snprintf(szFullFilename, 1024, "%s%c%s", pFileInfo->GetNZBInfo()->GetDestDir(), (int)PATH_SEPARATOR, pFileInfo->GetFilename());
 			szFullFilename[1024-1] = '\0';
 			m_ParChecker.AddParFile(szFullFilename);
 		}
@@ -535,7 +535,7 @@ void PrePostProcessor::ExecPostScript(const char * szPath, const char * szNZBFil
 	{
 		FileInfo* pFileInfo2 = *it;
 		if (!pFileInfo2->GetPaused() &&
-			!strcmp(pFileInfo2->GetNZBFilename(), szNZBFilename))
+			!strcmp(pFileInfo2->GetNZBInfo()->GetFilename(), szNZBFilename))
 		{
 			bCollectionCompleted = false;
 			break;

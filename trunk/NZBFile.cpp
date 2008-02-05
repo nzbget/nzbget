@@ -1,5 +1,5 @@
 /*
- *  This file if part of nzbget
+ *  This file is part of nzbget
  *
  *  Copyright (C) 2004  Sven Henkel <sidddy@users.sourceforge.net>
  *  Copyright (C) 2007  Andrei Prygounkov <hugbug@users.sourceforge.net>
@@ -59,6 +59,10 @@ NZBFile::NZBFile(const char* szFileName)
     debug("Creating NZBFile");
 
     m_szFileName = strdup(szFileName);
+	m_pNZBInfo = new NZBInfo();
+	m_pNZBInfo->AddReference();
+	m_pNZBInfo->SetFilename(szFileName);
+	BuildDestDirName();
 
     m_FileInfos.clear();
 }
@@ -78,6 +82,11 @@ NZBFile::~NZBFile()
         delete *it;
     }
     m_FileInfos.clear();
+
+	if (m_pNZBInfo)
+	{
+		m_pNZBInfo->Release();
+	}
 }
 
 void NZBFile::LogDebugInfo()
@@ -131,8 +140,10 @@ void NZBFile::AddFileInfo(FileInfo* pFileInfo)
 	if (!pArticles->empty())
 	{
 		ParseSubject(pFileInfo);
-		BuildDestDirName(pFileInfo);
 		m_FileInfos.push_back(pFileInfo);
+		pFileInfo->SetNZBInfo(m_pNZBInfo);
+		m_pNZBInfo->SetSize(m_pNZBInfo->GetSize() + pFileInfo->GetSize());
+		m_pNZBInfo->SetFileCount(m_pNZBInfo->GetFileCount() + 1);
 
 		if (g_pOptions->GetSaveQueue() && g_pOptions->GetServerMode())
 		{
@@ -234,14 +245,14 @@ void NZBFile::ParseSubject(FileInfo* pFileInfo)
 	pFileInfo->MakeValidFilename();
 }
 
-void NZBFile::BuildDestDirName(FileInfo* pFileInfo)
+void NZBFile::BuildDestDirName()
 {
 	char szBuffer[1024];
 
 	if (g_pOptions->GetAppendNZBDir())
 	{
 		char szNiceNZBName[1024];
-		pFileInfo->GetNiceNZBName(szNiceNZBName, 1024);
+		m_pNZBInfo->GetNiceNZBName(szNiceNZBName, 1024);
 		snprintf(szBuffer, 1024, "%s%s", g_pOptions->GetDestDir(), szNiceNZBName);
 		szBuffer[1024-1] = '\0';
 	}
@@ -251,7 +262,7 @@ void NZBFile::BuildDestDirName(FileInfo* pFileInfo)
 		szBuffer[1024-1] = '\0'; // trim the last slash, always returned by GetDestDir()
 	}
 
-	pFileInfo->SetDestDir(szBuffer);
+	m_pNZBInfo->SetDestDir(szBuffer);
 }
 
 /**
@@ -286,32 +297,16 @@ void NZBFile::CheckFilenames()
 				FileInfo* pFileInfo2 = *it2;
 				pFileInfo2->SetFilename(pFileInfo2->GetSubject());
 				pFileInfo2->MakeValidFilename();
+
+				if (g_pOptions->GetSaveQueue() && g_pOptions->GetServerMode())
+				{
+					g_pDiskState->LoadArticles(pFileInfo2);
+					g_pDiskState->SaveFile(pFileInfo2);
+					pFileInfo2->ClearArticles();
+				}
 			}
 		}
     }
-}
-
-void NZBFile::UpdateGroupInfo()
-{
-	long long lSize = 0;
-    for (FileInfos::iterator it = m_FileInfos.begin(); it != m_FileInfos.end(); it++)
-    {
-        FileInfo* pFileInfo = *it;
-		lSize += pFileInfo->GetSize();
-	}
-
-    for (FileInfos::iterator it = m_FileInfos.begin(); it != m_FileInfos.end(); it++)
-    {
-        FileInfo* pFileInfo = *it;
-		pFileInfo->SetNZBSize(lSize);
-		pFileInfo->SetNZBFileCount(m_FileInfos.size());
-		if (g_pOptions->GetSaveQueue() && g_pOptions->GetServerMode())
-		{
-			g_pDiskState->LoadArticles(pFileInfo);
-			g_pDiskState->SaveFile(pFileInfo);
-			pFileInfo->ClearArticles();
-		}
-	}
 }
 
 #ifdef WIN32
@@ -359,7 +354,6 @@ NZBFile* NZBFile::Create(const char* szFileName, const char* szBuffer, int iSize
     if (pFile->ParseNZB(doc))
 	{
 		pFile->CheckFilenames();
-		pFile->UpdateGroupInfo();
 	}
 	else
 	{
@@ -405,7 +399,6 @@ bool NZBFile::ParseNZB(IUnknown* nzb)
 		if (!attribute) return false;
 		_bstr_t subject(attribute->Gettext());
         FileInfo* pFileInfo = new FileInfo();
-        pFileInfo->SetNZBFilename(m_szFileName);
 		pFileInfo->SetSubject(subject);
 
 		MSXML::IXMLDOMNodeListPtr groupList = node->selectNodes("groups/group");
@@ -474,7 +467,6 @@ NZBFile* NZBFile::Create(const char* szFileName, const char* szBuffer, int iSize
     if (pFile->ParseNZB(doc))
 	{
 		pFile->CheckFilenames();
-		pFile->UpdateGroupInfo();
 	}
 	else
 	{
@@ -511,7 +503,7 @@ bool NZBFile::ParseNZB(void* nzb)
                 if (!strcmp("file", (char*)name))
                 {
                     pFileInfo = new FileInfo();
-                    pFileInfo->SetNZBFilename(m_szFileName);
+                    pFileInfo->SetFilename(m_szFileName);
 
                     while (xmlTextReaderMoveToNextAttribute(node))
                     {

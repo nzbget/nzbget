@@ -1,5 +1,5 @@
 /*
- *  This file if part of nzbget
+ *  This file is part of nzbget
  *
  *  Copyright (C) 2004  Sven Henkel <sidddy@users.sourceforge.net>
  *  Copyright (C) 2007  Andrei Prygounkov <hugbug@users.sourceforge.net>
@@ -38,15 +38,15 @@ public:
 
 private:
 	FileInfos			m_FileInfos;
+	NZBInfo*			m_pNZBInfo;
 	char*				m_szFileName;
 
 						NZBFile(const char* szFileName);
 	void				AddArticle(FileInfo* pFileInfo, ArticleInfo* pArticleInfo);
 	void				AddFileInfo(FileInfo* pFileInfo);
 	void				ParseSubject(FileInfo* pFileInfo);
-	void				BuildDestDirName(FileInfo* pFileInfo);
+	void				BuildDestDirName();
 	void				CheckFilenames();
-	void				UpdateGroupInfo();
 #ifdef WIN32
     bool 				ParseNZB(IUnknown* nzb);
 	static void			EncodeURL(const char* szFilename, char* szURL);

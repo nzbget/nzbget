@@ -1,5 +1,5 @@
 /*
- *  This file if part of nzbget
+ *  This file is part of nzbget
  *
  *  Copyright (C) 2005  Bo Cordes Petersen <placebodk@sourceforge.net>
  *  Copyright (C) 2007  Andrei Prygounkov <hugbug@users.sourceforge.net>
@@ -286,7 +286,7 @@ bool RemoteClient::RequestServerList()
 			char* szFilename = pBufPtr + sizeof(SNZBListResponseEntry) + ntohl(pListAnswer->m_iNZBFilenameLen) + ntohl(pListAnswer->m_iSubjectLen);
 			
 			char szNZBNiceName[1024];
-			FileInfo::MakeNiceNZBName(szNZBFilename, szNZBNiceName, 1024);
+			NZBInfo::MakeNiceNZBName(szNZBFilename, szNZBNiceName, 1024);
 			
 			printf("[%i] %s%c%s (%.2f MB%s)%s\n", ntohl(pListAnswer->m_iID), szNZBNiceName, (int)PATH_SEPARATOR, szFilename, lFileSize / 1024.0 / 1024.0, szCompleted, szStatus);
 

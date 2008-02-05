@@ -1,5 +1,5 @@
 /*
- *  This file if part of nzbget
+ *  This file is part of nzbget
  *
  *  Copyright (C) 2004  Sven Henkel <sidddy@users.sourceforge.net>
  *  Copyright (C) 2007  Andrei Prygounkov <hugbug@users.sourceforge.net>
@@ -714,7 +714,7 @@ void ArticleDownloader::CompleteFileParts()
 	SetStatus(adJoining);
 
 	char szNZBNiceName[1024];
-	m_pFileInfo->GetNiceNZBName(szNZBNiceName, 1024);
+	m_pFileInfo->GetNZBInfo()->GetNiceNZBName(szNZBNiceName, 1024);
 	
 	char InfoFilename[1024];
 	snprintf(InfoFilename, 1024, "%s%c%s", szNZBNiceName, (int)PATH_SEPARATOR, m_pFileInfo->GetFilename());
@@ -734,11 +734,11 @@ void ArticleDownloader::CompleteFileParts()
 	}
 
 	char ofn[1024];
-	snprintf(ofn, 1024, "%s%c%s", m_pFileInfo->GetDestDir(), (int)PATH_SEPARATOR, m_pFileInfo->GetFilename());
+	snprintf(ofn, 1024, "%s%c%s", m_pFileInfo->GetNZBInfo()->GetDestDir(), (int)PATH_SEPARATOR, m_pFileInfo->GetFilename());
 	ofn[1024-1] = '\0';
 
 	// Ensure the DstDir is created
-	mkdir(m_pFileInfo->GetDestDir(), S_DIRMODE);
+	mkdir(m_pFileInfo->GetNZBInfo()->GetDestDir(), S_DIRMODE);
 
 	// prevent overwriting existing files
 	struct stat statbuf;
@@ -746,7 +746,7 @@ void ArticleDownloader::CompleteFileParts()
 	while (!stat(ofn, &statbuf))
 	{
 		dupcount++;
-		snprintf(ofn, 1024, "%s%c%s_duplicate%d", m_pFileInfo->GetDestDir(), (int)PATH_SEPARATOR, m_pFileInfo->GetFilename(), dupcount);
+		snprintf(ofn, 1024, "%s%c%s_duplicate%d", m_pFileInfo->GetNZBInfo()->GetDestDir(), (int)PATH_SEPARATOR, m_pFileInfo->GetFilename(), dupcount);
 		ofn[1024-1] = '\0';
 	}
 
@@ -896,7 +896,7 @@ void ArticleDownloader::CompleteFileParts()
 		if (g_pOptions->GetCreateBrokenLog())
 		{
 			char szBrokenLogName[1024];
-			snprintf(szBrokenLogName, 1024, "%s%c_brokenlog.txt", m_pFileInfo->GetDestDir(), (int)PATH_SEPARATOR);
+			snprintf(szBrokenLogName, 1024, "%s%c_brokenlog.txt", m_pFileInfo->GetNZBInfo()->GetDestDir(), (int)PATH_SEPARATOR);
 			szBrokenLogName[1024-1] = '\0';
 			FILE* file = fopen(szBrokenLogName, "a");
 			fprintf(file, "%s (%i/%i)\n", m_pFileInfo->GetFilename(), m_pFileInfo->GetArticles()->size() - iBrokenCount, m_pFileInfo->GetArticles()->size());

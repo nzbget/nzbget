@@ -1,5 +1,5 @@
 /*
- *  This file if part of nzbget
+ *  This file is part of nzbget
  *
  *  Copyright (C) 2007  Andrei Prygounkov <hugbug@users.sourceforge.net>
  *
@@ -354,7 +354,7 @@ bool ParChecker::RequestMorePars(int iBlockNeeded, int* pBlockFound)
 	if (iBlockFound >= iBlockNeeded)
 	{
 		char szNZBNiceName[1024];
-		FileInfo::MakeNiceNZBName(m_szNZBFilename, szNZBNiceName, 1024);
+		NZBInfo::MakeNiceNZBName(m_szNZBFilename, szNZBNiceName, 1024);
 
 		// 1. first unpause all files with par-blocks less or equal iBlockNeeded
 		// starting from the file with max block count.
@@ -443,7 +443,7 @@ void ParChecker::FindPars(DownloadQueue * pDownloadQueue, Blocks * pBlocks, bool
 	{
 		FileInfo* pFileInfo = *it;
 		int iBlocks = 0;
-		if (!strcmp(pFileInfo->GetNZBFilename(), m_szNZBFilename) &&
+		if (!strcmp(pFileInfo->GetNZBInfo()->GetFilename(), m_szNZBFilename) &&
 			ParseParFilename(pFileInfo->GetFilename(), NULL, &iBlocks) &&
 			iBlocks > 0)
 		{
