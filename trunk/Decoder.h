@@ -1,5 +1,5 @@
 /*
- *  This file if part of nzbget
+ *  This file is part of nzbget
  *
  *  Copyright (C) 2004  Sven Henkel <sidddy@users.sourceforge.net>
  *  Copyright (C) 2007  Andrei Prygounkov <hugbug@users.sourceforge.net>
@@ -31,20 +31,27 @@
 
 class Decoder
 {
+public:
+	enum EStatus
+	{
+		eUnknownError,
+		eFinished,
+		eArticleIncomplete,
+		eCrcError
+	};
+
 protected:
 	const char*				m_szSrcFilename;
 	const char*				m_szDestFilename;
 	char*					m_szArticleFilename;
-	bool					m_bCrcError;
 
 public:
 							Decoder();
 	virtual					~Decoder();
-	virtual bool			Execute() = 0;
+	virtual EStatus			Execute() = 0;
 	void					SetSrcFilename(const char* szSrcFilename) { m_szSrcFilename = szSrcFilename; }
 	void					SetDestFilename(const char* szDestFilename) { m_szDestFilename = szDestFilename; }
 	const char*				GetArticleFilename() { return m_szArticleFilename; }
-	bool					GetCrcError() { return m_bCrcError; }
 };
 
 class UULibDecoder: public Decoder
@@ -53,7 +60,7 @@ private:
 	static Mutex			m_mutexDecoder;
 
 public:
-	virtual bool			Execute();
+	virtual EStatus			Execute();
 };
 
 class YDecoder: public Decoder
@@ -76,7 +83,7 @@ protected:
 
 public:
 							YDecoder();
-	virtual bool			Execute();
+	virtual EStatus			Execute();
 	void					Clear();
 	bool					Write(char* buffer, FILE* outfile);
 	void					SetAutoSeek(bool bAutoSeek) { m_bAutoSeek = m_bNeedSetPos = bAutoSeek; }

@@ -172,28 +172,33 @@ void ArticleDownloader::Run()
 		}
 		
 		// test connection
-		bool connected = m_pConnection && m_pConnection->Connect() >= 0;
-		if (connected && !IsStopped())
+		bool bConnected = m_pConnection && m_pConnection->Connect() >= 0;
+		if (bConnected && !IsStopped())
 		{
-			// Okay, we got a Connection. Now start downloading!!
+			// Okay, we got a Connection. Now start downloading.
 			Status = Download();
 		}
 
-		bool bAuthError = m_pConnection && m_pConnection->GetAuthError();
-
-		if (connected)
+		if (bConnected)
 		{
-			// freeing connection allows other threads to start.
-			// we doing this only if the problem was with article or group.
-			// if the problem occurs by Connect() we do not free the connection,
-			// to prevent starting of thousands of threads (cause each of them
-			// will also free it's connection after the same connect-error).
-
-			FreeConnection(Status == adFinished);
+			if (Status == adConnectError)
+			{
+				m_pConnection->Disconnect();
+			}
+			else
+			{
+				// freeing connection allows other threads to start.
+				// we doing this only if the problem was with article or group.
+				// if the problem occurs by connecting or authorization we do not
+				// free the connection, to prevent starting of thousands of threads 
+				// (cause each of them will also free it's connection after the 
+				// same connect-error).
+				FreeConnection(Status == adFinished);
+			}
 		}
 
-		if ((Status == adFailed || (Status == adCrcError && g_pOptions->GetRetryOnCrcError())) && 
-			((retry > 1) || !connected || bAuthError) && !IsStopped())
+		if (((Status == adFailed) || ((Status == adCrcError) && g_pOptions->GetRetryOnCrcError())) && 
+			((retry > 1) || !bConnected || (Status == adConnectError)) && !IsStopped())
 		{
 			info("Waiting %i sec to retry", g_pOptions->GetRetryInterval());
 			int msec = 0;
@@ -237,7 +242,7 @@ void ArticleDownloader::Run()
 		}
 
 		// do not count connect-errors, only article- and group-errors
-		if (connected && !bAuthError)
+		if (bConnected && (Status != adConnectError))
 		{
 			level++;
 			if (level > iMaxLevel)
@@ -281,55 +286,43 @@ void ArticleDownloader::Run()
 
 ArticleDownloader::EStatus ArticleDownloader::Download()
 {
+	const char* szResponse = NULL;
+	EStatus Status = adRunning;
+
 	// at first, change group
-	bool grpchanged = false;
 	for (FileInfo::Groups::iterator it = m_pFileInfo->GetGroups()->begin(); it != m_pFileInfo->GetGroups()->end(); it++)
 	{
-		grpchanged = m_pConnection->JoinGroup(*it);
-		if (grpchanged)
+		szResponse = m_pConnection->JoinGroup(*it);
+		if (szResponse && !strncmp(szResponse, "2", 1))
 		{
-			break;
+			break; 
 		}
 	}
 
-	if (!grpchanged)
+	Status = CheckResponse(szResponse, "could not join group");
+	if (Status != adFinished)
 	{
-		if (!m_pConnection->GetAuthError() && !IsStopped())
-		{
-			warn("Article %s @ %s failed: Could not join group", m_szInfoName, m_pConnection->GetServer()->GetHost());
-		}
-		return adFailed;
+		return Status;
 	}
 
-	// now, let's begin!
+	// retrieve article
 	char tmp[1024];
 	snprintf(tmp, 1024, "ARTICLE %s\r\n", m_pArticleInfo->GetMessageID());
 	tmp[1024-1] = '\0';
 
-	char* answer = NULL;
-
 	for (int retry = 3; retry > 0; retry--)
 	{
-		answer = m_pConnection->Request(tmp);
-		if (answer && !strncmp(answer, "2", 1))
+		szResponse = m_pConnection->Request(tmp);
+		if (szResponse && !strncmp(szResponse, "2", 1))
 		{
 			break;
 		}
 	}
 
-	if (!answer)
+	Status = CheckResponse(szResponse, "could not fetch article");
+	if (Status != adFinished)
 	{
-		if (!m_pConnection->GetAuthError() && !IsStopped())
-		{
-			warn("Article %s @ %s failed: Connection closed by remote host", m_szInfoName, m_pConnection->GetServer()->GetHost());
-		}
-		return adFailed;
-	}
-
-	if (strncmp(answer, "2", 1))
-	{
-		warn("Article %s @ %s failed: %s", m_szInfoName, m_pConnection->GetServer()->GetHost(), answer);
-		return (!strncmp(answer, "41", 2) || !strncmp(answer, "42", 2)) ? adNotFound : adFailed;
+		return Status;
 	}
 
 	// positive answer!
@@ -342,10 +335,10 @@ ArticleDownloader::EStatus ArticleDownloader::Download()
 	}
 
 	m_pOutFile = NULL;
-	EStatus Status = adRunning;
 	bool bBody = false;
 	const int LineBufSize = 1024*10;
 	char* szLineBuf = (char*)malloc(LineBufSize);
+	Status = adRunning;
 
 	while (!IsStopped())
 	{
@@ -366,13 +359,16 @@ ArticleDownloader::EStatus ArticleDownloader::Download()
 		// Have we encountered a timeout?
 		if (!line)
 		{
-			warn("Article %s @ %s failed: Unexpected end of article", m_szInfoName, m_pConnection->GetServer()->GetHost());
+			if (!IsStopped())
+			{
+				warn("Article %s @ %s failed: Unexpected end of article", m_szInfoName, m_pConnection->GetServer()->GetHost());
+			}
 			Status = adFailed;
 			break;
 		}
 
 		//detect end of article
-		if ((!strcmp(line, ".\r\n")) || (!strcmp(line, ".\n")))
+		if (!strcmp(line, ".\r\n") || !strcmp(line, ".\n"))
 		{
 			break;
 		}
@@ -386,7 +382,7 @@ ArticleDownloader::EStatus ArticleDownloader::Download()
 		// check id of returned article
 		if (!bBody)
 		{
-			if ((!strcmp(line, "\r\n")) || (!strcmp(line, "\n")))
+			if (!strcmp(line, "\r\n") || !strcmp(line, "\n"))
 			{
 				bBody = true;
 			}
@@ -437,6 +433,39 @@ ArticleDownloader::EStatus ArticleDownloader::Download()
 	else
 	{
 		return Status;
+	}
+}
+
+ArticleDownloader::EStatus ArticleDownloader::CheckResponse(const char* szResponse, const char* szComment)
+{
+	if (!szResponse)
+	{
+		if (!IsStopped())
+		{
+			warn("Article %s @ %s failed, %s: Connection closed by remote host", m_szInfoName, m_pConnection->GetServer()->GetHost(), szComment);
+		}
+		return adConnectError;
+	}
+	else if (m_pConnection->GetAuthError() || !strncmp(szResponse, "400", 3) || !strncmp(szResponse, "499", 3))
+	{
+		warn("Article %s @ %s failed, %s: %s", m_szInfoName, m_pConnection->GetServer()->GetHost(), szComment, szResponse);
+		return adConnectError;
+	}
+	else if (!strncmp(szResponse, "41", 2) || !strncmp(szResponse, "42", 2))
+	{
+		warn("Article %s @ %s failed, %s: %s", m_szInfoName, m_pConnection->GetServer()->GetHost(), szComment, szResponse);
+		return adNotFound;
+	}
+	else if (!strncmp(szResponse, "2", 1))
+	{
+		// OK
+		return adFinished;
+	}
+	else 
+	{
+		// unknown error, no special handling
+		warn("Article %s @ %s failed, %s: %s", m_szInfoName, m_pConnection->GetServer()->GetHost(), szComment, szResponse);
+		return adFailed;
 	}
 }
 
@@ -577,7 +606,8 @@ ArticleDownloader::EStatus ArticleDownloader::Decode()
 			pDecoder->SetDestFilename(szDecoderTempFilename);
 		}
 
-		bool bOK = pDecoder->Execute();
+		Decoder::EStatus eStatus = pDecoder->Execute();
+		bool bOK = eStatus == Decoder::eFinished;
 
 		if (!g_pOptions->GetDirectWrite())
 		{
@@ -597,7 +627,6 @@ ArticleDownloader::EStatus ArticleDownloader::Decode()
 		}
 
 		remove(m_szTempFilename);
-		bool bCrcError = pDecoder->GetCrcError();
 		if (pDecoder != &m_YDecoder)
 		{
 			delete pDecoder;
@@ -624,10 +653,15 @@ ArticleDownloader::EStatus ArticleDownloader::Decode()
 		else
 		{
 			remove(m_szResultFilename);
-			if (bCrcError)
+			if (eStatus == Decoder::eCrcError)
 			{
 				warn("Decoding %s failed: CRC-Error", m_szInfoName);
 				return adCrcError;
+			}
+			else if (eStatus == Decoder::eArticleIncomplete)
+			{
+				warn("Decoding %s failed: article incomplete", m_szInfoName);
+				return adFailed;
 			}
 			else
 			{

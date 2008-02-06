@@ -1,5 +1,5 @@
 /*
- *  This file if part of nzbget
+ *  This file is part of nzbget
  *
  *  Copyright (C) 2004  Sven Henkel <sidddy@users.sourceforge.net>
  *  Copyright (C) 2007  Andrei Prygounkov <hugbug@users.sourceforge.net>
@@ -45,11 +45,11 @@ public:
 							NNTPConnection(NewsServer* server);
 							~NNTPConnection();
 	NewsServer*				GetNewsServer() { return(NewsServer*)m_pNetAddress; }
-	char* 					Request(char* req);
+	const char* 			Request(char* req);
 	bool 					Authenticate();
 	bool 					AuthInfoUser(int iRecur = 0);
 	bool 					AuthInfoPass(int iRecur = 0);
-	bool 					JoinGroup(char* grp);
+	const char*				JoinGroup(char* grp);
 	bool					GetAuthError() { return m_bAuthError; }
 };
 

@@ -1,5 +1,5 @@
 /*
- *  This file if part of nzbget
+ *  This file is part of nzbget
  *
  *  Copyright (C) 2004  Sven Henkel <sidddy@users.sourceforge.net>
  *  Copyright (C) 2007  Andrei Prygounkov <hugbug@users.sourceforge.net>
@@ -52,6 +52,7 @@ public:
 		adDecoding,
 		adJoining,
 		adNotFound,
+		adConnectError,
 		adFatalError
 	};
 			
@@ -77,6 +78,7 @@ private:
 	bool				PrepareFile(char* szLine);
 	EStatus				Decode();
 	void				FreeConnection(bool bKeepConnected);
+	EStatus				CheckResponse(const char* szResponse, const char* szComment);
 
 public:
 						ArticleDownloader();

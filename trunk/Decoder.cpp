@@ -1,5 +1,5 @@
 /*
- *  This file if part of nzbget
+ *  This file is part of nzbget
  *
  *  Copyright (C) 2004  Sven Henkel <sidddy@users.sourceforge.net>
  *  Copyright (C) 2007  Andrei Prygounkov <hugbug@users.sourceforge.net>
@@ -62,7 +62,6 @@ Decoder::Decoder()
 	m_szSrcFilename		= NULL;
 	m_szDestFilename	= NULL;
 	m_szArticleFilename	= NULL;
-	m_bCrcError			= false;
 }
 
 Decoder::~ Decoder()
@@ -80,9 +79,9 @@ Decoder::~ Decoder()
  * UULibDecoder
  */
 
-bool UULibDecoder::Execute()
+Decoder::EStatus UULibDecoder::Execute()
 {
-	bool res = false;
+	EStatus res = eUnknownError;
 
 #ifndef ENABLE_UULIB
 	error("Program was compiled without option ENABLE_UULIB defined. uulib-Decoder is not available.");
@@ -136,7 +135,7 @@ bool UULibDecoder::Execute()
 			if (r == UURET_OK)
 			{
 				// we did it!
-				res = true;
+				res = eFinished;
 				m_szArticleFilename = strdup(attachment->filename);
 			}
 		}
@@ -361,13 +360,21 @@ bool YDecoder::Write(char* buffer, FILE* outfile)
 	return true;
 }
 
-bool YDecoder::Execute()
+Decoder::EStatus YDecoder::Execute()
 {
 	m_lCalculatedCRC ^= 0xFFFFFFFF;
 
 	debug("Expected pcrc32=%x", m_lExpectedCRC);
 	debug("Calculated pcrc32=%x", m_lCalculatedCRC);
-	m_bCrcError = m_bCrcCheck && (m_lExpectedCRC != m_lCalculatedCRC);
 
-	return m_bBody && m_bEnd && !m_bCrcError;
+	if (!m_bBody || !m_bEnd)
+	{
+		return eArticleIncomplete;
+	}
+	else if (m_bCrcCheck && (m_lExpectedCRC != m_lCalculatedCRC))
+	{
+		return eCrcError;
+	}
+
+	return eFinished;
 }

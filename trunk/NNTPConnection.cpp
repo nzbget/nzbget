@@ -1,5 +1,5 @@
 /*
- *  This file if part of nzbget
+ *  This file is part of nzbget
  *
  *  Copyright (C) 2004  Sven Henkel <sidddy@users.sourceforge.net>
  *  Copyright (C) 2007  Andrei Prygounkov <hugbug@users.sourceforge.net>
@@ -60,7 +60,7 @@ NNTPConnection::~NNTPConnection()
 	free(m_szLineBuf);
 }
 
-char* NNTPConnection::Request(char* req)
+const char* NNTPConnection::Request(char* req)
 {
 	if (!req)
 	{
@@ -190,25 +190,26 @@ bool NNTPConnection::AuthInfoPass(int iRecur)
 	return false;
 }
 
-bool NNTPConnection::JoinGroup(char* grp)
+const char* NNTPConnection::JoinGroup(char* grp)
 {
-	if ((m_szActiveGroup) && (!strcmp(m_szActiveGroup, grp)))
+	if (m_szActiveGroup && !strcmp(m_szActiveGroup, grp))
 	{
 		// already in group
-		return true;
+		strcpy(m_szLineBuf, "211 ");
+		return m_szLineBuf;
 	}
 
 	char tmp[1024];
 	snprintf(tmp, 1024, "GROUP %s\r\n", grp);
 	tmp[1024-1] = '\0';
 
-	char* answer = Request(tmp);
+	const char* answer = Request(tmp);
 	if (m_bAuthError)
 	{
-		return false;
+		return answer;
 	}
 
-	if ((answer) && (!strncmp(answer, "2", 1)))
+	if (answer && !strncmp(answer, "2", 1))
 	{
 		debug("Changed group to %s on %s", grp, GetServer()->GetHost());
 
@@ -217,24 +218,14 @@ bool NNTPConnection::JoinGroup(char* grp)
 			free(m_szActiveGroup);
 		}
 		m_szActiveGroup = strdup(grp);
-		return true;
 	}
-
-	if (GetStatus() != csCancelled)
+	else
 	{
-		if (!answer)
-		{
-			warn("Error changing group on %s: Connection closed by remote host.", 
-				GetServer()->GetHost());
-		}
-		else
-		{
-			warn("Error changing group on %s to %s: Answer was \"%s\".",
-				 GetServer()->GetHost(), grp, answer);
-		}
+		debug("Error changing group on %s to %s: %s.",
+			 GetServer()->GetHost(), grp, answer);
 	}
 
-	return false;
+	return answer;
 }
 
 int NNTPConnection::DoConnect()
@@ -253,7 +244,6 @@ int NNTPConnection::DoConnect()
 		ReportError("Connection to %s failed: Connection closed by remote host.", m_pNetAddress->GetHost(), 0);
 		return -1;
 	}
-
 
 	if (strncmp(answer, "2", 1))
 	{
