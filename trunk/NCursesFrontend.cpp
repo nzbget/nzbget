@@ -316,9 +316,9 @@ void NCursesFrontend::CalcWindowSizes()
     {
 #ifdef WIN32
 		m_iScreenBufferSize = iNrRows * iNrColumns * sizeof(CHAR_INFO);
-		m_pScreenBuffer = (CHAR_INFO*)malloc(m_iScreenBufferSize);
+		m_pScreenBuffer = (CHAR_INFO*)realloc(m_pScreenBuffer, m_iScreenBufferSize);
 		memset(m_pScreenBuffer, 0, m_iScreenBufferSize);
-		m_pOldScreenBuffer = (CHAR_INFO*)malloc(m_iScreenBufferSize);
+		m_pOldScreenBuffer = (CHAR_INFO*)realloc(m_pOldScreenBuffer, m_iScreenBufferSize);
 		memset(m_pOldScreenBuffer, 0, m_iScreenBufferSize);
 #else
         clear();
