@@ -168,7 +168,7 @@ bool RemoteClient::RequestServerDownload(const char* szName, bool bAddFirst)
 	// Read the file into the buffer
 	char* szBuffer	= NULL;
 	int iLength		= 0;
-	if (!LoadFileIntoBuffer(szName, &szBuffer, &iLength))
+	if (!Util::LoadFileIntoBuffer(szName, &szBuffer, &iLength))
 	{
 		printf("Could not load file %s\n", szName);
 		return false;
@@ -262,8 +262,8 @@ bool RemoteClient::RequestServerList()
 		{
 			SNZBListResponseEntry* pListAnswer = (SNZBListResponseEntry*) pBufPtr;
 
-			long long lFileSize = JoinInt64(ntohl(pListAnswer->m_iFileSizeHi), ntohl(pListAnswer->m_iFileSizeLo));
-			long long lRemainingSize = JoinInt64(ntohl(pListAnswer->m_iRemainingSizeHi), ntohl(pListAnswer->m_iRemainingSizeLo));
+			long long lFileSize = Util::JoinInt64(ntohl(pListAnswer->m_iFileSizeHi), ntohl(pListAnswer->m_iFileSizeLo));
+			long long lRemainingSize = Util::JoinInt64(ntohl(pListAnswer->m_iRemainingSizeHi), ntohl(pListAnswer->m_iRemainingSizeLo));
 
 			char szCompleted[100];
 			szCompleted[0] = '\0';
@@ -309,7 +309,7 @@ bool RemoteClient::RequestServerList()
 		free(pBuf);
 	}
 
-	long long iAllBytes = JoinInt64(ntohl(ListResponse.m_iDownloadedBytesHi), ntohl(ListResponse.m_iDownloadedBytesLo));
+	long long iAllBytes = Util::JoinInt64(ntohl(ListResponse.m_iDownloadedBytesHi), ntohl(ListResponse.m_iDownloadedBytesLo));
 	float fAverageSpeed = ntohl(ListResponse.m_iDownloadTimeSec) > 0 ? iAllBytes / ntohl(ListResponse.m_iDownloadTimeSec) : 0;
 	printf("Session download rate: %.1f KB/s\n", (float)(fAverageSpeed / 1024.0));
 

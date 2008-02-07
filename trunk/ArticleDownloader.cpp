@@ -41,6 +41,7 @@
 #include <sys/time.h>
 #endif
 #include <sys/stat.h>
+#include <errno.h>
 
 #include "nzbget.h"
 #include "ArticleDownloader.h"
@@ -123,9 +124,7 @@ void ArticleDownloader::Run()
 
 	if (g_pOptions->GetContinuePartial())
 	{
-		struct stat buffer;
-		bool fileExists = !stat(m_szResultFilename, &buffer);
-		if (fileExists)
+		if (Util::FileExists(m_szResultFilename))
 		{
 			// file exists from previous program's start
 			info("Article %s already downloaded, skipping", m_szInfoName);
@@ -536,7 +535,7 @@ bool ArticleDownloader::PrepareFile(char* szLine)
 					{
 						pb += 5; //=strlen("size=")
 						long iArticleFilesize = atol(pb);
-						if (!SetFileSize(m_szOutputFilename, iArticleFilesize))
+						if (!Util::SetFileSize(m_szOutputFilename, iArticleFilesize))
 						{
 							error("Could not create file %s!", m_szOutputFilename);
 							return false;
@@ -613,7 +612,10 @@ ArticleDownloader::EStatus ArticleDownloader::Decode()
 		{
 			if (bOK)
 			{
-				rename(szDecoderTempFilename, m_szResultFilename);
+				if (!Util::MoveFile(szDecoderTempFilename, m_szResultFilename))
+				{
+					error("Could not rename file %s to %s! Errcode: %i", szDecoderTempFilename, m_szResultFilename, errno);
+				}
 			}
 			else if (g_pOptions->GetDecoder() == Options::dcUulib)
 			{
@@ -673,8 +675,14 @@ ArticleDownloader::EStatus ArticleDownloader::Decode()
 	else if (g_pOptions->GetDecoder() == Options::dcNone)
 	{
 		// rawmode
-		rename(m_szTempFilename, m_szResultFilename);
-		info("Article %s successfully downloaded", m_szInfoName);
+		if (Util::MoveFile(m_szTempFilename, m_szResultFilename))
+		{
+			info("Article %s successfully downloaded", m_szInfoName);
+		}
+		else
+		{
+			error("Could not move file %s to %s! Errcode: %i", m_szTempFilename, m_szResultFilename, errno);
+		}
 		return adFinished;
 	}
 	else
@@ -694,7 +702,7 @@ void ArticleDownloader::LogDebugInfo()
 		ctime_r(&m_tLastUpdateTime, szTime);
 #endif
 
-	debug("      Download: status=%s, LastUpdateTime=%s, filename=%s", GetStatusText(), szTime, BaseFileName(GetTempFilename()));
+	debug("      Download: status=%s, LastUpdateTime=%s, filename=%s", GetStatusText(), szTime, Util::BaseFileName(GetTempFilename()));
 }
 
 void ArticleDownloader::Stop()
@@ -772,12 +780,16 @@ void ArticleDownloader::CompleteFileParts()
 	ofn[1024-1] = '\0';
 
 	// Ensure the DstDir is created
-	mkdir(m_pFileInfo->GetNZBInfo()->GetDestDir(), S_DIRMODE);
+	if (!Util::CreateDirectory(m_pFileInfo->GetNZBInfo()->GetDestDir()))
+	{
+		error("Could not create directory %s! Errcode: %i", m_pFileInfo->GetNZBInfo()->GetDestDir(), errno);
+		SetStatus(adFinished);
+		return;
+	}
 
 	// prevent overwriting existing files
-	struct stat statbuf;
 	int dupcount = 0;
-	while (!stat(ofn, &statbuf))
+	while (Util::FileExists(ofn))
 	{
 		dupcount++;
 		snprintf(ofn, 1024, "%s%c%s_duplicate%d", m_pFileInfo->GetNZBInfo()->GetDestDir(), (int)PATH_SEPARATOR, m_pFileInfo->GetFilename(), dupcount);
@@ -813,7 +825,12 @@ void ArticleDownloader::CompleteFileParts()
 	else if (g_pOptions->GetDecoder() == Options::dcNone)
 	{
 		remove(tmpdestfile);
-		mkdir(ofn, S_DIRMODE);
+		if (!Util::CreateDirectory(ofn))
+		{
+			error("Could not create directory %s! Errcode: %i", ofn, errno);
+			SetStatus(adFinished);
+			return;
+		}
 	}
 
 	bool complete = true;
@@ -870,7 +887,10 @@ void ArticleDownloader::CompleteFileParts()
 			char dstFileName[1024];
 			snprintf(dstFileName, 1024, "%s%c%03i", ofn, (int)PATH_SEPARATOR, pa->GetPartNumber());
 			dstFileName[1024-1] = '\0';
-			rename(fn, dstFileName);
+			if (!Util::MoveFile(fn, dstFileName))
+			{
+				error("Could not move file %s to %s! Errcode: %i", fn, dstFileName, errno);
+			}
 		}
 	}
 
@@ -882,12 +902,18 @@ void ArticleDownloader::CompleteFileParts()
 	if (outfile)
 	{
 		fclose(outfile);
-		rename(tmpdestfile, ofn);
+		if (!Util::MoveFile(tmpdestfile, ofn))
+		{
+			error("Could not move file %s to %s! Errcode: %i", tmpdestfile, ofn, errno);
+		}
 	}
 
 	if (g_pOptions->GetDirectWrite())
 	{
-		rename(m_szOutputFilename, ofn);
+		if (!Util::MoveFile(m_szOutputFilename, ofn))
+		{
+			error("Could not move file %s to %s! Errcode: %i", m_szOutputFilename, ofn, errno);
+		}
 	}
 
 	if (!g_pOptions->GetDirectWrite() || g_pOptions->GetContinuePartial())
@@ -912,8 +938,7 @@ void ArticleDownloader::CompleteFileParts()
 			char brokenfn[1024];
 			snprintf(brokenfn, 1024, "%s_broken", ofn);
 			brokenfn[1024-1] = '\0';
-			bool OK = rename(ofn, brokenfn) == 0;
-			if (OK)
+			if (Util::MoveFile(ofn, brokenfn))
 			{
 				info("Renaming broken file from %s to %s", ofn, brokenfn);
 			}

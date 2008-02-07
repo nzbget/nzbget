@@ -351,7 +351,7 @@ bool Frontend::RequestFileList()
 	if (m_bSummary)
 	{
 		m_bPause = ntohl(ListResponse.m_bServerPaused);
-		m_lRemainingSize = JoinInt64(ntohl(ListResponse.m_iRemainingSizeHi), ntohl(ListResponse.m_iRemainingSizeLo));
+		m_lRemainingSize = Util::JoinInt64(ntohl(ListResponse.m_iRemainingSizeHi), ntohl(ListResponse.m_iRemainingSizeLo));
 		m_fCurrentDownloadSpeed = ntohl(ListResponse.m_iDownloadRate) / 1024.0;
 		m_fDownloadLimit = ntohl(ListResponse.m_iDownloadLimit) / 1024.0;
 		m_iThreadCount = ntohl(ListResponse.m_iThreadCount);
@@ -359,7 +359,7 @@ bool Frontend::RequestFileList()
 		m_iUpTimeSec = ntohl(ListResponse.m_iUpTimeSec);
 		m_iDnTimeSec = ntohl(ListResponse.m_iDownloadTimeSec);
 		m_bStandBy = ntohl(ListResponse.m_bServerStandBy);
-		m_iAllBytes = JoinInt64(ntohl(ListResponse.m_iDownloadedBytesHi), ntohl(ListResponse.m_iDownloadedBytesLo));
+		m_iAllBytes = Util::JoinInt64(ntohl(ListResponse.m_iDownloadedBytesHi), ntohl(ListResponse.m_iDownloadedBytesLo));
 	}
 
 	if (m_bFileList && ntohl(ListResponse.m_iTrailingDataLength) > 0)
@@ -379,8 +379,8 @@ bool Frontend::RequestFileList()
 			
 			FileInfo* pFileInfo = new FileInfo();
 			pFileInfo->SetID(ntohl(pListAnswer->m_iID));
-			pFileInfo->SetSize(JoinInt64(ntohl(pListAnswer->m_iFileSizeHi), ntohl(pListAnswer->m_iFileSizeLo)));
-			pFileInfo->SetRemainingSize(JoinInt64(ntohl(pListAnswer->m_iRemainingSizeHi), ntohl(pListAnswer->m_iRemainingSizeLo)));
+			pFileInfo->SetSize(Util::JoinInt64(ntohl(pListAnswer->m_iFileSizeHi), ntohl(pListAnswer->m_iFileSizeLo)));
+			pFileInfo->SetRemainingSize(Util::JoinInt64(ntohl(pListAnswer->m_iRemainingSizeHi), ntohl(pListAnswer->m_iRemainingSizeLo)));
 			pFileInfo->SetPaused(ntohl(pListAnswer->m_bPaused));
 			pFileInfo->SetSubject(szSubject);
 			pFileInfo->SetFilename(szFileName);

@@ -85,7 +85,7 @@ void XmlRpcProcessor::Execute()
 				return;
 			}
 			if (char* pe = strrchr(szAuthInfo64, '\r')) *pe = '\0';
-			szAuthInfo[DecodeBase64(szAuthInfo64, 0, szAuthInfo)] = '\0';
+			szAuthInfo[Util::DecodeBase64(szAuthInfo64, 0, szAuthInfo)] = '\0';
 		}
 		if (!strncmp(p, "\r", 1))
 		{
@@ -142,7 +142,7 @@ void XmlRpcProcessor::Dispatch()
 	XmlCommand* command = NULL;
 
 	char szMethodName[100];
-	if (!ParseTagValue(m_szRequest, "methodName", szMethodName, sizeof(szMethodName), NULL))
+	if (!Util::ParseTagValue(m_szRequest, "methodName", szMethodName, sizeof(szMethodName), NULL))
 	{
 		command = new ErrorXmlCommand(1, "Invalid request");
 	}
@@ -303,10 +303,10 @@ void XmlCommand::SendBoolResponse(bool bOK)
 bool XmlCommand::NextIntParam(int* iValue)
 {
 	int iLen = 0;
-	const char* szParam = FindTag(m_szRequestPtr, "i4", &iLen);
+	const char* szParam = Util::FindTag(m_szRequestPtr, "i4", &iLen);
 	if (!szParam)
 	{
-		szParam = FindTag(m_szRequestPtr, "int", &iLen);
+		szParam = Util::FindTag(m_szRequestPtr, "int", &iLen);
 	}
 	if (szParam)
 	{
@@ -407,7 +407,7 @@ void StatusXmlCommand::Execute()
 	unsigned int iRemainingSizeHi, iRemainingSizeLo;
 	int iDownloadRate = (int)(g_pQueueCoordinator->CalcCurrentDownloadSpeed() * 1024);
 	long long iRemainingSize = g_pQueueCoordinator->CalcRemainingSize();
-	SplitInt64(iRemainingSize, &iRemainingSizeHi, &iRemainingSizeLo);
+	Util::SplitInt64(iRemainingSize, &iRemainingSizeHi, &iRemainingSizeLo);
 	int iRemainingMBytes = iRemainingSize / 1024 / 1024;
 	int iDownloadLimit = (int)(g_pOptions->GetDownloadRate() * 1024);
 	bool bServerPaused = g_pOptions->GetPause();
@@ -421,7 +421,7 @@ void StatusXmlCommand::Execute()
 	bool bServerStandBy;
 	g_pQueueCoordinator->CalcStat(&iUpTimeSec, &iDownloadTimeSec, &iAllBytes, &bServerStandBy);
 	int iDownloadedMBytes = iAllBytes / 1024 / 1024;
-	SplitInt64(iAllBytes, &iDownloadedSizeHi, &iDownloadedSizeLo);
+	Util::SplitInt64(iAllBytes, &iDownloadedSizeHi, &iDownloadedSizeLo);
 	int iAverageDownloadRate = iDownloadTimeSec > 0 ? iAllBytes / iDownloadTimeSec : 0;
 
 	char szContent[2048];
@@ -487,7 +487,7 @@ void LogXmlCommand::Execute()
 	for (unsigned int i = (unsigned int)iStart; i < pMessages->size(); i++)
 	{
 		Message* pMessage = (*pMessages)[i];
-		char* xmltext = XmlEncode(pMessage->GetText());
+		char* xmltext = Util::XmlEncode(pMessage->GetText());
 		snprintf(szItemBuf, szItemBufSize, LOG_ITEM, pMessage->GetID(), szMessageType[pMessage->GetKind()], pMessage->GetTime(), xmltext);
 		szItemBuf[szItemBufSize-1] = '\0';
 		free(xmltext);
@@ -532,12 +532,12 @@ void ListFilesXmlCommand::Execute()
 		FileInfo* pFileInfo = *it;
 		unsigned int iFileSizeHi, iFileSizeLo;
 		unsigned int iRemainingSizeLo, iRemainingSizeHi;
-		SplitInt64(pFileInfo->GetSize(), &iFileSizeHi, &iFileSizeLo);
-		SplitInt64(pFileInfo->GetRemainingSize(), &iRemainingSizeHi, &iRemainingSizeLo);
-		char* xmlNZBFilename = XmlEncode(pFileInfo->GetNZBInfo()->GetFilename());
-		char* xmlSubject = XmlEncode(pFileInfo->GetSubject());
-		char* xmlFilename = XmlEncode(pFileInfo->GetFilename());
-		char* xmlDestDir = XmlEncode(pFileInfo->GetNZBInfo()->GetDestDir());
+		Util::SplitInt64(pFileInfo->GetSize(), &iFileSizeHi, &iFileSizeLo);
+		Util::SplitInt64(pFileInfo->GetRemainingSize(), &iRemainingSizeHi, &iRemainingSizeLo);
+		char* xmlNZBFilename = Util::XmlEncode(pFileInfo->GetNZBInfo()->GetFilename());
+		char* xmlSubject = Util::XmlEncode(pFileInfo->GetSubject());
+		char* xmlFilename = Util::XmlEncode(pFileInfo->GetFilename());
+		char* xmlDestDir = Util::XmlEncode(pFileInfo->GetNZBInfo()->GetDestDir());
 
 		snprintf(szItemBuf, szItemBufSize, LIST_ITEM, pFileInfo->GetID(), iFileSizeLo, iFileSizeHi, 
 			iRemainingSizeLo, iRemainingSizeHi, (int)pFileInfo->GetFilenameConfirmed(), (int)pFileInfo->GetPaused(),
@@ -601,17 +601,17 @@ void ListGroupsXmlCommand::Execute()
 		unsigned int iRemainingSizeLo, iRemainingSizeHi, iRemainingSizeMB;
 		unsigned int iPausedSizeLo, iPausedSizeHi, iPausedSizeMB;
 		char szNZBNicename[1024];
-		SplitInt64(pGroupInfo->GetNZBInfo()->GetSize(), &iFileSizeHi, &iFileSizeLo);
+		Util::SplitInt64(pGroupInfo->GetNZBInfo()->GetSize(), &iFileSizeHi, &iFileSizeLo);
 		iFileSizeMB = pGroupInfo->GetNZBInfo()->GetSize() / 1024 / 1024;
-		SplitInt64(pGroupInfo->GetRemainingSize(), &iRemainingSizeHi, &iRemainingSizeLo);
+		Util::SplitInt64(pGroupInfo->GetRemainingSize(), &iRemainingSizeHi, &iRemainingSizeLo);
 		iRemainingSizeMB = pGroupInfo->GetRemainingSize() / 1024 / 1024;
-		SplitInt64(pGroupInfo->GetPausedSize(), &iPausedSizeHi, &iPausedSizeLo);
+		Util::SplitInt64(pGroupInfo->GetPausedSize(), &iPausedSizeHi, &iPausedSizeLo);
 		iPausedSizeMB = pGroupInfo->GetPausedSize() / 1024 / 1024;
 		pGroupInfo->GetNZBInfo()->GetNiceNZBName(szNZBNicename, sizeof(szNZBNicename));
 
-		char* xmlNZBNicename = XmlEncode(szNZBNicename);
-		char* xmlNZBFilename = XmlEncode(pGroupInfo->GetNZBInfo()->GetFilename());
-		char* xmlDestDir = XmlEncode(pGroupInfo->GetNZBInfo()->GetDestDir());
+		char* xmlNZBNicename = Util::XmlEncode(szNZBNicename);
+		char* xmlNZBFilename = Util::XmlEncode(pGroupInfo->GetNZBInfo()->GetFilename());
+		char* xmlDestDir = Util::XmlEncode(pGroupInfo->GetNZBInfo()->GetDestDir());
 
 		snprintf(szItemBuf, szItemBufSize, LIST_ITEM, pGroupInfo->GetFirstID(), pGroupInfo->GetLastID(),
 			iFileSizeLo, iFileSizeHi, iFileSizeMB, iRemainingSizeLo, iRemainingSizeHi, iRemainingSizeMB,
@@ -668,7 +668,7 @@ EditCommandEntry EditCommandNameMap[] = {
 void EditQueueXmlCommand::Execute()
 {
 	char szEditCommand[100];
-	if (!ParseTagValue(m_szRequest, "string", szEditCommand, sizeof(szEditCommand), NULL))
+	if (!Util::ParseTagValue(m_szRequest, "string", szEditCommand, sizeof(szEditCommand), NULL))
 	{
 		SendErrorResponse(2, "Invalid parameter");
 		return;
@@ -719,18 +719,18 @@ void EditQueueXmlCommand::Execute()
 void DownloadXmlCommand::Execute()
 {
 	char szFileName[1024];
-	if (!ParseTagValue(m_szRequest, "string", szFileName, sizeof(szFileName), NULL))
+	if (!Util::ParseTagValue(m_szRequest, "string", szFileName, sizeof(szFileName), NULL))
 	{
 		SendErrorResponse(2, "Invalid parameter");
 		return;
 	}
 
-	XmlDecode(szFileName);
+	Util::XmlDecode(szFileName);
 	debug("FileName=%s", szFileName);
 
 	const char* pTagEnd;
 	char szAddTop[10];
-	if (!ParseTagValue(m_szRequest, "boolean", szAddTop, sizeof(szAddTop), &pTagEnd))
+	if (!Util::ParseTagValue(m_szRequest, "boolean", szAddTop, sizeof(szAddTop), &pTagEnd))
 	{
 		SendErrorResponse(2, "Invalid parameter");
 		return;
@@ -739,14 +739,14 @@ void DownloadXmlCommand::Execute()
 	bool bAddTop = !strcmp(szAddTop, "1");
 
 	int iLen = 0;
-	char* szFileContent = (char*)FindTag(pTagEnd, "string", &iLen);
+	char* szFileContent = (char*)Util::FindTag(pTagEnd, "string", &iLen);
 	if (!szFileContent)
 	{
 		SendErrorResponse(2, "Invalid parameter");
 		return;
 	}
 
-	szFileContent[DecodeBase64(szFileContent, iLen, szFileContent)] = '\0';
+	szFileContent[Util::DecodeBase64(szFileContent, iLen, szFileContent)] = '\0';
 	//debug("FileContent=%s", szFileContent);
 
 	NZBFile* pNZBFile = NZBFile::CreateFromBuffer(szFileName, szFileContent, iLen);
@@ -787,10 +787,10 @@ void PostQueueXmlCommand::Execute()
 		char szNZBNicename[1024];
 		NZBInfo::MakeNiceNZBName(pParJob->GetNZBFilename(), szNZBNicename, sizeof(szNZBNicename));
 
-		char* xmlNZBNicename = XmlEncode(szNZBNicename);
-		char* xmlNZBFilename = XmlEncode(pParJob->GetNZBFilename());
-		char* xmlParFilename = XmlEncode(pParJob->GetParFilename());
-		char* xmlInfoName = XmlEncode(pParJob->GetInfoName());
+		char* xmlNZBNicename = Util::XmlEncode(szNZBNicename);
+		char* xmlNZBFilename = Util::XmlEncode(pParJob->GetNZBFilename());
+		char* xmlParFilename = Util::XmlEncode(pParJob->GetParFilename());
+		char* xmlInfoName = Util::XmlEncode(pParJob->GetInfoName());
 
 		snprintf(szItemBuf, szItemBufSize, POSTQUEUE_ITEM, szNZBNicename, xmlNZBFilename, xmlParFilename, xmlInfoName);
 		szItemBuf[szItemBufSize-1] = '\0';

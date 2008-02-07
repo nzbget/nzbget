@@ -58,43 +58,52 @@ public:
 	const char*			Next();
 };
 
-char* BaseFileName(const char* filename);
-void NormalizePathSeparators(char* szPath);
-bool ForceDirectories(const char* szPath);
-bool LoadFileIntoBuffer(const char* szFileName, char** pBuffer, int* pBufferLength);
-bool SetFileSize(const char* szFilename, int iSize);
-void MakeValidFilename(char* szFilename, char cReplaceChar);
+class Util 
+{
+public:
 
-long long JoinInt64(unsigned int Hi, unsigned int Lo);
-void SplitInt64(long long Int64, unsigned int* Hi, unsigned int* Lo);
+	static char* BaseFileName(const char* filename);
+	static void NormalizePathSeparators(char* szPath);
+	static bool LoadFileIntoBuffer(const char* szFileName, char** pBuffer, int* pBufferLength);
+	static bool SetFileSize(const char* szFilename, int iSize);
+	static void MakeValidFilename(char* szFilename, char cReplaceChar);
+	static bool MoveFile(const char* szSrcFilename, const char* szDstFilename);
+	static bool FileExists(const char* szFilename);
+	static bool DirectoryExists(const char* szDirFilename);
+	static bool CreateDirectory(const char* szDirFilename);
+	static bool ForceDirectories(const char* szPath);
 
-float EqualTime(_timeval* t1, _timeval* t2);
-bool EmptyTime(_timeval* t);
-float DiffTime(_timeval* t1, _timeval* t2);
+	static long long JoinInt64(unsigned int Hi, unsigned int Lo);
+	static void SplitInt64(long long Int64, unsigned int* Hi, unsigned int* Lo);
 
-unsigned int DecodeBase64(char* szInputBuffer, int iInputBufferLength, char* szOutputBuffer);
+	static float EqualTime(_timeval* t1, _timeval* t2);
+	static bool EmptyTime(_timeval* t);
+	static float DiffTime(_timeval* t1, _timeval* t2);
 
-/*
- * Encodes string to be used as content of xml-tag.
- * Returns new string allocated with malloc, it need to be freed by caller.
- */
-char* XmlEncode(const char* raw);
+	static unsigned int DecodeBase64(char* szInputBuffer, int iInputBufferLength, char* szOutputBuffer);
 
-/*
- * Decodes string from xml.
- * The string is decoded on the place overwriting the content of raw-data.
- */
-void XmlDecode(char* raw);
+	/*
+	 * Encodes string to be used as content of xml-tag.
+	 * Returns new string allocated with malloc, it need to be freed by caller.
+	 */
+	static char* XmlEncode(const char* raw);
 
-/*
- * Returns pointer to tag-content and length of content in iValueLength
- * The returned pointer points to the part of source-string, no additional strings are allocated.
- */
-const char* FindTag(const char* szXml, const char* szTag, int* iValueLength);
+	/*
+	 * Decodes string from xml.
+	 * The string is decoded on the place overwriting the content of raw-data.
+	 */
+	static void XmlDecode(char* raw);
 
-/*
- * Parses tag-content into szValueBuf.
- */
-bool ParseTagValue(const char* szXml, const char* szTag, char* szValueBuf, int iValueBufSize, const char** pTagEnd);
+	/*
+	 * Returns pointer to tag-content and length of content in iValueLength
+	 * The returned pointer points to the part of source-string, no additional strings are allocated.
+	 */
+	static const char* FindTag(const char* szXml, const char* szTag, int* iValueLength);
+
+	/*
+	 * Parses tag-content into szValueBuf.
+	 */
+	static bool ParseTagValue(const char* szXml, const char* szTag, char* szValueBuf, int iValueBufSize, const char** pTagEnd);
+};
 
 #endif

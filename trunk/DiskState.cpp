@@ -404,9 +404,7 @@ bool DiskState::Exists()
 	char fileName[1024];
 	snprintf(fileName, 1024, "%s%s", g_pOptions->GetQueueDir(), "queue");
 	fileName[1024-1] = '\0';
-	struct stat buffer;
-	bool fileExists = !stat(fileName, &buffer);
-	return fileExists;
+	return Util::FileExists(fileName);
 }
 
 bool DiskState::DiscardFile(DownloadQueue* pDownloadQueue, FileInfo* pFileInfo)

@@ -100,7 +100,7 @@ void NZBInfo::GetNiceNZBName(char* szBuffer, int iSize)
 void NZBInfo::MakeNiceNZBName(const char * szNZBFilename, char * szBuffer, int iSize)
 {
 	char postname[1024];
-	const char* szBaseName = BaseFileName(szNZBFilename);
+	const char* szBaseName = Util::BaseFileName(szNZBFilename);
 
 	// if .nzb file has a certain structure, try to strip out certain elements
 	if (sscanf(szBaseName, "msgid_%*d_%1023s", postname) == 1)
@@ -117,7 +117,7 @@ void NZBInfo::MakeNiceNZBName(const char * szNZBFilename, char * szBuffer, int i
 	// wipe out ".nzb"
 	if (char* p = strrchr(postname, '.')) *p = '\0';
 
-	::MakeValidFilename(postname, '_');
+	Util::MakeValidFilename(postname, '_');
 
 	// if the resulting name is empty, use basename without cleaning up "msgid_"
 	if (strlen(postname) == 0)
@@ -129,7 +129,7 @@ void NZBInfo::MakeNiceNZBName(const char * szNZBFilename, char * szBuffer, int i
 		// wipe out ".nzb"
 		if (char* p = strrchr(postname, '.')) *p = '\0';
 
-		::MakeValidFilename(postname, '_');
+		Util::MakeValidFilename(postname, '_');
 
 		// if the resulting name is STILL empty, use "noname"
 		if (strlen(postname) == 0)
@@ -262,7 +262,7 @@ void FileInfo::SetFilename(const char* szFilename)
 
 void FileInfo::MakeValidFilename()
 {
-	::MakeValidFilename(m_szFilename, '_');
+	Util::MakeValidFilename(m_szFilename, '_');
 }
 
 void FileInfo::LockOutputFile()
@@ -277,19 +277,16 @@ void FileInfo::UnlockOutputFile()
 
 bool FileInfo::IsDupe(const char* szFilename)
 {
-	struct stat buffer;
 	char fileName[1024];
 	snprintf(fileName, 1024, "%s%c%s", m_pNZBInfo->GetDestDir(), (int)PATH_SEPARATOR, szFilename);
 	fileName[1024-1] = '\0';
-	bool exists = !stat(fileName, &buffer);
-	if (exists)
+	if (Util::FileExists(fileName))
 	{
 		return true;
 	}
 	snprintf(fileName, 1024, "%s%c%s_broken", m_pNZBInfo->GetDestDir(), (int)PATH_SEPARATOR, szFilename);
 	fileName[1024-1] = '\0';
-	exists = !stat(fileName, &buffer);
-	if (exists)
+	if (Util::FileExists(fileName))
 	{
 		return true;
 	}

@@ -1,5 +1,5 @@
 /*
- *  This file if part of nzbget
+ *  This file is part of nzbget
  *
  *  Copyright (C) 2004  Sven Henkel <sidddy@users.sourceforge.net>
  *  Copyright (C) 2007  Andrei Prygounkov <hugbug@users.sourceforge.net>
@@ -50,8 +50,7 @@ Log::Log()
 	m_iIDGen = 0;
 	m_szLogFilename = NULL;
 #ifdef DEBUG
-	struct stat buffer;
-	m_bExtraDebug = !stat("extradebug", &buffer);
+	m_bExtraDebug = Util::FileExists("extradebug");
 #endif
 }
 
@@ -144,11 +143,11 @@ void debug(const char* msg, ...)
 #ifdef HAVE_VARIADIC_MACROS
 	if (szFuncname)
 	{
-		snprintf(tmp2, 1024, "%s (%s:%i:%s)", tmp1, BaseFileName(szFilename), iLineNr, szFuncname);
+		snprintf(tmp2, 1024, "%s (%s:%i:%s)", tmp1, Util::BaseFileName(szFilename), iLineNr, szFuncname);
 	}
 	else
 	{
-		snprintf(tmp2, 1024, "%s (%s:%i)", tmp1, BaseFileName(szFilename), iLineNr);
+		snprintf(tmp2, 1024, "%s (%s:%i)", tmp1, Util::BaseFileName(szFilename), iLineNr);
 	}
 #else
 	snprintf(tmp2, 1024, "%s", tmp1);

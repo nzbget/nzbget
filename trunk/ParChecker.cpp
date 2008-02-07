@@ -425,7 +425,7 @@ void ParChecker::FindPars(DownloadQueue * pDownloadQueue, Blocks * pBlocks, bool
     *pBlockFound = 0;
 	
 	// extract base name from m_szParFilename (trim .par2-extension and possible .vol-part)
-	char* szBaseParFilename = BaseFileName(m_szParFilename);
+	char* szBaseParFilename = Util::BaseFileName(m_szParFilename);
 	char szMainBaseFilename[1024];
 	int iMainBaseLen = 0;
 	if (!ParseParFilename(szBaseParFilename, &iMainBaseLen, NULL))
@@ -497,11 +497,11 @@ void ParChecker::LoadMorePars(void* repairer)
 		bool loadedOK = ((Repairer*)repairer)->LoadPacketsFromFile(szParFilename);
 		if (loadedOK)
 		{
-			info("File %s successfully loaded for par-check", BaseFileName(szParFilename), m_szInfoName);
+			info("File %s successfully loaded for par-check", Util::BaseFileName(szParFilename), m_szInfoName);
 		}
 		else
 		{
-			info("Could not load file %s for par-check", BaseFileName(szParFilename), m_szInfoName);
+			info("Could not load file %s for par-check", Util::BaseFileName(szParFilename), m_szInfoName);
 		}
 		free(szParFilename);
 	}
