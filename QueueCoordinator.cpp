@@ -720,7 +720,7 @@ void QueueCoordinator::ResetHangingDownloads()
 			}
 			else
 			{
-				error("Could not terminate hanging download %s", BaseFileName(pArticleInfo->GetResultFilename()));
+				error("Could not terminate hanging download %s", Util::BaseFileName(pArticleInfo->GetResultFilename()));
 			}
 			m_ActiveDownloads.erase(it);
 			// it's not safe to destroy pArticleDownloader, because the state of object is unknown

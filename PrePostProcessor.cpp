@@ -203,7 +203,8 @@ void PrePostProcessor::QueueCoordinatorUpdate(Subject * Caller, void * Aspect)
 				info("Collection %s deleted from queue", szNZBNiceName);
 			}
 #ifndef DISABLE_PARCHECK
-			if (g_pOptions->GetParCheck() &&
+			if (g_pOptions->GetParCheck() && 
+				g_pOptions->GetDecoder() != Options::dcNone &&
 				pAspect->eAction == QueueCoordinator::eaFileCompleted)
 			{
 				CheckPars(pAspect->pDownloadQueue, pAspect->pFileInfo);
@@ -282,7 +283,10 @@ void PrePostProcessor::CheckIncomingNZBs()
 					bakname2[1024-1] = '\0';
 				}
 				
-				rename(fullfilename, bakname2);
+				if (rename(fullfilename, bakname2))
+				{
+					error("Could not rename file %s to %s! Errcode: %i", fullfilename, bakname2, errno);
+				}
 			}
 		}
 	}
@@ -397,7 +401,7 @@ bool PrePostProcessor::AddPar(FileInfo * pFileInfo, bool bDeleted)
 	m_mutexParChecker.Lock();
 	bool bSameCollection = m_ParChecker.IsRunning() &&
 		!strcmp(pFileInfo->GetNZBInfo()->GetFilename(), m_ParChecker.GetNZBFilename()) &&
-		SameParCollection(pFileInfo->GetFilename(), BaseFileName(m_ParChecker.GetParFilename()));
+		SameParCollection(pFileInfo->GetFilename(), Util::BaseFileName(m_ParChecker.GetParFilename()));
 	if (bSameCollection)
 	{
 		if (!bDeleted)
@@ -459,13 +463,7 @@ void PrePostProcessor::ParCheckerUpdate(Subject * Caller, void * Aspect)
 			snprintf(szBrokenLogName, 1024, "%s%c_brokenlog.txt", szPath, (int)PATH_SEPARATOR);
 			szBrokenLogName[1024-1] = '\0';
 			
-			bool bExists = false;
-			if (m_ParChecker.GetRepairNotNeeded())
-			{
-				struct stat buffer;
-				bExists = !stat(szBrokenLogName, &buffer);
-			}
-			if (!m_ParChecker.GetRepairNotNeeded() || bExists)
+			if (!m_ParChecker.GetRepairNotNeeded() || Util::FileExists(szBrokenLogName))
 			{
 				FILE* file = fopen(szBrokenLogName, "a");
 				if (m_ParChecker.GetStatus() == ParChecker::psFailed)
@@ -661,10 +659,8 @@ void PrePostProcessor::ExecPostScript(const char * szPath, const char * szNZBFil
 		return;
 	}
 		
-	info("Executing post-process for %s (%s)", szPath, BaseFileName(szNZBFilename));
-	struct stat buffer;
-	bool bExists = !stat(szScript, &buffer);
-	if (!bExists)
+	info("Executing post-process for %s (%s)", szPath, Util::BaseFileName(szNZBFilename));
+	if (!Util::FileExists(szScript))
 	{
 		error("Could not start post-process: could not find file %s", szScript);
 		return;

@@ -317,14 +317,14 @@ void DownloadBinCommand::Execute()
 			delete pNZBFile;
 
 			char tmp[1024];
-			snprintf(tmp, 1024, "Collection %s added to queue", BaseFileName(DownloadRequest.m_szFilename));
+			snprintf(tmp, 1024, "Collection %s added to queue", Util::BaseFileName(DownloadRequest.m_szFilename));
 			tmp[1024-1] = '\0';
 			SendBoolResponse(true, tmp);
 		}
 		else
 		{
 			char tmp[1024];
-			snprintf(tmp, 1024, "Download Request failed for %s", BaseFileName(DownloadRequest.m_szFilename));
+			snprintf(tmp, 1024, "Download Request failed for %s", Util::BaseFileName(DownloadRequest.m_szFilename));
 			tmp[1024-1] = '\0';
 			SendBoolResponse(false, tmp);
 		}
@@ -376,10 +376,10 @@ void ListBinCommand::Execute()
 			FileInfo* pFileInfo = *it;
 			SNZBListResponseEntry* pListAnswer = (SNZBListResponseEntry*) bufptr;
 			pListAnswer->m_iID				= htonl(pFileInfo->GetID());
-			SplitInt64(pFileInfo->GetSize(), &iSizeHi, &iSizeLo);
+			Util::SplitInt64(pFileInfo->GetSize(), &iSizeHi, &iSizeLo);
 			pListAnswer->m_iFileSizeLo		= htonl(iSizeLo);
 			pListAnswer->m_iFileSizeHi		= htonl(iSizeHi);
-			SplitInt64(pFileInfo->GetRemainingSize(), &iSizeHi, &iSizeLo);
+			Util::SplitInt64(pFileInfo->GetRemainingSize(), &iSizeHi, &iSizeLo);
 			pListAnswer->m_iRemainingSizeLo	= htonl(iSizeLo);
 			pListAnswer->m_iRemainingSizeHi	= htonl(iSizeHi);
 			pListAnswer->m_bFilenameConfirmed = htonl(pFileInfo->GetFilenameConfirmed());
@@ -409,7 +409,7 @@ void ListBinCommand::Execute()
 	{
 		unsigned int iSizeHi, iSizeLo;
 		ListResponse.m_iDownloadRate = htonl((int)(g_pQueueCoordinator->CalcCurrentDownloadSpeed() * 1024));
-		SplitInt64(g_pQueueCoordinator->CalcRemainingSize(), &iSizeHi, &iSizeLo);
+		Util::SplitInt64(g_pQueueCoordinator->CalcRemainingSize(), &iSizeHi, &iSizeLo);
 		ListResponse.m_iRemainingSizeHi = htonl(iSizeHi);
 		ListResponse.m_iRemainingSizeLo = htonl(iSizeLo);
 		ListResponse.m_iDownloadLimit = htonl((int)(g_pOptions->GetDownloadRate() * 1024));
@@ -426,7 +426,7 @@ void ListBinCommand::Execute()
 		ListResponse.m_iUpTimeSec = htonl(iUpTimeSec);
 		ListResponse.m_iDownloadTimeSec = htonl(iDnTimeSec);
 		ListResponse.m_bServerStandBy = htonl(bStandBy);
-		SplitInt64(iAllBytes, &iSizeHi, &iSizeLo);
+		Util::SplitInt64(iAllBytes, &iSizeHi, &iSizeLo);
 		ListResponse.m_iDownloadedBytesHi = htonl(iSizeHi);
 		ListResponse.m_iDownloadedBytesLo = htonl(iSizeLo);
 	}

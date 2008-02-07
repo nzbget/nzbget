@@ -222,7 +222,7 @@ Options::Options(int argc, char* argv[])
 	strncpy(szFilename, argv[0], MAX_PATH + 1);
 #endif
 	szFilename[MAX_PATH] = '\0';
-	NormalizePathSeparators(szFilename);
+	Util::NormalizePathSeparators(szFilename);
 	char* end = strrchr(szFilename, PATH_SEPARATOR);
 	if (end) *end = '\0';
 	SetOption("APPDIR", szFilename);
@@ -422,13 +422,12 @@ void Options::InitOptFile()
 		char szFilename[MAX_PATH + 1];
 		GetModuleFileName(NULL, szFilename, MAX_PATH + 1);
 		szFilename[MAX_PATH] = '\0';
-		NormalizePathSeparators(szFilename);
+		Util::NormalizePathSeparators(szFilename);
 		char* end = strrchr(szFilename, PATH_SEPARATOR);
 		if (end) end[1] = '\0';
 		strcat(szFilename, "nzbget.conf");
 
-		struct stat buffer;
-		if (!stat(szFilename, &buffer) && S_ISREG(buffer.st_mode))
+		if (Util::FileExists(szFilename))
 		{
 			m_szConfigFilename = strdup(szFilename);
 		}
@@ -440,8 +439,7 @@ void Options::InitOptFile()
 			SetOption("$CONFIGFILENAME", szFilename);
 			szFilename = GetOption("$CONFIGFILENAME");
 
-			struct stat buffer;
-			if (!stat(szFilename, &buffer) && S_ISREG(buffer.st_mode))
+			if (Util::FileExists(szFilename))
 			{
 				m_szConfigFilename = strdup(szFilename);
 				DelOption("$CONFIGFILENAME");
@@ -479,14 +477,14 @@ void Options::CheckDir(char** dir, const char* szOptionName)
 			usedir[len] = PATH_SEPARATOR;
 			usedir[len + 1] = '\0';
 		}
-		NormalizePathSeparators(usedir);
+		Util::NormalizePathSeparators(usedir);
 	}
 	else
 	{
 		abort("FATAL ERROR: Wrong value for option \"%s\"\n", szOptionName);
 	}
 	// Ensure the dir is created
-	if (!ForceDirectories(usedir))
+	if (!Util::ForceDirectories(usedir))
 	{
 		abort("FATAL ERROR: Directory \"%s\" (option \"%s\") does not exist and could not be created\n", usedir, szOptionName);
 	}
@@ -788,7 +786,7 @@ void Options::PrintUsage(char* com)
 		"       D                    Delete file(s)\n"
 		"    <IDs>                   Comma-separated list of file-ids or ranges\n"
 		"                            of file-ids, e. g.: 1-5,3,10-22\n",
-		BaseFileName(com));
+		Util::BaseFileName(com));
 }
 
 void Options::InitFileArg(int argc, char* argv[])

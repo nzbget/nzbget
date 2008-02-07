@@ -35,6 +35,7 @@
 #include <string.h>
 #include <sys/stat.h>
 #include <stdio.h>
+#include <errno.h>
 #ifdef WIN32
 #include <direct.h>
 #else
@@ -43,27 +44,6 @@
 
 #include "nzbget.h"
 #include "Util.h"
-
-char* BaseFileName(const char* filename)
-{
-	char* p = (char*)strrchr(filename, PATH_SEPARATOR);
-	char* p1 = (char*)strrchr(filename, ALT_PATH_SEPARATOR);
-	if (p1)
-	{
-		if ((p && p < p1) || !p)
-		{
-			p = p1;
-		}
-	}
-	if (p)
-	{
-		return p + 1;
-	}
-	else
-	{
-		return (char*)filename;
-	}
-}
 
 #ifdef WIN32
 
@@ -217,7 +197,28 @@ const char* DirBrowser::Next()
 
 #endif
 
-void NormalizePathSeparators(char* szPath)
+char* Util::BaseFileName(const char* filename)
+{
+	char* p = (char*)strrchr(filename, PATH_SEPARATOR);
+	char* p1 = (char*)strrchr(filename, ALT_PATH_SEPARATOR);
+	if (p1)
+	{
+		if ((p && p < p1) || !p)
+		{
+			p = p1;
+		}
+	}
+	if (p)
+	{
+		return p + 1;
+	}
+	else
+	{
+		return (char*)filename;
+	}
+}
+
+void Util::NormalizePathSeparators(char* szPath)
 {
 	for (char* p = szPath; *p; p++) 
 	{
@@ -228,7 +229,7 @@ void NormalizePathSeparators(char* szPath)
 	}
 }
 
-bool ForceDirectories(const char* szPath)
+bool Util::ForceDirectories(const char* szPath)
 {
 	char* szNormPath = strdup(szPath);
 	NormalizePathSeparators(szNormPath);
@@ -281,7 +282,7 @@ bool ForceDirectories(const char* szPath)
 	return bOK;
 }
 
-bool LoadFileIntoBuffer(const char* szFileName, char** pBuffer, int* pBufferLength)
+bool Util::LoadFileIntoBuffer(const char* szFileName, char** pBuffer, int* pBufferLength)
 {
     FILE* pFile = fopen(szFileName, "r");
     if (!pFile)
@@ -313,7 +314,7 @@ bool LoadFileIntoBuffer(const char* szFileName, char** pBuffer, int* pBufferLeng
     return true;
 }
 
-bool SetFileSize(const char* szFilename, int iSize)
+bool Util::SetFileSize(const char* szFilename, int iSize)
 {
 	bool bOK = false;
 #ifdef WIN32
@@ -330,7 +331,7 @@ bool SetFileSize(const char* szFilename, int iSize)
 	{
 		fclose(pFile);
 	}
-	// there no reliable function to expand file on POSIX, so we must try different approaches,
+	// there are no reliable function to expand file on POSIX, so we must try different approaches,
 	// starting with the fastest one and hoping it will work
 	// 1) set file size using function "truncate" (it is fast, if works)
 	truncate(szFilename, iSize);
@@ -357,7 +358,7 @@ bool SetFileSize(const char* szFilename, int iSize)
 }
 
 //replace bad chars in filename
-void MakeValidFilename(char* szFilename, char cReplaceChar)
+void Util::MakeValidFilename(char* szFilename, char cReplaceChar)
 {
 	char* p = szFilename;
 	while (*p)
@@ -377,18 +378,18 @@ void MakeValidFilename(char* szFilename, char cReplaceChar)
 	}
 }
 
-long long JoinInt64(unsigned int Hi, unsigned int Lo)
+long long Util::JoinInt64(unsigned int Hi, unsigned int Lo)
 {
 	return (((long long)Hi) << 32) + Lo;
 }
 
-void SplitInt64(long long Int64, unsigned int* Hi, unsigned int* Lo)
+void Util::SplitInt64(long long Int64, unsigned int* Hi, unsigned int* Lo)
 {
 	*Hi = (unsigned int)(Int64 >> 32);
 	*Lo = (unsigned int)Int64;
 }
 
-float EqualTime(_timeval* t1, _timeval* t2)
+float Util::EqualTime(_timeval* t1, _timeval* t2)
 {
 #ifdef WIN32
 	return t1->time == t2->time && t1->millitm == t2->millitm;
@@ -397,7 +398,7 @@ float EqualTime(_timeval* t1, _timeval* t2)
 #endif
 }
 
-bool EmptyTime(_timeval* t)
+bool Util::EmptyTime(_timeval* t)
 {
 #ifdef WIN32
 	return t->time == 0 && t->millitm == 0;
@@ -406,7 +407,7 @@ bool EmptyTime(_timeval* t)
 #endif
 }
 
-float DiffTime(_timeval* t1, _timeval* t2)
+float Util::DiffTime(_timeval* t1, _timeval* t2)
 {
 #ifdef WIN32
 	return ((t1->time - t2->time) + (t1->millitm - t2->millitm) / 1000.0);
@@ -487,7 +488,7 @@ unsigned int DecodeByteQuartet(char* szInputBuffer, char* szOutputBuffer)
 	return -1;
 }
 
-unsigned int DecodeBase64(char* szInputBuffer, int iInputBufferLength, char* szOutputBuffer)
+unsigned int Util::DecodeBase64(char* szInputBuffer, int iInputBufferLength, char* szOutputBuffer)
 {
 	unsigned int InputBufferIndex  = 0;
 	unsigned int OutputBufferIndex = 0;
@@ -526,7 +527,7 @@ unsigned int DecodeBase64(char* szInputBuffer, int iInputBufferLength, char* szO
 /* END - Base64
 */
 
-char* XmlEncode(const char* raw)
+char* Util::XmlEncode(const char* raw)
 {
 	// calculate the required outputstring-size based on number of xml-entities and their sizes
 	int iReqSize = strlen(raw);
@@ -590,7 +591,7 @@ BreakLoop:
 	return result;
 }
 
-void XmlDecode(char* raw)
+void Util::XmlDecode(char* raw)
 {
 	char* output = raw;
 	for (char* p = raw;;)
@@ -645,7 +646,7 @@ BreakLoop:
 	*output = '\0';
 }
 
-const char* FindTag(const char* szXml, const char* szTag, int* iValueLength)
+const char* Util::FindTag(const char* szXml, const char* szTag, int* iValueLength)
 {
 	char szOpenTag[100];
 	snprintf(szOpenTag, 100, "<%s>", szTag);
@@ -667,7 +668,7 @@ const char* FindTag(const char* szXml, const char* szTag, int* iValueLength)
 	return pstart + iTagLen;
 }
 
-bool ParseTagValue(const char* szXml, const char* szTag, char* szValueBuf, int iValueBufSize, const char** pTagEnd)
+bool Util::ParseTagValue(const char* szXml, const char* szTag, char* szValueBuf, int iValueBufSize, const char** pTagEnd)
 {
 	int iValueLen = 0;
 	const char* szValue = FindTag(szXml, szTag, &iValueLen);
@@ -683,4 +684,65 @@ bool ParseTagValue(const char* szXml, const char* szTag, char* szValueBuf, int i
 		*pTagEnd = szValue + iValueLen;
 	}
 	return true;
+}
+
+bool Util::MoveFile(const char* szSrcFilename, const char* szDstFilename)
+{
+	bool bOK = rename(szSrcFilename, szDstFilename) == 0;
+
+#ifndef WIN32
+	if (!bOK && (errno == EXDEV))
+	{
+		FILE* infile = fopen(szSrcFilename, "r");
+		if (!infile)
+		{
+			return false;
+		}
+
+		FILE* outfile = fopen(szDstFilename, "w+");
+		if (!outfile)
+		{
+			fclose(infile);
+			return false;
+		}
+
+		static const int BUFFER_SIZE = 1024 * 50;
+		char* buffer = (char*)malloc(BUFFER_SIZE);
+
+		int cnt = BUFFER_SIZE;
+		while (cnt == BUFFER_SIZE)
+		{
+			cnt = (int)fread(buffer, 1, BUFFER_SIZE, infile);
+			fwrite(buffer, 1, cnt, outfile);
+		}
+
+		fclose(infile);
+		fclose(outfile);
+		free(buffer);
+
+		bOK = remove(szSrcFilename) == 0;
+	}
+#endif
+
+	return bOK;
+}
+
+bool Util::FileExists(const char* szFilename)
+{
+	struct stat buffer;
+	bool bExists = !stat(szFilename, &buffer) && S_ISREG(buffer.st_mode);;
+	return bExists;
+}
+
+bool Util::DirectoryExists(const char* szDirFilename)
+{
+	struct stat buffer;
+	bool bExists = !stat(szDirFilename, &buffer) && S_ISDIR(buffer.st_mode);
+	return bExists;
+}
+
+bool Util::CreateDirectory(const char* szDirFilename)
+{
+	mkdir(szDirFilename, S_DIRMODE);
+	return DirectoryExists(szDirFilename);
 }
