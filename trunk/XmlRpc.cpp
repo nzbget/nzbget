@@ -480,7 +480,7 @@ void LogXmlCommand::Execute()
 		"<member><name>Text</name><value><string>%s</string></value></member>\n"
 		"</struct></value>\n";
 
-    char* szMessageType[] = { "INFO", "WARNING", "ERROR", "DEBUG"};
+    char* szMessageType[] = { "INFO", "WARNING", "ERROR", "DEBUG", "DETAIL"};
 	int szItemBufSize = 10240;
 	char* szItemBuf = (char*)malloc(szItemBufSize);
 

@@ -268,11 +268,12 @@ CreateLog=yes
 ResetLog=no
 
 # How various messages must be printed (screen, log, both, none)
-# Debug-messages can be only printed if the programm was compiled in 
+# Debug-messages can be printed only if the programm was compiled in 
 # debug-mode: "./configure --enable-debug"
-InfoTarget=both
-WarningTarget=both
 ErrorTarget=both
+WarningTarget=both
+InfoTarget=both
+DetailTarget=both
 DebugTarget=both
 
 # Number of messages stored in buffer and available for remote clients

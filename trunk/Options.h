@@ -93,6 +93,7 @@ private:
 	EMessageTarget		m_eWarningTarget;
 	EMessageTarget		m_eErrorTarget;
 	EMessageTarget		m_eDebugTarget;
+	EMessageTarget		m_eDetailTarget;
 	EDecoder			m_eDecoder;
 	bool				m_bCreateBrokenLog;
 	bool				m_bResetLog;
@@ -188,6 +189,7 @@ public:
 	EMessageTarget		GetWarningTarget() const { return m_eWarningTarget; }
 	EMessageTarget		GetErrorTarget() const { return m_eErrorTarget; }
 	EMessageTarget		GetDebugTarget() const { return m_eDebugTarget; }
+	EMessageTarget		GetDetailTarget() const { return m_eDetailTarget; }
 	int					GetConnectionTimeout() { return m_iConnectionTimeout; }
 	int					GetTerminateTimeout() { return m_iTerminateTimeout; }
 	EDecoder			GetDecoder() { return m_eDecoder; };

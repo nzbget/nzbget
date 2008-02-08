@@ -140,6 +140,10 @@ void ColoredFrontend::PrintMessage(Message * pMessage)
 			SetConsoleTextAttribute(m_hConsole, 2);
 			printf("[INFO]");
 			break;
+		case Message::mkDetail:
+			SetConsoleTextAttribute(m_hConsole, 2);
+			printf("[DETAIL]");
+			break;
 	}
 	SetConsoleTextAttribute(m_hConsole, 7);
 	char* msg = strdup(pMessage->GetText());
@@ -161,6 +165,9 @@ void ColoredFrontend::PrintMessage(Message * pMessage)
 			break;
 		case Message::mkInfo:
 			printf("\033[32m[INFO]\033[39m %s\033[K\n", msg);
+			break;
+		case Message::mkDetail:
+			printf("\033[32m[DETAIL]\033[39m %s\033[K\n", msg);
 			break;
 	}
 #endif

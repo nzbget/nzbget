@@ -127,14 +127,14 @@ void ArticleDownloader::Run()
 		if (Util::FileExists(m_szResultFilename))
 		{
 			// file exists from previous program's start
-			info("Article %s already downloaded, skipping", m_szInfoName);
+			detail("Article %s already downloaded, skipping", m_szInfoName);
 			SetStatus(adFinished);
 			FreeConnection(true);
 			return;
 		}
 	}
 
-	info("Downloading %s", m_szInfoName);
+	detail("Downloading %s", m_szInfoName);
 
 	int retry = g_pOptions->GetRetries();
 
@@ -199,7 +199,7 @@ void ArticleDownloader::Run()
 		if (((Status == adFailed) || ((Status == adCrcError) && g_pOptions->GetRetryOnCrcError())) && 
 			((retry > 1) || !bConnected || (Status == adConnectError)) && !IsStopped())
 		{
-			info("Waiting %i sec to retry", g_pOptions->GetRetryInterval());
+			detail("Waiting %i sec to retry", g_pOptions->GetRetryInterval());
 			int msec = 0;
 			while (!IsStopped() && (msec < g_pOptions->GetRetryInterval() * 1000))
 			{
@@ -270,7 +270,7 @@ void ArticleDownloader::Run()
 	{
 		if (IsStopped())
 		{
-			info("Download %s cancelled", m_szInfoName);
+			detail("Download %s cancelled", m_szInfoName);
 		}
 		else
 		{
@@ -636,7 +636,7 @@ ArticleDownloader::EStatus ArticleDownloader::Decode()
 
 		if (bOK)
 		{
-			info("Successfully downloaded %s", m_szInfoName);
+			detail("Successfully downloaded %s", m_szInfoName);
 
 			if (g_pOptions->GetDirectWrite() && g_pOptions->GetContinuePartial())
 			{
@@ -677,7 +677,7 @@ ArticleDownloader::EStatus ArticleDownloader::Decode()
 		// rawmode
 		if (Util::MoveFile(m_szTempFilename, m_szResultFilename))
 		{
-			info("Article %s successfully downloaded", m_szInfoName);
+			detail("Article %s successfully downloaded", m_szInfoName);
 		}
 		else
 		{
@@ -764,15 +764,15 @@ void ArticleDownloader::CompleteFileParts()
 
 	if (g_pOptions->GetDecoder() == Options::dcNone)
 	{
-		info("Moving articles for %s", InfoFilename);
+		detail("Moving articles for %s", InfoFilename);
 	}
 	else if (g_pOptions->GetDirectWrite())
 	{
-		info("Checking articles for %s", InfoFilename);
+		detail("Checking articles for %s", InfoFilename);
 	}
 	else
 	{
-		info("Joining articles for %s", InfoFilename);
+		detail("Joining articles for %s", InfoFilename);
 	}
 
 	char ofn[1024];
@@ -878,7 +878,7 @@ void ArticleDownloader::CompleteFileParts()
 			{
 				complete = false;
 				iBrokenCount++;
-				info("Could not find file %s. Status is broken", fn);
+				detail("Could not find file %s. Status is broken", fn);
 			}
 		}
 		else if (g_pOptions->GetDecoder() == Options::dcNone)
@@ -940,7 +940,7 @@ void ArticleDownloader::CompleteFileParts()
 			brokenfn[1024-1] = '\0';
 			if (Util::MoveFile(ofn, brokenfn))
 			{
-				info("Renaming broken file from %s to %s", ofn, brokenfn);
+				detail("Renaming broken file from %s to %s", ofn, brokenfn);
 			}
 			else
 			{
@@ -949,7 +949,7 @@ void ArticleDownloader::CompleteFileParts()
 		}
 		else
 		{
-			info("Not renaming broken file %s", ofn);
+			detail("Not renaming broken file %s", ofn);
 		}
 
 		if (g_pOptions->GetCreateBrokenLog())

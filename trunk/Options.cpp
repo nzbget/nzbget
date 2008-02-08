@@ -115,6 +115,7 @@ static const char* OPTION_INFOTARGET		= "InfoTarget";
 static const char* OPTION_WARNINGTARGET		= "WarningTarget";
 static const char* OPTION_ERRORTARGET		= "ErrorTarget";
 static const char* OPTION_DEBUGTARGET		= "DebugTarget";
+static const char* OPTION_DETAILTARGET		= "DetailTarget";
 static const char* OPTION_LOADPARS			= "LoadPars";
 static const char* OPTION_PARCHECK			= "ParCheck";
 static const char* OPTION_PARREPAIR			= "ParRepair";
@@ -160,6 +161,7 @@ Options::Options(int argc, char* argv[])
 	m_eWarningTarget		= mtScreen;
 	m_eErrorTarget			= mtScreen;
 	m_eDebugTarget			= mtScreen;
+	m_eDetailTarget			= mtScreen;
 	m_eDecoder				= dcUulib;
 	m_bPause				= false;
 	m_bCreateBrokenLog		= false;
@@ -387,6 +389,7 @@ void Options::InitDefault()
 	SetOption(OPTION_WARNINGTARGET, "both");
 	SetOption(OPTION_ERRORTARGET, "both");
 	SetOption(OPTION_DEBUGTARGET, "none");
+	SetOption(OPTION_DETAILTARGET, "both");
 	SetOption(OPTION_LOADPARS, "all");
 	SetOption(OPTION_PARCHECK, "no");
 	SetOption(OPTION_PARREPAIR, "no");	
@@ -568,6 +571,7 @@ void Options::InitOptions()
 	m_eWarningTarget = (EMessageTarget)ParseOptionValue(OPTION_WARNINGTARGET, TargetCount, TargetNames, TargetValues);
 	m_eErrorTarget = (EMessageTarget)ParseOptionValue(OPTION_ERRORTARGET, TargetCount, TargetNames, TargetValues);
 	m_eDebugTarget = (EMessageTarget)ParseOptionValue(OPTION_DEBUGTARGET, TargetCount, TargetNames, TargetValues);
+	m_eDetailTarget = (EMessageTarget)ParseOptionValue(OPTION_DETAILTARGET, TargetCount, TargetNames, TargetValues);
 }
 
 int Options::ParseOptionValue(const char * OptName, int argc, const char * argn[], const int argv[])
