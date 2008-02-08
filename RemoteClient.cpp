@@ -419,6 +419,9 @@ bool RemoteClient::RequestServerLog(int iLines)
 				case Message::mkInfo:
 					printf("[INFO] %s\n", szText);
 					break;
+				case Message::mkDetail:
+					printf("[DETAIL] %s\n", szText);
+					break;
 			}
 
 			pBufPtr += sizeof(SNZBLogResponseEntry) + ntohl(pLogAnswer->m_iTextLen);

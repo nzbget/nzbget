@@ -35,6 +35,7 @@
 void error(const char* msg, ...);
 void warn(const char* msg, ...);
 void info(const char* msg, ...);
+void detail(const char* msg, ...);
 void abort(const char* msg, ...);
 
 #ifdef HAVE_VARIADIC_MACROS
@@ -49,10 +50,11 @@ class Message
 public:
 	enum EKind
 	{
-	    mkInfo,
+		mkInfo,
 	    mkWarning,
 	    mkError,
-	    mkDebug
+	    mkDebug,
+	    mkDetail
 	};
 
 private:
@@ -91,6 +93,7 @@ private:
 	friend void warn(const char* msg, ...);
 	friend void info(const char* msg, ...);
 	friend void abort(const char* msg, ...);
+	friend void detail(const char* msg, ...);
 #ifdef HAVE_VARIADIC_MACROS
 	friend void debug(const char* szFilename, const char* szFuncname, int iLineNr, const char* msg, ...);
 #else	

@@ -67,11 +67,12 @@ static const int NCURSES_COLORPAIR_INFO			= 2;
 static const int NCURSES_COLORPAIR_WARNING		= 3;
 static const int NCURSES_COLORPAIR_ERROR		= 4;
 static const int NCURSES_COLORPAIR_DEBUG		= 5;
-static const int NCURSES_COLORPAIR_STATUS		= 6;
-static const int NCURSES_COLORPAIR_KEYBAR		= 7;
-static const int NCURSES_COLORPAIR_INFOLINE		= 8;
-static const int NCURSES_COLORPAIR_TEXTHIGHL	= 9;
-static const int NCURSES_COLORPAIR_CURSOR		= 10;
+static const int NCURSES_COLORPAIR_DETAIL		= 6;
+static const int NCURSES_COLORPAIR_STATUS		= 7;
+static const int NCURSES_COLORPAIR_KEYBAR		= 8;
+static const int NCURSES_COLORPAIR_INFOLINE		= 9;
+static const int NCURSES_COLORPAIR_TEXTHIGHL	= 10;
+static const int NCURSES_COLORPAIR_CURSOR		= 11;
 
 static const int MAX_SCREEN_WIDTH				= 512;
 
@@ -174,6 +175,7 @@ NCursesFrontend::NCursesFrontend()
         init_pair(NCURSES_COLORPAIR_WARNING,	COLOR_MAGENTA,	COLOR_BLACK);
         init_pair(NCURSES_COLORPAIR_ERROR,		COLOR_RED,		COLOR_BLACK);
         init_pair(NCURSES_COLORPAIR_DEBUG,		COLOR_WHITE,	COLOR_BLACK);
+        init_pair(NCURSES_COLORPAIR_DETAIL,		COLOR_GREEN,	COLOR_BLACK);
         init_pair(NCURSES_COLORPAIR_STATUS,		COLOR_BLUE,		COLOR_WHITE);
         init_pair(NCURSES_COLORPAIR_KEYBAR,		COLOR_WHITE,	COLOR_BLUE);
         init_pair(NCURSES_COLORPAIR_INFOLINE,	COLOR_WHITE,	COLOR_BLUE);
@@ -498,9 +500,9 @@ void NCursesFrontend::PrintMessages()
 
 int NCursesFrontend::PrintMessage(Message* Msg, int iRow, int iMaxLines)
 {
-    char* szMessageType[] = { "INFO    ", "WARNING ", "ERROR   ", "DEBUG   "};
+    char* szMessageType[] = { "INFO    ", "WARNING ", "ERROR   ", "DEBUG   ", "DETAIL  "};
     const int iMessageTypeColor[] = { NCURSES_COLORPAIR_INFO, NCURSES_COLORPAIR_WARNING,
-    	NCURSES_COLORPAIR_ERROR, NCURSES_COLORPAIR_DEBUG };
+    	NCURSES_COLORPAIR_ERROR, NCURSES_COLORPAIR_DEBUG, NCURSES_COLORPAIR_DETAIL };
 
 	char* szText = (char*)Msg->GetText();
 

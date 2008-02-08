@@ -256,6 +256,31 @@ void info(const char* msg, ...)
 	g_pLog->m_mutexLog.Unlock();
 }
 
+void detail(const char* msg, ...)
+{
+	char tmp2[1024];
+
+	va_list ap;
+	va_start(ap, msg);
+	vsnprintf(tmp2, 1024, msg, ap);
+	tmp2[1024-1] = '\0';
+	va_end(ap);
+
+	g_pLog->m_mutexLog.Lock();
+
+	Options::EMessageTarget eMessageTarget = g_pOptions->GetDetailTarget();
+	if (eMessageTarget == Options::mtLog || eMessageTarget == Options::mtBoth)
+	{
+		g_pLog->Filelog("DETAIL\t%s", tmp2);
+	}
+	if (eMessageTarget == Options::mtScreen || eMessageTarget == Options::mtBoth)
+	{
+		g_pLog->AppendMessage(Message::mkDetail, tmp2);
+	}
+
+	g_pLog->m_mutexLog.Unlock();
+}
+
 void abort(const char* msg, ...)
 {
 	char tmp2[1024];

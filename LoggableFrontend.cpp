@@ -126,6 +126,9 @@ void LoggableFrontend::PrintMessage(Message * pMessage)
 		case Message::mkInfo:
 			printf("[INFO] %s\n", msg);
 			break;
+		case Message::mkDetail:
+			printf("[DETAIL] %s\n", msg);
+			break;
 	}
 #ifdef WIN32
 	free(msg);
