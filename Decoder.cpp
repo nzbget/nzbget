@@ -253,7 +253,7 @@ unsigned long YDecoder::crc32m(unsigned long startCrc, unsigned char *block, uns
 
 unsigned int YDecoder::DecodeBuffer(char* buffer)
 {
-	if (m_bBody)
+	if (m_bBody && !m_bEnd)
 	{
 		if (!strncmp(buffer, "=yend size=", 11))
 		{
