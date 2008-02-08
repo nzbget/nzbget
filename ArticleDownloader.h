@@ -51,6 +51,7 @@ public:
 		adCrcError,
 		adDecoding,
 		adJoining,
+		adJoined,
 		adNotFound,
 		adConnectError,
 		adFatalError

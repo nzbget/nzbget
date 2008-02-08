@@ -783,7 +783,7 @@ void ArticleDownloader::CompleteFileParts()
 	if (!Util::CreateDirectory(m_pFileInfo->GetNZBInfo()->GetDestDir()))
 	{
 		error("Could not create directory %s! Errcode: %i", m_pFileInfo->GetNZBInfo()->GetDestDir(), errno);
-		SetStatus(adFinished);
+		SetStatus(adJoined);
 		return;
 	}
 
@@ -810,7 +810,7 @@ void ArticleDownloader::CompleteFileParts()
 		if (!outfile)
 		{
 			error("Could not create file %s!", tmpdestfile);
-			SetStatus(adFinished);
+			SetStatus(adJoined);
 			return;
 		}
 		if (g_pOptions->GetWriteBufferSize() == -1 && (*m_pFileInfo->GetArticles())[0])
@@ -828,7 +828,7 @@ void ArticleDownloader::CompleteFileParts()
 		if (!Util::CreateDirectory(ofn))
 		{
 			error("Could not create directory %s! Errcode: %i", ofn, errno);
-			SetStatus(adFinished);
+			SetStatus(adJoined);
 			return;
 		}
 	}
@@ -961,9 +961,7 @@ void ArticleDownloader::CompleteFileParts()
 			fprintf(file, "%s (%i/%i)\n", m_pFileInfo->GetFilename(), m_pFileInfo->GetArticles()->size() - iBrokenCount, m_pFileInfo->GetArticles()->size());
 			fclose(file);
 		}
-
-		warn("%s is incomplete!", InfoFilename);
 	}
 
-	SetStatus(adFinished);
+	SetStatus(adJoined);
 }
