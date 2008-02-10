@@ -56,6 +56,38 @@ extern void ExitProc();
 
 
 //*****************************************************************
+// StringBuilder
+
+StringBuilder::StringBuilder()
+{
+	m_szBuffer = NULL;
+	m_iBufferSize = 0;
+	m_iUsedSize = 0;
+}
+
+StringBuilder::~StringBuilder()
+{
+	if (m_szBuffer)
+	{
+		free(m_szBuffer);
+	}
+}
+
+void StringBuilder::Append(const char* szStr)
+{
+	int iPartLen = strlen(szStr);
+	if (m_iUsedSize + iPartLen + 1 > m_iBufferSize)
+	{
+		m_iBufferSize += iPartLen + 10240;
+		m_szBuffer = (char*)realloc(m_szBuffer, m_iBufferSize);
+	}
+	strcpy(m_szBuffer + m_iUsedSize, szStr);
+	m_iUsedSize += iPartLen;
+	m_szBuffer[m_iUsedSize] = '\0';
+}
+
+
+//*****************************************************************
 // XmlRpcProcessor
 
 void XmlRpcProcessor::Execute()
@@ -137,16 +169,11 @@ void XmlRpcProcessor::Execute()
 	free(m_szRequest);
 }
 
-void XmlRpcProcessor::Dispatch()
+XmlCommand* XmlRpcProcessor::CreateCommand(const char* szMethodName)
 {
 	XmlCommand* command = NULL;
 
-	char szMethodName[100];
-	if (!Util::ParseTagValue(m_szRequest, "methodName", szMethodName, sizeof(szMethodName), NULL))
-	{
-		command = new ErrorXmlCommand(1, "Invalid request");
-	}
-	else if (!strcasecmp(szMethodName, "pause"))
+	if (!strcasecmp(szMethodName, "pause"))
 	{
 		command = new PauseXmlCommand();
 	}
@@ -203,52 +230,98 @@ void XmlRpcProcessor::Dispatch()
 		command = new ErrorXmlCommand(1, "Invalid method");
 	}
 
-	if (command)
+	return command;
+}
+
+void XmlRpcProcessor::Dispatch()
+{
+	char szMethodName[100];
+	szMethodName[0] = '\0';
+	Util::ParseTagValue(m_szRequest, "methodName", szMethodName, sizeof(szMethodName), NULL);
+
+	debug("MethodName=%s", szMethodName);
+
+	if (!strcasecmp(szMethodName, "system.multicall"))
 	{
-		debug("MethodName=%s", szMethodName);
-		command->SetSocket(m_iSocket);
+		MutliCall();
+	}
+	else
+	{
+		XmlCommand* command = CreateCommand(szMethodName);
 		command->SetRequest(m_szRequest);
 		command->Execute();
+		SendResponse(command->GetResponse(), command->GetFault());
 		delete command;
 	}
 }
 
-
-//*****************************************************************
-// Commands
-
-XmlCommand::XmlCommand()
+void XmlRpcProcessor::MutliCall()
 {
-	m_iSocket = INVALID_SOCKET;
-	m_szRequest = NULL;
-	m_szRequestPtr = NULL;
-	m_szResponse = NULL;
-	m_iResponseBufSize = 0;
-	m_iResponseLen = 0;
-}
+	bool bError = false;
+	StringBuilder cStringBuilder;
 
-XmlCommand::~XmlCommand()
-{
-	if (m_szResponse)
+	cStringBuilder.Append("<array><data>");
+
+	char* szRequestPtr = m_szRequest;
+	char* szCallEnd = strstr(szRequestPtr, "</struct>");
+	while (szCallEnd)
 	{
-		free(m_szResponse);
+		*szCallEnd = '\0';
+		debug("MutliCall, request=%s", szRequestPtr);
+		char* szNameEnd = strstr(szRequestPtr, "</name>");
+		if (!szNameEnd)
+		{
+			bError = true;
+			break;
+		}
+
+		char szMethodName[100];
+		szMethodName[0] = '\0';
+		Util::ParseTagValue(szNameEnd, "string", szMethodName, sizeof(szMethodName), NULL);
+		debug("MutliCall, MethodName=%s", szMethodName);
+
+		XmlCommand* command = CreateCommand(szMethodName);
+		command->SetRequest(szRequestPtr);
+		command->Execute();
+
+		debug("MutliCall, Response=%s", command->GetResponse());
+
+		bool bFault = !strncmp(command->GetResponse(), "<fault>", 7);
+		bool bArray = !bFault && !strncmp(command->GetResponse(), "<array>", 7);
+		if (!bFault && !bArray)
+		{
+			cStringBuilder.Append("<array><data>");
+		}
+		cStringBuilder.Append("<value>");
+		cStringBuilder.Append(command->GetResponse());
+		cStringBuilder.Append("</value>");
+		if (!bFault && !bArray)
+		{
+			cStringBuilder.Append("</data></array>");
+		}
+
+		delete command;
+
+		szRequestPtr = szCallEnd + 9; //strlen("</struct>")
+		szCallEnd = strstr(szRequestPtr, "</struct>");
+	}
+
+	if (bError)
+	{
+		XmlCommand* command = new ErrorXmlCommand(4, "Parse error");
+		command->SetRequest(m_szRequest);
+		command->Execute();
+		SendResponse(command->GetResponse(), command->GetFault());
+		delete command;
+	}
+	else
+	{
+		cStringBuilder.Append("</data></array>");
+		SendResponse(cStringBuilder.GetBuffer(), false);
 	}
 }
 
-void XmlCommand::AppendResponse(const char* szPart)
-{
-	int iPartLen = strlen(szPart);
-	if (m_iResponseLen + iPartLen + 1 > m_iResponseBufSize)
-	{
-		m_iResponseBufSize += iPartLen + 10240;
-		m_szResponse = (char*)realloc(m_szResponse, m_iResponseBufSize);
-	}
-	strcpy(m_szResponse + m_iResponseLen, szPart);
-	m_iResponseLen += iPartLen;
-	m_szResponse[m_iResponseLen] = '\0';
-}
-
-void XmlCommand::SendResponse(const char* szResponse)
+void XmlRpcProcessor::SendResponse(const char* szResponse, bool bFault)
 {
 	const char* RESPONSE_HEADER = 
 		"HTTP/1.0 200 OK\n"
@@ -257,47 +330,76 @@ void XmlCommand::SendResponse(const char* szResponse)
 		"Content-Type: text/xml\n"
 		"Server: nzbget-%s\n"
 		"\n";
+	const char XML_HEADER[] = "<?xml version=\"1.0\"?>\n<methodResponse>\n";
+	const char XML_FOOTER[] = "</methodResponse>";
+	const char XML_OK_OPEN[] = "<params><param><value>";
+	const char XML_OK_CLOSE[] = "</value></param></params>\n";
+	const char XML_FAULT_OPEN[] = "<fault><value>";
+	const char XML_FAULT_CLOSE[] = "</value></fault>\n";
+
+	debug("Response=%s", szResponse);
+
+	const char* xmlOpenTag = bFault ? XML_FAULT_OPEN : XML_OK_OPEN;
+	const char* xmlCloseTag = bFault ? XML_FAULT_CLOSE : XML_OK_CLOSE;
+	int iOpenTagLen = (bFault ? sizeof(XML_FAULT_OPEN) : sizeof(XML_OK_OPEN)) - 1;
+	int iCloseTagLen = (bFault ? sizeof(XML_FAULT_CLOSE) : sizeof(XML_OK_CLOSE)) - 1;
+	int iResponseLen = strlen(szResponse);
 
 	char szHeader[1024];
-	int iLen = strlen(szResponse);
-	snprintf(szHeader, 1024, RESPONSE_HEADER, iLen, VERSION);
+	int iBodyLen = iResponseLen + sizeof(XML_HEADER) - 1 + sizeof(XML_FOOTER) - 1 + iOpenTagLen + iCloseTagLen;
+	snprintf(szHeader, 1024, RESPONSE_HEADER, iBodyLen, VERSION);
 
 	// Send the request answer
 	send(m_iSocket, szHeader, strlen(szHeader), 0);
-	send(m_iSocket, szResponse, iLen, 0);
+	send(m_iSocket, XML_HEADER, sizeof(XML_HEADER) - 1, 0);
+	send(m_iSocket, xmlOpenTag, iOpenTagLen, 0);
+	send(m_iSocket, szResponse, iResponseLen, 0);
+	send(m_iSocket, xmlCloseTag, iCloseTagLen, 0);
+	send(m_iSocket, XML_FOOTER, sizeof(XML_FOOTER) - 1, 0);
 }
 
-void XmlCommand::SendErrorResponse(int iErrCode, const char* szErrText)
+
+//*****************************************************************
+// Commands
+
+XmlCommand::XmlCommand()
+{
+	m_szRequest = NULL;
+	m_szRequestPtr = NULL;
+	m_bFault = false;
+}
+
+void XmlCommand::AppendResponse(const char* szPart)
+{
+	m_StringBuilder.Append(szPart);
+}
+
+void XmlCommand::BuildErrorResponse(int iErrCode, const char* szErrText)
 {
 	const char* RESPONSE_ERROR_BODY = 
-		"<?xml version=\"1.0\"?>\n"
-		"<methodResponse>\n"
-		"<fault><value><struct>\n"
+		"<struct>\n"
 		"<member><name>faultCode</name><value><int>%i</int></value></member>\n"
 		"<member><name>faultString</name><value><string>%s</string></value></member>\n"
-		"</struct></value></fault>\n"
-		"</methodResponse>";
+		"</struct>\n";
 
 	char szContent[1024];
 	snprintf(szContent, 1024, RESPONSE_ERROR_BODY, iErrCode, szErrText);
 	szContent[1024-1] = '\0';
 
-	SendResponse(szContent);
+	AppendResponse(szContent);
+
+	m_bFault = true;
 }
 
-void XmlCommand::SendBoolResponse(bool bOK)
+void XmlCommand::BuildBoolResponse(bool bOK)
 {
-	const char* RESPONSE_BOOL_BODY = 
-		"<?xml version=\"1.0\"?>\n"
-		"<methodResponse>\n"
-		"<params><param><value><boolean>%i</boolean></value></param></params>\n"
-		"</methodResponse>";
+	const char* RESPONSE_BOOL_BODY = "<boolean>%i</boolean>";
 
 	char szContent[1024];
 	snprintf(szContent, 1024, RESPONSE_BOOL_BODY, (int)bOK);
 	szContent[1024-1] = '\0';
 
-	SendResponse(szContent);
+	AppendResponse(szContent);
 }
 
 bool XmlCommand::NextIntParam(int* iValue)
@@ -325,46 +427,42 @@ ErrorXmlCommand::ErrorXmlCommand(int iErrCode, const char* szErrText)
 void ErrorXmlCommand::Execute()
 {
 	error("Received unsupported request: %s", m_szErrText);
-	SendErrorResponse(m_iErrCode, m_szErrText);
+	BuildErrorResponse(m_iErrCode, m_szErrText);
 }
 
 void PauseXmlCommand::Execute()
 {
 	g_pOptions->SetPause(true);
-	SendBoolResponse(true);
+	BuildBoolResponse(true);
 }
 
 void UnPauseXmlCommand::Execute()
 {
 	g_pOptions->SetPause(false);
-	SendBoolResponse(true);
+	BuildBoolResponse(true);
 }
 
 void ShutdownXmlCommand::Execute()
 {
-	SendBoolResponse(true);
+	BuildBoolResponse(true);
 	ExitProc();
 }
 
 void VersionXmlCommand::Execute()
 {
-	const char* RESPONSE_STRING_BODY = 
-		"<?xml version=\"1.0\"?>\n"
-		"<methodResponse>\n"
-		"<params><param><value><string>%s</string></value></param></params>\n"
-		"</methodResponse>";
+	const char* RESPONSE_STRING_BODY = "<string>%s</string>";
 
 	char szContent[1024];
 	snprintf(szContent, 1024, RESPONSE_STRING_BODY, VERSION);
 	szContent[1024-1] = '\0';
 
-	SendResponse(szContent);
+	AppendResponse(szContent);
 }
 
 void DumpDebugXmlCommand::Execute()
 {
 	g_pQueueCoordinator->LogDebugInfo();
-	SendBoolResponse(true);
+	BuildBoolResponse(true);
 }
 
 void SetDownloadRateXmlCommand::Execute()
@@ -372,20 +470,18 @@ void SetDownloadRateXmlCommand::Execute()
 	int iRate = 0;
 	if (!NextIntParam(&iRate) || iRate < 0)
 	{
-		SendErrorResponse(2, "Invalid parameter");
+		BuildErrorResponse(2, "Invalid parameter");
 		return;
 	}
 
 	g_pOptions->SetDownloadRate(iRate);
-	SendBoolResponse(true);
+	BuildBoolResponse(true);
 }
 
 void StatusXmlCommand::Execute()
 {
 	const char* RESPONSE_STATUS_BODY = 
-		"<?xml version=\"1.0\"?>\n"
-		"<methodResponse>\n"
-		"<params><param><value><struct>\n"
+		"<struct>\n"
 		"<member><name>RemainingSizeLo</name><value><i4>%i</i4></value></member>\n"
 		"<member><name>RemainingSizeHi</name><value><i4>%i</i4></value></member>\n"
 		"<member><name>RemainingSizeMB</name><value><i4>%i</i4></value></member>\n"
@@ -401,8 +497,7 @@ void StatusXmlCommand::Execute()
 		"<member><name>DownloadTimeSec</name><value><i4>%i</i4></value></member>\n"
 		"<member><name>ServerPaused</name><value><boolean>%i</boolean></value></member>\n"
 		"<member><name>ServerStandBy</name><value><boolean>%i</boolean></value></member>\n"
-		"</struct></value></param></params>\n"
-		"</methodResponse>";
+		"</struct>\n";
 
 	unsigned int iRemainingSizeHi, iRemainingSizeLo;
 	int iDownloadRate = (int)(g_pQueueCoordinator->CalcCurrentDownloadSpeed() * 1024);
@@ -430,7 +525,7 @@ void StatusXmlCommand::Execute()
 		iThreadCount, iParJobCount, iUpTimeSec, iDownloadTimeSec, (int)bServerPaused, (int)bServerStandBy);
 	szContent[2048-1] = '\0';
 
-	SendResponse(szContent);
+	AppendResponse(szContent);
 }
 
 void LogXmlCommand::Execute()
@@ -439,14 +534,14 @@ void LogXmlCommand::Execute()
 	int iNrEntries = 0;
 	if (!NextIntParam(&iIDFrom) || !NextIntParam(&iNrEntries) || (iNrEntries > 0 && iIDFrom > 0))
 	{
-		SendErrorResponse(2, "Invalid parameter");
+		BuildErrorResponse(2, "Invalid parameter");
 		return;
 	}
 
 	debug("iIDFrom=%i", iIDFrom);
 	debug("iNrEntries=%i", iNrEntries);
 
-	AppendResponse("<?xml version=\"1.0\"?>\n<methodResponse>\n<params><param><value><array><data>\n");
+	AppendResponse("<array><data>\n");
 	Log::Messages* pMessages = g_pLog->LockMessages();
 
 	int iStart = pMessages->size();
@@ -497,15 +592,12 @@ void LogXmlCommand::Execute()
 	free(szItemBuf);
 
 	g_pLog->UnlockMessages();
-	AppendResponse("</data></array></value></param></params>\n</methodResponse>");
-
-	debug("m_szResponse=%s", m_szResponse);
-	SendResponse(m_szResponse);
+	AppendResponse("</data></array>\n");
 }
 
 void ListFilesXmlCommand::Execute()
 {
-	AppendResponse("<?xml version=\"1.0\"?>\n<methodResponse>\n<params><param><value><array><data>\n");
+	AppendResponse("<array><data>\n");
 
 	DownloadQueue* pDownloadQueue = g_pQueueCoordinator->LockQueue();
 
@@ -554,15 +646,12 @@ void ListFilesXmlCommand::Execute()
 	free(szItemBuf);
 
 	g_pQueueCoordinator->UnlockQueue();
-	AppendResponse("</data></array></value></param></params>\n</methodResponse>");
-
-	debug("m_szResponse=%s", m_szResponse);
-	SendResponse(m_szResponse);
+	AppendResponse("</data></array>\n");
 }
 
 void ListGroupsXmlCommand::Execute()
 {
-	AppendResponse("<?xml version=\"1.0\"?>\n<methodResponse>\n<params><param><value><array><data>\n");
+	AppendResponse("<array><data>\n");
 
 	const char* LIST_ITEM = 
 		"<value><struct>\n"
@@ -627,16 +716,13 @@ void ListGroupsXmlCommand::Execute()
 	}
 	free(szItemBuf);
 
-	AppendResponse("</data></array></value></param></params>\n</methodResponse>");
+	AppendResponse("</data></array>\n");
 
 	for (GroupQueue::iterator it = groupQueue.begin(); it != groupQueue.end(); it++)
 	{
 		delete *it;
 	}
 	groupQueue.clear();
-
-	debug("m_szResponse=%s", m_szResponse);
-	SendResponse(m_szResponse);
 }
 
 typedef struct 
@@ -670,7 +756,7 @@ void EditQueueXmlCommand::Execute()
 	char szEditCommand[100];
 	if (!Util::ParseTagValue(m_szRequest, "string", szEditCommand, sizeof(szEditCommand), NULL))
 	{
-		SendErrorResponse(2, "Invalid parameter");
+		BuildErrorResponse(2, "Invalid parameter");
 		return;
 	}
 
@@ -693,14 +779,14 @@ void EditQueueXmlCommand::Execute()
 
 	if (iAction == -1)
 	{
-		SendErrorResponse(3, "Invalid action");
+		BuildErrorResponse(3, "Invalid action");
 		return;
 	}
 
 	int iOffset = 0;
 	if (!NextIntParam(&iOffset))
 	{
-		SendErrorResponse(2, "Invalid parameter");
+		BuildErrorResponse(2, "Invalid parameter");
 		return;
 	}
 
@@ -713,7 +799,7 @@ void EditQueueXmlCommand::Execute()
 
 	bool bOK = g_pQueueCoordinator->GetQueueEditor()->EditList(&cIDList, true, (QueueEditor::EEditAction)iAction, iOffset);
 
-	SendBoolResponse(bOK);
+	BuildBoolResponse(bOK);
 }
 
 void DownloadXmlCommand::Execute()
@@ -721,7 +807,7 @@ void DownloadXmlCommand::Execute()
 	char szFileName[1024];
 	if (!Util::ParseTagValue(m_szRequest, "string", szFileName, sizeof(szFileName), NULL))
 	{
-		SendErrorResponse(2, "Invalid parameter");
+		BuildErrorResponse(2, "Invalid parameter");
 		return;
 	}
 
@@ -732,7 +818,7 @@ void DownloadXmlCommand::Execute()
 	char szAddTop[10];
 	if (!Util::ParseTagValue(m_szRequest, "boolean", szAddTop, sizeof(szAddTop), &pTagEnd))
 	{
-		SendErrorResponse(2, "Invalid parameter");
+		BuildErrorResponse(2, "Invalid parameter");
 		return;
 	}
 
@@ -742,7 +828,7 @@ void DownloadXmlCommand::Execute()
 	char* szFileContent = (char*)Util::FindTag(pTagEnd, "string", &iLen);
 	if (!szFileContent)
 	{
-		SendErrorResponse(2, "Invalid parameter");
+		BuildErrorResponse(2, "Invalid parameter");
 		return;
 	}
 
@@ -756,17 +842,17 @@ void DownloadXmlCommand::Execute()
 		info("Request: Queue collection %s", szFileName);
 		g_pQueueCoordinator->AddNZBFileToQueue(pNZBFile, bAddTop);
 		delete pNZBFile;
-		SendBoolResponse(true);
+		BuildBoolResponse(true);
 	}
 	else
 	{
-		SendBoolResponse(false);
+		BuildBoolResponse(false);
 	}
 }
 
 void PostQueueXmlCommand::Execute()
 {
-	AppendResponse("<?xml version=\"1.0\"?>\n<methodResponse>\n<params><param><value><array><data>\n");
+	AppendResponse("<array><data>\n");
 
 	const char* POSTQUEUE_ITEM = 
 		"<value><struct>\n"
@@ -806,8 +892,5 @@ void PostQueueXmlCommand::Execute()
 
 	g_pPrePostProcessor->UnlockParQueue();
 
-	AppendResponse("</data></array></value></param></params>\n</methodResponse>");
-
-	debug("m_szResponse=%s", m_szResponse);
-	SendResponse(m_szResponse);
+	AppendResponse("</data></array>\n");
 }

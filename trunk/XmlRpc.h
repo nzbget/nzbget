@@ -28,6 +28,41 @@
 
 #include "Connection.h"
 
+class StringBuilder
+{
+private:
+	char*				m_szBuffer;
+	int					m_iBufferSize;
+	int					m_iUsedSize;
+public:
+						StringBuilder();
+						~StringBuilder();
+	void				Append(const char* szStr);
+	const char*			GetBuffer() { return m_szBuffer; }
+};
+
+class XmlCommand
+{
+protected:
+	char*				m_szRequest;
+	const char*			m_szRequestPtr;
+	StringBuilder		m_StringBuilder;
+	bool				m_bFault;
+
+	void				BuildErrorResponse(int iErrCode, const char* szErrText);
+	void				BuildBoolResponse(bool bOK);
+	void				AppendResponse(const char* szPart);
+	bool				NextIntParam(int* iValue);
+
+public:
+						XmlCommand();
+	virtual 			~XmlCommand() {}
+	virtual void		Execute() = 0;
+	void				SetRequest(char* szRequest) { m_szRequest = szRequest; m_szRequestPtr = m_szRequest; }
+	const char*			GetResponse() { return m_StringBuilder.GetBuffer(); }
+	bool				GetFault() { return m_bFault; }
+};
+
 class XmlRpcProcessor
 {
 private:
@@ -36,36 +71,14 @@ private:
 	char*				m_szRequest;
 
 	void				Dispatch();
+	void				SendResponse(const char* szResponse, bool bFault);
+	XmlCommand*			CreateCommand(const char* szMethodName);
+	void				MutliCall();
 
 public:
 	void				Execute();
 	void				SetSocket(SOCKET iSocket) { m_iSocket = iSocket; }
 	void				SetClientIP(const char* szClientIP) { m_szClientIP = szClientIP; }
-};
-
-class XmlCommand
-{
-protected:
-	SOCKET				m_iSocket;
-	char*				m_szRequest;
-	char*				m_szResponse;
-	int					m_iResponseBufSize;
-	int					m_iResponseLen;
-	const char*			m_szRequestPtr;
-
-	bool				ReceiveRequest(void* pBuffer, int iSize);
-	void				SendResponse(const char* szResponse);
-	void				SendErrorResponse(int iErrCode, const char* szErrText);
-	void				SendBoolResponse(bool bOK);
-	void				AppendResponse(const char* szPart);
-	bool				NextIntParam(int* iValue);
-
-public:
-						XmlCommand();
-	virtual				~XmlCommand();
-	virtual void		Execute() = 0;
-	void				SetSocket(SOCKET iSocket) { m_iSocket = iSocket; }
-	void				SetRequest(char* szRequest) { m_szRequest = szRequest; m_szRequestPtr = m_szRequest; }
 };
 
 class ErrorXmlCommand: public XmlCommand
