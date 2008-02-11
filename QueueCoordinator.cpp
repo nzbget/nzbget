@@ -212,8 +212,10 @@ void QueueCoordinator::AddNZBFileToQueue(NZBFile* pNZBFile, bool bAddFirst)
 	DownloadQueue DupeList;
 	DupeList.clear();
 
+	int index1 = 0;
 	for (NZBFile::FileInfos::iterator it = pNZBFile->GetFileInfos()->begin(); it != pNZBFile->GetFileInfos()->end(); it++)
 	{
+		index1++;
 		FileInfo* pFileInfo = *it;
 
 		if (g_pOptions->GetDupeCheck())
@@ -224,11 +226,15 @@ void QueueCoordinator::AddNZBFileToQueue(NZBFile* pNZBFile, bool bAddFirst)
 				warn("File \"%s\" seems to be duplicate, skipping", pFileInfo->GetFilename());
 				dupe = true;
 			}
+			int index2 = 0;
 			for (NZBFile::FileInfos::iterator it2 = pNZBFile->GetFileInfos()->begin(); it2 != pNZBFile->GetFileInfos()->end(); it2++)
 			{
+				index2++;
 				FileInfo* pFileInfo2 = *it2;
-				if (!strcmp(pFileInfo->GetFilename(), pFileInfo2->GetFilename()) &&
-					(pFileInfo->GetSize() < pFileInfo2->GetSize()))
+				if (pFileInfo != pFileInfo2 &&
+					!strcmp(pFileInfo->GetFilename(), pFileInfo2->GetFilename()) &&
+					(pFileInfo->GetSize() < pFileInfo2->GetSize() || 
+					 (pFileInfo->GetSize() == pFileInfo2->GetSize() && index2 < index1)))
 				{
 					warn("File \"%s\" appears twice in nzb-request, adding only the biggest file", pFileInfo->GetFilename());
 					dupe = true;
