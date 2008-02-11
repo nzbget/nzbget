@@ -45,6 +45,7 @@ public:
 		char*				m_szNZBFilename;
 		char*				m_szParFilename;
 		char*				m_szInfoName;
+		bool				m_bFailed;
 		
 	public:
 							ParJob(const char* szNZBFilename, const char* szParFilename, const char* szInfoName);
@@ -52,6 +53,8 @@ public:
 		const char*			GetNZBFilename() { return m_szNZBFilename; }
 		const char*			GetParFilename() { return m_szParFilename; }
 		const char*			GetInfoName() { return m_szInfoName; }
+		bool				GetFailed() { return m_bFailed; }
+		void				SetFailed(bool bFailed) { m_bFailed = bFailed; }
 	};
 
 	typedef std::deque<ParJob*> ParQueue;
@@ -73,6 +76,23 @@ private:
 		PrePostProcessor* owner;
 		virtual void	Update(Subject* Caller, void* Aspect) { owner->ParCheckerUpdate(Caller, Aspect); }
 	};
+
+	class PostParChecker: public ParChecker
+	{
+	private:
+		PrePostProcessor* m_Owner;
+	protected:
+		bool			RequestMorePars(int iBlockNeeded, int* pBlockFound);
+		friend class PrePostProcessor;
+	};
+
+	struct BlockInfo
+	{
+		FileInfo*	m_pFileInfo;
+		int		    m_iBlockCount;
+	};
+
+	typedef std::deque<BlockInfo*> 	Blocks;
 #endif
 	
 private:
@@ -83,14 +103,14 @@ private:
 	void				CheckIncomingNZBs();
 	bool				WasLastInCollection(DownloadQueue* pDownloadQueue, FileInfo* pFileInfo, bool bIgnorePaused);
 	void				ExecPostScript(const char* szPath, const char* szNZBFilename, const char * szParFilename, int iParStatus);
-	bool				IsCollectionCompleted(const char* szNZBFilename);
+	bool				IsCollectionCompleted(DownloadQueue* pDownloadQueue, const char* szNZBFilename, bool bIgnoreFirstInParQueue, bool bIgnorePaused);
 
 	Mutex			 	m_mutexParChecker;
 	ParQueue			m_ParQueue;
-	FileList			m_FailedParJobs;
+	ParQueue			m_CompletedParJobs;
 
 #ifndef DISABLE_PARCHECK
-	ParChecker			m_ParChecker;
+	PostParChecker		m_ParChecker;
 	ParCheckerObserver	m_ParCheckerObserver;
 
 	void				ParCheckerUpdate(Subject* Caller, void* Aspect);
@@ -101,7 +121,12 @@ private:
 	bool				FindMainPars(const char* szPath, FileList* pFileList);
 	void				ParCleanupQueue(const char* szNZBFilename);
 	bool				HasFailedParJobs(const char* szNZBFilename);
-	void				ClearFailedParJobs(const char* szNZBFilename);
+	void				ClearCompletedParJobs(const char* szNZBFilename);
+	bool				ParJobExists(ParQueue* pParQueue, const char* szParFilename);
+	bool				ParseParFilename(const char* szParFilename, int* iBaseNameLen, int* iBlocks);
+	bool				RequestMorePars(const char* szNZBFilename, const char* szParFilename, int iBlockNeeded, int* pBlockFound);
+	void				FindPars(DownloadQueue* pDownloadQueue, const char* szNZBFilename, const char* szParFilename, 
+							Blocks* pBlocks, bool bStrictParName, bool bExactParName, int* pBlockFound);
 #endif
 	
 public:

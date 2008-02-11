@@ -1,5 +1,5 @@
 /*
- *  This file if part of nzbget
+ *  This file is part of nzbget
  *
  *  Copyright (C) 2007  Andrei Prygounkov <hugbug@users.sourceforge.net>
  *
@@ -44,14 +44,8 @@ public:
 		psFailed,
 		psFinished
 	};
-	struct BlockInfo
-	{
-		FileInfo*	m_pFileInfo;
-		int		    m_iBlockCount;
-	};
 	
 	typedef std::deque<char*>		QueuedParFiles;
-	typedef std::deque<BlockInfo*> 	Blocks;
 	
 private:
 	char*				m_szInfoName;
@@ -65,11 +59,17 @@ private:
 	Semaphore			m_semNeedMoreFiles;
 	bool				m_bRepairing;
 
-	bool				RequestMorePars(int iBlockNeeded, int* pBlockFound);
-	void				FindPars(DownloadQueue* pDownloadQueue, Blocks* pBlocks, bool bStrictParName, int* pBlockFound);
 	void				LoadMorePars(void* repairer);
 	void				signal_filename(std::string str);
-	
+
+protected:
+	/**
+	* Unpause par2-files
+	* returns true, if the files with required number of blocks were unpaused,
+	* or false if there are no more files in queue for this collection or not enough blocks
+	*/
+	virtual bool		RequestMorePars(int iBlockNeeded, int* pBlockFound) = 0;
+
 public:
 						ParChecker();
 	virtual				~ParChecker();
@@ -86,7 +86,6 @@ public:
 	bool				GetRepairNotNeeded() { return m_bRepairNotNeeded; }
 	void				AddParFile(const char* szParFilename);
 	void				QueueChanged();
-	static bool			ParseParFilename(const char* szParFilename, int* iBaseNameLen, int* iBlocks);
 };
 
 #endif

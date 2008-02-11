@@ -61,6 +61,7 @@ PrePostProcessor::ParJob::ParJob(const char * szNZBFilename, const char * szParF
 	m_szNZBFilename = strdup(szNZBFilename);
 	m_szParFilename = strdup(szParFilename);
 	m_szInfoName = strdup(szInfoName);
+	m_bFailed = false;
 }
 
 PrePostProcessor::ParJob::~ ParJob()
@@ -79,6 +80,11 @@ PrePostProcessor::ParJob::~ ParJob()
 	}
 }
 
+bool PrePostProcessor::PostParChecker::RequestMorePars(int iBlockNeeded, int* pBlockFound)
+{
+	return m_Owner->RequestMorePars(GetNZBFilename(), GetParFilename(), iBlockNeeded, pBlockFound);
+}
+
 PrePostProcessor::PrePostProcessor()
 {
 	debug("Creating PrePostProcessor");
@@ -89,11 +95,12 @@ PrePostProcessor::PrePostProcessor()
 	g_pQueueCoordinator->Attach(&m_QueueCoordinatorObserver);
 
 	m_ParQueue.clear();
-	m_FailedParJobs.clear();
+	m_CompletedParJobs.clear();
 
 #ifndef DISABLE_PARCHECK
 	m_ParCheckerObserver.owner = this;
 	m_ParChecker.Attach(&m_ParCheckerObserver);
+	m_ParChecker.m_Owner = this;
 #endif
 }
 
@@ -106,9 +113,9 @@ PrePostProcessor::~PrePostProcessor()
 		delete *it;
 	}
 
-	for (FileList::iterator it = m_FailedParJobs.begin(); it != m_FailedParJobs.end(); it++)
+	for (ParQueue::iterator it = m_CompletedParJobs.begin(); it != m_CompletedParJobs.end(); it++)
 	{
-		free(*it);
+		delete *it;
 	}
 }
 
@@ -170,73 +177,6 @@ void PrePostProcessor::Stop()
 #endif
 }
 
-void PrePostProcessor::QueueCoordinatorUpdate(Subject * Caller, void * Aspect)
-{
-	if (IsStopped())
-	{
-		return;
-	}
-
-	QueueCoordinator::Aspect* pAspect = (QueueCoordinator::Aspect*)Aspect;
-	if (pAspect->eAction == QueueCoordinator::eaNZBFileAdded &&
-		g_pOptions->GetLoadPars() != Options::plAll)
-	{
-		PausePars(pAspect->pDownloadQueue, pAspect->szNZBFilename);
-	}
-	else if ((pAspect->eAction == QueueCoordinator::eaFileCompleted ||
-		pAspect->eAction == QueueCoordinator::eaFileDeleted))
-	{
-		if (
-#ifndef DISABLE_PARCHECK
-			!AddPar(pAspect->pFileInfo, pAspect->eAction == QueueCoordinator::eaFileDeleted) &&
-#endif
-			WasLastInCollection(pAspect->pDownloadQueue, pAspect->pFileInfo, true))
-		{
-			char szNZBNiceName[1024];
-			pAspect->pFileInfo->GetNZBInfo()->GetNiceNZBName(szNZBNiceName, 1024);
-			if (pAspect->eAction == QueueCoordinator::eaFileCompleted)
-			{
-				info("Collection %s completely downloaded", szNZBNiceName);
-			}
-			else if (WasLastInCollection(pAspect->pDownloadQueue, pAspect->pFileInfo, false))
-			{
-				info("Collection %s deleted from queue", szNZBNiceName);
-			}
-#ifndef DISABLE_PARCHECK
-			if (g_pOptions->GetParCheck() && 
-				g_pOptions->GetDecoder() != Options::dcNone &&
-				pAspect->eAction == QueueCoordinator::eaFileCompleted)
-			{
-				CheckPars(pAspect->pDownloadQueue, pAspect->pFileInfo);
-			}
-			else
-#endif
-			{
-				ExecPostScript(pAspect->pFileInfo->GetNZBInfo()->GetDestDir(), pAspect->pFileInfo->GetNZBInfo()->GetFilename(), "", PARSTATUS_NOT_CHECKED);
-			}
-		}
-	}
-}
-
-void PrePostProcessor::PausePars(DownloadQueue* pDownloadQueue, const char* szNZBFilename)
-{
-	debug("PrePostProcessor: Pausing pars");
-	
-	for (DownloadQueue::iterator it = pDownloadQueue->begin(); it != pDownloadQueue->end(); it++)
-	{
-		FileInfo* pFileInfo = *it;
-		if (!strcmp(pFileInfo->GetNZBInfo()->GetFilename(), szNZBFilename))
-		{
-			g_pQueueCoordinator->GetQueueEditor()->LockedEditEntry(pDownloadQueue, pFileInfo->GetID(), false, 
-				(g_pOptions->GetLoadPars() == Options::plOne ||
-					(g_pOptions->GetLoadPars() == Options::plNone && g_pOptions->GetParCheck()))
-				? QueueEditor::eaGroupPauseExtraPars : QueueEditor::eaGroupPauseAllPars,
-				0);
-			break;
-		}
-	}
-}
-
 /**
 * Check if there are files in directory for incoming nzb-files
 * and add them to download queue
@@ -292,6 +232,145 @@ void PrePostProcessor::CheckIncomingNZBs()
 	}
 }
 
+void PrePostProcessor::ExecPostScript(const char * szPath, const char * szNZBFilename, const char * szParFilename, int iParStatus)
+{
+	const char* szScript = g_pOptions->GetPostProcess();
+	if (!szScript || strlen(szScript) == 0)
+	{
+		return;
+	}
+		
+	info("Executing post-process for %s (%s)", szPath, Util::BaseFileName(szNZBFilename));
+	if (!Util::FileExists(szScript))
+	{
+		error("Could not start post-process: could not find file %s", szScript);
+		return;
+	}
+
+	bool bCollectionCompleted = IsCollectionCompleted(NULL, szNZBFilename, false, true);
+
+	char szParStatus[10];
+	snprintf(szParStatus, 10, "%i", iParStatus);
+	szParStatus[10-1] = '\0';
+
+	char szCollectionCompleted[10];
+	snprintf(szCollectionCompleted, 10, "%i", (int)bCollectionCompleted);
+	szCollectionCompleted[10-1] = '\0';
+
+#ifdef WIN32
+	char szCmdLine[2048];
+	snprintf(szCmdLine, 2048, "%s \"%s\" \"%s\" \"%s\" %s %s", szScript, szPath, szNZBFilename, szParFilename, szParStatus, szCollectionCompleted);
+	szCmdLine[2048-1] = '\0';
+	UINT ErrCode = WinExec(szCmdLine, SW_HIDE);
+	if (ErrCode < 32)
+	{
+		char szErrMsg[255];
+		szErrMsg[255-1] = '\0';
+		FormatMessage(FORMAT_MESSAGE_FROM_SYSTEM || FORMAT_MESSAGE_IGNORE_INSERTS || FORMAT_MESSAGE_ARGUMENT_ARRAY, 
+			NULL, ErrCode, 0, szErrMsg, 255, NULL);
+		error("Could not start post-process: %s", szErrMsg);
+	}
+#else
+	if (fork())
+	{
+		// continue the first instance
+		return;
+	}
+
+	// here goes the second instance
+		
+	int h;
+	for (h = getdtablesize(); h >= 0;--h) close(h); /* close all descriptors */
+	h = open("/dev/null", O_RDWR); dup(h); dup(h); /* handle standart I/O */
+	
+	execlp(szScript, szScript, szPath, szNZBFilename, szParFilename, szParStatus, szCollectionCompleted, NULL);
+	error("Could not start post-process: %s", strerror(errno));
+	exit(-1);
+#endif
+}
+
+
+//*********************************************************************************
+// PAR-HANDLING
+
+
+void PrePostProcessor::QueueCoordinatorUpdate(Subject * Caller, void * Aspect)
+{
+	if (IsStopped())
+	{
+		return;
+	}
+
+	QueueCoordinator::Aspect* pAspect = (QueueCoordinator::Aspect*)Aspect;
+	if (pAspect->eAction == QueueCoordinator::eaNZBFileAdded &&
+		g_pOptions->GetLoadPars() != Options::plAll)
+	{
+		PausePars(pAspect->pDownloadQueue, pAspect->szNZBFilename);
+	}
+	else if ((pAspect->eAction == QueueCoordinator::eaFileCompleted ||
+		pAspect->eAction == QueueCoordinator::eaFileDeleted))
+	{
+		if (
+#ifndef DISABLE_PARCHECK
+			!AddPar(pAspect->pFileInfo, pAspect->eAction == QueueCoordinator::eaFileDeleted) &&
+#endif
+			WasLastInCollection(pAspect->pDownloadQueue, pAspect->pFileInfo, true))
+		{
+			char szNZBNiceName[1024];
+			pAspect->pFileInfo->GetNZBInfo()->GetNiceNZBName(szNZBNiceName, 1024);
+			if (pAspect->eAction == QueueCoordinator::eaFileCompleted)
+			{
+				info("Collection %s completely downloaded", szNZBNiceName);
+			}
+			else if (WasLastInCollection(pAspect->pDownloadQueue, pAspect->pFileInfo, false))
+			{
+				info("Collection %s deleted from queue", szNZBNiceName);
+			}
+
+			if (pAspect->eAction == QueueCoordinator::eaFileCompleted)
+			{
+#ifndef DISABLE_PARCHECK
+				if (g_pOptions->GetParCheck() && 
+					g_pOptions->GetDecoder() != Options::dcNone)
+				{
+					CheckPars(pAspect->pDownloadQueue, pAspect->pFileInfo);
+				}
+				else
+#endif
+				{
+					ExecPostScript(pAspect->pFileInfo->GetNZBInfo()->GetDestDir(), pAspect->pFileInfo->GetNZBInfo()->GetFilename(), "", PARSTATUS_NOT_CHECKED);
+				}
+			}
+		}
+
+		if (IsCollectionCompleted(pAspect->pDownloadQueue, pAspect->pFileInfo->GetNZBInfo()->GetFilename(), false, false))
+		{
+			m_mutexParChecker.Lock();
+			ClearCompletedParJobs(pAspect->pFileInfo->GetNZBInfo()->GetFilename());
+			m_mutexParChecker.Unlock();
+		}
+	}
+}
+
+void PrePostProcessor::PausePars(DownloadQueue* pDownloadQueue, const char* szNZBFilename)
+{
+	debug("PrePostProcessor: Pausing pars");
+	
+	for (DownloadQueue::iterator it = pDownloadQueue->begin(); it != pDownloadQueue->end(); it++)
+	{
+		FileInfo* pFileInfo = *it;
+		if (!strcmp(pFileInfo->GetNZBInfo()->GetFilename(), szNZBFilename))
+		{
+			g_pQueueCoordinator->GetQueueEditor()->LockedEditEntry(pDownloadQueue, pFileInfo->GetID(), false, 
+				(g_pOptions->GetLoadPars() == Options::plOne ||
+					(g_pOptions->GetLoadPars() == Options::plNone && g_pOptions->GetParCheck()))
+				? QueueEditor::eaGroupPauseExtraPars : QueueEditor::eaGroupPauseAllPars,
+				0);
+			break;
+		}
+	}
+}
+
 /**
 * Check if the completed file was last (unpaused, if bIgnorePaused is "true") file in nzb-collection
 */
@@ -310,6 +389,53 @@ bool PrePostProcessor::WasLastInCollection(DownloadQueue* pDownloadQueue, FileIn
 	}
 
 	return true;
+}
+
+bool PrePostProcessor::IsCollectionCompleted(DownloadQueue* pDownloadQueue, const char* szNZBFilename, 
+	bool bIgnoreFirstInParQueue, bool bIgnorePaused)
+{
+	bool bCollectionCompleted = true;
+
+	bool bNeedQueueLock = !pDownloadQueue;
+	if (bNeedQueueLock)
+	{
+		pDownloadQueue = g_pQueueCoordinator->LockQueue();
+	}
+
+	for (DownloadQueue::iterator it = pDownloadQueue->begin(); it != pDownloadQueue->end(); it++)
+	{
+		FileInfo* pFileInfo = *it;
+		if ((!bIgnorePaused || !pFileInfo->GetPaused()) &&
+			!strcmp(pFileInfo->GetNZBInfo()->GetFilename(), szNZBFilename))
+		{
+			bCollectionCompleted = false;
+			break;
+		}
+	}
+
+	if (bNeedQueueLock)
+	{
+		g_pQueueCoordinator->UnlockQueue();
+	}
+		
+#ifndef DISABLE_PARCHECK
+	if (bCollectionCompleted)
+	{
+		m_mutexParChecker.Lock();
+		for (ParQueue::iterator it = m_ParQueue.begin() + (int)bIgnoreFirstInParQueue; it != m_ParQueue.end(); it++)
+		{
+			ParJob* pParJob = *it;
+			if (!strcmp(pParJob->GetNZBFilename(), szNZBFilename))
+			{
+				bCollectionCompleted = false;
+				break;
+			}
+		}
+		m_mutexParChecker.Unlock();
+	}
+#endif
+
+	return bCollectionCompleted;
 }
 
 PrePostProcessor::ParQueue* PrePostProcessor::LockParQueue()
@@ -339,26 +465,30 @@ void PrePostProcessor::CheckPars(DownloadQueue * pDownloadQueue, FileInfo * pFil
 		{
 			char* szParFilename = *it;
 			debug("Found par: %s", szParFilename);
-			
+
 			char szFullFilename[1024];
 			snprintf(szFullFilename, 1024, "%s%c%s", pFileInfo->GetNZBInfo()->GetDestDir(), (int)PATH_SEPARATOR, szParFilename);
 			szFullFilename[1024-1] = '\0';
 
-			char szInfoName[1024];
-			int iBaseLen = 0;
-			ParChecker::ParseParFilename(szParFilename, &iBaseLen, NULL);
-			int maxlen = iBaseLen < 1024 ? iBaseLen : 1024 - 1;
-			strncpy(szInfoName, szParFilename, maxlen);
-			szInfoName[maxlen] = '\0';
-			
-			char szParInfoName[1024];
-			snprintf(szParInfoName, 1024, "%s%c%s", szNZBNiceName, (int)PATH_SEPARATOR, szInfoName);
-			szParInfoName[1024-1] = '\0';
-			
-			info("Queueing %s%c%s for par-check", szNZBNiceName, (int)PATH_SEPARATOR, szInfoName);
-			ParJob* pParJob = new ParJob(pFileInfo->GetNZBInfo()->GetFilename(), szFullFilename, szParInfoName);
-			m_ParQueue.push_back(pParJob);
-			m_bHasMoreJobs = true;
+			if (!ParJobExists(&m_ParQueue, szFullFilename) && 
+				!ParJobExists(&m_CompletedParJobs, szFullFilename))
+			{
+				char szInfoName[1024];
+				int iBaseLen = 0;
+				ParseParFilename(szParFilename, &iBaseLen, NULL);
+				int maxlen = iBaseLen < 1024 ? iBaseLen : 1024 - 1;
+				strncpy(szInfoName, szParFilename, maxlen);
+				szInfoName[maxlen] = '\0';
+				
+				char szParInfoName[1024];
+				snprintf(szParInfoName, 1024, "%s%c%s", szNZBNiceName, (int)PATH_SEPARATOR, szInfoName);
+				szParInfoName[1024-1] = '\0';
+				
+				info("Queueing %s%c%s for par-check", szNZBNiceName, (int)PATH_SEPARATOR, szInfoName);
+				ParJob* pParJob = new ParJob(pFileInfo->GetNZBInfo()->GetFilename(), szFullFilename, szParInfoName);
+				m_ParQueue.push_back(pParJob);
+				m_bHasMoreJobs = true;
+			}
 
 			free(szParFilename);
 		}
@@ -374,7 +504,7 @@ bool PrePostProcessor::FindMainPars(const char * szPath, FileList * pFileList)
 	while (const char* filename = dir.Next())
 	{
 		int iBaseLen = 0;
-		if (ParChecker::ParseParFilename(filename, &iBaseLen, NULL))
+		if (ParseParFilename(filename, &iBaseLen, NULL))
 		{
 			// check if the base file already added to list
 			bool exists = false;
@@ -402,19 +532,16 @@ bool PrePostProcessor::AddPar(FileInfo * pFileInfo, bool bDeleted)
 	bool bSameCollection = m_ParChecker.IsRunning() &&
 		!strcmp(pFileInfo->GetNZBInfo()->GetFilename(), m_ParChecker.GetNZBFilename()) &&
 		SameParCollection(pFileInfo->GetFilename(), Util::BaseFileName(m_ParChecker.GetParFilename()));
-	if (bSameCollection)
+	if (bSameCollection && !bDeleted)
 	{
-		if (!bDeleted)
-		{
-			char szFullFilename[1024];
-			snprintf(szFullFilename, 1024, "%s%c%s", pFileInfo->GetNZBInfo()->GetDestDir(), (int)PATH_SEPARATOR, pFileInfo->GetFilename());
-			szFullFilename[1024-1] = '\0';
-			m_ParChecker.AddParFile(szFullFilename);
-		}
-		else
-		{
-			m_ParChecker.QueueChanged();
-		}
+		char szFullFilename[1024];
+		snprintf(szFullFilename, 1024, "%s%c%s", pFileInfo->GetNZBInfo()->GetDestDir(), (int)PATH_SEPARATOR, pFileInfo->GetFilename());
+		szFullFilename[1024-1] = '\0';
+		m_ParChecker.AddParFile(szFullFilename);
+	}
+	else
+	{
+		m_ParChecker.QueueChanged();
 	}
 	m_mutexParChecker.Unlock();
 	return bSameCollection;
@@ -423,8 +550,8 @@ bool PrePostProcessor::AddPar(FileInfo * pFileInfo, bool bDeleted)
 bool PrePostProcessor::SameParCollection(const char* szFilename1, const char* szFilename2)
 {
 	int iBaseLen1 = 0, iBaseLen2 = 0;
-	return ParChecker::ParseParFilename(szFilename1, &iBaseLen1, NULL) &&
-		ParChecker::ParseParFilename(szFilename2, &iBaseLen2, NULL) &&
+	return ParseParFilename(szFilename1, &iBaseLen1, NULL) &&
+		ParseParFilename(szFilename2, &iBaseLen2, NULL) &&
 		iBaseLen1 == iBaseLen2 &&
 		!strncasecmp(szFilename1, szFilename2, iBaseLen1);
 }
@@ -489,7 +616,7 @@ void PrePostProcessor::ParCheckerUpdate(Subject * Caller, void * Aspect)
 			}
 		}
 
-		bool bCollectionCompleted = IsCollectionCompleted(m_ParChecker.GetNZBFilename());
+		bool bCollectionCompleted = IsCollectionCompleted(NULL, m_ParChecker.GetNZBFilename(), true, true);
 		bool bHasFailedParJobs = HasFailedParJobs(m_ParChecker.GetNZBFilename());
 
 		if (g_pOptions->GetParCleanupQueue() && m_ParChecker.GetStatus() == ParChecker::psFinished && 
@@ -512,25 +639,23 @@ void PrePostProcessor::ParCheckerUpdate(Subject * Caller, void * Aspect)
 			iParStatus = PARSTATUS_REPAIR_POSSIBLE;
 		}
 		
-		ExecPostScript(szPath, m_ParChecker.GetNZBFilename(), m_ParChecker.GetParFilename(), iParStatus);
-
 		m_mutexParChecker.Lock();
 
 		ParJob* pParJob = m_ParQueue.front();
 		m_ParQueue.pop_front();
-		delete pParJob;
 		m_bHasMoreJobs = !m_ParQueue.empty();
 
-		if (m_ParChecker.GetStatus() == ParChecker::psFailed && !bCollectionCompleted)
-		{
-			m_FailedParJobs.push_back(strdup(m_ParChecker.GetNZBFilename()));
-		}
-		if (bCollectionCompleted)
-		{
-			ClearFailedParJobs(m_ParChecker.GetNZBFilename());
-		}
+		pParJob->SetFailed(m_ParChecker.GetStatus() == ParChecker::psFailed);
+		m_CompletedParJobs.push_back(pParJob);
 
 		m_mutexParChecker.Unlock();
+
+		if (IsCollectionCompleted(NULL, m_ParChecker.GetNZBFilename(), false, false))
+		{
+			ClearCompletedParJobs(m_ParChecker.GetNZBFilename());
+		}
+
+		ExecPostScript(szPath, m_ParChecker.GetNZBFilename(), m_ParChecker.GetParFilename(), iParStatus);
 	}
 }
 
@@ -551,7 +676,7 @@ void PrePostProcessor::ParCleanupQueue(const char* szNZBFilename)
 		{
 			ID = pFileInfo->GetID();
 			if (!pFileInfo->GetPaused() && !pFileInfo->GetDeleted() &&
-				!ParChecker::ParseParFilename(pFileInfo->GetFilename(), NULL, NULL))
+				!ParseParFilename(pFileInfo->GetFilename(), NULL, NULL))
 			{
 				bOnlyPars = false;
 				break;
@@ -578,10 +703,10 @@ bool PrePostProcessor::HasFailedParJobs(const char* szNZBFilename)
 	bool bHasFailedJobs = false;
 
 	m_mutexParChecker.Lock();
-	for (FileList::iterator it = m_FailedParJobs.begin(); it != m_FailedParJobs.end(); it++)
+	for (ParQueue::iterator it = m_CompletedParJobs.begin(); it != m_CompletedParJobs.end(); it++)
 	{
-		char* szNZBFilename = *it;
-		if (!strcmp(szNZBFilename, m_ParChecker.GetNZBFilename()))
+		ParJob* pParJob = *it;
+		if (!strcmp(pParJob->GetNZBFilename(), m_ParChecker.GetNZBFilename()) && pParJob->GetFailed())
 		{
 			bHasFailedJobs = true;
 			break;
@@ -593,117 +718,254 @@ bool PrePostProcessor::HasFailedParJobs(const char* szNZBFilename)
 }
 
 /**
- * Delete info about failed par-jobs for nzb-collection after the collection is completely downloaded.
+ * Delete info about completed par-jobs for nzb-collection after the collection is completely downloaded.
  * Mutex "m_mutexParChecker" must be locked prior to call of this funtion.
  */
-void PrePostProcessor::ClearFailedParJobs(const char* szNZBFilename)
+void PrePostProcessor::ClearCompletedParJobs(const char* szNZBFilename)
 {
-	for (FileList::iterator it = m_FailedParJobs.begin(); it != m_FailedParJobs.end();)
+	for (ParQueue::iterator it = m_CompletedParJobs.begin(); it != m_CompletedParJobs.end();)
 	{
-		char* szFailedNZBFilename = *it;
-		if (!strcmp(szNZBFilename, szFailedNZBFilename))
+		ParJob* pParJob = *it;
+		if (!strcmp(szNZBFilename, pParJob->GetNZBFilename()))
 		{
-			m_FailedParJobs.erase(it);
-			free(szFailedNZBFilename);
-			it = m_FailedParJobs.begin();
+			m_CompletedParJobs.erase(it);
+			delete pParJob;
+			it = m_CompletedParJobs.begin();
 			continue;
 		}
 		it++;
 	}
 }
 
-#endif
-
-bool PrePostProcessor::IsCollectionCompleted(const char* szNZBFilename)
+/**
+ * Mutex "m_mutexParChecker" must be locked prior to call of this funtion.
+ */
+bool PrePostProcessor::ParJobExists(ParQueue* pParQueue, const char* szParFilename)
 {
-	bool bCollectionCompleted = true;
-
-	DownloadQueue* pDownloadQueue = g_pQueueCoordinator->LockQueue();
-	for (DownloadQueue::iterator it = pDownloadQueue->begin(); it != pDownloadQueue->end(); it++)
+	for (ParQueue::iterator it = pParQueue->begin(); it != pParQueue->end(); it++)
 	{
-		FileInfo* pFileInfo = *it;
-		if (!pFileInfo->GetPaused() &&
-			!strcmp(pFileInfo->GetNZBInfo()->GetFilename(), szNZBFilename))
+		ParJob* pParJob = *it;
+		if (!strcmp(pParJob->GetParFilename(), szParFilename))
 		{
-			bCollectionCompleted = false;
-			break;
+			return true;
 		}
 	}
-	g_pQueueCoordinator->UnlockQueue();
-		
-#ifndef DISABLE_PARCHECK
-	if (bCollectionCompleted)
+	return false;
+}
+
+/**
+* Unpause par2-files
+* returns true, if the files with required number of blocks were unpaused,
+* or false if there are no more files in queue for this collection or not enough blocks
+*/
+bool PrePostProcessor::RequestMorePars(const char* szNZBFilename, const char* szParFilename, int iBlockNeeded, int* pBlockFound)
+{
+	DownloadQueue* pDownloadQueue = g_pQueueCoordinator->LockQueue();
+	
+	Blocks blocks;
+	blocks.clear();
+	int iBlockFound = 0;
+
+	FindPars(pDownloadQueue, szNZBFilename, szParFilename, &blocks, true, true, &iBlockFound);
+	if (iBlockFound == 0)
 	{
-		m_mutexParChecker.Lock();
-		for (ParQueue::iterator it = m_ParQueue.begin() + 1; it != m_ParQueue.end(); it++)
-		{
-			ParJob* pParJob = *it;
-			if (!strcmp(pParJob->GetNZBFilename(), szNZBFilename))
+		FindPars(pDownloadQueue, szNZBFilename, szParFilename, &blocks, true, false, &iBlockFound);
+	}
+	if (iBlockFound == 0 && !g_pOptions->GetStrictParName())
+	{
+		FindPars(pDownloadQueue, szNZBFilename, szParFilename, &blocks, false, false, &iBlockFound);
+	}
+
+	if (iBlockFound >= iBlockNeeded)
+	{
+		char szNZBNiceName[1024];
+		NZBInfo::MakeNiceNZBName(szNZBFilename, szNZBNiceName, 1024);
+
+		// 1. first unpause all files with par-blocks less or equal iBlockNeeded
+		// starting from the file with max block count.
+		// if par-collection was built exponentially and all par-files present,
+		// this step selects par-files with exact number of blocks we need.
+		while (iBlockNeeded > 0)
+		{               
+			BlockInfo* pBestBlockInfo = NULL;
+			for (Blocks::iterator it = blocks.begin(); it != blocks.end(); it++)
 			{
-				bCollectionCompleted = false;
+				BlockInfo* pBlockInfo = *it;
+				if (pBlockInfo->m_iBlockCount <= iBlockNeeded &&
+				   (!pBestBlockInfo || pBestBlockInfo->m_iBlockCount < pBlockInfo->m_iBlockCount))
+				{
+					pBestBlockInfo = pBlockInfo;
+				}
+			}
+			if (pBestBlockInfo)
+			{
+				if (pBestBlockInfo->m_pFileInfo->GetPaused())
+				{
+					info("Unpausing %s%c%s for par-recovery", szNZBNiceName, (int)PATH_SEPARATOR, pBestBlockInfo->m_pFileInfo->GetFilename());
+					pBestBlockInfo->m_pFileInfo->SetPaused(false);
+				}
+				iBlockNeeded -= pBestBlockInfo->m_iBlockCount;
+			}
+			else
+			{
 				break;
 			}
 		}
-		m_mutexParChecker.Unlock();
+			
+		// 2. then unpause other files
+		// this step only needed if the par-collection was built not exponentially 
+		// or not all par-files present (or some of them were corrupted)
+		// this step is not optimal, but we hope, that the first step will work good 
+		// in most cases and we will not need the second step often
+		while (iBlockNeeded > 0)
+		{
+			BlockInfo* pBlockInfo = blocks.front();
+			if (pBlockInfo->m_pFileInfo->GetPaused())
+			{
+				info("Unpausing %s%c%s for par-recovery", szNZBNiceName, (int)PATH_SEPARATOR, pBlockInfo->m_pFileInfo->GetFilename());
+				pBlockInfo->m_pFileInfo->SetPaused(false);
+			}
+			iBlockNeeded -= pBlockInfo->m_iBlockCount;
+		}
 	}
-#endif
 
-	return bCollectionCompleted;
-}
+	g_pQueueCoordinator->UnlockQueue();
 
-void PrePostProcessor::ExecPostScript(const char * szPath, const char * szNZBFilename, const char * szParFilename, int iParStatus)
-{
-	const char* szScript = g_pOptions->GetPostProcess();
-	if (!szScript || strlen(szScript) == 0)
+	if (pBlockFound)
 	{
-		return;
+		*pBlockFound = iBlockFound;
 	}
-		
-	info("Executing post-process for %s (%s)", szPath, Util::BaseFileName(szNZBFilename));
-	if (!Util::FileExists(szScript))
+
+	for (Blocks::iterator it = blocks.begin(); it != blocks.end(); it++)
 	{
-		error("Could not start post-process: could not find file %s", szScript);
-		return;
+		delete *it;
 	}
-
-	bool bCollectionCompleted = IsCollectionCompleted(szNZBFilename);
-
-	char szParStatus[10];
-	snprintf(szParStatus, 10, "%i", iParStatus);
-	szParStatus[10-1] = '\0';
-
-	char szCollectionCompleted[10];
-	snprintf(szCollectionCompleted, 10, "%i", (int)bCollectionCompleted);
-	szCollectionCompleted[10-1] = '\0';
-
-#ifdef WIN32
-	char szCmdLine[2048];
-	snprintf(szCmdLine, 2048, "%s \"%s\" \"%s\" \"%s\" %s %s", szScript, szPath, szNZBFilename, szParFilename, szParStatus, szCollectionCompleted);
-	szCmdLine[2048-1] = '\0';
-	UINT ErrCode = WinExec(szCmdLine, SW_HIDE);
-	if (ErrCode < 32)
-	{
-		char szErrMsg[255];
-		szErrMsg[255-1] = '\0';
-		FormatMessage(FORMAT_MESSAGE_FROM_SYSTEM || FORMAT_MESSAGE_IGNORE_INSERTS || FORMAT_MESSAGE_ARGUMENT_ARRAY, 
-			NULL, ErrCode, 0, szErrMsg, 255, NULL);
-		error("Could not start post-process: %s", szErrMsg);
-	}
-#else
-	if (fork())
-	{
-		// continue the first instance
-		return;
-	}
-
-	// here goes the second instance
-		
-	int h;
-	for (h = getdtablesize(); h >= 0;--h) close(h); /* close all descriptors */
-	h = open("/dev/null", O_RDWR); dup(h); dup(h); /* handle standart I/O */
+	blocks.clear();
 	
-	execlp(szScript, szScript, szPath, szNZBFilename, szParFilename, szParStatus, szCollectionCompleted, NULL);
-	error("Could not start post-process: %s", strerror(errno));
-	exit(-1);
-#endif
+	return iBlockNeeded <= 0;
 }
+
+void PrePostProcessor::FindPars(DownloadQueue * pDownloadQueue, const char* szNZBFilename, const char* szParFilename,
+	Blocks * pBlocks, bool bStrictParName, bool bExactParName, int* pBlockFound)
+{
+    *pBlockFound = 0;
+	
+	// extract base name from m_szParFilename (trim .par2-extension and possible .vol-part)
+	char* szBaseParFilename = Util::BaseFileName(szParFilename);
+	char szMainBaseFilename[1024];
+	int iMainBaseLen = 0;
+	if (!ParseParFilename(szBaseParFilename, &iMainBaseLen, NULL))
+	{
+		// should not happen
+        error("Internal error: could not parse filename %s", szBaseParFilename);
+		return;
+	}
+	int maxlen = iMainBaseLen < 1024 ? iMainBaseLen : 1024 - 1;
+	strncpy(szMainBaseFilename, szBaseParFilename, maxlen);
+	szMainBaseFilename[maxlen] = '\0';
+	for (char* p = szMainBaseFilename; *p; p++) *p = tolower(*p); // convert string to lowercase
+
+	for (DownloadQueue::iterator it = pDownloadQueue->begin(); it != pDownloadQueue->end(); it++)
+	{
+		FileInfo* pFileInfo = *it;
+		int iBlocks = 0;
+		if (!strcmp(pFileInfo->GetNZBInfo()->GetFilename(), szNZBFilename) &&
+			ParseParFilename(pFileInfo->GetFilename(), NULL, &iBlocks) &&
+			iBlocks > 0)
+		{
+			bool bUseFile = true;
+
+			if (bExactParName)
+			{
+				bUseFile = SameParCollection(pFileInfo->GetFilename(), Util::BaseFileName(szParFilename));
+			}
+			else if (bStrictParName)
+			{
+				// the pFileInfo->GetFilename() may be not confirmed and may contain
+				// additional texts if Subject could not be parsed correctly
+
+				char szLoFileName[1024];
+				strncpy(szLoFileName, pFileInfo->GetFilename(), 1024);
+				szLoFileName[1024-1] = '\0';
+				for (char* p = szLoFileName; *p; p++) *p = tolower(*p); // convert string to lowercase
+				
+				char szCandidateFileName[1024];
+				snprintf(szCandidateFileName, 1024, "%s.par2", szMainBaseFilename);
+				szCandidateFileName[1024-1] = '\0';
+				if (!strstr(szLoFileName, szCandidateFileName))
+				{
+					snprintf(szCandidateFileName, 1024, "%s.vol", szMainBaseFilename);
+					szCandidateFileName[1024-1] = '\0';
+					bUseFile = strstr(szLoFileName, szCandidateFileName);
+				}
+			}
+
+			// if it is a par2-file with blocks and it was from the same NZB-request
+			// and it belongs to the same file collection (same base name),
+			// then OK, we can use it
+			if (bUseFile)
+			{
+				BlockInfo* pBlockInfo = new BlockInfo();
+				pBlockInfo->m_pFileInfo = pFileInfo;
+				pBlockInfo->m_iBlockCount = iBlocks;
+				pBlocks->push_back(pBlockInfo);
+				*pBlockFound += iBlocks;
+			}
+		}
+	}
+}
+
+bool PrePostProcessor::ParseParFilename(const char * szParFilename, int* iBaseNameLen, int* iBlocks)
+{
+	char szFilename[1024];
+	strncpy(szFilename, szParFilename, 1024);
+	szFilename[1024-1] = '\0';
+	for (char* p = szFilename; *p; p++) *p = tolower(*p); // convert string to lowercase
+
+	int iLen = strlen(szFilename);
+	if (iLen < 6)
+	{
+		return false;
+	}
+
+	// find last occurence of ".par2" and trim filename after it
+	char* szEnd = szFilename;
+	while (char* p = strstr(szEnd, ".par2")) szEnd = p + 5;
+	*szEnd = '\0';
+	iLen = strlen(szFilename);
+	
+	if (strcasecmp(szFilename + iLen - 5, ".par2"))
+	{
+		return false;
+	}
+	*(szFilename + iLen - 5) = '\0';
+
+	int blockcnt = 0;
+	char* p = strrchr(szFilename, '.');
+	if (p && !strncasecmp(p, ".vol", 4))
+	{
+		char* b = strchr(p, '+');
+		if (!b)
+		{
+			b = strchr(p, '-');
+		}
+		if (b)
+		{
+			blockcnt = atoi(b+1);
+			*p = '\0';
+		}
+	}
+
+	if (iBaseNameLen)
+	{
+		*iBaseNameLen = strlen(szFilename);
+	}
+	if (iBlocks)
+	{
+		*iBlocks = blockcnt;
+	}
+	
+	return true;
+}
+
+#endif
