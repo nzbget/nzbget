@@ -299,4 +299,3 @@ int Thread::GetThreadCount()
 	m_mutexThread.Unlock();
 	return iThreadCount;
 }
-
