@@ -62,6 +62,12 @@ PrePostProcessor::ParJob::ParJob(const char * szNZBFilename, const char * szParF
 	m_szParFilename = strdup(szParFilename);
 	m_szInfoName = strdup(szInfoName);
 	m_bFailed = false;
+	m_szProgressLabel = NULL;
+	m_iFileProgress = 0;
+	m_iStageProgress = 0;
+	m_tStartTime = 0;
+	m_tStageTime = 0;
+	m_eStage = PrePostProcessor::ptQueued;
 }
 
 PrePostProcessor::ParJob::~ ParJob()
@@ -78,12 +84,32 @@ PrePostProcessor::ParJob::~ ParJob()
 	{
 		free(m_szInfoName);
 	}
+	if (m_szProgressLabel)
+	{
+		free(m_szProgressLabel);
+	}
 }
 
+void PrePostProcessor::ParJob::SetProgressLabel(const char* szProgressLabel)
+{
+	if (m_szProgressLabel)
+	{
+		free(m_szProgressLabel);
+	}
+	m_szProgressLabel = strdup(szProgressLabel);
+}
+
+#ifndef DISABLE_PARCHECK
 bool PrePostProcessor::PostParChecker::RequestMorePars(int iBlockNeeded, int* pBlockFound)
 {
 	return m_Owner->RequestMorePars(GetNZBFilename(), GetParFilename(), iBlockNeeded, pBlockFound);
 }
+
+void PrePostProcessor::PostParChecker::UpdateProgress()
+{
+	m_Owner->UpdateParProgress();
+}
+#endif
 
 PrePostProcessor::PrePostProcessor()
 {
@@ -95,12 +121,12 @@ PrePostProcessor::PrePostProcessor()
 	g_pQueueCoordinator->Attach(&m_QueueCoordinatorObserver);
 
 	m_ParQueue.clear();
-	m_CompletedParJobs.clear();
 
 #ifndef DISABLE_PARCHECK
 	m_ParCheckerObserver.owner = this;
 	m_ParChecker.Attach(&m_ParCheckerObserver);
 	m_ParChecker.m_Owner = this;
+	m_CompletedParJobs.clear();
 #endif
 }
 
@@ -113,10 +139,12 @@ PrePostProcessor::~PrePostProcessor()
 		delete *it;
 	}
 
+#ifndef DISABLE_PARCHECK
 	for (ParQueue::iterator it = m_CompletedParJobs.begin(); it != m_CompletedParJobs.end(); it++)
 	{
 		delete *it;
 	}
+#endif
 }
 
 void PrePostProcessor::Run()
@@ -343,12 +371,14 @@ void PrePostProcessor::QueueCoordinatorUpdate(Subject * Caller, void * Aspect)
 			}
 		}
 
+#ifndef DISABLE_PARCHECK
 		if (IsCollectionCompleted(pAspect->pDownloadQueue, pAspect->pFileInfo->GetNZBInfo()->GetFilename(), false, false))
 		{
 			m_mutexParChecker.Lock();
 			ClearCompletedParJobs(pAspect->pFileInfo->GetNZBInfo()->GetFilename());
 			m_mutexParChecker.Unlock();
 		}
+#endif
 	}
 }
 
@@ -645,7 +675,7 @@ void PrePostProcessor::ParCheckerUpdate(Subject * Caller, void * Aspect)
 		m_ParQueue.pop_front();
 		m_bHasMoreJobs = !m_ParQueue.empty();
 
-		pParJob->SetFailed(m_ParChecker.GetStatus() == ParChecker::psFailed);
+		pParJob->m_bFailed = m_ParChecker.GetStatus() == ParChecker::psFailed;
 		m_CompletedParJobs.push_back(pParJob);
 
 		m_mutexParChecker.Unlock();
@@ -966,6 +996,34 @@ bool PrePostProcessor::ParseParFilename(const char * szParFilename, int* iBaseNa
 	}
 	
 	return true;
+}
+
+void PrePostProcessor::UpdateParProgress()
+{
+	m_mutexParChecker.Lock();
+
+	ParJob* pParJob = m_ParQueue.front();
+	if (m_ParChecker.GetFileProgress() == 0)
+	{
+		pParJob->SetProgressLabel(m_ParChecker.GetProgressLabel());
+	}
+	pParJob->m_iFileProgress = m_ParChecker.GetFileProgress();
+	pParJob->m_iStageProgress = m_ParChecker.GetStageProgress();
+    EParJobStage StageKind[] = { ptPreparing, ptVerifying, ptCalculating, ptRepairing };
+	EParJobStage eStage = StageKind[m_ParChecker.GetStage()];
+
+	if (!pParJob->m_tStartTime)
+	{
+		pParJob->m_tStartTime = time(NULL);
+	}
+
+	if (pParJob->m_eStage != eStage)
+	{
+		pParJob->m_eStage = eStage;
+		pParJob->m_tStageTime = time(NULL);
+	}
+
+	m_mutexParChecker.Unlock();
 }
 
 #endif

@@ -44,7 +44,15 @@ public:
 		psFailed,
 		psFinished
 	};
-	
+
+	enum EStage
+	{
+		ptPreparing,
+		ptVerifying,
+		ptCalculating,
+		ptRepairing,
+	};
+
 	typedef std::deque<char*>		QueuedParFiles;
 	
 private:
@@ -52,15 +60,23 @@ private:
 	char*				m_szNZBFilename;
 	char*				m_szParFilename;
 	EStatus				m_eStatus;
+	EStage				m_eStage;
+	void*				m_pRepairer;	// declared as void* to prevent the including of libpar2-headers into this header-file
 	char*				m_szErrMsg;
 	bool				m_bRepairNotNeeded;
 	QueuedParFiles		m_QueuedParFiles;
 	Mutex			 	m_mutexQueuedParFiles;
 	Semaphore			m_semNeedMoreFiles;
-	bool				m_bRepairing;
+	int					m_iProcessedFiles;
+	int					m_iFilesToRepair;
+	char*				m_szProgressLabel;
+	int					m_iFileProgress;
+	int					m_iStageProgress;
 
-	void				LoadMorePars(void* repairer);
+	void				LoadMorePars();
 	void				signal_filename(std::string str);
+	void				signal_progress(double progress);
+	void				signal_done(std::string str, int available, int total);
 
 protected:
 	/**
@@ -69,6 +85,11 @@ protected:
 	* or false if there are no more files in queue for this collection or not enough blocks
 	*/
 	virtual bool		RequestMorePars(int iBlockNeeded, int* pBlockFound) = 0;
+	virtual void		UpdateProgress() {}
+	EStage				GetStage() { return m_eStage; }
+	const char*			GetProgressLabel() { return m_szProgressLabel; }
+	int					GetFileProgress() { return m_iFileProgress; }
+	int					GetStageProgress() { return m_iStageProgress; }
 
 public:
 						ParChecker();

@@ -62,10 +62,12 @@ const char* Par2CmdLineErrStr[] = { "OK",
 	"internal error occurred",
 	"out of memory" };
 
+
 class Repairer : public Par2Repairer
 {
 	friend class ParChecker;
 };
+
 
 ParChecker::ParChecker()
 {
@@ -76,6 +78,10 @@ ParChecker::ParChecker()
 	m_szNZBFilename = NULL;
 	m_szInfoName = NULL;
 	m_szErrMsg = NULL;
+	m_szProgressLabel = (char*)malloc(1024);
+	m_iFileProgress = 0;
+	m_iStageProgress = 0;
+	m_eStage = ptPreparing;
 	m_QueuedParFiles.clear();
 }
 
@@ -99,6 +105,7 @@ ParChecker::~ParChecker()
 	{
 		free(m_szErrMsg);
 	}
+	free(m_szProgressLabel);
 
 	for (QueuedParFiles::iterator it = m_QueuedParFiles.begin(); it != m_QueuedParFiles.end() ;it++)
 	{
@@ -142,12 +149,22 @@ void ParChecker::SetStatus(EStatus eStatus)
 
 void ParChecker::Run()
 {
-    info("Verifying %s", m_szInfoName);
+	m_bRepairNotNeeded = false;
+	m_eStage = ptPreparing;
+	m_iProcessedFiles = 0;
+
+	info("Verifying %s", m_szInfoName);
 	SetStatus(psWorking);
-	
+
+	snprintf(m_szProgressLabel, 1024, "Verifying %s", m_szInfoName);
+	m_szProgressLabel[1024-1] = '\0';
+	m_iFileProgress = 0;
+	m_iStageProgress = 0;
+	UpdateProgress();
+
     debug("par: %s", m_szParFilename);
     CommandLine commandLine;
-    const char* argv[] = { "par2", "r", "-q", "-q", m_szParFilename };
+    const char* argv[] = { "par2", "r", "-v", "-v", m_szParFilename };
     if (!commandLine.Parse(5, (char**)argv))
     {
         error("Could not start par-check for %s. Par-file: %s", m_szInfoName, m_szParFilename);
@@ -156,17 +173,22 @@ void ParChecker::Run()
     }
 
     Result res;
-    Repairer* repairer = new Repairer();
-	repairer->sig_filename.connect(sigc::mem_fun(*this, &ParChecker::signal_filename));
+
+	Repairer* pRepairer = new Repairer();
+	m_pRepairer = pRepairer;
+
+	pRepairer->sig_filename.connect(sigc::mem_fun(*this, &ParChecker::signal_filename));
+	pRepairer->sig_progress.connect(sigc::mem_fun(*this, &ParChecker::signal_progress));
+	pRepairer->sig_done.connect(sigc::mem_fun(*this, &ParChecker::signal_done));
 	
-    res = repairer->PreProcess(commandLine);
+    res = pRepairer->PreProcess(commandLine);
     debug("ParChecker: PreProcess-result=%i", res);
 
 	if (res != eSuccess || IsStopped())
 	{
-       	error("Could not verify %s: ", m_szInfoName, IsStopped() ? "due stopping" : "par2-file could not be processed");
+       	error("Could not verify %s: %s", m_szInfoName, IsStopped() ? "due stopping" : "par2-file could not be processed");
 		SetStatus(psFailed);
-		delete repairer;
+		delete pRepairer;
 		return;
 	}
 
@@ -178,14 +200,13 @@ void ParChecker::Run()
 	}
 	m_szErrMsg = NULL;
 	
-	m_bRepairNotNeeded = false;
-	m_bRepairing = false;
-    res = repairer->Process(commandLine, false);
+	m_eStage = ptVerifying;
+    res = pRepairer->Process(commandLine, false);
     debug("ParChecker: Process-result=%i", res);
 	
 	while (!IsStopped() && res == eRepairNotPossible)
 	{
-		int missingblockcount = repairer->missingblockcount - repairer->recoverypacketmap.size();
+		int missingblockcount = pRepairer->missingblockcount - pRepairer->recoverypacketmap.size();
 		info("Need more %i par-block(s) for %s", missingblockcount, m_szInfoName);
 		
 		m_mutexQueuedParFiles.Lock();
@@ -220,18 +241,17 @@ void ParChecker::Run()
 			break;
 		}
 
-		LoadMorePars(repairer);
-		repairer->UpdateVerificationResults();
+		LoadMorePars();
+		pRepairer->UpdateVerificationResults();
 				
-		m_bRepairing = false;
-		res = repairer->Process(commandLine, false);
+		res = pRepairer->Process(commandLine, false);
 		debug("ParChecker: Process-result=%i", res);
 	}
 
 	if (IsStopped())
 	{
 		SetStatus(psFailed);
-		delete repairer;
+		delete pRepairer;
 		return;
 	}
 	
@@ -245,8 +265,17 @@ void ParChecker::Run()
 		if (g_pOptions->GetParRepair())
 		{
     		info("Repairing %s", m_szInfoName);
-			m_bRepairing = true;
-    		res = repairer->Process(commandLine, true);
+
+			snprintf(m_szProgressLabel, 1024, "Repairing %s", m_szInfoName);
+			m_szProgressLabel[1024-1] = '\0';
+			m_iFileProgress = 0;
+			m_iStageProgress = 0;
+			m_iProcessedFiles = 0;
+			m_eStage = ptCalculating;
+			m_iFilesToRepair = pRepairer->damagedfilecount + pRepairer->missingfilecount;
+			UpdateProgress();
+
+			res = pRepairer->Process(commandLine, true);
     		debug("ParChecker: Process-result=%i", res);
 			if (res == eSuccess)
 			{
@@ -274,10 +303,10 @@ void ParChecker::Run()
 		SetStatus(psFailed);
 	}
 	
-	delete repairer;
+	delete pRepairer;
 }
 
-void ParChecker::LoadMorePars(void* repairer)
+void ParChecker::LoadMorePars()
 {
 	m_mutexQueuedParFiles.Lock();
 	QueuedParFiles moreFiles;
@@ -288,7 +317,7 @@ void ParChecker::LoadMorePars(void* repairer)
 	for (QueuedParFiles::iterator it = moreFiles.begin(); it != moreFiles.end() ;it++)
 	{
 		char* szParFilename = *it;
-		bool loadedOK = ((Repairer*)repairer)->LoadPacketsFromFile(szParFilename);
+		bool loadedOK = ((Repairer*)m_pRepairer)->LoadPacketsFromFile(szParFilename);
 		if (loadedOK)
 		{
 			info("File %s successfully loaded for par-check", Util::BaseFileName(szParFilename), m_szInfoName);
@@ -318,7 +347,76 @@ void ParChecker::QueueChanged()
 
 void ParChecker::signal_filename(std::string str)
 {
-	info("%s file %s", m_bRepairing ? "Repairing" : "Verifying", str.c_str());
+	info("%s file %s", m_eStage == ptCalculating || m_eStage == ptRepairing ? "Repairing" : "Verifying", str.c_str());
+
+	snprintf(m_szProgressLabel, 1024, "%s file %s", m_eStage == ptCalculating || m_eStage == ptRepairing ? "Repairing" : "Verifying", str.c_str());
+	m_szProgressLabel[1024-1] = '\0';
+	m_iFileProgress = 0;
+	if (m_eStage == ptCalculating)
+	{
+		m_eStage = ptRepairing;
+	}
+	UpdateProgress();
+}
+
+void ParChecker::signal_progress(double progress)
+{
+	m_iFileProgress = (int)progress;
+
+	if (m_eStage == ptCalculating)
+	{
+		// calculating repair-data for all files
+		m_iStageProgress = m_iFileProgress;
+	}
+	else
+	{
+		// processing individual files
+
+		int iTotalFiles = 0;
+		if (m_eStage == ptRepairing)
+		{
+			// repairing individual files
+			iTotalFiles = m_iFilesToRepair;
+		}
+		else
+		{
+			// verifying individual files
+			iTotalFiles = ((Repairer*)m_pRepairer)->sourcefiles.size();
+		}
+
+		if (iTotalFiles > 0)
+		{
+			if (m_iFileProgress < 1000)
+			{
+				m_iStageProgress = (m_iProcessedFiles * 1000 + m_iFileProgress) / iTotalFiles;
+			}
+			else
+			{
+				m_iStageProgress = m_iProcessedFiles * 1000 / iTotalFiles;
+			}
+		}
+		else
+		{
+			m_iStageProgress = 0;
+		}
+	}
+
+	debug("Current-progres: %i, Total-progress: %i", m_iFileProgress, m_iStageProgress);
+
+	UpdateProgress();
+}
+
+void ParChecker::signal_done(std::string str, int available, int total)
+{
+	m_iProcessedFiles++;
+
+	if (m_eStage == ptVerifying)
+	{
+		if (available < total)
+		{
+			warn("File %s has %i bad block(s) of total %i block(s)", str.c_str(), total - available, total);
+		}
+	}
 }
 
 #endif
