@@ -46,6 +46,9 @@
 #include <signal.h>
 #include <stdio.h>
 #include <fcntl.h>
+#ifndef DISABLE_PARCHECK
+#include <iostream>
+#endif
 
 #include "nzbget.h"
 #include "ServerPool.h"
@@ -73,6 +76,9 @@ void ProcessClientRequest();
 #ifndef WIN32
 void InstallSignalHandlers();
 void Daemonize();
+#endif
+#ifndef DISABLE_PARCHECK
+void DisableCout();
 #endif
 
 Thread* g_pFrontend = NULL;
@@ -106,6 +112,10 @@ int main(int argc, char *argv[])
 #ifdef WIN32
 	_set_fmode(_O_BINARY);
 	InstallUninstallServiceCheck(argc, argv);
+#endif
+
+#ifndef DISABLE_PARCHECK
+	DisableCout();
 #endif
 
 	// Init options & get the name of the .nzb file
@@ -548,5 +558,21 @@ void Daemonize()
 	signal(SIGTSTP, SIG_IGN); /* ignore tty signals */
 	signal(SIGTTOU, SIG_IGN);
 	signal(SIGTTIN, SIG_IGN);
+}
+#endif
+
+#ifndef DISABLE_PARCHECK
+class NullStreamBuf : public std::streambuf
+{
+public:
+	int sputc ( char c ) { return (int) c; }
+} NullStreamBufInstance;
+
+void DisableCout()
+{
+	// libpar2 prints messages to c++ standard output stream (std::cout).
+	// However we do not want these messages to be printed.
+	// Since we do not use std::cout in nzbget we just disable it.
+	std::cout.rdbuf(&NullStreamBufInstance);
 }
 #endif

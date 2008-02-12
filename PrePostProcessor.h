@@ -39,6 +39,16 @@
 class PrePostProcessor : public Thread
 {
 public:
+
+	enum EParJobStage
+	{
+		ptQueued,
+		ptPreparing,
+		ptVerifying,
+		ptCalculating,
+		ptRepairing,
+	};
+
 	class ParJob
 	{
 	private:
@@ -46,6 +56,15 @@ public:
 		char*				m_szParFilename;
 		char*				m_szInfoName;
 		bool				m_bFailed;
+		EParJobStage		m_eStage;
+		char*				m_szProgressLabel;
+		int					m_iFileProgress;
+		int					m_iStageProgress;
+		time_t				m_tStartTime;
+		time_t				m_tStageTime;
+
+		void				SetProgressLabel(const char* szProgressLabel);
+		bool				GetFailed() { return m_bFailed; }
 		
 	public:
 							ParJob(const char* szNZBFilename, const char* szParFilename, const char* szInfoName);
@@ -53,8 +72,14 @@ public:
 		const char*			GetNZBFilename() { return m_szNZBFilename; }
 		const char*			GetParFilename() { return m_szParFilename; }
 		const char*			GetInfoName() { return m_szInfoName; }
-		bool				GetFailed() { return m_bFailed; }
-		void				SetFailed(bool bFailed) { m_bFailed = bFailed; }
+		EParJobStage		GetStage() { return m_eStage; }
+		const char*			GetProgressLabel() { return m_szProgressLabel; }
+		int					GetFileProgress() { return m_iFileProgress; }
+		int					GetStageProgress() { return m_iStageProgress; }
+		time_t				GetStartTime() { return m_tStartTime; }
+		time_t				GetStageTime() { return m_tStageTime; }
+
+		friend class PrePostProcessor;
 	};
 
 	typedef std::deque<ParJob*> ParQueue;
@@ -82,7 +107,9 @@ private:
 	private:
 		PrePostProcessor* m_Owner;
 	protected:
-		bool			RequestMorePars(int iBlockNeeded, int* pBlockFound);
+		virtual bool	RequestMorePars(int iBlockNeeded, int* pBlockFound);
+		virtual void	UpdateProgress();
+
 		friend class PrePostProcessor;
 	};
 
@@ -107,11 +134,11 @@ private:
 
 	Mutex			 	m_mutexParChecker;
 	ParQueue			m_ParQueue;
-	ParQueue			m_CompletedParJobs;
 
 #ifndef DISABLE_PARCHECK
 	PostParChecker		m_ParChecker;
 	ParCheckerObserver	m_ParCheckerObserver;
+	ParQueue			m_CompletedParJobs;
 
 	void				ParCheckerUpdate(Subject* Caller, void* Aspect);
 	void				CheckParQueue();
@@ -127,6 +154,7 @@ private:
 	bool				RequestMorePars(const char* szNZBFilename, const char* szParFilename, int iBlockNeeded, int* pBlockFound);
 	void				FindPars(DownloadQueue* pDownloadQueue, const char* szNZBFilename, const char* szParFilename, 
 							Blocks* pBlocks, bool bStrictParName, bool bExactParName, int* pBlockFound);
+	void				UpdateParProgress();
 #endif
 	
 public:

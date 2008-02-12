@@ -860,10 +860,18 @@ void PostQueueXmlCommand::Execute()
 		"<member><name>NZBFilename</name><value><string>%s</string></value></member>\n"
 		"<member><name>ParFilename</name><value><string>%s</string></value></member>\n"
 		"<member><name>InfoName</name><value><string>%s</string></value></member>\n"
+		"<member><name>Action</name><value><string>%s</string></value></member>\n"
+		"<member><name>Stage</name><value><string>%s</string></value></member>\n"
+		"<member><name>ProgressLabel</name><value><string>%s</string></value></member>\n"
+		"<member><name>FileProgress</name><value><int>%i</int></value></member>\n"
+		"<member><name>StageProgress</name><value><int>%i</int></value></member>\n"
+		"<member><name>TotalTimeSec</name><value><int>%i</int></value></member>\n"
+		"<member><name>StageTimeSec</name><value><int>%i</int></value></member>\n"
 		"</struct></value>\n";
 
 	PrePostProcessor::ParQueue* pParQueue = g_pPrePostProcessor->LockParQueue();
 
+	time_t tCurTime = time(NULL);
 	int szItemBufSize = 10240;
 	char* szItemBuf = (char*)malloc(szItemBufSize);
 
@@ -873,18 +881,29 @@ void PostQueueXmlCommand::Execute()
 		char szNZBNicename[1024];
 		NZBInfo::MakeNiceNZBName(pParJob->GetNZBFilename(), szNZBNicename, sizeof(szNZBNicename));
 
+	    char* szParStageKind[] = { "QUEUED", "PREPAIRING", "VERIFYING", "CALCULATING", "REPAIRING"};
+
 		char* xmlNZBNicename = Util::XmlEncode(szNZBNicename);
 		char* xmlNZBFilename = Util::XmlEncode(pParJob->GetNZBFilename());
 		char* xmlParFilename = Util::XmlEncode(pParJob->GetParFilename());
 		char* xmlInfoName = Util::XmlEncode(pParJob->GetInfoName());
+		char* xmlProgressLabel = pParJob->GetProgressLabel() ? Util::XmlEncode(pParJob->GetProgressLabel()) : NULL;
 
-		snprintf(szItemBuf, szItemBufSize, POSTQUEUE_ITEM, szNZBNicename, xmlNZBFilename, xmlParFilename, xmlInfoName);
+		snprintf(szItemBuf, szItemBufSize, POSTQUEUE_ITEM, szNZBNicename, xmlNZBFilename, xmlParFilename, 
+			xmlInfoName, "par", szParStageKind[pParJob->GetStage()], pParJob->GetProgressLabel() ? xmlProgressLabel : "", 
+			pParJob->GetFileProgress(), pParJob->GetStageProgress(), 
+			pParJob->GetStartTime() ? tCurTime - pParJob->GetStartTime() : 0, 
+			pParJob->GetStageTime() ? tCurTime - pParJob->GetStageTime() : 0);
 		szItemBuf[szItemBufSize-1] = '\0';
 
 		free(xmlNZBNicename);
 		free(xmlNZBFilename);
 		free(xmlParFilename);
 		free(xmlInfoName);
+		if (xmlProgressLabel)
+		{
+			free(xmlProgressLabel);
+		}
 
 		AppendResponse(szItemBuf);
 	}
