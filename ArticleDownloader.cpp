@@ -55,8 +55,6 @@ extern DownloadSpeedMeter* g_pDownloadSpeedMeter;
 extern Options* g_pOptions;
 extern ServerPool* g_pServerPool;
 
-const char* ArticleDownloader::m_szJobStatus[] = { "WAITING", "RUNNING", "FINISHED", "FAILED", "DECODING", "JOINING", "NOT_FOUND", "FATAL_ERROR" };
-
 ArticleDownloader::ArticleDownloader()
 {
 	debug("Creating ArticleDownloader");
@@ -213,7 +211,7 @@ void ArticleDownloader::Run()
 			Status = adFailed;
 			break;
 		}
-				 
+	 
 		if ((Status == adFinished) || (Status == adFatalError) ||
 			(Status == adCrcError && !g_pOptions->GetRetryOnCrcError()))
 		{
@@ -335,6 +333,8 @@ ArticleDownloader::EStatus ArticleDownloader::Download()
 
 	m_pOutFile = NULL;
 	bool bBody = false;
+	bool bEnd = false;
+	bool bFormatChecked = false;
 	const int LineBufSize = 1024*10;
 	char* szLineBuf = (char*)malloc(LineBufSize);
 	Status = adRunning;
@@ -369,6 +369,7 @@ ArticleDownloader::EStatus ArticleDownloader::Download()
 		//detect end of article
 		if (!strcmp(line, ".\r\n") || !strcmp(line, ".\n"))
 		{
+			bEnd = true;
 			break;
 		}
 
@@ -378,13 +379,14 @@ ArticleDownloader::EStatus ArticleDownloader::Download()
 			line++;
 		}
 
-		// check id of returned article
 		if (!bBody)
 		{
-			if (!strcmp(line, "\r\n") || !strcmp(line, "\n"))
+			// detect body of article
+			if (*line == '\r' || *line == '\n')
 			{
 				bBody = true;
 			}
+			// check id of returned article
 			else if (!strncmp(line, "Message-ID: ", 12))
 			{
 				char* p = line + 12;
@@ -397,8 +399,21 @@ ArticleDownloader::EStatus ArticleDownloader::Download()
 				}
 			}
 		}
+		else if (!bFormatChecked && g_pOptions->GetDecoder() == Options::dcYenc)
+		{
+			Decoder::EFormat eFormat = Decoder::DetectFormat(line, iLen);
+			bFormatChecked = eFormat == Decoder::efYenc;
+			if (eFormat != Decoder::efUnknown && eFormat != Decoder::efYenc)
+			{
+				warn("Article %s @ %s failed: %s-format is not supported by internal decoder", m_szInfoName, m_pConnection->GetServer()->GetHost(), Decoder::FormatNames[eFormat]);
+				Status = adFatalError;
+				break;
+			}
+		}
 
-		if (!Write(line, iLen))
+		// write to output file
+		if ((bBody || g_pOptions->GetDecoder() != Options::dcYenc) &&
+			!Write(line, iLen))
 		{
 			Status = adFatalError;
 			break;
@@ -412,16 +427,15 @@ ArticleDownloader::EStatus ArticleDownloader::Download()
 		fclose(m_pOutFile);
 	}
 
-	if (IsStopped())
+	if (!bEnd && Status == adRunning)
 	{
-		remove(m_szTempFilename);
-		return adFailed;
+		warn("Article %s @ %s failed: article incomplete", m_szInfoName, m_pConnection->GetServer()->GetHost());
+		Status = adFailed;
 	}
 
-	if (Status == adFailed)
+	if (IsStopped())
 	{
-		remove(m_szTempFilename);
-		return adFailed;
+		Status = adFailed;
 	}
 
 	if (Status == adRunning)
@@ -431,6 +445,7 @@ ArticleDownloader::EStatus ArticleDownloader::Download()
 	}
 	else
 	{
+		remove(m_szTempFilename);
 		return Status;
 	}
 }
@@ -492,17 +507,17 @@ bool ArticleDownloader::PrepareFile(char* szLine)
 	// prepare file for writing
 	if (g_pOptions->GetDecoder() == Options::dcYenc)
 	{
-		if (!strncmp(szLine, "=ybegin part=", 13))
+		if (!strncmp(szLine, "=ybegin ", 8))
 		{
 			if (g_pOptions->GetDupeCheck())
 			{
 				m_pFileInfo->LockOutputFile();
 				if (!m_pFileInfo->GetOutputInitialized())
 				{
-					char* pb = strstr(szLine, "name=");
+					char* pb = strstr(szLine, " name=");
 					if (pb)
 					{
-						pb += 5; //=strlen("name=")
+						pb += 6; //=strlen(" name=")
 						char* pe;
 						for (pe = pb; *pe != '\0' && *pe != '\n' && *pe != '\r'; pe++) ;
 						if (!m_szArticleFilename)
@@ -527,13 +542,13 @@ bool ArticleDownloader::PrepareFile(char* szLine)
 
 			if (g_pOptions->GetDirectWrite())
 			{
-				char* pb = strstr(szLine, "size=");
+				char* pb = strstr(szLine, " size=");
 				if (pb) 
 				{
 					m_pFileInfo->LockOutputFile();
 					if (!m_pFileInfo->GetOutputInitialized())
 					{
-						pb += 5; //=strlen("size=")
+						pb += 6; //=strlen(" size=")
 						long iArticleFilesize = atol(pb);
 						if (!Util::SetFileSize(m_szOutputFilename, iArticleFilesize))
 						{
@@ -665,6 +680,16 @@ ArticleDownloader::EStatus ArticleDownloader::Decode()
 				warn("Decoding %s failed: article incomplete", m_szInfoName);
 				return adFailed;
 			}
+			else if (eStatus == Decoder::eInvalidSize)
+			{
+				warn("Decoding %s failed: size mismatch", m_szInfoName);
+				return adFailed;
+			}
+			else if (eStatus == Decoder::eNoBinaryData)
+			{
+				warn("Decoding %s failed: no binary data found (incomplete article or unsupported format)", m_szInfoName);
+				return adFailed;
+			}
 			else
 			{
 				warn("Decoding %s failed", m_szInfoName);
@@ -702,7 +727,7 @@ void ArticleDownloader::LogDebugInfo()
 		ctime_r(&m_tLastUpdateTime, szTime);
 #endif
 
-	debug("      Download: status=%s, LastUpdateTime=%s, filename=%s", GetStatusText(), szTime, Util::BaseFileName(GetTempFilename()));
+	debug("      Download: status=%i, LastUpdateTime=%s, filename=%s", m_eStatus, szTime, Util::BaseFileName(GetTempFilename()));
 }
 
 void ArticleDownloader::Stop()

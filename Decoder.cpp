@@ -52,6 +52,7 @@
 #include "Log.h"
 #include "Util.h"
 
+const char* Decoder::FormatNames[] = { "Unknown", "yEnc", "UU" };
 Mutex UULibDecoder::m_mutexDecoder;
 unsigned int YDecoder::crc_tab[256];
 
@@ -74,6 +75,39 @@ Decoder::~ Decoder()
 	}
 }
 
+Decoder::EFormat Decoder::DetectFormat(const char* buffer, int iLen)
+{
+	if (!strncmp(buffer, "=ybegin ", 8))
+	{
+		return efYenc;
+	}
+	
+	if ((iLen == 62 || iLen == 63) && (buffer[62] == '\n' || buffer[62] == '\r') && *buffer == 'M')
+	{
+		return efUu;
+	}
+
+	if (!strncmp(buffer, "begin ", 6))
+	{
+		bool bOK = true;
+		buffer += 6; //strlen("begin ")
+		while (*buffer && *buffer != ' ')
+		{
+			char ch = *buffer++;
+			if (ch < '0' || ch > '7')
+			{
+				bOK = false;
+				break;
+			}
+		}
+		if (bOK)
+		{
+			return efUu;
+		}
+	}
+
+	return efUnknown;
+}
 
 /*
  * UULibDecoder
@@ -182,11 +216,16 @@ YDecoder::YDecoder()
 void YDecoder::Clear()
 {
 	m_bBody = false;
+	m_bBegin = false;
+	m_bPart = false;
 	m_bEnd = false;
+	m_bCrc = false;
 	m_lExpectedCRC = 0;
 	m_lCalculatedCRC = 0xFFFFFFFF;
 	m_iBegin = 0;
 	m_iEnd = 0;
+	m_iSize = 0;
+	m_iEndSize = 0;
 	m_bAutoSeek = false;
 	m_bNeedSetPos = false;
 	m_bCrcCheck = false;
@@ -255,14 +294,21 @@ unsigned int YDecoder::DecodeBuffer(char* buffer)
 {
 	if (m_bBody && !m_bEnd)
 	{
-		if (!strncmp(buffer, "=yend size=", 11))
+		if (!strncmp(buffer, "=yend ", 6))
 		{
 			m_bEnd = true;
-			char* pc = strstr(buffer, "pcrc32=");
-			if (pc)
+			char* pb = strstr(buffer, m_bPart ? " pcrc32=" : " crc32=");
+			if (pb)
 			{
-				pc += 7; //=strlen("pcrc32=")
-				m_lExpectedCRC = strtoul(pc, NULL, 16);
+				m_bCrc = true;
+				pb += 7 + (int)m_bPart; //=strlen(" crc32=") or strlen(" pcrc32=")
+				m_lExpectedCRC = strtoul(pb, NULL, 16);
+			}
+			pb = strstr(buffer, " size=");
+			if (pb) 
+			{
+				pb += 6; //=strlen(" size=")
+				m_iEndSize = (int)atoi(pb);
 			}
 			return 0;
 		}
@@ -298,30 +344,15 @@ BreakLoop:
 		}
 		return optr - buffer;
 	}
-	else
+	else 
 	{
-		if (!strncmp(buffer, "=ypart begin=", 13))
+		if (!m_bPart && !strncmp(buffer, "=ybegin ", 8))
 		{
-			m_bBody = true;
-			char* pb = strstr(buffer, "begin=");
-			if (pb) 
-			{
-				pb += 6; //=strlen("begin=")
-				m_iBegin = (int)atoi(pb);
-			}
-			pb = strstr(buffer, "end=");
-			if (pb) 
-			{
-				pb += 4; //=strlen("end=")
-				m_iEnd = (int)atoi(pb);
-			}
-		}
-		else if (!strncmp(buffer, "=ybegin part=", 13))
-		{
-			char* pb = strstr(buffer, "name=");
+			m_bBegin = true;
+			char* pb = strstr(buffer, " name=");
 			if (pb)
 			{
-				pb += 5; //=strlen("name=")
+				pb += 6; //=strlen(" name=")
 				char* pe;
 				for (pe = pb; *pe != '\0' && *pe != '\n' && *pe != '\r'; pe++) ;
 				if (m_szArticleFilename)
@@ -331,6 +362,36 @@ BreakLoop:
 				m_szArticleFilename = (char*)malloc(pe - pb + 1);
 				strncpy(m_szArticleFilename, pb, pe - pb);
 				m_szArticleFilename[pe - pb] = '\0';
+			}
+			pb = strstr(buffer, " size=");
+			if (pb) 
+			{
+				pb += 6; //=strlen(" size=")
+				m_iSize = (int)atoi(pb);
+			}
+			m_bPart = strstr(buffer, " part=");
+			if (!m_bPart)
+			{
+				m_bBody = true;
+				m_iBegin = 1;
+				m_iEnd = m_iSize;
+			}
+		}
+		else if (m_bPart && !strncmp(buffer, "=ypart ", 7))
+		{
+			m_bPart = true;
+			m_bBody = true;
+			char* pb = strstr(buffer, " begin=");
+			if (pb) 
+			{
+				pb += 7; //=strlen(" begin=")
+				m_iBegin = (int)atoi(pb);
+			}
+			pb = strstr(buffer, " end=");
+			if (pb) 
+			{
+				pb += 5; //=strlen(" end=")
+				m_iEnd = (int)atoi(pb);
 			}
 		}
 	}
@@ -364,14 +425,22 @@ Decoder::EStatus YDecoder::Execute()
 {
 	m_lCalculatedCRC ^= 0xFFFFFFFF;
 
-	debug("Expected pcrc32=%x", m_lExpectedCRC);
-	debug("Calculated pcrc32=%x", m_lCalculatedCRC);
+	debug("Expected crc32=%x", m_lExpectedCRC);
+	debug("Calculated crc32=%x", m_lCalculatedCRC);
 
-	if (!m_bBody || !m_bEnd)
+	if (!m_bBegin)
+	{
+		return eNoBinaryData;
+	}
+	else if (!m_bEnd)
 	{
 		return eArticleIncomplete;
 	}
-	else if (m_bCrcCheck && (m_lExpectedCRC != m_lCalculatedCRC))
+	else if (!m_bPart && m_iSize != m_iEndSize)
+	{
+		return eInvalidSize;
+	}
+	else if (m_bCrcCheck && m_bCrc && (m_lExpectedCRC != m_lCalculatedCRC))
 	{
 		return eCrcError;
 	}

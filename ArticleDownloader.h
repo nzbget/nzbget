@@ -69,7 +69,6 @@ private:
 	char*				m_szInfoName;
 	char*				m_szOutputFilename;
 	time_t				m_tLastUpdateTime;
-	static const char*	m_szJobStatus[];
 	YDecoder			m_YDecoder;
 	FILE*				m_pOutFile;
 	bool				m_bDuplicate;
@@ -90,7 +89,6 @@ public:
 	ArticleInfo*		GetArticleInfo() { return m_pArticleInfo; }
 	void				SetStatus(EStatus eStatus);
 	EStatus				GetStatus() { return m_eStatus; }
-	const char*			GetStatusText() { return m_szJobStatus[m_eStatus]; }
 	virtual void		Run();
 	virtual void		Stop();
 	bool				Terminate();
