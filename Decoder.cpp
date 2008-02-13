@@ -152,7 +152,7 @@ Decoder::EStatus UULibDecoder::Execute()
 			}
 			else
 			{
-				//f**k, multiple attachments!? Can't handle this.
+				// multiple attachments!? Can't handle this.
 				attachment = NULL;
 				break;
 			}
@@ -162,7 +162,7 @@ Decoder::EStatus UULibDecoder::Execute()
 	if (attachment)
 	{
 		// okay, we got only one attachment, perfect!
-		if ((attachment->haveparts) && (attachment->haveparts[0])) //  && (!attachment->haveparts[1]))  FUCK UULIB
+		if ((attachment->haveparts) && (attachment->haveparts[0])) //  && (!attachment->haveparts[1]))  
 		{
 			int r = UUDecodeFile(attachment, (char*)m_szDestFilename);
 
@@ -170,7 +170,10 @@ Decoder::EStatus UULibDecoder::Execute()
 			{
 				// we did it!
 				res = eFinished;
-				m_szArticleFilename = strdup(attachment->filename);
+				if (attachment->filename)
+				{
+					m_szArticleFilename = strdup(attachment->filename);
+				}
 			}
 		}
 		else
