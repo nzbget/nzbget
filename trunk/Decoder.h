@@ -37,8 +37,19 @@ public:
 		eUnknownError,
 		eFinished,
 		eArticleIncomplete,
-		eCrcError
+		eCrcError,
+		eInvalidSize,
+		eNoBinaryData
 	};
+
+	enum EFormat
+	{
+		efUnknown,
+		efYenc,
+		efUu
+	};
+
+	static const char* FormatNames[];
 
 protected:
 	const char*				m_szSrcFilename;
@@ -52,6 +63,7 @@ public:
 	void					SetSrcFilename(const char* szSrcFilename) { m_szSrcFilename = szSrcFilename; }
 	void					SetDestFilename(const char* szDestFilename) { m_szDestFilename = szDestFilename; }
 	const char*				GetArticleFilename() { return m_szArticleFilename; }
+	static EFormat			DetectFormat(const char* buffer, int iLen);
 };
 
 class UULibDecoder: public Decoder
@@ -67,12 +79,17 @@ class YDecoder: public Decoder
 {
 protected:
 	static unsigned int		crc_tab[256];
+	bool					m_bBegin;
+	bool					m_bPart;
 	bool					m_bBody;
 	bool					m_bEnd;
+	bool					m_bCrc;
 	unsigned long			m_lExpectedCRC;
 	unsigned long			m_lCalculatedCRC;
 	unsigned long			m_iBegin;
 	unsigned long			m_iEnd;
+	unsigned long			m_iSize;
+	unsigned long			m_iEndSize;
 	bool					m_bAutoSeek;
 	bool					m_bNeedSetPos;
 	bool					m_bCrcCheck;
