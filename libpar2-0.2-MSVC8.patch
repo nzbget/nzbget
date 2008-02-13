@@ -425,7 +425,7 @@ diff -urN libpar2-0.2-original/par2cmdline.h libpar2-0.2-modified/par2cmdline.h
  #ifdef HAVE_CONFIG_H
 diff -urN libpar2-0.2-original/par2repairer.cpp libpar2-0.2-modified/par2repairer.cpp
 --- libpar2-0.2-original/par2repairer.cpp	2006-01-20 18:25:20.000000000 +0100
-+++ libpar2-0.2-modified/par2repairer.cpp	2008-02-06 12:02:53.226050300 +0100
++++ libpar2-0.2-modified/par2repairer.cpp	2008-02-13 15:37:59.899314300 +0100
 @@ -78,6 +78,7 @@
  
    delete mainpacket;
@@ -439,7 +439,7 @@ diff -urN libpar2-0.2-original/par2repairer.cpp libpar2-0.2-modified/par2repaire
  
          cout << "Target: \"" << name << "\" - missing." << endl;
 -	sig_done.emit(name, 0, sourcefile->GetVerificationPacket()->BlockCount());
-+	sig_done.emit(name, 0, sourcefile->GetVerificationPacket() ? sourcefile->GetVerificationPacket()->BlockCount() : 0);
++	sig_done.emit(name, 0, sourcefile && sourcefile->GetVerificationPacket() ? sourcefile->GetVerificationPacket()->BlockCount() : 0);
        }
      }
  
@@ -448,7 +448,7 @@ diff -urN libpar2-0.2-original/par2repairer.cpp libpar2-0.2-modified/par2repaire
      }
    }
 -  sig_done.emit(name,count,sourcefile->GetVerificationPacket()->BlockCount()); 
-+  sig_done.emit(name,count, sourcefile->GetVerificationPacket() ? sourcefile->GetVerificationPacket()->BlockCount() : 0); 
++  sig_done.emit(name,count, sourcefile && sourcefile->GetVerificationPacket() ? sourcefile->GetVerificationPacket()->BlockCount() : 0); 
    sig_progress.emit(1000.0);
    return true;
  }
