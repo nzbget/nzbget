@@ -220,7 +220,7 @@ void PrePostProcessor::CheckIncomingNZBs()
 			// file found, checking modification-time
 			struct stat buffer;
 			char fullfilename[1024];
-			snprintf(fullfilename, 1024, "%s%c%s", g_pOptions->GetNzbDir(), (int)PATH_SEPARATOR, filename);
+			snprintf(fullfilename, 1024, "%s%s", g_pOptions->GetNzbDir(), filename);
 			fullfilename[1024-1] = '\0';
 			if (!stat(fullfilename, &buffer) &&
 				time(NULL) - buffer.st_mtime > g_pOptions->GetNzbDirFileAge() &&
