@@ -67,6 +67,7 @@ ArticleDownloader::ArticleDownloader()
 	m_pConnection		= NULL;
 	m_eStatus			= adUndefined;
 	m_bDuplicate		= false;
+	m_eFormat			= Decoder::efUnknown;
 	SetLastUpdateTimeNow();
 }
 
@@ -181,6 +182,8 @@ void ArticleDownloader::Run()
 			if (Status == adConnectError)
 			{
 				m_pConnection->Disconnect();
+				bConnected = false;
+				Status = adFailed;
 			}
 			else
 			{
@@ -194,8 +197,8 @@ void ArticleDownloader::Run()
 			}
 		}
 
-		if (((Status == adFailed) || ((Status == adCrcError) && g_pOptions->GetRetryOnCrcError())) && 
-			((retry > 1) || !bConnected || (Status == adConnectError)) && !IsStopped())
+		if (((Status == adFailed) || (Status == adCrcError && g_pOptions->GetRetryOnCrcError())) && 
+			(retry > 1 || !bConnected) && !IsStopped())
 		{
 			detail("Waiting %i sec to retry", g_pOptions->GetRetryInterval());
 			int msec = 0;
@@ -239,7 +242,7 @@ void ArticleDownloader::Run()
 		}
 
 		// do not count connect-errors, only article- and group-errors
-		if (bConnected && (Status != adConnectError))
+		if (bConnected)
 		{
 			level++;
 			if (level > iMaxLevel)
@@ -324,17 +327,18 @@ ArticleDownloader::EStatus ArticleDownloader::Download()
 
 	// positive answer!
 
-	if (g_pOptions->GetDecoder() == Options::dcYenc)
+	if (g_pOptions->GetDecode())
 	{
 		m_YDecoder.Clear();
 		m_YDecoder.SetAutoSeek(g_pOptions->GetDirectWrite());
 		m_YDecoder.SetCrcCheck(g_pOptions->GetCrcCheck());
+
+		m_UDecoder.Clear();
 	}
 
 	m_pOutFile = NULL;
 	bool bBody = false;
 	bool bEnd = false;
-	bool bFormatChecked = false;
 	const int LineBufSize = 1024*10;
 	char* szLineBuf = (char*)malloc(LineBufSize);
 	Status = adRunning;
@@ -399,21 +403,13 @@ ArticleDownloader::EStatus ArticleDownloader::Download()
 				}
 			}
 		}
-		else if (!bFormatChecked && g_pOptions->GetDecoder() == Options::dcYenc)
+		else if (m_eFormat == Decoder::efUnknown && g_pOptions->GetDecode())
 		{
-			Decoder::EFormat eFormat = Decoder::DetectFormat(line, iLen);
-			bFormatChecked = eFormat == Decoder::efYenc;
-			if (eFormat != Decoder::efUnknown && eFormat != Decoder::efYenc)
-			{
-				warn("Article %s @ %s failed: %s-format is not supported by internal decoder", m_szInfoName, m_pConnection->GetServer()->GetHost(), Decoder::FormatNames[eFormat]);
-				Status = adFatalError;
-				break;
-			}
+			m_eFormat = Decoder::DetectFormat(line, iLen);
 		}
 
 		// write to output file
-		if ((bBody || g_pOptions->GetDecoder() != Options::dcYenc) &&
-			!Write(line, iLen))
+		if (((bBody && m_eFormat != Decoder::efUnknown) || !g_pOptions->GetDecode()) && !Write(line, iLen))
 		{
 			Status = adFatalError;
 			break;
@@ -427,7 +423,7 @@ ArticleDownloader::EStatus ArticleDownloader::Download()
 		fclose(m_pOutFile);
 	}
 
-	if (!bEnd && Status == adRunning)
+	if (!bEnd && Status == adRunning && !IsStopped())
 	{
 		warn("Article %s @ %s failed: article incomplete", m_szInfoName, m_pConnection->GetServer()->GetHost());
 		Status = adFailed;
@@ -441,7 +437,7 @@ ArticleDownloader::EStatus ArticleDownloader::Download()
 	if (Status == adRunning)
 	{
 		FreeConnection(true);
-		return Decode();
+		return DecodeCheck();
 	}
 	else
 	{
@@ -490,9 +486,20 @@ bool ArticleDownloader::Write(char* szLine, int iLen)
 		return false;
 	}
 
-	if (g_pOptions->GetDecoder() == Options::dcYenc)
+	if (g_pOptions->GetDecode())
 	{
-		return m_YDecoder.Write(szLine, m_pOutFile);
+		if (m_eFormat == Decoder::efYenc)
+		{
+			return m_YDecoder.Write(szLine, iLen, m_pOutFile);
+		}
+		else if (m_eFormat == Decoder::efUx)
+		{
+			return m_UDecoder.Write(szLine, iLen, m_pOutFile);
+		}
+		else
+		{
+			return false;
+		}
 	}
 	else
 	{
@@ -505,7 +512,7 @@ bool ArticleDownloader::PrepareFile(char* szLine)
 	bool bOpen = false;
 
 	// prepare file for writing
-	if (g_pOptions->GetDecoder() == Options::dcYenc)
+	if (m_eFormat == Decoder::efYenc)
 	{
 		if (!strncmp(szLine, "=ybegin ", 8))
 		{
@@ -574,11 +581,12 @@ bool ArticleDownloader::PrepareFile(char* szLine)
 
 	if (bOpen)
 	{
-		const char* szFilename = g_pOptions->GetDirectWrite() ? m_szOutputFilename : m_szTempFilename;
-		m_pOutFile = fopen(szFilename, g_pOptions->GetDirectWrite() ? "r+" : "w");
+		bool bDirectWrite = g_pOptions->GetDirectWrite() && m_eFormat == Decoder::efYenc;
+		const char* szFilename = bDirectWrite ? m_szOutputFilename : m_szTempFilename;
+		m_pOutFile = fopen(szFilename, bDirectWrite ? "r+" : "w");
 		if (!m_pOutFile)
 		{
-			error("Could not %s file %s", g_pOptions->GetDirectWrite() ? "open" : "create", szFilename);
+			error("Could not %s file %s", bDirectWrite ? "open" : "create", szFilename);
 			return false;
 		}
 		if (g_pOptions->GetWriteBufferSize() == -1)
@@ -594,47 +602,38 @@ bool ArticleDownloader::PrepareFile(char* szLine)
 	return true;
 }
 
-ArticleDownloader::EStatus ArticleDownloader::Decode()
+ArticleDownloader::EStatus ArticleDownloader::DecodeCheck()
 {
-	if ((g_pOptions->GetDecoder() == Options::dcUulib) ||
-		(g_pOptions->GetDecoder() == Options::dcYenc))
+	bool bDirectWrite = g_pOptions->GetDirectWrite() && m_eFormat == Decoder::efYenc;
+
+	if (g_pOptions->GetDecode())
 	{
 		SetStatus(adDecoding);
 
-		char tmpdestfile[1024];
-		char* szDecoderTempFilename = NULL;
 		Decoder* pDecoder = NULL;
 
-		if (g_pOptions->GetDecoder() == Options::dcYenc)
+		if (m_eFormat == Decoder::efYenc)
 		{
 			pDecoder = &m_YDecoder;
-			szDecoderTempFilename = m_szTempFilename;
 		}
-		else if (g_pOptions->GetDecoder() == Options::dcUulib)
+		else if (m_eFormat == Decoder::efUx)
 		{
-			pDecoder = new UULibDecoder();
-			pDecoder->SetSrcFilename(m_szTempFilename);
-			snprintf(tmpdestfile, 1024, "%s.dec", m_szResultFilename);
-			tmpdestfile[1024-1] = '\0';
-			szDecoderTempFilename = tmpdestfile;
-			pDecoder->SetDestFilename(szDecoderTempFilename);
+			pDecoder = &m_UDecoder;
+		}
+		else
+		{
+			warn("Decoding %s failed: no binary data or unsupported encoding format", m_szInfoName);
+			return adFatalError;
 		}
 
-		Decoder::EStatus eStatus = pDecoder->Execute();
+		Decoder::EStatus eStatus = pDecoder->Check();
 		bool bOK = eStatus == Decoder::eFinished;
 
-		if (!g_pOptions->GetDirectWrite())
+		if (!bDirectWrite && bOK)
 		{
-			if (bOK)
+			if (!Util::MoveFile(m_szTempFilename, m_szResultFilename))
 			{
-				if (!Util::MoveFile(szDecoderTempFilename, m_szResultFilename))
-				{
-					error("Could not rename file %s to %s! Errcode: %i", szDecoderTempFilename, m_szResultFilename, errno);
-				}
-			}
-			else if (g_pOptions->GetDecoder() == Options::dcUulib)
-			{
-				remove(szDecoderTempFilename);
+				error("Could not rename file %s to %s! Errcode: %i", m_szTempFilename, m_szResultFilename, errno);
 			}
 		}
 
@@ -644,16 +643,12 @@ ArticleDownloader::EStatus ArticleDownloader::Decode()
 		}
 
 		remove(m_szTempFilename);
-		if (pDecoder != &m_YDecoder)
-		{
-			delete pDecoder;
-		}
 
 		if (bOK)
 		{
 			detail("Successfully downloaded %s", m_szInfoName);
 
-			if (g_pOptions->GetDirectWrite() && g_pOptions->GetContinuePartial())
+			if (bDirectWrite && g_pOptions->GetContinuePartial())
 			{
 				// create empty flag-file to indicate that the artcile was downloaded
 				FILE* flagfile = fopen(m_szResultFilename, "w");
@@ -687,7 +682,7 @@ ArticleDownloader::EStatus ArticleDownloader::Decode()
 			}
 			else if (eStatus == Decoder::eNoBinaryData)
 			{
-				warn("Decoding %s failed: no binary data found (incomplete article or unsupported format)", m_szInfoName);
+				warn("Decoding %s failed: no binary data found", m_szInfoName);
 				return adFailed;
 			}
 			else
@@ -697,7 +692,7 @@ ArticleDownloader::EStatus ArticleDownloader::Decode()
 			}
 		}
 	}
-	else if (g_pOptions->GetDecoder() == Options::dcNone)
+	else 
 	{
 		// rawmode
 		if (Util::MoveFile(m_szTempFilename, m_szResultFilename))
@@ -709,12 +704,6 @@ ArticleDownloader::EStatus ArticleDownloader::Decode()
 			error("Could not move file %s to %s! Errcode: %i", m_szTempFilename, m_szResultFilename, errno);
 		}
 		return adFinished;
-	}
-	else
-	{
-		// should not occur
-		error("Internal error: Decoding %s failed", m_szInfoName);
-		return adFatalError;
 	}
 }
 
@@ -780,6 +769,8 @@ void ArticleDownloader::CompleteFileParts()
 
 	SetStatus(adJoining);
 
+	bool bDirectWrite = g_pOptions->GetDirectWrite() && m_pFileInfo->GetOutputInitialized();
+
 	char szNZBNiceName[1024];
 	m_pFileInfo->GetNZBInfo()->GetNiceNZBName(szNZBNiceName, 1024);
 	
@@ -787,11 +778,11 @@ void ArticleDownloader::CompleteFileParts()
 	snprintf(InfoFilename, 1024, "%s%c%s", szNZBNiceName, (int)PATH_SEPARATOR, m_pFileInfo->GetFilename());
 	InfoFilename[1024-1] = '\0';
 
-	if (g_pOptions->GetDecoder() == Options::dcNone)
+	if (!g_pOptions->GetDecode())
 	{
 		detail("Moving articles for %s", InfoFilename);
 	}
-	else if (g_pOptions->GetDirectWrite())
+	else if (bDirectWrite)
 	{
 		detail("Checking articles for %s", InfoFilename);
 	}
@@ -826,9 +817,7 @@ void ArticleDownloader::CompleteFileParts()
 	snprintf(tmpdestfile, 1024, "%s.tmp", ofn);
 	tmpdestfile[1024-1] = '\0';
 
-	if (((g_pOptions->GetDecoder() == Options::dcUulib) ||
-		(g_pOptions->GetDecoder() == Options::dcYenc)) &&
-		!g_pOptions->GetDirectWrite())
+	if (g_pOptions->GetDecode() && !bDirectWrite)
 	{
 		remove(tmpdestfile);
 		outfile = fopen(tmpdestfile, "w+");
@@ -847,7 +836,7 @@ void ArticleDownloader::CompleteFileParts()
 			setvbuf(outfile, (char *)NULL, _IOFBF, g_pOptions->GetWriteBufferSize());
 		}
 	}
-	else if (g_pOptions->GetDecoder() == Options::dcNone)
+	else if (!g_pOptions->GetDecode())
 	{
 		remove(tmpdestfile);
 		if (!Util::CreateDirectory(ofn))
@@ -863,9 +852,7 @@ void ArticleDownloader::CompleteFileParts()
 	static const int BUFFER_SIZE = 1024 * 50;
 	char* buffer = NULL;
 
-	if (((g_pOptions->GetDecoder() == Options::dcUulib) ||
-		(g_pOptions->GetDecoder() == Options::dcYenc)) &&
-		!g_pOptions->GetDirectWrite())
+	if (g_pOptions->GetDecode() && !bDirectWrite)
 	{
 		buffer = (char*)malloc(BUFFER_SIZE);
 	}
@@ -878,9 +865,7 @@ void ArticleDownloader::CompleteFileParts()
 			iBrokenCount++;
 			complete = false;
 		}
-		else if (((g_pOptions->GetDecoder() == Options::dcUulib) ||
-		         (g_pOptions->GetDecoder() == Options::dcYenc)) && 
-				 !g_pOptions->GetDirectWrite())
+		else if (g_pOptions->GetDecode() && !bDirectWrite)
 		{
 			FILE* infile;
 			const char* fn = pa->GetResultFilename();
@@ -906,7 +891,7 @@ void ArticleDownloader::CompleteFileParts()
 				detail("Could not find file %s. Status is broken", fn);
 			}
 		}
-		else if (g_pOptions->GetDecoder() == Options::dcNone)
+		else if (!g_pOptions->GetDecode())
 		{
 			const char* fn = pa->GetResultFilename();
 			char dstFileName[1024];
@@ -933,7 +918,7 @@ void ArticleDownloader::CompleteFileParts()
 		}
 	}
 
-	if (g_pOptions->GetDirectWrite())
+	if (bDirectWrite)
 	{
 		if (!Util::MoveFile(m_szOutputFilename, ofn))
 		{
@@ -941,7 +926,7 @@ void ArticleDownloader::CompleteFileParts()
 		}
 	}
 
-	if (!g_pOptions->GetDirectWrite() || g_pOptions->GetContinuePartial())
+	if (!bDirectWrite || g_pOptions->GetContinuePartial())
 	{
 		for (FileInfo::Articles::iterator it = m_pFileInfo->GetArticles()->begin(); it != m_pFileInfo->GetArticles()->end(); it++)
 		{

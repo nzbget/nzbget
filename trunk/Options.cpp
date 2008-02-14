@@ -105,7 +105,7 @@ static const char* OPTION_SAVEQUEUE			= "SaveQueue";
 static const char* OPTION_RELOADQUEUE		= "ReloadQueue";
 static const char* OPTION_CREATEBROKENLOG	= "CreateBrokenLog";
 static const char* OPTION_RESETLOG			= "ResetLog";
-static const char* OPTION_DECODER			= "Decoder";
+static const char* OPTION_DECODE			= "Decode";
 static const char* OPTION_RETRIES			= "Retries";
 static const char* OPTION_RETRYINTERVAL		= "RetryInterval";
 static const char* OPTION_TERMINATETIMEOUT	= "TerminateTimeout";
@@ -162,7 +162,7 @@ Options::Options(int argc, char* argv[])
 	m_eErrorTarget			= mtScreen;
 	m_eDebugTarget			= mtScreen;
 	m_eDetailTarget			= mtScreen;
-	m_eDecoder				= dcUulib;
+	m_bDecode				= true;
 	m_bPause				= false;
 	m_bCreateBrokenLog		= false;
 	m_bResetLog				= false;
@@ -379,7 +379,7 @@ void Options::InitDefault()
 	SetOption(OPTION_RELOADQUEUE, "ask");
 	SetOption(OPTION_CREATEBROKENLOG, "no");
 	SetOption(OPTION_RESETLOG, "no");
-	SetOption(OPTION_DECODER, "yEnc");
+	SetOption(OPTION_DECODE, "yes");
 	SetOption(OPTION_RETRIES, "5");
 	SetOption(OPTION_RETRYINTERVAL, "10");
 	SetOption(OPTION_TERMINATETIMEOUT, "600");
@@ -548,17 +548,13 @@ void Options::InitOptions()
 	m_bRetryOnCrcError		= (bool)ParseOptionValue(OPTION_RETRYONCRCERROR, BoolCount, BoolNames, BoolValues);
 	m_bDirectWrite			= (bool)ParseOptionValue(OPTION_DIRECTWRITE, BoolCount, BoolNames, BoolValues);
 	m_bParCleanupQueue		= (bool)ParseOptionValue(OPTION_PARCLEANUPQUEUE, BoolCount, BoolNames, BoolValues);
+	m_bDecode				= (bool)ParseOptionValue(OPTION_DECODE, BoolCount, BoolNames, BoolValues);
 
 	const char* OutputModeNames[] = { "loggable", "logable", "log", "colored", "color", "ncurses", "curses" };
 	const int OutputModeValues[] = { omLoggable, omLoggable, omLoggable, omColored, omColored, omNCurses, omNCurses };
 	const int OutputModeCount = 7;
 	m_eOutputMode = (EOutputMode)ParseOptionValue(OPTION_OUTPUTMODE, OutputModeCount, OutputModeNames, OutputModeValues);
 
-	const char* DecoderNames[] = { "uulib", "yenc", "none", "ydec", "ydecoder" };
-	const int DecoderValues[] = { dcUulib, dcYenc, dcNone, dcYenc, dcYenc };
-	const int DecoderCount = 5;
-	m_eDecoder = (EDecoder)ParseOptionValue(OPTION_DECODER, DecoderCount, DecoderNames, DecoderValues);
-	
 	const char* LoadParsNames[] = { "none", "one", "all", "1", "0" };
 	const int LoadParsValues[] = { plNone, plOne, plAll, plOne, plNone };
 	const int LoadParsCount = 4;
@@ -1128,7 +1124,7 @@ void Options::CheckOptions()
 	}
 #endif
 
-	if (m_eDecoder != dcYenc)
+	if (!m_bDecode)
 	{
 		m_bDirectWrite = false;
 	}

@@ -158,15 +158,12 @@ DupeCheck=no
 # Do not activate this option if par-check is enabled.
 RenameBroken=no
 
-# Determine how the articles should be decoded (yenc, uulib, none)
-# yenc - use internal yEnc-Decoder. Supports only yEnc-format, but is 
-#        very fast and does not create temporary files with articles' text
-#        decoding them on the fly.
-# uulib - use uulib to decode files. Supports many encoding formats, 
-#         but is slow. Not available in Windows-version.
-# none - the articles will not be decoded and joined. External programs 
-#        (like "uudeview") can be used to decode and join downloaded articles.
-Decoder=yEnc
+# Decode articles (yes, no)
+# yes - use internal yEnc-Decoder.
+# no - the articles will not be decoded and joined. External programs 
+#      (like "uudeview") can be used to decode and join downloaded articles.
+#      Also useful for debugging to look at article's source text.
+Decode=yes
 
 # Write decoded articles directly into destination output file (yes, no)
 # With this option enabled the program at first creates the output 

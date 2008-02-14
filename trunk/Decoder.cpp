@@ -40,20 +40,11 @@
 #endif
 
 #include "nzbget.h"
-
-#ifdef ENABLE_UULIB
-#ifndef PROTOTYPES
-#define PROTOTYPES
-#endif
-#include <uudeview.h>
-#endif
-
 #include "Decoder.h"
 #include "Log.h"
 #include "Util.h"
 
 const char* Decoder::FormatNames[] = { "Unknown", "yEnc", "UU" };
-Mutex UULibDecoder::m_mutexDecoder;
 unsigned int YDecoder::crc_tab[256];
 
 Decoder::Decoder()
@@ -75,16 +66,25 @@ Decoder::~ Decoder()
 	}
 }
 
-Decoder::EFormat Decoder::DetectFormat(const char* buffer, int iLen)
+void Decoder::Clear()
+{
+	if (m_szArticleFilename)
+	{
+		free(m_szArticleFilename);
+	}
+	m_szArticleFilename = NULL;
+}
+
+Decoder::EFormat Decoder::DetectFormat(const char* buffer, int len)
 {
 	if (!strncmp(buffer, "=ybegin ", 8))
 	{
 		return efYenc;
 	}
 	
-	if ((iLen == 62 || iLen == 63) && (buffer[62] == '\n' || buffer[62] == '\r') && *buffer == 'M')
+	if ((len == 62 || len == 63) && (buffer[62] == '\n' || buffer[62] == '\r') && *buffer == 'M')
 	{
-		return efUu;
+		return efUx;
 	}
 
 	if (!strncmp(buffer, "begin ", 6))
@@ -102,102 +102,15 @@ Decoder::EFormat Decoder::DetectFormat(const char* buffer, int iLen)
 		}
 		if (bOK)
 		{
-			return efUu;
+			return efUx;
 		}
 	}
 
 	return efUnknown;
 }
 
-/*
- * UULibDecoder
- */
-
-Decoder::EStatus UULibDecoder::Execute()
-{
-	EStatus res = eUnknownError;
-
-#ifndef ENABLE_UULIB
-	error("Program was compiled without option ENABLE_UULIB defined. uulib-Decoder is not available.");
-#else
-
-	m_mutexDecoder.Lock();
-
-	UUInitialize();
-
-	UUSetOption(UUOPT_DESPERATE, 1, NULL);
-	//  UUSetOption(UUOPT_DUMBNESS,1,NULL);
-	// UUSetOption( UUOPT_SAVEPATH, 1, szDestDir );
-
-	UULoadFile((char*) m_szSrcFilename, NULL, 0);
-
-	// choose right attachment
-
-	uulist* attachment = NULL;
-
-	for (int i = 0; ; i++)
-	{
-		uulist* att_tmp = UUGetFileListItem(i);
-
-		if (!att_tmp)
-		{
-			break;
-		}
-
-		if ((att_tmp) && (att_tmp->haveparts))
-		{
-			if (!attachment)
-			{
-				attachment = att_tmp;
-			}
-			else
-			{
-				// multiple attachments!? Can't handle this.
-				attachment = NULL;
-				break;
-			}
-		}
-	}
-
-	if (attachment)
-	{
-		// okay, we got only one attachment, perfect!
-		if ((attachment->haveparts) && (attachment->haveparts[0])) //  && (!attachment->haveparts[1]))  
-		{
-			int r = UUDecodeFile(attachment, (char*)m_szDestFilename);
-
-			if (r == UURET_OK)
-			{
-				// we did it!
-				res = eFinished;
-				if (attachment->filename)
-				{
-					m_szArticleFilename = strdup(attachment->filename);
-				}
-			}
-		}
-		else
-		{
-			error("[ERROR] Wrong number of parts!\n");
-		}
-	}
-	else
-	{
-		error("[ERROR] Wrong number of attachments!\n");
-	}
-
-	UUCleanUp();
-
-	m_mutexDecoder.Unlock();
-
-#endif // ENABLE_UULIB
-
-	return res;
-}
-
 /**
-  * YDecoder
-  * Very primitive (but fast) implementation of yEnc-Decoder
+  * YDecoder: fast implementation of yEnc-Decoder
   */
 
 void YDecoder::Init()
@@ -218,6 +131,8 @@ YDecoder::YDecoder()
 
 void YDecoder::Clear()
 {
+	Decoder::Clear();
+
 	m_bBody = false;
 	m_bBegin = false;
 	m_bPart = false;
@@ -232,11 +147,6 @@ void YDecoder::Clear()
 	m_bAutoSeek = false;
 	m_bNeedSetPos = false;
 	m_bCrcCheck = false;
-	if (m_szArticleFilename)
-	{
-		free(m_szArticleFilename);
-	}
-	m_szArticleFilename = NULL;
 }
 
 /* from crc32.c (http://www.koders.com/c/fid699AFE0A656F0022C9D6B9D1743E697B69CE5815.aspx)
@@ -402,7 +312,7 @@ BreakLoop:
 	return 0;
 }
 
-bool YDecoder::Write(char* buffer, FILE* outfile)
+bool YDecoder::Write(char* buffer, int len, FILE* outfile)
 {
 	unsigned int wcnt = DecodeBuffer(buffer);
 	if (wcnt > 0)
@@ -424,7 +334,7 @@ bool YDecoder::Write(char* buffer, FILE* outfile)
 	return true;
 }
 
-Decoder::EStatus YDecoder::Execute()
+Decoder::EStatus YDecoder::Check()
 {
 	m_lCalculatedCRC ^= 0xFFFFFFFF;
 
@@ -446,6 +356,129 @@ Decoder::EStatus YDecoder::Execute()
 	else if (m_bCrcCheck && m_bCrc && (m_lExpectedCRC != m_lCalculatedCRC))
 	{
 		return eCrcError;
+	}
+
+	return eFinished;
+}
+
+
+/**
+  * UDecoder: supports UU encoding formats
+  */
+
+UDecoder::UDecoder()
+{
+
+}
+
+void UDecoder::Clear()
+{
+	Decoder::Clear();
+
+	m_bBody = false;
+	m_bEnd = false;
+}
+
+/* DecodeBuffer-function uses portions of code from tool UUDECODE by Clem Dye
+ * UUDECODE.c (http://www.bastet.com/uue.zip)
+ * Copyright (C) 1998 Clem Dye
+ *
+ * Released under GPL (thanks)
+ */
+
+#define UU_DECODE_CHAR(c) (c == '`' ? 0 : (((c) - ' ') & 077))
+
+unsigned int UDecoder::DecodeBuffer(char* buffer, int len)
+{
+	if (!m_bBody)
+	{
+		if (!strncmp(buffer, "begin ", 6))
+		{
+			char* pb = buffer;
+			pb += 6; //strlen("begin ")
+
+			// skip file-permissions
+			for (; *pb != ' ' && *pb != '\0' && *pb != '\n' && *pb != '\r'; pb++) ; 
+			pb++;
+
+			// extracting filename
+			char* pe;
+			for (pe = pb; *pe != '\0' && *pe != '\n' && *pe != '\r'; pe++) ;
+			if (m_szArticleFilename)
+			{
+				free(m_szArticleFilename);
+			}
+			m_szArticleFilename = (char*)malloc(pe - pb + 1);
+			strncpy(m_szArticleFilename, pb, pe - pb);
+			m_szArticleFilename[pe - pb] = '\0';
+
+			m_bBody = true;
+			return 0;
+		}
+		else if ((len == 62 || len == 63) && (buffer[62] == '\n' || buffer[62] == '\r') && *buffer == 'M')
+		{
+			m_bBody = true;
+		}
+	}
+
+	if (m_bBody && (!strncmp(buffer, "end ", 4) || *buffer == '`'))
+	{
+		m_bEnd = true;
+	}
+
+	if (m_bBody && !m_bEnd)
+	{
+		int iEffLen = UU_DECODE_CHAR(buffer[0]);
+		if (iEffLen > len)
+		{
+			// error;
+			return 0;
+		}
+
+		char* iptr = buffer;
+		char* optr = buffer;
+		for (++iptr; iEffLen > 0; iptr += 4, iEffLen -= 3)
+		{
+			if (iEffLen >= 3)
+			{
+				*optr++ = UU_DECODE_CHAR (iptr[0]) << 2 | UU_DECODE_CHAR (iptr[1]) >> 4; 
+				*optr++ = UU_DECODE_CHAR (iptr[1]) << 4 | UU_DECODE_CHAR (iptr[2]) >> 2; 
+				*optr++ = UU_DECODE_CHAR (iptr[2]) << 6 | UU_DECODE_CHAR (iptr[3]);
+			}
+			else
+			{
+				if (iEffLen >= 1)
+				{
+					*optr++ = UU_DECODE_CHAR (iptr[0]) << 2 | UU_DECODE_CHAR (iptr[1]) >> 4; 
+				}
+				if (iEffLen >= 2)
+				{
+					*optr++ = UU_DECODE_CHAR (iptr[1]) << 4 | UU_DECODE_CHAR (iptr[2]) >> 2; 
+				}
+			}
+		}
+
+		return optr - buffer;
+	}
+
+	return 0;
+}
+
+bool UDecoder::Write(char* buffer, int len, FILE* outfile)
+{
+	unsigned int wcnt = DecodeBuffer(buffer, len);
+	if (wcnt > 0)
+	{
+		fwrite(buffer, 1, wcnt, outfile);
+	}
+	return true;
+}
+
+Decoder::EStatus UDecoder::Check()
+{
+	if (!m_bBody)
+	{
+		return eNoBinaryData;
 	}
 
 	return eFinished;

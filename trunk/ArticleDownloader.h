@@ -69,14 +69,16 @@ private:
 	char*				m_szInfoName;
 	char*				m_szOutputFilename;
 	time_t				m_tLastUpdateTime;
+	Decoder::EFormat	m_eFormat;
 	YDecoder			m_YDecoder;
+	UDecoder			m_UDecoder;
 	FILE*				m_pOutFile;
 	bool				m_bDuplicate;
 
 	EStatus				Download();
 	bool				Write(char* szLine, int iLen);
 	bool				PrepareFile(char* szLine);
-	EStatus				Decode();
+	EStatus				DecodeCheck();
 	void				FreeConnection(bool bKeepConnected);
 	EStatus				CheckResponse(const char* szResponse, const char* szComment);
 

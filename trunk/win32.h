@@ -30,9 +30,6 @@
 /* Define to 1 to disable smart par-verification and restoration */
 #undef DISABLE_PARCHECK
 
-/* Define to 1 to include support for uulib */
-#undef ENABLE_UULIB
-
 /* Define to the name of macro which returns the name of function being
    compiled */
 #define FUNCTION_MACRO_NAME __FUNCTION__
