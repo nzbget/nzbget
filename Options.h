@@ -53,12 +53,6 @@ public:
 	    mtLog,
 	    mtBoth
 	};
-	enum EDecoder
-	{
-	    dcNone,
-	    dcUulib,
-	    dcYenc
-	};
 	enum EOutputMode
 	{
 	    omLoggable,
@@ -94,7 +88,7 @@ private:
 	EMessageTarget		m_eErrorTarget;
 	EMessageTarget		m_eDebugTarget;
 	EMessageTarget		m_eDetailTarget;
-	EDecoder			m_eDecoder;
+	bool				m_bDecode;
 	bool				m_bCreateBrokenLog;
 	bool				m_bResetLog;
 	int					m_iConnectionTimeout;
@@ -192,7 +186,7 @@ public:
 	EMessageTarget		GetDetailTarget() const { return m_eDetailTarget; }
 	int					GetConnectionTimeout() { return m_iConnectionTimeout; }
 	int					GetTerminateTimeout() { return m_iTerminateTimeout; }
-	EDecoder			GetDecoder() { return m_eDecoder; };
+	bool				GetDecode() { return m_bDecode; };
 	bool				GetAppendNZBDir() { return m_bAppendNZBDir; }
 	bool				GetContinuePartial() { return m_bContinuePartial; }
 	bool				GetRenameBroken() { return m_bRenameBroken; }

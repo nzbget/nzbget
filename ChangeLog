@@ -1,3 +1,7 @@
+nzbget-0.3.2-testing:
+  - see subversion-log on sourceforge.net:
+    http://nzbget.svn.sourceforge.net/viewvc/nzbget/trunk/?view=log
+  
 nzbget-0.3.1:
   - Greatly reduced the memory consumption by keeping articles' info on disk 
     until the file download starts;

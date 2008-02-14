@@ -87,9 +87,6 @@ And the following libraries are optional:
    - libpar2     (http://parchive.sourceforge.net)
    - libsigc++   (http://libsigc.sourceforge.net)
 
- - for support of encoding-formats other than yEnc (disabled by default):
-   - libuu       (http://www.fpx.de/fp/Software/UUDeview)
-
 All these libraries are included in modern Linux distributions and
 should be available as installable packages. Please note that you also 
 need the developer packages for these libraries too, they package names 
@@ -124,10 +121,6 @@ Configure-options
 -----------------
 You may run configure with additional arguments:
 
-  --enable-uulib - to make with uulib-library, in a case you want it
-    (see later section "Optional package: uulib"). This option is not
-    enabled by default.
-    
   --disable-curses - to make without curses-support. Use this option
     if you can not use curses/ncurses.
     
@@ -136,63 +129,18 @@ You may run configure with additional arguments:
        
   --enable-debug - to build in debug-mode, if you want to see and log
     debug-messages.
-
-Optional package: uulib
------------------------
-uulib is not required to compile and run nzbget, because nzbget includes
-internal decoder for yEnc-format. However, uulib supports many other formats,
-you may possibly want to have support for. In this case you can build the
-program with uulib-support enabled.
-
-NOTE: enabling uulib does not disable internal decoder. The program built with
-uulib-support can use both decoders (internal and uulib), depending on option
-"decoder" in program's configuration file.
-
-To build with uulib use option "--enable-uulib" while running configure:
-  
-  ./configure --enable-uulib
-
-The uulib must be installed on your system. On most linux distributions 
-the package uulib-dev is available. So you only need to install this package
-and run configure with parameter "--enable-uulib".
-If you do not have this package you can compile uulib yourself:
-  
-  - download source code of uudeview from 
-    http://www.fpx.de/fp/Software/UUDeview;
-  - build uudeview as usually:
-      /.confugure
-      make
-  - start nzbget's configure-script with following parameters:
-      ./configure --enable-uulib \
-         --with-uulib-includes=<path to uudeview>/uulib \
-         --with-uulib-libraries=<path to uudeview>/uulib
-    for example:
-      ./configure --enable-uulib \
-         --with-uulib-includes=/home/user/uudeview-0.5.20/uulib \
-         --with-uulib-libraries=/home/user/uudeview-0.5.20/uulib
-  - now you can compile nzbget.
-
-NOTE: after nzbget is compiled, the code of uulib-library is built into
-nzbget's executable. You do not need to have uulib on target system
-to run nzbget.
-
+    
 Optional package: par-check
 ---------------------------
 NZBGet can check and repair downloaded files for you. For this purpose
 it uses library par2 (libpar2), which needs sigc++ on its part.
 
-To build with par-check use option "--enable-parcheck" while running 
-configure:
-  
-  ./configure --enable-parcheck
-
 The libpar2 and libsigc++ (version 2 or later) must be installed on your
 system. On most linux distributions these libraries are available as packages.
 So you only need to install theme and run configure with parameter
 "--enable-parcheck".
-If you do not have these package you can compile them yourself. Please
-refer to section "Optional package: uulib" for an example on how to
-compile additional library. Following configure-parameters may be usefull:
+If you do not have these packages you can compile them yourself. 
+Following configure-parameters may be usefull:
 
   --with-libpar2-includes
   --with-libpar2-libraries
@@ -201,12 +149,17 @@ compile additional library. Following configure-parameters may be usefull:
   
 The library libsigc++ must be installed first, since libpar2 requires it.
 
+If you are not able to use libpar2 or libsigc++ or do not want them you can
+make the program without support for par-check using option 
+"--disable-parcheck":
+
+  ./configure --disable-parcheck
+  
 Optional package: curses
 -------------------------
 For curses-outputmode you need ncurses or curses on your system.
 If you do not have one of them you can download and compile ncurses yourself.
-Please refer to section "Optional package: uulib" for an example on how to
-compile additional library. Following configure-parameters may be usefull:
+Following configure-parameters may be usefull:
 
   --with-libcurses-includes
   --with-libcurses-libraries

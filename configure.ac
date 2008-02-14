@@ -246,42 +246,6 @@ fi
 
 
 dnl
-dnl Use uulib. Deafult: no
-dnl
-AC_MSG_CHECKING(whether to use uulib for decoding and joining)
-AC_ARG_ENABLE(uulib,
-	[  --enable-uulib		use uulib for decoding and joining],
-	[ ENABLEUULIB=$enableval ],
-	[ ENABLEUULIB=no] )
-AC_MSG_RESULT($ENABLEUULIB)
-if test "$ENABLEUULIB" = "yes"; then
-	AC_DEFINE([ENABLE_UULIB],1,[Define to 1 to include support for uulib])
-
-	dnl 
-	dnl checks for uulib includes and libraries.
-	dnl
-	INCVAL="${LIBPREF}/include"
-	LIBVAL="${LIBPREF}/lib"
-	AC_ARG_WITH(uulib_includes,
-		[  --with-uulib-includes=DIR	uulib include directory],
-		[INCVAL="$withval"])
-
-	CPPFLAGS="${CPPFLAGS} -I${INCVAL}"
-	AC_CHECK_HEADER($INCVAL/uudeview.h,,
-		AC_MSG_ERROR("uulib header files were not found in $INCVAL."))
-
-	AC_ARG_WITH(uulib_libraries,
-		[  --with-uulib-libraries=DIR	uulib library directory],
-		[LIBVAL="$withval"])
-
-	LDFLAGS="${LDFLAGS} -L${LIBVAL}"
-
-	AC_SEARCH_LIBS([UUInitialize], [uu],,
-		AC_MSG_ERROR("uulib library not found in $LIBVAL."))
-fi
-
-
-dnl
 dnl Use lib2par for par-checking. Deafult: no
 dnl
 AC_MSG_CHECKING(whether to include code for par-checking)

@@ -358,8 +358,7 @@ void PrePostProcessor::QueueCoordinatorUpdate(Subject * Caller, void * Aspect)
 			if (pAspect->eAction == QueueCoordinator::eaFileCompleted)
 			{
 #ifndef DISABLE_PARCHECK
-				if (g_pOptions->GetParCheck() && 
-					g_pOptions->GetDecoder() != Options::dcNone)
+				if (g_pOptions->GetParCheck() && g_pOptions->GetDecode())
 				{
 					CheckPars(pAspect->pDownloadQueue, pAspect->pFileInfo);
 				}

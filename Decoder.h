@@ -46,7 +46,7 @@ public:
 	{
 		efUnknown,
 		efYenc,
-		efUu
+		efUx,
 	};
 
 	static const char* FormatNames[];
@@ -59,20 +59,13 @@ protected:
 public:
 							Decoder();
 	virtual					~Decoder();
-	virtual EStatus			Execute() = 0;
+	virtual EStatus			Check() = 0;
+	virtual void			Clear();
+	virtual bool			Write(char* buffer, int len, FILE* outfile) = 0;
 	void					SetSrcFilename(const char* szSrcFilename) { m_szSrcFilename = szSrcFilename; }
 	void					SetDestFilename(const char* szDestFilename) { m_szDestFilename = szDestFilename; }
 	const char*				GetArticleFilename() { return m_szArticleFilename; }
-	static EFormat			DetectFormat(const char* buffer, int iLen);
-};
-
-class UULibDecoder: public Decoder
-{
-private:
-	static Mutex			m_mutexDecoder;
-
-public:
-	virtual EStatus			Execute();
+	static EFormat			DetectFormat(const char* buffer, int len);
 };
 
 class YDecoder: public Decoder
@@ -100,14 +93,29 @@ protected:
 
 public:
 							YDecoder();
-	virtual EStatus			Execute();
-	void					Clear();
-	bool					Write(char* buffer, FILE* outfile);
+	virtual EStatus			Check();
+	virtual void			Clear();
+	virtual bool			Write(char* buffer, int len, FILE* outfile);
 	void					SetAutoSeek(bool bAutoSeek) { m_bAutoSeek = m_bNeedSetPos = bAutoSeek; }
 	void					SetCrcCheck(bool bCrcCheck) { m_bCrcCheck = bCrcCheck; }
 
 	static void				Init();
 	static void				Final();
+};
+
+class UDecoder: public Decoder
+{
+private:
+	bool					m_bBody;
+	bool					m_bEnd;
+
+	unsigned int			DecodeBuffer(char* buffer, int len);
+
+public:
+							UDecoder();
+	virtual EStatus			Check();
+	virtual void			Clear();
+	virtual bool			Write(char* buffer, int len, FILE* outfile);
 };
 
 #endif
