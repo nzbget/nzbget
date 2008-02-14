@@ -159,7 +159,7 @@ DupeCheck=no
 RenameBroken=no
 
 # Decode articles (yes, no)
-# yes - use internal yEnc-Decoder.
+# yes - decode articles using internal decoder (supports yEnc and UU formats).
 # no - the articles will not be decoded and joined. External programs 
 #      (like "uudeview") can be used to decode and join downloaded articles.
 #      Also useful for debugging to look at article's source text.
