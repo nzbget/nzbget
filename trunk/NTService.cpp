@@ -1,5 +1,5 @@
 /*
- *  This file if part of nzbget
+ *  This file is part of nzbget
  *
  *  Copyright (C) 2007  Andrei Prygounkov <hugbug@users.sourceforge.net>
  *
@@ -133,8 +133,12 @@ void InstallService(int argc, char *argv[])
 		return;
 	}
 	
+	char szExeName[1024];
+	GetModuleFileName(NULL, szExeName, 1024);
+	szExeName[1024-1] = '\0';
+
 	char szCmdLine[1024];
-	snprintf(szCmdLine, 1024, "%s -D", argv[0]);
+	snprintf(szCmdLine, 1024, "%s -D", szExeName);
 	szCmdLine[1024-1] = '\0';
 
 	SC_HANDLE hService = CreateService(scm, strServiceName,
