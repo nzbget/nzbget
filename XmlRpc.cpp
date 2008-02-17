@@ -881,7 +881,7 @@ void PostQueueXmlCommand::Execute()
 		char szNZBNicename[1024];
 		NZBInfo::MakeNiceNZBName(pParJob->GetNZBFilename(), szNZBNicename, sizeof(szNZBNicename));
 
-	    char* szParStageKind[] = { "QUEUED", "PREPAIRING", "VERIFYING", "CALCULATING", "REPAIRING"};
+	    char* szParStageKind[] = { "QUEUED", "LOADING_PARS", "VERIFYING_SOURCES", "REPAIRING", "VERIFYING_REPAIRED" };
 
 		char* xmlNZBNicename = Util::XmlEncode(szNZBNicename);
 		char* xmlNZBFilename = Util::XmlEncode(pParJob->GetNZBFilename());

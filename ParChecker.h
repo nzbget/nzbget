@@ -47,10 +47,10 @@ public:
 
 	enum EStage
 	{
-		ptPreparing,
-		ptVerifying,
-		ptCalculating,
+		ptLoadingPars,
+		ptVerifyingSources,
 		ptRepairing,
+		ptVerifyingRepaired,
 	};
 
 	typedef std::deque<char*>		QueuedParFiles;
