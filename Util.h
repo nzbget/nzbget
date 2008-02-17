@@ -72,6 +72,7 @@ public:
 	static bool DirectoryExists(const char* szDirFilename);
 	static bool CreateDirectory(const char* szDirFilename);
 	static bool ForceDirectories(const char* szPath);
+	static long long FileSize(const char* szFilename);
 
 	static long long JoinInt64(unsigned int Hi, unsigned int Lo);
 	static void SplitInt64(long long Int64, unsigned int* Hi, unsigned int* Lo);

@@ -46,6 +46,9 @@
 /* Define to 1 to use pragma pack directive in MessageBase.h */
 #undef HAVE_PRAGMA_PACK
 
+/* Define to 1 if stat64 is supported */
+#undef HAVE_STAT64
+
 /* Define to 1 if you have the <stdint.h> header file. */
 #undef HAVE_STDINT_H
 
