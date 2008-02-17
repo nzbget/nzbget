@@ -1008,7 +1008,7 @@ void PrePostProcessor::UpdateParProgress()
 	}
 	pParJob->m_iFileProgress = m_ParChecker.GetFileProgress();
 	pParJob->m_iStageProgress = m_ParChecker.GetStageProgress();
-    EParJobStage StageKind[] = { ptPreparing, ptVerifying, ptCalculating, ptRepairing };
+    EParJobStage StageKind[] = { ptLoadingPars, ptVerifyingSources, ptRepairing, ptVerifyingRepaired };
 	EParJobStage eStage = StageKind[m_ParChecker.GetStage()];
 
 	if (!pParJob->m_tStartTime)

@@ -83,7 +83,7 @@ ParChecker::ParChecker()
 	m_iStageProgress = 0;
 	m_iExtraFiles = 0;
 	m_bVerifyingExtraFiles = false;
-	m_eStage = ptPreparing;
+	m_eStage = ptLoadingPars;
 	m_QueuedParFiles.clear();
 }
 
@@ -152,7 +152,7 @@ void ParChecker::SetStatus(EStatus eStatus)
 void ParChecker::Run()
 {
 	m_bRepairNotNeeded = false;
-	m_eStage = ptPreparing;
+	m_eStage = ptLoadingPars;
 	m_iProcessedFiles = 0;
 	m_iExtraFiles = 0;
 	m_bVerifyingExtraFiles = false;
@@ -204,7 +204,7 @@ void ParChecker::Run()
 	}
 	m_szErrMsg = NULL;
 	
-	m_eStage = ptVerifying;
+	m_eStage = ptVerifyingSources;
     res = pRepairer->Process(commandLine, false);
     debug("ParChecker: Process-result=%i", res);
 
@@ -282,7 +282,7 @@ void ParChecker::Run()
 			m_iFileProgress = 0;
 			m_iStageProgress = 0;
 			m_iProcessedFiles = 0;
-			m_eStage = ptCalculating;
+			m_eStage = ptRepairing;
 			m_iFilesToRepair = pRepairer->damagedfilecount + pRepairer->missingfilecount;
 			UpdateProgress();
 
@@ -428,15 +428,18 @@ bool ParChecker::AddSplittedFragments(const char* szFilename)
 
 void ParChecker::signal_filename(std::string str)
 {
-	info("%s file %s", m_eStage == ptCalculating || m_eStage == ptRepairing ? "Repairing" : "Verifying", str.c_str());
+    char* szStageMessage[] = { "Loading file", "Verifying file", "Repairing file", "Verifying repaired file" };
 
-	snprintf(m_szProgressLabel, 1024, "%s file %s", m_eStage == ptCalculating || m_eStage == ptRepairing ? "Repairing" : "Verifying", str.c_str());
+	if (m_eStage == ptRepairing)
+	{
+		m_eStage = ptVerifyingRepaired;
+	}
+
+	info("%s %s", szStageMessage[m_eStage], str.c_str());
+
+	snprintf(m_szProgressLabel, 1024, "%s %s", szStageMessage[m_eStage], str.c_str());
 	m_szProgressLabel[1024-1] = '\0';
 	m_iFileProgress = 0;
-	if (m_eStage == ptCalculating)
-	{
-		m_eStage = ptRepairing;
-	}
 	UpdateProgress();
 }
 
@@ -444,7 +447,7 @@ void ParChecker::signal_progress(double progress)
 {
 	m_iFileProgress = (int)progress;
 
-	if (m_eStage == ptCalculating)
+	if (m_eStage == ptRepairing)
 	{
 		// calculating repair-data for all files
 		m_iStageProgress = m_iFileProgress;
@@ -454,7 +457,7 @@ void ParChecker::signal_progress(double progress)
 		// processing individual files
 
 		int iTotalFiles = 0;
-		if (m_eStage == ptRepairing)
+		if (m_eStage == ptVerifyingRepaired)
 		{
 			// repairing individual files
 			iTotalFiles = m_iFilesToRepair;
@@ -491,7 +494,7 @@ void ParChecker::signal_done(std::string str, int available, int total)
 {
 	m_iProcessedFiles++;
 
-	if (m_eStage == ptVerifying)
+	if (m_eStage == ptVerifyingSources)
 	{
 		if (available < total && !m_bVerifyingExtraFiles)
 		{

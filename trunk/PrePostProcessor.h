@@ -43,10 +43,10 @@ public:
 	enum EParJobStage
 	{
 		ptQueued,
-		ptPreparing,
-		ptVerifying,
-		ptCalculating,
+		ptLoadingPars,
+		ptVerifyingSources,
 		ptRepairing,
+		ptVerifyingRepaired,
 	};
 
 	class ParJob
