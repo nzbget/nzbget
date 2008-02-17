@@ -88,6 +88,14 @@ AC_CHECK_FUNC(getopt_long,
 
 
 dnl
+dnl stat64
+dnl
+AC_CHECK_FUNC(stat64,
+	[AC_DEFINE([HAVE_STAT64], 1, [Define to 1 if stat64 is supported])],
+	[AC_LIBOBJ(stat64)])
+
+
+dnl
 dnl check ctime_r
 dnl
 AC_MSG_CHECKING(for ctime_r)

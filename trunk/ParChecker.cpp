@@ -81,6 +81,8 @@ ParChecker::ParChecker()
 	m_szProgressLabel = (char*)malloc(1024);
 	m_iFileProgress = 0;
 	m_iStageProgress = 0;
+	m_iExtraFiles = 0;
+	m_bVerifyingExtraFiles = false;
 	m_eStage = ptPreparing;
 	m_QueuedParFiles.clear();
 }
@@ -152,6 +154,8 @@ void ParChecker::Run()
 	m_bRepairNotNeeded = false;
 	m_eStage = ptPreparing;
 	m_iProcessedFiles = 0;
+	m_iExtraFiles = 0;
+	m_bVerifyingExtraFiles = false;
 
 	info("Verifying %s", m_szInfoName);
 	SetStatus(psWorking);
@@ -203,7 +207,14 @@ void ParChecker::Run()
 	m_eStage = ptVerifying;
     res = pRepairer->Process(commandLine, false);
     debug("ParChecker: Process-result=%i", res);
-	
+
+	if (!IsStopped() && res == eRepairNotPossible && CheckSplittedFragments())
+	{
+		pRepairer->UpdateVerificationResults();
+		res = pRepairer->Process(commandLine, false);
+		debug("ParChecker: Process-result=%i", res);
+	}
+
 	while (!IsStopped() && res == eRepairNotPossible)
 	{
 		int missingblockcount = pRepairer->missingblockcount - pRepairer->recoverypacketmap.size();
@@ -345,6 +356,76 @@ void ParChecker::QueueChanged()
 	m_mutexQueuedParFiles.Unlock();
 }
 
+bool ParChecker::CheckSplittedFragments()
+{
+	bool bFragmentsAdded = false;
+
+	for (vector<Par2RepairerSourceFile*>::iterator it = ((Repairer*)m_pRepairer)->sourcefiles.begin();
+		it != ((Repairer*)m_pRepairer)->sourcefiles.end(); it++)
+	{
+		Par2RepairerSourceFile *sourcefile = *it;
+		if (!sourcefile->GetTargetExists() && AddSplittedFragments(sourcefile->TargetFileName().c_str()))
+		{
+			bFragmentsAdded = true;
+		}
+	}
+
+	return bFragmentsAdded;
+}
+
+bool ParChecker::AddSplittedFragments(const char* szFilename)
+{
+	char szDirectory[1024];
+	strncpy(szDirectory, szFilename, 1024);
+	szDirectory[1024-1] = '\0';
+
+	char* szBasename = Util::BaseFileName(szDirectory);
+	if (szBasename == szDirectory)
+	{
+		return false;
+	}
+	szBasename[-1] = '\0';
+	int iBaseLen = strlen(szBasename);
+
+	list<CommandLine::ExtraFile> extrafiles;
+
+	DirBrowser dir(szDirectory);
+	while (const char* filename = dir.Next())
+	{
+		if (!strncasecmp(filename, szBasename, iBaseLen))
+		{
+			const char* p = filename + iBaseLen;
+			if (*p == '.')
+			{
+				for (p++; *p && strchr("0123456789", *p); p++) ;
+				if (!*p)
+				{
+					debug("Found splitted fragment %s", filename);
+
+					char fullfilename[1024];
+					snprintf(fullfilename, 1024, "%s%c%s", szDirectory, PATH_SEPARATOR, filename);
+					fullfilename[1024-1] = '\0';
+
+					CommandLine::ExtraFile extrafile(fullfilename, Util::FileSize(fullfilename));
+					extrafiles.push_back(extrafile);
+				}
+			}
+		}
+	}
+
+	bool bFragmentsAdded = false;
+
+	if (!extrafiles.empty())
+	{
+		m_iExtraFiles = extrafiles.size();
+		m_bVerifyingExtraFiles = true;
+		bFragmentsAdded = ((Repairer*)m_pRepairer)->VerifyExtraFiles(extrafiles);
+		m_bVerifyingExtraFiles = false;
+	}
+
+	return bFragmentsAdded;
+}
+
 void ParChecker::signal_filename(std::string str)
 {
 	info("%s file %s", m_eStage == ptCalculating || m_eStage == ptRepairing ? "Repairing" : "Verifying", str.c_str());
@@ -381,7 +462,7 @@ void ParChecker::signal_progress(double progress)
 		else
 		{
 			// verifying individual files
-			iTotalFiles = ((Repairer*)m_pRepairer)->sourcefiles.size();
+			iTotalFiles = ((Repairer*)m_pRepairer)->sourcefiles.size() + m_iExtraFiles;
 		}
 
 		if (iTotalFiles > 0)
@@ -412,9 +493,30 @@ void ParChecker::signal_done(std::string str, int available, int total)
 
 	if (m_eStage == ptVerifying)
 	{
-		if (available < total)
+		if (available < total && !m_bVerifyingExtraFiles)
 		{
-			warn("File %s has %i bad block(s) of total %i block(s)", str.c_str(), total - available, total);
+			bool bFileExists = true;
+
+			for (vector<Par2RepairerSourceFile*>::iterator it = ((Repairer*)m_pRepairer)->sourcefiles.begin();
+				it != ((Repairer*)m_pRepairer)->sourcefiles.end(); it++)
+			{
+				Par2RepairerSourceFile *sourcefile = *it;
+				if (sourcefile && !strcmp(str.c_str(), Util::BaseFileName(sourcefile->TargetFileName().c_str())) &&
+					!sourcefile->GetTargetExists())
+				{
+					bFileExists = false;
+					break;
+				}
+			}
+
+			if (bFileExists)
+			{
+				warn("File %s has %i bad block(s) of total %i block(s)", str.c_str(), total - available, total);
+			}
+			else
+			{
+				warn("File %s with %i block(s) is missing", str.c_str(), total);
+			}
 		}
 	}
 }

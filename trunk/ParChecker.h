@@ -69,11 +69,15 @@ private:
 	Semaphore			m_semNeedMoreFiles;
 	int					m_iProcessedFiles;
 	int					m_iFilesToRepair;
+	int					m_iExtraFiles;
+	bool				m_bVerifyingExtraFiles;
 	char*				m_szProgressLabel;
 	int					m_iFileProgress;
 	int					m_iStageProgress;
 
 	void				LoadMorePars();
+	bool				CheckSplittedFragments();
+	bool				AddSplittedFragments(const char* szFilename);
 	void				signal_filename(std::string str);
 	void				signal_progress(double progress);
 	void				signal_done(std::string str, int available, int total);

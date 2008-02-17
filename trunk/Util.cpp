@@ -730,7 +730,7 @@ bool Util::MoveFile(const char* szSrcFilename, const char* szDstFilename)
 bool Util::FileExists(const char* szFilename)
 {
 	struct stat buffer;
-	bool bExists = !stat(szFilename, &buffer) && S_ISREG(buffer.st_mode);;
+	bool bExists = !stat(szFilename, &buffer) && S_ISREG(buffer.st_mode);
 	return bExists;
 }
 
@@ -745,4 +745,21 @@ bool Util::CreateDirectory(const char* szDirFilename)
 {
 	mkdir(szDirFilename, S_DIRMODE);
 	return DirectoryExists(szDirFilename);
+}
+
+long long Util::FileSize(const char* szFilename)
+{
+#ifdef WIN32
+	struct _stat32i64 buffer;
+	_stat32i64(szFilename, &buffer);
+#else
+#ifdef HAVE_STAT64
+	struct stat64 buffer;
+	stat64(szFilename, &buffer);
+#else
+	struct stat buffer;
+	stat(szFilename, &buffer);
+#endif
+#endif
+	return buffer.st_size;
 }
