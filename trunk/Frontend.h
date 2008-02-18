@@ -1,5 +1,5 @@
 /*
- *  This file if part of nzbget
+ *  This file is part of nzbget
  *
  *  Copyright (C) 2004  Sven Henkel <sidddy@users.sourceforge.net>
  *  Copyright (C) 2007  Andrei Prygounkov <hugbug@users.sourceforge.net>
@@ -55,7 +55,7 @@ protected:
 	bool				m_bPause;
 	float				m_fDownloadLimit;
 	int					m_iThreadCount;
-	int					m_iParJobCount;
+	int					m_iPostJobCount;
 	int					m_iUpTimeSec;
 	int					m_iDnTimeSec;
 	long long			m_iAllBytes;

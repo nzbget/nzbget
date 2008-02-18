@@ -68,7 +68,7 @@ Frontend::Frontend()
 	m_bPause = false;
 	m_fDownloadLimit = 0;
 	m_iThreadCount = 0;
-	m_iParJobCount = 0;
+	m_iPostJobCount = 0;
 	m_iUpTimeSec = 0;
 	m_iDnTimeSec = 0;
 	m_iAllBytes = 0;
@@ -102,9 +102,9 @@ bool Frontend::PrepareData()
 			m_bPause = g_pOptions->GetPause();
 			m_fDownloadLimit = g_pOptions->GetDownloadRate();
 			m_iThreadCount = Thread::GetThreadCount();
-			PrePostProcessor::ParQueue* pParQueue = g_pPrePostProcessor->LockParQueue();
-			m_iParJobCount = pParQueue->size();
-			g_pPrePostProcessor->UnlockParQueue();
+			PrePostProcessor::PostQueue* pPostQueue = g_pPrePostProcessor->LockPostQueue();
+			m_iPostJobCount = pPostQueue->size();
+			g_pPrePostProcessor->UnlockPostQueue();
 			g_pQueueCoordinator->CalcStat(&m_iUpTimeSec, &m_iDnTimeSec, &m_iAllBytes, &m_bStandBy);
 		}
 	}
@@ -355,7 +355,7 @@ bool Frontend::RequestFileList()
 		m_fCurrentDownloadSpeed = ntohl(ListResponse.m_iDownloadRate) / 1024.0;
 		m_fDownloadLimit = ntohl(ListResponse.m_iDownloadLimit) / 1024.0;
 		m_iThreadCount = ntohl(ListResponse.m_iThreadCount);
-		m_iParJobCount = ntohl(ListResponse.m_iParJobCount);
+		m_iPostJobCount = ntohl(ListResponse.m_iPostJobCount);
 		m_iUpTimeSec = ntohl(ListResponse.m_iUpTimeSec);
 		m_iDnTimeSec = ntohl(ListResponse.m_iDownloadTimeSec);
 		m_bStandBy = ntohl(ListResponse.m_bServerStandBy);

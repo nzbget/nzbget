@@ -507,9 +507,9 @@ void StatusXmlCommand::Execute()
 	int iDownloadLimit = (int)(g_pOptions->GetDownloadRate() * 1024);
 	bool bServerPaused = g_pOptions->GetPause();
 	int iThreadCount = Thread::GetThreadCount() - 1; // not counting itself
-	PrePostProcessor::ParQueue* pParQueue = g_pPrePostProcessor->LockParQueue();
-	int iParJobCount = pParQueue->size();
-	g_pPrePostProcessor->UnlockParQueue();
+	PrePostProcessor::PostQueue* pPostQueue = g_pPrePostProcessor->LockPostQueue();
+	int iParJobCount = pPostQueue->size();
+	g_pPrePostProcessor->UnlockPostQueue();
 	unsigned int iDownloadedSizeHi, iDownloadedSizeLo;
 	int iUpTimeSec, iDownloadTimeSec;
 	long long iAllBytes;
@@ -858,9 +858,9 @@ void PostQueueXmlCommand::Execute()
 		"<value><struct>\n"
 		"<member><name>NZBNicename</name><value><string>%s</string></value></member>\n"
 		"<member><name>NZBFilename</name><value><string>%s</string></value></member>\n"
+		"<member><name>DestDir</name><value><string>%s</string></value></member>\n"
 		"<member><name>ParFilename</name><value><string>%s</string></value></member>\n"
 		"<member><name>InfoName</name><value><string>%s</string></value></member>\n"
-		"<member><name>Action</name><value><string>%s</string></value></member>\n"
 		"<member><name>Stage</name><value><string>%s</string></value></member>\n"
 		"<member><name>ProgressLabel</name><value><string>%s</string></value></member>\n"
 		"<member><name>FileProgress</name><value><int>%i</int></value></member>\n"
@@ -869,35 +869,37 @@ void PostQueueXmlCommand::Execute()
 		"<member><name>StageTimeSec</name><value><int>%i</int></value></member>\n"
 		"</struct></value>\n";
 
-	PrePostProcessor::ParQueue* pParQueue = g_pPrePostProcessor->LockParQueue();
+	PrePostProcessor::PostQueue* pPostQueue = g_pPrePostProcessor->LockPostQueue();
 
 	time_t tCurTime = time(NULL);
 	int szItemBufSize = 10240;
 	char* szItemBuf = (char*)malloc(szItemBufSize);
 
-	for (PrePostProcessor::ParQueue::iterator it = pParQueue->begin(); it != pParQueue->end(); it++)
+	for (PrePostProcessor::PostQueue::iterator it = pPostQueue->begin(); it != pPostQueue->end(); it++)
 	{
-		PrePostProcessor::ParJob* pParJob = *it;
+		PrePostProcessor::PostJob* pPostJob = *it;
 		char szNZBNicename[1024];
-		NZBInfo::MakeNiceNZBName(pParJob->GetNZBFilename(), szNZBNicename, sizeof(szNZBNicename));
+		NZBInfo::MakeNiceNZBName(pPostJob->GetNZBFilename(), szNZBNicename, sizeof(szNZBNicename));
 
-	    char* szParStageKind[] = { "QUEUED", "LOADING_PARS", "VERIFYING_SOURCES", "REPAIRING", "VERIFYING_REPAIRED" };
+	    char* szPostStageName[] = { "QUEUED", "LOADING_PARS", "VERIFYING_SOURCES", "REPAIRING", "VERIFYING_REPAIRED", "EXECUTING_SCRIPT", "FINISHED" };
 
 		char* xmlNZBNicename = Util::XmlEncode(szNZBNicename);
-		char* xmlNZBFilename = Util::XmlEncode(pParJob->GetNZBFilename());
-		char* xmlParFilename = Util::XmlEncode(pParJob->GetParFilename());
-		char* xmlInfoName = Util::XmlEncode(pParJob->GetInfoName());
-		char* xmlProgressLabel = pParJob->GetProgressLabel() ? Util::XmlEncode(pParJob->GetProgressLabel()) : NULL;
+		char* xmlNZBFilename = Util::XmlEncode(pPostJob->GetNZBFilename());
+		char* xmlDestDir = Util::XmlEncode(pPostJob->GetDestDir());
+		char* xmlParFilename = Util::XmlEncode(pPostJob->GetParFilename());
+		char* xmlInfoName = Util::XmlEncode(pPostJob->GetInfoName());
+		char* xmlProgressLabel = pPostJob->GetProgressLabel() ? Util::XmlEncode(pPostJob->GetProgressLabel()) : NULL;
 
-		snprintf(szItemBuf, szItemBufSize, POSTQUEUE_ITEM, szNZBNicename, xmlNZBFilename, xmlParFilename, 
-			xmlInfoName, "par", szParStageKind[pParJob->GetStage()], pParJob->GetProgressLabel() ? xmlProgressLabel : "", 
-			pParJob->GetFileProgress(), pParJob->GetStageProgress(), 
-			pParJob->GetStartTime() ? tCurTime - pParJob->GetStartTime() : 0, 
-			pParJob->GetStageTime() ? tCurTime - pParJob->GetStageTime() : 0);
+		snprintf(szItemBuf, szItemBufSize, POSTQUEUE_ITEM, szNZBNicename, xmlNZBFilename, xmlDestDir, xmlParFilename, 
+			xmlInfoName, szPostStageName[pPostJob->GetStage()], pPostJob->GetProgressLabel() ? xmlProgressLabel : "", 
+			pPostJob->GetFileProgress(), pPostJob->GetStageProgress(), 
+			pPostJob->GetStartTime() ? tCurTime - pPostJob->GetStartTime() : 0, 
+			pPostJob->GetStageTime() ? tCurTime - pPostJob->GetStageTime() : 0);
 		szItemBuf[szItemBufSize-1] = '\0';
 
 		free(xmlNZBNicename);
 		free(xmlNZBFilename);
+		free(xmlDestDir);
 		free(xmlParFilename);
 		free(xmlInfoName);
 		if (xmlProgressLabel)
@@ -909,7 +911,7 @@ void PostQueueXmlCommand::Execute()
 	}
 	free(szItemBuf);
 
-	g_pPrePostProcessor->UnlockParQueue();
+	g_pPrePostProcessor->UnlockPostQueue();
 
 	AppendResponse("</data></array>\n");
 }

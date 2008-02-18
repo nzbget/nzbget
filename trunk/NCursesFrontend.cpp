@@ -595,21 +595,21 @@ void NCursesFrontend::PrintStatus()
         szDownloadLimit[0] = 0;
     }
 
-    char szParStatus[128];
-    if (m_iParJobCount > 0)
+    char szPostStatus[128];
+    if (m_iPostJobCount > 0)
     {
-        sprintf(szParStatus, ", %i par%s", m_iParJobCount, m_iParJobCount > 1 ? "s" : "");
+        sprintf(szPostStatus, ", %i post-job%s", m_iPostJobCount, m_iPostJobCount > 1 ? "s" : "");
     }
     else
     {
-        szParStatus[0] = 0;
+        szPostStatus[0] = 0;
     }
 
 	float fAverageSpeed = m_iDnTimeSec > 0 ? m_iAllBytes / m_iDnTimeSec / 1024 : 0;
 
 	snprintf(tmp, MAX_SCREEN_WIDTH, " %d threads, %.0f KB/s, %.2f MB remaining%s%s%s%s, Avg. %.0f KB/s", 
 		m_iThreadCount, fCurrentDownloadSpeed, (float)(m_lRemainingSize / 1024.0 / 1024.0), timeString, 
-		szParStatus, m_bPause ? (m_bStandBy ? ", Paused" : ", Pausing") : "", szDownloadLimit, fAverageSpeed);
+		szPostStatus, m_bPause ? (m_bStandBy ? ", Paused" : ", Pausing") : "", szDownloadLimit, fAverageSpeed);
 	tmp[MAX_SCREEN_WIDTH - 1] = '\0';
     PlotLine(tmp, iStatusRow, 0, NCURSES_COLORPAIR_STATUS);
 }

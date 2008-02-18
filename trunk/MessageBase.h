@@ -1,5 +1,5 @@
 /*
- *  This file if part of nzbget
+ *  This file is part of nzbget
  *
  *  Copyright (C) 2005  Bo Cordes Petersen <placebodk@users.sourceforge.net>
  *  Copyright (C) 2007  Andrei Prygounkov <hugbug@users.sourceforge.net>
@@ -137,7 +137,7 @@ struct SNZBListResponse
 	int32_t					m_iDownloadLimit;		// Current download limit, in Bytes pro Second
 	int32_t					m_bServerPaused;		// 1 - server is currently in paused-state
 	int32_t					m_iThreadCount;			// Number of threads running
-	int32_t					m_iParJobCount;			// Number of ParJobs in Par-Checker queue (including current file)
+	int32_t					m_iPostJobCount;		// Number of jobs in post-processor queue (including current job)
 	int32_t					m_iUpTimeSec;			// Server up time in seconds
 	int32_t					m_iDownloadTimeSec;		// Server download time in seconds (up_time - standby_time)
 	int32_t					m_iDownloadedBytesLo;	// Amount of data downloaded since server start, Low 32-bits of 64-bit value

@@ -334,9 +334,9 @@ bool RemoteClient::RequestServerList()
 
 	printf("Threads running: %i\n", ntohl(ListResponse.m_iThreadCount));
 
-	if (ntohl(ListResponse.m_iParJobCount) > 0)
+	if (ntohl(ListResponse.m_iPostJobCount) > 0)
 	{
-		printf("Par-jobs: %i\n", (int)ntohl(ListResponse.m_iParJobCount));
+		printf("Post-jobs: %i\n", (int)ntohl(ListResponse.m_iPostJobCount));
 	}
 
 	if (ntohl(ListResponse.m_bServerStandBy))
