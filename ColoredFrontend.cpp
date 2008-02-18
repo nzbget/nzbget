@@ -94,14 +94,14 @@ void ColoredFrontend::PrintStatus()
 		szDownloadLimit[0] = 0;
 	}
 
-    char szParStatus[128];
-    if (m_iParJobCount > 0)
+    char szPostStatus[128];
+    if (m_iPostJobCount > 0)
     {
-        sprintf(szParStatus, ", %i par", m_iParJobCount);
+        sprintf(szPostStatus, ", %i post-job%s", m_iPostJobCount, m_iPostJobCount > 1 ? "s" : "");
     }
     else
     {
-        szParStatus[0] = 0;
+        szPostStatus[0] = 0;
     }
 
 #ifdef WIN32
@@ -113,7 +113,7 @@ void ColoredFrontend::PrintStatus()
 
 	snprintf(tmp, 1024, " %d threads, %.0f KB/s, %.2f MB remaining%s%s%s%s%s\n", 
 		m_iThreadCount, fCurrentDownloadSpeed, (float)(m_lRemainingSize / 1024.0 / 1024.0), 
-		timeString, szParStatus, m_bPause ? (m_bStandBy ? ", Paused" : ", Pausing") : "", szDownloadLimit, szControlSeq);
+		timeString, szPostStatus, m_bPause ? (m_bStandBy ? ", Paused" : ", Pausing") : "", szDownloadLimit, szControlSeq);
 	tmp[1024-1] = '\0';
 	printf("%s", tmp);
 	m_bNeedGoBack = true;

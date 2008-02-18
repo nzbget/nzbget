@@ -392,7 +392,7 @@ ParCleanupQueue=yes
 # Set path to program, that must be executed after the download of
 # nzb-file or one collection in nzb-file (if par-check enabled)
 # is completed and possibly par-checked/repaired.
-# Six arguments are being passed to this program:
+# Five arguments are passed to this program:
 #  - path to destination dir, where downloaded files are located;
 #  - name of nzb-file processed;
 #  - name of par-file processed (if par-checked) or empty string (if not);

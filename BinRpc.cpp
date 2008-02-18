@@ -415,9 +415,9 @@ void ListBinCommand::Execute()
 		ListResponse.m_iDownloadLimit = htonl((int)(g_pOptions->GetDownloadRate() * 1024));
 		ListResponse.m_bServerPaused = htonl(g_pOptions->GetPause());
 		ListResponse.m_iThreadCount = htonl(Thread::GetThreadCount() - 1); // not counting itself
-		PrePostProcessor::ParQueue* pParQueue = g_pPrePostProcessor->LockParQueue();
-		ListResponse.m_iParJobCount = htonl(pParQueue->size());
-		g_pPrePostProcessor->UnlockParQueue();
+		PrePostProcessor::PostQueue* pPostQueue = g_pPrePostProcessor->LockPostQueue();
+		ListResponse.m_iPostJobCount = htonl(pPostQueue->size());
+		g_pPrePostProcessor->UnlockPostQueue();
 
 		int iUpTimeSec, iDnTimeSec;
 		long long iAllBytes;
