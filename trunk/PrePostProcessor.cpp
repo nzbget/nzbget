@@ -210,6 +210,59 @@ void PrePostProcessor::Stop()
 #endif
 }
 
+void PrePostProcessor::QueueCoordinatorUpdate(Subject * Caller, void * Aspect)
+{
+	if (IsStopped())
+	{
+		return;
+	}
+
+	QueueCoordinator::Aspect* pAspect = (QueueCoordinator::Aspect*)Aspect;
+	if (pAspect->eAction == QueueCoordinator::eaNZBFileAdded &&
+		g_pOptions->GetLoadPars() != Options::plAll)
+	{
+		PausePars(pAspect->pDownloadQueue, pAspect->szNZBFilename);
+	}
+	else if ((pAspect->eAction == QueueCoordinator::eaFileCompleted ||
+		pAspect->eAction == QueueCoordinator::eaFileDeleted))
+	{
+		if (
+#ifndef DISABLE_PARCHECK
+			!AddPar(pAspect->pFileInfo, pAspect->eAction == QueueCoordinator::eaFileDeleted) &&
+#endif
+			IsNZBFileCompleted(pAspect->pDownloadQueue, pAspect->pFileInfo->GetNZBInfo()->GetFilename(), false, true, false) &&
+			(!pAspect->pFileInfo->GetPaused() || IsNZBFileCompleted(pAspect->pDownloadQueue, pAspect->pFileInfo->GetNZBInfo()->GetFilename(), false, false, false)))
+		{
+			char szNZBNiceName[1024];
+			pAspect->pFileInfo->GetNZBInfo()->GetNiceNZBName(szNZBNiceName, 1024);
+			if (pAspect->eAction == QueueCoordinator::eaFileCompleted)
+			{
+				info("Collection %s completely downloaded", szNZBNiceName);
+			}
+			else if (IsNZBFileCompleted(pAspect->pDownloadQueue, pAspect->pFileInfo->GetNZBInfo()->GetFilename(), false, false, false))
+			{
+				info("Collection %s deleted from queue", szNZBNiceName);
+			}
+
+			if (pAspect->eAction == QueueCoordinator::eaFileCompleted)
+			{
+#ifndef DISABLE_PARCHECK
+				(g_pOptions->GetParCheck() && g_pOptions->GetDecode() && 
+					CheckPars(pAspect->pDownloadQueue, pAspect->pFileInfo)) ||
+#endif
+				CheckScript(pAspect->pFileInfo);
+			}
+		}
+
+		m_mutexQueue.Lock();
+		if (IsNZBFileCompleted(pAspect->pDownloadQueue, pAspect->pFileInfo->GetNZBInfo()->GetFilename(), false, false, true))
+		{
+			ClearCompletedJobs(pAspect->pFileInfo->GetNZBInfo()->GetFilename());
+		}
+		m_mutexQueue.Unlock();
+	}
+}
+
 /**
 * Check if there are files in directory for incoming nzb-files
 * and add them to download queue
@@ -331,7 +384,7 @@ void PrePostProcessor::StartScriptJob(PostJob* pPostJob)
 		return;
 	}
 
-	bool bNZBFileCompleted = IsNZBFileCompleted(NULL, pPostJob->GetNZBFilename(), false, true);
+	bool bNZBFileCompleted = IsNZBFileCompleted(NULL, pPostJob->GetNZBFilename(), false, true, true);
 
 	char szParStatus[10];
 	snprintf(szParStatus, 10, "%i", pPostJob->m_iParStatus);
@@ -431,7 +484,7 @@ void PrePostProcessor::JobCompleted(PostJob* pPostJob)
 	pPostJob->m_eStage = ptFinished;
 
 	if (g_pOptions->GetParCleanupQueue() && 
-		IsNZBFileCompleted(NULL, pPostJob->GetNZBFilename(), true, true) && 
+		IsNZBFileCompleted(NULL, pPostJob->GetNZBFilename(), true, true, true) && 
 		!HasFailedParJobs(pPostJob->GetNZBFilename()))
 	{
 		m_mutexQueue.Unlock();
@@ -450,64 +503,12 @@ void PrePostProcessor::JobCompleted(PostJob* pPostJob)
 
 	m_CompletedJobs.push_back(pPostJob);
 
-	if (IsNZBFileCompleted(NULL, pPostJob->GetNZBFilename(), false, false))
+	if (IsNZBFileCompleted(NULL, pPostJob->GetNZBFilename(), false, false, true))
 	{
 		ClearCompletedJobs(pPostJob->GetNZBFilename());
 	}
 
 	m_bHasMoreJobs = !m_PostQueue.empty();
-}
-
-void PrePostProcessor::QueueCoordinatorUpdate(Subject * Caller, void * Aspect)
-{
-	if (IsStopped())
-	{
-		return;
-	}
-
-	QueueCoordinator::Aspect* pAspect = (QueueCoordinator::Aspect*)Aspect;
-	if (pAspect->eAction == QueueCoordinator::eaNZBFileAdded &&
-		g_pOptions->GetLoadPars() != Options::plAll)
-	{
-		PausePars(pAspect->pDownloadQueue, pAspect->szNZBFilename);
-	}
-	else if ((pAspect->eAction == QueueCoordinator::eaFileCompleted ||
-		pAspect->eAction == QueueCoordinator::eaFileDeleted))
-	{
-		if (
-#ifndef DISABLE_PARCHECK
-			!AddPar(pAspect->pFileInfo, pAspect->eAction == QueueCoordinator::eaFileDeleted) &&
-#endif
-			WasLastInCollection(pAspect->pDownloadQueue, pAspect->pFileInfo, true))
-		{
-			char szNZBNiceName[1024];
-			pAspect->pFileInfo->GetNZBInfo()->GetNiceNZBName(szNZBNiceName, 1024);
-			if (pAspect->eAction == QueueCoordinator::eaFileCompleted)
-			{
-				info("Collection %s completely downloaded", szNZBNiceName);
-			}
-			else if (WasLastInCollection(pAspect->pDownloadQueue, pAspect->pFileInfo, false))
-			{
-				info("Collection %s deleted from queue", szNZBNiceName);
-			}
-
-			if (pAspect->eAction == QueueCoordinator::eaFileCompleted)
-			{
-#ifndef DISABLE_PARCHECK
-				(g_pOptions->GetParCheck() && g_pOptions->GetDecode() && 
-					CheckPars(pAspect->pDownloadQueue, pAspect->pFileInfo)) ||
-#endif
-				CheckScript(pAspect->pFileInfo);
-			}
-		}
-
-		m_mutexQueue.Lock();
-		if (IsNZBFileCompleted(pAspect->pDownloadQueue, pAspect->pFileInfo->GetNZBInfo()->GetFilename(), false, false))
-		{
-			ClearCompletedJobs(pAspect->pFileInfo->GetNZBInfo()->GetFilename());
-		}
-		m_mutexQueue.Unlock();
-	}
 }
 
 PrePostProcessor::PostQueue* PrePostProcessor::LockPostQueue()
@@ -573,6 +574,7 @@ void PrePostProcessor::ClearCompletedJobs(const char* szNZBFilename)
 		PostJob* pPostJob = *it;
 		if (!strcmp(szNZBFilename, pPostJob->GetNZBFilename()))
 		{
+			debug("Deleting completed job %s", pPostJob->GetInfoName());
 			m_CompletedJobs.erase(it);
 			delete pPostJob;
 			it = m_CompletedJobs.begin();
@@ -605,30 +607,10 @@ void PrePostProcessor::PausePars(DownloadQueue* pDownloadQueue, const char* szNZ
 }
 
 /**
-* Check if the completed file was last (unpaused, if bIgnorePaused is "true") file in nzb-collection
-*/
-bool PrePostProcessor::WasLastInCollection(DownloadQueue* pDownloadQueue, FileInfo * pFileInfo, bool bIgnorePaused)
-{
-	debug("File %s completed or deleted", pFileInfo->GetFilename());
-
-	for (DownloadQueue::iterator it = pDownloadQueue->begin(); it != pDownloadQueue->end(); it++)
-	{
-		FileInfo* pFileInfo2 = *it;
-		if (pFileInfo2 != pFileInfo && (!bIgnorePaused || !pFileInfo2->GetPaused()) &&
-			(pFileInfo2->GetNZBInfo() == pFileInfo->GetNZBInfo()))
-		{
-			return false;
-		}
-	}
-
-	return true;
-}
-
-/**
  * Mutex "m_mutexQueue" must be locked prior to call of this funtion.
  */
 bool PrePostProcessor::IsNZBFileCompleted(DownloadQueue* pDownloadQueue, const char* szNZBFilename, 
-	bool bIgnoreFirstInPostQueue, bool bIgnorePaused)
+	bool bIgnoreFirstInPostQueue, bool bIgnorePaused, bool bCheckPostQueue)
 {
 	bool bNZBFileCompleted = true;
 
@@ -641,7 +623,7 @@ bool PrePostProcessor::IsNZBFileCompleted(DownloadQueue* pDownloadQueue, const c
 	for (DownloadQueue::iterator it = pDownloadQueue->begin(); it != pDownloadQueue->end(); it++)
 	{
 		FileInfo* pFileInfo = *it;
-		if ((!bIgnorePaused || !pFileInfo->GetPaused()) &&
+		if ((!bIgnorePaused || !pFileInfo->GetPaused()) && !pFileInfo->GetDeleted() &&
 			!strcmp(pFileInfo->GetNZBInfo()->GetFilename(), szNZBFilename))
 		{
 			bNZBFileCompleted = false;
@@ -654,8 +636,7 @@ bool PrePostProcessor::IsNZBFileCompleted(DownloadQueue* pDownloadQueue, const c
 		g_pQueueCoordinator->UnlockQueue();
 	}
 		
-#ifndef DISABLE_PARCHECK
-	if (bNZBFileCompleted)
+	if (bNZBFileCompleted && bCheckPostQueue)
 	{
 		for (PostQueue::iterator it = m_PostQueue.begin() + int(bIgnoreFirstInPostQueue); it != m_PostQueue.end(); it++)
 		{
@@ -667,7 +648,6 @@ bool PrePostProcessor::IsNZBFileCompleted(DownloadQueue* pDownloadQueue, const c
 			}
 		}
 	}
-#endif
 
 	return bNZBFileCompleted;
 }

@@ -142,8 +142,8 @@ private:
 
 	void				PausePars(DownloadQueue* pDownloadQueue, const char* szNZBFilename);
 	void				CheckIncomingNZBs();
-	bool				WasLastInCollection(DownloadQueue* pDownloadQueue, FileInfo* pFileInfo, bool bIgnorePaused);
-	bool				IsNZBFileCompleted(DownloadQueue* pDownloadQueue, const char* szNZBFilename, bool bIgnoreFirstInPostQueue, bool bIgnorePaused);
+	bool				IsNZBFileCompleted(DownloadQueue* pDownloadQueue, const char* szNZBFilename, 
+							bool bIgnoreFirstInPostQueue, bool bIgnorePaused, bool bCheckPostQueue);
 	bool				CheckScript(FileInfo* pFileInfo);
 	bool				JobExists(PostQueue* pPostQueue, const char* szNZBFilename);
 	void				ClearCompletedJobs(const char* szNZBFilename);
