@@ -294,6 +294,10 @@ void PrePostProcessor::CheckPostQueue()
 			{
 				JobCompleted(pPostJob);
 			}
+			else
+			{
+				error("Internal error: invalid state in post-processor");
+			}
 		}
 	}
 	
@@ -308,6 +312,7 @@ void PrePostProcessor::StartScriptJob(PostJob* pPostJob)
 	const char* szScript = g_pOptions->GetPostProcess();
 	if (!szScript || strlen(szScript) == 0)
 	{
+		pPostJob->m_eStage = ptFinished;
 		return;
 	}
 
