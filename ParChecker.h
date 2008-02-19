@@ -75,7 +75,7 @@ private:
 	int					m_iFileProgress;
 	int					m_iStageProgress;
 
-	void				LoadMorePars();
+	bool				LoadMorePars();
 	bool				CheckSplittedFragments();
 	bool				AddSplittedFragments(const char* szFilename);
 	void				signal_filename(std::string str);

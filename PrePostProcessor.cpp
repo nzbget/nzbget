@@ -375,7 +375,7 @@ void PrePostProcessor::StartScriptJob(PostJob* pPostJob)
 	pPostJob->m_tStageTime = time(NULL);
 	pPostJob->m_iStageProgress = 50;
 
-	info("Executing post-process-script for %s (%s)", pPostJob->GetDestDir(), Util::BaseFileName(pPostJob->GetNZBFilename()));
+	info("Executing post-process-script for %s", pPostJob->GetInfoName());
 	if (!Util::FileExists(szScript))
 	{
 		error("Could not start post-process-script: could not find file %s", szScript);
