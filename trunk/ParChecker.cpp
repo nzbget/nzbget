@@ -215,10 +215,14 @@ void ParChecker::Run()
 		debug("ParChecker: Process-result=%i", res);
 	}
 
+	bool bMoreFilesLoaded = true;
 	while (!IsStopped() && res == eRepairNotPossible)
 	{
 		int missingblockcount = pRepairer->missingblockcount - pRepairer->recoverypacketmap.size();
-		info("Need more %i par-block(s) for %s", missingblockcount, m_szInfoName);
+		if (bMoreFilesLoaded)
+		{
+			info("Need more %i par-block(s) for %s", missingblockcount, m_szInfoName);
+		}
 		
 		m_mutexQueuedParFiles.Lock();
         bool hasMorePars = !m_QueuedParFiles.empty();
@@ -252,11 +256,13 @@ void ParChecker::Run()
 			break;
 		}
 
-		LoadMorePars();
-		pRepairer->UpdateVerificationResults();
-				
-		res = pRepairer->Process(commandLine, false);
-		debug("ParChecker: Process-result=%i", res);
+		bMoreFilesLoaded = LoadMorePars();
+		if (bMoreFilesLoaded)
+		{
+			pRepairer->UpdateVerificationResults();
+			res = pRepairer->Process(commandLine, false);
+			debug("ParChecker: Process-result=%i", res);
+		}
 	}
 
 	if (IsStopped())
@@ -317,7 +323,7 @@ void ParChecker::Run()
 	delete pRepairer;
 }
 
-void ParChecker::LoadMorePars()
+bool ParChecker::LoadMorePars()
 {
 	m_mutexQueuedParFiles.Lock();
 	QueuedParFiles moreFiles;
@@ -339,6 +345,8 @@ void ParChecker::LoadMorePars()
 		}
 		free(szParFilename);
 	}
+
+	return !moreFiles.empty();
 }
 
 void ParChecker::AddParFile(const char * szParFilename)
