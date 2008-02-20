@@ -533,7 +533,8 @@ char* Util::XmlEncode(const char* raw)
 	int iReqSize = strlen(raw);
 	for (const char* p = raw; *p; p++)
 	{
-		switch (*p)
+		unsigned char ch = *p;
+		switch (ch)
 		{
 			case '>':
 			case '<':
@@ -546,6 +547,12 @@ char* Util::XmlEncode(const char* raw)
 			case '\"':
 				iReqSize += 6;
 				break;
+			default:
+				if (ch >= 0xA0)
+				{
+					iReqSize += 6;
+					break;
+				}
 		}
 	}
 
@@ -555,7 +562,8 @@ char* Util::XmlEncode(const char* raw)
 	char* output = result;
 	for (const char* p = raw; ; p++)
 	{
-		switch (*p)
+		unsigned char ch = *p;
+		switch (ch)
 		{
 			case '\0':
 				goto BreakLoop;
@@ -580,7 +588,15 @@ char* Util::XmlEncode(const char* raw)
 				output += 6;
 				break;
 			default:
-				*output++ = *p;
+				if (ch >= 0xA0)
+				{
+					sprintf(output, "&#%i;", ch);
+					output += 6;
+				}
+				else
+				{
+					*output++ = ch;
+				}
 				break;
 		}
 	}
