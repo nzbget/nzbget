@@ -372,6 +372,10 @@ void PrePostProcessor::StartScriptJob(PostJob* pPostJob)
 	pPostJob->SetProgressLabel("Executing post-process-script");
 	pPostJob->m_bWorking = true;
 	pPostJob->m_eStage = ptExecutingScript;
+	if (!pPostJob->m_tStartTime)
+	{
+		pPostJob->m_tStartTime = time(NULL);
+	}
 	pPostJob->m_tStageTime = time(NULL);
 	pPostJob->m_iStageProgress = 50;
 
