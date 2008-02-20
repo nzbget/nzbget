@@ -398,9 +398,15 @@ void PrePostProcessor::StartScriptJob(PostJob* pPostJob)
 	snprintf(szCollectionCompleted, 10, "%i", (int)bNZBFileCompleted);
 	szCollectionCompleted[10-1] = '\0';
 
+	bool bHasFailedParJobs = HasFailedParJobs(pPostJob->GetNZBFilename()) || pPostJob->m_bParFailed;
+	char szHasFailedParJobs[10];
+	snprintf(szHasFailedParJobs, 10, "%i", (int)bHasFailedParJobs);
+	szHasFailedParJobs[10-1] = '\0';
+
 #ifdef WIN32
 	char szCmdLine[2048];
-	snprintf(szCmdLine, 2048, "%s \"%s\" \"%s\" \"%s\" %s %s", szScript, pPostJob->GetDestDir(), pPostJob->GetNZBFilename(), pPostJob->GetParFilename(), szParStatus, szCollectionCompleted);
+	snprintf(szCmdLine, 2048, "%s \"%s\" \"%s\" \"%s\" %s %s %s", szScript, pPostJob->GetDestDir(), 
+		pPostJob->GetNZBFilename(), pPostJob->GetParFilename(), szParStatus, szCollectionCompleted, szHasFailedParJobs);
 	szCmdLine[2048-1] = '\0';
 	
 	STARTUPINFO StartupInfo;
@@ -458,7 +464,8 @@ void PrePostProcessor::StartScriptJob(PostJob* pPostJob)
 	h = open("/dev/null", O_RDWR); dup(h); dup(h); /* handle standart I/O */
 	
 	//pPostJob->m_hProcessID = getpid();
-	execlp(szScript, szScript, szDestDir, szNZBFilename, szParFilename, szParStatus, szCollectionCompleted, NULL);
+	execlp(szScript, szScript, szDestDir, szNZBFilename, szParFilename, 
+		szParStatus, szCollectionCompleted, szHasFailedParJobs, NULL);
 	error("Could not start post-process: %s", strerror(errno));
 	exit(-1);
 #endif
@@ -898,7 +905,7 @@ bool PrePostProcessor::HasFailedParJobs(const char* szNZBFilename)
 	{
 		PostJob* pPostJob = *it;
 		if (pPostJob->m_bParCheck && pPostJob->m_bParFailed &&
-			!strcmp(pPostJob->GetNZBFilename(), m_ParChecker.GetNZBFilename()))
+			!strcmp(pPostJob->GetNZBFilename(), szNZBFilename))
 		{
 			bHasFailedJobs = true;
 			break;

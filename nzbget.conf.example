@@ -390,9 +390,9 @@ ParCleanupQueue=yes
 ### POSTPROCESSING                                                         ###
 
 # Set path to program, that must be executed after the download of
-# nzb-file or one collection in nzb-file (if par-check enabled)
-# is completed and possibly par-checked/repaired.
-# Five arguments are passed to this program:
+# nzb-file or one collection in nzb-file (if par-check enabled and nzb-file
+# contains multiple collections) is completed and possibly par-checked/repaired.
+# Six arguments are passed to that program:
 #  - path to destination dir, where downloaded files are located;
 #  - name of nzb-file processed;
 #  - name of par-file processed (if par-checked) or empty string (if not);
@@ -405,12 +405,17 @@ ParCleanupQueue=yes
 #  - state of nzb-job:
 #      0 - there are more collections in this nzb-file queued;
 #      1 - this was the last collection in nzb-file;
+#  - indication of failed par-jobs for current nzb-file:
+#      0 - no failed par-jobs;
+#      1 - current par-job or any of the previous par-jobs for the
+#          same nzb-files failed;
 # NOTE: if par-check is enabled and nzb-file contains more than one collection
 # of files the postprocess-program is called after each collection is completed
 # and par-checked. If you want to clean up the directory (delete par-files, 
 # etc.) there are two possibilities, when you can do this:
 #  1) you parse the "name of par-file processed" to find out the base name
-#     of collection and clean up only files from this collection;
+#     of collection and clean up only files from this collection (not reliable,
+#     because par-files sometimes have different names than rar-files);
 #  2) or you just check the parameter "state of nzb-job" and do clean up,
 #     only if it is equal to "1" (which means, that this was the last
 #     collection in nzb-file and all files are now completed);
