@@ -610,6 +610,7 @@ void ListFilesXmlCommand::Execute()
 		"<member><name>RemainingSizeHi</name><value><i4>%i</i4></value></member>\n"
 		"<member><name>FilenameConfirmed</name><value><boolean>%i</boolean></value></member>\n"
 		"<member><name>Paused</name><value><boolean>%i</boolean></value></member>\n"
+		"<member><name>NZBNicename</name><value><string>%s</string></value></member>\n"
 		"<member><name>NZBFilename</name><value><string>%s</string></value></member>\n"
 		"<member><name>Subject</name><value><string>%s</string></value></member>\n"
 		"<member><name>Filename</name><value><string>%s</string></value></member>\n"
@@ -624,22 +625,26 @@ void ListFilesXmlCommand::Execute()
 		FileInfo* pFileInfo = *it;
 		unsigned int iFileSizeHi, iFileSizeLo;
 		unsigned int iRemainingSizeLo, iRemainingSizeHi;
+		char szNZBNicename[1024];
 		Util::SplitInt64(pFileInfo->GetSize(), &iFileSizeHi, &iFileSizeLo);
 		Util::SplitInt64(pFileInfo->GetRemainingSize(), &iRemainingSizeHi, &iRemainingSizeLo);
+		pFileInfo->GetNZBInfo()->GetNiceNZBName(szNZBNicename, sizeof(szNZBNicename));
 		char* xmlNZBFilename = Util::XmlEncode(pFileInfo->GetNZBInfo()->GetFilename());
 		char* xmlSubject = Util::XmlEncode(pFileInfo->GetSubject());
 		char* xmlFilename = Util::XmlEncode(pFileInfo->GetFilename());
 		char* xmlDestDir = Util::XmlEncode(pFileInfo->GetNZBInfo()->GetDestDir());
+		char* xmlNZBNicename = Util::XmlEncode(szNZBNicename);
 
 		snprintf(szItemBuf, szItemBufSize, LIST_ITEM, pFileInfo->GetID(), iFileSizeLo, iFileSizeHi, 
 			iRemainingSizeLo, iRemainingSizeHi, (int)pFileInfo->GetFilenameConfirmed(), (int)pFileInfo->GetPaused(),
-			xmlNZBFilename, xmlSubject, xmlFilename, xmlDestDir);
+			xmlNZBNicename, xmlNZBFilename, xmlSubject, xmlFilename, xmlDestDir);
 		szItemBuf[szItemBufSize-1] = '\0';
 
 		free(xmlNZBFilename);
 		free(xmlSubject);
 		free(xmlFilename);
 		free(xmlDestDir);
+		free(xmlNZBNicename);
 
 		AppendResponse(szItemBuf);
 	}
