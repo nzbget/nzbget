@@ -710,7 +710,7 @@ void ListGroupsXmlCommand::Execute()
 		snprintf(szItemBuf, szItemBufSize, LIST_ITEM, pGroupInfo->GetFirstID(), pGroupInfo->GetLastID(),
 			iFileSizeLo, iFileSizeHi, iFileSizeMB, iRemainingSizeLo, iRemainingSizeHi, iRemainingSizeMB,
 			iPausedSizeLo, iPausedSizeHi, iPausedSizeMB, pGroupInfo->GetNZBInfo()->GetFileCount(), 
-			pGroupInfo->GetRemainingFileCount(), pGroupInfo->GetRemainingParCount(), szNZBNicename, xmlNZBFilename, xmlDestDir);
+			pGroupInfo->GetRemainingFileCount(), pGroupInfo->GetRemainingParCount(), xmlNZBNicename, xmlNZBFilename, xmlDestDir);
 		szItemBuf[szItemBufSize-1] = '\0';
 
 		free(xmlNZBNicename);
@@ -895,7 +895,7 @@ void PostQueueXmlCommand::Execute()
 		char* xmlInfoName = Util::XmlEncode(pPostJob->GetInfoName());
 		char* xmlProgressLabel = pPostJob->GetProgressLabel() ? Util::XmlEncode(pPostJob->GetProgressLabel()) : NULL;
 
-		snprintf(szItemBuf, szItemBufSize, POSTQUEUE_ITEM, szNZBNicename, xmlNZBFilename, xmlDestDir, xmlParFilename, 
+		snprintf(szItemBuf, szItemBufSize, POSTQUEUE_ITEM, xmlNZBNicename, xmlNZBFilename, xmlDestDir, xmlParFilename, 
 			xmlInfoName, szPostStageName[pPostJob->GetStage()], pPostJob->GetProgressLabel() ? xmlProgressLabel : "", 
 			pPostJob->GetFileProgress(), pPostJob->GetStageProgress(), 
 			pPostJob->GetStartTime() ? tCurTime - pPostJob->GetStartTime() : 0, 
