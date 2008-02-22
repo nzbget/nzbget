@@ -388,7 +388,7 @@ void PrePostProcessor::StartScriptJob(PostJob* pPostJob)
 		return;
 	}
 
-	bool bNZBFileCompleted = IsNZBFileCompleted(NULL, pPostJob->GetNZBFilename(), false, true, true);
+	bool bNZBFileCompleted = IsNZBFileCompleted(NULL, pPostJob->GetNZBFilename(), true, true, true);
 
 	char szParStatus[10];
 	snprintf(szParStatus, 10, "%i", pPostJob->m_iParStatus);
