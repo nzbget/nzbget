@@ -176,16 +176,30 @@ void RequestProcessor::Run()
 	}
 	else if (!strncmp((char*)&iSignature, "POST", 4))
 	{
-		char buf[6];
+		XmlRpcProcessor::ERpcProtocol eProtocol = XmlRpcProcessor::rpUndefined;
+		char buf[10];
 		iBytesReceived = recv(m_iSocket, buf, sizeof(buf), 0);
-		bOK = iBytesReceived == sizeof(buf) && !strncmp(buf, " /RPC ", 6);
-		if (bOK)
+		if (iBytesReceived == sizeof(buf))
 		{
-			// XML-RPC request received
+			if (!strncmp(buf, " /xmlrpc ", 9))
+			{
+				eProtocol = XmlRpcProcessor::rpXmlRpc;
+			}
+			else if (!strncmp(buf, " /jsonrpc ", 10))
+			{
+				eProtocol = XmlRpcProcessor::rpJsonRpc;
+			}
+		}
+
+		if (eProtocol != XmlRpcProcessor::rpUndefined)
+		{
+			// XML-RPC or JSON-RPC request received
 			XmlRpcProcessor processor;
 			processor.SetSocket(m_iSocket);
 			processor.SetClientIP(ip);
+			processor.SetProtocol(eProtocol);
 			processor.Execute();
+			bOK = true;
 		}
 	}
 
