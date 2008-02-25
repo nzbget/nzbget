@@ -26,6 +26,8 @@
 #ifndef XMLRPC_H
 #define XMLRPC_H
 
+#include <vector>
+
 #include "Connection.h"
 
 class StringBuilder
@@ -41,34 +43,23 @@ public:
 	const char*			GetBuffer() { return m_szBuffer; }
 };
 
-class XmlCommand
-{
-protected:
-	char*				m_szRequest;
-	const char*			m_szRequestPtr;
-	StringBuilder		m_StringBuilder;
-	bool				m_bFault;
-
-	void				BuildErrorResponse(int iErrCode, const char* szErrText);
-	void				BuildBoolResponse(bool bOK);
-	void				AppendResponse(const char* szPart);
-	bool				NextIntParam(int* iValue);
-
-public:
-						XmlCommand();
-	virtual 			~XmlCommand() {}
-	virtual void		Execute() = 0;
-	void				SetRequest(char* szRequest) { m_szRequest = szRequest; m_szRequestPtr = m_szRequest; }
-	const char*			GetResponse() { return m_StringBuilder.GetBuffer(); }
-	bool				GetFault() { return m_bFault; }
-};
+class XmlCommand;
 
 class XmlRpcProcessor
 {
+public:
+	enum ERpcProtocol
+	{
+		rpUndefined,
+		rpXmlRpc,
+		rpJsonRpc
+	};
+
 private:
 	SOCKET				m_iSocket;
 	const char*			m_szClientIP;
 	char*				m_szRequest;
+	ERpcProtocol		m_eProtocol;
 
 	void				Dispatch();
 	void				SendResponse(const char* szResponse, bool bFault);
@@ -76,9 +67,41 @@ private:
 	void				MutliCall();
 
 public:
+						XmlRpcProcessor();
 	void				Execute();
 	void				SetSocket(SOCKET iSocket) { m_iSocket = iSocket; }
+	void				SetProtocol(ERpcProtocol eProtocol) { m_eProtocol = eProtocol; }
 	void				SetClientIP(const char* szClientIP) { m_szClientIP = szClientIP; }
+};
+
+class XmlCommand
+{
+protected:
+	char*				m_szRequest;
+	char*				m_szRequestPtr;
+	StringBuilder		m_StringBuilder;
+	bool				m_bFault;
+	XmlRpcProcessor::ERpcProtocol	m_eProtocol;
+
+	void				BuildErrorResponse(int iErrCode, const char* szErrText);
+	void				BuildBoolResponse(bool bOK);
+	void				AppendResponse(const char* szPart);
+	bool				IsJson() { return m_eProtocol == XmlRpcProcessor::rpJsonRpc; }
+	bool				NextParamAsInt(int* iValue);
+	bool				NextParamAsBool(bool* bValue);
+	bool				NextParamAsStr(char** szValueBuf);
+	const char*			BoolToStr(bool bValue);
+	char*				EncodeStr(const char* szStr);
+
+public:
+						XmlCommand();
+	virtual 			~XmlCommand() {}
+	virtual void		Execute() = 0;
+	void				PrepareParams();
+	void				SetRequest(char* szRequest) { m_szRequest = szRequest; m_szRequestPtr = m_szRequest; }
+	void				SetProtocol(XmlRpcProcessor::ERpcProtocol eProtocol) { m_eProtocol = eProtocol; }
+	const char*			GetResponse() { return m_StringBuilder.GetBuffer(); }
+	bool				GetFault() { return m_bFault; }
 };
 
 class ErrorXmlCommand: public XmlCommand

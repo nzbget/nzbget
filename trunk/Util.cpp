@@ -662,7 +662,7 @@ BreakLoop:
 	*output = '\0';
 }
 
-const char* Util::FindTag(const char* szXml, const char* szTag, int* iValueLength)
+const char* Util::XmlFindTag(const char* szXml, const char* szTag, int* pValueLength)
 {
 	char szOpenTag[100];
 	snprintf(szOpenTag, 100, "<%s>", szTag);
@@ -679,15 +679,15 @@ const char* Util::FindTag(const char* szXml, const char* szTag, int* iValueLengt
 	if (!pend) return NULL;
 
 	int iTagLen = strlen(szOpenTag);
-	*iValueLength = pend - pstart - iTagLen;
+	*pValueLength = pend - pstart - iTagLen;
 
 	return pstart + iTagLen;
 }
 
-bool Util::ParseTagValue(const char* szXml, const char* szTag, char* szValueBuf, int iValueBufSize, const char** pTagEnd)
+bool Util::XmlParseTagValue(const char* szXml, const char* szTag, char* szValueBuf, int iValueBufSize, const char** pTagEnd)
 {
 	int iValueLen = 0;
-	const char* szValue = FindTag(szXml, szTag, &iValueLen);
+	const char* szValue = XmlFindTag(szXml, szTag, &iValueLen);
 	if (!szValue)
 	{
 		return false;
@@ -778,4 +778,146 @@ long long Util::FileSize(const char* szFilename)
 #endif
 #endif
 	return buffer.st_size;
+}
+
+char* Util::JsonEncode(const char* raw)
+{
+	// calculate the required outputstring-size based on number of escape-entities and their sizes
+	int iReqSize = strlen(raw);
+	for (const char* p = raw; *p; p++)
+	{
+		unsigned char ch = *p;
+		switch (ch)
+		{
+			case '\"':
+			case '\\':
+			case '/':
+			case '\b':
+			case '\f':
+			case '\n':
+			case '\r':
+			case '\t':
+				iReqSize += 1;
+			default:
+				if (ch >= 0xA0)
+				{
+					iReqSize += 6;
+					break;
+				}
+		}
+	}
+
+	char* result = (char*)malloc(iReqSize + 1);
+
+	// copy string
+	char* output = result;
+	for (const char* p = raw; ; p++)
+	{
+		unsigned char ch = *p;
+		switch (ch)
+		{
+			case '\0':
+				goto BreakLoop;
+			case '\"':
+				strcpy(output, "\\\"");
+				output += 2;
+				break;
+			case '\\':
+				strcpy(output, "\\\\");
+				output += 2;
+				break;
+			case '/':
+				strcpy(output, "\\/");
+				output += 2;
+				break;
+			case '\b':
+				strcpy(output, "\\b");
+				output += 2;
+				break;
+			case '\f':
+				strcpy(output, "\\f");
+				output += 2;
+				break;
+			case '\n':
+				strcpy(output, "\\n");
+				output += 2;
+				break;
+			case '\r':
+				strcpy(output, "\\r");
+				output += 2;
+				break;
+			case '\t':
+				strcpy(output, "\\t");
+				output += 2;
+				break;
+			default:
+				if (ch >= 0xA0)
+				{
+					sprintf(output, "\\u%04x", ch);
+					output += 6;
+				}
+				else
+				{
+					*output++ = ch;
+				}
+				break;
+		}
+	}
+BreakLoop:
+
+	*output = '\0';
+
+	return result;
+}
+
+const char* Util::JsonFindField(const char* szJsonText, const char* szFieldName, int* pValueLength)
+{
+	char szOpenTag[100];
+	snprintf(szOpenTag, 100, "\"%s\"", szFieldName);
+	szOpenTag[100-1] = '\0';
+
+	const char* pstart = strstr(szJsonText, szOpenTag);
+	if (!pstart) return NULL;
+
+	pstart += strlen(szOpenTag);
+
+	return JsonNextValue(pstart, pValueLength);
+}
+
+const char* Util::JsonNextValue(const char* szJsonText, int* pValueLength)
+{
+	const char* pstart = szJsonText;
+
+	while (*pstart && strchr(" ,[{:\r\n\t\f", *pstart)) pstart++;
+	if (!*pstart) return NULL;
+
+	const char* pend = pstart;
+
+	char ch = *pend;
+	bool bStr = ch == '"';
+	if (bStr)
+	{
+		ch = *++pend;
+	}
+	while (ch)
+	{
+		if (ch == '\\')
+		{
+			if (!*++pend || !*++pend) return NULL;
+			ch = *pend;
+		}
+		if (bStr && ch == '"')
+		{
+			pend++;
+			break;
+		}
+		else if (!bStr && strchr(" ,]}\r\n\t\f", ch))
+		{
+			break;
+		}
+		ch = *++pend;
+	}
+
+	*pValueLength = pend - pstart;
+	return pstart;
 }

@@ -99,12 +99,30 @@ public:
 	 * Returns pointer to tag-content and length of content in iValueLength
 	 * The returned pointer points to the part of source-string, no additional strings are allocated.
 	 */
-	static const char* FindTag(const char* szXml, const char* szTag, int* iValueLength);
+	static const char* XmlFindTag(const char* szXml, const char* szTag, int* pValueLength);
 
 	/*
 	 * Parses tag-content into szValueBuf.
 	 */
-	static bool ParseTagValue(const char* szXml, const char* szTag, char* szValueBuf, int iValueBufSize, const char** pTagEnd);
+	static bool XmlParseTagValue(const char* szXml, const char* szTag, char* szValueBuf, int iValueBufSize, const char** pTagEnd);
+
+	/*
+	 * Replace certain characters with escape-sequences.
+	 * Returns new string allocated with malloc, it need to be freed by caller.
+	 */
+	static char* JsonEncode(const char* raw);
+
+	/*
+	 * Returns pointer to field-content and length of content in iValueLength
+	 * The returned pointer points to the part of source-string, no additional strings are allocated.
+	 */
+	static const char* JsonFindField(const char* szJsonText, const char* szFieldName, int* pValueLength);
+
+	/*
+	 * Returns pointer to field-content and length of content in iValueLength
+	 * The returned pointer points to the part of source-string, no additional strings are allocated.
+	 */
+	static const char* JsonNextValue(const char* szJsonText, int* pValueLength);
 };
 
 #endif
