@@ -107,10 +107,16 @@ public:
 	static bool XmlParseTagValue(const char* szXml, const char* szTag, char* szValueBuf, int iValueBufSize, const char** pTagEnd);
 
 	/*
-	 * Replace certain characters with escape-sequences.
+	 * Creates JSON-string by replace the certain characters with escape-sequences.
 	 * Returns new string allocated with malloc, it need to be freed by caller.
 	 */
 	static char* JsonEncode(const char* raw);
+
+	/*
+	 * Decodes JSON-string.
+	 * The string is decoded on the place overwriting the content of raw-data.
+	 */
+	static void JsonDecode(char* raw);
 
 	/*
 	 * Returns pointer to field-content and length of content in iValueLength
