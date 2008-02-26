@@ -818,7 +818,7 @@ char* Util::JsonEncode(const char* raw)
 		{
 			case '\0':
 				goto BreakLoop;
-			case '\"':
+			case '"':
 				strcpy(output, "\\\"");
 				output += 2;
 				break;
@@ -868,6 +868,65 @@ BreakLoop:
 	*output = '\0';
 
 	return result;
+}
+
+void Util::JsonDecode(char* raw)
+{
+	char* output = raw;
+	for (char* p = raw;;)
+	{
+		switch (*p)
+		{
+			case '\0':
+				goto BreakLoop;
+			case '\\':
+				{
+					p++;
+					switch (*p)
+					{
+						case '"':
+							*output++ = '"';
+							break;
+						case '\\':
+							*output++ = '\\';
+							break;
+						case '/':
+							*output++ = '/';
+							break;
+						case 'b':
+							*output++ = '\b';
+							break;
+						case 'f':
+							*output++ = '\f';
+							break;
+						case 'n':
+							*output++ = '\n';
+							break;
+						case 'r':
+							*output++ = '\r';
+							break;
+						case 't':
+							*output++ = '\t';
+							break;
+						case 'u':
+							*output++ = (char)strtol(p + 1, NULL, 16);
+							p += 4;
+							break;
+						default:
+							// unknown escape-sequence, should never occur
+							*output++ = *p;
+							break;
+					}
+					p++;
+				}
+			default:
+				*output++ = *p++;
+				break;
+		}
+	}
+BreakLoop:
+
+	*output = '\0';
 }
 
 const char* Util::JsonFindField(const char* szJsonText, const char* szFieldName, int* pValueLength)

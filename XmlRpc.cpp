@@ -1076,8 +1076,7 @@ void DownloadXmlCommand::Execute()
 
 	if (IsJson())
 	{
-		//TODO: decode JSON-string
-		//Util::JsonDecode(szFileName);
+		Util::JsonDecode(szFileName);
 	}
 	else
 	{
@@ -1103,8 +1102,7 @@ void DownloadXmlCommand::Execute()
 	if (IsJson())
 	{
 		// JSON-string may contain '/'-character used in Base64, which must be escaped in JSON
-		//TODO: decode JSON-string
-		//Util::JsonDecode(szFileContent);
+		Util::JsonDecode(szFileContent);
 	}
 
 	int iLen = Util::DecodeBase64(szFileContent, 0, szFileContent);
