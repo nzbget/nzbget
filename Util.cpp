@@ -548,7 +548,7 @@ char* Util::XmlEncode(const char* raw)
 				iReqSize += 6;
 				break;
 			default:
-				if (ch >= 0xA0)
+				if (ch >= 0x80)
 				{
 					iReqSize += 6;
 					break;
@@ -588,7 +588,7 @@ char* Util::XmlEncode(const char* raw)
 				output += 6;
 				break;
 			default:
-				if (ch >= 0xA0)
+				if (ch >= 0x80)
 				{
 					sprintf(output, "&#%i;", ch);
 					output += 6;
@@ -799,7 +799,7 @@ char* Util::JsonEncode(const char* raw)
 			case '\t':
 				iReqSize += 1;
 			default:
-				if (ch >= 0xA0)
+				if (ch >= 0x80)
 				{
 					iReqSize += 6;
 					break;
@@ -851,7 +851,7 @@ char* Util::JsonEncode(const char* raw)
 				output += 2;
 				break;
 			default:
-				if (ch >= 0xA0)
+				if (ch >= 0x80)
 				{
 					sprintf(output, "\\u%04x", ch);
 					output += 6;
