@@ -398,7 +398,11 @@ void PrePostProcessor::StartScriptJob(PostJob* pPostJob)
 	snprintf(szCollectionCompleted, 10, "%i", (int)bNZBFileCompleted);
 	szCollectionCompleted[10-1] = '\0';
 
+#ifndef DISABLE_PARCHECK
 	bool bHasFailedParJobs = HasFailedParJobs(pPostJob->GetNZBFilename()) || pPostJob->m_bParFailed;
+#else
+	bool bHasFailedParJobs = false;
+#endif
 	char szHasFailedParJobs[10];
 	snprintf(szHasFailedParJobs, 10, "%i", (int)bHasFailedParJobs);
 	szHasFailedParJobs[10-1] = '\0';
@@ -494,6 +498,7 @@ void PrePostProcessor::JobCompleted(PostJob* pPostJob)
 	pPostJob->SetProgressLabel("");
 	pPostJob->m_eStage = ptFinished;
 
+#ifndef DISABLE_PARCHECK
 	if (g_pOptions->GetParCleanupQueue() && 
 		IsNZBFileCompleted(NULL, pPostJob->GetNZBFilename(), true, true, true) && 
 		!HasFailedParJobs(pPostJob->GetNZBFilename()))
@@ -502,6 +507,7 @@ void PrePostProcessor::JobCompleted(PostJob* pPostJob)
 		ParCleanupQueue(pPostJob->GetNZBFilename());
 		m_mutexQueue.Lock();
 	}
+#endif
 
 	for (PostQueue::iterator it = m_PostQueue.begin(); it != m_PostQueue.end(); it++)
 	{
