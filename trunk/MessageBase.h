@@ -57,7 +57,8 @@ enum eRemoteRequest
 	eRemoteRequestEditQueue,
 	eRemoteRequestLog,
 	eRemoteRequestShutdown,
-	eRemoteRequestVersion
+	eRemoteRequestVersion,
+	eRemoteRequestPostQueue
 };
 
 // Possible values for field "m_iAction" of struct "SNZBEditQueueRequest":
@@ -293,6 +294,42 @@ struct SNZBVersionResponse
 	int32_t					m_bSuccess;				// 0 - command failed, 1 - command executed successfully
 	int32_t					m_iTrailingDataLength;	// Length of Text-string (m_szText), following to this record
 	//char					m_szText[m_iTrailingDataLength];	// variable sized
+};
+
+// PostQueue request
+struct SNZBPostQueueRequest
+{
+	SNZBRequestBase			m_MessageBase;			// Must be the first in the struct
+};
+
+// A PostQueue response
+struct SNZBPostQueueResponse
+{
+	SNZBResponseBase		m_MessageBase;			// Must be the first in the struct
+	int32_t					m_iEntrySize;			// Size of the SNZBPostQueueResponseEntry-struct
+	int32_t					m_iNrTrailingEntries;	// Number of PostQueue-entries, following to this structure
+	int32_t					m_iTrailingDataLength;	// Length of all PostQueue-entries, following to this structure
+	// SNZBPostQueueResponseEntry m_Entries[m_iNrTrailingEntries]		// variable sized
+};
+
+// A PostQueue response entry
+struct SNZBPostQueueResponseEntry
+{
+	int32_t					m_iStage;				// See PrePostProcessor::EPostJobStage
+	int32_t					m_iStageProgress;		// Progress of current stage, value in range 0..1000
+	int32_t					m_iFileProgress;		// Progress of current file, value in range 0..1000
+	int32_t					m_iTotalTimeSec;		// Number of seconds this post-job is beeing processed (after it first changed the state from QUEUED).
+	int32_t					m_iStageTimeSec;		// Number of seconds the current stage is beeing processed.
+	int32_t					m_iNZBFilenameLen;		// Length of NZBFileName-string (m_szNZBFilename), following to this record
+	int32_t					m_iParFilename;			// Length of ParFilename-string (m_szParFilename), following to this record
+	int32_t					m_iInfoNameLen;			// Length of Filename-string (m_szFilename), following to this record
+	int32_t					m_iDestDirLen;			// Length of DestDir-string (m_szDestDir), following to this record
+	int32_t					m_iProgressLabelLen;	// Length of ProgressLabel-string (m_szProgressLabel), following to this record
+	//char					m_szNZBFilename[m_iNZBFilenameLen];		// variable sized, may contain full path (local path on client) or only filename
+	//char					m_szParFilename[m_iParFilename];		// variable sized
+	//char					m_szInfoName[m_iInfoNameLen];			// variable sized
+	//char					m_szDestDir[m_iDestDirLen];				// variable sized
+	//char					m_szProgressLabel[m_iProgressLabelLen];	// variable sized
 };
 
 #ifdef HAVE_PRAGMA_PACK

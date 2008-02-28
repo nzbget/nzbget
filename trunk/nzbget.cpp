@@ -354,6 +354,10 @@ void ProcessClientRequest()
 	{
 		Client->RequestServerVersion();
 	}
+	else if (g_pOptions->GetClientOperation() == Options::opClientRequestPostQueue)
+	{
+		Client->RequestPostQueue();
+	}
 
 	delete Client;
 }

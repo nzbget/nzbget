@@ -116,4 +116,10 @@ public:
 	virtual void		Execute();
 };
 
+class PostQueueBinCommand: public BinCommand
+{
+public:
+	virtual void		Execute();
+};
+
 #endif

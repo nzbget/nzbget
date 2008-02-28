@@ -583,3 +583,81 @@ bool RemoteClient::RequestServerVersion()
 	m_pConnection->Disconnect();
 	return OK;
 }
+
+bool RemoteClient::RequestPostQueue()
+{
+	if (!InitConnection()) return false;
+
+	SNZBPostQueueRequest PostQueueRequest;
+	InitMessageBase(&PostQueueRequest.m_MessageBase, eRemoteRequestPostQueue, sizeof(PostQueueRequest));
+
+	if (m_pConnection->Send((char*)(&PostQueueRequest), sizeof(PostQueueRequest)) < 0)
+	{
+		perror("m_pConnection->Send");
+		return false;
+	}
+
+	// Now listen for the returned list
+	SNZBPostQueueResponse PostQueueResponse;
+	int iResponseLen = m_pConnection->Recv((char*) &PostQueueResponse, sizeof(PostQueueResponse));
+	if (iResponseLen != sizeof(PostQueueResponse) || 
+		(int)ntohl(PostQueueResponse.m_MessageBase.m_iSignature) != (int)NZBMESSAGE_SIGNATURE ||
+		ntohl(PostQueueResponse.m_MessageBase.m_iStructSize) != sizeof(PostQueueResponse))
+	{
+		printf("invaid response received: either not nzbget-server or wrong server version\n");
+		return false;
+	}
+
+	char* pBuf = NULL;
+	if (ntohl(PostQueueResponse.m_iTrailingDataLength) > 0)
+	{
+		pBuf = (char*)malloc(ntohl(PostQueueResponse.m_iTrailingDataLength));
+		if (!m_pConnection->RecvAll(pBuf, ntohl(PostQueueResponse.m_iTrailingDataLength)))
+		{
+			free(pBuf);
+			return false;
+		}
+	}
+
+	m_pConnection->Disconnect();
+
+	if (ntohl(PostQueueResponse.m_iTrailingDataLength) == 0)
+	{
+		printf("Server has no files queued for post-processing\n");
+	}
+	else
+	{
+		printf("Post-Processing List\n");
+		printf("-----------------------------------\n");
+
+		char* pBufPtr = (char*)pBuf;
+		for (unsigned int i = 0; i < ntohl(PostQueueResponse.m_iNrTrailingEntries); i++)
+		{
+			SNZBPostQueueResponseEntry* pPostQueueAnswer = (SNZBPostQueueResponseEntry*) pBufPtr;
+
+			int iStageProgress = ntohl(pPostQueueAnswer->m_iStageProgress);
+
+			char szCompleted[100];
+			szCompleted[0] = '\0';
+			if (iStageProgress > 0)
+			{
+				sprintf(szCompleted, ", %i%s", (int)(iStageProgress / 10), "%");
+			}
+
+			char* szPostStageName[] = { "", ", Loading Pars", ", Verifying source files", ", Repairing", ", Verifying repaired files", ", Executing postprocess-script", "" };
+			char* szInfoName = pBufPtr + sizeof(SNZBPostQueueResponseEntry) + ntohl(pPostQueueAnswer->m_iNZBFilenameLen) + ntohl(pPostQueueAnswer->m_iParFilename);
+			
+			printf("%s%s%s\n", szInfoName, szPostStageName[ntohl(pPostQueueAnswer->m_iStage)], szCompleted);
+
+			pBufPtr += sizeof(SNZBPostQueueResponseEntry) + ntohl(pPostQueueAnswer->m_iNZBFilenameLen) + 
+				ntohl(pPostQueueAnswer->m_iParFilename) + ntohl(pPostQueueAnswer->m_iInfoNameLen) +
+				ntohl(pPostQueueAnswer->m_iDestDirLen) + ntohl(pPostQueueAnswer->m_iProgressLabelLen);
+		}
+
+		free(pBuf);
+
+		printf("-----------------------------------\n");
+	}
+
+	return true;
+}

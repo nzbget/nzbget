@@ -44,7 +44,8 @@ public:
 	    opClientRequestEditQueue,
 	    opClientRequestLog,
 	    opClientRequestShutdown,
-	    opClientRequestVersion
+	    opClientRequestVersion,
+	    opClientRequestPostQueue
 	};
 	enum EMessageTarget
 	{

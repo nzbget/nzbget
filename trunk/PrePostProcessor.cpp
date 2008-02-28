@@ -68,7 +68,7 @@ PrePostProcessor::PostJob::PostJob(const char * szNZBFilename, const char* szDes
 	m_bParCheck = bParCheck;
 	m_iParStatus = PARSTATUS_NOT_CHECKED;
 	m_bParFailed = false;
-	m_szProgressLabel = NULL;
+	m_szProgressLabel = strdup("");
 	m_iFileProgress = 0;
 	m_iStageProgress = 0;
 	m_tStartTime = 0;

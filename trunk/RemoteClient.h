@@ -57,6 +57,7 @@ public:
 	bool			RequestServerLog(int iLines);
 	bool			RequestServerShutdown();
 	bool			RequestServerVersion();
+	bool			RequestPostQueue();
 };
 
 #endif
