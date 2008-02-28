@@ -56,9 +56,8 @@ extern PrePostProcessor* g_pPrePostProcessor;
 extern void ExitProc();
 
 const char* g_szMessageRequestNames[] =
-    { "N/A", "Download", "Pause/Unpause", "List",
-      "Set download rate", "Dump debug", "Edit queue", "Log", "Quit"
-    };
+    { "N/A", "Download", "Pause/Unpause", "List", "Set download rate", "Dump debug", 
+		"Edit queue", "Log", "Quit", "Version", "Post-queue" };
 
 const unsigned int g_iMessageRequestSizes[] =
     { 0,
@@ -69,7 +68,9 @@ const unsigned int g_iMessageRequestSizes[] =
 		sizeof(SNZBDumpDebugRequest),
 		sizeof(SNZBEditQueueRequest),
 		sizeof(SNZBLogRequest),
-		sizeof(SNZBRequestBase)
+		sizeof(SNZBShutdownRequest),
+		sizeof(SNZBVersionRequest),
+		sizeof(SNZBPostQueueRequest),
     };
 
 //*****************************************************************
@@ -105,7 +106,7 @@ void BinRpcProcessor::Execute()
 void BinRpcProcessor::Dispatch()
 {
 	if (ntohl(m_MessageBase.m_iType) >= (int)eRemoteRequestDownload &&
-		   ntohl(m_MessageBase.m_iType) <= (int)eRemoteRequestShutdown &&
+		   ntohl(m_MessageBase.m_iType) <= (int)eRemoteRequestPostQueue &&
 		   g_iMessageRequestSizes[ntohl(m_MessageBase.m_iType)] != ntohl(m_MessageBase.m_iStructSize))
 	{
 		error("Invalid size of request: needed %i Bytes, but received %i Bytes",
@@ -168,6 +169,12 @@ void BinRpcProcessor::Dispatch()
 		case eRemoteRequestVersion:
 			{
 				command = new VersionBinCommand();
+				break;
+			}
+
+		case eRemoteRequestPostQueue:
+			{
+				command = new PostQueueBinCommand();
 				break;
 			}
 
@@ -588,5 +595,90 @@ void EditQueueBinCommand::Execute()
 	else
 	{
 		SendBoolResponse(false, "Edit-Command failed");
+	}
+}
+
+void PostQueueBinCommand::Execute()
+{
+	SNZBPostQueueRequest PostQueueRequest;
+	if (!ReceiveRequest(&PostQueueRequest, sizeof(PostQueueRequest)))
+	{
+		return;
+	}
+
+	SNZBPostQueueResponse PostQueueResponse;
+	memset(&PostQueueResponse, 0, sizeof(PostQueueResponse));
+	PostQueueResponse.m_MessageBase.m_iSignature = htonl(NZBMESSAGE_SIGNATURE);
+	PostQueueResponse.m_MessageBase.m_iStructSize = htonl(sizeof(PostQueueResponse));
+	PostQueueResponse.m_iEntrySize = htonl(sizeof(SNZBPostQueueResponseEntry));
+
+	char* buf = NULL;
+	int bufsize = 0;
+
+	// Make a data structure and copy all the elements of the list into it
+	PrePostProcessor::PostQueue* pPostQueue = g_pPrePostProcessor->LockPostQueue();
+
+	int NrEntries = pPostQueue->size();
+
+	// calculate required buffer size
+	bufsize = NrEntries * sizeof(SNZBPostQueueResponseEntry);
+	for (PrePostProcessor::PostQueue::iterator it = pPostQueue->begin(); it != pPostQueue->end(); it++)
+	{
+		PrePostProcessor::PostJob* pPostJob = *it;
+		bufsize += strlen(pPostJob->GetNZBFilename()) + 1;
+		bufsize += strlen(pPostJob->GetParFilename()) + 1;
+		bufsize += strlen(pPostJob->GetInfoName()) + 1;
+		bufsize += strlen(pPostJob->GetDestDir()) + 1;
+		bufsize += strlen(pPostJob->GetProgressLabel()) + 1;
+	}
+
+	time_t tCurTime = time(NULL);
+	buf = (char*) malloc(bufsize);
+	char* bufptr = buf;
+
+	for (PrePostProcessor::PostQueue::iterator it = pPostQueue->begin(); it != pPostQueue->end(); it++)
+	{
+		PrePostProcessor::PostJob* pPostJob = *it;
+		SNZBPostQueueResponseEntry* pPostQueueAnswer = (SNZBPostQueueResponseEntry*) bufptr;
+		pPostQueueAnswer->m_iStage			= htonl(pPostJob->GetStage());
+		pPostQueueAnswer->m_iStageProgress	= htonl(pPostJob->GetStageProgress());
+		pPostQueueAnswer->m_iFileProgress	= htonl(pPostJob->GetFileProgress());
+		pPostQueueAnswer->m_iTotalTimeSec	= htonl(pPostJob->GetStartTime() ? tCurTime - pPostJob->GetStartTime() : 0);
+		pPostQueueAnswer->m_iStageTimeSec	= htonl(pPostJob->GetStageTime() ? tCurTime - pPostJob->GetStageTime() : 0);
+		pPostQueueAnswer->m_iNZBFilenameLen		= htonl(strlen(pPostJob->GetNZBFilename()) + 1);
+		pPostQueueAnswer->m_iParFilename		= htonl(strlen(pPostJob->GetParFilename()) + 1);
+		pPostQueueAnswer->m_iInfoNameLen		= htonl(strlen(pPostJob->GetInfoName()) + 1);
+		pPostQueueAnswer->m_iDestDirLen			= htonl(strlen(pPostJob->GetDestDir()) + 1);
+		pPostQueueAnswer->m_iProgressLabelLen	= htonl(strlen(pPostJob->GetProgressLabel()) + 1);
+		bufptr += sizeof(SNZBPostQueueResponseEntry);
+		strcpy(bufptr, pPostJob->GetNZBFilename());
+		bufptr += ntohl(pPostQueueAnswer->m_iNZBFilenameLen);
+		strcpy(bufptr, pPostJob->GetParFilename());
+		bufptr += ntohl(pPostQueueAnswer->m_iParFilename);
+		strcpy(bufptr, pPostJob->GetInfoName());
+		bufptr += ntohl(pPostQueueAnswer->m_iInfoNameLen);
+		strcpy(bufptr, pPostJob->GetDestDir());
+		bufptr += ntohl(pPostQueueAnswer->m_iDestDirLen);
+		strcpy(bufptr, pPostJob->GetProgressLabel());
+		bufptr += ntohl(pPostQueueAnswer->m_iProgressLabelLen);
+	}
+
+	g_pPrePostProcessor->UnlockPostQueue();
+
+	PostQueueResponse.m_iNrTrailingEntries = htonl(NrEntries);
+	PostQueueResponse.m_iTrailingDataLength = htonl(bufsize);
+
+	// Send the request answer
+	send(m_iSocket, (char*) &PostQueueResponse, sizeof(PostQueueResponse), 0);
+
+	// Send the data
+	if (bufsize > 0)
+	{
+		send(m_iSocket, buf, bufsize, 0);
+	}
+
+	if (buf)
+	{
+		free(buf);
 	}
 }

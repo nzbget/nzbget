@@ -77,11 +77,12 @@ static struct option long_options[] =
 	    {"edit", required_argument, 0, 'E'},
 	    {"connect", no_argument, 0, 'C'},
 	    {"quit", no_argument, 0, 'Q'},
+	    {"post", required_argument, 0, 'O'},
 	    {0, 0, 0, 0}
     };
 #endif
 
-static char short_options[] = "c:hno:psvABDCG:LPUR:TE:QV";
+static char short_options[] = "c:hno:psvABDCE:G:LOPR:TUQV";
 
 // Program options
 static const char* OPTION_DESTDIR			= "DestDir";
@@ -736,6 +737,9 @@ void Options::InitCommandLine(int argc, char* argv[])
 			case 'V':
 				m_eClientOperation = opClientRequestVersion;
 				break;
+			case 'O':
+				m_eClientOperation = opClientRequestPostQueue;
+				break;
 			case '?':
 				exit(-1);
 				break;
@@ -772,6 +776,7 @@ void Options::PrintUsage(char* com)
 		"  -T, --top                 Add file to the top (begining) of queue\n"
 		"                            (should be used with switch --append)\n"
 		"  -G, --log <lines>         Request last <lines> lines from server's screen-log\n"
+		"  -O, --post                Request post-processor-queue from server\n"
 		"  -E, --edit [G] <action> <IDs> Edit queue on the server\n"
 		"    <G>                     Affect all files in the group (same nzb-file)\n"
 		"    <action> is one of:\n"
