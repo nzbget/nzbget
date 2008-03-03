@@ -103,7 +103,9 @@ bool DiskState::Save(DownloadQueue* pDownloadQueue)
 		fprintf(outfile, "%s\n", pNZBInfo->GetFilename());
 		fprintf(outfile, "%s\n", pNZBInfo->GetDestDir());
 		fprintf(outfile, "%i\n", pNZBInfo->GetFileCount());
-		fprintf(outfile, "%lu,%lu\n", (unsigned long)(pNZBInfo->GetSize() >> 32), (unsigned long)(pNZBInfo->GetSize()));
+		unsigned long High, Low;
+		Util::SplitInt64(pNZBInfo->GetSize(), &High, &Low);
+		fprintf(outfile, "%lu,%lu\n", High, Low);
 	}
 
 	// save file-infos
@@ -189,7 +191,7 @@ bool DiskState::Load(DownloadQueue* pDownloadQueue)
 
 		unsigned long High, Low;
 		if (fscanf(infile, "%lu,%lu\n", &High, &Low) != 2) goto error;
-		pNZBInfo->SetSize((((unsigned long long)High) << 32) + Low);
+		pNZBInfo->SetSize(Util::JoinInt64(High, Low));
 	}
 
 	// load file-infos
@@ -251,7 +253,9 @@ bool DiskState::SaveFileInfo(FileInfo* pFileInfo, const char* szFilename)
 	fprintf(outfile, "%s\n", pFileInfo->GetSubject());
 	fprintf(outfile, "%s\n", pFileInfo->GetFilename());
 	fprintf(outfile, "%i\n", pFileInfo->GetFilenameConfirmed());
-	fprintf(outfile, "%lu,%lu\n", (unsigned long)(pFileInfo->GetSize() >> 32), (unsigned long)(pFileInfo->GetSize()));
+	unsigned long High, Low;
+	Util::SplitInt64(pFileInfo->GetSize(), &High, &Low);
+	fprintf(outfile, "%lu,%lu\n", High, Low);
 
 	fprintf(outfile, "%i\n", pFileInfo->GetGroups()->size());
 	for (FileInfo::Groups::iterator it = pFileInfo->GetGroups()->begin(); it != pFileInfo->GetGroups()->end(); it++)
@@ -307,7 +311,7 @@ bool DiskState::LoadFileInfo(FileInfo* pFileInfo, const char * szFilename, bool 
 	
 	unsigned long High, Low;
 	if (fscanf(infile, "%lu,%lu\n", &High, &Low) != 2) goto error;
-	if (bFileSummary) pFileInfo->SetSize((((unsigned long long)High) << 32) + Low);
+	if (bFileSummary) pFileInfo->SetSize(Util::JoinInt64(High, Low));
 	if (bFileSummary) pFileInfo->SetRemainingSize(pFileInfo->GetSize());
 
 	int size;

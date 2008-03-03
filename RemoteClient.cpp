@@ -269,7 +269,7 @@ bool RemoteClient::RequestServerList()
 			szCompleted[0] = '\0';
 			if (lRemainingSize < lFileSize)
 			{
-				sprintf(szCompleted, ", %i%s", (int)(100 - lRemainingSize * 100.0 / lFileSize), "%");
+				sprintf(szCompleted, ", %i%s", (int)(100 - Util::Int64ToFloat(lRemainingSize) * 100.0 / Util::Int64ToFloat(lFileSize)), "%");
 			}
 			char szStatus[100];
 			if (ntohl(pListAnswer->m_bPaused))
@@ -288,7 +288,8 @@ bool RemoteClient::RequestServerList()
 			char szNZBNiceName[1024];
 			NZBInfo::MakeNiceNZBName(szNZBFilename, szNZBNiceName, 1024);
 			
-			printf("[%i] %s%c%s (%.2f MB%s)%s\n", ntohl(pListAnswer->m_iID), szNZBNiceName, (int)PATH_SEPARATOR, szFilename, lFileSize / 1024.0 / 1024.0, szCompleted, szStatus);
+			printf("[%i] %s%c%s (%.2f MB%s)%s\n", ntohl(pListAnswer->m_iID), szNZBNiceName, (int)PATH_SEPARATOR, szFilename,
+				(float)(Util::Int64ToFloat(lFileSize) / 1024.0 / 1024.0), szCompleted, szStatus);
 
 			pBufPtr += sizeof(SNZBListResponseEntry) + ntohl(pListAnswer->m_iNZBFilenameLen) +
 				ntohl(pListAnswer->m_iSubjectLen) + ntohl(pListAnswer->m_iFilenameLen) + ntohl(pListAnswer->m_iDestDirLen);
@@ -298,11 +299,12 @@ bool RemoteClient::RequestServerList()
 		printf("Files: %i\n", ntohl(ListResponse.m_iNrTrailingEntries));
 		if (lPaused > 0)
 		{
-			printf("Remaining size: %.2f MB (+%.2f MB paused)\n", lRemaining / 1024.0 / 1024.0, lPaused / 1024.0 / 1024.0);
+			printf("Remaining size: %.2f MB (+%.2f MB paused)\n", (float)(Util::Int64ToFloat(lRemaining) / 1024.0 / 1024.0), 
+				(float)(Util::Int64ToFloat(lPaused) / 1024.0 / 1024.0));
 		}
 		else
 		{
-			printf("Remaining size: %.2f MB\n", lRemaining / 1024.0 / 1024.0);
+			printf("Remaining size: %.2f MB\n", (float)(Util::Int64ToFloat(lRemaining) / 1024.0 / 1024.0));
 		}
 		printf("Current download rate: %.1f KB/s\n", (float)(ntohl(ListResponse.m_iDownloadRate) / 1024.0));
 
@@ -310,7 +312,7 @@ bool RemoteClient::RequestServerList()
 	}
 
 	long long iAllBytes = Util::JoinInt64(ntohl(ListResponse.m_iDownloadedBytesHi), ntohl(ListResponse.m_iDownloadedBytesLo));
-	float fAverageSpeed = ntohl(ListResponse.m_iDownloadTimeSec) > 0 ? iAllBytes / ntohl(ListResponse.m_iDownloadTimeSec) : 0;
+	float fAverageSpeed = Util::Int64ToFloat(ntohl(ListResponse.m_iDownloadTimeSec) > 0 ? iAllBytes / ntohl(ListResponse.m_iDownloadTimeSec) : 0);
 	printf("Session download rate: %.1f KB/s\n", (float)(fAverageSpeed / 1024.0));
 
 	if (ntohl(ListResponse.m_iDownloadLimit) > 0)
@@ -330,7 +332,7 @@ bool RemoteClient::RequestServerList()
 	s = sec % 60;
 	printf("Download time: %.2d:%.2d:%.2d\n", h, m, s);
 
-	printf("Downloaded: %.2f MB\n", iAllBytes / 1024.0 / 1024.0);
+	printf("Downloaded: %.2f MB\n", (float)(Util::Int64ToFloat(iAllBytes) / 1024.0 / 1024.0));
 
 	printf("Threads running: %i\n", ntohl(ListResponse.m_iThreadCount));
 
@@ -604,7 +606,14 @@ bool RemoteClient::RequestPostQueue()
 		(int)ntohl(PostQueueResponse.m_MessageBase.m_iSignature) != (int)NZBMESSAGE_SIGNATURE ||
 		ntohl(PostQueueResponse.m_MessageBase.m_iStructSize) != sizeof(PostQueueResponse))
 	{
-		printf("invaid response received: either not nzbget-server or wrong server version\n");
+		if (iResponseLen < 0)
+		{
+			printf("No response received (timeout)\n");
+		}
+		else
+		{
+			printf("Invalid response received: either not nzbget-server or wrong server version\n");
+		}
 		return false;
 	}
 

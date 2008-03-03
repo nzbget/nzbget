@@ -699,7 +699,7 @@ void StatusXmlCommand::Execute()
 		"\"ServerStandBy\" : %s\n"
 		"}\n";
 
-	unsigned int iRemainingSizeHi, iRemainingSizeLo;
+	unsigned long iRemainingSizeHi, iRemainingSizeLo;
 	int iDownloadRate = (int)(g_pQueueCoordinator->CalcCurrentDownloadSpeed() * 1024);
 	long long iRemainingSize = g_pQueueCoordinator->CalcRemainingSize();
 	Util::SplitInt64(iRemainingSize, &iRemainingSizeHi, &iRemainingSizeLo);
@@ -710,7 +710,7 @@ void StatusXmlCommand::Execute()
 	PrePostProcessor::PostQueue* pPostQueue = g_pPrePostProcessor->LockPostQueue();
 	int iParJobCount = pPostQueue->size();
 	g_pPrePostProcessor->UnlockPostQueue();
-	unsigned int iDownloadedSizeHi, iDownloadedSizeLo;
+	unsigned long iDownloadedSizeHi, iDownloadedSizeLo;
 	int iUpTimeSec, iDownloadTimeSec;
 	long long iAllBytes;
 	bool bServerStandBy;
@@ -855,8 +855,8 @@ void ListFilesXmlCommand::Execute()
 	for (DownloadQueue::iterator it = pDownloadQueue->begin(); it != pDownloadQueue->end(); it++)
 	{
 		FileInfo* pFileInfo = *it;
-		unsigned int iFileSizeHi, iFileSizeLo;
-		unsigned int iRemainingSizeLo, iRemainingSizeHi;
+		unsigned long iFileSizeHi, iFileSizeLo;
+		unsigned long iRemainingSizeLo, iRemainingSizeHi;
 		char szNZBNicename[1024];
 		Util::SplitInt64(pFileInfo->GetSize(), &iFileSizeHi, &iFileSizeLo);
 		Util::SplitInt64(pFileInfo->GetRemainingSize(), &iRemainingSizeHi, &iRemainingSizeLo);
@@ -950,9 +950,9 @@ void ListGroupsXmlCommand::Execute()
 	for (GroupQueue::iterator it = groupQueue.begin(); it != groupQueue.end(); it++)
 	{
 		GroupInfo* pGroupInfo = *it;
-		unsigned int iFileSizeHi, iFileSizeLo, iFileSizeMB;
-		unsigned int iRemainingSizeLo, iRemainingSizeHi, iRemainingSizeMB;
-		unsigned int iPausedSizeLo, iPausedSizeHi, iPausedSizeMB;
+		unsigned long iFileSizeHi, iFileSizeLo, iFileSizeMB;
+		unsigned long iRemainingSizeLo, iRemainingSizeHi, iRemainingSizeMB;
+		unsigned long iPausedSizeLo, iPausedSizeHi, iPausedSizeMB;
 		char szNZBNicename[1024];
 		Util::SplitInt64(pGroupInfo->GetNZBInfo()->GetSize(), &iFileSizeHi, &iFileSizeLo);
 		iFileSizeMB = pGroupInfo->GetNZBInfo()->GetSize() / 1024 / 1024;

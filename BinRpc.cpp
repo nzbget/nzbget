@@ -373,13 +373,15 @@ void ListBinCommand::Execute()
 			bufsize += strlen(pFileInfo->GetSubject()) + 1;
 			bufsize += strlen(pFileInfo->GetFilename()) + 1;
 			bufsize += strlen(pFileInfo->GetNZBInfo()->GetDestDir()) + 1;
+			// align struct to 4-bytes, needed by ARM-processor (and may be others)
+			bufsize += bufsize % 4 > 0 ? 4 - bufsize % 4 : 0;
 		}
 
 		buf = (char*) malloc(bufsize);
 		char* bufptr = buf;
 		for (DownloadQueue::iterator it = pDownloadQueue->begin(); it != pDownloadQueue->end(); it++)
 		{
-			unsigned int iSizeHi, iSizeLo;
+			unsigned long iSizeHi, iSizeLo;
 			FileInfo* pFileInfo = *it;
 			SNZBListResponseEntry* pListAnswer = (SNZBListResponseEntry*) bufptr;
 			pListAnswer->m_iID				= htonl(pFileInfo->GetID());
@@ -404,6 +406,12 @@ void ListBinCommand::Execute()
 			bufptr += ntohl(pListAnswer->m_iFilenameLen);
 			strcpy(bufptr, pFileInfo->GetNZBInfo()->GetDestDir());
 			bufptr += ntohl(pListAnswer->m_iDestDirLen);
+			// align struct to 4-bytes, needed by ARM-processor (and may be others)
+			if ((size_t)bufptr % 4 > 0)
+			{
+				pListAnswer->m_iDestDirLen = htonl(ntohl(pListAnswer->m_iDestDirLen) + 4 - (size_t)bufptr % 4);
+				bufptr += 4 - (size_t)bufptr % 4;
+			}
 		}
 
 		g_pQueueCoordinator->UnlockQueue();
@@ -414,7 +422,7 @@ void ListBinCommand::Execute()
 
 	if (htonl(ListRequest.m_bServerState))
 	{
-		unsigned int iSizeHi, iSizeLo;
+		unsigned long iSizeHi, iSizeLo;
 		ListResponse.m_iDownloadRate = htonl((int)(g_pQueueCoordinator->CalcCurrentDownloadSpeed() * 1024));
 		Util::SplitInt64(g_pQueueCoordinator->CalcRemainingSize(), &iSizeHi, &iSizeLo);
 		ListResponse.m_iRemainingSizeHi = htonl(iSizeHi);
@@ -494,6 +502,8 @@ void LogBinCommand::Execute()
 	{
 		Message* pMessage = (*pMessages)[i];
 		bufsize += strlen(pMessage->GetText()) + 1;
+		// align struct to 4-bytes, needed by ARM-processor (and may be others)
+		bufsize += bufsize % 4 > 0 ? 4 - bufsize % 4 : 0;
 	}
 
 	char* buf = (char*) malloc(bufsize);
@@ -509,6 +519,12 @@ void LogBinCommand::Execute()
 		bufptr += sizeof(SNZBLogResponseEntry);
 		strcpy(bufptr, pMessage->GetText());
 		bufptr += ntohl(pLogAnswer->m_iTextLen);
+		// align struct to 4-bytes, needed by ARM-processor (and may be others)
+		if ((size_t)bufptr % 4 > 0)
+		{
+			pLogAnswer->m_iTextLen = htonl(ntohl(pLogAnswer->m_iTextLen) + 4 - (size_t)bufptr % 4);
+			bufptr += 4 - (size_t)bufptr % 4;
+		}
 	}
 
 	g_pLog->UnlockMessages();
@@ -630,6 +646,8 @@ void PostQueueBinCommand::Execute()
 		bufsize += strlen(pPostJob->GetInfoName()) + 1;
 		bufsize += strlen(pPostJob->GetDestDir()) + 1;
 		bufsize += strlen(pPostJob->GetProgressLabel()) + 1;
+		// align struct to 4-bytes, needed by ARM-processor (and may be others)
+		bufsize += bufsize % 4 > 0 ? 4 - bufsize % 4 : 0;
 	}
 
 	time_t tCurTime = time(NULL);
@@ -661,6 +679,12 @@ void PostQueueBinCommand::Execute()
 		bufptr += ntohl(pPostQueueAnswer->m_iDestDirLen);
 		strcpy(bufptr, pPostJob->GetProgressLabel());
 		bufptr += ntohl(pPostQueueAnswer->m_iProgressLabelLen);
+		// align struct to 4-bytes, needed by ARM-processor (and may be others)
+		if ((size_t)bufptr % 4 > 0)
+		{
+			pPostQueueAnswer->m_iProgressLabelLen = htonl(ntohl(pPostQueueAnswer->m_iProgressLabelLen) + 4 - (size_t)bufptr % 4);
+			bufptr += 4 - (size_t)bufptr % 4;
+		}
 	}
 
 	g_pPrePostProcessor->UnlockPostQueue();

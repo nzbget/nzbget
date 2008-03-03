@@ -74,8 +74,15 @@ public:
 	static bool ForceDirectories(const char* szPath);
 	static long long FileSize(const char* szFilename);
 
-	static long long JoinInt64(unsigned int Hi, unsigned int Lo);
-	static void SplitInt64(long long Int64, unsigned int* Hi, unsigned int* Lo);
+	static long long JoinInt64(unsigned long Hi, unsigned long Lo);
+	static void SplitInt64(long long Int64, unsigned long* Hi, unsigned long* Lo);
+
+	/**
+	 * Int64ToFloat converts Int64 to float.
+	 * Simple (float)Int64 does not work on all compilers,
+	 * for example on ARM for NSLU2 (unslung).
+	 */
+	static float Int64ToFloat(long long Int64);
 
 	static float EqualTime(_timeval* t1, _timeval* t2);
 	static bool EmptyTime(_timeval* t);
