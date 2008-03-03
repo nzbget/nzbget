@@ -378,15 +378,22 @@ void Util::MakeValidFilename(char* szFilename, char cReplaceChar)
 	}
 }
 
-long long Util::JoinInt64(unsigned int Hi, unsigned int Lo)
+long long Util::JoinInt64(unsigned long Hi, unsigned long Lo)
 {
 	return (((long long)Hi) << 32) + Lo;
 }
 
-void Util::SplitInt64(long long Int64, unsigned int* Hi, unsigned int* Lo)
+void Util::SplitInt64(long long Int64, unsigned long* Hi, unsigned long* Lo)
 {
-	*Hi = (unsigned int)(Int64 >> 32);
-	*Lo = (unsigned int)Int64;
+	*Hi = (unsigned long)(Int64 >> 32);
+	*Lo = (unsigned long)Int64;
+}
+
+float Util::Int64ToFloat(long long Int64)
+{
+	unsigned long Hi = (unsigned long)(Int64 >> 32);
+	unsigned long Lo = (unsigned long)Int64;
+	return ((unsigned long)(1 << 30)) * 4.0 * Hi + Lo;
 }
 
 float Util::EqualTime(_timeval* t1, _timeval* t2)
@@ -485,7 +492,7 @@ unsigned int DecodeByteQuartet(char* szInputBuffer, char* szOutputBuffer)
 		return 3;
 	}
 
-	return -1;
+	return 0;
 }
 
 unsigned int Util::DecodeBase64(char* szInputBuffer, int iInputBufferLength, char* szOutputBuffer)

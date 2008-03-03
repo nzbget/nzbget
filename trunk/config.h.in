@@ -43,9 +43,6 @@
 /* Define to 1 if you have the <ncurses/ncurses.h> header file. */
 #undef HAVE_NCURSES_NCURSES_H
 
-/* Define to 1 to use pragma pack directive in MessageBase.h */
-#undef HAVE_PRAGMA_PACK
-
 /* Define to 1 if stat64 is supported */
 #undef HAVE_STAT64
 

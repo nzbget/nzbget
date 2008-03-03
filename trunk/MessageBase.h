@@ -36,15 +36,8 @@ static const int NZBREQUESTPASSWORDSIZE = 32;
  * Integer values are passed using network byte order (Big-Endian).
  * Use function "htonl" and "ntohl" to convert integers to/from machine 
  ' (host) byte order.
- * All char-strings must end with NULL-char.
+ * All char-strings ends with NULL-char.
  */
-
-// The pack-directive prevents aligning of structs.
-// This makes them more portable and allows to use together servers and clients
-// compiled on different cpu architectures
-#ifdef HAVE_PRAGMA_PACK
-#pragma pack(1)
-#endif
 
 // Possible values for field "m_iType" of struct "SNZBRequestBase":
 enum eRemoteRequest
@@ -331,9 +324,5 @@ struct SNZBPostQueueResponseEntry
 	//char					m_szDestDir[m_iDestDirLen];				// variable sized
 	//char					m_szProgressLabel[m_iProgressLabelLen];	// variable sized
 };
-
-#ifdef HAVE_PRAGMA_PACK
-#pragma pack()
-#endif
 
 #endif

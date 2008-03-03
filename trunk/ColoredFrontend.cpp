@@ -41,6 +41,7 @@
 
 #include "nzbget.h"
 #include "ColoredFrontend.h"
+#include "Util.h"
 
 ColoredFrontend::ColoredFrontend()
 {
@@ -77,7 +78,7 @@ void ColoredFrontend::PrintStatus()
 
 	if (fCurrentDownloadSpeed > 0.0 && !m_bPause)
 	{
-		long long remain_sec = m_lRemainingSize / ((long long int)(fCurrentDownloadSpeed * 1024));
+		long long remain_sec = m_lRemainingSize / ((long long)(fCurrentDownloadSpeed * 1024));
 		int h = remain_sec / 3600;
 		int m = (remain_sec % 3600) / 60;
 		int s = remain_sec % 60;
@@ -112,7 +113,7 @@ void ColoredFrontend::PrintStatus()
 #endif
 
 	snprintf(tmp, 1024, " %d threads, %.0f KB/s, %.2f MB remaining%s%s%s%s%s\n", 
-		m_iThreadCount, fCurrentDownloadSpeed, (float)(m_lRemainingSize / 1024.0 / 1024.0), 
+		m_iThreadCount, fCurrentDownloadSpeed, (float)(Util::Int64ToFloat(m_lRemainingSize) / 1024.0 / 1024.0), 
 		timeString, szPostStatus, m_bPause ? (m_bStandBy ? ", Paused" : ", Pausing") : "", szDownloadLimit, szControlSeq);
 	tmp[1024-1] = '\0';
 	printf("%s", tmp);

@@ -51,7 +51,6 @@
 #include "NewsServer.h"
 #include "MessageBase.h"
 
-extern float g_fDownloadRate;
 extern ServerPool* g_pServerPool;
 
 #ifdef HAVE_GETOPT_LONG

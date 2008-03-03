@@ -43,9 +43,6 @@
 /* Define to 1 if getopt_long is supported */
 #undef HAVE_GETOPT_LONG
 
-/* Define to 1 to use pragma pack directive in MessageBase.h */
-#define HAVE_PRAGMA_PACK
-
 /* Define to 1 if variadic macros are supported */
 #define HAVE_VARIADIC_MACROS
 

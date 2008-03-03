@@ -50,6 +50,7 @@
 #include "nzbget.h"
 #include "NCursesFrontend.h"
 #include "Options.h"
+#include "Util.h"
 
 #ifdef HAVE_CURSES_H
 // curses.h header must be included last to avoid problems on Solaris
@@ -605,10 +606,10 @@ void NCursesFrontend::PrintStatus()
         szPostStatus[0] = 0;
     }
 
-	float fAverageSpeed = m_iDnTimeSec > 0 ? m_iAllBytes / m_iDnTimeSec / 1024 : 0;
+	float fAverageSpeed = Util::Int64ToFloat(m_iDnTimeSec > 0 ? m_iAllBytes / m_iDnTimeSec / 1024 : 0);
 
 	snprintf(tmp, MAX_SCREEN_WIDTH, " %d threads, %.0f KB/s, %.2f MB remaining%s%s%s%s, Avg. %.0f KB/s", 
-		m_iThreadCount, fCurrentDownloadSpeed, (float)(m_lRemainingSize / 1024.0 / 1024.0), timeString, 
+		m_iThreadCount, fCurrentDownloadSpeed, (float)(Util::Int64ToFloat(m_lRemainingSize) / 1024.0 / 1024.0), timeString, 
 		szPostStatus, m_bPause ? (m_bStandBy ? ", Paused" : ", Pausing") : "", szDownloadLimit, fAverageSpeed);
 	tmp[MAX_SCREEN_WIDTH - 1] = '\0';
     PlotLine(tmp, iStatusRow, 0, NCURSES_COLORPAIR_STATUS);
@@ -752,7 +753,7 @@ void NCursesFrontend::PrintFilename(FileInfo * pFileInfo, int iRow, bool bSelect
 	szCompleted[0] = '\0';
 	if (pFileInfo->GetRemainingSize() < pFileInfo->GetSize())
 	{
-		sprintf(szCompleted, ", %i%%", (int)(100 - pFileInfo->GetRemainingSize() * 100.0 / pFileInfo->GetSize()));
+		sprintf(szCompleted, ", %i%%", (int)(100 - Util::Int64ToFloat(pFileInfo->GetRemainingSize()) * 100.0 / Util::Int64ToFloat(pFileInfo->GetSize())));
 	}
 
 	char szNZBNiceName[1024];
@@ -769,7 +770,9 @@ void NCursesFrontend::PrintFilename(FileInfo * pFileInfo, int iRow, bool bSelect
 	}
 
 	char szBuffer[MAX_SCREEN_WIDTH];
-	snprintf(szBuffer, MAX_SCREEN_WIDTH, "%s%i%s %s%s (%.2f MB%s)%s", Brace1, pFileInfo->GetID(), Brace2, szNZBNiceName, pFileInfo->GetFilename(), pFileInfo->GetSize() / 1024.0 / 1024.0, szCompleted, pFileInfo->GetPaused() ? " (paused)" : "");
+	snprintf(szBuffer, MAX_SCREEN_WIDTH, "%s%i%s %s%s (%.2f MB%s)%s", Brace1, pFileInfo->GetID(),
+		Brace2, szNZBNiceName, pFileInfo->GetFilename(), (float)(Util::Int64ToFloat(pFileInfo->GetSize()) / 1024.0 / 1024.0),
+		szCompleted, pFileInfo->GetPaused() ? " (paused)" : "");
 	szBuffer[MAX_SCREEN_WIDTH - 1] = '\0';
 
 	PlotLine(szBuffer, iRow, 0, color);
@@ -779,15 +782,15 @@ void NCursesFrontend::FormatFileSize(char * szBuffer, int iBufLen, long long lFi
 {
 	if (lFileSize > 1024 * 1024 * 1024)
 	{
-		snprintf(szBuffer, iBufLen, "%.2f GB", (float)lFileSize / 1024 / 1024 / 1024);
+		snprintf(szBuffer, iBufLen, "%.2f GB", (float)(Util::Int64ToFloat(lFileSize) / 1024 / 1024 / 1024));
 	}
 	else if (lFileSize > 1024 * 1024)
 	{
-		snprintf(szBuffer, iBufLen, "%.2f MB", (float)lFileSize / 1024 / 1024);
+		snprintf(szBuffer, iBufLen, "%.2f MB", (float)(Util::Int64ToFloat(lFileSize) / 1024 / 1024));
 	}
 	else if (lFileSize > 1024)
 	{
-		snprintf(szBuffer, iBufLen, "%.2f KB", (float)lFileSize / 1024);
+		snprintf(szBuffer, iBufLen, "%.2f KB", (float)(Util::Int64ToFloat(lFileSize) / 1024));
 	}
 	else 
 	{

@@ -174,17 +174,6 @@ if test "$HAVE_FUNCTION_MACRO" != "yes"; then
 fi
 
 
-dnl
-dnl check for pragma pack
-dnl
-AC_MSG_CHECKING(for pragma pack)
-AC_TRY_COMPILE([#pragma pack(1)
-#pragma pack()],,
-	AC_MSG_RESULT([yes])
-	AC_DEFINE([HAVE_PRAGMA_PACK],1,[Define to 1 to use pragma pack directive in MessageBase.h]),
-	AC_MSG_RESULT([no]))
-
-
 dnl 
 dnl checks for libxml2 includes and libraries.
 dnl 
