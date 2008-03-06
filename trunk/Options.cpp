@@ -173,6 +173,7 @@ Options::Options(int argc, char* argv[])
 	m_iEditQueueIDCount		= 0;
 	m_iEditQueueOffset		= 0;
 	m_szArgFilename			= NULL;
+	m_szLastArg				= NULL;
 	m_iConnectionTimeout	= 0;
 	m_iTerminateTimeout		= 0;
 	m_bServerMode			= false;
@@ -300,6 +301,10 @@ Options::~Options()
 	if (m_szArgFilename)
 	{
 		free(m_szArgFilename);
+	}
+	if (m_szLastArg)
+	{
+		free(m_szLastArg);
 	}
 	if (m_szServerIP)
 	{
@@ -845,6 +850,8 @@ void Options::InitFileArg(int argc, char* argv[])
 	}
 	else
 	{
+		m_szLastArg = strdup(argv[optind]);
+
 		// Check if the file-name is a relative path or an absolute path
 		// If the path starts with '/' its an absolute, else relative
 		const char* szFileName = argv[optind];

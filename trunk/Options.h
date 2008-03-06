@@ -141,6 +141,7 @@ private:
 	int*				m_pEditQueueIDList;
 	int					m_iEditQueueIDCount;
 	char*				m_szArgFilename;
+	char*				m_szLastArg;
 	bool				m_bPrintOptions;
 	bool				m_bAddTop;
 	float				m_fSetRate;
@@ -236,6 +237,7 @@ public:
 	int*				GetEditQueueIDList() { return m_pEditQueueIDList; }
 	int					GetEditQueueIDCount() { return m_iEditQueueIDCount; }
 	const char*			GetArgFilename() { return m_szArgFilename; }
+	const char*			GetLastArg() { return m_szLastArg; }
 	bool				GetAddTop() { return m_bAddTop; }
 	float				GetSetRate() { return m_fSetRate; }
 	int					GetLogLines() { return m_iLogLines; }
