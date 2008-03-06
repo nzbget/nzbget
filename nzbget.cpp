@@ -360,7 +360,7 @@ void ProcessClientRequest()
 	}
 	else if (g_pOptions->GetClientOperation() == Options::opClientRequestWriteLog)
 	{
-		Client->RequestWriteLog(g_pOptions->GetWriteLogKind(), g_pOptions->GetArgFilename());
+		Client->RequestWriteLog(g_pOptions->GetWriteLogKind(), g_pOptions->GetLastArg());
 	}
 
 	delete Client;
