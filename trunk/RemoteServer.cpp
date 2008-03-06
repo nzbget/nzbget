@@ -174,32 +174,46 @@ void RequestProcessor::Run()
 		processor.SetClientIP(ip);
 		processor.Execute();
 	}
-	else if (!strncmp((char*)&iSignature, "POST", 4))
+	else if (!strncmp((char*)&iSignature, "POST", 4) || !strncmp((char*)&iSignature, "GET ", 4))
 	{
-		XmlRpcProcessor::ERpcProtocol eProtocol = XmlRpcProcessor::rpUndefined;
-		char buf[10];
-		iBytesReceived = recv(m_iSocket, buf, sizeof(buf), 0);
-		if (iBytesReceived == sizeof(buf))
+		// XML-RPC or JSON-RPC request received
+		Connection con(m_iSocket, false);
+		char szBuffer[1024];
+		if (con.ReadLine(szBuffer, sizeof(szBuffer), NULL))
 		{
-			if (!strncmp(buf, " /xmlrpc ", 9))
+			XmlRpcProcessor::EHttpMethod eHttpMethod = XmlRpcProcessor::hmGet;
+			char* szUrl = szBuffer;
+			if (!strncmp((char*)&iSignature, "POST", 4))
+			{
+				eHttpMethod = XmlRpcProcessor::hmPost;
+				szUrl++;
+			}
+			if (char* p = strchr(szUrl, ' '))
+			{
+				*p = '\0';
+			}
+
+			XmlRpcProcessor::ERpcProtocol eProtocol = XmlRpcProcessor::rpUndefined;
+			if (!strcmp(szUrl, "/xmlrpc") || !strncmp(szUrl, "/xmlrpc/", 8))
 			{
 				eProtocol = XmlRpcProcessor::rpXmlRpc;
 			}
-			else if (!strncmp(buf, " /jsonrpc ", 10))
+			else if (!strcmp(szUrl, "/jsonrpc") || !strncmp(szUrl, "/jsonrpc/", 9))
 			{
 				eProtocol = XmlRpcProcessor::rpJsonRpc;
 			}
-		}
 
-		if (eProtocol != XmlRpcProcessor::rpUndefined)
-		{
-			// XML-RPC or JSON-RPC request received
-			XmlRpcProcessor processor;
-			processor.SetSocket(m_iSocket);
-			processor.SetClientIP(ip);
-			processor.SetProtocol(eProtocol);
-			processor.Execute();
-			bOK = true;
+			if (eProtocol != XmlRpcProcessor::rpUndefined)
+			{
+				XmlRpcProcessor processor;
+				processor.SetConnection(&con);
+				processor.SetClientIP(ip);
+				processor.SetProtocol(eProtocol);
+				processor.SetHttpMethod(eHttpMethod);
+				processor.SetUrl(szUrl);
+				processor.Execute();
+				bOK = true;
+			}
 		}
 	}
 
