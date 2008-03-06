@@ -190,7 +190,7 @@ bool NNTPConnection::AuthInfoPass(int iRecur)
 	return false;
 }
 
-const char* NNTPConnection::JoinGroup(char* grp)
+const char* NNTPConnection::JoinGroup(const char* grp)
 {
 	if (m_szActiveGroup && !strcmp(m_szActiveGroup, grp))
 	{

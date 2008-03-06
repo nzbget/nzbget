@@ -49,7 +49,7 @@ public:
 	bool 					Authenticate();
 	bool 					AuthInfoUser(int iRecur = 0);
 	bool 					AuthInfoPass(int iRecur = 0);
-	const char*				JoinGroup(char* grp);
+	const char*				JoinGroup(const char* grp);
 	bool					GetAuthError() { return m_bAuthError; }
 };
 

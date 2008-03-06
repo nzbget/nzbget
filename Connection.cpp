@@ -171,7 +171,7 @@ int Connection::Bind()
 	return iRes;
 }
 
-int Connection::WriteLine(char* line)
+int Connection::WriteLine(const char* pBuffer)
 {
 	//debug("Connection::write(char* line)");
 
@@ -180,12 +180,12 @@ int Connection::WriteLine(char* line)
 		return -1;
 	}
 
-	int iRes = DoWriteLine(line);
+	int iRes = DoWriteLine(pBuffer);
 
 	return iRes;
 }
 
-int Connection::Send(char* pBuffer, int iSize)
+int Connection::Send(const char* pBuffer, int iSize)
 {
 	debug("Sending data");
 
@@ -378,10 +378,10 @@ int Connection::DoDisconnect()
 	return 0;
 }
 
-int Connection::DoWriteLine(char* szText)
+int Connection::DoWriteLine(const char* pBuffer)
 {
 	//debug("Connection::doWrite()");
-	return send(m_iSocket, szText, strlen(szText), 0);
+	return send(m_iSocket, pBuffer, strlen(pBuffer), 0);
 }
 
 char* Connection::DoReadLine(char* pBuffer, int iSize, int* pBytesRead)
