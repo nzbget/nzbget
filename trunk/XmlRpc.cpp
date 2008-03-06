@@ -536,7 +536,7 @@ bool XmlCommand::NextParamAsInt(int* iValue)
 	{
 		int iLen = 0;
 		char* szParam = (char*)Util::JsonNextValue(m_szRequestPtr, &iLen);
-		if (!szParam)
+		if (!szParam || !strchr("0123456789", *szParam))
 		{
 			return false;
 		}
@@ -554,7 +554,7 @@ bool XmlCommand::NextParamAsInt(int* iValue)
 			szParam = (char*)Util::XmlFindTag(m_szRequestPtr, "int", &iLen);
 			iTagLen = 5; //strlen("<int>");
 		}
-		if (!szParam)
+		if (!szParam || !strchr("0123456789", *szParam))
 		{
 			return false;
 		}
