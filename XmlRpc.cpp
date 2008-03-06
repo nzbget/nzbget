@@ -91,10 +91,29 @@ void StringBuilder::Append(const char* szStr)
 
 XmlRpcProcessor::XmlRpcProcessor()
 {
-	m_iSocket = 0;
+	m_pConnection = NULL;
 	m_szClientIP = NULL;
 	m_szRequest = NULL;
 	m_eProtocol = rpUndefined;
+	m_eHttpMethod = hmPost;
+	m_szUrl = NULL;
+}
+
+void XmlRpcProcessor::SetUrl(const char* szUrl)
+{
+	m_szUrl = strdup(szUrl);
+}
+
+XmlRpcProcessor::~XmlRpcProcessor()
+{
+	if (m_szRequest)
+	{
+		free(m_szRequest);
+	}
+	if (m_szUrl)
+	{
+		free(m_szUrl);
+	}
 }
 
 void XmlRpcProcessor::Execute()
@@ -102,13 +121,11 @@ void XmlRpcProcessor::Execute()
 	char szAuthInfo[1024];
 	szAuthInfo[0] = '\0';
 
-	Connection con(m_iSocket, false);
-
 	// reading http header
 	char szBuffer[1024];
 	bool bBody = false;
 	int iContentLen = 0;
-	while (char* p = con.ReadLine(szBuffer, sizeof(szBuffer), NULL))
+	while (char* p = m_pConnection->ReadLine(szBuffer, sizeof(szBuffer), NULL))
 	{
 		debug("header=%s", p);
 		if (!strncasecmp(p, "Content-Length: ", 16))
@@ -133,10 +150,11 @@ void XmlRpcProcessor::Execute()
 		}
 	}
 
+	debug("URL=%s", m_szUrl);
 	debug("Content-Length=%i", iContentLen);
 	debug("Authorization=%s", szAuthInfo);
 
-	if (iContentLen <= 0)
+	if (m_eHttpMethod == hmPost && iContentLen <= 0)
 	{
 		error("invalid-request: content length is 0");
 		return;
@@ -153,27 +171,28 @@ void XmlRpcProcessor::Execute()
 	if (pw) *pw++ = '\0';
 	if (strcmp(szAuthInfo, "nzbget") || strcmp(pw, g_pOptions->GetServerPassword()))
 	{
-		warn("xml-rpc request received on port %i from %s, but password invalid", g_pOptions->GetServerPort(), m_szClientIP);
+		warn("rpc-request received on port %i from %s, but password invalid", g_pOptions->GetServerPort(), m_szClientIP);
 		return;
 	}
 
-	// reading http body (request content)
-	m_szRequest = (char*)malloc(iContentLen + 1);
-	m_szRequest[iContentLen] = '\0';
-
-	if (!con.RecvAll(m_szRequest, iContentLen))
+	if (m_eHttpMethod == hmPost)
 	{
-		free(m_szRequest);
-		error("invalid-request: could not read data");
-		return;
+		// reading http body (request content)
+		m_szRequest = (char*)malloc(iContentLen + 1);
+		m_szRequest[iContentLen] = '\0';
+
+		if (!m_pConnection->RecvAll(m_szRequest, iContentLen))
+		{
+			free(m_szRequest);
+			error("invalid-request: could not read data");
+			return;
+		}
+		debug("Request=%s", m_szRequest);
 	}
 
 	debug("Request received from %s", m_szClientIP);
-	debug("Request=%s", m_szRequest);
 
 	Dispatch();
-
-	free(m_szRequest);
 }
 
 void XmlRpcProcessor::Dispatch()
@@ -182,10 +201,34 @@ void XmlRpcProcessor::Dispatch()
 	char szMethodName[100];
 	szMethodName[0] = '\0';
 
-	if (m_eProtocol == rpXmlRpc)
+	if (m_eHttpMethod == hmGet)
+	{
+		szRequest = m_szUrl + 1;
+		char* pstart = strchr(szRequest, '/');
+		if (pstart) 
+		{
+			char* pend = strchr(pstart + 1, '?');
+			if (pend) 
+			{
+				int iLen = pend - pstart - 1 < sizeof(szMethodName) - 1 ? pend - pstart - 1 : sizeof(szMethodName) - 1;
+				strncpy(szMethodName, pstart + 1, iLen);
+				szMethodName[iLen] = '\0';
+				szRequest = pend + 1;
+			}
+			else
+			{
+				strncpy(szMethodName, pstart + 1, sizeof(szMethodName));
+				szMethodName[sizeof(szMethodName) - 1] = '\0';
+				szRequest = szRequest + strlen(szRequest);
+			}
+		}
+	}
+	else if (m_eProtocol == rpXmlRpc)
 	{
 		Util::XmlParseTagValue(m_szRequest, "methodName", szMethodName, sizeof(szMethodName), NULL);
-	} else if (m_eProtocol == rpJsonRpc) {
+	} 
+	else if (m_eProtocol == rpJsonRpc) 
+	{
 		int iValueLen = 0;
 		if (const char* szMethodPtr = Util::JsonFindField(m_szRequest, "method", &iValueLen))
 		{
@@ -197,7 +240,7 @@ void XmlRpcProcessor::Dispatch()
 
 	debug("MethodName=%s", szMethodName);
 
-	if (!strcasecmp(szMethodName, "system.multicall") && m_eProtocol == rpXmlRpc)
+	if (!strcasecmp(szMethodName, "system.multicall") && m_eProtocol == rpXmlRpc && m_eHttpMethod == hmPost)
 	{
 		MutliCall();
 	}
@@ -206,6 +249,7 @@ void XmlRpcProcessor::Dispatch()
 		XmlCommand* command = CreateCommand(szMethodName);
 		command->SetRequest(szRequest);
 		command->SetProtocol(m_eProtocol);
+		command->SetHttpMethod(m_eHttpMethod);
 		command->PrepareParams();
 		command->Execute();
 		SendResponse(command->GetResponse(), command->GetFault());
@@ -330,12 +374,12 @@ void XmlRpcProcessor::SendResponse(const char* szResponse, bool bFault)
 	snprintf(szResponseHeader, 1024, bXmlRpc ? XML_RESPONSE_HEADER : JSON_RESPONSE_HEADER, iBodyLen, VERSION);
 
 	// Send the request answer
-	send(m_iSocket, szResponseHeader, strlen(szResponseHeader), 0);
-	send(m_iSocket, szHeader, iHeaderLen, 0);
-	send(m_iSocket, szOpenTag, iOpenTagLen, 0);
-	send(m_iSocket, szResponse, iResponseLen, 0);
-	send(m_iSocket, szCloseTag, iCloseTagLen, 0);
-	send(m_iSocket, szFooter, iFooterLen, 0);
+	m_pConnection->Send(szResponseHeader, strlen(szResponseHeader));
+	m_pConnection->Send(szHeader, iHeaderLen);
+	m_pConnection->Send(szOpenTag, iOpenTagLen);
+	m_pConnection->Send(szResponse, iResponseLen);
+	m_pConnection->Send(szCloseTag, iCloseTagLen);
+	m_pConnection->Send(szFooter, iFooterLen);
 }
 
 XmlCommand* XmlRpcProcessor::CreateCommand(const char* szMethodName)
@@ -400,7 +444,7 @@ XmlCommand* XmlRpcProcessor::CreateCommand(const char* szMethodName)
 	}
 	else 
 	{
-		command = new ErrorXmlCommand(1, "Invalid method");
+		command = new ErrorXmlCommand(1, "Invalid procedure");
 	}
 
 	return command;
@@ -463,7 +507,7 @@ void XmlCommand::BuildBoolResponse(bool bOK)
 
 void XmlCommand::PrepareParams()
 {
-	if (IsJson())
+	if (IsJson() && m_eHttpMethod == XmlRpcProcessor::hmPost)
 	{
 		char* szParams = strstr(m_szRequestPtr, "\"params\"");
 		if (!szParams)
@@ -477,7 +521,18 @@ void XmlCommand::PrepareParams()
 
 bool XmlCommand::NextParamAsInt(int* iValue)
 {
-	if (IsJson())
+	if (m_eHttpMethod == XmlRpcProcessor::hmGet)
+	{
+		char* szParam = strchr(m_szRequestPtr, '=');
+		if (!szParam)
+		{
+			return false;
+		}
+		*iValue = atoi(szParam + 1);
+		m_szRequestPtr = szParam + 1;
+		return true;
+	}
+	else if (IsJson())
 	{
 		int iLen = 0;
 		char* szParam = (char*)Util::JsonNextValue(m_szRequestPtr, &iLen);
@@ -511,7 +566,11 @@ bool XmlCommand::NextParamAsInt(int* iValue)
 
 bool XmlCommand::NextParamAsBool(bool* bValue)
 {
-	if (IsJson())
+	if (m_eHttpMethod == XmlRpcProcessor::hmGet)
+	{
+		return false;
+	}
+	else if (IsJson())
 	{
 		int iLen = 0;
 		char* szParam = (char*)Util::JsonNextValue(m_szRequestPtr, &iLen);
@@ -552,7 +611,11 @@ bool XmlCommand::NextParamAsBool(bool* bValue)
 
 bool XmlCommand::NextParamAsStr(char** szValue)
 {
-	if (IsJson())
+	if (m_eHttpMethod == XmlRpcProcessor::hmGet)
+	{
+		return false;
+	}
+	else if (IsJson())
 	{
 		int iLen = 0;
 		char* szParam = (char*)Util::JsonNextValue(m_szRequestPtr, &iLen);
@@ -615,18 +678,36 @@ void ErrorXmlCommand::Execute()
 
 void PauseXmlCommand::Execute()
 {
+	if (m_eHttpMethod == XmlRpcProcessor::hmGet)
+	{
+		BuildErrorResponse(4, "Not safe procedure for HTTP-Method GET. Use Method POST instead");
+		return;
+	}
+
 	g_pOptions->SetPause(true);
 	BuildBoolResponse(true);
 }
 
 void UnPauseXmlCommand::Execute()
 {
+	if (m_eHttpMethod == XmlRpcProcessor::hmGet)
+	{
+		BuildErrorResponse(4, "Not safe procedure for HTTP-Method GET. Use Method POST instead");
+		return;
+	}
+
 	g_pOptions->SetPause(false);
 	BuildBoolResponse(true);
 }
 
 void ShutdownXmlCommand::Execute()
 {
+	if (m_eHttpMethod == XmlRpcProcessor::hmGet)
+	{
+		BuildErrorResponse(4, "Not safe procedure for HTTP-Method GET. Use Method POST instead");
+		return;
+	}
+
 	BuildBoolResponse(true);
 	ExitProc();
 }
@@ -652,6 +733,12 @@ void DumpDebugXmlCommand::Execute()
 
 void SetDownloadRateXmlCommand::Execute()
 {
+	if (m_eHttpMethod == XmlRpcProcessor::hmGet)
+	{
+		BuildErrorResponse(4, "Not safe procedure for HTTP-Method GET. Use Method POST instead");
+		return;
+	}
+
 	int iRate = 0;
 	if (!NextParamAsInt(&iRate) || iRate < 0)
 	{
@@ -802,7 +889,7 @@ void LogXmlCommand::Execute()
 		szItemBuf[szItemBufSize-1] = '\0';
 		free(xmltext);
 
-		if (index++ > 0)
+		if (IsJson() && index++ > 0)
 		{
 			AppendResponse(",\n");
 		}
@@ -817,6 +904,17 @@ void LogXmlCommand::Execute()
 
 void ListFilesXmlCommand::Execute()
 {
+	int iIDStart = 0;
+	int iIDEnd = 0;
+	if (NextParamAsInt(&iIDStart) && (!NextParamAsInt(&iIDEnd) || iIDEnd < iIDStart))
+	{
+		BuildErrorResponse(2, "Invalid parameter");
+		return;
+	}
+
+	debug("iIDStart=%i", iIDStart);
+	debug("iIDEnd=%i", iIDEnd);
+
 	AppendResponse(IsJson() ? "[\n" : "<array><data>\n");
 	DownloadQueue* pDownloadQueue = g_pQueueCoordinator->LockQueue();
 
@@ -859,35 +957,38 @@ void ListFilesXmlCommand::Execute()
 	for (DownloadQueue::iterator it = pDownloadQueue->begin(); it != pDownloadQueue->end(); it++)
 	{
 		FileInfo* pFileInfo = *it;
-		unsigned long iFileSizeHi, iFileSizeLo;
-		unsigned long iRemainingSizeLo, iRemainingSizeHi;
-		char szNZBNicename[1024];
-		Util::SplitInt64(pFileInfo->GetSize(), &iFileSizeHi, &iFileSizeLo);
-		Util::SplitInt64(pFileInfo->GetRemainingSize(), &iRemainingSizeHi, &iRemainingSizeLo);
-		pFileInfo->GetNZBInfo()->GetNiceNZBName(szNZBNicename, sizeof(szNZBNicename));
-		char* xmlNZBFilename = EncodeStr(pFileInfo->GetNZBInfo()->GetFilename());
-		char* xmlSubject = EncodeStr(pFileInfo->GetSubject());
-		char* xmlFilename = EncodeStr(pFileInfo->GetFilename());
-		char* xmlDestDir = EncodeStr(pFileInfo->GetNZBInfo()->GetDestDir());
-		char* xmlNZBNicename = EncodeStr(szNZBNicename);
-
-		snprintf(szItemBuf, szItemBufSize, IsJson() ? JSON_LIST_ITEM : XML_LIST_ITEM,
-			pFileInfo->GetID(), iFileSizeLo, iFileSizeHi, iRemainingSizeLo, iRemainingSizeHi, 
-			BoolToStr(pFileInfo->GetFilenameConfirmed()), BoolToStr(pFileInfo->GetPaused()),
-			xmlNZBNicename, xmlNZBFilename, xmlSubject, xmlFilename, xmlDestDir);
-		szItemBuf[szItemBufSize-1] = '\0';
-
-		free(xmlNZBFilename);
-		free(xmlSubject);
-		free(xmlFilename);
-		free(xmlDestDir);
-		free(xmlNZBNicename);
-
-		if (index++ > 0)
+		if (iIDStart == 0 || (iIDStart <= pFileInfo->GetID() && pFileInfo->GetID() <= iIDEnd))
 		{
-			AppendResponse(",\n");
+			unsigned long iFileSizeHi, iFileSizeLo;
+			unsigned long iRemainingSizeLo, iRemainingSizeHi;
+			char szNZBNicename[1024];
+			Util::SplitInt64(pFileInfo->GetSize(), &iFileSizeHi, &iFileSizeLo);
+			Util::SplitInt64(pFileInfo->GetRemainingSize(), &iRemainingSizeHi, &iRemainingSizeLo);
+			pFileInfo->GetNZBInfo()->GetNiceNZBName(szNZBNicename, sizeof(szNZBNicename));
+			char* xmlNZBFilename = EncodeStr(pFileInfo->GetNZBInfo()->GetFilename());
+			char* xmlSubject = EncodeStr(pFileInfo->GetSubject());
+			char* xmlFilename = EncodeStr(pFileInfo->GetFilename());
+			char* xmlDestDir = EncodeStr(pFileInfo->GetNZBInfo()->GetDestDir());
+			char* xmlNZBNicename = EncodeStr(szNZBNicename);
+
+			snprintf(szItemBuf, szItemBufSize, IsJson() ? JSON_LIST_ITEM : XML_LIST_ITEM,
+				pFileInfo->GetID(), iFileSizeLo, iFileSizeHi, iRemainingSizeLo, iRemainingSizeHi, 
+				BoolToStr(pFileInfo->GetFilenameConfirmed()), BoolToStr(pFileInfo->GetPaused()),
+				xmlNZBNicename, xmlNZBFilename, xmlSubject, xmlFilename, xmlDestDir);
+			szItemBuf[szItemBufSize-1] = '\0';
+
+			free(xmlNZBFilename);
+			free(xmlSubject);
+			free(xmlFilename);
+			free(xmlDestDir);
+			free(xmlNZBNicename);
+
+			if (IsJson() && index++ > 0)
+			{
+				AppendResponse(",\n");
+			}
+			AppendResponse(szItemBuf);
 		}
-		AppendResponse(szItemBuf);
 	}
 	free(szItemBuf);
 
@@ -981,7 +1082,7 @@ void ListGroupsXmlCommand::Execute()
 		free(xmlNZBFilename);
 		free(xmlDestDir);
 
-		if (index++ > 0)
+		if (IsJson() && index++ > 0)
 		{
 			AppendResponse(",\n");
 		}
@@ -1026,6 +1127,12 @@ EditCommandEntry EditCommandNameMap[] = {
 
 void EditQueueXmlCommand::Execute()
 {
+	if (m_eHttpMethod == XmlRpcProcessor::hmGet)
+	{
+		BuildErrorResponse(4, "Not safe procedure for HTTP-Method GET. Use Method POST instead");
+		return;
+	}
+
 	char* szEditCommand;
 	if (!NextParamAsStr(&szEditCommand))
 	{
@@ -1071,6 +1178,12 @@ void EditQueueXmlCommand::Execute()
 
 void DownloadXmlCommand::Execute()
 {
+	if (m_eHttpMethod == XmlRpcProcessor::hmGet)
+	{
+		BuildErrorResponse(4, "Not safe procedure for HTTP-Method GET. Use Method POST instead");
+		return;
+	}
+
 	char* szFileName;
 	if (!NextParamAsStr(&szFileName))
 	{
@@ -1199,7 +1312,7 @@ void PostQueueXmlCommand::Execute()
 		free(xmlInfoName);
 		free(xmlProgressLabel);
 
-		if (index++ > 0)
+		if (IsJson() && index++ > 0)
 		{
 			AppendResponse(",\n");
 		}
@@ -1214,6 +1327,12 @@ void PostQueueXmlCommand::Execute()
 
 void WriteLogXmlCommand::Execute()
 {
+	if (m_eHttpMethod == XmlRpcProcessor::hmGet)
+	{
+		BuildErrorResponse(4, "Not safe procedure for HTTP-Method GET. Use Method POST instead");
+		return;
+	}
+
 	char* szKind;
 	char* szText;
 	if (!NextParamAsStr(&szKind) || !NextParamAsStr(&szText))

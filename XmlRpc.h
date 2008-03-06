@@ -55,11 +55,19 @@ public:
 		rpJsonRpc
 	};
 
+	enum EHttpMethod
+	{
+		hmPost,
+		hmGet
+	};
+
 private:
-	SOCKET				m_iSocket;
+	Connection*			m_pConnection;
 	const char*			m_szClientIP;
 	char*				m_szRequest;
 	ERpcProtocol		m_eProtocol;
+	EHttpMethod			m_eHttpMethod;
+	char*				m_szUrl;
 
 	void				Dispatch();
 	void				SendResponse(const char* szResponse, bool bFault);
@@ -68,9 +76,12 @@ private:
 
 public:
 						XmlRpcProcessor();
+						~XmlRpcProcessor();
 	void				Execute();
-	void				SetSocket(SOCKET iSocket) { m_iSocket = iSocket; }
+	void				SetConnection(Connection* pConnection) { m_pConnection = pConnection; }
 	void				SetProtocol(ERpcProtocol eProtocol) { m_eProtocol = eProtocol; }
+	void				SetHttpMethod(EHttpMethod eHttpMethod) { m_eHttpMethod = eHttpMethod; }
+	void				SetUrl(const char* szUrl);
 	void				SetClientIP(const char* szClientIP) { m_szClientIP = szClientIP; }
 };
 
@@ -82,6 +93,7 @@ protected:
 	StringBuilder		m_StringBuilder;
 	bool				m_bFault;
 	XmlRpcProcessor::ERpcProtocol	m_eProtocol;
+	XmlRpcProcessor::EHttpMethod	m_eHttpMethod;
 
 	void				BuildErrorResponse(int iErrCode, const char* szErrText);
 	void				BuildBoolResponse(bool bOK);
@@ -100,6 +112,7 @@ public:
 	void				PrepareParams();
 	void				SetRequest(char* szRequest) { m_szRequest = szRequest; m_szRequestPtr = m_szRequest; }
 	void				SetProtocol(XmlRpcProcessor::ERpcProtocol eProtocol) { m_eProtocol = eProtocol; }
+	void				SetHttpMethod(XmlRpcProcessor::EHttpMethod eHttpMethod) { m_eHttpMethod = eHttpMethod; }
 	const char*			GetResponse() { return m_StringBuilder.GetBuffer(); }
 	bool				GetFault() { return m_bFault; }
 };
