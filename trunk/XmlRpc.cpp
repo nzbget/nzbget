@@ -394,6 +394,10 @@ XmlCommand* XmlRpcProcessor::CreateCommand(const char* szMethodName)
 	{
 		command = new PostQueueXmlCommand();
 	}
+	else if (!strcasecmp(szMethodName, "writelog"))
+	{
+		command = new WriteLogXmlCommand();
+	}
 	else 
 	{
 		command = new ErrorXmlCommand(1, "Invalid method");
@@ -1206,4 +1210,49 @@ void PostQueueXmlCommand::Execute()
 	g_pPrePostProcessor->UnlockPostQueue();
 
 	AppendResponse(IsJson() ? "\n]" : "</data></array>\n");
+}
+
+void WriteLogXmlCommand::Execute()
+{
+	char* szKind;
+	char* szText;
+	if (!NextParamAsStr(&szKind) || !NextParamAsStr(&szText))
+	{
+		BuildErrorResponse(2, "Invalid parameter");
+		return;
+	}
+
+	if (IsJson())
+	{
+		Util::JsonDecode(szText);
+	}
+	else
+	{
+		Util::XmlDecode(szText);
+	}
+
+	debug("Kind=%s, Text=%s", szKind, szText);
+
+	if (!strcmp(szKind, "INFO")) {
+		info(szText);
+	}
+	else if (!strcmp(szKind, "WARNING")) {
+		warn(szText);
+	}
+	else if (!strcmp(szKind, "ERROR")) {
+		error(szText);
+	}
+	else if (!strcmp(szKind, "DETAIL")) {
+		detail(szText);
+	}
+	else if (!strcmp(szKind, "DEBUG")) {
+		debug(szText);
+	} 
+	else
+	{
+		BuildErrorResponse(3, "Invalid Kind");
+		return;
+	}
+
+	BuildBoolResponse(true);
 }

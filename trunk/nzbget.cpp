@@ -358,6 +358,10 @@ void ProcessClientRequest()
 	{
 		Client->RequestPostQueue();
 	}
+	else if (g_pOptions->GetClientOperation() == Options::opClientRequestWriteLog)
+	{
+		Client->RequestWriteLog(g_pOptions->GetWriteLogKind(), g_pOptions->GetArgFilename());
+	}
 
 	delete Client;
 }

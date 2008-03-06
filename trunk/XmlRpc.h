@@ -193,4 +193,10 @@ public:
 	virtual void		Execute();
 };
 
+class WriteLogXmlCommand: public XmlCommand
+{
+public:
+	virtual void		Execute();
+};
+
 #endif

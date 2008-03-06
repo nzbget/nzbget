@@ -670,3 +670,25 @@ bool RemoteClient::RequestPostQueue()
 
 	return true;
 }
+
+bool RemoteClient::RequestWriteLog(int iKind, const char* szText)
+{
+	if (!InitConnection()) return false;
+
+	SNZBWriteLogRequest WriteLogRequest;
+	InitMessageBase(&WriteLogRequest.m_MessageBase, eRemoteRequestWriteLog, sizeof(WriteLogRequest));
+	WriteLogRequest.m_iKind = htonl(iKind);
+	int iLength = strlen(szText) + 1;
+	WriteLogRequest.m_iTrailingDataLength = htonl(iLength);
+
+	if (m_pConnection->Send((char*)(&WriteLogRequest), sizeof(WriteLogRequest)) < 0)
+	{
+		perror("m_pConnection->Send");
+		return false;
+	}
+
+	m_pConnection->Send(szText, iLength);
+	bool OK = ReceiveBoolResponse();
+	m_pConnection->Disconnect();
+	return OK;
+}

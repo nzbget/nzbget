@@ -122,4 +122,10 @@ public:
 	virtual void		Execute();
 };
 
+class WriteLogBinCommand: public BinCommand
+{
+public:
+	virtual void		Execute();
+};
+
 #endif
