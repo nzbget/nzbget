@@ -56,7 +56,7 @@ protected:
 	virtual int 		DoConnect();
 	virtual int			DoDisconnect();
 	int					DoBind();
-	int					DoWriteLine(char* text);
+	int					DoWriteLine(const char* pBuffer);
 	char*				DoReadLine(char* pBuffer, int iSize, int* pBytesRead);
 	SOCKET				DoAccept();
 
@@ -69,11 +69,11 @@ public:
 	int 				Connect();
 	int					Disconnect();
 	int					Bind();
-	int					Send(char* pBuffer, int iSize);
+	int					Send(const char* pBuffer, int iSize);
 	int					Recv(char* pBuffer, int iSize);
 	bool				RecvAll(char* pBuffer, int iSize);
 	char*				ReadLine(char* pBuffer, int iSize, int* pBytesRead);
-	int					WriteLine(char* text);
+	int					WriteLine(const char* pBuffer);
 	SOCKET				Accept();
 	void				Cancel();
 	NetAddress*			GetServer() { return m_pNetAddress; }
