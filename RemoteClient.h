@@ -58,6 +58,7 @@ public:
 	bool			RequestServerShutdown();
 	bool			RequestServerVersion();
 	bool			RequestPostQueue();
+	bool 			RequestWriteLog(int iKind, const char* szText);
 };
 
 #endif

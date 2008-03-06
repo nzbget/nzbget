@@ -45,7 +45,8 @@ public:
 	    opClientRequestLog,
 	    opClientRequestShutdown,
 	    opClientRequestVersion,
-	    opClientRequestPostQueue
+	    opClientRequestPostQueue,
+	    opClientRequestWriteLog
 	};
 	enum EMessageTarget
 	{
@@ -144,6 +145,7 @@ private:
 	bool				m_bAddTop;
 	float				m_fSetRate;
 	int					m_iLogLines;
+	int					m_iWriteLogKind;
 
 	// Current state
 	bool				m_bPause;
@@ -228,7 +230,7 @@ public:
 	bool				GetServerMode() { return m_bServerMode; }
 	bool				GetDaemonMode() { return m_bDaemonMode; }
 	bool				GetRemoteClientMode() { return m_bRemoteClientMode; }
-	EClientOperation	GetClientOperation() { return 	m_eClientOperation; }
+	EClientOperation	GetClientOperation() { return m_eClientOperation; }
 	int					GetEditQueueAction() { return m_iEditQueueAction; }
 	int					GetEditQueueOffset() { return m_iEditQueueOffset; }
 	int*				GetEditQueueIDList() { return m_pEditQueueIDList; }
@@ -237,6 +239,7 @@ public:
 	bool				GetAddTop() { return m_bAddTop; }
 	float				GetSetRate() { return m_fSetRate; }
 	int					GetLogLines() { return m_iLogLines; }
+	int					GetWriteLogKind() { return m_iWriteLogKind; }
 
 	// Current state
 	void				SetPause(bool bOnOff) { m_bPause = bOnOff; }

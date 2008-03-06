@@ -51,7 +51,8 @@ enum eRemoteRequest
 	eRemoteRequestLog,
 	eRemoteRequestShutdown,
 	eRemoteRequestVersion,
-	eRemoteRequestPostQueue
+	eRemoteRequestPostQueue,
+	eRemoteRequestWriteLog
 };
 
 // Possible values for field "m_iAction" of struct "SNZBEditQueueRequest":
@@ -323,6 +324,24 @@ struct SNZBPostQueueResponseEntry
 	//char					m_szInfoName[m_iInfoNameLen];			// variable sized
 	//char					m_szDestDir[m_iDestDirLen];				// variable sized
 	//char					m_szProgressLabel[m_iProgressLabelLen];	// variable sized
+};
+
+// Write log request
+struct SNZBWriteLogRequest
+{
+	SNZBRequestBase			m_MessageBase;			// Must be the first in the struct
+	int32_t					m_iKind;				// see Message::Kind in "Log.h"
+	int32_t					m_iTrailingDataLength;	// Length of nzb-file in bytes
+	//char					m_szText[m_iTrailingDataLength];	// variable sized
+};
+
+// Write log  response
+struct SNZBWriteLogResponse
+{
+	SNZBResponseBase		m_MessageBase;			// Must be the first in the struct
+	int32_t					m_bSuccess;				// 0 - command failed, 1 - command executed successfully
+	int32_t					m_iTrailingDataLength;	// Length of Text-string (m_szText), following to this record
+	//char					m_szText[m_iTrailingDataLength];	// variable sized
 };
 
 #endif

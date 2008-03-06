@@ -178,6 +178,12 @@ void BinRpcProcessor::Dispatch()
 				break;
 			}
 
+		case eRemoteRequestWriteLog:
+			{
+				command = new WriteLogBinCommand();
+				break;
+			}
+
 		default:
 			error("Received unsupported request %i", ntohl(m_MessageBase.m_iType));
 			break;
@@ -705,4 +711,61 @@ void PostQueueBinCommand::Execute()
 	{
 		free(buf);
 	}
+}
+
+void WriteLogBinCommand::Execute()
+{
+	SNZBWriteLogRequest WriteLogRequest;
+	if (!ReceiveRequest(&WriteLogRequest, sizeof(WriteLogRequest)))
+	{
+		return;
+	}
+
+	char* pRecvBuffer = (char*)malloc(ntohl(WriteLogRequest.m_iTrailingDataLength) + 1);
+	char* pBufPtr = pRecvBuffer;
+
+	// Read from the socket until nothing remains
+	int iResult = 0;
+	int NeedBytes = ntohl(WriteLogRequest.m_iTrailingDataLength);
+	pRecvBuffer[NeedBytes] = '\0';
+	while (NeedBytes > 0)
+	{
+		iResult = recv(m_iSocket, pBufPtr, NeedBytes, 0);
+		// Did the recv succeed?
+		if (iResult <= 0)
+		{
+			error("invalid request");
+			break;
+		}
+		pBufPtr += iResult;
+		NeedBytes -= iResult;
+	}
+
+	if (NeedBytes == 0)
+	{
+		bool OK = true;
+		switch ((Message::EKind)ntohl(WriteLogRequest.m_iKind))
+		{
+			case Message::mkDetail:
+				detail(pRecvBuffer);
+				break;
+			case Message::mkInfo:
+				info(pRecvBuffer);
+				break;
+			case Message::mkWarning:
+				warn(pRecvBuffer);
+				break;
+			case Message::mkError:
+				error(pRecvBuffer);
+				break;
+			case Message::mkDebug:
+				debug(pRecvBuffer);
+				break;
+			default:
+				OK = false;
+		}
+		SendBoolResponse(OK, OK ? "Message added to log" : "Invalid message-kind");
+	}
+
+	free(pRecvBuffer);
 }

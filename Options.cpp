@@ -76,12 +76,13 @@ static struct option long_options[] =
 	    {"edit", required_argument, 0, 'E'},
 	    {"connect", no_argument, 0, 'C'},
 	    {"quit", no_argument, 0, 'Q'},
-	    {"post", required_argument, 0, 'O'},
+	    {"post", no_argument, 0, 'O'},
+	    {"write", required_argument, 0, 'W'},
 	    {0, 0, 0, 0}
     };
 #endif
 
-static char short_options[] = "c:hno:psvABDCE:G:LOPR:TUQV";
+static char short_options[] = "c:hno:psvABDCE:G:LOPR:TUQVW:";
 
 // Program options
 static const char* OPTION_DESTDIR			= "DestDir";
@@ -195,6 +196,7 @@ Options::Options(int argc, char* argv[])
 	m_bReloadQueue			= false;
 	m_iLogBufferSize		= 0;
 	m_iLogLines				= 0;
+	m_iWriteLogKind			= 0;
 	m_bCreateLog			= false;
 	m_szLogFile				= NULL;
 	m_eLoadPars				= plAll;
@@ -739,6 +741,28 @@ void Options::InitCommandLine(int argc, char* argv[])
 			case 'O':
 				m_eClientOperation = opClientRequestPostQueue;
 				break;
+			case 'W':
+				m_eClientOperation = opClientRequestWriteLog;
+				if (!strcmp(optarg, "I")) {
+					m_iWriteLogKind = (int)Message::mkInfo;
+				}
+				else if (!strcmp(optarg, "W")) {
+					m_iWriteLogKind = (int)Message::mkWarning;
+				}
+				else if (!strcmp(optarg, "E")) {
+					m_iWriteLogKind = (int)Message::mkError;
+				}
+				else if (!strcmp(optarg, "D")) {
+					m_iWriteLogKind = (int)Message::mkDetail;
+				}
+				else if (!strcmp(optarg, "G")) {
+					m_iWriteLogKind = (int)Message::mkDebug;
+				} 
+				else
+				{
+					abort("FATAL ERROR: Could not parse value of option 'W'\n");
+				}
+				break;
 			case '?':
 				exit(-1);
 				break;
@@ -751,7 +775,7 @@ void Options::InitCommandLine(int argc, char* argv[])
 void Options::PrintUsage(char* com)
 {
 	printf("Usage:\n"
-		"  %s [switches] [<nzb-file>]\n\n"
+		"  %s [switches]\n\n"
 		"Switches:\n"
 	    "  -h, --help                Print this help-message\n"
 	    "  -v, --version             Print version and exit\n"
@@ -766,7 +790,7 @@ void Options::PrintUsage(char* com)
 #endif
 	    "  -V, --serverversion       Print server's version and exit\n"
 		"  -Q, --quit                Shutdown the server\n"
-		"  -A, --append              Send file to the server's download queue\n"
+		"  -A, --append <nzb-file>   Send file to the server's download queue\n"
 		"  -C, --connect             Attach client to server\n"
 		"  -L, --list                Request list of downloads from the server\n"
 		"  -P, --pause               Pause downloading on the server\n"
@@ -775,6 +799,7 @@ void Options::PrintUsage(char* com)
 		"  -T, --top                 Add file to the top (begining) of queue\n"
 		"                            (should be used with switch --append)\n"
 		"  -G, --log <lines>         Request last <lines> lines from server's screen-log\n"
+		"  -W, --write <D|I|W|E|G> \"Text\" Send text to server's log\n"
 		"  -O, --post                Request post-processor-queue from server\n"
 		"  -E, --edit [G] <action> <IDs> Edit queue on the server\n"
 		"    <G>                     Affect all files in the group (same nzb-file)\n"
@@ -800,9 +825,17 @@ void Options::InitFileArg(int argc, char* argv[])
 		// no nzb-file passed
 		if (!m_bServerMode && !m_bRemoteClientMode &&
 		        (m_eClientOperation == opClientNoOperation ||
-		         m_eClientOperation == opClientRequestDownload))
+		         m_eClientOperation == opClientRequestDownload ||
+				 m_eClientOperation == opClientRequestWriteLog))
 		{
-			printf("nzb-file not specified\n");
+			if (m_eClientOperation == opClientRequestWriteLog)
+			{
+				printf("Log-text not specified\n");
+			}
+			else
+			{
+				printf("Nzb-file not specified\n");
+			}
 			exit(-1);
 		}
 	}
@@ -835,10 +868,11 @@ void Options::InitFileArg(int argc, char* argv[])
 #endif
 
 		if (m_bServerMode || m_bRemoteClientMode ||
-		        !((m_eClientOperation == opClientRequestDownload)
-		          || (m_eClientOperation == opClientNoOperation)))
+		        !(m_eClientOperation == opClientNoOperation ||
+		          m_eClientOperation == opClientRequestDownload ||
+				  m_eClientOperation == opClientRequestWriteLog))
 		{
-			printf("nzb-file not needed for this command\n");
+			printf("Too many arguments\n");
 			exit(-1);
 		}
 	}
