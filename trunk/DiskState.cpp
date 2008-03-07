@@ -493,13 +493,29 @@ bool DiskState::DiscardDownloadQueue()
 	fgets(FileSignatur, sizeof(FileSignatur), infile);
 	if (!strcmp(FileSignatur, FORMATVERSION_SIGNATURE))
 	{
-		int id, paused;
-		while (fscanf(infile, "%i,%i\n", &id, &paused) == 2)
+		// skip nzb-infos
+		int size = 0;
+		char buf[1024];
+		fscanf(infile, "%i\n", &size);
+		for (int i = 0; i < size; i++)
 		{
-			char fileName[1024];
-			snprintf(fileName, 1024, "%s%i", g_pOptions->GetQueueDir(), id);
-			fileName[1024-1] = '\0';
-			remove(fileName);
+			if (!fgets(buf, sizeof(buf), infile)) break;
+			if (!fgets(buf, sizeof(buf), infile)) break;
+			if (!fgets(buf, sizeof(buf), infile)) break;
+			if (!fgets(buf, sizeof(buf), infile)) break;
+		}
+
+		fscanf(infile, "%i\n", &size);
+		for (int i = 0; i < size; i++)
+		{
+			int id, group, paused;
+			if (fscanf(infile, "%i,%i,%i\n", &id, &group, &paused) == 3)
+			{
+				char fileName[1024];
+				snprintf(fileName, 1024, "%s%i", g_pOptions->GetQueueDir(), id);
+				fileName[1024-1] = '\0';
+				remove(fileName);
+			}
 		}
 		res = true;
 	}
