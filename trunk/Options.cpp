@@ -104,6 +104,7 @@ static const char* OPTION_SERVERPASSWORD	= "ServerPassword";
 static const char* OPTION_CONNECTIONTIMEOUT	= "ConnectionTimeout";
 static const char* OPTION_SAVEQUEUE			= "SaveQueue";
 static const char* OPTION_RELOADQUEUE		= "ReloadQueue";
+static const char* OPTION_RELOADPOSTQUEUE	= "ReloadPostQueue";
 static const char* OPTION_CREATEBROKENLOG	= "CreateBrokenLog";
 static const char* OPTION_RESETLOG			= "ResetLog";
 static const char* OPTION_DECODE			= "Decode";
@@ -195,6 +196,7 @@ Options::Options(int argc, char* argv[])
 	m_szDaemonUserName		= NULL;
 	m_eOutputMode			= omLoggable;
 	m_bReloadQueue			= false;
+	m_bReloadPostQueue		= false;
 	m_iLogBufferSize		= 0;
 	m_iLogLines				= 0;
 	m_iWriteLogKind			= 0;
@@ -383,7 +385,8 @@ void Options::InitDefault()
 	SetOption(OPTION_SERVERPORT, "6789");
 	SetOption(OPTION_CONNECTIONTIMEOUT, "60");
 	SetOption(OPTION_SAVEQUEUE, "yes");
-	SetOption(OPTION_RELOADQUEUE, "ask");
+	SetOption(OPTION_RELOADQUEUE, "yes");
+	SetOption(OPTION_RELOADPOSTQUEUE, "yes");
 	SetOption(OPTION_CREATEBROKENLOG, "no");
 	SetOption(OPTION_RESETLOG, "no");
 	SetOption(OPTION_DECODE, "yes");
@@ -533,9 +536,9 @@ void Options::InitOptions()
 		CheckDir(&m_szNzbDir, OPTION_NZBDIR);
 	}
 
-	const char* BoolNames[] = { "yes", "no", "true", "false", "1", "0", "on", "off", "enable", "disable" };
-	const int BoolValues[] = { 1, 0, 1, 0, 1, 0, 1, 0, 1, 0 };
-	const int BoolCount = 10;
+	const char* BoolNames[] = { "yes", "no", "true", "false", "1", "0", "on", "off", "enable", "disable", "enabled", "disabled" };
+	const int BoolValues[] = { 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0 };
+	const int BoolCount = 12;
 	m_bCreateBrokenLog		= (bool)ParseOptionValue(OPTION_CREATEBROKENLOG, BoolCount, BoolNames, BoolValues);
 	m_bResetLog				= (bool)ParseOptionValue(OPTION_RESETLOG, BoolCount, BoolNames, BoolValues);
 	m_bAppendNZBDir			= (bool)ParseOptionValue(OPTION_APPENDNZBDIR, BoolCount, BoolNames, BoolValues);
@@ -548,6 +551,7 @@ void Options::InitOptions()
 	m_bParRepair			= (bool)ParseOptionValue(OPTION_PARREPAIR, BoolCount, BoolNames, BoolValues);
 	m_bStrictParName		= (bool)ParseOptionValue(OPTION_STRICTPARNAME, BoolCount, BoolNames, BoolValues);
 	m_bReloadQueue			= (bool)ParseOptionValue(OPTION_RELOADQUEUE, BoolCount, BoolNames, BoolValues);
+	m_bReloadPostQueue		= (bool)ParseOptionValue(OPTION_RELOADPOSTQUEUE, BoolCount, BoolNames, BoolValues);
 	m_bCursesNZBName		= (bool)ParseOptionValue(OPTION_CURSESNZBNAME, BoolCount, BoolNames, BoolValues);
 	m_bCursesTime			= (bool)ParseOptionValue(OPTION_CURSESTIME, BoolCount, BoolNames, BoolValues);
 	m_bCursesGroup			= (bool)ParseOptionValue(OPTION_CURSESGROUP, BoolCount, BoolNames, BoolValues);

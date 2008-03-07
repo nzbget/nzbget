@@ -47,67 +47,17 @@
 #include "Options.h"
 #include "Log.h"
 #include "QueueCoordinator.h"
+#include "DiskState.h"
 #include "Util.h"
 
 extern QueueCoordinator* g_pQueueCoordinator;
 extern Options* g_pOptions;
+extern DiskState* g_pDiskState;
 
 static const int PARSTATUS_NOT_CHECKED = 0;
 static const int PARSTATUS_FAILED = 1;
 static const int PARSTATUS_REPAIRED = 2;
 static const int PARSTATUS_REPAIR_POSSIBLE = 3;
-
-PrePostProcessor::PostJob::PostJob(const char * szNZBFilename, const char* szDestDir,
-	const char * szParFilename, const char * szInfoName, bool bParCheck)
-{
-	m_szNZBFilename = strdup(szNZBFilename);
-	m_szDestDir = strdup(szDestDir);
-	m_szParFilename = strdup(szParFilename);
-	m_szInfoName = strdup(szInfoName);
-	m_bWorking = false;
-	m_bParCheck = bParCheck;
-	m_iParStatus = PARSTATUS_NOT_CHECKED;
-	m_bParFailed = false;
-	m_szProgressLabel = strdup("");
-	m_iFileProgress = 0;
-	m_iStageProgress = 0;
-	m_tStartTime = 0;
-	m_tStageTime = 0;
-	m_eStage = PrePostProcessor::ptQueued;
-}
-
-PrePostProcessor::PostJob::~ PostJob()
-{
-	if (m_szNZBFilename)
-	{
-		free(m_szNZBFilename);
-	}
-	if (m_szDestDir)
-	{
-		free(m_szDestDir);
-	}
-	if (m_szParFilename)
-	{
-		free(m_szParFilename);
-	}
-	if (m_szInfoName)
-	{
-		free(m_szInfoName);
-	}
-	if (m_szProgressLabel)
-	{
-		free(m_szProgressLabel);
-	}
-}
-
-void PrePostProcessor::PostJob::SetProgressLabel(const char* szProgressLabel)
-{
-	if (m_szProgressLabel)
-	{
-		free(m_szProgressLabel);
-	}
-	m_szProgressLabel = strdup(szProgressLabel);
-}
 
 #ifndef DISABLE_PARCHECK
 bool PrePostProcessor::PostParChecker::RequestMorePars(int iBlockNeeded, int* pBlockFound)
@@ -131,6 +81,7 @@ PrePostProcessor::PrePostProcessor()
 	g_pQueueCoordinator->Attach(&m_QueueCoordinatorObserver);
 
 	m_PostQueue.clear();
+	m_CompletedJobs.clear();
 
 	const char* szScript = g_pOptions->GetPostProcess();
 	m_bPostScript = szScript && strlen(szScript) > 0;
@@ -139,7 +90,6 @@ PrePostProcessor::PrePostProcessor()
 	m_ParCheckerObserver.owner = this;
 	m_ParChecker.Attach(&m_ParCheckerObserver);
 	m_ParChecker.m_Owner = this;
-	m_CompletedJobs.clear();
 #endif
 }
 
@@ -163,6 +113,21 @@ PrePostProcessor::~PrePostProcessor()
 void PrePostProcessor::Run()
 {
 	debug("Entering PrePostProcessor-loop");
+
+	if (g_pOptions->GetServerMode() && g_pOptions->GetSaveQueue()&& g_pOptions->GetReloadPostQueue())
+	{
+		m_mutexQueue.Lock();
+		if (g_pDiskState->PostQueueExists(false))
+		{
+			g_pDiskState->LoadPostQueue(&m_PostQueue, false);
+			SanitisePostQueue();
+		}
+		if (g_pDiskState->PostQueueExists(true))
+		{
+			g_pDiskState->LoadPostQueue(&m_CompletedJobs, true);
+		}
+		m_mutexQueue.Unlock();
+	}
 
 	int iNZBDirInterval = 0;
 	while (!IsStopped())
@@ -257,7 +222,11 @@ void PrePostProcessor::QueueCoordinatorUpdate(Subject * Caller, void * Aspect)
 		m_mutexQueue.Lock();
 		if (IsNZBFileCompleted(pAspect->pDownloadQueue, pAspect->pFileInfo->GetNZBInfo()->GetFilename(), false, false, true))
 		{
-			ClearCompletedJobs(pAspect->pFileInfo->GetNZBInfo()->GetFilename());
+			if (ClearCompletedJobs(pAspect->pFileInfo->GetNZBInfo()->GetFilename()) &&
+				g_pOptions->GetSaveQueue() && g_pOptions->GetServerMode())
+			{
+				g_pDiskState->SavePostQueue(&m_CompletedJobs, true);
+			}
 		}
 		m_mutexQueue.Unlock();
 	}
@@ -324,28 +293,28 @@ void PrePostProcessor::CheckPostQueue()
 
 	if (!m_PostQueue.empty())
 	{
-		PostJob* pPostJob = m_PostQueue.front();
-		if (pPostJob->m_bWorking && pPostJob->m_eStage == ptExecutingScript)
+		PostInfo* pPostInfo = m_PostQueue.front();
+		if (pPostInfo->GetWorking() && pPostInfo->GetStage() == PostInfo::ptExecutingScript)
 		{
-			CheckScriptFinished(pPostJob);
+			CheckScriptFinished(pPostInfo);
 		}
 
-		if (!pPostJob->m_bWorking)
+		if (!pPostInfo->GetWorking())
 		{
 #ifndef DISABLE_PARCHECK
-			if (pPostJob->m_bParCheck && pPostJob->m_iParStatus == PARSTATUS_NOT_CHECKED)
+			if (pPostInfo->GetParCheck() && pPostInfo->GetParStatus() == PARSTATUS_NOT_CHECKED)
 			{
-				StartParJob(pPostJob);
+				StartParJob(pPostInfo);
 			}
 			else
 #endif
-			if (pPostJob->m_eStage == ptQueued)
+			if (pPostInfo->GetStage() == PostInfo::ptQueued)
 			{
-				StartScriptJob(pPostJob);
+				StartScriptJob(pPostInfo);
 			}
-			else if (pPostJob->m_eStage == ptFinished)
+			else if (pPostInfo->GetStage() == PostInfo::ptFinished)
 			{
-				JobCompleted(pPostJob);
+				JobCompleted(pPostInfo);
 			}
 			else
 			{
@@ -360,38 +329,71 @@ void PrePostProcessor::CheckPostQueue()
 /**
  * Mutex "m_mutexQueue" must be locked prior to call of this funtion.
  */
-void PrePostProcessor::StartScriptJob(PostJob* pPostJob)
+void PrePostProcessor::SavePostQueue()
+{
+	if (g_pOptions->GetSaveQueue() && g_pOptions->GetServerMode())
+	{
+		g_pDiskState->SavePostQueue(&m_PostQueue, false);
+	}
+}
+
+/**
+ * Reset the state of items after reloading from and
+ * delete items which could not be resumed.
+ * Mutex "m_mutexQueue" must be locked prior to call of this funtion.
+ */
+void PrePostProcessor::SanitisePostQueue()
+{
+	for (PostQueue::iterator it = m_PostQueue.begin(); it != m_PostQueue.end(); it++)
+	{
+		PostInfo* pPostInfo = *it;
+		if (pPostInfo->GetStage() == PostInfo::ptExecutingScript)
+		{
+			pPostInfo->SetStage(PostInfo::ptFinished);
+		}
+		else 
+		{
+			pPostInfo->SetStage(PostInfo::ptQueued);
+		}
+	}
+}
+
+/**
+ * Mutex "m_mutexQueue" must be locked prior to call of this funtion.
+ */
+void PrePostProcessor::StartScriptJob(PostInfo* pPostInfo)
 {
 	const char* szScript = g_pOptions->GetPostProcess();
 	if (!szScript || strlen(szScript) == 0)
 	{
-		pPostJob->m_eStage = ptFinished;
+		pPostInfo->SetStage(PostInfo::ptFinished);
 		return;
 	}
 
-	pPostJob->SetProgressLabel("Executing post-process-script");
-	pPostJob->m_bWorking = true;
-	pPostJob->m_eStage = ptExecutingScript;
-	if (!pPostJob->m_tStartTime)
+	pPostInfo->SetProgressLabel("Executing post-process-script");
+	pPostInfo->SetWorking(true);
+	pPostInfo->SetStage(PostInfo::ptExecutingScript);
+	SavePostQueue();
+	if (!pPostInfo->GetStartTime())
 	{
-		pPostJob->m_tStartTime = time(NULL);
+		pPostInfo->SetStartTime(time(NULL));
 	}
-	pPostJob->m_tStageTime = time(NULL);
-	pPostJob->m_iStageProgress = 50;
+	pPostInfo->SetStageTime(time(NULL));
+	pPostInfo->SetStageProgress(50);
 
-	info("Executing post-process-script for %s", pPostJob->GetInfoName());
+	info("Executing post-process-script for %s", pPostInfo->GetInfoName());
 	if (!Util::FileExists(szScript))
 	{
 		error("Could not start post-process-script: could not find file %s", szScript);
-		pPostJob->m_bWorking = false;
-		pPostJob->m_eStage = ptFinished;
+		pPostInfo->SetWorking(false);
+		pPostInfo->SetStage(PostInfo::ptFinished);
 		return;
 	}
 
-	bool bNZBFileCompleted = IsNZBFileCompleted(NULL, pPostJob->GetNZBFilename(), true, true, true);
+	bool bNZBFileCompleted = IsNZBFileCompleted(NULL, pPostInfo->GetNZBFilename(), true, true, true);
 
 	char szParStatus[10];
-	snprintf(szParStatus, 10, "%i", pPostJob->m_iParStatus);
+	snprintf(szParStatus, 10, "%i", pPostInfo->GetParStatus());
 	szParStatus[10-1] = '\0';
 
 	char szCollectionCompleted[10];
@@ -399,7 +401,7 @@ void PrePostProcessor::StartScriptJob(PostJob* pPostJob)
 	szCollectionCompleted[10-1] = '\0';
 
 #ifndef DISABLE_PARCHECK
-	bool bHasFailedParJobs = HasFailedParJobs(pPostJob->GetNZBFilename()) || pPostJob->m_bParFailed;
+	bool bHasFailedParJobs = HasFailedParJobs(pPostInfo->GetNZBFilename()) || pPostInfo->GetParFailed();
 #else
 	bool bHasFailedParJobs = false;
 #endif
@@ -409,18 +411,18 @@ void PrePostProcessor::StartScriptJob(PostJob* pPostJob)
 
 #ifdef WIN32
 	char szCmdLine[2048];
-	snprintf(szCmdLine, 2048, "%s \"%s\" \"%s\" \"%s\" %s %s %s", szScript, pPostJob->GetDestDir(), 
-		pPostJob->GetNZBFilename(), pPostJob->GetParFilename(), szParStatus, szCollectionCompleted, szHasFailedParJobs);
+	snprintf(szCmdLine, 2048, "%s \"%s\" \"%s\" \"%s\" %s %s %s", szScript, pPostInfo->GetDestDir(), 
+		pPostInfo->GetNZBFilename(), pPostInfo->GetParFilename(), szParStatus, szCollectionCompleted, szHasFailedParJobs);
 	szCmdLine[2048-1] = '\0';
 	
 	STARTUPINFO StartupInfo;
 	memset(&StartupInfo, 0, sizeof(StartupInfo));
 	PROCESS_INFORMATION ProcessInfo;
 
-	BOOL bOK = CreateProcess(NULL, szCmdLine, NULL, NULL, FALSE, CREATE_NEW_CONSOLE, NULL, pPostJob->GetDestDir(), &StartupInfo, &ProcessInfo);
+	BOOL bOK = CreateProcess(NULL, szCmdLine, NULL, NULL, FALSE, CREATE_NEW_CONSOLE, NULL, pPostInfo->GetDestDir(), &StartupInfo, &ProcessInfo);
 	if (bOK)
 	{
-		pPostJob->m_hProcessID = ProcessInfo.hProcess;
+		pPostInfo->SetProcessID(ProcessInfo.hProcess);
 	}
 	else
 	{
@@ -429,20 +431,20 @@ void PrePostProcessor::StartScriptJob(PostJob* pPostJob)
 		FormatMessage(FORMAT_MESSAGE_FROM_SYSTEM || FORMAT_MESSAGE_IGNORE_INSERTS || FORMAT_MESSAGE_ARGUMENT_ARRAY, 
 			NULL, GetLastError(), 0, szErrMsg, 255, NULL);
 		error("Could not start post-process: %s", szErrMsg);
-		pPostJob->m_bWorking = false;
-		pPostJob->m_eStage = ptFinished;
+		pPostInfo->SetWorking(false);
+		pPostInfo->SetStage(PostInfo::ptFinished);
 	}
 #else
 	char szDestDir[1024];
-	strncpy(szDestDir, pPostJob->GetDestDir(), 1024);
+	strncpy(szDestDir, pPostInfo->GetDestDir(), 1024);
 	szDestDir[1024-1] = '\0';
 	
 	char szNZBFilename[1024];
-	strncpy(szNZBFilename, pPostJob->GetNZBFilename(), 1024);
+	strncpy(szNZBFilename, pPostInfo->GetNZBFilename(), 1024);
 	szNZBFilename[1024-1] = '\0';
 	
 	char szParFilename[1024];
-	strncpy(szParFilename, pPostJob->GetParFilename(), 1024);
+	strncpy(szParFilename, pPostInfo->GetParFilename(), 1024);
 	szParFilename[1024-1] = '\0';
 
 	pid_t pid = fork();
@@ -450,14 +452,14 @@ void PrePostProcessor::StartScriptJob(PostJob* pPostJob)
 	if (pid == -1)
 	{
 		error("Could not start post-process: errno %i", errno);
-		pPostJob->m_bWorking = false;
-		pPostJob->m_eStage = ptFinished;
+		pPostInfo->SetWorking(false);
+		pPostInfo->SetStage(PostInfo::ptFinished);
 		return;
 	}
 	else if (pid != 0)
 	{
 		// continue the first instance
-		pPostJob->m_hProcessID = pid;
+		pPostInfo->SetProcessID(pid);
 		return;
 	}
 
@@ -467,7 +469,6 @@ void PrePostProcessor::StartScriptJob(PostJob* pPostJob)
 	for (h = getdtablesize(); h >= 0;--h) close(h); /* close all descriptors */
 	h = open("/dev/null", O_RDWR); dup(h); dup(h); /* handle standart I/O */
 	
-	//pPostJob->m_hProcessID = getpid();
 	execlp(szScript, szScript, szDestDir, szNZBFilename, szParFilename, 
 		szParStatus, szCollectionCompleted, szHasFailedParJobs, NULL);
 	error("Could not start post-process: %s", strerror(errno));
@@ -475,60 +476,66 @@ void PrePostProcessor::StartScriptJob(PostJob* pPostJob)
 #endif
 }
 
-void PrePostProcessor::CheckScriptFinished(PostJob* pPostJob)
+void PrePostProcessor::CheckScriptFinished(PostInfo* pPostInfo)
 {
 #ifdef WIN32
-	if (WaitForSingleObject(pPostJob->m_hProcessID, 0) == WAIT_OBJECT_0)
+	if (WaitForSingleObject(pPostInfo->GetProcessID(), 0) == WAIT_OBJECT_0)
 #else
 	int iStatus;
-	if (waitpid(pPostJob->m_hProcessID, &iStatus, WNOHANG) == -1 || WIFEXITED(iStatus))
+	if (waitpid(pPostInfo->GetProcessID(), &iStatus, WNOHANG) == -1 || WIFEXITED(iStatus))
 #endif
 	{
-		pPostJob->m_bWorking = false;
-		pPostJob->m_eStage = ptFinished;
+		pPostInfo->SetWorking(false);
+		pPostInfo->SetStage(PostInfo::ptFinished);
 	}
 }
 
 /**
  * Mutex "m_mutexQueue" must be locked prior to call of this funtion.
  */
-void PrePostProcessor::JobCompleted(PostJob* pPostJob)
+void PrePostProcessor::JobCompleted(PostInfo* pPostInfo)
 {
-	pPostJob->m_bWorking = false;
-	pPostJob->SetProgressLabel("");
-	pPostJob->m_eStage = ptFinished;
+	pPostInfo->SetWorking(false);
+	pPostInfo->SetProgressLabel("");
+	pPostInfo->SetStage(PostInfo::ptFinished);
 
 #ifndef DISABLE_PARCHECK
 	if (g_pOptions->GetParCleanupQueue() && 
-		IsNZBFileCompleted(NULL, pPostJob->GetNZBFilename(), true, true, true) && 
-		!HasFailedParJobs(pPostJob->GetNZBFilename()))
+		IsNZBFileCompleted(NULL, pPostInfo->GetNZBFilename(), true, true, true) && 
+		!HasFailedParJobs(pPostInfo->GetNZBFilename()))
 	{
 		m_mutexQueue.Unlock();
-		ParCleanupQueue(pPostJob->GetNZBFilename());
+		ParCleanupQueue(pPostInfo->GetNZBFilename());
 		m_mutexQueue.Lock();
 	}
 #endif
 
 	for (PostQueue::iterator it = m_PostQueue.begin(); it != m_PostQueue.end(); it++)
 	{
-		if (pPostJob == *it)
+		if (pPostInfo == *it)
 		{
 			m_PostQueue.erase(it);
 			break;
 		}
 	}
 
-	m_CompletedJobs.push_back(pPostJob);
+	m_CompletedJobs.push_back(pPostInfo);
 
-	if (IsNZBFileCompleted(NULL, pPostJob->GetNZBFilename(), false, false, true))
+	if (IsNZBFileCompleted(NULL, pPostInfo->GetNZBFilename(), false, false, true))
 	{
-		ClearCompletedJobs(pPostJob->GetNZBFilename());
+		ClearCompletedJobs(pPostInfo->GetNZBFilename());
+	}
+
+	if (g_pOptions->GetSaveQueue() && g_pOptions->GetServerMode())
+	{
+		g_pDiskState->SavePostQueue(&m_PostQueue, false);
+		g_pDiskState->SavePostQueue(&m_CompletedJobs, true);
 	}
 
 	m_bHasMoreJobs = !m_PostQueue.empty();
 }
 
-PrePostProcessor::PostQueue* PrePostProcessor::LockPostQueue()
+PostQueue* PrePostProcessor::LockPostQueue()
 {
 	m_mutexQueue.Lock();
 	return &m_PostQueue;
@@ -553,8 +560,14 @@ bool PrePostProcessor::CheckScript(FileInfo * pFileInfo)
 		pFileInfo->GetNZBInfo()->GetNiceNZBName(szNZBNiceName, 1024);
 
 		info("Queueing %s for post-process-script", szNZBNiceName);
-		PostJob* pPostJob = new PostJob(pFileInfo->GetNZBInfo()->GetFilename(), pFileInfo->GetNZBInfo()->GetDestDir(), "", szNZBNiceName, false);
-		m_PostQueue.push_back(pPostJob);
+		PostInfo* pPostInfo = new PostInfo();
+		pPostInfo->SetNZBFilename(pFileInfo->GetNZBInfo()->GetFilename());
+		pPostInfo->SetDestDir(pFileInfo->GetNZBInfo()->GetDestDir());
+		pPostInfo->SetParFilename("");
+		pPostInfo->SetInfoName(szNZBNiceName);
+		pPostInfo->SetParCheck(false);
+		m_PostQueue.push_back(pPostInfo);
+		SavePostQueue();
 		m_bHasMoreJobs = true;
 		bJobAdded = true;
 
@@ -571,8 +584,8 @@ bool PrePostProcessor::JobExists(PostQueue* pPostQueue, const char* szNZBFilenam
 {
 	for (PostQueue::iterator it = pPostQueue->begin(); it != pPostQueue->end(); it++)
 	{
-		PostJob* pPostJob = *it;
-		if (!strcmp(pPostJob->GetNZBFilename(), szNZBFilename))
+		PostInfo* pPostInfo = *it;
+		if (!strcmp(pPostInfo->GetNZBFilename(), szNZBFilename))
 		{
 			return true;
 		}
@@ -584,21 +597,26 @@ bool PrePostProcessor::JobExists(PostQueue* pPostQueue, const char* szNZBFilenam
  * Delete info about completed par-jobs for nzb-collection after the collection is completely downloaded.
  * Mutex "m_mutexQueue" must be locked prior to call of this funtion.
  */
-void PrePostProcessor::ClearCompletedJobs(const char* szNZBFilename)
+bool PrePostProcessor::ClearCompletedJobs(const char* szNZBFilename)
 {
+	bool bListChanged = false;
+
 	for (PostQueue::iterator it = m_CompletedJobs.begin(); it != m_CompletedJobs.end();)
 	{
-		PostJob* pPostJob = *it;
-		if (!strcmp(szNZBFilename, pPostJob->GetNZBFilename()))
+		PostInfo* pPostInfo = *it;
+		if (!strcmp(szNZBFilename, pPostInfo->GetNZBFilename()))
 		{
-			debug("Deleting completed job %s", pPostJob->GetInfoName());
+			debug("Deleting completed job %s", pPostInfo->GetInfoName());
 			m_CompletedJobs.erase(it);
-			delete pPostJob;
+			delete pPostInfo;
 			it = m_CompletedJobs.begin();
+			bListChanged = true;
 			continue;
 		}
 		it++;
 	}
+
+	return bListChanged;
 }
 
 //*********************************************************************************
@@ -657,8 +675,8 @@ bool PrePostProcessor::IsNZBFileCompleted(DownloadQueue* pDownloadQueue, const c
 	{
 		for (PostQueue::iterator it = m_PostQueue.begin() + int(bIgnoreFirstInPostQueue); it != m_PostQueue.end(); it++)
 		{
-			PostJob* pPostJob = *it;
-			if (!strcmp(pPostJob->GetNZBFilename(), szNZBFilename))
+			PostInfo* pPostInfo = *it;
+			if (!strcmp(pPostInfo->GetNZBFilename(), szNZBFilename))
 			{
 				bNZBFileCompleted = false;
 				break;
@@ -674,13 +692,13 @@ bool PrePostProcessor::IsNZBFileCompleted(DownloadQueue* pDownloadQueue, const c
 /**
  * Mutex "m_mutexQueue" must be locked prior to call of this funtion.
  */
-void PrePostProcessor::StartParJob(PostJob* pPostJob)
+void PrePostProcessor::StartParJob(PostInfo* pPostInfo)
 {
-	info("Checking pars for %s", pPostJob->GetInfoName());
-	m_ParChecker.SetNZBFilename(pPostJob->GetNZBFilename());
-	m_ParChecker.SetParFilename(pPostJob->GetParFilename());
-	m_ParChecker.SetInfoName(pPostJob->GetInfoName());
-	pPostJob->m_bWorking = true;
+	info("Checking pars for %s", pPostInfo->GetInfoName());
+	m_ParChecker.SetNZBFilename(pPostInfo->GetNZBFilename());
+	m_ParChecker.SetParFilename(pPostInfo->GetParFilename());
+	m_ParChecker.SetInfoName(pPostInfo->GetInfoName());
+	pPostInfo->SetWorking(true);
 	m_ParChecker.Start();
 }
 
@@ -720,8 +738,14 @@ bool PrePostProcessor::CheckPars(DownloadQueue * pDownloadQueue, FileInfo * pFil
 				szParInfoName[1024-1] = '\0';
 				
 				info("Queueing %s%c%s for par-check", szNZBNiceName, (int)PATH_SEPARATOR, szInfoName);
-				PostJob* pPostJob = new PostJob(pFileInfo->GetNZBInfo()->GetFilename(), pFileInfo->GetNZBInfo()->GetDestDir(), szFullFilename, szParInfoName, true);
-				m_PostQueue.push_back(pPostJob);
+				PostInfo* pPostInfo = new PostInfo();
+				pPostInfo->SetNZBFilename(pFileInfo->GetNZBInfo()->GetFilename());
+				pPostInfo->SetDestDir(pFileInfo->GetNZBInfo()->GetDestDir());
+				pPostInfo->SetParFilename(szFullFilename);
+				pPostInfo->SetInfoName(szParInfoName);
+				pPostInfo->SetParCheck(true);
+				m_PostQueue.push_back(pPostInfo);
+				SavePostQueue();
 				m_bHasMoreJobs = true;
 				bJobAdded = true;
 			}
@@ -838,23 +862,25 @@ void PrePostProcessor::ParCheckerUpdate(Subject * Caller, void * Aspect)
 
 		m_mutexQueue.Lock();
 
-		PostJob* pPostJob = m_PostQueue.front();
-		pPostJob->m_bParFailed = m_ParChecker.GetStatus() == ParChecker::psFailed;
-		pPostJob->m_bWorking = false;
-		pPostJob->m_eStage = ptQueued;
+		PostInfo* pPostInfo = m_PostQueue.front();
+		pPostInfo->SetParFailed(m_ParChecker.GetStatus() == ParChecker::psFailed);
+		pPostInfo->SetWorking(false);
+		pPostInfo->SetStage(PostInfo::ptQueued);
 
 		if (m_ParChecker.GetStatus() == ParChecker::psFailed)
 		{
-			pPostJob->m_iParStatus = PARSTATUS_FAILED;
+			pPostInfo->SetParStatus(PARSTATUS_FAILED);
 		}
 		else if (g_pOptions->GetParRepair() || m_ParChecker.GetRepairNotNeeded())
 		{
-			pPostJob->m_iParStatus = PARSTATUS_REPAIRED;
+			pPostInfo->SetParStatus(PARSTATUS_REPAIRED);
 		}
 		else
 		{
-			pPostJob->m_iParStatus = PARSTATUS_REPAIR_POSSIBLE;
+			pPostInfo->SetParStatus(PARSTATUS_REPAIR_POSSIBLE);
 		}
+
+		SavePostQueue();
 
 		m_mutexQueue.Unlock();
 	}
@@ -909,9 +935,9 @@ bool PrePostProcessor::HasFailedParJobs(const char* szNZBFilename)
 
 	for (PostQueue::iterator it = m_CompletedJobs.begin(); it != m_CompletedJobs.end(); it++)
 	{
-		PostJob* pPostJob = *it;
-		if (pPostJob->m_bParCheck && pPostJob->m_bParFailed &&
-			!strcmp(pPostJob->GetNZBFilename(), szNZBFilename))
+		PostInfo* pPostInfo = *it;
+		if (pPostInfo->GetParCheck() && pPostInfo->GetParFailed() &&
+			!strcmp(pPostInfo->GetNZBFilename(), szNZBFilename))
 		{
 			bHasFailedJobs = true;
 			break;
@@ -928,8 +954,8 @@ bool PrePostProcessor::ParJobExists(PostQueue* pPostQueue, const char* szParFile
 {
 	for (PostQueue::iterator it = pPostQueue->begin(); it != pPostQueue->end(); it++)
 	{
-		PostJob* pPostJob = *it;
-		if (pPostJob->m_bParCheck && !strcmp(pPostJob->GetParFilename(), szParFilename))
+		PostInfo* pPostInfo = *it;
+		if (pPostInfo->GetParCheck() && !strcmp(pPostInfo->GetParFilename(), szParFilename))
 		{
 			return true;
 		}
@@ -1156,25 +1182,25 @@ void PrePostProcessor::UpdateParProgress()
 {
 	m_mutexQueue.Lock();
 
-	PostJob* pPostJob = m_PostQueue.front();
+	PostInfo* pPostInfo = m_PostQueue.front();
 	if (m_ParChecker.GetFileProgress() == 0)
 	{
-		pPostJob->SetProgressLabel(m_ParChecker.GetProgressLabel());
+		pPostInfo->SetProgressLabel(m_ParChecker.GetProgressLabel());
 	}
-	pPostJob->m_iFileProgress = m_ParChecker.GetFileProgress();
-	pPostJob->m_iStageProgress = m_ParChecker.GetStageProgress();
-    EPostJobStage StageKind[] = { ptLoadingPars, ptVerifyingSources, ptRepairing, ptVerifyingRepaired };
-	EPostJobStage eStage = StageKind[m_ParChecker.GetStage()];
+	pPostInfo->SetFileProgress(m_ParChecker.GetFileProgress());
+	pPostInfo->SetStageProgress(m_ParChecker.GetStageProgress());
+    PostInfo::EStage StageKind[] = { PostInfo::ptLoadingPars, PostInfo::ptVerifyingSources, PostInfo::ptRepairing, PostInfo::ptVerifyingRepaired };
+	PostInfo::EStage eStage = StageKind[m_ParChecker.GetStage()];
 
-	if (!pPostJob->m_tStartTime)
+	if (!pPostInfo->GetStartTime())
 	{
-		pPostJob->m_tStartTime = time(NULL);
+		pPostInfo->SetStartTime(time(NULL));
 	}
 
-	if (pPostJob->m_eStage != eStage)
+	if (pPostInfo->GetStage() != eStage)
 	{
-		pPostJob->m_eStage = eStage;
-		pPostJob->m_tStageTime = time(NULL);
+		pPostInfo->SetStage(eStage);
+		pPostInfo->SetStartTime(time(NULL));
 	}
 
 	m_mutexQueue.Unlock();

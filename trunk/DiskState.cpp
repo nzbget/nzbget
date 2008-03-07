@@ -52,7 +52,7 @@ static const char* FORMATVERSION_SIGNATURE = "nzbget diskstate file version 3\n"
  * This function saves file "queue" and files with NZB-info. It does not
  * save file-infos.
  */
-bool DiskState::Save(DownloadQueue* pDownloadQueue)
+bool DiskState::SaveDownloadQueue(DownloadQueue* pDownloadQueue)
 {
 	debug("Saving queue to disk");
 
@@ -139,7 +139,7 @@ bool DiskState::Save(DownloadQueue* pDownloadQueue)
 	return true;
 }
 
-bool DiskState::Load(DownloadQueue* pDownloadQueue)
+bool DiskState::LoadDownloadQueue(DownloadQueue* pDownloadQueue)
 {
 	debug("Loading queue from disk");
 
@@ -351,6 +351,123 @@ error:
 	return false;
 }
 
+bool DiskState::SavePostQueue(PostQueue* pPostQueue, bool bCompleted)
+{
+	debug("Saving post-queue to disk");
+
+	char fileName[1024];
+	snprintf(fileName, 1024, "%s%s", g_pOptions->GetQueueDir(), bCompleted ? "postc" : "postq");
+	fileName[1024-1] = '\0';
+
+	FILE* outfile = fopen(fileName, "w");
+
+	if (!outfile)
+	{
+		error("Could not create file %s", fileName);
+		perror(fileName);
+		return false;
+	}
+
+	fprintf(outfile, FORMATVERSION_SIGNATURE);
+
+	fprintf(outfile, "%i\n", pPostQueue->size());
+	for (PostQueue::iterator it = pPostQueue->begin(); it != pPostQueue->end(); it++)
+	{
+		PostInfo* pPostInfo = *it;
+		fprintf(outfile, "%s\n", pPostInfo->GetNZBFilename());
+		fprintf(outfile, "%s\n", pPostInfo->GetDestDir());
+		fprintf(outfile, "%s\n", pPostInfo->GetParFilename());
+		fprintf(outfile, "%s\n", pPostInfo->GetInfoName());
+		fprintf(outfile, "%i\n", (int)pPostInfo->GetParCheck());
+		fprintf(outfile, "%i\n", (int)pPostInfo->GetParStatus());
+		fprintf(outfile, "%i\n", (int)pPostInfo->GetParFailed());
+		fprintf(outfile, "%i\n", (int)pPostInfo->GetStage());
+	}
+	fclose(outfile);
+
+	if (pPostQueue->empty())
+	{
+		remove(fileName);
+	}
+
+	return true;
+}
+
+bool DiskState::LoadPostQueue(PostQueue* pPostQueue, bool bCompleted)
+{
+	debug("Loading post-queue from disk");
+
+	char fileName[1024];
+	snprintf(fileName, 1024, "%s%s", g_pOptions->GetQueueDir(), bCompleted ? "postc" : "postq");
+	fileName[1024-1] = '\0';
+
+	FILE* infile = fopen(fileName, "r");
+
+	if (!infile)
+	{
+		error("Could not open file %s", fileName);
+		return false;
+	}
+
+	char FileSignatur[128];
+	fgets(FileSignatur, sizeof(FileSignatur), infile);
+	if (strcmp(FileSignatur, FORMATVERSION_SIGNATURE))
+	{
+		error("Could not load diskstate due file version mismatch");
+		fclose(infile);
+		return false;
+	}
+
+	int size;
+	char buf[1024];
+	int iIntValue;
+
+	// load file-infos
+	if (fscanf(infile, "%i\n", &size) != 1) goto error;
+	for (int i = 0; i < size; i++)
+	{
+		PostInfo* pPostInfo = new PostInfo();
+
+		if (!fgets(buf, sizeof(buf), infile)) goto error;
+		if (buf[0] != 0) buf[strlen(buf)-1] = 0; // remove traling '\n'
+		pPostInfo->SetNZBFilename(buf);
+
+		if (!fgets(buf, sizeof(buf), infile)) goto error;
+		if (buf[0] != 0) buf[strlen(buf)-1] = 0; // remove traling '\n'
+		pPostInfo->SetDestDir(buf);
+
+		if (!fgets(buf, sizeof(buf), infile)) goto error;
+		if (buf[0] != 0) buf[strlen(buf)-1] = 0; // remove traling '\n'
+		pPostInfo->SetParFilename(buf);
+
+		if (!fgets(buf, sizeof(buf), infile)) goto error;
+		if (buf[0] != 0) buf[strlen(buf)-1] = 0; // remove traling '\n'
+		pPostInfo->SetInfoName(buf);
+
+		if (fscanf(infile, "%i\n", &iIntValue) != 1) goto error;
+		pPostInfo->SetParCheck(iIntValue);
+
+		if (fscanf(infile, "%i\n", &iIntValue) != 1) goto error;
+		pPostInfo->SetParStatus(iIntValue);
+
+		if (fscanf(infile, "%i\n", &iIntValue) != 1) goto error;
+		pPostInfo->SetParFailed(iIntValue);
+
+		if (fscanf(infile, "%i\n", &iIntValue) != 1) goto error;
+		pPostInfo->SetStage((PostInfo::EStage)iIntValue);
+
+		pPostQueue->push_back(pPostInfo);
+	}
+
+	fclose(infile);
+	return true;
+
+error:
+	fclose(infile);
+	error("Error reading diskstate for file %s", fileName);
+	return false;
+}
+
 /*
  * Delete all files from Queue.
  * Returns true if successful, false if not
@@ -401,12 +518,22 @@ bool DiskState::Discard()
 	return res;
 }
 
-bool DiskState::Exists()
+bool DiskState::DownloadQueueExists()
 {
 	debug("Checking if a saved queue exists on disk");
 
 	char fileName[1024];
 	snprintf(fileName, 1024, "%s%s", g_pOptions->GetQueueDir(), "queue");
+	fileName[1024-1] = '\0';
+	return Util::FileExists(fileName);
+}
+
+bool DiskState::PostQueueExists(bool bCompleted)
+{
+	debug("Checking if a saved queue exists on disk");
+
+	char fileName[1024];
+	snprintf(fileName, 1024, "%s%s", g_pOptions->GetQueueDir(), bCompleted ? "postc" : "postq");
 	fileName[1024-1] = '\0';
 	return Util::FileExists(fileName);
 }
@@ -419,7 +546,7 @@ bool DiskState::DiscardFile(DownloadQueue* pDownloadQueue, FileInfo* pFileInfo)
 	fileName[1024-1] = '\0';
 	remove(fileName);
 
-	return !pDownloadQueue || Save(pDownloadQueue);
+	return !pDownloadQueue || SaveDownloadQueue(pDownloadQueue);
 }
 
 void DiskState::CleanupTempDir(DownloadQueue* pDownloadQueue)

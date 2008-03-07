@@ -798,7 +798,7 @@ void StatusXmlCommand::Execute()
 	int iDownloadLimit = (int)(g_pOptions->GetDownloadRate() * 1024);
 	bool bServerPaused = g_pOptions->GetPause();
 	int iThreadCount = Thread::GetThreadCount() - 1; // not counting itself
-	PrePostProcessor::PostQueue* pPostQueue = g_pPrePostProcessor->LockPostQueue();
+	PostQueue* pPostQueue = g_pPrePostProcessor->LockPostQueue();
 	int iParJobCount = pPostQueue->size();
 	g_pPrePostProcessor->UnlockPostQueue();
 	unsigned long iDownloadedSizeHi, iDownloadedSizeLo;
@@ -1275,34 +1275,34 @@ void PostQueueXmlCommand::Execute()
 		"\"StageTimeSec\" : %i\n"
 		"}";
 
-	PrePostProcessor::PostQueue* pPostQueue = g_pPrePostProcessor->LockPostQueue();
+	PostQueue* pPostQueue = g_pPrePostProcessor->LockPostQueue();
 
 	time_t tCurTime = time(NULL);
 	int szItemBufSize = 10240;
 	char* szItemBuf = (char*)malloc(szItemBufSize);
 	int index = 0;
 
-	for (PrePostProcessor::PostQueue::iterator it = pPostQueue->begin(); it != pPostQueue->end(); it++)
+	for (PostQueue::iterator it = pPostQueue->begin(); it != pPostQueue->end(); it++)
 	{
-		PrePostProcessor::PostJob* pPostJob = *it;
+		PostInfo* pPostInfo = *it;
 		char szNZBNicename[1024];
-		NZBInfo::MakeNiceNZBName(pPostJob->GetNZBFilename(), szNZBNicename, sizeof(szNZBNicename));
+		NZBInfo::MakeNiceNZBName(pPostInfo->GetNZBFilename(), szNZBNicename, sizeof(szNZBNicename));
 
 	    char* szPostStageName[] = { "QUEUED", "LOADING_PARS", "VERIFYING_SOURCES", "REPAIRING", "VERIFYING_REPAIRED", "EXECUTING_SCRIPT", "FINISHED" };
 
 		char* xmlNZBNicename = EncodeStr(szNZBNicename);
-		char* xmlNZBFilename = EncodeStr(pPostJob->GetNZBFilename());
-		char* xmlDestDir = EncodeStr(pPostJob->GetDestDir());
-		char* xmlParFilename = EncodeStr(pPostJob->GetParFilename());
-		char* xmlInfoName = EncodeStr(pPostJob->GetInfoName());
-		char* xmlProgressLabel = EncodeStr(pPostJob->GetProgressLabel());
+		char* xmlNZBFilename = EncodeStr(pPostInfo->GetNZBFilename());
+		char* xmlDestDir = EncodeStr(pPostInfo->GetDestDir());
+		char* xmlParFilename = EncodeStr(pPostInfo->GetParFilename());
+		char* xmlInfoName = EncodeStr(pPostInfo->GetInfoName());
+		char* xmlProgressLabel = EncodeStr(pPostInfo->GetProgressLabel());
 
 		snprintf(szItemBuf, szItemBufSize, IsJson() ? JSON_POSTQUEUE_ITEM : XML_POSTQUEUE_ITEM,
 			xmlNZBNicename, xmlNZBFilename, xmlDestDir, xmlParFilename,
-			xmlInfoName, szPostStageName[pPostJob->GetStage()], xmlProgressLabel,
-			pPostJob->GetFileProgress(), pPostJob->GetStageProgress(),
-			pPostJob->GetStartTime() ? tCurTime - pPostJob->GetStartTime() : 0,
-			pPostJob->GetStageTime() ? tCurTime - pPostJob->GetStageTime() : 0);
+			xmlInfoName, szPostStageName[pPostInfo->GetStage()], xmlProgressLabel,
+			pPostInfo->GetFileProgress(), pPostInfo->GetStageProgress(),
+			pPostInfo->GetStartTime() ? tCurTime - pPostInfo->GetStartTime() : 0,
+			pPostInfo->GetStageTime() ? tCurTime - pPostInfo->GetStageTime() : 0);
 		szItemBuf[szItemBufSize-1] = '\0';
 
 		free(xmlNZBNicename);
