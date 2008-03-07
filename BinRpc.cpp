@@ -436,7 +436,7 @@ void ListBinCommand::Execute()
 		ListResponse.m_iDownloadLimit = htonl((int)(g_pOptions->GetDownloadRate() * 1024));
 		ListResponse.m_bServerPaused = htonl(g_pOptions->GetPause());
 		ListResponse.m_iThreadCount = htonl(Thread::GetThreadCount() - 1); // not counting itself
-		PrePostProcessor::PostQueue* pPostQueue = g_pPrePostProcessor->LockPostQueue();
+		PostQueue* pPostQueue = g_pPrePostProcessor->LockPostQueue();
 		ListResponse.m_iPostJobCount = htonl(pPostQueue->size());
 		g_pPrePostProcessor->UnlockPostQueue();
 
@@ -638,20 +638,20 @@ void PostQueueBinCommand::Execute()
 	int bufsize = 0;
 
 	// Make a data structure and copy all the elements of the list into it
-	PrePostProcessor::PostQueue* pPostQueue = g_pPrePostProcessor->LockPostQueue();
+	PostQueue* pPostQueue = g_pPrePostProcessor->LockPostQueue();
 
 	int NrEntries = pPostQueue->size();
 
 	// calculate required buffer size
 	bufsize = NrEntries * sizeof(SNZBPostQueueResponseEntry);
-	for (PrePostProcessor::PostQueue::iterator it = pPostQueue->begin(); it != pPostQueue->end(); it++)
+	for (PostQueue::iterator it = pPostQueue->begin(); it != pPostQueue->end(); it++)
 	{
-		PrePostProcessor::PostJob* pPostJob = *it;
-		bufsize += strlen(pPostJob->GetNZBFilename()) + 1;
-		bufsize += strlen(pPostJob->GetParFilename()) + 1;
-		bufsize += strlen(pPostJob->GetInfoName()) + 1;
-		bufsize += strlen(pPostJob->GetDestDir()) + 1;
-		bufsize += strlen(pPostJob->GetProgressLabel()) + 1;
+		PostInfo* pPostInfo = *it;
+		bufsize += strlen(pPostInfo->GetNZBFilename()) + 1;
+		bufsize += strlen(pPostInfo->GetParFilename()) + 1;
+		bufsize += strlen(pPostInfo->GetInfoName()) + 1;
+		bufsize += strlen(pPostInfo->GetDestDir()) + 1;
+		bufsize += strlen(pPostInfo->GetProgressLabel()) + 1;
 		// align struct to 4-bytes, needed by ARM-processor (and may be others)
 		bufsize += bufsize % 4 > 0 ? 4 - bufsize % 4 : 0;
 	}
@@ -660,30 +660,30 @@ void PostQueueBinCommand::Execute()
 	buf = (char*) malloc(bufsize);
 	char* bufptr = buf;
 
-	for (PrePostProcessor::PostQueue::iterator it = pPostQueue->begin(); it != pPostQueue->end(); it++)
+	for (PostQueue::iterator it = pPostQueue->begin(); it != pPostQueue->end(); it++)
 	{
-		PrePostProcessor::PostJob* pPostJob = *it;
+		PostInfo* pPostInfo = *it;
 		SNZBPostQueueResponseEntry* pPostQueueAnswer = (SNZBPostQueueResponseEntry*) bufptr;
-		pPostQueueAnswer->m_iStage			= htonl(pPostJob->GetStage());
-		pPostQueueAnswer->m_iStageProgress	= htonl(pPostJob->GetStageProgress());
-		pPostQueueAnswer->m_iFileProgress	= htonl(pPostJob->GetFileProgress());
-		pPostQueueAnswer->m_iTotalTimeSec	= htonl(pPostJob->GetStartTime() ? tCurTime - pPostJob->GetStartTime() : 0);
-		pPostQueueAnswer->m_iStageTimeSec	= htonl(pPostJob->GetStageTime() ? tCurTime - pPostJob->GetStageTime() : 0);
-		pPostQueueAnswer->m_iNZBFilenameLen		= htonl(strlen(pPostJob->GetNZBFilename()) + 1);
-		pPostQueueAnswer->m_iParFilename		= htonl(strlen(pPostJob->GetParFilename()) + 1);
-		pPostQueueAnswer->m_iInfoNameLen		= htonl(strlen(pPostJob->GetInfoName()) + 1);
-		pPostQueueAnswer->m_iDestDirLen			= htonl(strlen(pPostJob->GetDestDir()) + 1);
-		pPostQueueAnswer->m_iProgressLabelLen	= htonl(strlen(pPostJob->GetProgressLabel()) + 1);
+		pPostQueueAnswer->m_iStage			= htonl(pPostInfo->GetStage());
+		pPostQueueAnswer->m_iStageProgress	= htonl(pPostInfo->GetStageProgress());
+		pPostQueueAnswer->m_iFileProgress	= htonl(pPostInfo->GetFileProgress());
+		pPostQueueAnswer->m_iTotalTimeSec	= htonl(pPostInfo->GetStartTime() ? tCurTime - pPostInfo->GetStartTime() : 0);
+		pPostQueueAnswer->m_iStageTimeSec	= htonl(pPostInfo->GetStageTime() ? tCurTime - pPostInfo->GetStageTime() : 0);
+		pPostQueueAnswer->m_iNZBFilenameLen		= htonl(strlen(pPostInfo->GetNZBFilename()) + 1);
+		pPostQueueAnswer->m_iParFilename		= htonl(strlen(pPostInfo->GetParFilename()) + 1);
+		pPostQueueAnswer->m_iInfoNameLen		= htonl(strlen(pPostInfo->GetInfoName()) + 1);
+		pPostQueueAnswer->m_iDestDirLen			= htonl(strlen(pPostInfo->GetDestDir()) + 1);
+		pPostQueueAnswer->m_iProgressLabelLen	= htonl(strlen(pPostInfo->GetProgressLabel()) + 1);
 		bufptr += sizeof(SNZBPostQueueResponseEntry);
-		strcpy(bufptr, pPostJob->GetNZBFilename());
+		strcpy(bufptr, pPostInfo->GetNZBFilename());
 		bufptr += ntohl(pPostQueueAnswer->m_iNZBFilenameLen);
-		strcpy(bufptr, pPostJob->GetParFilename());
+		strcpy(bufptr, pPostInfo->GetParFilename());
 		bufptr += ntohl(pPostQueueAnswer->m_iParFilename);
-		strcpy(bufptr, pPostJob->GetInfoName());
+		strcpy(bufptr, pPostInfo->GetInfoName());
 		bufptr += ntohl(pPostQueueAnswer->m_iInfoNameLen);
-		strcpy(bufptr, pPostJob->GetDestDir());
+		strcpy(bufptr, pPostInfo->GetDestDir());
 		bufptr += ntohl(pPostQueueAnswer->m_iDestDirLen);
-		strcpy(bufptr, pPostJob->GetProgressLabel());
+		strcpy(bufptr, pPostInfo->GetProgressLabel());
 		bufptr += ntohl(pPostQueueAnswer->m_iProgressLabelLen);
 		// align struct to 4-bytes, needed by ARM-processor (and may be others)
 		if ((size_t)bufptr % 4 > 0)

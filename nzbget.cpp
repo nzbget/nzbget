@@ -200,11 +200,10 @@ void Run()
 		g_pRemoteServer->Start();
 	}
 
-	// Starting a thread with the PrePostProcessor
+	// Creating PrePostProcessor
 	if (!g_pOptions->GetRemoteClientMode())
 	{
 		g_pPrePostProcessor = new PrePostProcessor();
-		g_pPrePostProcessor->Start();
 	}
 
 	// Create the frontend
@@ -232,7 +231,7 @@ void Run()
 		g_pFrontend->Start();
 	}
 
-	// Starting QueueCoordinator
+	// Starting QueueCoordinator and PrePostProcessor
 	if (!g_pOptions->GetRemoteClientMode())
 	{
 		// Standalone-mode
@@ -248,6 +247,7 @@ void Run()
 		}
 
 		g_pQueueCoordinator->Start();
+		g_pPrePostProcessor->Start();
 
 		// enter main program-loop
 		while (g_pQueueCoordinator->IsRunning() || g_pPrePostProcessor->IsRunning())

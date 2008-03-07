@@ -31,6 +31,7 @@
 #include "Thread.h"
 #include "Observer.h"
 #include "DownloadInfo.h"
+#include "PostInfo.h"
 
 #ifndef DISABLE_PARCHECK
 #include "ParChecker.h"
@@ -38,65 +39,6 @@
 
 class PrePostProcessor : public Thread
 {
-public:
-
-	enum EPostJobStage
-	{
-		ptQueued,
-		ptLoadingPars,
-		ptVerifyingSources,
-		ptRepairing,
-		ptVerifyingRepaired,
-		ptExecutingScript,
-		ptFinished
-	};
-
-	class PostJob
-	{
-	private:
-		char*			m_szNZBFilename;
-		char*			m_szDestDir;
-		char*			m_szParFilename;
-		char*			m_szInfoName;
-		bool			m_bWorking;
-		bool			m_bParCheck;
-		int				m_iParStatus;
-		bool			m_bParFailed;
-		EPostJobStage	m_eStage;
-		char*			m_szProgressLabel;
-		int				m_iFileProgress;
-		int				m_iStageProgress;
-		time_t			m_tStartTime;
-		time_t			m_tStageTime;
-#ifdef WIN32
-		HANDLE	 		m_hProcessID;
-#else
-		pid_t			m_hProcessID;
-#endif
-		
-
-		void			SetProgressLabel(const char* szProgressLabel);
-		
-	public:
-						PostJob(const char* szNZBFilename, const char* szDestDir, const char* szParFilename, 
-							const char* szInfoName, bool bParCheck);
-						~PostJob();
-		const char*		GetNZBFilename() { return m_szNZBFilename; }
-		const char*		GetDestDir() { return m_szDestDir; }
-		const char*		GetParFilename() { return m_szParFilename; }
-		const char*		GetInfoName() { return m_szInfoName; }
-		EPostJobStage	GetStage() { return m_eStage; }
-		const char*		GetProgressLabel() { return m_szProgressLabel; }
-		int				GetFileProgress() { return m_iFileProgress; }
-		int				GetStageProgress() { return m_iStageProgress; }
-		time_t			GetStartTime() { return m_tStartTime; }
-		time_t			GetStageTime() { return m_tStageTime; }
-
-		friend class PrePostProcessor;
-	};
-
-	typedef std::deque<PostJob*> PostQueue;
-
 private:
 	typedef std::deque<char*>		FileList;
 
@@ -146,11 +88,13 @@ private:
 							bool bIgnoreFirstInPostQueue, bool bIgnorePaused, bool bCheckPostQueue);
 	bool				CheckScript(FileInfo* pFileInfo);
 	bool				JobExists(PostQueue* pPostQueue, const char* szNZBFilename);
-	void				ClearCompletedJobs(const char* szNZBFilename);
+	bool				ClearCompletedJobs(const char* szNZBFilename);
 	void				CheckPostQueue();
-	void				JobCompleted(PostJob* pPostJob);
-	void				StartScriptJob(PostJob* pPostJob);
-	void				CheckScriptFinished(PostJob* pPostJob);
+	void				JobCompleted(PostInfo* pPostInfo);
+	void				StartScriptJob(PostInfo* pPostInfo);
+	void				CheckScriptFinished(PostInfo* pPostInfo);
+	void				SavePostQueue();
+	void				SanitisePostQueue();
 
 	Mutex			 	m_mutexQueue;
 	PostQueue			m_PostQueue;
@@ -173,7 +117,7 @@ private:
 	void				FindPars(DownloadQueue* pDownloadQueue, const char* szNZBFilename, const char* szParFilename, 
 							Blocks* pBlocks, bool bStrictParName, bool bExactParName, int* pBlockFound);
 	void				UpdateParProgress();
-	void				StartParJob(PostJob* pPostJob);
+	void				StartParJob(PostInfo* pPostInfo);
 #endif
 	
 public:

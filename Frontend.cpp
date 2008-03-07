@@ -102,7 +102,7 @@ bool Frontend::PrepareData()
 			m_bPause = g_pOptions->GetPause();
 			m_fDownloadLimit = g_pOptions->GetDownloadRate();
 			m_iThreadCount = Thread::GetThreadCount();
-			PrePostProcessor::PostQueue* pPostQueue = g_pPrePostProcessor->LockPostQueue();
+			PostQueue* pPostQueue = g_pPrePostProcessor->LockPostQueue();
 			m_iPostJobCount = pPostQueue->size();
 			g_pPrePostProcessor->UnlockPostQueue();
 			g_pQueueCoordinator->CalcStat(&m_iUpTimeSec, &m_iDnTimeSec, &m_iAllBytes, &m_bStandBy);

@@ -27,6 +27,7 @@
 #define DISKSTATE_H
 
 #include "DownloadInfo.h"
+#include "PostInfo.h"
 
 class DiskState
 {
@@ -35,11 +36,14 @@ private:
 	bool				LoadFileInfo(FileInfo* pFileInfo, const char* szFilename, bool bFileSummary, bool bArticles);
 	
 public:
-	bool				Exists();
-	bool				Save(DownloadQueue* pDownloadQueue);
-	bool				Load(DownloadQueue* pDownloadQueue);
+	bool				DownloadQueueExists();
+	bool				PostQueueExists(bool bCompleted);
+	bool				SaveDownloadQueue(DownloadQueue* pDownloadQueue);
+	bool				LoadDownloadQueue(DownloadQueue* pDownloadQueue);
 	bool				SaveFile(FileInfo* pFileInfo);
 	bool				LoadArticles(FileInfo* pFileInfo);
+	bool				SavePostQueue(PostQueue* pPostQueue, bool bCompleted);
+	bool				LoadPostQueue(PostQueue* pPostQueue, bool bCompleted);
 	bool				Discard();
 	bool				DiscardFile(DownloadQueue* pDownloadQueue, FileInfo* pFileInfo);
 	void				CleanupTempDir(DownloadQueue* pDownloadQueue);

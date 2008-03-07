@@ -169,7 +169,7 @@ bool QueueEditor::EditList(IDList* pIDList, bool bSmartOrder, EEditAction eActio
 
 	if (g_pOptions->GetSaveQueue() && g_pOptions->GetServerMode())
 	{
-		g_pDiskState->Save(pDownloadQueue);
+		g_pDiskState->SaveDownloadQueue(pDownloadQueue);
 	}
 
 	g_pQueueCoordinator->UnlockQueue();

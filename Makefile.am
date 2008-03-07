@@ -8,7 +8,8 @@ nzbget_SOURCES = ArticleDownloader.cpp ArticleDownloader.h ColoredFrontend.cpp \
 	ParChecker.cpp ParChecker.h PrePostProcessor.cpp PrePostProcessor.h \
 	QueueCoordinator.cpp QueueCoordinator.h QueueEditor.cpp QueueEditor.h RemoteClient.cpp \
 	RemoteClient.h RemoteServer.cpp RemoteServer.h ServerPool.cpp ServerPool.h Thread.cpp \
-	Thread.h Util.cpp Util.h nzbget.cpp nzbget.h BinRpc.cpp BinRpc.h XmlRpc.cpp XmlRpc.h
+	Thread.h Util.cpp Util.h nzbget.cpp nzbget.h BinRpc.cpp BinRpc.h XmlRpc.cpp XmlRpc.h \
+	PostInfo.cpp PostInfo.h
 
 EXTRA_DIST = nzbget.conf.example \
 	win32.h NTService.cpp NTService.h \

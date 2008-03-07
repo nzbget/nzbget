@@ -107,11 +107,11 @@ void QueueCoordinator::Run()
 
 	m_mutexDownloadQueue.Lock();
 
-	if (g_pOptions->GetServerMode() && g_pOptions->GetSaveQueue() && g_pDiskState->Exists())
+	if (g_pOptions->GetServerMode() && g_pOptions->GetSaveQueue() && g_pDiskState->DownloadQueueExists())
 	{
 		if (g_pOptions->GetReloadQueue())
 		{
-			g_pDiskState->Load(&m_DownloadQueue);
+			g_pDiskState->LoadDownloadQueue(&m_DownloadQueue);
 		}
 		else
 		{
@@ -273,7 +273,10 @@ void QueueCoordinator::AddNZBFileToQueue(NZBFile* pNZBFile, bool bAddFirst)
 	for (DownloadQueue::iterator it = DupeList.begin(); it != DupeList.end(); it++)
 	{
 		FileInfo* pFileInfo = *it;
-		g_pDiskState->DiscardFile(NULL, pFileInfo);
+		if (g_pOptions->GetSaveQueue() && g_pOptions->GetServerMode())
+		{
+			g_pDiskState->DiscardFile(NULL, pFileInfo);
+		}
 		delete pFileInfo;
 	}
 
@@ -284,7 +287,7 @@ void QueueCoordinator::AddNZBFileToQueue(NZBFile* pNZBFile, bool bAddFirst)
 	
 	if (g_pOptions->GetSaveQueue() && g_pOptions->GetServerMode())
 	{
-		g_pDiskState->Save(&m_DownloadQueue);
+		g_pDiskState->SaveDownloadQueue(&m_DownloadQueue);
 	}
 
 	m_mutexDownloadQueue.Unlock();

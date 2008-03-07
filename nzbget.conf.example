@@ -335,7 +335,12 @@ ServerPassword=tegbzn6789
 
 
 ##############################################################################
-### PAR CHECK AND REPAIR                                                   ###
+### PAR CHECK/REPAIR AND POSTPROCESSING                                    ###
+
+# Reload Post-processor-queue on start, if it exists (yes, no)
+# For this option to work the options "SaveQueue" and "ReloadQueue" must
+# be also enabled.
+ReloadPostQueue=yes
 
 # How many par2-files to load (none, all, one)
 # none - all added par2-files must be automatically paused
@@ -384,10 +389,6 @@ StrictParName=yes
 # If there are paused non-par-files (this means that you have paused them
 # manually), the cleanup will be skipped for this collection.
 ParCleanupQueue=yes
-
-
-##############################################################################
-### POSTPROCESSING                                                         ###
 
 # Set path to program, that must be executed after the download of
 # nzb-file or one collection in nzb-file (if par-check enabled and nzb-file

@@ -109,6 +109,7 @@ private:
 	char*				m_szDaemonUserName;
 	EOutputMode			m_eOutputMode;
 	bool				m_bReloadQueue;
+	bool				m_bReloadPostQueue;
 	int					m_iLogBufferSize;
 	bool				m_bCreateLog;
 	char*				m_szLogFile;
@@ -205,6 +206,7 @@ public:
 	char*				GetDaemonUserName() { return m_szDaemonUserName; }
 	EOutputMode			GetOutputMode() { return m_eOutputMode; }
 	bool				GetReloadQueue() { return m_bReloadQueue; }
+	bool				GetReloadPostQueue() { return m_bReloadPostQueue; }
 	int					GetLogBufferSize() { return m_iLogBufferSize; }
 	bool				GetCreateLog() { return m_bCreateLog; }
 	char*				GetLogFile() { return m_szLogFile; }
