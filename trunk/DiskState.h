@@ -44,7 +44,8 @@ public:
 	bool				LoadArticles(FileInfo* pFileInfo);
 	bool				SavePostQueue(PostQueue* pPostQueue, bool bCompleted);
 	bool				LoadPostQueue(PostQueue* pPostQueue, bool bCompleted);
-	bool				Discard();
+	bool				DiscardDownloadQueue();
+	bool				DiscardPostQueue();
 	bool				DiscardFile(DownloadQueue* pDownloadQueue, FileInfo* pFileInfo);
 	void				CleanupTempDir(DownloadQueue* pDownloadQueue);
 };

@@ -115,7 +115,7 @@ void QueueCoordinator::Run()
 		}
 		else
 		{
-			g_pDiskState->Discard();
+			g_pDiskState->DiscardDownloadQueue();
 		}
 	}
 

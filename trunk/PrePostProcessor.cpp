@@ -114,19 +114,26 @@ void PrePostProcessor::Run()
 {
 	debug("Entering PrePostProcessor-loop");
 
-	if (g_pOptions->GetServerMode() && g_pOptions->GetSaveQueue()&& g_pOptions->GetReloadPostQueue())
+	if (g_pOptions->GetServerMode() && g_pOptions->GetSaveQueue())
 	{
-		m_mutexQueue.Lock();
-		if (g_pDiskState->PostQueueExists(false))
+		if (g_pOptions->GetReloadQueue() && g_pOptions->GetReloadPostQueue())
 		{
-			g_pDiskState->LoadPostQueue(&m_PostQueue, false);
-			SanitisePostQueue();
+			m_mutexQueue.Lock();
+			if (g_pDiskState->PostQueueExists(false))
+			{
+				g_pDiskState->LoadPostQueue(&m_PostQueue, false);
+				SanitisePostQueue();
+			}
+			if (g_pDiskState->PostQueueExists(true))
+			{
+				g_pDiskState->LoadPostQueue(&m_CompletedJobs, true);
+			}
+			m_mutexQueue.Unlock();
 		}
-		if (g_pDiskState->PostQueueExists(true))
+		else
 		{
-			g_pDiskState->LoadPostQueue(&m_CompletedJobs, true);
+			g_pDiskState->DiscardPostQueue();
 		}
-		m_mutexQueue.Unlock();
 	}
 
 	int iNZBDirInterval = 0;
