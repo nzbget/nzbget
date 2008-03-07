@@ -472,7 +472,7 @@ error:
  * Delete all files from Queue.
  * Returns true if successful, false if not
  */
-bool DiskState::Discard()
+bool DiskState::DiscardDownloadQueue()
 {
 	debug("Discarding queue");
 
@@ -516,6 +516,27 @@ bool DiskState::Discard()
 	}
 
 	return res;
+}
+
+/*
+ * Delete all files from Queue.
+ * Returns true if successful, false if not
+ */
+bool DiskState::DiscardPostQueue()
+{
+	debug("Discarding post-queue");
+
+	char fileName[1024];
+
+	snprintf(fileName, 1024, "%s%s", g_pOptions->GetQueueDir(), "postq");
+	fileName[1024-1] = '\0';
+	remove(fileName);
+
+	snprintf(fileName, 1024, "%s%s", g_pOptions->GetQueueDir(), "postc");
+	fileName[1024-1] = '\0';
+	remove(fileName);
+
+	return true;
 }
 
 bool DiskState::DownloadQueueExists()
