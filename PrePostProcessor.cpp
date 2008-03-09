@@ -1207,7 +1207,7 @@ void PrePostProcessor::UpdateParProgress()
 	if (pPostInfo->GetStage() != eStage)
 	{
 		pPostInfo->SetStage(eStage);
-		pPostInfo->SetStartTime(time(NULL));
+		pPostInfo->SetStageTime(time(NULL));
 	}
 
 	m_mutexQueue.Unlock();
