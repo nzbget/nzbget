@@ -136,17 +136,27 @@ void PrePostProcessor::Run()
 		}
 	}
 
-	int iNZBDirInterval = 0;
+	int iNZBDirInterval = g_pOptions->GetNzbDirInterval() * 1000;
+	int iDiskSpaceInterval = 1000;
 	while (!IsStopped())
 	{
 		if (g_pOptions->GetNzbDir() && g_pOptions->GetNzbDirInterval() > 0 && 
-			iNZBDirInterval == g_pOptions->GetNzbDirInterval() * 1000)
+			iNZBDirInterval >= g_pOptions->GetNzbDirInterval() * 1000)
 		{
 			// check nzbdir every g_pOptions->GetNzbDirInterval() seconds
 			CheckIncomingNZBs();
 			iNZBDirInterval = 0;
 		}
 		iNZBDirInterval += 200;
+
+		if (!g_pOptions->GetPause() && g_pOptions->GetDiskSpace() > 0 && 
+			!g_pQueueCoordinator->GetStandBy() && iDiskSpaceInterval >= 1000)
+		{
+			// check free disk space every 1 second
+			CheckDiskSpace();
+			iDiskSpaceInterval = 0;
+		}
+		iDiskSpaceInterval += 200;
 
 		// check post-queue every 200 msec
 		CheckPostQueue();
@@ -291,6 +301,16 @@ void PrePostProcessor::CheckIncomingNZBs()
 				}
 			}
 		}
+	}
+}
+
+void PrePostProcessor::CheckDiskSpace()
+{
+	long long lFreeSpace = Util::FreeDiskSize(g_pOptions->GetDestDir());
+	if (lFreeSpace > -1 && lFreeSpace / 1024 / 1024 < g_pOptions->GetDiskSpace())
+	{
+		warn("Low disk space. Pausing download");
+		g_pOptions->SetPause(true);
 	}
 }
 

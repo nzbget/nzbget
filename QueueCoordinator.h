@@ -106,6 +106,7 @@ public:
 	void					AddNZBFileToQueue(NZBFile* pNZBQueue, bool bAddFirst);
 	bool					AddFileToQueue(const char* szFileName);
 	bool					HasMoreJobs() { return m_bHasMoreJobs; }
+	bool					GetStandBy() { return m_bStandBy; }
 	bool					DeleteQueueEntry(FileInfo* pFileInfo);
 	QueueEditor*			GetQueueEditor() { return &m_QueueEditor; }
 	

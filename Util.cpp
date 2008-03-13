@@ -40,6 +40,7 @@
 #include <direct.h>
 #else
 #include <unistd.h>
+#include <sys/statvfs.h>
 #endif
 
 #include "nzbget.h"
@@ -986,4 +987,22 @@ const char* Util::JsonNextValue(const char* szJsonText, int* pValueLength)
 
 	*pValueLength = pend - pstart;
 	return pstart;
+}
+
+long long Util::FreeDiskSize(const char* szPath)
+{
+#ifdef WIN32
+	ULARGE_INTEGER lFree, lDummy;
+	if (GetDiskFreeSpaceEx(szPath, &lFree, &lDummy, &lDummy))
+	{
+		return lFree.QuadPart;
+	}
+#else
+	struct statvfs diskdata;
+	if (!statvfs(szPath, &diskdata)) 
+	{
+		return (long long)diskdata.f_bsize * (long long)diskdata.f_bavail;
+	}
+#endif
+	return -1;
 }

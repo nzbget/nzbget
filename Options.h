@@ -132,6 +132,7 @@ private:
 	int					m_iNzbDirInterval;
 	int					m_iNzbDirFileAge;
 	bool				m_bParCleanupQueue;
+	int					m_iDiskSpace;
 
 	// Parsed command-line parameters
 	bool				m_bServerMode;
@@ -228,6 +229,7 @@ public:
 	int					GetNzbDirInterval() { return m_iNzbDirInterval; }
 	int					GetNzbDirFileAge() { return m_iNzbDirFileAge; }
 	bool				GetParCleanupQueue() { return m_bParCleanupQueue; }
+	int					GetDiskSpace() { return m_iDiskSpace; }
 
 	// Parsed command-line parameters
 	bool				GetServerMode() { return m_bServerMode; }
