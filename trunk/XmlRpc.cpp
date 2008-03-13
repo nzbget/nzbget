@@ -210,7 +210,7 @@ void XmlRpcProcessor::Dispatch()
 			char* pend = strchr(pstart + 1, '?');
 			if (pend) 
 			{
-				int iLen = pend - pstart - 1 < sizeof(szMethodName) - 1 ? pend - pstart - 1 : sizeof(szMethodName) - 1;
+				int iLen = pend - pstart - 1 < (int)sizeof(szMethodName) - 1 ? pend - pstart - 1 : (int)sizeof(szMethodName) - 1;
 				strncpy(szMethodName, pstart + 1, iLen);
 				szMethodName[iLen] = '\0';
 				szRequest = pend + 1;
