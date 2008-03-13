@@ -95,6 +95,7 @@ private:
 	void				CheckScriptFinished(PostInfo* pPostInfo);
 	void				SavePostQueue();
 	void				SanitisePostQueue();
+	void				CheckDiskSpace();
 
 	Mutex			 	m_mutexQueue;
 	PostQueue			m_PostQueue;

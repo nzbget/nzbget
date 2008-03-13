@@ -254,6 +254,12 @@ DownloadRate=0
 # the effect of the option is highly OS-dependend.
 WriteBufferSize=0
 
+# Pause if disk space gets below this value, in MegaBytes.
+# Value "0" disables the check.
+# Only the disk space on the drive with "DestDir" is checked.
+# The drive with "TempDir" is not checked.
+DiskSpace=250
+
 
 ##############################################################################
 ### LOGGING                                                                ###

@@ -136,6 +136,7 @@ static const char* OPTION_WRITEBUFFERSIZE	= "WriteBufferSize";
 static const char* OPTION_NZBDIRINTERVAL	= "NzbDirInterval";
 static const char* OPTION_NZBDIRFILEAGE		= "NzbDirFileAge";
 static const char* OPTION_PARCLEANUPQUEUE	= "ParCleanupQueue";
+static const char* OPTION_DISKSPACE			= "DiskSpace";
 
 #ifndef WIN32
 const char* PossibleConfigLocations[] =
@@ -221,6 +222,7 @@ Options::Options(int argc, char* argv[])
 	m_iNzbDirInterval		= 0;
 	m_iNzbDirFileAge		= 0;
 	m_bParCleanupQueue		= false;
+	m_iDiskSpace			= 0;
 
 	char szFilename[MAX_PATH + 1];
 #ifdef WIN32
@@ -419,6 +421,7 @@ void Options::InitDefault()
 	SetOption(OPTION_NZBDIRINTERVAL, "5");
 	SetOption(OPTION_NZBDIRFILEAGE, "60");
 	SetOption(OPTION_PARCLEANUPQUEUE, "no");
+	SetOption(OPTION_DISKSPACE, "0");
 }
 
 void Options::InitOptFile()
@@ -530,6 +533,7 @@ void Options::InitOptions()
 	m_iWriteBufferSize		= atoi(GetOption(OPTION_WRITEBUFFERSIZE));
 	m_iNzbDirInterval		= atoi(GetOption(OPTION_NZBDIRINTERVAL));
 	m_iNzbDirFileAge		= atoi(GetOption(OPTION_NZBDIRFILEAGE));
+	m_iDiskSpace			= atoi(GetOption(OPTION_DISKSPACE));
 
 	if (m_iNzbDirInterval > 0)
 	{
