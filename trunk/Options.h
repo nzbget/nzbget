@@ -34,38 +34,48 @@ class Options
 public:
 	enum EClientOperation
 	{
-	    opClientNoOperation,
-	    opClientRequestDownload,
-	    opClientRequestList,
-	    opClientRequestPause,
-	    opClientRequestUnpause,
-	    opClientRequestSetRate,
-	    opClientRequestDumpDebug,
-	    opClientRequestEditQueue,
-	    opClientRequestLog,
-	    opClientRequestShutdown,
-	    opClientRequestVersion,
-	    opClientRequestPostQueue,
-	    opClientRequestWriteLog
+		opClientNoOperation,
+		opClientRequestDownload,
+		opClientRequestList,
+		opClientRequestPause,
+		opClientRequestUnpause,
+		opClientRequestSetRate,
+		opClientRequestDumpDebug,
+		opClientRequestEditQueue,
+		opClientRequestLog,
+		opClientRequestShutdown,
+		opClientRequestVersion,
+		opClientRequestPostQueue,
+		opClientRequestWriteLog
 	};
 	enum EMessageTarget
 	{
-	    mtNone,
-	    mtScreen,
-	    mtLog,
-	    mtBoth
+		mtNone,
+		mtScreen,
+		mtLog,
+		mtBoth
 	};
 	enum EOutputMode
 	{
-	    omLoggable,
-	    omColored,
-	    omNCurses
+		omLoggable,
+		omColored,
+		omNCurses
 	};
 	enum ELoadPars
 	{
-	    plNone,
-	    plOne,
-	    plAll
+		lpNone,
+		lpOne,
+		lpAll
+	};
+
+	enum EPostLogKind
+	{
+		plNone,
+		plDetail,
+		plInfo,
+		plWarning,
+		plError,
+		plDebug
 	};
 
 private:
@@ -133,6 +143,7 @@ private:
 	int					m_iNzbDirFileAge;
 	bool				m_bParCleanupQueue;
 	int					m_iDiskSpace;
+	EPostLogKind		m_ePostLogKind;
 
 	// Parsed command-line parameters
 	bool				m_bServerMode;
@@ -230,6 +241,7 @@ public:
 	int					GetNzbDirFileAge() { return m_iNzbDirFileAge; }
 	bool				GetParCleanupQueue() { return m_bParCleanupQueue; }
 	int					GetDiskSpace() { return m_iDiskSpace; }
+	EPostLogKind		GetPostLogKind() { return m_ePostLogKind; }
 
 	// Parsed command-line parameters
 	bool				GetServerMode() { return m_bServerMode; }

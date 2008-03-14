@@ -530,10 +530,10 @@ int NCursesFrontend::PrintMessage(Message* Msg, int iRow, int iMaxLines)
 		szText = strdup(szText);
 	}
 
-	// replace CR and LF characters with spaces
+	// replace some special characters with spaces
 	for (char* p = szText; *p; p++)
 	{
-		if (*p == '\n' || *p == '\r')
+		if (*p == '\n' || *p == '\r' || *p == '\b')
 		{
 			*p = ' ';
 		}

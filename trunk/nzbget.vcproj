@@ -380,6 +380,14 @@
 			>
 		</File>
 		<File
+			RelativePath=".\ScriptController.cpp"
+			>
+		</File>
+		<File
+			RelativePath=".\ScriptController.h"
+			>
+		</File>
+		<File
 			RelativePath=".\ServerPool.cpp"
 			>
 		</File>

@@ -92,7 +92,6 @@ private:
 	void				CheckPostQueue();
 	void				JobCompleted(PostInfo* pPostInfo);
 	void				StartScriptJob(PostInfo* pPostInfo);
-	void				CheckScriptFinished(PostInfo* pPostInfo);
 	void				SavePostQueue();
 	void				SanitisePostQueue();
 	void				CheckDiskSpace();
