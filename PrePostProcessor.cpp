@@ -47,6 +47,7 @@
 #include "Options.h"
 #include "Log.h"
 #include "QueueCoordinator.h"
+#include "ScriptController.h"
 #include "DiskState.h"
 #include "Util.h"
 
@@ -201,7 +202,7 @@ void PrePostProcessor::QueueCoordinatorUpdate(Subject * Caller, void * Aspect)
 
 	QueueCoordinator::Aspect* pAspect = (QueueCoordinator::Aspect*)Aspect;
 	if (pAspect->eAction == QueueCoordinator::eaNZBFileAdded &&
-		g_pOptions->GetLoadPars() != Options::plAll)
+		g_pOptions->GetLoadPars() != Options::lpAll)
 	{
 		PausePars(pAspect->pDownloadQueue, pAspect->szNZBFilename);
 	}
@@ -321,11 +322,6 @@ void PrePostProcessor::CheckPostQueue()
 	if (!m_PostQueue.empty())
 	{
 		PostInfo* pPostInfo = m_PostQueue.front();
-		if (pPostInfo->GetWorking() && pPostInfo->GetStage() == PostInfo::ptExecutingScript)
-		{
-			CheckScriptFinished(pPostInfo);
-		}
-
 		if (!pPostInfo->GetWorking())
 		{
 #ifndef DISABLE_PARCHECK
@@ -354,7 +350,7 @@ void PrePostProcessor::CheckPostQueue()
 }
 
 /**
- * Mutex "m_mutexQueue" must be locked prior to call of this funtion.
+ * Mutex "m_mutexQueue" must be locked prior to call of this function.
  */
 void PrePostProcessor::SavePostQueue()
 {
@@ -365,9 +361,9 @@ void PrePostProcessor::SavePostQueue()
 }
 
 /**
- * Reset the state of items after reloading from and
+ * Reset the state of items after reloading from disk and
  * delete items which could not be resumed.
- * Mutex "m_mutexQueue" must be locked prior to call of this funtion.
+ * Mutex "m_mutexQueue" must be locked prior to call of this function.
  */
 void PrePostProcessor::SanitisePostQueue()
 {
@@ -386,7 +382,7 @@ void PrePostProcessor::SanitisePostQueue()
 }
 
 /**
- * Mutex "m_mutexQueue" must be locked prior to call of this funtion.
+ * Mutex "m_mutexQueue" must be locked prior to call of this function.
  */
 void PrePostProcessor::StartScriptJob(PostInfo* pPostInfo)
 {
@@ -401,124 +397,19 @@ void PrePostProcessor::StartScriptJob(PostInfo* pPostInfo)
 	pPostInfo->SetWorking(true);
 	pPostInfo->SetStage(PostInfo::ptExecutingScript);
 	SavePostQueue();
-	if (!pPostInfo->GetStartTime())
-	{
-		pPostInfo->SetStartTime(time(NULL));
-	}
-	pPostInfo->SetStageTime(time(NULL));
-	pPostInfo->SetStageProgress(50);
-
-	info("Executing post-process-script for %s", pPostInfo->GetInfoName());
-	if (!Util::FileExists(szScript))
-	{
-		error("Could not start post-process-script: could not find file %s", szScript);
-		pPostInfo->SetWorking(false);
-		pPostInfo->SetStage(PostInfo::ptFinished);
-		return;
-	}
 
 	bool bNZBFileCompleted = IsNZBFileCompleted(NULL, pPostInfo->GetNZBFilename(), true, true, true);
-
-	char szParStatus[10];
-	snprintf(szParStatus, 10, "%i", pPostInfo->GetParStatus());
-	szParStatus[10-1] = '\0';
-
-	char szCollectionCompleted[10];
-	snprintf(szCollectionCompleted, 10, "%i", (int)bNZBFileCompleted);
-	szCollectionCompleted[10-1] = '\0';
-
 #ifndef DISABLE_PARCHECK
 	bool bHasFailedParJobs = HasFailedParJobs(pPostInfo->GetNZBFilename()) || pPostInfo->GetParFailed();
 #else
 	bool bHasFailedParJobs = false;
 #endif
-	char szHasFailedParJobs[10];
-	snprintf(szHasFailedParJobs, 10, "%i", (int)bHasFailedParJobs);
-	szHasFailedParJobs[10-1] = '\0';
 
-#ifdef WIN32
-	char szCmdLine[2048];
-	snprintf(szCmdLine, 2048, "%s \"%s\" \"%s\" \"%s\" %s %s %s", szScript, pPostInfo->GetDestDir(), 
-		pPostInfo->GetNZBFilename(), pPostInfo->GetParFilename(), szParStatus, szCollectionCompleted, szHasFailedParJobs);
-	szCmdLine[2048-1] = '\0';
-	
-	STARTUPINFO StartupInfo;
-	memset(&StartupInfo, 0, sizeof(StartupInfo));
-	PROCESS_INFORMATION ProcessInfo;
-
-	BOOL bOK = CreateProcess(NULL, szCmdLine, NULL, NULL, FALSE, CREATE_NEW_CONSOLE, NULL, pPostInfo->GetDestDir(), &StartupInfo, &ProcessInfo);
-	if (bOK)
-	{
-		pPostInfo->SetProcessID(ProcessInfo.hProcess);
-	}
-	else
-	{
-		char szErrMsg[255];
-		szErrMsg[255-1] = '\0';
-		FormatMessage(FORMAT_MESSAGE_FROM_SYSTEM || FORMAT_MESSAGE_IGNORE_INSERTS || FORMAT_MESSAGE_ARGUMENT_ARRAY, 
-			NULL, GetLastError(), 0, szErrMsg, 255, NULL);
-		error("Could not start post-process: %s", szErrMsg);
-		pPostInfo->SetWorking(false);
-		pPostInfo->SetStage(PostInfo::ptFinished);
-	}
-#else
-	char szDestDir[1024];
-	strncpy(szDestDir, pPostInfo->GetDestDir(), 1024);
-	szDestDir[1024-1] = '\0';
-	
-	char szNZBFilename[1024];
-	strncpy(szNZBFilename, pPostInfo->GetNZBFilename(), 1024);
-	szNZBFilename[1024-1] = '\0';
-	
-	char szParFilename[1024];
-	strncpy(szParFilename, pPostInfo->GetParFilename(), 1024);
-	szParFilename[1024-1] = '\0';
-
-	pid_t pid = fork();
-
-	if (pid == -1)
-	{
-		error("Could not start post-process: errno %i", errno);
-		pPostInfo->SetWorking(false);
-		pPostInfo->SetStage(PostInfo::ptFinished);
-		return;
-	}
-	else if (pid != 0)
-	{
-		// continue the first instance
-		pPostInfo->SetProcessID(pid);
-		return;
-	}
-
-	// here goes the second instance
-		
-	int h;
-	for (h = getdtablesize(); h >= 0;--h) close(h); /* close all descriptors */
-	h = open("/dev/null", O_RDWR); dup(h); dup(h); /* handle standart I/O */
-	
-	execlp(szScript, szScript, szDestDir, szNZBFilename, szParFilename, 
-		szParStatus, szCollectionCompleted, szHasFailedParJobs, NULL);
-	error("Could not start post-process: %s", strerror(errno));
-	exit(-1);
-#endif
-}
-
-void PrePostProcessor::CheckScriptFinished(PostInfo* pPostInfo)
-{
-#ifdef WIN32
-	if (WaitForSingleObject(pPostInfo->GetProcessID(), 0) == WAIT_OBJECT_0)
-#else
-	int iStatus;
-	if (waitpid(pPostInfo->GetProcessID(), &iStatus, WNOHANG) == -1 || WIFEXITED(iStatus))
-#endif
-	{
-		pPostInfo->SetWorking(false);
-		pPostInfo->SetStage(PostInfo::ptFinished);
-	}
+	ScriptController::StartScriptJob(pPostInfo, szScript, bNZBFileCompleted, bHasFailedParJobs);
 }
 
 /**
- * Mutex "m_mutexQueue" must be locked prior to call of this funtion.
+ * Mutex "m_mutexQueue" must be locked prior to call of this function.
  */
 void PrePostProcessor::JobCompleted(PostInfo* pPostInfo)
 {
@@ -605,7 +496,7 @@ bool PrePostProcessor::CheckScript(FileInfo * pFileInfo)
 }
 
 /**
- * Mutex "m_mutexQueue" must be locked prior to call of this funtion.
+ * Mutex "m_mutexQueue" must be locked prior to call of this function.
  */
 bool PrePostProcessor::JobExists(PostQueue* pPostQueue, const char* szNZBFilename)
 {
@@ -622,7 +513,7 @@ bool PrePostProcessor::JobExists(PostQueue* pPostQueue, const char* szNZBFilenam
 
 /**
  * Delete info about completed par-jobs for nzb-collection after the collection is completely downloaded.
- * Mutex "m_mutexQueue" must be locked prior to call of this funtion.
+ * Mutex "m_mutexQueue" must be locked prior to call of this function.
  */
 bool PrePostProcessor::ClearCompletedJobs(const char* szNZBFilename)
 {
@@ -659,8 +550,8 @@ void PrePostProcessor::PausePars(DownloadQueue* pDownloadQueue, const char* szNZ
 		if (!strcmp(pFileInfo->GetNZBInfo()->GetFilename(), szNZBFilename))
 		{
 			g_pQueueCoordinator->GetQueueEditor()->LockedEditEntry(pDownloadQueue, pFileInfo->GetID(), false, 
-				(g_pOptions->GetLoadPars() == Options::plOne ||
-					(g_pOptions->GetLoadPars() == Options::plNone && g_pOptions->GetParCheck()))
+				(g_pOptions->GetLoadPars() == Options::lpOne ||
+					(g_pOptions->GetLoadPars() == Options::lpNone && g_pOptions->GetParCheck()))
 				? QueueEditor::eaGroupPauseExtraPars : QueueEditor::eaGroupPauseAllPars,
 				0);
 			break;
@@ -669,7 +560,7 @@ void PrePostProcessor::PausePars(DownloadQueue* pDownloadQueue, const char* szNZ
 }
 
 /**
- * Mutex "m_mutexQueue" must be locked prior to call of this funtion.
+ * Mutex "m_mutexQueue" must be locked prior to call of this function.
  */
 bool PrePostProcessor::IsNZBFileCompleted(DownloadQueue* pDownloadQueue, const char* szNZBFilename, 
 	bool bIgnoreFirstInPostQueue, bool bIgnorePaused, bool bCheckPostQueue)
@@ -717,7 +608,7 @@ bool PrePostProcessor::IsNZBFileCompleted(DownloadQueue* pDownloadQueue, const c
 #ifndef DISABLE_PARCHECK
 
 /**
- * Mutex "m_mutexQueue" must be locked prior to call of this funtion.
+ * Mutex "m_mutexQueue" must be locked prior to call of this function.
  */
 void PrePostProcessor::StartParJob(PostInfo* pPostInfo)
 {
@@ -731,6 +622,8 @@ void PrePostProcessor::StartParJob(PostInfo* pPostInfo)
 
 bool PrePostProcessor::CheckPars(DownloadQueue * pDownloadQueue, FileInfo * pFileInfo)
 {
+	debug("Checking if pars exist");
+	
 	char szNZBNiceName[1024];
 	pFileInfo->GetNZBInfo()->GetNiceNZBName(szNZBNiceName, 1024);
 
@@ -741,6 +634,8 @@ bool PrePostProcessor::CheckPars(DownloadQueue * pDownloadQueue, FileInfo * pFil
 	FileList fileList;
 	if (FindMainPars(pFileInfo->GetNZBInfo()->GetDestDir(), &fileList))
 	{
+		debug("Found pars");
+		
 		for (FileList::iterator it = fileList.begin(); it != fileList.end(); it++)
 		{
 			char* szParFilename = *it;
@@ -783,6 +678,7 @@ bool PrePostProcessor::CheckPars(DownloadQueue * pDownloadQueue, FileInfo * pFil
 
 	m_mutexQueue.Unlock();
 
+	debug("bJobAdded=%i", (int)bJobAdded);
 	return bJobAdded;
 }
 
@@ -954,7 +850,7 @@ void PrePostProcessor::ParCleanupQueue(const char* szNZBFilename)
  * Check if nzb-file has failures from other par-jobs
  * (if nzb-file has more than one collections)
  *
- * Mutex "m_mutexQueue" must be locked prior to call of this funtion.
+ * Mutex "m_mutexQueue" must be locked prior to call of this function.
  */
 bool PrePostProcessor::HasFailedParJobs(const char* szNZBFilename)
 {
@@ -975,7 +871,7 @@ bool PrePostProcessor::HasFailedParJobs(const char* szNZBFilename)
 }
 
 /**
- * Mutex "m_mutexQueue" must be locked prior to call of this funtion.
+ * Mutex "m_mutexQueue" must be locked prior to call of this function.
  */
 bool PrePostProcessor::ParJobExists(PostQueue* pPostQueue, const char* szParFilename)
 {

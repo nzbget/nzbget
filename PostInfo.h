@@ -57,11 +57,6 @@ private:
 	int				m_iStageProgress;
 	time_t			m_tStartTime;
 	time_t			m_tStageTime;
-#ifdef WIN32
-	HANDLE	 		m_hProcessID;
-#else
-	pid_t			m_hProcessID;
-#endif
 	
 public:
 					PostInfo();
@@ -94,13 +89,6 @@ public:
 	void			SetParStatus(int iParStatus) { m_iParStatus = iParStatus; }
 	bool			GetParFailed() { return m_bParFailed; }
 	void			SetParFailed(bool bParFailed) { m_bParFailed = bParFailed; }
-#ifdef WIN32
-	HANDLE	 		GetProcessID() { return m_hProcessID; }
-	void	 		SetProcessID(HANDLE hProcessID) { m_hProcessID = hProcessID; }
-#else
-	pid_t	 		GetProcessID() { return m_hProcessID; }
-	void	 		SetProcessID(pid_t hProcessID) { m_hProcessID = hProcessID; }
-#endif
 };
 
 typedef std::deque<PostInfo*> PostQueue;

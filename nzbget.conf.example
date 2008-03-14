@@ -429,6 +429,19 @@ ParCleanupQueue=yes
 # NOTE: do not forget to uncomment the next line
 #PostProcess=~/myscript.sh
 
+# Set the default message-kind for output received from postprocess-script 
+# (None, Detail, Info, Warning, Error, Debug).
+# NZBGet checks if the line written by the script to stdout or stderr starts
+# with special character-sequence, determining the message-kind, e.g.:
+# [INFO] bla-bla
+# [DETAIL] bla-bla
+# [WARNING] bla-bla
+# [ERROR] bla-bla
+# [DEBUG] bla-bla
+# If the message-kind was detected the text is added to log with detected type.
+# Otherwise the message becomes the default kind, specified in this option.
+PostLogKind=Detail
+
 
 ##############################################################################
 ### PERFORMANCE                                                            ###

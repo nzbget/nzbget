@@ -137,6 +137,7 @@ static const char* OPTION_NZBDIRINTERVAL	= "NzbDirInterval";
 static const char* OPTION_NZBDIRFILEAGE		= "NzbDirFileAge";
 static const char* OPTION_PARCLEANUPQUEUE	= "ParCleanupQueue";
 static const char* OPTION_DISKSPACE			= "DiskSpace";
+static const char* OPTION_POSTLOGKIND		= "PostLogKind";
 
 #ifndef WIN32
 const char* PossibleConfigLocations[] =
@@ -203,7 +204,7 @@ Options::Options(int argc, char* argv[])
 	m_iWriteLogKind			= 0;
 	m_bCreateLog			= false;
 	m_szLogFile				= NULL;
-	m_eLoadPars				= plAll;
+	m_eLoadPars				= lpAll;
 	m_bParCheck				= false;
 	m_bParRepair			= false;
 	m_szPostProcess			= NULL;
@@ -223,6 +224,7 @@ Options::Options(int argc, char* argv[])
 	m_iNzbDirFileAge		= 0;
 	m_bParCleanupQueue		= false;
 	m_iDiskSpace			= 0;
+	m_ePostLogKind			= plNone;
 
 	char szFilename[MAX_PATH + 1];
 #ifdef WIN32
@@ -422,6 +424,7 @@ void Options::InitDefault()
 	SetOption(OPTION_NZBDIRFILEAGE, "60");
 	SetOption(OPTION_PARCLEANUPQUEUE, "no");
 	SetOption(OPTION_DISKSPACE, "0");
+	SetOption(OPTION_POSTLOGKIND, "none");
 }
 
 void Options::InitOptFile()
@@ -571,7 +574,7 @@ void Options::InitOptions()
 	m_eOutputMode = (EOutputMode)ParseOptionValue(OPTION_OUTPUTMODE, OutputModeCount, OutputModeNames, OutputModeValues);
 
 	const char* LoadParsNames[] = { "none", "one", "all", "1", "0" };
-	const int LoadParsValues[] = { plNone, plOne, plAll, plOne, plNone };
+	const int LoadParsValues[] = { lpNone, lpOne, lpAll, lpOne, lpNone };
 	const int LoadParsCount = 4;
 	m_eLoadPars = (ELoadPars)ParseOptionValue(OPTION_LOADPARS, LoadParsCount, LoadParsNames, LoadParsValues);
 
@@ -583,6 +586,11 @@ void Options::InitOptions()
 	m_eErrorTarget = (EMessageTarget)ParseOptionValue(OPTION_ERRORTARGET, TargetCount, TargetNames, TargetValues);
 	m_eDebugTarget = (EMessageTarget)ParseOptionValue(OPTION_DEBUGTARGET, TargetCount, TargetNames, TargetValues);
 	m_eDetailTarget = (EMessageTarget)ParseOptionValue(OPTION_DETAILTARGET, TargetCount, TargetNames, TargetValues);
+
+	const char* PostLogKindNames[] = { "none", "detail", "info", "warning", "error", "debug" };
+	const int PostLogKindValues[] = { plNone, plDetail, plInfo, plWarning, plError, plDebug };
+	const int PostLogKindCount = 6;
+	m_ePostLogKind = (EPostLogKind)ParseOptionValue(OPTION_POSTLOGKIND, PostLogKindCount, PostLogKindNames, PostLogKindValues);
 }
 
 int Options::ParseOptionValue(const char * OptName, int argc, const char * argn[], const int argv[])
