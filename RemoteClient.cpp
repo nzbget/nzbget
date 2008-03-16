@@ -131,7 +131,7 @@ void RemoteClient::InitMessageBase(SNZBRequestBase* pMessageBase, int iRequest, 
 
 bool RemoteClient::ReceiveBoolResponse()
 {
-	printf("request sent\n");
+	printf("Request sent\n");
 
 	// all bool-responses have the same format of structure, we use SNZBDownloadResponse here
 	SNZBDownloadResponse BoolResponse;
@@ -142,7 +142,14 @@ bool RemoteClient::ReceiveBoolResponse()
 		(int)ntohl(BoolResponse.m_MessageBase.m_iSignature) != (int)NZBMESSAGE_SIGNATURE ||
 		ntohl(BoolResponse.m_MessageBase.m_iStructSize) != sizeof(BoolResponse))
 	{
-		printf("invaid response received: either not nzbget-server or wrong server version\n");
+		if (iResponseLen < 0)
+		{
+			printf("No response received (timeout)\n");
+		}
+		else
+		{
+			printf("Invalid response received: either not nzbget-server or wrong server version\n");
+		}
 		return false;
 	}
 
@@ -151,7 +158,14 @@ bool RemoteClient::ReceiveBoolResponse()
 	iResponseLen = m_pConnection->Recv(buf, iTextLen);
 	if (iResponseLen != iTextLen)
 	{
-		printf("invaid response received: either not nzbget-server or wrong server version\n");
+		if (iResponseLen < 0)
+		{
+			printf("No response received (timeout)\n");
+		}
+		else
+		{
+			printf("Invalid response received: either not nzbget-server or wrong server version\n");
+		}
 		return false;
 	}
 
@@ -222,6 +236,8 @@ bool RemoteClient::RequestServerList()
 		return false;
 	}
 
+	printf("Request sent\n");
+
 	// Now listen for the returned list
 	SNZBListResponse ListResponse;
 	int iResponseLen = m_pConnection->Recv((char*) &ListResponse, sizeof(ListResponse));
@@ -229,7 +245,14 @@ bool RemoteClient::RequestServerList()
 		(int)ntohl(ListResponse.m_MessageBase.m_iSignature) != (int)NZBMESSAGE_SIGNATURE ||
 		ntohl(ListResponse.m_MessageBase.m_iStructSize) != sizeof(ListResponse))
 	{
-		printf("invaid response received: either not nzbget-server or wrong server version\n");
+		if (iResponseLen < 0)
+		{
+			printf("No response received (timeout)\n");
+		}
+		else
+		{
+			printf("Invalid response received: either not nzbget-server or wrong server version\n");
+		}
 		return false;
 	}
 
@@ -368,6 +391,8 @@ bool RemoteClient::RequestServerLog(int iLines)
 		return false;
 	}
 
+	printf("Request sent\n");
+
 	// Now listen for the returned log
 	SNZBLogResponse LogResponse;
 	int iResponseLen = m_pConnection->Recv((char*) &LogResponse, sizeof(LogResponse));
@@ -375,7 +400,14 @@ bool RemoteClient::RequestServerLog(int iLines)
 		(int)ntohl(LogResponse.m_MessageBase.m_iSignature) != (int)NZBMESSAGE_SIGNATURE ||
 		ntohl(LogResponse.m_MessageBase.m_iStructSize) != sizeof(LogResponse))
 	{
-		printf("invaid response received: either not nzbget-server or wrong server version\n");
+		if (iResponseLen < 0)
+		{
+			printf("No response received (timeout)\n");
+		}
+		else
+		{
+			printf("Invalid response received: either not nzbget-server or wrong server version\n");
+		}
 		return false;
 	}
 
@@ -598,6 +630,8 @@ bool RemoteClient::RequestPostQueue()
 		perror("m_pConnection->Send");
 		return false;
 	}
+
+	printf("Request sent\n");
 
 	// Now listen for the returned list
 	SNZBPostQueueResponse PostQueueResponse;
