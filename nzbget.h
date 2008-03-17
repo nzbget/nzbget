@@ -43,7 +43,6 @@
 
 #pragma warning(disable:4800) // 'type' : forcing value to bool 'true' or 'false' (performance warning)
 #pragma warning(disable:4267) // 'var' : conversion from 'size_t' to 'type', possible loss of data
-#pragma warning(disable:4244) // 'argument' : conversion from 'type1' to 'type2', possible loss of data
 
 #define	__S_ISTYPE(mode, mask)	(((mode) & _S_IFMT) == (mask))
 #define	S_ISDIR(mode)	 __S_ISTYPE((mode), _S_IFDIR)

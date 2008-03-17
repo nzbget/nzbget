@@ -79,9 +79,9 @@ void ColoredFrontend::PrintStatus()
 	if (fCurrentDownloadSpeed > 0.0 && !m_bPause)
 	{
 		long long remain_sec = m_lRemainingSize / ((long long)(fCurrentDownloadSpeed * 1024));
-		int h = remain_sec / 3600;
-		int m = (remain_sec % 3600) / 60;
-		int s = remain_sec % 60;
+		int h = (int)(remain_sec / 3600);
+		int m = (int)((remain_sec % 3600) / 60);
+		int s = (int)(remain_sec % 60);
 		sprintf(timeString, " (~ %.2d:%.2d:%.2d)", h, m, s);
 	}
 

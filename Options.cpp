@@ -1112,7 +1112,7 @@ bool Options::SetOptionString(const char * option)
 	{
 		char optname[1001];
 		char optvalue[1001];
-		int maxlen = eq - option < 1000 ? eq - option : 1000;
+		int maxlen = (int)(eq - option < 1000 ? eq - option : 1000);
 		strncpy(optname, option, maxlen);
 		optname[maxlen] = '\0';
 		strncpy(optvalue, eq + 1, 1000);
@@ -1209,7 +1209,7 @@ void Options::ParseFileIDList(int argc, char* argv[], int optind)
 			if (p)
 			{
 				char buf[101];
-				int maxlen = p - optarg < 100 ? p - optarg : 100;
+				int maxlen = (int)(p - optarg < 100 ? p - optarg : 100);
 				strncpy(buf, optarg, maxlen);
 				buf[maxlen] = '\0';
 				iEditQueueIDFrom = atoi(buf);

@@ -253,7 +253,7 @@ void SetDownloadRateBinCommand::Execute()
 		return;
 	}
 
-	g_pOptions->SetDownloadRate(ntohl(SetDownloadRequest.m_iDownloadRate) / 1024.0);
+	g_pOptions->SetDownloadRate(ntohl(SetDownloadRequest.m_iDownloadRate) / 1024.0f);
 	SendBoolResponse(true, "Rate-Command completed successfully");
 }
 
@@ -520,7 +520,7 @@ void LogBinCommand::Execute()
 		SNZBLogResponseEntry* pLogAnswer = (SNZBLogResponseEntry*) bufptr;
 		pLogAnswer->m_iID = htonl(pMessage->GetID());
 		pLogAnswer->m_iKind = htonl(pMessage->GetKind());
-		pLogAnswer->m_tTime = htonl(pMessage->GetTime());
+		pLogAnswer->m_tTime = htonl((int)pMessage->GetTime());
 		pLogAnswer->m_iTextLen = htonl(strlen(pMessage->GetText()) + 1);
 		bufptr += sizeof(SNZBLogResponseEntry);
 		strcpy(bufptr, pMessage->GetText());
@@ -667,8 +667,8 @@ void PostQueueBinCommand::Execute()
 		pPostQueueAnswer->m_iStage			= htonl(pPostInfo->GetStage());
 		pPostQueueAnswer->m_iStageProgress	= htonl(pPostInfo->GetStageProgress());
 		pPostQueueAnswer->m_iFileProgress	= htonl(pPostInfo->GetFileProgress());
-		pPostQueueAnswer->m_iTotalTimeSec	= htonl(pPostInfo->GetStartTime() ? tCurTime - pPostInfo->GetStartTime() : 0);
-		pPostQueueAnswer->m_iStageTimeSec	= htonl(pPostInfo->GetStageTime() ? tCurTime - pPostInfo->GetStageTime() : 0);
+		pPostQueueAnswer->m_iTotalTimeSec	= htonl((int)(pPostInfo->GetStartTime() ? tCurTime - pPostInfo->GetStartTime() : 0));
+		pPostQueueAnswer->m_iStageTimeSec	= htonl((int)(pPostInfo->GetStageTime() ? tCurTime - pPostInfo->GetStageTime() : 0));
 		pPostQueueAnswer->m_iNZBFilenameLen		= htonl(strlen(pPostInfo->GetNZBFilename()) + 1);
 		pPostQueueAnswer->m_iParFilename		= htonl(strlen(pPostInfo->GetParFilename()) + 1);
 		pPostQueueAnswer->m_iInfoNameLen		= htonl(strlen(pPostInfo->GetInfoName()) + 1);

@@ -394,7 +394,7 @@ float Util::Int64ToFloat(long long Int64)
 {
 	unsigned long Hi = (unsigned long)(Int64 >> 32);
 	unsigned long Lo = (unsigned long)Int64;
-	return ((unsigned long)(1 << 30)) * 4.0 * Hi + Lo;
+	return ((unsigned long)(1 << 30)) * 4.0f * Hi + Lo;
 }
 
 float Util::EqualTime(_timeval* t1, _timeval* t2)
@@ -418,7 +418,7 @@ bool Util::EmptyTime(_timeval* t)
 float Util::DiffTime(_timeval* t1, _timeval* t2)
 {
 #ifdef WIN32
-	return ((t1->time - t2->time) + (t1->millitm - t2->millitm) / 1000.0);
+	return ((t1->time - t2->time) + (t1->millitm - t2->millitm) / 1000.0f);
 #else
 	return (float)((t1->tv_sec - t2->tv_sec) + (t1->tv_usec - t2->tv_usec) / 1000000.0);
 #endif
@@ -687,7 +687,7 @@ const char* Util::XmlFindTag(const char* szXml, const char* szTag, int* pValueLe
 	if (!pend) return NULL;
 
 	int iTagLen = strlen(szOpenTag);
-	*pValueLength = pend - pstart - iTagLen;
+	*pValueLength = (int)(pend - pstart - iTagLen);
 
 	return pstart + iTagLen;
 }
@@ -985,7 +985,7 @@ const char* Util::JsonNextValue(const char* szJsonText, int* pValueLength)
 		ch = *++pend;
 	}
 
-	*pValueLength = pend - pstart;
+	*pValueLength = (int)(pend - pstart);
 	return pstart;
 }
 

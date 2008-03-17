@@ -324,7 +324,7 @@ float QueueCoordinator::CalcCurrentDownloadSpeed()
 		iTotal += m_iSpeedBytes[i];
 	}
 
-	float fSpeed = iTotal / 1024.0 / SPEEDMETER_SECONDS;
+	float fSpeed = iTotal / 1024.0f / SPEEDMETER_SECONDS;
 
 	return fSpeed;
 }
@@ -340,7 +340,7 @@ float QueueCoordinator::CalcCurrentDownloadSpeed()
  */
 void QueueCoordinator::AddSpeedReading(int iBytes)
 {
-	int iIndex = time(NULL);
+	int iIndex = (int)time(NULL);
 
 	if (iIndex - m_iSpeedBytesIndex > SPEEDMETER_SECONDS)
 	{
@@ -771,7 +771,7 @@ void QueueCoordinator::CalcStat(int* iUpTimeSec, int* iDnTimeSec, long long* iAl
 	m_mutexStat.Lock();
 	if (m_tStartServer > 0)
 	{
-		*iUpTimeSec = time(NULL) - m_tStartServer;
+		*iUpTimeSec = (int)(time(NULL) - m_tStartServer);
 	}
 	else
 	{
@@ -780,11 +780,11 @@ void QueueCoordinator::CalcStat(int* iUpTimeSec, int* iDnTimeSec, long long* iAl
 	*bStandBy = m_bStandBy;
 	if (m_bStandBy)
 	{
-		*iDnTimeSec = m_tPausedFrom - m_tStartDownload;
+		*iDnTimeSec = (int)(m_tPausedFrom - m_tStartDownload);
 	}
 	else
 	{
-		*iDnTimeSec = time(NULL) - m_tStartDownload;
+		*iDnTimeSec = (int)(time(NULL) - m_tStartDownload);
 	}
 	*iAllBytes = m_iAllBytes;
 	m_mutexStat.Unlock();
