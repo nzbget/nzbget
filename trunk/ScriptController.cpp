@@ -41,6 +41,7 @@
 #include <sys/stat.h>
 #include <errno.h>
 #include <fcntl.h>
+#include <stdio.h>
 
 #include "nzbget.h"
 #include "ScriptController.h"
@@ -99,17 +100,35 @@ void ScriptController::Run()
 	snprintf(szHasFailedParJobs, 10, "%i", (int)m_bHasFailedParJobs);
 	szHasFailedParJobs[10-1] = '\0';
 
+	int pipein;
+
 #ifdef WIN32
 	char szCmdLine[2048];
 	snprintf(szCmdLine, 2048, "%s \"%s\" \"%s\" \"%s\" %s %s %s", m_szScript, m_pPostInfo->GetDestDir(), 
 		m_pPostInfo->GetNZBFilename(), m_pPostInfo->GetParFilename(), szParStatus, szCollectionCompleted, szHasFailedParJobs);
 	szCmdLine[2048-1] = '\0';
 	
+	//Create pipes to write and read data
+	HANDLE hReadPipe, hWritePipe;
+	SECURITY_ATTRIBUTES SecurityAttributes;
+	memset(&SecurityAttributes, 0, sizeof(SecurityAttributes));
+	SecurityAttributes.nLength = sizeof(SecurityAttributes);
+	SecurityAttributes.bInheritHandle = TRUE;
+
+	CreatePipe(&hReadPipe, &hWritePipe, &SecurityAttributes, 0);
+
 	STARTUPINFO StartupInfo;
 	memset(&StartupInfo, 0, sizeof(StartupInfo));
-	PROCESS_INFORMATION ProcessInfo;
+	StartupInfo.cb = sizeof(StartupInfo);
+	StartupInfo.dwFlags = STARTF_USESTDHANDLES;
+	StartupInfo.hStdInput = 0;
+	StartupInfo.hStdOutput = hWritePipe;
+	StartupInfo.hStdError = hWritePipe;
 
-	BOOL bOK = CreateProcess(NULL, szCmdLine, NULL, NULL, FALSE, CREATE_NEW_CONSOLE, NULL, m_pPostInfo->GetDestDir(), &StartupInfo, &ProcessInfo);
+	PROCESS_INFORMATION ProcessInfo;
+	memset(&ProcessInfo, 0, sizeof(ProcessInfo));
+
+	BOOL bOK = CreateProcess(NULL, szCmdLine, NULL, NULL, TRUE, NORMAL_PRIORITY_CLASS | CREATE_NO_WINDOW, NULL, m_pPostInfo->GetDestDir(), &StartupInfo, &ProcessInfo);
 	if (!bOK)
 	{
 		char szErrMsg[255];
@@ -122,9 +141,13 @@ void ScriptController::Run()
 		return;
 	}
 	
-	m_pPostInfo->SetStageProgress(50);
-	WaitForSingleObject(ProcessInfo.hProcess, INFINITE);
+	/* close unused "write" end */
+	CloseHandle(hWritePipe);
+
+	pipein = _open_osfhandle((intptr_t)hReadPipe, _O_RDONLY);
+
 #else
+
 	char szDestDir[1024];
 	strncpy(szDestDir, m_pPostInfo->GetDestDir(), 1024);
 	szDestDir[1024-1] = '\0';
@@ -138,8 +161,7 @@ void ScriptController::Run()
 	szParFilename[1024-1] = '\0';
 
 	int p[2];
-	FILE *readpipe;
-	int pipein, pipeout;
+	int pipeout;
 
 	/* create the pipe */
 	if (pipe(p) != 0)
@@ -189,19 +211,20 @@ void ScriptController::Run()
 
 	// continue the first instance
 
-	m_pPostInfo->SetStageProgress(50);
-
 	/* close unused "write" end */
 	close(pipeout);
+#endif
+
+	m_pPostInfo->SetStageProgress(50);
 
 	/* open the read end */
-	readpipe = fdopen(pipein, "r");
+	FILE* readpipe = fdopen(pipein, "r");
 	char* buf = (char*)malloc(10240);
-	
+
 	debug("Entering pipe-loop");
 	while (!feof(readpipe))
 	{
-		if (fgets(buf, 10240, readpipe) > 0)
+		if (fgets(buf, 10240, readpipe))
 		{
 			AddMessage(buf);
 		}
@@ -211,6 +234,9 @@ void ScriptController::Run()
 	free(buf);
 	fclose(readpipe);
 
+#ifdef WIN32
+	WaitForSingleObject(ProcessInfo.hProcess, INFINITE);
+#else
 	waitpid(pid, NULL, 0);
 #endif
 
@@ -221,10 +247,12 @@ void ScriptController::Run()
 
 void ScriptController::AddMessage(char* szText)
 {
-	int iLen = strlen(szText);
-	if (iLen > 0 && (szText[iLen - 1] == '\n' || szText[iLen - 1] == '\r'))
+	for (char* pend = szText + strlen(szText) - 1; pend >= szText && (*pend == '\n' || *pend == '\r' || *pend == ' '); pend--) *pend = '\0';
+
+	if (strlen(szText) == 0)
 	{
-		szText[iLen - 1] = '\0';
+		// skip empty lines
+		return;
 	}
 
 	if (!strncmp(szText, "[INFO] ", 7))
