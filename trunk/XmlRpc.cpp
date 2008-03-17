@@ -205,12 +205,12 @@ void XmlRpcProcessor::Dispatch()
 	{
 		szRequest = m_szUrl + 1;
 		char* pstart = strchr(szRequest, '/');
-		if (pstart) 
+		if (pstart)
 		{
 			char* pend = strchr(pstart + 1, '?');
 			if (pend) 
 			{
-				int iLen = pend - pstart - 1 < (int)sizeof(szMethodName) - 1 ? pend - pstart - 1 : (int)sizeof(szMethodName) - 1;
+				int iLen = (int)(pend - pstart - 1 < (int)sizeof(szMethodName) - 1 ? pend - pstart - 1 : (int)sizeof(szMethodName) - 1);
 				strncpy(szMethodName, pstart + 1, iLen);
 				szMethodName[iLen] = '\0';
 				szRequest = pend + 1;
@@ -746,7 +746,7 @@ void SetDownloadRateXmlCommand::Execute()
 		return;
 	}
 
-	g_pOptions->SetDownloadRate(iRate);
+	g_pOptions->SetDownloadRate((float)iRate);
 	BuildBoolResponse(true);
 }
 
@@ -794,7 +794,7 @@ void StatusXmlCommand::Execute()
 	int iDownloadRate = (int)(g_pQueueCoordinator->CalcCurrentDownloadSpeed() * 1024);
 	long long iRemainingSize = g_pQueueCoordinator->CalcRemainingSize();
 	Util::SplitInt64(iRemainingSize, &iRemainingSizeHi, &iRemainingSizeLo);
-	int iRemainingMBytes = iRemainingSize / 1024 / 1024;
+	int iRemainingMBytes = (int)(iRemainingSize / 1024 / 1024);
 	int iDownloadLimit = (int)(g_pOptions->GetDownloadRate() * 1024);
 	bool bServerPaused = g_pOptions->GetPause();
 	int iThreadCount = Thread::GetThreadCount() - 1; // not counting itself
@@ -806,9 +806,9 @@ void StatusXmlCommand::Execute()
 	long long iAllBytes;
 	bool bServerStandBy;
 	g_pQueueCoordinator->CalcStat(&iUpTimeSec, &iDownloadTimeSec, &iAllBytes, &bServerStandBy);
-	int iDownloadedMBytes = iAllBytes / 1024 / 1024;
+	int iDownloadedMBytes = (int)(iAllBytes / 1024 / 1024);
 	Util::SplitInt64(iAllBytes, &iDownloadedSizeHi, &iDownloadedSizeLo);
-	int iAverageDownloadRate = iDownloadTimeSec > 0 ? iAllBytes / iDownloadTimeSec : 0;
+	int iAverageDownloadRate = (int)(iDownloadTimeSec > 0 ? iAllBytes / iDownloadTimeSec : 0);
 
 	char szContent[2048];
 	snprintf(szContent, 2048, IsJson() ? JSON_RESPONSE_STATUS_BODY : XML_RESPONSE_STATUS_BODY, 
@@ -1060,11 +1060,11 @@ void ListGroupsXmlCommand::Execute()
 		unsigned long iPausedSizeLo, iPausedSizeHi, iPausedSizeMB;
 		char szNZBNicename[1024];
 		Util::SplitInt64(pGroupInfo->GetNZBInfo()->GetSize(), &iFileSizeHi, &iFileSizeLo);
-		iFileSizeMB = pGroupInfo->GetNZBInfo()->GetSize() / 1024 / 1024;
+		iFileSizeMB = (int)(pGroupInfo->GetNZBInfo()->GetSize() / 1024 / 1024);
 		Util::SplitInt64(pGroupInfo->GetRemainingSize(), &iRemainingSizeHi, &iRemainingSizeLo);
-		iRemainingSizeMB = pGroupInfo->GetRemainingSize() / 1024 / 1024;
+		iRemainingSizeMB = (int)(pGroupInfo->GetRemainingSize() / 1024 / 1024);
 		Util::SplitInt64(pGroupInfo->GetPausedSize(), &iPausedSizeHi, &iPausedSizeLo);
-		iPausedSizeMB = pGroupInfo->GetPausedSize() / 1024 / 1024;
+		iPausedSizeMB = (int)(pGroupInfo->GetPausedSize() / 1024 / 1024);
 		pGroupInfo->GetNZBInfo()->GetNiceNZBName(szNZBNicename, sizeof(szNZBNicename));
 
 		char* xmlNZBNicename = EncodeStr(szNZBNicename);

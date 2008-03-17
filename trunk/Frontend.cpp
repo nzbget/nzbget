@@ -352,8 +352,8 @@ bool Frontend::RequestFileList()
 	{
 		m_bPause = ntohl(ListResponse.m_bServerPaused);
 		m_lRemainingSize = Util::JoinInt64(ntohl(ListResponse.m_iRemainingSizeHi), ntohl(ListResponse.m_iRemainingSizeLo));
-		m_fCurrentDownloadSpeed = ntohl(ListResponse.m_iDownloadRate) / 1024.0;
-		m_fDownloadLimit = ntohl(ListResponse.m_iDownloadLimit) / 1024.0;
+		m_fCurrentDownloadSpeed = ntohl(ListResponse.m_iDownloadRate) / 1024.0f;
+		m_fDownloadLimit = ntohl(ListResponse.m_iDownloadLimit) / 1024.0f;
 		m_iThreadCount = ntohl(ListResponse.m_iThreadCount);
 		m_iPostJobCount = ntohl(ListResponse.m_iPostJobCount);
 		m_iUpTimeSec = ntohl(ListResponse.m_iUpTimeSec);

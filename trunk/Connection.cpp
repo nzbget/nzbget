@@ -414,7 +414,7 @@ char* Connection::DoReadLine(char* pBuffer, int iSize, int* pBytesRead)
 		char* p = (char*)memchr(szBufPtr, '\n', iBufAvail);
 		if (p)
 		{
-			len = p - szBufPtr + 1;
+			len = (int)(p - szBufPtr + 1);
 		}
 		else
 		{

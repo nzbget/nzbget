@@ -253,9 +253,9 @@ BreakLoop:
 
 		if (m_bCrcCheck)
 		{
-			m_lCalculatedCRC = crc32m(m_lCalculatedCRC, (unsigned char *)buffer, optr - buffer);
+			m_lCalculatedCRC = crc32m(m_lCalculatedCRC, (unsigned char *)buffer, (unsigned int)(optr - buffer));
 		}
-		return optr - buffer;
+		return (unsigned int)(optr - buffer);
 	}
 	else 
 	{
@@ -458,7 +458,7 @@ unsigned int UDecoder::DecodeBuffer(char* buffer, int len)
 			}
 		}
 
-		return optr - buffer;
+		return (unsigned int)(optr - buffer);
 	}
 
 	return 0;

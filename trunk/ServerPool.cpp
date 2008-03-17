@@ -211,7 +211,7 @@ void ServerPool::CloseUnusedConnections()
 		PooledConnection* pConnection = *it;
 		if (!pConnection->GetInUse() && pConnection->GetStatus() == Connection::csConnected)
 		{
-			int tdiff = curtime - pConnection->GetFreeTime();
+			int tdiff = (int)(curtime - pConnection->GetFreeTime());
 			if (tdiff > CONNECTION_HOLD_SECODNS)
 			{
 				debug("Closing unused connection to %s", pConnection->GetNewsServer()->GetHost());

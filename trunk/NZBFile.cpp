@@ -178,7 +178,7 @@ void NZBFile::ParseSubject(FileInfo* pFileInfo)
 		if (sep)
 		{
 			// end of token
-			int len = p - start;
+			int len = (int)(p - start);
 			if (len > 0)
 			{
 				char* token = (char*)malloc(len + 1);
