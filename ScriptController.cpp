@@ -258,25 +258,52 @@ void ScriptController::AddMessage(char* szText)
 	if (!strncmp(szText, "[INFO] ", 7))
 	{
 		info(szText + 7);
+		Options::EMessageTarget eMessageTarget = g_pOptions->GetInfoTarget();
+		if (eMessageTarget == Options::mtScreen || eMessageTarget == Options::mtBoth)
+		{
+			m_pPostInfo->AppendMessage(Message::mkInfo, szText + 7);
+		}
 	}
 	else if (!strncmp(szText, "[WARNING] ", 10))
 	{
 		warn(szText + 10);
+		Options::EMessageTarget eMessageTarget = g_pOptions->GetWarningTarget();
+		if (eMessageTarget == Options::mtScreen || eMessageTarget == Options::mtBoth)
+		{
+			m_pPostInfo->AppendMessage(Message::mkWarning, szText + 10);
+		}
 	}
 	else if (!strncmp(szText, "[ERROR] ", 8))
 	{
 		error(szText + 8);
+		Options::EMessageTarget eMessageTarget = g_pOptions->GetErrorTarget();
+		if (eMessageTarget == Options::mtScreen || eMessageTarget == Options::mtBoth)
+		{
+			m_pPostInfo->AppendMessage(Message::mkError, szText + 8);
+		}
 	}
 	else if (!strncmp(szText, "[DETAIL] ", 9))
 	{
 		detail(szText + 9);
+		Options::EMessageTarget eMessageTarget = g_pOptions->GetDetailTarget();
+		if (eMessageTarget == Options::mtScreen || eMessageTarget == Options::mtBoth)
+		{
+			m_pPostInfo->AppendMessage(Message::mkDetail, szText + 9);
+		}
 	}
 	else if (!strncmp(szText, "[DEBUG] ", 8))
 	{
 		debug(szText + 8);
+		Options::EMessageTarget eMessageTarget = g_pOptions->GetDebugTarget();
+		if (eMessageTarget == Options::mtScreen || eMessageTarget == Options::mtBoth)
+		{
+			m_pPostInfo->AppendMessage(Message::mkDebug, szText + 8);
+		}
 	}
 	else 
 	{
+		Options::EMessageTarget eMessageTarget = Options::mtNone;
+		Message::EKind eKind = Message::mkDebug;
 		switch (g_pOptions->GetPostLogKind())
 		{
 			case Options::plNone:
@@ -284,23 +311,37 @@ void ScriptController::AddMessage(char* szText)
 
 			case Options::plDetail:
 				detail("Post-Process: %s", szText);
+				eMessageTarget = g_pOptions->GetDetailTarget();
+				eKind = Message::mkDetail;
 				break;
 
 			case Options::plInfo:
 				info("Post-Process: %s", szText);
+				eMessageTarget = g_pOptions->GetInfoTarget();
+				eKind = Message::mkInfo;
 				break;
 
 			case Options::plWarning:
 				warn("Post-Process: %s", szText);
+				eMessageTarget = g_pOptions->GetWarningTarget();
+				eKind = Message::mkWarning;
 				break;
 
 			case Options::plError:
 				error("Post-Process: %s", szText);
+				eMessageTarget = g_pOptions->GetErrorTarget();
+				eKind = Message::mkError;
 				break;
 
 			case Options::plDebug:
 				debug("Post-Process: %s", szText);
+				eMessageTarget = g_pOptions->GetDebugTarget();
+				eKind = Message::mkDebug;
 				break;
+		}
+		if (eMessageTarget == Options::mtScreen || eMessageTarget == Options::mtBoth)
+		{
+			m_pPostInfo->AppendMessage(eKind, szText);
 		}
 	}
 }

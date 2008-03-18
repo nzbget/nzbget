@@ -36,6 +36,9 @@
 
 #include "nzbget.h"
 #include "PostInfo.h"
+#include "Options.h"
+
+extern Options* g_pOptions;
 
 PostInfo::PostInfo()
 {
@@ -53,6 +56,8 @@ PostInfo::PostInfo()
 	m_tStartTime = 0;
 	m_tStageTime = 0;
 	m_eStage = ptQueued;
+	m_Messages.clear();
+	m_iIDGen = 0;
 }
 
 PostInfo::~ PostInfo()
@@ -77,6 +82,11 @@ PostInfo::~ PostInfo()
 	{
 		free(m_szProgressLabel);
 	}
+	for (Messages::iterator it = m_Messages.begin(); it != m_Messages.end(); it++)
+	{
+		delete *it;
+	}
+	m_Messages.clear();
 }
 
 void PostInfo::SetNZBFilename(const char* szNZBFilename)
@@ -108,3 +118,29 @@ void PostInfo::SetProgressLabel(const char* szProgressLabel)
 	m_szProgressLabel = strdup(szProgressLabel);
 }
 
+PostInfo::Messages* PostInfo::LockMessages()
+{
+	m_mutexLog.Lock();
+	return &m_Messages;
+}
+
+void PostInfo::UnlockMessages()
+{
+	m_mutexLog.Unlock();
+}
+
+void PostInfo::AppendMessage(Message::EKind eKind, const char * szText)
+{
+	Message* pMessage = new Message(++m_iIDGen, eKind, time(NULL), szText);
+
+	m_mutexLog.Lock();
+	m_Messages.push_back(pMessage);
+
+	while (m_Messages.size() > (unsigned int)g_pOptions->GetLogBufferSize())
+	{
+		Message* pMessage = m_Messages.front();
+		delete pMessage;
+		m_Messages.pop_front();
+	}
+	m_mutexLog.Unlock();
+}

@@ -28,6 +28,8 @@
 
 #include <deque>
 
+#include "Log.h"
+
 class PostInfo
 {
 public:
@@ -41,6 +43,8 @@ public:
 		ptExecutingScript,
 		ptFinished
 	};
+
+	typedef std::deque<Message*>	Messages;
 
 private:
 	char*			m_szNZBFilename;
@@ -58,6 +62,10 @@ private:
 	time_t			m_tStartTime;
 	time_t			m_tStageTime;
 	
+	Mutex			m_mutexLog;
+	Messages		m_Messages;
+	unsigned int	m_iIDGen;
+
 public:
 					PostInfo();
 					~PostInfo();
@@ -89,6 +97,9 @@ public:
 	void			SetParStatus(int iParStatus) { m_iParStatus = iParStatus; }
 	bool			GetParFailed() { return m_bParFailed; }
 	void			SetParFailed(bool bParFailed) { m_bParFailed = bParFailed; }
+	void			AppendMessage(Message::EKind eKind, const char* szText);
+	Messages*		LockMessages();
+	void			UnlockMessages();
 };
 
 typedef std::deque<PostInfo*> PostQueue;
