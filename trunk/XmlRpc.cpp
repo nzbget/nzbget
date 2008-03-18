@@ -1243,9 +1243,12 @@ void DownloadXmlCommand::Execute()
 
 void PostQueueXmlCommand::Execute()
 {
+	int iNrEntries = 0;
+	NextParamAsInt(&iNrEntries);
+
 	AppendResponse(IsJson() ? "[\n" : "<array><data>\n");
 
-	const char* XML_POSTQUEUE_ITEM = 
+	const char* XML_POSTQUEUE_ITEM_START = 
 		"<value><struct>\n"
 		"<member><name>NZBNicename</name><value><string>%s</string></value></member>\n"
 		"<member><name>NZBFilename</name><value><string>%s</string></value></member>\n"
@@ -1258,9 +1261,13 @@ void PostQueueXmlCommand::Execute()
 		"<member><name>StageProgress</name><value><i4>%i</i4></value></member>\n"
 		"<member><name>TotalTimeSec</name><value><i4>%i</i4></value></member>\n"
 		"<member><name>StageTimeSec</name><value><i4>%i</i4></value></member>\n"
+		"<member><name>Log</name><value><array><data>\n";
+
+	const char* XML_POSTQUEUE_ITEM_END = 
+		"</data></array></value></member>\n"
 		"</struct></value>\n";
 
-	const char* JSON_POSTQUEUE_ITEM = 
+	const char* JSON_POSTQUEUE_ITEM_START = 
 		"{\n"
 		"\"NZBNicename\" : \"%s\",\n"
 		"\"NZBFilename\" : \"%s\",\n"
@@ -1272,7 +1279,27 @@ void PostQueueXmlCommand::Execute()
 		"\"FileProgress\" : %i,\n"
 		"\"StageProgress\" : %i,\n"
 		"\"TotalTimeSec\" : %i,\n"
-		"\"StageTimeSec\" : %i\n"
+		"\"StageTimeSec\" : %i,\n"
+		"\"Log\" : [\n";
+
+	const char* JSON_POSTQUEUE_ITEM_END = 
+		"]\n"
+		"}";
+
+	const char* XML_LOG_ITEM = 
+		"<value><struct>\n"
+		"<member><name>ID</name><value><i4>%i</i4></value></member>\n"
+		"<member><name>Kind</name><value><string>%s</string></value></member>\n"
+		"<member><name>Time</name><value><i4>%i</i4></value></member>\n"
+		"<member><name>Text</name><value><string>%s</string></value></member>\n"
+		"</struct></value>\n";
+
+	const char* JSON_LOG_ITEM = 
+		"{\n"
+		"\"ID\" : %i,\n"
+		"\"Kind\" : \"%s\",\n"
+		"\"Time\" : %i,\n"
+		"\"Text\" : \"%s\"\n"
 		"}";
 
 	PostQueue* pPostQueue = g_pPrePostProcessor->LockPostQueue();
@@ -1297,7 +1324,7 @@ void PostQueueXmlCommand::Execute()
 		char* xmlInfoName = EncodeStr(pPostInfo->GetInfoName());
 		char* xmlProgressLabel = EncodeStr(pPostInfo->GetProgressLabel());
 
-		snprintf(szItemBuf, szItemBufSize, IsJson() ? JSON_POSTQUEUE_ITEM : XML_POSTQUEUE_ITEM,
+		snprintf(szItemBuf, szItemBufSize, IsJson() ? JSON_POSTQUEUE_ITEM_START : XML_POSTQUEUE_ITEM_START,
 			xmlNZBNicename, xmlNZBFilename, xmlDestDir, xmlParFilename,
 			xmlInfoName, szPostStageName[pPostInfo->GetStage()], xmlProgressLabel,
 			pPostInfo->GetFileProgress(), pPostInfo->GetStageProgress(),
@@ -1317,6 +1344,42 @@ void PostQueueXmlCommand::Execute()
 			AppendResponse(",\n");
 		}
 		AppendResponse(szItemBuf);
+
+		if (iNrEntries > 0)
+		{
+			PostInfo::Messages* pMessages = pPostInfo->LockMessages();
+			if (!pMessages->empty())
+			{
+				int iStart = pMessages->size();
+				if (iNrEntries > (int)pMessages->size())
+				{
+					iNrEntries = pMessages->size();
+				}
+				iStart = pMessages->size() - iNrEntries;
+
+				char* szMessageType[] = { "INFO", "WARNING", "ERROR", "DEBUG", "DETAIL"};
+				int index = 0;
+
+				for (unsigned int i = (unsigned int)iStart; i < pMessages->size(); i++)
+				{
+					Message* pMessage = (*pMessages)[i];
+					char* xmltext = EncodeStr(pMessage->GetText());
+					snprintf(szItemBuf, szItemBufSize, IsJson() ? JSON_LOG_ITEM : XML_LOG_ITEM,
+						pMessage->GetID(), szMessageType[pMessage->GetKind()], pMessage->GetTime(), xmltext);
+					szItemBuf[szItemBufSize-1] = '\0';
+					free(xmltext);
+
+					if (IsJson() && index++ > 0)
+					{
+						AppendResponse(",\n");
+					}
+					AppendResponse(szItemBuf);
+				}
+			}
+			pPostInfo->UnlockMessages();
+		}
+
+		AppendResponse(IsJson() ? JSON_POSTQUEUE_ITEM_END : XML_POSTQUEUE_ITEM_END);
 	}
 	free(szItemBuf);
 
