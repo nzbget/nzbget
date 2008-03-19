@@ -1,6 +1,63 @@
 nzbget-0.4.0-testing:
-  - see subversion-log on sourceforge.net:
-    http://nzbget.svn.sourceforge.net/viewvc/nzbget/trunk/?view=log
+  - added the support for XML-RPC and JSON-RPC to easier control the server 
+    from other applications; 
+  - added web-interface - it is available for download from NZBGet-project's 
+    home page as a separate package "web-interface";
+  - added the automatic cleaning up of the download queue (deletion of unneeded 
+    paused par-files) after successful par-check/repair - new 
+    option <ParCleanupQueue>;
+  - added option <DetailTarget> to allow to filter the (not so important) 
+    log-messages from articles' downloads (they have now the type <detail> 
+    instead of <info>);
+  - added the gathering of progress-information during par-check; it is 
+    available via XML-RPC or JSON-RPC; it is also showed in web-interface;
+  - improvements in internal decoder: added support for yEnc-files without 
+    ypart-statement (sometimes used for small files); added support for 
+    UU-format;
+  - removed support for uulib-decoder (it did not work well anyway); 
+  - replaced the option <decoder (yenc, uulib, none)> with the option 
+    <decode (yes, no)>;
+  - added detection of errors <server busy> and <remote server not available> 
+    (special case for NNTPCache-server) to consider them as connect-errors 
+    (and therefore not count as retries); 
+  - added check for incomplete articles (also mostly for NNTPCache-server) to 
+    differ such errors from CrcErrors (better error reporting);
+  - improved error-reporting on moving of completed files from tmp- to 
+    dst-directory and added code to move files across drives if renaming fails;
+  - improved handling of nzb-files with multiple collections in par-checker;
+  - improved the parchecker: added the detection and processing of files 
+    splitted after parring;
+  - added the queueing of post-process-scripts and waiting for script's 
+    completion before starting of a next job in postprocessor (par-job or 
+    script) to provide more balanced cpu utilization;
+  - added the redirecting of post-process-script's output to log; new option 
+    <PostLogKind> to specify the default message-kind for unformatted 
+    log-messages;
+  - added the returning of script-output by command <postqueue> via XML-RPC 
+    and JSON-RPC; the script-output is also showed in web-interface;
+  - added the saving and restoring of the post-processor-queue (if server was 
+    stopped before all items were processed); new option <ReloadPostQueue>;
+  - added new parameter to postprocess-script to indicate if any of par-jobs 
+    for the same nzb-file failed;
+  - added remote command (switch O/--post) to request the post-processor-queue 
+    from server;
+  - added remote command (switch -W/--write) to write messages to server's log;
+  - added option <DiskSpace> to automatically pause the download on low disk 
+    space;
+  - fixed few incompatibility-issues with unslung-platform on nslu2 (ARM);
+  - fixed: articles with trailing text after binary data caused the decode 
+    failures and the reporting of CRC-errors;
+  - fixed: dupecheck could cause seg.faults when all articles for a file failed;
+  - fixed: by dupe-checking of files contained in nzb-file the files with the 
+    same size were ignored (not deleted from queue);
+  - updated libpar2-patch for msvc to fix a segfault in libpar2 (windows only);
+  - fixed: by registering the service on windows the fullpath to nzbget.exe 
+    was not always added to service's exename, making the registered service 
+    unusable;
+  - fixed: the pausing of a group could cause the start of post-processing for 
+    that group;
+  - fixed: too many info-messages <Need more N blocks> could be printed during 
+    par-check (appeared on posix only);
   
 nzbget-0.3.1:
   - Greatly reduced the memory consumption by keeping articles' info on disk 
