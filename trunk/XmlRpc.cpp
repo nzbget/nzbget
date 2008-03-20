@@ -536,7 +536,7 @@ bool XmlCommand::NextParamAsInt(int* iValue)
 	{
 		int iLen = 0;
 		char* szParam = (char*)Util::JsonNextValue(m_szRequestPtr, &iLen);
-		if (!szParam || !strchr("0123456789", *szParam))
+		if (!szParam || !strchr("-+0123456789", *szParam))
 		{
 			return false;
 		}
