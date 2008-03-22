@@ -131,11 +131,18 @@ void ScriptController::Run()
 	BOOL bOK = CreateProcess(NULL, szCmdLine, NULL, NULL, TRUE, NORMAL_PRIORITY_CLASS | CREATE_NO_WINDOW, NULL, m_pPostInfo->GetDestDir(), &StartupInfo, &ProcessInfo);
 	if (!bOK)
 	{
+		DWORD dwErrCode = GetLastError();
 		char szErrMsg[255];
 		szErrMsg[255-1] = '\0';
-		FormatMessage(FORMAT_MESSAGE_FROM_SYSTEM || FORMAT_MESSAGE_IGNORE_INSERTS || FORMAT_MESSAGE_ARGUMENT_ARRAY, 
-			NULL, GetLastError(), 0, szErrMsg, 255, NULL);
-		error("Could not start post-process: %s", szErrMsg);
+		if (FormatMessage(FORMAT_MESSAGE_FROM_SYSTEM || FORMAT_MESSAGE_IGNORE_INSERTS || FORMAT_MESSAGE_ARGUMENT_ARRAY, 
+			NULL, dwErrCode, 0, szErrMsg, 255, NULL))
+		{
+			error("Could not start post-process: %s", szErrMsg);
+		}
+		else
+		{
+			error("Could not start post-process: error %i", dwErrCode);
+		}
 		m_pPostInfo->SetStage(PostInfo::ptFinished);
 		m_pPostInfo->SetWorking(false);
 		return;
