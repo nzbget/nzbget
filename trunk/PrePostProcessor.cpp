@@ -760,26 +760,33 @@ void PrePostProcessor::ParCheckerUpdate(Subject * Caller, void * Aspect)
 			if (!m_ParChecker.GetRepairNotNeeded() || Util::FileExists(szBrokenLogName))
 			{
 				FILE* file = fopen(szBrokenLogName, "a");
-				if (m_ParChecker.GetStatus() == ParChecker::psFailed)
+				if (file)
 				{
-					fprintf(file, "Repair failed for %s: %s\n", m_ParChecker.GetInfoName(), m_ParChecker.GetErrMsg() ? m_ParChecker.GetErrMsg() : "");
-				}
-				else if (m_ParChecker.GetRepairNotNeeded())
-				{
-					fprintf(file, "Repair not needed for %s\n", m_ParChecker.GetInfoName());
-				}
-				else
-				{
-					if (g_pOptions->GetParRepair())
+					if (m_ParChecker.GetStatus() == ParChecker::psFailed)
 					{
-						fprintf(file, "Successfully repaired %s\n", m_ParChecker.GetInfoName());
+						fprintf(file, "Repair failed for %s: %s\n", m_ParChecker.GetInfoName(), m_ParChecker.GetErrMsg() ? m_ParChecker.GetErrMsg() : "");
+					}
+					else if (m_ParChecker.GetRepairNotNeeded())
+					{
+						fprintf(file, "Repair not needed for %s\n", m_ParChecker.GetInfoName());
 					}
 					else
 					{
-						fprintf(file, "Repair possible for %s\n", m_ParChecker.GetInfoName());
+						if (g_pOptions->GetParRepair())
+						{
+							fprintf(file, "Successfully repaired %s\n", m_ParChecker.GetInfoName());
+						}
+						else
+						{
+							fprintf(file, "Repair possible for %s\n", m_ParChecker.GetInfoName());
+						}
 					}
+					fclose(file);
 				}
-				fclose(file);
+				else
+				{
+					error("Could not open file %s", szBrokenLogName);
+				}
 			}
 		}
 
