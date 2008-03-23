@@ -47,6 +47,7 @@ public:
 	typedef std::deque<Message*>	Messages;
 
 private:
+	int				m_iID;
 	char*			m_szNZBFilename;
 	char*			m_szDestDir;
 	char*			m_szParFilename;
@@ -64,11 +65,12 @@ private:
 	
 	Mutex			m_mutexLog;
 	Messages		m_Messages;
-	unsigned int	m_iIDGen;
+	static int		m_iIDGen;
 
 public:
 					PostInfo();
 					~PostInfo();
+	int				GetID() { return m_iID; }
 	const char*		GetNZBFilename() { return m_szNZBFilename; }
 	void			SetNZBFilename(const char* szNZBFilename);
 	const char*		GetDestDir() { return m_szDestDir; }

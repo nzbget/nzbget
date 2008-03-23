@@ -222,7 +222,7 @@ void ScriptController::Run()
 	close(pipeout);
 #endif
 
-	m_pPostInfo->SetStageProgress(50);
+	m_pPostInfo->SetStageProgress(500);
 
 	/* open the read end */
 	FILE* readpipe = fdopen(pipein, "r");

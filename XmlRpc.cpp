@@ -1250,6 +1250,7 @@ void PostQueueXmlCommand::Execute()
 
 	const char* XML_POSTQUEUE_ITEM_START = 
 		"<value><struct>\n"
+		"<member><name>ID</name><value><i4>%i</i4></value></member>\n"
 		"<member><name>NZBNicename</name><value><string>%s</string></value></member>\n"
 		"<member><name>NZBFilename</name><value><string>%s</string></value></member>\n"
 		"<member><name>DestDir</name><value><string>%s</string></value></member>\n"
@@ -1269,6 +1270,7 @@ void PostQueueXmlCommand::Execute()
 
 	const char* JSON_POSTQUEUE_ITEM_START = 
 		"{\n"
+		"\"ID\" : %i,\n"
 		"\"NZBNicename\" : \"%s\",\n"
 		"\"NZBFilename\" : \"%s\",\n"
 		"\"DestDir\" : \"%s\",\n"
@@ -1325,7 +1327,7 @@ void PostQueueXmlCommand::Execute()
 		char* xmlProgressLabel = EncodeStr(pPostInfo->GetProgressLabel());
 
 		snprintf(szItemBuf, szItemBufSize, IsJson() ? JSON_POSTQUEUE_ITEM_START : XML_POSTQUEUE_ITEM_START,
-			xmlNZBNicename, xmlNZBFilename, xmlDestDir, xmlParFilename,
+			pPostInfo->GetID(), xmlNZBNicename, xmlNZBFilename, xmlDestDir, xmlParFilename,
 			xmlInfoName, szPostStageName[pPostInfo->GetStage()], xmlProgressLabel,
 			pPostInfo->GetFileProgress(), pPostInfo->GetStageProgress(),
 			pPostInfo->GetStartTime() ? tCurTime - pPostInfo->GetStartTime() : 0,
