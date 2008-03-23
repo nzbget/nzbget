@@ -171,8 +171,9 @@ void PrePostProcessor::Run()
 void PrePostProcessor::Stop()
 {
 	Thread::Stop();
-#ifndef DISABLE_PARCHECK
 	m_mutexQueue.Lock();
+
+#ifndef DISABLE_PARCHECK
 	if (m_ParChecker.IsRunning())
 	{
 		m_ParChecker.Stop();
@@ -188,9 +189,21 @@ void PrePostProcessor::Stop()
 			m_ParChecker.Kill();
 		}
 	}
-	
-	m_mutexQueue.Unlock();
 #endif
+
+	if (!m_PostQueue.empty())
+	{
+		PostInfo* pPostInfo = m_PostQueue.front();
+		if (pPostInfo->GetStage() == PostInfo::ptExecutingScript && pPostInfo->GetScriptThread())
+		{
+			Thread* pScriptThread = pPostInfo->GetScriptThread();
+			pPostInfo->SetScriptThread(NULL);
+			pScriptThread->SetAutoDestroy(true);
+			pScriptThread->Stop();
+		}
+	}
+
+	m_mutexQueue.Unlock();
 }
 
 void PrePostProcessor::QueueCoordinatorUpdate(Subject * Caller, void * Aspect)
@@ -420,6 +433,12 @@ void PrePostProcessor::JobCompleted(PostInfo* pPostInfo)
 	pPostInfo->SetWorking(false);
 	pPostInfo->SetProgressLabel("");
 	pPostInfo->SetStage(PostInfo::ptFinished);
+
+	if (pPostInfo->GetScriptThread())
+	{
+		delete pPostInfo->GetScriptThread();
+		pPostInfo->SetScriptThread(NULL);
+	}
 
 #ifndef DISABLE_PARCHECK
 	if (g_pOptions->GetParCleanupQueue() && 

@@ -36,11 +36,17 @@ private:
 	const char*			m_szScript;
 	bool				m_bNZBFileCompleted;
 	bool				m_bHasFailedParJobs;
+#ifdef WIN32
+	HANDLE				m_hProcess;
+#else
+	pid_t				m_hProcess;
+#endif
 
 	void				AddMessage(char* szText);
 
 public:
 	virtual void		Run();
+	virtual void		Stop();
 	static void			StartScriptJob(PostInfo* pPostInfo, const char* szScript, 
 							bool bNZBFileCompleted, bool bHasFailedParJobs);
 };

@@ -29,6 +29,7 @@
 #include <deque>
 
 #include "Log.h"
+#include "Thread.h"
 
 class PostInfo
 {
@@ -62,6 +63,7 @@ private:
 	int				m_iStageProgress;
 	time_t			m_tStartTime;
 	time_t			m_tStageTime;
+	Thread*			m_pScriptThread;
 	
 	Mutex			m_mutexLog;
 	Messages		m_Messages;
@@ -100,6 +102,8 @@ public:
 	bool			GetParFailed() { return m_bParFailed; }
 	void			SetParFailed(bool bParFailed) { m_bParFailed = bParFailed; }
 	void			AppendMessage(Message::EKind eKind, const char* szText);
+	Thread*			GetScriptThread() { return m_pScriptThread; }
+	void			SetScriptThread(Thread* pScriptThread) { m_pScriptThread = pScriptThread; }
 	Messages*		LockMessages();
 	void			UnlockMessages();
 };

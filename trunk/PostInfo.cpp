@@ -60,6 +60,7 @@ PostInfo::PostInfo()
 	m_tStartTime = 0;
 	m_tStageTime = 0;
 	m_eStage = ptQueued;
+	m_pScriptThread = NULL;
 	m_Messages.clear();
 	m_iIDGen++;
 	m_iID = m_iIDGen;
