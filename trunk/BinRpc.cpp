@@ -664,6 +664,7 @@ void PostQueueBinCommand::Execute()
 	{
 		PostInfo* pPostInfo = *it;
 		SNZBPostQueueResponseEntry* pPostQueueAnswer = (SNZBPostQueueResponseEntry*) bufptr;
+		pPostQueueAnswer->m_iID				= htonl(pPostInfo->GetID());
 		pPostQueueAnswer->m_iStage			= htonl(pPostInfo->GetStage());
 		pPostQueueAnswer->m_iStageProgress	= htonl(pPostInfo->GetStageProgress());
 		pPostQueueAnswer->m_iFileProgress	= htonl(pPostInfo->GetFileProgress());

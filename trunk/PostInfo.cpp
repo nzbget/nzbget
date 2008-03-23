@@ -40,8 +40,12 @@
 
 extern Options* g_pOptions;
 
+int PostInfo::m_iIDGen = 0;
+
 PostInfo::PostInfo()
 {
+	debug("Creating PostInfo");
+
 	m_szNZBFilename = NULL;
 	m_szDestDir = NULL;
 	m_szParFilename = NULL;
@@ -57,11 +61,14 @@ PostInfo::PostInfo()
 	m_tStageTime = 0;
 	m_eStage = ptQueued;
 	m_Messages.clear();
-	m_iIDGen = 0;
+	m_iIDGen++;
+	m_iID = m_iIDGen;
 }
 
 PostInfo::~ PostInfo()
 {
+	debug("Destroying PostInfo");
+
 	if (m_szNZBFilename)
 	{
 		free(m_szNZBFilename);

@@ -398,6 +398,8 @@ void PrePostProcessor::StartScriptJob(PostInfo* pPostInfo)
 	pPostInfo->SetProgressLabel("Executing post-process-script");
 	pPostInfo->SetWorking(true);
 	pPostInfo->SetStage(PostInfo::ptExecutingScript);
+	pPostInfo->SetFileProgress(0);
+	pPostInfo->SetStageProgress(0);
 	SavePostQueue();
 
 	bool bNZBFileCompleted = IsNZBFileCompleted(NULL, pPostInfo->GetNZBFilename(), true, true, true);

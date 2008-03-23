@@ -309,6 +309,7 @@ struct SNZBPostQueueResponse
 // A PostQueue response entry
 struct SNZBPostQueueResponseEntry
 {
+	int32_t					m_iID;					// ID of Post-entry
 	int32_t					m_iStage;				// See PrePostProcessor::EPostJobStage
 	int32_t					m_iStageProgress;		// Progress of current stage, value in range 0..1000
 	int32_t					m_iFileProgress;		// Progress of current file, value in range 0..1000

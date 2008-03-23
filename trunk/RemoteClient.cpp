@@ -680,9 +680,10 @@ bool RemoteClient::RequestPostQueue()
 
 			int iStageProgress = ntohl(pPostQueueAnswer->m_iStageProgress);
 
+			static const int EXECUTING_SCRIPT = 5;
 			char szCompleted[100];
 			szCompleted[0] = '\0';
-			if (iStageProgress > 0)
+			if (iStageProgress > 0 && ntohl(pPostQueueAnswer->m_iStage) != EXECUTING_SCRIPT)
 			{
 				sprintf(szCompleted, ", %i%s", (int)(iStageProgress / 10), "%");
 			}
@@ -690,7 +691,7 @@ bool RemoteClient::RequestPostQueue()
 			char* szPostStageName[] = { "", ", Loading Pars", ", Verifying source files", ", Repairing", ", Verifying repaired files", ", Executing postprocess-script", "" };
 			char* szInfoName = pBufPtr + sizeof(SNZBPostQueueResponseEntry) + ntohl(pPostQueueAnswer->m_iNZBFilenameLen) + ntohl(pPostQueueAnswer->m_iParFilename);
 			
-			printf("%s%s%s\n", szInfoName, szPostStageName[ntohl(pPostQueueAnswer->m_iStage)], szCompleted);
+			printf("[%i] %s%s%s\n", ntohl(pPostQueueAnswer->m_iID), szInfoName, szPostStageName[ntohl(pPostQueueAnswer->m_iStage)], szCompleted);
 
 			pBufPtr += sizeof(SNZBPostQueueResponseEntry) + ntohl(pPostQueueAnswer->m_iNZBFilenameLen) + 
 				ntohl(pPostQueueAnswer->m_iParFilename) + ntohl(pPostQueueAnswer->m_iInfoNameLen) +
