@@ -370,9 +370,11 @@ void PrePostProcessor::SanitisePostQueue()
 	for (PostQueue::iterator it = m_PostQueue.begin(); it != m_PostQueue.end(); it++)
 	{
 		PostInfo* pPostInfo = *it;
-		if (pPostInfo->GetStage() == PostInfo::ptExecutingScript)
+		if (pPostInfo->GetStage() == PostInfo::ptExecutingScript ||
+			!Util::DirectoryExists(pPostInfo->GetDestDir()))
 		{
 			pPostInfo->SetStage(PostInfo::ptFinished);
+			pPostInfo->SetParCheck(false);
 		}
 		else 
 		{
