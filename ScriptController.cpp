@@ -75,12 +75,14 @@ void ScriptController::StartScriptJob(PostInfo* pPostInfo, const char* szScript,
 	pScriptController->m_szScript = szScript;
 	pScriptController->m_bNZBFileCompleted = bNZBFileCompleted;
 	pScriptController->m_bHasFailedParJobs = bHasFailedParJobs;
-	pScriptController->SetAutoDestroy(true);
+	pScriptController->SetAutoDestroy(false);
+
+	pPostInfo->SetScriptThread(pScriptController);
 
 	pScriptController->Start();
 
 	// wait until process starts or fails to start
-	while (pPostInfo->GetWorking() && pPostInfo->GetStageProgress() == 0)
+	while (pPostInfo->GetWorking() && !pScriptController->m_hProcess)
 	{
 		usleep(50 * 1000);
 	}
@@ -147,7 +149,9 @@ void ScriptController::Run()
 		m_pPostInfo->SetWorking(false);
 		return;
 	}
-	
+
+	m_hProcess = ProcessInfo.hProcess;
+
 	/* close unused "write" end */
 	CloseHandle(hWritePipe);
 
@@ -217,19 +221,18 @@ void ScriptController::Run()
 	}
 
 	// continue the first instance
+	m_hProcess = pid;
 
 	/* close unused "write" end */
 	close(pipeout);
 #endif
-
-	m_pPostInfo->SetStageProgress(500);
 
 	/* open the read end */
 	FILE* readpipe = fdopen(pipein, "r");
 	char* buf = (char*)malloc(10240);
 
 	debug("Entering pipe-loop");
-	while (!feof(readpipe))
+	while (!feof(readpipe) && !IsStopped())
 	{
 		if (fgets(buf, 10240, readpipe))
 		{
@@ -241,13 +244,22 @@ void ScriptController::Run()
 	free(buf);
 	fclose(readpipe);
 
+	if (IsStopped())
+	{
+		warn("Interrupted post-process-script for %s", m_pPostInfo->GetInfoName());
+	}
+
 #ifdef WIN32
-	WaitForSingleObject(ProcessInfo.hProcess, INFINITE);
+	WaitForSingleObject(m_hProcess, INFINITE);
 #else
-	waitpid(pid, NULL, 0);
+	waitpid(m_hProcess, NULL, 0);
 #endif
 
-	info("Completed post-process-script for %s", m_pPostInfo->GetInfoName());
+	if (!IsStopped())
+	{
+		info("Completed post-process-script for %s", m_pPostInfo->GetInfoName());
+	}
+
 	m_pPostInfo->SetStage(PostInfo::ptFinished);
 	m_pPostInfo->SetWorking(false);
 }
@@ -351,4 +363,27 @@ void ScriptController::AddMessage(char* szText)
 			m_pPostInfo->AppendMessage(eKind, szText);
 		}
 	}
+}
+
+void ScriptController::Stop()
+{
+	debug("Stopping post-process-script");
+	Thread::Stop();
+
+#ifdef WIN32
+	BOOL bOK = TerminateProcess(m_hProcess, -1);
+#else
+	bool bOK = kill(m_hProcess, 9) == 0;
+#endif
+
+	if (bOK)
+	{
+		debug("Terminated post-process-script");
+	}
+	else
+	{
+		error("Could not terminate post-process-script");
+	}
+
+	debug("Post-process-script stopped");
 }
