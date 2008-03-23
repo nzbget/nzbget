@@ -232,6 +232,13 @@ void ParChecker::Run()
 		{
 			int iBlockFound = 0;
 			bool requested = RequestMorePars(missingblockcount, &iBlockFound);
+			if (requested)
+			{
+				strncpy(m_szProgressLabel, "Awaiting additional par-files", 1024);
+				m_szProgressLabel[1024-1] = '\0';
+				m_iFileProgress = 0;
+				UpdateProgress();
+			}
 			
 			m_mutexQueuedParFiles.Lock();
 			hasMorePars = !m_QueuedParFiles.empty();
