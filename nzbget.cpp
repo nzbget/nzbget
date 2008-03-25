@@ -403,23 +403,21 @@ void SignalProc(int iSignal)
 	{
 		case SIGINT:
 			signal(SIGINT, SIG_DFL);   // Reset the signal handler
-			debug("SIGINT received");
 			ExitProc();
 			break;
 
 		case SIGTERM:
 			signal(SIGTERM, SIG_DFL);   // Reset the signal handler
-			debug("SIGTERM received");
 			ExitProc();
 			break;
 
 #ifdef DEBUG
 		case SIGPIPE:
-			debug("SIGPIPE received, ignoring");
+			// ignoring
 			break;
 			
 		case SIGCHLD:
-			debug("SIGCHLD received, ignoring");
+			// ignoring
 			break;
 			
 		case SIGSEGV:
@@ -428,7 +426,7 @@ void SignalProc(int iSignal)
 			break;
 		
 		default:
-			debug("Signal %i received", iSignal);
+			// printf("Signal %i received\n", iSignal);
 			if (SignalProcList[iSignal - 1])
 			{
 				SignalProcList[iSignal - 1](iSignal);
