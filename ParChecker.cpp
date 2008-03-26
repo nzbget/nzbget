@@ -191,6 +191,7 @@ void ParChecker::Run()
 	if (res != eSuccess || IsStopped())
 	{
        	error("Could not verify %s: %s", m_szInfoName, IsStopped() ? "due stopping" : "par2-file could not be processed");
+		m_szErrMsg = strdup("par2-file could not be processed");
 		SetStatus(psFailed);
 		delete pRepairer;
 		return;
