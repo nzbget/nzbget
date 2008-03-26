@@ -518,8 +518,6 @@ bool PrePostProcessor::CheckScript(FileInfo * pFileInfo)
 		pFileInfo->GetNZBInfo()->GetNiceNZBName(szNZBNiceName, 1024);
 
 		info("Queueing %s for post-process-script", szNZBNiceName);
-		for (int i = 0; i < 1000; i++)
-		{
 		PostInfo* pPostInfo = new PostInfo();
 		pPostInfo->SetNZBFilename(pFileInfo->GetNZBInfo()->GetFilename());
 		pPostInfo->SetDestDir(pFileInfo->GetNZBInfo()->GetDestDir());
@@ -527,7 +525,6 @@ bool PrePostProcessor::CheckScript(FileInfo * pFileInfo)
 		pPostInfo->SetInfoName(szNZBNiceName);
 		pPostInfo->SetParCheck(false);
 		m_PostQueue.push_back(pPostInfo);
-		}
 		SavePostQueue();
 		m_bHasMoreJobs = true;
 		bJobAdded = true;
