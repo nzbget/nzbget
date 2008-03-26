@@ -683,7 +683,7 @@ bool RemoteClient::RequestPostQueue()
 			static const int EXECUTING_SCRIPT = 5;
 			char szCompleted[100];
 			szCompleted[0] = '\0';
-			if (iStageProgress > 0 && ntohl(pPostQueueAnswer->m_iStage) != EXECUTING_SCRIPT)
+			if (iStageProgress > 0 && (int)ntohl(pPostQueueAnswer->m_iStage) != EXECUTING_SCRIPT)
 			{
 				sprintf(szCompleted, ", %i%s", (int)(iStageProgress / 10), "%");
 			}
