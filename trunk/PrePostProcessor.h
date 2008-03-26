@@ -90,8 +90,8 @@ private:
 	bool				JobExists(PostQueue* pPostQueue, const char* szNZBFilename);
 	bool				ClearCompletedJobs(const char* szNZBFilename);
 	void				CheckPostQueue();
-	void				JobCompleted(PostInfo* pPostInfo);
-	void				StartScriptJob(PostInfo* pPostInfo);
+	void				JobCompleted(DownloadQueue* pDownloadQueue, PostInfo* pPostInfo);
+	void				StartScriptJob(DownloadQueue* pDownloadQueue, PostInfo* pPostInfo);
 	void				SavePostQueue();
 	void				SanitisePostQueue();
 	void				CheckDiskSpace();
@@ -109,7 +109,7 @@ private:
 	bool				AddPar(FileInfo* pFileInfo, bool bDeleted);
 	bool				SameParCollection(const char* szFilename1, const char* szFilename2);
 	bool				FindMainPars(const char* szPath, FileList* pFileList);
-	void				ParCleanupQueue(const char* szNZBFilename);
+	int					GetParCleanupQueueGroup(DownloadQueue* pDownloadQueue, const char* szNZBFilename);
 	bool				HasFailedParJobs(const char* szNZBFilename);
 	bool				ParJobExists(PostQueue* pPostQueue, const char* szParFilename);
 	bool				ParseParFilename(const char* szParFilename, int* iBaseNameLen, int* iBlocks);

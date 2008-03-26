@@ -330,6 +330,10 @@ void PrePostProcessor::CheckDiskSpace()
 
 void PrePostProcessor::CheckPostQueue()
 {
+	int iCleanupGroupID = 0;
+	char szNZBNiceName[1024];
+
+	DownloadQueue* pDownloadQueue = g_pQueueCoordinator->LockQueue();
 	m_mutexQueue.Lock();
 
 	if (!m_PostQueue.empty())
@@ -346,11 +350,22 @@ void PrePostProcessor::CheckPostQueue()
 #endif
 			if (pPostInfo->GetStage() == PostInfo::ptQueued)
 			{
-				StartScriptJob(pPostInfo);
+				StartScriptJob(pDownloadQueue, pPostInfo);
 			}
 			else if (pPostInfo->GetStage() == PostInfo::ptFinished)
 			{
-				JobCompleted(pPostInfo);
+#ifndef DISABLE_PARCHECK
+				if (g_pOptions->GetParCleanupQueue() && 
+					IsNZBFileCompleted(pDownloadQueue, pPostInfo->GetNZBFilename(), true, true, true) &&
+					pPostInfo->GetParStatus() != PARSTATUS_NOT_CHECKED &&
+					pPostInfo->GetParStatus() != PARSTATUS_FAILED &&
+					!HasFailedParJobs(pPostInfo->GetNZBFilename()))
+				{
+					iCleanupGroupID = GetParCleanupQueueGroup(pDownloadQueue, pPostInfo->GetNZBFilename());
+					NZBInfo::MakeNiceNZBName(pPostInfo->GetNZBFilename(), szNZBNiceName, sizeof(szNZBNiceName));
+				}
+#endif
+				JobCompleted(pDownloadQueue, pPostInfo);
 			}
 			else
 			{
@@ -360,6 +375,13 @@ void PrePostProcessor::CheckPostQueue()
 	}
 	
 	m_mutexQueue.Unlock();
+	g_pQueueCoordinator->UnlockQueue();
+
+	if (iCleanupGroupID > 0)
+	{
+		info("Cleaning up download queue for %s", szNZBNiceName);
+		g_pQueueCoordinator->GetQueueEditor()->EditEntry(iCleanupGroupID, false, QueueEditor::eaGroupDelete, 0);
+	}
 }
 
 /**
@@ -399,7 +421,7 @@ void PrePostProcessor::SanitisePostQueue()
 /**
  * Mutex "m_mutexQueue" must be locked prior to call of this function.
  */
-void PrePostProcessor::StartScriptJob(PostInfo* pPostInfo)
+void PrePostProcessor::StartScriptJob(DownloadQueue* pDownloadQueue, PostInfo* pPostInfo)
 {
 	const char* szScript = g_pOptions->GetPostProcess();
 	if (!szScript || strlen(szScript) == 0)
@@ -415,7 +437,13 @@ void PrePostProcessor::StartScriptJob(PostInfo* pPostInfo)
 	pPostInfo->SetStageProgress(0);
 	SavePostQueue();
 
-	bool bNZBFileCompleted = IsNZBFileCompleted(NULL, pPostInfo->GetNZBFilename(), true, true, true);
+	if (!pPostInfo->GetStartTime())
+	{
+		pPostInfo->SetStartTime(time(NULL));
+	}
+	pPostInfo->SetStageTime(time(NULL));
+
+	bool bNZBFileCompleted = IsNZBFileCompleted(pDownloadQueue, pPostInfo->GetNZBFilename(), true, true, true);
 #ifndef DISABLE_PARCHECK
 	bool bHasFailedParJobs = HasFailedParJobs(pPostInfo->GetNZBFilename()) || pPostInfo->GetParFailed();
 #else
@@ -428,7 +456,7 @@ void PrePostProcessor::StartScriptJob(PostInfo* pPostInfo)
 /**
  * Mutex "m_mutexQueue" must be locked prior to call of this function.
  */
-void PrePostProcessor::JobCompleted(PostInfo* pPostInfo)
+void PrePostProcessor::JobCompleted(DownloadQueue* pDownloadQueue, PostInfo* pPostInfo)
 {
 	pPostInfo->SetWorking(false);
 	pPostInfo->SetProgressLabel("");
@@ -439,17 +467,6 @@ void PrePostProcessor::JobCompleted(PostInfo* pPostInfo)
 		delete pPostInfo->GetScriptThread();
 		pPostInfo->SetScriptThread(NULL);
 	}
-
-#ifndef DISABLE_PARCHECK
-	if (g_pOptions->GetParCleanupQueue() && 
-		IsNZBFileCompleted(NULL, pPostInfo->GetNZBFilename(), true, true, true) && 
-		!HasFailedParJobs(pPostInfo->GetNZBFilename()))
-	{
-		m_mutexQueue.Unlock();
-		ParCleanupQueue(pPostInfo->GetNZBFilename());
-		m_mutexQueue.Lock();
-	}
-#endif
 
 	for (PostQueue::iterator it = m_PostQueue.begin(); it != m_PostQueue.end(); it++)
 	{
@@ -462,7 +479,7 @@ void PrePostProcessor::JobCompleted(PostInfo* pPostInfo)
 
 	m_CompletedJobs.push_back(pPostInfo);
 
-	if (IsNZBFileCompleted(NULL, pPostInfo->GetNZBFilename(), false, false, true))
+	if (IsNZBFileCompleted(pDownloadQueue, pPostInfo->GetNZBFilename(), false, false, true))
 	{
 		ClearCompletedJobs(pPostInfo->GetNZBFilename());
 	}
@@ -501,6 +518,8 @@ bool PrePostProcessor::CheckScript(FileInfo * pFileInfo)
 		pFileInfo->GetNZBInfo()->GetNiceNZBName(szNZBNiceName, 1024);
 
 		info("Queueing %s for post-process-script", szNZBNiceName);
+		for (int i = 0; i < 1000; i++)
+		{
 		PostInfo* pPostInfo = new PostInfo();
 		pPostInfo->SetNZBFilename(pFileInfo->GetNZBInfo()->GetFilename());
 		pPostInfo->SetDestDir(pFileInfo->GetNZBInfo()->GetDestDir());
@@ -508,6 +527,7 @@ bool PrePostProcessor::CheckScript(FileInfo * pFileInfo)
 		pPostInfo->SetInfoName(szNZBNiceName);
 		pPostInfo->SetParCheck(false);
 		m_PostQueue.push_back(pPostInfo);
+		}
 		SavePostQueue();
 		m_bHasMoreJobs = true;
 		bJobAdded = true;
@@ -583,18 +603,13 @@ void PrePostProcessor::PausePars(DownloadQueue* pDownloadQueue, const char* szNZ
 }
 
 /**
- * Mutex "m_mutexQueue" must be locked prior to call of this function.
+ * Mutex "m_mutexQueue" must be locked prior to call of this function, 
+ * if the parameter "bCheckPostQueue" is set to "true".
  */
 bool PrePostProcessor::IsNZBFileCompleted(DownloadQueue* pDownloadQueue, const char* szNZBFilename, 
 	bool bIgnoreFirstInPostQueue, bool bIgnorePaused, bool bCheckPostQueue)
 {
 	bool bNZBFileCompleted = true;
-
-	bool bNeedQueueLock = !pDownloadQueue;
-	if (bNeedQueueLock)
-	{
-		pDownloadQueue = g_pQueueCoordinator->LockQueue();
-	}
 
 	for (DownloadQueue::iterator it = pDownloadQueue->begin(); it != pDownloadQueue->end(); it++)
 	{
@@ -607,11 +622,6 @@ bool PrePostProcessor::IsNZBFileCompleted(DownloadQueue* pDownloadQueue, const c
 		}
 	}
 
-	if (bNeedQueueLock)
-	{
-		g_pQueueCoordinator->UnlockQueue();
-	}
-		
 	if (bNZBFileCompleted && bCheckPostQueue)
 	{
 		for (PostQueue::iterator it = m_PostQueue.begin() + int(bIgnoreFirstInPostQueue); it != m_PostQueue.end(); it++)
@@ -840,17 +850,16 @@ void PrePostProcessor::ParCheckerUpdate(Subject * Caller, void * Aspect)
 }
 
 /**
- * Delete unneeded (paused) par-files from download queue after successful par-check.
+ * Check if the deletion of unneeded (paused) par-files from download queue after successful par-check is possible.
  * If the collection has paused non-par-files, none files will be deleted (even pars).
+ * Returns the group-ID, which can be later used in call to GetQueueEditor()->EditEntry()
  */
-void PrePostProcessor::ParCleanupQueue(const char* szNZBFilename)
+int PrePostProcessor::GetParCleanupQueueGroup(DownloadQueue* pDownloadQueue, const char* szNZBFilename)
 {
-	debug("Cleaning up download queue from par-files");
+	debug("Preparing to cleaning up download queue from par-files");
 
 	// check if nzb-file has only pars paused
 	int ID = 0;
-	bool bOnlyPars = true;
-	DownloadQueue* pDownloadQueue = g_pQueueCoordinator->LockQueue();
 	for (DownloadQueue::iterator it = pDownloadQueue->begin(); it != pDownloadQueue->end(); it++)
 	{
 		FileInfo* pFileInfo = *it;
@@ -860,20 +869,11 @@ void PrePostProcessor::ParCleanupQueue(const char* szNZBFilename)
 			if (!pFileInfo->GetPaused() && !pFileInfo->GetDeleted() &&
 				!ParseParFilename(pFileInfo->GetFilename(), NULL, NULL))
 			{
-				bOnlyPars = false;
-				break;
+				return 0;
 			}
 		}
 	}
-	g_pQueueCoordinator->UnlockQueue();
-
-	if (bOnlyPars && ID > 0)
-	{
-		char szNZBNiceName[1024];
-		NZBInfo::MakeNiceNZBName(szNZBFilename, szNZBNiceName, sizeof(szNZBNiceName));
-		info("Cleaning up download queue for %s", szNZBNiceName);
-		g_pQueueCoordinator->GetQueueEditor()->EditEntry(ID, false, QueueEditor::eaGroupDelete, 0);
-	}
+	return ID;
 }
 
 /**

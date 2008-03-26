@@ -53,13 +53,6 @@ extern Options* g_pOptions;
 
 void ScriptController::StartScriptJob(PostInfo* pPostInfo, const char* szScript, bool bNZBFileCompleted, bool bHasFailedParJobs)
 {
-	if (!pPostInfo->GetStartTime())
-	{
-		pPostInfo->SetStartTime(time(NULL));
-	}
-	pPostInfo->SetStageTime(time(NULL));
-	pPostInfo->SetStageProgress(0);
-
 	if (!Util::FileExists(szScript))
 	{
 		error("Could not start post-process-script: could not find file %s", szScript);
@@ -80,12 +73,6 @@ void ScriptController::StartScriptJob(PostInfo* pPostInfo, const char* szScript,
 	pPostInfo->SetScriptThread(pScriptController);
 
 	pScriptController->Start();
-
-	// wait until process starts or fails to start
-	while (pPostInfo->GetWorking() && !pScriptController->m_hProcess)
-	{
-		usleep(50 * 1000);
-	}
 }
 
 void ScriptController::Run()
@@ -106,7 +93,7 @@ void ScriptController::Run()
 
 #ifdef WIN32
 	char szCmdLine[2048];
-	snprintf(szCmdLine, 2048, "%s \"%s\" \"%s\" \"%s\" %s %s %s", m_szScript, m_pPostInfo->GetDestDir(), 
+	snprintf(szCmdLine, 2048, "\"%s\" \"%s\" \"%s\" \"%s\" %s %s %s", m_szScript, m_pPostInfo->GetDestDir(), 
 		m_pPostInfo->GetNZBFilename(), m_pPostInfo->GetParFilename(), szParStatus, szCollectionCompleted, szHasFailedParJobs);
 	szCmdLine[2048-1] = '\0';
 	
@@ -139,11 +126,11 @@ void ScriptController::Run()
 		if (FormatMessage(FORMAT_MESSAGE_FROM_SYSTEM || FORMAT_MESSAGE_IGNORE_INSERTS || FORMAT_MESSAGE_ARGUMENT_ARRAY, 
 			NULL, dwErrCode, 0, szErrMsg, 255, NULL))
 		{
-			error("Could not start post-process: %s", szErrMsg);
+			error("Could not start post-process-script: %s", szErrMsg);
 		}
 		else
 		{
-			error("Could not start post-process: error %i", dwErrCode);
+			error("Could not start post-process-script: error %i", dwErrCode);
 		}
 		m_pPostInfo->SetStage(PostInfo::ptFinished);
 		m_pPostInfo->SetWorking(false);
@@ -186,12 +173,13 @@ void ScriptController::Run()
 	/* orient the pipe */
 	pipein = p[0];
 	pipeout = p[1];
-	
+
+	debug("forking");
 	pid_t pid = fork();
 
 	if (pid == -1)
 	{
-		error("Could not start post-process: errno %i", errno);
+		error("Could not start post-process-script: errno %i", errno);
 		m_pPostInfo->SetStage(PostInfo::ptFinished);
 		m_pPostInfo->SetWorking(false);
 		return;
@@ -216,9 +204,11 @@ void ScriptController::Run()
 		
 		execlp(m_szScript, m_szScript, szDestDir, szNZBFilename, szParFilename, 
 			szParStatus, szCollectionCompleted, szHasFailedParJobs, NULL);
-		error("Could not start post-process: %s", strerror(errno));
-		exit(-1);
+		error("Could not start post-process-script: %s", strerror(errno));
+		_exit(-1);
 	}
+
+	debug("forked");
 
 	// continue the first instance
 	m_hProcess = pid;
@@ -266,6 +256,8 @@ void ScriptController::Run()
 
 void ScriptController::AddMessage(char* szText)
 {
+	debug("Adding message received from post-process-script");
+
 	for (char* pend = szText + strlen(szText) - 1; pend >= szText && (*pend == '\n' || *pend == '\r' || *pend == ' '); pend--) *pend = '\0';
 
 	if (strlen(szText) == 0)
@@ -363,6 +355,8 @@ void ScriptController::AddMessage(char* szText)
 			m_pPostInfo->AppendMessage(eKind, szText);
 		}
 	}
+
+	debug("Adding message received from post-process-script - completed");
 }
 
 void ScriptController::Stop()
