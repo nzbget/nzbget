@@ -396,37 +396,50 @@ StrictParName=yes
 # manually), the cleanup will be skipped for this collection.
 ParCleanupQueue=yes
 
-# Set path to program, that must be executed after the download of
-# nzb-file or one collection in nzb-file (if par-check enabled and nzb-file
-# contains multiple collections) is completed and possibly par-checked/repaired.
-# Six arguments are passed to that program:
-#  - path to destination dir, where downloaded files are located;
-#  - name of nzb-file processed;
-#  - name of par-file processed (if par-checked) or empty string (if not);
-#  - result of par-check:
+# Set path to program, that must be executed after the download of nzb-file 
+# or one collection in nzb-file (if par-check enabled and nzb-file contains 
+# multiple collections; see note below for the definition of "collection") 
+# is completed and possibly par-checked/repaired.
+# Arguments passed to that program:
+#  1 - path to destination dir, where downloaded files are located;
+#  2 - name of nzb-file processed;
+#  3 - name of par-file processed (if par-checked) or empty string (if not);
+#  4 - result of par-check:
 #      0 - not checked: par-check disabled or nzb-file does not contain any
 #          par-files;
 #      1 - checked and failed to repair;
 #      2 - checked and sucessfully repaired;
 #      3 - checked and can be repaired but repair is disabled;
-#  - state of nzb-job:
+#  5 - state of nzb-job:
 #      0 - there are more collections in this nzb-file queued;
 #      1 - this was the last collection in nzb-file;
-#  - indication of failed par-jobs for current nzb-file:
+#  6 - indication of failed par-jobs for current nzb-file:
 #      0 - no failed par-jobs;
 #      1 - current par-job or any of the previous par-jobs for the
 #          same nzb-files failed;
-# NOTE: if par-check is enabled and nzb-file contains more than one collection
+# NOTE: The parameter "state of nzb-job" is very important and MUST be checked 
+# even in the simplest scripts.
+# If par-check is enabled and nzb-file contains more than one collection
 # of files the postprocess-program is called after each collection is completed
-# and par-checked. If you want to clean up the directory (delete par-files, 
-# etc.) there are two possibilities, when you can do this:
+# and par-checked. If you want to unpack files or clean up the directory 
+# (delete par-files, etc.) there are two possibilities, when you can do this:
 #  1) you parse the "name of par-file processed" to find out the base name
 #     of collection and clean up only files from this collection (not reliable,
 #     because par-files sometimes have different names than rar-files);
-#  2) or you just check the parameter "state of nzb-job" and do clean up,
-#     only if it is equal to "1" (which means, that this was the last
-#     collection in nzb-file and all files are now completed);
-# NOTE: do not forget to uncomment the next line
+#  2) or you just check the parameters "state of nzb-job" and "indication of 
+#     failed par-jobs" and do the processing, only if they are set to "1" 
+#     (which means, that this was the last collection in nzb-file and all files 
+#      are now completed) and to "0" (no failed par-jobs) respectively;
+# NOTE 2: if the option "ParCheck" is disabled nzbget calls PostProcess
+# only once, not after every collection, because the detection of collection
+# is disabled in this case;
+# NOTE 3: the term "collection" in the above description actually means 
+# "par-set". To determine what "collections" are present in nzb-file nzbget 
+# looks for par-sets. If any collection of files within nzb-file does 
+# not have any par-files, this collection will not be detected.
+# For example, for nzb-file containing three collections but only two par-sets, 
+# the postprocess will be called two times - after processing of each par-set.
+# NOTE 4: do not forget to uncomment the next line
 #PostProcess=~/myscript.sh
 
 # Set the default message-kind for output received from postprocess-script 
