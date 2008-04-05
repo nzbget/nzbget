@@ -97,7 +97,7 @@ void ScriptController::Run()
 		m_pPostInfo->GetNZBFilename(), m_pPostInfo->GetParFilename(), szParStatus, szCollectionCompleted, szHasFailedParJobs);
 	szCmdLine[2048-1] = '\0';
 	
-	//Create pipes to write and read data
+	// create pipes to write and read data
 	HANDLE hReadPipe, hWritePipe;
 	SECURITY_ATTRIBUTES SecurityAttributes;
 	memset(&SecurityAttributes, 0, sizeof(SecurityAttributes));
@@ -137,9 +137,11 @@ void ScriptController::Run()
 		return;
 	}
 
+	debug("Child Process-ID: %i", (int)ProcessInfo.dwProcessId);
+
 	m_hProcess = ProcessInfo.hProcess;
 
-	/* close unused "write" end */
+	// close unused "write" end
 	CloseHandle(hWritePipe);
 
 	pipein = _open_osfhandle((intptr_t)hReadPipe, _O_RDONLY);
@@ -161,8 +163,8 @@ void ScriptController::Run()
 	int p[2];
 	int pipeout;
 
-	/* create the pipe */
-	if (pipe(p) != 0)
+	// create the pipe
+	if (pipe(p))
 	{
 		error("Could not open pipe: errno %i", errno);
 		m_pPostInfo->SetStage(PostInfo::ptFinished);
@@ -170,7 +172,6 @@ void ScriptController::Run()
 		return;
 	}
 
-	/* orient the pipe */
 	pipein = p[0];
 	pipeout = p[1];
 
@@ -188,37 +189,42 @@ void ScriptController::Run()
 	{
 		// here goes the second instance
 			
-		/* close up the "read" end */
+		// close up the "read" end
 		close(pipein);
       			
-		/* make the pipeout to be the same as stdout and stderr */
+		// make the pipeout to be the same as stdout and stderr
 		dup2(pipeout, 1);
 		dup2(pipeout, 2);
+		
 		close(pipeout);
 
-		/* close all other descriptors */
-		for (int h = getdtablesize(); h > 2; --h)
-		{
-			close(h);
-		}
-		
-		execlp(m_szScript, m_szScript, szDestDir, szNZBFilename, szParFilename, 
+		execlp(m_szScript, m_szScript, szDestDir, szNZBFilename, szParFilename,
 			szParStatus, szCollectionCompleted, szHasFailedParJobs, NULL);
-		error("Could not start post-process-script: %s", strerror(errno));
+		fprintf(stdout, "[ERROR] Could not start post-process-script: %s", strerror(errno));
+		fflush(stdout);
 		_exit(-1);
 	}
 
-	debug("forked");
-
 	// continue the first instance
+	debug("forked");
+	debug("Child Process-ID: %i", (int)pid);
+
 	m_hProcess = pid;
 
-	/* close unused "write" end */
+	// close unused "write" end
 	close(pipeout);
 #endif
 
-	/* open the read end */
+	// open the read end
 	FILE* readpipe = fdopen(pipein, "r");
+	if (!readpipe)
+	{
+		error("Could not open pipe to post-process-script");
+		m_pPostInfo->SetStage(PostInfo::ptFinished);
+		m_pPostInfo->SetWorking(false);
+		return;
+	}
+	
 	char* buf = (char*)malloc(10240);
 
 	debug("Entering pipe-loop");
