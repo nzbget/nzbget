@@ -41,7 +41,7 @@ NZBGet is written in C++ and was initialy developed on Linux.
 It was ported to Windows later and tested for compatibility with
 several POSIX-OS'es.
 
-The current version (0.3.1) should run at least on:
+The current version (0.4.0) should run at least on:
   - Linux Debian 4.0 on x86;
   - Linux BusyBox with uClibc on MIPSEL;
   - PC-BSD 1.4 (based on FreeBSD 6.2) on x86;
@@ -107,11 +107,10 @@ Well, the usual stuff:
  - configure it via
      ./configure
    (maybe you have to tell configure, where to find some libraries.
-       ./configure --help is your friend! ;-)
+       ./configure --help is your friend!)
     also see "Configure-options" later.)
  - compile it via
      make
-   (you may get some warnings concerning 'mktemp', simply ignore them!)
  - become root via
      su
  - install it via
