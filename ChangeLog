@@ -1,4 +1,4 @@
-nzbget-0.4.0-testing:
+nzbget-0.4.0:
   - added the support for XML-RPC and JSON-RPC to easier control the server 
     from other applications; 
   - added web-interface - it is available for download from NZBGet-project's 
