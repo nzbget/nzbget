@@ -37,6 +37,7 @@
 #ifndef WIN32
 #include <unistd.h>
 #include <sys/wait.h>
+#include <signal.h>
 #endif
 #include <sys/stat.h>
 #include <errno.h>
