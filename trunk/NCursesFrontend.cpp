@@ -74,6 +74,7 @@ static const int NCURSES_COLORPAIR_KEYBAR		= 8;
 static const int NCURSES_COLORPAIR_INFOLINE		= 9;
 static const int NCURSES_COLORPAIR_TEXTHIGHL	= 10;
 static const int NCURSES_COLORPAIR_CURSOR		= 11;
+static const int NCURSES_COLORPAIR_HINT			= 12;
 
 static const int MAX_SCREEN_WIDTH				= 512;
 
@@ -127,6 +128,7 @@ NCursesFrontend::NCursesFrontend()
 	m_iDataUpdatePos = 0;
 	m_iLastEditEntry = -1;
 	m_bLastPausePars = false;
+	m_szHint = NULL;
 
 	m_groupQueue.clear();
 
@@ -182,6 +184,7 @@ NCursesFrontend::NCursesFrontend()
         init_pair(NCURSES_COLORPAIR_INFOLINE,	COLOR_WHITE,	COLOR_BLUE);
         init_pair(NCURSES_COLORPAIR_TEXTHIGHL,	COLOR_BLACK,	COLOR_CYAN);
         init_pair(NCURSES_COLORPAIR_CURSOR,		COLOR_BLACK,	COLOR_YELLOW);
+        init_pair(NCURSES_COLORPAIR_HINT,		COLOR_WHITE,	COLOR_RED);
     }
 }
 
@@ -210,6 +213,7 @@ NCursesFrontend::~NCursesFrontend()
     endwin();
 #endif
     printf("\n");
+	SetHint(NULL);
 }
 
 void NCursesFrontend::Run()
@@ -620,6 +624,20 @@ void NCursesFrontend::PrintKeyInputBar()
     int iQueueSize = CalcQueueSize();
 	int iInputBarRow = m_iScreenHeight - 1;
 	
+	if (m_szHint)
+	{
+		time_t tTime = time(NULL);
+		if (tTime - m_tStartHint < 5)
+		{
+			PlotLine(m_szHint, iInputBarRow, 0, NCURSES_COLORPAIR_HINT);
+			return;
+		}
+		else
+		{
+			SetHint(NULL);
+		}
+	}
+
     switch (m_eInputMode)
     {
     case eNormal:
@@ -664,6 +682,20 @@ void NCursesFrontend::PrintKeyInputBar()
 		PlotText(" ", iInputBarRow, 15 + m_iInputNumberIndex, NCURSES_COLORPAIR_CURSOR, true);
         break;
     }
+}
+
+void NCursesFrontend::SetHint(const char* szHint)
+{
+	if (m_szHint)
+	{
+		free(m_szHint);
+		m_szHint = NULL;
+	}
+	if (szHint)
+	{
+		m_szHint = strdup(szHint);
+		m_tStartHint = time(NULL);
+	}
 }
 
 void NCursesFrontend::PrintQueue()
@@ -1227,6 +1259,9 @@ void NCursesFrontend::UpdateInput()
 				EditQueue(QueueEditor::eaFilePause, 0);
 				break;
 			case 'd':
+				SetHint(" Use Uppercase \"D\" for delete");
+				break;
+			case 'D':
 				// Delete entry
 				if (EditQueue(QueueEditor::eaFileDelete, 0))
 				{
@@ -1311,7 +1346,13 @@ int NCursesFrontend::ReadConsoleKey()
 				InputRecord.EventType == KEY_EVENT &&
 				InputRecord.Event.KeyEvent.bKeyDown)
 			{
-				return tolower(InputRecord.Event.KeyEvent.wVirtualKeyCode);
+				char c = tolower(InputRecord.Event.KeyEvent.wVirtualKeyCode);
+				if (bool(InputRecord.Event.KeyEvent.dwControlKeyState & CAPSLOCK_ON) ^
+					bool(InputRecord.Event.KeyEvent.dwControlKeyState & SHIFT_PRESSED))
+				{
+					c = toupper(c);
+				}
+				return c;
 			}
 		}
 	}

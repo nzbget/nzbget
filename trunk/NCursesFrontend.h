@@ -61,8 +61,10 @@ private:
 	bool				m_bLastPausePars;
 	int					m_iQueueScrollOffset;
 	GroupQueue			m_groupQueue;
+	char*				m_szHint;
+	time_t				m_tStartHint;
 
-	// Inputting numbres
+	// Inputting numbers
 	int					m_iInputNumberIndex;
 	int					m_iInputValue;
 
@@ -108,6 +110,7 @@ private:
 	int				CalcQueueSize();
 	void			NeedUpdateData();
 	bool			EditQueue(QueueEditor::EEditAction eAction, int iOffset);
+	void			SetHint(const char* szHint);
 
 protected:
 	virtual void 	Run();
