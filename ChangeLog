@@ -1,3 +1,7 @@
+nzbget-0.4.1-testing:
+  - please look at subversion-log on sourceforge.net:
+    http://nzbget.svn.sourceforge.net/viewvc/nzbget/trunk/?view=log
+
 nzbget-0.4.0:
   - added the support for XML-RPC and JSON-RPC to easier control the server 
     from other applications; 
@@ -244,7 +248,7 @@ nzbget-0.3.0:
     of completing and state (paused or not) for every file is printed. 
     The header of queue shows number of total files, number of unpaused 
     files and size for all and unpaused files. Better using of screen estate
-    space – no more empty lines and separate header for status (total seven
+    space ï¿½ no more empty lines and separate header for status (total seven
     lines gain). The messages are printed on several lines (if they not fill
     in one line) without trimming now;
   - configure.ac-file updated to work with recent versions of autoconf/automake. 
