@@ -133,8 +133,6 @@ void ArticleDownloader::Run()
 		}
 	}
 
-	detail("Downloading %s", m_szInfoName);
-
 	int retry = g_pOptions->GetRetries();
 
 	EStatus Status = adFailed;
@@ -174,6 +172,7 @@ void ArticleDownloader::Run()
 		if (bConnected && !IsStopped())
 		{
 			// Okay, we got a Connection. Now start downloading.
+			detail("Downloading %s @ %s", m_szInfoName, m_pConnection->GetServer()->GetHost());
 			Status = Download();
 		}
 
