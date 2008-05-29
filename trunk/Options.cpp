@@ -1084,6 +1084,10 @@ void Options::LoadConfig(const char * configfile)
 		{
 			buf[strlen(buf)-1] = 0; // remove traling '\n'
 		}
+		if (buf[0] != 0 && buf[strlen(buf)-1] == '\r')
+		{
+			buf[strlen(buf)-1] = 0; // remove traling '\r' (for windows line endings)
+		}
 
 		if (buf[0] == 0 || buf[0] == '#' || strspn(buf, " ") == strlen(buf))
 		{
