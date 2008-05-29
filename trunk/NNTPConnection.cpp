@@ -103,7 +103,7 @@ bool NNTPConnection::Authenticate()
 	if (!((NewsServer*)m_pNetAddress)->GetUser() ||
 		!((NewsServer*)m_pNetAddress)->GetPassword())
 	{
-		return false;
+		return true;
 	}
 
 	return AuthInfoUser();

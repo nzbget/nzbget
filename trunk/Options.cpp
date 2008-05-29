@@ -1042,7 +1042,7 @@ void Options::InitServers()
 		const char* nconnections = GetOption(optname);
 
 		bool definition = nlevel || nhost || nport || nusername || npassword || nconnections;
-		bool completed = nlevel && nhost && nport && nusername && npassword && nconnections;
+		bool completed = nlevel && nhost && nport && nconnections;
 
 		if (!definition)
 		{

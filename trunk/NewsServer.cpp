@@ -58,8 +58,12 @@ NewsServer::NewsServer(const char* host, int port, const char* user, const char*
 
 NewsServer::~NewsServer()
 {
-	free(m_szUser);
-	m_szUser = NULL;
-	free(m_szPassword);
-	m_szPassword = NULL;
+	if (m_szUser)
+	{
+		free(m_szUser);
+	}
+	if (m_szPassword)
+	{
+		free(m_szPassword);
+	}
 }
