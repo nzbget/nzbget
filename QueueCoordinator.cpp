@@ -62,11 +62,14 @@ QueueCoordinator::QueueCoordinator()
 	m_DownloadQueue.clear();
 	m_ActiveDownloads.clear();
 
-	for (int i = 0; i < SPEEDMETER_SECONDS; i++)
+    m_iSpeedStartTime = (int)time(NULL)/SPEEDMETER_SLOTSIZE;
+	for (int i = 0; i < SPEEDMETER_SLOTS; i++)
 	{
 		m_iSpeedBytes[i] = 0;
+        m_iSpeedTime[i] = m_iSpeedStartTime;
 	}
 	m_iSpeedBytesIndex = 0;
+    m_iSpeedTotalBytes = 0;
 
 	m_iAllBytes = 0;
 	m_tStartServer = 0;
@@ -317,15 +320,12 @@ bool QueueCoordinator::AddFileToQueue(const char* szFileName)
  */
 float QueueCoordinator::CalcCurrentDownloadSpeed()
 {
-	int iTotal = 0;
-
-	for (int i = 0; i < SPEEDMETER_SECONDS; i++)
-	{
-		iTotal += m_iSpeedBytes[i];
-	}
-
-	float fSpeed = iTotal / 1024.0f / SPEEDMETER_SECONDS;
-
+    int iTimeDiff = (int)time(NULL) - m_iSpeedStartTime*SPEEDMETER_SLOTSIZE;
+    if (iTimeDiff == 0)
+    {
+    	return 0;
+    }
+	float fSpeed = m_iSpeedTotalBytes / 1024.0f / iTimeDiff;
 	return fSpeed;
 }
 
@@ -340,28 +340,37 @@ float QueueCoordinator::CalcCurrentDownloadSpeed()
  */
 void QueueCoordinator::AddSpeedReading(int iBytes)
 {
-	int iIndex = (int)time(NULL);
+	time_t tNow = time(NULL);
 
-	if (iIndex - m_iSpeedBytesIndex > SPEEDMETER_SECONDS)
-	{
-		m_iSpeedBytesIndex = iIndex - SPEEDMETER_SECONDS - 1;
-	}
+    int iNowSlot = (int)tNow / SPEEDMETER_SLOTSIZE;
 
-	for (int i = m_iSpeedBytesIndex + 1; i < iIndex; i++)
-	{
-		m_iSpeedBytes[i % SPEEDMETER_SECONDS] = 0;
-	}
+    if (iNowSlot > m_iSpeedTime[m_iSpeedBytesIndex])
+    {
+        //record bytes in next slot
+        m_iSpeedBytesIndex++;
+        if (m_iSpeedBytesIndex >= SPEEDMETER_SLOTS)
+        {
+            m_iSpeedBytesIndex = 0;
+        }
+        //Adjust counters with outging information.
+        m_iSpeedTotalBytes -= m_iSpeedBytes[m_iSpeedBytesIndex];
 
-	if (iIndex > m_iSpeedBytesIndex)
-	{
-		m_iSpeedBytesIndex = iIndex;
-		m_iSpeedBytes[iIndex % SPEEDMETER_SECONDS] = iBytes;
-	}
-	else
-	{
-		m_iSpeedBytes[m_iSpeedBytesIndex % SPEEDMETER_SECONDS] += iBytes;
-	}
+        //Note we should really use the start time of the next slot
+        //but its easier to just use the outgoing slot time. This 
+        //will result in a small error.
+        m_iSpeedStartTime = m_iSpeedTime[m_iSpeedBytesIndex];
 
+        //Now reset.
+        m_iSpeedBytes[m_iSpeedBytesIndex] = 0;
+        m_iSpeedTime[m_iSpeedBytesIndex] = iNowSlot;
+
+    } 
+    if (m_iSpeedTotalBytes == 0)
+    {
+        m_iSpeedStartTime = iNowSlot;
+    }
+    m_iSpeedBytes[m_iSpeedBytesIndex] += iBytes;
+    m_iSpeedTotalBytes += iBytes;
 	m_iAllBytes += iBytes;
 }
 
