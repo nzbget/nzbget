@@ -458,8 +458,7 @@ unsigned int DecodeByteQuartet(char* szInputBuffer, char* szOutputBuffer)
 			buffer = (buffer | BASE64_DEALPHABET [(int)szInputBuffer[1]]) << 6;
 			buffer = buffer << 14;
 
-			char* temp = (char*) &buffer;
-			szOutputBuffer [0] = temp [3];
+			szOutputBuffer [0] = (char)(buffer >> 24);
 			
 			return 1;
 		}
@@ -470,9 +469,8 @@ unsigned int DecodeByteQuartet(char* szInputBuffer, char* szOutputBuffer)
 			buffer = (buffer | BASE64_DEALPHABET [(int)szInputBuffer[2]]) << 6;
 			buffer = buffer << 8;
 
-			char* temp = (char*) &buffer;
-			szOutputBuffer [0] = temp [3];
-			szOutputBuffer [1] = temp [2];
+			szOutputBuffer [0] = (char)(buffer >> 24);
+			szOutputBuffer [1] = (char)(buffer >> 16);
 			
 			return 2;
 		}
@@ -485,10 +483,9 @@ unsigned int DecodeByteQuartet(char* szInputBuffer, char* szOutputBuffer)
 		buffer = (buffer | BASE64_DEALPHABET [(int)szInputBuffer[3]]) << 6; 
 		buffer = buffer << 2;
 
-		char* temp = (char*) &buffer;
-		szOutputBuffer [0] = temp [3];
-		szOutputBuffer [1] = temp [2];
-		szOutputBuffer [2] = temp [1];
+		szOutputBuffer [0] = (char)(buffer >> 24);
+		szOutputBuffer [1] = (char)(buffer >> 16);
+		szOutputBuffer [2] = (char)(buffer >> 8);
 
 		return 3;
 	}
