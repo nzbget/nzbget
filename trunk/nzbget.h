@@ -68,7 +68,7 @@
 #define PATH_SEPARATOR '/'
 #define ALT_PATH_SEPARATOR '\\'
 #define MAX_PATH 1024
-#define	S_DIRMODE (S_IRUSR | S_IWUSR | S_IXUSR | S_IRGRP | S_IXGRP | S_IROTH | S_IXOTH)
+#define	S_DIRMODE (S_IRWXU | S_IRWXG | S_IRWXO)
 
 #endif
 
