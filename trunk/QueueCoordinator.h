@@ -80,7 +80,6 @@ private:
 	time_t					m_tStartServer;
 	time_t					m_tStartDownload;
 	time_t					m_tPausedFrom;
-	void					EnterLeaveStandBy(bool bEnter);
 	bool					m_bStandBy;
 	Mutex					m_mutexStat;
 
@@ -91,6 +90,8 @@ private:
 	void					ArticleCompleted(ArticleDownloader* pArticleDownloader);
 	void					DeleteFileInfo(FileInfo* pFileInfo, bool bCompleted);
 	void					ResetHangingDownloads();
+	void					ResetSpeedStat();
+	void					EnterLeaveStandBy(bool bEnter);
 
 public:
 							QueueCoordinator();                
