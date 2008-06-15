@@ -61,15 +61,7 @@ QueueCoordinator::QueueCoordinator()
 	m_bHasMoreJobs = true;
 	m_DownloadQueue.clear();
 	m_ActiveDownloads.clear();
-
-    m_iSpeedStartTime = (int)time(NULL)/SPEEDMETER_SLOTSIZE;
-	for (int i = 0; i < SPEEDMETER_SLOTS; i++)
-	{
-		m_iSpeedBytes[i] = 0;
-        m_iSpeedTime[i] = m_iSpeedStartTime;
-	}
-	m_iSpeedBytesIndex = 0;
-    m_iSpeedTotalBytes = 0;
+	ResetSpeedStat();
 
 	m_iAllBytes = 0;
 	m_tStartServer = 0;
@@ -320,7 +312,7 @@ bool QueueCoordinator::AddFileToQueue(const char* szFileName)
  */
 float QueueCoordinator::CalcCurrentDownloadSpeed()
 {
-    int iTimeDiff = (int)time(NULL) - m_iSpeedStartTime*SPEEDMETER_SLOTSIZE;
+    int iTimeDiff = (int)time(NULL) - m_iSpeedStartTime * SPEEDMETER_SLOTSIZE;
     if (iTimeDiff == 0)
     {
     	return 0;
@@ -340,9 +332,7 @@ float QueueCoordinator::CalcCurrentDownloadSpeed()
  */
 void QueueCoordinator::AddSpeedReading(int iBytes)
 {
-	time_t tNow = time(NULL);
-
-    int iNowSlot = (int)tNow / SPEEDMETER_SLOTSIZE;
+    int iNowSlot = (int)time(NULL) / SPEEDMETER_SLOTSIZE;
 
     if (iNowSlot > m_iSpeedTime[m_iSpeedBytesIndex])
     {
@@ -363,8 +353,8 @@ void QueueCoordinator::AddSpeedReading(int iBytes)
         //Now reset.
         m_iSpeedBytes[m_iSpeedBytesIndex] = 0;
         m_iSpeedTime[m_iSpeedBytesIndex] = iNowSlot;
-
     } 
+
     if (m_iSpeedTotalBytes == 0)
     {
         m_iSpeedStartTime = iNowSlot;
@@ -372,6 +362,18 @@ void QueueCoordinator::AddSpeedReading(int iBytes)
     m_iSpeedBytes[m_iSpeedBytesIndex] += iBytes;
     m_iSpeedTotalBytes += iBytes;
 	m_iAllBytes += iBytes;
+}
+
+void QueueCoordinator::ResetSpeedStat()
+{
+    m_iSpeedStartTime = (int)time(NULL) / SPEEDMETER_SLOTSIZE;
+	for (int i = 0; i < SPEEDMETER_SLOTS; i++)
+	{
+		m_iSpeedBytes[i] = 0;
+        m_iSpeedTime[i] = m_iSpeedStartTime;
+	}
+	m_iSpeedBytesIndex = 0;
+    m_iSpeedTotalBytes = 0;
 }
 
 long long QueueCoordinator::CalcRemainingSize()
@@ -771,6 +773,7 @@ void QueueCoordinator::EnterLeaveStandBy(bool bEnter)
 			m_tStartDownload += time(NULL) - m_tPausedFrom;
 		}
 		m_tPausedFrom = 0;
+		ResetSpeedStat();
 	}
 	m_mutexStat.Unlock();
 }
