@@ -48,6 +48,7 @@ private:
 
 	bool				m_bUseColor;
 	int					m_iDataUpdatePos;
+    bool				m_bUpdateNextTime;
 	int					m_iScreenHeight;
 	int					m_iScreenWidth;
 	int					m_iQueueWinTop;
@@ -100,8 +101,8 @@ private:
 	int				PrintMessage(Message* Msg, int iRow, int iMaxLines);
 	void			PrintKeyInputBar();
 	void 			PrintStatus();
-	void			UpdateInput();
-	void			Update();
+	void			UpdateInput(int initialKey);
+	void			Update(int iKey);
 	void			SetCurrentQueueEntry(int iEntry);
 	void			CalcWindowSizes();
 	void			FormatFileSize(char* szBuffer, int iBufLen, long long lFileSize);
