@@ -126,6 +126,7 @@ NCursesFrontend::NCursesFrontend()
 	m_bGroupFiles = g_pOptions->GetCursesGroup();
 	m_QueueWindowPercentage = 0.5f;
 	m_iDataUpdatePos = 0;
+    m_bUpdateNextTime = false;
 	m_iLastEditEntry = -1;
 	m_bLastPausePars = false;
 	m_szHint = NULL;
@@ -220,26 +221,45 @@ void NCursesFrontend::Run()
 {
     debug("Entering NCursesFrontend-loop");
 
-	int iScreenUpdateInterval = 25;
-	int iScreenUpdatePos = 0;
 	m_iDataUpdatePos = 0;
 
     while (!IsStopped())
     {
         // The data (queue and log) is updated each m_iUpdateInterval msec,
         // but the window is updated more often for better reaction on user's input
-		if (iScreenUpdatePos <= 0 || m_iDataUpdatePos <= 0)
+
+		bool updateNow = false;
+		int iKey = ReadConsoleKey();
+
+		if (iKey != READKEY_EMPTY)
 		{
-			iScreenUpdatePos = iScreenUpdateInterval;
-			Update();
-			if (m_iDataUpdatePos <= 0)
-			{
-				m_iDataUpdatePos = m_iUpdateInterval;
-			}
+			// Update now and next if a key is pressed.
+			updateNow = true;
+			m_bUpdateNextTime = true;
+		} 
+		else if (m_bUpdateNextTime)
+		{
+			// Update due to key being pressed during previous call.
+			updateNow = true;
+			m_bUpdateNextTime = false;
+		} 
+		else if (m_iDataUpdatePos <= 0) 
+		{
+			updateNow = true;
+			m_bUpdateNextTime = false;
+		}
+
+		if (updateNow) 
+		{
+			Update(iKey);
+		}
+
+		if (m_iDataUpdatePos <= 0)
+		{
+			m_iDataUpdatePos = m_iUpdateInterval;
 		}
 
 		usleep(10 * 1000);
-		iScreenUpdatePos -= 10;
 		m_iDataUpdatePos -= 10;
     }
 
@@ -252,9 +272,10 @@ void NCursesFrontend::Run()
 void NCursesFrontend::NeedUpdateData()
 {
 	m_iDataUpdatePos = 10;
+	m_bUpdateNextTime = true;
 }
 
-void NCursesFrontend::Update()
+void NCursesFrontend::Update(int iKey)
 {
     // Figure out how big the screen is
 	CalcWindowSizes();
@@ -301,8 +322,7 @@ void NCursesFrontend::Update()
 
 	PrintKeyInputBar();
 
-    // Update the input
-    UpdateInput();
+    UpdateInput(iKey);
 
 	RefreshScreen();
 }
@@ -1110,10 +1130,15 @@ void NCursesFrontend::SetCurrentQueueEntry(int iEntry)
 	m_iSelectedQueueEntry = iEntry;
 }
 
-void NCursesFrontend::UpdateInput()
+
+/*
+ * Process keystrokes starting with the initialKey, which must not be
+ * READKEY_EMPTY but has alread been set via ReadConsoleKey.
+ */
+void NCursesFrontend::UpdateInput(int initialKey)
 {
-    int iKey;
-    while ((iKey = ReadConsoleKey()) != READKEY_EMPTY)
+	int iKey = initialKey;
+	while (iKey != READKEY_EMPTY)
     {
 		int iQueueSize = CalcQueueSize();
 
@@ -1326,6 +1351,8 @@ void NCursesFrontend::UpdateInput()
 				m_iInputNumberIndex--;
 			}
 		}
+
+		iKey = ReadConsoleKey();
 	}
 }
 
