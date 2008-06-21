@@ -290,6 +290,9 @@ void NCursesFrontend::Update(int iKey)
             return;
         }
 		PrepareGroupQueue();
+
+		// recalculate frame sizes
+		CalcWindowSizes();
     }
 
 	if (m_eInputMode == eEditQueue)
