@@ -174,7 +174,6 @@ Decode=yes
 # depends on OS and filesystem used.
 # Can improve performance on a very fast internet connections, 
 # but you need to test if it works in your case.
-# The option works only with internal decoder ("decoder=yenc")
 # INFO: Tests showed, that on Linux with EXT3-partition activating of 
 # this option results in up to 20% better performance, but on Windows with NTFS 
 # or Linux with FAT32-partitions the performance were decreased. 
@@ -184,8 +183,7 @@ Decode=yes
 # initialize created large file with nulls, resulting in a big performace 
 # degradation.
 # NOTE: for testing try to download few big files (with total size 500-1000MB)
-# and measure required time. Do not rely on the program's speed indicator,
-# it is not accurate.
+# and measure required time. Do not rely on the program's speed indicator.
 # NOTE: if both options "DirectWrite" and "ContinuePartial" are enabled,
 # the program will create empty articles-files in temp-directrory. They
 # are used to continue download of file on a next program start. To minimize
@@ -200,7 +198,6 @@ DirectWrite=no
 # errors. However checking of CRC needs about the same CPU time as 
 # decoding of articles. On a fast connections with slow CPUs disabling of
 # CPU-check may slightly improve performance (if CPU is a limiting factor).
-# The option works only with internal decoder ("decoder=yenc")
 CrcCheck=yes
 
 # How much retries should be attempted if a download error occurs
@@ -464,17 +461,16 @@ PostLogKind=Detail
 # 1) Disable par-checking and -repairing ("ParCheck=no"). VERY important,
 #    because par-checking/repairing needs a lot of CPU-power and 
 #    significantly increases disk usage;
-# 2) Use internal Decoder ("Decoder=yenc");
-# 3) Try to activate option "DirectWrite" ("DirectWrite=yes");
-# 4) Disable option "CrcCheck" ("CrcCheck=no");
-# 5) Disable option "ContinuePartial" ("ContinuePartial=no");
-# 6) Do not limit download rate ("DownloadRate=0"), because the bandwidth 
+# 2) Try to activate option "DirectWrite" ("DirectWrite=yes");
+# 3) Disable option "CrcCheck" ("CrcCheck=no");
+# 4) Disable option "ContinuePartial" ("ContinuePartial=no");
+# 5) Do not limit download rate ("DownloadRate=0"), because the bandwidth 
 #    throttling eats CPU time;
-# 7) Disable logging for info- and debug-messages ("InfoTarget=none", 
+# 6) Disable logging for info- and debug-messages ("InfoTarget=none", 
 #    "DebugTarget=none");
-# 8) Run the program in daemon (Posix) or service (Windows) mode and use
+# 7) Run the program in daemon (Posix) or service (Windows) mode and use
 #    remote client for short periods of time needed for controlling of 
 #    download process on server. Daemon/Service mode eats less CPU 
 #    resources due to not updating of output on screen.
-# 9) Increase the value of option "WriteBufferSize" or better set it to 
+# 8) Increase the value of option "WriteBufferSize" or better set it to 
 #    "-1" (max/auto) if you have spare 5-20 MB of memory.
