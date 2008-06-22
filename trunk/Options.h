@@ -144,6 +144,7 @@ private:
 	bool				m_bParCleanupQueue;
 	int					m_iDiskSpace;
 	EPostLogKind		m_ePostLogKind;
+	bool				m_bAllowReProcess;
 
 	// Parsed command-line parameters
 	bool				m_bServerMode;
@@ -242,6 +243,7 @@ public:
 	bool				GetParCleanupQueue() { return m_bParCleanupQueue; }
 	int					GetDiskSpace() { return m_iDiskSpace; }
 	EPostLogKind		GetPostLogKind() { return m_ePostLogKind; }
+	bool				GetAllowReProcess() { return m_bAllowReProcess; }
 
 	// Parsed command-line parameters
 	bool				GetServerMode() { return m_bServerMode; }

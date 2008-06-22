@@ -138,6 +138,7 @@ static const char* OPTION_NZBDIRFILEAGE		= "NzbDirFileAge";
 static const char* OPTION_PARCLEANUPQUEUE	= "ParCleanupQueue";
 static const char* OPTION_DISKSPACE			= "DiskSpace";
 static const char* OPTION_POSTLOGKIND		= "PostLogKind";
+static const char* OPTION_ALLOWREPROCESS	= "AllowReProcess";
 
 #ifndef WIN32
 const char* PossibleConfigLocations[] =
@@ -425,6 +426,7 @@ void Options::InitDefault()
 	SetOption(OPTION_PARCLEANUPQUEUE, "no");
 	SetOption(OPTION_DISKSPACE, "0");
 	SetOption(OPTION_POSTLOGKIND, "none");
+	SetOption(OPTION_ALLOWREPROCESS, "no");
 }
 
 void Options::InitOptFile()
@@ -567,6 +569,7 @@ void Options::InitOptions()
 	m_bDirectWrite			= (bool)ParseOptionValue(OPTION_DIRECTWRITE, BoolCount, BoolNames, BoolValues);
 	m_bParCleanupQueue		= (bool)ParseOptionValue(OPTION_PARCLEANUPQUEUE, BoolCount, BoolNames, BoolValues);
 	m_bDecode				= (bool)ParseOptionValue(OPTION_DECODE, BoolCount, BoolNames, BoolValues);
+	m_bAllowReProcess		= (bool)ParseOptionValue(OPTION_ALLOWREPROCESS, BoolCount, BoolNames, BoolValues);
 
 	const char* OutputModeNames[] = { "loggable", "logable", "log", "colored", "color", "ncurses", "curses" };
 	const int OutputModeValues[] = { omLoggable, omLoggable, omLoggable, omColored, omColored, omNCurses, omNCurses };
