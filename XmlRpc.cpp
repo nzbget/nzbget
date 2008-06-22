@@ -554,7 +554,7 @@ bool XmlCommand::NextParamAsInt(int* iValue)
 			szParam = (char*)Util::XmlFindTag(m_szRequestPtr, "int", &iLen);
 			iTagLen = 5; //strlen("<int>");
 		}
-		if (!szParam || !strchr("0123456789", *szParam))
+		if (!szParam || !strchr("-+0123456789", *szParam))
 		{
 			return false;
 		}
