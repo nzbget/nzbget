@@ -439,6 +439,23 @@ ParCleanupQueue=yes
 # NOTE 4: do not forget to uncomment the next line
 #PostProcess=~/myscript.sh
 
+# Allow multiple post-processing for the same nzb-file (yes,no)
+# After the post-processing (par-check and call of a postprocess-script) is
+# completed, nzbget adds the nzb-file to a list of completed-jobs. The nzb-file
+# stays in the list until the last file from that nzb-file is deleted from 
+# the download queue (it occurs straight away if the par-check was successful 
+# and the option "ParCleanupQueue" was set).
+# So, if there were paused files in queue and they will be unpaused (manually
+# or from a post-process-script) nzbget will not post-process nzb-file again.
+# This prevents the unwanted multiple post-processing of the same nzb-file.
+# But it might be needed if the par-check/-repair are performed not directly 
+# by nzbget but from a post-process-script.
+# NOTE 1: it is recommended to keep the option disabled. You should enable it
+# only if it is suggested by a post-process-script's author.
+# NOTE 2: by enabling "AllowReProcess" you should disable the option "ParCheck"
+# to prevent multiple par-checking.
+AllowReProcess=no
+
 # Set the default message-kind for output received from postprocess-script 
 # (None, Detail, Info, Warning, Error, Debug).
 # NZBGet checks if the line written by the script to stdout or stderr starts

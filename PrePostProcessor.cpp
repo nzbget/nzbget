@@ -510,7 +510,7 @@ bool PrePostProcessor::CheckScript(FileInfo * pFileInfo)
 
 	if (m_bPostScript &&
 		!JobExists(&m_PostQueue, pFileInfo->GetNZBInfo()->GetFilename()) && 
-		!JobExists(&m_CompletedJobs, pFileInfo->GetNZBInfo()->GetFilename()))
+		(!JobExists(&m_CompletedJobs, pFileInfo->GetNZBInfo()->GetFilename()) || g_pOptions->GetAllowReProcess()))
 	{
 		m_mutexQueue.Lock();
 
@@ -676,7 +676,7 @@ bool PrePostProcessor::CheckPars(DownloadQueue * pDownloadQueue, FileInfo * pFil
 			szFullFilename[1024-1] = '\0';
 
 			if (!ParJobExists(&m_PostQueue, szFullFilename) && 
-				!ParJobExists(&m_CompletedJobs, szFullFilename))
+				(!ParJobExists(&m_CompletedJobs, szFullFilename) || g_pOptions->GetAllowReProcess()))
 			{
 				char szInfoName[1024];
 				int iBaseLen = 0;
