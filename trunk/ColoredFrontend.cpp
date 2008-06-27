@@ -109,7 +109,7 @@ void ColoredFrontend::PrintStatus()
 	char* szControlSeq = "";
 #else
 	printf("\033[s");
-	char* szControlSeq = "\033[K";
+	const char* szControlSeq = "\033[K";
 #endif
 
 	snprintf(tmp, 1024, " %d threads, %.0f KB/s, %.2f MB remaining%s%s%s%s%s\n", 

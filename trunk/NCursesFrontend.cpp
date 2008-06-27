@@ -528,7 +528,7 @@ void NCursesFrontend::PrintMessages()
 
 int NCursesFrontend::PrintMessage(Message* Msg, int iRow, int iMaxLines)
 {
-    char* szMessageType[] = { "INFO    ", "WARNING ", "ERROR   ", "DEBUG   ", "DETAIL  "};
+    const char* szMessageType[] = { "INFO    ", "WARNING ", "ERROR   ", "DEBUG   ", "DETAIL  "};
     const int iMessageTypeColor[] = { NCURSES_COLORPAIR_INFO, NCURSES_COLORPAIR_WARNING,
     	NCURSES_COLORPAIR_ERROR, NCURSES_COLORPAIR_DEBUG, NCURSES_COLORPAIR_DETAIL };
 
@@ -675,7 +675,7 @@ void NCursesFrontend::PrintKeyInputBar()
         break;
     case eEditQueue:
     {
-		char* szStatus = NULL;
+		const char* szStatus = NULL;
 		if (m_iSelectedQueueEntry > 0 && iQueueSize > 1 && m_iSelectedQueueEntry == iQueueSize - 1)
 		{
 			szStatus = "(Q)uit | (E)xit | (P)ause | (D)elete | (U)p/(T)op";

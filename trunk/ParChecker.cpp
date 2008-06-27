@@ -36,6 +36,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <ctype.h>
+#include <fstream>
 #ifdef WIN32
 #include <par2cmdline.h>
 #include <par2repairer.h>
@@ -444,7 +445,7 @@ bool ParChecker::AddSplittedFragments(const char* szFilename)
 
 void ParChecker::signal_filename(std::string str)
 {
-    char* szStageMessage[] = { "Loading file", "Verifying file", "Repairing file", "Verifying repaired file" };
+    const char* szStageMessage[] = { "Loading file", "Verifying file", "Repairing file", "Verifying repaired file" };
 
 	if (m_eStage == ptRepairing)
 	{

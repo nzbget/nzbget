@@ -34,6 +34,7 @@
 
 #include <stdlib.h>
 #include <string.h>
+#include <cstdio>
 #ifndef WIN32
 #include <netdb.h>
 #include <unistd.h>

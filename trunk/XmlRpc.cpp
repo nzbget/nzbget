@@ -33,6 +33,8 @@
 
 #include <stdlib.h>
 #include <string.h>
+#include <cstdio>
+#include <fstream>
 #ifndef WIN32
 #include <unistd.h>
 #include <sys/socket.h>
@@ -875,7 +877,7 @@ void LogXmlCommand::Execute()
 		"\"Text\" : \"%s\"\n"
 		"}";
 
-    char* szMessageType[] = { "INFO", "WARNING", "ERROR", "DEBUG", "DETAIL"};
+    const char* szMessageType[] = { "INFO", "WARNING", "ERROR", "DEBUG", "DETAIL"};
 	int szItemBufSize = 10240;
 	char* szItemBuf = (char*)malloc(szItemBufSize);
 	int index = 0;
@@ -1317,7 +1319,7 @@ void PostQueueXmlCommand::Execute()
 		char szNZBNicename[1024];
 		NZBInfo::MakeNiceNZBName(pPostInfo->GetNZBFilename(), szNZBNicename, sizeof(szNZBNicename));
 
-	    char* szPostStageName[] = { "QUEUED", "LOADING_PARS", "VERIFYING_SOURCES", "REPAIRING", "VERIFYING_REPAIRED", "EXECUTING_SCRIPT", "FINISHED" };
+	    const char* szPostStageName[] = { "QUEUED", "LOADING_PARS", "VERIFYING_SOURCES", "REPAIRING", "VERIFYING_REPAIRED", "EXECUTING_SCRIPT", "FINISHED" };
 
 		char* xmlNZBNicename = EncodeStr(szNZBNicename);
 		char* xmlNZBFilename = EncodeStr(pPostInfo->GetNZBFilename());
@@ -1359,7 +1361,7 @@ void PostQueueXmlCommand::Execute()
 				}
 				iStart = pMessages->size() - iNrEntries;
 
-				char* szMessageType[] = { "INFO", "WARNING", "ERROR", "DEBUG", "DETAIL"};
+				const char* szMessageType[] = { "INFO", "WARNING", "ERROR", "DEBUG", "DETAIL"};
 				int index = 0;
 
 				for (unsigned int i = (unsigned int)iStart; i < pMessages->size(); i++)

@@ -46,13 +46,13 @@ class QueueCoordinator : public Thread, public Observer, public Subject, public 
 {
 public:
 	typedef std::list<ArticleDownloader*>	ActiveDownloads;
-	typedef enum EAspectAction
+	enum EAspectAction
 	{
 		eaNZBFileAdded,
 		eaFileCompleted,
 		eaFileDeleted
 	};
-	typedef struct Aspect
+	struct Aspect
 	{
 		EAspectAction eAction;
 		FileInfo* pFileInfo;

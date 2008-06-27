@@ -34,6 +34,7 @@
 
 #include <stdlib.h>
 #include <string.h>
+#include <cstdio>
 #ifdef WIN32
 #include <windows.h>
 #else
@@ -87,7 +88,7 @@ RemoteClient::~RemoteClient()
 	}
 }
 
-void RemoteClient::printf(char * msg,...)
+void RemoteClient::printf(const char * msg,...)
 {
 	if (m_bVerbose)
 	{
@@ -98,7 +99,7 @@ void RemoteClient::printf(char * msg,...)
 	}
 }
 
-void RemoteClient::perror(char * msg)
+void RemoteClient::perror(const char * msg)
 {
 	if (m_bVerbose)
 	{
@@ -688,7 +689,7 @@ bool RemoteClient::RequestPostQueue()
 				sprintf(szCompleted, ", %i%s", (int)(iStageProgress / 10), "%");
 			}
 
-			char* szPostStageName[] = { "", ", Loading Pars", ", Verifying source files", ", Repairing", ", Verifying repaired files", ", Executing postprocess-script", "" };
+			const char* szPostStageName[] = { "", ", Loading Pars", ", Verifying source files", ", Repairing", ", Verifying repaired files", ", Executing postprocess-script", "" };
 			char* szInfoName = pBufPtr + sizeof(SNZBPostQueueResponseEntry) + ntohl(pPostQueueAnswer->m_iNZBFilenameLen) + ntohl(pPostQueueAnswer->m_iParFilename);
 			
 			printf("[%i] %s%s%s\n", ntohl(pPostQueueAnswer->m_iID), szInfoName, szPostStageName[ntohl(pPostQueueAnswer->m_iStage)], szCompleted);

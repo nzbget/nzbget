@@ -34,6 +34,7 @@
 
 #include <stdlib.h>
 #include <string.h>
+#include <cstdio>
 
 #include "nzbget.h"
 #include "Log.h"
@@ -60,7 +61,7 @@ NNTPConnection::~NNTPConnection()
 	free(m_szLineBuf);
 }
 
-const char* NNTPConnection::Request(char* req)
+const char* NNTPConnection::Request(const char* req)
 {
 	if (!req)
 	{
