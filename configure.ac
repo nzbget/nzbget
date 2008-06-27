@@ -13,12 +13,9 @@ AC_CANONICAL_HOST
 case "$host" in
   *86-*-linux*)
     LIBPREF1="/usr"
-    CFLAGS1="${CFLAGS} -m486"
-    CPPFLAGS1="${CPPFLAGS} -D_GNU_SOURCE"
     ;;
   *-linux*)
     LIBPREF1="/usr"
-    CPPFLAGS1="${CPPFLAGS} -D_GNU_SOURCE"
     ;;
   *-freebsd*)
     LIBPREF1="/usr/local"
@@ -31,12 +28,6 @@ esac
 
 if test "$LIBPREF" = ""; then
 	LIBPREF="$LIBPREF1"
-fi
-if test "$CFLAGS" = ""; then
-	CFLAGS="$CFLAGS1"
-fi
-if test "$CPPFLAGS" = ""; then
-	CPPFLAGS="$CPPFLAGS1"
 fi
 
 

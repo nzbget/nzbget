@@ -36,6 +36,7 @@
 #include <string.h>
 #include <sys/stat.h>
 #include <stdarg.h>
+#include <cstdio>
 
 #include "nzbget.h"
 #include "Options.h"

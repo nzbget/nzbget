@@ -45,7 +45,7 @@ public:
 							NNTPConnection(NewsServer* server);
 							~NNTPConnection();
 	NewsServer*				GetNewsServer() { return(NewsServer*)m_pNetAddress; }
-	const char* 			Request(char* req);
+	const char* 			Request(const char* req);
 	bool 					Authenticate();
 	bool 					AuthInfoUser(int iRecur = 0);
 	bool 					AuthInfoPass(int iRecur = 0);
