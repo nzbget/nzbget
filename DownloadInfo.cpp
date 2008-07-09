@@ -193,6 +193,7 @@ FileInfo::FileInfo()
 	m_bDeleted = false;
 	m_iCompleted = 0;
 	m_bOutputInitialized = false;
+	m_pNZBInfo = NULL;
 	m_iIDGen++;
 	m_iID = m_iIDGen;
 }
