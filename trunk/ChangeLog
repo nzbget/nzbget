@@ -1,6 +1,34 @@
-nzbget-0.4.1-testing:
-  - please look at subversion-log on sourceforge.net:
-    http://nzbget.svn.sourceforge.net/viewvc/nzbget/trunk/?view=log
+nzbget-0.4.1:
+  - to avoid accidental deletion of file in curses-frontend the key <D>
+    not now must be pressed in uppercase;
+  - options <username> and <password> in news-server's configuration are now 
+    optional;
+  - added the server's name to the detail-log-message, displayed on the start 
+    of article's download;
+  - added the option <AllowReProcess> to help to post-process-scripts, which 
+    make par-check/-repair on it's own;
+  - improved download-speed-meter: it useses now a ölittle bit less cpu and 
+    calculates the speed for the last 30 seconds (instead of 5 seconds),
+    providing better accuracy; Thanks to ydrol <ydrol@users.sourceforge.net>
+    for the patch;
+  - reduced CPU-usage in curses-outputmode; Thanks to ydrol for the patch 
+    <ydrol@users.sourceforge.net>;
+  - fixed: line-endings in windows-style (CR-LF) in config-file were not 
+    read properly;
+  - fixed: trailing spaces in nzb-filenames (before the file's extension) 
+    caused errors on windows. Now they will be trimmed;
+  - fixed: XML-RPC and JSON-RPC did not work on Big-Endian-CPUs (ARM, PPC, etc), 
+    preventing the using of web-interface;
+  - fixed: umask-option did not allow to enable write-permissions for <group> 
+    and <others>;
+  - fixed: in curses-outputmode the remote-client showed on first screen-update 
+    only one item of queue;
+  - fixed: edit-commands with negative offset did not work via XML-RPC 
+    (but worked via JSON-RPC);
+  - fixed incompatibility issues with gcc 4.3; Thanks to Paul Bredbury 
+    <brebs@users.sourceforge.net> for the patch;
+  - fixed: segmentation fault if a file listed in nzb-file does not have any 
+    segments (articles);
 
 nzbget-0.4.0:
   - added the support for XML-RPC and JSON-RPC to easier control the server 
