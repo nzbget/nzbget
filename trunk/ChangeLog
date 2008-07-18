@@ -1,13 +1,17 @@
+nzbget-0.5.0-testing:
+  - see subversion-log (from revision 189) at
+    http://nzbget.svn.sourceforge.net/viewvc/nzbget/trunk/?view=log
+
 nzbget-0.4.1:
   - to avoid accidental deletion of file in curses-frontend the key <D>
-    not now must be pressed in uppercase;
+    now must be pressed in uppercase;
   - options <username> and <password> in news-server's configuration are now 
     optional;
   - added the server's name to the detail-log-message, displayed on the start 
     of article's download;
   - added the option <AllowReProcess> to help to post-process-scripts, which 
     make par-check/-repair on it's own;
-  - improved download-speed-meter: it useses now a ölittle bit less cpu and 
+  - improved download-speed-meter: it uses now a little bit less cpu and
     calculates the speed for the last 30 seconds (instead of 5 seconds),
     providing better accuracy; Thanks to ydrol <ydrol@users.sourceforge.net>
     for the patch;
