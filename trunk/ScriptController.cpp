@@ -94,8 +94,9 @@ void ScriptController::Run()
 
 #ifdef WIN32
 	char szCmdLine[2048];
-	snprintf(szCmdLine, 2048, "\"%s\" \"%s\" \"%s\" \"%s\" %s %s %s", m_szScript, m_pPostInfo->GetDestDir(), 
-		m_pPostInfo->GetNZBFilename(), m_pPostInfo->GetParFilename(), szParStatus, szCollectionCompleted, szHasFailedParJobs);
+	snprintf(szCmdLine, 2048, "\"%s\" \"%s\" \"%s\" \"%s\" %s %s %s \"%s\"", m_szScript, m_pPostInfo->GetDestDir(), 
+		m_pPostInfo->GetNZBFilename(), m_pPostInfo->GetParFilename(), szParStatus, szCollectionCompleted, 
+		szHasFailedParJobs, m_pPostInfo->GetCategory());
 	szCmdLine[2048-1] = '\0';
 	
 	// create pipes to write and read data
@@ -199,8 +200,8 @@ void ScriptController::Run()
 		
 		close(pipeout);
 
-		execlp(m_szScript, m_szScript, szDestDir, szNZBFilename, szParFilename,
-			szParStatus, szCollectionCompleted, szHasFailedParJobs, NULL);
+		execlp(m_szScript, m_szScript, szDestDir, szNZBFilename, szParFilename, szParStatus, 
+			szCollectionCompleted, szHasFailedParJobs, m_pPostInfo->GetCategory(), NULL);
 		fprintf(stdout, "[ERROR] Could not start post-process-script: %s", strerror(errno));
 		fflush(stdout);
 		_exit(-1);

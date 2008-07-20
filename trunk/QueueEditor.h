@@ -52,7 +52,8 @@ public:
 		eaGroupResume,
 		eaGroupDelete,
 		eaGroupPauseAllPars,
-		eaGroupPauseExtraPars
+		eaGroupPauseExtraPars,
+		eaGroupSetCategory
 	};
 
 private:
@@ -71,7 +72,7 @@ private:
 private:
 	FileInfo*				FindFileInfo(DownloadQueue* pDownloadQueue, int iID);
 	int						FindFileInfoEntry(DownloadQueue* pDownloadQueue, FileInfo* pFileInfo);
-	bool					InternEditList(DownloadQueue* pDownloadQueue, IDList* pIDList, bool bSmartOrder, EEditAction eAction, int iOffset);
+	bool					InternEditList(DownloadQueue* pDownloadQueue, IDList* pIDList, bool bSmartOrder, EEditAction eAction, int iOffset, const char* szText);
 	void					PrepareList(DownloadQueue* pDownloadQueue, ItemList* pItemList, IDList* pIDList, bool bSmartOrder, EEditAction eAction, int iOffset);
 	bool					EditGroup(DownloadQueue* pDownloadQueue, FileInfo* pFileInfo, EEditAction eAction, int iOffset);
 	void					BuildGroupList(DownloadQueue* pDownloadQueue, FileList* pGroupList);
@@ -80,6 +81,7 @@ private:
 	void					AlignGroup(DownloadQueue* pDownloadQueue, FileInfo* pFirstFileInfo);
 	void					PauseParsInGroups(ItemList* pItemList, bool bExtraParsOnly);
 	void					PausePars(FileList* pFileList, bool bExtraParsOnly);
+	void					SetNZBCategory(NZBInfo* pNZBInfo, const char* szCategory);
 
 	void					PauseUnpauseEntry(FileInfo* pFileInfo, bool bPause);
 	void					DeleteEntry(FileInfo* pFileInfo);
@@ -89,10 +91,10 @@ public:
 							QueueEditor();                
 							~QueueEditor();
 
-	bool					EditEntry(int ID, bool bSmartOrder, EEditAction eAction, int iOffset);
-	bool					EditList(IDList* pIDList, bool bSmartOrder, EEditAction eAction, int iOffset);
+	bool					EditEntry(int ID, bool bSmartOrder, EEditAction eAction, int iOffset, const char* szText);
+	bool					EditList(IDList* pIDList, bool bSmartOrder, EEditAction eAction, int iOffset, const char* szText);
 
-	bool					LockedEditEntry(DownloadQueue* pDownloadQueue, int ID, bool bSmartOrder, EEditAction eAction, int iOffset);
+	bool					LockedEditEntry(DownloadQueue* pDownloadQueue, int ID, bool bSmartOrder, EEditAction eAction, int iOffset, const char* szText);
 };
 
 #endif

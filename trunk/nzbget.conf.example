@@ -28,7 +28,10 @@ $MAINDIR=~/download
 # Destination-directory to store the downloaded files
 DestDir=${MAINDIR}/dst
 
-# Directory to monitor for incoming nzb-jobs
+# Directory to monitor for incoming nzb-jobs.
+# Can have subdirectories (only one level of nesting). 
+# A nzb-file queued from a subdirectory will be automatically assigned to 
+# category with the directory-name.
 NzbDir=${MAINDIR}/nzb
 
 # Directory to store download queue
@@ -124,6 +127,9 @@ ReloadQueue=yes
 # This allows to continue download of file, if program was exited before 
 # the file was completed.
 ContinuePartial=yes
+
+# Create subdirectory with category-name in destination-directory (yes, no)
+AppendCategoryDir=yes
 
 # Create subdirectory with nzb-filename in destination-directory (yes, no)
 AppendNzbDir=yes
@@ -414,6 +420,8 @@ ParCleanupQueue=yes
 #      0 - no failed par-jobs;
 #      1 - current par-job or any of the previous par-jobs for the
 #          same nzb-files failed;
+#  7 - category assigned to nzb-file (can be empty string).
+#
 # NOTE: The parameter "state of nzb-job" is very important and MUST be checked 
 # even in the simplest scripts.
 # If par-check is enabled and nzb-file contains more than one collection

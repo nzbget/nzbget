@@ -103,6 +103,7 @@ public:
 	void				SetInfoName(const char* v);
 	const char*			GetInfoName() { return m_szInfoName; }
 	void				CompleteFileParts();
+	static bool			MoveCompletedFiles(NZBInfo* pNZBInfo, const char* szOldDestDir);
 	void				SetConnection(NNTPConnection* pConnection) { m_pConnection = pConnection; }
 
 	void				LogDebugInfo();
@@ -115,5 +116,13 @@ public:
 	virtual float		CalcCurrentDownloadSpeed() = 0;
 	virtual void		AddSpeedReading(int iBytes) = 0;
 };
-                      
+
+class NZBInfoLocker
+{
+public:
+	virtual				~NZBInfoLocker() {};
+	virtual void		LockNZBInfo(NZBInfo* pNZBInfo) = 0;
+	virtual void		UnlockNZBInfo(NZBInfo* pNZBInfo) = 0;
+};
+
 #endif

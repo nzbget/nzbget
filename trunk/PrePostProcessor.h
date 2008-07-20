@@ -83,7 +83,7 @@ private:
 	bool				m_bPostScript;
 
 	void				PausePars(DownloadQueue* pDownloadQueue, const char* szNZBFilename);
-	void				CheckIncomingNZBs();
+	void				CheckIncomingNZBs(const char* szDirectory, const char* szCategory);
 	bool				IsNZBFileCompleted(DownloadQueue* pDownloadQueue, const char* szNZBFilename, 
 							bool bIgnoreFirstInPostQueue, bool bIgnorePaused, bool bCheckPostQueue);
 	bool				CheckScript(FileInfo* pFileInfo);

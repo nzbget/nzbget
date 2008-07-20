@@ -38,6 +38,7 @@
 #define ctime_r(timep, buf, bufsize) ctime_s(buf, bufsize, timep)
 #define int32_t __int32
 #define mkdir(dir, flags) _mkdir(dir)
+#define rmdir _rmdir
 #define strcasecmp(a, b) _stricmp(a, b)
 #define strncasecmp(a, b, c) _strnicmp(a, b, c)
 

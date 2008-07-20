@@ -289,10 +289,10 @@ void QueueCoordinator::AddNZBFileToQueue(NZBFile* pNZBFile, bool bAddFirst)
 	m_mutexDownloadQueue.Unlock();
 }
 
-bool QueueCoordinator::AddFileToQueue(const char* szFileName)
+bool QueueCoordinator::AddFileToQueue(const char* szFileName, const char* szCategory)
 {
 	// Parse the buffer and make it into a NZBFile
-	NZBFile* pNZBFile = NZBFile::CreateFromFile(szFileName);
+	NZBFile* pNZBFile = NZBFile::CreateFromFile(szFileName, szCategory);
 
 	// Did file parse correctly?
 	if (!pNZBFile)
@@ -801,4 +801,27 @@ void QueueCoordinator::CalcStat(int* iUpTimeSec, int* iDnTimeSec, long long* iAl
 	}
 	*iAllBytes = m_iAllBytes;
 	m_mutexStat.Unlock();
+}
+
+bool QueueCoordinator::SetQueueEntryNZBCategory(NZBInfo* pNZBInfo, const char* szCategory)
+{
+	if (pNZBInfo->GetPostProcess())
+	{
+		char szNZBNiceName[1024];
+		pNZBInfo->GetNiceNZBName(szNZBNiceName, 1024);
+		error("Could not change category for %s. File in post-process-stage", szNZBNiceName);
+		return false;
+	}
+
+	char szOldDestDir[1024];
+	strncpy(szOldDestDir, pNZBInfo->GetDestDir(), 1024);
+	szOldDestDir[1024-1] = '\0';
+
+	pNZBInfo->SetCategory(szCategory);
+	pNZBInfo->BuildDestDirName();
+
+	bool bDirUnchanged = !strcmp(pNZBInfo->GetDestDir(), szOldDestDir);
+	bool bOK = bDirUnchanged || ArticleDownloader::MoveCompletedFiles(pNZBInfo, szOldDestDir);
+
+	return bOK;
 }

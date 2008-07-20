@@ -323,7 +323,7 @@ void DownloadBinCommand::Execute()
 
 	if (NeedBytes == 0)
 	{
-		NZBFile* pNZBFile = NZBFile::CreateFromBuffer(DownloadRequest.m_szFilename, pRecvBuffer, ntohl(DownloadRequest.m_iTrailingDataLength));
+		NZBFile* pNZBFile = NZBFile::CreateFromBuffer(DownloadRequest.m_szFilename, DownloadRequest.m_szCategory, pRecvBuffer, ntohl(DownloadRequest.m_iTrailingDataLength));
 
 		if (pNZBFile)
 		{
@@ -381,6 +381,7 @@ void ListBinCommand::Execute()
 			bufsize += strlen(pFileInfo->GetSubject()) + 1;
 			bufsize += strlen(pFileInfo->GetFilename()) + 1;
 			bufsize += strlen(pFileInfo->GetNZBInfo()->GetDestDir()) + 1;
+			bufsize += strlen(pFileInfo->GetNZBInfo()->GetCategory()) + 1;
 			// align struct to 4-bytes, needed by ARM-processor (and may be others)
 			bufsize += bufsize % 4 > 0 ? 4 - bufsize % 4 : 0;
 		}
@@ -405,6 +406,7 @@ void ListBinCommand::Execute()
 			pListAnswer->m_iSubjectLen		= htonl(strlen(pFileInfo->GetSubject()) + 1);
 			pListAnswer->m_iFilenameLen		= htonl(strlen(pFileInfo->GetFilename()) + 1);
 			pListAnswer->m_iDestDirLen		= htonl(strlen(pFileInfo->GetNZBInfo()->GetDestDir()) + 1);
+			pListAnswer->m_iCategoryLen		= htonl(strlen(pFileInfo->GetNZBInfo()->GetCategory()) + 1);
 			bufptr += sizeof(SNZBListResponseEntry);
 			strcpy(bufptr, pFileInfo->GetNZBInfo()->GetFilename());
 			bufptr += ntohl(pListAnswer->m_iNZBFilenameLen);
@@ -414,10 +416,12 @@ void ListBinCommand::Execute()
 			bufptr += ntohl(pListAnswer->m_iFilenameLen);
 			strcpy(bufptr, pFileInfo->GetNZBInfo()->GetDestDir());
 			bufptr += ntohl(pListAnswer->m_iDestDirLen);
+			strcpy(bufptr, pFileInfo->GetNZBInfo()->GetCategory());
+			bufptr += ntohl(pListAnswer->m_iCategoryLen);
 			// align struct to 4-bytes, needed by ARM-processor (and may be others)
 			if ((size_t)bufptr % 4 > 0)
 			{
-				pListAnswer->m_iDestDirLen = htonl(ntohl(pListAnswer->m_iDestDirLen) + 4 - (size_t)bufptr % 4);
+				pListAnswer->m_iCategoryLen = htonl(ntohl(pListAnswer->m_iCategoryLen) + 4 - (size_t)bufptr % 4);
 				bufptr += 4 - (size_t)bufptr % 4;
 			}
 		}
@@ -567,10 +571,11 @@ void EditQueueBinCommand::Execute()
 	int iNrEntries = ntohl(EditQueueRequest.m_iNrTrailingEntries);
 	int iAction = ntohl(EditQueueRequest.m_iAction);
 	int iOffset = ntohl(EditQueueRequest.m_iOffset);
+	int iTextLen = ntohl(EditQueueRequest.m_iTextLen);
 	bool bSmartOrder = ntohl(EditQueueRequest.m_bSmartOrder);
 	unsigned int iBufLength = ntohl(EditQueueRequest.m_iTrailingDataLength);
 
-	if (iNrEntries * sizeof(int32_t) != iBufLength)
+	if (iNrEntries * sizeof(int32_t) + iTextLen != iBufLength)
 	{
 		error("Invalid struct size");
 		return;
@@ -582,10 +587,12 @@ void EditQueueBinCommand::Execute()
 		return;
 	}
 
-	int32_t* pIDs = (int32_t*)malloc(iBufLength);
+	char* pBuf = (char*)malloc(iBufLength);
+	char* szText = NULL;
+	int32_t* pIDs = NULL;
 
 	// Read from the socket until nothing remains
-	char* pBufPtr = (char*)pIDs;
+	char* pBufPtr = pBuf;
 	int NeedBytes = iBufLength;
 	int iResult = 0;
 	while (NeedBytes > 0)
@@ -600,6 +607,13 @@ void EditQueueBinCommand::Execute()
 		pBufPtr += iResult;
 		NeedBytes -= iResult;
 	}
+	bool bOK = NeedBytes == 0;
+
+	if (bOK)
+	{
+		szText = iTextLen > 0 ? pBuf : NULL;
+		pIDs = (int32_t*)(pBuf + iTextLen);
+	}
 
 	QueueEditor::IDList cIDList;
 	cIDList.reserve(iNrEntries);
@@ -608,9 +622,9 @@ void EditQueueBinCommand::Execute()
 		cIDList.push_back(ntohl(pIDs[i]));
 	}
 
-	free(pIDs);
+	bOK = g_pQueueCoordinator->GetQueueEditor()->EditList(&cIDList, bSmartOrder, (QueueEditor::EEditAction)iAction, iOffset, szText);
 
-	bool bOK = g_pQueueCoordinator->GetQueueEditor()->EditList(&cIDList, bSmartOrder, (QueueEditor::EEditAction)iAction, iOffset);
+	free(pBuf);
 
 	if (bOK)
 	{

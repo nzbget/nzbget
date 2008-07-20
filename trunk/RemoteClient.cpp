@@ -178,14 +178,14 @@ bool RemoteClient::ReceiveBoolResponse()
 /*
  * Sends a message to the running nzbget process.
  */
-bool RemoteClient::RequestServerDownload(const char* szName, bool bAddFirst)
+bool RemoteClient::RequestServerDownload(const char* szFilename, const char* szCategory, bool bAddFirst)
 {
 	// Read the file into the buffer
 	char* szBuffer	= NULL;
 	int iLength		= 0;
-	if (!Util::LoadFileIntoBuffer(szName, &szBuffer, &iLength))
+	if (!Util::LoadFileIntoBuffer(szFilename, &szBuffer, &iLength))
 	{
-		printf("Could not load file %s\n", szName);
+		printf("Could not load file %s\n", szFilename);
 		return false;
 	}
 
@@ -197,8 +197,14 @@ bool RemoteClient::RequestServerDownload(const char* szName, bool bAddFirst)
 		DownloadRequest.m_bAddFirst = htonl(bAddFirst);
 		DownloadRequest.m_iTrailingDataLength = htonl(iLength);
 
-		strncpy(DownloadRequest.m_szFilename, szName, NZBREQUESTFILENAMESIZE - 1);
+		strncpy(DownloadRequest.m_szFilename, szFilename, NZBREQUESTFILENAMESIZE - 1);
 		DownloadRequest.m_szFilename[NZBREQUESTFILENAMESIZE-1] = '\0';
+		DownloadRequest.m_szCategory[0] = '\0';
+		if (szCategory)
+		{
+			strncpy(DownloadRequest.m_szCategory, szCategory, NZBREQUESTFILENAMESIZE - 1);
+		}
+		DownloadRequest.m_szCategory[NZBREQUESTFILENAMESIZE-1] = '\0';
 
 		if (m_pConnection->Send((char*)(&DownloadRequest), sizeof(DownloadRequest)) < 0)
 		{
@@ -316,7 +322,8 @@ bool RemoteClient::RequestServerList()
 				(float)(Util::Int64ToFloat(lFileSize) / 1024.0 / 1024.0), szCompleted, szStatus);
 
 			pBufPtr += sizeof(SNZBListResponseEntry) + ntohl(pListAnswer->m_iNZBFilenameLen) +
-				ntohl(pListAnswer->m_iSubjectLen) + ntohl(pListAnswer->m_iFilenameLen) + ntohl(pListAnswer->m_iDestDirLen);
+				ntohl(pListAnswer->m_iSubjectLen) + ntohl(pListAnswer->m_iFilenameLen) + 
+				ntohl(pListAnswer->m_iDestDirLen) + ntohl(pListAnswer->m_iCategoryLen);
 		}
 
 		printf("-----------------------------------\n");
@@ -532,7 +539,7 @@ bool RemoteClient::RequestServerDumpDebug()
 	return OK;
 }
 
-bool RemoteClient::RequestServerEditQueue(int iAction, int iOffset, int* pIDList, int iIDCount, bool bSmartOrder)
+bool RemoteClient::RequestServerEditQueue(int iAction, int iOffset, const char* szText, int* pIDList, int iIDCount, bool bSmartOrder)
 {
 	if (iIDCount <= 0 || pIDList == NULL)
 	{
@@ -542,17 +549,28 @@ bool RemoteClient::RequestServerEditQueue(int iAction, int iOffset, int* pIDList
 
 	if (!InitConnection()) return false;
 
-	int iLength = sizeof(int32_t) * iIDCount;
+	int iTextLen = szText ? strlen(szText) + 1 : 0;
+	// align size to 4-bytes, needed by ARM-processor (and may be others)
+	iTextLen += iTextLen % 4 > 0 ? 4 - iTextLen % 4 : 0;
+	int iLength = sizeof(int32_t) * iIDCount + iTextLen;
 
 	SNZBEditQueueRequest EditQueueRequest;
 	InitMessageBase(&EditQueueRequest.m_MessageBase, eRemoteRequestEditQueue, sizeof(EditQueueRequest));
 	EditQueueRequest.m_iAction = htonl(iAction);
 	EditQueueRequest.m_iOffset = htonl((int)iOffset);
 	EditQueueRequest.m_bSmartOrder = htonl(bSmartOrder);
+	EditQueueRequest.m_iTextLen = htonl(iTextLen);
 	EditQueueRequest.m_iNrTrailingEntries = htonl(iIDCount);
 	EditQueueRequest.m_iTrailingDataLength = htonl(iLength);
 
-	int32_t* pIDs = (int32_t*)malloc(iLength);
+	char* pTrailingData = (char*)malloc(iLength);
+
+	if (iTextLen > 0)
+	{
+		strcpy(pTrailingData, szText);
+	}
+
+	int32_t* pIDs = (int32_t*)(pTrailingData + iTextLen);
 	
 	for (int i = 0; i < iIDCount; i++)
 	{
@@ -566,12 +584,12 @@ bool RemoteClient::RequestServerEditQueue(int iAction, int iOffset, int* pIDList
 	}
 	else
 	{
-		m_pConnection->Send((char*)pIDs, iLength);
+		m_pConnection->Send(pTrailingData, iLength);
 		OK = ReceiveBoolResponse();
 		m_pConnection->Disconnect();
 	}
 
-	free(pIDs);
+	free(pTrailingData);
 
 	m_pConnection->Disconnect();
 	return OK;

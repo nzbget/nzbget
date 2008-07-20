@@ -146,7 +146,7 @@ void PrePostProcessor::Run()
 			iNZBDirInterval >= g_pOptions->GetNzbDirInterval() * 1000)
 		{
 			// check nzbdir every g_pOptions->GetNzbDirInterval() seconds
-			CheckIncomingNZBs();
+			CheckIncomingNZBs(g_pOptions->GetNzbDir(), NULL);
 			iNZBDirInterval = 0;
 		}
 		iNZBDirInterval += 200;
@@ -243,6 +243,7 @@ void PrePostProcessor::QueueCoordinatorUpdate(Subject * Caller, void * Aspect)
 
 			if (pAspect->eAction == QueueCoordinator::eaFileCompleted)
 			{
+				pAspect->pFileInfo->GetNZBInfo()->SetPostProcess(true);
 #ifndef DISABLE_PARCHECK
 				(g_pOptions->GetParCheck() && g_pOptions->GetDecode() && 
 					CheckPars(pAspect->pDownloadQueue, pAspect->pFileInfo)) ||
@@ -268,51 +269,61 @@ void PrePostProcessor::QueueCoordinatorUpdate(Subject * Caller, void * Aspect)
 * Check if there are files in directory for incoming nzb-files
 * and add them to download queue
 */
-void PrePostProcessor::CheckIncomingNZBs()
+void PrePostProcessor::CheckIncomingNZBs(const char* szDirectory, const char* szCategory)
 {
-	DirBrowser dir(g_pOptions->GetNzbDir());
+	DirBrowser dir(szDirectory);
 	while (const char* filename = dir.Next())
 	{
-		int len = strlen(filename);
-		if (len > 4 && !strcasecmp(filename + len - 4, ".nzb"))
+		struct stat buffer;
+		char fullfilename[1023 + 1]; // one char reserved for the trailing slash (if needed)
+		snprintf(fullfilename, 1023, "%s%s", szDirectory, filename);
+		fullfilename[1023-1] = '\0';
+		if (!stat(fullfilename, &buffer))
 		{
-			// file found, checking modification-time
-			struct stat buffer;
-			char fullfilename[1024];
-			snprintf(fullfilename, 1024, "%s%s", g_pOptions->GetNzbDir(), filename);
-			fullfilename[1024-1] = '\0';
-			if (!stat(fullfilename, &buffer) &&
-				time(NULL) - buffer.st_mtime > g_pOptions->GetNzbDirFileAge() &&
-				time(NULL) - buffer.st_ctime > g_pOptions->GetNzbDirFileAge())
-			{
-				// the file is at least g_pOptions->GetNzbDirFileAge() seconds old, we can process it
-				info("Collection %s found", filename);
-				char bakname[1024];
-				if (g_pQueueCoordinator->AddFileToQueue(fullfilename))
-				{
-					info("Collection %s added to queue", filename);
-					snprintf(bakname, 1024, "%s.queued", fullfilename);
-					bakname[1024-1] = '\0';
-				}
-				else
-				{
-					error("Could not add collection %s to queue", filename);
-					snprintf(bakname, 1024, "%s.error", fullfilename);
-					bakname[1024-1] = '\0';
-				}
+			int len = strlen(filename);
 
-				char bakname2[1024];
-				strcpy(bakname2, bakname);
-				int i = 2;
-				while (!stat(bakname2, &buffer))
+			// check subfolders of first level
+			if (!szCategory && (buffer.st_mode & S_IFDIR) != 0 && strcmp(filename, ".") && strcmp(filename, ".."))
+			{
+				fullfilename[strlen(fullfilename) + 1] = '\0';
+				fullfilename[strlen(fullfilename)] = PATH_SEPARATOR;
+				CheckIncomingNZBs(fullfilename, filename);
+			}
+			else if (len > 4 && !strcasecmp(filename + len - 4, ".nzb"))
+			{
+				// file found, checking modification-time
+				if (time(NULL) - buffer.st_mtime > g_pOptions->GetNzbDirFileAge() &&
+					time(NULL) - buffer.st_ctime > g_pOptions->GetNzbDirFileAge())
 				{
-					snprintf(bakname2, 1024, "%s%i", bakname, i++);
-					bakname2[1024-1] = '\0';
-				}
-				
-				if (rename(fullfilename, bakname2))
-				{
-					error("Could not rename file %s to %s! Errcode: %i", fullfilename, bakname2, errno);
+					// the file is at least g_pOptions->GetNzbDirFileAge() seconds old, we can process it
+					info("Collection %s found", filename);
+					char bakname[1024];
+					if (g_pQueueCoordinator->AddFileToQueue(fullfilename, szCategory))
+					{
+						info("Collection %s added to queue", filename);
+						snprintf(bakname, 1024, "%s.queued", fullfilename);
+						bakname[1024-1] = '\0';
+					}
+					else
+					{
+						error("Could not add collection %s to queue", filename);
+						snprintf(bakname, 1024, "%s.error", fullfilename);
+						bakname[1024-1] = '\0';
+					}
+
+					char bakname2[1024];
+					strcpy(bakname2, bakname);
+					int i = 2;
+					while (!stat(bakname2, &buffer))
+					{
+						snprintf(bakname2, 1024, "%s%i", bakname, i++);
+						bakname2[1024-1] = '\0';
+					}
+					
+					if (rename(fullfilename, bakname2))
+					{
+						error("Could not rename file %s to %s! Errcode: %i", fullfilename, bakname2, errno);
+					}
 				}
 			}
 		}
@@ -381,7 +392,7 @@ void PrePostProcessor::CheckPostQueue()
 	if (iCleanupGroupID > 0)
 	{
 		info("Cleaning up download queue for %s", szNZBNiceName);
-		g_pQueueCoordinator->GetQueueEditor()->EditEntry(iCleanupGroupID, false, QueueEditor::eaGroupDelete, 0);
+		g_pQueueCoordinator->GetQueueEditor()->EditEntry(iCleanupGroupID, false, QueueEditor::eaGroupDelete, 0, NULL);
 	}
 }
 
@@ -524,6 +535,7 @@ bool PrePostProcessor::CheckScript(FileInfo * pFileInfo)
 		pPostInfo->SetDestDir(pFileInfo->GetNZBInfo()->GetDestDir());
 		pPostInfo->SetParFilename("");
 		pPostInfo->SetInfoName(szNZBNiceName);
+		pPostInfo->SetCategory(pFileInfo->GetNZBInfo()->GetCategory());
 		pPostInfo->SetParCheck(false);
 		m_PostQueue.push_back(pPostInfo);
 		SavePostQueue();
@@ -594,7 +606,7 @@ void PrePostProcessor::PausePars(DownloadQueue* pDownloadQueue, const char* szNZ
 				(g_pOptions->GetLoadPars() == Options::lpOne ||
 					(g_pOptions->GetLoadPars() == Options::lpNone && g_pOptions->GetParCheck()))
 				? QueueEditor::eaGroupPauseExtraPars : QueueEditor::eaGroupPauseAllPars,
-				0);
+				0, NULL);
 			break;
 		}
 	}
@@ -696,6 +708,7 @@ bool PrePostProcessor::CheckPars(DownloadQueue * pDownloadQueue, FileInfo * pFil
 				pPostInfo->SetDestDir(pFileInfo->GetNZBInfo()->GetDestDir());
 				pPostInfo->SetParFilename(szFullFilename);
 				pPostInfo->SetInfoName(szParInfoName);
+				pPostInfo->SetCategory(pFileInfo->GetNZBInfo()->GetCategory());
 				pPostInfo->SetParCheck(true);
 				m_PostQueue.push_back(pPostInfo);
 				SavePostQueue();

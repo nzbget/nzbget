@@ -87,6 +87,7 @@ ServerPool* g_pServerPool = NULL;
 QueueCoordinator* g_pQueueCoordinator = NULL;
 RemoteServer* g_pRemoteServer = NULL;
 DownloadSpeedMeter* g_pDownloadSpeedMeter = NULL;
+NZBInfoLocker* g_pNZBInfoLocker = NULL;
 Log* g_pLog = NULL;
 PrePostProcessor* g_pPrePostProcessor = NULL;
 DiskState* g_pDiskState = NULL;
@@ -191,6 +192,7 @@ void Run()
 	{                                    
 		g_pQueueCoordinator = new QueueCoordinator();
 		g_pDownloadSpeedMeter = g_pQueueCoordinator;
+		g_pNZBInfoLocker = g_pQueueCoordinator;
 	}
 
 	// Setup the network-server
@@ -235,7 +237,7 @@ void Run()
 	if (!g_pOptions->GetRemoteClientMode())
 	{
 		// Standalone-mode
-		if (!g_pOptions->GetServerMode() && !g_pQueueCoordinator->AddFileToQueue(g_pOptions->GetArgFilename()))
+		if (!g_pOptions->GetServerMode() && !g_pQueueCoordinator->AddFileToQueue(g_pOptions->GetArgFilename(), g_pOptions->GetCategory()))
 		{
 			abort("FATAL ERROR: Parsing NZB-document %s failed!!\n\n", g_pOptions->GetArgFilename() ? g_pOptions->GetArgFilename() : "N/A");
 			return;
@@ -336,7 +338,7 @@ void ProcessClientRequest()
 	else if (g_pOptions->GetClientOperation() == Options::opClientRequestEditQueue)
 	{
 		Client->RequestServerEditQueue(g_pOptions->GetEditQueueAction(), g_pOptions->GetEditQueueOffset(),
-			g_pOptions->GetEditQueueIDList(), g_pOptions->GetEditQueueIDCount(), true);
+			g_pOptions->GetEditQueueText(), g_pOptions->GetEditQueueIDList(), g_pOptions->GetEditQueueIDCount(), true);
 	}
 	else if (g_pOptions->GetClientOperation() == Options::opClientRequestLog)
 	{
@@ -348,7 +350,7 @@ void ProcessClientRequest()
 	}
 	else if (g_pOptions->GetClientOperation() == Options::opClientRequestDownload)
 	{
-		Client->RequestServerDownload(g_pOptions->GetArgFilename(), g_pOptions->GetAddTop());
+		Client->RequestServerDownload(g_pOptions->GetArgFilename(), g_pOptions->GetCategory(), g_pOptions->GetAddTop());
 	}
 	else if (g_pOptions->GetClientOperation() == Options::opClientRequestVersion)
 	{

@@ -220,7 +220,7 @@ bool Frontend::ServerEditQueue(QueueEditor::EEditAction eAction, int iOffset, in
 	}
 	else
 	{
-		return g_pQueueCoordinator->GetQueueEditor()->EditEntry(iID, true, eAction, iOffset);
+		return g_pQueueCoordinator->GetQueueEditor()->EditEntry(iID, true, eAction, iOffset, NULL);
 	}
 	return false;
 }
@@ -378,6 +378,7 @@ bool Frontend::RequestFileList()
 			char* szSubject = pBufPtr + sizeof(SNZBListResponseEntry) + ntohl(pListAnswer->m_iNZBFilenameLen);
 			char* szFileName = pBufPtr + sizeof(SNZBListResponseEntry) + ntohl(pListAnswer->m_iNZBFilenameLen) + ntohl(pListAnswer->m_iSubjectLen);
 			char* szDestDir = pBufPtr + sizeof(SNZBListResponseEntry) + ntohl(pListAnswer->m_iNZBFilenameLen) + ntohl(pListAnswer->m_iSubjectLen) + ntohl(pListAnswer->m_iFilenameLen);
+			char* szCategory = pBufPtr + sizeof(SNZBListResponseEntry) + ntohl(pListAnswer->m_iNZBFilenameLen) + ntohl(pListAnswer->m_iSubjectLen) + ntohl(pListAnswer->m_iFilenameLen) + ntohl(pListAnswer->m_iDestDirLen);
 			
 			FileInfo* pFileInfo = new FileInfo();
 			pFileInfo->SetID(ntohl(pListAnswer->m_iID));
@@ -404,6 +405,7 @@ bool Frontend::RequestFileList()
 				pNZBInfo = new NZBInfo();
 				pNZBInfo->SetFilename(szNZBFilename);
 				pNZBInfo->SetDestDir(szDestDir);
+				pNZBInfo->SetCategory(szCategory);
 				cNZBList.push_back(pNZBInfo);
 			}
 
@@ -412,7 +414,8 @@ bool Frontend::RequestFileList()
 			m_RemoteQueue.push_back(pFileInfo);
 
 			pBufPtr += sizeof(SNZBListResponseEntry) + ntohl(pListAnswer->m_iNZBFilenameLen) +
-				ntohl(pListAnswer->m_iSubjectLen) + ntohl(pListAnswer->m_iFilenameLen) + ntohl(pListAnswer->m_iDestDirLen);
+				ntohl(pListAnswer->m_iSubjectLen) + ntohl(pListAnswer->m_iFilenameLen) + 
+				ntohl(pListAnswer->m_iDestDirLen) + ntohl(pListAnswer->m_iCategoryLen);
 		}
 	}
 	if (pBuf)
@@ -448,5 +451,5 @@ bool Frontend::RequestEditQueue(int iAction, int iOffset, int iID)
 {
 	RemoteClient client;
 	client.SetVerbose(false);
-	return client.RequestServerEditQueue(iAction, iOffset, &iID, 1, false);
+	return client.RequestServerEditQueue(iAction, iOffset, NULL, &iID, 1, false);
 }

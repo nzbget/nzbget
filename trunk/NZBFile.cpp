@@ -54,7 +54,7 @@ using namespace MSXML;
 extern Options* g_pOptions;
 extern DiskState* g_pDiskState;
 
-NZBFile::NZBFile(const char* szFileName)
+NZBFile::NZBFile(const char* szFileName, const char* szCategory)
 {
     debug("Creating NZBFile");
 
@@ -62,7 +62,8 @@ NZBFile::NZBFile(const char* szFileName)
 	m_pNZBInfo = new NZBInfo();
 	m_pNZBInfo->AddReference();
 	m_pNZBInfo->SetFilename(szFileName);
-	BuildDestDirName();
+	m_pNZBInfo->SetCategory(szCategory);
+	m_pNZBInfo->BuildDestDirName();
 
     m_FileInfos.clear();
 }
@@ -99,14 +100,14 @@ void NZBFile::DetachFileInfos()
     m_FileInfos.clear();
 }
 
-NZBFile* NZBFile::CreateFromBuffer(const char* szFileName, const char* szBuffer, int iSize)
+NZBFile* NZBFile::CreateFromBuffer(const char* szFileName, const char* szCategory, const char* szBuffer, int iSize)
 {
-	return Create(szFileName, szBuffer, iSize, true);
+	return Create(szFileName, szCategory, szBuffer, iSize, true);
 }
 
-NZBFile* NZBFile::CreateFromFile(const char* szFileName)
+NZBFile* NZBFile::CreateFromFile(const char* szFileName, const char* szCategory)
 {
-	return Create(szFileName, NULL, 0, false);
+	return Create(szFileName, szCategory, NULL, 0, false);
 }
 
 void NZBFile::AddArticle(FileInfo* pFileInfo, ArticleInfo* pArticleInfo)
@@ -245,26 +246,6 @@ void NZBFile::ParseSubject(FileInfo* pFileInfo)
 	pFileInfo->MakeValidFilename();
 }
 
-void NZBFile::BuildDestDirName()
-{
-	char szBuffer[1024];
-
-	if (g_pOptions->GetAppendNZBDir())
-	{
-		char szNiceNZBName[1024];
-		m_pNZBInfo->GetNiceNZBName(szNiceNZBName, 1024);
-		snprintf(szBuffer, 1024, "%s%s", g_pOptions->GetDestDir(), szNiceNZBName);
-		szBuffer[1024-1] = '\0';
-	}
-	else
-	{
-		strncpy(szBuffer, g_pOptions->GetDestDir(), 1024);
-		szBuffer[1024-1] = '\0'; // trim the last slash, always returned by GetDestDir()
-	}
-
-	m_pNZBInfo->SetDestDir(szBuffer);
-}
-
 /**
  * Check if the parsing of subject was correct
  */
@@ -310,7 +291,7 @@ void NZBFile::CheckFilenames()
 }
 
 #ifdef WIN32
-NZBFile* NZBFile::Create(const char* szFileName, const char* szBuffer, int iSize, bool bFromBuffer)
+NZBFile* NZBFile::Create(const char* szFileName, const char* szCategory, const char* szBuffer, int iSize, bool bFromBuffer)
 {
     CoInitialize(NULL);
 
@@ -350,7 +331,7 @@ NZBFile* NZBFile::Create(const char* szFileName, const char* szBuffer, int iSize
 		return NULL;
 	}
 
-    NZBFile* pFile = new NZBFile(szFileName);
+    NZBFile* pFile = new NZBFile(szFileName, szCategory);
     if (pFile->ParseNZB(doc))
 	{
 		pFile->CheckFilenames();
@@ -447,7 +428,7 @@ bool NZBFile::ParseNZB(IUnknown* nzb)
 
 #else
 
-NZBFile* NZBFile::Create(const char* szFileName, const char* szBuffer, int iSize, bool bFromBuffer)
+NZBFile* NZBFile::Create(const char* szFileName, const char* szCategory, const char* szBuffer, int iSize, bool bFromBuffer)
 {
     xmlTextReaderPtr doc;
 	if (bFromBuffer)
@@ -463,7 +444,7 @@ NZBFile* NZBFile::Create(const char* szFileName, const char* szBuffer, int iSize
         return NULL;
     }
 
-    NZBFile* pFile = new NZBFile(szFileName);
+    NZBFile* pFile = new NZBFile(szFileName, szCategory);
     if (pFile->ParseNZB(doc))
 	{
 		pFile->CheckFilenames();
