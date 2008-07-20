@@ -496,7 +496,7 @@ void XmlCommand::BuildErrorResponse(int iErrCode, const char* szErrText)
 
 void XmlCommand::BuildBoolResponse(bool bOK)
 {
-	const char* XML_RESPONSE_BOOL_BODY = "<boolean>%i</boolean>";
+	const char* XML_RESPONSE_BOOL_BODY = "<boolean>%s</boolean>";
 	const char* JSON_RESPONSE_BOOL_BODY = "%s";
 
 	char szContent[1024];
@@ -653,6 +653,11 @@ const char* XmlCommand::BoolToStr(bool bValue)
 
 char* XmlCommand::EncodeStr(const char* szStr)
 {
+	if (!szStr)
+	{
+		return strdup("");
+	}
+
 	if (IsJson()) 
 	{
 		return Util::JsonEncode(szStr);
@@ -934,6 +939,7 @@ void ListFilesXmlCommand::Execute()
 		"<member><name>Subject</name><value><string>%s</string></value></member>\n"
 		"<member><name>Filename</name><value><string>%s</string></value></member>\n"
 		"<member><name>DestDir</name><value><string>%s</string></value></member>\n"
+		"<member><name>Category</name><value><string>%s</string></value></member>\n"
 		"</struct></value>\n";
 
 	const char* JSON_LIST_ITEM = 
@@ -949,7 +955,8 @@ void ListFilesXmlCommand::Execute()
 		"\"NZBFilename\" : \"%s\",\n"
 		"\"Subject\" : \"%s\",\n"
 		"\"Filename\" : \"%s\",\n"
-		"\"DestDir\" : \"%s\"\n"
+		"\"DestDir\" : \"%s\",\n"
+		"\"Category\" : \"%s\"\n"
 		"}";
 
 	int szItemBufSize = 10240;
@@ -971,18 +978,20 @@ void ListFilesXmlCommand::Execute()
 			char* xmlSubject = EncodeStr(pFileInfo->GetSubject());
 			char* xmlFilename = EncodeStr(pFileInfo->GetFilename());
 			char* xmlDestDir = EncodeStr(pFileInfo->GetNZBInfo()->GetDestDir());
+			char* xmlCategory = EncodeStr(pFileInfo->GetNZBInfo()->GetCategory());
 			char* xmlNZBNicename = EncodeStr(szNZBNicename);
 
 			snprintf(szItemBuf, szItemBufSize, IsJson() ? JSON_LIST_ITEM : XML_LIST_ITEM,
 				pFileInfo->GetID(), iFileSizeLo, iFileSizeHi, iRemainingSizeLo, iRemainingSizeHi, 
 				BoolToStr(pFileInfo->GetFilenameConfirmed()), BoolToStr(pFileInfo->GetPaused()),
-				xmlNZBNicename, xmlNZBFilename, xmlSubject, xmlFilename, xmlDestDir);
+				xmlNZBNicename, xmlNZBFilename, xmlSubject, xmlFilename, xmlDestDir, xmlCategory);
 			szItemBuf[szItemBufSize-1] = '\0';
 
 			free(xmlNZBFilename);
 			free(xmlSubject);
 			free(xmlFilename);
 			free(xmlDestDir);
+			free(xmlCategory);
 			free(xmlNZBNicename);
 
 			if (IsJson() && index++ > 0)
@@ -1021,6 +1030,7 @@ void ListGroupsXmlCommand::Execute()
 		"<member><name>NZBNicename</name><value><string>%s</string></value></member>\n"
 		"<member><name>NZBFilename</name><value><string>%s</string></value></member>\n"
 		"<member><name>DestDir</name><value><string>%s</string></value></member>\n"
+		"<member><name>Category</name><value><string>%s</string></value></member>\n"
 		"</struct></value>\n";
 
 	const char* JSON_LIST_ITEM = 
@@ -1041,7 +1051,8 @@ void ListGroupsXmlCommand::Execute()
 		"\"RemainingParCount\" : %i,\n"
 		"\"NZBNicename\" : \"%s\",\n"
 		"\"NZBFilename\" : \"%s\",\n"
-		"\"DestDir\" : \"%s\"\n"
+		"\"DestDir\" : \"%s\",\n"
+		"\"Category\" : \"%s\"\n"
 		"}";
 
 	GroupQueue groupQueue;
@@ -1072,17 +1083,19 @@ void ListGroupsXmlCommand::Execute()
 		char* xmlNZBNicename = EncodeStr(szNZBNicename);
 		char* xmlNZBFilename = EncodeStr(pGroupInfo->GetNZBInfo()->GetFilename());
 		char* xmlDestDir = EncodeStr(pGroupInfo->GetNZBInfo()->GetDestDir());
+		char* xmlCategory = EncodeStr(pGroupInfo->GetNZBInfo()->GetCategory());
 
 		snprintf(szItemBuf, szItemBufSize, IsJson() ? JSON_LIST_ITEM : XML_LIST_ITEM,
 			pGroupInfo->GetFirstID(), pGroupInfo->GetLastID(), iFileSizeLo, iFileSizeHi, iFileSizeMB, 
 			iRemainingSizeLo, iRemainingSizeHi, iRemainingSizeMB, iPausedSizeLo, iPausedSizeHi, iPausedSizeMB, 
 			pGroupInfo->GetNZBInfo()->GetFileCount(), pGroupInfo->GetRemainingFileCount(), 
-			pGroupInfo->GetRemainingParCount(), xmlNZBNicename, xmlNZBFilename, xmlDestDir);
+			pGroupInfo->GetRemainingParCount(), xmlNZBNicename, xmlNZBFilename, xmlDestDir, xmlCategory);
 		szItemBuf[szItemBufSize-1] = '\0';
 
 		free(xmlNZBNicename);
 		free(xmlNZBFilename);
 		free(xmlDestDir);
+		free(xmlCategory);
 
 		if (IsJson() && index++ > 0)
 		{
@@ -1124,6 +1137,7 @@ EditCommandEntry EditCommandNameMap[] = {
 	{ QueueEditor::eaGroupDelete, "GroupDelete" },
 	{ QueueEditor::eaGroupPauseAllPars, "GroupPauseAllPars" },
 	{ QueueEditor::eaGroupPauseExtraPars, "GroupPauseExtraPars" },
+	{ QueueEditor::eaGroupSetCategory, "GroupSetCategory" },
 	{ QueueEditor::eaFileMoveOffset, NULL }
 };
 
@@ -1141,8 +1155,8 @@ void EditQueueXmlCommand::Execute()
 		BuildErrorResponse(2, "Invalid parameter");
 		return;
 	}
-
 	debug("EditCommand=%s", szEditCommand);
+
 	int iAction = -1;
 	for (int i = 0; const char* szName = EditCommandNameMap[i].szActionName; i++)
 	{
@@ -1166,6 +1180,14 @@ void EditQueueXmlCommand::Execute()
 		return;
 	}
 
+	char* szEditText;
+	if (!NextParamAsStr(&szEditText))
+	{
+		BuildErrorResponse(2, "Invalid parameter");
+		return;
+	}
+	debug("EditText=%s", szEditText);
+
 	QueueEditor::IDList cIDList;
 	int iID = 0;
 	while (NextParamAsInt(&iID))
@@ -1173,7 +1195,7 @@ void EditQueueXmlCommand::Execute()
 		cIDList.push_back(iID);
 	}
 
-	bool bOK = g_pQueueCoordinator->GetQueueEditor()->EditList(&cIDList, true, (QueueEditor::EEditAction)iAction, iOffset);
+	bool bOK = g_pQueueCoordinator->GetQueueEditor()->EditList(&cIDList, true, (QueueEditor::EEditAction)iAction, iOffset, szEditText);
 
 	BuildBoolResponse(bOK);
 }
@@ -1193,13 +1215,22 @@ void DownloadXmlCommand::Execute()
 		return;
 	}
 
+	char* szCategory;
+	if (!NextParamAsStr(&szCategory))
+	{
+		BuildErrorResponse(2, "Invalid parameter");
+		return;
+	}
+
 	if (IsJson())
 	{
 		Util::JsonDecode(szFileName);
+		Util::JsonDecode(szCategory);
 	}
 	else
 	{
 		Util::XmlDecode(szFileName);
+		Util::XmlDecode(szCategory);
 	}
 
 	debug("FileName=%s", szFileName);
@@ -1228,7 +1259,7 @@ void DownloadXmlCommand::Execute()
 	szFileContent[iLen] = '\0';
 	//debug("FileContent=%s", szFileContent);
 
-	NZBFile* pNZBFile = NZBFile::CreateFromBuffer(szFileName, szFileContent, iLen);
+	NZBFile* pNZBFile = NZBFile::CreateFromBuffer(szFileName, szCategory, szFileContent, iLen);
 
 	if (pNZBFile)
 	{

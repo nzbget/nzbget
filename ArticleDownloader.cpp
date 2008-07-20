@@ -53,6 +53,7 @@
 #include "Util.h"
 
 extern DownloadSpeedMeter* g_pDownloadSpeedMeter;
+extern NZBInfoLocker* g_pNZBInfoLocker;
 extern Options* g_pOptions;
 extern ServerPool* g_pServerPool;
 
@@ -791,24 +792,30 @@ void ArticleDownloader::CompleteFileParts()
 		detail("Joining articles for %s", InfoFilename);
 	}
 
-	char ofn[1024];
-	snprintf(ofn, 1024, "%s%c%s", m_pFileInfo->GetNZBInfo()->GetDestDir(), (int)PATH_SEPARATOR, m_pFileInfo->GetFilename());
-	ofn[1024-1] = '\0';
+	char szNZBDestDir[1024];
+	g_pNZBInfoLocker->LockNZBInfo(m_pFileInfo->GetNZBInfo());
+	strncpy(szNZBDestDir, m_pFileInfo->GetNZBInfo()->GetDestDir(), 1024);
+	g_pNZBInfoLocker->UnlockNZBInfo(m_pFileInfo->GetNZBInfo());
+	szNZBDestDir[1024-1] = '\0';
 
 	// Ensure the DstDir is created
-	if (!Util::CreateDirectory(m_pFileInfo->GetNZBInfo()->GetDestDir()))
+	if (!Util::ForceDirectories(szNZBDestDir))
 	{
-		error("Could not create directory %s! Errcode: %i", m_pFileInfo->GetNZBInfo()->GetDestDir(), errno);
+		error("Could not create directory %s! Errcode: %i", szNZBDestDir, errno);
 		SetStatus(adJoined);
 		return;
 	}
+
+	char ofn[1024];
+	snprintf(ofn, 1024, "%s%c%s", szNZBDestDir, (int)PATH_SEPARATOR, m_pFileInfo->GetFilename());
+	ofn[1024-1] = '\0';
 
 	// prevent overwriting existing files
 	int dupcount = 0;
 	while (Util::FileExists(ofn))
 	{
 		dupcount++;
-		snprintf(ofn, 1024, "%s%c%s_duplicate%d", m_pFileInfo->GetNZBInfo()->GetDestDir(), (int)PATH_SEPARATOR, m_pFileInfo->GetFilename(), dupcount);
+		snprintf(ofn, 1024, "%s%c%s_duplicate%d", szNZBDestDir, (int)PATH_SEPARATOR, m_pFileInfo->GetFilename(), dupcount);
 		ofn[1024-1] = '\0';
 	}
 
@@ -956,6 +963,8 @@ void ArticleDownloader::CompleteFileParts()
 			{
 				warn("Renaming broken file from %s to %s failed", ofn, brokenfn);
 			}
+			strncpy(ofn, brokenfn, 1024);
+			ofn[1024-1] = '\0';
 		}
 		else
 		{
@@ -965,7 +974,7 @@ void ArticleDownloader::CompleteFileParts()
 		if (g_pOptions->GetCreateBrokenLog())
 		{
 			char szBrokenLogName[1024];
-			snprintf(szBrokenLogName, 1024, "%s%c_brokenlog.txt", m_pFileInfo->GetNZBInfo()->GetDestDir(), (int)PATH_SEPARATOR);
+			snprintf(szBrokenLogName, 1024, "%s%c_brokenlog.txt", szNZBDestDir, (int)PATH_SEPARATOR);
 			szBrokenLogName[1024-1] = '\0';
 			FILE* file = fopen(szBrokenLogName, "a");
 			fprintf(file, "%s (%i/%i)\n", m_pFileInfo->GetFilename(), m_pFileInfo->GetArticles()->size() - iBrokenCount, m_pFileInfo->GetArticles()->size());
@@ -973,5 +982,128 @@ void ArticleDownloader::CompleteFileParts()
 		}
 	}
 
+	g_pNZBInfoLocker->LockNZBInfo(m_pFileInfo->GetNZBInfo());
+	m_pFileInfo->GetNZBInfo()->GetCompletedFiles()->push_back(strdup(ofn));
+	if (strcmp(m_pFileInfo->GetNZBInfo()->GetDestDir(), szNZBDestDir))
+	{
+		// destination directory was changed during completion, need to move the file
+		MoveCompletedFiles(m_pFileInfo->GetNZBInfo(), szNZBDestDir);
+	}
+	g_pNZBInfoLocker->UnlockNZBInfo(m_pFileInfo->GetNZBInfo());
+
 	SetStatus(adJoined);
+}
+
+bool ArticleDownloader::MoveCompletedFiles(NZBInfo* pNZBInfo, const char* szOldDestDir)
+{
+	if (pNZBInfo->GetCompletedFiles()->empty())
+	{
+		return true;
+	}
+
+	// Ensure the DstDir is created
+	if (!Util::ForceDirectories(pNZBInfo->GetDestDir()))
+	{
+		error("Could not create directory %s! Errcode: %i", pNZBInfo->GetDestDir(), errno);
+		return false;
+	}
+
+	// move already downloaded files to new destination
+	for (NZBInfo::Files::iterator it = pNZBInfo->GetCompletedFiles()->begin(); it != pNZBInfo->GetCompletedFiles()->end(); it++)
+    {
+		char* szFileName = *it;
+		char szNewFileName[1024];
+		snprintf(szNewFileName, 1024, "%s%c%s", pNZBInfo->GetDestDir(), (int)PATH_SEPARATOR, Util::BaseFileName(szFileName));
+		szNewFileName[1024-1] = '\0';
+
+		// check if file was not moved already
+		if (strcmp(szFileName, szNewFileName))
+		{
+			// prevent overwriting of existing files
+			int dupcount = 0;
+			while (Util::FileExists(szNewFileName))
+			{
+				dupcount++;
+				snprintf(szNewFileName, 1024, "%s%c%s_duplicate%d", pNZBInfo->GetDestDir(), (int)PATH_SEPARATOR, Util::BaseFileName(szFileName), dupcount);
+				szNewFileName[1024-1] = '\0';
+			}
+
+			detail("Moving file %s to %s", szFileName, szNewFileName);
+			if (Util::MoveFile(szFileName, szNewFileName))
+			{
+				free(szFileName);
+				*it = strdup(szNewFileName);
+			}
+			else
+			{
+				error("Could not move file %s to %s! Errcode: %i", szFileName, szNewFileName, errno);
+			}
+		}
+    }
+
+	// move brokenlog.txt
+	if (g_pOptions->GetCreateBrokenLog())
+	{
+		char szOldBrokenLogName[1024];
+		snprintf(szOldBrokenLogName, 1024, "%s%c_brokenlog.txt", szOldDestDir, (int)PATH_SEPARATOR);
+		szOldBrokenLogName[1024-1] = '\0';
+		if (Util::FileExists(szOldBrokenLogName))
+		{
+			char szBrokenLogName[1024];
+			snprintf(szBrokenLogName, 1024, "%s%c_brokenlog.txt", pNZBInfo->GetDestDir(), (int)PATH_SEPARATOR);
+			szBrokenLogName[1024-1] = '\0';
+
+			detail("Moving file %s to %s", szOldBrokenLogName, szBrokenLogName);
+			if (Util::FileExists(szBrokenLogName))
+			{
+				// copy content to existing new file, then delete old file
+				FILE* outfile;
+				outfile = fopen(szBrokenLogName, "a");
+				if (outfile)
+				{
+					FILE* infile;
+					infile = fopen(szOldBrokenLogName, "r");
+					if (infile)
+					{
+						static const int BUFFER_SIZE = 1024 * 50;
+						int cnt = BUFFER_SIZE;
+						char* buffer = (char*)malloc(BUFFER_SIZE);
+						while (cnt == BUFFER_SIZE)
+						{
+							cnt = (int)fread(buffer, 1, BUFFER_SIZE, infile);
+							fwrite(buffer, 1, cnt, outfile);
+						}
+						fclose(infile);
+						free(buffer);
+						remove(szOldBrokenLogName);
+					}
+					else
+					{
+						error("Could not open file %s", szOldBrokenLogName);
+					}
+					fclose(outfile);
+				}
+				else
+				{
+					error("Could not open file %s", szBrokenLogName);
+				}
+			}
+			else 
+			{
+				// move to new destination
+				if (!Util::MoveFile(szOldBrokenLogName, szBrokenLogName))
+				{
+					error("Could not move file %s to %s! Errcode: %i", szOldBrokenLogName, szBrokenLogName, errno);
+				}
+			}
+		}
+	}
+
+	// delete old directory (if empty)
+	if (Util::DirEmpty(szOldDestDir))
+	{
+		rmdir(szOldDestDir);
+	}
+
+	return true;
 }

@@ -42,7 +42,7 @@
 #include "QueueEditor.h"
 #include "NNTPConnection.h"
                                             
-class QueueCoordinator : public Thread, public Observer, public Subject, public DownloadSpeedMeter
+class QueueCoordinator : public Thread, public Observer, public Subject, public DownloadSpeedMeter, public NZBInfoLocker
 {
 public:
 	typedef std::list<ArticleDownloader*>	ActiveDownloads;
@@ -110,12 +110,16 @@ public:
 	DownloadQueue*			LockQueue();
 	void					UnlockQueue() ;
 	void					AddNZBFileToQueue(NZBFile* pNZBQueue, bool bAddFirst);
-	bool					AddFileToQueue(const char* szFileName);
+	bool					AddFileToQueue(const char* szFileName, const char* szCategory);
 	bool					HasMoreJobs() { return m_bHasMoreJobs; }
 	bool					GetStandBy() { return m_bStandBy; }
 	bool					DeleteQueueEntry(FileInfo* pFileInfo);
+	bool					SetQueueEntryNZBCategory(NZBInfo* pNZBInfo, const char* szCategory);
 	QueueEditor*			GetQueueEditor() { return &m_QueueEditor; }
-	
+
+	virtual void			LockNZBInfo(NZBInfo* pNZBInfo) { LockQueue(); }
+	virtual void			UnlockNZBInfo(NZBInfo* pNZBInfo) { UnlockQueue(); }
+
 	void					LogDebugInfo();
 };
 

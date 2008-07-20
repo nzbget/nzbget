@@ -41,11 +41,10 @@ private:
 	NZBInfo*			m_pNZBInfo;
 	char*				m_szFileName;
 
-						NZBFile(const char* szFileName);
+						NZBFile(const char* szFileName, const char* szCategory);
 	void				AddArticle(FileInfo* pFileInfo, ArticleInfo* pArticleInfo);
 	void				AddFileInfo(FileInfo* pFileInfo);
 	void				ParseSubject(FileInfo* pFileInfo);
-	void				BuildDestDirName();
 	void				CheckFilenames();
 #ifdef WIN32
     bool 				ParseNZB(IUnknown* nzb);
@@ -53,12 +52,12 @@ private:
 #else
     bool 				ParseNZB(void* nzb);
 #endif
-	static NZBFile*		Create(const char* szFileName, const char* szBuffer, int iSize, bool bFromBuffer);
+	static NZBFile*		Create(const char* szFileName, const char* szCategory, const char* szBuffer, int iSize, bool bFromBuffer);
 
 public:
 	virtual 			~NZBFile();
-	static NZBFile*		CreateFromBuffer(const char* szFileName, const char* szBuffer, int iSize);
-	static NZBFile*		CreateFromFile(const char* szFileName);
+	static NZBFile*		CreateFromBuffer(const char* szFileName, const char* szCategory, const char* szBuffer, int iSize);
+	static NZBFile*		CreateFromFile(const char* szFileName, const char* szCategory);
 	const char* 		GetFileName() const { return m_szFileName; }
 	FileInfos*			GetFileInfos() { return &m_FileInfos; }
 	void				DetachFileInfos();

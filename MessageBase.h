@@ -27,7 +27,7 @@
 #ifndef MESSAGEBASE_H
 #define MESSAGEBASE_H
 
-static const int32_t NZBMESSAGE_SIGNATURE = 0x6E7A6202; // = "nzb2" (nzb version 2)
+static const int32_t NZBMESSAGE_SIGNATURE = 0x6E7A6203; // = "nzb3" (nzb version 3)
 static const int NZBREQUESTFILENAMESIZE = 512;
 static const int NZBREQUESTPASSWORDSIZE = 32;
 
@@ -75,7 +75,8 @@ enum eRemoteEditAction
 	eRemoteEditActionGroupResume,			// resume (unpause)
 	eRemoteEditActionGroupDelete,			// delete
 	eRemoteEditActionGroupPauseAllPars,		// pause only (all) pars (does not affect other files)
-	eRemoteEditActionGroupPauseExtraPars	// pause only (almost all) pars, except main par-file (does not affect other files)
+	eRemoteEditActionGroupPauseExtraPars,	// pause only (almost all) pars, except main par-file (does not affect other files)
+	eRemoteEditActionGroupSetCategory		// set or change category for a group
 };
 
 // The basic SNZBRequestBase struct, used in all requests
@@ -99,6 +100,7 @@ struct SNZBDownloadRequest
 {
 	SNZBRequestBase			m_MessageBase;			// Must be the first in the struct
 	char					m_szFilename[NZBREQUESTFILENAMESIZE];	// Name of nzb-file, may contain full path (local path on client) or only filename
+	char					m_szCategory[NZBREQUESTFILENAMESIZE];	// Category, be empty
 	int32_t					m_bAddFirst;			// 1 - add file to the top of download queue
 	int32_t					m_iTrailingDataLength;	// Length of nzb-file in bytes
 	//char					m_szContent[m_iTrailingDataLength];	// variable sized
@@ -157,10 +159,12 @@ struct SNZBListResponseEntry
 	int32_t					m_iSubjectLen;			// Length of Subject-string (m_szSubject), following to this record
 	int32_t					m_iFilenameLen;			// Length of Filename-string (m_szFilename), following to this record
 	int32_t					m_iDestDirLen;			// Length of DestDir-string (m_szDestDir), following to this record
+	int32_t					m_iCategoryLen;			// Length of Category-string (m_szCategory), following to this record
 	//char					m_szNZBFilename[m_iNZBFilenameLen];	// variable sized, may contain full path (local path on client) or only filename
 	//char					m_szSubject[m_iSubjectLen];			// variable sized
 	//char					m_szFilename[m_iFilenameLen];		// variable sized
 	//char					m_szDestDir[m_iDestDirLen];			// variable sized
+	//char					m_szCategory[m_iCategoryLen];		// variable sized
 };
 
 // A log request
@@ -232,7 +236,9 @@ struct SNZBEditQueueRequest
 	int32_t					m_bSmartOrder;			// For Move-Actions: 0 - execute action for each ID in order they are placed in array;
 													// 1 - smart execute to ensure that the relative order of all affected IDs are not changed.
 	int32_t					m_iNrTrailingEntries;	// Number of ID-entries, following to this structure
-	int32_t					m_iTrailingDataLength;	// Length of all ID-entries, following to this structure
+	int32_t					m_iTextLen;				// Length of Text-string (m_szText), following to this record
+	int32_t					m_iTrailingDataLength;	// Length of Text-string and all ID-entries, following to this structure
+	//char					m_szText[m_iTextLen];	// variable sized
 	//int32_t				m_iIDs[m_iNrTrailingEntries];	// variable sized array of IDs. For File-Actions - ID of file, for Group-Actions - ID of any file belonging to group
 };
 

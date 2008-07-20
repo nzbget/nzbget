@@ -40,8 +40,11 @@
 
 #include "nzbget.h"
 #include "DownloadInfo.h"
+#include "Options.h"
 #include "Log.h"
 #include "Util.h"
+
+extern Options* g_pOptions;
 
 int FileInfo::m_iIDGen = 0;
 
@@ -51,9 +54,11 @@ NZBInfo::NZBInfo()
 
 	m_szFilename = NULL;
 	m_szDestDir = NULL;
+	m_szCategory = strdup("");
 	m_iFileCount = 0;
 	m_lSize = 0;
 	m_iRefCount = 0;
+	m_bPostProcess = false;
 }
 
 NZBInfo::~NZBInfo()
@@ -68,6 +73,16 @@ NZBInfo::~NZBInfo()
 	{
 		free(m_szDestDir);
 	}
+	if (m_szCategory)
+	{
+		free(m_szCategory);
+	}
+
+	for (Files::iterator it = m_completedFiles.begin(); it != m_completedFiles.end(); it++)
+	{
+		free(*it);
+	}
+	m_completedFiles.clear();
 }
 
 void NZBInfo::AddReference()
@@ -86,12 +101,25 @@ void NZBInfo::Release()
 
 void NZBInfo::SetDestDir(const char* szDestDir)
 {
+	if (m_szDestDir)
+	{
+		free(m_szDestDir);
+	}
 	m_szDestDir = strdup(szDestDir);
 }
 
 void NZBInfo::SetFilename(const char * szFilename)
 {
 	m_szFilename = strdup(szFilename);
+}
+
+void NZBInfo::SetCategory(const char* szCategory)
+{
+	if (m_szCategory)
+	{
+		free(m_szCategory);
+	}
+	m_szCategory = strdup(szCategory);
 }
 
 void NZBInfo::GetNiceNZBName(char* szBuffer, int iSize)
@@ -142,6 +170,47 @@ void NZBInfo::MakeNiceNZBName(const char * szNZBFilename, char * szBuffer, int i
 
 	strncpy(szBuffer, postname, iSize);
 	szBuffer[iSize-1] = '\0';
+}
+
+void NZBInfo::BuildDestDirName()
+{
+	char szBuffer[1024];
+	char szCategory[1024];
+	if (g_pOptions->GetAppendCategoryDir() && m_szCategory)
+	{
+		strncpy(szCategory, m_szCategory, 1024);
+		szCategory[1024 - 1] = '\0';
+		Util::MakeValidFilename(szCategory, '_');
+	}
+
+	if (g_pOptions->GetAppendNZBDir())
+	{
+		char szNiceNZBName[1024];
+		GetNiceNZBName(szNiceNZBName, 1024);
+		if (g_pOptions->GetAppendCategoryDir() && m_szCategory)
+		{
+			snprintf(szBuffer, 1024, "%s%s%c%s", g_pOptions->GetDestDir(), szCategory, PATH_SEPARATOR, szNiceNZBName);
+		}
+		else
+		{
+			snprintf(szBuffer, 1024, "%s%s", g_pOptions->GetDestDir(), szNiceNZBName);
+		}
+		szBuffer[1024-1] = '\0';
+	}
+	else
+	{
+		if (g_pOptions->GetAppendCategoryDir() && m_szCategory)
+		{
+			snprintf(szBuffer, 1024, "%s%s", g_pOptions->GetDestDir(), szCategory);
+		}
+		else
+		{
+			strncpy(szBuffer, g_pOptions->GetDestDir(), 1024);
+		}
+		szBuffer[1024-1] = '\0'; // trim the last slash, always returned by GetDestDir()
+	}
+
+	SetDestDir(szBuffer);
 }
 
 ArticleInfo::ArticleInfo()

@@ -34,6 +34,7 @@ class DiskState
 private:
 	bool				SaveFileInfo(FileInfo* pFileInfo, const char* szFilename);
 	bool				LoadFileInfo(FileInfo* pFileInfo, const char* szFilename, bool bFileSummary, bool bArticles);
+	int					ParseFormatVersion(const char* szFormatSignature);
 	
 public:
 	bool				DownloadQueueExists();

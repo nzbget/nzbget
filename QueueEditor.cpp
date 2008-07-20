@@ -148,27 +148,27 @@ void QueueEditor::MoveEntry(DownloadQueue* pDownloadQueue, FileInfo* pFileInfo, 
 	}
 }
 
-bool QueueEditor::EditEntry(int ID, bool bSmartOrder, EEditAction eAction, int iOffset)
+bool QueueEditor::EditEntry(int ID, bool bSmartOrder, EEditAction eAction, int iOffset, const char* szText)
 {
 	IDList cIDList;
 	cIDList.clear();
 	cIDList.push_back(ID);
-	return EditList(&cIDList, bSmartOrder, eAction, iOffset);
+	return EditList(&cIDList, bSmartOrder, eAction, iOffset, szText);
 }
 
-bool QueueEditor::LockedEditEntry(DownloadQueue* pDownloadQueue, int ID, bool bSmartOrder, EEditAction eAction, int iOffset)
+bool QueueEditor::LockedEditEntry(DownloadQueue* pDownloadQueue, int ID, bool bSmartOrder, EEditAction eAction, int iOffset, const char* szText)
 {
 	IDList cIDList;
 	cIDList.clear();
 	cIDList.push_back(ID);
-	return InternEditList(pDownloadQueue, &cIDList, bSmartOrder, eAction, iOffset);
+	return InternEditList(pDownloadQueue, &cIDList, bSmartOrder, eAction, iOffset, szText);
 }
 
-bool QueueEditor::EditList(IDList* pIDList, bool bSmartOrder, EEditAction eAction, int iOffset)
+bool QueueEditor::EditList(IDList* pIDList, bool bSmartOrder, EEditAction eAction, int iOffset, const char* szText)
 {
 	DownloadQueue* pDownloadQueue = g_pQueueCoordinator->LockQueue();
 
-	bool bOK = InternEditList(pDownloadQueue, pIDList, bSmartOrder, eAction, iOffset);
+	bool bOK = InternEditList(pDownloadQueue, pIDList, bSmartOrder, eAction, iOffset, szText);
 
 	if (g_pOptions->GetSaveQueue() && g_pOptions->GetServerMode())
 	{
@@ -180,7 +180,7 @@ bool QueueEditor::EditList(IDList* pIDList, bool bSmartOrder, EEditAction eActio
 	return bOK;
 }
 
-bool QueueEditor::InternEditList(DownloadQueue* pDownloadQueue, IDList* pIDList, bool bSmartOrder, EEditAction eAction, int iOffset)
+bool QueueEditor::InternEditList(DownloadQueue* pDownloadQueue, IDList* pIDList, bool bSmartOrder, EEditAction eAction, int iOffset, const char* szText)
 {
 	if (eAction == eaGroupMoveOffset)
 	{
@@ -222,6 +222,10 @@ bool QueueEditor::InternEditList(DownloadQueue* pDownloadQueue, IDList* pIDList,
 				case eaFilePauseAllPars:
 				case eaFilePauseExtraPars:
 					// remove compiler warning "enumeration not handled in switch"
+					break;
+
+				case eaGroupSetCategory:
+					SetNZBCategory(pItem->m_pFileInfo->GetNZBInfo(), szText);
 					break;
 
 				case eaGroupPause:
@@ -411,7 +415,7 @@ bool QueueEditor::EditGroup(DownloadQueue* pDownloadQueue, FileInfo* pFileInfo, 
 	EEditAction GroupToFileMap[] = { (EEditAction)0, eaFileMoveOffset, eaFileMoveTop, eaFileMoveBottom, eaFilePause, eaFileResume, eaFileDelete, eaFilePauseAllPars, eaFilePauseExtraPars,
 		eaFileMoveOffset, eaFileMoveTop, eaFileMoveBottom, eaFilePause, eaFileResume, eaFileDelete, eaFilePauseAllPars, eaFilePauseExtraPars };
 
-	return InternEditList(pDownloadQueue, &cIDList, true, GroupToFileMap[eAction], iOffset);
+	return InternEditList(pDownloadQueue, &cIDList, true, GroupToFileMap[eAction], iOffset, NULL);
 }
 
 void QueueEditor::BuildGroupList(DownloadQueue* pDownloadQueue, FileList* pGroupList)
@@ -655,4 +659,11 @@ void QueueEditor::PausePars(FileList* pFileList, bool bExtraParsOnly)
 			}
 		}
 	}
+}
+
+void QueueEditor::SetNZBCategory(NZBInfo* pNZBInfo, const char* szCategory)
+{
+	debug("QueueEditor: setting category '%s' for '%s'", szCategory, Util::BaseFileName(pNZBInfo->GetFilename()));
+
+	g_pQueueCoordinator->SetQueueEntryNZBCategory(pNZBInfo, szCategory);
 }

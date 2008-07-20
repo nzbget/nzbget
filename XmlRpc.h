@@ -26,8 +26,6 @@
 #ifndef XMLRPC_H
 #define XMLRPC_H
 
-#include <vector>
-
 #include "Connection.h"
 
 class StringBuilder

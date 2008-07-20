@@ -53,6 +53,7 @@ private:
 	char*			m_szDestDir;
 	char*			m_szParFilename;
 	char*			m_szInfoName;
+	char*			m_szCategory;
 	bool			m_bWorking;
 	bool			m_bParCheck;
 	int				m_iParStatus;
@@ -81,6 +82,8 @@ public:
 	void			SetParFilename(const char* szParFilename);
 	const char*		GetInfoName() { return m_szInfoName; }
 	void			SetInfoName(const char* szInfoName);
+	const char*		GetCategory() { return m_szCategory; }
+	void			SetCategory(const char* szCategory);
 	EStage			GetStage() { return m_eStage; }
 	void			SetStage(EStage eStage) { m_eStage = eStage; }
 	void			SetProgressLabel(const char* szProgressLabel);

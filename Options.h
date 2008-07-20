@@ -106,6 +106,7 @@ private:
 	int					m_iConnectionTimeout;
 	int					m_iTerminateTimeout;
 	bool				m_bAppendNZBDir;
+	bool				m_bAppendCategoryDir;
 	bool				m_bContinuePartial;
 	bool				m_bRenameBroken;
 	int					m_iRetries;
@@ -154,7 +155,9 @@ private:
 	int					m_iEditQueueOffset;
 	int*				m_pEditQueueIDList;
 	int					m_iEditQueueIDCount;
+	char*				m_szEditQueueText;
 	char*				m_szArgFilename;
+	char*				m_szCategory;
 	char*				m_szLastArg;
 	bool				m_bPrintOptions;
 	bool				m_bAddTop;
@@ -206,6 +209,7 @@ public:
 	int					GetTerminateTimeout() { return m_iTerminateTimeout; }
 	bool				GetDecode() { return m_bDecode; };
 	bool				GetAppendNZBDir() { return m_bAppendNZBDir; }
+	bool				GetAppendCategoryDir() { return m_bAppendCategoryDir; }
 	bool				GetContinuePartial() { return m_bContinuePartial; }
 	bool				GetRenameBroken() { return m_bRenameBroken; }
 	int					GetRetries() { return m_iRetries; }
@@ -254,7 +258,9 @@ public:
 	int					GetEditQueueOffset() { return m_iEditQueueOffset; }
 	int*				GetEditQueueIDList() { return m_pEditQueueIDList; }
 	int					GetEditQueueIDCount() { return m_iEditQueueIDCount; }
+	const char*			GetEditQueueText() { return m_szEditQueueText; }
 	const char*			GetArgFilename() { return m_szArgFilename; }
+	const char*			GetCategory() { return m_szCategory; }
 	const char*			GetLastArg() { return m_szLastArg; }
 	bool				GetAddTop() { return m_bAddTop; }
 	float				GetSetRate() { return m_fSetRate; }

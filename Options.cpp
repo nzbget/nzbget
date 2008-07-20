@@ -79,11 +79,12 @@ static struct option long_options[] =
 	    {"quit", no_argument, 0, 'Q'},
 	    {"post", no_argument, 0, 'O'},
 	    {"write", required_argument, 0, 'W'},
+	    {"category", required_argument, 0, 'K'},
 	    {0, 0, 0, 0}
     };
 #endif
 
-static char short_options[] = "c:hno:psvABDCE:G:LOPR:TUQVW:";
+static char short_options[] = "c:hno:psvABDCE:G:K:LOPR:TUQVW:";
 
 // Program options
 static const char* OPTION_DESTDIR			= "DestDir";
@@ -93,6 +94,7 @@ static const char* OPTION_NZBDIR			= "NzbDir";
 static const char* OPTION_CREATELOG			= "CreateLog";
 static const char* OPTION_LOGFILE			= "LogFile";
 static const char* OPTION_APPENDNZBDIR		= "AppendNzbDir";
+static const char* OPTION_APPENDCATEGORYDIR	= "AppendCategoryDir";
 static const char* OPTION_LOCKFILE			= "LockFile";
 static const char* OPTION_DAEMONUSERNAME	= "DaemonUserName";
 static const char* OPTION_OUTPUTMODE		= "OutputMode";
@@ -177,8 +179,10 @@ Options::Options(int argc, char* argv[])
 	m_pEditQueueIDList		= NULL;
 	m_iEditQueueIDCount		= 0;
 	m_iEditQueueOffset		= 0;
+	m_szEditQueueText			= NULL;
 	m_szArgFilename			= NULL;
 	m_szLastArg				= NULL;
+	m_szCategory			= NULL;
 	m_iConnectionTimeout	= 0;
 	m_iTerminateTimeout		= 0;
 	m_bServerMode			= false;
@@ -187,6 +191,7 @@ Options::Options(int argc, char* argv[])
 	m_bPrintOptions			= false;
 	m_bAddTop				= false;
 	m_bAppendNZBDir			= false;
+	m_bAppendCategoryDir	= false;
 	m_bContinuePartial		= false;
 	m_bRenameBroken			= false;
 	m_bSaveQueue			= false;
@@ -310,6 +315,14 @@ Options::~Options()
 	{
 		free(m_szArgFilename);
 	}
+	if (m_szCategory)
+	{
+		free(m_szCategory);
+	}
+	if (m_szEditQueueText)
+	{
+		free(m_szEditQueueText);
+	}
 	if (m_szLastArg)
 	{
 		free(m_szLastArg);
@@ -382,6 +395,7 @@ void Options::InitDefault()
 #endif
 	SetOption(OPTION_CREATELOG, "yes");
 	SetOption(OPTION_APPENDNZBDIR, "yes");
+	SetOption(OPTION_APPENDCATEGORYDIR, "yes");
 	SetOption(OPTION_OUTPUTMODE, "loggable");
 	SetOption(OPTION_DUPECHECK, "yes");
 	SetOption(OPTION_DOWNLOADRATE, "0");
@@ -552,6 +566,7 @@ void Options::InitOptions()
 	m_bCreateBrokenLog		= (bool)ParseOptionValue(OPTION_CREATEBROKENLOG, BoolCount, BoolNames, BoolValues);
 	m_bResetLog				= (bool)ParseOptionValue(OPTION_RESETLOG, BoolCount, BoolNames, BoolValues);
 	m_bAppendNZBDir			= (bool)ParseOptionValue(OPTION_APPENDNZBDIR, BoolCount, BoolNames, BoolValues);
+	m_bAppendCategoryDir	= (bool)ParseOptionValue(OPTION_APPENDCATEGORYDIR, BoolCount, BoolNames, BoolValues);
 	m_bContinuePartial		= (bool)ParseOptionValue(OPTION_CONTINUEPARTIAL, BoolCount, BoolNames, BoolValues);
 	m_bRenameBroken			= (bool)ParseOptionValue(OPTION_RENAMEBROKEN, BoolCount, BoolNames, BoolValues);
 	m_bSaveQueue			= (bool)ParseOptionValue(OPTION_SAVEQUEUE, BoolCount, BoolNames, BoolValues);
@@ -746,6 +761,21 @@ void Options::InitCommandLine(int argc, char* argv[])
 				{
 					m_iEditQueueAction = bGroup ? eRemoteEditActionGroupDelete : eRemoteEditActionFileDelete;
 				}
+				else if (!strcasecmp(optarg, "K"))
+				{
+					if (!bGroup)
+					{
+						abort("FATAL ERROR: Category can be set only for groups\n");
+					}
+					m_iEditQueueAction = eRemoteEditActionGroupSetCategory;
+
+					optind++;
+					if (optind > argc)
+					{
+						abort("FATAL ERROR: Could not parse value of option 'E'\n");
+					}
+					m_szEditQueueText = strdup(argv[optind-1]);
+				}
 				else
 				{
 					m_iEditQueueOffset = atoi(optarg);
@@ -788,6 +818,13 @@ void Options::InitCommandLine(int argc, char* argv[])
 					abort("FATAL ERROR: Could not parse value of option 'W'\n");
 				}
 				break;
+			case 'K':
+				if (m_szCategory)
+				{
+					free(m_szCategory);
+				}
+				m_szCategory = strdup(optarg);
+				break;
 			case '?':
 				exit(-1);
 				break;
@@ -823,6 +860,8 @@ void Options::PrintUsage(char* com)
 		"  -R, --rate                Set the download rate on the server\n"
 		"  -T, --top                 Add file to the top (begining) of queue\n"
 		"                            (should be used with switch --append)\n"
+		"  -K, --category <name>     Assign category to nzb-file\n"
+		"                            (should be used with switch --append)\n"
 		"  -G, --log <lines>         Request last <lines> lines from server's screen-log\n"
 		"  -W, --write <D|I|W|E|G> \"Text\" Send text to server's log\n"
 		"  -O, --post                Request post-processor-queue from server\n"
@@ -838,6 +877,7 @@ void Options::PrintUsage(char* com)
 		"       A                    Pause all pars (for groups)\n"
 		"       R                    Pause extra pars (for groups)\n"
 		"       D                    Delete file(s)\n"
+		"       K <name>             Set category (for groups)\n"
 		"    <IDs>                   Comma-separated list of file-ids or ranges\n"
 		"                            of file-ids, e. g.: 1-5,3,10-22\n",
 		Util::BaseFileName(com));

@@ -283,6 +283,19 @@ bool Util::ForceDirectories(const char* szPath)
 	return bOK;
 }
 
+bool Util::DirEmpty(const char* szDirFilename)
+{
+	DirBrowser dir(szDirFilename);
+	while (const char* filename = dir.Next())
+	{
+		if (strcmp(filename, ".") && strcmp(filename, ".."))
+		{
+			return false;
+		}
+	}
+	return true;
+}
+
 bool Util::LoadFileIntoBuffer(const char* szFileName, char** pBuffer, int* pBufferLength)
 {
     FILE* pFile = fopen(szFileName, "r");

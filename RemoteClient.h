@@ -48,12 +48,12 @@ public:
 	RemoteClient();
 	~RemoteClient();
 	void			SetVerbose(bool bVerbose) { m_bVerbose = bVerbose; };
-	bool 			RequestServerDownload(const char* szName, bool bAddFirst);
+	bool 			RequestServerDownload(const char* szFilename, const char* szCategory, bool bAddFirst);
 	bool			RequestServerList();
 	bool			RequestServerPauseUnpause(bool bPause);
 	bool			RequestServerSetDownloadRate(float fRate);
 	bool			RequestServerDumpDebug();
-	bool 			RequestServerEditQueue(int iAction, int iOffset, int* pIDList, int iIDCount, bool bSmartOrder);
+	bool 			RequestServerEditQueue(int iAction, int iOffset, const char* szText, int* pIDList, int iIDCount, bool bSmartOrder);
 	bool			RequestServerLog(int iLines);
 	bool			RequestServerShutdown();
 	bool			RequestServerVersion();

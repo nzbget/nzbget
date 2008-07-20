@@ -50,6 +50,7 @@ PostInfo::PostInfo()
 	m_szDestDir = NULL;
 	m_szParFilename = NULL;
 	m_szInfoName = NULL;
+	m_szCategory = NULL;
 	m_bWorking = false;
 	m_bParCheck = false;
 	m_iParStatus = 0;
@@ -86,6 +87,10 @@ PostInfo::~ PostInfo()
 	{
 		free(m_szInfoName);
 	}
+	if (m_szCategory)
+	{
+		free(m_szCategory);
+	}
 	if (m_szProgressLabel)
 	{
 		free(m_szProgressLabel);
@@ -115,6 +120,11 @@ void PostInfo::SetParFilename(const char* szParFilename)
 void PostInfo::SetInfoName(const char* szInfoName)
 {
 	m_szInfoName = strdup(szInfoName);
+}
+
+void PostInfo::SetCategory(const char* szCategory)
+{
+	m_szCategory = strdup(szCategory);
 }
 
 void PostInfo::SetProgressLabel(const char* szProgressLabel)

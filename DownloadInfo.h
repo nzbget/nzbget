@@ -34,12 +34,18 @@
 
 class NZBInfo
 {
+public:
+	typedef std::vector<char*>			Files;
+
 private:
 	int					m_iRefCount;
 	char* 				m_szFilename;
 	char* 				m_szDestDir;
+	char* 				m_szCategory;
 	int		 			m_iFileCount;
 	long long 			m_lSize;
+	Files				m_completedFiles;
+	bool				m_bPostProcess;
 
 public:
 						NZBInfo();
@@ -50,12 +56,18 @@ public:
 	void				SetFilename(const char* szFilename);
 	void				GetNiceNZBName(char* szBuffer, int iSize);
 	static void			MakeNiceNZBName(const char* szNZBFilename, char* szBuffer, int iSize);
-	const char*			GetDestDir() { return m_szDestDir; }
-	void				SetDestDir(const char* szDestDir);
+	const char*			GetDestDir() { return m_szDestDir; }   // needs locking (for shared objects)
+	void				SetDestDir(const char* szDestDir);     // needs locking (for shared objects)
+	const char*			GetCategory() { return m_szCategory; } // needs locking (for shared objects)
+	void				SetCategory(const char* szCategory);   // needs locking (for shared objects)
 	long long 			GetSize() { return m_lSize; }
 	void 				SetSize(long long s) { m_lSize = s; }
 	int					GetFileCount() { return m_iFileCount; }
 	void 				SetFileCount(int s) { m_iFileCount = s; }
+	void				BuildDestDirName();
+	Files*				GetCompletedFiles() { return &m_completedFiles; }
+	bool				GetPostProcess() { return m_bPostProcess; }
+	void				SetPostProcess(bool b) { m_bPostProcess = b; }
 };
 
 class ArticleInfo
