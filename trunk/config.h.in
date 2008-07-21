@@ -13,6 +13,9 @@
    compiled */
 #undef FUNCTION_MACRO_NAME
 
+/* Define to 1 to create stacktrace on segmentation faults */
+#undef HAVE_BACKTRACE
+
 /* Define to 1 if ctime_r takes 2 arguments */
 #undef HAVE_CTIME_R_2
 

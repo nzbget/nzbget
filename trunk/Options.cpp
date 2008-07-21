@@ -71,7 +71,7 @@ static struct option long_options[] =
 	    {"pause", no_argument, 0, 'P'},
 	    {"unpause", no_argument, 0, 'U'},
 	    {"rate", required_argument, 0, 'R'},
-	    {"dumpdebug", no_argument, 0, 'B'},
+	    {"debug", no_argument, 0, 'B'},
 	    {"log", required_argument, 0, 'G'},
 	    {"top", no_argument, 0, 'T'},
 	    {"edit", required_argument, 0, 'E'},
@@ -84,7 +84,7 @@ static struct option long_options[] =
     };
 #endif
 
-static char short_options[] = "c:hno:psvABDCE:G:K:LOPR:TUQVW:";
+static char short_options[] = "c:hno:psvAB:DCE:G:K:LOPR:TUQVW:";
 
 // Program options
 static const char* OPTION_DESTDIR			= "DestDir";
@@ -232,6 +232,7 @@ Options::Options(int argc, char* argv[])
 	m_bParCleanupQueue		= false;
 	m_iDiskSpace			= 0;
 	m_ePostLogKind			= plNone;
+	m_bTestBacktrace		= false;
 
 	char szFilename[MAX_PATH + 1];
 #ifdef WIN32
@@ -703,7 +704,18 @@ void Options::InitCommandLine(int argc, char* argv[])
 				m_fSetRate = (float)atof(optarg);
 				break;
 			case 'B':
-				m_eClientOperation = opClientRequestDumpDebug;
+				if (!strcmp(optarg, "dump"))
+				{
+					m_eClientOperation = opClientRequestDumpDebug;
+				}
+				else if (!strcmp(optarg, "trace"))
+				{
+					m_bTestBacktrace = true;
+				}
+				else
+				{
+					abort("FATAL ERROR: Could not parse value of option 'B'\n");
+				}
 				break;
 			case 'G':
 				m_eClientOperation = opClientRequestLog;

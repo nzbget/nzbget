@@ -318,6 +318,33 @@ fi
 AC_MSG_RESULT($ENABLEDEBUG)
 
 
+dnl
+dnl Backtracing on segmentation faults
+if test "$ENABLEDEBUG" = "yes"; then
+	AC_MSG_CHECKING(for backtrace)
+	AC_TRY_COMPILE(
+		[#include <execinfo.h>]
+		[#include <stdio.h>]
+		[#include <stdlib.h>],
+		[ void *array[100];	size_t size; char **strings; ]
+		[ size = backtrace(array, 100); ]
+		[ strings = backtrace_symbols(array, size); ],
+		FOUND=yes
+		AC_MSG_RESULT([[yes]])
+		AC_DEFINE([HAVE_BACKTRACE], 1, [Define to 1 to create stacktrace on segmentation faults]),
+		FOUND=no
+		AC_MSG_RESULT([[no]]))
+
+AC_MSG_CHECKING(for rdynamic linker flag)
+	old_LDFLAGS="$LDFLAGS"
+	LDFLAGS="$LDFLAGS -rdynamic"
+	AC_TRY_LINK([], [],
+		AC_MSG_RESULT([[yes]]),
+		AC_MSG_RESULT([[no]])
+		[LDFLAGS="$old_LDFLAGS"])
+fi
+
+
 dnl 
 dnl variadic macros
 dnl 
