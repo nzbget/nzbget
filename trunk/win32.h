@@ -63,6 +63,7 @@
 #include <crtdbg.h>
 #endif
 
+#ifndef SKIP_DEFAULT_WINDOWS_HEADERS
 #include <windows.h>
 #include <winbase.h>
-
+#endif

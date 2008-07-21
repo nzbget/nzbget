@@ -51,7 +51,6 @@ protected:
 	bool				m_bSuppressErrors;
 	bool				m_bAutoClose;
 
-	unsigned int		ResolveHostAddr(const char* szHost);
 	void				ReportError(const char* szMsgPrefix, const char* szMsgArg, int ErrCode);
 	virtual int 		DoConnect();
 	virtual int			DoDisconnect();

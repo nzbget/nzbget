@@ -29,13 +29,19 @@
 #endif
 
 #ifdef WIN32
+// SKIP_DEFAULT_WINDOWS_HEADERS prevents the including of <windows.h>, which includes "winsock.h",
+// but we need "winsock2.h" here (they conflicts with each other)
+#define SKIP_DEFAULT_WINDOWS_HEADERS
 #include "win32.h"
 #endif
 
 #include <stdlib.h>
 #include <string.h>
 #include <cstdio>
-#ifndef WIN32
+#ifdef WIN32
+#include <winsock2.h>
+#include <ws2tcpip.h>
+#else
 #include <netdb.h>
 #include <unistd.h>
 #include <errno.h>
@@ -281,31 +287,47 @@ int Connection::DoConnect()
 {
 	debug("Do connecting");
 
-	struct sockaddr_in	sSocketAddress;
-	memset(&sSocketAddress, '\0', sizeof(sSocketAddress));
-	sSocketAddress.sin_family = AF_INET;
-	sSocketAddress.sin_port = htons(m_pNetAddress->GetPort());
-	sSocketAddress.sin_addr.s_addr = ResolveHostAddr(m_pNetAddress->GetHost());
-	if (sSocketAddress.sin_addr.s_addr == (unsigned int)-1)
+	struct addrinfo addr_hints, *addr_list, *addr;
+	char iPortStr[sizeof(int) * 4 + 1]; //is enough to hold any converted int
+
+	memset(&addr_hints, 0, sizeof(addr_hints));
+	addr_hints.ai_family = AF_UNSPEC;    /* Allow IPv4 or IPv6 */
+	addr_hints.ai_socktype = SOCK_STREAM,
+
+	sprintf(iPortStr, "%d", m_pNetAddress->GetPort());
+
+	int res = getaddrinfo(m_pNetAddress->GetHost(), iPortStr, &addr_hints, &addr_list);
+	if (res != 0)
 	{
+		ReportError("Could not resolve hostname %s", m_pNetAddress->GetHost(), 0);
 		return -1;
 	}
 
-	m_iSocket = socket(PF_INET, SOCK_STREAM, 0);
+	m_iSocket = INVALID_SOCKET;
+	for (addr = addr_list; addr != NULL; addr = addr->ai_next)
+	{
+		m_iSocket = socket(addr->ai_family, addr->ai_socktype, addr->ai_protocol);
+		if (m_iSocket != INVALID_SOCKET)
+		{
+			res = connect(m_iSocket , addr->ai_addr, addr->ai_addrlen);
+			if (res != -1) 
+			{
+				// Connection established
+				break;
+			}
+			// Connection failed
+			closesocket(m_iSocket);
+			m_iSocket = INVALID_SOCKET;
+		}
+	}
+
+	freeaddrinfo(addr_list);
 
 	if (m_iSocket == INVALID_SOCKET)
 	{
-		ReportError("Socket creation failed for %s!", m_pNetAddress->GetHost(), 0);
-		return -1;
-	}
-
-	int res = connect(m_iSocket , (struct sockaddr *) & sSocketAddress, sizeof(sSocketAddress));
-
-	if (res < 0)
-	{
 		ReportError("Connection to %s failed!", m_pNetAddress->GetHost(), 0);
 		return -1;
-	}
+	} 
 
 #ifdef WIN32
 	int MSecVal = m_iTimeout * 1000;
@@ -322,47 +344,6 @@ int Connection::DoConnect()
 	}
 
 	return 0;
-}
-
-unsigned int Connection::ResolveHostAddr(const char* szHost)
-{
-	unsigned int uaddr = inet_addr(szHost);
-	if (uaddr == (unsigned int)-1)
-	{
-		struct hostent* hinfo;
-		bool err = false;
-		int h_errnop = 0;
-#ifdef WIN32
-		hinfo = gethostbyname(szHost);
-		err = hinfo == NULL;
-		h_errnop = WSAGetLastError();
-#else
-		struct hostent hinfobuf;
-		static const int strbuflen = 1024;
-		char* strbuf = (char*)malloc(strbuflen);
-#ifdef HAVE_GETHOSTBYNAME_R_6
-		err = gethostbyname_r(szHost, &hinfobuf, strbuf, strbuflen, &hinfo, &h_errnop);
-		err = err || (hinfo == NULL); // error on null hinfo (means 'no entry')
-#else
-		hinfo = gethostbyname_r(szHost, &hinfobuf, strbuf, strbuflen, &h_errnop);
-		err = hinfo == NULL;
-#endif			
-#endif
-		if (err)
-		{
-			ReportError("Could not resolve hostname %s", szHost, h_errnop);
-#ifndef WIN32
-			free(strbuf);
-#endif
-			return (unsigned int)-1;
-		}
-
-		memcpy(&uaddr, hinfo->h_addr_list[0], sizeof(uaddr));
-#ifndef WIN32
-		free(strbuf);
-#endif
-	}
-	return uaddr;
 }
 
 int Connection::DoDisconnect()
@@ -460,33 +441,46 @@ int Connection::DoBind()
 {
 	debug("Do binding");
 
-	m_iSocket = socket(PF_INET, SOCK_STREAM, 0);
-	if (m_iSocket == INVALID_SOCKET)
+	struct addrinfo addr_hints, *addr_list, *addr;
+	char iPortStr[sizeof(int) * 4 + 1]; // is enough to hold any converted int
+
+	memset(&addr_hints, 0, sizeof(addr_hints));
+	addr_hints.ai_family = AF_UNSPEC;    // Allow IPv4 or IPv6
+	addr_hints.ai_socktype = SOCK_STREAM,
+	addr_hints.ai_flags = AI_PASSIVE;    // For wildcard IP address
+
+	sprintf(iPortStr, "%d", m_pNetAddress->GetPort());
+
+	int res = getaddrinfo(m_pNetAddress->GetHost(), iPortStr, &addr_hints, &addr_list);
+	if (res != 0)
 	{
-		ReportError("Socket creation failed for %s!", m_pNetAddress->GetHost(), 0);
+		error( "Could not resolve hostname %s", m_pNetAddress->GetHost() );
 		return -1;
 	}
 
-	struct sockaddr_in	sSocketAddress;
-	memset(&sSocketAddress, '\0', sizeof(sSocketAddress));
-	sSocketAddress.sin_family = AF_INET;
-	if (!m_pNetAddress->GetHost() || strlen(m_pNetAddress->GetHost()) == 0)
+	m_iSocket = INVALID_SOCKET;
+	for (addr = addr_list; addr != NULL; addr = addr->ai_next)
 	{
-		sSocketAddress.sin_addr.s_addr = htonl(INADDR_ANY);
-	}
-	else
-	{
-		sSocketAddress.sin_addr.s_addr = ResolveHostAddr(m_pNetAddress->GetHost());
-		if (sSocketAddress.sin_addr.s_addr == (unsigned int)-1)
+		m_iSocket = socket(addr->ai_family, addr->ai_socktype, addr->ai_protocol);
+		if (m_iSocket != INVALID_SOCKET)
 		{
-			return -1;
+			int opt = 1;
+			setsockopt(m_iSocket, SOL_SOCKET, SO_REUSEADDR, (char*)&opt, sizeof(opt));
+			res = bind(m_iSocket, addr->ai_addr, addr->ai_addrlen);
+			if (res != -1)
+			{
+				// Connection established
+				break;
+			}
+			// Connection failed
+			closesocket(m_iSocket);
+			m_iSocket = INVALID_SOCKET;
 		}
 	}
-	sSocketAddress.sin_port = htons(m_pNetAddress->GetPort());
-	int opt = 1;
-	setsockopt(m_iSocket, SOL_SOCKET, SO_REUSEADDR, (char*)&opt, sizeof(opt));
 
-	if (bind(m_iSocket, (struct sockaddr *) &sSocketAddress, sizeof(sSocketAddress)) < 0)
+	freeaddrinfo(addr_list);
+
+	if (m_iSocket == INVALID_SOCKET)
 	{
 		ReportError("Binding socket failed for %s", m_pNetAddress->GetHost(), 0);
 		return -1;
@@ -503,12 +497,7 @@ int Connection::DoBind()
 
 SOCKET Connection::DoAccept()
 {
-	struct sockaddr_in ClientAddress;
-	socklen_t SockLen;
-
-	SockLen = sizeof(ClientAddress);
-
-	SOCKET iSocket = accept(GetSocket(), (struct sockaddr *) & ClientAddress, &SockLen);
+	SOCKET iSocket = accept(GetSocket(), NULL, NULL);
 
 	if (iSocket == INVALID_SOCKET && m_eStatus != csCancelled)
 	{

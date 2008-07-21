@@ -169,6 +169,8 @@ void ArticleDownloader::Run()
 			error("Serious error: Connection is NULL");
 		}
 		
+		m_pConnection->SetSuppressErrors(false);
+
 		// test connection
 		bool bConnected = m_pConnection && m_pConnection->Connect() >= 0;
 		if (bConnected && !IsStopped())
@@ -727,6 +729,7 @@ void ArticleDownloader::Stop()
 	m_mutexConnection.Lock();
 	if (m_pConnection)
 	{
+		m_pConnection->SetSuppressErrors(true);
 		m_pConnection->Cancel();
 	}
 	m_mutexConnection.Unlock();
@@ -740,6 +743,7 @@ bool ArticleDownloader::Terminate()
 	if (terminated && pConnection)
 	{
 		debug("Terminating connection");
+		pConnection->SetSuppressErrors(true);
 		pConnection->Cancel();
 		pConnection->Disconnect();
 		g_pServerPool->FreeConnection(pConnection, true);
