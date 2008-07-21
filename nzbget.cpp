@@ -49,6 +49,9 @@
 #ifndef DISABLE_PARCHECK
 #include <iostream>
 #endif
+#ifdef HAVE_BACKTRACE
+#include <execinfo.h>
+#endif
 
 #include "nzbget.h"
 #include "ServerPool.h"
@@ -76,6 +79,10 @@ void ProcessClientRequest();
 #ifndef WIN32
 void InstallSignalHandlers();
 void Daemonize();
+void print_backtrace();
+#ifdef DEBUG
+void MakeSegFault();
+#endif
 #endif
 #ifndef DISABLE_PARCHECK
 void DisableCout();
@@ -174,8 +181,14 @@ void Run()
 {
 #ifndef WIN32
 	InstallSignalHandlers();
+#ifdef DEBUG
+	if (g_pOptions->GetTestBacktrace())
+	{
+		MakeSegFault();
+	}
 #endif
-
+#endif
+	
 	Thread::Init();
 	Connection::Init();
 
@@ -424,7 +437,7 @@ void SignalProc(int iSignal)
 			
 		case SIGSEGV:
 			signal(SIGSEGV, SIG_DFL);   // Reset the signal handler
-			debug("SIGSEGV received");
+			print_backtrace();
 			break;
 		
 		default:
@@ -452,6 +465,48 @@ void InstallSignalHandlers()
 	signal(SIGWINCH, SIG_DFL);
 #endif
 }
+
+void print_backtrace()
+{
+#ifdef HAVE_BACKTRACE
+	printf("Segmentation fault, tracing...\n");
+	
+	void *array[100];
+	size_t size;
+	char **strings;
+	size_t i;
+
+	size = backtrace(array, 100);
+	strings = backtrace_symbols(array, size);
+
+	// first trace to screen
+	printf("Obtained %zd stack frames\n", size);
+	for (i = 0; i < size; i++)
+	{
+		printf("%s\n", strings[i]);
+	}
+
+	// then trace to log
+	error("Segmentation fault, tracing...");
+	error("Obtained %zd stack frames", size);
+	for (i = 0; i < size; i++)
+	{
+		error("%s", strings[i]);
+	}
+
+	free(strings);
+#else
+	error("Segmentation fault");
+#endif
+}
+
+#ifdef DEBUG
+void MakeSegFault()
+{
+	char* N = NULL;
+	strcpy(N, "");
+}
+#endif
 #endif
 
 void Cleanup()

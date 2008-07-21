@@ -67,7 +67,6 @@ public:
 		lpOne,
 		lpAll
 	};
-
 	enum EPostLogKind
 	{
 		plNone,
@@ -164,6 +163,7 @@ private:
 	float				m_fSetRate;
 	int					m_iLogLines;
 	int					m_iWriteLogKind;
+	bool				m_bTestBacktrace;
 
 	// Current state
 	bool				m_bPause;
@@ -266,6 +266,7 @@ public:
 	float				GetSetRate() { return m_fSetRate; }
 	int					GetLogLines() { return m_iLogLines; }
 	int					GetWriteLogKind() { return m_iWriteLogKind; }
+	bool				GetTestBacktrace() { return m_bTestBacktrace; }
 
 	// Current state
 	void				SetPause(bool bOnOff) { m_bPause = bOnOff; }
