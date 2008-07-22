@@ -62,33 +62,37 @@ LogFile=${destdir}/nzbget.log
 
 # First server, on level 0
 # Level of newsserver
-server1.level=0
+Server1.Level=0
 # Host-name of newsserver
-server1.host=my1.newsserver.com
+Server1.Host=my1.newsserver.com
 # Port to connect to (default 119 if not specified)
-server1.port=119
+Server1.Port=119
 # Username to use for authentication
-server1.username=user
+Server1.Username=user
 # Password to use for authentication
-server1.password=pass
+Server1.Password=pass
+# Server requires "Join Group"-command (yes, no) (default yes if not specified)
+Server1.JoinGroup=yes
 # Maximal number of simultaneous connections to this server
-server1.connections=4
+Server1.Connections=4
 
 # Second server, on level 0
-#server2.level=0
-#server2.host=my2.newsserver.com
-#server2.port=119
-#server2.username=me
-#server2.password=mypass
-#server2.connections=4
+#Server2.Level=0
+#Server2.Host=my2.newsserver.com
+#Server2.Port=119
+#Server2.Username=me
+#Server2.Password=mypass
+#Server2.JoinGroup=yes
+#Server2.Connections=4
 
 # Third server, on level 1
-#server3.level=1
-#server3.host=fills.newsserver.com
-#server3.port=119
-#server3.username=me2
-#server3.password=mypass2
-#server3.connections=1
+#Server3.Level=1
+#Server3.Host=fills.newsserver.com
+#Server3.Port=119
+#Server3.Username=me2
+#Server3.Password=mypass2
+#Server3.JoinGroup=yes
+#Server3.Connections=1
 
 
 ##############################################################################

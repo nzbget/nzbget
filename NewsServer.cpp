@@ -39,20 +39,21 @@
 #include "NewsServer.h"
 #include "Log.h"
 
-NewsServer::NewsServer(const char* host, int port, const char* user, const char* pass, int maxConnections, int level) : NetAddress(host, port)
+NewsServer::NewsServer(const char* szHost, int iPort, const char* szUser, const char* szPass, bool bJoinGroup, int iMaxConnections, int iLevel) : NetAddress(szHost, iPort)
 {
 	m_szUser = NULL;
 	m_szPassword = NULL;
-	m_iLevel = level;
-	m_iMaxConnections = maxConnections;
+	m_iLevel = iLevel;
+	m_iMaxConnections = iMaxConnections;
+	m_bJoinGroup = bJoinGroup;
 
-	if (pass)
+	if (szUser)
 	{
-		m_szPassword = strdup(pass);
+		m_szUser = strdup(szUser);
 	}
-	if (user)
+	if (szPass)
 	{
-		m_szUser = strdup(user);
+		m_szPassword = strdup(szPass);
 	}
 }
 

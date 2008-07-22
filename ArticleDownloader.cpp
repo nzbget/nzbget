@@ -292,20 +292,23 @@ ArticleDownloader::EStatus ArticleDownloader::Download()
 	const char* szResponse = NULL;
 	EStatus Status = adRunning;
 
-	// at first, change group
-	for (FileInfo::Groups::iterator it = m_pFileInfo->GetGroups()->begin(); it != m_pFileInfo->GetGroups()->end(); it++)
+	if (m_pConnection->GetNewsServer()->GetJoinGroup())
 	{
-		szResponse = m_pConnection->JoinGroup(*it);
-		if (szResponse && !strncmp(szResponse, "2", 1))
+		// change group
+		for (FileInfo::Groups::iterator it = m_pFileInfo->GetGroups()->begin(); it != m_pFileInfo->GetGroups()->end(); it++)
 		{
-			break; 
+			szResponse = m_pConnection->JoinGroup(*it);
+			if (szResponse && !strncmp(szResponse, "2", 1))
+			{
+				break; 
+			}
 		}
-	}
 
-	Status = CheckResponse(szResponse, "could not join group");
-	if (Status != adFinished)
-	{
-		return Status;
+		Status = CheckResponse(szResponse, "could not join group");
+		if (Status != adFinished)
+		{
+			return Status;
+		}
 	}
 
 	// retrieve article

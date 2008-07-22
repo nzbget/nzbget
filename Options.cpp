@@ -143,6 +143,10 @@ static const char* OPTION_DISKSPACE			= "DiskSpace";
 static const char* OPTION_POSTLOGKIND		= "PostLogKind";
 static const char* OPTION_ALLOWREPROCESS	= "AllowReProcess";
 
+const char* BoolNames[] = { "yes", "no", "true", "false", "1", "0", "on", "off", "enable", "disable", "enabled", "disabled" };
+const int BoolValues[] = { 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0 };
+const int BoolCount = 12;
+
 #ifndef WIN32
 const char* PossibleConfigLocations[] =
 	{
@@ -561,61 +565,62 @@ void Options::InitOptions()
 		CheckDir(&m_szNzbDir, OPTION_NZBDIR);
 	}
 
-	const char* BoolNames[] = { "yes", "no", "true", "false", "1", "0", "on", "off", "enable", "disable", "enabled", "disabled" };
-	const int BoolValues[] = { 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0 };
-	const int BoolCount = 12;
-	m_bCreateBrokenLog		= (bool)ParseOptionValue(OPTION_CREATEBROKENLOG, BoolCount, BoolNames, BoolValues);
-	m_bResetLog				= (bool)ParseOptionValue(OPTION_RESETLOG, BoolCount, BoolNames, BoolValues);
-	m_bAppendNZBDir			= (bool)ParseOptionValue(OPTION_APPENDNZBDIR, BoolCount, BoolNames, BoolValues);
-	m_bAppendCategoryDir	= (bool)ParseOptionValue(OPTION_APPENDCATEGORYDIR, BoolCount, BoolNames, BoolValues);
-	m_bContinuePartial		= (bool)ParseOptionValue(OPTION_CONTINUEPARTIAL, BoolCount, BoolNames, BoolValues);
-	m_bRenameBroken			= (bool)ParseOptionValue(OPTION_RENAMEBROKEN, BoolCount, BoolNames, BoolValues);
-	m_bSaveQueue			= (bool)ParseOptionValue(OPTION_SAVEQUEUE, BoolCount, BoolNames, BoolValues);
-	m_bDupeCheck			= (bool)ParseOptionValue(OPTION_DUPECHECK, BoolCount, BoolNames, BoolValues);
-	m_bCreateLog			= (bool)ParseOptionValue(OPTION_CREATELOG, BoolCount, BoolNames, BoolValues);
-	m_bParCheck				= (bool)ParseOptionValue(OPTION_PARCHECK, BoolCount, BoolNames, BoolValues);
-	m_bParRepair			= (bool)ParseOptionValue(OPTION_PARREPAIR, BoolCount, BoolNames, BoolValues);
-	m_bStrictParName		= (bool)ParseOptionValue(OPTION_STRICTPARNAME, BoolCount, BoolNames, BoolValues);
-	m_bReloadQueue			= (bool)ParseOptionValue(OPTION_RELOADQUEUE, BoolCount, BoolNames, BoolValues);
-	m_bReloadPostQueue		= (bool)ParseOptionValue(OPTION_RELOADPOSTQUEUE, BoolCount, BoolNames, BoolValues);
-	m_bCursesNZBName		= (bool)ParseOptionValue(OPTION_CURSESNZBNAME, BoolCount, BoolNames, BoolValues);
-	m_bCursesTime			= (bool)ParseOptionValue(OPTION_CURSESTIME, BoolCount, BoolNames, BoolValues);
-	m_bCursesGroup			= (bool)ParseOptionValue(OPTION_CURSESGROUP, BoolCount, BoolNames, BoolValues);
-	m_bCrcCheck				= (bool)ParseOptionValue(OPTION_CRCCHECK, BoolCount, BoolNames, BoolValues);
-	m_bRetryOnCrcError		= (bool)ParseOptionValue(OPTION_RETRYONCRCERROR, BoolCount, BoolNames, BoolValues);
-	m_bDirectWrite			= (bool)ParseOptionValue(OPTION_DIRECTWRITE, BoolCount, BoolNames, BoolValues);
-	m_bParCleanupQueue		= (bool)ParseOptionValue(OPTION_PARCLEANUPQUEUE, BoolCount, BoolNames, BoolValues);
-	m_bDecode				= (bool)ParseOptionValue(OPTION_DECODE, BoolCount, BoolNames, BoolValues);
-	m_bAllowReProcess		= (bool)ParseOptionValue(OPTION_ALLOWREPROCESS, BoolCount, BoolNames, BoolValues);
+	m_bCreateBrokenLog		= (bool)ParseOptionValue(OPTION_CREATEBROKENLOG, NULL, BoolCount, BoolNames, BoolValues);
+	m_bResetLog				= (bool)ParseOptionValue(OPTION_RESETLOG, NULL, BoolCount, BoolNames, BoolValues);
+	m_bAppendNZBDir			= (bool)ParseOptionValue(OPTION_APPENDNZBDIR, NULL, BoolCount, BoolNames, BoolValues);
+	m_bAppendCategoryDir	= (bool)ParseOptionValue(OPTION_APPENDCATEGORYDIR, NULL, BoolCount, BoolNames, BoolValues);
+	m_bContinuePartial		= (bool)ParseOptionValue(OPTION_CONTINUEPARTIAL, NULL, BoolCount, BoolNames, BoolValues);
+	m_bRenameBroken			= (bool)ParseOptionValue(OPTION_RENAMEBROKEN, NULL, BoolCount, BoolNames, BoolValues);
+	m_bSaveQueue			= (bool)ParseOptionValue(OPTION_SAVEQUEUE, NULL, BoolCount, BoolNames, BoolValues);
+	m_bDupeCheck			= (bool)ParseOptionValue(OPTION_DUPECHECK, NULL, BoolCount, BoolNames, BoolValues);
+	m_bCreateLog			= (bool)ParseOptionValue(OPTION_CREATELOG, NULL, BoolCount, BoolNames, BoolValues);
+	m_bParCheck				= (bool)ParseOptionValue(OPTION_PARCHECK, NULL, BoolCount, BoolNames, BoolValues);
+	m_bParRepair			= (bool)ParseOptionValue(OPTION_PARREPAIR, NULL, BoolCount, BoolNames, BoolValues);
+	m_bStrictParName		= (bool)ParseOptionValue(OPTION_STRICTPARNAME, NULL, BoolCount, BoolNames, BoolValues);
+	m_bReloadQueue			= (bool)ParseOptionValue(OPTION_RELOADQUEUE, NULL, BoolCount, BoolNames, BoolValues);
+	m_bReloadPostQueue		= (bool)ParseOptionValue(OPTION_RELOADPOSTQUEUE, NULL, BoolCount, BoolNames, BoolValues);
+	m_bCursesNZBName		= (bool)ParseOptionValue(OPTION_CURSESNZBNAME, NULL, BoolCount, BoolNames, BoolValues);
+	m_bCursesTime			= (bool)ParseOptionValue(OPTION_CURSESTIME, NULL, BoolCount, BoolNames, BoolValues);
+	m_bCursesGroup			= (bool)ParseOptionValue(OPTION_CURSESGROUP, NULL, BoolCount, BoolNames, BoolValues);
+	m_bCrcCheck				= (bool)ParseOptionValue(OPTION_CRCCHECK, NULL, BoolCount, BoolNames, BoolValues);
+	m_bRetryOnCrcError		= (bool)ParseOptionValue(OPTION_RETRYONCRCERROR, NULL, BoolCount, BoolNames, BoolValues);
+	m_bDirectWrite			= (bool)ParseOptionValue(OPTION_DIRECTWRITE, NULL, BoolCount, BoolNames, BoolValues);
+	m_bParCleanupQueue		= (bool)ParseOptionValue(OPTION_PARCLEANUPQUEUE, NULL, BoolCount, BoolNames, BoolValues);
+	m_bDecode				= (bool)ParseOptionValue(OPTION_DECODE, NULL, BoolCount, BoolNames, BoolValues);
+	m_bAllowReProcess		= (bool)ParseOptionValue(OPTION_ALLOWREPROCESS, NULL, BoolCount, BoolNames, BoolValues);
 
 	const char* OutputModeNames[] = { "loggable", "logable", "log", "colored", "color", "ncurses", "curses" };
 	const int OutputModeValues[] = { omLoggable, omLoggable, omLoggable, omColored, omColored, omNCurses, omNCurses };
 	const int OutputModeCount = 7;
-	m_eOutputMode = (EOutputMode)ParseOptionValue(OPTION_OUTPUTMODE, OutputModeCount, OutputModeNames, OutputModeValues);
+	m_eOutputMode = (EOutputMode)ParseOptionValue(OPTION_OUTPUTMODE, NULL, OutputModeCount, OutputModeNames, OutputModeValues);
 
 	const char* LoadParsNames[] = { "none", "one", "all", "1", "0" };
 	const int LoadParsValues[] = { lpNone, lpOne, lpAll, lpOne, lpNone };
 	const int LoadParsCount = 4;
-	m_eLoadPars = (ELoadPars)ParseOptionValue(OPTION_LOADPARS, LoadParsCount, LoadParsNames, LoadParsValues);
+	m_eLoadPars = (ELoadPars)ParseOptionValue(OPTION_LOADPARS, NULL, LoadParsCount, LoadParsNames, LoadParsValues);
 
 	const char* TargetNames[] = { "screen", "log", "both", "none" };
 	const int TargetValues[] = { mtScreen, mtLog, mtBoth, mtNone };
 	const int TargetCount = 4;
-	m_eInfoTarget = (EMessageTarget)ParseOptionValue(OPTION_INFOTARGET, TargetCount, TargetNames, TargetValues);
-	m_eWarningTarget = (EMessageTarget)ParseOptionValue(OPTION_WARNINGTARGET, TargetCount, TargetNames, TargetValues);
-	m_eErrorTarget = (EMessageTarget)ParseOptionValue(OPTION_ERRORTARGET, TargetCount, TargetNames, TargetValues);
-	m_eDebugTarget = (EMessageTarget)ParseOptionValue(OPTION_DEBUGTARGET, TargetCount, TargetNames, TargetValues);
-	m_eDetailTarget = (EMessageTarget)ParseOptionValue(OPTION_DETAILTARGET, TargetCount, TargetNames, TargetValues);
+	m_eInfoTarget = (EMessageTarget)ParseOptionValue(OPTION_INFOTARGET, NULL, TargetCount, TargetNames, TargetValues);
+	m_eWarningTarget = (EMessageTarget)ParseOptionValue(OPTION_WARNINGTARGET, NULL, TargetCount, TargetNames, TargetValues);
+	m_eErrorTarget = (EMessageTarget)ParseOptionValue(OPTION_ERRORTARGET, NULL, TargetCount, TargetNames, TargetValues);
+	m_eDebugTarget = (EMessageTarget)ParseOptionValue(OPTION_DEBUGTARGET, NULL, TargetCount, TargetNames, TargetValues);
+	m_eDetailTarget = (EMessageTarget)ParseOptionValue(OPTION_DETAILTARGET, NULL, TargetCount, TargetNames, TargetValues);
 
 	const char* PostLogKindNames[] = { "none", "detail", "info", "warning", "error", "debug" };
 	const int PostLogKindValues[] = { plNone, plDetail, plInfo, plWarning, plError, plDebug };
 	const int PostLogKindCount = 6;
-	m_ePostLogKind = (EPostLogKind)ParseOptionValue(OPTION_POSTLOGKIND, PostLogKindCount, PostLogKindNames, PostLogKindValues);
+	m_ePostLogKind = (EPostLogKind)ParseOptionValue(OPTION_POSTLOGKIND, NULL, PostLogKindCount, PostLogKindNames, PostLogKindValues);
 }
 
-int Options::ParseOptionValue(const char * OptName, int argc, const char * argn[], const int argv[])
+int Options::ParseOptionValue(const char* OptName, const char* OptValue, int argc, const char * argn[], const int argv[])
 {
-	const char* v = GetOption(OptName);
+	const char* v = OptValue;
+	if (!v)
+	{
+		v = GetOption(OptName);
+	}
 	if (!v)
 	{
 		abort("FATAL ERROR: Undefined value for option \"%s\"\n", OptName);
@@ -1094,10 +1099,18 @@ void Options::InitServers()
 		sprintf(optname, "server%i.password", n);
 		const char* npassword = GetOption(optname);
 
+		sprintf(optname, "server%i.joingroup", n);
+		const char* njoingroup = GetOption(optname);
+		bool bJoinGroup = true;
+		if (njoingroup)
+		{
+			bJoinGroup = (bool)ParseOptionValue(optname, njoingroup, BoolCount, BoolNames, BoolValues);
+		}
+
 		sprintf(optname, "server%i.connections", n);
 		const char* nconnections = GetOption(optname);
 
-		bool definition = nlevel || nhost || nport || nusername || npassword || nconnections;
+		bool definition = nlevel || nhost || nport || nusername || npassword || nconnections || njoingroup;
 		bool completed = nlevel && nhost && nport && nconnections;
 
 		if (!definition)
@@ -1110,7 +1123,7 @@ void Options::InitServers()
 			abort("FATAL ERROR: Server definition not complete\n");
 		}
 
-		NewsServer* pNewsServer = new NewsServer(nhost, atoi(nport), nusername, npassword, atoi((char*)nconnections), atoi((char*)nlevel));
+		NewsServer* pNewsServer = new NewsServer(nhost, atoi(nport), nusername, npassword, bJoinGroup, atoi((char*)nconnections), atoi((char*)nlevel));
 		g_pServerPool->AddServer(pNewsServer);
 
 		n++;
@@ -1213,14 +1226,15 @@ bool Options::ValidateOptionName(const char * optname)
 		return true;
 	}
 
-	if (!strncmp(optname, "server", 6))
+	if (!strncasecmp(optname, "server", 6))
 	{
 		char* p = (char*)optname + 6;
 		while (*p >= '0' && *p <= '9') p++;
 		if (p &&
-			(!strcmp(p, ".level") || !strcmp(p, ".host") ||
-			!strcmp(p, ".port") || !strcmp(p, ".username") ||
-			!strcmp(p, ".password") || !strcmp(p, ".connections")))
+			(!strcasecmp(p, ".level") || !strcasecmp(p, ".host") ||
+			!strcasecmp(p, ".port") || !strcasecmp(p, ".username") ||
+			!strcasecmp(p, ".password") || !strcasecmp(p, ".joingroup") ||
+			!strcasecmp(p, ".connections")))
 		{
 			return true;
 		}

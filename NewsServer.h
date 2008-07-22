@@ -36,14 +36,16 @@ private:
 	char*		m_szPassword;
 	int			m_iMaxConnections;
 	int			m_iLevel;
+	bool		m_bJoinGroup;
 
 public:
-	NewsServer(const char* host, int port, const char* user, const char* pass, int maxConnections, int level);
+					NewsServer(const char* szHost, int iPort, const char* szUser, const char* szPass, bool bJoinGroup, int iMaxConnections, int iLevel);
 	virtual			~NewsServer();
 	const char*		GetUser() { return m_szUser; }
 	const char*		GetPassword() { return m_szPassword; }
 	int				GetMaxConnections() { return m_iMaxConnections; }
 	int				GetLevel() { return m_iLevel; }
+	int				GetJoinGroup() { return m_bJoinGroup; }
 };
 
 #endif
