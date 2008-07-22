@@ -179,7 +179,7 @@ private:
 	void				CheckOptions();
 	void				PrintUsage(char* com);
 	void				Dump();
-	int					ParseOptionValue(const char* OptName, int argc, const char* argn[], const int argv[]);
+	int					ParseOptionValue(const char* OptName, const char* OptValue, int argc, const char* argn[], const int argv[]);
 	const char*			GetOption(const char* optname);
 	void				DelOption(const char* optname);
 	void				SetOption(const char* optname, const char* value);
