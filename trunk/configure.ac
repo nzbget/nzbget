@@ -66,7 +66,6 @@ dnl
 AC_SEARCH_LIBS([pthread_create], [pthread])
 AC_SEARCH_LIBS([socket], [socket])
 AC_SEARCH_LIBS([inet_addr], [nsl])
-AC_SEARCH_LIBS([gethostbyname_r], [nsl])
 AC_SEARCH_LIBS([hstrerror], [resolv])
 
 
@@ -108,34 +107,6 @@ fi
 if test "$FOUND" = "no"; then
 	AC_MSG_RESULT([no])
 	AC_MSG_ERROR("function ctime_r not found.")
-fi
-
-
-dnl
-dnl check gethostbyname_r
-dnl
-AC_MSG_CHECKING(for gethostbyname_r)
-AC_TRY_COMPILE(
-	[#include <netdb.h>],
-	[	char* szHost; struct hostent hinfobuf; char* strbuf; int h_errnop;
-		struct hostent* hinfo = gethostbyname_r(szHost, &hinfobuf, strbuf, 1024, &h_errnop); ],
-	AC_MSG_RESULT([[yes, and it takes 5 arguments]])
-	FOUND="yes"                      
-	AC_DEFINE([HAVE_GETHOSTBYNAME_R_5], 1, [Define to 1 if gethostbyname_r takes 5 arguments]),
-	FOUND="no")
-if test "$FOUND" = "no"; then
-AC_TRY_COMPILE(
-	[#include <netdb.h>],
-	[	char* szHost; struct hostent* hinfo; struct hostent hinfobuf; char* strbuf; int h_errnop;
-		int err = gethostbyname_r(szHost, &hinfobuf, strbuf, 1024, &hinfo, &h_errnop); ],
-	AC_MSG_RESULT([[yes, and it takes 6 arguments]])
-	FOUND="yes"
-	AC_DEFINE([HAVE_GETHOSTBYNAME_R_6], 1, [Define to 1 if gethostbyname_r takes 6 arguments]),
-	FOUND="no")
-fi
-if test "$FOUND" = "no"; then
-	AC_MSG_RESULT([no])
-	AC_MSG_ERROR("function gethostbyname_r not found.")
 fi
 
 
