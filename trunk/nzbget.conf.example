@@ -233,12 +233,23 @@ ConnectionTimeout=60
 # Do not use small values!
 TerminateTimeout=600
 
-# Set the maximum number of threads program may create.
-# Connection errors or fast connection with slow cpu can cause 
-# the creating of many (thousands) threads, which results in program crash.
-# Limiting the number of threads helps in such situations.
-# The option affects only download threads, so the number of existing threads
-# may be slightly more than set by the option.
+# Set the (approximate) maximum number of allowed threads.
+# Sometimes under certain circumstances the program may create way to many 
+# download threads. Most of them are in wait-state. That is not bad,
+# but threads are usually a limited resource. If a program creates to many
+# of them, operating system may kill it. The option <ThreadLimit> prevents that.
+# NOTE 1: the number of threads is not the same as the number of connections
+# opened to NNTP-servers. Do not use the option <ThreadLimit> to limit the
+# number of connections. Use the appropriate options <ServerX.Connections>
+# instead.
+# NOTE 2: the actual number of created threads can be slightly larger as
+# defined by the option. Important threads may be created even if the
+# number of threads is exceeded. The option prevents only the creation of
+# additional download threads.
+# NOTE 3: in most cases you should leave the default value "100" unchanged.
+# However you may increase that value if you need more than 90 connections 
+# (that's very unlikely) or decrease the value if the OS does not allow so 
+# many threads. But the most OSes should not have problems with 100 threads.
 ThreadLimit=100
 
 # Set the maximum download rate in KB/s, "0" means no speed control
