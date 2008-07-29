@@ -1,8 +1,8 @@
 /*
  *  This file is part of nzbget
  *
- *  Copyright (C) 2004  Sven Henkel <sidddy@users.sourceforge.net>
- *  Copyright (C) 2007  Andrei Prygounkov <hugbug@users.sourceforge.net>
+ *  Copyright (C) 2004 Sven Henkel <sidddy@users.sourceforge.net>
+ *  Copyright (C) 2007-2008 Andrei Prygounkov <hugbug@users.sourceforge.net>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -145,6 +145,7 @@ private:
 	int					m_iDiskSpace;
 	EPostLogKind		m_ePostLogKind;
 	bool				m_bAllowReProcess;
+	bool				m_bTLS;
 
 	// Parsed command-line parameters
 	bool				m_bServerMode;
@@ -248,6 +249,7 @@ public:
 	int					GetDiskSpace() { return m_iDiskSpace; }
 	EPostLogKind		GetPostLogKind() { return m_ePostLogKind; }
 	bool				GetAllowReProcess() { return m_bAllowReProcess; }
+	bool				GetTLS() { return m_bTLS; }
 
 	// Parsed command-line parameters
 	bool				GetServerMode() { return m_bServerMode; }

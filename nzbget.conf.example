@@ -73,6 +73,8 @@ Server1.Username=user
 Server1.Password=pass
 # Server requires "Join Group"-command (yes, no) (default yes if not specified)
 Server1.JoinGroup=yes
+# Encrypted server connection (TLS/SSL) (yes, no)
+Server1.Encryption=no
 # Maximal number of simultaneous connections to this server
 Server1.Connections=4
 

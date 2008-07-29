@@ -1,8 +1,8 @@
 /*
  *  This file is part of nzbget
  *
- *  Copyright (C) 2005  Bo Cordes Petersen <placebodk@sourceforge.net>
- *  Copyright (C) 2007  Andrei Prygounkov <hugbug@users.sourceforge.net>
+ *  Copyright (C) 2005 Bo Cordes Petersen <placebodk@sourceforge.net>
+ *  Copyright (C) 2007-2008 Andrei Prygounkov <hugbug@users.sourceforge.net>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -113,7 +113,7 @@ bool RemoteClient::InitConnection()
 	m_pNetAddress	= new NetAddress(g_pOptions->GetServerIP(), g_pOptions->GetServerPort());
 	m_pConnection	= new Connection(m_pNetAddress);
 
-	bool OK = m_pConnection->Connect() >= 0;
+	bool OK = m_pConnection->Connect();
 	if (!OK)
 	{
 		printf("Unable to send request to nzbserver at %s (port %i)\n", g_pOptions->GetServerIP(), g_pOptions->GetServerPort());

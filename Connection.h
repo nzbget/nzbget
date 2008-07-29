@@ -1,8 +1,8 @@
 /*
  *  This file if part of nzbget
  *
- *  Copyright (C) 2004  Sven Henkel <sidddy@users.sourceforge.net>
- *  Copyright (C) 2007  Andrei Prygounkov <hugbug@users.sourceforge.net>
+ *  Copyright (C) 2004 Sven Henkel <sidddy@users.sourceforge.net>
+ *  Copyright (C) 2007-2008 Andrei Prygounkov <hugbug@users.sourceforge.net>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -50,23 +50,33 @@ protected:
 	int					m_iTimeout;
 	bool				m_bSuppressErrors;
 	bool				m_bAutoClose;
+#ifndef DISABLE_TLS
+	void*				m_pTLS;
+	static bool			bTLSLibInitialized;
+#endif
 
 	void				ReportError(const char* szMsgPrefix, const char* szMsgArg, int ErrCode);
-	virtual int 		DoConnect();
-	virtual int			DoDisconnect();
+	virtual bool 		DoConnect();
+	virtual bool		DoDisconnect();
 	int					DoBind();
 	int					DoWriteLine(const char* pBuffer);
 	char*				DoReadLine(char* pBuffer, int iSize, int* pBytesRead);
 	SOCKET				DoAccept();
+#ifndef DISABLE_TLS
+	bool				CheckTLSResult(int iResultCode, char* szErrStr, const char* szErrMsgPrefix);
+	int					recv(SOCKET s, char* buf, int len, int flags);
+	int					send(SOCKET s, const char* buf, int len, int flags);
+	void				CloseTLS();
+#endif
 
 public:
 						Connection(NetAddress* pNetAddress);
 						Connection(SOCKET iSocket, bool bAutoClose);
 	virtual 			~Connection();
-	static void			Init();
+	static void			Init(bool bTLS);
 	static void			Final();
-	int 				Connect();
-	int					Disconnect();
+	bool 				Connect();
+	bool				Disconnect();
 	int					Bind();
 	int					Send(const char* pBuffer, int iSize);
 	int					Recv(char* pBuffer, int iSize);
@@ -81,6 +91,9 @@ public:
 	EStatus				GetStatus() { return m_eStatus; }
 	void				SetSuppressErrors(bool bSuppressErrors) { m_bSuppressErrors = bSuppressErrors; }
 	bool				GetSuppressErrors() { return m_bSuppressErrors; }
+#ifndef DISABLE_TLS
+	bool				StartTLS();
+#endif
 };
 
 #endif

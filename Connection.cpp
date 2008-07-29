@@ -1,8 +1,8 @@
 /*
  *  This file if part of nzbget
  *
- *  Copyright (C) 2004  Sven Henkel <sidddy@users.sourceforge.net>
- *  Copyright (C) 2007  Andrei Prygounkov <hugbug@users.sourceforge.net>
+ *  Copyright (C) 2004 Sven Henkel <sidddy@users.sourceforge.net>
+ *  Copyright (C) 2007-2008 Andrei Prygounkov <hugbug@users.sourceforge.net>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -53,10 +53,14 @@
 #include "nzbget.h"
 #include "Connection.h"
 #include "Log.h"
+#include "TLS.h"
 
 static const int CONNECTION_READBUFFER_SIZE = 1024;
+#ifndef DISABLE_TLS
+bool Connection::bTLSLibInitialized = false;
+#endif
 
-void Connection::Init()
+void Connection::Init(bool bTLS)
 {
 	debug("Intiializing global connection data");
 
@@ -75,6 +79,23 @@ void Connection::Init()
 		return; 
 	}
 #endif
+#ifndef DISABLE_TLS
+	if (bTLS)
+	{
+		debug("Initializing TLS library");
+		char* szErrStr;
+		int iRes = tls_lib_init(&szErrStr);
+		bTLSLibInitialized = iRes == TLS_EOK;
+		if (!bTLSLibInitialized)
+		{
+			error("Could not initialize TLS library: %s", szErrStr ? szErrStr : "unknown error");
+			if (szErrStr)
+			{
+				free(szErrStr);
+			}
+		}
+	}
+#endif
 }
 
 void Connection::Final()
@@ -84,8 +105,15 @@ void Connection::Final()
 #ifdef WIN32
 	WSACleanup();
 #endif
-}
 
+#ifndef DISABLE_TLS
+	if (bTLSLibInitialized)
+	{
+		debug("Finalizing TLS library");
+		tls_lib_deinit();
+	}
+#endif
+}
 
 Connection::Connection(NetAddress* pNetAddress)
 {
@@ -99,6 +127,9 @@ Connection::Connection(NetAddress* pNetAddress)
 	m_bSuppressErrors	= true;
 	m_szReadBuf			= (char*)malloc(CONNECTION_READBUFFER_SIZE + 1);
 	m_bAutoClose		= true;
+#ifndef DISABLE_TLS
+	m_pTLS				= NULL;
+#endif
 }
 
 Connection::Connection(SOCKET iSocket, bool bAutoClose)
@@ -113,6 +144,9 @@ Connection::Connection(SOCKET iSocket, bool bAutoClose)
 	m_bSuppressErrors	= true;
 	m_szReadBuf			= (char*)malloc(CONNECTION_READBUFFER_SIZE + 1);
 	m_bAutoClose		= bAutoClose;
+#ifndef DISABLE_TLS
+	m_pTLS				= NULL;
+#endif
 }
 
 Connection::~Connection()
@@ -124,39 +158,45 @@ Connection::~Connection()
 		Disconnect();
 	}
 	free(m_szReadBuf);
+#ifndef DISABLE_TLS
+	if (m_pTLS)
+	{
+		free(m_pTLS);
+	}
+#endif
 }
 
-int Connection::Connect()
+bool Connection::Connect()
 {
 	debug("Connecting");
 
 	if (m_eStatus == csConnected)
-		return 0;
+		return true;
 
-	int iRes = DoConnect();
+	bool bRes = DoConnect();
 
-	if (iRes >= 0)
+	if (bRes)
 		m_eStatus = csConnected;
 	else
 		Connection::DoDisconnect();
 
-	return iRes;
+	return bRes;
 }
 
-int Connection::Disconnect()
+bool Connection::Disconnect()
 {
 	debug("Disconnecting");
 
 	if (m_eStatus == csDisconnected)
-		return 0;
+		return true;
 
-	int iRes = DoDisconnect();
+	bool bRes = DoDisconnect();
 
 	m_eStatus = csDisconnected;
 	m_iSocket = INVALID_SOCKET;
 	m_iBufAvail = 0;
 
-	return iRes;
+	return bRes;
 }
 
 int Connection::Bind()
@@ -283,7 +323,7 @@ bool Connection::RecvAll(char * pBuffer, int iSize)
 	return true;
 }
 
-int Connection::DoConnect()
+bool Connection::DoConnect()
 {
 	debug("Do connecting");
 
@@ -300,7 +340,7 @@ int Connection::DoConnect()
 	if (res != 0)
 	{
 		ReportError("Could not resolve hostname %s", m_pNetAddress->GetHost(), 0);
-		return -1;
+		return false;
 	}
 
 	m_iSocket = INVALID_SOCKET;
@@ -326,7 +366,7 @@ int Connection::DoConnect()
 	if (m_iSocket == INVALID_SOCKET)
 	{
 		ReportError("Connection to %s failed!", m_pNetAddress->GetHost(), 0);
-		return -1;
+		return false;
 	} 
 
 #ifdef WIN32
@@ -343,10 +383,10 @@ int Connection::DoConnect()
 		ReportError("setsockopt failed", NULL, 0);
 	}
 
-	return 0;
+	return true;
 }
 
-int Connection::DoDisconnect()
+bool Connection::DoDisconnect()
 {
 	debug("Do disconnecting");
 
@@ -354,10 +394,16 @@ int Connection::DoDisconnect()
 	{
 		closesocket(m_iSocket);
 		m_iSocket = INVALID_SOCKET;
+#ifndef DISABLE_TLS
+		if (m_pTLS)
+		{
+			CloseTLS();
+		}
+#endif
 	}
 
 	m_eStatus = csDisconnected;
-	return 0;
+	return true;
 }
 
 int Connection::DoWriteLine(const char* pBuffer)
@@ -556,3 +602,99 @@ void Connection::ReportError(const char* szMsgPrefix, const char* szMsgArg, int 
 	}
 #endif
 }
+
+#ifndef DISABLE_TLS
+bool Connection::CheckTLSResult(int iResultCode, char* szErrStr, const char* szErrMsgPrefix)
+{
+	bool bOK = iResultCode == TLS_EOK;
+	if (!bOK)
+	{
+		ReportError(szErrMsgPrefix, szErrStr ? szErrStr : "unknown error", -1);
+		if (szErrStr)
+		{
+			free(szErrStr);
+		}
+	}
+	return bOK;
+}
+
+bool Connection::StartTLS()
+{
+	debug("Starting TLS");
+
+	if (m_pTLS)
+	{
+		free(m_pTLS);
+	}
+
+	m_pTLS = malloc(sizeof(tls_t));
+	tls_t* pTLS = (tls_t*)m_pTLS;
+	memset(pTLS, 0, sizeof(tls_t));
+	tls_clear(pTLS);
+
+	char* szErrStr;
+	int iRes;
+		
+	iRes = tls_init(pTLS, NULL, NULL, NULL, 0, &szErrStr);
+	if (!CheckTLSResult(iRes, szErrStr, "Could not initialize TLS-object: %s"))
+	{
+		return false;
+	}
+
+	debug("tls_start...");
+	iRes = tls_start(pTLS, (int)m_iSocket, NULL, 1, NULL, &szErrStr);
+	debug("tls_start...%i", iRes);
+	if (!CheckTLSResult(iRes, szErrStr, "Could not establish secure connection: %s"))
+	{
+		return false;
+	}
+
+	return true;
+}
+
+void Connection::CloseTLS()
+{
+	tls_close((tls_t*)m_pTLS);
+	free(m_pTLS);
+	m_pTLS = NULL;
+}
+
+int Connection::recv(SOCKET s, char* buf, int len, int flags)
+{
+	size_t iReceived = 0;
+	
+	if (m_pTLS)
+	{
+		char* szErrStr;
+		int iRes = tls_getbuf((tls_t*)m_pTLS, buf, len, &iReceived, &szErrStr);
+		if (!CheckTLSResult(iRes, szErrStr, "Could not read from TLS-socket: %s"))
+		{
+			return -1;
+		}
+	}
+	else
+	{
+		iReceived = ::recv(s, buf, len, flags);
+	}
+	return iReceived;
+}
+
+int Connection::send(SOCKET s, const char* buf, int len, int flags)
+{
+	if (m_pTLS)
+	{
+		char* szErrStr;
+		int iRes = tls_putbuf((tls_t*)m_pTLS, buf, len, &szErrStr);
+		if (!CheckTLSResult(iRes, szErrStr, "Could not send to TLS-socket: %s"))
+		{
+			return -1;
+		}
+		return 0;
+	}
+	else
+	{
+		int iRet = ::send(s, buf, len, flags);
+		return iRet;
+	}
+}
+#endif

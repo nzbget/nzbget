@@ -1,7 +1,7 @@
 /*
  *  This file is part of nzbget
  *
- *  Copyright (C) 2007  Andrei Prygounkov <hugbug@users.sourceforge.net>
+ *  Copyright (C) 2007-2008 Andrei Prygounkov <hugbug@users.sourceforge.net>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -25,10 +25,18 @@
 /* win32.h - Defines and standard includes for MS Windows / Visual C++ 2005  */
 
 /* Define to 1 to not use curses */
-#undef DISABLE_CURSES
+//#define DISABLE_CURSES
 
 /* Define to 1 to disable smart par-verification and restoration */
-#undef DISABLE_PARCHECK
+//#define DISABLE_PARCHECK
+
+/* Define to 1 to disable TLS/SSL-support. */
+//#define DISABLE_TLS
+
+#ifndef DISABLE_TLS
+/* Define to 1 to use GnuTLS library for TLS/SSL-support */
+#define HAVE_LIBGNUTLS
+#endif
 
 /* Define to the name of macro which returns the name of function being
    compiled */

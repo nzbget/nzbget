@@ -125,6 +125,12 @@ You may run configure with additional arguments:
     
   --disable-parcheck - to make without parcheck-support. Use this option
     if you can not use libpar2 or libsigc++.
+
+  --with-tlslib=(GnuTLS, OpenSSL) - to select which TLS/SSL library
+    should be used for encrypted server connections.
+      
+  --disable-tls - to make without TLS/SSL support. Use this option if
+    you can not neither GnuTLS nor OpenSSL.
        
   --enable-debug - to build in debug-mode, if you want to see and log
     debug-messages.
@@ -136,8 +142,6 @@ it uses library par2 (libpar2), which needs sigc++ on its part.
 
 The libpar2 and libsigc++ (version 2 or later) must be installed on your
 system. On most linux distributions these libraries are available as packages.
-So you only need to install theme and run configure with parameter
-"--enable-parcheck".
 If you do not have these packages you can compile them yourself. 
 Following configure-parameters may be usefull:
 
@@ -153,7 +157,7 @@ make the program without support for par-check using option
 "--disable-parcheck":
 
   ./configure --disable-parcheck
-  
+
 Optional package: curses
 -------------------------
 For curses-outputmode you need ncurses or curses on your system.
@@ -168,6 +172,29 @@ make the program without support for curses using option "--disable-curses":
 
   ./configure --disable-curses
 
+Optional package: TLS
+-------------------------
+To enable encrypted server connections (TLS/SSL) you need to build the program
+with TLS/SSL support. NZBGet can use two libraries: GnuTLS or OpenSSL.
+Configure-script checks which library is installed and use it. If both are
+avialable it gives the precedence to GnuTLS. You may override that with
+the option --with-tlslib=(GnuTLS, OpenSSL). For example to build whith OpenSSL:
+
+  ./configure --with-tlslib=OpenSSL
+  
+Following configure-parameters may be usefull:
+
+  --with-libtls-includes
+  --with-libtls-libraries
+
+  --with-openssl-includes
+  --with-openssl-libraries
+
+If none of these libraries is available you can make the program without 
+TLS/SSL support using option "--disable-tls":
+
+  ./configure --disable-tls
+  
 =====================================
 5. Compiling on Windows
 =====================================
@@ -181,15 +208,23 @@ libraries:
 
    - libsigc++   (http://libsigc.sourceforge.net)
    - libpar2     (http://parchive.sourceforge.net)
-   
+
 Download these libaries, then use patch-files provided with NZBGet to create
 preconfigured project files and solutions for each library. 
 Look at http://gnuwin32.sourceforge.net/packages/patch.htm for info on how
 to use patch-files, if you do not familiar with this technique.
 
-After libsigc++ and libpar2 are compiled in static libraries (.lib) 
-and include- and libraries-paths are configured in MS Visual C++ 2005 you
-should be able to compile NZBGet.   
+To compile the program with TLS/SSL support you also need the library:
+
+   - GnuTLS   (http://www.gnu.org/software/gnutls)
+
+Download a precompiled version of GnuTLS from http://josefsson.org/gnutls4win
+and create lib-file as described there in section "Using the GnuTLS DLL from 
+your Visual Studio program".
+
+After libsigc++ and libpar2 are compiled in static libraries (.lib), the 
+library for GnuTLS is created and include- and libraries-paths are configured 
+in MS Visual C++ 2005 you should be able to compile NZBGet.   
 
 =====================================
 6. Configuration
@@ -342,23 +377,35 @@ nzbget-client-commands in this terminal.
 =====================================
 
 NZBGet was initialiy written by Sven Henkel (sidddy@users.sourceforge.net).
-Up to version 0.2.3 it was been developed and maintained by Bo Cordes Petersen 
-(placebodk@users.sourceforge.net). Beginning at version 0.3.0 the program is 
-being developed by Andrei Prygounkov (hugbug@users.sourceforge.net).
+
+Up to version 0.2.3 it was developed and maintained by Bo Cordes Petersen 
+(placebodk@users.sourceforge.net). 
+
+Beginning at version 0.3.0 the program is being developed by Andrei Prygounkov 
+(hugbug@users.sourceforge.net).
+
+Module TLS (TLS.c, TLS.h) is based on work by Martin Lambers (marlam@marlam.de).
 
 =====================================
 9. Copyright
 =====================================
 
-NZBGet is distributed under GNU General Pubic License Version 2.
+This program is free software; you can redistribute it and/or modify
+it under the terms of the GNU General Public License as published by
+the Free Software Foundation; either version 2 of the License, or
+(at your option) any later version.
+
 The complete content of license is provided in file COPYING.
+
+Additional exemption: compiling, linking, and/or using OpenSSL is allowed.
 
 Binary distribution for Windows contains code from the following libraries:
 
    - libpar2     (http://parchive.sourceforge.net)
    - libsigc++   (http://libsigc.sourceforge.net)
+   - GnuTLS      (http://www.gnu.org/software/gnutls)
 
-libpar2 is distributed under GPL and libsigc++ under LGPL.
+libpar2 is distributed under GPL; libsigc++ and GnuTLS - under LGPL.
 
 =====================================
 10. Contact

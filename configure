@@ -1317,21 +1317,43 @@ Optional Features:
   --enable-FEATURE[=ARG]  include FEATURE [ARG=yes]
   --disable-dependency-tracking  speeds up one-time build
   --enable-dependency-tracking   do not reject slow dependency extractors
-  --disable-curses		do not use curses (removes dependency from curses-library and makes executable smaller)
-  --enable-parcheck		include code for par-checking
-  --enable-debug		enable debugging
+  --disable-curses        do not use curses (removes dependency from
+                          curses-library)
+  --disable-parcheck      do not include par-check/-repair-support (removes
+                          dependency from libpar2- and libsigc-libraries)
+  --disable-tls           do not use TLS/SSL (removes dependency from
+                          TLS/SSL-libraries)
+  --enable-debug          enable debugging
 
 Optional Packages:
   --with-PACKAGE[=ARG]    use PACKAGE [ARG=yes]
   --without-PACKAGE       do not use PACKAGE (same as --with-PACKAGE=no)
-  --with-libxml2-includes=DIR	libxml2 include directory
-  --with-libxml2-libraries=DIR	libxml2 library directory
-  --with-libcurses-includes=DIR	libcurses include directory
-  --with-libcurses-libraries=DIR	libcurses library directory
-  --with-libsigc-includes=DIR	libsigc++-2.0 include directory
-  --with-libsigc-libraries=DIR	libsigc++-2.0 library directory
-  --with-libpar2-includes=DIR	libpar2 include directory
-  --with-libpar2-libraries=DIR	libpar2 library directory
+  --with-libxml2-includes=DIR
+                          libxml2 include directory
+  --with-libxml2-libraries=DIR
+                          libxml2 library directory
+  --with-libcurses-includes=DIR
+                          libcurses include directory
+  --with-libcurses-libraries=DIR
+                          libcurses library directory
+  --with-libsigc-includes=DIR
+                          libsigc++-2.0 include directory
+  --with-libsigc-libraries=DIR
+                          libsigc++-2.0 library directory
+  --with-libpar2-includes=DIR
+                          libpar2 include directory
+  --with-libpar2-libraries=DIR
+                          libpar2 library directory
+  --with-tlslib=(GnuTLS, OpenSSL)
+                          TLS/SSL library to use
+  --with-libgnutls-includes=DIR
+                          GnuTLS include directory
+  --with-libgnutls-libraries=DIR
+                          GnuTLS library directory
+  --with-openssl-includes=DIR
+                          OpenSSL include directory
+  --with-openssl-libraries=DIR
+                          OpenSSL library directory
 
 Some influential environment variables:
   CXX         C++ compiler command
@@ -7453,6 +7475,578 @@ else
 
 cat >>confdefs.h <<\_ACEOF
 #define DISABLE_PARCHECK 1
+_ACEOF
+
+fi
+
+
+{ echo "$as_me:$LINENO: checking whether to use TLS/SSL" >&5
+echo $ECHO_N "checking whether to use TLS/SSL... $ECHO_C" >&6; }
+# Check whether --enable-tls was given.
+if test "${enable_tls+set}" = set; then
+  enableval=$enable_tls;  USETLS=$enableval
+else
+   USETLS=yes
+fi
+
+{ echo "$as_me:$LINENO: result: $USETLS" >&5
+echo "${ECHO_T}$USETLS" >&6; }
+if test "$USETLS" = "yes"; then
+
+# Check whether --with-tlslib was given.
+if test "${with_tlslib+set}" = set; then
+  withval=$with_tlslib; TLSLIB="$withval"
+fi
+
+	if test "$TLSLIB" != "GnuTLS" -a "$TLSLIB" != "OpenSSL" -a "$TLSLIB" != ""; then
+		{ { echo "$as_me:$LINENO: error: Invalid argument for option --with-tlslib." >&5
+echo "$as_me: error: Invalid argument for option --with-tlslib." >&2;}
+   { (exit 1); exit 1; }; }
+	fi
+
+	if test "$TLSLIB" = "GnuTLS" -o "$TLSLIB" = ""; then
+		INCVAL="${LIBPREF}/include"
+		LIBVAL="${LIBPREF}/lib"
+
+# Check whether --with-libgnutls_includes was given.
+if test "${with_libgnutls_includes+set}" = set; then
+  withval=$with_libgnutls_includes; INCVAL="$withval"
+fi
+
+		CPPFLAGS="${CPPFLAGS} -I${INCVAL}"
+		CFLAGS="${CFLAGS} -I${INCVAL}"
+
+# Check whether --with-libgnutls_libraries was given.
+if test "${with_libgnutls_libraries+set}" = set; then
+  withval=$with_libgnutls_libraries; LIBVAL="$withval"
+fi
+
+		LDFLAGS="${LDFLAGS} -L${LIBVAL}"
+
+		if test "${ac_cv_header_gnutls_gnutls_h+set}" = set; then
+  { echo "$as_me:$LINENO: checking for gnutls/gnutls.h" >&5
+echo $ECHO_N "checking for gnutls/gnutls.h... $ECHO_C" >&6; }
+if test "${ac_cv_header_gnutls_gnutls_h+set}" = set; then
+  echo $ECHO_N "(cached) $ECHO_C" >&6
+fi
+{ echo "$as_me:$LINENO: result: $ac_cv_header_gnutls_gnutls_h" >&5
+echo "${ECHO_T}$ac_cv_header_gnutls_gnutls_h" >&6; }
+else
+  # Is the header compilable?
+{ echo "$as_me:$LINENO: checking gnutls/gnutls.h usability" >&5
+echo $ECHO_N "checking gnutls/gnutls.h usability... $ECHO_C" >&6; }
+cat >conftest.$ac_ext <<_ACEOF
+/* confdefs.h.  */
+_ACEOF
+cat confdefs.h >>conftest.$ac_ext
+cat >>conftest.$ac_ext <<_ACEOF
+/* end confdefs.h.  */
+$ac_includes_default
+#include <gnutls/gnutls.h>
+_ACEOF
+rm -f conftest.$ac_objext
+if { (ac_try="$ac_compile"
+case "(($ac_try" in
+  *\"* | *\`* | *\\*) ac_try_echo=\$ac_try;;
+  *) ac_try_echo=$ac_try;;
+esac
+eval "echo \"\$as_me:$LINENO: $ac_try_echo\"") >&5
+  (eval "$ac_compile") 2>conftest.er1
+  ac_status=$?
+  grep -v '^ *+' conftest.er1 >conftest.err
+  rm -f conftest.er1
+  cat conftest.err >&5
+  echo "$as_me:$LINENO: \$? = $ac_status" >&5
+  (exit $ac_status); } && {
+	 test -z "$ac_c_werror_flag" ||
+	 test ! -s conftest.err
+       } && test -s conftest.$ac_objext; then
+  ac_header_compiler=yes
+else
+  echo "$as_me: failed program was:" >&5
+sed 's/^/| /' conftest.$ac_ext >&5
+
+	ac_header_compiler=no
+fi
+
+rm -f core conftest.err conftest.$ac_objext conftest.$ac_ext
+{ echo "$as_me:$LINENO: result: $ac_header_compiler" >&5
+echo "${ECHO_T}$ac_header_compiler" >&6; }
+
+# Is the header present?
+{ echo "$as_me:$LINENO: checking gnutls/gnutls.h presence" >&5
+echo $ECHO_N "checking gnutls/gnutls.h presence... $ECHO_C" >&6; }
+cat >conftest.$ac_ext <<_ACEOF
+/* confdefs.h.  */
+_ACEOF
+cat confdefs.h >>conftest.$ac_ext
+cat >>conftest.$ac_ext <<_ACEOF
+/* end confdefs.h.  */
+#include <gnutls/gnutls.h>
+_ACEOF
+if { (ac_try="$ac_cpp conftest.$ac_ext"
+case "(($ac_try" in
+  *\"* | *\`* | *\\*) ac_try_echo=\$ac_try;;
+  *) ac_try_echo=$ac_try;;
+esac
+eval "echo \"\$as_me:$LINENO: $ac_try_echo\"") >&5
+  (eval "$ac_cpp conftest.$ac_ext") 2>conftest.er1
+  ac_status=$?
+  grep -v '^ *+' conftest.er1 >conftest.err
+  rm -f conftest.er1
+  cat conftest.err >&5
+  echo "$as_me:$LINENO: \$? = $ac_status" >&5
+  (exit $ac_status); } >/dev/null && {
+	 test -z "$ac_c_preproc_warn_flag$ac_c_werror_flag" ||
+	 test ! -s conftest.err
+       }; then
+  ac_header_preproc=yes
+else
+  echo "$as_me: failed program was:" >&5
+sed 's/^/| /' conftest.$ac_ext >&5
+
+  ac_header_preproc=no
+fi
+
+rm -f conftest.err conftest.$ac_ext
+{ echo "$as_me:$LINENO: result: $ac_header_preproc" >&5
+echo "${ECHO_T}$ac_header_preproc" >&6; }
+
+# So?  What about this header?
+case $ac_header_compiler:$ac_header_preproc:$ac_c_preproc_warn_flag in
+  yes:no: )
+    { echo "$as_me:$LINENO: WARNING: gnutls/gnutls.h: accepted by the compiler, rejected by the preprocessor!" >&5
+echo "$as_me: WARNING: gnutls/gnutls.h: accepted by the compiler, rejected by the preprocessor!" >&2;}
+    { echo "$as_me:$LINENO: WARNING: gnutls/gnutls.h: proceeding with the compiler's result" >&5
+echo "$as_me: WARNING: gnutls/gnutls.h: proceeding with the compiler's result" >&2;}
+    ac_header_preproc=yes
+    ;;
+  no:yes:* )
+    { echo "$as_me:$LINENO: WARNING: gnutls/gnutls.h: present but cannot be compiled" >&5
+echo "$as_me: WARNING: gnutls/gnutls.h: present but cannot be compiled" >&2;}
+    { echo "$as_me:$LINENO: WARNING: gnutls/gnutls.h:     check for missing prerequisite headers?" >&5
+echo "$as_me: WARNING: gnutls/gnutls.h:     check for missing prerequisite headers?" >&2;}
+    { echo "$as_me:$LINENO: WARNING: gnutls/gnutls.h: see the Autoconf documentation" >&5
+echo "$as_me: WARNING: gnutls/gnutls.h: see the Autoconf documentation" >&2;}
+    { echo "$as_me:$LINENO: WARNING: gnutls/gnutls.h:     section \"Present But Cannot Be Compiled\"" >&5
+echo "$as_me: WARNING: gnutls/gnutls.h:     section \"Present But Cannot Be Compiled\"" >&2;}
+    { echo "$as_me:$LINENO: WARNING: gnutls/gnutls.h: proceeding with the preprocessor's result" >&5
+echo "$as_me: WARNING: gnutls/gnutls.h: proceeding with the preprocessor's result" >&2;}
+    { echo "$as_me:$LINENO: WARNING: gnutls/gnutls.h: in the future, the compiler will take precedence" >&5
+echo "$as_me: WARNING: gnutls/gnutls.h: in the future, the compiler will take precedence" >&2;}
+    ( cat <<\_ASBOX
+## ------------------------------------------- ##
+## Report this to hugbug@users.sourceforge.net ##
+## ------------------------------------------- ##
+_ASBOX
+     ) | sed "s/^/$as_me: WARNING:     /" >&2
+    ;;
+esac
+{ echo "$as_me:$LINENO: checking for gnutls/gnutls.h" >&5
+echo $ECHO_N "checking for gnutls/gnutls.h... $ECHO_C" >&6; }
+if test "${ac_cv_header_gnutls_gnutls_h+set}" = set; then
+  echo $ECHO_N "(cached) $ECHO_C" >&6
+else
+  ac_cv_header_gnutls_gnutls_h=$ac_header_preproc
+fi
+{ echo "$as_me:$LINENO: result: $ac_cv_header_gnutls_gnutls_h" >&5
+echo "${ECHO_T}$ac_cv_header_gnutls_gnutls_h" >&6; }
+
+fi
+if test $ac_cv_header_gnutls_gnutls_h = yes; then
+  FOUND=yes
+			TLSHEADERS=yes
+else
+  FOUND=no
+fi
+
+
+		if test "$FOUND" = "no" -a "$TLSLIB" = "GnuTLS"; then
+			{ { echo "$as_me:$LINENO: error: Couldn't find GnuTLS headers (gnutls.h)." >&5
+echo "$as_me: error: Couldn't find GnuTLS headers (gnutls.h)." >&2;}
+   { (exit 1); exit 1; }; }
+		fi
+		if test "$FOUND" = "yes"; then
+			{ echo "$as_me:$LINENO: checking for library containing gnutls_global_init" >&5
+echo $ECHO_N "checking for library containing gnutls_global_init... $ECHO_C" >&6; }
+if test "${ac_cv_search_gnutls_global_init+set}" = set; then
+  echo $ECHO_N "(cached) $ECHO_C" >&6
+else
+  ac_func_search_save_LIBS=$LIBS
+cat >conftest.$ac_ext <<_ACEOF
+/* confdefs.h.  */
+_ACEOF
+cat confdefs.h >>conftest.$ac_ext
+cat >>conftest.$ac_ext <<_ACEOF
+/* end confdefs.h.  */
+
+/* Override any GCC internal prototype to avoid an error.
+   Use char because int might match the return type of a GCC
+   builtin and then its argument prototype would still apply.  */
+#ifdef __cplusplus
+extern "C"
+#endif
+char gnutls_global_init ();
+int
+main ()
+{
+return gnutls_global_init ();
+  ;
+  return 0;
+}
+_ACEOF
+for ac_lib in '' gnutls; do
+  if test -z "$ac_lib"; then
+    ac_res="none required"
+  else
+    ac_res=-l$ac_lib
+    LIBS="-l$ac_lib  $ac_func_search_save_LIBS"
+  fi
+  rm -f conftest.$ac_objext conftest$ac_exeext
+if { (ac_try="$ac_link"
+case "(($ac_try" in
+  *\"* | *\`* | *\\*) ac_try_echo=\$ac_try;;
+  *) ac_try_echo=$ac_try;;
+esac
+eval "echo \"\$as_me:$LINENO: $ac_try_echo\"") >&5
+  (eval "$ac_link") 2>conftest.er1
+  ac_status=$?
+  grep -v '^ *+' conftest.er1 >conftest.err
+  rm -f conftest.er1
+  cat conftest.err >&5
+  echo "$as_me:$LINENO: \$? = $ac_status" >&5
+  (exit $ac_status); } && {
+	 test -z "$ac_c_werror_flag" ||
+	 test ! -s conftest.err
+       } && test -s conftest$ac_exeext &&
+       $as_test_x conftest$ac_exeext; then
+  ac_cv_search_gnutls_global_init=$ac_res
+else
+  echo "$as_me: failed program was:" >&5
+sed 's/^/| /' conftest.$ac_ext >&5
+
+
+fi
+
+rm -f core conftest.err conftest.$ac_objext conftest_ipa8_conftest.oo \
+      conftest$ac_exeext
+  if test "${ac_cv_search_gnutls_global_init+set}" = set; then
+  break
+fi
+done
+if test "${ac_cv_search_gnutls_global_init+set}" = set; then
+  :
+else
+  ac_cv_search_gnutls_global_init=no
+fi
+rm conftest.$ac_ext
+LIBS=$ac_func_search_save_LIBS
+fi
+{ echo "$as_me:$LINENO: result: $ac_cv_search_gnutls_global_init" >&5
+echo "${ECHO_T}$ac_cv_search_gnutls_global_init" >&6; }
+ac_res=$ac_cv_search_gnutls_global_init
+if test "$ac_res" != no; then
+  test "$ac_res" = "none required" || LIBS="$ac_res $LIBS"
+  FOUND=yes
+else
+  FOUND=no
+fi
+
+			if test "$FOUND" = "no" -a "$TLSLIB" = "GnuTLS"; then
+				{ { echo "$as_me:$LINENO: error: Couldn't find GnuTLS library." >&5
+echo "$as_me: error: Couldn't find GnuTLS library." >&2;}
+   { (exit 1); exit 1; }; }
+			fi
+			if test "$FOUND" = "yes"; then
+				TLSLIB="GnuTLS"
+
+cat >>confdefs.h <<\_ACEOF
+#define HAVE_LIBGNUTLS 1
+_ACEOF
+
+			fi
+		fi
+	fi
+
+	if test "$TLSLIB" = "OpenSSL" -o "$TLSLIB" = ""; then
+		INCVAL="${LIBPREF}/include"
+		LIBVAL="${LIBPREF}/lib"
+
+# Check whether --with-openssl_includes was given.
+if test "${with_openssl_includes+set}" = set; then
+  withval=$with_openssl_includes; INCVAL="$withval"
+fi
+
+		CPPFLAGS="${CPPFLAGS} -I${INCVAL}"
+		CFLAGS="${CFLAGS} -I${INCVAL}"
+
+# Check whether --with-openssl_libraries was given.
+if test "${with_openssl_libraries+set}" = set; then
+  withval=$with_openssl_libraries; LIBVAL="$withval"
+fi
+
+		LDFLAGS="${LDFLAGS} -L${LIBVAL}"
+
+		if test "${ac_cv_header_openssl_ssl_h+set}" = set; then
+  { echo "$as_me:$LINENO: checking for openssl/ssl.h" >&5
+echo $ECHO_N "checking for openssl/ssl.h... $ECHO_C" >&6; }
+if test "${ac_cv_header_openssl_ssl_h+set}" = set; then
+  echo $ECHO_N "(cached) $ECHO_C" >&6
+fi
+{ echo "$as_me:$LINENO: result: $ac_cv_header_openssl_ssl_h" >&5
+echo "${ECHO_T}$ac_cv_header_openssl_ssl_h" >&6; }
+else
+  # Is the header compilable?
+{ echo "$as_me:$LINENO: checking openssl/ssl.h usability" >&5
+echo $ECHO_N "checking openssl/ssl.h usability... $ECHO_C" >&6; }
+cat >conftest.$ac_ext <<_ACEOF
+/* confdefs.h.  */
+_ACEOF
+cat confdefs.h >>conftest.$ac_ext
+cat >>conftest.$ac_ext <<_ACEOF
+/* end confdefs.h.  */
+$ac_includes_default
+#include <openssl/ssl.h>
+_ACEOF
+rm -f conftest.$ac_objext
+if { (ac_try="$ac_compile"
+case "(($ac_try" in
+  *\"* | *\`* | *\\*) ac_try_echo=\$ac_try;;
+  *) ac_try_echo=$ac_try;;
+esac
+eval "echo \"\$as_me:$LINENO: $ac_try_echo\"") >&5
+  (eval "$ac_compile") 2>conftest.er1
+  ac_status=$?
+  grep -v '^ *+' conftest.er1 >conftest.err
+  rm -f conftest.er1
+  cat conftest.err >&5
+  echo "$as_me:$LINENO: \$? = $ac_status" >&5
+  (exit $ac_status); } && {
+	 test -z "$ac_c_werror_flag" ||
+	 test ! -s conftest.err
+       } && test -s conftest.$ac_objext; then
+  ac_header_compiler=yes
+else
+  echo "$as_me: failed program was:" >&5
+sed 's/^/| /' conftest.$ac_ext >&5
+
+	ac_header_compiler=no
+fi
+
+rm -f core conftest.err conftest.$ac_objext conftest.$ac_ext
+{ echo "$as_me:$LINENO: result: $ac_header_compiler" >&5
+echo "${ECHO_T}$ac_header_compiler" >&6; }
+
+# Is the header present?
+{ echo "$as_me:$LINENO: checking openssl/ssl.h presence" >&5
+echo $ECHO_N "checking openssl/ssl.h presence... $ECHO_C" >&6; }
+cat >conftest.$ac_ext <<_ACEOF
+/* confdefs.h.  */
+_ACEOF
+cat confdefs.h >>conftest.$ac_ext
+cat >>conftest.$ac_ext <<_ACEOF
+/* end confdefs.h.  */
+#include <openssl/ssl.h>
+_ACEOF
+if { (ac_try="$ac_cpp conftest.$ac_ext"
+case "(($ac_try" in
+  *\"* | *\`* | *\\*) ac_try_echo=\$ac_try;;
+  *) ac_try_echo=$ac_try;;
+esac
+eval "echo \"\$as_me:$LINENO: $ac_try_echo\"") >&5
+  (eval "$ac_cpp conftest.$ac_ext") 2>conftest.er1
+  ac_status=$?
+  grep -v '^ *+' conftest.er1 >conftest.err
+  rm -f conftest.er1
+  cat conftest.err >&5
+  echo "$as_me:$LINENO: \$? = $ac_status" >&5
+  (exit $ac_status); } >/dev/null && {
+	 test -z "$ac_c_preproc_warn_flag$ac_c_werror_flag" ||
+	 test ! -s conftest.err
+       }; then
+  ac_header_preproc=yes
+else
+  echo "$as_me: failed program was:" >&5
+sed 's/^/| /' conftest.$ac_ext >&5
+
+  ac_header_preproc=no
+fi
+
+rm -f conftest.err conftest.$ac_ext
+{ echo "$as_me:$LINENO: result: $ac_header_preproc" >&5
+echo "${ECHO_T}$ac_header_preproc" >&6; }
+
+# So?  What about this header?
+case $ac_header_compiler:$ac_header_preproc:$ac_c_preproc_warn_flag in
+  yes:no: )
+    { echo "$as_me:$LINENO: WARNING: openssl/ssl.h: accepted by the compiler, rejected by the preprocessor!" >&5
+echo "$as_me: WARNING: openssl/ssl.h: accepted by the compiler, rejected by the preprocessor!" >&2;}
+    { echo "$as_me:$LINENO: WARNING: openssl/ssl.h: proceeding with the compiler's result" >&5
+echo "$as_me: WARNING: openssl/ssl.h: proceeding with the compiler's result" >&2;}
+    ac_header_preproc=yes
+    ;;
+  no:yes:* )
+    { echo "$as_me:$LINENO: WARNING: openssl/ssl.h: present but cannot be compiled" >&5
+echo "$as_me: WARNING: openssl/ssl.h: present but cannot be compiled" >&2;}
+    { echo "$as_me:$LINENO: WARNING: openssl/ssl.h:     check for missing prerequisite headers?" >&5
+echo "$as_me: WARNING: openssl/ssl.h:     check for missing prerequisite headers?" >&2;}
+    { echo "$as_me:$LINENO: WARNING: openssl/ssl.h: see the Autoconf documentation" >&5
+echo "$as_me: WARNING: openssl/ssl.h: see the Autoconf documentation" >&2;}
+    { echo "$as_me:$LINENO: WARNING: openssl/ssl.h:     section \"Present But Cannot Be Compiled\"" >&5
+echo "$as_me: WARNING: openssl/ssl.h:     section \"Present But Cannot Be Compiled\"" >&2;}
+    { echo "$as_me:$LINENO: WARNING: openssl/ssl.h: proceeding with the preprocessor's result" >&5
+echo "$as_me: WARNING: openssl/ssl.h: proceeding with the preprocessor's result" >&2;}
+    { echo "$as_me:$LINENO: WARNING: openssl/ssl.h: in the future, the compiler will take precedence" >&5
+echo "$as_me: WARNING: openssl/ssl.h: in the future, the compiler will take precedence" >&2;}
+    ( cat <<\_ASBOX
+## ------------------------------------------- ##
+## Report this to hugbug@users.sourceforge.net ##
+## ------------------------------------------- ##
+_ASBOX
+     ) | sed "s/^/$as_me: WARNING:     /" >&2
+    ;;
+esac
+{ echo "$as_me:$LINENO: checking for openssl/ssl.h" >&5
+echo $ECHO_N "checking for openssl/ssl.h... $ECHO_C" >&6; }
+if test "${ac_cv_header_openssl_ssl_h+set}" = set; then
+  echo $ECHO_N "(cached) $ECHO_C" >&6
+else
+  ac_cv_header_openssl_ssl_h=$ac_header_preproc
+fi
+{ echo "$as_me:$LINENO: result: $ac_cv_header_openssl_ssl_h" >&5
+echo "${ECHO_T}$ac_cv_header_openssl_ssl_h" >&6; }
+
+fi
+if test $ac_cv_header_openssl_ssl_h = yes; then
+  FOUND=yes
+			TLSHEADERS=yes
+else
+  FOUND=no
+fi
+
+
+		if test "$FOUND" = "no" -a "$TLSLIB" = "OpenSSL"; then
+			{ { echo "$as_me:$LINENO: error: Couldn't find OpenSSL headers (ssl.h)." >&5
+echo "$as_me: error: Couldn't find OpenSSL headers (ssl.h)." >&2;}
+   { (exit 1); exit 1; }; }
+		fi
+		if test "$FOUND" = "yes"; then
+			{ echo "$as_me:$LINENO: checking for library containing SSL_library_init" >&5
+echo $ECHO_N "checking for library containing SSL_library_init... $ECHO_C" >&6; }
+if test "${ac_cv_search_SSL_library_init+set}" = set; then
+  echo $ECHO_N "(cached) $ECHO_C" >&6
+else
+  ac_func_search_save_LIBS=$LIBS
+cat >conftest.$ac_ext <<_ACEOF
+/* confdefs.h.  */
+_ACEOF
+cat confdefs.h >>conftest.$ac_ext
+cat >>conftest.$ac_ext <<_ACEOF
+/* end confdefs.h.  */
+
+/* Override any GCC internal prototype to avoid an error.
+   Use char because int might match the return type of a GCC
+   builtin and then its argument prototype would still apply.  */
+#ifdef __cplusplus
+extern "C"
+#endif
+char SSL_library_init ();
+int
+main ()
+{
+return SSL_library_init ();
+  ;
+  return 0;
+}
+_ACEOF
+for ac_lib in '' ssl; do
+  if test -z "$ac_lib"; then
+    ac_res="none required"
+  else
+    ac_res=-l$ac_lib
+    LIBS="-l$ac_lib  $ac_func_search_save_LIBS"
+  fi
+  rm -f conftest.$ac_objext conftest$ac_exeext
+if { (ac_try="$ac_link"
+case "(($ac_try" in
+  *\"* | *\`* | *\\*) ac_try_echo=\$ac_try;;
+  *) ac_try_echo=$ac_try;;
+esac
+eval "echo \"\$as_me:$LINENO: $ac_try_echo\"") >&5
+  (eval "$ac_link") 2>conftest.er1
+  ac_status=$?
+  grep -v '^ *+' conftest.er1 >conftest.err
+  rm -f conftest.er1
+  cat conftest.err >&5
+  echo "$as_me:$LINENO: \$? = $ac_status" >&5
+  (exit $ac_status); } && {
+	 test -z "$ac_c_werror_flag" ||
+	 test ! -s conftest.err
+       } && test -s conftest$ac_exeext &&
+       $as_test_x conftest$ac_exeext; then
+  ac_cv_search_SSL_library_init=$ac_res
+else
+  echo "$as_me: failed program was:" >&5
+sed 's/^/| /' conftest.$ac_ext >&5
+
+
+fi
+
+rm -f core conftest.err conftest.$ac_objext conftest_ipa8_conftest.oo \
+      conftest$ac_exeext
+  if test "${ac_cv_search_SSL_library_init+set}" = set; then
+  break
+fi
+done
+if test "${ac_cv_search_SSL_library_init+set}" = set; then
+  :
+else
+  ac_cv_search_SSL_library_init=no
+fi
+rm conftest.$ac_ext
+LIBS=$ac_func_search_save_LIBS
+fi
+{ echo "$as_me:$LINENO: result: $ac_cv_search_SSL_library_init" >&5
+echo "${ECHO_T}$ac_cv_search_SSL_library_init" >&6; }
+ac_res=$ac_cv_search_SSL_library_init
+if test "$ac_res" != no; then
+  test "$ac_res" = "none required" || LIBS="$ac_res $LIBS"
+  FOUND=yes
+else
+  FOUND=no
+fi
+
+			if test "$FOUND" = "no" -a "$TLSLIB" = "OpenSSL"; then
+				{ { echo "$as_me:$LINENO: error: Couldn't find OpenSSL library." >&5
+echo "$as_me: error: Couldn't find OpenSSL library." >&2;}
+   { (exit 1); exit 1; }; }
+			fi
+			if test "$FOUND" = "yes"; then
+				TLSLIB="OpenSSL"
+
+cat >>confdefs.h <<\_ACEOF
+#define HAVE_OPENSSL 1
+_ACEOF
+
+			fi
+		fi
+	fi
+
+	if test "$TLSLIB" = ""; then
+		if test "$TLSHEADERS" = ""; then
+			{ { echo "$as_me:$LINENO: error: Couldn't find neither GnuTLS nor OpenSSL headers (gnutls.h or ssl.h)." >&5
+echo "$as_me: error: Couldn't find neither GnuTLS nor OpenSSL headers (gnutls.h or ssl.h)." >&2;}
+   { (exit 1); exit 1; }; }
+		else
+			{ { echo "$as_me:$LINENO: error: Couldn't find neither GnuTLS nor OpenSSL library." >&5
+echo "$as_me: error: Couldn't find neither GnuTLS nor OpenSSL library." >&2;}
+   { (exit 1); exit 1; }; }
+		fi
+	fi
+else
+
+cat >>confdefs.h <<\_ACEOF
+#define DISABLE_TLS 1
 _ACEOF
 
 fi

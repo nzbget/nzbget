@@ -1,8 +1,8 @@
 /*
  *  This file is part of nzbget
  *
- *  Copyright (C) 2004  Sven Henkel <sidddy@users.sourceforge.net>
- *  Copyright (C) 2007  Andrei Prygounkov <hugbug@users.sourceforge.net>
+ *  Copyright (C) 2004 Sven Henkel <sidddy@users.sourceforge.net>
+ *  Copyright (C) 2007-2008 Andrei Prygounkov <hugbug@users.sourceforge.net>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -190,7 +190,7 @@ void Run()
 #endif
 	
 	Thread::Init();
-	Connection::Init();
+	Connection::Init(g_pOptions->GetTLS() && g_pOptions->GetServerMode());
 
 	// client request
 	if (g_pOptions->GetClientOperation() != Options::opClientNoOperation)

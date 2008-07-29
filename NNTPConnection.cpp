@@ -1,8 +1,8 @@
 /*
  *  This file is part of nzbget
  *
- *  Copyright (C) 2004  Sven Henkel <sidddy@users.sourceforge.net>
- *  Copyright (C) 2007  Andrei Prygounkov <hugbug@users.sourceforge.net>
+ *  Copyright (C) 2004 Sven Henkel <sidddy@users.sourceforge.net>
+ *  Copyright (C) 2007-2008 Andrei Prygounkov <hugbug@users.sourceforge.net>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -229,34 +229,45 @@ const char* NNTPConnection::JoinGroup(const char* grp)
 	return answer;
 }
 
-int NNTPConnection::DoConnect()
+bool NNTPConnection::DoConnect()
 {
 	debug("Opening connection to %s", GetServer()->GetHost());
-	int res = Connection::DoConnect();
-	if (res < 0)
+	bool res = Connection::DoConnect();
+	if (!res)
 	{
 		return res;
 	}
+
+#ifndef DISABLE_TLS
+	if (GetNewsServer()->GetTLS())
+	{
+		if (!StartTLS())
+		{
+			return false;
+		}
+	}
+#endif
 
 	char* answer = DoReadLine(m_szLineBuf, CONNECTION_LINEBUFFER_SIZE, NULL);
 
 	if (!answer)
 	{
 		ReportError("Connection to %s failed: Connection closed by remote host.", m_pNetAddress->GetHost(), 0);
-		return -1;
+		return false;
 	}
 
 	if (strncmp(answer, "2", 1))
 	{
 		error("Connection to %s failed. Answer: ", m_pNetAddress->GetHost(), answer);
-		return -1;
+		return false;
 	}
 
 	debug("Connection to %s established", GetServer()->GetHost());
-	return 0;
+
+	return true;
 }
 
-int NNTPConnection::DoDisconnect()
+bool NNTPConnection::DoDisconnect()
 {
 	if (m_eStatus == csConnected)
 	{
