@@ -9,6 +9,9 @@
 /* Define to 1 to disable smart par-verification and restoration */
 #undef DISABLE_PARCHECK
 
+/* Define to 1 to not use TLS/SSL */
+#undef DISABLE_TLS
+
 /* Define to the name of macro which returns the name of function being
    compiled */
 #undef FUNCTION_MACRO_NAME
@@ -31,6 +34,9 @@
 /* Define to 1 if you have the <inttypes.h> header file. */
 #undef HAVE_INTTYPES_H
 
+/* Define to 1 to use GnuTLS library for TLS/SSL-support. */
+#undef HAVE_LIBGNUTLS
+
 /* Define to 1 if you have the <memory.h> header file. */
 #undef HAVE_MEMORY_H
 
@@ -39,6 +45,9 @@
 
 /* Define to 1 if you have the <ncurses/ncurses.h> header file. */
 #undef HAVE_NCURSES_NCURSES_H
+
+/* Define to 1 to use OpenSSL library for TLS/SSL-support. */
+#undef HAVE_OPENSSL
 
 /* Define to 1 if stat64 is supported */
 #undef HAVE_STAT64

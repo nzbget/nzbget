@@ -1,8 +1,8 @@
 /*
  *  This file if part of nzbget
  *
- *  Copyright (C) 2004  Sven Henkel <sidddy@users.sourceforge.net>
- *  Copyright (C) 2007  Andrei Prygounkov <hugbug@users.sourceforge.net>
+ *  Copyright (C) 2004 Sven Henkel <sidddy@users.sourceforge.net>
+ *  Copyright (C) 2007-2008 Andrei Prygounkov <hugbug@users.sourceforge.net>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -39,13 +39,14 @@
 #include "NewsServer.h"
 #include "Log.h"
 
-NewsServer::NewsServer(const char* szHost, int iPort, const char* szUser, const char* szPass, bool bJoinGroup, int iMaxConnections, int iLevel) : NetAddress(szHost, iPort)
+NewsServer::NewsServer(const char* szHost, int iPort, const char* szUser, const char* szPass, bool bJoinGroup, bool bTLS, int iMaxConnections, int iLevel) : NetAddress(szHost, iPort)
 {
 	m_szUser = NULL;
 	m_szPassword = NULL;
 	m_iLevel = iLevel;
 	m_iMaxConnections = iMaxConnections;
 	m_bJoinGroup = bJoinGroup;
+	m_bTLS = bTLS;
 
 	if (szUser)
 	{

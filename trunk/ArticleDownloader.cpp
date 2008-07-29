@@ -1,8 +1,8 @@
 /*
  *  This file is part of nzbget
  *
- *  Copyright (C) 2004  Sven Henkel <sidddy@users.sourceforge.net>
- *  Copyright (C) 2007  Andrei Prygounkov <hugbug@users.sourceforge.net>
+ *  Copyright (C) 2004 Sven Henkel <sidddy@users.sourceforge.net>
+ *  Copyright (C) 2007-2008 Andrei Prygounkov <hugbug@users.sourceforge.net>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -165,14 +165,13 @@ void ArticleDownloader::Run()
 
 		if (!m_pConnection)
 		{
-			debug("m_pConnection is NULL");
 			error("Serious error: Connection is NULL");
 		}
 		
 		m_pConnection->SetSuppressErrors(false);
 
 		// test connection
-		bool bConnected = m_pConnection && m_pConnection->Connect() >= 0;
+		bool bConnected = m_pConnection && m_pConnection->Connect();
 		if (bConnected && !IsStopped())
 		{
 			// Okay, we got a Connection. Now start downloading.

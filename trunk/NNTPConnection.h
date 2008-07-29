@@ -1,8 +1,8 @@
 /*
  *  This file is part of nzbget
  *
- *  Copyright (C) 2004  Sven Henkel <sidddy@users.sourceforge.net>
- *  Copyright (C) 2007  Andrei Prygounkov <hugbug@users.sourceforge.net>
+ *  Copyright (C) 2004 Sven Henkel <sidddy@users.sourceforge.net>
+ *  Copyright (C) 2007-2008 Andrei Prygounkov <hugbug@users.sourceforge.net>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -37,8 +37,8 @@ private:
 	char*					m_szLineBuf;
 	bool					m_bAuthError;
 
-	virtual int 			DoConnect();
-	virtual int 			DoDisconnect();
+	virtual bool 			DoConnect();
+	virtual bool 			DoDisconnect();
 	void					Clear();
 
 public:

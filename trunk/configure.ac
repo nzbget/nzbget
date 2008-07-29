@@ -142,14 +142,14 @@ dnl
 INCVAL="${LIBPREF}/include/libxml2"
 LIBVAL="${LIBPREF}/lib"
 AC_ARG_WITH(libxml2_includes,
-      [  --with-libxml2-includes=DIR	libxml2 include directory],
+      [AS_HELP_STRING([--with-libxml2-includes=DIR], [libxml2 include directory])],
       [INCVAL="$withval"])
 CPPFLAGS="${CPPFLAGS} -I${INCVAL}"
 CFLAGS="${CFLAGS} -I${INCVAL}"
 AC_CHECK_HEADER(libxml/tree.h,,
 	AC_MSG_ERROR("libxml2 header files were not found."))
 AC_ARG_WITH(libxml2_libraries,
-	[  --with-libxml2-libraries=DIR	libxml2 library directory],
+	[AS_HELP_STRING([--with-libxml2-libraries=DIR], [libxml2 library directory])],
 	[LIBVAL="$withval"])
 LDFLAGS="${LDFLAGS} -L${LIBVAL}"
 AC_SEARCH_LIBS([xmlNewNode], [xml2], ,
@@ -161,7 +161,7 @@ dnl Use curses. Deafult: yes
 dnl
 AC_MSG_CHECKING(whether to use curses)
 AC_ARG_ENABLE(curses,
-	[  --disable-curses		do not use curses (removes dependency from curses-library and makes executable smaller)],
+	[AS_HELP_STRING([--disable-curses], [do not use curses (removes dependency from curses-library)])],
 	[ USECURSES=$enableval ],
 	[ USECURSES=yes] )
 AC_MSG_RESULT($USECURSES)
@@ -169,12 +169,12 @@ if test "$USECURSES" = "yes"; then
 	INCVAL="${LIBPREF}/include"
 	LIBVAL="${LIBPREF}/lib"
 	AC_ARG_WITH(libcurses_includes,
-		[  --with-libcurses-includes=DIR	libcurses include directory],
+		[AS_HELP_STRING([--with-libcurses-includes=DIR], [libcurses include directory])],
 		[INCVAL="$withval"])
 	CPPFLAGS="${CPPFLAGS} -I${INCVAL}"
 	CFLAGS="${CFLAGS} -I${INCVAL}"
 	AC_ARG_WITH(libcurses_libraries,
-		[  --with-libcurses-libraries=DIR	libcurses library directory],
+		[AS_HELP_STRING([--with-libcurses-libraries=DIR], [libcurses library directory])],
 		[LIBVAL="$withval"])
 	LDFLAGS="${LDFLAGS} -L${LIBVAL}"
 	
@@ -209,7 +209,7 @@ dnl Use lib2par for par-checking. Deafult: no
 dnl
 AC_MSG_CHECKING(whether to include code for par-checking)
 AC_ARG_ENABLE(parcheck,
-	[  --enable-parcheck		include code for par-checking],
+	[AS_HELP_STRING([--disable-parcheck], [do not include par-check/-repair-support (removes dependency from libpar2- and libsigc-libraries)])],
 	[ ENABLEPARCHECK=$enableval ],
 	[ ENABLEPARCHECK=yes] )
 AC_MSG_RESULT($ENABLEPARCHECK)
@@ -221,11 +221,11 @@ if test "$ENABLEPARCHECK" = "yes"; then
 	INCVAL="${LIBPREF}/include/sigc++-2.0"
 	LIBVAL="${LIBPREF}/lib"
 	AC_ARG_WITH(libsigc_includes,
-		[  --with-libsigc-includes=DIR	libsigc++-2.0 include directory],
+		[AS_HELP_STRING([--with-libsigc-includes=DIR], [libsigc++-2.0 include directory])],
 		[INCVAL="$withval"])
 	
 	AC_ARG_WITH(libsigc_libraries,
-		[  --with-libsigc-libraries=DIR	libsigc++-2.0 library directory],
+		[AS_HELP_STRING([--with-libsigc-libraries=DIR], [libsigc++-2.0 library directory])],
 		[LIBVAL="$withval"])
 
 	LDFLAGS="${LDFLAGS} -L${LIBVAL}"
@@ -242,7 +242,7 @@ if test "$ENABLEPARCHECK" = "yes"; then
 	INCVAL="${LIBPREF}/include"
 	LIBVAL="${LIBPREF}/lib"
 	AC_ARG_WITH(libpar2_includes,
-		[  --with-libpar2-includes=DIR	libpar2 include directory],
+		[AS_HELP_STRING([--with-libpar2-includes=DIR], [libpar2 include directory])],
 		[INCVAL="$withval"])
 
 	CPPFLAGS="${CPPFLAGS} -I${INCVAL}"
@@ -253,7 +253,7 @@ if test "$ENABLEPARCHECK" = "yes"; then
 	AC_LANG_POP(C++)
 
 	AC_ARG_WITH(libpar2_libraries,
-		[  --with-libpar2-libraries=DIR	libpar2 library directory],
+		[AS_HELP_STRING([--with-libpar2-libraries=DIR], [libpar2 library directory])],
 		[LIBVAL="$withval"])
 
 	LDFLAGS="${LDFLAGS} -L${LIBVAL}"
@@ -270,12 +270,109 @@ else
 fi
 
 
+dnl
+dnl Use TLS/SSL. Deafult: yes
+dnl
+AC_MSG_CHECKING(whether to use TLS/SSL)
+AC_ARG_ENABLE(tls,
+	[AS_HELP_STRING([--disable-tls], [do not use TLS/SSL (removes dependency from TLS/SSL-libraries)])],
+	[ USETLS=$enableval ],
+	[ USETLS=yes] )
+AC_MSG_RESULT($USETLS)
+if test "$USETLS" = "yes"; then
+	AC_ARG_WITH(tlslib,
+		[AS_HELP_STRING([--with-tlslib=(GnuTLS, OpenSSL)], [TLS/SSL library to use])],
+		[TLSLIB="$withval"])
+	if test "$TLSLIB" != "GnuTLS" -a "$TLSLIB" != "OpenSSL" -a "$TLSLIB" != ""; then
+		AC_MSG_ERROR([Invalid argument for option --with-tlslib.])
+	fi
+	
+	if test "$TLSLIB" = "GnuTLS" -o "$TLSLIB" = ""; then
+		INCVAL="${LIBPREF}/include"
+		LIBVAL="${LIBPREF}/lib"
+		AC_ARG_WITH(libgnutls_includes,
+			[AS_HELP_STRING([--with-libgnutls-includes=DIR], [GnuTLS include directory])],
+			[INCVAL="$withval"])
+		CPPFLAGS="${CPPFLAGS} -I${INCVAL}"
+		CFLAGS="${CFLAGS} -I${INCVAL}"
+		AC_ARG_WITH(libgnutls_libraries,
+			[AS_HELP_STRING([--with-libgnutls-libraries=DIR], [GnuTLS library directory])],
+			[LIBVAL="$withval"])
+		LDFLAGS="${LDFLAGS} -L${LIBVAL}"
+	
+		AC_CHECK_HEADER(gnutls/gnutls.h,
+			FOUND=yes
+			TLSHEADERS=yes,
+			FOUND=no)
+		if test "$FOUND" = "no" -a "$TLSLIB" = "GnuTLS"; then
+			AC_MSG_ERROR([Couldn't find GnuTLS headers (gnutls.h).])
+		fi
+		if test "$FOUND" = "yes"; then
+			AC_SEARCH_LIBS([gnutls_global_init], [gnutls],
+				FOUND=yes,
+				FOUND=no)
+			if test "$FOUND" = "no" -a "$TLSLIB" = "GnuTLS"; then
+				AC_MSG_ERROR([Couldn't find GnuTLS library.])
+			fi
+			if test "$FOUND" = "yes"; then
+				TLSLIB="GnuTLS"
+				AC_DEFINE([HAVE_LIBGNUTLS],1,[Define to 1 to use GnuTLS library for TLS/SSL-support.])
+			fi
+		fi
+	fi
+	
+	if test "$TLSLIB" = "OpenSSL" -o "$TLSLIB" = ""; then
+		INCVAL="${LIBPREF}/include"
+		LIBVAL="${LIBPREF}/lib"
+		AC_ARG_WITH(openssl_includes,
+			[AS_HELP_STRING([--with-openssl-includes=DIR], [OpenSSL include directory])],
+			[INCVAL="$withval"])
+		CPPFLAGS="${CPPFLAGS} -I${INCVAL}"
+		CFLAGS="${CFLAGS} -I${INCVAL}"
+		AC_ARG_WITH(openssl_libraries,
+			[AS_HELP_STRING([--with-openssl-libraries=DIR], [OpenSSL library directory])],
+			[LIBVAL="$withval"])
+		LDFLAGS="${LDFLAGS} -L${LIBVAL}"
+	
+		AC_CHECK_HEADER(openssl/ssl.h,
+			FOUND=yes
+			TLSHEADERS=yes,
+			FOUND=no)
+		if test "$FOUND" = "no" -a "$TLSLIB" = "OpenSSL"; then
+			AC_MSG_ERROR([Couldn't find OpenSSL headers (ssl.h).])
+		fi
+		if test "$FOUND" = "yes"; then
+			AC_SEARCH_LIBS([SSL_library_init], [ssl],
+				FOUND=yes,
+				FOUND=no)
+			if test "$FOUND" = "no" -a "$TLSLIB" = "OpenSSL"; then
+				AC_MSG_ERROR([Couldn't find OpenSSL library.])
+			fi
+			if test "$FOUND" = "yes"; then
+				TLSLIB="OpenSSL"
+				AC_DEFINE([HAVE_OPENSSL],1,[Define to 1 to use OpenSSL library for TLS/SSL-support.])
+			fi
+		fi
+	fi
+	
+	if test "$TLSLIB" = ""; then
+		if test "$TLSHEADERS" = ""; then
+			AC_MSG_ERROR([Couldn't find neither GnuTLS nor OpenSSL headers (gnutls.h or ssl.h).])
+		else
+			AC_MSG_ERROR([Couldn't find neither GnuTLS nor OpenSSL library.])
+		fi
+	fi
+else
+	AC_DEFINE([DISABLE_TLS],1,[Define to 1 to not use TLS/SSL])
+fi
+
+
 dnl 
 dnl Debugging. Default: no
 dnl 
 AC_MSG_CHECKING(whether to include all debugging code)
 AC_ARG_ENABLE(debug,
-	[  --enable-debug		enable debugging],
+	[AS_HELP_STRING([--enable-debug], [enable debugging])],
 	[ ENABLEDEBUG=$enableval ],
 	[ ENABLEDEBUG=no] )
 if test "$ENABLEDEBUG" = "yes"; then

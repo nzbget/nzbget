@@ -1,8 +1,8 @@
 /*
  *  This file is part of nzbget
  *
- *  Copyright (C) 2004  Sven Henkel <sidddy@users.sourceforge.net>
- *  Copyright (C) 2007  Andrei Prygounkov <hugbug@users.sourceforge.net>
+ *  Copyright (C) 2004 Sven Henkel <sidddy@users.sourceforge.net>
+ *  Copyright (C) 2007-2008 Andrei Prygounkov <hugbug@users.sourceforge.net>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -239,7 +239,7 @@ bool Frontend::RequestMessages()
 	NetAddress netAddress(g_pOptions->GetServerIP(), g_pOptions->GetServerPort());
 	Connection connection(&netAddress);
 
-	bool OK = connection.Connect() >= 0;
+	bool OK = connection.Connect();
 	if (!OK)
 	{
 		return false;
@@ -311,7 +311,7 @@ bool Frontend::RequestFileList()
 	NetAddress netAddress(g_pOptions->GetServerIP(), g_pOptions->GetServerPort());
 	Connection connection(&netAddress);
 
-	bool OK = connection.Connect() >= 0;
+	bool OK = connection.Connect();
 	if (!OK)
 	{
 		return false;

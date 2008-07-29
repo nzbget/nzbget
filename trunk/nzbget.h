@@ -1,7 +1,7 @@
 /*
  *  This file is part of nzbget
  *
- *  Copyright (C) 2007  Andrei Prygounkov <hugbug@users.sourceforge.net>
+ *  Copyright (C) 2007-2008 Andrei Prygounkov <hugbug@users.sourceforge.net>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -41,15 +41,11 @@
 #define rmdir _rmdir
 #define strcasecmp(a, b) _stricmp(a, b)
 #define strncasecmp(a, b, c) _strnicmp(a, b, c)
-
-#pragma warning(disable:4800) // 'type' : forcing value to bool 'true' or 'false' (performance warning)
-#pragma warning(disable:4267) // 'var' : conversion from 'size_t' to 'type', possible loss of data
-
+#define ssize_t SSIZE_T
 #define	__S_ISTYPE(mode, mask)	(((mode) & _S_IFMT) == (mask))
 #define	S_ISDIR(mode)	 __S_ISTYPE((mode), _S_IFDIR)
 #define	S_ISREG(mode)	 __S_ISTYPE((mode), _S_IFREG)
 #define	S_DIRMODE NULL
-
 #define usleep(usec) Sleep((usec) / 1000)
 #define gettimeofday(tm, ignore) _ftime(tm)
 #define _timeval _timeb
@@ -57,6 +53,9 @@
 #define SHUT_RDWR 0x02
 #define PATH_SEPARATOR '\\'
 #define ALT_PATH_SEPARATOR '/'
+
+#pragma warning(disable:4800) // 'type' : forcing value to bool 'true' or 'false' (performance warning)
+#pragma warning(disable:4267) // 'var' : conversion from 'size_t' to 'type', possible loss of data
 
 #else
 

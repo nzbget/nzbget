@@ -1,8 +1,8 @@
 /*
  *  This file is part of nzbget
  *
- *  Copyright (C) 2004  Sven Henkel <sidddy@users.sourceforge.net>
- *  Copyright (C) 2007  Andrei Prygounkov <hugbug@users.sourceforge.net>
+ *  Copyright (C) 2004 Sven Henkel <sidddy@users.sourceforge.net>
+ *  Copyright (C) 2007-2008 Andrei Prygounkov <hugbug@users.sourceforge.net>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -237,6 +237,7 @@ Options::Options(int argc, char* argv[])
 	m_iDiskSpace			= 0;
 	m_ePostLogKind			= plNone;
 	m_bTestBacktrace		= false;
+	m_bTLS					= false;
 
 	char szFilename[MAX_PATH + 1];
 #ifdef WIN32
@@ -1107,10 +1108,25 @@ void Options::InitServers()
 			bJoinGroup = (bool)ParseOptionValue(optname, njoingroup, BoolCount, BoolNames, BoolValues);
 		}
 
+		sprintf(optname, "server%i.encryption", n);
+		const char* ntls = GetOption(optname);
+		bool bTLS = false;
+		if (ntls)
+		{
+			bTLS = (bool)ParseOptionValue(optname, ntls, BoolCount, BoolNames, BoolValues);
+#ifdef DISABLE_TLS
+			if (bTLS)
+			{
+				abort("FATAL ERROR: Program was compiled without TLS/SSL-support. Invalid value for option \"%s\"\n", optname);
+			}
+#endif
+			m_bTLS |= bTLS;
+		}
+
 		sprintf(optname, "server%i.connections", n);
 		const char* nconnections = GetOption(optname);
 
-		bool definition = nlevel || nhost || nport || nusername || npassword || nconnections || njoingroup;
+		bool definition = nlevel || nhost || nport || nusername || npassword || nconnections || njoingroup || ntls;
 		bool completed = nlevel && nhost && nport && nconnections;
 
 		if (!definition)
@@ -1123,7 +1139,8 @@ void Options::InitServers()
 			abort("FATAL ERROR: Server definition not complete\n");
 		}
 
-		NewsServer* pNewsServer = new NewsServer(nhost, atoi(nport), nusername, npassword, bJoinGroup, atoi((char*)nconnections), atoi((char*)nlevel));
+		NewsServer* pNewsServer = new NewsServer(nhost, atoi(nport), nusername, npassword, 
+			bJoinGroup, bTLS, atoi((char*)nconnections), atoi((char*)nlevel));
 		g_pServerPool->AddServer(pNewsServer);
 
 		n++;
@@ -1234,7 +1251,7 @@ bool Options::ValidateOptionName(const char * optname)
 			(!strcasecmp(p, ".level") || !strcasecmp(p, ".host") ||
 			!strcasecmp(p, ".port") || !strcasecmp(p, ".username") ||
 			!strcasecmp(p, ".password") || !strcasecmp(p, ".joingroup") ||
-			!strcasecmp(p, ".connections")))
+			!strcasecmp(p, ".encryption") || !strcasecmp(p, ".connections")))
 		{
 			return true;
 		}

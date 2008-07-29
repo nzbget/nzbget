@@ -1,8 +1,8 @@
 /*
  *  This file if part of nzbget
  *
- *  Copyright (C) 2004  Sven Henkel <sidddy@users.sourceforge.net>
- *  Copyright (C) 2007  Andrei Prygounkov <hugbug@users.sourceforge.net>
+ *  Copyright (C) 2004 Sven Henkel <sidddy@users.sourceforge.net>
+ *  Copyright (C) 2007-2008 Andrei Prygounkov <hugbug@users.sourceforge.net>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -32,20 +32,22 @@
 class NewsServer : public NetAddress
 {
 private:
-	char*		m_szUser;
-	char*		m_szPassword;
-	int			m_iMaxConnections;
-	int			m_iLevel;
-	bool		m_bJoinGroup;
+	char*			m_szUser;
+	char*			m_szPassword;
+	int				m_iMaxConnections;
+	int				m_iLevel;
+	bool			m_bJoinGroup;
+	bool			m_bTLS;
 
 public:
-					NewsServer(const char* szHost, int iPort, const char* szUser, const char* szPass, bool bJoinGroup, int iMaxConnections, int iLevel);
+					NewsServer(const char* szHost, int iPort, const char* szUser, const char* szPass, bool bJoinGroup, bool bTLS, int iMaxConnections, int iLevel);
 	virtual			~NewsServer();
 	const char*		GetUser() { return m_szUser; }
 	const char*		GetPassword() { return m_szPassword; }
 	int				GetMaxConnections() { return m_iMaxConnections; }
 	int				GetLevel() { return m_iLevel; }
 	int				GetJoinGroup() { return m_bJoinGroup; }
+	bool			GetTLS() { return m_bTLS; }
 };
 
 #endif
