@@ -40,10 +40,12 @@
 #include <unistd.h>
 #include <pwd.h>
 #include <grp.h>
+#include <sys/resource.h>
+#include <sys/prctl.h>
+#include <signal.h>
 #endif
 #include <sys/types.h>
 #include <sys/stat.h>
-#include <signal.h>
 #include <stdio.h>
 #include <fcntl.h>
 #ifndef DISABLE_PARCHECK
@@ -79,7 +81,8 @@ void ProcessClientRequest();
 #ifndef WIN32
 void InstallSignalHandlers();
 void Daemonize();
-void print_backtrace();
+void PrintBacktrace();
+void EnableDumpCore();
 #ifdef DEBUG
 void MakeSegFault();
 #endif
@@ -165,6 +168,13 @@ int main(int argc, char *argv[])
 	{
 		info("nzbget remote-mode");
 	}
+
+#ifndef WIN32
+	if (g_pOptions->GetDumpCore())
+	{
+		EnableDumpCore();
+	}
+#endif
 
 	Run();
 
@@ -437,7 +447,7 @@ void SignalProc(int iSignal)
 			
 		case SIGSEGV:
 			signal(SIGSEGV, SIG_DFL);   // Reset the signal handler
-			print_backtrace();
+			PrintBacktrace();
 			break;
 		
 		default:
@@ -466,7 +476,7 @@ void InstallSignalHandlers()
 #endif
 }
 
-void print_backtrace()
+void PrintBacktrace()
 {
 #ifdef HAVE_BACKTRACE
 	printf("Segmentation fault, tracing...\n");
@@ -507,6 +517,18 @@ void MakeSegFault()
 	strcpy(N, "");
 }
 #endif
+
+/**
+* activates the creation of core-files
+*/
+void EnableDumpCore()
+{
+	rlimit rlim;
+	rlim.rlim_cur= RLIM_INFINITY;
+	rlim.rlim_max= RLIM_INFINITY;
+	setrlimit(RLIMIT_CORE, &rlim);
+	prctl(PR_SET_DUMPABLE, 1);
+}
 #endif
 
 void Cleanup()
