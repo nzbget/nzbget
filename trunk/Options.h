@@ -146,6 +146,7 @@ private:
 	EPostLogKind		m_ePostLogKind;
 	bool				m_bAllowReProcess;
 	bool				m_bTLS;
+	bool				m_bDumpCore;
 
 	// Parsed command-line parameters
 	bool				m_bServerMode;
@@ -250,6 +251,7 @@ public:
 	EPostLogKind		GetPostLogKind() { return m_ePostLogKind; }
 	bool				GetAllowReProcess() { return m_bAllowReProcess; }
 	bool				GetTLS() { return m_bTLS; }
+	bool				GetDumpCore() { return m_bDumpCore; }
 
 	// Parsed command-line parameters
 	bool				GetServerMode() { return m_bServerMode; }

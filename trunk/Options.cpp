@@ -142,6 +142,7 @@ static const char* OPTION_PARCLEANUPQUEUE	= "ParCleanupQueue";
 static const char* OPTION_DISKSPACE			= "DiskSpace";
 static const char* OPTION_POSTLOGKIND		= "PostLogKind";
 static const char* OPTION_ALLOWREPROCESS	= "AllowReProcess";
+static const char* OPTION_DUMPCORE			= "DumpCore";
 
 const char* BoolNames[] = { "yes", "no", "true", "false", "1", "0", "on", "off", "enable", "disable", "enabled", "disabled" };
 const int BoolValues[] = { 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0 };
@@ -236,8 +237,10 @@ Options::Options(int argc, char* argv[])
 	m_bParCleanupQueue		= false;
 	m_iDiskSpace			= 0;
 	m_ePostLogKind			= plNone;
+	m_bAllowReProcess		= false;
 	m_bTestBacktrace		= false;
 	m_bTLS					= false;
+	m_bDumpCore				= false;
 
 	char szFilename[MAX_PATH + 1];
 #ifdef WIN32
@@ -448,6 +451,7 @@ void Options::InitDefault()
 	SetOption(OPTION_DISKSPACE, "0");
 	SetOption(OPTION_POSTLOGKIND, "none");
 	SetOption(OPTION_ALLOWREPROCESS, "no");
+	SetOption(OPTION_DUMPCORE, "no");
 }
 
 void Options::InitOptFile()
@@ -589,6 +593,8 @@ void Options::InitOptions()
 	m_bParCleanupQueue		= (bool)ParseOptionValue(OPTION_PARCLEANUPQUEUE, NULL, BoolCount, BoolNames, BoolValues);
 	m_bDecode				= (bool)ParseOptionValue(OPTION_DECODE, NULL, BoolCount, BoolNames, BoolValues);
 	m_bAllowReProcess		= (bool)ParseOptionValue(OPTION_ALLOWREPROCESS, NULL, BoolCount, BoolNames, BoolValues);
+	m_bDumpCore				= (bool)ParseOptionValue(OPTION_DUMPCORE, NULL, BoolCount, BoolNames, BoolValues);
+	
 
 	const char* OutputModeNames[] = { "loggable", "logable", "log", "colored", "color", "ncurses", "curses" };
 	const int OutputModeValues[] = { omLoggable, omLoggable, omLoggable, omColored, omColored, omNCurses, omNCurses };

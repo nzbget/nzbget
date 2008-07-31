@@ -307,6 +307,12 @@ LogBufferSize=1000
 # the names of broken files
 CreateBrokenLog=yes
 
+# Create memory dump (core-file) on abnormal termination (POSIX only) (yes, no)
+# Core-files are very helpful for debugging.
+# NOTE: core-files may contain sensible data, like your login/password to
+# newsserver etc.
+DumpCore=no
+
 # See also option "logfile" in secion "PATHS"
 
 
