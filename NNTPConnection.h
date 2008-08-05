@@ -40,6 +40,7 @@ private:
 	virtual bool 			DoConnect();
 	virtual bool 			DoDisconnect();
 	void					Clear();
+	void					ReportErrorAnswer(const char* szMsgPrefix, const char* szAnswer);
 
 public:
 							NNTPConnection(NewsServer* server);

@@ -126,13 +126,13 @@ bool NNTPConnection::AuthInfoUser(int iRecur)
 	char* answer = ReadLine(m_szLineBuf, CONNECTION_LINEBUFFER_SIZE, NULL);
 	if (!answer)
 	{
-		ReportError("authorization for %s failed: Connection closed by remote host.", m_pNetAddress->GetHost(), 0);
+		ReportError("Authorization for %s failed: Connection closed by remote host.", m_pNetAddress->GetHost(), true, 0);
 		return false;
 	}
 
 	if (!strncmp(answer, "281", 3))
 	{
-		debug("authorization for %s successful", m_pNetAddress->GetHost());
+		debug("Authorization for %s successful", m_pNetAddress->GetHost());
 		return true;
 	}
 	else if (!strncmp(answer, "381", 3))
@@ -148,7 +148,7 @@ bool NNTPConnection::AuthInfoUser(int iRecur)
 
 	if (GetStatus() != csCancelled)
 	{
-		error("authorization for %s failed (Answer: %s)", m_pNetAddress->GetHost(), answer);
+		ReportErrorAnswer("Authorization for %s failed (Answer: %s)", answer);
 	}
 	return false;
 }
@@ -169,12 +169,12 @@ bool NNTPConnection::AuthInfoPass(int iRecur)
 	char* answer = ReadLine(m_szLineBuf, CONNECTION_LINEBUFFER_SIZE, NULL);
 	if (!answer)
 	{
-		ReportError("authorization for %s failed: Connection closed by remote host.", m_pNetAddress->GetHost(), 0);
+		ReportError("Authorization for %s failed: Connection closed by remote host.", m_pNetAddress->GetHost(), true, 0);
 		return false;
 	}
 	else if (!strncmp(answer, "2", 1))
 	{
-		debug("authorization for %s successful", m_pNetAddress->GetHost());
+		debug("Authorization for %s successful", m_pNetAddress->GetHost());
 		return true;
 	}
 	else if (!strncmp(answer, "381", 3))
@@ -186,7 +186,7 @@ bool NNTPConnection::AuthInfoPass(int iRecur)
 
 	if (GetStatus() != csCancelled)
 	{
-		error("authorization for %s failed (Answer: %s)", m_pNetAddress->GetHost(), answer);
+		ReportErrorAnswer("Authorization for %s failed (Answer: %s)", answer);
 	}
 	return false;
 }
@@ -252,13 +252,13 @@ bool NNTPConnection::DoConnect()
 
 	if (!answer)
 	{
-		ReportError("Connection to %s failed: Connection closed by remote host.", m_pNetAddress->GetHost(), 0);
+		ReportError("Connection to %s failed: Connection closed by remote host.", m_pNetAddress->GetHost(), true, 0);
 		return false;
 	}
 
 	if (strncmp(answer, "2", 1))
 	{
-		error("Connection to %s failed. Answer: ", m_pNetAddress->GetHost(), answer);
+		ReportErrorAnswer("Connection to %s failed (Answer: %s)", answer);
 		return false;
 	}
 
@@ -279,4 +279,13 @@ bool NNTPConnection::DoDisconnect()
 		}
 	}
 	return Connection::DoDisconnect();
+}
+
+void NNTPConnection::ReportErrorAnswer(const char* szMsgPrefix, const char* szAnswer)
+{
+	char szErrStr[1024];
+	snprintf(szErrStr, 1024, szMsgPrefix, m_pNetAddress->GetHost(), szAnswer);
+	szErrStr[1024-1] = '\0';
+	
+	ReportError(szErrStr, NULL, false, 0);
 }

@@ -282,7 +282,7 @@ int Connection::Recv(char* pBuffer, int iSize)
 
 	if (iReceived < 0)
 	{
-		ReportError("Could not receive data on socket", NULL, 0);
+		ReportError("Could not receive data on socket", NULL, true, 0);
 	}
 
 	return iReceived;
@@ -314,7 +314,7 @@ bool Connection::RecvAll(char * pBuffer, int iSize)
 		// Did the recv succeed?
 		if (iReceived <= 0)
 		{
-			ReportError("Could not receive data on socket", NULL, 0);
+			ReportError("Could not receive data on socket", NULL, true, 0);
 			return false;
 		}
 		pBufPtr += iReceived;
@@ -339,7 +339,7 @@ bool Connection::DoConnect()
 	int res = getaddrinfo(m_pNetAddress->GetHost(), iPortStr, &addr_hints, &addr_list);
 	if (res != 0)
 	{
-		ReportError("Could not resolve hostname %s", m_pNetAddress->GetHost(), 0);
+		ReportError("Could not resolve hostname %s", m_pNetAddress->GetHost(), true, 0);
 		return false;
 	}
 
@@ -365,7 +365,7 @@ bool Connection::DoConnect()
 
 	if (m_iSocket == INVALID_SOCKET)
 	{
-		ReportError("Connection to %s failed!", m_pNetAddress->GetHost(), 0);
+		ReportError("Connection to %s failed!", m_pNetAddress->GetHost(), true, 0);
 		return false;
 	} 
 
@@ -380,7 +380,7 @@ bool Connection::DoConnect()
 #endif
 	if (err != 0)
 	{
-		ReportError("setsockopt failed", NULL, 0);
+		ReportError("setsockopt failed", NULL, true, 0);
 	}
 
 	return true;
@@ -427,7 +427,7 @@ char* Connection::DoReadLine(char* pBuffer, int iSize, int* pBytesRead)
 			iBufAvail = recv(m_iSocket, m_szReadBuf, CONNECTION_READBUFFER_SIZE, 0);
 			if (iBufAvail < 0)
 			{
-				ReportError("Could not receive data on socket", NULL, 0);
+				ReportError("Could not receive data on socket", NULL, true, 0);
 				break;
 			}
 			else if (iBufAvail == 0)
@@ -528,13 +528,13 @@ int Connection::DoBind()
 
 	if (m_iSocket == INVALID_SOCKET)
 	{
-		ReportError("Binding socket failed for %s", m_pNetAddress->GetHost(), 0);
+		ReportError("Binding socket failed for %s", m_pNetAddress->GetHost(), true, 0);
 		return -1;
 	}
 
 	if (listen(m_iSocket, 10) < 0)
 	{
-		ReportError("Listen on socket failed for %s", m_pNetAddress->GetHost(), 0);
+		ReportError("Listen on socket failed for %s", m_pNetAddress->GetHost(), true, 0);
 		return -1;
 	}
 
@@ -547,7 +547,7 @@ SOCKET Connection::DoAccept()
 
 	if (iSocket == INVALID_SOCKET && m_eStatus != csCancelled)
 	{
-		ReportError("Could not accept connection", NULL, 0);
+		ReportError("Could not accept connection", NULL, true, 0);
 	}
 
 	return iSocket;
@@ -562,45 +562,59 @@ void Connection::Cancel()
 		int r = shutdown(m_iSocket, SHUT_RDWR);
 		if (r == -1)
 		{
-			ReportError("Could not shutdown connection", NULL, 0);
+			ReportError("Could not shutdown connection", NULL, true, 0);
 		}
 	}
 }
 
-void Connection::ReportError(const char* szMsgPrefix, const char* szMsgArg, int ErrCode)
+void Connection::ReportError(const char* szMsgPrefix, const char* szMsgArg, bool PrintErrCode, int ErrCode)
 {
-	if (ErrCode == 0)
-	{
-#ifdef WIN32
-		ErrCode = WSAGetLastError();
-#else
-		ErrCode = errno;
-#endif
-	}
-
 	char szErrPrefix[1024];
 	snprintf(szErrPrefix, 1024, szMsgPrefix, szMsgArg);
 	szErrPrefix[1024-1] = '\0';
+	
+	if (PrintErrCode)
+	{
+		if (ErrCode == 0)
+		{
 #ifdef WIN32
-	if (m_bSuppressErrors)
-	{
-		debug("%s: ErrNo %i", szErrPrefix, ErrCode);
-	}
-	else
-	{
-		error("%s: ErrNo %i", szErrPrefix, ErrCode);
-	}
+			ErrCode = WSAGetLastError();
 #else
-	const char* szErrMsg = hstrerror(ErrCode);
-	if (m_bSuppressErrors)
-	{
-		debug("%s: ErrNo %i, %s", szErrPrefix, ErrCode, szErrMsg);
+			ErrCode = errno;
+#endif
+		}
+#ifdef WIN32
+		if (m_bSuppressErrors)
+		{
+			debug("%s: ErrNo %i", szErrPrefix, ErrCode);
+		}
+		else
+		{
+			error("%s: ErrNo %i", szErrPrefix, ErrCode);
+		}
+#else
+		const char* szErrMsg = hstrerror(ErrCode);
+		if (m_bSuppressErrors)
+		{
+			debug("%s: ErrNo %i, %s", szErrPrefix, ErrCode, szErrMsg);
+		}
+		else
+		{
+			error("%s: ErrNo %i, %s", szErrPrefix, ErrCode, szErrMsg);
+		}
+#endif
 	}
 	else
 	{
-		error("%s: ErrNo %i, %s", szErrPrefix, ErrCode, szErrMsg);
+		if (m_bSuppressErrors)
+		{
+			debug(szErrPrefix);
+		}
+		else
+		{
+			error(szErrPrefix);
+		}
 	}
-#endif
 }
 
 #ifndef DISABLE_TLS
@@ -609,7 +623,7 @@ bool Connection::CheckTLSResult(int iResultCode, char* szErrStr, const char* szE
 	bool bOK = iResultCode == TLS_EOK;
 	if (!bOK)
 	{
-		ReportError(szErrMsgPrefix, szErrStr ? szErrStr : "unknown error", -1);
+		ReportError(szErrMsgPrefix, szErrStr ? szErrStr : "unknown error", false, 0);
 		if (szErrStr)
 		{
 			free(szErrStr);

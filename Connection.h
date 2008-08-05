@@ -55,7 +55,7 @@ protected:
 	static bool			bTLSLibInitialized;
 #endif
 
-	void				ReportError(const char* szMsgPrefix, const char* szMsgArg, int ErrCode);
+	void				ReportError(const char* szMsgPrefix, const char* szMsgArg, bool PrintErrCode, int ErrCode);
 	virtual bool 		DoConnect();
 	virtual bool		DoDisconnect();
 	int					DoBind();
