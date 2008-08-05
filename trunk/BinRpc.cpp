@@ -422,6 +422,7 @@ void ListBinCommand::Execute()
 			if ((size_t)bufptr % 4 > 0)
 			{
 				pListAnswer->m_iCategoryLen = htonl(ntohl(pListAnswer->m_iCategoryLen) + 4 - (size_t)bufptr % 4);
+				memset(bufptr, 0, 4 - (size_t)bufptr % 4); //suppress valgrind warning "uninitialized data"
 				bufptr += 4 - (size_t)bufptr % 4;
 			}
 		}
@@ -535,6 +536,7 @@ void LogBinCommand::Execute()
 		if ((size_t)bufptr % 4 > 0)
 		{
 			pLogAnswer->m_iTextLen = htonl(ntohl(pLogAnswer->m_iTextLen) + 4 - (size_t)bufptr % 4);
+			memset(bufptr, 0, 4 - (size_t)bufptr % 4); //suppress valgrind warning "uninitialized data"
 			bufptr += 4 - (size_t)bufptr % 4;
 		}
 	}
@@ -706,6 +708,7 @@ void PostQueueBinCommand::Execute()
 		if ((size_t)bufptr % 4 > 0)
 		{
 			pPostQueueAnswer->m_iProgressLabelLen = htonl(ntohl(pPostQueueAnswer->m_iProgressLabelLen) + 4 - (size_t)bufptr % 4);
+			memset(bufptr, 0, 4 - (size_t)bufptr % 4); //suppress valgrind warning "uninitialized data"
 			bufptr += 4 - (size_t)bufptr % 4;
 		}
 	}
