@@ -43,7 +43,7 @@ private:
 
 public:
 							NNTPConnection(NewsServer* server);
-							~NNTPConnection();
+	virtual					~NNTPConnection();
 	NewsServer*				GetNewsServer() { return(NewsServer*)m_pNetAddress; }
 	const char* 			Request(const char* req);
 	bool 					Authenticate();
