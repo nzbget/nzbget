@@ -32,40 +32,43 @@
 # include "config.h"
 #endif
 
+#ifndef DISABLE_TLS
+
+#define SKIP_DEFAULT_WINDOWS_HEADERS
 #ifdef WIN32
 #include "win32.h"
 #endif
 
-#ifndef DISABLE_TLS
-
+#include <stdlib.h>
+#include <string.h>
+#include <cstdio>
 #ifdef WIN32
-#include <windows.h>
+#include <winsock2.h>
+#include <ws2tcpip.h>
 #else
 #include <strings.h>
 #endif
-
-#include <stdio.h>
-#include <string.h>
 #include <ctype.h>
-#include <stdlib.h>
 #include <stdarg.h>
 #include <limits.h>
 #include <time.h>
 #include <errno.h>
+#include <list>
 
 #include "nzbget.h"
 
 #ifdef HAVE_LIBGNUTLS
-# include <gnutls/gnutls.h>
-# include <gnutls/x509.h>
+#include <gnutls/gnutls.h>
+#include <gnutls/x509.h>
+#include <gcrypt.h>
 #endif /* HAVE_LIBGNUTLS */
 #ifdef HAVE_OPENSSL
-# include <openssl/ssl.h>
-# include <openssl/x509.h>
-# include <openssl/x509v3.h>
-# include <openssl/err.h>
-# include <openssl/rand.h>
-# include <openssl/evp.h>
+#include <openssl/ssl.h>
+#include <openssl/x509.h>
+#include <openssl/x509v3.h>
+#include <openssl/err.h>
+#include <openssl/rand.h>
+#include <openssl/evp.h>
 #endif /* HAVE_OPENSSL */
 
 #ifdef HAVE_LIBIDN
@@ -73,9 +76,9 @@
 #endif
 
 #include "TLS.h"
+#include "Thread.h"
 
 /**
- * Andrei Prygounkov:
  * Substitutes for xasprintf, xmalloc, xstrdup and _() to remove dependencies from gnulib
  */
 #define xmalloc (char*)malloc
@@ -95,6 +98,52 @@ char* xasprintf(const char* msg, ...)
 	return szResult;
 }
 /* End Substitutes */
+
+
+#ifdef HAVE_LIBGNUTLS
+
+/**
+ * Mutexes for gcryptlib
+ */
+
+typedef std::list<Mutex*> Mutexes;
+Mutexes* g_pGCryptLibMutexes;
+
+static int gcry_mutex_init(void **priv)
+{
+	Mutex* pMutex = new Mutex();
+	g_pGCryptLibMutexes->push_back(pMutex);
+	*priv = pMutex;
+	return 0;
+}
+
+static int gcry_mutex_destroy(void **lock)
+{
+	Mutex* pMutex = ((Mutex*)*lock);
+	g_pGCryptLibMutexes->remove(pMutex);
+	delete pMutex;
+	return 0;
+}
+
+static int gcry_mutex_lock(void **lock)
+{
+	((Mutex*)*lock)->Lock();
+	return 0;
+}
+
+static int gcry_mutex_unlock(void **lock)
+{
+	((Mutex*)*lock)->Unlock();
+	return 0;
+}
+
+static struct gcry_thread_cbs gcry_threads_Mutex =
+{ GCRY_THREAD_OPTION_USER, NULL,
+  gcry_mutex_init, gcry_mutex_destroy,
+  gcry_mutex_lock, gcry_mutex_unlock,
+  NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL };
+
+#endif /* HAVE_LIBGNUTLS */
 
 /*
  * tls_clear()
@@ -187,12 +236,19 @@ int seed_prng(char **errstr)
 int tls_lib_init(char **errstr)
 {
 #ifdef HAVE_LIBGNUTLS
-    int error_code;
-    
+	int error_code;
+
+	g_pGCryptLibMutexes = new Mutexes();
+    if ((error_code = gcry_control(GCRYCTL_SET_THREAD_CBS, &gcry_threads_Mutex)) != 0)
+    {
+		*errstr = xasprintf("%s", "Could not initialize libcrypt");
+		return TLS_ELIBFAILED;
+    }
+
     if ((error_code = gnutls_global_init()) != 0)
     {
-	*errstr = xasprintf("%s", gnutls_strerror(error_code));
-	return TLS_ELIBFAILED;
+		*errstr = xasprintf("%s", gnutls_strerror(error_code));
+		return TLS_ELIBFAILED;
     }
 
     return TLS_EOK;
@@ -1490,7 +1546,14 @@ void tls_close(tls_t *tls)
 void tls_lib_deinit(void)
 {
 #ifdef HAVE_LIBGNUTLS
-    gnutls_global_deinit();
+	gnutls_global_deinit();
+
+	// fixing memory leak in gcryptlib
+	for (Mutexes::iterator it = g_pGCryptLibMutexes->begin(); it != g_pGCryptLibMutexes->end(); it++)
+	{
+		delete *it;
+	}
+	delete g_pGCryptLibMutexes;
 #endif /* HAVE_LIBGNUTLS */
 }
 

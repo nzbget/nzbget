@@ -54,6 +54,7 @@
 #define PATH_SEPARATOR '\\'
 #define ALT_PATH_SEPARATOR '/'
 #define LINE_ENDING "\r\n"
+#define pid_t int
 
 #pragma warning(disable:4800) // 'type' : forcing value to bool 'true' or 'false' (performance warning)
 #pragma warning(disable:4267) // 'var' : conversion from 'size_t' to 'type', possible loss of data
