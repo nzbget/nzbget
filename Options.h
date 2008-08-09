@@ -147,6 +147,8 @@ private:
 	bool				m_bAllowReProcess;
 	bool				m_bTLS;
 	bool				m_bDumpCore;
+	bool				m_bParPauseQueue;
+	bool				m_bPostPauseQueue;
 
 	// Parsed command-line parameters
 	bool				m_bServerMode;
@@ -252,6 +254,8 @@ public:
 	bool				GetAllowReProcess() { return m_bAllowReProcess; }
 	bool				GetTLS() { return m_bTLS; }
 	bool				GetDumpCore() { return m_bDumpCore; }
+	bool				GetParPauseQueue() { return m_bParPauseQueue; }
+	bool				GetPostPauseQueue() { return m_bPostPauseQueue; }
 
 	// Parsed command-line parameters
 	bool				GetServerMode() { return m_bServerMode; }

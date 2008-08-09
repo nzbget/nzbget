@@ -1,7 +1,7 @@
 /*
  *  This file is part of nzbget
  *
- *  Copyright (C) 2007  Andrei Prygounkov <hugbug@users.sourceforge.net>
+ *  Copyright (C) 2007-2008 Andrei Prygounkov <hugbug@users.sourceforge.net>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -60,6 +60,12 @@ void ScriptController::StartScriptJob(PostInfo* pPostInfo, const char* szScript,
 		pPostInfo->SetStage(PostInfo::ptFinished);
 		pPostInfo->SetWorking(false);
 		return;
+	}
+
+	if (g_pOptions->GetPostPauseQueue())
+	{
+		info("Pausing queue before post-process-script");
+		g_pOptions->SetPause(true);
 	}
 
 	info("Executing post-process-script for %s", pPostInfo->GetInfoName());
@@ -134,8 +140,7 @@ void ScriptController::Run()
 		{
 			error("Could not start post-process-script: error %i", dwErrCode);
 		}
-		m_pPostInfo->SetStage(PostInfo::ptFinished);
-		m_pPostInfo->SetWorking(false);
+		Finished();
 		return;
 	}
 
@@ -169,8 +174,7 @@ void ScriptController::Run()
 	if (pipe(p))
 	{
 		error("Could not open pipe: errno %i", errno);
-		m_pPostInfo->SetStage(PostInfo::ptFinished);
-		m_pPostInfo->SetWorking(false);
+		Finished();
 		return;
 	}
 
@@ -183,8 +187,7 @@ void ScriptController::Run()
 	if (pid == -1)
 	{
 		error("Could not start post-process-script: errno %i", errno);
-		m_pPostInfo->SetStage(PostInfo::ptFinished);
-		m_pPostInfo->SetWorking(false);
+		Finished();
 		return;
 	}
 	else if (pid == 0)
@@ -222,8 +225,7 @@ void ScriptController::Run()
 	if (!readpipe)
 	{
 		error("Could not open pipe to post-process-script");
-		m_pPostInfo->SetStage(PostInfo::ptFinished);
-		m_pPostInfo->SetWorking(false);
+		Finished();
 		return;
 	}
 	
@@ -258,8 +260,19 @@ void ScriptController::Run()
 		info("Completed post-process-script for %s", m_pPostInfo->GetInfoName());
 	}
 
+	Finished();
+}
+
+void ScriptController::Finished()
+{
 	m_pPostInfo->SetStage(PostInfo::ptFinished);
 	m_pPostInfo->SetWorking(false);
+
+	if (g_pOptions->GetPostPauseQueue())
+	{
+		info("Unpausing queue after post-process-script");
+		g_pOptions->SetPause(false);
+	}
 }
 
 void ScriptController::AddMessage(char* szText)
