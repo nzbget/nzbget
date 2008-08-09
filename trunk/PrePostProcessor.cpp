@@ -1,7 +1,7 @@
 /*
  *  This file is part of nzbget
  *
- *  Copyright (C) 2007  Andrei Prygounkov <hugbug@users.sourceforge.net>
+ *  Copyright (C) 2007-2008 Andrei Prygounkov <hugbug@users.sourceforge.net>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -655,6 +655,12 @@ bool PrePostProcessor::IsNZBFileCompleted(DownloadQueue* pDownloadQueue, const c
  */
 void PrePostProcessor::StartParJob(PostInfo* pPostInfo)
 {
+	if (g_pOptions->GetParPauseQueue())
+	{
+		info("Pausing queue before par-check");
+		g_pOptions->SetPause(true);
+	}
+
 	info("Checking pars for %s", pPostInfo->GetInfoName());
 	m_ParChecker.SetNZBFilename(pPostInfo->GetNZBFilename());
 	m_ParChecker.SetParFilename(pPostInfo->GetParFilename());
@@ -767,6 +773,11 @@ bool PrePostProcessor::AddPar(FileInfo * pFileInfo, bool bDeleted)
 		snprintf(szFullFilename, 1024, "%s%c%s", pFileInfo->GetNZBInfo()->GetDestDir(), (int)PATH_SEPARATOR, pFileInfo->GetFilename());
 		szFullFilename[1024-1] = '\0';
 		m_ParChecker.AddParFile(szFullFilename);
+
+		if (g_pOptions->GetParPauseQueue())
+		{
+			g_pOptions->SetPause(true);
+		}
 	}
 	else
 	{
@@ -785,7 +796,7 @@ bool PrePostProcessor::SameParCollection(const char* szFilename1, const char* sz
 		!strncasecmp(szFilename1, szFilename2, iBaseLen1);
 }
 
-void PrePostProcessor::ParCheckerUpdate(Subject * Caller, void * Aspect)
+void PrePostProcessor::ParCheckerUpdate(Subject* Caller, void* Aspect)
 {
 	if (m_ParChecker.GetStatus() == ParChecker::psFinished ||
 		m_ParChecker.GetStatus() == ParChecker::psFailed)
@@ -857,6 +868,12 @@ void PrePostProcessor::ParCheckerUpdate(Subject * Caller, void * Aspect)
 		SavePostQueue();
 
 		m_mutexQueue.Unlock();
+
+		if (g_pOptions->GetParPauseQueue())
+		{
+			info("Unpausing queue after par-check");
+			g_pOptions->SetPause(false);
+		}
 	}
 }
 
@@ -1015,8 +1032,15 @@ bool PrePostProcessor::RequestMorePars(const char* szNZBFilename, const char* sz
 		delete *it;
 	}
 	blocks.clear();
-	
-	return iBlockNeeded <= 0;
+
+	bool bOK = iBlockNeeded <= 0;
+
+	if (bOK && g_pOptions->GetParPauseQueue())
+	{
+		g_pOptions->SetPause(false);
+	}
+
+	return bOK;
 }
 
 void PrePostProcessor::FindPars(DownloadQueue * pDownloadQueue, const char* szNZBFilename, const char* szParFilename,

@@ -375,11 +375,10 @@ ServerPassword=tegbzn6789
 ReloadPostQueue=yes
 
 # How many par2-files to load (none, all, one)
-# none - all added par2-files must be automatically paused
-# all - all added par2-files must be downloaded
+# none - all par2-files must be automatically paused
+# all - all par2-files must be downloaded
 # one - only one main par2-file must be dowloaded and other must be paused
-# Paused files remain in queue and should be deleted manually,
-# when they not needed anymore
+# Paused files remain in queue and can be unpaused by parchecker when needed
 LoadPars=one
 
 # Automatic par-verification (yes, no)
@@ -392,7 +391,7 @@ ParCheck=no
 
 # Automatic par-repair (yes, no)
 # If option "parcheck" is enabled and "parrepair" is not, the program
-# only verifies downloaded files and downloads needed par2-files, but do
+# only verifies downloaded files and downloads needed par2-files, but does
 # not start repair-process. This is useful if the server does not have
 # enough CPU power, since repairing of large files may take too much
 # resources and time on a slow computers.
@@ -404,7 +403,7 @@ ParRepair=yes
 # in download queue, which can be unpaused and used for restore. 
 # These par2-files should have the same base name as the main par2-file, 
 # currently loaded in par-checker. Sometimes extra par files (especially if 
-# they were uploaded from a different poster) have not matching names. 
+# they were uploaded by a different poster) have not matching names. 
 # Normally par-checker does not use these files, but you can allow it 
 # to use these files by setting "strictparname" to "no".
 # This has however a side effect: if NZB-file contains more than one collection
@@ -421,6 +420,13 @@ StrictParName=yes
 # If there are paused non-par-files (this means that you have paused them
 # manually), the cleanup will be skipped for this collection.
 ParCleanupQueue=yes
+
+# Pause download queue during check/repair (yes, no)
+# Enable the option to give CPU more time for par-check/repair. That helps
+# to speed up check/repair on slow CPUs with fast connection (e.g. NAS-devices).
+# NOTE: if parchecker needs additional par-files it temporary unpauses queue
+# NOTE: See also option <PostPauseQueue>.
+ParPauseQueue=no
 
 # Set path to program, that must be executed after the download of nzb-file 
 # or one collection in nzb-file (if par-check enabled and nzb-file contains 
@@ -467,7 +473,9 @@ ParCleanupQueue=yes
 # not have any par-files, this collection will not be detected.
 # For example, for nzb-file containing three collections but only two par-sets, 
 # the postprocess will be called two times - after processing of each par-set.
-# NOTE 4: do not forget to uncomment the next line
+# NOTE 4: an example script for unrarring is provided within distribution 
+# in file <postprocess-example.sh>
+# NOTE 5: do not forget to uncomment the next line
 #PostProcess=~/myscript.sh
 
 # Allow multiple post-processing for the same nzb-file (yes,no)
@@ -475,16 +483,17 @@ ParCleanupQueue=yes
 # completed, nzbget adds the nzb-file to a list of completed-jobs. The nzb-file
 # stays in the list until the last file from that nzb-file is deleted from 
 # the download queue (it occurs straight away if the par-check was successful 
-# and the option "ParCleanupQueue" was set).
-# So, if there were paused files in queue and they will be unpaused (manually
-# or from a post-process-script) nzbget will not post-process nzb-file again.
-# This prevents the unwanted multiple post-processing of the same nzb-file.
+# and the option "ParCleanupQueue" is enabled).
+# That means, if a paused file from a nzb-collection becomes unpaused 
+# (manually or from a post-process-script) after the collection was allready 
+# postprocessed nzbget will not post-process nzb-file again.
+# This prevents the unwanted multiple post-processings of the same nzb-file.
 # But it might be needed if the par-check/-repair are performed not directly 
 # by nzbget but from a post-process-script.
-# NOTE 1: it is recommended to keep the option disabled. You should enable it
-# only if it is suggested by a post-process-script's author.
+# NOTE 1: enable this option only if you were advised to do that by the author
+# of the post-process-script
 # NOTE 2: by enabling "AllowReProcess" you should disable the option "ParCheck"
-# to prevent multiple par-checking.
+# to prevent multiple par-checking
 AllowReProcess=no
 
 # Set the default message-kind for output received from postprocess-script 
@@ -500,6 +509,11 @@ AllowReProcess=no
 # Otherwise the message becomes the default kind, specified in this option.
 PostLogKind=Detail
 
+# Pause download queue during executing of postprocess-script (yes, no)
+# Enable the option to give CPU more time for postprocess-script. That helps
+# to speed up postprocess on slow CPUs with fast connection (e.g. NAS-devices).
+# NOTE: See also option <ParPauseQueue>.
+PostPauseQueue=no
 
 ##############################################################################
 ### PERFORMANCE                                                            ###
