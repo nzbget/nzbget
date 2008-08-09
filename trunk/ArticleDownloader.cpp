@@ -983,7 +983,7 @@ void ArticleDownloader::CompleteFileParts()
 			snprintf(szBrokenLogName, 1024, "%s%c_brokenlog.txt", szNZBDestDir, (int)PATH_SEPARATOR);
 			szBrokenLogName[1024-1] = '\0';
 			FILE* file = fopen(szBrokenLogName, "a");
-			fprintf(file, "%s (%i/%i)\n", m_pFileInfo->GetFilename(), m_pFileInfo->GetArticles()->size() - iBrokenCount, m_pFileInfo->GetArticles()->size());
+			fprintf(file, "%s (%i/%i)%s", m_pFileInfo->GetFilename(), m_pFileInfo->GetArticles()->size() - iBrokenCount, m_pFileInfo->GetArticles()->size(), LINE_ENDING);
 			fclose(file);
 		}
 	}

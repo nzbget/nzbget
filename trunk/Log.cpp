@@ -111,9 +111,9 @@ void Log::Filelog(const char* msg, ...)
 			unsigned long iThreadId = (unsigned long)pthread_self();
 #endif
 #ifdef DEBUG
-			fprintf(file, "%s\t%lu\t%s\n", szTime, iThreadId, tmp2);
+			fprintf(file, "%s\t%lu\t%s%s", szTime, iThreadId, tmp2, LINE_ENDING);
 #else
-			fprintf(file, "%s\t%s\n", szTime, tmp2);
+			fprintf(file, "%s\t%s%s", szTime, tmp2, LINE_ENDING);
 #endif
 			fclose(file);
 		}
