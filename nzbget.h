@@ -53,6 +53,7 @@
 #define SHUT_RDWR 0x02
 #define PATH_SEPARATOR '\\'
 #define ALT_PATH_SEPARATOR '/'
+#define LINE_ENDING "\r\n"
 
 #pragma warning(disable:4800) // 'type' : forcing value to bool 'true' or 'false' (performance warning)
 #pragma warning(disable:4267) // 'var' : conversion from 'size_t' to 'type', possible loss of data
@@ -68,7 +69,8 @@
 #define PATH_SEPARATOR '/'
 #define ALT_PATH_SEPARATOR '\\'
 #define MAX_PATH 1024
-#define	S_DIRMODE (S_IRWXU | S_IRWXG | S_IRWXO)
+#define S_DIRMODE (S_IRWXU | S_IRWXG | S_IRWXO)
+#define LINE_ENDING "\n"
 
 #endif
 
