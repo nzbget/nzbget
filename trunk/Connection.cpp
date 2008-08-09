@@ -62,7 +62,7 @@ bool Connection::bTLSLibInitialized = false;
 
 void Connection::Init(bool bTLS)
 {
-	debug("Intiializing global connection data");
+	debug("Initializing global connection data");
 
 #ifdef WIN32
 	WSADATA wsaData;

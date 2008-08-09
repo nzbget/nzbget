@@ -58,7 +58,7 @@
 			/>
 			<Tool
 				Name="VCLinkerTool"
-				AdditionalDependencies="WS2_32.Lib ole32.lib OleAut32.Lib comsuppwd.lib Advapi32.lib sigc-2.0d.lib par2d.lib libgnutls-26.lib"
+				AdditionalDependencies="WS2_32.Lib ole32.lib OleAut32.Lib comsuppwd.lib Advapi32.lib sigc-2.0d.lib par2d.lib libgnutls-26.lib libgcrypt-11.lib"
 				LinkIncremental="2"
 				GenerateDebugInformation="true"
 				SubSystem="1"
@@ -131,7 +131,7 @@
 			/>
 			<Tool
 				Name="VCLinkerTool"
-				AdditionalDependencies="WS2_32.Lib ole32.lib OleAut32.Lib comsuppwd.lib Advapi32.lib sigc-2.0.lib par2.lib libgnutls-26.lib"
+				AdditionalDependencies="WS2_32.Lib ole32.lib OleAut32.Lib comsuppwd.lib Advapi32.lib sigc-2.0.lib par2.lib libgnutls-26.lib libgcrypt-11.lib"
 				LinkIncremental="0"
 				GenerateDebugInformation="true"
 				SubSystem="1"
