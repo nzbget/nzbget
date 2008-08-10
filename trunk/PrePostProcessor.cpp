@@ -430,13 +430,18 @@ void PrePostProcessor::SanitisePostQueue()
 	}
 }
 
+bool PrePostProcessor::PostProcessEnabled()
+{
+	const char* szScript = g_pOptions->GetPostProcess();
+	return szScript && strlen(szScript) > 0;
+}
+
 /**
  * Mutex "m_mutexQueue" must be locked prior to call of this function.
  */
 void PrePostProcessor::StartScriptJob(DownloadQueue* pDownloadQueue, PostInfo* pPostInfo)
 {
-	const char* szScript = g_pOptions->GetPostProcess();
-	if (!szScript || strlen(szScript) == 0)
+	if (!PostProcessEnabled())
 	{
 		pPostInfo->SetStage(PostInfo::ptFinished);
 		return;
@@ -462,7 +467,7 @@ void PrePostProcessor::StartScriptJob(DownloadQueue* pDownloadQueue, PostInfo* p
 	bool bHasFailedParJobs = false;
 #endif
 
-	ScriptController::StartScriptJob(pPostInfo, szScript, bNZBFileCompleted, bHasFailedParJobs);
+	ScriptController::StartScriptJob(pPostInfo, g_pOptions->GetPostProcess(), bNZBFileCompleted, bHasFailedParJobs);
 }
 
 /**
@@ -655,7 +660,7 @@ bool PrePostProcessor::IsNZBFileCompleted(DownloadQueue* pDownloadQueue, const c
  */
 void PrePostProcessor::StartParJob(PostInfo* pPostInfo)
 {
-	if (g_pOptions->GetParPauseQueue())
+	if (g_pOptions->GetParPauseQueue() && !g_pOptions->GetPause())
 	{
 		info("Pausing queue before par-check");
 		g_pOptions->SetPause(true);
@@ -869,7 +874,7 @@ void PrePostProcessor::ParCheckerUpdate(Subject* Caller, void* Aspect)
 
 		m_mutexQueue.Unlock();
 
-		if (g_pOptions->GetParPauseQueue())
+		if (g_pOptions->GetParPauseQueue() && !(g_pOptions->GetPostPauseQueue() && PostProcessEnabled()))
 		{
 			info("Unpausing queue after par-check");
 			g_pOptions->SetPause(false);

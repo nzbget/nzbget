@@ -95,6 +95,7 @@ private:
 	void				SavePostQueue();
 	void				SanitisePostQueue();
 	void				CheckDiskSpace();
+	bool				PostProcessEnabled();
 
 	Mutex			 	m_mutexQueue;
 	PostQueue			m_PostQueue;
