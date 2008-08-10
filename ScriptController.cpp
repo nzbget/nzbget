@@ -54,15 +54,7 @@ extern Options* g_pOptions;
 
 void ScriptController::StartScriptJob(PostInfo* pPostInfo, const char* szScript, bool bNZBFileCompleted, bool bHasFailedParJobs)
 {
-	if (!Util::FileExists(szScript))
-	{
-		error("Could not start post-process-script: could not find file %s", szScript);
-		pPostInfo->SetStage(PostInfo::ptFinished);
-		pPostInfo->SetWorking(false);
-		return;
-	}
-
-	if (g_pOptions->GetPostPauseQueue())
+	if (g_pOptions->GetPostPauseQueue() && !g_pOptions->GetPause())
 	{
 		info("Pausing queue before post-process-script");
 		g_pOptions->SetPause(true);
@@ -84,6 +76,13 @@ void ScriptController::StartScriptJob(PostInfo* pPostInfo, const char* szScript,
 
 void ScriptController::Run()
 {
+	if (!Util::FileExists(m_szScript))
+	{
+		error("Could not start post-process-script: could not find file %s", m_szScript);
+		Finished();
+		return;
+	}
+
 	char szParStatus[10];
 	snprintf(szParStatus, 10, "%i", m_pPostInfo->GetParStatus());
 	szParStatus[10-1] = '\0';
