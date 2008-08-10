@@ -86,13 +86,17 @@ And the following libraries are optional:
  - for par-check and -repair (enabled by default):
    - libpar2     (http://parchive.sourceforge.net)
    - libsigc++   (http://libsigc.sourceforge.net)
+ 
+ - for encrypted connections (TLS/SSL):
+   - GnuTLS      (http://www.gnu.org/software/gnutls)
+     or
+   - OpenSSL     (http://www.openssl.org)
 
 All these libraries are included in modern Linux distributions and
 should be available as installable packages. Please note that you also 
 need the developer packages for these libraries too, they package names 
 have often suffix "dev" or "devel". On other systems you may need to 
 download the libraries at the given URLs and compile them (see hints below).
-
 
 =====================================
 4. Installation on POSIX
