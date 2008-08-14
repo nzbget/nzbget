@@ -218,22 +218,29 @@ if test "$ENABLEPARCHECK" = "yes"; then
 	dnl 
 	dnl checks for libsigc++ includes and libraries (required for libpar2).
 	dnl
-	INCVAL="${LIBPREF}/include/sigc++-2.0"
-	LIBVAL="${LIBPREF}/lib"
+
 	AC_ARG_WITH(libsigc_includes,
 		[AS_HELP_STRING([--with-libsigc-includes=DIR], [libsigc++-2.0 include directory])],
-		[INCVAL="$withval"])
+		[CPPFLAGS="${CPPFLAGS} -I${withval}"]
+		[INCVAL="yes"],
+		[INCVAL="no"])
 	
 	AC_ARG_WITH(libsigc_libraries,
 		[AS_HELP_STRING([--with-libsigc-libraries=DIR], [libsigc++-2.0 library directory])],
-		[LIBVAL="$withval"])
-
-	LDFLAGS="${LDFLAGS} -L${LIBVAL}"
-	CPPFLAGS="${CPPFLAGS} -I${INCVAL} -I${LIBVAL}/sigc++-2.0/include"
+		[LDFLAGS="${LDFLAGS} -L${withval}"]
+		[CPPFLAGS="${CPPFLAGS} -I${withval}/sigc++-2.0/include"]
+		[LIBVAL="yes"],
+		[LIBVAL="no"])
+	
+	if test "$INCVAL" = "no" -o "$LIBVAL" = "no"; then
+		PKG_CHECK_MODULES(LIBSIGC, sigc++-2.0,
+			[LDFLAGS="${LDFLAGS} $LIBSIGC_LIBS"]
+			[CPPFLAGS="${CPPFLAGS} $LIBSIGC_CFLAGS"])
+	fi
 
 	AC_LANG_PUSH(C++)
 	AC_CHECK_HEADER(sigc++/type_traits.h,,
-		AC_MSG_ERROR("libsigc++-2.0 header files were not found in $INCVAL."))
+		AC_MSG_ERROR("libsigc++-2.0 header files were not found."))
 	AC_LANG_POP(C++)
 
 	dnl
