@@ -120,6 +120,7 @@ void QueueCoordinator::Run()
 	m_mutexDownloadQueue.Unlock();
 
 	m_tStartServer = time(NULL);
+	m_tLastCheck = m_tStartServer;
 	bool bWasStandBy = true;
 	bool bArticeDownloadsRunning = false;
 	int iResetCounter = 0;
@@ -178,6 +179,7 @@ void QueueCoordinator::Run()
 			g_pServerPool->CloseUnusedConnections();
 			ResetHangingDownloads();
 			iResetCounter = 0;
+			AdjustStartTime();
 		}
 	}
 
@@ -801,6 +803,24 @@ void QueueCoordinator::CalcStat(int* iUpTimeSec, int* iDnTimeSec, long long* iAl
 	}
 	*iAllBytes = m_iAllBytes;
 	m_mutexStat.Unlock();
+}
+
+/*
+ * Detects large step changes of system time and adjust statistics.
+ */
+void QueueCoordinator::AdjustStartTime()
+{
+	time_t m_tCurTime = time(NULL);
+	time_t tDiff = m_tCurTime - m_tLastCheck;
+	if (tDiff > 60 || tDiff < 0)
+	{
+		m_tStartServer += tDiff + 1; // "1" because the method is called once per second
+		if (m_tStartDownload != 0)
+		{
+			m_tStartDownload += tDiff + 1;
+		}
+	}		
+	m_tLastCheck = m_tCurTime;
 }
 
 bool QueueCoordinator::SetQueueEntryNZBCategory(NZBInfo* pNZBInfo, const char* szCategory)
