@@ -78,6 +78,7 @@ private:
     int						m_iSpeedBytesIndex;
 	long long				m_iAllBytes;
 	time_t					m_tStartServer;
+	time_t					m_tLastCheck;
 	time_t					m_tStartDownload;
 	time_t					m_tPausedFrom;
 	bool					m_bStandBy;
@@ -92,6 +93,7 @@ private:
 	void					ResetHangingDownloads();
 	void					ResetSpeedStat();
 	void					EnterLeaveStandBy(bool bEnter);
+	void					AdjustStartTime();
 
 public:
 							QueueCoordinator();                
