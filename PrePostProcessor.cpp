@@ -296,37 +296,66 @@ void PrePostProcessor::CheckIncomingNZBs(const char* szDirectory, const char* sz
 					time(NULL) - buffer.st_ctime > g_pOptions->GetNzbDirFileAge())
 				{
 					// the file is at least g_pOptions->GetNzbDirFileAge() seconds old, we can process it
-					info("Collection %s found", filename);
-					char bakname[1024];
-					if (g_pQueueCoordinator->AddFileToQueue(fullfilename, szCategory))
-					{
-						info("Collection %s added to queue", filename);
-						snprintf(bakname, 1024, "%s.queued", fullfilename);
-						bakname[1024-1] = '\0';
-					}
-					else
-					{
-						error("Could not add collection %s to queue", filename);
-						snprintf(bakname, 1024, "%s.error", fullfilename);
-						bakname[1024-1] = '\0';
-					}
-
-					char bakname2[1024];
-					strcpy(bakname2, bakname);
-					int i = 2;
-					while (!stat(bakname2, &buffer))
-					{
-						snprintf(bakname2, 1024, "%s%i", bakname, i++);
-						bakname2[1024-1] = '\0';
-					}
-					
-					if (rename(fullfilename, bakname2))
-					{
-						error("Could not rename file %s to %s! Errcode: %i", fullfilename, bakname2, errno);
-					}
+					AddFileToQueue(fullfilename, szCategory);
 				}
 			}
 		}
+	}
+}
+
+void PrePostProcessor::AddFileToQueue(const char* szFilename, const char* szCategory)
+{
+	const char* szBasename = Util::BaseFileName(szFilename);
+
+	info("Collection %s found", szBasename);
+	char bakname[1024];
+	bool bAdded = g_pQueueCoordinator->AddFileToQueue(szFilename, szCategory);
+	if (bAdded)
+	{
+		info("Collection %s added to queue", szBasename);
+		snprintf(bakname, 1024, "%s.queued", szFilename);
+		bakname[1024-1] = '\0';
+	}
+	else
+	{
+		error("Could not add collection %s to queue", szBasename);
+		snprintf(bakname, 1024, "%s.error", szFilename);
+		bakname[1024-1] = '\0';
+	}
+
+	char bakname2[1024];
+	strcpy(bakname2, bakname);
+	int i = 2;
+	struct stat buffer;
+	while (!stat(bakname2, &buffer))
+	{
+		snprintf(bakname2, 1024, "%s%i", bakname, i++);
+		bakname2[1024-1] = '\0';
+	}
+	
+	if (rename(szFilename, bakname2))
+	{
+		error("Could not rename file %s to %s! Errcode: %i", szFilename, bakname2, errno);
+	}
+	else if (bAdded)
+	{
+		// find just added item in queue and save bakname2 into NZBInfo.QueuedFileName
+		DownloadQueue* pDownloadQueue = g_pQueueCoordinator->LockQueue();
+		for (DownloadQueue::reverse_iterator it = pDownloadQueue->rbegin(); it != pDownloadQueue->rend(); it++)
+		{
+			FileInfo* pFileInfo = *it;
+			if (!strcmp(pFileInfo->GetNZBInfo()->GetFilename(), szFilename) && 
+				strlen(pFileInfo->GetNZBInfo()->GetQueuedFilename()) == 0)
+			{
+				pFileInfo->GetNZBInfo()->SetQueuedFilename(bakname2);
+				if (g_pOptions->GetSaveQueue() && g_pOptions->GetServerMode())
+				{
+					g_pDiskState->SaveDownloadQueue(pDownloadQueue);
+				}
+				break;
+			}
+		}
+		g_pQueueCoordinator->UnlockQueue();
 	}
 }
 
@@ -344,6 +373,8 @@ void PrePostProcessor::CheckPostQueue()
 {
 	int iCleanupGroupID = 0;
 	char szNZBNiceName[1024];
+	char szQueuedFilename[1024];
+	szQueuedFilename[0] = '\0';
 
 	DownloadQueue* pDownloadQueue = g_pQueueCoordinator->LockQueue();
 	m_mutexQueue.Lock();
@@ -367,14 +398,22 @@ void PrePostProcessor::CheckPostQueue()
 			else if (pPostInfo->GetStage() == PostInfo::ptFinished)
 			{
 #ifndef DISABLE_PARCHECK
-				if (g_pOptions->GetParCleanupQueue() && 
+				if ((g_pOptions->GetParCleanupQueue() || g_pOptions->GetNzbCleanupDisk()) && 
 					IsNZBFileCompleted(pDownloadQueue, pPostInfo->GetNZBFilename(), true, true, true) &&
 					pPostInfo->GetParStatus() != PARSTATUS_NOT_CHECKED &&
 					pPostInfo->GetParStatus() != PARSTATUS_FAILED &&
 					!HasFailedParJobs(pPostInfo->GetNZBFilename()))
 				{
-					iCleanupGroupID = GetParCleanupQueueGroup(pDownloadQueue, pPostInfo->GetNZBFilename());
-					NZBInfo::MakeNiceNZBName(pPostInfo->GetNZBFilename(), szNZBNiceName, sizeof(szNZBNiceName));
+					if (g_pOptions->GetParCleanupQueue())
+					{
+						iCleanupGroupID = GetParCleanupQueueGroup(pDownloadQueue, pPostInfo->GetNZBFilename());
+						NZBInfo::MakeNiceNZBName(pPostInfo->GetNZBFilename(), szNZBNiceName, sizeof(szNZBNiceName));
+					}
+					if (g_pOptions->GetNzbCleanupDisk())
+					{
+						strncpy(szQueuedFilename, pPostInfo->GetQueuedFilename(), 1024);
+						szQueuedFilename[1024-1] = '\0';
+					}
 				}
 #endif
 				JobCompleted(pDownloadQueue, pPostInfo);
@@ -393,6 +432,12 @@ void PrePostProcessor::CheckPostQueue()
 	{
 		info("Cleaning up download queue for %s", szNZBNiceName);
 		g_pQueueCoordinator->GetQueueEditor()->EditEntry(iCleanupGroupID, false, QueueEditor::eaGroupDelete, 0, NULL);
+	}
+
+	if (szQueuedFilename[0] != '\0' && Util::FileExists(szQueuedFilename))
+	{
+		info("Deleting file %s", szQueuedFilename);
+		remove(szQueuedFilename);
 	}
 }
 
@@ -541,6 +586,7 @@ bool PrePostProcessor::CheckScript(FileInfo * pFileInfo)
 		pPostInfo->SetParFilename("");
 		pPostInfo->SetInfoName(szNZBNiceName);
 		pPostInfo->SetCategory(pFileInfo->GetNZBInfo()->GetCategory());
+		pPostInfo->SetQueuedFilename(pFileInfo->GetNZBInfo()->GetQueuedFilename());
 		pPostInfo->SetParCheck(false);
 		m_PostQueue.push_back(pPostInfo);
 		SavePostQueue();
@@ -720,6 +766,7 @@ bool PrePostProcessor::CheckPars(DownloadQueue * pDownloadQueue, FileInfo * pFil
 				pPostInfo->SetParFilename(szFullFilename);
 				pPostInfo->SetInfoName(szParInfoName);
 				pPostInfo->SetCategory(pFileInfo->GetNZBInfo()->GetCategory());
+				pPostInfo->SetQueuedFilename(pFileInfo->GetNZBInfo()->GetQueuedFilename());
 				pPostInfo->SetParCheck(true);
 				m_PostQueue.push_back(pPostInfo);
 				SavePostQueue();
