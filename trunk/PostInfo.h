@@ -54,6 +54,7 @@ private:
 	char*			m_szParFilename;
 	char*			m_szInfoName;
 	char*			m_szCategory;
+	char*			m_szQueuedFilename;
 	bool			m_bWorking;
 	bool			m_bParCheck;
 	int				m_iParStatus;
@@ -84,6 +85,8 @@ public:
 	void			SetInfoName(const char* szInfoName);
 	const char*		GetCategory() { return m_szCategory; }
 	void			SetCategory(const char* szCategory);
+	const char*		GetQueuedFilename() { return m_szQueuedFilename; }
+	void			SetQueuedFilename(const char* szQueuedFilename);
 	EStage			GetStage() { return m_eStage; }
 	void			SetStage(EStage eStage) { m_eStage = eStage; }
 	void			SetProgressLabel(const char* szProgressLabel);

@@ -46,6 +46,7 @@ private:
 	long long 			m_lSize;
 	Files				m_completedFiles;
 	bool				m_bPostProcess;
+	char*				m_szQueuedFilename;
 
 public:
 						NZBInfo();
@@ -68,6 +69,8 @@ public:
 	Files*				GetCompletedFiles() { return &m_completedFiles; }
 	bool				GetPostProcess() { return m_bPostProcess; }
 	void				SetPostProcess(bool b) { m_bPostProcess = b; }
+	const char*			GetQueuedFilename() { return m_szQueuedFilename; }
+	void				SetQueuedFilename(const char* szQueuedFilename);
 };
 
 class ArticleInfo

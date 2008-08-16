@@ -149,6 +149,7 @@ private:
 	bool				m_bDumpCore;
 	bool				m_bParPauseQueue;
 	bool				m_bPostPauseQueue;
+	bool				m_bNzbCleanupDisk;
 
 	// Parsed command-line parameters
 	bool				m_bServerMode;
@@ -256,6 +257,7 @@ public:
 	bool				GetDumpCore() { return m_bDumpCore; }
 	bool				GetParPauseQueue() { return m_bParPauseQueue; }
 	bool				GetPostPauseQueue() { return m_bPostPauseQueue; }
+	bool				GetNzbCleanupDisk() { return m_bNzbCleanupDisk; }
 
 	// Parsed command-line parameters
 	bool				GetServerMode() { return m_bServerMode; }

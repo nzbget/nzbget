@@ -145,6 +145,7 @@ static const char* OPTION_ALLOWREPROCESS	= "AllowReProcess";
 static const char* OPTION_DUMPCORE			= "DumpCore";
 static const char* OPTION_PARPAUSEQUEUE		= "ParPauseQueue";
 static const char* OPTION_POSTPAUSEQUEUE	= "PostPauseQueue";
+static const char* OPTION_NZBCLEANUPDISK	= "NzbCleanupDisk";
 
 const char* BoolNames[] = { "yes", "no", "true", "false", "1", "0", "on", "off", "enable", "disable", "enabled", "disabled" };
 const int BoolValues[] = { 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0 };
@@ -245,6 +246,7 @@ Options::Options(int argc, char* argv[])
 	m_bDumpCore				= false;
 	m_bParPauseQueue		= false;
 	m_bPostPauseQueue		= false;
+	m_bNzbCleanupDisk		= false;
 
 	char szFilename[MAX_PATH + 1];
 #ifdef WIN32
@@ -458,6 +460,7 @@ void Options::InitDefault()
 	SetOption(OPTION_DUMPCORE, "no");
 	SetOption(OPTION_PARPAUSEQUEUE, "no");
 	SetOption(OPTION_POSTPAUSEQUEUE, "no");
+	SetOption(OPTION_NZBCLEANUPDISK, "no");
 }
 
 void Options::InitOptFile()
@@ -602,6 +605,7 @@ void Options::InitOptions()
 	m_bDumpCore				= (bool)ParseOptionValue(OPTION_DUMPCORE, NULL, BoolCount, BoolNames, BoolValues);
 	m_bParPauseQueue		= (bool)ParseOptionValue(OPTION_PARPAUSEQUEUE, NULL, BoolCount, BoolNames, BoolValues);
 	m_bPostPauseQueue		= (bool)ParseOptionValue(OPTION_POSTPAUSEQUEUE, NULL, BoolCount, BoolNames, BoolValues);
+	m_bNzbCleanupDisk		= (bool)ParseOptionValue(OPTION_NZBCLEANUPDISK, NULL, BoolCount, BoolNames, BoolValues);
 
 	const char* OutputModeNames[] = { "loggable", "logable", "log", "colored", "color", "ncurses", "curses" };
 	const int OutputModeValues[] = { omLoggable, omLoggable, omLoggable, omColored, omColored, omNCurses, omNCurses };

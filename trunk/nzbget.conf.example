@@ -413,6 +413,13 @@ ParRepair=yes
 # and the option "strictparname" does not change this behavior
 StrictParName=yes
 
+# Pause download queue during check/repair (yes, no)
+# Enable the option to give CPU more time for par-check/repair. That helps
+# to speed up check/repair on slow CPUs with fast connection (e.g. NAS-devices).
+# NOTE: if parchecker needs additional par-files it temporary unpauses queue
+# NOTE: See also option <PostPauseQueue>.
+ParPauseQueue=no
+
 # Cleanup download queue after successful check/repair (yes, no)
 # Enable this option for automatic deletion of unneeded (paused) par-files 
 # from download queue after successful check/repair.
@@ -421,12 +428,10 @@ StrictParName=yes
 # manually), the cleanup will be skipped for this collection.
 ParCleanupQueue=yes
 
-# Pause download queue during check/repair (yes, no)
-# Enable the option to give CPU more time for par-check/repair. That helps
-# to speed up check/repair on slow CPUs with fast connection (e.g. NAS-devices).
-# NOTE: if parchecker needs additional par-files it temporary unpauses queue
-# NOTE: See also option <PostPauseQueue>.
-ParPauseQueue=no
+# Delete source nzb-file after successful check/repair (yes, no)
+# Enable this option for automatic deletion of nzb-file from incoming directory 
+# after successful check/repair.
+NzbCleanupDisk=no
 
 # Set path to program, that must be executed after the download of nzb-file 
 # or one collection in nzb-file (if par-check enabled and nzb-file contains 

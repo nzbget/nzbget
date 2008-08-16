@@ -96,6 +96,7 @@ private:
 	void				SanitisePostQueue();
 	void				CheckDiskSpace();
 	bool				PostProcessEnabled();
+	void				AddFileToQueue(const char* szFilename, const char* szCategory);
 
 	Mutex			 	m_mutexQueue;
 	PostQueue			m_PostQueue;

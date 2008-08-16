@@ -46,6 +46,7 @@ extern Options* g_pOptions;
 
 static const char* FORMATVERSION_SIGNATURE_V3 = "nzbget diskstate file version 3\n";
 static const char* FORMATVERSION_SIGNATURE_V4 = "nzbget diskstate file version 4\n";
+static const char* FORMATVERSION_SIGNATURE_V5 = "nzbget diskstate file version 5\n";
 
 /* Parse signature and return format version number
 */
@@ -58,6 +59,10 @@ int DiskState::ParseFormatVersion(const char* szFormatSignature)
 	else if (!strcmp(szFormatSignature, FORMATVERSION_SIGNATURE_V4))
 	{
 		return 4;
+	}
+	else if (!strcmp(szFormatSignature, FORMATVERSION_SIGNATURE_V5))
+	{
+		return 5;
 	}
 	else
 	{
@@ -112,7 +117,7 @@ bool DiskState::SaveDownloadQueue(DownloadQueue* pDownloadQueue)
 		return false;
 	}
 
-	fprintf(outfile, FORMATVERSION_SIGNATURE_V4);
+	fprintf(outfile, FORMATVERSION_SIGNATURE_V5);
 
 	// save nzb-infos
 	fprintf(outfile, "%i\n", cNZBList.size());
@@ -123,6 +128,7 @@ bool DiskState::SaveDownloadQueue(DownloadQueue* pDownloadQueue)
 		fprintf(outfile, "%s\n", pNZBInfo->GetDestDir());
 		fprintf(outfile, "%s\n", pNZBInfo->GetCategory());
 		fprintf(outfile, "%i\n", pNZBInfo->GetPostProcess() ? 1 : 0);
+		fprintf(outfile, "%s\n", pNZBInfo->GetQueuedFilename());
 		fprintf(outfile, "%i\n", pNZBInfo->GetFileCount());
 		unsigned long High, Low;
 		Util::SplitInt64(pNZBInfo->GetSize(), &High, &Low);
@@ -189,7 +195,7 @@ bool DiskState::LoadDownloadQueue(DownloadQueue* pDownloadQueue)
 	char FileSignatur[128];
 	fgets(FileSignatur, sizeof(FileSignatur), infile);
 	int iFormatVersion = ParseFormatVersion(FileSignatur);
-	if (iFormatVersion != 3 && iFormatVersion != 4)
+	if (iFormatVersion != 3 && iFormatVersion != 4 && iFormatVersion != 5)
 	{
 		error("Could not load diskstate due file version mismatch");
 		fclose(infile);
@@ -214,7 +220,7 @@ bool DiskState::LoadDownloadQueue(DownloadQueue* pDownloadQueue)
 		if (buf[0] != 0) buf[strlen(buf)-1] = 0; // remove traling '\n'
 		pNZBInfo->SetDestDir(buf);
 
-		if (iFormatVersion == 4)
+		if (iFormatVersion >= 4)
 		{
 			if (!fgets(buf, sizeof(buf), infile)) goto error;
 			if (buf[0] != 0) buf[strlen(buf)-1] = 0; // remove traling '\n'
@@ -225,6 +231,13 @@ bool DiskState::LoadDownloadQueue(DownloadQueue* pDownloadQueue)
 			pNZBInfo->SetPostProcess(iPostProcess == 1);
 		}
 
+		if (iFormatVersion >= 5)
+		{
+			if (!fgets(buf, sizeof(buf), infile)) goto error;
+			if (buf[0] != 0) buf[strlen(buf)-1] = 0; // remove traling '\n'
+			pNZBInfo->SetQueuedFilename(buf);
+		}
+
 		int iFileCount;
 		if (fscanf(infile, "%i\n", &iFileCount) != 1) goto error;
 		pNZBInfo->SetFileCount(iFileCount);
@@ -233,7 +246,7 @@ bool DiskState::LoadDownloadQueue(DownloadQueue* pDownloadQueue)
 		if (fscanf(infile, "%lu,%lu\n", &High, &Low) != 2) goto error;
 		pNZBInfo->SetSize(Util::JoinInt64(High, Low));
 
-		if (iFormatVersion == 4)
+		if (iFormatVersion >= 4)
 		{
 			int iFileCount;
 			if (fscanf(infile, "%i\n", &iFileCount) != 1) goto error;
@@ -420,7 +433,7 @@ bool DiskState::SavePostQueue(PostQueue* pPostQueue, bool bCompleted)
 		return false;
 	}
 
-	fprintf(outfile, FORMATVERSION_SIGNATURE_V4);
+	fprintf(outfile, FORMATVERSION_SIGNATURE_V5);
 
 	fprintf(outfile, "%i\n", pPostQueue->size());
 	for (PostQueue::iterator it = pPostQueue->begin(); it != pPostQueue->end(); it++)
@@ -431,6 +444,7 @@ bool DiskState::SavePostQueue(PostQueue* pPostQueue, bool bCompleted)
 		fprintf(outfile, "%s\n", pPostInfo->GetParFilename());
 		fprintf(outfile, "%s\n", pPostInfo->GetInfoName());
 		fprintf(outfile, "%s\n", pPostInfo->GetCategory());
+		fprintf(outfile, "%s\n", pPostInfo->GetQueuedFilename());
 		fprintf(outfile, "%i\n", (int)pPostInfo->GetParCheck());
 		fprintf(outfile, "%i\n", (int)pPostInfo->GetParStatus());
 		fprintf(outfile, "%i\n", (int)pPostInfo->GetParFailed());
@@ -465,7 +479,7 @@ bool DiskState::LoadPostQueue(PostQueue* pPostQueue, bool bCompleted)
 	char FileSignatur[128];
 	fgets(FileSignatur, sizeof(FileSignatur), infile);
 	int iFormatVersion = ParseFormatVersion(FileSignatur);
-	if (iFormatVersion != 3 && iFormatVersion != 4)
+	if (iFormatVersion != 3 && iFormatVersion != 4 && iFormatVersion != 5)
 	{
 		error("Could not load diskstate due file version mismatch");
 		fclose(infile);
@@ -498,11 +512,26 @@ bool DiskState::LoadPostQueue(PostQueue* pPostQueue, bool bCompleted)
 		if (buf[0] != 0) buf[strlen(buf)-1] = 0; // remove traling '\n'
 		pPostInfo->SetInfoName(buf);
 
-		if (iFormatVersion == 4)
+		if (iFormatVersion >= 4)
 		{
 			if (!fgets(buf, sizeof(buf), infile)) goto error;
 			if (buf[0] != 0) buf[strlen(buf)-1] = 0; // remove traling '\n'
 			pPostInfo->SetCategory(buf);
+		}
+		else
+		{
+			pPostInfo->SetCategory("");
+		}
+
+		if (iFormatVersion >= 5)
+		{
+			if (!fgets(buf, sizeof(buf), infile)) goto error;
+			if (buf[0] != 0) buf[strlen(buf)-1] = 0; // remove traling '\n'
+			pPostInfo->SetQueuedFilename(buf);
+		}
+		else
+		{
+			pPostInfo->SetQueuedFilename("");
 		}
 
 		if (fscanf(infile, "%i\n", &iIntValue) != 1) goto error;
@@ -553,7 +582,7 @@ bool DiskState::DiscardDownloadQueue()
 	char FileSignatur[128];
 	fgets(FileSignatur, sizeof(FileSignatur), infile);
 	int iFormatVersion = ParseFormatVersion(FileSignatur);
-	if (iFormatVersion == 3 || iFormatVersion == 4)
+	if (iFormatVersion == 3 || iFormatVersion == 4 || iFormatVersion == 5)
 	{
 		// skip nzb-infos
 		int size = 0;
@@ -561,16 +590,32 @@ bool DiskState::DiscardDownloadQueue()
 		fscanf(infile, "%i\n", &size);
 		for (int i = 0; i < size; i++)
 		{
-			if (!fgets(buf, sizeof(buf), infile)) break;
-			if (!fgets(buf, sizeof(buf), infile)) break;
-			if (!fgets(buf, sizeof(buf), infile)) break;
-			if (iFormatVersion == 4)
+			if (!fgets(buf, sizeof(buf), infile)) break; // filename
+			if (!fgets(buf, sizeof(buf), infile)) break; // destdir
+			if (iFormatVersion >= 4)
 			{
-				if (!fgets(buf, sizeof(buf), infile)) break;
+				if (!fgets(buf, sizeof(buf), infile)) break; // category
+				if (!fgets(buf, sizeof(buf), infile)) break; // postprocess
 			}
-			if (!fgets(buf, sizeof(buf), infile)) break;
+			if (iFormatVersion >= 5)
+			{
+				if (!fgets(buf, sizeof(buf), infile)) break; // localfile
+			}
+			if (!fgets(buf, sizeof(buf), infile)) break; // file count
+			if (!fgets(buf, sizeof(buf), infile)) break; // file size
+			if (iFormatVersion >= 4)
+			{
+				// completed files
+				int iFileCount;
+				if (fscanf(infile, "%i\n", &iFileCount) != 1) break;
+				for (int i = 0; i < iFileCount; i++)
+				{
+					if (!fgets(buf, sizeof(buf), infile)) break; // filename
+				}
+			}
 		}
 
+		// file-infos
 		fscanf(infile, "%i\n", &size);
 		for (int i = 0; i < size; i++)
 		{

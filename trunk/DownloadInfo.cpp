@@ -59,6 +59,7 @@ NZBInfo::NZBInfo()
 	m_lSize = 0;
 	m_iRefCount = 0;
 	m_bPostProcess = false;
+	m_szQueuedFilename = strdup("");
 }
 
 NZBInfo::~NZBInfo()
@@ -76,6 +77,10 @@ NZBInfo::~NZBInfo()
 	if (m_szCategory)
 	{
 		free(m_szCategory);
+	}
+	if (m_szQueuedFilename)
+	{
+		free(m_szQueuedFilename);
 	}
 
 	for (Files::iterator it = m_completedFiles.begin(); it != m_completedFiles.end(); it++)
@@ -120,6 +125,15 @@ void NZBInfo::SetCategory(const char* szCategory)
 		free(m_szCategory);
 	}
 	m_szCategory = strdup(szCategory);
+}
+
+void NZBInfo::SetQueuedFilename(const char * szQueuedFilename)
+{
+	if (m_szQueuedFilename)
+	{
+		free(m_szQueuedFilename);
+	}
+	m_szQueuedFilename = strdup(szQueuedFilename);
 }
 
 void NZBInfo::GetNiceNZBName(char* szBuffer, int iSize)
