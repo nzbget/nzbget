@@ -283,7 +283,7 @@ void PrePostProcessor::CheckIncomingNZBs(const char* szDirectory, const char* sz
 			int len = strlen(filename);
 
 			// check subfolders of first level
-			if (strlen(szCategory) > 0 && (buffer.st_mode & S_IFDIR) != 0 && strcmp(filename, ".") && strcmp(filename, ".."))
+			if (strlen(szCategory) == 0 && (buffer.st_mode & S_IFDIR) != 0 && strcmp(filename, ".") && strcmp(filename, ".."))
 			{
 				fullfilename[strlen(fullfilename) + 1] = '\0';
 				fullfilename[strlen(fullfilename)] = PATH_SEPARATOR;
