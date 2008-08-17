@@ -190,7 +190,8 @@ void NZBInfo::BuildDestDirName()
 {
 	char szBuffer[1024];
 	char szCategory[1024];
-	if (g_pOptions->GetAppendCategoryDir() && m_szCategory)
+	bool bHasCategory = m_szCategory && m_szCategory[0] != '\0';
+	if (g_pOptions->GetAppendCategoryDir() && bHasCategory)
 	{
 		strncpy(szCategory, m_szCategory, 1024);
 		szCategory[1024 - 1] = '\0';
@@ -201,7 +202,7 @@ void NZBInfo::BuildDestDirName()
 	{
 		char szNiceNZBName[1024];
 		GetNiceNZBName(szNiceNZBName, 1024);
-		if (g_pOptions->GetAppendCategoryDir() && m_szCategory)
+		if (g_pOptions->GetAppendCategoryDir() && bHasCategory)
 		{
 			snprintf(szBuffer, 1024, "%s%s%c%s", g_pOptions->GetDestDir(), szCategory, PATH_SEPARATOR, szNiceNZBName);
 		}
@@ -213,7 +214,7 @@ void NZBInfo::BuildDestDirName()
 	}
 	else
 	{
-		if (g_pOptions->GetAppendCategoryDir() && m_szCategory)
+		if (g_pOptions->GetAppendCategoryDir() && bHasCategory)
 		{
 			snprintf(szBuffer, 1024, "%s%s", g_pOptions->GetDestDir(), szCategory);
 		}
