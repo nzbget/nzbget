@@ -53,6 +53,7 @@ protected:
 #ifndef DISABLE_TLS
 	void*				m_pTLS;
 	static bool			bTLSLibInitialized;
+	bool				m_bTLSError;
 #endif
 
 	void				ReportError(const char* szMsgPrefix, const char* szMsgArg, bool PrintErrCode, int ErrCode);

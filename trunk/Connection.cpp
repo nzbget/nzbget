@@ -129,6 +129,7 @@ Connection::Connection(NetAddress* pNetAddress)
 	m_bAutoClose		= true;
 #ifndef DISABLE_TLS
 	m_pTLS				= NULL;
+	m_bTLSError			= false;
 #endif
 }
 
@@ -569,6 +570,13 @@ void Connection::Cancel()
 
 void Connection::ReportError(const char* szMsgPrefix, const char* szMsgArg, bool PrintErrCode, int ErrCode)
 {
+	if (m_bTLSError)
+	{
+		// TLS-Error was already reported
+		m_bTLSError = false;
+		return;
+	}
+
 	char szErrPrefix[1024];
 	snprintf(szErrPrefix, 1024, szMsgPrefix, szMsgArg);
 	szErrPrefix[1024-1] = '\0';
@@ -679,10 +687,12 @@ int Connection::recv(SOCKET s, char* buf, int len, int flags)
 	
 	if (m_pTLS)
 	{
+		m_bTLSError = false;
 		char* szErrStr;
 		int iRes = tls_getbuf((tls_t*)m_pTLS, buf, len, &iReceived, &szErrStr);
 		if (!CheckTLSResult(iRes, szErrStr, "Could not read from TLS-socket: %s"))
 		{
+			m_bTLSError = true;
 			return -1;
 		}
 	}
@@ -697,10 +707,12 @@ int Connection::send(SOCKET s, const char* buf, int len, int flags)
 {
 	if (m_pTLS)
 	{
+		m_bTLSError = false;
 		char* szErrStr;
 		int iRes = tls_putbuf((tls_t*)m_pTLS, buf, len, &szErrStr);
 		if (!CheckTLSResult(iRes, szErrStr, "Could not send to TLS-socket: %s"))
 		{
+			m_bTLSError = true;
 			return -1;
 		}
 		return 0;
