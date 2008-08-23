@@ -866,6 +866,12 @@ void Options::InitCommandLine(int argc, char* argv[])
 		}
 	}
 
+	if (m_bServerMode && m_eClientOperation == opClientRequestPause)
+	{
+		m_bPause = true;
+		m_eClientOperation = opClientNoOperation;
+	}
+
 	InitOptFile();
 }
 
