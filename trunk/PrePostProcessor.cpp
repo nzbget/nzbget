@@ -282,12 +282,20 @@ void PrePostProcessor::CheckIncomingNZBs(const char* szDirectory, const char* sz
 		{
 			int len = strlen(filename);
 
-			// check subfolders of first level
-			if (strlen(szCategory) == 0 && (buffer.st_mode & S_IFDIR) != 0 && strcmp(filename, ".") && strcmp(filename, ".."))
+			// check subfolders 
+			if ((buffer.st_mode & S_IFDIR) != 0 && strcmp(filename, ".") && strcmp(filename, ".."))
 			{
 				fullfilename[strlen(fullfilename) + 1] = '\0';
 				fullfilename[strlen(fullfilename)] = PATH_SEPARATOR;
-				CheckIncomingNZBs(fullfilename, filename);
+				const char* szUseCategory = filename;
+				char szSubCategory[1024];
+				if (strlen(szCategory) > 0)
+				{
+					snprintf(szSubCategory, 1023, "%s%c%s", szCategory, PATH_SEPARATOR, filename);
+					szSubCategory[1024-1] = '\0';
+					szUseCategory = szSubCategory;
+				}
+				CheckIncomingNZBs(fullfilename, szUseCategory);
 			}
 			else if (len > 4 && !strcasecmp(filename + len - 4, ".nzb"))
 			{
