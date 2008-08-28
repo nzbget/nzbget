@@ -161,7 +161,7 @@ void NZBInfo::MakeNiceNZBName(const char * szNZBFilename, char * szBuffer, int i
 	// wipe out ".nzb"
 	if (char* p = strrchr(postname, '.')) *p = '\0';
 
-	Util::MakeValidFilename(postname, '_');
+	Util::MakeValidFilename(postname, '_', false);
 
 	// if the resulting name is empty, use basename without cleaning up "msgid_"
 	if (strlen(postname) == 0)
@@ -173,7 +173,7 @@ void NZBInfo::MakeNiceNZBName(const char * szNZBFilename, char * szBuffer, int i
 		// wipe out ".nzb"
 		if (char* p = strrchr(postname, '.')) *p = '\0';
 
-		Util::MakeValidFilename(postname, '_');
+		Util::MakeValidFilename(postname, '_', false);
 
 		// if the resulting name is STILL empty, use "noname"
 		if (strlen(postname) == 0)
@@ -195,7 +195,7 @@ void NZBInfo::BuildDestDirName()
 	{
 		strncpy(szCategory, m_szCategory, 1024);
 		szCategory[1024 - 1] = '\0';
-		Util::MakeValidFilename(szCategory, '_');
+		Util::MakeValidFilename(szCategory, '_', true);
 	}
 
 	if (g_pOptions->GetAppendNZBDir())
@@ -349,7 +349,7 @@ void FileInfo::SetFilename(const char* szFilename)
 
 void FileInfo::MakeValidFilename()
 {
-	Util::MakeValidFilename(m_szFilename, '_');
+	Util::MakeValidFilename(m_szFilename, '_', false);
 }
 
 void FileInfo::LockOutputFile()

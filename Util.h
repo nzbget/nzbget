@@ -66,7 +66,7 @@ public:
 	static void NormalizePathSeparators(char* szPath);
 	static bool LoadFileIntoBuffer(const char* szFileName, char** pBuffer, int* pBufferLength);
 	static bool SetFileSize(const char* szFilename, int iSize);
-	static void MakeValidFilename(char* szFilename, char cReplaceChar);
+	static void MakeValidFilename(char* szFilename, char cReplaceChar, bool bAllowSlashes);
 	static bool MoveFile(const char* szSrcFilename, const char* szDstFilename);
 	static bool FileExists(const char* szFilename);
 	static bool DirectoryExists(const char* szDirFilename);

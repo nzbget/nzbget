@@ -372,14 +372,19 @@ bool Util::SetFileSize(const char* szFilename, int iSize)
 }
 
 //replace bad chars in filename
-void Util::MakeValidFilename(char* szFilename, char cReplaceChar)
+void Util::MakeValidFilename(char* szFilename, char cReplaceChar, bool bAllowSlashes)
 {
+	const char* szReplaceChars = bAllowSlashes ? ":*?\"><'\n\r\t" : "\\/:*?\"><'\n\r\t";
 	char* p = szFilename;
 	while (*p)
 	{
-		if (strchr("\\/:*?\"><'\n\r\t", *p))
+		if (strchr(szReplaceChars, *p))
 		{
 			*p = cReplaceChar;
+		}
+		if (bAllowSlashes && *p == ALT_PATH_SEPARATOR)
+		{
+			*p = PATH_SEPARATOR;
 		}
 		p++;
 	}
