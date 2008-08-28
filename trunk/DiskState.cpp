@@ -126,9 +126,9 @@ bool DiskState::SaveDownloadQueue(DownloadQueue* pDownloadQueue)
 		NZBInfo* pNZBInfo = *it;
 		fprintf(outfile, "%s\n", pNZBInfo->GetFilename());
 		fprintf(outfile, "%s\n", pNZBInfo->GetDestDir());
+		fprintf(outfile, "%s\n", pNZBInfo->GetQueuedFilename());
 		fprintf(outfile, "%s\n", pNZBInfo->GetCategory());
 		fprintf(outfile, "%i\n", pNZBInfo->GetPostProcess() ? 1 : 0);
-		fprintf(outfile, "%s\n", pNZBInfo->GetQueuedFilename());
 		fprintf(outfile, "%i\n", pNZBInfo->GetFileCount());
 		unsigned long High, Low;
 		Util::SplitInt64(pNZBInfo->GetSize(), &High, &Low);
@@ -177,6 +177,8 @@ bool DiskState::LoadDownloadQueue(DownloadQueue* pDownloadQueue)
 {
 	debug("Loading queue from disk");
 
+	bool bOK = false;
+
 	typedef std::deque<NZBInfo*> NZBList;
 	NZBList cNZBList;
 
@@ -210,6 +212,7 @@ bool DiskState::LoadDownloadQueue(DownloadQueue* pDownloadQueue)
 	for (int i = 0; i < size; i++)
 	{
 		NZBInfo* pNZBInfo = new NZBInfo();
+		pNZBInfo->AddReference();
 		cNZBList.push_back(pNZBInfo);
 
 		if (!fgets(buf, sizeof(buf), infile)) goto error;
@@ -220,6 +223,13 @@ bool DiskState::LoadDownloadQueue(DownloadQueue* pDownloadQueue)
 		if (buf[0] != 0) buf[strlen(buf)-1] = 0; // remove traling '\n'
 		pNZBInfo->SetDestDir(buf);
 
+		if (iFormatVersion >= 5)
+		{
+			if (!fgets(buf, sizeof(buf), infile)) goto error;
+			if (buf[0] != 0) buf[strlen(buf)-1] = 0; // remove traling '\n'
+			pNZBInfo->SetQueuedFilename(buf);
+		}
+
 		if (iFormatVersion >= 4)
 		{
 			if (!fgets(buf, sizeof(buf), infile)) goto error;
@@ -229,13 +239,6 @@ bool DiskState::LoadDownloadQueue(DownloadQueue* pDownloadQueue)
 			int iPostProcess;
 			if (fscanf(infile, "%i\n", &iPostProcess) != 1) goto error;
 			pNZBInfo->SetPostProcess(iPostProcess == 1);
-		}
-
-		if (iFormatVersion >= 5)
-		{
-			if (!fgets(buf, sizeof(buf), infile)) goto error;
-			if (buf[0] != 0) buf[strlen(buf)-1] = 0; // remove traling '\n'
-			pNZBInfo->SetQueuedFilename(buf);
 		}
 
 		int iFileCount;
@@ -286,13 +289,23 @@ bool DiskState::LoadDownloadQueue(DownloadQueue* pDownloadQueue)
 		}
 	}
 
-	fclose(infile);
-	return true;
+	bOK = true;
 
 error:
+
 	fclose(infile);
-	error("Error reading diskstate for file %s", fileName);
-	return false;
+	if (!bOK)
+	{
+		error("Error reading diskstate for file %s", fileName);
+	}
+
+	for (NZBList::iterator it = cNZBList.begin(); it != cNZBList.end(); it++)
+	{
+		NZBInfo* pNZBInfo = *it;
+		pNZBInfo->Release();
+	}
+
+	return bOK;
 }
 
 bool DiskState::SaveFile(FileInfo* pFileInfo)
