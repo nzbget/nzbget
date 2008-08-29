@@ -570,12 +570,14 @@ void Connection::Cancel()
 
 void Connection::ReportError(const char* szMsgPrefix, const char* szMsgArg, bool PrintErrCode, int ErrCode)
 {
+#ifndef DISABLE_TLS
 	if (m_bTLSError)
 	{
 		// TLS-Error was already reported
 		m_bTLSError = false;
 		return;
 	}
+#endif
 
 	char szErrPrefix[1024];
 	snprintf(szErrPrefix, 1024, szMsgPrefix, szMsgArg);
