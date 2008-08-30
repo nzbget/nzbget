@@ -12,7 +12,7 @@ nzbget_SOURCES = ArticleDownloader.cpp ArticleDownloader.h BinRpc.cpp BinRpc.h \
 	ServerPool.h TLS.cpp TLS.h Thread.cpp Thread.h Util.cpp Util.h XmlRpc.cpp XmlRpc.h \
 	nzbget.cpp nzbget.h
 
-EXTRA_DIST = nzbget.conf.example \
+EXTRA_DIST = nzbget.conf.example postprocess-example.sh \
 	win32.h NTService.cpp NTService.h \
 	libpar2-0.2-MSVC8.patch libsigc++-2.0.18-MSVC8.patch \
 	Makefile.cvs nzbget.kdevelop nzbget.sln nzbget.vcproj
