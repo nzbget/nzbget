@@ -1,7 +1,43 @@
-nzbget-0.5.0-testing:
-  - see subversion-log (from revision 189) at
-    http://nzbget.svn.sourceforge.net/viewvc/nzbget/trunk/?view=log
-
+nzbget-0.5.0:
+  - added TLS/SSL-support for encrypted communication with news-servers;
+  - added IPv6-support for communication with news-servers as well as for
+    communication between nzbget-server and nzbget-client;
+  - added support for categories to organize downloaded files;
+  - new option <AppendCategoryDir> to create the subdirectory for each category;
+  - new switch <-K> for usage with switch <-A> to define a category during
+    the adding a file to download queue;
+  - new command <K> in switch <-E> to change the category of nzb-file in
+    download queue; the already downloaded files are automatically moved to new
+    directory if the option <AppendCategoryDir> is active;
+  - new parameter <Category> in XML-/JSON-RPC-command <editqueue> to allow the
+    changing of category via those protocols;
+  - new parameter in a call to post-process-script with category name; 
+  - scanning of subdirectories inside incoming nzb-directory to automatically 
+    assign category names; nested categories are supported;
+  - added option <ServerX.JoinGroup> to connect to servers, that do not accept
+    <GROUP>-command;
+  - added example post-process script for unraring of downloaded files
+    (POSIX only);
+  - added options <ParPauseQueue> and <PostPauseQueue> useful on slow CPUs;
+  - added option <NzbCleanupDisk> to delete source nzb-file after successful 
+    download and parcheck;
+  - switch <-P> can now be used together with switches <-s> and <-D> to start
+    server/daemon in paused state;
+  - changed the type of messages logged in a case of connection errors from
+    <DEBUG> to <ERROR> to provide better error reporting;
+  - now using OS-specific line-endings in log-file and brokenlog-file: LF on 
+    Posix and CRLF on Windows;
+  - added detection of adjusting of system clock to correct uptime/download 
+    time (for NAS-devices, that do not have internal clock and set time from
+    internet after booting, while nzbget may be already running);
+  - added the printing of stack on segmentation faults (if configured with 
+    <--enable-debug>, POSIX only);
+  - added option <DumpCore> for better debugging on Linux in a case of abnormal
+    program termination;
+  - fixed: configure-script could not automatically find libsigc++ on 64-bit
+    systems;
+  - few other small fixes; 
+ 
 nzbget-0.4.1:
   - to avoid accidental deletion of file in curses-frontend the key <D>
     now must be pressed in uppercase;

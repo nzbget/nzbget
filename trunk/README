@@ -383,7 +383,7 @@ After the download of nzb-file is completed nzbget can call post-process-script,
 defined in configuration file. See example configuration file for the 
 description of parameters passed to the script.
 
-An example script for unraring of downloaded files are provided in file
+An example script for unraring of downloaded files is provided in file
 postprocess-example.sh. That example is for POSIX systems (not for Windows).
 
 =====================================
