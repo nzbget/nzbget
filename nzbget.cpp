@@ -260,7 +260,7 @@ void Run()
 	if (!g_pOptions->GetRemoteClientMode())
 	{
 		// Standalone-mode
-		if (!g_pOptions->GetServerMode() && !g_pQueueCoordinator->AddFileToQueue(g_pOptions->GetArgFilename(), g_pOptions->GetCategory()))
+		if (!g_pOptions->GetServerMode() && !g_pQueueCoordinator->AddFileToQueue(g_pOptions->GetArgFilename(), g_pOptions->GetCategory() ? g_pOptions->GetCategory() : ""))
 		{
 			abort("FATAL ERROR: Parsing NZB-document %s failed!!\n\n", g_pOptions->GetArgFilename() ? g_pOptions->GetArgFilename() : "N/A");
 			return;
