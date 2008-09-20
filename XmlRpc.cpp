@@ -1188,6 +1188,15 @@ void EditQueueXmlCommand::Execute()
 	}
 	debug("EditText=%s", szEditText);
 
+	if (IsJson())
+	{
+		Util::JsonDecode(szEditText);
+	}
+	else
+	{
+		Util::XmlDecode(szEditText);
+	}
+
 	QueueEditor::IDList cIDList;
 	int iID = 0;
 	while (NextParamAsInt(&iID))
