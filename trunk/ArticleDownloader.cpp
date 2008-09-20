@@ -466,7 +466,7 @@ ArticleDownloader::EStatus ArticleDownloader::CheckResponse(const char* szRespon
 		warn("Article %s @ %s failed, %s: %s", m_szInfoName, m_pConnection->GetServer()->GetHost(), szComment, szResponse);
 		return adConnectError;
 	}
-	else if (!strncmp(szResponse, "41", 2) || !strncmp(szResponse, "42", 2))
+	else if (!strncmp(szResponse, "41", 2) || !strncmp(szResponse, "42", 2) || !strncmp(szResponse, "43", 2))
 	{
 		warn("Article %s @ %s failed, %s: %s", m_szInfoName, m_pConnection->GetServer()->GetHost(), szComment, szResponse);
 		return adNotFound;
