@@ -315,6 +315,11 @@ bool QueueCoordinator::AddFileToQueue(const char* szFileName, const char* szCate
  */
 float QueueCoordinator::CalcCurrentDownloadSpeed()
 {
+	if (m_bStandBy)
+	{
+		return 0;
+	}
+
     int iTimeDiff = (int)time(NULL) - m_iSpeedStartTime * SPEEDMETER_SLOTSIZE;
     if (iTimeDiff == 0)
     {
