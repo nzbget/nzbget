@@ -1,3 +1,14 @@
+nzbget-0.5.1:
+  - improved the check of server responses to prevent unnecessary retrying
+    if the article does not exist on server;
+  - fixed: seg.fault in standalone mode if used without specifying the
+    category (e.g. without switch <-K>);
+  - fixed: download speed indicator could report not-null values in
+    standby-mode (when paused);
+  - fixed: parameter <category> in JSON/XML-RPC was not properly decoded by
+    server, making the setting of a nested category (containing slash or
+    backslash character) via nzbgetweb not possible;
+    
 nzbget-0.5.0:
   - added TLS/SSL-support for encrypted communication with news-servers;
   - added IPv6-support for communication with news-servers as well as for
