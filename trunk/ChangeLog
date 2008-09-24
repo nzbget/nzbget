@@ -1,3 +1,7 @@
+nzbget-0.6.0-testing:
+  - please see subversion log at
+    http://nzbget.svn.sourceforge.net/viewvc/nzbget/?view=log
+
 nzbget-0.5.1:
   - improved the check of server responses to prevent unnecessary retrying
     if the article does not exist on server;
