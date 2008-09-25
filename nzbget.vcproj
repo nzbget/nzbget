@@ -456,6 +456,14 @@
 			>
 		</File>
 		<File
+			RelativePath=".\Scheduler.cpp"
+			>
+		</File>
+		<File
+			RelativePath=".\Scheduler.h"
+			>
+		</File>
+		<File
 			RelativePath=".\ScriptController.cpp"
 			>
 		</File>

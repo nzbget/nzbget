@@ -181,6 +181,7 @@ private:
 	void				InitOptions();
 	void				InitFileArg(int argc, char* argv[]);
 	void				InitServers();
+	void				InitScheduler();
 	void				CheckOptions();
 	void				PrintUsage(char* com);
 	void				Dump();
@@ -193,6 +194,8 @@ private:
 	void				LoadConfig(const char* configfile);
 	void				CheckDir(char** dir, const char* szOptionName);
 	void				ParseFileIDList(int argc, char* argv[], int optind);
+	bool				ParseTime(const char* szTime, int* pHours, int* pMinutes);
+	bool				ParseWeekDays(const char* szWeekDays, int* pWeekDaysBits);
 
 public:
 						Options(int argc, char* argv[]);

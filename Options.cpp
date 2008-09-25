@@ -51,8 +51,10 @@
 #include "ServerPool.h"
 #include "NewsServer.h"
 #include "MessageBase.h"
+#include "Scheduler.h"
 
 extern ServerPool* g_pServerPool;
+extern Scheduler* g_pScheduler;
 
 #ifdef HAVE_GETOPT_LONG
 static struct option long_options[] =
@@ -301,6 +303,7 @@ Options::Options(int argc, char* argv[])
 	InitFileArg(argc, argv);
 	
 	InitServers();
+	InitScheduler();
 	CheckOptions();
 }
 
@@ -1173,6 +1176,166 @@ void Options::InitServers()
 	g_pServerPool->InitConnections();
 }
 
+void Options::InitScheduler()
+{
+	int n = 1;
+	while (true)
+	{
+		char optname[128];
+
+		sprintf(optname, "task%i.time", n);
+		const char* szTime = GetOption(optname);
+
+		sprintf(optname, "task%i.weekdays", n);
+		const char* szWeekDays = GetOption(optname);
+
+		sprintf(optname, "task%i.command", n);
+		const char* szCommand = GetOption(optname);
+
+		bool definition = szTime || szWeekDays || szCommand;
+		bool completed = szTime && szCommand;
+
+		if (!definition)
+		{
+			break;
+		}
+
+		if (definition && !completed)
+		{
+			abort("FATAL ERROR: Task definition not complete for Task%i\n", n);
+		}
+
+		int iHours, iMinutes;
+		if (!ParseTime(szTime, &iHours, &iMinutes))
+		{
+			abort("FATAL ERROR: Invalid value for option Task%i.Time\n", n);
+		}
+
+		int iWeekDays = 0;
+		if (szWeekDays && !ParseWeekDays(szWeekDays, &iWeekDays))
+		{
+			abort("FATAL ERROR: Invalid value for option Task%i.WeekDays\n", n);
+		}
+
+		Scheduler::ECommand eCommand;
+		int iDownloadRate=0;
+		if (!strcasecmp(szCommand, "pause"))
+		{
+			eCommand = Scheduler::scPause;
+		}
+		else if (!strcasecmp(szCommand, "unpause"))
+		{
+			eCommand = Scheduler::scUnpause;
+		}
+		else
+		{
+			eCommand = Scheduler::scDownloadRate;
+			char* szErr;
+			iDownloadRate = strtol(szCommand, &szErr, 10);
+			if (!szErr || *szErr != '\0' || iDownloadRate < 0)
+			{
+				abort("FATAL ERROR: Invalid value for option Task%i.Command\n", n);
+			}
+		}
+
+		Scheduler::Task* pTask = new Scheduler::Task(iHours, iMinutes, iWeekDays, eCommand, iDownloadRate);
+		g_pScheduler->AddTask(pTask);
+
+		n++;
+	}
+}
+
+bool Options::ParseTime(const char* szTime, int* pHours, int* pMinutes)
+{
+	int iColons = 0;
+	const char* p = szTime;
+	while (*p)
+	{
+		if (!strchr("0123456789:", *p))
+		{
+			return false;
+		}
+		if (*p == ':')
+		{
+			iColons++;
+		}
+		p++;
+	}
+
+	if (iColons != 1)
+	{
+		return false;
+	}
+
+	const char* szColon = strchr(szTime, ':');
+	if (!szColon)
+	{
+		return false;
+	}
+	*pHours = atoi(szTime);
+	if (*pHours < 0 || *pHours > 23)
+	{
+		return false;
+	}
+	*pMinutes = atoi(szColon + 1);
+	if (*pMinutes < 0 || *pMinutes > 59)
+	{
+		return false;
+	}
+	return true;
+}
+
+bool Options::ParseWeekDays(const char* szWeekDays, int* pWeekDaysBits)
+{
+	*pWeekDaysBits = 0;
+	const char* p = szWeekDays;
+	int iFirstDay = 0;
+	bool bRange = false;
+	while (*p)
+	{
+		if (strchr("1234567", *p))
+		{
+			int iDay = *p - '0';
+			if (bRange)
+			{
+				if (iDay <= iFirstDay || iFirstDay == 0)
+				{
+					return false;
+				}
+				for (int i = iFirstDay; i <= iDay; i++)
+				{
+					*pWeekDaysBits |= 1 << (i - 1);
+				}
+				iFirstDay = 0;
+			}
+			else
+			{
+				*pWeekDaysBits |= 1 << (iDay - 1);
+				iFirstDay = iDay;
+			}
+			bRange = false;
+		}
+		else if (*p == ',')
+		{
+			bRange = false;
+		}
+		else if (*p == '-')
+		{
+			bRange = true;
+		}
+		else if (*p == ' ')
+		{
+			// skip spaces
+		}
+		else
+		{
+			return false;
+		}
+		p++;
+	}
+	return true;
+}
+
 void Options::LoadConfig(const char * configfile)
 {
 	FILE* infile = fopen(configfile, "r");
@@ -1279,7 +1442,17 @@ bool Options::ValidateOptionName(const char * optname)
 			return true;
 		}
 	}
-	
+
+	if (!strncasecmp(optname, "task", 4))
+	{
+		char* p = (char*)optname + 4;
+		while (*p >= '0' && *p <= '9') p++;
+		if (p && (!strcasecmp(p, ".time") || !strcasecmp(p, ".weekdays") || !strcasecmp(p, ".command")))
+		{
+			return true;
+		}
+	}
+
 	return false;
 }
 

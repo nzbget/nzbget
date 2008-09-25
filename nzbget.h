@@ -36,6 +36,7 @@
 #endif
 #define fdopen _fdopen
 #define ctime_r(timep, buf, bufsize) ctime_s(buf, bufsize, timep)
+#define localtime_r(time, tm) localtime_s(tm, time)
 #define int32_t __int32
 #define mkdir(dir, flags) _mkdir(dir)
 #define rmdir _rmdir

@@ -70,6 +70,7 @@
 #include "DiskState.h"
 #include "PrePostProcessor.h"
 #include "ParChecker.h"
+#include "Scheduler.h"
 #ifdef WIN32
 #include "NTService.h"
 #endif
@@ -101,6 +102,7 @@ NZBInfoLocker* g_pNZBInfoLocker = NULL;
 Log* g_pLog = NULL;
 PrePostProcessor* g_pPrePostProcessor = NULL;
 DiskState* g_pDiskState = NULL;
+Scheduler* g_pScheduler = NULL;
 
 
 /*
@@ -132,6 +134,7 @@ int main(int argc, char *argv[])
 	// Init options & get the name of the .nzb file
 	g_pLog = new Log();
 	g_pServerPool = new ServerPool();
+	g_pScheduler = new Scheduler();
 	debug("Options parsing");
 	g_pOptions = new Options(argc, argv);
 
@@ -594,6 +597,14 @@ void Cleanup()
 		g_pServerPool = NULL;
 	}
 	debug("ServerPool deleted");
+
+	debug("Deleting Scheduler");
+	if (g_pScheduler)
+	{
+		delete g_pScheduler;
+		g_pScheduler = NULL;
+	}
+	debug("Scheduler deleted");
 
 	Thread::Final();
 	Connection::Final();

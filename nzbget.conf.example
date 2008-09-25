@@ -520,6 +520,39 @@ PostLogKind=Detail
 # NOTE: See also option <ParPauseQueue>.
 PostPauseQueue=no
 
+
+##############################################################################
+### SCHEDULER                                                              ###
+
+# This section defines scheduler commands.
+# For each command create a pair of options "TaskX.At" and "TaskX.Command".
+# The following example shows how to throttle downloads in the daytime 
+# by 100 KB/s and download at full speed overnights:
+
+# Time to execute the command (HH:MM)
+#Task1.Time=08:00
+
+# Week days to execute the command (1, 2, 3, 4, 5, 6, 7)
+# Comma separated list of week days numbers. 
+# 1 is Monday.
+# Character '-' may be used to define ranges.
+# Examples: "1-7", "1-5", "5,6", "1-5, 7".
+# NOTE: if the command must be executed every day (1-7), the option "WeekDays"
+# can be omitted.
+#Task1.WeekDays=1-7
+
+# Command to be executed (Pause, Unpause, 0..9999999)
+# Possible commands:
+#   Pause      - pauses download
+#   Unpause    - resumes download
+#   0..9999999 - sets download rate in KB/s, 0 - no limit
+#Task1.Command=100
+
+#Task2.Time=20:00
+#Task2.WeekDays=1-7
+#Task2.Command=0
+
+
 ##############################################################################
 ### PERFORMANCE                                                            ###
 

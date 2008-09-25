@@ -51,10 +51,12 @@
 #include "ScriptController.h"
 #include "DiskState.h"
 #include "Util.h"
+#include "Scheduler.h"
 
 extern QueueCoordinator* g_pQueueCoordinator;
 extern Options* g_pOptions;
 extern DiskState* g_pDiskState;
+extern Scheduler* g_pScheduler;
 
 static const int PARSTATUS_NOT_CHECKED = 0;
 static const int PARSTATUS_FAILED = 1;
@@ -78,6 +80,7 @@ PrePostProcessor::PrePostProcessor()
 	debug("Creating PrePostProcessor");
 
 	m_bHasMoreJobs = false;
+	m_bPostPause = false;
 
 	m_QueueCoordinatorObserver.owner = this;
 	g_pQueueCoordinator->Attach(&m_QueueCoordinatorObserver);
@@ -138,8 +141,12 @@ void PrePostProcessor::Run()
 		}
 	}
 
+	g_pScheduler->FirstCheck();
+	ApplySchedulerState();
+
 	int iNZBDirInterval = g_pOptions->GetNzbDirInterval() * 1000;
 	int iDiskSpaceInterval = 1000;
+	int iSchedulerInterval = 1000;
 	while (!IsStopped())
 	{
 		if (g_pOptions->GetNzbDir() && g_pOptions->GetNzbDirInterval() > 0 && 
@@ -162,6 +169,15 @@ void PrePostProcessor::Run()
 
 		// check post-queue every 200 msec
 		CheckPostQueue();
+
+		if (iSchedulerInterval >= 1000)
+		{
+			// check scheduler tasks every 1 second
+			g_pScheduler->IntervalCheck();
+			ApplySchedulerState();
+			iSchedulerInterval = 0;
+		}
+		iSchedulerInterval += 200;
 
 		usleep(200 * 1000);
 	}
@@ -424,6 +440,14 @@ void PrePostProcessor::CheckPostQueue()
 					}
 				}
 #endif
+				if (m_bPostScript && g_pOptions->GetPostPauseQueue())
+				{
+					if (UnpauseDownload())
+					{
+						info("Unpausing queue after post-process-script");
+					}
+				}
+
 				JobCompleted(pDownloadQueue, pPostInfo);
 			}
 			else
@@ -483,18 +507,12 @@ void PrePostProcessor::SanitisePostQueue()
 	}
 }
 
-bool PrePostProcessor::PostProcessEnabled()
-{
-	const char* szScript = g_pOptions->GetPostProcess();
-	return szScript && strlen(szScript) > 0;
-}
-
 /**
  * Mutex "m_mutexQueue" must be locked prior to call of this function.
  */
 void PrePostProcessor::StartScriptJob(DownloadQueue* pDownloadQueue, PostInfo* pPostInfo)
 {
-	if (!PostProcessEnabled())
+	if (!m_bPostScript)
 	{
 		pPostInfo->SetStage(PostInfo::ptFinished);
 		return;
@@ -519,6 +537,14 @@ void PrePostProcessor::StartScriptJob(DownloadQueue* pDownloadQueue, PostInfo* p
 #else
 	bool bHasFailedParJobs = false;
 #endif
+
+	if (g_pOptions->GetPostPauseQueue())
+	{
+		if (PauseDownload())
+		{
+			info("Pausing queue before post-process-script");
+		}
+	}
 
 	ScriptController::StartScriptJob(pPostInfo, g_pOptions->GetPostProcess(), bNZBFileCompleted, bHasFailedParJobs);
 }
@@ -714,10 +740,12 @@ bool PrePostProcessor::IsNZBFileCompleted(DownloadQueue* pDownloadQueue, const c
  */
 void PrePostProcessor::StartParJob(PostInfo* pPostInfo)
 {
-	if (g_pOptions->GetParPauseQueue() && !g_pOptions->GetPause())
+	if (g_pOptions->GetParPauseQueue())
 	{
-		info("Pausing queue before par-check");
-		g_pOptions->SetPause(true);
+		if (PauseDownload())
+		{
+			info("Pausing queue before par-check");
+		}
 	}
 
 	info("Checking pars for %s", pPostInfo->GetInfoName());
@@ -836,7 +864,7 @@ bool PrePostProcessor::AddPar(FileInfo * pFileInfo, bool bDeleted)
 
 		if (g_pOptions->GetParPauseQueue())
 		{
-			g_pOptions->SetPause(true);
+			PauseDownload();
 		}
 	}
 	else
@@ -929,10 +957,12 @@ void PrePostProcessor::ParCheckerUpdate(Subject* Caller, void* Aspect)
 
 		m_mutexQueue.Unlock();
 
-		if (g_pOptions->GetParPauseQueue() && !(g_pOptions->GetPostPauseQueue() && PostProcessEnabled()))
+		if (g_pOptions->GetParPauseQueue() && !(g_pOptions->GetPostPauseQueue() && m_bPostScript))
 		{
-			info("Unpausing queue after par-check");
-			g_pOptions->SetPause(false);
+			if (UnpauseDownload())
+			{
+				info("Unpausing queue after par-check");
+			}
 		}
 	}
 }
@@ -1097,7 +1127,7 @@ bool PrePostProcessor::RequestMorePars(const char* szNZBFilename, const char* sz
 
 	if (bOK && g_pOptions->GetParPauseQueue())
 	{
-		g_pOptions->SetPause(false);
+		UnpauseDownload();
 	}
 
 	return bOK;
@@ -1255,3 +1285,47 @@ void PrePostProcessor::UpdateParProgress()
 }
 
 #endif
+
+void PrePostProcessor::ApplySchedulerState()
+{
+	if (g_pScheduler->GetDownloadRateChanged())
+	{
+		info("Scheduler: set download rate to %i KB/s", g_pScheduler->GetDownloadRate());
+		g_pOptions->SetDownloadRate((float)g_pScheduler->GetDownloadRate());
+	}
+
+	if (g_pScheduler->GetPauseChanged())
+	{
+		info("Scheduler: %s download queue", g_pScheduler->GetPause() ? "pause" : "unpause");
+		m_bSchedulerPauseChanged = true;
+		m_bSchedulerPause = g_pScheduler->GetPause();
+		if (!m_bPostPause)
+		{
+			g_pOptions->SetPause(m_bSchedulerPause);
+		}
+	}
+}
+
+bool PrePostProcessor::PauseDownload()
+{
+	debug("PrePostProcessor::PauseDownload()");
+
+	m_bPostPause = !g_pOptions->GetPause();
+	m_bSchedulerPauseChanged = false;
+	g_pOptions->SetPause(m_bPostPause);
+	return m_bPostPause;
+}
+
+bool PrePostProcessor::UnpauseDownload()
+{
+	debug("PrePostProcessor::UnpauseDownload()");
+
+	bool bPause = true;
+	if (m_bPostPause)
+	{
+		m_bPostPause = false;
+		bPause = m_bSchedulerPauseChanged && m_bSchedulerPause;
+		g_pOptions->SetPause(bPause);
+	}
+	return !bPause;
+}
