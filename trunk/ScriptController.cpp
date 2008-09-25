@@ -54,12 +54,6 @@ extern Options* g_pOptions;
 
 void ScriptController::StartScriptJob(PostInfo* pPostInfo, const char* szScript, bool bNZBFileCompleted, bool bHasFailedParJobs)
 {
-	if (g_pOptions->GetPostPauseQueue() && !g_pOptions->GetPause())
-	{
-		info("Pausing queue before post-process-script");
-		g_pOptions->SetPause(true);
-	}
-
 	info("Executing post-process-script for %s", pPostInfo->GetInfoName());
 
 	ScriptController* pScriptController = new ScriptController();
@@ -266,12 +260,6 @@ void ScriptController::Finished()
 {
 	m_pPostInfo->SetStage(PostInfo::ptFinished);
 	m_pPostInfo->SetWorking(false);
-
-	if (g_pOptions->GetPostPauseQueue())
-	{
-		info("Unpausing queue after post-process-script");
-		g_pOptions->SetPause(false);
-	}
 }
 
 void ScriptController::AddMessage(char* szText)
