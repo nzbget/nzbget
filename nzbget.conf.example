@@ -152,6 +152,36 @@ NzbDirInterval=5
 # downloaded in web-browser.
 NzbDirFileAge=60
 
+# Set path to program, that must be executed before any file in incoming 
+# directory (option "NzbDir") is processed.
+# That program can unpack archives put in incoming directory, make
+# filename cleanup or something else.
+# Arguments passed to that program:
+#  1 - path to directory, where file is located. It is a directory specified
+#      by the option "NzbDir" or a subdirectory inside it;
+#  2 - name of file to be processed;
+# The nzbprocess-script can delete processed file, rename it or move somewhere.
+# After the calling of the script the file will be either added to queue 
+# (if it was an nzb-file) or renamed by adding the extension ".processed".
+# Unpacked files will be checked on next directory scan (see option 
+# "NzbDirInterval").
+# Files with extensions ".processed", ".queued" and ".error" are skipped
+# during the directory scanning.
+#NzbProcess=~/nzbprocess.sh
+
+# Set the default message-kind for output received from nzbprocess-script 
+# (None, Detail, Info, Warning, Error, Debug).
+# NZBGet checks if the line written by the script to stdout or stderr starts
+# with special character-sequence, determining the message-kind, e.g.:
+# [INFO] bla-bla
+# [DETAIL] bla-bla
+# [WARNING] bla-bla
+# [ERROR] bla-bla
+# [DEBUG] bla-bla
+# If the message-kind was detected the text is added to log with detected type.
+# Otherwise the message becomes the default kind, specified in this option.
+NzbLogKind=Detail
+
 # Check for duplicate files (yes, no)
 # If this option is enabled the program checks by adding of a new nzb-file:
 # 1) if nzb-file contains duplicate entries. This check aims on detecting
@@ -481,7 +511,7 @@ NzbCleanupDisk=no
 # NOTE 4: an example script for unrarring is provided within distribution 
 # in file <postprocess-example.sh>
 # NOTE 5: do not forget to uncomment the next line
-#PostProcess=~/myscript.sh
+#PostProcess=~/postprocess-example.sh
 
 # Allow multiple post-processing for the same nzb-file (yes,no)
 # After the post-processing (par-check and call of a postprocess-script) is

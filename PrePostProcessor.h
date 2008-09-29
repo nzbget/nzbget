@@ -81,6 +81,7 @@ private:
 	QueueCoordinatorObserver	m_QueueCoordinatorObserver;
 	bool				m_bHasMoreJobs;
 	bool				m_bPostScript;
+	bool				m_bNZBScript;
 	bool				m_bSchedulerPauseChanged;
 	bool				m_bSchedulerPause;
 	bool				m_bPostPause;
@@ -99,6 +100,7 @@ private:
 	void				SanitisePostQueue();
 	void				CheckDiskSpace();
 	void				AddFileToQueue(const char* szFilename, const char* szCategory);
+	void				ProcessIncomingFile(const char* szDirectory, const char* szBaseFilename, const char* szFullFilename, const char* szCategory);
 	void				ApplySchedulerState();
 	bool				PauseDownload();
 	bool				UnpauseDownload();

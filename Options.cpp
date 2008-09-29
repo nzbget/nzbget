@@ -127,6 +127,7 @@ static const char* OPTION_LOADPARS			= "LoadPars";
 static const char* OPTION_PARCHECK			= "ParCheck";
 static const char* OPTION_PARREPAIR			= "ParRepair";
 static const char* OPTION_POSTPROCESS		= "PostProcess";
+static const char* OPTION_NZBPROCESS		= "NZBProcess";
 static const char* OPTION_STRICTPARNAME		= "StrictParName";
 static const char* OPTION_UMASK				= "UMask";
 static const char* OPTION_UPDATEINTERVAL	= "UpdateInterval";
@@ -143,6 +144,7 @@ static const char* OPTION_NZBDIRFILEAGE		= "NzbDirFileAge";
 static const char* OPTION_PARCLEANUPQUEUE	= "ParCleanupQueue";
 static const char* OPTION_DISKSPACE			= "DiskSpace";
 static const char* OPTION_POSTLOGKIND		= "PostLogKind";
+static const char* OPTION_NZBLOGKIND		= "NZBLogKind";
 static const char* OPTION_ALLOWREPROCESS	= "AllowReProcess";
 static const char* OPTION_DUMPCORE			= "DumpCore";
 static const char* OPTION_PARPAUSEQUEUE		= "ParPauseQueue";
@@ -225,6 +227,7 @@ Options::Options(int argc, char* argv[])
 	m_bParCheck				= false;
 	m_bParRepair			= false;
 	m_szPostProcess			= NULL;
+	m_szNZBProcess			= NULL;
 	m_bStrictParName		= false;
 	m_bNoConfig				= false;
 	m_iUMask				= 0;
@@ -241,7 +244,8 @@ Options::Options(int argc, char* argv[])
 	m_iNzbDirFileAge		= 0;
 	m_bParCleanupQueue		= false;
 	m_iDiskSpace			= 0;
-	m_ePostLogKind			= plNone;
+	m_ePostLogKind			= slNone;
+	m_eNZBLogKind			= slNone;
 	m_bAllowReProcess		= false;
 	m_bTestBacktrace		= false;
 	m_bTLS					= false;
@@ -369,6 +373,10 @@ Options::~Options()
 	{
 		free(m_szPostProcess);
 	}
+	if (m_szNZBProcess)
+	{
+		free(m_szNZBProcess);
+	}
 	if (m_pEditQueueIDList)
 	{
 		free(m_pEditQueueIDList);
@@ -442,6 +450,7 @@ void Options::InitDefault()
 	SetOption(OPTION_PARCHECK, "no");
 	SetOption(OPTION_PARREPAIR, "no");	
 	SetOption(OPTION_POSTPROCESS, "");
+	SetOption(OPTION_NZBPROCESS, "");
 	SetOption(OPTION_STRICTPARNAME, "yes");
 	SetOption(OPTION_DAEMONUSERNAME, "root");
 	SetOption(OPTION_UMASK, "1000");
@@ -459,6 +468,7 @@ void Options::InitDefault()
 	SetOption(OPTION_PARCLEANUPQUEUE, "no");
 	SetOption(OPTION_DISKSPACE, "0");
 	SetOption(OPTION_POSTLOGKIND, "none");
+	SetOption(OPTION_NZBLOGKIND, "none");
 	SetOption(OPTION_ALLOWREPROCESS, "no");
 	SetOption(OPTION_DUMPCORE, "no");
 	SetOption(OPTION_PARPAUSEQUEUE, "no");
@@ -556,6 +566,7 @@ void Options::InitOptions()
 	CheckDir(&m_szQueueDir, OPTION_QUEUEDIR);
 
 	m_szPostProcess = strdup(GetOption(OPTION_POSTPROCESS));
+	m_szNZBProcess = strdup(GetOption(OPTION_NZBPROCESS));
 	
 	m_fDownloadRate			= (float)atof(GetOption(OPTION_DOWNLOADRATE));
 	m_iConnectionTimeout	= atoi(GetOption(OPTION_CONNECTIONTIMEOUT));
@@ -629,10 +640,11 @@ void Options::InitOptions()
 	m_eDebugTarget = (EMessageTarget)ParseOptionValue(OPTION_DEBUGTARGET, NULL, TargetCount, TargetNames, TargetValues);
 	m_eDetailTarget = (EMessageTarget)ParseOptionValue(OPTION_DETAILTARGET, NULL, TargetCount, TargetNames, TargetValues);
 
-	const char* PostLogKindNames[] = { "none", "detail", "info", "warning", "error", "debug" };
-	const int PostLogKindValues[] = { plNone, plDetail, plInfo, plWarning, plError, plDebug };
-	const int PostLogKindCount = 6;
-	m_ePostLogKind = (EPostLogKind)ParseOptionValue(OPTION_POSTLOGKIND, NULL, PostLogKindCount, PostLogKindNames, PostLogKindValues);
+	const char* ScriptLogKindNames[] = { "none", "detail", "info", "warning", "error", "debug" };
+	const int ScriptLogKindValues[] = { slNone, slDetail, slInfo, slWarning, slError, slDebug };
+	const int ScriptLogKindCount = 6;
+	m_ePostLogKind = (EScriptLogKind)ParseOptionValue(OPTION_POSTLOGKIND, NULL, ScriptLogKindCount, ScriptLogKindNames, ScriptLogKindValues);
+	m_eNZBLogKind = (EScriptLogKind)ParseOptionValue(OPTION_NZBLOGKIND, NULL, ScriptLogKindCount, ScriptLogKindNames, ScriptLogKindValues);
 }
 
 int Options::ParseOptionValue(const char* OptName, const char* OptValue, int argc, const char * argn[], const int argv[])

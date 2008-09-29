@@ -88,8 +88,11 @@ PrePostProcessor::PrePostProcessor()
 	m_PostQueue.clear();
 	m_CompletedJobs.clear();
 
-	const char* szScript = g_pOptions->GetPostProcess();
-	m_bPostScript = szScript && strlen(szScript) > 0;
+	const char* szPostScript = g_pOptions->GetPostProcess();
+	m_bPostScript = szPostScript && strlen(szPostScript) > 0;
+
+	const char* szNZBScript = g_pOptions->GetNZBProcess();
+	m_bNZBScript = szNZBScript && strlen(szNZBScript) > 0;
 
 #ifndef DISABLE_PARCHECK
 	m_ParCheckerObserver.owner = this;
@@ -296,9 +299,7 @@ void PrePostProcessor::CheckIncomingNZBs(const char* szDirectory, const char* sz
 		fullfilename[1023-1] = '\0';
 		if (!stat(fullfilename, &buffer))
 		{
-			int len = strlen(filename);
-
-			// check subfolders 
+			// check subfolders
 			if ((buffer.st_mode & S_IFDIR) != 0 && strcmp(filename, ".") && strcmp(filename, ".."))
 			{
 				fullfilename[strlen(fullfilename) + 1] = '\0';
@@ -313,17 +314,49 @@ void PrePostProcessor::CheckIncomingNZBs(const char* szDirectory, const char* sz
 				}
 				CheckIncomingNZBs(fullfilename, szUseCategory);
 			}
-			else if (len > 4 && !strcasecmp(filename + len - 4, ".nzb"))
-			{
+			else if ((buffer.st_mode & S_IFDIR) == 0 &&
 				// file found, checking modification-time
-				if (time(NULL) - buffer.st_mtime > g_pOptions->GetNzbDirFileAge() &&
-					time(NULL) - buffer.st_ctime > g_pOptions->GetNzbDirFileAge())
-				{
-					// the file is at least g_pOptions->GetNzbDirFileAge() seconds old, we can process it
-					AddFileToQueue(fullfilename, szCategory);
-				}
+				time(NULL) - buffer.st_mtime > g_pOptions->GetNzbDirFileAge() &&
+				time(NULL) - buffer.st_ctime > g_pOptions->GetNzbDirFileAge())
+			{
+				// the file is at least g_pOptions->GetNzbDirFileAge() seconds old, we can process it
+				ProcessIncomingFile(szDirectory, filename, fullfilename, szCategory);
 			}
 		}
+	}
+}
+
+void PrePostProcessor::ProcessIncomingFile(const char* szDirectory, const char* szBaseFilename, const char* szFullFilename, const char* szCategory)
+{
+	const char* szExtension = strrchr(szBaseFilename, '.');
+	if (!szExtension)
+	{
+		return;
+	}
+
+	bool bExists = true;
+
+	if (m_bNZBScript && 
+		strcasecmp(szExtension, ".queued") && 
+		strcasecmp(szExtension, ".error") &&
+		strcasecmp(szExtension, ".processed"))
+	{
+		NZBScriptController::ExecuteScript(g_pOptions->GetNZBProcess(), szFullFilename, szDirectory); 
+		bExists = Util::FileExists(szFullFilename);
+		if (strcasecmp(szExtension, ".nzb"))
+		{
+			char bakname2[1024];
+			bool bRenameOK = Util::RenameBak(szFullFilename, "processed", bakname2, 1024);
+			if (!bRenameOK)
+			{
+				error("Could not rename file %s to %s! Errcode: %i", szFullFilename, bakname2, errno);
+			}
+		}
+	}
+
+	if (bExists && !strcasecmp(szExtension, ".nzb"))
+	{
+		AddFileToQueue(szFullFilename, szCategory);
 	}
 }
 
@@ -332,36 +365,25 @@ void PrePostProcessor::AddFileToQueue(const char* szFilename, const char* szCate
 	const char* szBasename = Util::BaseFileName(szFilename);
 
 	info("Collection %s found", szBasename);
-	char bakname[1024];
+
 	bool bAdded = g_pQueueCoordinator->AddFileToQueue(szFilename, szCategory);
 	if (bAdded)
 	{
 		info("Collection %s added to queue", szBasename);
-		snprintf(bakname, 1024, "%s.queued", szFilename);
-		bakname[1024-1] = '\0';
 	}
 	else
 	{
 		error("Could not add collection %s to queue", szBasename);
-		snprintf(bakname, 1024, "%s.error", szFilename);
-		bakname[1024-1] = '\0';
 	}
 
 	char bakname2[1024];
-	strcpy(bakname2, bakname);
-	int i = 2;
-	struct stat buffer;
-	while (!stat(bakname2, &buffer))
-	{
-		snprintf(bakname2, 1024, "%s%i", bakname, i++);
-		bakname2[1024-1] = '\0';
-	}
-	
-	if (rename(szFilename, bakname2))
+	bool bRenameOK = Util::RenameBak(szFilename, bAdded ? "queued" : "error", bakname2, 1024);
+	if (!bRenameOK)
 	{
 		error("Could not rename file %s to %s! Errcode: %i", szFilename, bakname2, errno);
 	}
-	else if (bAdded)
+
+	if (bAdded && bRenameOK)
 	{
 		// find just added item in queue and save bakname2 into NZBInfo.QueuedFileName
 		DownloadQueue* pDownloadQueue = g_pQueueCoordinator->LockQueue();
@@ -546,7 +568,7 @@ void PrePostProcessor::StartScriptJob(DownloadQueue* pDownloadQueue, PostInfo* p
 		}
 	}
 
-	ScriptController::StartScriptJob(pPostInfo, g_pOptions->GetPostProcess(), bNZBFileCompleted, bHasFailedParJobs);
+	PostScriptController::StartScriptJob(pPostInfo, g_pOptions->GetPostProcess(), bNZBFileCompleted, bHasFailedParJobs);
 }
 
 /**
