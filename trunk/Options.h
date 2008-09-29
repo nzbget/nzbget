@@ -67,14 +67,14 @@ public:
 		lpOne,
 		lpAll
 	};
-	enum EPostLogKind
+	enum EScriptLogKind
 	{
-		plNone,
-		plDetail,
-		plInfo,
-		plWarning,
-		plError,
-		plDebug
+		slNone,
+		slDetail,
+		slInfo,
+		slWarning,
+		slError,
+		slDebug
 	};
 
 private:
@@ -127,6 +127,7 @@ private:
 	bool				m_bParCheck;
 	bool				m_bParRepair;
 	char*				m_szPostProcess;
+	char*				m_szNZBProcess;
 	bool				m_bStrictParName;
 	bool				m_bNoConfig;
 	int					m_iUMask;
@@ -143,7 +144,8 @@ private:
 	int					m_iNzbDirFileAge;
 	bool				m_bParCleanupQueue;
 	int					m_iDiskSpace;
-	EPostLogKind		m_ePostLogKind;
+	EScriptLogKind		m_ePostLogKind;
+	EScriptLogKind		m_eNZBLogKind;
 	bool				m_bAllowReProcess;
 	bool				m_bTLS;
 	bool				m_bDumpCore;
@@ -239,6 +241,7 @@ public:
 	bool				GetParCheck() { return m_bParCheck; }
 	bool				GetParRepair() { return m_bParRepair; }
 	const char*			GetPostProcess() { return m_szPostProcess; }
+	const char*			GetNZBProcess() { return m_szNZBProcess; }
 	bool				GetStrictParName() { return m_bStrictParName; }
 	int					GetUMask() { return m_iUMask; }
 	int					GetUpdateInterval() {return m_iUpdateInterval; }
@@ -254,7 +257,8 @@ public:
 	int					GetNzbDirFileAge() { return m_iNzbDirFileAge; }
 	bool				GetParCleanupQueue() { return m_bParCleanupQueue; }
 	int					GetDiskSpace() { return m_iDiskSpace; }
-	EPostLogKind		GetPostLogKind() { return m_ePostLogKind; }
+	EScriptLogKind		GetPostLogKind() { return m_ePostLogKind; }
+	EScriptLogKind		GetNZBLogKind() { return m_eNZBLogKind; }
 	bool				GetAllowReProcess() { return m_bAllowReProcess; }
 	bool				GetTLS() { return m_bTLS; }
 	bool				GetDumpCore() { return m_bDumpCore; }

@@ -1021,3 +1021,27 @@ long long Util::FreeDiskSize(const char* szPath)
 #endif
 	return -1;
 }
+
+bool Util::RenameBak(const char* szFilename, const char* szBakPart, char* szNewNameBuf, int iNewNameBufSize)
+{
+	char bakname[1024];
+	snprintf(bakname, 1024, "%s.%s", szFilename, szBakPart);
+	bakname[1024-1] = '\0';
+
+	int i = 2;
+	struct stat buffer;
+	while (!stat(bakname, &buffer))
+	{
+		snprintf(bakname, 1024, "%s.%i.%s", szFilename, i++, szBakPart);
+		bakname[1024-1] = '\0';
+	}
+
+	if (szNewNameBuf)
+	{
+		strncpy(szNewNameBuf, bakname, iNewNameBufSize);
+	}
+
+	bool bOK = !rename(szFilename, bakname);
+	return bOK;
+}
+
