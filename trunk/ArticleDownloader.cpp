@@ -386,6 +386,7 @@ ArticleDownloader::EStatus ArticleDownloader::Download()
 		if (!strncmp(line, "..", 2))
 		{
 			line++;
+			iLen--;
 		}
 
 		if (!bBody)
