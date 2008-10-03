@@ -1204,7 +1204,10 @@ void Options::InitScheduler()
 		sprintf(optname, "task%i.command", n);
 		const char* szCommand = GetOption(optname);
 
-		bool definition = szTime || szWeekDays || szCommand;
+		sprintf(optname, "task%i.downloadrate", n);
+		const char* szDownloadRate = GetOption(optname);
+
+		bool definition = szTime || szWeekDays || szCommand || szDownloadRate;
 		bool completed = szTime && szCommand;
 
 		if (!definition)
@@ -1216,6 +1219,12 @@ void Options::InitScheduler()
 		{
 			abort("FATAL ERROR: Task definition not complete for Task%i\n", n);
 		}
+
+		sprintf(optname, "Task%i.Command", n);
+		const char* CommandNames[] = { "pause", "unpause", "resume", "downloadrate", "setdownloadrate", "rate", "speed" };
+		const int CommandValues[] = { Scheduler::scPause, Scheduler::scUnpause, Scheduler::scUnpause, Scheduler::scDownloadRate, Scheduler::scDownloadRate, Scheduler::scDownloadRate, Scheduler::scDownloadRate };
+		const int CommandCount = 7;
+		Scheduler::ECommand eCommand = (Scheduler::ECommand)ParseOptionValue(optname, szCommand, CommandCount, CommandNames, CommandValues);
 
 		int iHours, iMinutes;
 		if (!ParseTime(szTime, &iHours, &iMinutes))
@@ -1229,24 +1238,18 @@ void Options::InitScheduler()
 			abort("FATAL ERROR: Invalid value for option Task%i.WeekDays\n", n);
 		}
 
-		Scheduler::ECommand eCommand;
-		int iDownloadRate=0;
-		if (!strcasecmp(szCommand, "pause"))
+		int iDownloadRate = 0;
+		if (eCommand == Scheduler::scDownloadRate)
 		{
-			eCommand = Scheduler::scPause;
-		}
-		else if (!strcasecmp(szCommand, "unpause"))
-		{
-			eCommand = Scheduler::scUnpause;
-		}
-		else
-		{
-			eCommand = Scheduler::scDownloadRate;
+			if (!szDownloadRate)
+			{
+				abort("FATAL ERROR: Task definition not complete for Task%i. Option Task%i.DownloadRate missing.\n", n, n);
+			}
 			char* szErr;
-			iDownloadRate = strtol(szCommand, &szErr, 10);
+			iDownloadRate = strtol(szDownloadRate, &szErr, 10);
 			if (!szErr || *szErr != '\0' || iDownloadRate < 0)
 			{
-				abort("FATAL ERROR: Invalid value for option Task%i.Command\n", n);
+				abort("FATAL ERROR: Invalid value for option Task%i.DownloadRate\n", n);
 			}
 		}
 
@@ -1459,7 +1462,8 @@ bool Options::ValidateOptionName(const char * optname)
 	{
 		char* p = (char*)optname + 4;
 		while (*p >= '0' && *p <= '9') p++;
-		if (p && (!strcasecmp(p, ".time") || !strcasecmp(p, ".weekdays") || !strcasecmp(p, ".command")))
+		if (p && (!strcasecmp(p, ".time") || !strcasecmp(p, ".weekdays") || 
+			!strcasecmp(p, ".command") || !strcasecmp(p, ".downloadrate")))
 		{
 			return true;
 		}
