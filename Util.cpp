@@ -695,8 +695,19 @@ const char* Util::XmlFindTag(const char* szXml, const char* szTag, int* pValueLe
 	snprintf(szCloseTag, 100, "</%s>", szTag);
 	szCloseTag[100-1] = '\0';
 
+	char szOpenCloseTag[100];
+	snprintf(szOpenCloseTag, 100, "<%s/>", szTag);
+	szOpenCloseTag[100-1] = '\0';
+
 	const char* pstart = strstr(szXml, szOpenTag);
-	if (!pstart) return NULL;
+	const char* pstartend = strstr(szXml, szOpenCloseTag);
+	if (!pstart && !pstartend) return NULL;
+
+	if (pstartend && (!pstart || pstartend < pstart))
+	{
+		*pValueLength = 0;
+		return pstartend;
+	}
 
 	const char* pend = strstr(pstart, szCloseTag);
 	if (!pend) return NULL;
