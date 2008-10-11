@@ -35,7 +35,9 @@
 #include <string.h>
 #include <ctype.h>
 #include <fstream>
-#ifndef WIN32
+#ifdef WIN32
+#include <direct.h>
+#else
 #include <unistd.h>
 #include <sys/wait.h>
 #endif
@@ -246,33 +248,27 @@ void PrePostProcessor::QueueCoordinatorUpdate(Subject * Caller, void * Aspect)
 #ifndef DISABLE_PARCHECK
 			!AddPar(pAspect->pFileInfo, pAspect->eAction == QueueCoordinator::eaFileDeleted) &&
 #endif
-			IsNZBFileCompleted(pAspect->pDownloadQueue, pAspect->pFileInfo->GetNZBInfo()->GetFilename(), false, true, false) &&
-			(!pAspect->pFileInfo->GetPaused() || IsNZBFileCompleted(pAspect->pDownloadQueue, pAspect->pFileInfo->GetNZBInfo()->GetFilename(), false, false, false)))
+			IsNZBFileCompleted(pAspect->pDownloadQueue, pAspect->pFileInfo->GetNZBInfo()->GetFilename(), false, true, false, false) &&
+			(!pAspect->pFileInfo->GetPaused() || IsNZBFileCompleted(pAspect->pDownloadQueue, pAspect->pFileInfo->GetNZBInfo()->GetFilename(), false, false, false, false)))
 		{
 			char szNZBNiceName[1024];
 			pAspect->pFileInfo->GetNZBInfo()->GetNiceNZBName(szNZBNiceName, 1024);
 			if (pAspect->eAction == QueueCoordinator::eaFileCompleted)
 			{
 				info("Collection %s completely downloaded", szNZBNiceName);
+				CollectionCompleted(pAspect->pDownloadQueue, pAspect->pFileInfo);
 			}
-			else if (IsNZBFileCompleted(pAspect->pDownloadQueue, pAspect->pFileInfo->GetNZBInfo()->GetFilename(), false, false, false))
+			else if (pAspect->pFileInfo->GetNZBInfo()->GetDeleted() &&
+				!pAspect->pFileInfo->GetNZBInfo()->GetParCleanup() &&
+				IsNZBFileCompleted(pAspect->pDownloadQueue, pAspect->pFileInfo->GetNZBInfo()->GetFilename(), false, false, false, true))
 			{
 				info("Collection %s deleted from queue", szNZBNiceName);
-			}
-
-			if (pAspect->eAction == QueueCoordinator::eaFileCompleted)
-			{
-				pAspect->pFileInfo->GetNZBInfo()->SetPostProcess(true);
-#ifndef DISABLE_PARCHECK
-				(g_pOptions->GetParCheck() && g_pOptions->GetDecode() && 
-					CheckPars(pAspect->pDownloadQueue, pAspect->pFileInfo)) ||
-#endif
-				CheckScript(pAspect->pFileInfo);
+				CollectionDeleted(pAspect->pDownloadQueue, pAspect->pFileInfo);
 			}
 		}
 
 		m_mutexQueue.Lock();
-		if (IsNZBFileCompleted(pAspect->pDownloadQueue, pAspect->pFileInfo->GetNZBInfo()->GetFilename(), false, false, true))
+		if (IsNZBFileCompleted(pAspect->pDownloadQueue, pAspect->pFileInfo->GetNZBInfo()->GetFilename(), false, false, true, false))
 		{
 			if (ClearCompletedJobs(pAspect->pFileInfo->GetNZBInfo()->GetFilename()) &&
 				g_pOptions->GetSaveQueue() && g_pOptions->GetServerMode())
@@ -281,6 +277,44 @@ void PrePostProcessor::QueueCoordinatorUpdate(Subject * Caller, void * Aspect)
 			}
 		}
 		m_mutexQueue.Unlock();
+	}
+}
+
+void PrePostProcessor::CollectionCompleted(DownloadQueue* pDownloadQueue, FileInfo* pFileInfo)
+{
+	pFileInfo->GetNZBInfo()->SetPostProcess(true);
+#ifndef DISABLE_PARCHECK
+	(g_pOptions->GetParCheck() && g_pOptions->GetDecode() && 
+		CheckPars(pDownloadQueue, pFileInfo)) ||
+#endif
+	CheckScript(pFileInfo);
+}
+
+void PrePostProcessor::CollectionDeleted(DownloadQueue* pDownloadQueue, FileInfo* pFileInfo)
+{
+	if (g_pOptions->GetDeleteCleanupDisk() && 
+		pFileInfo->GetNZBInfo()->GetCleanupDisk())
+	{
+		// download was cancelled, deleting already downloaded files from disk
+		for (NZBInfo::Files::reverse_iterator it = pFileInfo->GetNZBInfo()->GetCompletedFiles()->rbegin(); it != pFileInfo->GetNZBInfo()->GetCompletedFiles()->rend(); it++)
+		{
+			char* szFilename = *it;
+			if (Util::FileExists(szFilename))
+			{
+				detail("Deleting file %s", szFilename);
+				remove(szFilename);
+				// delete old directory (if empty)
+				if (g_pOptions->GetAppendNZBDir() && Util::DirEmpty(pFileInfo->GetNZBInfo()->GetDestDir()))
+				{
+					rmdir(pFileInfo->GetNZBInfo()->GetDestDir());
+				}
+			}
+		}
+		if (g_pOptions->GetNzbCleanupDisk() && Util::FileExists(pFileInfo->GetNZBInfo()->GetQueuedFilename()))
+		{
+			detail("Deleting file %s", pFileInfo->GetNZBInfo()->GetQueuedFilename());
+			remove(pFileInfo->GetNZBInfo()->GetQueuedFilename());
+		}
 	}
 }
 
@@ -445,14 +479,19 @@ void PrePostProcessor::CheckPostQueue()
 			{
 #ifndef DISABLE_PARCHECK
 				if ((g_pOptions->GetParCleanupQueue() || g_pOptions->GetNzbCleanupDisk()) && 
-					IsNZBFileCompleted(pDownloadQueue, pPostInfo->GetNZBFilename(), true, true, true) &&
+					IsNZBFileCompleted(pDownloadQueue, pPostInfo->GetNZBFilename(), true, true, true, false) &&
 					pPostInfo->GetParStatus() != PARSTATUS_NOT_CHECKED &&
 					pPostInfo->GetParStatus() != PARSTATUS_FAILED &&
 					!HasFailedParJobs(pPostInfo->GetNZBFilename()))
 				{
 					if (g_pOptions->GetParCleanupQueue())
 					{
-						iCleanupGroupID = GetParCleanupQueueGroup(pDownloadQueue, pPostInfo->GetNZBFilename());
+						FileInfo* pFileInfo = GetParCleanupQueueGroup(pDownloadQueue, pPostInfo->GetNZBFilename());
+						if (pFileInfo)
+						{
+							pFileInfo->GetNZBInfo()->SetParCleanup(true);
+							iCleanupGroupID = pFileInfo->GetID();
+						}
 						NZBInfo::MakeNiceNZBName(pPostInfo->GetNZBFilename(), szNZBNiceName, sizeof(szNZBNiceName));
 					}
 					if (g_pOptions->GetNzbCleanupDisk())
@@ -553,7 +592,7 @@ void PrePostProcessor::StartScriptJob(DownloadQueue* pDownloadQueue, PostInfo* p
 	}
 	pPostInfo->SetStageTime(time(NULL));
 
-	bool bNZBFileCompleted = IsNZBFileCompleted(pDownloadQueue, pPostInfo->GetNZBFilename(), true, true, true);
+	bool bNZBFileCompleted = IsNZBFileCompleted(pDownloadQueue, pPostInfo->GetNZBFilename(), true, true, true, false);
 #ifndef DISABLE_PARCHECK
 	bool bHasFailedParJobs = HasFailedParJobs(pPostInfo->GetNZBFilename()) || pPostInfo->GetParFailed();
 #else
@@ -597,7 +636,7 @@ void PrePostProcessor::JobCompleted(DownloadQueue* pDownloadQueue, PostInfo* pPo
 
 	m_CompletedJobs.push_back(pPostInfo);
 
-	if (IsNZBFileCompleted(pDownloadQueue, pPostInfo->GetNZBFilename(), false, false, true))
+	if (IsNZBFileCompleted(pDownloadQueue, pPostInfo->GetNZBFilename(), false, false, true, false))
 	{
 		ClearCompletedJobs(pPostInfo->GetNZBFilename());
 	}
@@ -724,18 +763,26 @@ void PrePostProcessor::PausePars(DownloadQueue* pDownloadQueue, const char* szNZ
  * if the parameter "bCheckPostQueue" is set to "true".
  */
 bool PrePostProcessor::IsNZBFileCompleted(DownloadQueue* pDownloadQueue, const char* szNZBFilename, 
-	bool bIgnoreFirstInPostQueue, bool bIgnorePaused, bool bCheckPostQueue)
+	bool bIgnoreFirstInPostQueue, bool bIgnorePaused, bool bCheckPostQueue, bool bAllowOnlyOneDeleted)
 {
 	bool bNZBFileCompleted = true;
+	int iDeleted = 0;
 
 	for (DownloadQueue::iterator it = pDownloadQueue->begin(); it != pDownloadQueue->end(); it++)
 	{
 		FileInfo* pFileInfo = *it;
-		if ((!bIgnorePaused || !pFileInfo->GetPaused()) && !pFileInfo->GetDeleted() &&
-			!strcmp(pFileInfo->GetNZBInfo()->GetFilename(), szNZBFilename))
+		if (!strcmp(pFileInfo->GetNZBInfo()->GetFilename(), szNZBFilename))
 		{
-			bNZBFileCompleted = false;
-			break;
+			if (pFileInfo->GetDeleted())
+			{
+				iDeleted++;
+			}
+			if (((!bIgnorePaused || !pFileInfo->GetPaused()) && !pFileInfo->GetDeleted()) ||
+				(bAllowOnlyOneDeleted && iDeleted > 1))
+			{
+				bNZBFileCompleted = false;
+				break;
+			}
 		}
 	}
 
@@ -992,28 +1039,28 @@ void PrePostProcessor::ParCheckerUpdate(Subject* Caller, void* Aspect)
 /**
  * Check if the deletion of unneeded (paused) par-files from download queue after successful par-check is possible.
  * If the collection has paused non-par-files, none files will be deleted (even pars).
- * Returns the group-ID, which can be later used in call to GetQueueEditor()->EditEntry()
+ * Returns fileinfo, which ID can be later used in call to GetQueueEditor()->EditEntry()
  */
-int PrePostProcessor::GetParCleanupQueueGroup(DownloadQueue* pDownloadQueue, const char* szNZBFilename)
+FileInfo* PrePostProcessor::GetParCleanupQueueGroup(DownloadQueue* pDownloadQueue, const char* szNZBFilename)
 {
 	debug("Preparing to cleaning up download queue from par-files");
 
 	// check if nzb-file has only pars paused
-	int ID = 0;
+	FileInfo* pRetFileInfo = NULL;
 	for (DownloadQueue::iterator it = pDownloadQueue->begin(); it != pDownloadQueue->end(); it++)
 	{
 		FileInfo* pFileInfo = *it;
 		if (!strcmp(pFileInfo->GetNZBInfo()->GetFilename(), szNZBFilename))
 		{
-			ID = pFileInfo->GetID();
 			if (!pFileInfo->GetPaused() && !pFileInfo->GetDeleted() &&
 				!ParseParFilename(pFileInfo->GetFilename(), NULL, NULL))
 			{
-				return 0;
+				return NULL;
 			}
+			pRetFileInfo = pFileInfo;
 		}
 	}
-	return ID;
+	return pRetFileInfo;
 }
 
 /**

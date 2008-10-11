@@ -47,6 +47,9 @@ private:
 	Files				m_completedFiles;
 	bool				m_bPostProcess;
 	char*				m_szQueuedFilename;
+	bool				m_bDeleted;
+	bool				m_bParCleanup;
+	bool				m_bCleanupDisk;
 
 public:
 						NZBInfo();
@@ -62,15 +65,21 @@ public:
 	const char*			GetCategory() { return m_szCategory; } // needs locking (for shared objects)
 	void				SetCategory(const char* szCategory);   // needs locking (for shared objects)
 	long long 			GetSize() { return m_lSize; }
-	void 				SetSize(long long s) { m_lSize = s; }
+	void 				SetSize(long long lSize) { m_lSize = lSize; }
 	int					GetFileCount() { return m_iFileCount; }
-	void 				SetFileCount(int s) { m_iFileCount = s; }
+	void 				SetFileCount(int iFileCount) { m_iFileCount = iFileCount; }
 	void				BuildDestDirName();
 	Files*				GetCompletedFiles() { return &m_completedFiles; }
 	bool				GetPostProcess() { return m_bPostProcess; }
-	void				SetPostProcess(bool b) { m_bPostProcess = b; }
+	void				SetPostProcess(bool bPostProcess) { m_bPostProcess = bPostProcess; }
 	const char*			GetQueuedFilename() { return m_szQueuedFilename; }
 	void				SetQueuedFilename(const char* szQueuedFilename);
+	bool				GetDeleted() { return m_bDeleted; }
+	void				SetDeleted(bool bDeleted) { m_bDeleted = bDeleted; }
+	bool				GetParCleanup() { return m_bParCleanup; }
+	void				SetParCleanup(bool bParCleanup) { m_bParCleanup = bParCleanup; }
+	bool				GetCleanupDisk() { return m_bCleanupDisk; }
+	void				SetCleanupDisk(bool bCleanupDisk) { m_bCleanupDisk = bCleanupDisk; }
 };
 
 class ArticleInfo

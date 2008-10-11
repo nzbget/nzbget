@@ -150,6 +150,7 @@ static const char* OPTION_DUMPCORE			= "DumpCore";
 static const char* OPTION_PARPAUSEQUEUE		= "ParPauseQueue";
 static const char* OPTION_POSTPAUSEQUEUE	= "PostPauseQueue";
 static const char* OPTION_NZBCLEANUPDISK	= "NzbCleanupDisk";
+static const char* OPTION_DELETECLEANUPDISK	= "DeleteCleanupDisk";
 
 const char* BoolNames[] = { "yes", "no", "true", "false", "1", "0", "on", "off", "enable", "disable", "enabled", "disabled" };
 const int BoolValues[] = { 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0 };
@@ -253,6 +254,7 @@ Options::Options(int argc, char* argv[])
 	m_bParPauseQueue		= false;
 	m_bPostPauseQueue		= false;
 	m_bNzbCleanupDisk		= false;
+	m_bDeleteCleanupDisk	= false;
 
 	char szFilename[MAX_PATH + 1];
 #ifdef WIN32
@@ -474,6 +476,7 @@ void Options::InitDefault()
 	SetOption(OPTION_PARPAUSEQUEUE, "no");
 	SetOption(OPTION_POSTPAUSEQUEUE, "no");
 	SetOption(OPTION_NZBCLEANUPDISK, "no");
+	SetOption(OPTION_DELETECLEANUPDISK, "no");
 }
 
 void Options::InitOptFile()
@@ -620,6 +623,7 @@ void Options::InitOptions()
 	m_bParPauseQueue		= (bool)ParseOptionValue(OPTION_PARPAUSEQUEUE, NULL, BoolCount, BoolNames, BoolValues);
 	m_bPostPauseQueue		= (bool)ParseOptionValue(OPTION_POSTPAUSEQUEUE, NULL, BoolCount, BoolNames, BoolValues);
 	m_bNzbCleanupDisk		= (bool)ParseOptionValue(OPTION_NZBCLEANUPDISK, NULL, BoolCount, BoolNames, BoolValues);
+	m_bDeleteCleanupDisk	= (bool)ParseOptionValue(OPTION_DELETECLEANUPDISK, NULL, BoolCount, BoolNames, BoolValues);
 
 	const char* OutputModeNames[] = { "loggable", "logable", "log", "colored", "color", "ncurses", "curses" };
 	const int OutputModeValues[] = { omLoggable, omLoggable, omLoggable, omColored, omColored, omNCurses, omNCurses };

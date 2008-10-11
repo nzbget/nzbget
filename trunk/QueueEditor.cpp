@@ -411,6 +411,11 @@ bool QueueEditor::EditGroup(DownloadQueue* pDownloadQueue, FileInfo* pFileInfo, 
 		}
 		iOffset = iFileOffset;
 	}
+	else if (eAction == eaGroupDelete)
+	{
+		pFileInfo->GetNZBInfo()->SetDeleted(true);
+		pFileInfo->GetNZBInfo()->SetCleanupDisk(CanCleanupDisk(pDownloadQueue, pFileInfo->GetNZBInfo()));
+	}
 
 	EEditAction GroupToFileMap[] = { (EEditAction)0, eaFileMoveOffset, eaFileMoveTop, eaFileMoveBottom, eaFilePause, eaFileResume, eaFileDelete, eaFilePauseAllPars, eaFilePauseExtraPars,
 		eaFileMoveOffset, eaFileMoveTop, eaFileMoveBottom, eaFilePause, eaFileResume, eaFileDelete, eaFilePauseAllPars, eaFilePauseExtraPars };
@@ -666,4 +671,29 @@ void QueueEditor::SetNZBCategory(NZBInfo* pNZBInfo, const char* szCategory)
 	debug("QueueEditor: setting category '%s' for '%s'", szCategory, Util::BaseFileName(pNZBInfo->GetFilename()));
 
 	g_pQueueCoordinator->SetQueueEntryNZBCategory(pNZBInfo, szCategory);
+}
+
+/**
+* Check if deletion of already downloaded files is possible (when nzb id deleted from queue).
+* The deletion is most always possible, except the case if all remaining files in queue 
+* (belonging to this nzb-file) are PARS.
+*/
+bool QueueEditor::CanCleanupDisk(DownloadQueue* pDownloadQueue, NZBInfo* pNZBInfo)
+{
+    for (DownloadQueue::iterator it = pDownloadQueue->begin(); it != pDownloadQueue->end(); it++)
+    {
+        FileInfo* pFileInfo = *it;
+		char szLoFileName[1024];
+		strncpy(szLoFileName, pFileInfo->GetFilename(), 1024);
+		szLoFileName[1024-1] = '\0';
+		for (char* p = szLoFileName; *p; p++) *p = tolower(*p); // convert string to lowercase
+
+		if (!strstr(szLoFileName, ".par2"))
+		{
+			// non-par file found
+			return true;
+		}
+	}
+
+	return false;
 }
