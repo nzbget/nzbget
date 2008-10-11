@@ -89,7 +89,7 @@ private:
 	void				PausePars(DownloadQueue* pDownloadQueue, const char* szNZBFilename);
 	void				CheckIncomingNZBs(const char* szDirectory, const char* szCategory);
 	bool				IsNZBFileCompleted(DownloadQueue* pDownloadQueue, const char* szNZBFilename, 
-							bool bIgnoreFirstInPostQueue, bool bIgnorePaused, bool bCheckPostQueue);
+							bool bIgnoreFirstInPostQueue, bool bIgnorePaused, bool bCheckPostQueue, bool bAllowOnlyOneDeleted);
 	bool				CheckScript(FileInfo* pFileInfo);
 	bool				JobExists(PostQueue* pPostQueue, const char* szNZBFilename);
 	bool				ClearCompletedJobs(const char* szNZBFilename);
@@ -104,6 +104,8 @@ private:
 	void				ApplySchedulerState();
 	bool				PauseDownload();
 	bool				UnpauseDownload();
+	void				CollectionCompleted(DownloadQueue* pDownloadQueue, FileInfo* pFileInfo);
+	void				CollectionDeleted(DownloadQueue* pDownloadQueue, FileInfo* pFileInfo);
 
 	Mutex			 	m_mutexQueue;
 	PostQueue			m_PostQueue;
@@ -118,7 +120,7 @@ private:
 	bool				AddPar(FileInfo* pFileInfo, bool bDeleted);
 	bool				SameParCollection(const char* szFilename1, const char* szFilename2);
 	bool				FindMainPars(const char* szPath, FileList* pFileList);
-	int					GetParCleanupQueueGroup(DownloadQueue* pDownloadQueue, const char* szNZBFilename);
+	FileInfo*			GetParCleanupQueueGroup(DownloadQueue* pDownloadQueue, const char* szNZBFilename);
 	bool				HasFailedParJobs(const char* szNZBFilename);
 	bool				ParJobExists(PostQueue* pPostQueue, const char* szParFilename);
 	bool				ParseParFilename(const char* szParFilename, int* iBaseNameLen, int* iBlocks);

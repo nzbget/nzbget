@@ -118,8 +118,8 @@ DaemonUserName=root
 # files, POSIX only (000-1000).
 # The value should be written in octal form (the same as for "umask" shell 
 # command).
-# Value "1000" disables the setting of umask-mode; current umask-mode 
-# (set via shell) will be used.
+# Empty value or value "1000" disable the setting of umask-mode; current 
+# umask-mode (set via shell) is used in this case.
 UMask=1000
 
 
@@ -326,6 +326,14 @@ WriteBufferSize=0
 # The drive with <TempDir> is not checked.
 DiskSpace=250
 
+# Delete already downloaded files from disk, if the download of nzb-file was 
+# cancelled (nzb-file was deleted from queue) (yes, no).
+# NOTE: nzbget does not delete files in a case if all remaining files in 
+# queue are par-files. That prevents the accidential deletetion if the option
+# <ParCleanupQueue> is disabled or if the program was interrupted during 
+# parcheck and later restarted without reloading of post queue (option 
+# <ReloadPostQueue> disabled).
+DeleteCleanupDisk=no
 
 ##############################################################################
 ### LOGGING                                                                ###
@@ -534,7 +542,7 @@ NzbCleanupDisk=no
 # For example, for nzb-file containing three collections but only two par-sets, 
 # the postprocess will be called two times - after processing of each par-set.
 # NOTE: an example script for unrarring is provided within distribution 
-# in file "postprocess-example.sh"
+# in file "postprocess-example.sh".
 PostProcess=
 
 # Allow multiple post-processing for the same nzb-file (yes,no).

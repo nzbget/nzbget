@@ -82,6 +82,7 @@ private:
 	void					PauseParsInGroups(ItemList* pItemList, bool bExtraParsOnly);
 	void					PausePars(FileList* pFileList, bool bExtraParsOnly);
 	void					SetNZBCategory(NZBInfo* pNZBInfo, const char* szCategory);
+	bool					CanCleanupDisk(DownloadQueue* pDownloadQueue, NZBInfo* pNZBInfo);
 
 	void					PauseUnpauseEntry(FileInfo* pFileInfo, bool bPause);
 	void					DeleteEntry(FileInfo* pFileInfo);
