@@ -432,12 +432,22 @@ void NZBScriptController::ExecuteScript(const char* szScript, const char* szNZBF
 	szInfoName[1024-1] = '\0';
 	pScriptController->SetInfoName(szInfoName);
 
+	// remove trailing slash
+	char szDir[1024];
+	strncpy(szDir, szDirectory, 1024);
+	szDir[1024-1] = '\0';
+	int iLen = strlen(szDir);
+	if (szDir[iLen-1] == PATH_SEPARATOR)
+	{
+		szDir[iLen-1] = '\0';
+	}
+
 	pScriptController->SetDefaultKindPrefix("NZB-Process: ");
 	pScriptController->SetDefaultLogKind(g_pOptions->GetNZBLogKind());
 
 	const char* szArgs[4];
 	szArgs[0] = szScript;
-	szArgs[1] = szDirectory;
+	szArgs[1] = szDir;
 	szArgs[2] = szNZBFilename;
 	szArgs[3] = NULL;
 	pScriptController->SetArgs(szArgs);
