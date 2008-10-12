@@ -377,7 +377,7 @@ void PrePostProcessor::ProcessIncomingFile(const char* szDirectory, const char* 
 	{
 		NZBScriptController::ExecuteScript(g_pOptions->GetNZBProcess(), szFullFilename, szDirectory); 
 		bExists = Util::FileExists(szFullFilename);
-		if (strcasecmp(szExtension, ".nzb"))
+		if (bExists && strcasecmp(szExtension, ".nzb"))
 		{
 			char bakname2[1024];
 			bool bRenameOK = Util::RenameBak(szFullFilename, "processed", bakname2, 1024);
