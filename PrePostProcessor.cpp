@@ -373,14 +373,15 @@ void PrePostProcessor::ProcessIncomingFile(const char* szDirectory, const char* 
 	if (m_bNZBScript && 
 		strcasecmp(szExtension, ".queued") && 
 		strcasecmp(szExtension, ".error") &&
-		strcasecmp(szExtension, ".processed"))
+		strcasecmp(szExtension, ".processed") &&
+		strcasecmp(szExtension, ".nzb_processed"))
 	{
 		NZBScriptController::ExecuteScript(g_pOptions->GetNZBProcess(), szFullFilename, szDirectory); 
 		bExists = Util::FileExists(szFullFilename);
 		if (bExists && strcasecmp(szExtension, ".nzb"))
 		{
 			char bakname2[1024];
-			bool bRenameOK = Util::RenameBak(szFullFilename, "processed", bakname2, 1024);
+			bool bRenameOK = Util::RenameBak(szFullFilename, "processed", false, bakname2, 1024);
 			if (!bRenameOK)
 			{
 				error("Could not rename file %s to %s! Errcode: %i", szFullFilename, bakname2, errno);
@@ -388,7 +389,18 @@ void PrePostProcessor::ProcessIncomingFile(const char* szDirectory, const char* 
 		}
 	}
 
-	if (bExists && !strcasecmp(szExtension, ".nzb"))
+	if (!strcasecmp(szExtension, ".nzb_processed"))
+	{
+		char szRenamedName[1024];
+		bool bRenameOK = Util::RenameBak(szFullFilename, "nzb", true, szRenamedName, 1024);
+		if (!bRenameOK)
+		{
+			error("Could not rename file %s to %s! Errcode: %i", szFullFilename, szRenamedName, errno);
+			return;
+		}
+		AddFileToQueue(szRenamedName, szCategory);
+	}
+	else if (bExists && !strcasecmp(szExtension, ".nzb"))
 	{
 		AddFileToQueue(szFullFilename, szCategory);
 	}
@@ -411,7 +423,7 @@ void PrePostProcessor::AddFileToQueue(const char* szFilename, const char* szCate
 	}
 
 	char bakname2[1024];
-	bool bRenameOK = Util::RenameBak(szFilename, bAdded ? "queued" : "error", bakname2, 1024);
+	bool bRenameOK = Util::RenameBak(szFilename, bAdded ? "queued" : "error", false, bakname2, 1024);
 	if (!bRenameOK)
 	{
 		error("Could not rename file %s to %s! Errcode: %i", szFilename, bakname2, errno);

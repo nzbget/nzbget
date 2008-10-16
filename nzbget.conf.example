@@ -158,8 +158,12 @@ NzbDirFileAge=60
 # (if it was an nzb-file) or renamed by adding the extension ".processed".
 # Unpacked files will be checked on next directory scan (see option 
 # <NzbDirInterval>).
-# Files with extensions ".processed", ".queued" and ".error" are skipped
+# NOTE: Files with extensions ".processed", ".queued" and ".error" are skipped
 # during the directory scanning.
+# NOTE: Files with extension ".nzb_processed" are not passed to 
+# NzbProcess-script before adding to queue. This feature allows 
+# NzbProcess-script to perevnt the scanning of nzb-files extracted from 
+# archives, if they were already processed by the script.
 NzbProcess=
 
 # Set the default message-kind for output received from nzbprocess-script 
@@ -552,7 +556,7 @@ PostProcess=
 # the download queue (it occurs straight away if the par-check was successful 
 # and the option <ParCleanupQueue> is enabled).
 # That means, if a paused file from a nzb-collection becomes unpaused 
-# (manually or from a post-process-script) after the collection was allready 
+# (manually or from a post-process-script) after the collection was already 
 # postprocessed nzbget will not post-process nzb-file again.
 # This prevents the unwanted multiple post-processings of the same nzb-file.
 # But it might be needed if the par-check/-repair are performed not directly 
