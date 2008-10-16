@@ -1033,17 +1033,30 @@ long long Util::FreeDiskSize(const char* szPath)
 	return -1;
 }
 
-bool Util::RenameBak(const char* szFilename, const char* szBakPart, char* szNewNameBuf, int iNewNameBufSize)
+bool Util::RenameBak(const char* szFilename, const char* szBakPart, bool bRemoveOldExtension, char* szNewNameBuf, int iNewNameBufSize)
 {
+	char szChangedFilename[1024];
+
+	if (bRemoveOldExtension)
+	{
+		strncpy(szChangedFilename, szFilename, 1024);
+		szChangedFilename[1024-1] = '\0';
+		char* szExtension = strrchr(szChangedFilename, '.');
+		if (szExtension)
+		{
+			*szExtension = '\0';
+		}
+	}
+
 	char bakname[1024];
-	snprintf(bakname, 1024, "%s.%s", szFilename, szBakPart);
+	snprintf(bakname, 1024, "%s.%s", bRemoveOldExtension ? szChangedFilename : szFilename, szBakPart);
 	bakname[1024-1] = '\0';
 
 	int i = 2;
 	struct stat buffer;
 	while (!stat(bakname, &buffer))
 	{
-		snprintf(bakname, 1024, "%s.%i.%s", szFilename, i++, szBakPart);
+		snprintf(bakname, 1024, "%s.%i.%s", bRemoveOldExtension ? szChangedFilename : szFilename, i++, szBakPart);
 		bakname[1024-1] = '\0';
 	}
 

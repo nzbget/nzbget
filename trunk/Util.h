@@ -75,7 +75,7 @@ public:
 	static long long FileSize(const char* szFilename);
 	static long long FreeDiskSize(const char* szPath);
 	static bool DirEmpty(const char* szDirFilename);
-	static bool RenameBak(const char* szFilename, const char* szBakPart, char* szNewNameBuf, int iNewNameBufSize);
+	static bool RenameBak(const char* szFilename, const char* szBakPart, bool bRemoveOldExtension, char* szNewNameBuf, int iNewNameBufSize);
 
 	static long long JoinInt64(unsigned long Hi, unsigned long Lo);
 	static void SplitInt64(long long Int64, unsigned long* Hi, unsigned long* Lo);
