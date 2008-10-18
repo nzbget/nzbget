@@ -54,7 +54,7 @@ protected:
 
 public:
 						ScriptController();
-	void				Execute();
+	int					Execute();
 	void				Terminate();
 
 	void				SetScript(const char* szScript) { m_szScript = szScript; }

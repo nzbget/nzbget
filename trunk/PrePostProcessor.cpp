@@ -477,6 +477,12 @@ void PrePostProcessor::CheckPostQueue()
 		if (!pPostInfo->GetWorking())
 		{
 #ifndef DISABLE_PARCHECK
+			if (pPostInfo->GetRequestParCheck())
+			{
+				CheckParsIndirect(pDownloadQueue, pPostInfo->GetDestDir(), pPostInfo->GetNZBFilename(),
+					pPostInfo->GetCategory(), pPostInfo->GetQueuedFilename(), true);
+			}
+
 			if (pPostInfo->GetParCheck() && pPostInfo->GetParStatus() == PARSTATUS_NOT_CHECKED)
 			{
 				StartParJob(pPostInfo);
@@ -837,19 +843,30 @@ void PrePostProcessor::StartParJob(PostInfo* pPostInfo)
 	m_ParChecker.Start();
 }
 
-bool PrePostProcessor::CheckPars(DownloadQueue * pDownloadQueue, FileInfo * pFileInfo)
+bool PrePostProcessor::CheckPars(DownloadQueue* pDownloadQueue, FileInfo* pFileInfo)
+{
+	return CheckParsIndirect(pDownloadQueue, pFileInfo->GetNZBInfo()->GetDestDir(),
+		pFileInfo->GetNZBInfo()->GetFilename(), pFileInfo->GetNZBInfo()->GetCategory(),
+		pFileInfo->GetNZBInfo()->GetQueuedFilename(), false);
+}
+
+bool PrePostProcessor::CheckParsIndirect(DownloadQueue* pDownloadQueue, const char* szDestDir,
+	const char* szNZBFilename, const char* szCategory, const char* szQueuedFilename, bool bAddTop)
 {
 	debug("Checking if pars exist");
 	
 	char szNZBNiceName[1024];
-	pFileInfo->GetNZBInfo()->GetNiceNZBName(szNZBNiceName, 1024);
+	NZBInfo::MakeNiceNZBName(szNZBFilename, szNZBNiceName, 1024);
 
-	bool bJobAdded = false;
+	PostQueue cPostQueue;
 
-	m_mutexQueue.Lock();
+	if (!bAddTop)
+	{
+		m_mutexQueue.Lock();
+	}
 
 	FileList fileList;
-	if (FindMainPars(pFileInfo->GetNZBInfo()->GetDestDir(), &fileList))
+	if (FindMainPars(szDestDir, &fileList))
 	{
 		debug("Found pars");
 		
@@ -859,11 +876,11 @@ bool PrePostProcessor::CheckPars(DownloadQueue * pDownloadQueue, FileInfo * pFil
 			debug("Found par: %s", szParFilename);
 
 			char szFullFilename[1024];
-			snprintf(szFullFilename, 1024, "%s%c%s", pFileInfo->GetNZBInfo()->GetDestDir(), (int)PATH_SEPARATOR, szParFilename);
+			snprintf(szFullFilename, 1024, "%s%c%s", szDestDir, (int)PATH_SEPARATOR, szParFilename);
 			szFullFilename[1024-1] = '\0';
 
 			if (!ParJobExists(&m_PostQueue, szFullFilename) && 
-				(!ParJobExists(&m_CompletedJobs, szFullFilename) || g_pOptions->GetAllowReProcess()))
+				!ParJobExists(&m_CompletedJobs, szFullFilename))
 			{
 				char szInfoName[1024];
 				int iBaseLen = 0;
@@ -878,24 +895,51 @@ bool PrePostProcessor::CheckPars(DownloadQueue * pDownloadQueue, FileInfo * pFil
 				
 				info("Queueing %s%c%s for par-check", szNZBNiceName, (int)PATH_SEPARATOR, szInfoName);
 				PostInfo* pPostInfo = new PostInfo();
-				pPostInfo->SetNZBFilename(pFileInfo->GetNZBInfo()->GetFilename());
-				pPostInfo->SetDestDir(pFileInfo->GetNZBInfo()->GetDestDir());
+				pPostInfo->SetNZBFilename(szNZBFilename);
+				pPostInfo->SetDestDir(szDestDir);
 				pPostInfo->SetParFilename(szFullFilename);
 				pPostInfo->SetInfoName(szParInfoName);
-				pPostInfo->SetCategory(pFileInfo->GetNZBInfo()->GetCategory());
-				pPostInfo->SetQueuedFilename(pFileInfo->GetNZBInfo()->GetQueuedFilename());
+				pPostInfo->SetCategory(szCategory);
+				pPostInfo->SetQueuedFilename(szQueuedFilename);
 				pPostInfo->SetParCheck(true);
-				m_PostQueue.push_back(pPostInfo);
-				SavePostQueue();
-				m_bHasMoreJobs = true;
-				bJobAdded = true;
+				if (bAddTop)
+				{
+					cPostQueue.push_front(pPostInfo);
+				}
+				else
+				{
+					cPostQueue.push_back(pPostInfo);
+				}
 			}
 
 			free(szParFilename);
 		}
 	}
 
-	m_mutexQueue.Unlock();
+	bool bJobAdded = false;
+
+	if (!cPostQueue.empty())
+	{
+		for (PostQueue::iterator it = cPostQueue.begin(); it != cPostQueue.end(); it++)
+		{
+			if (bAddTop)
+			{
+				m_PostQueue.push_front(*it);
+			}
+			else
+			{
+				m_PostQueue.push_back(*it);
+			}
+		}
+		SavePostQueue();
+		m_bHasMoreJobs = true;
+		bJobAdded = true;
+	}
+
+	if (!bAddTop)
+	{
+		m_mutexQueue.Unlock();
+	}
 
 	debug("bJobAdded=%i", (int)bJobAdded);
 	return bJobAdded;

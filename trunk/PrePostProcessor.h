@@ -117,6 +117,8 @@ private:
 
 	void				ParCheckerUpdate(Subject* Caller, void* Aspect);
 	bool				CheckPars(DownloadQueue* pDownloadQueue, FileInfo* pFileInfo);
+	bool				CheckParsIndirect(DownloadQueue* pDownloadQueue, const char* szDestDir, const char* szNZBFilename, 
+							const char* szCategory, const char* szQueuedFilename, bool bAddTop);
 	bool				AddPar(FileInfo* pFileInfo, bool bDeleted);
 	bool				SameParCollection(const char* szFilename1, const char* szFilename2);
 	bool				FindMainPars(const char* szPath, FileList* pFileList);
