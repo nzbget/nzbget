@@ -51,6 +51,8 @@
 
 extern Options* g_pOptions;
 
+static const int POSTPROCESS_REQUEST_PARCHECK = 0x6E01; // = "n1" (nzbget result code 1);
+
 ScriptController::ScriptController()
 {
 	m_szScript = NULL;
@@ -61,12 +63,12 @@ ScriptController::ScriptController()
 	m_bTerminated = false;
 }
 
-void ScriptController::Execute()
+int ScriptController::Execute()
 {
 	if (!Util::FileExists(m_szScript))
 	{
 		error("Could not start %s: could not find file %s", m_szInfoName, m_szScript);
-		return;
+		return -1;
 	}
 
 	int pipein;
@@ -117,7 +119,7 @@ void ScriptController::Execute()
 		{
 			error("Could not start %s: error %i", m_szInfoName, dwErrCode);
 		}
-		return;
+		return -1;
 	}
 
 	debug("Child Process-ID: %i", (int)ProcessInfo.dwProcessId);
@@ -138,7 +140,7 @@ void ScriptController::Execute()
 	if (pipe(p))
 	{
 		error("Could not open pipe: errno %i", errno);
-		return;
+		return -1;
 	}
 
 	pipein = p[0];
@@ -150,7 +152,7 @@ void ScriptController::Execute()
 	if (pid == -1)
 	{
 		error("Could not start %s: errno %i", m_szInfoName, errno);
-		return;
+		return -1;
 	}
 	else if (pid == 0)
 	{
@@ -186,7 +188,7 @@ void ScriptController::Execute()
 	if (!readpipe)
 	{
 		error("Could not open pipe to %s", m_szInfoName);
-		return;
+		return -1;
 	}
 	
 	char* buf = (char*)malloc(10240);
@@ -209,16 +211,29 @@ void ScriptController::Execute()
 		warn("Interrupted %s", m_szInfoName);
 	}
 
+	int iExitCode = 0;
+
 #ifdef WIN32
 	WaitForSingleObject(m_hProcess, INFINITE);
+	DWORD dExitCode = 0;
+	GetExitCodeProcess(m_hProcess, &dExitCode);
+	iExitCode = dExitCode;
 #else
-	waitpid(m_hProcess, NULL, 0);
+	int iStatus = 0;
+	waitpid(m_hProcess, &iStatus, 0);
+	if (WIFEXITED(iStatus))
+	{
+		iExitCode = WEXITSTATUS(iStatus);
+	}
 #endif
 
 	if (!m_bTerminated)
 	{
 		info("Completed %s", m_szInfoName);
+		debug("Exit code %i", iExitCode);
 	}
+
+	return iExitCode;
 }
 
 void ScriptController::Terminate()
@@ -397,8 +412,16 @@ void PostScriptController::Run()
 	szArgs[8] = NULL;
 	SetArgs(szArgs);
 
+#ifndef DISABLE_PARCHECK
+	int iResult = Execute();
+	if (iResult == POSTPROCESS_REQUEST_PARCHECK && !m_pPostInfo->GetParCheck())
+	{
+		info("%s requested par-check/repair", szInfoName);
+		m_pPostInfo->SetRequestParCheck(true);
+	}
+#else
 	Execute();
-
+#endif
 	m_pPostInfo->SetStage(PostInfo::ptFinished);
 	m_pPostInfo->SetWorking(false);
 }

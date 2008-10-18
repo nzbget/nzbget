@@ -59,6 +59,7 @@ private:
 	bool			m_bParCheck;
 	int				m_iParStatus;
 	bool			m_bParFailed;
+	bool			m_bRequestParCheck;
 	EStage			m_eStage;
 	char*			m_szProgressLabel;
 	int				m_iFileProgress;
@@ -107,6 +108,8 @@ public:
 	void			SetParStatus(int iParStatus) { m_iParStatus = iParStatus; }
 	bool			GetParFailed() { return m_bParFailed; }
 	void			SetParFailed(bool bParFailed) { m_bParFailed = bParFailed; }
+	bool			GetRequestParCheck() { return m_bRequestParCheck; }
+	void			SetRequestParCheck(bool bRequestParCheck) { m_bRequestParCheck = bRequestParCheck; }
 	void			AppendMessage(Message::EKind eKind, const char* szText);
 	Thread*			GetScriptThread() { return m_pScriptThread; }
 	void			SetScriptThread(Thread* pScriptThread) { m_pScriptThread = pScriptThread; }
