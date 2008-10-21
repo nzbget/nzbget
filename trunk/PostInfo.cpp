@@ -56,7 +56,7 @@ PostInfo::PostInfo()
 	m_bParCheck = false;
 	m_iParStatus = 0;
 	m_bParFailed = false;
-	m_bRequestParCheck = false;
+	m_eRequestParCheck = rpNone;
 	m_szProgressLabel = strdup("");
 	m_iFileProgress = 0;
 	m_iStageProgress = 0;
