@@ -51,7 +51,8 @@
 
 extern Options* g_pOptions;
 
-static const int POSTPROCESS_REQUEST_PARCHECK = 0x6E01; // = "n1" (nzbget result code 1);
+static const int POSTPROCESS_PARCHECK_CURRENT = 0x6E01; // = "n1" (nzbget result code 1);
+static const int POSTPROCESS_PARCHECK_ALL = 0x6E02; // = "n2" (nzbget result code 2);
 
 ScriptController::ScriptController()
 {
@@ -414,14 +415,42 @@ void PostScriptController::Run()
 
 #ifndef DISABLE_PARCHECK
 	int iResult = Execute();
-	if (iResult == POSTPROCESS_REQUEST_PARCHECK && !m_pPostInfo->GetParCheck())
+	if (iResult == POSTPROCESS_PARCHECK_ALL)
 	{
-		info("%s requested par-check/repair", szInfoName);
-		m_pPostInfo->SetRequestParCheck(true);
+		if (m_pPostInfo->GetParCheck())
+		{
+			error("%s requested par-check/repair for all collections, but they were already checked", szInfoName);
+		}
+		else if (!m_bNZBFileCompleted)
+		{
+			error("%s requested par-check/repair for all collections, but it was not the call for the last collection", szInfoName);
+		}
+		else
+		{
+			info("%s requested par-check/repair for all collections", szInfoName);
+			m_pPostInfo->SetRequestParCheck(PostInfo::rpAll);
+		}
+	}
+	else if (iResult == POSTPROCESS_PARCHECK_CURRENT)
+	{
+		if (m_pPostInfo->GetParCheck())
+		{
+			error("%s requested par-check/repair for current collection, but the collection was already checked", szInfoName);
+		}
+		else if (strlen(m_pPostInfo->GetParFilename()) == 0)
+		{
+			error("%s requested par-check/repair for current collection, but the collection doesn't have any par-files", szInfoName);
+		}
+		else
+		{
+			info("%s requested par-check/repair for current collection", szInfoName);
+			m_pPostInfo->SetRequestParCheck(PostInfo::rpCurrent);
+		}
 	}
 #else
 	Execute();
 #endif
+
 	m_pPostInfo->SetStage(PostInfo::ptFinished);
 	m_pPostInfo->SetWorking(false);
 }

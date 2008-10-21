@@ -508,7 +508,7 @@ NzbCleanupDisk=no
 # Arguments passed to that program:
 #  1 - path to destination dir, where downloaded files are located;
 #  2 - name of nzb-file processed;
-#  3 - name of par-file processed (if par-checked) or empty string (if not);
+#  3 - name of par-file or empty string (if no collections found);
 #  4 - result of par-check:
 #      0 = not checked: par-check disabled or nzb-file does not contain any
 #          par-files;
@@ -523,10 +523,17 @@ NzbCleanupDisk=no
 #      1 = current par-job or any of the previous par-jobs for the
 #          same nzb-files failed;
 #  7 - category assigned to nzb-file (can be empty string).
-# Return value: the script may return special value "28161" (hex 0x6E01 which 
-# means "n1" or "nzbget return code 1") to request nzbget to do 
-# par-check/repair. All other returns code are currently ignored, but for
-# future compatibility use value "0", which is a common default result code).
+# Return value: nzbget processes the exit code returned by the script:
+#  0     - all OK;
+#  28161 - request nzbget to do par-check/repair for current collection in the 
+#          current nzb-file;
+#  28162 - request nzbget to do par-check/repair for all collections in the 
+#          current nzb-file;
+# For info: value "28161" in hex-form is 0x6E01 and means "n1" or "nzbget 
+# return code 1".
+# All other return codes are currently ignored, but for future compatibility 
+# use value "0" or do not specify any exit code (in this case system use code
+# "0" by default).
 # NOTE: The parameter "state of nzb-job" is very important and MUST be checked 
 # even in the simplest scripts.
 # If par-check is enabled and nzb-file contains more than one collection
@@ -540,21 +547,21 @@ NzbCleanupDisk=no
 #     failed par-jobs" and do the processing, only if they are set to "1" 
 #     (which means, that this was the last collection in nzb-file and all files 
 #      are now completed) and to "0" (no failed par-jobs) respectively;
-# NOTE: if the option <ParCheck> is disabled nzbget calls PostProcess
-# only once, not after every collection, because the detection of collection
-# is disabled in this case;
 # NOTE: the term "collection" in the above description actually means 
 # "par-set". To determine what "collections" are present in nzb-file nzbget 
 # looks for par-sets. If any collection of files within nzb-file does 
 # not have any par-files, this collection will not be detected.
 # For example, for nzb-file containing three collections but only two par-sets, 
 # the postprocess will be called two times - after processing of each par-set.
+# NOTE: if nzbget doesn't find any collections it calls PostProcess once
+# with empty string for parameter "name of par-file";
 # NOTE: using the special return value ("28161") for requesting of 
 # par-check/repair allows to organize the delayed parcheck. To do that:
 #   1) set options: LoadPars=one, ParCheck=no, ParRepair=yes;
 #   2) in post-process-script check the parameter "result of par-check". If 
-#      it is "0", that means, the script is called the first time. Try to 
-#      unpack files. If unpack fails, exit the script with magic return value;
+#      it is "0", that means, the script is called for the first time. Try to 
+#      unpack files. If unpack fails, exit the script with exit code for 
+#      par-check/repair;
 #   3) nzbget will start par-check/repair. After that it calls the script again;
 #   4) on second pass the parameter "result of par-check" will have value 
 #      greater than "0". If it is "2" ("checked and successfully repaired")
