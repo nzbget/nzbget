@@ -850,3 +850,54 @@ bool QueueCoordinator::SetQueueEntryNZBCategory(NZBInfo* pNZBInfo, const char* s
 
 	return bOK;
 }
+
+/*
+ * NOTE: DownloadQueue must be locked prior to call of this function
+ */
+bool QueueCoordinator::MergeQueueEntries(NZBInfo* pDestNZBInfo, NZBInfo* pSrcNZBInfo)
+{
+	if (pDestNZBInfo->GetPostProcess() || pSrcNZBInfo->GetPostProcess())
+	{
+		char szDestNZBNiceName[1024];
+		pDestNZBInfo->GetNiceNZBName(szDestNZBNiceName, 1024);
+		char szSrcNZBNiceName[1024];
+		pSrcNZBInfo->GetNiceNZBName(szSrcNZBNiceName, 1024);
+		error("Could not merge %s and %s. File in post-process-stage", szDestNZBNiceName, szSrcNZBNiceName);
+		return false;
+	}
+
+	// set new dest directory, new category and move downloaded files to new dest directory
+	pSrcNZBInfo->SetFilename(pSrcNZBInfo->GetFilename());
+	SetQueueEntryNZBCategory(pSrcNZBInfo, pDestNZBInfo->GetCategory());
+
+	// reattach file items to new NZBInfo-object
+	for (DownloadQueue::iterator it = m_DownloadQueue.begin(); it != m_DownloadQueue.end(); it++)
+	{
+		FileInfo* pFileInfo = *it;
+		if (pFileInfo->GetNZBInfo() == pSrcNZBInfo)
+		{
+			pFileInfo->SetNZBInfo(pDestNZBInfo);
+		}
+	}
+
+	pDestNZBInfo->SetFileCount(pDestNZBInfo->GetFileCount() + pSrcNZBInfo->GetFileCount());
+	pDestNZBInfo->SetSize(pDestNZBInfo->GetSize() + pSrcNZBInfo->GetSize());
+
+	// reattach completed file items to new NZBInfo-object
+	for (NZBInfo::Files::iterator it = pSrcNZBInfo->GetCompletedFiles()->begin(); it != pSrcNZBInfo->GetCompletedFiles()->end(); it++)
+    {
+		char* szFileName = *it;
+		pDestNZBInfo->GetCompletedFiles()->push_back(szFileName);
+	}
+	pSrcNZBInfo->GetCompletedFiles()->clear();
+
+	// concatenate QueuedFilenames using character '|' as separator
+	int iLen = strlen(pDestNZBInfo->GetQueuedFilename()) + strlen(pSrcNZBInfo->GetQueuedFilename()) + 1;
+	char* szQueuedFilename = (char*)malloc(iLen);
+	snprintf(szQueuedFilename, iLen, "%s|%s", pDestNZBInfo->GetQueuedFilename(), pSrcNZBInfo->GetQueuedFilename());
+	szQueuedFilename[iLen - 1] = '\0';
+	pDestNZBInfo->SetQueuedFilename(szQueuedFilename);
+	free(szQueuedFilename);
+
+	return true;
+}

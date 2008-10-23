@@ -1,8 +1,8 @@
 /*
  *  This file is part of nzbget
  *
- *  Copyright (C) 2005  Bo Cordes Petersen <placebodk@users.sourceforge.net>
- *  Copyright (C) 2007  Andrei Prygounkov <hugbug@users.sourceforge.net>
+ *  Copyright (C) 2005 Bo Cordes Petersen <placebodk@users.sourceforge.net>
+ *  Copyright (C) 2007-2008 Andrei Prygounkov <hugbug@users.sourceforge.net>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -76,7 +76,8 @@ enum eRemoteEditAction
 	eRemoteEditActionGroupDelete,			// delete
 	eRemoteEditActionGroupPauseAllPars,		// pause only (all) pars (does not affect other files)
 	eRemoteEditActionGroupPauseExtraPars,	// pause only (almost all) pars, except main par-file (does not affect other files)
-	eRemoteEditActionGroupSetCategory		// set or change category for a group
+	eRemoteEditActionGroupSetCategory,		// set or change category for a group
+	eRemoteEditActionGroupMerge				// merge group
 };
 
 // The basic SNZBRequestBase struct, used in all requests

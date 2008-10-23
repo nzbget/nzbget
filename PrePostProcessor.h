@@ -111,6 +111,7 @@ private:
 	bool				SameParCollection(const char* szFilename1, const char* szFilename2);
 	bool				CreatePostJobs(DownloadQueue* pDownloadQueue, const char* szDestDir, const char* szNZBFilename, 
 							const char* szCategory, const char* szQueuedFilename, bool bParCheck, bool bLockQueue, bool bAddTop);
+	void				DeleteQueuedFile(const char* szQueuedFile);
 
 	Mutex			 	m_mutexQueue;
 	PostQueue			m_PostQueue;

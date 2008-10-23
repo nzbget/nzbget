@@ -830,6 +830,14 @@ void Options::InitCommandLine(int argc, char* argv[])
 					}
 					m_szEditQueueText = strdup(argv[optind-1]);
 				}
+				else if (!strcasecmp(optarg, "M"))
+				{
+					if (!bGroup)
+					{
+						abort("FATAL ERROR: only groups can be merged\n");
+					}
+					m_iEditQueueAction = eRemoteEditActionGroupMerge;
+				}
 				else
 				{
 					m_iEditQueueOffset = atoi(optarg);
@@ -938,6 +946,7 @@ void Options::PrintUsage(char* com)
 		"       R                    Pause extra pars (for groups)\n"
 		"       D                    Delete file(s)\n"
 		"       K <name>             Set category (for groups)\n"
+		"       M                    Merge (for groups)\n"
 		"    <IDs>                   Comma-separated list of file-ids or ranges\n"
 		"                            of file-ids, e. g.: 1-5,3,10-22\n",
 		Util::BaseFileName(com));

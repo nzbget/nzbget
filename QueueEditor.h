@@ -1,7 +1,7 @@
 /*
  *  This file if part of nzbget
  *
- *  Copyright (C) 2007  Andrei Prygounkov <hugbug@users.sourceforge.net>
+ *  Copyright (C) 2007-2008 Andrei Prygounkov <hugbug@users.sourceforge.net>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -53,7 +53,8 @@ public:
 		eaGroupDelete,
 		eaGroupPauseAllPars,
 		eaGroupPauseExtraPars,
-		eaGroupSetCategory
+		eaGroupSetCategory,
+		eaGroupMerge
 	};
 
 private:
@@ -83,6 +84,7 @@ private:
 	void					PausePars(FileList* pFileList, bool bExtraParsOnly);
 	void					SetNZBCategory(NZBInfo* pNZBInfo, const char* szCategory);
 	bool					CanCleanupDisk(DownloadQueue* pDownloadQueue, NZBInfo* pNZBInfo);
+	void					MergeGroups(DownloadQueue* pDownloadQueue, ItemList* pItemList);
 
 	void					PauseUnpauseEntry(FileInfo* pFileInfo, bool bPause);
 	void					DeleteEntry(FileInfo* pFileInfo);

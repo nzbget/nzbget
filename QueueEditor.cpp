@@ -1,7 +1,7 @@
 /*
  *  This file is part of nzbget
  *
- *  Copyright (C) 2007  Andrei Prygounkov <hugbug@users.sourceforge.net>
+ *  Copyright (C) 2007-2008 Andrei Prygounkov <hugbug@users.sourceforge.net>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -194,6 +194,10 @@ bool QueueEditor::InternEditList(DownloadQueue* pDownloadQueue, IDList* pIDList,
 	{
 		PauseParsInGroups(&cItemList, eAction == eaFilePauseExtraPars);
 	}
+	else if (eAction == eaGroupMerge)
+	{
+		MergeGroups(pDownloadQueue, &cItemList);
+	}
 	else
 	{
 		for (ItemList::iterator it = cItemList.begin(); it != cItemList.end(); it++)
@@ -219,11 +223,6 @@ bool QueueEditor::InternEditList(DownloadQueue* pDownloadQueue, IDList* pIDList,
 					DeleteEntry(pItem->m_pFileInfo);
 					break;
 
-				case eaFilePauseAllPars:
-				case eaFilePauseExtraPars:
-					// remove compiler warning "enumeration not handled in switch"
-					break;
-
 				case eaGroupSetCategory:
 					SetNZBCategory(pItem->m_pFileInfo->GetNZBInfo(), szText);
 					break;
@@ -237,6 +236,12 @@ bool QueueEditor::InternEditList(DownloadQueue* pDownloadQueue, IDList* pIDList,
 				case eaGroupPauseAllPars:
 				case eaGroupPauseExtraPars:
 					EditGroup(pDownloadQueue, pItem->m_pFileInfo, eAction, iOffset);
+					break;
+
+				case eaFilePauseAllPars:
+				case eaFilePauseExtraPars:
+				case eaGroupMerge:
+					// remove compiler warning "enumeration not handled in switch"
 					break;
 			}
 			delete pItem;
@@ -418,7 +423,7 @@ bool QueueEditor::EditGroup(DownloadQueue* pDownloadQueue, FileInfo* pFileInfo, 
 	}
 
 	EEditAction GroupToFileMap[] = { (EEditAction)0, eaFileMoveOffset, eaFileMoveTop, eaFileMoveBottom, eaFilePause, eaFileResume, eaFileDelete, eaFilePauseAllPars, eaFilePauseExtraPars,
-		eaFileMoveOffset, eaFileMoveTop, eaFileMoveBottom, eaFilePause, eaFileResume, eaFileDelete, eaFilePauseAllPars, eaFilePauseExtraPars };
+		eaFileMoveOffset, eaFileMoveTop, eaFileMoveBottom, eaFilePause, eaFileResume, eaFileDelete, eaFilePauseAllPars, eaFilePauseExtraPars, (EEditAction)0, (EEditAction)0 };
 
 	return InternEditList(pDownloadQueue, &cIDList, true, GroupToFileMap[eAction], iOffset, NULL);
 }
@@ -696,4 +701,38 @@ bool QueueEditor::CanCleanupDisk(DownloadQueue* pDownloadQueue, NZBInfo* pNZBInf
 	}
 
 	return false;
+}
+
+void QueueEditor::MergeGroups(DownloadQueue* pDownloadQueue, ItemList* pItemList)
+{
+	if (pItemList->size() == 0)
+	{
+		return;
+	}
+
+	EditItem* pDestItem = pItemList->front();
+
+	for (ItemList::iterator it = pItemList->begin() + 1; it != pItemList->end(); it++)
+	{
+		EditItem* pItem = *it;
+		if (pItem->m_pFileInfo->GetNZBInfo() != pDestItem->m_pFileInfo->GetNZBInfo())
+		{
+			debug("merge %s to %s", pItem->m_pFileInfo->GetNZBInfo()->GetFilename(), pDestItem->m_pFileInfo->GetNZBInfo()->GetFilename());
+			g_pQueueCoordinator->MergeQueueEntries(pDestItem->m_pFileInfo->GetNZBInfo(), pItem->m_pFileInfo->GetNZBInfo());
+		}
+		delete pItem;
+	}
+
+	// align group ("AlignGroup" needs the first file item as parameter)
+	for (DownloadQueue::iterator it = pDownloadQueue->begin(); it != pDownloadQueue->end(); it++)
+	{
+		FileInfo* pFileInfo = *it;
+		if (pFileInfo->GetNZBInfo() == pDestItem->m_pFileInfo->GetNZBInfo())
+		{
+			AlignGroup(pDownloadQueue, pFileInfo);
+			break;
+		}
+	}
+
+	delete pDestItem;
 }
