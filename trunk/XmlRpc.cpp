@@ -1138,6 +1138,7 @@ EditCommandEntry EditCommandNameMap[] = {
 	{ QueueEditor::eaGroupPauseAllPars, "GroupPauseAllPars" },
 	{ QueueEditor::eaGroupPauseExtraPars, "GroupPauseExtraPars" },
 	{ QueueEditor::eaGroupSetCategory, "GroupSetCategory" },
+	{ QueueEditor::eaGroupMerge, "GroupMerge" },
 	{ QueueEditor::eaFileMoveOffset, NULL }
 };
 

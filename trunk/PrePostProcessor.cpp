@@ -310,12 +310,34 @@ void PrePostProcessor::CollectionDeleted(DownloadQueue* pDownloadQueue, FileInfo
 				}
 			}
 		}
-		if (g_pOptions->GetNzbCleanupDisk() && Util::FileExists(pFileInfo->GetNZBInfo()->GetQueuedFilename()))
+		if (g_pOptions->GetNzbCleanupDisk())
 		{
-			detail("Deleting file %s", pFileInfo->GetNZBInfo()->GetQueuedFilename());
-			remove(pFileInfo->GetNZBInfo()->GetQueuedFilename());
+			DeleteQueuedFile(pFileInfo->GetNZBInfo()->GetQueuedFilename());
 		}
 	}
+}
+
+void PrePostProcessor::DeleteQueuedFile(const char* szQueuedFile)
+{
+	// szQueuedFile may contain one filename or several filenames separated 
+	// with "|"-character (for merged groups)
+	char* szFilename = strdup(szQueuedFile);
+	char* szEnd = szFilename - 1;
+	
+	while (szEnd)
+	{
+		char* szName1 = szEnd + 1;
+		szEnd = strchr(szName1, '|');
+		if (szEnd) *szEnd = '\0';
+
+		if (Util::FileExists(szName1))
+		{
+			info("Deleting file %s", szName1);
+			remove(szName1);
+		}
+	}
+
+	free(szFilename);
 }
 
 /**
@@ -465,8 +487,7 @@ void PrePostProcessor::CheckPostQueue()
 {
 	int iCleanupGroupID = 0;
 	char szNZBNiceName[1024];
-	char szQueuedFilename[1024];
-	szQueuedFilename[0] = '\0';
+	char* szQueuedFilename = NULL;
 
 	DownloadQueue* pDownloadQueue = g_pQueueCoordinator->LockQueue();
 	m_mutexQueue.Lock();
@@ -525,8 +546,7 @@ void PrePostProcessor::CheckPostQueue()
 					}
 					if (g_pOptions->GetNzbCleanupDisk())
 					{
-						strncpy(szQueuedFilename, pPostInfo->GetQueuedFilename(), 1024);
-						szQueuedFilename[1024-1] = '\0';
+						szQueuedFilename = strdup(pPostInfo->GetQueuedFilename());
 					}
 				}
 #endif
@@ -556,10 +576,10 @@ void PrePostProcessor::CheckPostQueue()
 		g_pQueueCoordinator->GetQueueEditor()->EditEntry(iCleanupGroupID, false, QueueEditor::eaGroupDelete, 0, NULL);
 	}
 
-	if (szQueuedFilename[0] != '\0' && Util::FileExists(szQueuedFilename))
+	if (szQueuedFilename)
 	{
-		info("Deleting file %s", szQueuedFilename);
-		remove(szQueuedFilename);
+		DeleteQueuedFile(szQueuedFilename);
+		free(szQueuedFilename);
 	}
 }
 

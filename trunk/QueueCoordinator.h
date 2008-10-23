@@ -111,12 +111,13 @@ public:
 	// Editing the queue
 	DownloadQueue*			LockQueue();
 	void					UnlockQueue() ;
-	void					AddNZBFileToQueue(NZBFile* pNZBQueue, bool bAddFirst);
+	void					AddNZBFileToQueue(NZBFile* pNZBFile, bool bAddFirst);
 	bool					AddFileToQueue(const char* szFileName, const char* szCategory);
 	bool					HasMoreJobs() { return m_bHasMoreJobs; }
 	bool					GetStandBy() { return m_bStandBy; }
 	bool					DeleteQueueEntry(FileInfo* pFileInfo);
 	bool					SetQueueEntryNZBCategory(NZBInfo* pNZBInfo, const char* szCategory);
+	bool					MergeQueueEntries(NZBInfo* pDestNZBInfo, NZBInfo* pSrcNZBInfo);
 	QueueEditor*			GetQueueEditor() { return &m_QueueEditor; }
 
 	virtual void			LockNZBInfo(NZBInfo* pNZBInfo) { LockQueue(); }
