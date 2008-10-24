@@ -55,9 +55,9 @@ public:
 	struct Aspect
 	{
 		EAspectAction eAction;
-		FileInfo* pFileInfo;
 		DownloadQueue* pDownloadQueue;
-		const char* szNZBFilename;
+		NZBInfo* pNZBInfo;
+		FileInfo* pFileInfo;
 	};
 
 private:

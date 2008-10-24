@@ -60,6 +60,7 @@ public:
 	static NZBFile*		CreateFromFile(const char* szFileName, const char* szCategory);
 	const char* 		GetFileName() const { return m_szFileName; }
 	FileInfos*			GetFileInfos() { return &m_FileInfos; }
+	NZBInfo*			GetNZBInfo() { return m_pNZBInfo; }
 	void				DetachFileInfos();
 
 	void				LogDebugInfo();

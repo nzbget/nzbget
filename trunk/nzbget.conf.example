@@ -144,6 +144,16 @@ NzbDirInterval=5
 # downloaded in web-browser.
 NzbDirFileAge=60
 
+# Automatic merging of nzb-files with the same filename (yes, no).
+# A typical scenario: you put nzb-file into incoming directory, nzbget adds
+# file to queue. You find out, that the file doesn't have par-files. You
+# find required par-files, put nzb-file with the par-files into incoming 
+# directory, nzbget adds it to queue as a separate group. You want the second 
+# file to be merged with the first for parchecking to work properly. With 
+# option "MergeNzb" nzbget can merge files automatically. You only need to 
+# save the second file under the same filename as the first one.
+MergeNzb=no
+
 # Set path to program, that must be executed before any file in incoming 
 # directory (option <NzbDir>) is processed.
 # Example: "NzbProcess=~/nzbprocess.sh".

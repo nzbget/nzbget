@@ -180,6 +180,11 @@ bool QueueEditor::EditList(IDList* pIDList, bool bSmartOrder, EEditAction eActio
 	return bOK;
 }
 
+bool QueueEditor::LockedEditList(DownloadQueue* pDownloadQueue, IDList* pIDList, bool bSmartOrder, EEditAction eAction, int iOffset, const char* szText)
+{
+	return InternEditList(pDownloadQueue, pIDList, bSmartOrder, eAction, iOffset, szText);
+}
+
 bool QueueEditor::InternEditList(DownloadQueue* pDownloadQueue, IDList* pIDList, bool bSmartOrder, EEditAction eAction, int iOffset, const char* szText)
 {
 	if (eAction == eaGroupMoveOffset)

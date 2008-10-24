@@ -118,6 +118,10 @@ void NZBInfo::SetDestDir(const char* szDestDir)
 
 void NZBInfo::SetFilename(const char * szFilename)
 {
+	if (m_szFilename)
+	{
+		free(m_szFilename);
+	}
 	m_szFilename = strdup(szFilename);
 }
 

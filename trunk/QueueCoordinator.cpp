@@ -280,7 +280,7 @@ void QueueCoordinator::AddNZBFileToQueue(NZBFile* pNZBFile, bool bAddFirst)
 
 	pNZBFile->DetachFileInfos();
 
-	Aspect aspect = { eaNZBFileAdded, NULL, &m_DownloadQueue, pNZBFile->GetFileName() };
+	Aspect aspect = { eaNZBFileAdded, &m_DownloadQueue, pNZBFile->GetNZBInfo(), NULL };
 	Notify(&aspect);
 	
 	if (g_pOptions->GetSaveQueue() && g_pOptions->GetServerMode())
@@ -422,7 +422,7 @@ bool QueueCoordinator::DeleteQueueEntry(FileInfo* pFileInfo)
 	}
 	if (!hasDownloads)
 	{
-		Aspect aspect = { eaFileDeleted, pFileInfo, &m_DownloadQueue, NULL };
+		Aspect aspect = { eaFileDeleted, &m_DownloadQueue, pFileInfo->GetNZBInfo(), pFileInfo };
 		Notify(&aspect);
 
 		DeleteFileInfo(pFileInfo, false);
@@ -620,7 +620,7 @@ void QueueCoordinator::ArticleCompleted(ArticleDownloader* pArticleDownloader)
 		// delete File from Queue
 		pFileInfo->SetDeleted(true);
 
-		Aspect aspect = { fileCompleted && !fileDeleted ? eaFileCompleted : eaFileDeleted, pFileInfo, &m_DownloadQueue, NULL };
+		Aspect aspect = { fileCompleted && !fileDeleted ? eaFileCompleted : eaFileDeleted, &m_DownloadQueue, pFileInfo->GetNZBInfo(), pFileInfo };
 		Notify(&aspect);
 		
 		DeleteFileInfo(pFileInfo, fileCompleted);
