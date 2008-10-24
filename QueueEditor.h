@@ -98,6 +98,7 @@ public:
 	bool					EditList(IDList* pIDList, bool bSmartOrder, EEditAction eAction, int iOffset, const char* szText);
 
 	bool					LockedEditEntry(DownloadQueue* pDownloadQueue, int ID, bool bSmartOrder, EEditAction eAction, int iOffset, const char* szText);
+	bool					LockedEditList(DownloadQueue* pDownloadQueue, IDList* pIDList, bool bSmartOrder, EEditAction eAction, int iOffset, const char* szText);
 };
 
 #endif
