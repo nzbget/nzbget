@@ -51,8 +51,8 @@
 
 extern Options* g_pOptions;
 
-static const int POSTPROCESS_PARCHECK_CURRENT = 0x6E01; // = "n1" (nzbget result code 1);
-static const int POSTPROCESS_PARCHECK_ALL = 0x6E02; // = "n2" (nzbget result code 2);
+static const int POSTPROCESS_PARCHECK_CURRENT = 91;
+static const int POSTPROCESS_PARCHECK_ALL = 92;
 
 ScriptController::ScriptController()
 {
