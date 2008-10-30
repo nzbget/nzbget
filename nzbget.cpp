@@ -439,12 +439,12 @@ void SignalProc(int iSignal)
 			ExitProc();
 			break;
 
-#ifdef DEBUG
-		case SIGPIPE:
+		case SIGCHLD:
 			// ignoring
 			break;
-			
-		case SIGCHLD:
+
+#ifdef DEBUG
+		case SIGPIPE:
 			// ignoring
 			break;
 			
@@ -468,6 +468,7 @@ void InstallSignalHandlers()
 {
 	signal(SIGINT, SignalProc);
 	signal(SIGTERM, SignalProc);
+	signal(SIGCHLD, SignalProc);
 	signal(SIGPIPE, SIG_IGN);
 #ifdef DEBUG
 	SignalProcList.clear();
