@@ -1441,16 +1441,44 @@ void PrePostProcessor::UpdateParProgress()
 	pPostInfo->SetStageProgress(m_ParChecker.GetStageProgress());
     PostInfo::EStage StageKind[] = { PostInfo::ptLoadingPars, PostInfo::ptVerifyingSources, PostInfo::ptRepairing, PostInfo::ptVerifyingRepaired };
 	PostInfo::EStage eStage = StageKind[m_ParChecker.GetStage()];
+	time_t tCurrent = time(NULL);
 
 	if (!pPostInfo->GetStartTime())
 	{
-		pPostInfo->SetStartTime(time(NULL));
+		pPostInfo->SetStartTime(tCurrent);
 	}
 
 	if (pPostInfo->GetStage() != eStage)
 	{
 		pPostInfo->SetStage(eStage);
-		pPostInfo->SetStageTime(time(NULL));
+		pPostInfo->SetStageTime(tCurrent);
+	}
+
+	bool bParCancel = false;
+#ifdef HAVE_PAR2_CANCEL
+	if (!m_ParChecker.GetCancelled())
+	{
+		if ((g_pOptions->GetParTimeLimit() > 0) &&
+			m_ParChecker.GetStage() == ParChecker::ptRepairing &&
+			((g_pOptions->GetParTimeLimit() > 5 && tCurrent - pPostInfo->GetStageTime() > 5 * 60) ||
+			(g_pOptions->GetParTimeLimit() <= 5 && tCurrent - pPostInfo->GetStageTime() > 1 * 60)))
+		{
+			// first five (or one) minutes elapsed, now can check the estimated time
+			int iEstimatedRepairTime = (int)((tCurrent - pPostInfo->GetStartTime()) * 1000 / 
+				(pPostInfo->GetStageProgress() > 0 ? pPostInfo->GetStageProgress() : 1));
+			if (iEstimatedRepairTime > g_pOptions->GetParTimeLimit() * 60)
+			{
+				debug("Estimated repair time %i seconds", iEstimatedRepairTime);
+				warn("Cancelling par-repair for %s, estimated repair time (%i minutes) exceeds allowed repair time", m_ParChecker.GetInfoName(), iEstimatedRepairTime / 60);
+				bParCancel = true;
+			}
+		}
+	}
+#endif
+
+	if (bParCancel)
+	{
+		m_ParChecker.Cancel();
 	}
 
 	m_mutexQueue.Unlock();

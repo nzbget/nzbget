@@ -74,6 +74,7 @@ private:
 	char*				m_szProgressLabel;
 	int					m_iFileProgress;
 	int					m_iStageProgress;
+	bool				m_bCancelled;
 
 	bool				LoadMorePars();
 	bool				CheckSplittedFragments();
@@ -111,6 +112,8 @@ public:
 	bool				GetRepairNotNeeded() { return m_bRepairNotNeeded; }
 	void				AddParFile(const char* szParFilename);
 	void				QueueChanged();
+	void				Cancel();
+	bool				GetCancelled() { return m_bCancelled; }
 };
 
 #endif

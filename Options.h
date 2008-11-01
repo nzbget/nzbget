@@ -154,6 +154,7 @@ private:
 	bool				m_bNzbCleanupDisk;
 	bool				m_bDeleteCleanupDisk;
 	bool				m_bMergeNzb;
+	int					m_iParTimeLimit;
 
 	// Parsed command-line parameters
 	bool				m_bServerMode;
@@ -269,6 +270,7 @@ public:
 	bool				GetNzbCleanupDisk() { return m_bNzbCleanupDisk; }
 	bool				GetDeleteCleanupDisk() { return m_bDeleteCleanupDisk; }
 	bool				GetMergeNzb() { return m_bMergeNzb; }
+	int					GetParTimeLimit() { return m_iParTimeLimit; }
 
 	// Parsed command-line parameters
 	bool				GetServerMode() { return m_bServerMode; }

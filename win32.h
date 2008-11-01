@@ -54,6 +54,9 @@
 /* Define to 1 if variadic macros are supported */
 #define HAVE_VARIADIC_MACROS
 
+/* Define to 1 if libpar2 supports cancelling (needs a special patch) */
+#define HAVE_PAR2_CANCEL
+
 #define VERSION "0.6.0-testing"
 
 /* Suppress warnings */
