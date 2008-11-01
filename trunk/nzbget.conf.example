@@ -486,6 +486,26 @@ ParRepair=yes
 # and the option <StrictParName> does not change this behavior.
 StrictParName=yes
 
+# Maximum allowed time for par-repair (minutes).
+# Value "0" means unlimited.
+# If you use nzbget on a very slow computer like NAS-device, it may be good to
+# limit the time allowed for par-repair. Nzbget calculates the estimated time 
+# required for par-repair. If the estimated value exceeds the limit defined
+# here, nzbget cancels the repair.
+# To avoid a false cancellation nzbget compares the estimated time with 
+# <ParTimeLimit> after the first 5 minutes of repairing, when the calculated
+# estimated time is more or less accurate. But in a case if <ParTimeLimit> is
+# set to a value smaller than 5 minutes, the comparison is made after the first 
+# whole minute.
+# NOTE: the option limits only the time required for repairing. It doesn't 
+# affect the first stage of parcheck - verification of files. However the 
+# verification speed is constant, it doesn't depend on files integrity and
+# therefore it is not necessary to limit the time needed for the first stage.
+# NOTE: this option requires an extended version of libpar2 (the original
+# version doesn't support the cancelling of repairing). Please refer to 
+# nzbget's README for info on how to apply a patch to libpar2.
+ParTimeLimit=0
+
 # Pause download queue during check/repair (yes, no).
 # Enable the option to give CPU more time for par-check/repair. That helps
 # to speed up check/repair on slow CPUs with fast connection (e.g. NAS-devices).

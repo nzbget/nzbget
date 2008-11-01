@@ -272,6 +272,20 @@ if test "$ENABLEPARCHECK" = "yes"; then
 	dnl			AC_MSG_ERROR("libpar2 library not found in $LIBVAL.")
 	dnl		fi
 
+	dnl
+	dnl check if libpar2 has support for cancelling
+	dnl
+	AC_MSG_CHECKING(whether libpar2 supports cancelling)
+	AC_LANG_PUSH(C++)
+	AC_TRY_COMPILE(
+		[#include <libpar2/par2cmdline.h>]
+		[#include <libpar2/par2repairer.h>]
+		[ class Repairer : public Par2Repairer { void test() { cancelled = true; } }; ],
+		[],
+		AC_MSG_RESULT([[yes]])
+		AC_DEFINE([HAVE_PAR2_CANCEL], 1, [Define to 1 if libpar2 supports cancelling (needs a special patch)]),
+		AC_MSG_RESULT([[no]]))
+	AC_LANG_POP(C++)
 else
 	AC_DEFINE([DISABLE_PARCHECK],1,[Define to 1 to disable smart par-verification and restoration])
 fi

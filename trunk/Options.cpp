@@ -152,6 +152,7 @@ static const char* OPTION_POSTPAUSEQUEUE	= "PostPauseQueue";
 static const char* OPTION_NZBCLEANUPDISK	= "NzbCleanupDisk";
 static const char* OPTION_DELETECLEANUPDISK	= "DeleteCleanupDisk";
 static const char* OPTION_MERGENZB			= "MergeNzb";
+static const char* OPTION_PARTIMELIMIT		= "ParTimeLimit";
 
 const char* BoolNames[] = { "yes", "no", "true", "false", "1", "0", "on", "off", "enable", "disable", "enabled", "disabled" };
 const int BoolValues[] = { 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0 };
@@ -257,6 +258,7 @@ Options::Options(int argc, char* argv[])
 	m_bNzbCleanupDisk		= false;
 	m_bDeleteCleanupDisk	= false;
 	m_bMergeNzb				= false;
+	m_iParTimeLimit			= 0;
 
 	char szFilename[MAX_PATH + 1];
 #ifdef WIN32
@@ -479,7 +481,8 @@ void Options::InitDefault()
 	SetOption(OPTION_POSTPAUSEQUEUE, "no");
 	SetOption(OPTION_NZBCLEANUPDISK, "no");
 	SetOption(OPTION_DELETECLEANUPDISK, "no");
-	SetOption(OPTION_MERGENZB, "no");	
+	SetOption(OPTION_MERGENZB, "no");
+	SetOption(OPTION_PARTIMELIMIT, "0");	
 }
 
 void Options::InitOptFile()
@@ -593,6 +596,7 @@ void Options::InitOptions()
 	m_iNzbDirInterval		= atoi(GetOption(OPTION_NZBDIRINTERVAL));
 	m_iNzbDirFileAge		= atoi(GetOption(OPTION_NZBDIRFILEAGE));
 	m_iDiskSpace			= atoi(GetOption(OPTION_DISKSPACE));
+	m_iParTimeLimit			= atoi(GetOption(OPTION_PARTIMELIMIT));
 
 	if (m_iNzbDirInterval > 0)
 	{

@@ -156,9 +156,23 @@ Following configure-parameters may be usefull:
   
 The library libsigc++ must be installed first, since libpar2 requires it.
 
+If you use nzbget on a very slow computer like NAS-device, it may be good to
+limit the time allowed for par-repair (option "ParTimeLimit" in nzbget 
+configuration file). This feature requires a patched version of libpar2.
+To compile that version download the original source code of libpar2
+(version 0.2) and apply patches "libpar2-0.2-bugfixes.patch" and 
+"libpar2-0.2-cancel.patch", provided with nzbget:
+
+  cd libpar2-0.2
+  cp ~/nzbget/libpar2-0.2-*.patch .
+  patch < libpar2-0.2-bugfixes.patch
+  patch < libpar2-0.2-cancel.patch
+  ./configure
+  make
+  make install
+
 If you are not able to use libpar2 or libsigc++ or do not want them you can
-make the program without support for par-check using option 
-"--disable-parcheck":
+make nzbget without support for par-check using option "--disable-parcheck":
 
   ./configure --disable-parcheck
 

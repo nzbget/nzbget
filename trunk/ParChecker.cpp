@@ -84,6 +84,7 @@ ParChecker::ParChecker()
 	m_iStageProgress = 0;
 	m_iExtraFiles = 0;
 	m_bVerifyingExtraFiles = false;
+	m_bCancelled = false;
 	m_eStage = ptLoadingPars;
 	m_QueuedParFiles.clear();
 }
@@ -157,15 +158,10 @@ void ParChecker::Run()
 	m_iProcessedFiles = 0;
 	m_iExtraFiles = 0;
 	m_bVerifyingExtraFiles = false;
+	m_bCancelled = false;
 
 	info("Verifying %s", m_szInfoName);
 	SetStatus(psWorking);
-
-	snprintf(m_szProgressLabel, 1024, "Verifying %s", m_szInfoName);
-	m_szProgressLabel[1024-1] = '\0';
-	m_iFileProgress = 0;
-	m_iStageProgress = 0;
-	UpdateProgress();
 
     debug("par: %s", m_szParFilename);
     CommandLine commandLine;
@@ -185,7 +181,13 @@ void ParChecker::Run()
 	pRepairer->sig_filename.connect(sigc::mem_fun(*this, &ParChecker::signal_filename));
 	pRepairer->sig_progress.connect(sigc::mem_fun(*this, &ParChecker::signal_progress));
 	pRepairer->sig_done.connect(sigc::mem_fun(*this, &ParChecker::signal_done));
-	
+
+	snprintf(m_szProgressLabel, 1024, "Verifying %s", m_szInfoName);
+	m_szProgressLabel[1024-1] = '\0';
+	m_iFileProgress = 0;
+	m_iStageProgress = 0;
+	UpdateProgress();
+
     res = pRepairer->PreProcess(commandLine);
     debug("ParChecker: PreProcess-result=%i", res);
 
@@ -315,7 +317,13 @@ void ParChecker::Run()
 		}
 	}
 	
-	if (res == eSuccess)
+	if (m_bCancelled)
+	{
+		error("Repair cancelled for %s", m_szInfoName);
+		m_szErrMsg = strdup("repair cancelled");
+		SetStatus(psFailed);
+	}
+	else if (res == eSuccess)
 	{
 		SetStatus(psFinished);
 	}
@@ -539,6 +547,16 @@ void ParChecker::signal_done(std::string str, int available, int total)
 			}
 		}
 	}
+}
+
+void ParChecker::Cancel()
+{
+#ifdef HAVE_PAR2_CANCEL
+	((Repairer*)m_pRepairer)->cancelled = true;
+	m_bCancelled = true;
+#else
+	error("Could not cancel par-repair. The used version of libpar2 does not support the cancelling of par-repair. Libpar2 needs to be patched for that feature to work.");
+#endif
 }
 
 #endif
