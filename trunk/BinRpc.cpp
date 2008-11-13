@@ -1,8 +1,8 @@
 /*
  *  This file is part of nzbget
  *
- *  Copyright (C) 2005  Bo Cordes Petersen <placebodk@sourceforge.net>
- *  Copyright (C) 2007  Andrei Prygounkov <hugbug@users.sourceforge.net>
+ *  Copyright (C) 2005 Bo Cordes Petersen <placebodk@sourceforge.net>
+ *  Copyright (C) 2007-2008 Andrei Prygounkov <hugbug@users.sourceforge.net>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -59,7 +59,7 @@ extern void ExitProc();
 
 const char* g_szMessageRequestNames[] =
     { "N/A", "Download", "Pause/Unpause", "List", "Set download rate", "Dump debug", 
-		"Edit queue", "Log", "Quit", "Version", "Post-queue" };
+		"Edit queue", "Log", "Quit", "Version", "Post-queue", "Write log", "Scan" };
 
 const unsigned int g_iMessageRequestSizes[] =
     { 0,
@@ -73,6 +73,8 @@ const unsigned int g_iMessageRequestSizes[] =
 		sizeof(SNZBShutdownRequest),
 		sizeof(SNZBVersionRequest),
 		sizeof(SNZBPostQueueRequest),
+		sizeof(SNZBWriteLogRequest),
+		sizeof(SNZBScanRequest)
     };
 
 //*****************************************************************
@@ -108,7 +110,7 @@ void BinRpcProcessor::Execute()
 void BinRpcProcessor::Dispatch()
 {
 	if (ntohl(m_MessageBase.m_iType) >= (int)eRemoteRequestDownload &&
-		   ntohl(m_MessageBase.m_iType) <= (int)eRemoteRequestPostQueue &&
+		   ntohl(m_MessageBase.m_iType) <= (int)eRemoteRequestScan &&
 		   g_iMessageRequestSizes[ntohl(m_MessageBase.m_iType)] != ntohl(m_MessageBase.m_iStructSize))
 	{
 		error("Invalid size of request: needed %i Bytes, but received %i Bytes",
@@ -183,6 +185,12 @@ void BinRpcProcessor::Dispatch()
 		case eRemoteRequestWriteLog:
 			{
 				command = new WriteLogBinCommand();
+				break;
+			}
+
+		case eRemoteRequestScan:
+			{
+				command = new ScanBinCommand();
 				break;
 			}
 
@@ -788,4 +796,16 @@ void WriteLogBinCommand::Execute()
 	}
 
 	free(pRecvBuffer);
+}
+
+void ScanBinCommand::Execute()
+{
+	SNZBScanRequest ScanRequest;
+	if (!ReceiveRequest(&ScanRequest, sizeof(ScanRequest)))
+	{
+		return;
+	}
+
+	g_pPrePostProcessor->ScanNZBDir();
+	SendBoolResponse(true, "Scan-Command completed successfully");
 }

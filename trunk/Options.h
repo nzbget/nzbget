@@ -46,7 +46,8 @@ public:
 		opClientRequestShutdown,
 		opClientRequestVersion,
 		opClientRequestPostQueue,
-		opClientRequestWriteLog
+		opClientRequestWriteLog,
+		opClientRequestScan
 	};
 	enum EMessageTarget
 	{
@@ -197,7 +198,7 @@ private:
 	bool				SetOptionString(const char* option);
 	bool				ValidateOptionName(const char* optname);
 	void				LoadConfig(const char* configfile);
-	void				CheckDir(char** dir, const char* szOptionName);
+	void				CheckDir(char** dir, const char* szOptionName, bool bAllowEmpty);
 	void				ParseFileIDList(int argc, char* argv[], int optind);
 	bool				ParseTime(const char* szTime, int* pHours, int* pMinutes);
 	bool				ParseWeekDays(const char* szWeekDays, int* pWeekDaysBits);

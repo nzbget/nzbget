@@ -1,8 +1,8 @@
 /*
  *  This file if part of nzbget
  *
- *  Copyright (C) 2005  Bo Cordes Petersen <placebodk@users.sourceforge.net>
- *  Copyright (C) 2007  Andrei Prygounkov <hugbug@users.sourceforge.net>
+ *  Copyright (C) 2005 Bo Cordes Petersen <placebodk@users.sourceforge.net>
+ *  Copyright (C) 2007-2008 Andrei Prygounkov <hugbug@users.sourceforge.net>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -59,6 +59,7 @@ public:
 	bool			RequestServerVersion();
 	bool			RequestPostQueue();
 	bool 			RequestWriteLog(int iKind, const char* szText);
+	bool			RequestScan();
 };
 
 #endif

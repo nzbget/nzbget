@@ -82,11 +82,12 @@ static struct option long_options[] =
 	    {"post", no_argument, 0, 'O'},
 	    {"write", required_argument, 0, 'W'},
 	    {"category", required_argument, 0, 'K'},
+	    {"scan", no_argument, 0, 'S'},
 	    {0, 0, 0, 0}
     };
 #endif
 
-static char short_options[] = "c:hno:psvAB:DCE:G:K:LOPR:TUQVW:";
+static char short_options[] = "c:hno:psvAB:DCE:G:K:LOPR:STUQVW:";
 
 // Program options
 static const char* OPTION_DESTDIR			= "DestDir";
@@ -535,7 +536,7 @@ void Options::InitOptFile()
 	m_bConfigInitialized = true;
 }
 
-void Options::CheckDir(char** dir, const char* szOptionName)
+void Options::CheckDir(char** dir, const char* szOptionName, bool bAllowEmpty)
 {
 	char* usedir = NULL;
 	const char* tempdir = GetOption(szOptionName);
@@ -558,8 +559,13 @@ void Options::CheckDir(char** dir, const char* szOptionName)
 	}
 	else
 	{
-		abort("FATAL ERROR: Wrong value for option \"%s\"\n", szOptionName);
+		if (!bAllowEmpty)
+		{
+			abort("FATAL ERROR: Wrong value for option \"%s\"\n", szOptionName);
+		}
+		return;
 	}
+
 	// Ensure the dir is created
 	if (!Util::ForceDirectories(usedir))
 	{
@@ -570,9 +576,9 @@ void Options::CheckDir(char** dir, const char* szOptionName)
 
 void Options::InitOptions()
 {
-	CheckDir(&m_szDestDir, OPTION_DESTDIR);
-	CheckDir(&m_szTempDir, OPTION_TEMPDIR);
-	CheckDir(&m_szQueueDir, OPTION_QUEUEDIR);
+	CheckDir(&m_szDestDir, OPTION_DESTDIR, false);
+	CheckDir(&m_szTempDir, OPTION_TEMPDIR, false);
+	CheckDir(&m_szQueueDir, OPTION_QUEUEDIR, false);
 
 	m_szPostProcess = strdup(GetOption(OPTION_POSTPROCESS));
 	m_szNZBProcess = strdup(GetOption(OPTION_NZBPROCESS));
@@ -598,10 +604,7 @@ void Options::InitOptions()
 	m_iDiskSpace			= atoi(GetOption(OPTION_DISKSPACE));
 	m_iParTimeLimit			= atoi(GetOption(OPTION_PARTIMELIMIT));
 
-	if (m_iNzbDirInterval > 0)
-	{
-		CheckDir(&m_szNzbDir, OPTION_NZBDIR);
-	}
+	CheckDir(&m_szNzbDir, OPTION_NZBDIR, m_iNzbDirInterval == 0);
 
 	m_bCreateBrokenLog		= (bool)ParseOptionValue(OPTION_CREATEBROKENLOG, NULL, BoolCount, BoolNames, BoolValues);
 	m_bResetLog				= (bool)ParseOptionValue(OPTION_RESETLOG, NULL, BoolCount, BoolNames, BoolValues);
@@ -895,6 +898,9 @@ void Options::InitCommandLine(int argc, char* argv[])
 				}
 				m_szCategory = strdup(optarg);
 				break;
+			case 'S':
+				m_eClientOperation = opClientRequestScan;
+				break;
 			case '?':
 				exit(-1);
 				break;
@@ -941,6 +947,7 @@ void Options::PrintUsage(char* com)
 		"  -G, --log <lines>         Request last <lines> lines from server's screen-log\n"
 		"  -W, --write <D|I|W|E|G> \"Text\" Send text to server's log\n"
 		"  -O, --post                Request post-processor-queue from server\n"
+		"  -S, --scan                Scan incoming nzb-directory on the server\n"
 		"  -E, --edit [G] <action> <IDs> Edit queue on the server\n"
 		"    <G>                     Affect all files in the group (same nzb-file)\n"
 		"    <action> is one of:\n"
