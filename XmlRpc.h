@@ -210,4 +210,10 @@ public:
 	virtual void		Execute();
 };
 
+class ScanXmlCommand: public XmlCommand
+{
+public:
+	virtual void		Execute();
+};
+
 #endif

@@ -390,6 +390,10 @@ void ProcessClientRequest()
 	{
 		Client->RequestWriteLog(g_pOptions->GetWriteLogKind(), g_pOptions->GetLastArg());
 	}
+	else if (g_pOptions->GetClientOperation() == Options::opClientRequestScan)
+	{
+		Client->RequestScan();
+	}
 
 	delete Client;
 }

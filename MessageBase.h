@@ -52,7 +52,8 @@ enum eRemoteRequest
 	eRemoteRequestShutdown,
 	eRemoteRequestVersion,
 	eRemoteRequestPostQueue,
-	eRemoteRequestWriteLog
+	eRemoteRequestWriteLog,
+	eRemoteRequestScan
 };
 
 // Possible values for field "m_iAction" of struct "SNZBEditQueueRequest":
@@ -343,13 +344,19 @@ struct SNZBWriteLogRequest
 	//char					m_szText[m_iTrailingDataLength];	// variable sized
 };
 
-// Write log  response
+// Write log response
 struct SNZBWriteLogResponse
 {
 	SNZBResponseBase		m_MessageBase;			// Must be the first in the struct
 	int32_t					m_bSuccess;				// 0 - command failed, 1 - command executed successfully
 	int32_t					m_iTrailingDataLength;	// Length of Text-string (m_szText), following to this record
 	//char					m_szText[m_iTrailingDataLength];	// variable sized
+};
+
+// Scan nzb directory request
+struct SNZBScanRequest
+{
+	SNZBRequestBase			m_MessageBase;			// Must be the first in the struct
 };
 
 #endif

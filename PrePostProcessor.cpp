@@ -156,7 +156,7 @@ void PrePostProcessor::Run()
 			iNZBDirInterval >= g_pOptions->GetNzbDirInterval() * 1000)
 		{
 			// check nzbdir every g_pOptions->GetNzbDirInterval() seconds
-			CheckIncomingNZBs(g_pOptions->GetNzbDir(), "");
+			ScanNZBDir();
 			iNZBDirInterval = 0;
 		}
 		iNZBDirInterval += 200;
@@ -395,6 +395,14 @@ NZBInfo* PrePostProcessor::MergeGroups(DownloadQueue* pDownloadQueue, NZBInfo* p
 * Check if there are files in directory for incoming nzb-files
 * and add them to download queue
 */
+void PrePostProcessor::ScanNZBDir()
+{
+	if (g_pOptions->GetNzbDir())
+	{
+		CheckIncomingNZBs(g_pOptions->GetNzbDir(), "");
+	}
+}
+
 void PrePostProcessor::CheckIncomingNZBs(const char* szDirectory, const char* szCategory)
 {
 	DirBrowser dir(szDirectory);

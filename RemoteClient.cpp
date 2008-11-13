@@ -746,3 +746,24 @@ bool RemoteClient::RequestWriteLog(int iKind, const char* szText)
 	m_pConnection->Disconnect();
 	return OK;
 }
+
+bool RemoteClient::RequestScan()
+{
+	if (!InitConnection()) return false;
+
+	SNZBScanRequest ScanRequest;
+	InitMessageBase(&ScanRequest.m_MessageBase, eRemoteRequestScan, sizeof(ScanRequest));
+
+	bool OK = m_pConnection->Send((char*)(&ScanRequest), sizeof(ScanRequest)) >= 0;
+	if (OK)
+	{
+		OK = ReceiveBoolResponse();
+	}
+	else
+	{
+		perror("m_pConnection->Send");
+	}
+
+	m_pConnection->Disconnect();
+	return OK;
+}

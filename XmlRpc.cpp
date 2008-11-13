@@ -444,6 +444,10 @@ XmlCommand* XmlRpcProcessor::CreateCommand(const char* szMethodName)
 	{
 		command = new WriteLogXmlCommand();
 	}
+	else if (!strcasecmp(szMethodName, "scan"))
+	{
+		command = new ScanXmlCommand();
+	}
 	else 
 	{
 		command = new ErrorXmlCommand(1, "Invalid procedure");
@@ -1481,5 +1485,17 @@ void WriteLogXmlCommand::Execute()
 		return;
 	}
 
+	BuildBoolResponse(true);
+}
+
+void ScanXmlCommand::Execute()
+{
+	if (m_eHttpMethod == XmlRpcProcessor::hmGet)
+	{
+		BuildErrorResponse(4, "Not safe procedure for HTTP-Method GET. Use Method POST instead");
+		return;
+	}
+
+	g_pPrePostProcessor->ScanNZBDir();
 	BuildBoolResponse(true);
 }

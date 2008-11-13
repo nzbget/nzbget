@@ -142,6 +142,7 @@ public:
 	bool				HasMoreJobs() { return m_bHasMoreJobs; }
 	PostQueue*			LockPostQueue();
 	void				UnlockPostQueue();
+	void				ScanNZBDir();
 };
 
 #endif
