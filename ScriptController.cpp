@@ -54,6 +54,51 @@ extern Options* g_pOptions;
 static const int POSTPROCESS_PARCHECK_CURRENT = 91;
 static const int POSTPROCESS_PARCHECK_ALL = 92;
 
+#ifndef WIN32
+#define CHILD_WATCHDOG 1
+#endif
+
+#ifdef CHILD_WATCHDOG
+/**
+ * Sometimes the forked child process doesn't start properly and hangs
+ * just during the starting. I didn't find any explanation about what
+ * could cause that problem except of a general advice, that
+ * "a forking in a multithread application is not recommended".
+ *
+ * Workaround:
+ * 1) child process prints a line into stdout directly after the start;
+ * 2) parent process waits for a line for 60 seconds. If it didn't receive it
+ *    the cild process assumed to hang and will be killed. Another attempt
+ *    will be made.
+ */
+ 
+class ChildWatchDog : public Thread
+{
+private:
+	pid_t			m_hProcessID;
+protected:
+	virtual void	Run();
+public:
+	void			SetProcessID(pid_t hProcessID) { m_hProcessID = hProcessID; }
+};
+
+void ChildWatchDog::Run()
+{
+	static const int WAIT_SECONDS = 60;
+	time_t tStart = time(NULL);
+	while (!IsStopped() && (time(NULL) - tStart) < WAIT_SECONDS)
+	{
+		usleep(10 * 1000);
+	}
+
+	if (!IsStopped())
+	{
+		info("Restarting hanging child process");
+		kill(m_hProcessID, SIGKILL);
+	}
+}
+#endif
+
 ScriptController::ScriptController()
 {
 	m_szScript = NULL;
@@ -72,7 +117,14 @@ int ScriptController::Execute()
 		return -1;
 	}
 
+	int iExitCode = 0;
 	int pipein;
+
+#ifdef CHILD_WATCHDOG
+	bool bChildConfirmed = false;
+	while (!bChildConfirmed && !m_bTerminated)
+	{
+#endif
 
 #ifdef WIN32
 	// build command line
@@ -168,6 +220,10 @@ int ScriptController::Execute()
 		
 		close(pipeout);
 
+#ifdef CHILD_WATCHDOG
+		fwrite("\n", 1, 2, stdout);
+#endif
+
 		execvp(m_szScript, (char* const*)m_szArgs);
 		fprintf(stdout, "[ERROR] Could not start script: %s", strerror(errno));
 		fflush(stdout);
@@ -192,6 +248,14 @@ int ScriptController::Execute()
 		return -1;
 	}
 	
+#ifdef CHILD_WATCHDOG
+	debug("Creating child watchdog");
+	ChildWatchDog* pWatchDog = new ChildWatchDog();
+	pWatchDog->SetAutoDestroy(false);
+	pWatchDog->SetProcessID(pid);
+	pWatchDog->Start();
+#endif
+	
 	char* buf = (char*)malloc(10240);
 
 	debug("Entering pipe-loop");
@@ -199,10 +263,31 @@ int ScriptController::Execute()
 	{
 		if (fgets(buf, 10240, readpipe))
 		{
+#ifdef CHILD_WATCHDOG
+			if (!bChildConfirmed)
+			{
+				bChildConfirmed = true;
+				pWatchDog->Stop();
+				debug("Child confirmed");
+			}
+#endif
 			ProcessOutput(buf);
 		}
 	}
 	debug("Exited pipe-loop");
+
+#ifdef CHILD_WATCHDOG
+	debug("Destroying WatchDog");
+	if (!bChildConfirmed)
+	{
+		pWatchDog->Stop();
+	}
+	while (pWatchDog->IsRunning())
+	{
+		usleep(1 * 1000);
+	}
+	delete pWatchDog;
+#endif
 	
 	free(buf);
 	fclose(readpipe);
@@ -212,7 +297,7 @@ int ScriptController::Execute()
 		warn("Interrupted %s", m_szInfoName);
 	}
 
-	int iExitCode = 0;
+	iExitCode = 0;
 
 #ifdef WIN32
 	WaitForSingleObject(m_hProcess, INFINITE);
@@ -227,7 +312,11 @@ int ScriptController::Execute()
 		iExitCode = WEXITSTATUS(iStatus);
 	}
 #endif
-
+	
+#ifdef CHILD_WATCHDOG
+	}	// while (!bChildConfirmed && !m_bTerminated)
+#endif
+	
 	if (!m_bTerminated)
 	{
 		info("Completed %s", m_szInfoName);
@@ -245,7 +334,7 @@ void ScriptController::Terminate()
 #ifdef WIN32
 	BOOL bOK = TerminateProcess(m_hProcess, -1);
 #else
-	bool bOK = kill(m_hProcess, 9) == 0;
+	bool bOK = kill(m_hProcess, SIGKILL) == 0;
 #endif
 
 	if (bOK)
