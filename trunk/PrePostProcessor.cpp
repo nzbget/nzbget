@@ -83,6 +83,7 @@ PrePostProcessor::PrePostProcessor()
 
 	m_bHasMoreJobs = false;
 	m_bPostPause = false;
+	m_bRequestedNZBDirScan = false;
 
 	m_QueueCoordinatorObserver.owner = this;
 	g_pQueueCoordinator->Attach(&m_QueueCoordinatorObserver);
@@ -152,11 +153,12 @@ void PrePostProcessor::Run()
 	int iSchedulerInterval = 1000;
 	while (!IsStopped())
 	{
-		if (g_pOptions->GetNzbDir() && g_pOptions->GetNzbDirInterval() > 0 && 
-			iNZBDirInterval >= g_pOptions->GetNzbDirInterval() * 1000)
+		if (g_pOptions->GetNzbDir() && (m_bRequestedNZBDirScan || 
+			(g_pOptions->GetNzbDirInterval() > 0 && iNZBDirInterval >= g_pOptions->GetNzbDirInterval() * 1000)))
 		{
-			// check nzbdir every g_pOptions->GetNzbDirInterval() seconds
-			ScanNZBDir();
+			// check nzbdir every g_pOptions->GetNzbDirInterval() seconds or if requested
+			m_bRequestedNZBDirScan = false;
+			CheckIncomingNZBs(g_pOptions->GetNzbDir(), "");
 			iNZBDirInterval = 0;
 		}
 		iNZBDirInterval += 200;
@@ -391,18 +393,17 @@ NZBInfo* PrePostProcessor::MergeGroups(DownloadQueue* pDownloadQueue, NZBInfo* p
 	return pNZBInfo;
 }
 
+void PrePostProcessor::ScanNZBDir()
+{
+	// ideally we should use mutex to access "m_bRequestedNZBDirScan",
+	// but it's not critical here.
+	m_bRequestedNZBDirScan = true;
+}
+
 /**
 * Check if there are files in directory for incoming nzb-files
 * and add them to download queue
 */
-void PrePostProcessor::ScanNZBDir()
-{
-	if (g_pOptions->GetNzbDir())
-	{
-		CheckIncomingNZBs(g_pOptions->GetNzbDir(), "");
-	}
-}
-
 void PrePostProcessor::CheckIncomingNZBs(const char* szDirectory, const char* szCategory)
 {
 	DirBrowser dir(szDirectory);

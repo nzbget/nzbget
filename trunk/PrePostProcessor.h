@@ -85,6 +85,7 @@ private:
 	bool				m_bSchedulerPauseChanged;
 	bool				m_bSchedulerPause;
 	bool				m_bPostPause;
+	bool				m_bRequestedNZBDirScan;
 
 	void				CheckIncomingNZBs(const char* szDirectory, const char* szCategory);
 	bool				IsNZBFileCompleted(DownloadQueue* pDownloadQueue, const char* szNZBFilename, 
