@@ -807,5 +807,5 @@ void ScanBinCommand::Execute()
 	}
 
 	g_pPrePostProcessor->ScanNZBDir();
-	SendBoolResponse(true, "Scan-Command completed successfully");
+	SendBoolResponse(true, "Scan-Command scheduled successfully");
 }
