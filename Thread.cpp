@@ -144,18 +144,6 @@ bool Semaphore::TryWait()
 #endif
 }
 
-bool Semaphore::TimedWait(int iMSec)
-{
-#ifdef WIN32
-	return WaitForSingleObject(m_semObj, iMSec) == WAIT_OBJECT_0;
-#else
-	struct timespec alarm;
-	alarm.tv_sec = ::time(NULL) + iMSec / 1000;
-	alarm.tv_nsec = (iMSec % 1000) * 1000;
-	return sem_timedwait(&m_semObj, &alarm) == 0;
-#endif
-}
-
 bool Semaphore::IsLocked()
 {
 #ifdef WIN32
