@@ -50,6 +50,7 @@
 #include "Util.h"
 
 extern Options* g_pOptions;
+extern char* (*szEnvironmentVariables)[];
 
 static const int POSTPROCESS_PARCHECK_CURRENT = 91;
 static const int POSTPROCESS_PARCHECK_ALL = 92;
@@ -99,6 +100,84 @@ void ChildWatchDog::Run()
 }
 #endif
 
+
+EnvironmentStrings::EnvironmentStrings()
+{
+}
+
+EnvironmentStrings::~EnvironmentStrings()
+{
+	for (Strings::iterator it = m_strings.begin(); it != m_strings.end(); it++)
+	{
+		free(*it);
+	}
+	m_strings.clear();
+}
+
+void EnvironmentStrings::InitFromCurrentProcess()
+{
+	for (int i = 0; (*szEnvironmentVariables)[i]; i++)
+	{
+		char* szVar = (*szEnvironmentVariables)[i];
+		Append(strdup(szVar));
+	}
+}
+
+void EnvironmentStrings::Append(char* szString)
+{
+	m_strings.push_back(szString);
+}
+
+#ifdef WIN32
+/*
+ * Returns environment block in format suitable for using with CreateProcess. 
+ * The allocated memory must be freed by caller using "free()".
+ */
+char* EnvironmentStrings::GetStrings()
+{
+	int iSize = 1;
+	for (Strings::iterator it = m_strings.begin(); it != m_strings.end(); it++)
+	{
+		char* szVar = *it;
+		iSize += strlen(szVar) + 1;
+	}
+
+	char* szStrings = (char*)malloc(iSize);
+	char* szPtr = szStrings;
+	for (Strings::iterator it = m_strings.begin(); it != m_strings.end(); it++)
+	{
+		char* szVar = *it;
+		strcpy(szPtr, szVar);
+		szPtr += strlen(szVar) + 1;
+	}
+	szPtr = '\0';
+
+	return szStrings;
+}
+
+#else
+
+/*
+ * Returns environment block in format suitable for using with execve 
+ * The allocated memory must be freed by caller using "free()".
+ */
+char** EnvironmentStrings::GetStrings()
+{
+	char** pStrings = (char**)malloc((m_strings.size() + 1) * sizeof(char*));
+	char** pPtr = pStrings;
+	for (Strings::iterator it = m_strings.begin(); it != m_strings.end(); it++)
+	{
+		char* szVar = *it;
+		*pPtr = szVar;
+		pPtr++;
+	}
+	*pPtr = NULL;
+
+	return pStrings;
+}
+#endif
+
+
 ScriptController::ScriptController()
 {
 	m_szScript = NULL;
@@ -107,6 +186,21 @@ ScriptController::ScriptController()
 	m_szInfoName = NULL;
 	m_szDefaultKindPrefix = NULL;
 	m_bTerminated = false;
+	m_environmentStrings.InitFromCurrentProcess();
+}
+
+void ScriptController::SetEnvVar(const char* szName, const char* szValue)
+{
+	int iLen = strlen(szName) + strlen(szValue) + 2;
+	char* szVar = (char*)malloc(iLen);
+	snprintf(szVar, iLen, "%s=%s", szName, szValue);
+	m_environmentStrings.Append(szVar);
+}
+
+void ScriptController::PrepareEnvironmentStrings()
+{
+	//TODO: add program options
+
 }
 
 int ScriptController::Execute()
@@ -116,6 +210,8 @@ int ScriptController::Execute()
 		error("Could not start %s: could not find file %s", m_szInfoName, m_szScript);
 		return -1;
 	}
+
+	PrepareEnvironmentStrings();
 
 	int iExitCode = 0;
 	int pipein;
@@ -157,7 +253,9 @@ int ScriptController::Execute()
 	PROCESS_INFORMATION ProcessInfo;
 	memset(&ProcessInfo, 0, sizeof(ProcessInfo));
 
-	BOOL bOK = CreateProcess(NULL, szCmdLine, NULL, NULL, TRUE, NORMAL_PRIORITY_CLASS | CREATE_NO_WINDOW, NULL, m_szWorkingDir, &StartupInfo, &ProcessInfo);
+	char* szEnvironmentStrings = m_environmentStrings.GetStrings();
+
+	BOOL bOK = CreateProcess(NULL, szCmdLine, NULL, NULL, TRUE, NORMAL_PRIORITY_CLASS | CREATE_NO_WINDOW, szEnvironmentStrings, m_szWorkingDir, &StartupInfo, &ProcessInfo);
 	if (!bOK)
 	{
 		DWORD dwErrCode = GetLastError();
@@ -174,6 +272,8 @@ int ScriptController::Execute()
 		}
 		return -1;
 	}
+
+	free(szEnvironmentStrings);
 
 	debug("Child Process-ID: %i", (int)ProcessInfo.dwProcessId);
 
@@ -195,6 +295,8 @@ int ScriptController::Execute()
 		error("Could not open pipe: errno %i", errno);
 		return -1;
 	}
+
+	char** pEnvironmentStrings = m_environmentStrings.GetStrings();
 
 	pipein = p[0];
 	pipeout = p[1];
@@ -224,7 +326,7 @@ int ScriptController::Execute()
 		fwrite("\n", 1, 2, stdout);
 #endif
 
-		execvp(m_szScript, (char* const*)m_szArgs);
+		execve(m_szScript, (char* const*)m_szArgs, (char* const*)pEnvironmentStrings);
 		fprintf(stdout, "[ERROR] Could not start script: %s", strerror(errno));
 		fflush(stdout);
 		_exit(-1);
@@ -233,6 +335,8 @@ int ScriptController::Execute()
 	// continue the first instance
 	debug("forked");
 	debug("Child Process-ID: %i", (int)pid);
+
+	free(pEnvironmentStrings);
 
 	m_hProcess = pid;
 
@@ -502,6 +606,14 @@ void PostScriptController::Run()
 	szArgs[8] = NULL;
 	SetArgs(szArgs);
 
+	SetEnvVar("NZBPP_DIRECTORY", m_pPostInfo->GetDestDir());
+	SetEnvVar("NZBPP_NZBFILENAME", szNZBFilename);
+	SetEnvVar("NZBPP_PARFILENAME", szParFilename);
+	SetEnvVar("NZBPP_PARSTATUS", szParStatus);
+	SetEnvVar("NZBPP_NZBCOMPLETED", szCollectionCompleted);
+	SetEnvVar("NZBPP_PARFAILED", szHasFailedParJobs);
+	SetEnvVar("NZBPP_CATEGORY", m_pPostInfo->GetCategory());
+
 #ifndef DISABLE_PARCHECK
 	int iResult = Execute();
 	if (iResult == POSTPROCESS_PARCHECK_ALL)
@@ -592,6 +704,9 @@ void NZBScriptController::ExecuteScript(const char* szScript, const char* szNZBF
 	szArgs[2] = szNZBFilename;
 	szArgs[3] = NULL;
 	pScriptController->SetArgs(szArgs);
+
+	pScriptController->SetEnvVar("NZBNP_DIRECTORY", szDir);
+	pScriptController->SetEnvVar("NZBNP_FILENAME", szNZBFilename);
 
 	pScriptController->Execute();
 

@@ -75,6 +75,8 @@
 #include "NTService.h"
 #endif
 
+#include "ScriptController.h" // DEBUG
+
 // Prototypes
 void Run();
 void Cleanup();
@@ -103,12 +105,12 @@ Log* g_pLog = NULL;
 PrePostProcessor* g_pPrePostProcessor = NULL;
 DiskState* g_pDiskState = NULL;
 Scheduler* g_pScheduler = NULL;
-
+char* (*szEnvironmentVariables)[] = NULL;
 
 /*
  * Main loop
  */
-int main(int argc, char *argv[])
+int main(int argc, char *argv[], char *argp[])
 {
 #ifdef WIN32
 #ifdef _DEBUG
@@ -137,6 +139,7 @@ int main(int argc, char *argv[])
 	g_pScheduler = new Scheduler();
 	debug("Options parsing");
 	g_pOptions = new Options(argc, argv);
+	szEnvironmentVariables = (char*(*)[])argp;
 
 #ifndef WIN32
 	if (g_pOptions->GetUMask() < 01000)

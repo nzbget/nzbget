@@ -26,10 +26,31 @@
 #ifndef SCRIPTCONTROLLER_H
 #define SCRIPTCONTROLLER_H
 
+#include <list>
+
 #include "Log.h"
 #include "Thread.h"
 #include "PostInfo.h"
 #include "Options.h"
+
+class EnvironmentStrings
+{
+private:
+	typedef std::vector<char*>		Strings;
+	
+	Strings				m_strings;
+
+public:
+						EnvironmentStrings();
+						~EnvironmentStrings();
+	void				InitFromCurrentProcess();
+	void				Append(char* szString);
+#ifdef WIN32
+	char*				GetStrings();
+#else	
+	char**				GetStrings();
+#endif
+};
 
 class ScriptController
 {
@@ -39,6 +60,7 @@ private:
 	const char**		m_szArgs;
 	const char*			m_szInfoName;
 	const char*			m_szDefaultKindPrefix;
+	EnvironmentStrings	m_environmentStrings;
 	Options::EScriptLogKind	m_eDefaultLogKind;
 	bool				m_bTerminated;
 #ifdef WIN32
@@ -48,6 +70,7 @@ private:
 #endif
 
 	void				ProcessOutput(char* szText);
+	void				PrepareEnvironmentStrings();
 
 protected:
 	virtual void		AddMessage(Message::EKind eKind, bool bDefaultKind, Options::EMessageTarget eMessageTarget, const char* szText);
@@ -64,6 +87,7 @@ public:
 	void				SetInfoName(const char* szInfoName) { m_szInfoName = szInfoName; }
 	void				SetDefaultKindPrefix(const char* szDefaultKindPrefix) { m_szDefaultKindPrefix = szDefaultKindPrefix; }
 	void				SetDefaultLogKind(Options::EScriptLogKind eDefaultLogKind) { m_eDefaultLogKind = eDefaultLogKind; }
+	void				SetEnvVar(const char* szName, const char* szValue);
 };
 
 class PostScriptController : public Thread, ScriptController
