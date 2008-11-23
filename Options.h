@@ -79,14 +79,24 @@ public:
 	};
 
 private:
-	struct OptEntry
+	class OptEntry
 	{
-		char* name;
-		char* value;
+	private:
+		char*			m_szName;
+		char*			m_szValue;
+
+	public:
+						OptEntry();
+						~OptEntry();
+		const char*		GetName() { return m_szName; }
+		void			SetName(const char* szName);
+		const char*		GetValue() { return m_szValue; }
+		void			SetValue(const char* szValue);
 	};
 	
-	std::vector< struct OptEntry >	optEntries;
+	typedef std::vector<OptEntry*>  OptEntries;
 
+	OptEntries			m_OptEntries;
 	bool				m_bConfigInitialized;
 
 	// Options
@@ -191,9 +201,9 @@ private:
 	void				CheckOptions();
 	void				PrintUsage(char* com);
 	void				Dump();
-	int					ParseOptionValue(const char* OptName, const char* OptValue, int argc, const char* argn[], const int argv[]);
+	int					ParseOptionValue(const char* OptName, int argc, const char* argn[], const int argv[]);
+	OptEntry*			FindOption(const char* optname);
 	const char*			GetOption(const char* optname);
-	void				DelOption(const char* optname);
 	void				SetOption(const char* optname, const char* value);
 	bool				SetOptionString(const char* option);
 	bool				ValidateOptionName(const char* optname);
