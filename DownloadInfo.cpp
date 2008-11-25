@@ -265,6 +265,10 @@ void ArticleInfo::SetMessageID(const char * szMessageID)
 
 void ArticleInfo::SetResultFilename(const char * v)
 {
+	if (m_szResultFilename)
+	{
+		free(m_szResultFilename);
+	}
 	m_szResultFilename = strdup(v);
 }
 

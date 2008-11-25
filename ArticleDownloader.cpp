@@ -163,6 +163,12 @@ void ArticleDownloader::Run()
 			break;
 		}
 
+		if (g_pOptions->GetPause())
+		{
+			Status = adPaused;
+			break;
+		}
+
 		if (!m_pConnection)
 		{
 			error("Serious error: Connection is NULL");
@@ -197,6 +203,12 @@ void ArticleDownloader::Run()
 				// same connect-error).
 				FreeConnection(Status == adFinished);
 			}
+		}
+
+		if (g_pOptions->GetPause())
+		{
+			Status = adPaused;
+			break;
 		}
 
 		if (((Status == adFailed) || (Status == adCrcError && g_pOptions->GetRetryOnCrcError())) && 
@@ -264,7 +276,7 @@ void ArticleDownloader::Run()
 		Status = adFinished;
 	}
 
-	if (Status != adFinished)
+	if (Status != adFinished && Status != adPaused)
 	{
 		Status = adFailed;
 	}
