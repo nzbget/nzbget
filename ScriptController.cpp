@@ -324,6 +324,7 @@ int ScriptController::Execute()
 
 #ifdef CHILD_WATCHDOG
 		fwrite("\n", 1, 2, stdout);
+		fflush(stdout);
 #endif
 
 		execve(m_szScript, (char* const*)m_szArgs, (char* const*)pEnvironmentStrings);
