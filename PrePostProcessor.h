@@ -31,7 +31,6 @@
 #include "Thread.h"
 #include "Observer.h"
 #include "DownloadInfo.h"
-#include "PostInfo.h"
 
 #ifndef DISABLE_PARCHECK
 #include "ParChecker.h"
@@ -109,8 +108,9 @@ private:
 	bool				FindMainPars(const char* szPath, FileList* pFileList);
 	bool				ParseParFilename(const char* szParFilename, int* iBaseNameLen, int* iBlocks);
 	bool				SameParCollection(const char* szFilename1, const char* szFilename2);
-	bool				CreatePostJobs(DownloadQueue* pDownloadQueue, const char* szDestDir, const char* szNZBFilename, 
-							const char* szCategory, const char* szQueuedFilename, bool bParCheck, bool bLockQueue, bool bAddTop);
+	bool				CreatePostJobs(DownloadQueue* pDownloadQueue, const char* szDestDir, const char* szNZBFilename,
+							const char* szCategory, NZBParameterList* pParameters, const char* szQueuedFilename,
+							bool bParCheck, bool bLockQueue, bool bAddTop);
 	void				DeleteQueuedFile(const char* szQueuedFile);
 	void				PausePars(DownloadQueue* pDownloadQueue, NZBInfo* pNZBInfo);
 	NZBInfo*			MergeGroups(DownloadQueue* pDownloadQueue, NZBInfo* pNZBInfo);

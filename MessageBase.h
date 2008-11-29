@@ -35,8 +35,14 @@ static const int NZBREQUESTPASSWORDSIZE = 32;
  * NZBGet communication protocol uses only two basic data types: integer and char.
  * Integer values are passed using network byte order (Big-Endian).
  * Use function "htonl" and "ntohl" to convert integers to/from machine 
- ' (host) byte order.
+ * (host) byte order.
  * All char-strings ends with NULL-char.
+ *
+ * NOTE: 
+ * NZBGet communication protocol is intended for usage only by NZBGet itself.
+ * The communication works only if server and client has the same version.
+ * The compatibility with previous program versions is not provided.
+ * Third-party programs should use JSON-RPC or XML-RPC to communicate with NZBGet.
  */
 
 // Possible values for field "m_iType" of struct "SNZBRequestBase":
@@ -78,7 +84,8 @@ enum eRemoteEditAction
 	eRemoteEditActionGroupPauseAllPars,		// pause only (all) pars (does not affect other files)
 	eRemoteEditActionGroupPauseExtraPars,	// pause only (almost all) pars, except main par-file (does not affect other files)
 	eRemoteEditActionGroupSetCategory,		// set or change category for a group
-	eRemoteEditActionGroupMerge				// merge group
+	eRemoteEditActionGroupMerge,			// merge group
+	eRemoteEditActionGroupSetParameter		// set post-process parameter
 };
 
 // The basic SNZBRequestBase struct, used in all requests
@@ -357,6 +364,15 @@ struct SNZBWriteLogResponse
 struct SNZBScanRequest
 {
 	SNZBRequestBase			m_MessageBase;			// Must be the first in the struct
+};
+
+// Scan nzb directory response
+struct SNZBScanResponse
+{
+	SNZBResponseBase		m_MessageBase;			// Must be the first in the struct
+	int32_t					m_bSuccess;				// 0 - command failed, 1 - command executed successfully
+	int32_t					m_iTrailingDataLength;	// Length of Text-string (m_szText), following to this record
+	//char					m_szText[m_iTrailingDataLength];	// variable sized
 };
 
 #endif

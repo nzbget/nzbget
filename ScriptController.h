@@ -30,7 +30,7 @@
 
 #include "Log.h"
 #include "Thread.h"
-#include "PostInfo.h"
+#include "DownloadInfo.h"
 #include "Options.h"
 
 class EnvironmentStrings

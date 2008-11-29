@@ -300,7 +300,7 @@ void PrePostProcessor::NZBCompleted(DownloadQueue* pDownloadQueue, NZBInfo* pNZB
 	bParCheck = g_pOptions->GetParCheck() && g_pOptions->GetDecode();
 #endif
 	CreatePostJobs(pDownloadQueue, pNZBInfo->GetDestDir(),
-		pNZBInfo->GetFilename(), pNZBInfo->GetCategory(),
+		pNZBInfo->GetFilename(), pNZBInfo->GetCategory(), pNZBInfo->GetParameters(),
 		pNZBInfo->GetQueuedFilename(), bParCheck, true, false);
 }
 
@@ -561,7 +561,8 @@ void PrePostProcessor::CheckPostQueue()
 			if (pPostInfo->GetRequestParCheck() == PostInfo::rpAll)
 			{
 				CreatePostJobs(pDownloadQueue, pPostInfo->GetDestDir(), pPostInfo->GetNZBFilename(),
-					pPostInfo->GetCategory(), pPostInfo->GetQueuedFilename(), true, false, true);
+					pPostInfo->GetCategory(), pPostInfo->GetParameters(), pPostInfo->GetQueuedFilename(),
+					true, false, true);
 			}
 			else if (pPostInfo->GetRequestParCheck() == PostInfo::rpCurrent && !pPostInfo->GetParCheck())
 			{
@@ -882,7 +883,8 @@ bool PrePostProcessor::IsNZBFileCompleted(DownloadQueue* pDownloadQueue, const c
 }
 
 bool PrePostProcessor::CreatePostJobs(DownloadQueue* pDownloadQueue, const char* szDestDir, const char* szNZBFilename, 
-	const char* szCategory, const char* szQueuedFilename, bool bParCheck, bool bLockQueue, bool bAddTop)
+	const char* szCategory, NZBParameterList* pParameters, const char* szQueuedFilename,
+	bool bParCheck, bool bLockQueue, bool bAddTop)
 {
 	debug("Queueing post-process-jobs");
 
@@ -939,6 +941,7 @@ bool PrePostProcessor::CreatePostJobs(DownloadQueue* pDownloadQueue, const char*
 				pPostInfo->SetParFilename(szFullParFilename);
 				pPostInfo->SetInfoName(szParInfoName);
 				pPostInfo->SetCategory(szCategory);
+				pPostInfo->AssignParameter(pParameters);
 				pPostInfo->SetQueuedFilename(szQueuedFilename);
 				pPostInfo->SetParCheck(bParCheck && !bJobExists);
 				if (bAddTop)
@@ -967,6 +970,7 @@ bool PrePostProcessor::CreatePostJobs(DownloadQueue* pDownloadQueue, const char*
 		pPostInfo->SetParFilename("");
 		pPostInfo->SetInfoName(szNZBNiceName);
 		pPostInfo->SetCategory(szCategory);
+		pPostInfo->AssignParameter(pParameters);
 		pPostInfo->SetQueuedFilename(szQueuedFilename);
 		pPostInfo->SetParCheck(false);
 		cPostQueue.push_back(pPostInfo);

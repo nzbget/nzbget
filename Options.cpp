@@ -900,6 +900,26 @@ void Options::InitCommandLine(int argc, char* argv[])
 					}
 					m_iEditQueueAction = eRemoteEditActionGroupMerge;
 				}
+				else if (!strcasecmp(optarg, "O"))
+				{
+					if (!bGroup)
+					{
+						abort("FATAL ERROR: Post-process parameter can be set only for groups\n");
+					}
+					m_iEditQueueAction = eRemoteEditActionGroupSetParameter;
+
+					optind++;
+					if (optind > argc)
+					{
+						abort("FATAL ERROR: Could not parse value of option 'E'\n");
+					}
+					m_szEditQueueText = strdup(argv[optind-1]);
+
+					if (!strchr(m_szEditQueueText, '='))
+					{
+						abort("FATAL ERROR: Could not parse value of option 'E'\n");
+					}
+				}
 				else
 				{
 					m_iEditQueueOffset = atoi(optarg);
@@ -1013,6 +1033,7 @@ void Options::PrintUsage(char* com)
 		"       D                    Delete file(s)\n"
 		"       K <name>             Set category (for groups)\n"
 		"       M                    Merge (for groups)\n"
+		"       O <name>=<value>     Set post-process parameter (for groups)\n"
 		"    <IDs>                   Comma-separated list of file-ids or ranges\n"
 		"                            of file-ids, e. g.: 1-5,3,10-22\n",
 		Util::BaseFileName(com));

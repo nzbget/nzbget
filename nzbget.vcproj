@@ -408,14 +408,6 @@
 			>
 		</File>
 		<File
-			RelativePath=".\PostInfo.cpp"
-			>
-		</File>
-		<File
-			RelativePath=".\PostInfo.h"
-			>
-		</File>
-		<File
 			RelativePath=".\PrePostProcessor.cpp"
 			>
 		</File>

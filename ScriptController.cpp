@@ -615,6 +615,15 @@ void PostScriptController::Run()
 	SetEnvVar("NZBPP_PARFAILED", szHasFailedParJobs);
 	SetEnvVar("NZBPP_CATEGORY", m_pPostInfo->GetCategory());
 
+	for (NZBParameterList::iterator it = m_pPostInfo->GetParameters()->begin(); it != m_pPostInfo->GetParameters()->end(); it++)
+	{
+		NZBParameter* pParameter = *it;
+		char szVarname[1024];
+		snprintf(szVarname, sizeof(szVarname), "NZBPR_%s", pParameter->GetName());
+		szVarname[1024-1] = '\0';
+		SetEnvVar(szVarname, pParameter->GetValue());
+	}
+
 #ifndef DISABLE_PARCHECK
 	int iResult = Execute();
 	if (iResult == POSTPROCESS_PARCHECK_ALL)

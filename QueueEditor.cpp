@@ -232,6 +232,10 @@ bool QueueEditor::InternEditList(DownloadQueue* pDownloadQueue, IDList* pIDList,
 					SetNZBCategory(pItem->m_pFileInfo->GetNZBInfo(), szText);
 					break;
 
+				case eaGroupSetParameter:
+					SetNZBParameter(pItem->m_pFileInfo->GetNZBInfo(), szText);
+					break;
+
 				case eaGroupPause:
 				case eaGroupResume:
 				case eaGroupDelete:
@@ -428,7 +432,7 @@ bool QueueEditor::EditGroup(DownloadQueue* pDownloadQueue, FileInfo* pFileInfo, 
 	}
 
 	EEditAction GroupToFileMap[] = { (EEditAction)0, eaFileMoveOffset, eaFileMoveTop, eaFileMoveBottom, eaFilePause, eaFileResume, eaFileDelete, eaFilePauseAllPars, eaFilePauseExtraPars,
-		eaFileMoveOffset, eaFileMoveTop, eaFileMoveBottom, eaFilePause, eaFileResume, eaFileDelete, eaFilePauseAllPars, eaFilePauseExtraPars, (EEditAction)0, (EEditAction)0 };
+		eaFileMoveOffset, eaFileMoveTop, eaFileMoveBottom, eaFilePause, eaFileResume, eaFileDelete, eaFilePauseAllPars, eaFilePauseExtraPars, (EEditAction)0, (EEditAction)0, (EEditAction)0 };
 
 	return InternEditList(pDownloadQueue, &cIDList, true, GroupToFileMap[eAction], iOffset, NULL);
 }
@@ -740,4 +744,25 @@ void QueueEditor::MergeGroups(DownloadQueue* pDownloadQueue, ItemList* pItemList
 	}
 
 	delete pDestItem;
+}
+
+void QueueEditor::SetNZBParameter(NZBInfo* pNZBInfo, const char* szParamString)
+{
+	debug("QueueEditor: setting nzb parameter '%s' for '%s'", szParamString, Util::BaseFileName(pNZBInfo->GetFilename()));
+
+	char* szStr = strdup(szParamString);
+
+	char* szValue = strchr(szStr, '=');
+	if (szValue)
+	{
+		*szValue = '\0';
+		szValue++;
+		pNZBInfo->SetParameter(szStr, szValue);
+	}
+	else
+	{
+		error("Could not set nzb parameter for %s: invalid argument: %s", Util::BaseFileName(pNZBInfo->GetFilename()), szParamString);
+	}
+
+	free(szStr);
 }

@@ -27,7 +27,6 @@
 #define DISKSTATE_H
 
 #include "DownloadInfo.h"
-#include "PostInfo.h"
 
 class DiskState
 {

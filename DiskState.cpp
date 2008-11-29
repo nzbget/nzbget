@@ -47,6 +47,7 @@ extern Options* g_pOptions;
 static const char* FORMATVERSION_SIGNATURE_V3 = "nzbget diskstate file version 3\n";
 static const char* FORMATVERSION_SIGNATURE_V4 = "nzbget diskstate file version 4\n";
 static const char* FORMATVERSION_SIGNATURE_V5 = "nzbget diskstate file version 5\n";
+static const char* FORMATVERSION_SIGNATURE_V6 = "nzbget diskstate file version 6\n";
 
 /* Parse signature and return format version number
 */
@@ -63,6 +64,10 @@ int DiskState::ParseFormatVersion(const char* szFormatSignature)
 	else if (!strcmp(szFormatSignature, FORMATVERSION_SIGNATURE_V5))
 	{
 		return 5;
+	}
+	else if (!strcmp(szFormatSignature, FORMATVERSION_SIGNATURE_V6))
+	{
+		return 6;
 	}
 	else
 	{
@@ -117,7 +122,7 @@ bool DiskState::SaveDownloadQueue(DownloadQueue* pDownloadQueue)
 		return false;
 	}
 
-	fprintf(outfile, FORMATVERSION_SIGNATURE_V5);
+	fprintf(outfile, FORMATVERSION_SIGNATURE_V6);
 
 	// save nzb-infos
 	fprintf(outfile, "%i\n", cNZBList.size());
@@ -139,6 +144,13 @@ bool DiskState::SaveDownloadQueue(DownloadQueue* pDownloadQueue)
 		{
 			char* szFilename = *it;
 			fprintf(outfile, "%s\n", szFilename);
+		}
+
+		fprintf(outfile, "%i\n", pNZBInfo->GetParameters()->size());
+		for (NZBParameterList::iterator it = pNZBInfo->GetParameters()->begin(); it != pNZBInfo->GetParameters()->end(); it++)
+		{
+			NZBParameter* pParameter = *it;
+			fprintf(outfile, "%s=%s\n", pParameter->GetName(), pParameter->GetValue());
 		}
 	}
 
@@ -197,7 +209,7 @@ bool DiskState::LoadDownloadQueue(DownloadQueue* pDownloadQueue)
 	char FileSignatur[128];
 	fgets(FileSignatur, sizeof(FileSignatur), infile);
 	int iFormatVersion = ParseFormatVersion(FileSignatur);
-	if (iFormatVersion != 3 && iFormatVersion != 4 && iFormatVersion != 5)
+	if (iFormatVersion < 3 || iFormatVersion > 6)
 	{
 		error("Could not load diskstate due file version mismatch");
 		fclose(infile);
@@ -205,7 +217,7 @@ bool DiskState::LoadDownloadQueue(DownloadQueue* pDownloadQueue)
 	}
 
 	int size;
-	char buf[1024];
+	char buf[10240];
 
 	// load nzb-infos
 	if (fscanf(infile, "%i\n", &size) != 1) goto error;
@@ -258,6 +270,25 @@ bool DiskState::LoadDownloadQueue(DownloadQueue* pDownloadQueue)
 				if (!fgets(buf, sizeof(buf), infile)) goto error;
 				if (buf[0] != 0) buf[strlen(buf)-1] = 0; // remove traling '\n'
 				pNZBInfo->GetCompletedFiles()->push_back(strdup(buf));
+			}
+		}
+
+		if (iFormatVersion >= 6)
+		{
+			int iParameterCount;
+			if (fscanf(infile, "%i\n", &iParameterCount) != 1) goto error;
+			for (int i = 0; i < iParameterCount; i++)
+			{
+				if (!fgets(buf, sizeof(buf), infile)) goto error;
+				if (buf[0] != 0) buf[strlen(buf)-1] = 0; // remove traling '\n'
+
+				char* szValue = strchr(buf, '=');
+				if (szValue)
+				{
+					*szValue = '\0';
+					szValue++;
+					pNZBInfo->SetParameter(buf, szValue);
+				}
 			}
 		}
 	}
@@ -446,7 +477,7 @@ bool DiskState::SavePostQueue(PostQueue* pPostQueue, bool bCompleted)
 		return false;
 	}
 
-	fprintf(outfile, FORMATVERSION_SIGNATURE_V5);
+	fprintf(outfile, FORMATVERSION_SIGNATURE_V6);
 
 	fprintf(outfile, "%i\n", pPostQueue->size());
 	for (PostQueue::iterator it = pPostQueue->begin(); it != pPostQueue->end(); it++)
@@ -462,6 +493,13 @@ bool DiskState::SavePostQueue(PostQueue* pPostQueue, bool bCompleted)
 		fprintf(outfile, "%i\n", (int)pPostInfo->GetParStatus());
 		fprintf(outfile, "%i\n", (int)pPostInfo->GetParFailed());
 		fprintf(outfile, "%i\n", (int)pPostInfo->GetStage());
+
+		fprintf(outfile, "%i\n", pPostInfo->GetParameters()->size());
+		for (NZBParameterList::iterator it = pPostInfo->GetParameters()->begin(); it != pPostInfo->GetParameters()->end(); it++)
+		{
+			NZBParameter* pParameter = *it;
+			fprintf(outfile, "%s=%s\n", pParameter->GetName(), pParameter->GetValue());
+		}
 	}
 	fclose(outfile);
 
@@ -492,7 +530,7 @@ bool DiskState::LoadPostQueue(PostQueue* pPostQueue, bool bCompleted)
 	char FileSignatur[128];
 	fgets(FileSignatur, sizeof(FileSignatur), infile);
 	int iFormatVersion = ParseFormatVersion(FileSignatur);
-	if (iFormatVersion != 3 && iFormatVersion != 4 && iFormatVersion != 5)
+	if (iFormatVersion < 3 || iFormatVersion > 6)
 	{
 		error("Could not load diskstate due file version mismatch");
 		fclose(infile);
@@ -500,7 +538,7 @@ bool DiskState::LoadPostQueue(PostQueue* pPostQueue, bool bCompleted)
 	}
 
 	int size;
-	char buf[1024];
+	char buf[10240];
 	int iIntValue;
 
 	// load file-infos
@@ -558,6 +596,25 @@ bool DiskState::LoadPostQueue(PostQueue* pPostQueue, bool bCompleted)
 
 		if (fscanf(infile, "%i\n", &iIntValue) != 1) goto error;
 		pPostInfo->SetStage((PostInfo::EStage)iIntValue);
+
+		if (iFormatVersion >= 6)
+		{
+			int iParameterCount;
+			if (fscanf(infile, "%i\n", &iParameterCount) != 1) goto error;
+			for (int i = 0; i < iParameterCount; i++)
+			{
+				if (!fgets(buf, sizeof(buf), infile)) goto error;
+				if (buf[0] != 0) buf[strlen(buf)-1] = 0; // remove traling '\n'
+
+				char* szValue = strchr(buf, '=');
+				if (szValue)
+				{
+					*szValue = '\0';
+					szValue++;
+					pPostInfo->AddParameter(buf, szValue);
+				}
+			}
+		}
 
 		pPostQueue->push_back(pPostInfo);
 	}
