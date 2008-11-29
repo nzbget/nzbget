@@ -5,8 +5,8 @@ nzbget_SOURCES = ArticleDownloader.cpp ArticleDownloader.h BinRpc.cpp BinRpc.h \
 	Log.cpp Log.h LoggableFrontend.cpp LoggableFrontend.h MessageBase.h \
 	NCursesFrontend.cpp NCursesFrontend.h NNTPConnection.cpp NNTPConnection.h NZBFile.cpp \
 	NZBFile.h NetAddress.cpp NetAddress.h NewsServer.cpp NewsServer.h Observer.cpp \
-	Observer.h Options.cpp Options.h ParChecker.cpp ParChecker.h PostInfo.cpp \
-	PostInfo.h PrePostProcessor.cpp PrePostProcessor.h QueueCoordinator.cpp \
+	Observer.h Options.cpp Options.h ParChecker.cpp ParChecker.h \
+	PrePostProcessor.cpp PrePostProcessor.h QueueCoordinator.cpp \
 	QueueCoordinator.h QueueEditor.cpp QueueEditor.h RemoteClient.cpp RemoteClient.h \
 	RemoteServer.cpp RemoteServer.h Scheduler.cpp Scheduler.h ScriptController.cpp \
 	ScriptController.h ServerPool.cpp ServerPool.h TLS.cpp TLS.h Thread.cpp Thread.h Util.cpp \

@@ -1,7 +1,7 @@
 /*
  *  This file is part of nzbget
  *
- *  Copyright (C) 2007  Andrei Prygounkov <hugbug@users.sourceforge.net>
+ *  Copyright (C) 2007-2008 Andrei Prygounkov <hugbug@users.sourceforge.net>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -1015,7 +1015,7 @@ void ListGroupsXmlCommand::Execute()
 {
 	AppendResponse(IsJson() ? "[\n" : "<array><data>\n");
 
-	const char* XML_LIST_ITEM = 
+	const char* XML_LIST_ITEM_START = 
 		"<value><struct>\n"
 		"<member><name>FirstID</name><value><i4>%i</i4></value></member>\n"
 		"<member><name>LastID</name><value><i4>%i</i4></value></member>\n"
@@ -1035,9 +1035,13 @@ void ListGroupsXmlCommand::Execute()
 		"<member><name>NZBFilename</name><value><string>%s</string></value></member>\n"
 		"<member><name>DestDir</name><value><string>%s</string></value></member>\n"
 		"<member><name>Category</name><value><string>%s</string></value></member>\n"
+		"<member><name>Parameters</name><value><array><data>\n";
+
+	const char* XML_LIST_ITEM_END = 
+		"</data></array></value></member>\n"
 		"</struct></value>\n";
 
-	const char* JSON_LIST_ITEM = 
+	const char* JSON_LIST_ITEM_START = 
 		"{\n"
 		"\"FirstID\" : %i,\n"
 		"\"LastID\" : %i,\n"
@@ -1056,7 +1060,23 @@ void ListGroupsXmlCommand::Execute()
 		"\"NZBNicename\" : \"%s\",\n"
 		"\"NZBFilename\" : \"%s\",\n"
 		"\"DestDir\" : \"%s\",\n"
-		"\"Category\" : \"%s\"\n"
+		"\"Category\" : \"%s\",\n"
+		"\"Parameters\" : [\n";
+
+	const char* JSON_LIST_ITEM_END = 
+		"]\n"
+		"}";
+
+	const char* XML_PARAMETER_ITEM = 
+		"<value><struct>\n"
+		"<member><name>Name</name><value><string>%s</string></value></member>\n"
+		"<member><name>Value</name><value><string>%s</string></value></member>\n"
+		"</struct></value>\n";
+
+	const char* JSON_PARAMETER_ITEM = 
+		"{\n"
+		"\"Name\" : \"%s\",\n"
+		"\"Value\" : \"%s\"\n"
 		"}";
 
 	GroupQueue groupQueue;
@@ -1089,7 +1109,7 @@ void ListGroupsXmlCommand::Execute()
 		char* xmlDestDir = EncodeStr(pGroupInfo->GetNZBInfo()->GetDestDir());
 		char* xmlCategory = EncodeStr(pGroupInfo->GetNZBInfo()->GetCategory());
 
-		snprintf(szItemBuf, szItemBufSize, IsJson() ? JSON_LIST_ITEM : XML_LIST_ITEM,
+		snprintf(szItemBuf, szItemBufSize, IsJson() ? JSON_LIST_ITEM_START : XML_LIST_ITEM_START,
 			pGroupInfo->GetFirstID(), pGroupInfo->GetLastID(), iFileSizeLo, iFileSizeHi, iFileSizeMB, 
 			iRemainingSizeLo, iRemainingSizeHi, iRemainingSizeMB, iPausedSizeLo, iPausedSizeHi, iPausedSizeMB, 
 			pGroupInfo->GetNZBInfo()->GetFileCount(), pGroupInfo->GetRemainingFileCount(), 
@@ -1106,6 +1126,30 @@ void ListGroupsXmlCommand::Execute()
 			AppendResponse(",\n");
 		}
 		AppendResponse(szItemBuf);
+
+		int iParamIndex = 0;
+
+		for (NZBParameterList::iterator it = pGroupInfo->GetNZBInfo()->GetParameters()->begin(); it != pGroupInfo->GetNZBInfo()->GetParameters()->end(); it++)
+		{
+			NZBParameter* pParameter = *it;
+
+			char* xmlName = EncodeStr(pParameter->GetName());
+			char* xmlValue = EncodeStr(pParameter->GetValue());
+
+			snprintf(szItemBuf, szItemBufSize, IsJson() ? JSON_PARAMETER_ITEM : XML_PARAMETER_ITEM, xmlName, xmlValue);
+			szItemBuf[szItemBufSize-1] = '\0';
+
+			free(xmlName);
+			free(xmlValue);
+
+			if (IsJson() && iParamIndex++ > 0)
+			{
+				AppendResponse(",\n");
+			}
+			AppendResponse(szItemBuf);
+		}
+
+		AppendResponse(IsJson() ? JSON_LIST_ITEM_END : XML_LIST_ITEM_END);
 	}
 	free(szItemBuf);
 
@@ -1143,6 +1187,7 @@ EditCommandEntry EditCommandNameMap[] = {
 	{ QueueEditor::eaGroupPauseExtraPars, "GroupPauseExtraPars" },
 	{ QueueEditor::eaGroupSetCategory, "GroupSetCategory" },
 	{ QueueEditor::eaGroupMerge, "GroupMerge" },
+	{ QueueEditor::eaGroupSetParameter, "GroupSetParameter" },
 	{ QueueEditor::eaFileMoveOffset, NULL }
 };
 

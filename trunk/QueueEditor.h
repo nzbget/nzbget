@@ -54,7 +54,8 @@ public:
 		eaGroupPauseAllPars,
 		eaGroupPauseExtraPars,
 		eaGroupSetCategory,
-		eaGroupMerge
+		eaGroupMerge,
+		eaGroupSetParameter
 	};
 
 private:
@@ -85,6 +86,7 @@ private:
 	void					SetNZBCategory(NZBInfo* pNZBInfo, const char* szCategory);
 	bool					CanCleanupDisk(DownloadQueue* pDownloadQueue, NZBInfo* pNZBInfo);
 	void					MergeGroups(DownloadQueue* pDownloadQueue, ItemList* pItemList);
+	void					SetNZBParameter(NZBInfo* pNZBInfo, const char* szParamString);
 
 	void					PauseUnpauseEntry(FileInfo* pFileInfo, bool bPause);
 	void					DeleteEntry(FileInfo* pFileInfo);

@@ -57,12 +57,12 @@ am_nzbget_OBJECTS = ArticleDownloader.$(OBJEXT) BinRpc.$(OBJEXT) \
 	NCursesFrontend.$(OBJEXT) NNTPConnection.$(OBJEXT) \
 	NZBFile.$(OBJEXT) NetAddress.$(OBJEXT) NewsServer.$(OBJEXT) \
 	Observer.$(OBJEXT) Options.$(OBJEXT) ParChecker.$(OBJEXT) \
-	PostInfo.$(OBJEXT) PrePostProcessor.$(OBJEXT) \
-	QueueCoordinator.$(OBJEXT) QueueEditor.$(OBJEXT) \
-	RemoteClient.$(OBJEXT) RemoteServer.$(OBJEXT) \
-	Scheduler.$(OBJEXT) ScriptController.$(OBJEXT) \
-	ServerPool.$(OBJEXT) TLS.$(OBJEXT) Thread.$(OBJEXT) \
-	Util.$(OBJEXT) XmlRpc.$(OBJEXT) nzbget.$(OBJEXT)
+	PrePostProcessor.$(OBJEXT) QueueCoordinator.$(OBJEXT) \
+	QueueEditor.$(OBJEXT) RemoteClient.$(OBJEXT) \
+	RemoteServer.$(OBJEXT) Scheduler.$(OBJEXT) \
+	ScriptController.$(OBJEXT) ServerPool.$(OBJEXT) TLS.$(OBJEXT) \
+	Thread.$(OBJEXT) Util.$(OBJEXT) XmlRpc.$(OBJEXT) \
+	nzbget.$(OBJEXT)
 nzbget_OBJECTS = $(am_nzbget_OBJECTS)
 nzbget_LDADD = $(LDADD)
 DEFAULT_INCLUDES = -I.@am__isrc@
@@ -210,8 +210,8 @@ nzbget_SOURCES = ArticleDownloader.cpp ArticleDownloader.h BinRpc.cpp BinRpc.h \
 	Log.cpp Log.h LoggableFrontend.cpp LoggableFrontend.h MessageBase.h \
 	NCursesFrontend.cpp NCursesFrontend.h NNTPConnection.cpp NNTPConnection.h NZBFile.cpp \
 	NZBFile.h NetAddress.cpp NetAddress.h NewsServer.cpp NewsServer.h Observer.cpp \
-	Observer.h Options.cpp Options.h ParChecker.cpp ParChecker.h PostInfo.cpp \
-	PostInfo.h PrePostProcessor.cpp PrePostProcessor.h QueueCoordinator.cpp \
+	Observer.h Options.cpp Options.h ParChecker.cpp ParChecker.h \
+	PrePostProcessor.cpp PrePostProcessor.h QueueCoordinator.cpp \
 	QueueCoordinator.h QueueEditor.cpp QueueEditor.h RemoteClient.cpp RemoteClient.h \
 	RemoteServer.cpp RemoteServer.h Scheduler.cpp Scheduler.h ScriptController.cpp \
 	ScriptController.h ServerPool.cpp ServerPool.h TLS.cpp TLS.h Thread.cpp Thread.h Util.cpp \
@@ -329,7 +329,6 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/Observer.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/Options.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/ParChecker.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/PostInfo.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/PrePostProcessor.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/QueueCoordinator.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/QueueEditor.Po@am__quote@

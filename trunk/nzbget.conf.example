@@ -159,10 +159,11 @@ MergeNzb=no
 # Example: "NzbProcess=~/nzbprocess.sh".
 # That program can unpack archives put in incoming directory, make
 # filename cleanup or something else.
-# Arguments passed to that program:
-#  1 - path to directory, where file is located. It is a directory specified
-#      by the option <NzbDir> or a subdirectory inside it;
-#  2 - name of file to be processed;
+# NZBGet passes following arguments to nzbprocess-program as environment
+# variables:
+#  NZBNP_DIRECTORY - path to directory, where file is located. It is a directory
+#                    specified by the option <NzbDir> or a subdirectory;
+#  NZBNP_FILENAME  - name of file to be processed;
 # The nzbprocess-script can delete processed file, rename it or move somewhere.
 # After the calling of the script the file will be either added to queue 
 # (if it was an nzb-file) or renamed by adding the extension ".processed".
@@ -535,24 +536,32 @@ NzbCleanupDisk=no
 # multiple collections; see note below for the definition of "collection") 
 # is completed and possibly par-checked/repaired.
 # Example: "PostProcess=~/postprocess-example.sh".
-# Arguments passed to that program:
-#  1 - path to destination dir, where downloaded files are located;
-#  2 - name of nzb-file processed;
-#  3 - name of par-file or empty string (if no collections found);
-#  4 - result of par-check:
-#      0 = not checked: par-check disabled or nzb-file does not contain any
-#          par-files;
-#      1 = checked and failed to repair;
-#      2 = checked and successfully repaired;
-#      3 = checked and can be repaired but repair is disabled;
-#  5 - state of nzb-job:
-#      0 = there are more collections in this nzb-file queued;
-#      1 = this was the last collection in nzb-file;
-#  6 - indication of failed par-jobs for current nzb-file:
-#      0 = no failed par-jobs;
-#      1 = current par-job or any of the previous par-jobs for the
-#          same nzb-files failed;
-#  7 - category assigned to nzb-file (can be empty string).
+# NZBGet passes following arguments to postprocess-program as environment
+# variables:
+#  NZBPP_DIRECTORY    - path to destination dir for downloaded files;
+#  NZBPP_NZBFILENAME  - name of processed nzb-file;
+#  NZBPP_PARFILENAME  - name of par-file or empty string (if no collections were 
+#                       found);
+#  NZBPP_PARSTATUS    - result of par-check:
+#                       0 = not checked: par-check disabled or nzb-file does
+#                           not contain any par-files;
+#                       1 = checked and failed to repair;
+#                       2 = checked and successfully repaired;
+#                       3 = checked and can be repaired but repair is disabled;
+#  NZBPP_NZBCOMPLETED - state of nzb-job:
+#                       0 = there are more collections in this nzb-file queued;
+#                       1 = this was the last collection in nzb-file;
+#  NZBPP_PARFAILED    - indication of failed par-jobs for current nzb-file:
+#                       0 = no failed par-jobs;
+#                       1 = current par-job or any of the previous par-jobs for
+#                           the same nzb-files failed;
+#  NZBPP_CATEGORY     - category assigned to nzb-file (can be empty string).
+# If nzb-file has assotiated postprocess-parameters (which can be set using
+# subcommand <O> of command <-E>, for example: nzbget -E G O "myvar=hello !" 10)
+# or using XML-/JSON-RPC (for example via web-interface), they are also passed 
+# as environment variables. These variables have prefix "NZBPR_" in their names.
+# For example, pp-parameter "myvar" will be passed as environment 
+# variable "NZBPR_myvar".
 # Return value: nzbget processes the exit code returned by the script:
 #  0  - all OK;
 #  91 - request nzbget to do par-check/repair for current collection in the 
@@ -562,19 +571,19 @@ NzbCleanupDisk=no
 # All other return codes are currently ignored, but for future compatibility 
 # use value "0" (or do not specify any exit code, in this case system uses code
 # "0" by default).
-# NOTE: The parameter "state of nzb-job" is very important and MUST be checked 
+# NOTE: The parameter NZBPP_NZBCOMPLETED is very important and MUST be checked 
 # even in the simplest scripts.
 # If par-check is enabled and nzb-file contains more than one collection
 # of files the postprocess-program is called after each collection is completed
 # and par-checked. If you want to unpack files or clean up the directory 
 # (delete par-files, etc.) there are two possibilities, when you can do this:
-#  1) you parse the "name of par-file processed" to find out the base name
-#     of collection and clean up only files from this collection (not reliable,
-#     because par-files sometimes have different names than rar-files);
-#  2) or you just check the parameters "state of nzb-job" and "indication of 
-#     failed par-jobs" and do the processing, only if they are set to "1" 
-#     (which means, that this was the last collection in nzb-file and all files 
-#      are now completed) and to "0" (no failed par-jobs) respectively;
+#  1) you parse NZBPP_PARFILENAME to find out the base name of collection and 
+#     clean up only files from this collection (not reliable, because par-files
+#     sometimes have different names than rar-files);
+#  2) or you just check the parameters NZBPP_NZBCOMPLETED and NZBPP_PARFAILED
+#     and do the processing, only if NZBPP_NZBCOMPLETED is set to "1" (which 
+#     means, that this was the last collection in nzb-file and all files 
+#     are now completed) and NZBPP_PARFAILED is set to "0" (no failed par-jobs);
 # NOTE: the term "collection" in the above description actually means 
 # "par-set". To determine what "collections" are present in nzb-file nzbget 
 # looks for par-sets. If any collection of files within nzb-file does 
@@ -582,16 +591,15 @@ NzbCleanupDisk=no
 # For example, for nzb-file containing three collections but only two par-sets, 
 # the postprocess will be called two times - after processing of each par-set.
 # NOTE: if nzbget doesn't find any collections it calls PostProcess once
-# with empty string for parameter "name of par-file";
+# with empty string for parameter NZBPP_PARFILENAME;
 # NOTE: the using of special return values (91 and 92) for requesting of 
 # par-check/repair allows to organize the delayed parcheck. To do that:
 #   1) set options: LoadPars=one, ParCheck=no, ParRepair=yes;
-#   2) in post-process-script check the parameter "result of par-check". If 
-#      it is "0", that means, the script is called for the first time. Try to 
-#      unpack files. If unpack fails, exit the script with exit code for 
-#      par-check/repair;
+#   2) in post-process-script check the parameter NZBPP_PARSTATUS. If it is "0",
+#      that means, the script is called for the first time. Try to unpack files.
+#      If unpack fails, exit the script with exit code for par-check/repair;
 #   3) nzbget will start par-check/repair. After that it calls the script again;
-#   4) on second pass the parameter "result of par-check" will have value 
+#   4) on second pass the parameter NZBPP_PARSTATUS will have value 
 #      greater than "0". If it is "2" ("checked and successfully repaired")
 #      you can try unpack again. 
 # NOTE: an example script for unrarring is provided within distribution 

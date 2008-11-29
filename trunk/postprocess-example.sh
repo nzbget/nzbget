@@ -39,33 +39,29 @@ RenameIMG=0
 
 ####################### End of settings section #######################
 
+# NZBGet passes following arguments to postprocess-programm as environment
+# variables:
+#  NZBPP_DIRECTORY    - path to destination dir for downloaded files;
+#  NZBPP_NZBFILENAME  - name of processed nzb-file;
+#  NZBPP_PARFILENAME  - name of par-file or empty string (if no collections were 
+#                       found);
+#  NZBPP_PARSTATUS    - result of par-check:
+#                       0 = not checked: par-check disabled or nzb-file does
+#                           not contain any par-files;
+#                       1 = checked and failed to repair;
+#                       2 = checked and successfully repaired;
+#                       3 = checked and can be repaired but repair is disabled;
+#  NZBPP_NZBCOMPLETED - state of nzb-job:
+#                       0 = there are more collections in this nzb-file queued;
+#                       1 = this was the last collection in nzb-file;
+#  NZBPP_PARFAILED    - indication of failed par-jobs for current nzb-file:
+#                       0 = no failed par-jobs;
+#                       1 = current par-job or any of the previous par-jobs for
+#                           the same nzb-files failed;
+#  NZBPP_CATEGORY     - category assigned to nzb-file (can be empty string).
 
-# Parameters passed to script by nzbget:
-#  1 - path to destination dir, where downloaded files are located; 
-#  2 - name of nzb-file processed; 
-#  3 - name of par-file processed (if par-checked) or empty string (if not); 
-#  4 - result of par-check: 
-#      0 - not checked: par-check disabled or nzb-file does not contain any 
-#          par-files; 
-#      1 - checked and failed to repair; 
-#      2 - checked and sucessfully repaired; 
-#      3 - checked and can be repaired but repair is disabled; 
-#  5 - state of nzb-job: 
-#      0 - there are more collections in this nzb-file queued; 
-#      1 - this was the last collection in nzb-file; 
-#  6 - indication of failed par-jobs for current nzb-file: 
-#      0 - no failed par-jobs; 
-#      1 - current par-job or any of the previous par-jobs for the 
-#          same nzb-files failed; 
 
-DownloadDir="$1"   
-NzbFile="$2" 
-ParCheck=$4 
-NzbState=$5  
-ParFail=$6 
-
-# Check if all is downloaded and repaired
-if [ "$#" -lt 6 ] 
+if [ "$NZBPP_DIRECTORY" -eq "" ] 
 then
 	echo "*** NZBGet post-process script ***"
 	echo "This script is supposed to be called from nzbget."
@@ -75,24 +71,24 @@ fi
 echo "[INFO] Unpack: Post-process script successfully started"
 
 # Check if all is downloaded and repaired
-if [ ! "$NzbState" -eq 1 ] 
+if [ ! "$NZBPP_NZBCOMPLETED" -eq 1 ] 
 then
 	echo "[INFO] Unpack: Not the last collection in nzb-file, exiting"
 	exit
 fi 
-if [ ! "$ParCheck" -eq 2 ] 
+if [ ! "$NZBPP_PARSTATUS" -eq 2 ] 
 then
 	echo "[WARNING] Unpack: Par-check failed or disabled, exiting"
 	exit
 fi 
-if [ ! "$ParFail" -eq 0 ] 
+if [ ! "$NZBPP_PARFAILED" -eq 0 ] 
 then
 	echo "[WARNING] Unpack: Previous par-check failed, exiting"
 	exit
 fi 
 
 # All OK, processing the files
-cd "$DownloadDir" 
+cd "$NZBPP_DIRECTORY"
 
 # Make a temporary directory to store the unrarred files
 mkdir extracted

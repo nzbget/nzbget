@@ -1,7 +1,7 @@
 /*
  *  This file is part of nzbget
  *
- *  Copyright (C) 2004  Sven Henkel <sidddy@users.sourceforge.net>
+ *  Copyright (C) 2004 Sven Henkel <sidddy@users.sourceforge.net>
  *  Copyright (C) 2007-2008 Andrei Prygounkov <hugbug@users.sourceforge.net>
  *
  *  This program is free software; you can redistribute it and/or modify
@@ -47,6 +47,35 @@
 extern Options* g_pOptions;
 
 int FileInfo::m_iIDGen = 0;
+int PostInfo::m_iIDGen = 0;
+
+NZBParameter::NZBParameter(const char* szName)
+{
+	m_szName = strdup(szName);
+	m_szValue = NULL;
+}
+
+NZBParameter::~NZBParameter()
+{
+	if (m_szName)
+	{
+		free(m_szName);
+	}
+	if (m_szValue)
+	{
+		free(m_szValue);
+	}
+}
+
+void NZBParameter::SetValue(const char* szValue)
+{
+	if (m_szValue)
+	{
+		free(m_szValue);
+	}
+	m_szValue = strdup(szValue);
+}
+
 
 NZBInfo::NZBInfo()
 {
@@ -91,6 +120,12 @@ NZBInfo::~NZBInfo()
 		free(*it);
 	}
 	m_completedFiles.clear();
+
+	for (NZBParameterList::iterator it = m_ppParameters.begin(); it != m_ppParameters.end(); it++)
+	{
+		delete *it;
+	}
+	m_ppParameters.clear();
 }
 
 void NZBInfo::AddReference()
@@ -233,6 +268,41 @@ void NZBInfo::BuildDestDirName()
 	}
 
 	SetDestDir(szBuffer);
+}
+
+void NZBInfo::SetParameter(const char* szName, const char* szValue)
+{
+	NZBParameter* pParameter = NULL;
+	bool bDelete = !szValue || !*szValue;
+
+	for (NZBParameterList::iterator it = m_ppParameters.begin(); it != m_ppParameters.end(); it++)
+	{
+		NZBParameter* pLookupParameter = *it;
+		if (!strcmp(pLookupParameter->GetName(), szName))
+		{
+			if (bDelete)
+			{
+				delete pLookupParameter;
+				m_ppParameters.erase(it);
+				return;
+			}
+			pParameter = pLookupParameter;
+			break;
+		}
+	}
+
+	if (bDelete)
+	{
+		return;
+	}
+
+	if (!pParameter)
+	{
+		pParameter = new NZBParameter(szName);
+		m_ppParameters.push_back(pParameter);
+	}
+
+	pParameter->SetValue(szValue);
 }
 
 ArticleInfo::ArticleInfo()
@@ -461,5 +531,160 @@ void GroupInfo::BuildGroups(DownloadQueue* pDownloadQueue, GroupQueue* pGroupQue
 		{
 			pGroupInfo->m_iRemainingParCount++;
 		}
+	}
+}
+
+PostInfo::PostInfo()
+{
+	debug("Creating PostInfo");
+
+	m_szNZBFilename = NULL;
+	m_szDestDir = NULL;
+	m_szParFilename = NULL;
+	m_szInfoName = NULL;
+	m_szCategory = NULL;
+	m_szQueuedFilename = NULL;
+	m_bWorking = false;
+	m_bParCheck = false;
+	m_iParStatus = 0;
+	m_bParFailed = false;
+	m_eRequestParCheck = rpNone;
+	m_szProgressLabel = strdup("");
+	m_iFileProgress = 0;
+	m_iStageProgress = 0;
+	m_tStartTime = 0;
+	m_tStageTime = 0;
+	m_eStage = ptQueued;
+	m_pScriptThread = NULL;
+	m_Messages.clear();
+	m_iIDGen++;
+	m_iID = m_iIDGen;
+}
+
+PostInfo::~ PostInfo()
+{
+	debug("Destroying PostInfo");
+
+	if (m_szNZBFilename)
+	{
+		free(m_szNZBFilename);
+	}
+	if (m_szDestDir)
+	{
+		free(m_szDestDir);
+	}
+	if (m_szParFilename)
+	{
+		free(m_szParFilename);
+	}
+	if (m_szInfoName)
+	{
+		free(m_szInfoName);
+	}
+	if (m_szCategory)
+	{
+		free(m_szCategory);
+	}
+	if (m_szQueuedFilename)
+	{
+		free(m_szQueuedFilename);
+	}
+	if (m_szProgressLabel)
+	{
+		free(m_szProgressLabel);
+	}
+
+	for (Messages::iterator it = m_Messages.begin(); it != m_Messages.end(); it++)
+	{
+		delete *it;
+	}
+	m_Messages.clear();
+
+	for (NZBParameterList::iterator it = m_ppParameters.begin(); it != m_ppParameters.end(); it++)
+	{
+		delete *it;
+	}
+	m_ppParameters.clear();
+}
+
+void PostInfo::SetNZBFilename(const char* szNZBFilename)
+{
+	m_szNZBFilename = strdup(szNZBFilename);
+}
+
+void PostInfo::SetDestDir(const char* szDestDir)
+{
+	m_szDestDir = strdup(szDestDir);
+}
+
+void PostInfo::SetParFilename(const char* szParFilename)
+{
+	m_szParFilename = strdup(szParFilename);
+}
+
+void PostInfo::SetInfoName(const char* szInfoName)
+{
+	m_szInfoName = strdup(szInfoName);
+}
+
+void PostInfo::SetCategory(const char* szCategory)
+{
+	m_szCategory = strdup(szCategory);
+}
+
+void PostInfo::SetQueuedFilename(const char * szQueuedFilename)
+{
+	m_szQueuedFilename = strdup(szQueuedFilename);
+}
+
+void PostInfo::SetProgressLabel(const char* szProgressLabel)
+{
+	if (m_szProgressLabel)
+	{
+		free(m_szProgressLabel);
+	}
+	m_szProgressLabel = strdup(szProgressLabel);
+}
+
+PostInfo::Messages* PostInfo::LockMessages()
+{
+	m_mutexLog.Lock();
+	return &m_Messages;
+}
+
+void PostInfo::UnlockMessages()
+{
+	m_mutexLog.Unlock();
+}
+
+void PostInfo::AppendMessage(Message::EKind eKind, const char * szText)
+{
+	Message* pMessage = new Message(++m_iIDGen, eKind, time(NULL), szText);
+
+	m_mutexLog.Lock();
+	m_Messages.push_back(pMessage);
+
+	while (m_Messages.size() > (unsigned int)g_pOptions->GetLogBufferSize())
+	{
+		Message* pMessage = m_Messages.front();
+		delete pMessage;
+		m_Messages.pop_front();
+	}
+	m_mutexLog.Unlock();
+}
+
+void PostInfo::AddParameter(const char* szName, const char* szValue)
+{
+	NZBParameter* pParameter = new NZBParameter(szName);
+	pParameter->SetValue(szValue);
+	m_ppParameters.push_back(pParameter);
+}
+
+void PostInfo::AssignParameter(NZBParameterList* pSrcParameters)
+{
+	for (NZBParameterList::iterator it = pSrcParameters->begin(); it != pSrcParameters->end(); it++)
+	{
+		NZBParameter* pParameter = *it;
+		AddParameter(pParameter->GetName(), pParameter->GetValue());
 	}
 }
