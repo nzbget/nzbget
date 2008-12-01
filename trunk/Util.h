@@ -76,6 +76,9 @@ public:
 	static long long FreeDiskSize(const char* szPath);
 	static bool DirEmpty(const char* szDirFilename);
 	static bool RenameBak(const char* szFilename, const char* szBakPart, bool bRemoveOldExtension, char* szNewNameBuf, int iNewNameBufSize);
+#ifndef WIN32
+	static bool ExpandHomePath(const char* szFilename, char* szBuffer, int iBufSize);
+#endif
 
 	static long long JoinInt64(unsigned long Hi, unsigned long Lo);
 	static void SplitInt64(long long Int64, unsigned long* Hi, unsigned long* Lo);

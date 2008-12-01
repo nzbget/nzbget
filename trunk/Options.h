@@ -28,6 +28,7 @@
 #define OPTIONS_H
 
 #include <vector>
+#include "Thread.h"
 
 class Options
 {
@@ -78,26 +79,30 @@ public:
 		slDebug
 	};
 
-private:
 	class OptEntry
 	{
 	private:
 		char*			m_szName;
 		char*			m_szValue;
 
+		void			SetName(const char* szName);
+		void			SetValue(const char* szValue);
+
+		friend class Options;
+
 	public:
 						OptEntry();
 						~OptEntry();
 		const char*		GetName() { return m_szName; }
-		void			SetName(const char* szName);
 		const char*		GetValue() { return m_szValue; }
-		void			SetValue(const char* szValue);
 	};
 	
 	typedef std::vector<OptEntry*>  OptEntries;
 
+private:
 	OptEntries			m_OptEntries;
 	bool				m_bConfigInitialized;
+	Mutex				m_mutexOptEntries;
 
 	// Options
 	char*				m_szConfigFilename;
@@ -218,6 +223,8 @@ public:
 						~Options();
 
 	// Options
+	OptEntries*			LockOptEntries();
+	void				UnlockOptEntries();
 	const char*			GetDestDir() { return m_szDestDir; }
 	const char*			GetTempDir() { return m_szTempDir; }
 	const char*			GetQueueDir() { return m_szQueueDir; }
