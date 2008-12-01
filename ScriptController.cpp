@@ -614,7 +614,7 @@ void PostScriptController::Run()
 	SetInfoName(szInfoName);
 
 	SetDefaultKindPrefix("Post-Process: ");
-	SetDefaultLogKind(g_pOptions->GetPostLogKind());
+	SetDefaultLogKind(g_pOptions->GetProcessLogKind());
 
 	const char* szArgs[9];
 	szArgs[0] = GetScript();
@@ -727,7 +727,7 @@ void NZBScriptController::ExecuteScript(const char* szScript, const char* szNZBF
 	}
 
 	pScriptController->SetDefaultKindPrefix("NZB-Process: ");
-	pScriptController->SetDefaultLogKind(g_pOptions->GetNZBLogKind());
+	pScriptController->SetDefaultLogKind(g_pOptions->GetProcessLogKind());
 
 	const char* szArgs[4];
 	szArgs[0] = szScript;
@@ -742,4 +742,33 @@ void NZBScriptController::ExecuteScript(const char* szScript, const char* szNZBF
 	pScriptController->Execute();
 
 	delete pScriptController;
+}
+
+void SchedulerScriptController::StartScript(const char* szScript)
+{
+	info("Executing scheduled process-script %s", Util::BaseFileName(szScript));
+
+	SchedulerScriptController* pScriptController = new SchedulerScriptController();
+	pScriptController->SetScript(szScript);
+	pScriptController->SetAutoDestroy(true);
+
+	pScriptController->Start();
+}
+
+void SchedulerScriptController::Run()
+{
+	char szInfoName[1024];
+	snprintf(szInfoName, 1024, "scheduled process-script %s", Util::BaseFileName(GetScript()));
+	szInfoName[1024-1] = '\0';
+	SetInfoName(szInfoName);
+
+	const char* szArgs[2];
+	szArgs[0] = GetScript();
+	szArgs[1] = NULL;
+	SetArgs(szArgs);
+
+	SetDefaultKindPrefix("Scheduled Process: ");
+	SetDefaultLogKind(g_pOptions->GetProcessLogKind());
+
+	Execute();
 }

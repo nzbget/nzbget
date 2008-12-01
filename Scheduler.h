@@ -37,7 +37,8 @@ public:
 	{
 		scPause,
 		scUnpause,
-		scDownloadRate
+		scDownloadRate,
+		scProcess
 	};
 
 	class Task
@@ -48,10 +49,13 @@ public:
 		int				m_iWeekDaysBits;
 		ECommand		m_eCommand;
 		int				m_iDownloadRate;
+		char*			m_szProcess;
 		time_t			m_tLastExecuted;
 
 	public:
-						Task(int iHours, int iMinutes, int iWeekDaysBits, ECommand eCommand, int iDownloadRate);
+						Task(int iHours, int iMinutes, int iWeekDaysBits, ECommand eCommand, 
+							int iDownloadRate, const char* szProcess);
+						~Task();
 		friend class	Scheduler;
 	};
 
@@ -64,6 +68,7 @@ private:
 	time_t				m_tLastCheck;
 	bool				m_bDetectClockChanges;
 	bool				m_bDownloadRateChanged;
+	bool				m_bExecuteProcess;
 	int					m_iDownloadRate;
 	bool				m_bPauseChanged;
 	bool				m_bPause;

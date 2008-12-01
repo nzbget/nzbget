@@ -36,20 +36,36 @@
 
 #include "nzbget.h"
 #include "Scheduler.h"
+#include "ScriptController.h"
 #include "Options.h"
 #include "Log.h"
 
 extern Options* g_pOptions;
 
-Scheduler::Task::Task(int iHours, int iMinutes, int iWeekDaysBits, ECommand eCommand, int iDownloadRate)
+Scheduler::Task::Task(int iHours, int iMinutes, int iWeekDaysBits, ECommand eCommand, 
+	int iDownloadRate, const char* szProcess)
 {
 	m_iHours = iHours;
 	m_iMinutes = iMinutes;
 	m_iWeekDaysBits = iWeekDaysBits;
 	m_eCommand = eCommand;
 	m_iDownloadRate = iDownloadRate;
+	m_szProcess = NULL;
+	if (szProcess)
+	{
+		m_szProcess = strdup(szProcess);
+	}
 	m_tLastExecuted = 0;
 }
+
+Scheduler::Task::~Task()
+{
+	if (m_szProcess)
+	{
+		free(m_szProcess);
+	}
+}
+
 
 Scheduler::Scheduler()
 {
@@ -92,6 +108,7 @@ void Scheduler::FirstCheck()
 	time_t tCurrent = time(NULL);
 	m_tLastCheck = tCurrent - 60*60*24*7;
 	m_bDetectClockChanges = false;
+	m_bExecuteProcess = false;
 	m_bDownloadRateChanged = false;
 	m_bPauseChanged = false;
 	CheckTasks();
@@ -100,6 +117,7 @@ void Scheduler::FirstCheck()
 void Scheduler::IntervalCheck()
 {
 	m_bDetectClockChanges = true;
+	m_bExecuteProcess = true;
 	m_bDownloadRateChanged = false;
 	m_bPauseChanged = false;
 	CheckTasks();
@@ -122,6 +140,7 @@ void Scheduler::CheckTasks()
 		if (tDiff > 60*90 || tDiff < -60*90)
 		{
 			debug("Reset scheduled tasks (detected clock adjustment greater than 90 minutes)");
+			m_bExecuteProcess = false;
 			m_tLastCheck = tCurrent;
 
 			for (TaskList::iterator it = m_TaskList.begin(); it != m_TaskList.end(); it++)
@@ -190,7 +209,7 @@ void Scheduler::ExecuteTask(Task* pTask)
 	}
 	else
 	{
-		const char* szCommandName[] = { "Pause", "Unpause", "Set download rate" };
+		const char* szCommandName[] = { "Pause", "Unpause", "Set download rate", "Execute program" };
 		debug("Executing scheduled command: %s", szCommandName[pTask->m_eCommand]);
 	}
 
@@ -205,6 +224,13 @@ void Scheduler::ExecuteTask(Task* pTask)
 		case scUnpause:
 			m_bPause = pTask->m_eCommand == scPause;
 			m_bPauseChanged = true;
+			break;
+
+		case scProcess:
+			if (m_bExecuteProcess)
+			{
+				SchedulerScriptController::StartScript(pTask->m_szProcess);
+			}
 			break;
 	}
 }

@@ -143,8 +143,7 @@ static const char* OPTION_NZBDIRINTERVAL	= "NzbDirInterval";
 static const char* OPTION_NZBDIRFILEAGE		= "NzbDirFileAge";
 static const char* OPTION_PARCLEANUPQUEUE	= "ParCleanupQueue";
 static const char* OPTION_DISKSPACE			= "DiskSpace";
-static const char* OPTION_POSTLOGKIND		= "PostLogKind";
-static const char* OPTION_NZBLOGKIND		= "NZBLogKind";
+static const char* OPTION_PROCESSLOGKIND	= "ProcessLogKind";
 static const char* OPTION_ALLOWREPROCESS	= "AllowReProcess";
 static const char* OPTION_DUMPCORE			= "DumpCore";
 static const char* OPTION_PARPAUSEQUEUE		= "ParPauseQueue";
@@ -153,6 +152,10 @@ static const char* OPTION_NZBCLEANUPDISK	= "NzbCleanupDisk";
 static const char* OPTION_DELETECLEANUPDISK	= "DeleteCleanupDisk";
 static const char* OPTION_MERGENZB			= "MergeNzb";
 static const char* OPTION_PARTIMELIMIT		= "ParTimeLimit";
+
+// obsolete options
+static const char* OPTION_POSTLOGKIND		= "PostLogKind";
+static const char* OPTION_NZBLOGKIND		= "NZBLogKind";
 
 const char* BoolNames[] = { "yes", "no", "true", "false", "1", "0", "on", "off", "enable", "disable", "enabled", "disabled" };
 const int BoolValues[] = { 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0 };
@@ -284,8 +287,7 @@ Options::Options(int argc, char* argv[])
 	m_iNzbDirFileAge		= 0;
 	m_bParCleanupQueue		= false;
 	m_iDiskSpace			= 0;
-	m_ePostLogKind			= slNone;
-	m_eNZBLogKind			= slNone;
+	m_eProcessLogKind		= slNone;
 	m_bAllowReProcess		= false;
 	m_bTestBacktrace		= false;
 	m_bTLS					= false;
@@ -514,8 +516,7 @@ void Options::InitDefault()
 	SetOption(OPTION_NZBDIRFILEAGE, "60");
 	SetOption(OPTION_PARCLEANUPQUEUE, "no");
 	SetOption(OPTION_DISKSPACE, "0");
-	SetOption(OPTION_POSTLOGKIND, "none");
-	SetOption(OPTION_NZBLOGKIND, "none");
+	SetOption(OPTION_PROCESSLOGKIND, "none");
 	SetOption(OPTION_ALLOWREPROCESS, "no");
 	SetOption(OPTION_DUMPCORE, "no");
 	SetOption(OPTION_PARPAUSEQUEUE, "no");
@@ -699,8 +700,7 @@ void Options::InitOptions()
 	const char* ScriptLogKindNames[] = { "none", "detail", "info", "warning", "error", "debug" };
 	const int ScriptLogKindValues[] = { slNone, slDetail, slInfo, slWarning, slError, slDebug };
 	const int ScriptLogKindCount = 6;
-	m_ePostLogKind = (EScriptLogKind)ParseOptionValue(OPTION_POSTLOGKIND, ScriptLogKindCount, ScriptLogKindNames, ScriptLogKindValues);
-	m_eNZBLogKind = (EScriptLogKind)ParseOptionValue(OPTION_NZBLOGKIND, ScriptLogKindCount, ScriptLogKindNames, ScriptLogKindValues);
+	m_eProcessLogKind = (EScriptLogKind)ParseOptionValue(OPTION_PROCESSLOGKIND, ScriptLogKindCount, ScriptLogKindNames, ScriptLogKindValues);
 }
 
 int Options::ParseOptionValue(const char* OptName, int argc, const char * argn[], const int argv[])
@@ -1295,7 +1295,10 @@ void Options::InitScheduler()
 		sprintf(optname, "Task%i.DownloadRate", n);
 		const char* szDownloadRate = GetOption(optname);
 
-		bool definition = szTime || szWeekDays || szCommand || szDownloadRate;
+		sprintf(optname, "Task%i.Process", n);
+		const char* szProcess = GetOption(optname);
+
+		bool definition = szTime || szWeekDays || szCommand || szDownloadRate || szProcess;
 		bool completed = szTime && szCommand;
 
 		if (!definition)
@@ -1309,9 +1312,9 @@ void Options::InitScheduler()
 		}
 
 		sprintf(optname, "Task%i.Command", n);
-		const char* CommandNames[] = { "pause", "unpause", "resume", "downloadrate", "setdownloadrate", "rate", "speed" };
-		const int CommandValues[] = { Scheduler::scPause, Scheduler::scUnpause, Scheduler::scUnpause, Scheduler::scDownloadRate, Scheduler::scDownloadRate, Scheduler::scDownloadRate, Scheduler::scDownloadRate };
-		const int CommandCount = 7;
+		const char* CommandNames[] = { "pause", "unpause", "resume", "downloadrate", "setdownloadrate", "rate", "speed", "script", "process" };
+		const int CommandValues[] = { Scheduler::scPause, Scheduler::scUnpause, Scheduler::scUnpause, Scheduler::scDownloadRate, Scheduler::scDownloadRate, Scheduler::scDownloadRate, Scheduler::scDownloadRate, Scheduler::scProcess, Scheduler::scProcess };
+		const int CommandCount = 9;
 		Scheduler::ECommand eCommand = (Scheduler::ECommand)ParseOptionValue(optname, CommandCount, CommandNames, CommandValues);
 
 		int iHours, iMinutes;
@@ -1341,7 +1344,15 @@ void Options::InitScheduler()
 			}
 		}
 
-		Scheduler::Task* pTask = new Scheduler::Task(iHours, iMinutes, iWeekDays, eCommand, iDownloadRate);
+		if (eCommand == Scheduler::scProcess)
+		{
+			if (!szProcess || strlen(szProcess) == 0)
+			{
+				abort("FATAL ERROR: Task definition not complete for Task%i. Option Task%i.Process missing.\n", n, n);
+			}
+		}
+
+		Scheduler::Task* pTask = new Scheduler::Task(iHours, iMinutes, iWeekDays, eCommand, iDownloadRate, szProcess);
 		g_pScheduler->AddTask(pTask);
 
 		n++;
@@ -1551,10 +1562,17 @@ bool Options::ValidateOptionName(const char * optname)
 		char* p = (char*)optname + 4;
 		while (*p >= '0' && *p <= '9') p++;
 		if (p && (!strcasecmp(p, ".time") || !strcasecmp(p, ".weekdays") || 
-			!strcasecmp(p, ".command") || !strcasecmp(p, ".downloadrate")))
+			!strcasecmp(p, ".command") || !strcasecmp(p, ".downloadrate") || !strcasecmp(p, ".process")))
 		{
 			return true;
 		}
+	}
+
+	// suppress abort on obsolete options; print a warning message instead
+	if (!strcasecmp(optname, OPTION_POSTLOGKIND) || !strcasecmp(optname, OPTION_NZBLOGKIND))
+	{
+		printf("WARNING: Option \"%s\" is obsolete. Use %s instead.\n", optname, OPTION_PROCESSLOGKIND);
+		return true;
 	}
 
 	return false;

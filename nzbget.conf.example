@@ -211,21 +211,6 @@ MergeNzb=no
 # archives, if they were already processed by the script.
 NzbProcess=
 
-# Set the default message-kind for output received from nzbprocess-script 
-# (none, detail, info, warning, error, debug).
-#
-# NZBGet checks if the line written by the script to stdout or stderr starts
-# with special character-sequence, determining the message-kind, e.g.:
-# [INFO] bla-bla.
-# [DETAIL] bla-bla.
-# [WARNING] bla-bla.
-# [ERROR] bla-bla.
-# [DEBUG] bla-bla.
-#
-# If the message-kind was detected the text is added to log with detected type.
-# Otherwise the message becomes the default kind, specified in this option.
-NzbLogKind=detail
-
 # Check for duplicate files (yes, no).
 #
 # If this option is enabled the program checks by adding of a new nzb-file:
@@ -440,6 +425,22 @@ DetailTarget=both
 # Debug-messages can be printed only if the program was compiled in 
 # debug-mode: "./configure --enable-debug".
 DebugTarget=both
+
+# Set the default message-kind for output received from process-scripts
+# (PostProcess, NzbProcess, TaskX.Process) (none, detail, info, warning, 
+# error, debug).
+#
+# NZBGet checks if the line written by the script to stdout or stderr starts
+# with special character-sequence, determining the message-kind, e.g.:
+# [INFO] bla-bla.
+# [DETAIL] bla-bla.
+# [WARNING] bla-bla.
+# [ERROR] bla-bla.
+# [DEBUG] bla-bla.
+#
+# If the message-kind was detected the text is added to log with detected type.
+# Otherwise the message becomes the default kind, specified in this option.
+ProcessLogKind=detail
 
 # Number of messages stored in buffer and available for remote 
 # clients (messages).
@@ -734,21 +735,6 @@ PostProcess=
 # to prevent multiple par-checking.
 AllowReProcess=no
 
-# Set the default message-kind for output received from postprocess-script 
-# (none, detail, info, warning, error, debug).
-#
-# NZBGet checks if the line written by the script to stdout or stderr starts
-# with special character-sequence, determining the message-kind, e.g.:
-# [INFO] bla-bla.
-# [DETAIL] bla-bla.
-# [WARNING] bla-bla.
-# [ERROR] bla-bla.
-# [DEBUG] bla-bla.
-#
-# If the message-kind was detected the text is added to log with detected type.
-# Otherwise the message becomes the default kind, specified in this option.
-PostLogKind=detail
-
 # Pause download queue during executing of postprocess-script (yes, no).
 #
 # Enable the option to give CPU more time for postprocess-script. That helps
@@ -782,18 +768,27 @@ PostPauseQueue=no
 # Command to be executed (Pause, Unpause, DownloadRate).
 #
 # Possible commands:
-#   Pause      - pauses download;
-#   Unpause    - resumes download;
-#   DownloadRate - sets download rate in KB/s.
+#   Pause        - pauses download;
+#   Unpause      - resumes download;
+#   DownloadRate - sets download rate in KB/s;
+#   Process      - executes external program.
 #Task1.Command=DownloadRate
 
 # Download rate to be set if the command is "DownloadRate" (kilobytes/sec).
 #
 # Value "0" means no speed control.
 #
-# If the option <TaskX.Command> is set to "Pause" or "Unpause" this option
+# If the option <TaskX.Command> is not set to "DownloadRate" this option
 # is ignored and can be omitted.
 #Task1.DownloadRate=100
+
+# Path to the porgram to execute if the command is "Process".
+#
+# Example: /home/user/fetch-nzb.sh
+#
+# If the option <TaskX.Command> is not set to "Process" this option
+# is ignored and can be omitted.
+#Task1.Process=
 
 #Task2.Time=20:00
 #Task2.WeekDays=1-7
