@@ -113,4 +113,11 @@ public:
 	static void			ExecuteScript(const char* szScript, const char* szNZBFilename, const char* szDirectory);
 };
 
+class SchedulerScriptController : public Thread, ScriptController
+{
+public:
+	virtual void		Run();
+	static void			StartScript(const char* szScript);
+};
+
 #endif

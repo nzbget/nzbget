@@ -160,8 +160,7 @@ private:
 	int					m_iNzbDirFileAge;
 	bool				m_bParCleanupQueue;
 	int					m_iDiskSpace;
-	EScriptLogKind		m_ePostLogKind;
-	EScriptLogKind		m_eNZBLogKind;
+	EScriptLogKind		m_eProcessLogKind;
 	bool				m_bAllowReProcess;
 	bool				m_bTLS;
 	bool				m_bDumpCore;
@@ -278,8 +277,7 @@ public:
 	int					GetNzbDirFileAge() { return m_iNzbDirFileAge; }
 	bool				GetParCleanupQueue() { return m_bParCleanupQueue; }
 	int					GetDiskSpace() { return m_iDiskSpace; }
-	EScriptLogKind		GetPostLogKind() { return m_ePostLogKind; }
-	EScriptLogKind		GetNZBLogKind() { return m_eNZBLogKind; }
+	EScriptLogKind		GetProcessLogKind() { return m_eProcessLogKind; }
 	bool				GetAllowReProcess() { return m_bAllowReProcess; }
 	bool				GetTLS() { return m_bTLS; }
 	bool				GetDumpCore() { return m_bDumpCore; }
