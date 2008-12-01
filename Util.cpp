@@ -41,6 +41,7 @@
 #else
 #include <unistd.h>
 #include <sys/statvfs.h>
+#include <pwd.h>
 #endif
 
 #include "nzbget.h"
@@ -1069,3 +1070,39 @@ bool Util::RenameBak(const char* szFilename, const char* szBakPart, bool bRemove
 	return bOK;
 }
 
+#ifndef WIN32
+bool Util::ExpandHomePath(const char* szFilename, char* szBuffer, int iBufSize)
+{
+	if (szFilename && (szFilename[0] == '~') && (szFilename[1] == '/'))
+	{
+		// expand home-dir
+
+		char* home = getenv("HOME");
+		if (!home)
+		{
+			struct passwd *pw = getpwuid(getuid());
+			if (pw)
+			{
+				home = pw->pw_dir;
+			}
+		}
+
+		if (!home)
+		{
+			return false;
+		}
+
+		if (home[strlen(home)-1] == '/')
+		{
+			snprintf(szBuffer, iBufSize, "%s%s", home, szFilename + 2);
+		}
+		else
+		{
+			snprintf(szBuffer, iBufSize, "%s/%s", home, szFilename + 2);
+		}
+		szBuffer[iBufSize - 1] = '\0';
+	}
+	
+	return true;
+}
+#endif

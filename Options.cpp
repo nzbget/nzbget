@@ -40,7 +40,6 @@
 #include <direct.h>
 #else
 #include <unistd.h>
-#include <pwd.h>
 #include <getopt.h>
 #endif
 
@@ -554,9 +553,12 @@ void Options::InitOptFile()
 		int p = 0;
 		while (const char* szFilename = PossibleConfigLocations[p++])
 		{
-			// substitute HOME-variable using SetOption
-			SetOption("$CONFIGFILENAME", szFilename);
-			szFilename = GetOption("$CONFIGFILENAME");
+			// substitute HOME-variable
+			char szExpandedFilename[1024];
+			if (Util::ExpandHomePath(szFilename, szExpandedFilename, sizeof(szExpandedFilename)))
+			{
+				szFilename = szExpandedFilename;
+			}
 
 			if (Util::FileExists(szFilename))
 			{
@@ -1114,35 +1116,14 @@ void Options::SetOption(const char* optname, const char* value)
 	char* curvalue = NULL;
 
 #ifndef WIN32
-	if ((value) && (value[0] == '~') && (value[1] == '/'))
+	if (value && (value[0] == '~') && (value[1] == '/'))
 	{
-		// expand home-dir
-
-		char* home = getenv("HOME");
-		if (!home)
-		{
-			struct passwd *pw = getpwuid(getuid());
-			if (pw)
-				home = pw->pw_dir;
-		}
-
-		if (!home)
+		char szExpandedPath[1024];
+		if (!Util::ExpandHomePath(value, szExpandedPath, sizeof(szExpandedPath)))
 		{
 			abort("FATAL ERROR: Unable to determine home-directory, option \"%s\"\n", optname);
 		}
-
-		char* newvalue = (char*) malloc(strlen(value) + strlen(home) + 10);
-
-		if (home[strlen(home)-1] == '/')
-		{
-			sprintf(newvalue, "%s%s", home, value + 2);
-		}
-		else
-		{
-			sprintf(newvalue, "%s/%s", home, value + 2);
-		}
-
-		curvalue = newvalue;
+		curvalue = strdup(szExpandedPath);
 	}
 	else
 #endif
@@ -1680,4 +1661,15 @@ void Options::ParseFileIDList(int argc, char* argv[], int optind)
 	{
 		m_pEditQueueIDList[i] = IDs[i];
 	}
+}
+
+Options::OptEntries* Options::LockOptEntries()
+{
+	m_mutexOptEntries.Lock();
+	return &m_OptEntries;
+}
+
+void Options::UnlockOptEntries()
+{
+	m_mutexOptEntries.Unlock();
 }

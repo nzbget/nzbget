@@ -199,8 +199,29 @@ void ScriptController::SetEnvVar(const char* szName, const char* szValue)
 
 void ScriptController::PrepareEnvironmentStrings()
 {
-	//TODO: add program options
+	Options::OptEntries* pOptEntries = g_pOptions->LockOptEntries();
 
+	for (Options::OptEntries::iterator it = pOptEntries->begin(); it != pOptEntries->end(); it++)
+	{
+		Options::OptEntry* pOptEntry = *it;
+		char szVarname[1024];
+		snprintf(szVarname, sizeof(szVarname), "NZBOP_%s", pOptEntry->GetName());
+
+		// convert to upper case; replace "." with "_".
+		for (char* szPtr = szVarname; *szPtr; szPtr++)
+		{
+			if (*szPtr == '.')
+			{
+				*szPtr = '_';
+			}
+			*szPtr = toupper(*szPtr);
+		}
+
+		szVarname[1024-1] = '\0';
+		SetEnvVar(szVarname, pOptEntry->GetValue());
+	}
+
+	g_pOptions->UnlockOptEntries();
 }
 
 int ScriptController::Execute()
