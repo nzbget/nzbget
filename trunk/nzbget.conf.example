@@ -20,6 +20,7 @@
 ### PATHS                                                                  ###
 
 # Root directory for all related tasks.
+#
 # MAINDIR is a variable and therefore starts with "$".
 # On POSIX you can use "~" as alias for home directory (e.g. "~/download").
 # On Windows use absolute paths (e.g. "C:\Download").
@@ -29,6 +30,7 @@ $MAINDIR=~/download
 DestDir=${MAINDIR}/dst
 
 # Directory to monitor for incoming nzb-jobs.
+#
 # Can have subdirectories. 
 # A nzb-file queued from a subdirectory will be automatically assigned to 
 # category with the directory-name.
@@ -41,11 +43,13 @@ QueueDir=${MAINDIR}/queue
 TempDir=${MAINDIR}/tmp
 
 # Lock-file for daemon-mode, POSIX only.
+#
 # If the option is not empty, nzbget creates the file and writes process-id 
 # (PID) into it. That info can be used in shell scripts.
 LockFile=/tmp/nzbget.lock
 
 # Where to store log file, if it needs to be created.
+#
 # NOTE: See also option <CreateLog>.
 LogFile=${DestDir}/nzbget.log
 
@@ -56,27 +60,37 @@ LogFile=${DestDir}/nzbget.log
 # This section defines which servers nzbget should connect to.
 
 # Level of newsserver (0-99).
+#
 # The servers will be ordered by their level, i.e. nzbget will at
 # first try to download an article from the level-0-server.
 # If that server fails, nzbget proceeds with the level-1-server, etc.
 # A good idea is surely to put your major download-server at level 0
 # and your fill-servers at levels 1,2,...
-# NOTE: Do not leave out a level in your server-list and start with level 0!
+#
+# NOTE: Do not leave out a level in your server-list and start with level 0.
+#
 # NOTE: Several servers with the same level may be used, they will have 
 # the same priority.
 Server1.Level=0
+
 # Host name of newsserver.
 Server1.Host=my1.newsserver.com
+
 # Port to connect to (1-65535).
 Server1.Port=119
+
 # User name to use for authentication.
 Server1.Username=user
+
 # Password to use for authentication.
 Server1.Password=pass
+
 # Server requires "Join Group"-command (yes, no).
 Server1.JoinGroup=yes
+
 # Encrypted server connection (TLS/SSL) (yes, no).
 Server1.Encryption=no
+
 # Maximal number of simultaneous connections to this server (0-999).
 Server1.Connections=4
 
@@ -105,10 +119,12 @@ Server1.Connections=4
 ### PERMISSIONS                                                            ###
 
 # User name for daemon-mode, POSIX only.
+#
 # Set the user that the daemon normally runs at (POSIX in daemon-mode only).
 # Set $MAINDIR with an absolute path to be sure where it will write.
 # This allows nzbget daemon to be launched in rc.local (at boot), and
 # download items as a specific user id.
+#
 # NOTE: This option has effect only if the program was started from 
 # root-account, otherwise it is ignored and the daemon runs under 
 # current user id.
@@ -116,6 +132,7 @@ DaemonUserName=root
 
 # Specify default umask (affects file permissions) for newly created 
 # files, POSIX only (000-1000).
+#
 # The value should be written in octal form (the same as for "umask" shell 
 # command).
 # Empty value or value "1000" disable the setting of umask-mode; current 
@@ -134,10 +151,12 @@ AppendNzbDir=yes
 
 # How often incoming-directory (option <NzbDir>) must be checked for new 
 # nzb-files (seconds).
+#
 # Value "0" disables the check.
 NzbDirInterval=5
 
 # How old nzb-file should at least be for it to be loaded to queue (seconds).
+#
 # Nzbget checks if nzb-file was not modified in last few seconds, defined by
 # this option. That safety interval prevents the loading of files, which 
 # were not yet completely saved to disk, for example if they are still being
@@ -145,6 +164,7 @@ NzbDirInterval=5
 NzbDirFileAge=60
 
 # Automatic merging of nzb-files with the same filename (yes, no).
+#
 # A typical scenario: you put nzb-file into incoming directory, nzbget adds
 # file to queue. You find out, that the file doesn't have par-files. You
 # find required par-files, put nzb-file with the par-files into incoming 
@@ -156,21 +176,35 @@ MergeNzb=no
 
 # Set path to program, that must be executed before any file in incoming 
 # directory (option <NzbDir>) is processed.
+#
 # Example: "NzbProcess=~/nzbprocess.sh".
+#
 # That program can unpack archives put in incoming directory, make
 # filename cleanup or something else.
+#
 # NZBGet passes following arguments to nzbprocess-program as environment
 # variables:
 #  NZBNP_DIRECTORY - path to directory, where file is located. It is a directory
 #                    specified by the option <NzbDir> or a subdirectory;
 #  NZBNP_FILENAME  - name of file to be processed;
+#
+# In addition to these arguments nzbget passes all
+# nzbget.conf-options to postprocess-program as environment variables. These
+# variables have prefix "NZBOP_" and are written in UPPER CASE. For Example
+# option "ParRepair" is passed as environment variable "NZBOP_PARREPAIR".
+# The dots in option names are replaced with underscores, for example 
+# "SERVER1_HOST". For options with predefined possible values (yes/no, etc.)
+# the values are passed always in lower case.
+#
 # The nzbprocess-script can delete processed file, rename it or move somewhere.
 # After the calling of the script the file will be either added to queue 
 # (if it was an nzb-file) or renamed by adding the extension ".processed".
 # Unpacked files will be checked on next directory scan (see option 
 # <NzbDirInterval>).
+#
 # NOTE: Files with extensions ".processed", ".queued" and ".error" are skipped
 # during the directory scanning.
+#
 # NOTE: Files with extension ".nzb_processed" are not passed to 
 # NzbProcess-script before adding to queue. This feature allows 
 # NzbProcess-script to perevnt the scanning of nzb-files extracted from 
@@ -179,6 +213,7 @@ NzbProcess=
 
 # Set the default message-kind for output received from nzbprocess-script 
 # (none, detail, info, warning, error, debug).
+#
 # NZBGet checks if the line written by the script to stdout or stderr starts
 # with special character-sequence, determining the message-kind, e.g.:
 # [INFO] bla-bla.
@@ -186,11 +221,13 @@ NzbProcess=
 # [WARNING] bla-bla.
 # [ERROR] bla-bla.
 # [DEBUG] bla-bla.
+#
 # If the message-kind was detected the text is added to log with detected type.
 # Otherwise the message becomes the default kind, specified in this option.
 NzbLogKind=detail
 
 # Check for duplicate files (yes, no).
+#
 # If this option is enabled the program checks by adding of a new nzb-file:
 # 1) if nzb-file contains duplicate entries. This check aims on detecting
 #    of reposted files (if first file was not fully uploaded);    
@@ -199,6 +236,7 @@ NzbLogKind=detail
 # 2) if download queue already contains file with the same name;
 # 3) if destination file on disk already exists.
 # In last two cases: if the file exists it will not be added to queue;
+#
 # If this option is disabled, all files are downloaded and duplicate files 
 # are renamed to "filename_duplicate1".
 # Existing files are never deleted or overwritten.
@@ -209,6 +247,7 @@ DupeCheck=no
 ### DOWNLOAD QUEUE                                                         ###
 
 # Save download queue to disk (yes, no).
+#
 # This allows to reload it on next start.
 SaveQueue=yes
 
@@ -216,20 +255,24 @@ SaveQueue=yes
 ReloadQueue=yes
 
 # Reload Post-processor-queue on start, if it exists (yes, no).
+#
 # For this option to work the options <SaveQueue> and <ReloadQueue> must
 # be also enabled.
 ReloadPostQueue=yes
 
 # Reuse articles saved in temp-directory from previous program start (yes, no).
+#
 # This allows to continue download of file, if program was exited before 
 # the file was completed.
 ContinuePartial=yes
 
 # Visibly rename broken files on download appending "_broken" (yes, no).
+#
 # Do not activate this option if par-check is enabled.
 RenameBroken=no
 
 # Decode articles (yes, no).
+#
 # yes - decode articles using internal decoder (supports yEnc and UU formats);
 # no - the articles will not be decoded and joined. External programs 
 #      (like "uudeview") can be used to decode and join downloaded articles.
@@ -237,14 +280,17 @@ RenameBroken=no
 Decode=yes
 
 # Write decoded articles directly into destination output file (yes, no).
+#
 # With this option enabled the program at first creates the output 
 # destination file with required size (total size of all articles), 
 # then writes on the fly decoded articles directly to the file 
 # without creating of any temporary files, even for decoded articles.
 # This may results in major performance improvement, but this higly 
 # depends on OS and filesystem used.
+#
 # Can improve performance on a very fast internet connections, 
 # but you need to test if it works in your case.
+#
 # INFO: Tests showed, that on Linux with EXT3-partition activating of 
 # this option results in up to 20% better performance, but on Windows with NTFS 
 # or Linux with FAT32-partitions the performance were decreased. 
@@ -253,8 +299,10 @@ Decode=yes
 # but Windows on NTFS-partition and also Linux on FAT32-partition need to
 # initialize created large file with nulls, resulting in a big performace 
 # degradation.
+#
 # NOTE: for testing try to download few big files (with total size 500-1000MB)
 # and measure required time. Do not rely on the program's speed indicator.
+#
 # NOTE: if both options <DirectWrite> and <ContinuePartial> are enabled,
 # the program will create empty articles-files in temp-directrory. They
 # are used to continue download of file on a next program start. To minimize
@@ -265,6 +313,7 @@ Decode=yes
 DirectWrite=no
 
 # Check CRC of downloaded and decoded articles (yes, no).
+#
 # Normally this option should be enabled for better detecting of download 
 # errors. However checking of CRC needs about the same CPU time as 
 # decoding of articles. On a fast connections with slow CPUs disabling of
@@ -278,6 +327,7 @@ Retries=4
 RetryInterval=10
 
 # Redownload article if CRC-check fails (yes, no).
+#
 # Helps to minimize number of broken files, but may be effective 
 # only if you have multiple download servers (even from the same provider
 # but from different locations (e.g. europe, usa)).
@@ -290,23 +340,28 @@ RetryOnCrcError=no
 ConnectionTimeout=60
 
 # Timeout until a download-thread should be killed (seconds).
+#
 # This can help on hanging downloads, but is dangerous. 
 # Do not use small values!
 TerminateTimeout=600
 
 # Set the (approximate) maximum number of allowed threads (0-999).
+#
 # Sometimes under certain circumstances the program may create way to many 
 # download threads. Most of them are in wait-state. That is not bad,
 # but threads are usually a limited resource. If a program creates to many
 # of them, operating system may kill it. The option <ThreadLimit> prevents that.
+#
 # NOTE: the number of threads is not the same as the number of connections
 # opened to NNTP-servers. Do not use the option <ThreadLimit> to limit the
 # number of connections. Use the appropriate options <ServerX.Connections>
 # instead.
+#
 # NOTE: the actual number of created threads can be slightly larger as
 # defined by the option. Important threads may be created even if the
 # number of threads is exceeded. The option prevents only the creation of
 # additional download threads.
+#
 # NOTE: in most cases you should leave the default value "100" unchanged.
 # However you may increase that value if you need more than 90 connections 
 # (that's very unlikely) or decrease the value if the OS does not allow so 
@@ -314,28 +369,36 @@ TerminateTimeout=600
 ThreadLimit=100
 
 # Set the maximum download rate on program start (kilobytes/sec).
+#
 # Value "0" means no speed control.
 # The download rate can be changed later via remote calls.
 DownloadRate=0
 
 # Set the size of memory buffer used by writing the articles (bytes).
+#
 # Bigger values decrease disk-io, but increase memory usage.
 # Value "0" causes the OS-dependend default value to be used.
 # With value "-1" (which means "max/auto") the program sets the size of 
 # buffer according to the size of current article (typically less than 500K).
+#
 # NOTE: the value must be written in bytes, do not use postfixes "K" or "M".
+#
 # NOTE: to calculate the memory usage multiply WriteBufferSize by max number
 # of connections, configured in section "NEWS-SERVERS".
+#
 # NOTE: typical article's size not exceed 500000 bytes, so using bigger values
 # (like several megabytes) will just waste memory.
+#
 # NOTE: for desktop computers with large amount of memory value "-1" (max/auto)
 # is recommended, but for computers with very low memory (routers, NAS)
 # value "0" (default OS-dependend size) could be better alternative.
+#
 # NOTE: write-buffer is managed by OS (system libraries) and therefore 
 # the effect of the option is highly OS-dependend.
 WriteBufferSize=0
 
 # Pause if disk space gets below this value (megabytes).
+#
 # Value "0" disables the check.
 # Only the disk space on the drive with <DestDir> is checked.
 # The drive with <TempDir> is not checked.
@@ -343,6 +406,7 @@ DiskSpace=250
 
 # Delete already downloaded files from disk, if the download of nzb-file was 
 # cancelled (nzb-file was deleted from queue) (yes, no).
+#
 # NOTE: nzbget does not delete files in a case if all remaining files in 
 # queue are par-files. That prevents the accidential deletetion if the option
 # <ParCleanupQueue> is disabled or if the program was interrupted during 
@@ -372,6 +436,7 @@ InfoTarget=both
 DetailTarget=both
 
 # How debug messages must be printed (screen, log, both, none).
+#
 # Debug-messages can be printed only if the program was compiled in 
 # debug-mode: "./configure --enable-debug".
 DebugTarget=both
@@ -381,12 +446,15 @@ DebugTarget=both
 LogBufferSize=1000
 
 # Create a log of all broken files (yes ,no).
+#
 # It is a text file placed near downloaded files, which contains
 # the names of broken files.
 CreateBrokenLog=yes
 
 # Create memory dump (core-file) on abnormal termination, POSIX only (yes, no).
+#
 # Core-files are very helpful for debugging.
+#
 # NOTE: core-files may contain sensible data, like your login/password to
 # newsserver etc.
 DumpCore=no
@@ -398,6 +466,7 @@ DumpCore=no
 ### DISPLAY (TERMINAL)                                                     ###
 
 # Set screen-outputmode (loggable, colored, curses).
+#
 # loggable - only messages will be printed to standard output;
 # colored  - prints messages (with simple coloring for messages categories)
 #            and download progress info; uses escape-sequenses to move cursor;
@@ -406,22 +475,26 @@ DumpCore=no
 OutputMode=curses
 
 # Shows NZB-Filename in file list in curses-outputmode (yes, no).
+#
 # This option controls the initial state of curses-frontend,
 # it can be switched on/off in run-time with Z-key.
 CursesNzbName=yes
 
 # Show files in groups (NZB-files) in queue list in curses-outputmode (yes, no).
+#
 # This option controls the initial state of curses-frontend,
 # it can be switched on/off in run-time with G-key.
 CursesGroup=no
 
 # Show timestamps in message list in curses-outputmode (yes, no).
+#
 # This option controls the initial state of curses-frontend,
 # it can be switched on/off in run-time with T-key.
 CursesTime=no
 
 # Update interval for Frontend-output in console mode or remote client 
 # mode (milliseconds).
+#
 # Min value 25. Bigger values reduce CPU usage (especially in curses-outputmode)
 # and network traffic in remote-client mode.
 UpdateInterval=200
@@ -431,6 +504,7 @@ UpdateInterval=200
 ### CLIENT/SERVER COMMUNICATION                                            ###
 
 # IP on which the server listen and which client uses to contact the server. 
+#
 # It could be dns-hostname or ip-address (more effective since does not 
 # require dns-lookup).
 # If you want the server to listen to all interfaces, use "0.0.0.0".
@@ -449,6 +523,7 @@ ServerPassword=tegbzn6789
 ### PAR CHECK/REPAIR                                                       ###
 
 # How many par2-files to load (none, all, one).
+#
 # none - all par2-files must be automatically paused;
 # all - all par2-files must be downloaded;
 # one - only one main par2-file must be dowloaded and other must be paused.
@@ -456,6 +531,7 @@ ServerPassword=tegbzn6789
 LoadPars=one
 
 # Automatic par-verification (yes, no).
+#
 # To download only needed par2-files (smart par-files loading) set also 
 # the option <LoadPars> to "one". If option <LoadPars> is set to "all",
 # all par2-files will be downloaded before verification and repair starts.
@@ -464,6 +540,7 @@ LoadPars=one
 ParCheck=no
 
 # Automatic par-repair (yes, no).
+#
 # If option <ParCheck> is enabled and <ParRepair> is not, the program
 # only verifies downloaded files and downloads needed par2-files, but does
 # not start repair-process. This is useful if the server does not have
@@ -473,6 +550,7 @@ ParCheck=no
 ParRepair=yes
 
 # Use only par2-files with matching names (yes, no).
+#
 # If par-check needs extra par-blocks it searches for par2-files
 # in download queue, which can be unpaused and used for restore. 
 # These par2-files should have the same base name as the main par2-file, 
@@ -483,46 +561,58 @@ ParRepair=yes
 # This has however a side effect: if NZB-file contains more than one collection
 # of files (with different par-sets), par-checker may download par-files from
 # a wrong collection. This increases you traffic (but not harm par-check).
+#
 # NOTE: par-checker always uses only par-files added from the same NZB-file
 # and the option <StrictParName> does not change this behavior.
 StrictParName=yes
 
 # Maximum allowed time for par-repair (minutes).
+#
 # Value "0" means unlimited.
+#
 # If you use nzbget on a very slow computer like NAS-device, it may be good to
 # limit the time allowed for par-repair. Nzbget calculates the estimated time 
 # required for par-repair. If the estimated value exceeds the limit defined
 # here, nzbget cancels the repair.
+#
 # To avoid a false cancellation nzbget compares the estimated time with 
 # <ParTimeLimit> after the first 5 minutes of repairing, when the calculated
 # estimated time is more or less accurate. But in a case if <ParTimeLimit> is
 # set to a value smaller than 5 minutes, the comparison is made after the first 
 # whole minute.
+#
 # NOTE: the option limits only the time required for repairing. It doesn't 
 # affect the first stage of parcheck - verification of files. However the 
 # verification speed is constant, it doesn't depend on files integrity and
 # therefore it is not necessary to limit the time needed for the first stage.
+#
 # NOTE: this option requires an extended version of libpar2 (the original
 # version doesn't support the cancelling of repairing). Please refer to 
 # nzbget's README for info on how to apply a patch to libpar2.
 ParTimeLimit=0
 
 # Pause download queue during check/repair (yes, no).
+#
 # Enable the option to give CPU more time for par-check/repair. That helps
 # to speed up check/repair on slow CPUs with fast connection (e.g. NAS-devices).
+#
 # NOTE: if parchecker needs additional par-files it temporary unpauses queue.
+#
 # NOTE: See also option <PostPauseQueue>.
 ParPauseQueue=no
 
 # Cleanup download queue after successful check/repair (yes, no).
+#
 # Enable this option for automatic deletion of unneeded (paused) par-files 
 # from download queue after successful check/repair.
+#
 # NOTE: before cleaning up the program checks if all paused files are par-files.
 # If there are paused non-par-files (this means that you have paused them
 # manually), the cleanup will be skipped for this collection.
 ParCleanupQueue=yes
 
 # Delete source nzb-file after successful check/repair (yes, no).
+#
 # Enable this option for automatic deletion of nzb-file from incoming directory 
 # after successful check/repair.
 NzbCleanupDisk=no
@@ -535,7 +625,9 @@ NzbCleanupDisk=no
 # or one collection in nzb-file (if par-check enabled and nzb-file contains 
 # multiple collections; see note below for the definition of "collection") 
 # is completed and possibly par-checked/repaired.
+#
 # Example: "PostProcess=~/postprocess-example.sh".
+#
 # NZBGet passes following arguments to postprocess-program as environment
 # variables:
 #  NZBPP_DIRECTORY    - path to destination dir for downloaded files;
@@ -556,12 +648,22 @@ NzbCleanupDisk=no
 #                       1 = current par-job or any of the previous par-jobs for
 #                           the same nzb-files failed;
 #  NZBPP_CATEGORY     - category assigned to nzb-file (can be empty string).
+#
 # If nzb-file has assotiated postprocess-parameters (which can be set using
 # subcommand <O> of command <-E>, for example: nzbget -E G O "myvar=hello !" 10)
 # or using XML-/JSON-RPC (for example via web-interface), they are also passed 
 # as environment variables. These variables have prefix "NZBPR_" in their names.
 # For example, pp-parameter "myvar" will be passed as environment 
 # variable "NZBPR_myvar".
+#
+# In addition to arguments and postprocess-parameters nzbget passes all
+# nzbget.conf-options to postprocess-program as environment variables. These
+# variables have prefix "NZBOP_" and are written in UPPER CASE. For Example
+# option "ParRepair" is passed as environment variable "NZBOP_PARREPAIR".
+# The dots in option names are replaced with underscores, for example 
+# "SERVER1_HOST". For options with predefined possible values (yes/no, etc.)
+# the values are passed always in lower case.
+#
 # Return value: nzbget processes the exit code returned by the script:
 #  0  - all OK;
 #  91 - request nzbget to do par-check/repair for current collection in the 
@@ -571,6 +673,7 @@ NzbCleanupDisk=no
 # All other return codes are currently ignored, but for future compatibility 
 # use value "0" (or do not specify any exit code, in this case system uses code
 # "0" by default).
+#
 # NOTE: The parameter NZBPP_NZBCOMPLETED is very important and MUST be checked 
 # even in the simplest scripts.
 # If par-check is enabled and nzb-file contains more than one collection
@@ -584,14 +687,17 @@ NzbCleanupDisk=no
 #     and do the processing, only if NZBPP_NZBCOMPLETED is set to "1" (which 
 #     means, that this was the last collection in nzb-file and all files 
 #     are now completed) and NZBPP_PARFAILED is set to "0" (no failed par-jobs);
+#
 # NOTE: the term "collection" in the above description actually means 
 # "par-set". To determine what "collections" are present in nzb-file nzbget 
 # looks for par-sets. If any collection of files within nzb-file does 
 # not have any par-files, this collection will not be detected.
 # For example, for nzb-file containing three collections but only two par-sets, 
 # the postprocess will be called two times - after processing of each par-set.
+#
 # NOTE: if nzbget doesn't find any collections it calls PostProcess once
 # with empty string for parameter NZBPP_PARFILENAME;
+#
 # NOTE: the using of special return values (91 and 92) for requesting of 
 # par-check/repair allows to organize the delayed parcheck. To do that:
 #   1) set options: LoadPars=one, ParCheck=no, ParRepair=yes;
@@ -602,11 +708,13 @@ NzbCleanupDisk=no
 #   4) on second pass the parameter NZBPP_PARSTATUS will have value 
 #      greater than "0". If it is "2" ("checked and successfully repaired")
 #      you can try unpack again. 
+#
 # NOTE: an example script for unrarring is provided within distribution 
 # in file "postprocess-example.sh".
 PostProcess=
 
 # Allow multiple post-processing for the same nzb-file (yes,no).
+#
 # After the post-processing (par-check and call of a postprocess-script) is
 # completed, nzbget adds the nzb-file to a list of completed-jobs. The nzb-file
 # stays in the list until the last file from that nzb-file is deleted from 
@@ -618,14 +726,17 @@ PostProcess=
 # This prevents the unwanted multiple post-processings of the same nzb-file.
 # But it might be needed if the par-check/-repair are performed not directly 
 # by nzbget but from a post-process-script.
+#
 # NOTE: enable this option only if you were advised to do that by the author
 # of the post-process-script.
+#
 # NOTE: by enabling <AllowReProcess> you should disable the option <ParCheck>
 # to prevent multiple par-checking.
 AllowReProcess=no
 
 # Set the default message-kind for output received from postprocess-script 
 # (none, detail, info, warning, error, debug).
+#
 # NZBGet checks if the line written by the script to stdout or stderr starts
 # with special character-sequence, determining the message-kind, e.g.:
 # [INFO] bla-bla.
@@ -633,13 +744,16 @@ AllowReProcess=no
 # [WARNING] bla-bla.
 # [ERROR] bla-bla.
 # [DEBUG] bla-bla.
+#
 # If the message-kind was detected the text is added to log with detected type.
 # Otherwise the message becomes the default kind, specified in this option.
 PostLogKind=detail
 
 # Pause download queue during executing of postprocess-script (yes, no).
+#
 # Enable the option to give CPU more time for postprocess-script. That helps
 # to speed up postprocess on slow CPUs with fast connection (e.g. NAS-devices).
+#
 # NOTE: See also option <ParPauseQueue>.
 PostPauseQueue=no
 
@@ -657,13 +771,16 @@ PostPauseQueue=no
 #Task1.Time=08:00
 
 # Week days to execute the command (1-7).
+#
 # Comma separated list of week days numbers. 
 # 1 is Monday.
 # Character '-' may be used to define ranges.
+#
 # Examples: "1-7", "1-5", "5,6", "1-5, 7".
 #Task1.WeekDays=1-7
 
 # Command to be executed (Pause, Unpause, DownloadRate).
+#
 # Possible commands:
 #   Pause      - pauses download;
 #   Unpause    - resumes download;
@@ -671,9 +788,11 @@ PostPauseQueue=no
 #Task1.Command=DownloadRate
 
 # Download rate to be set if the command is "DownloadRate" (kilobytes/sec).
+#
+# Value "0" means no speed control.
+#
 # If the option <TaskX.Command> is set to "Pause" or "Unpause" this option
 # is ignored and can be omitted.
-# Value "0" means no speed control.
 #Task1.DownloadRate=100
 
 #Task2.Time=20:00
