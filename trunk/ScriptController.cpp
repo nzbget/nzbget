@@ -344,7 +344,7 @@ int ScriptController::Execute()
 		close(pipeout);
 
 #ifdef CHILD_WATCHDOG
-		fwrite("\n", 1, 2, stdout);
+		fwrite("\n", 1, 1, stdout);
 		fflush(stdout);
 #endif
 
