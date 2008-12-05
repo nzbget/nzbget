@@ -135,7 +135,14 @@ void ArticleDownloader::Run()
 		}
 	}
 
-	int retry = g_pOptions->GetRetries();
+	int iRemainedDownloadRetries = g_pOptions->GetRetries();
+
+	// NOTE: about iRemainedConnectRetries:
+	// Sometimes connections just do not want to work in a particular thread,
+	// regardless of retry count. However they work in other threads.
+	// If ArticleDownloader can't start download after many attempts, it terminates
+	// and let QueueCoordinator retry the article in new thread.
+	int iRemainedConnectRetries = iRemainedDownloadRetries > 5 ? iRemainedDownloadRetries * 2 : 10;
 
 	EStatus Status = adFailed;
 	int iMaxLevel = g_pServerPool->GetMaxLevel();
@@ -146,7 +153,7 @@ void ArticleDownloader::Run()
 	}
 	int level = 0;
 
-	while (!IsStopped() && (retry > 0))
+	while (!IsStopped() && iRemainedDownloadRetries > 0)
 	{
 		SetLastUpdateTimeNow();
 
@@ -165,7 +172,7 @@ void ArticleDownloader::Run()
 
 		if (g_pOptions->GetPause())
 		{
-			Status = adPaused;
+			Status = adRetry;
 			break;
 		}
 
@@ -192,6 +199,7 @@ void ArticleDownloader::Run()
 				m_pConnection->Disconnect();
 				bConnected = false;
 				Status = adFailed;
+				iRemainedConnectRetries--;
 			}
 			else
 			{
@@ -204,15 +212,26 @@ void ArticleDownloader::Run()
 				FreeConnection(Status == adFinished);
 			}
 		}
+		else
+		{
+			iRemainedConnectRetries--;
+		}
+
+		if (iRemainedConnectRetries == 0)
+		{
+			debug("Can't connect from this thread, retry later from another");
+			Status = adRetry;
+			break;
+		}
 
 		if (g_pOptions->GetPause())
 		{
-			Status = adPaused;
+			Status = adRetry;
 			break;
 		}
 
 		if (((Status == adFailed) || (Status == adCrcError && g_pOptions->GetRetryOnCrcError())) && 
-			(retry > 1 || !bConnected) && !IsStopped())
+			(iRemainedDownloadRetries > 1 || !bConnected) && !IsStopped())
 		{
 			detail("Waiting %i sec to retry", g_pOptions->GetRetryInterval());
 			int msec = 0;
@@ -263,7 +282,7 @@ void ArticleDownloader::Run()
 			{
 				level = 0;
 			}
-			retry--;
+			iRemainedDownloadRetries--;
 		}
 	}
 
@@ -276,7 +295,7 @@ void ArticleDownloader::Run()
 		Status = adFinished;
 	}
 
-	if (Status != adFinished && Status != adPaused)
+	if (Status != adFinished && Status != adRetry)
 	{
 		Status = adFailed;
 	}
