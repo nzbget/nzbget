@@ -47,7 +47,7 @@ public:
 		adRunning,
 		adFinished,
 		adFailed,
-		adPaused,
+		adRetry,
 		adDecodeError,
 		adCrcError,
 		adDecoding,

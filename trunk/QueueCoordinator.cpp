@@ -535,7 +535,7 @@ void QueueCoordinator::Update(Subject* Caller, void* Aspect)
 	ArticleDownloader* pArticleDownloader = (ArticleDownloader*) Caller;
 	if ((pArticleDownloader->GetStatus() == ArticleDownloader::adFinished) ||
 		(pArticleDownloader->GetStatus() == ArticleDownloader::adFailed) ||
-		(pArticleDownloader->GetStatus() == ArticleDownloader::adPaused))
+		(pArticleDownloader->GetStatus() == ArticleDownloader::adRetry))
 	{
 		ArticleCompleted(pArticleDownloader);
 	}
@@ -560,7 +560,7 @@ void QueueCoordinator::ArticleCompleted(ArticleDownloader* pArticleDownloader)
 	{
 		pArticleInfo->SetStatus(ArticleInfo::aiFailed);
 	}
-	else if (pArticleDownloader->GetStatus() == ArticleDownloader::adPaused)
+	else if (pArticleDownloader->GetStatus() == ArticleDownloader::adRetry)
 	{
 		pArticleInfo->SetStatus(ArticleInfo::aiUndefined);
 		bPaused = true;
