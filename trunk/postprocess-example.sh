@@ -61,7 +61,7 @@ RenameIMG=0
 #  NZBPP_CATEGORY     - category assigned to nzb-file (can be empty string).
 
 
-if [ "$NZBPP_DIRECTORY" -eq "" ] 
+if [ "$NZBPP_DIRECTORY" = "" ] 
 then
 	echo "*** NZBGet post-process script ***"
 	echo "This script is supposed to be called from nzbget."
