@@ -452,7 +452,7 @@ LogBufferSize=1000
 # the names of broken files.
 CreateBrokenLog=yes
 
-# Create memory dump (core-file) on abnormal termination, POSIX only (yes, no).
+# Create memory dump (core-file) on abnormal termination, Linux only (yes, no).
 #
 # Core-files are very helpful for debugging.
 #

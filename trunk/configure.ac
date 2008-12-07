@@ -8,26 +8,27 @@ AC_CONFIG_SRCDIR([nzbget.cpp])
 AC_CONFIG_HEADERS([config.h])
 
 
-dnl Architecture check
+dnl
+dnl Architecture check.
+dnl
 AC_CANONICAL_HOST
-case "$host" in
-  *86-*-linux*)
-    LIBPREF1="/usr"
-    ;;
-  *-linux*)
-    LIBPREF1="/usr"
-    ;;
-  *-freebsd*)
-    LIBPREF1="/usr/local"
-    ;;
-  *-solaris*)
-    LIBPREF1="/usr"
-    ;;
-esac
 
 
+dnl
+dnl Set default library path, if not specified in environment variable "LIBPREF".
+dnl
 if test "$LIBPREF" = ""; then
-	LIBPREF="$LIBPREF1"
+	case "$host" in
+	*-linux*)
+		LIBPREF="/usr"
+		;;
+	*-freebsd*)
+		LIBPREF="/usr/local"
+		;;
+	*-solaris*)
+		LIBPREF="/usr"
+		;;
+	esac
 fi
 
 
@@ -56,9 +57,7 @@ AC_PROG_INSTALL
 dnl
 dnl Checks for header files.
 dnl
-dnl AC_CHECK_HEADERS(stdarg.h time.h stdlib.h stdio.h unistd.h errno.h string.h sys/stat.h sys/time.h)
-dnl AC_CHECK_HEADERS(libgen.h pwd.h getopt.h dirent.h fcntl.h pthread.h semaphore.h)
-dnl AC_CHECK_HEADERS(sys/socket.h sys/types.h netinet/in.h arpa/inet.h netdb.h)
+AC_CHECK_HEADERS(sys/prctl.h)
 
 dnl
 dnl Check for libs
@@ -96,17 +95,17 @@ AC_TRY_COMPILE(
 	AC_DEFINE([HAVE_CTIME_R_3], 1, [Define to 1 if ctime_r takes 3 arguments]),
 	FOUND="no")
 if test "$FOUND" = "no"; then
-AC_TRY_COMPILE(
-	[#include <time.h>],
-	[ time_t clock; char buf[26];	ctime_r(&clock, buf); ],
-	AC_MSG_RESULT([[yes, and it takes 2 arguments]])
-	FOUND="yes"
-	AC_DEFINE([HAVE_CTIME_R_2], 1, [Define to 1 if ctime_r takes 2 arguments]),
-	FOUND="no")
+	AC_TRY_COMPILE(
+		[#include <time.h>],
+		[ time_t clock; char buf[26];	ctime_r(&clock, buf); ],
+		AC_MSG_RESULT([[yes, and it takes 2 arguments]])
+		FOUND="yes"
+		AC_DEFINE([HAVE_CTIME_R_2], 1, [Define to 1 if ctime_r takes 2 arguments]),
+		FOUND="no")
 fi
 if test "$FOUND" = "no"; then
 	AC_MSG_RESULT([no])
-	AC_MSG_ERROR("function ctime_r not found.")
+	AC_MSG_ERROR("function ctime_r not found")
 fi
 
 
@@ -138,22 +137,28 @@ fi
 
 dnl 
 dnl checks for libxml2 includes and libraries.
-dnl 
-INCVAL="${LIBPREF}/include/libxml2"
-LIBVAL="${LIBPREF}/lib"
+dnl
 AC_ARG_WITH(libxml2_includes,
-      [AS_HELP_STRING([--with-libxml2-includes=DIR], [libxml2 include directory])],
-      [INCVAL="$withval"])
-CPPFLAGS="${CPPFLAGS} -I${INCVAL}"
-CFLAGS="${CFLAGS} -I${INCVAL}"
-AC_CHECK_HEADER(libxml/tree.h,,
-	AC_MSG_ERROR("libxml2 header files were not found."))
+	[AS_HELP_STRING([--with-libxml2-includes=DIR], [libxml2 include directory])],
+	[CPPFLAGS="${CPPFLAGS} -I${withval}"]
+	[CFLAGS="${CFLAGS} -I${withval}"]
+	[INCVAL="yes"],
+	[INCVAL="no"])
 AC_ARG_WITH(libxml2_libraries,
 	[AS_HELP_STRING([--with-libxml2-libraries=DIR], [libxml2 library directory])],
-	[LIBVAL="$withval"])
-LDFLAGS="${LDFLAGS} -L${LIBVAL}"
+	[LDFLAGS="${LDFLAGS} -L${withval}"]
+	[LIBVAL="yes"],
+	[LIBVAL="no"])
+if test "$INCVAL" = "no" -o "$LIBVAL" = "no"; then
+	PKG_CHECK_MODULES(libxml2, libxml-2.0,
+		[LDFLAGS="${LDFLAGS} $libxml2_LIBS"]
+		[CPPFLAGS="${CPPFLAGS} $libxml2_CFLAGS"]
+		[CFLAGS="${CFLAGS} $libxml2_CFLAGS"])
+fi
+AC_CHECK_HEADER(libxml/tree.h,,
+	AC_MSG_ERROR("libxml2 header files were not found"))
 AC_SEARCH_LIBS([xmlNewNode], [xml2], ,
-	AC_MSG_ERROR("libxml2 library not found in $LIBVAL."))
+	AC_MSG_ERROR("libxml2 library not found"))
 
 
 dnl
@@ -162,8 +167,8 @@ dnl
 AC_MSG_CHECKING(whether to use curses)
 AC_ARG_ENABLE(curses,
 	[AS_HELP_STRING([--disable-curses], [do not use curses (removes dependency from curses-library)])],
-	[ USECURSES=$enableval ],
-	[ USECURSES=yes] )
+	[USECURSES=$enableval],
+	[USECURSES=yes] )
 AC_MSG_RESULT($USECURSES)
 if test "$USECURSES" = "yes"; then
 	INCVAL="${LIBPREF}/include"
@@ -195,7 +200,7 @@ if test "$USECURSES" = "yes"; then
 			FOUND=no)
 	fi
 	if test "$FOUND" = "no"; then
-		AC_MSG_ERROR([Couldn't find curses headers (ncurses.h or curses.h).])
+		AC_MSG_ERROR([Couldn't find curses headers (ncurses.h or curses.h)])
 	fi
 	AC_SEARCH_LIBS([refresh], [ncurses curses],, 
 		AC_ERROR([Couldn't find curses library]))
@@ -205,7 +210,7 @@ fi
 
 
 dnl
-dnl Use lib2par for par-checking. Deafult: no
+dnl Use libpar2 for par-checking. Deafult: no
 dnl
 AC_MSG_CHECKING(whether to include code for par-checking)
 AC_ARG_ENABLE(parcheck,
@@ -224,23 +229,21 @@ if test "$ENABLEPARCHECK" = "yes"; then
 		[CPPFLAGS="${CPPFLAGS} -I${withval}"]
 		[INCVAL="yes"],
 		[INCVAL="no"])
-	
 	AC_ARG_WITH(libsigc_libraries,
 		[AS_HELP_STRING([--with-libsigc-libraries=DIR], [libsigc++-2.0 library directory])],
 		[LDFLAGS="${LDFLAGS} -L${withval}"]
 		[CPPFLAGS="${CPPFLAGS} -I${withval}/sigc++-2.0/include"]
 		[LIBVAL="yes"],
 		[LIBVAL="no"])
-	
 	if test "$INCVAL" = "no" -o "$LIBVAL" = "no"; then
-		PKG_CHECK_MODULES(LIBSIGC, sigc++-2.0,
-			[LDFLAGS="${LDFLAGS} $LIBSIGC_LIBS"]
-			[CPPFLAGS="${CPPFLAGS} $LIBSIGC_CFLAGS"])
+		PKG_CHECK_MODULES(libsigc, sigc++-2.0,
+			[LDFLAGS="${LDFLAGS} $libsigc_LIBS"]
+			[CPPFLAGS="${CPPFLAGS} $libsigc_CFLAGS"])
 	fi
-
+	
 	AC_LANG_PUSH(C++)
 	AC_CHECK_HEADER(sigc++/type_traits.h,,
-		AC_MSG_ERROR("libsigc++-2.0 header files were not found."))
+		AC_MSG_ERROR("libsigc++-2.0 header files were not found"))
 	AC_LANG_POP(C++)
 
 	dnl
@@ -256,7 +259,7 @@ if test "$ENABLEPARCHECK" = "yes"; then
 	
 	AC_LANG_PUSH(C++)
 	AC_CHECK_HEADER(libpar2/libpar2.h,,
-		AC_MSG_ERROR("libpar2 header files were not found in $INCVAL."))
+		AC_MSG_ERROR("libpar2 header files were not found in $INCVAL"))
 	AC_LANG_POP(C++)
 
 	AC_ARG_WITH(libpar2_libraries,
@@ -269,7 +272,7 @@ if test "$ENABLEPARCHECK" = "yes"; then
 		LIBS="${LIBS} -lpar2"
 	dnl		AC_CHECK_LIB(par2, GenerateCRC32Table, , FOUND=no)
 	dnl		if test "$FOUND" = "no"; then
-	dnl			AC_MSG_ERROR("libpar2 library not found in $LIBVAL.")
+	dnl			AC_MSG_ERROR("libpar2 library not found in $LIBVAL")
 	dnl		fi
 
 	dnl
@@ -305,7 +308,7 @@ if test "$USETLS" = "yes"; then
 		[AS_HELP_STRING([--with-tlslib=(GnuTLS, OpenSSL)], [TLS/SSL library to use])],
 		[TLSLIB="$withval"])
 	if test "$TLSLIB" != "GnuTLS" -a "$TLSLIB" != "OpenSSL" -a "$TLSLIB" != ""; then
-		AC_MSG_ERROR([Invalid argument for option --with-tlslib.])
+		AC_MSG_ERROR([Invalid argument for option --with-tlslib])
 	fi
 	
 	if test "$TLSLIB" = "GnuTLS" -o "$TLSLIB" = ""; then
@@ -326,14 +329,14 @@ if test "$USETLS" = "yes"; then
 			TLSHEADERS=yes,
 			FOUND=no)
 		if test "$FOUND" = "no" -a "$TLSLIB" = "GnuTLS"; then
-			AC_MSG_ERROR([Couldn't find GnuTLS headers (gnutls.h).])
+			AC_MSG_ERROR([Couldn't find GnuTLS headers (gnutls.h)])
 		fi
 		if test "$FOUND" = "yes"; then
 			AC_SEARCH_LIBS([gnutls_global_init], [gnutls],
 				FOUND=yes,
 				FOUND=no)
 			if test "$FOUND" = "no" -a "$TLSLIB" = "GnuTLS"; then
-				AC_MSG_ERROR([Couldn't find GnuTLS library.])
+				AC_MSG_ERROR([Couldn't find GnuTLS library])
 			fi
 			if test "$FOUND" = "yes"; then
 				TLSLIB="GnuTLS"
@@ -360,14 +363,14 @@ if test "$USETLS" = "yes"; then
 			TLSHEADERS=yes,
 			FOUND=no)
 		if test "$FOUND" = "no" -a "$TLSLIB" = "OpenSSL"; then
-			AC_MSG_ERROR([Couldn't find OpenSSL headers (ssl.h).])
+			AC_MSG_ERROR([Couldn't find OpenSSL headers (ssl.h)])
 		fi
 		if test "$FOUND" = "yes"; then
 			AC_SEARCH_LIBS([SSL_library_init], [ssl],
 				FOUND=yes,
 				FOUND=no)
 			if test "$FOUND" = "no" -a "$TLSLIB" = "OpenSSL"; then
-				AC_MSG_ERROR([Couldn't find OpenSSL library.])
+				AC_MSG_ERROR([Couldn't find OpenSSL library])
 			fi
 			if test "$FOUND" = "yes"; then
 				TLSLIB="OpenSSL"
@@ -378,9 +381,9 @@ if test "$USETLS" = "yes"; then
 	
 	if test "$TLSLIB" = ""; then
 		if test "$TLSHEADERS" = ""; then
-			AC_MSG_ERROR([Couldn't find neither GnuTLS nor OpenSSL headers (gnutls.h or ssl.h).])
+			AC_MSG_ERROR([Couldn't find neither GnuTLS nor OpenSSL headers (gnutls.h or ssl.h)])
 		else
-			AC_MSG_ERROR([Couldn't find neither GnuTLS nor OpenSSL library.])
+			AC_MSG_ERROR([Couldn't find neither GnuTLS nor OpenSSL library])
 		fi
 	fi
 else

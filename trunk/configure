@@ -721,8 +721,10 @@ MKDIR
 CP
 LIBOBJS
 PKG_CONFIG
-LIBSIGC_CFLAGS
-LIBSIGC_LIBS
+libxml2_CFLAGS
+libxml2_LIBS
+libsigc_CFLAGS
+libsigc_LIBS
 ADDSRCS
 LTLIBOBJS'
 ac_subst_files=''
@@ -739,8 +741,10 @@ CC
 CFLAGS
 CPP
 PKG_CONFIG
-LIBSIGC_CFLAGS
-LIBSIGC_LIBS
+libxml2_CFLAGS
+libxml2_LIBS
+libsigc_CFLAGS
+libsigc_LIBS
 CXXCPP'
 
 
@@ -1373,10 +1377,14 @@ Some influential environment variables:
   CFLAGS      C compiler flags
   CPP         C preprocessor
   PKG_CONFIG  path to pkg-config utility
-  LIBSIGC_CFLAGS
-              C compiler flags for LIBSIGC, overriding pkg-config
-  LIBSIGC_LIBS
-              linker flags for LIBSIGC, overriding pkg-config
+  libxml2_CFLAGS
+              C compiler flags for libxml2, overriding pkg-config
+  libxml2_LIBS
+              linker flags for libxml2, overriding pkg-config
+  libsigc_CFLAGS
+              C compiler flags for libsigc, overriding pkg-config
+  libsigc_LIBS
+              linker flags for libsigc, overriding pkg-config
   CXXCPP      C++ preprocessor
 
 Use these variables to override the choices made by `configure' or to help
@@ -2381,24 +2389,20 @@ IFS=$ac_save_IFS
 case $host_os in *\ *) host_os=`echo "$host_os" | sed 's/ /-/g'`;; esac
 
 
-case "$host" in
-  *86-*-linux*)
-    LIBPREF1="/usr"
-    ;;
-  *-linux*)
-    LIBPREF1="/usr"
-    ;;
-  *-freebsd*)
-    LIBPREF1="/usr/local"
-    ;;
-  *-solaris*)
-    LIBPREF1="/usr"
-    ;;
-esac
 
 
 if test "$LIBPREF" = ""; then
-	LIBPREF="$LIBPREF1"
+	case "$host" in
+	*-linux*)
+		LIBPREF="/usr"
+		;;
+	*-freebsd*)
+		LIBPREF="/usr/local"
+		;;
+	*-solaris*)
+		LIBPREF="/usr"
+		;;
+	esac
 fi
 
 
@@ -5066,6 +5070,394 @@ test -z "$INSTALL_DATA" && INSTALL_DATA='${INSTALL} -m 644'
 
 
 
+{ echo "$as_me:$LINENO: checking for ANSI C header files" >&5
+echo $ECHO_N "checking for ANSI C header files... $ECHO_C" >&6; }
+if test "${ac_cv_header_stdc+set}" = set; then
+  echo $ECHO_N "(cached) $ECHO_C" >&6
+else
+  cat >conftest.$ac_ext <<_ACEOF
+/* confdefs.h.  */
+_ACEOF
+cat confdefs.h >>conftest.$ac_ext
+cat >>conftest.$ac_ext <<_ACEOF
+/* end confdefs.h.  */
+#include <stdlib.h>
+#include <stdarg.h>
+#include <string.h>
+#include <float.h>
+
+int
+main ()
+{
+
+  ;
+  return 0;
+}
+_ACEOF
+rm -f conftest.$ac_objext
+if { (ac_try="$ac_compile"
+case "(($ac_try" in
+  *\"* | *\`* | *\\*) ac_try_echo=\$ac_try;;
+  *) ac_try_echo=$ac_try;;
+esac
+eval "echo \"\$as_me:$LINENO: $ac_try_echo\"") >&5
+  (eval "$ac_compile") 2>conftest.er1
+  ac_status=$?
+  grep -v '^ *+' conftest.er1 >conftest.err
+  rm -f conftest.er1
+  cat conftest.err >&5
+  echo "$as_me:$LINENO: \$? = $ac_status" >&5
+  (exit $ac_status); } && {
+	 test -z "$ac_c_werror_flag" ||
+	 test ! -s conftest.err
+       } && test -s conftest.$ac_objext; then
+  ac_cv_header_stdc=yes
+else
+  echo "$as_me: failed program was:" >&5
+sed 's/^/| /' conftest.$ac_ext >&5
+
+	ac_cv_header_stdc=no
+fi
+
+rm -f core conftest.err conftest.$ac_objext conftest.$ac_ext
+
+if test $ac_cv_header_stdc = yes; then
+  # SunOS 4.x string.h does not declare mem*, contrary to ANSI.
+  cat >conftest.$ac_ext <<_ACEOF
+/* confdefs.h.  */
+_ACEOF
+cat confdefs.h >>conftest.$ac_ext
+cat >>conftest.$ac_ext <<_ACEOF
+/* end confdefs.h.  */
+#include <string.h>
+
+_ACEOF
+if (eval "$ac_cpp conftest.$ac_ext") 2>&5 |
+  $EGREP "memchr" >/dev/null 2>&1; then
+  :
+else
+  ac_cv_header_stdc=no
+fi
+rm -f conftest*
+
+fi
+
+if test $ac_cv_header_stdc = yes; then
+  # ISC 2.0.2 stdlib.h does not declare free, contrary to ANSI.
+  cat >conftest.$ac_ext <<_ACEOF
+/* confdefs.h.  */
+_ACEOF
+cat confdefs.h >>conftest.$ac_ext
+cat >>conftest.$ac_ext <<_ACEOF
+/* end confdefs.h.  */
+#include <stdlib.h>
+
+_ACEOF
+if (eval "$ac_cpp conftest.$ac_ext") 2>&5 |
+  $EGREP "free" >/dev/null 2>&1; then
+  :
+else
+  ac_cv_header_stdc=no
+fi
+rm -f conftest*
+
+fi
+
+if test $ac_cv_header_stdc = yes; then
+  # /bin/cc in Irix-4.0.5 gets non-ANSI ctype macros unless using -ansi.
+  if test "$cross_compiling" = yes; then
+  :
+else
+  cat >conftest.$ac_ext <<_ACEOF
+/* confdefs.h.  */
+_ACEOF
+cat confdefs.h >>conftest.$ac_ext
+cat >>conftest.$ac_ext <<_ACEOF
+/* end confdefs.h.  */
+#include <ctype.h>
+#include <stdlib.h>
+#if ((' ' & 0x0FF) == 0x020)
+# define ISLOWER(c) ('a' <= (c) && (c) <= 'z')
+# define TOUPPER(c) (ISLOWER(c) ? 'A' + ((c) - 'a') : (c))
+#else
+# define ISLOWER(c) \
+		   (('a' <= (c) && (c) <= 'i') \
+		     || ('j' <= (c) && (c) <= 'r') \
+		     || ('s' <= (c) && (c) <= 'z'))
+# define TOUPPER(c) (ISLOWER(c) ? ((c) | 0x40) : (c))
+#endif
+
+#define XOR(e, f) (((e) && !(f)) || (!(e) && (f)))
+int
+main ()
+{
+  int i;
+  for (i = 0; i < 256; i++)
+    if (XOR (islower (i), ISLOWER (i))
+	|| toupper (i) != TOUPPER (i))
+      return 2;
+  return 0;
+}
+_ACEOF
+rm -f conftest$ac_exeext
+if { (ac_try="$ac_link"
+case "(($ac_try" in
+  *\"* | *\`* | *\\*) ac_try_echo=\$ac_try;;
+  *) ac_try_echo=$ac_try;;
+esac
+eval "echo \"\$as_me:$LINENO: $ac_try_echo\"") >&5
+  (eval "$ac_link") 2>&5
+  ac_status=$?
+  echo "$as_me:$LINENO: \$? = $ac_status" >&5
+  (exit $ac_status); } && { ac_try='./conftest$ac_exeext'
+  { (case "(($ac_try" in
+  *\"* | *\`* | *\\*) ac_try_echo=\$ac_try;;
+  *) ac_try_echo=$ac_try;;
+esac
+eval "echo \"\$as_me:$LINENO: $ac_try_echo\"") >&5
+  (eval "$ac_try") 2>&5
+  ac_status=$?
+  echo "$as_me:$LINENO: \$? = $ac_status" >&5
+  (exit $ac_status); }; }; then
+  :
+else
+  echo "$as_me: program exited with status $ac_status" >&5
+echo "$as_me: failed program was:" >&5
+sed 's/^/| /' conftest.$ac_ext >&5
+
+( exit $ac_status )
+ac_cv_header_stdc=no
+fi
+rm -f core *.core core.conftest.* gmon.out bb.out conftest$ac_exeext conftest.$ac_objext conftest.$ac_ext
+fi
+
+
+fi
+fi
+{ echo "$as_me:$LINENO: result: $ac_cv_header_stdc" >&5
+echo "${ECHO_T}$ac_cv_header_stdc" >&6; }
+if test $ac_cv_header_stdc = yes; then
+
+cat >>confdefs.h <<\_ACEOF
+#define STDC_HEADERS 1
+_ACEOF
+
+fi
+
+# On IRIX 5.3, sys/types and inttypes.h are conflicting.
+
+
+
+
+
+
+
+
+
+for ac_header in sys/types.h sys/stat.h stdlib.h string.h memory.h strings.h \
+		  inttypes.h stdint.h unistd.h
+do
+as_ac_Header=`echo "ac_cv_header_$ac_header" | $as_tr_sh`
+{ echo "$as_me:$LINENO: checking for $ac_header" >&5
+echo $ECHO_N "checking for $ac_header... $ECHO_C" >&6; }
+if { as_var=$as_ac_Header; eval "test \"\${$as_var+set}\" = set"; }; then
+  echo $ECHO_N "(cached) $ECHO_C" >&6
+else
+  cat >conftest.$ac_ext <<_ACEOF
+/* confdefs.h.  */
+_ACEOF
+cat confdefs.h >>conftest.$ac_ext
+cat >>conftest.$ac_ext <<_ACEOF
+/* end confdefs.h.  */
+$ac_includes_default
+
+#include <$ac_header>
+_ACEOF
+rm -f conftest.$ac_objext
+if { (ac_try="$ac_compile"
+case "(($ac_try" in
+  *\"* | *\`* | *\\*) ac_try_echo=\$ac_try;;
+  *) ac_try_echo=$ac_try;;
+esac
+eval "echo \"\$as_me:$LINENO: $ac_try_echo\"") >&5
+  (eval "$ac_compile") 2>conftest.er1
+  ac_status=$?
+  grep -v '^ *+' conftest.er1 >conftest.err
+  rm -f conftest.er1
+  cat conftest.err >&5
+  echo "$as_me:$LINENO: \$? = $ac_status" >&5
+  (exit $ac_status); } && {
+	 test -z "$ac_c_werror_flag" ||
+	 test ! -s conftest.err
+       } && test -s conftest.$ac_objext; then
+  eval "$as_ac_Header=yes"
+else
+  echo "$as_me: failed program was:" >&5
+sed 's/^/| /' conftest.$ac_ext >&5
+
+	eval "$as_ac_Header=no"
+fi
+
+rm -f core conftest.err conftest.$ac_objext conftest.$ac_ext
+fi
+ac_res=`eval echo '${'$as_ac_Header'}'`
+	       { echo "$as_me:$LINENO: result: $ac_res" >&5
+echo "${ECHO_T}$ac_res" >&6; }
+if test `eval echo '${'$as_ac_Header'}'` = yes; then
+  cat >>confdefs.h <<_ACEOF
+#define `echo "HAVE_$ac_header" | $as_tr_cpp` 1
+_ACEOF
+
+fi
+
+done
+
+
+
+for ac_header in sys/prctl.h
+do
+as_ac_Header=`echo "ac_cv_header_$ac_header" | $as_tr_sh`
+if { as_var=$as_ac_Header; eval "test \"\${$as_var+set}\" = set"; }; then
+  { echo "$as_me:$LINENO: checking for $ac_header" >&5
+echo $ECHO_N "checking for $ac_header... $ECHO_C" >&6; }
+if { as_var=$as_ac_Header; eval "test \"\${$as_var+set}\" = set"; }; then
+  echo $ECHO_N "(cached) $ECHO_C" >&6
+fi
+ac_res=`eval echo '${'$as_ac_Header'}'`
+	       { echo "$as_me:$LINENO: result: $ac_res" >&5
+echo "${ECHO_T}$ac_res" >&6; }
+else
+  # Is the header compilable?
+{ echo "$as_me:$LINENO: checking $ac_header usability" >&5
+echo $ECHO_N "checking $ac_header usability... $ECHO_C" >&6; }
+cat >conftest.$ac_ext <<_ACEOF
+/* confdefs.h.  */
+_ACEOF
+cat confdefs.h >>conftest.$ac_ext
+cat >>conftest.$ac_ext <<_ACEOF
+/* end confdefs.h.  */
+$ac_includes_default
+#include <$ac_header>
+_ACEOF
+rm -f conftest.$ac_objext
+if { (ac_try="$ac_compile"
+case "(($ac_try" in
+  *\"* | *\`* | *\\*) ac_try_echo=\$ac_try;;
+  *) ac_try_echo=$ac_try;;
+esac
+eval "echo \"\$as_me:$LINENO: $ac_try_echo\"") >&5
+  (eval "$ac_compile") 2>conftest.er1
+  ac_status=$?
+  grep -v '^ *+' conftest.er1 >conftest.err
+  rm -f conftest.er1
+  cat conftest.err >&5
+  echo "$as_me:$LINENO: \$? = $ac_status" >&5
+  (exit $ac_status); } && {
+	 test -z "$ac_c_werror_flag" ||
+	 test ! -s conftest.err
+       } && test -s conftest.$ac_objext; then
+  ac_header_compiler=yes
+else
+  echo "$as_me: failed program was:" >&5
+sed 's/^/| /' conftest.$ac_ext >&5
+
+	ac_header_compiler=no
+fi
+
+rm -f core conftest.err conftest.$ac_objext conftest.$ac_ext
+{ echo "$as_me:$LINENO: result: $ac_header_compiler" >&5
+echo "${ECHO_T}$ac_header_compiler" >&6; }
+
+# Is the header present?
+{ echo "$as_me:$LINENO: checking $ac_header presence" >&5
+echo $ECHO_N "checking $ac_header presence... $ECHO_C" >&6; }
+cat >conftest.$ac_ext <<_ACEOF
+/* confdefs.h.  */
+_ACEOF
+cat confdefs.h >>conftest.$ac_ext
+cat >>conftest.$ac_ext <<_ACEOF
+/* end confdefs.h.  */
+#include <$ac_header>
+_ACEOF
+if { (ac_try="$ac_cpp conftest.$ac_ext"
+case "(($ac_try" in
+  *\"* | *\`* | *\\*) ac_try_echo=\$ac_try;;
+  *) ac_try_echo=$ac_try;;
+esac
+eval "echo \"\$as_me:$LINENO: $ac_try_echo\"") >&5
+  (eval "$ac_cpp conftest.$ac_ext") 2>conftest.er1
+  ac_status=$?
+  grep -v '^ *+' conftest.er1 >conftest.err
+  rm -f conftest.er1
+  cat conftest.err >&5
+  echo "$as_me:$LINENO: \$? = $ac_status" >&5
+  (exit $ac_status); } >/dev/null && {
+	 test -z "$ac_c_preproc_warn_flag$ac_c_werror_flag" ||
+	 test ! -s conftest.err
+       }; then
+  ac_header_preproc=yes
+else
+  echo "$as_me: failed program was:" >&5
+sed 's/^/| /' conftest.$ac_ext >&5
+
+  ac_header_preproc=no
+fi
+
+rm -f conftest.err conftest.$ac_ext
+{ echo "$as_me:$LINENO: result: $ac_header_preproc" >&5
+echo "${ECHO_T}$ac_header_preproc" >&6; }
+
+# So?  What about this header?
+case $ac_header_compiler:$ac_header_preproc:$ac_c_preproc_warn_flag in
+  yes:no: )
+    { echo "$as_me:$LINENO: WARNING: $ac_header: accepted by the compiler, rejected by the preprocessor!" >&5
+echo "$as_me: WARNING: $ac_header: accepted by the compiler, rejected by the preprocessor!" >&2;}
+    { echo "$as_me:$LINENO: WARNING: $ac_header: proceeding with the compiler's result" >&5
+echo "$as_me: WARNING: $ac_header: proceeding with the compiler's result" >&2;}
+    ac_header_preproc=yes
+    ;;
+  no:yes:* )
+    { echo "$as_me:$LINENO: WARNING: $ac_header: present but cannot be compiled" >&5
+echo "$as_me: WARNING: $ac_header: present but cannot be compiled" >&2;}
+    { echo "$as_me:$LINENO: WARNING: $ac_header:     check for missing prerequisite headers?" >&5
+echo "$as_me: WARNING: $ac_header:     check for missing prerequisite headers?" >&2;}
+    { echo "$as_me:$LINENO: WARNING: $ac_header: see the Autoconf documentation" >&5
+echo "$as_me: WARNING: $ac_header: see the Autoconf documentation" >&2;}
+    { echo "$as_me:$LINENO: WARNING: $ac_header:     section \"Present But Cannot Be Compiled\"" >&5
+echo "$as_me: WARNING: $ac_header:     section \"Present But Cannot Be Compiled\"" >&2;}
+    { echo "$as_me:$LINENO: WARNING: $ac_header: proceeding with the preprocessor's result" >&5
+echo "$as_me: WARNING: $ac_header: proceeding with the preprocessor's result" >&2;}
+    { echo "$as_me:$LINENO: WARNING: $ac_header: in the future, the compiler will take precedence" >&5
+echo "$as_me: WARNING: $ac_header: in the future, the compiler will take precedence" >&2;}
+    ( cat <<\_ASBOX
+## ------------------------------------------- ##
+## Report this to hugbug@users.sourceforge.net ##
+## ------------------------------------------- ##
+_ASBOX
+     ) | sed "s/^/$as_me: WARNING:     /" >&2
+    ;;
+esac
+{ echo "$as_me:$LINENO: checking for $ac_header" >&5
+echo $ECHO_N "checking for $ac_header... $ECHO_C" >&6; }
+if { as_var=$as_ac_Header; eval "test \"\${$as_var+set}\" = set"; }; then
+  echo $ECHO_N "(cached) $ECHO_C" >&6
+else
+  eval "$as_ac_Header=\$ac_header_preproc"
+fi
+ac_res=`eval echo '${'$as_ac_Header'}'`
+	       { echo "$as_me:$LINENO: result: $ac_res" >&5
+echo "${ECHO_T}$ac_res" >&6; }
+
+fi
+if test `eval echo '${'$as_ac_Header'}'` = yes; then
+  cat >>confdefs.h <<_ACEOF
+#define `echo "HAVE_$ac_header" | $as_tr_cpp` 1
+_ACEOF
+
+fi
+
+done
+
 
 { echo "$as_me:$LINENO: checking for library containing pthread_create" >&5
 echo $ECHO_N "checking for library containing pthread_create... $ECHO_C" >&6; }
@@ -5652,7 +6044,7 @@ fi
 
 rm -f core conftest.err conftest.$ac_objext conftest.$ac_ext
 if test "$FOUND" = "no"; then
-cat >conftest.$ac_ext <<_ACEOF
+	cat >conftest.$ac_ext <<_ACEOF
 /* confdefs.h.  */
 _ACEOF
 cat confdefs.h >>conftest.$ac_ext
@@ -5686,7 +6078,7 @@ eval "echo \"\$as_me:$LINENO: $ac_try_echo\"") >&5
        } && test -s conftest.$ac_objext; then
   { echo "$as_me:$LINENO: result: yes, and it takes 2 arguments" >&5
 echo "${ECHO_T}yes, and it takes 2 arguments" >&6; }
-	FOUND="yes"
+		FOUND="yes"
 
 cat >>confdefs.h <<\_ACEOF
 #define HAVE_CTIME_R_2 1
@@ -5704,8 +6096,8 @@ fi
 if test "$FOUND" = "no"; then
 	{ echo "$as_me:$LINENO: result: no" >&5
 echo "${ECHO_T}no" >&6; }
-	{ { echo "$as_me:$LINENO: error: \"function ctime_r not found.\"" >&5
-echo "$as_me: error: \"function ctime_r not found.\"" >&2;}
+	{ { echo "$as_me:$LINENO: error: \"function ctime_r not found\"" >&5
+echo "$as_me: error: \"function ctime_r not found\"" >&2;}
    { (exit 1); exit 1; }; }
 fi
 
@@ -5848,259 +6240,260 @@ _ACEOF
 fi
 
 
-INCVAL="${LIBPREF}/include/libxml2"
-LIBVAL="${LIBPREF}/lib"
 
 # Check whether --with-libxml2_includes was given.
 if test "${with_libxml2_includes+set}" = set; then
-  withval=$with_libxml2_includes; INCVAL="$withval"
+  withval=$with_libxml2_includes; CPPFLAGS="${CPPFLAGS} -I${withval}"
+	CFLAGS="${CFLAGS} -I${withval}"
+	INCVAL="yes"
+else
+  INCVAL="no"
 fi
 
-CPPFLAGS="${CPPFLAGS} -I${INCVAL}"
-CFLAGS="${CFLAGS} -I${INCVAL}"
-{ echo "$as_me:$LINENO: checking for ANSI C header files" >&5
-echo $ECHO_N "checking for ANSI C header files... $ECHO_C" >&6; }
-if test "${ac_cv_header_stdc+set}" = set; then
+
+# Check whether --with-libxml2_libraries was given.
+if test "${with_libxml2_libraries+set}" = set; then
+  withval=$with_libxml2_libraries; LDFLAGS="${LDFLAGS} -L${withval}"
+	LIBVAL="yes"
+else
+  LIBVAL="no"
+fi
+
+if test "$INCVAL" = "no" -o "$LIBVAL" = "no"; then
+
+
+if test "x$ac_cv_env_PKG_CONFIG_set" != "xset"; then
+	if test -n "$ac_tool_prefix"; then
+  # Extract the first word of "${ac_tool_prefix}pkg-config", so it can be a program name with args.
+set dummy ${ac_tool_prefix}pkg-config; ac_word=$2
+{ echo "$as_me:$LINENO: checking for $ac_word" >&5
+echo $ECHO_N "checking for $ac_word... $ECHO_C" >&6; }
+if test "${ac_cv_path_PKG_CONFIG+set}" = set; then
   echo $ECHO_N "(cached) $ECHO_C" >&6
 else
-  cat >conftest.$ac_ext <<_ACEOF
-/* confdefs.h.  */
-_ACEOF
-cat confdefs.h >>conftest.$ac_ext
-cat >>conftest.$ac_ext <<_ACEOF
-/* end confdefs.h.  */
-#include <stdlib.h>
-#include <stdarg.h>
-#include <string.h>
-#include <float.h>
-
-int
-main ()
-{
-
-  ;
-  return 0;
-}
-_ACEOF
-rm -f conftest.$ac_objext
-if { (ac_try="$ac_compile"
-case "(($ac_try" in
-  *\"* | *\`* | *\\*) ac_try_echo=\$ac_try;;
-  *) ac_try_echo=$ac_try;;
-esac
-eval "echo \"\$as_me:$LINENO: $ac_try_echo\"") >&5
-  (eval "$ac_compile") 2>conftest.er1
-  ac_status=$?
-  grep -v '^ *+' conftest.er1 >conftest.err
-  rm -f conftest.er1
-  cat conftest.err >&5
-  echo "$as_me:$LINENO: \$? = $ac_status" >&5
-  (exit $ac_status); } && {
-	 test -z "$ac_c_werror_flag" ||
-	 test ! -s conftest.err
-       } && test -s conftest.$ac_objext; then
-  ac_cv_header_stdc=yes
-else
-  echo "$as_me: failed program was:" >&5
-sed 's/^/| /' conftest.$ac_ext >&5
-
-	ac_cv_header_stdc=no
-fi
-
-rm -f core conftest.err conftest.$ac_objext conftest.$ac_ext
-
-if test $ac_cv_header_stdc = yes; then
-  # SunOS 4.x string.h does not declare mem*, contrary to ANSI.
-  cat >conftest.$ac_ext <<_ACEOF
-/* confdefs.h.  */
-_ACEOF
-cat confdefs.h >>conftest.$ac_ext
-cat >>conftest.$ac_ext <<_ACEOF
-/* end confdefs.h.  */
-#include <string.h>
-
-_ACEOF
-if (eval "$ac_cpp conftest.$ac_ext") 2>&5 |
-  $EGREP "memchr" >/dev/null 2>&1; then
-  :
-else
-  ac_cv_header_stdc=no
-fi
-rm -f conftest*
-
-fi
-
-if test $ac_cv_header_stdc = yes; then
-  # ISC 2.0.2 stdlib.h does not declare free, contrary to ANSI.
-  cat >conftest.$ac_ext <<_ACEOF
-/* confdefs.h.  */
-_ACEOF
-cat confdefs.h >>conftest.$ac_ext
-cat >>conftest.$ac_ext <<_ACEOF
-/* end confdefs.h.  */
-#include <stdlib.h>
-
-_ACEOF
-if (eval "$ac_cpp conftest.$ac_ext") 2>&5 |
-  $EGREP "free" >/dev/null 2>&1; then
-  :
-else
-  ac_cv_header_stdc=no
-fi
-rm -f conftest*
-
-fi
-
-if test $ac_cv_header_stdc = yes; then
-  # /bin/cc in Irix-4.0.5 gets non-ANSI ctype macros unless using -ansi.
-  if test "$cross_compiling" = yes; then
-  :
-else
-  cat >conftest.$ac_ext <<_ACEOF
-/* confdefs.h.  */
-_ACEOF
-cat confdefs.h >>conftest.$ac_ext
-cat >>conftest.$ac_ext <<_ACEOF
-/* end confdefs.h.  */
-#include <ctype.h>
-#include <stdlib.h>
-#if ((' ' & 0x0FF) == 0x020)
-# define ISLOWER(c) ('a' <= (c) && (c) <= 'z')
-# define TOUPPER(c) (ISLOWER(c) ? 'A' + ((c) - 'a') : (c))
-#else
-# define ISLOWER(c) \
-		   (('a' <= (c) && (c) <= 'i') \
-		     || ('j' <= (c) && (c) <= 'r') \
-		     || ('s' <= (c) && (c) <= 'z'))
-# define TOUPPER(c) (ISLOWER(c) ? ((c) | 0x40) : (c))
-#endif
-
-#define XOR(e, f) (((e) && !(f)) || (!(e) && (f)))
-int
-main ()
-{
-  int i;
-  for (i = 0; i < 256; i++)
-    if (XOR (islower (i), ISLOWER (i))
-	|| toupper (i) != TOUPPER (i))
-      return 2;
-  return 0;
-}
-_ACEOF
-rm -f conftest$ac_exeext
-if { (ac_try="$ac_link"
-case "(($ac_try" in
-  *\"* | *\`* | *\\*) ac_try_echo=\$ac_try;;
-  *) ac_try_echo=$ac_try;;
-esac
-eval "echo \"\$as_me:$LINENO: $ac_try_echo\"") >&5
-  (eval "$ac_link") 2>&5
-  ac_status=$?
-  echo "$as_me:$LINENO: \$? = $ac_status" >&5
-  (exit $ac_status); } && { ac_try='./conftest$ac_exeext'
-  { (case "(($ac_try" in
-  *\"* | *\`* | *\\*) ac_try_echo=\$ac_try;;
-  *) ac_try_echo=$ac_try;;
-esac
-eval "echo \"\$as_me:$LINENO: $ac_try_echo\"") >&5
-  (eval "$ac_try") 2>&5
-  ac_status=$?
-  echo "$as_me:$LINENO: \$? = $ac_status" >&5
-  (exit $ac_status); }; }; then
-  :
-else
-  echo "$as_me: program exited with status $ac_status" >&5
-echo "$as_me: failed program was:" >&5
-sed 's/^/| /' conftest.$ac_ext >&5
-
-( exit $ac_status )
-ac_cv_header_stdc=no
-fi
-rm -f core *.core core.conftest.* gmon.out bb.out conftest$ac_exeext conftest.$ac_objext conftest.$ac_ext
-fi
-
-
-fi
-fi
-{ echo "$as_me:$LINENO: result: $ac_cv_header_stdc" >&5
-echo "${ECHO_T}$ac_cv_header_stdc" >&6; }
-if test $ac_cv_header_stdc = yes; then
-
-cat >>confdefs.h <<\_ACEOF
-#define STDC_HEADERS 1
-_ACEOF
-
-fi
-
-# On IRIX 5.3, sys/types and inttypes.h are conflicting.
-
-
-
-
-
-
-
-
-
-for ac_header in sys/types.h sys/stat.h stdlib.h string.h memory.h strings.h \
-		  inttypes.h stdint.h unistd.h
+  case $PKG_CONFIG in
+  [\\/]* | ?:[\\/]*)
+  ac_cv_path_PKG_CONFIG="$PKG_CONFIG" # Let the user override the test with a path.
+  ;;
+  *)
+  as_save_IFS=$IFS; IFS=$PATH_SEPARATOR
+for as_dir in $PATH
 do
-as_ac_Header=`echo "ac_cv_header_$ac_header" | $as_tr_sh`
-{ echo "$as_me:$LINENO: checking for $ac_header" >&5
-echo $ECHO_N "checking for $ac_header... $ECHO_C" >&6; }
-if { as_var=$as_ac_Header; eval "test \"\${$as_var+set}\" = set"; }; then
+  IFS=$as_save_IFS
+  test -z "$as_dir" && as_dir=.
+  for ac_exec_ext in '' $ac_executable_extensions; do
+  if { test -f "$as_dir/$ac_word$ac_exec_ext" && $as_test_x "$as_dir/$ac_word$ac_exec_ext"; }; then
+    ac_cv_path_PKG_CONFIG="$as_dir/$ac_word$ac_exec_ext"
+    echo "$as_me:$LINENO: found $as_dir/$ac_word$ac_exec_ext" >&5
+    break 2
+  fi
+done
+done
+IFS=$as_save_IFS
+
+  ;;
+esac
+fi
+PKG_CONFIG=$ac_cv_path_PKG_CONFIG
+if test -n "$PKG_CONFIG"; then
+  { echo "$as_me:$LINENO: result: $PKG_CONFIG" >&5
+echo "${ECHO_T}$PKG_CONFIG" >&6; }
+else
+  { echo "$as_me:$LINENO: result: no" >&5
+echo "${ECHO_T}no" >&6; }
+fi
+
+
+fi
+if test -z "$ac_cv_path_PKG_CONFIG"; then
+  ac_pt_PKG_CONFIG=$PKG_CONFIG
+  # Extract the first word of "pkg-config", so it can be a program name with args.
+set dummy pkg-config; ac_word=$2
+{ echo "$as_me:$LINENO: checking for $ac_word" >&5
+echo $ECHO_N "checking for $ac_word... $ECHO_C" >&6; }
+if test "${ac_cv_path_ac_pt_PKG_CONFIG+set}" = set; then
   echo $ECHO_N "(cached) $ECHO_C" >&6
 else
-  cat >conftest.$ac_ext <<_ACEOF
-/* confdefs.h.  */
-_ACEOF
-cat confdefs.h >>conftest.$ac_ext
-cat >>conftest.$ac_ext <<_ACEOF
-/* end confdefs.h.  */
-$ac_includes_default
-
-#include <$ac_header>
-_ACEOF
-rm -f conftest.$ac_objext
-if { (ac_try="$ac_compile"
-case "(($ac_try" in
-  *\"* | *\`* | *\\*) ac_try_echo=\$ac_try;;
-  *) ac_try_echo=$ac_try;;
-esac
-eval "echo \"\$as_me:$LINENO: $ac_try_echo\"") >&5
-  (eval "$ac_compile") 2>conftest.er1
-  ac_status=$?
-  grep -v '^ *+' conftest.er1 >conftest.err
-  rm -f conftest.er1
-  cat conftest.err >&5
-  echo "$as_me:$LINENO: \$? = $ac_status" >&5
-  (exit $ac_status); } && {
-	 test -z "$ac_c_werror_flag" ||
-	 test ! -s conftest.err
-       } && test -s conftest.$ac_objext; then
-  eval "$as_ac_Header=yes"
-else
-  echo "$as_me: failed program was:" >&5
-sed 's/^/| /' conftest.$ac_ext >&5
-
-	eval "$as_ac_Header=no"
-fi
-
-rm -f core conftest.err conftest.$ac_objext conftest.$ac_ext
-fi
-ac_res=`eval echo '${'$as_ac_Header'}'`
-	       { echo "$as_me:$LINENO: result: $ac_res" >&5
-echo "${ECHO_T}$ac_res" >&6; }
-if test `eval echo '${'$as_ac_Header'}'` = yes; then
-  cat >>confdefs.h <<_ACEOF
-#define `echo "HAVE_$ac_header" | $as_tr_cpp` 1
-_ACEOF
-
-fi
-
+  case $ac_pt_PKG_CONFIG in
+  [\\/]* | ?:[\\/]*)
+  ac_cv_path_ac_pt_PKG_CONFIG="$ac_pt_PKG_CONFIG" # Let the user override the test with a path.
+  ;;
+  *)
+  as_save_IFS=$IFS; IFS=$PATH_SEPARATOR
+for as_dir in $PATH
+do
+  IFS=$as_save_IFS
+  test -z "$as_dir" && as_dir=.
+  for ac_exec_ext in '' $ac_executable_extensions; do
+  if { test -f "$as_dir/$ac_word$ac_exec_ext" && $as_test_x "$as_dir/$ac_word$ac_exec_ext"; }; then
+    ac_cv_path_ac_pt_PKG_CONFIG="$as_dir/$ac_word$ac_exec_ext"
+    echo "$as_me:$LINENO: found $as_dir/$ac_word$ac_exec_ext" >&5
+    break 2
+  fi
 done
+done
+IFS=$as_save_IFS
+
+  ;;
+esac
+fi
+ac_pt_PKG_CONFIG=$ac_cv_path_ac_pt_PKG_CONFIG
+if test -n "$ac_pt_PKG_CONFIG"; then
+  { echo "$as_me:$LINENO: result: $ac_pt_PKG_CONFIG" >&5
+echo "${ECHO_T}$ac_pt_PKG_CONFIG" >&6; }
+else
+  { echo "$as_me:$LINENO: result: no" >&5
+echo "${ECHO_T}no" >&6; }
+fi
+
+  if test "x$ac_pt_PKG_CONFIG" = x; then
+    PKG_CONFIG=""
+  else
+    case $cross_compiling:$ac_tool_warned in
+yes:)
+{ echo "$as_me:$LINENO: WARNING: In the future, Autoconf will not detect cross-tools
+whose name does not start with the host triplet.  If you think this
+configuration is useful to you, please write to autoconf@gnu.org." >&5
+echo "$as_me: WARNING: In the future, Autoconf will not detect cross-tools
+whose name does not start with the host triplet.  If you think this
+configuration is useful to you, please write to autoconf@gnu.org." >&2;}
+ac_tool_warned=yes ;;
+esac
+    PKG_CONFIG=$ac_pt_PKG_CONFIG
+  fi
+else
+  PKG_CONFIG="$ac_cv_path_PKG_CONFIG"
+fi
+
+fi
+if test -n "$PKG_CONFIG"; then
+	_pkg_min_version=0.9.0
+	{ echo "$as_me:$LINENO: checking pkg-config is at least version $_pkg_min_version" >&5
+echo $ECHO_N "checking pkg-config is at least version $_pkg_min_version... $ECHO_C" >&6; }
+	if $PKG_CONFIG --atleast-pkgconfig-version $_pkg_min_version; then
+		{ echo "$as_me:$LINENO: result: yes" >&5
+echo "${ECHO_T}yes" >&6; }
+	else
+		{ echo "$as_me:$LINENO: result: no" >&5
+echo "${ECHO_T}no" >&6; }
+		PKG_CONFIG=""
+	fi
+
+fi
+
+pkg_failed=no
+{ echo "$as_me:$LINENO: checking for libxml2" >&5
+echo $ECHO_N "checking for libxml2... $ECHO_C" >&6; }
+
+if test -n "$PKG_CONFIG"; then
+    if test -n "$libxml2_CFLAGS"; then
+        pkg_cv_libxml2_CFLAGS="$libxml2_CFLAGS"
+    else
+        if test -n "$PKG_CONFIG" && \
+    { (echo "$as_me:$LINENO: \$PKG_CONFIG --exists --print-errors \"libxml-2.0\"") >&5
+  ($PKG_CONFIG --exists --print-errors "libxml-2.0") 2>&5
+  ac_status=$?
+  echo "$as_me:$LINENO: \$? = $ac_status" >&5
+  (exit $ac_status); }; then
+  pkg_cv_libxml2_CFLAGS=`$PKG_CONFIG --cflags "libxml-2.0" 2>/dev/null`
+else
+  pkg_failed=yes
+fi
+    fi
+else
+	pkg_failed=untried
+fi
+if test -n "$PKG_CONFIG"; then
+    if test -n "$libxml2_LIBS"; then
+        pkg_cv_libxml2_LIBS="$libxml2_LIBS"
+    else
+        if test -n "$PKG_CONFIG" && \
+    { (echo "$as_me:$LINENO: \$PKG_CONFIG --exists --print-errors \"libxml-2.0\"") >&5
+  ($PKG_CONFIG --exists --print-errors "libxml-2.0") 2>&5
+  ac_status=$?
+  echo "$as_me:$LINENO: \$? = $ac_status" >&5
+  (exit $ac_status); }; then
+  pkg_cv_libxml2_LIBS=`$PKG_CONFIG --libs "libxml-2.0" 2>/dev/null`
+else
+  pkg_failed=yes
+fi
+    fi
+else
+	pkg_failed=untried
+fi
 
 
+
+if test $pkg_failed = yes; then
+
+if $PKG_CONFIG --atleast-pkgconfig-version 0.20; then
+        _pkg_short_errors_supported=yes
+else
+        _pkg_short_errors_supported=no
+fi
+        if test $_pkg_short_errors_supported = yes; then
+	        libxml2_PKG_ERRORS=`$PKG_CONFIG --short-errors --errors-to-stdout --print-errors "libxml-2.0"`
+        else
+	        libxml2_PKG_ERRORS=`$PKG_CONFIG --errors-to-stdout --print-errors "libxml-2.0"`
+        fi
+	# Put the nasty error message in config.log where it belongs
+	echo "$libxml2_PKG_ERRORS" >&5
+
+	{ { echo "$as_me:$LINENO: error: Package requirements (libxml-2.0) were not met:
+
+$libxml2_PKG_ERRORS
+
+Consider adjusting the PKG_CONFIG_PATH environment variable if you
+installed software in a non-standard prefix.
+
+Alternatively, you may set the environment variables libxml2_CFLAGS
+and libxml2_LIBS to avoid the need to call pkg-config.
+See the pkg-config man page for more details.
+" >&5
+echo "$as_me: error: Package requirements (libxml-2.0) were not met:
+
+$libxml2_PKG_ERRORS
+
+Consider adjusting the PKG_CONFIG_PATH environment variable if you
+installed software in a non-standard prefix.
+
+Alternatively, you may set the environment variables libxml2_CFLAGS
+and libxml2_LIBS to avoid the need to call pkg-config.
+See the pkg-config man page for more details.
+" >&2;}
+   { (exit 1); exit 1; }; }
+elif test $pkg_failed = untried; then
+	{ { echo "$as_me:$LINENO: error: The pkg-config script could not be found or is too old.  Make sure it
+is in your PATH or set the PKG_CONFIG environment variable to the full
+path to pkg-config.
+
+Alternatively, you may set the environment variables libxml2_CFLAGS
+and libxml2_LIBS to avoid the need to call pkg-config.
+See the pkg-config man page for more details.
+
+To get pkg-config, see <http://www.freedesktop.org/software/pkgconfig>.
+See \`config.log' for more details." >&5
+echo "$as_me: error: The pkg-config script could not be found or is too old.  Make sure it
+is in your PATH or set the PKG_CONFIG environment variable to the full
+path to pkg-config.
+
+Alternatively, you may set the environment variables libxml2_CFLAGS
+and libxml2_LIBS to avoid the need to call pkg-config.
+See the pkg-config man page for more details.
+
+To get pkg-config, see <http://www.freedesktop.org/software/pkgconfig>.
+See \`config.log' for more details." >&2;}
+   { (exit 1); exit 1; }; }
+else
+	libxml2_CFLAGS=$pkg_cv_libxml2_CFLAGS
+	libxml2_LIBS=$pkg_cv_libxml2_LIBS
+        { echo "$as_me:$LINENO: result: yes" >&5
+echo "${ECHO_T}yes" >&6; }
+	LDFLAGS="${LDFLAGS} $libxml2_LIBS"
+		CPPFLAGS="${CPPFLAGS} $libxml2_CFLAGS"
+		CFLAGS="${CFLAGS} $libxml2_CFLAGS"
+fi
+fi
 if test "${ac_cv_header_libxml_tree_h+set}" = set; then
   { echo "$as_me:$LINENO: checking for libxml/tree.h" >&5
 echo $ECHO_N "checking for libxml/tree.h... $ECHO_C" >&6; }
@@ -6234,19 +6627,12 @@ fi
 if test $ac_cv_header_libxml_tree_h = yes; then
   :
 else
-  { { echo "$as_me:$LINENO: error: \"libxml2 header files were not found.\"" >&5
-echo "$as_me: error: \"libxml2 header files were not found.\"" >&2;}
+  { { echo "$as_me:$LINENO: error: \"libxml2 header files were not found\"" >&5
+echo "$as_me: error: \"libxml2 header files were not found\"" >&2;}
    { (exit 1); exit 1; }; }
 fi
 
 
-
-# Check whether --with-libxml2_libraries was given.
-if test "${with_libxml2_libraries+set}" = set; then
-  withval=$with_libxml2_libraries; LIBVAL="$withval"
-fi
-
-LDFLAGS="${LDFLAGS} -L${LIBVAL}"
 { echo "$as_me:$LINENO: checking for library containing xmlNewNode" >&5
 echo $ECHO_N "checking for library containing xmlNewNode... $ECHO_C" >&6; }
 if test "${ac_cv_search_xmlNewNode+set}" = set; then
@@ -6329,8 +6715,8 @@ if test "$ac_res" != no; then
   test "$ac_res" = "none required" || LIBS="$ac_res $LIBS"
 
 else
-  { { echo "$as_me:$LINENO: error: \"libxml2 library not found in $LIBVAL.\"" >&5
-echo "$as_me: error: \"libxml2 library not found in $LIBVAL.\"" >&2;}
+  { { echo "$as_me:$LINENO: error: \"libxml2 library not found\"" >&5
+echo "$as_me: error: \"libxml2 library not found\"" >&2;}
    { (exit 1); exit 1; }; }
 fi
 
@@ -6340,9 +6726,9 @@ fi
 echo $ECHO_N "checking whether to use curses... $ECHO_C" >&6; }
 # Check whether --enable-curses was given.
 if test "${enable_curses+set}" = set; then
-  enableval=$enable_curses;  USECURSES=$enableval
+  enableval=$enable_curses; USECURSES=$enableval
 else
-   USECURSES=yes
+  USECURSES=yes
 fi
 
 { echo "$as_me:$LINENO: result: $USECURSES" >&5
@@ -6797,8 +7183,8 @@ fi
 
 	fi
 	if test "$FOUND" = "no"; then
-		{ { echo "$as_me:$LINENO: error: Couldn't find curses headers (ncurses.h or curses.h)." >&5
-echo "$as_me: error: Couldn't find curses headers (ncurses.h or curses.h)." >&2;}
+		{ { echo "$as_me:$LINENO: error: Couldn't find curses headers (ncurses.h or curses.h)" >&5
+echo "$as_me: error: Couldn't find curses headers (ncurses.h or curses.h)" >&2;}
    { (exit 1); exit 1; }; }
 	fi
 	{ echo "$as_me:$LINENO: checking for library containing refresh" >&5
@@ -6921,7 +7307,6 @@ else
 fi
 
 
-
 # Check whether --with-libsigc_libraries was given.
 if test "${with_libsigc_libraries+set}" = set; then
   withval=$with_libsigc_libraries; LDFLAGS="${LDFLAGS} -L${withval}"
@@ -6931,136 +7316,15 @@ else
   LIBVAL="no"
 fi
 
-
 	if test "$INCVAL" = "no" -o "$LIBVAL" = "no"; then
 
-
-if test "x$ac_cv_env_PKG_CONFIG_set" != "xset"; then
-	if test -n "$ac_tool_prefix"; then
-  # Extract the first word of "${ac_tool_prefix}pkg-config", so it can be a program name with args.
-set dummy ${ac_tool_prefix}pkg-config; ac_word=$2
-{ echo "$as_me:$LINENO: checking for $ac_word" >&5
-echo $ECHO_N "checking for $ac_word... $ECHO_C" >&6; }
-if test "${ac_cv_path_PKG_CONFIG+set}" = set; then
-  echo $ECHO_N "(cached) $ECHO_C" >&6
-else
-  case $PKG_CONFIG in
-  [\\/]* | ?:[\\/]*)
-  ac_cv_path_PKG_CONFIG="$PKG_CONFIG" # Let the user override the test with a path.
-  ;;
-  *)
-  as_save_IFS=$IFS; IFS=$PATH_SEPARATOR
-for as_dir in $PATH
-do
-  IFS=$as_save_IFS
-  test -z "$as_dir" && as_dir=.
-  for ac_exec_ext in '' $ac_executable_extensions; do
-  if { test -f "$as_dir/$ac_word$ac_exec_ext" && $as_test_x "$as_dir/$ac_word$ac_exec_ext"; }; then
-    ac_cv_path_PKG_CONFIG="$as_dir/$ac_word$ac_exec_ext"
-    echo "$as_me:$LINENO: found $as_dir/$ac_word$ac_exec_ext" >&5
-    break 2
-  fi
-done
-done
-IFS=$as_save_IFS
-
-  ;;
-esac
-fi
-PKG_CONFIG=$ac_cv_path_PKG_CONFIG
-if test -n "$PKG_CONFIG"; then
-  { echo "$as_me:$LINENO: result: $PKG_CONFIG" >&5
-echo "${ECHO_T}$PKG_CONFIG" >&6; }
-else
-  { echo "$as_me:$LINENO: result: no" >&5
-echo "${ECHO_T}no" >&6; }
-fi
-
-
-fi
-if test -z "$ac_cv_path_PKG_CONFIG"; then
-  ac_pt_PKG_CONFIG=$PKG_CONFIG
-  # Extract the first word of "pkg-config", so it can be a program name with args.
-set dummy pkg-config; ac_word=$2
-{ echo "$as_me:$LINENO: checking for $ac_word" >&5
-echo $ECHO_N "checking for $ac_word... $ECHO_C" >&6; }
-if test "${ac_cv_path_ac_pt_PKG_CONFIG+set}" = set; then
-  echo $ECHO_N "(cached) $ECHO_C" >&6
-else
-  case $ac_pt_PKG_CONFIG in
-  [\\/]* | ?:[\\/]*)
-  ac_cv_path_ac_pt_PKG_CONFIG="$ac_pt_PKG_CONFIG" # Let the user override the test with a path.
-  ;;
-  *)
-  as_save_IFS=$IFS; IFS=$PATH_SEPARATOR
-for as_dir in $PATH
-do
-  IFS=$as_save_IFS
-  test -z "$as_dir" && as_dir=.
-  for ac_exec_ext in '' $ac_executable_extensions; do
-  if { test -f "$as_dir/$ac_word$ac_exec_ext" && $as_test_x "$as_dir/$ac_word$ac_exec_ext"; }; then
-    ac_cv_path_ac_pt_PKG_CONFIG="$as_dir/$ac_word$ac_exec_ext"
-    echo "$as_me:$LINENO: found $as_dir/$ac_word$ac_exec_ext" >&5
-    break 2
-  fi
-done
-done
-IFS=$as_save_IFS
-
-  ;;
-esac
-fi
-ac_pt_PKG_CONFIG=$ac_cv_path_ac_pt_PKG_CONFIG
-if test -n "$ac_pt_PKG_CONFIG"; then
-  { echo "$as_me:$LINENO: result: $ac_pt_PKG_CONFIG" >&5
-echo "${ECHO_T}$ac_pt_PKG_CONFIG" >&6; }
-else
-  { echo "$as_me:$LINENO: result: no" >&5
-echo "${ECHO_T}no" >&6; }
-fi
-
-  if test "x$ac_pt_PKG_CONFIG" = x; then
-    PKG_CONFIG=""
-  else
-    case $cross_compiling:$ac_tool_warned in
-yes:)
-{ echo "$as_me:$LINENO: WARNING: In the future, Autoconf will not detect cross-tools
-whose name does not start with the host triplet.  If you think this
-configuration is useful to you, please write to autoconf@gnu.org." >&5
-echo "$as_me: WARNING: In the future, Autoconf will not detect cross-tools
-whose name does not start with the host triplet.  If you think this
-configuration is useful to you, please write to autoconf@gnu.org." >&2;}
-ac_tool_warned=yes ;;
-esac
-    PKG_CONFIG=$ac_pt_PKG_CONFIG
-  fi
-else
-  PKG_CONFIG="$ac_cv_path_PKG_CONFIG"
-fi
-
-fi
-if test -n "$PKG_CONFIG"; then
-	_pkg_min_version=0.9.0
-	{ echo "$as_me:$LINENO: checking pkg-config is at least version $_pkg_min_version" >&5
-echo $ECHO_N "checking pkg-config is at least version $_pkg_min_version... $ECHO_C" >&6; }
-	if $PKG_CONFIG --atleast-pkgconfig-version $_pkg_min_version; then
-		{ echo "$as_me:$LINENO: result: yes" >&5
-echo "${ECHO_T}yes" >&6; }
-	else
-		{ echo "$as_me:$LINENO: result: no" >&5
-echo "${ECHO_T}no" >&6; }
-		PKG_CONFIG=""
-	fi
-
-fi
-
 pkg_failed=no
-{ echo "$as_me:$LINENO: checking for LIBSIGC" >&5
-echo $ECHO_N "checking for LIBSIGC... $ECHO_C" >&6; }
+{ echo "$as_me:$LINENO: checking for libsigc" >&5
+echo $ECHO_N "checking for libsigc... $ECHO_C" >&6; }
 
 if test -n "$PKG_CONFIG"; then
-    if test -n "$LIBSIGC_CFLAGS"; then
-        pkg_cv_LIBSIGC_CFLAGS="$LIBSIGC_CFLAGS"
+    if test -n "$libsigc_CFLAGS"; then
+        pkg_cv_libsigc_CFLAGS="$libsigc_CFLAGS"
     else
         if test -n "$PKG_CONFIG" && \
     { (echo "$as_me:$LINENO: \$PKG_CONFIG --exists --print-errors \"sigc++-2.0\"") >&5
@@ -7068,7 +7332,7 @@ if test -n "$PKG_CONFIG"; then
   ac_status=$?
   echo "$as_me:$LINENO: \$? = $ac_status" >&5
   (exit $ac_status); }; then
-  pkg_cv_LIBSIGC_CFLAGS=`$PKG_CONFIG --cflags "sigc++-2.0" 2>/dev/null`
+  pkg_cv_libsigc_CFLAGS=`$PKG_CONFIG --cflags "sigc++-2.0" 2>/dev/null`
 else
   pkg_failed=yes
 fi
@@ -7077,8 +7341,8 @@ else
 	pkg_failed=untried
 fi
 if test -n "$PKG_CONFIG"; then
-    if test -n "$LIBSIGC_LIBS"; then
-        pkg_cv_LIBSIGC_LIBS="$LIBSIGC_LIBS"
+    if test -n "$libsigc_LIBS"; then
+        pkg_cv_libsigc_LIBS="$libsigc_LIBS"
     else
         if test -n "$PKG_CONFIG" && \
     { (echo "$as_me:$LINENO: \$PKG_CONFIG --exists --print-errors \"sigc++-2.0\"") >&5
@@ -7086,7 +7350,7 @@ if test -n "$PKG_CONFIG"; then
   ac_status=$?
   echo "$as_me:$LINENO: \$? = $ac_status" >&5
   (exit $ac_status); }; then
-  pkg_cv_LIBSIGC_LIBS=`$PKG_CONFIG --libs "sigc++-2.0" 2>/dev/null`
+  pkg_cv_libsigc_LIBS=`$PKG_CONFIG --libs "sigc++-2.0" 2>/dev/null`
 else
   pkg_failed=yes
 fi
@@ -7105,33 +7369,33 @@ else
         _pkg_short_errors_supported=no
 fi
         if test $_pkg_short_errors_supported = yes; then
-	        LIBSIGC_PKG_ERRORS=`$PKG_CONFIG --short-errors --errors-to-stdout --print-errors "sigc++-2.0"`
+	        libsigc_PKG_ERRORS=`$PKG_CONFIG --short-errors --errors-to-stdout --print-errors "sigc++-2.0"`
         else
-	        LIBSIGC_PKG_ERRORS=`$PKG_CONFIG --errors-to-stdout --print-errors "sigc++-2.0"`
+	        libsigc_PKG_ERRORS=`$PKG_CONFIG --errors-to-stdout --print-errors "sigc++-2.0"`
         fi
 	# Put the nasty error message in config.log where it belongs
-	echo "$LIBSIGC_PKG_ERRORS" >&5
+	echo "$libsigc_PKG_ERRORS" >&5
 
 	{ { echo "$as_me:$LINENO: error: Package requirements (sigc++-2.0) were not met:
 
-$LIBSIGC_PKG_ERRORS
+$libsigc_PKG_ERRORS
 
 Consider adjusting the PKG_CONFIG_PATH environment variable if you
 installed software in a non-standard prefix.
 
-Alternatively, you may set the environment variables LIBSIGC_CFLAGS
-and LIBSIGC_LIBS to avoid the need to call pkg-config.
+Alternatively, you may set the environment variables libsigc_CFLAGS
+and libsigc_LIBS to avoid the need to call pkg-config.
 See the pkg-config man page for more details.
 " >&5
 echo "$as_me: error: Package requirements (sigc++-2.0) were not met:
 
-$LIBSIGC_PKG_ERRORS
+$libsigc_PKG_ERRORS
 
 Consider adjusting the PKG_CONFIG_PATH environment variable if you
 installed software in a non-standard prefix.
 
-Alternatively, you may set the environment variables LIBSIGC_CFLAGS
-and LIBSIGC_LIBS to avoid the need to call pkg-config.
+Alternatively, you may set the environment variables libsigc_CFLAGS
+and libsigc_LIBS to avoid the need to call pkg-config.
 See the pkg-config man page for more details.
 " >&2;}
    { (exit 1); exit 1; }; }
@@ -7140,8 +7404,8 @@ elif test $pkg_failed = untried; then
 is in your PATH or set the PKG_CONFIG environment variable to the full
 path to pkg-config.
 
-Alternatively, you may set the environment variables LIBSIGC_CFLAGS
-and LIBSIGC_LIBS to avoid the need to call pkg-config.
+Alternatively, you may set the environment variables libsigc_CFLAGS
+and libsigc_LIBS to avoid the need to call pkg-config.
 See the pkg-config man page for more details.
 
 To get pkg-config, see <http://www.freedesktop.org/software/pkgconfig>.
@@ -7150,20 +7414,20 @@ echo "$as_me: error: The pkg-config script could not be found or is too old.  Ma
 is in your PATH or set the PKG_CONFIG environment variable to the full
 path to pkg-config.
 
-Alternatively, you may set the environment variables LIBSIGC_CFLAGS
-and LIBSIGC_LIBS to avoid the need to call pkg-config.
+Alternatively, you may set the environment variables libsigc_CFLAGS
+and libsigc_LIBS to avoid the need to call pkg-config.
 See the pkg-config man page for more details.
 
 To get pkg-config, see <http://www.freedesktop.org/software/pkgconfig>.
 See \`config.log' for more details." >&2;}
    { (exit 1); exit 1; }; }
 else
-	LIBSIGC_CFLAGS=$pkg_cv_LIBSIGC_CFLAGS
-	LIBSIGC_LIBS=$pkg_cv_LIBSIGC_LIBS
+	libsigc_CFLAGS=$pkg_cv_libsigc_CFLAGS
+	libsigc_LIBS=$pkg_cv_libsigc_LIBS
         { echo "$as_me:$LINENO: result: yes" >&5
 echo "${ECHO_T}yes" >&6; }
-	LDFLAGS="${LDFLAGS} $LIBSIGC_LIBS"
-			CPPFLAGS="${CPPFLAGS} $LIBSIGC_CFLAGS"
+	LDFLAGS="${LDFLAGS} $libsigc_LIBS"
+			CPPFLAGS="${CPPFLAGS} $libsigc_CFLAGS"
 fi
 	fi
 
@@ -7533,8 +7797,8 @@ fi
 if test $ac_cv_header_sigcpp_type_traits_h = yes; then
   :
 else
-  { { echo "$as_me:$LINENO: error: \"libsigc++-2.0 header files were not found.\"" >&5
-echo "$as_me: error: \"libsigc++-2.0 header files were not found.\"" >&2;}
+  { { echo "$as_me:$LINENO: error: \"libsigc++-2.0 header files were not found\"" >&5
+echo "$as_me: error: \"libsigc++-2.0 header files were not found\"" >&2;}
    { (exit 1); exit 1; }; }
 fi
 
@@ -7696,8 +7960,8 @@ fi
 if test $ac_cv_header_libpar2_libpar2_h = yes; then
   :
 else
-  { { echo "$as_me:$LINENO: error: \"libpar2 header files were not found in $INCVAL.\"" >&5
-echo "$as_me: error: \"libpar2 header files were not found in $INCVAL.\"" >&2;}
+  { { echo "$as_me:$LINENO: error: \"libpar2 header files were not found in $INCVAL\"" >&5
+echo "$as_me: error: \"libpar2 header files were not found in $INCVAL\"" >&2;}
    { (exit 1); exit 1; }; }
 fi
 
@@ -7812,8 +8076,8 @@ if test "${with_tlslib+set}" = set; then
 fi
 
 	if test "$TLSLIB" != "GnuTLS" -a "$TLSLIB" != "OpenSSL" -a "$TLSLIB" != ""; then
-		{ { echo "$as_me:$LINENO: error: Invalid argument for option --with-tlslib." >&5
-echo "$as_me: error: Invalid argument for option --with-tlslib." >&2;}
+		{ { echo "$as_me:$LINENO: error: Invalid argument for option --with-tlslib" >&5
+echo "$as_me: error: Invalid argument for option --with-tlslib" >&2;}
    { (exit 1); exit 1; }; }
 	fi
 
@@ -7975,8 +8239,8 @@ fi
 
 
 		if test "$FOUND" = "no" -a "$TLSLIB" = "GnuTLS"; then
-			{ { echo "$as_me:$LINENO: error: Couldn't find GnuTLS headers (gnutls.h)." >&5
-echo "$as_me: error: Couldn't find GnuTLS headers (gnutls.h)." >&2;}
+			{ { echo "$as_me:$LINENO: error: Couldn't find GnuTLS headers (gnutls.h)" >&5
+echo "$as_me: error: Couldn't find GnuTLS headers (gnutls.h)" >&2;}
    { (exit 1); exit 1; }; }
 		fi
 		if test "$FOUND" = "yes"; then
@@ -8066,8 +8330,8 @@ else
 fi
 
 			if test "$FOUND" = "no" -a "$TLSLIB" = "GnuTLS"; then
-				{ { echo "$as_me:$LINENO: error: Couldn't find GnuTLS library." >&5
-echo "$as_me: error: Couldn't find GnuTLS library." >&2;}
+				{ { echo "$as_me:$LINENO: error: Couldn't find GnuTLS library" >&5
+echo "$as_me: error: Couldn't find GnuTLS library" >&2;}
    { (exit 1); exit 1; }; }
 			fi
 			if test "$FOUND" = "yes"; then
@@ -8239,8 +8503,8 @@ fi
 
 
 		if test "$FOUND" = "no" -a "$TLSLIB" = "OpenSSL"; then
-			{ { echo "$as_me:$LINENO: error: Couldn't find OpenSSL headers (ssl.h)." >&5
-echo "$as_me: error: Couldn't find OpenSSL headers (ssl.h)." >&2;}
+			{ { echo "$as_me:$LINENO: error: Couldn't find OpenSSL headers (ssl.h)" >&5
+echo "$as_me: error: Couldn't find OpenSSL headers (ssl.h)" >&2;}
    { (exit 1); exit 1; }; }
 		fi
 		if test "$FOUND" = "yes"; then
@@ -8330,8 +8594,8 @@ else
 fi
 
 			if test "$FOUND" = "no" -a "$TLSLIB" = "OpenSSL"; then
-				{ { echo "$as_me:$LINENO: error: Couldn't find OpenSSL library." >&5
-echo "$as_me: error: Couldn't find OpenSSL library." >&2;}
+				{ { echo "$as_me:$LINENO: error: Couldn't find OpenSSL library" >&5
+echo "$as_me: error: Couldn't find OpenSSL library" >&2;}
    { (exit 1); exit 1; }; }
 			fi
 			if test "$FOUND" = "yes"; then
@@ -8347,12 +8611,12 @@ _ACEOF
 
 	if test "$TLSLIB" = ""; then
 		if test "$TLSHEADERS" = ""; then
-			{ { echo "$as_me:$LINENO: error: Couldn't find neither GnuTLS nor OpenSSL headers (gnutls.h or ssl.h)." >&5
-echo "$as_me: error: Couldn't find neither GnuTLS nor OpenSSL headers (gnutls.h or ssl.h)." >&2;}
+			{ { echo "$as_me:$LINENO: error: Couldn't find neither GnuTLS nor OpenSSL headers (gnutls.h or ssl.h)" >&5
+echo "$as_me: error: Couldn't find neither GnuTLS nor OpenSSL headers (gnutls.h or ssl.h)" >&2;}
    { (exit 1); exit 1; }; }
 		else
-			{ { echo "$as_me:$LINENO: error: Couldn't find neither GnuTLS nor OpenSSL library." >&5
-echo "$as_me: error: Couldn't find neither GnuTLS nor OpenSSL library." >&2;}
+			{ { echo "$as_me:$LINENO: error: Couldn't find neither GnuTLS nor OpenSSL library" >&5
+echo "$as_me: error: Couldn't find neither GnuTLS nor OpenSSL library" >&2;}
    { (exit 1); exit 1; }; }
 		fi
 	fi
@@ -9352,13 +9616,15 @@ MKDIR!$MKDIR$ac_delim
 CP!$CP$ac_delim
 LIBOBJS!$LIBOBJS$ac_delim
 PKG_CONFIG!$PKG_CONFIG$ac_delim
-LIBSIGC_CFLAGS!$LIBSIGC_CFLAGS$ac_delim
-LIBSIGC_LIBS!$LIBSIGC_LIBS$ac_delim
+libxml2_CFLAGS!$libxml2_CFLAGS$ac_delim
+libxml2_LIBS!$libxml2_LIBS$ac_delim
+libsigc_CFLAGS!$libsigc_CFLAGS$ac_delim
+libsigc_LIBS!$libsigc_LIBS$ac_delim
 ADDSRCS!$ADDSRCS$ac_delim
 LTLIBOBJS!$LTLIBOBJS$ac_delim
 _ACEOF
 
-  if test `sed -n "s/.*$ac_delim\$/X/p" conf$$subs.sed | grep -c X` = 13; then
+  if test `sed -n "s/.*$ac_delim\$/X/p" conf$$subs.sed | grep -c X` = 15; then
     break
   elif $ac_last_try; then
     { { echo "$as_me:$LINENO: error: could not make $CONFIG_STATUS" >&5

@@ -41,7 +41,9 @@
 #include <pwd.h>
 #include <grp.h>
 #include <sys/resource.h>
+#ifdef HAVE_SYS_PRCTL_H
 #include <sys/prctl.h>
+#endif
 #include <signal.h>
 #endif
 #include <sys/types.h>
@@ -85,7 +87,9 @@ void ProcessClientRequest();
 void InstallSignalHandlers();
 void Daemonize();
 void PrintBacktrace();
+#ifdef HAVE_SYS_PRCTL_H
 void EnableDumpCore();
+#endif
 #ifdef DEBUG
 void MakeSegFault();
 #endif
@@ -176,10 +180,12 @@ int main(int argc, char *argv[], char *argp[])
 	}
 
 #ifndef WIN32
+#ifdef HAVE_SYS_PRCTL_H
 	if (g_pOptions->GetDumpCore())
 	{
 		EnableDumpCore();
 	}
+#endif
 #endif
 
 	Run();
@@ -529,6 +535,7 @@ void MakeSegFault()
 }
 #endif
 
+#ifdef HAVE_SYS_PRCTL_H
 /**
 * activates the creation of core-files
 */
@@ -540,6 +547,7 @@ void EnableDumpCore()
 	setrlimit(RLIMIT_CORE, &rlim);
 	prctl(PR_SET_DUMPABLE, 1);
 }
+#endif
 #endif
 
 void Cleanup()
