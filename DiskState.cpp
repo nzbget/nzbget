@@ -48,6 +48,7 @@ static const char* FORMATVERSION_SIGNATURE_V3 = "nzbget diskstate file version 3
 static const char* FORMATVERSION_SIGNATURE_V4 = "nzbget diskstate file version 4\n";
 static const char* FORMATVERSION_SIGNATURE_V5 = "nzbget diskstate file version 5\n";
 static const char* FORMATVERSION_SIGNATURE_V6 = "nzbget diskstate file version 6\n";
+static const char* FORMATVERSION_SIGNATURE_V7 = "nzbget diskstate file version 7\n";
 
 /* Parse signature and return format version number
 */
@@ -68,6 +69,10 @@ int DiskState::ParseFormatVersion(const char* szFormatSignature)
 	else if (!strcmp(szFormatSignature, FORMATVERSION_SIGNATURE_V6))
 	{
 		return 6;
+	}
+	else if (!strcmp(szFormatSignature, FORMATVERSION_SIGNATURE_V7))
+	{
+		return 7;
 	}
 	else
 	{
@@ -477,7 +482,7 @@ bool DiskState::SavePostQueue(PostQueue* pPostQueue, bool bCompleted)
 		return false;
 	}
 
-	fprintf(outfile, FORMATVERSION_SIGNATURE_V6);
+	fprintf(outfile, FORMATVERSION_SIGNATURE_V7);
 
 	fprintf(outfile, "%i\n", pPostQueue->size());
 	for (PostQueue::iterator it = pPostQueue->begin(); it != pPostQueue->end(); it++)
@@ -491,7 +496,6 @@ bool DiskState::SavePostQueue(PostQueue* pPostQueue, bool bCompleted)
 		fprintf(outfile, "%s\n", pPostInfo->GetQueuedFilename());
 		fprintf(outfile, "%i\n", (int)pPostInfo->GetParCheck());
 		fprintf(outfile, "%i\n", (int)pPostInfo->GetParStatus());
-		fprintf(outfile, "%i\n", (int)pPostInfo->GetParFailed());
 		fprintf(outfile, "%i\n", (int)pPostInfo->GetStage());
 
 		fprintf(outfile, "%i\n", pPostInfo->GetParameters()->size());
@@ -530,7 +534,7 @@ bool DiskState::LoadPostQueue(PostQueue* pPostQueue, bool bCompleted)
 	char FileSignatur[128];
 	fgets(FileSignatur, sizeof(FileSignatur), infile);
 	int iFormatVersion = ParseFormatVersion(FileSignatur);
-	if (iFormatVersion < 3 || iFormatVersion > 6)
+	if (iFormatVersion < 3 || iFormatVersion > 7)
 	{
 		error("Could not load diskstate due file version mismatch");
 		fclose(infile);
@@ -591,8 +595,11 @@ bool DiskState::LoadPostQueue(PostQueue* pPostQueue, bool bCompleted)
 		if (fscanf(infile, "%i\n", &iIntValue) != 1) goto error;
 		pPostInfo->SetParStatus(iIntValue);
 
-		if (fscanf(infile, "%i\n", &iIntValue) != 1) goto error;
-		pPostInfo->SetParFailed(iIntValue);
+		if (iFormatVersion < 7)
+		{
+			// skip old field ParFailed, not used anymore
+			if (fscanf(infile, "%i\n", &iIntValue) != 1) goto error;
+		}
 
 		if (fscanf(infile, "%i\n", &iIntValue) != 1) goto error;
 		pPostInfo->SetStage((PostInfo::EStage)iIntValue);

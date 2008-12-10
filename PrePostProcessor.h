@@ -126,7 +126,7 @@ private:
 	void				ParCheckerUpdate(Subject* Caller, void* Aspect);
 	bool				AddPar(FileInfo* pFileInfo, bool bDeleted);
 	FileInfo*			GetParCleanupQueueGroup(DownloadQueue* pDownloadQueue, const char* szNZBFilename);
-	bool				HasFailedParJobs(const char* szNZBFilename);
+	bool				HasFailedParJobs(const char* szNZBFilename, bool bIgnoreRepairPossible);
 	bool				RequestMorePars(const char* szNZBFilename, const char* szParFilename, int iBlockNeeded, int* pBlockFound);
 	void				FindPars(DownloadQueue* pDownloadQueue, const char* szNZBFilename, const char* szParFilename, 
 							Blocks* pBlocks, bool bStrictParName, bool bExactParName, int* pBlockFound);
