@@ -593,7 +593,7 @@ void PrePostProcessor::CheckPostQueue()
 					IsNZBFileCompleted(pDownloadQueue, pPostInfo->GetNZBFilename(), true, true, true, false) &&
 					pPostInfo->GetParStatus() != PARSTATUS_NOT_CHECKED &&
 					pPostInfo->GetParStatus() != PARSTATUS_FAILED &&
-					!HasFailedParJobs(pPostInfo->GetNZBFilename()))
+					!HasFailedParJobs(pPostInfo->GetNZBFilename(), true))
 				{
 					if (g_pOptions->GetParCleanupQueue())
 					{
@@ -704,7 +704,9 @@ void PrePostProcessor::StartScriptJob(DownloadQueue* pDownloadQueue, PostInfo* p
 
 	bool bNZBFileCompleted = IsNZBFileCompleted(pDownloadQueue, pPostInfo->GetNZBFilename(), true, true, true, false);
 #ifndef DISABLE_PARCHECK
-	bool bHasFailedParJobs = HasFailedParJobs(pPostInfo->GetNZBFilename()) || pPostInfo->GetParFailed();
+	bool bHasFailedParJobs = HasFailedParJobs(pPostInfo->GetNZBFilename(), false) || 
+		pPostInfo->GetParStatus() == PARSTATUS_FAILED || 
+		pPostInfo->GetParStatus() == PARSTATUS_REPAIR_POSSIBLE;
 #else
 	bool bHasFailedParJobs = false;
 #endif
@@ -1161,7 +1163,14 @@ void PrePostProcessor::ParCheckerUpdate(Subject* Caller, void* Aspect)
 				{
 					if (m_ParChecker.GetStatus() == ParChecker::psFailed)
 					{
-						fprintf(file, "Repair failed for %s: %s\n", m_ParChecker.GetInfoName(), m_ParChecker.GetErrMsg() ? m_ParChecker.GetErrMsg() : "");
+						if (m_ParChecker.GetCancelled())
+						{
+							fprintf(file, "Repair cancelled for %s\n", m_ParChecker.GetInfoName());
+						}
+						else
+						{
+							fprintf(file, "Repair failed for %s: %s\n", m_ParChecker.GetInfoName(), m_ParChecker.GetErrMsg() ? m_ParChecker.GetErrMsg() : "");
+						}
 					}
 					else if (m_ParChecker.GetRepairNotNeeded())
 					{
@@ -1190,15 +1199,15 @@ void PrePostProcessor::ParCheckerUpdate(Subject* Caller, void* Aspect)
 		m_mutexQueue.Lock();
 
 		PostInfo* pPostInfo = m_PostQueue.front();
-		pPostInfo->SetParFailed(m_ParChecker.GetStatus() == ParChecker::psFailed);
 		pPostInfo->SetWorking(false);
 		pPostInfo->SetStage(PostInfo::ptQueued);
 
-		if (m_ParChecker.GetStatus() == ParChecker::psFailed)
+		if (m_ParChecker.GetStatus() == ParChecker::psFailed && !m_ParChecker.GetCancelled())
 		{
 			pPostInfo->SetParStatus(PARSTATUS_FAILED);
 		}
-		else if (g_pOptions->GetParRepair() || m_ParChecker.GetRepairNotNeeded())
+		else if (m_ParChecker.GetStatus() == ParChecker::psFinished &&
+			(g_pOptions->GetParRepair() || m_ParChecker.GetRepairNotNeeded()))
 		{
 			pPostInfo->SetParStatus(PARSTATUS_REPAIRED);
 		}
@@ -1254,14 +1263,16 @@ FileInfo* PrePostProcessor::GetParCleanupQueueGroup(DownloadQueue* pDownloadQueu
  *
  * Mutex "m_mutexQueue" must be locked prior to call of this function.
  */
-bool PrePostProcessor::HasFailedParJobs(const char* szNZBFilename)
+bool PrePostProcessor::HasFailedParJobs(const char* szNZBFilename, bool bIgnoreRepairPossible)
 {
 	bool bHasFailedJobs = false;
 
 	for (PostQueue::iterator it = m_CompletedJobs.begin(); it != m_CompletedJobs.end(); it++)
 	{
 		PostInfo* pPostInfo = *it;
-		if (pPostInfo->GetParCheck() && pPostInfo->GetParFailed() &&
+		if (pPostInfo->GetParCheck() && 
+			(pPostInfo->GetParStatus() == PARSTATUS_FAILED || 
+			 (!bIgnoreRepairPossible && pPostInfo->GetParStatus() == PARSTATUS_REPAIR_POSSIBLE)) &&
 			!strcmp(pPostInfo->GetNZBFilename(), szNZBFilename))
 		{
 			bHasFailedJobs = true;

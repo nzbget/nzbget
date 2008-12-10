@@ -261,7 +261,6 @@ private:
 	bool				m_bWorking;
 	bool				m_bParCheck;
 	int					m_iParStatus;
-	bool				m_bParFailed;
 	ERequestParCheck	m_eRequestParCheck;
 	EStage				m_eStage;
 	char*				m_szProgressLabel;
@@ -310,8 +309,6 @@ public:
 	void				SetParCheck(bool bParCheck) { m_bParCheck = bParCheck; }
 	int					GetParStatus() { return m_iParStatus; }
 	void				SetParStatus(int iParStatus) { m_iParStatus = iParStatus; }
-	bool				GetParFailed() { return m_bParFailed; }
-	void				SetParFailed(bool bParFailed) { m_bParFailed = bParFailed; }
 	ERequestParCheck	GetRequestParCheck() { return m_eRequestParCheck; }
 	void				SetRequestParCheck(ERequestParCheck eRequestParCheck) { m_eRequestParCheck = eRequestParCheck; }
 	void				AppendMessage(Message::EKind eKind, const char* szText);
