@@ -212,7 +212,8 @@ void Run()
 #endif
 	
 	Thread::Init();
-	Connection::Init(g_pOptions->GetTLS() && g_pOptions->GetServerMode());
+	Connection::Init(g_pOptions->GetTLS() && !g_pOptions->GetRemoteClientMode() && 
+		(g_pOptions->GetClientOperation() == Options::opClientNoOperation));
 
 	// client request
 	if (g_pOptions->GetClientOperation() != Options::opClientNoOperation)
