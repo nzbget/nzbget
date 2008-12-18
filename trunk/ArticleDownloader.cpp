@@ -137,12 +137,17 @@ void ArticleDownloader::Run()
 
 	int iRemainedDownloadRetries = g_pOptions->GetRetries();
 
+#ifdef THREADCONNECT_WORKAROUND
 	// NOTE: about iRemainedConnectRetries:
 	// Sometimes connections just do not want to work in a particular thread,
 	// regardless of retry count. However they work in other threads.
 	// If ArticleDownloader can't start download after many attempts, it terminates
-	// and let QueueCoordinator retry the article in new thread.
+	// and let QueueCoordinator retry the article in a new thread.
+	// It wasn't confirmed that this workaround actually helps.
+	// Therefore it is disabled by default. Define symbol "THREADCONNECT_WORKAROUND"
+	// to activate the workaround.
 	int iRemainedConnectRetries = iRemainedDownloadRetries > 5 ? iRemainedDownloadRetries * 2 : 10;
+#endif
 
 	EStatus Status = adFailed;
 	int iMaxLevel = g_pServerPool->GetMaxLevel();
@@ -199,7 +204,9 @@ void ArticleDownloader::Run()
 				m_pConnection->Disconnect();
 				bConnected = false;
 				Status = adFailed;
+#ifdef THREADCONNECT_WORKAROUND
 				iRemainedConnectRetries--;
+#endif
 			}
 			else
 			{
@@ -212,6 +219,7 @@ void ArticleDownloader::Run()
 				FreeConnection(Status == adFinished);
 			}
 		}
+#ifdef THREADCONNECT_WORKAROUND
 		else
 		{
 			iRemainedConnectRetries--;
@@ -223,6 +231,7 @@ void ArticleDownloader::Run()
 			Status = adRetry;
 			break;
 		}
+#endif
 
 		if (g_pOptions->GetPause())
 		{
