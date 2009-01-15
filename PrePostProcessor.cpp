@@ -1534,9 +1534,14 @@ bool PrePostProcessor::PauseDownload()
 {
 	debug("PrePostProcessor::PauseDownload()");
 
+	if (m_bPostPause && g_pOptions->GetPause())
+	{
+		return false;
+	}
+
 	m_bPostPause = !g_pOptions->GetPause();
 	m_bSchedulerPauseChanged = false;
-	g_pOptions->SetPause(m_bPostPause);
+	g_pOptions->SetPause(true);
 	return m_bPostPause;
 }
 
