@@ -765,7 +765,7 @@ PostPauseQueue=no
 # Examples: "1-7", "1-5", "5,6", "1-5, 7".
 #Task1.WeekDays=1-7
 
-# Command to be executed (Pause, Unpause, DownloadRate).
+# Command to be executed (Pause, Unpause, DownloadRate, Process).
 #
 # Possible commands:
 #   Pause        - pauses download;
