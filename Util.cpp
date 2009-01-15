@@ -1102,6 +1102,10 @@ bool Util::ExpandHomePath(const char* szFilename, char* szBuffer, int iBufSize)
 		}
 		szBuffer[iBufSize - 1] = '\0';
 	}
+	else
+	{
+		strncpy(szBuffer, szFilename, iBufSize);
+	}
 	
 	return true;
 }
