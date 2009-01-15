@@ -291,6 +291,7 @@ int ScriptController::Execute()
 		{
 			error("Could not start %s: error %i", m_szInfoName, dwErrCode);
 		}
+		free(szEnvironmentStrings);
 		return -1;
 	}
 
@@ -328,6 +329,7 @@ int ScriptController::Execute()
 	if (pid == -1)
 	{
 		error("Could not start %s: errno %i", m_szInfoName, errno);
+		free(pEnvironmentStrings);
 		return -1;
 	}
 	else if (pid == 0)
