@@ -141,7 +141,7 @@ void YDecoder::Clear()
 	m_lExpectedCRC = 0;
 	m_lCalculatedCRC = 0xFFFFFFFF;
 	m_iBegin = 0;
-	m_iEnd = 0;
+	m_iEnd = 0xFFFFFFFF;
 	m_iSize = 0;
 	m_iEndSize = 0;
 	m_bAutoSeek = false;
@@ -319,7 +319,7 @@ bool YDecoder::Write(char* buffer, int len, FILE* outfile)
 	{
 		if (m_bNeedSetPos)
 		{
-			if (m_iBegin == 0 || m_iEnd == 0 || !outfile)
+			if (m_iBegin == 0 || m_iEnd == 0xFFFFFFFF || !outfile)
 			{
 				return false;
 			}
