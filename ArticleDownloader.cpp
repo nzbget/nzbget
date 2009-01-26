@@ -534,18 +534,26 @@ bool ArticleDownloader::Write(char* szLine, int iLen)
 
 	if (g_pOptions->GetDecode())
 	{
+		bool bOK = false;
 		if (m_eFormat == Decoder::efYenc)
 		{
-			return m_YDecoder.Write(szLine, iLen, m_pOutFile);
+			bOK = m_YDecoder.Write(szLine, iLen, m_pOutFile);
 		}
 		else if (m_eFormat == Decoder::efUx)
 		{
-			return m_UDecoder.Write(szLine, iLen, m_pOutFile);
+			bOK = m_UDecoder.Write(szLine, iLen, m_pOutFile);
 		}
 		else
 		{
+			warn("Decoding %s failed: unsupported encoding", m_szInfoName);
 			return false;
 		}
+		if (!bOK)
+		{
+			debug("Failed line: %s", szLine);
+			warn("Decoding %s failed", m_szInfoName);
+		}
+		return bOK;
 	}
 	else
 	{
