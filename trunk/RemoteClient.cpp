@@ -46,7 +46,6 @@
 
 #include "nzbget.h"
 #include "RemoteClient.h"
-#include "DownloadInfo.h"
 #include "Options.h"
 #include "Log.h"
 #include "Util.h"
@@ -64,7 +63,7 @@ RemoteClient::RemoteClient()
 	printf("sizeof(SNZBDownloadRequest)=%i\n", sizeof(SNZBDownloadRequest));
 	printf("sizeof(SNZBListRequest)=%i\n", sizeof(SNZBListRequest));
 	printf("sizeof(SNZBListResponse)=%i\n", sizeof(SNZBListResponse));
-	printf("sizeof(SNZBListResponseEntry)=%i\n", sizeof(SNZBListResponseEntry));
+	printf("sizeof(SNZBListResponseFileEntry)=%i\n", sizeof(SNZBListResponseFileEntry));
 	printf("sizeof(SNZBLogRequest)=%i\n", sizeof(SNZBLogRequest));
 	printf("sizeof(SNZBLogResponse)=%i\n", sizeof(SNZBLogResponse));
 	printf("sizeof(SNZBLogResponseEntry)=%i\n", sizeof(SNZBLogResponseEntry));
@@ -228,7 +227,68 @@ bool RemoteClient::RequestServerDownload(const char* szFilename, const char* szC
 	return OK;
 }
 
-bool RemoteClient::RequestServerList()
+void RemoteClient::BuildFileList(SNZBListResponse* pListResponse, const char* pTrailingData, DownloadQueue* pDownloadQueue)
+{
+	if (ntohl(pListResponse->m_iTrailingDataLength) > 0)
+	{
+		NZBQueue cNZBQueue;
+		const char* pBufPtr = pTrailingData;
+
+		// read nzb entries
+		for (unsigned int i = 0; i < ntohl(pListResponse->m_iNrTrailingNZBEntries); i++)
+		{
+			SNZBListResponseNZBEntry* pListAnswer = (SNZBListResponseNZBEntry*) pBufPtr;
+
+			const char* szFileName = pBufPtr + sizeof(SNZBListResponseNZBEntry);
+			const char* szDestDir = pBufPtr + sizeof(SNZBListResponseNZBEntry) + ntohl(pListAnswer->m_iFilenameLen);
+			const char* szCategory = pBufPtr + sizeof(SNZBListResponseNZBEntry) + ntohl(pListAnswer->m_iFilenameLen) + ntohl(pListAnswer->m_iDestDirLen);
+			const char* m_szQueuedFilename = pBufPtr + sizeof(SNZBListResponseNZBEntry) + ntohl(pListAnswer->m_iFilenameLen) + ntohl(pListAnswer->m_iDestDirLen) + ntohl(pListAnswer->m_iCategoryLen);
+			
+			NZBInfo* pNZBInfo = new NZBInfo();
+			pNZBInfo->SetSize(Util::JoinInt64(ntohl(pListAnswer->m_iSizeHi), ntohl(pListAnswer->m_iSizeLo)));
+			pNZBInfo->SetFilename(szFileName);
+			pNZBInfo->SetDestDir(szDestDir);
+			pNZBInfo->SetCategory(szCategory);
+			pNZBInfo->SetQueuedFilename(m_szQueuedFilename);
+
+			cNZBQueue.push_back(pNZBInfo);
+
+			pBufPtr += sizeof(SNZBListResponseNZBEntry) + ntohl(pListAnswer->m_iFilenameLen) +
+				ntohl(pListAnswer->m_iDestDirLen) + ntohl(pListAnswer->m_iCategoryLen) + 
+				ntohl(pListAnswer->m_iQueuedFilenameLen);
+		}
+
+		//read file entries
+		for (unsigned int i = 0; i < ntohl(pListResponse->m_iNrTrailingFileEntries); i++)
+		{
+			SNZBListResponseFileEntry* pListAnswer = (SNZBListResponseFileEntry*) pBufPtr;
+
+			const char* szNZBFilename = pBufPtr + sizeof(SNZBListResponseFileEntry);
+			const char* szSubject = pBufPtr + sizeof(SNZBListResponseFileEntry) + ntohl(pListAnswer->m_iNZBFilenameLen);
+			const char* szFileName = pBufPtr + sizeof(SNZBListResponseFileEntry) + ntohl(pListAnswer->m_iNZBFilenameLen) + ntohl(pListAnswer->m_iSubjectLen);
+			
+			FileInfo* pFileInfo = new FileInfo();
+			pFileInfo->SetID(ntohl(pListAnswer->m_iID));
+			pFileInfo->SetSize(Util::JoinInt64(ntohl(pListAnswer->m_iFileSizeHi), ntohl(pListAnswer->m_iFileSizeLo)));
+			pFileInfo->SetRemainingSize(Util::JoinInt64(ntohl(pListAnswer->m_iRemainingSizeHi), ntohl(pListAnswer->m_iRemainingSizeLo)));
+			pFileInfo->SetPaused(ntohl(pListAnswer->m_bPaused));
+			pFileInfo->SetSubject(szSubject);
+			pFileInfo->SetFilename(szFileName);
+			pFileInfo->SetFilenameConfirmed(ntohl(pListAnswer->m_bFilenameConfirmed));
+
+			NZBInfo* pNZBInfo = cNZBQueue.at(ntohl(pListAnswer->m_iNZBIndex) - 1);
+
+			pFileInfo->SetNZBInfo(pNZBInfo);
+
+			pDownloadQueue->push_back(pFileInfo);
+
+			pBufPtr += sizeof(SNZBListResponseFileEntry) + ntohl(pListAnswer->m_iNZBFilenameLen) +
+				ntohl(pListAnswer->m_iSubjectLen) + ntohl(pListAnswer->m_iFilenameLen);
+		}
+	}
+}
+
+bool RemoteClient::RequestServerList(bool bFiles, bool bGroups)
 {
 	if (!InitConnection()) return false;
 
@@ -276,71 +336,146 @@ bool RemoteClient::RequestServerList()
 
 	m_pConnection->Disconnect();
 
-	if (ntohl(ListResponse.m_iTrailingDataLength) == 0)
+	if (bFiles)
 	{
-		printf("Server has no files queued for download\n");
-	}
-	else
-	{
-		printf("Queue List\n");
-		printf("-----------------------------------\n");
-
-		long long lRemaining = 0;
-		long long lPaused = 0;
-		char* pBufPtr = (char*)pBuf;
-		for (unsigned int i = 0; i < ntohl(ListResponse.m_iNrTrailingEntries); i++)
+		if (ntohl(ListResponse.m_iTrailingDataLength) == 0)
 		{
-			SNZBListResponseEntry* pListAnswer = (SNZBListResponseEntry*) pBufPtr;
-
-			long long lFileSize = Util::JoinInt64(ntohl(pListAnswer->m_iFileSizeHi), ntohl(pListAnswer->m_iFileSizeLo));
-			long long lRemainingSize = Util::JoinInt64(ntohl(pListAnswer->m_iRemainingSizeHi), ntohl(pListAnswer->m_iRemainingSizeLo));
-
-			char szCompleted[100];
-			szCompleted[0] = '\0';
-			if (lRemainingSize < lFileSize)
-			{
-				sprintf(szCompleted, ", %i%s", (int)(100 - Util::Int64ToFloat(lRemainingSize) * 100.0 / Util::Int64ToFloat(lFileSize)), "%");
-			}
-			char szStatus[100];
-			if (ntohl(pListAnswer->m_bPaused))
-			{
-				sprintf(szStatus, " (paused)");
-				lPaused += lRemainingSize;
-			}
-			else
-			{
-				szStatus[0] = '\0';
-				lRemaining += lRemainingSize;
-			}
-			char* szNZBFilename = pBufPtr + sizeof(SNZBListResponseEntry);
-			char* szFilename = pBufPtr + sizeof(SNZBListResponseEntry) + ntohl(pListAnswer->m_iNZBFilenameLen) + ntohl(pListAnswer->m_iSubjectLen);
-			
-			char szNZBNiceName[1024];
-			NZBInfo::MakeNiceNZBName(szNZBFilename, szNZBNiceName, 1024);
-			
-			printf("[%i] %s%c%s (%.2f MB%s)%s\n", ntohl(pListAnswer->m_iID), szNZBNiceName, (int)PATH_SEPARATOR, szFilename,
-				(float)(Util::Int64ToFloat(lFileSize) / 1024.0 / 1024.0), szCompleted, szStatus);
-
-			pBufPtr += sizeof(SNZBListResponseEntry) + ntohl(pListAnswer->m_iNZBFilenameLen) +
-				ntohl(pListAnswer->m_iSubjectLen) + ntohl(pListAnswer->m_iFilenameLen) + 
-				ntohl(pListAnswer->m_iDestDirLen) + ntohl(pListAnswer->m_iCategoryLen);
-		}
-
-		printf("-----------------------------------\n");
-		printf("Files: %i\n", ntohl(ListResponse.m_iNrTrailingEntries));
-		if (lPaused > 0)
-		{
-			printf("Remaining size: %.2f MB (+%.2f MB paused)\n", (float)(Util::Int64ToFloat(lRemaining) / 1024.0 / 1024.0), 
-				(float)(Util::Int64ToFloat(lPaused) / 1024.0 / 1024.0));
+			printf("Server has no files queued for download\n");
 		}
 		else
 		{
-			printf("Remaining size: %.2f MB\n", (float)(Util::Int64ToFloat(lRemaining) / 1024.0 / 1024.0));
-		}
-		printf("Current download rate: %.1f KB/s\n", (float)(ntohl(ListResponse.m_iDownloadRate) / 1024.0));
+			printf("Queue List\n");
+			printf("-----------------------------------\n");
 
-		free(pBuf);
+			DownloadQueue cRemoteQueue;
+			BuildFileList(&ListResponse, pBuf, &cRemoteQueue);
+
+			long long lRemaining = 0;
+			long long lPaused = 0;
+
+			for (DownloadQueue::iterator it = cRemoteQueue.begin(); it != cRemoteQueue.end(); it++)
+			{
+				FileInfo* pFileInfo = *it;
+
+				char szCompleted[100];
+				szCompleted[0] = '\0';
+				if (pFileInfo->GetRemainingSize() < pFileInfo->GetSize())
+				{
+					sprintf(szCompleted, ", %i%s", (int)(100 - Util::Int64ToFloat(pFileInfo->GetRemainingSize()) * 100.0 / Util::Int64ToFloat(pFileInfo->GetSize())), "%");
+				}
+				char szStatus[100];
+				if (pFileInfo->GetPaused())
+				{
+					sprintf(szStatus, " (paused)");
+					lPaused += pFileInfo->GetRemainingSize();
+				}
+				else
+				{
+					szStatus[0] = '\0';
+					lRemaining += pFileInfo->GetRemainingSize();
+				}
+				
+				char szNZBNiceName[1024];
+				pFileInfo->GetNZBInfo()->GetNiceNZBName(szNZBNiceName, 1024);
+				
+				printf("[%i] %s%c%s (%.2f MB%s)%s\n", pFileInfo->GetID(), szNZBNiceName, (int)PATH_SEPARATOR, pFileInfo->GetFilename(),
+					(float)(Util::Int64ToFloat(pFileInfo->GetSize()) / 1024.0 / 1024.0), szCompleted, szStatus);
+
+				delete pFileInfo;
+			}
+
+			printf("-----------------------------------\n");
+			printf("Files: %i\n", cRemoteQueue.size());
+			if (lPaused > 0)
+			{
+				printf("Remaining size: %.2f MB (+%.2f MB paused)\n", (float)(Util::Int64ToFloat(lRemaining) / 1024.0 / 1024.0), 
+					(float)(Util::Int64ToFloat(lPaused) / 1024.0 / 1024.0));
+			}
+			else
+			{
+				printf("Remaining size: %.2f MB\n", (float)(Util::Int64ToFloat(lRemaining) / 1024.0 / 1024.0));
+			}
+		}
 	}
+
+	if (bGroups)
+	{
+		if (ntohl(ListResponse.m_iTrailingDataLength) == 0)
+		{
+			printf("Server has no files queued for download\n");
+		}
+		else
+		{
+			printf("Queue List\n");
+			printf("-----------------------------------\n");
+
+			DownloadQueue cRemoteQueue;
+			BuildFileList(&ListResponse, pBuf, &cRemoteQueue);
+
+			GroupQueue cGroupQueue;
+			GroupInfo::BuildGroups(&cRemoteQueue, &cGroupQueue);
+
+			long long lRemaining = 0;
+			long long lPaused = 0;
+
+			for (GroupQueue::iterator it = cGroupQueue.begin(); it != cGroupQueue.end(); it++)
+			{
+				GroupInfo* pGroupInfo = *it;
+
+				long long lUnpausedRemainingSize = pGroupInfo->GetRemainingSize() - pGroupInfo->GetPausedSize();
+				lRemaining += lUnpausedRemainingSize;
+
+				char szRemaining[20];
+				Util::FormatFileSize(szRemaining, sizeof(szRemaining), lUnpausedRemainingSize);
+
+				char szPaused[20];
+				szPaused[0] = '\0';
+				if (pGroupInfo->GetPausedSize() > 0)
+				{
+					char szPausedSize[20];
+					Util::FormatFileSize(szPausedSize, sizeof(szPausedSize), pGroupInfo->GetPausedSize());
+					sprintf(szPaused, " + %s paused", szPausedSize);
+					lPaused += pGroupInfo->GetPausedSize();
+				}
+
+				char szNZBNiceName[1024];
+				pGroupInfo->GetNZBInfo()->GetNiceNZBName(szNZBNiceName, 1023);
+
+				printf("[%i-%i] %s (%i file%s, %s%s)\n", pGroupInfo->GetFirstID(), pGroupInfo->GetLastID(), szNZBNiceName, 
+					pGroupInfo->GetRemainingFileCount(), pGroupInfo->GetRemainingFileCount() > 1 ? "s" : "", szRemaining, szPaused);
+
+				delete pGroupInfo;
+			}
+
+			for (DownloadQueue::iterator it = cRemoteQueue.begin(); it != cRemoteQueue.end(); it++)
+			{
+				delete *it;
+			}
+
+			printf("-----------------------------------\n");
+			printf("Groups: %i\n", cGroupQueue.size());
+			printf("Files: %i\n", cRemoteQueue.size());
+			if (lPaused > 0)
+			{
+				printf("Remaining size: %.2f MB (+%.2f MB paused)\n", (float)(Util::Int64ToFloat(lRemaining) / 1024.0 / 1024.0), 
+					(float)(Util::Int64ToFloat(lPaused) / 1024.0 / 1024.0));
+			}
+			else
+			{
+				printf("Remaining size: %.2f MB\n", (float)(Util::Int64ToFloat(lRemaining) / 1024.0 / 1024.0));
+			}
+		}
+	}
+
+	free(pBuf);
+
+	if (!bFiles && !bGroups)
+	{
+		long long lRemaining = Util::JoinInt64(ntohl(ListResponse.m_iRemainingSizeHi), ntohl(ListResponse.m_iRemainingSizeLo));
+		printf("Remaining size: %.2f MB\n", (float)(Util::Int64ToFloat(lRemaining) / 1024.0 / 1024.0));
+	}
+
+	printf("Current download rate: %.1f KB/s\n", (float)(ntohl(ListResponse.m_iDownloadRate) / 1024.0));
 
 	long long iAllBytes = Util::JoinInt64(ntohl(ListResponse.m_iDownloadedBytesHi), ntohl(ListResponse.m_iDownloadedBytesLo));
 	float fAverageSpeed = Util::Int64ToFloat(ntohl(ListResponse.m_iDownloadTimeSec) > 0 ? iAllBytes / ntohl(ListResponse.m_iDownloadTimeSec) : 0);

@@ -797,7 +797,24 @@ void Options::InitCommandLine(int argc, char* argv[])
 				m_eClientOperation = opClientRequestDownload;
 				break;
 			case 'L':
-				m_eClientOperation = opClientRequestList;
+				optind++;
+				optarg = optind > argc ? NULL : optarg = argv[optind-1];
+				if (!optarg || !strcmp(optarg, "F"))
+				{
+					m_eClientOperation = opClientRequestListFiles;
+				}
+				else if (!strcmp(optarg, "G"))
+				{
+					m_eClientOperation = opClientRequestListGroups;
+				}
+				else if (!strcmp(optarg, "S"))
+				{
+					m_eClientOperation = opClientRequestListStatus;
+				}
+				else
+				{
+					abort("FATAL ERROR: Could not parse value of option 'L'\n");
+				}
 				break;
 			case 'P':
 				m_eClientOperation = opClientRequestPause;
@@ -1009,7 +1026,10 @@ void Options::PrintUsage(char* com)
 		"  -Q, --quit                Shutdown server\n"
 		"  -A, --append <nzb-file>   Send file to server's download queue\n"
 		"  -C, --connect             Attach client to server\n"
-		"  -L, --list                Request list of downloads from server\n"
+		"  -L, --list  [F|G|S]       Request list of downloads from server\n"
+		"              F             list individual files and server status (default)\n"
+		"              G             list groups (nzb-files) and server status\n"
+		"              S             print only server status\n"
 		"  -P, --pause               Pause downloading on server\n"
 		"  -U, --unpause             Unpause downloading on server\n"
 		"  -R, --rate                Set download rate on server\n"

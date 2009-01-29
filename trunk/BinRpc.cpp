@@ -368,7 +368,7 @@ void ListBinCommand::Execute()
 	memset(&ListResponse, 0, sizeof(ListResponse));
 	ListResponse.m_MessageBase.m_iSignature = htonl(NZBMESSAGE_SIGNATURE);
 	ListResponse.m_MessageBase.m_iStructSize = htonl(sizeof(ListResponse));
-	ListResponse.m_iEntrySize = htonl(sizeof(SNZBListResponseEntry));
+	ListResponse.m_iEntrySize = htonl(sizeof(SNZBListResponseFileEntry));
 
 	char* buf = NULL;
 	int bufsize = 0;
@@ -378,30 +378,90 @@ void ListBinCommand::Execute()
 		// Make a data structure and copy all the elements of the list into it
 		DownloadQueue* pDownloadQueue = g_pQueueCoordinator->LockQueue();
 
-		int NrEntries = pDownloadQueue->size();
+		// prepare list of nzb-infos
+		NZBQueue cNZBQueue;
+		NZBInfo::BuildNZBList(pDownloadQueue, &cNZBQueue);
 
-		// calculate required buffer size
-		bufsize = NrEntries * sizeof(SNZBListResponseEntry);
+		// calculate required buffer size for nzbs
+		int iNrNZBEntries = cNZBQueue.size();
+		bufsize += iNrNZBEntries * sizeof(SNZBListResponseNZBEntry);
+		for (NZBQueue::iterator it = cNZBQueue.begin(); it != cNZBQueue.end(); it++)
+		{
+			NZBInfo* pNZBInfo = *it;
+			bufsize += strlen(pNZBInfo->GetFilename()) + 1;
+			bufsize += strlen(pNZBInfo->GetDestDir()) + 1;
+			bufsize += strlen(pNZBInfo->GetCategory()) + 1;
+			bufsize += strlen(pNZBInfo->GetQueuedFilename()) + 1;
+			// align struct to 4-bytes, needed by ARM-processor (and may be others)
+			bufsize += bufsize % 4 > 0 ? 4 - bufsize % 4 : 0;
+		}
+
+		// calculate required buffer size for files
+		int iNrFileEntries = pDownloadQueue->size();
+		bufsize += iNrFileEntries * sizeof(SNZBListResponseFileEntry);
 		for (DownloadQueue::iterator it = pDownloadQueue->begin(); it != pDownloadQueue->end(); it++)
 		{
 			FileInfo* pFileInfo = *it;
 			bufsize += strlen(pFileInfo->GetNZBInfo()->GetFilename()) + 1;
 			bufsize += strlen(pFileInfo->GetSubject()) + 1;
 			bufsize += strlen(pFileInfo->GetFilename()) + 1;
-			bufsize += strlen(pFileInfo->GetNZBInfo()->GetDestDir()) + 1;
-			bufsize += strlen(pFileInfo->GetNZBInfo()->GetCategory()) + 1;
 			// align struct to 4-bytes, needed by ARM-processor (and may be others)
 			bufsize += bufsize % 4 > 0 ? 4 - bufsize % 4 : 0;
 		}
 
 		buf = (char*) malloc(bufsize);
 		char* bufptr = buf;
+
+		// write nzb entries
+		for (NZBQueue::iterator it = cNZBQueue.begin(); it != cNZBQueue.end(); it++)
+		{
+			unsigned long iSizeHi, iSizeLo;
+			NZBInfo* pNZBInfo = *it;
+			SNZBListResponseNZBEntry* pListAnswer = (SNZBListResponseNZBEntry*) bufptr;
+			Util::SplitInt64(pNZBInfo->GetSize(), &iSizeHi, &iSizeLo);
+			pListAnswer->m_iSizeLo				= htonl(iSizeLo);
+			pListAnswer->m_iSizeHi				= htonl(iSizeHi);
+			pListAnswer->m_iFilenameLen			= htonl(strlen(pNZBInfo->GetFilename()) + 1);
+			pListAnswer->m_iDestDirLen			= htonl(strlen(pNZBInfo->GetDestDir()) + 1);
+			pListAnswer->m_iCategoryLen			= htonl(strlen(pNZBInfo->GetCategory()) + 1);
+			pListAnswer->m_iQueuedFilenameLen	= htonl(strlen(pNZBInfo->GetQueuedFilename()) + 1);
+			bufptr += sizeof(SNZBListResponseNZBEntry);
+			strcpy(bufptr, pNZBInfo->GetFilename());
+			bufptr += ntohl(pListAnswer->m_iFilenameLen);
+			strcpy(bufptr, pNZBInfo->GetDestDir());
+			bufptr += ntohl(pListAnswer->m_iDestDirLen);
+			strcpy(bufptr, pNZBInfo->GetCategory());
+			bufptr += ntohl(pListAnswer->m_iCategoryLen);
+			strcpy(bufptr, pNZBInfo->GetQueuedFilename());
+			bufptr += ntohl(pListAnswer->m_iQueuedFilenameLen);
+			// align struct to 4-bytes, needed by ARM-processor (and may be others)
+			if ((size_t)bufptr % 4 > 0)
+			{
+				pListAnswer->m_iQueuedFilenameLen = htonl(ntohl(pListAnswer->m_iQueuedFilenameLen) + 4 - (size_t)bufptr % 4);
+				memset(bufptr, 0, 4 - (size_t)bufptr % 4); //suppress valgrind warning "uninitialized data"
+				bufptr += 4 - (size_t)bufptr % 4;
+			}
+		}
+
+		// write file entries
 		for (DownloadQueue::iterator it = pDownloadQueue->begin(); it != pDownloadQueue->end(); it++)
 		{
 			unsigned long iSizeHi, iSizeLo;
 			FileInfo* pFileInfo = *it;
-			SNZBListResponseEntry* pListAnswer = (SNZBListResponseEntry*) bufptr;
+			SNZBListResponseFileEntry* pListAnswer = (SNZBListResponseFileEntry*) bufptr;
 			pListAnswer->m_iID				= htonl(pFileInfo->GetID());
+
+			int iNZBIndex = 0;
+			for (unsigned int i = 0; i < cNZBQueue.size(); i++)
+			{
+				iNZBIndex++;
+				if (cNZBQueue[i] == pFileInfo->GetNZBInfo())
+				{
+					break;
+				}
+			}
+			pListAnswer->m_iNZBIndex		= htonl(iNZBIndex);
+
 			Util::SplitInt64(pFileInfo->GetSize(), &iSizeHi, &iSizeLo);
 			pListAnswer->m_iFileSizeLo		= htonl(iSizeLo);
 			pListAnswer->m_iFileSizeHi		= htonl(iSizeHi);
@@ -413,23 +473,17 @@ void ListBinCommand::Execute()
 			pListAnswer->m_iNZBFilenameLen	= htonl(strlen(pFileInfo->GetNZBInfo()->GetFilename()) + 1);
 			pListAnswer->m_iSubjectLen		= htonl(strlen(pFileInfo->GetSubject()) + 1);
 			pListAnswer->m_iFilenameLen		= htonl(strlen(pFileInfo->GetFilename()) + 1);
-			pListAnswer->m_iDestDirLen		= htonl(strlen(pFileInfo->GetNZBInfo()->GetDestDir()) + 1);
-			pListAnswer->m_iCategoryLen		= htonl(strlen(pFileInfo->GetNZBInfo()->GetCategory()) + 1);
-			bufptr += sizeof(SNZBListResponseEntry);
+			bufptr += sizeof(SNZBListResponseFileEntry);
 			strcpy(bufptr, pFileInfo->GetNZBInfo()->GetFilename());
 			bufptr += ntohl(pListAnswer->m_iNZBFilenameLen);
 			strcpy(bufptr, pFileInfo->GetSubject());
 			bufptr += ntohl(pListAnswer->m_iSubjectLen);
 			strcpy(bufptr, pFileInfo->GetFilename());
 			bufptr += ntohl(pListAnswer->m_iFilenameLen);
-			strcpy(bufptr, pFileInfo->GetNZBInfo()->GetDestDir());
-			bufptr += ntohl(pListAnswer->m_iDestDirLen);
-			strcpy(bufptr, pFileInfo->GetNZBInfo()->GetCategory());
-			bufptr += ntohl(pListAnswer->m_iCategoryLen);
 			// align struct to 4-bytes, needed by ARM-processor (and may be others)
 			if ((size_t)bufptr % 4 > 0)
 			{
-				pListAnswer->m_iCategoryLen = htonl(ntohl(pListAnswer->m_iCategoryLen) + 4 - (size_t)bufptr % 4);
+				pListAnswer->m_iFilenameLen = htonl(ntohl(pListAnswer->m_iFilenameLen) + 4 - (size_t)bufptr % 4);
 				memset(bufptr, 0, 4 - (size_t)bufptr % 4); //suppress valgrind warning "uninitialized data"
 				bufptr += 4 - (size_t)bufptr % 4;
 			}
@@ -437,7 +491,8 @@ void ListBinCommand::Execute()
 
 		g_pQueueCoordinator->UnlockQueue();
 
-		ListResponse.m_iNrTrailingEntries = htonl(NrEntries);
+		ListResponse.m_iNrTrailingNZBEntries = htonl(iNrNZBEntries);
+		ListResponse.m_iNrTrailingFileEntries = htonl(iNrFileEntries);
 		ListResponse.m_iTrailingDataLength = htonl(bufsize);
 	}
 

@@ -366,58 +366,11 @@ bool Frontend::RequestFileList()
 
 	if (m_bFileList && ntohl(ListResponse.m_iTrailingDataLength) > 0)
 	{
-		typedef std::deque<NZBInfo*> NZBList;
-		NZBList cNZBList;
-
-		char* pBufPtr = (char*)pBuf;
-		for (unsigned int i = 0; i < ntohl(ListResponse.m_iNrTrailingEntries); i++)
-		{
-			SNZBListResponseEntry* pListAnswer = (SNZBListResponseEntry*) pBufPtr;
-
-			char* szNZBFilename = pBufPtr + sizeof(SNZBListResponseEntry);
-			char* szSubject = pBufPtr + sizeof(SNZBListResponseEntry) + ntohl(pListAnswer->m_iNZBFilenameLen);
-			char* szFileName = pBufPtr + sizeof(SNZBListResponseEntry) + ntohl(pListAnswer->m_iNZBFilenameLen) + ntohl(pListAnswer->m_iSubjectLen);
-			char* szDestDir = pBufPtr + sizeof(SNZBListResponseEntry) + ntohl(pListAnswer->m_iNZBFilenameLen) + ntohl(pListAnswer->m_iSubjectLen) + ntohl(pListAnswer->m_iFilenameLen);
-			char* szCategory = pBufPtr + sizeof(SNZBListResponseEntry) + ntohl(pListAnswer->m_iNZBFilenameLen) + ntohl(pListAnswer->m_iSubjectLen) + ntohl(pListAnswer->m_iFilenameLen) + ntohl(pListAnswer->m_iDestDirLen);
-			
-			FileInfo* pFileInfo = new FileInfo();
-			pFileInfo->SetID(ntohl(pListAnswer->m_iID));
-			pFileInfo->SetSize(Util::JoinInt64(ntohl(pListAnswer->m_iFileSizeHi), ntohl(pListAnswer->m_iFileSizeLo)));
-			pFileInfo->SetRemainingSize(Util::JoinInt64(ntohl(pListAnswer->m_iRemainingSizeHi), ntohl(pListAnswer->m_iRemainingSizeLo)));
-			pFileInfo->SetPaused(ntohl(pListAnswer->m_bPaused));
-			pFileInfo->SetSubject(szSubject);
-			pFileInfo->SetFilename(szFileName);
-			pFileInfo->SetFilenameConfirmed(ntohl(pListAnswer->m_bFilenameConfirmed));
-
-			// find nzb-info or create new
-			NZBInfo* pNZBInfo = NULL;
-			for (NZBList::iterator it = cNZBList.begin(); it != cNZBList.end(); it++)
-			{
-				NZBInfo* pNZBInfo2 = *it;
-				if (!strcmp(pNZBInfo2->GetFilename(), szNZBFilename))
-				{
-					pNZBInfo = pNZBInfo2;
-					break;
-				}
-			}
-			if (!pNZBInfo)
-			{
-				pNZBInfo = new NZBInfo();
-				pNZBInfo->SetFilename(szNZBFilename);
-				pNZBInfo->SetDestDir(szDestDir);
-				pNZBInfo->SetCategory(szCategory);
-				cNZBList.push_back(pNZBInfo);
-			}
-
-			pFileInfo->SetNZBInfo(pNZBInfo);
-
-			m_RemoteQueue.push_back(pFileInfo);
-
-			pBufPtr += sizeof(SNZBListResponseEntry) + ntohl(pListAnswer->m_iNZBFilenameLen) +
-				ntohl(pListAnswer->m_iSubjectLen) + ntohl(pListAnswer->m_iFilenameLen) + 
-				ntohl(pListAnswer->m_iDestDirLen) + ntohl(pListAnswer->m_iCategoryLen);
-		}
+		RemoteClient client;
+		client.SetVerbose(false);
+		client.BuildFileList(&ListResponse, pBuf, &m_RemoteQueue);
 	}
+
 	if (pBuf)
 	{
 		free(pBuf);

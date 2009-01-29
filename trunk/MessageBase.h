@@ -27,7 +27,7 @@
 #ifndef MESSAGEBASE_H
 #define MESSAGEBASE_H
 
-static const int32_t NZBMESSAGE_SIGNATURE = 0x6E7A6203; // = "nzb3" (nzb version 3)
+static const int32_t NZBMESSAGE_SIGNATURE = 0x6E7A6204; // = "nzb4" (nzb version 4)
 static const int NZBREQUESTFILENAMESIZE = 512;
 static const int NZBREQUESTPASSWORDSIZE = 32;
 
@@ -149,15 +149,33 @@ struct SNZBListResponse
 	int32_t					m_iDownloadedBytesLo;	// Amount of data downloaded since server start, Low 32-bits of 64-bit value
 	int32_t					m_iDownloadedBytesHi;	// Amount of data downloaded since server start, High 32-bits of 64-bit value
 	int32_t					m_bServerStandBy;		// 0 - there are currently downloads running, 1 - no downloads in progress (server paused or all jobs completed)
-	int32_t					m_iNrTrailingEntries;	// Number of List-entries, following to this structure
+	int32_t					m_iNrTrailingNZBEntries;	// Number of List-NZB-entries, following to this structure
+	int32_t					m_iNrTrailingFileEntries;	// Number of List-File-entries, following to this structure
 	int32_t					m_iTrailingDataLength;	// Length of all List-entries, following to this structure
-	// SNZBListResponseEntry m_Entries[m_iNrTrailingEntries]		// variable sized
+	// SNZBListResponseEntry m_NZBEntries[m_iNrTrailingNZBEntries]			// variable sized
+	// SNZBListResponseEntry m_FileEntries[m_iNrTrailingFileEntries]		// variable sized
 };
 
 // A list response entry
-struct SNZBListResponseEntry
+struct SNZBListResponseNZBEntry
+{
+	int32_t					m_iSizeLo;				// Size of all files in bytes, Low 32-bits of 64-bit value
+	int32_t					m_iSizeHi;				// Size of all files in bytes, High 32-bits of 64-bit value
+	int32_t					m_iFilenameLen;			// Length of Filename-string (m_szFilename), following to this record
+	int32_t					m_iDestDirLen;			// Length of DestDir-string (m_szDestDir), following to this record
+	int32_t					m_iCategoryLen;			// Length of Category-string (m_szCategory), following to this record
+	int32_t					m_iQueuedFilenameLen;	// Length of queued file name (m_szQueuedFilename), following to this record
+	//char					m_szFilename[m_iFilenameLen];				// variable sized
+	//char					m_szDestDir[m_iDestDirLen];					// variable sized
+	//char					m_szCategory[m_iCategoryLen];				// variable sized
+	//char					m_szQueuedFilename[m_iQueuedFilenameLen];	// variable sized
+};
+
+// A list response entry
+struct SNZBListResponseFileEntry
 {
 	int32_t					m_iID;					// Entry-ID
+	int32_t					m_iNZBIndex;			// Index of NZB-Entry in m_NZBEntries-list
 	int32_t					m_iFileSizeLo;			// Filesize in bytes, Low 32-bits of 64-bit value
 	int32_t					m_iFileSizeHi;			// Filesize in bytes, High 32-bits of 64-bit value
 	int32_t					m_iRemainingSizeLo;		// Remaining size in bytes, Low 32-bits of 64-bit value
@@ -167,13 +185,9 @@ struct SNZBListResponseEntry
 	int32_t					m_iNZBFilenameLen;		// Length of NZBFileName-string (m_szNZBFilename), following to this record
 	int32_t					m_iSubjectLen;			// Length of Subject-string (m_szSubject), following to this record
 	int32_t					m_iFilenameLen;			// Length of Filename-string (m_szFilename), following to this record
-	int32_t					m_iDestDirLen;			// Length of DestDir-string (m_szDestDir), following to this record
-	int32_t					m_iCategoryLen;			// Length of Category-string (m_szCategory), following to this record
 	//char					m_szNZBFilename[m_iNZBFilenameLen];	// variable sized, may contain full path (local path on client) or only filename
 	//char					m_szSubject[m_iSubjectLen];			// variable sized
 	//char					m_szFilename[m_iFilenameLen];		// variable sized
-	//char					m_szDestDir[m_iDestDirLen];			// variable sized
-	//char					m_szCategory[m_iCategoryLen];		// variable sized
 };
 
 // A log request

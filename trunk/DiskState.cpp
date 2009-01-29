@@ -91,28 +91,8 @@ bool DiskState::SaveDownloadQueue(DownloadQueue* pDownloadQueue)
 	debug("Saving queue to disk");
 
 	// prepare list of nzb-infos
-
-	typedef std::deque<NZBInfo*> NZBList;
-	NZBList cNZBList;
-
-	for (DownloadQueue::iterator it = pDownloadQueue->begin(); it != pDownloadQueue->end(); it++)
-	{
-		FileInfo* pFileInfo = *it;
-		bool inlist = false;
-		for (NZBList::iterator it = cNZBList.begin(); it != cNZBList.end(); it++)
-		{
-			NZBInfo* pNZBInfo = *it;
-			if (pNZBInfo == pFileInfo->GetNZBInfo())
-			{
-				inlist = true;
-				break;
-			}
-		}
-		if (!inlist)
-		{
-			cNZBList.push_back(pFileInfo->GetNZBInfo());
-		}
-	}
+	NZBQueue cNZBQueue;
+	NZBInfo::BuildNZBList(pDownloadQueue, &cNZBQueue);
 
 	char fileName[1024];
 	snprintf(fileName, 1024, "%s%s", g_pOptions->GetQueueDir(), "queue");
@@ -130,8 +110,8 @@ bool DiskState::SaveDownloadQueue(DownloadQueue* pDownloadQueue)
 	fprintf(outfile, FORMATVERSION_SIGNATURE_V6);
 
 	// save nzb-infos
-	fprintf(outfile, "%i\n", cNZBList.size());
-	for (NZBList::iterator it = cNZBList.begin(); it != cNZBList.end(); it++)
+	fprintf(outfile, "%i\n", cNZBQueue.size());
+	for (NZBQueue::iterator it = cNZBQueue.begin(); it != cNZBQueue.end(); it++)
 	{
 		NZBInfo* pNZBInfo = *it;
 		fprintf(outfile, "%s\n", pNZBInfo->GetFilename());
@@ -168,10 +148,10 @@ bool DiskState::SaveDownloadQueue(DownloadQueue* pDownloadQueue)
 		{
 			// find index of nzb-info
 			int iNZBIndex = 0;
-			for (unsigned int i = 0; i < cNZBList.size(); i++)
+			for (unsigned int i = 0; i < cNZBQueue.size(); i++)
 			{
 				iNZBIndex++;
-				if (cNZBList[i] == pFileInfo->GetNZBInfo())
+				if (cNZBQueue[i] == pFileInfo->GetNZBInfo())
 				{
 					break;
 				}
@@ -196,8 +176,7 @@ bool DiskState::LoadDownloadQueue(DownloadQueue* pDownloadQueue)
 
 	bool bOK = false;
 
-	typedef std::deque<NZBInfo*> NZBList;
-	NZBList cNZBList;
+	NZBQueue cNZBQueue;
 
 	char fileName[1024];
 	snprintf(fileName, 1024, "%s%s", g_pOptions->GetQueueDir(), "queue");
@@ -230,7 +209,7 @@ bool DiskState::LoadDownloadQueue(DownloadQueue* pDownloadQueue)
 	{
 		NZBInfo* pNZBInfo = new NZBInfo();
 		pNZBInfo->AddReference();
-		cNZBList.push_back(pNZBInfo);
+		cNZBQueue.push_back(pNZBInfo);
 
 		if (!fgets(buf, sizeof(buf), infile)) goto error;
 		if (buf[0] != 0) buf[strlen(buf)-1] = 0; // remove traling '\n'
@@ -304,7 +283,7 @@ bool DiskState::LoadDownloadQueue(DownloadQueue* pDownloadQueue)
 	{
 		unsigned int id, iNZBIndex, paused;
 		if (fscanf(infile, "%i,%i,%i\n", &id, &iNZBIndex, &paused) != 3) goto error;
-		if (iNZBIndex < 0 || iNZBIndex > cNZBList.size()) goto error;
+		if (iNZBIndex < 0 || iNZBIndex > cNZBQueue.size()) goto error;
 
 		char fileName[1024];
 		snprintf(fileName, 1024, "%s%i", g_pOptions->GetQueueDir(), id);
@@ -315,7 +294,7 @@ bool DiskState::LoadDownloadQueue(DownloadQueue* pDownloadQueue)
 		{
 			pFileInfo->SetID(id);
 			pFileInfo->SetPaused(paused);
-			pFileInfo->SetNZBInfo(cNZBList[iNZBIndex - 1]);
+			pFileInfo->SetNZBInfo(cNZBQueue[iNZBIndex - 1]);
 			pDownloadQueue->push_back(pFileInfo);
 		}
 		else
@@ -335,7 +314,7 @@ error:
 		error("Error reading diskstate for file %s", fileName);
 	}
 
-	for (NZBList::iterator it = cNZBList.begin(); it != cNZBList.end(); it++)
+	for (NZBQueue::iterator it = cNZBQueue.begin(); it != cNZBQueue.end(); it++)
 	{
 		NZBInfo* pNZBInfo = *it;
 		pNZBInfo->Release();

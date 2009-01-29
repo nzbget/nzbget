@@ -79,6 +79,7 @@ public:
 #ifndef WIN32
 	static bool ExpandHomePath(const char* szFilename, char* szBuffer, int iBufSize);
 #endif
+	static void FormatFileSize(char* szBuffer, int iBufLen, long long lFileSize);
 
 	static long long JoinInt64(unsigned long Hi, unsigned long Lo);
 	static void SplitInt64(long long Int64, unsigned long* Hi, unsigned long* Lo);

@@ -30,6 +30,7 @@
 #include "Options.h"
 #include "MessageBase.h"
 #include "Connection.h"
+#include "DownloadInfo.h"
 
 class RemoteClient
 {
@@ -49,7 +50,7 @@ public:
 	~RemoteClient();
 	void			SetVerbose(bool bVerbose) { m_bVerbose = bVerbose; };
 	bool 			RequestServerDownload(const char* szFilename, const char* szCategory, bool bAddFirst);
-	bool			RequestServerList();
+	bool			RequestServerList(bool bFiles, bool bGroups);
 	bool			RequestServerPauseUnpause(bool bPause);
 	bool			RequestServerSetDownloadRate(float fRate);
 	bool			RequestServerDumpDebug();
@@ -60,6 +61,7 @@ public:
 	bool			RequestPostQueue();
 	bool 			RequestWriteLog(int iKind, const char* szText);
 	bool			RequestScan();
+	void			BuildFileList(SNZBListResponse* pListResponse, const char* pTrailingData, DownloadQueue* pDownloadQueue);
 };
 
 #endif

@@ -105,7 +105,6 @@ private:
 	void			Update(int iKey);
 	void			SetCurrentQueueEntry(int iEntry);
 	void			CalcWindowSizes();
-	void			FormatFileSize(char* szBuffer, int iBufLen, long long lFileSize);
 	void			RefreshScreen();
 	int				ReadConsoleKey();
 	int				CalcQueueSize();

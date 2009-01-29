@@ -1110,3 +1110,24 @@ bool Util::ExpandHomePath(const char* szFilename, char* szBuffer, int iBufSize)
 	return true;
 }
 #endif
+
+void Util::FormatFileSize(char * szBuffer, int iBufLen, long long lFileSize)
+{
+	if (lFileSize > 1024 * 1024 * 1024)
+	{
+		snprintf(szBuffer, iBufLen, "%.2f GB", (float)(Util::Int64ToFloat(lFileSize) / 1024 / 1024 / 1024));
+	}
+	else if (lFileSize > 1024 * 1024)
+	{
+		snprintf(szBuffer, iBufLen, "%.2f MB", (float)(Util::Int64ToFloat(lFileSize) / 1024 / 1024));
+	}
+	else if (lFileSize > 1024)
+	{
+		snprintf(szBuffer, iBufLen, "%.2f KB", (float)(Util::Int64ToFloat(lFileSize) / 1024));
+	}
+	else 
+	{
+		snprintf(szBuffer, iBufLen, "%i", (int)lFileSize);
+	}
+	szBuffer[iBufLen - 1] = '\0';
+}
