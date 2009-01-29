@@ -37,7 +37,9 @@ public:
 	{
 		opClientNoOperation,
 		opClientRequestDownload,
-		opClientRequestList,
+		opClientRequestListFiles,
+		opClientRequestListGroups,
+		opClientRequestListStatus,
 		opClientRequestPause,
 		opClientRequestUnpause,
 		opClientRequestSetRate,

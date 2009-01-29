@@ -351,58 +351,68 @@ void ProcessClientRequest()
 {
 	RemoteClient* Client = new RemoteClient();
 
-	if (g_pOptions->GetClientOperation() == Options::opClientRequestList)
+	switch (g_pOptions->GetClientOperation())
 	{
-		Client->RequestServerList();
-	}
-	else if (g_pOptions->GetClientOperation() == Options::opClientRequestPause)
-	{
-		Client->RequestServerPauseUnpause(true);
-	}
-	else if (g_pOptions->GetClientOperation() == Options::opClientRequestUnpause)
-	{
-		Client->RequestServerPauseUnpause(false);
-	}
-	else if (g_pOptions->GetClientOperation() == Options::opClientRequestSetRate)
-	{
-		Client->RequestServerSetDownloadRate(g_pOptions->GetSetRate());
-	}
-	else if (g_pOptions->GetClientOperation() == Options::opClientRequestDumpDebug)
-	{
-		Client->RequestServerDumpDebug();
-	}
-	else if (g_pOptions->GetClientOperation() == Options::opClientRequestEditQueue)
-	{
-		Client->RequestServerEditQueue(g_pOptions->GetEditQueueAction(), g_pOptions->GetEditQueueOffset(),
-			g_pOptions->GetEditQueueText(), g_pOptions->GetEditQueueIDList(), g_pOptions->GetEditQueueIDCount(), true);
-	}
-	else if (g_pOptions->GetClientOperation() == Options::opClientRequestLog)
-	{
-		Client->RequestServerLog(g_pOptions->GetLogLines());
-	}
-	else if (g_pOptions->GetClientOperation() == Options::opClientRequestShutdown)
-	{
-		Client->RequestServerShutdown();
-	}
-	else if (g_pOptions->GetClientOperation() == Options::opClientRequestDownload)
-	{
-		Client->RequestServerDownload(g_pOptions->GetArgFilename(), g_pOptions->GetCategory(), g_pOptions->GetAddTop());
-	}
-	else if (g_pOptions->GetClientOperation() == Options::opClientRequestVersion)
-	{
-		Client->RequestServerVersion();
-	}
-	else if (g_pOptions->GetClientOperation() == Options::opClientRequestPostQueue)
-	{
-		Client->RequestPostQueue();
-	}
-	else if (g_pOptions->GetClientOperation() == Options::opClientRequestWriteLog)
-	{
-		Client->RequestWriteLog(g_pOptions->GetWriteLogKind(), g_pOptions->GetLastArg());
-	}
-	else if (g_pOptions->GetClientOperation() == Options::opClientRequestScan)
-	{
-		Client->RequestScan();
+		case Options::opClientRequestListFiles:
+			Client->RequestServerList(true, false);
+			break;
+
+		case Options::opClientRequestListGroups:
+			Client->RequestServerList(false, true);
+			break;
+
+		case Options::opClientRequestListStatus:
+			Client->RequestServerList(false, false);
+			break;
+
+		case Options::opClientRequestPause:
+			Client->RequestServerPauseUnpause(true);
+			break;
+
+		case Options::opClientRequestUnpause:
+			Client->RequestServerPauseUnpause(false);
+			break;
+
+		case Options::opClientRequestSetRate:
+			Client->RequestServerSetDownloadRate(g_pOptions->GetSetRate());
+			break;
+
+		case Options::opClientRequestDumpDebug:
+			Client->RequestServerDumpDebug();
+			break;
+
+		case Options::opClientRequestEditQueue:
+			Client->RequestServerEditQueue(g_pOptions->GetEditQueueAction(), g_pOptions->GetEditQueueOffset(),
+				g_pOptions->GetEditQueueText(), g_pOptions->GetEditQueueIDList(), g_pOptions->GetEditQueueIDCount(), true);
+			break;
+
+		case Options::opClientRequestLog:
+			Client->RequestServerLog(g_pOptions->GetLogLines());
+			break;
+
+		case Options::opClientRequestShutdown:
+			Client->RequestServerShutdown();
+			break;
+
+		case Options::opClientRequestDownload:
+			Client->RequestServerDownload(g_pOptions->GetArgFilename(), g_pOptions->GetCategory(), g_pOptions->GetAddTop());
+			break;
+
+		case Options::opClientRequestVersion:
+			Client->RequestServerVersion();
+			break;
+
+		case Options::opClientRequestPostQueue:
+			Client->RequestPostQueue();
+			break;
+
+		case Options::opClientRequestWriteLog:
+			Client->RequestWriteLog(g_pOptions->GetWriteLogKind(), g_pOptions->GetLastArg());
+			break;
+
+		case Options::opClientRequestScan:
+			Client->RequestScan();
+			break;
 	}
 
 	delete Client;

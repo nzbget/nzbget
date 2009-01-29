@@ -33,78 +33,7 @@
 #include "Log.h"
 #include "Thread.h"
 
-class NZBParameter
-{
-private:
-	char* 				m_szName;
-	char* 				m_szValue;
-
-	void				SetValue(const char* szValue);
-
-	friend class NZBInfo;
-	friend class PostInfo;
-
-public:
-						NZBParameter(const char* szName);
-						~NZBParameter();
-	const char*			GetName() { return m_szName; }
-	const char*			GetValue() { return m_szValue; }
-};
-
-typedef std::deque<NZBParameter*> NZBParameterList;
-
-class NZBInfo
-{
-public:
-	typedef std::vector<char*>			Files;
-
-private:
-	int					m_iRefCount;
-	char* 				m_szFilename;
-	char* 				m_szDestDir;
-	char* 				m_szCategory;
-	int		 			m_iFileCount;
-	long long 			m_lSize;
-	Files				m_completedFiles;
-	bool				m_bPostProcess;
-	char*				m_szQueuedFilename;
-	bool				m_bDeleted;
-	bool				m_bParCleanup;
-	bool				m_bCleanupDisk;
-	NZBParameterList	m_ppParameters;
-
-public:
-						NZBInfo();
-						~NZBInfo();
-	void				AddReference();
-	void				Release();
-	const char*			GetFilename() { return m_szFilename; }
-	void				SetFilename(const char* szFilename);
-	void				GetNiceNZBName(char* szBuffer, int iSize);
-	static void			MakeNiceNZBName(const char* szNZBFilename, char* szBuffer, int iSize);
-	const char*			GetDestDir() { return m_szDestDir; }   // needs locking (for shared objects)
-	void				SetDestDir(const char* szDestDir);     // needs locking (for shared objects)
-	const char*			GetCategory() { return m_szCategory; } // needs locking (for shared objects)
-	void				SetCategory(const char* szCategory);   // needs locking (for shared objects)
-	long long 			GetSize() { return m_lSize; }
-	void 				SetSize(long long lSize) { m_lSize = lSize; }
-	int					GetFileCount() { return m_iFileCount; }
-	void 				SetFileCount(int iFileCount) { m_iFileCount = iFileCount; }
-	void				BuildDestDirName();
-	Files*				GetCompletedFiles() { return &m_completedFiles; }		// needs locking (for shared objects)
-	bool				GetPostProcess() { return m_bPostProcess; }
-	void				SetPostProcess(bool bPostProcess) { m_bPostProcess = bPostProcess; }
-	const char*			GetQueuedFilename() { return m_szQueuedFilename; }
-	void				SetQueuedFilename(const char* szQueuedFilename);
-	bool				GetDeleted() { return m_bDeleted; }
-	void				SetDeleted(bool bDeleted) { m_bDeleted = bDeleted; }
-	bool				GetParCleanup() { return m_bParCleanup; }
-	void				SetParCleanup(bool bParCleanup) { m_bParCleanup = bParCleanup; }
-	bool				GetCleanupDisk() { return m_bCleanupDisk; }
-	void				SetCleanupDisk(bool bCleanupDisk) { m_bCleanupDisk = bCleanupDisk; }
-	NZBParameterList*	GetParameters() { return &m_ppParameters; }				// needs locking (for shared objects)
-	void				SetParameter(const char* szName, const char* szValue);	// needs locking (for shared objects)
-};
+class NZBInfo;
 
 class ArticleInfo
 {
@@ -225,6 +154,84 @@ public:
 	int					GetRemainingParCount() { return m_iRemainingParCount; }
 
 	static void			BuildGroups(DownloadQueue* pDownloadQueue, GroupQueue* pGroupQueue);
+};
+
+
+class NZBParameter
+{
+private:
+	char* 				m_szName;
+	char* 				m_szValue;
+
+	void				SetValue(const char* szValue);
+
+	friend class NZBInfo;
+	friend class PostInfo;
+
+public:
+						NZBParameter(const char* szName);
+						~NZBParameter();
+	const char*			GetName() { return m_szName; }
+	const char*			GetValue() { return m_szValue; }
+};
+
+typedef std::deque<NZBParameter*> NZBParameterList;
+
+typedef std::deque<NZBInfo*> NZBQueue;
+
+class NZBInfo
+{
+public:
+	typedef std::vector<char*>			Files;
+
+private:
+	int					m_iRefCount;
+	char* 				m_szFilename;
+	char* 				m_szDestDir;
+	char* 				m_szCategory;
+	int		 			m_iFileCount;
+	long long 			m_lSize;
+	Files				m_completedFiles;
+	bool				m_bPostProcess;
+	char*				m_szQueuedFilename;
+	bool				m_bDeleted;
+	bool				m_bParCleanup;
+	bool				m_bCleanupDisk;
+	NZBParameterList	m_ppParameters;
+
+public:
+						NZBInfo();
+						~NZBInfo();
+	void				AddReference();
+	void				Release();
+	const char*			GetFilename() { return m_szFilename; }
+	void				SetFilename(const char* szFilename);
+	void				GetNiceNZBName(char* szBuffer, int iSize);
+	static void			MakeNiceNZBName(const char* szNZBFilename, char* szBuffer, int iSize);
+	const char*			GetDestDir() { return m_szDestDir; }   // needs locking (for shared objects)
+	void				SetDestDir(const char* szDestDir);     // needs locking (for shared objects)
+	const char*			GetCategory() { return m_szCategory; } // needs locking (for shared objects)
+	void				SetCategory(const char* szCategory);   // needs locking (for shared objects)
+	long long 			GetSize() { return m_lSize; }
+	void 				SetSize(long long lSize) { m_lSize = lSize; }
+	int					GetFileCount() { return m_iFileCount; }
+	void 				SetFileCount(int iFileCount) { m_iFileCount = iFileCount; }
+	void				BuildDestDirName();
+	Files*				GetCompletedFiles() { return &m_completedFiles; }		// needs locking (for shared objects)
+	bool				GetPostProcess() { return m_bPostProcess; }
+	void				SetPostProcess(bool bPostProcess) { m_bPostProcess = bPostProcess; }
+	const char*			GetQueuedFilename() { return m_szQueuedFilename; }
+	void				SetQueuedFilename(const char* szQueuedFilename);
+	bool				GetDeleted() { return m_bDeleted; }
+	void				SetDeleted(bool bDeleted) { m_bDeleted = bDeleted; }
+	bool				GetParCleanup() { return m_bParCleanup; }
+	void				SetParCleanup(bool bParCleanup) { m_bParCleanup = bParCleanup; }
+	bool				GetCleanupDisk() { return m_bCleanupDisk; }
+	void				SetCleanupDisk(bool bCleanupDisk) { m_bCleanupDisk = bCleanupDisk; }
+	NZBParameterList*	GetParameters() { return &m_ppParameters; }				// needs locking (for shared objects)
+	void				SetParameter(const char* szName, const char* szValue);	// needs locking (for shared objects)
+
+	static void			BuildNZBList(DownloadQueue* pDownloadQueue, NZBQueue* pNZBQueue);
 };
 
 class PostInfo

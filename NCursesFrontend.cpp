@@ -771,10 +771,10 @@ void NCursesFrontend::PrintFileQueue()
         }
 		
 		char szRemaining[20];
-		FormatFileSize(szRemaining, sizeof(szRemaining), lRemaining);
+		Util::FormatFileSize(szRemaining, sizeof(szRemaining), lRemaining);
 
 		char szUnpaused[20];
-		FormatFileSize(szUnpaused, sizeof(szUnpaused), lRemaining - lPaused);
+		Util::FormatFileSize(szUnpaused, sizeof(szUnpaused), lRemaining - lPaused);
 		
 		char szBuffer[MAX_SCREEN_WIDTH];
 		snprintf(szBuffer, sizeof(szBuffer), " %sFiles for downloading - %i / %i files in queue - %s / %s", 
@@ -831,27 +831,6 @@ void NCursesFrontend::PrintFilename(FileInfo * pFileInfo, int iRow, bool bSelect
 	szBuffer[MAX_SCREEN_WIDTH - 1] = '\0';
 
 	PlotLine(szBuffer, iRow, 0, color);
-}
-
-void NCursesFrontend::FormatFileSize(char * szBuffer, int iBufLen, long long lFileSize)
-{
-	if (lFileSize > 1024 * 1024 * 1024)
-	{
-		snprintf(szBuffer, iBufLen, "%.2f GB", (float)(Util::Int64ToFloat(lFileSize) / 1024 / 1024 / 1024));
-	}
-	else if (lFileSize > 1024 * 1024)
-	{
-		snprintf(szBuffer, iBufLen, "%.2f MB", (float)(Util::Int64ToFloat(lFileSize) / 1024 / 1024));
-	}
-	else if (lFileSize > 1024)
-	{
-		snprintf(szBuffer, iBufLen, "%.2f KB", (float)(Util::Int64ToFloat(lFileSize) / 1024));
-	}
-	else 
-	{
-		snprintf(szBuffer, iBufLen, "%i", (int)lFileSize);
-	}
-	szBuffer[iBufLen - 1] = '\0';
 }
 
 void NCursesFrontend::PrintTopHeader(char* szHeader, int iLineNr, bool bUpTime)
@@ -947,10 +926,10 @@ void NCursesFrontend::PrintGroupQueue()
         }
 		
 		char szRemaining[20];
-		FormatFileSize(szRemaining, sizeof(szRemaining), lRemaining);
+		Util::FormatFileSize(szRemaining, sizeof(szRemaining), lRemaining);
 
 		char szUnpaused[20];
-		FormatFileSize(szUnpaused, sizeof(szUnpaused), lRemaining - lPaused);
+		Util::FormatFileSize(szUnpaused, sizeof(szUnpaused), lRemaining - lPaused);
 		
 		char szBuffer[MAX_SCREEN_WIDTH];
 		snprintf(szBuffer, sizeof(szBuffer), " %sNZBs for downloading - %i NZBs in queue - %s / %s", 
@@ -982,14 +961,14 @@ void NCursesFrontend::PrintGroupname(GroupInfo * pGroupInfo, int iRow, bool bSel
 	long long lUnpausedRemainingSize = pGroupInfo->GetRemainingSize() - pGroupInfo->GetPausedSize();
 
 	char szRemaining[20];
-	FormatFileSize(szRemaining, sizeof(szRemaining), lUnpausedRemainingSize);
+	Util::FormatFileSize(szRemaining, sizeof(szRemaining), lUnpausedRemainingSize);
 
 	char szPaused[20];
 	szPaused[0] = '\0';
 	if (pGroupInfo->GetPausedSize() > 0)
 	{
 		char szPausedSize[20];
-		FormatFileSize(szPausedSize, sizeof(szPausedSize), pGroupInfo->GetPausedSize());
+		Util::FormatFileSize(szPausedSize, sizeof(szPausedSize), pGroupInfo->GetPausedSize());
 		sprintf(szPaused, " + %s paused", szPausedSize);
 	}
 

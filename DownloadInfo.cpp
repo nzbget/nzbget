@@ -305,6 +305,28 @@ void NZBInfo::SetParameter(const char* szName, const char* szValue)
 	pParameter->SetValue(szValue);
 }
 
+void NZBInfo::BuildNZBList(DownloadQueue* pDownloadQueue, NZBQueue* pNZBQueue)
+{
+	for (DownloadQueue::iterator it = pDownloadQueue->begin(); it != pDownloadQueue->end(); it++)
+	{
+		FileInfo* pFileInfo = *it;
+		bool inlist = false;
+		for (NZBQueue::iterator it = pNZBQueue->begin(); it != pNZBQueue->end(); it++)
+		{
+			NZBInfo* pNZBInfo = *it;
+			if (pNZBInfo == pFileInfo->GetNZBInfo())
+			{
+				inlist = true;
+				break;
+			}
+		}
+		if (!inlist)
+		{
+			pNZBQueue->push_back(pFileInfo->GetNZBInfo());
+		}
+	}
+}
+
 ArticleInfo::ArticleInfo()
 {
 	//debug("Creating ArticleInfo");
