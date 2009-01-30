@@ -384,6 +384,7 @@ void ListBinCommand::Execute()
 
 		// calculate required buffer size for nzbs
 		int iNrNZBEntries = cNZBQueue.size();
+		int iNrPPPEntries = 0;
 		bufsize += iNrNZBEntries * sizeof(SNZBListResponseNZBEntry);
 		for (NZBQueue::iterator it = cNZBQueue.begin(); it != cNZBQueue.end(); it++)
 		{
@@ -394,6 +395,18 @@ void ListBinCommand::Execute()
 			bufsize += strlen(pNZBInfo->GetQueuedFilename()) + 1;
 			// align struct to 4-bytes, needed by ARM-processor (and may be others)
 			bufsize += bufsize % 4 > 0 ? 4 - bufsize % 4 : 0;
+
+			// calculate required buffer size for pp-parameters
+			for (NZBParameterList::iterator it = pNZBInfo->GetParameters()->begin(); it != pNZBInfo->GetParameters()->end(); it++)
+			{
+				NZBParameter* pNZBParameter = *it;
+				bufsize += sizeof(SNZBListResponsePPPEntry);
+				bufsize += strlen(pNZBParameter->GetName()) + 1;
+				bufsize += strlen(pNZBParameter->GetValue()) + 1;
+				// align struct to 4-bytes, needed by ARM-processor (and may be others)
+				bufsize += bufsize % 4 > 0 ? 4 - bufsize % 4 : 0;
+				iNrPPPEntries++;
+			}
 		}
 
 		// calculate required buffer size for files
@@ -440,6 +453,33 @@ void ListBinCommand::Execute()
 				pListAnswer->m_iQueuedFilenameLen = htonl(ntohl(pListAnswer->m_iQueuedFilenameLen) + 4 - (size_t)bufptr % 4);
 				memset(bufptr, 0, 4 - (size_t)bufptr % 4); //suppress valgrind warning "uninitialized data"
 				bufptr += 4 - (size_t)bufptr % 4;
+			}
+		}
+
+		// write ppp entries
+		int iNZBIndex = 1;
+		for (NZBQueue::iterator it = cNZBQueue.begin(); it != cNZBQueue.end(); it++, iNZBIndex++)
+		{
+			NZBInfo* pNZBInfo = *it;
+			for (NZBParameterList::iterator it = pNZBInfo->GetParameters()->begin(); it != pNZBInfo->GetParameters()->end(); it++)
+			{
+				NZBParameter* pNZBParameter = *it;
+				SNZBListResponsePPPEntry* pListAnswer = (SNZBListResponsePPPEntry*) bufptr;
+				pListAnswer->m_iNZBIndex	= htonl(iNZBIndex);
+				pListAnswer->m_iNameLen		= htonl(strlen(pNZBParameter->GetName()) + 1);
+				pListAnswer->m_iValueLen	= htonl(strlen(pNZBParameter->GetValue()) + 1);
+				bufptr += sizeof(SNZBListResponsePPPEntry);
+				strcpy(bufptr, pNZBParameter->GetName());
+				bufptr += ntohl(pListAnswer->m_iNameLen);
+				strcpy(bufptr, pNZBParameter->GetValue());
+				bufptr += ntohl(pListAnswer->m_iValueLen);
+				// align struct to 4-bytes, needed by ARM-processor (and may be others)
+				if ((size_t)bufptr % 4 > 0)
+				{
+					pListAnswer->m_iValueLen = htonl(ntohl(pListAnswer->m_iValueLen) + 4 - (size_t)bufptr % 4);
+					memset(bufptr, 0, 4 - (size_t)bufptr % 4); //suppress valgrind warning "uninitialized data"
+					bufptr += 4 - (size_t)bufptr % 4;
+				}
 			}
 		}
 
@@ -492,6 +532,7 @@ void ListBinCommand::Execute()
 		g_pQueueCoordinator->UnlockQueue();
 
 		ListResponse.m_iNrTrailingNZBEntries = htonl(iNrNZBEntries);
+		ListResponse.m_iNrTrailingPPPEntries = htonl(iNrPPPEntries);
 		ListResponse.m_iNrTrailingFileEntries = htonl(iNrFileEntries);
 		ListResponse.m_iTrailingDataLength = htonl(bufsize);
 	}

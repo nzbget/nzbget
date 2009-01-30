@@ -150,13 +150,15 @@ struct SNZBListResponse
 	int32_t					m_iDownloadedBytesHi;	// Amount of data downloaded since server start, High 32-bits of 64-bit value
 	int32_t					m_bServerStandBy;		// 0 - there are currently downloads running, 1 - no downloads in progress (server paused or all jobs completed)
 	int32_t					m_iNrTrailingNZBEntries;	// Number of List-NZB-entries, following to this structure
+	int32_t					m_iNrTrailingPPPEntries;	// Number of List-PPP-entries, following to this structure
 	int32_t					m_iNrTrailingFileEntries;	// Number of List-File-entries, following to this structure
 	int32_t					m_iTrailingDataLength;	// Length of all List-entries, following to this structure
 	// SNZBListResponseEntry m_NZBEntries[m_iNrTrailingNZBEntries]			// variable sized
+	// SNZBListResponseEntry m_PPPEntries[m_iNrTrailingPPPEntries]			// variable sized
 	// SNZBListResponseEntry m_FileEntries[m_iNrTrailingFileEntries]		// variable sized
 };
 
-// A list response entry
+// A list response nzb entry
 struct SNZBListResponseNZBEntry
 {
 	int32_t					m_iSizeLo;				// Size of all files in bytes, Low 32-bits of 64-bit value
@@ -171,7 +173,17 @@ struct SNZBListResponseNZBEntry
 	//char					m_szQueuedFilename[m_iQueuedFilenameLen];	// variable sized
 };
 
-// A list response entry
+// A list response pp-parameter entry
+struct SNZBListResponsePPPEntry
+{
+	int32_t					m_iNZBIndex;			// Index of NZB-Entry in m_NZBEntries-list
+	int32_t					m_iNameLen;				// Length of Name-string (m_szName), following to this record
+	int32_t					m_iValueLen;			// Length of Value-string (m_szValue), following to this record
+	//char					m_szName[m_iNameLen];	// variable sized
+	//char					m_szValue[m_iValueLen];	// variable sized
+};
+
+// A list response file entry
 struct SNZBListResponseFileEntry
 {
 	int32_t					m_iID;					// Entry-ID
