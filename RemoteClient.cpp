@@ -258,6 +258,21 @@ void RemoteClient::BuildFileList(SNZBListResponse* pListResponse, const char* pT
 				ntohl(pListAnswer->m_iQueuedFilenameLen);
 		}
 
+		//read ppp entries
+		for (unsigned int i = 0; i < ntohl(pListResponse->m_iNrTrailingPPPEntries); i++)
+		{
+			SNZBListResponsePPPEntry* pListAnswer = (SNZBListResponsePPPEntry*) pBufPtr;
+
+			const char* szName = pBufPtr + sizeof(SNZBListResponsePPPEntry);
+			const char* szValue = pBufPtr + sizeof(SNZBListResponsePPPEntry) + ntohl(pListAnswer->m_iNameLen);
+
+			NZBInfo* pNZBInfo = cNZBQueue.at(ntohl(pListAnswer->m_iNZBIndex) - 1);
+			pNZBInfo->SetParameter(szName, szValue);
+
+			pBufPtr += sizeof(SNZBListResponsePPPEntry) + ntohl(pListAnswer->m_iNameLen) +
+				ntohl(pListAnswer->m_iValueLen);
+		}
+
 		//read file entries
 		for (unsigned int i = 0; i < ntohl(pListResponse->m_iNrTrailingFileEntries); i++)
 		{
@@ -441,8 +456,38 @@ bool RemoteClient::RequestServerList(bool bFiles, bool bGroups)
 				char szNZBNiceName[1024];
 				pGroupInfo->GetNZBInfo()->GetNiceNZBName(szNZBNiceName, 1023);
 
-				printf("[%i-%i] %s (%i file%s, %s%s)\n", pGroupInfo->GetFirstID(), pGroupInfo->GetLastID(), szNZBNiceName, 
-					pGroupInfo->GetRemainingFileCount(), pGroupInfo->GetRemainingFileCount() > 1 ? "s" : "", szRemaining, szPaused);
+				char szCategory[1024];
+				szCategory[0] = '\0';
+				if (pGroupInfo->GetNZBInfo()->GetCategory() && strlen(pGroupInfo->GetNZBInfo()->GetCategory()) > 0)
+				{
+					sprintf(szCategory, " (%s)", pGroupInfo->GetNZBInfo()->GetCategory());
+				}
+
+				char szParameters[1024];
+				szParameters[0] = '\0';
+				for (NZBParameterList::iterator it = pGroupInfo->GetNZBInfo()->GetParameters()->begin(); it != pGroupInfo->GetNZBInfo()->GetParameters()->end(); it++)
+				{
+					if (szParameters[0] == '\0')
+					{
+						strncat(szParameters, " (", 1024);
+					}
+					else
+					{
+						strncat(szParameters, ", ", 1024);
+					}
+					NZBParameter* pNZBParameter = *it;
+					strncat(szParameters, pNZBParameter->GetName(), 1024);
+					strncat(szParameters, "=", 1024);
+					strncat(szParameters, pNZBParameter->GetValue(), 1024);
+				}
+				if (szParameters[0] != '\0')
+				{
+					strncat(szParameters, ")", 1024);
+				}
+
+				printf("[%i-%i] %s (%i file%s, %s%s)%s%s\n", pGroupInfo->GetFirstID(), pGroupInfo->GetLastID(), szNZBNiceName, 
+					pGroupInfo->GetRemainingFileCount(), pGroupInfo->GetRemainingFileCount() > 1 ? "s" : "", szRemaining, 
+					szPaused, szCategory, szParameters);
 
 				delete pGroupInfo;
 			}
