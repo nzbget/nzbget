@@ -37,20 +37,8 @@ dnl Check for programs.
 dnl
 AC_PROG_CXX
 AC_PROG_CC
-AC_PROG_GCC_TRADITIONAL
-AC_PROG_RANLIB
-AC_PROG_MAKE_SET
-AC_PATH_PROG(FALSE, false, /usr/bin/false)
-AC_PATH_PROG(TRUE, true, /usr/bin/true)
-AC_PATH_PROG(RM, rm, $FALSE)
-AC_PATH_PROG(LN, ln, $FALSE)
 AC_PATH_PROG(TAR, tar, $FALSE)
-AC_PATH_PROG(AR, ar, $FALSE)
 AC_PATH_PROG(MAKE, make, $FALSE)
-AC_PATH_PROG(CXXCPP, cpp, $FALSE)
-AC_PATH_PROG(MV, mv, $FALSE)
-AC_PATH_PROG(MKDIR, mkdir, $FALSE)
-AC_PATH_PROG(CP, cp, $FALSE)
 AC_PROG_INSTALL
 
 
@@ -88,10 +76,12 @@ dnl
 dnl check ctime_r
 dnl
 AC_MSG_CHECKING(for ctime_r)
+AC_LANG_PUSH(C++)
 AC_TRY_COMPILE(
 	[#include <time.h>],
 	[ time_t clock; char buf[26];	ctime_r(&clock, buf, 26); ],
 	AC_MSG_RESULT([[yes, and it takes 3 arguments]])
+	FOUND="yes"
 	AC_DEFINE([HAVE_CTIME_R_3], 1, [Define to 1 if ctime_r takes 3 arguments]),
 	FOUND="no")
 if test "$FOUND" = "no"; then
@@ -103,6 +93,7 @@ if test "$FOUND" = "no"; then
 		AC_DEFINE([HAVE_CTIME_R_2], 1, [Define to 1 if ctime_r takes 2 arguments]),
 		FOUND="no")
 fi
+AC_LANG_POP(C++)
 if test "$FOUND" = "no"; then
 	AC_MSG_RESULT([no])
 	AC_MSG_ERROR("function ctime_r not found")
