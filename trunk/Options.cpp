@@ -798,8 +798,13 @@ void Options::InitCommandLine(int argc, char* argv[])
 				break;
 			case 'L':
 				optind++;
-				optarg = optind > argc ? NULL : optarg = argv[optind-1];
-				if (!optarg || !strcmp(optarg, "F"))
+				optarg = optind > argc ? NULL : argv[optind-1];
+				if (!optarg || !strncmp(optarg, "-", 1))
+				{
+					m_eClientOperation = opClientRequestListFiles;
+					optind--;
+				}
+				else if (!strcmp(optarg, "F"))
 				{
 					m_eClientOperation = opClientRequestListFiles;
 				}
