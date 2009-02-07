@@ -278,9 +278,8 @@ void RemoteClient::BuildFileList(SNZBListResponse* pListResponse, const char* pT
 		{
 			SNZBListResponseFileEntry* pListAnswer = (SNZBListResponseFileEntry*) pBufPtr;
 
-			const char* szNZBFilename = pBufPtr + sizeof(SNZBListResponseFileEntry);
-			const char* szSubject = pBufPtr + sizeof(SNZBListResponseFileEntry) + ntohl(pListAnswer->m_iNZBFilenameLen);
-			const char* szFileName = pBufPtr + sizeof(SNZBListResponseFileEntry) + ntohl(pListAnswer->m_iNZBFilenameLen) + ntohl(pListAnswer->m_iSubjectLen);
+			const char* szSubject = pBufPtr + sizeof(SNZBListResponseFileEntry);
+			const char* szFileName = pBufPtr + sizeof(SNZBListResponseFileEntry) + ntohl(pListAnswer->m_iSubjectLen);
 			
 			FileInfo* pFileInfo = new FileInfo();
 			pFileInfo->SetID(ntohl(pListAnswer->m_iID));
@@ -297,8 +296,8 @@ void RemoteClient::BuildFileList(SNZBListResponse* pListResponse, const char* pT
 
 			pDownloadQueue->push_back(pFileInfo);
 
-			pBufPtr += sizeof(SNZBListResponseFileEntry) + ntohl(pListAnswer->m_iNZBFilenameLen) +
-				ntohl(pListAnswer->m_iSubjectLen) + ntohl(pListAnswer->m_iFilenameLen);
+			pBufPtr += sizeof(SNZBListResponseFileEntry) + ntohl(pListAnswer->m_iSubjectLen) + 
+				ntohl(pListAnswer->m_iFilenameLen);
 		}
 	}
 }

@@ -415,7 +415,6 @@ void ListBinCommand::Execute()
 		for (DownloadQueue::iterator it = pDownloadQueue->begin(); it != pDownloadQueue->end(); it++)
 		{
 			FileInfo* pFileInfo = *it;
-			bufsize += strlen(pFileInfo->GetNZBInfo()->GetFilename()) + 1;
 			bufsize += strlen(pFileInfo->GetSubject()) + 1;
 			bufsize += strlen(pFileInfo->GetFilename()) + 1;
 			// align struct to 4-bytes, needed by ARM-processor (and may be others)
@@ -510,12 +509,9 @@ void ListBinCommand::Execute()
 			pListAnswer->m_iRemainingSizeHi	= htonl(iSizeHi);
 			pListAnswer->m_bFilenameConfirmed = htonl(pFileInfo->GetFilenameConfirmed());
 			pListAnswer->m_bPaused			= htonl(pFileInfo->GetPaused());
-			pListAnswer->m_iNZBFilenameLen	= htonl(strlen(pFileInfo->GetNZBInfo()->GetFilename()) + 1);
 			pListAnswer->m_iSubjectLen		= htonl(strlen(pFileInfo->GetSubject()) + 1);
 			pListAnswer->m_iFilenameLen		= htonl(strlen(pFileInfo->GetFilename()) + 1);
 			bufptr += sizeof(SNZBListResponseFileEntry);
-			strcpy(bufptr, pFileInfo->GetNZBInfo()->GetFilename());
-			bufptr += ntohl(pListAnswer->m_iNZBFilenameLen);
 			strcpy(bufptr, pFileInfo->GetSubject());
 			bufptr += ntohl(pListAnswer->m_iSubjectLen);
 			strcpy(bufptr, pFileInfo->GetFilename());
