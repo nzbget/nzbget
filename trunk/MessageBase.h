@@ -194,10 +194,8 @@ struct SNZBListResponseFileEntry
 	int32_t					m_iRemainingSizeHi;		// Remaining size in bytes, High 32-bits of 64-bit value
 	int32_t					m_bPaused;				// 1 - file is paused
 	int32_t					m_bFilenameConfirmed;	// 1 - Filename confirmed (read from article body), 0 - Filename parsed from subject (can be changed after reading of article)
-	int32_t					m_iNZBFilenameLen;		// Length of NZBFileName-string (m_szNZBFilename), following to this record
 	int32_t					m_iSubjectLen;			// Length of Subject-string (m_szSubject), following to this record
 	int32_t					m_iFilenameLen;			// Length of Filename-string (m_szFilename), following to this record
-	//char					m_szNZBFilename[m_iNZBFilenameLen];	// variable sized, may contain full path (local path on client) or only filename
 	//char					m_szSubject[m_iSubjectLen];			// variable sized
 	//char					m_szFilename[m_iFilenameLen];		// variable sized
 };
