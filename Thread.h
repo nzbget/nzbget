@@ -65,7 +65,6 @@ public:
 	void					Post();
 	bool					Wait();
 	bool					TryWait();
-	bool					IsLocked();
 };
 
 
