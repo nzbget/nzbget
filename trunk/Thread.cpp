@@ -144,22 +144,6 @@ bool Semaphore::TryWait()
 #endif
 }
 
-bool Semaphore::IsLocked()
-{
-#ifdef WIN32
-	bool bCanLock = WaitForSingleObject(m_semObj, 0) == WAIT_OBJECT_0;
-	if (bCanLock)
-	{
-		ReleaseSemaphore(m_semObj, 1, NULL);
-	}
-	return !bCanLock;
-#else
-	int iSemValue;
-	sem_getvalue(&m_semObj, &iSemValue);
-	return iSemValue <= 0;
-#endif
-}
-
 
 void Thread::Init()
 {
