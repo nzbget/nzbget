@@ -159,25 +159,31 @@ int main(int argc, char *argv[], char *argp[])
 		g_pLog->ResetLog();
 	}
 
+	info("nzbget %s", VERSION);
+
 	if (g_pOptions->GetDaemonMode())
 	{
 #ifdef WIN32
-		info("nzbget service-mode");
+		info("service-mode");
 		StartService(Run);
 		return 0;
 #else
 		Daemonize();
-		info("nzbget daemon-mode");
+		info("daemon-mode");
 #endif
 	}
 	else if (g_pOptions->GetServerMode())
 	{
-		info("nzbget server-mode");
+		info("server-mode");
 	}
 	else if (g_pOptions->GetRemoteClientMode())
 	{
-		info("nzbget remote-mode");
+		info("remote-mode");
 	}
+
+#ifdef DEBUG
+	g_pServerPool->LogDebugInfo();
+#endif
 
 #ifndef WIN32
 #ifdef HAVE_SYS_PRCTL_H
@@ -412,6 +418,9 @@ void ProcessClientRequest()
 
 		case Options::opClientRequestScan:
 			Client->RequestScan();
+			break;
+		
+		case Options::opClientNoOperation:
 			break;
 	}
 
