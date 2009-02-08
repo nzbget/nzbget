@@ -2385,15 +2385,15 @@ case $host_os in *\ *) host_os=`echo "$host_os" | sed 's/ /-/g'`;; esac
 
 if test "$LIBPREF" = ""; then
 	case "$host" in
-	*-linux*)
-		LIBPREF="/usr"
-		;;
-	*-freebsd*)
-		LIBPREF="/usr/local"
-		;;
-	*-solaris*)
-		LIBPREF="/usr"
-		;;
+		*-linux*)
+			LIBPREF="/usr"
+			;;
+		*-freebsd*)
+			LIBPREF="/usr/local"
+			;;
+		*-solaris*)
+			LIBPREF="/usr"
+			;;
 	esac
 fi
 
@@ -5698,6 +5698,25 @@ cat >>confdefs.h <<\_ACEOF
 _ACEOF
 
 fi
+
+
+{ echo "$as_me:$LINENO: checking whether to use unnamed semaphores" >&5
+echo $ECHO_N "checking whether to use unnamed semaphores... $ECHO_C" >&6; }
+case "$host" in
+	*-darwin*)
+		{ echo "$as_me:$LINENO: result: no" >&5
+echo "${ECHO_T}no" >&6; }
+		;;
+	*)
+		{ echo "$as_me:$LINENO: result: yes" >&5
+echo "${ECHO_T}yes" >&6; }
+
+cat >>confdefs.h <<\_ACEOF
+#define HAVE_UNNAMED_SEMAPHORES 1
+_ACEOF
+
+		;;
+esac
 
 
 

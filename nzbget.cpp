@@ -141,6 +141,7 @@ int main(int argc, char *argv[], char *argp[])
 	g_pLog = new Log();
 	g_pServerPool = new ServerPool();
 	g_pScheduler = new Scheduler();
+
 	debug("Options parsing");
 	g_pOptions = new Options(argc, argv);
 	szEnvironmentVariables = (char*(*)[])argp;
@@ -160,6 +161,8 @@ int main(int argc, char *argv[], char *argp[])
 	}
 
 	info("nzbget %s", VERSION);
+
+	g_pServerPool->InitConnections();
 
 	if (g_pOptions->GetDaemonMode())
 	{
@@ -217,8 +220,7 @@ void Run()
 #endif
 #endif
 	
-	Thread::Init();
-	Connection::Init(g_pOptions->GetTLS() && !g_pOptions->GetRemoteClientMode() && 
+	Connection::Init(g_pOptions->GetTLS() && !g_pOptions->GetRemoteClientMode() &&
 		(g_pOptions->GetClientOperation() == Options::opClientNoOperation));
 
 	// client request
@@ -642,7 +644,6 @@ void Cleanup()
 	}
 	debug("Scheduler deleted");
 
-	Thread::Final();
 	Connection::Final();
 
 	debug("Global objects cleaned up");
