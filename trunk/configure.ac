@@ -19,15 +19,15 @@ dnl Set default library path, if not specified in environment variable "LIBPREF"
 dnl
 if test "$LIBPREF" = ""; then
 	case "$host" in
-	*-linux*)
-		LIBPREF="/usr"
-		;;
-	*-freebsd*)
-		LIBPREF="/usr/local"
-		;;
-	*-solaris*)
-		LIBPREF="/usr"
-		;;
+		*-linux*)
+			LIBPREF="/usr"
+			;;
+		*-freebsd*)
+			LIBPREF="/usr/local"
+			;;
+		*-solaris*)
+			LIBPREF="/usr"
+			;;
 	esac
 fi
 
@@ -124,6 +124,21 @@ fi
 if test "$HAVE_FUNCTION_MACRO" != "yes"; then
 	AC_DEFINE([FUNCTION_MACRO_NAME],[NULL],[Define to the name of macro which returns the name of function being compiled])
 fi
+
+
+dnl
+dnl Unnamed semaphores
+dnl
+AC_MSG_CHECKING(whether to use unnamed semaphores)
+case "$host" in
+	*-darwin*)
+		AC_MSG_RESULT([no])
+		;;
+	*)
+		AC_MSG_RESULT([yes])
+		AC_DEFINE([HAVE_UNNAMED_SEMAPHORES],1,Define to 1 to use unnamed semaphores)
+		;;
+esac
 
 
 dnl 

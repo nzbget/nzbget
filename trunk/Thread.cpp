@@ -34,9 +34,12 @@
 
 #include <stdlib.h>
 #include <stdio.h>
+#include <errno.h>
 
 #ifdef WIN32
 #include <process.h>
+#else
+#include <fcntl.h>
 #endif
 
 #include "Log.h"
@@ -44,6 +47,13 @@
 
 int Thread::m_iThreadCount = 1; // take the main program thread into account
 Mutex Thread::m_mutexThread;
+
+#ifndef WIN32
+#ifndef HAVE_UNNAMED_SEMAPHORES	
+int Semaphore::m_iID = 1;
+Mutex Semaphore::m_mutexID;
+#endif
+#endif
 
 Mutex::Mutex()
 {
@@ -95,7 +105,7 @@ Semaphore::Semaphore()
 #ifdef WIN32
 	m_semObj = CreateSemaphore(NULL, 0, 1, NULL);
 #else
-	sem_init(&m_semObj, 0, 0);
+	CreateSemObj(0);
 #endif
 }
 
@@ -104,16 +114,47 @@ Semaphore::Semaphore(int iValue)
 #ifdef WIN32
 	m_semObj = CreateSemaphore(NULL, iValue, iValue, NULL);
 #else
-	sem_init(&m_semObj, 0, iValue);
+	CreateSemObj(iValue);
 #endif
 }
+
+#ifndef WIN32
+void Semaphore::CreateSemObj(int iValue)
+{
+#ifdef HAVE_UNNAMED_SEMAPHORES
+	m_semObj = (sem_t*)malloc(sizeof(m_semObj));
+	int iRet = sem_init(m_semObj, 0, iValue);
+	if (iRet == -1)
+	{
+		error("sem_init failed: error %i", errno);
+	}
+#else
+	m_mutexID.Lock();
+	int iID = m_iID;
+	m_iID++;
+	m_mutexID.Unlock();
+	snprintf(m_szName, sizeof(m_szName), "/NZBGET-%i", iID);
+	m_semObj = sem_open(m_szName, O_CREAT, S_IRWXU, iValue);
+	if (m_semObj == SEM_FAILED)
+	{
+		error("sem_open failed: error %i", errno);
+	}
+#endif
+}
+#endif
 
 Semaphore::~ Semaphore()
 {
 #ifdef WIN32
 	CloseHandle(m_semObj);
 #else
-	sem_destroy(&m_semObj);
+#ifdef HAVE_UNNAMED_SEMAPHORES	
+	sem_destroy(m_semObj);
+	free(m_semObj);
+#else
+	sem_close(m_semObj);
+	sem_unlink(m_szName);
+#endif
 #endif
 }
 
@@ -122,7 +163,7 @@ void Semaphore::Post()
 #ifdef WIN32
 	ReleaseSemaphore(m_semObj, 1, NULL);
 #else
-	sem_post(&m_semObj);
+	sem_post(m_semObj);
 #endif
 }
 
@@ -131,7 +172,7 @@ bool Semaphore::Wait()
 #ifdef WIN32
 	return WaitForSingleObject(m_semObj, INFINITE) == WAIT_OBJECT_0;
 #else
-	return sem_wait(&m_semObj) == 0;
+	return sem_wait(m_semObj) == 0;
 #endif
 }
 
@@ -140,20 +181,10 @@ bool Semaphore::TryWait()
 #ifdef WIN32
 	return WaitForSingleObject(m_semObj, 0) == WAIT_OBJECT_0;
 #else
-	return sem_trywait(&m_semObj) == 0;
+	return sem_trywait(m_semObj) == 0;
 #endif
 }
 
-
-void Thread::Init()
-{
-	debug("Initializing global thread data");
-}
-
-void Thread::Final()
-{
-	debug("Finalizing global thread data");
-}
 
 Thread::Thread()
 {

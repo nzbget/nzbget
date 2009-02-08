@@ -55,7 +55,14 @@ private:
 #ifdef WIN32
 	HANDLE					m_semObj;
 #else
-	sem_t					m_semObj;
+	sem_t*					m_semObj;
+#ifndef HAVE_UNNAMED_SEMAPHORES
+	char					m_szName[20];
+	static int				m_iID;
+	static Mutex			m_mutexID;
+#endif
+
+	void					CreateSemObj(int iValue);
 #endif
 	
 public:
@@ -102,9 +109,6 @@ public:
 	bool					GetAutoDestroy() { return m_bAutoDestroy; }
 	void					SetAutoDestroy(bool bAutoDestroy) { m_bAutoDestroy = bAutoDestroy; }
 	static int				GetThreadCount();
-
-	static void				Init();
-	static void				Final();
 
 protected:
 	virtual void 			Run() {}; // Virtual function - override in derivatives

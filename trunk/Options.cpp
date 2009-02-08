@@ -1298,7 +1298,6 @@ void Options::InitServers()
 	}
 
 	g_pServerPool->SetTimeout(GetConnectionTimeout());
-	g_pServerPool->InitConnections();
 }
 
 void Options::InitScheduler()
