@@ -162,8 +162,6 @@ int main(int argc, char *argv[], char *argp[])
 
 	info("nzbget %s", VERSION);
 
-	g_pServerPool->InitConnections();
-
 	if (g_pOptions->GetDaemonMode())
 	{
 #ifdef WIN32
@@ -184,9 +182,13 @@ int main(int argc, char *argv[], char *argp[])
 		info("remote-mode");
 	}
 
+	if (!g_pOptions->GetRemoteClientMode())
+	{
+		g_pServerPool->InitConnections();
 #ifdef DEBUG
-	g_pServerPool->LogDebugInfo();
+		g_pServerPool->LogDebugInfo();
 #endif
+	}
 
 #ifndef WIN32
 #ifdef HAVE_SYS_PRCTL_H
