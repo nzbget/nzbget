@@ -160,26 +160,24 @@ int main(int argc, char *argv[], char *argp[])
 		g_pLog->ResetLog();
 	}
 
-	info("nzbget %s", VERSION);
-
 	if (g_pOptions->GetDaemonMode())
 	{
 #ifdef WIN32
-		info("service-mode");
+		info("nzbget %s service-mode", VERSION);
 		StartService(Run);
 		return 0;
 #else
 		Daemonize();
-		info("daemon-mode");
+		info("nzbget %s daemon-mode", VERSION);
 #endif
 	}
 	else if (g_pOptions->GetServerMode())
 	{
-		info("server-mode");
+		info("nzbget %s server-mode", VERSION);
 	}
 	else if (g_pOptions->GetRemoteClientMode())
 	{
-		info("remote-mode");
+		info("nzbget %s remote-mode", VERSION);
 	}
 
 	if (!g_pOptions->GetRemoteClientMode())
