@@ -157,8 +157,9 @@ void PrePostProcessor::Run()
 			(g_pOptions->GetNzbDirInterval() > 0 && iNZBDirInterval >= g_pOptions->GetNzbDirInterval() * 1000)))
 		{
 			// check nzbdir every g_pOptions->GetNzbDirInterval() seconds or if requested
+			bool bCheckTimestamp = !m_bRequestedNZBDirScan;
 			m_bRequestedNZBDirScan = false;
-			CheckIncomingNZBs(g_pOptions->GetNzbDir(), "");
+			CheckIncomingNZBs(g_pOptions->GetNzbDir(), "", bCheckTimestamp);
 			iNZBDirInterval = 0;
 		}
 		iNZBDirInterval += 200;
@@ -404,7 +405,7 @@ void PrePostProcessor::ScanNZBDir()
 * Check if there are files in directory for incoming nzb-files
 * and add them to download queue
 */
-void PrePostProcessor::CheckIncomingNZBs(const char* szDirectory, const char* szCategory)
+void PrePostProcessor::CheckIncomingNZBs(const char* szDirectory, const char* szCategory, bool bCheckTimestamp)
 {
 	DirBrowser dir(szDirectory);
 	while (const char* filename = dir.Next())
@@ -428,12 +429,13 @@ void PrePostProcessor::CheckIncomingNZBs(const char* szDirectory, const char* sz
 					szSubCategory[1024-1] = '\0';
 					szUseCategory = szSubCategory;
 				}
-				CheckIncomingNZBs(fullfilename, szUseCategory);
+				CheckIncomingNZBs(fullfilename, szUseCategory, bCheckTimestamp);
 			}
 			else if ((buffer.st_mode & S_IFDIR) == 0 &&
+				(!bCheckTimestamp ||
 				// file found, checking modification-time
-				time(NULL) - buffer.st_mtime > g_pOptions->GetNzbDirFileAge() &&
-				time(NULL) - buffer.st_ctime > g_pOptions->GetNzbDirFileAge())
+				(time(NULL) - buffer.st_mtime > g_pOptions->GetNzbDirFileAge() &&
+				time(NULL) - buffer.st_ctime > g_pOptions->GetNzbDirFileAge())))
 			{
 				// the file is at least g_pOptions->GetNzbDirFileAge() seconds old, we can process it
 				ProcessIncomingFile(szDirectory, filename, fullfilename, szCategory);
