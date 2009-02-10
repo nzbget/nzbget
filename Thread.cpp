@@ -122,7 +122,7 @@ Semaphore::Semaphore(int iValue)
 void Semaphore::CreateSemObj(int iValue)
 {
 #ifdef HAVE_UNNAMED_SEMAPHORES
-	m_semObj = (sem_t*)malloc(sizeof(m_semObj));
+	m_semObj = (sem_t*)malloc(sizeof(sem_t));
 	int iRet = sem_init(m_semObj, 0, iValue);
 	if (iRet == -1)
 	{
