@@ -73,7 +73,7 @@ private:
 		int				m_iBlockCount;
 	};
 
-	typedef std::deque<BlockInfo*> 	Blocks;
+	typedef std::list<BlockInfo*> 	Blocks;
 #endif
 	
 private:

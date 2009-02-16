@@ -1337,6 +1337,8 @@ bool PrePostProcessor::RequestMorePars(const char* szNZBFilename, const char* sz
 					pBestBlockInfo->m_pFileInfo->SetPaused(false);
 				}
 				iBlockNeeded -= pBestBlockInfo->m_iBlockCount;
+				blocks.remove(pBestBlockInfo);
+				delete pBestBlockInfo;
 			}
 			else
 			{
