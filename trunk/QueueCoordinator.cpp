@@ -273,7 +273,7 @@ void QueueCoordinator::AddNZBFileToQueue(NZBFile* pNZBFile, bool bAddFirst)
 		FileInfo* pFileInfo = *it;
 		if (g_pOptions->GetSaveQueue() && g_pOptions->GetServerMode())
 		{
-			g_pDiskState->DiscardFile(NULL, pFileInfo);
+			g_pDiskState->DiscardFile(pFileInfo);
 		}
 		delete pFileInfo;
 	}
@@ -636,6 +636,10 @@ void QueueCoordinator::ArticleCompleted(ArticleDownloader* pArticleDownloader)
 		Notify(&aspect);
 		
 		DeleteFileInfo(pFileInfo, fileCompleted);
+		if (g_pOptions->GetSaveQueue() && g_pOptions->GetServerMode())
+		{
+			g_pDiskState->SaveDownloadQueue(&m_DownloadQueue);
+		}
 	}
 
 	m_mutexDownloadQueue.Unlock();
@@ -655,7 +659,7 @@ void QueueCoordinator::DeleteFileInfo(FileInfo* pFileInfo, bool bCompleted)
 
 	if (g_pOptions->GetSaveQueue() && g_pOptions->GetServerMode())
 	{
-		g_pDiskState->DiscardFile(&m_DownloadQueue, pFileInfo);
+		g_pDiskState->DiscardFile(pFileInfo);
 	}
 
 	if (!bCompleted)
