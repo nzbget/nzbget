@@ -86,6 +86,7 @@ private:
 	bool				m_bPostPause;
 	bool				m_bRequestedNZBDirScan;
 
+	void				CheckIncomingNZBDir(bool bCheckTimestamp);
 	void				CheckIncomingNZBs(const char* szDirectory, const char* szCategory, bool bCheckTimestamp);
 	bool				IsNZBFileCompleted(DownloadQueue* pDownloadQueue, const char* szNZBFilename, 
 							bool bIgnoreFirstInPostQueue, bool bIgnorePaused, bool bCheckPostQueue, bool bAllowOnlyOneDeleted);
