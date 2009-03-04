@@ -752,7 +752,7 @@ bool DiskState::PostQueueExists(bool bCompleted)
 	return Util::FileExists(fileName);
 }
 
-bool DiskState::DiscardFile(DownloadQueue* pDownloadQueue, FileInfo* pFileInfo)
+bool DiskState::DiscardFile(FileInfo* pFileInfo)
 {
 	// delete diskstate-file for file-info
 	char fileName[1024];
@@ -760,7 +760,7 @@ bool DiskState::DiscardFile(DownloadQueue* pDownloadQueue, FileInfo* pFileInfo)
 	fileName[1024-1] = '\0';
 	remove(fileName);
 
-	return !pDownloadQueue || SaveDownloadQueue(pDownloadQueue);
+	return true;
 }
 
 void DiskState::CleanupTempDir(DownloadQueue* pDownloadQueue)
