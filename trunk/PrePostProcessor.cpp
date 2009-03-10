@@ -151,6 +151,7 @@ void PrePostProcessor::Run()
 	int iNZBDirInterval = g_pOptions->GetNzbDirInterval() * 1000;
 	int iDiskSpaceInterval = 1000;
 	int iSchedulerInterval = 1000;
+	bool bSecondScan = false;
 	while (!IsStopped())
 	{
 		if (g_pOptions->GetNzbDir() && (m_bRequestedNZBDirScan || 
@@ -159,8 +160,20 @@ void PrePostProcessor::Run()
 			// check nzbdir every g_pOptions->GetNzbDirInterval() seconds or if requested
 			bool bCheckTimestamp = !m_bRequestedNZBDirScan;
 			m_bRequestedNZBDirScan = false;
-			CheckIncomingNZBDir(bCheckTimestamp);
+			CheckIncomingNZBs(g_pOptions->GetNzbDir(), "", bCheckTimestamp);
 			iNZBDirInterval = 0;
+			if (m_bNZBScript && (g_pOptions->GetNzbDirFileAge() < g_pOptions->GetNzbDirInterval()))
+			{
+				if (!bSecondScan)
+				{
+					// scheduling second scan of incoming directory in g_pOptions->GetNzbDirFileAge() seconds.
+					// the second scan is needed because the files extracted by nzbprocess-script
+					// might be skipped on the first scan; that might occur depending on file
+					// names and their storage location in directory's entry list.
+					iNZBDirInterval = (g_pOptions->GetNzbDirInterval() - g_pOptions->GetNzbDirFileAge() - 1) * 1000;
+				}
+				bSecondScan = !bSecondScan;
+			}
 		}
 		iNZBDirInterval += 200;
 
@@ -405,18 +418,6 @@ void PrePostProcessor::ScanNZBDir()
 * Check if there are files in directory for incoming nzb-files
 * and add them to download queue
 */
-void PrePostProcessor::CheckIncomingNZBDir(bool bCheckTimestamp)
-{
-	CheckIncomingNZBs(g_pOptions->GetNzbDir(), "", bCheckTimestamp);
-	if (m_bNZBScript)
-	{
-		// second scan is needed because the files extracted by nzbprocess-script
-		// might be skipped on the first scan; that might occur depending on file
-		// names and their storage location in directory's entry list.
-		CheckIncomingNZBs(g_pOptions->GetNzbDir(), "", bCheckTimestamp);
-	}
-}
-
 void PrePostProcessor::CheckIncomingNZBs(const char* szDirectory, const char* szCategory, bool bCheckTimestamp)
 {
 	DirBrowser dir(szDirectory);
