@@ -41,16 +41,13 @@ NZBGet is written in C++ and was initialy developed on Linux.
 It was ported to Windows later and tested for compatibility with
 several POSIX-OS'es.
 
-The current version (0.5.1) should run at least on:
+The current version (0.6.0) should run at least on:
   - Linux Debian 4.0 on x86;
-  - Linux BusyBox with uClibc on MIPSEL;
+  - Linux with uClibc and BusyBox on MIPSEL and ARM;
+  - FreeBSD 7.0 on x86;
+  - OpenSolaris 2008.11 on x86;
+  - Mac OS X;
   - Windows XP SP2 on x86.
-
-One of the previous versions (0.3.0) was also tested on:
-  - Linux Debian 3.1 on x86;
-  - Solaris 10 on x86;
-  - Linux Debian 3.1 on SPARC (QEmu).
-  - PC-BSD 1.4 (based on FreeBSD 6.2) on x86;
 
 Clients and servers running on different OS'es may communicate with
 each other. For example, you can use NZBGet as client on Windows to 
@@ -439,7 +436,7 @@ libpar2 is distributed under GPL; libsigc++ and GnuTLS - under LGPL.
 10. Contact
 =====================================
 
-If you encounter any problem, feel free to use tracker/forums on
+If you encounter any problem, feel free to use forums on
 
     sourceforge.net/projects/nzbget
 
