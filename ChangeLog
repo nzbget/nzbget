@@ -1,6 +1,71 @@
-nzbget-0.6.0-testing:
-  - please see subversion log at
-    http://nzbget.svn.sourceforge.net/viewvc/nzbget/?view=log
+nzbget-0.6.0:
+  - added scheduler; new options <TaskX.Time>, <TaskX.WeekDays>,
+    <TaskX.Command>, <TaskX.DownloadRate> and <TaskX.Process>;
+  - added support for postprocess-parameters; new subcommand <O> of remote
+    command <E> to add/modify pp-parameter for group (nzb-file); new
+    XML-/JSON-RPC-subcommand <GroupSetParameter> of method <editqueue> for
+    the same purpose; updated example configuration file and example
+    postprocess-script to indicate new method of passing arguments via
+    environment variables;
+  - added subcommands <F>, <G> and <S> to command line switch <-L/--list>,
+    which prints list of files, groups or only status info respectively;
+    extended binary communication protocol to transfer nzb-infos in addition
+    to file-infos;
+  - added new subcommand <M> to edit-command <E> for merging of two (or more)
+    groups (useful after adding pars from a separate nzb-file);
+  - added option <MergeNzb> to automatically merge nzb-files with the same
+    filename (useful by adding pars from a different source);
+  - added script-processing of files in incoming directory to allow automatic
+    unpacking and queueing of compressed nzb-files; new option <NzbProcess>;
+  - added the printing of post-process-parameters for groups in command
+    <--list G>;
+  - added the printing of nzbget version into the log-file on start;
+  - added option <DeleteCleanupDisk> to automatically delete already downloaded
+    files from disk if nzb-file was deleted from queue (the download was
+    cancelled);
+  - added option <ParTimeLimit> to define the max time allowed for par-repair;
+  - added command <--scan/-S> to execute the scan of nzb-directory on remote
+    server;
+  - changed the method to pass arguments to postprocess/nzbprocess: now using
+    environment variables (old method is still supported for compatibility with
+    existing scripts);
+  - added the passing of nzbget-options to postprocess/nzbprocess scripts as
+    environment variables;
+  - extended the communication between nzbget and post-process-script: 
+    collections are now detected even if parcheck is disabled;
+  - added support for delayed par-check/repair: post-process-script can request
+    par-check/repair using special exit codes to repair current collection or
+    all collections;
+  - implemented the normalizing of option names and values in option list; the
+    command <-p> also prints normalized names and values now; that makes the
+    parsing of output of command <-p> for external scripts easier;
+  - replaced option <PostLogKind> with new option <ProcessLogKind> which is now
+    used by all scripts (PostProcess, NzbProcess, TaskX.Process);
+  - improved entering to paused state on connection errors (do not retry failed
+    downloads if pause was activated);
+  - improved error reporting on decoding failures;
+  - improved compatibility of yenc-decoder;
+  - improved the speed of deleting of groups from download queue (by avoiding
+    the saving of queue after the deleting of each individual file);
+  - updated configure-script for better compatibility with FreeBSD;
+  - cleaning up of download queue (option <ParCleanupQueue>) and deletion of
+    source nzb-file (option <NzbCleanupDisk>) after par-repair now works also
+    if par-repair was cancelled (option <ParTimeLimit>); since required
+    par-files were already downloaded the repair in an external tool is
+    possible;
+  - added workaround to avoid hangs in child processes (by starting of
+    postprocess or nzbprocess), observed on uClibC based systems;
+  - fixed: TLS/SSL didn't work in standalone mode;
+  - fixed compatibility issues with Mac OS X;
+  - fixed: not all necessary par2-files were unpaused on first request for
+    par-blocks (although harmless, because additional files were unpaused
+    later anyway);
+  - fixed small memory leak appeared if process-script could not be started;
+  - fixed: configure-script could not detect the right syntax for function
+    <ctime_r> on OpenSolaris.
+  - fixed: files downloaded with disabled decoder (option decode=no) sometimes
+    were malformed and could not be decoded;
+  - fixed: empty string parameters did not always work in XML-RPC.
 
 nzbget-0.5.1:
   - improved the check of server responses to prevent unnecessary retrying
