@@ -57,7 +57,7 @@
 /* Define to 1 if libpar2 supports cancelling (needs a special patch) */
 #define HAVE_PAR2_CANCEL
 
-#define VERSION "0.6.0"
+#define VERSION "0.7.0-testing"
 
 /* Suppress warnings */
 #define _CRT_SECURE_NO_DEPRECATE
