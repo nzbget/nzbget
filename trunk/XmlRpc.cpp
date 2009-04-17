@@ -373,7 +373,7 @@ void XmlRpcProcessor::SendResponse(const char* szResponse, bool bFault)
 
 	char szResponseHeader[1024];
 	int iBodyLen = iResponseLen + iHeaderLen + iFooterLen + iOpenTagLen + iCloseTagLen;
-	snprintf(szResponseHeader, 1024, bXmlRpc ? XML_RESPONSE_HEADER : JSON_RESPONSE_HEADER, iBodyLen, VERSION);
+	snprintf(szResponseHeader, 1024, bXmlRpc ? XML_RESPONSE_HEADER : JSON_RESPONSE_HEADER, iBodyLen, Util::VersionRevision());
 
 	// Send the request answer
 	m_pConnection->Send(szResponseHeader, strlen(szResponseHeader));
@@ -729,8 +729,7 @@ void VersionXmlCommand::Execute()
 	const char* JSON_RESPONSE_STRING_BODY = "\"%s\"";
 
 	char szContent[1024];
-	snprintf(szContent, 1024, IsJson() ? JSON_RESPONSE_STRING_BODY : XML_RESPONSE_STRING_BODY, 
-		VERSION);
+	snprintf(szContent, 1024, IsJson() ? JSON_RESPONSE_STRING_BODY : XML_RESPONSE_STRING_BODY, Util::VersionRevision());
 	szContent[1024-1] = '\0';
 
 	AppendResponse(szContent);

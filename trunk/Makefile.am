@@ -10,12 +10,49 @@ nzbget_SOURCES = ArticleDownloader.cpp ArticleDownloader.h BinRpc.cpp BinRpc.h \
 	QueueCoordinator.h QueueEditor.cpp QueueEditor.h RemoteClient.cpp RemoteClient.h \
 	RemoteServer.cpp RemoteServer.h Scheduler.cpp Scheduler.h ScriptController.cpp \
 	ScriptController.h ServerPool.cpp ServerPool.h TLS.cpp TLS.h Thread.cpp Thread.h Util.cpp \
-	Util.h XmlRpc.cpp XmlRpc.h nzbget.cpp nzbget.h
+	Util.h XmlRpc.cpp XmlRpc.h nzbget.cpp nzbget.h svn_version.cpp
 
 EXTRA_DIST = nzbget.conf.example postprocess-example.sh \
 	win32.h NTService.cpp NTService.h \
 	libpar2-0.2-bugfixes.patch libpar2-0.2-cancel.patch \
 	libpar2-0.2-MSVC8.patch libsigc++-2.0.18-MSVC8.patch \
 	Makefile.cvs nzbget.kdevelop nzbget.sln nzbget.vcproj
+
+# Determining subversion revision:
+# 1) If directory ".svn" exists we take revision from it using program svnversion (part of subversion package)
+#    File is recreated only if revision number was changed.
+# 2) If directory ".svn" doesn't exists we keep and reuse file "svn_version.cpp",
+#    which was possibly created early.
+# 3) If neither directory ".svn" nor file "svn_version.cpp" are available
+#    we create new file "svn_version.c" with empty revision number.
+svn_version.cpp: FORCE
+	@ if test -d ./.svn ; then \
+		V="$(shell svnversion -n .)"; \
+		H="$(shell test -f ./svn_version.cpp && head -n 1 svn_version.cpp)"; \
+		if test "/* $$V */" != "$$H" ; then \
+			( \
+			echo "/* $$V */" ;\
+			echo "/* This file is automatically regenerated on each build. Do not edit it. */" ;\
+			echo "const char* svn_version(void)" ;\
+			echo "{" ;\
+			echo "	const char* SVN_Version = \"$$V\";" ;\
+			echo "	return SVN_Version;" ;\
+			echo "}" ;\
+			) > svn_version.cpp ; \
+		fi \
+	elif test -f ./svn_version.cpp ; then \
+		test "ok, reuse existing file"; \
+	else \
+		( \
+		echo "/*  */" ;\
+		echo "/* This file is automatically regenerated on each build. Do not edit it. */" ;\
+		echo "const char* svn_version(void)" ;\
+		echo "{" ;\
+		echo "	const char* SVN_Version = \"\";" ;\
+		echo "	return SVN_Version;" ;\
+		echo "}" ;\
+		) > svn_version.cpp ; \
+	fi
+FORCE:
 
 clean-bak: rm *~

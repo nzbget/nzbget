@@ -299,7 +299,7 @@ void VersionBinCommand::Execute()
 		return;
 	}
 
-	SendBoolResponse(true, VERSION);
+	SendBoolResponse(true, Util::VersionRevision());
 }
 
 void DownloadBinCommand::Execute()

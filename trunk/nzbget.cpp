@@ -73,6 +73,7 @@
 #include "PrePostProcessor.h"
 #include "ParChecker.h"
 #include "Scheduler.h"
+#include "Util.h"
 #ifdef WIN32
 #include "NTService.h"
 #endif
@@ -128,6 +129,8 @@ int main(int argc, char *argv[], char *argp[])
 #endif
 #endif
 
+	Util::InitVersionRevision();
+	
 #ifdef WIN32
 	_set_fmode(_O_BINARY);
 	InstallUninstallServiceCheck(argc, argv);
@@ -163,21 +166,21 @@ int main(int argc, char *argv[], char *argp[])
 	if (g_pOptions->GetDaemonMode())
 	{
 #ifdef WIN32
-		info("nzbget %s service-mode", VERSION);
+		info("nzbget %s service-mode", Util::VersionRevision());
 		StartService(Run);
 		return 0;
 #else
 		Daemonize();
-		info("nzbget %s daemon-mode", VERSION);
+		info("nzbget %s daemon-mode", Util::VersionRevision());
 #endif
 	}
 	else if (g_pOptions->GetServerMode())
 	{
-		info("nzbget %s server-mode", VERSION);
+		info("nzbget %s server-mode", Util::VersionRevision());
 	}
 	else if (g_pOptions->GetRemoteClientMode())
 	{
-		info("nzbget %s remote-mode", VERSION);
+		info("nzbget %s remote-mode", Util::VersionRevision());
 	}
 
 	if (!g_pOptions->GetRemoteClientMode())

@@ -773,7 +773,7 @@ void Options::InitCommandLine(int argc, char* argv[])
 				exit(0);
 				break;
 			case 'v':
-				printf("nzbget version: %s\n", VERSION);
+				printf("nzbget version: %s\n", Util::VersionRevision());
 				exit(1);
 				break;
 			case 'p':
