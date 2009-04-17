@@ -47,6 +47,11 @@
 #include "nzbget.h"
 #include "Util.h"
 
+#ifndef WIN32
+// function "svn_version" is automatically generated in file "svn_version.cpp" on each build
+const char* svn_version(void);
+#endif
+
 #ifdef WIN32
 
 // getopt for WIN32:
@@ -198,6 +203,8 @@ const char* DirBrowser::Next()
 }
 
 #endif
+
+char Util::VersionRevisionBuf[40];
 
 char* Util::BaseFileName(const char* filename)
 {
@@ -1130,4 +1137,18 @@ void Util::FormatFileSize(char * szBuffer, int iBufLen, long long lFileSize)
 		snprintf(szBuffer, iBufLen, "%i", (int)lFileSize);
 	}
 	szBuffer[iBufLen - 1] = '\0';
+}
+
+void Util::InitVersionRevision()
+{
+#ifndef WIN32
+	if ((strlen(svn_version()) > 0) && strstr(VERSION, "testing"))
+	{
+		snprintf(VersionRevisionBuf, sizeof(VersionRevisionBuf), "%s-r%s", VERSION, svn_version());
+	}
+	else
+#endif
+	{
+		snprintf(VersionRevisionBuf, sizeof(VersionRevisionBuf), "%s", VERSION);
+	}
 }

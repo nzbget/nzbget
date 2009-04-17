@@ -143,6 +143,21 @@ public:
 	 * The returned pointer points to the part of source-string, no additional strings are allocated.
 	 */
 	static const char* JsonNextValue(const char* szJsonText, int* pValueLength);
+
+	/*
+	 * Returns program version and revision number as string formatted like "0.7.0-r295".
+	 * If revision number is not available only version is returned ("0.7.0").
+	 */
+	static const char* VersionRevision() { return VersionRevisionBuf; };
+	
+	/*
+	 * Initialize buffer for program version and revision number.
+	 * This function must be called during program initialization before any
+	 * call to "VersionRevision()".
+	 */
+	static void InitVersionRevision();
+	
+	static char VersionRevisionBuf[40];
 };
 
 #endif
