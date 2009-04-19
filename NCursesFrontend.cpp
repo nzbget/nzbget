@@ -60,13 +60,17 @@
 #undef erase
 #endif
 
+#ifndef WIN32
+// curses.h on Solaris declares "clear()" via DEFINE. That causes problems, because
+// it also affects calls to deque's method "clear()", producing compiler errors.
+// We use function "curses_clear()" to call macro "clear" of curses, then
+// undefine macro "clear".
 void curses_clear()
 {
     clear();
 }
-
-// "#undef clear" is neccessary on Solaris
 #undef clear
+#endif
 
 extern Options* g_pOptions;
 extern void ExitProc();
