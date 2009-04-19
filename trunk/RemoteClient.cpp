@@ -2,7 +2,7 @@
  *  This file is part of nzbget
  *
  *  Copyright (C) 2005 Bo Cordes Petersen <placebodk@sourceforge.net>
- *  Copyright (C) 2007-2008 Andrei Prygounkov <hugbug@users.sourceforge.net>
+ *  Copyright (C) 2007-2009 Andrei Prygounkov <hugbug@users.sourceforge.net>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -513,11 +513,23 @@ bool RemoteClient::RequestServerList(bool bFiles, bool bGroups)
 
 	free(pBuf);
 
+	long long lRemaining = Util::JoinInt64(ntohl(ListResponse.m_iRemainingSizeHi), ntohl(ListResponse.m_iRemainingSizeLo));
+
 	if (!bFiles && !bGroups)
 	{
-		long long lRemaining = Util::JoinInt64(ntohl(ListResponse.m_iRemainingSizeHi), ntohl(ListResponse.m_iRemainingSizeLo));
 		printf("Remaining size: %.2f MB\n", (float)(Util::Int64ToFloat(lRemaining) / 1024.0 / 1024.0));
 	}
+
+    if (ntohl(ListResponse.m_iDownloadRate) > 0 && 
+		!ntohl(ListResponse.m_bServerPaused) && 
+		!ntohl(ListResponse.m_bServerStandBy))
+    {
+        long long remain_sec = (long long)(lRemaining / ntohl(ListResponse.m_iDownloadRate));
+		int h = (int)(remain_sec / 3600);
+		int m = (int)((remain_sec % 3600) / 60);
+		int s = (int)(remain_sec % 60);
+		printf("Remaining time: %.2d:%.2d:%.2d\n", h, m, s);
+    }
 
 	printf("Current download rate: %.1f KB/s\n", (float)(ntohl(ListResponse.m_iDownloadRate) / 1024.0));
 
@@ -551,14 +563,28 @@ bool RemoteClient::RequestServerList(bool bFiles, bool bGroups)
 		printf("Post-jobs: %i\n", (int)ntohl(ListResponse.m_iPostJobCount));
 	}
 
-	if (ntohl(ListResponse.m_bServerStandBy))
+	char szServerState[50];
+
+	if (ntohl(ListResponse.m_bServerPaused))
 	{
-		printf("Server state: Stand-By\n");
+		snprintf(szServerState, sizeof(szServerState), "%s", ntohl(ListResponse.m_bServerStandBy) ? "Paused" : "Pausing");
 	}
 	else
 	{
-		printf("Server state: %s\n", ntohl(ListResponse.m_bServerPaused) ? "Paused" : "Downloading");
+		snprintf(szServerState, sizeof(szServerState), "%s", ntohl(ListResponse.m_bServerStandBy) ? "" : "Downloading");
 	}
+
+	if (ntohl(ListResponse.m_iPostJobCount) > 0)
+	{
+		strncat(szServerState, strlen(szServerState) > 0 ? ", Post-Processing" : "Post-Processing", sizeof(szServerState));
+	}
+
+	if (strlen(szServerState) == 0)
+	{
+		strncpy(szServerState, "Stand-By", sizeof(szServerState));
+	}
+
+	printf("Server state: %s\n", szServerState);
 
 	return true;
 }
