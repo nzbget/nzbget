@@ -60,6 +60,14 @@
 #undef erase
 #endif
 
+void curses_clear()
+{
+    clear();
+}
+
+// "#undef clear" is neccessary on Solaris
+#undef clear
+
 extern Options* g_pOptions;
 extern void ExitProc();
 
@@ -130,8 +138,6 @@ NCursesFrontend::NCursesFrontend()
 	m_iLastEditEntry = -1;
 	m_bLastPausePars = false;
 	m_szHint = NULL;
-
-	m_groupQueue.clear();
 
     // Setup curses
 #ifdef WIN32
@@ -351,7 +357,7 @@ void NCursesFrontend::CalcWindowSizes()
 		m_pOldScreenBuffer = (CHAR_INFO*)realloc(m_pOldScreenBuffer, m_iScreenBufferSize);
 		memset(m_pOldScreenBuffer, 0, m_iScreenBufferSize);
 #else
-        clear();
+        curses_clear();
 #endif
         m_iScreenHeight = iNrRows;
         m_iScreenWidth = iNrColumns;
