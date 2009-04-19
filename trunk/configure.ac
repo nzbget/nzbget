@@ -339,7 +339,9 @@ if test "$USETLS" = "yes"; then
 		fi
 		if test "$FOUND" = "yes"; then
 			AC_SEARCH_LIBS([gnutls_global_init], [gnutls],
-				FOUND=yes,
+				AC_SEARCH_LIBS([gcry_control], [gnutls gcrypt],
+					FOUND=yes,
+					FOUND=no),
 				FOUND=no)
 			if test "$FOUND" = "no" -a "$TLSLIB" = "GnuTLS"; then
 				AC_MSG_ERROR([Couldn't find GnuTLS library])
