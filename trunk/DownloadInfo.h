@@ -269,6 +269,7 @@ private:
 	bool				m_bParCheck;
 	int					m_iParStatus;
 	ERequestParCheck	m_eRequestParCheck;
+	bool				m_bRequestParCleanup;
 	EStage				m_eStage;
 	char*				m_szProgressLabel;
 	int					m_iFileProgress;
@@ -318,6 +319,8 @@ public:
 	void				SetParStatus(int iParStatus) { m_iParStatus = iParStatus; }
 	ERequestParCheck	GetRequestParCheck() { return m_eRequestParCheck; }
 	void				SetRequestParCheck(ERequestParCheck eRequestParCheck) { m_eRequestParCheck = eRequestParCheck; }
+	bool				GetRequestParCleanup() { return m_bRequestParCleanup; }
+	void				SetRequestParCleanup(bool bRequestParCleanup) { m_bRequestParCleanup = bRequestParCleanup; }
 	void				AppendMessage(Message::EKind eKind, const char* szText);
 	Thread*				GetScriptThread() { return m_pScriptThread; }
 	void				SetScriptThread(Thread* pScriptThread) { m_pScriptThread = pScriptThread; }

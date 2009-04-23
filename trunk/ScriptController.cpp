@@ -54,6 +54,7 @@ extern char* (*szEnvironmentVariables)[];
 
 static const int POSTPROCESS_PARCHECK_CURRENT = 91;
 static const int POSTPROCESS_PARCHECK_ALL = 92;
+static const int POSTPROCESS_ALLOK = 93;
 
 #ifndef WIN32
 #define CHILD_WATCHDOG 1
@@ -647,9 +648,16 @@ void PostScriptController::Run()
 		SetEnvVar(szVarname, pParameter->GetValue());
 	}
 
-#ifndef DISABLE_PARCHECK
 	int iResult = Execute();
-	if (iResult == POSTPROCESS_PARCHECK_ALL)
+
+	if (iResult == POSTPROCESS_ALLOK)
+	{
+		info("%s sucessful", szInfoName);
+		m_pPostInfo->SetRequestParCleanup(true);
+	}
+
+#ifndef DISABLE_PARCHECK
+	else if (iResult == POSTPROCESS_PARCHECK_ALL)
 	{
 		if (m_pPostInfo->GetParCheck())
 		{
@@ -681,8 +689,6 @@ void PostScriptController::Run()
 			m_pPostInfo->SetRequestParCheck(PostInfo::rpCurrent);
 		}
 	}
-#else
-	Execute();
 #endif
 
 	m_pPostInfo->SetStage(PostInfo::ptFinished);
