@@ -606,8 +606,9 @@ void PrePostProcessor::CheckPostQueue()
 #ifndef DISABLE_PARCHECK
 				if ((g_pOptions->GetParCleanupQueue() || g_pOptions->GetNzbCleanupDisk()) && 
 					IsNZBFileCompleted(pDownloadQueue, pPostInfo->GetNZBFilename(), true, true, true, false) &&
-					pPostInfo->GetParStatus() != PARSTATUS_NOT_CHECKED &&
-					pPostInfo->GetParStatus() != PARSTATUS_FAILED &&
+					((pPostInfo->GetParStatus() != PARSTATUS_NOT_CHECKED &&
+					  pPostInfo->GetParStatus() != PARSTATUS_FAILED) ||
+					 pPostInfo->GetRequestParCleanup()) &&
 					!HasFailedParJobs(pPostInfo->GetNZBFilename(), true))
 				{
 					if (g_pOptions->GetParCleanupQueue())
