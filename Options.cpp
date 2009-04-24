@@ -299,18 +299,22 @@ Options::Options(int argc, char* argv[])
 	m_bMergeNzb				= false;
 	m_iParTimeLimit			= 0;
 
+	// Option "ConfigFile" will be initialized later, but we want
+	// to see it at the top of option list, so we add it first
+	SetOption("ConfigFile", "");
+
 	char szFilename[MAX_PATH + 1];
 #ifdef WIN32
-	GetModuleFileName(NULL, szFilename, MAX_PATH + 1);
+	GetModuleFileName(NULL, szFilename, sizeof(szFilename));
 #else
-	strncpy(szFilename, argv[0], MAX_PATH + 1);
+	Util::ExpandFileName(argv[0], szFilename, sizeof(szFilename));
 #endif
-	szFilename[MAX_PATH] = '\0';
 	Util::NormalizePathSeparators(szFilename);
+	SetOption("AppBin", szFilename);
 	char* end = strrchr(szFilename, PATH_SEPARATOR);
 	if (end) *end = '\0';
-	SetOption("APPDIR", szFilename);
-		
+	SetOption("AppDir", szFilename);
+
 	InitDefault();
 	InitCommandLine(argc, argv);
 
@@ -326,9 +330,9 @@ Options::Options(int argc, char* argv[])
 		}
 		printf("No configuration-file found\n");
 #ifdef WIN32
-		printf("Please put a configuration-file \"nzbget.conf\" into the directory with exe-file\n");
+		printf("Please put configuration-file \"nzbget.conf\" into the directory with exe-file\n");
 #else
-		printf("Please put a configuration-file in one of the following locations:\n");
+		printf("Please use option \"-c\" or put configuration-file in one of the following locations:\n");
 		int p = 0;
 		while (const char* szFilename = PossibleConfigLocations[p++])
 		{
@@ -440,10 +444,6 @@ Options::~Options()
 
 void Options::Dump()
 {
-	if (m_szConfigFilename)
-	{
-		printf("Configuration-file: %s\n", m_szConfigFilename);
-	}
 	for (OptEntries::iterator it = m_OptEntries.begin(); it != m_OptEntries.end(); it++)
 	{
 		OptEntry* pOptEntry = *it;
@@ -454,12 +454,12 @@ void Options::Dump()
 void Options::InitDefault()
 {
 #ifdef WIN32
-	SetOption(OPTION_TEMPDIR, "${APPDIR}\\temp");
-	SetOption(OPTION_DESTDIR, "${APPDIR}\\dest");
-	SetOption(OPTION_QUEUEDIR, "${APPDIR}\\queue");
-	SetOption(OPTION_NZBDIR, "${APPDIR}\\nzb");
-	SetOption(OPTION_LOGFILE, "${APPDIR}\\nzbget.log");
-	SetOption(OPTION_LOCKFILE, "${APPDIR}\\nzbget.lock");
+	SetOption(OPTION_TEMPDIR, "${AppDir}\\temp");
+	SetOption(OPTION_DESTDIR, "${AppDir}\\dest");
+	SetOption(OPTION_QUEUEDIR, "${AppDir}\\queue");
+	SetOption(OPTION_NZBDIR, "${AppDir}\\nzb");
+	SetOption(OPTION_LOGFILE, "${AppDir}\\nzbget.log");
+	SetOption(OPTION_LOCKFILE, "${AppDir}\\nzbget.lock");
 #else
 	SetOption(OPTION_TEMPDIR, "~/nzbget/temp");
 	SetOption(OPTION_DESTDIR, "~/nzbget/dest");
@@ -572,6 +572,7 @@ void Options::InitOptFile()
 
 	if (m_szConfigFilename)
 	{
+		SetOption("ConfigFile", m_szConfigFilename);
 		LoadConfig(m_szConfigFilename);
 	}
 

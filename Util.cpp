@@ -1112,9 +1112,30 @@ bool Util::ExpandHomePath(const char* szFilename, char* szBuffer, int iBufSize)
 	else
 	{
 		strncpy(szBuffer, szFilename, iBufSize);
+		szBuffer[iBufSize - 1] = '\0';
 	}
 	
 	return true;
+}
+
+void Util::ExpandFileName(const char* szFilename, char* szBuffer, int iBufSize)
+{
+	if (szFilename[0] != '\0' && szFilename[0] != '/')
+	{
+		char szCurDir[MAX_PATH + 1];
+		getcwd(szCurDir, sizeof(szCurDir) - 1); // 1 char reserved for adding backslash
+		int iOffset = 0;
+		if (szFilename[0] == '.' && szFilename[1] == '/')
+		{
+			iOffset += 2;
+		}
+		snprintf(szBuffer, iBufSize, "%s/%s", szCurDir, szFilename + iOffset);
+	}
+	else
+	{
+		strncpy(szBuffer, szFilename, iBufSize);
+		szBuffer[iBufSize - 1] = '\0';
+	}
 }
 #endif
 
