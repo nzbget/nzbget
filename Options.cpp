@@ -89,6 +89,10 @@ static struct option long_options[] =
 static char short_options[] = "c:hno:psvAB:DCE:G:K:LOPR:STUQVW:";
 
 // Program options
+static const char* OPTION_CONFIGFILE		= "ConfigFile";
+static const char* OPTION_APPBIN			= "AppBin";
+static const char* OPTION_APPDIR			= "AppDir";
+static const char* OPTION_VERSION			= "Version";
 static const char* OPTION_DESTDIR			= "DestDir";
 static const char* OPTION_TEMPDIR			= "TempDir";
 static const char* OPTION_QUEUEDIR			= "QueueDir";
@@ -301,7 +305,7 @@ Options::Options(int argc, char* argv[])
 
 	// Option "ConfigFile" will be initialized later, but we want
 	// to see it at the top of option list, so we add it first
-	SetOption("ConfigFile", "");
+	SetOption(OPTION_CONFIGFILE, "");
 
 	char szFilename[MAX_PATH + 1];
 #ifdef WIN32
@@ -310,12 +314,12 @@ Options::Options(int argc, char* argv[])
 	Util::ExpandFileName(argv[0], szFilename, sizeof(szFilename));
 #endif
 	Util::NormalizePathSeparators(szFilename);
-	SetOption("AppBin", szFilename);
+	SetOption(OPTION_APPBIN, szFilename);
 	char* end = strrchr(szFilename, PATH_SEPARATOR);
 	if (end) *end = '\0';
-	SetOption("AppDir", szFilename);
+	SetOption(OPTION_APPDIR, szFilename);
 
-	SetOption("Version", Util::VersionRevision());
+	SetOption(OPTION_VERSION, Util::VersionRevision());
 
 	InitDefault();
 	InitCommandLine(argc, argv);
@@ -574,7 +578,7 @@ void Options::InitOptFile()
 
 	if (m_szConfigFilename)
 	{
-		SetOption("ConfigFile", m_szConfigFilename);
+		SetOption(OPTION_CONFIGFILE, m_szConfigFilename);
 		LoadConfig(m_szConfigFilename);
 	}
 
@@ -1557,6 +1561,13 @@ bool Options::SetOptionString(const char * option)
 
 bool Options::ValidateOptionName(const char * optname)
 {
+	if (!strcasecmp(optname, OPTION_CONFIGFILE) || !strcasecmp(optname, OPTION_APPBIN) ||
+		!strcasecmp(optname, OPTION_APPDIR) || !strcasecmp(optname, OPTION_VERSION))
+	{
+		// read-only options
+		return false;
+	}
+
 	const char* v = GetOption(optname);
 	if (v)
 	{
