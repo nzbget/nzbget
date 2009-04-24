@@ -315,6 +315,8 @@ Options::Options(int argc, char* argv[])
 	if (end) *end = '\0';
 	SetOption("AppDir", szFilename);
 
+	SetOption("Version", Util::VersionRevision());
+
 	InitDefault();
 	InitCommandLine(argc, argv);
 
