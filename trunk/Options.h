@@ -216,7 +216,7 @@ private:
 	void				LoadConfig(const char* configfile);
 	void				CheckDir(char** dir, const char* szOptionName, bool bAllowEmpty);
 	void				ParseFileIDList(int argc, char* argv[], int optind);
-	bool				ParseTime(const char* szTime, int* pHours, int* pMinutes);
+	bool				ParseTime(const char** pTime, int* pHours, int* pMinutes);
 	bool				ParseWeekDays(const char* szWeekDays, int* pWeekDaysBits);
 
 public:
