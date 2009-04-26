@@ -1348,12 +1348,6 @@ void Options::InitScheduler()
 		const int CommandCount = 9;
 		Scheduler::ECommand eCommand = (Scheduler::ECommand)ParseOptionValue(optname, CommandCount, CommandNames, CommandValues);
 
-		int iHours, iMinutes;
-		if (!ParseTime(szTime, &iHours, &iMinutes))
-		{
-			abort("FATAL ERROR: Invalid value for option Task%i.Time\n", n);
-		}
-
 		int iWeekDays = 0;
 		if (szWeekDays && !ParseWeekDays(szWeekDays, &iWeekDays))
 		{
@@ -1383,20 +1377,47 @@ void Options::InitScheduler()
 			}
 		}
 
-		Scheduler::Task* pTask = new Scheduler::Task(iHours, iMinutes, iWeekDays, eCommand, iDownloadRate, szProcess);
-		g_pScheduler->AddTask(pTask);
+		int iHours, iMinutes;
+		const char** pTime = &szTime;
+		while (*pTime)
+		{
+			if (!ParseTime(pTime, &iHours, &iMinutes))
+			{
+				abort("FATAL ERROR: Invalid value for option Task%i.Time\n", n);
+			}
+
+			if (iHours == -1)
+			{
+				for (int iEveryHour = 0; iEveryHour < 24; iEveryHour++)
+				{
+					Scheduler::Task* pTask = new Scheduler::Task(iEveryHour, iMinutes, iWeekDays, eCommand, iDownloadRate, szProcess);
+					g_pScheduler->AddTask(pTask);
+				}
+			}
+			else
+			{
+				Scheduler::Task* pTask = new Scheduler::Task(iHours, iMinutes, iWeekDays, eCommand, iDownloadRate, szProcess);
+				g_pScheduler->AddTask(pTask);
+			}
+		}
 
 		n++;
 	}
 }
 
-bool Options::ParseTime(const char* szTime, int* pHours, int* pMinutes)
+/*
+* Parses Time string and moves current string pointer to the next time token.
+*/
+bool Options::ParseTime(const char** pTime, int* pHours, int* pMinutes)
 {
+	const char* szTime = *pTime;
+	const char* szComma = strchr(szTime, ',');
+
 	int iColons = 0;
 	const char* p = szTime;
-	while (*p)
+	while (*p && (!szComma || p != szComma))
 	{
-		if (!strchr("0123456789:", *p))
+		if (!strchr("0123456789: *", *p))
 		{
 			return false;
 		}
@@ -1417,8 +1438,21 @@ bool Options::ParseTime(const char* szTime, int* pHours, int* pMinutes)
 	{
 		return false;
 	}
-	*pHours = atoi(szTime);
-	if (*pHours < 0 || *pHours > 23)
+
+	if (szTime[0] == '*')
+	{
+		*pHours = -1;
+	}
+	else
+	{
+		*pHours = atoi(szTime);
+		if (*pHours < 0 || *pHours > 23)
+		{
+			return false;
+		}
+	}
+
+	if (szColon[1] == '*')
 	{
 		return false;
 	}
@@ -1427,6 +1461,16 @@ bool Options::ParseTime(const char* szTime, int* pHours, int* pMinutes)
 	{
 		return false;
 	}
+
+	if (szComma)
+	{
+		*pTime = szComma + 1;
+	}
+	else
+	{
+		*pTime = NULL;
+	}
+
 	return true;
 }
 
