@@ -115,22 +115,22 @@ fi
 # Check nzbget.conf options
 BadConfig=0
 
-if [ "$NZBOP_ALLOWREPROCESS" == "yes"  ]; then
+if [ "$NZBOP_ALLOWREPROCESS" == "yes" ]; then
 	echo "[ERROR] Unpack: Please disable option \"AllowReProcess\" in nzbget configuration file"
 	BadConfig=1
 fi 
 
-if [ "$NZBOP_LOADPARS" == "none"  ]; then
+if [ "$NZBOP_LOADPARS" == "none" ]; then
 	echo "[ERROR] Unpack: Please set option \"LoadPars\" to \"One\" or \"All\" in nzbget configuration file"
 	BadConfig=1
 fi
 
-if [ "$NZBOP_PARREPAIR" == "no"  ]; then
+if [ "$NZBOP_PARREPAIR" == "no" ]; then
 	echo "[ERROR] Unpack: Please set option \"ParRepair\" to \"Yes\" in nzbget configuration file"
 	BadConfig=1
 fi
 
-if [ "$BadConfig" -eq 1  ]; then
+if [ "$BadConfig" -eq 1 ]; then
 	echo "[ERROR] Unpack: Existing because of not compatible nzbget configuration"
 	exit $POSTPROCESS_ERROR
 fi 
@@ -144,7 +144,7 @@ cd "$NZBPP_DIRECTORY"
 # exiting with returning code $POSTPROCESS_PARCHECK_ALL to request par-repair
 if [ ! "$NZBPP_PARSTATUS" -eq 2 ]; then
 	if [ -f "_brokenlog.txt" ]; then
-		if (ls *.[pP][aA][rR]2  >/dev/null 2>/dev/null); then
+		if (ls *.[pP][aA][rR]2  >/dev/null 2>1); then
 			echo "[INFO] Unpack: Brokenlog found, requesting par-repair"
 			exit $POSTPROCESS_PARCHECK_ALL
 		fi
@@ -162,7 +162,7 @@ fi
 mkdir extracted
    
 # Unrar the files (if any) to the temporary directory, if there are no rar files this will do nothing
-if (ls *.rar >/dev/null 2>/dev/null); then
+if (ls *.rar >/dev/null 2>1); then
     echo "[INFO] Unpack: Unraring"
 	$UnrarCmd x -y -p- -o+ "*.rar"  ./extracted/
 	if [ "$?" -eq 3 ]; then
@@ -170,7 +170,8 @@ if (ls *.rar >/dev/null 2>/dev/null); then
    		if [ "$ExtractedDirExists" -eq 0 ]; then
 			rm -R extracted
 		fi
-		if (ls *.[pP][aA][rR]2  >/dev/null 2>/dev/null); then
+		# for delayed par-check/-repair at least one par-file must be already downloaded
+		if (ls *.[pP][aA][rR]2  >/dev/null 2>1); then
 			echo "[INFO] Unpack: Requesting par-repair"
 			exit $POSTPROCESS_PARCHECK_ALL
 		fi
@@ -181,7 +182,7 @@ fi
 if [ $JoinTS -eq 1 ]; then
 	# Join any split .ts files if they are named xxxx.0000.ts xxxx.0001.ts
 	# They will be joined together to a file called xxxx.0001.ts
-	if (ls *.ts >/dev/null 2>/dev/null); then
+	if (ls *.ts >/dev/null 2>1); then
 	    echo "[INFO] Unpack: Joining ts-files"
 		tsname=`find . -name "*0001.ts" |awk -F/ '{print $NF}'`
 		cat *0???.ts > ./extracted/$tsname
@@ -189,27 +190,21 @@ if [ $JoinTS -eq 1 ]; then
    
 	# Remove all the split .ts files
     echo "[INFO] Unpack: Deleting source ts-files"
-	rm *0???.ts
+	rm *0???.ts >/dev/null 2>1
 fi
    
 # Remove the rar files
 if [ $DeleteRarFiles -eq 1 ]; then
     echo "[INFO] Unpack: Deleting rar-files"
-	if (ls *.r[0-9][0-9] >/dev/null 2>/dev/null); then
-		rm *.r[0-9][0-9]
-	fi
-	if (ls *.rar >/dev/null 2>/dev/null); then
-		rm *.rar
-	fi
-	if (ls *.s[0-9][0-9] >/dev/null 2>/dev/null); then
-		rm *.s[0-9][0-9]
-	fi
+	rm *.r[0-9][0-9] >/dev/null 2>1
+	rm *.rar >/dev/null 2>1
+	rm *.s[0-9][0-9] >/dev/null 2>1
 fi
    
 # Go to the temp directory and try to unrar again.  
 # If there are any rars inside the extracted rars then these will no also be unrarred
 cd extracted
-if (ls *.rar >/dev/null 2>/dev/null); then
+if (ls *.rar >/dev/null 2>1); then
     echo "[INFO] Unpack: Unraring (second pass)"
 	$UnrarCmd x -y -p- -o+ "*.rar"
 
@@ -221,15 +216,9 @@ if (ls *.rar >/dev/null 2>/dev/null); then
 	# Delete the Rar files
 	if [ $DeleteRarFiles -eq 1 ]; then
 	    echo "[INFO] Unpack: Deleting rar-files (second pass)"
-		if (ls *.r[0-9][0-9] >/dev/null 2>/dev/null); then
-			rm *.r[0-9][0-9]
-		fi
-		if (ls *.rar >/dev/null 2>/dev/null); then
-			rm *.rar
-		fi
-		if (ls *.s[0-9][0-9] >/dev/null 2>/dev/null); then
-			rm *.s[0-9][0-9]
-		fi
+		rm *.r[0-9][0-9] >/dev/null 2>1
+		rm *.rar >/dev/null 2>1
+		rm *.s[0-9][0-9] >/dev/null 2>1
 	fi
 fi
    
@@ -241,26 +230,16 @@ cd ..
 echo "[INFO] Unpack: Cleaning up"
 rmdir extracted
 chmod -R a+rw . 
-if (ls *.nzb >/dev/null 2>/dev/null); then
-	rm *.nzb
-fi
-if (ls *.1 >/dev/null 2>/dev/null); then
-	rm *.1
-fi
-if (ls *.sfv >/dev/null 2>/dev/null); then
-	rm *.sfv
-fi
-if [ -f "_brokenlog.txt" ]; then
-	rm _brokenlog.txt
-fi
-if (ls *.[pP][aA][rR]2  >/dev/null 2>/dev/null); then
-	rm *.[pP][aA][rR]2 
-fi
+rm *.nzb >/dev/null 2>1
+rm *.1 >/dev/null 2>1
+rm *.sfv >/dev/null 2>1
+rm _brokenlog.txt >/dev/null 2>1
+rm *.[pP][aA][rR]2 >/dev/null 2>1
 
 if [ $RenameIMG -eq 1 ]; then
 	# Rename img file to iso
 	# It will be renamed to .img.iso so you can see that it has been renamed
-	if (ls *.img >/dev/null 2>/dev/null); then
+	if (ls *.img >/dev/null 2>1); then
 	    echo "[INFO] Unpack: Renaming img-files to iso"
 		imgname=`find . -name "*.img" |awk -F/ '{print $NF}'`
 		mv $imgname $imgname.iso
