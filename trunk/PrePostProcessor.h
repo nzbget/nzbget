@@ -1,7 +1,7 @@
 /*
  *  This file is part of nzbget
  *
- *  Copyright (C) 2007  Andrei Prygounkov <hugbug@users.sourceforge.net>
+ *  Copyright (C) 2007-2009 Andrei Prygounkov <hugbug@users.sourceforge.net>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -38,6 +38,15 @@
 
 class PrePostProcessor : public Thread
 {
+public:
+	enum EEditAction
+	{
+		eaPostMoveOffset = 51,			// move post to m_iOffset relative to the current position in post-queue
+		eaPostMoveTop,
+		eaPostMoveBottom,
+		eaPostDelete
+	};
+
 private:
 	typedef std::deque<char*>		FileList;
 
@@ -114,6 +123,8 @@ private:
 	void				DeleteQueuedFile(const char* szQueuedFile);
 	void				PausePars(DownloadQueue* pDownloadQueue, NZBInfo* pNZBInfo);
 	NZBInfo*			MergeGroups(DownloadQueue* pDownloadQueue, NZBInfo* pNZBInfo);
+	bool				QueueMove(IDList* pIDList, EEditAction eAction, int iOffset);
+	bool				QueueDelete(IDList* pIDList);
 
 	Mutex			 	m_mutexQueue;
 	PostQueue			m_PostQueue;
@@ -144,6 +155,7 @@ public:
 	PostQueue*			LockPostQueue();
 	void				UnlockPostQueue();
 	void				ScanNZBDir();
+	bool				QueueEditList(IDList* pIDList, EEditAction eAction, int iOffset);
 };
 
 #endif

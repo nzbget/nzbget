@@ -2,7 +2,7 @@
  *  This file is part of nzbget
  *
  *  Copyright (C) 2005 Bo Cordes Petersen <placebodk@users.sourceforge.net>
- *  Copyright (C) 2007-2008 Andrei Prygounkov <hugbug@users.sourceforge.net>
+ *  Copyright (C) 2007-2009 Andrei Prygounkov <hugbug@users.sourceforge.net>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -27,7 +27,7 @@
 #ifndef MESSAGEBASE_H
 #define MESSAGEBASE_H
 
-static const int32_t NZBMESSAGE_SIGNATURE = 0x6E7A6204; // = "nzb4" (nzb version 4)
+static const int32_t NZBMESSAGE_SIGNATURE = 0x6E7A6205; // = "nzb5" (nzb version 5)
 static const int NZBREQUESTFILENAMESIZE = 512;
 static const int NZBREQUESTPASSWORDSIZE = 32;
 
@@ -67,25 +67,29 @@ enum eRemoteRequest
 // Group is a list of files, added to queue from one NZB-File.
 enum eRemoteEditAction
 {
-	eRemoteEditActionFileMoveOffset = 1,	// move to m_iOffset relative to the current position in queue
-	eRemoteEditActionFileMoveTop,			// move to top of queue
-	eRemoteEditActionFileMoveBottom,		// move to bottom of queue
-	eRemoteEditActionFilePause,				// pause
-	eRemoteEditActionFileResume,			// resume (unpause)
-	eRemoteEditActionFileDelete,			// delete
+	eRemoteEditActionFileMoveOffset = 1,	// move files to m_iOffset relative to the current position in download-queue
+	eRemoteEditActionFileMoveTop,			// move files to the top of download-queue
+	eRemoteEditActionFileMoveBottom,		// move files to the bottom of download-queue
+	eRemoteEditActionFilePause,				// pause files
+	eRemoteEditActionFileResume,			// resume (unpause) files
+	eRemoteEditActionFileDelete,			// delete files
 	eRemoteEditActionFilePauseAllPars,		// pause only (all) pars (does not affect other files)
 	eRemoteEditActionFilePauseExtraPars,	// pause only (almost all) pars, except main par-file (does not affect other files)
-	eRemoteEditActionGroupMoveOffset,		// move to m_iOffset relative to the current position in queue
-	eRemoteEditActionGroupMoveTop,			// move to top of queue
-	eRemoteEditActionGroupMoveBottom,		// move to bottom of queue
-	eRemoteEditActionGroupPause,			// pause
-	eRemoteEditActionGroupResume,			// resume (unpause)
-	eRemoteEditActionGroupDelete,			// delete
-	eRemoteEditActionGroupPauseAllPars,		// pause only (all) pars (does not affect other files)
-	eRemoteEditActionGroupPauseExtraPars,	// pause only (almost all) pars, except main par-file (does not affect other files)
+	eRemoteEditActionGroupMoveOffset,		// move group to m_iOffset relative to the current position in download-queue
+	eRemoteEditActionGroupMoveTop,			// move group to the top of download-queue
+	eRemoteEditActionGroupMoveBottom,		// move group to the bottom of download-queue
+	eRemoteEditActionGroupPause,			// pause group
+	eRemoteEditActionGroupResume,			// resume (unpause) group
+	eRemoteEditActionGroupDelete,			// delete group
+	eRemoteEditActionGroupPauseAllPars,		// pause only (all) pars (does not affect other files) in group
+	eRemoteEditActionGroupPauseExtraPars,	// pause only (almost all) pars in group, except main par-file (does not affect other files)
 	eRemoteEditActionGroupSetCategory,		// set or change category for a group
 	eRemoteEditActionGroupMerge,			// merge group
-	eRemoteEditActionGroupSetParameter		// set post-process parameter
+	eRemoteEditActionGroupSetParameter,		// set post-process parameter for group
+	eRemoteEditActionPostMoveOffset = 51,		// move post-job to m_iOffset relative to the current position in post-queue
+	eRemoteEditActionPostMoveTop,			// move post-job to the top of post-queue
+	eRemoteEditActionPostMoveBottom,		// move post-job to the bottom of post-queue
+	eRemoteEditActionPostDelete				// delete post-job
 };
 
 // The basic SNZBRequestBase struct, used in all requests

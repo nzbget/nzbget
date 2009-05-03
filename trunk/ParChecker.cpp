@@ -1,7 +1,7 @@
 /*
  *  This file is part of nzbget
  *
- *  Copyright (C) 2007  Andrei Prygounkov <hugbug@users.sourceforge.net>
+ *  Copyright (C) 2007-2009 Andrei Prygounkov <hugbug@users.sourceforge.net>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -319,7 +319,7 @@ void ParChecker::Run()
 	
 	if (m_bCancelled)
 	{
-		error("Repair cancelled for %s", m_szInfoName);
+		warn("Repair cancelled for %s", m_szInfoName);
 		m_szErrMsg = strdup("repair cancelled");
 		SetStatus(psFailed);
 	}

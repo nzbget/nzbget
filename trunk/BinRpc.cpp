@@ -2,7 +2,7 @@
  *  This file is part of nzbget
  *
  *  Copyright (C) 2005 Bo Cordes Petersen <placebodk@sourceforge.net>
- *  Copyright (C) 2007-2008 Andrei Prygounkov <hugbug@users.sourceforge.net>
+ *  Copyright (C) 2007-2009 Andrei Prygounkov <hugbug@users.sourceforge.net>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -717,14 +717,21 @@ void EditQueueBinCommand::Execute()
 		pIDs = (int32_t*)(pBuf + iTextLen);
 	}
 
-	QueueEditor::IDList cIDList;
+	IDList cIDList;
 	cIDList.reserve(iNrEntries);
 	for (int i = 0; i < iNrEntries; i++)
 	{
 		cIDList.push_back(ntohl(pIDs[i]));
 	}
 
-	bOK = g_pQueueCoordinator->GetQueueEditor()->EditList(&cIDList, bSmartOrder, (QueueEditor::EEditAction)iAction, iOffset, szText);
+	if (iAction < eRemoteEditActionPostMoveOffset)
+	{
+		bOK = g_pQueueCoordinator->GetQueueEditor()->EditList(&cIDList, bSmartOrder, (QueueEditor::EEditAction)iAction, iOffset, szText);
+	}
+	else
+	{
+		bOK = g_pPrePostProcessor->QueueEditList(&cIDList, (PrePostProcessor::EEditAction)iAction, iOffset);
+	}
 
 	free(pBuf);
 

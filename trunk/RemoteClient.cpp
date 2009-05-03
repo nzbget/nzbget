@@ -890,7 +890,7 @@ bool RemoteClient::RequestPostQueue()
 
 	if (ntohl(PostQueueResponse.m_iTrailingDataLength) == 0)
 	{
-		printf("Server has no files queued for post-processing\n");
+		printf("Server has no jobs queued for post-processing\n");
 	}
 	else
 	{

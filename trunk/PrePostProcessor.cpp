@@ -1,7 +1,7 @@
 /*
  *  This file is part of nzbget
  *
- *  Copyright (C) 2007-2008 Andrei Prygounkov <hugbug@users.sourceforge.net>
+ *  Copyright (C) 2007-2009 Andrei Prygounkov <hugbug@users.sourceforge.net>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -393,7 +393,7 @@ NZBInfo* PrePostProcessor::MergeGroups(DownloadQueue* pDownloadQueue, NZBInfo* p
 			{
 				// file found, do merging
 
-				QueueEditor::IDList cIDList;
+				IDList cIDList;
 				cIDList.push_back(pFileInfo->GetID());
 				cIDList.push_back(iAddedGroupID);
 
@@ -1216,7 +1216,14 @@ void PrePostProcessor::ParCheckerUpdate(Subject* Caller, void* Aspect)
 
 		PostInfo* pPostInfo = m_PostQueue.front();
 		pPostInfo->SetWorking(false);
-		pPostInfo->SetStage(PostInfo::ptQueued);
+		if (pPostInfo->GetDeleted())
+		{
+			pPostInfo->SetStage(PostInfo::ptFinished);
+		}
+		else
+		{
+			pPostInfo->SetStage(PostInfo::ptQueued);
+		}
 
 		if (m_ParChecker.GetStatus() == ParChecker::psFailed && !m_ParChecker.GetCancelled())
 		{
@@ -1575,4 +1582,150 @@ bool PrePostProcessor::UnpauseDownload()
 		g_pOptions->SetPause(bPause);
 	}
 	return !bPause;
+}
+
+bool PrePostProcessor::QueueEditList(IDList* pIDList, EEditAction eAction, int iOffset)
+{
+	debug("Edit-command for post-processor-queue received");
+	if (eAction == eaPostDelete)
+	{
+		return QueueDelete(pIDList);
+	}
+	else
+	{
+		return QueueMove(pIDList, eAction, iOffset);
+	}
+}
+
+bool PrePostProcessor::QueueDelete(IDList* pIDList)
+{
+	bool bOK = false;
+
+	DownloadQueue* pDownloadQueue = g_pQueueCoordinator->LockQueue();
+	m_mutexQueue.Lock();
+
+	for (IDList::iterator itID = pIDList->begin(); itID != pIDList->end(); itID++)
+	{
+		int iID = *itID;
+		for (PostQueue::iterator itPost = m_PostQueue.begin(); itPost != m_PostQueue.end(); itPost++)
+		{
+			PostInfo* pPostInfo = *itPost;
+			if (pPostInfo->GetID() == iID)
+			{
+				if (pPostInfo->GetWorking())
+				{
+					info("Deleting active post-job %s", pPostInfo->GetInfoName());
+					pPostInfo->SetDeleted(true);
+					if (PostInfo::ptLoadingPars <= pPostInfo->GetStage() && pPostInfo->GetStage() <= PostInfo::ptVerifyingRepaired)
+					{
+#ifdef HAVE_PAR2_CANCEL
+						if (!m_ParChecker.GetCancelled())
+						{
+							debug("Cancelling par-repair for %s", m_ParChecker.GetInfoName());
+							m_ParChecker.Cancel();
+							bOK = true;
+						}
+#else
+						warn("Cannot cancel par-repair for %s, used version of libpar2 does not support cancelling", m_ParChecker.GetInfoName());
+#endif
+					}
+					else if (pPostInfo->GetScriptThread())
+					{
+						debug("Terminating post-process-script for %s", pPostInfo->GetInfoName());
+						pPostInfo->GetScriptThread()->Stop();
+						bOK = true;
+					}
+					else
+					{
+						error("Internal error in PrePostProcessor::QueueDelete");
+					}
+				}
+				else
+				{
+					info("Deleting queued post-job %s", pPostInfo->GetInfoName());
+					JobCompleted(pDownloadQueue, pPostInfo);
+					bOK = true;
+				}
+				break;
+			}
+		}
+	}
+
+	m_mutexQueue.Unlock();
+	g_pQueueCoordinator->UnlockQueue();
+	return bOK;
+}
+
+bool PrePostProcessor::QueueMove(IDList* pIDList, EEditAction eAction, int iOffset)
+{
+	if (pIDList->size() != 1)
+	{
+		//NOTE: Only one post-job can be moved at once
+		return false;
+	}
+
+	m_mutexQueue.Lock();
+
+	bool bOK = false;
+
+	int iID = pIDList->front();
+	unsigned int iIndex = 0;
+	PostInfo* pPostInfo = NULL;
+
+	for (PostQueue::iterator it = m_PostQueue.begin(); it != m_PostQueue.end(); it++)
+	{
+		PostInfo* pPostInfo1 = *it;
+		if (pPostInfo1->GetID() == iID)
+		{
+			pPostInfo = pPostInfo1;
+			break;
+		}
+		iIndex++;
+	}
+
+	if (pPostInfo)
+	{
+		// NOTE: only items which are not currently being processed can be moved
+
+		unsigned int iNewIndex = 0;
+		switch (eAction)
+		{
+			case eaPostMoveTop:
+				iNewIndex = 1;
+				break;
+
+			case eaPostMoveBottom:
+				iNewIndex = m_PostQueue.size() - 1;
+				break;
+
+			case eaPostMoveOffset:
+				iNewIndex = iIndex + iOffset;
+				break;
+				
+			default: ; // suppress compiler warning
+		}
+
+		if (iNewIndex < 1)
+		{
+			iNewIndex = 1;
+		}
+		else if (iNewIndex > m_PostQueue.size() - 1)
+		{
+			iNewIndex = m_PostQueue.size() - 1;
+		}
+
+		if (0 < iNewIndex && iNewIndex < m_PostQueue.size() && iNewIndex != iIndex)
+		{
+			m_PostQueue.erase(m_PostQueue.begin() + iIndex);
+			m_PostQueue.insert(m_PostQueue.begin() + iNewIndex, pPostInfo);
+			if (g_pOptions->GetSaveQueue() && g_pOptions->GetServerMode())
+			{
+				g_pDiskState->SavePostQueue(&m_PostQueue, false);
+			}
+			bOK = true;
+		}
+	}
+
+	m_mutexQueue.Unlock();
+	return bOK;
 }

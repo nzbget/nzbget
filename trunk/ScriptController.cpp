@@ -336,6 +336,9 @@ int ScriptController::Execute()
 	else if (pid == 0)
 	{
 		// here goes the second instance
+
+		// create new process group (see Terminate() where it is used)
+		setsid();
 			
 		// close up the "read" end
 		close(pipein);
@@ -463,7 +466,13 @@ void ScriptController::Terminate()
 #ifdef WIN32
 	BOOL bOK = TerminateProcess(m_hProcess, -1);
 #else
-	bool bOK = kill(m_hProcess, SIGKILL) == 0;
+	pid_t hKillProcess = m_hProcess;
+	if (getpgid(hKillProcess) == hKillProcess)
+	{
+		// if the child process has its own group (setsid() was successful), kill the whole group
+		hKillProcess = -hKillProcess;
+	}
+	bool bOK = kill(hKillProcess, SIGKILL) == 0;
 #endif
 
 	if (bOK)

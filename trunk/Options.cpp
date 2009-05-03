@@ -2,7 +2,7 @@
  *  This file is part of nzbget
  *
  *  Copyright (C) 2004 Sven Henkel <sidddy@users.sourceforge.net>
- *  Copyright (C) 2007-2008 Andrei Prygounkov <hugbug@users.sourceforge.net>
+ *  Copyright (C) 2007-2009 Andrei Prygounkov <hugbug@users.sourceforge.net>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -870,7 +870,8 @@ void Options::InitCommandLine(int argc, char* argv[])
 			{
 				m_eClientOperation = opClientRequestEditQueue;
 				bool bGroup = !strcasecmp(optarg, "G");
-				if (bGroup)
+				bool bPost = !strcasecmp(optarg, "O");
+				if (bGroup || bPost)
 				{
 					optind++;
 					if (optind > argc)
@@ -880,85 +881,114 @@ void Options::InitCommandLine(int argc, char* argv[])
 					optarg = argv[optind-1];
 				}
 
-				if (!strcasecmp(optarg, "T"))
+				if (bPost)
 				{
-					m_iEditQueueAction = bGroup ? eRemoteEditActionGroupMoveTop : eRemoteEditActionFileMoveTop;
-				}
-				else if (!strcasecmp(optarg, "B"))
-				{
-					m_iEditQueueAction = bGroup ? eRemoteEditActionGroupMoveBottom : eRemoteEditActionFileMoveBottom;
-				}
-				else if (!strcasecmp(optarg, "P"))
-				{
-					m_iEditQueueAction = bGroup ? eRemoteEditActionGroupPause : eRemoteEditActionFilePause;
-				}
-				else if (!strcasecmp(optarg, "A"))
-				{
-					m_iEditQueueAction = bGroup ? eRemoteEditActionGroupPauseAllPars : eRemoteEditActionFilePauseAllPars;
-				}
-				else if (!strcasecmp(optarg, "R"))
-				{
-					m_iEditQueueAction = bGroup ? eRemoteEditActionGroupPauseExtraPars : eRemoteEditActionFilePauseExtraPars;
-				}
-				else if (!strcasecmp(optarg, "U"))
-				{
-					m_iEditQueueAction = bGroup ? eRemoteEditActionGroupResume : eRemoteEditActionFileResume;
-				}
-				else if (!strcasecmp(optarg, "D"))
-				{
-					m_iEditQueueAction = bGroup ? eRemoteEditActionGroupDelete : eRemoteEditActionFileDelete;
-				}
-				else if (!strcasecmp(optarg, "K"))
-				{
-					if (!bGroup)
+					// edit-commands for post-processor-queue
+					if (!strcasecmp(optarg, "T"))
 					{
-						abort("FATAL ERROR: Category can be set only for groups\n");
+						m_iEditQueueAction = eRemoteEditActionPostMoveTop;
 					}
-					m_iEditQueueAction = eRemoteEditActionGroupSetCategory;
-
-					optind++;
-					if (optind > argc)
+					else if (!strcasecmp(optarg, "B"))
 					{
-						abort("FATAL ERROR: Could not parse value of option 'E'\n");
+						m_iEditQueueAction = eRemoteEditActionPostMoveBottom;
 					}
-					m_szEditQueueText = strdup(argv[optind-1]);
-				}
-				else if (!strcasecmp(optarg, "M"))
-				{
-					if (!bGroup)
+					else if (!strcasecmp(optarg, "D"))
 					{
-						abort("FATAL ERROR: only groups can be merged\n");
+						m_iEditQueueAction = eRemoteEditActionPostDelete;
 					}
-					m_iEditQueueAction = eRemoteEditActionGroupMerge;
-				}
-				else if (!strcasecmp(optarg, "O"))
-				{
-					if (!bGroup)
+					else
 					{
-						abort("FATAL ERROR: Post-process parameter can be set only for groups\n");
-					}
-					m_iEditQueueAction = eRemoteEditActionGroupSetParameter;
-
-					optind++;
-					if (optind > argc)
-					{
-						abort("FATAL ERROR: Could not parse value of option 'E'\n");
-					}
-					m_szEditQueueText = strdup(argv[optind-1]);
-
-					if (!strchr(m_szEditQueueText, '='))
-					{
-						abort("FATAL ERROR: Could not parse value of option 'E'\n");
+						m_iEditQueueOffset = atoi(optarg);
+						if (m_iEditQueueOffset == 0)
+						{
+							abort("FATAL ERROR: Could not parse value of option 'E'\n");
+						}
+						m_iEditQueueAction = eRemoteEditActionPostMoveOffset;
 					}
 				}
 				else
 				{
-					m_iEditQueueOffset = atoi(optarg);
-					if (m_iEditQueueOffset == 0)
+					// edit-commands for download-queue
+					if (!strcasecmp(optarg, "T"))
 					{
-						abort("FATAL ERROR: Could not parse value of option 'E'\n");
+						m_iEditQueueAction = bGroup ? eRemoteEditActionGroupMoveTop : eRemoteEditActionFileMoveTop;
 					}
-					m_iEditQueueAction = bGroup ? eRemoteEditActionGroupMoveOffset : eRemoteEditActionFileMoveOffset;
+					else if (!strcasecmp(optarg, "B"))
+					{
+						m_iEditQueueAction = bGroup ? eRemoteEditActionGroupMoveBottom : eRemoteEditActionFileMoveBottom;
+					}
+					else if (!strcasecmp(optarg, "P"))
+					{
+						m_iEditQueueAction = bGroup ? eRemoteEditActionGroupPause : eRemoteEditActionFilePause;
+					}
+					else if (!strcasecmp(optarg, "A"))
+					{
+						m_iEditQueueAction = bGroup ? eRemoteEditActionGroupPauseAllPars : eRemoteEditActionFilePauseAllPars;
+					}
+					else if (!strcasecmp(optarg, "R"))
+					{
+						m_iEditQueueAction = bGroup ? eRemoteEditActionGroupPauseExtraPars : eRemoteEditActionFilePauseExtraPars;
+					}
+					else if (!strcasecmp(optarg, "U"))
+					{
+						m_iEditQueueAction = bGroup ? eRemoteEditActionGroupResume : eRemoteEditActionFileResume;
+					}
+					else if (!strcasecmp(optarg, "D"))
+					{
+						m_iEditQueueAction = bGroup ? eRemoteEditActionGroupDelete : eRemoteEditActionFileDelete;
+					}
+					else if (!strcasecmp(optarg, "K"))
+					{
+						if (!bGroup)
+						{
+							abort("FATAL ERROR: Category can be set only for groups\n");
+						}
+						m_iEditQueueAction = eRemoteEditActionGroupSetCategory;
+
+						optind++;
+						if (optind > argc)
+						{
+							abort("FATAL ERROR: Could not parse value of option 'E'\n");
+						}
+						m_szEditQueueText = strdup(argv[optind-1]);
+					}
+					else if (!strcasecmp(optarg, "M"))
+					{
+						if (!bGroup)
+						{
+							abort("FATAL ERROR: only groups can be merged\n");
+						}
+						m_iEditQueueAction = eRemoteEditActionGroupMerge;
+					}
+					else if (!strcasecmp(optarg, "O"))
+					{
+						if (!bGroup)
+						{
+							abort("FATAL ERROR: Post-process parameter can be set only for groups\n");
+						}
+						m_iEditQueueAction = eRemoteEditActionGroupSetParameter;
+
+						optind++;
+						if (optind > argc)
+						{
+							abort("FATAL ERROR: Could not parse value of option 'E'\n");
+						}
+						m_szEditQueueText = strdup(argv[optind-1]);
+
+						if (!strchr(m_szEditQueueText, '='))
+						{
+							abort("FATAL ERROR: Could not parse value of option 'E'\n");
+						}
+					}
+					else
+					{
+						m_iEditQueueOffset = atoi(optarg);
+						if (m_iEditQueueOffset == 0)
+						{
+							abort("FATAL ERROR: Could not parse value of option 'E'\n");
+						}
+						m_iEditQueueAction = bGroup ? eRemoteEditActionGroupMoveOffset : eRemoteEditActionFileMoveOffset;
+					}
 				}
 				break;
 			}
@@ -1044,7 +1074,7 @@ void Options::PrintUsage(char* com)
 		"              S             print only server status\n"
 		"  -P, --pause               Pause downloading on server\n"
 		"  -U, --unpause             Unpause downloading on server\n"
-		"  -R, --rate                Set download rate on server\n"
+		"  -R, --rate <speed>        Set download rate on server, in KB/s\n"
 		"  -T, --top                 Add file to the top (begining) of queue\n"
 		"                            (should be used with switch --append)\n"
 		"  -K, --category <name>     Assign category to nzb-file\n"
@@ -1053,18 +1083,19 @@ void Options::PrintUsage(char* com)
 		"  -W, --write <D|I|W|E|G> \"Text\" Send text to server's log\n"
 		"  -O, --post                Request post-processor-queue from server\n"
 		"  -S, --scan                Scan incoming nzb-directory on server\n"
-		"  -E, --edit [G] <action> <IDs> Edit queue on server\n"
+		"  -E, --edit [G|O] <action> <IDs> Edit queue on server\n"
 		"    <G>                     Affect all files in the group (same nzb-file)\n"
+		"    <O>                     Edit post-processor-queue\n"
 		"    <action> is one of:\n"
-		"       <+offset|-offset>    Move file(s) in queue relative to current position,\n"
-		"                            offset is an integer value\n"
-		"       T                    Move file(s) to the top of queue\n"
-		"       B                    Move file(s) to the bottom of queue\n"
-		"       P                    Pause file(s)\n"
-		"       U                    Resume (unpause) file(s)\n"
+		"       <+offset|-offset>    Move file(s)/group(s)/post-job in queue relative to\n"
+		"                            current position, offset is an integer value\n"
+		"       T                    Move file(s)/group(s)/post-job to top of queue\n"
+		"       B                    Move file(s)/group(s)/post-job to bottom of queue\n"
+		"       P                    Pause file(s)/group(s)\n"
+		"       U                    Resume (unpause) file(s)/group(s)\n"
 		"       A                    Pause all pars (for groups)\n"
 		"       R                    Pause extra pars (for groups)\n"
-		"       D                    Delete file(s)\n"
+		"       D                    Delete file(s)/group(s)/post-job(s)\n"
 		"       K <name>             Set category (for groups)\n"
 		"       M                    Merge (for groups)\n"
 		"       O <name>=<value>     Set post-process parameter (for groups)\n"
