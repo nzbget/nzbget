@@ -2,7 +2,7 @@
  *  This file is part of nzbget
  *
  *  Copyright (C) 2004 Sven Henkel <sidddy@users.sourceforge.net>
- *  Copyright (C) 2007-2008 Andrei Prygounkov <hugbug@users.sourceforge.net>
+ *  Copyright (C) 2007-2009 Andrei Prygounkov <hugbug@users.sourceforge.net>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -266,6 +266,7 @@ private:
 	char*				m_szCategory;
 	char*				m_szQueuedFilename;
 	bool				m_bWorking;
+	bool				m_bDeleted;
 	bool				m_bParCheck;
 	int					m_iParStatus;
 	ERequestParCheck	m_eRequestParCheck;
@@ -281,6 +282,8 @@ private:
 	
 	Mutex				m_mutexLog;
 	Messages			m_Messages;
+	int					m_iIDMessageGen;
+
 	static int			m_iIDGen;
 
 public:
@@ -313,6 +316,8 @@ public:
 	void				SetStageTime(time_t tStageTime) { m_tStageTime = tStageTime; }
 	bool				GetWorking() { return m_bWorking; }
 	void				SetWorking(bool bWorking) { m_bWorking = bWorking; }
+	bool				GetDeleted() { return m_bDeleted; }
+	void				SetDeleted(bool bDeleted) { m_bDeleted = bDeleted; }
 	bool				GetParCheck() { return m_bParCheck; }
 	void				SetParCheck(bool bParCheck) { m_bParCheck = bParCheck; }
 	int					GetParStatus() { return m_iParStatus; }
@@ -332,5 +337,7 @@ public:
 };
 
 typedef std::deque<PostInfo*> PostQueue;
+
+typedef std::vector<int> IDList;
 
 #endif

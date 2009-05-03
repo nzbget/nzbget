@@ -2,7 +2,7 @@
  *  This file is part of nzbget
  *
  *  Copyright (C) 2004 Sven Henkel <sidddy@users.sourceforge.net>
- *  Copyright (C) 2007-2008 Andrei Prygounkov <hugbug@users.sourceforge.net>
+ *  Copyright (C) 2007-2009 Andrei Prygounkov <hugbug@users.sourceforge.net>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -567,6 +567,7 @@ PostInfo::PostInfo()
 	m_szCategory = NULL;
 	m_szQueuedFilename = NULL;
 	m_bWorking = false;
+	m_bDeleted = false;
 	m_bParCheck = false;
 	m_iParStatus = 0;
 	m_eRequestParCheck = rpNone;
@@ -579,6 +580,7 @@ PostInfo::PostInfo()
 	m_eStage = ptQueued;
 	m_pScriptThread = NULL;
 	m_Messages.clear();
+	m_iIDMessageGen = 0;
 	m_iIDGen++;
 	m_iID = m_iIDGen;
 }
@@ -681,7 +683,7 @@ void PostInfo::UnlockMessages()
 
 void PostInfo::AppendMessage(Message::EKind eKind, const char * szText)
 {
-	Message* pMessage = new Message(++m_iIDGen, eKind, time(NULL), szText);
+	Message* pMessage = new Message(++m_iIDMessageGen, eKind, time(NULL), szText);
 
 	m_mutexLog.Lock();
 	m_Messages.push_back(pMessage);

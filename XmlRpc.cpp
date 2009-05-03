@@ -1,7 +1,7 @@
 /*
  *  This file is part of nzbget
  *
- *  Copyright (C) 2007-2008 Andrei Prygounkov <hugbug@users.sourceforge.net>
+ *  Copyright (C) 2007-2009 Andrei Prygounkov <hugbug@users.sourceforge.net>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -1163,8 +1163,8 @@ void ListGroupsXmlCommand::Execute()
 
 typedef struct 
 {
-	QueueEditor::EEditAction	eActionID;
-	const char*					szActionName;
+	int				iActionID;
+	const char*		szActionName;
 } EditCommandEntry;
 
 EditCommandEntry EditCommandNameMap[] = { 
@@ -1187,7 +1187,11 @@ EditCommandEntry EditCommandNameMap[] = {
 	{ QueueEditor::eaGroupSetCategory, "GroupSetCategory" },
 	{ QueueEditor::eaGroupMerge, "GroupMerge" },
 	{ QueueEditor::eaGroupSetParameter, "GroupSetParameter" },
-	{ QueueEditor::eaFileMoveOffset, NULL }
+	{ PrePostProcessor::eaPostMoveOffset, "PostMoveOffset" },
+	{ PrePostProcessor::eaPostMoveTop, "PostMoveTop" },
+	{ PrePostProcessor::eaPostMoveBottom, "PostMoveBottom" },
+	{ PrePostProcessor::eaPostDelete, "PostDelete" },
+	{ 0, NULL }
 };
 
 void EditQueueXmlCommand::Execute()
@@ -1211,7 +1215,7 @@ void EditQueueXmlCommand::Execute()
 	{
 		if (!strcasecmp(szEditCommand, szName))
 		{
-			iAction = (int)EditCommandNameMap[i].eActionID;
+			iAction = EditCommandNameMap[i].iActionID;
 			break;
 		}
 	}
@@ -1246,14 +1250,23 @@ void EditQueueXmlCommand::Execute()
 		Util::XmlDecode(szEditText);
 	}
 
-	QueueEditor::IDList cIDList;
+	IDList cIDList;
 	int iID = 0;
 	while (NextParamAsInt(&iID))
 	{
 		cIDList.push_back(iID);
 	}
 
-	bool bOK = g_pQueueCoordinator->GetQueueEditor()->EditList(&cIDList, true, (QueueEditor::EEditAction)iAction, iOffset, szEditText);
+	bool bOK = false;
+
+	if (iAction < PrePostProcessor::eaPostMoveOffset)
+	{
+		bOK = g_pQueueCoordinator->GetQueueEditor()->EditList(&cIDList, true, (QueueEditor::EEditAction)iAction, iOffset, szEditText);
+	}
+	else
+	{
+		bOK = g_pPrePostProcessor->QueueEditList(&cIDList, (PrePostProcessor::EEditAction)iAction, iOffset);
+	}
 
 	BuildBoolResponse(bOK);
 }
