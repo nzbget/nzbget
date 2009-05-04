@@ -167,8 +167,6 @@ int main(int argc, char *argv[], char *argp[])
 	{
 #ifdef WIN32
 		info("nzbget %s service-mode", Util::VersionRevision());
-		StartService(Run);
-		return 0;
 #else
 		Daemonize();
 		info("nzbget %s daemon-mode", Util::VersionRevision());
@@ -191,7 +189,13 @@ int main(int argc, char *argv[], char *argp[])
 #endif
 	}
 
-#ifndef WIN32
+#ifdef WIN32
+	if (g_pOptions->GetDaemonMode())
+	{
+		StartService(Run);
+		return 0;
+	}
+#else
 #ifdef HAVE_SYS_PRCTL_H
 	if (g_pOptions->GetDumpCore())
 	{
