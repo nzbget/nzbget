@@ -829,10 +829,26 @@ void Options::InitCommandLine(int argc, char* argv[])
 				}
 				break;
 			case 'P':
-				m_eClientOperation = opClientRequestPause;
-				break;
 			case 'U':
-				m_eClientOperation = opClientRequestUnpause;
+				optind++;
+				optarg = optind > argc ? NULL : argv[optind-1];
+				if (!optarg || !strncmp(optarg, "-", 1))
+				{
+					m_eClientOperation = c == 'P' ? opClientRequestPause : opClientRequestUnpause;
+					optind--;
+				}
+				else if (!strcmp(optarg, "D"))
+				{
+					m_eClientOperation = c == 'P' ? opClientRequestPause : opClientRequestUnpause;
+				}
+				else if (!strcmp(optarg, "O"))
+				{
+					m_eClientOperation = c == 'P' ? opClientRequestPostPause : opClientRequestPostUnpause;
+				}
+				else
+				{
+					abort("FATAL ERROR: Could not parse value of option '%c'\n", c);
+				}
 				break;
 			case 'R':
 				m_eClientOperation = opClientRequestSetRate;
@@ -1068,12 +1084,16 @@ void Options::PrintUsage(char* com)
 		"  -Q, --quit                Shutdown server\n"
 		"  -A, --append <nzb-file>   Send file to server's download queue\n"
 		"  -C, --connect             Attach client to server\n"
-		"  -L, --list  [F|G|S]       Request list of downloads from server\n"
-		"              F             list individual files and server status (default)\n"
-		"              G             list groups (nzb-files) and server status\n"
-		"              S             print only server status\n"
-		"  -P, --pause               Pause downloading on server\n"
-		"  -U, --unpause             Unpause downloading on server\n"
+		"  -L, --list    [F|G|S]     Request list of downloads from server\n"
+		"                 F          list individual files and server status (default)\n"
+		"                 G          list groups (nzb-files) and server status\n"
+		"                 S          print only server status\n"
+		"  -P, --pause   [D|P]       Pause downloading or post-processing on server\n"
+		"                 D          download queue (default)\n"
+		"                 P          post-processor queue\n"
+		"  -U, --unpause [D|P]       Unpause downloading or post-processing on server\n"
+		"                 D          download queue (default)\n"
+		"                 P          post-processor queue\n"
 		"  -R, --rate <speed>        Set download rate on server, in KB/s\n"
 		"  -T, --top                 Add file to the top (begining) of queue\n"
 		"                            (should be used with switch --append)\n"
@@ -1084,8 +1104,8 @@ void Options::PrintUsage(char* com)
 		"  -O, --post                Request post-processor-queue from server\n"
 		"  -S, --scan                Scan incoming nzb-directory on server\n"
 		"  -E, --edit [G|O] <action> <IDs> Edit queue on server\n"
-		"    <G>                     Affect all files in the group (same nzb-file)\n"
-		"    <O>                     Edit post-processor-queue\n"
+		"              G             Affect all files in the group (same nzb-file)\n"
+		"              O             Edit post-processor-queue\n"
 		"    <action> is one of:\n"
 		"       <+offset|-offset>    Move file(s)/group(s)/post-job in queue relative to\n"
 		"                            current position, offset is an integer value\n"

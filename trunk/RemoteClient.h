@@ -2,7 +2,7 @@
  *  This file if part of nzbget
  *
  *  Copyright (C) 2005 Bo Cordes Petersen <placebodk@users.sourceforge.net>
- *  Copyright (C) 2007-2008 Andrei Prygounkov <hugbug@users.sourceforge.net>
+ *  Copyright (C) 2007-2009 Andrei Prygounkov <hugbug@users.sourceforge.net>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -51,7 +51,7 @@ public:
 	void			SetVerbose(bool bVerbose) { m_bVerbose = bVerbose; };
 	bool 			RequestServerDownload(const char* szFilename, const char* szCategory, bool bAddFirst);
 	bool			RequestServerList(bool bFiles, bool bGroups);
-	bool			RequestServerPauseUnpause(bool bPause);
+	bool			RequestServerPauseUnpause(bool bPause, bool bPostProcessorQueue);
 	bool			RequestServerSetDownloadRate(float fRate);
 	bool			RequestServerDumpDebug();
 	bool 			RequestServerEditQueue(int iAction, int iOffset, const char* szText, int* pIDList, int iIDCount, bool bSmartOrder);

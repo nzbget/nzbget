@@ -521,8 +521,8 @@ bool RemoteClient::RequestServerList(bool bFiles, bool bGroups)
 	}
 
     if (ntohl(ListResponse.m_iDownloadRate) > 0 && 
-		!ntohl(ListResponse.m_bServerPaused) && 
-		!ntohl(ListResponse.m_bServerStandBy))
+		!ntohl(ListResponse.m_bDownloadPaused) && 
+		!ntohl(ListResponse.m_bDownloadStandBy))
     {
         long long remain_sec = (long long)(lRemaining / ntohl(ListResponse.m_iDownloadRate));
 		int h = (int)(remain_sec / 3600);
@@ -565,18 +565,22 @@ bool RemoteClient::RequestServerList(bool bFiles, bool bGroups)
 
 	char szServerState[50];
 
-	if (ntohl(ListResponse.m_bServerPaused))
+	if (ntohl(ListResponse.m_bDownloadPaused))
 	{
-		snprintf(szServerState, sizeof(szServerState), "%s", ntohl(ListResponse.m_bServerStandBy) ? "Paused" : "Pausing");
+		snprintf(szServerState, sizeof(szServerState), "%s", ntohl(ListResponse.m_bDownloadStandBy) ? "Paused" : "Pausing");
 	}
 	else
 	{
-		snprintf(szServerState, sizeof(szServerState), "%s", ntohl(ListResponse.m_bServerStandBy) ? "" : "Downloading");
+		snprintf(szServerState, sizeof(szServerState), "%s", ntohl(ListResponse.m_bDownloadStandBy) ? "" : "Downloading");
 	}
 
-	if (ntohl(ListResponse.m_iPostJobCount) > 0)
+	if (ntohl(ListResponse.m_iPostJobCount) > 0 || ntohl(ListResponse.m_bPostPaused))
 	{
 		strncat(szServerState, strlen(szServerState) > 0 ? ", Post-Processing" : "Post-Processing", sizeof(szServerState));
+		if (ntohl(ListResponse.m_bPostPaused))
+		{
+			strncat(szServerState, " paused", sizeof(szServerState));
+		}
 	}
 
 	if (strlen(szServerState) == 0)
@@ -682,12 +686,14 @@ bool RemoteClient::RequestServerLog(int iLines)
 	return true;
 }
 
-bool RemoteClient::RequestServerPauseUnpause(bool bPause)
+bool RemoteClient::RequestServerPauseUnpause(bool bPause, bool bPostProcessorQueue)
 {
 	if (!InitConnection()) return false;
 
 	SNZBPauseUnpauseRequest PauseUnpauseRequest;
-	InitMessageBase(&PauseUnpauseRequest.m_MessageBase, eRemoteRequestPauseUnpause, sizeof(PauseUnpauseRequest));
+	InitMessageBase(&PauseUnpauseRequest.m_MessageBase, 
+		bPostProcessorQueue ? eRemoteRequestPostPauseUnpause : eRemoteRequestPauseUnpause, 
+		sizeof(PauseUnpauseRequest));
 	PauseUnpauseRequest.m_bPause = htonl(bPause);
 
 	if (m_pConnection->Send((char*)(&PauseUnpauseRequest), sizeof(PauseUnpauseRequest)) < 0)

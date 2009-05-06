@@ -1,7 +1,7 @@
 /*
  *  This file is part of nzbget
  *
- *  Copyright (C) 2007  Andrei Prygounkov <hugbug@users.sourceforge.net>
+ *  Copyright (C) 2007-2009 Andrei Prygounkov <hugbug@users.sourceforge.net>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -126,15 +126,13 @@ public:
 	virtual void		Execute();
 };
 
-class PauseXmlCommand: public XmlCommand
+class PauseUnpauseXmlCommand: public XmlCommand
 {
+private:
+	bool	m_bPause;
+	bool	m_bPostProcessor;
 public:
-	virtual void		Execute();
-};
-
-class UnPauseXmlCommand: public XmlCommand
-{
-public:
+						PauseUnpauseXmlCommand(bool bPause, bool bPostProcessor);
 	virtual void		Execute();
 };
 

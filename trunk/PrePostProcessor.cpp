@@ -84,6 +84,7 @@ PrePostProcessor::PrePostProcessor()
 	m_bHasMoreJobs = false;
 	m_bPostPause = false;
 	m_bRequestedNZBDirScan = false;
+	m_bPause = false;
 
 	m_QueueCoordinatorObserver.owner = this;
 	g_pQueueCoordinator->Attach(&m_QueueCoordinatorObserver);
@@ -591,13 +592,13 @@ void PrePostProcessor::CheckPostQueue()
 				}
 			}
 
-			if (pPostInfo->GetParCheck() && pPostInfo->GetParStatus() == PARSTATUS_NOT_CHECKED)
+			if (pPostInfo->GetParCheck() && pPostInfo->GetParStatus() == PARSTATUS_NOT_CHECKED && !m_bPause)
 			{
 				StartParJob(pPostInfo);
 			}
 			else
 #endif
-			if (pPostInfo->GetStage() == PostInfo::ptQueued)
+			if (pPostInfo->GetStage() == PostInfo::ptQueued && !m_bPause)
 			{
 				StartScriptJob(pDownloadQueue, pPostInfo);
 			}
@@ -637,7 +638,7 @@ void PrePostProcessor::CheckPostQueue()
 
 				JobCompleted(pDownloadQueue, pPostInfo);
 			}
-			else
+			else if (!m_bPause)
 			{
 				error("Internal error: invalid state in post-processor");
 			}
