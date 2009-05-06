@@ -134,4 +134,10 @@ public:
 	virtual void		Execute();
 };
 
+class PostPauseUnpauseBinCommand: public BinCommand
+{
+public:
+	virtual void		Execute();
+};
+
 #endif

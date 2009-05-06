@@ -2,7 +2,7 @@
  *  This file is part of nzbget
  *
  *  Copyright (C) 2004 Sven Henkel <sidddy@users.sourceforge.net>
- *  Copyright (C) 2007-2008 Andrei Prygounkov <hugbug@users.sourceforge.net>
+ *  Copyright (C) 2007-2009 Andrei Prygounkov <hugbug@users.sourceforge.net>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -381,11 +381,11 @@ void ProcessClientRequest()
 			break;
 
 		case Options::opClientRequestPause:
-			Client->RequestServerPauseUnpause(true);
+			Client->RequestServerPauseUnpause(true, false);
 			break;
 
 		case Options::opClientRequestUnpause:
-			Client->RequestServerPauseUnpause(false);
+			Client->RequestServerPauseUnpause(false, false);
 			break;
 
 		case Options::opClientRequestSetRate:
@@ -428,7 +428,15 @@ void ProcessClientRequest()
 		case Options::opClientRequestScan:
 			Client->RequestScan();
 			break;
-		
+
+		case Options::opClientRequestPostPause:
+			Client->RequestServerPauseUnpause(true, true);
+			break;
+
+		case Options::opClientRequestPostUnpause:
+			Client->RequestServerPauseUnpause(false, true);
+			break;
+
 		case Options::opClientNoOperation:
 			break;
 	}

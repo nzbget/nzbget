@@ -2,7 +2,7 @@
  *  This file is part of nzbget
  *
  *  Copyright (C) 2004 Sven Henkel <sidddy@users.sourceforge.net>
- *  Copyright (C) 2007-2008 Andrei Prygounkov <hugbug@users.sourceforge.net>
+ *  Copyright (C) 2007-2009 Andrei Prygounkov <hugbug@users.sourceforge.net>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -352,7 +352,7 @@ bool Frontend::RequestFileList()
 
 	if (m_bSummary)
 	{
-		m_bPause = ntohl(ListResponse.m_bServerPaused);
+		m_bPause = ntohl(ListResponse.m_bDownloadPaused);
 		m_lRemainingSize = Util::JoinInt64(ntohl(ListResponse.m_iRemainingSizeHi), ntohl(ListResponse.m_iRemainingSizeLo));
 		m_fCurrentDownloadSpeed = ntohl(ListResponse.m_iDownloadRate) / 1024.0f;
 		m_fDownloadLimit = ntohl(ListResponse.m_iDownloadLimit) / 1024.0f;
@@ -360,7 +360,7 @@ bool Frontend::RequestFileList()
 		m_iPostJobCount = ntohl(ListResponse.m_iPostJobCount);
 		m_iUpTimeSec = ntohl(ListResponse.m_iUpTimeSec);
 		m_iDnTimeSec = ntohl(ListResponse.m_iDownloadTimeSec);
-		m_bStandBy = ntohl(ListResponse.m_bServerStandBy);
+		m_bStandBy = ntohl(ListResponse.m_bDownloadStandBy);
 		m_iAllBytes = Util::JoinInt64(ntohl(ListResponse.m_iDownloadedBytesHi), ntohl(ListResponse.m_iDownloadedBytesLo));
 	}
 
@@ -383,7 +383,7 @@ bool Frontend::RequestPauseUnpause(bool bPause)
 {
 	RemoteClient client;
 	client.SetVerbose(false);
-	return client.RequestServerPauseUnpause(bPause);
+	return client.RequestServerPauseUnpause(bPause, false);
 }
 
 bool Frontend::RequestSetDownloadRate(float fRate)

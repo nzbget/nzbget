@@ -59,7 +59,7 @@ extern void ExitProc();
 
 const char* g_szMessageRequestNames[] =
     { "N/A", "Download", "Pause/Unpause", "List", "Set download rate", "Dump debug", 
-		"Edit queue", "Log", "Quit", "Version", "Post-queue", "Write log", "Scan" };
+		"Edit queue", "Log", "Quit", "Version", "Post-queue", "Write log", "Scan", "Pause/Unpause postprocessor" };
 
 const unsigned int g_iMessageRequestSizes[] =
     { 0,
@@ -74,7 +74,8 @@ const unsigned int g_iMessageRequestSizes[] =
 		sizeof(SNZBVersionRequest),
 		sizeof(SNZBPostQueueRequest),
 		sizeof(SNZBWriteLogRequest),
-		sizeof(SNZBScanRequest)
+		sizeof(SNZBScanRequest),
+		sizeof(SNZBPauseUnpauseRequest)
     };
 
 //*****************************************************************
@@ -191,6 +192,12 @@ void BinRpcProcessor::Dispatch()
 		case eRemoteRequestScan:
 			{
 				command = new ScanBinCommand();
+				break;
+			}
+
+		case eRemoteRequestPostPauseUnpause:
+			{
+				command = new PostPauseUnpauseBinCommand();
 				break;
 			}
 
@@ -541,7 +548,8 @@ void ListBinCommand::Execute()
 		ListResponse.m_iRemainingSizeHi = htonl(iSizeHi);
 		ListResponse.m_iRemainingSizeLo = htonl(iSizeLo);
 		ListResponse.m_iDownloadLimit = htonl((int)(g_pOptions->GetDownloadRate() * 1024));
-		ListResponse.m_bServerPaused = htonl(g_pOptions->GetPause());
+		ListResponse.m_bDownloadPaused = htonl(g_pOptions->GetPause());
+		ListResponse.m_bPostPaused = htonl(g_pPrePostProcessor->GetPause());
 		ListResponse.m_iThreadCount = htonl(Thread::GetThreadCount() - 1); // not counting itself
 		PostQueue* pPostQueue = g_pPrePostProcessor->LockPostQueue();
 		ListResponse.m_iPostJobCount = htonl(pPostQueue->size());
@@ -553,7 +561,7 @@ void ListBinCommand::Execute()
 		g_pQueueCoordinator->CalcStat(&iUpTimeSec, &iDnTimeSec, &iAllBytes, &bStandBy);
 		ListResponse.m_iUpTimeSec = htonl(iUpTimeSec);
 		ListResponse.m_iDownloadTimeSec = htonl(iDnTimeSec);
-		ListResponse.m_bServerStandBy = htonl(bStandBy);
+		ListResponse.m_bDownloadStandBy = htonl(bStandBy);
 		Util::SplitInt64(iAllBytes, &iSizeHi, &iSizeLo);
 		ListResponse.m_iDownloadedBytesHi = htonl(iSizeHi);
 		ListResponse.m_iDownloadedBytesLo = htonl(iSizeLo);
@@ -907,4 +915,16 @@ void ScanBinCommand::Execute()
 
 	g_pPrePostProcessor->ScanNZBDir();
 	SendBoolResponse(true, "Scan-Command scheduled successfully");
+}
+
+void PostPauseUnpauseBinCommand::Execute()
+{
+	SNZBPauseUnpauseRequest PauseUnpauseRequest;
+	if (!ReceiveRequest(&PauseUnpauseRequest, sizeof(PauseUnpauseRequest)))
+	{
+		return;
+	}
+
+	g_pPrePostProcessor->SetPause(ntohl(PauseUnpauseRequest.m_bPause));
+	SendBoolResponse(true, "Pause-/Unpause-Command for post-processor completed successfully");
 }

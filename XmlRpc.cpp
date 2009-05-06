@@ -390,11 +390,11 @@ XmlCommand* XmlRpcProcessor::CreateCommand(const char* szMethodName)
 
 	if (!strcasecmp(szMethodName, "pause"))
 	{
-		command = new PauseXmlCommand();
+		command = new PauseUnpauseXmlCommand(true, false);
 	}
 	else if (!strcasecmp(szMethodName, "resume"))
 	{
-		command = new UnPauseXmlCommand();
+		command = new PauseUnpauseXmlCommand(false, false);
 	}
 	else if (!strcasecmp(szMethodName, "shutdown"))
 	{
@@ -447,6 +447,14 @@ XmlCommand* XmlRpcProcessor::CreateCommand(const char* szMethodName)
 	else if (!strcasecmp(szMethodName, "scan"))
 	{
 		command = new ScanXmlCommand();
+	}
+	else if (!strcasecmp(szMethodName, "postpause"))
+	{
+		command = new PauseUnpauseXmlCommand(true, true);
+	}
+	else if (!strcasecmp(szMethodName, "postresume"))
+	{
+		command = new PauseUnpauseXmlCommand(false, true);
 	}
 	else 
 	{
@@ -687,19 +695,13 @@ void ErrorXmlCommand::Execute()
 	BuildErrorResponse(m_iErrCode, m_szErrText);
 }
 
-void PauseXmlCommand::Execute()
+PauseUnpauseXmlCommand::PauseUnpauseXmlCommand(bool bPause, bool bPostProcessor)
 {
-	if (m_eHttpMethod == XmlRpcProcessor::hmGet)
-	{
-		BuildErrorResponse(4, "Not safe procedure for HTTP-Method GET. Use Method POST instead");
-		return;
-	}
-
-	g_pOptions->SetPause(true);
-	BuildBoolResponse(true);
+	m_bPause = bPause;
+	m_bPostProcessor = bPostProcessor;
 }
 
-void UnPauseXmlCommand::Execute()
+void PauseUnpauseXmlCommand::Execute()
 {
 	if (m_eHttpMethod == XmlRpcProcessor::hmGet)
 	{
@@ -707,7 +709,15 @@ void UnPauseXmlCommand::Execute()
 		return;
 	}
 
-	g_pOptions->SetPause(false);
+	if (m_bPostProcessor)
+	{
+		g_pPrePostProcessor->SetPause(m_bPause);
+	}
+	else
+	{
+		g_pOptions->SetPause(m_bPause);
+	}
+
 	BuildBoolResponse(true);
 }
 
@@ -779,6 +789,7 @@ void StatusXmlCommand::Execute()
 		"<member><name>DownloadTimeSec</name><value><i4>%i</i4></value></member>\n"
 		"<member><name>ServerPaused</name><value><boolean>%s</boolean></value></member>\n"
 		"<member><name>ServerStandBy</name><value><boolean>%s</boolean></value></member>\n"
+		"<member><name>PostPaused</name><value><boolean>%s</boolean></value></member>\n"
 		"</struct>\n";
 
 	const char* JSON_RESPONSE_STATUS_BODY = 
@@ -797,7 +808,8 @@ void StatusXmlCommand::Execute()
 		"\"UpTimeSec\" : %i,\n"
 		"\"DownloadTimeSec\" : %i,\n"
 		"\"ServerPaused\" : %s,\n"
-		"\"ServerStandBy\" : %s\n"
+		"\"ServerStandBy\" : %s,\n"
+		"\"PostPaused\" : %s\n"
 		"}\n";
 
 	unsigned long iRemainingSizeHi, iRemainingSizeLo;
@@ -807,6 +819,7 @@ void StatusXmlCommand::Execute()
 	int iRemainingMBytes = (int)(iRemainingSize / 1024 / 1024);
 	int iDownloadLimit = (int)(g_pOptions->GetDownloadRate() * 1024);
 	bool bServerPaused = g_pOptions->GetPause();
+	bool bPostPaused = g_pPrePostProcessor->GetPause();
 	int iThreadCount = Thread::GetThreadCount() - 1; // not counting itself
 	PostQueue* pPostQueue = g_pPrePostProcessor->LockPostQueue();
 	int iParJobCount = pPostQueue->size();
@@ -824,7 +837,8 @@ void StatusXmlCommand::Execute()
 	snprintf(szContent, 2048, IsJson() ? JSON_RESPONSE_STATUS_BODY : XML_RESPONSE_STATUS_BODY, 
 		iRemainingSizeLo, iRemainingSizeHi,	iRemainingMBytes, iDownloadedSizeLo, iDownloadedSizeHi, 
 		iDownloadedMBytes, iDownloadRate, iAverageDownloadRate, iDownloadLimit,	iThreadCount, 
-		iParJobCount, iUpTimeSec, iDownloadTimeSec, BoolToStr(bServerPaused), BoolToStr(bServerStandBy));
+		iParJobCount, iUpTimeSec, iDownloadTimeSec, BoolToStr(bServerPaused), BoolToStr(bServerStandBy),
+		BoolToStr(bPostPaused));
 	szContent[2048-1] = '\0';
 
 	AppendResponse(szContent);

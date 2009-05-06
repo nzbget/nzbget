@@ -94,6 +94,10 @@ private:
 	bool				m_bSchedulerPause;
 	bool				m_bPostPause;
 	bool				m_bRequestedNZBDirScan;
+	Mutex			 	m_mutexQueue;
+	PostQueue			m_PostQueue;
+	PostQueue			m_CompletedJobs;
+	bool				m_bPause;
 
 	void				CheckIncomingNZBs(const char* szDirectory, const char* szCategory, bool bCheckTimestamp);
 	bool				IsNZBFileCompleted(DownloadQueue* pDownloadQueue, const char* szNZBFilename, 
@@ -126,10 +130,6 @@ private:
 	bool				QueueMove(IDList* pIDList, EEditAction eAction, int iOffset);
 	bool				QueueDelete(IDList* pIDList);
 
-	Mutex			 	m_mutexQueue;
-	PostQueue			m_PostQueue;
-	PostQueue			m_CompletedJobs;
-
 #ifndef DISABLE_PARCHECK
 	PostParChecker		m_ParChecker;
 	ParCheckerObserver	m_ParCheckerObserver;
@@ -156,6 +156,8 @@ public:
 	void				UnlockPostQueue();
 	void				ScanNZBDir();
 	bool				QueueEditList(IDList* pIDList, EEditAction eAction, int iOffset);
+	void				SetPause(bool bPause) { m_bPause = bPause; }
+	bool				GetPause() const { return m_bPause; }
 };
 
 #endif

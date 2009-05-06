@@ -27,7 +27,7 @@
 #ifndef MESSAGEBASE_H
 #define MESSAGEBASE_H
 
-static const int32_t NZBMESSAGE_SIGNATURE = 0x6E7A6205; // = "nzb5" (nzb version 5)
+static const int32_t NZBMESSAGE_SIGNATURE = 0x6E7A6205; // = "nzb6" (protocol version)
 static const int NZBREQUESTFILENAMESIZE = 512;
 static const int NZBREQUESTPASSWORDSIZE = 32;
 
@@ -59,7 +59,8 @@ enum eRemoteRequest
 	eRemoteRequestVersion,
 	eRemoteRequestPostQueue,
 	eRemoteRequestWriteLog,
-	eRemoteRequestScan
+	eRemoteRequestScan,
+	eRemoteRequestPostPauseUnpause
 };
 
 // Possible values for field "m_iAction" of struct "SNZBEditQueueRequest":
@@ -145,14 +146,15 @@ struct SNZBListResponse
 	int32_t 				m_iRemainingSizeHi;		// Remaining size in bytes, High 32-bits of 64-bit value
 	int32_t					m_iDownloadRate;		// Current download speed, in Bytes pro Second
 	int32_t					m_iDownloadLimit;		// Current download limit, in Bytes pro Second
-	int32_t					m_bServerPaused;		// 1 - server is currently in paused-state
+	int32_t					m_bDownloadPaused;		// 1 - download queue is currently in paused-state
+	int32_t					m_bDownloadStandBy;		// 0 - there are currently downloads running, 1 - no downloads in progress (download queue paused or all download jobs completed)
+	int32_t					m_bPostPaused;			// 1 - post-processor queue is currently in paused-state
 	int32_t					m_iThreadCount;			// Number of threads running
 	int32_t					m_iPostJobCount;		// Number of jobs in post-processor queue (including current job)
 	int32_t					m_iUpTimeSec;			// Server up time in seconds
 	int32_t					m_iDownloadTimeSec;		// Server download time in seconds (up_time - standby_time)
 	int32_t					m_iDownloadedBytesLo;	// Amount of data downloaded since server start, Low 32-bits of 64-bit value
 	int32_t					m_iDownloadedBytesHi;	// Amount of data downloaded since server start, High 32-bits of 64-bit value
-	int32_t					m_bServerStandBy;		// 0 - there are currently downloads running, 1 - no downloads in progress (server paused or all jobs completed)
 	int32_t					m_iNrTrailingNZBEntries;	// Number of List-NZB-entries, following to this structure
 	int32_t					m_iNrTrailingPPPEntries;	// Number of List-PPP-entries, following to this structure
 	int32_t					m_iNrTrailingFileEntries;	// Number of List-File-entries, following to this structure
