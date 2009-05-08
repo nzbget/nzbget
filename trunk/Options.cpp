@@ -1393,6 +1393,11 @@ void Options::InitScheduler()
 			abort("FATAL ERROR: Task definition not complete for Task%i\n", n);
 		}
 
+		if (szProcess && strlen(szProcess) > 0 && !Util::SplitCommandLine(szProcess, NULL))
+		{
+			abort("FATAL ERROR: Invalid value for option Task%i.Process\n", n);
+		}
+
 		sprintf(optname, "Task%i.Command", n);
 		const char* CommandNames[] = { "pause", "unpause", "resume", "downloadrate", "setdownloadrate", "rate", "speed", "script", "process" };
 		const int CommandValues[] = { Scheduler::scPause, Scheduler::scUnpause, Scheduler::scUnpause, Scheduler::scDownloadRate, Scheduler::scDownloadRate, Scheduler::scDownloadRate, Scheduler::scDownloadRate, Scheduler::scProcess, Scheduler::scProcess };
@@ -1420,12 +1425,9 @@ void Options::InitScheduler()
 			}
 		}
 
-		if (eCommand == Scheduler::scProcess)
+		if (eCommand == Scheduler::scProcess && (!szProcess || strlen(szProcess) == 0))
 		{
-			if (!szProcess || strlen(szProcess) == 0)
-			{
-				abort("FATAL ERROR: Task definition not complete for Task%i. Option Task%i.Process missing.\n", n, n);
-			}
+			abort("FATAL ERROR: Task definition not complete for Task%i. Option Task%i.Process missing.\n", n, n);
 		}
 
 		int iHours, iMinutes;

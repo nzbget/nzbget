@@ -1,7 +1,7 @@
 /*
  *  This file is part of nzbget
  *
- *  Copyright (C) 2007  Andrei Prygounkov <hugbug@users.sourceforge.net>
+ *  Copyright (C) 2007-2009 Andrei Prygounkov <hugbug@users.sourceforge.net>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -1172,4 +1172,84 @@ void Util::InitVersionRevision()
 	{
 		snprintf(VersionRevisionBuf, sizeof(VersionRevisionBuf), "%s", VERSION);
 	}
+}
+
+bool Util::SplitCommandLine(const char* szCommandLine, char*** argv)
+{
+	int iArgCount = 0;
+	char szBuf[1024];
+	char* pszArgList[100];
+	unsigned int iLen = 0;
+	bool bEscaping = false;
+	bool bSpace = true;
+	for (const char* p = szCommandLine; ; p++)
+	{
+		if (*p)
+		{
+			const char c = *p;
+			if (bEscaping)
+			{
+				if (c == '\'')
+				{
+					if (p[1] == '\'' && iLen < sizeof(szBuf) - 1)
+					{
+						szBuf[iLen++] = c;
+						p++;
+					}
+					else
+					{
+						bEscaping = false;
+						bSpace = true;
+					}
+				}
+				else if (iLen < sizeof(szBuf) - 1)
+				{
+					szBuf[iLen++] = c;
+				}
+			}
+			else
+			{
+				if (c == ' ')
+				{
+					bSpace = true;
+				}
+				else if (c == '\'' && bSpace)
+				{
+					bEscaping = true;
+					bSpace = false;
+				}
+				else if (iLen < sizeof(szBuf) - 1)
+				{
+					szBuf[iLen++] = c;
+					bSpace = false;
+				}
+			}
+		}
+
+		if ((bSpace || !*p) && iLen > 0 && iArgCount < 100)
+		{
+			//add token
+			szBuf[iLen] = '\0';
+			if (argv)
+			{
+				pszArgList[iArgCount] = strdup(szBuf);
+			}
+			(iArgCount)++;
+			iLen = 0;
+		}
+
+		if (!*p)
+		{
+			break;
+		}
+	}
+
+	if (argv)
+	{
+		pszArgList[iArgCount] = NULL;
+		*argv = (char**)malloc((iArgCount + 1) * sizeof(char*));
+		memcpy(*argv, pszArgList, sizeof(char*) * (iArgCount + 1));
+	}
+
+	return iArgCount > 0;
 }
