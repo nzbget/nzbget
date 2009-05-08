@@ -58,6 +58,7 @@ private:
 	const char*			m_szScript;
 	const char*			m_szWorkingDir;
 	const char**		m_szArgs;
+	bool				m_bFreeArgs;
 	const char*			m_szInfoName;
 	const char*			m_szDefaultKindPrefix;
 	EnvironmentStrings	m_environmentStrings;
@@ -77,14 +78,14 @@ protected:
 
 public:
 						ScriptController();
-	virtual				~ScriptController() {};
+	virtual				~ScriptController();
 	int					Execute();
 	void				Terminate();
 
 	void				SetScript(const char* szScript) { m_szScript = szScript; }
 	const char*			GetScript() { return m_szScript; }
 	void				SetWorkingDir(const char* szWorkingDir) { m_szWorkingDir = szWorkingDir; }
-	void				SetArgs(const char** szArgs) { m_szArgs = szArgs; }
+	void				SetArgs(const char** szArgs, bool bFreeArgs) { m_szArgs = szArgs; m_bFreeArgs = bFreeArgs; }
 	void				SetInfoName(const char* szInfoName) { m_szInfoName = szInfoName; }
 	void				SetDefaultKindPrefix(const char* szDefaultKindPrefix) { m_szDefaultKindPrefix = szDefaultKindPrefix; }
 	void				SetDefaultLogKind(Options::EScriptLogKind eDefaultLogKind) { m_eDefaultLogKind = eDefaultLogKind; }
@@ -118,7 +119,7 @@ class SchedulerScriptController : public Thread, ScriptController
 {
 public:
 	virtual void		Run();
-	static void			StartScript(const char* szScript);
+	static void			StartScript(const char* szCommandLine);
 };
 
 #endif

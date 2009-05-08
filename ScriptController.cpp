@@ -1,7 +1,7 @@
 /*
  *  This file is part of nzbget
  *
- *  Copyright (C) 2007-2008 Andrei Prygounkov <hugbug@users.sourceforge.net>
+ *  Copyright (C) 2007-2009 Andrei Prygounkov <hugbug@users.sourceforge.net>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -184,10 +184,23 @@ ScriptController::ScriptController()
 	m_szScript = NULL;
 	m_szWorkingDir = NULL;
 	m_szArgs = NULL;
+	m_bFreeArgs = false;
 	m_szInfoName = NULL;
 	m_szDefaultKindPrefix = NULL;
 	m_bTerminated = false;
 	m_environmentStrings.InitFromCurrentProcess();
+}
+
+ScriptController::~ScriptController()
+{
+	if (m_bFreeArgs)
+	{
+		for (const char** szArgPtr = m_szArgs; *szArgPtr; szArgPtr++)
+		{
+			free((char*)*szArgPtr);
+		}
+		free(m_szArgs);
+	}
 }
 
 void ScriptController::SetEnvVar(const char* szName, const char* szValue)
@@ -638,7 +651,7 @@ void PostScriptController::Run()
 	szArgs[6] = szHasFailedParJobs;
 	szArgs[7] = m_pPostInfo->GetCategory();
 	szArgs[8] = NULL;
-	SetArgs(szArgs);
+	SetArgs(szArgs, false);
 
 	SetEnvVar("NZBPP_DIRECTORY", m_pPostInfo->GetDestDir());
 	SetEnvVar("NZBPP_NZBFILENAME", szNZBFilename);
@@ -751,7 +764,7 @@ void NZBScriptController::ExecuteScript(const char* szScript, const char* szNZBF
 	szArgs[1] = szDir;
 	szArgs[2] = szNZBFilename;
 	szArgs[3] = NULL;
-	pScriptController->SetArgs(szArgs);
+	pScriptController->SetArgs(szArgs, false);
 
 	pScriptController->SetEnvVar("NZBNP_DIRECTORY", szDir);
 	pScriptController->SetEnvVar("NZBNP_FILENAME", szNZBFilename);
@@ -761,12 +774,20 @@ void NZBScriptController::ExecuteScript(const char* szScript, const char* szNZBF
 	delete pScriptController;
 }
 
-void SchedulerScriptController::StartScript(const char* szScript)
+void SchedulerScriptController::StartScript(const char* szCommandLine)
 {
-	info("Executing scheduled process-script %s", Util::BaseFileName(szScript));
+	char** argv = NULL;
+	if (!Util::SplitCommandLine(szCommandLine, &argv))
+	{
+		error("Could not execute scheduled process-script, failed to parse command line: %s", szCommandLine);
+		return;
+	}
+
+	info("Executing scheduled process-script %s", Util::BaseFileName(argv[0]));
 
 	SchedulerScriptController* pScriptController = new SchedulerScriptController();
-	pScriptController->SetScript(szScript);
+	pScriptController->SetScript(argv[0]);
+	pScriptController->SetArgs((const char**)argv, true);
 	pScriptController->SetAutoDestroy(true);
 
 	pScriptController->Start();
@@ -778,11 +799,6 @@ void SchedulerScriptController::Run()
 	snprintf(szInfoName, 1024, "scheduled process-script %s", Util::BaseFileName(GetScript()));
 	szInfoName[1024-1] = '\0';
 	SetInfoName(szInfoName);
-
-	const char* szArgs[2];
-	szArgs[0] = GetScript();
-	szArgs[1] = NULL;
-	SetArgs(szArgs);
 
 	SetDefaultKindPrefix("Scheduled Process: ");
 	SetDefaultLogKind(g_pOptions->GetProcessLogKind());

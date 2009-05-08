@@ -789,10 +789,19 @@ PostPauseQueue=no
 
 # Path to the porgram to execute if the command is "Process".
 #
-# Example: /home/user/fetch-nzb.sh
+# Example: "Task1.Process=/home/user/fetch-nzb.sh".
 #
 # If the option <TaskX.Command> is not set to "Process" this option
 # is ignored and can be omitted.
+#
+# NOTE: it's allowed to add parameters to command line. If filename or
+# any parameter contains spaces it must be surrounded with single quotation
+# marks. If filename/parameter contains single quotation marks, each of them 
+# must be replaced with two single quotation marks and the resulting filename/
+# parameter must be surrounded with single quotation marks.
+# Example: '/home/user/download/my scripts/task process.sh' 'world''s fun'.
+# In this example one parameter (world's fun) is passed to the script 
+# (task process.sh).
 #Task1.Process=
 
 #Task2.Time=20:00

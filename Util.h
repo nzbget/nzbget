@@ -1,7 +1,7 @@
 /*
  *  This file is part of nzbget
  *
- *  Copyright (C) 2007  Andrei Prygounkov <hugbug@users.sourceforge.net>
+ *  Copyright (C) 2007-2009 Andrei Prygounkov <hugbug@users.sourceforge.net>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -81,6 +81,20 @@ public:
 	static void ExpandFileName(const char* szFilename, char* szBuffer, int iBufSize);
 #endif
 	static void FormatFileSize(char* szBuffer, int iBufLen, long long lFileSize);
+
+	/*
+	 * Split command line int arguments.
+	 * Uses spaces and single quotation marks as separators.
+	 * Returns bool if sucessful or false if bad escaping was detected.
+	 * Parameter "argv" may be NULL if only a syntax check is needed.
+	 * Parsed parameters returned in Array "argv", which contains at least one element.
+	 * The last element in array is NULL.
+	 * Restrictions: the number of arguments is limited to 100 and each arguments must
+	 * be maximum 1024 chars long.
+	 * If these restrictions are exceeded, only first 100 arguments and only first 1024
+	 * for each argument are returned (the functions still returns "true").
+	 */
+	static bool SplitCommandLine(const char* szCommandLine, char*** argv);
 
 	static long long JoinInt64(unsigned long Hi, unsigned long Lo);
 	static void SplitInt64(long long Int64, unsigned long* Hi, unsigned long* Lo);
