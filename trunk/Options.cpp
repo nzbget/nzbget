@@ -78,7 +78,6 @@ static struct option long_options[] =
 	    {"edit", required_argument, 0, 'E'},
 	    {"connect", no_argument, 0, 'C'},
 	    {"quit", no_argument, 0, 'Q'},
-	    {"post", no_argument, 0, 'O'},
 	    {"write", required_argument, 0, 'W'},
 	    {"category", required_argument, 0, 'K'},
 	    {"scan", no_argument, 0, 'S'},
@@ -86,7 +85,7 @@ static struct option long_options[] =
     };
 #endif
 
-static char short_options[] = "c:hno:psvAB:DCE:G:K:LOPR:STUQVW:";
+static char short_options[] = "c:hno:psvAB:DCE:G:K:LPR:STUQVW:";
 
 // Program options
 static const char* OPTION_CONFIGFILE		= "ConfigFile";
@@ -819,6 +818,10 @@ void Options::InitCommandLine(int argc, char* argv[])
 				{
 					m_eClientOperation = opClientRequestListGroups;
 				}
+				else if (!strcmp(optarg, "O"))
+				{
+					m_eClientOperation = opClientRequestPostQueue;
+				}
 				else if (!strcmp(optarg, "S"))
 				{
 					m_eClientOperation = opClientRequestListStatus;
@@ -1014,9 +1017,6 @@ void Options::InitCommandLine(int argc, char* argv[])
 			case 'V':
 				m_eClientOperation = opClientRequestVersion;
 				break;
-			case 'O':
-				m_eClientOperation = opClientRequestPostQueue;
-				break;
 			case 'W':
 				m_eClientOperation = opClientRequestWriteLog;
 				if (!strcmp(optarg, "I")) {
@@ -1084,9 +1084,10 @@ void Options::PrintUsage(char* com)
 		"  -Q, --quit                Shutdown server\n"
 		"  -A, --append <nzb-file>   Send file to server's download queue\n"
 		"  -C, --connect             Attach client to server\n"
-		"  -L, --list    [F|G|S]     Request list of downloads from server\n"
+		"  -L, --list    [F|G|O|S]   Request list of downloads from server\n"
 		"                 F          list individual files and server status (default)\n"
 		"                 G          list groups (nzb-files) and server status\n"
+		"                 O          list post-processor-queue\n"
 		"                 S          print only server status\n"
 		"  -P, --pause   [D|P]       Pause downloading or post-processing on server\n"
 		"                 D          download queue (default)\n"
@@ -1101,7 +1102,6 @@ void Options::PrintUsage(char* com)
 		"                            (should be used with switch --append)\n"
 		"  -G, --log <lines>         Request last <lines> lines from server's screen-log\n"
 		"  -W, --write <D|I|W|E|G> \"Text\" Send text to server's log\n"
-		"  -O, --post                Request post-processor-queue from server\n"
 		"  -S, --scan                Scan incoming nzb-directory on server\n"
 		"  -E, --edit [G|O] <action> <IDs> Edit queue on server\n"
 		"              G             Affect all files in the group (same nzb-file)\n"
