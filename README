@@ -395,7 +395,9 @@ defined in configuration file. See example configuration file for the
 description of parameters passed to the script.
 
 An example script for unraring of downloaded files is provided in file
-postprocess-example.sh. That example is for POSIX systems (not for Windows).
+postprocess-example.sh. The usage instructions are included in the file,
+please open the file in any text editor to read them.
+NOTE: That example script is for POSIX systems (not for Windows).
 
 =====================================
 8. Authors

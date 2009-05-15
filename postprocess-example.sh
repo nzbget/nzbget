@@ -1,7 +1,6 @@
 #!/bin/sh 
 #
-# NZBGet post-process script
-# Script will unrar downloaded rar files, join ts-files and rename img-files to iso.
+# Example postprocessing script for NZBGet
 #
 # Copyright (C) 2008 Peter Roubos <peterroubos@hotmail.com>
 # Copyright (C) 2008 Otmar Werner
@@ -24,11 +23,30 @@
 #
 
 #######################    Usage instructions     #######################
-# 1. To use this script with nzbget set the option "PostProcess" in
-#    nzbget configuration file to point to this script file. E.g.:
-#        PostProcess=/home/user/nzbget/postprocess-example.sh
+# o  Script will unrar downloaded rar files, join ts-files and rename img-files
+#    to iso.
 #
-# 2. The script supports the feature called "delayed par-check".
+# o  To use this script with nzbget set the option "PostProcess" in
+#    nzbget configuration file to point to this script file. E.g.:
+#        PostProcess=/home/user/nzbget/nzbget-postprocess.sh
+#
+# o  The script needs a configuration file. An example configuration file
+#    is provided in file "postprocess-example.conf". Put the configuration file 
+#    into the directory where nzbget's configuration file (nzbget.conf) or where
+#    this script itself is located. Then edit the configuration file in any
+#    text editor to adjust the settings.
+#
+# o  You can also edit the script's configuration via web-interface (requires
+#    NZBGetWeb 1.4 or later). Set the options "PostProcessConfigFile" and 
+#    "PostProcessConfigTemplate" to point to "postprocess-example.conf"
+#    (including full path). The both options are under the section 
+#    "CONFIGURATION OF POSTPROCESSING-SCRIPT" in NZBGetWeb.
+#
+# o  There are few options, which can be ajdusted for each nzb-file 
+#    individually. To view/edit them in web-interface click on a spanner icon
+#    near the name of nzb-file.
+#
+# o  The script supports the feature called "delayed par-check".
 #    That means it can try to unpack downloaded files without par-checking
 #    them fisrt. Only if unpack fails, the script schedules par-check,
 #    then unpacks again.
@@ -37,28 +55,10 @@
 #        ParRepair=yes
 #        LoadPars=one (or) LoadPars=all
 #
-# 3. If you want to par-check/repair all files before trying to unpack them,
+# o  If you want to par-check/repair all files before trying to unpack them,
 #    set option "ParCheck=yes".
 #
-# 4. There are few user-configurable settings in the script.
-#    See the next section.
 ####################### End of Usage instructions #######################
-
-#######################    Settings section     #######################
-
-# Set the full path to unrar if it is not in your PATH
-UnrarCmd=unrar
-
-# Delete rar-files after unpacking (1, 0)
-DeleteRarFiles=1
-
-# Joint TS-files (1, 0)
-JoinTS=0
-
-# Rename img-files to iso (1, 0)
-RenameIMG=1
-
-####################### End of settings section #######################
 
 
 # NZBGet passes following arguments to postprocess-programm as environment
@@ -83,60 +83,86 @@ RenameIMG=1
 #  NZBPP_CATEGORY     - category assigned to nzb-file (can be empty string).
 
 
+# Name of script's configuration file
+SCRIPT_CONFIG_FILE="postprocess-example.conf"
+
 # Exit codes
 POSTPROCESS_PARCHECK_CURRENT=91
 POSTPROCESS_PARCHECK_ALL=92
 POSTPROCESS_ALLOK=93
 POSTPROCESS_ERROR=1
 
-if [ "$NZBPP_DIRECTORY" = "" ]; then
+# Check if the script is called from nzbget
+if [ "$NZBPP_DIRECTORY" = "" -o "$NZBOP_CONFIGFILE" = "" ]; then
 	echo "*** NZBGet post-process script ***"
 	echo "This script is supposed to be called from nzbget."
 	exit $POSTPROCESS_ERROR
 fi 
 
-echo "[INFO] Unpack: Post-process script successfully started"
-
-# Check if all collections in nzb-file are downloaded
-if [ ! "$NZBPP_NZBCOMPLETED" -eq 1 ]; then
-	echo "[INFO] Unpack: Not the last collection in nzb-file, exiting"
+# Check if postprocessing was disabled in postprocessing parameters 
+# (for current nzb-file) via web-interface or via command line with 
+# "nzbget -E G O PostProcess=no <ID>"
+if [ "$NZBPR_PostProcess" = "no" ]; then
+	echo "[WARNING] Post-Process: Postprocessing disabled for this nzb-file, exiting"
 	exit $POSTPROCESS_ERROR
-fi 
+fi
 
-if [ "$NZBPP_PARSTATUS" -eq 1 -o "$NZBPP_PARSTATUS" -eq 3 -o "$NZBPP_PARFAILED" -eq 1 ]; then
-	if [ "$NZBPP_PARSTATUS" -eq 3 ]; then
-		echo "[WARNING] Unpack: Par-check successful, but Par-repair disabled, exiting"
-	else
-		echo "[WARNING] Unpack: Par-check failed, exiting"
-	fi
+echo "[INFO] Post-Process: Post-process script successfully started"
+
+# Determine the location of coniguration file (it must be stored in
+# the directory with nzbget.conf or in this script's directory).
+ConfigDir=`dirname $NZBOP_CONFIGFILE`
+ScriptConfigFile="$ConfigDir/$SCRIPT_CONFIG_FILE"
+if [ ! -f "$ScriptConfigFile" ]; then
+	ConfigDir=`dirname $0`
+	ScriptConfigFile="$ConfigDir/$SCRIPT_CONFIG_FILE"
+fi
+if [ ! -f "$ScriptConfigFile" ]; then
+	echo "[ERROR] Post-Process: Configuration file $ScriptConfigFile not found, exiting"
 	exit $POSTPROCESS_ERROR
-fi 
+fi
+
+# Readg configuration file
+while read line; do	eval "$line"; done < $ScriptConfigFile
 
 # Check nzbget.conf options
 BadConfig=0
 
-if [ "$NZBOP_ALLOWREPROCESS" == "yes" ]; then
-	echo "[ERROR] Unpack: Please disable option \"AllowReProcess\" in nzbget configuration file"
+if [ "$NZBOP_ALLOWREPROCESS" = "yes" ]; then
+	echo "[ERROR] Post-Process: Please disable option \"AllowReProcess\" in nzbget configuration file"
 	BadConfig=1
 fi 
 
-if [ "$NZBOP_LOADPARS" == "none" ]; then
-	echo "[ERROR] Unpack: Please set option \"LoadPars\" to \"One\" or \"All\" in nzbget configuration file"
+if [ "$NZBOP_LOADPARS" = "none" ]; then
+	echo "[ERROR] Post-Process: Please set option \"LoadPars\" to \"One\" or \"All\" in nzbget configuration file"
 	BadConfig=1
 fi
 
-if [ "$NZBOP_PARREPAIR" == "no" ]; then
-	echo "[ERROR] Unpack: Please set option \"ParRepair\" to \"Yes\" in nzbget configuration file"
+if [ "$NZBOP_PARREPAIR" = "no" ]; then
+	echo "[ERROR] Post-Process: Please set option \"ParRepair\" to \"Yes\" in nzbget configuration file"
 	BadConfig=1
 fi
 
 if [ "$BadConfig" -eq 1 ]; then
-	echo "[ERROR] Unpack: Existing because of not compatible nzbget configuration"
+	echo "[ERROR] Post-Process: Existing because of not compatible nzbget configuration"
 	exit $POSTPROCESS_ERROR
 fi 
 
+# Check if all collections in nzb-file are downloaded
+if [ ! "$NZBPP_NZBCOMPLETED" -eq 1 ]; then
+	echo "[INFO] Post-Process: Not the last collection in nzb-file, exiting"
+	exit $POSTPROCESS_ERROR
+fi 
 
-# All checks done, now processing the files
+# Check par status
+if [ "$NZBPP_PARSTATUS" -eq 1 -o "$NZBPP_PARSTATUS" -eq 3 -o "$NZBPP_PARFAILED" -eq 1 ]; then
+	if [ "$NZBPP_PARSTATUS" -eq 3 ]; then
+		echo "[WARNING] Post-Process: Par-check successful, but Par-repair disabled, exiting"
+	else
+		echo "[WARNING] Post-Process: Par-check failed, exiting"
+	fi
+	exit $POSTPROCESS_ERROR
+fi 
 
 cd "$NZBPP_DIRECTORY"
 
@@ -145,57 +171,46 @@ cd "$NZBPP_DIRECTORY"
 if [ ! "$NZBPP_PARSTATUS" -eq 2 ]; then
 	if [ -f "_brokenlog.txt" ]; then
 		if (ls *.[pP][aA][rR]2 >/dev/null 2>&1); then
-			echo "[INFO] Unpack: Brokenlog found, requesting par-repair"
+			echo "[INFO] Post-Process: Brokenlog found, requesting par-repair"
 			exit $POSTPROCESS_PARCHECK_ALL
 		fi
 	fi
 fi
 
-# All OK, processing the files
+# All checks done, now processing the files
 
 # Make a temporary directory to store the unrarred files
 ExtractedDirExists=0
 if [ -d extracted ]; then
 	ExtractedDirExists=1
 fi
-
 mkdir extracted
    
 # Unrar the files (if any) to the temporary directory, if there are no rar files this will do nothing
 if (ls *.rar >/dev/null 2>&1); then
-    echo "[INFO] Unpack: Unraring"
-	$UnrarCmd x -y -p- -o+ "*.rar"  ./extracted/
+	echo "[INFO] Post-Process: Unraring"
+	rarpasswordparam=""
+	if [ "$NZBPR_Password" != "" ]; then
+		rarpasswordparam="-p$NZBPR_Password"
+	fi
+	$UnrarCmd x -y -p- "$rarpasswordparam" -o+ "*.rar"  ./extracted/
 	if [ "$?" -eq 3 ]; then
-   		echo "[ERROR] Unpack: Unrar failed"
-   		if [ "$ExtractedDirExists" -eq 0 ]; then
+		echo "[ERROR] Post-Process: Unrar failed"
+		if [ "$ExtractedDirExists" -eq 0 ]; then
 			rm -R extracted
 		fi
 		# for delayed par-check/-repair at least one par-file must be already downloaded
 		if (ls *.[pP][aA][rR]2 >/dev/null 2>&1); then
-			echo "[INFO] Unpack: Requesting par-repair"
+			echo "[INFO] Post-Process: Requesting par-repair"
 			exit $POSTPROCESS_PARCHECK_ALL
 		fi
 		exit $POSTPROCESS_ERROR
 	fi
 fi
-
-if [ $JoinTS -eq 1 ]; then
-	# Join any split .ts files if they are named xxxx.0000.ts xxxx.0001.ts
-	# They will be joined together to a file called xxxx.0001.ts
-	if (ls *.ts >/dev/null 2>&1); then
-	    echo "[INFO] Unpack: Joining ts-files"
-		tsname=`find . -name "*0001.ts" |awk -F/ '{print $NF}'`
-		cat *0???.ts > ./extracted/$tsname
-	fi   
-   
-	# Remove all the split .ts files
-    echo "[INFO] Unpack: Deleting source ts-files"
-	rm *0???.ts >/dev/null 2>&1
-fi
    
 # Remove the rar files
-if [ $DeleteRarFiles -eq 1 ]; then
-    echo "[INFO] Unpack: Deleting rar-files"
+if [ "$DeleteRarFiles" = "yes" ]; then
+	echo "[INFO] Post-Process: Deleting rar-files"
 	rm *.r[0-9][0-9] >/dev/null 2>&1
 	rm *.rar >/dev/null 2>&1
 	rm *.s[0-9][0-9] >/dev/null 2>&1
@@ -205,17 +220,17 @@ fi
 # If there are any rars inside the extracted rars then these will no also be unrarred
 cd extracted
 if (ls *.rar >/dev/null 2>&1); then
-    echo "[INFO] Unpack: Unraring (second pass)"
+	echo "[INFO] Post-Process: Unraring (second pass)"
 	$UnrarCmd x -y -p- -o+ "*.rar"
 
 	if [ "$?" -eq 3 ]; then
-		echo "[INFO] Unpack: Unrar (second pass) failed"
+		echo "[INFO] Post-Process: Unrar (second pass) failed"
 		exit $POSTPROCESS_ERROR
 	fi
 
 	# Delete the Rar files
-	if [ $DeleteRarFiles -eq 1 ]; then
-	    echo "[INFO] Unpack: Deleting rar-files (second pass)"
+	if [ "$DeleteRarFiles" = "yes" ]; then
+		echo "[INFO] Post-Process: Deleting rar-files (second pass)"
 		rm *.r[0-9][0-9] >/dev/null 2>&1
 		rm *.rar >/dev/null 2>&1
 		rm *.s[0-9][0-9] >/dev/null 2>&1
@@ -227,7 +242,7 @@ mv * ..
 cd ..
    
 # Clean up the temp folder
-echo "[INFO] Unpack: Cleaning up"
+echo "[INFO] Post-Process: Cleaning up"
 rmdir extracted
 chmod -R a+rw . 
 rm *.nzb >/dev/null 2>&1
@@ -236,14 +251,35 @@ rm *.sfv >/dev/null 2>&1
 rm _brokenlog.txt >/dev/null 2>&1
 rm *.[pP][aA][rR]2 >/dev/null 2>&1
 
-if [ $RenameIMG -eq 1 ]; then
+if [ "$JoinTS" = "yes" ]; then
+	# Join any split .ts files if they are named xxxx.0000.ts xxxx.0001.ts
+	# They will be joined together to a file called xxxx.0001.ts
+	if (ls *.ts >/dev/null 2>&1); then
+	    echo "[INFO] Post-Process: Joining ts-files"
+		tsname=`find . -name "*0001.ts" |awk -F/ '{print $NF}'`
+		cat *0???.ts > ./$tsname
+	fi   
+   
+	# Remove all the split .ts files
+    echo "[INFO] Post-Process: Deleting source ts-files"
+	rm *0???.ts >/dev/null 2>&1
+fi
+
+if [ "$RenameIMG" = "yes" ]; then
 	# Rename img file to iso
 	# It will be renamed to .img.iso so you can see that it has been renamed
 	if (ls *.img >/dev/null 2>&1); then
-	    echo "[INFO] Unpack: Renaming img-files to iso"
+	    echo "[INFO] Post-Process: Renaming img-files to iso"
 		imgname=`find . -name "*.img" |awk -F/ '{print $NF}'`
 		mv $imgname $imgname.iso
 	fi   
+fi
+
+if [ "$NZBPR_DestDir" != "" ]; then
+	mkdir $NZBPR_DestDir
+	mv * $NZBPR_DestDir >/dev/null 2>&1
+	cd ..
+	rmdir $NZBPP_DIRECTORY
 fi
 
 # All OK, requesting cleaning up of download queue
