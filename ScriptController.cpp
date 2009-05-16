@@ -151,7 +151,7 @@ char* EnvironmentStrings::GetStrings()
 		strcpy(szPtr, szVar);
 		szPtr += strlen(szVar) + 1;
 	}
-	szPtr = '\0';
+	*szPtr = '\0';
 
 	return szStrings;
 }
