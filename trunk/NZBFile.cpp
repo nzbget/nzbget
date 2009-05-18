@@ -41,6 +41,7 @@ using namespace MSXML;
 #else
 #include <libxml/parser.h>
 #include <libxml/xmlreader.h>
+#include <libxml/xmlerror.h>
 #endif
 
 #include "nzbget.h"
@@ -53,6 +54,23 @@ using namespace MSXML;
 
 extern Options* g_pOptions;
 extern DiskState* g_pDiskState;
+
+#ifndef WIN32
+static void libxml_errorhandler(void *ebuf, const char *fmt, ...)
+{
+    va_list argp;
+    va_start(argp, fmt);
+    char szErrMsg[1024];
+    vsnprintf(szErrMsg, sizeof(szErrMsg), fmt, argp);
+    szErrMsg[1024-1] = '\0';
+    va_end(argp);
+
+	// remove trailing CRLF
+	for (char* pend = szErrMsg + strlen(szErrMsg) - 1; pend >= szErrMsg && (*pend == '\n' || *pend == '\r' || *pend == ' '); pend--) *pend = '\0';
+    
+    error("Error parsing nzb-file: %s", szErrMsg);
+}
+#endif
 
 NZBFile::NZBFile(const char* szFileName, const char* szCategory)
 {
@@ -430,6 +448,8 @@ bool NZBFile::ParseNZB(IUnknown* nzb)
 
 NZBFile* NZBFile::Create(const char* szFileName, const char* szCategory, const char* szBuffer, int iSize, bool bFromBuffer)
 {
+	xmlSetGenericErrorFunc(NULL, libxml_errorhandler);
+	
     xmlTextReaderPtr doc;
 	if (bFromBuffer)
 	{
@@ -441,6 +461,7 @@ NZBFile* NZBFile::Create(const char* szFileName, const char* szCategory, const c
 	}
     if (!doc)
     {
+    	error("Could not create XML-Reader");
         return NULL;
     }
 
@@ -545,6 +566,11 @@ bool NZBFile::ParseNZB(void* nzb)
                     ret = xmlTextReaderRead(node);
 					xmlFree(value);
 					value = xmlTextReaderValue(node);
+					if (!pFileInfo)
+					{
+						// error: bad nzb-file
+						break;
+					}
                     pFileInfo->GetGroups()->push_back(strdup((char*)value));
                 }
             }
@@ -565,7 +591,7 @@ bool NZBFile::ParseNZB(void* nzb)
     }
     if (ret != 0)
     {
-        error("Failed to parse nzb-file\n");
+        error("Failed to parse nzb-file");
 		return false;
     }
 	return true;
