@@ -1,7 +1,7 @@
 /*
  *  This file is part of nzbget
  *
- *  Copyright (C) 2007  Andrei Prygounkov <hugbug@users.sourceforge.net>
+ *  Copyright (C) 2007-2009 Andrei Prygounkov <hugbug@users.sourceforge.net>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -31,10 +31,18 @@
 class DiskState
 {
 private:
+	int					ParseFormatVersion(const char* szFormatSignature);
 	bool				SaveFileInfo(FileInfo* pFileInfo, const char* szFilename);
 	bool				LoadFileInfo(FileInfo* pFileInfo, const char* szFilename, bool bFileSummary, bool bArticles);
-	int					ParseFormatVersion(const char* szFormatSignature);
-	
+	void				SaveNZBList(DownloadQueue* pDownloadQueue, FILE* outfile);
+	bool				LoadNZBList(DownloadQueue* pDownloadQueue, FILE* infile, int iFormatVersion);
+	void				SaveFileQueue(DownloadQueue* pDownloadQueue, FILE* outfile);
+	bool				LoadFileQueue(DownloadQueue* pDownloadQueue, FILE* infile);
+	void				SavePostQueue(DownloadQueue* pDownloadQueue, PostQueue* pPostQueue, FILE* outfile);
+	bool				LoadPostQueue(DownloadQueue* pDownloadQueue, PostQueue* pPostQueue, FILE* infile);
+	bool				LoadOldPostQueue(DownloadQueue* pDownloadQueue, PostQueue* pPostQueue, bool bCompleted);
+	int					FindNZBInfoIndex(DownloadQueue* pDownloadQueue, NZBInfo* pNZBInfo);
+
 public:
 	bool				DownloadQueueExists();
 	bool				PostQueueExists(bool bCompleted);
@@ -42,10 +50,7 @@ public:
 	bool				LoadDownloadQueue(DownloadQueue* pDownloadQueue);
 	bool				SaveFile(FileInfo* pFileInfo);
 	bool				LoadArticles(FileInfo* pFileInfo);
-	bool				SavePostQueue(PostQueue* pPostQueue, bool bCompleted);
-	bool				LoadPostQueue(PostQueue* pPostQueue, bool bCompleted);
 	bool				DiscardDownloadQueue();
-	bool				DiscardPostQueue();
 	bool				DiscardFile(FileInfo* pFileInfo);
 	void				CleanupTempDir(DownloadQueue* pDownloadQueue);
 };

@@ -34,6 +34,7 @@
 #include "Thread.h"
 
 class NZBInfo;
+class DownloadQueue;
 
 class ArticleInfo
 {
@@ -126,10 +127,7 @@ public:
 	bool				IsDupe(const char* szFilename);
 };
                               
-typedef std::deque<FileInfo*> DownloadQueue;
-
-class GroupInfo;
-typedef std::deque<GroupInfo*> GroupQueue;
+typedef std::deque<FileInfo*> FileQueue;
 
 class GroupInfo
 {
@@ -142,6 +140,8 @@ private:
 	long long 			m_lPausedSize;
 	int					m_iRemainingParCount;
 
+	friend class DownloadQueue;
+
 public:
 						GroupInfo();
 						~GroupInfo();
@@ -152,10 +152,9 @@ public:
 	long long 			GetPausedSize() { return m_lPausedSize; }
 	int					GetRemainingFileCount() { return m_iRemainingFileCount; }
 	int					GetRemainingParCount() { return m_iRemainingParCount; }
-
-	static void			BuildGroups(DownloadQueue* pDownloadQueue, GroupQueue* pGroupQueue);
 };
 
+typedef std::deque<GroupInfo*> GroupQueue;
 
 class NZBParameter
 {
@@ -177,7 +176,7 @@ public:
 
 typedef std::deque<NZBParameter*> NZBParameterList;
 
-typedef std::deque<NZBInfo*> NZBQueue;
+class NZBInfoList;
 
 class NZBInfo
 {
@@ -197,7 +196,10 @@ private:
 	bool				m_bDeleted;
 	bool				m_bParCleanup;
 	bool				m_bCleanupDisk;
+	NZBInfoList*		m_Owner;
 	NZBParameterList	m_ppParameters;
+
+	friend class NZBInfoList;
 
 public:
 						NZBInfo();
@@ -230,8 +232,16 @@ public:
 	void				SetCleanupDisk(bool bCleanupDisk) { m_bCleanupDisk = bCleanupDisk; }
 	NZBParameterList*	GetParameters() { return &m_ppParameters; }				// needs locking (for shared objects)
 	void				SetParameter(const char* szName, const char* szValue);	// needs locking (for shared objects)
+};
 
-	static void			BuildNZBList(DownloadQueue* pDownloadQueue, NZBQueue* pNZBQueue);
+typedef std::deque<NZBInfo*> NZBInfoListBase;
+
+class NZBInfoList : public NZBInfoListBase
+{
+public:
+	void				Add(NZBInfo* pNZBInfo);
+	void				Remove(NZBInfo* pNZBInfo);
+	void				ReleaseAll();
 };
 
 class PostInfo
@@ -259,12 +269,9 @@ public:
 
 private:
 	int					m_iID;
-	char*				m_szNZBFilename;
-	char*				m_szDestDir;
+	NZBInfo*			m_pNZBInfo;
 	char*				m_szParFilename;
 	char*				m_szInfoName;
-	char*				m_szCategory;
-	char*				m_szQueuedFilename;
 	bool				m_bWorking;
 	bool				m_bDeleted;
 	bool				m_bParCheck;
@@ -278,7 +285,6 @@ private:
 	time_t				m_tStartTime;
 	time_t				m_tStageTime;
 	Thread*				m_pScriptThread;
-	NZBParameterList	m_ppParameters;
 	
 	Mutex				m_mutexLog;
 	Messages			m_Messages;
@@ -290,18 +296,12 @@ public:
 						PostInfo();
 						~PostInfo();
 	int					GetID() { return m_iID; }
-	const char*			GetNZBFilename() { return m_szNZBFilename; }
-	void				SetNZBFilename(const char* szNZBFilename);
-	const char*			GetDestDir() { return m_szDestDir; }
-	void				SetDestDir(const char* szDestDir);
+	NZBInfo*			GetNZBInfo() { return m_pNZBInfo; }
+	void				SetNZBInfo(NZBInfo* pNZBInfo);
 	const char*			GetParFilename() { return m_szParFilename; }
 	void				SetParFilename(const char* szParFilename);
 	const char*			GetInfoName() { return m_szInfoName; }
 	void				SetInfoName(const char* szInfoName);
-	const char*			GetCategory() { return m_szCategory; }
-	void				SetCategory(const char* szCategory);
-	const char*			GetQueuedFilename() { return m_szQueuedFilename; }
-	void				SetQueuedFilename(const char* szQueuedFilename);
 	EStage				GetStage() { return m_eStage; }
 	void				SetStage(EStage eStage) { m_eStage = eStage; }
 	void				SetProgressLabel(const char* szProgressLabel);
@@ -329,9 +329,6 @@ public:
 	void				AppendMessage(Message::EKind eKind, const char* szText);
 	Thread*				GetScriptThread() { return m_pScriptThread; }
 	void				SetScriptThread(Thread* pScriptThread) { m_pScriptThread = pScriptThread; }
-	NZBParameterList*	GetParameters() { return &m_ppParameters; }
-	void				AddParameter(const char* szName, const char* szValue);
-	void				AssignParameter(NZBParameterList* pSrcParameters);
 	Messages*			LockMessages();
 	void				UnlockMessages();
 };
@@ -339,5 +336,29 @@ public:
 typedef std::deque<PostInfo*> PostQueue;
 
 typedef std::vector<int> IDList;
+
+class DownloadQueue
+{
+protected:
+	FileQueue			m_FileQueue;
+	PostQueue			m_PostQueue;
+	PostQueue			m_CompletedPostList;
+	NZBInfoList			m_NZBInfoList;
+
+public:
+	FileQueue*			GetFileQueue() { return &m_FileQueue; }
+	PostQueue*			GetPostQueue() {return &m_PostQueue; }
+	PostQueue*			GetCompletedPostList() {return &m_CompletedPostList; }
+	NZBInfoList*		GetNZBInfoList() { return &m_NZBInfoList; }
+	void				BuildGroups(GroupQueue* pGroupQueue);
+};
+
+class DownloadQueueHolder
+{
+public:
+	virtual					~DownloadQueueHolder() {};
+	virtual DownloadQueue*	LockQueue() = 0;
+	virtual void			UnlockQueue() = 0;
+};
 
 #endif

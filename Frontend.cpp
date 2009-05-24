@@ -49,12 +49,10 @@
 #include "Connection.h"
 #include "MessageBase.h"
 #include "QueueCoordinator.h"
-#include "PrePostProcessor.h"
 #include "RemoteClient.h"
 #include "Util.h"
 
 extern QueueCoordinator* g_pQueueCoordinator;
-extern PrePostProcessor* g_pPrePostProcessor;
 extern Options* g_pOptions;
 
 Frontend::Frontend()
@@ -75,8 +73,6 @@ Frontend::Frontend()
 	m_iDnTimeSec = 0;
 	m_iAllBytes = 0;
 	m_bStandBy = 0;
-	m_RemoteMessages.clear();
-	m_RemoteQueue.clear();
 	m_iUpdateInterval = g_pOptions->GetUpdateInterval();
 }
 
@@ -104,9 +100,9 @@ bool Frontend::PrepareData()
 			m_bPause = g_pOptions->GetPause();
 			m_fDownloadLimit = g_pOptions->GetDownloadRate();
 			m_iThreadCount = Thread::GetThreadCount();
-			PostQueue* pPostQueue = g_pPrePostProcessor->LockPostQueue();
+			PostQueue* pPostQueue = g_pQueueCoordinator->LockQueue()->GetPostQueue();
 			m_iPostJobCount = pPostQueue->size();
-			g_pPrePostProcessor->UnlockPostQueue();
+			g_pQueueCoordinator->UnlockQueue();
 			g_pQueueCoordinator->CalcStat(&m_iUpTimeSec, &m_iDnTimeSec, &m_iAllBytes, &m_bStandBy);
 		}
 	}
@@ -123,11 +119,11 @@ void Frontend::FreeData()
 		}
 		m_RemoteMessages.clear();
 
-		for (DownloadQueue::iterator it = m_RemoteQueue.begin(); it != m_RemoteQueue.end(); it++)
+		for (FileQueue::iterator it = m_RemoteQueue.GetFileQueue()->begin(); it != m_RemoteQueue.GetFileQueue()->end(); it++)
 		{
 			delete *it;
 		}
-		m_RemoteQueue.clear();
+		m_RemoteQueue.GetFileQueue()->clear();
 	}
 }
 
@@ -151,7 +147,7 @@ void Frontend::UnlockMessages()
 	}
 }
 
-DownloadQueue * Frontend::LockQueue()
+DownloadQueue* Frontend::LockQueue()
 {
 	if (IsRemoteMode())
 	{

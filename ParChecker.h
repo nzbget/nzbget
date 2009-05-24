@@ -1,7 +1,7 @@
 /*
  *  This file is part of nzbget
  *
- *  Copyright (C) 2007  Andrei Prygounkov <hugbug@users.sourceforge.net>
+ *  Copyright (C) 2007-2009 Andrei Prygounkov <hugbug@users.sourceforge.net>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -32,7 +32,6 @@
 
 #include "Thread.h"
 #include "Observer.h"
-#include "DownloadInfo.h"
 
 class ParChecker : public Thread, public Subject
 {
@@ -57,7 +56,6 @@ public:
 	
 private:
 	char*				m_szInfoName;
-	char*				m_szNZBFilename;
 	char*				m_szParFilename;
 	EStatus				m_eStatus;
 	EStage				m_eStage;
@@ -102,8 +100,6 @@ public:
 	virtual void		Run();
 	const char*			GetParFilename() { return m_szParFilename; }
 	void				SetParFilename(const char* szParFilename);
-	const char*			GetNZBFilename() { return m_szNZBFilename; }
-	void				SetNZBFilename(const char* szNZBFilename);
 	const char*			GetInfoName() { return m_szInfoName; }
 	void				SetInfoName(const char* szInfoName);
 	void				SetStatus(EStatus eStatus);

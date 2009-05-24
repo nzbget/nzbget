@@ -53,7 +53,7 @@
 #include "Util.h"
 
 extern DownloadSpeedMeter* g_pDownloadSpeedMeter;
-extern NZBInfoLocker* g_pNZBInfoLocker;
+extern DownloadQueueHolder* g_pDownloadQueueHolder;
 extern Options* g_pOptions;
 extern ServerPool* g_pServerPool;
 
@@ -848,9 +848,10 @@ void ArticleDownloader::CompleteFileParts()
 	}
 
 	char szNZBDestDir[1024];
-	g_pNZBInfoLocker->LockNZBInfo(m_pFileInfo->GetNZBInfo());
+	// the locking is needed for accessing the memebers of NZBInfo
+	g_pDownloadQueueHolder->LockQueue();
 	strncpy(szNZBDestDir, m_pFileInfo->GetNZBInfo()->GetDestDir(), 1024);
-	g_pNZBInfoLocker->UnlockNZBInfo(m_pFileInfo->GetNZBInfo());
+	g_pDownloadQueueHolder->UnlockQueue();
 	szNZBDestDir[1024-1] = '\0';
 
 	// Ensure the DstDir is created
@@ -1037,14 +1038,15 @@ void ArticleDownloader::CompleteFileParts()
 		}
 	}
 
-	g_pNZBInfoLocker->LockNZBInfo(m_pFileInfo->GetNZBInfo());
+	// the locking is needed for accessing the memebers of NZBInfo
+	g_pDownloadQueueHolder->LockQueue();
 	m_pFileInfo->GetNZBInfo()->GetCompletedFiles()->push_back(strdup(ofn));
 	if (strcmp(m_pFileInfo->GetNZBInfo()->GetDestDir(), szNZBDestDir))
 	{
 		// destination directory was changed during completion, need to move the file
 		MoveCompletedFiles(m_pFileInfo->GetNZBInfo(), szNZBDestDir);
 	}
-	g_pNZBInfoLocker->UnlockNZBInfo(m_pFileInfo->GetNZBInfo());
+	g_pDownloadQueueHolder->UnlockQueue();
 
 	SetStatus(adJoined);
 }

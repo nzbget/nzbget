@@ -250,17 +250,17 @@ public:
 	int					GetRetryInterval() { return m_iRetryInterval; }
 	bool				GetSaveQueue() { return m_bSaveQueue; }
 	bool				GetDupeCheck() { return m_bDupeCheck; }
-	char*				GetServerIP() { return m_szServerIP; }
-	char*				GetServerPassword() { return m_szServerPassword; }
+	const char*			GetServerIP() { return m_szServerIP; }
+	const char*			GetServerPassword() { return m_szServerPassword; }
 	int					GetServerPort() { return m_szServerPort; }
-	char*				GetLockFile() { return m_szLockFile; }
-	char*				GetDaemonUserName() { return m_szDaemonUserName; }
+	const char*			GetLockFile() { return m_szLockFile; }
+	const char*			GetDaemonUserName() { return m_szDaemonUserName; }
 	EOutputMode			GetOutputMode() { return m_eOutputMode; }
 	bool				GetReloadQueue() { return m_bReloadQueue; }
 	bool				GetReloadPostQueue() { return m_bReloadPostQueue; }
 	int					GetLogBufferSize() { return m_iLogBufferSize; }
 	bool				GetCreateLog() { return m_bCreateLog; }
-	char*				GetLogFile() { return m_szLogFile; }
+	const char*			GetLogFile() { return m_szLogFile; }
 	ELoadPars			GetLoadPars() { return m_eLoadPars; }
 	bool				GetParCheck() { return m_bParCheck; }
 	bool				GetParRepair() { return m_bParRepair; }
