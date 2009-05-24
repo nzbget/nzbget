@@ -1,8 +1,8 @@
 /*
- *  This file if part of nzbget
+ *  This file is part of nzbget
  *
- *  Copyright (C) 2004  Sven Henkel <sidddy@users.sourceforge.net>
- *  Copyright (C) 2007  Andrei Prygounkov <hugbug@users.sourceforge.net>
+ *  Copyright (C) 2004 Sven Henkel <sidddy@users.sourceforge.net>
+ *  Copyright (C) 2007-2009 Andrei Prygounkov <hugbug@users.sourceforge.net>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -27,19 +27,10 @@
 #ifndef THREAD_H
 #define THREAD_H
 
-#ifndef WIN32
-#include <pthread.h>
-#include <semaphore.h>
-#endif
-
 class Mutex
 {
 private:
-#ifdef WIN32
-	CRITICAL_SECTION		m_mutexObj;
-#else
-	pthread_mutex_t			m_mutexObj;
-#endif
+	void*					m_pMutexObj;
 	
 public:
 							Mutex();
@@ -52,16 +43,14 @@ public:
 class Semaphore
 {
 private:
-#ifdef WIN32
-	HANDLE					m_semObj;
-#else
-	sem_t*					m_semObj;
+	void*					m_pSemObj;
+	
+#ifndef WIN32
 #ifndef HAVE_UNNAMED_SEMAPHORES
 	char					m_szName[20];
 	static int				m_iID;
 	static Mutex			m_mutexID;
 #endif
-
 	void					CreateSemObj(int iValue);
 #endif
 	
@@ -78,13 +67,9 @@ public:
 class Thread
 {
 private:
-	static Mutex			m_mutexThread;
+	static Mutex*			m_pMutexThread;
 	static int				m_iThreadCount;
-#ifdef WIN32
-	HANDLE	 				m_Thread;
-#else
-	pthread_t 				m_Thread;
-#endif
+	void*	 				m_pThreadObj;
 	bool 					m_bRunning;
 	bool					m_bStopped;
 	bool					m_bAutoDestroy;
@@ -96,8 +81,10 @@ private:
 #endif
 
 public:
-	Thread();
+							Thread();
 	virtual 				~Thread();
+	static void				Init();
+	static void				Final();
 
 	virtual void 			Start();
 	virtual void 			Stop();

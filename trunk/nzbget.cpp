@@ -144,6 +144,7 @@ int main(int argc, char *argv[], char *argp[])
 	g_pLog = new Log();
 	g_pServerPool = new ServerPool();
 	g_pScheduler = new Scheduler();
+	Thread::Init();
 
 	debug("Options parsing");
 	g_pOptions = new Options(argc, argv);
@@ -660,6 +661,8 @@ void Cleanup()
 	debug("Scheduler deleted");
 
 	Connection::Final();
+
+	Thread::Final();
 
 	debug("Global objects cleaned up");
 
