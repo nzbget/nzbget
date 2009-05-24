@@ -68,10 +68,14 @@ private:
 	class PostParChecker: public ParChecker
 	{
 	private:
-		PrePostProcessor* m_Owner;
+		PrePostProcessor*	m_Owner;
+		PostInfo*			m_pPostInfo;
 	protected:
 		virtual bool	RequestMorePars(int iBlockNeeded, int* pBlockFound);
 		virtual void	UpdateProgress();
+	public:
+		PostInfo*		GetPostInfo() { return m_pPostInfo; }
+		void			SetPostInfo(PostInfo* pPostInfo) { m_pPostInfo = pPostInfo; }
 
 		friend class PrePostProcessor;
 	};
@@ -94,21 +98,18 @@ private:
 	bool				m_bSchedulerPause;
 	bool				m_bPostPause;
 	bool				m_bRequestedNZBDirScan;
-	Mutex			 	m_mutexQueue;
-	PostQueue			m_PostQueue;
-	PostQueue			m_CompletedJobs;
 	bool				m_bPause;
 
 	void				CheckIncomingNZBs(const char* szDirectory, const char* szCategory, bool bCheckTimestamp);
-	bool				IsNZBFileCompleted(DownloadQueue* pDownloadQueue, const char* szNZBFilename, 
+	bool				IsNZBFileCompleted(DownloadQueue* pDownloadQueue, NZBInfo* pNZBInfo, 
 							bool bIgnoreFirstInPostQueue, bool bIgnorePaused, bool bCheckPostQueue, bool bAllowOnlyOneDeleted);
-	bool				JobExists(PostQueue* pPostQueue, const char* szNZBFilename, const char* szParFilename, bool bParCheck);
-	bool				ClearCompletedJobs(const char* szNZBFilename);
+	bool				JobExists(PostQueue* pPostQueue, NZBInfo* pNZBInfo, const char* szParFilename, bool bParCheck);
+	bool				ClearCompletedJobs(DownloadQueue* pDownloadQueue, NZBInfo* pNZBInfo);
 	void				CheckPostQueue();
 	void				JobCompleted(DownloadQueue* pDownloadQueue, PostInfo* pPostInfo);
 	void				StartScriptJob(DownloadQueue* pDownloadQueue, PostInfo* pPostInfo);
-	void				SavePostQueue();
-	void				SanitisePostQueue();
+	void				SavePostQueue(DownloadQueue* pDownloadQueue);
+	void				SanitisePostQueue(PostQueue* pPostQueue);
 	void				CheckDiskSpace();
 	void				AddFileToQueue(const char* szFilename, const char* szCategory);
 	void				ProcessIncomingFile(const char* szDirectory, const char* szBaseFilename, const char* szFullFilename, const char* szCategory);
@@ -121,14 +122,13 @@ private:
 	bool				FindMainPars(const char* szPath, FileList* pFileList);
 	bool				ParseParFilename(const char* szParFilename, int* iBaseNameLen, int* iBlocks);
 	bool				SameParCollection(const char* szFilename1, const char* szFilename2);
-	bool				CreatePostJobs(DownloadQueue* pDownloadQueue, const char* szDestDir, const char* szNZBFilename,
-							const char* szCategory, NZBParameterList* pParameters, const char* szQueuedFilename,
-							bool bParCheck, bool bLockQueue, bool bAddTop);
+	bool				CreatePostJobs(DownloadQueue* pDownloadQueue, NZBInfo* pNZBInfo, bool bParCheck, bool bAddTop);
 	void				DeleteQueuedFile(const char* szQueuedFile);
 	void				PausePars(DownloadQueue* pDownloadQueue, NZBInfo* pNZBInfo);
 	NZBInfo*			MergeGroups(DownloadQueue* pDownloadQueue, NZBInfo* pNZBInfo);
 	bool				QueueMove(IDList* pIDList, EEditAction eAction, int iOffset);
 	bool				QueueDelete(IDList* pIDList);
+	void				Cleanup();
 
 #ifndef DISABLE_PARCHECK
 	PostParChecker		m_ParChecker;
@@ -136,10 +136,10 @@ private:
 
 	void				ParCheckerUpdate(Subject* Caller, void* Aspect);
 	bool				AddPar(FileInfo* pFileInfo, bool bDeleted);
-	FileInfo*			GetParCleanupQueueGroup(DownloadQueue* pDownloadQueue, const char* szNZBFilename);
-	bool				HasFailedParJobs(const char* szNZBFilename, bool bIgnoreRepairPossible);
-	bool				RequestMorePars(const char* szNZBFilename, const char* szParFilename, int iBlockNeeded, int* pBlockFound);
-	void				FindPars(DownloadQueue* pDownloadQueue, const char* szNZBFilename, const char* szParFilename, 
+	FileInfo*			GetParCleanupQueueGroup(DownloadQueue* pDownloadQueue, NZBInfo* pNZBInfo);
+	bool				HasFailedParJobs(DownloadQueue* pDownloadQueue, NZBInfo* pNZBInfo, bool bIgnoreRepairPossible);
+	bool				RequestMorePars(NZBInfo* pNZBInfo, const char* szParFilename, int iBlockNeeded, int* pBlockFound);
+	void				FindPars(DownloadQueue* pDownloadQueue, NZBInfo* pNZBInfo, const char* szParFilename, 
 							Blocks* pBlocks, bool bStrictParName, bool bExactParName, int* pBlockFound);
 	void				UpdateParProgress();
 	void				StartParJob(PostInfo* pPostInfo);
@@ -152,8 +152,6 @@ public:
 	virtual void		Stop();
 	void				QueueCoordinatorUpdate(Subject* Caller, void* Aspect);
 	bool				HasMoreJobs() { return m_bHasMoreJobs; }
-	PostQueue*			LockPostQueue();
-	void				UnlockPostQueue();
 	void				ScanNZBDir();
 	bool				QueueEditList(IDList* pIDList, EEditAction eAction, int iOffset);
 	void				SetPause(bool bPause) { m_bPause = bPause; }

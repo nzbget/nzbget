@@ -2,7 +2,7 @@
  *  This file if part of nzbget
  *
  *  Copyright (C) 2004  Sven Henkel <sidddy@users.sourceforge.net>
- *  Copyright (C) 2007  Andrei Prygounkov <hugbug@users.sourceforge.net>
+ *  Copyright (C) 2007-2009 Andrei Prygounkov <hugbug@users.sourceforge.net>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -42,7 +42,7 @@
 #include "QueueEditor.h"
 #include "NNTPConnection.h"
                                             
-class QueueCoordinator : public Thread, public Observer, public Subject, public DownloadSpeedMeter, public NZBInfoLocker
+class QueueCoordinator : public Thread, public Observer, public Subject, public DownloadSpeedMeter, public DownloadQueueHolder
 {
 public:
 	typedef std::list<ArticleDownloader*>	ActiveDownloads;
@@ -119,9 +119,6 @@ public:
 	bool					SetQueueEntryNZBCategory(NZBInfo* pNZBInfo, const char* szCategory);
 	bool					MergeQueueEntries(NZBInfo* pDestNZBInfo, NZBInfo* pSrcNZBInfo);
 	QueueEditor*			GetQueueEditor() { return &m_QueueEditor; }
-
-	virtual void			LockNZBInfo(NZBInfo* pNZBInfo) { LockQueue(); }
-	virtual void			UnlockNZBInfo(NZBInfo* pNZBInfo) { UnlockQueue(); }
 
 	void					LogDebugInfo();
 };

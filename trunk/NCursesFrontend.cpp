@@ -2,7 +2,7 @@
  *  This file is part of nzbget
  *
  *  Copyright (C) 2004  Sven Henkel <sidddy@users.sourceforge.net>
- *  Copyright (C) 2007  Andrei Prygounkov <hugbug@users.sourceforge.net>
+ *  Copyright (C) 2007-2009 Andrei Prygounkov <hugbug@users.sourceforge.net>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -316,7 +316,7 @@ void NCursesFrontend::Update(int iKey)
 	}
 
     //------------------------------------------
-    // Print Current NZBQueue
+    // Print Current NZBInfoList
     //------------------------------------------
 	if (m_iQueueWinHeight > 0)
 	{
@@ -399,7 +399,7 @@ int NCursesFrontend::CalcQueueSize()
 	else
 	{
 		DownloadQueue* pDownloadQueue = LockQueue();
-		int iQueueSize = pDownloadQueue->size();
+		int iQueueSize = pDownloadQueue->GetFileQueue()->size();
 		UnlockQueue();
 		return iQueueSize;
 	}
@@ -748,7 +748,7 @@ void NCursesFrontend::PrintFileQueue()
 	int iLineNr = m_iQueueWinTop;
 			
     DownloadQueue* pDownloadQueue = LockQueue();
-	if (pDownloadQueue->empty())
+	if (pDownloadQueue->GetFileQueue()->empty())
     {
 		char szBuffer[MAX_SCREEN_WIDTH];
 		snprintf(szBuffer, sizeof(szBuffer), "%s Files for downloading", m_bUseColor ? "" : "*** ");
@@ -763,7 +763,7 @@ void NCursesFrontend::PrintFileQueue()
 		long long lPaused = 0;
 		int iPausedFiles = 0;
 		int i = 0;
-        for (DownloadQueue::iterator it = pDownloadQueue->begin(); it != pDownloadQueue->end(); it++, i++)
+        for (FileQueue::iterator it = pDownloadQueue->GetFileQueue()->begin(); it != pDownloadQueue->GetFileQueue()->end(); it++, i++)
         {
             FileInfo* pFileInfo = *it;
 
@@ -788,7 +788,8 @@ void NCursesFrontend::PrintFileQueue()
 		
 		char szBuffer[MAX_SCREEN_WIDTH];
 		snprintf(szBuffer, sizeof(szBuffer), " %sFiles for downloading - %i / %i files in queue - %s / %s", 
-			m_bUseColor ? "" : "*** ", pDownloadQueue->size(), pDownloadQueue->size() - iPausedFiles, szRemaining, szUnpaused);
+			m_bUseColor ? "" : "*** ", pDownloadQueue->GetFileQueue()->size(), 
+			pDownloadQueue->GetFileQueue()->size() - iPausedFiles, szRemaining, szUnpaused);
 		szBuffer[MAX_SCREEN_WIDTH - 1] = '\0';
 		PrintTopHeader(szBuffer, m_iQueueWinTop, true);
     }
@@ -998,7 +999,7 @@ void NCursesFrontend::PrepareGroupQueue()
 	m_groupQueue.clear();
 
     DownloadQueue* pDownloadQueue = LockQueue();
-	GroupInfo::BuildGroups(pDownloadQueue, &m_groupQueue);
+	pDownloadQueue->BuildGroups(&m_groupQueue);
 	UnlockQueue();
 }
 
@@ -1057,9 +1058,9 @@ bool NCursesFrontend::EditQueue(QueueEditor::EEditAction eAction, int iOffset)
 	else
 	{
 		DownloadQueue* pDownloadQueue = LockQueue();
-		if (m_iSelectedQueueEntry >= 0 && m_iSelectedQueueEntry < (int)pDownloadQueue->size())
+		if (m_iSelectedQueueEntry >= 0 && m_iSelectedQueueEntry < (int)pDownloadQueue->GetFileQueue()->size())
 		{
-			FileInfo* pFileInfo = (*pDownloadQueue)[m_iSelectedQueueEntry];
+			FileInfo* pFileInfo = pDownloadQueue->GetFileQueue()->at(m_iSelectedQueueEntry);
 			ID = pFileInfo->GetID();
 			if (eAction == QueueEditor::eaFilePause)
 			{

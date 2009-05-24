@@ -51,6 +51,7 @@
 
 extern Options* g_pOptions;
 extern char* (*szEnvironmentVariables)[];
+extern DownloadQueueHolder* g_pDownloadQueueHolder;
 
 static const int POSTPROCESS_PARCHECK_CURRENT = 91;
 static const int POSTPROCESS_PARCHECK_ALL = 92;
@@ -609,6 +610,9 @@ void PostScriptController::StartScriptJob(PostInfo* pPostInfo, const char* szScr
 
 void PostScriptController::Run()
 {
+	// the locking is needed for accessing the memebers of NZBInfo
+	g_pDownloadQueueHolder->LockQueue();
+
 	char szParStatus[10];
 	snprintf(szParStatus, 10, "%i", m_pPostInfo->GetParStatus());
 	szParStatus[10-1] = '\0';
@@ -622,16 +626,20 @@ void PostScriptController::Run()
 	szHasFailedParJobs[10-1] = '\0';
 
 	char szDestDir[1024];
-	strncpy(szDestDir, m_pPostInfo->GetDestDir(), 1024);
+	strncpy(szDestDir, m_pPostInfo->GetNZBInfo()->GetDestDir(), 1024);
 	szDestDir[1024-1] = '\0';
 	
 	char szNZBFilename[1024];
-	strncpy(szNZBFilename, m_pPostInfo->GetNZBFilename(), 1024);
+	strncpy(szNZBFilename, m_pPostInfo->GetNZBInfo()->GetFilename(), 1024);
 	szNZBFilename[1024-1] = '\0';
 	
 	char szParFilename[1024];
 	strncpy(szParFilename, m_pPostInfo->GetParFilename(), 1024);
 	szParFilename[1024-1] = '\0';
+
+	char szCategory[1024];
+	strncpy(szCategory, m_pPostInfo->GetNZBInfo()->GetCategory(), 1024);
+	szCategory[1024-1] = '\0';
 
 	char szInfoName[1024];
 	snprintf(szInfoName, 1024, "post-process-script for %s", m_pPostInfo->GetInfoName());
@@ -643,25 +651,25 @@ void PostScriptController::Run()
 
 	const char* szArgs[9];
 	szArgs[0] = GetScript();
-	szArgs[1] = m_pPostInfo->GetDestDir();
+	szArgs[1] = szDestDir;
 	szArgs[2] = szNZBFilename;
 	szArgs[3] = szParFilename;
 	szArgs[4] = szParStatus;
 	szArgs[5] = szCollectionCompleted;
 	szArgs[6] = szHasFailedParJobs;
-	szArgs[7] = m_pPostInfo->GetCategory();
+	szArgs[7] = szCategory;
 	szArgs[8] = NULL;
 	SetArgs(szArgs, false);
 
-	SetEnvVar("NZBPP_DIRECTORY", m_pPostInfo->GetDestDir());
+	SetEnvVar("NZBPP_DIRECTORY", szDestDir);
 	SetEnvVar("NZBPP_NZBFILENAME", szNZBFilename);
 	SetEnvVar("NZBPP_PARFILENAME", szParFilename);
 	SetEnvVar("NZBPP_PARSTATUS", szParStatus);
 	SetEnvVar("NZBPP_NZBCOMPLETED", szCollectionCompleted);
 	SetEnvVar("NZBPP_PARFAILED", szHasFailedParJobs);
-	SetEnvVar("NZBPP_CATEGORY", m_pPostInfo->GetCategory());
+	SetEnvVar("NZBPP_CATEGORY", szCategory);
 
-	for (NZBParameterList::iterator it = m_pPostInfo->GetParameters()->begin(); it != m_pPostInfo->GetParameters()->end(); it++)
+	for (NZBParameterList::iterator it = m_pPostInfo->GetNZBInfo()->GetParameters()->begin(); it != m_pPostInfo->GetNZBInfo()->GetParameters()->end(); it++)
 	{
 		NZBParameter* pParameter = *it;
 		char szVarname[1024];
@@ -669,6 +677,8 @@ void PostScriptController::Run()
 		szVarname[1024-1] = '\0';
 		SetEnvVar(szVarname, pParameter->GetValue());
 	}
+
+	g_pDownloadQueueHolder->UnlockQueue();
 
 	int iResult = Execute();
 

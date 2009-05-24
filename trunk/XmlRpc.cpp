@@ -821,9 +821,9 @@ void StatusXmlCommand::Execute()
 	bool bServerPaused = g_pOptions->GetPause();
 	bool bPostPaused = g_pPrePostProcessor->GetPause();
 	int iThreadCount = Thread::GetThreadCount() - 1; // not counting itself
-	PostQueue* pPostQueue = g_pPrePostProcessor->LockPostQueue();
+	PostQueue* pPostQueue = g_pQueueCoordinator->LockQueue()->GetPostQueue();
 	int iParJobCount = pPostQueue->size();
-	g_pPrePostProcessor->UnlockPostQueue();
+	g_pQueueCoordinator->UnlockQueue();
 	unsigned long iDownloadedSizeHi, iDownloadedSizeLo;
 	int iUpTimeSec, iDownloadTimeSec;
 	long long iAllBytes;
@@ -980,7 +980,7 @@ void ListFilesXmlCommand::Execute()
 	char* szItemBuf = (char*)malloc(szItemBufSize);
 	int index = 0;
 
-	for (DownloadQueue::iterator it = pDownloadQueue->begin(); it != pDownloadQueue->end(); it++)
+	for (FileQueue::iterator it = pDownloadQueue->GetFileQueue()->begin(); it != pDownloadQueue->GetFileQueue()->end(); it++)
 	{
 		FileInfo* pFileInfo = *it;
 		if (iIDStart == 0 || (iIDStart <= pFileInfo->GetID() && pFileInfo->GetID() <= iIDEnd))
@@ -1095,7 +1095,7 @@ void ListGroupsXmlCommand::Execute()
 	GroupQueue groupQueue;
 	groupQueue.clear();
 	DownloadQueue* pDownloadQueue = g_pQueueCoordinator->LockQueue();
-	GroupInfo::BuildGroups(pDownloadQueue, &groupQueue);
+	pDownloadQueue->BuildGroups(&groupQueue);
 	g_pQueueCoordinator->UnlockQueue();
 
 	int szItemBufSize = 10240;
@@ -1422,7 +1422,7 @@ void PostQueueXmlCommand::Execute()
 		"\"Text\" : \"%s\"\n"
 		"}";
 
-	PostQueue* pPostQueue = g_pPrePostProcessor->LockPostQueue();
+	PostQueue* pPostQueue = g_pQueueCoordinator->LockQueue()->GetPostQueue();
 
 	time_t tCurTime = time(NULL);
 	int szItemBufSize = 10240;
@@ -1433,13 +1433,13 @@ void PostQueueXmlCommand::Execute()
 	{
 		PostInfo* pPostInfo = *it;
 		char szNZBNicename[1024];
-		NZBInfo::MakeNiceNZBName(pPostInfo->GetNZBFilename(), szNZBNicename, sizeof(szNZBNicename));
+		pPostInfo->GetNZBInfo()->GetNiceNZBName(szNZBNicename, sizeof(szNZBNicename));
 
 	    const char* szPostStageName[] = { "QUEUED", "LOADING_PARS", "VERIFYING_SOURCES", "REPAIRING", "VERIFYING_REPAIRED", "EXECUTING_SCRIPT", "FINISHED" };
 
 		char* xmlNZBNicename = EncodeStr(szNZBNicename);
-		char* xmlNZBFilename = EncodeStr(pPostInfo->GetNZBFilename());
-		char* xmlDestDir = EncodeStr(pPostInfo->GetDestDir());
+		char* xmlNZBFilename = EncodeStr(pPostInfo->GetNZBInfo()->GetFilename());
+		char* xmlDestDir = EncodeStr(pPostInfo->GetNZBInfo()->GetDestDir());
 		char* xmlParFilename = EncodeStr(pPostInfo->GetParFilename());
 		char* xmlInfoName = EncodeStr(pPostInfo->GetInfoName());
 		char* xmlProgressLabel = EncodeStr(pPostInfo->GetProgressLabel());
@@ -1503,7 +1503,7 @@ void PostQueueXmlCommand::Execute()
 	}
 	free(szItemBuf);
 
-	g_pPrePostProcessor->UnlockPostQueue();
+	g_pQueueCoordinator->UnlockQueue();
 
 	AppendResponse(IsJson() ? "\n]" : "</data></array>\n");
 }

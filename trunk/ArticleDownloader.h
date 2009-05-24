@@ -2,7 +2,7 @@
  *  This file is part of nzbget
  *
  *  Copyright (C) 2004 Sven Henkel <sidddy@users.sourceforge.net>
- *  Copyright (C) 2007-2008 Andrei Prygounkov <hugbug@users.sourceforge.net>
+ *  Copyright (C) 2007-2009 Andrei Prygounkov <hugbug@users.sourceforge.net>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -116,14 +116,6 @@ public:
 	virtual				~DownloadSpeedMeter() {};
 	virtual float		CalcCurrentDownloadSpeed() = 0;
 	virtual void		AddSpeedReading(int iBytes) = 0;
-};
-
-class NZBInfoLocker
-{
-public:
-	virtual				~NZBInfoLocker() {};
-	virtual void		LockNZBInfo(NZBInfo* pNZBInfo) = 0;
-	virtual void		UnlockNZBInfo(NZBInfo* pNZBInfo) = 0;
 };
 
 #endif

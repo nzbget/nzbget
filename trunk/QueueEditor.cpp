@@ -1,7 +1,7 @@
 /*
  *  This file is part of nzbget
  *
- *  Copyright (C) 2007-2008 Andrei Prygounkov <hugbug@users.sourceforge.net>
+ *  Copyright (C) 2007-2009 Andrei Prygounkov <hugbug@users.sourceforge.net>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -74,7 +74,7 @@ QueueEditor::~QueueEditor()
 
 FileInfo* QueueEditor::FindFileInfo(DownloadQueue* pDownloadQueue, int iID)
 {
-	for (DownloadQueue::iterator it = pDownloadQueue->begin(); it != pDownloadQueue->end(); it++)
+	for (FileQueue::iterator it = pDownloadQueue->GetFileQueue()->begin(); it != pDownloadQueue->GetFileQueue()->end(); it++)
 	{
 		FileInfo* pFileInfo = *it;
 		if (pFileInfo->GetID() == iID)
@@ -88,7 +88,7 @@ FileInfo* QueueEditor::FindFileInfo(DownloadQueue* pDownloadQueue, int iID)
 int QueueEditor::FindFileInfoEntry(DownloadQueue* pDownloadQueue, FileInfo* pFileInfo)
 {
 	int iEntry = 0;
-	for (DownloadQueue::iterator it = pDownloadQueue->begin(); it != pDownloadQueue->end(); it++)
+	for (FileQueue::iterator it = pDownloadQueue->GetFileQueue()->begin(); it != pDownloadQueue->GetFileQueue()->end(); it++)
 	{
 		FileInfo* pFileInfo2 = *it;
 		if (pFileInfo2 == pFileInfo)
@@ -134,16 +134,16 @@ void QueueEditor::MoveEntry(DownloadQueue* pDownloadQueue, FileInfo* pFileInfo, 
 		{
 			iNewEntry = 0;
 		}
-		if ((unsigned int)iNewEntry > pDownloadQueue->size() - 1)
+		if ((unsigned int)iNewEntry > pDownloadQueue->GetFileQueue()->size() - 1)
 		{
-			iNewEntry = (int)pDownloadQueue->size() - 1;
+			iNewEntry = (int)pDownloadQueue->GetFileQueue()->size() - 1;
 		}
 
-		if (iNewEntry >= 0 && (unsigned int)iNewEntry <= pDownloadQueue->size() - 1)
+		if (iNewEntry >= 0 && (unsigned int)iNewEntry <= pDownloadQueue->GetFileQueue()->size() - 1)
 		{
-			FileInfo* fi = (*pDownloadQueue)[iEntry];
-			pDownloadQueue->erase(pDownloadQueue->begin() + iEntry);
-			pDownloadQueue->insert(pDownloadQueue->begin() + iNewEntry, fi);
+			FileInfo* fi = pDownloadQueue->GetFileQueue()->at(iEntry);
+			pDownloadQueue->GetFileQueue()->erase(pDownloadQueue->GetFileQueue()->begin() + iEntry);
+			pDownloadQueue->GetFileQueue()->insert(pDownloadQueue->GetFileQueue()->begin() + iNewEntry, fi);
 		}
 	}
 }
@@ -282,18 +282,18 @@ void QueueEditor::PrepareList(DownloadQueue* pDownloadQueue, ItemList* pItemList
 		if (iOffset < 0)
 		{
 			iStart = 0;
-			iEnd = pDownloadQueue->size();
+			iEnd = pDownloadQueue->GetFileQueue()->size();
 			iStep = 1;
 		}
 		else
 		{
-			iStart = pDownloadQueue->size() - 1;
+			iStart = pDownloadQueue->GetFileQueue()->size() - 1;
 			iEnd = -1;
 			iStep = -1;
 		}
 		for (int iIndex = iStart; iIndex != iEnd; iIndex += iStep)
 		{
-			FileInfo* pFileInfo = (*pDownloadQueue)[iIndex];
+			FileInfo* pFileInfo = pDownloadQueue->GetFileQueue()->at(iIndex);
 			int iID = pFileInfo->GetID();
 			for (IDList::iterator it = pIDList->begin(); it != pIDList->end(); it++)
 			{
@@ -307,9 +307,9 @@ void QueueEditor::PrepareList(DownloadQueue* pDownloadQueue, ItemList* pItemList
 						{
 							iWorkOffset = -iIndex;
 						}
-						else if (iDestPos > int(pDownloadQueue->size()) - 1)
+						else if (iDestPos > int(pDownloadQueue->GetFileQueue()->size()) - 1)
 						{
-							iWorkOffset = int(pDownloadQueue->size()) - 1 - iIndex;
+							iWorkOffset = int(pDownloadQueue->GetFileQueue()->size()) - 1 - iIndex;
 						}
 					}
 					else
@@ -335,7 +335,7 @@ void QueueEditor::PrepareList(DownloadQueue* pDownloadQueue, ItemList* pItemList
 		// check ID range
 		int iMaxID = 0;
 		int iMinID = MAX_ID;
-		for (DownloadQueue::iterator it = pDownloadQueue->begin(); it != pDownloadQueue->end(); it++)
+		for (FileQueue::iterator it = pDownloadQueue->GetFileQueue()->begin(); it != pDownloadQueue->GetFileQueue()->end(); it++)
 		{
 			FileInfo* pFileInfo = *it;
 			int ID = pFileInfo->GetID();
@@ -371,7 +371,7 @@ bool QueueEditor::EditGroup(DownloadQueue* pDownloadQueue, FileInfo* pFileInfo, 
 	cIDList.clear();
 
 	// collecting files belonging to group
-	for (DownloadQueue::iterator it = pDownloadQueue->begin(); it != pDownloadQueue->end(); it++)
+	for (FileQueue::iterator it = pDownloadQueue->GetFileQueue()->begin(); it != pDownloadQueue->GetFileQueue()->end(); it++)
 	{
 		FileInfo* pFileInfo2 = *it;
 		if (pFileInfo2->GetNZBInfo() == pFileInfo->GetNZBInfo())
@@ -440,7 +440,7 @@ bool QueueEditor::EditGroup(DownloadQueue* pDownloadQueue, FileInfo* pFileInfo, 
 void QueueEditor::BuildGroupList(DownloadQueue* pDownloadQueue, FileList* pGroupList)
 {
 	pGroupList->clear();
-    for (DownloadQueue::iterator it = pDownloadQueue->begin(); it != pDownloadQueue->end(); it++)
+    for (FileQueue::iterator it = pDownloadQueue->GetFileQueue()->begin(); it != pDownloadQueue->GetFileQueue()->end(); it++)
     {
         FileInfo* pFileInfo = *it;
 		FileInfo* pGroupInfo = NULL;
@@ -542,15 +542,15 @@ void QueueEditor::AlignGroup(DownloadQueue* pDownloadQueue, FileInfo* pFirstFile
 	FileInfo* pLastFileInfo = NULL;
 	unsigned int iLastNum = 0;
 	unsigned int iNum = 0;
-	while (iNum < pDownloadQueue->size())
+	while (iNum < pDownloadQueue->GetFileQueue()->size())
 	{
-		FileInfo* pFileInfo = (*pDownloadQueue)[iNum];
+		FileInfo* pFileInfo = pDownloadQueue->GetFileQueue()->at(iNum);
 		if (pFirstFileInfo->GetNZBInfo() == pFileInfo->GetNZBInfo())
 		{
 			if (pLastFileInfo && iNum - iLastNum > 1)
 			{
-				pDownloadQueue->erase(pDownloadQueue->begin() + iNum);
-				pDownloadQueue->insert(pDownloadQueue->begin() + iLastNum + 1, pFileInfo);
+				pDownloadQueue->GetFileQueue()->erase(pDownloadQueue->GetFileQueue()->begin() + iNum);
+				pDownloadQueue->GetFileQueue()->insert(pDownloadQueue->GetFileQueue()->begin() + iLastNum + 1, pFileInfo);
 				iLastNum++;
 			}
 			else
@@ -694,7 +694,7 @@ void QueueEditor::SetNZBCategory(NZBInfo* pNZBInfo, const char* szCategory)
 */
 bool QueueEditor::CanCleanupDisk(DownloadQueue* pDownloadQueue, NZBInfo* pNZBInfo)
 {
-    for (DownloadQueue::iterator it = pDownloadQueue->begin(); it != pDownloadQueue->end(); it++)
+    for (FileQueue::iterator it = pDownloadQueue->GetFileQueue()->begin(); it != pDownloadQueue->GetFileQueue()->end(); it++)
     {
         FileInfo* pFileInfo = *it;
 		char szLoFileName[1024];
@@ -733,7 +733,7 @@ void QueueEditor::MergeGroups(DownloadQueue* pDownloadQueue, ItemList* pItemList
 	}
 
 	// align group ("AlignGroup" needs the first file item as parameter)
-	for (DownloadQueue::iterator it = pDownloadQueue->begin(); it != pDownloadQueue->end(); it++)
+	for (FileQueue::iterator it = pDownloadQueue->GetFileQueue()->begin(); it != pDownloadQueue->GetFileQueue()->end(); it++)
 	{
 		FileInfo* pFileInfo = *it;
 		if (pFileInfo->GetNZBInfo() == pDestItem->m_pFileInfo->GetNZBInfo())

@@ -1,5 +1,5 @@
 /*
- *  This file if part of nzbget
+ *  This file is part of nzbget
  *
  *  Copyright (C) 2005 Bo Cordes Petersen <placebodk@users.sourceforge.net>
  *  Copyright (C) 2007-2009 Andrei Prygounkov <hugbug@users.sourceforge.net>
@@ -46,8 +46,8 @@ private:
 	void			perror(const char* msg);
 
 public:
-	RemoteClient();
-	~RemoteClient();
+					RemoteClient();
+					~RemoteClient();
 	void			SetVerbose(bool bVerbose) { m_bVerbose = bVerbose; };
 	bool 			RequestServerDownload(const char* szFilename, const char* szCategory, bool bAddFirst);
 	bool			RequestServerList(bool bFiles, bool bGroups);

@@ -2,7 +2,7 @@
  *  This file is part of nzbget
  *
  *  Copyright (C) 2005 Bo Cordes Petersen <placebodk@users.sourceforge.net>
- *  Copyright (C) 2007-2008 Andrei Prygounkov <hugbug@users.sourceforge.net>
+ *  Copyright (C) 2007-2009 Andrei Prygounkov <hugbug@users.sourceforge.net>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -60,8 +60,6 @@ QueueCoordinator::QueueCoordinator()
 	debug("Creating QueueCoordinator");
 
 	m_bHasMoreJobs = true;
-	m_DownloadQueue.clear();
-	m_ActiveDownloads.clear();
 	ResetSpeedStat();
 
 	m_iAllBytes = 0;
@@ -79,11 +77,11 @@ QueueCoordinator::~QueueCoordinator()
 	// Cleanup
 
 	debug("Deleting DownloadQueue");
-	for (DownloadQueue::iterator it = m_DownloadQueue.begin(); it != m_DownloadQueue.end(); it++)
+	for (FileQueue::iterator it = m_DownloadQueue.GetFileQueue()->begin(); it != m_DownloadQueue.GetFileQueue()->end(); it++)
 	{
 		delete *it;
 	}
-	m_DownloadQueue.clear();
+	m_DownloadQueue.GetFileQueue()->clear();
 
 	debug("Deleting ArticleDownloaders");
 	for (ActiveDownloads::iterator it = m_ActiveDownloads.begin(); it != m_ActiveDownloads.end(); it++)
@@ -205,9 +203,9 @@ void QueueCoordinator::AddNZBFileToQueue(NZBFile* pNZBFile, bool bAddFirst)
 
 	m_mutexDownloadQueue.Lock();
 
-	DownloadQueue tmpDownloadQueue;
-	tmpDownloadQueue.clear();
-	DownloadQueue DupeList;
+	FileQueue tmpFileQueue;
+	tmpFileQueue.clear();
+	FileQueue DupeList;
 	DupeList.clear();
 
 	int index1 = 0;
@@ -248,27 +246,27 @@ void QueueCoordinator::AddNZBFileToQueue(NZBFile* pNZBFile, bool bAddFirst)
 
 		if (bAddFirst)
 		{
-			tmpDownloadQueue.push_front(pFileInfo);
+			tmpFileQueue.push_front(pFileInfo);
 		}
 		else
 		{
-			tmpDownloadQueue.push_back(pFileInfo);
+			tmpFileQueue.push_back(pFileInfo);
 		}
 	}
 
-	for (DownloadQueue::iterator it = tmpDownloadQueue.begin(); it != tmpDownloadQueue.end(); it++)
+	for (FileQueue::iterator it = tmpFileQueue.begin(); it != tmpFileQueue.end(); it++)
 	{
 		if (bAddFirst)
 		{
-			m_DownloadQueue.push_front(*it);
+			m_DownloadQueue.GetFileQueue()->push_front(*it);
 		}
 		else
 		{
-			m_DownloadQueue.push_back(*it);
+			m_DownloadQueue.GetFileQueue()->push_back(*it);
 		}
 	}
 
-	for (DownloadQueue::iterator it = DupeList.begin(); it != DupeList.end(); it++)
+	for (FileQueue::iterator it = DupeList.begin(); it != DupeList.end(); it++)
 	{
 		FileInfo* pFileInfo = *it;
 		if (g_pOptions->GetSaveQueue() && g_pOptions->GetServerMode())
@@ -277,6 +275,8 @@ void QueueCoordinator::AddNZBFileToQueue(NZBFile* pNZBFile, bool bAddFirst)
 		}
 		delete pFileInfo;
 	}
+
+	m_DownloadQueue.GetNZBInfoList()->Add(pNZBFile->GetNZBInfo());
 
 	pNZBFile->DetachFileInfos();
 
@@ -389,7 +389,7 @@ long long QueueCoordinator::CalcRemainingSize()
 	long long lRemainingSize = 0;
 
 	m_mutexDownloadQueue.Lock();
-	for (DownloadQueue::iterator it = m_DownloadQueue.begin(); it != m_DownloadQueue.end(); it++)
+	for (FileQueue::iterator it = m_DownloadQueue.GetFileQueue()->begin(); it != m_DownloadQueue.GetFileQueue()->end(); it++)
 	{
 		FileInfo* pFileInfo = *it;
 		if (!pFileInfo->GetPaused() && !pFileInfo->GetDeleted())
@@ -448,7 +448,7 @@ bool QueueCoordinator::GetNextArticle(FileInfo* &pFileInfo, ArticleInfo* &pArtic
 {
 	//debug("QueueCoordinator::GetNextArticle()");
 
-	for (DownloadQueue::iterator it = m_DownloadQueue.begin(); it != m_DownloadQueue.end(); it++)
+	for (FileQueue::iterator it = m_DownloadQueue.GetFileQueue()->begin(); it != m_DownloadQueue.GetFileQueue()->end(); it++)
 	{
 		pFileInfo = *it;
 		if (!pFileInfo->GetPaused() && !pFileInfo->GetDeleted())
@@ -647,12 +647,12 @@ void QueueCoordinator::ArticleCompleted(ArticleDownloader* pArticleDownloader)
 
 void QueueCoordinator::DeleteFileInfo(FileInfo* pFileInfo, bool bCompleted)
 {
-	for (DownloadQueue::iterator it = m_DownloadQueue.begin(); it != m_DownloadQueue.end(); it++)
+	for (FileQueue::iterator it = m_DownloadQueue.GetFileQueue()->begin(); it != m_DownloadQueue.GetFileQueue()->end(); it++)
 	{
 		FileInfo* pa = *it;
 		if (pa == pFileInfo)
 		{
-			m_DownloadQueue.erase(it);
+			m_DownloadQueue.GetFileQueue()->erase(it);
 			break;
 		}
 	}
@@ -701,7 +701,7 @@ bool QueueCoordinator::IsDupe(FileInfo* pFileInfo)
 	}
 
 	// checking in queue
-	for (DownloadQueue::iterator it = m_DownloadQueue.begin(); it != m_DownloadQueue.end(); it++)
+	for (FileQueue::iterator it = m_DownloadQueue.GetFileQueue()->begin(); it != m_DownloadQueue.GetFileQueue()->end(); it++)
 	{
 		FileInfo* pQueueEntry = *it;
 		if (!strcmp(pFileInfo->GetNZBInfo()->GetDestDir(), pQueueEntry->GetNZBInfo()->GetDestDir()) &&
@@ -887,7 +887,7 @@ bool QueueCoordinator::MergeQueueEntries(NZBInfo* pDestNZBInfo, NZBInfo* pSrcNZB
 	SetQueueEntryNZBCategory(pSrcNZBInfo, pDestNZBInfo->GetCategory());
 
 	// reattach file items to new NZBInfo-object
-	for (DownloadQueue::iterator it = m_DownloadQueue.begin(); it != m_DownloadQueue.end(); it++)
+	for (FileQueue::iterator it = m_DownloadQueue.GetFileQueue()->begin(); it != m_DownloadQueue.GetFileQueue()->end(); it++)
 	{
 		FileInfo* pFileInfo = *it;
 		if (pFileInfo->GetNZBInfo() == pSrcNZBInfo)

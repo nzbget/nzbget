@@ -76,7 +76,6 @@ ParChecker::ParChecker()
 
 	m_eStatus = psUndefined;
 	m_szParFilename = NULL;
-	m_szNZBFilename = NULL;
 	m_szInfoName = NULL;
 	m_szErrMsg = NULL;
 	m_szProgressLabel = (char*)malloc(1024);
@@ -96,10 +95,6 @@ ParChecker::~ParChecker()
 	if (m_szParFilename)
 	{
 		free(m_szParFilename);
-	}
-	if (m_szNZBFilename)
-	{
-		free(m_szNZBFilename);
 	}
 	if (m_szInfoName)
 	{
@@ -134,15 +129,6 @@ void ParChecker::SetInfoName(const char * szInfoName)
 		free(m_szInfoName);
 	}
 	m_szInfoName = strdup(szInfoName);
-}
-
-void ParChecker::SetNZBFilename(const char * szNZBFilename)
-{
-	if (m_szNZBFilename)
-	{
-		free(m_szNZBFilename);
-	}
-	m_szNZBFilename = strdup(szNZBFilename);
 }
 
 void ParChecker::SetStatus(EStatus eStatus)

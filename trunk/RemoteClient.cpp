@@ -231,7 +231,6 @@ void RemoteClient::BuildFileList(SNZBListResponse* pListResponse, const char* pT
 {
 	if (ntohl(pListResponse->m_iTrailingDataLength) > 0)
 	{
-		NZBQueue cNZBQueue;
 		const char* pBufPtr = pTrailingData;
 
 		// read nzb entries
@@ -251,7 +250,8 @@ void RemoteClient::BuildFileList(SNZBListResponse* pListResponse, const char* pT
 			pNZBInfo->SetCategory(szCategory);
 			pNZBInfo->SetQueuedFilename(m_szQueuedFilename);
 
-			cNZBQueue.push_back(pNZBInfo);
+			pNZBInfo->AddReference();
+			pDownloadQueue->GetNZBInfoList()->Add(pNZBInfo);
 
 			pBufPtr += sizeof(SNZBListResponseNZBEntry) + ntohl(pListAnswer->m_iFilenameLen) +
 				ntohl(pListAnswer->m_iDestDirLen) + ntohl(pListAnswer->m_iCategoryLen) + 
@@ -266,7 +266,7 @@ void RemoteClient::BuildFileList(SNZBListResponse* pListResponse, const char* pT
 			const char* szName = pBufPtr + sizeof(SNZBListResponsePPPEntry);
 			const char* szValue = pBufPtr + sizeof(SNZBListResponsePPPEntry) + ntohl(pListAnswer->m_iNameLen);
 
-			NZBInfo* pNZBInfo = cNZBQueue.at(ntohl(pListAnswer->m_iNZBIndex) - 1);
+			NZBInfo* pNZBInfo = pDownloadQueue->GetNZBInfoList()->at(ntohl(pListAnswer->m_iNZBIndex) - 1);
 			pNZBInfo->SetParameter(szName, szValue);
 
 			pBufPtr += sizeof(SNZBListResponsePPPEntry) + ntohl(pListAnswer->m_iNameLen) +
@@ -290,16 +290,18 @@ void RemoteClient::BuildFileList(SNZBListResponse* pListResponse, const char* pT
 			pFileInfo->SetFilename(szFileName);
 			pFileInfo->SetFilenameConfirmed(ntohl(pListAnswer->m_bFilenameConfirmed));
 
-			NZBInfo* pNZBInfo = cNZBQueue.at(ntohl(pListAnswer->m_iNZBIndex) - 1);
+			NZBInfo* pNZBInfo = pDownloadQueue->GetNZBInfoList()->at(ntohl(pListAnswer->m_iNZBIndex) - 1);
 
 			pFileInfo->SetNZBInfo(pNZBInfo);
 
-			pDownloadQueue->push_back(pFileInfo);
+			pDownloadQueue->GetFileQueue()->push_back(pFileInfo);
 
 			pBufPtr += sizeof(SNZBListResponseFileEntry) + ntohl(pListAnswer->m_iSubjectLen) + 
 				ntohl(pListAnswer->m_iFilenameLen);
 		}
 	}
+
+	pDownloadQueue->GetNZBInfoList()->ReleaseAll();
 }
 
 bool RemoteClient::RequestServerList(bool bFiles, bool bGroups)
@@ -367,7 +369,7 @@ bool RemoteClient::RequestServerList(bool bFiles, bool bGroups)
 			long long lRemaining = 0;
 			long long lPaused = 0;
 
-			for (DownloadQueue::iterator it = cRemoteQueue.begin(); it != cRemoteQueue.end(); it++)
+			for (FileQueue::iterator it = cRemoteQueue.GetFileQueue()->begin(); it != cRemoteQueue.GetFileQueue()->end(); it++)
 			{
 				FileInfo* pFileInfo = *it;
 
@@ -399,7 +401,7 @@ bool RemoteClient::RequestServerList(bool bFiles, bool bGroups)
 			}
 
 			printf("-----------------------------------\n");
-			printf("Files: %i\n", cRemoteQueue.size());
+			printf("Files: %i\n", cRemoteQueue.GetFileQueue()->size());
 			if (lPaused > 0)
 			{
 				printf("Remaining size: %.2f MB (+%.2f MB paused)\n", (float)(Util::Int64ToFloat(lRemaining) / 1024.0 / 1024.0), 
@@ -427,7 +429,7 @@ bool RemoteClient::RequestServerList(bool bFiles, bool bGroups)
 			BuildFileList(&ListResponse, pBuf, &cRemoteQueue);
 
 			GroupQueue cGroupQueue;
-			GroupInfo::BuildGroups(&cRemoteQueue, &cGroupQueue);
+			cRemoteQueue.BuildGroups(&cGroupQueue);
 
 			long long lRemaining = 0;
 			long long lPaused = 0;
@@ -491,14 +493,14 @@ bool RemoteClient::RequestServerList(bool bFiles, bool bGroups)
 				delete pGroupInfo;
 			}
 
-			for (DownloadQueue::iterator it = cRemoteQueue.begin(); it != cRemoteQueue.end(); it++)
+			for (FileQueue::iterator it = cRemoteQueue.GetFileQueue()->begin(); it != cRemoteQueue.GetFileQueue()->end(); it++)
 			{
 				delete *it;
 			}
 
 			printf("-----------------------------------\n");
 			printf("Groups: %i\n", cGroupQueue.size());
-			printf("Files: %i\n", cRemoteQueue.size());
+			printf("Files: %i\n", cRemoteQueue.GetFileQueue()->size());
 			if (lPaused > 0)
 			{
 				printf("Remaining size: %.2f MB (+%.2f MB paused)\n", (float)(Util::Int64ToFloat(lRemaining) / 1024.0 / 1024.0), 

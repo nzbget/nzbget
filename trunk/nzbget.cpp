@@ -105,7 +105,7 @@ ServerPool* g_pServerPool = NULL;
 QueueCoordinator* g_pQueueCoordinator = NULL;
 RemoteServer* g_pRemoteServer = NULL;
 DownloadSpeedMeter* g_pDownloadSpeedMeter = NULL;
-NZBInfoLocker* g_pNZBInfoLocker = NULL;
+DownloadQueueHolder* g_pDownloadQueueHolder = NULL;
 Log* g_pLog = NULL;
 PrePostProcessor* g_pPrePostProcessor = NULL;
 DiskState* g_pDiskState = NULL;
@@ -243,7 +243,7 @@ void Run()
 	{                                    
 		g_pQueueCoordinator = new QueueCoordinator();
 		g_pDownloadSpeedMeter = g_pQueueCoordinator;
-		g_pNZBInfoLocker = g_pQueueCoordinator;
+		g_pDownloadQueueHolder = g_pQueueCoordinator;
 	}
 
 	// Setup the network-server

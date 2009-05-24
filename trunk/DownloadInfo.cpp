@@ -92,6 +92,7 @@ NZBInfo::NZBInfo()
 	m_bParCleanup = false;
 	m_bCleanupDisk = false;
 	m_szQueuedFilename = strdup("");
+	m_Owner = NULL;
 }
 
 NZBInfo::~NZBInfo()
@@ -126,6 +127,11 @@ NZBInfo::~NZBInfo()
 		delete *it;
 	}
 	m_ppParameters.clear();
+
+	if (m_Owner)
+	{
+		m_Owner->Remove(this);
+	}
 }
 
 void NZBInfo::AddReference()
@@ -305,24 +311,41 @@ void NZBInfo::SetParameter(const char* szName, const char* szValue)
 	pParameter->SetValue(szValue);
 }
 
-void NZBInfo::BuildNZBList(DownloadQueue* pDownloadQueue, NZBQueue* pNZBQueue)
+void NZBInfoList::Add(NZBInfo* pNZBInfo)
 {
-	for (DownloadQueue::iterator it = pDownloadQueue->begin(); it != pDownloadQueue->end(); it++)
+	pNZBInfo->m_Owner = this;
+	push_back(pNZBInfo);
+}
+
+void NZBInfoList::Remove(NZBInfo* pNZBInfo)
+{
+	for (iterator it = begin(); it != end(); it++)
 	{
-		FileInfo* pFileInfo = *it;
-		bool inlist = false;
-		for (NZBQueue::iterator it = pNZBQueue->begin(); it != pNZBQueue->end(); it++)
+		NZBInfo* pNZBInfo2 = *it;
+		if (pNZBInfo2 == pNZBInfo)
 		{
-			NZBInfo* pNZBInfo = *it;
-			if (pNZBInfo == pFileInfo->GetNZBInfo())
-			{
-				inlist = true;
-				break;
-			}
+			erase(it);
+			break;
 		}
-		if (!inlist)
+	}
+}
+
+void NZBInfoList::ReleaseAll()
+{
+	int i = 0;
+	for (iterator it = begin(); it != end(); )
+	{
+		NZBInfo* pNZBInfo = *it;
+		bool bObjDeleted = pNZBInfo->m_iRefCount == 1;
+		pNZBInfo->Release();
+		if (bObjDeleted)
 		{
-			pNZBQueue->push_back(pFileInfo->GetNZBInfo());
+			it = begin() + i;
+		}
+		else
+		{
+			it++;
+			i++;
 		}
 	}
 }
@@ -506,9 +529,120 @@ GroupInfo::~GroupInfo()
 	}
 }
 
-void GroupInfo::BuildGroups(DownloadQueue* pDownloadQueue, GroupQueue* pGroupQueue)
+PostInfo::PostInfo()
 {
-    for (DownloadQueue::iterator it = pDownloadQueue->begin(); it != pDownloadQueue->end(); it++)
+	debug("Creating PostInfo");
+
+	m_pNZBInfo = NULL;
+	m_szParFilename = NULL;
+	m_szInfoName = NULL;
+	m_bWorking = false;
+	m_bDeleted = false;
+	m_bParCheck = false;
+	m_iParStatus = 0;
+	m_eRequestParCheck = rpNone;
+	m_bRequestParCleanup = false;
+	m_szProgressLabel = strdup("");
+	m_iFileProgress = 0;
+	m_iStageProgress = 0;
+	m_tStartTime = 0;
+	m_tStageTime = 0;
+	m_eStage = ptQueued;
+	m_pScriptThread = NULL;
+	m_Messages.clear();
+	m_iIDMessageGen = 0;
+	m_iIDGen++;
+	m_iID = m_iIDGen;
+}
+
+PostInfo::~ PostInfo()
+{
+	debug("Destroying PostInfo");
+
+	if (m_szParFilename)
+	{
+		free(m_szParFilename);
+	}
+	if (m_szInfoName)
+	{
+		free(m_szInfoName);
+	}
+	if (m_szProgressLabel)
+	{
+		free(m_szProgressLabel);
+	}
+
+	for (Messages::iterator it = m_Messages.begin(); it != m_Messages.end(); it++)
+	{
+		delete *it;
+	}
+	m_Messages.clear();
+
+	if (m_pNZBInfo)
+	{
+		m_pNZBInfo->Release();
+	}
+}
+
+void PostInfo::SetNZBInfo(NZBInfo* pNZBInfo)
+{
+	if (m_pNZBInfo)
+	{
+		m_pNZBInfo->Release();
+	}
+	m_pNZBInfo = pNZBInfo;
+	m_pNZBInfo->AddReference();
+}
+
+void PostInfo::SetParFilename(const char* szParFilename)
+{
+	m_szParFilename = strdup(szParFilename);
+}
+
+void PostInfo::SetInfoName(const char* szInfoName)
+{
+	m_szInfoName = strdup(szInfoName);
+}
+
+void PostInfo::SetProgressLabel(const char* szProgressLabel)
+{
+	if (m_szProgressLabel)
+	{
+		free(m_szProgressLabel);
+	}
+	m_szProgressLabel = strdup(szProgressLabel);
+}
+
+PostInfo::Messages* PostInfo::LockMessages()
+{
+	m_mutexLog.Lock();
+	return &m_Messages;
+}
+
+void PostInfo::UnlockMessages()
+{
+	m_mutexLog.Unlock();
+}
+
+void PostInfo::AppendMessage(Message::EKind eKind, const char * szText)
+{
+	Message* pMessage = new Message(++m_iIDMessageGen, eKind, time(NULL), szText);
+
+	m_mutexLog.Lock();
+	m_Messages.push_back(pMessage);
+
+	while (m_Messages.size() > (unsigned int)g_pOptions->GetLogBufferSize())
+	{
+		Message* pMessage = m_Messages.front();
+		delete pMessage;
+		m_Messages.pop_front();
+	}
+	m_mutexLog.Unlock();
+}
+
+void DownloadQueue::BuildGroups(GroupQueue* pGroupQueue)
+{
+	for (FileQueue::iterator it = GetFileQueue()->begin(); it != GetFileQueue()->end(); it++)
     {
         FileInfo* pFileInfo = *it;
 		GroupInfo* pGroupInfo = NULL;
@@ -553,162 +687,5 @@ void GroupInfo::BuildGroups(DownloadQueue* pDownloadQueue, GroupQueue* pGroupQue
 		{
 			pGroupInfo->m_iRemainingParCount++;
 		}
-	}
-}
-
-PostInfo::PostInfo()
-{
-	debug("Creating PostInfo");
-
-	m_szNZBFilename = NULL;
-	m_szDestDir = NULL;
-	m_szParFilename = NULL;
-	m_szInfoName = NULL;
-	m_szCategory = NULL;
-	m_szQueuedFilename = NULL;
-	m_bWorking = false;
-	m_bDeleted = false;
-	m_bParCheck = false;
-	m_iParStatus = 0;
-	m_eRequestParCheck = rpNone;
-	m_bRequestParCleanup = false;
-	m_szProgressLabel = strdup("");
-	m_iFileProgress = 0;
-	m_iStageProgress = 0;
-	m_tStartTime = 0;
-	m_tStageTime = 0;
-	m_eStage = ptQueued;
-	m_pScriptThread = NULL;
-	m_Messages.clear();
-	m_iIDMessageGen = 0;
-	m_iIDGen++;
-	m_iID = m_iIDGen;
-}
-
-PostInfo::~ PostInfo()
-{
-	debug("Destroying PostInfo");
-
-	if (m_szNZBFilename)
-	{
-		free(m_szNZBFilename);
-	}
-	if (m_szDestDir)
-	{
-		free(m_szDestDir);
-	}
-	if (m_szParFilename)
-	{
-		free(m_szParFilename);
-	}
-	if (m_szInfoName)
-	{
-		free(m_szInfoName);
-	}
-	if (m_szCategory)
-	{
-		free(m_szCategory);
-	}
-	if (m_szQueuedFilename)
-	{
-		free(m_szQueuedFilename);
-	}
-	if (m_szProgressLabel)
-	{
-		free(m_szProgressLabel);
-	}
-
-	for (Messages::iterator it = m_Messages.begin(); it != m_Messages.end(); it++)
-	{
-		delete *it;
-	}
-	m_Messages.clear();
-
-	for (NZBParameterList::iterator it = m_ppParameters.begin(); it != m_ppParameters.end(); it++)
-	{
-		delete *it;
-	}
-	m_ppParameters.clear();
-}
-
-void PostInfo::SetNZBFilename(const char* szNZBFilename)
-{
-	m_szNZBFilename = strdup(szNZBFilename);
-}
-
-void PostInfo::SetDestDir(const char* szDestDir)
-{
-	m_szDestDir = strdup(szDestDir);
-}
-
-void PostInfo::SetParFilename(const char* szParFilename)
-{
-	m_szParFilename = strdup(szParFilename);
-}
-
-void PostInfo::SetInfoName(const char* szInfoName)
-{
-	m_szInfoName = strdup(szInfoName);
-}
-
-void PostInfo::SetCategory(const char* szCategory)
-{
-	m_szCategory = strdup(szCategory);
-}
-
-void PostInfo::SetQueuedFilename(const char * szQueuedFilename)
-{
-	m_szQueuedFilename = strdup(szQueuedFilename);
-}
-
-void PostInfo::SetProgressLabel(const char* szProgressLabel)
-{
-	if (m_szProgressLabel)
-	{
-		free(m_szProgressLabel);
-	}
-	m_szProgressLabel = strdup(szProgressLabel);
-}
-
-PostInfo::Messages* PostInfo::LockMessages()
-{
-	m_mutexLog.Lock();
-	return &m_Messages;
-}
-
-void PostInfo::UnlockMessages()
-{
-	m_mutexLog.Unlock();
-}
-
-void PostInfo::AppendMessage(Message::EKind eKind, const char * szText)
-{
-	Message* pMessage = new Message(++m_iIDMessageGen, eKind, time(NULL), szText);
-
-	m_mutexLog.Lock();
-	m_Messages.push_back(pMessage);
-
-	while (m_Messages.size() > (unsigned int)g_pOptions->GetLogBufferSize())
-	{
-		Message* pMessage = m_Messages.front();
-		delete pMessage;
-		m_Messages.pop_front();
-	}
-	m_mutexLog.Unlock();
-}
-
-void PostInfo::AddParameter(const char* szName, const char* szValue)
-{
-	NZBParameter* pParameter = new NZBParameter(szName);
-	pParameter->SetValue(szValue);
-	m_ppParameters.push_back(pParameter);
-}
-
-void PostInfo::AssignParameter(NZBParameterList* pSrcParameters)
-{
-	for (NZBParameterList::iterator it = pSrcParameters->begin(); it != pSrcParameters->end(); it++)
-	{
-		NZBParameter* pParameter = *it;
-		AddParameter(pParameter->GetName(), pParameter->GetValue());
 	}
 }
