@@ -84,7 +84,6 @@ PrePostProcessor::PrePostProcessor()
 	m_bHasMoreJobs = false;
 	m_bPostPause = false;
 	m_bRequestedNZBDirScan = false;
-	m_bPause = false;
 
 	m_QueueCoordinatorObserver.owner = this;
 	g_pQueueCoordinator->Attach(&m_QueueCoordinatorObserver);
@@ -150,7 +149,8 @@ void PrePostProcessor::Run()
 	while (!IsStopped())
 	{
 		if (g_pOptions->GetNzbDir() && (m_bRequestedNZBDirScan || 
-			(g_pOptions->GetNzbDirInterval() > 0 && iNZBDirInterval >= g_pOptions->GetNzbDirInterval() * 1000)))
+			(!g_pOptions->GetPauseScan() && g_pOptions->GetNzbDirInterval() > 0 && 
+			 iNZBDirInterval >= g_pOptions->GetNzbDirInterval() * 1000)))
 		{
 			// check nzbdir every g_pOptions->GetNzbDirInterval() seconds or if requested
 			bool bCheckTimestamp = !m_bRequestedNZBDirScan;
@@ -172,7 +172,7 @@ void PrePostProcessor::Run()
 		}
 		iNZBDirInterval += 200;
 
-		if (!g_pOptions->GetPause() && g_pOptions->GetDiskSpace() > 0 && 
+		if (!g_pOptions->GetPauseDownload() && g_pOptions->GetDiskSpace() > 0 && 
 			!g_pQueueCoordinator->GetStandBy() && iDiskSpaceInterval >= 1000)
 		{
 			// check free disk space every 1 second
@@ -546,7 +546,7 @@ void PrePostProcessor::CheckDiskSpace()
 	if (lFreeSpace > -1 && lFreeSpace / 1024 / 1024 < g_pOptions->GetDiskSpace())
 	{
 		warn("Low disk space. Pausing download");
-		g_pOptions->SetPause(true);
+		g_pOptions->SetPauseDownload(true);
 	}
 }
 
@@ -580,13 +580,13 @@ void PrePostProcessor::CheckPostQueue()
 				}
 			}
 
-			if (pPostInfo->GetParCheck() && pPostInfo->GetParStatus() == PARSTATUS_NOT_CHECKED && !m_bPause)
+			if (pPostInfo->GetParCheck() && pPostInfo->GetParStatus() == PARSTATUS_NOT_CHECKED && !g_pOptions->GetPausePostProcess())
 			{
 				StartParJob(pPostInfo);
 			}
 			else
 #endif
-			if (pPostInfo->GetStage() == PostInfo::ptQueued && !m_bPause)
+			if (pPostInfo->GetStage() == PostInfo::ptQueued && !g_pOptions->GetPausePostProcess())
 			{
 				StartScriptJob(pDownloadQueue, pPostInfo);
 			}
@@ -626,7 +626,7 @@ void PrePostProcessor::CheckPostQueue()
 
 				JobCompleted(pDownloadQueue, pPostInfo);
 			}
-			else if (!m_bPause)
+			else if (!g_pOptions->GetPausePostProcess())
 			{
 				error("Internal error: invalid state in post-processor");
 			}
@@ -1479,15 +1479,21 @@ void PrePostProcessor::ApplySchedulerState()
 		g_pOptions->SetDownloadRate((float)g_pScheduler->GetDownloadRate());
 	}
 
-	if (g_pScheduler->GetPauseChanged())
+	if (g_pScheduler->GetPauseDownloadChanged())
 	{
-		info("Scheduler: %s download queue", g_pScheduler->GetPause() ? "pause" : "unpause");
+		info("Scheduler: %s download queue", g_pScheduler->GetPauseDownload() ? "pause" : "unpause");
 		m_bSchedulerPauseChanged = true;
-		m_bSchedulerPause = g_pScheduler->GetPause();
+		m_bSchedulerPause = g_pScheduler->GetPauseDownload();
 		if (!m_bPostPause)
 		{
-			g_pOptions->SetPause(m_bSchedulerPause);
+			g_pOptions->SetPauseDownload(m_bSchedulerPause);
 		}
+	}
+
+	if (g_pScheduler->GetPauseScanChanged())
+	{
+		info("Scheduler: %s scan", g_pScheduler->GetPauseScan() ? "pause" : "unpause");
+		g_pOptions->SetPauseScan(g_pScheduler->GetPauseScan());
 	}
 }
 
@@ -1495,14 +1501,14 @@ bool PrePostProcessor::PauseDownload()
 {
 	debug("PrePostProcessor::PauseDownload()");
 
-	if (m_bPostPause && g_pOptions->GetPause())
+	if (m_bPostPause && g_pOptions->GetPauseDownload())
 	{
 		return false;
 	}
 
-	m_bPostPause = !g_pOptions->GetPause();
+	m_bPostPause = !g_pOptions->GetPauseDownload();
 	m_bSchedulerPauseChanged = false;
-	g_pOptions->SetPause(true);
+	g_pOptions->SetPauseDownload(true);
 	return m_bPostPause;
 }
 
@@ -1515,7 +1521,7 @@ bool PrePostProcessor::UnpauseDownload()
 	{
 		m_bPostPause = false;
 		bPause = m_bSchedulerPauseChanged && m_bSchedulerPause;
-		g_pOptions->SetPause(bPause);
+		g_pOptions->SetPauseDownload(bPause);
 	}
 	return !bPause;
 }

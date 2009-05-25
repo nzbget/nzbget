@@ -382,11 +382,11 @@ void ProcessClientRequest()
 			break;
 
 		case Options::opClientRequestPause:
-			Client->RequestServerPauseUnpause(true, false);
+			Client->RequestServerPauseUnpause(true, eRemotePauseUnpauseActionDownload);
 			break;
 
 		case Options::opClientRequestUnpause:
-			Client->RequestServerPauseUnpause(false, false);
+			Client->RequestServerPauseUnpause(false, eRemotePauseUnpauseActionDownload);
 			break;
 
 		case Options::opClientRequestSetRate:
@@ -398,7 +398,7 @@ void ProcessClientRequest()
 			break;
 
 		case Options::opClientRequestEditQueue:
-			Client->RequestServerEditQueue(g_pOptions->GetEditQueueAction(), g_pOptions->GetEditQueueOffset(),
+			Client->RequestServerEditQueue((eRemoteEditAction)g_pOptions->GetEditQueueAction(), g_pOptions->GetEditQueueOffset(),
 				g_pOptions->GetEditQueueText(), g_pOptions->GetEditQueueIDList(), g_pOptions->GetEditQueueIDCount(), true);
 			break;
 
@@ -431,11 +431,19 @@ void ProcessClientRequest()
 			break;
 
 		case Options::opClientRequestPostPause:
-			Client->RequestServerPauseUnpause(true, true);
+			Client->RequestServerPauseUnpause(true, eRemotePauseUnpauseActionPostProcess);
 			break;
 
 		case Options::opClientRequestPostUnpause:
-			Client->RequestServerPauseUnpause(false, true);
+			Client->RequestServerPauseUnpause(false, eRemotePauseUnpauseActionPostProcess);
+			break;
+
+		case Options::opClientRequestScanPause:
+			Client->RequestServerPauseUnpause(true, eRemotePauseUnpauseActionScan);
+			break;
+
+		case Options::opClientRequestScanUnpause:
+			Client->RequestServerPauseUnpause(false, eRemotePauseUnpauseActionScan);
 			break;
 
 		case Options::opClientNoOperation:

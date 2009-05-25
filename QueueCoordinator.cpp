@@ -125,7 +125,7 @@ void QueueCoordinator::Run()
 
 	while (!IsStopped())
 	{
-		if (!g_pOptions->GetPause())
+		if (!g_pOptions->GetPauseDownload())
 		{
 			NNTPConnection* pConnection = g_pServerPool->GetConnection(0, false);
 			if (pConnection)

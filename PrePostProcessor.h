@@ -98,7 +98,6 @@ private:
 	bool				m_bSchedulerPause;
 	bool				m_bPostPause;
 	bool				m_bRequestedNZBDirScan;
-	bool				m_bPause;
 
 	void				CheckIncomingNZBs(const char* szDirectory, const char* szCategory, bool bCheckTimestamp);
 	bool				IsNZBFileCompleted(DownloadQueue* pDownloadQueue, NZBInfo* pNZBInfo, 
@@ -154,8 +153,6 @@ public:
 	bool				HasMoreJobs() { return m_bHasMoreJobs; }
 	void				ScanNZBDir();
 	bool				QueueEditList(IDList* pIDList, EEditAction eAction, int iOffset);
-	void				SetPause(bool bPause) { m_bPause = bPause; }
-	bool				GetPause() const { return m_bPause; }
 };
 
 #endif

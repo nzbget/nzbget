@@ -128,11 +128,20 @@ public:
 
 class PauseUnpauseXmlCommand: public XmlCommand
 {
-private:
-	bool	m_bPause;
-	bool	m_bPostProcessor;
 public:
-						PauseUnpauseXmlCommand(bool bPause, bool bPostProcessor);
+	enum EPauseAction
+	{
+		paDownload,
+		paPostProcess,
+		paScan
+	};
+
+private:
+	bool			m_bPause;
+	EPauseAction	m_eEPauseAction;
+
+public:
+						PauseUnpauseXmlCommand(bool bPause, EPauseAction eEPauseAction);
 	virtual void		Execute();
 };
 

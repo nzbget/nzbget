@@ -2,7 +2,7 @@
  *  This file is part of nzbget
  *
  *  Copyright (C) 2005 Bo Cordes Petersen <placebodk@sourceforge.net>
- *  Copyright (C) 2007-2008 Andrei Prygounkov <hugbug@users.sourceforge.net>
+ *  Copyright (C) 2007-2009 Andrei Prygounkov <hugbug@users.sourceforge.net>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -129,12 +129,6 @@ public:
 };
 
 class ScanBinCommand: public BinCommand
-{
-public:
-	virtual void		Execute();
-};
-
-class PostPauseUnpauseBinCommand: public BinCommand
 {
 public:
 	virtual void		Execute();

@@ -195,12 +195,6 @@ void BinRpcProcessor::Dispatch()
 				break;
 			}
 
-		case eRemoteRequestPostPauseUnpause:
-			{
-				command = new PostPauseUnpauseBinCommand();
-				break;
-			}
-
 		default:
 			error("Received unsupported request %i", ntohl(m_MessageBase.m_iType));
 			break;
@@ -258,7 +252,21 @@ void PauseUnpauseBinCommand::Execute()
 		return;
 	}
 
-	g_pOptions->SetPause(ntohl(PauseUnpauseRequest.m_bPause));
+	switch (ntohl(PauseUnpauseRequest.m_iAction))
+	{
+		case eRemotePauseUnpauseActionDownload:
+			g_pOptions->SetPauseDownload(ntohl(PauseUnpauseRequest.m_bPause));
+			break;
+
+		case eRemotePauseUnpauseActionPostProcess:
+			g_pOptions->SetPausePostProcess(ntohl(PauseUnpauseRequest.m_bPause));
+			break;
+
+		case eRemotePauseUnpauseActionScan:
+			g_pOptions->SetPauseScan(ntohl(PauseUnpauseRequest.m_bPause));
+			break;
+	}
+
 	SendBoolResponse(true, "Pause-/Unpause-Command completed successfully");
 }
 
@@ -544,8 +552,9 @@ void ListBinCommand::Execute()
 		ListResponse.m_iRemainingSizeHi = htonl(iSizeHi);
 		ListResponse.m_iRemainingSizeLo = htonl(iSizeLo);
 		ListResponse.m_iDownloadLimit = htonl((int)(g_pOptions->GetDownloadRate() * 1024));
-		ListResponse.m_bDownloadPaused = htonl(g_pOptions->GetPause());
-		ListResponse.m_bPostPaused = htonl(g_pPrePostProcessor->GetPause());
+		ListResponse.m_bDownloadPaused = htonl(g_pOptions->GetPauseDownload());
+		ListResponse.m_bPostPaused = htonl(g_pOptions->GetPausePostProcess());
+		ListResponse.m_bScanPaused = htonl(g_pOptions->GetPauseScan());
 		ListResponse.m_iThreadCount = htonl(Thread::GetThreadCount() - 1); // not counting itself
 		PostQueue* pPostQueue = g_pQueueCoordinator->LockQueue()->GetPostQueue();
 		ListResponse.m_iPostJobCount = htonl(pPostQueue->size());
@@ -911,16 +920,4 @@ void ScanBinCommand::Execute()
 
 	g_pPrePostProcessor->ScanNZBDir();
 	SendBoolResponse(true, "Scan-Command scheduled successfully");
-}
-
-void PostPauseUnpauseBinCommand::Execute()
-{
-	SNZBPauseUnpauseRequest PauseUnpauseRequest;
-	if (!ReceiveRequest(&PauseUnpauseRequest, sizeof(PauseUnpauseRequest)))
-	{
-		return;
-	}
-
-	g_pPrePostProcessor->SetPause(ntohl(PauseUnpauseRequest.m_bPause));
-	SendBoolResponse(true, "Pause-/Unpause-Command for post-processor completed successfully");
 }

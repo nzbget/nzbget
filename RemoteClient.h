@@ -51,10 +51,10 @@ public:
 	void			SetVerbose(bool bVerbose) { m_bVerbose = bVerbose; };
 	bool 			RequestServerDownload(const char* szFilename, const char* szCategory, bool bAddFirst);
 	bool			RequestServerList(bool bFiles, bool bGroups);
-	bool			RequestServerPauseUnpause(bool bPause, bool bPostProcessorQueue);
+	bool			RequestServerPauseUnpause(bool bPause, eRemotePauseUnpauseAction iAction);
 	bool			RequestServerSetDownloadRate(float fRate);
 	bool			RequestServerDumpDebug();
-	bool 			RequestServerEditQueue(int iAction, int iOffset, const char* szText, int* pIDList, int iIDCount, bool bSmartOrder);
+	bool 			RequestServerEditQueue(eRemoteEditAction iAction, int iOffset, const char* szText, int* pIDList, int iIDCount, bool bSmartOrder);
 	bool			RequestServerLog(int iLines);
 	bool			RequestServerShutdown();
 	bool			RequestServerVersion();

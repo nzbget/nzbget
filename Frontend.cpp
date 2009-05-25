@@ -97,7 +97,7 @@ bool Frontend::PrepareData()
 		{
 			m_fCurrentDownloadSpeed = g_pQueueCoordinator->CalcCurrentDownloadSpeed();
 			m_lRemainingSize = g_pQueueCoordinator->CalcRemainingSize();
-			m_bPause = g_pOptions->GetPause();
+			m_bPause = g_pOptions->GetPauseDownload();
 			m_fDownloadLimit = g_pOptions->GetDownloadRate();
 			m_iThreadCount = Thread::GetThreadCount();
 			PostQueue* pPostQueue = g_pQueueCoordinator->LockQueue()->GetPostQueue();
@@ -180,7 +180,7 @@ void Frontend::ServerPauseUnpause(bool bPause)
 	}
 	else
 	{
-		g_pOptions->SetPause(bPause);
+		g_pOptions->SetPauseDownload(bPause);
 	}
 }
 
@@ -212,7 +212,7 @@ bool Frontend::ServerEditQueue(QueueEditor::EEditAction eAction, int iOffset, in
 {
 	if (IsRemoteMode())
 	{
-		return RequestEditQueue(eAction, iOffset, iID);
+		return RequestEditQueue((eRemoteEditAction)eAction, iOffset, iID);
 	}
 	else
 	{
@@ -379,7 +379,7 @@ bool Frontend::RequestPauseUnpause(bool bPause)
 {
 	RemoteClient client;
 	client.SetVerbose(false);
-	return client.RequestServerPauseUnpause(bPause, false);
+	return client.RequestServerPauseUnpause(bPause, eRemotePauseUnpauseActionDownload);
 }
 
 bool Frontend::RequestSetDownloadRate(float fRate)
@@ -396,7 +396,7 @@ bool Frontend::RequestDumpDebug()
 	return client.RequestServerDumpDebug();
 }
 
-bool Frontend::RequestEditQueue(int iAction, int iOffset, int iID)
+bool Frontend::RequestEditQueue(eRemoteEditAction iAction, int iOffset, int iID)
 {
 	RemoteClient client;
 	client.SetVerbose(false);
