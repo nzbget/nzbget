@@ -52,7 +52,9 @@ public:
 		opClientRequestWriteLog,
 		opClientRequestScan,
 		opClientRequestPostPause,
-		opClientRequestPostUnpause
+		opClientRequestPostUnpause,
+		opClientRequestScanPause,
+		opClientRequestScanUnpause
 	};
 	enum EMessageTarget
 	{
@@ -195,7 +197,9 @@ private:
 	bool				m_bTestBacktrace;
 
 	// Current state
-	bool				m_bPause;
+	bool				m_bPauseDownload;
+	bool				m_bPausePostProcess;
+	bool				m_bPauseScan;
 	float				m_fDownloadRate;
 	EClientOperation	m_eClientOperation;
 
@@ -312,8 +316,12 @@ public:
 	bool				GetTestBacktrace() { return m_bTestBacktrace; }
 
 	// Current state
-	void				SetPause(bool bOnOff) { m_bPause = bOnOff; }
-	bool				GetPause() const { return m_bPause; }
+	void				SetPauseDownload(bool bPauseDownload) { m_bPauseDownload = bPauseDownload; }
+	bool				GetPauseDownload() const { return m_bPauseDownload; }
+	void				SetPausePostProcess(bool bPausePostProcess) { m_bPausePostProcess = bPausePostProcess; }
+	bool				GetPausePostProcess() const { return m_bPausePostProcess; }
+	void				SetPauseScan(bool bPauseScan) { m_bPauseScan = bPauseScan; }
+	bool				GetPauseScan() const { return m_bPauseScan; }
 	void				SetDownloadRate(float fRate) { m_fDownloadRate = fRate; }
 	float				GetDownloadRate() const { return m_fDownloadRate; }
 };

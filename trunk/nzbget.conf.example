@@ -714,7 +714,7 @@ NzbCleanupDisk=no
 # in file "postprocess-example.sh".
 PostProcess=
 
-# Allow multiple post-processing for the same nzb-file (yes,no).
+# Allow multiple post-processing for the same nzb-file (yes, no).
 #
 # After the post-processing (par-check and call of a postprocess-script) is
 # completed, nzbget adds the nzb-file to a list of completed-jobs. The nzb-file
@@ -770,13 +770,16 @@ PostPauseQueue=no
 # Examples: "1-7", "1-5", "5,6", "1-5, 7".
 #Task1.WeekDays=1-7
 
-# Command to be executed (Pause, Unpause, DownloadRate, Process).
+# Command to be executed (PauseDownload, UnpauseDownload, PauseScan,
+# UnpauseScan, DownloadRate, Process).
 #
 # Possible commands:
-#   Pause        - pauses download;
-#   Unpause      - resumes download;
-#   DownloadRate - sets download rate in KB/s;
-#   Process      - executes external program.
+#   PauseDownload   - pauses download;
+#   UnpauseDownload - resumes download;
+#   PauseScan       - pauses scan of incoming nzb-directory;
+#   UnpauseScan     - resumes scan of incoming nzb-directory;
+#   DownloadRate    - sets download rate in KB/s;
+#   Process         - executes external program.
 #Task1.Command=DownloadRate
 
 # Download rate to be set if the command is "DownloadRate" (kilobytes/sec).

@@ -59,8 +59,7 @@ enum eRemoteRequest
 	eRemoteRequestVersion,
 	eRemoteRequestPostQueue,
 	eRemoteRequestWriteLog,
-	eRemoteRequestScan,
-	eRemoteRequestPostPauseUnpause
+	eRemoteRequestScan
 };
 
 // Possible values for field "m_iAction" of struct "SNZBEditQueueRequest":
@@ -91,6 +90,14 @@ enum eRemoteEditAction
 	eRemoteEditActionPostMoveTop,			// move post-job to the top of post-queue
 	eRemoteEditActionPostMoveBottom,		// move post-job to the bottom of post-queue
 	eRemoteEditActionPostDelete				// delete post-job
+};
+
+// Possible values for field "m_iAction" of struct "SNZBPauseUnpauseRequest":
+enum eRemotePauseUnpauseAction
+{
+	eRemotePauseUnpauseActionDownload = 1,	// pause/unpause download queue
+	eRemotePauseUnpauseActionPostProcess,	// pause/unpause post-processor queue
+	eRemotePauseUnpauseActionScan			// pause/unpause scan of incoming nzb-directory
 };
 
 // The basic SNZBRequestBase struct, used in all requests
@@ -149,6 +156,7 @@ struct SNZBListResponse
 	int32_t					m_bDownloadPaused;		// 1 - download queue is currently in paused-state
 	int32_t					m_bDownloadStandBy;		// 0 - there are currently downloads running, 1 - no downloads in progress (download queue paused or all download jobs completed)
 	int32_t					m_bPostPaused;			// 1 - post-processor queue is currently in paused-state
+	int32_t					m_bScanPaused;			// 1 - scaning of incoming directory is currently in paused-state
 	int32_t					m_iThreadCount;			// Number of threads running
 	int32_t					m_iPostJobCount;		// Number of jobs in post-processor queue (including current job)
 	int32_t					m_iUpTimeSec;			// Server up time in seconds
@@ -239,6 +247,7 @@ struct SNZBPauseUnpauseRequest
 {
 	SNZBRequestBase			m_MessageBase;			// Must be the first in the struct
 	int32_t					m_bPause;				// 1 - server must be paused, 0 - server must be unpaused
+	int32_t					m_iAction;				// Action to be executed, see enum eRemotePauseUnpauseAction
 };
 
 // A Pause/Unpause response
@@ -270,7 +279,7 @@ struct SNZBSetDownloadRateResponse
 struct SNZBEditQueueRequest
 {
 	SNZBRequestBase			m_MessageBase;			// Must be the first in the struct
-	int32_t					m_iAction;				// Action to be executed, see enum in NZBMessageRequest-namespace
+	int32_t					m_iAction;				// Action to be executed, see enum eRemoteEditAction
 	int32_t					m_iOffset;				// Offset to move (for m_iAction = 0)
 	int32_t					m_bSmartOrder;			// For Move-Actions: 0 - execute action for each ID in order they are placed in array;
 													// 1 - smart execute to ensure that the relative order of all affected IDs are not changed.

@@ -1,7 +1,7 @@
 /*
- *  This file if part of nzbget
+ *  This file is part of nzbget
  *
- *  Copyright (C) 2008 Andrei Prygounkov <hugbug@users.sourceforge.net>
+ *  Copyright (C) 2008-2009 Andrei Prygounkov <hugbug@users.sourceforge.net>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -35,10 +35,12 @@ class Scheduler
 public:
 	enum ECommand
 	{
-		scPause,
-		scUnpause,
+		scPauseDownload,
+		scUnpauseDownload,
 		scDownloadRate,
-		scProcess
+		scProcess,
+		scPauseScan,
+		scUnpauseScan
 	};
 
 	class Task
@@ -70,8 +72,10 @@ private:
 	bool				m_bDownloadRateChanged;
 	bool				m_bExecuteProcess;
 	int					m_iDownloadRate;
-	bool				m_bPauseChanged;
-	bool				m_bPause;
+	bool				m_bPauseDownloadChanged;
+	bool				m_bPauseDownload;
+	bool				m_bPauseScanChanged;
+	bool				m_bPauseScan;
 	void				ExecuteTask(Task* pTask);
 	void				CheckTasks();
 	static bool			CompareTasks(Scheduler::Task* pTask1, Scheduler::Task* pTask2);
@@ -84,8 +88,10 @@ public:
 	void				IntervalCheck();
 	bool				GetDownloadRateChanged() { return m_bDownloadRateChanged; }
 	int					GetDownloadRate() { return m_iDownloadRate; }
-	bool				GetPauseChanged() { return m_bPauseChanged; }
-	bool				GetPause() { return m_bPause; }
+	bool				GetPauseDownloadChanged() { return m_bPauseDownloadChanged; }
+	bool				GetPauseDownload() { return m_bPauseDownload; }
+	bool				GetPauseScanChanged() { return m_bPauseScanChanged; }
+	bool				GetPauseScan() { return m_bPauseScan; }
 };
 
 #endif

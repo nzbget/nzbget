@@ -565,6 +565,11 @@ bool RemoteClient::RequestServerList(bool bFiles, bool bGroups)
 		printf("Post-jobs: %i\n", (int)ntohl(ListResponse.m_iPostJobCount));
 	}
 
+	if (ntohl(ListResponse.m_bScanPaused))
+	{
+		printf("Scan state: Paused\n");
+	}
+
 	char szServerState[50];
 
 	if (ntohl(ListResponse.m_bDownloadPaused))
@@ -688,15 +693,14 @@ bool RemoteClient::RequestServerLog(int iLines)
 	return true;
 }
 
-bool RemoteClient::RequestServerPauseUnpause(bool bPause, bool bPostProcessorQueue)
+bool RemoteClient::RequestServerPauseUnpause(bool bPause, eRemotePauseUnpauseAction iAction)
 {
 	if (!InitConnection()) return false;
 
 	SNZBPauseUnpauseRequest PauseUnpauseRequest;
-	InitMessageBase(&PauseUnpauseRequest.m_MessageBase, 
-		bPostProcessorQueue ? eRemoteRequestPostPauseUnpause : eRemoteRequestPauseUnpause, 
-		sizeof(PauseUnpauseRequest));
+	InitMessageBase(&PauseUnpauseRequest.m_MessageBase, eRemoteRequestPauseUnpause, sizeof(PauseUnpauseRequest));
 	PauseUnpauseRequest.m_bPause = htonl(bPause);
+	PauseUnpauseRequest.m_iAction = htonl(iAction);
 
 	if (m_pConnection->Send((char*)(&PauseUnpauseRequest), sizeof(PauseUnpauseRequest)) < 0)
 	{
@@ -752,7 +756,7 @@ bool RemoteClient::RequestServerDumpDebug()
 	return OK;
 }
 
-bool RemoteClient::RequestServerEditQueue(int iAction, int iOffset, const char* szText, int* pIDList, int iIDCount, bool bSmartOrder)
+bool RemoteClient::RequestServerEditQueue(eRemoteEditAction iAction, int iOffset, const char* szText, int* pIDList, int iIDCount, bool bSmartOrder)
 {
 	if (iIDCount <= 0 || pIDList == NULL)
 	{

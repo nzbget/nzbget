@@ -1,7 +1,7 @@
 /*
- *  This file if part of nzbget
+ *  This file is part of nzbget
  *
- *  Copyright (C) 2008 Andrei Prygounkov <hugbug@users.sourceforge.net>
+ *  Copyright (C) 2008-2009 Andrei Prygounkov <hugbug@users.sourceforge.net>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -110,7 +110,8 @@ void Scheduler::FirstCheck()
 	m_bDetectClockChanges = false;
 	m_bExecuteProcess = false;
 	m_bDownloadRateChanged = false;
-	m_bPauseChanged = false;
+	m_bPauseDownloadChanged = false;
+	m_bPauseScanChanged = false;
 	CheckTasks();
 }
 
@@ -119,7 +120,8 @@ void Scheduler::IntervalCheck()
 	m_bDetectClockChanges = true;
 	m_bExecuteProcess = true;
 	m_bDownloadRateChanged = false;
-	m_bPauseChanged = false;
+	m_bPauseDownloadChanged = false;
+	m_bPauseScanChanged = false;
 	CheckTasks();
 }
 
@@ -209,7 +211,7 @@ void Scheduler::ExecuteTask(Task* pTask)
 	}
 	else
 	{
-		const char* szCommandName[] = { "Pause", "Unpause", "Set download rate", "Execute program" };
+		const char* szCommandName[] = { "Pause", "Unpause", "Set download rate", "Execute program", "Pause Scan", "Unpause Scan" };
 		debug("Executing scheduled command: %s", szCommandName[pTask->m_eCommand]);
 	}
 
@@ -220,10 +222,10 @@ void Scheduler::ExecuteTask(Task* pTask)
 			m_bDownloadRateChanged = true;
 			break;
 
-		case scPause:
-		case scUnpause:
-			m_bPause = pTask->m_eCommand == scPause;
-			m_bPauseChanged = true;
+		case scPauseDownload:
+		case scUnpauseDownload:
+			m_bPauseDownload = pTask->m_eCommand == scPauseDownload;
+			m_bPauseDownloadChanged = true;
 			break;
 
 		case scProcess:
@@ -231,6 +233,12 @@ void Scheduler::ExecuteTask(Task* pTask)
 			{
 				SchedulerScriptController::StartScript(pTask->m_szProcess);
 			}
+			break;
+
+		case scPauseScan:
+		case scUnpauseScan:
+			m_bPauseScan = pTask->m_eCommand == scPauseScan;
+			m_bPauseScanChanged = true;
 			break;
 	}
 }

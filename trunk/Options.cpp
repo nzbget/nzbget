@@ -229,7 +229,9 @@ Options::Options(int argc, char* argv[])
 	m_eDebugTarget			= mtScreen;
 	m_eDetailTarget			= mtScreen;
 	m_bDecode				= true;
-	m_bPause				= false;
+	m_bPauseDownload		= false;
+	m_bPausePostProcess		= false;
+	m_bPauseScan			= false;
 	m_bCreateBrokenLog		= false;
 	m_bResetLog				= false;
 	m_fDownloadRate			= 0;
@@ -848,6 +850,10 @@ void Options::InitCommandLine(int argc, char* argv[])
 				{
 					m_eClientOperation = c == 'P' ? opClientRequestPostPause : opClientRequestPostUnpause;
 				}
+				else if (!strcmp(optarg, "S"))
+				{
+					m_eClientOperation = c == 'P' ? opClientRequestScanPause : opClientRequestScanUnpause;
+				}
 				else
 				{
 					abort("FATAL ERROR: Could not parse value of option '%c'\n", c);
@@ -1057,7 +1063,7 @@ void Options::InitCommandLine(int argc, char* argv[])
 
 	if (m_bServerMode && m_eClientOperation == opClientRequestPause)
 	{
-		m_bPause = true;
+		m_bPauseDownload = true;
 		m_eClientOperation = opClientNoOperation;
 	}
 
@@ -1089,12 +1095,14 @@ void Options::PrintUsage(char* com)
 		"                 G          list groups (nzb-files) and server status\n"
 		"                 O          list post-processor-queue\n"
 		"                 S          print only server status\n"
-		"  -P, --pause   [D|P]       Pause downloading or post-processing on server\n"
-		"                 D          download queue (default)\n"
-		"                 P          post-processor queue\n"
-		"  -U, --unpause [D|P]       Unpause downloading or post-processing on server\n"
-		"                 D          download queue (default)\n"
-		"                 P          post-processor queue\n"
+		"  -P, --pause   [D|O|S]     Pause server:\n"
+		"                 D          pause download queue (default)\n"
+		"                 O          pause post-processor queue\n"
+		"                 S          pause scan of incoming nzb-directory\n"
+		"  -U, --unpause [D|O|S]     Unpause server:\n"
+		"                 D          unpause download queue (default)\n"
+		"                 O          unpause post-processor queue\n"
+		"                 S          unpause scan of incoming nzb-directory\n"
 		"  -R, --rate <speed>        Set download rate on server, in KB/s\n"
 		"  -T, --top                 Add file to the top (begining) of queue\n"
 		"                            (should be used with switch --append)\n"
@@ -1399,9 +1407,11 @@ void Options::InitScheduler()
 		}
 
 		sprintf(optname, "Task%i.Command", n);
-		const char* CommandNames[] = { "pause", "unpause", "resume", "downloadrate", "setdownloadrate", "rate", "speed", "script", "process" };
-		const int CommandValues[] = { Scheduler::scPause, Scheduler::scUnpause, Scheduler::scUnpause, Scheduler::scDownloadRate, Scheduler::scDownloadRate, Scheduler::scDownloadRate, Scheduler::scDownloadRate, Scheduler::scProcess, Scheduler::scProcess };
-		const int CommandCount = 9;
+		const char* CommandNames[] = { "pausedownload", "pause", "unpausedownload", "resumedownload", "unpause", "resume", "downloadrate", "setdownloadrate", 
+			"rate", "speed", "script", "process", "pausescan", "unpausescan", "resumescan" };
+		const int CommandValues[] = { Scheduler::scPauseDownload, Scheduler::scPauseDownload, Scheduler::scUnpauseDownload, Scheduler::scUnpauseDownload, Scheduler::scUnpauseDownload, Scheduler::scUnpauseDownload, Scheduler::scDownloadRate, Scheduler::scDownloadRate, 
+			Scheduler::scDownloadRate, Scheduler::scDownloadRate, Scheduler::scProcess, Scheduler::scProcess, Scheduler::scPauseScan, Scheduler::scUnpauseScan, Scheduler::scUnpauseScan };
+		const int CommandCount = 15;
 		Scheduler::ECommand eCommand = (Scheduler::ECommand)ParseOptionValue(optname, CommandCount, CommandNames, CommandValues);
 
 		int iWeekDays = 0;

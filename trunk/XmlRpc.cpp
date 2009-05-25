@@ -390,11 +390,11 @@ XmlCommand* XmlRpcProcessor::CreateCommand(const char* szMethodName)
 
 	if (!strcasecmp(szMethodName, "pause"))
 	{
-		command = new PauseUnpauseXmlCommand(true, false);
+		command = new PauseUnpauseXmlCommand(true, PauseUnpauseXmlCommand::paDownload);
 	}
 	else if (!strcasecmp(szMethodName, "resume"))
 	{
-		command = new PauseUnpauseXmlCommand(false, false);
+		command = new PauseUnpauseXmlCommand(false, PauseUnpauseXmlCommand::paDownload);
 	}
 	else if (!strcasecmp(szMethodName, "shutdown"))
 	{
@@ -448,13 +448,21 @@ XmlCommand* XmlRpcProcessor::CreateCommand(const char* szMethodName)
 	{
 		command = new ScanXmlCommand();
 	}
-	else if (!strcasecmp(szMethodName, "postpause"))
+	else if (!strcasecmp(szMethodName, "pausepost"))
 	{
-		command = new PauseUnpauseXmlCommand(true, true);
+		command = new PauseUnpauseXmlCommand(true, PauseUnpauseXmlCommand::paPostProcess);
 	}
-	else if (!strcasecmp(szMethodName, "postresume"))
+	else if (!strcasecmp(szMethodName, "resumepost"))
 	{
-		command = new PauseUnpauseXmlCommand(false, true);
+		command = new PauseUnpauseXmlCommand(false, PauseUnpauseXmlCommand::paPostProcess);
+	}
+	else if (!strcasecmp(szMethodName, "pausescan"))
+	{
+		command = new PauseUnpauseXmlCommand(true, PauseUnpauseXmlCommand::paScan);
+	}
+	else if (!strcasecmp(szMethodName, "resumescan"))
+	{
+		command = new PauseUnpauseXmlCommand(false, PauseUnpauseXmlCommand::paScan);
 	}
 	else 
 	{
@@ -695,10 +703,10 @@ void ErrorXmlCommand::Execute()
 	BuildErrorResponse(m_iErrCode, m_szErrText);
 }
 
-PauseUnpauseXmlCommand::PauseUnpauseXmlCommand(bool bPause, bool bPostProcessor)
+PauseUnpauseXmlCommand::PauseUnpauseXmlCommand(bool bPause, EPauseAction eEPauseAction)
 {
 	m_bPause = bPause;
-	m_bPostProcessor = bPostProcessor;
+	m_eEPauseAction = eEPauseAction;
 }
 
 void PauseUnpauseXmlCommand::Execute()
@@ -709,16 +717,27 @@ void PauseUnpauseXmlCommand::Execute()
 		return;
 	}
 
-	if (m_bPostProcessor)
+	bool bOK = true;
+
+	switch (m_eEPauseAction)
 	{
-		g_pPrePostProcessor->SetPause(m_bPause);
-	}
-	else
-	{
-		g_pOptions->SetPause(m_bPause);
+		case paDownload:
+			g_pOptions->SetPauseDownload(m_bPause);
+			break;
+
+		case paPostProcess:
+			g_pOptions->SetPausePostProcess(m_bPause);
+			break;
+
+		case paScan:
+			g_pOptions->SetPauseScan(m_bPause);
+			break;
+
+		default:
+			bOK = false;
 	}
 
-	BuildBoolResponse(true);
+	BuildBoolResponse(bOK);
 }
 
 void ShutdownXmlCommand::Execute()
@@ -790,6 +809,7 @@ void StatusXmlCommand::Execute()
 		"<member><name>ServerPaused</name><value><boolean>%s</boolean></value></member>\n"
 		"<member><name>ServerStandBy</name><value><boolean>%s</boolean></value></member>\n"
 		"<member><name>PostPaused</name><value><boolean>%s</boolean></value></member>\n"
+		"<member><name>ScanPaused</name><value><boolean>%s</boolean></value></member>\n"
 		"</struct>\n";
 
 	const char* JSON_RESPONSE_STATUS_BODY = 
@@ -809,7 +829,8 @@ void StatusXmlCommand::Execute()
 		"\"DownloadTimeSec\" : %i,\n"
 		"\"ServerPaused\" : %s,\n"
 		"\"ServerStandBy\" : %s,\n"
-		"\"PostPaused\" : %s\n"
+		"\"PostPaused\" : %s,\n"
+		"\"ScanPaused\" : %s\n"
 		"}\n";
 
 	unsigned long iRemainingSizeHi, iRemainingSizeLo;
@@ -818,8 +839,9 @@ void StatusXmlCommand::Execute()
 	Util::SplitInt64(iRemainingSize, &iRemainingSizeHi, &iRemainingSizeLo);
 	int iRemainingMBytes = (int)(iRemainingSize / 1024 / 1024);
 	int iDownloadLimit = (int)(g_pOptions->GetDownloadRate() * 1024);
-	bool bServerPaused = g_pOptions->GetPause();
-	bool bPostPaused = g_pPrePostProcessor->GetPause();
+	bool bServerPaused = g_pOptions->GetPauseDownload();
+	bool bPostPaused = g_pOptions->GetPausePostProcess();
+	bool bScanPaused = g_pOptions->GetPauseScan();
 	int iThreadCount = Thread::GetThreadCount() - 1; // not counting itself
 	PostQueue* pPostQueue = g_pQueueCoordinator->LockQueue()->GetPostQueue();
 	int iParJobCount = pPostQueue->size();
@@ -838,7 +860,7 @@ void StatusXmlCommand::Execute()
 		iRemainingSizeLo, iRemainingSizeHi,	iRemainingMBytes, iDownloadedSizeLo, iDownloadedSizeHi, 
 		iDownloadedMBytes, iDownloadRate, iAverageDownloadRate, iDownloadLimit,	iThreadCount, 
 		iParJobCount, iUpTimeSec, iDownloadTimeSec, BoolToStr(bServerPaused), BoolToStr(bServerStandBy),
-		BoolToStr(bPostPaused));
+		BoolToStr(bPostPaused), BoolToStr(bScanPaused));
 	szContent[2048-1] = '\0';
 
 	AppendResponse(szContent);
