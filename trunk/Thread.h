@@ -40,30 +40,6 @@ public:
 };
 
 
-class Semaphore
-{
-private:
-	void*					m_pSemObj;
-	
-#ifndef WIN32
-#ifndef HAVE_UNNAMED_SEMAPHORES
-	char					m_szName[20];
-	static int				m_iID;
-	static Mutex			m_mutexID;
-#endif
-	void					CreateSemObj(int iValue);
-#endif
-	
-public:
-							Semaphore();
-							Semaphore(int iValue);
-							~Semaphore();
-	void					Post();
-	bool					Wait();
-	bool					TryWait();
-};
-
-
 class Thread
 {
 private:

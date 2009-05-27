@@ -232,6 +232,7 @@ void ParChecker::Run()
 			
 			m_mutexQueuedParFiles.Lock();
 			hasMorePars = !m_QueuedParFiles.empty();
+			m_bQueuedParFilesChanged = false;
 			m_mutexQueuedParFiles.Unlock();
 			
 			if (!requested && !hasMorePars)
@@ -244,7 +245,15 @@ void ParChecker::Run()
 			
 			if (!hasMorePars)
 			{
-				m_semNeedMoreFiles.Wait();
+				// wait until new files are added by "AddParFile" or a change is signaled by "QueueChanged"
+				bool bQueuedParFilesChanged = false;
+				while (!bQueuedParFilesChanged && !IsStopped())
+				{
+					m_mutexQueuedParFiles.Lock();
+					bQueuedParFilesChanged = m_bQueuedParFilesChanged;
+					m_mutexQueuedParFiles.Unlock();
+					usleep(100 * 1000);
+				}
 			}
 		}
 
@@ -356,14 +365,14 @@ void ParChecker::AddParFile(const char * szParFilename)
 {
 	m_mutexQueuedParFiles.Lock();
 	m_QueuedParFiles.push_back(strdup(szParFilename));
-	m_semNeedMoreFiles.Post();
+	m_bQueuedParFilesChanged = true;
 	m_mutexQueuedParFiles.Unlock();
 }
 
 void ParChecker::QueueChanged()
 {
 	m_mutexQueuedParFiles.Lock();
-	m_semNeedMoreFiles.Post();
+	m_bQueuedParFilesChanged = true;
 	m_mutexQueuedParFiles.Unlock();
 }
 

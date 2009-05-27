@@ -64,7 +64,7 @@ private:
 	bool				m_bRepairNotNeeded;
 	QueuedParFiles		m_QueuedParFiles;
 	Mutex			 	m_mutexQueuedParFiles;
-	Semaphore			m_semNeedMoreFiles;
+	bool				m_bQueuedParFilesChanged;
 	int					m_iProcessedFiles;
 	int					m_iFilesToRepair;
 	int					m_iExtraFiles;

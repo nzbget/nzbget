@@ -164,9 +164,10 @@ void ArticleDownloader::Run()
 
 		Status = adFailed;
 
-		if (!m_pConnection)
+		while (!IsStopped() && !m_pConnection)
 		{
-			m_pConnection = g_pServerPool->GetConnection(level, true);
+			m_pConnection = g_pServerPool->GetConnection(level);
+			usleep(5 * 1000);
 		}
 
 		if (IsStopped())
@@ -181,11 +182,6 @@ void ArticleDownloader::Run()
 			break;
 		}
 
-		if (!m_pConnection)
-		{
-			error("Serious error: Connection is NULL");
-		}
-		
 		m_pConnection->SetSuppressErrors(false);
 
 		// test connection

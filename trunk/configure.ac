@@ -47,6 +47,7 @@ dnl Checks for header files.
 dnl
 AC_CHECK_HEADERS(sys/prctl.h)
 
+
 dnl
 dnl Check for libs
 dnl
@@ -124,21 +125,6 @@ fi
 if test "$HAVE_FUNCTION_MACRO" != "yes"; then
 	AC_DEFINE([FUNCTION_MACRO_NAME],[NULL],[Define to the name of macro which returns the name of function being compiled])
 fi
-
-
-dnl
-dnl Unnamed semaphores
-dnl
-AC_MSG_CHECKING(whether to use unnamed semaphores)
-case "$host" in
-	*-darwin*)
-		AC_MSG_RESULT([no])
-		;;
-	*)
-		AC_MSG_RESULT([yes])
-		AC_DEFINE([HAVE_UNNAMED_SEMAPHORES],1,Define to 1 to use unnamed semaphores)
-		;;
-esac
 
 
 dnl 
