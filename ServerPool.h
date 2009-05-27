@@ -1,9 +1,8 @@
 /*
- *  This file if part of nzbget
+ *  This file is part of nzbget
  *
- *  Copyright (C) 2004  Sven Henkel <sidddy@users.sourceforge.net>
- *  Copyright (C) 2005	Florian Penzkofer <f.penzkofer@sent.com>
- *  Copyright (C) 2007  Andrei Prygounkov <hugbug@users.sourceforge.net>
+ *  Copyright (C) 2004 Sven Henkel <sidddy@users.sourceforge.net>
+ *  Copyright (C) 2007-2009 Andrei Prygounkov <hugbug@users.sourceforge.net>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -52,24 +51,24 @@ private:
 	};
 
 	typedef std::vector<NewsServer*>		Servers;
-	typedef std::vector<Semaphore*>			Semaphores;
+	typedef std::vector<int>				Levels;
 	typedef std::vector<PooledConnection*>	Connections;
 
 	Servers				m_Servers;
 	Connections			m_Connections;
-	Semaphores			m_Semaphores;
+	Levels				m_Levels;
 	int					m_iMaxLevel;
 	Mutex			 	m_mutexConnections;
 	int					m_iTimeout;
 
 public:
-	ServerPool();
-	~ServerPool();
+						ServerPool();
+						~ServerPool();
 	void				SetTimeout(int iTimeout) { m_iTimeout = iTimeout; }
-	void 				AddServer(NewsServer *s);
+	void 				AddServer(NewsServer* pNewsServer);
 	void				InitConnections();
 	int					GetMaxLevel() { return m_iMaxLevel; }
-	NNTPConnection*		GetConnection(int iLevel, bool bWait);
+	NNTPConnection*		GetConnection(int iLevel);
 	void 				FreeConnection(NNTPConnection* pConnection, bool bUsed);
 	void				CloseUnusedConnections();
 

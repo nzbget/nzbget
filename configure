@@ -5035,6 +5035,7 @@ fi
 done
 
 
+
 { $as_echo "$as_me:$LINENO: checking for library containing pthread_create" >&5
 $as_echo_n "checking for library containing pthread_create... " >&6; }
 if test "${ac_cv_search_pthread_create+set}" = set; then
@@ -5855,25 +5856,6 @@ cat >>confdefs.h <<\_ACEOF
 _ACEOF
 
 fi
-
-
-{ $as_echo "$as_me:$LINENO: checking whether to use unnamed semaphores" >&5
-$as_echo_n "checking whether to use unnamed semaphores... " >&6; }
-case "$host" in
-	*-darwin*)
-		{ $as_echo "$as_me:$LINENO: result: no" >&5
-$as_echo "no" >&6; }
-		;;
-	*)
-		{ $as_echo "$as_me:$LINENO: result: yes" >&5
-$as_echo "yes" >&6; }
-
-cat >>confdefs.h <<\_ACEOF
-#define HAVE_UNNAMED_SEMAPHORES 1
-_ACEOF
-
-		;;
-esac
 
 
 

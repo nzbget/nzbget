@@ -127,7 +127,7 @@ void QueueCoordinator::Run()
 	{
 		if (!g_pOptions->GetPauseDownload())
 		{
-			NNTPConnection* pConnection = g_pServerPool->GetConnection(0, false);
+			NNTPConnection* pConnection = g_pServerPool->GetConnection(0);
 			if (pConnection)
 			{
 				// start download for next article

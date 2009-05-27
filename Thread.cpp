@@ -41,7 +41,6 @@
 #else
 #include <fcntl.h>
 #include <pthread.h>
-#include <semaphore.h>
 #endif
 
 #include "Log.h"
@@ -50,12 +49,6 @@
 int Thread::m_iThreadCount = 1; // take the main program thread into account
 Mutex* Thread::m_pMutexThread;
 
-#ifndef WIN32
-#ifndef HAVE_UNNAMED_SEMAPHORES	
-int Semaphore::m_iID = 1;
-Mutex Semaphore::m_mutexID;
-#endif
-#endif
 
 Mutex::Mutex()
 {
@@ -101,92 +94,6 @@ void Mutex::Unlock()
 	LeaveCriticalSection((CRITICAL_SECTION*)m_pMutexObj);
 #else
 	pthread_mutex_unlock((pthread_mutex_t*)m_pMutexObj);
-#endif
-}
-
-
-Semaphore::Semaphore()
-{
-#ifdef WIN32
-	m_pSemObj = CreateSemaphore(NULL, 0, 1, NULL);
-#else
-	CreateSemObj(0);
-#endif
-}
-
-Semaphore::Semaphore(int iValue)
-{
-#ifdef WIN32
-	m_pSemObj = CreateSemaphore(NULL, iValue, iValue, NULL);
-#else
-	CreateSemObj(iValue);
-#endif
-}
-
-#ifndef WIN32
-void Semaphore::CreateSemObj(int iValue)
-{
-#ifdef HAVE_UNNAMED_SEMAPHORES
-	m_pSemObj = (sem_t*)malloc(sizeof(sem_t));
-	int iRet = sem_init((sem_t*)m_pSemObj, 0, iValue);
-	if (iRet == -1)
-	{
-		error("sem_init failed: error %i", errno);
-	}
-#else
-	m_mutexID.Lock();
-	int iID = m_iID;
-	m_iID++;
-	m_mutexID.Unlock();
-	snprintf(m_szName, sizeof(m_szName), "/NZBGET-%i", iID);
-	m_pSemObj = sem_open(m_szName, O_CREAT, S_IRWXU, iValue);
-	if (m_pSemObj == SEM_FAILED)
-	{
-		error("sem_open failed: error %i", errno);
-	}
-#endif
-}
-#endif
-
-Semaphore::~ Semaphore()
-{
-#ifdef WIN32
-	CloseHandle((HANDLE)m_pSemObj);
-#else
-#ifdef HAVE_UNNAMED_SEMAPHORES	
-	sem_destroy((sem_t*)m_pSemObj);
-	free(m_pSemObj);
-#else
-	sem_close((sem_t*)m_pSemObj);
-	sem_unlink(m_szName);
-#endif
-#endif
-}
-
-void Semaphore::Post()
-{
-#ifdef WIN32
-	ReleaseSemaphore((HANDLE)m_pSemObj, 1, NULL);
-#else
-	sem_post((sem_t*)m_pSemObj);
-#endif
-}
-
-bool Semaphore::Wait()
-{
-#ifdef WIN32
-	return WaitForSingleObject((HANDLE)m_pSemObj, INFINITE) == WAIT_OBJECT_0;
-#else
-	return sem_wait((sem_t*)m_pSemObj) == 0;
-#endif
-}
-
-bool Semaphore::TryWait()
-{
-#ifdef WIN32
-	return WaitForSingleObject((HANDLE)m_pSemObj, 0) == WAIT_OBJECT_0;
-#else
-	return sem_trywait((sem_t*)m_pSemObj) == 0;
 #endif
 }
 

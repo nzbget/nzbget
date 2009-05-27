@@ -1,8 +1,8 @@
 /*
- *  This file if part of nzbget
+ *  This file is part of nzbget
  *
- *  Copyright (C) 2004  Sven Henkel <sidddy@users.sourceforge.net>
- *  Copyright (C) 2007  Andrei Prygounkov <hugbug@users.sourceforge.net>
+ *  Copyright (C) 2004 Sven Henkel <sidddy@users.sourceforge.net>
+ *  Copyright (C) 2007-2009 Andrei Prygounkov <hugbug@users.sourceforge.net>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -20,14 +20,6 @@
  *
  * $Revision$
  * $Date$
- *
- */
-
-/*
- *
- * m_Semaphore Patch by Florian Penzkofer <f.penzkofer@sent.com>
- * The queue of mutexes that was used did not work for every
- * implementation of POSIX threads. Now a m_Semaphore is used.
  *
  */
 
@@ -65,20 +57,13 @@ ServerPool::ServerPool()
 
 	m_iMaxLevel = 0;
 	m_iTimeout = 60;
-	m_Servers.clear();
-	m_Connections.clear();
-	m_Semaphores.clear();
 }
 
 ServerPool::~ ServerPool()
 {
 	debug("Destroying ServerPool");
 
-	for (Semaphores::iterator it = m_Semaphores.begin(); it != m_Semaphores.end(); it++)
-	{
-		delete *it;
-	}
-	m_Semaphores.clear();
+	m_Levels.clear();
 
 	for (Servers::iterator it = m_Servers.begin(); it != m_Servers.end(); it++)
 	{
@@ -132,51 +117,39 @@ void ServerPool::InitConnections()
 			}
 		}
 
-		Semaphore* sem = new Semaphore(iMaxConnectionsForLevel);
-		m_Semaphores.push_back(sem);
+		m_Levels.push_back(iMaxConnectionsForLevel);
 	}
 }
 
-NNTPConnection* ServerPool::GetConnection(int iLevel, bool bWait)
+NNTPConnection* ServerPool::GetConnection(int iLevel)
 {
-	bool bWaitVal = false;
-	if (bWait)
-	{
-		debug("Getting connection (wait)");
-		bWaitVal = m_Semaphores[iLevel]->Wait();
-	}
-	else
-	{
-		bWaitVal = m_Semaphores[iLevel]->TryWait();
-	}
-
-	if (!bWaitVal)
-	{
-		// signal received or wait timeout
-		return NULL;
-	}
+	PooledConnection* pConnection = NULL;
 
 	m_mutexConnections.Lock();
 
-	PooledConnection* pConnection = NULL;
-	for (Connections::iterator it = m_Connections.begin(); it != m_Connections.end(); it++)
+	if (m_Levels[iLevel] > 0)
 	{
-		PooledConnection* pConnection1 = *it;
-		if (!pConnection1->GetInUse() && pConnection1->GetNewsServer()->GetLevel() == iLevel)
+		for (Connections::iterator it = m_Connections.begin(); it != m_Connections.end(); it++)
 		{
-			// free connection found, take it!
-			pConnection = pConnection1;
-			pConnection->SetInUse(true);
-			break;
+			PooledConnection* pConnection1 = *it;
+			if (!pConnection1->GetInUse() && pConnection1->GetNewsServer()->GetLevel() == iLevel)
+			{
+				// free connection found, take it!
+				pConnection = pConnection1;
+				pConnection->SetInUse(true);
+				break;
+			}
+		}
+
+		m_Levels[iLevel]--;
+
+		if (!pConnection)
+		{
+			error("ServerPool: internal error, no free connection found, but there should be one");
 		}
 	}
 
 	m_mutexConnections.Unlock();
-
-	if (!pConnection)
-	{
-		error("ServerPool: serious error, no free connection found, but there should be one.");
-	}
 
 	return pConnection;
 }
@@ -195,7 +168,7 @@ void ServerPool::FreeConnection(NNTPConnection* pConnection, bool bUsed)
 	{
 		((PooledConnection*)pConnection)->SetFreeTimeNow();
 	}
-	m_Semaphores[pConnection->GetNewsServer()->GetLevel()]->Post();
+	m_Levels[pConnection->GetNewsServer()->GetLevel()]++;
 
 	m_mutexConnections.Unlock();
 }
@@ -237,15 +210,6 @@ void ServerPool::LogDebugInfo()
 	{
 		debug("      Connection: Level=%i, InUse:%i", (*it)->GetNewsServer()->GetLevel(), (int)(*it)->GetInUse());
 	}
-/*
-	debug("    Semaphores: %i", m_Semaphores.size());
-	for (int iLevel = 0; iLevel <= m_iMaxLevel; iLevel++)
-	{
-		sem_t* sem = m_Semaphores[iLevel];
-		int iSemValue;
-		sem_getvalue(sem, &iSemValue);
-		debug("      Semaphore: level=%i, value=%i", iLevel, iSemValue);
-	}
-*/
+
 	m_mutexConnections.Unlock();
 }

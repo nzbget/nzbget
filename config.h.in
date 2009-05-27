@@ -79,9 +79,6 @@
 /* Define to 1 if you have the <unistd.h> header file. */
 #undef HAVE_UNISTD_H
 
-/* Define to 1 to use unnamed semaphores */
-#undef HAVE_UNNAMED_SEMAPHORES
-
 /* Define to 1 if variadic macros are supported */
 #undef HAVE_VARIADIC_MACROS
 
