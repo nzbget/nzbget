@@ -31,6 +31,7 @@
 #include "Thread.h"
 #include "Observer.h"
 #include "DownloadInfo.h"
+#include "Scanner.h"
 
 #ifndef DISABLE_PARCHECK
 #include "ParChecker.h"
@@ -93,13 +94,11 @@ private:
 	QueueCoordinatorObserver	m_QueueCoordinatorObserver;
 	bool				m_bHasMoreJobs;
 	bool				m_bPostScript;
-	bool				m_bNZBScript;
 	bool				m_bSchedulerPauseChanged;
 	bool				m_bSchedulerPause;
 	bool				m_bPostPause;
-	bool				m_bRequestedNZBDirScan;
+	Scanner				m_Scanner;
 
-	void				CheckIncomingNZBs(const char* szDirectory, const char* szCategory, bool bCheckTimestamp);
 	bool				IsNZBFileCompleted(DownloadQueue* pDownloadQueue, NZBInfo* pNZBInfo, 
 							bool bIgnoreFirstInPostQueue, bool bIgnorePaused, bool bCheckPostQueue, bool bAllowOnlyOneDeleted);
 	bool				JobExists(PostQueue* pPostQueue, NZBInfo* pNZBInfo, const char* szParFilename, bool bParCheck);
@@ -110,8 +109,6 @@ private:
 	void				SavePostQueue(DownloadQueue* pDownloadQueue);
 	void				SanitisePostQueue(PostQueue* pPostQueue);
 	void				CheckDiskSpace();
-	void				AddFileToQueue(const char* szFilename, const char* szCategory);
-	void				ProcessIncomingFile(const char* szDirectory, const char* szBaseFilename, const char* szFullFilename, const char* szCategory);
 	void				ApplySchedulerState();
 	bool				PauseDownload();
 	bool				UnpauseDownload();

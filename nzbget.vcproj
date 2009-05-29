@@ -448,6 +448,14 @@
 			>
 		</File>
 		<File
+			RelativePath=".\Scanner.cpp"
+			>
+		</File>
+		<File
+			RelativePath=".\Scanner.h"
+			>
+		</File>
+		<File
 			RelativePath=".\Scheduler.cpp"
 			>
 		</File>
