@@ -136,6 +136,7 @@ private:
 	int					m_iFirstID;
 	int					m_iLastID;
 	int		 			m_iRemainingFileCount;
+	int					m_iPausedFileCount;
 	long long 			m_lRemainingSize;
 	long long 			m_lPausedSize;
 	int					m_iRemainingParCount;
@@ -151,6 +152,7 @@ public:
 	long long 			GetRemainingSize() { return m_lRemainingSize; }
 	long long 			GetPausedSize() { return m_lPausedSize; }
 	int					GetRemainingFileCount() { return m_iRemainingFileCount; }
+	int					GetPausedFileCount() { return m_iPausedFileCount; }
 	int					GetRemainingParCount() { return m_iRemainingParCount; }
 };
 

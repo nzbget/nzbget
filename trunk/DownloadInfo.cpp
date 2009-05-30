@@ -516,6 +516,7 @@ GroupInfo::GroupInfo()
 	m_iFirstID = 0;
 	m_iLastID = 0;
 	m_iRemainingFileCount = 0;
+	m_iPausedFileCount = 0;
 	m_lRemainingSize = 0;
 	m_lPausedSize = 0;
 	m_iRemainingParCount = 0;
@@ -677,6 +678,7 @@ void DownloadQueue::BuildGroups(GroupQueue* pGroupQueue)
 		if (pFileInfo->GetPaused())
 		{
 			pGroupInfo->m_lPausedSize += pFileInfo->GetRemainingSize();
+			pGroupInfo->m_iPausedFileCount++;
 		}
 
 		char szLoFileName[1024];
