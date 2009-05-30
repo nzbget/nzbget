@@ -30,6 +30,7 @@
 #ifndef DISABLE_CURSES
 
 #include <vector>
+#include <time.h>
 
 #include "Frontend.h"
 #include "Log.h"

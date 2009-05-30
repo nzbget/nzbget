@@ -28,9 +28,6 @@
 #define ARTICLEDOWNLOADER_H
 
 #include <time.h>
-#ifdef WIN32
-#include <sys/timeb.h>
-#endif
 
 #include "Observer.h"
 #include "DownloadInfo.h"

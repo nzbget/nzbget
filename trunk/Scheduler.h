@@ -27,6 +27,7 @@
 #define SCHEDULER_H
 
 #include <list>
+#include <time.h>
 
 #include "Thread.h"
 
