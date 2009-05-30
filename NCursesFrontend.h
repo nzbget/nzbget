@@ -1,8 +1,8 @@
 /*
- *  This file if part of nzbget
+ *  This file is part of nzbget
  *
- *  Copyright (C) 2004  Sven Henkel <sidddy@users.sourceforge.net>
- *  Copyright (C) 2007  Andrei Prygounkov <hugbug@users.sourceforge.net>
+ *  Copyright (C) 2004 Sven Henkel <sidddy@users.sourceforge.net>
+ *  Copyright (C) 2007-2009 Andrei Prygounkov <hugbug@users.sourceforge.net>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -64,6 +64,9 @@ private:
 	GroupQueue			m_groupQueue;
 	char*				m_szHint;
 	time_t				m_tStartHint;
+	int					m_iColWidthFiles;
+	int					m_iColWidthTotal;
+	int					m_iColWidthLeft;
 
 	// Inputting numbers
 	int					m_iInputNumberIndex;
@@ -94,7 +97,8 @@ private:
 	void			PrintFileQueue();
 	void			PrintFilename(FileInfo* pFileInfo, int iRow, bool bSelected);
 	void			PrintGroupQueue();
-	void			PrintGroupname(GroupInfo * pGroupInfo, int iRow, bool bSelected);
+	void			ResetColWidths();
+	void			PrintGroupname(GroupInfo * pGroupInfo, int iRow, bool bSelected, bool bCalcColWidth);
 	void			PrepareGroupQueue();
 	void			PrintTopHeader(char* szHeader, int iLineNr, bool bUpTime);
 	void			ClearGroupQueue();

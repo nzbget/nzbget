@@ -920,8 +920,9 @@ void NCursesFrontend::PrintGroupQueue()
     else
     {
 		iLineNr++;
-		long long lRemaining = 0;
-		long long lPaused = 0;
+
+		ResetColWidths();
+		int iCalcLineNr = iLineNr;
 		int i = 0;
         for (GroupQueue::iterator it = pGroupQueue->begin(); it != pGroupQueue->end(); it++, i++)
         {
@@ -929,7 +930,20 @@ void NCursesFrontend::PrintGroupQueue()
 
 			if (i >= m_iQueueScrollOffset && i < m_iQueueScrollOffset + m_iQueueWinHeight -1)
 			{
-				PrintGroupname(pGroupInfo, iLineNr++, i == m_iSelectedQueueEntry);
+				PrintGroupname(pGroupInfo, iCalcLineNr++, false, true);
+			}
+        }
+
+		long long lRemaining = 0;
+		long long lPaused = 0;
+		i = 0;
+        for (GroupQueue::iterator it = pGroupQueue->begin(); it != pGroupQueue->end(); it++, i++)
+        {
+            GroupInfo* pGroupInfo = *it;
+
+			if (i >= m_iQueueScrollOffset && i < m_iQueueScrollOffset + m_iQueueWinHeight -1)
+			{
+				PrintGroupname(pGroupInfo, iLineNr++, i == m_iSelectedQueueEntry, false);
 			}
 
 			lRemaining += pGroupInfo->GetRemainingSize();
@@ -950,7 +964,14 @@ void NCursesFrontend::PrintGroupQueue()
     }
 }
 
-void NCursesFrontend::PrintGroupname(GroupInfo * pGroupInfo, int iRow, bool bSelected)
+void NCursesFrontend::ResetColWidths()
+{
+	m_iColWidthFiles = 0;
+	m_iColWidthTotal = 0;
+	m_iColWidthLeft = 0;
+}
+
+void NCursesFrontend::PrintGroupname(GroupInfo * pGroupInfo, int iRow, bool bSelected, bool bCalcColWidth)
 {
 	int color = 0;
 	const char* Brace1 = "[";
@@ -974,24 +995,91 @@ void NCursesFrontend::PrintGroupname(GroupInfo * pGroupInfo, int iRow, bool bSel
 	char szRemaining[20];
 	Util::FormatFileSize(szRemaining, sizeof(szRemaining), lUnpausedRemainingSize);
 
-	char szPaused[20];
-	szPaused[0] = '\0';
-	if (pGroupInfo->GetPausedSize() > 0)
-	{
-		char szPausedSize[20];
-		Util::FormatFileSize(szPausedSize, sizeof(szPausedSize), pGroupInfo->GetPausedSize());
-		sprintf(szPaused, " + %s paused", szPausedSize);
-	}
-
 	char szNZBNiceName[1024];
 	pGroupInfo->GetNZBInfo()->GetNiceNZBName(szNZBNiceName, 1023);
 
 	char szBuffer[MAX_SCREEN_WIDTH];
-	snprintf(szBuffer, MAX_SCREEN_WIDTH, "%s%i-%i%s %s (%i file%s, %s%s)", Brace1, pGroupInfo->GetFirstID(), pGroupInfo->GetLastID(), Brace2, szNZBNiceName, 
-		pGroupInfo->GetRemainingFileCount(), pGroupInfo->GetRemainingFileCount() > 1 ? "s" : "", szRemaining, szPaused);
+
+	// Format:
+	// [id - id] Name   Left-Files/Paused     Total      Left     Time
+	// [1-2] Nzb-name             999/999 999.99 MB 999.99 MB 00:00:00
+
+	int iNameLen = 0;
+	if (bCalcColWidth)
+	{
+		iNameLen = m_iScreenWidth - 1 - 9 - 11 - 11 - 9;
+	}
+	else
+	{
+		iNameLen = m_iScreenWidth - 1 - m_iColWidthFiles - 2 - m_iColWidthTotal - 2 - m_iColWidthLeft - 2 - 9;
+	}
+
+	bool bPrintFormatted = iNameLen > 20;
+
+	if (bPrintFormatted)
+	{
+		char szFiles[20];
+		snprintf(szFiles, 20, "%i/%i", pGroupInfo->GetRemainingFileCount(), pGroupInfo->GetPausedFileCount());
+		szFiles[20-1] = '\0';
+		
+		char szTotal[20];
+		Util::FormatFileSize(szTotal, sizeof(szTotal), pGroupInfo->GetNZBInfo()->GetSize());
+
+		char szNameWithIds[1024];
+		snprintf(szNameWithIds, 1024, "%s%i-%i%s %s", Brace1, pGroupInfo->GetFirstID(), pGroupInfo->GetLastID(), Brace2, szNZBNiceName);
+		szNameWithIds[iNameLen] = '\0';
+
+		char szTime[100];
+		szTime[0] = '\0';
+		float fCurrentDownloadSpeed = m_bStandBy ? 0 : m_fCurrentDownloadSpeed;
+		if (pGroupInfo->GetPausedSize() > 0 && lUnpausedRemainingSize == 0)
+		{
+			snprintf(szTime, 100, "[paused]");
+			Util::FormatFileSize(szRemaining, sizeof(szRemaining), pGroupInfo->GetRemainingSize());
+		}
+		else if (fCurrentDownloadSpeed > 0.0 && !m_bPause)
+		{
+			long long remain_sec = (long long)(lUnpausedRemainingSize / (fCurrentDownloadSpeed * 1024));
+			int h = (int)(remain_sec / 3600);
+			int m = (int)((remain_sec % 3600) / 60);
+			int s = (int)(remain_sec % 60);
+			if (h < 100)
+			{
+				snprintf(szTime, 100, "%.2d:%.2d:%.2d", h, m, s);
+			}
+			else
+			{
+				snprintf(szTime, 100, "99:99:99");
+			}
+		}
+
+		if (bCalcColWidth)
+		{
+			int iColWidthFiles = strlen(szFiles);
+			m_iColWidthFiles = iColWidthFiles > m_iColWidthFiles ? iColWidthFiles : m_iColWidthFiles;
+
+			int iColWidthTotal = strlen(szTotal);
+			m_iColWidthTotal = iColWidthTotal > m_iColWidthTotal ? iColWidthTotal : m_iColWidthTotal;
+
+			int iColWidthLeft = strlen(szRemaining);
+			m_iColWidthLeft = iColWidthLeft > m_iColWidthLeft ? iColWidthLeft : m_iColWidthLeft;
+		}
+		else
+		{
+			snprintf(szBuffer, MAX_SCREEN_WIDTH, "%-*s  %*s  %*s  %*s  %8s", iNameLen, szNameWithIds, m_iColWidthFiles, szFiles, m_iColWidthTotal, szTotal, m_iColWidthLeft, szRemaining, szTime);
+		}
+	}
+	else
+	{
+		snprintf(szBuffer, MAX_SCREEN_WIDTH, "%s%i-%i%s %s", Brace1, pGroupInfo->GetFirstID(), pGroupInfo->GetLastID(), Brace2, szNZBNiceName);
+	}
+
 	szBuffer[MAX_SCREEN_WIDTH - 1] = '\0';
 
-	PlotLine(szBuffer, iRow, 0, color);
+	if (!bCalcColWidth)
+	{
+		PlotLine(szBuffer, iRow, 0, color);
+	}
 }
 
 void NCursesFrontend::PrepareGroupQueue()
