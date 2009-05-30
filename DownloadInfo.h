@@ -29,6 +29,7 @@
 
 #include <vector>
 #include <deque>
+#include <time.h>
 
 #include "Log.h"
 #include "Thread.h"

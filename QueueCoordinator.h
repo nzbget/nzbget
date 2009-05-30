@@ -1,7 +1,7 @@
 /*
- *  This file if part of nzbget
+ *  This file is part of nzbget
  *
- *  Copyright (C) 2004  Sven Henkel <sidddy@users.sourceforge.net>
+ *  Copyright (C) 2004 Sven Henkel <sidddy@users.sourceforge.net>
  *  Copyright (C) 2007-2009 Andrei Prygounkov <hugbug@users.sourceforge.net>
  *
  *  This program is free software; you can redistribute it and/or modify
@@ -30,9 +30,6 @@
 #include <deque>
 #include <list>
 #include <time.h>
-#ifdef WIN32
-#include <sys/timeb.h>
-#endif
 
 #include "Thread.h"
 #include "NZBFile.h"
