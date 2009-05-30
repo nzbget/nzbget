@@ -423,33 +423,6 @@ float Util::Int64ToFloat(long long Int64)
 	return ((unsigned long)(1 << 30)) * 4.0f * Hi + Lo;
 }
 
-float Util::EqualTime(_timeval* t1, _timeval* t2)
-{
-#ifdef WIN32
-	return t1->time == t2->time && t1->millitm == t2->millitm;
-#else
-	return t1->tv_sec == t2->tv_sec && t1->tv_usec == t2->tv_usec;
-#endif
-}
-
-bool Util::EmptyTime(_timeval* t)
-{
-#ifdef WIN32
-	return t->time == 0 && t->millitm == 0;
-#else
-	return t->tv_sec == 0 && t->tv_usec == 0;
-#endif
-}
-
-float Util::DiffTime(_timeval* t1, _timeval* t2)
-{
-#ifdef WIN32
-	return ((t1->time - t2->time) + (t1->millitm - t2->millitm) / 1000.0f);
-#else
-	return (float)((t1->tv_sec - t2->tv_sec) + (t1->tv_usec - t2->tv_usec) / 1000000.0);
-#endif
-}
-
 /* Base64 decryption is taken from 
  *  Article "BASE 64 Decoding and Encoding Class 2003" by Jan Raddatz
  *  http://www.codeguru.com/cpp/cpp/algorithms/article.php/c5099/

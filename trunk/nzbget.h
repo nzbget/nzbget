@@ -49,7 +49,6 @@
 #define	S_DIRMODE NULL
 #define usleep(usec) Sleep((usec) / 1000)
 #define gettimeofday(tm, ignore) _ftime(tm)
-#define _timeval _timeb
 #define socklen_t int
 #define SHUT_RDWR 0x02
 #define PATH_SEPARATOR '\\'
@@ -64,7 +63,6 @@
 
 // POSIX
 
-#define _timeval timeval
 #define closesocket(sock) close(sock)
 #define SOCKET int
 #define INVALID_SOCKET (-1)

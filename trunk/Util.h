@@ -29,7 +29,6 @@
 #ifdef WIN32
 #include <stdio.h>
 #include <io.h>
-#include <sys/timeb.h>
 #else
 #include <dirent.h>
 #endif
@@ -105,10 +104,6 @@ public:
 	 * for example on ARM for NSLU2 (unslung).
 	 */
 	static float Int64ToFloat(long long Int64);
-
-	static float EqualTime(_timeval* t1, _timeval* t2);
-	static bool EmptyTime(_timeval* t);
-	static float DiffTime(_timeval* t1, _timeval* t2);
 
 	static unsigned int DecodeBase64(char* szInputBuffer, int iInputBufferLength, char* szOutputBuffer);
 
