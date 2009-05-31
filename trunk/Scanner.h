@@ -26,21 +26,47 @@
 #ifndef SCANNER_H
 #define SCANNER_H
 
+#include <deque>
+#include <time.h>
+
 class Scanner
 {
 private:
+	class FileData
+	{
+	private:
+		char*			m_szFilename;
+		long long		m_iSize;
+		time_t			m_tLastChange;
+
+	public:
+						FileData(const char* szFilename);
+						~FileData();
+		const char*		GetFilename() { return m_szFilename; }
+		long long		GetSize() { return m_iSize; }
+		void			SetSize(long long lSize) { m_iSize = lSize; }
+		time_t			GetLastChange() { return m_tLastChange; }
+		void			SetLastChange(time_t tLastChange) { m_tLastChange = tLastChange; }
+	};
+
+	typedef std::deque<FileData*>		FileList;
+
 	bool				m_bRequestedNZBDirScan;
 	int					m_iNZBDirInterval;
 	bool				m_bNZBScript;
-	bool				m_bSecondScan;
+	int					m_iPass;
 	int					m_iStepMSec;
+	FileList			m_FileList;
 
-	void				CheckIncomingNZBs(const char* szDirectory, const char* szCategory, bool bCheckTimestamp);
+	void				CheckIncomingNZBs(const char* szDirectory, const char* szCategory, bool bCheckStat);
 	void				AddFileToQueue(const char* szFilename, const char* szCategory);
 	void				ProcessIncomingFile(const char* szDirectory, const char* szBaseFilename, const char* szFullFilename, const char* szCategory);
+	bool				CanProcessFile(const char* szFullFilename);
+	void				DropOldFiles();
 
 public:
 						Scanner();
+						~Scanner();
 	void				SetStepInterval(int iStepMSec) { m_iStepMSec = iStepMSec; }
 	void				ScanNZBDir();
 	void				Check();

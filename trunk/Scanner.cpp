@@ -53,17 +53,40 @@ extern QueueCoordinator* g_pQueueCoordinator;
 extern Options* g_pOptions;
 extern DiskState* g_pDiskState;
 
+Scanner::FileData::FileData(const char* szFilename)
+{
+	m_szFilename = strdup(szFilename);
+	m_iSize = 0;
+	m_tLastChange = 0;
+}
+
+Scanner::FileData::~FileData()
+{
+	free(m_szFilename);
+}
+
 Scanner::Scanner()
 {
 	debug("Creating Scanner");
 
 	m_bRequestedNZBDirScan = false;
 	m_iNZBDirInterval = g_pOptions->GetNzbDirInterval() * 1000;
-	m_bSecondScan = false;
+	m_iPass = 0;
 	m_iStepMSec = 0;
 
 	const char* szNZBScript = g_pOptions->GetNZBProcess();
 	m_bNZBScript = szNZBScript && strlen(szNZBScript) > 0;
+}
+
+Scanner::~Scanner()
+{
+	debug("Destroying Scanner");
+
+	for (FileList::iterator it = m_FileList.begin(); it != m_FileList.end(); it++)
+    {
+        delete *it;
+	}
+	m_FileList.clear();
 }
 
 void Scanner::Check()
@@ -73,22 +96,32 @@ void Scanner::Check()
 		 m_iNZBDirInterval >= g_pOptions->GetNzbDirInterval() * 1000)))
 	{
 		// check nzbdir every g_pOptions->GetNzbDirInterval() seconds or if requested
-		bool bCheckTimestamp = !m_bRequestedNZBDirScan;
+		bool bCheckStat = !m_bRequestedNZBDirScan;
 		m_bRequestedNZBDirScan = false;
-		CheckIncomingNZBs(g_pOptions->GetNzbDir(), "", bCheckTimestamp);
+		CheckIncomingNZBs(g_pOptions->GetNzbDir(), "", bCheckStat);
 		m_iNZBDirInterval = 0;
-		if (m_bNZBScript && (g_pOptions->GetNzbDirFileAge() < g_pOptions->GetNzbDirInterval()))
+
+		// if NzbDirFileAge is less than NzbDirInterval (that can happen if NzbDirInterval
+		// is set for rare scans like once per hour) we make 4 scans:
+		//   - one additional scan is neccessary to check sizes of detected files;
+		//   - another scan is required to check files which were extracted by NzbProcess-script;
+		//   - third scan is needed to check sizes of extracted files.
+		if (g_pOptions->GetNzbDirFileAge() < g_pOptions->GetNzbDirInterval())
 		{
-			if (!m_bSecondScan)
+			int iMaxPass = m_bNZBScript ? 3 : 1;
+			if (m_iPass < iMaxPass)
 			{
-				// scheduling second scan of incoming directory in g_pOptions->GetNzbDirFileAge() seconds.
-				// the second scan is needed because the files extracted by nzbprocess-script
-				// might be skipped on the first scan; that might occur depending on file
-				// names and their storage location in directory's entry list.
-				m_iNZBDirInterval = (g_pOptions->GetNzbDirInterval() - g_pOptions->GetNzbDirFileAge() - 1) * 1000;
+				// scheduling another scan of incoming directory in NzbDirFileAge seconds.
+				m_iNZBDirInterval = (g_pOptions->GetNzbDirInterval() - g_pOptions->GetNzbDirFileAge()) * 1000;
+				m_iPass++;
 			}
-			m_bSecondScan = !m_bSecondScan;
+			else
+			{
+				m_iPass = 0;
+			}
 		}
+
+		DropOldFiles();
 	}
 	m_iNZBDirInterval += m_iStepMSec;
 }
@@ -97,7 +130,7 @@ void Scanner::Check()
 * Check if there are files in directory for incoming nzb-files
 * and add them to download queue
 */
-void Scanner::CheckIncomingNZBs(const char* szDirectory, const char* szCategory, bool bCheckTimestamp)
+void Scanner::CheckIncomingNZBs(const char* szDirectory, const char* szCategory, bool bCheckStat)
 {
 	DirBrowser dir(szDirectory);
 	while (const char* filename = dir.Next())
@@ -105,7 +138,7 @@ void Scanner::CheckIncomingNZBs(const char* szDirectory, const char* szCategory,
 		struct stat buffer;
 		char fullfilename[1023 + 1]; // one char reserved for the trailing slash (if needed)
 		snprintf(fullfilename, 1023, "%s%s", szDirectory, filename);
-		fullfilename[1023-1] = '\0';
+		fullfilename[1023 - 1] = '\0';
 		if (!stat(fullfilename, &buffer))
 		{
 			// check subfolders
@@ -118,20 +151,107 @@ void Scanner::CheckIncomingNZBs(const char* szDirectory, const char* szCategory,
 				if (strlen(szCategory) > 0)
 				{
 					snprintf(szSubCategory, 1023, "%s%c%s", szCategory, PATH_SEPARATOR, filename);
-					szSubCategory[1024-1] = '\0';
+					szSubCategory[1024 - 1] = '\0';
 					szUseCategory = szSubCategory;
 				}
-				CheckIncomingNZBs(fullfilename, szUseCategory, bCheckTimestamp);
+				CheckIncomingNZBs(fullfilename, szUseCategory, bCheckStat);
 			}
 			else if ((buffer.st_mode & S_IFDIR) == 0 &&
-				(!bCheckTimestamp ||
-				// file found, checking modification-time
-				(time(NULL) - buffer.st_mtime > g_pOptions->GetNzbDirFileAge() &&
-				time(NULL) - buffer.st_ctime > g_pOptions->GetNzbDirFileAge())))
+				(!bCheckStat || CanProcessFile(fullfilename)))
 			{
-				// the file is at least g_pOptions->GetNzbDirFileAge() seconds old, we can process it
 				ProcessIncomingFile(szDirectory, filename, fullfilename, szCategory);
 			}
+		}
+	}
+}
+
+/**
+ * Only files which were not changed during last g_pOptions->GetNzbDirFileAge() seconds
+ * can be processed. That prevents the processing of files, which are currently being
+ * copied into nzb-directory (eg. being downloaded in web-browser).
+ */
+bool Scanner::CanProcessFile(const char* szFullFilename)
+{
+	const char* szExtension = strrchr(szFullFilename, '.');
+	if (!szExtension ||
+		!strcasecmp(szExtension, ".queued") ||
+		!strcasecmp(szExtension, ".error") ||
+		!strcasecmp(szExtension, ".processed"))
+	{
+		return false;
+	}
+
+	long long lSize = Util::FileSize(szFullFilename);
+	time_t tCurrent = time(NULL);
+	bool bCanProcess = false;
+	bool bInList = false;
+
+	for (FileList::iterator it = m_FileList.begin(); it != m_FileList.end(); it++)
+    {
+        FileData* pFileData = *it;
+		if (!strcmp(pFileData->GetFilename(), szFullFilename))
+		{
+			bInList = true;
+			if (pFileData->GetSize() == lSize &&
+				tCurrent - pFileData->GetLastChange() >= g_pOptions->GetNzbDirFileAge())
+			{
+				bCanProcess = true;
+				delete pFileData;
+				m_FileList.erase(it);
+			}
+			else
+			{
+				pFileData->SetSize(lSize);
+				if (pFileData->GetSize() != lSize)
+				{
+					pFileData->SetLastChange(tCurrent);
+				}
+			}
+			break;
+		}
+	}
+
+	if (!bInList)
+	{
+		FileData* pFileData = new FileData(szFullFilename);
+		pFileData->SetSize(lSize);
+		pFileData->SetLastChange(tCurrent);
+		m_FileList.push_back(pFileData);
+	}
+
+	return bCanProcess;
+}
+
+/**
+ * Remove old files from the list of monitored files.
+ * Normally these files are deleted from the list when they are processed.
+ * However if a file was detected by function "CanProcessFile" once but wasn't 
+ * processed later (for example if the user deleted it), it will stay in the list,
+ * until we remove it here.
+ */
+void Scanner::DropOldFiles()
+{
+	time_t tCurrent = time(NULL);
+
+	int i = 0;
+	for (FileList::iterator it = m_FileList.begin(); it != m_FileList.end(); )
+    {
+        FileData* pFileData = *it;
+		if ((tCurrent - pFileData->GetLastChange() >= 
+			(g_pOptions->GetNzbDirInterval() + g_pOptions->GetNzbDirFileAge()) * 2) ||
+			// can occur if the system clock was adjusted
+			tCurrent < pFileData->GetLastChange())
+		{
+			debug("Removing file %s from scan file list", pFileData->GetFilename());
+
+			delete pFileData;
+			m_FileList.erase(it);
+			it = m_FileList.begin() + i;
+		}
+		else
+		{
+			it++;
+			i++;
 		}
 	}
 }
@@ -146,11 +266,7 @@ void Scanner::ProcessIncomingFile(const char* szDirectory, const char* szBaseFil
 
 	bool bExists = true;
 
-	if (m_bNZBScript && 
-		strcasecmp(szExtension, ".queued") && 
-		strcasecmp(szExtension, ".error") &&
-		strcasecmp(szExtension, ".processed") &&
-		strcasecmp(szExtension, ".nzb_processed"))
+	if (m_bNZBScript && strcasecmp(szExtension, ".nzb_processed"))
 	{
 		NZBScriptController::ExecuteScript(g_pOptions->GetNZBProcess(), szFullFilename, szDirectory); 
 		bExists = Util::FileExists(szFullFilename);
