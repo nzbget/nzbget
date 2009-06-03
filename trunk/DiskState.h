@@ -38,9 +38,9 @@ private:
 	bool				LoadNZBList(DownloadQueue* pDownloadQueue, FILE* infile, int iFormatVersion);
 	void				SaveFileQueue(DownloadQueue* pDownloadQueue, FILE* outfile);
 	bool				LoadFileQueue(DownloadQueue* pDownloadQueue, FILE* infile);
-	void				SavePostQueue(DownloadQueue* pDownloadQueue, PostQueue* pPostQueue, FILE* outfile);
-	bool				LoadPostQueue(DownloadQueue* pDownloadQueue, PostQueue* pPostQueue, FILE* infile);
-	bool				LoadOldPostQueue(DownloadQueue* pDownloadQueue, PostQueue* pPostQueue, bool bCompleted);
+	void				SavePostQueue(DownloadQueue* pDownloadQueue, FILE* outfile);
+	bool				LoadPostQueue(DownloadQueue* pDownloadQueue, FILE* infile);
+	bool				LoadOldPostQueue(DownloadQueue* pDownloadQueue);
 	int					FindNZBInfoIndex(DownloadQueue* pDownloadQueue, NZBInfo* pNZBInfo);
 
 public:

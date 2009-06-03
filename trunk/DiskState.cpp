@@ -44,44 +44,22 @@
 
 extern Options* g_pOptions;
 
-static const char* FORMATVERSION_SIGNATURE_V3 = "nzbget diskstate file version 3\n";
-static const char* FORMATVERSION_SIGNATURE_V4 = "nzbget diskstate file version 4\n";
-static const char* FORMATVERSION_SIGNATURE_V5 = "nzbget diskstate file version 5\n";
-static const char* FORMATVERSION_SIGNATURE_V6 = "nzbget diskstate file version 6\n";
-static const char* FORMATVERSION_SIGNATURE_V7 = "nzbget diskstate file version 7\n";
+static const char* FORMATVERSION_SIGNATURE = "nzbget diskstate file version ";
 
 /* Parse signature and return format version number
 */
 int DiskState::ParseFormatVersion(const char* szFormatSignature)
 {
-	if (!strcmp(szFormatSignature, FORMATVERSION_SIGNATURE_V3))
-	{
-		return 3;
-	}
-	else if (!strcmp(szFormatSignature, FORMATVERSION_SIGNATURE_V4))
-	{
-		return 4;
-	}
-	else if (!strcmp(szFormatSignature, FORMATVERSION_SIGNATURE_V5))
-	{
-		return 5;
-	}
-	else if (!strcmp(szFormatSignature, FORMATVERSION_SIGNATURE_V6))
-	{
-		return 6;
-	}
-	else if (!strcmp(szFormatSignature, FORMATVERSION_SIGNATURE_V7))
-	{
-		return 7;
-	}
-	else
+	if (strncmp(szFormatSignature, FORMATVERSION_SIGNATURE, strlen(FORMATVERSION_SIGNATURE)))
 	{
 		return 0;
 	}
+
+	return atoi(szFormatSignature + strlen(FORMATVERSION_SIGNATURE));
 }
 
 /* Save Download Queue to Disk.
- * The Disk State consists of file "queue", which contains the order of files
+ * The Disk State consists of file "queue", which contains the order of files,
  * and of one diskstate-file for each file in download queue.
  * This function saves file "queue" and files with NZB-info. It does not
  * save file-infos.
@@ -103,7 +81,7 @@ bool DiskState::SaveDownloadQueue(DownloadQueue* pDownloadQueue)
 		return false;
 	}
 
-	fprintf(outfile, FORMATVERSION_SIGNATURE_V7);
+	fprintf(outfile, "%s%i\n", FORMATVERSION_SIGNATURE, 8);
 
 	// save nzb-infos
 	SaveNZBList(pDownloadQueue, outfile);
@@ -112,16 +90,12 @@ bool DiskState::SaveDownloadQueue(DownloadQueue* pDownloadQueue)
 	SaveFileQueue(pDownloadQueue, outfile);
 
 	// save post-queue
-	SavePostQueue(pDownloadQueue, pDownloadQueue->GetPostQueue(), outfile);
-
-	// save completed-post-queue
-	SavePostQueue(pDownloadQueue, pDownloadQueue->GetCompletedPostList(), outfile);
+	SavePostQueue(pDownloadQueue, outfile);
 
 	fclose(outfile);
 
 	if (pDownloadQueue->GetFileQueue()->empty() && 
-		pDownloadQueue->GetPostQueue()->empty() &&
-		pDownloadQueue->GetCompletedPostList()->empty())
+		pDownloadQueue->GetPostQueue()->empty())
 	{
 		remove(fileName);
 	}
@@ -150,7 +124,7 @@ bool DiskState::LoadDownloadQueue(DownloadQueue* pDownloadQueue)
 	char FileSignatur[128];
 	fgets(FileSignatur, sizeof(FileSignatur), infile);
 	int iFormatVersion = ParseFormatVersion(FileSignatur);
-	if (iFormatVersion < 3 || iFormatVersion > 7)
+	if (iFormatVersion < 3 || iFormatVersion > 8)
 	{
 		error("Could not load diskstate due file version mismatch");
 		fclose(infile);
@@ -166,15 +140,12 @@ bool DiskState::LoadDownloadQueue(DownloadQueue* pDownloadQueue)
 	if (iFormatVersion >= 7 && g_pOptions->GetReloadPostQueue())
 	{
 		// load post-queue
-		if (!LoadPostQueue(pDownloadQueue, pDownloadQueue->GetPostQueue(), infile)) goto error;
-
-		// load completed-post-queue
-		if (!LoadPostQueue(pDownloadQueue, pDownloadQueue->GetCompletedPostList(), infile)) goto error;
+		if (!LoadPostQueue(pDownloadQueue, infile)) goto error;
 	}
 	else if (iFormatVersion < 7 && g_pOptions->GetReloadPostQueue())
 	{
-		LoadOldPostQueue(pDownloadQueue, pDownloadQueue->GetPostQueue(), false);
-		LoadOldPostQueue(pDownloadQueue, pDownloadQueue->GetCompletedPostList(), true);
+		// load post-queue created with older version of program
+		LoadOldPostQueue(pDownloadQueue);
 	}
 
 	bOK = true;
@@ -205,7 +176,9 @@ void DiskState::SaveNZBList(DownloadQueue* pDownloadQueue, FILE* outfile)
 		fprintf(outfile, "%s\n", pNZBInfo->GetQueuedFilename());
 		fprintf(outfile, "%s\n", pNZBInfo->GetCategory());
 		fprintf(outfile, "%i\n", pNZBInfo->GetPostProcess() ? 1 : 0);
+		fprintf(outfile, "%i\n", (int)pNZBInfo->GetParFailure());
 		fprintf(outfile, "%i\n", pNZBInfo->GetFileCount());
+
 		unsigned long High, Low;
 		Util::SplitInt64(pNZBInfo->GetSize(), &High, &Low);
 		fprintf(outfile, "%lu,%lu\n", High, Low);
@@ -265,6 +238,13 @@ bool DiskState::LoadNZBList(DownloadQueue* pDownloadQueue, FILE* infile, int iFo
 			int iPostProcess;
 			if (fscanf(infile, "%i\n", &iPostProcess) != 1) goto error;
 			pNZBInfo->SetPostProcess(iPostProcess == 1);
+		}
+
+		if (iFormatVersion >= 8)
+		{
+			int iParFailure;
+			if (fscanf(infile, "%i\n", &iParFailure) != 1) goto error;
+			pNZBInfo->SetParFailure((NZBInfo::EParFailure)iParFailure);
 		}
 
 		int iFileCount;
@@ -490,12 +470,12 @@ error:
 	return false;
 }
 
-void DiskState::SavePostQueue(DownloadQueue* pDownloadQueue, PostQueue* pPostQueue, FILE* outfile)
+void DiskState::SavePostQueue(DownloadQueue* pDownloadQueue, FILE* outfile)
 {
 	debug("Saving post-queue to disk");
 
-	fprintf(outfile, "%i\n", pPostQueue->size());
-	for (PostQueue::iterator it = pPostQueue->begin(); it != pPostQueue->end(); it++)
+	fprintf(outfile, "%i\n", pDownloadQueue->GetPostQueue()->size());
+	for (PostQueue::iterator it = pDownloadQueue->GetPostQueue()->begin(); it != pDownloadQueue->GetPostQueue()->end(); it++)
 	{
 		PostInfo* pPostInfo = *it;
 		int iNZBIndex = FindNZBInfoIndex(pDownloadQueue, pPostInfo->GetNZBInfo());
@@ -506,7 +486,7 @@ void DiskState::SavePostQueue(DownloadQueue* pDownloadQueue, PostQueue* pPostQue
 	}
 }
 
-bool DiskState::LoadPostQueue(DownloadQueue* pDownloadQueue, PostQueue* pPostQueue, FILE* infile)
+bool DiskState::LoadPostQueue(DownloadQueue* pDownloadQueue, FILE* infile)
 {
 	debug("Loading post-queue from disk");
 
@@ -534,7 +514,7 @@ bool DiskState::LoadPostQueue(DownloadQueue* pDownloadQueue, PostQueue* pPostQue
 		if (buf[0] != 0) buf[strlen(buf)-1] = 0; // remove traling '\n'
 		pPostInfo->SetParFilename(buf);
 
-		pPostQueue->push_back(pPostInfo);
+		pDownloadQueue->GetPostQueue()->push_back(pPostInfo);
 	}
 
 	return true;
@@ -548,12 +528,12 @@ error:
  * Loads post-queue created with older versions of nzbget.
  * Returns true if successful, false if not
  */
-bool DiskState::LoadOldPostQueue(DownloadQueue* pDownloadQueue, PostQueue* pPostQueue, bool bCompleted)
+bool DiskState::LoadOldPostQueue(DownloadQueue* pDownloadQueue)
 {
 	debug("Loading post-queue from disk");
 
 	char fileName[1024];
-	snprintf(fileName, 1024, "%s%s", g_pOptions->GetQueueDir(), bCompleted ? "postc" : "postq");
+	snprintf(fileName, 1024, "%s%s", g_pOptions->GetQueueDir(), "postq");
 	fileName[1024-1] = '\0';
 
 	if (!Util::FileExists(fileName))
@@ -701,7 +681,7 @@ bool DiskState::LoadOldPostQueue(DownloadQueue* pDownloadQueue, PostQueue* pPost
 			}
 		}
 
-		pPostQueue->push_back(pPostInfo);
+		pDownloadQueue->GetPostQueue()->push_back(pPostInfo);
 	}
 
 	fclose(infile);
