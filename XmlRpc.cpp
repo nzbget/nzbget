@@ -973,6 +973,7 @@ void ListFilesXmlCommand::Execute()
 		"<member><name>RemainingSizeHi</name><value><i4>%i</i4></value></member>\n"
 		"<member><name>FilenameConfirmed</name><value><boolean>%s</boolean></value></member>\n"
 		"<member><name>Paused</name><value><boolean>%s</boolean></value></member>\n"
+		"<member><name>NZBID</name><value><i4>%i</i4></value></member>\n"
 		"<member><name>NZBNicename</name><value><string>%s</string></value></member>\n"
 		"<member><name>NZBFilename</name><value><string>%s</string></value></member>\n"
 		"<member><name>Subject</name><value><string>%s</string></value></member>\n"
@@ -990,6 +991,7 @@ void ListFilesXmlCommand::Execute()
 		"\"RemainingSizeHi\" : %i,\n"
 		"\"FilenameConfirmed\" : %s,\n"
 		"\"Paused\" : %s,\n"
+		"\"NZBID\" : %i,\n"
 		"\"NZBNicename\" : \"%s\",\n"
 		"\"NZBFilename\" : \"%s\",\n"
 		"\"Subject\" : \"%s\",\n"
@@ -1023,7 +1025,8 @@ void ListFilesXmlCommand::Execute()
 			snprintf(szItemBuf, szItemBufSize, IsJson() ? JSON_LIST_ITEM : XML_LIST_ITEM,
 				pFileInfo->GetID(), iFileSizeLo, iFileSizeHi, iRemainingSizeLo, iRemainingSizeHi, 
 				BoolToStr(pFileInfo->GetFilenameConfirmed()), BoolToStr(pFileInfo->GetPaused()),
-				xmlNZBNicename, xmlNZBFilename, xmlSubject, xmlFilename, xmlDestDir, xmlCategory);
+				pFileInfo->GetNZBInfo()->GetID(), xmlNZBNicename, xmlNZBFilename, xmlSubject, 
+				xmlFilename, xmlDestDir, xmlCategory);
 			szItemBuf[szItemBufSize-1] = '\0';
 
 			free(xmlNZBFilename);
@@ -1066,6 +1069,7 @@ void ListGroupsXmlCommand::Execute()
 		"<member><name>FileCount</name><value><i4>%i</i4></value></member>\n"
 		"<member><name>RemainingFileCount</name><value><i4>%i</i4></value></member>\n"
 		"<member><name>RemainingParCount</name><value><i4>%i</i4></value></member>\n"
+		"<member><name>NZBID</name><value><i4>%i</i4></value></member>\n"
 		"<member><name>NZBNicename</name><value><string>%s</string></value></member>\n"
 		"<member><name>NZBFilename</name><value><string>%s</string></value></member>\n"
 		"<member><name>DestDir</name><value><string>%s</string></value></member>\n"
@@ -1092,6 +1096,7 @@ void ListGroupsXmlCommand::Execute()
 		"\"FileCount\" : %i,\n"
 		"\"RemainingFileCount\" : %i,\n"
 		"\"RemainingParCount\" : %i,\n"
+		"\"NZBID\" : %i,\n"
 		"\"NZBNicename\" : \"%s\",\n"
 		"\"NZBFilename\" : \"%s\",\n"
 		"\"DestDir\" : \"%s\",\n"
@@ -1148,7 +1153,8 @@ void ListGroupsXmlCommand::Execute()
 			pGroupInfo->GetFirstID(), pGroupInfo->GetLastID(), iFileSizeLo, iFileSizeHi, iFileSizeMB, 
 			iRemainingSizeLo, iRemainingSizeHi, iRemainingSizeMB, iPausedSizeLo, iPausedSizeHi, iPausedSizeMB, 
 			pGroupInfo->GetNZBInfo()->GetFileCount(), pGroupInfo->GetRemainingFileCount(), 
-			pGroupInfo->GetRemainingParCount(), xmlNZBNicename, xmlNZBFilename, xmlDestDir, xmlCategory);
+			pGroupInfo->GetRemainingParCount(), pGroupInfo->GetNZBInfo()->GetID(),
+			xmlNZBNicename, xmlNZBFilename, xmlDestDir, xmlCategory);
 		szItemBuf[szItemBufSize-1] = '\0';
 
 		free(xmlNZBNicename);
@@ -1391,6 +1397,7 @@ void PostQueueXmlCommand::Execute()
 	const char* XML_POSTQUEUE_ITEM_START = 
 		"<value><struct>\n"
 		"<member><name>ID</name><value><i4>%i</i4></value></member>\n"
+		"<member><name>NZBID</name><value><i4>%i</i4></value></member>\n"
 		"<member><name>NZBNicename</name><value><string>%s</string></value></member>\n"
 		"<member><name>NZBFilename</name><value><string>%s</string></value></member>\n"
 		"<member><name>DestDir</name><value><string>%s</string></value></member>\n"
@@ -1411,6 +1418,7 @@ void PostQueueXmlCommand::Execute()
 	const char* JSON_POSTQUEUE_ITEM_START = 
 		"{\n"
 		"\"ID\" : %i,\n"
+		"\"NZBID\" : %i,\n"
 		"\"NZBNicename\" : \"%s\",\n"
 		"\"NZBFilename\" : \"%s\",\n"
 		"\"DestDir\" : \"%s\",\n"
@@ -1467,7 +1475,8 @@ void PostQueueXmlCommand::Execute()
 		char* xmlProgressLabel = EncodeStr(pPostInfo->GetProgressLabel());
 
 		snprintf(szItemBuf, szItemBufSize, IsJson() ? JSON_POSTQUEUE_ITEM_START : XML_POSTQUEUE_ITEM_START,
-			pPostInfo->GetID(), xmlNZBNicename, xmlNZBFilename, xmlDestDir, xmlParFilename,
+			pPostInfo->GetID(), pPostInfo->GetNZBInfo()->GetID(),
+			xmlNZBNicename, xmlNZBFilename, xmlDestDir, xmlParFilename,
 			xmlInfoName, szPostStageName[pPostInfo->GetStage()], xmlProgressLabel,
 			pPostInfo->GetFileProgress(), pPostInfo->GetStageProgress(),
 			pPostInfo->GetStartTime() ? tCurTime - pPostInfo->GetStartTime() : 0,

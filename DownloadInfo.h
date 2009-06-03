@@ -194,6 +194,7 @@ public:
 	typedef std::vector<char*>			Files;
 
 private:
+	int					m_iID;
 	int					m_iRefCount;
 	char* 				m_szFilename;
 	char* 				m_szDestDir;
@@ -210,6 +211,8 @@ private:
 	NZBInfoList*		m_Owner;
 	NZBParameterList	m_ppParameters;
 
+	static int			m_iIDGen;
+
 	friend class NZBInfoList;
 
 public:
@@ -217,6 +220,7 @@ public:
 						~NZBInfo();
 	void				AddReference();
 	void				Release();
+	int					GetID() { return m_iID; }
 	const char*			GetFilename() { return m_szFilename; }
 	void				SetFilename(const char* szFilename);
 	void				GetNiceNZBName(char* szBuffer, int iSize);
