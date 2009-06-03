@@ -47,6 +47,7 @@
 extern Options* g_pOptions;
 
 int FileInfo::m_iIDGen = 0;
+int NZBInfo::m_iIDGen = 0;
 int PostInfo::m_iIDGen = 0;
 
 NZBParameter::NZBParameter(const char* szName)
@@ -94,6 +95,8 @@ NZBInfo::NZBInfo()
 	m_bCleanupDisk = false;
 	m_szQueuedFilename = strdup("");
 	m_Owner = NULL;
+	m_iIDGen++;
+	m_iID = m_iIDGen;
 }
 
 NZBInfo::~NZBInfo()
