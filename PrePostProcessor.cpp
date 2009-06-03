@@ -109,12 +109,6 @@ void PrePostProcessor::Cleanup()
 	}
 	pDownloadQueue->GetPostQueue()->clear();
 
-	for (PostQueue::iterator it = pDownloadQueue->GetCompletedPostList()->begin(); it != pDownloadQueue->GetCompletedPostList()->end(); it++)
-	{
-		delete *it;
-	}
-	pDownloadQueue->GetCompletedPostList()->clear();
-
 	g_pQueueCoordinator->UnlockQueue();
 }
 
@@ -247,14 +241,6 @@ void PrePostProcessor::QueueCoordinatorUpdate(Subject * Caller, void * Aspect)
 				NZBDeleted(pAspect->pDownloadQueue, pAspect->pNZBInfo, pAspect->pFileInfo);
 			}
 		}
-
-		if (IsNZBFileCompleted(pAspect->pDownloadQueue, pAspect->pNZBInfo, false, false, true, false))
-		{
-			if (ClearCompletedJobs(pAspect->pDownloadQueue, pAspect->pNZBInfo))
-			{
-				SavePostQueue(pAspect->pDownloadQueue);
-			}
-		}
 	}
 }
 
@@ -273,12 +259,16 @@ void PrePostProcessor::NZBAdded(DownloadQueue* pDownloadQueue, NZBInfo* pNZBInfo
 
 void PrePostProcessor::NZBCompleted(DownloadQueue* pDownloadQueue, NZBInfo* pNZBInfo, FileInfo* pFileInfo)
 {
-	pNZBInfo->SetPostProcess(true);
-	bool bParCheck = false;
-#ifndef DISABLE_PARCHECK
-	bParCheck = g_pOptions->GetParCheck() && g_pOptions->GetDecode();
+	if (!pNZBInfo->GetPostProcess() || (m_bPostScript && g_pOptions->GetAllowReProcess()))
+	{
+#ifdef DISABLE_PARCHECK
+		bool bParCheck = false;
+#else
+		bool bParCheck = g_pOptions->GetParCheck() && g_pOptions->GetDecode();
 #endif
-	CreatePostJobs(pDownloadQueue, pNZBInfo, bParCheck, false);
+		CreatePostJobs(pDownloadQueue, pNZBInfo, bParCheck, false);
+		pNZBInfo->SetPostProcess(true);
+	}
 }
 
 void PrePostProcessor::NZBDeleted(DownloadQueue* pDownloadQueue, NZBInfo* pNZBInfo, FileInfo* pFileInfo)
@@ -433,7 +423,7 @@ void PrePostProcessor::CheckPostQueue()
 					((pPostInfo->GetParStatus() != PARSTATUS_NOT_CHECKED &&
 					  pPostInfo->GetParStatus() != PARSTATUS_FAILED) ||
 					 pPostInfo->GetRequestParCleanup()) &&
-					 !HasFailedParJobs(pDownloadQueue, pPostInfo->GetNZBInfo(), true))
+					 pPostInfo->GetNZBInfo()->GetParFailure() != NZBInfo::pfParFailed)
 				{
 					if (g_pOptions->GetParCleanupQueue())
 					{
@@ -535,13 +525,7 @@ void PrePostProcessor::StartScriptJob(DownloadQueue* pDownloadQueue, PostInfo* p
 	pPostInfo->SetStageTime(time(NULL));
 
 	bool bNZBFileCompleted = IsNZBFileCompleted(pDownloadQueue, pPostInfo->GetNZBInfo(), true, true, true, false);
-#ifndef DISABLE_PARCHECK
-	bool bHasFailedParJobs = HasFailedParJobs(pDownloadQueue, pPostInfo->GetNZBInfo(), false) || 
-		pPostInfo->GetParStatus() == PARSTATUS_FAILED || 
-		pPostInfo->GetParStatus() == PARSTATUS_REPAIR_POSSIBLE;
-#else
-	bool bHasFailedParJobs = false;
-#endif
+	bool bHasFailedParJobs = pPostInfo->GetNZBInfo()->GetParFailure() != NZBInfo::pfNone;
 
 	if (g_pOptions->GetPostPauseQueue())
 	{
@@ -575,57 +559,11 @@ void PrePostProcessor::JobCompleted(DownloadQueue* pDownloadQueue, PostInfo* pPo
 		}
 	}
 
-	pDownloadQueue->GetCompletedPostList()->push_back(pPostInfo);
-
-	if (IsNZBFileCompleted(pDownloadQueue, pPostInfo->GetNZBInfo(), false, false, true, false))
-	{
-		ClearCompletedJobs(pDownloadQueue, pPostInfo->GetNZBInfo());
-	}
+	delete pPostInfo;
 
 	SavePostQueue(pDownloadQueue);
 
 	m_bHasMoreJobs = !pDownloadQueue->GetPostQueue()->empty();
-}
-
-bool PrePostProcessor::JobExists(PostQueue* pPostQueue, NZBInfo* pNZBInfo, 
-	const char* szParFilename, bool bParCheck)
-{
-	for (PostQueue::iterator it = pPostQueue->begin(); it != pPostQueue->end(); it++)
-	{
-		PostInfo* pPostInfo = *it;
-		if (pPostInfo->GetNZBInfo() == pNZBInfo &&
-			(!bParCheck || (pPostInfo->GetParCheck() && 
-			 !strcmp(pPostInfo->GetParFilename(), szParFilename))))
-		{
-			return true;
-		}
-	}
-	return false;
-}
-
-/**
- * Delete info about completed par-jobs for nzb-collection after the collection is completely downloaded.
- */
-bool PrePostProcessor::ClearCompletedJobs(DownloadQueue* pDownloadQueue, NZBInfo* pNZBInfo)
-{
-	bool bListChanged = false;
-
-	for (PostQueue::iterator it = pDownloadQueue->GetCompletedPostList()->begin(); it != pDownloadQueue->GetCompletedPostList()->end();)
-	{
-		PostInfo* pPostInfo = *it;
-		if (pPostInfo->GetNZBInfo() == pNZBInfo)
-		{
-			debug("Deleting completed job %s", pPostInfo->GetInfoName());
-			pDownloadQueue->GetCompletedPostList()->erase(it);
-			delete pPostInfo;
-			it = pDownloadQueue->GetCompletedPostList()->begin();
-			bListChanged = true;
-			continue;
-		}
-		it++;
-	}
-
-	return bListChanged;
 }
 
 //*********************************************************************************
@@ -721,45 +659,37 @@ bool PrePostProcessor::CreatePostJobs(DownloadQueue* pDownloadQueue, NZBInfo* pN
 			snprintf(szFullParFilename, 1024, "%s%c%s", pNZBInfo->GetDestDir(), (int)PATH_SEPARATOR, szParFilename);
 			szFullParFilename[1024-1] = '\0';
 
-			bool bJobExists = JobExists(pDownloadQueue->GetPostQueue(), pNZBInfo, szFullParFilename, bParCheck) ||
-				JobExists(pDownloadQueue->GetCompletedPostList(), pNZBInfo, szFullParFilename, bParCheck);
-			if (!bJobExists || (m_bPostScript && g_pOptions->GetAllowReProcess()))
+			char szInfoName[1024];
+			int iBaseLen = 0;
+			ParseParFilename(szParFilename, &iBaseLen, NULL);
+			int maxlen = iBaseLen < 1024 ? iBaseLen : 1024 - 1;
+			strncpy(szInfoName, szParFilename, maxlen);
+			szInfoName[maxlen] = '\0';
+			
+			char szParInfoName[1024];
+			snprintf(szParInfoName, 1024, "%s%c%s", szNZBNiceName, (int)PATH_SEPARATOR, szInfoName);
+			szParInfoName[1024-1] = '\0';
+			
+			info("Queueing %s%c%s for par-check", szNZBNiceName, (int)PATH_SEPARATOR, szInfoName);
+			PostInfo* pPostInfo = new PostInfo();
+			pPostInfo->SetNZBInfo(pNZBInfo);
+			pPostInfo->SetParFilename(szFullParFilename);
+			pPostInfo->SetInfoName(szParInfoName);
+			pPostInfo->SetParCheck(bParCheck);
+			if (bAddTop)
 			{
-				char szInfoName[1024];
-				int iBaseLen = 0;
-				ParseParFilename(szParFilename, &iBaseLen, NULL);
-				int maxlen = iBaseLen < 1024 ? iBaseLen : 1024 - 1;
-				strncpy(szInfoName, szParFilename, maxlen);
-				szInfoName[maxlen] = '\0';
-				
-				char szParInfoName[1024];
-				snprintf(szParInfoName, 1024, "%s%c%s", szNZBNiceName, (int)PATH_SEPARATOR, szInfoName);
-				szParInfoName[1024-1] = '\0';
-				
-				info("Queueing %s%c%s for par-check", szNZBNiceName, (int)PATH_SEPARATOR, szInfoName);
-				PostInfo* pPostInfo = new PostInfo();
-				pPostInfo->SetNZBInfo(pNZBInfo);
-				pPostInfo->SetParFilename(szFullParFilename);
-				pPostInfo->SetInfoName(szParInfoName);
-				pPostInfo->SetParCheck(bParCheck && !bJobExists);
-				if (bAddTop)
-				{
-					cPostQueue.push_front(pPostInfo);
-				}
-				else
-				{
-					cPostQueue.push_back(pPostInfo);
-				}
+				cPostQueue.push_front(pPostInfo);
+			}
+			else
+			{
+				cPostQueue.push_back(pPostInfo);
 			}
 
 			free(szParFilename);
 		}
 	}
 
-	if (cPostQueue.empty() && m_bPostScript && 
-		(!(JobExists(pDownloadQueue->GetPostQueue(), pNZBInfo, NULL, false) || 
-		   JobExists(pDownloadQueue->GetCompletedPostList(), pNZBInfo, NULL, false)) ||
-		g_pOptions->GetAllowReProcess()))
+	if (cPostQueue.empty() && m_bPostScript)
 	{
 		info("Queueing %s for post-process-script", szNZBNiceName);
 		PostInfo* pPostInfo = new PostInfo();
@@ -1001,6 +931,7 @@ void PrePostProcessor::ParCheckerUpdate(Subject* Caller, void* Aspect)
 		if (m_ParChecker.GetStatus() == ParChecker::psFailed && !m_ParChecker.GetCancelled())
 		{
 			pPostInfo->SetParStatus(PARSTATUS_FAILED);
+			pPostInfo->GetNZBInfo()->SetParFailure(NZBInfo::pfParFailed);
 		}
 		else if (m_ParChecker.GetStatus() == ParChecker::psFinished &&
 			(g_pOptions->GetParRepair() || m_ParChecker.GetRepairNotNeeded()))
@@ -1010,6 +941,10 @@ void PrePostProcessor::ParCheckerUpdate(Subject* Caller, void* Aspect)
 		else
 		{
 			pPostInfo->SetParStatus(PARSTATUS_REPAIR_POSSIBLE);
+			if (pPostInfo->GetNZBInfo()->GetParFailure() != NZBInfo::pfParFailed)
+			{
+				pPostInfo->GetNZBInfo()->SetParFailure(NZBInfo::pfRepairPossible);
+			}
 		}
 
 		SavePostQueue(pDownloadQueue);
@@ -1051,30 +986,6 @@ FileInfo* PrePostProcessor::GetParCleanupQueueGroup(DownloadQueue* pDownloadQueu
 		}
 	}
 	return pRetFileInfo;
-}
-
-/**
- * Check if nzb-file has failures from other par-jobs
- * (if nzb-file has more than one collections)
- */
-bool PrePostProcessor::HasFailedParJobs(DownloadQueue* pDownloadQueue, NZBInfo* pNZBInfo, bool bIgnoreRepairPossible)
-{
-	bool bHasFailedJobs = false;
-
-	for (PostQueue::iterator it = pDownloadQueue->GetCompletedPostList()->begin(); it != pDownloadQueue->GetCompletedPostList()->end(); it++)
-	{
-		PostInfo* pPostInfo = *it;
-		if (pPostInfo->GetParCheck() && 
-			(pPostInfo->GetParStatus() == PARSTATUS_FAILED || 
-			 (!bIgnoreRepairPossible && pPostInfo->GetParStatus() == PARSTATUS_REPAIR_POSSIBLE)) &&
-			pPostInfo->GetNZBInfo() == pNZBInfo)
-		{
-			bHasFailedJobs = true;
-			break;
-		}
-	}
-
-	return bHasFailedJobs;
 }
 
 /**

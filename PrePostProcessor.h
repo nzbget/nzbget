@@ -101,8 +101,6 @@ private:
 
 	bool				IsNZBFileCompleted(DownloadQueue* pDownloadQueue, NZBInfo* pNZBInfo, 
 							bool bIgnoreFirstInPostQueue, bool bIgnorePaused, bool bCheckPostQueue, bool bAllowOnlyOneDeleted);
-	bool				JobExists(PostQueue* pPostQueue, NZBInfo* pNZBInfo, const char* szParFilename, bool bParCheck);
-	bool				ClearCompletedJobs(DownloadQueue* pDownloadQueue, NZBInfo* pNZBInfo);
 	void				CheckPostQueue();
 	void				JobCompleted(DownloadQueue* pDownloadQueue, PostInfo* pPostInfo);
 	void				StartScriptJob(DownloadQueue* pDownloadQueue, PostInfo* pPostInfo);
@@ -133,7 +131,6 @@ private:
 	void				ParCheckerUpdate(Subject* Caller, void* Aspect);
 	bool				AddPar(FileInfo* pFileInfo, bool bDeleted);
 	FileInfo*			GetParCleanupQueueGroup(DownloadQueue* pDownloadQueue, NZBInfo* pNZBInfo);
-	bool				HasFailedParJobs(DownloadQueue* pDownloadQueue, NZBInfo* pNZBInfo, bool bIgnoreRepairPossible);
 	bool				RequestMorePars(NZBInfo* pNZBInfo, const char* szParFilename, int iBlockNeeded, int* pBlockFound);
 	void				FindPars(DownloadQueue* pDownloadQueue, NZBInfo* pNZBInfo, const char* szParFilename, 
 							Blocks* pBlocks, bool bStrictParName, bool bExactParName, int* pBlockFound);

@@ -184,6 +184,13 @@ class NZBInfoList;
 class NZBInfo
 {
 public:
+	enum EParFailure
+	{
+		pfNone,
+		pfParFailed,
+		pfRepairPossible
+	};
+
 	typedef std::vector<char*>			Files;
 
 private:
@@ -195,6 +202,7 @@ private:
 	long long 			m_lSize;
 	Files				m_completedFiles;
 	bool				m_bPostProcess;
+	EParFailure			m_eParFailure;
 	char*				m_szQueuedFilename;
 	bool				m_bDeleted;
 	bool				m_bParCleanup;
@@ -225,6 +233,8 @@ public:
 	Files*				GetCompletedFiles() { return &m_completedFiles; }		// needs locking (for shared objects)
 	bool				GetPostProcess() { return m_bPostProcess; }
 	void				SetPostProcess(bool bPostProcess) { m_bPostProcess = bPostProcess; }
+	EParFailure			GetParFailure() { return m_eParFailure; }
+	void				SetParFailure(EParFailure eParFailure) { m_eParFailure = eParFailure; }
 	const char*			GetQueuedFilename() { return m_szQueuedFilename; }
 	void				SetQueuedFilename(const char* szQueuedFilename);
 	bool				GetDeleted() { return m_bDeleted; }
@@ -345,13 +355,11 @@ class DownloadQueue
 protected:
 	FileQueue			m_FileQueue;
 	PostQueue			m_PostQueue;
-	PostQueue			m_CompletedPostList;
 	NZBInfoList			m_NZBInfoList;
 
 public:
 	FileQueue*			GetFileQueue() { return &m_FileQueue; }
-	PostQueue*			GetPostQueue() {return &m_PostQueue; }
-	PostQueue*			GetCompletedPostList() {return &m_CompletedPostList; }
+	PostQueue*			GetPostQueue() { return &m_PostQueue; }
 	NZBInfoList*		GetNZBInfoList() { return &m_NZBInfoList; }
 	void				BuildGroups(GroupQueue* pGroupQueue);
 };

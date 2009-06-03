@@ -88,6 +88,7 @@ NZBInfo::NZBInfo()
 	m_lSize = 0;
 	m_iRefCount = 0;
 	m_bPostProcess = false;
+	m_eParFailure = pfNone;
 	m_bDeleted = false;
 	m_bParCleanup = false;
 	m_bCleanupDisk = false;
