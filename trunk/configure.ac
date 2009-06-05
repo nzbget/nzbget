@@ -260,12 +260,23 @@ if test "$ENABLEPARCHECK" = "yes"; then
 
 	LDFLAGS="${LDFLAGS} -L${LIBVAL}"
 
-	dnl Q: How to check for c++-class in library?
-		LIBS="${LIBS} -lpar2"
-	dnl		AC_CHECK_LIB(par2, GenerateCRC32Table, , FOUND=no)
-	dnl		if test "$FOUND" = "no"; then
-	dnl			AC_MSG_ERROR("libpar2 library not found in $LIBVAL")
-	dnl		fi
+	AC_SEARCH_LIBS([_ZN12Par2RepairerC1Ev], [par2], ,
+		AC_MSG_ERROR("libpar2 library not found"))
+
+	dnl
+	dnl check if libpar2 library is linkable
+	dnl
+	AC_MSG_CHECKING(for libpar2 linking)
+	AC_LANG_PUSH(C++)
+	AC_TRY_LINK(
+		[#include <libpar2/par2cmdline.h>]
+		[#include <libpar2/par2repairer.h>]
+		[ class Repairer : public Par2Repairer { }; ],
+		[ Repairer* p = new Repairer(); ],
+		AC_MSG_RESULT([[yes]]),
+		AC_MSG_RESULT([[no]])
+		AC_MSG_ERROR("libpar2 library not found"))
+	AC_LANG_POP(C++)
 
 	dnl
 	dnl check if libpar2 has support for cancelling
