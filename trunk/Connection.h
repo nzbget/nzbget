@@ -1,8 +1,8 @@
 /*
- *  This file if part of nzbget
+ *  This file is part of nzbget
  *
  *  Copyright (C) 2004 Sven Henkel <sidddy@users.sourceforge.net>
- *  Copyright (C) 2007-2008 Andrei Prygounkov <hugbug@users.sourceforge.net>
+ *  Copyright (C) 2007-2009 Andrei Prygounkov <hugbug@users.sourceforge.net>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -28,6 +28,11 @@
 #define CONNECTION_H
 
 #include "NetAddress.h"
+#ifndef HAVE_GETADDRINFO
+#ifndef HAVE_GETHOSTBYNAME_R
+#include "Thread.h"
+#endif
+#endif
 
 class Connection
 {
@@ -55,14 +60,22 @@ protected:
 	static bool			bTLSLibInitialized;
 	bool				m_bTLSError;
 #endif
+#ifndef HAVE_GETADDRINFO
+#ifndef HAVE_GETHOSTBYNAME_R
+	static Mutex*		m_pMutexGetHostByName;
+#endif
+#endif
 
-	void				ReportError(const char* szMsgPrefix, const char* szMsgArg, bool PrintErrCode, int ErrCode);
+	void				ReportError(const char* szMsgPrefix, const char* szMsgArg, bool PrintErrCode, int herrno);
 	virtual bool 		DoConnect();
 	virtual bool		DoDisconnect();
 	int					DoBind();
 	int					DoWriteLine(const char* pBuffer);
 	char*				DoReadLine(char* pBuffer, int iSize, int* pBytesRead);
 	SOCKET				DoAccept();
+#ifndef HAVE_GETADDRINFO
+	unsigned int		ResolveHostAddr(const char* szHost);
+#endif
 #ifndef DISABLE_TLS
 	bool				CheckTLSResult(int iResultCode, char* szErrStr, const char* szErrMsgPrefix);
 	int					recv(SOCKET s, char* buf, int len, int flags);
