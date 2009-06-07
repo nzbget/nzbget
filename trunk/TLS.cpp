@@ -7,7 +7,7 @@
  *  Copyright (C) 2000, 2003, 2004, 2005, 2006, 2007
  *  Martin Lambers <marlam@marlam.de>
  *
- *  Copyright (C) 2008 Andrei Prygounkov <hugbug@users.sourceforge.net>
+ *  Copyright (C) 2008-2009 Andrei Prygounkov <hugbug@users.sourceforge.net>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -55,7 +55,9 @@
 #include <errno.h>
 #include <list>
 
+#ifdef WIN32
 #include "nzbget.h"
+#endif
 
 #ifdef HAVE_LIBGNUTLS
 #include <gnutls/gnutls.h>
@@ -73,6 +75,10 @@
 
 #ifdef HAVE_LIBIDN
 # include <idna.h>
+#endif
+
+#ifndef WIN32
+#include "nzbget.h"
 #endif
 
 #include "TLS.h"

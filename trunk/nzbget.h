@@ -1,7 +1,7 @@
 /*
  *  This file is part of nzbget
  *
- *  Copyright (C) 2007-2008 Andrei Prygounkov <hugbug@users.sourceforge.net>
+ *  Copyright (C) 2007-2009 Andrei Prygounkov <hugbug@users.sourceforge.net>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -72,6 +72,15 @@
 #define S_DIRMODE (S_IRWXU | S_IRWXG | S_IRWXO)
 #define LINE_ENDING "\n"
 
+#endif
+
+#if defined(OS2) || defined(__OS2__)
+// OS/2
+#define socklen_t int
+#endif
+
+#ifndef SHUT_RDWR
+#define SHUT_RDWR 2
 #endif
 
 #endif
