@@ -8,6 +8,7 @@ AC_CONFIG_SRCDIR([nzbget.cpp])
 AC_CONFIG_HEADERS([config.h])
 
 
+
 dnl
 dnl Architecture check.
 dnl
@@ -98,6 +99,64 @@ AC_LANG_POP(C++)
 if test "$FOUND" = "no"; then
 	AC_MSG_RESULT([no])
 	AC_MSG_ERROR("function ctime_r not found")
+fi
+
+
+dnl
+dnl check getaddrinfo
+dnl
+AC_CHECK_FUNC(getaddrinfo,
+	FOUND="yes"
+	[AC_DEFINE([HAVE_GETADDRINFO], 1, [Define to 1 if getaddrinfo is supported])],
+	[AC_LIBOBJ(getaddrinfo)]
+	FOUND="no")
+if test "$FOUND" = "yes"; then
+	AC_SEARCH_LIBS([getaddrinfo], [nsl])
+fi
+
+
+if test "$FOUND" = "no"; then
+	dnl
+	dnl check gethostbyname_r
+	dnl
+	AC_MSG_CHECKING(for gethostbyname_r)
+	
+	AC_TRY_COMPILE(
+		[#include <netdb.h>],
+		[	char* szHost; struct hostent hinfobuf; char* strbuf; int h_errnop;
+			struct hostent* hinfo = gethostbyname_r(szHost, &hinfobuf, strbuf, 1024, &h_errnop); ],
+		AC_MSG_RESULT([[yes, and it takes 5 arguments]])
+		FOUND="yes"                      
+		AC_DEFINE([HAVE_GETHOSTBYNAME_R_5], 1, [Define to 1 if gethostbyname_r takes 5 arguments]),
+		FOUND="no")
+	
+	if test "$FOUND" = "no"; then
+	AC_TRY_COMPILE(
+		[#include <netdb.h>],
+		[	char* szHost; struct hostent* hinfo; struct hostent hinfobuf; char* strbuf; int h_errnop;
+			int err = gethostbyname_r(szHost, &hinfobuf, strbuf, 1024, &hinfo, &h_errnop); ],
+		AC_MSG_RESULT([[yes, and it takes 6 arguments]])
+		FOUND="yes"
+		AC_DEFINE([HAVE_GETHOSTBYNAME_R_6], 1, [Define to 1 if gethostbyname_r takes 6 arguments]),
+		FOUND="no")
+	fi
+	
+	if test "$FOUND" = "no"; then
+	AC_TRY_COMPILE(
+		[#include <netdb.h>],
+		[	char* szHost; struct hostent hinfo; struct hostent_data hinfobuf; 
+			int err = gethostbyname_r(szHost, &hinfo, &hinfobuf); ],
+		AC_MSG_RESULT([[yes, and it takes 3 arguments]])
+		FOUND="yes"
+		AC_DEFINE([HAVE_GETHOSTBYNAME_R_3], 1, [Define to 1 if gethostbyname_r takes 3 arguments]),
+		FOUND="no")
+	fi
+	
+	AC_MSG_RESULT([$FOUND])
+	if test "$FOUND" = "yes"; then
+		AC_DEFINE([HAVE_GETHOSTBYNAME_R], 1, [Define to 1 if gethostbyname_r is supported]),
+		AC_SEARCH_LIBS([gethostbyname_r], [nsl])
+	fi
 fi
 
 

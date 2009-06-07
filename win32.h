@@ -1,7 +1,7 @@
 /*
  *  This file is part of nzbget
  *
- *  Copyright (C) 2007-2008 Andrei Prygounkov <hugbug@users.sourceforge.net>
+ *  Copyright (C) 2007-2009 Andrei Prygounkov <hugbug@users.sourceforge.net>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -56,6 +56,9 @@
 
 /* Define to 1 if libpar2 supports cancelling (needs a special patch) */
 #define HAVE_PAR2_CANCEL
+
+/* Define to 1 if function GetAddrInfo is supported */
+#define HAVE_GETADDRINFO
 
 #define VERSION "0.7.0-testing"
 

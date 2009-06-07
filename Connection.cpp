@@ -1,8 +1,8 @@
 /*
- *  This file if part of nzbget
+ *  This file is part of nzbget
  *
  *  Copyright (C) 2004 Sven Henkel <sidddy@users.sourceforge.net>
- *  Copyright (C) 2007-2008 Andrei Prygounkov <hugbug@users.sourceforge.net>
+ *  Copyright (C) 2007-2009 Andrei Prygounkov <hugbug@users.sourceforge.net>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -46,6 +46,7 @@
 #include <unistd.h>
 #include <errno.h>
 #include <sys/socket.h>
+#include <sys/time.h>
 #include <arpa/inet.h>
 #include <netinet/in.h>
 #endif
@@ -58,6 +59,11 @@
 static const int CONNECTION_READBUFFER_SIZE = 1024;
 #ifndef DISABLE_TLS
 bool Connection::bTLSLibInitialized = false;
+#endif
+#ifndef HAVE_GETADDRINFO
+#ifndef HAVE_GETHOSTBYNAME_R
+Mutex* Connection::m_pMutexGetHostByName = NULL;
+#endif
 #endif
 
 void Connection::Init(bool bTLS)
@@ -79,6 +85,7 @@ void Connection::Init(bool bTLS)
 		return; 
 	}
 #endif
+
 #ifndef DISABLE_TLS
 	if (bTLS)
 	{
@@ -96,6 +103,12 @@ void Connection::Init(bool bTLS)
 		}
 	}
 #endif
+
+#ifndef HAVE_GETADDRINFO
+#ifndef HAVE_GETHOSTBYNAME_R
+	m_pMutexGetHostByName = new Mutex();
+#endif
+#endif
 }
 
 void Connection::Final()
@@ -112,6 +125,12 @@ void Connection::Final()
 		debug("Finalizing TLS library");
 		tls_lib_deinit();
 	}
+#endif
+
+#ifndef HAVE_GETADDRINFO
+#ifndef HAVE_GETHOSTBYNAME_R
+	delete m_pMutexGetHostByName;
+#endif
 #endif
 }
 
@@ -328,6 +347,9 @@ bool Connection::DoConnect()
 {
 	debug("Do connecting");
 
+	m_iSocket = INVALID_SOCKET;
+	
+#ifdef HAVE_GETADDRINFO
 	struct addrinfo addr_hints, *addr_list, *addr;
 	char iPortStr[sizeof(int) * 4 + 1]; //is enough to hold any converted int
 
@@ -344,7 +366,6 @@ bool Connection::DoConnect()
 		return false;
 	}
 
-	m_iSocket = INVALID_SOCKET;
 	for (addr = addr_list; addr != NULL; addr = addr->ai_next)
 	{
 		m_iSocket = socket(addr->ai_family, addr->ai_socktype, addr->ai_protocol);
@@ -364,9 +385,37 @@ bool Connection::DoConnect()
 
 	freeaddrinfo(addr_list);
 
+#else
+	
+	struct sockaddr_in	sSocketAddress;
+	memset(&sSocketAddress, 0, sizeof(sSocketAddress));
+	sSocketAddress.sin_family = AF_INET;
+	sSocketAddress.sin_port = htons(m_pNetAddress->GetPort());
+	sSocketAddress.sin_addr.s_addr = ResolveHostAddr(m_pNetAddress->GetHost());
+	if (sSocketAddress.sin_addr.s_addr == (unsigned int)-1)
+	{
+		return false;
+	}
+
+	m_iSocket = socket(PF_INET, SOCK_STREAM, 0);
 	if (m_iSocket == INVALID_SOCKET)
 	{
-		ReportError("Connection to %s failed!", m_pNetAddress->GetHost(), true, 0);
+		ReportError("Socket creation failed for %s", m_pNetAddress->GetHost(), true, 0);
+		return false;
+	}
+
+	int res = connect(m_iSocket , (struct sockaddr *) & sSocketAddress, sizeof(sSocketAddress));
+	if (res == -1)
+	{
+		// Connection failed
+		closesocket(m_iSocket);
+		m_iSocket = INVALID_SOCKET;
+	}
+#endif
+
+	if (m_iSocket == INVALID_SOCKET)
+	{
+		ReportError("Connection to %s failed", m_pNetAddress->GetHost(), true, 0);
 		return false;
 	} 
 
@@ -391,7 +440,7 @@ bool Connection::DoDisconnect()
 {
 	debug("Do disconnecting");
 
-	if (m_iSocket > 0)
+	if (m_iSocket != INVALID_SOCKET)
 	{
 		closesocket(m_iSocket);
 		m_iSocket = INVALID_SOCKET;
@@ -488,6 +537,7 @@ int Connection::DoBind()
 {
 	debug("Do binding");
 
+#ifdef HAVE_GETADDRINFO
 	struct addrinfo addr_hints, *addr_list, *addr;
 	char iPortStr[sizeof(int) * 4 + 1]; // is enough to hold any converted int
 
@@ -526,6 +576,44 @@ int Connection::DoBind()
 	}
 
 	freeaddrinfo(addr_list);
+
+#else
+
+	struct sockaddr_in	sSocketAddress;
+	memset(&sSocketAddress, 0, sizeof(sSocketAddress));
+	sSocketAddress.sin_family = AF_INET;
+	if (!m_pNetAddress->GetHost() || strlen(m_pNetAddress->GetHost()) == 0)
+	{
+		sSocketAddress.sin_addr.s_addr = htonl(INADDR_ANY);
+	}
+	else
+	{
+		sSocketAddress.sin_addr.s_addr = ResolveHostAddr(m_pNetAddress->GetHost());
+		if (sSocketAddress.sin_addr.s_addr == (unsigned int)-1)
+		{
+			return -1;
+		}
+	}
+	sSocketAddress.sin_port = htons(m_pNetAddress->GetPort());
+
+	m_iSocket = socket(PF_INET, SOCK_STREAM, 0);
+	if (m_iSocket == INVALID_SOCKET)
+	{
+		ReportError("Socket creation failed for %s", m_pNetAddress->GetHost(), true, 0);
+		return -1;
+	}
+	
+	int opt = 1;
+	setsockopt(m_iSocket, SOL_SOCKET, SO_REUSEADDR, (char*)&opt, sizeof(opt));
+
+	int res = bind(m_iSocket, (struct sockaddr *) &sSocketAddress, sizeof(sSocketAddress));
+	if (res == -1)
+	{
+		// Connection failed
+		closesocket(m_iSocket);
+		m_iSocket = INVALID_SOCKET;
+	}
+#endif
 
 	if (m_iSocket == INVALID_SOCKET)
 	{
@@ -568,7 +656,7 @@ void Connection::Cancel()
 	}
 }
 
-void Connection::ReportError(const char* szMsgPrefix, const char* szMsgArg, bool PrintErrCode, int ErrCode)
+void Connection::ReportError(const char* szMsgPrefix, const char* szMsgArg, bool PrintErrCode, int herrno)
 {
 #ifndef DISABLE_TLS
 	if (m_bTLSError)
@@ -585,15 +673,8 @@ void Connection::ReportError(const char* szMsgPrefix, const char* szMsgArg, bool
 	
 	if (PrintErrCode)
 	{
-		if (ErrCode == 0)
-		{
 #ifdef WIN32
-			ErrCode = WSAGetLastError();
-#else
-			ErrCode = errno;
-#endif
-		}
-#ifdef WIN32
+		int ErrCode = WSAGetLastError();
 		if (m_bSuppressErrors)
 		{
 			debug("%s: ErrNo %i", szErrPrefix, ErrCode);
@@ -603,7 +684,18 @@ void Connection::ReportError(const char* szMsgPrefix, const char* szMsgArg, bool
 			error("%s: ErrNo %i", szErrPrefix, ErrCode);
 		}
 #else
-		const char* szErrMsg = hstrerror(ErrCode);
+		const char *szErrMsg = NULL;
+		int ErrCode = herrno;
+		if (herrno == 0)
+		{
+			ErrCode = errno;
+			szErrMsg = strerror(ErrCode);
+		}
+		else
+		{
+			szErrMsg = hstrerror(ErrCode);
+		}
+		
 		if (m_bSuppressErrors)
 		{
 			debug("%s: ErrNo %i, %s", szErrPrefix, ErrCode, szErrMsg);
@@ -724,5 +816,55 @@ int Connection::send(SOCKET s, const char* buf, int len, int flags)
 		int iRet = ::send(s, buf, len, flags);
 		return iRet;
 	}
+}
+#endif
+
+#ifndef HAVE_GETADDRINFO
+unsigned int Connection::ResolveHostAddr(const char* szHost)
+{
+	unsigned int uaddr = inet_addr(szHost);
+	if (uaddr == (unsigned int)-1)
+	{
+		struct hostent* hinfo;
+		bool err = false;
+		int h_errnop = 0;
+#ifdef HAVE_GETHOSTBYNAME_R
+		struct hostent hinfobuf;
+		char strbuf[1024];
+#ifdef HAVE_GETHOSTBYNAME_R_6
+		err = gethostbyname_r(szHost, &hinfobuf, strbuf, sizeof(strbuf), &hinfo, &h_errnop);
+		err = err || (hinfo == NULL); // error on null hinfo (means 'no entry')
+#endif			
+#ifdef HAVE_GETHOSTBYNAME_R_5
+		hinfo = gethostbyname_r(szHost, &hinfobuf, strbuf, sizeof(strbuf), &h_errnop);
+		err = hinfo == NULL;
+#endif			
+#ifdef HAVE_GETHOSTBYNAME_R_3
+		//NOTE: gethostbyname_r with three parameters were not tested
+		struct hostent_data hinfo_data;
+		hinfo = gethostbyname_r((char*)szHost, (struct hostent*)hinfobuf, &hinfo_data);
+		err = hinfo == NULL;
+#endif			
+#else
+		m_pMutexGetHostByName->Lock();
+		hinfo = gethostbyname(szHost);
+		err = hinfo == NULL;
+#endif
+		if (err)
+		{
+#ifndef HAVE_GETHOSTBYNAME_R
+			m_pMutexGetHostByName->Unlock();
+#endif
+			ReportError("Could not resolve hostname %s", szHost, true, h_errnop);
+			return (unsigned int)-1;
+		}
+
+		memcpy(&uaddr, hinfo->h_addr_list[0], sizeof(uaddr));
+		
+#ifndef HAVE_GETHOSTBYNAME_R
+		m_pMutexGetHostByName->Unlock();
+#endif
+	}
+	return uaddr;
 }
 #endif
