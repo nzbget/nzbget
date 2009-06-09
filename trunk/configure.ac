@@ -37,10 +37,15 @@ dnl
 dnl Check for programs.
 dnl
 AC_PROG_CXX
-AC_PROG_CC
 AC_PATH_PROG(TAR, tar, $FALSE)
 AC_PATH_PROG(MAKE, make, $FALSE)
 AC_PROG_INSTALL
+
+
+dnl
+dnl Do all tests with c++ compiler.
+dnl
+AC_LANG(C++)
 
 
 dnl
@@ -62,23 +67,20 @@ dnl
 dnl Getopt
 dnl
 AC_CHECK_FUNC(getopt_long,
-	[AC_DEFINE([HAVE_GETOPT_LONG], 1, [Define to 1 if getopt_long is supported])],
-	[AC_LIBOBJ(getopt) AC_LIBOBJ(getopt1)])
+	[AC_DEFINE([HAVE_GETOPT_LONG], 1, [Define to 1 if getopt_long is supported])],)
 
 
 dnl
 dnl stat64
 dnl
 AC_CHECK_FUNC(stat64,
-	[AC_DEFINE([HAVE_STAT64], 1, [Define to 1 if stat64 is supported])],
-	[AC_LIBOBJ(stat64)])
+	[AC_DEFINE([HAVE_STAT64], 1, [Define to 1 if stat64 is supported])],)
 
 
 dnl
 dnl check ctime_r
 dnl
 AC_MSG_CHECKING(for ctime_r)
-AC_LANG_PUSH(C++)
 AC_TRY_COMPILE(
 	[#include <time.h>],
 	[ time_t clock; char buf[26];	ctime_r(&clock, buf, 26); ],
@@ -87,15 +89,14 @@ AC_TRY_COMPILE(
 	AC_DEFINE([HAVE_CTIME_R_3], 1, [Define to 1 if ctime_r takes 3 arguments]),
 	FOUND="no")
 if test "$FOUND" = "no"; then
-	AC_TRY_COMPILE(
-		[#include <time.h>],
-		[ time_t clock; char buf[26];	ctime_r(&clock, buf); ],
-		AC_MSG_RESULT([[yes, and it takes 2 arguments]])
-		FOUND="yes"
-		AC_DEFINE([HAVE_CTIME_R_2], 1, [Define to 1 if ctime_r takes 2 arguments]),
-		FOUND="no")
+AC_TRY_COMPILE(
+	[#include <time.h>],
+	[ time_t clock; char buf[26];	ctime_r(&clock, buf); ],
+	AC_MSG_RESULT([[yes, and it takes 2 arguments]])
+	FOUND="yes"
+	AC_DEFINE([HAVE_CTIME_R_2], 1, [Define to 1 if ctime_r takes 2 arguments]),
+	FOUND="no")
 fi
-AC_LANG_POP(C++)
 if test "$FOUND" = "no"; then
 	AC_MSG_RESULT([no])
 	AC_MSG_ERROR("function ctime_r not found")
@@ -107,18 +108,15 @@ dnl check getaddrinfo
 dnl
 AC_CHECK_FUNC(getaddrinfo,
 	FOUND="yes"
-	[AC_DEFINE([HAVE_GETADDRINFO], 1, [Define to 1 if getaddrinfo is supported])],
-	[AC_LIBOBJ(getaddrinfo)]
+	[AC_DEFINE([HAVE_GETADDRINFO], 1, [Define to 1 if getaddrinfo is supported])]
+	AC_SEARCH_LIBS([getaddrinfo], [nsl]),
 	FOUND="no")
-if test "$FOUND" = "yes"; then
-	AC_SEARCH_LIBS([getaddrinfo], [nsl])
-fi
 
 
+dnl
+dnl check gethostbyname_r, if getaddrinfo is not available
+dnl
 if test "$FOUND" = "no"; then
-	dnl
-	dnl check gethostbyname_r
-	dnl
 	AC_MSG_CHECKING(for gethostbyname_r)
 	
 	AC_TRY_COMPILE(
@@ -149,12 +147,12 @@ if test "$FOUND" = "no"; then
 		AC_MSG_RESULT([[yes, and it takes 3 arguments]])
 		FOUND="yes"
 		AC_DEFINE([HAVE_GETHOSTBYNAME_R_3], 1, [Define to 1 if gethostbyname_r takes 3 arguments]),
+		AC_MSG_RESULT([[no]])
 		FOUND="no")
 	fi
 	
-	AC_MSG_RESULT([$FOUND])
 	if test "$FOUND" = "yes"; then
-		AC_DEFINE([HAVE_GETHOSTBYNAME_R], 1, [Define to 1 if gethostbyname_r is supported]),
+		AC_DEFINE([HAVE_GETHOSTBYNAME_R], 1, [Define to 1 if gethostbyname_r is supported])
 		AC_SEARCH_LIBS([gethostbyname_r], [nsl])
 	fi
 fi
@@ -164,22 +162,18 @@ dnl
 dnl check for __FUNCTION__ or __func__ macro
 dnl
 AC_MSG_CHECKING(for __FUNCTION__ macro)
-AC_LANG_PUSH(C++)
 AC_TRY_COMPILE([#include <stdio.h>], [printf("%s\n", __FUNCTION__);],
 	AC_MSG_RESULT([yes])
 	AC_DEFINE([FUNCTION_MACRO_NAME],[__FUNCTION__],[Define to the name of macro which returns the name of funtion being compiled])
 	HAVE_FUNCTION_MACRO=yes,
 	AC_MSG_RESULT([no]))
-AC_LANG_POP(C++)
 if test "$HAVE_FUNCTION_MACRO" != "yes"; then
 	AC_MSG_CHECKING(for __func__ macro)
-	AC_LANG_PUSH(C++)
 	AC_TRY_COMPILE([#include <stdio.h>], [printf("%s\n", __func__);],
 		AC_MSG_RESULT([yes])
 		AC_DEFINE([FUNCTION_MACRO_NAME],[__func__],[Define to the name of macro which returns the name of function being compiled])
 		HAVE_FUNCTION_MACRO=yes,
 		AC_MSG_RESULT([no]))
-	AC_LANG_POP(C++)
 fi
 if test "$HAVE_FUNCTION_MACRO" != "yes"; then
 	AC_DEFINE([FUNCTION_MACRO_NAME],[NULL],[Define to the name of macro which returns the name of function being compiled])
@@ -292,10 +286,8 @@ if test "$ENABLEPARCHECK" = "yes"; then
 			[CPPFLAGS="${CPPFLAGS} $libsigc_CFLAGS"])
 	fi
 	
-	AC_LANG_PUSH(C++)
 	AC_CHECK_HEADER(sigc++/type_traits.h,,
 		AC_MSG_ERROR("libsigc++-2.0 header files were not found"))
-	AC_LANG_POP(C++)
 
 	dnl
 	dnl checks for libpar2 includes and libraries.
@@ -308,10 +300,8 @@ if test "$ENABLEPARCHECK" = "yes"; then
 
 	CPPFLAGS="${CPPFLAGS} -I${INCVAL}"
 	
-	AC_LANG_PUSH(C++)
 	AC_CHECK_HEADER(libpar2/libpar2.h,,
 		AC_MSG_ERROR("libpar2 header files were not found in $INCVAL"))
-	AC_LANG_POP(C++)
 
 	AC_ARG_WITH(libpar2_libraries,
 		[AS_HELP_STRING([--with-libpar2-libraries=DIR], [libpar2 library directory])],
@@ -326,7 +316,6 @@ if test "$ENABLEPARCHECK" = "yes"; then
 	dnl check if libpar2 library is linkable
 	dnl
 	AC_MSG_CHECKING(for libpar2 linking)
-	AC_LANG_PUSH(C++)
 	AC_TRY_LINK(
 		[#include <libpar2/par2cmdline.h>]
 		[#include <libpar2/par2repairer.h>]
@@ -335,13 +324,11 @@ if test "$ENABLEPARCHECK" = "yes"; then
 		AC_MSG_RESULT([[yes]]),
 		AC_MSG_RESULT([[no]])
 		AC_MSG_ERROR("libpar2 library not found"))
-	AC_LANG_POP(C++)
 
 	dnl
 	dnl check if libpar2 has support for cancelling
 	dnl
 	AC_MSG_CHECKING(whether libpar2 supports cancelling)
-	AC_LANG_PUSH(C++)
 	AC_TRY_COMPILE(
 		[#include <libpar2/par2cmdline.h>]
 		[#include <libpar2/par2repairer.h>]
@@ -350,7 +337,6 @@ if test "$ENABLEPARCHECK" = "yes"; then
 		AC_MSG_RESULT([[yes]])
 		AC_DEFINE([HAVE_PAR2_CANCEL], 1, [Define to 1 if libpar2 supports cancelling (needs a special patch)]),
 		AC_MSG_RESULT([[no]]))
-	AC_LANG_POP(C++)
 else
 	AC_DEFINE([DISABLE_PARCHECK],1,[Define to 1 to disable smart par-verification and restoration])
 fi
