@@ -148,7 +148,7 @@ if [ "$BadConfig" -eq 1 ]; then
 	exit $POSTPROCESS_ERROR
 fi 
 
-# Check if all collections in nzb-file are downloaded
+# Check if all collections in nzb-file were downloaded
 if [ ! "$NZBPP_NZBCOMPLETED" -eq 1 ]; then
 	echo "[INFO] Post-Process: Not the last collection in nzb-file, exiting"
 	exit $POSTPROCESS_ERROR
@@ -179,15 +179,20 @@ fi
 
 # All checks done, now processing the files
 
-# Make a temporary directory to store the unrarred files
-ExtractedDirExists=0
-if [ -d extracted ]; then
-	ExtractedDirExists=1
-fi
-mkdir extracted
+# Flag indicates that something was unrared
+Unrared=0
    
 # Unrar the files (if any) to the temporary directory, if there are no rar files this will do nothing
 if (ls *.rar >/dev/null 2>&1); then
+	
+	# Make a temporary directory to store the unrarred files
+	ExtractedDirExists=0
+	if [ -d extracted ]; then
+		ExtractedDirExists=1
+	else
+		mkdir extracted
+	fi
+	
 	echo "[INFO] Post-Process: Unraring"
 	rarpasswordparam=""
 	if [ "$NZBPR_Password" != "" ]; then
@@ -206,50 +211,63 @@ if (ls *.rar >/dev/null 2>&1); then
 		fi
 		exit $POSTPROCESS_ERROR
 	fi
-fi
+	Unrared=1
    
-# Remove the rar files
-if [ "$DeleteRarFiles" = "yes" ]; then
-	echo "[INFO] Post-Process: Deleting rar-files"
-	rm *.r[0-9][0-9] >/dev/null 2>&1
-	rm *.rar >/dev/null 2>&1
-	rm *.s[0-9][0-9] >/dev/null 2>&1
-fi
-   
-# Go to the temp directory and try to unrar again.  
-# If there are any rars inside the extracted rars then these will no also be unrarred
-cd extracted
-if (ls *.rar >/dev/null 2>&1); then
-	echo "[INFO] Post-Process: Unraring (second pass)"
-	$UnrarCmd x -y -p- -o+ "*.rar"
-
-	if [ "$?" -eq 3 ]; then
-		echo "[INFO] Post-Process: Unrar (second pass) failed"
-		exit $POSTPROCESS_ERROR
-	fi
-
-	# Delete the Rar files
+	# Remove the rar files
 	if [ "$DeleteRarFiles" = "yes" ]; then
-		echo "[INFO] Post-Process: Deleting rar-files (second pass)"
+		echo "[INFO] Post-Process: Deleting rar-files"
 		rm *.r[0-9][0-9] >/dev/null 2>&1
 		rm *.rar >/dev/null 2>&1
 		rm *.s[0-9][0-9] >/dev/null 2>&1
 	fi
+	
+	# Go to the temp directory and try to unrar again.  
+	# If there are any rars inside the extracted rars then these will no also be unrarred
+	cd extracted
+	if (ls *.rar >/dev/null 2>&1); then
+		echo "[INFO] Post-Process: Unraring (second pass)"
+		$UnrarCmd x -y -p- -o+ "*.rar"
+
+		if [ "$?" -eq 3 ]; then
+			echo "[INFO] Post-Process: Unrar (second pass) failed"
+			exit $POSTPROCESS_ERROR
+		fi
+
+		# Delete the Rar files
+		if [ "$DeleteRarFiles" = "yes" ]; then
+			echo "[INFO] Post-Process: Deleting rar-files (second pass)"
+			rm *.r[0-9][0-9] >/dev/null 2>&1
+			rm *.rar >/dev/null 2>&1
+			rm *.s[0-9][0-9] >/dev/null 2>&1
+		fi
+	fi
+	
+	# Move everything back to the Download folder
+	mv * ..
+	cd ..
+	rmdir extracted
 fi
-   
-# Move everything back to the Download folder
-mv * ..
-cd ..
-   
-# Clean up the temp folder
+
+# If download contains only nzb-files move them into nzb-directory
+# for further download
+AllFilesCount=`ls -1 2>/dev/null | wc -l`
+NZBFilesCount=`ls -1 *.nzb 2>/dev/null | wc -l`
+if [ "$AllFilesCount" -eq "$NZBFilesCount" ]; then
+	echo "[INFO] Moving downloaded nzb-files into incoming nzb-directory for further download"
+	mv *.nzb $NZBOP_NZBDIR
+fi
+
+# Clean up
 echo "[INFO] Post-Process: Cleaning up"
-rmdir extracted
-chmod -R a+rw . 
+chmod -R a+rw .
 rm *.nzb >/dev/null 2>&1
-rm *.1 >/dev/null 2>&1
 rm *.sfv >/dev/null 2>&1
+rm *.1 >/dev/null 2>&1
 rm _brokenlog.txt >/dev/null 2>&1
-rm *.[pP][aA][rR]2 >/dev/null 2>&1
+if [ "$Unrared" -eq 1 ]; then
+	# Delete par2-file only if there were files for unpacking.
+	rm *.[pP][aA][rR]2 >/dev/null 2>&1
+fi
 
 if [ "$JoinTS" = "yes" ]; then
 	# Join any split .ts files if they are named xxxx.0000.ts xxxx.0001.ts
@@ -275,6 +293,9 @@ if [ "$RenameIMG" = "yes" ]; then
 	fi   
 fi
 
+# Check if destination directory was set in postprocessing parameters
+# (for current nzb-file) via web-interface or via command line with 
+# "nzbget -E G O DestDir=/new/path <ID>"
 if [ "$NZBPR_DestDir" != "" ]; then
 	mkdir $NZBPR_DestDir
 	mv * $NZBPR_DestDir >/dev/null 2>&1
