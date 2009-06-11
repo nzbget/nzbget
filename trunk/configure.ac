@@ -159,25 +159,33 @@ fi
 
 
 dnl
-dnl check for __FUNCTION__ or __func__ macro
+dnl Determine what socket length (socklen_t) data type is
 dnl
-AC_MSG_CHECKING(for __FUNCTION__ macro)
-AC_TRY_COMPILE([#include <stdio.h>], [printf("%s\n", __FUNCTION__);],
-	AC_MSG_RESULT([yes])
-	AC_DEFINE([FUNCTION_MACRO_NAME],[__FUNCTION__],[Define to the name of macro which returns the name of funtion being compiled])
-	HAVE_FUNCTION_MACRO=yes,
-	AC_MSG_RESULT([no]))
-if test "$HAVE_FUNCTION_MACRO" != "yes"; then
-	AC_MSG_CHECKING(for __func__ macro)
-	AC_TRY_COMPILE([#include <stdio.h>], [printf("%s\n", __func__);],
-		AC_MSG_RESULT([yes])
-		AC_DEFINE([FUNCTION_MACRO_NAME],[__func__],[Define to the name of macro which returns the name of function being compiled])
-		HAVE_FUNCTION_MACRO=yes,
-		AC_MSG_RESULT([no]))
-fi
-if test "$HAVE_FUNCTION_MACRO" != "yes"; then
-	AC_DEFINE([FUNCTION_MACRO_NAME],[NULL],[Define to the name of macro which returns the name of function being compiled])
-fi
+AC_MSG_CHECKING([for type of socket length (socklen_t)])
+AC_TRY_COMPILE([
+#include <stddef.h>
+#include <sys/types.h>
+#include <sys/socket.h>],[
+(void)getsockopt (1, 1, 1, NULL, (socklen_t*)NULL)],[
+  AC_MSG_RESULT(socklen_t)
+  SOCKLEN_T=socklen_t],[
+  AC_TRY_COMPILE([
+#include <stddef.h>
+#include <sys/types.h>
+#include <sys/socket.h>],[
+(void)getsockopt (1, 1, 1, NULL, (size_t*)NULL)],[
+    AC_MSG_RESULT(size_t)
+    SOCKLEN_T=size_t],[
+    AC_TRY_COMPILE([
+#include <stddef.h>
+#include <sys/types.h>
+#include <sys/socket.h>],[
+(void)getsockopt (1, 1, 1, NULL, (int*)NULL)],[
+      AC_MSG_RESULT(int)
+      SOCKLEN_T=int],[
+      AC_MSG_WARN(could not determine)
+      SOCKLEN_T=int])])])
+AC_DEFINE_UNQUOTED(SOCKLEN_T, $SOCKLEN_T, [Determine what socket length (socklen_t) data type is])
 
 
 dnl 
@@ -201,7 +209,7 @@ if test "$INCVAL" = "no" -o "$LIBVAL" = "no"; then
 		[CFLAGS="${CFLAGS} $libxml2_CFLAGS"])
 fi
 AC_CHECK_HEADER(libxml/tree.h,,
-	AC_MSG_ERROR("libxml2 header files were not found"))
+	AC_MSG_ERROR("libxml2 header files not found"))
 AC_SEARCH_LIBS([xmlNewNode], [xml2], ,
 	AC_MSG_ERROR("libxml2 library not found"))
 
@@ -287,7 +295,7 @@ if test "$ENABLEPARCHECK" = "yes"; then
 	fi
 	
 	AC_CHECK_HEADER(sigc++/type_traits.h,,
-		AC_MSG_ERROR("libsigc++-2.0 header files were not found"))
+		AC_MSG_ERROR("libsigc++-2.0 header files not found"))
 
 	dnl
 	dnl checks for libpar2 includes and libraries.
@@ -301,7 +309,7 @@ if test "$ENABLEPARCHECK" = "yes"; then
 	CPPFLAGS="${CPPFLAGS} -I${INCVAL}"
 	
 	AC_CHECK_HEADER(libpar2/libpar2.h,,
-		AC_MSG_ERROR("libpar2 header files were not found in $INCVAL"))
+		AC_MSG_ERROR("libpar2 header files not found"))
 
 	AC_ARG_WITH(libpar2_libraries,
 		[AS_HELP_STRING([--with-libpar2-libraries=DIR], [libpar2 library directory])],
@@ -449,41 +457,42 @@ AC_ARG_ENABLE(debug,
 	[AS_HELP_STRING([--enable-debug], [enable debugging])],
 	[ ENABLEDEBUG=$enableval ],
 	[ ENABLEDEBUG=no] )
-if test "$ENABLEDEBUG" = "yes"; then
-	AC_DEFINE([DEBUG],1,Define to 1 to include debug-code)
-	if test "$CC" = "gcc"; then
-		CXXFLAGS="-g -Wall"
-	else
-		CXXFLAGS=""
-	fi
-fi
 AC_MSG_RESULT($ENABLEDEBUG)
 
 
-dnl
-dnl Backtracing on segmentation faults
 if test "$ENABLEDEBUG" = "yes"; then
-	AC_MSG_CHECKING(for backtrace)
-	AC_TRY_COMPILE(
-		[#include <execinfo.h>]
-		[#include <stdio.h>]
-		[#include <stdlib.h>],
-		[ void *array[100];	size_t size; char **strings; ]
-		[ size = backtrace(array, 100); ]
-		[ strings = backtrace_symbols(array, size); ],
-		FOUND=yes
-		AC_MSG_RESULT([[yes]])
-		AC_DEFINE([HAVE_BACKTRACE], 1, [Define to 1 to create stacktrace on segmentation faults]),
-		FOUND=no
-		AC_MSG_RESULT([[no]]))
 
-AC_MSG_CHECKING(for rdynamic linker flag)
-	old_LDFLAGS="$LDFLAGS"
-	LDFLAGS="$LDFLAGS -rdynamic"
-	AC_TRY_LINK([], [],
-		AC_MSG_RESULT([[yes]]),
-		AC_MSG_RESULT([[no]])
-		[LDFLAGS="$old_LDFLAGS"])
+dnl
+dnl Begin of debugging code
+dnl
+
+AC_DEFINE([DEBUG],1,Define to 1 to include debug-code)
+
+
+dnl
+dnl Set debug flags for gcc (if gcc is used)
+dnl
+if test "$CC" = "gcc"; then
+	CXXFLAGS="-g -Wall"
+else
+	CXXFLAGS=""
+fi
+
+
+dnl
+dnl check for __FUNCTION__ or __func__ macro
+dnl
+AC_MSG_CHECKING(for macro returning current function name)
+AC_TRY_COMPILE(
+	[#include <stdio.h>], [printf("%s\n", __FUNCTION__);],
+	AC_MSG_RESULT(__FUNCTION__)
+	FUNCTION_MACRO_NAME=__FUNCTION__,
+AC_TRY_COMPILE([#include <stdio.h>], [printf("%s\n", __func__);],
+	AC_MSG_RESULT(__func__)
+	FUNCTION_MACRO_NAME=__func__,
+	AC_MSG_RESULT(none)))
+if test "$FUNCTION_MACRO_NAME" != ""; then
+	AC_DEFINE_UNQUOTED(FUNCTION_MACRO_NAME, $FUNCTION_MACRO_NAME, [Define to the name of macro which returns the name of function being compiled])
 fi
 
 
@@ -499,6 +508,41 @@ AC_COMPILE_IFELSE([
 	AC_MSG_RESULT([yes])
 	AC_DEFINE([HAVE_VARIADIC_MACROS], 1, Define to 1 if variadic macros are supported),
 	AC_MSG_RESULT([no]))
+
+
+dnl
+dnl Backtracing on segmentation faults
+dnl
+AC_MSG_CHECKING(for backtrace)
+AC_TRY_COMPILE(
+	[#include <execinfo.h>]
+	[#include <stdio.h>]
+	[#include <stdlib.h>],
+	[ void *array[100];	size_t size; char **strings; ]
+	[ size = backtrace(array, 100); ]
+	[ strings = backtrace_symbols(array, size); ],
+	FOUND=yes
+	AC_MSG_RESULT([[yes]])
+	AC_DEFINE([HAVE_BACKTRACE], 1, [Define to 1 to create stacktrace on segmentation faults]),
+	FOUND=no
+	AC_MSG_RESULT([[no]]))
+
+
+dnl
+dnl "rdynamic" linker flag
+dnl
+AC_MSG_CHECKING(for rdynamic linker flag)
+	old_LDFLAGS="$LDFLAGS"
+	LDFLAGS="$LDFLAGS -rdynamic"
+	AC_TRY_LINK([], [],
+		AC_MSG_RESULT([[yes]]),
+		AC_MSG_RESULT([[no]])
+		[LDFLAGS="$old_LDFLAGS"])
+		
+dnl
+dnl End of debugging code
+dnl
+fi
 
 
 dnl Substitute flags.

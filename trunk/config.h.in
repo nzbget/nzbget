@@ -115,6 +115,9 @@
 /* Define to the version of this package. */
 #undef PACKAGE_VERSION
 
+/* Determine what socket length (socklen_t) data type is */
+#undef SOCKLEN_T
+
 /* Define to 1 if you have the ANSI C header files. */
 #undef STDC_HEADERS
 

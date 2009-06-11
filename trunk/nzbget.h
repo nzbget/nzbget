@@ -74,11 +74,6 @@
 
 #endif
 
-#if defined(OS2) || defined(__OS2__)
-// OS/2
-#define socklen_t int
-#endif
-
 #ifndef SHUT_RDWR
 #define SHUT_RDWR 2
 #endif

@@ -60,6 +60,9 @@
 /* Define to 1 if function GetAddrInfo is supported */
 #define HAVE_GETADDRINFO
 
+/* Determine what socket length (socklen_t) data type is */
+#define SOCKLEN_T socklen_t
+
 #define VERSION "0.7.0-testing"
 
 /* Suppress warnings */
