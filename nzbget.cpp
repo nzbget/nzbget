@@ -132,7 +132,6 @@ int main(int argc, char *argv[], char *argp[])
 	Util::InitVersionRevision();
 	
 #ifdef WIN32
-	_set_fmode(_O_BINARY);
 	InstallUninstallServiceCheck(argc, argv);
 #endif
 
