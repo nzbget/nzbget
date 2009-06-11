@@ -72,7 +72,7 @@ bool DiskState::SaveDownloadQueue(DownloadQueue* pDownloadQueue)
 	snprintf(fileName, 1024, "%s%s", g_pOptions->GetQueueDir(), "queue");
 	fileName[1024-1] = '\0';
 
-	FILE* outfile = fopen(fileName, "w");
+	FILE* outfile = fopen(fileName, "wb");
 
 	if (!outfile)
 	{
@@ -113,7 +113,7 @@ bool DiskState::LoadDownloadQueue(DownloadQueue* pDownloadQueue)
 	snprintf(fileName, 1024, "%s%s", g_pOptions->GetQueueDir(), "queue");
 	fileName[1024-1] = '\0';
 
-	FILE* infile = fopen(fileName, "r");
+	FILE* infile = fopen(fileName, "rb");
 
 	if (!infile)
 	{
@@ -361,7 +361,7 @@ bool DiskState::SaveFileInfo(FileInfo* pFileInfo, const char* szFilename)
 {
 	debug("Saving FileInfo to disk");
 
-	FILE* outfile = fopen(szFilename, "w");
+	FILE* outfile = fopen(szFilename, "wb");
 
 	if (!outfile)
 	{
@@ -406,7 +406,7 @@ bool DiskState::LoadFileInfo(FileInfo* pFileInfo, const char * szFilename, bool 
 {
 	debug("Loading FileInfo from disk");
 
-	FILE* infile = fopen(szFilename, "r");
+	FILE* infile = fopen(szFilename, "rb");
 
 	if (!infile)
 	{
@@ -541,7 +541,7 @@ bool DiskState::LoadOldPostQueue(DownloadQueue* pDownloadQueue)
 		return true;
 	}
 
-	FILE* infile = fopen(fileName, "r");
+	FILE* infile = fopen(fileName, "rb");
 
 	if (!infile)
 	{
@@ -720,7 +720,7 @@ bool DiskState::DiscardDownloadQueue()
 	snprintf(fileName, 1024, "%s%s", g_pOptions->GetQueueDir(), "queue");
 	fileName[1024-1] = '\0';
 
-	FILE* infile = fopen(fileName, "r");
+	FILE* infile = fopen(fileName, "rb");
 
 	if (!infile)
 	{

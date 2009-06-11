@@ -877,7 +877,7 @@ void PrePostProcessor::ParCheckerUpdate(Subject* Caller, void* Aspect)
 			
 			if (!m_ParChecker.GetRepairNotNeeded() || Util::FileExists(szBrokenLogName))
 			{
-				FILE* file = fopen(szBrokenLogName, "a");
+				FILE* file = fopen(szBrokenLogName, "ab");
 				if (file)
 				{
 					if (m_ParChecker.GetStatus() == ParChecker::psFailed)

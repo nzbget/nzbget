@@ -633,7 +633,7 @@ bool ArticleDownloader::PrepareFile(char* szLine)
 	{
 		bool bDirectWrite = g_pOptions->GetDirectWrite() && m_eFormat == Decoder::efYenc;
 		const char* szFilename = bDirectWrite ? m_szOutputFilename : m_szTempFilename;
-		m_pOutFile = fopen(szFilename, bDirectWrite ? "r+" : "w");
+		m_pOutFile = fopen(szFilename, bDirectWrite ? "rb+" : "wb");
 		if (!m_pOutFile)
 		{
 			error("Could not %s file %s", bDirectWrite ? "open" : "create", szFilename);
@@ -701,7 +701,7 @@ ArticleDownloader::EStatus ArticleDownloader::DecodeCheck()
 			if (bDirectWrite && g_pOptions->GetContinuePartial())
 			{
 				// create empty flag-file to indicate that the artcile was downloaded
-				FILE* flagfile = fopen(m_szResultFilename, "w");
+				FILE* flagfile = fopen(m_szResultFilename, "wb");
 				if (!flagfile)
 				{
 					error("Could not create file %s", m_szResultFilename);
@@ -879,7 +879,7 @@ void ArticleDownloader::CompleteFileParts()
 	if (g_pOptions->GetDecode() && !bDirectWrite)
 	{
 		remove(tmpdestfile);
-		outfile = fopen(tmpdestfile, "w+");
+		outfile = fopen(tmpdestfile, "wb+");
 		if (!outfile)
 		{
 			error("Could not create file %s!", tmpdestfile);
@@ -929,7 +929,7 @@ void ArticleDownloader::CompleteFileParts()
 			FILE* infile;
 			const char* fn = pa->GetResultFilename();
 
-			infile = fopen(fn, "r");
+			infile = fopen(fn, "rb");
 			if (infile)
 			{
 				int cnt = BUFFER_SIZE;
@@ -1028,7 +1028,7 @@ void ArticleDownloader::CompleteFileParts()
 			char szBrokenLogName[1024];
 			snprintf(szBrokenLogName, 1024, "%s%c_brokenlog.txt", szNZBDestDir, (int)PATH_SEPARATOR);
 			szBrokenLogName[1024-1] = '\0';
-			FILE* file = fopen(szBrokenLogName, "a");
+			FILE* file = fopen(szBrokenLogName, "ab");
 			fprintf(file, "%s (%i/%i)%s", m_pFileInfo->GetFilename(), m_pFileInfo->GetArticles()->size() - iBrokenCount, m_pFileInfo->GetArticles()->size(), LINE_ENDING);
 			fclose(file);
 		}
@@ -1111,11 +1111,11 @@ bool ArticleDownloader::MoveCompletedFiles(NZBInfo* pNZBInfo, const char* szOldD
 			{
 				// copy content to existing new file, then delete old file
 				FILE* outfile;
-				outfile = fopen(szBrokenLogName, "a");
+				outfile = fopen(szBrokenLogName, "ab");
 				if (outfile)
 				{
 					FILE* infile;
-					infile = fopen(szOldBrokenLogName, "r");
+					infile = fopen(szOldBrokenLogName, "rb");
 					if (infile)
 					{
 						static const int BUFFER_SIZE = 1024 * 50;

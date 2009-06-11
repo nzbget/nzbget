@@ -306,7 +306,7 @@ bool Util::DirEmpty(const char* szDirFilename)
 
 bool Util::LoadFileIntoBuffer(const char* szFileName, char** pBuffer, int* pBufferLength)
 {
-    FILE* pFile = fopen(szFileName, "r");
+    FILE* pFile = fopen(szFileName, "rb");
     if (!pFile)
     {
         return false;
@@ -340,7 +340,7 @@ bool Util::SetFileSize(const char* szFilename, int iSize)
 {
 	bool bOK = false;
 #ifdef WIN32
-	FILE* pFile = fopen(szFilename, "a");
+	FILE* pFile = fopen(szFilename, "ab");
 	if (pFile)
 	{
 		bOK = _chsize_s(pFile->_file, iSize) == 0;
@@ -348,7 +348,7 @@ bool Util::SetFileSize(const char* szFilename, int iSize)
 	}
 #else
 	// create file
-	FILE* pFile = fopen(szFilename, "a");
+	FILE* pFile = fopen(szFilename, "ab");
 	if (pFile)
 	{
 		fclose(pFile);
@@ -358,7 +358,7 @@ bool Util::SetFileSize(const char* szFilename, int iSize)
 	// 1) set file size using function "truncate" (it is fast, if works)
 	truncate(szFilename, iSize);
 	// check if it worked
-	pFile = fopen(szFilename, "a");
+	pFile = fopen(szFilename, "ab");
 	if (pFile)
 	{
 		fseek(pFile, 0, SEEK_END);
@@ -368,7 +368,7 @@ bool Util::SetFileSize(const char* szFilename, int iSize)
 			// 2) truncate did not work, expanding the file by writing in it (it is slow)
 			fclose(pFile);
 			truncate(szFilename, 0);
-			pFile = fopen(szFilename, "a");
+			pFile = fopen(szFilename, "ab");
 			char c = '0';
 			fwrite(&c, 1, iSize, pFile);
 			bOK = ftell(pFile) == iSize;
@@ -724,13 +724,13 @@ bool Util::MoveFile(const char* szSrcFilename, const char* szDstFilename)
 #ifndef WIN32
 	if (!bOK && (errno == EXDEV))
 	{
-		FILE* infile = fopen(szSrcFilename, "r");
+		FILE* infile = fopen(szSrcFilename, "rb");
 		if (!infile)
 		{
 			return false;
 		}
 
-		FILE* outfile = fopen(szDstFilename, "w+");
+		FILE* outfile = fopen(szDstFilename, "wb+");
 		if (!outfile)
 		{
 			fclose(infile);

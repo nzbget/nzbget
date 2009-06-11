@@ -1590,7 +1590,7 @@ bool Options::ParseWeekDays(const char* szWeekDays, int* pWeekDaysBits)
 
 void Options::LoadConfig(const char * configfile)
 {
-	FILE* infile = fopen(configfile, "r");
+	FILE* infile = fopen(configfile, "rb");
 
 	if (!infile)
 	{
