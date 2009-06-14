@@ -1,8 +1,8 @@
 /*
- *  This file if part of nzbget
+ *  This file is part of nzbget
  *
- *  Copyright (C) 2004  Sven Henkel <sidddy@users.sourceforge.net>
- *  Copyright (C) 2007  Andrei Prygounkov <hugbug@users.sourceforge.net>
+ *  Copyright (C) 2004 Sven Henkel <sidddy@users.sourceforge.net>
+ *  Copyright (C) 2007-2009 Andrei Prygounkov <hugbug@users.sourceforge.net>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -38,12 +38,13 @@ void info(const char* msg, ...);
 void detail(const char* msg, ...);
 void abort(const char* msg, ...);
 
+#ifdef DEBUG
 #ifdef HAVE_VARIADIC_MACROS
 	void debug(const char* szFilename, const char* szFuncname, int iLineNr, const char* msg, ...);
 #else
 	void debug(const char* msg, ...);
 #endif
-
+#endif
 
 class Message
 {
@@ -94,26 +95,29 @@ private:
 	friend void info(const char* msg, ...);
 	friend void abort(const char* msg, ...);
 	friend void detail(const char* msg, ...);
+#ifdef DEBUG
 #ifdef HAVE_VARIADIC_MACROS
 	friend void debug(const char* szFilename, const char* szFuncname, int iLineNr, const char* msg, ...);
 #else	
 	friend void debug(const char* msg, ...);
 #endif
+#endif
 	
 public:
-	Log();
-	~Log();
+						Log();
+						~Log();
 	Messages*			LockMessages();
 	void				UnlockMessages();
 	void				ResetLog();
+	void				InitOptions();
 };
 
+#ifdef DEBUG
 #ifdef HAVE_VARIADIC_MACROS
-	#ifdef DEBUG
-		#define debug(...)   debug(__FILE__, FUNCTION_MACRO_NAME, __LINE__, __VA_ARGS__)
-	#else
-		#define debug(...)   do { } while(0)
-	#endif
+#define debug(...)   debug(__FILE__, FUNCTION_MACRO_NAME, __LINE__, __VA_ARGS__)
+#endif
+#else
+#define debug(...)   do { } while(0)
 #endif
 
 extern Log* g_pLog;
