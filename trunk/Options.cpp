@@ -1716,7 +1716,7 @@ bool Options::ValidateOptionName(const char * optname)
 	// suppress abort on obsolete options; print a warning message instead
 	if (!strcasecmp(optname, OPTION_POSTLOGKIND) || !strcasecmp(optname, OPTION_NZBLOGKIND))
 	{
-		printf("WARNING: Option \"%s\" is obsolete. Use %s instead.\n", optname, OPTION_PROCESSLOGKIND);
+		warn("Option \"%s\" is obsolete. Use \"%s\" instead.", optname, OPTION_PROCESSLOGKIND);
 		return true;
 	}
 

@@ -78,8 +78,6 @@
 #include "NTService.h"
 #endif
 
-#include "ScriptController.h" // DEBUG
-
 // Prototypes
 void Run();
 void Cleanup();
@@ -139,13 +137,15 @@ int main(int argc, char *argv[], char *argp[])
 	DisableCout();
 #endif
 
-	// Init options & get the name of the .nzb file
 	g_pLog = new Log();
+
+	debug("nzbget %s", Util::VersionRevision());
+
 	g_pServerPool = new ServerPool();
 	g_pScheduler = new Scheduler();
 	Thread::Init();
 
-	debug("Options parsing");
+	debug("Reading options");
 	g_pOptions = new Options(argc, argv);
 	szEnvironmentVariables = (char*(*)[])argp;
 
@@ -159,9 +159,11 @@ int main(int argc, char *argv[], char *argp[])
 	
 	if (g_pOptions->GetServerMode() && g_pOptions->GetCreateLog() && g_pOptions->GetResetLog())
 	{
-		debug("deleting old log-file");
+		debug("Deleting old log-file");
 		g_pLog->ResetLog();
 	}
+
+	g_pLog->InitOptions();
 
 	if (g_pOptions->GetDaemonMode())
 	{
@@ -290,7 +292,7 @@ void Run()
 		// Standalone-mode
 		if (!g_pOptions->GetServerMode() && !g_pQueueCoordinator->AddFileToQueue(g_pOptions->GetArgFilename(), g_pOptions->GetCategory() ? g_pOptions->GetCategory() : ""))
 		{
-			abort("FATAL ERROR: Parsing NZB-document %s failed!!\n\n", g_pOptions->GetArgFilename() ? g_pOptions->GetArgFilename() : "N/A");
+			abort("FATAL ERROR: Parsing NZB-document %s failed\n\n", g_pOptions->GetArgFilename() ? g_pOptions->GetArgFilename() : "N/A");
 			return;
 		}
 

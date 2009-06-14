@@ -72,18 +72,8 @@ Log::~Log()
 
 void Log::Filelog(const char* msg, ...)
 {
-	if (
-		(g_pOptions && g_pOptions->GetCreateLog() && g_pOptions->GetLogFile())
-#ifdef DEBUG
-		|| (m_szLogFilename && m_bExtraDebug)
-#endif
-		)
+	if (m_szLogFilename)
 	{
-		if (!m_szLogFilename)
-		{
-			m_szLogFilename = strdup(g_pOptions->GetLogFile());
-		}
-
 		char tmp2[1024];
 
 		va_list ap;
@@ -126,6 +116,7 @@ void Log::Filelog(const char* msg, ...)
 	}
 }
 
+#ifdef DEBUG
 #undef debug
 #ifdef HAVE_VARIADIC_MACROS
 void debug(const char* szFilename, const char* szFuncname, int iLineNr, const char* msg, ...)
@@ -133,7 +124,6 @@ void debug(const char* szFilename, const char* szFuncname, int iLineNr, const ch
 void debug(const char* msg, ...)
 #endif
 {
-#ifdef DEBUG
 	char tmp1[1024];
 
 	va_list ap;
@@ -159,18 +149,12 @@ void debug(const char* msg, ...)
 
 	g_pLog->m_mutexLog.Lock();
 
-	if (!g_pOptions)
+	if (!g_pOptions && g_pLog->m_bExtraDebug)
 	{
-		if (g_pLog->m_bExtraDebug)
-		{
-			printf("%s\n", tmp2);
-			g_pLog->Filelog("DEBUG\t%s", tmp2);
-		}
-		g_pLog->m_mutexLog.Unlock();
-		return;
+		printf("%s\n", tmp2);
 	}
 
-	Options::EMessageTarget eMessageTarget = g_pOptions->GetDebugTarget();
+	Options::EMessageTarget eMessageTarget = g_pOptions ? g_pOptions->GetDebugTarget() : Options::mtScreen;
 	if (eMessageTarget == Options::mtLog || eMessageTarget == Options::mtBoth)
 	{
 		g_pLog->Filelog("DEBUG\t%s", tmp2);
@@ -181,8 +165,8 @@ void debug(const char* msg, ...)
 	}
 
 	g_pLog->m_mutexLog.Unlock();
-#endif
 }
+#endif
 
 void error(const char* msg, ...)
 {
@@ -196,7 +180,7 @@ void error(const char* msg, ...)
 
 	g_pLog->m_mutexLog.Lock();
 
-	Options::EMessageTarget eMessageTarget = g_pOptions->GetErrorTarget();
+	Options::EMessageTarget eMessageTarget = g_pOptions ? g_pOptions->GetErrorTarget() : Options::mtBoth;
 	if (eMessageTarget == Options::mtLog || eMessageTarget == Options::mtBoth)
 	{
 		g_pLog->Filelog("ERROR\t%s", tmp2);
@@ -221,7 +205,7 @@ void warn(const char* msg, ...)
 
 	g_pLog->m_mutexLog.Lock();
 
-	Options::EMessageTarget eMessageTarget = g_pOptions->GetWarningTarget();
+	Options::EMessageTarget eMessageTarget = g_pOptions ? g_pOptions->GetWarningTarget() : Options::mtScreen;
 	if (eMessageTarget == Options::mtLog || eMessageTarget == Options::mtBoth)
 	{
 		g_pLog->Filelog("WARNING\t%s", tmp2);
@@ -246,7 +230,7 @@ void info(const char* msg, ...)
 
 	g_pLog->m_mutexLog.Lock();
 
-	Options::EMessageTarget eMessageTarget = g_pOptions->GetInfoTarget();
+	Options::EMessageTarget eMessageTarget = g_pOptions ? g_pOptions->GetInfoTarget() : Options::mtScreen;
 	if (eMessageTarget == Options::mtLog || eMessageTarget == Options::mtBoth)
 	{
 		g_pLog->Filelog("INFO\t%s", tmp2);
@@ -271,7 +255,7 @@ void detail(const char* msg, ...)
 
 	g_pLog->m_mutexLog.Lock();
 
-	Options::EMessageTarget eMessageTarget = g_pOptions->GetDetailTarget();
+	Options::EMessageTarget eMessageTarget = g_pOptions ? g_pOptions->GetDetailTarget() : Options::mtScreen;
 	if (eMessageTarget == Options::mtLog || eMessageTarget == Options::mtBoth)
 	{
 		g_pLog->Filelog("DETAIL\t%s", tmp2);
@@ -336,11 +320,14 @@ void Log::AppendMessage(Message::EKind eKind, const char * szText)
 	Message* pMessage = new Message(++m_iIDGen, eKind, time(NULL), szText);
 	m_Messages.push_back(pMessage);
 
-	while (m_Messages.size() > (unsigned int)g_pOptions->GetLogBufferSize())
+	if (g_pOptions)
 	{
-		Message* pMessage = m_Messages.front();
-		delete pMessage;
-		m_Messages.pop_front();
+		while (m_Messages.size() > (unsigned int)g_pOptions->GetLogBufferSize())
+		{
+			Message* pMessage = m_Messages.front();
+			delete pMessage;
+			m_Messages.pop_front();
+		}
 	}
 }
 
@@ -358,4 +345,61 @@ void Log::UnlockMessages()
 void Log::ResetLog()
 {
 	remove(g_pOptions->GetLogFile());
+}
+
+/*
+* During intializing stage (when options were not read yet) all messages
+* are saved in screen log, even if they shouldn't (according to options).
+* Method "InitOptions()" check all messages added to screen log during
+* intializing stage and does two things:
+* 1) save the messages to log-file (if they should according to options);
+* 2) delete messages from screen log (if they should not be saved in screen log).
+*/
+void Log::InitOptions()
+{
+	const char* szMessageType[] = { "INFO", "WARNING", "ERROR", "DEBUG", "DETAIL"};
+
+	if (g_pOptions->GetCreateLog() && g_pOptions->GetLogFile())
+	{
+		m_szLogFilename = strdup(g_pOptions->GetLogFile());
+	}
+
+	for (unsigned int i = 0; i < m_Messages.size(); )
+	{
+		Message* pMessage = m_Messages.at(i);
+		Options::EMessageTarget eTarget = Options::mtNone;
+		switch (pMessage->GetKind())
+		{
+			case Message::mkDebug:
+				eTarget = g_pOptions->GetDebugTarget();
+				break;
+			case Message::mkDetail:
+				eTarget = g_pOptions->GetDetailTarget();
+				break;
+			case Message::mkInfo:
+				eTarget = g_pOptions->GetInfoTarget();
+				break;
+			case Message::mkWarning:
+				eTarget = g_pOptions->GetWarningTarget();
+				break;
+			case Message::mkError:
+				eTarget = g_pOptions->GetErrorTarget();
+				break;
+		}
+
+		if (eTarget == Options::mtLog || eTarget == Options::mtBoth)
+		{
+			Filelog("%s\t%s", szMessageType[pMessage->GetKind()], pMessage->GetText());
+		}
+
+		if (eTarget == Options::mtLog || eTarget == Options::mtNone)
+		{
+			delete pMessage;
+			m_Messages.erase(m_Messages.begin() + i);
+		}
+		else
+		{
+			i++;
+		}
+	}
 }
