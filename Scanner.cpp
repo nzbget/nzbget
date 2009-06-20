@@ -156,8 +156,7 @@ void Scanner::CheckIncomingNZBs(const char* szDirectory, const char* szCategory,
 				}
 				CheckIncomingNZBs(fullfilename, szUseCategory, bCheckStat);
 			}
-			else if ((buffer.st_mode & S_IFDIR) == 0 &&
-				(!bCheckStat || CanProcessFile(fullfilename)))
+			else if ((buffer.st_mode & S_IFDIR) == 0 && CanProcessFile(fullfilename, bCheckStat))
 			{
 				ProcessIncomingFile(szDirectory, filename, fullfilename, szCategory);
 			}
@@ -170,7 +169,7 @@ void Scanner::CheckIncomingNZBs(const char* szDirectory, const char* szCategory,
  * can be processed. That prevents the processing of files, which are currently being
  * copied into nzb-directory (eg. being downloaded in web-browser).
  */
-bool Scanner::CanProcessFile(const char* szFullFilename)
+bool Scanner::CanProcessFile(const char* szFullFilename, bool bCheckStat)
 {
 	const char* szExtension = strrchr(szFullFilename, '.');
 	if (!szExtension ||
@@ -179,6 +178,11 @@ bool Scanner::CanProcessFile(const char* szFullFilename)
 		!strcasecmp(szExtension, ".processed"))
 	{
 		return false;
+	}
+
+	if (!bCheckStat)
+	{
+		return true;
 	}
 
 	long long lSize = Util::FileSize(szFullFilename);
