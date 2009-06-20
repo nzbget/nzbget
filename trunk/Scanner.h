@@ -61,7 +61,7 @@ private:
 	void				CheckIncomingNZBs(const char* szDirectory, const char* szCategory, bool bCheckStat);
 	void				AddFileToQueue(const char* szFilename, const char* szCategory);
 	void				ProcessIncomingFile(const char* szDirectory, const char* szBaseFilename, const char* szFullFilename, const char* szCategory);
-	bool				CanProcessFile(const char* szFullFilename);
+	bool				CanProcessFile(const char* szFullFilename, bool bCheckStat);
 	void				DropOldFiles();
 
 public:
