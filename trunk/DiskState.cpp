@@ -848,12 +848,13 @@ void DiskState::CleanupTempDir(DownloadQueue* pDownloadQueue)
 	{
 		int id, part;
 		bool del = strstr(filename, ".tmp") || strstr(filename, ".dec") ||
-			((sscanf(filename, "%i.out", &id) == 1) &&
-				!(g_pOptions->GetContinuePartial() && g_pOptions->GetDirectWrite()));
+			((strstr(filename, ".out") && (sscanf(filename, "%i.out", &id) == 1) &&
+			!(g_pOptions->GetContinuePartial() && g_pOptions->GetDirectWrite())) ||
+			((sscanf(filename, "%i.%i", &id, &part) == 2) && !g_pOptions->GetContinuePartial()));
 		if (!del)
 		{
 			if ((sscanf(filename, "%i.%i", &id, &part) == 2) ||
-				(sscanf(filename, "%i.out", &id) == 1))
+				(strstr(filename, ".out") && (sscanf(filename, "%i.out", &id) == 1)))
 			{
 				del = true;
 				ptr = ids;
