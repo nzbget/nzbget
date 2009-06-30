@@ -55,7 +55,8 @@ extern DownloadQueueHolder* g_pDownloadQueueHolder;
 
 static const int POSTPROCESS_PARCHECK_CURRENT = 91;
 static const int POSTPROCESS_PARCHECK_ALL = 92;
-static const int POSTPROCESS_ALLOK = 93;
+static const int POSTPROCESS_SUCCESS = 93;
+static const int POSTPROCESS_ERROR = 94;
 
 #ifndef WIN32
 #define CHILD_WATCHDOG 1
@@ -682,46 +683,62 @@ void PostScriptController::Run()
 
 	int iResult = Execute();
 
-	if (iResult == POSTPROCESS_ALLOK)
+	switch (iResult)
 	{
-		info("%s sucessful", szInfoName);
-		m_pPostInfo->SetRequestParCleanup(true);
-	}
+		case POSTPROCESS_SUCCESS:
+			info("%s sucessful", szInfoName);
+			m_pPostInfo->SetScriptStatus(PostInfo::srSuccess);
+			break;
+
+		case POSTPROCESS_ERROR:
+			info("%s failed", szInfoName);
+			m_pPostInfo->SetScriptStatus(PostInfo::srFailure);
+			break;
 
 #ifndef DISABLE_PARCHECK
-	else if (iResult == POSTPROCESS_PARCHECK_ALL)
-	{
-		if (m_pPostInfo->GetParCheck())
-		{
-			error("%s requested par-check/repair for all collections, but they were already checked", szInfoName);
-		}
-		else if (!m_bNZBFileCompleted)
-		{
-			error("%s requested par-check/repair for all collections, but it was not the call for the last collection", szInfoName);
-		}
-		else
-		{
-			info("%s requested par-check/repair for all collections", szInfoName);
-			m_pPostInfo->SetRequestParCheck(PostInfo::rpAll);
-		}
-	}
-	else if (iResult == POSTPROCESS_PARCHECK_CURRENT)
-	{
-		if (m_pPostInfo->GetParCheck())
-		{
-			error("%s requested par-check/repair for current collection, but the collection was already checked", szInfoName);
-		}
-		else if (strlen(m_pPostInfo->GetParFilename()) == 0)
-		{
-			error("%s requested par-check/repair for current collection, but the collection doesn't have any par-files", szInfoName);
-		}
-		else
-		{
-			info("%s requested par-check/repair for current collection", szInfoName);
-			m_pPostInfo->SetRequestParCheck(PostInfo::rpCurrent);
-		}
-	}
+		case POSTPROCESS_PARCHECK_ALL:
+			if (m_pPostInfo->GetParCheck())
+			{
+				error("%s requested par-check/repair for all collections, but they were already checked", szInfoName);
+				m_pPostInfo->SetScriptStatus(PostInfo::srFailure);
+			}
+			else if (!m_bNZBFileCompleted)
+			{
+				error("%s requested par-check/repair for all collections, but it was not the call for the last collection", szInfoName);
+				m_pPostInfo->SetScriptStatus(PostInfo::srFailure);
+			}
+			else
+			{
+				info("%s requested par-check/repair for all collections", szInfoName);
+				m_pPostInfo->SetRequestParCheck(PostInfo::rpAll);
+				m_pPostInfo->SetScriptStatus(PostInfo::srSuccess);
+			}
+			break;
+
+		case POSTPROCESS_PARCHECK_CURRENT:
+			if (m_pPostInfo->GetParCheck())
+			{
+				error("%s requested par-check/repair for current collection, but it was already checked", szInfoName);
+				m_pPostInfo->SetScriptStatus(PostInfo::srFailure);
+			}
+			else if (strlen(m_pPostInfo->GetParFilename()) == 0)
+			{
+				error("%s requested par-check/repair for current collection, but it doesn't have any par-files", szInfoName);
+				m_pPostInfo->SetScriptStatus(PostInfo::srFailure);
+			}
+			else
+			{
+				info("%s requested par-check/repair for current collection", szInfoName);
+				m_pPostInfo->SetRequestParCheck(PostInfo::rpCurrent);
+				m_pPostInfo->SetScriptStatus(PostInfo::srSuccess);
+			}
+			break;
 #endif
+
+		default:
+			info("%s terminated with unknown status", szInfoName);
+			m_pPostInfo->SetScriptStatus(PostInfo::srUnknown);
+	}
 
 	m_pPostInfo->SetStage(PostInfo::ptFinished);
 	m_pPostInfo->SetWorking(false);

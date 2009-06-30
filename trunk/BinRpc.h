@@ -134,4 +134,10 @@ public:
 	virtual void		Execute();
 };
 
+class HistoryBinCommand: public BinCommand
+{
+public:
+	virtual void		Execute();
+};
+
 #endif

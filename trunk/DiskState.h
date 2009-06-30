@@ -36,11 +36,13 @@ private:
 	bool				LoadFileInfo(FileInfo* pFileInfo, const char* szFilename, bool bFileSummary, bool bArticles);
 	void				SaveNZBList(DownloadQueue* pDownloadQueue, FILE* outfile);
 	bool				LoadNZBList(DownloadQueue* pDownloadQueue, FILE* infile, int iFormatVersion);
-	void				SaveFileQueue(DownloadQueue* pDownloadQueue, FILE* outfile);
-	bool				LoadFileQueue(DownloadQueue* pDownloadQueue, FILE* infile);
+	void				SaveFileQueue(DownloadQueue* pDownloadQueue, FileQueue* pFileQueue, FILE* outfile);
+	bool				LoadFileQueue(DownloadQueue* pDownloadQueue, FileQueue* pFileQueue, FILE* infile);
 	void				SavePostQueue(DownloadQueue* pDownloadQueue, FILE* outfile);
 	bool				LoadPostQueue(DownloadQueue* pDownloadQueue, FILE* infile);
 	bool				LoadOldPostQueue(DownloadQueue* pDownloadQueue);
+	void				SaveHistory(DownloadQueue* pDownloadQueue, FILE* outfile);
+	bool				LoadHistory(DownloadQueue* pDownloadQueue, FILE* infile);
 	int					FindNZBInfoIndex(DownloadQueue* pDownloadQueue, NZBInfo* pNZBInfo);
 
 public:

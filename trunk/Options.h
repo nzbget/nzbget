@@ -54,7 +54,8 @@ public:
 		opClientRequestPostPause,
 		opClientRequestPostUnpause,
 		opClientRequestScanPause,
-		opClientRequestScanUnpause
+		opClientRequestScanUnpause,
+		opClientRequestHistory
 	};
 	enum EMessageTarget
 	{
@@ -176,6 +177,7 @@ private:
 	bool				m_bDeleteCleanupDisk;
 	bool				m_bMergeNzb;
 	int					m_iParTimeLimit;
+	int					m_iKeepHistory;
 
 	// Parsed command-line parameters
 	bool				m_bServerMode;
@@ -295,6 +297,7 @@ public:
 	bool				GetDeleteCleanupDisk() { return m_bDeleteCleanupDisk; }
 	bool				GetMergeNzb() { return m_bMergeNzb; }
 	int					GetParTimeLimit() { return m_iParTimeLimit; }
+	int					GetKeepHistory() { return m_iKeepHistory; }
 
 	// Parsed command-line parameters
 	bool				GetServerMode() { return m_bServerMode; }

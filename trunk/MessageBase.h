@@ -27,7 +27,7 @@
 #ifndef MESSAGEBASE_H
 #define MESSAGEBASE_H
 
-static const int32_t NZBMESSAGE_SIGNATURE = 0x6E7A6205; // = "nzb6" (protocol version)
+static const int32_t NZBMESSAGE_SIGNATURE = 0x6E7A6207; // = "nzb7" (protocol version)
 static const int NZBREQUESTFILENAMESIZE = 512;
 static const int NZBREQUESTPASSWORDSIZE = 32;
 
@@ -59,7 +59,8 @@ enum eRemoteRequest
 	eRemoteRequestVersion,
 	eRemoteRequestPostQueue,
 	eRemoteRequestWriteLog,
-	eRemoteRequestScan
+	eRemoteRequestScan,
+	eRemoteRequestHistory
 };
 
 // Possible values for field "m_iAction" of struct "SNZBEditQueueRequest":
@@ -86,10 +87,11 @@ enum eRemoteEditAction
 	eRemoteEditActionGroupSetCategory,		// set or change category for a group
 	eRemoteEditActionGroupMerge,			// merge group
 	eRemoteEditActionGroupSetParameter,		// set post-process parameter for group
-	eRemoteEditActionPostMoveOffset = 51,		// move post-job to m_iOffset relative to the current position in post-queue
+	eRemoteEditActionPostMoveOffset = 51,	// move post-job to m_iOffset relative to the current position in post-queue
 	eRemoteEditActionPostMoveTop,			// move post-job to the top of post-queue
 	eRemoteEditActionPostMoveBottom,		// move post-job to the bottom of post-queue
-	eRemoteEditActionPostDelete				// delete post-job
+	eRemoteEditActionPostDelete,			// delete post-job
+	eRemoteEditActionHistoryDelete			// delete history-item
 };
 
 // Possible values for field "m_iAction" of struct "SNZBPauseUnpauseRequest":
@@ -166,7 +168,7 @@ struct SNZBListResponse
 	int32_t					m_iNrTrailingNZBEntries;	// Number of List-NZB-entries, following to this structure
 	int32_t					m_iNrTrailingPPPEntries;	// Number of List-PPP-entries, following to this structure
 	int32_t					m_iNrTrailingFileEntries;	// Number of List-File-entries, following to this structure
-	int32_t					m_iTrailingDataLength;	// Length of all List-entries, following to this structure
+	int32_t					m_iTrailingDataLength;		// Length of all List-entries, following to this structure
 	// SNZBListResponseEntry m_NZBEntries[m_iNrTrailingNZBEntries]			// variable sized
 	// SNZBListResponseEntry m_PPPEntries[m_iNrTrailingPPPEntries]			// variable sized
 	// SNZBListResponseEntry m_FileEntries[m_iNrTrailingFileEntries]		// variable sized
@@ -412,6 +414,42 @@ struct SNZBScanResponse
 	int32_t					m_bSuccess;				// 0 - command failed, 1 - command executed successfully
 	int32_t					m_iTrailingDataLength;	// Length of Text-string (m_szText), following to this record
 	//char					m_szText[m_iTrailingDataLength];	// variable sized
+};
+
+// A history request
+struct SNZBHistoryRequest
+{
+	SNZBRequestBase			m_MessageBase;			// Must be the first in the struct
+};
+
+// A history response
+struct SNZBHistoryResponse
+{
+	SNZBResponseBase		m_MessageBase;			// Must be the first in the struct
+	int32_t					m_iEntrySize;			// Size of the SNZBHistoryResponseEntry-struct
+	int32_t					m_iNrTrailingEntries;	// Number of History-entries, following to this structure
+	int32_t					m_iTrailingDataLength;	// Length of all History-entries, following to this structure
+	// SNZBHistoryResponseEntry m_NZBEntries[m_iNrTrailingNZBEntries]			// variable sized
+};
+
+// A list response nzb entry
+struct SNZBHistoryResponseEntry
+{
+	int32_t					m_iID;					// NZBID
+	int32_t					m_tTime;				// When the item was added to history. time since the Epoch (00:00:00 UTC, January 1, 1970), measured in seconds.
+	int32_t					m_iSizeLo;				// Size of all files in bytes, Low 32-bits of 64-bit value
+	int32_t					m_iSizeHi;				// Size of all files in bytes, High 32-bits of 64-bit value
+	int32_t					m_iFileCount;			// Initial number of files included in NZB-file
+	int32_t					m_iParStatus;			// See NZBInfo::EParStatus
+	int32_t					m_iScriptStatus;		// See NZBInfo::EScriptStatus
+	int32_t					m_iFilenameLen;			// Length of Filename-string (m_szFilename), following to this record
+	int32_t					m_iDestDirLen;			// Length of DestDir-string (m_szDestDir), following to this record
+	int32_t					m_iCategoryLen;			// Length of Category-string (m_szCategory), following to this record
+	int32_t					m_iQueuedFilenameLen;	// Length of queued file name (m_szQueuedFilename), following to this record
+	//char					m_szFilename[m_iFilenameLen];				// variable sized
+	//char					m_szDestDir[m_iDestDirLen];					// variable sized
+	//char					m_szCategory[m_iCategoryLen];				// variable sized
+	//char					m_szQueuedFilename[m_iQueuedFilenameLen];	// variable sized
 };
 
 #endif

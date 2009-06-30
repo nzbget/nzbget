@@ -984,3 +984,98 @@ bool RemoteClient::RequestScan()
 	m_pConnection->Disconnect();
 	return OK;
 }
+
+bool RemoteClient::RequestHistory()
+{
+	if (!InitConnection()) return false;
+
+	SNZBHistoryRequest HistoryRequest;
+	InitMessageBase(&HistoryRequest.m_MessageBase, eRemoteRequestHistory, sizeof(HistoryRequest));
+
+	if (m_pConnection->Send((char*)(&HistoryRequest), sizeof(HistoryRequest)) < 0)
+	{
+		perror("m_pConnection->Send");
+		return false;
+	}
+
+	printf("Request sent\n");
+
+	// Now listen for the returned list
+	SNZBHistoryResponse HistoryResponse;
+	int iResponseLen = m_pConnection->Recv((char*) &HistoryResponse, sizeof(HistoryResponse));
+	if (iResponseLen != sizeof(HistoryResponse) || 
+		(int)ntohl(HistoryResponse.m_MessageBase.m_iSignature) != (int)NZBMESSAGE_SIGNATURE ||
+		ntohl(HistoryResponse.m_MessageBase.m_iStructSize) != sizeof(HistoryResponse))
+	{
+		if (iResponseLen < 0)
+		{
+			printf("No response received (timeout)\n");
+		}
+		else
+		{
+			printf("Invalid response received: either not nzbget-server or wrong server version\n");
+		}
+		return false;
+	}
+
+	char* pBuf = NULL;
+	if (ntohl(HistoryResponse.m_iTrailingDataLength) > 0)
+	{
+		pBuf = (char*)malloc(ntohl(HistoryResponse.m_iTrailingDataLength));
+		if (!m_pConnection->RecvAll(pBuf, ntohl(HistoryResponse.m_iTrailingDataLength)))
+		{
+			free(pBuf);
+			return false;
+		}
+	}
+
+	m_pConnection->Disconnect();
+
+	if (ntohl(HistoryResponse.m_iTrailingDataLength) == 0)
+	{
+		printf("Server has no files in history\n");
+	}
+	else
+	{
+		printf("History (most recent first)\n");
+		printf("-----------------------------------\n");
+
+		char* pBufPtr = (char*)pBuf;
+		for (unsigned int i = 0; i < ntohl(HistoryResponse.m_iNrTrailingEntries); i++)
+		{
+			SNZBHistoryResponseEntry* pListAnswer = (SNZBHistoryResponseEntry*) pBufPtr;
+
+			const char* szFileName = pBufPtr + sizeof(SNZBHistoryResponseEntry);
+			const char* szDestDir = pBufPtr + sizeof(SNZBHistoryResponseEntry) + ntohl(pListAnswer->m_iFilenameLen);
+			const char* szCategory = pBufPtr + sizeof(SNZBHistoryResponseEntry) + ntohl(pListAnswer->m_iFilenameLen) + ntohl(pListAnswer->m_iDestDirLen);
+			const char* m_szQueuedFilename = pBufPtr + sizeof(SNZBHistoryResponseEntry) + ntohl(pListAnswer->m_iFilenameLen) + ntohl(pListAnswer->m_iDestDirLen) + ntohl(pListAnswer->m_iCategoryLen);
+
+			long long lSize = Util::JoinInt64(ntohl(pListAnswer->m_iSizeHi), ntohl(pListAnswer->m_iSizeLo));
+
+			char szNZBNiceName[1024];
+			NZBInfo::MakeNiceNZBName(szFileName, szNZBNiceName, 1024);
+
+			char szSize[20];
+			Util::FormatFileSize(szSize, sizeof(szSize), lSize);
+
+			const char* szParStatusText[] = { "", ", Par failed", ", Par possible", ", Par successful" };
+			const char* szScriptStatusText[] = { "", ", Script status unknown", ", Script failed", ", Script successful" };
+
+			printf("[%i] %s (%i files, %s%s%s)\n", ntohl(pListAnswer->m_iID), szNZBNiceName, 
+				ntohl(pListAnswer->m_iFileCount), szSize, 
+				szParStatusText[ntohl(pListAnswer->m_iParStatus)], 
+				szScriptStatusText[ntohl(pListAnswer->m_iScriptStatus)]);
+
+			pBufPtr += sizeof(SNZBHistoryResponseEntry) + ntohl(pListAnswer->m_iFilenameLen) +
+				ntohl(pListAnswer->m_iDestDirLen) + ntohl(pListAnswer->m_iCategoryLen) + 
+				ntohl(pListAnswer->m_iQueuedFilenameLen);
+		}
+
+		printf("-----------------------------------\n");
+		printf("Items: %i\n", ntohl(HistoryResponse.m_iNrTrailingEntries));
+	}
+
+	free(pBuf);
+
+	return true;
+}

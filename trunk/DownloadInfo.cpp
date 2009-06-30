@@ -89,11 +89,13 @@ NZBInfo::NZBInfo()
 	m_lSize = 0;
 	m_iRefCount = 0;
 	m_bPostProcess = false;
-	m_eParFailure = pfNone;
+	m_eParStatus = prNone;
+	m_eScriptStatus = srNone;
 	m_bDeleted = false;
 	m_bParCleanup = false;
 	m_bCleanupDisk = false;
 	m_szQueuedFilename = strdup("");
+	m_tHistoryTime = 0;
 	m_Owner = NULL;
 	m_iIDGen++;
 	m_iID = m_iIDGen;
@@ -120,11 +122,7 @@ NZBInfo::~NZBInfo()
 		free(m_szQueuedFilename);
 	}
 
-	for (Files::iterator it = m_completedFiles.begin(); it != m_completedFiles.end(); it++)
-	{
-		free(*it);
-	}
-	m_completedFiles.clear();
+	ClearCompletedFiles();
 
 	for (NZBParameterList::iterator it = m_ppParameters.begin(); it != m_ppParameters.end(); it++)
 	{
@@ -150,6 +148,15 @@ void NZBInfo::Release()
 	{
 		delete this;
 	}
+}
+
+void NZBInfo::ClearCompletedFiles()
+{
+	for (Files::iterator it = m_completedFiles.begin(); it != m_completedFiles.end(); it++)
+	{
+		free(*it);
+	}
+	m_completedFiles.clear();
 }
 
 void NZBInfo::SetDestDir(const char* szDestDir)
@@ -544,9 +551,9 @@ PostInfo::PostInfo()
 	m_bWorking = false;
 	m_bDeleted = false;
 	m_bParCheck = false;
-	m_iParStatus = 0;
+	m_eParStatus = psNone;
 	m_eRequestParCheck = rpNone;
-	m_bRequestParCleanup = false;
+	m_eScriptStatus = srNone;
 	m_szProgressLabel = strdup("");
 	m_iFileProgress = 0;
 	m_iStageProgress = 0;
