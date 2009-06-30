@@ -155,6 +155,7 @@ static const char* OPTION_NZBCLEANUPDISK	= "NzbCleanupDisk";
 static const char* OPTION_DELETECLEANUPDISK	= "DeleteCleanupDisk";
 static const char* OPTION_MERGENZB			= "MergeNzb";
 static const char* OPTION_PARTIMELIMIT		= "ParTimeLimit";
+static const char* OPTION_KEEPHISTORY		= "KeepHistory";
 
 // obsolete options
 static const char* OPTION_POSTLOGKIND		= "PostLogKind";
@@ -303,6 +304,7 @@ Options::Options(int argc, char* argv[])
 	m_bDeleteCleanupDisk	= false;
 	m_bMergeNzb				= false;
 	m_iParTimeLimit			= 0;
+	m_iKeepHistory			= 0;
 
 	// Option "ConfigFile" will be initialized later, but we want
 	// to see it at the top of option list, so we add it first
@@ -532,6 +534,7 @@ void Options::InitDefault()
 	SetOption(OPTION_DELETECLEANUPDISK, "no");
 	SetOption(OPTION_MERGENZB, "no");
 	SetOption(OPTION_PARTIMELIMIT, "0");	
+	SetOption(OPTION_KEEPHISTORY, "0");	
 }
 
 void Options::InitOptFile()
@@ -653,6 +656,7 @@ void Options::InitOptions()
 	m_iNzbDirFileAge		= atoi(GetOption(OPTION_NZBDIRFILEAGE));
 	m_iDiskSpace			= atoi(GetOption(OPTION_DISKSPACE));
 	m_iParTimeLimit			= atoi(GetOption(OPTION_PARTIMELIMIT));
+	m_iKeepHistory			= atoi(GetOption(OPTION_KEEPHISTORY));
 
 	CheckDir(&m_szNzbDir, OPTION_NZBDIR, m_iNzbDirInterval == 0);
 
@@ -828,6 +832,10 @@ void Options::InitCommandLine(int argc, char* argv[])
 				{
 					m_eClientOperation = opClientRequestListStatus;
 				}
+				else if (!strcmp(optarg, "H"))
+				{
+					m_eClientOperation = opClientRequestHistory;
+				}
 				else
 				{
 					abort("FATAL ERROR: Could not parse value of option 'L'\n");
@@ -896,7 +904,8 @@ void Options::InitCommandLine(int argc, char* argv[])
 				m_eClientOperation = opClientRequestEditQueue;
 				bool bGroup = !strcasecmp(optarg, "G");
 				bool bPost = !strcasecmp(optarg, "O");
-				if (bGroup || bPost)
+				bool bHistory = !strcasecmp(optarg, "H");
+				if (bGroup || bPost || bHistory)
 				{
 					optind++;
 					if (optind > argc)
@@ -929,6 +938,18 @@ void Options::InitCommandLine(int argc, char* argv[])
 							abort("FATAL ERROR: Could not parse value of option 'E'\n");
 						}
 						m_iEditQueueAction = eRemoteEditActionPostMoveOffset;
+					}
+				}
+				else if (bHistory)
+				{
+					// edit-commands for history
+					if (!strcasecmp(optarg, "D"))
+					{
+						m_iEditQueueAction = eRemoteEditActionHistoryDelete;
+					}
+					else
+					{
+						abort("FATAL ERROR: Could not parse value of option 'E'\n");
 					}
 				}
 				else
@@ -1090,10 +1111,11 @@ void Options::PrintUsage(char* com)
 		"  -Q, --quit                Shutdown server\n"
 		"  -A, --append <nzb-file>   Send file to server's download queue\n"
 		"  -C, --connect             Attach client to server\n"
-		"  -L, --list    [F|G|O|S]   Request list of downloads from server\n"
+		"  -L, --list    [F|G|O|S|H] Request list of downloads from server\n"
 		"                 F          list individual files and server status (default)\n"
 		"                 G          list groups (nzb-files) and server status\n"
 		"                 O          list post-processor-queue\n"
+		"                 H          list history\n"
 		"                 S          print only server status\n"
 		"  -P, --pause   [D|O|S]     Pause server:\n"
 		"                 D          pause download queue (default)\n"
@@ -1111,9 +1133,10 @@ void Options::PrintUsage(char* com)
 		"  -G, --log <lines>         Request last <lines> lines from server's screen-log\n"
 		"  -W, --write <D|I|W|E|G> \"Text\" Send text to server's log\n"
 		"  -S, --scan                Scan incoming nzb-directory on server\n"
-		"  -E, --edit [G|O] <action> <IDs> Edit queue on server\n"
+		"  -E, --edit [G|O|H] <action> <IDs> Edit items on server\n"
 		"              G             Affect all files in the group (same nzb-file)\n"
 		"              O             Edit post-processor-queue\n"
+		"              H             Edit history\n"
 		"    <action> is one of:\n"
 		"       <+offset|-offset>    Move file(s)/group(s)/post-job in queue relative to\n"
 		"                            current position, offset is an integer value\n"
@@ -1123,7 +1146,7 @@ void Options::PrintUsage(char* com)
 		"       U                    Resume (unpause) file(s)/group(s)\n"
 		"       A                    Pause all pars (for groups)\n"
 		"       R                    Pause extra pars (for groups)\n"
-		"       D                    Delete file(s)/group(s)/post-job(s)\n"
+		"       D                    Delete file(s)/group(s)/post-job(s)/history-item(s)\n"
 		"       K <name>             Set category (for groups)\n"
 		"       M                    Merge (for groups)\n"
 		"       O <name>=<value>     Set post-process parameter (for groups)\n"

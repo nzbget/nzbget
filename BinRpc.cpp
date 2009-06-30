@@ -59,7 +59,8 @@ extern void ExitProc();
 
 const char* g_szMessageRequestNames[] =
     { "N/A", "Download", "Pause/Unpause", "List", "Set download rate", "Dump debug", 
-		"Edit queue", "Log", "Quit", "Version", "Post-queue", "Write log", "Scan", "Pause/Unpause postprocessor" };
+		"Edit queue", "Log", "Quit", "Version", "Post-queue", "Write log", "Scan", 
+		"Pause/Unpause postprocessor", "History" };
 
 const unsigned int g_iMessageRequestSizes[] =
     { 0,
@@ -75,7 +76,7 @@ const unsigned int g_iMessageRequestSizes[] =
 		sizeof(SNZBPostQueueRequest),
 		sizeof(SNZBWriteLogRequest),
 		sizeof(SNZBScanRequest),
-		sizeof(SNZBPauseUnpauseRequest)
+		sizeof(SNZBHistoryRequest)
     };
 
 //*****************************************************************
@@ -111,10 +112,10 @@ void BinRpcProcessor::Execute()
 void BinRpcProcessor::Dispatch()
 {
 	if (ntohl(m_MessageBase.m_iType) >= (int)eRemoteRequestDownload &&
-		   ntohl(m_MessageBase.m_iType) <= (int)eRemoteRequestScan &&
+		   ntohl(m_MessageBase.m_iType) <= (int)eRemoteRequestHistory &&
 		   g_iMessageRequestSizes[ntohl(m_MessageBase.m_iType)] != ntohl(m_MessageBase.m_iStructSize))
 	{
-		error("Invalid size of request: needed %i Bytes, but received %i Bytes",
+		error("Invalid size of request: expected %i Bytes, but received %i Bytes",
 			 g_iMessageRequestSizes[ntohl(m_MessageBase.m_iType)], ntohl(m_MessageBase.m_iStructSize));
 		return;
 	}
@@ -124,76 +125,56 @@ void BinRpcProcessor::Dispatch()
 	switch (ntohl(m_MessageBase.m_iType))
 	{
 		case eRemoteRequestDownload:
-			{
-				command = new DownloadBinCommand();
-				break;
-			}
+			command = new DownloadBinCommand();
+			break;
 
 		case eRemoteRequestList:
-			{
-				command = new ListBinCommand();
-				break;
-			}
+			command = new ListBinCommand();
+			break;
 
 		case eRemoteRequestLog:
-			{
-				command = new LogBinCommand();
-				break;
-			}
+			command = new LogBinCommand();
+			break;
 
 		case eRemoteRequestPauseUnpause:
-			{
-				command = new PauseUnpauseBinCommand();
-				break;
-			}
+			command = new PauseUnpauseBinCommand();
+			break;
 
 		case eRemoteRequestEditQueue:
-			{
-				command = new EditQueueBinCommand();
-				break;
-			}
+			command = new EditQueueBinCommand();
+			break;
 
 		case eRemoteRequestSetDownloadRate:
-			{
-				command = new SetDownloadRateBinCommand();
-				break;
-			}
+			command = new SetDownloadRateBinCommand();
+			break;
 
 		case eRemoteRequestDumpDebug:
-			{
-				command = new DumpDebugBinCommand();
-				break;
-			}
+			command = new DumpDebugBinCommand();
+			break;
 
 		case eRemoteRequestShutdown:
-			{
-				command = new ShutdownBinCommand();
-				break;
-			}
+			command = new ShutdownBinCommand();
+			break;
 
 		case eRemoteRequestVersion:
-			{
-				command = new VersionBinCommand();
-				break;
-			}
+			command = new VersionBinCommand();
+			break;
 
 		case eRemoteRequestPostQueue:
-			{
-				command = new PostQueueBinCommand();
-				break;
-			}
+			command = new PostQueueBinCommand();
+			break;
 
 		case eRemoteRequestWriteLog:
-			{
-				command = new WriteLogBinCommand();
-				break;
-			}
+			command = new WriteLogBinCommand();
+			break;
 
 		case eRemoteRequestScan:
-			{
-				command = new ScanBinCommand();
-				break;
-			}
+			command = new ScanBinCommand();
+			break;
+
+		case eRemoteRequestHistory:
+			command = new HistoryBinCommand();
+			break;
 
 		default:
 			error("Received unsupported request %i", ntohl(m_MessageBase.m_iType));
@@ -847,10 +828,7 @@ void PostQueueBinCommand::Execute()
 		send(m_iSocket, buf, bufsize, 0);
 	}
 
-	if (buf)
-	{
-		free(buf);
-	}
+	free(buf);
 }
 
 void WriteLogBinCommand::Execute()
@@ -920,4 +898,94 @@ void ScanBinCommand::Execute()
 
 	g_pPrePostProcessor->ScanNZBDir();
 	SendBoolResponse(true, "Scan-Command scheduled successfully");
+}
+
+void HistoryBinCommand::Execute()
+{
+	SNZBHistoryRequest HistoryRequest;
+	if (!ReceiveRequest(&HistoryRequest, sizeof(HistoryRequest)))
+	{
+		return;
+	}
+
+	SNZBHistoryResponse HistoryResponse;
+	memset(&HistoryResponse, 0, sizeof(HistoryResponse));
+	HistoryResponse.m_MessageBase.m_iSignature = htonl(NZBMESSAGE_SIGNATURE);
+	HistoryResponse.m_MessageBase.m_iStructSize = htonl(sizeof(HistoryResponse));
+	HistoryResponse.m_iEntrySize = htonl(sizeof(SNZBHistoryResponseEntry));
+
+	char* buf = NULL;
+	int bufsize = 0;
+
+	// Make a data structure and copy all the elements of the list into it
+	DownloadQueue* pDownloadQueue = g_pQueueCoordinator->LockQueue();
+
+	// calculate required buffer size for nzbs
+	int iNrNZBEntries = pDownloadQueue->GetHistoryList()->size();
+	bufsize += iNrNZBEntries * sizeof(SNZBHistoryResponseEntry);
+	for (HistoryList::iterator it = pDownloadQueue->GetHistoryList()->begin(); it != pDownloadQueue->GetHistoryList()->end(); it++)
+	{
+		NZBInfo* pNZBInfo = *it;
+		bufsize += strlen(pNZBInfo->GetFilename()) + 1;
+		bufsize += strlen(pNZBInfo->GetDestDir()) + 1;
+		bufsize += strlen(pNZBInfo->GetCategory()) + 1;
+		bufsize += strlen(pNZBInfo->GetQueuedFilename()) + 1;
+		// align struct to 4-bytes, needed by ARM-processor (and may be others)
+		bufsize += bufsize % 4 > 0 ? 4 - bufsize % 4 : 0;
+	}
+
+	buf = (char*) malloc(bufsize);
+	char* bufptr = buf;
+
+	// write nzb entries
+	for (NZBInfoList::iterator it = pDownloadQueue->GetHistoryList()->begin(); it != pDownloadQueue->GetHistoryList()->end(); it++)
+	{
+		unsigned long iSizeHi, iSizeLo;
+		NZBInfo* pNZBInfo = *it;
+		SNZBHistoryResponseEntry* pListAnswer = (SNZBHistoryResponseEntry*) bufptr;
+		Util::SplitInt64(pNZBInfo->GetSize(), &iSizeHi, &iSizeLo);
+		pListAnswer->m_iID					= htonl(pNZBInfo->GetID());
+		pListAnswer->m_tTime				= htonl((int)pNZBInfo->GetHistoryTime());
+		pListAnswer->m_iSizeLo				= htonl(iSizeLo);
+		pListAnswer->m_iSizeHi				= htonl(iSizeHi);
+		pListAnswer->m_iFileCount			= htonl(pNZBInfo->GetFileCount());
+		pListAnswer->m_iParStatus			= htonl(pNZBInfo->GetParStatus());
+		pListAnswer->m_iScriptStatus		= htonl(pNZBInfo->GetScriptStatus());
+		pListAnswer->m_iFilenameLen			= htonl(strlen(pNZBInfo->GetFilename()) + 1);
+		pListAnswer->m_iDestDirLen			= htonl(strlen(pNZBInfo->GetDestDir()) + 1);
+		pListAnswer->m_iCategoryLen			= htonl(strlen(pNZBInfo->GetCategory()) + 1);
+		pListAnswer->m_iQueuedFilenameLen	= htonl(strlen(pNZBInfo->GetQueuedFilename()) + 1);
+		bufptr += sizeof(SNZBHistoryResponseEntry);
+		strcpy(bufptr, pNZBInfo->GetFilename());
+		bufptr += ntohl(pListAnswer->m_iFilenameLen);
+		strcpy(bufptr, pNZBInfo->GetDestDir());
+		bufptr += ntohl(pListAnswer->m_iDestDirLen);
+		strcpy(bufptr, pNZBInfo->GetCategory());
+		bufptr += ntohl(pListAnswer->m_iCategoryLen);
+		strcpy(bufptr, pNZBInfo->GetQueuedFilename());
+		bufptr += ntohl(pListAnswer->m_iQueuedFilenameLen);
+		// align struct to 4-bytes, needed by ARM-processor (and may be others)
+		if ((size_t)bufptr % 4 > 0)
+		{
+			pListAnswer->m_iQueuedFilenameLen = htonl(ntohl(pListAnswer->m_iQueuedFilenameLen) + 4 - (size_t)bufptr % 4);
+			memset(bufptr, 0, 4 - (size_t)bufptr % 4); //suppress valgrind warning "uninitialized data"
+			bufptr += 4 - (size_t)bufptr % 4;
+		}
+	}
+
+	g_pQueueCoordinator->UnlockQueue();
+
+	HistoryResponse.m_iNrTrailingEntries = htonl(iNrNZBEntries);
+	HistoryResponse.m_iTrailingDataLength = htonl(bufsize);
+
+	// Send the request answer
+	send(m_iSocket, (char*) &HistoryResponse, sizeof(HistoryResponse), 0);
+
+	// Send the data
+	if (bufsize > 0)
+	{
+		send(m_iSocket, buf, bufsize, 0);
+	}
+
+	free(buf);
 }

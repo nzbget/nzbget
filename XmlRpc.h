@@ -223,4 +223,10 @@ public:
 	virtual void		Execute();
 };
 
+class HistoryXmlCommand: public XmlCommand
+{
+public:
+	virtual void		Execute();
+};
+
 #endif

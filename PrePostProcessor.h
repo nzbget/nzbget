@@ -45,7 +45,8 @@ public:
 		eaPostMoveOffset = 51,			// move post to m_iOffset relative to the current position in post-queue
 		eaPostMoveTop,
 		eaPostMoveBottom,
-		eaPostDelete
+		eaPostDelete,
+		eaHistoryDelete
 	};
 
 private:
@@ -100,19 +101,20 @@ private:
 	Scanner				m_Scanner;
 
 	bool				IsNZBFileCompleted(DownloadQueue* pDownloadQueue, NZBInfo* pNZBInfo, 
-							bool bIgnoreFirstInPostQueue, bool bIgnorePaused, bool bCheckPostQueue, bool bAllowOnlyOneDeleted);
+							bool bIgnoreFirstInPostQueue, bool bIgnorePausedPars, bool bCheckPostQueue, bool bAllowOnlyOneDeleted);
 	void				CheckPostQueue();
 	void				JobCompleted(DownloadQueue* pDownloadQueue, PostInfo* pPostInfo);
 	void				StartScriptJob(DownloadQueue* pDownloadQueue, PostInfo* pPostInfo);
-	void				SavePostQueue(DownloadQueue* pDownloadQueue);
+	void				SaveQueue(DownloadQueue* pDownloadQueue);
 	void				SanitisePostQueue(PostQueue* pPostQueue);
 	void				CheckDiskSpace();
 	void				ApplySchedulerState();
 	bool				PauseDownload();
 	bool				UnpauseDownload();
 	void				NZBAdded(DownloadQueue* pDownloadQueue, NZBInfo* pNZBInfo);
-	void				NZBCompleted(DownloadQueue* pDownloadQueue, NZBInfo* pNZBInfo, FileInfo* pFileInfo);
+	void				NZBDownloaded(DownloadQueue* pDownloadQueue, NZBInfo* pNZBInfo, FileInfo* pFileInfo);
 	void				NZBDeleted(DownloadQueue* pDownloadQueue, NZBInfo* pNZBInfo, FileInfo* pFileInfo);
+	void				NZBCompleted(DownloadQueue* pDownloadQueue, NZBInfo* pNZBInfo, bool bSaveQueue);
 	bool				FindMainPars(const char* szPath, FileList* pFileList);
 	bool				ParseParFilename(const char* szParFilename, int* iBaseNameLen, int* iBlocks);
 	bool				SameParCollection(const char* szFilename1, const char* szFilename2);
@@ -120,9 +122,12 @@ private:
 	void				DeleteQueuedFile(const char* szQueuedFile);
 	void				PausePars(DownloadQueue* pDownloadQueue, NZBInfo* pNZBInfo);
 	NZBInfo*			MergeGroups(DownloadQueue* pDownloadQueue, NZBInfo* pNZBInfo);
-	bool				QueueMove(IDList* pIDList, EEditAction eAction, int iOffset);
-	bool				QueueDelete(IDList* pIDList);
+	bool				PostQueueMove(IDList* pIDList, EEditAction eAction, int iOffset);
+	bool				PostQueueDelete(IDList* pIDList);
+	bool				HistoryDelete(IDList* pIDList);
 	void				Cleanup();
+	FileInfo*			GetQueueGroup(DownloadQueue* pDownloadQueue, NZBInfo* pNZBInfo);
+	void				CheckHistory();
 
 #ifndef DISABLE_PARCHECK
 	PostParChecker		m_ParChecker;
@@ -130,7 +135,6 @@ private:
 
 	void				ParCheckerUpdate(Subject* Caller, void* Aspect);
 	bool				AddPar(FileInfo* pFileInfo, bool bDeleted);
-	FileInfo*			GetParCleanupQueueGroup(DownloadQueue* pDownloadQueue, NZBInfo* pNZBInfo);
 	bool				RequestMorePars(NZBInfo* pNZBInfo, const char* szParFilename, int iBlockNeeded, int* pBlockFound);
 	void				FindPars(DownloadQueue* pDownloadQueue, NZBInfo* pNZBInfo, const char* szParFilename, 
 							Blocks* pBlocks, bool bStrictParName, bool bExactParName, int* pBlockFound);

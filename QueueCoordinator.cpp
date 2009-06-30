@@ -664,30 +664,35 @@ void QueueCoordinator::DeleteFileInfo(FileInfo* pFileInfo, bool bCompleted)
 
 	if (!bCompleted)
 	{
-		// deleting temporary files
-
-		if (!g_pOptions->GetDirectWrite() || g_pOptions->GetContinuePartial())
-		{
-			for (FileInfo::Articles::iterator it = pFileInfo->GetArticles()->begin(); it != pFileInfo->GetArticles()->end(); it++)
-			{
-				ArticleInfo* pa = *it;
-				if (pa->GetResultFilename())
-				{
-					remove(pa->GetResultFilename());
-				}
-			}
-		}
-
-		if (g_pOptions->GetDirectWrite())
-		{
-			char name[1024];
-			snprintf(name, 1024, "%s%i.out", g_pOptions->GetTempDir(), pFileInfo->GetID());
-			name[1024-1] = '\0';
-			remove(name);
-		}
+		DiscardDiskFile(pFileInfo);
 	}
 
 	delete pFileInfo;
+}
+
+void QueueCoordinator::DiscardDiskFile(FileInfo* pFileInfo)
+{
+	// deleting temporary files
+
+	if (!g_pOptions->GetDirectWrite() || g_pOptions->GetContinuePartial())
+	{
+		for (FileInfo::Articles::iterator it = pFileInfo->GetArticles()->begin(); it != pFileInfo->GetArticles()->end(); it++)
+		{
+			ArticleInfo* pa = *it;
+			if (pa->GetResultFilename())
+			{
+				remove(pa->GetResultFilename());
+			}
+		}
+	}
+
+	if (g_pOptions->GetDirectWrite())
+	{
+		char name[1024];
+		snprintf(name, 1024, "%s%i.out", g_pOptions->GetTempDir(), pFileInfo->GetID());
+		name[1024-1] = '\0';
+		remove(name);
+	}
 }
 
 bool QueueCoordinator::IsDupe(FileInfo* pFileInfo)

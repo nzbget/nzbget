@@ -115,6 +115,7 @@ public:
 	bool					DeleteQueueEntry(FileInfo* pFileInfo);
 	bool					SetQueueEntryNZBCategory(NZBInfo* pNZBInfo, const char* szCategory);
 	bool					MergeQueueEntries(NZBInfo* pDestNZBInfo, NZBInfo* pSrcNZBInfo);
+	void					DiscardDiskFile(FileInfo* pFileInfo);
 	QueueEditor*			GetQueueEditor() { return &m_QueueEditor; }
 
 	void					LogDebugInfo();

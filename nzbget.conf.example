@@ -399,6 +399,20 @@ DiskSpace=250
 # <ReloadPostQueue> disabled).
 DeleteCleanupDisk=no
 
+# Keep the history of downloaded nzb-files (days).
+#
+# Value "0" disables the history.
+#
+# NOTE: when a collection having paused files is added to history all remaining
+# files are moved from download queue to a list of parked files. It holds files
+# which could be required later if the collection will be moved back to
+# download queue for downloading of remaining files. The parked files still
+# consume some amount of memory and disk space. If the collection was downloaded
+# and successfully par-checked or postprocessed it is recommeded to discard the
+# unneeded parked files before adding the collection to history. For par2-files
+# that can be achieved with the option <ParCleanupQueue>.
+KeepHistory=1
+
 ##############################################################################
 ### LOGGING                                                                ###
 
@@ -606,10 +620,6 @@ ParPauseQueue=no
 #
 # Enable this option for automatic deletion of unneeded (paused) par-files 
 # from download queue after successful check/repair.
-#
-# NOTE: before cleaning up the program checks if all paused files are par-files.
-# If there are paused non-par-files (this means that you have paused them
-# manually), the cleanup will be skipped for this collection.
 ParCleanupQueue=yes
 
 # Delete source nzb-file after successful check/repair (yes, no).
@@ -666,14 +676,13 @@ NzbCleanupDisk=no
 # the values are passed always in lower case.
 #
 # Return value: nzbget processes the exit code returned by the script:
-#  0  - all OK;
 #  91 - request nzbget to do par-check/repair for current collection in the 
 #       current nzb-file;
 #  92 - request nzbget to do par-check/repair for all collections in the 
 #       current nzb-file;
-# All other return codes are currently ignored, but for future compatibility 
-# use value "0" (or do not specify any exit code, in this case system uses code
-# "0" by default).
+#  93 - post-process successfull;
+#  94 - post-process failed;
+# All other return codes are interpreted as "status unknown".
 #
 # NOTE: The parameter NZBPP_NZBCOMPLETED is very important and MUST be checked 
 # even in the simplest scripts.

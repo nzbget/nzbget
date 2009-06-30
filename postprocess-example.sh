@@ -89,8 +89,8 @@ SCRIPT_CONFIG_FILE="postprocess-example.conf"
 # Exit codes
 POSTPROCESS_PARCHECK_CURRENT=91
 POSTPROCESS_PARCHECK_ALL=92
-POSTPROCESS_ALLOK=93
-POSTPROCESS_ERROR=1
+POSTPROCESS_SUCCESS=93
+POSTPROCESS_ERROR=94
 
 # Check if the script is called from nzbget
 if [ "$NZBPP_DIRECTORY" = "" -o "$NZBOP_CONFIGFILE" = "" ]; then
@@ -151,7 +151,7 @@ fi
 # Check if all collections in nzb-file were downloaded
 if [ ! "$NZBPP_NZBCOMPLETED" -eq 1 ]; then
 	echo "[INFO] Post-Process: Not the last collection in nzb-file, exiting"
-	exit $POSTPROCESS_ERROR
+	exit $POSTPROCESS_SUCCESS
 fi 
 
 # Check par status
@@ -304,4 +304,4 @@ if [ "$NZBPR_DestDir" != "" ]; then
 fi
 
 # All OK, requesting cleaning up of download queue
-exit $POSTPROCESS_ALLOK
+exit $POSTPROCESS_SUCCESS

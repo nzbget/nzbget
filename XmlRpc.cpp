@@ -464,6 +464,10 @@ XmlCommand* XmlRpcProcessor::CreateCommand(const char* szMethodName)
 	{
 		command = new PauseUnpauseXmlCommand(false, PauseUnpauseXmlCommand::paScan);
 	}
+	else if (!strcasecmp(szMethodName, "history"))
+	{
+		command = new HistoryXmlCommand();
+	}
 	else 
 	{
 		command = new ErrorXmlCommand(1, "Invalid procedure");
@@ -921,7 +925,7 @@ void LogXmlCommand::Execute()
 		"\"Text\" : \"%s\"\n"
 		"}";
 
-    const char* szMessageType[] = { "INFO", "WARNING", "ERROR", "DEBUG", "DETAIL"};
+    const char* szMessageType[] = { "INFO", "WARNING", "ERROR", "DEBUG", "DETAIL" };
 	int szItemBufSize = 10240;
 	char* szItemBuf = (char*)malloc(szItemBufSize);
 	int index = 0;
@@ -1233,6 +1237,7 @@ EditCommandEntry EditCommandNameMap[] = {
 	{ PrePostProcessor::eaPostMoveTop, "PostMoveTop" },
 	{ PrePostProcessor::eaPostMoveBottom, "PostMoveBottom" },
 	{ PrePostProcessor::eaPostDelete, "PostDelete" },
+	{ PrePostProcessor::eaHistoryDelete, "HistoryDelete" },
 	{ 0, NULL }
 };
 
@@ -1600,4 +1605,131 @@ void ScanXmlCommand::Execute()
 
 	g_pPrePostProcessor->ScanNZBDir();
 	BuildBoolResponse(true);
+}
+
+void HistoryXmlCommand::Execute()
+{
+	AppendResponse(IsJson() ? "[\n" : "<array><data>\n");
+
+	const char* XML_HISTORY_ITEM_START = 
+		"<value><struct>\n"
+		"<member><name>NZBID</name><value><i4>%i</i4></value></member>\n"
+		"<member><name>NZBNicename</name><value><string>%s</string></value></member>\n"
+		"<member><name>NZBFilename</name><value><string>%s</string></value></member>\n"
+		"<member><name>DestDir</name><value><string>%s</string></value></member>\n"
+		"<member><name>Category</name><value><string>%s</string></value></member>\n"
+		"<member><name>ParStatus</name><value><string>%s</string></value></member>\n"
+		"<member><name>ScriptStatus</name><value><string>%s</string></value></member>\n"
+		"<member><name>FileSizeLo</name><value><i4>%i</i4></value></member>\n"
+		"<member><name>FileSizeHi</name><value><i4>%i</i4></value></member>\n"
+		"<member><name>FileSizeMB</name><value><i4>%i</i4></value></member>\n"
+		"<member><name>FileCount</name><value><i4>%i</i4></value></member>\n"
+		"<member><name>HistoryTime</name><value><i4>%i</i4></value></member>\n"
+		"<member><name>Parameters</name><value><array><data>\n";
+
+	const char* XML_HISTORY_ITEM_END = 
+		"</data></array></value></member>\n"
+		"</struct></value>\n";
+
+	const char* JSON_HISTORY_ITEM_START = 
+		"{\n"
+		"\"NZBID\" : %i,\n"
+		"\"NZBNicename\" : \"%s\",\n"
+		"\"NZBFilename\" : \"%s\",\n"
+		"\"DestDir\" : \"%s\",\n"
+		"\"Category\" : \"%s\",\n"
+		"\"ParStatus\" : \"%s\",\n"
+		"\"ScriptStatus\" : \"%s\",\n"
+		"\"FileSizeLo\" : %i,\n"
+		"\"FileSizeHi\" : %i,\n"
+		"\"FileSizeMB\" : %i,\n"
+		"\"FileCount\" : %i,\n"
+		"\"HistoryTime\" : %i,\n"
+		"\"Parameters\" : [\n";
+
+	const char* JSON_HISTORY_ITEM_END = 
+		"]\n"
+		"}";
+
+	const char* XML_PARAMETER_ITEM = 
+		"<value><struct>\n"
+		"<member><name>Name</name><value><string>%s</string></value></member>\n"
+		"<member><name>Value</name><value><string>%s</string></value></member>\n"
+		"</struct></value>\n";
+
+	const char* JSON_PARAMETER_ITEM = 
+		"{\n"
+		"\"Name\" : \"%s\",\n"
+		"\"Value\" : \"%s\"\n"
+		"}";
+
+    const char* szParStatusName[] = { "NONE", "FAILED", "REPAIR_POSSIBLE", "SUCCESS" };
+    const char* szScriptStatusName[] = { "NONE", "UNKNOWN", "FAILURE", "SUCCESS" };
+
+	DownloadQueue* pDownloadQueue = g_pQueueCoordinator->LockQueue();
+
+	int szItemBufSize = 10240;
+	char* szItemBuf = (char*)malloc(szItemBufSize);
+	int index = 0;
+
+	for (HistoryList::iterator it = pDownloadQueue->GetHistoryList()->begin(); it != pDownloadQueue->GetHistoryList()->end(); it++)
+	{
+		NZBInfo* pNZBInfo = *it;
+		unsigned long iFileSizeHi, iFileSizeLo, iFileSizeMB;
+		char szNZBNicename[1024];
+		Util::SplitInt64(pNZBInfo->GetSize(), &iFileSizeHi, &iFileSizeLo);
+		iFileSizeMB = (int)(pNZBInfo->GetSize() / 1024 / 1024);
+		pNZBInfo->GetNiceNZBName(szNZBNicename, sizeof(szNZBNicename));
+
+		char* xmlNZBNicename = EncodeStr(szNZBNicename);
+		char* xmlNZBFilename = EncodeStr(pNZBInfo->GetFilename());
+		char* xmlDestDir = EncodeStr(pNZBInfo->GetDestDir());
+		char* xmlCategory = EncodeStr(pNZBInfo->GetCategory());
+
+		snprintf(szItemBuf, szItemBufSize, IsJson() ? JSON_HISTORY_ITEM_START : XML_HISTORY_ITEM_START,
+			pNZBInfo->GetID(), xmlNZBNicename, xmlNZBFilename, xmlDestDir, xmlCategory,
+			szParStatusName[pNZBInfo->GetParStatus()], szScriptStatusName[pNZBInfo->GetScriptStatus()],
+			iFileSizeLo, iFileSizeHi, iFileSizeMB, pNZBInfo->GetFileCount(), pNZBInfo->GetHistoryTime());
+		szItemBuf[szItemBufSize-1] = '\0';
+
+		free(xmlNZBNicename);
+		free(xmlNZBFilename);
+		free(xmlDestDir);
+		free(xmlCategory);
+
+		if (IsJson() && index++ > 0)
+		{
+			AppendResponse(",\n");
+		}
+		AppendResponse(szItemBuf);
+
+		int iParamIndex = 0;
+
+		for (NZBParameterList::iterator it = pNZBInfo->GetParameters()->begin(); it != pNZBInfo->GetParameters()->end(); it++)
+		{
+			NZBParameter* pParameter = *it;
+
+			char* xmlName = EncodeStr(pParameter->GetName());
+			char* xmlValue = EncodeStr(pParameter->GetValue());
+
+			snprintf(szItemBuf, szItemBufSize, IsJson() ? JSON_PARAMETER_ITEM : XML_PARAMETER_ITEM, xmlName, xmlValue);
+			szItemBuf[szItemBufSize-1] = '\0';
+
+			free(xmlName);
+			free(xmlValue);
+
+			if (IsJson() && iParamIndex++ > 0)
+			{
+				AppendResponse(",\n");
+			}
+			AppendResponse(szItemBuf);
+		}
+
+		AppendResponse(IsJson() ? JSON_HISTORY_ITEM_END : XML_HISTORY_ITEM_END);
+	}
+	free(szItemBuf);
+
+	AppendResponse(IsJson() ? "\n]" : "</data></array>\n");
+
+	g_pQueueCoordinator->UnlockQueue();
 }

@@ -184,11 +184,20 @@ class NZBInfoList;
 class NZBInfo
 {
 public:
-	enum EParFailure
+	enum EParStatus
 	{
-		pfNone,
-		pfParFailed,
-		pfRepairPossible
+		prNone,
+		prFailed,
+		prRepairPossible,
+		prSuccess
+	};
+
+	enum EScriptStatus
+	{
+		srNone,
+		srUnknown,
+		srFailure,
+		srSuccess
 	};
 
 	typedef std::vector<char*>			Files;
@@ -203,11 +212,13 @@ private:
 	long long 			m_lSize;
 	Files				m_completedFiles;
 	bool				m_bPostProcess;
-	EParFailure			m_eParFailure;
+	EParStatus			m_eParStatus;
+	EScriptStatus		m_eScriptStatus;
 	char*				m_szQueuedFilename;
 	bool				m_bDeleted;
 	bool				m_bParCleanup;
 	bool				m_bCleanupDisk;
+	time_t				m_tHistoryTime;
 	NZBInfoList*		m_Owner;
 	NZBParameterList	m_ppParameters;
 
@@ -235,10 +246,13 @@ public:
 	void 				SetFileCount(int iFileCount) { m_iFileCount = iFileCount; }
 	void				BuildDestDirName();
 	Files*				GetCompletedFiles() { return &m_completedFiles; }		// needs locking (for shared objects)
+	void				ClearCompletedFiles();
 	bool				GetPostProcess() { return m_bPostProcess; }
 	void				SetPostProcess(bool bPostProcess) { m_bPostProcess = bPostProcess; }
-	EParFailure			GetParFailure() { return m_eParFailure; }
-	void				SetParFailure(EParFailure eParFailure) { m_eParFailure = eParFailure; }
+	EParStatus			GetParStatus() { return m_eParStatus; }
+	void				SetParStatus(EParStatus eParStatus) { m_eParStatus = eParStatus; }
+	EScriptStatus		GetScriptStatus() { return m_eScriptStatus; }
+	void				SetScriptStatus(EScriptStatus eScriptStatus) { m_eScriptStatus = eScriptStatus; }
 	const char*			GetQueuedFilename() { return m_szQueuedFilename; }
 	void				SetQueuedFilename(const char* szQueuedFilename);
 	bool				GetDeleted() { return m_bDeleted; }
@@ -247,6 +261,8 @@ public:
 	void				SetParCleanup(bool bParCleanup) { m_bParCleanup = bParCleanup; }
 	bool				GetCleanupDisk() { return m_bCleanupDisk; }
 	void				SetCleanupDisk(bool bCleanupDisk) { m_bCleanupDisk = bCleanupDisk; }
+	time_t				GetHistoryTime() { return m_tHistoryTime; }
+	void				SetHistoryTime(time_t tHistoryTime) { m_tHistoryTime = tHistoryTime; }
 	NZBParameterList*	GetParameters() { return &m_ppParameters; }				// needs locking (for shared objects)
 	void				SetParameter(const char* szName, const char* szValue);	// needs locking (for shared objects)
 };
@@ -275,11 +291,27 @@ public:
 		ptFinished
 	};
 
+	enum EParStatus
+	{
+		psNone,
+		psFailed,
+		psSuccess,
+		psRepairPossible
+	};
+
 	enum ERequestParCheck
 	{
 		rpNone,
 		rpCurrent,
 		rpAll
+	};
+
+	enum EScriptStatus
+	{
+		srNone,
+		srUnknown,
+		srFailure,
+		srSuccess
 	};
 
 	typedef std::deque<Message*>	Messages;
@@ -292,9 +324,9 @@ private:
 	bool				m_bWorking;
 	bool				m_bDeleted;
 	bool				m_bParCheck;
-	int					m_iParStatus;
+	EParStatus			m_eParStatus;
+	EScriptStatus		m_eScriptStatus;
 	ERequestParCheck	m_eRequestParCheck;
-	bool				m_bRequestParCleanup;
 	EStage				m_eStage;
 	char*				m_szProgressLabel;
 	int					m_iFileProgress;
@@ -337,12 +369,12 @@ public:
 	void				SetDeleted(bool bDeleted) { m_bDeleted = bDeleted; }
 	bool				GetParCheck() { return m_bParCheck; }
 	void				SetParCheck(bool bParCheck) { m_bParCheck = bParCheck; }
-	int					GetParStatus() { return m_iParStatus; }
-	void				SetParStatus(int iParStatus) { m_iParStatus = iParStatus; }
+	EParStatus			GetParStatus() { return m_eParStatus; }
+	void				SetParStatus(EParStatus eParStatus) { m_eParStatus = eParStatus; }
 	ERequestParCheck	GetRequestParCheck() { return m_eRequestParCheck; }
 	void				SetRequestParCheck(ERequestParCheck eRequestParCheck) { m_eRequestParCheck = eRequestParCheck; }
-	bool				GetRequestParCleanup() { return m_bRequestParCleanup; }
-	void				SetRequestParCleanup(bool bRequestParCleanup) { m_bRequestParCleanup = bRequestParCleanup; }
+	EScriptStatus		GetScriptStatus() { return m_eScriptStatus; }
+	void				SetScriptStatus(EScriptStatus eScriptStatus) { m_eScriptStatus = eScriptStatus; }
 	void				AppendMessage(Message::EKind eKind, const char* szText);
 	Thread*				GetScriptThread() { return m_pScriptThread; }
 	void				SetScriptThread(Thread* pScriptThread) { m_pScriptThread = pScriptThread; }
@@ -354,17 +386,23 @@ typedef std::deque<PostInfo*> PostQueue;
 
 typedef std::vector<int> IDList;
 
+typedef std::deque<NZBInfo*> HistoryList;
+
 class DownloadQueue
 {
 protected:
+	NZBInfoList			m_NZBInfoList;
 	FileQueue			m_FileQueue;
 	PostQueue			m_PostQueue;
-	NZBInfoList			m_NZBInfoList;
+	HistoryList			m_HistoryList;
+	FileQueue			m_ParkedFiles;
 
 public:
+	NZBInfoList*		GetNZBInfoList() { return &m_NZBInfoList; }
 	FileQueue*			GetFileQueue() { return &m_FileQueue; }
 	PostQueue*			GetPostQueue() { return &m_PostQueue; }
-	NZBInfoList*		GetNZBInfoList() { return &m_NZBInfoList; }
+	HistoryList*		GetHistoryList() { return &m_HistoryList; }
+	FileQueue*			GetParkedFiles() { return &m_ParkedFiles; }
 	void				BuildGroups(GroupQueue* pGroupQueue);
 };
 
