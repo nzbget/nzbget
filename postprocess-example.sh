@@ -111,10 +111,10 @@ echo "[INFO] Post-Process: Post-process script successfully started"
 
 # Determine the location of coniguration file (it must be stored in
 # the directory with nzbget.conf or in this script's directory).
-ConfigDir=`dirname $NZBOP_CONFIGFILE`
+ConfigDir="${NZBOP_CONFIGFILE%/*}"
 ScriptConfigFile="$ConfigDir/$SCRIPT_CONFIG_FILE"
 if [ ! -f "$ScriptConfigFile" ]; then
-	ConfigDir=`dirname $0`
+	ConfigDir="${0%/*}"
 	ScriptConfigFile="$ConfigDir/$SCRIPT_CONFIG_FILE"
 fi
 if [ ! -f "$ScriptConfigFile" ]; then
