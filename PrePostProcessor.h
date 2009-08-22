@@ -46,7 +46,9 @@ public:
 		eaPostMoveTop,
 		eaPostMoveBottom,
 		eaPostDelete,
-		eaHistoryDelete
+		eaHistoryDelete,
+		eaHistoryReturn,
+		eaHistoryProcess
 	};
 
 private:
@@ -112,8 +114,8 @@ private:
 	bool				PauseDownload();
 	bool				UnpauseDownload();
 	void				NZBAdded(DownloadQueue* pDownloadQueue, NZBInfo* pNZBInfo);
-	void				NZBDownloaded(DownloadQueue* pDownloadQueue, NZBInfo* pNZBInfo, FileInfo* pFileInfo);
-	void				NZBDeleted(DownloadQueue* pDownloadQueue, NZBInfo* pNZBInfo, FileInfo* pFileInfo);
+	void				NZBDownloaded(DownloadQueue* pDownloadQueue, NZBInfo* pNZBInfo);
+	void				NZBDeleted(DownloadQueue* pDownloadQueue, NZBInfo* pNZBInfo);
 	void				NZBCompleted(DownloadQueue* pDownloadQueue, NZBInfo* pNZBInfo, bool bSaveQueue);
 	bool				FindMainPars(const char* szPath, FileList* pFileList);
 	bool				ParseParFilename(const char* szParFilename, int* iBaseNameLen, int* iBlocks);
@@ -125,6 +127,7 @@ private:
 	bool				PostQueueMove(IDList* pIDList, EEditAction eAction, int iOffset);
 	bool				PostQueueDelete(IDList* pIDList);
 	bool				HistoryDelete(IDList* pIDList);
+	bool				HistoryReturn(IDList* pIDList, bool bReprocess);
 	void				Cleanup();
 	FileInfo*			GetQueueGroup(DownloadQueue* pDownloadQueue, NZBInfo* pNZBInfo);
 	void				CheckHistory();

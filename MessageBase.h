@@ -91,7 +91,9 @@ enum eRemoteEditAction
 	eRemoteEditActionPostMoveTop,			// move post-job to the top of post-queue
 	eRemoteEditActionPostMoveBottom,		// move post-job to the bottom of post-queue
 	eRemoteEditActionPostDelete,			// delete post-job
-	eRemoteEditActionHistoryDelete			// delete history-item
+	eRemoteEditActionHistoryDelete,			// delete history-item
+	eRemoteEditActionHistoryReturn,			// move history-item back to download queue
+	eRemoteEditActionHistoryProcess			// move history-item back to download queue and start postprocessing
 };
 
 // Possible values for field "m_iAction" of struct "SNZBPauseUnpauseRequest":
