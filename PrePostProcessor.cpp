@@ -285,7 +285,7 @@ void PrePostProcessor::NZBDownloaded(DownloadQueue* pDownloadQueue, NZBInfo* pNZ
 		bool bParCheck = g_pOptions->GetParCheck() && g_pOptions->GetDecode();
 #endif
 		if ((bParCheck || m_bPostScript) &&
-			CreatePostJobs(pDownloadQueue, pNZBInfo, bParCheck, false))
+			CreatePostJobs(pDownloadQueue, pNZBInfo, bParCheck, true, false))
 		{
 			pNZBInfo->SetPostProcess(true);
 			bPostProcessed = true;
@@ -496,7 +496,12 @@ void PrePostProcessor::CheckPostQueue()
 #ifndef DISABLE_PARCHECK
 			if (pPostInfo->GetRequestParCheck() == PostInfo::rpAll)
 			{
-				CreatePostJobs(pDownloadQueue, pPostInfo->GetNZBInfo(), true, true);
+				if (!CreatePostJobs(pDownloadQueue, pPostInfo->GetNZBInfo(), true, false, true))
+				{
+					char szNZBNiceName[1024];
+					pPostInfo->GetNZBInfo()->GetNiceNZBName(szNZBNiceName, sizeof(szNZBNiceName));
+					error("Could not par-check %s: there are no par-files", szNZBNiceName);
+				}
 			}
 			else if (pPostInfo->GetRequestParCheck() == PostInfo::rpCurrent && !pPostInfo->GetParCheck())
 			{
@@ -724,7 +729,7 @@ bool PrePostProcessor::IsNZBFileCompleted(DownloadQueue* pDownloadQueue, NZBInfo
 }
 
 bool PrePostProcessor::CreatePostJobs(DownloadQueue* pDownloadQueue, NZBInfo* pNZBInfo,
-	bool bParCheck, bool bAddTop)
+	bool bParCheck, bool bPostScript, bool bAddTop)
 {
 	debug("Queueing post-process-jobs");
 
@@ -779,7 +784,7 @@ bool PrePostProcessor::CreatePostJobs(DownloadQueue* pDownloadQueue, NZBInfo* pN
 		}
 	}
 
-	if (cPostQueue.empty() && m_bPostScript)
+	if (cPostQueue.empty() && bPostScript && m_bPostScript)
 	{
 		info("Queueing %s for post-process-script", szNZBNiceName);
 		PostInfo* pPostInfo = new PostInfo();
