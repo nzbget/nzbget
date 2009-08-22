@@ -947,6 +947,14 @@ void Options::InitCommandLine(int argc, char* argv[])
 					{
 						m_iEditQueueAction = eRemoteEditActionHistoryDelete;
 					}
+					else if (!strcasecmp(optarg, "R"))
+					{
+						m_iEditQueueAction = eRemoteEditActionHistoryReturn;
+					}
+					else if (!strcasecmp(optarg, "P"))
+					{
+						m_iEditQueueAction = eRemoteEditActionHistoryProcess;
+					}
 					else
 					{
 						abort("FATAL ERROR: Could not parse value of option 'E'\n");
@@ -1143,9 +1151,11 @@ void Options::PrintUsage(char* com)
 		"       T                    Move file(s)/group(s)/post-job to top of queue\n"
 		"       B                    Move file(s)/group(s)/post-job to bottom of queue\n"
 		"       P                    Pause file(s)/group(s)\n"
+		"                            Postprocess history-item(s) again\n"
 		"       U                    Resume (unpause) file(s)/group(s)\n"
 		"       A                    Pause all pars (for groups)\n"
-		"       R                    Pause extra pars (for groups)\n"
+		"       R                    Pause extra pars (for groups)/\n"
+		"                            Return history-item(s) back to download queue\n"
 		"       D                    Delete file(s)/group(s)/post-job(s)/history-item(s)\n"
 		"       K <name>             Set category (for groups)\n"
 		"       M                    Merge (for groups)\n"

@@ -247,14 +247,14 @@ void PrePostProcessor::QueueCoordinatorUpdate(Subject * Caller, void * Aspect)
 			if (pAspect->eAction == QueueCoordinator::eaFileCompleted)
 			{
 				info("Collection %s completely downloaded", szNZBNiceName);
-				NZBDownloaded(pAspect->pDownloadQueue, pAspect->pNZBInfo, pAspect->pFileInfo);
+				NZBDownloaded(pAspect->pDownloadQueue, pAspect->pNZBInfo);
 			}
 			else if (pAspect->pNZBInfo->GetDeleted() &&
 				!pAspect->pNZBInfo->GetParCleanup() &&
 				IsNZBFileCompleted(pAspect->pDownloadQueue, pAspect->pNZBInfo, false, false, false, true))
 			{
 				info("Collection %s deleted from queue", szNZBNiceName);
-				NZBDeleted(pAspect->pDownloadQueue, pAspect->pNZBInfo, pAspect->pFileInfo);
+				NZBDeleted(pAspect->pDownloadQueue, pAspect->pNZBInfo);
 			}
 		}
 	}
@@ -273,7 +273,7 @@ void PrePostProcessor::NZBAdded(DownloadQueue* pDownloadQueue, NZBInfo* pNZBInfo
 	}
 }
 
-void PrePostProcessor::NZBDownloaded(DownloadQueue* pDownloadQueue, NZBInfo* pNZBInfo, FileInfo* pFileInfo)
+void PrePostProcessor::NZBDownloaded(DownloadQueue* pDownloadQueue, NZBInfo* pNZBInfo)
 {
 	bool bPostProcessed = false;
 
@@ -298,7 +298,7 @@ void PrePostProcessor::NZBDownloaded(DownloadQueue* pDownloadQueue, NZBInfo* pNZ
 	}
 }
 
-void PrePostProcessor::NZBDeleted(DownloadQueue* pDownloadQueue, NZBInfo* pNZBInfo, FileInfo* pFileInfo)
+void PrePostProcessor::NZBDeleted(DownloadQueue* pDownloadQueue, NZBInfo* pNZBInfo)
 {
 	if (g_pOptions->GetDeleteCleanupDisk() && pNZBInfo->GetCleanupDisk())
 	{
@@ -333,7 +333,6 @@ void PrePostProcessor::NZBCompleted(DownloadQueue* pDownloadQueue, NZBInfo* pNZB
 		char szNZBNiceName[1024];
 		pNZBInfo->GetNiceNZBName(szNZBNiceName, 1024);
 		pNZBInfo->AddReference();
-		//pNZBInfo->ClearCompletedFiles();
 		pNZBInfo->SetHistoryTime(time(NULL));
 		pDownloadQueue->GetHistoryList()->push_front(pNZBInfo);
 
@@ -342,8 +341,9 @@ void PrePostProcessor::NZBCompleted(DownloadQueue* pDownloadQueue, NZBInfo* pNZB
 		for (FileQueue::iterator it = pDownloadQueue->GetFileQueue()->begin(); it != pDownloadQueue->GetFileQueue()->end(); )
 		{
 			FileInfo* pFileInfo = *it;
-			if (pFileInfo->GetNZBInfo() == pNZBInfo)
+			if (pFileInfo->GetNZBInfo() == pNZBInfo && !pFileInfo->GetDeleted())
 			{
+				detail("Park file %s", pFileInfo->GetFilename());
 				g_pQueueCoordinator->DiscardDiskFile(pFileInfo);
 				pDownloadQueue->GetFileQueue()->erase(it);
 				pDownloadQueue->GetParkedFiles()->push_back(pFileInfo);
@@ -1398,6 +1398,10 @@ bool PrePostProcessor::QueueEditList(IDList* pIDList, EEditAction eAction, int i
 		case eaHistoryDelete:
 			return HistoryDelete(pIDList);
 
+		case eaHistoryReturn:
+		case eaHistoryProcess:
+			return HistoryReturn(pIDList, eAction == eaHistoryProcess);
+
 		default:
 			return false;
 	}
@@ -1579,6 +1583,85 @@ bool PrePostProcessor::HistoryDelete(IDList* pIDList)
 				pDownloadQueue->GetHistoryList()->erase(itHistory);
 				pNZBInfo->Release();
 				bOK = true;
+				break;
+			}
+		}
+	}
+
+	if (bOK)
+	{
+		SaveQueue(pDownloadQueue);
+	}
+
+	g_pQueueCoordinator->UnlockQueue();
+
+	return bOK;
+}
+
+bool PrePostProcessor::HistoryReturn(IDList* pIDList, bool bReprocess)
+{
+	bool bOK = false;
+
+	DownloadQueue* pDownloadQueue = g_pQueueCoordinator->LockQueue();
+
+	for (IDList::iterator itID = pIDList->begin(); itID != pIDList->end(); itID++)
+	{
+		int iID = *itID;
+		for (HistoryList::iterator itHistory = pDownloadQueue->GetHistoryList()->begin(); itHistory != pDownloadQueue->GetHistoryList()->end(); itHistory++)
+		{
+			NZBInfo* pNZBInfo = *itHistory;
+			if (pNZBInfo->GetID() == iID)
+			{
+				char szNZBNiceName[1024];
+				pNZBInfo->GetNiceNZBName(szNZBNiceName, 1024);
+				debug("Returning %s from history back to download queue", szNZBNiceName);
+				bool bUnparked = false;
+
+				// unpark files
+				int index = 0;
+				for (FileQueue::reverse_iterator it = pDownloadQueue->GetParkedFiles()->rbegin(); it != pDownloadQueue->GetParkedFiles()->rend(); )
+				{
+					FileInfo* pFileInfo = *it;
+					if (pFileInfo->GetNZBInfo() == pNZBInfo)
+					{
+						detail("Unpark file %s", pFileInfo->GetFilename());
+						pDownloadQueue->GetParkedFiles()->erase(pDownloadQueue->GetParkedFiles()->end() - 1 - index);
+						pDownloadQueue->GetFileQueue()->push_front(pFileInfo);
+						bUnparked = true;
+						it = pDownloadQueue->GetParkedFiles()->rbegin() + index;
+					}
+					else
+					{
+						it++;
+						index++;
+					}
+				}
+
+				// reset postprocessing status variables
+				pNZBInfo->SetPostProcess(false);
+				pNZBInfo->SetParStatus(NZBInfo::prNone);
+				pNZBInfo->SetParCleanup(false);
+				pNZBInfo->SetHistoryTime(0);
+
+				if (bUnparked || bReprocess)
+				{
+					pDownloadQueue->GetHistoryList()->erase(itHistory);
+					pNZBInfo->Release();
+					info("%s returned from history back to download queue", szNZBNiceName);
+					bOK = true;
+				}
+				else
+				{
+					warn("Could not return %s back from history to download queue: history item does not have any files left for download", szNZBNiceName);
+				}
+
+				if (bReprocess)
+				{
+					// start postprocessing
+					debug("Restarting postprocessing for %s", szNZBNiceName);
+					NZBDownloaded(pDownloadQueue, pNZBInfo);
+				}
+
 				break;
 			}
 		}
