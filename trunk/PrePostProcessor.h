@@ -120,7 +120,7 @@ private:
 	bool				FindMainPars(const char* szPath, FileList* pFileList);
 	bool				ParseParFilename(const char* szParFilename, int* iBaseNameLen, int* iBlocks);
 	bool				SameParCollection(const char* szFilename1, const char* szFilename2);
-	bool				CreatePostJobs(DownloadQueue* pDownloadQueue, NZBInfo* pNZBInfo, bool bParCheck, bool bAddTop);
+	bool				CreatePostJobs(DownloadQueue* pDownloadQueue, NZBInfo* pNZBInfo, bool bParCheck, bool bPostScript, bool bAddTop);
 	void				DeleteQueuedFile(const char* szQueuedFile);
 	void				PausePars(DownloadQueue* pDownloadQueue, NZBInfo* pNZBInfo);
 	NZBInfo*			MergeGroups(DownloadQueue* pDownloadQueue, NZBInfo* pNZBInfo);
