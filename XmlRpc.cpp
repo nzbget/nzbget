@@ -1667,7 +1667,7 @@ void HistoryXmlCommand::Execute()
 		"\"Value\" : \"%s\"\n"
 		"}";
 
-    const char* szParStatusName[] = { "NONE", "FAILED", "REPAIR_POSSIBLE", "SUCCESS" };
+    const char* szParStatusName[] = { "NONE", "FAILURE", "REPAIR_POSSIBLE", "SUCCESS" };
     const char* szScriptStatusName[] = { "NONE", "UNKNOWN", "FAILURE", "SUCCESS" };
 
 	DownloadQueue* pDownloadQueue = g_pQueueCoordinator->LockQueue();
