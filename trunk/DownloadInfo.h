@@ -187,7 +187,7 @@ public:
 	enum EParStatus
 	{
 		prNone,
-		prFailed,
+		prFailure,
 		prRepairPossible,
 		prSuccess
 	};
@@ -297,7 +297,7 @@ public:
 	enum EParStatus
 	{
 		psNone,
-		psFailed,
+		psFailure,
 		psSuccess,
 		psRepairPossible
 	};

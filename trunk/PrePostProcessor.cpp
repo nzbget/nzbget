@@ -602,7 +602,7 @@ void PrePostProcessor::StartScriptJob(DownloadQueue* pDownloadQueue, PostInfo* p
 	pPostInfo->SetStageTime(time(NULL));
 
 	bool bNZBFileCompleted = IsNZBFileCompleted(pDownloadQueue, pPostInfo->GetNZBInfo(), true, true, true, false);
-	bool bHasFailedParJobs = pPostInfo->GetNZBInfo()->GetParStatus() == NZBInfo::prFailed ||
+	bool bHasFailedParJobs = pPostInfo->GetNZBInfo()->GetParStatus() == NZBInfo::prFailure ||
 		pPostInfo->GetNZBInfo()->GetParStatus() == NZBInfo::prRepairPossible;
 
 	if (g_pOptions->GetPostPauseQueue())
@@ -1071,8 +1071,8 @@ void PrePostProcessor::ParCheckerUpdate(Subject* Caller, void* Aspect)
 		// Update ParStatus by NZBInfo (accumulate result)
 		if (m_ParChecker.GetStatus() == ParChecker::psFailed && !m_ParChecker.GetCancelled())
 		{
-			pPostInfo->SetParStatus(PostInfo::psFailed);
-			pPostInfo->GetNZBInfo()->SetParStatus(NZBInfo::prFailed);
+			pPostInfo->SetParStatus(PostInfo::psFailure);
+			pPostInfo->GetNZBInfo()->SetParStatus(NZBInfo::prFailure);
 		}
 		else if (m_ParChecker.GetStatus() == ParChecker::psFinished &&
 			(g_pOptions->GetParRepair() || m_ParChecker.GetRepairNotNeeded()))
@@ -1086,7 +1086,7 @@ void PrePostProcessor::ParCheckerUpdate(Subject* Caller, void* Aspect)
 		else
 		{
 			pPostInfo->SetParStatus(PostInfo::psRepairPossible);
-			if (pPostInfo->GetNZBInfo()->GetParStatus() != NZBInfo::prFailed)
+			if (pPostInfo->GetNZBInfo()->GetParStatus() != NZBInfo::prFailure)
 			{
 				pPostInfo->GetNZBInfo()->SetParStatus(NZBInfo::prRepairPossible);
 			}
