@@ -1626,6 +1626,7 @@ void HistoryXmlCommand::Execute()
 		"<member><name>FileSizeHi</name><value><i4>%i</i4></value></member>\n"
 		"<member><name>FileSizeMB</name><value><i4>%i</i4></value></member>\n"
 		"<member><name>FileCount</name><value><i4>%i</i4></value></member>\n"
+		"<member><name>RemainingFileCount</name><value><i4>%i</i4></value></member>\n"
 		"<member><name>HistoryTime</name><value><i4>%i</i4></value></member>\n"
 		"<member><name>Parameters</name><value><array><data>\n";
 
@@ -1646,6 +1647,7 @@ void HistoryXmlCommand::Execute()
 		"\"FileSizeHi\" : %i,\n"
 		"\"FileSizeMB\" : %i,\n"
 		"\"FileCount\" : %i,\n"
+		"\"RemainingFileCount\" : %i,\n"
 		"\"HistoryTime\" : %i,\n"
 		"\"Parameters\" : [\n";
 
@@ -1691,7 +1693,8 @@ void HistoryXmlCommand::Execute()
 		snprintf(szItemBuf, szItemBufSize, IsJson() ? JSON_HISTORY_ITEM_START : XML_HISTORY_ITEM_START,
 			pNZBInfo->GetID(), xmlNZBNicename, xmlNZBFilename, xmlDestDir, xmlCategory,
 			szParStatusName[pNZBInfo->GetParStatus()], szScriptStatusName[pNZBInfo->GetScriptStatus()],
-			iFileSizeLo, iFileSizeHi, iFileSizeMB, pNZBInfo->GetFileCount(), pNZBInfo->GetHistoryTime());
+			iFileSizeLo, iFileSizeHi, iFileSizeMB, pNZBInfo->GetFileCount(), pNZBInfo->GetParkedFileCount(),
+			pNZBInfo->GetHistoryTime());
 		szItemBuf[szItemBufSize-1] = '\0';
 
 		free(xmlNZBNicename);
