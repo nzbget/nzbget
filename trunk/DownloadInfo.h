@@ -209,6 +209,7 @@ private:
 	char* 				m_szDestDir;
 	char* 				m_szCategory;
 	int		 			m_iFileCount;
+	int		 			m_iParkedFileCount;
 	long long 			m_lSize;
 	Files				m_completedFiles;
 	bool				m_bPostProcess;
@@ -244,6 +245,8 @@ public:
 	void 				SetSize(long long lSize) { m_lSize = lSize; }
 	int					GetFileCount() { return m_iFileCount; }
 	void 				SetFileCount(int iFileCount) { m_iFileCount = iFileCount; }
+	int					GetParkedFileCount() { return m_iParkedFileCount; }
+	void 				SetParkedFileCount(int iParkedFileCount) { m_iParkedFileCount = iParkedFileCount; }
 	void				BuildDestDirName();
 	Files*				GetCompletedFiles() { return &m_completedFiles; }		// needs locking (for shared objects)
 	void				ClearCompletedFiles();

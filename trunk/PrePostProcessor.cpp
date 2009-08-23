@@ -337,6 +337,7 @@ void PrePostProcessor::NZBCompleted(DownloadQueue* pDownloadQueue, NZBInfo* pNZB
 		pDownloadQueue->GetHistoryList()->push_front(pNZBInfo);
 
 		// park files
+		int iParkedFiles = 0;
 		int index = 0;
 		for (FileQueue::iterator it = pDownloadQueue->GetFileQueue()->begin(); it != pDownloadQueue->GetFileQueue()->end(); )
 		{
@@ -348,6 +349,7 @@ void PrePostProcessor::NZBCompleted(DownloadQueue* pDownloadQueue, NZBInfo* pNZB
 				pDownloadQueue->GetFileQueue()->erase(it);
 				pDownloadQueue->GetParkedFiles()->push_back(pFileInfo);
 				it = pDownloadQueue->GetFileQueue()->begin() + index;
+				iParkedFiles++;
 			}
 			else
 			{
@@ -355,6 +357,7 @@ void PrePostProcessor::NZBCompleted(DownloadQueue* pDownloadQueue, NZBInfo* pNZB
 				index++;
 			}
 		}
+		pNZBInfo->SetParkedFileCount(iParkedFiles);
 
 		if (bSaveQueue)
 		{
@@ -1647,6 +1650,7 @@ bool PrePostProcessor::HistoryReturn(IDList* pIDList, bool bReprocess)
 				pNZBInfo->SetParStatus(NZBInfo::prNone);
 				pNZBInfo->SetParCleanup(false);
 				pNZBInfo->SetHistoryTime(0);
+				pNZBInfo->SetParkedFileCount(0);
 
 				if (bUnparked || bReprocess)
 				{

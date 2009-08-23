@@ -86,6 +86,7 @@ NZBInfo::NZBInfo()
 	m_szDestDir = NULL;
 	m_szCategory = strdup("");
 	m_iFileCount = 0;
+	m_iParkedFileCount = 0;
 	m_lSize = 0;
 	m_iRefCount = 0;
 	m_bPostProcess = false;

@@ -82,7 +82,7 @@ bool DiskState::SaveDownloadQueue(DownloadQueue* pDownloadQueue)
 		return false;
 	}
 
-	fprintf(outfile, "%s%i\n", FORMATVERSION_SIGNATURE, 9);
+	fprintf(outfile, "%s%i\n", FORMATVERSION_SIGNATURE, 10);
 
 	// save nzb-infos
 	SaveNZBList(pDownloadQueue, outfile);
@@ -132,7 +132,7 @@ bool DiskState::LoadDownloadQueue(DownloadQueue* pDownloadQueue)
 	char FileSignatur[128];
 	fgets(FileSignatur, sizeof(FileSignatur), infile);
 	int iFormatVersion = ParseFormatVersion(FileSignatur);
-	if (iFormatVersion < 3 || iFormatVersion > 9)
+	if (iFormatVersion < 3 || iFormatVersion > 10)
 	{
 		error("Could not load diskstate due file version mismatch");
 		fclose(infile);
@@ -196,6 +196,7 @@ void DiskState::SaveNZBList(DownloadQueue* pDownloadQueue, FILE* outfile)
 		fprintf(outfile, "%i\n", (int)pNZBInfo->GetParStatus());
 		fprintf(outfile, "%i\n", (int)pNZBInfo->GetScriptStatus());
 		fprintf(outfile, "%i\n", pNZBInfo->GetFileCount());
+		fprintf(outfile, "%i\n", pNZBInfo->GetParkedFileCount());
 
 		unsigned long High, Low;
 		Util::SplitInt64(pNZBInfo->GetSize(), &High, &Low);
@@ -275,6 +276,12 @@ bool DiskState::LoadNZBList(DownloadQueue* pDownloadQueue, FILE* infile, int iFo
 		int iFileCount;
 		if (fscanf(infile, "%i\n", &iFileCount) != 1) goto error;
 		pNZBInfo->SetFileCount(iFileCount);
+
+		if (iFormatVersion >= 10)
+		{
+			if (fscanf(infile, "%i\n", &iFileCount) != 1) goto error;
+			pNZBInfo->SetParkedFileCount(iFileCount);
+		}
 
 		unsigned long High, Low;
 		if (fscanf(infile, "%lu,%lu\n", &High, &Low) != 2) goto error;
