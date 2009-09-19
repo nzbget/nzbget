@@ -926,6 +926,7 @@ void LogXmlCommand::Execute()
 		"}";
 
     const char* szMessageType[] = { "INFO", "WARNING", "ERROR", "DEBUG", "DETAIL" };
+
 	int szItemBufSize = 10240;
 	char* szItemBuf = (char*)malloc(szItemBufSize);
 	int index = 0;
@@ -1459,6 +1460,8 @@ void PostQueueXmlCommand::Execute()
 		"\"Text\" : \"%s\"\n"
 		"}";
 
+	const char* szMessageType[] = { "INFO", "WARNING", "ERROR", "DEBUG", "DETAIL"};
+
 	PostQueue* pPostQueue = g_pQueueCoordinator->LockQueue()->GetPostQueue();
 
 	time_t tCurTime = time(NULL);
@@ -1515,9 +1518,7 @@ void PostQueueXmlCommand::Execute()
 				}
 				iStart = pMessages->size() - iNrEntries;
 
-				const char* szMessageType[] = { "INFO", "WARNING", "ERROR", "DEBUG", "DETAIL"};
 				int index = 0;
-
 				for (unsigned int i = (unsigned int)iStart; i < pMessages->size(); i++)
 				{
 					Message* pMessage = (*pMessages)[i];
@@ -1630,6 +1631,10 @@ void HistoryXmlCommand::Execute()
 		"<member><name>HistoryTime</name><value><i4>%i</i4></value></member>\n"
 		"<member><name>Parameters</name><value><array><data>\n";
 
+	const char* XML_HISTORY_ITEM_LOG_START = 
+		"</data></array></value></member>\n"
+		"<member><name>Log</name><value><array><data>\n";
+
 	const char* XML_HISTORY_ITEM_END = 
 		"</data></array></value></member>\n"
 		"</struct></value>\n";
@@ -1651,6 +1656,10 @@ void HistoryXmlCommand::Execute()
 		"\"HistoryTime\" : %i,\n"
 		"\"Parameters\" : [\n";
 
+	const char* JSON_HISTORY_ITEM_LOG_START = 
+		"],\n"
+		"\"Log\" : [\n";
+
 	const char* JSON_HISTORY_ITEM_END = 
 		"]\n"
 		"}";
@@ -1667,8 +1676,25 @@ void HistoryXmlCommand::Execute()
 		"\"Value\" : \"%s\"\n"
 		"}";
 
+	const char* XML_LOG_ITEM = 
+		"<value><struct>\n"
+		"<member><name>ID</name><value><i4>%i</i4></value></member>\n"
+		"<member><name>Kind</name><value><string>%s</string></value></member>\n"
+		"<member><name>Time</name><value><i4>%i</i4></value></member>\n"
+		"<member><name>Text</name><value><string>%s</string></value></member>\n"
+		"</struct></value>\n";
+
+	const char* JSON_LOG_ITEM = 
+		"{\n"
+		"\"ID\" : %i,\n"
+		"\"Kind\" : \"%s\",\n"
+		"\"Time\" : %i,\n"
+		"\"Text\" : \"%s\"\n"
+		"}";
+
     const char* szParStatusName[] = { "NONE", "FAILURE", "REPAIR_POSSIBLE", "SUCCESS" };
     const char* szScriptStatusName[] = { "NONE", "UNKNOWN", "FAILURE", "SUCCESS" };
+	const char* szMessageType[] = { "INFO", "WARNING", "ERROR", "DEBUG", "DETAIL"};
 
 	DownloadQueue* pDownloadQueue = g_pQueueCoordinator->LockQueue();
 
@@ -1708,8 +1734,8 @@ void HistoryXmlCommand::Execute()
 		}
 		AppendResponse(szItemBuf);
 
+		// Post-processing parameters
 		int iParamIndex = 0;
-
 		for (NZBParameterList::iterator it = pNZBInfo->GetParameters()->begin(); it != pNZBInfo->GetParameters()->end(); it++)
 		{
 			NZBParameter* pParameter = *it;
@@ -1729,6 +1755,31 @@ void HistoryXmlCommand::Execute()
 			}
 			AppendResponse(szItemBuf);
 		}
+
+		AppendResponse(IsJson() ? JSON_HISTORY_ITEM_LOG_START : XML_HISTORY_ITEM_LOG_START);
+
+		// Log-Messages
+		NZBInfo::Messages* pMessages = pNZBInfo->LockMessages();
+		if (!pMessages->empty())
+		{
+			int iLogIndex = 0;
+			for (NZBInfo::Messages::iterator it = pMessages->begin(); it != pMessages->end(); it++)
+			{
+				Message* pMessage = *it;
+				char* xmltext = EncodeStr(pMessage->GetText());
+				snprintf(szItemBuf, szItemBufSize, IsJson() ? JSON_LOG_ITEM : XML_LOG_ITEM,
+					pMessage->GetID(), szMessageType[pMessage->GetKind()], pMessage->GetTime(), xmltext);
+				szItemBuf[szItemBufSize-1] = '\0';
+				free(xmltext);
+
+				if (IsJson() && iLogIndex++ > 0)
+				{
+					AppendResponse(",\n");
+				}
+				AppendResponse(szItemBuf);
+			}
+		}
+		pNZBInfo->UnlockMessages();
 
 		AppendResponse(IsJson() ? JSON_HISTORY_ITEM_END : XML_HISTORY_ITEM_END);
 	}

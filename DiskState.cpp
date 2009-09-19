@@ -82,7 +82,7 @@ bool DiskState::SaveDownloadQueue(DownloadQueue* pDownloadQueue)
 		return false;
 	}
 
-	fprintf(outfile, "%s%i\n", FORMATVERSION_SIGNATURE, 10);
+	fprintf(outfile, "%s%i\n", FORMATVERSION_SIGNATURE, 11);
 
 	// save nzb-infos
 	SaveNZBList(pDownloadQueue, outfile);
@@ -132,9 +132,9 @@ bool DiskState::LoadDownloadQueue(DownloadQueue* pDownloadQueue)
 	char FileSignatur[128];
 	fgets(FileSignatur, sizeof(FileSignatur), infile);
 	int iFormatVersion = ParseFormatVersion(FileSignatur);
-	if (iFormatVersion < 3 || iFormatVersion > 10)
+	if (iFormatVersion < 3 || iFormatVersion > 11)
 	{
-		error("Could not load diskstate due file version mismatch");
+		error("Could not load diskstate due to file version mismatch");
 		fclose(infile);
 		return false;
 	}
@@ -215,6 +215,15 @@ void DiskState::SaveNZBList(DownloadQueue* pDownloadQueue, FILE* outfile)
 			NZBParameter* pParameter = *it;
 			fprintf(outfile, "%s=%s\n", pParameter->GetName(), pParameter->GetValue());
 		}
+
+		NZBInfo::Messages* pMessages = pNZBInfo->LockMessages();
+		fprintf(outfile, "%i\n", pMessages->size());
+		for (NZBInfo::Messages::iterator it = pMessages->begin(); it != pMessages->end(); it++)
+		{
+			Message* pMessage = *it;
+			fprintf(outfile, "%i,%i,%s\n", pMessage->GetKind(), (int)pMessage->GetTime(), pMessage->GetText());
+		}
+		pNZBInfo->UnlockMessages();
 	}
 }
 
@@ -315,6 +324,25 @@ bool DiskState::LoadNZBList(DownloadQueue* pDownloadQueue, FILE* infile, int iFo
 					szValue++;
 					pNZBInfo->SetParameter(buf, szValue);
 				}
+			}
+		}
+
+		if (iFormatVersion >= 11)
+		{
+			int iLogCount;
+			if (fscanf(infile, "%i\n", &iLogCount) != 1) goto error;
+			for (int i = 0; i < iLogCount; i++)
+			{
+				if (!fgets(buf, sizeof(buf), infile)) goto error;
+				if (buf[0] != 0) buf[strlen(buf)-1] = 0; // remove traling '\n'
+
+				int iKind, iTime;
+				sscanf(buf, "%i,%i", &iKind, &iTime);
+				char* szText = strchr(buf + 2, ',');
+				if (szText) {
+					szText++;
+				}
+				pNZBInfo->AppendMessage((Message::EKind)iKind, (time_t)iTime, szText);
 			}
 		}
 	}
@@ -594,7 +622,7 @@ bool DiskState::LoadOldPostQueue(DownloadQueue* pDownloadQueue)
 	int iFormatVersion = ParseFormatVersion(FileSignatur);
 	if (iFormatVersion < 3 || iFormatVersion > 7)
 	{
-		error("Could not load diskstate due file version mismatch");
+		error("Could not load diskstate due to file version mismatch");
 		fclose(infile);
 		return false;
 	}
@@ -814,7 +842,7 @@ bool DiskState::DiscardDownloadQueue()
 	char FileSignatur[128];
 	fgets(FileSignatur, sizeof(FileSignatur), infile);
 	int iFormatVersion = ParseFormatVersion(FileSignatur);
-	if (3 <= iFormatVersion && iFormatVersion <= 10)
+	if (3 <= iFormatVersion && iFormatVersion <= 11)
 	{
 		// skip nzb-infos
 		int size = 0;
@@ -867,6 +895,17 @@ bool DiskState::DiscardDownloadQueue()
 					if (!fgets(buf, sizeof(buf), infile)) break;
 				}
 			}
+
+			if (iFormatVersion >= 11)
+			{
+				// log-messages
+				int iLogCount;
+				if (fscanf(infile, "%i\n", &iLogCount) != 1) break;
+				for (int i = 0; i < iLogCount; i++)
+				{
+					if (!fgets(buf, sizeof(buf), infile)) break;
+				}
+			}
 		}
 
 		// file-infos
@@ -886,7 +925,7 @@ bool DiskState::DiscardDownloadQueue()
 	}
 	else
 	{
-		error("Could not discard diskstate due file version mismatch");
+		error("Could not discard diskstate due to file version mismatch");
 		res = false;
 	}
 

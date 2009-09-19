@@ -201,6 +201,7 @@ public:
 	};
 
 	typedef std::vector<char*>			Files;
+	typedef std::deque<Message*>		Messages;
 
 private:
 	int					m_iID;
@@ -222,6 +223,9 @@ private:
 	time_t				m_tHistoryTime;
 	NZBInfoList*		m_Owner;
 	NZBParameterList	m_ppParameters;
+	Mutex				m_mutexLog;
+	Messages			m_Messages;
+	int					m_iIDMessageGen;
 
 	static int			m_iIDGen;
 
@@ -268,6 +272,9 @@ public:
 	void				SetHistoryTime(time_t tHistoryTime) { m_tHistoryTime = tHistoryTime; }
 	NZBParameterList*	GetParameters() { return &m_ppParameters; }				// needs locking (for shared objects)
 	void				SetParameter(const char* szName, const char* szValue);	// needs locking (for shared objects)
+	void				AppendMessage(Message::EKind eKind, time_t tTime, const char* szText);
+	Messages*			LockMessages();
+	void				UnlockMessages();
 };
 
 typedef std::deque<NZBInfo*> NZBInfoListBase;
