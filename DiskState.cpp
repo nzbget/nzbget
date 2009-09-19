@@ -814,7 +814,7 @@ bool DiskState::DiscardDownloadQueue()
 	char FileSignatur[128];
 	fgets(FileSignatur, sizeof(FileSignatur), infile);
 	int iFormatVersion = ParseFormatVersion(FileSignatur);
-	if (3 <= iFormatVersion && iFormatVersion <= 9)
+	if (3 <= iFormatVersion && iFormatVersion <= 10)
 	{
 		// skip nzb-infos
 		int size = 0;
@@ -835,9 +835,17 @@ bool DiskState::DiscardDownloadQueue()
 			}
 			if (iFormatVersion >= 8)
 			{
-				if (!fgets(buf, sizeof(buf), infile)) break; // ParFailure
+				if (!fgets(buf, sizeof(buf), infile)) break; // ParStatus
+			}
+			if (iFormatVersion >= 9)
+			{
+				if (!fgets(buf, sizeof(buf), infile)) break; // ScriptStatus
 			}
 			if (!fgets(buf, sizeof(buf), infile)) break; // file count
+			if (iFormatVersion >= 10)
+			{
+				if (!fgets(buf, sizeof(buf), infile)) break; // parked file count
+			}
 			if (!fgets(buf, sizeof(buf), infile)) break; // file size
 			if (iFormatVersion >= 4)
 			{
