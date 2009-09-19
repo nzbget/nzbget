@@ -746,6 +746,15 @@ void PostScriptController::Run()
 
 void PostScriptController::AddMessage(Message::EKind eKind, bool bDefaultKind, Options::EMessageTarget eMessageTarget, const char* szText)
 {
+	if (!strncmp(szText, "[HISTORY] ", 10))
+	{
+		if (eMessageTarget == Options::mtScreen || eMessageTarget == Options::mtBoth)
+		{
+			m_pPostInfo->GetNZBInfo()->AppendMessage(eKind, 0, szText + 10);
+		}
+		return;
+	}
+
 	ScriptController::AddMessage(eKind, bDefaultKind, eMessageTarget, szText);
 
 	if (eMessageTarget == Options::mtScreen || eMessageTarget == Options::mtBoth)

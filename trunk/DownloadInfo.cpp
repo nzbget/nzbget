@@ -98,6 +98,8 @@ NZBInfo::NZBInfo()
 	m_szQueuedFilename = strdup("");
 	m_tHistoryTime = 0;
 	m_Owner = NULL;
+	m_Messages.clear();
+	m_iIDMessageGen = 0;
 	m_iIDGen++;
 	m_iID = m_iIDGen;
 }
@@ -130,6 +132,12 @@ NZBInfo::~NZBInfo()
 		delete *it;
 	}
 	m_ppParameters.clear();
+
+	for (Messages::iterator it = m_Messages.begin(); it != m_Messages.end(); it++)
+	{
+		delete *it;
+	}
+	m_Messages.clear();
 
 	if (m_Owner)
 	{
@@ -321,6 +329,31 @@ void NZBInfo::SetParameter(const char* szName, const char* szValue)
 	}
 
 	pParameter->SetValue(szValue);
+}
+
+NZBInfo::Messages* NZBInfo::LockMessages()
+{
+	m_mutexLog.Lock();
+	return &m_Messages;
+}
+
+void NZBInfo::UnlockMessages()
+{
+	m_mutexLog.Unlock();
+}
+
+void NZBInfo::AppendMessage(Message::EKind eKind, time_t tTime, const char * szText)
+{
+	if (tTime == 0)
+	{
+		tTime = time(NULL);
+	}
+
+	Message* pMessage = new Message(++m_iIDMessageGen, eKind, tTime, szText);
+
+	m_mutexLog.Lock();
+	m_Messages.push_back(pMessage);
+	m_mutexLog.Unlock();
 }
 
 void NZBInfoList::Add(NZBInfo* pNZBInfo)
