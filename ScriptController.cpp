@@ -57,6 +57,7 @@ static const int POSTPROCESS_PARCHECK_CURRENT = 91;
 static const int POSTPROCESS_PARCHECK_ALL = 92;
 static const int POSTPROCESS_SUCCESS = 93;
 static const int POSTPROCESS_ERROR = 94;
+static const int POSTPROCESS_NONE = 95;
 
 #ifndef WIN32
 #define CHILD_WATCHDOG 1
@@ -693,6 +694,11 @@ void PostScriptController::Run()
 		case POSTPROCESS_ERROR:
 			info("%s failed", szInfoName);
 			m_pPostInfo->SetScriptStatus(PostInfo::srFailure);
+			break;
+
+		case POSTPROCESS_NONE:
+			info("%s skipped", szInfoName);
+			m_pPostInfo->SetScriptStatus(PostInfo::srNone);
 			break;
 
 #ifndef DISABLE_PARCHECK

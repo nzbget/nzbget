@@ -4,7 +4,7 @@
 #
 # Copyright (C) 2008 Peter Roubos <peterroubos@hotmail.com>
 # Copyright (C) 2008 Otmar Werner
-# Copyright (C) 2008 Andrei Prygounkov <hugbug@users.sourceforge.net>
+# Copyright (C) 2008-2009 Andrei Prygounkov <hugbug@users.sourceforge.net>
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -91,11 +91,12 @@ POSTPROCESS_PARCHECK_CURRENT=91
 POSTPROCESS_PARCHECK_ALL=92
 POSTPROCESS_SUCCESS=93
 POSTPROCESS_ERROR=94
+POSTPROCESS_NONE=95
 
 # Check if the script is called from nzbget
 if [ "$NZBPP_DIRECTORY" = "" -o "$NZBOP_CONFIGFILE" = "" ]; then
 	echo "*** NZBGet post-process script ***"
-	echo "This script is supposed to be called from nzbget."
+	echo "This script is supposed to be called from nzbget (0.7.0 or later)."
 	exit $POSTPROCESS_ERROR
 fi 
 
@@ -104,12 +105,12 @@ fi
 # "nzbget -E G O PostProcess=no <ID>"
 if [ "$NZBPR_PostProcess" = "no" ]; then
 	echo "[WARNING] Post-Process: Postprocessing disabled for this nzb-file, exiting"
-	exit $POSTPROCESS_ERROR
+	exit $POSTPROCESS_NONE
 fi
 
 echo "[INFO] Post-Process: Post-process script successfully started"
 
-# Determine the location of coniguration file (it must be stored in
+# Determine the location of configuration file (it must be stored in
 # the directory with nzbget.conf or in this script's directory).
 ConfigDir="${NZBOP_CONFIGFILE%/*}"
 ScriptConfigFile="$ConfigDir/$SCRIPT_CONFIG_FILE"

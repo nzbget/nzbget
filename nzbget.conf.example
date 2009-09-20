@@ -680,8 +680,9 @@ NzbCleanupDisk=no
 #       current nzb-file;
 #  92 - request nzbget to do par-check/repair for all collections in the 
 #       current nzb-file;
-#  93 - post-process successful;
-#  94 - post-process failed;
+#  93 - post-process successful (status = SUCCESS);
+#  94 - post-process failed (status = FAILURE);
+#  95 - post-process skipped (status = NONE);
 # All other return codes are interpreted as "status unknown".
 #
 # The return value is used to display the status of post-processing in
