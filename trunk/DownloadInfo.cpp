@@ -444,6 +444,7 @@ FileInfo::FileInfo()
 	m_bFilenameConfirmed = false;
 	m_lSize = 0;
 	m_lRemainingSize = 0;
+	m_tTime = 0;
 	m_bPaused = false;
 	m_bDeleted = false;
 	m_iCompleted = 0;
@@ -565,6 +566,8 @@ GroupInfo::GroupInfo()
 	m_lRemainingSize = 0;
 	m_lPausedSize = 0;
 	m_iRemainingParCount = 0;
+	m_tMinTime = 0;
+	m_tMaxTime = 0;
 }
 
 GroupInfo::~GroupInfo()
@@ -708,6 +711,8 @@ void DownloadQueue::BuildGroups(GroupQueue* pGroupQueue)
 			pGroupInfo->m_pNZBInfo->AddReference();
 			pGroupInfo->m_iFirstID = pFileInfo->GetID();
 			pGroupInfo->m_iLastID = pFileInfo->GetID();
+			pGroupInfo->m_tMinTime = pFileInfo->GetTime();
+			pGroupInfo->m_tMaxTime = pFileInfo->GetTime();
 			pGroupQueue->push_back(pGroupInfo);
 		}
 		if (pFileInfo->GetID() < pGroupInfo->GetFirstID())
@@ -717,6 +722,17 @@ void DownloadQueue::BuildGroups(GroupQueue* pGroupQueue)
 		if (pFileInfo->GetID() > pGroupInfo->GetLastID())
 		{
 			pGroupInfo->m_iLastID = pFileInfo->GetID();
+		}
+		if (pFileInfo->GetTime() > 0)
+		{
+			if (pFileInfo->GetTime() < pGroupInfo->GetMinTime())
+			{
+				pGroupInfo->m_tMinTime = pFileInfo->GetTime();
+			}
+			if (pFileInfo->GetTime() > pGroupInfo->GetMaxTime())
+			{
+				pGroupInfo->m_tMaxTime = pFileInfo->GetTime();
+			}
 		}
 		pGroupInfo->m_iRemainingFileCount++;
 		pGroupInfo->m_lRemainingSize += pFileInfo->GetRemainingSize();
