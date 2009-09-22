@@ -976,6 +976,7 @@ void ListFilesXmlCommand::Execute()
 		"<member><name>FileSizeHi</name><value><i4>%i</i4></value></member>\n"
 		"<member><name>RemainingSizeLo</name><value><i4>%i</i4></value></member>\n"
 		"<member><name>RemainingSizeHi</name><value><i4>%i</i4></value></member>\n"
+		"<member><name>PostTime</name><value><i4>%i</i4></value></member>\n"
 		"<member><name>FilenameConfirmed</name><value><boolean>%s</boolean></value></member>\n"
 		"<member><name>Paused</name><value><boolean>%s</boolean></value></member>\n"
 		"<member><name>NZBID</name><value><i4>%i</i4></value></member>\n"
@@ -994,6 +995,7 @@ void ListFilesXmlCommand::Execute()
 		"\"FileSizeHi\" : %i,\n"
 		"\"RemainingSizeLo\" : %i,\n"
 		"\"RemainingSizeHi\" : %i,\n"
+		"\"PostTime\" : %i,\n"
 		"\"FilenameConfirmed\" : %s,\n"
 		"\"Paused\" : %s,\n"
 		"\"NZBID\" : %i,\n"
@@ -1029,9 +1031,9 @@ void ListFilesXmlCommand::Execute()
 
 			snprintf(szItemBuf, szItemBufSize, IsJson() ? JSON_LIST_ITEM : XML_LIST_ITEM,
 				pFileInfo->GetID(), iFileSizeLo, iFileSizeHi, iRemainingSizeLo, iRemainingSizeHi, 
-				BoolToStr(pFileInfo->GetFilenameConfirmed()), BoolToStr(pFileInfo->GetPaused()),
-				pFileInfo->GetNZBInfo()->GetID(), xmlNZBNicename, xmlNZBFilename, xmlSubject, 
-				xmlFilename, xmlDestDir, xmlCategory);
+				pFileInfo->GetTime(), BoolToStr(pFileInfo->GetFilenameConfirmed()), 
+				BoolToStr(pFileInfo->GetPaused()), pFileInfo->GetNZBInfo()->GetID(), 
+				xmlNZBNicename, xmlNZBFilename, xmlSubject, xmlFilename, xmlDestDir, xmlCategory);
 			szItemBuf[szItemBufSize-1] = '\0';
 
 			free(xmlNZBFilename);
@@ -1074,6 +1076,8 @@ void ListGroupsXmlCommand::Execute()
 		"<member><name>FileCount</name><value><i4>%i</i4></value></member>\n"
 		"<member><name>RemainingFileCount</name><value><i4>%i</i4></value></member>\n"
 		"<member><name>RemainingParCount</name><value><i4>%i</i4></value></member>\n"
+		"<member><name>MinPostTime</name><value><i4>%i</i4></value></member>\n"
+		"<member><name>MaxPostTime</name><value><i4>%i</i4></value></member>\n"
 		"<member><name>NZBID</name><value><i4>%i</i4></value></member>\n"
 		"<member><name>NZBNicename</name><value><string>%s</string></value></member>\n"
 		"<member><name>NZBFilename</name><value><string>%s</string></value></member>\n"
@@ -1101,6 +1105,8 @@ void ListGroupsXmlCommand::Execute()
 		"\"FileCount\" : %i,\n"
 		"\"RemainingFileCount\" : %i,\n"
 		"\"RemainingParCount\" : %i,\n"
+		"\"MinPostTime\" : %i,\n"
+		"\"MaxPostTime\" : %i,\n"
 		"\"NZBID\" : %i,\n"
 		"\"NZBNicename\" : \"%s\",\n"
 		"\"NZBFilename\" : \"%s\",\n"
@@ -1158,8 +1164,8 @@ void ListGroupsXmlCommand::Execute()
 			pGroupInfo->GetFirstID(), pGroupInfo->GetLastID(), iFileSizeLo, iFileSizeHi, iFileSizeMB, 
 			iRemainingSizeLo, iRemainingSizeHi, iRemainingSizeMB, iPausedSizeLo, iPausedSizeHi, iPausedSizeMB, 
 			pGroupInfo->GetNZBInfo()->GetFileCount(), pGroupInfo->GetRemainingFileCount(), 
-			pGroupInfo->GetRemainingParCount(), pGroupInfo->GetNZBInfo()->GetID(),
-			xmlNZBNicename, xmlNZBFilename, xmlDestDir, xmlCategory);
+			pGroupInfo->GetRemainingParCount(), pGroupInfo->GetMinTime(), pGroupInfo->GetMaxTime(),
+			pGroupInfo->GetNZBInfo()->GetID(), xmlNZBNicename, xmlNZBFilename, xmlDestDir, xmlCategory);
 		szItemBuf[szItemBufSize-1] = '\0';
 
 		free(xmlNZBNicename);

@@ -82,7 +82,7 @@ bool DiskState::SaveDownloadQueue(DownloadQueue* pDownloadQueue)
 		return false;
 	}
 
-	fprintf(outfile, "%s%i\n", FORMATVERSION_SIGNATURE, 11);
+	fprintf(outfile, "%s%i\n", FORMATVERSION_SIGNATURE, 12);
 
 	// save nzb-infos
 	SaveNZBList(pDownloadQueue, outfile);
@@ -132,7 +132,7 @@ bool DiskState::LoadDownloadQueue(DownloadQueue* pDownloadQueue)
 	char FileSignatur[128];
 	fgets(FileSignatur, sizeof(FileSignatur), infile);
 	int iFormatVersion = ParseFormatVersion(FileSignatur);
-	if (iFormatVersion < 3 || iFormatVersion > 11)
+	if (iFormatVersion < 3 || iFormatVersion > 12)
 	{
 		error("Could not load diskstate due to file version mismatch");
 		fclose(infile);
@@ -143,7 +143,7 @@ bool DiskState::LoadDownloadQueue(DownloadQueue* pDownloadQueue)
 	if (!LoadNZBList(pDownloadQueue, infile, iFormatVersion)) goto error;
 
 	// load file-infos
-	if (!LoadFileQueue(pDownloadQueue, pDownloadQueue->GetFileQueue(), infile)) goto error;
+	if (!LoadFileQueue(pDownloadQueue, pDownloadQueue->GetFileQueue(), infile, iFormatVersion)) goto error;
 
 	if (iFormatVersion >= 7)
 	{
@@ -162,7 +162,7 @@ bool DiskState::LoadDownloadQueue(DownloadQueue* pDownloadQueue)
 		if (!LoadHistory(pDownloadQueue, infile)) goto error;
 
 		// load parked file-infos
-		if (!LoadFileQueue(pDownloadQueue, pDownloadQueue->GetParkedFiles(), infile)) goto error;
+		if (!LoadFileQueue(pDownloadQueue, pDownloadQueue->GetParkedFiles(), infile, iFormatVersion)) goto error;
 	}
 
 	bOK = true;
@@ -366,12 +366,12 @@ void DiskState::SaveFileQueue(DownloadQueue* pDownloadQueue, FileQueue* pFileQue
 		if (!pFileInfo->GetDeleted())
 		{
 			int iNZBIndex = FindNZBInfoIndex(pDownloadQueue, pFileInfo->GetNZBInfo());
-			fprintf(outfile, "%i,%i,%i\n", pFileInfo->GetID(), iNZBIndex, (int)pFileInfo->GetPaused());
+			fprintf(outfile, "%i,%i,%i,%i\n", pFileInfo->GetID(), iNZBIndex, (int)pFileInfo->GetPaused(), (int)pFileInfo->GetTime());
 		}
 	}
 }
 
-bool DiskState::LoadFileQueue(DownloadQueue* pDownloadQueue, FileQueue* pFileQueue, FILE* infile)
+bool DiskState::LoadFileQueue(DownloadQueue* pDownloadQueue, FileQueue* pFileQueue, FILE* infile, int iFormatVersion)
 {
 	debug("Loading file queue from disk");
 
@@ -379,8 +379,16 @@ bool DiskState::LoadFileQueue(DownloadQueue* pDownloadQueue, FileQueue* pFileQue
 	if (fscanf(infile, "%i\n", &size) != 1) goto error;
 	for (int i = 0; i < size; i++)
 	{
-		unsigned int id, iNZBIndex, paused;
-		if (fscanf(infile, "%i,%i,%i\n", &id, &iNZBIndex, &paused) != 3) goto error;
+		unsigned int id, iNZBIndex, paused, iTime;
+		if (iFormatVersion >= 12)
+		{
+			if (fscanf(infile, "%i,%i,%i,%i\n", &id, &iNZBIndex, &paused, &iTime) != 4) goto error;
+		}
+		else
+		{
+			if (fscanf(infile, "%i,%i,%i\n", &id, &iNZBIndex, &paused) != 3) goto error;
+			iTime = 0;
+		}
 		if (iNZBIndex < 0 || iNZBIndex > pDownloadQueue->GetNZBInfoList()->size()) goto error;
 
 		char fileName[1024];
@@ -392,6 +400,7 @@ bool DiskState::LoadFileQueue(DownloadQueue* pDownloadQueue, FileQueue* pFileQue
 		{
 			pFileInfo->SetID(id);
 			pFileInfo->SetPaused(paused);
+			pFileInfo->SetTime(iTime);
 			pFileInfo->SetNZBInfo(pDownloadQueue->GetNZBInfoList()->at(iNZBIndex - 1));
 			pFileQueue->push_back(pFileInfo);
 		}
@@ -842,7 +851,7 @@ bool DiskState::DiscardDownloadQueue()
 	char FileSignatur[128];
 	fgets(FileSignatur, sizeof(FileSignatur), infile);
 	int iFormatVersion = ParseFormatVersion(FileSignatur);
-	if (3 <= iFormatVersion && iFormatVersion <= 11)
+	if (3 <= iFormatVersion && iFormatVersion <= 12)
 	{
 		// skip nzb-infos
 		int size = 0;
@@ -912,8 +921,9 @@ bool DiskState::DiscardDownloadQueue()
 		fscanf(infile, "%i\n", &size);
 		for (int i = 0; i < size; i++)
 		{
-			int id, group, paused;
-			if (fscanf(infile, "%i,%i,%i\n", &id, &group, &paused) == 3)
+			int id;
+			char tr[100];
+			if (fscanf(infile, "%i,%s\n", &id, &tr) == 2)
 			{
 				char fileName[1024];
 				snprintf(fileName, 1024, "%s%i", g_pOptions->GetQueueDir(), id);

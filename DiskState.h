@@ -37,7 +37,7 @@ private:
 	void				SaveNZBList(DownloadQueue* pDownloadQueue, FILE* outfile);
 	bool				LoadNZBList(DownloadQueue* pDownloadQueue, FILE* infile, int iFormatVersion);
 	void				SaveFileQueue(DownloadQueue* pDownloadQueue, FileQueue* pFileQueue, FILE* outfile);
-	bool				LoadFileQueue(DownloadQueue* pDownloadQueue, FileQueue* pFileQueue, FILE* infile);
+	bool				LoadFileQueue(DownloadQueue* pDownloadQueue, FileQueue* pFileQueue, FILE* infile, int iFormatVersion);
 	void				SavePostQueue(DownloadQueue* pDownloadQueue, FILE* outfile);
 	bool				LoadPostQueue(DownloadQueue* pDownloadQueue, FILE* infile);
 	bool				LoadOldPostQueue(DownloadQueue* pDownloadQueue);

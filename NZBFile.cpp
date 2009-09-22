@@ -400,6 +400,13 @@ bool NZBFile::ParseNZB(IUnknown* nzb)
         FileInfo* pFileInfo = new FileInfo();
 		pFileInfo->SetSubject(subject);
 
+		attribute = node->Getattributes()->getNamedItem("date");
+		if (attribute)
+		{
+			_bstr_t date(attribute->Gettext());
+			pFileInfo->SetTime(atoi(date));
+		}
+
 		MSXML::IXMLDOMNodeListPtr groupList = node->selectNodes("groups/group");
 		for (int g = 0; g < groupList->Getlength(); g++)
 		{
@@ -516,6 +523,12 @@ bool NZBFile::ParseNZB(void* nzb)
 							xmlFree(value);
 							value = xmlTextReaderValue(node);
                             pFileInfo->SetSubject((char*)value);
+                        }
+                        if (!strcmp("date",(char*)name))
+                        {
+							xmlFree(value);
+							value = xmlTextReaderValue(node);
+							pFileInfo->SetTime(atoi((char*)value));
                         }
                     }
                 }

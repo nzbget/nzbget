@@ -85,6 +85,7 @@ private:
 	char*				m_szFilename;
 	long long 			m_lSize;
 	long long 			m_lRemainingSize;
+	time_t				m_tTime;
 	bool				m_bPaused;
 	bool				m_bDeleted;
 	bool				m_bFilenameConfirmed;
@@ -114,6 +115,8 @@ public:
 	long long 			GetSize() { return m_lSize; }
 	long long 			GetRemainingSize() { return m_lRemainingSize; }
 	void 				SetRemainingSize(long long s) { m_lRemainingSize = s; }
+	time_t				GetTime() { return m_tTime; }
+	void				SetTime(time_t tTime) { m_tTime = tTime; }
 	bool				GetPaused() { return m_bPaused; }
 	void				SetPaused(bool Paused) { m_bPaused = Paused; }
 	bool				GetDeleted() { return m_bDeleted; }
@@ -141,6 +144,8 @@ private:
 	long long 			m_lRemainingSize;
 	long long 			m_lPausedSize;
 	int					m_iRemainingParCount;
+	time_t				m_tMinTime;
+	time_t				m_tMaxTime;
 
 	friend class DownloadQueue;
 
@@ -155,6 +160,8 @@ public:
 	int					GetRemainingFileCount() { return m_iRemainingFileCount; }
 	int					GetPausedFileCount() { return m_iPausedFileCount; }
 	int					GetRemainingParCount() { return m_iRemainingParCount; }
+	time_t				GetMinTime() { return m_tMinTime; }
+	time_t				GetMaxTime() { return m_tMaxTime; }
 };
 
 typedef std::deque<GroupInfo*> GroupQueue;
