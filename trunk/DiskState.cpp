@@ -202,11 +202,23 @@ void DiskState::SaveNZBList(DownloadQueue* pDownloadQueue, FILE* outfile)
 		Util::SplitInt64(pNZBInfo->GetSize(), &High, &Low);
 		fprintf(outfile, "%lu,%lu\n", High, Low);
 
+		char DestDirSlash[1024];
+		snprintf(DestDirSlash, 1023, "%s%c", pNZBInfo->GetDestDir(), PATH_SEPARATOR);
+		int iDestDirLen = strlen(DestDirSlash);
+
 		fprintf(outfile, "%i\n", pNZBInfo->GetCompletedFiles()->size());
 		for (NZBInfo::Files::iterator it = pNZBInfo->GetCompletedFiles()->begin(); it != pNZBInfo->GetCompletedFiles()->end(); it++)
 		{
 			char* szFilename = *it;
-			fprintf(outfile, "%s\n", szFilename);
+			// do not save full path to reduce the size of queue-file
+			if (!strncmp(DestDirSlash, szFilename, iDestDirLen))
+			{
+				fprintf(outfile, "%s\n", szFilename + iDestDirLen);
+			}
+			else
+			{
+				fprintf(outfile, "%s\n", szFilename);
+			}
 		}
 
 		fprintf(outfile, "%i\n", pNZBInfo->GetParameters()->size());
@@ -304,7 +316,17 @@ bool DiskState::LoadNZBList(DownloadQueue* pDownloadQueue, FILE* infile, int iFo
 			{
 				if (!fgets(buf, sizeof(buf), infile)) goto error;
 				if (buf[0] != 0) buf[strlen(buf)-1] = 0; // remove traling '\n'
-				pNZBInfo->GetCompletedFiles()->push_back(strdup(buf));
+
+				// restore full file name.
+				char* szFileName = buf;
+				char FullFileName[1024];
+				if (!strchr(buf, PATH_SEPARATOR))
+				{
+					snprintf(FullFileName, 1023, "%s%c%s", pNZBInfo->GetDestDir(), PATH_SEPARATOR, buf);
+					szFileName = FullFileName;
+				}
+
+				pNZBInfo->GetCompletedFiles()->push_back(strdup(szFileName));
 			}
 		}
 
