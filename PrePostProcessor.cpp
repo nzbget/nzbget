@@ -660,6 +660,7 @@ void PrePostProcessor::JobCompleted(DownloadQueue* pDownloadQueue, PostInfo* pPo
 					char szNZBNiceName[1024];
 					pPostInfo->GetNZBInfo()->GetNiceNZBName(szNZBNiceName, sizeof(szNZBNiceName));
 					info("Cleaning up download queue for %s", szNZBNiceName);
+					pFileInfo->GetNZBInfo()->ClearCompletedFiles();
 					pFileInfo->GetNZBInfo()->SetParCleanup(true);
 					g_pQueueCoordinator->GetQueueEditor()->LockedEditEntry(pDownloadQueue, pFileInfo->GetID(), false, QueueEditor::eaGroupDelete, 0, NULL);
 				}
