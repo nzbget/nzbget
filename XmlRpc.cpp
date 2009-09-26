@@ -1245,8 +1245,8 @@ EditCommandEntry EditCommandNameMap[] = {
 	{ PrePostProcessor::eaPostMoveBottom, "PostMoveBottom" },
 	{ PrePostProcessor::eaPostDelete, "PostDelete" },
 	{ PrePostProcessor::eaHistoryDelete, "HistoryDelete" },
-	{ PrePostProcessor::eaHistoryDelete, "HistoryReturn" },
-	{ PrePostProcessor::eaHistoryDelete, "HistoryProcess" },
+	{ PrePostProcessor::eaHistoryReturn, "HistoryReturn" },
+	{ PrePostProcessor::eaHistoryProcess, "HistoryProcess" },
 	{ 0, NULL }
 };
 
