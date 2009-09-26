@@ -1656,7 +1656,7 @@ bool PrePostProcessor::HistoryReturn(IDList* pIDList, bool bReprocess)
 				if (bUnparked || bReprocess)
 				{
 					pDownloadQueue->GetHistoryList()->erase(itHistory);
-					pNZBInfo->Release();
+					// the object "pNZBInfo" is released fe lines later, after the call to "NZBDownloaded"
 					info("%s returned from history back to download queue", szNZBNiceName);
 					bOK = true;
 				}
@@ -1670,6 +1670,11 @@ bool PrePostProcessor::HistoryReturn(IDList* pIDList, bool bReprocess)
 					// start postprocessing
 					debug("Restarting postprocessing for %s", szNZBNiceName);
 					NZBDownloaded(pDownloadQueue, pNZBInfo);
+				}
+
+				if (bUnparked || bReprocess)
+				{
+					pNZBInfo->Release();
 				}
 
 				break;
