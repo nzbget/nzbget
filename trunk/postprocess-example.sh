@@ -165,6 +165,12 @@ if [ "$NZBPP_PARSTATUS" -eq 1 -o "$NZBPP_PARSTATUS" -eq 3 -o "$NZBPP_PARFAILED" 
 	exit $POSTPROCESS_ERROR
 fi 
 
+# Check if destination directory exists (important for reprocessing of history items)
+if [ ! -d "$NZBPP_DIRECTORY" ]; then
+	echo "[ERROR] Post-Process: Nothing to post-process: destination directory $NZBPP_DIRECTORY doesn't exist"
+	exit $POSTPROCESS_ERROR
+fi
+
 cd "$NZBPP_DIRECTORY"
 
 # If not just repaired and file "_brokenlog.txt" exists, the collection is damaged
