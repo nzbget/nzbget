@@ -643,11 +643,13 @@ void NCursesFrontend::PrintStatus()
         szPostStatus[0] = 0;
     }
 
-	float fAverageSpeed = Util::Int64ToFloat(m_iDnTimeSec > 0 ? m_iAllBytes / m_iDnTimeSec / 1024 : 0);
+	float fAverageSpeed = (float)(Util::Int64ToFloat(m_iDnTimeSec > 0 ? m_iAllBytes / m_iDnTimeSec : 0) / 1024.0);
 
-	snprintf(tmp, MAX_SCREEN_WIDTH, " %d threads, %.0f KB/s, %.2f MB remaining%s%s%s%s, Avg. %.0f KB/s", 
-		m_iThreadCount, fCurrentDownloadSpeed, (float)(Util::Int64ToFloat(m_lRemainingSize) / 1024.0 / 1024.0), timeString, 
-		szPostStatus, m_bPause ? (m_bStandBy ? ", Paused" : ", Pausing") : "", szDownloadLimit, fAverageSpeed);
+	snprintf(tmp, MAX_SCREEN_WIDTH, " %d threads, %.*f KB/s, %.2f MB remaining%s%s%s%s, Avg. %.*f KB/s", 
+		m_iThreadCount, (fCurrentDownloadSpeed >= 10 ? 0 : 1), fCurrentDownloadSpeed, 
+		(float)(Util::Int64ToFloat(m_lRemainingSize) / 1024.0 / 1024.0), timeString, 
+		szPostStatus, m_bPause ? (m_bStandBy ? ", Paused" : ", Pausing") : "", szDownloadLimit, 
+		(fAverageSpeed >= 10 ? 0 : 1), fAverageSpeed);
 	tmp[MAX_SCREEN_WIDTH - 1] = '\0';
     PlotLine(tmp, iStatusRow, 0, NCURSES_COLORPAIR_STATUS);
 }
