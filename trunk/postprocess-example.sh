@@ -191,7 +191,14 @@ Unrared=0
    
 # Unrar the files (if any) to the temporary directory, if there are no rar files this will do nothing
 if (ls *.rar >/dev/null 2>&1); then
-	
+
+	# Check if unrar exists
+	$UnrarCmd >/dev/null 2>&1
+	if [ "$?" -eq 127 ]; then
+		echo "[ERROR] Post-Process: Unrar not found. Set the path to unrar in script's configuration"
+		exit $POSTPROCESS_ERROR
+	fi
+
 	# Make a temporary directory to store the unrarred files
 	ExtractedDirExists=0
 	if [ -d extracted ]; then
@@ -205,6 +212,7 @@ if (ls *.rar >/dev/null 2>&1); then
 	if [ "$NZBPR_Password" != "" ]; then
 		rarpasswordparam="-p$NZBPR_Password"
 	fi
+
 	$UnrarCmd x -y -p- "$rarpasswordparam" -o+ "*.rar"  ./extracted/
 	if [ "$?" -eq 3 ]; then
 		echo "[ERROR] Post-Process: Unrar failed"
@@ -257,11 +265,15 @@ fi
 
 # If download contains only nzb-files move them into nzb-directory
 # for further download
-AllFilesCount=`ls -1 2>/dev/null | wc -l`
-NZBFilesCount=`ls -1 *.nzb 2>/dev/null | wc -l`
-if [ "$AllFilesCount" -eq "$NZBFilesCount" ]; then
-	echo "[INFO] Moving downloaded nzb-files into incoming nzb-directory for further download"
-	mv *.nzb $NZBOP_NZBDIR
+# Check if command "wc" exists
+wc -l . >/dev/null 2>&1
+if [ "$?" -ne 127 ]; then
+	AllFilesCount=`ls -1 2>/dev/null | wc -l`
+	NZBFilesCount=`ls -1 *.nzb 2>/dev/null | wc -l`
+	if [ "$AllFilesCount" -eq "$NZBFilesCount" ]; then
+		echo "[INFO] Moving downloaded nzb-files into incoming nzb-directory for further download"
+		mv *.nzb $NZBOP_NZBDIR
+	fi
 fi
 
 # Clean up
