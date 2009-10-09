@@ -236,7 +236,6 @@ void XmlRpcProcessor::Dispatch()
 		{
 			strncpy(szMethodName, szMethodPtr + 1, iValueLen - 2);
 			szMethodName[iValueLen - 2] = '\0';
-			szRequest = (char*)szMethodPtr + 1 + iValueLen;
 		}
 	}
 
