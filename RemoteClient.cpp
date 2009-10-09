@@ -1046,9 +1046,6 @@ bool RemoteClient::RequestHistory()
 			SNZBHistoryResponseEntry* pListAnswer = (SNZBHistoryResponseEntry*) pBufPtr;
 
 			const char* szFileName = pBufPtr + sizeof(SNZBHistoryResponseEntry);
-			const char* szDestDir = pBufPtr + sizeof(SNZBHistoryResponseEntry) + ntohl(pListAnswer->m_iFilenameLen);
-			const char* szCategory = pBufPtr + sizeof(SNZBHistoryResponseEntry) + ntohl(pListAnswer->m_iFilenameLen) + ntohl(pListAnswer->m_iDestDirLen);
-			const char* m_szQueuedFilename = pBufPtr + sizeof(SNZBHistoryResponseEntry) + ntohl(pListAnswer->m_iFilenameLen) + ntohl(pListAnswer->m_iDestDirLen) + ntohl(pListAnswer->m_iCategoryLen);
 
 			long long lSize = Util::JoinInt64(ntohl(pListAnswer->m_iSizeHi), ntohl(pListAnswer->m_iSizeLo));
 
