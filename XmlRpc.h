@@ -69,6 +69,7 @@ private:
 	char*				m_szUrl;
 
 	void				Dispatch();
+	void				SendAuthResponse();
 	void				SendResponse(const char* szResponse, const char* szCallbackFunc, bool bFault);
 	XmlCommand*			CreateCommand(const char* szMethodName);
 	void				MutliCall();
