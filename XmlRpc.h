@@ -50,7 +50,8 @@ public:
 	{
 		rpUndefined,
 		rpXmlRpc,
-		rpJsonRpc
+		rpJsonRpc,
+		rpJsonPRpc
 	};
 
 	enum EHttpMethod
@@ -68,7 +69,7 @@ private:
 	char*				m_szUrl;
 
 	void				Dispatch();
-	void				SendResponse(const char* szResponse, bool bFault);
+	void				SendResponse(const char* szResponse, const char* szCallbackFunc, bool bFault);
 	XmlCommand*			CreateCommand(const char* szMethodName);
 	void				MutliCall();
 
@@ -88,6 +89,7 @@ class XmlCommand
 protected:
 	char*				m_szRequest;
 	char*				m_szRequestPtr;
+	char*				m_szCallbackFunc;
 	StringBuilder		m_StringBuilder;
 	bool				m_bFault;
 	XmlRpcProcessor::ERpcProtocol	m_eProtocol;
@@ -96,7 +98,8 @@ protected:
 	void				BuildErrorResponse(int iErrCode, const char* szErrText);
 	void				BuildBoolResponse(bool bOK);
 	void				AppendResponse(const char* szPart);
-	bool				IsJson() { return m_eProtocol == XmlRpcProcessor::rpJsonRpc; }
+	bool				IsJson();
+	bool				CheckSafeMethod();
 	bool				NextParamAsInt(int* iValue);
 	bool				NextParamAsBool(bool* bValue);
 	bool				NextParamAsStr(char** szValueBuf);
@@ -112,6 +115,7 @@ public:
 	void				SetProtocol(XmlRpcProcessor::ERpcProtocol eProtocol) { m_eProtocol = eProtocol; }
 	void				SetHttpMethod(XmlRpcProcessor::EHttpMethod eHttpMethod) { m_eHttpMethod = eHttpMethod; }
 	const char*			GetResponse() { return m_StringBuilder.GetBuffer(); }
+	const char*			GetCallbackFunc() { return m_szCallbackFunc; }
 	bool				GetFault() { return m_bFault; }
 };
 

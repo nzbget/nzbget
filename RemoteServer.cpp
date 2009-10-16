@@ -202,6 +202,10 @@ void RequestProcessor::Run()
 			{
 				eProtocol = XmlRpcProcessor::rpJsonRpc;
 			}
+			else if (!strcmp(szUrl, "/jsonprpc") || !strncmp(szUrl, "/jsonprpc/", 10))
+			{
+				eProtocol = XmlRpcProcessor::rpJsonPRpc;
+			}
 
 			if (eProtocol != XmlRpcProcessor::rpUndefined)
 			{
