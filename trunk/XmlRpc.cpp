@@ -253,7 +253,7 @@ void XmlRpcProcessor::Dispatch()
 		command->SetHttpMethod(m_eHttpMethod);
 		command->PrepareParams();
 		command->Execute();
-		SendResponse(command->GetResponse(), command->GetFault());
+		SendResponse(command->GetResponse(), command->GetCallbackFunc(), command->GetFault());
 		delete command;
 	}
 }
@@ -316,17 +316,17 @@ void XmlRpcProcessor::MutliCall()
 		command->SetProtocol(rpXmlRpc);
 		command->PrepareParams();
 		command->Execute();
-		SendResponse(command->GetResponse(), command->GetFault());
+		SendResponse(command->GetResponse(), "", command->GetFault());
 		delete command;
 	}
 	else
 	{
 		cStringBuilder.Append("</data></array>");
-		SendResponse(cStringBuilder.GetBuffer(), false);
+		SendResponse(cStringBuilder.GetBuffer(), "", false);
 	}
 }
 
-void XmlRpcProcessor::SendResponse(const char* szResponse, bool bFault)
+void XmlRpcProcessor::SendResponse(const char* szResponse, const char* szCallbackFunc, bool bFault)
 {
 	const char* XML_RESPONSE_HEADER = 
 		"HTTP/1.0 200 OK\r\n"
@@ -356,31 +356,46 @@ void XmlRpcProcessor::SendResponse(const char* szResponse, bool bFault)
 	const char JSON_FAULT_OPEN[] = "\"error\" : ";
 	const char JSON_FAULT_CLOSE[] = "";
 
+	const char JSONP_CALLBACK_HEADER[] = "(";
+	const char JSONP_CALLBACK_FOOTER[] = ")";
+
 	bool bXmlRpc = m_eProtocol == rpXmlRpc;
 
+	const char* szCallbackHeader = m_eProtocol == rpJsonPRpc ? JSONP_CALLBACK_HEADER : "";
 	const char* szHeader = bXmlRpc ? XML_HEADER : JSON_HEADER;
 	const char* szFooter = bXmlRpc ? XML_FOOTER : JSON_FOOTER;
 	const char* szOpenTag = bFault ? (bXmlRpc ? XML_FAULT_OPEN : JSON_FAULT_OPEN) : (bXmlRpc ? XML_OK_OPEN : JSON_OK_OPEN);
 	const char* szCloseTag = bFault ? (bXmlRpc ? XML_FAULT_CLOSE : JSON_FAULT_CLOSE ) : (bXmlRpc ? XML_OK_CLOSE : JSON_OK_CLOSE);
+	const char* szCallbackFooter = m_eProtocol == rpJsonPRpc ? JSONP_CALLBACK_FOOTER : "";
+
+	int iCallbackHeaderLen = (m_eProtocol == rpJsonPRpc ? sizeof(JSONP_CALLBACK_HEADER) - 1 : 0);
+	int iCallbackFuncLen = m_eProtocol == rpJsonPRpc ? strlen(szCallbackFunc) : 0;
 	int iHeaderLen = (bXmlRpc ? sizeof(XML_HEADER) : sizeof(JSON_HEADER)) - 1;
 	int iFooterLen = (bXmlRpc ? sizeof(XML_FOOTER) : sizeof(JSON_FOOTER)) - 1;
 	int iOpenTagLen = (bFault ? (bXmlRpc ? sizeof(XML_FAULT_OPEN) : sizeof(JSON_FAULT_OPEN)) : (bXmlRpc ? sizeof(XML_OK_OPEN) : sizeof(JSON_OK_OPEN))) - 1;
 	int iCloseTagLen = (bFault ? (bXmlRpc ? sizeof(XML_FAULT_CLOSE) : sizeof(JSON_FAULT_CLOSE)) : (bXmlRpc ? sizeof(XML_OK_CLOSE) : sizeof(JSON_OK_CLOSE))) - 1;
+	int iCallbackFooterLen = (m_eProtocol == rpJsonPRpc ? sizeof(JSONP_CALLBACK_FOOTER) - 1 : 0);
 
 	debug("Response=%s", szResponse);
 	int iResponseLen = strlen(szResponse);
 
 	char szResponseHeader[1024];
-	int iBodyLen = iResponseLen + iHeaderLen + iFooterLen + iOpenTagLen + iCloseTagLen;
+	int iBodyLen = iResponseLen + iCallbackFuncLen + iCallbackHeaderLen + iHeaderLen + iFooterLen + iOpenTagLen + iCloseTagLen + iCallbackFooterLen;
 	snprintf(szResponseHeader, 1024, bXmlRpc ? XML_RESPONSE_HEADER : JSON_RESPONSE_HEADER, iBodyLen, Util::VersionRevision());
 
 	// Send the request answer
 	m_pConnection->Send(szResponseHeader, strlen(szResponseHeader));
+	if (szCallbackFunc)
+	{
+		m_pConnection->Send(szCallbackFunc, iCallbackFuncLen);
+	}
+	m_pConnection->Send(szCallbackHeader, iCallbackHeaderLen);
 	m_pConnection->Send(szHeader, iHeaderLen);
 	m_pConnection->Send(szOpenTag, iOpenTagLen);
 	m_pConnection->Send(szResponse, iResponseLen);
 	m_pConnection->Send(szCloseTag, iCloseTagLen);
 	m_pConnection->Send(szFooter, iFooterLen);
+	m_pConnection->Send(szCallbackFooter, iCallbackFooterLen);
 }
 
 XmlCommand* XmlRpcProcessor::CreateCommand(const char* szMethodName)
@@ -483,8 +498,14 @@ XmlCommand::XmlCommand()
 {
 	m_szRequest = NULL;
 	m_szRequestPtr = NULL;
+	m_szCallbackFunc = NULL;
 	m_bFault = false;
 	m_eProtocol = XmlRpcProcessor::rpUndefined;
+}
+
+bool XmlCommand::IsJson()
+{ 
+	return m_eProtocol == XmlRpcProcessor::rpJsonRpc || m_eProtocol == XmlRpcProcessor::rpJsonPRpc;
 }
 
 void XmlCommand::AppendResponse(const char* szPart)
@@ -542,6 +563,11 @@ void XmlCommand::PrepareParams()
 		}
 		m_szRequestPtr = szParams + 8; // strlen("\"params\"")
 	}
+
+	if (m_eProtocol == XmlRpcProcessor::rpJsonPRpc)
+	{
+		NextParamAsStr(&m_szCallbackFunc);
+	}
 }
 
 bool XmlCommand::NextParamAsInt(int* iValue)
@@ -593,6 +619,30 @@ bool XmlCommand::NextParamAsBool(bool* bValue)
 {
 	if (m_eHttpMethod == XmlRpcProcessor::hmGet)
 	{
+		char* szParam;
+		if (!NextParamAsStr(&szParam))
+		{
+			return false;
+		}
+
+		if (IsJson())
+		{
+			if (!strcmp(szParam, "true"))
+			{
+				*bValue = true;
+				return true;
+			}
+			else if (!strcmp(szParam, "false"))
+			{
+				*bValue = false;
+				return true;
+			}
+		}
+		else
+		{
+			*bValue = szParam[0] == '1';
+			return true;
+		}
 		return false;
 	}
 	else if (IsJson())
@@ -638,7 +688,26 @@ bool XmlCommand::NextParamAsStr(char** szValue)
 {
 	if (m_eHttpMethod == XmlRpcProcessor::hmGet)
 	{
-		return false;
+		char* szParam = strchr(m_szRequestPtr, '=');
+		if (!szParam)
+		{
+			return false;
+		}
+		szParam++; // skip '='
+		int iLen = 0;
+		char* szParamEnd = strchr(m_szRequestPtr, '&');
+		if (szParamEnd)
+		{
+			iLen = (int)(szParamEnd - szParam);
+			szParam[iLen] = '\0';
+		}
+		else
+		{
+			iLen = strlen(szParam) - 1;
+		}
+		m_szRequestPtr = szParam + iLen + 1;
+		*szValue = szParam;
+		return true;
 	}
 	else if (IsJson())
 	{
@@ -691,6 +760,16 @@ char* XmlCommand::EncodeStr(const char* szStr)
 	}
 }
 
+bool XmlCommand::CheckSafeMethod()
+{
+	bool bSafe = m_eHttpMethod == XmlRpcProcessor::hmPost || m_eProtocol == XmlRpcProcessor::rpJsonPRpc;
+	if (!bSafe)
+	{
+		BuildErrorResponse(4, "Not safe procedure for HTTP-Method GET. Use Method POST instead");
+	}
+	return bSafe;
+}
+
 //*****************************************************************
 // Commands
 
@@ -714,9 +793,8 @@ PauseUnpauseXmlCommand::PauseUnpauseXmlCommand(bool bPause, EPauseAction eEPause
 
 void PauseUnpauseXmlCommand::Execute()
 {
-	if (m_eHttpMethod == XmlRpcProcessor::hmGet)
+	if (!CheckSafeMethod())
 	{
-		BuildErrorResponse(4, "Not safe procedure for HTTP-Method GET. Use Method POST instead");
 		return;
 	}
 
@@ -745,9 +823,8 @@ void PauseUnpauseXmlCommand::Execute()
 
 void ShutdownXmlCommand::Execute()
 {
-	if (m_eHttpMethod == XmlRpcProcessor::hmGet)
+	if (!CheckSafeMethod())
 	{
-		BuildErrorResponse(4, "Not safe procedure for HTTP-Method GET. Use Method POST instead");
 		return;
 	}
 
@@ -775,9 +852,8 @@ void DumpDebugXmlCommand::Execute()
 
 void SetDownloadRateXmlCommand::Execute()
 {
-	if (m_eHttpMethod == XmlRpcProcessor::hmGet)
+	if (!CheckSafeMethod())
 	{
-		BuildErrorResponse(4, "Not safe procedure for HTTP-Method GET. Use Method POST instead");
 		return;
 	}
 
@@ -1251,9 +1327,8 @@ EditCommandEntry EditCommandNameMap[] = {
 
 void EditQueueXmlCommand::Execute()
 {
-	if (m_eHttpMethod == XmlRpcProcessor::hmGet)
+	if (!CheckSafeMethod())
 	{
-		BuildErrorResponse(4, "Not safe procedure for HTTP-Method GET. Use Method POST instead");
 		return;
 	}
 
@@ -1328,9 +1403,8 @@ void EditQueueXmlCommand::Execute()
 
 void DownloadXmlCommand::Execute()
 {
-	if (m_eHttpMethod == XmlRpcProcessor::hmGet)
+	if (!CheckSafeMethod())
 	{
-		BuildErrorResponse(4, "Not safe procedure for HTTP-Method GET. Use Method POST instead");
 		return;
 	}
 
@@ -1554,9 +1628,8 @@ void PostQueueXmlCommand::Execute()
 
 void WriteLogXmlCommand::Execute()
 {
-	if (m_eHttpMethod == XmlRpcProcessor::hmGet)
+	if (!CheckSafeMethod())
 	{
-		BuildErrorResponse(4, "Not safe procedure for HTTP-Method GET. Use Method POST instead");
 		return;
 	}
 
@@ -1605,9 +1678,8 @@ void WriteLogXmlCommand::Execute()
 
 void ScanXmlCommand::Execute()
 {
-	if (m_eHttpMethod == XmlRpcProcessor::hmGet)
+	if (!CheckSafeMethod())
 	{
-		BuildErrorResponse(4, "Not safe procedure for HTTP-Method GET. Use Method POST instead");
 		return;
 	}
 
