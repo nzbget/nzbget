@@ -164,7 +164,8 @@ void XmlRpcProcessor::Execute()
 
 	if (strlen(szAuthInfo) == 0)
 	{
-		error("invalid-request: not authorized");
+		warn("rpc-request received on port %i from %s, but username/password were not submitted", g_pOptions->GetServerPort(), m_szClientIP);
+		SendAuthResponse();
 		return;
 	}
 
@@ -174,6 +175,7 @@ void XmlRpcProcessor::Execute()
 	if (strcmp(szAuthInfo, "nzbget") || strcmp(pw, g_pOptions->GetServerPassword()))
 	{
 		warn("rpc-request received on port %i from %s, but password invalid", g_pOptions->GetServerPort(), m_szClientIP);
+		SendAuthResponse();
 		return;
 	}
 
@@ -324,6 +326,24 @@ void XmlRpcProcessor::MutliCall()
 		cStringBuilder.Append("</data></array>");
 		SendResponse(cStringBuilder.GetBuffer(), "", false);
 	}
+}
+
+void XmlRpcProcessor::SendAuthResponse()
+{
+	const char* AUTH_RESPONSE_HEADER =
+		"HTTP/1.0 401 Unauthorized\r\n"
+		"WWW-Authenticate: Basic\r\n"
+		"Connection: close\r\n"
+		"Content-Length: %i\r\n"
+		"Content-Type: text/plain\r\n"
+		"Server: nzbget-%s\r\n"
+		"\r\n";
+	char szResponseHeader[1024];
+	snprintf(szResponseHeader, 1024, AUTH_RESPONSE_HEADER, sizeof(AUTH_RESPONSE_HEADER), Util::VersionRevision());
+	 
+	// Send the request answer
+	debug("ResponseHeader=%s", szResponseHeader);
+	m_pConnection->Send(szResponseHeader, strlen(szResponseHeader));
 }
 
 void XmlRpcProcessor::SendResponse(const char* szResponse, const char* szCallbackFunc, bool bFault)
