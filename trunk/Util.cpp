@@ -499,27 +499,27 @@ unsigned int Util::DecodeBase64(char* szInputBuffer, int iInputBufferLength, cha
 	unsigned int InputBufferLength = iInputBufferLength > 0 ? iInputBufferLength : strlen(szInputBuffer);
 
 	char ByteQuartet [4];
-
+	int i = 0;
 	while (InputBufferIndex < InputBufferLength)
 	{
-		for (int i = 0; i < 4; i++)
+		// Ignore all characters except the ones in BASE64_ALPHABET
+		if ((szInputBuffer [InputBufferIndex] >= 48 && szInputBuffer [InputBufferIndex] <=  57) ||
+			(szInputBuffer [InputBufferIndex] >= 65 && szInputBuffer [InputBufferIndex] <=  90) ||
+			(szInputBuffer [InputBufferIndex] >= 97 && szInputBuffer [InputBufferIndex] <= 122) ||
+			szInputBuffer [InputBufferIndex] == '+' || 
+			szInputBuffer [InputBufferIndex] == '/' || 
+			szInputBuffer [InputBufferIndex] == '=')
 		{
-			ByteQuartet [i] = szInputBuffer[InputBufferIndex];
-
-			// Ignore all characters except the ones in BASE64_ALPHABET
-			if (!((ByteQuartet [i] >= 48 && ByteQuartet [i] <=  57) ||
-				(ByteQuartet [i] >= 65 && ByteQuartet [i] <=  90) ||
-				(ByteQuartet [i] >= 97 && ByteQuartet [i] <= 122) ||
-				 ByteQuartet [i] == '+' || ByteQuartet [i] == '/' || ByteQuartet [i] == '='))
-			{
-				// Invalid character
-				i--;
-			}
-
-			InputBufferIndex++;
+			ByteQuartet [i] = szInputBuffer [InputBufferIndex];
+			i++;
 		}
-
-		OutputBufferIndex += DecodeByteQuartet(ByteQuartet, szOutputBuffer + OutputBufferIndex);
+		
+		InputBufferIndex++;
+		
+		if (i == 4) {
+			OutputBufferIndex += DecodeByteQuartet(ByteQuartet, szOutputBuffer + OutputBufferIndex);
+			i = 0;
+		}
 	}
 
 	// OutputBufferIndex gives us the next position of the next decoded character
