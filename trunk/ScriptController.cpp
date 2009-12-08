@@ -758,14 +758,20 @@ void PostScriptController::AddMessage(Message::EKind eKind, bool bDefaultKind, O
 		{
 			m_pPostInfo->GetNZBInfo()->AppendMessage(eKind, 0, szText + 10);
 		}
-		return;
+	}
+	else
+	{
+		ScriptController::AddMessage(eKind, bDefaultKind, eMessageTarget, szText);
+
+		if (eMessageTarget == Options::mtScreen || eMessageTarget == Options::mtBoth)
+		{
+			m_pPostInfo->AppendMessage(eKind, szText);
+		}
 	}
 
-	ScriptController::AddMessage(eKind, bDefaultKind, eMessageTarget, szText);
-
-	if (eMessageTarget == Options::mtScreen || eMessageTarget == Options::mtBoth)
+	while (g_pOptions->GetPausePostProcess() && !IsStopped())
 	{
-		m_pPostInfo->AppendMessage(eKind, szText);
+		usleep(100 * 1000);
 	}
 }
 
