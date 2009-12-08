@@ -393,7 +393,7 @@ ArticleDownloader::EStatus ArticleDownloader::Download()
 		        (g_pDownloadSpeedMeter->CalcCurrentDownloadSpeed() > g_pOptions->GetDownloadRate()))
 		{
 			SetLastUpdateTimeNow();
-			usleep(200 * 1000);
+			usleep(10 * 1000);
 		}
 
 		int iLen = 0;
