@@ -1332,6 +1332,11 @@ void PrePostProcessor::UpdateParProgress()
 	}
 
 	g_pQueueCoordinator->UnlockQueue();
+
+	while (g_pOptions->GetPausePostProcess() && !IsStopped())
+	{
+		usleep(100 * 1000);
+	}
 }
 
 #endif
