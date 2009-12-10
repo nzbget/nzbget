@@ -1479,7 +1479,7 @@ void DownloadXmlCommand::Execute()
 	szFileContent[iLen] = '\0';
 	//debug("FileContent=%s", szFileContent);
 
-	NZBFile* pNZBFile = NZBFile::CreateFromBuffer(szFileName, szCategory, szFileContent, iLen);
+	NZBFile* pNZBFile = NZBFile::CreateFromBuffer(szFileName, szCategory, szFileContent, iLen + 1);
 
 	if (pNZBFile)
 	{
