@@ -16,7 +16,8 @@ EXTRA_DIST = nzbget.conf.example postprocess-example.sh postprocess-example.conf
 	win32.h NTService.cpp NTService.h \
 	libpar2-0.2-bugfixes.patch libpar2-0.2-cancel.patch \
 	libpar2-0.2-MSVC8.patch libsigc++-2.0.18-MSVC8.patch \
-	Makefile.cvs nzbget.kdevelop nzbget.sln nzbget.vcproj
+	Makefile.cvs nzbget.kdevelop nzbget.sln nzbget.vcproj \
+	nzbgetd nzbget-shell.bat
 
 # Determining subversion revision:
 # 1) If directory ".svn" exists we take revision from it using program svnversion (part of subversion package)
