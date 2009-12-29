@@ -447,10 +447,6 @@ void ProcessClientRequest()
 			Client->RequestServerPauseUnpause(false, eRemotePauseUnpauseActionScan);
 			break;
 
-		case Options::opClientRequestHistory:
-			Client->RequestHistory();
-			break;
-
 		case Options::opClientNoOperation:
 			break;
 	}
@@ -650,6 +646,7 @@ void Cleanup()
 	{
 		if (g_pOptions->GetDaemonMode())
 		{
+			info("Deleting lock file");
 			remove(g_pOptions->GetLockFile());
 		}
 		delete g_pOptions;
@@ -710,6 +707,7 @@ void Daemonize()
 		struct passwd *pw = getpwnam(g_pOptions->GetDaemonUserName());
 		if (pw)
 		{
+			fchown(lfp, pw->pw_uid, pw->pw_gid); /* change owner of lock file  */
 			setgroups( 0, (const gid_t*) 0 ); /* Set aux groups to null. */
 			setgid(pw->pw_gid); /* Set primary group. */
 			/* Try setting aux groups correctly - not critical if this fails. */
