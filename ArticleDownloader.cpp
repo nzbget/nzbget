@@ -135,7 +135,7 @@ void ArticleDownloader::Run()
 		}
 	}
 
-	int iRemainedDownloadRetries = g_pOptions->GetRetries();
+	int iRemainedDownloadRetries = g_pOptions->GetRetries() > 0 ? g_pOptions->GetRetries() : 1;
 
 #ifdef THREADCONNECT_WORKAROUND
 	// NOTE: about iRemainedConnectRetries:
