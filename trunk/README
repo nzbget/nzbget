@@ -279,6 +279,12 @@ options via command-line.
 NZBGet can be used in either standalone mode which downloads a single file 
 or as a server which is able to queue up numerous download requests.
 
+TIP for Windows users: NZBGet is controlled via various command line
+parameters. For easier using there is a simple shell script included
+in "nzbget-shell.bat". Start this script from Windows Explorer and you will
+be running a command shell with PATH adjusted to find NZBGet executable.
+Then you can type all commands without full path to nzbget.exe.
+
 Standalone mode:
 ----------------
 
@@ -306,10 +312,16 @@ To stop server use:
 
   nzbget -Q  
 
-Depending on which frontend has been selected in the nzbget.conf file
-(option "outputmode") the server should display a message that
-it is ready to receive download requests (this applies only to console
-mode, not to daemon mode).
+TIP for POSIX users: with included script "nzbgetd" you can use standard
+commands to control daemon:
+
+  nzbgetd start
+  nzbgetd stop
+  etc.
+
+When NZBGet is started in console server mode it displays a message that
+it is ready to receive download requests. In daemon mode it doesn't print any
+messages to console since it runs in background.
 
 When the server is running it is possible to queue up downloads. This can be
 done either in terminal with "nzbget -A <nzb-file>" or by uploading
