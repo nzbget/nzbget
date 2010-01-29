@@ -447,6 +447,10 @@ void ProcessClientRequest()
 			Client->RequestServerPauseUnpause(false, eRemotePauseUnpauseActionScan);
 			break;
 
+		case Options::opClientRequestHistory:	 
+			Client->RequestHistory();	 
+			break;
+
 		case Options::opClientNoOperation:
 			break;
 	}
