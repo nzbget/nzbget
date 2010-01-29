@@ -2,7 +2,7 @@
  *  This file is part of nzbget
  *
  *  Copyright (C) 2004 Sven Henkel <sidddy@users.sourceforge.net>
- *  Copyright (C) 2007-2009 Andrei Prygounkov <hugbug@users.sourceforge.net>
+ *  Copyright (C) 2007-2010 Andrei Prygounkov <hugbug@users.sourceforge.net>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -75,6 +75,42 @@ void NZBParameter::SetValue(const char* szValue)
 		free(m_szValue);
 	}
 	m_szValue = strdup(szValue);
+}
+
+
+void NZBParameterList::SetParameter(const char* szName, const char* szValue)
+{
+	NZBParameter* pParameter = NULL;
+	bool bDelete = !szValue || !*szValue;
+
+	for (iterator it = begin(); it != end(); it++)
+	{
+		NZBParameter* pLookupParameter = *it;
+		if (!strcmp(pLookupParameter->GetName(), szName))
+		{
+			if (bDelete)
+			{
+				delete pLookupParameter;
+				erase(it);
+				return;
+			}
+			pParameter = pLookupParameter;
+			break;
+		}
+	}
+
+	if (bDelete)
+	{
+		return;
+	}
+
+	if (!pParameter)
+	{
+		pParameter = new NZBParameter(szName);
+		push_back(pParameter);
+	}
+
+	pParameter->SetValue(szValue);
 }
 
 
@@ -298,37 +334,7 @@ void NZBInfo::BuildDestDirName()
 
 void NZBInfo::SetParameter(const char* szName, const char* szValue)
 {
-	NZBParameter* pParameter = NULL;
-	bool bDelete = !szValue || !*szValue;
-
-	for (NZBParameterList::iterator it = m_ppParameters.begin(); it != m_ppParameters.end(); it++)
-	{
-		NZBParameter* pLookupParameter = *it;
-		if (!strcmp(pLookupParameter->GetName(), szName))
-		{
-			if (bDelete)
-			{
-				delete pLookupParameter;
-				m_ppParameters.erase(it);
-				return;
-			}
-			pParameter = pLookupParameter;
-			break;
-		}
-	}
-
-	if (bDelete)
-	{
-		return;
-	}
-
-	if (!pParameter)
-	{
-		pParameter = new NZBParameter(szName);
-		m_ppParameters.push_back(pParameter);
-	}
-
-	pParameter->SetValue(szValue);
+	m_ppParameters.SetParameter(szName, szValue);
 }
 
 NZBInfo::Messages* NZBInfo::LockMessages()

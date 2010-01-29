@@ -1,7 +1,7 @@
 /*
  *  This file is part of nzbget
  *
- *  Copyright (C) 2007-2009 Andrei Prygounkov <hugbug@users.sourceforge.net>
+ *  Copyright (C) 2007-2010 Andrei Prygounkov <hugbug@users.sourceforge.net>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -268,11 +268,14 @@ void Scanner::ProcessIncomingFile(const char* szDirectory, const char* szBaseFil
 		return;
 	}
 
+	char* szNZBCategory = strdup(szCategory);
+	NZBParameterList* pParameterList = new NZBParameterList;
+
 	bool bExists = true;
 
 	if (m_bNZBScript && strcasecmp(szExtension, ".nzb_processed"))
 	{
-		NZBScriptController::ExecuteScript(g_pOptions->GetNZBProcess(), szFullFilename, szDirectory); 
+		NZBScriptController::ExecuteScript(g_pOptions->GetNZBProcess(), szFullFilename, szDirectory, &szNZBCategory, pParameterList); 
 		bExists = Util::FileExists(szFullFilename);
 		if (bExists && strcasecmp(szExtension, ".nzb"))
 		{
@@ -289,61 +292,66 @@ void Scanner::ProcessIncomingFile(const char* szDirectory, const char* szBaseFil
 	{
 		char szRenamedName[1024];
 		bool bRenameOK = Util::RenameBak(szFullFilename, "nzb", true, szRenamedName, 1024);
-		if (!bRenameOK)
+		if (bRenameOK)
+		{
+			AddFileToQueue(szRenamedName, szNZBCategory, pParameterList);
+		}
+		else
 		{
 			error("Could not rename file %s to %s! Errcode: %i", szFullFilename, szRenamedName, errno);
-			return;
 		}
-		AddFileToQueue(szRenamedName, szCategory);
 	}
 	else if (bExists && !strcasecmp(szExtension, ".nzb"))
 	{
-		AddFileToQueue(szFullFilename, szCategory);
+		AddFileToQueue(szFullFilename, szNZBCategory, pParameterList);
 	}
+
+	for (NZBParameterList::iterator it = pParameterList->begin(); it != pParameterList->end(); it++)
+	{
+		delete *it;
+	}
+	pParameterList->clear();
+	delete pParameterList;
+
+	free(szNZBCategory);
 }
 
-void Scanner::AddFileToQueue(const char* szFilename, const char* szCategory)
+void Scanner::AddFileToQueue(const char* szFilename, const char* szCategory, NZBParameterList* pParameterList)
 {
 	const char* szBasename = Util::BaseFileName(szFilename);
 
 	info("Collection %s found", szBasename);
 
-	bool bAdded = g_pQueueCoordinator->AddFileToQueue(szFilename, szCategory);
-	if (bAdded)
-	{
-		info("Collection %s added to queue", szBasename);
-	}
-	else
+	NZBFile* pNZBFile = NZBFile::CreateFromFile(szFilename, szCategory);
+	if (!pNZBFile)
 	{
 		error("Could not add collection %s to queue", szBasename);
 	}
 
 	char bakname2[1024];
-	bool bRenameOK = Util::RenameBak(szFilename, bAdded ? "queued" : "error", false, bakname2, 1024);
+	bool bRenameOK = Util::RenameBak(szFilename, pNZBFile ? "queued" : "error", false, bakname2, 1024);
 	if (!bRenameOK)
 	{
 		error("Could not rename file %s to %s! Errcode: %i", szFilename, bakname2, errno);
 	}
 
-	if (bAdded && bRenameOK)
+	if (pNZBFile && bRenameOK)
 	{
-		// find just added item in queue and save bakname2 into NZBInfo.QueuedFileName
-		DownloadQueue* pDownloadQueue = g_pQueueCoordinator->LockQueue();
-		for (FileQueue::reverse_iterator it = pDownloadQueue->GetFileQueue()->rbegin(); it != pDownloadQueue->GetFileQueue()->rend(); it++)
+		pNZBFile->GetNZBInfo()->SetQueuedFilename(bakname2);
+
+		for (NZBParameterList::iterator it = pParameterList->begin(); it != pParameterList->end(); it++)
 		{
-			FileInfo* pFileInfo = *it;
-			if (!strcmp(pFileInfo->GetNZBInfo()->GetFilename(), szFilename) && 
-				strlen(pFileInfo->GetNZBInfo()->GetQueuedFilename()) == 0)
-			{
-				pFileInfo->GetNZBInfo()->SetQueuedFilename(bakname2);
-				if (g_pOptions->GetSaveQueue() && g_pOptions->GetServerMode())
-				{
-					g_pDiskState->SaveDownloadQueue(pDownloadQueue);
-				}
-				break;
-			}
+			NZBParameter* pParameter = *it;
+			pNZBFile->GetNZBInfo()->SetParameter(pParameter->GetName(), pParameter->GetValue());
 		}
-		g_pQueueCoordinator->UnlockQueue();
+
+		g_pQueueCoordinator->AddNZBFileToQueue(pNZBFile, false);
+		info("Collection %s added to queue", szBasename);
+	}
+
+	if (pNZBFile)
+	{
+		delete pNZBFile;
 	}
 }
 

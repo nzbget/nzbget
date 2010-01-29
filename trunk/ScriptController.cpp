@@ -1,7 +1,7 @@
 /*
  *  This file is part of nzbget
  *
- *  Copyright (C) 2007-2009 Andrei Prygounkov <hugbug@users.sourceforge.net>
+ *  Copyright (C) 2007-2010 Andrei Prygounkov <hugbug@users.sourceforge.net>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -782,12 +782,15 @@ void PostScriptController::Stop()
 	Terminate();
 }
 
-void NZBScriptController::ExecuteScript(const char* szScript, const char* szNZBFilename, const char* szDirectory)
+void NZBScriptController::ExecuteScript(const char* szScript, const char* szNZBFilename, 
+	const char* szDirectory, char** pCategory, NZBParameterList* pParameterList)
 {
 	info("Executing nzb-process-script for %s", Util::BaseFileName(szNZBFilename));
 
 	NZBScriptController* pScriptController = new NZBScriptController();
 	pScriptController->SetScript(szScript);
+	pScriptController->m_pCategory = pCategory;
+	pScriptController->m_pParameterList = pParameterList;
 
 	char szInfoName[1024];
 	snprintf(szInfoName, 1024, "nzb-process-script for %s", Util::BaseFileName(szNZBFilename));
@@ -820,6 +823,42 @@ void NZBScriptController::ExecuteScript(const char* szScript, const char* szNZBF
 	pScriptController->Execute();
 
 	delete pScriptController;
+}
+
+void NZBScriptController::AddMessage(Message::EKind eKind, bool bDefaultKind, Options::EMessageTarget eMessageTarget, const char* szText)
+{
+	if (!strncmp(szText, "[NZB] ", 6))
+	{
+		debug("Command %s detected", szText + 6);
+		if (!strncmp(szText + 6, "CATEGORY=", 9))
+		{
+			free(*m_pCategory);
+			*m_pCategory = strdup(szText + 6 + 9);
+		}
+		else if (!strncmp(szText + 6, "NZBPR_", 6))
+		{
+			char* szParam = strdup(szText + 6 + 6);
+			char* szValue = strchr(szParam, '=');
+			if (szValue)
+			{
+				*szValue = '\0';
+				m_pParameterList->SetParameter(szParam, szValue + 1);
+			}
+			else
+			{
+				error("Invalid command \"%s\" received from %s", szText, GetInfoName());
+			}
+			free(szParam);
+		}
+		else
+		{
+			error("Invalid command \"%s\" received from %s", szText, GetInfoName());
+		}
+	}
+	else
+	{
+		ScriptController::AddMessage(eKind, bDefaultKind, eMessageTarget, szText);
+	}
 }
 
 void SchedulerScriptController::StartScript(const char* szCommandLine)

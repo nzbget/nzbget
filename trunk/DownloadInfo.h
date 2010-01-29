@@ -2,7 +2,7 @@
  *  This file is part of nzbget
  *
  *  Copyright (C) 2004 Sven Henkel <sidddy@users.sourceforge.net>
- *  Copyright (C) 2007-2009 Andrei Prygounkov <hugbug@users.sourceforge.net>
+ *  Copyright (C) 2007-2010 Andrei Prygounkov <hugbug@users.sourceforge.net>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -174,8 +174,7 @@ private:
 
 	void				SetValue(const char* szValue);
 
-	friend class NZBInfo;
-	friend class PostInfo;
+	friend class NZBParameterList;
 
 public:
 						NZBParameter(const char* szName);
@@ -184,7 +183,13 @@ public:
 	const char*			GetValue() { return m_szValue; }
 };
 
-typedef std::deque<NZBParameter*> NZBParameterList;
+typedef std::deque<NZBParameter*> NZBParameterListBase;
+
+class NZBParameterList : public NZBParameterListBase
+{
+public:
+	void				SetParameter(const char* szName, const char* szValue);
+};
 
 class NZBInfoList;
 

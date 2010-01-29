@@ -179,8 +179,9 @@ MergeNzb=no
 #
 # Example: "NzbProcess=~/nzbprocess.sh".
 #
-# That program can unpack archives put in incoming directory, make
-# filename cleanup or something else.
+# That program can unpack archives which were put in incoming directory, make
+# filename cleanup, assign category and post-processing parameters to nzb-file
+# or do something else.
 #
 # NZBGet passes following arguments to nzbprocess-program as environment
 # variables:
@@ -196,11 +197,23 @@ MergeNzb=no
 # "SERVER1_HOST". For options with predefined possible values (yes/no, etc.)
 # the values are passed always in lower case.
 #
+# The nzbprocess-script can assign category or post-processing parameters
+# to current nzb-file by printing special messages into standard output
+# (which is processed by NZBGet).
+#
+# To assign category use following syntax:
+#   echo "[NZB] CATEGORY=my category";
+#
+# To assign post-processing parameters:
+#   echo "[NZB] NZBPR_myvar=my value";
+#
+# The prefix "NZBPR_" will be removed. In this example a post-processing
+# parameter with name "myvar" and value "my value" will be associated
+# with nzb-file.
+#
 # The nzbprocess-script can delete processed file, rename it or move somewhere.
 # After the calling of the script the file will be either added to queue 
 # (if it was an nzb-file) or renamed by adding the extension ".processed".
-# Unpacked files will be checked on next directory scan (see option 
-# <NzbDirInterval>).
 #
 # NOTE: Files with extensions ".processed", ".queued" and ".error" are skipped
 # during the directory scanning.

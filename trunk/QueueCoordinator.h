@@ -2,7 +2,7 @@
  *  This file is part of nzbget
  *
  *  Copyright (C) 2004 Sven Henkel <sidddy@users.sourceforge.net>
- *  Copyright (C) 2007-2009 Andrei Prygounkov <hugbug@users.sourceforge.net>
+ *  Copyright (C) 2007-2010 Andrei Prygounkov <hugbug@users.sourceforge.net>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -109,7 +109,6 @@ public:
 	DownloadQueue*			LockQueue();
 	void					UnlockQueue() ;
 	void					AddNZBFileToQueue(NZBFile* pNZBFile, bool bAddFirst);
-	bool					AddFileToQueue(const char* szFileName, const char* szCategory);
 	bool					HasMoreJobs() { return m_bHasMoreJobs; }
 	bool					GetStandBy() { return m_bStandBy; }
 	bool					DeleteQueueEntry(FileInfo* pFileInfo);
