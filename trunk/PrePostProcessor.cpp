@@ -1,7 +1,7 @@
 /*
  *  This file is part of nzbget
  *
- *  Copyright (C) 2007-2009 Andrei Prygounkov <hugbug@users.sourceforge.net>
+ *  Copyright (C) 2007-2010 Andrei Prygounkov <hugbug@users.sourceforge.net>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -1655,6 +1655,7 @@ bool PrePostProcessor::HistoryReturn(IDList* pIDList, bool bReprocess)
 				pNZBInfo->SetPostProcess(false);
 				pNZBInfo->SetParStatus(NZBInfo::prNone);
 				pNZBInfo->SetParCleanup(false);
+				pNZBInfo->SetScriptStatus(NZBInfo::srNone);
 				pNZBInfo->SetHistoryTime(0);
 				pNZBInfo->SetParkedFileCount(0);
 
