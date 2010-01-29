@@ -2,7 +2,7 @@
  *  This file is part of nzbget
  *
  *  Copyright (C) 2005 Bo Cordes Petersen <placebodk@users.sourceforge.net>
- *  Copyright (C) 2007-2009 Andrei Prygounkov <hugbug@users.sourceforge.net>
+ *  Copyright (C) 2007-2010 Andrei Prygounkov <hugbug@users.sourceforge.net>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -289,25 +289,6 @@ void QueueCoordinator::AddNZBFileToQueue(NZBFile* pNZBFile, bool bAddFirst)
 	}
 
 	m_mutexDownloadQueue.Unlock();
-}
-
-bool QueueCoordinator::AddFileToQueue(const char* szFileName, const char* szCategory)
-{
-	// Parse the buffer and make it into a NZBFile
-	NZBFile* pNZBFile = NZBFile::CreateFromFile(szFileName, szCategory);
-
-	// Did file parse correctly?
-	if (!pNZBFile)
-	{
-		return false;
-	}
-
-	// Add NZBFile to Queue
-	AddNZBFileToQueue(pNZBFile, false);
-
-	delete pNZBFile;
-
-	return true;
 }
 
 /*

@@ -1,7 +1,7 @@
 /*
  *  This file is part of nzbget
  *
- *  Copyright (C) 2007-2009 Andrei Prygounkov <hugbug@users.sourceforge.net>
+ *  Copyright (C) 2007-2010 Andrei Prygounkov <hugbug@users.sourceforge.net>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -87,6 +87,7 @@ public:
 	void				SetWorkingDir(const char* szWorkingDir) { m_szWorkingDir = szWorkingDir; }
 	void				SetArgs(const char** szArgs, bool bFreeArgs) { m_szArgs = szArgs; m_bFreeArgs = bFreeArgs; }
 	void				SetInfoName(const char* szInfoName) { m_szInfoName = szInfoName; }
+	const char*			GetInfoName() { return m_szInfoName; }
 	void				SetDefaultKindPrefix(const char* szDefaultKindPrefix) { m_szDefaultKindPrefix = szDefaultKindPrefix; }
 	void				SetDefaultLogKind(Options::EScriptLogKind eDefaultLogKind) { m_eDefaultLogKind = eDefaultLogKind; }
 	void				SetEnvVar(const char* szName, const char* szValue);
@@ -111,8 +112,15 @@ public:
 
 class NZBScriptController : public ScriptController
 {
+private:
+	char**				m_pCategory;
+	NZBParameterList*	m_pParameterList;
+
+protected:
+	virtual void		AddMessage(Message::EKind eKind, bool bDefaultKind, Options::EMessageTarget eMessageTarget, const char* szText);
+
 public:
-	static void			ExecuteScript(const char* szScript, const char* szNZBFilename, const char* szDirectory);
+	static void			ExecuteScript(const char* szScript, const char* szNZBFilename, const char* szDirectory, char** pCategory, NZBParameterList* pParameterList);
 };
 
 class SchedulerScriptController : public Thread, ScriptController

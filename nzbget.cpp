@@ -2,7 +2,7 @@
  *  This file is part of nzbget
  *
  *  Copyright (C) 2004 Sven Henkel <sidddy@users.sourceforge.net>
- *  Copyright (C) 2007-2009 Andrei Prygounkov <hugbug@users.sourceforge.net>
+ *  Copyright (C) 2007-2010 Andrei Prygounkov <hugbug@users.sourceforge.net>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -290,10 +290,16 @@ void Run()
 	if (!g_pOptions->GetRemoteClientMode())
 	{
 		// Standalone-mode
-		if (!g_pOptions->GetServerMode() && !g_pQueueCoordinator->AddFileToQueue(g_pOptions->GetArgFilename(), g_pOptions->GetCategory() ? g_pOptions->GetCategory() : ""))
+		if (!g_pOptions->GetServerMode())
 		{
-			abort("FATAL ERROR: Parsing NZB-document %s failed\n\n", g_pOptions->GetArgFilename() ? g_pOptions->GetArgFilename() : "N/A");
-			return;
+			NZBFile* pNZBFile = NZBFile::CreateFromFile(g_pOptions->GetArgFilename(), g_pOptions->GetCategory() ? g_pOptions->GetCategory() : "");
+			if (!pNZBFile)
+			{
+				abort("FATAL ERROR: Parsing NZB-document %s failed\n\n", g_pOptions->GetArgFilename() ? g_pOptions->GetArgFilename() : "N/A");
+				return;
+			}
+			g_pQueueCoordinator->AddNZBFileToQueue(pNZBFile, false);
+			delete pNZBFile;
 		}
 
 		if (g_pOptions->GetSaveQueue() && g_pOptions->GetServerMode())

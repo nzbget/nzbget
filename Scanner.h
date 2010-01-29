@@ -1,7 +1,7 @@
 /*
  *  This file is part of nzbget
  *
- *  Copyright (C) 2007-2009 Andrei Prygounkov <hugbug@users.sourceforge.net>
+ *  Copyright (C) 2007-2010 Andrei Prygounkov <hugbug@users.sourceforge.net>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -28,6 +28,7 @@
 
 #include <deque>
 #include <time.h>
+#include "DownloadInfo.h"
 
 class Scanner
 {
@@ -59,7 +60,7 @@ private:
 	FileList			m_FileList;
 
 	void				CheckIncomingNZBs(const char* szDirectory, const char* szCategory, bool bCheckStat);
-	void				AddFileToQueue(const char* szFilename, const char* szCategory);
+	void				AddFileToQueue(const char* szFilename, const char* szCategory, NZBParameterList* pParameterList);
 	void				ProcessIncomingFile(const char* szDirectory, const char* szBaseFilename, const char* szFullFilename, const char* szCategory);
 	bool				CanProcessFile(const char* szFullFilename, bool bCheckStat);
 	void				DropOldFiles();
