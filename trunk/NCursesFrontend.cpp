@@ -1,8 +1,8 @@
 /*
  *  This file is part of nzbget
  *
- *  Copyright (C) 2004  Sven Henkel <sidddy@users.sourceforge.net>
- *  Copyright (C) 2007-2009 Andrei Prygounkov <hugbug@users.sourceforge.net>
+ *  Copyright (C) 2004 Sven Henkel <sidddy@users.sourceforge.net>
+ *  Copyright (C) 2007-2010 Andrei Prygounkov <hugbug@users.sourceforge.net>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -614,7 +614,7 @@ void NCursesFrontend::PrintStatus()
     timeString[0] = '\0';
 
 	float fCurrentDownloadSpeed = m_bStandBy ? 0 : m_fCurrentDownloadSpeed;
-    if (fCurrentDownloadSpeed > 0.0 && !m_bPause)
+    if (fCurrentDownloadSpeed > 0.0 && !(m_bPauseDownload || m_bPauseDownload2))
     {
         long long remain_sec = (long long)(m_lRemainingSize / (fCurrentDownloadSpeed * 1024));
 		int h = (int)(remain_sec / 3600);
@@ -645,11 +645,13 @@ void NCursesFrontend::PrintStatus()
 
 	float fAverageSpeed = (float)(Util::Int64ToFloat(m_iDnTimeSec > 0 ? m_iAllBytes / m_iDnTimeSec : 0) / 1024.0);
 
-	snprintf(tmp, MAX_SCREEN_WIDTH, " %d threads, %.*f KB/s, %.2f MB remaining%s%s%s%s, Avg. %.*f KB/s", 
+	snprintf(tmp, MAX_SCREEN_WIDTH, " %d threads, %.*f KB/s, %.2f MB remaining%s%s%s%s%s, Avg. %.*f KB/s", 
 		m_iThreadCount, (fCurrentDownloadSpeed >= 10 ? 0 : 1), fCurrentDownloadSpeed, 
-		(float)(Util::Int64ToFloat(m_lRemainingSize) / 1024.0 / 1024.0), timeString, 
-		szPostStatus, m_bPause ? (m_bStandBy ? ", Paused" : ", Pausing") : "", szDownloadLimit, 
-		(fAverageSpeed >= 10 ? 0 : 1), fAverageSpeed);
+		(float)(Util::Int64ToFloat(m_lRemainingSize) / 1024.0 / 1024.0), timeString, szPostStatus, 
+		m_bPauseDownload || m_bPauseDownload2 ? (m_bStandBy ? ", Paused" : ", Pausing") : "",
+		m_bPauseDownload || m_bPauseDownload2 ? 
+			(m_bPauseDownload && m_bPauseDownload2 ? " (+2)" : m_bPauseDownload2 ? " (2)" : "") : "",
+		szDownloadLimit, (fAverageSpeed >= 10 ? 0 : 1), fAverageSpeed);
 	tmp[MAX_SCREEN_WIDTH - 1] = '\0';
     PlotLine(tmp, iStatusRow, 0, NCURSES_COLORPAIR_STATUS);
 }
@@ -1039,7 +1041,7 @@ void NCursesFrontend::PrintGroupname(GroupInfo * pGroupInfo, int iRow, bool bSel
 			snprintf(szTime, 100, "[paused]");
 			Util::FormatFileSize(szRemaining, sizeof(szRemaining), pGroupInfo->GetRemainingSize());
 		}
-		else if (fCurrentDownloadSpeed > 0.0 && !m_bPause)
+		else if (fCurrentDownloadSpeed > 0.0 && !(m_bPauseDownload || m_bPauseDownload2))
 		{
 			long long remain_sec = (long long)(lUnpausedRemainingSize / (fCurrentDownloadSpeed * 1024));
 			int h = (int)(remain_sec / 3600);
@@ -1273,9 +1275,9 @@ void NCursesFrontend::UpdateInput(int initialKey)
 				// Key 'p' for pause
 				if (!IsRemoteMode())
 				{
-					info(m_bPause ? "Unpausing download" : "Pausing download");
+					info(m_bPauseDownload || m_bPauseDownload2 ? "Unpausing download" : "Pausing download");
 				}
-				ServerPauseUnpause(!m_bPause);
+				ServerPauseUnpause(!(m_bPauseDownload || m_bPauseDownload2), m_bPauseDownload2 && !m_bPauseDownload);
 				break;
 			case '\'':
 				ServerDumpDebug();

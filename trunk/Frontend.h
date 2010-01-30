@@ -2,7 +2,7 @@
  *  This file is part of nzbget
  *
  *  Copyright (C) 2004 Sven Henkel <sidddy@users.sourceforge.net>
- *  Copyright (C) 2007-209 Andrei Prygounkov <hugbug@users.sourceforge.net>
+ *  Copyright (C) 2007-2010 Andrei Prygounkov <hugbug@users.sourceforge.net>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -52,7 +52,8 @@ protected:
 	// summary
 	float				m_fCurrentDownloadSpeed;
 	long long 			m_lRemainingSize;
-	bool				m_bPause;
+	bool				m_bPauseDownload;
+	bool				m_bPauseDownload2;
 	float				m_fDownloadLimit;
 	int					m_iThreadCount;
 	int					m_iPostJobCount;
@@ -69,8 +70,8 @@ protected:
 	void				UnlockQueue();
 	bool				IsRemoteMode();
 	void				InitMessageBase(SNZBRequestBase* pMessageBase, int iRequest, int iSize);
-	void				ServerPauseUnpause(bool bPause);
-	bool				RequestPauseUnpause(bool bPause);
+	void				ServerPauseUnpause(bool bPause, bool bSecondRegister);
+	bool				RequestPauseUnpause(bool bPause, bool bSecondRegister);
 	void				ServerSetDownloadRate(float fRate);
 	bool				RequestSetDownloadRate(float fRate);
 	void				ServerDumpDebug();

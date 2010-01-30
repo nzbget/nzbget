@@ -1,7 +1,7 @@
 /*
  *  This file is part of nzbget
  *
- *  Copyright (C) 2007-2009 Andrei Prygounkov <hugbug@users.sourceforge.net>
+ *  Copyright (C) 2007-2010 Andrei Prygounkov <hugbug@users.sourceforge.net>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -422,13 +422,21 @@ XmlCommand* XmlRpcProcessor::CreateCommand(const char* szMethodName)
 {
 	XmlCommand* command = NULL;
 
-	if (!strcasecmp(szMethodName, "pause"))
+	if (!strcasecmp(szMethodName, "pause") || !strcasecmp(szMethodName, "pausedownload"))
 	{
 		command = new PauseUnpauseXmlCommand(true, PauseUnpauseXmlCommand::paDownload);
 	}
-	else if (!strcasecmp(szMethodName, "resume"))
+	else if (!strcasecmp(szMethodName, "resume") || !strcasecmp(szMethodName, "resumedownload"))
 	{
 		command = new PauseUnpauseXmlCommand(false, PauseUnpauseXmlCommand::paDownload);
+	}
+	else if (!strcasecmp(szMethodName, "pausedownload2"))
+	{
+		command = new PauseUnpauseXmlCommand(true, PauseUnpauseXmlCommand::paDownload2);
+	}
+	else if (!strcasecmp(szMethodName, "resumedownload2"))
+	{
+		command = new PauseUnpauseXmlCommand(false, PauseUnpauseXmlCommand::paDownload2);
 	}
 	else if (!strcasecmp(szMethodName, "shutdown"))
 	{
@@ -826,6 +834,10 @@ void PauseUnpauseXmlCommand::Execute()
 			g_pOptions->SetPauseDownload(m_bPause);
 			break;
 
+		case paDownload2:
+			g_pOptions->SetPauseDownload2(m_bPause);
+			break;
+
 		case paPostProcess:
 			g_pOptions->SetPausePostProcess(m_bPause);
 			break;
@@ -902,10 +914,13 @@ void StatusXmlCommand::Execute()
 		"<member><name>AverageDownloadRate</name><value><i4>%i</i4></value></member>\n"
 		"<member><name>DownloadLimit</name><value><i4>%i</i4></value></member>\n"
 		"<member><name>ThreadCount</name><value><i4>%i</i4></value></member>\n"
-		"<member><name>ParJobCount</name><value><i4>%i</i4></value></member>\n"
+		"<member><name>ParJobCount</name><value><i4>%i</i4></value></member>\n"					// deprecated (renamed to PostJobCount)
+		"<member><name>PostJobCount</name><value><i4>%i</i4></value></member>\n"
 		"<member><name>UpTimeSec</name><value><i4>%i</i4></value></member>\n"
 		"<member><name>DownloadTimeSec</name><value><i4>%i</i4></value></member>\n"
-		"<member><name>ServerPaused</name><value><boolean>%s</boolean></value></member>\n"
+		"<member><name>ServerPaused</name><value><boolean>%s</boolean></value></member>\n"		// deprecated (renamed to DownloadPaused)
+		"<member><name>DownloadPaused</name><value><boolean>%s</boolean></value></member>\n"
+		"<member><name>Download2Paused</name><value><boolean>%s</boolean></value></member>\n"
 		"<member><name>ServerStandBy</name><value><boolean>%s</boolean></value></member>\n"
 		"<member><name>PostPaused</name><value><boolean>%s</boolean></value></member>\n"
 		"<member><name>ScanPaused</name><value><boolean>%s</boolean></value></member>\n"
@@ -923,10 +938,13 @@ void StatusXmlCommand::Execute()
 		"\"AverageDownloadRate\" : %i,\n"
 		"\"DownloadLimit\" : %i,\n"
 		"\"ThreadCount\" : %i,\n"
-		"\"ParJobCount\" : %i,\n"
+		"\"ParJobCount\" : %i,\n"			// deprecated (renamed to PostJobCount)
+		"\"PostJobCount\" : %i,\n"
 		"\"UpTimeSec\" : %i,\n"
 		"\"DownloadTimeSec\" : %i,\n"
-		"\"ServerPaused\" : %s,\n"
+		"\"ServerPaused\" : %s,\n"			// deprecated (renamed to DownloadPaused)
+		"\"DownloadPaused\" : %s,\n"
+		"\"Download2Paused\" : %s,\n"
 		"\"ServerStandBy\" : %s,\n"
 		"\"PostPaused\" : %s,\n"
 		"\"ScanPaused\" : %s\n"
@@ -938,12 +956,13 @@ void StatusXmlCommand::Execute()
 	Util::SplitInt64(iRemainingSize, &iRemainingSizeHi, &iRemainingSizeLo);
 	int iRemainingMBytes = (int)(iRemainingSize / 1024 / 1024);
 	int iDownloadLimit = (int)(g_pOptions->GetDownloadRate() * 1024);
-	bool bServerPaused = g_pOptions->GetPauseDownload();
+	bool bDownloadPaused = g_pOptions->GetPauseDownload();
+	bool bDownload2Paused = g_pOptions->GetPauseDownload2();
 	bool bPostPaused = g_pOptions->GetPausePostProcess();
 	bool bScanPaused = g_pOptions->GetPauseScan();
 	int iThreadCount = Thread::GetThreadCount() - 1; // not counting itself
 	PostQueue* pPostQueue = g_pQueueCoordinator->LockQueue()->GetPostQueue();
-	int iParJobCount = pPostQueue->size();
+	int iPostJobCount = pPostQueue->size();
 	g_pQueueCoordinator->UnlockQueue();
 	unsigned long iDownloadedSizeHi, iDownloadedSizeLo;
 	int iUpTimeSec, iDownloadTimeSec;
@@ -958,8 +977,9 @@ void StatusXmlCommand::Execute()
 	snprintf(szContent, 2048, IsJson() ? JSON_RESPONSE_STATUS_BODY : XML_RESPONSE_STATUS_BODY, 
 		iRemainingSizeLo, iRemainingSizeHi,	iRemainingMBytes, iDownloadedSizeLo, iDownloadedSizeHi, 
 		iDownloadedMBytes, iDownloadRate, iAverageDownloadRate, iDownloadLimit,	iThreadCount, 
-		iParJobCount, iUpTimeSec, iDownloadTimeSec, BoolToStr(bServerPaused), BoolToStr(bServerStandBy),
-		BoolToStr(bPostPaused), BoolToStr(bScanPaused));
+		iPostJobCount, iPostJobCount, iUpTimeSec, iDownloadTimeSec, 
+		BoolToStr(bDownloadPaused), BoolToStr(bDownloadPaused), BoolToStr(bDownload2Paused), 
+		BoolToStr(bServerStandBy), BoolToStr(bPostPaused), BoolToStr(bScanPaused));
 	szContent[2048-1] = '\0';
 
 	AppendResponse(szContent);

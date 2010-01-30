@@ -2,7 +2,7 @@
  *  This file is part of nzbget
  *
  *  Copyright (C) 2005 Bo Cordes Petersen <placebodk@sourceforge.net>
- *  Copyright (C) 2007-2009 Andrei Prygounkov <hugbug@users.sourceforge.net>
+ *  Copyright (C) 2007-2010 Andrei Prygounkov <hugbug@users.sourceforge.net>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -524,6 +524,7 @@ bool RemoteClient::RequestServerList(bool bFiles, bool bGroups)
 
     if (ntohl(ListResponse.m_iDownloadRate) > 0 && 
 		!ntohl(ListResponse.m_bDownloadPaused) && 
+		!ntohl(ListResponse.m_bDownload2Paused) && 
 		!ntohl(ListResponse.m_bDownloadStandBy))
     {
         long long remain_sec = (long long)(lRemaining / ntohl(ListResponse.m_iDownloadRate));
@@ -572,9 +573,12 @@ bool RemoteClient::RequestServerList(bool bFiles, bool bGroups)
 
 	char szServerState[50];
 
-	if (ntohl(ListResponse.m_bDownloadPaused))
+	if (ntohl(ListResponse.m_bDownloadPaused) || ntohl(ListResponse.m_bDownload2Paused))
 	{
-		snprintf(szServerState, sizeof(szServerState), "%s", ntohl(ListResponse.m_bDownloadStandBy) ? "Paused" : "Pausing");
+		snprintf(szServerState, sizeof(szServerState), "%s%s", 
+			ntohl(ListResponse.m_bDownloadStandBy) ? "Paused" : "Pausing",
+			ntohl(ListResponse.m_bDownloadPaused) && ntohl(ListResponse.m_bDownload2Paused) ?
+			" (+2)" : ntohl(ListResponse.m_bDownload2Paused) ? " (2)" : "");
 	}
 	else
 	{

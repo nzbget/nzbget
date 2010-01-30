@@ -2,7 +2,7 @@
  *  This file is part of nzbget
  *
  *  Copyright (C) 2005 Bo Cordes Petersen <placebodk@users.sourceforge.net>
- *  Copyright (C) 2007-2009 Andrei Prygounkov <hugbug@users.sourceforge.net>
+ *  Copyright (C) 2007-2010 Andrei Prygounkov <hugbug@users.sourceforge.net>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -27,7 +27,7 @@
 #ifndef MESSAGEBASE_H
 #define MESSAGEBASE_H
 
-static const int32_t NZBMESSAGE_SIGNATURE = 0x6E7A6207; // = "nzb7" (protocol version)
+static const int32_t NZBMESSAGE_SIGNATURE = 0x6E7A6208; // = "nzb8" (protocol version)
 static const int NZBREQUESTFILENAMESIZE = 512;
 static const int NZBREQUESTPASSWORDSIZE = 32;
 
@@ -100,6 +100,7 @@ enum eRemoteEditAction
 enum eRemotePauseUnpauseAction
 {
 	eRemotePauseUnpauseActionDownload = 1,	// pause/unpause download queue
+	eRemotePauseUnpauseActionDownload2,		// pause/unpause download queue (second pause-register)
 	eRemotePauseUnpauseActionPostProcess,	// pause/unpause post-processor queue
 	eRemotePauseUnpauseActionScan			// pause/unpause scan of incoming nzb-directory
 };
@@ -158,6 +159,7 @@ struct SNZBListResponse
 	int32_t					m_iDownloadRate;		// Current download speed, in Bytes pro Second
 	int32_t					m_iDownloadLimit;		// Current download limit, in Bytes pro Second
 	int32_t					m_bDownloadPaused;		// 1 - download queue is currently in paused-state
+	int32_t					m_bDownload2Paused;		// 1 - download queue is currently in paused-state (second pause-register)
 	int32_t					m_bDownloadStandBy;		// 0 - there are currently downloads running, 1 - no downloads in progress (download queue paused or all download jobs completed)
 	int32_t					m_bPostPaused;			// 1 - post-processor queue is currently in paused-state
 	int32_t					m_bScanPaused;			// 1 - scaning of incoming directory is currently in paused-state

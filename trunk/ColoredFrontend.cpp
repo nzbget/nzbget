@@ -1,8 +1,8 @@
 /*
  *  This file if part of nzbget
  *
- *  Copyright (C) 2004  Sven Henkel <sidddy@users.sourceforge.net>
- *  Copyright (C) 2007  Andrei Prygounkov <hugbug@users.sourceforge.net>
+ *  Copyright (C) 2004 Sven Henkel <sidddy@users.sourceforge.net>
+ *  Copyright (C) 2007-2010 Andrei Prygounkov <hugbug@users.sourceforge.net>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -76,7 +76,7 @@ void ColoredFrontend::PrintStatus()
 	timeString[0] = '\0';
 	float fCurrentDownloadSpeed = m_bStandBy ? 0 : m_fCurrentDownloadSpeed;
 
-	if (fCurrentDownloadSpeed > 0.0 && !m_bPause)
+	if (fCurrentDownloadSpeed > 0.0 && !(m_bPauseDownload || m_bPauseDownload2))
 	{
 		long long remain_sec = m_lRemainingSize / ((long long)(fCurrentDownloadSpeed * 1024));
 		int h = (int)(remain_sec / 3600);
@@ -114,8 +114,8 @@ void ColoredFrontend::PrintStatus()
 
 	snprintf(tmp, 1024, " %d threads, %.*f KB/s, %.2f MB remaining%s%s%s%s%s\n", 
 		m_iThreadCount, (fCurrentDownloadSpeed >= 10 ? 0 : 1), fCurrentDownloadSpeed, 
-		(float)(Util::Int64ToFloat(m_lRemainingSize) / 1024.0 / 1024.0), 
-		timeString, szPostStatus, m_bPause ? (m_bStandBy ? ", Paused" : ", Pausing") : "",
+		(float)(Util::Int64ToFloat(m_lRemainingSize) / 1024.0 / 1024.0), timeString, szPostStatus, 
+		m_bPauseDownload || m_bPauseDownload2 ? (m_bStandBy ? ", Paused" : ", Pausing") : "",
 		szDownloadLimit, szControlSeq);
 	tmp[1024-1] = '\0';
 	printf("%s", tmp);

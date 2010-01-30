@@ -388,12 +388,20 @@ void ProcessClientRequest()
 			Client->RequestServerList(false, false);
 			break;
 
-		case Options::opClientRequestPause:
+		case Options::opClientRequestDownloadPause:
 			Client->RequestServerPauseUnpause(true, eRemotePauseUnpauseActionDownload);
 			break;
 
-		case Options::opClientRequestUnpause:
+		case Options::opClientRequestDownloadUnpause:
 			Client->RequestServerPauseUnpause(false, eRemotePauseUnpauseActionDownload);
+			break;
+
+		case Options::opClientRequestDownload2Pause:
+			Client->RequestServerPauseUnpause(true, eRemotePauseUnpauseActionDownload2);
+			break;
+
+		case Options::opClientRequestDownload2Unpause:
+			Client->RequestServerPauseUnpause(false, eRemotePauseUnpauseActionDownload2);
 			break;
 
 		case Options::opClientRequestSetRate:
