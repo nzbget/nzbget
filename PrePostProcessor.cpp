@@ -145,8 +145,9 @@ void PrePostProcessor::Run()
 		// check incoming nzb directory
 		m_Scanner.Check();
 
-		if (!g_pOptions->GetPauseDownload() && g_pOptions->GetDiskSpace() > 0 && 
-			!g_pQueueCoordinator->GetStandBy() && iDiskSpaceInterval >= 1000)
+		if (!(g_pOptions->GetPauseDownload() || g_pOptions->GetPauseDownload2()) && 
+			g_pOptions->GetDiskSpace() > 0 && !g_pQueueCoordinator->GetStandBy() && 
+			iDiskSpaceInterval >= 1000)
 		{
 			// check free disk space every 1 second
 			CheckDiskSpace();

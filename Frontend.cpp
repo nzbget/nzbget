@@ -2,7 +2,7 @@
  *  This file is part of nzbget
  *
  *  Copyright (C) 2004 Sven Henkel <sidddy@users.sourceforge.net>
- *  Copyright (C) 2007-2009 Andrei Prygounkov <hugbug@users.sourceforge.net>
+ *  Copyright (C) 2007-2010 Andrei Prygounkov <hugbug@users.sourceforge.net>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -65,7 +65,8 @@ Frontend::Frontend()
 	m_bFileList = false;
 	m_fCurrentDownloadSpeed = 0;
 	m_lRemainingSize = 0;
-	m_bPause = false;
+	m_bPauseDownload = false;
+	m_bPauseDownload2 = false;
 	m_fDownloadLimit = 0;
 	m_iThreadCount = 0;
 	m_iPostJobCount = 0;
@@ -97,7 +98,8 @@ bool Frontend::PrepareData()
 		{
 			m_fCurrentDownloadSpeed = g_pQueueCoordinator->CalcCurrentDownloadSpeed();
 			m_lRemainingSize = g_pQueueCoordinator->CalcRemainingSize();
-			m_bPause = g_pOptions->GetPauseDownload();
+			m_bPauseDownload = g_pOptions->GetPauseDownload();
+			m_bPauseDownload2 = g_pOptions->GetPauseDownload2();
 			m_fDownloadLimit = g_pOptions->GetDownloadRate();
 			m_iThreadCount = Thread::GetThreadCount();
 			PostQueue* pPostQueue = g_pQueueCoordinator->LockQueue()->GetPostQueue();
@@ -172,15 +174,22 @@ bool Frontend::IsRemoteMode()
 	return g_pOptions->GetRemoteClientMode();
 }
 
-void Frontend::ServerPauseUnpause(bool bPause)
+void Frontend::ServerPauseUnpause(bool bPause, bool bSecondRegister)
 {
 	if (IsRemoteMode())
 	{
-		RequestPauseUnpause(bPause);
+		RequestPauseUnpause(bPause, bSecondRegister);
 	}
 	else
 	{
-		g_pOptions->SetPauseDownload(bPause);
+		if (bSecondRegister)
+		{
+			g_pOptions->SetPauseDownload2(bPause);
+		}
+		else
+		{
+			g_pOptions->SetPauseDownload(bPause);
+		}
 	}
 }
 
@@ -348,7 +357,8 @@ bool Frontend::RequestFileList()
 
 	if (m_bSummary)
 	{
-		m_bPause = ntohl(ListResponse.m_bDownloadPaused);
+		m_bPauseDownload = ntohl(ListResponse.m_bDownloadPaused);
+		m_bPauseDownload2 = ntohl(ListResponse.m_bDownload2Paused);
 		m_lRemainingSize = Util::JoinInt64(ntohl(ListResponse.m_iRemainingSizeHi), ntohl(ListResponse.m_iRemainingSizeLo));
 		m_fCurrentDownloadSpeed = ntohl(ListResponse.m_iDownloadRate) / 1024.0f;
 		m_fDownloadLimit = ntohl(ListResponse.m_iDownloadLimit) / 1024.0f;
@@ -375,11 +385,11 @@ bool Frontend::RequestFileList()
 	return true;
 }
 
-bool Frontend::RequestPauseUnpause(bool bPause)
+bool Frontend::RequestPauseUnpause(bool bPause, bool bSecondRegister)
 {
 	RemoteClient client;
 	client.SetVerbose(false);
-	return client.RequestServerPauseUnpause(bPause, eRemotePauseUnpauseActionDownload);
+	return client.RequestServerPauseUnpause(bPause, bSecondRegister ? eRemotePauseUnpauseActionDownload2 : eRemotePauseUnpauseActionDownload);
 }
 
 bool Frontend::RequestSetDownloadRate(float fRate)

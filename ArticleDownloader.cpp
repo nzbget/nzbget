@@ -2,7 +2,7 @@
  *  This file is part of nzbget
  *
  *  Copyright (C) 2004 Sven Henkel <sidddy@users.sourceforge.net>
- *  Copyright (C) 2007-2009 Andrei Prygounkov <hugbug@users.sourceforge.net>
+ *  Copyright (C) 2007-2010 Andrei Prygounkov <hugbug@users.sourceforge.net>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -176,7 +176,7 @@ void ArticleDownloader::Run()
 			break;
 		}
 
-		if (g_pOptions->GetPauseDownload())
+		if (g_pOptions->GetPauseDownload() || g_pOptions->GetPauseDownload2())
 		{
 			Status = adRetry;
 			break;
@@ -229,7 +229,7 @@ void ArticleDownloader::Run()
 		}
 #endif
 
-		if (g_pOptions->GetPauseDownload())
+		if (g_pOptions->GetPauseDownload() || g_pOptions->GetPauseDownload2())
 		{
 			Status = adRetry;
 			break;

@@ -2,7 +2,7 @@
  *  This file is part of nzbget
  *
  *  Copyright (C) 2004 Sven Henkel <sidddy@users.sourceforge.net>
- *  Copyright (C) 2007-2009 Andrei Prygounkov <hugbug@users.sourceforge.net>
+ *  Copyright (C) 2007-2010 Andrei Prygounkov <hugbug@users.sourceforge.net>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -40,8 +40,6 @@ public:
 		opClientRequestListFiles,
 		opClientRequestListGroups,
 		opClientRequestListStatus,
-		opClientRequestPause,
-		opClientRequestUnpause,
 		opClientRequestSetRate,
 		opClientRequestDumpDebug,
 		opClientRequestEditQueue,
@@ -51,6 +49,10 @@ public:
 		opClientRequestPostQueue,
 		opClientRequestWriteLog,
 		opClientRequestScan,
+		opClientRequestDownloadPause,
+		opClientRequestDownloadUnpause,
+		opClientRequestDownload2Pause,
+		opClientRequestDownload2Unpause,
 		opClientRequestPostPause,
 		opClientRequestPostUnpause,
 		opClientRequestScanPause,
@@ -200,6 +202,7 @@ private:
 
 	// Current state
 	bool				m_bPauseDownload;
+	bool				m_bPauseDownload2;
 	bool				m_bPausePostProcess;
 	bool				m_bPauseScan;
 	float				m_fDownloadRate;
@@ -321,6 +324,8 @@ public:
 	// Current state
 	void				SetPauseDownload(bool bPauseDownload) { m_bPauseDownload = bPauseDownload; }
 	bool				GetPauseDownload() const { return m_bPauseDownload; }
+	void				SetPauseDownload2(bool bPauseDownload2) { m_bPauseDownload2 = bPauseDownload2; }
+	bool				GetPauseDownload2() const { return m_bPauseDownload2; }
 	void				SetPausePostProcess(bool bPausePostProcess) { m_bPausePostProcess = bPausePostProcess; }
 	bool				GetPausePostProcess() const { return m_bPausePostProcess; }
 	void				SetPauseScan(bool bPauseScan) { m_bPauseScan = bPauseScan; }

@@ -2,7 +2,7 @@
  *  This file is part of nzbget
  *
  *  Copyright (C) 2004 Sven Henkel <sidddy@users.sourceforge.net>
- *  Copyright (C) 2007-2009 Andrei Prygounkov <hugbug@users.sourceforge.net>
+ *  Copyright (C) 2007-2010 Andrei Prygounkov <hugbug@users.sourceforge.net>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -231,6 +231,7 @@ Options::Options(int argc, char* argv[])
 	m_eDetailTarget			= mtScreen;
 	m_bDecode				= true;
 	m_bPauseDownload		= false;
+	m_bPauseDownload2		= false;
 	m_bPausePostProcess		= false;
 	m_bPauseScan			= false;
 	m_bCreateBrokenLog		= false;
@@ -847,12 +848,16 @@ void Options::InitCommandLine(int argc, char* argv[])
 				optarg = optind > argc ? NULL : argv[optind-1];
 				if (!optarg || !strncmp(optarg, "-", 1))
 				{
-					m_eClientOperation = c == 'P' ? opClientRequestPause : opClientRequestUnpause;
+					m_eClientOperation = c == 'P' ? opClientRequestDownloadPause : opClientRequestDownloadUnpause;
 					optind--;
 				}
 				else if (!strcmp(optarg, "D"))
 				{
-					m_eClientOperation = c == 'P' ? opClientRequestPause : opClientRequestUnpause;
+					m_eClientOperation = c == 'P' ? opClientRequestDownloadPause : opClientRequestDownloadUnpause;
+				}
+				else if (!strcmp(optarg, "D2"))
+				{
+					m_eClientOperation = c == 'P' ? opClientRequestDownload2Pause : opClientRequestDownload2Unpause;
 				}
 				else if (!strcmp(optarg, "O"))
 				{
@@ -1090,9 +1095,11 @@ void Options::InitCommandLine(int argc, char* argv[])
 		}
 	}
 
-	if (m_bServerMode && m_eClientOperation == opClientRequestPause)
+	if (m_bServerMode && (m_eClientOperation == opClientRequestDownloadPause ||
+		m_eClientOperation == opClientRequestDownload2Pause))
 	{
-		m_bPauseDownload = true;
+		m_bPauseDownload = m_eClientOperation == opClientRequestDownloadPause;
+		m_bPauseDownload2 = m_eClientOperation == opClientRequestDownload2Pause;
 		m_eClientOperation = opClientNoOperation;
 	}
 
@@ -1125,19 +1132,21 @@ void Options::PrintUsage(char* com)
 		"                 O          list post-processor-queue\n"
 		"                 H          list history\n"
 		"                 S          print only server status\n"
-		"  -P, --pause   [D|O|S]     Pause server:\n"
+		"  -P, --pause   [D|D2|O|S]  Pause server:\n"
 		"                 D          pause download queue (default)\n"
+		"                 D2         pause download queue via second pause-register\n"
 		"                 O          pause post-processor queue\n"
 		"                 S          pause scan of incoming nzb-directory\n"
-		"  -U, --unpause [D|O|S]     Unpause server:\n"
+		"  -U, --unpause [D|D2|O|S]  Unpause server:\n"
 		"                 D          unpause download queue (default)\n"
+		"                 D2         unpause download queue via second pause-register\n"
 		"                 O          unpause post-processor queue\n"
 		"                 S          unpause scan of incoming nzb-directory\n"
 		"  -R, --rate <speed>        Set download rate on server, in KB/s\n"
 		"  -T, --top                 Add file to the top (begining) of queue\n"
-		"                            (should be used with switch --append)\n"
+		"                            (for using with switch --append)\n"
 		"  -K, --category <name>     Assign category to nzb-file\n"
-		"                            (should be used with switch --append)\n"
+		"                            (for using with switch --append)\n"
 		"  -G, --log <lines>         Request last <lines> lines from server's screen-log\n"
 		"  -W, --write <D|I|W|E|G> \"Text\" Send text to server's log\n"
 		"  -S, --scan                Scan incoming nzb-directory on server\n"
@@ -1150,7 +1159,7 @@ void Options::PrintUsage(char* com)
 		"                            current position, offset is an integer value\n"
 		"       T                    Move file(s)/group(s)/post-job to top of queue\n"
 		"       B                    Move file(s)/group(s)/post-job to bottom of queue\n"
-		"       P                    Pause file(s)/group(s)\n"
+		"       P                    Pause file(s)/group(s)/\n"
 		"                            Postprocess history-item(s) again\n"
 		"       U                    Resume (unpause) file(s)/group(s)\n"
 		"       A                    Pause all pars (for groups)\n"
