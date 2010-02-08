@@ -1334,9 +1334,31 @@ void PrePostProcessor::UpdateParProgress()
 
 	g_pQueueCoordinator->UnlockQueue();
 
-	while (g_pOptions->GetPausePostProcess() && !IsStopped())
+	if (g_pOptions->GetPausePostProcess())
 	{
-		usleep(100 * 1000);
+		time_t tStageTime = pPostInfo->GetStageTime();
+		time_t tStartTime = pPostInfo->GetStartTime();
+		time_t tWaitTime = time(NULL);
+
+		// wait until Post-processor is unpaused
+		while (g_pOptions->GetPausePostProcess() && !IsStopped())
+		{
+			usleep(100 * 1000);
+
+			// update time stamps
+
+			time_t tDelta = time(NULL) - tWaitTime;
+
+			if (tStageTime > 0)
+			{
+				pPostInfo->SetStageTime(tStageTime + tDelta);
+			}
+
+			if (tStartTime > 0)
+			{
+				pPostInfo->SetStartTime(tStartTime + tDelta);
+			}
+		}
 	}
 }
 
