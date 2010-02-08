@@ -769,9 +769,32 @@ void PostScriptController::AddMessage(Message::EKind eKind, bool bDefaultKind, O
 		}
 	}
 
-	while (g_pOptions->GetPausePostProcess() && !IsStopped())
+
+	if (g_pOptions->GetPausePostProcess())
 	{
-		usleep(100 * 1000);
+		time_t tStageTime = m_pPostInfo->GetStageTime();
+		time_t tStartTime = m_pPostInfo->GetStartTime();
+		time_t tWaitTime = time(NULL);
+
+		// wait until Post-processor is unpaused
+		while (g_pOptions->GetPausePostProcess() && !IsStopped())
+		{
+			usleep(100 * 1000);
+
+			// update time stamps
+
+			time_t tDelta = time(NULL) - tWaitTime;
+
+			if (tStageTime > 0)
+			{
+				m_pPostInfo->SetStageTime(tStageTime + tDelta);
+			}
+
+			if (tStartTime > 0)
+			{
+				m_pPostInfo->SetStartTime(tStartTime + tDelta);
+			}
+		}
 	}
 }
 
