@@ -41,7 +41,7 @@ NZBGet is written in C++ and was initialy developed on Linux.
 It was ported to Windows later and tested for compatibility with
 several POSIX-OS'es.
 
-The current version (0.6.0) should run at least on:
+The current version (0.7.0) should run at least on:
   - Linux Debian 4.0 on x86;
   - Linux with uClibc and BusyBox on MIPSEL and ARM;
   - FreeBSD 7.0 on x86;
