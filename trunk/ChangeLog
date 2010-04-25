@@ -1,6 +1,148 @@
-nzbget-0.7.0-testing:
-  - please see subversion log at
-    http://nzbget.svn.sourceforge.net/viewvc/nzbget/?view=log
+nzbget-0.7.0:
+  - added history: new option <KeepHistory>, new remote subcommand <H> for
+    commands <L> (list history entries) and <E> (delete history entries,
+    return history item, postprocess history item), new RPC-command <History>
+    and subcommands <HistoryDelete>, <HistoryReturn>, <HistoryProcess> for
+    command <EditQueue>;
+  - added support for JSON-P (extension of JSON-RPC);
+  - changed the result code returning status <ERROR> for postprocessing script
+    from <1> to <94> (needed to show the proper script status in history);
+  - improved the detection of new files in incoming nzb directory: now the
+    scanner does not rely on system datum, but tracks the changing of file
+    sizes during a last few (<NzbDirFileAge>) seconds instead;
+  - improvements in example postprocessing script: 1) if download contains
+    only par2-files the script do not delete them during cleanup;
+    2) if download contains only nzb-files the script moves them to incoming
+    nzb-directory for further download;
+  - improved formatting of groups and added time info in curses output mode;
+  - added second pause register, which is independent of main pause-state and
+    therfore is intended for usage from external scripts;
+    that allows to pause download without interfering with options
+    <ParPauseQueue> and <PostPauseQueue> and scheduler tasks <PauseDownload>
+    and <UnpauseDownload> - they all work with first (default) pause register;
+    new subcommand <D2> for commands <--pause/-P> and <--unpause/-U>;
+    new RPC-command <pausedownload2> and <resumedownload2>;
+    existing RPC-commands <pause> und <resume> renamed to <pausedownload> and
+    <resumedownload>;
+    new field <Download2Paused> in result struct for RPC-command <status>;
+    existing fields <ServerPaused> and <ParJobCount> renamed to 
+    <DownloadPaused> and <PostJobCount>;
+    old RPC-commands and fields still exist for compatibility;
+    the status output of command <--list/-L> indicates the state of second
+    pause register;
+    key <P> in curses-frontend can unpause second pause-register;
+  - nzbprocess-script (option <NZBProcess>) can now set category and
+    post-processing parameters for nzb-file;
+  - redesigned server pool and par-checker to avoid using of semaphores
+    (which are very platform specific);
+  - added subcommand <S> to remote commands <--pause/-P> and <--unpause/-U> to
+    pause/unpause the scanning of incoming nzb-directory;
+  - added commands <PauseScan> and <UnpauseScan> for scheduler option 
+    <TaskX.Command>;
+  - added remote commands <PauseScan> and <ResumeScan> for XML-/JSON-RPC;
+  - command <pause post-processing> now not only pauses the post-processing
+    queue but also pauses the current post-processing job (par-job or 
+    script-job);
+    however the script-job can be paused only after the next line printed to
+    screen;
+  - improved error reporting while parsing nzb-files;
+  - added field <NZBID> to NZBInfo; the field is now returned by XML-/JSON-RPC
+    methods <listfiles>, <listgroups> and <postqueue>;
+  - improvements in configure script;
+  - added support for platforms without IPv6 (they do not have <getaddrinfo>);
+  - debug-messages generated on early stages during initializing are now
+    printed to screen/log-file;
+  - messages about obsolete options are now printed to screen/log-file;
+  - imporved example postprocessing script: added support for external
+    configuration file, postprocessing parameters and configuration via
+    web-interface;
+  - option <TaskX.Process> now can contain parameters which must be passed
+    to the script;
+  - added pausing/resuming for post-processor queue; 
+    added new modifier <O> to remote commands <--pause/-P> and <--unpause/-U>;
+    added new commands <postpause> and <postresume> to XML-/JSON-RPC;
+    extended output of remote command <--list/-L> to indicate paused state
+    of post-processor queue; extended command <status> of XML-/JSON-RPC
+    with field <PostPause>;
+  - changed the command line syntax for requesting of post-processor queue
+    from <-O> to <-L O> for consistency with other post-queue related
+    commands (<-P O>, <-U O> and <-E O>);
+  - improved example post-processing script: added support for delayed
+    par-check (try unrar first, par-repair if unrar failed);
+  - added modifier <O> to command <-E/--edit> for editing of
+    post-processor-queue;
+    following subcommands are supported: <+/-offset>, <T>, <B>, <D>;
+    subcommand <D> supports deletion of queued post-jobs and active job as well;
+    deletion of active job means the cancelling of par-check/repair or
+    terminating of post-processing-script (including child processes of the 
+    script);
+    updated remote-server to support new edit-subcommands in XML/JSON-RPC;
+  - extended the syntax of option <TaskX.Time> in two ways: 
+    1) it now accepts multiple comma-separated values;
+    2) an asterix as hours-part means <every hour>;
+  - added svn revision number to version string (commands <-v> and <-V>,
+    startup log entry);
+    svn revision is automatically read from svn-repository on each build;
+  - added estimated remaining time and better distinguishing of server state
+    in command <--list/-L>;
+  - added new return code (93) for post-processing script to indicate
+    successful processing; that results in cleaning up of download queue
+    if option <ParCleanupQueue> is active;
+  - added readonly options <AppBin>, <ConfigFile> and <Version> for usage
+    in processing scripts (options are available as environment variables
+    <NZBOP_APPBIN>, <NZBOP_CONFIGFILE> and <NZBOP_VERSION>);
+  - renamed ParStatus constant <FAILED> to <FAILURE> for a consistence with
+    ScriptStatus constant <FAILURE>, that also affects the results of
+    RPC-command <history>;
+  - added a new return code <95/POSTPROCESS_NONE> for post-processing scripts
+    for cases when pp-script skips all post-processing work (typically upon
+    a user's request via a pp-parameter);
+    modified the example post-processing script to return the new code
+    instead of a error code when a pp-parameter <PostProcess> was set to <no>;
+  - added field <PostTime> to result of RPC-Command <listfiles> and fields
+    <MinPostTime> and <MaxPostTime> for command <listgroups>;
+  - in <curses> and <colored> output-modes the download speed is now printed
+    with one decimal digit when the speed is lower than 10 KB/s;
+  - improvement in example post-processing script: added check for existence
+    of <unrar> and command <wc>;
+  - added shell batch file for windows (nzbget-shell.bat);
+    thanks to orbisvicis (orbisvicis@users.sourceforge.net) for the script;
+  - added debian style init script (nzbgetd);
+    thanks to orbisvicis (orbisvicis@users.sourceforge.net) for the script;
+  - added the returning of a proper HTTP error code if the authorization was
+    failed on RPC-calls;
+    thanks to jdembski (jdembski@users.sourceforge.net) for the patch;
+  - changed the sleep-time during the throttling of bandwidth from 200ms to
+    10ms in order to achieve better uniformity;
+  - modified example postprocessing script to not use the command <dirname>,
+    which is not always available; 
+    thanks to Ger Teunis for the patch;
+  - improved example post-processing script: added the check for existence
+    of destination directory to return a proper ERROR-code (important for
+    reprocessing of history items);
+  - by saving the queue to disk now using relative paths for the list of
+    compeled files to reduce the file's size;
+  - eliminated few compiler warnings on GCC;
+  - fixed: when option <DaemonUserName> was specified and nzbget was
+    started as root, the lockfile was not removed;
+  - fixed: nothing was downloaded when the option <Retries> was set to <0>;
+  - fixed: base64 decoding function used by RPC-method <append> sometimes
+    failed, in particular when called from Ruby-language;
+  - fixed: JSON-RPC-commands failed, if parameters were placed before method
+    name in the request;
+  - fixed: RPC-method <append> did not work properly on Posix systems
+    (it worked only on Windows);
+  - fixed compilation error when using native curses library on OpenSolaris;
+  - fixed linking error on OpenSolaris when using GnuTLS;
+  - fixed: option <ContinuePartial> did not work;
+  - fixed: seg. fault in service mode on program start (Windows only);
+  - fixed: environment block was not passed correctly to child process,
+    what could result in seg faults (windows only);
+  - fixed: returning the postprocessing exit code <92 - par-check all 
+    collections> when there were no par-files results in endless calling
+    of postprocessing script;
+  - fixed compatibility issues with OS/2.
+
 nzbget-0.6.0:
   - added scheduler; new options <TaskX.Time>, <TaskX.WeekDays>,
     <TaskX.Command>, <TaskX.DownloadRate> and <TaskX.Process>;
