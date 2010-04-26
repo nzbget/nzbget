@@ -1,0 +1,459 @@
+=====================================
+           NZBGet ReadMe
+=====================================
+
+Contents          
+--------
+1. About NZBGet
+2. Supported OS
+3. Prerequisites on POSIX
+4. Installation on POSIX
+5. Compiling on Windows
+6. Configuration
+7. Usage
+8. Authors
+9. Copyright
+10. Contact
+
+=====================================
+1. About NZBGet
+=====================================
+
+NZBGet is a binary newsgrabber, which downloads files from usenet
+based on information given in nzb-files. NZBGet can be used in
+standalone and in server/client modes. In standalone mode you 
+pass a nzb-file as parameter in command-line, NZBGet downloads
+listed files and then exits. 
+
+In server/client mode NZBGet runs as server in background.
+Then you use client to send requests to server. The sample requests
+are: download nzb-file, list files in queue, etc.
+
+Standalone-tool, server and client are all contained in only one 
+executable file "nzbget". The mode in which the program works 
+depends on command-line parameters passed to the program.
+
+=====================================
+2. Supported OS
+=====================================
+
+NZBGet is written in C++ and was initialy developed on Linux.
+It was ported to Windows later and tested for compatibility with
+several POSIX-OS'es.
+
+The current version (0.7.0) should run at least on:
+  - Linux Debian 4.0 on x86;
+  - Linux with uClibc and BusyBox on MIPSEL and ARM;
+  - FreeBSD 7.0 on x86;
+  - OpenSolaris 2008.11 on x86;
+  - Mac OS X;
+  - Windows XP SP2 on x86.
+
+Clients and servers running on different OS'es may communicate with
+each other. For example, you can use NZBGet as client on Windows to 
+control your NZBGet-server running on Linux.
+
+The download-section of NZBGet web-site provides binary files
+for Windows. The binary packages for many routers and NAS devices are 
+also available in OPTWARE repository (http://www.nslu2-linux.org), 
+but for most POSIX-systems you need to compile the program yourself. 
+
+If you have downloaded binaries you can just jump to section 
+"Configuration".
+
+=====================================
+3. Prerequisites on POSIX
+=====================================
+
+NZBGet is developed on a linux-system, but it should run on other
+POSIX platforms (see the list of tested platforms above).
+
+NZBGet absolutely needs the following libraries:
+
+ - libstdc++     (usually part of compiler)
+ - libxml2       (http://www.xmlsoft.org)
+
+And the following libraries are optional:
+
+ - for curses-output-mode (enabled by default):
+   - libcurses   (usually part of commercial systems)
+     or (better)
+   - libncurses  (http://invisible-island.net/ncurses)
+   
+ - for par-check and -repair (enabled by default):
+   - libpar2     (http://parchive.sourceforge.net)
+   - libsigc++   (http://libsigc.sourceforge.net)
+ 
+ - for encrypted connections (TLS/SSL):
+   - GnuTLS      (http://www.gnu.org/software/gnutls)
+     or
+   - OpenSSL     (http://www.openssl.org)
+
+All these libraries are included in modern Linux distributions and
+should be available as installable packages. Please note that you also 
+need the developer packages for these libraries too, they package names 
+have often suffix "dev" or "devel". On other systems you may need to 
+download the libraries at the given URLs and compile them (see hints below).
+
+=====================================
+4. Installation on POSIX
+=====================================
+
+Well, the usual stuff:
+
+ - untar the nzbget-source via
+     tar -zxf nzbget-VERSION.tar.gz
+ - change into nzbget-directory via
+     cd nzbget-VERSION
+ - configure it via
+     ./configure
+   (maybe you have to tell configure, where to find some libraries.
+       ./configure --help is your friend!)
+    also see "Configure-options" later.)
+ - compile it via
+     make
+ - become root via
+     su
+ - install it via
+     make install
+
+Configure-options
+-----------------
+You may run configure with additional arguments:
+
+  --disable-curses - to make without curses-support. Use this option
+    if you can not use curses/ncurses.
+    
+  --disable-parcheck - to make without parcheck-support. Use this option
+    if you can not use libpar2 or libsigc++.
+
+  --with-tlslib=(GnuTLS, OpenSSL) - to select which TLS/SSL library
+    should be used for encrypted server connections.
+      
+  --disable-tls - to make without TLS/SSL support. Use this option if
+    you can not neither GnuTLS nor OpenSSL.
+       
+  --enable-debug - to build in debug-mode, if you want to see and log
+    debug-messages.
+    
+Optional package: par-check
+---------------------------
+NZBGet can check and repair downloaded files for you. For this purpose
+it uses library par2 (libpar2), which needs sigc++ on its part.
+
+The libpar2 and libsigc++ (version 2 or later) must be installed on your
+system. On most linux distributions these libraries are available as packages.
+If you do not have these packages you can compile them yourself. 
+Following configure-parameters may be usefull:
+
+  --with-libpar2-includes
+  --with-libpar2-libraries
+  --with-libsigc-includes
+  --with-libsigc-libraries
+  
+The library libsigc++ must be installed first, since libpar2 requires it.
+
+If you use nzbget on a very slow computer like NAS-device, it may be good to
+limit the time allowed for par-repair (option "ParTimeLimit" in nzbget 
+configuration file). This feature requires a patched version of libpar2.
+To compile that version download the original source code of libpar2
+(version 0.2) and apply patches "libpar2-0.2-bugfixes.patch" and 
+"libpar2-0.2-cancel.patch", provided with nzbget:
+
+  cd libpar2-0.2
+  cp ~/nzbget/libpar2-0.2-*.patch .
+  patch < libpar2-0.2-bugfixes.patch
+  patch < libpar2-0.2-cancel.patch
+  ./configure
+  make
+  make install
+
+If you are not able to use libpar2 or libsigc++ or do not want them you can
+make nzbget without support for par-check using option "--disable-parcheck":
+
+  ./configure --disable-parcheck
+
+Optional package: curses
+-------------------------
+For curses-outputmode you need ncurses or curses on your system.
+If you do not have one of them you can download and compile ncurses yourself.
+Following configure-parameters may be usefull:
+
+  --with-libcurses-includes
+  --with-libcurses-libraries
+
+If you are not able to use curses or ncurses or do not want them you can
+make the program without support for curses using option "--disable-curses":
+
+  ./configure --disable-curses
+
+Optional package: TLS
+-------------------------
+To enable encrypted server connections (TLS/SSL) you need to build the program
+with TLS/SSL support. NZBGet can use two libraries: GnuTLS or OpenSSL.
+Configure-script checks which library is installed and use it. If both are
+avialable it gives the precedence to GnuTLS. You may override that with
+the option --with-tlslib=(GnuTLS, OpenSSL). For example to build whith OpenSSL:
+
+  ./configure --with-tlslib=OpenSSL
+  
+Following configure-parameters may be usefull:
+
+  --with-libtls-includes
+  --with-libtls-libraries
+
+  --with-openssl-includes
+  --with-openssl-libraries
+
+If none of these libraries is available you can make the program without 
+TLS/SSL support using option "--disable-tls":
+
+  ./configure --disable-tls
+  
+=====================================
+5. Compiling on Windows
+=====================================
+
+NZBGet is developed using MS Visual C++ 2005. The project file and solution 
+are provided. If you use MS Visual C++ 2005 Express you need to download
+and install Platform SDK.
+
+To compile the program with par-check-support you also need the following 
+libraries:
+
+   - libsigc++   (http://libsigc.sourceforge.net)
+   - libpar2     (http://parchive.sourceforge.net)
+
+Download these libaries, then use patch-files provided with NZBGet to create
+preconfigured project files and solutions for each library. 
+Look at http://gnuwin32.sourceforge.net/packages/patch.htm for info on how
+to use patch-files, if you do not familiar with this technique.
+
+To compile the program with TLS/SSL support you also need the library:
+
+   - GnuTLS   (http://www.gnu.org/software/gnutls)
+
+Download a precompiled version of GnuTLS from http://josefsson.org/gnutls4win
+and create lib-file as described there in section "Using the GnuTLS DLL from 
+your Visual Studio program".
+
+After libsigc++ and libpar2 are compiled in static libraries (.lib), the 
+library for GnuTLS is created and include- and libraries-paths are configured 
+in MS Visual C++ 2005 you should be able to compile NZBGet.   
+
+=====================================
+6. Configuration
+=====================================
+
+NZBGet needs a configuration-file to work properly. 
+
+You need to set at least the option "MAINDIR" and one newsserver in
+configuration file. Have a look at the example in nzbget.conf.example, 
+it has comments on how to use each option.
+
+The program looks for configuration file in following standard 
+locations (in this order):
+
+On POSIX systems:
+
+  ~/.nzbget
+  /etc/nzbget.conf
+  /usr/etc/nzbget.conf
+  /usr/local/etc/nzbget.conf
+  /opt/etc/nzbget.conf
+  
+On Windows:
+  <EXE-DIR>\nzbget.conf
+
+If you put the configuration file in other place, you can use command-
+line switch "-c <filename>" to point the program to correct location.
+
+In special cases you can run program without configuration file using
+switch "-n". You need to use switch "-o" to pass required configuration 
+options via command-line.
+
+=====================================
+7. Usage
+=====================================
+
+NZBGet can be used in either standalone mode which downloads a single file 
+or as a server which is able to queue up numerous download requests.
+
+TIP for Windows users: NZBGet is controlled via various command line
+parameters. For easier using there is a simple shell script included
+in "nzbget-shell.bat". Start this script from Windows Explorer and you will
+be running a command shell with PATH adjusted to find NZBGet executable.
+Then you can type all commands without full path to nzbget.exe.
+
+Standalone mode:
+----------------
+
+nzbget <nzb-file>
+
+Server mode:
+------------
+
+First start the nzbget-server:
+
+  - in console mode:
+
+	nzbget -s
+	
+  - or in daemon mode (POSIX only):
+
+	nzbget -D
+	
+	- or as a service (Windowx only, firstly install the service with command
+	  "nzbget -install"):
+
+  net start NZBGet
+  
+To stop server use:
+
+  nzbget -Q  
+
+TIP for POSIX users: with included script "nzbgetd" you can use standard
+commands to control daemon:
+
+  nzbgetd start
+  nzbgetd stop
+  etc.
+
+When NZBGet is started in console server mode it displays a message that
+it is ready to receive download requests. In daemon mode it doesn't print any
+messages to console since it runs in background.
+
+When the server is running it is possible to queue up downloads. This can be
+done either in terminal with "nzbget -A <nzb-file>" or by uploading
+a nzb-file into server's monitor-directory (<MAINDIR>/nzb by default).
+
+To check the status of server start client and connect it to server:
+  
+  nzbget -C
+
+The client have three different (display) outputmodes, which you can select
+in configuration file (on client computer) or in command line. Try them:
+
+  nzbget -o outputmode=log -C
+
+  nzbget -o outputmode=color -C
+
+  nzbget -o outputmode=curses -C
+
+To list files in server's queue:
+
+  nzbget -L
+  
+It prints something like:
+
+  [1] nzbname\filename1.rar (50.00 MB)
+  [2] nzbname\filename1.r01 (50.00 MB)
+
+The numbers in square braces are ID's of files in queue. They can be used
+in edit-command. For example to move file with ID 2 to the top of queue:
+
+  nzbget -E T 2
+  
+or to pause files with IDs from 10 to 20:
+
+  nzbget -E P 10-20
+
+or to delete files from queue:
+
+  nzbget -E D 3 10-15 20-21 16
+
+The edit-command has also a group-mode which affects all files from the
+same nzb-request. You need to pass one ID of any file in the group. For
+example to delete all files from the first nzb-request:
+
+  nzbget -E G D 1
+
+The switch "o" is useful to override options in configuration files. 
+For example:
+
+  nzbget -o reloadqueue=no -o dupecheck=no -o parcheck=yes -s
+  
+or:
+
+  nzbget -o createlog=no -C
+  
+Running client & server on seperate machines:
+---------------------------------------------
+
+Since nzbget communicates via TCP/IP it's possible to have a server running on
+one computer and adding downloads via a client on another computer.
+
+Do this by setting the "serverip" option in the nzbget.conf file to point to the
+IP of the server (default is localhost which means client and server runs on 
+same computer)
+
+Security warning
+----------------
+
+NZBGet communicates via unsecured socket connections. This makes it vulnerable.
+Although server checks the password passed by client, this password is still 
+transmitted in unsecured way. For this reason it is highly recommended 
+to configure your Firewall to not expose the port used by NZBGet to WAN. 
+
+If you need to control server from WAN it is better to connect to server's
+terminal via SSH (POSIX) or remote desktop (Windows) and then run
+nzbget-client-commands in this terminal.
+
+Post processing scripts
+-----------------------
+
+After the download of nzb-file is completed nzbget can call post-process-script, 
+defined in configuration file. See example configuration file for the 
+description of parameters passed to the script.
+
+An example script for unraring of downloaded files is provided in file
+postprocess-example.sh. The usage instructions are included in the file,
+please open the file in any text editor to read them.
+NOTE: That example script is for POSIX systems (not for Windows).
+
+=====================================
+8. Authors
+=====================================
+
+NZBGet was initialiy written by Sven Henkel (sidddy@users.sourceforge.net).
+
+Up to version 0.2.3 it was developed and maintained by Bo Cordes Petersen 
+(placebodk@users.sourceforge.net). 
+
+Beginning at version 0.3.0 the program is being developed by Andrei Prygounkov 
+(hugbug@users.sourceforge.net).
+
+Module TLS (TLS.c, TLS.h) is based on work by Martin Lambers (marlam@marlam.de).
+
+=====================================
+9. Copyright
+=====================================
+
+This program is free software; you can redistribute it and/or modify
+it under the terms of the GNU General Public License as published by
+the Free Software Foundation; either version 2 of the License, or
+(at your option) any later version.
+
+The complete content of license is provided in file COPYING.
+
+Additional exemption: compiling, linking, and/or using OpenSSL is allowed.
+
+Binary distribution for Windows contains code from the following libraries:
+
+   - libpar2     (http://parchive.sourceforge.net)
+   - libsigc++   (http://libsigc.sourceforge.net)
+   - GnuTLS      (http://www.gnu.org/software/gnutls)
+
+libpar2 is distributed under GPL; libsigc++ and GnuTLS - under LGPL.
+
+=====================================
+10. Contact
+=====================================
+
+If you encounter any problem, feel free to use forums on
+
+    sourceforge.net/projects/nzbget
+
+or contact me at
+
+	hugbug@users.sourceforge.net

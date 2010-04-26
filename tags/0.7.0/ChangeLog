@@ -1,0 +1,620 @@
+nzbget-0.7.0:
+  - added history: new option <KeepHistory>, new remote subcommand <H> for
+    commands <L> (list history entries) and <E> (delete history entries,
+    return history item, postprocess history item), new RPC-command <History>
+    and subcommands <HistoryDelete>, <HistoryReturn>, <HistoryProcess> for
+    command <EditQueue>;
+  - added support for JSON-P (extension of JSON-RPC);
+  - changed the result code returning status <ERROR> for postprocessing script
+    from <1> to <94> (needed to show the proper script status in history);
+  - improved the detection of new files in incoming nzb directory: now the
+    scanner does not rely on system datum, but tracks the changing of file
+    sizes during a last few (<NzbDirFileAge>) seconds instead;
+  - improvements in example postprocessing script: 1) if download contains
+    only par2-files the script do not delete them during cleanup;
+    2) if download contains only nzb-files the script moves them to incoming
+    nzb-directory for further download;
+  - improved formatting of groups and added time info in curses output mode;
+  - added second pause register, which is independent of main pause-state and
+    therfore is intended for usage from external scripts;
+    that allows to pause download without interfering with options
+    <ParPauseQueue> and <PostPauseQueue> and scheduler tasks <PauseDownload>
+    and <UnpauseDownload> - they all work with first (default) pause register;
+    new subcommand <D2> for commands <--pause/-P> and <--unpause/-U>;
+    new RPC-command <pausedownload2> and <resumedownload2>;
+    existing RPC-commands <pause> und <resume> renamed to <pausedownload> and
+    <resumedownload>;
+    new field <Download2Paused> in result struct for RPC-command <status>;
+    existing fields <ServerPaused> and <ParJobCount> renamed to 
+    <DownloadPaused> and <PostJobCount>;
+    old RPC-commands and fields still exist for compatibility;
+    the status output of command <--list/-L> indicates the state of second
+    pause register;
+    key <P> in curses-frontend can unpause second pause-register;
+  - nzbprocess-script (option <NZBProcess>) can now set category and
+    post-processing parameters for nzb-file;
+  - redesigned server pool and par-checker to avoid using of semaphores
+    (which are very platform specific);
+  - added subcommand <S> to remote commands <--pause/-P> and <--unpause/-U> to
+    pause/unpause the scanning of incoming nzb-directory;
+  - added commands <PauseScan> and <UnpauseScan> for scheduler option 
+    <TaskX.Command>;
+  - added remote commands <PauseScan> and <ResumeScan> for XML-/JSON-RPC;
+  - command <pause post-processing> now not only pauses the post-processing
+    queue but also pauses the current post-processing job (par-job or 
+    script-job);
+    however the script-job can be paused only after the next line printed to
+    screen;
+  - improved error reporting while parsing nzb-files;
+  - added field <NZBID> to NZBInfo; the field is now returned by XML-/JSON-RPC
+    methods <listfiles>, <listgroups> and <postqueue>;
+  - improvements in configure script;
+  - added support for platforms without IPv6 (they do not have <getaddrinfo>);
+  - debug-messages generated on early stages during initializing are now
+    printed to screen/log-file;
+  - messages about obsolete options are now printed to screen/log-file;
+  - imporved example postprocessing script: added support for external
+    configuration file, postprocessing parameters and configuration via
+    web-interface;
+  - option <TaskX.Process> now can contain parameters which must be passed
+    to the script;
+  - added pausing/resuming for post-processor queue; 
+    added new modifier <O> to remote commands <--pause/-P> and <--unpause/-U>;
+    added new commands <postpause> and <postresume> to XML-/JSON-RPC;
+    extended output of remote command <--list/-L> to indicate paused state
+    of post-processor queue; extended command <status> of XML-/JSON-RPC
+    with field <PostPause>;
+  - changed the command line syntax for requesting of post-processor queue
+    from <-O> to <-L O> for consistency with other post-queue related
+    commands (<-P O>, <-U O> and <-E O>);
+  - improved example post-processing script: added support for delayed
+    par-check (try unrar first, par-repair if unrar failed);
+  - added modifier <O> to command <-E/--edit> for editing of
+    post-processor-queue;
+    following subcommands are supported: <+/-offset>, <T>, <B>, <D>;
+    subcommand <D> supports deletion of queued post-jobs and active job as well;
+    deletion of active job means the cancelling of par-check/repair or
+    terminating of post-processing-script (including child processes of the 
+    script);
+    updated remote-server to support new edit-subcommands in XML/JSON-RPC;
+  - extended the syntax of option <TaskX.Time> in two ways: 
+    1) it now accepts multiple comma-separated values;
+    2) an asterix as hours-part means <every hour>;
+  - added svn revision number to version string (commands <-v> and <-V>,
+    startup log entry);
+    svn revision is automatically read from svn-repository on each build;
+  - added estimated remaining time and better distinguishing of server state
+    in command <--list/-L>;
+  - added new return code (93) for post-processing script to indicate
+    successful processing; that results in cleaning up of download queue
+    if option <ParCleanupQueue> is active;
+  - added readonly options <AppBin>, <ConfigFile> and <Version> for usage
+    in processing scripts (options are available as environment variables
+    <NZBOP_APPBIN>, <NZBOP_CONFIGFILE> and <NZBOP_VERSION>);
+  - renamed ParStatus constant <FAILED> to <FAILURE> for a consistence with
+    ScriptStatus constant <FAILURE>, that also affects the results of
+    RPC-command <history>;
+  - added a new return code <95/POSTPROCESS_NONE> for post-processing scripts
+    for cases when pp-script skips all post-processing work (typically upon
+    a user's request via a pp-parameter);
+    modified the example post-processing script to return the new code
+    instead of a error code when a pp-parameter <PostProcess> was set to <no>;
+  - added field <PostTime> to result of RPC-Command <listfiles> and fields
+    <MinPostTime> and <MaxPostTime> for command <listgroups>;
+  - in <curses> and <colored> output-modes the download speed is now printed
+    with one decimal digit when the speed is lower than 10 KB/s;
+  - improvement in example post-processing script: added check for existence
+    of <unrar> and command <wc>;
+  - added shell batch file for windows (nzbget-shell.bat);
+    thanks to orbisvicis (orbisvicis@users.sourceforge.net) for the script;
+  - added debian style init script (nzbgetd);
+    thanks to orbisvicis (orbisvicis@users.sourceforge.net) for the script;
+  - added the returning of a proper HTTP error code if the authorization was
+    failed on RPC-calls;
+    thanks to jdembski (jdembski@users.sourceforge.net) for the patch;
+  - changed the sleep-time during the throttling of bandwidth from 200ms to
+    10ms in order to achieve better uniformity;
+  - modified example postprocessing script to not use the command <dirname>,
+    which is not always available; 
+    thanks to Ger Teunis for the patch;
+  - improved example post-processing script: added the check for existence
+    of destination directory to return a proper ERROR-code (important for
+    reprocessing of history items);
+  - by saving the queue to disk now using relative paths for the list of
+    compeled files to reduce the file's size;
+  - eliminated few compiler warnings on GCC;
+  - fixed: when option <DaemonUserName> was specified and nzbget was
+    started as root, the lockfile was not removed;
+  - fixed: nothing was downloaded when the option <Retries> was set to <0>;
+  - fixed: base64 decoding function used by RPC-method <append> sometimes
+    failed, in particular when called from Ruby-language;
+  - fixed: JSON-RPC-commands failed, if parameters were placed before method
+    name in the request;
+  - fixed: RPC-method <append> did not work properly on Posix systems
+    (it worked only on Windows);
+  - fixed compilation error when using native curses library on OpenSolaris;
+  - fixed linking error on OpenSolaris when using GnuTLS;
+  - fixed: option <ContinuePartial> did not work;
+  - fixed: seg. fault in service mode on program start (Windows only);
+  - fixed: environment block was not passed correctly to child process,
+    what could result in seg faults (windows only);
+  - fixed: returning the postprocessing exit code <92 - par-check all 
+    collections> when there were no par-files results in endless calling
+    of postprocessing script;
+  - fixed compatibility issues with OS/2.
+
+nzbget-0.6.0:
+  - added scheduler; new options <TaskX.Time>, <TaskX.WeekDays>,
+    <TaskX.Command>, <TaskX.DownloadRate> and <TaskX.Process>;
+  - added support for postprocess-parameters; new subcommand <O> of remote
+    command <E> to add/modify pp-parameter for group (nzb-file); new
+    XML-/JSON-RPC-subcommand <GroupSetParameter> of method <editqueue> for
+    the same purpose; updated example configuration file and example
+    postprocess-script to indicate new method of passing arguments via
+    environment variables;
+  - added subcommands <F>, <G> and <S> to command line switch <-L/--list>,
+    which prints list of files, groups or only status info respectively;
+    extended binary communication protocol to transfer nzb-infos in addition
+    to file-infos;
+  - added new subcommand <M> to edit-command <E> for merging of two (or more)
+    groups (useful after adding pars from a separate nzb-file);
+  - added option <MergeNzb> to automatically merge nzb-files with the same
+    filename (useful by adding pars from a different source);
+  - added script-processing of files in incoming directory to allow automatic
+    unpacking and queueing of compressed nzb-files; new option <NzbProcess>;
+  - added the printing of post-process-parameters for groups in command
+    <--list G>;
+  - added the printing of nzbget version into the log-file on start;
+  - added option <DeleteCleanupDisk> to automatically delete already downloaded
+    files from disk if nzb-file was deleted from queue (the download was
+    cancelled);
+  - added option <ParTimeLimit> to define the max time allowed for par-repair;
+  - added command <--scan/-S> to execute the scan of nzb-directory on remote
+    server;
+  - changed the method to pass arguments to postprocess/nzbprocess: now using
+    environment variables (old method is still supported for compatibility with
+    existing scripts);
+  - added the passing of nzbget-options to postprocess/nzbprocess scripts as
+    environment variables;
+  - extended the communication between nzbget and post-process-script: 
+    collections are now detected even if parcheck is disabled;
+  - added support for delayed par-check/repair: post-process-script can request
+    par-check/repair using special exit codes to repair current collection or
+    all collections;
+  - implemented the normalizing of option names and values in option list; the
+    command <-p> also prints normalized names and values now; that makes the
+    parsing of output of command <-p> for external scripts easier;
+  - replaced option <PostLogKind> with new option <ProcessLogKind> which is now
+    used by all scripts (PostProcess, NzbProcess, TaskX.Process);
+  - improved entering to paused state on connection errors (do not retry failed
+    downloads if pause was activated);
+  - improved error reporting on decoding failures;
+  - improved compatibility of yenc-decoder;
+  - improved the speed of deleting of groups from download queue (by avoiding
+    the saving of queue after the deleting of each individual file);
+  - updated configure-script for better compatibility with FreeBSD;
+  - cleaning up of download queue (option <ParCleanupQueue>) and deletion of
+    source nzb-file (option <NzbCleanupDisk>) after par-repair now works also
+    if par-repair was cancelled (option <ParTimeLimit>); since required
+    par-files were already downloaded the repair in an external tool is
+    possible;
+  - added workaround to avoid hangs in child processes (by starting of
+    postprocess or nzbprocess), observed on uClibC based systems;
+  - fixed: TLS/SSL didn't work in standalone mode;
+  - fixed compatibility issues with Mac OS X;
+  - fixed: not all necessary par2-files were unpaused on first request for
+    par-blocks (although harmless, because additional files were unpaused
+    later anyway);
+  - fixed small memory leak appeared if process-script could not be started;
+  - fixed: configure-script could not detect the right syntax for function
+    <ctime_r> on OpenSolaris.
+  - fixed: files downloaded with disabled decoder (option decode=no) sometimes
+    were malformed and could not be decoded;
+  - fixed: empty string parameters did not always work in XML-RPC.
+
+nzbget-0.5.1:
+  - improved the check of server responses to prevent unnecessary retrying
+    if the article does not exist on server;
+  - fixed: seg.fault in standalone mode if used without specifying the
+    category (e.g. without switch <-K>);
+  - fixed: download speed indicator could report not-null values in
+    standby-mode (when paused);
+  - fixed: parameter <category> in JSON/XML-RPC was not properly decoded by
+    server, making the setting of a nested category (containing slash or
+    backslash character) via nzbgetweb not possible;
+    
+nzbget-0.5.0:
+  - added TLS/SSL-support for encrypted communication with news-servers;
+  - added IPv6-support for communication with news-servers as well as for
+    communication between nzbget-server and nzbget-client;
+  - added support for categories to organize downloaded files;
+  - new option <AppendCategoryDir> to create the subdirectory for each category;
+  - new switch <-K> for usage with switch <-A> to define a category during
+    the adding a file to download queue;
+  - new command <K> in switch <-E> to change the category of nzb-file in
+    download queue; the already downloaded files are automatically moved to new
+    directory if the option <AppendCategoryDir> is active;
+  - new parameter <Category> in XML-/JSON-RPC-command <editqueue> to allow the
+    changing of category via those protocols;
+  - new parameter in a call to post-process-script with category name; 
+  - scanning of subdirectories inside incoming nzb-directory to automatically 
+    assign category names; nested categories are supported;
+  - added option <ServerX.JoinGroup> to connect to servers, that do not accept
+    <GROUP>-command;
+  - added example post-process script for unraring of downloaded files
+    (POSIX only);
+  - added options <ParPauseQueue> and <PostPauseQueue> useful on slow CPUs;
+  - added option <NzbCleanupDisk> to delete source nzb-file after successful 
+    download and parcheck;
+  - switch <-P> can now be used together with switches <-s> and <-D> to start
+    server/daemon in paused state;
+  - changed the type of messages logged in a case of connection errors from
+    <DEBUG> to <ERROR> to provide better error reporting;
+  - now using OS-specific line-endings in log-file and brokenlog-file: LF on 
+    Posix and CRLF on Windows;
+  - added detection of adjusting of system clock to correct uptime/download 
+    time (for NAS-devices, that do not have internal clock and set time from
+    internet after booting, while nzbget may be already running);
+  - added the printing of stack on segmentation faults (if configured with 
+    <--enable-debug>, POSIX only);
+  - added option <DumpCore> for better debugging on Linux in a case of abnormal
+    program termination;
+  - fixed: configure-script could not automatically find libsigc++ on 64-bit
+    systems;
+  - few other small fixes; 
+ 
+nzbget-0.4.1:
+  - to avoid accidental deletion of file in curses-frontend the key <D>
+    now must be pressed in uppercase;
+  - options <username> and <password> in news-server's configuration are now 
+    optional;
+  - added the server's name to the detail-log-message, displayed on the start 
+    of article's download;
+  - added the option <AllowReProcess> to help to post-process-scripts, which 
+    make par-check/-repair on it's own;
+  - improved download-speed-meter: it uses now a little bit less cpu and
+    calculates the speed for the last 30 seconds (instead of 5 seconds),
+    providing better accuracy; Thanks to ydrol <ydrol@users.sourceforge.net>
+    for the patch;
+  - reduced CPU-usage in curses-outputmode; Thanks to ydrol for the patch 
+    <ydrol@users.sourceforge.net>;
+  - fixed: line-endings in windows-style (CR-LF) in config-file were not 
+    read properly;
+  - fixed: trailing spaces in nzb-filenames (before the file's extension) 
+    caused errors on windows. Now they will be trimmed;
+  - fixed: XML-RPC and JSON-RPC did not work on Big-Endian-CPUs (ARM, PPC, etc), 
+    preventing the using of web-interface;
+  - fixed: umask-option did not allow to enable write-permissions for <group> 
+    and <others>;
+  - fixed: in curses-outputmode the remote-client showed on first screen-update 
+    only one item of queue;
+  - fixed: edit-commands with negative offset did not work via XML-RPC 
+    (but worked via JSON-RPC);
+  - fixed incompatibility issues with gcc 4.3; Thanks to Paul Bredbury 
+    <brebs@users.sourceforge.net> for the patch;
+  - fixed: segmentation fault if a file listed in nzb-file does not have any 
+    segments (articles);
+
+nzbget-0.4.0:
+  - added the support for XML-RPC and JSON-RPC to easier control the server 
+    from other applications; 
+  - added web-interface - it is available for download from NZBGet-project's 
+    home page as a separate package "web-interface";
+  - added the automatic cleaning up of the download queue (deletion of unneeded 
+    paused par-files) after successful par-check/repair - new 
+    option <ParCleanupQueue>;
+  - added option <DetailTarget> to allow to filter the (not so important) 
+    log-messages from articles' downloads (they have now the type <detail> 
+    instead of <info>);
+  - added the gathering of progress-information during par-check; it is 
+    available via XML-RPC or JSON-RPC; it is also showed in web-interface;
+  - improvements in internal decoder: added support for yEnc-files without 
+    ypart-statement (sometimes used for small files); added support for 
+    UU-format;
+  - removed support for uulib-decoder (it did not work well anyway); 
+  - replaced the option <decoder (yenc, uulib, none)> with the option 
+    <decode (yes, no)>;
+  - added detection of errors <server busy> and <remote server not available> 
+    (special case for NNTPCache-server) to consider them as connect-errors 
+    (and therefore not count as retries); 
+  - added check for incomplete articles (also mostly for NNTPCache-server) to 
+    differ such errors from CrcErrors (better error reporting);
+  - improved error-reporting on moving of completed files from tmp- to 
+    dst-directory and added code to move files across drives if renaming fails;
+  - improved handling of nzb-files with multiple collections in par-checker;
+  - improved the parchecker: added the detection and processing of files 
+    splitted after parring;
+  - added the queueing of post-process-scripts and waiting for script's 
+    completion before starting of a next job in postprocessor (par-job or 
+    script) to provide more balanced cpu utilization;
+  - added the redirecting of post-process-script's output to log; new option 
+    <PostLogKind> to specify the default message-kind for unformatted 
+    log-messages;
+  - added the returning of script-output by command <postqueue> via XML-RPC 
+    and JSON-RPC; the script-output is also showed in web-interface;
+  - added the saving and restoring of the post-processor-queue (if server was 
+    stopped before all items were processed); new option <ReloadPostQueue>;
+  - added new parameter to postprocess-script to indicate if any of par-jobs 
+    for the same nzb-file failed;
+  - added remote command (switch O/--post) to request the post-processor-queue 
+    from server;
+  - added remote command (switch -W/--write) to write messages to server's log;
+  - added option <DiskSpace> to automatically pause the download on low disk 
+    space;
+  - fixed few incompatibility-issues with unslung-platform on nslu2 (ARM);
+  - fixed: articles with trailing text after binary data caused the decode 
+    failures and the reporting of CRC-errors;
+  - fixed: dupecheck could cause seg.faults when all articles for a file failed;
+  - fixed: by dupe-checking of files contained in nzb-file the files with the 
+    same size were ignored (not deleted from queue);
+  - updated libpar2-patch for msvc to fix a segfault in libpar2 (windows only);
+  - fixed: by registering the service on windows the fullpath to nzbget.exe 
+    was not always added to service's exename, making the registered service 
+    unusable;
+  - fixed: the pausing of a group could cause the start of post-processing for 
+    that group;
+  - fixed: too many info-messages <Need more N blocks> could be printed during 
+    par-check (appeared on posix only);
+  
+nzbget-0.3.1:
+  - Greatly reduced the memory consumption by keeping articles' info on disk 
+    until the file download starts;
+  - Implemented decode-on-the-fly-technique to reduce disk-io; downloaded
+    and decoded data can also be saved directly to the destination file 
+    (without any intermediate files at all); this eliminates the necessity
+    of joining of articles later (option "DirectWrite");
+  - Improved communication with news-servers: connections are now keeped open 
+    until all files are downloaded (or server paused); this eliminates the 
+    need for establishing of connections and authorizations for each 
+    article and improves overal download speed;
+  - Significantly better download speed is now possible on fast connection; 
+    it was limited by delays on starting of new articles' downloads; 
+    the synchronisation mechanism was reworked to fix this issue;
+  - Download speed meter is much more accurate, especially on fast connections;
+    this also means better speed throttling;
+  - Speed optimisations in internal decoder (up to 25% faster);
+  - CRC-calculation can be bypassed to increase performance on slow CPUs
+    (option "CrcCheck");
+  - Improved parsing of artcile's subject for better extracting of filename 
+    part from it and implemented a fallback-option if the parsing was incorrect; 
+  - Improved dupe check for files from the same nzb-request to detect reposted 
+    files and download only the best from them (if option "DupeCheck" is on); 
+  - Articles with incorrect CRC can be treated as "possibly recoverable errors"
+    and relaunched for download (option "RetryOnCrcError"), it is useful if 
+    multiple servers are available;
+  - Improved error-check for downloaded articles (crc-check and check for
+    received message-id) decreases the number of broken files;
+  - Extensions in curses-outputmode: added group-view-mode (key "G") to show
+    items in download queue as groups, where one group represents all files 
+    from the same nzb-file; the editing of queue works also in group-mode 
+    (for all files in this group): pause/unpause/delete/move of groups; 
+  - Other extensions in curses-outputmode: key "T" toggles timestamps in log;
+    added output of statistical data: uptime, download-time, average session 
+    download speed;
+  - Edit-command accepts more than one ID or range of IDs.
+    E.g: "nzbget -E P 2,6-10,33-39"; The switch "-I" is not used anymore;
+  - Move-actions in Edit-command affect files in a smart order to guarantee 
+    that the relative order of files in queue is not changed after the moving;
+  - Extended syntax of edit-command to edit groups (pause/unpause/delete/move 
+    of groups). E.g: "nzbget -E G P 2";
+  - Added option "DaemonUserName" to set the user that the daemon (POSIX only) 
+    normally runs at. This allows nzbget daemon to be launched in rc.local 
+    (at boot), and download items as a specific user id; Thanks to Thierry 
+    MERLE <merlum@users.sourceforge.net> for the patch;
+  - Added option "UMask" to specify permissions for newly created files and dirs 
+    (POSIX only);
+  - Communication protocol used between server and client was revised to define 
+    the byte order for transferred data. This allows hosts with different 
+    endianness to communicate with each other;
+  - Added options "CursesNzbName", "CursesGroup" and "CursesTime" to define
+    initial state of curses-outputmode;
+  - Added option "UpdateInterval" to adjust update interval for Frontend-output
+    (useful in remote-mode to reduce network usage);
+  - Added option "WriteBufferSize" to reduce disk-io (but it could slightly 
+    increase memory usage and therefore disabled by default);
+  - List-command prints additional statistical info: uptime, download-time,
+    total amount of downloaded data and average session download speed;
+  - The creation of necessary directories on program's start was extended 
+    with automatic creation of all parent directories or error reporting 
+    if it was not possible;
+  - Printed messages are now translated to oem-codepage to correctly print 
+    filenames with non-english characters (windows only);
+  - Added remote-command "-V (--serverversion)" to print the server's version;
+  - Added option "ThreadLimit" to prevent program from crash if it wants to 
+    create too many threads (sometimes could occur in special cases);
+  - Added options "NzbDirInterval" and "NzbDirFileAge" to adjust interval and
+    delay by monitoring of incoming-directory for new nzb-files;
+  - Fixed error on parsing of nzb-files containing percent and other special 
+    characters in their names (bug appeared on windows only);
+  - Reformated sample configuration file and changed default optionnames 
+    from lowercase to MixedCase for better readability; 
+  - Few bugs (seg faults) were fixed.
+
+nzbget-0.3.0:
+  - The download queue now contains newsgroup-files to be downloaded instead of 
+    nzb-jobs. By adding a new job, the nzb-file is immediately parsed and each 
+    newsgroup-file is added to download queue. Each file can therefore be 
+    managed separately (paused, deleted or moved);
+  - Current queue state is saved after every change (file is completed or the 
+    queue is changed - entries paused, deleted or moved). The state is saved on
+    disk using internal format, which allows fast loading on next program start
+    (no need to parse xml-files again);
+  - The remaining download-size is updated after every article is completed to
+    indicate the correct remaining size and time for total files in queue;
+  - Downloaded articles, which are saved in temp-directory, can be reused on
+    next program start, if the file was not completed (option "continuepartial"
+    in config-file); 
+  - Along with uulib the program has internal decoder for yEnc-format. This
+    decoder was necessary, because uulib is so slow, that it prevents using of
+    the program on not so powerful systems like linux-routers (MIPSEL CPU 200
+    MHz). The new decoder is very fast. It is controlled over option "decoder" 
+    in config-file;
+  - The decoder can be completely disabled. In this case all downloaded articles
+    are saved in unaltered form and can be joined with an external program;
+    UUDeview is one of them;
+  - If download of article fails, the program attempts to download it again so
+    many times, what the option "retries" in config-file says. This works even
+    if no servers with level higher than "0" defined. After each retry the next
+    server-level is used, if there are no more levels, the program switches to
+    level "0" again. The pause between retries can be set with config-option
+    "retryinterval";
+  - If despite of a stated connection-timeout (it can be changed via
+    config-option "connectiontimeout") connection hangs, the program tries to
+    cancel the connection (after "terminatetimeout" seconds). If it doesn't
+    work the download thread is killed and the article will be redownloaded in
+    a new thread. This ensures, that there are no long-time hanging connections
+    and all articles are downloaded, when a time to rejoin file comes;
+  - Automatic par-checking and repairing. Only reuired par-files are downloaded.
+    The program uses libpar2 and does not require any external tools. The big
+    advantage of library is, that it allows to continue par-check after new
+    par-blocks were downloaded. This were not possible with external 
+    par2cmdline-tool;
+  - There is a daemon-mode now (command-line switch "-D" (--daemon)). In this
+    mode a lock-file (default location "/tmp/nzbget.lock", can be changed via
+    option "lockfile") contains PID of daemon;
+  - The format of configuration-file was changed from xml to more common
+    text-format. It allows also using of variables like 
+    "tempdir=${MAINDIR}/tmp";
+  - Any option of config-file can be overwritten via command-line switch
+    "-o" (--option). This includes also the definition of servers. 
+    This means that the program can now be started without a configuration-file 
+    at all (all required options must be passed via command-line);
+  - The command-line switches were revised. The dedicated switches to change
+    options in config-file were eliminated, since any option can now be changed
+    via switch "-o" (--option);
+  - If the name of configuration-file was not passed via command-line the
+    program search it  in following locations: "~/.nzbget", "/etc/nzbget.conf", 
+    "/usr/etc/nzbget.conf", "/usr/local/etc/nzbget.conf", 
+    "/opt/etc/nzbget.conf";
+  - The new command-line switch "-n" (--noconfigfile) prevents the loading of
+    a config-file. All required config-options must be passed via command-line
+    (switch "-o" (--option));
+  - To start the program in server mode either "-s" (--server) or 
+    "-D" (--daemon) switch must be used. If the program started without any
+    parameters it prints help-screen. There is no a dedicated switch to start
+    in a standalone mode. If switches "-s" and "-D" are omitted and none of
+    client-request-switches used the standalone mode is default. This usage
+    of switches is more common to programs like "wget". To add a file to 
+    server's download queue use switch "-A" (--append) and a name of nzb-file
+    as last command-line parameter;
+  - There is a new switch "-Q" (--quit) to gracefully stop server. BTW the
+    SIGKIL-signal is now handled appropriately, so "killall nzbget" is also OK,
+    where "killall -9 nzbget" terminates server immediately (helpful if it
+    hangs, but it shouldn't);
+  - With new switch "-T" (--top) the file will be added to the top of download
+    queue. Use it with switch "-A" (--append);
+  - The download queue can be edited via switch "-E" (--edit). It is possible
+    to pause, unpause, delete and move files in queue. The IDs of file(s)
+    to be affected are passed via switch "-I" (fileid), either one ID or a 
+    range in a form "IDForm-IDTo". This also means, that every file in queue
+    have ID now;
+  - The switch "-L" (--list) prints IDs of files consequently. It prints also
+    name, size, percentage of completing and state (paused or not) of each file. 
+    Plus summary info: number of files, total remaining size and size of
+    paused files, server state (paused or running), number of threads on 
+    server, current speed limit;
+  - With new switch "-G" (--log) the last N lines printed to server's 
+    screen-log, can be printed on client. The max number of lines which can
+    be returned from servers depends on option "logbuffersize";
+  - The redesigned Frontends (known as outputmodes "loggable", "colored" and
+    "curses") can connect to (remote) server and behave as if you were running
+    server-instance of program itself (command-line switch "-C" (--connect)). 
+    The log-output updates constantly and even all control-functions in 
+    ncurses-mode works: pause/unpause server, set download rate limit, edit of
+    queue (pause/unpause, delete, move entries). The number of connected 
+    clients is not limited. The "outputmode" on a client can be set
+    independently from server. The client-mode is especially useful if the
+    server runs as a daemon;
+  - The writing to log-file can be disabled via option "createlog". 
+    The location of log-file controls the option "log-file";
+  - Switch "-p" (--printconfig) prints the name of configuration file being
+    used and all option/value-pairs, taking into account all used 
+    "-o" (--option) - switches;
+  - The communication protocol between server and client was optimized to
+    minimize the size of transferred data. Instead of fixing the size for
+    Filenames in data-structures to 512 bytes only in fact used data
+    are transferred;
+  - Extensions in ncurses-outputmode: scrolling in queue-list works better, 
+    navigation in queue with keys Up, Down, PgUp, PgDn, Home, End. 
+    Keys to move entries are "U" (move up), "N" (move down), "T" (move to top),
+    "B" (move to bottom). "P" to pause/unpause file. The size, percentage 
+    of completing and state (paused or not) for every file is printed. 
+    The header of queue shows number of total files, number of unpaused 
+    files and size for all and unpaused files. Better using of screen estate
+    space � no more empty lines and separate header for status (total seven
+    lines gain). The messages are printed on several lines (if they not fill
+    in one line) without trimming now;
+  - configure.ac-file updated to work with recent versions of autoconf/automake. 
+    There are new configure-options now: "--disable-uulib" to compile the 
+    program without uulib; "--disable-ncurses" to disable ncurses-support 
+    (eliminates necessity of ncurses-libs), useful on embedded systems with 
+    little resources; "--disable-parcheck" to compile without par-check;
+  - The algorithm for parsing of nzb-files now uses XMLReader instead of 
+    DOM-Parser to minimize memory usage (no mor needs to build complete DOM-tree
+    in memory). Thanks to Thierry MERLE <merlum@users.sourceforge.net> for 
+    the patch;
+  - The log-file contains now thread-ID for all entry-types and additionally 
+    for debug-entries: filename, line number and function's name of source
+    code, where the message was printed. Debug-messages can be disabled in 
+    config-file (option "debugtarget") like other messages;
+  - The program is now compatible with windows. Project file for MS Visual 
+    C++ 2005 is included. Use "nzbget -install" and "nzbget -remove" to
+    install/remove NZBGet-Service. Servers and clients can run on diferrent
+    operating systems;
+  - Improved compatibility with POSIX systems; Tested on:
+	  - Linux Debian 3.1 on x86;
+	  - Linux BusyBox with uClibc on MIPSEL;
+	  - PC-BSD 1.4 (based on FreeBSD 6.2) on x86;
+	  - Solaris 10 on x86;
+  - Many memory-leaks and thread issues were fixed;
+  - The program was thoroughly worked over. Almost every line of code was
+    revised.
+
+nzbget-0.2.3
+  - Fixed problem with losing connection to newsserver after too long idle time
+  - Added functionality for dumping lots of debug info
+
+nzbget-0.2.2
+  - Added Florian Penzkofers fix for FreeBSD, exchanging base functionality in 
+    SingleServerPool.cpp with a more elegant solution
+  - Added functionality for forcing answer to reloading queue upon startup of 
+    server
+    + use -y option to force from command-line
+	+ use "reloadqueue" option in nzbget.cfg to control behavior
+  - Added nzbget.cfg options to control where info, warnings and errors get 
+    directed to (either screen, log or both)
+  - Added option "createbrokenfilelog" in nzbget.cfg
+  
+nzbget-0.2.1
+  - Changed and extended the TCP client/server interface
+  - Added timeout on sockets which prevents certain types of nzbget hanging
+  - Added Kristian Hermansen's patch for renaming broken files
+
+nzbget-0.2.0
+  - Moved 0.1.2-alt4 to a official release as 0.2.0
+  - Small fixes
+
+nzbget-0.1.2-alt4
+  - implemented tcp/ip communication between client & server (removing the 
+    rather defunct System V IPC)
+  - added queue editing functionality in server-mode
+
+nzbget-0.1.2-alt1
+  - added new ncurses frontend
+  - added server/client-mode (using System V IPC)
+  - added functionality for queueing download requests 
+
+nzbget-0.1.2
+  - performance-improvements
+  - commandline-options
+  - fixes
+
+nzbget-0.1.1
+  - new output
+  - fixes
+
+nzbget-0.1.0a
+  - compiling-fixes
+
+nzbget-0.1.0
+  - initial release

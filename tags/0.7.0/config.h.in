@@ -1,0 +1,125 @@
+/* config.h.in.  Generated from configure.ac by autoheader.  */
+
+/* Define to 1 to include debug-code */
+#undef DEBUG
+
+/* Define to 1 to not use curses */
+#undef DISABLE_CURSES
+
+/* Define to 1 to disable smart par-verification and restoration */
+#undef DISABLE_PARCHECK
+
+/* Define to 1 to not use TLS/SSL */
+#undef DISABLE_TLS
+
+/* Define to the name of macro which returns the name of function being
+   compiled */
+#undef FUNCTION_MACRO_NAME
+
+/* Define to 1 to create stacktrace on segmentation faults */
+#undef HAVE_BACKTRACE
+
+/* Define to 1 if ctime_r takes 2 arguments */
+#undef HAVE_CTIME_R_2
+
+/* Define to 1 if ctime_r takes 3 arguments */
+#undef HAVE_CTIME_R_3
+
+/* Define to 1 if you have the <curses.h> header file. */
+#undef HAVE_CURSES_H
+
+/* Define to 1 if getaddrinfo is supported */
+#undef HAVE_GETADDRINFO
+
+/* Define to 1 if gethostbyname_r is supported */
+#undef HAVE_GETHOSTBYNAME_R
+
+/* Define to 1 if gethostbyname_r takes 3 arguments */
+#undef HAVE_GETHOSTBYNAME_R_3
+
+/* Define to 1 if gethostbyname_r takes 5 arguments */
+#undef HAVE_GETHOSTBYNAME_R_5
+
+/* Define to 1 if gethostbyname_r takes 6 arguments */
+#undef HAVE_GETHOSTBYNAME_R_6
+
+/* Define to 1 if getopt_long is supported */
+#undef HAVE_GETOPT_LONG
+
+/* Define to 1 if you have the <inttypes.h> header file. */
+#undef HAVE_INTTYPES_H
+
+/* Define to 1 to use GnuTLS library for TLS/SSL-support. */
+#undef HAVE_LIBGNUTLS
+
+/* Define to 1 if you have the <memory.h> header file. */
+#undef HAVE_MEMORY_H
+
+/* Define to 1 if you have the <ncurses.h> header file. */
+#undef HAVE_NCURSES_H
+
+/* Define to 1 if you have the <ncurses/ncurses.h> header file. */
+#undef HAVE_NCURSES_NCURSES_H
+
+/* Define to 1 to use OpenSSL library for TLS/SSL-support. */
+#undef HAVE_OPENSSL
+
+/* Define to 1 if libpar2 supports cancelling (needs a special patch) */
+#undef HAVE_PAR2_CANCEL
+
+/* Define to 1 if stat64 is supported */
+#undef HAVE_STAT64
+
+/* Define to 1 if you have the <stdint.h> header file. */
+#undef HAVE_STDINT_H
+
+/* Define to 1 if you have the <stdlib.h> header file. */
+#undef HAVE_STDLIB_H
+
+/* Define to 1 if you have the <strings.h> header file. */
+#undef HAVE_STRINGS_H
+
+/* Define to 1 if you have the <string.h> header file. */
+#undef HAVE_STRING_H
+
+/* Define to 1 if you have the <sys/prctl.h> header file. */
+#undef HAVE_SYS_PRCTL_H
+
+/* Define to 1 if you have the <sys/stat.h> header file. */
+#undef HAVE_SYS_STAT_H
+
+/* Define to 1 if you have the <sys/types.h> header file. */
+#undef HAVE_SYS_TYPES_H
+
+/* Define to 1 if you have the <unistd.h> header file. */
+#undef HAVE_UNISTD_H
+
+/* Define to 1 if variadic macros are supported */
+#undef HAVE_VARIADIC_MACROS
+
+/* Name of package */
+#undef PACKAGE
+
+/* Define to the address where bug reports for this package should be sent. */
+#undef PACKAGE_BUGREPORT
+
+/* Define to the full name of this package. */
+#undef PACKAGE_NAME
+
+/* Define to the full name and version of this package. */
+#undef PACKAGE_STRING
+
+/* Define to the one symbol short name of this package. */
+#undef PACKAGE_TARNAME
+
+/* Define to the version of this package. */
+#undef PACKAGE_VERSION
+
+/* Determine what socket length (socklen_t) data type is */
+#undef SOCKLEN_T
+
+/* Define to 1 if you have the ANSI C header files. */
+#undef STDC_HEADERS
+
+/* Version number of package */
+#undef VERSION
