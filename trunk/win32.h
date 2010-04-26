@@ -1,7 +1,7 @@
 /*
  *  This file is part of nzbget
  *
- *  Copyright (C) 2007-2009 Andrei Prygounkov <hugbug@users.sourceforge.net>
+ *  Copyright (C) 2007-2010 Andrei Prygounkov <hugbug@users.sourceforge.net>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -63,7 +63,7 @@
 /* Determine what socket length (socklen_t) data type is */
 #define SOCKLEN_T socklen_t
 
-#define VERSION "0.7.0-testing"
+#define VERSION "0.7.0"
 
 /* Suppress warnings */
 #define _CRT_SECURE_NO_DEPRECATE
