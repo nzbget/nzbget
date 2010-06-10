@@ -63,7 +63,7 @@
 /* Determine what socket length (socklen_t) data type is */
 #define SOCKLEN_T socklen_t
 
-#define VERSION "0.7.0"
+#define VERSION "0.8.0-testing"
 
 /* Suppress warnings */
 #define _CRT_SECURE_NO_DEPRECATE
