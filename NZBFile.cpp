@@ -1,8 +1,8 @@
 /*
  *  This file is part of nzbget
  *
- *  Copyright (C) 2004  Sven Henkel <sidddy@users.sourceforge.net>
- *  Copyright (C) 2007  Andrei Prygounkov <hugbug@users.sourceforge.net>
+ *  Copyright (C) 2004 Sven Henkel <sidddy@users.sourceforge.net>
+ *  Copyright (C) 2007-2010 Andrei Prygounkov <hugbug@users.sourceforge.net>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -42,6 +42,7 @@ using namespace MSXML;
 #include <libxml/parser.h>
 #include <libxml/xmlreader.h>
 #include <libxml/xmlerror.h>
+#include <libxml/entities.h>
 #endif
 
 #include "nzbget.h"
@@ -55,23 +56,6 @@ using namespace MSXML;
 extern Options* g_pOptions;
 extern DiskState* g_pDiskState;
 
-#ifndef WIN32
-static void libxml_errorhandler(void *ebuf, const char *fmt, ...)
-{
-    va_list argp;
-    va_start(argp, fmt);
-    char szErrMsg[1024];
-    vsnprintf(szErrMsg, sizeof(szErrMsg), fmt, argp);
-    szErrMsg[1024-1] = '\0';
-    va_end(argp);
-
-	// remove trailing CRLF
-	for (char* pend = szErrMsg + strlen(szErrMsg) - 1; pend >= szErrMsg && (*pend == '\n' || *pend == '\r' || *pend == ' '); pend--) *pend = '\0';
-    
-    error("Error parsing nzb-file: %s", szErrMsg);
-}
-#endif
-
 NZBFile::NZBFile(const char* szFileName, const char* szCategory)
 {
     debug("Creating NZBFile");
@@ -82,6 +66,12 @@ NZBFile::NZBFile(const char* szFileName, const char* szCategory)
 	m_pNZBInfo->SetFilename(szFileName);
 	m_pNZBInfo->SetCategory(szCategory);
 	m_pNZBInfo->BuildDestDirName();
+
+#ifndef WIN32
+	m_pFileInfo = NULL;
+	m_pArticle = NULL;
+	m_szTagContent = NULL;
+#endif
 
     m_FileInfos.clear();
 }
@@ -106,6 +96,18 @@ NZBFile::~NZBFile()
 	{
 		m_pNZBInfo->Release();
 	}
+
+#ifndef WIN32
+	if (m_pFileInfo)
+	{
+		delete m_pFileInfo;
+	}
+	
+	if (m_szTagContent)
+	{
+		free(m_szTagContent);
+	}
+#endif
 }
 
 void NZBFile::LogDebugInfo()
@@ -455,158 +457,230 @@ bool NZBFile::ParseNZB(IUnknown* nzb)
 
 NZBFile* NZBFile::Create(const char* szFileName, const char* szCategory, const char* szBuffer, int iSize, bool bFromBuffer)
 {
-	xmlSetGenericErrorFunc(NULL, libxml_errorhandler);
-	
-    xmlTextReaderPtr doc;
+    NZBFile* pFile = new NZBFile(szFileName, szCategory);
+
+	xmlSAXHandler SAX_handler = {0};
+	SAX_handler.startElement = reinterpret_cast<startElementSAXFunc>(SAX_StartElement);
+	SAX_handler.endElement = reinterpret_cast<endElementSAXFunc>(SAX_EndElement);
+	SAX_handler.characters = reinterpret_cast<charactersSAXFunc>(SAX_characters);
+	SAX_handler.error = reinterpret_cast<errorSAXFunc>(SAX_error);
+	SAX_handler.getEntity = reinterpret_cast<getEntitySAXFunc>(SAX_getEntity);
+
+	int ret = 0;
+	pFile->m_bIgnoreNextError = false;
+
 	if (bFromBuffer)
 	{
-		doc = xmlReaderForMemory(szBuffer, iSize-1, "", NULL, 0);
+		ret = xmlSAXUserParseMemory(&SAX_handler, pFile, szBuffer, iSize);
 	}
 	else
 	{
-		doc = xmlReaderForFile(szFileName, NULL, 0);
+		ret = xmlSAXUserParseFile(&SAX_handler, pFile, szFileName);
 	}
-    if (!doc)
-    {
-    	error("Could not create XML-Reader");
-        return NULL;
-    }
-
-    NZBFile* pFile = new NZBFile(szFileName, szCategory);
-    if (pFile->ParseNZB(doc))
+        
+    if (ret == 0)
 	{
 		pFile->CheckFilenames();
 	}
 	else
 	{
+        error("Failed to parse nzb-file");
 		delete pFile;
 		pFile = NULL;
 	}
-
-    xmlFreeTextReader(doc);
-
-    return pFile;
+	
+	return pFile;
 }
 
-bool NZBFile::ParseNZB(void* nzb)
+void NZBFile::Parse_StartElement(const char *name, const char **atts)
 {
-	FileInfo* pFileInfo = NULL;
-	xmlTextReaderPtr node = (xmlTextReaderPtr)nzb;
-    // walk through whole doc and search for segments-tags
-    int ret = xmlTextReaderRead(node);
-    while (ret == 1)
-    {
-        if (node)
-        {
-            xmlChar *name, *value;
+	if (!strcmp("file", name))
+	{
+		m_pFileInfo = new FileInfo();
+		m_pFileInfo->SetFilename(m_szFileName);
 
-            name = xmlTextReaderName(node);
-            if (name == NULL)
-            {
-                name = xmlStrdup(BAD_CAST "--");
-            }
-            value = xmlTextReaderValue(node);
+    	for (int i = 0; atts[i]; i += 2)
+    	{
+    		const char* attrname = atts[i];
+    		const char* attrvalue = atts[i + 1];
+			if (!strcmp("subject", attrname))
+			{
+				m_pFileInfo->SetSubject(attrvalue);
+			}
+			if (!strcmp("date", attrname))
+			{
+				m_pFileInfo->SetTime(atoi(attrvalue));
+			}
+		}
+	}
+	else if (!strcmp("segment", name))
+	{
+		if (!m_pFileInfo)
+		{
+			// error: bad nzb-file
+			return;
+		}
+	
+		long long lsize = -1;
+		int partNumber = -1;
 
-            if (xmlTextReaderNodeType(node) == 1)
-            {
-                if (!strcmp("file", (char*)name))
-                {
-                    pFileInfo = new FileInfo();
-                    pFileInfo->SetFilename(m_szFileName);
+    	for (int i = 0; atts[i]; i += 2)
+    	{
+    		const char* attrname = atts[i];
+    		const char* attrvalue = atts[i + 1];
+			if (!strcmp("bytes", attrname))
+			{
+				lsize = atol(attrvalue);
+			}
+			if (!strcmp("number", attrname))
+			{
+				partNumber = atol(attrvalue);
+			}
+		}
+		if (lsize > 0)
+		{
+			m_pFileInfo->SetSize(m_pFileInfo->GetSize() + lsize);
+		}
 
-                    while (xmlTextReaderMoveToNextAttribute(node))
-                    {
-						xmlFree(name);
-            			name = xmlTextReaderName(node);
-                        if (!strcmp("subject",(char*)name))
-                        {
-							xmlFree(value);
-							value = xmlTextReaderValue(node);
-                            pFileInfo->SetSubject((char*)value);
-                        }
-                        if (!strcmp("date",(char*)name))
-                        {
-							xmlFree(value);
-							value = xmlTextReaderValue(node);
-							pFileInfo->SetTime(atoi((char*)value));
-                        }
-                    }
-                }
-                else if (!strcmp("segment",(char*)name))
-                {
-                    long long lsize = -1;
-                    int partNumber = -1;
+		if (partNumber > 0)
+		{
+			// new segment, add it!
+			m_pArticle = new ArticleInfo();
+			m_pArticle->SetPartNumber(partNumber);
+			m_pArticle->SetSize(lsize);
+			AddArticle(m_pFileInfo, m_pArticle);
+		}
+	}
+}
 
-                    while (xmlTextReaderMoveToNextAttribute(node))
-                    {
-						xmlFree(name);
-						name = xmlTextReaderName(node);
-						xmlFree(value);
-						value = xmlTextReaderValue(node);
-                        if (!strcmp("bytes",(char*)name))
-                        {
-                            lsize = atol((char*)value);
-                        }
-                        if (!strcmp("number",(char*)name))
-                        {
-                            partNumber = atol((char*)value);
-                        }
-                    }
-                    if (lsize > 0)
-                    {
-                        pFileInfo->SetSize(pFileInfo->GetSize() + lsize);
-                    }
-                    
-					/* Get the #text part */
-                    ret = xmlTextReaderRead(node);
+void NZBFile::Parse_EndElement(const char *name)
+{
+	if (!strcmp("file", name))
+	{
+		// Close the file element, add the new file to file-list
+		AddFileInfo(m_pFileInfo);
+		m_pFileInfo = NULL;
+		m_pArticle = NULL;
+	}
+	else if (!strcmp("group", name))
+	{
+		if (!m_pFileInfo)
+		{
+			// error: bad nzb-file
+			return;
+		}
+		
+		m_pFileInfo->GetGroups()->push_back(m_szTagContent);
+		m_szTagContent = NULL;
+	}
+	else if (!strcmp("segment", name))
+	{
+		if (!m_pFileInfo || !m_pArticle)
+		{
+			// error: bad nzb-file
+			return;
+		}
 
-                    if (partNumber > 0)
-                    {
-                        // new segment, add it!
-						xmlFree(value);
-						value = xmlTextReaderValue(node);
-                        char tmp[2048];
-                        snprintf(tmp, 2048, "<%s>", (char*)value);
-                        ArticleInfo* pArticle = new ArticleInfo();
-                        pArticle->SetPartNumber(partNumber);
-                        pArticle->SetMessageID(tmp);
-                        pArticle->SetSize(lsize);
-						AddArticle(pFileInfo, pArticle);
-                    }
-                }
-                else if (!strcmp("group",(char*)name))
-                {
-                    ret = xmlTextReaderRead(node);
-					xmlFree(value);
-					value = xmlTextReaderValue(node);
-					if (!pFileInfo)
-					{
-						// error: bad nzb-file
-						break;
-					}
-                    pFileInfo->GetGroups()->push_back(strdup((char*)value));
-                }
-            }
+		// Get the #text part
+		char ID[2048];
+		snprintf(ID, 2048, "<%s>", m_szTagContent);
+		m_pArticle->SetMessageID(ID);
+		m_pArticle = NULL;
+	}
+}
 
-            if (xmlTextReaderNodeType(node) == 15)
-            {
-                /* Close the file element, add the new file to file-list */
-                if (!strcmp("file",(char*)name))
-                {
-					AddFileInfo(pFileInfo);
-                }
-            }
+void NZBFile::Parse_Content(const char *buf, int len)
+{
+	if (m_szTagContent)
+	{
+		free(m_szTagContent);
+	}
 
-            xmlFree(name);
-            xmlFree(value);
-        }
-        ret = xmlTextReaderRead(node);
-    }
-    if (ret != 0)
-    {
-        error("Failed to parse nzb-file");
-		return false;
-    }
-	return true;
+	m_szTagContent = (char*)malloc(len + 1);
+	strncpy(m_szTagContent, buf, len);
+	m_szTagContent[len] = '\0';
+}
+
+void NZBFile::SAX_StartElement(NZBFile* pFile, const char *name, const char **atts)
+{
+	pFile->Parse_StartElement(name, atts);
+}
+
+void NZBFile::SAX_EndElement(NZBFile* pFile, const char *name)
+{
+	pFile->Parse_EndElement(name);
+}
+
+void NZBFile::SAX_characters(NZBFile* pFile, const char * xmlstr, int len)
+{
+	char* str = (char*)xmlstr;
+	
+	// trim starting blanks
+	int off = 0;
+	for (int i = 0; i < len; i++)
+	{
+		char ch = str[i];
+		if (ch == ' ' || ch == 10 || ch == 13 || ch == 9)
+		{
+			off++;
+		}
+		else
+		{
+			break;
+		}
+	}
+	
+	int newlen = len - off;
+	
+	// trim ending blanks
+	for (int i = len - 1; i >= off; i--)
+	{
+		char ch = str[i];
+		if (ch == ' ' || ch == 10 || ch == 13 || ch == 9)
+		{
+			newlen--;
+		}
+		else
+		{
+			break;
+		}
+	}
+	
+	if (newlen > 0)
+	{
+		// interpret tag content
+		pFile->Parse_Content(str + off, newlen);
+	}
+}
+
+void* NZBFile::SAX_getEntity(NZBFile* pFile, const char * name)
+{
+	xmlEntityPtr e = xmlGetPredefinedEntity((xmlChar* )name);
+	if (!e)
+	{
+		pFile->m_bIgnoreNextError = true;
+	}
+
+	return e;
+}
+
+void NZBFile::SAX_error(NZBFile* pFile, const char *msg, ...)
+{
+	if (pFile->m_bIgnoreNextError)
+	{
+		pFile->m_bIgnoreNextError = false;
+		return;
+	}
+	
+    va_list argp;
+    va_start(argp, msg);
+    char szErrMsg[1024];
+    vsnprintf(szErrMsg, sizeof(szErrMsg), msg, argp);
+    szErrMsg[1024-1] = '\0';
+    va_end(argp);
+
+	// remove trailing CRLF
+	for (char* pend = szErrMsg + strlen(szErrMsg) - 1; pend >= szErrMsg && (*pend == '\n' || *pend == '\r' || *pend == ' '); pend--) *pend = '\0';
+    error("Error parsing nzb-file: %s", szErrMsg);
 }
 #endif

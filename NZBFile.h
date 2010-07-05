@@ -1,8 +1,8 @@
 /*
  *  This file is part of nzbget
  *
- *  Copyright (C) 2004  Sven Henkel <sidddy@users.sourceforge.net>
- *  Copyright (C) 2007  Andrei Prygounkov <hugbug@users.sourceforge.net>
+ *  Copyright (C) 2004 Sven Henkel <sidddy@users.sourceforge.net>
+ *  Copyright (C) 2007-2010 Andrei Prygounkov <hugbug@users.sourceforge.net>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -50,7 +50,19 @@ private:
     bool 				ParseNZB(IUnknown* nzb);
 	static void			EncodeURL(const char* szFilename, char* szURL);
 #else
-    bool 				ParseNZB(void* nzb);
+	FileInfo*			m_pFileInfo;
+	ArticleInfo*		m_pArticle;
+	char*				m_szTagContent;
+	bool				m_bIgnoreNextError;
+
+	static void			SAX_StartElement(NZBFile* pFile, const char *name, const char **atts);
+	static void			SAX_EndElement(NZBFile* pFile, const char *name);
+	static void			SAX_characters(NZBFile* pFile, const char * xmlstr, int len);
+	static void*		SAX_getEntity(NZBFile* pFile, const char * name);
+	static void			SAX_error(NZBFile* pFile, const char *msg, ...);
+	void				Parse_StartElement(const char *name, const char **atts);
+	void				Parse_EndElement(const char *name);
+	void				Parse_Content(const char *buf, int len);
 #endif
 	static NZBFile*		Create(const char* szFileName, const char* szCategory, const char* szBuffer, int iSize, bool bFromBuffer);
 
