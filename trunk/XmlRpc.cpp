@@ -162,6 +162,30 @@ void XmlRpcProcessor::Execute()
 		return;
 	}
 
+	if (m_eAuthMode == amURL)
+	{
+		// extract password from URL
+		char* pstart = strchr(m_szUrl + 1, '/');
+		if (pstart)
+		{
+			int iLen = 0;
+			char* pend = strchr(pstart + 1, '/');
+			if (pend) 
+			{
+				iLen = (int)(pend - pstart - 1 < (int)sizeof(szAuthInfo) - 1 ? pend - pstart - 1 : (int)sizeof(szAuthInfo) - 1);
+			}
+			else
+			{
+				iLen = strlen(pstart + 1);
+			}
+			strncpy(szAuthInfo, pstart + 1, iLen);
+			szAuthInfo[iLen] = '\0';
+			char* sz_OldUrl = m_szUrl;
+			m_szUrl = strdup(pstart);
+			free(sz_OldUrl);
+		}
+	}
+
 	if (strlen(szAuthInfo) == 0)
 	{
 		warn("rpc-request received on port %i from %s, but username/password were not submitted", g_pOptions->GetServerPort(), m_szClientIP);
@@ -389,7 +413,7 @@ void XmlRpcProcessor::SendResponse(const char* szResponse, const char* szCallbac
 	const char* szCallbackFooter = m_eProtocol == rpJsonPRpc ? JSONP_CALLBACK_FOOTER : "";
 
 	int iCallbackHeaderLen = (m_eProtocol == rpJsonPRpc ? sizeof(JSONP_CALLBACK_HEADER) - 1 : 0);
-	int iCallbackFuncLen = m_eProtocol == rpJsonPRpc ? strlen(szCallbackFunc) : 0;
+	int iCallbackFuncLen = m_eProtocol == rpJsonPRpc ? (szCallbackFunc ? strlen(szCallbackFunc) : 0) : 0;
 	int iHeaderLen = (bXmlRpc ? sizeof(XML_HEADER) : sizeof(JSON_HEADER)) - 1;
 	int iFooterLen = (bXmlRpc ? sizeof(XML_FOOTER) : sizeof(JSON_FOOTER)) - 1;
 	int iOpenTagLen = (bFault ? (bXmlRpc ? sizeof(XML_FAULT_OPEN) : sizeof(JSON_FAULT_OPEN)) : (bXmlRpc ? sizeof(XML_OK_OPEN) : sizeof(JSON_OK_OPEN))) - 1;

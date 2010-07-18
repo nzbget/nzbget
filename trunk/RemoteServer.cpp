@@ -194,17 +194,33 @@ void RequestProcessor::Run()
 			}
 
 			XmlRpcProcessor::ERpcProtocol eProtocol = XmlRpcProcessor::rpUndefined;
+			XmlRpcProcessor::EAuthMode eAuthMode = XmlRpcProcessor::amHeader;
 			if (!strcmp(szUrl, "/xmlrpc") || !strncmp(szUrl, "/xmlrpc/", 8))
 			{
 				eProtocol = XmlRpcProcessor::rpXmlRpc;
+			}
+			else if (!strcmp(szUrl, "/xmlrpc-auth") || !strncmp(szUrl, "/xmlrpc-auth/", 13))
+			{
+				eProtocol = XmlRpcProcessor::rpXmlRpc;
+				eAuthMode = XmlRpcProcessor::amURL;
 			}
 			else if (!strcmp(szUrl, "/jsonrpc") || !strncmp(szUrl, "/jsonrpc/", 9))
 			{
 				eProtocol = XmlRpcProcessor::rpJsonRpc;
 			}
+			else if (!strcmp(szUrl, "/jsonrpc-auth") || !strncmp(szUrl, "/jsonrpc-auth/", 14))
+			{
+				eProtocol = XmlRpcProcessor::rpJsonRpc;
+				eAuthMode = XmlRpcProcessor::amURL;
+			}
 			else if (!strcmp(szUrl, "/jsonprpc") || !strncmp(szUrl, "/jsonprpc/", 10))
 			{
 				eProtocol = XmlRpcProcessor::rpJsonPRpc;
+			}
+			else if (!strcmp(szUrl, "/jsonprpc-auth") || !strncmp(szUrl, "/jsonprpc-auth/", 15))
+			{
+				eProtocol = XmlRpcProcessor::rpJsonPRpc;
+				eAuthMode = XmlRpcProcessor::amURL;
 			}
 
 			if (eProtocol != XmlRpcProcessor::rpUndefined)
@@ -214,6 +230,7 @@ void RequestProcessor::Run()
 				processor.SetClientIP(ip);
 				processor.SetProtocol(eProtocol);
 				processor.SetHttpMethod(eHttpMethod);
+				processor.SetAuthMode(eAuthMode);
 				processor.SetUrl(szUrl);
 				processor.Execute();
 				bOK = true;

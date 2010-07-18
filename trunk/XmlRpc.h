@@ -60,12 +60,19 @@ public:
 		hmGet
 	};
 
+	enum EAuthMode
+	{
+		amHeader,
+		amURL
+	};
+
 private:
 	Connection*			m_pConnection;
 	const char*			m_szClientIP;
 	char*				m_szRequest;
 	ERpcProtocol		m_eProtocol;
 	EHttpMethod			m_eHttpMethod;
+	EAuthMode			m_eAuthMode;
 	char*				m_szUrl;
 
 	void				Dispatch();
@@ -81,6 +88,7 @@ public:
 	void				SetConnection(Connection* pConnection) { m_pConnection = pConnection; }
 	void				SetProtocol(ERpcProtocol eProtocol) { m_eProtocol = eProtocol; }
 	void				SetHttpMethod(EHttpMethod eHttpMethod) { m_eHttpMethod = eHttpMethod; }
+	void				SetAuthMode(EAuthMode eAuthMode) { m_eAuthMode = eAuthMode; } 
 	void				SetUrl(const char* szUrl);
 	void				SetClientIP(const char* szClientIP) { m_szClientIP = szClientIP; }
 };
