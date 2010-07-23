@@ -1,7 +1,7 @@
 /*
  *  This file is part of nzbget
  *
- *  Copyright (C) 2007-2009 Andrei Prygounkov <hugbug@users.sourceforge.net>
+ *  Copyright (C) 2007-2010 Andrei Prygounkov <hugbug@users.sourceforge.net>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -38,6 +38,7 @@
 #include <errno.h>
 #ifdef WIN32
 #include <direct.h>
+#include <WinIoCtl.h>
 #else
 #include <unistd.h>
 #include <sys/statvfs.h>
@@ -340,11 +341,18 @@ bool Util::SetFileSize(const char* szFilename, int iSize)
 {
 	bool bOK = false;
 #ifdef WIN32
-	FILE* pFile = fopen(szFilename, "ab");
-	if (pFile)
+	HANDLE hFile = CreateFile(szFilename, GENERIC_WRITE, FILE_SHARE_READ, 0, CREATE_NEW, 0, NULL);
+	if (hFile != INVALID_HANDLE_VALUE)
 	{
-		bOK = _chsize_s(pFile->_file, iSize) == 0;
-		fclose(pFile);
+		// first try to create sparse file (supported only on NTFS partitions),
+		// it may fail but that's OK.
+		DWORD dwBytesReturned;
+		DeviceIoControl(hFile, FSCTL_SET_SPARSE, NULL, 0, NULL, 0, &dwBytesReturned, NULL);
+
+		SetFilePointer(hFile, iSize, NULL, FILE_END);
+		SetEndOfFile(hFile);
+		CloseHandle(hFile);
+		bOK = true;
 	}
 #else
 	// create file
