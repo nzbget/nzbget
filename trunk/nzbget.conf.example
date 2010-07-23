@@ -40,6 +40,11 @@ NzbDir=${MAINDIR}/nzb
 QueueDir=${MAINDIR}/queue
 
 # Directory to store temporary files.
+#
+# NOTE: when option <DirectWrite> is enabled the temporary directory (option 
+# <TempDir>) must be located on the same partition with destination directory
+# (option DestDir>) for better performance. If option <DirectWrite> is disabled 
+# it's better to use different drives for temporary and destination directories.
 TempDir=${MAINDIR}/tmp
 
 # Lock-file for daemon-mode, POSIX only.
@@ -279,35 +284,47 @@ Decode=yes
 
 # Write decoded articles directly into destination output file (yes, no).
 #
+# Files are posted to Usenet withing artilce bodies. Each file typically
+# requires hundreds of articles.
+#
+# When option <DirectWrite> is disabled, the program downloads all articles
+# into temporary directory and then combine them into destination file.
+#
 # With this option enabled the program at first creates the output 
 # destination file with required size (total size of all articles), 
 # then writes on the fly decoded articles directly to the file 
-# without creating of any temporary files, even for decoded articles.
-# This may results in major performance improvement, but this highly 
-# depends on OS and file system.
+# without creating of any temporary files.
 #
-# Can improve performance on a very fast internet connections, 
-# but you need to test if it works in your case.
+# This may improve performance but depends on OS and file system ability to
+# instantly create large files without initializing them with nulls. Such
+# files are called sparse files and are supported by modern file systems
+# like EXT3 on Linux or NTFS on Windows.
 #
-# INFO: Tests showed, that on Linux with EXT3-partition activating of 
-# this option results in up to 20% better performance, but on Windows with NTFS 
-# or Linux with FAT32-partitions the performance were decreased. 
-# The possible reason is that on EXT3-partition Linux can create large files
-# very fast (if the content of file does not need to be initialized), 
-# but Windows on NTFS-partition and also Linux on FAT32-partition need to
-# initialize created large file with nulls, resulting in a big performance 
-# degradation.
+# Using of this option reduces disk operations but may produce more fragmented
+# files (depends on disk driver), which may slow down the post-processing.
+# It's recommended to test how the option behave on your platform to find the
+# best setting.
 #
-# NOTE: for testing try to download few big files (with total size 500-1000MB)
-# and measure required time. Do not rely on the program's speed indicator.
+# INFO: a particular test on a Linux router with EXT3-partition showed that
+# activating of this option results in up to 20% better performance during
+# downloading.
+#
+# NOTE: for test try to download few big nzb-collections (each 4GB or more)
+# and measure the time used for downloading and post-processing (use timestamps
+# in a log-file to determine when the post-processing was ended).
+#
+# NOTE: when option <DirectWrite> is enabled the temporary directory (option 
+# <TempDir>) must be located on the same partition with destination directory
+# (option DestDir>) for better performance. If option <DirectWrite> is disabled 
+# it's better to use different drives for temporary and destination directories.
 #
 # NOTE: if both options <DirectWrite> and <ContinuePartial> are enabled,
-# the program will still create empty articles-files in temp-directory. They
-# are used to continue download of file on a next program start. To minimize
-# disk-io it is recommended to disable option <ContinuePartial>, if 
-# <DirectWrite> is enabled. Especially on a fast connections (where you
-# would want to activate <DirectWrite>) it should not be a problem to 
-# redownload an interrupted file.
+# the program still creates empty article-files in temp-directory. They are used 
+# by the option <ContinuePartial> to check if a certain article was downloaded.
+# To minimize disk-io it is recommended to disable option <ContinuePartial>,
+# if <DirectWrite> is enabled. Especially on a fast connections (where you 
+# would want to activate <DirectWrite>) it should not be a problem to redownload
+# an interrupted file.
 DirectWrite=no
 
 # Check CRC of downloaded and decoded articles (yes, no).
@@ -851,7 +868,7 @@ PostPauseQueue=no
 #    because par-checking/repairing needs a lot of CPU-power and 
 #    significantly increases disk usage;
 # 2) Try to activate option <DirectWrite> ("DirectWrite=yes"), especially
-#    if you use EXT3-partitions;
+#    if you use EXT3-partitions (Linux) or NTFS (Windows);
 # 3) Disable option <CrcCheck> ("CrcCheck=no");
 # 4) Disable option <ContinuePartial> ("ContinuePartial=no");
 # 5) Do not limit download rate ("DownloadRate=0"), because the bandwidth 
