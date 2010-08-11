@@ -853,6 +853,29 @@ bool QueueCoordinator::SetQueueEntryNZBCategory(NZBInfo* pNZBInfo, const char* s
 	return bOK;
 }
 
+bool QueueCoordinator::SetQueueEntryNZBName(NZBInfo* pNZBInfo, const char* szName)
+{
+	if (pNZBInfo->GetPostProcess())
+	{
+		char szNZBNiceName[1024];
+		pNZBInfo->GetNiceNZBName(szNZBNiceName, 1024);
+		error("Could not rename %s. File in post-process-stage", szNZBNiceName);
+		return false;
+	}
+
+	char szOldDestDir[1024];
+	strncpy(szOldDestDir, pNZBInfo->GetDestDir(), 1024);
+	szOldDestDir[1024-1] = '\0';
+
+	pNZBInfo->SetUserNZBName(szName);
+	pNZBInfo->BuildDestDirName();
+
+	bool bDirUnchanged = !strcmp(pNZBInfo->GetDestDir(), szOldDestDir);
+	bool bOK = bDirUnchanged || ArticleDownloader::MoveCompletedFiles(pNZBInfo, szOldDestDir);
+
+	return bOK;
+}
+
 /*
  * NOTE: DownloadQueue must be locked prior to call of this function
  */

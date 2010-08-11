@@ -1011,6 +1011,21 @@ void Options::InitCommandLine(int argc, char* argv[])
 						}
 						m_szEditQueueText = strdup(argv[optind-1]);
 					}
+					else if (!strcasecmp(optarg, "N"))
+					{
+						if (!bGroup)
+						{
+							abort("FATAL ERROR: Only groups can be renamed\n");
+						}
+						m_iEditQueueAction = eRemoteEditActionGroupSetName;
+
+						optind++;
+						if (optind > argc)
+						{
+							abort("FATAL ERROR: Could not parse value of option 'E'\n");
+						}
+						m_szEditQueueText = strdup(argv[optind-1]);
+					}
 					else if (!strcasecmp(optarg, "M"))
 					{
 						if (!bGroup)
@@ -1167,6 +1182,7 @@ void Options::PrintUsage(char* com)
 		"                            Return history-item(s) back to download queue\n"
 		"       D                    Delete file(s)/group(s)/post-job(s)/history-item(s)\n"
 		"       K <name>             Set category (for groups)\n"
+		"       N <name>             Rename (for groups)\n"
 		"       M                    Merge (for groups)\n"
 		"       O <name>=<value>     Set post-process parameter (for groups)\n"
 		"    <IDs>                   Comma-separated list of file-ids or ranges\n"

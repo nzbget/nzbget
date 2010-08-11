@@ -1,7 +1,7 @@
 /*
  *  This file is part of nzbget
  *
- *  Copyright (C) 2007-2009 Andrei Prygounkov <hugbug@users.sourceforge.net>
+ *  Copyright (C) 2007-2010 Andrei Prygounkov <hugbug@users.sourceforge.net>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -230,6 +230,10 @@ bool QueueEditor::InternEditList(DownloadQueue* pDownloadQueue, IDList* pIDList,
 
 				case eaGroupSetCategory:
 					SetNZBCategory(pItem->m_pFileInfo->GetNZBInfo(), szText);
+					break;
+
+				case eaGroupSetName:
+					SetNZBName(pItem->m_pFileInfo->GetNZBInfo(), szText);
 					break;
 
 				case eaGroupSetParameter:
@@ -685,6 +689,13 @@ void QueueEditor::SetNZBCategory(NZBInfo* pNZBInfo, const char* szCategory)
 	debug("QueueEditor: setting category '%s' for '%s'", szCategory, Util::BaseFileName(pNZBInfo->GetFilename()));
 
 	g_pQueueCoordinator->SetQueueEntryNZBCategory(pNZBInfo, szCategory);
+}
+
+void QueueEditor::SetNZBName(NZBInfo* pNZBInfo, const char* szName)
+{
+	debug("QueueEditor: renaming '%s' to '%s'", Util::BaseFileName(pNZBInfo->GetFilename()), szName);
+
+	g_pQueueCoordinator->SetQueueEntryNZBName(pNZBInfo, szName);
 }
 
 /**

@@ -113,6 +113,7 @@ public:
 	bool					GetStandBy() { return m_bStandBy; }
 	bool					DeleteQueueEntry(FileInfo* pFileInfo);
 	bool					SetQueueEntryNZBCategory(NZBInfo* pNZBInfo, const char* szCategory);
+	bool					SetQueueEntryNZBName(NZBInfo* pNZBInfo, const char* szName);
 	bool					MergeQueueEntries(NZBInfo* pDestNZBInfo, NZBInfo* pSrcNZBInfo);
 	void					DiscardDiskFile(FileInfo* pFileInfo);
 	QueueEditor*			GetQueueEditor() { return &m_QueueEditor; }
