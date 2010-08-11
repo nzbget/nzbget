@@ -219,6 +219,7 @@ private:
 	int					m_iID;
 	int					m_iRefCount;
 	char* 				m_szFilename;
+	char*				m_szUserNZBName;
 	char* 				m_szDestDir;
 	char* 				m_szCategory;
 	int		 			m_iFileCount;
@@ -251,12 +252,14 @@ public:
 	int					GetID() { return m_iID; }
 	const char*			GetFilename() { return m_szFilename; }
 	void				SetFilename(const char* szFilename);
-	void				GetNiceNZBName(char* szBuffer, int iSize);
+	void				GetNiceNZBName(char* szBuffer, int iSize);  // needs locking (for shared objects)
 	static void			MakeNiceNZBName(const char* szNZBFilename, char* szBuffer, int iSize);
 	const char*			GetDestDir() { return m_szDestDir; }   // needs locking (for shared objects)
 	void				SetDestDir(const char* szDestDir);     // needs locking (for shared objects)
 	const char*			GetCategory() { return m_szCategory; } // needs locking (for shared objects)
 	void				SetCategory(const char* szCategory);   // needs locking (for shared objects)
+	const char*			GetUserNZBName() { return m_szUserNZBName; } 	   // needs locking (for shared objects)
+	void				SetUserNZBName(const char* szUserNZBName);	   // needs locking (for shared objects)
 	long long 			GetSize() { return m_lSize; }
 	void 				SetSize(long long lSize) { m_lSize = lSize; }
 	int					GetFileCount() { return m_iFileCount; }

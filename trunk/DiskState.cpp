@@ -1,7 +1,7 @@
 /*
  *  This file is part of nzbget
  *
- *  Copyright (C) 2007-2009 Andrei Prygounkov <hugbug@users.sourceforge.net>
+ *  Copyright (C) 2007-2010 Andrei Prygounkov <hugbug@users.sourceforge.net>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -82,7 +82,7 @@ bool DiskState::SaveDownloadQueue(DownloadQueue* pDownloadQueue)
 		return false;
 	}
 
-	fprintf(outfile, "%s%i\n", FORMATVERSION_SIGNATURE, 12);
+	fprintf(outfile, "%s%i\n", FORMATVERSION_SIGNATURE, 13);
 
 	// save nzb-infos
 	SaveNZBList(pDownloadQueue, outfile);
@@ -132,7 +132,7 @@ bool DiskState::LoadDownloadQueue(DownloadQueue* pDownloadQueue)
 	char FileSignatur[128];
 	fgets(FileSignatur, sizeof(FileSignatur), infile);
 	int iFormatVersion = ParseFormatVersion(FileSignatur);
-	if (iFormatVersion < 3 || iFormatVersion > 12)
+	if (iFormatVersion < 3 || iFormatVersion > 13)
 	{
 		error("Could not load diskstate due to file version mismatch");
 		fclose(infile);
@@ -191,6 +191,7 @@ void DiskState::SaveNZBList(DownloadQueue* pDownloadQueue, FILE* outfile)
 		fprintf(outfile, "%s\n", pNZBInfo->GetFilename());
 		fprintf(outfile, "%s\n", pNZBInfo->GetDestDir());
 		fprintf(outfile, "%s\n", pNZBInfo->GetQueuedFilename());
+		fprintf(outfile, "%s\n", pNZBInfo->GetUserNZBName());
 		fprintf(outfile, "%s\n", pNZBInfo->GetCategory());
 		fprintf(outfile, "%i\n", pNZBInfo->GetPostProcess() ? 1 : 0);
 		fprintf(outfile, "%i\n", (int)pNZBInfo->GetParStatus());
@@ -267,6 +268,13 @@ bool DiskState::LoadNZBList(DownloadQueue* pDownloadQueue, FILE* infile, int iFo
 			if (!fgets(buf, sizeof(buf), infile)) goto error;
 			if (buf[0] != 0) buf[strlen(buf)-1] = 0; // remove traling '\n'
 			pNZBInfo->SetQueuedFilename(buf);
+		}
+
+		if (iFormatVersion >= 13)
+		{
+			if (!fgets(buf, sizeof(buf), infile)) goto error;
+			if (buf[0] != 0) buf[strlen(buf)-1] = 0; // remove traling '\n'
+			pNZBInfo->SetUserNZBName(buf);
 		}
 
 		if (iFormatVersion >= 4)
@@ -873,7 +881,7 @@ bool DiskState::DiscardDownloadQueue()
 	char FileSignatur[128];
 	fgets(FileSignatur, sizeof(FileSignatur), infile);
 	int iFormatVersion = ParseFormatVersion(FileSignatur);
-	if (3 <= iFormatVersion && iFormatVersion <= 12)
+	if (3 <= iFormatVersion && iFormatVersion <= 13)
 	{
 		// skip nzb-infos
 		int size = 0;
@@ -886,6 +894,10 @@ bool DiskState::DiscardDownloadQueue()
 			if (iFormatVersion >= 5)
 			{
 				if (!fgets(buf, sizeof(buf), infile)) break; // localfile
+			}
+			if (iFormatVersion >= 13)
+			{
+				if (!fgets(buf, sizeof(buf), infile)) break; // UserNZBname
 			}
 			if (iFormatVersion >= 4)
 			{

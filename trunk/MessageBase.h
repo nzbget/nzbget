@@ -27,7 +27,7 @@
 #ifndef MESSAGEBASE_H
 #define MESSAGEBASE_H
 
-static const int32_t NZBMESSAGE_SIGNATURE = 0x6E7A6208; // = "nzb8" (protocol version)
+static const int32_t NZBMESSAGE_SIGNATURE = 0x6E7A6209; // = "nzb9" (protocol version)
 static const int NZBREQUESTFILENAMESIZE = 512;
 static const int NZBREQUESTPASSWORDSIZE = 32;
 
@@ -87,6 +87,7 @@ enum eRemoteEditAction
 	eRemoteEditActionGroupSetCategory,		// set or change category for a group
 	eRemoteEditActionGroupMerge,			// merge group
 	eRemoteEditActionGroupSetParameter,		// set post-process parameter for group
+	eRemoteEditActionGroupSetName,			// set group name (rename group)
 	eRemoteEditActionPostMoveOffset = 51,	// move post-job to m_iOffset relative to the current position in post-queue
 	eRemoteEditActionPostMoveTop,			// move post-job to the top of post-queue
 	eRemoteEditActionPostMoveBottom,		// move post-job to the bottom of post-queue

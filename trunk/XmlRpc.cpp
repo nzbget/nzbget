@@ -1379,6 +1379,7 @@ EditCommandEntry EditCommandNameMap[] = {
 	{ QueueEditor::eaGroupSetCategory, "GroupSetCategory" },
 	{ QueueEditor::eaGroupMerge, "GroupMerge" },
 	{ QueueEditor::eaGroupSetParameter, "GroupSetParameter" },
+	{ QueueEditor::eaGroupSetName, "GroupSetName" },
 	{ PrePostProcessor::eaPostMoveOffset, "PostMoveOffset" },
 	{ PrePostProcessor::eaPostMoveTop, "PostMoveTop" },
 	{ PrePostProcessor::eaPostMoveBottom, "PostMoveBottom" },

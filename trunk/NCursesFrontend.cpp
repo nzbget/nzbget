@@ -912,6 +912,7 @@ void NCursesFrontend::PrintGroupQueue()
 {
 	int iLineNr = m_iQueueWinTop;
 
+    DownloadQueue* pDownloadQueue = LockQueue();
 	GroupQueue* pGroupQueue = &m_groupQueue;
 	if (pGroupQueue->empty())
     {
@@ -966,6 +967,7 @@ void NCursesFrontend::PrintGroupQueue()
 		szBuffer[MAX_SCREEN_WIDTH - 1] = '\0';
 		PrintTopHeader(szBuffer, m_iQueueWinTop, false);
     }
+    UnlockQueue();
 }
 
 void NCursesFrontend::ResetColWidths()

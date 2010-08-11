@@ -121,6 +121,7 @@ NZBInfo::NZBInfo()
 	m_szFilename = NULL;
 	m_szDestDir = NULL;
 	m_szCategory = strdup("");
+	m_szUserNZBName = strdup("");
 	m_iFileCount = 0;
 	m_iParkedFileCount = 0;
 	m_lSize = 0;
@@ -155,6 +156,10 @@ NZBInfo::~NZBInfo()
 	if (m_szCategory)
 	{
 		free(m_szCategory);
+	}
+	if (m_szUserNZBName)
+	{
+		free(m_szUserNZBName);
 	}
 	if (m_szQueuedFilename)
 	{
@@ -231,6 +236,15 @@ void NZBInfo::SetCategory(const char* szCategory)
 	m_szCategory = strdup(szCategory);
 }
 
+void NZBInfo::SetUserNZBName(const char* szUserNZBName)
+{
+	if (m_szUserNZBName)
+	{
+		free(m_szUserNZBName);
+	}
+	m_szUserNZBName = strdup(szUserNZBName);
+}
+
 void NZBInfo::SetQueuedFilename(const char * szQueuedFilename)
 {
 	if (m_szQueuedFilename)
@@ -242,7 +256,7 @@ void NZBInfo::SetQueuedFilename(const char * szQueuedFilename)
 
 void NZBInfo::GetNiceNZBName(char* szBuffer, int iSize)
 {
-	MakeNiceNZBName(m_szFilename, szBuffer, iSize);
+	MakeNiceNZBName(strlen(m_szUserNZBName) > 0 ? m_szUserNZBName : m_szFilename, szBuffer, iSize);
 }
 
 void NZBInfo::MakeNiceNZBName(const char * szNZBFilename, char * szBuffer, int iSize)
