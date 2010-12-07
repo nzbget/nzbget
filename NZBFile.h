@@ -53,6 +53,7 @@ private:
 	FileInfo*			m_pFileInfo;
 	ArticleInfo*		m_pArticle;
 	char*				m_szTagContent;
+	int					m_iTagContentLen;
 	bool				m_bIgnoreNextError;
 
 	static void			SAX_StartElement(NZBFile* pFile, const char *name, const char **atts);

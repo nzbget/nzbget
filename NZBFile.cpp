@@ -71,6 +71,7 @@ NZBFile::NZBFile(const char* szFileName, const char* szCategory)
 	m_pFileInfo = NULL;
 	m_pArticle = NULL;
 	m_szTagContent = NULL;
+	m_iTagContentLen = 0;
 #endif
 
     m_FileInfos.clear();
@@ -494,6 +495,13 @@ NZBFile* NZBFile::Create(const char* szFileName, const char* szCategory, const c
 
 void NZBFile::Parse_StartElement(const char *name, const char **atts)
 {
+	if (m_szTagContent)
+	{
+		free(m_szTagContent);
+		m_szTagContent = NULL;
+		m_iTagContentLen = 0;
+	}
+	
 	if (!strcmp("file", name))
 	{
 		m_pFileInfo = new FileInfo();
@@ -572,6 +580,7 @@ void NZBFile::Parse_EndElement(const char *name)
 		
 		m_pFileInfo->GetGroups()->push_back(m_szTagContent);
 		m_szTagContent = NULL;
+		m_iTagContentLen = 0;
 	}
 	else if (!strcmp("segment", name))
 	{
@@ -591,14 +600,10 @@ void NZBFile::Parse_EndElement(const char *name)
 
 void NZBFile::Parse_Content(const char *buf, int len)
 {
-	if (m_szTagContent)
-	{
-		free(m_szTagContent);
-	}
-
-	m_szTagContent = (char*)malloc(len + 1);
-	strncpy(m_szTagContent, buf, len);
-	m_szTagContent[len] = '\0';
+	m_szTagContent = (char*)realloc(m_szTagContent, m_iTagContentLen + len + 1);
+	strncpy(m_szTagContent + m_iTagContentLen, buf, len);
+	m_iTagContentLen += len;
+	m_szTagContent[m_iTagContentLen] = '\0';
 }
 
 void NZBFile::SAX_StartElement(NZBFile* pFile, const char *name, const char **atts)
@@ -658,6 +663,7 @@ void* NZBFile::SAX_getEntity(NZBFile* pFile, const char * name)
 	xmlEntityPtr e = xmlGetPredefinedEntity((xmlChar* )name);
 	if (!e)
 	{
+		warn("entity not found");
 		pFile->m_bIgnoreNextError = true;
 	}
 
