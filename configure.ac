@@ -159,6 +159,14 @@ fi
 
 
 dnl
+dnl cCheck if spinlocks are available
+dnl
+AC_CHECK_FUNC(pthread_spin_init,
+	[AC_DEFINE([HAVE_SPINLOCK], 1, [Define to 1 if spinlocks are supported])]
+	AC_SEARCH_LIBS([pthread_spin_init], [pthread]),)
+
+
+dnl
 dnl Determine what socket length (socklen_t) data type is
 dnl
 AC_MSG_CHECKING([for type of socket length (socklen_t)])

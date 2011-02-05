@@ -71,6 +71,11 @@ private:
     int                     m_iSpeedTotalBytes;
     int 					m_iSpeedTime[SPEEDMETER_SLOTS];
     int                     m_iSpeedStartTime; 
+#ifdef HAVE_SPINLOCK
+	SpinLock				m_spinlockSpeed;
+#else
+	Mutex					m_mutexSpeed;
+#endif
 
     int						m_iSpeedBytesIndex;
 	long long				m_iAllBytes;

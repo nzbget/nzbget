@@ -67,6 +67,9 @@
 /* Define to 1 if libpar2 supports cancelling (needs a special patch) */
 #undef HAVE_PAR2_CANCEL
 
+/* Define to 1 if spinlocks are supported */
+#undef HAVE_SPINLOCK
+
 /* Define to 1 if stat64 is supported */
 #undef HAVE_STAT64
 
@@ -111,6 +114,9 @@
 
 /* Define to the one symbol short name of this package. */
 #undef PACKAGE_TARNAME
+
+/* Define to the home page for this package. */
+#undef PACKAGE_URL
 
 /* Define to the version of this package. */
 #undef PACKAGE_VERSION

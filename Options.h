@@ -180,6 +180,7 @@ private:
 	bool				m_bMergeNzb;
 	int					m_iParTimeLimit;
 	int					m_iKeepHistory;
+	bool				m_bAccurateRate;
 
 	// Parsed command-line parameters
 	bool				m_bServerMode;
@@ -301,6 +302,7 @@ public:
 	bool				GetMergeNzb() { return m_bMergeNzb; }
 	int					GetParTimeLimit() { return m_iParTimeLimit; }
 	int					GetKeepHistory() { return m_iKeepHistory; }
+	bool				GetAccurateRate() { return m_bAccurateRate; }
 
 	// Parsed command-line parameters
 	bool				GetServerMode() { return m_bServerMode; }
