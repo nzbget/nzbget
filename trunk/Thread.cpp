@@ -2,7 +2,7 @@
  *  This file is part of nzbget
  *
  *  Copyright (C) 2004 Sven Henkel <sidddy@users.sourceforge.net>
- *  Copyright (C) 2007-2009 Andrei Prygounkov <hugbug@users.sourceforge.net>
+ *  Copyright (C) 2007-2010 Andrei Prygounkov <hugbug@users.sourceforge.net>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -96,6 +96,47 @@ void Mutex::Unlock()
 	pthread_mutex_unlock((pthread_mutex_t*)m_pMutexObj);
 #endif
 }
+
+
+#ifdef HAVE_SPINLOCK
+SpinLock::SpinLock()
+{
+#ifdef WIN32
+	m_pSpinLockObj = (CRITICAL_SECTION *)malloc(sizeof(CRITICAL_SECTION));
+	InitializeCriticalSectionAndSpinCount((CRITICAL_SECTION *)m_pSpinLockObj, 0x00FFFFFF);
+#else
+	m_pSpinLockObj = (pthread_spinlock_t *)malloc(sizeof(pthread_spinlock_t));
+	pthread_spin_init((pthread_spinlock_t *)m_pSpinLockObj, PTHREAD_PROCESS_PRIVATE);
+#endif
+}
+
+SpinLock::~SpinLock()
+{
+#ifdef WIN32
+	DeleteCriticalSection((CRITICAL_SECTION *)m_pSpinLockObj);
+#else
+	pthread_spin_destroy((pthread_spinlock_t *)m_pSpinLockObj);
+#endif
+}
+
+void SpinLock::Lock()
+{
+#ifdef WIN32
+	EnterCriticalSection((CRITICAL_SECTION *)m_pSpinLockObj);
+#else
+	pthread_spin_lock((pthread_spinlock_t *)m_pSpinLockObj);
+#endif
+}
+
+void SpinLock::Unlock()
+{
+#ifdef WIN32
+	LeaveCriticalSection((CRITICAL_SECTION *)m_pSpinLockObj);
+#else
+	pthread_spin_unlock((pthread_spinlock_t *)m_pSpinLockObj);
+#endif
+}
+#endif
 
 
 void Thread::Init()

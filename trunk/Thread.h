@@ -2,7 +2,7 @@
  *  This file is part of nzbget
  *
  *  Copyright (C) 2004 Sven Henkel <sidddy@users.sourceforge.net>
- *  Copyright (C) 2007-2009 Andrei Prygounkov <hugbug@users.sourceforge.net>
+ *  Copyright (C) 2007-2010 Andrei Prygounkov <hugbug@users.sourceforge.net>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -39,6 +39,19 @@ public:
 	void					Unlock();
 };
 
+#ifdef HAVE_SPINLOCK
+class SpinLock
+{
+private:
+	volatile void			*m_pSpinLockObj;
+	
+public:
+							SpinLock();
+							~SpinLock();
+	void					Lock();
+	void					Unlock();
+};
+#endif
 
 class Thread
 {

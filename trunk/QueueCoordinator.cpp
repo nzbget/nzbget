@@ -310,18 +310,18 @@ float QueueCoordinator::CalcCurrentDownloadSpeed()
 	return fSpeed;
 }
 
-/*
- * NOTE: we should use mutex by access to m_iSpeedBytes and m_iSpeedBytesIndex,
- * but this would results in a big performance loss (the function 
- * "AddSpeedReading" is called extremly often), so we better agree with calculation 
- * errors possible because of simultaneuos access from several threads.
- * The used algorithm is able to recover after few seconds.
- * In any case the calculation errors can not result in fatal system 
- * errors (segmentation faults).
- */
 void QueueCoordinator::AddSpeedReading(int iBytes)
 {
     int iNowSlot = (int)time(NULL) / SPEEDMETER_SLOTSIZE;
+
+	if (g_pOptions->GetAccurateRate())
+	{
+#ifdef HAVE_SPINLOCK
+		m_spinlockSpeed.Lock();
+#else
+		m_mutexSpeed.Lock();
+#endif
+	}
 
     if (iNowSlot > m_iSpeedTime[m_iSpeedBytesIndex])
     {
@@ -351,6 +351,15 @@ void QueueCoordinator::AddSpeedReading(int iBytes)
     m_iSpeedBytes[m_iSpeedBytesIndex] += iBytes;
     m_iSpeedTotalBytes += iBytes;
 	m_iAllBytes += iBytes;
+
+	if (g_pOptions->GetAccurateRate())
+	{
+#ifdef HAVE_SPINLOCK
+		m_spinlockSpeed.Unlock();
+#else
+		m_mutexSpeed.Unlock();
+#endif
+	}
 }
 
 void QueueCoordinator::ResetSpeedStat()

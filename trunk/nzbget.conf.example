@@ -389,6 +389,31 @@ ThreadLimit=100
 # The download rate can be changed later via remote calls.
 DownloadRate=0
 
+# Accurate speed rate calculation (yes, no).
+#
+# During downloading using several connections the download threads may
+# interfere with each other when updating statistical data for speed meter.
+# This may cause calculation errors resulting in a wrong download rate
+# reported by the program. This can be critical especially when using download
+# rate throttling.
+#
+# Enable the option to use thread synchronisation mechanisms in order to
+# provide accurate speed calculations.
+#
+# NOTE: The program uses spinlocks if the operating system supports them.
+# Otherwise it uses mutexes, which are much less effective. Anyway thread
+# synchronisation increases CPU load. Be aware that spinlocks are efective
+# only on multicore systems. If you enabled the option on a sigle-core
+# system (even if the underlying OS supports spinlocks), that would
+# probably significally increase CPU load.
+#
+# NOTE: It is recommended to run tests to determine how the option affects
+# the CPU usage and the download speed on a particular system.
+#
+# NOTE: the average (session) download speed is always accurate. It uses
+# other data for speed calculation and is not affected by this option.
+AccurateRate=no
+
 # Set the size of memory buffer used by writing the articles (bytes).
 #
 # Bigger values decrease disk-io, but increase memory usage.
@@ -872,7 +897,8 @@ PostPauseQueue=no
 # 3) Disable option <CrcCheck> ("CrcCheck=no");
 # 4) Disable option <ContinuePartial> ("ContinuePartial=no");
 # 5) Do not limit download rate ("DownloadRate=0"), because the bandwidth 
-#    throttling eats some CPU time;
+#    throttling eats some CPU time. Disable accurate speed rate
+#    meter ("AccurateRate=no");
 # 6) Disable logging for detail- and debug-messages ("DetailTarget=none", 
 #    "DebugTarget=none");
 # 7) Run the program in daemon (Posix) or service (Windows) mode and use
