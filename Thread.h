@@ -43,7 +43,7 @@ public:
 class SpinLock
 {
 private:
-	volatile void			*m_pSpinLockObj;
+	void*					m_pSpinLockObj;
 	
 public:
 							SpinLock();
