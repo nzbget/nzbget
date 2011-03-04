@@ -43,7 +43,11 @@ public:
 class SpinLock
 {
 private:
+#ifdef WIN32
 	void*					m_pSpinLockObj;
+#else
+	volatile void*			m_pSpinLockObj;
+#endif
 	
 public:
 							SpinLock();

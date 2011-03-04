@@ -117,7 +117,7 @@ SpinLock::~SpinLock()
 #else
 	pthread_spin_destroy((pthread_spinlock_t *)m_pSpinLockObj);
 #endif
-	free(m_pSpinLockObj);
+	free((void*)m_pSpinLockObj);
 }
 
 void SpinLock::Lock()
