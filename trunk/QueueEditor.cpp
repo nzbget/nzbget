@@ -1,7 +1,7 @@
 /*
  *  This file is part of nzbget
  *
- *  Copyright (C) 2007-2010 Andrei Prygounkov <hugbug@users.sourceforge.net>
+ *  Copyright (C) 2007-2011 Andrei Prygounkov <hugbug@users.sourceforge.net>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -110,7 +110,7 @@ void QueueEditor::PauseUnpauseEntry(FileInfo* pFileInfo, bool bPause)
 }
 
 /*
- * Removes entry with index iEntry
+ * Removes entry
  * returns true if successful, false if operation is not possible
  */
 void QueueEditor::DeleteEntry(FileInfo* pFileInfo)
@@ -120,7 +120,7 @@ void QueueEditor::DeleteEntry(FileInfo* pFileInfo)
 }
 
 /*
- * Moves entry identified with iID in the queue
+ * Moves entry in the queue
  * returns true if successful, false if operation is not possible
  */
 void QueueEditor::MoveEntry(DownloadQueue* pDownloadQueue, FileInfo* pFileInfo, int iOffset)
@@ -146,6 +146,17 @@ void QueueEditor::MoveEntry(DownloadQueue* pDownloadQueue, FileInfo* pFileInfo, 
 			pDownloadQueue->GetFileQueue()->insert(pDownloadQueue->GetFileQueue()->begin() + iNewEntry, fi);
 		}
 	}
+}
+
+/*
+ * Set priority for entry
+ * returns true if successful, false if operation is not possible
+ */
+void QueueEditor::SetPriorityEntry(FileInfo* pFileInfo, const char* szPriority)
+{
+	debug("Setting priority %s for file %s", szPriority, pFileInfo->GetFilename());
+	int iPriority = atoi(szPriority);
+	pFileInfo->SetPriority(iPriority);
 }
 
 bool QueueEditor::EditEntry(int ID, bool bSmartOrder, EEditAction eAction, int iOffset, const char* szText)
@@ -228,6 +239,10 @@ bool QueueEditor::InternEditList(DownloadQueue* pDownloadQueue, IDList* pIDList,
 					DeleteEntry(pItem->m_pFileInfo);
 					break;
 
+				case eaFileSetPriority:
+					SetPriorityEntry(pItem->m_pFileInfo, szText);
+					break;
+
 				case eaGroupSetCategory:
 					SetNZBCategory(pItem->m_pFileInfo->GetNZBInfo(), szText);
 					break;
@@ -248,7 +263,8 @@ bool QueueEditor::InternEditList(DownloadQueue* pDownloadQueue, IDList* pIDList,
 				case eaGroupMoveOffset:
 				case eaGroupPauseAllPars:
 				case eaGroupPauseExtraPars:
-					EditGroup(pDownloadQueue, pItem->m_pFileInfo, eAction, iOffset);
+				case eaGroupSetPriority:
+					EditGroup(pDownloadQueue, pItem->m_pFileInfo, eAction, iOffset, szText);
 					break;
 
 				case eaFilePauseAllPars:
@@ -369,7 +385,7 @@ void QueueEditor::PrepareList(DownloadQueue* pDownloadQueue, ItemList* pItemList
 	}
 }
 
-bool QueueEditor::EditGroup(DownloadQueue* pDownloadQueue, FileInfo* pFileInfo, EEditAction eAction, int iOffset)
+bool QueueEditor::EditGroup(DownloadQueue* pDownloadQueue, FileInfo* pFileInfo, EEditAction eAction, int iOffset, const char* szText)
 {
 	IDList cIDList;
 	cIDList.clear();
@@ -435,10 +451,13 @@ bool QueueEditor::EditGroup(DownloadQueue* pDownloadQueue, FileInfo* pFileInfo, 
 		pFileInfo->GetNZBInfo()->SetCleanupDisk(CanCleanupDisk(pDownloadQueue, pFileInfo->GetNZBInfo()));
 	}
 
-	EEditAction GroupToFileMap[] = { (EEditAction)0, eaFileMoveOffset, eaFileMoveTop, eaFileMoveBottom, eaFilePause, eaFileResume, eaFileDelete, eaFilePauseAllPars, eaFilePauseExtraPars,
-		eaFileMoveOffset, eaFileMoveTop, eaFileMoveBottom, eaFilePause, eaFileResume, eaFileDelete, eaFilePauseAllPars, eaFilePauseExtraPars, (EEditAction)0, (EEditAction)0, (EEditAction)0 };
+	EEditAction GroupToFileMap[] = { (EEditAction)0, eaFileMoveOffset, eaFileMoveTop, eaFileMoveBottom, 
+		eaFilePause, eaFileResume, eaFileDelete, eaFilePauseAllPars, eaFilePauseExtraPars, eaFileSetPriority,
+		eaFileMoveOffset, eaFileMoveTop, eaFileMoveBottom, eaFilePause, eaFileResume, eaFileDelete, 
+		eaFilePauseAllPars, eaFilePauseExtraPars, eaFileSetPriority,
+		(EEditAction)0, (EEditAction)0, (EEditAction)0 };
 
-	return InternEditList(pDownloadQueue, &cIDList, true, GroupToFileMap[eAction], iOffset, NULL);
+	return InternEditList(pDownloadQueue, &cIDList, true, GroupToFileMap[eAction], iOffset, szText);
 }
 
 void QueueEditor::BuildGroupList(DownloadQueue* pDownloadQueue, FileList* pGroupList)

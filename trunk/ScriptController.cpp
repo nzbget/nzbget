@@ -1,7 +1,7 @@
 /*
  *  This file is part of nzbget
  *
- *  Copyright (C) 2007-2010 Andrei Prygounkov <hugbug@users.sourceforge.net>
+ *  Copyright (C) 2007-2011 Andrei Prygounkov <hugbug@users.sourceforge.net>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -806,7 +806,7 @@ void PostScriptController::Stop()
 }
 
 void NZBScriptController::ExecuteScript(const char* szScript, const char* szNZBFilename, 
-	const char* szDirectory, char** pCategory, NZBParameterList* pParameterList)
+	const char* szDirectory, char** pCategory, int* iPriority, NZBParameterList* pParameterList)
 {
 	info("Executing nzb-process-script for %s", Util::BaseFileName(szNZBFilename));
 
@@ -814,6 +814,7 @@ void NZBScriptController::ExecuteScript(const char* szScript, const char* szNZBF
 	pScriptController->SetScript(szScript);
 	pScriptController->m_pCategory = pCategory;
 	pScriptController->m_pParameterList = pParameterList;
+	pScriptController->m_iPriority = iPriority;
 
 	char szInfoName[1024];
 	snprintf(szInfoName, 1024, "nzb-process-script for %s", Util::BaseFileName(szNZBFilename));
@@ -872,6 +873,10 @@ void NZBScriptController::AddMessage(Message::EKind eKind, bool bDefaultKind, Op
 				error("Invalid command \"%s\" received from %s", szText, GetInfoName());
 			}
 			free(szParam);
+		}
+		else if (!strncmp(szText + 6, "PRIORITY=", 9))
+		{
+			*m_iPriority = atoi(szText + 6 + 9);
 		}
 		else
 		{

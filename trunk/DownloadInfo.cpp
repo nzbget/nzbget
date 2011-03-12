@@ -2,7 +2,7 @@
  *  This file is part of nzbget
  *
  *  Copyright (C) 2004 Sven Henkel <sidddy@users.sourceforge.net>
- *  Copyright (C) 2007-2010 Andrei Prygounkov <hugbug@users.sourceforge.net>
+ *  Copyright (C) 2007-2011 Andrei Prygounkov <hugbug@users.sourceforge.net>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -470,6 +470,8 @@ FileInfo::FileInfo()
 	m_iCompleted = 0;
 	m_bOutputInitialized = false;
 	m_pNZBInfo = NULL;
+	m_iPriority = 0;
+	m_iActiveDownloads = 0;
 	m_iIDGen++;
 	m_iID = m_iIDGen;
 }
@@ -588,6 +590,9 @@ GroupInfo::GroupInfo()
 	m_iRemainingParCount = 0;
 	m_tMinTime = 0;
 	m_tMaxTime = 0;
+	m_iMinPriority = 0;
+	m_iMaxPriority = 0;
+	m_iActiveDownloads = 0;
 }
 
 GroupInfo::~GroupInfo()
@@ -733,6 +738,8 @@ void DownloadQueue::BuildGroups(GroupQueue* pGroupQueue)
 			pGroupInfo->m_iLastID = pFileInfo->GetID();
 			pGroupInfo->m_tMinTime = pFileInfo->GetTime();
 			pGroupInfo->m_tMaxTime = pFileInfo->GetTime();
+			pGroupInfo->m_iMinPriority = pFileInfo->GetPriority();
+			pGroupInfo->m_iMaxPriority = pFileInfo->GetPriority();
 			pGroupQueue->push_back(pGroupInfo);
 		}
 		if (pFileInfo->GetID() < pGroupInfo->GetFirstID())
@@ -754,6 +761,16 @@ void DownloadQueue::BuildGroups(GroupQueue* pGroupQueue)
 				pGroupInfo->m_tMaxTime = pFileInfo->GetTime();
 			}
 		}
+		if (pFileInfo->GetPriority() < pGroupInfo->GetMinPriority())
+		{
+			pGroupInfo->m_iMinPriority = pFileInfo->GetPriority();
+		}
+		if (pFileInfo->GetPriority() > pGroupInfo->GetMaxPriority())
+		{
+			pGroupInfo->m_iMaxPriority = pFileInfo->GetPriority();
+		}
+
+		pGroupInfo->m_iActiveDownloads += pFileInfo->GetActiveDownloads();
 		pGroupInfo->m_iRemainingFileCount++;
 		pGroupInfo->m_lRemainingSize += pFileInfo->GetRemainingSize();
 		if (pFileInfo->GetPaused())

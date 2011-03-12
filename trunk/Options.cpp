@@ -2,7 +2,7 @@
  *  This file is part of nzbget
  *
  *  Copyright (C) 2004 Sven Henkel <sidddy@users.sourceforge.net>
- *  Copyright (C) 2007-2010 Andrei Prygounkov <hugbug@users.sourceforge.net>
+ *  Copyright (C) 2007-2011 Andrei Prygounkov <hugbug@users.sourceforge.net>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -1058,6 +1058,22 @@ void Options::InitCommandLine(int argc, char* argv[])
 							abort("FATAL ERROR: Could not parse value of option 'E'\n");
 						}
 					}
+					else if (!strcasecmp(optarg, "I"))
+					{
+						m_iEditQueueAction = bGroup ? eRemoteEditActionGroupSetPriority : eRemoteEditActionFileSetPriority;
+
+						optind++;
+						if (optind > argc)
+						{
+							abort("FATAL ERROR: Could not parse value of option 'E'\n");
+						}
+						m_szEditQueueText = strdup(argv[optind-1]);
+
+						if (atoi(m_szEditQueueText) == 0 && strcmp("0", m_szEditQueueText))
+						{
+							abort("FATAL ERROR: Could not parse value of option 'E'\n");
+						}
+					}
 					else
 					{
 						m_iEditQueueOffset = atoi(optarg);
@@ -1189,6 +1205,7 @@ void Options::PrintUsage(char* com)
 		"       N <name>             Rename (for groups)\n"
 		"       M                    Merge (for groups)\n"
 		"       O <name>=<value>     Set post-process parameter (for groups)\n"
+		"       I <priority>         Set priority (signed integer) for file(s)/group(s)\n"
 		"    <IDs>                   Comma-separated list of file-ids or ranges\n"
 		"                            of file-ids, e. g.: 1-5,3,10-22\n",
 		Util::BaseFileName(com));

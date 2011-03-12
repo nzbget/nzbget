@@ -2,7 +2,7 @@
  *  This file is part of nzbget
  *
  *  Copyright (C) 2005 Bo Cordes Petersen <placebodk@users.sourceforge.net>
- *  Copyright (C) 2007-2010 Andrei Prygounkov <hugbug@users.sourceforge.net>
+ *  Copyright (C) 2007-2011 Andrei Prygounkov <hugbug@users.sourceforge.net>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -27,7 +27,7 @@
 #ifndef MESSAGEBASE_H
 #define MESSAGEBASE_H
 
-static const int32_t NZBMESSAGE_SIGNATURE = 0x6E7A6209; // = "nzb9" (protocol version)
+static const int32_t NZBMESSAGE_SIGNATURE = 0x6E7A620A; // = "nzbA" (protocol version)
 static const int NZBREQUESTFILENAMESIZE = 512;
 static const int NZBREQUESTPASSWORDSIZE = 32;
 
@@ -76,6 +76,7 @@ enum eRemoteEditAction
 	eRemoteEditActionFileDelete,			// delete files
 	eRemoteEditActionFilePauseAllPars,		// pause only (all) pars (does not affect other files)
 	eRemoteEditActionFilePauseExtraPars,	// pause only (almost all) pars, except main par-file (does not affect other files)
+	eRemoteEditActionFileSetPriority,		// set priority for files
 	eRemoteEditActionGroupMoveOffset,		// move group to m_iOffset relative to the current position in download-queue
 	eRemoteEditActionGroupMoveTop,			// move group to the top of download-queue
 	eRemoteEditActionGroupMoveBottom,		// move group to the bottom of download-queue
@@ -84,6 +85,7 @@ enum eRemoteEditAction
 	eRemoteEditActionGroupDelete,			// delete group
 	eRemoteEditActionGroupPauseAllPars,		// pause only (all) pars (does not affect other files) in group
 	eRemoteEditActionGroupPauseExtraPars,	// pause only (almost all) pars in group, except main par-file (does not affect other files)
+	eRemoteEditActionGroupSetPriority,		// set priority for groups
 	eRemoteEditActionGroupSetCategory,		// set or change category for a group
 	eRemoteEditActionGroupMerge,			// merge group
 	eRemoteEditActionGroupSetParameter,		// set post-process parameter for group
@@ -215,6 +217,8 @@ struct SNZBListResponseFileEntry
 	int32_t					m_iRemainingSizeHi;		// Remaining size in bytes, High 32-bits of 64-bit value
 	int32_t					m_bPaused;				// 1 - file is paused
 	int32_t					m_bFilenameConfirmed;	// 1 - Filename confirmed (read from article body), 0 - Filename parsed from subject (can be changed after reading of article)
+	int32_t					m_iPriority;			// Download priority
+	int32_t					m_iActiveDownloads;		// Number of active downloads for this file
 	int32_t					m_iSubjectLen;			// Length of Subject-string (m_szSubject), following to this record
 	int32_t					m_iFilenameLen;			// Length of Filename-string (m_szFilename), following to this record
 	//char					m_szSubject[m_iSubjectLen];			// variable sized

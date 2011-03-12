@@ -202,12 +202,21 @@ MergeNzb=no
 # "SERVER1_HOST". For options with predefined possible values (yes/no, etc.)
 # the values are passed always in lower case.
 #
-# The nzbprocess-script can assign category or post-processing parameters
-# to current nzb-file by printing special messages into standard output
-# (which is processed by NZBGet).
+# The nzbprocess-script can assign category, priority and post-processing
+# parameters to the current nzb-file by printing special messages into
+# standard output (which is processed by NZBGet).
 #
 # To assign category use following syntax:
 #   echo "[NZB] CATEGORY=my category";
+#
+# To assign priority:
+#   echo "[NZB] PRIORITY=<signed integer value>";
+#
+# for example: to set priority higher than normal:
+#   echo "[NZB] PRIORITY=50";
+#
+# another example: use a negative value for "lower than normal" priority:
+#   echo "[NZB] PRIORITY=-100";
 #
 # To assign post-processing parameters:
 #   echo "[NZB] NZBPR_myvar=my value";

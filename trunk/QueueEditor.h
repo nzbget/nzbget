@@ -1,7 +1,7 @@
 /*
  *  This file if part of nzbget
  *
- *  Copyright (C) 2007-2010 Andrei Prygounkov <hugbug@users.sourceforge.net>
+ *  Copyright (C) 2007-2011 Andrei Prygounkov <hugbug@users.sourceforge.net>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -43,6 +43,7 @@ public:
 		eaFileDelete,
 		eaFilePauseAllPars,
 		eaFilePauseExtraPars,
+		eaFileSetPriority,
 		eaGroupMoveOffset,				// move to m_iOffset relative to the current position in queue
 		eaGroupMoveTop,
 		eaGroupMoveBottom,
@@ -51,10 +52,11 @@ public:
 		eaGroupDelete,
 		eaGroupPauseAllPars,
 		eaGroupPauseExtraPars,
+		eaGroupSetPriority,
 		eaGroupSetCategory,
 		eaGroupMerge,
 		eaGroupSetParameter,
-		eaGroupSetName,
+		eaGroupSetName
 	};
 
 private:
@@ -75,7 +77,7 @@ private:
 	int						FindFileInfoEntry(DownloadQueue* pDownloadQueue, FileInfo* pFileInfo);
 	bool					InternEditList(DownloadQueue* pDownloadQueue, IDList* pIDList, bool bSmartOrder, EEditAction eAction, int iOffset, const char* szText);
 	void					PrepareList(DownloadQueue* pDownloadQueue, ItemList* pItemList, IDList* pIDList, bool bSmartOrder, EEditAction eAction, int iOffset);
-	bool					EditGroup(DownloadQueue* pDownloadQueue, FileInfo* pFileInfo, EEditAction eAction, int iOffset);
+	bool					EditGroup(DownloadQueue* pDownloadQueue, FileInfo* pFileInfo, EEditAction eAction, int iOffset, const char* szText);
 	void					BuildGroupList(DownloadQueue* pDownloadQueue, FileList* pGroupList);
 	void					AlignAffectedGroups(DownloadQueue* pDownloadQueue, IDList* pIDList, bool bSmartOrder, int iOffset);
 	bool					ItemExists(FileList* pFileList, FileInfo* pFileInfo);
@@ -91,6 +93,7 @@ private:
 	void					PauseUnpauseEntry(FileInfo* pFileInfo, bool bPause);
 	void					DeleteEntry(FileInfo* pFileInfo);
 	void					MoveEntry(DownloadQueue* pDownloadQueue, FileInfo* pFileInfo, int iOffset);
+	void					SetPriorityEntry(FileInfo* pFileInfo, const char* szPriority);
 
 public:
 							QueueEditor();                

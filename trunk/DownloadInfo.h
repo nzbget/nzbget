@@ -2,7 +2,7 @@
  *  This file is part of nzbget
  *
  *  Copyright (C) 2004 Sven Henkel <sidddy@users.sourceforge.net>
- *  Copyright (C) 2007-2010 Andrei Prygounkov <hugbug@users.sourceforge.net>
+ *  Copyright (C) 2007-2011 Andrei Prygounkov <hugbug@users.sourceforge.net>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -92,6 +92,8 @@ private:
 	int					m_iCompleted;
 	bool				m_bOutputInitialized;
 	Mutex				m_mutexOutputFile;
+	int					m_iPriority;
+	int					m_iActiveDownloads;
 
 	static int			m_iIDGen;
 
@@ -129,6 +131,10 @@ public:
 	bool				GetOutputInitialized() { return m_bOutputInitialized; }
 	void				SetOutputInitialized(bool bOutputInitialized) { m_bOutputInitialized = bOutputInitialized; }
 	bool				IsDupe(const char* szFilename);
+	int					GetPriority() { return m_iPriority; }
+	void				SetPriority(int iPriority) { m_iPriority = iPriority; }
+	int					GetActiveDownloads() { return m_iActiveDownloads; }
+	void				SetActiveDownloads(int iActiveDownloads) { m_iActiveDownloads = iActiveDownloads; }
 };
                               
 typedef std::deque<FileInfo*> FileQueue;
@@ -146,6 +152,9 @@ private:
 	int					m_iRemainingParCount;
 	time_t				m_tMinTime;
 	time_t				m_tMaxTime;
+	int					m_iMinPriority;
+	int					m_iMaxPriority;
+	int					m_iActiveDownloads;
 
 	friend class DownloadQueue;
 
@@ -162,6 +171,9 @@ public:
 	int					GetRemainingParCount() { return m_iRemainingParCount; }
 	time_t				GetMinTime() { return m_tMinTime; }
 	time_t				GetMaxTime() { return m_tMaxTime; }
+	int					GetMinPriority() { return m_iMinPriority; }
+	int					GetMaxPriority() { return m_iMaxPriority; }
+	int					GetActiveDownloads() { return m_iActiveDownloads; }
 };
 
 typedef std::deque<GroupInfo*> GroupQueue;

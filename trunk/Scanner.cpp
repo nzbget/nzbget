@@ -1,7 +1,7 @@
 /*
  *  This file is part of nzbget
  *
- *  Copyright (C) 2007-2010 Andrei Prygounkov <hugbug@users.sourceforge.net>
+ *  Copyright (C) 2007-2011 Andrei Prygounkov <hugbug@users.sourceforge.net>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -270,12 +270,14 @@ void Scanner::ProcessIncomingFile(const char* szDirectory, const char* szBaseFil
 
 	char* szNZBCategory = strdup(szCategory);
 	NZBParameterList* pParameterList = new NZBParameterList;
+	int iPriority = 0;
 
 	bool bExists = true;
 
 	if (m_bNZBScript && strcasecmp(szExtension, ".nzb_processed"))
 	{
-		NZBScriptController::ExecuteScript(g_pOptions->GetNZBProcess(), szFullFilename, szDirectory, &szNZBCategory, pParameterList); 
+		NZBScriptController::ExecuteScript(g_pOptions->GetNZBProcess(), szFullFilename, szDirectory, 
+			&szNZBCategory, &iPriority, pParameterList); 
 		bExists = Util::FileExists(szFullFilename);
 		if (bExists && strcasecmp(szExtension, ".nzb"))
 		{
@@ -294,7 +296,7 @@ void Scanner::ProcessIncomingFile(const char* szDirectory, const char* szBaseFil
 		bool bRenameOK = Util::RenameBak(szFullFilename, "nzb", true, szRenamedName, 1024);
 		if (bRenameOK)
 		{
-			AddFileToQueue(szRenamedName, szNZBCategory, pParameterList);
+			AddFileToQueue(szRenamedName, szNZBCategory, iPriority, pParameterList);
 		}
 		else
 		{
@@ -303,7 +305,7 @@ void Scanner::ProcessIncomingFile(const char* szDirectory, const char* szBaseFil
 	}
 	else if (bExists && !strcasecmp(szExtension, ".nzb"))
 	{
-		AddFileToQueue(szFullFilename, szNZBCategory, pParameterList);
+		AddFileToQueue(szFullFilename, szNZBCategory, iPriority, pParameterList);
 	}
 
 	for (NZBParameterList::iterator it = pParameterList->begin(); it != pParameterList->end(); it++)
@@ -316,7 +318,7 @@ void Scanner::ProcessIncomingFile(const char* szDirectory, const char* szBaseFil
 	free(szNZBCategory);
 }
 
-void Scanner::AddFileToQueue(const char* szFilename, const char* szCategory, NZBParameterList* pParameterList)
+void Scanner::AddFileToQueue(const char* szFilename, const char* szCategory, int iPriority, NZBParameterList* pParameterList)
 {
 	const char* szBasename = Util::BaseFileName(szFilename);
 
@@ -343,6 +345,12 @@ void Scanner::AddFileToQueue(const char* szFilename, const char* szCategory, NZB
 		{
 			NZBParameter* pParameter = *it;
 			pNZBFile->GetNZBInfo()->SetParameter(pParameter->GetName(), pParameter->GetValue());
+		}
+
+		for (NZBFile::FileInfos::iterator it = pNZBFile->GetFileInfos()->begin(); it != pNZBFile->GetFileInfos()->end(); it++)
+		{
+			FileInfo* pFileInfo = *it;
+			pFileInfo->SetPriority(iPriority);
 		}
 
 		g_pQueueCoordinator->AddNZBFileToQueue(pNZBFile, false);
