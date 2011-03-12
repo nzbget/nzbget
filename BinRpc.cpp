@@ -2,7 +2,7 @@
  *  This file is part of nzbget
  *
  *  Copyright (C) 2005 Bo Cordes Petersen <placebodk@sourceforge.net>
- *  Copyright (C) 2007-2010 Andrei Prygounkov <hugbug@users.sourceforge.net>
+ *  Copyright (C) 2007-2011 Andrei Prygounkov <hugbug@users.sourceforge.net>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -505,6 +505,8 @@ void ListBinCommand::Execute()
 			pListAnswer->m_iRemainingSizeHi	= htonl(iSizeHi);
 			pListAnswer->m_bFilenameConfirmed = htonl(pFileInfo->GetFilenameConfirmed());
 			pListAnswer->m_bPaused			= htonl(pFileInfo->GetPaused());
+			pListAnswer->m_iActiveDownloads	= htonl(pFileInfo->GetActiveDownloads());
+			pListAnswer->m_iPriority		= htonl(pFileInfo->GetPriority());
 			pListAnswer->m_iSubjectLen		= htonl(strlen(pFileInfo->GetSubject()) + 1);
 			pListAnswer->m_iFilenameLen		= htonl(strlen(pFileInfo->GetFilename()) + 1);
 			bufptr += sizeof(SNZBListResponseFileEntry);

@@ -2,7 +2,7 @@
  *  This file is part of nzbget
  *
  *  Copyright (C) 2004 Sven Henkel <sidddy@users.sourceforge.net>
- *  Copyright (C) 2007-2010 Andrei Prygounkov <hugbug@users.sourceforge.net>
+ *  Copyright (C) 2007-2011 Andrei Prygounkov <hugbug@users.sourceforge.net>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -229,22 +229,24 @@ void ArticleDownloader::Run()
 		}
 #endif
 
-		if (g_pOptions->GetPauseDownload() || g_pOptions->GetPauseDownload2())
-		{
-			Status = adRetry;
-			break;
-		}
-
 		if (((Status == adFailed) || (Status == adCrcError && g_pOptions->GetRetryOnCrcError())) && 
-			(iRemainedDownloadRetries > 1 || !bConnected) && !IsStopped())
+			(iRemainedDownloadRetries > 1 || !bConnected) && !IsStopped() &&
+			!(g_pOptions->GetPauseDownload() || g_pOptions->GetPauseDownload2()))
 		{
 			detail("Waiting %i sec to retry", g_pOptions->GetRetryInterval());
 			int msec = 0;
-			while (!IsStopped() && (msec < g_pOptions->GetRetryInterval() * 1000))
+			while (!IsStopped() && (msec < g_pOptions->GetRetryInterval() * 1000) && 
+				!(g_pOptions->GetPauseDownload() || g_pOptions->GetPauseDownload2()))
 			{
 				usleep(100 * 1000);
 				msec += 100;
 			}
+		}
+
+		if (g_pOptions->GetPauseDownload() || g_pOptions->GetPauseDownload2())
+		{
+			Status = adRetry;
+			break;
 		}
 
 		if (IsStopped())

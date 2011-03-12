@@ -2,7 +2,7 @@
  *  This file is part of nzbget
  *
  *  Copyright (C) 2005 Bo Cordes Petersen <placebodk@sourceforge.net>
- *  Copyright (C) 2007-2010 Andrei Prygounkov <hugbug@users.sourceforge.net>
+ *  Copyright (C) 2007-2011 Andrei Prygounkov <hugbug@users.sourceforge.net>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -289,6 +289,8 @@ void RemoteClient::BuildFileList(SNZBListResponse* pListResponse, const char* pT
 			pFileInfo->SetSubject(szSubject);
 			pFileInfo->SetFilename(szFileName);
 			pFileInfo->SetFilenameConfirmed(ntohl(pListAnswer->m_bFilenameConfirmed));
+			pFileInfo->SetActiveDownloads(ntohl(pListAnswer->m_iActiveDownloads));
+			pFileInfo->SetPriority(ntohl(pListAnswer->m_iPriority));
 
 			NZBInfo* pNZBInfo = pDownloadQueue->GetNZBInfoList()->at(ntohl(pListAnswer->m_iNZBIndex) - 1);
 
@@ -373,12 +375,27 @@ bool RemoteClient::RequestServerList(bool bFiles, bool bGroups)
 			{
 				FileInfo* pFileInfo = *it;
 
+				char szPriority[100];
+				szPriority[0] = '\0';
+				if (pFileInfo->GetPriority() != 0)
+				{
+					sprintf(szPriority, "[%+i] ", pFileInfo->GetPriority());
+				}
+
 				char szCompleted[100];
 				szCompleted[0] = '\0';
 				if (pFileInfo->GetRemainingSize() < pFileInfo->GetSize())
 				{
 					sprintf(szCompleted, ", %i%s", (int)(100 - Util::Int64ToFloat(pFileInfo->GetRemainingSize()) * 100.0 / Util::Int64ToFloat(pFileInfo->GetSize())), "%");
 				}
+
+				char szThreads[100];
+				szThreads[0] = '\0';
+				if (pFileInfo->GetActiveDownloads() > 0)
+				{
+					sprintf(szThreads, ", %i thread%s", pFileInfo->GetActiveDownloads(), (pFileInfo->GetActiveDownloads() > 1 ? "s" : ""));
+				}
+
 				char szStatus[100];
 				if (pFileInfo->GetPaused())
 				{
@@ -390,12 +407,14 @@ bool RemoteClient::RequestServerList(bool bFiles, bool bGroups)
 					szStatus[0] = '\0';
 					lRemaining += pFileInfo->GetRemainingSize();
 				}
-				
+
 				char szNZBNiceName[1024];
 				pFileInfo->GetNZBInfo()->GetNiceNZBName(szNZBNiceName, 1024);
 				
-				printf("[%i] %s%c%s (%.2f MB%s)%s\n", pFileInfo->GetID(), szNZBNiceName, (int)PATH_SEPARATOR, pFileInfo->GetFilename(),
-					(float)(Util::Int64ToFloat(pFileInfo->GetSize()) / 1024.0 / 1024.0), szCompleted, szStatus);
+				printf("[%i] %s%s%c%s (%.2f MB%s%s)%s\n", pFileInfo->GetID(), szPriority, szNZBNiceName, 
+					(int)PATH_SEPARATOR, pFileInfo->GetFilename(),
+					(float)(Util::Int64ToFloat(pFileInfo->GetSize()) / 1024.0 / 1024.0), 
+					szCompleted, szThreads, szStatus);
 
 				delete pFileInfo;
 			}
@@ -444,6 +463,20 @@ bool RemoteClient::RequestServerList(bool bFiles, bool bGroups)
 				char szRemaining[20];
 				Util::FormatFileSize(szRemaining, sizeof(szRemaining), lUnpausedRemainingSize);
 
+				char szPriority[100];
+				szPriority[0] = '\0';
+				if (pGroupInfo->GetMinPriority() != 0 || pGroupInfo->GetMaxPriority() != 0)
+				{
+					if (pGroupInfo->GetMinPriority() == pGroupInfo->GetMaxPriority())
+					{
+						sprintf(szPriority, "[%+i] ", pGroupInfo->GetMinPriority());
+					}
+					else
+					{
+						sprintf(szPriority, "[%+i..%+i] ", pGroupInfo->GetMinPriority(), pGroupInfo->GetMaxPriority());
+					}
+				}
+
 				char szPaused[20];
 				szPaused[0] = '\0';
 				if (pGroupInfo->GetPausedSize() > 0)
@@ -462,6 +495,13 @@ bool RemoteClient::RequestServerList(bool bFiles, bool bGroups)
 				if (pGroupInfo->GetNZBInfo()->GetCategory() && strlen(pGroupInfo->GetNZBInfo()->GetCategory()) > 0)
 				{
 					sprintf(szCategory, " (%s)", pGroupInfo->GetNZBInfo()->GetCategory());
+				}
+
+				char szThreads[100];
+				szThreads[0] = '\0';
+				if (pGroupInfo->GetActiveDownloads() > 0)
+				{
+					sprintf(szThreads, ", %i thread%s", pGroupInfo->GetActiveDownloads(), (pGroupInfo->GetActiveDownloads() > 1 ? "s" : ""));
 				}
 
 				char szParameters[1024];
@@ -486,9 +526,9 @@ bool RemoteClient::RequestServerList(bool bFiles, bool bGroups)
 					strncat(szParameters, ")", 1024);
 				}
 
-				printf("[%i-%i] %s (%i file%s, %s%s)%s%s\n", pGroupInfo->GetFirstID(), pGroupInfo->GetLastID(), szNZBNiceName, 
+				printf("[%i-%i] %s%s (%i file%s, %s%s%s)%s%s\n", pGroupInfo->GetFirstID(), pGroupInfo->GetLastID(), szPriority, szNZBNiceName, 
 					pGroupInfo->GetRemainingFileCount(), pGroupInfo->GetRemainingFileCount() > 1 ? "s" : "", szRemaining, 
-					szPaused, szCategory, szParameters);
+					szPaused, szThreads, szCategory, szParameters);
 
 				delete pGroupInfo;
 			}

@@ -1,7 +1,7 @@
 /*
  *  This file is part of nzbget
  *
- *  Copyright (C) 2007-2010 Andrei Prygounkov <hugbug@users.sourceforge.net>
+ *  Copyright (C) 2007-2011 Andrei Prygounkov <hugbug@users.sourceforge.net>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -1125,6 +1125,8 @@ void ListFilesXmlCommand::Execute()
 		"<member><name>Filename</name><value><string>%s</string></value></member>\n"
 		"<member><name>DestDir</name><value><string>%s</string></value></member>\n"
 		"<member><name>Category</name><value><string>%s</string></value></member>\n"
+		"<member><name>Priority</name><value><i4>%i</i4></value></member>\n"
+		"<member><name>ActiveDownloads</name><value><i4>%i</i4></value></member>\n"
 		"</struct></value>\n";
 
 	const char* JSON_LIST_ITEM = 
@@ -1143,7 +1145,9 @@ void ListFilesXmlCommand::Execute()
 		"\"Subject\" : \"%s\",\n"
 		"\"Filename\" : \"%s\",\n"
 		"\"DestDir\" : \"%s\",\n"
-		"\"Category\" : \"%s\"\n"
+		"\"Category\" : \"%s\",\n"
+		"\"Priority\" : %i,\n"
+		"\"ActiveDownloads\" : %i\n"
 		"}";
 
 	int szItemBufSize = 10240;
@@ -1172,7 +1176,8 @@ void ListFilesXmlCommand::Execute()
 				pFileInfo->GetID(), iFileSizeLo, iFileSizeHi, iRemainingSizeLo, iRemainingSizeHi, 
 				pFileInfo->GetTime(), BoolToStr(pFileInfo->GetFilenameConfirmed()), 
 				BoolToStr(pFileInfo->GetPaused()), pFileInfo->GetNZBInfo()->GetID(), 
-				xmlNZBNicename, xmlNZBFilename, xmlSubject, xmlFilename, xmlDestDir, xmlCategory);
+				xmlNZBNicename, xmlNZBFilename, xmlSubject, xmlFilename, xmlDestDir, xmlCategory,
+				pFileInfo->GetPriority(), pFileInfo->GetActiveDownloads());
 			szItemBuf[szItemBufSize-1] = '\0';
 
 			free(xmlNZBFilename);
@@ -1222,6 +1227,9 @@ void ListGroupsXmlCommand::Execute()
 		"<member><name>NZBFilename</name><value><string>%s</string></value></member>\n"
 		"<member><name>DestDir</name><value><string>%s</string></value></member>\n"
 		"<member><name>Category</name><value><string>%s</string></value></member>\n"
+		"<member><name>MinPriority</name><value><i4>%i</i4></value></member>\n"
+		"<member><name>MaxPriority</name><value><i4>%i</i4></value></member>\n"
+		"<member><name>ActiveDownloads</name><value><i4>%i</i4></value></member>\n"
 		"<member><name>Parameters</name><value><array><data>\n";
 
 	const char* XML_LIST_ITEM_END = 
@@ -1251,6 +1259,9 @@ void ListGroupsXmlCommand::Execute()
 		"\"NZBFilename\" : \"%s\",\n"
 		"\"DestDir\" : \"%s\",\n"
 		"\"Category\" : \"%s\",\n"
+		"\"MinPriority\" : %i,\n"
+		"\"MaxPriority\" : %i,\n"
+		"\"ActiveDownloads\" : %i,\n"
 		"\"Parameters\" : [\n";
 
 	const char* JSON_LIST_ITEM_END = 
@@ -1304,7 +1315,8 @@ void ListGroupsXmlCommand::Execute()
 			iRemainingSizeLo, iRemainingSizeHi, iRemainingSizeMB, iPausedSizeLo, iPausedSizeHi, iPausedSizeMB, 
 			pGroupInfo->GetNZBInfo()->GetFileCount(), pGroupInfo->GetRemainingFileCount(), 
 			pGroupInfo->GetRemainingParCount(), pGroupInfo->GetMinTime(), pGroupInfo->GetMaxTime(),
-			pGroupInfo->GetNZBInfo()->GetID(), xmlNZBNicename, xmlNZBFilename, xmlDestDir, xmlCategory);
+			pGroupInfo->GetNZBInfo()->GetID(), xmlNZBNicename, xmlNZBFilename, xmlDestDir, xmlCategory,
+			pGroupInfo->GetMinPriority(), pGroupInfo->GetMaxPriority(), pGroupInfo->GetActiveDownloads());
 		szItemBuf[szItemBufSize-1] = '\0';
 
 		free(xmlNZBNicename);
@@ -1368,6 +1380,7 @@ EditCommandEntry EditCommandNameMap[] = {
 	{ QueueEditor::eaFileDelete, "FileDelete" },
 	{ QueueEditor::eaFilePauseAllPars, "FilePauseAllPars" },
 	{ QueueEditor::eaFilePauseExtraPars, "FilePauseExtraPars" },
+	{ QueueEditor::eaFileSetPriority, "FileSetPriority" },
 	{ QueueEditor::eaGroupMoveOffset, "GroupMoveOffset" },
 	{ QueueEditor::eaGroupMoveTop, "GroupMoveTop" },
 	{ QueueEditor::eaGroupMoveBottom, "GroupMoveBottom" },
@@ -1376,6 +1389,7 @@ EditCommandEntry EditCommandNameMap[] = {
 	{ QueueEditor::eaGroupDelete, "GroupDelete" },
 	{ QueueEditor::eaGroupPauseAllPars, "GroupPauseAllPars" },
 	{ QueueEditor::eaGroupPauseExtraPars, "GroupPauseExtraPars" },
+	{ QueueEditor::eaGroupSetPriority, "GroupSetPriority" },
 	{ QueueEditor::eaGroupSetCategory, "GroupSetCategory" },
 	{ QueueEditor::eaGroupMerge, "GroupMerge" },
 	{ QueueEditor::eaGroupSetParameter, "GroupSetParameter" },

@@ -2,7 +2,7 @@
  *  This file is part of nzbget
  *
  *  Copyright (C) 2004 Sven Henkel <sidddy@users.sourceforge.net>
- *  Copyright (C) 2007-2010 Andrei Prygounkov <hugbug@users.sourceforge.net>
+ *  Copyright (C) 2007-2011 Andrei Prygounkov <hugbug@users.sourceforge.net>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -819,6 +819,19 @@ void NCursesFrontend::PrintFilename(FileInfo * pFileInfo, int iRow, bool bSelect
 		color = NCURSES_COLORPAIR_TEXT;
 	}
 
+	const char* szDownloading = "";
+	if (pFileInfo->GetActiveDownloads() > 0)
+	{
+		szDownloading = " *";
+	}
+
+	char szPriority[100];
+	szPriority[0] = '\0';
+	if (pFileInfo->GetPriority() != 0)
+	{
+		sprintf(szPriority, " [%+i]", pFileInfo->GetPriority());
+	}
+
 	char szCompleted[20];
 	szCompleted[0] = '\0';
 	if (pFileInfo->GetRemainingSize() < pFileInfo->GetSize())
@@ -840,8 +853,9 @@ void NCursesFrontend::PrintFilename(FileInfo * pFileInfo, int iRow, bool bSelect
 	}
 
 	char szBuffer[MAX_SCREEN_WIDTH];
-	snprintf(szBuffer, MAX_SCREEN_WIDTH, "%s%i%s %s%s (%.2f MB%s)%s", Brace1, pFileInfo->GetID(),
-		Brace2, szNZBNiceName, pFileInfo->GetFilename(), (float)(Util::Int64ToFloat(pFileInfo->GetSize()) / 1024.0 / 1024.0),
+	snprintf(szBuffer, MAX_SCREEN_WIDTH, "%s%i%s%s%s %s%s (%.2f MB%s)%s", Brace1, pFileInfo->GetID(),
+		Brace2, szPriority, szDownloading, szNZBNiceName, pFileInfo->GetFilename(), 
+		(float)(Util::Int64ToFloat(pFileInfo->GetSize()) / 1024.0 / 1024.0),
 		szCompleted, pFileInfo->GetPaused() ? " (paused)" : "");
 	szBuffer[MAX_SCREEN_WIDTH - 1] = '\0';
 
@@ -979,21 +993,23 @@ void NCursesFrontend::ResetColWidths()
 
 void NCursesFrontend::PrintGroupname(GroupInfo * pGroupInfo, int iRow, bool bSelected, bool bCalcColWidth)
 {
-	int color = 0;
-	const char* Brace1 = "[";
-	const char* Brace2 = "]";
+	int color = NCURSES_COLORPAIR_TEXT;
+	char chBrace1 = '[';
+	char chBrace2 = ']';
 	if (m_eInputMode == eEditQueue && bSelected)
 	{
 		color = NCURSES_COLORPAIR_TEXTHIGHL;
 		if (!m_bUseColor)
 		{
-			Brace1 = "<";
-			Brace2 = ">";
+			chBrace1 = '<';
+			chBrace2 = '>';
 		}
 	}
-	else
+
+	const char* szDownloading = "";
+	if (pGroupInfo->GetActiveDownloads() > 0)
 	{
-		color = NCURSES_COLORPAIR_TEXT;
+		szDownloading = " *";
 	}
 
 	long long lUnpausedRemainingSize = pGroupInfo->GetRemainingSize() - pGroupInfo->GetPausedSize();
@@ -1003,6 +1019,20 @@ void NCursesFrontend::PrintGroupname(GroupInfo * pGroupInfo, int iRow, bool bSel
 
 	char szNZBNiceName[1024];
 	pGroupInfo->GetNZBInfo()->GetNiceNZBName(szNZBNiceName, 1023);
+
+	char szPriority[100];
+	szPriority[0] = '\0';
+	if (pGroupInfo->GetMinPriority() != 0 || pGroupInfo->GetMaxPriority() != 0)
+	{
+		if (pGroupInfo->GetMinPriority() == pGroupInfo->GetMaxPriority())
+		{
+			sprintf(szPriority, " [%+i]", pGroupInfo->GetMinPriority());
+		}
+		else
+		{
+			sprintf(szPriority, " [%+i..%+i]", pGroupInfo->GetMinPriority(), pGroupInfo->GetMaxPriority());
+		}
+	}
 
 	char szBuffer[MAX_SCREEN_WIDTH];
 
@@ -1032,7 +1062,8 @@ void NCursesFrontend::PrintGroupname(GroupInfo * pGroupInfo, int iRow, bool bSel
 		Util::FormatFileSize(szTotal, sizeof(szTotal), pGroupInfo->GetNZBInfo()->GetSize());
 
 		char szNameWithIds[1024];
-		snprintf(szNameWithIds, 1024, "%s%i-%i%s %s", Brace1, pGroupInfo->GetFirstID(), pGroupInfo->GetLastID(), Brace2, szNZBNiceName);
+		snprintf(szNameWithIds, 1024, "%c%i-%i%c%s%s %s", chBrace1, pGroupInfo->GetFirstID(), pGroupInfo->GetLastID(), chBrace2, 
+			szPriority, szDownloading, szNZBNiceName);
 		szNameWithIds[iNameLen] = '\0';
 
 		char szTime[100];
@@ -1077,7 +1108,8 @@ void NCursesFrontend::PrintGroupname(GroupInfo * pGroupInfo, int iRow, bool bSel
 	}
 	else
 	{
-		snprintf(szBuffer, MAX_SCREEN_WIDTH, "%s%i-%i%s %s", Brace1, pGroupInfo->GetFirstID(), pGroupInfo->GetLastID(), Brace2, szNZBNiceName);
+		snprintf(szBuffer, MAX_SCREEN_WIDTH, "%c%i-%i%c%s %s", chBrace1, pGroupInfo->GetFirstID(), 
+			pGroupInfo->GetLastID(), chBrace2, szDownloading, szNZBNiceName);
 	}
 
 	szBuffer[MAX_SCREEN_WIDTH - 1] = '\0';

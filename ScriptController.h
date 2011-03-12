@@ -1,7 +1,7 @@
 /*
  *  This file is part of nzbget
  *
- *  Copyright (C) 2007-2010 Andrei Prygounkov <hugbug@users.sourceforge.net>
+ *  Copyright (C) 2007-2011 Andrei Prygounkov <hugbug@users.sourceforge.net>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -114,13 +114,14 @@ class NZBScriptController : public ScriptController
 {
 private:
 	char**				m_pCategory;
+	int*				m_iPriority;
 	NZBParameterList*	m_pParameterList;
 
 protected:
 	virtual void		AddMessage(Message::EKind eKind, bool bDefaultKind, Options::EMessageTarget eMessageTarget, const char* szText);
 
 public:
-	static void			ExecuteScript(const char* szScript, const char* szNZBFilename, const char* szDirectory, char** pCategory, NZBParameterList* pParameterList);
+	static void			ExecuteScript(const char* szScript, const char* szNZBFilename, const char* szDirectory, char** pCategory, int* iPriority, NZBParameterList* pParameterList);
 };
 
 class SchedulerScriptController : public Thread, ScriptController

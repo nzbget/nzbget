@@ -2,7 +2,7 @@
  *  This file is part of nzbget
  *
  *  Copyright (C) 2005 Bo Cordes Petersen <placebodk@users.sourceforge.net>
- *  Copyright (C) 2007-2010 Andrei Prygounkov <hugbug@users.sourceforge.net>
+ *  Copyright (C) 2007-2011 Andrei Prygounkov <hugbug@users.sourceforge.net>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -170,7 +170,7 @@ void QueueCoordinator::Run()
 
 		AddSpeedReading(0);
 
-		iResetCounter+= iSleepInterval;
+		iResetCounter += iSleepInterval;
 		if (iResetCounter >= 1000)
 		{
 			// this code should not be called too often, once per second is OK
@@ -434,31 +434,84 @@ void QueueCoordinator::Stop()
 	debug("ArticleDownloads are notified");
 }
 
+/*
+ * Returns next article for download.
+ */
 bool QueueCoordinator::GetNextArticle(FileInfo* &pFileInfo, ArticleInfo* &pArticleInfo)
 {
+	// find an unpaused file with the highest priority, then take the next article from the file.
+	// if the file doesn't have any articles left for download, we store that fact and search again,
+	// ignoring all files which were previously marked as not having any articles.
+
 	//debug("QueueCoordinator::GetNextArticle()");
 
-	for (FileQueue::iterator it = m_DownloadQueue.GetFileQueue()->begin(); it != m_DownloadQueue.GetFileQueue()->end(); it++)
+	bool bOK = false;
+
+	// pCheckedFiles stores
+	bool* pCheckedFiles = NULL;
+
+	while (!bOK) 
 	{
-		pFileInfo = *it;
-		if (!pFileInfo->GetPaused() && !pFileInfo->GetDeleted())
+		//debug("QueueCoordinator::GetNextArticle() - in loop");
+
+		pFileInfo = NULL;
+		int iNum = 0;
+		int iFileNum = 0;
+
+		for (FileQueue::iterator it = m_DownloadQueue.GetFileQueue()->begin(); it != m_DownloadQueue.GetFileQueue()->end(); it++)
 		{
-			if (pFileInfo->GetArticles()->empty() && g_pOptions->GetSaveQueue() && g_pOptions->GetServerMode())
+			FileInfo* pFileInfo1 = *it;
+			if ((!pCheckedFiles || !pCheckedFiles[iNum]) && 
+				!pFileInfo1->GetPaused() && !pFileInfo1->GetDeleted() &&
+				(!pFileInfo || (pFileInfo1->GetPriority() > pFileInfo->GetPriority())))
 			{
-				g_pDiskState->LoadArticles(pFileInfo);
+				pFileInfo = pFileInfo1;
+				iFileNum = iNum;
 			}
-			for (FileInfo::Articles::iterator at = pFileInfo->GetArticles()->begin(); at != pFileInfo->GetArticles()->end(); at++)
+			iNum++;
+		}
+
+		if (!pFileInfo)
+		{
+			// there are no more files for download
+			break;
+		}
+
+		if (pFileInfo->GetArticles()->empty() && g_pOptions->GetSaveQueue() && g_pOptions->GetServerMode())
+		{
+			g_pDiskState->LoadArticles(pFileInfo);
+		}
+
+		// check if the file has any articles left for download
+		for (FileInfo::Articles::iterator at = pFileInfo->GetArticles()->begin(); at != pFileInfo->GetArticles()->end(); at++)
+		{
+			pArticleInfo = *at;
+			if (pArticleInfo->GetStatus() == 0)
 			{
-				pArticleInfo = *at;
-				if (pArticleInfo->GetStatus() == 0)
-				{
-					return true;
-				}
+				bOK = true;
+				break;
 			}
+		}
+
+		if (!bOK)
+		{
+			// the file doesn't have any articles left for download, we mark the file as such
+			if (!pCheckedFiles)
+			{
+				int iArrSize = sizeof(bool) * m_DownloadQueue.GetFileQueue()->size();
+				pCheckedFiles = (bool*)malloc(iArrSize);
+				memset(pCheckedFiles, false, iArrSize);
+			}
+			pCheckedFiles[iFileNum] = true;
 		}
 	}
 
-	return false;
+	if (pCheckedFiles)
+	{
+		free(pCheckedFiles);
+	}
+
+	return bOK;
 }
 
 void QueueCoordinator::StartArticleDownload(FileInfo* pFileInfo, ArticleInfo* pArticleInfo, NNTPConnection* pConnection)
@@ -474,6 +527,7 @@ void QueueCoordinator::StartArticleDownload(FileInfo* pFileInfo, ArticleInfo* pA
 	BuildArticleFilename(pArticleDownloader, pFileInfo, pArticleInfo);
 
 	pArticleInfo->SetStatus(ArticleInfo::aiRunning);
+	pFileInfo->SetActiveDownloads(pFileInfo->GetActiveDownloads() + 1);
 
 	m_ActiveDownloads.push_back(pArticleDownloader);
 	pArticleDownloader->Start();
@@ -615,6 +669,8 @@ void QueueCoordinator::ArticleCompleted(ArticleDownloader* pArticleDownloader)
 			break;
 		}
 	}
+
+	pFileInfo->SetActiveDownloads(pFileInfo->GetActiveDownloads() - 1);
 
 	if (deleteFileObj)
 	{
@@ -762,6 +818,7 @@ void QueueCoordinator::ResetHangingDownloads()
 				error("Could not terminate hanging download %s", Util::BaseFileName(pArticleInfo->GetResultFilename()));
 			}
 			m_ActiveDownloads.erase(it);
+			pArticleDownloader->GetFileInfo()->SetActiveDownloads(pArticleDownloader->GetFileInfo()->GetActiveDownloads() - 1);
 			// it's not safe to destroy pArticleDownloader, because the state of object is unknown
 			delete pArticleDownloader;
 			it = m_ActiveDownloads.begin();
