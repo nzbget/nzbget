@@ -63,6 +63,12 @@ LogFile=${DestDir}/nzbget.log
 ### NEWS-SERVERS                                                           ###
 
 # This section defines which servers nzbget should connect to.
+#
+# The servers should be numbered subsequently without holes.
+# For example if you configure three servers you should name them as Server1, 
+# Server2 and Server3. If you need to delete Server2 later you should also 
+# change the name of Server3 to Server2. Otherwise it will not be properly
+# read from the config file. Server number doesn't affect its priority (level).
 
 # Level of newsserver (0-99).
 #
