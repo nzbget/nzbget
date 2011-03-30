@@ -421,13 +421,13 @@ long long Util::JoinInt64(unsigned long Hi, unsigned long Lo)
 void Util::SplitInt64(long long Int64, unsigned long* Hi, unsigned long* Lo)
 {
 	*Hi = (unsigned long)(Int64 >> 32);
-	*Lo = (unsigned long)Int64;
+	*Lo = (unsigned long)(int32_t)Int64;
 }
 
 float Util::Int64ToFloat(long long Int64)
 {
-	unsigned long Hi = (unsigned long)(Int64 >> 32);
-	unsigned long Lo = (unsigned long)Int64;
+	unsigned long Hi, Lo;
+	SplitInt64(Int64, &Hi, &Lo);
 	return ((unsigned long)(1 << 30)) * 4.0f * Hi + Lo;
 }
 
