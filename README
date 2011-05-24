@@ -420,7 +420,7 @@ NZBGet was initialiy written by Sven Henkel (sidddy@users.sourceforge.net).
 Up to version 0.2.3 it was developed and maintained by Bo Cordes Petersen 
 (placebodk@users.sourceforge.net). 
 
-Beginning at version 0.3.0 the program is being developed by Andrei Prygounkov 
+Beginning at version 0.3.0 the program is being developed by Andrey Prygunkov 
 (hugbug@users.sourceforge.net).
 
 Module TLS (TLS.c, TLS.h) is based on work by Martin Lambers (marlam@marlam.de).

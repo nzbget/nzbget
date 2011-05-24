@@ -1,7 +1,7 @@
 /*
  *  This file is part of nzbget
  *
- *  Copyright (C) 2007-2010 Andrei Prygounkov <hugbug@users.sourceforge.net>
+ *  Copyright (C) 2007-2010 Andrey Prygunkov <hugbug@users.sourceforge.net>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -15,7 +15,7 @@
  *
  *  You should have received a copy of the GNU General Public License
  *  along with this program; if not, write to the Free Software
- *  Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
+ *  Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  *
  * $Revision$
  * $Date$
@@ -59,7 +59,7 @@ const char* svn_version(void);
 // from http://www.codeproject.com/cpp/xgetopt.asp
 // Original Author:  Hans Dietrich (hdietrich2@hotmail.com)
 // Released to public domain from author (thanks)
-// Slightly modified by Andrei Prygounkov
+// Slightly modified by Andrey Prygunkov
 
 char	*optarg;		// global argument pointer
 int		optind = 0; 	// global argv index
@@ -422,6 +422,10 @@ void Util::SplitInt64(long long Int64, unsigned long* Hi, unsigned long* Lo)
 {
 	*Hi = (unsigned long)(Int64 >> 32);
 	*Lo = (unsigned long)(int32_t)Int64;
+	if (sizeof(unsigned long) > 4)
+	{
+		*Lo -= (unsigned long)((long long)*Hi << 32);
+	}
 }
 
 float Util::Int64ToFloat(long long Int64)
