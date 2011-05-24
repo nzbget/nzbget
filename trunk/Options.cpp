@@ -1178,7 +1178,7 @@ void Options::PrintUsage(char* com)
 		"                 O          unpause post-processor queue\n"
 		"                 S          unpause scan of incoming nzb-directory\n"
 		"  -R, --rate <speed>        Set download rate on server, in KB/s\n"
-		"  -T, --top                 Add file to the top (begining) of queue\n"
+		"  -T, --top                 Add file to the top (beginning) of queue\n"
 		"                            (for using with switch --append)\n"
 		"  -K, --category <name>     Assign category to nzb-file\n"
 		"                            (for using with switch --append)\n"
