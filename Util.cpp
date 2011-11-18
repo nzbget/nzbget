@@ -820,7 +820,8 @@ char* Util::JsonEncode(const char* raw)
 			case '\n':
 			case '\r':
 			case '\t':
-				iReqSize += 1;
+				iReqSize++;
+                break;
 			default:
 				if (ch >= 0x80)
 				{
@@ -941,6 +942,7 @@ void Util::JsonDecode(char* raw)
 							break;
 					}
 					p++;
+                    break;
 				}
 			default:
 				*output++ = *p++;
