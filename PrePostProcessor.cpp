@@ -1120,15 +1120,19 @@ bool PrePostProcessor::RequestMorePars(NZBInfo* pNZBInfo, const char* szParFilen
 	Blocks blocks;
 	blocks.clear();
 	int iBlockFound = 0;
+    int iCurBlockFound = 0;
 
-	FindPars(pDownloadQueue, pNZBInfo, szParFilename, &blocks, true, true, &iBlockFound);
-	if (iBlockFound == 0)
+	FindPars(pDownloadQueue, pNZBInfo, szParFilename, &blocks, true, true, &iCurBlockFound);
+    iBlockFound += iCurBlockFound;
+	if (iBlockFound < iBlockNeeded)
 	{
-		FindPars(pDownloadQueue, pNZBInfo, szParFilename, &blocks, true, false, &iBlockFound);
+		FindPars(pDownloadQueue, pNZBInfo, szParFilename, &blocks, true, false, &iCurBlockFound);
+        iBlockFound += iCurBlockFound;
 	}
-	if (iBlockFound == 0 && !g_pOptions->GetStrictParName())
+	if (iBlockFound < iBlockNeeded && !g_pOptions->GetStrictParName())
 	{
-		FindPars(pDownloadQueue, pNZBInfo, szParFilename, &blocks, false, false, &iBlockFound);
+		FindPars(pDownloadQueue, pNZBInfo, szParFilename, &blocks, false, false, &iCurBlockFound);
+        iBlockFound += iCurBlockFound;
 	}
 
 	if (iBlockFound >= iBlockNeeded)
@@ -1264,11 +1268,26 @@ void PrePostProcessor::FindPars(DownloadQueue* pDownloadQueue, NZBInfo* pNZBInfo
 				}
 			}
 
+            bool bAlreadyAdded = false;
+            // check if file is not in the list already
+			if (bUseFile)
+			{
+				for (Blocks::iterator it = pBlocks->begin(); it != pBlocks->end(); it++)
+				{
+					BlockInfo* pBlockInfo = *it;
+					if (pBlockInfo->m_pFileInfo == pFileInfo)
+					{
+						bAlreadyAdded = true;
+						break;
+                	}
+        		}
+			}
+                
 			// if it is a par2-file with blocks and it was from the same NZB-request
 			// and it belongs to the same file collection (same base name),
 			// then OK, we can use it
-			if (bUseFile)
-			{
+            if (bUseFile && !bAlreadyAdded)
+            {
 				BlockInfo* pBlockInfo = new BlockInfo();
 				pBlockInfo->m_pFileInfo = pFileInfo;
 				pBlockInfo->m_iBlockCount = iBlocks;
