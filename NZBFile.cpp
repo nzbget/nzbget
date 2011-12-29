@@ -36,7 +36,7 @@
 #include <list>
 #ifdef WIN32
 #include <comutil.h>
-#import "MSXML.dll" named_guids 
+#import <msxml.tlb> named_guids 
 using namespace MSXML;
 #else
 #include <libxml/parser.h>
