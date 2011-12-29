@@ -11,7 +11,7 @@
 #
 # You can also put the file into any location, if you specify the path to it
 # using switch "-c", e.g:
-#   nzbget -c /home/user/myconig.txt
+#   nzbget -c /home/user/myconfig.txt
 
 # For quick start change the option MAINDIR and configure one news-server
 
@@ -299,7 +299,7 @@ Decode=yes
 
 # Write decoded articles directly into destination output file (yes, no).
 #
-# Files are posted to Usenet withing artilce bodies. Each file typically
+# Files are posted to Usenet within artilce bodies. Each file typically
 # requires hundreds of articles.
 #
 # When option <DirectWrite> is disabled, the program downloads all articles
@@ -417,10 +417,10 @@ DownloadRate=0
 #
 # NOTE: The program uses spinlocks if the operating system supports them.
 # Otherwise it uses mutexes, which are much less effective. Anyway thread
-# synchronisation increases CPU load. Be aware that spinlocks are efective
-# only on multicore systems. If you enabled the option on a sigle-core
+# synchronisation increases CPU load. Be aware that spinlocks are effective
+# only on multicore systems. If you enabled the option on a single-core
 # system (even if the underlying OS supports spinlocks), that would
-# probably significally increase CPU load.
+# probably significantly increase CPU load.
 #
 # NOTE: It is recommended to run tests to determine how the option affects
 # the CPU usage and the download speed on a particular system.
@@ -611,7 +611,7 @@ ServerPassword=tegbzn6789
 #
 # none - all par2-files must be automatically paused;
 # all - all par2-files must be downloaded;
-# one - only one main par2-file must be dowloaded and other must be paused.
+# one - only one main par2-file must be downloaded and other must be paused.
 # Paused files remain in queue and can be unpaused by parchecker when needed.
 LoadPars=one
 
@@ -681,7 +681,8 @@ ParTimeLimit=0
 # Enable the option to give CPU more time for par-check/repair. That helps
 # to speed up check/repair on slow CPUs with fast connection (e.g. NAS-devices).
 #
-# NOTE: if parchecker needs additional par-files it temporary unpauses queue.
+# NOTE: if parchecker needs additional par-files it temporarily unpauses 
+# the queue.
 #
 # NOTE: See also option <PostPauseQueue>.
 ParPauseQueue=no
@@ -876,7 +877,7 @@ PostPauseQueue=no
 # is ignored and can be omitted.
 #Task1.DownloadRate=100
 
-# Path to the porgram to execute if the command is "Process".
+# Path to the program to execute if the command is "Process".
 #
 # Example: "Task1.Process=/home/user/fetch-nzb.sh".
 #
@@ -916,7 +917,7 @@ PostPauseQueue=no
 #    meter ("AccurateRate=no");
 # 6) Disable logging for detail- and debug-messages ("DetailTarget=none", 
 #    "DebugTarget=none");
-# 7) Run the program in daemon (Posix) or service (Windows) mode and use
+# 7) Run the program in daemon (POSIX) or service (Windows) mode and use
 #    remote client for short periods of time needed for controlling of 
 #    download process on server. Daemon/Service mode eats less CPU 
 #    resources than console server mode due to not updating the screen.
