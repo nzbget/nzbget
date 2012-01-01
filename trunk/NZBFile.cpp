@@ -161,17 +161,10 @@ void NZBFile::AddFileInfo(FileInfo* pFileInfo)
 
 	if (!pArticles->empty())
 	{
-		ParseSubject(pFileInfo);
 		m_FileInfos.push_back(pFileInfo);
 		pFileInfo->SetNZBInfo(m_pNZBInfo);
 		m_pNZBInfo->SetSize(m_pNZBInfo->GetSize() + pFileInfo->GetSize());
 		m_pNZBInfo->SetFileCount(m_pNZBInfo->GetFileCount() + 1);
-
-		if (g_pOptions->GetSaveQueue() && g_pOptions->GetServerMode())
-		{
-			g_pDiskState->SaveFile(pFileInfo);
-			pFileInfo->ClearArticles();
-		}
 	}
 	else
 	{
@@ -179,8 +172,34 @@ void NZBFile::AddFileInfo(FileInfo* pFileInfo)
 	}
 }
 
-void NZBFile::ParseSubject(FileInfo* pFileInfo)
+void NZBFile::ParseSubject(FileInfo* pFileInfo, bool TryQuotes)
 {
+	if (TryQuotes)
+	{
+		// try to use the filename in quatation marks 
+		char* p = (char*)pFileInfo->GetSubject();
+		char* start = strchr(p, '\"');
+		if (start)
+		{
+			start++;
+			char* end = strchr(start + 1, '\"');
+			if (end)
+			{
+				int len = (int)(end - start);
+				char* point = strchr(start + 1, '.');
+				if (point && point < end)
+				{
+					char* filename = (char*)malloc(len + 1);
+					strncpy(filename, start, len);
+					filename[len] = '\0';
+					pFileInfo->SetFilename(filename);
+					free(filename);
+					return;
+				}
+			}
+		}
+	}
+
 	// tokenize subject, considering spaces as separators and quotation 
 	// marks as non separatable token delimiters.
 	// then take the last token containing dot (".") as a filename
@@ -263,19 +282,14 @@ void NZBFile::ParseSubject(FileInfo* pFileInfo)
 		debug("Could not extract Filename from Subject: %s. Using Subject as Filename", pFileInfo->GetSubject());
 		pFileInfo->SetFilename(pFileInfo->GetSubject());
 	}
-
-	pFileInfo->MakeValidFilename();
 }
 
-/**
- * Check if the parsing of subject was correct
- */
-void NZBFile::CheckFilenames()
+bool NZBFile::HasDuplicateFilenames()
 {
-    for (FileInfos::iterator it = m_FileInfos.begin(); it != m_FileInfos.end(); it++)
+	for (FileInfos::iterator it = m_FileInfos.begin(); it != m_FileInfos.end(); it++)
     {
         FileInfo* pFileInfo1 = *it;
-		int iDupe = 0;
+		int iDupe = 1;
 		for (FileInfos::iterator it2 = it + 1; it2 != m_FileInfos.end(); it2++)
 		{
 			FileInfo* pFileInfo2 = *it2;
@@ -294,21 +308,52 @@ void NZBFile::CheckFilenames()
 		// an often case by posting-errors to repost bad files
 		if (iDupe > 2 || (iDupe == 2 && m_FileInfos.size() == 2))
 		{
-			for (FileInfos::iterator it2 = it; it2 != m_FileInfos.end(); it2++)
-			{
-				FileInfo* pFileInfo2 = *it2;
-				pFileInfo2->SetFilename(pFileInfo2->GetSubject());
-				pFileInfo2->MakeValidFilename();
-
-				if (g_pOptions->GetSaveQueue() && g_pOptions->GetServerMode())
-				{
-					g_pDiskState->LoadArticles(pFileInfo2);
-					g_pDiskState->SaveFile(pFileInfo2);
-					pFileInfo2->ClearArticles();
-				}
-			}
+			return true;
 		}
     }
+
+	return false;
+}
+
+/**
+ * Generate filenames from subjects and check if the parsing of subject was correct
+ */
+void NZBFile::ProcessFilenames()
+{
+	for (FileInfos::iterator it = m_FileInfos.begin(); it != m_FileInfos.end(); it++)
+    {
+        FileInfo* pFileInfo = *it;
+		ParseSubject(pFileInfo, true);
+	}
+
+	if (HasDuplicateFilenames())
+    {
+		for (FileInfos::iterator it = m_FileInfos.begin(); it != m_FileInfos.end(); it++)
+		{
+			FileInfo* pFileInfo = *it;
+			ParseSubject(pFileInfo, false);
+		}
+	}
+
+	if (HasDuplicateFilenames())
+    {
+		for (FileInfos::iterator it = m_FileInfos.begin(); it != m_FileInfos.end(); it++)
+		{
+			FileInfo* pFileInfo = *it;
+			pFileInfo->SetFilename(pFileInfo->GetSubject());
+		}
+    }
+
+	for (FileInfos::iterator it = m_FileInfos.begin(); it != m_FileInfos.end(); it++)
+    {
+        FileInfo* pFileInfo = *it;
+		pFileInfo->MakeValidFilename();
+		if (g_pOptions->GetSaveQueue() && g_pOptions->GetServerMode())
+		{
+			g_pDiskState->SaveFile(pFileInfo);
+			pFileInfo->ClearArticles();
+		}
+	}
 }
 
 #ifdef WIN32
@@ -355,7 +400,7 @@ NZBFile* NZBFile::Create(const char* szFileName, const char* szCategory, const c
     NZBFile* pFile = new NZBFile(szFileName, szCategory);
     if (pFile->ParseNZB(doc))
 	{
-		pFile->CheckFilenames();
+		pFile->ProcessFilenames();
 	}
 	else
 	{
@@ -481,7 +526,7 @@ NZBFile* NZBFile::Create(const char* szFileName, const char* szCategory, const c
         
     if (ret == 0)
 	{
-		pFile->CheckFilenames();
+		pFile->ProcessFilenames();
 	}
 	else
 	{
