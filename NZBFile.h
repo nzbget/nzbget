@@ -44,8 +44,9 @@ private:
 						NZBFile(const char* szFileName, const char* szCategory);
 	void				AddArticle(FileInfo* pFileInfo, ArticleInfo* pArticleInfo);
 	void				AddFileInfo(FileInfo* pFileInfo);
-	void				ParseSubject(FileInfo* pFileInfo);
-	void				CheckFilenames();
+	void				ParseSubject(FileInfo* pFileInfo, bool TryQuotes);
+	void				ProcessFilenames();
+	bool				HasDuplicateFilenames();
 #ifdef WIN32
     bool 				ParseNZB(IUnknown* nzb);
 	static void			EncodeURL(const char* szFilename, char* szURL);
