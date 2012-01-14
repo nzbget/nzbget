@@ -458,6 +458,16 @@ fi
 
 
 dnl 
+dnl Some Linux systems may require an empty signal handler for SIGCHLD
+dnl in order for exit codes to be correctly delivered to parent process
+dnl
+AC_ARG_WITH(sigchld-handler,
+	[],
+	AC_DEFINE([SIGCHLD_HANDLER], 1, [Define to 1 to install an empty signal handler for SIGCHLD]),
+	)
+
+
+dnl 
 dnl Debugging. Default: no
 dnl 
 AC_MSG_CHECKING(whether to include all debugging code)

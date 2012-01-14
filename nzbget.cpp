@@ -522,21 +522,9 @@ void SignalProc(int iSignal)
 			break;
 
 #ifdef DEBUG
-		case SIGPIPE:
-			// ignoring
-			break;
-			
 		case SIGSEGV:
 			signal(SIGSEGV, SIG_DFL);   // Reset the signal handler
 			PrintBacktrace();
-			break;
-		
-		default:
-			// printf("Signal %i received\n", iSignal);
-			if (SignalProcList[iSignal - 1])
-			{
-				SignalProcList[iSignal - 1](iSignal);
-			}
 			break;
 #endif
 	}
@@ -546,15 +534,14 @@ void InstallSignalHandlers()
 {
 	signal(SIGINT, SignalProc);
 	signal(SIGTERM, SignalProc);
-	signal(SIGCHLD, SignalProc);
 	signal(SIGPIPE, SIG_IGN);
 #ifdef DEBUG
-	SignalProcList.clear();
-	for (int i = 1; i <= 32; i++)
-	{
-		SignalProcList.push_back((sighandler)signal(i, SignalProc));
-	}
-	signal(SIGWINCH, SIG_DFL);
+	signal(SIGSEGV, SignalProc);
+#endif
+#ifdef SIGCHLD_HANDLER
+    // it could be necessary on some systems to activate a handler for SIGCHLD
+    // however it make troubles on other systems and is deactivated by default
+	signal(SIGCHLD, SignalProc);
 #endif
 }
 
