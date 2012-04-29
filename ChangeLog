@@ -1,6 +1,36 @@
-nzbget-0.8.0-testing:
-  - please see subversion log at
-    http://nzbget.svn.sourceforge.net/viewvc/nzbget/?view=log
+nzbget-0.8.0:
+  - added priorities; new action <I> for remote command <--edit/-E> to set
+    priorities for groups or individual files; new actions <SetGroupPriority>
+    and <SetFilePriority> of RPC-command <editqueue>; remote command
+    <--list/-L> prints priorities and indicates files or groups being
+    downloaded; ncurses-frontend prints priorities and indicates files or
+    groups being download; new command <PRIORITY> to set priority of nzb-file
+    from nzbprocess-script; RPC-commands <listgroups> and <listfiles> return
+    priorities and indicate files or groups being downloaded;
+  - added renaming of groups; new subcommand <N> for command <--edit/-E>; new
+    action <SetName> for RPC-method <editqueue>;
+  - added new option <AccurateRate>, which enables syncronisation in speed
+    meter; that makes the indicated speed more accurate by eliminating
+    measurement errors possible due thread conflicts; thanks to anonymous
+    nzbget user for the patch;
+  - improved the parsing of filename from article subject;
+  - option <DirectWrite> now efficiently works on Windows with NTFS partitions;
+  - added URL-based-authentication as alternative to HTTP-header authentication
+    for XML- and JSON-RPC;
+  - fixed: nzb-files containing umlauts and other special characters could not
+    be parsed - replaced XML-Reader with SAX-Parser - only on POSIX (not on 
+    Windows);
+  - fixed incorrect displaying of group sizes bigger than 4GB on many 64-bit
+    OSes;
+  - fixed a bug causing error on decoding of input data in JSON-RPC;
+  - fixed a compilation error on some windows versions;
+  - fixed: par-repair could fail when the filenames were not correctly parsed
+    from article subjects;
+  - fixed a compatibility issue with OpenBSD (and possibly other BSD based
+    systems); added the automatic configuring of required signal handling logic
+    to better support BSD without breaking the compatibility with certain Linux
+    systems;
+  - corrected the address of Free Software Foundation in copyright notice.
    
 nzbget-0.7.0:
   - added history: new option <KeepHistory>, new remote subcommand <H> for

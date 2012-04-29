@@ -41,13 +41,12 @@ NZBGet is written in C++ and was initialy developed on Linux.
 It was ported to Windows later and tested for compatibility with
 several POSIX-OS'es.
 
-The current version (0.7.0) should run at least on:
-  - Linux Debian 4.0 on x86;
-  - Linux with uClibc and BusyBox on MIPSEL and ARM;
-  - FreeBSD 7.0 on x86;
-  - OpenSolaris 2008.11 on x86;
-  - Mac OS X;
-  - Windows XP SP2 on x86.
+The current version (0.8.0) should run at least on:
+  - Linux Debian 5.0 on x86;
+  - Linux with uClibc on MIPSEL and ARM;
+  - OpenBSD 5.0 on x86;
+  - Mac OS X 10.7 Lion on x64;
+  - Windows XP SP3 on x86 and Windows 7 on x64.
 
 Clients and servers running on different OS'es may communicate with
 each other. For example, you can use NZBGet as client on Windows to 
