@@ -49,6 +49,8 @@ extern Options* g_pOptions;
 int FileInfo::m_iIDGen = 0;
 int NZBInfo::m_iIDGen = 0;
 int PostInfo::m_iIDGen = 0;
+int UrlInfo::m_iIDGen = 0;
+int HistoryInfo::m_iIDGen = 0;
 
 NZBParameter::NZBParameter(const char* szName)
 {
@@ -133,7 +135,6 @@ NZBInfo::NZBInfo()
 	m_bParCleanup = false;
 	m_bCleanupDisk = false;
 	m_szQueuedFilename = strdup("");
-	m_tHistoryTime = 0;
 	m_Owner = NULL;
 	m_Messages.clear();
 	m_iIDMessageGen = 0;
@@ -787,5 +788,150 @@ void DownloadQueue::BuildGroups(GroupQueue* pGroupQueue)
 		{
 			pGroupInfo->m_iRemainingParCount++;
 		}
+	}
+}
+
+
+UrlInfo::UrlInfo()
+{
+	//debug("Creating ArticleInfo");
+	m_szURL = NULL;
+	m_szNZBFilename = strdup("");
+	m_szCategory = strdup("");
+	m_iPriority = 0;
+	m_eStatus = aiUndefined;
+	m_iIDGen++;
+	m_iID = m_iIDGen;
+}
+
+UrlInfo::~ UrlInfo()
+{
+	if (m_szURL)
+	{
+		free(m_szURL);
+	}
+	if (m_szNZBFilename)
+	{
+		free(m_szNZBFilename);
+	}
+	if (m_szCategory)
+	{
+		free(m_szCategory);
+	}
+}
+
+void UrlInfo::SetURL(const char* szURL)
+{
+	if (m_szURL)
+	{
+		free(m_szURL);
+	}
+	m_szURL = strdup(szURL);
+}
+
+void UrlInfo::SetID(int s)
+{
+	m_iID = s;
+	if (m_iIDGen < m_iID)
+	{
+		m_iIDGen = m_iID;
+	}
+}
+
+void UrlInfo::SetNZBFilename(const char* szNZBFilename)
+{
+	if (m_szNZBFilename)
+	{
+		free(m_szNZBFilename);
+	}
+	m_szNZBFilename = strdup(szNZBFilename);
+}
+
+void UrlInfo::SetCategory(const char* szCategory)
+{
+	if (m_szCategory)
+	{
+		free(m_szCategory);
+	}
+	m_szCategory = strdup(szCategory);
+}
+
+void UrlInfo::GetNiceName(char* szBuffer, int iSize)
+{
+	MakeNiceName(m_szURL, m_szNZBFilename, szBuffer, iSize);
+}
+
+void UrlInfo::MakeNiceName(const char* szURL, const char* szNZBFilename, char* szBuffer, int iSize)
+{
+	URL url(szURL);
+
+	if (strlen(szNZBFilename) > 0)
+	{
+		char szNZBNicename[1024];
+		NZBInfo::MakeNiceNZBName(szNZBFilename, szNZBNicename, sizeof(szNZBNicename));
+		snprintf(szBuffer, iSize, "%s @ %s", szNZBNicename, url.GetHost());
+	}
+	else
+	{
+		snprintf(szBuffer, iSize, "%s%s", url.GetHost(), url.GetResource());
+	}
+
+	szBuffer[iSize-1] = '\0';
+}
+
+
+HistoryInfo::HistoryInfo(NZBInfo* pNZBInfo)
+{
+	m_eKind = hkNZBInfo;
+	m_pInfo = pNZBInfo;
+	pNZBInfo->AddReference();
+	m_tTime = 0;
+	m_iIDGen++;
+	m_iID = m_iIDGen;
+}
+
+HistoryInfo::HistoryInfo(UrlInfo* pUrlInfo)
+{
+	m_eKind = hkUrlInfo;
+	m_pInfo = pUrlInfo;
+	m_tTime = 0;
+	m_iIDGen++;
+	m_iID = m_iIDGen;
+}
+
+HistoryInfo::~HistoryInfo()
+{
+	if (m_eKind == hkNZBInfo && m_pInfo)
+	{
+		((NZBInfo*)m_pInfo)->Release();
+	}
+	else if (m_eKind == hkUrlInfo && m_pInfo)
+	{
+		delete (UrlInfo*)m_pInfo;
+	}
+}
+
+void HistoryInfo::SetID(int s)
+{
+	m_iID = s;
+	if (m_iIDGen < m_iID)
+	{
+		m_iIDGen = m_iID;
+	}
+}
+
+void HistoryInfo::GetNiceName(char* szBuffer, int iSize)
+{
+	if (m_eKind == hkNZBInfo)
+	{
+		GetNZBInfo()->GetNiceNZBName(szBuffer, iSize);
+	}
+	else if (m_eKind == hkUrlInfo)
+	{
+		GetUrlInfo()->GetNiceName(szBuffer, iSize);
+	}
+	else
+	{
+		strncpy(szBuffer, "<unknown>", iSize);
 	}
 }

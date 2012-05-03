@@ -1236,3 +1236,163 @@ bool Util::SplitCommandLine(const char* szCommandLine, char*** argv)
 
 	return iArgCount > 0;
 }
+
+void Util::HttpUnquote(char* raw)
+{
+	if (*raw != '"')
+	{
+		return;
+	}
+
+	char *output = raw;
+	for (char *p = raw+1;;)
+	{
+		switch (*p)
+		{
+			case '\0':
+			case '"':
+				goto BreakLoop;
+			case '\\':
+				p++;
+				*output++ = *p;
+				break;
+			default:
+				*output++ = *p++;
+				break;
+		}
+	}
+BreakLoop:
+
+	*output = '\0';
+}
+
+
+URL::URL(const char* szAddress)
+{
+	m_szAddress = NULL;
+	m_szProtocol = NULL;
+	m_szUser = NULL;
+	m_szPassword = NULL;
+	m_szHost = NULL;
+	m_szResource = NULL;
+	m_iPort = 0;
+	m_bTLS = false;
+	m_bValid = false;
+
+	if (szAddress)
+	{
+		m_szAddress = strdup(szAddress);
+		ParseURL();
+	}
+}
+
+URL::~URL()
+{
+	if (m_szAddress)
+	{
+		free(m_szAddress);
+	}
+	if (m_szProtocol)
+	{
+		free(m_szProtocol);
+	}
+	if (m_szUser)
+	{
+		free(m_szUser);
+	}
+	if (m_szPassword)
+	{
+		free(m_szPassword);
+	}
+	if (m_szHost)
+	{
+		free(m_szHost);
+	}
+	if (m_szResource)
+	{
+		free(m_szResource);
+	}
+}
+
+void URL::ParseURL()
+{
+	// Examples:
+	// http://user:password@host:port/path/to/resource?param
+	// http://user@host:port/path/to/resource?param
+	// http://host:port/path/to/resource?param
+	// http://host/path/to/resource?param
+	// http://host
+
+	char* protEnd = strstr(m_szAddress, "://");
+	if (!protEnd)
+	{
+		// Bad URL
+		return;
+	}
+
+	m_szProtocol = (char*)malloc(protEnd - m_szAddress + 1);
+	strncpy(m_szProtocol, m_szAddress, protEnd - m_szAddress);
+	m_szProtocol[protEnd - m_szAddress] = 0;
+
+	char* hostStart = protEnd + 3;
+	char* slash = strchr(hostStart, '/');
+	char* hostEnd = NULL;
+	char* amp = strchr(hostStart, '@');
+
+	if (amp && (!slash || amp < slash))
+	{
+		// parse user/password
+		char* userend = amp - 1;
+		char* pass = strchr(hostStart, ':');
+		if (pass && pass < amp)
+		{
+			int iLen = amp - pass - 1;
+			if (iLen > 0)
+			{
+				m_szPassword = (char*)malloc(iLen + 1);
+				strncpy(m_szPassword, pass + 1, iLen);
+				m_szPassword[iLen] = 0;
+			}
+			userend = pass - 1;
+		}
+
+		int iLen = userend - hostStart + 1;
+		if (iLen > 0)
+		{
+			m_szUser = (char*)malloc(iLen + 1);
+			strncpy(m_szUser, hostStart, iLen);
+			m_szUser[iLen] = 0;
+		}
+
+		hostStart = amp + 1;
+	}
+
+	if (slash)
+	{
+		char* resEnd = m_szAddress + strlen(m_szAddress);
+		m_szResource = (char*)malloc(resEnd - slash + 1 + 1);
+		strncpy(m_szResource, slash, resEnd - slash + 1);
+		m_szResource[resEnd - slash + 1] = 0;
+
+		hostEnd = slash - 1;
+	}
+	else
+	{
+		m_szResource = strdup("/");
+
+		hostEnd = m_szAddress + strlen(m_szAddress);
+	}
+
+	char* colon = strchr(hostStart, ':');
+	if (colon && colon < hostEnd)
+	{
+		hostEnd = colon - 1;
+		m_iPort = atoi(colon + 1);
+	}
+
+	m_szHost = (char*)malloc(hostEnd - hostStart + 1 + 1);
+	strncpy(m_szHost, hostStart, hostEnd - hostStart + 1);
+	m_szHost[hostEnd - hostStart + 1] = 0;
+
+	m_bValid = true;
+}

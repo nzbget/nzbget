@@ -488,11 +488,27 @@
 			>
 		</File>
 		<File
+			RelativePath=".\UrlCoordinator.cpp"
+			>
+		</File>
+		<File
+			RelativePath=".\UrlCoordinator.h"
+			>
+		</File>
+		<File
 			RelativePath=".\Util.cpp"
 			>
 		</File>
 		<File
 			RelativePath=".\Util.h"
+			>
+		</File>
+		<File
+			RelativePath=".\WebDownloader.cpp"
+			>
+		</File>
+		<File
+			RelativePath=".\WebDownloader.h"
 			>
 		</File>
 		<File

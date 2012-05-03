@@ -140,4 +140,16 @@ public:
 	virtual void		Execute();
 };
 
+class DownloadUrlBinCommand: public BinCommand
+{
+public:
+	virtual void		Execute();
+};
+
+class UrlQueueBinCommand: public BinCommand
+{
+public:
+	virtual void		Execute();
+};
+
 #endif

@@ -1082,27 +1082,33 @@ bool RemoteClient::RequestHistory()
 		{
 			SNZBHistoryResponseEntry* pListAnswer = (SNZBHistoryResponseEntry*) pBufPtr;
 
-			const char* szFileName = pBufPtr + sizeof(SNZBHistoryResponseEntry);
+			HistoryInfo::EKind eKind = (HistoryInfo::EKind)ntohl(pListAnswer->m_iKind);
+			const char* szNicename = pBufPtr + sizeof(SNZBHistoryResponseEntry);
 
-			long long lSize = Util::JoinInt64(ntohl(pListAnswer->m_iSizeHi), ntohl(pListAnswer->m_iSizeLo));
+			if (eKind == HistoryInfo::hkNZBInfo)
+			{
+				long long lSize = Util::JoinInt64(ntohl(pListAnswer->m_iSizeHi), ntohl(pListAnswer->m_iSizeLo));
 
-			char szNZBNiceName[1024];
-			NZBInfo::MakeNiceNZBName(szFileName, szNZBNiceName, 1024);
+				char szSize[20];
+				Util::FormatFileSize(szSize, sizeof(szSize), lSize);
 
-			char szSize[20];
-			Util::FormatFileSize(szSize, sizeof(szSize), lSize);
+				const char* szParStatusText[] = { "", ", Par failed", ", Par possible", ", Par successful" };
+				const char* szScriptStatusText[] = { "", ", Script status unknown", ", Script failed", ", Script successful" };
 
-			const char* szParStatusText[] = { "", ", Par failed", ", Par possible", ", Par successful" };
-			const char* szScriptStatusText[] = { "", ", Script status unknown", ", Script failed", ", Script successful" };
+				printf("[%i] %s (%i files, %s%s%s)\n", ntohl(pListAnswer->m_iID), szNicename, 
+					ntohl(pListAnswer->m_iFileCount), szSize, 
+					szParStatusText[ntohl(pListAnswer->m_iParStatus)], 
+					szScriptStatusText[ntohl(pListAnswer->m_iScriptStatus)]);
+			}
+			else if (eKind == HistoryInfo::hkUrlInfo)
+			{
+				const char* szUrlStatusText[] = { "", "", "Url download successful", "Url download failed", "" };
 
-			printf("[%i] %s (%i files, %s%s%s)\n", ntohl(pListAnswer->m_iID), szNZBNiceName, 
-				ntohl(pListAnswer->m_iFileCount), szSize, 
-				szParStatusText[ntohl(pListAnswer->m_iParStatus)], 
-				szScriptStatusText[ntohl(pListAnswer->m_iScriptStatus)]);
+				printf("[%i] %s (%s)\n", ntohl(pListAnswer->m_iID), szNicename, 
+					szUrlStatusText[ntohl(pListAnswer->m_iUrlStatus)]);
+			}
 
-			pBufPtr += sizeof(SNZBHistoryResponseEntry) + ntohl(pListAnswer->m_iFilenameLen) +
-				ntohl(pListAnswer->m_iDestDirLen) + ntohl(pListAnswer->m_iCategoryLen) + 
-				ntohl(pListAnswer->m_iQueuedFilenameLen);
+			pBufPtr += sizeof(SNZBHistoryResponseEntry) + ntohl(pListAnswer->m_iNicenameLen);
 		}
 
 		printf("-----------------------------------\n");
@@ -1110,6 +1116,117 @@ bool RemoteClient::RequestHistory()
 	}
 
 	free(pBuf);
+
+	return true;
+}
+
+bool RemoteClient::RequestServerDownloadUrl(const char* szURL, const char* szCategory, bool bAddFirst)
+{
+	if (!InitConnection()) return false;
+
+	SNZBDownloadUrlRequest DownloadUrlRequest;
+	InitMessageBase(&DownloadUrlRequest.m_MessageBase, eRemoteRequestDownloadUrl, sizeof(DownloadUrlRequest));
+	DownloadUrlRequest.m_bAddFirst = htonl(bAddFirst);
+
+	strncpy(DownloadUrlRequest.m_szURL, szURL, NZBREQUESTFILENAMESIZE - 1);
+	DownloadUrlRequest.m_szURL[NZBREQUESTFILENAMESIZE-1] = '\0';
+	DownloadUrlRequest.m_szCategory[0] = '\0';
+	if (szCategory)
+	{
+		strncpy(DownloadUrlRequest.m_szCategory, szCategory, NZBREQUESTFILENAMESIZE - 1);
+	}
+	DownloadUrlRequest.m_szCategory[NZBREQUESTFILENAMESIZE-1] = '\0';
+
+	bool OK = m_pConnection->Send((char*)(&DownloadUrlRequest), sizeof(DownloadUrlRequest)) >= 0;
+	if (OK)
+	{
+		OK = ReceiveBoolResponse();
+	}
+	else
+	{
+		perror("m_pConnection->Send");
+	}
+
+	m_pConnection->Disconnect();
+	return OK;
+}
+
+bool RemoteClient::RequestUrlQueue()
+{
+	if (!InitConnection()) return false;
+
+	SNZBUrlQueueRequest UrlQueueRequest;
+	InitMessageBase(&UrlQueueRequest.m_MessageBase, eRemoteRequestUrlQueue, sizeof(UrlQueueRequest));
+
+	if (m_pConnection->Send((char*)(&UrlQueueRequest), sizeof(UrlQueueRequest)) < 0)
+	{
+		perror("m_pConnection->Send");
+		return false;
+	}
+
+	printf("Request sent\n");
+
+	// Now listen for the returned list
+	SNZBUrlQueueResponse UrlQueueResponse;
+	int iResponseLen = m_pConnection->Recv((char*) &UrlQueueResponse, sizeof(UrlQueueResponse));
+	if (iResponseLen != sizeof(UrlQueueResponse) || 
+		(int)ntohl(UrlQueueResponse.m_MessageBase.m_iSignature) != (int)NZBMESSAGE_SIGNATURE ||
+		ntohl(UrlQueueResponse.m_MessageBase.m_iStructSize) != sizeof(UrlQueueResponse))
+	{
+		if (iResponseLen < 0)
+		{
+			printf("No response received (timeout)\n");
+		}
+		else
+		{
+			printf("Invalid response received: either not nzbget-server or wrong server version\n");
+		}
+		return false;
+	}
+
+	char* pBuf = NULL;
+	if (ntohl(UrlQueueResponse.m_iTrailingDataLength) > 0)
+	{
+		pBuf = (char*)malloc(ntohl(UrlQueueResponse.m_iTrailingDataLength));
+		if (!m_pConnection->RecvAll(pBuf, ntohl(UrlQueueResponse.m_iTrailingDataLength)))
+		{
+			free(pBuf);
+			return false;
+		}
+	}
+
+	m_pConnection->Disconnect();
+
+	if (ntohl(UrlQueueResponse.m_iTrailingDataLength) == 0)
+	{
+		printf("Server has no urls queued for download\n");
+	}
+	else
+	{
+		printf("Url-Queue\n");
+		printf("-----------------------------------\n");
+
+		char* pBufPtr = (char*)pBuf;
+		for (unsigned int i = 0; i < ntohl(UrlQueueResponse.m_iNrTrailingEntries); i++)
+		{
+			SNZBUrlQueueResponseEntry* pUrlQueueAnswer = (SNZBUrlQueueResponseEntry*) pBufPtr;
+
+			const char* szURL = pBufPtr + sizeof(SNZBUrlQueueResponseEntry);
+			const char* szTitle = pBufPtr + sizeof(SNZBUrlQueueResponseEntry) + ntohl(pUrlQueueAnswer->m_iURLLen);
+
+			char szNiceName[1024];
+			UrlInfo::MakeNiceName(szURL, szTitle, szNiceName, 1024);
+
+			printf("[%i] %s\n", ntohl(pUrlQueueAnswer->m_iID), szNiceName);
+
+			pBufPtr += sizeof(SNZBUrlQueueResponseEntry) + ntohl(pUrlQueueAnswer->m_iURLLen) + 
+				ntohl(pUrlQueueAnswer->m_iNZBFilenameLen);
+		}
+
+		free(pBuf);
+
+		printf("-----------------------------------\n");
+	}
 
 	return true;
 }

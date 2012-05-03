@@ -112,6 +112,7 @@ static const char* OPTION_SERVERPASSWORD		= "ServerPassword";
 static const char* OPTION_CONNECTIONTIMEOUT		= "ConnectionTimeout";
 static const char* OPTION_SAVEQUEUE				= "SaveQueue";
 static const char* OPTION_RELOADQUEUE			= "ReloadQueue";
+static const char* OPTION_RELOADURLQUEUE		= "ReloadUrlQueue";
 static const char* OPTION_RELOADPOSTQUEUE		= "ReloadPostQueue";
 static const char* OPTION_CREATEBROKENLOG		= "CreateBrokenLog";
 static const char* OPTION_RESETLOG				= "ResetLog";
@@ -120,6 +121,7 @@ static const char* OPTION_RETRIES				= "Retries";
 static const char* OPTION_RETRYINTERVAL			= "RetryInterval";
 static const char* OPTION_TERMINATETIMEOUT		= "TerminateTimeout";
 static const char* OPTION_CONTINUEPARTIAL		= "ContinuePartial";
+static const char* OPTION_URLCONNECTIONS		= "UrlConnections";
 static const char* OPTION_LOGBUFFERSIZE			= "LogBufferSize";
 static const char* OPTION_INFOTARGET			= "InfoTarget";
 static const char* OPTION_WARNINGTARGET			= "WarningTarget";
@@ -268,7 +270,9 @@ Options::Options(int argc, char* argv[])
 	m_szDaemonUserName		= NULL;
 	m_eOutputMode			= omLoggable;
 	m_bReloadQueue			= false;
+	m_bReloadUrlQueue		= false;
 	m_bReloadPostQueue		= false;
+	m_iUrlConnections		= 0;
 	m_iLogBufferSize		= 0;
 	m_iLogLines				= 0;
 	m_iWriteLogKind			= 0;
@@ -493,6 +497,7 @@ void Options::InitDefault()
 	SetOption(OPTION_CONNECTIONTIMEOUT, "60");
 	SetOption(OPTION_SAVEQUEUE, "yes");
 	SetOption(OPTION_RELOADQUEUE, "yes");
+	SetOption(OPTION_RELOADURLQUEUE, "yes");
 	SetOption(OPTION_RELOADPOSTQUEUE, "yes");
 	SetOption(OPTION_CREATEBROKENLOG, "no");
 	SetOption(OPTION_RESETLOG, "no");
@@ -501,6 +506,7 @@ void Options::InitDefault()
 	SetOption(OPTION_RETRYINTERVAL, "10");
 	SetOption(OPTION_TERMINATETIMEOUT, "600");
 	SetOption(OPTION_CONTINUEPARTIAL, "no");
+	SetOption(OPTION_URLCONNECTIONS, "1");
 	SetOption(OPTION_LOGBUFFERSIZE, "1000");
 	SetOption(OPTION_INFOTARGET, "both");
 	SetOption(OPTION_WARNINGTARGET, "both");
@@ -650,6 +656,7 @@ void Options::InitOptions()
 	m_szServerPassword		= strdup(GetOption(OPTION_SERVERPASSWORD));
 	m_szLockFile			= strdup(GetOption(OPTION_LOCKFILE));
 	m_szDaemonUserName		= strdup(GetOption(OPTION_DAEMONUSERNAME));
+	m_iUrlConnections		= atoi(GetOption(OPTION_URLCONNECTIONS));
 	m_iLogBufferSize		= atoi(GetOption(OPTION_LOGBUFFERSIZE));
 	m_szLogFile				= strdup(GetOption(OPTION_LOGFILE));
 	m_iUMask				= strtol(GetOption(OPTION_UMASK), NULL, 8);
@@ -677,6 +684,7 @@ void Options::InitOptions()
 	m_bParRepair			= (bool)ParseOptionValue(OPTION_PARREPAIR, BoolCount, BoolNames, BoolValues);
 	m_bStrictParName		= (bool)ParseOptionValue(OPTION_STRICTPARNAME, BoolCount, BoolNames, BoolValues);
 	m_bReloadQueue			= (bool)ParseOptionValue(OPTION_RELOADQUEUE, BoolCount, BoolNames, BoolValues);
+	m_bReloadUrlQueue		= (bool)ParseOptionValue(OPTION_RELOADURLQUEUE, BoolCount, BoolNames, BoolValues);
 	m_bReloadPostQueue		= (bool)ParseOptionValue(OPTION_RELOADPOSTQUEUE, BoolCount, BoolNames, BoolValues);
 	m_bCursesNZBName		= (bool)ParseOptionValue(OPTION_CURSESNZBNAME, BoolCount, BoolNames, BoolValues);
 	m_bCursesTime			= (bool)ParseOptionValue(OPTION_CURSESTIME, BoolCount, BoolNames, BoolValues);
@@ -811,7 +819,21 @@ void Options::InitCommandLine(int argc, char* argv[])
 				m_bDaemonMode = true;
 				break;
 			case 'A':
-				m_eClientOperation = opClientRequestDownload;
+				optind++;
+				optarg = optind > argc ? NULL : argv[optind-1];
+				if (optarg && !strcmp(optarg, "F"))
+				{
+					m_eClientOperation = opClientRequestDownload;
+				}
+				else if (optarg && !strcmp(optarg, "U"))
+				{
+					m_eClientOperation = opClientRequestDownloadUrl;
+				}
+				else
+				{
+					m_eClientOperation = opClientRequestDownload;
+					optind--;
+				}
 				break;
 			case 'L':
 				optind++;
@@ -840,6 +862,10 @@ void Options::InitCommandLine(int argc, char* argv[])
 				else if (!strcmp(optarg, "H"))
 				{
 					m_eClientOperation = opClientRequestHistory;
+				}
+				else if (!strcmp(optarg, "U"))
+				{
+					m_eClientOperation = opClientRequestUrlQueue;
 				}
 				else
 				{
@@ -1159,12 +1185,19 @@ void Options::PrintUsage(char* com)
 #endif
 	    "  -V, --serverversion       Print server's version and exit\n"
 		"  -Q, --quit                Shutdown server\n"
-		"  -A, --append <nzb-file>   Send file to server's download queue\n"
+		"  -A, --append  [F|U] <nzb-file/url> Send file/url to server's download queue\n"
+		"                 F          Send file (default)\n"
+		"                 U          Send url\n"
+		"  -T, --top                 Add file to the top (beginning) of queue\n"
+		"                            (for using with switch --append)\n"
+		"  -K, --category <name>     Assign category to nzb-file\n"
+		"                            (for using with switch --append)\n"
 		"  -C, --connect             Attach client to server\n"
-		"  -L, --list    [F|G|O|S|H] Request list of downloads from server\n"
+		"  -L, --list    [F|G|O|U|H|S] Request list of downloads from server\n"
 		"                 F          list individual files and server status (default)\n"
 		"                 G          list groups (nzb-files) and server status\n"
 		"                 O          list post-processor-queue\n"
+		"                 U          list url-queue\n"
 		"                 H          list history\n"
 		"                 S          print only server status\n"
 		"  -P, --pause   [D|D2|O|S]  Pause server:\n"
@@ -1178,10 +1211,6 @@ void Options::PrintUsage(char* com)
 		"                 O          unpause post-processor queue\n"
 		"                 S          unpause scan of incoming nzb-directory\n"
 		"  -R, --rate <speed>        Set download rate on server, in KB/s\n"
-		"  -T, --top                 Add file to the top (beginning) of queue\n"
-		"                            (for using with switch --append)\n"
-		"  -K, --category <name>     Assign category to nzb-file\n"
-		"                            (for using with switch --append)\n"
 		"  -G, --log <lines>         Request last <lines> lines from server's screen-log\n"
 		"  -W, --write <D|I|W|E|G> \"Text\" Send text to server's log\n"
 		"  -S, --scan                Scan incoming nzb-directory on server\n"
@@ -1265,6 +1294,7 @@ void Options::InitFileArg(int argc, char* argv[])
 		if (m_bServerMode || m_bRemoteClientMode ||
 		        !(m_eClientOperation == opClientNoOperation ||
 		          m_eClientOperation == opClientRequestDownload ||
+		          m_eClientOperation == opClientRequestDownloadUrl ||
 				  m_eClientOperation == opClientRequestWriteLog))
 		{
 			printf("Too many arguments\n");

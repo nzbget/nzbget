@@ -155,6 +155,12 @@ public:
 	static const char* JsonNextValue(const char* szJsonText, int* pValueLength);
 
 	/*
+	 * Unquote http quoted string.
+	 * The string is decoded on the place overwriting the content of raw-data.
+	 */
+	static void HttpUnquote(char* raw);
+
+	/*
 	 * Returns program version and revision number as string formatted like "0.7.0-r295".
 	 * If revision number is not available only version is returned ("0.7.0").
 	 */
@@ -168,6 +174,33 @@ public:
 	static void InitVersionRevision();
 	
 	static char VersionRevisionBuf[40];
+};
+
+class URL
+{
+	char*				m_szAddress;
+	char*				m_szProtocol;
+	char*				m_szUser;
+	char*				m_szPassword;
+	char*				m_szHost;
+	char*				m_szResource;
+	int					m_iPort;
+	bool				m_bTLS;
+	bool				m_bValid;
+	void				ParseURL();
+
+public:
+	 					URL(const char* szAddress);
+						~URL();
+	bool				IsValid() { return m_bValid; }
+	const char*			GetAddress() { return m_szAddress; }
+	const char*			GetProtocol() { return m_szProtocol; }
+	const char*			GetUser() { return m_szUser; }
+	const char*			GetPassword() { return m_szPassword; }
+	const char*			GetHost() { return m_szHost; }
+	const char*			GetResource() { return m_szResource; }
+	int					GetPort() { return m_iPort; }
+	bool				GetTLS() { return m_bTLS; }
 };
 
 #endif

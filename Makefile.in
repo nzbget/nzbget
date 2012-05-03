@@ -67,7 +67,8 @@ am_nzbget_OBJECTS = ArticleDownloader.$(OBJEXT) BinRpc.$(OBJEXT) \
 	RemoteServer.$(OBJEXT) Scanner.$(OBJEXT) Scheduler.$(OBJEXT) \
 	ScriptController.$(OBJEXT) ServerPool.$(OBJEXT) \
 	svn_version.$(OBJEXT) TLS.$(OBJEXT) Thread.$(OBJEXT) \
-	Util.$(OBJEXT) XmlRpc.$(OBJEXT) nzbget.$(OBJEXT)
+	Util.$(OBJEXT) XmlRpc.$(OBJEXT) WebDownloader.$(OBJEXT) \
+	UrlCoordinator.$(OBJEXT) nzbget.$(OBJEXT)
 nzbget_OBJECTS = $(am_nzbget_OBJECTS)
 nzbget_LDADD = $(LDADD)
 DEFAULT_INCLUDES = -I. -I$(srcdir) -I.
@@ -208,7 +209,8 @@ nzbget_SOURCES = ArticleDownloader.cpp ArticleDownloader.h BinRpc.cpp BinRpc.h \
 	QueueCoordinator.h QueueEditor.cpp QueueEditor.h RemoteClient.cpp RemoteClient.h \
 	RemoteServer.cpp RemoteServer.h Scanner.cpp Scanner.h Scheduler.cpp Scheduler.h ScriptController.cpp \
 	ScriptController.h ServerPool.cpp ServerPool.h svn_version.cpp TLS.cpp TLS.h Thread.cpp Thread.h Util.cpp \
-	Util.h XmlRpc.cpp XmlRpc.h nzbget.cpp nzbget.h
+	Util.h XmlRpc.cpp XmlRpc.h WebDownloader.cpp WebDownloader.h UrlCoordinator.cpp UrlCoordinator.h \
+	nzbget.cpp nzbget.h
 
 EXTRA_DIST = nzbget.conf.example postprocess-example.sh postprocess-example.conf \
 	win32.h NTService.cpp NTService.h \
@@ -333,7 +335,9 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/ServerPool.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/TLS.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/Thread.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/UrlCoordinator.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/Util.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/WebDownloader.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/XmlRpc.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/nzbget.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/svn_version.Po@am__quote@

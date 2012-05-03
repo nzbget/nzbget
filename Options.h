@@ -57,7 +57,9 @@ public:
 		opClientRequestPostUnpause,
 		opClientRequestScanPause,
 		opClientRequestScanUnpause,
-		opClientRequestHistory
+		opClientRequestHistory,
+		opClientRequestDownloadUrl,
+		opClientRequestUrlQueue
 	};
 	enum EMessageTarget
 	{
@@ -144,7 +146,9 @@ private:
 	char*				m_szDaemonUserName;
 	EOutputMode			m_eOutputMode;
 	bool				m_bReloadQueue;
+	bool				m_bReloadUrlQueue;
 	bool				m_bReloadPostQueue;
+	int					m_iUrlConnections;
 	int					m_iLogBufferSize;
 	bool				m_bCreateLog;
 	char*				m_szLogFile;
@@ -267,7 +271,9 @@ public:
 	const char*			GetDaemonUserName() { return m_szDaemonUserName; }
 	EOutputMode			GetOutputMode() { return m_eOutputMode; }
 	bool				GetReloadQueue() { return m_bReloadQueue; }
+	bool				GetReloadUrlQueue() { return m_bReloadUrlQueue; }
 	bool				GetReloadPostQueue() { return m_bReloadPostQueue; }
+	int					GetUrlConnections() { return m_iUrlConnections; }
 	int					GetLogBufferSize() { return m_iLogBufferSize; }
 	bool				GetCreateLog() { return m_bCreateLog; }
 	const char*			GetLogFile() { return m_szLogFile; }

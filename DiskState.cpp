@@ -82,7 +82,7 @@ bool DiskState::SaveDownloadQueue(DownloadQueue* pDownloadQueue)
 		return false;
 	}
 
-	fprintf(outfile, "%s%i\n", FORMATVERSION_SIGNATURE, 14);
+	fprintf(outfile, "%s%i\n", FORMATVERSION_SIGNATURE, 15);
 
 	// save nzb-infos
 	SaveNZBList(pDownloadQueue, outfile);
@@ -93,6 +93,9 @@ bool DiskState::SaveDownloadQueue(DownloadQueue* pDownloadQueue)
 	// save post-queue
 	SavePostQueue(pDownloadQueue, outfile);
 
+	// save url-queue
+	SaveUrlQueue(pDownloadQueue, outfile);
+
 	// save history
 	SaveHistory(pDownloadQueue, outfile);
 
@@ -102,6 +105,7 @@ bool DiskState::SaveDownloadQueue(DownloadQueue* pDownloadQueue)
 	fclose(outfile);
 
 	if (pDownloadQueue->GetFileQueue()->empty() && 
+		pDownloadQueue->GetUrlQueue()->empty() &&
 		pDownloadQueue->GetPostQueue()->empty() &&
 		pDownloadQueue->GetHistoryList()->empty())
 	{
@@ -132,7 +136,7 @@ bool DiskState::LoadDownloadQueue(DownloadQueue* pDownloadQueue)
 	char FileSignatur[128];
 	fgets(FileSignatur, sizeof(FileSignatur), infile);
 	int iFormatVersion = ParseFormatVersion(FileSignatur);
-	if (iFormatVersion < 3 || iFormatVersion > 14)
+	if (iFormatVersion < 3 || iFormatVersion > 15)
 	{
 		error("Could not load diskstate due to file version mismatch");
 		fclose(infile);
@@ -156,10 +160,16 @@ bool DiskState::LoadDownloadQueue(DownloadQueue* pDownloadQueue)
 		LoadOldPostQueue(pDownloadQueue);
 	}
 
+	if (iFormatVersion >= 15)
+	{
+		// load url-queue
+		if (!LoadUrlQueue(pDownloadQueue, infile)) goto error;
+	}
+
 	if (iFormatVersion >= 9)
 	{
 		// load history
-		if (!LoadHistory(pDownloadQueue, infile)) goto error;
+		if (!LoadHistory(pDownloadQueue, infile, iFormatVersion)) goto error;
 
 		// load parked file-infos
 		if (!LoadFileQueue(pDownloadQueue, pDownloadQueue->GetParkedFiles(), infile, iFormatVersion)) goto error;
@@ -807,6 +817,86 @@ error:
 	return false;
 }
 
+void DiskState::SaveUrlQueue(DownloadQueue* pDownloadQueue, FILE* outfile)
+{
+	debug("Saving url-queue to disk");
+
+	fprintf(outfile, "%i\n", pDownloadQueue->GetUrlQueue()->size());
+	for (UrlQueue::iterator it = pDownloadQueue->GetUrlQueue()->begin(); it != pDownloadQueue->GetUrlQueue()->end(); it++)
+	{
+		UrlInfo* pUrlInfo = *it;
+		SaveUrlInfo(pUrlInfo, outfile);
+	}
+}
+
+bool DiskState::LoadUrlQueue(DownloadQueue* pDownloadQueue, FILE* infile)
+{
+	debug("Loading url-queue from disk");
+
+	bool bSkipUrlQueue = !g_pOptions->GetReloadUrlQueue();
+	int size;
+
+	// load url-infos
+	if (fscanf(infile, "%i\n", &size) != 1) goto error;
+	for (int i = 0; i < size; i++)
+	{
+		UrlInfo* pUrlInfo = NULL;
+		if (!bSkipUrlQueue)
+		{
+			pUrlInfo = new UrlInfo();
+		}
+
+		if (!LoadUrlInfo(pUrlInfo, infile)) goto error;
+
+		if (!bSkipUrlQueue)
+		{
+			pDownloadQueue->GetUrlQueue()->push_back(pUrlInfo);
+		}
+	}
+
+	return true;
+
+error:
+	error("Error reading diskstate for url-queue");
+	return false;
+}
+
+void DiskState::SaveUrlInfo(UrlInfo* pUrlInfo, FILE* outfile)
+{
+	fprintf(outfile, "%i,%i\n", (int)pUrlInfo->GetStatus(), pUrlInfo->GetPriority());
+	fprintf(outfile, "%s\n", pUrlInfo->GetURL());
+	fprintf(outfile, "%s\n", pUrlInfo->GetNZBFilename());
+	fprintf(outfile, "%s\n", pUrlInfo->GetCategory());
+}
+
+bool DiskState::LoadUrlInfo(UrlInfo* pUrlInfo, FILE* infile)
+{
+	char buf[10240];
+
+	int iStatus, iPriority;
+	if (fscanf(infile, "%i,%i\n", &iStatus, &iPriority) != 2) goto error;
+
+	if (pUrlInfo) pUrlInfo->SetStatus((UrlInfo::EStatus)iStatus);
+	if (pUrlInfo) pUrlInfo->SetPriority(iPriority);
+
+	if (!fgets(buf, sizeof(buf), infile)) goto error;
+	if (buf[0] != 0) buf[strlen(buf)-1] = 0; // remove traling '\n'
+	if (pUrlInfo) pUrlInfo->SetURL(buf);
+
+	if (!fgets(buf, sizeof(buf), infile)) goto error;
+	if (buf[0] != 0) buf[strlen(buf)-1] = 0; // remove traling '\n'
+	if (pUrlInfo) pUrlInfo->SetNZBFilename(buf);
+
+	if (!fgets(buf, sizeof(buf), infile)) goto error;
+	if (buf[0] != 0) buf[strlen(buf)-1] = 0; // remove traling '\n'
+	if (pUrlInfo) pUrlInfo->SetCategory(buf);
+
+	return true;
+
+error:
+	return false;
+}
+
 void DiskState::SaveHistory(DownloadQueue* pDownloadQueue, FILE* outfile)
 {
 	debug("Saving history to disk");
@@ -814,14 +904,25 @@ void DiskState::SaveHistory(DownloadQueue* pDownloadQueue, FILE* outfile)
 	fprintf(outfile, "%i\n", pDownloadQueue->GetHistoryList()->size());
 	for (HistoryList::iterator it = pDownloadQueue->GetHistoryList()->begin(); it != pDownloadQueue->GetHistoryList()->end(); it++)
 	{
-		NZBInfo* pNZBInfo = *it;
-		int iNZBIndex = FindNZBInfoIndex(pDownloadQueue, pNZBInfo);
-		fprintf(outfile, "%i\n", iNZBIndex);
-		fprintf(outfile, "%i\n", (int)pNZBInfo->GetHistoryTime());
+		HistoryInfo* pHistoryInfo = *it;
+
+		fprintf(outfile, "%i\n", (int)pHistoryInfo->GetKind());
+
+		if (pHistoryInfo->GetKind() == HistoryInfo::hkNZBInfo)
+		{
+			int iNZBIndex = FindNZBInfoIndex(pDownloadQueue, pHistoryInfo->GetNZBInfo());
+			fprintf(outfile, "%i\n", iNZBIndex);
+		}
+		else if (pHistoryInfo->GetKind() == HistoryInfo::hkUrlInfo)
+		{
+			SaveUrlInfo(pHistoryInfo->GetUrlInfo(), outfile);
+		}
+
+		fprintf(outfile, "%i\n", (int)pHistoryInfo->GetTime());
 	}
 }
 
-bool DiskState::LoadHistory(DownloadQueue* pDownloadQueue, FILE* infile)
+bool DiskState::LoadHistory(DownloadQueue* pDownloadQueue, FILE* infile, int iFormatVersion)
 {
 	debug("Loading history from disk");
 
@@ -829,23 +930,41 @@ bool DiskState::LoadHistory(DownloadQueue* pDownloadQueue, FILE* infile)
 	if (fscanf(infile, "%i\n", &size) != 1) goto error;
 	for (int i = 0; i < size; i++)
 	{
-		unsigned int iNZBIndex;
-		if (fscanf(infile, "%i\n", &iNZBIndex) != 1) goto error;
+		HistoryInfo* pHistoryInfo = NULL;
+		HistoryInfo::EKind eKind = HistoryInfo::hkNZBInfo;
 
-		NZBInfo* pNZBInfo = pDownloadQueue->GetNZBInfoList()->at(iNZBIndex - 1);
+		if (iFormatVersion >= 15)
+		{
+			int iKind = 0;
+			if (fscanf(infile, "%i\n", &iKind) != 1) goto error;
+			eKind = (HistoryInfo::EKind)iKind;
+		}
+
+		if (eKind == HistoryInfo::hkNZBInfo)
+		{
+			unsigned int iNZBIndex;
+			if (fscanf(infile, "%i\n", &iNZBIndex) != 1) goto error;
+			NZBInfo* pNZBInfo = pDownloadQueue->GetNZBInfoList()->at(iNZBIndex - 1);
+			pHistoryInfo = new HistoryInfo(pNZBInfo);
+		}
+		else if (eKind == HistoryInfo::hkUrlInfo)
+		{
+			UrlInfo* pUrlInfo = new UrlInfo();
+			if (!LoadUrlInfo(pUrlInfo, infile)) goto error;
+			pHistoryInfo = new HistoryInfo(pUrlInfo);
+		}
 
 		int iTime;
 		if (fscanf(infile, "%i\n", &iTime) != 1) goto error;
-		pNZBInfo->SetHistoryTime((time_t)iTime);
+		pHistoryInfo->SetTime((time_t)iTime);
 
-		pNZBInfo->AddReference();
-		pDownloadQueue->GetHistoryList()->push_back(pNZBInfo);
+		pDownloadQueue->GetHistoryList()->push_back(pHistoryInfo);
 	}
 
 	return true;
 
 error:
-	error("Error reading diskstate for post-processor queue");
+	error("Error reading diskstate for history");
 	return false;
 }
 
@@ -888,7 +1007,7 @@ bool DiskState::DiscardDownloadQueue()
 	char FileSignatur[128];
 	fgets(FileSignatur, sizeof(FileSignatur), infile);
 	int iFormatVersion = ParseFormatVersion(FileSignatur);
-	if (3 <= iFormatVersion && iFormatVersion <= 14)
+	if (3 <= iFormatVersion && iFormatVersion <= 15)
 	{
 		// skip nzb-infos
 		int size = 0;

@@ -243,4 +243,16 @@ public:
 	virtual void		Execute();
 };
 
+class DownloadUrlXmlCommand: public XmlCommand
+{
+public:
+	virtual void		Execute();
+};
+
+class UrlQueueXmlCommand: public XmlCommand
+{
+public:
+	virtual void		Execute();
+};
+
 #endif

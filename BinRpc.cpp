@@ -48,19 +48,22 @@
 #include "Log.h"
 #include "Options.h"
 #include "QueueCoordinator.h"
+#include "UrlCoordinator.h"
 #include "QueueEditor.h"
 #include "PrePostProcessor.h"
 #include "Util.h"
+#include "DownloadInfo.h"
 
 extern Options* g_pOptions;
 extern QueueCoordinator* g_pQueueCoordinator;
+extern UrlCoordinator* g_pUrlCoordinator;
 extern PrePostProcessor* g_pPrePostProcessor;
 extern void ExitProc();
 
 const char* g_szMessageRequestNames[] =
     { "N/A", "Download", "Pause/Unpause", "List", "Set download rate", "Dump debug", 
 		"Edit queue", "Log", "Quit", "Version", "Post-queue", "Write log", "Scan", 
-		"Pause/Unpause postprocessor", "History" };
+		"Pause/Unpause postprocessor", "History", "Download URL", "URL-queue" };
 
 const unsigned int g_iMessageRequestSizes[] =
     { 0,
@@ -176,6 +179,14 @@ void BinRpcProcessor::Dispatch()
 			command = new HistoryBinCommand();
 			break;
 
+		case eRemoteRequestDownloadUrl:
+			command = new DownloadUrlBinCommand();
+			break;
+
+		case eRemoteRequestUrlQueue:
+			command = new UrlQueueBinCommand();
+			break;
+
 		default:
 			error("Received unsupported request %i", ntohl(m_MessageBase.m_iType));
 			break;
@@ -276,6 +287,7 @@ void DumpDebugBinCommand::Execute()
 	}
 
 	g_pQueueCoordinator->LogDebugInfo();
+	g_pUrlCoordinator->LogDebugInfo();
 	SendBoolResponse(true, "Debug-Command completed successfully");
 }
 
@@ -928,15 +940,14 @@ void HistoryBinCommand::Execute()
 	DownloadQueue* pDownloadQueue = g_pQueueCoordinator->LockQueue();
 
 	// calculate required buffer size for nzbs
-	int iNrNZBEntries = pDownloadQueue->GetHistoryList()->size();
-	bufsize += iNrNZBEntries * sizeof(SNZBHistoryResponseEntry);
+	int iNrEntries = pDownloadQueue->GetHistoryList()->size();
+	bufsize += iNrEntries * sizeof(SNZBHistoryResponseEntry);
 	for (HistoryList::iterator it = pDownloadQueue->GetHistoryList()->begin(); it != pDownloadQueue->GetHistoryList()->end(); it++)
 	{
-		NZBInfo* pNZBInfo = *it;
-		bufsize += strlen(pNZBInfo->GetFilename()) + 1;
-		bufsize += strlen(pNZBInfo->GetDestDir()) + 1;
-		bufsize += strlen(pNZBInfo->GetCategory()) + 1;
-		bufsize += strlen(pNZBInfo->GetQueuedFilename()) + 1;
+		HistoryInfo* pHistoryInfo = *it;
+		char szNicename[1024];
+		pHistoryInfo->GetNiceName(szNicename, sizeof(szNicename));
+		bufsize += strlen(szNicename) + 1;
 		// align struct to 4-bytes, needed by ARM-processor (and may be others)
 		bufsize += bufsize % 4 > 0 ? 4 - bufsize % 4 : 0;
 	}
@@ -945,36 +956,42 @@ void HistoryBinCommand::Execute()
 	char* bufptr = buf;
 
 	// write nzb entries
-	for (NZBInfoList::iterator it = pDownloadQueue->GetHistoryList()->begin(); it != pDownloadQueue->GetHistoryList()->end(); it++)
+	for (HistoryList::iterator it = pDownloadQueue->GetHistoryList()->begin(); it != pDownloadQueue->GetHistoryList()->end(); it++)
 	{
-		unsigned long iSizeHi, iSizeLo;
-		NZBInfo* pNZBInfo = *it;
+		HistoryInfo* pHistoryInfo = *it;
 		SNZBHistoryResponseEntry* pListAnswer = (SNZBHistoryResponseEntry*) bufptr;
-		Util::SplitInt64(pNZBInfo->GetSize(), &iSizeHi, &iSizeLo);
-		pListAnswer->m_iID					= htonl(pNZBInfo->GetID());
-		pListAnswer->m_tTime				= htonl((int)pNZBInfo->GetHistoryTime());
-		pListAnswer->m_iSizeLo				= htonl(iSizeLo);
-		pListAnswer->m_iSizeHi				= htonl(iSizeHi);
-		pListAnswer->m_iFileCount			= htonl(pNZBInfo->GetFileCount());
-		pListAnswer->m_iParStatus			= htonl(pNZBInfo->GetParStatus());
-		pListAnswer->m_iScriptStatus		= htonl(pNZBInfo->GetScriptStatus());
-		pListAnswer->m_iFilenameLen			= htonl(strlen(pNZBInfo->GetFilename()) + 1);
-		pListAnswer->m_iDestDirLen			= htonl(strlen(pNZBInfo->GetDestDir()) + 1);
-		pListAnswer->m_iCategoryLen			= htonl(strlen(pNZBInfo->GetCategory()) + 1);
-		pListAnswer->m_iQueuedFilenameLen	= htonl(strlen(pNZBInfo->GetQueuedFilename()) + 1);
+		pListAnswer->m_iID					= htonl(pHistoryInfo->GetID());
+		pListAnswer->m_iKind				= htonl((int)pHistoryInfo->GetKind());
+		pListAnswer->m_tTime				= htonl((int)pHistoryInfo->GetTime());
+
+		char szNicename[1024];
+		pHistoryInfo->GetNiceName(szNicename, sizeof(szNicename));
+		pListAnswer->m_iNicenameLen			= htonl(strlen(szNicename) + 1);
+
+		if (pHistoryInfo->GetKind() == HistoryInfo::hkNZBInfo)
+		{
+			NZBInfo* pNZBInfo = pHistoryInfo->GetNZBInfo();
+			unsigned long iSizeHi, iSizeLo;
+			Util::SplitInt64(pNZBInfo->GetSize(), &iSizeHi, &iSizeLo);
+			pListAnswer->m_iSizeLo				= htonl(iSizeLo);
+			pListAnswer->m_iSizeHi				= htonl(iSizeHi);
+			pListAnswer->m_iFileCount			= htonl(pNZBInfo->GetFileCount());
+			pListAnswer->m_iParStatus			= htonl(pNZBInfo->GetParStatus());
+			pListAnswer->m_iScriptStatus		= htonl(pNZBInfo->GetScriptStatus());
+		}
+		else if (pHistoryInfo->GetKind() == HistoryInfo::hkUrlInfo)
+		{
+			UrlInfo* pUrlInfo = pHistoryInfo->GetUrlInfo();
+			pListAnswer->m_iUrlStatus			= htonl(pUrlInfo->GetStatus());
+		}
+
 		bufptr += sizeof(SNZBHistoryResponseEntry);
-		strcpy(bufptr, pNZBInfo->GetFilename());
-		bufptr += ntohl(pListAnswer->m_iFilenameLen);
-		strcpy(bufptr, pNZBInfo->GetDestDir());
-		bufptr += ntohl(pListAnswer->m_iDestDirLen);
-		strcpy(bufptr, pNZBInfo->GetCategory());
-		bufptr += ntohl(pListAnswer->m_iCategoryLen);
-		strcpy(bufptr, pNZBInfo->GetQueuedFilename());
-		bufptr += ntohl(pListAnswer->m_iQueuedFilenameLen);
+		strcpy(bufptr, szNicename);
+		bufptr += ntohl(pListAnswer->m_iNicenameLen);
 		// align struct to 4-bytes, needed by ARM-processor (and may be others)
 		if ((size_t)bufptr % 4 > 0)
 		{
-			pListAnswer->m_iQueuedFilenameLen = htonl(ntohl(pListAnswer->m_iQueuedFilenameLen) + 4 - (size_t)bufptr % 4);
+			pListAnswer->m_iNicenameLen = htonl(ntohl(pListAnswer->m_iNicenameLen) + 4 - (size_t)bufptr % 4);
 			memset(bufptr, 0, 4 - (size_t)bufptr % 4); //suppress valgrind warning "uninitialized data"
 			bufptr += 4 - (size_t)bufptr % 4;
 		}
@@ -982,11 +999,117 @@ void HistoryBinCommand::Execute()
 
 	g_pQueueCoordinator->UnlockQueue();
 
-	HistoryResponse.m_iNrTrailingEntries = htonl(iNrNZBEntries);
+	HistoryResponse.m_iNrTrailingEntries = htonl(iNrEntries);
 	HistoryResponse.m_iTrailingDataLength = htonl(bufsize);
 
 	// Send the request answer
 	send(m_iSocket, (char*) &HistoryResponse, sizeof(HistoryResponse), 0);
+
+	// Send the data
+	if (bufsize > 0)
+	{
+		send(m_iSocket, buf, bufsize, 0);
+	}
+
+	free(buf);
+}
+
+void DownloadUrlBinCommand::Execute()
+{
+	SNZBDownloadUrlRequest DownloadUrlRequest;
+	if (!ReceiveRequest(&DownloadUrlRequest, sizeof(DownloadUrlRequest)))
+	{
+		return;
+	}
+
+	URL url(DownloadUrlRequest.m_szURL);
+	if (!url.IsValid())
+	{
+		char tmp[1024];
+		snprintf(tmp, 1024, "Url %s is not valid", DownloadUrlRequest.m_szURL);
+		tmp[1024-1] = '\0';
+		SendBoolResponse(true, tmp);
+		return;
+	}
+
+	UrlInfo* pUrlInfo = new UrlInfo();
+	pUrlInfo->SetURL(DownloadUrlRequest.m_szURL);
+	pUrlInfo->SetCategory(DownloadUrlRequest.m_szCategory);
+	g_pUrlCoordinator->AddUrlToQueue(pUrlInfo, DownloadUrlRequest.m_bAddFirst);
+
+	info("Request: Queue url %s", DownloadUrlRequest.m_szURL);
+
+	char tmp[1024];
+	snprintf(tmp, 1024, "Url %s added to queue", DownloadUrlRequest.m_szURL);
+	tmp[1024-1] = '\0';
+	SendBoolResponse(true, tmp);
+}
+
+void UrlQueueBinCommand::Execute()
+{
+	SNZBUrlQueueRequest UrlQueueRequest;
+	if (!ReceiveRequest(&UrlQueueRequest, sizeof(UrlQueueRequest)))
+	{
+		return;
+	}
+
+	SNZBUrlQueueResponse UrlQueueResponse;
+	memset(&UrlQueueResponse, 0, sizeof(UrlQueueResponse));
+	UrlQueueResponse.m_MessageBase.m_iSignature = htonl(NZBMESSAGE_SIGNATURE);
+	UrlQueueResponse.m_MessageBase.m_iStructSize = htonl(sizeof(UrlQueueResponse));
+	UrlQueueResponse.m_iEntrySize = htonl(sizeof(SNZBUrlQueueResponseEntry));
+
+	char* buf = NULL;
+	int bufsize = 0;
+
+	// Make a data structure and copy all the elements of the list into it
+	UrlQueue* pUrlQueue = g_pQueueCoordinator->LockQueue()->GetUrlQueue();
+
+	int NrEntries = pUrlQueue->size();
+
+	// calculate required buffer size
+	bufsize = NrEntries * sizeof(SNZBUrlQueueResponseEntry);
+	for (UrlQueue::iterator it = pUrlQueue->begin(); it != pUrlQueue->end(); it++)
+	{
+		UrlInfo* pUrlInfo = *it;
+		bufsize += strlen(pUrlInfo->GetURL()) + 1;
+		bufsize += strlen(pUrlInfo->GetNZBFilename()) + 1;
+		// align struct to 4-bytes, needed by ARM-processor (and may be others)
+		bufsize += bufsize % 4 > 0 ? 4 - bufsize % 4 : 0;
+	}
+
+	time_t tCurTime = time(NULL);
+	buf = (char*) malloc(bufsize);
+	char* bufptr = buf;
+
+	for (UrlQueue::iterator it = pUrlQueue->begin(); it != pUrlQueue->end(); it++)
+	{
+		UrlInfo* pUrlInfo = *it;
+		SNZBUrlQueueResponseEntry* pUrlQueueAnswer = (SNZBUrlQueueResponseEntry*) bufptr;
+		pUrlQueueAnswer->m_iID				= htonl(pUrlInfo->GetID());
+		pUrlQueueAnswer->m_iURLLen			= htonl(strlen(pUrlInfo->GetURL()) + 1);
+		pUrlQueueAnswer->m_iNZBFilenameLen		= htonl(strlen(pUrlInfo->GetNZBFilename()) + 1);
+		bufptr += sizeof(SNZBUrlQueueResponseEntry);
+		strcpy(bufptr, pUrlInfo->GetURL());
+		bufptr += ntohl(pUrlQueueAnswer->m_iURLLen);
+		strcpy(bufptr, pUrlInfo->GetNZBFilename());
+		bufptr += ntohl(pUrlQueueAnswer->m_iNZBFilenameLen);
+		// align struct to 4-bytes, needed by ARM-processor (and may be others)
+		if ((size_t)bufptr % 4 > 0)
+		{
+			pUrlQueueAnswer->m_iNZBFilenameLen = htonl(ntohl(pUrlQueueAnswer->m_iNZBFilenameLen) + 4 - (size_t)bufptr % 4);
+			memset(bufptr, 0, 4 - (size_t)bufptr % 4); //suppress valgrind warning "uninitialized data"
+			bufptr += 4 - (size_t)bufptr % 4;
+		}
+	}
+
+	g_pQueueCoordinator->UnlockQueue();
+
+	UrlQueueResponse.m_iNrTrailingEntries = htonl(NrEntries);
+	UrlQueueResponse.m_iTrailingDataLength = htonl(bufsize);
+
+	// Send the request answer
+	send(m_iSocket, (char*) &UrlQueueResponse, sizeof(UrlQueueResponse), 0);
 
 	// Send the data
 	if (bufsize > 0)
