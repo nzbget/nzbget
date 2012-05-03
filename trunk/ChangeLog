@@ -1,3 +1,7 @@
+nzbget-0.9.0-testing:
+  - please see subversion log at
+    http://nzbget.svn.sourceforge.net/viewvc/nzbget/?view=log
+
 nzbget-0.8.0:
   - added priorities; new action <I> for remote command <--edit/-E> to set
     priorities for groups or individual files; new actions <SetGroupPriority>
