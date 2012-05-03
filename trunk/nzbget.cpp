@@ -66,6 +66,7 @@
 #include "ColoredFrontend.h"
 #include "NCursesFrontend.h"
 #include "QueueCoordinator.h"
+#include "UrlCoordinator.h"
 #include "RemoteServer.h"
 #include "RemoteClient.h"
 #include "MessageBase.h"
@@ -101,6 +102,7 @@ Thread* g_pFrontend = NULL;
 Options* g_pOptions = NULL;
 ServerPool* g_pServerPool = NULL;
 QueueCoordinator* g_pQueueCoordinator = NULL;
+UrlCoordinator* g_pUrlCoordinator = NULL;
 RemoteServer* g_pRemoteServer = NULL;
 DownloadSpeedMeter* g_pDownloadSpeedMeter = NULL;
 DownloadQueueHolder* g_pDownloadQueueHolder = NULL;
@@ -246,6 +248,8 @@ void Run()
 		g_pQueueCoordinator = new QueueCoordinator();
 		g_pDownloadSpeedMeter = g_pQueueCoordinator;
 		g_pDownloadQueueHolder = g_pQueueCoordinator;
+
+		g_pUrlCoordinator = new UrlCoordinator();
 	}
 
 	// Setup the network-server
@@ -308,17 +312,27 @@ void Run()
 		}
 
 		g_pQueueCoordinator->Start();
+		g_pUrlCoordinator->Start();
 		g_pPrePostProcessor->Start();
 
 		// enter main program-loop
-		while (g_pQueueCoordinator->IsRunning() || g_pPrePostProcessor->IsRunning())
+		while (g_pQueueCoordinator->IsRunning() || 
+			g_pUrlCoordinator->IsRunning() || 
+			g_pPrePostProcessor->IsRunning())
 		{
-			if (!g_pOptions->GetServerMode() && !g_pQueueCoordinator->HasMoreJobs() && !g_pPrePostProcessor->HasMoreJobs())
+			if (!g_pOptions->GetServerMode() && 
+				!g_pQueueCoordinator->HasMoreJobs() && 
+				!g_pUrlCoordinator->HasMoreJobs() && 
+				!g_pPrePostProcessor->HasMoreJobs())
 			{
 				// Standalone-mode: download completed
 				if (!g_pQueueCoordinator->IsStopped())
 				{
 					g_pQueueCoordinator->Stop();
+				}
+				if (!g_pUrlCoordinator->IsStopped())
+				{
+					g_pUrlCoordinator->Stop();
 				}
 				if (!g_pPrePostProcessor->IsStopped())
 				{
@@ -330,6 +344,7 @@ void Run()
 
 		// main program-loop is terminated
 		debug("QueueCoordinator stopped");
+		debug("UrlCoordinator stopped");
 		debug("PrePostProcessor stopped");
 	}
 
@@ -351,7 +366,7 @@ void Run()
 		}
 		debug("RemoteServer stopped");
 	}
-	
+
 	// Stop Frontend
 	if (g_pFrontend)
 	{
@@ -465,6 +480,14 @@ void ProcessClientRequest()
 			Client->RequestHistory();	 
 			break;
 
+		case Options::opClientRequestDownloadUrl:
+			Client->RequestServerDownloadUrl(g_pOptions->GetLastArg(), g_pOptions->GetCategory(), g_pOptions->GetAddTop());
+			break;
+
+		case Options::opClientRequestUrlQueue:
+			Client->RequestUrlQueue();
+			break;
+
 		case Options::opClientNoOperation:
 			break;
 	}
@@ -489,6 +512,7 @@ void ExitProc()
 		{
 			debug("Stopping QueueCoordinator");
 			g_pQueueCoordinator->Stop();
+			g_pUrlCoordinator->Stop();
 			g_pPrePostProcessor->Stop();
 		}
 	}
@@ -606,13 +630,13 @@ void Cleanup()
 {
 	debug("Cleaning up global objects");
 
-	debug("Deleting QueueCoordinator");
-	if (g_pQueueCoordinator)
+	debug("Deleting UrlCoordinator");
+	if (g_pUrlCoordinator)
 	{
-		delete g_pQueueCoordinator;
-		g_pQueueCoordinator = NULL;
+		delete g_pUrlCoordinator;
+		g_pUrlCoordinator = NULL;
 	}
-	debug("QueueCoordinator deleted");
+	debug("UrlCoordinator deleted");
 
 	debug("Deleting RemoteServer");
 	if (g_pRemoteServer)
@@ -637,6 +661,14 @@ void Cleanup()
 		g_pFrontend = NULL;
 	}
 	debug("Frontend deleted");
+
+	debug("Deleting QueueCoordinator");
+	if (g_pQueueCoordinator)
+	{
+		delete g_pQueueCoordinator;
+		g_pQueueCoordinator = NULL;
+	}
+	debug("QueueCoordinator deleted");
 
 	debug("Deleting DiskState");
 	if (g_pDiskState)

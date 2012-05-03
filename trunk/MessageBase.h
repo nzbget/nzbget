@@ -27,7 +27,7 @@
 #ifndef MESSAGEBASE_H
 #define MESSAGEBASE_H
 
-static const int32_t NZBMESSAGE_SIGNATURE = 0x6E7A620A; // = "nzbA" (protocol version)
+static const int32_t NZBMESSAGE_SIGNATURE = 0x6E7A620B; // = "nzbB" (protocol version)
 static const int NZBREQUESTFILENAMESIZE = 512;
 static const int NZBREQUESTPASSWORDSIZE = 32;
 
@@ -60,7 +60,9 @@ enum eRemoteRequest
 	eRemoteRequestPostQueue,
 	eRemoteRequestWriteLog,
 	eRemoteRequestScan,
-	eRemoteRequestHistory
+	eRemoteRequestHistory,
+	eRemoteRequestDownloadUrl,
+	eRemoteRequestUrlQueue
 };
 
 // Possible values for field "m_iAction" of struct "SNZBEditQueueRequest":
@@ -129,7 +131,7 @@ struct SNZBDownloadRequest
 {
 	SNZBRequestBase			m_MessageBase;			// Must be the first in the struct
 	char					m_szFilename[NZBREQUESTFILENAMESIZE];	// Name of nzb-file, may contain full path (local path on client) or only filename
-	char					m_szCategory[NZBREQUESTFILENAMESIZE];	// Category, be empty
+	char					m_szCategory[NZBREQUESTFILENAMESIZE];	// Category, can be empty
 	int32_t					m_bAddFirst;			// 1 - add file to the top of download queue
 	int32_t					m_iTrailingDataLength;	// Length of nzb-file in bytes
 	//char					m_szContent[m_iTrailingDataLength];	// variable sized
@@ -431,34 +433,77 @@ struct SNZBHistoryRequest
 	SNZBRequestBase			m_MessageBase;			// Must be the first in the struct
 };
 
-// A history response
+// history response
 struct SNZBHistoryResponse
 {
 	SNZBResponseBase		m_MessageBase;			// Must be the first in the struct
 	int32_t					m_iEntrySize;			// Size of the SNZBHistoryResponseEntry-struct
 	int32_t					m_iNrTrailingEntries;	// Number of History-entries, following to this structure
 	int32_t					m_iTrailingDataLength;	// Length of all History-entries, following to this structure
-	// SNZBHistoryResponseEntry m_NZBEntries[m_iNrTrailingNZBEntries]			// variable sized
+	// SNZBHistoryResponseEntry m_Entries[m_iNrTrailingEntries]			// variable sized
 };
 
-// A list response nzb entry
+// history entry
 struct SNZBHistoryResponseEntry
 {
-	int32_t					m_iID;					// NZBID
+	int32_t					m_iID;					// History-ID
+	int32_t					m_iKind;				// Kind of Item: 1 - Collection (NZB), 2 - URL
 	int32_t					m_tTime;				// When the item was added to history. time since the Epoch (00:00:00 UTC, January 1, 1970), measured in seconds.
+	int32_t					m_iNicenameLen;			// Length of Nicename-string (m_szNicename), following to this record
+	// for Collection items (m_iKind = 1)
 	int32_t					m_iSizeLo;				// Size of all files in bytes, Low 32-bits of 64-bit value
 	int32_t					m_iSizeHi;				// Size of all files in bytes, High 32-bits of 64-bit value
 	int32_t					m_iFileCount;			// Initial number of files included in NZB-file
 	int32_t					m_iParStatus;			// See NZBInfo::EParStatus
 	int32_t					m_iScriptStatus;		// See NZBInfo::EScriptStatus
-	int32_t					m_iFilenameLen;			// Length of Filename-string (m_szFilename), following to this record
-	int32_t					m_iDestDirLen;			// Length of DestDir-string (m_szDestDir), following to this record
-	int32_t					m_iCategoryLen;			// Length of Category-string (m_szCategory), following to this record
-	int32_t					m_iQueuedFilenameLen;	// Length of queued file name (m_szQueuedFilename), following to this record
-	//char					m_szFilename[m_iFilenameLen];				// variable sized
-	//char					m_szDestDir[m_iDestDirLen];					// variable sized
-	//char					m_szCategory[m_iCategoryLen];				// variable sized
-	//char					m_szQueuedFilename[m_iQueuedFilenameLen];	// variable sized
+	// for URL items (m_iKind = 2)
+	int32_t					m_iUrlStatus;			// See UrlInfo::EStatus
+	// trailing data
+	//char					m_szNicename[m_iNicenameLen];				// variable sized
+};
+
+// download url request
+struct SNZBDownloadUrlRequest
+{
+	SNZBRequestBase			m_MessageBase;			// Must be the first in the struct
+	char					m_szURL[NZBREQUESTFILENAMESIZE];		// url to nzb-file
+	char					m_szCategory[NZBREQUESTFILENAMESIZE];	// Category, can be empty
+	int32_t					m_bAddFirst;							// 1 - add url to the top of download queue
+};
+
+// download url response
+struct SNZBDownloadUrlResponse
+{
+	SNZBResponseBase		m_MessageBase;			// Must be the first in the struct
+	int32_t					m_bSuccess;				// 0 - command failed, 1 - command executed successfully
+	int32_t					m_iTrailingDataLength;	// Length of Text-string (m_szText), following to this record
+	//char					m_szText[m_iTrailingDataLength];	// variable sized
+};
+
+// UrlQueue request
+struct SNZBUrlQueueRequest
+{
+	SNZBRequestBase			m_MessageBase;			// Must be the first in the struct
+};
+
+// UrlQueue response
+struct SNZBUrlQueueResponse
+{
+	SNZBResponseBase		m_MessageBase;			// Must be the first in the struct
+	int32_t					m_iEntrySize;			// Size of the SNZBUrlQueueResponseEntry-struct
+	int32_t					m_iNrTrailingEntries;	// Number of UrlQueue-entries, following to this structure
+	int32_t					m_iTrailingDataLength;	// Length of all UrlQueue-entries, following to this structure
+	// SNZBUrlQueueResponseEntry m_Entries[m_iNrTrailingEntries]		// variable sized
+};
+
+// UrlQueue response entry
+struct SNZBUrlQueueResponseEntry
+{
+	int32_t					m_iID;					// ID of Url-entry
+	int32_t					m_iURLLen;				// Length of URL-string (m_szURL), following to this record
+	int32_t					m_iNZBFilenameLen;		// Length of NZBFilename-string (m_szNZBFilename), following to this record
+	//char					m_szURL[m_iURLLen];					// variable sized
+	//char					m_szNZBFilename[m_iNZBFilenameLen];	// variable sized
 };
 
 #endif

@@ -55,6 +55,5 @@ public:
 	bool					GetAuthError() { return m_bAuthError; }
 };
 
-
 #endif
 

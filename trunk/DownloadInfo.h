@@ -245,7 +245,6 @@ private:
 	bool				m_bDeleted;
 	bool				m_bParCleanup;
 	bool				m_bCleanupDisk;
-	time_t				m_tHistoryTime;
 	NZBInfoList*		m_Owner;
 	NZBParameterList	m_ppParameters;
 	Mutex				m_mutexLog;
@@ -295,8 +294,6 @@ public:
 	void				SetParCleanup(bool bParCleanup) { m_bParCleanup = bParCleanup; }
 	bool				GetCleanupDisk() { return m_bCleanupDisk; }
 	void				SetCleanupDisk(bool bCleanupDisk) { m_bCleanupDisk = bCleanupDisk; }
-	time_t				GetHistoryTime() { return m_tHistoryTime; }
-	void				SetHistoryTime(time_t tHistoryTime) { m_tHistoryTime = tHistoryTime; }
 	NZBParameterList*	GetParameters() { return &m_ppParameters; }				// needs locking (for shared objects)
 	void				SetParameter(const char* szName, const char* szValue);	// needs locking (for shared objects)
 	void				AppendMessage(Message::EKind eKind, time_t tTime, const char* szText);
@@ -423,7 +420,83 @@ typedef std::deque<PostInfo*> PostQueue;
 
 typedef std::vector<int> IDList;
 
-typedef std::deque<NZBInfo*> HistoryList;
+class UrlInfo
+{
+public:
+	enum EStatus
+	{
+		aiUndefined,
+		aiRunning,
+		aiFinished,
+		aiFailed,
+		aiRetry
+	};
+
+private:
+	int					m_iID;
+	char*				m_szURL;
+	char*				m_szNZBFilename;
+	char* 				m_szCategory;
+	int					m_iPriority;
+	EStatus				m_eStatus;
+
+	static int			m_iIDGen;
+
+public:
+						UrlInfo();
+						~UrlInfo();
+	int					GetID() { return m_iID; }
+	void				SetID(int s);
+	const char*			GetURL() { return m_szURL; }			// needs locking (for shared objects)
+	void				SetURL(const char* szURL);				// needs locking (for shared objects)
+	const char*			GetNZBFilename() { return m_szNZBFilename; }		// needs locking (for shared objects)
+	void				SetNZBFilename(const char* szNZBFilename);			// needs locking (for shared objects)
+	const char*			GetCategory() { return m_szCategory; }	// needs locking (for shared objects)
+	void				SetCategory(const char* szCategory);	// needs locking (for shared objects)
+	int					GetPriority() { return m_iPriority; }
+	void				SetPriority(int iPriority) { m_iPriority = iPriority; }
+	void				GetNiceName(char* szBuffer, int iSize);	// needs locking (for shared objects)
+	static void			MakeNiceName(const char* szURL, const char* szNZBFilename, char* szBuffer, int iSize);
+	EStatus				GetStatus() { return m_eStatus; }
+	void				SetStatus(EStatus Status) { m_eStatus = Status; }
+};
+
+typedef std::deque<UrlInfo*> UrlQueue;
+
+class HistoryInfo
+{
+public:
+	enum EKind
+	{
+		hkUnknown,
+		hkNZBInfo,
+		hkUrlInfo
+	};
+
+private:
+	int					m_iID;
+	EKind				m_eKind;
+	void*				m_pInfo;
+	time_t				m_tTime;
+
+	static int			m_iIDGen;
+
+public:
+						HistoryInfo(NZBInfo* pNZBInfo);
+						HistoryInfo(UrlInfo* pUrlInfo);
+						~HistoryInfo();
+	int					GetID() { return m_iID; }
+	void				SetID(int s);
+	EKind				GetKind() { return m_eKind; }
+	NZBInfo*			GetNZBInfo() { return (NZBInfo*)m_pInfo; }
+	UrlInfo*			GetUrlInfo() { return (UrlInfo*)m_pInfo; }
+	void				DiscardUrlInfo() { m_pInfo = NULL; }
+	time_t				GetTime() { return m_tTime; }
+	void				SetTime(time_t tTime) { m_tTime = tTime; }
+	void				GetNiceName(char* szBuffer, int iSize);	// needs locking (for shared objects)
+};
+
+typedef std::deque<HistoryInfo*> HistoryList;
 
 class DownloadQueue
 {
@@ -433,6 +506,7 @@ protected:
 	PostQueue			m_PostQueue;
 	HistoryList			m_HistoryList;
 	FileQueue			m_ParkedFiles;
+	UrlQueue			m_UrlQueue;
 
 public:
 	NZBInfoList*		GetNZBInfoList() { return &m_NZBInfoList; }
@@ -440,6 +514,7 @@ public:
 	PostQueue*			GetPostQueue() { return &m_PostQueue; }
 	HistoryList*		GetHistoryList() { return &m_HistoryList; }
 	FileQueue*			GetParkedFiles() { return &m_ParkedFiles; }
+	UrlQueue*			GetUrlQueue() { return &m_UrlQueue; }
 	void				BuildGroups(GroupQueue* pGroupQueue);
 };
 

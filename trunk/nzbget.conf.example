@@ -272,6 +272,12 @@ SaveQueue=yes
 # Reload download queue on start, if it exists (yes, no).
 ReloadQueue=yes
 
+# Reload url-queue on start, if it exists (yes, no).
+#
+# For this option to work the options <SaveQueue> and <ReloadQueue> must
+# be also enabled.
+ReloadUrlQueue=yes
+
 # Reload Post-processor-queue on start, if it exists (yes, no).
 #
 # For this option to work the options <SaveQueue> and <ReloadQueue> must
@@ -482,6 +488,13 @@ DeleteCleanupDisk=no
 # unneeded parked files before adding the collection to history. For par2-files
 # that can be achieved with the option <ParCleanupQueue>.
 KeepHistory=1
+
+# Maximal number of simultaneous connections for nzb URL downloads (0-999).
+#
+# When NZB-files are added to queue via URL, the program downloads them
+# from the specified URL. The option limits the maximal number of connections
+# used for this purpose, when multiple URLs were added at the same time.
+UrlConnections=4
 
 ##############################################################################
 ### LOGGING                                                                ###

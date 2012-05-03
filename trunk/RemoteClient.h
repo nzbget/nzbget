@@ -61,6 +61,8 @@ public:
 	bool 			RequestWriteLog(int iKind, const char* szText);
 	bool			RequestScan();
 	bool			RequestHistory();
+	bool 			RequestServerDownloadUrl(const char* szURL, const char* szCategory, bool bAddFirst);
+	bool			RequestUrlQueue();
 	void			BuildFileList(SNZBListResponse* pListResponse, const char* pTrailingData, DownloadQueue* pDownloadQueue);
 };
 
