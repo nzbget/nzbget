@@ -336,14 +336,6 @@
 			>
 		</File>
 		<File
-			RelativePath=".\NetAddress.cpp"
-			>
-		</File>
-		<File
-			RelativePath=".\NetAddress.h"
-			>
-		</File>
-		<File
 			RelativePath=".\NewsServer.cpp"
 			>
 		</File>
