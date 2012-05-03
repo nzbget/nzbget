@@ -33,6 +33,7 @@
 class NNTPConnection : public Connection
 {
 private:
+	NewsServer*				m_pNewsServer;
 	char* 					m_szActiveGroup;
 	char*					m_szLineBuf;
 	bool					m_bAuthError;
@@ -43,9 +44,9 @@ private:
 	void					ReportErrorAnswer(const char* szMsgPrefix, const char* szAnswer);
 
 public:
-							NNTPConnection(NewsServer* server);
+							NNTPConnection(NewsServer* pNewsServer);
 	virtual					~NNTPConnection();
-	NewsServer*				GetNewsServer() { return(NewsServer*)m_pNetAddress; }
+	NewsServer*				GetNewsServer() { return m_pNewsServer; }
 	const char* 			Request(const char* req);
 	bool 					Authenticate();
 	bool 					AuthInfoUser(int iRecur = 0);

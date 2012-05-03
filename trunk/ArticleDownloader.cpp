@@ -189,7 +189,7 @@ void ArticleDownloader::Run()
 		if (bConnected && !IsStopped())
 		{
 			// Okay, we got a Connection. Now start downloading.
-			detail("Downloading %s @ %s", m_szInfoName, m_pConnection->GetServer()->GetHost());
+			detail("Downloading %s @ %s", m_szInfoName, m_pConnection->GetHost());
 			Status = Download();
 		}
 
@@ -407,7 +407,7 @@ ArticleDownloader::EStatus ArticleDownloader::Download()
 		{
 			if (!IsStopped())
 			{
-				warn("Article %s @ %s failed: Unexpected end of article", m_szInfoName, m_pConnection->GetServer()->GetHost());
+				warn("Article %s @ %s failed: Unexpected end of article", m_szInfoName, m_pConnection->GetHost());
 			}
 			Status = adFailed;
 			break;
@@ -441,7 +441,7 @@ ArticleDownloader::EStatus ArticleDownloader::Download()
 				if (strncmp(p, m_pArticleInfo->GetMessageID(), strlen(m_pArticleInfo->GetMessageID())))
 				{
 					if (char* e = strrchr(p, '\r')) *e = '\0'; // remove trailing CR-character
-					warn("Article %s @ %s failed: Wrong message-id, expected %s, returned %s", m_szInfoName, m_pConnection->GetServer()->GetHost(), m_pArticleInfo->GetMessageID(), p);
+					warn("Article %s @ %s failed: Wrong message-id, expected %s, returned %s", m_szInfoName, m_pConnection->GetHost(), m_pArticleInfo->GetMessageID(), p);
 					Status = adFailed;
 					break;
 				}
@@ -469,7 +469,7 @@ ArticleDownloader::EStatus ArticleDownloader::Download()
 
 	if (!bEnd && Status == adRunning && !IsStopped())
 	{
-		warn("Article %s @ %s failed: article incomplete", m_szInfoName, m_pConnection->GetServer()->GetHost());
+		warn("Article %s @ %s failed: article incomplete", m_szInfoName, m_pConnection->GetHost());
 		Status = adFailed;
 	}
 
@@ -496,18 +496,18 @@ ArticleDownloader::EStatus ArticleDownloader::CheckResponse(const char* szRespon
 	{
 		if (!IsStopped())
 		{
-			warn("Article %s @ %s failed, %s: Connection closed by remote host", m_szInfoName, m_pConnection->GetServer()->GetHost(), szComment);
+			warn("Article %s @ %s failed, %s: Connection closed by remote host", m_szInfoName, m_pConnection->GetHost(), szComment);
 		}
 		return adConnectError;
 	}
 	else if (m_pConnection->GetAuthError() || !strncmp(szResponse, "400", 3) || !strncmp(szResponse, "499", 3))
 	{
-		warn("Article %s @ %s failed, %s: %s", m_szInfoName, m_pConnection->GetServer()->GetHost(), szComment, szResponse);
+		warn("Article %s @ %s failed, %s: %s", m_szInfoName, m_pConnection->GetHost(), szComment, szResponse);
 		return adConnectError;
 	}
 	else if (!strncmp(szResponse, "41", 2) || !strncmp(szResponse, "42", 2) || !strncmp(szResponse, "43", 2))
 	{
-		warn("Article %s @ %s failed, %s: %s", m_szInfoName, m_pConnection->GetServer()->GetHost(), szComment, szResponse);
+		warn("Article %s @ %s failed, %s: %s", m_szInfoName, m_pConnection->GetHost(), szComment, szResponse);
 		return adNotFound;
 	}
 	else if (!strncmp(szResponse, "2", 1))
@@ -518,7 +518,7 @@ ArticleDownloader::EStatus ArticleDownloader::CheckResponse(const char* szRespon
 	else 
 	{
 		// unknown error, no special handling
-		warn("Article %s @ %s failed, %s: %s", m_szInfoName, m_pConnection->GetServer()->GetHost(), szComment, szResponse);
+		warn("Article %s @ %s failed, %s: %s", m_szInfoName, m_pConnection->GetHost(), szComment, szResponse);
 		return adFailed;
 	}
 }

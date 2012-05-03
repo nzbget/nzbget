@@ -229,7 +229,7 @@ void Run()
 #endif
 #endif
 	
-	Connection::Init(g_pOptions->GetTLS() && !g_pOptions->GetRemoteClientMode() &&
+	Connection::Init(!g_pOptions->GetRemoteClientMode() &&
 		(g_pOptions->GetClientOperation() == Options::opClientNoOperation));
 
 	// client request

@@ -37,10 +37,11 @@
 
 #include "nzbget.h"
 #include "NewsServer.h"
-#include "Log.h"
 
-NewsServer::NewsServer(const char* szHost, int iPort, const char* szUser, const char* szPass, bool bJoinGroup, bool bTLS, int iMaxConnections, int iLevel) : NetAddress(szHost, iPort)
+NewsServer::NewsServer(const char* szHost, int iPort, const char* szUser, const char* szPass, bool bJoinGroup, bool bTLS, int iMaxConnections, int iLevel)
 {
+	m_szHost = NULL;
+	m_iPort = iPort;
 	m_szUser = NULL;
 	m_szPassword = NULL;
 	m_iLevel = iLevel;
@@ -48,6 +49,10 @@ NewsServer::NewsServer(const char* szHost, int iPort, const char* szUser, const 
 	m_bJoinGroup = bJoinGroup;
 	m_bTLS = bTLS;
 
+	if (szHost)
+	{
+		m_szHost = strdup(szHost);
+	}
 	if (szUser)
 	{
 		m_szUser = strdup(szUser);
@@ -60,6 +65,10 @@ NewsServer::NewsServer(const char* szHost, int iPort, const char* szUser, const 
 
 NewsServer::~NewsServer()
 {
+	if (m_szHost)
+	{
+		free(m_szHost);
+	}
 	if (m_szUser)
 	{
 		free(m_szUser);

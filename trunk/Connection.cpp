@@ -134,11 +134,13 @@ void Connection::Final()
 #endif
 }
 
-Connection::Connection(NetAddress* pNetAddress)
+Connection::Connection(const char* szHost, int iPort, bool bTLS)
 {
 	debug("Creating Connection");
 
-	m_pNetAddress		= pNetAddress;
+	m_szHost			= NULL;
+	m_iPort				= iPort;
+	m_bTLS				= bTLS;
 	m_eStatus			= csDisconnected;
 	m_iSocket			= INVALID_SOCKET;
 	m_iBufAvail			= 0;
@@ -150,13 +152,20 @@ Connection::Connection(NetAddress* pNetAddress)
 	m_pTLS				= NULL;
 	m_bTLSError			= false;
 #endif
+
+	if (szHost)
+	{
+		m_szHost = strdup(szHost);
+	}
 }
 
 Connection::Connection(SOCKET iSocket, bool bAutoClose)
 {
 	debug("Creating Connection");
 
-	m_pNetAddress		= NULL;
+	m_szHost			= NULL;
+	m_iPort				= 0;
+	m_bTLS				= false;
 	m_eStatus			= csConnected;
 	m_iSocket			= iSocket;
 	m_iBufAvail			= 0;
@@ -173,6 +182,10 @@ Connection::~Connection()
 {
 	debug("Destroying Connection");
 
+	if (m_szHost)
+	{
+		free(m_szHost);
+	}
 	if (m_eStatus == csConnected && m_bAutoClose)
 	{
 		Disconnect();
@@ -191,14 +204,20 @@ bool Connection::Connect()
 	debug("Connecting");
 
 	if (m_eStatus == csConnected)
+	{
 		return true;
+	}
 
 	bool bRes = DoConnect();
 
 	if (bRes)
+	{
 		m_eStatus = csConnected;
+	}
 	else
+	{
 		Connection::DoDisconnect();
+	}
 
 	return bRes;
 }
@@ -208,7 +227,9 @@ bool Connection::Disconnect()
 	debug("Disconnecting");
 
 	if (m_eStatus == csDisconnected)
+	{
 		return true;
+	}
 
 	bool bRes = DoDisconnect();
 
@@ -357,12 +378,12 @@ bool Connection::DoConnect()
 	addr_hints.ai_family = AF_UNSPEC;    /* Allow IPv4 or IPv6 */
 	addr_hints.ai_socktype = SOCK_STREAM,
 
-	sprintf(iPortStr, "%d", m_pNetAddress->GetPort());
+	sprintf(iPortStr, "%d", m_iPort);
 
-	int res = getaddrinfo(m_pNetAddress->GetHost(), iPortStr, &addr_hints, &addr_list);
+	int res = getaddrinfo(m_szHost, iPortStr, &addr_hints, &addr_list);
 	if (res != 0)
 	{
-		ReportError("Could not resolve hostname %s", m_pNetAddress->GetHost(), true, 0);
+		ReportError("Could not resolve hostname %s", m_szHost, true, 0);
 		return false;
 	}
 
@@ -390,8 +411,8 @@ bool Connection::DoConnect()
 	struct sockaddr_in	sSocketAddress;
 	memset(&sSocketAddress, 0, sizeof(sSocketAddress));
 	sSocketAddress.sin_family = AF_INET;
-	sSocketAddress.sin_port = htons(m_pNetAddress->GetPort());
-	sSocketAddress.sin_addr.s_addr = ResolveHostAddr(m_pNetAddress->GetHost());
+	sSocketAddress.sin_port = htons(m_iPort);
+	sSocketAddress.sin_addr.s_addr = ResolveHostAddr(m_szHost);
 	if (sSocketAddress.sin_addr.s_addr == (unsigned int)-1)
 	{
 		return false;
@@ -400,7 +421,7 @@ bool Connection::DoConnect()
 	m_iSocket = socket(PF_INET, SOCK_STREAM, 0);
 	if (m_iSocket == INVALID_SOCKET)
 	{
-		ReportError("Socket creation failed for %s", m_pNetAddress->GetHost(), true, 0);
+		ReportError("Socket creation failed for %s", m_szHost, true, 0);
 		return false;
 	}
 
@@ -415,7 +436,7 @@ bool Connection::DoConnect()
 
 	if (m_iSocket == INVALID_SOCKET)
 	{
-		ReportError("Connection to %s failed", m_pNetAddress->GetHost(), true, 0);
+		ReportError("Connection to %s failed", m_szHost, true, 0);
 		return false;
 	} 
 
@@ -432,6 +453,13 @@ bool Connection::DoConnect()
 	{
 		ReportError("setsockopt failed", NULL, true, 0);
 	}
+
+#ifndef DISABLE_TLS
+	if (m_bTLS && !StartTLS())
+	{
+		return false;
+	}
+#endif
 
 	return true;
 }
@@ -546,12 +574,12 @@ int Connection::DoBind()
 	addr_hints.ai_socktype = SOCK_STREAM,
 	addr_hints.ai_flags = AI_PASSIVE;    // For wildcard IP address
 
-	sprintf(iPortStr, "%d", m_pNetAddress->GetPort());
+	sprintf(iPortStr, "%d", m_iPort);
 
-	int res = getaddrinfo(m_pNetAddress->GetHost(), iPortStr, &addr_hints, &addr_list);
+	int res = getaddrinfo(m_szHost, iPortStr, &addr_hints, &addr_list);
 	if (res != 0)
 	{
-		error( "Could not resolve hostname %s", m_pNetAddress->GetHost() );
+		error("Could not resolve hostname %s", m_szHost);
 		return -1;
 	}
 
@@ -582,24 +610,24 @@ int Connection::DoBind()
 	struct sockaddr_in	sSocketAddress;
 	memset(&sSocketAddress, 0, sizeof(sSocketAddress));
 	sSocketAddress.sin_family = AF_INET;
-	if (!m_pNetAddress->GetHost() || strlen(m_pNetAddress->GetHost()) == 0)
+	if (!m_pNetAddress->GetHost() || strlen(m_szHost) == 0)
 	{
 		sSocketAddress.sin_addr.s_addr = htonl(INADDR_ANY);
 	}
 	else
 	{
-		sSocketAddress.sin_addr.s_addr = ResolveHostAddr(m_pNetAddress->GetHost());
+		sSocketAddress.sin_addr.s_addr = ResolveHostAddr(m_szHost);
 		if (sSocketAddress.sin_addr.s_addr == (unsigned int)-1)
 		{
 			return -1;
 		}
 	}
-	sSocketAddress.sin_port = htons(m_pNetAddress->GetPort());
+	sSocketAddress.sin_port = htons(m_iPort);
 
 	m_iSocket = socket(PF_INET, SOCK_STREAM, 0);
 	if (m_iSocket == INVALID_SOCKET)
 	{
-		ReportError("Socket creation failed for %s", m_pNetAddress->GetHost(), true, 0);
+		ReportError("Socket creation failed for %s", m_szHost, true, 0);
 		return -1;
 	}
 	
@@ -617,13 +645,13 @@ int Connection::DoBind()
 
 	if (m_iSocket == INVALID_SOCKET)
 	{
-		ReportError("Binding socket failed for %s", m_pNetAddress->GetHost(), true, 0);
+		ReportError("Binding socket failed for %s", m_szHost, true, 0);
 		return -1;
 	}
 
 	if (listen(m_iSocket, 10) < 0)
 	{
-		ReportError("Listen on socket failed for %s", m_pNetAddress->GetHost(), true, 0);
+		ReportError("Listen on socket failed for %s", m_szHost, true, 0);
 		return -1;
 	}
 

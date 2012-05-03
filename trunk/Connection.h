@@ -27,7 +27,6 @@
 #ifndef CONNECTION_H
 #define CONNECTION_H
 
-#include "NetAddress.h"
 #ifndef HAVE_GETADDRINFO
 #ifndef HAVE_GETHOSTBYNAME_R
 #include "Thread.h"
@@ -46,8 +45,10 @@ public:
 	};
 	
 protected:
-	NetAddress* 		m_pNetAddress;
+	char*				m_szHost;
+	int					m_iPort;
 	SOCKET				m_iSocket;
+	bool				m_bTLS;
 	char*				m_szReadBuf;
 	int					m_iBufAvail;
 	char*				m_szBufPtr;
@@ -84,7 +85,7 @@ protected:
 #endif
 
 public:
-						Connection(NetAddress* pNetAddress);
+						Connection(const char* szHost, int iPort, bool bTLS);
 						Connection(SOCKET iSocket, bool bAutoClose);
 	virtual 			~Connection();
 	static void			Init(bool bTLS);
@@ -99,7 +100,9 @@ public:
 	int					WriteLine(const char* pBuffer);
 	SOCKET				Accept();
 	void				Cancel();
-	NetAddress*			GetServer() { return m_pNetAddress; }
+	const char*			GetHost() { return m_szHost; }
+	int					GetPort() { return m_iPort; }
+	bool				GetTLS() { return m_bTLS; }
 	SOCKET				GetSocket() { return m_iSocket; }
 	void				SetTimeout(int iTimeout) { m_iTimeout = iTimeout; }
 	EStatus				GetStatus() { return m_eStatus; }

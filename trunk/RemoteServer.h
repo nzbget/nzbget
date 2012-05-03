@@ -28,13 +28,11 @@
 #define REMOTESERVER_H
 
 #include "Thread.h"
-#include "NetAddress.h"
 #include "Connection.h"
 
 class RemoteServer : public Thread
 {
 private:
-	NetAddress*			m_pNetAddress;
 	Connection*			m_pConnection;
 
 public:

@@ -187,7 +187,7 @@ void ServerPool::CloseUnusedConnections()
 			int tdiff = (int)(curtime - pConnection->GetFreeTime());
 			if (tdiff > CONNECTION_HOLD_SECODNS)
 			{
-				debug("Closing unused connection to %s", pConnection->GetNewsServer()->GetHost());
+				debug("Closing unused connection to %s", pConnection->GetHost());
 				pConnection->Disconnect();
 			}
 		}
