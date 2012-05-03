@@ -60,8 +60,8 @@ am_nzbget_OBJECTS = ArticleDownloader.$(OBJEXT) BinRpc.$(OBJEXT) \
 	Decoder.$(OBJEXT) DiskState.$(OBJEXT) DownloadInfo.$(OBJEXT) \
 	Frontend.$(OBJEXT) Log.$(OBJEXT) LoggableFrontend.$(OBJEXT) \
 	NCursesFrontend.$(OBJEXT) NNTPConnection.$(OBJEXT) \
-	NZBFile.$(OBJEXT) NetAddress.$(OBJEXT) NewsServer.$(OBJEXT) \
-	Observer.$(OBJEXT) Options.$(OBJEXT) ParChecker.$(OBJEXT) \
+	NZBFile.$(OBJEXT) NewsServer.$(OBJEXT) Observer.$(OBJEXT) \
+	Options.$(OBJEXT) ParChecker.$(OBJEXT) \
 	PrePostProcessor.$(OBJEXT) QueueCoordinator.$(OBJEXT) \
 	QueueEditor.$(OBJEXT) RemoteClient.$(OBJEXT) \
 	RemoteServer.$(OBJEXT) Scanner.$(OBJEXT) Scheduler.$(OBJEXT) \
@@ -202,7 +202,7 @@ nzbget_SOURCES = ArticleDownloader.cpp ArticleDownloader.h BinRpc.cpp BinRpc.h \
 	DiskState.cpp DiskState.h DownloadInfo.cpp DownloadInfo.h Frontend.cpp Frontend.h \
 	Log.cpp Log.h LoggableFrontend.cpp LoggableFrontend.h MessageBase.h \
 	NCursesFrontend.cpp NCursesFrontend.h NNTPConnection.cpp NNTPConnection.h NZBFile.cpp \
-	NZBFile.h NetAddress.cpp NetAddress.h NewsServer.cpp NewsServer.h Observer.cpp \
+	NZBFile.h NewsServer.cpp NewsServer.h Observer.cpp \
 	Observer.h Options.cpp Options.h ParChecker.cpp ParChecker.h \
 	PrePostProcessor.cpp PrePostProcessor.h QueueCoordinator.cpp \
 	QueueCoordinator.h QueueEditor.cpp QueueEditor.h RemoteClient.cpp RemoteClient.h \
@@ -318,7 +318,6 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/NCursesFrontend.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/NNTPConnection.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/NZBFile.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/NetAddress.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/NewsServer.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/Observer.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/Options.Po@am__quote@

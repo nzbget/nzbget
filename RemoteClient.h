@@ -36,7 +36,6 @@ class RemoteClient
 {
 private:
 	Connection* 	m_pConnection;
-	NetAddress*		m_pNetAddress;
 	bool			m_bVerbose;
 
 	bool			InitConnection();

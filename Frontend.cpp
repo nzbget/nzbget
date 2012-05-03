@@ -241,8 +241,7 @@ void Frontend::InitMessageBase(SNZBRequestBase* pMessageBase, int iRequest, int 
 
 bool Frontend::RequestMessages()
 {
-	NetAddress netAddress(g_pOptions->GetServerIP(), g_pOptions->GetServerPort());
-	Connection connection(&netAddress);
+	Connection connection(g_pOptions->GetServerIP(), g_pOptions->GetServerPort(), false);
 
 	bool OK = connection.Connect();
 	if (!OK)
@@ -313,8 +312,7 @@ bool Frontend::RequestMessages()
 
 bool Frontend::RequestFileList()
 {
-	NetAddress netAddress(g_pOptions->GetServerIP(), g_pOptions->GetServerPort());
-	Connection connection(&netAddress);
+	Connection connection(g_pOptions->GetServerIP(), g_pOptions->GetServerPort(), false);
 
 	bool OK = connection.Connect();
 	if (!OK)

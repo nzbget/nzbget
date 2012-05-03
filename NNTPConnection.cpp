@@ -44,8 +44,9 @@
 
 static const int CONNECTION_LINEBUFFER_SIZE = 1024*10;
 
-NNTPConnection::NNTPConnection(NewsServer* server) : Connection(server)
+NNTPConnection::NNTPConnection(NewsServer* pNewsServer) : Connection(pNewsServer->GetHost(), pNewsServer->GetPort(), pNewsServer->GetTLS())
 {
+	m_pNewsServer = pNewsServer;
 	m_szActiveGroup = NULL;
 	m_szLineBuf = (char*)malloc(CONNECTION_LINEBUFFER_SIZE);
 	m_bAuthError = false;
@@ -81,7 +82,7 @@ const char* NNTPConnection::Request(const char* req)
 
 	if (!strncmp(answer, "480", 3))
 	{
-		debug("%s requested authorization", m_pNetAddress->GetHost());
+		debug("%s requested authorization", GetHost());
 
 		//authentication required!
 		if (!Authenticate())
@@ -101,8 +102,8 @@ const char* NNTPConnection::Request(const char* req)
 
 bool NNTPConnection::Authenticate()
 {
-	if (!((NewsServer*)m_pNetAddress)->GetUser() ||
-		!((NewsServer*)m_pNetAddress)->GetPassword())
+	if (!(m_pNewsServer)->GetUser() ||
+		!(m_pNewsServer)->GetPassword())
 	{
 		return true;
 	}
@@ -118,7 +119,7 @@ bool NNTPConnection::AuthInfoUser(int iRecur)
 	}
 
 	char tmp[1024];
-	snprintf(tmp, 1024, "AUTHINFO USER %s\r\n", ((NewsServer*)m_pNetAddress)->GetUser());
+	snprintf(tmp, 1024, "AUTHINFO USER %s\r\n", m_pNewsServer->GetUser());
 	tmp[1024-1] = '\0';
 
 	WriteLine(tmp);
@@ -126,13 +127,13 @@ bool NNTPConnection::AuthInfoUser(int iRecur)
 	char* answer = ReadLine(m_szLineBuf, CONNECTION_LINEBUFFER_SIZE, NULL);
 	if (!answer)
 	{
-		ReportError("Authorization for %s failed: Connection closed by remote host.", m_pNetAddress->GetHost(), true, 0);
+		ReportError("Authorization for %s failed: Connection closed by remote host.", GetHost(), true, 0);
 		return false;
 	}
 
 	if (!strncmp(answer, "281", 3))
 	{
-		debug("Authorization for %s successful", m_pNetAddress->GetHost());
+		debug("Authorization for %s successful", GetHost());
 		return true;
 	}
 	else if (!strncmp(answer, "381", 3))
@@ -161,7 +162,7 @@ bool NNTPConnection::AuthInfoPass(int iRecur)
 	}
 
 	char tmp[1024];
-	snprintf(tmp, 1024, "AUTHINFO PASS %s\r\n", ((NewsServer*)m_pNetAddress)->GetPassword());
+	snprintf(tmp, 1024, "AUTHINFO PASS %s\r\n", m_pNewsServer->GetPassword());
 	tmp[1024-1] = '\0';
 
 	WriteLine(tmp);
@@ -169,12 +170,12 @@ bool NNTPConnection::AuthInfoPass(int iRecur)
 	char* answer = ReadLine(m_szLineBuf, CONNECTION_LINEBUFFER_SIZE, NULL);
 	if (!answer)
 	{
-		ReportError("Authorization for %s failed: Connection closed by remote host.", m_pNetAddress->GetHost(), true, 0);
+		ReportError("Authorization for %s failed: Connection closed by remote host.", GetHost(), true, 0);
 		return false;
 	}
 	else if (!strncmp(answer, "2", 1))
 	{
-		debug("Authorization for %s successful", m_pNetAddress->GetHost());
+		debug("Authorization for %s successful", GetHost());
 		return true;
 	}
 	else if (!strncmp(answer, "381", 3))
@@ -212,7 +213,7 @@ const char* NNTPConnection::JoinGroup(const char* grp)
 
 	if (answer && !strncmp(answer, "2", 1))
 	{
-		debug("Changed group to %s on %s", grp, GetServer()->GetHost());
+		debug("Changed group to %s on %s", grp, GetHost());
 
 		if (m_szActiveGroup)
 		{
@@ -222,8 +223,7 @@ const char* NNTPConnection::JoinGroup(const char* grp)
 	}
 	else
 	{
-		debug("Error changing group on %s to %s: %s.",
-			 GetServer()->GetHost(), grp, answer);
+		debug("Error changing group on %s to %s: %s.", GetHost(), grp, answer);
 	}
 
 	return answer;
@@ -231,28 +231,18 @@ const char* NNTPConnection::JoinGroup(const char* grp)
 
 bool NNTPConnection::DoConnect()
 {
-	debug("Opening connection to %s", GetServer()->GetHost());
+	debug("Opening connection to %s", GetHost());
 	bool res = Connection::DoConnect();
 	if (!res)
 	{
 		return res;
 	}
 
-#ifndef DISABLE_TLS
-	if (GetNewsServer()->GetTLS())
-	{
-		if (!StartTLS())
-		{
-			return false;
-		}
-	}
-#endif
-
 	char* answer = DoReadLine(m_szLineBuf, CONNECTION_LINEBUFFER_SIZE, NULL);
 
 	if (!answer)
 	{
-		ReportError("Connection to %s failed: Connection closed by remote host.", m_pNetAddress->GetHost(), true, 0);
+		ReportError("Connection to %s failed: Connection closed by remote host.", GetHost(), true, 0);
 		return false;
 	}
 
@@ -262,7 +252,7 @@ bool NNTPConnection::DoConnect()
 		return false;
 	}
 
-	debug("Connection to %s established", GetServer()->GetHost());
+	debug("Connection to %s established", GetHost());
 
 	return true;
 }
@@ -284,7 +274,7 @@ bool NNTPConnection::DoDisconnect()
 void NNTPConnection::ReportErrorAnswer(const char* szMsgPrefix, const char* szAnswer)
 {
 	char szErrStr[1024];
-	snprintf(szErrStr, 1024, szMsgPrefix, m_pNetAddress->GetHost(), szAnswer);
+	snprintf(szErrStr, 1024, szMsgPrefix, GetHost(), szAnswer);
 	szErrStr[1024-1] = '\0';
 	
 	ReportError(szErrStr, NULL, false, 0);

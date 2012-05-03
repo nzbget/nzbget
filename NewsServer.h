@@ -27,11 +27,11 @@
 #ifndef NEWSSERVER_H
 #define NEWSSERVER_H
 
-#include "NetAddress.h"
-
-class NewsServer : public NetAddress
+class NewsServer
 {
 private:
+	char*			m_szHost;
+	int				m_iPort;
 	char*			m_szUser;
 	char*			m_szPassword;
 	int				m_iMaxConnections;
@@ -41,7 +41,9 @@ private:
 
 public:
 					NewsServer(const char* szHost, int iPort, const char* szUser, const char* szPass, bool bJoinGroup, bool bTLS, int iMaxConnections, int iLevel);
-	virtual			~NewsServer();
+					~NewsServer();
+	const char*		GetHost() { return m_szHost; }
+	int				GetPort() { return m_iPort; }
 	const char*		GetUser() { return m_szUser; }
 	const char*		GetPassword() { return m_szPassword; }
 	int				GetMaxConnections() { return m_iMaxConnections; }

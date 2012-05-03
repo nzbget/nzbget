@@ -57,7 +57,6 @@ RemoteServer::RemoteServer()
 {
 	debug("Creating RemoteServer");
 
-	m_pNetAddress = new NetAddress(g_pOptions->GetServerIP(), g_pOptions->GetServerPort());
 	m_pConnection = NULL;
 }
 
@@ -69,7 +68,6 @@ RemoteServer::~RemoteServer()
 	{
 		delete m_pConnection;
 	}
-	delete m_pNetAddress;
 }
 
 void RemoteServer::Run()
@@ -82,7 +80,7 @@ void RemoteServer::Run()
 
 		if (!m_pConnection)
 		{
-			m_pConnection = new Connection(m_pNetAddress);
+			m_pConnection = new Connection(g_pOptions->GetServerIP(), g_pOptions->GetServerPort(), false);
 			m_pConnection->SetTimeout(g_pOptions->GetConnectionTimeout());
 			m_pConnection->SetSuppressErrors(false);
 			bBind = m_pConnection->Bind() == 0;

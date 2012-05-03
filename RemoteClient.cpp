@@ -55,7 +55,6 @@ extern Options* g_pOptions;
 RemoteClient::RemoteClient()
 {
 	m_pConnection	= NULL;
-	m_pNetAddress	= NULL;
 	m_bVerbose		= true;
 
 	/*
@@ -79,11 +78,6 @@ RemoteClient::~RemoteClient()
 	if (m_pConnection)
 	{
 		delete m_pConnection;
-	}
-
-	if (m_pNetAddress)
-	{
-		delete m_pNetAddress;
 	}
 }
 
@@ -109,8 +103,7 @@ void RemoteClient::perror(const char * msg)
 bool RemoteClient::InitConnection()
 {
 	// Create a connection to the server
-	m_pNetAddress	= new NetAddress(g_pOptions->GetServerIP(), g_pOptions->GetServerPort());
-	m_pConnection	= new Connection(m_pNetAddress);
+	m_pConnection = new Connection(g_pOptions->GetServerIP(), g_pOptions->GetServerPort(), false);
 
 	bool OK = m_pConnection->Connect();
 	if (!OK)
