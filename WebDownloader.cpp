@@ -189,7 +189,6 @@ void WebDownloader::Run()
 
 WebDownloader::EStatus WebDownloader::Download()
 {
-	const char* szResponse = NULL;
 	EStatus Status = adRunning;
 
 	URL url(m_szURL);
@@ -210,15 +209,19 @@ WebDownloader::EStatus WebDownloader::Download()
 		iPort = 443;
 	}
 
-	if (strcasecmp(url.GetProtocol(), "http") 
-#ifndef DISABLE_TLS
-		&& strcasecmp(url.GetProtocol(), "https")
-#endif DISABLE_TLS
-		)
+	if (strcasecmp(url.GetProtocol(), "http") && strcasecmp(url.GetProtocol(), "https"))
 	{
 		error("Unsupported protocol in URL: %s", url.GetAddress());
 		return adFatalError;
 	}
+
+#ifdef DISABLE_TLS
+	if (!strcasecmp(url.GetProtocol(), "https"))
+	{
+		error("Program was compiled without TLS/SSL-support. Cannot download using https protocol. URL: %s", url.GetAddress());
+		return adFatalError;
+	}
+#endif
 
 	bool bTLS = !strcasecmp(url.GetProtocol(), "https");
 
