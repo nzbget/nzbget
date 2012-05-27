@@ -232,13 +232,18 @@ void RemoteClient::BuildFileList(SNZBListResponse* pListResponse, const char* pT
 			SNZBListResponseNZBEntry* pListAnswer = (SNZBListResponseNZBEntry*) pBufPtr;
 
 			const char* szFileName = pBufPtr + sizeof(SNZBListResponseNZBEntry);
-			const char* szDestDir = pBufPtr + sizeof(SNZBListResponseNZBEntry) + ntohl(pListAnswer->m_iFilenameLen);
-			const char* szCategory = pBufPtr + sizeof(SNZBListResponseNZBEntry) + ntohl(pListAnswer->m_iFilenameLen) + ntohl(pListAnswer->m_iDestDirLen);
-			const char* m_szQueuedFilename = pBufPtr + sizeof(SNZBListResponseNZBEntry) + ntohl(pListAnswer->m_iFilenameLen) + ntohl(pListAnswer->m_iDestDirLen) + ntohl(pListAnswer->m_iCategoryLen);
+			const char* szUserNZBName = pBufPtr + sizeof(SNZBListResponseNZBEntry) + ntohl(pListAnswer->m_iFilenameLen);
+			const char* szDestDir = pBufPtr + sizeof(SNZBListResponseNZBEntry) + ntohl(pListAnswer->m_iFilenameLen) + 
+				ntohl(pListAnswer->m_iUserNZBNameLen);
+			const char* szCategory = pBufPtr + sizeof(SNZBListResponseNZBEntry) + ntohl(pListAnswer->m_iFilenameLen) + 
+				ntohl(pListAnswer->m_iUserNZBNameLen) + ntohl(pListAnswer->m_iDestDirLen);
+			const char* m_szQueuedFilename = pBufPtr + sizeof(SNZBListResponseNZBEntry) + ntohl(pListAnswer->m_iFilenameLen) + 
+				ntohl(pListAnswer->m_iUserNZBNameLen) + ntohl(pListAnswer->m_iDestDirLen) + ntohl(pListAnswer->m_iCategoryLen);
 			
 			NZBInfo* pNZBInfo = new NZBInfo();
 			pNZBInfo->SetSize(Util::JoinInt64(ntohl(pListAnswer->m_iSizeHi), ntohl(pListAnswer->m_iSizeLo)));
 			pNZBInfo->SetFilename(szFileName);
+			pNZBInfo->SetUserNZBName(szUserNZBName);
 			pNZBInfo->SetDestDir(szDestDir);
 			pNZBInfo->SetCategory(szCategory);
 			pNZBInfo->SetQueuedFilename(m_szQueuedFilename);
@@ -247,8 +252,8 @@ void RemoteClient::BuildFileList(SNZBListResponse* pListResponse, const char* pT
 			pDownloadQueue->GetNZBInfoList()->Add(pNZBInfo);
 
 			pBufPtr += sizeof(SNZBListResponseNZBEntry) + ntohl(pListAnswer->m_iFilenameLen) +
-				ntohl(pListAnswer->m_iDestDirLen) + ntohl(pListAnswer->m_iCategoryLen) + 
-				ntohl(pListAnswer->m_iQueuedFilenameLen);
+				ntohl(pListAnswer->m_iUserNZBNameLen) + ntohl(pListAnswer->m_iDestDirLen) + 
+				ntohl(pListAnswer->m_iCategoryLen) + ntohl(pListAnswer->m_iQueuedFilenameLen);
 		}
 
 		//read ppp entries
