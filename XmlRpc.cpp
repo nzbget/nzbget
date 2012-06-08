@@ -1833,7 +1833,7 @@ void HistoryXmlCommand::Execute()
 		"\"RemainingFileCount\" : %i,\n"
 		"\"HistoryTime\" : %i,\n"
 		"\"URL\" : \"%s\",\n"
-		"\"UrlStatus\" : %i,\n"
+		"\"UrlStatus\" : \"%s\",\n"
 		"\"Parameters\" : [\n";
 
 	const char* JSON_HISTORY_ITEM_LOG_START = 
