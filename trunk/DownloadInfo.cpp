@@ -123,7 +123,7 @@ NZBInfo::NZBInfo()
 	m_szFilename = NULL;
 	m_szDestDir = NULL;
 	m_szCategory = strdup("");
-	m_szUserNZBName = strdup("");
+	m_szName = NULL;
 	m_iFileCount = 0;
 	m_iParkedFileCount = 0;
 	m_lSize = 0;
@@ -158,9 +158,9 @@ NZBInfo::~NZBInfo()
 	{
 		free(m_szCategory);
 	}
-	if (m_szUserNZBName)
+	if (m_szName)
 	{
-		free(m_szUserNZBName);
+		free(m_szName);
 	}
 	if (m_szQueuedFilename)
 	{
@@ -226,6 +226,23 @@ void NZBInfo::SetFilename(const char * szFilename)
 		free(m_szFilename);
 	}
 	m_szFilename = strdup(szFilename);
+
+	if (!m_szName)
+	{
+		char szNZBNicename[1024];
+		MakeNiceNZBName(m_szFilename, szNZBNicename, sizeof(szNZBNicename), true);
+		szNZBNicename[1024-1] = '\0';
+		SetName(szNZBNicename);
+	}
+}
+
+void NZBInfo::SetName(const char* szName)
+{
+	if (m_szName)
+	{
+		free(m_szName);
+	}
+	m_szName = strdup(szName);
 }
 
 void NZBInfo::SetCategory(const char* szCategory)
@@ -237,15 +254,6 @@ void NZBInfo::SetCategory(const char* szCategory)
 	m_szCategory = strdup(szCategory);
 }
 
-void NZBInfo::SetUserNZBName(const char* szUserNZBName)
-{
-	if (m_szUserNZBName)
-	{
-		free(m_szUserNZBName);
-	}
-	m_szUserNZBName = strdup(szUserNZBName);
-}
-
 void NZBInfo::SetQueuedFilename(const char * szQueuedFilename)
 {
 	if (m_szQueuedFilename)
@@ -255,51 +263,22 @@ void NZBInfo::SetQueuedFilename(const char * szQueuedFilename)
 	m_szQueuedFilename = strdup(szQueuedFilename);
 }
 
-void NZBInfo::GetNiceNZBName(char* szBuffer, int iSize)
-{
-	MakeNiceNZBName(strlen(m_szUserNZBName) > 0 ? m_szUserNZBName : m_szFilename, szBuffer, iSize);
-}
-
-void NZBInfo::MakeNiceNZBName(const char * szNZBFilename, char * szBuffer, int iSize)
+void NZBInfo::MakeNiceNZBName(const char * szNZBFilename, char * szBuffer, int iSize, bool bRemoveExt)
 {
 	char postname[1024];
 	const char* szBaseName = Util::BaseFileName(szNZBFilename);
 
-	// if .nzb file has a certain structure, try to strip out certain elements
-	if (sscanf(szBaseName, "msgid_%*d_%1023s", postname) == 1)
-	{
-		// OK, using stripped name
-	}
-	else
-	{
-		// using complete filename
-		strncpy(postname, szBaseName, 1024);
-		postname[1024-1] = '\0';
-	}
+	strncpy(postname, szBaseName, 1024);
+	postname[1024-1] = '\0';
 
-	// wipe out ".nzb"
-	if (char* p = strrchr(postname, '.')) *p = '\0';
+	if (bRemoveExt)
+	{
+		// wipe out ".nzb"
+		char* p = strrchr(postname, '.');
+		if (p && !strcasecmp(p, ".nzb")) *p = '\0';
+	}
 
 	Util::MakeValidFilename(postname, '_', false);
-
-	// if the resulting name is empty, use basename without cleaning up "msgid_"
-	if (strlen(postname) == 0)
-	{
-		// using complete filename
-		strncpy(postname, szBaseName, 1024);
-		postname[1024-1] = '\0';
-
-		// wipe out ".nzb"
-		if (char* p = strrchr(postname, '.')) *p = '\0';
-
-		Util::MakeValidFilename(postname, '_', false);
-
-		// if the resulting name is STILL empty, use "noname"
-		if (strlen(postname) == 0)
-		{
-			strncpy(postname, "noname", 1024);
-		}
-	}
 
 	strncpy(szBuffer, postname, iSize);
 	szBuffer[iSize-1] = '\0';
@@ -319,15 +298,13 @@ void NZBInfo::BuildDestDirName()
 
 	if (g_pOptions->GetAppendNZBDir())
 	{
-		char szNiceNZBName[1024];
-		GetNiceNZBName(szNiceNZBName, 1024);
 		if (g_pOptions->GetAppendCategoryDir() && bHasCategory)
 		{
-			snprintf(szBuffer, 1024, "%s%s%c%s", g_pOptions->GetDestDir(), szCategory, PATH_SEPARATOR, szNiceNZBName);
+			snprintf(szBuffer, 1024, "%s%s%c%s", g_pOptions->GetDestDir(), szCategory, PATH_SEPARATOR, GetName());
 		}
 		else
 		{
-			snprintf(szBuffer, 1024, "%s%s", g_pOptions->GetDestDir(), szNiceNZBName);
+			snprintf(szBuffer, 1024, "%s%s", g_pOptions->GetDestDir(), GetName());
 		}
 		szBuffer[1024-1] = '\0';
 	}
@@ -856,7 +833,7 @@ void UrlInfo::SetCategory(const char* szCategory)
 	m_szCategory = strdup(szCategory);
 }
 
-void UrlInfo::GetNiceName(char* szBuffer, int iSize)
+void UrlInfo::GetName(char* szBuffer, int iSize)
 {
 	MakeNiceName(m_szURL, m_szNZBFilename, szBuffer, iSize);
 }
@@ -868,7 +845,7 @@ void UrlInfo::MakeNiceName(const char* szURL, const char* szNZBFilename, char* s
 	if (strlen(szNZBFilename) > 0)
 	{
 		char szNZBNicename[1024];
-		NZBInfo::MakeNiceNZBName(szNZBFilename, szNZBNicename, sizeof(szNZBNicename));
+		NZBInfo::MakeNiceNZBName(szNZBFilename, szNZBNicename, sizeof(szNZBNicename), true);
 		snprintf(szBuffer, iSize, "%s @ %s", szNZBNicename, url.GetHost());
 	}
 	else
@@ -920,15 +897,16 @@ void HistoryInfo::SetID(int s)
 	}
 }
 
-void HistoryInfo::GetNiceName(char* szBuffer, int iSize)
+void HistoryInfo::GetName(char* szBuffer, int iSize)
 {
 	if (m_eKind == hkNZBInfo)
 	{
-		GetNZBInfo()->GetNiceNZBName(szBuffer, iSize);
+		strncpy(szBuffer, GetNZBInfo()->GetName(), iSize);
+		szBuffer[iSize-1] = '\0';
 	}
 	else if (m_eKind == hkUrlInfo)
 	{
-		GetUrlInfo()->GetNiceName(szBuffer, iSize);
+		GetUrlInfo()->GetName(szBuffer, iSize);
 	}
 	else
 	{

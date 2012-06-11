@@ -231,7 +231,7 @@ private:
 	int					m_iID;
 	int					m_iRefCount;
 	char* 				m_szFilename;
-	char*				m_szUserNZBName;
+	char*				m_szName;
 	char* 				m_szDestDir;
 	char* 				m_szCategory;
 	int		 			m_iFileCount;
@@ -263,14 +263,13 @@ public:
 	int					GetID() { return m_iID; }
 	const char*			GetFilename() { return m_szFilename; }
 	void				SetFilename(const char* szFilename);
-	void				GetNiceNZBName(char* szBuffer, int iSize);  // needs locking (for shared objects)
-	static void			MakeNiceNZBName(const char* szNZBFilename, char* szBuffer, int iSize);
+	static void			MakeNiceNZBName(const char* szNZBFilename, char* szBuffer, int iSize, bool bRemoveExt);
 	const char*			GetDestDir() { return m_szDestDir; }   // needs locking (for shared objects)
 	void				SetDestDir(const char* szDestDir);     // needs locking (for shared objects)
 	const char*			GetCategory() { return m_szCategory; } // needs locking (for shared objects)
 	void				SetCategory(const char* szCategory);   // needs locking (for shared objects)
-	const char*			GetUserNZBName() { return m_szUserNZBName; } 	   // needs locking (for shared objects)
-	void				SetUserNZBName(const char* szUserNZBName);	   // needs locking (for shared objects)
+	const char*			GetName() { return m_szName; } 	   // needs locking (for shared objects)
+	void				SetName(const char* szName);	   // needs locking (for shared objects)
 	long long 			GetSize() { return m_lSize; }
 	void 				SetSize(long long lSize) { m_lSize = lSize; }
 	int					GetFileCount() { return m_iFileCount; }
@@ -455,7 +454,7 @@ public:
 	void				SetCategory(const char* szCategory);	// needs locking (for shared objects)
 	int					GetPriority() { return m_iPriority; }
 	void				SetPriority(int iPriority) { m_iPriority = iPriority; }
-	void				GetNiceName(char* szBuffer, int iSize);	// needs locking (for shared objects)
+	void				GetName(char* szBuffer, int iSize);		// needs locking (for shared objects)
 	static void			MakeNiceName(const char* szURL, const char* szNZBFilename, char* szBuffer, int iSize);
 	EStatus				GetStatus() { return m_eStatus; }
 	void				SetStatus(EStatus Status) { m_eStatus = Status; }
@@ -493,7 +492,7 @@ public:
 	void				DiscardUrlInfo() { m_pInfo = NULL; }
 	time_t				GetTime() { return m_tTime; }
 	void				SetTime(time_t tTime) { m_tTime = tTime; }
-	void				GetNiceName(char* szBuffer, int iSize);	// needs locking (for shared objects)
+	void				GetName(char* szBuffer, int iSize);		// needs locking (for shared objects)
 };
 
 typedef std::deque<HistoryInfo*> HistoryList;

@@ -201,7 +201,7 @@ void DiskState::SaveNZBList(DownloadQueue* pDownloadQueue, FILE* outfile)
 		fprintf(outfile, "%s\n", pNZBInfo->GetFilename());
 		fprintf(outfile, "%s\n", pNZBInfo->GetDestDir());
 		fprintf(outfile, "%s\n", pNZBInfo->GetQueuedFilename());
-		fprintf(outfile, "%s\n", pNZBInfo->GetUserNZBName());
+		fprintf(outfile, "%s\n", pNZBInfo->GetName());
 		fprintf(outfile, "%s\n", pNZBInfo->GetCategory());
 		fprintf(outfile, "%i\n", pNZBInfo->GetPostProcess() ? 1 : 0);
 		fprintf(outfile, "%i\n", (int)pNZBInfo->GetParStatus());
@@ -284,7 +284,10 @@ bool DiskState::LoadNZBList(DownloadQueue* pDownloadQueue, FILE* infile, int iFo
 		{
 			if (!fgets(buf, sizeof(buf), infile)) goto error;
 			if (buf[0] != 0) buf[strlen(buf)-1] = 0; // remove traling '\n'
-			pNZBInfo->SetUserNZBName(buf);
+			if (strlen(buf) > 0)
+			{
+				pNZBInfo->SetName(buf);
+			}
 		}
 
 		if (iFormatVersion >= 4)
@@ -1023,7 +1026,7 @@ bool DiskState::DiscardDownloadQueue()
 			}
 			if (iFormatVersion >= 13)
 			{
-				if (!fgets(buf, sizeof(buf), infile)) break; // UserNZBname
+				if (!fgets(buf, sizeof(buf), infile)) break; // name
 			}
 			if (iFormatVersion >= 4)
 			{

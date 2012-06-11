@@ -546,10 +546,7 @@ void QueueCoordinator::BuildArticleFilename(ArticleDownloader* pArticleDownloade
 	tmpname[1024-1] = '\0';
 	pArticleDownloader->SetTempFilename(tmpname);
 
-	char szNZBNiceName[1024];
-	pFileInfo->GetNZBInfo()->GetNiceNZBName(szNZBNiceName, 1024);
-	
-	snprintf(name, 1024, "%s%c%s [%i/%i]", szNZBNiceName, (int)PATH_SEPARATOR, pFileInfo->GetFilename(), pArticleInfo->GetPartNumber(), pFileInfo->GetArticles()->size());
+	snprintf(name, 1024, "%s%c%s [%i/%i]", pFileInfo->GetNZBInfo()->GetName(), (int)PATH_SEPARATOR, pFileInfo->GetFilename(), pArticleInfo->GetPartNumber(), pFileInfo->GetArticles()->size());
 	name[1024-1] = '\0';
 	pArticleDownloader->SetInfoName(name);
 
@@ -900,9 +897,7 @@ bool QueueCoordinator::SetQueueEntryNZBCategory(NZBInfo* pNZBInfo, const char* s
 {
 	if (pNZBInfo->GetPostProcess())
 	{
-		char szNZBNiceName[1024];
-		pNZBInfo->GetNiceNZBName(szNZBNiceName, 1024);
-		error("Could not change category for %s. File in post-process-stage", szNZBNiceName);
+		error("Could not change category for %s. File in post-process-stage", pNZBInfo->GetName());
 		return false;
 	}
 
@@ -923,9 +918,13 @@ bool QueueCoordinator::SetQueueEntryNZBName(NZBInfo* pNZBInfo, const char* szNam
 {
 	if (pNZBInfo->GetPostProcess())
 	{
-		char szNZBNiceName[1024];
-		pNZBInfo->GetNiceNZBName(szNZBNiceName, 1024);
-		error("Could not rename %s. File in post-process-stage", szNZBNiceName);
+		error("Could not rename %s. File in post-process-stage", pNZBInfo->GetName());
+		return false;
+	}
+
+	if (strlen(szName) == 0)
+	{
+		error("Could not rename %s. The new name cannot be empty", pNZBInfo->GetName());
 		return false;
 	}
 
@@ -933,7 +932,10 @@ bool QueueCoordinator::SetQueueEntryNZBName(NZBInfo* pNZBInfo, const char* szNam
 	strncpy(szOldDestDir, pNZBInfo->GetDestDir(), 1024);
 	szOldDestDir[1024-1] = '\0';
 
-	pNZBInfo->SetUserNZBName(szName);
+	char szNZBNicename[1024];
+	NZBInfo::MakeNiceNZBName(szName, szNZBNicename, sizeof(szNZBNicename), false);
+	pNZBInfo->SetName(szNZBNicename);
+
 	pNZBInfo->BuildDestDirName();
 
 	bool bDirUnchanged = !strcmp(pNZBInfo->GetDestDir(), szOldDestDir);
@@ -949,11 +951,7 @@ bool QueueCoordinator::MergeQueueEntries(NZBInfo* pDestNZBInfo, NZBInfo* pSrcNZB
 {
 	if (pDestNZBInfo->GetPostProcess() || pSrcNZBInfo->GetPostProcess())
 	{
-		char szDestNZBNiceName[1024];
-		pDestNZBInfo->GetNiceNZBName(szDestNZBNiceName, 1024);
-		char szSrcNZBNiceName[1024];
-		pSrcNZBInfo->GetNiceNZBName(szSrcNZBNiceName, 1024);
-		error("Could not merge %s and %s. File in post-process-stage", szDestNZBNiceName, szSrcNZBNiceName);
+		error("Could not merge %s and %s. File in post-process-stage", pDestNZBInfo->GetName(), pSrcNZBInfo->GetName());
 		return false;
 	}
 

@@ -398,7 +398,7 @@ void ListBinCommand::Execute()
 		{
 			NZBInfo* pNZBInfo = *it;
 			bufsize += strlen(pNZBInfo->GetFilename()) + 1;
-			bufsize += strlen(pNZBInfo->GetUserNZBName()) + 1;
+			bufsize += strlen(pNZBInfo->GetName()) + 1;
 			bufsize += strlen(pNZBInfo->GetDestDir()) + 1;
 			bufsize += strlen(pNZBInfo->GetCategory()) + 1;
 			bufsize += strlen(pNZBInfo->GetQueuedFilename()) + 1;
@@ -443,15 +443,15 @@ void ListBinCommand::Execute()
 			pListAnswer->m_iSizeLo				= htonl(iSizeLo);
 			pListAnswer->m_iSizeHi				= htonl(iSizeHi);
 			pListAnswer->m_iFilenameLen			= htonl(strlen(pNZBInfo->GetFilename()) + 1);
-			pListAnswer->m_iUserNZBNameLen		= htonl(strlen(pNZBInfo->GetUserNZBName()) + 1);
+			pListAnswer->m_iNameLen				= htonl(strlen(pNZBInfo->GetName()) + 1);
 			pListAnswer->m_iDestDirLen			= htonl(strlen(pNZBInfo->GetDestDir()) + 1);
 			pListAnswer->m_iCategoryLen			= htonl(strlen(pNZBInfo->GetCategory()) + 1);
 			pListAnswer->m_iQueuedFilenameLen	= htonl(strlen(pNZBInfo->GetQueuedFilename()) + 1);
 			bufptr += sizeof(SNZBListResponseNZBEntry);
 			strcpy(bufptr, pNZBInfo->GetFilename());
 			bufptr += ntohl(pListAnswer->m_iFilenameLen);
-			strcpy(bufptr, pNZBInfo->GetUserNZBName());
-			bufptr += ntohl(pListAnswer->m_iUserNZBNameLen);
+			strcpy(bufptr, pNZBInfo->GetName());
+			bufptr += ntohl(pListAnswer->m_iNameLen);
 			strcpy(bufptr, pNZBInfo->GetDestDir());
 			bufptr += ntohl(pListAnswer->m_iDestDirLen);
 			strcpy(bufptr, pNZBInfo->GetCategory());
@@ -950,7 +950,7 @@ void HistoryBinCommand::Execute()
 	{
 		HistoryInfo* pHistoryInfo = *it;
 		char szNicename[1024];
-		pHistoryInfo->GetNiceName(szNicename, sizeof(szNicename));
+		pHistoryInfo->GetName(szNicename, sizeof(szNicename));
 		bufsize += strlen(szNicename) + 1;
 		// align struct to 4-bytes, needed by ARM-processor (and may be others)
 		bufsize += bufsize % 4 > 0 ? 4 - bufsize % 4 : 0;
@@ -969,7 +969,7 @@ void HistoryBinCommand::Execute()
 		pListAnswer->m_tTime				= htonl((int)pHistoryInfo->GetTime());
 
 		char szNicename[1024];
-		pHistoryInfo->GetNiceName(szNicename, sizeof(szNicename));
+		pHistoryInfo->GetName(szNicename, sizeof(szNicename));
 		pListAnswer->m_iNicenameLen			= htonl(strlen(szNicename) + 1);
 
 		if (pHistoryInfo->GetKind() == HistoryInfo::hkNZBInfo)

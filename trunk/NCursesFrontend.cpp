@@ -842,7 +842,7 @@ void NCursesFrontend::PrintFilename(FileInfo * pFileInfo, int iRow, bool bSelect
 	char szNZBNiceName[1024];
 	if (m_bShowNZBname)
 	{
-		pFileInfo->GetNZBInfo()->GetNiceNZBName(szNZBNiceName, 1023);
+		strncpy(szNZBNiceName, pFileInfo->GetNZBInfo()->GetName(), 1023);
 		int len = strlen(szNZBNiceName);
 		szNZBNiceName[len] = PATH_SEPARATOR;
 		szNZBNiceName[len + 1] = '\0';
@@ -1017,9 +1017,6 @@ void NCursesFrontend::PrintGroupname(GroupInfo * pGroupInfo, int iRow, bool bSel
 	char szRemaining[20];
 	Util::FormatFileSize(szRemaining, sizeof(szRemaining), lUnpausedRemainingSize);
 
-	char szNZBNiceName[1024];
-	pGroupInfo->GetNZBInfo()->GetNiceNZBName(szNZBNiceName, 1023);
-
 	char szPriority[100];
 	szPriority[0] = '\0';
 	if (pGroupInfo->GetMinPriority() != 0 || pGroupInfo->GetMaxPriority() != 0)
@@ -1063,7 +1060,7 @@ void NCursesFrontend::PrintGroupname(GroupInfo * pGroupInfo, int iRow, bool bSel
 
 		char szNameWithIds[1024];
 		snprintf(szNameWithIds, 1024, "%c%i-%i%c%s%s %s", chBrace1, pGroupInfo->GetFirstID(), pGroupInfo->GetLastID(), chBrace2, 
-			szPriority, szDownloading, szNZBNiceName);
+			szPriority, szDownloading, pGroupInfo->GetNZBInfo()->GetName());
 		szNameWithIds[iNameLen] = '\0';
 
 		char szTime[100];
@@ -1109,7 +1106,7 @@ void NCursesFrontend::PrintGroupname(GroupInfo * pGroupInfo, int iRow, bool bSel
 	else
 	{
 		snprintf(szBuffer, MAX_SCREEN_WIDTH, "%c%i-%i%c%s %s", chBrace1, pGroupInfo->GetFirstID(), 
-			pGroupInfo->GetLastID(), chBrace2, szDownloading, szNZBNiceName);
+			pGroupInfo->GetLastID(), chBrace2, szDownloading, pGroupInfo->GetNZBInfo()->GetName());
 	}
 
 	szBuffer[MAX_SCREEN_WIDTH - 1] = '\0';

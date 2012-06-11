@@ -295,7 +295,7 @@ void UrlCoordinator::StartUrlDownload(UrlInfo* pUrlInfo)
 
 	char tmp[1024];
 
-	pUrlInfo->GetNiceName(tmp, 1024);
+	pUrlInfo->GetName(tmp, 1024);
 	pUrlDownloader->SetInfoName(tmp);
 
 	snprintf(tmp, 1024, "%surl-%i.tmp", g_pOptions->GetTempDir(), pUrlInfo->GetID());

@@ -612,8 +612,12 @@ void PostScriptController::StartScriptJob(PostInfo* pPostInfo, const char* szScr
 
 void PostScriptController::Run()
 {
-	// the locking is needed for accessing the memebers of NZBInfo
+	// the locking is needed for accessing the members of NZBInfo
 	g_pDownloadQueueHolder->LockQueue();
+
+	char szNZBName[1024];
+	strncpy(szNZBName, m_pPostInfo->GetNZBInfo()->GetName(), 1024);
+	szNZBName[1024-1] = '\0';
 
 	char szParStatus[10];
 	snprintf(szParStatus, 10, "%i", m_pPostInfo->GetParStatus());
@@ -663,6 +667,7 @@ void PostScriptController::Run()
 	szArgs[8] = NULL;
 	SetArgs(szArgs, false);
 
+	SetEnvVar("NZBPP_NZBNAME", szNZBName);
 	SetEnvVar("NZBPP_DIRECTORY", szDestDir);
 	SetEnvVar("NZBPP_NZBFILENAME", szNZBFilename);
 	SetEnvVar("NZBPP_PARFILENAME", szParFilename);

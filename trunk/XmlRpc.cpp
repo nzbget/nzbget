@@ -1133,7 +1133,8 @@ void ListFilesXmlCommand::Execute()
 		"<member><name>FilenameConfirmed</name><value><boolean>%s</boolean></value></member>\n"
 		"<member><name>Paused</name><value><boolean>%s</boolean></value></member>\n"
 		"<member><name>NZBID</name><value><i4>%i</i4></value></member>\n"
-		"<member><name>NZBNicename</name><value><string>%s</string></value></member>\n"
+		"<member><name>NZBName</name><value><string>%s</string></value></member>\n"
+		"<member><name>NZBNicename</name><value><string>%s</string></value></member>\n"	// deprecated, use "NZBName" instead
 		"<member><name>NZBFilename</name><value><string>%s</string></value></member>\n"
 		"<member><name>Subject</name><value><string>%s</string></value></member>\n"
 		"<member><name>Filename</name><value><string>%s</string></value></member>\n"
@@ -1154,7 +1155,8 @@ void ListFilesXmlCommand::Execute()
 		"\"FilenameConfirmed\" : %s,\n"
 		"\"Paused\" : %s,\n"
 		"\"NZBID\" : %i,\n"
-		"\"NZBNicename\" : \"%s\",\n"
+		"\"NZBName\" : \"%s\",\n"
+		"\"NZBNicename\" : \"%s\",\n" 		// deprecated, use "NZBName" instead
 		"\"NZBFilename\" : \"%s\",\n"
 		"\"Subject\" : \"%s\",\n"
 		"\"Filename\" : \"%s\",\n"
@@ -1175,21 +1177,19 @@ void ListFilesXmlCommand::Execute()
 		{
 			unsigned long iFileSizeHi, iFileSizeLo;
 			unsigned long iRemainingSizeLo, iRemainingSizeHi;
-			char szNZBNicename[1024];
 			Util::SplitInt64(pFileInfo->GetSize(), &iFileSizeHi, &iFileSizeLo);
 			Util::SplitInt64(pFileInfo->GetRemainingSize(), &iRemainingSizeHi, &iRemainingSizeLo);
-			pFileInfo->GetNZBInfo()->GetNiceNZBName(szNZBNicename, sizeof(szNZBNicename));
 			char* xmlNZBFilename = EncodeStr(pFileInfo->GetNZBInfo()->GetFilename());
 			char* xmlSubject = EncodeStr(pFileInfo->GetSubject());
 			char* xmlFilename = EncodeStr(pFileInfo->GetFilename());
 			char* xmlDestDir = EncodeStr(pFileInfo->GetNZBInfo()->GetDestDir());
 			char* xmlCategory = EncodeStr(pFileInfo->GetNZBInfo()->GetCategory());
-			char* xmlNZBNicename = EncodeStr(szNZBNicename);
+			char* xmlNZBNicename = EncodeStr(pFileInfo->GetNZBInfo()->GetName());
 
 			snprintf(szItemBuf, szItemBufSize, IsJson() ? JSON_LIST_ITEM : XML_LIST_ITEM,
 				pFileInfo->GetID(), iFileSizeLo, iFileSizeHi, iRemainingSizeLo, iRemainingSizeHi, 
 				pFileInfo->GetTime(), BoolToStr(pFileInfo->GetFilenameConfirmed()), 
-				BoolToStr(pFileInfo->GetPaused()), pFileInfo->GetNZBInfo()->GetID(), 
+				BoolToStr(pFileInfo->GetPaused()), pFileInfo->GetNZBInfo()->GetID(), xmlNZBNicename,
 				xmlNZBNicename, xmlNZBFilename, xmlSubject, xmlFilename, xmlDestDir, xmlCategory,
 				pFileInfo->GetPriority(), pFileInfo->GetActiveDownloads());
 			szItemBuf[szItemBufSize-1] = '\0';
@@ -1237,7 +1237,8 @@ void ListGroupsXmlCommand::Execute()
 		"<member><name>MinPostTime</name><value><i4>%i</i4></value></member>\n"
 		"<member><name>MaxPostTime</name><value><i4>%i</i4></value></member>\n"
 		"<member><name>NZBID</name><value><i4>%i</i4></value></member>\n"
-		"<member><name>NZBNicename</name><value><string>%s</string></value></member>\n"
+		"<member><name>NZBName</name><value><string>%s</string></value></member>\n"
+		"<member><name>NZBNicename</name><value><string>%s</string></value></member>\n"	// deprecated, use "NZBName" instead
 		"<member><name>NZBFilename</name><value><string>%s</string></value></member>\n"
 		"<member><name>DestDir</name><value><string>%s</string></value></member>\n"
 		"<member><name>Category</name><value><string>%s</string></value></member>\n"
@@ -1269,7 +1270,8 @@ void ListGroupsXmlCommand::Execute()
 		"\"MinPostTime\" : %i,\n"
 		"\"MaxPostTime\" : %i,\n"
 		"\"NZBID\" : %i,\n"
-		"\"NZBNicename\" : \"%s\",\n"
+		"\"NZBName\" : \"%s\",\n"
+		"\"NZBNicename\" : \"%s\",\n"	// deprecated, use "NZBName" instead
 		"\"NZBFilename\" : \"%s\",\n"
 		"\"DestDir\" : \"%s\",\n"
 		"\"Category\" : \"%s\",\n"
@@ -1310,16 +1312,14 @@ void ListGroupsXmlCommand::Execute()
 		unsigned long iFileSizeHi, iFileSizeLo, iFileSizeMB;
 		unsigned long iRemainingSizeLo, iRemainingSizeHi, iRemainingSizeMB;
 		unsigned long iPausedSizeLo, iPausedSizeHi, iPausedSizeMB;
-		char szNZBNicename[1024];
 		Util::SplitInt64(pGroupInfo->GetNZBInfo()->GetSize(), &iFileSizeHi, &iFileSizeLo);
 		iFileSizeMB = (int)(pGroupInfo->GetNZBInfo()->GetSize() / 1024 / 1024);
 		Util::SplitInt64(pGroupInfo->GetRemainingSize(), &iRemainingSizeHi, &iRemainingSizeLo);
 		iRemainingSizeMB = (int)(pGroupInfo->GetRemainingSize() / 1024 / 1024);
 		Util::SplitInt64(pGroupInfo->GetPausedSize(), &iPausedSizeHi, &iPausedSizeLo);
 		iPausedSizeMB = (int)(pGroupInfo->GetPausedSize() / 1024 / 1024);
-		pGroupInfo->GetNZBInfo()->GetNiceNZBName(szNZBNicename, sizeof(szNZBNicename));
 
-		char* xmlNZBNicename = EncodeStr(szNZBNicename);
+		char* xmlNZBNicename = EncodeStr(pGroupInfo->GetNZBInfo()->GetName());
 		char* xmlNZBFilename = EncodeStr(pGroupInfo->GetNZBInfo()->GetFilename());
 		char* xmlDestDir = EncodeStr(pGroupInfo->GetNZBInfo()->GetDestDir());
 		char* xmlCategory = EncodeStr(pGroupInfo->GetNZBInfo()->GetCategory());
@@ -1329,7 +1329,7 @@ void ListGroupsXmlCommand::Execute()
 			iRemainingSizeLo, iRemainingSizeHi, iRemainingSizeMB, iPausedSizeLo, iPausedSizeHi, iPausedSizeMB, 
 			pGroupInfo->GetNZBInfo()->GetFileCount(), pGroupInfo->GetRemainingFileCount(), 
 			pGroupInfo->GetRemainingParCount(), pGroupInfo->GetMinTime(), pGroupInfo->GetMaxTime(),
-			pGroupInfo->GetNZBInfo()->GetID(), xmlNZBNicename, xmlNZBFilename, xmlDestDir, xmlCategory,
+			pGroupInfo->GetNZBInfo()->GetID(), xmlNZBNicename, xmlNZBNicename, xmlNZBFilename, xmlDestDir, xmlCategory,
 			pGroupInfo->GetMinPriority(), pGroupInfo->GetMaxPriority(), pGroupInfo->GetActiveDownloads());
 		szItemBuf[szItemBufSize-1] = '\0';
 
@@ -1578,7 +1578,8 @@ void PostQueueXmlCommand::Execute()
 		"<value><struct>\n"
 		"<member><name>ID</name><value><i4>%i</i4></value></member>\n"
 		"<member><name>NZBID</name><value><i4>%i</i4></value></member>\n"
-		"<member><name>NZBNicename</name><value><string>%s</string></value></member>\n"
+		"<member><name>NZBName</name><value><string>%s</string></value></member>\n"
+		"<member><name>NZBNicename</name><value><string>%s</string></value></member>\n"		// deprecated, use "NZBName" instead
 		"<member><name>NZBFilename</name><value><string>%s</string></value></member>\n"
 		"<member><name>DestDir</name><value><string>%s</string></value></member>\n"
 		"<member><name>ParFilename</name><value><string>%s</string></value></member>\n"
@@ -1599,7 +1600,8 @@ void PostQueueXmlCommand::Execute()
 		"{\n"
 		"\"ID\" : %i,\n"
 		"\"NZBID\" : %i,\n"
-		"\"NZBNicename\" : \"%s\",\n"
+		"\"NZBName\" : \"%s\",\n"
+		"\"NZBNicename\" : \"%s\",\n"	// deprecated, use "NZBName" instead
 		"\"NZBFilename\" : \"%s\",\n"
 		"\"DestDir\" : \"%s\",\n"
 		"\"ParFilename\" : \"%s\",\n"
@@ -1644,12 +1646,10 @@ void PostQueueXmlCommand::Execute()
 	for (PostQueue::iterator it = pPostQueue->begin(); it != pPostQueue->end(); it++)
 	{
 		PostInfo* pPostInfo = *it;
-		char szNZBNicename[1024];
-		pPostInfo->GetNZBInfo()->GetNiceNZBName(szNZBNicename, sizeof(szNZBNicename));
 
 	    const char* szPostStageName[] = { "QUEUED", "LOADING_PARS", "VERIFYING_SOURCES", "REPAIRING", "VERIFYING_REPAIRED", "EXECUTING_SCRIPT", "FINISHED" };
 
-		char* xmlNZBNicename = EncodeStr(szNZBNicename);
+		char* xmlNZBNicename = EncodeStr(pPostInfo->GetNZBInfo()->GetName());
 		char* xmlNZBFilename = EncodeStr(pPostInfo->GetNZBInfo()->GetFilename());
 		char* xmlDestDir = EncodeStr(pPostInfo->GetNZBInfo()->GetDestDir());
 		char* xmlParFilename = EncodeStr(pPostInfo->GetParFilename());
@@ -1657,7 +1657,7 @@ void PostQueueXmlCommand::Execute()
 		char* xmlProgressLabel = EncodeStr(pPostInfo->GetProgressLabel());
 
 		snprintf(szItemBuf, szItemBufSize, IsJson() ? JSON_POSTQUEUE_ITEM_START : XML_POSTQUEUE_ITEM_START,
-			pPostInfo->GetID(), pPostInfo->GetNZBInfo()->GetID(),
+			pPostInfo->GetID(), pPostInfo->GetNZBInfo()->GetID(), xmlNZBNicename,
 			xmlNZBNicename, xmlNZBFilename, xmlDestDir, xmlParFilename,
 			xmlInfoName, szPostStageName[pPostInfo->GetStage()], xmlProgressLabel,
 			pPostInfo->GetFileProgress(), pPostInfo->GetStageProgress(),
@@ -1787,10 +1787,10 @@ void HistoryXmlCommand::Execute()
 	const char* XML_HISTORY_ITEM_START = 
 		"<value><struct>\n"
 		"<member><name>ID</name><value><i4>%i</i4></value></member>\n"
-		"<member><name>NZBID</name><value><i4>%i</i4></value></member>\n"					// deprecated (renamed to ID)
+		"<member><name>NZBID</name><value><i4>%i</i4></value></member>\n"					// deprecated, use ID instead
 		"<member><name>Kind</name><value><string>%s</string></value></member>\n"
-		"<member><name>Nicename</name><value><string>%s</string></value></member>\n"
-		"<member><name>NZBNicename</name><value><string>%s</string></value></member>\n"		// deprecated (renamed to Nicename)
+		"<member><name>Name</name><value><string>%s</string></value></member>\n"
+		"<member><name>NZBNicename</name><value><string>%s</string></value></member>\n"		// deprecated, use Name instead
 		"<member><name>NZBFilename</name><value><string>%s</string></value></member>\n"
 		"<member><name>DestDir</name><value><string>%s</string></value></member>\n"
 		"<member><name>Category</name><value><string>%s</string></value></member>\n"
@@ -1817,10 +1817,10 @@ void HistoryXmlCommand::Execute()
 	const char* JSON_HISTORY_ITEM_START = 
 		"{\n"
 		"\"ID\" : %i,\n"
-		"\"NZBID\" : %i,\n"					// deprecated (renamed to ID)
+		"\"NZBID\" : %i,\n"					// deprecated, use ID instead
 		"\"Kind\" : \"%s\",\n"
-		"\"Nicename\" : \"%s\",\n"
-		"\"NZBNicename\" : \"%s\",\n"		// deprecated (renamed to Nicename)
+		"\"Name\" : \"%s\",\n"				// deprecated, use Name instead
+		"\"NZBNicename\" : \"%s\",\n"		// deprecated, use Name instead
 		"\"NZBFilename\" : \"%s\",\n"
 		"\"DestDir\" : \"%s\",\n"
 		"\"Category\" : \"%s\",\n"
@@ -1889,7 +1889,7 @@ void HistoryXmlCommand::Execute()
 		NZBInfo* pNZBInfo = NULL;
 
 		char szNicename[1024];
-		pHistoryInfo->GetNiceName(szNicename, sizeof(szNicename));
+		pHistoryInfo->GetName(szNicename, sizeof(szNicename));
 
 		char *xmlNicename = EncodeStr(szNicename);
 		char *xmlNZBFilename, *xmlCategory;
@@ -2069,7 +2069,7 @@ void DownloadUrlXmlCommand::Execute()
 		pUrlInfo->SetPriority(iPriority);
 
 		char szNicename[1024];
-		pUrlInfo->GetNiceName(szNicename, sizeof(szNicename));
+		pUrlInfo->GetName(szNicename, sizeof(szNicename));
 		info("Request: Queue %s", szNicename);
 
 		g_pUrlCoordinator->AddUrlToQueue(pUrlInfo, bAddTop);
@@ -2094,7 +2094,7 @@ void UrlQueueXmlCommand::Execute()
 		"<member><name>ID</name><value><i4>%i</i4></value></member>\n"
 		"<member><name>NZBFilename</name><value><string>%s</string></value></member>\n"
 		"<member><name>URL</name><value><string>%s</string></value></member>\n"
-		"<member><name>Nicename</name><value><string>%s</string></value></member>\n"
+		"<member><name>Name</name><value><string>%s</string></value></member>\n"
 		"<member><name>Category</name><value><string>%s</string></value></member>\n"
 		"<member><name>Priority</name><value><i4>%i</i4></value></member>\n"
 		"</struct></value>\n";
@@ -2104,7 +2104,7 @@ void UrlQueueXmlCommand::Execute()
 		"\"ID\" : %i,\n"
 		"\"NZBFilename\" : \"%s\",\n"
 		"\"URL\" : \"%s\",\n"
-		"\"Nicename\" : \"%s\",\n"
+		"\"Name\" : \"%s\",\n"
 		"\"Category\" : \"%s\",\n"
 		"\"Priority\" : %i\n"
 		"}";
@@ -2119,7 +2119,7 @@ void UrlQueueXmlCommand::Execute()
 	{
 		UrlInfo* pUrlInfo = *it;
 		char szNicename[1024];
-		pUrlInfo->GetNiceName(szNicename, sizeof(szNicename));
+		pUrlInfo->GetName(szNicename, sizeof(szNicename));
 
 		char* xmlNicename = EncodeStr(szNicename);
 		char* xmlNZBFilename = EncodeStr(pUrlInfo->GetNZBFilename());
