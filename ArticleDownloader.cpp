@@ -825,17 +825,18 @@ void ArticleDownloader::CompleteFileParts()
 
 	bool bDirectWrite = g_pOptions->GetDirectWrite() && m_pFileInfo->GetOutputInitialized();
 
-	char szNZBNiceName[1024];
+	char szNZBName[1024];
 	char szNZBDestDir[1024];
 	// the locking is needed for accessing the memebers of NZBInfo
 	g_pDownloadQueueHolder->LockQueue();
-	m_pFileInfo->GetNZBInfo()->GetNiceNZBName(szNZBNiceName, 1024);
+	strncpy(szNZBName, m_pFileInfo->GetNZBInfo()->GetName(), 1024);
 	strncpy(szNZBDestDir, m_pFileInfo->GetNZBInfo()->GetDestDir(), 1024);
 	g_pDownloadQueueHolder->UnlockQueue();
+	szNZBName[1024-1] = '\0';
 	szNZBDestDir[1024-1] = '\0';
 	
 	char InfoFilename[1024];
-	snprintf(InfoFilename, 1024, "%s%c%s", szNZBNiceName, (int)PATH_SEPARATOR, m_pFileInfo->GetFilename());
+	snprintf(InfoFilename, 1024, "%s%c%s", szNZBName, (int)PATH_SEPARATOR, m_pFileInfo->GetFilename());
 	InfoFilename[1024-1] = '\0';
 
 	if (!g_pOptions->GetDecode())

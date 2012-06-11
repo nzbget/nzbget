@@ -243,18 +243,16 @@ void PrePostProcessor::QueueCoordinatorUpdate(Subject * Caller, void * Aspect)
 			IsNZBFileCompleted(pAspect->pDownloadQueue, pAspect->pNZBInfo, false, true, false, false) &&
 			(!pAspect->pFileInfo->GetPaused() || IsNZBFileCompleted(pAspect->pDownloadQueue, pAspect->pNZBInfo, false, false, false, false)))
 		{
-			char szNZBNiceName[1024];
-			pAspect->pNZBInfo->GetNiceNZBName(szNZBNiceName, 1024);
 			if (pAspect->eAction == QueueCoordinator::eaFileCompleted)
 			{
-				info("Collection %s completely downloaded", szNZBNiceName);
+				info("Collection %s completely downloaded", pAspect->pNZBInfo->GetName());
 				NZBDownloaded(pAspect->pDownloadQueue, pAspect->pNZBInfo);
 			}
 			else if (pAspect->pNZBInfo->GetDeleted() &&
 				!pAspect->pNZBInfo->GetParCleanup() &&
 				IsNZBFileCompleted(pAspect->pDownloadQueue, pAspect->pNZBInfo, false, false, false, true))
 			{
-				info("Collection %s deleted from queue", szNZBNiceName);
+				info("Collection %s deleted from queue", pAspect->pNZBInfo->GetName());
 				NZBDeleted(pAspect->pDownloadQueue, pAspect->pNZBInfo);
 			}
 		}
@@ -331,8 +329,6 @@ void PrePostProcessor::NZBCompleted(DownloadQueue* pDownloadQueue, NZBInfo* pNZB
 {
 	if (g_pOptions->GetKeepHistory() > 0)
 	{
-		char szNZBNiceName[1024];
-		pNZBInfo->GetNiceNZBName(szNZBNiceName, 1024);
 		HistoryInfo* pHistoryInfo = new HistoryInfo(pNZBInfo);
 		pHistoryInfo->SetTime(time(NULL));
 		pDownloadQueue->GetHistoryList()->push_front(pHistoryInfo);
@@ -365,7 +361,7 @@ void PrePostProcessor::NZBCompleted(DownloadQueue* pDownloadQueue, NZBInfo* pNZB
 			SaveQueue(pDownloadQueue);
 		}
 
-		info("Collection %s added to history", szNZBNiceName);
+		info("Collection %s added to history", pNZBInfo->GetName());
 	}
 }
 
@@ -388,7 +384,7 @@ void PrePostProcessor::CheckHistory()
 		if (pHistoryInfo->GetTime() < tMinTime)
 		{
 			char szNiceName[1024];
-			pHistoryInfo->GetNiceName(szNiceName, 1024);
+			pHistoryInfo->GetName(szNiceName, 1024);
 			pDownloadQueue->GetHistoryList()->erase(pDownloadQueue->GetHistoryList()->end() - 1 - index);
 			delete pHistoryInfo;
 			info("Collection %s removed from history", szNiceName);
@@ -448,14 +444,14 @@ NZBInfo* PrePostProcessor::MergeGroups(DownloadQueue* pDownloadQueue, NZBInfo* p
 		}
 	}
 
-	// merge(2): check if queue has other nzb-files with the same filename
+	// merge(2): check if queue has other nzb-files with the same name
 	if (iAddedGroupID > 0)
 	{
 		for (FileQueue::iterator it = pDownloadQueue->GetFileQueue()->begin(); it != pDownloadQueue->GetFileQueue()->end(); it++)
 		{
 			FileInfo* pFileInfo = *it;
 			if (pFileInfo->GetNZBInfo() != pNZBInfo &&
-				!strcmp(pFileInfo->GetNZBInfo()->GetFilename(), pNZBInfo->GetFilename()))
+				!strcmp(pFileInfo->GetNZBInfo()->GetName(), pNZBInfo->GetName()))
 			{
 				// file found, do merging
 
@@ -502,9 +498,7 @@ void PrePostProcessor::CheckPostQueue()
 			{
 				if (!CreatePostJobs(pDownloadQueue, pPostInfo->GetNZBInfo(), true, false, true))
 				{
-					char szNZBNiceName[1024];
-					pPostInfo->GetNZBInfo()->GetNiceNZBName(szNZBNiceName, sizeof(szNZBNiceName));
-					error("Could not par-check %s: there are no par-files", szNZBNiceName);
+					error("Could not par-check %s: there are no par-files", pPostInfo->GetNZBInfo()->GetName());
 				}
 			}
 			else if (pPostInfo->GetRequestParCheck() == PostInfo::rpCurrent && !pPostInfo->GetParCheck())
@@ -658,9 +652,7 @@ void PrePostProcessor::JobCompleted(DownloadQueue* pDownloadQueue, PostInfo* pPo
 				FileInfo* pFileInfo = GetQueueGroup(pDownloadQueue, pPostInfo->GetNZBInfo());
 				if (pFileInfo)
 				{
-					char szNZBNiceName[1024];
-					pPostInfo->GetNZBInfo()->GetNiceNZBName(szNZBNiceName, sizeof(szNZBNiceName));
-					info("Cleaning up download queue for %s", szNZBNiceName);
+					info("Cleaning up download queue for %s", pPostInfo->GetNZBInfo()->GetName());
 					pFileInfo->GetNZBInfo()->ClearCompletedFiles();
 					pFileInfo->GetNZBInfo()->SetParCleanup(true);
 					g_pQueueCoordinator->GetQueueEditor()->LockedEditEntry(pDownloadQueue, pFileInfo->GetID(), false, QueueEditor::eaGroupDelete, 0, NULL);
@@ -738,9 +730,6 @@ bool PrePostProcessor::CreatePostJobs(DownloadQueue* pDownloadQueue, NZBInfo* pN
 {
 	debug("Queueing post-process-jobs");
 
-	char szNZBNiceName[1024];
-	pNZBInfo->GetNiceNZBName(szNZBNiceName, 1024);
-
 	PostQueue cPostQueue;
 	bool bJobsAdded = false;
 
@@ -766,10 +755,10 @@ bool PrePostProcessor::CreatePostJobs(DownloadQueue* pDownloadQueue, NZBInfo* pN
 			szInfoName[maxlen] = '\0';
 			
 			char szParInfoName[1024];
-			snprintf(szParInfoName, 1024, "%s%c%s", szNZBNiceName, (int)PATH_SEPARATOR, szInfoName);
+			snprintf(szParInfoName, 1024, "%s%c%s", pNZBInfo->GetName(), (int)PATH_SEPARATOR, szInfoName);
 			szParInfoName[1024-1] = '\0';
 			
-			info("Queueing %s%c%s for par-check", szNZBNiceName, (int)PATH_SEPARATOR, szInfoName);
+			info("Queueing %s%c%s for par-check", pNZBInfo->GetName(), (int)PATH_SEPARATOR, szInfoName);
 			PostInfo* pPostInfo = new PostInfo();
 			pPostInfo->SetNZBInfo(pNZBInfo);
 			pPostInfo->SetParFilename(szFullParFilename);
@@ -791,11 +780,11 @@ bool PrePostProcessor::CreatePostJobs(DownloadQueue* pDownloadQueue, NZBInfo* pN
 
 	if (cPostQueue.empty() && bPostScript && m_bPostScript)
 	{
-		info("Queueing %s for post-process-script", szNZBNiceName);
+		info("Queueing %s for post-process-script", pNZBInfo->GetName());
 		PostInfo* pPostInfo = new PostInfo();
 		pPostInfo->SetNZBInfo(pNZBInfo);
 		pPostInfo->SetParFilename("");
-		pPostInfo->SetInfoName(szNZBNiceName);
+		pPostInfo->SetInfoName(pNZBInfo->GetName());
 		pPostInfo->SetParCheck(false);
 		cPostQueue.push_back(pPostInfo);
 		bJobsAdded = true;
@@ -1137,9 +1126,6 @@ bool PrePostProcessor::RequestMorePars(NZBInfo* pNZBInfo, const char* szParFilen
 
 	if (iBlockFound >= iBlockNeeded)
 	{
-		char szNZBNiceName[1024];
-		pNZBInfo->GetNiceNZBName(szNZBNiceName, 1024);
-
 		// 1. first unpause all files with par-blocks less or equal iBlockNeeded
 		// starting from the file with max block count.
 		// if par-collection was built exponentially and all par-files present,
@@ -1160,7 +1146,7 @@ bool PrePostProcessor::RequestMorePars(NZBInfo* pNZBInfo, const char* szParFilen
 			{
 				if (pBestBlockInfo->m_pFileInfo->GetPaused())
 				{
-					info("Unpausing %s%c%s for par-recovery", szNZBNiceName, (int)PATH_SEPARATOR, pBestBlockInfo->m_pFileInfo->GetFilename());
+					info("Unpausing %s%c%s for par-recovery", pNZBInfo->GetName(), (int)PATH_SEPARATOR, pBestBlockInfo->m_pFileInfo->GetFilename());
 					pBestBlockInfo->m_pFileInfo->SetPaused(false);
 				}
 				iBlockNeeded -= pBestBlockInfo->m_iBlockCount;
@@ -1183,7 +1169,7 @@ bool PrePostProcessor::RequestMorePars(NZBInfo* pNZBInfo, const char* szParFilen
 			BlockInfo* pBlockInfo = blocks.front();
 			if (pBlockInfo->m_pFileInfo->GetPaused())
 			{
-				info("Unpausing %s%c%s for par-recovery", szNZBNiceName, (int)PATH_SEPARATOR, pBlockInfo->m_pFileInfo->GetFilename());
+				info("Unpausing %s%c%s for par-recovery", pNZBInfo->GetName(), (int)PATH_SEPARATOR, pBlockInfo->m_pFileInfo->GetFilename());
 				pBlockInfo->m_pFileInfo->SetPaused(false);
 			}
 			iBlockNeeded -= pBlockInfo->m_iBlockCount;
@@ -1611,7 +1597,7 @@ bool PrePostProcessor::HistoryDelete(IDList* pIDList)
 			if (pHistoryInfo->GetID() == iID)
 			{
 				char szNiceName[1024];
-				pHistoryInfo->GetNiceName(szNiceName, 1024);
+				pHistoryInfo->GetName(szNiceName, 1024);
 				info("Deleting %s from history", szNiceName);
 
 				if (pHistoryInfo->GetKind() == HistoryInfo::hkNZBInfo)
@@ -1674,7 +1660,7 @@ bool PrePostProcessor::HistoryReturn(IDList* pIDList, bool bReprocess)
 			if (pHistoryInfo->GetID() == iID)
 			{
 				char szNiceName[1024];
-				pHistoryInfo->GetNiceName(szNiceName, 1024);
+				pHistoryInfo->GetName(szNiceName, 1024);
 				debug("Returning %s from history back to download queue", szNiceName);
 				bool bUnparked = false;
 

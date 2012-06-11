@@ -791,7 +791,7 @@ void QueueEditor::SetNZBParameter(NZBInfo* pNZBInfo, const char* szParamString)
 	}
 	else
 	{
-		error("Could not set nzb parameter for %s: invalid argument: %s", Util::BaseFileName(pNZBInfo->GetFilename()), szParamString);
+		error("Could not set nzb parameter for %s: invalid argument: %s", pNZBInfo->GetName(), szParamString);
 	}
 
 	free(szStr);

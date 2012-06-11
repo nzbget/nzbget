@@ -27,7 +27,7 @@
 #ifndef MESSAGEBASE_H
 #define MESSAGEBASE_H
 
-static const int32_t NZBMESSAGE_SIGNATURE = 0x6E7A620C; // = "nzbC" (protocol version)
+static const int32_t NZBMESSAGE_SIGNATURE = 0x6E7A620D; // = "nzbD" (protocol version)
 static const int NZBREQUESTFILENAMESIZE = 512;
 static const int NZBREQUESTPASSWORDSIZE = 32;
 
@@ -189,12 +189,12 @@ struct SNZBListResponseNZBEntry
 	int32_t					m_iSizeLo;				// Size of all files in bytes, Low 32-bits of 64-bit value
 	int32_t					m_iSizeHi;				// Size of all files in bytes, High 32-bits of 64-bit value
 	int32_t					m_iFilenameLen;			// Length of Filename-string (m_szFilename), following to this record
-	int32_t					m_iUserNZBNameLen;		// Length of renamed NZBName-string (m_szUserNZBName), following to this record
+	int32_t					m_iNameLen;				// Length of Name-string (m_szName), following to this record
 	int32_t					m_iDestDirLen;			// Length of DestDir-string (m_szDestDir), following to this record
 	int32_t					m_iCategoryLen;			// Length of Category-string (m_szCategory), following to this record
 	int32_t					m_iQueuedFilenameLen;	// Length of queued file name (m_szQueuedFilename), following to this record
 	//char					m_szFilename[m_iFilenameLen];				// variable sized
-	//char					m_szUserNZBName[m_iUserNZBNameLen];			// variable sized
+	//char					m_szName[m_iNameLen];						// variable sized
 	//char					m_szDestDir[m_iDestDirLen];					// variable sized
 	//char					m_szCategory[m_iCategoryLen];				// variable sized
 	//char					m_szQueuedFilename[m_iQueuedFilenameLen];	// variable sized

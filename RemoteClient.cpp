@@ -232,18 +232,18 @@ void RemoteClient::BuildFileList(SNZBListResponse* pListResponse, const char* pT
 			SNZBListResponseNZBEntry* pListAnswer = (SNZBListResponseNZBEntry*) pBufPtr;
 
 			const char* szFileName = pBufPtr + sizeof(SNZBListResponseNZBEntry);
-			const char* szUserNZBName = pBufPtr + sizeof(SNZBListResponseNZBEntry) + ntohl(pListAnswer->m_iFilenameLen);
+			const char* szName = pBufPtr + sizeof(SNZBListResponseNZBEntry) + ntohl(pListAnswer->m_iFilenameLen);
 			const char* szDestDir = pBufPtr + sizeof(SNZBListResponseNZBEntry) + ntohl(pListAnswer->m_iFilenameLen) + 
-				ntohl(pListAnswer->m_iUserNZBNameLen);
+				ntohl(pListAnswer->m_iNameLen);
 			const char* szCategory = pBufPtr + sizeof(SNZBListResponseNZBEntry) + ntohl(pListAnswer->m_iFilenameLen) + 
-				ntohl(pListAnswer->m_iUserNZBNameLen) + ntohl(pListAnswer->m_iDestDirLen);
+				ntohl(pListAnswer->m_iNameLen) + ntohl(pListAnswer->m_iDestDirLen);
 			const char* m_szQueuedFilename = pBufPtr + sizeof(SNZBListResponseNZBEntry) + ntohl(pListAnswer->m_iFilenameLen) + 
-				ntohl(pListAnswer->m_iUserNZBNameLen) + ntohl(pListAnswer->m_iDestDirLen) + ntohl(pListAnswer->m_iCategoryLen);
+				ntohl(pListAnswer->m_iNameLen) + ntohl(pListAnswer->m_iDestDirLen) + ntohl(pListAnswer->m_iCategoryLen);
 			
 			NZBInfo* pNZBInfo = new NZBInfo();
 			pNZBInfo->SetSize(Util::JoinInt64(ntohl(pListAnswer->m_iSizeHi), ntohl(pListAnswer->m_iSizeLo)));
 			pNZBInfo->SetFilename(szFileName);
-			pNZBInfo->SetUserNZBName(szUserNZBName);
+			pNZBInfo->SetName(szName);
 			pNZBInfo->SetDestDir(szDestDir);
 			pNZBInfo->SetCategory(szCategory);
 			pNZBInfo->SetQueuedFilename(m_szQueuedFilename);
@@ -252,7 +252,7 @@ void RemoteClient::BuildFileList(SNZBListResponse* pListResponse, const char* pT
 			pDownloadQueue->GetNZBInfoList()->Add(pNZBInfo);
 
 			pBufPtr += sizeof(SNZBListResponseNZBEntry) + ntohl(pListAnswer->m_iFilenameLen) +
-				ntohl(pListAnswer->m_iUserNZBNameLen) + ntohl(pListAnswer->m_iDestDirLen) + 
+				ntohl(pListAnswer->m_iNameLen) + ntohl(pListAnswer->m_iDestDirLen) + 
 				ntohl(pListAnswer->m_iCategoryLen) + ntohl(pListAnswer->m_iQueuedFilenameLen);
 		}
 
@@ -406,10 +406,7 @@ bool RemoteClient::RequestServerList(bool bFiles, bool bGroups)
 					lRemaining += pFileInfo->GetRemainingSize();
 				}
 
-				char szNZBNiceName[1024];
-				pFileInfo->GetNZBInfo()->GetNiceNZBName(szNZBNiceName, 1024);
-				
-				printf("[%i] %s%s%c%s (%.2f MB%s%s)%s\n", pFileInfo->GetID(), szPriority, szNZBNiceName, 
+				printf("[%i] %s%s%c%s (%.2f MB%s%s)%s\n", pFileInfo->GetID(), szPriority, pFileInfo->GetNZBInfo()->GetName(),
 					(int)PATH_SEPARATOR, pFileInfo->GetFilename(),
 					(float)(Util::Int64ToFloat(pFileInfo->GetSize()) / 1024.0 / 1024.0), 
 					szCompleted, szThreads, szStatus);
@@ -485,9 +482,6 @@ bool RemoteClient::RequestServerList(bool bFiles, bool bGroups)
 					lPaused += pGroupInfo->GetPausedSize();
 				}
 
-				char szNZBNiceName[1024];
-				pGroupInfo->GetNZBInfo()->GetNiceNZBName(szNZBNiceName, 1023);
-
 				char szCategory[1024];
 				szCategory[0] = '\0';
 				if (pGroupInfo->GetNZBInfo()->GetCategory() && strlen(pGroupInfo->GetNZBInfo()->GetCategory()) > 0)
@@ -524,8 +518,9 @@ bool RemoteClient::RequestServerList(bool bFiles, bool bGroups)
 					strncat(szParameters, ")", 1024);
 				}
 
-				printf("[%i-%i] %s%s (%i file%s, %s%s%s)%s%s\n", pGroupInfo->GetFirstID(), pGroupInfo->GetLastID(), szPriority, szNZBNiceName, 
-					pGroupInfo->GetRemainingFileCount(), pGroupInfo->GetRemainingFileCount() > 1 ? "s" : "", szRemaining, 
+				printf("[%i-%i] %s%s (%i file%s, %s%s%s)%s%s\n", pGroupInfo->GetFirstID(), pGroupInfo->GetLastID(), szPriority, 
+					pGroupInfo->GetNZBInfo()->GetName(), pGroupInfo->GetRemainingFileCount(),
+					pGroupInfo->GetRemainingFileCount() > 1 ? "s" : "", szRemaining, 
 					szPaused, szThreads, szCategory, szParameters);
 
 				delete pGroupInfo;
