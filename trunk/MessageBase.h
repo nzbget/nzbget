@@ -27,7 +27,7 @@
 #ifndef MESSAGEBASE_H
 #define MESSAGEBASE_H
 
-static const int32_t NZBMESSAGE_SIGNATURE = 0x6E7A620D; // = "nzbD" (protocol version)
+static const int32_t NZBMESSAGE_SIGNATURE = 0x6E7A620C; // = "nzb-XX" (protocol version)
 static const int NZBREQUESTFILENAMESIZE = 512;
 static const int NZBREQUESTPASSWORDSIZE = 32;
 
@@ -290,7 +290,7 @@ struct SNZBSetDownloadRateResponse
 	//char					m_szText[m_iTrailingDataLength];	// variable sized
 };
 
-// An edit queue request
+// edit queue request
 struct SNZBEditQueueRequest
 {
 	SNZBRequestBase			m_MessageBase;			// Must be the first in the struct
@@ -298,11 +298,14 @@ struct SNZBEditQueueRequest
 	int32_t					m_iOffset;				// Offset to move (for m_iAction = 0)
 	int32_t					m_bSmartOrder;			// For Move-Actions: 0 - execute action for each ID in order they are placed in array;
 													// 1 - smart execute to ensure that the relative order of all affected IDs are not changed.
-	int32_t					m_iNrTrailingEntries;	// Number of ID-entries, following to this structure
-	int32_t					m_iTextLen;				// Length of Text-string (m_szText), following to this record
-	int32_t					m_iTrailingDataLength;	// Length of Text-string and all ID-entries, following to this structure
-	//char					m_szText[m_iTextLen];	// variable sized
-	//int32_t				m_iIDs[m_iNrTrailingEntries];	// variable sized array of IDs. For File-Actions - ID of file, for Group-Actions - ID of any file belonging to group
+	int32_t					m_iNrTrailingIDEntries;		// Number of ID-entries, following to this structure
+	int32_t					m_iNrTrailingNameEntries;	// Number of Name-entries, following to this structure
+	int32_t					m_iTrailingNameEntriesLen;	// Length of all Name-entries, following to this structure
+	int32_t					m_iTextLen;					// Length of Text-string (m_szText), following to this record
+	int32_t					m_iTrailingDataLength;		// Length of Text-string and all ID-entries, following to this structure
+	//char					m_szText[m_iTextLen];		// variable sized
+	//int32_t				m_iIDs[m_iNrTrailingIDEntries];			// variable sized array of IDs. For File-Actions - ID of file, for Group-Actions - ID of any file belonging to group
+	//char*					m_szNames[m_iNrTrailingNameEntries];	// variable sized array of strings. For File-Actions - name of file incl. nzb-name as path, for Group-Actions - name of group
 };
 
 // An edit queue response

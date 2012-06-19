@@ -419,6 +419,8 @@ typedef std::deque<PostInfo*> PostQueue;
 
 typedef std::vector<int> IDList;
 
+typedef std::vector<char*> NameList;
+
 class UrlInfo
 {
 public:

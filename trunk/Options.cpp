@@ -244,7 +244,7 @@ Options::Options(int argc, char* argv[])
 	m_pEditQueueIDList		= NULL;
 	m_iEditQueueIDCount		= 0;
 	m_iEditQueueOffset		= 0;
-	m_szEditQueueText			= NULL;
+	m_szEditQueueText		= NULL;
 	m_szArgFilename			= NULL;
 	m_szLastArg				= NULL;
 	m_szCategory			= NULL;
@@ -312,6 +312,7 @@ Options::Options(int argc, char* argv[])
 	m_iParTimeLimit			= 0;
 	m_iKeepHistory			= 0;
 	m_bAccurateRate			= false;
+	m_bEditQueueByName		= false;
 
 	// Option "ConfigFile" will be initialized later, but we want
 	// to see it at the top of option list, so we add it first
@@ -456,6 +457,12 @@ Options::~Options()
 		delete *it;
 	}
 	m_OptEntries.clear();
+
+	for (NameList::iterator it = m_EditQueueNameList.begin(); it != m_EditQueueNameList.end(); it++)
+	{
+		free(*it);
+	}
+	m_EditQueueNameList.clear();
 }
 
 void Options::Dump()
@@ -937,10 +944,12 @@ void Options::InitCommandLine(int argc, char* argv[])
 			case 'E':
 			{
 				m_eClientOperation = opClientRequestEditQueue;
-				bool bGroup = !strcasecmp(optarg, "G");
+				bool bGroup = !strcasecmp(optarg, "G") || !strcasecmp(optarg, "GN");
+				bool bFile = !strcasecmp(optarg, "F") || !strcasecmp(optarg, "FN");
+				m_bEditQueueByName = !strcasecmp(optarg, "GN") || !strcasecmp(optarg, "FN");
 				bool bPost = !strcasecmp(optarg, "O");
 				bool bHistory = !strcasecmp(optarg, "H");
-				if (bGroup || bPost || bHistory)
+				if (bGroup || bFile || bPost || bHistory)
 				{
 					optind++;
 					if (optind > argc)
@@ -1214,8 +1223,11 @@ void Options::PrintUsage(char* com)
 		"  -G, --log <lines>         Request last <lines> lines from server's screen-log\n"
 		"  -W, --write <D|I|W|E|G> \"Text\" Send text to server's log\n"
 		"  -S, --scan                Scan incoming nzb-directory on server\n"
-		"  -E, --edit [G|O|H] <action> <IDs> Edit items on server\n"
-		"              G             Affect all files in the group (same nzb-file)\n"
+		"  -E, --edit [F|FN|G|GN|O|H] <action> <IDs/Names> Edit items on server\n"
+		"              F             Edit individual files (default)\n"
+		"              FN            Like \"F\" but uses names (as \"group%cfile\") instead of IDs\n"
+		"              G             Edit all files in the group (same nzb-file)\n"
+		"              GN            Like \"G\" but uses group names instead of IDs\n"
 		"              O             Edit post-processor-queue\n"
 		"              H             Edit history\n"
 		"    <action> is one of:\n"
@@ -1236,8 +1248,11 @@ void Options::PrintUsage(char* com)
 		"       O <name>=<value>     Set post-process parameter (for groups)\n"
 		"       I <priority>         Set priority (signed integer) for file(s)/group(s)\n"
 		"    <IDs>                   Comma-separated list of file-ids or ranges\n"
-		"                            of file-ids, e. g.: 1-5,3,10-22\n",
-		Util::BaseFileName(com));
+		"                            of file-ids, e. g.: 1-5,3,10-22\n"
+		"    <Names>                 List of names (only with options \"FN\" and \"GN\"), e. g.:\n"
+		"                            \"my nzb download%cmyfile.nfo\" \"another nzb\"\n",
+		Util::BaseFileName(com),
+		PATH_SEPARATOR, PATH_SEPARATOR);
 }
 
 void Options::InitFileArg(int argc, char* argv[])
@@ -1263,7 +1278,14 @@ void Options::InitFileArg(int argc, char* argv[])
 	}
 	else if (m_eClientOperation == opClientRequestEditQueue)
 	{
-		ParseFileIDList(argc, argv, optind);
+		if (m_bEditQueueByName)
+		{
+			ParseFileNameList(argc, argv, optind);
+		}
+		else
+		{
+			ParseFileIDList(argc, argv, optind);
+		}
 	}
 	else
 	{
@@ -1932,6 +1954,14 @@ void Options::ParseFileIDList(int argc, char* argv[], int optind)
 	for (int i = 0; i < m_iEditQueueIDCount; i++)
 	{
 		m_pEditQueueIDList[i] = IDs[i];
+	}
+}
+
+void Options::ParseFileNameList(int argc, char* argv[], int optind)
+{
+	while (optind < argc)
+	{
+		m_EditQueueNameList.push_back(strdup(argv[optind++]));
 	}
 }
 

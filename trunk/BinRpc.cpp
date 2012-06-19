@@ -687,28 +687,22 @@ void EditQueueBinCommand::Execute()
 		return;
 	}
 
-	int iNrEntries = ntohl(EditQueueRequest.m_iNrTrailingEntries);
+	int iNrIDEntries = ntohl(EditQueueRequest.m_iNrTrailingIDEntries);
+	int iNrNameEntries = ntohl(EditQueueRequest.m_iNrTrailingNameEntries);
+	int iNameEntriesLen = ntohl(EditQueueRequest.m_iTrailingNameEntriesLen);
 	int iAction = ntohl(EditQueueRequest.m_iAction);
 	int iOffset = ntohl(EditQueueRequest.m_iOffset);
 	int iTextLen = ntohl(EditQueueRequest.m_iTextLen);
 	bool bSmartOrder = ntohl(EditQueueRequest.m_bSmartOrder);
 	unsigned int iBufLength = ntohl(EditQueueRequest.m_iTrailingDataLength);
 
-	if (iNrEntries * sizeof(int32_t) + iTextLen != iBufLength)
+	if (iNrIDEntries * sizeof(int32_t) + iTextLen + iNameEntriesLen != iBufLength)
 	{
 		error("Invalid struct size");
 		return;
 	}
 
-	if (iNrEntries <= 0)
-	{
-		SendBoolResponse(false, "Edit-Command failed: no IDs specified");
-		return;
-	}
-
 	char* pBuf = (char*)malloc(iBufLength);
-	char* szText = NULL;
-	int32_t* pIDs = NULL;
 
 	// Read from the socket until nothing remains
 	char* pBufPtr = pBuf;
@@ -728,26 +722,51 @@ void EditQueueBinCommand::Execute()
 	}
 	bool bOK = NeedBytes == 0;
 
+	if (iNrIDEntries <= 0 && iNrNameEntries <= 0)
+	{
+		SendBoolResponse(false, "Edit-Command failed: no IDs/Names specified");
+		return;
+	}
+
 	if (bOK)
 	{
-		szText = iTextLen > 0 ? pBuf : NULL;
-		pIDs = (int32_t*)(pBuf + iTextLen);
-	}
+		char* szText = iTextLen > 0 ? pBuf : NULL;
+		int32_t* pIDs = (int32_t*)(pBuf + iTextLen);
+		char* pNames = (pBuf + iTextLen + iNrIDEntries * sizeof(int32_t));
 
-	IDList cIDList;
-	cIDList.reserve(iNrEntries);
-	for (int i = 0; i < iNrEntries; i++)
-	{
-		cIDList.push_back(ntohl(pIDs[i]));
-	}
+		IDList cIDList;
+		NameList cNameList;
 
-	if (iAction < eRemoteEditActionPostMoveOffset)
-	{
-		bOK = g_pQueueCoordinator->GetQueueEditor()->EditList(&cIDList, bSmartOrder, (QueueEditor::EEditAction)iAction, iOffset, szText);
-	}
-	else
-	{
-		bOK = g_pPrePostProcessor->QueueEditList(&cIDList, (PrePostProcessor::EEditAction)iAction, iOffset);
+		if (iNrIDEntries > 0)
+		{
+			cIDList.reserve(iNrIDEntries);
+			for (int i = 0; i < iNrIDEntries; i++)
+			{
+				cIDList.push_back(ntohl(pIDs[i]));
+			}
+		}
+
+		if (iNrNameEntries > 0)
+		{
+			cNameList.reserve(iNrNameEntries);
+			for (int i = 0; i < iNrNameEntries; i++)
+			{
+				cNameList.push_back(pNames);
+				pNames += strlen(pNames) + 1;
+			}
+		}
+
+		if (iAction < eRemoteEditActionPostMoveOffset)
+		{
+			bOK = g_pQueueCoordinator->GetQueueEditor()->EditList(
+				iNrIDEntries > 0 ? &cIDList : NULL,
+				iNrNameEntries > 0 ? &cNameList : NULL,
+				bSmartOrder, (QueueEditor::EEditAction)iAction, iOffset, szText);
+		}
+		else
+		{
+			bOK = g_pPrePostProcessor->QueueEditList(&cIDList, (PrePostProcessor::EEditAction)iAction, iOffset);
+		}
 	}
 
 	free(pBuf);
