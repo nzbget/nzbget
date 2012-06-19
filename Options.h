@@ -109,6 +109,7 @@ public:
 	};
 	
 	typedef std::vector<OptEntry*>  OptEntries;
+	typedef std::vector<char*>  NameList;
 
 private:
 	OptEntries			m_OptEntries;
@@ -194,6 +195,8 @@ private:
 	int					m_iEditQueueOffset;
 	int*				m_pEditQueueIDList;
 	int					m_iEditQueueIDCount;
+	bool				m_bEditQueueByName;
+	NameList			m_EditQueueNameList;
 	char*				m_szEditQueueText;
 	char*				m_szArgFilename;
 	char*				m_szCategory;
@@ -232,6 +235,7 @@ private:
 	void				LoadConfig(const char* configfile);
 	void				CheckDir(char** dir, const char* szOptionName, bool bAllowEmpty);
 	void				ParseFileIDList(int argc, char* argv[], int optind);
+	void				ParseFileNameList(int argc, char* argv[], int optind);
 	bool				ParseTime(const char** pTime, int* pHours, int* pMinutes);
 	bool				ParseWeekDays(const char* szWeekDays, int* pWeekDaysBits);
 
@@ -319,6 +323,8 @@ public:
 	int					GetEditQueueOffset() { return m_iEditQueueOffset; }
 	int*				GetEditQueueIDList() { return m_pEditQueueIDList; }
 	int					GetEditQueueIDCount() { return m_iEditQueueIDCount; }
+	bool				GetEditQueueByName() { return m_bEditQueueByName; }
+	NameList*			GetEditQueueNameList() { return &m_EditQueueNameList; }
 	const char*			GetEditQueueText() { return m_szEditQueueText; }
 	const char*			GetArgFilename() { return m_szArgFilename; }
 	const char*			GetCategory() { return m_szCategory; }

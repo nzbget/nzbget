@@ -159,6 +159,7 @@ bool RemoteClient::ReceiveBoolResponse()
 		{
 			printf("Invalid response received: either not nzbget-server or wrong server version\n");
 		}
+		free(buf);
 		return false;
 	}
 
@@ -793,9 +794,10 @@ bool RemoteClient::RequestServerDumpDebug()
 	return OK;
 }
 
-bool RemoteClient::RequestServerEditQueue(eRemoteEditAction iAction, int iOffset, const char* szText, int* pIDList, int iIDCount, bool bSmartOrder)
+bool RemoteClient::RequestServerEditQueue(eRemoteEditAction iAction, int iOffset, const char* szText, 
+	int* pIDList, int iIDCount, NameList* pNameList, bool bSmartOrder)
 {
-	if (iIDCount <= 0 || pIDList == NULL)
+	if ((iIDCount <= 0 || pIDList == NULL) && (pNameList == NULL || pNameList->size() == 0))
 	{
 		printf("File(s) not specified\n");
 		return false;
@@ -803,10 +805,27 @@ bool RemoteClient::RequestServerEditQueue(eRemoteEditAction iAction, int iOffset
 
 	if (!InitConnection()) return false;
 
+	int iIDLength = sizeof(int32_t) * iIDCount;
+
+	int iNameCount = 0;
+	int iNameLength = 0;
+	if (pNameList && pNameList->size() > 0)
+	{
+		for (NameList::iterator it = pNameList->begin(); it != pNameList->end(); it++)
+		{
+			const char *szName = *it;
+			iNameLength += strlen(szName) + 1;
+			iNameCount++;
+		}
+		// align size to 4-bytes, needed by ARM-processor (and may be others)
+		iNameLength += iNameLength % 4 > 0 ? 4 - iNameLength % 4 : 0;
+	}
+
 	int iTextLen = szText ? strlen(szText) + 1 : 0;
 	// align size to 4-bytes, needed by ARM-processor (and may be others)
 	iTextLen += iTextLen % 4 > 0 ? 4 - iTextLen % 4 : 0;
-	int iLength = sizeof(int32_t) * iIDCount + iTextLen;
+
+	int iLength = iTextLen + iIDLength + iNameLength;
 
 	SNZBEditQueueRequest EditQueueRequest;
 	InitMessageBase(&EditQueueRequest.m_MessageBase, eRemoteRequestEditQueue, sizeof(EditQueueRequest));
@@ -814,7 +833,9 @@ bool RemoteClient::RequestServerEditQueue(eRemoteEditAction iAction, int iOffset
 	EditQueueRequest.m_iOffset = htonl((int)iOffset);
 	EditQueueRequest.m_bSmartOrder = htonl(bSmartOrder);
 	EditQueueRequest.m_iTextLen = htonl(iTextLen);
-	EditQueueRequest.m_iNrTrailingEntries = htonl(iIDCount);
+	EditQueueRequest.m_iNrTrailingIDEntries = htonl(iIDCount);
+	EditQueueRequest.m_iNrTrailingNameEntries = htonl(iNameCount);
+	EditQueueRequest.m_iTrailingNameEntriesLen = htonl(iNameLength);
 	EditQueueRequest.m_iTrailingDataLength = htonl(iLength);
 
 	char* pTrailingData = (char*)malloc(iLength);
@@ -830,7 +851,19 @@ bool RemoteClient::RequestServerEditQueue(eRemoteEditAction iAction, int iOffset
 	{
 		pIDs[i] = htonl(pIDList[i]);
 	}
-			
+	
+	if (iNameCount > 0)
+	{
+		char *pNames = pTrailingData + iTextLen + iIDLength;
+		for (NameList::iterator it = pNameList->begin(); it != pNameList->end(); it++)
+		{
+			const char *szName = *it;
+			int iLen = strlen(szName);
+			strncpy(pNames, szName, iLen + 1);
+			pNames += iLen + 1;
+		}
+	}
+
 	bool OK = false;
 	if (m_pConnection->Send((char*)(&EditQueueRequest), sizeof(EditQueueRequest)) < 0)
 	{

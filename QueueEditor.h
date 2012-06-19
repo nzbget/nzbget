@@ -77,6 +77,7 @@ private:
 	int						FindFileInfoEntry(DownloadQueue* pDownloadQueue, FileInfo* pFileInfo);
 	bool					InternEditList(DownloadQueue* pDownloadQueue, IDList* pIDList, bool bSmartOrder, EEditAction eAction, int iOffset, const char* szText);
 	void					PrepareList(DownloadQueue* pDownloadQueue, ItemList* pItemList, IDList* pIDList, bool bSmartOrder, EEditAction eAction, int iOffset);
+	bool					BuildIDListFromNameList(DownloadQueue* pDownloadQueue, IDList* pIDList, NameList* pNameList, EEditAction eAction);
 	bool					EditGroup(DownloadQueue* pDownloadQueue, FileInfo* pFileInfo, EEditAction eAction, int iOffset, const char* szText);
 	void					BuildGroupList(DownloadQueue* pDownloadQueue, FileList* pGroupList);
 	void					AlignAffectedGroups(DownloadQueue* pDownloadQueue, IDList* pIDList, bool bSmartOrder, int iOffset);
@@ -100,7 +101,7 @@ public:
 							~QueueEditor();
 
 	bool					EditEntry(int ID, bool bSmartOrder, EEditAction eAction, int iOffset, const char* szText);
-	bool					EditList(IDList* pIDList, bool bSmartOrder, EEditAction eAction, int iOffset, const char* szText);
+	bool					EditList(IDList* pIDList, NameList* pNameList, bool bSmartOrder, EEditAction eAction, int iOffset, const char* szText);
 
 	bool					LockedEditEntry(DownloadQueue* pDownloadQueue, int ID, bool bSmartOrder, EEditAction eAction, int iOffset, const char* szText);
 	bool					LockedEditList(DownloadQueue* pDownloadQueue, IDList* pIDList, bool bSmartOrder, EEditAction eAction, int iOffset, const char* szText);
