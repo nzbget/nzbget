@@ -312,7 +312,7 @@ Options::Options(int argc, char* argv[])
 	m_iParTimeLimit			= 0;
 	m_iKeepHistory			= 0;
 	m_bAccurateRate			= false;
-	m_bEditQueueByName		= false;
+	m_EMatchMode	= mmID;
 
 	// Option "ConfigFile" will be initialized later, but we want
 	// to see it at the top of option list, so we add it first
@@ -850,11 +850,11 @@ void Options::InitCommandLine(int argc, char* argv[])
 					m_eClientOperation = opClientRequestListFiles;
 					optind--;
 				}
-				else if (!strcmp(optarg, "F"))
+				else if (!strcmp(optarg, "F") || !strcmp(optarg, "FR"))
 				{
 					m_eClientOperation = opClientRequestListFiles;
 				}
-				else if (!strcmp(optarg, "G"))
+				else if (!strcmp(optarg, "G") || !strcmp(optarg, "GR"))
 				{
 					m_eClientOperation = opClientRequestListGroups;
 				}
@@ -877,6 +877,18 @@ void Options::InitCommandLine(int argc, char* argv[])
 				else
 				{
 					abort("FATAL ERROR: Could not parse value of option 'L'\n");
+				}
+
+				if (!strcmp(optarg, "FR") || !strcmp(optarg, "GR"))
+				{
+					m_EMatchMode = mmRegEx;
+
+					optind++;
+					if (optind > argc)
+					{
+						abort("FATAL ERROR: Could not parse value of option 'L'\n");
+					}
+					m_szEditQueueText = strdup(argv[optind-1]);
 				}
 				break;
 			case 'P':
@@ -944,9 +956,20 @@ void Options::InitCommandLine(int argc, char* argv[])
 			case 'E':
 			{
 				m_eClientOperation = opClientRequestEditQueue;
-				bool bGroup = !strcasecmp(optarg, "G") || !strcasecmp(optarg, "GN");
-				bool bFile = !strcasecmp(optarg, "F") || !strcasecmp(optarg, "FN");
-				m_bEditQueueByName = !strcasecmp(optarg, "GN") || !strcasecmp(optarg, "FN");
+				bool bGroup = !strcasecmp(optarg, "G") || !strcasecmp(optarg, "GN") || !strcasecmp(optarg, "GR");
+				bool bFile = !strcasecmp(optarg, "F") || !strcasecmp(optarg, "FN") || !strcasecmp(optarg, "FR");
+				if (!strcasecmp(optarg, "GN") || !strcasecmp(optarg, "FN"))
+				{
+					m_EMatchMode = mmName;
+				}
+				else if (!strcasecmp(optarg, "GR") || !strcasecmp(optarg, "FR"))
+				{
+					m_EMatchMode = mmRegEx;
+				}
+				else 
+				{
+					m_EMatchMode = mmID;
+				};
 				bool bPost = !strcasecmp(optarg, "O");
 				bool bHistory = !strcasecmp(optarg, "H");
 				if (bGroup || bFile || bPost || bHistory)
@@ -1202,32 +1225,40 @@ void Options::PrintUsage(char* com)
 		"  -K, --category <name>     Assign category to nzb-file\n"
 		"                            (for using with switch --append)\n"
 		"  -C, --connect             Attach client to server\n"
-		"  -L, --list    [F|G|O|U|H|S] Request list of downloads from server\n"
-		"                 F          list individual files and server status (default)\n"
-		"                 G          list groups (nzb-files) and server status\n"
-		"                 O          list post-processor-queue\n"
-		"                 U          list url-queue\n"
-		"                 H          list history\n"
-		"                 S          print only server status\n"
-		"  -P, --pause   [D|D2|O|S]  Pause server:\n"
-		"                 D          pause download queue (default)\n"
-		"                 D2         pause download queue via second pause-register\n"
-		"                 O          pause post-processor queue\n"
-		"                 S          pause scan of incoming nzb-directory\n"
-		"  -U, --unpause [D|D2|O|S]  Unpause server:\n"
-		"                 D          unpause download queue (default)\n"
-		"                 D2         unpause download queue via second pause-register\n"
-		"                 O          unpause post-processor queue\n"
-		"                 S          unpause scan of incoming nzb-directory\n"
+		"  -L, --list    [F|FR|G|GR|O|U|H|S] [RegEx] Request list of items from server\n"
+		"                 F          List individual files and server status (default)\n"
+		"                 FR         Like \"F\" but apply regular expression filter\n"
+		"                 G          List groups (nzb-files) and server status\n"
+		"                 GR         Like \"G\" but apply regular expression filter\n"
+		"                 O          List post-processor-queue\n"
+		"                 U          List url-queue\n"
+		"                 H          List history\n"
+		"                 S          Print only server status\n"
+		"    <RegEx>                 Regular expression (only with options \"FR\", \"GR\")\n"
+		"                            using POSIX Extended Regular Expression Syntax\n"
+		"  -P, --pause   [D|D2|O|S]  Pause server\n"
+		"                 D          Pause download queue (default)\n"
+		"                 D2         Pause download queue via second pause-register\n"
+		"                 O          Pause post-processor queue\n"
+		"                 S          Pause scan of incoming nzb-directory\n"
+		"  -U, --unpause [D|D2|O|S]  Unpause server\n"
+		"                 D          Unpause download queue (default)\n"
+		"                 D2         Unpause download queue via second pause-register\n"
+		"                 O          Unpause post-processor queue\n"
+		"                 S          Unpause scan of incoming nzb-directory\n"
 		"  -R, --rate <speed>        Set download rate on server, in KB/s\n"
 		"  -G, --log <lines>         Request last <lines> lines from server's screen-log\n"
 		"  -W, --write <D|I|W|E|G> \"Text\" Send text to server's log\n"
 		"  -S, --scan                Scan incoming nzb-directory on server\n"
-		"  -E, --edit [F|FN|G|GN|O|H] <action> <IDs/Names> Edit items on server\n"
+		"  -E, --edit [F|FN|FR|G|GN|GR|O|H] <action> <IDs/Names/RegExs> Edit items\n"
+		"                            on server\n"
 		"              F             Edit individual files (default)\n"
-		"              FN            Like \"F\" but uses names (as \"group%cfile\") instead of IDs\n"
+		"              FN            Like \"F\" but uses names (as \"group/file\")\n"
+		"                            instead of IDs\n"
+		"              FR            Like \"FN\" but with regular expressions\n"
 		"              G             Edit all files in the group (same nzb-file)\n"
 		"              GN            Like \"G\" but uses group names instead of IDs\n"
+		"              GR            Like \"GN\" but with regular expressions\n"
 		"              O             Edit post-processor-queue\n"
 		"              H             Edit history\n"
 		"    <action> is one of:\n"
@@ -1249,8 +1280,10 @@ void Options::PrintUsage(char* com)
 		"       I <priority>         Set priority (signed integer) for file(s)/group(s)\n"
 		"    <IDs>                   Comma-separated list of file-ids or ranges\n"
 		"                            of file-ids, e. g.: 1-5,3,10-22\n"
-		"    <Names>                 List of names (only with options \"FN\" and \"GN\"), e. g.:\n"
-		"                            \"my nzb download%cmyfile.nfo\" \"another nzb\"\n",
+		"    <Names>                 List of names (with options \"FN\" and \"GN\"),\n"
+		"                            e. g.: \"my nzb download%cmyfile.nfo\" \"another nzb\"\n"
+		"    <RegExs>                List of regular expressions (options \"FR\", \"GR\")\n"
+		"                            using POSIX Extended Regular Expression Syntax",
 		Util::BaseFileName(com),
 		PATH_SEPARATOR, PATH_SEPARATOR);
 }
@@ -1278,13 +1311,13 @@ void Options::InitFileArg(int argc, char* argv[])
 	}
 	else if (m_eClientOperation == opClientRequestEditQueue)
 	{
-		if (m_bEditQueueByName)
+		if (m_EMatchMode == mmID)
 		{
-			ParseFileNameList(argc, argv, optind);
+			ParseFileIDList(argc, argv, optind);
 		}
 		else
 		{
-			ParseFileIDList(argc, argv, optind);
+			ParseFileNameList(argc, argv, optind);
 		}
 	}
 	else

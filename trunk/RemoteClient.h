@@ -49,12 +49,12 @@ public:
 					~RemoteClient();
 	void			SetVerbose(bool bVerbose) { m_bVerbose = bVerbose; };
 	bool 			RequestServerDownload(const char* szFilename, const char* szCategory, bool bAddFirst);
-	bool			RequestServerList(bool bFiles, bool bGroups);
+	bool			RequestServerList(bool bFiles, bool bGroups, const char* szPattern);
 	bool			RequestServerPauseUnpause(bool bPause, eRemotePauseUnpauseAction iAction);
 	bool			RequestServerSetDownloadRate(float fRate);
 	bool			RequestServerDumpDebug();
 	bool 			RequestServerEditQueue(eRemoteEditAction iAction, int iOffset, const char* szText, 
-		int* pIDList, int iIDCount, NameList* pNameList, bool bSmartOrder);
+		int* pIDList, int iIDCount, NameList* pNameList, eRemoteMatchMode iMatchMode, bool bSmartOrder);
 	bool			RequestServerLog(int iLines);
 	bool			RequestServerShutdown();
 	bool			RequestServerVersion();

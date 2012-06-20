@@ -208,4 +208,17 @@ public:
 	bool				GetTLS() { return m_bTLS; }
 };
 
+class RegEx
+{
+private:
+	void*				m_pContext;
+	bool				m_bValid;
+
+public:
+						RegEx(const char *szPattern);
+						~RegEx();
+	bool				IsValid() { return m_bValid; }
+	bool				Match(const char *szStr);
+};
+
 #endif

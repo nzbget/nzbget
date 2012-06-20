@@ -67,6 +67,9 @@
 /* Define to 1 if libpar2 supports cancelling (needs a special patch) */
 #undef HAVE_PAR2_CANCEL
 
+/* Define to 1 if you have the <regex.h> header file. */
+#undef HAVE_REGEX_H
+
 /* Define to 1 if spinlocks are supported */
 #undef HAVE_SPINLOCK
 

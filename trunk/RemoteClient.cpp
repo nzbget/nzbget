@@ -305,8 +305,16 @@ void RemoteClient::BuildFileList(SNZBListResponse* pListResponse, const char* pT
 	pDownloadQueue->GetNZBInfoList()->ReleaseAll();
 }
 
-bool RemoteClient::RequestServerList(bool bFiles, bool bGroups)
+bool RemoteClient::RequestServerList(bool bFiles, bool bGroups, const char* szPattern)
 {
+#ifndef HAVE_REGEX_H
+	if (szPattern)
+	{
+		printf("Command failed: the program (client) was compiled without RegEx-support");
+		return false;
+	}
+#endif
+
 	if (!InitConnection()) return false;
 
 	SNZBListRequest ListRequest;
@@ -353,6 +361,19 @@ bool RemoteClient::RequestServerList(bool bFiles, bool bGroups)
 
 	m_pConnection->Disconnect();
 
+	RegEx *pRegEx = NULL;
+	if (szPattern)
+	{
+		pRegEx = new RegEx(szPattern);
+		if (!pRegEx->IsValid())
+		{
+			printf("Error in regular expression");
+			delete pRegEx;
+			free(pBuf);
+			return false;
+		}
+	}
+
 	if (bFiles)
 	{
 		if (ntohl(ListResponse.m_iTrailingDataLength) == 0)
@@ -369,6 +390,7 @@ bool RemoteClient::RequestServerList(bool bFiles, bool bGroups)
 
 			long long lRemaining = 0;
 			long long lPaused = 0;
+			int iMatches = 0;
 
 			for (FileQueue::iterator it = cRemoteQueue.GetFileQueue()->begin(); it != cRemoteQueue.GetFileQueue()->end(); it++)
 			{
@@ -407,16 +429,37 @@ bool RemoteClient::RequestServerList(bool bFiles, bool bGroups)
 					lRemaining += pFileInfo->GetRemainingSize();
 				}
 
-				printf("[%i] %s%s%c%s (%.2f MB%s%s)%s\n", pFileInfo->GetID(), szPriority, pFileInfo->GetNZBInfo()->GetName(),
-					(int)PATH_SEPARATOR, pFileInfo->GetFilename(),
-					(float)(Util::Int64ToFloat(pFileInfo->GetSize()) / 1024.0 / 1024.0), 
-					szCompleted, szThreads, szStatus);
+				bool bRegMatch = false;
+				if (pRegEx)
+				{
+					char szFilename[MAX_PATH];
+					snprintf(szFilename, sizeof(szFilename) - 1, "%s/%s", pFileInfo->GetNZBInfo()->GetName(), Util::BaseFileName(pFileInfo->GetFilename()));
+					bRegMatch = pRegEx->Match(szFilename);
+				}
+					
+				if (!pRegEx || bRegMatch)
+				{
+					printf("[%i] %s%s/%s (%.2f MB%s%s)%s\n", pFileInfo->GetID(), szPriority, pFileInfo->GetNZBInfo()->GetName(),
+						pFileInfo->GetFilename(),
+						(float)(Util::Int64ToFloat(pFileInfo->GetSize()) / 1024.0 / 1024.0), 
+						szCompleted, szThreads, szStatus);
+					iMatches++;
+				}
 
 				delete pFileInfo;
 			}
 
+			if (iMatches == 0)
+			{
+				printf("No matches founds\n");
+			}
+
 			printf("-----------------------------------\n");
 			printf("Files: %i\n", cRemoteQueue.GetFileQueue()->size());
+			if (pRegEx)
+			{
+				printf("Matches: %i\n", iMatches);
+			}
 			if (lPaused > 0)
 			{
 				printf("Remaining size: %.2f MB (+%.2f MB paused)\n", (float)(Util::Int64ToFloat(lRemaining) / 1024.0 / 1024.0), 
@@ -448,6 +491,7 @@ bool RemoteClient::RequestServerList(bool bFiles, bool bGroups)
 
 			long long lRemaining = 0;
 			long long lPaused = 0;
+			int iMatches = 0;
 
 			for (GroupQueue::iterator it = cGroupQueue.begin(); it != cGroupQueue.end(); it++)
 			{
@@ -519,10 +563,14 @@ bool RemoteClient::RequestServerList(bool bFiles, bool bGroups)
 					strncat(szParameters, ")", 1024);
 				}
 
-				printf("[%i-%i] %s%s (%i file%s, %s%s%s)%s%s\n", pGroupInfo->GetFirstID(), pGroupInfo->GetLastID(), szPriority, 
-					pGroupInfo->GetNZBInfo()->GetName(), pGroupInfo->GetRemainingFileCount(),
-					pGroupInfo->GetRemainingFileCount() > 1 ? "s" : "", szRemaining, 
-					szPaused, szThreads, szCategory, szParameters);
+				if (!pRegEx || pRegEx->Match(pGroupInfo->GetNZBInfo()->GetName()))
+				{
+					printf("[%i-%i] %s%s (%i file%s, %s%s%s)%s%s\n", pGroupInfo->GetFirstID(), pGroupInfo->GetLastID(), szPriority, 
+						pGroupInfo->GetNZBInfo()->GetName(), pGroupInfo->GetRemainingFileCount(),
+						pGroupInfo->GetRemainingFileCount() > 1 ? "s" : "", szRemaining, 
+						szPaused, szThreads, szCategory, szParameters);
+					iMatches++;
+				}
 
 				delete pGroupInfo;
 			}
@@ -532,8 +580,17 @@ bool RemoteClient::RequestServerList(bool bFiles, bool bGroups)
 				delete *it;
 			}
 
+			if (iMatches == 0)
+			{
+				printf("No matches founds\n");
+			}
+
 			printf("-----------------------------------\n");
 			printf("Groups: %i\n", cGroupQueue.size());
+			if (pRegEx)
+			{
+				printf("Matches: %i\n", iMatches);
+			}
 			printf("Files: %i\n", cRemoteQueue.GetFileQueue()->size());
 			if (lPaused > 0)
 			{
@@ -548,6 +605,11 @@ bool RemoteClient::RequestServerList(bool bFiles, bool bGroups)
 	}
 
 	free(pBuf);
+
+	if (pRegEx)
+	{
+		delete pRegEx;
+	}
 
 	long long lRemaining = Util::JoinInt64(ntohl(ListResponse.m_iRemainingSizeHi), ntohl(ListResponse.m_iRemainingSizeLo));
 
@@ -795,7 +857,7 @@ bool RemoteClient::RequestServerDumpDebug()
 }
 
 bool RemoteClient::RequestServerEditQueue(eRemoteEditAction iAction, int iOffset, const char* szText, 
-	int* pIDList, int iIDCount, NameList* pNameList, bool bSmartOrder)
+	int* pIDList, int iIDCount, NameList* pNameList, eRemoteMatchMode iMatchMode, bool bSmartOrder)
 {
 	if ((iIDCount <= 0 || pIDList == NULL) && (pNameList == NULL || pNameList->size() == 0))
 	{
@@ -830,6 +892,7 @@ bool RemoteClient::RequestServerEditQueue(eRemoteEditAction iAction, int iOffset
 	SNZBEditQueueRequest EditQueueRequest;
 	InitMessageBase(&EditQueueRequest.m_MessageBase, eRemoteRequestEditQueue, sizeof(EditQueueRequest));
 	EditQueueRequest.m_iAction = htonl(iAction);
+	EditQueueRequest.m_iMatchMode = htonl(iMatchMode);
 	EditQueueRequest.m_iOffset = htonl((int)iOffset);
 	EditQueueRequest.m_bSmartOrder = htonl(bSmartOrder);
 	EditQueueRequest.m_iTextLen = htonl(iTextLen);
