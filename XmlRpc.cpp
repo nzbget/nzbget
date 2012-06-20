@@ -145,7 +145,7 @@ void XmlRpcProcessor::Execute()
 				return;
 			}
 			if (char* pe = strrchr(szAuthInfo64, '\r')) *pe = '\0';
-			szAuthInfo[Util::DecodeBase64(szAuthInfo64, 0, szAuthInfo)] = '\0';
+			szAuthInfo[WebUtil::DecodeBase64(szAuthInfo64, 0, szAuthInfo)] = '\0';
 		}
 		if (!strncmp(p, "\r", 1))
 		{
@@ -255,12 +255,12 @@ void XmlRpcProcessor::Dispatch()
 	}
 	else if (m_eProtocol == rpXmlRpc)
 	{
-		Util::XmlParseTagValue(m_szRequest, "methodName", szMethodName, sizeof(szMethodName), NULL);
+		WebUtil::XmlParseTagValue(m_szRequest, "methodName", szMethodName, sizeof(szMethodName), NULL);
 	} 
 	else if (m_eProtocol == rpJsonRpc) 
 	{
 		int iValueLen = 0;
-		if (const char* szMethodPtr = Util::JsonFindField(m_szRequest, "method", &iValueLen))
+		if (const char* szMethodPtr = WebUtil::JsonFindField(m_szRequest, "method", &iValueLen))
 		{
 			strncpy(szMethodName, szMethodPtr + 1, iValueLen - 2);
 			szMethodName[iValueLen - 2] = '\0';
@@ -308,7 +308,7 @@ void XmlRpcProcessor::MutliCall()
 
 		char szMethodName[100];
 		szMethodName[0] = '\0';
-		Util::XmlParseTagValue(szNameEnd, "string", szMethodName, sizeof(szMethodName), NULL);
+		WebUtil::XmlParseTagValue(szNameEnd, "string", szMethodName, sizeof(szMethodName), NULL);
 		debug("MutliCall, MethodName=%s", szMethodName);
 
 		XmlCommand* command = CreateCommand(szMethodName);
@@ -648,7 +648,7 @@ bool XmlCommand::NextParamAsInt(int* iValue)
 	else if (IsJson())
 	{
 		int iLen = 0;
-		char* szParam = (char*)Util::JsonNextValue(m_szRequestPtr, &iLen);
+		char* szParam = (char*)WebUtil::JsonNextValue(m_szRequestPtr, &iLen);
 		if (!szParam || !strchr("-+0123456789", *szParam))
 		{
 			return false;
@@ -661,10 +661,10 @@ bool XmlCommand::NextParamAsInt(int* iValue)
 	{
 		int iLen = 0;
 		int iTagLen = 4; //strlen("<i4>");
-		char* szParam = (char*)Util::XmlFindTag(m_szRequestPtr, "i4", &iLen);
+		char* szParam = (char*)WebUtil::XmlFindTag(m_szRequestPtr, "i4", &iLen);
 		if (!szParam)
 		{
-			szParam = (char*)Util::XmlFindTag(m_szRequestPtr, "int", &iLen);
+			szParam = (char*)WebUtil::XmlFindTag(m_szRequestPtr, "int", &iLen);
 			iTagLen = 5; //strlen("<int>");
 		}
 		if (!szParam || !strchr("-+0123456789", *szParam))
@@ -710,7 +710,7 @@ bool XmlCommand::NextParamAsBool(bool* bValue)
 	else if (IsJson())
 	{
 		int iLen = 0;
-		char* szParam = (char*)Util::JsonNextValue(m_szRequestPtr, &iLen);
+		char* szParam = (char*)WebUtil::JsonNextValue(m_szRequestPtr, &iLen);
 		if (!szParam)
 		{
 			return false;
@@ -735,7 +735,7 @@ bool XmlCommand::NextParamAsBool(bool* bValue)
 	else
 	{
 		int iLen = 0;
-		char* szParam = (char*)Util::XmlFindTag(m_szRequestPtr, "boolean", &iLen);
+		char* szParam = (char*)WebUtil::XmlFindTag(m_szRequestPtr, "boolean", &iLen);
 		if (!szParam)
 		{
 			return false;
@@ -774,7 +774,7 @@ bool XmlCommand::NextParamAsStr(char** szValue)
 	else if (IsJson())
 	{
 		int iLen = 0;
-		char* szParam = (char*)Util::JsonNextValue(m_szRequestPtr, &iLen);
+		char* szParam = (char*)WebUtil::JsonNextValue(m_szRequestPtr, &iLen);
 		if (!szParam || iLen < 2 || szParam[0] != '"' || szParam[iLen - 1] != '"')
 		{
 			return false;
@@ -788,7 +788,7 @@ bool XmlCommand::NextParamAsStr(char** szValue)
 	else
 	{
 		int iLen = 0;
-		char* szParam = (char*)Util::XmlFindTag(m_szRequestPtr, "string", &iLen);
+		char* szParam = (char*)WebUtil::XmlFindTag(m_szRequestPtr, "string", &iLen);
 		if (!szParam)
 		{
 			return false;
@@ -814,11 +814,11 @@ char* XmlCommand::EncodeStr(const char* szStr)
 
 	if (IsJson()) 
 	{
-		return Util::JsonEncode(szStr);
+		return WebUtil::JsonEncode(szStr);
 	}
 	else
 	{
-		return Util::XmlEncode(szStr);
+		return WebUtil::XmlEncode(szStr);
 	}
 }
 
@@ -1466,11 +1466,11 @@ void EditQueueXmlCommand::Execute()
 
 	if (IsJson())
 	{
-		Util::JsonDecode(szEditText);
+		WebUtil::JsonDecode(szEditText);
 	}
 	else
 	{
-		Util::XmlDecode(szEditText);
+		WebUtil::XmlDecode(szEditText);
 	}
 
 	IDList cIDList;
@@ -1517,13 +1517,13 @@ void DownloadXmlCommand::Execute()
 
 	if (IsJson())
 	{
-		Util::JsonDecode(szFileName);
-		Util::JsonDecode(szCategory);
+		WebUtil::JsonDecode(szFileName);
+		WebUtil::JsonDecode(szCategory);
 	}
 	else
 	{
-		Util::XmlDecode(szFileName);
-		Util::XmlDecode(szCategory);
+		WebUtil::XmlDecode(szFileName);
+		WebUtil::XmlDecode(szCategory);
 	}
 
 	debug("FileName=%s", szFileName);
@@ -1545,10 +1545,10 @@ void DownloadXmlCommand::Execute()
 	if (IsJson())
 	{
 		// JSON-string may contain '/'-character used in Base64, which must be escaped in JSON
-		Util::JsonDecode(szFileContent);
+		WebUtil::JsonDecode(szFileContent);
 	}
 
-	int iLen = Util::DecodeBase64(szFileContent, 0, szFileContent);
+	int iLen = WebUtil::DecodeBase64(szFileContent, 0, szFileContent);
 	szFileContent[iLen] = '\0';
 	//debug("FileContent=%s", szFileContent);
 
@@ -1736,11 +1736,11 @@ void WriteLogXmlCommand::Execute()
 
 	if (IsJson())
 	{
-		Util::JsonDecode(szText);
+		WebUtil::JsonDecode(szText);
 	}
 	else
 	{
-		Util::XmlDecode(szText);
+		WebUtil::XmlDecode(szText);
 	}
 
 	debug("Kind=%s, Text=%s", szKind, szText);
@@ -2049,15 +2049,15 @@ void DownloadUrlXmlCommand::Execute()
 
 		if (IsJson())
 		{
-			Util::JsonDecode(szNZBFileName);
-			Util::JsonDecode(szCategory);
-			Util::JsonDecode(szURL);
+			WebUtil::JsonDecode(szNZBFileName);
+			WebUtil::JsonDecode(szCategory);
+			WebUtil::JsonDecode(szURL);
 		}
 		else
 		{
-			Util::XmlDecode(szNZBFileName);
-			Util::XmlDecode(szCategory);
-			Util::XmlDecode(szURL);
+			WebUtil::XmlDecode(szNZBFileName);
+			WebUtil::XmlDecode(szCategory);
+			WebUtil::XmlDecode(szURL);
 		}
 
 		debug("URL=%s", szURL);

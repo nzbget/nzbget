@@ -463,7 +463,7 @@ void WebDownloader::ParseFilename(const char* szContentDisposition)
 		pe--;
 	}
 
-	Util::HttpUnquote(fname);
+	WebUtil::HttpUnquote(fname);
 
 	if (m_szOriginalFilename)
 	{

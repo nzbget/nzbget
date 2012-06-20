@@ -105,6 +105,25 @@ public:
 	 */
 	static float Int64ToFloat(long long Int64);
 
+	/*
+	 * Returns program version and revision number as string formatted like "0.7.0-r295".
+	 * If revision number is not available only version is returned ("0.7.0").
+	 */
+	static const char* VersionRevision() { return VersionRevisionBuf; };
+	
+	/*
+	 * Initialize buffer for program version and revision number.
+	 * This function must be called during program initialization before any
+	 * call to "VersionRevision()".
+	 */
+	static void InitVersionRevision();
+	
+	static char VersionRevisionBuf[40];
+};
+
+class WebUtil
+{
+public:
 	static unsigned int DecodeBase64(char* szInputBuffer, int iInputBufferLength, char* szOutputBuffer);
 
 	/*
@@ -159,25 +178,11 @@ public:
 	 * The string is decoded on the place overwriting the content of raw-data.
 	 */
 	static void HttpUnquote(char* raw);
-
-	/*
-	 * Returns program version and revision number as string formatted like "0.7.0-r295".
-	 * If revision number is not available only version is returned ("0.7.0").
-	 */
-	static const char* VersionRevision() { return VersionRevisionBuf; };
-	
-	/*
-	 * Initialize buffer for program version and revision number.
-	 * This function must be called during program initialization before any
-	 * call to "VersionRevision()".
-	 */
-	static void InitVersionRevision();
-	
-	static char VersionRevisionBuf[40];
 };
 
 class URL
 {
+private:
 	char*				m_szAddress;
 	char*				m_szProtocol;
 	char*				m_szUser;

@@ -500,231 +500,6 @@ unsigned int DecodeByteQuartet(char* szInputBuffer, char* szOutputBuffer)
 	return 0;
 }
 
-unsigned int Util::DecodeBase64(char* szInputBuffer, int iInputBufferLength, char* szOutputBuffer)
-{
-	unsigned int InputBufferIndex  = 0;
-	unsigned int OutputBufferIndex = 0;
-	unsigned int InputBufferLength = iInputBufferLength > 0 ? iInputBufferLength : strlen(szInputBuffer);
-
-	char ByteQuartet [4];
-	int i = 0;
-	while (InputBufferIndex < InputBufferLength)
-	{
-		// Ignore all characters except the ones in BASE64_ALPHABET
-		if ((szInputBuffer [InputBufferIndex] >= 48 && szInputBuffer [InputBufferIndex] <=  57) ||
-			(szInputBuffer [InputBufferIndex] >= 65 && szInputBuffer [InputBufferIndex] <=  90) ||
-			(szInputBuffer [InputBufferIndex] >= 97 && szInputBuffer [InputBufferIndex] <= 122) ||
-			szInputBuffer [InputBufferIndex] == '+' || 
-			szInputBuffer [InputBufferIndex] == '/' || 
-			szInputBuffer [InputBufferIndex] == '=')
-		{
-			ByteQuartet [i] = szInputBuffer [InputBufferIndex];
-			i++;
-		}
-		
-		InputBufferIndex++;
-		
-		if (i == 4) {
-			OutputBufferIndex += DecodeByteQuartet(ByteQuartet, szOutputBuffer + OutputBufferIndex);
-			i = 0;
-		}
-	}
-
-	// OutputBufferIndex gives us the next position of the next decoded character
-	// inside our output buffer and thus represents the number of decoded characters
-	// in our buffer.
-	return OutputBufferIndex;
-}
-
-/* END - Base64
-*/
-
-char* Util::XmlEncode(const char* raw)
-{
-	// calculate the required outputstring-size based on number of xml-entities and their sizes
-	int iReqSize = strlen(raw);
-	for (const char* p = raw; *p; p++)
-	{
-		unsigned char ch = *p;
-		switch (ch)
-		{
-			case '>':
-			case '<':
-				iReqSize += 4;
-				break;
-			case '&':
-				iReqSize += 5;
-				break;
-			case '\'':
-			case '\"':
-				iReqSize += 6;
-				break;
-			default:
-				if (ch >= 0x80)
-				{
-					iReqSize += 6;
-					break;
-				}
-		}
-	}
-
-	char* result = (char*)malloc(iReqSize + 1);
-
-	// copy string
-	char* output = result;
-	for (const char* p = raw; ; p++)
-	{
-		unsigned char ch = *p;
-		switch (ch)
-		{
-			case '\0':
-				goto BreakLoop;
-			case '<':
-				strcpy(output, "&lt;");
-				output += 4;
-				break;
-			case '>':
-				strcpy(output, "&gt;");
-				output += 4;
-				break;
-			case '&':
-				strcpy(output, "&amp;");
-				output += 5;
-				break;
-			case '\'':
-				strcpy(output, "&apos;");
-				output += 6;
-				break;
-			case '\"':
-				strcpy(output, "&quot;");
-				output += 6;
-				break;
-			default:
-				if (ch >= 0x80)
-				{
-					sprintf(output, "&#%i;", ch);
-					output += 6;
-				}
-				else
-				{
-					*output++ = ch;
-				}
-				break;
-		}
-	}
-BreakLoop:
-
-	*output = '\0';
-
-	return result;
-}
-
-void Util::XmlDecode(char* raw)
-{
-	char* output = raw;
-	for (char* p = raw;;)
-	{
-		switch (*p)
-		{
-			case '\0':
-				goto BreakLoop;
-			case '&':
-				{
-					p++;
-					if (!strncmp(p, "lt;", 3))
-					{
-						*output++ = '<';
-						p += 3;
-					}
-					else if (!strncmp(p, "gt;", 3))
-					{
-						*output++ = '>';
-						p += 3;
-					}
-					else if (!strncmp(p, "amp;", 4))
-					{
-						*output++ = '&';
-						p += 4;
-					}
-					else if (!strncmp(p, "apos;", 5))
-					{
-						*output++ = '\'';
-						p += 5;
-					}
-					else if (!strncmp(p, "quot;", 5))
-					{
-						*output++ = '\"';
-						p += 5;
-					}
-					else
-					{
-						// unknown entity
-						*output++ = *(p-1);
-						p++;
-					}
-					break;
-				}
-			default:
-				*output++ = *p++;
-				break;
-		}
-	}
-BreakLoop:
-
-	*output = '\0';
-}
-
-const char* Util::XmlFindTag(const char* szXml, const char* szTag, int* pValueLength)
-{
-	char szOpenTag[100];
-	snprintf(szOpenTag, 100, "<%s>", szTag);
-	szOpenTag[100-1] = '\0';
-
-	char szCloseTag[100];
-	snprintf(szCloseTag, 100, "</%s>", szTag);
-	szCloseTag[100-1] = '\0';
-
-	char szOpenCloseTag[100];
-	snprintf(szOpenCloseTag, 100, "<%s/>", szTag);
-	szOpenCloseTag[100-1] = '\0';
-
-	const char* pstart = strstr(szXml, szOpenTag);
-	const char* pstartend = strstr(szXml, szOpenCloseTag);
-	if (!pstart && !pstartend) return NULL;
-
-	if (pstartend && (!pstart || pstartend < pstart))
-	{
-		*pValueLength = 0;
-		return pstartend;
-	}
-
-	const char* pend = strstr(pstart, szCloseTag);
-	if (!pend) return NULL;
-
-	int iTagLen = strlen(szOpenTag);
-	*pValueLength = (int)(pend - pstart - iTagLen);
-
-	return pstart + iTagLen;
-}
-
-bool Util::XmlParseTagValue(const char* szXml, const char* szTag, char* szValueBuf, int iValueBufSize, const char** pTagEnd)
-{
-	int iValueLen = 0;
-	const char* szValue = XmlFindTag(szXml, szTag, &iValueLen);
-	if (!szValue)
-	{
-		return false;
-	}
-	int iLen = iValueLen < iValueBufSize ? iValueLen : iValueBufSize - 1;
-	strncpy(szValueBuf, szValue, iLen);
-	szValueBuf[iLen] = '\0';
-	if (pTagEnd)
-	{
-		*pTagEnd = szValue + iValueLen;
-	}
-	return true;
-}
-
 bool Util::MoveFile(const char* szSrcFilename, const char* szDstFilename)
 {
 	bool bOK = rename(szSrcFilename, szDstFilename) == 0;
@@ -801,209 +576,6 @@ long long Util::FileSize(const char* szFilename)
 #endif
 #endif
 	return buffer.st_size;
-}
-
-char* Util::JsonEncode(const char* raw)
-{
-	// calculate the required outputstring-size based on number of escape-entities and their sizes
-	int iReqSize = strlen(raw);
-	for (const char* p = raw; *p; p++)
-	{
-		unsigned char ch = *p;
-		switch (ch)
-		{
-			case '\"':
-			case '\\':
-			case '/':
-			case '\b':
-			case '\f':
-			case '\n':
-			case '\r':
-			case '\t':
-				iReqSize++;
-                break;
-			default:
-				if (ch >= 0x80)
-				{
-					iReqSize += 6;
-					break;
-				}
-		}
-	}
-
-	char* result = (char*)malloc(iReqSize + 1);
-
-	// copy string
-	char* output = result;
-	for (const char* p = raw; ; p++)
-	{
-		unsigned char ch = *p;
-		switch (ch)
-		{
-			case '\0':
-				goto BreakLoop;
-			case '"':
-				strcpy(output, "\\\"");
-				output += 2;
-				break;
-			case '\\':
-				strcpy(output, "\\\\");
-				output += 2;
-				break;
-			case '/':
-				strcpy(output, "\\/");
-				output += 2;
-				break;
-			case '\b':
-				strcpy(output, "\\b");
-				output += 2;
-				break;
-			case '\f':
-				strcpy(output, "\\f");
-				output += 2;
-				break;
-			case '\n':
-				strcpy(output, "\\n");
-				output += 2;
-				break;
-			case '\r':
-				strcpy(output, "\\r");
-				output += 2;
-				break;
-			case '\t':
-				strcpy(output, "\\t");
-				output += 2;
-				break;
-			default:
-				if (ch >= 0x80)
-				{
-					sprintf(output, "\\u%04x", ch);
-					output += 6;
-				}
-				else
-				{
-					*output++ = ch;
-				}
-				break;
-		}
-	}
-BreakLoop:
-
-	*output = '\0';
-
-	return result;
-}
-
-void Util::JsonDecode(char* raw)
-{
-	char* output = raw;
-	for (char* p = raw;;)
-	{
-		switch (*p)
-		{
-			case '\0':
-				goto BreakLoop;
-			case '\\':
-				{
-					p++;
-					switch (*p)
-					{
-						case '"':
-							*output++ = '"';
-							break;
-						case '\\':
-							*output++ = '\\';
-							break;
-						case '/':
-							*output++ = '/';
-							break;
-						case 'b':
-							*output++ = '\b';
-							break;
-						case 'f':
-							*output++ = '\f';
-							break;
-						case 'n':
-							*output++ = '\n';
-							break;
-						case 'r':
-							*output++ = '\r';
-							break;
-						case 't':
-							*output++ = '\t';
-							break;
-						case 'u':
-							*output++ = (char)strtol(p + 1, NULL, 16);
-							p += 4;
-							break;
-						default:
-							// unknown escape-sequence, should never occur
-							*output++ = *p;
-							break;
-					}
-					p++;
-                    break;
-				}
-			default:
-				*output++ = *p++;
-				break;
-		}
-	}
-BreakLoop:
-
-	*output = '\0';
-}
-
-const char* Util::JsonFindField(const char* szJsonText, const char* szFieldName, int* pValueLength)
-{
-	char szOpenTag[100];
-	snprintf(szOpenTag, 100, "\"%s\"", szFieldName);
-	szOpenTag[100-1] = '\0';
-
-	const char* pstart = strstr(szJsonText, szOpenTag);
-	if (!pstart) return NULL;
-
-	pstart += strlen(szOpenTag);
-
-	return JsonNextValue(pstart, pValueLength);
-}
-
-const char* Util::JsonNextValue(const char* szJsonText, int* pValueLength)
-{
-	const char* pstart = szJsonText;
-
-	while (*pstart && strchr(" ,[{:\r\n\t\f", *pstart)) pstart++;
-	if (!*pstart) return NULL;
-
-	const char* pend = pstart;
-
-	char ch = *pend;
-	bool bStr = ch == '"';
-	if (bStr)
-	{
-		ch = *++pend;
-	}
-	while (ch)
-	{
-		if (ch == '\\')
-		{
-			if (!*++pend || !*++pend) return NULL;
-			ch = *pend;
-		}
-		if (bStr && ch == '"')
-		{
-			pend++;
-			break;
-		}
-		else if (!bStr && strchr(" ,]}\r\n\t\f", ch))
-		{
-			break;
-		}
-		ch = *++pend;
-	}
-
-	*pValueLength = (int)(pend - pstart);
-	return pstart;
 }
 
 long long Util::FreeDiskSize(const char* szPath)
@@ -1237,7 +809,435 @@ bool Util::SplitCommandLine(const char* szCommandLine, char*** argv)
 	return iArgCount > 0;
 }
 
-void Util::HttpUnquote(char* raw)
+unsigned int WebUtil::DecodeBase64(char* szInputBuffer, int iInputBufferLength, char* szOutputBuffer)
+{
+	unsigned int InputBufferIndex  = 0;
+	unsigned int OutputBufferIndex = 0;
+	unsigned int InputBufferLength = iInputBufferLength > 0 ? iInputBufferLength : strlen(szInputBuffer);
+
+	char ByteQuartet [4];
+	int i = 0;
+	while (InputBufferIndex < InputBufferLength)
+	{
+		// Ignore all characters except the ones in BASE64_ALPHABET
+		if ((szInputBuffer [InputBufferIndex] >= 48 && szInputBuffer [InputBufferIndex] <=  57) ||
+			(szInputBuffer [InputBufferIndex] >= 65 && szInputBuffer [InputBufferIndex] <=  90) ||
+			(szInputBuffer [InputBufferIndex] >= 97 && szInputBuffer [InputBufferIndex] <= 122) ||
+			szInputBuffer [InputBufferIndex] == '+' || 
+			szInputBuffer [InputBufferIndex] == '/' || 
+			szInputBuffer [InputBufferIndex] == '=')
+		{
+			ByteQuartet [i] = szInputBuffer [InputBufferIndex];
+			i++;
+		}
+		
+		InputBufferIndex++;
+		
+		if (i == 4) {
+			OutputBufferIndex += DecodeByteQuartet(ByteQuartet, szOutputBuffer + OutputBufferIndex);
+			i = 0;
+		}
+	}
+
+	// OutputBufferIndex gives us the next position of the next decoded character
+	// inside our output buffer and thus represents the number of decoded characters
+	// in our buffer.
+	return OutputBufferIndex;
+}
+
+/* END - Base64
+*/
+
+char* WebUtil::XmlEncode(const char* raw)
+{
+	// calculate the required outputstring-size based on number of xml-entities and their sizes
+	int iReqSize = strlen(raw);
+	for (const char* p = raw; *p; p++)
+	{
+		unsigned char ch = *p;
+		switch (ch)
+		{
+			case '>':
+			case '<':
+				iReqSize += 4;
+				break;
+			case '&':
+				iReqSize += 5;
+				break;
+			case '\'':
+			case '\"':
+				iReqSize += 6;
+				break;
+			default:
+				if (ch >= 0x80)
+				{
+					iReqSize += 6;
+					break;
+				}
+		}
+	}
+
+	char* result = (char*)malloc(iReqSize + 1);
+
+	// copy string
+	char* output = result;
+	for (const char* p = raw; ; p++)
+	{
+		unsigned char ch = *p;
+		switch (ch)
+		{
+			case '\0':
+				goto BreakLoop;
+			case '<':
+				strcpy(output, "&lt;");
+				output += 4;
+				break;
+			case '>':
+				strcpy(output, "&gt;");
+				output += 4;
+				break;
+			case '&':
+				strcpy(output, "&amp;");
+				output += 5;
+				break;
+			case '\'':
+				strcpy(output, "&apos;");
+				output += 6;
+				break;
+			case '\"':
+				strcpy(output, "&quot;");
+				output += 6;
+				break;
+			default:
+				if (ch >= 0x80)
+				{
+					sprintf(output, "&#%i;", ch);
+					output += 6;
+				}
+				else
+				{
+					*output++ = ch;
+				}
+				break;
+		}
+	}
+BreakLoop:
+
+	*output = '\0';
+
+	return result;
+}
+
+void WebUtil::XmlDecode(char* raw)
+{
+	char* output = raw;
+	for (char* p = raw;;)
+	{
+		switch (*p)
+		{
+			case '\0':
+				goto BreakLoop;
+			case '&':
+				{
+					p++;
+					if (!strncmp(p, "lt;", 3))
+					{
+						*output++ = '<';
+						p += 3;
+					}
+					else if (!strncmp(p, "gt;", 3))
+					{
+						*output++ = '>';
+						p += 3;
+					}
+					else if (!strncmp(p, "amp;", 4))
+					{
+						*output++ = '&';
+						p += 4;
+					}
+					else if (!strncmp(p, "apos;", 5))
+					{
+						*output++ = '\'';
+						p += 5;
+					}
+					else if (!strncmp(p, "quot;", 5))
+					{
+						*output++ = '\"';
+						p += 5;
+					}
+					else
+					{
+						// unknown entity
+						*output++ = *(p-1);
+						p++;
+					}
+					break;
+				}
+			default:
+				*output++ = *p++;
+				break;
+		}
+	}
+BreakLoop:
+
+	*output = '\0';
+}
+
+const char* WebUtil::XmlFindTag(const char* szXml, const char* szTag, int* pValueLength)
+{
+	char szOpenTag[100];
+	snprintf(szOpenTag, 100, "<%s>", szTag);
+	szOpenTag[100-1] = '\0';
+
+	char szCloseTag[100];
+	snprintf(szCloseTag, 100, "</%s>", szTag);
+	szCloseTag[100-1] = '\0';
+
+	char szOpenCloseTag[100];
+	snprintf(szOpenCloseTag, 100, "<%s/>", szTag);
+	szOpenCloseTag[100-1] = '\0';
+
+	const char* pstart = strstr(szXml, szOpenTag);
+	const char* pstartend = strstr(szXml, szOpenCloseTag);
+	if (!pstart && !pstartend) return NULL;
+
+	if (pstartend && (!pstart || pstartend < pstart))
+	{
+		*pValueLength = 0;
+		return pstartend;
+	}
+
+	const char* pend = strstr(pstart, szCloseTag);
+	if (!pend) return NULL;
+
+	int iTagLen = strlen(szOpenTag);
+	*pValueLength = (int)(pend - pstart - iTagLen);
+
+	return pstart + iTagLen;
+}
+
+bool WebUtil::XmlParseTagValue(const char* szXml, const char* szTag, char* szValueBuf, int iValueBufSize, const char** pTagEnd)
+{
+	int iValueLen = 0;
+	const char* szValue = XmlFindTag(szXml, szTag, &iValueLen);
+	if (!szValue)
+	{
+		return false;
+	}
+	int iLen = iValueLen < iValueBufSize ? iValueLen : iValueBufSize - 1;
+	strncpy(szValueBuf, szValue, iLen);
+	szValueBuf[iLen] = '\0';
+	if (pTagEnd)
+	{
+		*pTagEnd = szValue + iValueLen;
+	}
+	return true;
+}
+
+char* WebUtil::JsonEncode(const char* raw)
+{
+	// calculate the required outputstring-size based on number of escape-entities and their sizes
+	int iReqSize = strlen(raw);
+	for (const char* p = raw; *p; p++)
+	{
+		unsigned char ch = *p;
+		switch (ch)
+		{
+			case '\"':
+			case '\\':
+			case '/':
+			case '\b':
+			case '\f':
+			case '\n':
+			case '\r':
+			case '\t':
+				iReqSize++;
+                break;
+			default:
+				if (ch >= 0x80)
+				{
+					iReqSize += 6;
+					break;
+				}
+		}
+	}
+
+	char* result = (char*)malloc(iReqSize + 1);
+
+	// copy string
+	char* output = result;
+	for (const char* p = raw; ; p++)
+	{
+		unsigned char ch = *p;
+		switch (ch)
+		{
+			case '\0':
+				goto BreakLoop;
+			case '"':
+				strcpy(output, "\\\"");
+				output += 2;
+				break;
+			case '\\':
+				strcpy(output, "\\\\");
+				output += 2;
+				break;
+			case '/':
+				strcpy(output, "\\/");
+				output += 2;
+				break;
+			case '\b':
+				strcpy(output, "\\b");
+				output += 2;
+				break;
+			case '\f':
+				strcpy(output, "\\f");
+				output += 2;
+				break;
+			case '\n':
+				strcpy(output, "\\n");
+				output += 2;
+				break;
+			case '\r':
+				strcpy(output, "\\r");
+				output += 2;
+				break;
+			case '\t':
+				strcpy(output, "\\t");
+				output += 2;
+				break;
+			default:
+				if (ch >= 0x80)
+				{
+					sprintf(output, "\\u%04x", ch);
+					output += 6;
+				}
+				else
+				{
+					*output++ = ch;
+				}
+				break;
+		}
+	}
+BreakLoop:
+
+	*output = '\0';
+
+	return result;
+}
+
+void WebUtil::JsonDecode(char* raw)
+{
+	char* output = raw;
+	for (char* p = raw;;)
+	{
+		switch (*p)
+		{
+			case '\0':
+				goto BreakLoop;
+			case '\\':
+				{
+					p++;
+					switch (*p)
+					{
+						case '"':
+							*output++ = '"';
+							break;
+						case '\\':
+							*output++ = '\\';
+							break;
+						case '/':
+							*output++ = '/';
+							break;
+						case 'b':
+							*output++ = '\b';
+							break;
+						case 'f':
+							*output++ = '\f';
+							break;
+						case 'n':
+							*output++ = '\n';
+							break;
+						case 'r':
+							*output++ = '\r';
+							break;
+						case 't':
+							*output++ = '\t';
+							break;
+						case 'u':
+							*output++ = (char)strtol(p + 1, NULL, 16);
+							p += 4;
+							break;
+						default:
+							// unknown escape-sequence, should never occur
+							*output++ = *p;
+							break;
+					}
+					p++;
+                    break;
+				}
+			default:
+				*output++ = *p++;
+				break;
+		}
+	}
+BreakLoop:
+
+	*output = '\0';
+}
+
+const char* WebUtil::JsonFindField(const char* szJsonText, const char* szFieldName, int* pValueLength)
+{
+	char szOpenTag[100];
+	snprintf(szOpenTag, 100, "\"%s\"", szFieldName);
+	szOpenTag[100-1] = '\0';
+
+	const char* pstart = strstr(szJsonText, szOpenTag);
+	if (!pstart) return NULL;
+
+	pstart += strlen(szOpenTag);
+
+	return JsonNextValue(pstart, pValueLength);
+}
+
+const char* WebUtil::JsonNextValue(const char* szJsonText, int* pValueLength)
+{
+	const char* pstart = szJsonText;
+
+	while (*pstart && strchr(" ,[{:\r\n\t\f", *pstart)) pstart++;
+	if (!*pstart) return NULL;
+
+	const char* pend = pstart;
+
+	char ch = *pend;
+	bool bStr = ch == '"';
+	if (bStr)
+	{
+		ch = *++pend;
+	}
+	while (ch)
+	{
+		if (ch == '\\')
+		{
+			if (!*++pend || !*++pend) return NULL;
+			ch = *pend;
+		}
+		if (bStr && ch == '"')
+		{
+			pend++;
+			break;
+		}
+		else if (!bStr && strchr(" ,]}\r\n\t\f", ch))
+		{
+			break;
+		}
+		ch = *++pend;
+	}
+
+	*pValueLength = (int)(pend - pstart);
+	return pstart;
+}
+
+void WebUtil::HttpUnquote(char* raw)
 {
 	if (*raw != '"')
 	{
