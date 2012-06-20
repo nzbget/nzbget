@@ -90,6 +90,13 @@ public:
 		slDebug
 	};
 
+	enum EMatchMode
+	{
+		mmID = 1,
+		mmName,
+		mmRegEx
+	};
+
 	class OptEntry
 	{
 	private:
@@ -195,8 +202,8 @@ private:
 	int					m_iEditQueueOffset;
 	int*				m_pEditQueueIDList;
 	int					m_iEditQueueIDCount;
-	bool				m_bEditQueueByName;
 	NameList			m_EditQueueNameList;
+	EMatchMode			m_EMatchMode;
 	char*				m_szEditQueueText;
 	char*				m_szArgFilename;
 	char*				m_szCategory;
@@ -323,8 +330,8 @@ public:
 	int					GetEditQueueOffset() { return m_iEditQueueOffset; }
 	int*				GetEditQueueIDList() { return m_pEditQueueIDList; }
 	int					GetEditQueueIDCount() { return m_iEditQueueIDCount; }
-	bool				GetEditQueueByName() { return m_bEditQueueByName; }
 	NameList*			GetEditQueueNameList() { return &m_EditQueueNameList; }
+	EMatchMode			GetMatchMode() { return m_EMatchMode; }
 	const char*			GetEditQueueText() { return m_szEditQueueText; }
 	const char*			GetArgFilename() { return m_szArgFilename; }
 	const char*			GetCategory() { return m_szCategory; }

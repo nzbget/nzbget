@@ -63,6 +63,9 @@
 /* Determine what socket length (socklen_t) data type is */
 #define SOCKLEN_T socklen_t
 
+/* Define to 1 if you have the <regex.h> header file. */
+#define HAVE_REGEX_H 1
+
 /* Define to 1 if spinlocks are supported */
 #define HAVE_SPINLOCK
 

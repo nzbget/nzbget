@@ -392,15 +392,15 @@ void ProcessClientRequest()
 	switch (g_pOptions->GetClientOperation())
 	{
 		case Options::opClientRequestListFiles:
-			Client->RequestServerList(true, false);
+			Client->RequestServerList(true, false, g_pOptions->GetMatchMode() == Options::mmRegEx ? g_pOptions->GetEditQueueText() : NULL);
 			break;
 
 		case Options::opClientRequestListGroups:
-			Client->RequestServerList(false, true);
+			Client->RequestServerList(false, true, g_pOptions->GetMatchMode() == Options::mmRegEx ? g_pOptions->GetEditQueueText() : NULL);
 			break;
 
 		case Options::opClientRequestListStatus:
-			Client->RequestServerList(false, false);
+			Client->RequestServerList(false, false, NULL);
 			break;
 
 		case Options::opClientRequestDownloadPause:
@@ -430,7 +430,7 @@ void ProcessClientRequest()
 		case Options::opClientRequestEditQueue:
 			Client->RequestServerEditQueue((eRemoteEditAction)g_pOptions->GetEditQueueAction(), g_pOptions->GetEditQueueOffset(),
 				g_pOptions->GetEditQueueText(), g_pOptions->GetEditQueueIDList(), g_pOptions->GetEditQueueIDCount(), 
-				g_pOptions->GetEditQueueNameList(), true);
+				g_pOptions->GetEditQueueNameList(), (eRemoteMatchMode)g_pOptions->GetMatchMode(), true);
 			break;
 
 		case Options::opClientRequestLog:

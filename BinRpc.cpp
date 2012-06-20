@@ -691,6 +691,7 @@ void EditQueueBinCommand::Execute()
 	int iNrNameEntries = ntohl(EditQueueRequest.m_iNrTrailingNameEntries);
 	int iNameEntriesLen = ntohl(EditQueueRequest.m_iTrailingNameEntriesLen);
 	int iAction = ntohl(EditQueueRequest.m_iAction);
+	int iMatchMode = ntohl(EditQueueRequest.m_iMatchMode);
 	int iOffset = ntohl(EditQueueRequest.m_iOffset);
 	int iTextLen = ntohl(EditQueueRequest.m_iTextLen);
 	bool bSmartOrder = ntohl(EditQueueRequest.m_bSmartOrder);
@@ -761,7 +762,7 @@ void EditQueueBinCommand::Execute()
 			bOK = g_pQueueCoordinator->GetQueueEditor()->EditList(
 				iNrIDEntries > 0 ? &cIDList : NULL,
 				iNrNameEntries > 0 ? &cNameList : NULL,
-				bSmartOrder, (QueueEditor::EEditAction)iAction, iOffset, szText);
+				(QueueEditor::EMatchMode)iMatchMode, bSmartOrder, (QueueEditor::EEditAction)iAction, iOffset, szText);
 		}
 		else
 		{
@@ -777,6 +778,13 @@ void EditQueueBinCommand::Execute()
 	}
 	else
 	{
+#ifndef HAVE_REGEX_H
+		if ((QueueEditor::EMatchMode)iMatchMode == QueueEditor::mmRegEx)
+		{
+			SendBoolResponse(false, "Edit-Command failed: the program was compiled without RegEx-support");
+			return;
+		}
+#endif
 		SendBoolResponse(false, "Edit-Command failed");
 	}
 }

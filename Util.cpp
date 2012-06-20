@@ -44,6 +44,9 @@
 #include <sys/statvfs.h>
 #include <pwd.h>
 #endif
+#ifdef HAVE_REGEX_H
+#include <regex.h>
+#endif
 
 #include "nzbget.h"
 #include "Util.h"
@@ -1395,4 +1398,31 @@ void URL::ParseURL()
 	m_szHost[hostEnd - hostStart + 1] = 0;
 
 	m_bValid = true;
+}
+
+RegEx::RegEx(const char *szPattern)
+{
+#ifdef HAVE_REGEX_H
+	m_pContext = malloc(sizeof(regex_t));
+	m_bValid = regcomp((regex_t*)m_pContext, szPattern, REG_EXTENDED | REG_ICASE | REG_NOSUB) == 0;
+#else
+	m_bValid = false;
+#endif
+}
+
+RegEx::~RegEx()
+{
+#ifdef HAVE_REGEX_H
+	regfree((regex_t*)m_pContext);
+	free(m_pContext);
+#endif
+}
+
+bool RegEx::Match(const char *szStr)
+{
+#ifdef HAVE_REGEX_H
+	return regexec((regex_t*)m_pContext, szStr, 0, NULL, 0) == 0;
+#else
+	return false;
+#endif
 }

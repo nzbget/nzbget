@@ -36,6 +36,7 @@
 #include <cctype>
 #include <cstdio>
 #include <sys/stat.h>
+#include <set>
 #ifndef WIN32
 #include <unistd.h>
 #include <sys/time.h>
@@ -164,7 +165,7 @@ bool QueueEditor::EditEntry(int ID, bool bSmartOrder, EEditAction eAction, int i
 	IDList cIDList;
 	cIDList.clear();
 	cIDList.push_back(ID);
-	return EditList(&cIDList, NULL, bSmartOrder, eAction, iOffset, szText);
+	return EditList(&cIDList, NULL, mmID, bSmartOrder, eAction, iOffset, szText);
 }
 
 bool QueueEditor::LockedEditEntry(DownloadQueue* pDownloadQueue, int ID, bool bSmartOrder, EEditAction eAction, int iOffset, const char* szText)
@@ -175,7 +176,8 @@ bool QueueEditor::LockedEditEntry(DownloadQueue* pDownloadQueue, int ID, bool bS
 	return InternEditList(pDownloadQueue, &cIDList, bSmartOrder, eAction, iOffset, szText);
 }
 
-bool QueueEditor::EditList(IDList* pIDList, NameList* pNameList, bool bSmartOrder, EEditAction eAction, int iOffset, const char* szText)
+bool QueueEditor::EditList(IDList* pIDList, NameList* pNameList, EMatchMode eMatchMode, bool bSmartOrder, 
+	EEditAction eAction, int iOffset, const char* szText)
 {
 	DownloadQueue* pDownloadQueue = g_pQueueCoordinator->LockQueue();
 
@@ -184,10 +186,10 @@ bool QueueEditor::EditList(IDList* pIDList, NameList* pNameList, bool bSmartOrde
 	if (pNameList)
 	{
 		pIDList = new IDList();
-		bOK = BuildIDListFromNameList(pDownloadQueue, pIDList, pNameList, eAction);
+		bOK = BuildIDListFromNameList(pDownloadQueue, pIDList, pNameList, eMatchMode, eAction);
 	}
 
-	bOK = bOK && InternEditList(pDownloadQueue, pIDList, bSmartOrder, eAction, iOffset, szText);
+	bOK = bOK && (InternEditList(pDownloadQueue, pIDList, bSmartOrder, eAction, iOffset, szText) || eMatchMode == mmRegEx);
 
 	if (g_pOptions->GetSaveQueue() && g_pOptions->GetServerMode())
 	{
@@ -398,11 +400,32 @@ void QueueEditor::PrepareList(DownloadQueue* pDownloadQueue, ItemList* pItemList
 	}
 }
 
-bool QueueEditor::BuildIDListFromNameList(DownloadQueue* pDownloadQueue, IDList* pIDList, NameList* pNameList, EEditAction eAction)
+bool QueueEditor::BuildIDListFromNameList(DownloadQueue* pDownloadQueue, IDList* pIDList, NameList* pNameList, EMatchMode eMatchMode, EEditAction eAction)
 {
+#ifndef HAVE_REGEX_H
+	if (eMatchMode == mmRegEx)
+	{
+		return false;
+	}
+#endif
+
+	std::set<int> uniqueIDs;
+
 	for (NameList::iterator it = pNameList->begin(); it != pNameList->end(); it++)
 	{
 		const char* szName = *it;
+
+		RegEx *pRegEx = NULL;
+		if (eMatchMode == mmRegEx)
+		{
+			pRegEx = new RegEx(szName);
+			if (!pRegEx->IsValid())
+			{
+				delete pRegEx;
+				return false;
+			}
+		}
+
 		bool bFound = false;
 
 		for (FileQueue::iterator it2 = pDownloadQueue->GetFileQueue()->begin(); it2 != pDownloadQueue->GetFileQueue()->end(); it2++)
@@ -412,27 +435,33 @@ bool QueueEditor::BuildIDListFromNameList(DownloadQueue* pDownloadQueue, IDList*
 			{
 				// file action
 				char szFilename[MAX_PATH];
-				snprintf(szFilename, sizeof(szFilename) - 1, "%s%c%s", pFileInfo->GetNZBInfo()->GetName(), PATH_SEPARATOR, Util::BaseFileName(pFileInfo->GetFilename()));
-				if (!strcmp(szFilename, szName))
+				snprintf(szFilename, sizeof(szFilename) - 1, "%s/%s", pFileInfo->GetNZBInfo()->GetName(), Util::BaseFileName(pFileInfo->GetFilename()));
+				if (((!pRegEx && !strcmp(szFilename, szName)) || (pRegEx && pRegEx->Match(szFilename))) &&
+					(uniqueIDs.find(pFileInfo->GetID()) == uniqueIDs.end()))
 				{
+					uniqueIDs.insert(pFileInfo->GetID());
 					pIDList->push_back(pFileInfo->GetID());
-					bFound = true;
-					break;
 				}
 			}
 			else
 			{
 				// group action
-				if (!strcmp(pFileInfo->GetNZBInfo()->GetName(), szName))
+				const char *szFilename = pFileInfo->GetNZBInfo()->GetName();
+				if (((!pRegEx && !strcmp(szFilename, szName)) || (pRegEx && pRegEx->Match(szFilename))) &&
+					(uniqueIDs.find(pFileInfo->GetNZBInfo()->GetID()) == uniqueIDs.end()))
 				{
+					uniqueIDs.insert(pFileInfo->GetNZBInfo()->GetID());
 					pIDList->push_back(pFileInfo->GetID());
-					bFound = true;
-					break;
 				}
 			}
 		}
 
-		if (!bFound)
+		if (pRegEx)
+		{
+			delete pRegEx;
+		}
+
+		if (!bFound && (eMatchMode == mmName))
 		{
 			return false;
 		}

@@ -36,6 +36,7 @@ dnl
 dnl Checks for header files.
 dnl
 AC_CHECK_HEADERS(sys/prctl.h)
+AC_CHECK_HEADERS(regex.h)
 
 
 dnl

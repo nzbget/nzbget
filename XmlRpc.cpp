@@ -1484,7 +1484,7 @@ void EditQueueXmlCommand::Execute()
 
 	if (iAction < PrePostProcessor::eaPostMoveOffset)
 	{
-		bOK = g_pQueueCoordinator->GetQueueEditor()->EditList(&cIDList, NULL, true, (QueueEditor::EEditAction)iAction, iOffset, szEditText);
+		bOK = g_pQueueCoordinator->GetQueueEditor()->EditList(&cIDList, NULL, QueueEditor::mmID, true, (QueueEditor::EEditAction)iAction, iOffset, szEditText);
 	}
 	else
 	{

@@ -27,7 +27,7 @@
 #ifndef MESSAGEBASE_H
 #define MESSAGEBASE_H
 
-static const int32_t NZBMESSAGE_SIGNATURE = 0x6E7A620C; // = "nzb-XX" (protocol version)
+static const int32_t NZBMESSAGE_SIGNATURE = 0x6E7A620E; // = "nzb-XX" (protocol version)
 static const int NZBREQUESTFILENAMESIZE = 512;
 static const int NZBREQUESTPASSWORDSIZE = 32;
 
@@ -108,6 +108,14 @@ enum eRemotePauseUnpauseAction
 	eRemotePauseUnpauseActionDownload2,		// pause/unpause download queue (second pause-register)
 	eRemotePauseUnpauseActionPostProcess,	// pause/unpause post-processor queue
 	eRemotePauseUnpauseActionScan			// pause/unpause scan of incoming nzb-directory
+};
+
+// Possible values for field "m_iMatchMode" of struct "SNZBEditQueueRequest":
+enum eRemoteMatchMode
+{
+	eRemoteMatchModeID = 1,				// ID
+	eRemoteMatchModeName,				// Name
+	eRemoteMatchModeRegEx,				// RegEx
 };
 
 // The basic SNZBRequestBase struct, used in all requests
@@ -298,6 +306,7 @@ struct SNZBEditQueueRequest
 	int32_t					m_iOffset;				// Offset to move (for m_iAction = 0)
 	int32_t					m_bSmartOrder;			// For Move-Actions: 0 - execute action for each ID in order they are placed in array;
 													// 1 - smart execute to ensure that the relative order of all affected IDs are not changed.
+	int32_t					m_iMatchMode;				// File/Group match mode, see enum eRemoteMatchMode
 	int32_t					m_iNrTrailingIDEntries;		// Number of ID-entries, following to this structure
 	int32_t					m_iNrTrailingNameEntries;	// Number of Name-entries, following to this structure
 	int32_t					m_iTrailingNameEntriesLen;	// Length of all Name-entries, following to this structure
