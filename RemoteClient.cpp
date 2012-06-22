@@ -241,13 +241,14 @@ void RemoteClient::BuildFileList(SNZBListResponse* pListResponse, const char* pT
 			const char* m_szQueuedFilename = pBufPtr + sizeof(SNZBListResponseNZBEntry) + ntohl(pListAnswer->m_iFilenameLen) + 
 				ntohl(pListAnswer->m_iNameLen) + ntohl(pListAnswer->m_iDestDirLen) + ntohl(pListAnswer->m_iCategoryLen);
 			
-			NZBInfo* pNZBInfo = new NZBInfo();
+			MatchedNZBInfo* pNZBInfo = new MatchedNZBInfo();
 			pNZBInfo->SetSize(Util::JoinInt64(ntohl(pListAnswer->m_iSizeHi), ntohl(pListAnswer->m_iSizeLo)));
 			pNZBInfo->SetFilename(szFileName);
 			pNZBInfo->SetName(szName);
 			pNZBInfo->SetDestDir(szDestDir);
 			pNZBInfo->SetCategory(szCategory);
 			pNZBInfo->SetQueuedFilename(m_szQueuedFilename);
+			pNZBInfo->m_bMatch = ntohl(pListAnswer->m_bMatch);
 
 			pNZBInfo->AddReference();
 			pDownloadQueue->GetNZBInfoList()->Add(pNZBInfo);
@@ -280,7 +281,7 @@ void RemoteClient::BuildFileList(SNZBListResponse* pListResponse, const char* pT
 			const char* szSubject = pBufPtr + sizeof(SNZBListResponseFileEntry);
 			const char* szFileName = pBufPtr + sizeof(SNZBListResponseFileEntry) + ntohl(pListAnswer->m_iSubjectLen);
 			
-			FileInfo* pFileInfo = new FileInfo();
+			MatchedFileInfo* pFileInfo = new MatchedFileInfo();
 			pFileInfo->SetID(ntohl(pListAnswer->m_iID));
 			pFileInfo->SetSize(Util::JoinInt64(ntohl(pListAnswer->m_iFileSizeHi), ntohl(pListAnswer->m_iFileSizeLo)));
 			pFileInfo->SetRemainingSize(Util::JoinInt64(ntohl(pListAnswer->m_iRemainingSizeHi), ntohl(pListAnswer->m_iRemainingSizeLo)));
@@ -290,6 +291,7 @@ void RemoteClient::BuildFileList(SNZBListResponse* pListResponse, const char* pT
 			pFileInfo->SetFilenameConfirmed(ntohl(pListAnswer->m_bFilenameConfirmed));
 			pFileInfo->SetActiveDownloads(ntohl(pListAnswer->m_iActiveDownloads));
 			pFileInfo->SetPriority(ntohl(pListAnswer->m_iPriority));
+			pFileInfo->m_bMatch = ntohl(pListAnswer->m_bMatch);
 
 			NZBInfo* pNZBInfo = pDownloadQueue->GetNZBInfoList()->at(ntohl(pListAnswer->m_iNZBIndex) - 1);
 
@@ -307,20 +309,19 @@ void RemoteClient::BuildFileList(SNZBListResponse* pListResponse, const char* pT
 
 bool RemoteClient::RequestServerList(bool bFiles, bool bGroups, const char* szPattern)
 {
-#ifndef HAVE_REGEX_H
-	if (szPattern)
-	{
-		printf("Command failed: the program (client) was compiled without RegEx-support");
-		return false;
-	}
-#endif
-
 	if (!InitConnection()) return false;
 
 	SNZBListRequest ListRequest;
 	InitMessageBase(&ListRequest.m_MessageBase, eRemoteRequestList, sizeof(ListRequest));
 	ListRequest.m_bFileList = htonl(true);
 	ListRequest.m_bServerState = htonl(true);
+	ListRequest.m_iMatchMode = htonl(szPattern ? eRemoteMatchModeRegEx : eRemoteMatchModeID);
+	ListRequest.m_bMatchGroup = htonl(bGroups);
+	if (szPattern)
+	{
+		strncpy(ListRequest.m_szPattern, szPattern, NZBREQUESTFILENAMESIZE - 1);
+		ListRequest.m_szPattern[NZBREQUESTFILENAMESIZE-1] = '\0';
+	}
 
 	if (m_pConnection->Send((char*)(&ListRequest), sizeof(ListRequest)) < 0)
 	{
@@ -361,17 +362,11 @@ bool RemoteClient::RequestServerList(bool bFiles, bool bGroups, const char* szPa
 
 	m_pConnection->Disconnect();
 
-	RegEx *pRegEx = NULL;
-	if (szPattern)
+	if (szPattern && !ListResponse.m_bRegExValid)
 	{
-		pRegEx = new RegEx(szPattern);
-		if (!pRegEx->IsValid())
-		{
-			printf("Error in regular expression");
-			delete pRegEx;
-			free(pBuf);
-			return false;
-		}
+		printf("Error in regular expression\n");
+		free(pBuf);
+		return false;
 	}
 
 	if (bFiles)
@@ -429,15 +424,7 @@ bool RemoteClient::RequestServerList(bool bFiles, bool bGroups, const char* szPa
 					lRemaining += pFileInfo->GetRemainingSize();
 				}
 
-				bool bRegMatch = false;
-				if (pRegEx)
-				{
-					char szFilename[MAX_PATH];
-					snprintf(szFilename, sizeof(szFilename) - 1, "%s/%s", pFileInfo->GetNZBInfo()->GetName(), Util::BaseFileName(pFileInfo->GetFilename()));
-					bRegMatch = pRegEx->Match(szFilename);
-				}
-					
-				if (!pRegEx || bRegMatch)
+				if (!szPattern || ((MatchedFileInfo*)pFileInfo)->m_bMatch)
 				{
 					printf("[%i] %s%s/%s (%.2f MB%s%s)%s\n", pFileInfo->GetID(), szPriority, pFileInfo->GetNZBInfo()->GetName(),
 						pFileInfo->GetFilename(),
@@ -456,7 +443,7 @@ bool RemoteClient::RequestServerList(bool bFiles, bool bGroups, const char* szPa
 
 			printf("-----------------------------------\n");
 			printf("Files: %i\n", cRemoteQueue.GetFileQueue()->size());
-			if (pRegEx)
+			if (szPattern)
 			{
 				printf("Matches: %i\n", iMatches);
 			}
@@ -563,7 +550,7 @@ bool RemoteClient::RequestServerList(bool bFiles, bool bGroups, const char* szPa
 					strncat(szParameters, ")", 1024);
 				}
 
-				if (!pRegEx || pRegEx->Match(pGroupInfo->GetNZBInfo()->GetName()))
+				if (!szPattern || ((MatchedNZBInfo*)pGroupInfo->GetNZBInfo())->m_bMatch)
 				{
 					printf("[%i-%i] %s%s (%i file%s, %s%s%s)%s%s\n", pGroupInfo->GetFirstID(), pGroupInfo->GetLastID(), szPriority, 
 						pGroupInfo->GetNZBInfo()->GetName(), pGroupInfo->GetRemainingFileCount(),
@@ -587,7 +574,7 @@ bool RemoteClient::RequestServerList(bool bFiles, bool bGroups, const char* szPa
 
 			printf("-----------------------------------\n");
 			printf("Groups: %i\n", cGroupQueue.size());
-			if (pRegEx)
+			if (szPattern)
 			{
 				printf("Matches: %i\n", iMatches);
 			}
@@ -605,11 +592,6 @@ bool RemoteClient::RequestServerList(bool bFiles, bool bGroups, const char* szPa
 	}
 
 	free(pBuf);
-
-	if (pRegEx)
-	{
-		delete pRegEx;
-	}
 
 	long long lRemaining = Util::JoinInt64(ntohl(ListResponse.m_iRemainingSizeHi), ntohl(ListResponse.m_iRemainingSizeLo));
 

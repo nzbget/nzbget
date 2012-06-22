@@ -35,6 +35,18 @@
 class RemoteClient
 {
 private:
+	class MatchedNZBInfo: public NZBInfo
+	{
+	public:
+		bool		m_bMatch;
+	};
+
+	class MatchedFileInfo: public FileInfo
+	{
+	public:
+		bool		m_bMatch;
+	};
+
 	Connection* 	m_pConnection;
 	bool			m_bVerbose;
 

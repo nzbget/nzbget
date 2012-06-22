@@ -1421,7 +1421,7 @@ RegEx::~RegEx()
 bool RegEx::Match(const char *szStr)
 {
 #ifdef HAVE_REGEX_H
-	return regexec((regex_t*)m_pContext, szStr, 0, NULL, 0) == 0;
+	return m_bValid ? regexec((regex_t*)m_pContext, szStr, 0, NULL, 0) == 0 : false;
 #else
 	return false;
 #endif
