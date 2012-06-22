@@ -27,7 +27,7 @@
 #ifndef MESSAGEBASE_H
 #define MESSAGEBASE_H
 
-static const int32_t NZBMESSAGE_SIGNATURE = 0x6E7A620E; // = "nzb-XX" (protocol version)
+static const int32_t NZBMESSAGE_SIGNATURE = 0x6E7A620F; // = "nzb-XX" (protocol version)
 static const int NZBREQUESTFILENAMESIZE = 512;
 static const int NZBREQUESTPASSWORDSIZE = 32;
 
@@ -160,6 +160,9 @@ struct SNZBListRequest
 	SNZBRequestBase			m_MessageBase;			// Must be the first in the struct
 	int32_t					m_bFileList;			// 1 - return file list
 	int32_t					m_bServerState;			// 1 - return server state
+	int32_t					m_iMatchMode;			// File/Group match mode, see enum eRemoteMatchMode (only values eRemoteMatchModeID (no filter) and eRemoteMatchModeRegEx are allowed)
+	int32_t					m_bMatchGroup;			// 0 - match files; 1 - match nzbs (when m_iMatchMode == eRemoteMatchModeRegEx)
+	char					m_szPattern[NZBREQUESTFILENAMESIZE];	// RegEx Pattern (when m_iMatchMode == eRemoteMatchModeRegEx)
 };
 
 // A list response
@@ -182,6 +185,7 @@ struct SNZBListResponse
 	int32_t					m_iDownloadTimeSec;		// Server download time in seconds (up_time - standby_time)
 	int32_t					m_iDownloadedBytesLo;	// Amount of data downloaded since server start, Low 32-bits of 64-bit value
 	int32_t					m_iDownloadedBytesHi;	// Amount of data downloaded since server start, High 32-bits of 64-bit value
+	int32_t					m_bRegExValid;			// 0 - error in RegEx-pattern, 1 - RegEx-pattern is valid (only when Request has eRemoteMatchModeRegEx)
 	int32_t					m_iNrTrailingNZBEntries;	// Number of List-NZB-entries, following to this structure
 	int32_t					m_iNrTrailingPPPEntries;	// Number of List-PPP-entries, following to this structure
 	int32_t					m_iNrTrailingFileEntries;	// Number of List-File-entries, following to this structure
@@ -196,6 +200,7 @@ struct SNZBListResponseNZBEntry
 {
 	int32_t					m_iSizeLo;				// Size of all files in bytes, Low 32-bits of 64-bit value
 	int32_t					m_iSizeHi;				// Size of all files in bytes, High 32-bits of 64-bit value
+	int32_t					m_bMatch;				// 1 - group matches the pattern (only when Request has eRemoteMatchModeRegEx)
 	int32_t					m_iFilenameLen;			// Length of Filename-string (m_szFilename), following to this record
 	int32_t					m_iNameLen;				// Length of Name-string (m_szName), following to this record
 	int32_t					m_iDestDirLen;			// Length of DestDir-string (m_szDestDir), following to this record
@@ -231,6 +236,7 @@ struct SNZBListResponseFileEntry
 	int32_t					m_bFilenameConfirmed;	// 1 - Filename confirmed (read from article body), 0 - Filename parsed from subject (can be changed after reading of article)
 	int32_t					m_iPriority;			// Download priority
 	int32_t					m_iActiveDownloads;		// Number of active downloads for this file
+	int32_t					m_bMatch;				// 1 - file matches the pattern (only when Request has eRemoteMatchModeRegEx)
 	int32_t					m_iSubjectLen;			// Length of Subject-string (m_szSubject), following to this record
 	int32_t					m_iFilenameLen;			// Length of Filename-string (m_szFilename), following to this record
 	//char					m_szSubject[m_iSubjectLen];			// variable sized

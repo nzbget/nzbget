@@ -381,12 +381,24 @@ void ListBinCommand::Execute()
 	ListResponse.m_MessageBase.m_iSignature = htonl(NZBMESSAGE_SIGNATURE);
 	ListResponse.m_MessageBase.m_iStructSize = htonl(sizeof(ListResponse));
 	ListResponse.m_iEntrySize = htonl(sizeof(SNZBListResponseFileEntry));
+	ListResponse.m_bRegExValid = 0;
 
 	char* buf = NULL;
 	int bufsize = 0;
 
 	if (ntohl(ListRequest.m_bFileList))
 	{
+		eRemoteMatchMode eMatchMode = (eRemoteMatchMode)ntohl(ListRequest.m_iMatchMode);
+		bool bMatchGroup = ntohl(ListRequest.m_bMatchGroup);
+		const char* szPattern = ListRequest.m_szPattern;
+
+		RegEx *pRegEx = NULL;
+		if (eMatchMode == eRemoteMatchModeRegEx)
+		{
+			pRegEx = new RegEx(szPattern);
+			ListResponse.m_bRegExValid = pRegEx->IsValid();
+		}
+
 		// Make a data structure and copy all the elements of the list into it
 		DownloadQueue* pDownloadQueue = g_pQueueCoordinator->LockQueue();
 
@@ -442,6 +454,7 @@ void ListBinCommand::Execute()
 			Util::SplitInt64(pNZBInfo->GetSize(), &iSizeHi, &iSizeLo);
 			pListAnswer->m_iSizeLo				= htonl(iSizeLo);
 			pListAnswer->m_iSizeHi				= htonl(iSizeHi);
+			pListAnswer->m_bMatch				= htonl(!pRegEx || pRegEx->Match(pNZBInfo->GetName()));
 			pListAnswer->m_iFilenameLen			= htonl(strlen(pNZBInfo->GetFilename()) + 1);
 			pListAnswer->m_iNameLen				= htonl(strlen(pNZBInfo->GetName()) + 1);
 			pListAnswer->m_iDestDirLen			= htonl(strlen(pNZBInfo->GetDestDir()) + 1);
@@ -500,7 +513,7 @@ void ListBinCommand::Execute()
 			unsigned long iSizeHi, iSizeLo;
 			FileInfo* pFileInfo = *it;
 			SNZBListResponseFileEntry* pListAnswer = (SNZBListResponseFileEntry*) bufptr;
-			pListAnswer->m_iID				= htonl(pFileInfo->GetID());
+			pListAnswer->m_iID = htonl(pFileInfo->GetID());
 
 			int iNZBIndex = 0;
 			for (unsigned int i = 0; i < pDownloadQueue->GetNZBInfoList()->size(); i++)
@@ -512,6 +525,13 @@ void ListBinCommand::Execute()
 				}
 			}
 			pListAnswer->m_iNZBIndex		= htonl(iNZBIndex);
+
+			if (pRegEx)
+			{
+				char szFilename[MAX_PATH];
+				snprintf(szFilename, sizeof(szFilename) - 1, "%s/%s", pFileInfo->GetNZBInfo()->GetName(), Util::BaseFileName(pFileInfo->GetFilename()));
+				pListAnswer->m_bMatch = htonl(pRegEx->Match(szFilename));
+			}
 
 			Util::SplitInt64(pFileInfo->GetSize(), &iSizeHi, &iSizeLo);
 			pListAnswer->m_iFileSizeLo		= htonl(iSizeLo);
@@ -540,6 +560,11 @@ void ListBinCommand::Execute()
 		}
 
 		g_pQueueCoordinator->UnlockQueue();
+
+		if (pRegEx)
+		{
+			delete pRegEx;
+		}
 
 		ListResponse.m_iNrTrailingNZBEntries = htonl(iNrNZBEntries);
 		ListResponse.m_iNrTrailingPPPEntries = htonl(iNrPPPEntries);
