@@ -879,7 +879,7 @@ void Options::InitCommandLine(int argc, char* argv[])
 					abort("FATAL ERROR: Could not parse value of option 'L'\n");
 				}
 
-				if (!strcmp(optarg, "FR") || !strcmp(optarg, "GR"))
+				if (optarg && (!strcmp(optarg, "FR") || !strcmp(optarg, "GR")))
 				{
 					m_EMatchMode = mmRegEx;
 
