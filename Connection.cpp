@@ -186,7 +186,7 @@ Connection::~Connection()
 	{
 		free(m_szHost);
 	}
-	if (m_bAutoClose)
+	if (m_eStatus == csConnected && m_bAutoClose)
 	{
 		Disconnect();
 	}
