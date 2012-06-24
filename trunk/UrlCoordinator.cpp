@@ -424,7 +424,7 @@ void UrlCoordinator::AddToNZBQueue(UrlInfo* pUrlInfo, const char* szTempFilename
 	if (pNZBFile)
 	{
 		pNZBFile->GetNZBInfo()->SetName(NULL);
-		pNZBFile->GetNZBInfo()->SetFilename(szOriginalFilename);
+		pNZBFile->GetNZBInfo()->SetFilename(pUrlInfo->GetNZBFilename() && strlen(pUrlInfo->GetNZBFilename()) > 0 ? pUrlInfo->GetNZBFilename() : szOriginalFilename);
 
 		if (strlen(pUrlInfo->GetCategory()) > 0)
 		{
