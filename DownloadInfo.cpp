@@ -242,7 +242,7 @@ void NZBInfo::SetName(const char* szName)
 	{
 		free(m_szName);
 	}
-	m_szName = strdup(szName);
+	m_szName = szName ? strdup(szName) : NULL;
 }
 
 void NZBInfo::SetCategory(const char* szCategory)

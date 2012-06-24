@@ -423,18 +423,19 @@ void UrlCoordinator::AddToNZBQueue(UrlInfo* pUrlInfo, const char* szTempFilename
 	NZBFile* pNZBFile = NZBFile::CreateFromFile(szTempFilename, pUrlInfo->GetCategory());
 	if (pNZBFile)
 	{
+		pNZBFile->GetNZBInfo()->SetName(NULL);
 		pNZBFile->GetNZBInfo()->SetFilename(szOriginalFilename);
 
 		if (strlen(pUrlInfo->GetCategory()) > 0)
 		{
 			pNZBFile->GetNZBInfo()->SetCategory(pUrlInfo->GetCategory());
-			pNZBFile->GetNZBInfo()->BuildDestDirName();
 		}
 		else if (szOriginalCategory)
 		{
 			pNZBFile->GetNZBInfo()->SetCategory(szOriginalCategory);
-			pNZBFile->GetNZBInfo()->BuildDestDirName();
 		}
+
+		pNZBFile->GetNZBInfo()->BuildDestDirName();
 
 		for (NZBFile::FileInfos::iterator it = pNZBFile->GetFileInfos()->begin(); it != pNZBFile->GetFileInfos()->end(); it++)
 		{
