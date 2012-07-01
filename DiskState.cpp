@@ -438,7 +438,7 @@ bool DiskState::LoadFileQueue(DownloadQueue* pDownloadQueue, FileQueue* pFileQue
 		{
 			if (fscanf(infile, "%i,%i,%i\n", &id, &iNZBIndex, &paused) != 3) goto error;
 		}
-		if (iNZBIndex < 0 || iNZBIndex > pDownloadQueue->GetNZBInfoList()->size()) goto error;
+		if (iNZBIndex > pDownloadQueue->GetNZBInfoList()->size()) goto error;
 
 		char fileName[1024];
 		snprintf(fileName, 1024, "%s%i", g_pOptions->GetQueueDir(), id);

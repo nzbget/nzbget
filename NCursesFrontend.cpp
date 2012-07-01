@@ -926,7 +926,7 @@ void NCursesFrontend::PrintGroupQueue()
 {
 	int iLineNr = m_iQueueWinTop;
 
-    DownloadQueue* pDownloadQueue = LockQueue();
+    LockQueue();
 	GroupQueue* pGroupQueue = &m_groupQueue;
 	if (pGroupQueue->empty())
     {

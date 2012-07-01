@@ -183,7 +183,7 @@ void UrlCoordinator::Stop()
 	Thread::Stop();
 
 	debug("Stopping UrlDownloads");
-	DownloadQueue* pDownloadQueue = g_pQueueCoordinator->LockQueue();
+	g_pQueueCoordinator->LockQueue();
 	for (ActiveDownloads::iterator it = m_ActiveDownloads.begin(); it != m_ActiveDownloads.end(); it++)
 	{
 		(*it)->Stop();

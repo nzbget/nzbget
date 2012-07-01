@@ -454,7 +454,7 @@ void ListBinCommand::Execute()
 			Util::SplitInt64(pNZBInfo->GetSize(), &iSizeHi, &iSizeLo);
 			pListAnswer->m_iSizeLo				= htonl(iSizeLo);
 			pListAnswer->m_iSizeHi				= htonl(iSizeHi);
-			pListAnswer->m_bMatch				= htonl(!pRegEx || pRegEx->Match(pNZBInfo->GetName()));
+			pListAnswer->m_bMatch				= htonl(bMatchGroup && (!pRegEx || pRegEx->Match(pNZBInfo->GetName())));
 			pListAnswer->m_iFilenameLen			= htonl(strlen(pNZBInfo->GetFilename()) + 1);
 			pListAnswer->m_iNameLen				= htonl(strlen(pNZBInfo->GetName()) + 1);
 			pListAnswer->m_iDestDirLen			= htonl(strlen(pNZBInfo->GetDestDir()) + 1);
@@ -526,7 +526,7 @@ void ListBinCommand::Execute()
 			}
 			pListAnswer->m_iNZBIndex		= htonl(iNZBIndex);
 
-			if (pRegEx)
+			if (pRegEx && !bMatchGroup)
 			{
 				char szFilename[MAX_PATH];
 				snprintf(szFilename, sizeof(szFilename) - 1, "%s/%s", pFileInfo->GetNZBInfo()->GetName(), Util::BaseFileName(pFileInfo->GetFilename()));
@@ -1134,7 +1134,6 @@ void UrlQueueBinCommand::Execute()
 		bufsize += bufsize % 4 > 0 ? 4 - bufsize % 4 : 0;
 	}
 
-	time_t tCurTime = time(NULL);
 	buf = (char*) malloc(bufsize);
 	char* bufptr = buf;
 
