@@ -60,37 +60,31 @@ public:
 		hmGet
 	};
 
-	enum EAuthMode
-	{
-		amHeader,
-		amURL
-	};
-
 private:
-	Connection*			m_pConnection;
 	const char*			m_szClientIP;
 	char*				m_szRequest;
+	const char*			m_szContentType;
 	ERpcProtocol		m_eProtocol;
 	EHttpMethod			m_eHttpMethod;
-	EAuthMode			m_eAuthMode;
 	char*				m_szUrl;
+	StringBuilder		m_cResponse;
 
 	void				Dispatch();
-	void				SendAuthResponse();
-	void				SendResponse(const char* szResponse, const char* szCallbackFunc, bool bFault);
 	XmlCommand*			CreateCommand(const char* szMethodName);
 	void				MutliCall();
+	void				BuildResponse(const char* szResponse, const char* szCallbackFunc, bool bFault);
 
 public:
 						XmlRpcProcessor();
 						~XmlRpcProcessor();
 	void				Execute();
-	void				SetConnection(Connection* pConnection) { m_pConnection = pConnection; }
-	void				SetProtocol(ERpcProtocol eProtocol) { m_eProtocol = eProtocol; }
 	void				SetHttpMethod(EHttpMethod eHttpMethod) { m_eHttpMethod = eHttpMethod; }
-	void				SetAuthMode(EAuthMode eAuthMode) { m_eAuthMode = eAuthMode; } 
 	void				SetUrl(const char* szUrl);
 	void				SetClientIP(const char* szClientIP) { m_szClientIP = szClientIP; }
+	void				SetRequest(char* szRequest) { m_szRequest = szRequest; }
+	const char*			GetResponse() { return m_cResponse.GetBuffer(); }
+	const char*			GetContentType() { return m_szContentType; }
+	static bool			IsRpcRequest(const char* szUrl);
 };
 
 class XmlCommand

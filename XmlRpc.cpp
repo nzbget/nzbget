@@ -34,12 +34,8 @@
 #include <stdlib.h>
 #include <string.h>
 #include <cstdio>
-#include <fstream>
 #ifndef WIN32
 #include <unistd.h>
-#include <sys/socket.h>
-#include <arpa/inet.h>
-#include <netinet/in.h>
 #endif
 
 #include "nzbget.h"
@@ -57,7 +53,6 @@ extern QueueCoordinator* g_pQueueCoordinator;
 extern UrlCoordinator* g_pUrlCoordinator;
 extern PrePostProcessor* g_pPrePostProcessor;
 extern void ExitProc();
-
 
 //*****************************************************************
 // StringBuilder
@@ -95,12 +90,20 @@ void StringBuilder::Append(const char* szStr)
 
 XmlRpcProcessor::XmlRpcProcessor()
 {
-	m_pConnection = NULL;
 	m_szClientIP = NULL;
 	m_szRequest = NULL;
 	m_eProtocol = rpUndefined;
 	m_eHttpMethod = hmPost;
 	m_szUrl = NULL;
+	m_szContentType = NULL;
+}
+
+XmlRpcProcessor::~XmlRpcProcessor()
+{
+	if (m_szUrl)
+	{
+		free(m_szUrl);
+	}
 }
 
 void XmlRpcProcessor::SetUrl(const char* szUrl)
@@ -108,119 +111,34 @@ void XmlRpcProcessor::SetUrl(const char* szUrl)
 	m_szUrl = strdup(szUrl);
 }
 
-XmlRpcProcessor::~XmlRpcProcessor()
+
+bool XmlRpcProcessor::IsRpcRequest(const char* szUrl)
 {
-	if (m_szRequest)
-	{
-		free(m_szRequest);
-	}
-	if (m_szUrl)
-	{
-		free(m_szUrl);
-	}
+	return !strcmp(szUrl, "/xmlrpc") || !strncmp(szUrl, "/xmlrpc/", 8) ||
+		!strcmp(szUrl, "/jsonrpc") || !strncmp(szUrl, "/jsonrpc/", 9) ||
+		!strcmp(szUrl, "/jsonprpc") || !strncmp(szUrl, "/jsonprpc/", 10);
 }
 
 void XmlRpcProcessor::Execute()
 {
-	char szAuthInfo[1024];
-	szAuthInfo[0] = '\0';
-
-	// reading http header
-	char szBuffer[1024];
-	bool bBody = false;
-	int iContentLen = 0;
-	while (char* p = m_pConnection->ReadLine(szBuffer, sizeof(szBuffer), NULL))
+	m_eProtocol = rpUndefined;
+	if (!strcmp(m_szUrl, "/xmlrpc") || !strncmp(m_szUrl, "/xmlrpc/", 8))
 	{
-		debug("header=%s", p);
-		if (!strncasecmp(p, "Content-Length: ", 16))
-		{
-			iContentLen = atoi(p + 16);
-		}
-		if (!strncasecmp(p, "Authorization: Basic ", 21))
-		{
-			char* szAuthInfo64 = p + 21;
-			if (strlen(szAuthInfo64) > sizeof(szAuthInfo))
-			{
-				error("invalid-request: auth-info too big");
-				return;
-			}
-			if (char* pe = strrchr(szAuthInfo64, '\r')) *pe = '\0';
-			szAuthInfo[WebUtil::DecodeBase64(szAuthInfo64, 0, szAuthInfo)] = '\0';
-		}
-		if (!strncmp(p, "\r", 1))
-		{
-			bBody = true;
-			break;
-		}
+		m_eProtocol = XmlRpcProcessor::rpXmlRpc;
 	}
-
-	debug("URL=%s", m_szUrl);
-	debug("Content-Length=%i", iContentLen);
-	debug("Authorization=%s", szAuthInfo);
-
-	if (m_eHttpMethod == hmPost && iContentLen <= 0)
+	else if (!strcmp(m_szUrl, "/jsonrpc") || !strncmp(m_szUrl, "/jsonrpc/", 9))
 	{
-		error("invalid-request: content length is 0");
+		m_eProtocol = rpJsonRpc;
+	}
+	else if (!strcmp(m_szUrl, "/jsonprpc") || !strncmp(m_szUrl, "/jsonprpc/", 10))
+	{
+		m_eProtocol = rpJsonPRpc;
+	}
+	else
+	{
+		error("internal error: invalid rpc-request: %s", m_szUrl);
 		return;
 	}
-
-	if (m_eAuthMode == amURL)
-	{
-		// extract password from URL
-		char* pstart = strchr(m_szUrl + 1, '/');
-		if (pstart)
-		{
-			int iLen = 0;
-			char* pend = strchr(pstart + 1, '/');
-			if (pend) 
-			{
-				iLen = (int)(pend - pstart - 1 < (int)sizeof(szAuthInfo) - 1 ? pend - pstart - 1 : (int)sizeof(szAuthInfo) - 1);
-			}
-			else
-			{
-				iLen = strlen(pstart + 1);
-			}
-			strncpy(szAuthInfo, pstart + 1, iLen);
-			szAuthInfo[iLen] = '\0';
-			char* sz_OldUrl = m_szUrl;
-			m_szUrl = strdup(pstart);
-			free(sz_OldUrl);
-		}
-	}
-
-	if (strlen(szAuthInfo) == 0)
-	{
-		warn("rpc-request received on port %i from %s, but username/password were not submitted", g_pOptions->GetServerPort(), m_szClientIP);
-		SendAuthResponse();
-		return;
-	}
-
-	// Authorization
-	char* pw = strchr(szAuthInfo, ':');
-	if (pw) *pw++ = '\0';
-	if (strcmp(szAuthInfo, "nzbget") || strcmp(pw, g_pOptions->GetServerPassword()))
-	{
-		warn("rpc-request received on port %i from %s, but password invalid", g_pOptions->GetServerPort(), m_szClientIP);
-		SendAuthResponse();
-		return;
-	}
-
-	if (m_eHttpMethod == hmPost)
-	{
-		// reading http body (request content)
-		m_szRequest = (char*)malloc(iContentLen + 1);
-		m_szRequest[iContentLen] = '\0';
-
-		if (!m_pConnection->RecvAll(m_szRequest, iContentLen))
-		{
-			free(m_szRequest);
-			error("invalid-request: could not read data");
-			return;
-		}
-		debug("Request=%s", m_szRequest);
-	}
-
-	debug("Request received from %s", m_szClientIP);
 
 	Dispatch();
 }
@@ -281,7 +199,7 @@ void XmlRpcProcessor::Dispatch()
 		command->SetHttpMethod(m_eHttpMethod);
 		command->PrepareParams();
 		command->Execute();
-		SendResponse(command->GetResponse(), command->GetCallbackFunc(), command->GetFault());
+		BuildResponse(command->GetResponse(), command->GetCallbackFunc(), command->GetFault());
 		delete command;
 	}
 }
@@ -344,43 +262,18 @@ void XmlRpcProcessor::MutliCall()
 		command->SetProtocol(rpXmlRpc);
 		command->PrepareParams();
 		command->Execute();
-		SendResponse(command->GetResponse(), "", command->GetFault());
+		BuildResponse(command->GetResponse(), "", command->GetFault());
 		delete command;
 	}
 	else
 	{
 		cStringBuilder.Append("</data></array>");
-		SendResponse(cStringBuilder.GetBuffer(), "", false);
+		BuildResponse(cStringBuilder.GetBuffer(), "", false);
 	}
 }
 
-void XmlRpcProcessor::SendAuthResponse()
+void XmlRpcProcessor::BuildResponse(const char* szResponse, const char* szCallbackFunc, bool bFault)
 {
-	const char* AUTH_RESPONSE_HEADER =
-		"HTTP/1.0 401 Unauthorized\r\n"
-		"WWW-Authenticate: Basic\r\n"
-		"Connection: close\r\n"
-		"Content-Length: %i\r\n"
-		"Content-Type: text/plain\r\n"
-		"Server: nzbget-%s\r\n"
-		"\r\n";
-	char szResponseHeader[1024];
-	snprintf(szResponseHeader, 1024, AUTH_RESPONSE_HEADER, sizeof(AUTH_RESPONSE_HEADER), Util::VersionRevision());
-	 
-	// Send the request answer
-	debug("ResponseHeader=%s", szResponseHeader);
-	m_pConnection->Send(szResponseHeader, strlen(szResponseHeader));
-}
-
-void XmlRpcProcessor::SendResponse(const char* szResponse, const char* szCallbackFunc, bool bFault)
-{
-	const char* XML_RESPONSE_HEADER = 
-		"HTTP/1.0 200 OK\r\n"
-		"Connection: close\r\n"
-		"Content-Length: %i\r\n"
-		"Content-Type: text/xml\r\n"
-		"Server: nzbget-%s\r\n"
-		"\r\n";
 	const char XML_HEADER[] = "<?xml version=\"1.0\"?>\n<methodResponse>\n";
 	const char XML_FOOTER[] = "</methodResponse>";
 	const char XML_OK_OPEN[] = "<params><param><value>";
@@ -388,13 +281,6 @@ void XmlRpcProcessor::SendResponse(const char* szResponse, const char* szCallbac
 	const char XML_FAULT_OPEN[] = "<fault><value>";
 	const char XML_FAULT_CLOSE[] = "</value></fault>\n";
 
-	const char* JSON_RESPONSE_HEADER = 
-		"HTTP/1.0 200 OK\r\n"
-		"Connection: close\r\n"
-		"Content-Length: %i\r\n"
-		"Content-Type: application/json\r\n"
-		"Server: nzbget-%s\r\n"
-		"\r\n";
 	const char JSON_HEADER[] = "{\n\"version\" : \"1.1\",\n";
 	const char JSON_FOOTER[] = "\n}";
 	const char JSON_OK_OPEN[] = "\"result\" : ";
@@ -414,34 +300,21 @@ void XmlRpcProcessor::SendResponse(const char* szResponse, const char* szCallbac
 	const char* szCloseTag = bFault ? (bXmlRpc ? XML_FAULT_CLOSE : JSON_FAULT_CLOSE ) : (bXmlRpc ? XML_OK_CLOSE : JSON_OK_CLOSE);
 	const char* szCallbackFooter = m_eProtocol == rpJsonPRpc ? JSONP_CALLBACK_FOOTER : "";
 
-	int iCallbackHeaderLen = (m_eProtocol == rpJsonPRpc ? sizeof(JSONP_CALLBACK_HEADER) - 1 : 0);
-	int iCallbackFuncLen = m_eProtocol == rpJsonPRpc ? (szCallbackFunc ? strlen(szCallbackFunc) : 0) : 0;
-	int iHeaderLen = (bXmlRpc ? sizeof(XML_HEADER) : sizeof(JSON_HEADER)) - 1;
-	int iFooterLen = (bXmlRpc ? sizeof(XML_FOOTER) : sizeof(JSON_FOOTER)) - 1;
-	int iOpenTagLen = (bFault ? (bXmlRpc ? sizeof(XML_FAULT_OPEN) : sizeof(JSON_FAULT_OPEN)) : (bXmlRpc ? sizeof(XML_OK_OPEN) : sizeof(JSON_OK_OPEN))) - 1;
-	int iCloseTagLen = (bFault ? (bXmlRpc ? sizeof(XML_FAULT_CLOSE) : sizeof(JSON_FAULT_CLOSE)) : (bXmlRpc ? sizeof(XML_OK_CLOSE) : sizeof(JSON_OK_CLOSE))) - 1;
-	int iCallbackFooterLen = (m_eProtocol == rpJsonPRpc ? sizeof(JSONP_CALLBACK_FOOTER) - 1 : 0);
-
 	debug("Response=%s", szResponse);
-	int iResponseLen = strlen(szResponse);
 
-	char szResponseHeader[1024];
-	int iBodyLen = iResponseLen + iCallbackFuncLen + iCallbackHeaderLen + iHeaderLen + iFooterLen + iOpenTagLen + iCloseTagLen + iCallbackFooterLen;
-	snprintf(szResponseHeader, 1024, bXmlRpc ? XML_RESPONSE_HEADER : JSON_RESPONSE_HEADER, iBodyLen, Util::VersionRevision());
-
-	// Send the request answer
-	m_pConnection->Send(szResponseHeader, strlen(szResponseHeader));
 	if (szCallbackFunc)
 	{
-		m_pConnection->Send(szCallbackFunc, iCallbackFuncLen);
+		m_cResponse.Append(szCallbackFunc);
 	}
-	m_pConnection->Send(szCallbackHeader, iCallbackHeaderLen);
-	m_pConnection->Send(szHeader, iHeaderLen);
-	m_pConnection->Send(szOpenTag, iOpenTagLen);
-	m_pConnection->Send(szResponse, iResponseLen);
-	m_pConnection->Send(szCloseTag, iCloseTagLen);
-	m_pConnection->Send(szFooter, iFooterLen);
-	m_pConnection->Send(szCallbackFooter, iCallbackFooterLen);
+	m_cResponse.Append(szCallbackHeader);
+	m_cResponse.Append(szHeader);
+	m_cResponse.Append(szOpenTag);
+	m_cResponse.Append(szResponse);
+	m_cResponse.Append(szCloseTag);
+	m_cResponse.Append(szFooter);
+	m_cResponse.Append(szCallbackFooter);
+	
+	m_szContentType = bXmlRpc ? "text/xml" : "application/json";
 }
 
 XmlCommand* XmlRpcProcessor::CreateCommand(const char* szMethodName)

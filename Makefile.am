@@ -10,7 +10,7 @@ nzbget_SOURCES = ArticleDownloader.cpp ArticleDownloader.h BinRpc.cpp BinRpc.h \
 	QueueCoordinator.h QueueEditor.cpp QueueEditor.h RemoteClient.cpp RemoteClient.h \
 	RemoteServer.cpp RemoteServer.h Scanner.cpp Scanner.h Scheduler.cpp Scheduler.h ScriptController.cpp \
 	ScriptController.h ServerPool.cpp ServerPool.h svn_version.cpp TLS.cpp TLS.h Thread.cpp Thread.h Util.cpp \
-	Util.h XmlRpc.cpp XmlRpc.h WebDownloader.cpp WebDownloader.h UrlCoordinator.cpp UrlCoordinator.h \
+	Util.h XmlRpc.cpp XmlRpc.h WebDownloader.cpp WebDownloader.h WebServer.cpp WebServer.h UrlCoordinator.cpp UrlCoordinator.h \
 	nzbget.cpp nzbget.h
 
 EXTRA_DIST = nzbget.conf.example postprocess-example.sh postprocess-example.conf \

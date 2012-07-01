@@ -96,6 +96,7 @@ static const char* OPTION_DESTDIR				= "DestDir";
 static const char* OPTION_TEMPDIR				= "TempDir";
 static const char* OPTION_QUEUEDIR				= "QueueDir";
 static const char* OPTION_NZBDIR				= "NzbDir";
+static const char* OPTION_WEBDIR				= "WebDir";
 static const char* OPTION_CREATELOG				= "CreateLog";
 static const char* OPTION_LOGFILE				= "LogFile";
 static const char* OPTION_APPENDNZBDIR			= "AppendNzbDir";
@@ -227,6 +228,7 @@ Options::Options(int argc, char* argv[])
 	m_szTempDir				= NULL;
 	m_szQueueDir			= NULL;
 	m_szNzbDir				= NULL;
+	m_szWebDir				= NULL;
 	m_eInfoTarget			= mtScreen;
 	m_eWarningTarget		= mtScreen;
 	m_eErrorTarget			= mtScreen;
@@ -403,6 +405,10 @@ Options::~Options()
 	{
 		free(m_szNzbDir);
 	}
+	if (m_szWebDir)
+	{
+		free(m_szWebDir);
+	}
 	if (m_szArgFilename)
 	{
 		free(m_szArgFilename);
@@ -491,6 +497,7 @@ void Options::InitDefault()
 	SetOption(OPTION_LOGFILE, "~/nzbget/nzbget.log");
 	SetOption(OPTION_LOCKFILE, "/tmp/nzbget.lock");
 #endif
+	SetOption(OPTION_WEBDIR, "");
 	SetOption(OPTION_CREATELOG, "yes");
 	SetOption(OPTION_APPENDNZBDIR, "yes");
 	SetOption(OPTION_APPENDCATEGORYDIR, "yes");
@@ -606,7 +613,7 @@ void Options::InitOptFile()
 	m_bConfigInitialized = true;
 }
 
-void Options::CheckDir(char** dir, const char* szOptionName, bool bAllowEmpty)
+void Options::CheckDir(char** dir, const char* szOptionName, bool bAllowEmpty, bool bCreate)
 {
 	char* usedir = NULL;
 	const char* tempdir = GetOption(szOptionName);
@@ -637,7 +644,7 @@ void Options::CheckDir(char** dir, const char* szOptionName, bool bAllowEmpty)
 	}
 
 	// Ensure the dir is created
-	if (!Util::ForceDirectories(usedir))
+	if (bCreate && !Util::ForceDirectories(usedir))
 	{
 		abort("FATAL ERROR: Directory \"%s\" (option \"%s\") does not exist and could not be created\n", usedir, szOptionName);
 	}
@@ -646,9 +653,10 @@ void Options::CheckDir(char** dir, const char* szOptionName, bool bAllowEmpty)
 
 void Options::InitOptions()
 {
-	CheckDir(&m_szDestDir, OPTION_DESTDIR, false);
-	CheckDir(&m_szTempDir, OPTION_TEMPDIR, false);
-	CheckDir(&m_szQueueDir, OPTION_QUEUEDIR, false);
+	CheckDir(&m_szDestDir, OPTION_DESTDIR, false, true);
+	CheckDir(&m_szTempDir, OPTION_TEMPDIR, false, true);
+	CheckDir(&m_szQueueDir, OPTION_QUEUEDIR, false, true);
+	CheckDir(&m_szWebDir, OPTION_WEBDIR, true, false);
 
 	m_szPostProcess = strdup(GetOption(OPTION_POSTPROCESS));
 	m_szNZBProcess = strdup(GetOption(OPTION_NZBPROCESS));
@@ -676,7 +684,7 @@ void Options::InitOptions()
 	m_iParTimeLimit			= atoi(GetOption(OPTION_PARTIMELIMIT));
 	m_iKeepHistory			= atoi(GetOption(OPTION_KEEPHISTORY));
 
-	CheckDir(&m_szNzbDir, OPTION_NZBDIR, m_iNzbDirInterval == 0);
+	CheckDir(&m_szNzbDir, OPTION_NZBDIR, m_iNzbDirInterval == 0, true);
 
 	m_bCreateBrokenLog		= (bool)ParseOptionValue(OPTION_CREATEBROKENLOG, BoolCount, BoolNames, BoolValues);
 	m_bResetLog				= (bool)ParseOptionValue(OPTION_RESETLOG, BoolCount, BoolNames, BoolValues);

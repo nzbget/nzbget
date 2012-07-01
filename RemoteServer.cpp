@@ -44,7 +44,7 @@
 #include "nzbget.h"
 #include "RemoteServer.h"
 #include "BinRpc.h"
-#include "XmlRpc.h"
+#include "WebServer.h"
 #include "Log.h"
 #include "Options.h"
 
@@ -174,16 +174,16 @@ void RequestProcessor::Run()
 	}
 	else if (!strncmp((char*)&iSignature, "POST", 4) || !strncmp((char*)&iSignature, "GET ", 4))
 	{
-		// XML-RPC or JSON-RPC request received
+		// HTTP request received
 		Connection con(m_iSocket, false);
 		char szBuffer[1024];
 		if (con.ReadLine(szBuffer, sizeof(szBuffer), NULL))
 		{
-			XmlRpcProcessor::EHttpMethod eHttpMethod = XmlRpcProcessor::hmGet;
+			bool bMethodGet = true;
 			char* szUrl = szBuffer;
 			if (!strncmp((char*)&iSignature, "POST", 4))
 			{
-				eHttpMethod = XmlRpcProcessor::hmPost;
+				bMethodGet = false;
 				szUrl++;
 			}
 			if (char* p = strchr(szUrl, ' '))
@@ -191,54 +191,26 @@ void RequestProcessor::Run()
 				*p = '\0';
 			}
 
-			XmlRpcProcessor::ERpcProtocol eProtocol = XmlRpcProcessor::rpUndefined;
-			XmlRpcProcessor::EAuthMode eAuthMode = XmlRpcProcessor::amHeader;
-			if (!strcmp(szUrl, "/xmlrpc") || !strncmp(szUrl, "/xmlrpc/", 8))
-			{
-				eProtocol = XmlRpcProcessor::rpXmlRpc;
-			}
-			else if (!strcmp(szUrl, "/xmlrpc-auth") || !strncmp(szUrl, "/xmlrpc-auth/", 13))
-			{
-				eProtocol = XmlRpcProcessor::rpXmlRpc;
-				eAuthMode = XmlRpcProcessor::amURL;
-			}
-			else if (!strcmp(szUrl, "/jsonrpc") || !strncmp(szUrl, "/jsonrpc/", 9))
-			{
-				eProtocol = XmlRpcProcessor::rpJsonRpc;
-			}
-			else if (!strcmp(szUrl, "/jsonrpc-auth") || !strncmp(szUrl, "/jsonrpc-auth/", 14))
-			{
-				eProtocol = XmlRpcProcessor::rpJsonRpc;
-				eAuthMode = XmlRpcProcessor::amURL;
-			}
-			else if (!strcmp(szUrl, "/jsonprpc") || !strncmp(szUrl, "/jsonprpc/", 10))
-			{
-				eProtocol = XmlRpcProcessor::rpJsonPRpc;
-			}
-			else if (!strcmp(szUrl, "/jsonprpc-auth") || !strncmp(szUrl, "/jsonprpc-auth/", 15))
-			{
-				eProtocol = XmlRpcProcessor::rpJsonPRpc;
-				eAuthMode = XmlRpcProcessor::amURL;
-			}
+			debug("url: %s", szUrl);
 
-			if (eProtocol != XmlRpcProcessor::rpUndefined)
-			{
-				XmlRpcProcessor processor;
-				processor.SetConnection(&con);
-				processor.SetClientIP(ip);
-				processor.SetProtocol(eProtocol);
-				processor.SetHttpMethod(eHttpMethod);
-				processor.SetAuthMode(eAuthMode);
-				processor.SetUrl(szUrl);
-				processor.Execute();
-				bOK = true;
-			}
+			WebProcessor processor;
+			processor.SetConnection(&con);
+			processor.SetClientIP(ip);
+			processor.SetUrl(szUrl);
+			processor.SetHttpMethod(bMethodGet ? WebProcessor::hmGet : WebProcessor::hmPost);
+			processor.Execute();
+			bOK = true;
 		}
 	}
 
-	if (!bOK)
+	if (!bOK && iBytesReceived > 0)
 	{
 		warn("Non-nzbget request received on port %i from %s", g_pOptions->GetServerPort(), ip);
+	}
+
+	if (!bOK && iBytesReceived == 0)
+	{
+		debug("empty request received on port %i from %s", g_pOptions->GetServerPort(), ip);
 	}
 
 	closesocket(m_iSocket);

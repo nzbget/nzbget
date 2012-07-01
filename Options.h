@@ -129,6 +129,7 @@ private:
 	char*				m_szTempDir;
 	char*				m_szQueueDir;
 	char*				m_szNzbDir;
+	char*				m_szWebDir;
 	EMessageTarget		m_eInfoTarget;
 	EMessageTarget		m_eWarningTarget;
 	EMessageTarget		m_eErrorTarget;
@@ -240,7 +241,7 @@ private:
 	bool				SetOptionString(const char* option);
 	bool				ValidateOptionName(const char* optname);
 	void				LoadConfig(const char* configfile);
-	void				CheckDir(char** dir, const char* szOptionName, bool bAllowEmpty);
+	void				CheckDir(char** dir, const char* szOptionName, bool bAllowEmpty, bool bCreate);
 	void				ParseFileIDList(int argc, char* argv[], int optind);
 	void				ParseFileNameList(int argc, char* argv[], int optind);
 	bool				ParseTime(const char** pTime, int* pHours, int* pMinutes);
@@ -257,6 +258,7 @@ public:
 	const char*			GetTempDir() { return m_szTempDir; }
 	const char*			GetQueueDir() { return m_szQueueDir; }
 	const char*			GetNzbDir() { return m_szNzbDir; }
+	const char*			GetWebDir() { return m_szWebDir; }
 	bool				GetCreateBrokenLog() const { return m_bCreateBrokenLog; }
 	bool				GetResetLog() const { return m_bResetLog; }
 	EMessageTarget		GetInfoTarget() const { return m_eInfoTarget; }
