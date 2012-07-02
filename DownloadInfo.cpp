@@ -36,6 +36,7 @@
 #include <string.h>
 #include <cctype>
 #include <cstdio>
+#include <map>
 #include <sys/stat.h>
 
 #include "nzbget.h"
@@ -694,19 +695,12 @@ void PostInfo::AppendMessage(Message::EKind eKind, const char * szText)
 
 void DownloadQueue::BuildGroups(GroupQueue* pGroupQueue)
 {
+	std::map<int, GroupInfo*> groupMap;
+
 	for (FileQueue::iterator it = GetFileQueue()->begin(); it != GetFileQueue()->end(); it++)
     {
         FileInfo* pFileInfo = *it;
-		GroupInfo* pGroupInfo = NULL;
-		for (GroupQueue::iterator itg = pGroupQueue->begin(); itg != pGroupQueue->end(); itg++)
-		{
-			GroupInfo* pGroupInfo1 = *itg;
-			if (pGroupInfo1->GetNZBInfo() == pFileInfo->GetNZBInfo())
-			{
-				pGroupInfo = pGroupInfo1;
-				break;
-			}
-		}
+		GroupInfo *&pGroupInfo = groupMap[pFileInfo->GetNZBInfo()->GetID()];
 		if (!pGroupInfo)
 		{
 			pGroupInfo = new GroupInfo();
