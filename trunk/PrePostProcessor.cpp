@@ -329,6 +329,18 @@ void PrePostProcessor::NZBCompleted(DownloadQueue* pDownloadQueue, NZBInfo* pNZB
 {
 	if (g_pOptions->GetKeepHistory() > 0)
 	{
+		//remove old item for the same NZB
+		for (HistoryList::iterator it = pDownloadQueue->GetHistoryList()->begin(); it != pDownloadQueue->GetHistoryList()->end(); it++)
+		{
+			HistoryInfo* pHistoryInfo = *it;
+			if (pHistoryInfo->GetNZBInfo() == pNZBInfo)
+			{
+				delete pHistoryInfo;
+				pDownloadQueue->GetHistoryList()->erase(it);
+				break;
+			}
+		}
+
 		HistoryInfo* pHistoryInfo = new HistoryInfo(pNZBInfo);
 		pHistoryInfo->SetTime(time(NULL));
 		pDownloadQueue->GetHistoryList()->push_front(pHistoryInfo);
