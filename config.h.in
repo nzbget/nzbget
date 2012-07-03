@@ -6,6 +6,9 @@
 /* Define to 1 to not use curses */
 #undef DISABLE_CURSES
 
+/* Define to 1 to disable gzip-support */
+#undef DISABLE_GZIP
+
 /* Define to 1 to disable smart par-verification and restoration */
 #undef DISABLE_PARCHECK
 
