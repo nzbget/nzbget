@@ -443,6 +443,37 @@ fi
 
 
 dnl 
+dnl checks for zlib includes and libraries.
+dnl
+AC_MSG_CHECKING(whether to use gzip)
+AC_ARG_ENABLE(gzip,
+	[AS_HELP_STRING([--disable-gzip], [disable gzip-compression/decompression (removes dependency from zlib-library)])],
+	[USEZLIB=$enableval],
+	[USEZLIB=yes] )
+AC_MSG_RESULT($USEZLIB)
+if test "$USEZLIB" = "yes"; then
+	INCVAL="${LIBPREF}/include"
+	LIBVAL="${LIBPREF}/lib"
+	AC_ARG_WITH(zlib_includes,
+		[AS_HELP_STRING([--with-zlib-includes=DIR], [zlib include directory])],
+		[INCVAL="$withval"])
+	CPPFLAGS="${CPPFLAGS} -I${INCVAL}"
+	CFLAGS="${CFLAGS} -I${INCVAL}"
+	AC_ARG_WITH(zlib_libraries,
+		[AS_HELP_STRING([--with-zlib-libraries=DIR], [zlib library directory])],
+		[LIBVAL="$withval"])
+	LDFLAGS="${LDFLAGS} -L${LIBVAL}"
+	
+	AC_CHECK_HEADER(zlib.h,,
+		AC_MSG_ERROR("zlib header files not found"))
+	AC_SEARCH_LIBS([deflateBound], [z], ,
+		AC_MSG_ERROR("zlib library not found"))
+else
+	AC_DEFINE([DISABLE_GZIP],1,[Define to 1 to disable gzip-support])
+fi
+
+
+dnl 
 dnl Some Linux systems require an empty signal handler for SIGCHLD
 dnl in order for exit codes to be correctly delivered to parent process.
 dnl Some BSD systems however may not function properly if the handler is installed.

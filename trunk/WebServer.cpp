@@ -266,8 +266,33 @@ void WebProcessor::SendBodyResponse(const char* szBody, int iBodyLen, const char
 	"Connection: close\r\n"
 	"Content-Length: %i\r\n"
 	"%s"					// Content-Type: xxx
+	"%s"					// Content-Encoding: gzip
 	"Server: nzbget-%s\r\n"
 	"\r\n";
+	
+#ifndef DISABLE_GZIP
+	char *szGBuf = NULL;
+	bool bGZip = m_bGZip && iBodyLen > MAX_UNCOMPRESSED_SIZE;
+	if (bGZip)
+	{
+		unsigned int iOutLen = ZLib::GZipLen(iBodyLen);
+		szGBuf = (char*)malloc(iOutLen);
+		int iGZippedLen = ZLib::GZip(szBody, iBodyLen, szGBuf, iOutLen);
+		if (iGZippedLen > 0 && iGZippedLen < iBodyLen)
+		{
+			szBody = szGBuf;
+			iBodyLen = iGZippedLen;
+		}
+		else
+		{
+			free(szGBuf);
+			szGBuf = NULL;
+			bGZip = false;
+		}
+	}
+#else
+	bool bGZip = false;
+#endif
 	
 	char szContentTypeHeader[1024];
 	if (szContentType)
@@ -281,11 +306,19 @@ void WebProcessor::SendBodyResponse(const char* szBody, int iBodyLen, const char
 	
 	char szResponseHeader[1024];
 	snprintf(szResponseHeader, 1024, RESPONSE_HEADER, iBodyLen, szContentTypeHeader,
+			 bGZip ? "Content-Encoding: gzip\r\n" : "",
 			 Util::VersionRevision());
 	
 	// Send the request answer
 	m_pConnection->Send(szResponseHeader, strlen(szResponseHeader));
 	m_pConnection->Send(szBody, iBodyLen);
+	
+#ifndef DISABLE_GZIP
+	if (szGBuf)
+	{
+		free(szGBuf);
+	}
+#endif
 }
 
 void WebProcessor::SendFileResponse(const char* szFilename)
