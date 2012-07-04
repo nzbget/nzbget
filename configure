@@ -8281,7 +8281,7 @@ fi
 else
 
 cat >>confdefs.h <<\_ACEOF
-#define DISABLE_ZLIB 1
+#define DISABLE_GZIP 1
 _ACEOF
 
 fi
