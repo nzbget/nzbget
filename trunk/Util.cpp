@@ -854,45 +854,6 @@ unsigned int WebUtil::DecodeBase64(char* szInputBuffer, int iInputBufferLength, 
 /* END - Base64
 */
 
-#ifndef DISABLE_GZIP
-unsigned int ZLib::GZipLen(int iInputBufferLength)
-{
-	z_stream zstr;
-	memset(&zstr, 0, sizeof(zstr));
-	return (unsigned int)deflateBound(&zstr, iInputBufferLength);
-}
-
-unsigned int ZLib::GZip(const char* szInputBuffer, int iInputBufferLength, char* szOutputBuffer, int iOutputBufferLength)
-{
-	z_stream zstr;
-	zstr.zalloc = Z_NULL;
-	zstr.zfree = Z_NULL;
-	zstr.opaque = Z_NULL;
-	zstr.next_in = (Bytef*)szInputBuffer;
-	zstr.avail_in = iInputBufferLength;
-	zstr.next_out = (Bytef*)szOutputBuffer;
-	zstr.avail_out = iOutputBufferLength;
-
-	/* add 16 to MAX_WBITS to enforce gzip format */
-	if (Z_OK != deflateInit2(&zstr, Z_DEFAULT_COMPRESSION, Z_DEFLATED, MAX_WBITS + 16, MAX_MEM_LEVEL, Z_DEFAULT_STRATEGY))
-	{
-		return 0;
-	}
-	
-	int rc;
-	if (Z_STREAM_END == (rc = deflate(&zstr, Z_FINISH)))
-	{
-		return (unsigned int)zstr.total_out;
-	}
-	else
-	{
-		return 0;
-	}
-	
-	deflateEnd(&zstr);
-}
-#endif
-
 char* WebUtil::XmlEncode(const char* raw)
 {
 	// calculate the required outputstring-size based on number of xml-entities and their sizes
@@ -1468,3 +1429,42 @@ bool RegEx::Match(const char *szStr)
 	return false;
 #endif
 }
+
+#ifndef DISABLE_GZIP
+unsigned int ZLib::GZipLen(int iInputBufferLength)
+{
+	z_stream zstr;
+	memset(&zstr, 0, sizeof(zstr));
+	return (unsigned int)deflateBound(&zstr, iInputBufferLength);
+}
+
+unsigned int ZLib::GZip(const char* szInputBuffer, int iInputBufferLength, char* szOutputBuffer, int iOutputBufferLength)
+{
+	z_stream zstr;
+	zstr.zalloc = Z_NULL;
+	zstr.zfree = Z_NULL;
+	zstr.opaque = Z_NULL;
+	zstr.next_in = (Bytef*)szInputBuffer;
+	zstr.avail_in = iInputBufferLength;
+	zstr.next_out = (Bytef*)szOutputBuffer;
+	zstr.avail_out = iOutputBufferLength;
+	
+	/* add 16 to MAX_WBITS to enforce gzip format */
+	if (Z_OK != deflateInit2(&zstr, Z_DEFAULT_COMPRESSION, Z_DEFLATED, MAX_WBITS + 16, MAX_MEM_LEVEL, Z_DEFAULT_STRATEGY))
+	{
+		return 0;
+	}
+	
+	int rc;
+	if (Z_STREAM_END == (rc = deflate(&zstr, Z_FINISH)))
+	{
+		return (unsigned int)zstr.total_out;
+	}
+	else
+	{
+		return 0;
+	}
+	
+	deflateEnd(&zstr);
+}
+#endif
