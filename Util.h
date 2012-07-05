@@ -121,21 +121,6 @@ public:
 	static char VersionRevisionBuf[40];
 };
 
-#ifndef DISABLE_GZIP
-class ZLib {
-public:
-	/*
-	 * calculates the size required for output buffer
-	 */
-	static unsigned int GZipLen(int iInputBufferLength);
-	
-	/*
-	 * returns the size of bytes written to szOutputBuffer or 0 if the buffer is too small or an error occured.
-	 */
-	static unsigned int GZip(const char* szInputBuffer, int iInputBufferLength, char* szOutputBuffer, int iOutputBufferLength);
-};
-#endif
-
 class WebUtil
 {
 public:
@@ -235,5 +220,20 @@ public:
 	bool				IsValid() { return m_bValid; }
 	bool				Match(const char *szStr);
 };
+
+#ifndef DISABLE_GZIP
+class ZLib {
+public:
+	/*
+	 * calculates the size required for output buffer
+	 */
+	static unsigned int GZipLen(int iInputBufferLength);
+	
+	/*
+	 * returns the size of bytes written to szOutputBuffer or 0 if the buffer is too small or an error occured.
+	 */
+	static unsigned int GZip(const char* szInputBuffer, int iInputBufferLength, char* szOutputBuffer, int iOutputBufferLength);
+};
+#endif
 
 #endif
