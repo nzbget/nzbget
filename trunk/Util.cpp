@@ -1455,16 +1455,14 @@ unsigned int ZLib::GZip(const char* szInputBuffer, int iInputBufferLength, char*
 		return 0;
 	}
 	
-	int rc;
-	if (Z_STREAM_END == (rc = deflate(&zstr, Z_FINISH)))
+	unsigned int total_out = 0;
+	if (deflate(&zstr, Z_FINISH) == Z_STREAM_END)
 	{
-		return (unsigned int)zstr.total_out;
-	}
-	else
-	{
-		return 0;
+		total_out = (unsigned int)zstr.total_out;
 	}
 	
 	deflateEnd(&zstr);
+	
+	return total_out;
 }
 #endif
