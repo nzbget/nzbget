@@ -97,6 +97,7 @@ public:
 	int					Recv(char* pBuffer, int iSize);
 	bool				RecvAll(char* pBuffer, int iSize);
 	char*				ReadLine(char* pBuffer, int iSize, int* pBytesRead);
+	void				ReadBuffer(char** pBuffer, int *iBufLen);
 	int					WriteLine(const char* pBuffer);
 	SOCKET				Accept();
 	void				Cancel();
