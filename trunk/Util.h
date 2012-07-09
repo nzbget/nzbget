@@ -222,7 +222,8 @@ public:
 };
 
 #ifndef DISABLE_GZIP
-class ZLib {
+class ZLib
+{
 public:
 	/*
 	 * calculates the size required for output buffer
@@ -232,7 +233,38 @@ public:
 	/*
 	 * returns the size of bytes written to szOutputBuffer or 0 if the buffer is too small or an error occured.
 	 */
-	static unsigned int GZip(const char* szInputBuffer, int iInputBufferLength, char* szOutputBuffer, int iOutputBufferLength);
+	static unsigned int GZip(const void* szInputBuffer, int iInputBufferLength, void* szOutputBuffer, int iOutputBufferLength);
+};
+
+class GUnzipStream
+{
+public:
+	enum EStatus
+	{
+		zlError,
+		zlFinished,
+		zlOK
+	};
+
+private:
+	void*				m_pZStream;
+	void*				m_pOutputBuffer;
+	int					m_iBufferSize;
+
+public:
+						GUnzipStream(int BufferSize);
+						~GUnzipStream();
+
+	/*
+	 * set next memory block for uncompression
+	 */
+	void				Write(const void *pInputBuffer, int iInputBufferLength);
+
+	/*
+	 * get next uncompressed memory block.
+	 * iOutputBufferLength - the size of uncompressed block. if it is "0" the next compressed block must be provided via "Write".
+	 */
+	EStatus				Read(const void **pOutputBuffer, int *iOutputBufferLength);
 };
 #endif
 

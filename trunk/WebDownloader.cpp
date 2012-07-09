@@ -193,39 +193,12 @@ WebDownloader::EStatus WebDownloader::Download()
 
 	URL url(m_szURL);
 
-	if (!url.IsValid())
+	Status = CreateConnection(&url);
+	if (Status != adRunning)
 	{
-		error("URL is not valid: %s", url.GetAddress());
-		return adFatalError;
+		return Status;
 	}
 
-	int iPort = url.GetPort();
-	if (iPort == 0 && !strcasecmp(url.GetProtocol(), "http"))
-	{
-		iPort = 80;
-	}
-	if (iPort == 0 && !strcasecmp(url.GetProtocol(), "https"))
-	{
-		iPort = 443;
-	}
-
-	if (strcasecmp(url.GetProtocol(), "http") && strcasecmp(url.GetProtocol(), "https"))
-	{
-		error("Unsupported protocol in URL: %s", url.GetAddress());
-		return adFatalError;
-	}
-
-#ifdef DISABLE_TLS
-	if (!strcasecmp(url.GetProtocol(), "https"))
-	{
-		error("Program was compiled without TLS/SSL-support. Cannot download using https protocol. URL: %s", url.GetAddress());
-		return adFatalError;
-	}
-#endif
-
-	bool bTLS = !strcasecmp(url.GetProtocol(), "https");
-
-	m_pConnection = new Connection(url.GetHost(), iPort, bTLS);
 	m_pConnection->SetSuppressErrors(false);
 
 	// connection
@@ -239,10 +212,77 @@ WebDownloader::EStatus WebDownloader::Download()
 	// Okay, we got a Connection. Now start downloading.
 	detail("Downloading %s", m_szInfoName);
 
+	SendHeaders(&url);
+
+	Status = DownloadHeaders();
+
+	if (Status == adRunning)
+	{
+		Status = DownloadBody();
+	}
+
+	if (IsStopped())
+	{
+		Status = adFailed;
+	}
+
+	FreeConnection();
+
+	if (Status != adFinished)
+	{
+		// Download failed, delete broken output file
+		remove(m_szOutputFilename);
+	}
+
+	return Status;
+}
+
+
+WebDownloader::EStatus WebDownloader::CreateConnection(URL *pUrl)
+{
+	if (!pUrl->IsValid())
+	{
+		error("URL is not valid: %s", pUrl->GetAddress());
+		return adFatalError;
+	}
+
+	int iPort = pUrl->GetPort();
+	if (iPort == 0 && !strcasecmp(pUrl->GetProtocol(), "http"))
+	{
+		iPort = 80;
+	}
+	if (iPort == 0 && !strcasecmp(pUrl->GetProtocol(), "https"))
+	{
+		iPort = 443;
+	}
+
+	if (strcasecmp(pUrl->GetProtocol(), "http") && strcasecmp(pUrl->GetProtocol(), "https"))
+	{
+		error("Unsupported protocol in URL: %s", pUrl->GetAddress());
+		return adFatalError;
+	}
+
+#ifdef DISABLE_TLS
+	if (!strcasecmp(pUrl->GetProtocol(), "https"))
+	{
+		error("Program was compiled without TLS/SSL-support. Cannot download using https protocol. URL: %s", pUrl->GetAddress());
+		return adFatalError;
+	}
+#endif
+
+	bool bTLS = !strcasecmp(pUrl->GetProtocol(), "https");
+
+	m_pConnection = new Connection(pUrl->GetHost(), iPort, bTLS);
+
+	return adRunning;
+}
+
+void WebDownloader::SendHeaders(URL *pUrl)
+{
 	char tmp[1024];
 
 	// retrieve file
-	snprintf(tmp, 1024, "GET %s HTTP/1.1\r\n", url.GetResource());
+	snprintf(tmp, 1024, "GET %s HTTP/1.0\r\n", pUrl->GetResource());
 	tmp[1024-1] = '\0';
 	m_pConnection->WriteLine(tmp);
 
@@ -250,26 +290,30 @@ WebDownloader::EStatus WebDownloader::Download()
 	tmp[1024-1] = '\0';
 	m_pConnection->WriteLine(tmp);
 
-	snprintf(tmp, 1024, "Host: %s\r\n", url.GetHost());
+	snprintf(tmp, 1024, "Host: %s\r\n", pUrl->GetHost());
 	tmp[1024-1] = '\0';
 	m_pConnection->WriteLine(tmp);
 
 	m_pConnection->WriteLine("Accept: */*\r\n");
+#ifndef DISABLE_GZIP
+	m_pConnection->WriteLine("Accept-Encoding: gzip\r\n");
+#endif
 	m_pConnection->WriteLine("Connection: close\r\n");
-
 	m_pConnection->WriteLine("\r\n");
+}
+
+WebDownloader::EStatus WebDownloader::DownloadHeaders()
+{
+	EStatus Status = adRunning;
 
 	m_bConfirmedLength = false;
-	m_pOutFile = NULL;
-	bool bBody = false;
-	bool bEnd = false;
 	const int LineBufSize = 1024*10;
 	char* szLineBuf = (char*)malloc(LineBufSize);
 	m_iContentLen = -1;
-	int iWrittenLen = 0;
-	Status = adRunning;
 	bool bFirstLine = true;
+	m_bGZip = false;
 
+	// Headers
 	while (!IsStopped())
 	{
 		SetLastUpdateTimeNow();
@@ -290,6 +334,69 @@ WebDownloader::EStatus WebDownloader::Download()
 		// Have we encountered a timeout?
 		if (!line)
 		{
+			if (!IsStopped())
+			{
+				warn("URL %s failed: Unexpected end of file", m_szInfoName);
+			}
+			Status = adFailed;
+			break;
+		}
+
+		debug("Header: %s", line);
+
+		// detect body of response
+		if (*line == '\r' || *line == '\n')
+		{
+			if (m_iContentLen == -1 && !m_bGZip)
+			{
+				warn("URL %s: Content-Length is not submitted by server, cannot verify whether the file is complete", m_szInfoName);
+			}
+			break;
+		}
+
+		ProcessHeader(line);
+	}
+
+	free(szLineBuf);
+
+	return Status;
+}
+
+WebDownloader::EStatus WebDownloader::DownloadBody()
+{
+	EStatus Status = adRunning;
+
+	m_pOutFile = NULL;
+	bool bEnd = false;
+	const int LineBufSize = 1024*10;
+	char* szLineBuf = (char*)malloc(LineBufSize);
+	int iWrittenLen = 0;
+
+#ifndef DISABLE_GZIP
+	m_pGUnzipStream = NULL;
+	if (m_bGZip)
+	{
+		m_pGUnzipStream = new GUnzipStream(1024*10);
+	}
+#endif
+
+	// Body
+	while (!IsStopped())
+	{
+		SetLastUpdateTimeNow();
+
+		char* szBuffer;
+		int iLen;
+		m_pConnection->ReadBuffer(&szBuffer, &iLen);
+		if (iLen == 0)
+		{
+			iLen = m_pConnection->Recv(szLineBuf, LineBufSize);
+			szBuffer = szLineBuf;
+		}
+
+		// Have we encountered a timeout?
+		if (iLen <= 0)
+		{
 			if (m_iContentLen == -1)
 			{
 				bEnd = true;
@@ -304,43 +411,30 @@ WebDownloader::EStatus WebDownloader::Download()
 			break;
 		}
 
-		if (bBody)
+		// write to output file
+		if (!Write(szBuffer, iLen))
 		{
-			// write to output file
-			if (!Write(line, iLen))
-			{
-				Status = adFatalError;
-				break;
-			}
-			iWrittenLen += iLen;
-
-			//detect end of file
-			if (iWrittenLen == m_iContentLen)
-			{
-				bEnd = true;
-				break;
-			}
+			Status = adFatalError;
+			break;
 		}
-		else
+		iWrittenLen += iLen;
+
+		//detect end of file
+		if (iWrittenLen == m_iContentLen || (m_iContentLen == -1 && m_bGZip && m_bConfirmedLength))
 		{
-			debug("Header: %s", line);
-
-			// detect body of article
-			if (*line == '\r' || *line == '\n')
-			{
-				bBody = true;
-
-				if (m_iContentLen == -1)
-				{
-					warn("URL %s: Content-Length is not submitted by server, cannot verify whether the file is complete", m_szInfoName);
-				}
-			}
-
-			ProcessHeader(line);
+			bEnd = true;
+			break;
 		}
 	}
 
 	free(szLineBuf);
+
+#ifndef DISABLE_GZIP
+	if (m_pGUnzipStream)
+	{
+		delete m_pGUnzipStream;
+	}
+#endif
 
 	if (m_pOutFile)
 	{
@@ -353,22 +447,9 @@ WebDownloader::EStatus WebDownloader::Download()
 		Status = adFailed;
 	}
 
-	if (IsStopped())
-	{
-		Status = adFailed;
-	}
-
-	FreeConnection();
-
 	if (bEnd)
 	{
 		Status = adFinished;
-	}
-
-	if (Status != adFinished)
-	{
-		// Download failed, delete broken output file
-		remove(m_szOutputFilename);
 	}
 
 	return Status;
@@ -425,6 +506,11 @@ void WebDownloader::ProcessHeader(const char* szLine)
 		m_bConfirmedLength = true;
 	}
 
+	if (!strncmp(szLine, "Content-Encoding: gzip", 22))
+	{
+		m_bGZip = true;
+	}
+
 	if (!strncmp(szLine, "Content-Disposition: ", 21))
 	{
 		ParseFilename(szLine);
@@ -474,14 +560,46 @@ void WebDownloader::ParseFilename(const char* szContentDisposition)
 	debug("OriginalFilename: %s", m_szOriginalFilename);
 }
 
-bool WebDownloader::Write(char* szLine, int iLen)
+bool WebDownloader::Write(void* pBuffer, int iLen)
 {
 	if (!m_pOutFile && !PrepareFile())
 	{
 		return false;
 	}
 
-	return fwrite(szLine, 1, iLen, m_pOutFile) > 0;
+#ifndef DISABLE_GZIP
+	if (m_bGZip)
+	{
+		m_pGUnzipStream->Write(pBuffer, iLen);
+		const void *pOutBuf;
+		int iOutLen = 1;
+		while (iOutLen > 0)
+		{
+			GUnzipStream::EStatus eGZStatus = m_pGUnzipStream->Read(&pOutBuf, &iOutLen);
+
+			if (eGZStatus == GUnzipStream::zlError)
+			{
+				error("URL %s: GUnzip failed", m_szInfoName);
+				return false;
+			}
+
+			if (eGZStatus == GUnzipStream::zlFinished)
+			{
+				m_bConfirmedLength = true;
+				return true;
+			}
+
+			if (iOutLen > 0 && fwrite(pOutBuf, 1, iOutLen, m_pOutFile) <= 0)
+			{
+				return false;
+			}
+		}
+		return true;
+	}
+	else
+#endif
+
+	return fwrite(pBuffer, 1, iLen, m_pOutFile) > 0;
 }
 
 bool WebDownloader::PrepareFile()

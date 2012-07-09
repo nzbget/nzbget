@@ -561,6 +561,15 @@ char* Connection::DoReadLine(char* pBuffer, int iSize, int* pBytesRead)
 	return pBuffer;
 }
 
+
+void Connection::ReadBuffer(char** pBuffer, int *iBufLen)
+{
+	*iBufLen = m_iBufAvail;
+	*pBuffer = m_szBufPtr;
+	m_iBufAvail = 0;
+ };
+
+
 int Connection::DoBind()
 {
 	debug("Do binding");

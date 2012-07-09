@@ -31,6 +31,7 @@
 #include "Observer.h"
 #include "Thread.h"
 #include "Connection.h"
+#include "Util.h"
 
 class WebDownloader : public Thread, public Subject
 {
@@ -59,14 +60,22 @@ private:
 	int					m_iContentLen;
 	bool				m_bConfirmedLength;
 	char*				m_szOriginalFilename;
+	bool				m_bGZip;
+#ifndef DISABLE_GZIP
+	GUnzipStream*		m_pGUnzipStream;
+#endif
 
 	void				SetStatus(EStatus eStatus);
-	bool				Write(char* szLine, int iLen);
+	bool				Write(void* pBuffer, int iLen);
 	bool				PrepareFile();
 	void				FreeConnection();
 	EStatus				CheckResponse(const char* szResponse);
 	EStatus				Download();
+	EStatus				CreateConnection(URL *pUrl);
 	void				ParseFilename(const char* szContentDisposition);
+	void				SendHeaders(URL *pUrl);
+	EStatus				DownloadHeaders();
+	EStatus				DownloadBody();
 
 protected:
 	virtual void		ProcessHeader(const char* szLine);

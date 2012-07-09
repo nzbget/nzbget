@@ -1438,7 +1438,7 @@ unsigned int ZLib::GZipLen(int iInputBufferLength)
 	return (unsigned int)deflateBound(&zstr, iInputBufferLength);
 }
 
-unsigned int ZLib::GZip(const char* szInputBuffer, int iInputBufferLength, char* szOutputBuffer, int iOutputBufferLength)
+unsigned int ZLib::GZip(const void* szInputBuffer, int iInputBufferLength, void* szOutputBuffer, int iOutputBufferLength)
 {
 	z_stream zstr;
 	zstr.zalloc = Z_NULL;
@@ -1465,4 +1465,69 @@ unsigned int ZLib::GZip(const char* szInputBuffer, int iInputBufferLength, char*
 	
 	return total_out;
 }
+
+GUnzipStream::GUnzipStream(int BufferSize)
+{
+	m_iBufferSize = BufferSize;
+	m_pZStream = malloc(sizeof(z_stream));
+	m_pOutputBuffer = malloc(BufferSize);
+
+	memset(m_pZStream, 0, sizeof(z_stream));
+
+	/* add 16 to MAX_WBITS to enforce gzip format */
+	int ret = inflateInit2(((z_stream*)m_pZStream), MAX_WBITS + 16);
+	if (ret != Z_OK)
+	{
+		free(m_pZStream);
+		m_pZStream = NULL;
+	}
+}
+
+GUnzipStream::~GUnzipStream()
+{
+	if (m_pZStream)
+	{
+		inflateEnd(((z_stream*)m_pZStream));
+		free(m_pZStream);
+	}
+	free(m_pOutputBuffer);
+}
+
+void GUnzipStream::Write(const void *pInputBuffer, int iInputBufferLength)
+{
+	((z_stream*)m_pZStream)->next_in = (Bytef*)pInputBuffer;
+	((z_stream*)m_pZStream)->avail_in = iInputBufferLength;
+
+	((z_stream*)m_pZStream)->next_out = (Bytef*)m_pOutputBuffer;
+	((z_stream*)m_pZStream)->avail_out = m_iBufferSize;
+}
+
+GUnzipStream::EStatus GUnzipStream::Read(const void **pOutputBuffer, int *iOutputBufferLength)
+{
+	*iOutputBufferLength = 0;
+
+	if (!m_pZStream)
+	{
+		return zlError;
+	}
+
+	int ret = inflate(((z_stream*)m_pZStream), Z_NO_FLUSH);
+
+	switch (ret)
+	{
+		case Z_STREAM_END:
+			return zlFinished;
+
+		case Z_OK:
+			*iOutputBufferLength = m_iBufferSize - ((z_stream*)m_pZStream)->avail_out;
+			*pOutputBuffer = m_pOutputBuffer;
+			return zlOK;
+
+		case Z_BUF_ERROR:
+			return zlOK;
+	}
+
+	return zlError;
+}
+
 #endif
