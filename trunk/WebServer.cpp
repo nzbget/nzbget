@@ -62,11 +62,7 @@ WebProcessor::WebProcessor()
 	m_szClientIP = NULL;
 	m_szRequest = NULL;
 	m_szUrl = NULL;
-}
-
-void WebProcessor::SetUrl(const char* szUrl)
-{
-	m_szUrl = strdup(szUrl);
+	m_szOrigin = NULL;
 }
 
 WebProcessor::~WebProcessor()
@@ -79,8 +75,16 @@ WebProcessor::~WebProcessor()
 	{
 		free(m_szUrl);
 	}
+	if (m_szOrigin)
+	{
+		free(m_szOrigin);
+	}
 }
 
+void WebProcessor::SetUrl(const char* szUrl)
+{
+	m_szUrl = strdup(szUrl);
+}
 
 void WebProcessor::Execute()
 {
@@ -114,6 +118,10 @@ void WebProcessor::Execute()
 		{
 			m_bGZip = strstr(p, "gzip");
 		}
+		if (!strncasecmp(p, "Origin: ", 8))
+		{
+			m_szOrigin = strdup(p + 8);
+		}
 		if (*p == '\0')
 		{
 			bBody = true;
@@ -129,7 +137,13 @@ void WebProcessor::Execute()
 		error("invalid-request: content length is 0");
 		return;
 	}
-	
+
+	if (m_eHttpMethod == hmOptions)
+	{
+		SendOptionsResponse();
+		return;
+	}
+
 	if (strlen(szAuthInfo) == 0)
 	{
 		SendAuthResponse();
@@ -223,12 +237,34 @@ void WebProcessor::SendAuthResponse()
 		"HTTP/1.0 401 Unauthorized\r\n"
 		"WWW-Authenticate: Basic realm=\"NZBGet\"\r\n"
 		"Connection: close\r\n"
-		"Content-Length: %i\r\n"
 		"Content-Type: text/plain\r\n"
 		"Server: nzbget-%s\r\n"
 		"\r\n";
 	char szResponseHeader[1024];
-	snprintf(szResponseHeader, 1024, AUTH_RESPONSE_HEADER, sizeof(AUTH_RESPONSE_HEADER), Util::VersionRevision());
+	snprintf(szResponseHeader, 1024, AUTH_RESPONSE_HEADER, Util::VersionRevision());
+	 
+	// Send the response answer
+	debug("ResponseHeader=%s", szResponseHeader);
+	m_pConnection->Send(szResponseHeader, strlen(szResponseHeader));
+}
+
+void WebProcessor::SendOptionsResponse()
+{
+	const char* OPTIONS_RESPONSE_HEADER =
+		"HTTP/1.1 200 OK\r\n"
+		"Connection: close\r\n"
+		//"Content-Type: plain/text\r\n"
+		"Access-Control-Allow-Methods: GET, POST, OPTIONS\r\n"
+		"Access-Control-Allow-Origin: %s\r\n"
+		"Access-Control-Allow-Credentials: true\r\n"
+		"Access-Control-Max-Age: 86400\r\n"
+		"Access-Control-Allow-Headers: Content-Type, Authorization\r\n"
+		"Server: nzbget-%s\r\n"
+		"\r\n";
+	char szResponseHeader[1024];
+	snprintf(szResponseHeader, 1024, OPTIONS_RESPONSE_HEADER, 
+		m_szOrigin ? m_szOrigin : "",
+		Util::VersionRevision());
 	 
 	// Send the response answer
 	debug("ResponseHeader=%s", szResponseHeader);
@@ -262,13 +298,18 @@ void WebProcessor::SendErrorResponse(const char* szErrCode)
 void WebProcessor::SendBodyResponse(const char* szBody, int iBodyLen, const char* szContentType)
 {
 	const char* RESPONSE_HEADER = 
-	"HTTP/1.0 200 OK\r\n"
-	"Connection: close\r\n"
-	"Content-Length: %i\r\n"
-	"%s"					// Content-Type: xxx
-	"%s"					// Content-Encoding: gzip
-	"Server: nzbget-%s\r\n"
-	"\r\n";
+		"HTTP/1.1 200 OK\r\n"
+		"Connection: close\r\n"
+		"Access-Control-Allow-Methods: GET, POST, OPTIONS\r\n"
+		"Access-Control-Allow-Origin: %s\r\n"
+		"Access-Control-Allow-Credentials: true\r\n"
+		"Access-Control-Max-Age: 86400\r\n"
+		"Access-Control-Allow-Headers: Content-Type, Authorization\r\n"
+		"Content-Length: %i\r\n"
+		"%s"					// Content-Type: xxx
+		"%s"					// Content-Encoding: gzip
+		"Server: nzbget-%s\r\n"
+		"\r\n";
 	
 #ifndef DISABLE_GZIP
 	char *szGBuf = NULL;
@@ -305,9 +346,11 @@ void WebProcessor::SendBodyResponse(const char* szBody, int iBodyLen, const char
 	}
 	
 	char szResponseHeader[1024];
-	snprintf(szResponseHeader, 1024, RESPONSE_HEADER, iBodyLen, szContentTypeHeader,
-			 bGZip ? "Content-Encoding: gzip\r\n" : "",
-			 Util::VersionRevision());
+	snprintf(szResponseHeader, 1024, RESPONSE_HEADER, 
+		m_szOrigin ? m_szOrigin : "",
+		iBodyLen, szContentTypeHeader,
+		bGZip ? "Content-Encoding: gzip\r\n" : "",
+		Util::VersionRevision());
 	
 	// Send the request answer
 	m_pConnection->Send(szResponseHeader, strlen(szResponseHeader));
