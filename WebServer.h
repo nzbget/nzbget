@@ -34,7 +34,8 @@ public:
 	enum EHttpMethod
 	{
 		hmPost,
-		hmGet
+		hmGet,
+		hmOptions
 	};
 
 private:
@@ -44,9 +45,11 @@ private:
 	char*				m_szUrl;
 	EHttpMethod			m_eHttpMethod;
 	bool				m_bGZip;
+	char*				m_szOrigin;
 
 	void				Dispatch();
 	void				SendAuthResponse();
+	void				SendOptionsResponse();
 	void				SendErrorResponse(const char* szErrCode);
 	void				SendFileResponse(const char* szFilename);
 	void				SendBodyResponse(const char* szBody, int iBodyLen, const char* szContentType);

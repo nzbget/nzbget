@@ -172,19 +172,26 @@ void RequestProcessor::Run()
 		processor.SetClientIP(ip);
 		processor.Execute();
 	}
-	else if (!strncmp((char*)&iSignature, "POST", 4) || !strncmp((char*)&iSignature, "GET ", 4))
+	else if (!strncmp((char*)&iSignature, "POST", 4) || 
+		!strncmp((char*)&iSignature, "GET ", 4) ||
+		!strncmp((char*)&iSignature, "OPTI", 4))
 	{
 		// HTTP request received
 		Connection con(m_iSocket, false);
 		char szBuffer[1024];
 		if (con.ReadLine(szBuffer, sizeof(szBuffer), NULL))
 		{
-			bool bMethodGet = true;
+			WebProcessor::EHttpMethod eHttpMethod = WebProcessor::hmGet;
 			char* szUrl = szBuffer;
 			if (!strncmp((char*)&iSignature, "POST", 4))
 			{
-				bMethodGet = false;
+				eHttpMethod = WebProcessor::hmPost;
 				szUrl++;
+			}
+			if (!strncmp((char*)&iSignature, "OPTI", 4) && strlen(szUrl) > 4)
+			{
+				eHttpMethod = WebProcessor::hmOptions;
+				szUrl += 4;
 			}
 			if (char* p = strchr(szUrl, ' '))
 			{
@@ -197,7 +204,7 @@ void RequestProcessor::Run()
 			processor.SetConnection(&con);
 			processor.SetClientIP(ip);
 			processor.SetUrl(szUrl);
-			processor.SetHttpMethod(bMethodGet ? WebProcessor::hmGet : WebProcessor::hmPost);
+			processor.SetHttpMethod(eHttpMethod);
 			processor.Execute();
 			bOK = true;
 		}
