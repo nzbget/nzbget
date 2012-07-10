@@ -144,6 +144,30 @@ void WebProcessor::Execute()
 		return;
 	}
 
+	// authorization via URL in format:
+	// http://localhost:6789/username:password/jsonrpc
+	char* pauth1 = strchr(m_szUrl + 1, ':');
+	char* pauth2 = strchr(m_szUrl + 1, '/');
+	if (pauth1 && pauth1 < pauth2)
+	{
+		char* pstart = m_szUrl + 1;
+		int iLen = 0;
+		char* pend = strchr(pstart + 1, '/');
+		if (pend) 
+		{
+			iLen = (int)(pend - pstart < (int)sizeof(szAuthInfo) - 1 ? pend - pstart : (int)sizeof(szAuthInfo) - 1);
+		}
+		else
+		{
+			iLen = strlen(pstart);
+		}
+		strncpy(szAuthInfo, pstart, iLen);
+		szAuthInfo[iLen] = '\0';
+		char* sz_OldUrl = m_szUrl;
+		m_szUrl = strdup(pend);
+		free(sz_OldUrl);
+	}
+
 	if (strlen(szAuthInfo) == 0)
 	{
 		SendAuthResponse();
