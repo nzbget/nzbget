@@ -441,6 +441,7 @@ bool QueueEditor::BuildIDListFromNameList(DownloadQueue* pDownloadQueue, IDList*
 				{
 					uniqueIDs.insert(pFileInfo->GetID());
 					pIDList->push_back(pFileInfo->GetID());
+					bFound = true;
 				}
 			}
 			else
@@ -452,6 +453,7 @@ bool QueueEditor::BuildIDListFromNameList(DownloadQueue* pDownloadQueue, IDList*
 				{
 					uniqueIDs.insert(pFileInfo->GetNZBInfo()->GetID());
 					pIDList->push_back(pFileInfo->GetID());
+					bFound = true;
 				}
 			}
 		}
