@@ -14,6 +14,29 @@
 
 @SET_MAKE@
 
+#
+#  This file if part of nzbget
+#
+# Copyright (C) 2008-2012 Andrey Prygunkov <hugbug@users.sourceforge.net>
+#
+# This program is free software; you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation; either version 2 of the License, or
+# (at your option) any later version.
+# 
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+# 
+# You should have received a copy of the GNU General Public License
+# along with this program; if not, write to the Free Software
+# Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
+#
+#
+
+
+
 srcdir = @srcdir@
 top_srcdir = @top_srcdir@
 VPATH = @srcdir@
@@ -38,7 +61,8 @@ build_triplet = @build@
 host_triplet = @host@
 target_triplet = @target@
 bin_PROGRAMS = nzbget$(EXEEXT)
-DIST_COMMON = README $(am__configure_deps) $(srcdir)/Makefile.am \
+DIST_COMMON = README $(am__configure_deps) $(dist_doc_DATA) \
+	$(dist_exampleconf_DATA) $(srcdir)/Makefile.am \
 	$(srcdir)/Makefile.in $(srcdir)/config.h.in \
 	$(top_srcdir)/configure AUTHORS COPYING ChangeLog INSTALL NEWS \
 	config.guess config.sub depcomp install-sh missing
@@ -52,7 +76,9 @@ am__CONFIG_DISTCLEAN_FILES = config.status config.cache config.log \
 mkinstalldirs = $(install_sh) -d
 CONFIG_HEADER = config.h
 CONFIG_CLEAN_FILES =
-am__installdirs = "$(DESTDIR)$(bindir)"
+am__installdirs = "$(DESTDIR)$(bindir)" "$(DESTDIR)$(bindir)" \
+	"$(DESTDIR)$(sbindir)" "$(DESTDIR)$(docdir)" \
+	"$(DESTDIR)$(exampleconfdir)"
 binPROGRAMS_INSTALL = $(INSTALL_PROGRAM)
 PROGRAMS = $(bin_PROGRAMS)
 am_nzbget_OBJECTS = ArticleDownloader.$(OBJEXT) BinRpc.$(OBJEXT) \
@@ -71,6 +97,9 @@ am_nzbget_OBJECTS = ArticleDownloader.$(OBJEXT) BinRpc.$(OBJEXT) \
 	WebServer.$(OBJEXT) UrlCoordinator.$(OBJEXT) nzbget.$(OBJEXT)
 nzbget_OBJECTS = $(am_nzbget_OBJECTS)
 nzbget_LDADD = $(LDADD)
+binSCRIPT_INSTALL = $(INSTALL_SCRIPT)
+sbinSCRIPT_INSTALL = $(INSTALL_SCRIPT)
+SCRIPTS = $(bin_SCRIPTS) $(sbin_SCRIPTS)
 DEFAULT_INCLUDES = -I. -I$(srcdir) -I.
 depcomp = $(SHELL) $(top_srcdir)/depcomp
 am__depfiles_maybe = depfiles
@@ -85,6 +114,15 @@ CCLD = $(CC)
 LINK = $(CCLD) $(AM_CFLAGS) $(CFLAGS) $(AM_LDFLAGS) $(LDFLAGS) -o $@
 SOURCES = $(nzbget_SOURCES)
 DIST_SOURCES = $(nzbget_SOURCES)
+am__vpath_adj_setup = srcdirstrip=`echo "$(srcdir)" | sed 's|.|.|g'`;
+am__vpath_adj = case $$p in \
+    $(srcdir)/*) f=`echo "$$p" | sed "s|^$$srcdirstrip/||"`;; \
+    *) f=$$p;; \
+  esac;
+am__strip_dir = `echo $$p | sed -e 's|^.*/||'`;
+dist_docDATA_INSTALL = $(INSTALL_DATA)
+dist_exampleconfDATA_INSTALL = $(INSTALL_DATA)
+DATA = $(dist_doc_DATA) $(dist_exampleconf_DATA)
 ETAGS = etags
 CTAGS = ctags
 DISTFILES = $(DIST_COMMON) $(DIST_SOURCES) $(TEXINFOS) $(EXTRA_DIST)
@@ -97,7 +135,6 @@ am__remove_distdir = \
 DIST_ARCHIVES = $(distdir).tar.gz
 GZIP_ENV = --best
 distuninstallcheck_listfiles = find . -type f -print
-distcleancheck_listfiles = find . -type f -print
 ACLOCAL = @ACLOCAL@
 ADDSRCS = @ADDSRCS@
 AMDEP_FALSE = @AMDEP_FALSE@
@@ -198,7 +235,8 @@ target_alias = @target_alias@
 target_cpu = @target_cpu@
 target_os = @target_os@
 target_vendor = @target_vendor@
-nzbget_SOURCES = ArticleDownloader.cpp ArticleDownloader.h BinRpc.cpp BinRpc.h \
+nzbget_SOURCES = \
+	ArticleDownloader.cpp ArticleDownloader.h BinRpc.cpp BinRpc.h \
 	ColoredFrontend.cpp ColoredFrontend.h Connection.cpp Connection.h Decoder.cpp Decoder.h \
 	DiskState.cpp DiskState.h DownloadInfo.cpp DownloadInfo.h Frontend.cpp Frontend.h \
 	Log.cpp Log.h LoggableFrontend.cpp LoggableFrontend.h MessageBase.h \
@@ -208,16 +246,38 @@ nzbget_SOURCES = ArticleDownloader.cpp ArticleDownloader.h BinRpc.cpp BinRpc.h \
 	PrePostProcessor.cpp PrePostProcessor.h QueueCoordinator.cpp \
 	QueueCoordinator.h QueueEditor.cpp QueueEditor.h RemoteClient.cpp RemoteClient.h \
 	RemoteServer.cpp RemoteServer.h Scanner.cpp Scanner.h Scheduler.cpp Scheduler.h ScriptController.cpp \
-	ScriptController.h ServerPool.cpp ServerPool.h svn_version.cpp TLS.cpp TLS.h Thread.cpp Thread.h Util.cpp \
-	Util.h XmlRpc.cpp XmlRpc.h WebDownloader.cpp WebDownloader.h WebServer.cpp WebServer.h UrlCoordinator.cpp UrlCoordinator.h \
-	nzbget.cpp nzbget.h
+	ScriptController.h ServerPool.cpp ServerPool.h svn_version.cpp TLS.cpp TLS.h Thread.cpp Thread.h \
+	Util.cpp Util.h XmlRpc.cpp XmlRpc.h WebDownloader.cpp WebDownloader.h WebServer.cpp WebServer.h \
+	UrlCoordinator.cpp UrlCoordinator.h nzbget.cpp nzbget.h
 
-EXTRA_DIST = nzbget.conf nzbget-postprocess.sh nzbget-postprocess.conf \
-	win32.h NTService.cpp NTService.h \
+EXTRA_DIST = \
+	Makefile.cvs nzbgetd nzbget-postprocess.sh 
+
+patches_FILES = \
 	libpar2-0.2-bugfixes.patch libpar2-0.2-cancel.patch \
-	libpar2-0.2-MSVC8.patch libsigc++-2.0.18-MSVC8.patch \
-	Makefile.cvs nzbget.kdevelop nzbget.sln nzbget.vcproj \
-	nzbgetd nzbget-shell.bat
+	libpar2-0.2-MSVC8.patch libsigc++-2.0.18-MSVC8.patch
+
+windows_FILES = \
+	win32.h NTService.cpp NTService.h nzbget.sln nzbget.vcproj nzbget-shell.bat
+
+doc_FILES = \
+	README ChangeLog COPYING
+
+exampleconf_FILES = \
+	nzbget.conf nzbget-postprocess.conf
+
+
+# Install
+sbin_SCRIPTS = nzbgetd
+bin_SCRIPTS = nzbget-postprocess.sh
+dist_doc_DATA = $(doc_FILES)
+exampleconfdir = $(datadir)/nzbget
+dist_exampleconf_DATA = $(exampleconf_FILES)
+
+# Ignore "svn_version.cpp" in distcleancheck
+distcleancheck_listfiles = \
+	find . -type f -exec sh -c 'test -f $(srcdir)/$$1 || echo $$1' \
+	sh '{}' ';'
 
 all: config.h
 	$(MAKE) $(AM_MAKEFLAGS) all-am
@@ -300,6 +360,44 @@ clean-binPROGRAMS:
 nzbget$(EXEEXT): $(nzbget_OBJECTS) $(nzbget_DEPENDENCIES) 
 	@rm -f nzbget$(EXEEXT)
 	$(CXXLINK) $(nzbget_LDFLAGS) $(nzbget_OBJECTS) $(nzbget_LDADD) $(LIBS)
+install-binSCRIPTS: $(bin_SCRIPTS)
+	@$(NORMAL_INSTALL)
+	test -z "$(bindir)" || $(mkdir_p) "$(DESTDIR)$(bindir)"
+	@list='$(bin_SCRIPTS)'; for p in $$list; do \
+	  if test -f "$$p"; then d=; else d="$(srcdir)/"; fi; \
+	  if test -f $$d$$p; then \
+	    f=`echo "$$p" | sed 's|^.*/||;$(transform)'`; \
+	    echo " $(binSCRIPT_INSTALL) '$$d$$p' '$(DESTDIR)$(bindir)/$$f'"; \
+	    $(binSCRIPT_INSTALL) "$$d$$p" "$(DESTDIR)$(bindir)/$$f"; \
+	  else :; fi; \
+	done
+
+uninstall-binSCRIPTS:
+	@$(NORMAL_UNINSTALL)
+	@list='$(bin_SCRIPTS)'; for p in $$list; do \
+	  f=`echo "$$p" | sed 's|^.*/||;$(transform)'`; \
+	  echo " rm -f '$(DESTDIR)$(bindir)/$$f'"; \
+	  rm -f "$(DESTDIR)$(bindir)/$$f"; \
+	done
+install-sbinSCRIPTS: $(sbin_SCRIPTS)
+	@$(NORMAL_INSTALL)
+	test -z "$(sbindir)" || $(mkdir_p) "$(DESTDIR)$(sbindir)"
+	@list='$(sbin_SCRIPTS)'; for p in $$list; do \
+	  if test -f "$$p"; then d=; else d="$(srcdir)/"; fi; \
+	  if test -f $$d$$p; then \
+	    f=`echo "$$p" | sed 's|^.*/||;$(transform)'`; \
+	    echo " $(sbinSCRIPT_INSTALL) '$$d$$p' '$(DESTDIR)$(sbindir)/$$f'"; \
+	    $(sbinSCRIPT_INSTALL) "$$d$$p" "$(DESTDIR)$(sbindir)/$$f"; \
+	  else :; fi; \
+	done
+
+uninstall-sbinSCRIPTS:
+	@$(NORMAL_UNINSTALL)
+	@list='$(sbin_SCRIPTS)'; for p in $$list; do \
+	  f=`echo "$$p" | sed 's|^.*/||;$(transform)'`; \
+	  echo " rm -f '$(DESTDIR)$(sbindir)/$$f'"; \
+	  rm -f "$(DESTDIR)$(sbindir)/$$f"; \
+	done
 
 mostlyclean-compile:
 	-rm -f *.$(OBJEXT)
@@ -357,6 +455,40 @@ distclean-compile:
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCXX_FALSE@	$(CXXCOMPILE) -c -o $@ `$(CYGPATH_W) '$<'`
 uninstall-info-am:
+install-dist_docDATA: $(dist_doc_DATA)
+	@$(NORMAL_INSTALL)
+	test -z "$(docdir)" || $(mkdir_p) "$(DESTDIR)$(docdir)"
+	@list='$(dist_doc_DATA)'; for p in $$list; do \
+	  if test -f "$$p"; then d=; else d="$(srcdir)/"; fi; \
+	  f=$(am__strip_dir) \
+	  echo " $(dist_docDATA_INSTALL) '$$d$$p' '$(DESTDIR)$(docdir)/$$f'"; \
+	  $(dist_docDATA_INSTALL) "$$d$$p" "$(DESTDIR)$(docdir)/$$f"; \
+	done
+
+uninstall-dist_docDATA:
+	@$(NORMAL_UNINSTALL)
+	@list='$(dist_doc_DATA)'; for p in $$list; do \
+	  f=$(am__strip_dir) \
+	  echo " rm -f '$(DESTDIR)$(docdir)/$$f'"; \
+	  rm -f "$(DESTDIR)$(docdir)/$$f"; \
+	done
+install-dist_exampleconfDATA: $(dist_exampleconf_DATA)
+	@$(NORMAL_INSTALL)
+	test -z "$(exampleconfdir)" || $(mkdir_p) "$(DESTDIR)$(exampleconfdir)"
+	@list='$(dist_exampleconf_DATA)'; for p in $$list; do \
+	  if test -f "$$p"; then d=; else d="$(srcdir)/"; fi; \
+	  f=$(am__strip_dir) \
+	  echo " $(dist_exampleconfDATA_INSTALL) '$$d$$p' '$(DESTDIR)$(exampleconfdir)/$$f'"; \
+	  $(dist_exampleconfDATA_INSTALL) "$$d$$p" "$(DESTDIR)$(exampleconfdir)/$$f"; \
+	done
+
+uninstall-dist_exampleconfDATA:
+	@$(NORMAL_UNINSTALL)
+	@list='$(dist_exampleconf_DATA)'; for p in $$list; do \
+	  f=$(am__strip_dir) \
+	  echo " rm -f '$(DESTDIR)$(exampleconfdir)/$$f'"; \
+	  rm -f "$(DESTDIR)$(exampleconfdir)/$$f"; \
+	done
 
 ID: $(HEADERS) $(SOURCES) $(LISP) $(TAGS_FILES)
 	list='$(SOURCES) $(HEADERS) $(LISP) $(TAGS_FILES)'; \
@@ -435,6 +567,9 @@ distdir: $(DISTFILES)
 	    || exit 1; \
 	  fi; \
 	done
+	$(MAKE) $(AM_MAKEFLAGS) \
+	  top_distdir="$(top_distdir)" distdir="$(distdir)" \
+	  dist-hook
 	-find $(distdir) -type d ! -perm -777 -exec chmod a+rwx {} \; -o \
 	  ! -type d ! -perm -444 -links 1 -exec chmod a+r {} \; -o \
 	  ! -type d ! -perm -400 -exec chmod a+r {} \; -o \
@@ -534,9 +669,9 @@ distcleancheck: distclean
 	       exit 1; } >&2
 check-am: all-am
 check: check-am
-all-am: Makefile $(PROGRAMS) config.h
+all-am: Makefile $(PROGRAMS) $(SCRIPTS) $(DATA) config.h
 installdirs:
-	for dir in "$(DESTDIR)$(bindir)"; do \
+	for dir in "$(DESTDIR)$(bindir)" "$(DESTDIR)$(bindir)" "$(DESTDIR)$(sbindir)" "$(DESTDIR)$(docdir)" "$(DESTDIR)$(exampleconfdir)"; do \
 	  test -z "$$dir" || $(mkdir_p) "$$dir"; \
 	done
 install: install-am
@@ -584,9 +719,14 @@ info: info-am
 
 info-am:
 
-install-data-am:
+install-data-am: install-dist_docDATA install-dist_exampleconfDATA
+	@$(NORMAL_INSTALL)
+	$(MAKE) $(AM_MAKEFLAGS) install-data-hook
 
-install-exec-am: install-binPROGRAMS
+install-exec-am: install-binPROGRAMS install-binSCRIPTS \
+	install-sbinSCRIPTS
+	@$(NORMAL_INSTALL)
+	$(MAKE) $(AM_MAKEFLAGS) install-exec-hook
 
 install-info: install-info-am
 
@@ -613,22 +753,39 @@ ps: ps-am
 
 ps-am:
 
-uninstall-am: uninstall-binPROGRAMS uninstall-info-am
+uninstall-am: uninstall-binPROGRAMS uninstall-binSCRIPTS \
+	uninstall-dist_docDATA uninstall-dist_exampleconfDATA \
+	uninstall-info-am uninstall-sbinSCRIPTS
 
 .PHONY: CTAGS GTAGS all all-am am--refresh check check-am clean \
 	clean-binPROGRAMS clean-generic ctags dist dist-all dist-bzip2 \
-	dist-gzip dist-shar dist-tarZ dist-zip distcheck distclean \
-	distclean-compile distclean-generic distclean-hdr \
+	dist-gzip dist-hook dist-shar dist-tarZ dist-zip distcheck \
+	distclean distclean-compile distclean-generic distclean-hdr \
 	distclean-tags distcleancheck distdir distuninstallcheck dvi \
 	dvi-am html html-am info info-am install install-am \
-	install-binPROGRAMS install-data install-data-am install-exec \
-	install-exec-am install-info install-info-am install-man \
-	install-strip installcheck installcheck-am installdirs \
-	maintainer-clean maintainer-clean-generic mostlyclean \
-	mostlyclean-compile mostlyclean-generic pdf pdf-am ps ps-am \
-	tags uninstall uninstall-am uninstall-binPROGRAMS \
-	uninstall-info-am
+	install-binPROGRAMS install-binSCRIPTS install-data \
+	install-data-am install-data-hook install-dist_docDATA \
+	install-dist_exampleconfDATA install-exec install-exec-am \
+	install-exec-hook install-info install-info-am install-man \
+	install-sbinSCRIPTS install-strip installcheck installcheck-am \
+	installdirs maintainer-clean maintainer-clean-generic \
+	mostlyclean mostlyclean-compile mostlyclean-generic pdf pdf-am \
+	ps ps-am tags uninstall uninstall-am uninstall-binPROGRAMS \
+	uninstall-binSCRIPTS uninstall-dist_docDATA \
+	uninstall-dist_exampleconfDATA uninstall-info-am \
+	uninstall-sbinSCRIPTS
 
+	$(patches_FILES) $(windows_FILES) $(doc_FILES) $(exampleconf_FILES)
+
+# Configure installed script
+install-exec-hook:
+	sed -i 's?/usr/local/bin?$(bindir)?' "$(DESTDIR)$(sbindir)/nzbgetd"
+
+# Prepare example configuration files and copy them into /etc (only if 
+# they do not exist there to prevent override by update)
+install-data-hook:
+	sed -i 's:"nzbget-postprocess.sh": "nzbget-postprocess.sh" (installed into $(sbindir)/nzbget-postprocess.sh):' "$(DESTDIR)$(exampleconfdir)/nzbget.conf" ; \
+	sed -i 's:/usr/local/share/nzbget/webui:$(webuidir)/webui:' "$(DESTDIR)$(exampleconfdir)/nzbget.conf" ;
 
 # Determining subversion revision:
 # 1) If directory ".svn" exists we take revision from it using program svnversion (part of subversion package)
@@ -668,6 +825,10 @@ svn_version.cpp: FORCE
 FORCE:
 
 clean-bak: rm *~
+
+# Fix premissions
+dist-hook:
+	chmod -x $(distdir)/*.cpp $(distdir)/*.h
 # Tell versions [3.59,3.63) of GNU make to not export all variables.
 # Otherwise a system limit (for SysV at least) may be exceeded.
 .NOEXPORT:
