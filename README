@@ -2,6 +2,10 @@
            NZBGet ReadMe
 =====================================
 
+This is a short documentation. For more information please
+visit NZBGet home page at 
+  http://nzbget.sourceforge.net
+
 Contents          
 --------
 1. About NZBGet
@@ -41,7 +45,7 @@ NZBGet is written in C++ and was initialy developed on Linux.
 It was ported to Windows later and tested for compatibility with
 several POSIX-OS'es.
 
-The current version (0.8.0) should run at least on:
+It should run at least on:
   - Linux Debian 5.0 on x86;
   - Linux with uClibc on MIPSEL and ARM;
   - OpenBSD 5.0 on x86;
@@ -88,6 +92,9 @@ And the following libraries are optional:
      or
    - OpenSSL     (http://www.openssl.org)
 
+ - for gzip support in web-server and web-client (enabled by default):
+   - zlib     (http://www.zlib.net)
+
 All these libraries are included in modern Linux distributions and
 should be available as installable packages. Please note that you also 
 need the developer packages for these libraries too, they package names 
@@ -116,6 +123,11 @@ Well, the usual stuff:
  - install it via
      make install
 
+In a case you don't have root access or just want to install the program
+in your home directory use the configure parameter --prefix, e. g.:
+
+  ./configure --prefix ~/usr
+
 Configure-options
 -----------------
 You may run configure with additional arguments:
@@ -131,6 +143,9 @@ You may run configure with additional arguments:
       
   --disable-tls - to make without TLS/SSL support. Use this option if
     you can not neither GnuTLS nor OpenSSL.
+
+  --disable-gzip - to make without gzip support. Use this option
+    if you can not use zlib.
        
   --enable-debug - to build in debug-mode, if you want to see and log
     debug-messages.
@@ -244,17 +259,22 @@ in MS Visual C++ 2005 you should be able to compile NZBGet.
 6. Configuration
 =====================================
 
-NZBGet needs a configuration-file to work properly. 
+NZBGet needs a configuration file. 
 
-You need to set at least the option "MAINDIR" and one newsserver in
-configuration file. Have a look at the example in nzbget.conf, 
-it has comments on how to use each option.
+An example configuration file is provided as "nzbget.conf", which
+is installed into "<prefix>/share/nzbget" (where <prefix> depends on
+system configuration and configure options - typically "/usr/local",
+"/usr" or "/opt"). The installer adjusts the file according to your
+system paths. Copy the file into one of the locations listed below,
+then edit it.
+
+You need to set at least the option "MAINDIR" and one news server in
+configuration file. The file has comments on how to use each option.
 
 The program looks for configuration file in following standard 
 locations (in this order):
 
 On POSIX systems:
-
   ~/.nzbget
   /etc/nzbget.conf
   /usr/etc/nzbget.conf
@@ -401,28 +421,40 @@ nzbget-client-commands in this terminal.
 Post processing scripts
 -----------------------
 
-After the download of nzb-file is completed nzbget can call post-process-script, 
-defined in configuration file. See example configuration file for the 
-description of parameters passed to the script.
+After the download of nzb-file is completed nzbget can call post-processing
+script, defined in configuration file. See example configuration file for
+the description of parameters passed to the script (option "PostProcess").
 
 An example script for unraring of downloaded files is provided in file
-nzbget-postprocess.sh. The usage instructions are included in the file,
-please open the file in any text editor to read them.
-NOTE: That example script is for POSIX systems (not for Windows).
+"nzbget-postprocess.sh" installed into "<prefix>/bin". The script requires
+configuration file "nzbget-postprocess.conf". You have to copy it from
+"<prefix>/share/nzbget" to the directory where the nzbget configuration
+file ("nzbget.conf") is located.
+
+Set the option "PostProcess" in "nzbget.conf" to point to the post-
+processing script.
+
+Additional usage instructions are included in "nzbget-postprocess.sh",
+please open the file in a text editor to read them.
+
+NOTE: The post-processing script "nzbget-postprocess.sh" is for
+POSIX systems and will not work on Windows.
 
 =====================================
 8. Authors
 =====================================
 
-NZBGet was initialiy written by Sven Henkel (sidddy@users.sourceforge.net).
-
-Up to version 0.2.3 it was developed and maintained by Bo Cordes Petersen 
-(placebodk@users.sourceforge.net). 
-
-Beginning at version 0.3.0 the program is being developed by Andrey Prygunkov 
+NZBGet is developed and maintained by Andrey Prygunkov
 (hugbug@users.sourceforge.net).
 
-Module TLS (TLS.c, TLS.h) is based on work by Martin Lambers (marlam@marlam.de).
+The original project was initially created by Sven Henkel
+(sidddy@users.sourceforge.net) in 2004 and later developed by
+Bo Cordes Petersen (placebodk@users.sourceforge.net) until 2005.
+In 2007 the abandoned project was overtaken by Andrey Prygunkov.
+Since then the program has been completely rewritten.
+
+Module TLS (TLS.c, TLS.h) is based on work by Martin Lambers
+(marlam@marlam.de).
 
 =====================================
 9. Copyright
