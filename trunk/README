@@ -247,7 +247,7 @@ in MS Visual C++ 2005 you should be able to compile NZBGet.
 NZBGet needs a configuration-file to work properly. 
 
 You need to set at least the option "MAINDIR" and one newsserver in
-configuration file. Have a look at the example in nzbget.conf.example, 
+configuration file. Have a look at the example in nzbget.conf, 
 it has comments on how to use each option.
 
 The program looks for configuration file in following standard 
@@ -406,7 +406,7 @@ defined in configuration file. See example configuration file for the
 description of parameters passed to the script.
 
 An example script for unraring of downloaded files is provided in file
-postprocess-example.sh. The usage instructions are included in the file,
+nzbget-postprocess.sh. The usage instructions are included in the file,
 please open the file in any text editor to read them.
 NOTE: That example script is for POSIX systems (not for Windows).
 

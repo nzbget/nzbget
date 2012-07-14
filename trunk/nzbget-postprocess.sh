@@ -1,10 +1,12 @@
 #!/bin/sh 
 #
+# This file if part of nzbget
+#
 # Example postprocessing script for NZBGet
 #
 # Copyright (C) 2008 Peter Roubos <peterroubos@hotmail.com>
 # Copyright (C) 2008 Otmar Werner
-# Copyright (C) 2008-2009 Andrey Prygunkov <hugbug@users.sourceforge.net>
+# Copyright (C) 2008-2012 Andrey Prygunkov <hugbug@users.sourceforge.net>
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -84,7 +86,7 @@
 
 
 # Name of script's configuration file
-SCRIPT_CONFIG_FILE="postprocess-example.conf"
+SCRIPT_CONFIG_FILE="nzbget-postprocess.conf"
 
 # Exit codes
 POSTPROCESS_PARCHECK_CURRENT=91
