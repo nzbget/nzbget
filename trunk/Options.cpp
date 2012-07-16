@@ -185,6 +185,8 @@ Options::OptEntry::OptEntry()
 {
 	m_szName = NULL;
 	m_szValue = NULL;
+	m_szDefValue = NULL;
+	m_iLineNo = 0;
 }
 
 Options::OptEntry::~OptEntry()
@@ -196,6 +198,10 @@ Options::OptEntry::~OptEntry()
 	if (m_szValue)
 	{
 		free(m_szValue);
+	}
+	if (m_szDefValue)
+	{
+		free(m_szDefValue);
 	}
 }
 
@@ -215,13 +221,20 @@ void Options::OptEntry::SetValue(const char* szValue)
 		free(m_szValue);
 	}
 	m_szValue = strdup(szValue);
+
+	if (!m_szDefValue)
+	{
+		m_szDefValue = strdup(szValue);
+	}
 }
 
 
 Options::Options(int argc, char* argv[])
 {
-	// initialize options with default values
+	m_bConfigErrors = false;
+	m_iConfigLine = 0;
 
+	// initialize options with default values
 	m_bConfigInitialized	= false;
 	m_szConfigFilename		= NULL;
 	m_szDestDir				= NULL;
@@ -381,6 +394,15 @@ Options::Options(int argc, char* argv[])
 		Dump();
 		exit(-1);
 	}
+
+	if (m_bConfigErrors && m_eClientOperation == opClientNoOperation)
+	{
+		info("Pausing all activities due to errors in configuration");
+		m_bPauseDownload = true;
+		m_bPauseDownload2= true;
+		m_bPausePostProcess = true;
+		m_bPauseScan = true;
+	}
 }
 
 Options::~Options()
@@ -480,6 +502,22 @@ void Options::Dump()
 	}
 }
 
+void Options::ConfigError(const char* msg, ...)
+{
+	char tmp2[1024];
+
+	va_list ap;
+	va_start(ap, msg);
+	vsnprintf(tmp2, 1024, msg, ap);
+	tmp2[1024-1] = '\0';
+	va_end(ap);
+
+	printf("%s(%i): %s\n", Util::BaseFileName(m_szConfigFilename), m_iConfigLine, tmp2);
+	error("%s(%i): %s", Util::BaseFileName(m_szConfigFilename), m_iConfigLine, tmp2);
+
+	m_bConfigErrors = true;
+}
+
 void Options::InitDefault()
 {
 #ifdef WIN32
@@ -557,7 +595,7 @@ void Options::InitDefault()
 	SetOption(OPTION_DELETECLEANUPDISK, "no");
 	SetOption(OPTION_MERGENZB, "no");
 	SetOption(OPTION_PARTIMELIMIT, "0");	
-	SetOption(OPTION_KEEPHISTORY, "0");
+	SetOption(OPTION_KEEPHISTORY, "7");
 	SetOption(OPTION_ACCURATERATE, "no");
 }
 
@@ -638,15 +676,16 @@ void Options::CheckDir(char** dir, const char* szOptionName, bool bAllowEmpty, b
 	{
 		if (!bAllowEmpty)
 		{
-			abort("FATAL ERROR: Wrong value for option \"%s\"\n", szOptionName);
+			ConfigError("Invalid value for option \"%s\": <empty>", szOptionName);
 		}
+		*dir = strdup("");
 		return;
 	}
 
 	// Ensure the dir is created
 	if (bCreate && !Util::ForceDirectories(usedir))
 	{
-		abort("FATAL ERROR: Directory \"%s\" (option \"%s\") does not exist and could not be created\n", usedir, szOptionName);
+		ConfigError("Invalid value for option \"%s\": could not create directory \"%s\"", szOptionName, usedir);
 	}
 	*dir = usedir;
 }
@@ -658,92 +697,92 @@ void Options::InitOptions()
 	CheckDir(&m_szQueueDir, OPTION_QUEUEDIR, false, true);
 	CheckDir(&m_szWebDir, OPTION_WEBDIR, true, false);
 
-	m_szPostProcess = strdup(GetOption(OPTION_POSTPROCESS));
-	m_szNZBProcess = strdup(GetOption(OPTION_NZBPROCESS));
-	
-	m_fDownloadRate			= (float)atof(GetOption(OPTION_DOWNLOADRATE));
-	m_iConnectionTimeout	= atoi(GetOption(OPTION_CONNECTIONTIMEOUT));
-	m_iTerminateTimeout		= atoi(GetOption(OPTION_TERMINATETIMEOUT));
-	m_iRetries				= atoi(GetOption(OPTION_RETRIES));
-	m_iRetryInterval		= atoi(GetOption(OPTION_RETRYINTERVAL));
-	m_szServerPort			= atoi(GetOption(OPTION_SERVERPORT));
+	m_szPostProcess			= strdup(GetOption(OPTION_POSTPROCESS));
+	m_szNZBProcess			= strdup(GetOption(OPTION_NZBPROCESS));
 	m_szServerIP			= strdup(GetOption(OPTION_SERVERIP));
 	m_szServerPassword		= strdup(GetOption(OPTION_SERVERPASSWORD));
 	m_szLockFile			= strdup(GetOption(OPTION_LOCKFILE));
 	m_szDaemonUserName		= strdup(GetOption(OPTION_DAEMONUSERNAME));
-	m_iUrlConnections		= atoi(GetOption(OPTION_URLCONNECTIONS));
-	m_iLogBufferSize		= atoi(GetOption(OPTION_LOGBUFFERSIZE));
 	m_szLogFile				= strdup(GetOption(OPTION_LOGFILE));
-	m_iUMask				= strtol(GetOption(OPTION_UMASK), NULL, 8);
-	m_iUpdateInterval		= atoi(GetOption(OPTION_UPDATEINTERVAL));
-	m_iThreadLimit			= atoi(GetOption(OPTION_THREADLIMIT));
-	m_iWriteBufferSize		= atoi(GetOption(OPTION_WRITEBUFFERSIZE));
-	m_iNzbDirInterval		= atoi(GetOption(OPTION_NZBDIRINTERVAL));
-	m_iNzbDirFileAge		= atoi(GetOption(OPTION_NZBDIRFILEAGE));
-	m_iDiskSpace			= atoi(GetOption(OPTION_DISKSPACE));
-	m_iParTimeLimit			= atoi(GetOption(OPTION_PARTIMELIMIT));
-	m_iKeepHistory			= atoi(GetOption(OPTION_KEEPHISTORY));
+
+	m_fDownloadRate			= ParseFloatValue(OPTION_DOWNLOADRATE);
+	m_iConnectionTimeout	= ParseIntValue(OPTION_CONNECTIONTIMEOUT, 10);
+	m_iTerminateTimeout		= ParseIntValue(OPTION_TERMINATETIMEOUT, 10);
+	m_iRetries				= ParseIntValue(OPTION_RETRIES, 10);
+	m_iRetryInterval		= ParseIntValue(OPTION_RETRYINTERVAL, 10);
+	m_szServerPort			= ParseIntValue(OPTION_SERVERPORT, 10);
+	m_iUrlConnections		= ParseIntValue(OPTION_URLCONNECTIONS, 10);
+	m_iLogBufferSize		= ParseIntValue(OPTION_LOGBUFFERSIZE, 10);
+	m_iUMask				= ParseIntValue(OPTION_UMASK, 8);
+	m_iUpdateInterval		= ParseIntValue(OPTION_UPDATEINTERVAL, 10);
+	m_iThreadLimit			= ParseIntValue(OPTION_THREADLIMIT, 10);
+	m_iWriteBufferSize		= ParseIntValue(OPTION_WRITEBUFFERSIZE, 10);
+	m_iNzbDirInterval		= ParseIntValue(OPTION_NZBDIRINTERVAL, 10);
+	m_iNzbDirFileAge		= ParseIntValue(OPTION_NZBDIRFILEAGE, 10);
+	m_iDiskSpace			= ParseIntValue(OPTION_DISKSPACE, 10);
+	m_iParTimeLimit			= ParseIntValue(OPTION_PARTIMELIMIT, 10);
+	m_iKeepHistory			= ParseIntValue(OPTION_KEEPHISTORY, 10);
 
 	CheckDir(&m_szNzbDir, OPTION_NZBDIR, m_iNzbDirInterval == 0, true);
 
-	m_bCreateBrokenLog		= (bool)ParseOptionValue(OPTION_CREATEBROKENLOG, BoolCount, BoolNames, BoolValues);
-	m_bResetLog				= (bool)ParseOptionValue(OPTION_RESETLOG, BoolCount, BoolNames, BoolValues);
-	m_bAppendNZBDir			= (bool)ParseOptionValue(OPTION_APPENDNZBDIR, BoolCount, BoolNames, BoolValues);
-	m_bAppendCategoryDir	= (bool)ParseOptionValue(OPTION_APPENDCATEGORYDIR, BoolCount, BoolNames, BoolValues);
-	m_bContinuePartial		= (bool)ParseOptionValue(OPTION_CONTINUEPARTIAL, BoolCount, BoolNames, BoolValues);
-	m_bRenameBroken			= (bool)ParseOptionValue(OPTION_RENAMEBROKEN, BoolCount, BoolNames, BoolValues);
-	m_bSaveQueue			= (bool)ParseOptionValue(OPTION_SAVEQUEUE, BoolCount, BoolNames, BoolValues);
-	m_bDupeCheck			= (bool)ParseOptionValue(OPTION_DUPECHECK, BoolCount, BoolNames, BoolValues);
-	m_bCreateLog			= (bool)ParseOptionValue(OPTION_CREATELOG, BoolCount, BoolNames, BoolValues);
-	m_bParCheck				= (bool)ParseOptionValue(OPTION_PARCHECK, BoolCount, BoolNames, BoolValues);
-	m_bParRepair			= (bool)ParseOptionValue(OPTION_PARREPAIR, BoolCount, BoolNames, BoolValues);
-	m_bStrictParName		= (bool)ParseOptionValue(OPTION_STRICTPARNAME, BoolCount, BoolNames, BoolValues);
-	m_bReloadQueue			= (bool)ParseOptionValue(OPTION_RELOADQUEUE, BoolCount, BoolNames, BoolValues);
-	m_bReloadUrlQueue		= (bool)ParseOptionValue(OPTION_RELOADURLQUEUE, BoolCount, BoolNames, BoolValues);
-	m_bReloadPostQueue		= (bool)ParseOptionValue(OPTION_RELOADPOSTQUEUE, BoolCount, BoolNames, BoolValues);
-	m_bCursesNZBName		= (bool)ParseOptionValue(OPTION_CURSESNZBNAME, BoolCount, BoolNames, BoolValues);
-	m_bCursesTime			= (bool)ParseOptionValue(OPTION_CURSESTIME, BoolCount, BoolNames, BoolValues);
-	m_bCursesGroup			= (bool)ParseOptionValue(OPTION_CURSESGROUP, BoolCount, BoolNames, BoolValues);
-	m_bCrcCheck				= (bool)ParseOptionValue(OPTION_CRCCHECK, BoolCount, BoolNames, BoolValues);
-	m_bRetryOnCrcError		= (bool)ParseOptionValue(OPTION_RETRYONCRCERROR, BoolCount, BoolNames, BoolValues);
-	m_bDirectWrite			= (bool)ParseOptionValue(OPTION_DIRECTWRITE, BoolCount, BoolNames, BoolValues);
-	m_bParCleanupQueue		= (bool)ParseOptionValue(OPTION_PARCLEANUPQUEUE, BoolCount, BoolNames, BoolValues);
-	m_bDecode				= (bool)ParseOptionValue(OPTION_DECODE, BoolCount, BoolNames, BoolValues);
-	m_bAllowReProcess		= (bool)ParseOptionValue(OPTION_ALLOWREPROCESS, BoolCount, BoolNames, BoolValues);
-	m_bDumpCore				= (bool)ParseOptionValue(OPTION_DUMPCORE, BoolCount, BoolNames, BoolValues);
-	m_bParPauseQueue		= (bool)ParseOptionValue(OPTION_PARPAUSEQUEUE, BoolCount, BoolNames, BoolValues);
-	m_bPostPauseQueue		= (bool)ParseOptionValue(OPTION_POSTPAUSEQUEUE, BoolCount, BoolNames, BoolValues);
-	m_bNzbCleanupDisk		= (bool)ParseOptionValue(OPTION_NZBCLEANUPDISK, BoolCount, BoolNames, BoolValues);
-	m_bDeleteCleanupDisk	= (bool)ParseOptionValue(OPTION_DELETECLEANUPDISK, BoolCount, BoolNames, BoolValues);
-	m_bMergeNzb				= (bool)ParseOptionValue(OPTION_MERGENZB, BoolCount, BoolNames, BoolValues);
-	m_bAccurateRate			= (bool)ParseOptionValue(OPTION_ACCURATERATE, BoolCount, BoolNames, BoolValues);
+	m_bCreateBrokenLog		= (bool)ParseEnumValue(OPTION_CREATEBROKENLOG, BoolCount, BoolNames, BoolValues);
+	m_bResetLog				= (bool)ParseEnumValue(OPTION_RESETLOG, BoolCount, BoolNames, BoolValues);
+	m_bAppendNZBDir			= (bool)ParseEnumValue(OPTION_APPENDNZBDIR, BoolCount, BoolNames, BoolValues);
+	m_bAppendCategoryDir	= (bool)ParseEnumValue(OPTION_APPENDCATEGORYDIR, BoolCount, BoolNames, BoolValues);
+	m_bContinuePartial		= (bool)ParseEnumValue(OPTION_CONTINUEPARTIAL, BoolCount, BoolNames, BoolValues);
+	m_bRenameBroken			= (bool)ParseEnumValue(OPTION_RENAMEBROKEN, BoolCount, BoolNames, BoolValues);
+	m_bSaveQueue			= (bool)ParseEnumValue(OPTION_SAVEQUEUE, BoolCount, BoolNames, BoolValues);
+	m_bDupeCheck			= (bool)ParseEnumValue(OPTION_DUPECHECK, BoolCount, BoolNames, BoolValues);
+	m_bCreateLog			= (bool)ParseEnumValue(OPTION_CREATELOG, BoolCount, BoolNames, BoolValues);
+	m_bParCheck				= (bool)ParseEnumValue(OPTION_PARCHECK, BoolCount, BoolNames, BoolValues);
+	m_bParRepair			= (bool)ParseEnumValue(OPTION_PARREPAIR, BoolCount, BoolNames, BoolValues);
+	m_bStrictParName		= (bool)ParseEnumValue(OPTION_STRICTPARNAME, BoolCount, BoolNames, BoolValues);
+	m_bReloadQueue			= (bool)ParseEnumValue(OPTION_RELOADQUEUE, BoolCount, BoolNames, BoolValues);
+	m_bReloadUrlQueue		= (bool)ParseEnumValue(OPTION_RELOADURLQUEUE, BoolCount, BoolNames, BoolValues);
+	m_bReloadPostQueue		= (bool)ParseEnumValue(OPTION_RELOADPOSTQUEUE, BoolCount, BoolNames, BoolValues);
+	m_bCursesNZBName		= (bool)ParseEnumValue(OPTION_CURSESNZBNAME, BoolCount, BoolNames, BoolValues);
+	m_bCursesTime			= (bool)ParseEnumValue(OPTION_CURSESTIME, BoolCount, BoolNames, BoolValues);
+	m_bCursesGroup			= (bool)ParseEnumValue(OPTION_CURSESGROUP, BoolCount, BoolNames, BoolValues);
+	m_bCrcCheck				= (bool)ParseEnumValue(OPTION_CRCCHECK, BoolCount, BoolNames, BoolValues);
+	m_bRetryOnCrcError		= (bool)ParseEnumValue(OPTION_RETRYONCRCERROR, BoolCount, BoolNames, BoolValues);
+	m_bDirectWrite			= (bool)ParseEnumValue(OPTION_DIRECTWRITE, BoolCount, BoolNames, BoolValues);
+	m_bParCleanupQueue		= (bool)ParseEnumValue(OPTION_PARCLEANUPQUEUE, BoolCount, BoolNames, BoolValues);
+	m_bDecode				= (bool)ParseEnumValue(OPTION_DECODE, BoolCount, BoolNames, BoolValues);
+	m_bAllowReProcess		= (bool)ParseEnumValue(OPTION_ALLOWREPROCESS, BoolCount, BoolNames, BoolValues);
+	m_bDumpCore				= (bool)ParseEnumValue(OPTION_DUMPCORE, BoolCount, BoolNames, BoolValues);
+	m_bParPauseQueue		= (bool)ParseEnumValue(OPTION_PARPAUSEQUEUE, BoolCount, BoolNames, BoolValues);
+	m_bPostPauseQueue		= (bool)ParseEnumValue(OPTION_POSTPAUSEQUEUE, BoolCount, BoolNames, BoolValues);
+	m_bNzbCleanupDisk		= (bool)ParseEnumValue(OPTION_NZBCLEANUPDISK, BoolCount, BoolNames, BoolValues);
+	m_bDeleteCleanupDisk	= (bool)ParseEnumValue(OPTION_DELETECLEANUPDISK, BoolCount, BoolNames, BoolValues);
+	m_bMergeNzb				= (bool)ParseEnumValue(OPTION_MERGENZB, BoolCount, BoolNames, BoolValues);
+	m_bAccurateRate			= (bool)ParseEnumValue(OPTION_ACCURATERATE, BoolCount, BoolNames, BoolValues);
 
 	const char* OutputModeNames[] = { "loggable", "logable", "log", "colored", "color", "ncurses", "curses" };
 	const int OutputModeValues[] = { omLoggable, omLoggable, omLoggable, omColored, omColored, omNCurses, omNCurses };
 	const int OutputModeCount = 7;
-	m_eOutputMode = (EOutputMode)ParseOptionValue(OPTION_OUTPUTMODE, OutputModeCount, OutputModeNames, OutputModeValues);
+	m_eOutputMode = (EOutputMode)ParseEnumValue(OPTION_OUTPUTMODE, OutputModeCount, OutputModeNames, OutputModeValues);
 
 	const char* LoadParsNames[] = { "none", "one", "all", "1", "0" };
 	const int LoadParsValues[] = { lpNone, lpOne, lpAll, lpOne, lpNone };
 	const int LoadParsCount = 4;
-	m_eLoadPars = (ELoadPars)ParseOptionValue(OPTION_LOADPARS, LoadParsCount, LoadParsNames, LoadParsValues);
+	m_eLoadPars = (ELoadPars)ParseEnumValue(OPTION_LOADPARS, LoadParsCount, LoadParsNames, LoadParsValues);
 
 	const char* TargetNames[] = { "screen", "log", "both", "none" };
 	const int TargetValues[] = { mtScreen, mtLog, mtBoth, mtNone };
 	const int TargetCount = 4;
-	m_eInfoTarget = (EMessageTarget)ParseOptionValue(OPTION_INFOTARGET, TargetCount, TargetNames, TargetValues);
-	m_eWarningTarget = (EMessageTarget)ParseOptionValue(OPTION_WARNINGTARGET, TargetCount, TargetNames, TargetValues);
-	m_eErrorTarget = (EMessageTarget)ParseOptionValue(OPTION_ERRORTARGET, TargetCount, TargetNames, TargetValues);
-	m_eDebugTarget = (EMessageTarget)ParseOptionValue(OPTION_DEBUGTARGET, TargetCount, TargetNames, TargetValues);
-	m_eDetailTarget = (EMessageTarget)ParseOptionValue(OPTION_DETAILTARGET, TargetCount, TargetNames, TargetValues);
+	m_eInfoTarget = (EMessageTarget)ParseEnumValue(OPTION_INFOTARGET, TargetCount, TargetNames, TargetValues);
+	m_eWarningTarget = (EMessageTarget)ParseEnumValue(OPTION_WARNINGTARGET, TargetCount, TargetNames, TargetValues);
+	m_eErrorTarget = (EMessageTarget)ParseEnumValue(OPTION_ERRORTARGET, TargetCount, TargetNames, TargetValues);
+	m_eDebugTarget = (EMessageTarget)ParseEnumValue(OPTION_DEBUGTARGET, TargetCount, TargetNames, TargetValues);
+	m_eDetailTarget = (EMessageTarget)ParseEnumValue(OPTION_DETAILTARGET, TargetCount, TargetNames, TargetValues);
 
 	const char* ScriptLogKindNames[] = { "none", "detail", "info", "warning", "error", "debug" };
 	const int ScriptLogKindValues[] = { slNone, slDetail, slInfo, slWarning, slError, slDebug };
 	const int ScriptLogKindCount = 6;
-	m_eProcessLogKind = (EScriptLogKind)ParseOptionValue(OPTION_PROCESSLOGKIND, ScriptLogKindCount, ScriptLogKindNames, ScriptLogKindValues);
+	m_eProcessLogKind = (EScriptLogKind)ParseEnumValue(OPTION_PROCESSLOGKIND, ScriptLogKindCount, ScriptLogKindNames, ScriptLogKindValues);
 }
 
-int Options::ParseOptionValue(const char* OptName, int argc, const char * argn[], const int argv[])
+int Options::ParseEnumValue(const char* OptName, int argc, const char * argn[], const int argv[])
 {
 	OptEntry* pOptEntry = FindOption(OptName);
 	if (!pOptEntry)
@@ -751,32 +790,82 @@ int Options::ParseOptionValue(const char* OptName, int argc, const char * argn[]
 		abort("FATAL ERROR: Undefined value for option \"%s\"\n", OptName);
 	}
 
+	int iDefNum = 0;
+
 	for (int i = 0; i < argc; i++)
 	{
 		if (!strcasecmp(pOptEntry->GetValue(), argn[i]))
 		{
 			// normalizing option value in option list, for example "NO" -> "no"
-			if (pOptEntry)
+			for (int j = 0; j < argc; j++)
 			{
-				for (int j = 0; j < argc; j++)
+				if (argv[j] == argv[i])
 				{
-					if (argv[j] == argv[i])
+					if (strcmp(argn[j], pOptEntry->GetValue()))
 					{
-						if (strcmp(argn[j], pOptEntry->GetValue()))
-						{
-							pOptEntry->SetValue(argn[j]);
-						}
-						break;
+						pOptEntry->SetValue(argn[j]);
 					}
+					break;
 				}
 			}
 
 			return argv[i];
 		}
+
+		if (!strcasecmp(pOptEntry->GetDefValue(), argn[i]))
+		{
+			iDefNum = i;
+		}
 	}
 	
-	abort("FATAL ERROR: Wrong value \"%s\" for option \"%s\"\n", pOptEntry->GetValue(), OptName);
-	return -1;
+	m_iConfigLine = pOptEntry->GetLineNo();
+	ConfigError("Invalid value for option \"%s\": \"%s\"", OptName, pOptEntry->GetValue());
+	pOptEntry->SetValue(argn[iDefNum]);
+	return argv[iDefNum];
+}
+
+int Options::ParseIntValue(const char* OptName, int iBase)
+{
+	OptEntry* pOptEntry = FindOption(OptName);
+	if (!pOptEntry)
+	{
+		abort("FATAL ERROR: Undefined value for option \"%s\"\n", OptName);
+	}
+
+	char *endptr;
+	int val = strtol(pOptEntry->GetValue(), &endptr, iBase);
+
+	if (endptr && *endptr != '\0')
+	{
+		m_iConfigLine = pOptEntry->GetLineNo();
+		ConfigError("Invalid value for option \"%s\": \"%s\"", OptName, pOptEntry->GetValue());
+		pOptEntry->SetValue(pOptEntry->GetDefValue());
+		val = strtol(pOptEntry->GetDefValue(), NULL, iBase);
+	}
+
+	return val;
+}
+
+float Options::ParseFloatValue(const char* OptName)
+{
+	OptEntry* pOptEntry = FindOption(OptName);
+	if (!pOptEntry)
+	{
+		abort("FATAL ERROR: Undefined value for option \"%s\"\n", OptName);
+	}
+
+	char *endptr;
+	float val = strtod(pOptEntry->GetValue(), &endptr);
+	
+	if (endptr && *endptr != '\0')
+	{
+		m_iConfigLine = pOptEntry->GetLineNo();
+		ConfigError("Invalid value for option \"%s\": \"%s\"", OptName, pOptEntry->GetValue());
+		pOptEntry->SetValue(pOptEntry->GetDefValue());
+		val = strtod(pOptEntry->GetDefValue(), NULL);
+	}
+	
+	return val;
 }
 
 void Options::InitCommandLine(int argc, char* argv[])
@@ -823,7 +912,7 @@ void Options::InitCommandLine(int argc, char* argv[])
 				InitOptFile();
 				if (!SetOptionString(optarg))
 				{
-					abort("FATAL ERROR: could not set option: %s\n", optarg);
+					abort("FATAL ERROR: error in option \"%s\"\n", optarg);
 				}
 				break;
 			case 's':
@@ -1308,13 +1397,12 @@ void Options::InitFileArg(int argc, char* argv[])
 		{
 			if (m_eClientOperation == opClientRequestWriteLog)
 			{
-				printf("Log-text not specified\n");
+				abort("FATAL ERROR: Log-text not specified\n");
 			}
 			else
 			{
-				printf("Nzb-file not specified\n");
+				abort("FATAL ERROR: Nzb-file not specified\n");
 			}
-			exit(-1);
 		}
 	}
 	else if (m_eClientOperation == opClientRequestEditQueue)
@@ -1360,8 +1448,7 @@ void Options::InitFileArg(int argc, char* argv[])
 		          m_eClientOperation == opClientRequestDownloadUrl ||
 				  m_eClientOperation == opClientRequestWriteLog))
 		{
-			printf("Too many arguments\n");
-			exit(-1);
+			abort("FATAL ERROR: Too many arguments\n");
 		}
 	}
 }
@@ -1384,7 +1471,8 @@ void Options::SetOption(const char* optname, const char* value)
 		char szExpandedPath[1024];
 		if (!Util::ExpandHomePath(value, szExpandedPath, sizeof(szExpandedPath)))
 		{
-			abort("FATAL ERROR: Unable to determine home-directory, option \"%s\"\n", optname);
+			ConfigError("Invalid value for option\"%s\": unable to determine home-directory", optname);
+			szExpandedPath[0] = '\0';
 		}
 		curvalue = strdup(szExpandedPath);
 	}
@@ -1393,6 +1481,9 @@ void Options::SetOption(const char* optname, const char* value)
 	{
 		curvalue = strdup(value);
 	}
+
+	pOptEntry->SetLineNo(m_iConfigLine);
+	bool bOK = true;
 
 	// expand variables
 	while (char* dollar = strstr(curvalue, "${"))
@@ -1418,16 +1509,21 @@ void Options::SetOption(const char* optname, const char* value)
 			}
 			else
 			{
-				abort("FATAL ERROR: Variable \"%s\" not found, option \"%s\"\n", variable, optname);
+				ConfigError("Invalid value for option \"%s\": variable \"%s\" not found", optname, variable);
+				bOK = false;
 			}
 		}
 		else
 		{
-			abort("FATAL ERROR: Syntax error in variable-substitution, option \"%s=%s\"\n", optname, curvalue);
+			ConfigError("Invalid value for option \"%s\": syntax error in variable-substitution \"%s\"", optname, curvalue);
+			bOK = false;
 		}
 	}
 
-	pOptEntry->SetValue(curvalue);
+	if (bOK)
+	{
+		pOptEntry->SetValue(curvalue);
+	}
 
 	free(curvalue);
 }
@@ -1462,6 +1558,10 @@ const char* Options::GetOption(const char* optname)
 	OptEntry* pOptEntry = FindOption(optname);
 	if (pOptEntry)
 	{
+		if (pOptEntry->GetLineNo() > 0)
+		{
+			m_iConfigLine = pOptEntry->GetLineNo();
+		}
 		return pOptEntry->GetValue();
 	}
 	return NULL;
@@ -1494,7 +1594,7 @@ void Options::InitServers()
 		bool bJoinGroup = true;
 		if (njoingroup)
 		{
-			bJoinGroup = (bool)ParseOptionValue(optname, BoolCount, BoolNames, BoolValues);
+			bJoinGroup = (bool)ParseEnumValue(optname, BoolCount, BoolNames, BoolValues);
 		}
 
 		sprintf(optname, "Server%i.Encryption", n);
@@ -1502,11 +1602,12 @@ void Options::InitServers()
 		bool bTLS = false;
 		if (ntls)
 		{
-			bTLS = (bool)ParseOptionValue(optname, BoolCount, BoolNames, BoolValues);
+			bTLS = (bool)ParseEnumValue(optname, BoolCount, BoolNames, BoolValues);
 #ifdef DISABLE_TLS
 			if (bTLS)
 			{
-				abort("FATAL ERROR: Program was compiled without TLS/SSL-support. Invalid value for option \"%s\"\n", optname);
+				ConfigError("Invalid value for option \"%s\": program was compiled without TLS/SSL-support", optname);
+				bTLS = false;
 			}
 #endif
 			m_bTLS |= bTLS;
@@ -1523,14 +1624,16 @@ void Options::InitServers()
 			break;
 		}
 
-		if (definition && !completed)
+		if (completed)
 		{
-			abort("FATAL ERROR: Server definition not complete\n");
+			NewsServer* pNewsServer = new NewsServer(nhost, atoi(nport), nusername, npassword, 
+				bJoinGroup, bTLS, atoi((char*)nconnections), atoi((char*)nlevel));
+			g_pServerPool->AddServer(pNewsServer);
 		}
-
-		NewsServer* pNewsServer = new NewsServer(nhost, atoi(nport), nusername, npassword, 
-			bJoinGroup, bTLS, atoi((char*)nconnections), atoi((char*)nlevel));
-		g_pServerPool->AddServer(pNewsServer);
+		else
+		{
+			ConfigError("Server definition not complete for \"Server%i\"", n);
+		}
 
 		n++;
 	}
@@ -1568,48 +1671,61 @@ void Options::InitScheduler()
 			break;
 		}
 
-		if (definition && !completed)
+		bool bOK = true;
+
+		if (!completed)
 		{
-			abort("FATAL ERROR: Task definition not complete for Task%i\n", n);
+			ConfigError("Task definition not complete for \"Task%i\"", n);
+			bOK = false;
 		}
 
 		if (szProcess && strlen(szProcess) > 0 && !Util::SplitCommandLine(szProcess, NULL))
 		{
-			abort("FATAL ERROR: Invalid value for option Task%i.Process\n", n);
+			ConfigError("Invalid value for option \"Task%i.Process\"", n);
+			bOK = false;
 		}
 
-		sprintf(optname, "Task%i.Command", n);
+		snprintf(optname, sizeof(optname), "Task%i.Command", n);
+		optname[sizeof(optname)-1] = '\0';
+
 		const char* CommandNames[] = { "pausedownload", "pause", "unpausedownload", "resumedownload", "unpause", "resume", "downloadrate", "setdownloadrate", 
 			"rate", "speed", "script", "process", "pausescan", "unpausescan", "resumescan" };
 		const int CommandValues[] = { Scheduler::scPauseDownload, Scheduler::scPauseDownload, Scheduler::scUnpauseDownload, Scheduler::scUnpauseDownload, Scheduler::scUnpauseDownload, Scheduler::scUnpauseDownload, Scheduler::scDownloadRate, Scheduler::scDownloadRate, 
 			Scheduler::scDownloadRate, Scheduler::scDownloadRate, Scheduler::scProcess, Scheduler::scProcess, Scheduler::scPauseScan, Scheduler::scUnpauseScan, Scheduler::scUnpauseScan };
 		const int CommandCount = 15;
-		Scheduler::ECommand eCommand = (Scheduler::ECommand)ParseOptionValue(optname, CommandCount, CommandNames, CommandValues);
+		Scheduler::ECommand eCommand = (Scheduler::ECommand)ParseEnumValue(optname, CommandCount, CommandNames, CommandValues);
 
 		int iWeekDays = 0;
 		if (szWeekDays && !ParseWeekDays(szWeekDays, &iWeekDays))
 		{
-			abort("FATAL ERROR: Invalid value for option Task%i.WeekDays\n", n);
+			ConfigError("Invalid value for option \"Task%i.WeekDays\": \"%s\"", n, szWeekDays);
+			bOK = false;
 		}
 
 		int iDownloadRate = 0;
 		if (eCommand == Scheduler::scDownloadRate)
 		{
-			if (!szDownloadRate)
+			if (szDownloadRate)
 			{
-				abort("FATAL ERROR: Task definition not complete for Task%i. Option Task%i.DownloadRate missing.\n", n, n);
+				char* szErr;
+				iDownloadRate = strtol(szDownloadRate, &szErr, 10);
+				if (!szErr || *szErr != '\0' || iDownloadRate < 0)
+				{
+					ConfigError("Invalid value for option \"Task%i.DownloadRate\": \"%s\"", n, szDownloadRate);
+					bOK = false;
+				}
 			}
-			char* szErr;
-			iDownloadRate = strtol(szDownloadRate, &szErr, 10);
-			if (!szErr || *szErr != '\0' || iDownloadRate < 0)
+			else
 			{
-				abort("FATAL ERROR: Invalid value for option Task%i.DownloadRate\n", n);
+				ConfigError("Task definition not complete for \"Task%i\". Option \"Task%i.DownloadRate\" is missing", n, n);
+				bOK = false;
 			}
 		}
 
 		if (eCommand == Scheduler::scProcess && (!szProcess || strlen(szProcess) == 0))
 		{
-			abort("FATAL ERROR: Task definition not complete for Task%i. Option Task%i.Process missing.\n", n, n);
+			ConfigError("Task definition not complete for \"Task%i\". Option \"Task%i.Process\" is missing", n, n);
+			bOK = false;
 		}
 
 		int iHours, iMinutes;
@@ -1618,21 +1734,26 @@ void Options::InitScheduler()
 		{
 			if (!ParseTime(pTime, &iHours, &iMinutes))
 			{
-				abort("FATAL ERROR: Invalid value for option Task%i.Time\n", n);
+				ConfigError("Invalid value for option \"Task%i.Time\": \"%s\"", n, pTime);
+				bOK = false;
+				break;
 			}
 
-			if (iHours == -1)
+			if (bOK)
 			{
-				for (int iEveryHour = 0; iEveryHour < 24; iEveryHour++)
+				if (iHours == -1)
 				{
-					Scheduler::Task* pTask = new Scheduler::Task(iEveryHour, iMinutes, iWeekDays, eCommand, iDownloadRate, szProcess);
+					for (int iEveryHour = 0; iEveryHour < 24; iEveryHour++)
+					{
+						Scheduler::Task* pTask = new Scheduler::Task(iEveryHour, iMinutes, iWeekDays, eCommand, iDownloadRate, szProcess);
+						g_pScheduler->AddTask(pTask);
+					}
+				}
+				else
+				{
+					Scheduler::Task* pTask = new Scheduler::Task(iHours, iMinutes, iWeekDays, eCommand, iDownloadRate, szProcess);
 					g_pScheduler->AddTask(pTask);
 				}
-			}
-			else
-			{
-				Scheduler::Task* pTask = new Scheduler::Task(iHours, iMinutes, iWeekDays, eCommand, iDownloadRate, szProcess);
-				g_pScheduler->AddTask(pTask);
 			}
 		}
 
@@ -1769,12 +1890,12 @@ void Options::LoadConfig(const char * configfile)
 		abort("FATAL ERROR: Could not open file %s\n", configfile);
 	}
 
-	int Errors = 0;
-	int Line = 0;
+	m_iConfigLine = 0;
+	int iLine = 0;
 	char buf[1024];
 	while (fgets(buf, sizeof(buf) - 1, infile))
 	{
-		Line++;
+		m_iConfigLine = ++iLine;
 
 		if (buf[0] != 0 && buf[strlen(buf)-1] == '\n')
 		{
@@ -1790,19 +1911,12 @@ void Options::LoadConfig(const char * configfile)
 			continue;
 		}
 
-		if (!SetOptionString(buf))
-		{
-			printf("Error in config-file: line %i: %s\n", Line, buf);
-			Errors++;
-		}
+		SetOptionString(buf);
 	}
 
 	fclose(infile);
 
-	if (Errors)
-	{
-		abort("FATAL ERROR: %i Error(s) in config-file detected\n", Errors);
-	}
+	m_iConfigLine = 0;
 }
 
 bool Options::SetOptionString(const char * option)
@@ -1821,7 +1935,8 @@ bool Options::SetOptionString(const char * option)
 		{
 			if (!ValidateOptionName(optname))
 			{
-				abort("FATAL ERROR: Invalid option \"%s\"\n", optname);
+				ConfigError("Invalid option \"%s\"", optname);
+				return false;
 			}
 			char* optname2 = optname;
 			if (optname2[0] ==  '$')
@@ -1834,6 +1949,7 @@ bool Options::SetOptionString(const char * option)
 	}
 	else
 	{
+		ConfigError("Invalid option \"%s\"", option);
 		return false;
 	}
 }
@@ -1888,7 +2004,7 @@ bool Options::ValidateOptionName(const char * optname)
 	// suppress abort on obsolete options; print a warning message instead
 	if (!strcasecmp(optname, OPTION_POSTLOGKIND) || !strcasecmp(optname, OPTION_NZBLOGKIND))
 	{
-		warn("Option \"%s\" is obsolete. Use \"%s\" instead.", optname, OPTION_PROCESSLOGKIND);
+		ConfigError("Option \"%s\" is obsolete, use \"%s\" instead", optname, OPTION_PROCESSLOGKIND);
 		return true;
 	}
 
@@ -1900,14 +2016,14 @@ void Options::CheckOptions()
 #ifdef DISABLE_PARCHECK
 	if (m_bParCheck)
 	{
-		abort("FATAL ERROR: Program was compiled without parcheck-support. Invalid value for option \"%s\"\n", OPTION_PARCHECK);
+		ConfigError("Invalid value for option \"%s\": program was compiled without parcheck-support", OPTION_PARCHECK);
 	}
 #endif
 	
 #ifdef DISABLE_CURSES
 	if (m_eOutputMode == omNCurses)
 	{
-		abort("FATAL ERROR: Program was compiled without curses-support. Can not use \"curses\" frontend (option \"%s\")\n", OPTION_OUTPUTMODE);
+		ConfigError("Invalid value for option \"%s\": program was compiled without curses-support", OPTION_OUTPUTMODE);
 	}
 #endif
 

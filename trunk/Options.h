@@ -102,9 +102,12 @@ public:
 	private:
 		char*			m_szName;
 		char*			m_szValue;
+		char*			m_szDefValue;
+		int				m_iLineNo;
 
 		void			SetName(const char* szName);
 		void			SetValue(const char* szValue);
+		void			SetLineNo(int iLineNo) { m_iLineNo = iLineNo; }
 
 		friend class Options;
 
@@ -113,6 +116,8 @@ public:
 						~OptEntry();
 		const char*		GetName() { return m_szName; }
 		const char*		GetValue() { return m_szValue; }
+		const char*		GetDefValue() { return m_szDefValue; }
+		int				GetLineNo() { return m_iLineNo; }
 	};
 	
 	typedef std::vector<OptEntry*>  OptEntries;
@@ -124,6 +129,8 @@ private:
 	Mutex				m_mutexOptEntries;
 
 	// Options
+	bool				m_bConfigErrors;
+	int					m_iConfigLine;
 	char*				m_szConfigFilename;
 	char*				m_szDestDir;
 	char*				m_szTempDir;
@@ -234,7 +241,9 @@ private:
 	void				CheckOptions();
 	void				PrintUsage(char* com);
 	void				Dump();
-	int					ParseOptionValue(const char* OptName, int argc, const char* argn[], const int argv[]);
+	int					ParseEnumValue(const char* OptName, int argc, const char* argn[], const int argv[]);
+	int					ParseIntValue(const char* OptName, int iBase);
+	float				ParseFloatValue(const char* OptName);
 	OptEntry*			FindOption(const char* optname);
 	const char*			GetOption(const char* optname);
 	void				SetOption(const char* optname, const char* value);
@@ -246,6 +255,7 @@ private:
 	void				ParseFileNameList(int argc, char* argv[], int optind);
 	bool				ParseTime(const char** pTime, int* pHours, int* pMinutes);
 	bool				ParseWeekDays(const char* szWeekDays, int* pWeekDaysBits);
+	void				ConfigError(const char* msg, ...);
 
 public:
 						Options(int argc, char* argv[]);
