@@ -64,9 +64,11 @@ private:
 	time_t				m_tTime;
 	char*				m_szText;
 
+	friend class Log;
+
 public:
-	Message(unsigned int iID, EKind eKind, time_t tTime, const char* szText);
-	~Message();
+						Message(unsigned int iID, EKind eKind, time_t tTime, const char* szText);
+						~Message();
 	unsigned int		GetID() { return m_iID; }
 	EKind				GetKind() { return m_eKind; }
 	time_t				GetTime() { return m_tTime; }

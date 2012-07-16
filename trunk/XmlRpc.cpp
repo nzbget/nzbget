@@ -924,15 +924,11 @@ void LogXmlCommand::Execute()
 	}
 	if (iIDFrom > 0 && !pMessages->empty())
 	{
+		iNrEntries = pMessages->size();
 		iStart = iIDFrom - pMessages->front()->GetID();
 		if (iStart < 0)
 		{
 			iStart = 0;
-		}
-		iNrEntries = pMessages->size() - iStart;
-		if (iNrEntries < 0)
-		{
-			iNrEntries = 0;
 		}
 	}
 
