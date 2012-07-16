@@ -351,9 +351,10 @@ void Log::ResetLog()
 * During intializing stage (when options were not read yet) all messages
 * are saved in screen log, even if they shouldn't (according to options).
 * Method "InitOptions()" check all messages added to screen log during
-* intializing stage and does two things:
+* intializing stage and does three things:
 * 1) save the messages to log-file (if they should according to options);
 * 2) delete messages from screen log (if they should not be saved in screen log).
+* 3) renumerate IDs
 */
 void Log::InitOptions()
 {
@@ -363,6 +364,8 @@ void Log::InitOptions()
 	{
 		m_szLogFilename = strdup(g_pOptions->GetLogFile());
 	}
+
+	m_iIDGen = 0;
 
 	for (unsigned int i = 0; i < m_Messages.size(); )
 	{
@@ -399,6 +402,7 @@ void Log::InitOptions()
 		}
 		else
 		{
+			pMessage->m_iID = ++m_iIDGen;
 			i++;
 		}
 	}
