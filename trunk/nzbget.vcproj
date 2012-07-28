@@ -58,7 +58,7 @@
 			/>
 			<Tool
 				Name="VCLinkerTool"
-				AdditionalDependencies="WS2_32.lib ole32.lib OleAut32.Lib comsuppwd.lib Advapi32.lib sigc-2.0d.lib par2d.lib libgnutls-26.lib libgcrypt-11.lib regex.lib $(NOINHERIT)"
+				AdditionalDependencies="WS2_32.lib ole32.lib OleAut32.Lib comsuppwd.lib Advapi32.lib sigc-2.0d.lib par2d.lib libgnutls-26.lib libgcrypt-11.lib regex.lib zlib.lib $(NOINHERIT)"
 				LinkIncremental="2"
 				GenerateDebugInformation="true"
 				SubSystem="1"
@@ -131,7 +131,7 @@
 			/>
 			<Tool
 				Name="VCLinkerTool"
-				AdditionalDependencies="WS2_32.lib ole32.lib OleAut32.Lib comsuppwd.lib Advapi32.lib sigc-2.0.lib par2.lib libgnutls-26.lib libgcrypt-11.lib regex.lib $(NOINHERIT)"
+				AdditionalDependencies="WS2_32.lib ole32.lib OleAut32.Lib comsuppwd.lib Advapi32.lib sigc-2.0.lib par2.lib libgnutls-26.lib libgcrypt-11.lib regex.lib zlib.lib $(NOINHERIT)"
 				LinkIncremental="0"
 				GenerateDebugInformation="true"
 				SubSystem="1"
@@ -206,7 +206,7 @@
 			/>
 			<Tool
 				Name="VCLinkerTool"
-				AdditionalDependencies="WS2_32.lib ole32.lib OleAut32.Lib comsuppwd.lib Advapi32.lib sigc-2.0.lib par2.lib regex.lib $(NOINHERIT)"
+				AdditionalDependencies="WS2_32.lib ole32.lib OleAut32.Lib comsuppwd.lib Advapi32.lib sigc-2.0.lib par2.lib regex.lib zlib.lib $(NOINHERIT)"
 				LinkIncremental="0"
 				GenerateDebugInformation="true"
 				SubSystem="1"
@@ -509,6 +509,14 @@
 		</File>
 		<File
 			RelativePath=".\WebDownloader.h"
+			>
+		</File>
+		<File
+			RelativePath=".\WebServer.cpp"
+			>
+		</File>
+		<File
+			RelativePath=".\WebServer.h"
 			>
 		</File>
 		<File
