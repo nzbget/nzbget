@@ -856,14 +856,14 @@ float Options::ParseFloatValue(const char* OptName)
 	}
 
 	char *endptr;
-	float val = strtod(pOptEntry->GetValue(), &endptr);
+	float val = (float)strtod(pOptEntry->GetValue(), &endptr);
 	
 	if (endptr && *endptr != '\0')
 	{
 		m_iConfigLine = pOptEntry->GetLineNo();
 		ConfigError("Invalid value for option \"%s\": \"%s\"", OptName, pOptEntry->GetValue());
 		pOptEntry->SetValue(pOptEntry->GetDefValue());
-		val = strtod(pOptEntry->GetDefValue(), NULL);
+		val = (float)strtod(pOptEntry->GetDefValue(), NULL);
 	}
 	
 	return val;

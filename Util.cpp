@@ -1352,7 +1352,7 @@ void URL::ParseURL()
 		char* pass = strchr(hostStart, ':');
 		if (pass && pass < amp)
 		{
-			int iLen = amp - pass - 1;
+			int iLen = (int)(amp - pass - 1);
 			if (iLen > 0)
 			{
 				m_szPassword = (char*)malloc(iLen + 1);
@@ -1362,7 +1362,7 @@ void URL::ParseURL()
 			userend = pass - 1;
 		}
 
-		int iLen = userend - hostStart + 1;
+		int iLen = (int)(userend - hostStart + 1);
 		if (iLen > 0)
 		{
 			m_szUser = (char*)malloc(iLen + 1);
