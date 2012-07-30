@@ -248,8 +248,15 @@ void WebProcessor::Dispatch()
 		}
 	}
 
+	char *szResource = m_szUrl + 1;
+	if (strlen(szResource) == 0)
+	{
+		// default file in directory (if not specified)
+		szResource = "index.html";
+	}
+
 	char disk_filename[1024];
-	snprintf(disk_filename, sizeof(disk_filename), "%s%s", g_pOptions->GetWebDir(), m_szUrl + 1);
+	snprintf(disk_filename, sizeof(disk_filename), "%s%s", g_pOptions->GetWebDir(), szResource);
 	disk_filename[sizeof(disk_filename)-1] = '\0';
 
 	SendFileResponse(disk_filename);
