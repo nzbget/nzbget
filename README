@@ -105,28 +105,40 @@ download the libraries at the given URLs and compile them (see hints below).
 4. Installation on POSIX
 =====================================
 
-Well, the usual stuff:
+Installation from the source distribution archive (nzbget-VERSION.tar.gz):
 
  - untar the nzbget-source via
      tar -zxf nzbget-VERSION.tar.gz
+
  - change into nzbget-directory via
      cd nzbget-VERSION
+
  - configure it via
      ./configure
-   (maybe you have to tell configure, where to find some libraries.
-       ./configure --help is your friend!)
-    also see "Configure-options" later.)
- - compile it via
-     make
- - become root via
-     su
- - install it via
-     make install
 
-In a case you don't have root access or just want to install the program
-in your home directory use the configure parameter --prefix, e. g.:
+   (maybe you have to tell configure, where to find some libraries.
+       ./configure --help is your friend!
+    also see "Configure-options" later)
+
+ - in a case you don't have root access or want to install the program
+   in your home directory use the configure parameter --prefix, e. g.:
 
   ./configure --prefix ~/usr
+
+ - compile it via
+     make
+
+ - to install system wide become root via:
+     su
+
+ - install it via:
+     make install
+
+ - install configuration files into <prefix>/etc via:
+     make install-conf
+
+   (you can skip this step if you intend to store configuration
+    files in a non-standard location)
 
 Configure-options
 -----------------
@@ -261,12 +273,17 @@ in MS Visual C++ 2005 you should be able to compile NZBGet.
 
 NZBGet needs a configuration file. 
 
-An example configuration file is provided as "nzbget.conf", which
+An example configuration file is provided in "nzbget.conf", which
 is installed into "<prefix>/share/nzbget" (where <prefix> depends on
 system configuration and configure options - typically "/usr/local",
 "/usr" or "/opt"). The installer adjusts the file according to your
-system paths. Copy the file into one of the locations listed below,
-then edit it.
+system paths. If you have performed the installation step 
+"make install-conf" this file is already copied to "<prefix>/etc" and
+NZBGet finds it automatically. If you install the program manually
+from a binary archive you have to copy the file from "<prefix>/share/nzbget"
+to one of the locations listed below.
+
+Open the file in a text editor and modify it accodring to your needs.
 
 You need to set at least the option "MAINDIR" and one news server in
 configuration file. The file has comments on how to use each option.
@@ -427,9 +444,12 @@ the description of parameters passed to the script (option "PostProcess").
 
 An example script for unraring of downloaded files is provided in file
 "nzbget-postprocess.sh" installed into "<prefix>/bin". The script requires
-configuration file "nzbget-postprocess.conf". You have to copy it from
-"<prefix>/share/nzbget" to the directory where the nzbget configuration
-file ("nzbget.conf") is located.
+configuration file "nzbget-postprocess.conf". If you have installed the
+program with "make install" this file is copied to "<prefix>/etc",
+where the post-processing script finds it automatically. If you install
+the program manually from a binary archive you have to copy the file
+from "<prefix>/share/nzbget" to the directory where you have put the
+nzbget configuration file ("nzbget.conf").
 
 Set the option "PostProcess" in "nzbget.conf" to point to the post-
 processing script.

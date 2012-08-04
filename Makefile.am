@@ -7,12 +7,12 @@
 # it under the terms of the GNU General Public License as published by
 # the Free Software Foundation; either version 2 of the License, or
 # (at your option) any later version.
-# 
+#
 # This program is distributed in the hope that it will be useful,
 # but WITHOUT ANY WARRANTY; without even the implied warranty of
 # MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 # GNU General Public License for more details.
-# 
+#
 # You should have received a copy of the GNU General Public License
 # along with this program; if not, write to the Free Software
 # Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
@@ -37,8 +37,8 @@ nzbget_SOURCES = \
 	UrlCoordinator.cpp UrlCoordinator.h nzbget.cpp nzbget.h
 
 EXTRA_DIST = \
-	Makefile.cvs nzbgetd nzbget-postprocess.sh 
-	$(patches_FILES) $(windows_FILES) $(doc_FILES) $(exampleconf_FILES)
+	Makefile.cvs nzbgetd nzbget-postprocess.sh \
+	$(patches_FILES) $(windows_FILES)
 
 patches_FILES = \
 	libpar2-0.2-bugfixes.patch libpar2-0.2-cancel.patch \
@@ -53,22 +53,49 @@ doc_FILES = \
 exampleconf_FILES = \
 	nzbget.conf nzbget-postprocess.conf
 
+webui_FILES = \
+	webui/index.html webui/index.js webui/downloads.js webui/edit.js webui/fasttable.js \
+	webui/history.js webui/messages.js webui/status.js webui/style.css webui/upload.js \
+	webui/util.js webui/categories.txt \
+	webui/lib/bootstrap.js webui/lib/bootstrap.min.js webui/lib/bootstrap.css  \
+	webui/lib/jquery.js webui/lib/jquery.min.js \
+	webui/img/extraicons.png webui/img/glyphicons-halflings.png webui/img/glyphicons-halflings-white.png \
+	webui/img/transmit.gif webui/img/transmit-file.gif webui/img/favicon.ico
+
 # Install
 sbin_SCRIPTS = nzbgetd
 bin_SCRIPTS = nzbget-postprocess.sh
 dist_doc_DATA = $(doc_FILES)
 exampleconfdir = $(datadir)/nzbget
 dist_exampleconf_DATA = $(exampleconf_FILES)
+webuidir = $(datadir)/nzbget
+nobase_dist_webui_DATA = $(webui_FILES)
 
 # Configure installed script
 install-exec-hook:
 	sed -i 's?/usr/local/bin?$(bindir)?' "$(DESTDIR)$(sbindir)/nzbgetd"
 
-# Prepare example configuration files and copy them into /etc (only if 
-# they do not exist there to prevent override by update)
+# Prepare example configuration files
 install-data-hook:
-	sed -i 's:"nzbget-postprocess.sh": "nzbget-postprocess.sh" (installed into $(sbindir)/nzbget-postprocess.sh):' "$(DESTDIR)$(exampleconfdir)/nzbget.conf" ; \
-	sed -i 's:/usr/local/share/nzbget/webui:$(webuidir)/webui:' "$(DESTDIR)$(exampleconfdir)/nzbget.conf" ;
+	sed -i 's:"nzbget-postprocess.sh":"nzbget-postprocess.sh" (installed into $(bindir)):' "$(DESTDIR)$(exampleconfdir)/nzbget.conf"
+	sed -i 's:^WebDir=:WebDir=$(webuidir)/webui:' "$(DESTDIR)$(exampleconfdir)/nzbget.conf"
+
+# Install configuration files into /etc
+# (only if they do not exist there to prevent override by update)
+install-conf:
+	if test ! -f "$(DESTDIR)$(sysconfdir)/nzbget.conf" ; then \
+		$(mkinstalldirs) "$(DESTDIR)$(sysconfdir)" ; \
+		cp "$(DESTDIR)$(exampleconfdir)/nzbget.conf" "$(DESTDIR)$(sysconfdir)/nzbget.conf" ; \
+		sed -i 's:^PostProcess=:PostProcess=$(bindir)/nzbget-postprocess.sh:' "$(DESTDIR)$(sysconfdir)/nzbget.conf" ; \
+	fi
+	if test ! -f "$(DESTDIR)$(sysconfdir)/nzbget-postprocess.conf" ; then \
+		$(mkinstalldirs) "$(DESTDIR)$(sysconfdir)" ; \
+		cp "$(DESTDIR)$(exampleconfdir)/nzbget-postprocess.conf" "$(DESTDIR)$(sysconfdir)/nzbget-postprocess.conf" ; \
+	fi
+
+uninstall-conf:
+	rm -f "$(DESTDIR)$(sysconfdir)/nzbget-postprocess.conf"
+	rm -f "$(DESTDIR)$(sysconfdir)/nzbget.conf"
 
 # Determining subversion revision:
 # 1) If directory ".svn" exists we take revision from it using program svnversion (part of subversion package)
@@ -117,4 +144,5 @@ clean-bak: rm *~
 # Fix premissions
 dist-hook:
 	chmod -x $(distdir)/*.cpp $(distdir)/*.h
+	find $(distdir)/webui -type f -print -exec chmod -x {} \;
 
