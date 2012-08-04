@@ -23,12 +23,12 @@
 # it under the terms of the GNU General Public License as published by
 # the Free Software Foundation; either version 2 of the License, or
 # (at your option) any later version.
-# 
+#
 # This program is distributed in the hope that it will be useful,
 # but WITHOUT ANY WARRANTY; without even the implied warranty of
 # MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 # GNU General Public License for more details.
-# 
+#
 # You should have received a copy of the GNU General Public License
 # along with this program; if not, write to the Free Software
 # Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
@@ -62,10 +62,11 @@ host_triplet = @host@
 target_triplet = @target@
 bin_PROGRAMS = nzbget$(EXEEXT)
 DIST_COMMON = README $(am__configure_deps) $(dist_doc_DATA) \
-	$(dist_exampleconf_DATA) $(srcdir)/Makefile.am \
-	$(srcdir)/Makefile.in $(srcdir)/config.h.in \
-	$(top_srcdir)/configure AUTHORS COPYING ChangeLog INSTALL NEWS \
-	config.guess config.sub depcomp install-sh missing
+	$(dist_exampleconf_DATA) $(nobase_dist_webui_DATA) \
+	$(srcdir)/Makefile.am $(srcdir)/Makefile.in \
+	$(srcdir)/config.h.in $(top_srcdir)/configure AUTHORS COPYING \
+	ChangeLog INSTALL NEWS config.guess config.sub depcomp \
+	install-sh missing
 subdir = .
 ACLOCAL_M4 = $(top_srcdir)/aclocal.m4
 am__aclocal_m4_deps = $(top_srcdir)/configure.ac
@@ -78,7 +79,7 @@ CONFIG_HEADER = config.h
 CONFIG_CLEAN_FILES =
 am__installdirs = "$(DESTDIR)$(bindir)" "$(DESTDIR)$(bindir)" \
 	"$(DESTDIR)$(sbindir)" "$(DESTDIR)$(docdir)" \
-	"$(DESTDIR)$(exampleconfdir)"
+	"$(DESTDIR)$(exampleconfdir)" "$(DESTDIR)$(webuidir)"
 binPROGRAMS_INSTALL = $(INSTALL_PROGRAM)
 PROGRAMS = $(bin_PROGRAMS)
 am_nzbget_OBJECTS = ArticleDownloader.$(OBJEXT) BinRpc.$(OBJEXT) \
@@ -122,7 +123,9 @@ am__vpath_adj = case $$p in \
 am__strip_dir = `echo $$p | sed -e 's|^.*/||'`;
 dist_docDATA_INSTALL = $(INSTALL_DATA)
 dist_exampleconfDATA_INSTALL = $(INSTALL_DATA)
-DATA = $(dist_doc_DATA) $(dist_exampleconf_DATA)
+nobase_dist_webuiDATA_INSTALL = $(install_sh_DATA)
+DATA = $(dist_doc_DATA) $(dist_exampleconf_DATA) \
+	$(nobase_dist_webui_DATA)
 ETAGS = etags
 CTAGS = ctags
 DISTFILES = $(DIST_COMMON) $(DIST_SOURCES) $(TEXINFOS) $(EXTRA_DIST)
@@ -251,7 +254,8 @@ nzbget_SOURCES = \
 	UrlCoordinator.cpp UrlCoordinator.h nzbget.cpp nzbget.h
 
 EXTRA_DIST = \
-	Makefile.cvs nzbgetd nzbget-postprocess.sh 
+	Makefile.cvs nzbgetd nzbget-postprocess.sh \
+	$(patches_FILES) $(windows_FILES)
 
 patches_FILES = \
 	libpar2-0.2-bugfixes.patch libpar2-0.2-cancel.patch \
@@ -266,6 +270,15 @@ doc_FILES = \
 exampleconf_FILES = \
 	nzbget.conf nzbget-postprocess.conf
 
+webui_FILES = \
+	webui/index.html webui/index.js webui/downloads.js webui/edit.js webui/fasttable.js \
+	webui/history.js webui/messages.js webui/status.js webui/style.css webui/upload.js \
+	webui/util.js webui/categories.txt \
+	webui/lib/bootstrap.js webui/lib/bootstrap.min.js webui/lib/bootstrap.css  \
+	webui/lib/jquery.js webui/lib/jquery.min.js \
+	webui/img/extraicons.png webui/img/glyphicons-halflings.png webui/img/glyphicons-halflings-white.png \
+	webui/img/transmit.gif webui/img/transmit-file.gif webui/img/favicon.ico
+
 
 # Install
 sbin_SCRIPTS = nzbgetd
@@ -273,6 +286,8 @@ bin_SCRIPTS = nzbget-postprocess.sh
 dist_doc_DATA = $(doc_FILES)
 exampleconfdir = $(datadir)/nzbget
 dist_exampleconf_DATA = $(exampleconf_FILES)
+webuidir = $(datadir)/nzbget
+nobase_dist_webui_DATA = $(webui_FILES)
 
 # Ignore "svn_version.cpp" in distcleancheck
 distcleancheck_listfiles = \
@@ -489,6 +504,25 @@ uninstall-dist_exampleconfDATA:
 	  echo " rm -f '$(DESTDIR)$(exampleconfdir)/$$f'"; \
 	  rm -f "$(DESTDIR)$(exampleconfdir)/$$f"; \
 	done
+install-nobase_dist_webuiDATA: $(nobase_dist_webui_DATA)
+	@$(NORMAL_INSTALL)
+	test -z "$(webuidir)" || $(mkdir_p) "$(DESTDIR)$(webuidir)"
+	@$(am__vpath_adj_setup) \
+	list='$(nobase_dist_webui_DATA)'; for p in $$list; do \
+	  if test -f "$$p"; then d=; else d="$(srcdir)/"; fi; \
+	  $(am__vpath_adj) \
+	  echo " $(nobase_dist_webuiDATA_INSTALL) '$$d$$p' '$(DESTDIR)$(webuidir)/$$f'"; \
+	  $(nobase_dist_webuiDATA_INSTALL) "$$d$$p" "$(DESTDIR)$(webuidir)/$$f"; \
+	done
+
+uninstall-nobase_dist_webuiDATA:
+	@$(NORMAL_UNINSTALL)
+	@$(am__vpath_adj_setup) \
+	list='$(nobase_dist_webui_DATA)'; for p in $$list; do \
+	  $(am__vpath_adj) \
+	  echo " rm -f '$(DESTDIR)$(webuidir)/$$f'"; \
+	  rm -f "$(DESTDIR)$(webuidir)/$$f"; \
+	done
 
 ID: $(HEADERS) $(SOURCES) $(LISP) $(TAGS_FILES)
 	list='$(SOURCES) $(HEADERS) $(LISP) $(TAGS_FILES)'; \
@@ -541,6 +575,7 @@ distclean-tags:
 distdir: $(DISTFILES)
 	$(am__remove_distdir)
 	mkdir $(distdir)
+	$(mkdir_p) $(distdir)/webui $(distdir)/webui/img $(distdir)/webui/lib
 	@srcdirstrip=`echo "$(srcdir)" | sed 's|.|.|g'`; \
 	topsrcdirstrip=`echo "$(top_srcdir)" | sed 's|.|.|g'`; \
 	list='$(DISTFILES)'; for file in $$list; do \
@@ -671,7 +706,7 @@ check-am: all-am
 check: check-am
 all-am: Makefile $(PROGRAMS) $(SCRIPTS) $(DATA) config.h
 installdirs:
-	for dir in "$(DESTDIR)$(bindir)" "$(DESTDIR)$(bindir)" "$(DESTDIR)$(sbindir)" "$(DESTDIR)$(docdir)" "$(DESTDIR)$(exampleconfdir)"; do \
+	for dir in "$(DESTDIR)$(bindir)" "$(DESTDIR)$(bindir)" "$(DESTDIR)$(sbindir)" "$(DESTDIR)$(docdir)" "$(DESTDIR)$(exampleconfdir)" "$(DESTDIR)$(webuidir)"; do \
 	  test -z "$$dir" || $(mkdir_p) "$$dir"; \
 	done
 install: install-am
@@ -719,7 +754,8 @@ info: info-am
 
 info-am:
 
-install-data-am: install-dist_docDATA install-dist_exampleconfDATA
+install-data-am: install-dist_docDATA install-dist_exampleconfDATA \
+	install-nobase_dist_webuiDATA
 	@$(NORMAL_INSTALL)
 	$(MAKE) $(AM_MAKEFLAGS) install-data-hook
 
@@ -755,7 +791,8 @@ ps-am:
 
 uninstall-am: uninstall-binPROGRAMS uninstall-binSCRIPTS \
 	uninstall-dist_docDATA uninstall-dist_exampleconfDATA \
-	uninstall-info-am uninstall-sbinSCRIPTS
+	uninstall-info-am uninstall-nobase_dist_webuiDATA \
+	uninstall-sbinSCRIPTS
 
 .PHONY: CTAGS GTAGS all all-am am--refresh check check-am clean \
 	clean-binPROGRAMS clean-generic ctags dist dist-all dist-bzip2 \
@@ -767,25 +804,41 @@ uninstall-am: uninstall-binPROGRAMS uninstall-binSCRIPTS \
 	install-data-am install-data-hook install-dist_docDATA \
 	install-dist_exampleconfDATA install-exec install-exec-am \
 	install-exec-hook install-info install-info-am install-man \
-	install-sbinSCRIPTS install-strip installcheck installcheck-am \
-	installdirs maintainer-clean maintainer-clean-generic \
-	mostlyclean mostlyclean-compile mostlyclean-generic pdf pdf-am \
-	ps ps-am tags uninstall uninstall-am uninstall-binPROGRAMS \
+	install-nobase_dist_webuiDATA install-sbinSCRIPTS \
+	install-strip installcheck installcheck-am installdirs \
+	maintainer-clean maintainer-clean-generic mostlyclean \
+	mostlyclean-compile mostlyclean-generic pdf pdf-am ps ps-am \
+	tags uninstall uninstall-am uninstall-binPROGRAMS \
 	uninstall-binSCRIPTS uninstall-dist_docDATA \
 	uninstall-dist_exampleconfDATA uninstall-info-am \
-	uninstall-sbinSCRIPTS
+	uninstall-nobase_dist_webuiDATA uninstall-sbinSCRIPTS
 
-	$(patches_FILES) $(windows_FILES) $(doc_FILES) $(exampleconf_FILES)
 
 # Configure installed script
 install-exec-hook:
 	sed -i 's?/usr/local/bin?$(bindir)?' "$(DESTDIR)$(sbindir)/nzbgetd"
 
-# Prepare example configuration files and copy them into /etc (only if 
-# they do not exist there to prevent override by update)
+# Prepare example configuration files
 install-data-hook:
-	sed -i 's:"nzbget-postprocess.sh": "nzbget-postprocess.sh" (installed into $(sbindir)/nzbget-postprocess.sh):' "$(DESTDIR)$(exampleconfdir)/nzbget.conf" ; \
-	sed -i 's:/usr/local/share/nzbget/webui:$(webuidir)/webui:' "$(DESTDIR)$(exampleconfdir)/nzbget.conf" ;
+	sed -i 's:"nzbget-postprocess.sh":"nzbget-postprocess.sh" (installed into $(bindir)):' "$(DESTDIR)$(exampleconfdir)/nzbget.conf"
+	sed -i 's:^WebDir=:WebDir=$(webuidir)/webui:' "$(DESTDIR)$(exampleconfdir)/nzbget.conf"
+
+# Install configuration files into /etc
+# (only if they do not exist there to prevent override by update)
+install-conf:
+	if test ! -f "$(DESTDIR)$(sysconfdir)/nzbget.conf" ; then \
+		$(mkinstalldirs) "$(DESTDIR)$(sysconfdir)" ; \
+		cp "$(DESTDIR)$(exampleconfdir)/nzbget.conf" "$(DESTDIR)$(sysconfdir)/nzbget.conf" ; \
+		sed -i 's:^PostProcess=:PostProcess=$(bindir)/nzbget-postprocess.sh:' "$(DESTDIR)$(sysconfdir)/nzbget.conf" ; \
+	fi
+	if test ! -f "$(DESTDIR)$(sysconfdir)/nzbget-postprocess.conf" ; then \
+		$(mkinstalldirs) "$(DESTDIR)$(sysconfdir)" ; \
+		cp "$(DESTDIR)$(exampleconfdir)/nzbget-postprocess.conf" "$(DESTDIR)$(sysconfdir)/nzbget-postprocess.conf" ; \
+	fi
+
+uninstall-conf:
+	rm -f "$(DESTDIR)$(sysconfdir)/nzbget-postprocess.conf"
+	rm -f "$(DESTDIR)$(sysconfdir)/nzbget.conf"
 
 # Determining subversion revision:
 # 1) If directory ".svn" exists we take revision from it using program svnversion (part of subversion package)
@@ -829,6 +882,7 @@ clean-bak: rm *~
 # Fix premissions
 dist-hook:
 	chmod -x $(distdir)/*.cpp $(distdir)/*.h
+	find $(distdir)/webui -type f -print -exec chmod -x {} \;
 # Tell versions [3.59,3.63) of GNU make to not export all variables.
 # Otherwise a system limit (for SysV at least) may be exceeded.
 .NOEXPORT:

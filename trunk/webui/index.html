@@ -1,0 +1,1124 @@
+<!DOCTYPE html>
+<!--
+ *	This file is part of nzbget
+ *
+ *	Copyright (C) 2012 Andrey Prygunkov <hugbug@users.sourceforge.net>
+ *
+ *	This program is free software; you can redistribute it and/or modify
+ *	it under the terms of the GNU General Public License as published by
+ *	the Free Software Foundation; either version 2 of the License, or
+ *	(at your option) any later version.
+ *
+ *	This program is distributed in the hope that it will be useful,
+ *	but WITHOUT ANY WARRANTY; without even the implied warranty of
+ *	MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ *	GNU General Public License for more details.
+ *
+ *	You should have received a copy of the GNU General Public License
+ *	along with this program; if not, write to the Free Software
+ *	Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
+ *
+ * $Revision: 1 $
+ * $Date: 2012-05-01 00:00:00 +0200 (Di, 01 Mai 2012) $
+ *
+ -->
+
+<html lang="en">
+<head>
+	<meta charset="utf-8">
+	<title>NZBGet</title>
+	<meta name="description" content="NZBGet web-interface">
+	<meta name="author" content="Andrey Prygunkov (hugbug@users.sourceforge.net)">
+
+	<!-- Mobile settings -->
+	<meta name="viewport" content="initial-scale=1.0, user-scalable=no" />
+	<meta name="apple-mobile-web-app-capable" content="yes" />
+	<meta name="apple-mobile-web-app-status-bar-style" content="black" />
+
+	<!-- Libraries -->
+	<script language="javascript" type="text/javascript" src="lib/jquery.js"></script>
+	<script language="javascript" type="text/javascript" src="lib/bootstrap.js"></script>
+
+	<!-- NZBGet -->
+	<script language="javascript" type="text/javascript" src="fasttable.js"></script>
+	<script language="javascript" type="text/javascript" src="util.js"></script>
+	<script language="javascript" type="text/javascript" src="index.js"></script>
+	<script language="javascript" type="text/javascript" src="downloads.js"></script>
+	<script language="javascript" type="text/javascript" src="edit.js"></script>
+	<script language="javascript" type="text/javascript" src="status.js"></script>
+	<script language="javascript" type="text/javascript" src="messages.js"></script>
+	<script language="javascript" type="text/javascript" src="history.js"></script>
+	<script language="javascript" type="text/javascript" src="upload.js"></script>
+
+	<link rel="stylesheet" type="text/css" href="lib/bootstrap.css" />
+	<link rel="stylesheet" type="text/css" href="style.css" />
+
+	<!-- Le HTML5 shim, for IE6-8 support of HTML5 elements -->
+	<!--[if lt IE 9]>
+	  <script src="http://html5shim.googlecode.com/svn/trunk/html5.js"></script>
+	<![endif]-->
+
+	<!-- fav and touch icons -->
+	<link rel="shortcut icon" href="img/favicon.ico">
+	<!--
+	<link rel="apple-touch-icon-precomposed" sizes="144x144" href="images/apple-touch-icon-144-precomposed.png">
+	<link rel="apple-touch-icon-precomposed" sizes="114x114" href="images/apple-touch-icon-114-precomposed.png">
+	<link rel="apple-touch-icon-precomposed" sizes="72x72" href="images/apple-touch-icon-72-precomposed.png">
+	<link rel="apple-touch-icon-precomposed" href="images/apple-touch-icon-57-precomposed.png">
+	-->
+</head>
+
+<body>
+
+<!-- *** NAVBAR ************************************************************ -->
+
+	<div class="navbar navbar-fixed-top">
+		<div class="navbar-inner">
+
+			<div class="container-fluid navbar-container" id ="NavbarContainer">
+				<a class="brand phone-hide">NZBGet <span id="version" class="label label-info phone-hide">version</span></a>
+
+				<!-- REFRESH MENU -->
+				<div class="btn-toolbar pull-right" id="RefreshToolbar">
+					<div class="btn-group">
+						<button class="btn btn-inverse" onclick="refresh()"><i class="icon-refresh icon-white"></i><span class="btn-caption"> Refresh</span></button>
+						<button class="btn btn-inverse dropdown-toggle" data-toggle="dropdown"><span class="caret"></span></button>
+						<ul class="dropdown-menu menu-refresh" id="RefreshMenu">
+							<li class="menu-header">Automatic refresh</li>
+							<li data="0.1"><a href="#"><table><tr><td></td><td>0.1</td><td>Second</td></tr></table></a></li>
+							<li data="0.2"><a href="#"><table><tr><td></td><td>0.2</td><td>Second</td></tr></table></a></li>
+							<li data="0.5"><a href="#"><table><tr><td></td></i><td>0.5</td><td>Second</td></tr></table></a></li>
+							<li data="1"><a href="#"><table><tr><td></td><td>1</td><td>Second</td></tr></table></a></li>
+							<li data="5"><a href="#"><table><tr><td></td><td>5</td><td>Seconds</td></tr></table></a></li>
+							<li data="15"><a href="#"><table><tr><td></td><td>15</td><td>Seconds</td></tr></table></a></li>
+							<li data="30"><a href="#"><table><tr><td></td><td>30</td><td>Seconds</td></tr></table></a></li>
+							<li data="60"><a href="#"><table><tr><td></td><td>1</td><td>Minute</td></tr></table></a></li>
+							<li data="0"><a href="#"><table><tr><td></td><td style="width:0"></td><td>Off</td></tr></table></a></li>
+							<li class="divider"></li>
+							<li data="indicator" ><a href="#"><table><tr><td id="RefreshIndicatorItem"></td><td style="width:0px"></td><td>Show Indicator</td></tr></table></a></li>
+							<li data="mark" style="display: none;"><i class="icon-ok"></i></li>
+						</ul>
+					</div>
+				</div>
+
+				<div class="nav">
+					<ul class="nav">
+						<li class="active"><a data-toggle="tab" href="#DownloadsTab"><span class="phone-hide">Downloads </span><i class="icon-download-alt icon-white phone-only inline"></i><br class="phone-only"><span class="badge badge-info" id="DownloadsTabBadge" style="display: none;"></span><span id="DownloadsTabBadgeEmpty">&nbsp;</span></a></li>
+						<li><a data-toggle="tab" href="#HistoryTab"><span class="phone-hide">History </span><i class="icon-time icon-white phone-only inline"></i><br class="phone-only"><span class="badge badge-info" id="HistoryTabBadge" style="display: none;"></span><span id="HistoryTabBadgeEmpty">&nbsp;</span></a></li>
+						<li><a data-toggle="tab" href="#MessagesTab"><span class="phone-hide">Messages </span><i class="icon-list-alt icon-white phone-only inline"></i><br class="phone-only"><span class="badge badge-info" id="MessagesTabBadge" style="display: none;"></span><span id="MessagesTabBadgeEmpty">&nbsp;</span></a></li>
+
+						<li class="dropdown" id="SettingsMenuLI">
+							<a href="#" class="dropdown-toggle" data-toggle="dropdown"><span class="phone-hide">Settings</span><i class="icon-cog icon-white phone-only inline"></i><br class="phone-only"> <b class="caret"></b></a>
+							<ul class="dropdown-menu menu-check" id="SettingsMenu">
+								<li class="menu-header phone-only">Settings</li>
+								<li><a data-toggle="tab" href="#ConfigTab"><table><tr><td></td><td>Configuration</td></tr></table></a></li>
+								<li><a data-toggle="tab" href="#StatisticsTab"><table><tr><td></td><td>Statistics and Status</td></tr></table></a></li>
+								<li><a data-toggle="tab" href="#InfoTab"><table><tr><td></td><td>Info</td></tr></table></a></li>
+								<li class="menu-header">View Settings</li>
+								<li data="ShowNotifications"><a href="#"><table><tr><td><i class="icon-ok" id="CHShowNotifications"></td><td>Show Notifications</td></tr></table></a></li>
+								<li data="MiniTheme" id="SettingsMenuLI_MiniTheme"><a href="#"><table><tr><td><i class="icon-ok" id="CHMiniTheme"></td><td>Mobile Version</td></tr></table></a></li>
+							</ul>
+						</li>
+
+						<li id="RefreshIndicatorBlock"><a id="RefreshIndicator"></a></li>
+					</ul>
+				</div>
+
+			</div>
+		</div>
+	</div>
+
+<!-- *** ERROR BLOCK  ****************************************************************** -->
+	<div class="alert alert-danger alert-block" style="display:none; margin-bottom:25px;" id="RPCError">
+		<h4 class="alert-heading" id="RPCError-title">Communication error!</h4>
+		<p id="RPCError-text"></p>
+	</div>
+
+<!-- *** CONTENT ************************************************************ -->
+
+	<div class="container-fluid" id="MainContent">
+
+		<div class="tab-content" style="display:none;" id="MainTabContent">
+
+<!-- *** DOWNLOADS ************************************************************ -->
+
+			<div id="DownloadsTab" class="tab-pane fade in active">
+
+				<div class="section-header">
+					<span class="section-title">Downloads</span>
+					<div class="section-info">
+						<!-- INFO -->
+						<span id="TBDownloadsLeft"><span class="label label-topstatus" id="DownloadsLeft">Left: 20.1 GB</span></span>
+						<span id="TBDownloadsTime"><span class="label label-topstatus" id="DownloadsTime">Estimated Time: 10:08:30</span></span>
+						<span id="TBDownloadsSpeed"><span class="label label-topstatus" id="DownloadsSpeed">Speed: 10000 KB/s</span></span>
+						<span id="TBDownloadsURLs"><span class="label label-topstatus" id="DownloadsURLs">2 URL queued</span></span>
+						<span class="label label-warning label-topstatus hide" id="DownloadsPausing">pausing</span>
+						<span class="label label-warning label-topstatus hide" id="DownloadsPaused">paused</span>
+						<span class="label label-warning label-topstatus hide" id="DownloadsSoftPaused">soft-paused</span>
+					</div>
+				</div>
+
+				<!-- *** DOWNLOADS: TOOLBAR -->
+
+				<div class="btn-toolbar form-inline section-toolbar" id="DownloadsToolbar">
+
+					<!-- COLLAPSED BUTTONS -->
+					<div class="btn-group" id="TBCollapsedButtonsMenu">
+						<button class="btn dropdown-toggle" data-toggle="dropdown" title="Hidden buttons"><i class="icon-wrench"></i> <span class="caret"></span></button>
+						<ul class="dropdown-menu" style="min-width:150px;" id="CollapsedButtonsMenu">
+							<li class="menu-header">Actions</li>
+							<li class="TBAddItem"><a href="#" onclick="downloads_add_click()"><i class="icon-plus"></i> Add</a></li>
+							<li class="divider" id="SepAddItem"></li>
+							<li class="TBEditItem"><a href="#" onclick="downloads_selected_edit_click()"><i class="icon-edit"></i> Edit</a></li>
+							<li class="TBEditItem"><a href="#" onclick="downloads_selected_merge_click()"><i class="icon-retweet"></i> Merge</a></li>
+							<li class="TBEditItem"><a href="#" onclick="downloads_selected_pause_click()"><i class="icon-pause"></i> <span>Pause</a></li>
+							<li class="TBEditItem"><a href="#" onclick="downloads_selected_resume_click()"><i class="icon-play"></i> <span>Resume</a></li>
+							<li class="TBEditItem"><a href="#" onclick="downloads_selected_delete_click()"><i class="icon-trash"></i> Delete</a></li>
+							<li class="divider" id="SepEditItem"></li>
+							<li class="TBMoveItem"><a href="#" onclick="downloads_selected_move_click('top')"><i class="icon-extra icon-move-top"></i> Move to the Top</a></li>
+							<li class="TBMoveItem"><a href="#" onclick="downloads_selected_move_click('up')"><i class="icon-arrow-up"></i> Move Up</a></li>
+							<li class="TBMoveItem"><a href="#" onclick="downloads_selected_move_click('down')"><i class="icon-arrow-down"></i> Move Down</a></li>
+							<li class="TBMoveItem"><a href="#" onclick="downloads_selected_move_click('bottom')"><i class="icon-extra icon-move-bottom"></i> Move to the Bottom</a></li>
+							<li class="divider" id="SepMoveItem"></li>
+							<li class="TBScanItem"><a href="#" onclick="downloads_scan_click()"><i class="icon-barcode"></i> Scan</a></li>
+						</ul>
+					</div>
+
+					<!-- ADD BUTTON -->
+					<div class="btn-group" id="TBAddButton">
+						<button class="btn" onclick="downloads_add_click()" title="Add nzb-files"><i class="icon-plus"></i><span class="btn-caption"> Add</span></button>
+					</div>
+
+					<!-- NZB-ACTIONS BUTTONS -->
+					<div class="btn-group phone-hide TBEditButtons">
+						<button class="btn" onclick="downloads_selected_edit_click()" title="Edit selected nzb-files"><i class="icon-edit"></i><span class="btn-caption"> Edit</span></button>
+						<button class="btn" onclick="downloads_selected_merge_click()" title="Merge selected nzb-files"><i class="icon-retweet"></i><span class="btn-caption"> Merge</span></button>
+						<button class="btn" onclick="downloads_selected_pause_click()" title="Pause selected nzb-files"><i class="icon-pause"></i><span class="btn-caption"> Pause</span></button>
+						<button class="btn" onclick="downloads_selected_resume_click()" title="Resume selected nzb-files"><i class="icon-play"></i><span class="btn-caption"> Resume</span></button>
+						<button class="btn" onclick="downloads_selected_delete_click()" title="Delete selected nzb-files"><i class="icon-trash"></i><span class="btn-caption"> Delete</span></button>
+					</div>
+					<div class="btn-group phone-only TBEditButtons"><button class="btn" onclick="downloads_selected_edit_click()" title="Edit selected nzb-files"><i class="icon-edit"></i><span class="btn-caption"> Edit</span></button></div>
+					<div class="btn-group phone-only TBEditButtons"><button class="btn" onclick="downloads_selected_merge_click()" title="Merge selected nzb-files"><i class="icon-retweet"></i><span class="btn-caption"> Merge</span></button></div>
+					<div class="btn-group phone-only TBEditButtons"><button class="btn" onclick="downloads_selected_pause_click()" title="Pause selected nzb-files"><i class="icon-pause"></i><span class="btn-caption"> Pause</span></button></div>
+					<div class="btn-group phone-only TBEditButtons"><button class="btn" onclick="downloads_selected_resume_click()" title="Resume selected nzb-files"><i class="icon-play"></i><span class="btn-caption"> Resume</span></button></div>
+					<div class="btn-group phone-only TBEditButtons"><button class="btn" onclick="downloads_selected_delete_click()" title="Delete selected nzb-files"><i class="icon-trash"></i><span class="btn-caption"> Delete</span></button></div>
+
+					<!-- MOVE BUTTONS -->
+					<div class="btn-group phone-hide TBMoveButtons">
+						<button class="btn" onclick="downloads_selected_move_click('top')" title="Move selected nzb-files to the top"><i class="icon-extra icon-move-top"></i></button>
+						<button class="btn" onclick="downloads_selected_move_click('up')" title="Move selected nzb-files up"><i class="icon-arrow-up"></i></button>
+						<button class="btn" onclick="downloads_selected_move_click('down')" title="Move selected nzb-files down"><i class="icon-arrow-down"></i></button>
+						<button class="btn" onclick="downloads_selected_move_click('bottom')" title="Move selected nzb-files to the bottom"><i class="icon-extra icon-move-bottom"></i></button>
+					</div>
+					<div class="btn-group phone-only TBMoveButtons"><button class="btn" onclick="downloads_selected_move_click('top')" title="Move selected nzb-files to the top"><i class="icon-extra icon-move-top"></i></button></div>
+					<div class="btn-group phone-only TBMoveButtons"><button class="btn" onclick="downloads_selected_move_click('up')" title="Move selected nzb-files up"><i class="icon-arrow-up"></i></button></div>
+					<div class="btn-group phone-only TBMoveButtons"><button class="btn" onclick="downloads_selected_move_click('down')" title="Move selected nzb-files down"><i class="icon-arrow-down"></i></button></div>
+					<div class="btn-group phone-only TBMoveButtons"><button class="btn" onclick="downloads_selected_move_click('bottom')" title="Move selected nzb-files to the bottom"><i class="icon-extra icon-move-bottom"></i></button></div>
+
+					<!-- HANDBRAKE BUTTON/MENU -->
+					<div class="btn-group">
+						<button class="btn" id="HandbrakeButton" onclick="downloads_Handbrake_click()" title="Pause/Resume all activities"><i class="icon-road" id="HandbrakeIcon"></i><span class="btn-caption"> Handbrake</span></button>
+						<button class="btn dropdown-toggle" data-toggle="dropdown" id="HandbrakeCaret"><span class="caret"></span></button>
+						<ul class="dropdown-menu menu-check pull-right" id="HandbrakeMenu">
+							<li class="menu-header">Pause activities</li>
+							<li data="download2"><a href="#"><table><tr><td><i class="icon-ok" id="CHPauseDownload"></td><td>Pause Download Queue</td></tr></table></a></li>
+							<li data="post"><a href="#"><table><tr><td><i class="icon-ok" id="CHPausePostProcess"></td><td>Pause Post-Processing</td></tr></table></a></li>
+							<li data="scan"><a href="#"><table><tr><td><i class="icon-ok" id="CHPauseScan"></td><td>Pause NZB Scan</td></tr></table></a></li>
+							<li class="divider"></li>
+							<li data="download"><a href="#"><table><tr><td><i class="icon-ok" id="CHSoftPauseDownload"></td><td>Soft-Pause Download Queue</td></tr></table></a></li>
+							<li class="divider"></li>
+							<li><a data-toggle="modal" href="#PauseHelp"><table><tr><td></td><td>Quick Help</td></tr></table></a></li>
+						</ul>
+					</div>
+
+					<!-- SCAN BUTTON -->
+					<div class="btn-group" id="TBScanButton">
+						<button class="btn" onclick="downloads_scan_click()" title="Scan incoming nzb-directory for new nzb-files"><i class="icon-barcode"></i><span class="btn-caption"> Scan</span></button>
+					</div>
+
+					<!-- SPEED LIMIT CONTROL -->
+					<div class="btn-group" id="TBSpeedLimitControl">
+						<div class="controls" style="float:left;">
+							<div class="input-prepend input-append">
+								<span class="add-on">Limit</span><input style="width:45px;text-align:center;" id="SpeedLimitInput" size="16" type="text"
+								placeholder="none" onFocus="SpeedLimitInput_focused=true" onBlur="SpeedLimitInput_focused=false"
+									onkeydown="if (IsEnterKey(event)) { $(this).blur(); downloads_setspeedlimit(); }"><span class="add-on">KB/s</span><button
+								class="btn" type="button" onFocus="SpeedLimitInput_focused=true" onBlur="SpeedLimitInput_focused=false" id='SpeedLimitButton'
+									onclick="$(this).blur(); downloads_setspeedlimit();" title="Set download speed limit (empty value removes the limit)">Set</button>
+							</div>
+						</div>
+					</div>
+
+					<!-- VIEW SETTINGS BUTTON -->
+					<div class="btn-group">
+						<button class="btn dropdown-toggle" data-toggle="dropdown" title="View settings" id="ToolbarOptButton"><i class="icon-cog"></i> <span class="caret"></span></button>
+						<ul class="dropdown-menu menu-check pull-right" id="ToolbarOptMenu">
+							<li class="menu-header">Toolbar Settings</li>
+							<li data="ShowAddButton"><a href="#"><table><tr><td><i class="icon-ok" id="CHShowAddButton"></td><td>Show Add Button</td></tr></table></a></li>
+							<li data="ShowEditButtons"><a href="#"><table><tr><td><i class="icon-ok" id="CHShowEditButtons"></td><td>Show Edit Buttons</td></tr></table></a></li>
+							<li data="ShowMoveButtons"><a href="#"><table><tr><td><i class="icon-ok" id="CHShowMoveButtons"></td><td>Show Move Buttons</td></tr></table></a></li>
+							<li data="ShowScanButton"><a href="#"><table><tr><td><i class="icon-ok" id="CHShowScanButton"></td><td>Show Scan Button</td></tr></table></a></li>
+							<li data="ShowSpeedLimitControl"><a href="#"><table><tr><td><i class="icon-ok" id="CHShowSpeedLimitControl"></td><td>Show Speed Limit Control</td></tr></table></a></li>
+							<li class="menu-header">Info Settings</li>
+							<li data="ShowDownloadsLeft"><a href="#"><table><tr><td><i class="icon-ok" id="CHShowDownloadsLeft"></td><td>Show Total Size</td></tr></table></a></li>
+							<li data="ShowDownloadsTime"><a href="#"><table><tr><td><i class="icon-ok" id="CHShowDownloadsTime"></td><td>Show Total Time</td></tr></table></a></li>
+							<li data="ShowDownloadsSpeed"><a href="#"><table><tr><td><i class="icon-ok" id="CHShowDownloadsSpeed"></td><td>Show Current Speed</td></tr></table></a></li>
+						</ul>
+					</div>
+
+				</div>
+
+	<!-- *** DOWNLOADS: TABLE -->
+
+				<div class="form-inline toolbox-top clearfix">
+					<div class="pull-left toolbox-length">
+						<select size="1" id="DownloadsRecordsPerPage" onchange="downloads_RecordsPerPage_change()">
+							<option value="5">5</option>
+							<option selected="selected" value="10">10</option>
+							<option value="15">15</option>
+							<option value="20">20</option>
+							<option value="30">30</option>
+							<option value="50">50</option>
+							<option value="100">100</option>
+						</select><span class="records-label"> records per page</span>
+					</div>&nbsp;
+
+					<div class="pull-right toolbox-search">
+						<span class="search-label">Search:</span>
+						<input id="DownloadsTable_filter" class="search-query" type="text" style="">
+						<i id="DownloadsTable_clearfilter" class="icon-remove search-clear"></i>
+					</div>
+
+				</div>
+
+				<table class="table table-striped table-bordered table-check table-cancheck datatable" id="DownloadsTable">
+					<thead><tr><th><div class="check"></div></th><th>Status</th><th>Name</th><th>Category</th><th class="text-right">Age</th><th width="120px"><div style="float:left; position:relative; width:50%; text-align:left;">Size</div><div style="float:right; position:relative; width:50%; text-align:right;">Left</div></th><th class="text-right">Estimated time</th></tr></thead>
+					<tbody></tbody>
+				</table>
+
+				<div class="toolbox-pager clearfix">
+					<div class="pull-left" id="DownloadsTable_info"></div>
+					<div class="pagination pull-right"><ul id="DownloadsTable_pager"></ul></div>
+				</div>
+
+				<div class="alert alert-info alert-block hide" style="margin-top:6px;" id="DownloadQueueEmpty">
+					<h4 class="alert-heading">Download queue is empty.</h4>
+					 To add downloads click on the Add button or put nzb-files into incoming nzb-directory (option <em>NzbDir</em>).
+				</div>
+
+				<br>
+
+				<div id="DownloadsFill"></div>
+			</div>
+
+<!-- *** HISTORY ************************************************************ -->
+
+			<div id="HistoryTab" class="tab-pane fade">
+				<div class="section-header">
+					<span class="section-title">History</span>
+				</div>
+
+	<!-- *** HISTORY: TOOLBAR -->
+
+				<div class="btn-toolbar form-inline section-toolbar">
+					<div class="btn-group">
+					<!--
+						<button class="btn" onclick="" title="Post-process selected records again"><i class="icon-wrench"></i> Reprocess</button>
+						<button class="btn" onclick="" title="Return selected records to download queue"><i class="icon-download"></i> Return</button>
+					-->
+						<button class="btn" onclick="history_delete_click()" title="Delete selected records"><i class="icon-trash"></i><span class="btn-caption"> Delete</span></button>
+					</div>
+				</div>
+
+	<!-- *** HISTORY: TABLE -->
+
+				<div class="form-inline toolbox-top clearfix">
+					<div class="pull-left toolbox-length">
+						<select size="1" id="HistoryRecordsPerPage" onchange="history_RecordsPerPage_change()">
+							<option value="5">5</option>
+							<option selected="selected" value="10">10</option>
+							<option value="15">15</option>
+							<option value="20">20</option>
+							<option value="30">30</option>
+							<option value="50">50</option>
+							<option value="100">100</option>
+						</select><span class="records-label"> records per page</span>
+					</div>&nbsp;
+
+					<div class="pull-right toolbox-search">
+						<span class="search-label">Search:</span>
+						<input id="HistoryTable_filter" class="search-query" type="text" style="">
+						<i id="HistoryTable_clearfilter" class="icon-remove search-clear"></i>
+					</div>
+				</div>
+
+				<table class="table table-striped table-bordered table-check table-cancheck datatable" id="HistoryTable">
+					<thead><tr><th><div class="check"></div></th><th>Status</th><th width="170px" class="text-center">Time</th><th>Name</th><th>Category</th><th class="text-right">Size</th></tr></thead>
+					<tbody></tbody>
+				</table>
+
+				<div class="toolbox-pager">
+					<div class="pull-left" id="HistoryTable_info"></div>
+					<div class="pagination pull-right"><ul id="HistoryTable_pager"></ul></div>
+				</div>
+
+				<br>
+			</div>
+
+<!-- *** MESSAGES ************************************************************ -->
+
+			<div id="MessagesTab" class="tab-pane fade">
+				<div class="section-header">
+					<span class="section-title">Messages</span>
+				</div>
+
+	<!-- *** MESSAGES: TOOLBAR -->
+<!--
+				<div class="btn-toolbar form-inline section-toolbar">
+					<div class="btn-group">
+						<button class="btn" onclick="TODO()" title="Delete all messages"><i class="icon-trash"></i> Clear</button>
+					</div>
+-->
+<!--
+					<div class="btn-group">
+						<div class="controls" style="float:left;">
+							<div class="input-prepend">
+								<span class="add-on">Filter&nbsp;</span>
+							</div>
+						</div>
+						<button class="btn active" onclick="TODO()" title="Show/Hide Detail-messages">Detail</button>
+						<button class="btn active" onclick="TODO()" title="Show/Hide Info-messages">Info</button>
+						<button class="btn active" onclick="TODO()" title="Show/Hide Warning-messages">Warning</button>
+						<button class="btn active" onclick="TODO()" title="Show/Hide Error-messages">Error</button>
+					</div>
+-->
+<!--				</div> -->
+
+	<!-- *** MESSAGES: TABLE -->
+
+				<div class="form-inline toolbox-top clearfix">
+					<div class="pull-left toolbox-length">
+						<select size="1" id="MessagesRecordsPerPage" onchange="messages_RecordsPerPage_change()">
+							<option value="5">5</option>
+							<option selected="selected" value="10">10</option>
+							<option value="15">15</option>
+							<option value="20">20</option>
+							<option value="30">30</option>
+							<option value="50">50</option>
+							<option value="100">100</option>
+						</select><span class="records-label"> records per page</span>
+					</div>&nbsp;
+
+					<div class="pull-right toolbox-search">
+						<span class="search-label">Search:</span>
+						<input id="MessagesTable_filter" class="search-query" type="text" style="">
+						<i id="MessagesTable_clearfilter" class="icon-remove search-clear"></i>
+					</div>
+				</div>
+
+				<table class="table table-striped table-bordered datatable" id="MessagesTable">
+					<thead><tr><th width="65px">Kind</th><th width="170px" class="text-center">Time</th><th>Text</th></tr></thead>
+					<tbody></tbody>
+				</table>
+
+				<div class="toolbox-pager">
+					<div class="pull-left" id="MessagesTable_info"></div>
+					<div class="pagination pull-right"><ul id="MessagesTable_pager"></ul></div>
+				</div>
+
+				<br>
+			</div>
+
+<!-- *** STATISTICS ************************************************************ -->
+
+			<div id="StatisticsTab" class="tab-pane fade">
+				<div class="section-header">
+					<span class="section-title">Statistics</span>
+				</div>
+
+				<table class="table table-striped table-bordered datatable" id="StatisticsTable">
+					<tbody></tbody>
+				</table>
+				<br>
+
+				<div class="section-header">
+					<span class="section-title">Status</span>
+				</div>
+				<table class="table table-striped table-bordered datatable" id="StatusTable">
+					<tbody></tbody>
+				</table>
+
+				<br>
+			</div>
+
+<!-- *** CONFIG ************************************************************ -->
+
+			<div id="ConfigTab" class="tab-pane fade">
+				<div class="section-header">
+					<span class="section-title">Configuration</span>
+				</div>
+
+				<div id="ConfigTabData">
+					<div class="alert alert-info alert-block">
+						<h4 class="alert-heading">The editing of NZBGet configuration via web-interface is not yet implemented.</h4>
+						To change NZBGet configuration please edit configuration file <em>nzbget.conf</em> in a text editor, then
+						restart NZBGet. Refer to documentation for more information.
+					</div>
+				</div>
+			</div>
+
+<!-- *** INFO ************************************************************ -->
+
+			<div id="InfoTab" class="tab-pane fade">
+				<div class="section-header">
+					<span class="section-title">Information about NZBGet</span>
+				</div>
+
+				<div id="InfoTabData">
+
+				<h2>Authors</h2>
+				<p>NZBGet is developed and maintained by Andrey Prygunkov (<a href="mailto:hugbug@users.sourceforge.net">hugbug@users.sourceforge.net</a>).</p>
+
+				<p>The original project was initially created by Sven Henkel (sidddy@users.sourceforge.net) in 2004 and later developed by Bo Cordes Petersen (placebodk@users.sourceforge.net) until 2005. In 2007 the abandoned project was overtaken by Andrey Prygunkov. Since then the program has been completely rewritten.</p>
+
+				<p>Module TLS (TLS.c, TLS.h) is based on work by Martin Lambers (marlam@marlam.de).</p>
+
+				<h2>Copyright</h2>
+				<p>This program is free software; you can redistribute it and/or modify
+				it under the terms of the GNU General Public License as published by
+				the Free Software Foundation; either version 2 of the License, or
+				(at your option) any later version.</p>
+
+				<p>The complete content of license is provided in file COPYING within distribution and also available <a href="http://www.gnu.org/licenses/gpl-2.0.html">online</a>.</p>
+
+				<p>Additional exemption: compiling, linking, and/or using OpenSSL is allowed.</p>
+
+				<h2>Contact</h2>
+				<p>For more info please visit <a href="http://nzbget.sourceforge.net">NZBGet Home Page</a>. Among other things the developers of third-party apps find there complete docs about RPC interface.</p>
+				<p>Should you need help, have suggestions or want to share your improvements - <a href="http://sourceforge.net/apps/phpbb/nzbget/">NZBGet Forum</a> is a place to do that.</p>
+				<p>If you use NZBGet on a media player, router, NAS or other non-PC device the best place to get help is probably forums specialized on your device.</p>
+
+				<h1 style="margin-top:20px;">Information about included libraries</h1>
+
+				<h2>jQuery</h2>
+				<p>NZBGet web-interface uses <a href="http://jquery.com">jQuery</a>. The jQuery Project is run by a distributed group of volunteers that all want to see jQuery become the best JavaScript tool possible.</p>
+				<p>jQuery is licensed under the <a href="http://github.com/jquery/jquery/blob/master/MIT-LICENSE.txt">MIT</a> and <a href="http://github.com/jquery/jquery/blob/master/GPL-LICENSE.txt">GPL</a> licenses.</p>
+
+				<h2>Bootstrap</h2>
+				<p>NZBGet web-interface uses <a href="http://twitter.github.com/bootstrap/">Twitter Bootstrap</a>. Designed and built with all the love in the world @twitter by @mdo and @fat.</p>
+				<p>Bootstrap code is licensed under the <a href="http://www.apache.org/licenses/LICENSE-2.0">Apache License v2.0</a>. Icons from <a href="http://glyphicons.com/">Glyphicons Free</a>, licensed under <a href="http://creativecommons.org/licenses/by/3.0/">CC BY 3.0</a>.</p>
+
+				</div>
+			</div>
+
+		  </div>
+
+	</div>
+
+<!-- *** QUICK HELP: EXPLAINING PAUSE OPTIONS ************************************************************ -->
+
+<div class="modal hide" id="PauseHelp">
+	<div class="modal-header">
+	<button type="button" class="close" data-dismiss="modal">×</button>
+	<h3>Help: Explaining pause options</h3>
+	</div>
+	<div class="modal-body">
+	<p>Command <strong>Pause download queue</strong> is for manually pausing the download queue.
+	This is what you should use to pause download.</p>
+	<p>Command <strong>Soft-Pause download queue</strong> changes the state of <em>Soft-Pause</em>, which is maintained by the program: scheduler and post-processing can
+	pause and resume download (see config options <em>PostPauseQueue</em> or <em>ParPauseQueue</em>).
+	In order to keep the scheduler in-sync it's better not to manually change the state of Soft-Pause.
+	However if you control NZBGet using a third-party software, which doesn't distinguigh between manual <em>Pause</em> and <em>Soft-Pause</em>, you may need to control the <em>Soft-Pause</em> manually as well.</p>
+	<p>The download is paused if either manual <em>Pause</em> or <em>Soft-Pause</em> is active.</p>
+	<p>The pausing of <strong>post-processing</strong> depends on how the post-processing-script handles screen output and may not always work.</p>
+	<p>Button <strong>Handbrake</strong> pauses or resumes all three activities: download, post-processing and nzb directory scan. The state of <em>Soft-Pause</em> remains unchanged.</p>
+	</div>
+	<div class="modal-footer">
+	<a href="#" class="btn btn-primary" data-dismiss="modal">Close</a>
+	</div>
+</div>
+
+<!-- *** INIT LOADING-ALERT ************************************************************ -->
+
+<div class="alert alert-info alert-block" style="display:none" id="FirstUpdateInfo">
+	<h4 class="alert-heading">Loading data...</h4>
+	Please wait.
+</div>
+
+<!-- *** EDIT DOWNLOAD DIALOG ************************************************************ -->
+
+<div class="modal hide" id="DownloadsEdit">
+	<div class="modal-header">
+		<button class="close" data-dismiss="modal">×</button>
+		<h3 id ="DownloadsEdit_Title">Title</h3>
+	</div>
+
+	<div class="modal-body">
+
+		<div class="tab-content">
+			<div class="tab-pane active" id="DownloadsEdit_GeneralTab">
+				<a class="hide" href="#DownloadsEdit_GeneralTab" id="DownloadsEdit_GeneralTabLink" data-toggle="tab"></a>
+				<form class="form-horizontal">
+					<fieldset>
+
+						<div class="control-group">
+							<label class="control-label" for="NZBName">Name</label>
+							<div class="controls" id="DownloadsEdit_NZBNameGroup">
+								<input type="text" class="input-xlarge" id="DownloadsEdit_NZBName" />
+								<p class="help-block help-block-uneditable" id="DownloadsEdit_NZBNameReadonly">Name and other properties cannot be changed for post-processing-downloads.</p>
+							</div>
+						</div>
+
+						<div class="control-group">
+							<label class="control-label" for="DownloadsEdit_Priority">Priority</label>
+							<div class="controls">
+								<select id="DownloadsEdit_Priority">
+								</select>
+							</div>
+						</div>
+
+						<div class="control-group">
+							<label class="control-label" for="DownloadsEdit_Category">Category</label>
+							<div class="controls">
+								<select id="DownloadsEdit_Category">
+								</select>
+								&nbsp;<a data-toggle="modal" href="#ConfigureCategoriesHelp" class="btn btn-small phone-hide">Quick Help</a>
+							</div>
+						</div>
+
+						<div class="control-group" id="DownloadsEdit_StatisticsGroup">
+							<label class="control-label" for="DownloadsEdit_Statistics">Statistics</label>
+							<div class="controls">
+							<table class="table table-striped table-bordered data-statistics">
+								<tbody id="DownloadsEdit_Statistics">
+								</tbody>
+							</table>
+							</div>
+						</div>
+
+						<div class="control-group" id="DownloadsEdit_PostProcessingGroup">
+							<label class="control-label" for="DownloadsEdit_PostProcessingLabel">Post-Processing</label>
+							<div class="controls">
+								<a class="btn hide" href="#DownloadsEdit_PostProcessingTab" data-toggle="tab">Parameters</a>
+								<a class="btn" href="#DownloadsEdit_LogTab" data-toggle="tab" id="DownloadsEdit_Log">Messages</a>
+							</div>
+						</div>
+
+					</fieldset>
+				</form>
+			</div>
+
+			<div class="tab-pane" id="DownloadsEdit_PostProcessingTab">
+				<form class="form-horizontal">
+					<fieldset>
+						<div class="alert alert-info alert-block hide">
+							<h4 class="alert-heading">Parameters not available.</h4>
+							<p>The post-processing script you are currently using doesn't support post-processing parameters or the script configuration file is not properly set in NZBGet settings.</p>
+						</div>
+						<div class="alert alert-info alert-block">
+							<h4 class="alert-heading">Not yet implemented.</h4>
+							<p>This page is a placeholder. The editing of post-processing parameters is not supported in web-interface yet.</p>
+						</div>
+
+						<a class="btn" href="#DownloadsEdit_GeneralTab" data-toggle="tab">Go Back</a>
+					</fieldset>
+				</form>
+			</div>
+
+			<div class="tab-pane" id="DownloadsEdit_LogTab">
+				<form class="form-horizontal">
+					<fieldset>
+						<div class="row-fluid">
+							<div class="pull-left">Post-Processing Messages</div>
+							<div class="pull-right" style="margin-bottom:10px;"><input id="DownloadsEdit_LogTable_filter" class="search-query" placeholder="Search" type="text"></div>
+						</div>
+						<table class="table table-striped table-bordered" id="DownloadsEdit_LogTable" style="margin-bottom:15px;">
+							<tbody></tbody>
+						</table>
+
+						<a class="btn" href="#DownloadsEdit_GeneralTab" data-toggle="tab">Go Back</a>
+						<div class="pull-right"><div class="pagination" id ="DownloadsEdit_LogTable_pager"></div></div>
+					</fieldset>
+				</form>
+			</div>
+
+		</div>
+
+	</div>
+
+	<div class="modal-footer">
+		<div class="btn-group pull-left hide" id="DownloadsEdit_ResumeGroup">
+			<a href="#" class="btn pull-left" id="DownloadsEdit_Resume"><i class="icon-play"></i> Resume</a>
+		</div>
+
+		<div class="btn-group pull-left" id="DownloadsEdit_PauseGroup">
+			<a href="#" class="btn" id="DownloadsEdit_Pause"><i class="icon-pause"></i> Pause</a>
+		</div>
+
+		<div class="btn-group dropup pull-left" id="DownloadsEdit_DeleteGroup">
+			<a class="btn dropdown-toggle btn-danger" data-toggle="dropdown"><i class="icon-trash icon-white"></i> Delete <span class="caret"></span></a>
+			<ul class="dropdown-menu confirm-menu open">
+				<li class="menu-header">Confirm</li>
+				<li><a href="#" id="DownloadsEdit_Delete">Yes, Delete</a></li>
+			</ul>
+		</div>
+
+		<div class="btn-group dropup pull-left hide" id="DownloadsEdit_CancelPPGroup">
+		<a class="btn dropdown-toggle btn-danger" data-toggle="dropdown">Cancel Post-Processing <span class="caret"></span></a>
+		<ul class="dropdown-menu confirm-menu">
+			<li class="menu-header">Confirm</li>
+			<li><a href="#" id="DownloadsEdit_CancelPP">Yes, Cancel</a></li>
+		</ul>
+		</div>
+
+		<div class="dialog-transmit hide" style="position:absolute;margin-left:260px;" id="DownloadsEdit_Transmit"><img src="img/transmit.gif"></div>
+		<a href="#" class="btn" data-dismiss="modal" id="DownloadsEdit_Close">Close</a>
+		<a href="#" class="btn btn-primary" id="DownloadsEdit_Save">Save changes</a>
+	</div>
+</div>
+
+<!-- *** MULTI EDIT DOWNLOAD DIALOG ************************************************************ -->
+
+<div class="modal hide" id="DownloadsMulti">
+	<div class="modal-header">
+		<button class="close" data-dismiss="modal">×</button>
+		<h3 id ="DownloadsMulti_Title">Multiple records</h3>
+	</div>
+
+	<div class="modal-body">
+
+		<div class="tab-content">
+			<div class="tab-pane active" id="DownloadsMulti_GeneralTab">
+				<a class="hide" href="#DownloadsMulti_GeneralTab" id="DownloadsMulti_GeneralTabLink" data-toggle="tab"></a>
+				<form class="form-horizontal">
+					<fieldset>
+
+						<div class="control-group">
+							<label class="control-label" for="DownloadsMulti_Priority">Priority</label>
+							<div class="controls">
+								<select id="DownloadsMulti_Priority">
+								</select>
+							</div>
+						</div>
+
+						<div class="control-group">
+							<label class="control-label" for="DownloadsMulti_Category">Category</label>
+							<div class="controls">
+								<select id="DownloadsMulti_Category">
+								</select>
+								&nbsp;<a data-toggle="modal" href="#ConfigureCategoriesHelp" class="btn btn-small">Quick Help</a>
+							</div>
+						</div>
+
+						<div class="control-group">
+							<label class="control-label" for="DownloadsMulti_Statistics">Statistics</label>
+							<div class="controls">
+							<table class="table table-striped table-bordered data-statistics">
+								<tbody id="DownloadsMulti_Statistics">
+								</tbody>
+							</table>
+							</div>
+						</div>
+
+						<!--
+						<div class="control-group">
+							<label class="control-label" for="DownloadsMulti_PostProcessingLabel">Post-Processing</label>
+							<div class="controls">
+								<a class="btn" href="#DownloadsMulti_PostProcessingTab" data-toggle="tab">Parameters</a>
+							</div>
+						</div>
+						-->
+
+					</fieldset>
+				</form>
+			</div>
+
+			<div class="tab-pane" id="DownloadsMulti_PostProcessingTab">
+				<form class="form-horizontal">
+					<fieldset>
+
+						<div class="alert alert-info alert-block hide">
+							<h4 class="alert-heading">Parameters not available.</h4>
+							<p>The post-processing script you are currently using doesn't support post-processing parameters or the script configuration file is not properly set in NZBGet settings.</p>
+						</div>
+						<div class="alert alert-info alert-block">
+							<h4 class="alert-heading">Not yet implemented.</h4>
+							<p>This page is a placeholder. The editing of post-processing parameters is not supported in web-interface yet.</p>
+						</div>
+
+						<a class="btn" href="#DownloadsMulti_GeneralTab" data-toggle="tab">Go Back</a>
+
+					</fieldset>
+				</form>
+			</div>
+
+		</div>
+
+	</div>
+
+	<div class="modal-footer">
+		<div class="dialog-transmit hide" style="position:absolute;margin-left:260px;" id="DownloadsMulti_Transmit"><img src="img/transmit.gif"></div>
+		<a href="#" class="btn" data-dismiss="modal" id="DownloadsMulti_Close">Close</a>
+		<a href="#" class="btn btn-primary" id="DownloadsMulti_Save">Save changes</a>
+	</div>
+</div>
+
+<!-- *** QUICK HELP: Configure Categores ************************************************** -->
+
+<div class="modal modal-mini modal-center hide" id="ConfigureCategoriesHelp">
+	<div class="modal-header">
+	<button type="button" class="close" data-dismiss="modal">×</button>
+	<h3>Help: Configuring categories</h3>
+	</div>
+	<div class="modal-body">
+	To setup categories please edit file <strong>categories.txt</strong> in webui-directory.
+	</div>
+	<div class="modal-footer">
+	<a href="#" class="btn btn-primary" data-dismiss="modal">Close</a>
+	</div>
+</div>
+
+<!-- *** HISTORY EDIT DIALOG ************************************************************ -->
+
+<div class="modal hide" id="HistoryEdit">
+	<div class="modal-header">
+		<button class="close" data-dismiss="modal">×</button>
+		<h3 id="HistoryEdit_Title"></h3>
+	</div>
+
+	<div class="modal-body">
+		<form class="form-horizontal">
+			<fieldset>
+
+				<div class="control-group">
+					<label class="control-label" for="HistoryEdit_Status">Status</label>
+					<div class="controls" style="margin-top: 4px;">
+						<span id="HistoryEdit_Status"></span>
+					</div>
+				</div>
+
+				<div class="control-group">
+					<label class="control-label" for="HistoryEdit_Category">Category</label>
+					<div class="controls">
+						<span class="input-xlarge uneditable-input" id="HistoryEdit_Category"></span>
+					</div>
+				</div>
+
+				<div class="control-group" id="HistoryEdit_PathGroup">
+					<label class="control-label" for="HistoryEdit_Path">Download Path</label>
+					<div class="controls">
+						<span class="uneditable-mulitline-input" id="HistoryEdit_Path"></span>
+						<p class="help-block">Post-processing script may have moved files elsewhere.</p>
+					</div>
+				</div>
+
+				<div class="control-group" style="margin-top: 15px; margin-bottom:0;" id="HistoryEdit_StatisticsGroup">
+					<label class="control-label" for="HistoryEdit_Statistics">Statistics</label>
+					<div class="controls">
+					<table class="table table-striped table-bordered data-statistics">
+						<tbody id="HistoryEdit_Statistics">
+						</tbody>
+					</table>
+					</div>
+				</div>
+
+			</fieldset>
+		</form>
+	</div>
+
+	<div class="modal-footer">
+		<div class="btn-group pull-left" id="HistoryEdit_DeleteGroup">
+			<a href="#" class="btn pull-left" id="HistoryEdit_Delete"><i class="icon-trash"></i> Delete</a>
+		</div>
+
+		<div class="btn-group dropup pull-left" id="HistoryEdit_ReprocessGroup">
+		<a class="btn dropdown-toggle" data-toggle="dropdown">Post-Process Again <span class="caret"></span></a>
+		<ul class="dropdown-menu confirm-menu">
+			<li class="menu-header">Confirm</li>
+			<li><a href="#" id="HistoryEdit_Reprocess">Yes, Post-Process</a></li>
+		</ul>
+		</div>
+
+		<div class="btn-group dropup pull-left" id="HistoryEdit_ReturnGroup">
+		<a class="btn dropdown-toggle" data-toggle="dropdown">Return to Queue <span class="caret"></span></a>
+		<ul class="dropdown-menu confirm-menu">
+			<li class="menu-header">Confirm</li>
+			<li><a href="#" id="HistoryEdit_Return">Yes, Return</a></li>
+		</ul>
+		</div>
+
+		<div class="dialog-transmit" style="position:absolute;margin-left:400px;" id="HistoryEdit_Transmit"><img src="img/transmit.gif"></div>
+		<a href="#" class="btn btn-primary" data-dismiss="modal">Close</a>
+	</div>
+</div>
+
+<!-- *** CONFIRMATION DIALOG ************************************************************ -->
+
+<div class="modal modal-mini modal-center hide" id="ConfirmDialog">
+	<div class="modal-header">
+		<button class="close" data-dismiss="modal">×</button>
+		<h3 id="ConfirmDialog_Title">Title</h3>
+	</div>
+
+	<div class="modal-body">
+		<div id="ConfirmDialog_Text">Text</div>
+	</div>
+
+	<div class="modal-footer">
+		<a href="#" class="btn" data-dismiss="modal" id="ConfirmDialog_Close">Close</a>
+		<a href="#" class="btn btn-primary" id="ConfirmDialog_OK">Clear</a>
+	</div>
+</div>
+
+<!-- *** DELETE DOWNLOADS CONFIRMATION DIALOG DATA ***************************************** -->
+
+<div class="hide" id="DownloadsDeleteConfirmDialog">
+	<div id="DownloadsDeleteConfirmDialog_Title">Downloads</div>
+	<div id="DownloadsDeleteConfirmDialog_Text">
+		<p>
+		Delete selected downloads?
+		</p>
+		<p class="confirm-help-block">
+		Selected items will be removed from the queue. Already downloaded files remain on disk.
+		</p>
+	</div>
+	<div id="DownloadsDeleteConfirmDialog_OK">Delete</div>
+</div>
+
+<!-- *** CLEAR HISTORY CONFIRMATION DIALOG DATA ***************************************** -->
+
+<div class="hide" id="HistoryClearConfirmDialog">
+	<div id="HistoryClearConfirmDialog_Title">History</div>
+	<div id="HistoryClearConfirmDialog_Text">
+		<p>
+		Clear History?
+		</p>
+		<p class="confirm-help-block">
+		All records will be deleted. All files remain on disk.
+		</p>
+	</div>
+	<div id="HistoryClearConfirmDialog_OK">Clear</div>
+</div>
+
+<!-- *** DELETE HISTORY RECORDS CONFIRMATION DIALOG DATA ******************************** -->
+
+<div class="hide" id="HistoryDeleteConfirmDialog">
+	<div id="HistoryDeleteConfirmDialog_Title">History</div>
+	<div id="HistoryDeleteConfirmDialog_Text">
+		<p>
+		Delete selected history records?
+		</p>
+		<p class="confirm-help-block">
+		Selected records will be removed from the history. All files remain on disk.
+		</p>
+	</div>
+	<div id="HistoryDeleteConfirmDialog_OK">Delete</div>
+</div>
+
+<!-- *** ADD FILES DIALOG ************************************************************ -->
+
+<div class="modal hide" id="AddDialog">
+	<div class="modal-header">
+		<button class="close" data-dismiss="modal">×</button>
+		<h3>Add NZB-Files to Download Queue</h3>
+	</div>
+
+	<div class="modal-body" id="AddDialog_Target">
+		<form class="form-horizontal">
+			<fieldset>
+
+				<div class="control-group">
+					<label class="control-label" for="URL" id="AddDialog_URLLabel"><i class="icon-remove"></i><img class="hide" src="img/transmit-file.gif"> Add from URL</label>
+					<div class="controls">
+						<input type="text" class="input-xlarge" id="AddDialog_URL" />
+						<p class="help-block">The nzb-file will be downloaded from the URL and added to queue.</p>
+					</div>
+				</div>
+
+				<div class="control-group">
+					<label class="control-label" for="URL">Add local files</label>
+					<div class="controls">
+						<div style="margin-top:6px; margin-bottom:10px;"><a href="#" class="btn" style="margin-top: -6px;" id="AddDialog_Select">Select files</a> or drop files here.</div>
+						<input multiple="multiple" type="file" id="AddDialog_Input">
+						<p class="help-block" id="AddDialog_FilesHelp">You need a modern browser for this to work.</p>
+						<div class="dialog-add-files hide" id="AddDialog_Files"></div>
+					</div>
+				</div>
+
+				<div class="control-group">
+					<label class="control-label" for="AddDialog_Priority">Priority</label>
+					<div class="controls">
+						<select id="AddDialog_Priority">
+						</select> &nbsp;(only for URLs)
+					</div>
+				</div>
+
+				<div class="control-group">
+					<label class="control-label" for="AddDialog_Category">Category</label>
+					<div class="controls">
+						<select id="AddDialog_Category">
+						</select>
+					</div>
+				</div>
+
+			</fieldset>
+		</form>
+	</div>
+
+	<div class="modal-footer">
+		<div class="btn-group pull-left">
+			<a data-toggle="modal" href="#AddDialogHelp" class="btn pull-left">Quick Help</a>
+		</div>
+
+		<div class="dialog-transmit hide" style="position:absolute;margin-left:260px;" id="AddDialog_Transmit"><img src="img/transmit.gif"></div>
+		<a href="#" class="btn" data-dismiss="modal">Close</a>
+		<a href="#" class="btn btn-primary" id="AddDialog_Submit">Submit</a>
+	</div>
+</div>
+
+<!-- ***  QUICK HELP: ADD FILES ************************************************************ -->
+
+<div class="modal hide" id="AddDialogHelp">
+	<div class="modal-header">
+	<button type="button" class="close" data-dismiss="modal">×</button>
+	<h3>Help: Tips for adding NZB-Files</h3>
+	</div>
+	<div class="modal-body">
+		<ul class="help">
+			<li>For adding of local files the web-interface uses FileReader API available in most modern browsers:
+			<table class="table table-condensed table-striped">
+			<thead>
+			<tr><th>Browser</th><th class="text-center">Minimum version</th><th class="text-center">Tested version</th></tr>
+			<tbody>
+			<tr><td>Firefox</th><td class="text-center">3.6</td><td class="text-center">13</td></tr>
+			<tr><td>Chrome</th><td class="text-center">6</td><td class="text-center">19</td></tr>
+			<tr><td>Opera</th><td class="text-center">11.1</td><td class="text-center">12</td></tr>
+			<tr><td>Safari</th><td class="text-center">6</td><td class="text-center">6.0</td></tr>
+			<tr><td>IE</th><td class="text-center">10</td><td class="text-center">not tested</td></tr>
+			</tbody>
+			</table>
+			</li>
+			<li>You can drag and drop files directly onto the downloads page without clicking on the <strong>Add</strong> button first.
+			The <strong>Add Dialog</strong> will show automatically.</li>
+			<li>Currently the priority can be set only when adding from URL. When submitting local files change their priorities after the adding to queue. This will be improved in future versions.</li>
+			<li>Instead of using this dialog you can put nzb-files into incoming nzb-directory and they will be added
+			automatically (see options <em>NzbDir</em> and <em>NzbDirInterval</em>).</li>
+		</ul>
+	</div>
+	<div class="modal-footer">
+	<a href="#" class="btn btn-primary" data-dismiss="modal">Close</a>
+	</div>
+</div>
+
+<!-- *** MERGE DOWNLOADS DIALOG ************************************************************ -->
+
+<div class="modal modal-padded hide" id="DownloadsMerge">
+	<div class="modal-header">
+		<button class="close" data-dismiss="modal">×</button>
+		<h3>Merge Downloads</h3>
+	</div>
+
+	<div class="modal-body">
+		<form class="form-horizontal">
+			<fieldset>
+				<p>Merge listed downloads?</p>
+				<div class="dialog-add-files" id="DownloadsMerge_Files"></div>
+				<p class="help-block" style="margin-top:10px;">The first item in the list is the target - the resulting download inherits
+				the properties such as destination directory, category, etc. from that item.</p>
+			</fieldset>
+		</form>
+	</div>
+
+	<div class="modal-footer">
+		<div class="dialog-transmit hide" style="position:absolute;margin-left:260px;" id="DownloadsMerge_Transmit"><img src="img/transmit.gif"></div>
+		<a href="#" class="btn" data-dismiss="modal">Close</a>
+		<a href="#" class="btn btn-primary" id="DownloadsMerge_Merge">Merge</a>
+	</div>
+</div>
+
+<!-- ***  ALERT: NOT IMPLEMENTED***************************************************** -->
+
+<div id="Notif_NotImplemented" data-duration="1000" class="alert alert-error alert-center alert-center-small hide">
+    <strong>Not yet implemented</strong>
+</div>
+
+<!-- ***  NOTIFICATIONS ************************************************************ -->
+
+<div id="Notif_AddFiles" data-duration="1000" class="alert alert-inverse alert-center alert-center-small hide">
+    <strong>Files Submitted</strong>
+</div>
+
+<div id="Notif_Scan" data-duration="1000" class="alert alert-inverse alert-center alert-center-small hide">
+    <strong>Scan Completed</strong>
+</div>
+
+<div id="Notif_SetSpeedLimit" data-duration="1000" class="alert alert-inverse alert-center alert-center-small hide">
+    <strong>Speed Limit Changed</strong>
+</div>
+
+<div id="Notif_Downloads_Saved" data-duration="1000" class="alert alert-inverse alert-center alert-center-small hide">
+    <strong>Saved</strong>
+</div>
+
+<div id="Notif_Downloads_Paused" data-duration="1000" class="alert alert-inverse alert-center alert-center-small hide">
+    <strong>Paused</strong>
+</div>
+
+<div id="Notif_Downloads_Resumed" data-duration="1000" class="alert alert-inverse alert-center alert-center-small hide">
+    <strong>Resumed</strong>
+</div>
+
+<div id="Notif_Downloads_Deleted" data-duration="1000" class="alert alert-inverse alert-center alert-center-small hide">
+    <strong>Deleted</strong>
+</div>
+
+<div id="Notif_Downloads_PostCanceled" data-duration="1000" class="alert alert-inverse alert-center alert-center-small hide">
+    <strong>Canceled</strong>
+</div>
+
+<div id="Notif_Downloads_Moved" data-duration="1000" class="alert alert-inverse alert-center alert-center-small hide">
+    <strong>Moved</strong>
+</div>
+
+<div id="Notif_Downloads_Merged" data-duration="1000" class="alert alert-inverse alert-center alert-center-small hide">
+    <strong>Merged</strong>
+</div>
+
+<div id="Notif_Downloads_Select" data-duration="2000" class="alert alert-error alert-center alert-center-small hide">
+    <strong>Please select records first</strong>
+</div>
+
+<div id="Notif_Downloads_SelectMulti" data-duration="2000" class="alert alert-error alert-center alert-center-medium hide">
+    <strong>Please select at least two records</strong>
+</div>
+
+<div id="Notif_Downloads_CheckPostProcess" data-duration="2000" class="alert alert-error alert-center alert-center-medium hide">
+    <strong>Post-processing-downloads cannot be edited</strong>
+</div>
+
+<div id="Notif_History_Deleted" data-duration="1000" class="alert alert-inverse alert-center alert-center-small hide">
+    <strong>Deleted</strong>
+</div>
+
+<div id="Notif_History_Cleared" data-duration="1000" class="alert alert-inverse alert-center alert-center-small hide">
+    <strong>Cleared</strong>
+</div>
+
+<div id="Notif_History_Deleted" data-duration="1000" class="alert alert-inverse alert-center alert-center-small hide">
+    <strong>Deleted</strong>
+</div>
+
+<div id="Notif_History_Returned" data-duration="1000" class="alert alert-inverse alert-center alert-center-small hide">
+    <strong>Returned to Queue</strong>
+</div>
+
+<div id="Notif_History_Reproces" data-duration="1000" class="alert alert-inverse alert-center alert-center-small hide">
+    <strong>Post-Processing</strong>
+</div>
+
+<div id="Notif_Debug" data-duration="400" class="alert alert-inverse alert-center alert-center-small hide">
+    <strong>Debug</strong>
+</div>
+
+</body>
+</html>

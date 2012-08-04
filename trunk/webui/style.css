@@ -1,0 +1,1087 @@
+/*!
+ *	This file is part of nzbget
+ *
+ *	Copyright (C) 2012 Andrey Prygunkov <hugbug@users.sourceforge.net>
+ *
+ *	This program is free software; you can redistribute it and/or modify
+ *	it under the terms of the GNU General Public License as published by
+ *	the Free Software Foundation; either version 2 of the License, or
+ *	(at your option) any later version.
+ *
+ *	This program is distributed in the hope that it will be useful,
+ *	but WITHOUT ANY WARRANTY; without even the implied warranty of
+ *	MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.	See the
+ *	GNU General Public License for more details.
+ *
+ *	You should have received a copy of the GNU General Public License
+ *	along with this program; if not, write to the Free Software
+ *	Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA	 02110-1301, USA.
+ *
+ * $Revision: 1 $
+ * $Date: 2012-05-01 00:00:00 +0200 (Di, 01 Mai 2012) $
+ *
+ */
+
+body {
+	padding-left: 0;
+	padding-right: 0;
+}
+
+/* NAVBAR */
+.navbar-fixed-top {
+    margin-bottom: 18px;
+    position: static;
+	margin-left: 0px;
+	margin-right: 0px;
+}
+
+.navbar-fixed-top .navbar-inner {
+	padding: 2px 0;
+}
+
+.navbar-container {
+	padding-left: 20px;
+	padding-right: 20px;
+}
+
+.navbar .brand {
+	padding: 8px 20px;
+}
+
+.navbar .btn-group {
+    padding: 0;
+}
+
+/* MENUS */
+#RefreshMenu  {
+	min-width: 160px;
+}
+
+#SettingsMenu {
+	min-width: 190px;
+}
+
+#HandbrakeMenu {
+	min-width: 230px;
+}
+
+#ToolbarOptMenu {
+	min-width: 215px;
+}
+
+#RefreshIndicator-block {
+	margin-right: 20px;
+}
+
+.btn-toolbar {
+	margin-top: 6px;
+	margin-bottom: 0px;
+}
+
+.section-toolbar {
+	margin-bottom: 7px;
+}
+
+.section-header {
+  display: inline-block;
+	font-size: 24px;
+	font-weight: bold;
+	line-height: 28px;
+	margin-bottom: 5px;
+	margin-top: 0px;
+}
+
+.section-title {
+	margin-right: 10px;
+	float: left;
+}
+
+.section-info {
+	float: left;
+}
+
+.label {
+	vertical-align: text-top;
+}
+
+.label-status {
+	text-transform: uppercase;
+}
+
+/* labels for left/time/speed */
+.label-topstatus {
+	text-transform: uppercase;
+	font-size: 12px;
+	margin-left: 3px;
+	margin-bottom: 4px;
+	line-height: 28px;
+	padding-left: 6px;
+	padding-right: 6px;
+	vertical-align: text-bottom;
+}
+
+/* links in black color */
+.datatable a {
+	color: #000000;
+}
+
+/* links in black color */
+.datatable a:hover {
+	color: #000000;
+}
+
+table.datatable > tbody > tr > td {
+	word-wrap: break-word;
+}
+
+#MainTabContent {
+	margin-top:-10px;
+    overflow: visible; /* fix problem with dropdown menus */
+}
+
+/* combobox with page length for tables */
+div.toolbox-length select {
+	width: 75px;
+}
+
+/* BEGIN: pagination for tables */
+.toolbox-pager {
+	margin-top: 10px;
+}
+
+.pagination {
+	height: 32px;
+	margin: 0 0;
+}
+
+.pagination a {
+	padding: 0 10px;
+	line-height: 26px;
+}
+/* END: pagination for tables */
+
+h1 {
+	font-size: 24px;
+	line-height: 36px;
+	margin-bottom: 8px;
+	margin-right: 20px;
+}
+
+h2 {
+	font-size: 20px;
+	line-height: 26px;
+	margin-bottom: 8px;
+	margin-right: 20px;
+}
+
+.alert-heading {
+	margin-bottom: 10px;
+}
+
+/* top toolbox (length-combo and search-edit) for tables */
+.toolbox-top {
+	margin-bottom: 10px;
+}
+
+/* remove focus border */
+.nav-tabs > .active > a, .nav-tabs > .active > a:hover,
+.nav-pills > .active > a, .nav-pills > .active > a:hover,
+.btn, .btn-group .btn, .pagination a,
+.btn-toolbar .btn , .control-group .btn, .modal-footer .btn, .form-search .btn {
+	outline: 0;
+}
+
+/* active tab in navbar */
+.navbar .nav .active > a,
+.navbar .nav .active > a:hover {
+	background-color: #404040;
+	outline: 0;
+}
+
+form {
+	margin-bottom: 0px;
+}
+
+
+/* BEGIN: Tables */
+.table {
+    margin-bottom: 0px;
+}
+
+/* text-align for tables */
+td.text-right,th.text-right {
+	text-align: right;
+}
+
+/* text-align for tables */
+td.text-center,th.text-center {
+	text-align: center;
+}
+
+.table-striped tbody tr:nth-child(odd) {
+  background-color: #f9f9f9;
+}
+
+.table tbody tr:hover  {
+  background-color: #f5f5f5;
+}
+
+.table th, .table  td {
+	padding: 5px;
+}
+
+.table-condensed th,
+.table-condensed td {
+	padding: 2px;
+}
+/* END: Tables */
+
+
+/* BEGIN: Checkmarks in the table */
+table.table-check > thead > tr > th:first-child,
+table.table-check > tbody > tr > td:first-child {
+	width: 14px;
+	height: 14px;
+}
+
+div.check {
+	width: 12px;
+	height: 12px;
+	border-color: #DDDDDD;
+	border: 1px solid #DDDDDD;
+	margin-top: 2px;
+	margin-bottom: 3px;
+	-webkit-border-radius: 2px;
+	-moz-border-radius: 2px;
+	border-radius: 2px;
+}
+
+div.check:hover {
+	border-color: #0088cc;
+	border: 1px solid #0088cc;
+}
+
+tr.checked  div.check {
+	background-image: url("./img/extraicons.png");
+	background-position: center;
+	background-repeat: no-repeat;
+	background-position: -73px -1px;
+}
+
+tr.checkremove div.check {
+	background-image: url("./img/extraicons.png");
+	background-position: center;
+	background-repeat: no-repeat;
+	background-position: -48px -1px;
+}
+
+tr.checked,
+tr.checked  td {
+	background-color: #FFFFE1;
+}
+
+.table-striped tbody tr.checked:nth-child(odd) td {
+	background-color: #FFFFE1;
+}
+
+.table tbody tr.checked:hover,
+.table tbody tr.checked:hover td {
+	background-color: #FFFFCC;
+}
+
+.checked .progress {
+	background-color: #FFFFE1;
+}
+/* END: Checkmarks in the table */
+
+
+/* BEGIN: search box */
+.toolbox-search .search-query {
+	padding-right:24px;
+}
+
+.toolbox-search {
+	position: relative;
+}
+
+.search-clear {
+	position: absolute;
+	top: 7px;
+	right: 9px;
+	cursor: pointer;
+	opacity: 0.65;
+}
+/* END: search box */
+
+
+/* BEGIN: Progress bars */
+.progress-block {
+	position: relative;
+	width: 120px;
+}
+
+.progress {
+	margin-bottom: 0px;
+	background: #f0f0f0;
+}
+
+/* style for queued downloads, based on ".progress-success.progress-striped .bar" from bootstrap.css */
+.progress-none.progress-striped .bar {
+	background-color: #c0c0c0;
+	background-image: -webkit-gradient(linear, 0 100%, 100% 0, color-stop(0.25, rgba(255, 255, 255, 0.15)), color-stop(0.25, transparent), color-stop(0.5, transparent), color-stop(0.5, rgba(255, 255, 255, 0.15)), color-stop(0.75, rgba(255, 255, 255, 0.15)), color-stop(0.75, transparent), to(transparent));
+	background-image: -webkit-linear-gradient(-45deg, rgba(255, 255, 255, 0.15) 25%, transparent 25%, transparent 50%, rgba(255, 255, 255, 0.15) 50%, rgba(255, 255, 255, 0.15) 75%, transparent 75%, transparent);
+	background-image: -moz-linear-gradient(-45deg, rgba(255, 255, 255, 0.15) 25%, transparent 25%, transparent 50%, rgba(255, 255, 255, 0.15) 50%, rgba(255, 255, 255, 0.15) 75%, transparent 75%, transparent);
+	background-image: -ms-linear-gradient(-45deg, rgba(255, 255, 255, 0.15) 25%, transparent 25%, transparent 50%, rgba(255, 255, 255, 0.15) 50%, rgba(255, 255, 255, 0.15) 75%, transparent 75%, transparent);
+	background-image: -o-linear-gradient(-45deg, rgba(255, 255, 255, 0.15) 25%, transparent 25%, transparent 50%, rgba(255, 255, 255, 0.15) 50%, rgba(255, 255, 255, 0.15) 75%, transparent 75%, transparent);
+	background-image: linear-gradient(-45deg, rgba(255, 255, 255, 0.15) 25%, transparent 25%, transparent 50%, rgba(255, 255, 255, 0.15) 50%, rgba(255, 255, 255, 0.15) 75%, transparent 75%, transparent);
+	filter: progid:dximagetransform.microsoft.gradient(startColorstr='#d0d0d0', endColorstr='#c0c0c0', GradientType=0);
+}
+
+/* text on left side of progress bar */
+.bar-text-left {
+	position: absolute;
+	top: 0;
+	left: 5px;
+	text-align: left;
+}
+
+/* text on right side of progress bar */
+.bar-text-right {
+	position: absolute;
+	top: 0;
+	right: 5px;
+	text-align: right;
+}
+
+/* text on left side of progress bar */
+.bar-text-center {
+	position: absolute;
+	top: 0;
+	left: 5px;
+	width: 100%;
+	text-align: center;
+}
+/* END: Progress bars */
+
+/* headers in navbar menu */
+.menu-header {
+	display: block;
+	padding: 3px 15px;
+	font-size: 11px;
+	font-weight: bold;
+	line-height: 18px;
+	color: #999999;
+	text-shadow: 0 1px 0 rgba(255, 255, 255, 0.5);
+	text-transform: uppercase;
+}
+
+/* for checkboxes in dropdown menu */
+.menu-refresh td:first-child ,
+.menu-check td:first-child {
+	width: 18px;
+}
+
+/* for checkboxes in dropdown menu "Refresh" */
+.menu-refresh td:nth-child(2) {
+	width: 20px;
+	text-align: right;
+	padding-right: 5px;
+}
+
+.input-prepend .add-on-small,
+.input-append .add-on-small {
+	font-size: 11px;
+}
+
+/* BEGIN: Extra Icons */
+.icon-extra {
+	background-image: url("./img/extraicons.png");
+}
+
+.icon-move-top {
+	background-position: 0 0;
+}
+
+.icon-move-bottom {
+	background-position: -24px 0;
+}
+
+.icon-checkmark {
+	background-position: -96px 0;
+}
+
+.icon-checkclear {
+	background-position: -120px 0;
+}
+/* END: Extra Icons */
+
+.toolbtn {
+	min-width: 56px;
+}
+
+/* BEGIN: override bootstrap styles for modals */
+.modal-body {
+    padding-bottom1: 5px;
+}
+
+.form-horizontal .control-group {
+	margin-bottom: 12px;
+}
+
+.form-horizontal .control-group:last-child {
+	margin-bottom: 0;
+}
+
+.form-horizontal .control-group-last {
+	margin-bottom: 0;
+}
+
+.form-horizontal .help-block	{
+	margin-top: 6px;
+	line-height: 14px;
+}
+
+.form-horizontal .help-block-uneditable {
+	margin-top: 3px;
+}
+
+.modal .input-xlarge {
+	width: 350px;
+}
+/* END: override bootstrap styles for modals */
+
+/* based on uneditable-input */
+.uneditable-mulitline-input {
+  display: inline-block;
+  width: 340px;
+  overflow: hidden;
+  cursor: not-allowed;
+  background-color: #ffffff;
+  border-color: #eee;
+  border: 1px solid #eee;
+  padding: 4px;
+  padding-right: 20px;
+  -webkit-border-radius: 3px;
+     -moz-border-radius: 3px;
+          border-radius: 3px;
+  -webkit-box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.025);
+     -moz-box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.025);
+          box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.025);
+}
+
+.modal-mini {
+  width: 400px;
+  margin-left:-200px;
+}
+
+.modal-mini .modal-body {
+  padding-left: 40px;
+  padding-right: 40px;
+}
+
+.modal-padded .modal-body {
+  padding-left: 40px;
+  padding-right: 40px;
+}
+
+.dragover, .dragover .table-striped tbody tr:nth-child(odd) td, .dragover .table-striped tbody tr:nth-child(odd) th {
+	background-color: #dff0d8;
+}
+
+.dialog-add-files {
+}
+
+ul.help > li {
+	margin-bottom: 10px;
+}
+
+@media (max-width: 480px) {
+	.dialog-transmit {
+		display: none;
+	}
+}
+
+/* Make "select files" native control invisible */
+#AddDialog_Input {
+	position: absolute;
+	left: 0;
+	top: 0;
+	width: 0;
+	height: 0;
+	opacity: 0;
+}
+
+/* BEGIN: Notification alerts */
+.alert-inverse {
+	color: #ffffff;
+	text-shadow: 0 -1px 0 rgba(0, 0, 0, 0.25);
+	background-color: #414141;
+	border-color: #222222;
+}
+
+.alert-center {
+	position: fixed;
+	padding: 20px;
+	top: 50%;
+	left: 50%;
+	z-index: 2000;
+	overflow: auto;
+	text-align: center;
+	opacity: 0.9;
+}
+
+.alert-center-small {
+	width: 200px;
+	margin: -80px 0 0 -100px;
+}
+
+.alert-center-medium {
+	width: 400px;
+	margin: -80px 0 0 -200px;
+}
+
+.alert-error.alert-center {
+	border-color: #B94A48;
+}
+
+.alert-success.alert-center {
+	border-color: #468847;
+}
+
+.alert-info.alert-center {
+	border-color: #3a87ad;
+}
+/* END: Notification alerts */
+
+.confirm-help-block {
+	color: #555555;
+	font-size: 13px;
+	line-height: 16px;
+	margin-bottom: 0;
+}
+
+.btn-group {
+	margin-right: 9px;
+}
+
+.btn-toolbar .btn-group {
+	margin-right: 4px;
+}
+
+.btn-group + .btn-group {
+	margin-left: 0;
+}
+
+.input-prepend .add-on,
+.input-append .add-on,
+.input-prepend .btn,
+.input-append .btn {
+	margin-left: 0;
+}
+
+#RPCError,
+#FirstUpdateInfo {
+	margin-left: 20px;
+	margin-right: 20px;
+}
+
+#StatisticsTab table {
+	width: 350px;
+}
+
+.confirm-menu {
+	text-align: left;
+	min-width: 10px;
+	right: 0;
+	left: auto;
+}
+
+.data-statistics {
+	width: 280px;
+}
+
+.modal-center {
+	margin-top: 0;
+}
+
+/****************************************************************************/
+/* SMARTPHONE THEME */
+
+/* GENERAL CLASSES */
+.phone-only,
+.btn-group.phone-only {
+	display: none;
+}
+
+.phone .phone-hide,
+.phone .btn-group.phone-hide {
+	display: none;
+}
+
+.phone .phone-only {
+	display: block;
+}
+
+.phone .phone-only.inline {
+	display: inline-block;
+}
+
+/* FONTS */
+body.phone,
+.phone p,
+.phone .form-horizontal .help-block ,
+.phone h4 {
+	font-size: 18px;
+	line-height: 22px;
+}
+
+.phone table td {
+	line-height: 22px;
+}
+
+.phone select,
+.phone input,
+.phone textarea,
+.phone label,
+.phone button,
+.phone .btn,
+.phone .uneditable-input {
+	font-size: 18px;
+	line-height: 24px;
+}
+
+.phone .menu-header {
+    font-size: 18px;
+    line-height: 24px;
+}
+
+/* SECTION MARGINGS */
+.phone .section-header,
+.phone .section-toolbar,
+.phone .toolbox-top,
+.phone .toolbox-pager,
+.phone #StatisticsTabData,
+.phone #ConfigTabData,
+.phone #InfoTabData {
+	padding-left: 5px;
+	padding-right: 5px;
+}
+
+.phone #RPCError,
+.phone #FirstUpdateInfo,
+.phone #DownloadQueueEmpty  {
+	margin-left: 5px;
+	margin-right: 5px;
+}
+
+.phone #MainContent {
+	padding-left: 0px;
+	padding-right: 0px;
+}
+
+.phone .section-header {
+    margin-top: 10px;
+    margin-bottom: 0;
+}
+
+.phone .section-toolbar{
+	margin-top: 8px;
+	margin-bottom: 8px;
+}
+
+.phone .toolbox-top {
+    margin-top: 5px;
+    margin-bottom: 25px;
+}
+
+/* NAVBAR */
+.phone .navbar-fixed-top {
+    margin-bottom: 8px;
+}
+
+.phone .navbar-container {
+	padding-left: 5px;
+	padding-right: 5px;
+}
+
+.phone .navbar-inner .btn-toolbar {
+	margin: 6px 0 0;
+}
+
+.phone ul.nav > li {
+	margin: 0;
+	text-align: center;
+	padding: 0;
+	min-width: 52px;
+}
+
+.phone .menu-header {
+	text-align: left;
+}
+
+.phone .navbar .nav > li > a {
+    padding: 4px 4px 6px;
+}
+
+/* DATATABLE */
+.phone table.datatable ,
+.phone table.datatable > tbody,
+.phone table.datatable > tbody > tr,
+.phone table.datatable > tbody > tr > td {
+	display: block;
+}
+
+.phone table.datatable > thead {
+	display: none;
+}
+
+.phone table.datatable > tbody > tr > td {
+	width: inherit;
+	height: inherit;
+}
+
+.phone .datatable  td {
+	border: 0;
+}
+
+.phone table.datatable > tbody > tr > td:first-child {
+    border-top: 1px solid #DDDDDD;
+}
+
+.phone table.datatable > tbody > tr:last-child > td:last-child {
+    border-bottom: 1px solid #DDDDDD;
+}
+
+.phone table.datatable > tbody > tr > td:first-child {
+    padding-top: 10px;
+}
+
+.phone table.datatable > tbody > tr > td:last-child {
+    padding-bottom: 10px;
+}
+
+.phone table.table-check tbody td {
+	padding-left: 60px;
+}
+
+/* CHECKMARKS IN DATATABLE */
+.phone div.check {
+	margin-top: -2px;
+	margin-left: -48px;
+	width: 30px;
+	height: 30px;
+	display: block;
+	position: absolute;
+	border-width: 2px;
+	-webkit-border-radius: 3px;
+	-moz-border-radius: 3px;
+	border-radius: 3px;
+}
+
+.phone tr.checked  div.check {
+	background-image: url("./img/extraicons.png");
+	background-position:center;
+	background-repeat: no-repeat;
+	background-position: -64px 8px;
+}
+
+/* SPECIAL TABLE STYLES */
+.phone .row-title {
+	font-weight: bold;
+}
+
+.phone .progress-block {
+	margin-top: -2px;
+}
+
+.phone .downloads-progresslabel {
+	margin-top: -8px;
+	margin-bottom: 10px;
+}
+
+/* CONTROLS AROUND DATATABLE */
+.phone .records-label,
+.phone .search-label {
+	display: none;
+}
+
+.phone .search-query {
+	width: 170px;
+}
+
+.phone .search-clear {
+	top: 10px;
+}
+
+/* PAGER */
+.phone .toolbox-pager div {
+	float: none;
+	width: 100%;
+	text-align: center;
+	display: block;
+	margin-top: 10px;
+}
+
+.phone .pagination {
+	height: auto;
+}
+
+.phone .pagination a {
+	padding: 0 15px;
+	line-height: 34px;
+}
+
+/* STATUS LABELS */
+.phone .label {
+	font-size: 14px;
+	line-height: 18px;
+	vertical-align: middle;
+}
+
+.phone .datatable .label {
+	*vertical-align: baseline;
+	line-height: 21px;
+}
+
+/* PROGRESS */
+.phone .progress-block {
+	font-size: 16px;
+	width: 100%;
+}
+
+.phone .progress,
+.phone .progress .bar {
+  height: 24px;
+}
+
+.phone .bar-text-left,
+.phone .bar-text-center,
+.phone .bar-text-right {
+	padding-top: 1px;
+	margin-top: 0px;
+}
+
+/* STATISTICS TABLE */
+.phone #StatisticsTab table {
+	width: 100%;
+}
+
+.phone #StatisticsTab td:first-child {
+	font-weight: bold;
+}
+
+.phone #StatisticsTab td {
+	text-align: left;
+}
+
+/* MENUS */
+.phone .dropdown-menu a {
+    padding: 7px 15px;
+}
+
+.phone .dropdown-toggle {
+	position: static;
+}
+
+/* hide arrow */
+.phone .navbar .dropdown-menu:before,
+.phone .navbar .dropdown-menu:after {
+	display: none;
+}
+
+.phone #RefreshMenu  {
+	min-width: 240px;
+}
+
+.phone #SettingsMenu {
+	min-width: 230px;
+}
+
+.phone #HandbrakeMenu {
+	min-width: 290px;
+}
+
+.phone #ToolbarOptMenu {
+	min-width: 270px;
+}
+
+/* TOOLBAR AND INPUTS */
+.phone .btn-toolbar .btn,
+.phone .btn-toolbar input {
+	padding: 6px;
+	min-width: 45px;
+}
+
+.phone .btn-toolbar .btn-group {
+	margin-right: 0;
+}
+
+.phone .btn-toolbar .input-prepend .add-on,
+.phone .btn-toolbar .input-append .add-on {
+	padding: 6px;
+	min-width: 45px;
+}
+
+.phone .btn {
+	min-width: 40px;
+}
+
+.phone input,
+.phone textarea,
+.phone .uneditable-input {
+    height: 24px;
+}
+
+.phone .input-prepend .add-on,
+.phone .input-append .add-on {
+    height: 24px;
+    line-height: 22px;
+    min-width: 16px;
+}
+
+.phone select {
+	height: auto;
+}
+
+.phone [class^="icon-"] {
+    line-height: 24px;
+	vertical-align: baseline;
+}
+
+.phone .caret {
+    line-height: 24px;
+	margin-top: -2px;
+	vertical-align: middle;
+}
+
+/*** MODALS */
+.phone .modal-footer > .btn,
+.phone .modal-footer > .btn-group {
+	display: block;
+	float: none;
+	width: 100%;
+	margin: 10px auto;
+}
+
+.phone .modal-footer .btn {
+	padding: 7px 0;
+}
+
+.phone .modal-footer > .btn-group > .btn {
+	width: 100%;
+	margin: 0;
+}
+
+.phone .modal-footer  {
+	padding-top: 5px;
+	padding-bottom: 5px;
+}
+
+.phone .modal-footer .confirm-menu {
+	text-align: center;
+	right: inherit;
+	left: inherit;
+	float: none;
+	width: 100%;
+}
+
+.phone .modal-footer .confirm-menu .menu-header {
+	text-align: center;
+}
+
+.phone .modal-mini .modal-body {
+  padding-left: 15px;
+  padding-right: 15px;
+}
+
+.phone .data-statistics {
+	width: 100%;
+}
+
+.phone .btn-caption {
+	display: none;
+}
+
+/* MODALS ON SMALL SCREENS */
+@media (max-width: 560px) {
+
+	input[type="checkbox"],
+		input[type="radio"] {
+		border: 1px solid #ccc;
+	}
+
+	.form-horizontal .control-group > label {
+		float: none;
+		width: auto;
+		padding-top: 0;
+		text-align: left;
+	}
+
+	.form-horizontal .controls {
+		margin-left: 0;
+	}
+
+	.form-horizontal .control-list {
+		padding-top: 0;
+	}
+
+	.form-horizontal .form-actions {
+		padding-right: 10px;
+		padding-left: 10px;
+	}
+
+	.modal {
+		position: absolute;
+		top: 0px;
+		right: 0px;
+		left: 0px;
+		width: auto;
+		margin: 0;
+	}
+
+	.modal.fade.in {
+		top: auto;
+	}
+
+	.modal-header .close {
+		padding: 10px;
+		margin: -10px;
+	}
+
+	.modal .input-xlarge ,
+	.uneditable-mulitline-input {
+		width: 95%;
+	}
+
+	.modal-body {
+		max-height: none;
+	}
+
+	.modal-center {
+		right: 20px;
+		left: 20px;
+	}
+	
+	.alert-center-small,
+	.alert-center-medium  {
+		right: 20px;
+		left: 20px;
+		width: auto;
+		margin: -10% 0 0;
+	}
+}
+
+.phone .navbar .btn-toolbar {
+	position: relative;
+}
+
+.phone #RefreshIndicatorBlock {
+	font-size: 10px;
+	position: absolute;
+	right: -15px;
+	top: 28px;
+}
+
+.phone #SettingsMenuLI .caret {
+    margin-left: 0;
+}
