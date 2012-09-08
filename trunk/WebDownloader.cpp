@@ -583,15 +583,15 @@ bool WebDownloader::Write(void* pBuffer, int iLen)
 				return false;
 			}
 
+			if (iOutLen > 0 && fwrite(pOutBuf, 1, iOutLen, m_pOutFile) <= 0)
+			{
+				return false;
+			}
+
 			if (eGZStatus == GUnzipStream::zlFinished)
 			{
 				m_bConfirmedLength = true;
 				return true;
-			}
-
-			if (iOutLen > 0 && fwrite(pOutBuf, 1, iOutLen, m_pOutFile) <= 0)
-			{
-				return false;
 			}
 		}
 		return true;

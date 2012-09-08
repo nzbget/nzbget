@@ -1497,13 +1497,13 @@ void GUnzipStream::Write(const void *pInputBuffer, int iInputBufferLength)
 {
 	((z_stream*)m_pZStream)->next_in = (Bytef*)pInputBuffer;
 	((z_stream*)m_pZStream)->avail_in = iInputBufferLength;
-
-	((z_stream*)m_pZStream)->next_out = (Bytef*)m_pOutputBuffer;
-	((z_stream*)m_pZStream)->avail_out = m_iBufferSize;
 }
 
 GUnzipStream::EStatus GUnzipStream::Read(const void **pOutputBuffer, int *iOutputBufferLength)
 {
+	((z_stream*)m_pZStream)->next_out = (Bytef*)m_pOutputBuffer;
+	((z_stream*)m_pZStream)->avail_out = m_iBufferSize;
+
 	*iOutputBufferLength = 0;
 
 	if (!m_pZStream)
@@ -1516,12 +1516,10 @@ GUnzipStream::EStatus GUnzipStream::Read(const void **pOutputBuffer, int *iOutpu
 	switch (ret)
 	{
 		case Z_STREAM_END:
-			return zlFinished;
-
 		case Z_OK:
 			*iOutputBufferLength = m_iBufferSize - ((z_stream*)m_pZStream)->avail_out;
 			*pOutputBuffer = m_pOutputBuffer;
-			return zlOK;
+			return ret == Z_STREAM_END ? zlFinished : zlOK;
 
 		case Z_BUF_ERROR:
 			return zlOK;
