@@ -56,11 +56,12 @@ exampleconf_FILES = \
 webui_FILES = \
 	webui/index.html webui/index.js webui/downloads.js webui/edit.js webui/fasttable.js \
 	webui/history.js webui/messages.js webui/status.js webui/style.css webui/upload.js \
-	webui/util.js webui/categories.txt \
+	webui/util.js webui/config.js webui/categories.txt \
 	webui/lib/bootstrap.js webui/lib/bootstrap.min.js webui/lib/bootstrap.css  \
 	webui/lib/jquery.js webui/lib/jquery.min.js \
 	webui/img/extraicons.png webui/img/glyphicons-halflings.png webui/img/glyphicons-halflings-white.png \
-	webui/img/transmit.gif webui/img/transmit-file.gif webui/img/favicon.ico
+	webui/img/transmit.gif webui/img/transmit-file.gif webui/img/favicon.ico \
+	webui/img/download-anim-green-2x.png webui/img/download-anim-orange-2x.png
 
 # Install
 sbin_SCRIPTS = nzbgetd
@@ -68,6 +69,8 @@ bin_SCRIPTS = nzbget-postprocess.sh
 dist_doc_DATA = $(doc_FILES)
 exampleconfdir = $(datadir)/nzbget
 dist_exampleconf_DATA = $(exampleconf_FILES)
+webuiconfdir = $(datadir)/nzbget/webui
+dist_webuiconf_DATA = $(exampleconf_FILES)
 webuidir = $(datadir)/nzbget
 nobase_dist_webui_DATA = $(webui_FILES)
 

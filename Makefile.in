@@ -62,11 +62,11 @@ host_triplet = @host@
 target_triplet = @target@
 bin_PROGRAMS = nzbget$(EXEEXT)
 DIST_COMMON = README $(am__configure_deps) $(dist_doc_DATA) \
-	$(dist_exampleconf_DATA) $(nobase_dist_webui_DATA) \
-	$(srcdir)/Makefile.am $(srcdir)/Makefile.in \
-	$(srcdir)/config.h.in $(top_srcdir)/configure AUTHORS COPYING \
-	ChangeLog INSTALL NEWS config.guess config.sub depcomp \
-	install-sh missing
+	$(dist_exampleconf_DATA) $(dist_webuiconf_DATA) \
+	$(nobase_dist_webui_DATA) $(srcdir)/Makefile.am \
+	$(srcdir)/Makefile.in $(srcdir)/config.h.in \
+	$(top_srcdir)/configure AUTHORS COPYING ChangeLog INSTALL NEWS \
+	config.guess config.sub depcomp install-sh missing
 subdir = .
 ACLOCAL_M4 = $(top_srcdir)/aclocal.m4
 am__aclocal_m4_deps = $(top_srcdir)/configure.ac
@@ -79,7 +79,8 @@ CONFIG_HEADER = config.h
 CONFIG_CLEAN_FILES =
 am__installdirs = "$(DESTDIR)$(bindir)" "$(DESTDIR)$(bindir)" \
 	"$(DESTDIR)$(sbindir)" "$(DESTDIR)$(docdir)" \
-	"$(DESTDIR)$(exampleconfdir)" "$(DESTDIR)$(webuidir)"
+	"$(DESTDIR)$(exampleconfdir)" "$(DESTDIR)$(webuiconfdir)" \
+	"$(DESTDIR)$(webuidir)"
 binPROGRAMS_INSTALL = $(INSTALL_PROGRAM)
 PROGRAMS = $(bin_PROGRAMS)
 am_nzbget_OBJECTS = ArticleDownloader.$(OBJEXT) BinRpc.$(OBJEXT) \
@@ -123,9 +124,10 @@ am__vpath_adj = case $$p in \
 am__strip_dir = `echo $$p | sed -e 's|^.*/||'`;
 dist_docDATA_INSTALL = $(INSTALL_DATA)
 dist_exampleconfDATA_INSTALL = $(INSTALL_DATA)
+dist_webuiconfDATA_INSTALL = $(INSTALL_DATA)
 nobase_dist_webuiDATA_INSTALL = $(install_sh_DATA)
 DATA = $(dist_doc_DATA) $(dist_exampleconf_DATA) \
-	$(nobase_dist_webui_DATA)
+	$(dist_webuiconf_DATA) $(nobase_dist_webui_DATA)
 ETAGS = etags
 CTAGS = ctags
 DISTFILES = $(DIST_COMMON) $(DIST_SOURCES) $(TEXINFOS) $(EXTRA_DIST)
@@ -273,11 +275,12 @@ exampleconf_FILES = \
 webui_FILES = \
 	webui/index.html webui/index.js webui/downloads.js webui/edit.js webui/fasttable.js \
 	webui/history.js webui/messages.js webui/status.js webui/style.css webui/upload.js \
-	webui/util.js webui/categories.txt \
+	webui/util.js webui/config.js webui/categories.txt \
 	webui/lib/bootstrap.js webui/lib/bootstrap.min.js webui/lib/bootstrap.css  \
 	webui/lib/jquery.js webui/lib/jquery.min.js \
 	webui/img/extraicons.png webui/img/glyphicons-halflings.png webui/img/glyphicons-halflings-white.png \
-	webui/img/transmit.gif webui/img/transmit-file.gif webui/img/favicon.ico
+	webui/img/transmit.gif webui/img/transmit-file.gif webui/img/favicon.ico \
+	webui/img/download-anim-green-2x.png webui/img/download-anim-orange-2x.png
 
 
 # Install
@@ -286,6 +289,8 @@ bin_SCRIPTS = nzbget-postprocess.sh
 dist_doc_DATA = $(doc_FILES)
 exampleconfdir = $(datadir)/nzbget
 dist_exampleconf_DATA = $(exampleconf_FILES)
+webuiconfdir = $(datadir)/nzbget/webui
+dist_webuiconf_DATA = $(exampleconf_FILES)
 webuidir = $(datadir)/nzbget
 nobase_dist_webui_DATA = $(webui_FILES)
 
@@ -504,6 +509,23 @@ uninstall-dist_exampleconfDATA:
 	  echo " rm -f '$(DESTDIR)$(exampleconfdir)/$$f'"; \
 	  rm -f "$(DESTDIR)$(exampleconfdir)/$$f"; \
 	done
+install-dist_webuiconfDATA: $(dist_webuiconf_DATA)
+	@$(NORMAL_INSTALL)
+	test -z "$(webuiconfdir)" || $(mkdir_p) "$(DESTDIR)$(webuiconfdir)"
+	@list='$(dist_webuiconf_DATA)'; for p in $$list; do \
+	  if test -f "$$p"; then d=; else d="$(srcdir)/"; fi; \
+	  f=$(am__strip_dir) \
+	  echo " $(dist_webuiconfDATA_INSTALL) '$$d$$p' '$(DESTDIR)$(webuiconfdir)/$$f'"; \
+	  $(dist_webuiconfDATA_INSTALL) "$$d$$p" "$(DESTDIR)$(webuiconfdir)/$$f"; \
+	done
+
+uninstall-dist_webuiconfDATA:
+	@$(NORMAL_UNINSTALL)
+	@list='$(dist_webuiconf_DATA)'; for p in $$list; do \
+	  f=$(am__strip_dir) \
+	  echo " rm -f '$(DESTDIR)$(webuiconfdir)/$$f'"; \
+	  rm -f "$(DESTDIR)$(webuiconfdir)/$$f"; \
+	done
 install-nobase_dist_webuiDATA: $(nobase_dist_webui_DATA)
 	@$(NORMAL_INSTALL)
 	test -z "$(webuidir)" || $(mkdir_p) "$(DESTDIR)$(webuidir)"
@@ -706,7 +728,7 @@ check-am: all-am
 check: check-am
 all-am: Makefile $(PROGRAMS) $(SCRIPTS) $(DATA) config.h
 installdirs:
-	for dir in "$(DESTDIR)$(bindir)" "$(DESTDIR)$(bindir)" "$(DESTDIR)$(sbindir)" "$(DESTDIR)$(docdir)" "$(DESTDIR)$(exampleconfdir)" "$(DESTDIR)$(webuidir)"; do \
+	for dir in "$(DESTDIR)$(bindir)" "$(DESTDIR)$(bindir)" "$(DESTDIR)$(sbindir)" "$(DESTDIR)$(docdir)" "$(DESTDIR)$(exampleconfdir)" "$(DESTDIR)$(webuiconfdir)" "$(DESTDIR)$(webuidir)"; do \
 	  test -z "$$dir" || $(mkdir_p) "$$dir"; \
 	done
 install: install-am
@@ -755,7 +777,7 @@ info: info-am
 info-am:
 
 install-data-am: install-dist_docDATA install-dist_exampleconfDATA \
-	install-nobase_dist_webuiDATA
+	install-dist_webuiconfDATA install-nobase_dist_webuiDATA
 	@$(NORMAL_INSTALL)
 	$(MAKE) $(AM_MAKEFLAGS) install-data-hook
 
@@ -791,8 +813,8 @@ ps-am:
 
 uninstall-am: uninstall-binPROGRAMS uninstall-binSCRIPTS \
 	uninstall-dist_docDATA uninstall-dist_exampleconfDATA \
-	uninstall-info-am uninstall-nobase_dist_webuiDATA \
-	uninstall-sbinSCRIPTS
+	uninstall-dist_webuiconfDATA uninstall-info-am \
+	uninstall-nobase_dist_webuiDATA uninstall-sbinSCRIPTS
 
 .PHONY: CTAGS GTAGS all all-am am--refresh check check-am clean \
 	clean-binPROGRAMS clean-generic ctags dist dist-all dist-bzip2 \
@@ -802,16 +824,17 @@ uninstall-am: uninstall-binPROGRAMS uninstall-binSCRIPTS \
 	dvi-am html html-am info info-am install install-am \
 	install-binPROGRAMS install-binSCRIPTS install-data \
 	install-data-am install-data-hook install-dist_docDATA \
-	install-dist_exampleconfDATA install-exec install-exec-am \
-	install-exec-hook install-info install-info-am install-man \
-	install-nobase_dist_webuiDATA install-sbinSCRIPTS \
-	install-strip installcheck installcheck-am installdirs \
-	maintainer-clean maintainer-clean-generic mostlyclean \
-	mostlyclean-compile mostlyclean-generic pdf pdf-am ps ps-am \
-	tags uninstall uninstall-am uninstall-binPROGRAMS \
+	install-dist_exampleconfDATA install-dist_webuiconfDATA \
+	install-exec install-exec-am install-exec-hook install-info \
+	install-info-am install-man install-nobase_dist_webuiDATA \
+	install-sbinSCRIPTS install-strip installcheck installcheck-am \
+	installdirs maintainer-clean maintainer-clean-generic \
+	mostlyclean mostlyclean-compile mostlyclean-generic pdf pdf-am \
+	ps ps-am tags uninstall uninstall-am uninstall-binPROGRAMS \
 	uninstall-binSCRIPTS uninstall-dist_docDATA \
-	uninstall-dist_exampleconfDATA uninstall-info-am \
-	uninstall-nobase_dist_webuiDATA uninstall-sbinSCRIPTS
+	uninstall-dist_exampleconfDATA uninstall-dist_webuiconfDATA \
+	uninstall-info-am uninstall-nobase_dist_webuiDATA \
+	uninstall-sbinSCRIPTS
 
 
 # Configure installed script

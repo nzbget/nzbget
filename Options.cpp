@@ -34,6 +34,7 @@
 
 #include <stdlib.h>
 #include <string.h>
+#include <set>
 #include <sys/stat.h>
 #include <stdarg.h>
 #include <cstdio>
@@ -134,6 +135,7 @@ static const char* OPTION_LOADPARS				= "LoadPars";
 static const char* OPTION_PARCHECK				= "ParCheck";
 static const char* OPTION_PARREPAIR				= "ParRepair";
 static const char* OPTION_POSTPROCESS			= "PostProcess";
+static const char* OPTION_POSTCONFIGFILE		= "PostConfigFile";
 static const char* OPTION_NZBPROCESS			= "NZBProcess";
 static const char* OPTION_STRICTPARNAME			= "StrictParName";
 static const char* OPTION_UMASK					= "UMask";
@@ -190,6 +192,14 @@ Options::OptEntry::OptEntry()
 	m_iLineNo = 0;
 }
 
+Options::OptEntry::OptEntry(const char* szName, const char* szValue)
+{
+	m_szName = strdup(szName);
+	m_szValue = strdup(szValue);
+	m_szDefValue = NULL;
+	m_iLineNo = 0;
+}
+
 Options::OptEntry::~OptEntry()
 {
 	if (m_szName)
@@ -227,6 +237,33 @@ void Options::OptEntry::SetValue(const char* szValue)
 	{
 		m_szDefValue = strdup(szValue);
 	}
+}
+
+Options::OptEntries::~OptEntries()
+{
+	for (iterator it = begin(); it != end(); it++)
+	{
+		delete *it;
+	}
+}
+
+Options::OptEntry* Options::OptEntries::FindOption(const char* optname)
+{
+	if (!optname)
+	{
+		return NULL;
+	}
+
+	for (iterator it = begin(); it != end(); it++)
+	{
+		OptEntry* pOptEntry = *it;
+		if (!strcasecmp(pOptEntry->GetName(), optname))
+		{
+			return pOptEntry;
+		}
+	}
+
+	return NULL;
 }
 
 
@@ -298,6 +335,7 @@ Options::Options(int argc, char* argv[])
 	m_bParCheck				= false;
 	m_bParRepair			= false;
 	m_szPostProcess			= NULL;
+	m_szPostConfigFilename	= NULL;
 	m_szNZBProcess			= NULL;
 	m_bStrictParName		= false;
 	m_bNoConfig				= false;
@@ -385,7 +423,7 @@ Options::Options(int argc, char* argv[])
 	{
 		InitFileArg(argc, argv);
 	}
-	
+
 	InitServers();
 	InitScheduler();
 	CheckOptions();
@@ -472,6 +510,10 @@ Options::~Options()
 	{
 		free(m_szPostProcess);
 	}
+	if (m_szPostConfigFilename)
+	{
+		free(m_szPostConfigFilename);
+	}
 	if (m_szNZBProcess)
 	{
 		free(m_szNZBProcess);
@@ -480,12 +522,6 @@ Options::~Options()
 	{
 		free(m_pEditQueueIDList);
 	}
-
-	for (OptEntries::iterator it = m_OptEntries.begin(); it != m_OptEntries.end(); it++)
-	{
-		delete *it;
-	}
-	m_OptEntries.clear();
 
 	for (NameList::iterator it = m_EditQueueNameList.begin(); it != m_EditQueueNameList.end(); it++)
 	{
@@ -540,36 +576,37 @@ void Options::InitDefault()
 	SetOption(OPTION_CREATELOG, "yes");
 	SetOption(OPTION_APPENDNZBDIR, "yes");
 	SetOption(OPTION_APPENDCATEGORYDIR, "yes");
-	SetOption(OPTION_OUTPUTMODE, "loggable");
+	SetOption(OPTION_OUTPUTMODE, "curses");
 	SetOption(OPTION_DUPECHECK, "yes");
 	SetOption(OPTION_DOWNLOADRATE, "0");
 	SetOption(OPTION_RENAMEBROKEN, "no");
-	SetOption(OPTION_SERVERIP, "localhost");
-	SetOption(OPTION_SERVERPASSWORD, "tegbzn");
+	SetOption(OPTION_SERVERIP, "127.0.0.1");
+	SetOption(OPTION_SERVERPASSWORD, "tegbzn6789");
 	SetOption(OPTION_SERVERPORT, "6789");
 	SetOption(OPTION_CONNECTIONTIMEOUT, "60");
 	SetOption(OPTION_SAVEQUEUE, "yes");
 	SetOption(OPTION_RELOADQUEUE, "yes");
 	SetOption(OPTION_RELOADURLQUEUE, "yes");
 	SetOption(OPTION_RELOADPOSTQUEUE, "yes");
-	SetOption(OPTION_CREATEBROKENLOG, "no");
+	SetOption(OPTION_CREATEBROKENLOG, "yes");
 	SetOption(OPTION_RESETLOG, "no");
 	SetOption(OPTION_DECODE, "yes");
-	SetOption(OPTION_RETRIES, "5");
+	SetOption(OPTION_RETRIES, "3");
 	SetOption(OPTION_RETRYINTERVAL, "10");
 	SetOption(OPTION_TERMINATETIMEOUT, "600");
 	SetOption(OPTION_CONTINUEPARTIAL, "no");
-	SetOption(OPTION_URLCONNECTIONS, "1");
+	SetOption(OPTION_URLCONNECTIONS, "4");
 	SetOption(OPTION_LOGBUFFERSIZE, "1000");
 	SetOption(OPTION_INFOTARGET, "both");
 	SetOption(OPTION_WARNINGTARGET, "both");
 	SetOption(OPTION_ERRORTARGET, "both");
 	SetOption(OPTION_DEBUGTARGET, "none");
 	SetOption(OPTION_DETAILTARGET, "both");
-	SetOption(OPTION_LOADPARS, "all");
+	SetOption(OPTION_LOADPARS, "one");
 	SetOption(OPTION_PARCHECK, "no");
-	SetOption(OPTION_PARREPAIR, "no");	
+	SetOption(OPTION_PARREPAIR, "yes");
 	SetOption(OPTION_POSTPROCESS, "");
+	SetOption(OPTION_POSTCONFIGFILE, "");
 	SetOption(OPTION_NZBPROCESS, "");
 	SetOption(OPTION_STRICTPARNAME, "yes");
 	SetOption(OPTION_DAEMONUSERNAME, "root");
@@ -581,13 +618,13 @@ void Options::InitDefault()
 	SetOption(OPTION_CRCCHECK, "yes");
 	SetOption(OPTION_RETRYONCRCERROR, "no");
 	SetOption(OPTION_THREADLIMIT, "100");
-	SetOption(OPTION_DIRECTWRITE, "no");
+	SetOption(OPTION_DIRECTWRITE, "yes");
 	SetOption(OPTION_WRITEBUFFERSIZE, "0");
 	SetOption(OPTION_NZBDIRINTERVAL, "5");
 	SetOption(OPTION_NZBDIRFILEAGE, "60");
-	SetOption(OPTION_PARCLEANUPQUEUE, "no");
-	SetOption(OPTION_DISKSPACE, "0");
-	SetOption(OPTION_PROCESSLOGKIND, "none");
+	SetOption(OPTION_PARCLEANUPQUEUE, "yes");
+	SetOption(OPTION_DISKSPACE, "250");
+	SetOption(OPTION_PROCESSLOGKIND, "detail");
 	SetOption(OPTION_ALLOWREPROCESS, "no");
 	SetOption(OPTION_DUMPCORE, "no");
 	SetOption(OPTION_PARPAUSEQUEUE, "no");
@@ -595,7 +632,7 @@ void Options::InitDefault()
 	SetOption(OPTION_NZBCLEANUPDISK, "no");
 	SetOption(OPTION_DELETECLEANUPDISK, "no");
 	SetOption(OPTION_MERGENZB, "no");
-	SetOption(OPTION_PARTIMELIMIT, "0");	
+	SetOption(OPTION_PARTIMELIMIT, "0");
 	SetOption(OPTION_KEEPHISTORY, "7");
 	SetOption(OPTION_ACCURATERATE, "no");
 }
@@ -781,6 +818,8 @@ void Options::InitOptions()
 	const int ScriptLogKindValues[] = { slNone, slDetail, slInfo, slWarning, slError, slDebug };
 	const int ScriptLogKindCount = 6;
 	m_eProcessLogKind = (EScriptLogKind)ParseEnumValue(OPTION_PROCESSLOGKIND, ScriptLogKindCount, ScriptLogKindNames, ScriptLogKindValues);
+
+	InitPostConfig();
 }
 
 int Options::ParseEnumValue(const char* OptName, int argc, const char * argn[], const int argv[])
@@ -788,7 +827,9 @@ int Options::ParseEnumValue(const char* OptName, int argc, const char * argn[], 
 	OptEntry* pOptEntry = FindOption(OptName);
 	if (!pOptEntry)
 	{
-		abort("FATAL ERROR: Undefined value for option \"%s\"\n", OptName);
+		ConfigError("Undefined value for option \"%s\"", OptName);
+		return argv[0];
+		//abort("FATAL ERROR: Undefined value for option \"%s\"\n", OptName);
 	}
 
 	int iDefNum = 0;
@@ -818,7 +859,7 @@ int Options::ParseEnumValue(const char* OptName, int argc, const char * argn[], 
 			iDefNum = i;
 		}
 	}
-	
+
 	m_iConfigLine = pOptEntry->GetLineNo();
 	ConfigError("Invalid value for option \"%s\": \"%s\"", OptName, pOptEntry->GetValue());
 	pOptEntry->SetValue(argn[iDefNum]);
@@ -857,7 +898,7 @@ float Options::ParseFloatValue(const char* OptName)
 
 	char *endptr;
 	float val = (float)strtod(pOptEntry->GetValue(), &endptr);
-	
+
 	if (endptr && *endptr != '\0')
 	{
 		m_iConfigLine = pOptEntry->GetLineNo();
@@ -865,8 +906,42 @@ float Options::ParseFloatValue(const char* OptName)
 		pOptEntry->SetValue(pOptEntry->GetDefValue());
 		val = (float)strtod(pOptEntry->GetDefValue(), NULL);
 	}
-	
+
 	return val;
+}
+
+void Options::InitPostConfig()
+{
+	if (!m_szPostProcess || strlen(m_szPostProcess) == 0)
+	{
+		return;
+	}
+
+	//extract directory of config file name
+	char szConfigFileDir[1024];
+	strncpy(szConfigFileDir, m_szConfigFilename, 1024);
+	szConfigFileDir[1024-1] = '\0';
+	char *base = Util::BaseFileName(szConfigFileDir);
+	if (base)
+	{
+		*base = '\0';
+	}
+
+	char szPostConfig[1024];
+	snprintf(szPostConfig, sizeof(szPostConfig) - 1, "%s%s", szConfigFileDir, Util::BaseFileName(m_szPostProcess));
+
+	// replace extension with ".conf"
+	char *szExt = strrchr(Util::BaseFileName(szPostConfig), '.');
+	if (szExt && (szExt + 5 - szPostConfig < sizeof(szPostConfig)))
+	{
+		strncpy(szExt, ".conf\0", 6);
+	}
+
+	if (Util::FileExists(szPostConfig))
+	{
+		m_szPostConfigFilename = strdup(szPostConfig);
+		SetOption(OPTION_POSTCONFIGFILE, m_szPostConfigFilename);
+	}
 }
 
 void Options::InitCommandLine(int argc, char* argv[])
@@ -1064,7 +1139,7 @@ void Options::InitCommandLine(int argc, char* argv[])
 				{
 					m_EMatchMode = mmRegEx;
 				}
-				else 
+				else
 				{
 					m_EMatchMode = mmID;
 				};
@@ -1264,7 +1339,7 @@ void Options::InitCommandLine(int argc, char* argv[])
 				}
 				else if (!strcmp(optarg, "G")) {
 					m_iWriteLogKind = (int)Message::mkDebug;
-				} 
+				}
 				else
 				{
 					abort("FATAL ERROR: Could not parse value of option 'W'\n");
@@ -1512,12 +1587,14 @@ void Options::SetOption(const char* optname, const char* value)
 			{
 				ConfigError("Invalid value for option \"%s\": variable \"%s\" not found", optname, variable);
 				bOK = false;
+				break;
 			}
 		}
 		else
 		{
 			ConfigError("Invalid value for option \"%s\": syntax error in variable-substitution \"%s\"", optname, curvalue);
 			bOK = false;
+			break;
 		}
 	}
 
@@ -1531,27 +1608,15 @@ void Options::SetOption(const char* optname, const char* value)
 
 Options::OptEntry* Options::FindOption(const char* optname)
 {
-	if (!optname)
+	OptEntry* pOptEntry = m_OptEntries.FindOption(optname);
+
+	// normalize option name in option list; for example "server1.joingroup" -> "Server1.JoinGroup"
+	if (pOptEntry && strcmp(pOptEntry->GetName(), optname))
 	{
-		return NULL;
+		pOptEntry->SetName(optname);
 	}
 
-	for (OptEntries::iterator it = m_OptEntries.begin(); it != m_OptEntries.end(); it++)
-	{
-		OptEntry* pOptEntry = *it;
-		if (!strcasecmp(pOptEntry->GetName(), optname))
-		{
-			// normalize option name in option list; for example "server1.joingroup" -> "Server1.JoinGroup"
-			if (strcmp(pOptEntry->GetName(), optname))
-			{
-				pOptEntry->SetName(optname);
-			}
-
-			return pOptEntry;
-		}
-	}
-
-	return NULL;
+	return pOptEntry;
 }
 
 const char* Options::GetOption(const char* optname)
@@ -1627,7 +1692,7 @@ void Options::InitServers()
 
 		if (completed)
 		{
-			NewsServer* pNewsServer = new NewsServer(nhost, atoi(nport), nusername, npassword, 
+			NewsServer* pNewsServer = new NewsServer(nhost, atoi(nport), nusername, npassword,
 				bJoinGroup, bTLS, atoi((char*)nconnections), atoi((char*)nlevel));
 			g_pServerPool->AddServer(pNewsServer);
 		}
@@ -1689,9 +1754,9 @@ void Options::InitScheduler()
 		snprintf(optname, sizeof(optname), "Task%i.Command", n);
 		optname[sizeof(optname)-1] = '\0';
 
-		const char* CommandNames[] = { "pausedownload", "pause", "unpausedownload", "resumedownload", "unpause", "resume", "downloadrate", "setdownloadrate", 
+		const char* CommandNames[] = { "pausedownload", "pause", "unpausedownload", "resumedownload", "unpause", "resume", "downloadrate", "setdownloadrate",
 			"rate", "speed", "script", "process", "pausescan", "unpausescan", "resumescan" };
-		const int CommandValues[] = { Scheduler::scPauseDownload, Scheduler::scPauseDownload, Scheduler::scUnpauseDownload, Scheduler::scUnpauseDownload, Scheduler::scUnpauseDownload, Scheduler::scUnpauseDownload, Scheduler::scDownloadRate, Scheduler::scDownloadRate, 
+		const int CommandValues[] = { Scheduler::scPauseDownload, Scheduler::scPauseDownload, Scheduler::scUnpauseDownload, Scheduler::scUnpauseDownload, Scheduler::scUnpauseDownload, Scheduler::scUnpauseDownload, Scheduler::scDownloadRate, Scheduler::scDownloadRate,
 			Scheduler::scDownloadRate, Scheduler::scDownloadRate, Scheduler::scProcess, Scheduler::scProcess, Scheduler::scPauseScan, Scheduler::scUnpauseScan, Scheduler::scUnpauseScan };
 		const int CommandCount = 15;
 		Scheduler::ECommand eCommand = (Scheduler::ECommand)ParseEnumValue(optname, CommandCount, CommandNames, CommandValues);
@@ -1995,7 +2060,7 @@ bool Options::ValidateOptionName(const char * optname)
 	{
 		char* p = (char*)optname + 4;
 		while (*p >= '0' && *p <= '9') p++;
-		if (p && (!strcasecmp(p, ".time") || !strcasecmp(p, ".weekdays") || 
+		if (p && (!strcasecmp(p, ".time") || !strcasecmp(p, ".weekdays") ||
 			!strcasecmp(p, ".command") || !strcasecmp(p, ".downloadrate") || !strcasecmp(p, ".process")))
 		{
 			return true;
@@ -2020,7 +2085,7 @@ void Options::CheckOptions()
 		ConfigError("Invalid value for option \"%s\": program was compiled without parcheck-support", OPTION_PARCHECK);
 	}
 #endif
-	
+
 #ifdef DISABLE_CURSES
 	if (m_eOutputMode == omNCurses)
 	{
@@ -2132,4 +2197,163 @@ Options::OptEntries* Options::LockOptEntries()
 void Options::UnlockOptEntries()
 {
 	m_mutexOptEntries.Unlock();
+}
+
+bool Options::LoadConfig(EDomain eDomain, OptEntries* pOptEntries)
+{
+	const char* szConfigFile = NULL;
+
+	if (eDomain == dmServer)
+	{
+		szConfigFile = GetConfigFilename();
+	}
+	else if (eDomain == dmPostProcess)
+	{
+		szConfigFile = GetPostConfigFilename();
+		if (!szConfigFile)
+		{
+			return true;
+		}
+	}
+
+	// read config file
+	FILE* infile = fopen(szConfigFile, "rb");
+
+	if (!infile)
+	{
+		return false;
+	}
+
+	char buf[1024];
+	while (fgets(buf, sizeof(buf) - 1, infile))
+	{
+		// remove trailing '\n' and '\r' and spaces
+		Util::TrimRight(buf);
+
+		// skip comments and empty lines
+		if (buf[0] == 0 || buf[0] == '#' || strspn(buf, " ") == strlen(buf))
+		{
+			continue;
+		}
+
+		const char* eq = strchr(buf, '=');
+		if (eq)
+		{
+			char optname[1024];
+			char optvalue[1024];
+			int len = (int)(eq - buf);
+			strncpy(optname, buf, len);
+			optname[len] = '\0';
+			strncpy(optvalue, eq + 1, 1024);
+			optvalue[1024-1]  = '\0';
+			if (strlen(optname) > 0)
+			{
+				OptEntry* pOptEntry = new OptEntry();
+				pOptEntry->SetName(optname);
+				pOptEntry->SetValue(optvalue);
+				pOptEntries->push_back(pOptEntry);
+			}
+		}
+	}
+
+	fclose(infile);
+
+	return true;
+}
+
+bool Options::SaveConfig(EDomain eDomain, OptEntries* pOptEntries)
+{
+	const char* szConfigFile = NULL;
+
+	if (eDomain == dmServer)
+	{
+		szConfigFile = GetConfigFilename();
+	}
+	else if (eDomain == dmPostProcess)
+	{
+		szConfigFile = GetPostConfigFilename();
+		if (!szConfigFile)
+		{
+			return true;
+		}
+	}
+
+	// save to config file
+	FILE* infile = fopen(szConfigFile, "r+b");
+
+	if (!infile)
+	{
+		return false;
+	}
+
+	std::vector<char*> config;
+	std::set<OptEntry*> writtenOptions;
+
+	// read config file into memory array
+	char buf[1024];
+	char val[1024];
+	while (fgets(buf, sizeof(buf) - 1, infile))
+	{
+		config.push_back(strdup(buf));
+	}
+
+	// write config file back to disk, replace old vcalues of existing options with new values
+	rewind(infile);
+	for (std::vector<char*>::iterator it = config.begin(); it != config.end(); it++)
+    {
+        char* buf = *it;
+
+		const char* eq = strchr(buf, '=');
+		if (eq && buf[0] != '#')
+		{
+			// remove trailing '\n' and '\r' and spaces
+			Util::TrimRight(buf);
+
+			char optname[1024];
+			char optvalue[1024];
+			int len = (int)(eq - buf);
+			strncpy(optname, buf, len);
+			optname[len] = '\0';
+			strncpy(optvalue, eq + 1, 1024);
+			optvalue[1024-1]  = '\0';
+			if (strlen(optname) > 0)
+			{
+				OptEntry *pOptEntry = pOptEntries->FindOption(optname);
+				if (pOptEntry)
+				{
+					snprintf(val, sizeof(val) - 1, "%s=%s\n", pOptEntry->GetName(), pOptEntry->GetValue());
+					val[sizeof(val) - 1] = '\0';
+					fputs(val, infile);
+					writtenOptions.insert(pOptEntry);
+				}
+			}
+		}
+		else
+		{
+			fputs(buf, infile);
+		}
+
+		free(buf);
+	}
+
+	// write new options
+	for (Options::OptEntries::iterator it = pOptEntries->begin(); it != pOptEntries->end(); it++)
+	{
+		Options::OptEntry* pOptEntry = *it;
+		std::set<OptEntry*>::iterator fit = writtenOptions.find(pOptEntry);
+		if (fit == writtenOptions.end() && strlen(pOptEntry->GetValue()) > 0)
+		{
+			snprintf(val, sizeof(val) - 1, "%s=%s\n", pOptEntry->GetName(), pOptEntry->GetValue());
+			val[sizeof(val) - 1] = '\0';
+			fputs(val, infile);
+		}
+	}
+
+	// close and truncate the file
+	int pos = ftell(infile);
+	fclose(infile);
+
+	Util::TruncateFile(szConfigFile, pos);
+
+	return true;
 }

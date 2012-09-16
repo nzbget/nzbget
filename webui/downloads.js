@@ -28,23 +28,7 @@ var downloads_DownloadsTabBadge;
 var downloads_DownloadsTabBadgeEmpty;
 var downloads_DownloadQueueEmpty;
 var downloads_DownloadsRecordsPerPage;
-var downloads_SpeedLimitInput;
-var downloads_CHPauseDownload;
-var downloads_CHPausePostProcess;
-var downloads_CHPauseScan;
-var downloads_CHSoftPauseDownload;
-var downloads_HandbrakeButton;
-var downloads_HandbrakeCaret;
-var downloads_HandbrakeIcon;
-var downloads_DownloadsPausing;
-var downloads_DownloadsPaused;
-var downloads_DownloadsSoftPaused;
-var downloads_DownloadsLeft;
-var downloads_DownloadsSpeed;
-var downloads_DownloadsTime;
-var downloads_DownloadsURLs;
 
-var downloads_LastHandbrakeState = 0;
 var downloads_notification = null;
 
 function downloads_init()
@@ -54,21 +38,6 @@ function downloads_init()
 	downloads_DownloadsTabBadgeEmpty = $('#DownloadsTabBadgeEmpty');
 	downloads_DownloadQueueEmpty = $('#DownloadQueueEmpty');
 	downloads_DownloadsRecordsPerPage = $('#DownloadsRecordsPerPage');
-	downloads_SpeedLimitInput = $('#SpeedLimitInput');
-	downloads_CHPauseDownload = $('#CHPauseDownload');
-	downloads_CHPausePostProcess = $('#CHPausePostProcess');
-	downloads_CHPauseScan = $('#CHPauseScan');
-	downloads_CHSoftPauseDownload = $('#CHSoftPauseDownload');
-	downloads_HandbrakeButton = $('#HandbrakeButton');
-	downloads_HandbrakeCaret = $('#HandbrakeCaret');
-	downloads_HandbrakeIcon = $('#HandbrakeIcon');
-	downloads_DownloadsPausing = $('#DownloadsPausing');
-	downloads_DownloadsPaused = $('#DownloadsPaused');
-	downloads_DownloadsSoftPaused = $('#DownloadsSoftPaused');
-	downloads_DownloadsLeft = $('#DownloadsLeft');
-	downloads_DownloadsSpeed = $('#DownloadsSpeed');
-	downloads_DownloadsTime = $('#DownloadsTime');
-	downloads_DownloadsURLs = $('#DownloadsURLs');
 
 	var RecordsPerPage = getSetting('DownloadsRecordsPerPage', 10);
 	downloads_DownloadsRecordsPerPage.val(RecordsPerPage);
@@ -86,7 +55,8 @@ function downloads_init()
 			maxPages: Settings_MiniTheme ? 1 : 5,
 			pageDots: !Settings_MiniTheme,
 			fillFieldsCallback: downloads_fillFieldsCallback,
-			renderCellCallback: downloads_renderCellCallback
+			renderCellCallback: downloads_renderCellCallback,
+			updateInfoCallback: downloads_updateInfo
 		});
 
 	downloads_DownloadsTable.on('click', 'a', downloads_edit_click);
@@ -99,7 +69,7 @@ function downloads_init()
 
 function downloads_theme()
 {
-	downloads_DownloadsTable.fasttable('setPageSize', getSetting('DownloadsRecordsPerPage', 10), 
+	downloads_DownloadsTable.fasttable('setPageSize', getSetting('DownloadsRecordsPerPage', 10),
 		Settings_MiniTheme ? 1 : 5, !Settings_MiniTheme);
 }
 
@@ -191,69 +161,9 @@ function downloads_redraw()
 {
 	downloads_redraw_table();
 
-	downloads_DownloadsTabBadge.html(Groups.length);
 	show(downloads_DownloadsTabBadge, Groups.length > 0);
 	show(downloads_DownloadsTabBadgeEmpty, Groups.length === 0 && Settings_MiniTheme);
 	show(downloads_DownloadQueueEmpty, Groups.length === 0);
-
-	if (!SpeedLimitInput_focused)
-	{
-		downloads_updateSpeedLimitInput();
-	}
-
-	show(downloads_CHPauseDownload, Status.Download2Paused);
-	show(downloads_CHPausePostProcess, Status.PostPaused);
-	show(downloads_CHPauseScan, Status.ScanPaused);
-	show(downloads_CHSoftPauseDownload, Status.DownloadPaused);
-
-	show(downloads_DownloadsPausing, (Status.DownloadPaused || Status.Download2Paused) && !Status.ServerStandBy);
-	show(downloads_DownloadsPaused, Status.Download2Paused && Status.ServerStandBy);
-	show(downloads_DownloadsSoftPaused, Status.DownloadPaused && !Status.Download2Paused && Status.ServerStandBy);
-
-	var Handbrake = Status.Download2Paused || Status.PostPaused || Status.ScanPaused;
-	if (Handbrake !== downloads_LastHandbrakeState)
-	{
-		if (Status.Download2Paused || Status.PostPaused || Status.ScanPaused)
-		{
-			downloads_HandbrakeButton.addClass('btn-warning');
-			downloads_HandbrakeCaret.addClass('btn-warning');
-			downloads_HandbrakeIcon.addClass('icon-white');
-		}
-		else
-		{
-			downloads_HandbrakeButton.removeClass('btn-warning');
-			downloads_HandbrakeCaret.removeClass('btn-warning');
-			downloads_HandbrakeIcon.removeClass('icon-white');
-		}
-		downloads_LastHandbrakeState = Handbrake;
-	}
-
-	if (Status.DownloadRate > 0)
-	{
-		downloads_DownloadsSpeed.html('Speed: ' + round0(Status.DownloadRate / 1024) + ' KB/s');
-		var estimated = Status.DownloadRate > 0 ? FormatTimeHMS(Status.RemainingSizeMB*1024/(Status.DownloadRate/1024)) : '- - -';
-		downloads_DownloadsTime.html('Time: ' + estimated);
-	}
-	else
-	{
-		downloads_DownloadsSpeed.html('Speed: - - - KB/s');
-		downloads_DownloadsTime.html('Time: - - -');
-	}
-	show(downloads_DownloadsTime, !Status.ServerStandBy);
-	show(downloads_DownloadsSpeed, !Status.ServerStandBy);
-
-	if (Status.RemainingSizeMB > 0)
-	{
-		downloads_DownloadsLeft.html('Left: ' + FormatSizeMB(Status.RemainingSizeMB));
-		downloads_DownloadsLeft.show();
-	}
-	else
-	{
-		downloads_DownloadsLeft.hide();
-	}
-
-	downloads_DownloadsURLs.text(Urls.length + (Urls.length > 1 ? ' URLs queued' : ' URL queued'));
-	show(downloads_DownloadsURLs, Urls.length > 0);
 }
 
 /*** TABLE *************************************************************************/
@@ -449,7 +359,7 @@ function downloads_build_estimated(group)
 	}
 	else if (!group.paused && Status.DownloadRate > 0)
 	{
-		return FormatTimeHMS((group.RemainingSizeMB-group.PausedSizeMB)*1024/(Status.DownloadRate/1024));
+		return FormatTimeLeft((group.RemainingSizeMB-group.PausedSizeMB)*1024/(Status.DownloadRate/1024));
 	}
 
 	return '';
@@ -511,6 +421,11 @@ function downloads_RecordsPerPage_change()
 	var val = downloads_DownloadsRecordsPerPage.val();
 	setSetting('DownloadsRecordsPerPage', val);
 	downloads_DownloadsTable.fasttable('setPageSize', val);
+}
+
+function downloads_updateInfo(stat)
+{
+	tab_updateInfo(downloads_DownloadsTabBadge, stat);
 }
 
 /*** EDIT ******************************************************/
@@ -737,82 +652,6 @@ function downloads_selected_move_click(action)
 }
 
 /*** TOOLBAR: GENERAL *****************************************************************/
-
-function downloads_updateSpeedLimitInput()
-{
-	downloads_SpeedLimitInput.val(Status.DownloadLimit === 0 ? '' : round0(Status.DownloadLimit / 1024));
-}
-
-function downloads_setspeedlimit()
-{
-	var val = downloads_SpeedLimitInput.val();
-	if (val == '')
-	{
-		var rate = 0;
-	}
-	else
-	{
-		var rate = parseInt(val);
-		if (isNaN(rate))
-		{
-			downloads_updateSpeedLimitInput();
-			return;
-		}
-	}
-	rpc('rate', [rate], function()
-	{
-		animateAlert('#Notif_SetSpeedLimit');
-		refresh_update();
-	});
-}
-
-function downloads_scan_click()
-{
-	rpc('scan', [], function()
-	{
-		animateAlert('#Notif_Scan');
-		refresh_update();
-	});
-}
-
-function downloads_Handbrake_click()
-{
-	if (downloads_LastHandbrakeState)
-	{
-		// resume all activities
-		rpc('resumedownload2', [],
-			function(){rpc('resumepost', [],
-			function(){rpc('resumescan', [], refresh_update)})});
-	}
-	else
-	{
-		// pause all activities
-		rpc('pausedownload2', [],
-			function(){rpc('pausepost', [],
-			function(){rpc('pausescan', [], refresh_update)})});
-	}
-}
-
-function downloads_Pause_click()
-{
-	var data = $(this).parent().attr('data');
-	switch (data)
-	{
-		case 'download2':
-			var method = Status.Download2Paused ? 'resumedownload2' : 'pausedownload2';
-			break;
-		case 'post':
-			var method = Status.PostPaused ? 'resumepost' : 'pausepost';
-			break;
-		case 'scan':
-			var method = Status.ScanPaused ? 'resumescan' : 'pausescan';
-			break;
-		case 'download':
-			var method = Status.DownloadPaused ? 'resumedownload' : 'pausedownload';
-			break;
-	}
-	rpc(method, [], refresh_update);
-}
 
 function downloads_add_click()
 {

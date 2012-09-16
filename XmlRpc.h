@@ -98,7 +98,7 @@ protected:
 	XmlRpcProcessor::ERpcProtocol	m_eProtocol;
 	XmlRpcProcessor::EHttpMethod	m_eHttpMethod;
 
-	void				BuildErrorResponse(int iErrCode, const char* szErrText);
+	void				BuildErrorResponse(int iErrCode, const char* szErrText, ...);
 	void				BuildBoolResponse(bool bOK);
 	void				AppendResponse(const char* szPart);
 	bool				IsJson();
@@ -108,6 +108,7 @@ protected:
 	bool				NextParamAsStr(char** szValueBuf);
 	const char*			BoolToStr(bool bValue);
 	char*				EncodeStr(const char* szStr);
+	void				DecodeStr(char* szStr);
 
 public:
 						XmlCommand();
@@ -247,6 +248,25 @@ class UrlQueueXmlCommand: public XmlCommand
 {
 public:
 	virtual void		Execute();
+};
+
+class ConfigXmlCommand: public XmlCommand
+{
+public:
+	virtual void		Execute();
+};
+
+class LoadConfigXmlCommand: public XmlCommand
+{
+public:
+	virtual void		Execute();
+};
+
+class SaveConfigXmlCommand: public XmlCommand
+{
+public:
+	virtual void		Execute();
+	void				Save(const char *szFilename);
 };
 
 #endif
