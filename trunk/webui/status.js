@@ -22,6 +22,65 @@
  *
  */
 
+/* controls */
+var status_SpeedLimitInput;
+var status_CHPauseDownload;
+var status_CHPausePostProcess;
+var status_CHPauseScan;
+var status_CHSoftPauseDownload;
+var status_StatusPausing;
+var status_StatusPaused;
+var status_StatusSoftPaused;
+var status_StatusLeft;
+var status_StatusSpeed;
+var status_StatusSpeedBlock;
+var status_StatusTime;
+var status_StatusURLs;
+var status_PlayBlock;
+var status_PlayButton;
+var status_PauseButton;
+var status_PlayAnimation;
+var status_CurSpeedLimit;
+var status_CurSpeedLimitBlock;
+
+var status_LastPlayState = 0;
+var status_LastAnimState = 0;
+var status_PlayInitialized = false;
+var status_limit_dialog;
+var status_PlayFrame = 0;
+var status_PlayFrameSize = 40;
+var status_PlayState = 0;
+var status_PlayStep = 0;
+
+function status_init()
+{
+	status_SpeedLimitInput = $('#SpeedLimitInput');
+	status_CHPauseDownload = $('#CHPauseDownload');
+	status_CHPausePostProcess = $('#CHPausePostProcess');
+	status_CHPauseScan = $('#CHPauseScan');
+	status_CHSoftPauseDownload = $('#CHSoftPauseDownload');
+	status_PlayBlock = $('#PlayBlock');
+	status_PlayButton = $('#PlayButton');
+	status_PauseButton = $('#PauseButton');
+	status_PlayAnimation = $('#PlayAnimation');
+	status_StatusPausing = $('#StatusPausing');
+	status_StatusPaused = $('#StatusPaused');
+	status_StatusSoftPaused = $('#StatusSoftPaused');
+	status_StatusLeft = $('#StatusLeft');
+	status_StatusSpeed = $('#StatusSpeed');
+	status_StatusSpeedBlock = $('#StatusSpeedBlock');
+	status_StatusTime = $('#StatusTime');
+	status_StatusURLs = $('#StatusURLs');
+	status_CurSpeedLimit = $('#CurSpeedLimit');
+	status_CurSpeedLimitBlock = $('#CurSpeedLimitBlock');
+
+	$('#PlayMenu li[data] a').click(status_Pause_click);
+
+	status_limit_dialog = $('#LimitDialog');
+
+	status_PlayAnimation.hover(function() { status_PlayBlock.addClass('hover'); }, function() { status_PlayBlock.removeClass('hover'); });
+}
+
 function status_update()
 {
 	rpc('status', [], status_loaded);
@@ -34,6 +93,12 @@ function status_loaded(status)
 }
 
 function status_redraw()
+{
+	status_statistics();
+	status_info()
+}
+
+function status_statistics()
 {
 	var content = '';
 
@@ -49,7 +114,7 @@ function status_redraw()
 	$('#StatisticsTable tbody').html(content);
 
 	content = '';
-	content += '<tr><td>Download</td><td class="text-right">'; 
+	content += '<tr><td>Download</td><td class="text-right">';
 	if (Status.DownloadPaused || Status.Download2Paused)
 	{
 		content += Status.Download2Paused ? '<span class="label label-status label-warning">paused</span>' : '';
@@ -61,18 +126,315 @@ function status_redraw()
 		content += '<span class="label label-status label-success">active</span>';
 	}
 	content += '</td></tr>';
-		
-	content += '<tr><td>Post-processing</td><td class="text-right">' + (Status.PostPaused ? 
-		'<span class="label label-status label-warning">paused</span>' : 
-		'<span class="label label-status label-success">active</span>') + 
+
+	content += '<tr><td>Post-processing</td><td class="text-right">' + (Status.PostPaused ?
+		'<span class="label label-status label-warning">paused</span>' :
+		'<span class="label label-status label-success">active</span>') +
 		'</td></tr>';
-	content += '<tr><td>NZB-Directory scan</td><td class="text-right">' + (Status.ScanPaused ? 
-		'<span class="label label-status label-warning">paused</span>' : 
-		'<span class="label label-status label-success">active</span>') + 
+	content += '<tr><td>NZB-Directory scan</td><td class="text-right">' + (Status.ScanPaused ?
+		'<span class="label label-status label-warning">paused</span>' :
+		'<span class="label label-status label-success">active</span>') +
 		'</td></tr>';
-	
+
 	content += '</tbody>';
 	content += '</table>';
-	
+
 	$('#StatusTable tbody').html(content);
 }
+
+function status_info()
+{
+	show(status_CHPauseDownload, Status.Download2Paused);
+	show(status_CHPausePostProcess, Status.PostPaused);
+	show(status_CHPauseScan, Status.ScanPaused);
+	show(status_CHSoftPauseDownload, Status.DownloadPaused);
+
+	/*
+	show(status_StatusPausing, (Status.DownloadPaused || Status.Download2Paused) && !Status.ServerStandBy);
+	show(status_StatusPaused, Status.Download2Paused && Status.ServerStandBy);
+	show(status_StatusSoftPaused, Status.DownloadPaused && !Status.Download2Paused && Status.ServerStandBy);
+	*/
+
+	status_updatePlayButton();
+	status_updatePlayAnim();
+
+	if (Status.ServerStandBy)
+	{
+		status_StatusSpeed.html('--- KB/s');
+		if (Status.RemainingSizeHi > 0 || Status.RemainingSizeLo > 0)
+		{
+			if (Status.AverageDownloadRate > 0)
+			{
+				status_StatusTime.html(FormatTimeLeft(Status.RemainingSizeMB*1024/(Status.AverageDownloadRate/1024)));
+			}
+			else
+			{
+				status_StatusTime.html('--h --m');
+			}
+		}
+		else
+		{
+			status_StatusTime.html('0h 0m');
+		}
+	}
+	else
+	{
+		status_StatusSpeed.html(round0(Status.DownloadRate / 1024) + ' KB/s');
+		if (Status.DownloadRate > 0)
+		{
+			status_StatusTime.html(FormatTimeLeft(Status.RemainingSizeMB*1024/(Status.DownloadRate/1024)));
+		}
+		else
+		{
+			status_StatusTime.html('--h --m');
+		}
+	}
+
+
+	/*
+	if (Status.RemainingSizeMB > 0)
+	{
+		status_StatusLeft.html('Left: ' + FormatSizeMB(Status.RemainingSizeMB));
+		status_StatusLeft.show();
+	}
+	else
+	{
+		status_StatusLeft.hide();
+	}
+
+	status_StatusURLs.text(Urls.length + (Urls.length > 1 ? ' URLs queued' : ' URL queued'));
+	show(status_StatusURLs, Urls.length > 0);
+	*/
+
+	status_StatusSpeedBlock.toggleClass('speedlimit', Status.DownloadLimit !== 0);
+
+	//TODO: remove DEBUG
+	//status_StatusSpeed.html('99999 KB/s');
+	//status_StatusTime.html('10h 10m');
+}
+
+function status_updatePlayButton()
+{
+	var Play = !Status.Download2Paused;
+	if (Play === status_LastPlayState)
+	{
+		return;
+	}
+
+	status_LastPlayState = Play;
+
+	var hideBtn = Play ? $('#PlayButton') : $('#PauseButton');
+	var showBtn = !Play ? $('#PlayButton') : $('#PauseButton');
+
+	if (status_PlayInitialized)
+	{
+		hideBtn.fadeOut(500);
+		showBtn.fadeIn(500);
+		if (!Play && !Status.ServerStandBy)
+		{
+			animateAlert('#Notif_Downloads_Pausing');
+		}
+	}
+	else
+	{
+		hideBtn.hide();
+		showBtn.show();
+	}
+
+	if (Play)
+	{
+		status_PlayAnimation.removeClass('pause').addClass('play');
+	}
+	else
+	{
+		status_PlayAnimation.removeClass('play').addClass('pause');
+	}
+
+	status_PlayInitialized = true;
+}
+
+function status_updatePlayAnim()
+{
+	// Animate if either any downloads or post-processing is in progress
+	var Anim = (!Status.ServerStandBy || (Status.PostJobCount > 0 && !Status.PostPaused)) &&
+		(Settings_RefreshInterval !== 0) && !State_ConnectionError;
+	if (Anim === status_LastAnimState)
+	{
+		return;
+	}
+
+	status_LastAnimState = Anim;
+
+	if (Settings_PlayAnimation)
+	{
+		if (Anim)
+		{
+			status_PlayAnimation.fadeIn(1000);
+		}
+		else
+		{
+			status_PlayAnimation.fadeOut(1000);
+		}
+	}
+}
+
+function status_Play_click()
+{
+	//animateAlert('#Notif_Play');
+
+	if (status_LastPlayState)
+	{
+		// pause all activities
+		rpc('pausedownload2', [],
+			function(){rpc('pausepost', [],
+			function(){rpc('pausescan', [], refresh_update)})});
+	}
+	else
+	{
+		// resume all activities
+		rpc('resumedownload2', [],
+			function(){rpc('resumepost', [],
+			function(){rpc('resumescan', [], refresh_update)})});
+	}
+}
+
+function status_setSpeedLimit_click()
+{
+	var val = status_SpeedLimitInput.val();
+	var rate = 0;
+	if (val == '')
+	{
+		rate = 0;
+	}
+	else
+	{
+		rate = parseInt(val);
+		if (isNaN(rate))
+		{
+			return;
+		}
+	}
+	rpc('rate', [rate], function()
+	{
+		$('#LimitDialog').modal('hide');
+		animateAlert('#Notif_SetSpeedLimit');
+		refresh_update();
+	});
+}
+
+function status_Pause_click(data)
+{
+	switch (data)
+	{
+		case 'download2':
+			var method = Status.Download2Paused ? 'resumedownload2' : 'pausedownload2';
+			break;
+		case 'post':
+			var method = Status.PostPaused ? 'resumepost' : 'pausepost';
+			break;
+		case 'scan':
+			var method = Status.ScanPaused ? 'resumescan' : 'pausescan';
+			break;
+		case 'download':
+			var method = Status.DownloadPaused ? 'resumedownload' : 'pausedownload';
+			break;
+	}
+	rpc(method, [], refresh_update);
+}
+
+function status_limit_click()
+{
+	status_SpeedLimitInput.val('');
+	status_CurSpeedLimit.text(Status.DownloadLimit === 0 ? 'none' : round0(Status.DownloadLimit / 1024) + ' KB/s');
+	show(status_CurSpeedLimitBlock, Status.DownloadLimit !== 0);
+	status_limit_dialog.modal();
+}
+
+function status_PlayRotate()
+{
+	// animate next frame
+	status_PlayFrame++;
+
+	if (status_PlayFrame >= status_PlayFrameSize)
+	{
+		status_PlayFrame = 0;
+	}
+
+	var f = status_PlayFrame <= status_PlayFrameSize ? status_PlayFrame : 0;
+
+	var degree = 360 * f / status_PlayFrameSize;
+
+	status_PlayAnimation.css({
+		'-webkit-transform': 'rotate(' + degree + 'deg)',
+		   '-moz-transform': 'rotate(' + degree + 'deg)',
+			'-ms-transform': 'rotate(' + degree + 'deg)',
+			 '-o-transform': 'rotate(' + degree + 'deg)',
+				'transform': 'rotate(' + degree + 'deg)'
+	});
+
+
+	var extra = '';
+	status_PlayStep++;
+
+	if (status_PlayState === 0)
+	{
+		status_PlayFrameSize -= 0.2;
+
+		// fading in
+		if (status_PlayStep <= 20)
+		{
+			status_PlayAnimation.css('opacity', status_PlayStep / 20);
+		}
+
+		// fastening
+		if (status_PlayFrameSize < 20)
+		{
+			status_PlayFrameSize = 20;
+			status_PlayState++;
+			status_PlayStep = 0;
+		}
+	}
+	else if (status_PlayState === 1)
+	{
+		if (status_PlayStep > 100)
+		{
+			status_PlayState++;
+			status_PlayStep = 0;
+			//status_PlayState = 4;
+		}
+	}
+	else if (status_PlayState === 2)
+	{
+		status_PlayFrameSize += 0.2;
+		// slowing
+		if (status_PlayFrameSize > 50)
+		{
+			status_PlayFrameSize = 50;
+			status_PlayState++;
+			status_PlayStep = 0;
+		}
+	}
+	else if (status_PlayState === 3)
+	{
+		if (status_PlayStep > 100)
+		{
+			status_PlayState++;
+			status_PlayStep = 0;
+		}
+	}
+	else if (status_PlayState === 4)
+	{
+		// fading out
+		if (status_PlayStep <= 50)
+		{
+			status_PlayAnimation.css('opacity', (50 - status_PlayStep) / 50);
+		}
+
+		if (status_PlayStep > 100)
+		{
+			status_PlayState = 0;
+			status_PlayStep = 0;
+		}
+	}
+}
+

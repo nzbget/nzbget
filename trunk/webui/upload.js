@@ -73,6 +73,7 @@ function upload_init()
 	$('#AddDialog_Select').click(upload_Select);
 	$('#AddDialog_Submit').click(upload_Submit);
 	$('#AddDialog_Input')[0].addEventListener("change", upload_FileSelectHandler, false);
+	$('#AddDialog_Scan').click(upload_Scan);
 }
 
 function upload_body_dragover(event)
@@ -371,4 +372,15 @@ function upload_allCompleted()
 			animateAlert('#Notif_AddFiles');
 		}
 	}
+}
+
+function upload_Scan()
+{
+	upload_DisableAllButtons();
+	rpc('scan', [], function()
+	{
+		upload_needRefresh = true;
+		upload_dialog.modal('hide');
+		animateAlert('#Notif_Scan');
+	});
 }

@@ -56,7 +56,8 @@ function history_init()
 			maxPages: Settings_MiniTheme ? 1 : 5,
 			pageDots: !Settings_MiniTheme,
 			fillFieldsCallback: history_fillFieldsCallback,
-			renderCellCallback: history_renderCellCallback
+			renderCellCallback: history_renderCellCallback,
+			updateInfoCallback: history_updateInfo
 		});
 
 	history_HistoryTable.on('click', 'a', history_edit_click);
@@ -69,7 +70,7 @@ function history_init()
 
 function history_theme()
 {
-	history_HistoryTable.fasttable('setPageSize', getSetting('HistoryRecordsPerPage', 10), 
+	history_HistoryTable.fasttable('setPageSize', getSetting('HistoryRecordsPerPage', 10),
 		Settings_MiniTheme ? 1 : 5, !Settings_MiniTheme);
 }
 
@@ -156,7 +157,6 @@ function history_redraw()
 
 	history_HistoryTable.fasttable('update', data);
 
-	history_HistoryTabBadge.html(History.length);
 	show(history_HistoryTabBadge, History.length > 0);
 	show(history_HistoryTabBadgeEmpty, History.length === 0 && Settings_MiniTheme);
 }
@@ -187,7 +187,10 @@ function history_fillFieldsCallback(item)
 		{
 			info += ' <span class="label label-status">' + category + '</span>';
 		}
-		info += ' <span class="label">' + item.data.size + '</span>';
+		if (hist.Kind === 'NZB')
+		{
+			info += ' <span class="label">' + item.data.size + '</span>';
+		}
 		item.fields = [info];
 	}
 }
@@ -222,6 +225,11 @@ function history_RecordsPerPage_change()
 	var val = history_HistoryRecordsPerPage.val();
 	setSetting('HistoryRecordsPerPage', val);
 	history_HistoryTable.fasttable('setPageSize', val);
+}
+
+function history_updateInfo(stat)
+{
+	tab_updateInfo(history_HistoryTabBadge, stat);
 }
 
 function history_edit_init()

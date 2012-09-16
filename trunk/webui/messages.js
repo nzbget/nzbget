@@ -50,7 +50,9 @@ function messages_init()
 			maxPages: Settings_MiniTheme ? 1 : 5,
 			pageDots: !Settings_MiniTheme,
 			fillFieldsCallback: messages_fillFieldsCallback,
-			renderCellCallback: messages_renderCellCallback
+			fillSearchCallback: messages_fillSearchCallback,
+			renderCellCallback: messages_renderCellCallback,
+			updateInfoCallback: messages_updateInfo
 		});
 }
 
@@ -104,14 +106,10 @@ function messages_redraw()
 	{
 		var message = Messages[i];
 
-		var time = FormatDateTime(message.Time);
-
 		var item =
 		{
 			id: message.ID,
-			message: message,
-			data: { time: time },
-			search: message.Kind + ' ' + time + ' ' + message.Text
+			message: message
 		};
 
 		data.unshift(item);
@@ -119,7 +117,6 @@ function messages_redraw()
 
 	messages_MessagesTable.fasttable('update', data);
 
-	messages_MessagesTabBadge.html(Messages.length);
 	show(messages_MessagesTabBadge, Messages.length > 0);
 	show(messages_MessagesTabBadgeEmpty, Messages.length === 0 && Settings_MiniTheme);
 }
@@ -139,16 +136,30 @@ function messages_fillFieldsCallback(item)
 	}
 
 	var text = TextToHtml(message.Text);
+	if (!item.time)
+	{
+		item.time = FormatDateTime(message.Time);
+	}
 
 	if (!Settings_MiniTheme)
 	{
-		item.fields = [kind, item.data.time, text];
+		item.fields = [kind, item.time, text];
 	}
 	else
 	{
-		var info = kind + ' <span class="label">' + item.data.time + '</span> ' + text;
+		var info = kind + ' <span class="label">' + item.time + '</span> ' + text;
 		item.fields = [info];
 	}
+}
+
+function messages_fillSearchCallback(item)
+{
+	if (!item.time)
+	{
+		item.time = FormatDateTime(item.message.Time);
+	}
+
+	item.search = item.message.Kind + ' ' + item.time + ' ' + item.message.Text;
 }
 
 function messages_renderCellCallback(cell, index, item)
@@ -164,4 +175,9 @@ function messages_RecordsPerPage_change()
 	var val = messages_MessagesRecordsPerPage.val();
 	setSetting('MessagesRecordsPerPage', val);
 	messages_MessagesTable.fasttable('setPageSize', val);
+}
+
+function messages_updateInfo(stat)
+{
+	tab_updateInfo(messages_MessagesTabBadge, stat);
 }

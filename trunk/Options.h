@@ -97,6 +97,12 @@ public:
 		mmRegEx
 	};
 
+	enum EDomain
+	{
+		dmServer = 1,
+		dmPostProcess
+	};
+
 	class OptEntry
 	{
 	private:
@@ -113,6 +119,7 @@ public:
 
 	public:
 						OptEntry();
+						OptEntry(const char* szName, const char* szValue);
 						~OptEntry();
 		const char*		GetName() { return m_szName; }
 		const char*		GetValue() { return m_szValue; }
@@ -120,7 +127,15 @@ public:
 		int				GetLineNo() { return m_iLineNo; }
 	};
 	
-	typedef std::vector<OptEntry*>  OptEntries;
+	typedef std::vector<OptEntry*>  OptEntriesBase;
+
+	class OptEntries: public OptEntriesBase
+	{
+	public:
+						~OptEntries();
+		OptEntry*		FindOption(const char* szName);
+	};
+
 	typedef std::vector<char*>  NameList;
 
 private:
@@ -172,6 +187,7 @@ private:
 	bool				m_bParCheck;
 	bool				m_bParRepair;
 	char*				m_szPostProcess;
+	char*				m_szPostConfigFilename;
 	char*				m_szNZBProcess;
 	bool				m_bStrictParName;
 	bool				m_bNoConfig;
@@ -235,6 +251,7 @@ private:
 	void				InitOptFile();
 	void				InitCommandLine(int argc, char* argv[]);
 	void				InitOptions();
+	void				InitPostConfig();
 	void				InitFileArg(int argc, char* argv[]);
 	void				InitServers();
 	void				InitScheduler();
@@ -261,9 +278,13 @@ public:
 						Options(int argc, char* argv[]);
 						~Options();
 
+	bool				LoadConfig(EDomain eDomain, OptEntries* pOptEntries);
+	bool				SaveConfig(EDomain eDomain, OptEntries* pOptEntries);
+
 	// Options
 	OptEntries*			LockOptEntries();
 	void				UnlockOptEntries();
+	const char*			GetConfigFilename() { return m_szConfigFilename; }
 	const char*			GetDestDir() { return m_szDestDir; }
 	const char*			GetTempDir() { return m_szTempDir; }
 	const char*			GetQueueDir() { return m_szQueueDir; }
@@ -304,6 +325,7 @@ public:
 	bool				GetParCheck() { return m_bParCheck; }
 	bool				GetParRepair() { return m_bParRepair; }
 	const char*			GetPostProcess() { return m_szPostProcess; }
+	const char*			GetPostConfigFilename() { return m_szPostConfigFilename; }
 	const char*			GetNZBProcess() { return m_szNZBProcess; }
 	bool				GetStrictParName() { return m_bStrictParName; }
 	int					GetUMask() { return m_iUMask; }

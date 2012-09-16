@@ -90,16 +90,20 @@
 						var timerCallback = function()
 						{
 							var value = inputBox.value;
+							var data = $this.data('fasttable');
 
-							if ((value != inputBox.lastValue) || (overrideBool))
+							if ((value != data.lastFilter) || (overrideBool))
 							{
-								inputBox.lastValue = value;
-								var data = $this.data('fasttable');
+								data.lastFilter = value;
 								if (data.content)
 								{
 									data.curPage = 1;
 									refresh(data);
 								}
+								if (data.config.filterInputCallback)
+								{
+									data.config.filterInputCallback(value);
+								}								
 							}
 						};
 
@@ -113,8 +117,16 @@
 					$(config.filterClearButton).click(function()
 					{
 						var data = $this.data('fasttable');
+						data.lastFilter = '';
 						$(data.config.filterInput).val('');
-						refresh(data);
+						if (data.content)
+						{
+							refresh(data);
+						}
+						if (data.config.filterClearCallback)
+						{
+							data.config.filterClearCallback();
+						}								
 					});
 						
 					$(config.pagerContainer).on('click', 'li', function (e)
@@ -196,7 +208,9 @@
 		for (var i = 0; i < words.length; i++)
 		{
 			if (text.indexOf(words[i]) === -1)
+			{
 				return false;
+			}
 		}
 
 		return true;
@@ -238,6 +252,11 @@
 			for (var i = 0; i < data.content.length; i++)
 			{
 				var item = data.content[i];
+				if (item.search === undefined && data.config.fillSearchCallback)
+				{
+					data.config.fillSearchCallback(item);
+				}
+				
 				if (has_words(item.search, words, caseSensitive))
 				{
 					data.filteredContent.push(item);
@@ -497,6 +516,17 @@
 			}
 		}
 		$(data.config.infoContainer).html(infoText);
+
+		if (data.config.updateInfoCallback)
+		{
+			data.config.updateInfoCallback({
+				total: data.content.length,
+				available: data.filteredContent.length,
+				filter: data.filteredContent != data.content,
+				firstRecord: firstRecord,
+				lastRecord: lastRecord				
+			});
+		}
 	}
 
 	function setPageSize(pageSize, maxPages, pageDots)
@@ -716,6 +746,10 @@
 		renderCellCallback: undefined,
 		renderTableCallback: undefined,
 		fillFieldsCallback: undefined,
+		updateInfoCallback: undefined,
+		filterInputCallback: undefined,
+		filterClearCallback: undefined,
+		fillSearchCallback: undefined,
 		headerCheck: '#table-header-check'
 	};
 

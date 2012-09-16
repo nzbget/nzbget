@@ -22,23 +22,93 @@
  *
  */
 
+function createXMLHttpRequest()
+{
+	var xmlHttp;
+
+	if (window.XMLHttpRequest)
+	{
+		xmlHttp = new XMLHttpRequest();
+	}
+	else if (window.ActiveXObject)
+	{
+		try
+		{
+			xmlHttp = new ActiveXObject("Msxml2.XMLHTTP");
+		}
+		catch(e)
+		{
+			try
+			{
+				xmlHttp = new ActiveXObject("Microsoft.XMLHTTP");
+			}
+			catch(e)
+			{
+				throw(e);
+			}
+		}
+	}
+
+	if (xmlHttp==null)
+	{
+		alert("Your browser does not support XMLHTTP.");
+		throw("Your browser does not support XMLHTTP.");
+	}
+
+	return xmlHttp;
+}
+
 function FormatTimeHMS(sec)
 {
 	var hms = '';
 	var days = Math.floor(sec / 86400);
 	if (days > 0)
+	{
 		hms = days	+ 'd ';
+	}
 	var hours = Math.floor((sec % 86400) / 3600);
 	hms = hms + hours + ':';
 	var minutes = Math.floor((sec / 60) % 60);
 	if (minutes < 10)
+	{
 		hms = hms + '0';
+	}
 	hms = hms + minutes + ':';
 	var seconds = Math.floor(sec % 60);
 	if (seconds < 10)
+	{
 		hms = hms + '0';
+	}
 	hms = hms + seconds;
 	return hms;
+}
+
+function FormatTimeLeft(sec)
+{
+	var hms = '';
+	var days = Math.floor(sec / 86400);
+	var hours = Math.floor((sec % 86400) / 3600);
+	var minutes = Math.floor((sec / 60) % 60);
+	var seconds = Math.floor(sec % 60);
+
+	if (days > 10)
+	{
+		return days + 'd';
+	}
+	if (days > 0)
+	{
+		return days + 'd ' + hours + 'h';
+	}
+	if (hours > 0)
+	{
+		return hours + 'h ' + (minutes < 10 ? '0' : '') + minutes + 'm';
+	}
+	if (minutes > 0)
+	{
+		return minutes + 'm ' + (seconds < 10 ? '0' : '') + seconds + 's';
+	}
+
+	return seconds + 's';
 }
 
 function FormatDateTime(unixTime)
@@ -58,27 +128,43 @@ function FormatSizeMB(sizeMB, sizeLo)
 	}
 
 	if (sizeMB > 10240)
+	{
 		return round1(sizeMB / 1024.0) + '&nbsp;GB';
+	}
 	else if (sizeMB > 1024)
+	{
 		return round2(sizeMB / 1024.0) + '&nbsp;GB';
+	}
 	else if (sizeMB > 100)
+	{
 		return round0(sizeMB) + '&nbsp;MB';
+	}
 	else if (sizeMB > 10)
+	{
 		return round1(sizeMB) + '&nbsp;MB';
+	}
 	else
+	{
 		return round2(sizeMB) + '&nbsp;MB';
+	}
 }
 
 function FormatAge(time)
 {
 	if (time == 0)
+	{
 		return '';
+	}
 
 	var diff = new Date().getTime() / 1000 - time;
 	if (diff > 60*60*24)
+	{
 		return round0(diff / (60*60*24))  +'&nbsp;d';
+	}
 	else
+	{
 		return round0(diff / (60*60))  +'&nbsp;h';
+	}
 }
 
 function round0(arg)
@@ -128,10 +214,16 @@ function setMenuMark(menu, data)
 function IsEnterKey(e)
 {
 	var keynum;
-	if(window.event) // IE
+	if(window.event)
+	{
+		// IE
 		keynum = e.keyCode;
-	else if(e.which) // Netscape/Firefox/Opera
+	}
+	else if(e.which)
+	{
+		// Netscape/Firefox/Opera
 		keynum = e.which;
+	}
 	return keynum == 13;
 }
 

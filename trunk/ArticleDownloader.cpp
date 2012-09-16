@@ -609,7 +609,7 @@ bool ArticleDownloader::PrepareFile(char* szLine)
 					{
 						pb += 6; //=strlen(" size=")
 						long iArticleFilesize = atol(pb);
-						if (!Util::SetFileSize(m_szOutputFilename, iArticleFilesize))
+						if (!Util::CreateSparseFile(m_szOutputFilename, iArticleFilesize))
 						{
 							error("Could not create file %s!", m_szOutputFilename);
 							return false;

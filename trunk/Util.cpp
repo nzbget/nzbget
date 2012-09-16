@@ -343,7 +343,7 @@ bool Util::LoadFileIntoBuffer(const char* szFileName, char** pBuffer, int* pBuff
     return true;
 }
 
-bool Util::SetFileSize(const char* szFilename, int iSize)
+bool Util::CreateSparseFile(const char* szFilename, int iSize)
 {
 	bool bOK = false;
 #ifdef WIN32
@@ -389,6 +389,20 @@ bool Util::SetFileSize(const char* szFilename, int iSize)
 		}
 		fclose(pFile);
 	}
+#endif
+	return bOK;
+}
+
+bool Util::TruncateFile(const char* szFilename, int iSize)
+{
+	bool bOK = false;
+#ifdef WIN32
+	FILE *file = fopen(szFilename, "r+b");
+	fseek(file, iSize, SEEK_SET);
+	bOK = SetEndOfFile((HANDLE)_get_osfhandle(_fileno(file))) != 0;
+	fclose(file);
+#else
+	bOK = truncate(szFilename, iSize) == 0;
 #endif
 	return bOK;
 }
@@ -814,6 +828,19 @@ bool Util::SplitCommandLine(const char* szCommandLine, char*** argv)
 
 	return iArgCount > 0;
 }
+
+void Util::TrimRight(char* szStr)
+{
+	int iLen = strlen(szStr);
+	char ch = szStr[iLen-1];
+	while (*szStr && (ch == '\n' || ch == '\r') || ch == ' ' || ch == '\t')
+	{
+		szStr[iLen-1] = 0;
+		iLen--;
+		ch = szStr[iLen-1];
+	}
+}
+
 
 unsigned int WebUtil::DecodeBase64(char* szInputBuffer, int iInputBufferLength, char* szOutputBuffer)
 {

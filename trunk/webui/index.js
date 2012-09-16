@@ -22,25 +22,18 @@
  *
  */
 
-var Settings_RefreshInterval = 5;
-var Settings_RefreshIndicator = false;
-var Settings_TimeZoneCorrection = 0;
-var Settings_ShowNotifications = true;
+var Settings_RefreshInterval = 1;
+var Settings_RefreshAnimation = true;
+var Settings_PlayAnimation = true;
+var Settings_TimeZoneCorrection = 0; // not fully implemented
 var Settings_MaxMessages = 1000;  // must be the same as in nzbget.conf
 var Settings_SetFocus = false; // automatically set focus to the first control in dialogs (not good on touch devices, because pops up the on-screen-keyboard)
 
-// Download toolbar and info settings
-var Settings_ShowEditButtons = true;
-var Settings_ShowMoveButtons = true;
-var Settings_ShowAddButton = true;
-var Settings_ShowSpeedLimitControl = true;
-var Settings_ShowScanButton = true;
-var Settings_ShowDownloadsLeft = true;
-var Settings_ShowDownloadsTime = true;
-var Settings_ShowDownloadsSpeed = true;
 var Settings_ShowNotifications = true;
 var Settings_MiniTheme = false;
-var Settings_MiniThemeAuto = false;
+var Settings_MiniThemeAuto = true;
+var Settings_NavbarFixed = false;
+var Settings_ShowEditButtons = true;
 
 // Global state
 var Status;
@@ -48,11 +41,13 @@ var Groups;
 var Urls;
 var Messages;
 var History;
+var Config;
 var secondsToUpdate = -1;
 var refreshTimer = 0;
+var indicatorTimer = 0;
+var indicatorFrame=0;
 var nzbgetVersion;
 var loadQueue;
-var SpeedLimitInput_focused = false;
 var firstLoad = true;
 var TBDownloadInfoWidth;
 var refreshPaused = 0;
@@ -63,6 +58,10 @@ var refreshing = false;
 var refreshNeeded = false;
 var initialized = false;
 var firstRun = false;
+var mobileSafari = false;
+var scrollbarWidth = 0;
+var switchingTheme = false;
+var State_ConnectionError = false;
 
 // Const
 var NZBGET_RPC_URL = './jsonrpc';
@@ -72,48 +71,29 @@ $(document).ready(
 	{
 		$('#FirstUpdateInfo').show();
 
-		loadSettings();
-		setupEvents();
-
 		index_init();
+
+		loadSettings();
+		windowResized();
+
+		status_init();
 		downloads_init();
 		edit_init();
 		messages_init();
 		history_init();
 		upload_init();
+		config_init();
 
 		$(window).resize(windowResized);
 
 		initialized = true;
 		refresh();
+
+		// DEBUG: activate config tab
+		//$('#DownloadsTab').removeClass('fade').removeClass('in');
+		//$('#ConfigTabLink').tab('show');
 	}
 );
-
-function createXMLHttpRequest() {
-	var xmlHttp;
-
-	if (window.XMLHttpRequest) {
-		xmlHttp = new XMLHttpRequest();
-	} else if (window.ActiveXObject) {
-		try {
-			xmlHttp = new ActiveXObject("Msxml2.XMLHTTP");
-		} catch(e) {
-			try {
-				xmlHttp = new ActiveXObject("Microsoft.XMLHTTP");
-			} catch(e) {
-				throw(e);
-			}
-		}
-	}
-
-	if (xmlHttp==null)
-	{
-		alert("Your browser does not support XMLHTTP.");
-		throw("Your browser does not support XMLHTTP.");
-	}
-
-	return xmlHttp;
-}
 
 function rpc(method, params, completed_callback, failure_callback)
 {
@@ -131,22 +111,32 @@ function rpc(method, params, completed_callback, failure_callback)
 	{
 		if (xhr.readyState === 4)
 		{
-				var res;
+				var res = 'Unknown error';
+				var result;
 				if (xhr.status === 200)
 				{
 					if (xhr.responseText != '')
 					{
-						var result = JSON.parse(xhr.responseText);
-						if (result.error==null)
+						try
 						{
-							$('#RPCError').hide();
-							res = result.result;
-							completed_callback(res);
-							return;
+							result = JSON.parse(xhr.responseText);
 						}
-						else
+						catch (e)
 						{
-							res = result.error.message + '<br><br>Request: ' + request;
+							res = e;
+						}
+						if (result)
+						{
+							if (result.error == null)
+							{
+								res = result.result;
+								completed_callback(res);
+								return;
+							}
+							else
+							{
+								res = result.error.message + '<br><br>Request: ' + request;
+							}
 						}
 					}
 					else
@@ -165,32 +155,42 @@ function rpc(method, params, completed_callback, failure_callback)
 
 				if (failure_callback)
 				{
-					failure_callback(res);
+					failure_callback(res, result);
 				}
 				else
 				{
-					$('#FirstUpdateInfo').hide();
-					$('#RPCError-text').html(res);
-					$('#RPCError').show();
+					rpc_failure(res, result);
 				}
 		}
 	};
 	xhr.send(request);
 }
 
+function rpc_failure(res)
+{
+	State_ConnectionError = true;
+	$('#FirstUpdateInfo').hide();
+	$('#RPCError-text').html(res);
+	$('#RPCError').show();
+	status_redraw();
+}
+
 function refresh()
 {
 	clearTimeout(refreshTimer);
     refreshPaused = 0;
+    State_ConnectionError = false;
+	$('#RPCError').hide();
 	refreshing = true;
 	refreshNeeded = false;
-	refreshIndicatorShow();
+	refreshAnimationShow();
 
-	loadQueue = new Array(version_update, status_update, downloads_update, messages_update, history_update);
+	loadQueue = new Array(version_update, config_update, status_update, downloads_update, messages_update, history_update);
 
 	if (nzbgetVersion != null)
 	{
-		// query NZBGet version only on first refresh
+		// query NZBGet version and Configuration only on first refresh
+		loadQueue.shift();
 		loadQueue.shift();
 	}
 	else
@@ -226,6 +226,7 @@ function loadCompleted()
 	if (firstLoad)
 	{
 		$('#FirstUpdateInfo').hide();
+		$('#Navbar').show();
 		$('#MainTabContent').show();
 		windowResized();
 		firstLoad = false;
@@ -238,7 +239,7 @@ function loadCompleted()
 		firstRun = false;
 		checkMobileTheme();
 	}
-	
+
 	scheduleNextRefresh();
 }
 
@@ -267,6 +268,17 @@ function categories_load()
 /****************************************************************
 * Auto refresh and Refresh menu
 */
+
+function refresh_click()
+{
+	if (indicatorFrame > 10)
+	{
+		// force animation restart
+		indicatorFrame = 0;
+	}
+	refresh();
+}
+
 function scheduleNextRefresh()
 {
 	clearTimeout(refreshTimer);
@@ -276,25 +288,6 @@ function scheduleNextRefresh()
 		secondsToUpdate += 0.1;
 		countSeconds();
 	}
-	else
-	{
-		refreshIndicatorHide();
-	}
-}
-
-function refreshIndicatorShow()
-{
-	$('#RefreshIndicator').html('Refreshing...');
-}
-
-function refreshIndicatorHide()
-{
-	$('#RefreshIndicator').empty();
-}
-
-function refreshIndicatorWait()
-{
-	$('#RefreshIndicator').html('Waiting: ' + round1(secondsToUpdate));
 }
 
 function countSeconds()
@@ -311,8 +304,48 @@ function countSeconds()
 	}
 	else
 	{
-		refreshIndicatorWait();
 		refreshTimer = setTimeout(countSeconds, 100);
+	}
+}
+
+function refreshAnimationShow()
+{
+	if (Settings_RefreshAnimation && indicatorTimer === 0)
+	{
+		refreshAnimationFrame();
+	}
+}
+
+function refreshAnimationFrame()
+{
+	// animate next frame
+	indicatorFrame++;
+
+	if (indicatorFrame === 20)
+	{
+		indicatorFrame = 0;
+	}
+
+	var f = indicatorFrame <= 10 ? indicatorFrame : 0;
+
+	var degree = 360 * f / 10;
+
+	$('#RefreshAnimation').css({
+		'-webkit-transform': 'rotate(' + degree + 'deg)',
+		   '-moz-transform': 'rotate(' + degree + 'deg)',
+			'-ms-transform': 'rotate(' + degree + 'deg)',
+			 '-o-transform': 'rotate(' + degree + 'deg)',
+				'transform': 'rotate(' + degree + 'deg)'
+	});
+
+	if (!refreshing && indicatorFrame === 0 && (Settings_RefreshInterval === 0 || Settings_RefreshInterval > 1 || !Settings_RefreshAnimation) || State_ConnectionError)
+	{
+		indicatorTimer = 0;
+	}
+	else
+	{
+		// schedule next frame update
+		indicatorTimer = setTimeout(refreshAnimationFrame, 100);
 	}
 }
 
@@ -345,24 +378,21 @@ function refresh_update()
 function refreshIntervalClick()
 {
 	var data = $(this).parent().attr('data');
-	if (data === 'indicator')
-	{
-		Settings_RefreshIndicator = !Settings_RefreshIndicator;
-	}
-	else
-	{
-		Settings_RefreshInterval = parseFloat(data);
-		scheduleNextRefresh();
-	}
+	Settings_RefreshInterval = parseFloat(data);
+	scheduleNextRefresh();
 	updateRefreshMenu();
 	saveSettings();
+
+	if (Settings_RefreshInterval === 0)
+	{
+		// stop animation
+		status_redraw();
+	}
 }
 
 function updateRefreshMenu()
 {
 	setMenuMark($('#RefreshMenu'), Settings_RefreshInterval);
-	$('#RefreshIndicatorItem').html(Settings_RefreshIndicator ? $('li[data="mark"]', $('#RefreshMenu')).html() : '');
-	show('#RefreshIndicatorBlock', Settings_RefreshIndicator);
 }
 
 /* END - Auto refresh and Refresh menu
@@ -370,124 +400,83 @@ function updateRefreshMenu()
 
 function index_init()
 {
+	mobileSafari = $.browser.safari && navigator.userAgent.toLowerCase().match(/(iphone|ipod|ipad)/) != null;
+	scrollbarWidth = index_scrollbarWidth();
+
+	$('#RefreshMenu li a').click(refreshIntervalClick);
+
 	TBDownloadInfoWidth = $('#TBDownloadInfo').width();
 	confirm_dialog_init();
 
-	show('#SettingsMenuLI_MiniTheme', !Settings_MiniThemeAuto);
-	
 	var FadeMainTabs = !$.browser.opera;
 	if (!FadeMainTabs)
 	{
 		$('#DownloadsTab').removeClass('fade').removeClass('in');
 	}
+
+	$('#Navbar a[data-toggle="tab"]').on('show', index_mainTabBeforeShow);
+	$('#Navbar a[data-toggle="tab"]').on('shown', index_mainTabAfterShow);
+	index_setupSearch();
+
+	$(window).scroll(index_windowScrolled);
 }
 
-/****************************************************************
-* Toolbar settings
-*/
-
-function updateToolbarSettings()
+function index_mainTabBeforeShow(e)
 {
-	var collapsedButtons = ! (Settings_ShowAddButton && Settings_ShowEditButtons && Settings_ShowMoveButtons && Settings_ShowScanButton);
-	show('#TBCollapsedButtonsMenu', collapsedButtons);
-	//$('#TBAddButton').toggleClass('btn-first', !collapsedButtons);
-
-	show('#TBAddButton, #CHShowAddButton', Settings_ShowAddButton);
-	show('#CollapsedButtonsMenu .TBAddItem', !Settings_ShowAddButton);
-
-	show('#CHShowEditButtons', Settings_ShowEditButtons);
-	show('#DownloadsToolbar .phone-hide.TBEditButtons', Settings_ShowEditButtons && !Settings_MiniTheme);
-	show('#DownloadsToolbar .phone-only.TBEditButtons', Settings_ShowEditButtons && Settings_MiniTheme, 'inline-block');
-	show('#CollapsedButtonsMenu .TBEditItem', !Settings_ShowEditButtons);
-
-	show('#CHShowMoveButtons', Settings_ShowMoveButtons);
-	show('#DownloadsToolbar .phone-hide.TBMoveButtons', Settings_ShowMoveButtons && !Settings_MiniTheme);
-	show('#DownloadsToolbar .phone-only.TBMoveButtons', Settings_ShowMoveButtons && Settings_MiniTheme, 'inline-block');
-	show('#CollapsedButtonsMenu .TBMoveItem', !Settings_ShowMoveButtons);
-
-	show('#TBScanButton, #CHShowScanButton', Settings_ShowScanButton);
-	show('#CollapsedButtonsMenu .TBScanItem', !Settings_ShowScanButton);
-
-	show('#SepAddItem', !Settings_ShowAddButton && (!Settings_ShowEditButtons || !Settings_ShowMoveButtons || !Settings_ShowScanButton));
-	show('#SepEditItem', !Settings_ShowEditButtons && (!Settings_ShowMoveButtons || !Settings_ShowScanButton));
-	show('#SepMoveItem', !Settings_ShowMoveButtons && !Settings_ShowScanButton);
-
-	show('#TBSpeedLimitControl, #CHShowSpeedLimitControl', Settings_ShowSpeedLimitControl);
-
-	show('#TBDownloadsLeft, #CHShowDownloadsLeft', Settings_ShowDownloadsLeft);
-	show('#TBDownloadsTime, #CHShowDownloadsTime', Settings_ShowDownloadsTime);
-	show('#TBDownloadsSpeed, #CHShowDownloadsSpeed', Settings_ShowDownloadsSpeed);
-	show('#CHShowNotifications', Settings_ShowNotifications);
-	show('#CHMiniTheme', Settings_MiniTheme);
+	var tabname = $(e.target).attr('href');
+	tabname = tabname.substr(1, tabname.length - 4);
+	$('#SearchBlock .search-query, #SearchBlock .search-clear').hide();
+	$('#' + tabname + 'Table_filter, #' + tabname + 'Table_clearfilter').show();
 }
 
-function toolbarOptMenuClick()
+function index_mainTabAfterShow(e)
 {
-	var data = $(this).parent().attr('data');
-	switch (data)
+	if ($(e.target).attr('href') !== '#ConfigTab')
 	{
-		case 'ShowMoveButtons':
-			Settings_ShowMoveButtons = !Settings_ShowMoveButtons;
-			break;
-		case 'ShowAddButton':
-			Settings_ShowAddButton = !Settings_ShowAddButton;
-			break;
-		case 'ShowScanButton':
-			Settings_ShowScanButton = !Settings_ShowScanButton;
-			break;
-		case 'ShowSpeedLimitControl':
-			Settings_ShowSpeedLimitControl = !Settings_ShowSpeedLimitControl;
-			break;
-		case 'ShowEditButtons':
-			Settings_ShowEditButtons = !Settings_ShowEditButtons;
-			switchTheme(); // update checkmarks
-			break;
-		case 'ShowDownloadsLeft':
-			Settings_ShowDownloadsLeft = !Settings_ShowDownloadsLeft;
-			break;
-		case 'ShowDownloadsTime':
-			Settings_ShowDownloadsTime = !Settings_ShowDownloadsTime;
-			break;
-		case 'ShowDownloadsSpeed':
-			Settings_ShowDownloadsSpeed = !Settings_ShowDownloadsSpeed;
-			break;
-		case 'ShowNotifications':
-			Settings_ShowNotifications = !Settings_ShowNotifications;
-			break;
-		case 'MiniTheme':
-			Settings_MiniTheme = !Settings_MiniTheme;
-			switchTheme();
-			break;
+		config_cleanup();
 	}
-	updateToolbarSettings();
-	saveSettings();
-    windowResized();
 }
 
-/* END - Toolbar settings
-*****************************************************************/
+function index_setupSearch()
+{
+	$('.navbar-search .search-query').on('focus', function()
+	{
+		$(this).next().removeClass('icon-white');
+	});
+
+	$('.navbar-search .search-query').on('blur', function()
+	{
+		$(this).next().addClass('icon-white');
+	});
+
+	$('.navbar-search').show();
+	index_mainTabBeforeShow({target: $('#DownloadsTabLink')});
+}
+
+function index_windowScrolled()
+{
+	$('body').toggleClass('scrolled', $(window).scrollTop() > 0 && !Settings_MiniTheme);
+}
+
+function index_scrollbarWidth()
+{
+    var div = $('<div style="width:50px;height:50px;overflow:hidden;position:absolute;top:-200px;left:-200px;"><div style="height:100px;"></div>');
+    // Append our div, do our calculation and then remove it
+    $('body').append(div);
+    var w1 = $('div', div).innerWidth();
+    div.css('overflow-y', 'scroll');
+    var w2 = $('div', div).innerWidth();
+    $(div).remove();
+    return (w1 - w2);
+}
 
 function loadSettings()
 {
 	var savedVersion = getSetting('version', 'version');
 	firstRun = savedVersion === 'version';
 	$('#version').text(savedVersion);
-	
+
 	Settings_RefreshInterval = parseFloat(getSetting('RefreshInterval', Settings_RefreshInterval));
-	Settings_RefreshIndicator = parseBool(getSetting('RefreshIndicator', Settings_RefreshIndicator));
-
-	Settings_ShowEditButtons = parseBool(getSetting('ShowEditButtons', Settings_ShowEditButtons));
-	Settings_ShowMoveButtons = parseBool(getSetting('ShowMoveButtons', Settings_ShowMoveButtons));
-	Settings_ShowAddButton = parseBool(getSetting('ShowAddButton', Settings_ShowAddButton));
-	Settings_ShowSpeedLimitControl = parseBool(getSetting('ShowSpeedLimitControl', Settings_ShowSpeedLimitControl));
-	Settings_ShowScanButton = parseBool(getSetting('ShowScanButton', Settings_ShowScanButton));
-
-	Settings_ShowDownloadsLeft = parseBool(getSetting('ShowDownloadsLeft', Settings_ShowDownloadsLeft));
-	Settings_ShowDownloadsTime = parseBool(getSetting('ShowDownloadsTime', Settings_ShowDownloadsTime));
-	Settings_ShowDownloadsSpeed = parseBool(getSetting('ShowDownloadsSpeed', Settings_ShowDownloadsSpeed));
-
-	Settings_ShowNotifications = parseBool(getSetting('ShowNotifications', Settings_ShowNotifications));
-	Settings_MiniTheme = parseBool(getSetting('MiniTheme', Settings_MiniTheme));
 
 	// visualize settings
 	settingsToControls();
@@ -496,35 +485,12 @@ function loadSettings()
 function saveSettings()
 {
 	setSetting('RefreshInterval', Settings_RefreshInterval);
-	setSetting('RefreshIndicator', Settings_RefreshIndicator);
-
-	setSetting('ShowEditButtons', Settings_ShowEditButtons);
-	setSetting('ShowAddButton', Settings_ShowAddButton);
-	setSetting('ShowMoveButtons', Settings_ShowMoveButtons);
-	setSetting('ShowSpeedLimitControl', Settings_ShowSpeedLimitControl);
-	setSetting('ShowScanButton', Settings_ShowScanButton);
-
-	setSetting('ShowDownloadsLeft', Settings_ShowDownloadsLeft);
-	setSetting('ShowDownloadsTime', Settings_ShowDownloadsTime);
-	setSetting('ShowDownloadsSpeed', Settings_ShowDownloadsSpeed);
-
-	setSetting('ShowNotifications', Settings_ShowNotifications);
-	setSetting('MiniTheme', Settings_MiniTheme);
 }
 
 function settingsToControls()
 {
 	updateRefreshMenu();
-	updateToolbarSettings();
 	switchTheme();
-}
-
-function setupEvents()
-{
-	$('#RefreshMenu li a').click(refreshIntervalClick);
-	$('#SettingsMenu li a').click(toolbarOptMenuClick);
-	$('#ToolbarOptMenu li a').click(toolbarOptMenuClick);
-	$('#HandbrakeMenu li[data] a').click(downloads_Pause_click);
 }
 
 function TODO()
@@ -535,6 +501,7 @@ function TODO()
 function confirm_dialog_init()
 {
 	confirm_dialog = $('#ConfirmDialog');
+	confirm_dialog.on('hidden', confirm_dialog_hidden);
 	$('#ConfirmDialog_OK').click(confirm_dialog_click);
 }
 
@@ -548,8 +515,18 @@ function confirm_dialog_show(id, okFunc)
 	confirm_dialog.modal();
 }
 
-function confirm_dialog_click()
+function confirm_dialog_hidden()
 {
+	// confirm dialog copies data from other nodes
+	// the copied dom nodes must be destroyed
+	$('#ConfirmDialog_Title').empty();
+	$('#ConfirmDialog_Text').empty();
+	$('#ConfirmDialog_OK').empty();
+}
+
+function confirm_dialog_click(event)
+{
+	event.preventDefault(); // avoid scrolling
 	confirm_dialog_func();
 	confirm_dialog.modal('hide');
 }
@@ -586,22 +563,13 @@ function windowResized()
 			switchTheme();
 		}
 	}
-	
+
 	resizeNavbar();
 
-	if (!Settings_MiniTheme)
+	if (Settings_MiniTheme)
 	{
-		$('#ToolbarOptMenu').toggleClass('pull-right', $('#ToolbarOptButton').offset().left > 180);
-		$('#HandbrakeMenu').toggleClass('pull-right', $('#HandbrakeButton').offset().left > 240);
-		$('#SettingsMenu').toggleClass('pull-right', $('#SettingsMenuLI').offset().left > 100);
-	}
-	else
-	{
-		centerPopupMenu('#ToolbarOptMenu', true);
-		centerPopupMenu('#HandbrakeMenu', true);
-		centerPopupMenu('#SettingsMenu', true);
+		centerPopupMenu('#PlayMenu', true);
 		centerPopupMenu('#RefreshMenu', true);
-		centerPopupMenu('#CollapsedButtonsMenu', true);
 	}
 
 	centerCenterDialogs();
@@ -659,18 +627,52 @@ function centerCenterDialogs()
 
 function resizeNavbar()
 {
+	var ScrollDelta = scrollbarWidth;
+	if ($(document).height() > $(window).height())
+	{
+		// scrollbar is already visible, not need to acount on it
+		ScrollDelta = 0;
+	}
+
 	if (Settings_MiniTheme)
 	{
-		var w = $('#NavbarContainer').innerWidth() - $('#RefreshToolbar').outerWidth() - 30;
-		var $btns = $('ul.nav > li');
-		var buttonWidth = w / ($btns.length - 1); // -1 - don't count refresh indicator
-		buttonWidth = buttonWidth > 90 ? 90 : buttonWidth;
-		$btns.css({ 'min-width': buttonWidth + 'px' });
+		var w = $('#NavbarContainer').width() - $('#RefreshBlockPhone').outerWidth() - ScrollDelta;
+		var $btns = $('#Navbar ul.nav > li');
+		var buttonWidth = w / $btns.length;
+		$btns.css('min-width', buttonWidth + 'px');
+		$('#NavLinks').css('margin-left', 0);
+		$('body').toggleClass('navfixed', false);
+	}
+	else
+	{
+		var InfoBlockMargin = 10;
+		var w = $('#SearchBlock').position().left - $('#InfoBlock').position().left - $('#InfoBlock').width() - InfoBlockMargin * 2 - ScrollDelta;
+		var n = $('#NavLinks').width();
+		var offset = (w - n) / 2;
+		var fixed = true;
+		if (offset < 0)
+		{
+			w = $('#NavbarContainer').width() - ScrollDelta;
+			offset = (w - n) / 2;
+			fixed = false;
+		}
+		offset = offset > 0 ? offset : 0;
+		$('#NavLinks').css('margin-left', offset);
+
+		// as of Aug 2012 Mobile Safari does not support "position:fixed"
+		$('body').toggleClass('navfixed', fixed && !mobileSafari);
+
+		if (switchingTheme)
+		{
+			$('#Navbar ul.nav > li').css('min-width', '');
+		}
 	}
 }
 
 function switchTheme()
 {
+	switchingTheme = true;
+
 	$('#DownloadsTable tbody').empty();
 	$('#HistoryTable tbody').empty();
 	$('#MessagesTable tbody').empty();
@@ -680,21 +682,23 @@ function switchTheme()
 	$('#DownloadsTable').toggleClass('table-check', !Settings_MiniTheme || Settings_ShowEditButtons);
 	$('#HistoryTable').toggleClass('table-check', !Settings_MiniTheme);
 
+	centerPopupMenu('#PlayMenu', Settings_MiniTheme);
+	centerPopupMenu('#RefreshMenu', Settings_MiniTheme);
+
 	if (Settings_MiniTheme)
 	{
-		$('.search-query').attr('placeholder', 'Search');
+		$('#RefreshBlock').appendTo($('#RefreshBlockPhone'));
+		$('#DownloadsRecordsPerPageBlock').appendTo($('#DownloadsRecordsPerPageBlockPhone'));
+		$('#HistoryRecordsPerPageBlock').appendTo($('#HistoryRecordsPerPageBlockPhone'));
+		$('#MessagesRecordsPerPageBlock').appendTo($('#MessagesRecordsPerPageBlockPhone'));
 	}
 	else
 	{
-		$('.search-query').removeAttr('placeholder');
+		$('#RefreshBlock').appendTo($('#RefreshBlockDesktop'));
+		$('#DownloadsRecordsPerPageBlock').appendTo($('#DownloadsTableTopBlock'));
+		$('#HistoryRecordsPerPageBlock').appendTo($('#HistoryTableTopBlock'));
+		$('#MessagesRecordsPerPageBlock').appendTo($('#MessagesTableTopBlock'));
 	}
-
-	updateToolbarSettings();
-	centerPopupMenu('#ToolbarOptMenu', Settings_MiniTheme);
-	centerPopupMenu('#HandbrakeMenu', Settings_MiniTheme);
-	centerPopupMenu('#SettingsMenu', Settings_MiniTheme);
-	centerPopupMenu('#RefreshMenu', Settings_MiniTheme);
-	centerPopupMenu('#CollapsedButtonsMenu', Settings_MiniTheme);
 
 	if (initialized)
 	{
@@ -705,15 +709,16 @@ function switchTheme()
 		downloads_theme();
 		history_theme();
 		messages_theme();
+		windowResized();
 	}
 
-    windowResized();
+	switchingTheme = false;
 }
 
 function checkMobileTheme()
 {
-	if ( /Android|webOS|iPhone|iPod|BlackBerry/i.test(navigator.userAgent) &&  
-		$(window).width() < 560 && !Settings_MiniTheme &&
+	if ( /Android|webOS|iPhone|iPod|BlackBerry/i.test(navigator.userAgent) &&
+		$(window).width() < 560 && !Settings_MiniTheme && !Settings_MiniThemeAuto &&
 		confirm('Looks like you are using a smartphone.\nWould you like to switch to mobile version?\n(You can switch back via settings menu.)'))
 	{
 		Settings_MiniTheme = true;
@@ -721,3 +726,46 @@ function checkMobileTheme()
 		switchTheme()
 	}
 }
+
+function switch_click(control)
+{
+    var state = $(control).val().toLowerCase();
+	$('.btn', $(control).parent()).removeClass('btn-primary');
+	$(control).addClass('btn-primary');
+}
+
+function switch_getValue(control)
+{
+	var state = $('.btn-primary', $(control).parent()).val();
+	return state;
+}
+
+/****************************************************************
+* Common Tab functions
+*/
+
+function tab_updateInfo(control, stat)
+{
+	if (stat.filter)
+	{
+		control.removeClass('badge-info').addClass('badge-warning');
+	}
+	else
+	{
+		control.removeClass('badge-warning').addClass('badge-info');
+	}
+
+	control.html(stat.available);
+	control.toggleClass('badge2', stat.total > 9);
+	control.toggleClass('badge3', stat.total > 99);
+
+	if (control.lastOuterWidth !== control.outerWidth())
+	{
+		resizeNavbar();
+		control.lastOuterWidth = control.outerWidth();
+	}
+}
+
+/* END - Common Tab functions
+*****************************************************************/
+

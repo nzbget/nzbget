@@ -64,7 +64,8 @@ public:
 	static char* BaseFileName(const char* filename);
 	static void NormalizePathSeparators(char* szPath);
 	static bool LoadFileIntoBuffer(const char* szFileName, char** pBuffer, int* pBufferLength);
-	static bool SetFileSize(const char* szFilename, int iSize);
+	static bool CreateSparseFile(const char* szFilename, int iSize);
+	static bool TruncateFile(const char* szFilename, int iSize);
 	static void MakeValidFilename(char* szFilename, char cReplaceChar, bool bAllowSlashes);
 	static bool MoveFile(const char* szSrcFilename, const char* szDstFilename);
 	static bool FileExists(const char* szFilename);
@@ -104,6 +105,8 @@ public:
 	 * for example on ARM for NSLU2 (unslung).
 	 */
 	static float Int64ToFloat(long long Int64);
+
+	static void TrimRight(char* szStr);
 
 	/*
 	 * Returns program version and revision number as string formatted like "0.7.0-r295".

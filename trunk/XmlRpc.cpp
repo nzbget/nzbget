@@ -35,6 +35,7 @@
 #include <string.h>
 #include <cstdio>
 #include <fstream>
+#include <stdarg.h>
 #ifndef WIN32
 #include <unistd.h>
 #endif
@@ -418,6 +419,18 @@ XmlCommand* XmlRpcProcessor::CreateCommand(const char* szMethodName)
 	{
 		command = new UrlQueueXmlCommand();
 	}
+	else if (!strcasecmp(szMethodName, "config"))
+	{
+		command = new ConfigXmlCommand();
+	}
+	else if (!strcasecmp(szMethodName, "loadconfig"))
+	{
+		command = new LoadConfigXmlCommand();
+	}
+	else if (!strcasecmp(szMethodName, "saveconfig"))
+	{
+		command = new SaveConfigXmlCommand();
+	}
 	else 
 	{
 		command = new ErrorXmlCommand(1, "Invalid procedure");
@@ -449,7 +462,7 @@ void XmlCommand::AppendResponse(const char* szPart)
 	m_StringBuilder.Append(szPart);
 }
 
-void XmlCommand::BuildErrorResponse(int iErrCode, const char* szErrText)
+void XmlCommand::BuildErrorResponse(int iErrCode, const char* szErrText, ...)
 {
 	const char* XML_RESPONSE_ERROR_BODY = 
 		"<struct>\n"
@@ -464,10 +477,21 @@ void XmlCommand::BuildErrorResponse(int iErrCode, const char* szErrText)
         "\"message\" : \"%s\"\n"
         "}";
 
+	char szFullText[1024];
+
+	va_list ap;
+	va_start(ap, szErrText);
+	vsnprintf(szFullText, 1024, szErrText, ap);
+	szFullText[1024-1] = '\0';
+	va_end(ap);
+
+	char* xmlText = EncodeStr(szFullText);
+
 	char szContent[1024];
-	snprintf(szContent, 1024, IsJson() ? JSON_RESPONSE_ERROR_BODY : XML_RESPONSE_ERROR_BODY,
-		iErrCode, szErrText);
+	snprintf(szContent, 1024, IsJson() ? JSON_RESPONSE_ERROR_BODY : XML_RESPONSE_ERROR_BODY, iErrCode, xmlText);
 	szContent[1024-1] = '\0';
+
+	free(xmlText);
 
 	AppendResponse(szContent);
 
@@ -693,6 +717,18 @@ char* XmlCommand::EncodeStr(const char* szStr)
 	else
 	{
 		return WebUtil::XmlEncode(szStr);
+	}
+}
+
+void XmlCommand::DecodeStr(char* szStr)
+{
+	if (IsJson())
+	{
+		WebUtil::JsonDecode(szStr);
+	}
+	else
+	{
+		WebUtil::XmlDecode(szStr);
 	}
 }
 
@@ -1334,14 +1370,7 @@ void EditQueueXmlCommand::Execute()
 	}
 	debug("EditText=%s", szEditText);
 
-	if (IsJson())
-	{
-		WebUtil::JsonDecode(szEditText);
-	}
-	else
-	{
-		WebUtil::XmlDecode(szEditText);
-	}
+	DecodeStr(szEditText);
 
 	IDList cIDList;
 	int iID = 0;
@@ -1385,16 +1414,8 @@ void DownloadXmlCommand::Execute()
 		return;
 	}
 
-	if (IsJson())
-	{
-		WebUtil::JsonDecode(szFileName);
-		WebUtil::JsonDecode(szCategory);
-	}
-	else
-	{
-		WebUtil::XmlDecode(szFileName);
-		WebUtil::XmlDecode(szCategory);
-	}
+	DecodeStr(szFileName);
+	DecodeStr(szCategory);
 
 	debug("FileName=%s", szFileName);
 
@@ -1604,14 +1625,7 @@ void WriteLogXmlCommand::Execute()
 		return;
 	}
 
-	if (IsJson())
-	{
-		WebUtil::JsonDecode(szText);
-	}
-	else
-	{
-		WebUtil::XmlDecode(szText);
-	}
+	DecodeStr(szText);
 
 	debug("Kind=%s, Text=%s", szKind, szText);
 
@@ -1917,18 +1931,9 @@ void DownloadUrlXmlCommand::Execute()
 			return;
 		}
 
-		if (IsJson())
-		{
-			WebUtil::JsonDecode(szNZBFileName);
-			WebUtil::JsonDecode(szCategory);
-			WebUtil::JsonDecode(szURL);
-		}
-		else
-		{
-			WebUtil::XmlDecode(szNZBFileName);
-			WebUtil::XmlDecode(szCategory);
-			WebUtil::XmlDecode(szURL);
-		}
+		DecodeStr(szNZBFileName);
+		DecodeStr(szCategory);
+		DecodeStr(szURL);
 
 		debug("URL=%s", szURL);
 
@@ -2016,4 +2021,190 @@ void UrlQueueXmlCommand::Execute()
 	g_pQueueCoordinator->UnlockQueue();
 
 	AppendResponse(IsJson() ? "\n]" : "</data></array>\n");
+}
+
+// struct[] config()
+void ConfigXmlCommand::Execute()
+{
+	const char* XML_CONFIG_ITEM = 
+		"<value><struct>\n"
+		"<member><name>Name</name><value><string>%s</string></value></member>\n"
+		"<member><name>Value</name><value><string>%s</string></value></member>\n"
+		"</struct></value>\n";
+
+	const char* JSON_CONFIG_ITEM = 
+		"{\n"
+		"\"Name\" : \"%s\",\n"
+		"\"Value\" : \"%s\"\n"
+		"}";
+
+	AppendResponse(IsJson() ? "[\n" : "<array><data>\n");
+
+	Options::OptEntries* pOptEntries = g_pOptions->LockOptEntries();
+
+	int szItemBufSize = 10240;
+	char* szItemBuf = (char*)malloc(szItemBufSize);
+	int index = 0;
+
+	for (Options::OptEntries::iterator it = pOptEntries->begin(); it != pOptEntries->end(); it++)
+	{
+		Options::OptEntry* pOptEntry = *it;
+
+		char* xmlName = EncodeStr(pOptEntry->GetName());
+		char* xmlValue = EncodeStr(pOptEntry->GetValue());
+
+		snprintf(szItemBuf, szItemBufSize, IsJson() ? JSON_CONFIG_ITEM : XML_CONFIG_ITEM, xmlName, xmlValue);
+		szItemBuf[szItemBufSize-1] = '\0';
+
+		free(xmlName);
+		free(xmlValue);
+
+		if (IsJson() && index++ > 0)
+		{
+			AppendResponse(",\n");
+		}
+		AppendResponse(szItemBuf);
+	}
+
+	g_pOptions->UnlockOptEntries();
+
+	free(szItemBuf);
+
+	AppendResponse(IsJson() ? "\n]" : "</data></array>\n");
+}
+
+// struct[] loadconfig(string domain)
+void LoadConfigXmlCommand::Execute()
+{
+	const char* XML_CONFIG_ITEM = 
+		"<value><struct>\n"
+		"<member><name>Name</name><value><string>%s</string></value></member>\n"
+		"<member><name>Value</name><value><string>%s</string></value></member>\n"
+		"</struct></value>\n";
+
+	const char* JSON_CONFIG_ITEM = 
+		"{\n"
+		"\"Name\" : \"%s\",\n"
+		"\"Value\" : \"%s\"\n"
+		"}";
+
+	char* szDomain;
+	if (!NextParamAsStr(&szDomain))
+	{
+		BuildErrorResponse(2, "Invalid parameter");
+		return;
+	}
+
+	const char* szConfigFile = NULL;
+	Options::EDomain eDomain;
+
+	if (!strcasecmp(szDomain, "SERVER"))
+	{
+		eDomain = Options::dmServer;
+		szConfigFile = g_pOptions->GetConfigFilename();
+	}
+	else if (!strcasecmp(szDomain, "POST"))
+	{
+		eDomain = Options::dmPostProcess;
+		szConfigFile = g_pOptions->GetPostConfigFilename();
+	}
+	else
+	{
+		BuildErrorResponse(2, "Invalid parameter");
+		return;
+	}
+
+	Options::OptEntries* pOptEntries = new Options::OptEntries();
+	if (!g_pOptions->LoadConfig(eDomain, pOptEntries))
+	{
+		BuildErrorResponse(3, "Could not read configuration file %s", szConfigFile);
+		delete pOptEntries;
+		return;
+	}
+
+	AppendResponse(IsJson() ? "[\n" : "<array><data>\n");
+
+	int szItemBufSize = 10240;
+	char* szItemBuf = (char*)malloc(szItemBufSize);
+	int index = 0;
+
+	for (Options::OptEntries::iterator it = pOptEntries->begin(); it != pOptEntries->end(); it++)
+	{
+		Options::OptEntry* pOptEntry = *it;
+
+		char* xmlName = EncodeStr(pOptEntry->GetName());
+		char* xmlValue = EncodeStr(pOptEntry->GetValue());
+
+		snprintf(szItemBuf, szItemBufSize, IsJson() ? JSON_CONFIG_ITEM : XML_CONFIG_ITEM, xmlName, xmlValue);
+		szItemBuf[szItemBufSize-1] = '\0';
+
+		free(xmlName);
+		free(xmlValue);
+
+		if (IsJson() && index++ > 0)
+		{
+			AppendResponse(",\n");
+		}
+		AppendResponse(szItemBuf);
+	}
+
+	delete pOptEntries;
+
+	free(szItemBuf);
+
+	AppendResponse(IsJson() ? "\n]" : "</data></array>\n");
+}
+
+// bool saveconfig(string domain, struct[] data)
+void SaveConfigXmlCommand::Execute()
+{
+	char* szDomain;
+	if (!NextParamAsStr(&szDomain))
+	{
+		BuildErrorResponse(2, "Invalid parameter");
+		return;
+	}
+
+	const char* szConfigFile = NULL;
+	Options::EDomain eDomain;
+
+	if (!strcasecmp(szDomain, "SERVER"))
+	{
+		eDomain = Options::dmServer;
+		szConfigFile = g_pOptions->GetConfigFilename();
+	}
+	else if (!strcasecmp(szDomain, "POST"))
+	{
+		eDomain = Options::dmPostProcess;
+		szConfigFile = g_pOptions->GetPostConfigFilename();
+		if (!szConfigFile)
+		{
+			BuildErrorResponse(3, "Post-processing script configuration file is not defined");
+			return;
+		}
+	}
+	else
+	{
+		BuildErrorResponse(2, "Invalid parameter");
+		return;
+	}
+
+	Options::OptEntries* pOptEntries = new Options::OptEntries();
+
+	char* szName;
+	char* szValue;
+	char* szDummy;
+	while (NextParamAsStr(&szDummy) && NextParamAsStr(&szName) && NextParamAsStr(&szDummy) && NextParamAsStr(&szValue))
+	{
+		DecodeStr(szName);
+		DecodeStr(szValue);
+		pOptEntries->push_back(new Options::OptEntry(szName, szValue));
+	}
+
+	// save to config file
+	bool bOK = g_pOptions->SaveConfig(eDomain, pOptEntries);
+
+	delete pOptEntries;
+
+	BuildBoolResponse(bOK);
 }
