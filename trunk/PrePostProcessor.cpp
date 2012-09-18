@@ -240,8 +240,8 @@ void PrePostProcessor::QueueCoordinatorUpdate(Subject * Caller, void * Aspect)
 #ifndef DISABLE_PARCHECK
 			!AddPar(pAspect->pFileInfo, pAspect->eAction == QueueCoordinator::eaFileDeleted) &&
 #endif
-			IsNZBFileCompleted(pAspect->pDownloadQueue, pAspect->pNZBInfo, false, true, false, false) &&
-			(!pAspect->pFileInfo->GetPaused() || IsNZBFileCompleted(pAspect->pDownloadQueue, pAspect->pNZBInfo, false, false, false, false)))
+			IsNZBFileCompleted(pAspect->pDownloadQueue, pAspect->pNZBInfo, true, false, false) &&
+			(!pAspect->pFileInfo->GetPaused() || IsNZBFileCompleted(pAspect->pDownloadQueue, pAspect->pNZBInfo, false, false, false)))
 		{
 			if (pAspect->eAction == QueueCoordinator::eaFileCompleted)
 			{
@@ -250,7 +250,7 @@ void PrePostProcessor::QueueCoordinatorUpdate(Subject * Caller, void * Aspect)
 			}
 			else if (pAspect->pNZBInfo->GetDeleted() &&
 				!pAspect->pNZBInfo->GetParCleanup() &&
-				IsNZBFileCompleted(pAspect->pDownloadQueue, pAspect->pNZBInfo, false, false, false, true))
+				IsNZBFileCompleted(pAspect->pDownloadQueue, pAspect->pNZBInfo, false, false, true))
 			{
 				info("Collection %s deleted from queue", pAspect->pNZBInfo->GetName());
 				NZBDeleted(pAspect->pDownloadQueue, pAspect->pNZBInfo);
@@ -608,7 +608,7 @@ void PrePostProcessor::StartScriptJob(DownloadQueue* pDownloadQueue, PostInfo* p
 	}
 	pPostInfo->SetStageTime(time(NULL));
 
-	bool bNZBFileCompleted = IsNZBFileCompleted(pDownloadQueue, pPostInfo->GetNZBInfo(), true, true, true, false);
+	bool bNZBFileCompleted = IsNZBFileCompleted(pDownloadQueue, pPostInfo->GetNZBInfo(), true, true, false);
 	bool bHasFailedParJobs = pPostInfo->GetNZBInfo()->GetParStatus() == NZBInfo::prFailure ||
 		pPostInfo->GetNZBInfo()->GetParStatus() == NZBInfo::prRepairPossible;
 
@@ -651,7 +651,7 @@ void PrePostProcessor::JobCompleted(DownloadQueue* pDownloadQueue, PostInfo* pPo
 		pPostInfo->GetNZBInfo()->SetScriptStatus(NZBInfo::srSuccess);
 	}
 
-	if (IsNZBFileCompleted(pDownloadQueue, pPostInfo->GetNZBInfo(), true, true, true, false))
+	if (IsNZBFileCompleted(pDownloadQueue, pPostInfo->GetNZBInfo(), true, true, false))
 	{
 		// Cleaning up queue if all par-checks were successful or all scripts were successful
 		bool bCanCleanupQueue = pPostInfo->GetNZBInfo()->GetParStatus() == NZBInfo::prSuccess ||
@@ -696,7 +696,7 @@ void PrePostProcessor::JobCompleted(DownloadQueue* pDownloadQueue, PostInfo* pPo
 }
 
 bool PrePostProcessor::IsNZBFileCompleted(DownloadQueue* pDownloadQueue, NZBInfo* pNZBInfo,
-	bool bIgnoreFirstInPostQueue, bool bIgnorePausedPars, bool bCheckPostQueue, bool bAllowOnlyOneDeleted)
+	bool bIgnorePausedPars, bool bCheckPostQueue, bool bAllowOnlyOneDeleted)
 {
 	bool bNZBFileCompleted = true;
 	int iDeleted = 0;
@@ -710,8 +710,11 @@ bool PrePostProcessor::IsNZBFileCompleted(DownloadQueue* pDownloadQueue, NZBInfo
 			{
 				iDeleted++;
 			}
+			// Special case if option "AllowReProcess" is active: 
+			// paused non-par-files are treated the same way as paused par-files,
+			// meaning: the NZB considered completed even if there are paused non-par-files.
 			if (((!pFileInfo->GetPaused() || !bIgnorePausedPars ||
-				!ParseParFilename(pFileInfo->GetFilename(), NULL, NULL)) && 
+				!(ParseParFilename(pFileInfo->GetFilename(), NULL, NULL) || g_pOptions->GetAllowReProcess())) && 
 				!pFileInfo->GetDeleted()) ||
 				(bAllowOnlyOneDeleted && iDeleted > 1))
 			{
@@ -723,7 +726,7 @@ bool PrePostProcessor::IsNZBFileCompleted(DownloadQueue* pDownloadQueue, NZBInfo
 
 	if (bNZBFileCompleted && bCheckPostQueue)
 	{
-		for (PostQueue::iterator it = pDownloadQueue->GetPostQueue()->begin() + int(bIgnoreFirstInPostQueue); it != pDownloadQueue->GetPostQueue()->end(); it++)
+		for (PostQueue::iterator it = pDownloadQueue->GetPostQueue()->begin() + 1; it != pDownloadQueue->GetPostQueue()->end(); it++)
 		{
 			PostInfo* pPostInfo = *it;
 			if (pPostInfo->GetNZBInfo() == pNZBInfo)
