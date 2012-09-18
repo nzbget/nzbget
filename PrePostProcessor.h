@@ -103,7 +103,7 @@ private:
 	Scanner				m_Scanner;
 
 	bool				IsNZBFileCompleted(DownloadQueue* pDownloadQueue, NZBInfo* pNZBInfo, 
-							bool bIgnoreFirstInPostQueue, bool bIgnorePausedPars, bool bCheckPostQueue, bool bAllowOnlyOneDeleted);
+							bool bIgnorePausedPars, bool bCheckPostQueue, bool bAllowOnlyOneDeleted);
 	void				CheckPostQueue();
 	void				JobCompleted(DownloadQueue* pDownloadQueue, PostInfo* pPostInfo);
 	void				StartScriptJob(DownloadQueue* pDownloadQueue, PostInfo* pPostInfo);
