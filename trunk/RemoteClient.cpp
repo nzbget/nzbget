@@ -1079,12 +1079,14 @@ bool RemoteClient::RequestWriteLog(int iKind, const char* szText)
 	return OK;
 }
 
-bool RemoteClient::RequestScan()
+bool RemoteClient::RequestScan(bool bSyncMode)
 {
 	if (!InitConnection()) return false;
 
 	SNZBScanRequest ScanRequest;
 	InitMessageBase(&ScanRequest.m_MessageBase, eRemoteRequestScan, sizeof(ScanRequest));
+
+	ScanRequest.m_bSyncMode = htonl(bSyncMode);
 
 	bool OK = m_pConnection->Send((char*)(&ScanRequest), sizeof(ScanRequest)) >= 0;
 	if (OK)

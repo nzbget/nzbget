@@ -971,8 +971,10 @@ void ScanBinCommand::Execute()
 		return;
 	}
 
-	g_pPrePostProcessor->ScanNZBDir();
-	SendBoolResponse(true, "Scan-Command scheduled successfully");
+	bool bSyncMode = ntohl(ScanRequest.m_bSyncMode);
+
+	g_pPrePostProcessor->ScanNZBDir(bSyncMode);
+	SendBoolResponse(true, bSyncMode ? "Scan-Command completed" : "Scan-Command scheduled successfully");
 }
 
 void HistoryBinCommand::Execute()

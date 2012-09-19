@@ -70,6 +70,7 @@ Scanner::Scanner()
 	debug("Creating Scanner");
 
 	m_bRequestedNZBDirScan = false;
+	m_bScanning = false;
 	m_iNZBDirInterval = g_pOptions->GetNzbDirInterval() * 1000;
 	m_iPass = 0;
 	m_iStepMSec = 0;
@@ -98,7 +99,14 @@ void Scanner::Check()
 		// check nzbdir every g_pOptions->GetNzbDirInterval() seconds or if requested
 		bool bCheckStat = !m_bRequestedNZBDirScan;
 		m_bRequestedNZBDirScan = false;
+		m_bScanning = true;
 		CheckIncomingNZBs(g_pOptions->GetNzbDir(), "", bCheckStat);
+		if (!bCheckStat && m_bNZBScript)
+		{
+			// if immediate scan requesten, we need second scan to process files extracted by NzbProcess-script
+			CheckIncomingNZBs(g_pOptions->GetNzbDir(), "", bCheckStat);
+		}
+		m_bScanning = false;
 		m_iNZBDirInterval = 0;
 
 		// if NzbDirFileAge is less than NzbDirInterval (that can happen if NzbDirInterval
@@ -363,9 +371,15 @@ void Scanner::AddFileToQueue(const char* szFilename, const char* szCategory, int
 	}
 }
 
-void Scanner::ScanNZBDir()
+void Scanner::ScanNZBDir(bool bSyncMode)
 {
 	// ideally we should use mutex to access "m_bRequestedNZBDirScan",
 	// but it's not critical here.
+	m_bScanning = true;
 	m_bRequestedNZBDirScan = true;
+
+	while (bSyncMode && (m_bScanning || m_bRequestedNZBDirScan))
+	{
+		usleep(100 * 1000);
+	}
 }

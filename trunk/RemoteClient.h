@@ -72,7 +72,7 @@ public:
 	bool			RequestServerVersion();
 	bool			RequestPostQueue();
 	bool 			RequestWriteLog(int iKind, const char* szText);
-	bool			RequestScan();
+	bool			RequestScan(bool bSyncMode);
 	bool			RequestHistory();
 	bool 			RequestServerDownloadUrl(const char* szURL, const char* szCategory, bool bAddFirst);
 	bool			RequestUrlQueue();

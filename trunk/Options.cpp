@@ -1353,7 +1353,21 @@ void Options::InitCommandLine(int argc, char* argv[])
 				m_szCategory = strdup(optarg);
 				break;
 			case 'S':
-				m_eClientOperation = opClientRequestScan;
+				optind++;
+				optarg = optind > argc ? NULL : argv[optind-1];
+				if (!optarg || !strncmp(optarg, "-", 1))
+				{
+					m_eClientOperation = opClientRequestScanAsync;
+					optind--;
+				}
+				else if (!strcmp(optarg, "W"))
+				{
+					m_eClientOperation = opClientRequestScanSync;
+				}
+				else
+				{
+					abort("FATAL ERROR: Could not parse value of option '%c'\n", c);
+				}
 				break;
 			case '?':
 				exit(-1);
@@ -1422,7 +1436,8 @@ void Options::PrintUsage(char* com)
 		"  -R, --rate <speed>        Set download rate on server, in KB/s\n"
 		"  -G, --log <lines>         Request last <lines> lines from server's screen-log\n"
 		"  -W, --write <D|I|W|E|G> \"Text\" Send text to server's log\n"
-		"  -S, --scan                Scan incoming nzb-directory on server\n"
+		"  -S, --scan    [W]         Scan incoming nzb-directory on server\n"
+		"                 W          Wait until scan completes (synchronous mode)\n"
 		"  -E, --edit [F|FN|FR|G|GN|GR|O|H] <action> <IDs/Names/RegExs> Edit items\n"
 		"                            on server\n"
 		"              F             Edit individual files (default)\n"

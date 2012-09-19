@@ -27,7 +27,7 @@
 #ifndef MESSAGEBASE_H
 #define MESSAGEBASE_H
 
-static const int32_t NZBMESSAGE_SIGNATURE = 0x6E7A620F; // = "nzb-XX" (protocol version)
+static const int32_t NZBMESSAGE_SIGNATURE = 0x6E7A6210; // = "nzb-XX" (protocol version)
 static const int NZBREQUESTFILENAMESIZE = 512;
 static const int NZBREQUESTPASSWORDSIZE = 32;
 
@@ -436,6 +436,7 @@ struct SNZBWriteLogResponse
 struct SNZBScanRequest
 {
 	SNZBRequestBase			m_MessageBase;			// Must be the first in the struct
+	int32_t					m_bSyncMode;			// 0 - asynchronous Scan (the command returns immediately), 1 - synchronous Scan (the command returns when the scan is completed)
 };
 
 // Scan nzb directory response

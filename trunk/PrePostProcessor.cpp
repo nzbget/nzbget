@@ -481,9 +481,9 @@ NZBInfo* PrePostProcessor::MergeGroups(DownloadQueue* pDownloadQueue, NZBInfo* p
 	return pNZBInfo;
 }
 
-void PrePostProcessor::ScanNZBDir()
+void PrePostProcessor::ScanNZBDir(bool bSyncMode)
 {
-	m_Scanner.ScanNZBDir();
+	m_Scanner.ScanNZBDir(bSyncMode);
 }
 
 void PrePostProcessor::CheckDiskSpace()
