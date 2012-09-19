@@ -207,12 +207,12 @@ function upload_Show(files)
 
 function upload_DisableAllButtons()
 {
-	$('#AddDialog .modal-footer .btn, #AddDialog_Select').attr('disabled', 'disabled');
+	$('#AddDialog .modal-footer .btn, #AddDialog_Select, #AddDialog_Scan').attr('disabled', 'disabled');
 }
 
 function upload_EnableAllButtons()
 {
-	$('#AddDialog .modal-footer .btn, #AddDialog_Select').removeAttr('disabled');
+	$('#AddDialog .modal-footer .btn, #AddDialog_Select, #AddDialog_Scan').removeAttr('disabled');
 	$('#AddDialog_Transmit').hide();
 }
 
@@ -377,7 +377,12 @@ function upload_allCompleted()
 function upload_Scan()
 {
 	upload_DisableAllButtons();
-	rpc('scan', [], function()
+
+	setTimeout(function(){
+		$('#AddDialog_Transmit').show();
+	}, 500);
+
+	rpc('scan', [true], function()
 	{
 		upload_needRefresh = true;
 		upload_dialog.modal('hide');

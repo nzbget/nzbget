@@ -58,6 +58,7 @@ private:
 	int					m_iPass;
 	int					m_iStepMSec;
 	FileList			m_FileList;
+	bool				m_bScanning;
 
 	void				CheckIncomingNZBs(const char* szDirectory, const char* szCategory, bool bCheckStat);
 	void				AddFileToQueue(const char* szFilename, const char* szCategory, int iPriority, NZBParameterList* pParameterList);
@@ -69,7 +70,7 @@ public:
 						Scanner();
 						~Scanner();
 	void				SetStepInterval(int iStepMSec) { m_iStepMSec = iStepMSec; }
-	void				ScanNZBDir();
+	void				ScanNZBDir(bool bSyncMode);
 	void				Check();
 };
 

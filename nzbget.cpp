@@ -457,8 +457,12 @@ void ProcessClientRequest()
 			Client->RequestWriteLog(g_pOptions->GetWriteLogKind(), g_pOptions->GetLastArg());
 			break;
 
-		case Options::opClientRequestScan:
-			Client->RequestScan();
+		case Options::opClientRequestScanAsync:
+			Client->RequestScan(false);
+			break;
+
+		case Options::opClientRequestScanSync:
+			Client->RequestScan(true);
 			break;
 
 		case Options::opClientRequestPostPause:

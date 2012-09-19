@@ -1660,7 +1660,11 @@ void ScanXmlCommand::Execute()
 		return;
 	}
 
-	g_pPrePostProcessor->ScanNZBDir();
+	bool bSyncMode = false;
+	// optional parameter "SyncMode"
+	NextParamAsBool(&bSyncMode);
+
+	g_pPrePostProcessor->ScanNZBDir(bSyncMode);
 	BuildBoolResponse(true);
 }
 

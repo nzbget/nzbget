@@ -152,7 +152,7 @@ public:
 	virtual void		Stop();
 	void				QueueCoordinatorUpdate(Subject* Caller, void* Aspect);
 	bool				HasMoreJobs() { return m_bHasMoreJobs; }
-	void				ScanNZBDir();
+	void				ScanNZBDir(bool bSyncMode);
 	bool				QueueEditList(IDList* pIDList, EEditAction eAction, int iOffset);
 };
 
