@@ -212,11 +212,11 @@ function downloads_fillFieldsCallback(item)
 	if (!Settings_MiniTheme)
 	{
 		var info = name + ' ' + priority + progresslabel;
-		item.fields = ['<div class="check"></div>', status, info, category, item.data.age, progress, item.data.estimated];
+		item.fields = ['<div class="check img-check"></div>', status, info, category, item.data.age, progress, item.data.estimated];
 	}
 	else
 	{
-		var info = '<div class="check"></div><span class="row-title">' + name + '</span>' +
+		var info = '<div class="check img-check"></div><span class="row-title">' + name + '</span>' +
 			' ' + (group.status === 'queued' ? '' : status) + ' ' + priority;
 		if (category)
 		{

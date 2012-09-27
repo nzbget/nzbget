@@ -79,16 +79,21 @@
 		<div class="container-fluid navbar-container" id="NavbarContainer">
 
 			<!-- LOGO -->
-			<div id="Logo" data-toggle="modal" href="#InfoDialog"></div>
+			<div id="Logo" data-toggle="modal" href="#InfoDialog"><i class="img-logo"></i></div>
 
 			<!-- PLAY/PAUSE-BUTTON -->
 			<div id="PlayBlock">
-				<button id="PlayButton" class="btn" style="display:none;" onclick="status_Play_click()" title="Download paused (click to resume)">
-					<div class="img-download"></div>
-				</button>
-				<button id="PauseButton" class="btn" onclick="status_Play_click()" title="Download active (click to pause)">
-					<div class="img-download"></div>
-				</button>
+				<div id="PlayPauseBg"><div class="img-download-bg"></div></div>
+				<div id="PlayButton" class="img-download-orange" style="display:none;">
+					<div class="PlayBlockInner" onclick="status_Play_click()" title="Download paused (click to resume)">
+						<div class="img-download-btn"></div>
+					</div>
+				</div>
+				<div id="PauseButton" class="img-download-green">
+					<div class="PlayBlockInner" onclick="status_Play_click()" title="Download active (click to pause)">
+						<div class="img-download-btn"></div>
+					</div>
+				</div>
 				<div id="PlayAnimation" style="display:none;" onclick="status_Play_click()"></div>
 				<div id="PlayCaretBlock">
 					<button id="PlayCaretButton" class="dropdown-toggle" data-toggle="dropdown"><span id="PlayCaret" class="caret"></span></button>
@@ -107,15 +112,15 @@
 
 			<!-- SPEED/TIME -->
 			<div id="InfoBlock">
-				<div id="StatusSpeedBlock" href="#" onclick="status_limit_click()" title="Current speed (click to set speed limit)"><i class="icon-plane icon-white"></i> <span id="StatusSpeed">--- KB/s</span></div>
-				<div data-toggle="modal" href="#StatDialog" title="Remaining time (click for more statistics)"><i class="icon-time icon-white"></i> <span id="StatusTime">--h --m</span></div>
+				<div href="#" onclick="status_limit_click()" title="Current speed (click to set speed limit)"><i class="icon-plane" id="StatusSpeedIcon"></i> <span id="StatusSpeed">--- KB/s</span></div>
+				<div data-toggle="modal" href="#StatDialog" title="Remaining time (click for more statistics)"><i class="icon-time"></i> <span id="StatusTime">--h --m</span></div>
 			</div>
 
 			<!-- REFRESH MENU -->
 			<div id="RefreshBlockDesktop" class="pull-right phone-hide">
 				<div class="btn-toolbar" id="RefreshBlock">
 					<div class="btn-group">
-						<button class="btn btn-inverse" id="RefreshButton" onclick="refresh_click()"><i class="icon-refresh icon-white" id="RefreshAnimation"></i></button>
+						<button class="btn btn-inverse" id="RefreshButton" onclick="refresh_click()"><i class="icon-refresh" id="RefreshAnimation"></i></button>
 						<button class="btn btn-inverse dropdown-toggle" data-toggle="dropdown"><span class="caret"></span></button>
 						<ul class="dropdown-menu menu-refresh" id="RefreshMenu">
 							<li class="menu-header">Automatic refresh</li>
@@ -138,26 +143,26 @@
 			<div class="btn-toolbar pull-right" id="SearchBlock">
 				<div class="navbar-search" style="display: none;">
 					<input id="DownloadsTable_filter" class="search-query" type="text" placeholder="Search downloads">
-					<i id="DownloadsTable_clearfilter" class="icon-remove icon-white search-clear" title="Clear"></i>
+					<i id="DownloadsTable_clearfilter" class="icon-remove-white search-clear" title="Clear"></i>
 
 					<input id="HistoryTable_filter" class="search-query" type="text" placeholder="Search history">
-					<i id="HistoryTable_clearfilter" class="icon-remove icon-white search-clear" title="Clear"></i>
+					<i id="HistoryTable_clearfilter" class="icon-remove-white search-clear" title="Clear"></i>
 
 					<input id="MessagesTable_filter" class="search-query" type="text" placeholder="Search messages">
-					<i id="MessagesTable_clearfilter" class="icon-remove icon-white search-clear" title="Clear"></i>
+					<i id="MessagesTable_clearfilter" class="icon-remove-white search-clear" title="Clear"></i>
 
 					<input id="ConfigTable_filter" class="search-query" type="text" placeholder="Search settings">
-					<i id="ConfigTable_clearfilter" class="icon-remove icon-white search-clear" title="Clear"></i>
+					<i id="ConfigTable_clearfilter" class="icon-remove-white search-clear" title="Clear"></i>
 				</div>
 			</div>
 
 			<!-- TABS -->
 			<div class="nav" id="NavLinks">
 				<ul class="nav">
-					<li class="active"><a data-toggle="tab" href="#DownloadsTab" id="DownloadsTabLink"><span class="phone-hide">Downloads </span><i class="icon-download-alt icon-white phone-only inline"></i><br class="phone-only"><span class="badge" id="DownloadsTabBadge" style="display: none;"></span><span class="badge badge-empty" id="DownloadsTabBadgeEmpty">&nbsp;</span></a></li>
-					<li><a data-toggle="tab" href="#HistoryTab" id="HistoryTabLink"><span class="phone-hide">History </span><i class="icon-time icon-white phone-only inline"></i><br class="phone-only"><span class="badge" id="HistoryTabBadge" style="display: none;"></span><span class="badge badge-empty" id="HistoryTabBadgeEmpty">&nbsp;</span></a></li>
-					<li><a data-toggle="tab" href="#MessagesTab"><span class="phone-hide">Messages </span><i class="icon-list-alt icon-white phone-only inline"></i><br class="phone-only"><span class="badge" id="MessagesTabBadge" style="display: none;"></span><span class="badge badge-empty" id="MessagesTabBadgeEmpty">&nbsp;</span></a></li>
-					<li><a data-toggle="tab" href="#ConfigTab" id="ConfigTabLink"><span class="phone-hide">Settings </span><i class="icon-cog icon-white phone-only inline"></i><br class="phone-only"><span class="badge" id="ConfigTabBadge" style="display: none;"></span><span class="phone-only"><span class="badge badge-empty" id="ConfigTabBadgeEmpty">&nbsp;</span></span></a></li>
+					<li class="active"><a data-toggle="tab" href="#DownloadsTab" id="DownloadsTabLink"><span class="phone-hide">Downloads </span><i class="icon-downloads-white phone-only inline"></i><br class="phone-only"><span class="badge" id="DownloadsTabBadge" style="display: none;"></span><span class="badge badge-empty" id="DownloadsTabBadgeEmpty">&nbsp;</span></a></li>
+					<li><a data-toggle="tab" href="#HistoryTab" id="HistoryTabLink"><span class="phone-hide">History </span><i class="icon-history-white phone-only inline"></i><br class="phone-only"><span class="badge" id="HistoryTabBadge" style="display: none;"></span><span class="badge badge-empty" id="HistoryTabBadgeEmpty">&nbsp;</span></a></li>
+					<li><a data-toggle="tab" href="#MessagesTab" id="MessagesTabLink"><span class="phone-hide">Messages </span><i class="icon-messages-white phone-only inline"></i><br class="phone-only"><span class="badge" id="MessagesTabBadge" style="display: none;"></span><span class="badge badge-empty" id="MessagesTabBadgeEmpty">&nbsp;</span></a></li>
+					<li><a data-toggle="tab" href="#ConfigTab" id="ConfigTabLink"><span class="phone-hide">Settings </span><i class="icon-settings-white phone-only inline"></i><br class="phone-only"><span class="badge" id="ConfigTabBadge" style="display: none;"></span><span class="phone-only"><span class="badge badge-empty" id="ConfigTabBadgeEmpty">&nbsp;</span></span></a></li>
 				</ul>
 			</div>
 
@@ -204,28 +209,28 @@
 				<!-- NZB-ACTIONS BUTTONS -->
 				<div class="btn-group phone-hide">
 					<button class="btn" onclick="downloads_selected_edit_click()" title="Edit selected nzb-files"><i class="icon-edit"></i><span class="btn-caption"> Edit</span></button>
-					<button class="btn" onclick="downloads_selected_merge_click()" title="Merge selected nzb-files"><i class="icon-retweet"></i><span class="btn-caption"> Merge</span></button>
+					<button class="btn" onclick="downloads_selected_merge_click()" title="Merge selected nzb-files"><i class="icon-merge"></i><span class="btn-caption"> Merge</span></button>
 					<button class="btn" onclick="downloads_selected_pause_click()" title="Pause selected nzb-files"><i class="icon-pause"></i><span class="btn-caption"> Pause</span></button>
 					<button class="btn" onclick="downloads_selected_resume_click()" title="Resume selected nzb-files"><i class="icon-play"></i><span class="btn-caption"> Resume</span></button>
 					<button class="btn" onclick="downloads_selected_delete_click()" title="Delete selected nzb-files"><i class="icon-trash"></i><span class="btn-caption"> Delete</span></button>
 				</div>
 				<div class="btn-group phone-only inline"><button class="btn" onclick="downloads_selected_edit_click()" title="Edit selected nzb-files"><i class="icon-edit"></i><span class="btn-caption"> Edit</span></button></div>
-				<div class="btn-group phone-only inline"><button class="btn" onclick="downloads_selected_merge_click()" title="Merge selected nzb-files"><i class="icon-retweet"></i><span class="btn-caption"> Merge</span></button></div>
+				<div class="btn-group phone-only inline"><button class="btn" onclick="downloads_selected_merge_click()" title="Merge selected nzb-files"><i class="icon-merge"></i><span class="btn-caption"> Merge</span></button></div>
 				<div class="btn-group phone-only inline"><button class="btn" onclick="downloads_selected_pause_click()" title="Pause selected nzb-files"><i class="icon-pause"></i><span class="btn-caption"> Pause</span></button></div>
 				<div class="btn-group phone-only inline"><button class="btn" onclick="downloads_selected_resume_click()" title="Resume selected nzb-files"><i class="icon-play"></i><span class="btn-caption"> Resume</span></button></div>
 				<div class="btn-group phone-only inline"><button class="btn" onclick="downloads_selected_delete_click()" title="Delete selected nzb-files"><i class="icon-trash"></i><span class="btn-caption"> Delete</span></button></div>
 
 				<!-- MOVE BUTTONS -->
 				<div class="btn-group phone-hide">
-					<button class="btn" onclick="downloads_selected_move_click('top')" title="Move selected nzb-files to the top"><i class="icon-extra icon-move-top"></i></button>
-					<button class="btn" onclick="downloads_selected_move_click('up')" title="Move selected nzb-files up"><i class="icon-arrow-up"></i></button>
-					<button class="btn" onclick="downloads_selected_move_click('down')" title="Move selected nzb-files down"><i class="icon-arrow-down"></i></button>
-					<button class="btn" onclick="downloads_selected_move_click('bottom')" title="Move selected nzb-files to the bottom"><i class="icon-extra icon-move-bottom"></i></button>
+					<button class="btn" onclick="downloads_selected_move_click('top')" title="Move selected nzb-files to the top"><i class="icon-top"></i></button>
+					<button class="btn" onclick="downloads_selected_move_click('up')" title="Move selected nzb-files up"><i class="icon-up"></i></button>
+					<button class="btn" onclick="downloads_selected_move_click('down')" title="Move selected nzb-files down"><i class="icon-down"></i></button>
+					<button class="btn" onclick="downloads_selected_move_click('bottom')" title="Move selected nzb-files to the bottom"><i class="icon-bottom"></i></button>
 				</div>
-				<div class="btn-group phone-only inline"><button class="btn" onclick="downloads_selected_move_click('top')" title="Move selected nzb-files to the top"><i class="icon-extra icon-move-top"></i></button></div>
-				<div class="btn-group phone-only inline"><button class="btn" onclick="downloads_selected_move_click('up')" title="Move selected nzb-files up"><i class="icon-arrow-up"></i></button></div>
-				<div class="btn-group phone-only inline"><button class="btn" onclick="downloads_selected_move_click('down')" title="Move selected nzb-files down"><i class="icon-arrow-down"></i></button></div>
-				<div class="btn-group phone-only inline"><button class="btn" onclick="downloads_selected_move_click('bottom')" title="Move selected nzb-files to the bottom"><i class="icon-extra icon-move-bottom"></i></button></div>
+				<div class="btn-group phone-only inline"><button class="btn" onclick="downloads_selected_move_click('top')" title="Move selected nzb-files to the top"><i class="icon-top"></i></button></div>
+				<div class="btn-group phone-only inline"><button class="btn" onclick="downloads_selected_move_click('up')" title="Move selected nzb-files up"><i class="icon-up"></i></button></div>
+				<div class="btn-group phone-only inline"><button class="btn" onclick="downloads_selected_move_click('down')" title="Move selected nzb-files down"><i class="icon-down"></i></button></div>
+				<div class="btn-group phone-only inline"><button class="btn" onclick="downloads_selected_move_click('bottom')" title="Move selected nzb-files to the bottom"><i class="icon-bottom"></i></button></div>
 
 				<div class="btn-group phone-only inline" id="DownloadsRecordsPerPageBlockPhone">
 				</div>
@@ -251,7 +256,7 @@
 			</div>
 
 			<table class="table table-striped table-bordered table-check table-cancheck datatable" id="DownloadsTable">
-				<thead><tr><th><div class="check"></div></th><th>Status</th><th>Name</th><th>Category</th><th class="text-right">Age</th><th width="120px"><div style="float:left; position:relative; width:50%; text-align:left;">Size</div><div style="float:right; position:relative; width:50%; text-align:right;">Left</div></th><th class="text-right">Estimated time</th></tr></thead>
+				<thead><tr><th><div class="check img-check"></div></th><th>Status</th><th>Name</th><th>Category</th><th class="text-right">Age</th><th width="120px"><div style="float:left; position:relative; width:50%; text-align:left;">Size</div><div style="float:right; position:relative; width:50%; text-align:right;">Left</div></th><th class="text-right">Estimated time</th></tr></thead>
 				<tbody></tbody>
 			</table>
 
@@ -306,7 +311,7 @@
 			</div>
 
 			<table class="table table-striped table-bordered table-check table-cancheck datatable" id="HistoryTable">
-				<thead><tr><th><div class="check"></div></th><th>Status</th><th width="170px" class="text-center">Time</th><th>Name</th><th>Category</th><th class="text-right">Size</th></tr></thead>
+				<thead><tr><th><div class="check img-check"></div></th><th>Status</th><th width="170px" class="text-center">Time</th><th>Name</th><th>Category</th><th class="text-right">Size</th></tr></thead>
 				<tbody></tbody>
 			</table>
 
@@ -407,7 +412,8 @@
 				<div class="hide" id="ConfigSaved">
 					<div class="alert alert-success alert-block">
 						<h4 class="alert-heading">Configuration has been saved successfully</h4>
-						<p id="ConfigSaved_Reload">For changes to have effect NZBGet must be reloaded (soft-restart).</p>
+						<p id="ConfigSaved_Reload">For changes to have effect NZBGet must be reloaded (soft-restart).<br><br>
+						TIP: You can reload anytime later in section <em><strong>SYSTEM</strong></em> on settings page.</p>
 						<p id="ConfigSaved_Close">The changes made to post-processing settings will be in effect for the next post-processing job.</p>
 					</div>
 					<button type="button" class="btn btn-primary" id="ConfigReload" onclick="config_Reload()">Reload NZBGet</button>
@@ -420,6 +426,7 @@
 						<div class="span3">
 							<ul class="nav nav-list" id="ConfigNav">
 							<li class="config-static"><a href="#Config-Info">INFO</a></li>
+							<li class="config-static"><a href="#Config-System">SYSTEM</a></li>
 							</ul>
 						</div>
 
@@ -437,7 +444,6 @@
 									It's not neccessary to save the changes on each page individually.
 									</p>
 
-
 									<p>The configuration consists of two parts:
 									<ul>
 									<li>NZBGet settings</li>
@@ -449,7 +455,7 @@
 									<p>
 									With these settings you configure NZBGet. When you configure NZBGet for the first time you need
 									to check at least the option <a class="option" href="#" data-category="S" onclick="config_scrollToOption(event, this)">$MainDir</a> and configure one news server.
-									Any changes of NZBGet settings require a restart or <a href="#" onclick="config_ReloadConfirm()">reload</a> (soft-restart) of NZBGet.
+									Any changes of NZBGet settings require a restart or reload (soft-restart) of NZBGet.
 									</p>
 
 									<h4>Post-processing script settings</h4>
@@ -472,6 +478,43 @@
 								<div>
 									<form class="form-horizontal">
 										<fieldset id="ConfigData">
+
+											<!-- *** SYSTEM -->
+											<div class="control-group config-static config-system">
+												<label class="control-label nowrap">Reload NZBGet</label>
+												<div class="controls">
+													<button type="button" class="btn btn-danger" onclick="config_ReloadConfirm()">Reload</button>
+													<p class="help-block">
+													<span class="help-option-title">Reload configuration and reinitialize the program.</span><br><br>
+													If the configuration file was edited externaly (in a texteditor) or you have not reloaded NZBGet directly after saving the changes in web-interface you can do this here.
+													</p>
+												</div>
+											</div>
+
+											<!--
+											<div class="control-group config-static config-system">
+												<label class="control-label nowrap">Backup Settings</label>
+												<div class="controls">
+													<button type="button" class="btn" onclick="TODO()">Backup</button>
+													<p class="help-block">
+													<span class="help-option-title">Save settings to local file.</span><br><br>
+													Export all settings for backup purpose.
+													</p>
+												</div>
+											</div>
+
+											<div class="control-group config-static config-system">
+												<label class="control-label nowrap">Restore Settings</label>
+												<div class="controls">
+													<button type="button" class="btn" onclick="TODO()">Restore</button>
+													<p class="help-block">
+													<span class="help-option-title">Load settings from local file.</span><br><br>
+													Import all settings from a perviously created backup file.
+													</p>
+												</div>
+											</div>
+											-->
+
 										</fieldset>
 									</form>
 								</div>
@@ -530,7 +573,11 @@
 
 		<h2>Bootstrap</h2>
 		<p>NZBGet web-interface uses <a href="http://twitter.github.com/bootstrap/">Twitter Bootstrap</a>. Designed and built with all the love in the world @twitter by @mdo and @fat.</p>
-		<p>Bootstrap code is licensed under the <a href="http://www.apache.org/licenses/LICENSE-2.0">Apache License v2.0</a>. Icons from <a href="http://glyphicons.com/">Glyphicons Free</a>, licensed under <a href="http://creativecommons.org/licenses/by/3.0/">CC BY 3.0</a>.</p>
+		<p>Bootstrap code is licensed under the <a href="http://www.apache.org/licenses/LICENSE-2.0">Apache License v2.0</a>.</p>
+
+		<h2>iconSweets</h2>
+		<p>NZBGet web-interface includes selected icons from collections <a href="http://www.iconsweets.com/">iconSweets</a> and <a href="http://www.iconsweets2.com/">iconSweets2</a> by <a href="http://yummygum.com">Yummygum</a>.</p>
+		<p>The icons are generally licensed under a custom license but used in NZBGet with author's permission.</p>
 
 	</div>
 </div>
@@ -712,7 +759,7 @@
 		</div>
 
 		<div class="btn-group dropup pull-left" id="DownloadsEdit_DeleteGroup">
-			<a class="btn dropdown-toggle btn-danger" data-toggle="dropdown"><i class="icon-trash icon-white"></i> Delete <span class="caret"></span></a>
+			<a class="btn dropdown-toggle btn-danger" data-toggle="dropdown"><i class="icon-trash-white"></i> Delete <span class="caret"></span></a>
 			<ul class="dropdown-menu confirm-menu open">
 				<li class="menu-header">Confirm</li>
 				<li><a href="#" id="DownloadsEdit_Delete">Yes, Delete</a></li>

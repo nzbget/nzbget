@@ -59,7 +59,7 @@ webui_FILES = \
 	webui/util.js webui/config.js webui/categories.txt \
 	webui/lib/bootstrap.js webui/lib/bootstrap.min.js webui/lib/bootstrap.css  \
 	webui/lib/jquery.js webui/lib/jquery.min.js \
-	webui/img/extraicons.png webui/img/glyphicons-halflings.png webui/img/glyphicons-halflings-white.png \
+	webui/img/icons.png webui/img/icons-2x.png \
 	webui/img/transmit.gif webui/img/transmit-file.gif webui/img/favicon.ico \
 	webui/img/download-anim-green-2x.png webui/img/download-anim-orange-2x.png \
 	webui/img/transmit-reload-2x.gif

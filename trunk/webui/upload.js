@@ -169,7 +169,7 @@ function upload_addFiles(files)
 	for (var i = 0; i<files.length; i++)
 	{
 		var file = files[i];
-		var html = '<table><tr><td width="18px" valign="top"><i class="icon-file" style="vertical-align:top;margin-top:2px;"></i><img class="hide" style="vertical-align:top;margin-top:1px;" src="img/transmit-file.gif"></td><td>' +
+		var html = '<table><tr><td width="18px" valign="top"><i class="icon-file" style="vertical-align:top;margin-top:2px;"></i><img class="hide" style="vertical-align:top;margin-top:1px;" src="img/transmit-file.gif" width="16px" height="16px"></td><td>' +
 			FormatNZBName(file.name) + '</td></tr></table>';
 		$('#AddDialog_Files').append(html);
 		upload_files.push(file);

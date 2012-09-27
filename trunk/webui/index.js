@@ -445,12 +445,12 @@ function index_setupSearch()
 {
 	$('.navbar-search .search-query').on('focus', function()
 	{
-		$(this).next().removeClass('icon-white');
+		$(this).next().removeClass('icon-remove-white').addClass('icon-remove');
 	});
 
 	$('.navbar-search .search-query').on('blur', function()
 	{
-		$(this).next().addClass('icon-white');
+		$(this).next().removeClass('icon-remove').addClass('icon-remove-white');
 	});
 
 	$('.navbar-search').show();
@@ -684,7 +684,7 @@ function switchTheme()
 	$('body').toggleClass('phone', Settings_MiniTheme);
 	$('.datatable').toggleClass('table-bordered', !Settings_MiniTheme);
 	$('#DownloadsTable').toggleClass('table-check', !Settings_MiniTheme || Settings_ShowEditButtons);
-	$('#HistoryTable').toggleClass('table-check', !Settings_MiniTheme);
+	$('#HistoryTable').toggleClass('table-check', !Settings_MiniTheme || Settings_ShowEditButtons);
 
 	centerPopupMenu('#PlayMenu', Settings_MiniTheme);
 	centerPopupMenu('#RefreshMenu', Settings_MiniTheme);
