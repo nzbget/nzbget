@@ -50,7 +50,7 @@
 #include "Util.h"
 
 extern Options* g_pOptions;
-extern char* (*szEnvironmentVariables)[];
+extern char* (*g_szEnvironmentVariables)[];
 extern DownloadQueueHolder* g_pDownloadQueueHolder;
 
 static const int POSTPROCESS_PARCHECK_CURRENT = 91;
@@ -120,9 +120,9 @@ EnvironmentStrings::~EnvironmentStrings()
 
 void EnvironmentStrings::InitFromCurrentProcess()
 {
-	for (int i = 0; (*szEnvironmentVariables)[i]; i++)
+	for (int i = 0; (*g_szEnvironmentVariables)[i]; i++)
 	{
-		char* szVar = (*szEnvironmentVariables)[i];
+		char* szVar = (*g_szEnvironmentVariables)[i];
 		Append(strdup(szVar));
 	}
 }

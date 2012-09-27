@@ -860,12 +860,14 @@ ul.help > li {
 }
 
 #RPCError,
-#FirstUpdateInfo {
+#FirstUpdateInfo,
+#ConfigReloadInfo {
 	margin-left: 20px;
 	margin-right: 20px;
 }
 
-#FirstUpdateInfo {
+#FirstUpdateInfo,
+#ConfigReloadInfo {
 	margin-top: 20px;
 }
 
@@ -1149,12 +1151,14 @@ body.phone,
 
 .phone #RPCError,
 .phone #FirstUpdateInfo,
+.phone #ConfigReloadInfo,
 .phone #DownloadQueueEmpty  {
 	margin-left: 5px;
 	margin-right: 5px;
 }
 
-.phone #FirstUpdateInfo {
+.phone #FirstUpdateInfo,
+.phone #ConfigReloadInfo {
 	margin-top: 5px;
 }
 

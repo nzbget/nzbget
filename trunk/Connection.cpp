@@ -66,7 +66,7 @@ Mutex* Connection::m_pMutexGetHostByName = NULL;
 #endif
 #endif
 
-void Connection::Init(bool bTLS)
+void Connection::Init()
 {
 	debug("Initializing global connection data");
 
@@ -87,19 +87,16 @@ void Connection::Init(bool bTLS)
 #endif
 
 #ifndef DISABLE_TLS
-	if (bTLS)
+	debug("Initializing TLS library");
+	char* szErrStr;
+	int iRes = tls_lib_init(&szErrStr);
+	bTLSLibInitialized = iRes == TLS_EOK;
+	if (!bTLSLibInitialized)
 	{
-		debug("Initializing TLS library");
-		char* szErrStr;
-		int iRes = tls_lib_init(&szErrStr);
-		bTLSLibInitialized = iRes == TLS_EOK;
-		if (!bTLSLibInitialized)
+		error("Could not initialize TLS library: %s", szErrStr ? szErrStr : "unknown error");
+		if (szErrStr)
 		{
-			error("Could not initialize TLS library: %s", szErrStr ? szErrStr : "unknown error");
-			if (szErrStr)
-			{
-				free(szErrStr);
-			}
+			free(szErrStr);
 		}
 	}
 #endif

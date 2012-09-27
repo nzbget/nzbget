@@ -80,7 +80,9 @@
 #endif
 
 // Prototypes
-void Run();
+void RunMain();
+void Run(bool bReload);
+void Reload();
 void Cleanup();
 void ProcessClientRequest();
 #ifndef WIN32
@@ -110,7 +112,10 @@ Log* g_pLog = NULL;
 PrePostProcessor* g_pPrePostProcessor = NULL;
 DiskState* g_pDiskState = NULL;
 Scheduler* g_pScheduler = NULL;
-char* (*szEnvironmentVariables)[] = NULL;
+int g_iArgumentCount;
+char* (*g_szEnvironmentVariables)[] = NULL;
+char* (*g_szArguments)[] = NULL;
+bool g_bReloading = true;
 
 /*
  * Main loop
@@ -139,17 +144,60 @@ int main(int argc, char *argv[], char *argp[])
 	DisableCout();
 #endif
 
+	g_iArgumentCount = argc;
+	g_szArguments = (char*(*)[])argv;
+	g_szEnvironmentVariables = (char*(*)[])argp;
+
+#ifdef WIN32
+	for (int i=0; i < argc; i++)
+	{
+		if (!strcmp(argv[i], "-D"))
+		{
+			StartService(RunMain);
+			return 0;
+		}
+	}
+#endif
+
+	RunMain();
+
+#ifdef WIN32
+#ifdef _DEBUG
+	_CrtDumpMemoryLeaks();
+#endif
+#endif
+
+	return 0;
+}
+
+void RunMain()
+{
+	bool bReload = false;
+	while (g_bReloading)
+	{
+		g_bReloading = false;
+		Run(bReload);
+		bReload = true;
+	}
+}
+
+void Run(bool bReload)
+{
 	g_pLog = new Log();
 
 	debug("nzbget %s", Util::VersionRevision());
 
+	if (!bReload)
+	{
+		Thread::Init();
+		Connection::Init();
+	}
+
 	g_pServerPool = new ServerPool();
 	g_pScheduler = new Scheduler();
-	Thread::Init();
 
 	debug("Reading options");
-	g_pOptions = new Options(argc, argv);
-	szEnvironmentVariables = (char*(*)[])argp;
+	g_pOptions = new Options(g_iArgumentCount, *g_szArguments);
 
 #ifndef WIN32
 	if (g_pOptions->GetUMask() < 01000)
@@ -167,7 +215,7 @@ int main(int argc, char *argv[], char *argp[])
 
 	g_pLog->InitOptions();
 
-	if (g_pOptions->GetDaemonMode())
+	if (g_pOptions->GetDaemonMode() && !bReload)
 	{
 #ifdef WIN32
 		info("nzbget %s service-mode", Util::VersionRevision());
@@ -176,7 +224,7 @@ int main(int argc, char *argv[], char *argp[])
 		info("nzbget %s daemon-mode", Util::VersionRevision());
 #endif
 	}
-	else if (g_pOptions->GetServerMode())
+	else if (g_pOptions->GetServerMode() && !bReload)
 	{
 		info("nzbget %s server-mode", Util::VersionRevision());
 	}
@@ -193,13 +241,7 @@ int main(int argc, char *argv[], char *argp[])
 #endif
 	}
 
-#ifdef WIN32
-	if (g_pOptions->GetDaemonMode())
-	{
-		StartService(Run);
-		return 0;
-	}
-#else
+#ifndef WIN32
 #ifdef HAVE_SYS_PRCTL_H
 	if (g_pOptions->GetDumpCore())
 	{
@@ -208,19 +250,6 @@ int main(int argc, char *argv[], char *argp[])
 #endif
 #endif
 
-	Run();
-
-#ifdef WIN32
-#ifdef _DEBUG
-	_CrtDumpMemoryLeaks();
-#endif
-#endif
-
-	return 0;
-}
-
-void Run()
-{
 #ifndef WIN32
 	InstallSignalHandlers();
 #ifdef DEBUG
@@ -230,9 +259,6 @@ void Run()
 	}
 #endif
 #endif
-	
-	Connection::Init(!g_pOptions->GetRemoteClientMode() &&
-		(g_pOptions->GetClientOperation() == Options::opClientNoOperation));
 
 	// client request
 	if (g_pOptions->GetClientOperation() != Options::opClientNoOperation)
@@ -441,6 +467,10 @@ void ProcessClientRequest()
 			Client->RequestServerShutdown();
 			break;
 
+		case Options::opClientRequestReload:
+			Client->RequestServerReload();
+			break;
+
 		case Options::opClientRequestDownload:
 			Client->RequestServerDownload(g_pOptions->GetArgFilename(), g_pOptions->GetCategory(), g_pOptions->GetAddTop());
 			break;
@@ -502,7 +532,10 @@ void ProcessClientRequest()
 
 void ExitProc()
 {
-	info("Stopping, please wait...");
+	if (!g_bReloading)
+	{
+		info("Stopping, please wait...");
+	}
 	if (g_pOptions->GetRemoteClientMode())
 	{
 		if (g_pFrontend)
@@ -521,6 +554,13 @@ void ExitProc()
 			g_pPrePostProcessor->Stop();
 		}
 	}
+}
+
+void Reload()
+{
+	g_bReloading = true;
+	info("Reloading...");
+	ExitProc();
 }
 
 #ifndef WIN32
@@ -712,9 +752,11 @@ void Cleanup()
 	}
 	debug("Scheduler deleted");
 
-	Connection::Final();
-
-	Thread::Final();
+	if (!g_bReloading)
+	{
+		Connection::Final();
+		Thread::Final();
+	}
 
 	debug("Global objects cleaned up");
 

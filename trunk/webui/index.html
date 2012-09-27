@@ -407,10 +407,10 @@
 				<div class="hide" id="ConfigSaved">
 					<div class="alert alert-success alert-block">
 						<h4 class="alert-heading">Configuration has been saved successfully</h4>
-						<p id="ConfigSaved_Restart">For changes to have effect NZBGet must be restarted.</p>
+						<p id="ConfigSaved_Reload">For changes to have effect NZBGet must be reloaded (soft-restart).</p>
 						<p id="ConfigSaved_Close">The changes made to post-processing settings will be in effect for the next post-processing job.</p>
 					</div>
-					<button type="button" class="btn btn-primary" id="ConfigRestart" onclick="config_Restart()">Restart NZBGet</button>
+					<button type="button" class="btn btn-primary" id="ConfigReload" onclick="config_Reload()">Reload NZBGet</button>
 					<button type="button" class="btn btn-primary" id="ConfigClose" onclick="config_Close()">Return to Downloads</button>
 				</div>
 
@@ -449,7 +449,7 @@
 									<p>
 									With these settings you configure NZBGet. When you configure NZBGet for the first time you need
 									to check at least the option <a class="option" href="#" data-category="S" onclick="config_scrollToOption(event, this)">$MainDir</a> and configure one news server.
-									Any changes of NZBGet settings require a restart of NZBGet.
+									Any changes of NZBGet settings require a restart or <a href="#" onclick="config_ReloadConfirm()">reload</a> (soft-restart) of NZBGet.
 									</p>
 
 									<h4>Post-processing script settings</h4>
@@ -1127,6 +1127,37 @@
     <strong>Not yet implemented</strong>
 </div>
 
+<!-- *** RELOAD DIALOG DATA ***************************************** -->
+
+<div class="hide" id="ReloadConfirmDialog">
+	<div id="ReloadConfirmDialog_Title">Reload (soft-restart)</div>
+	<div id="ReloadConfirmDialog_Text">
+		<p>
+		Reload NZBGet?
+		</p>
+		<p class="confirm-help-block">
+		The configuration will be reloaded and the program will be reinitialized.
+		</p>
+	</div>
+	<div id="ReloadConfirmDialog_OK">Reload</div>
+</div>
+
+<!-- ***  RELOAD INFO BLOCK ***************************************** -->
+
+<div id="ConfigReloadInfo" class="alert alert-success hide">
+	<h4 class="alert-heading">Reloading NZBGet</h4>
+	<p>
+	<img style="vertical-align:top; margin-top:1px; width:16px; height:16px;" src="img/transmit-reload-2x.gif"> <span id="ConfigReloadAction">Stopping all activities and reloading...</span>
+	</p>
+	<div id="ConfigReloadInfoNotes" class="hide">
+	Should this take too long:
+	<ul>
+		<li>Try to refresh the page in browser manually.</li>
+		<li>If you changed remote control settings (IP, Port, Password) update the URL in browser accordingly.</li>
+	</ul>
+	</div>
+</div>
+
 <!-- ***  NOTIFICATIONS ************************************************************ -->
 
 <div id="Notif_AddFiles" data-duration="1000" class="alert alert-inverse alert-center alert-center-small hide">
@@ -1213,8 +1244,9 @@
     <strong>Could not save configuration in<br><span id="Notif_Config_Failed_Filename"></span></strong><br><br>Please check file permissions
 </div>
 
-<div id="Notif_Config_Restart" data-duration="3000" class="alert alert-error alert-center alert-center-small hide">
-    <strong>Not yet implemented</strong><br>Please restart manually
+<div id="Config_Reload" data-duration="100000000" class="alert alert-success alert-center alert-center-medium hide">
+	<h4 class="alert-heading">Reload command has been sent</h4>
+	Please wait few seconds, then refresh the page.
 </div>
 
 <div id="Notif_Debug" data-duration="400" class="alert alert-inverse alert-center alert-center-small hide">

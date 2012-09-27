@@ -280,7 +280,8 @@ webui_FILES = \
 	webui/lib/jquery.js webui/lib/jquery.min.js \
 	webui/img/extraicons.png webui/img/glyphicons-halflings.png webui/img/glyphicons-halflings-white.png \
 	webui/img/transmit.gif webui/img/transmit-file.gif webui/img/favicon.ico \
-	webui/img/download-anim-green-2x.png webui/img/download-anim-orange-2x.png
+	webui/img/download-anim-green-2x.png webui/img/download-anim-orange-2x.png \
+	webui/img/transmit-reload-2x.gif
 
 
 # Install

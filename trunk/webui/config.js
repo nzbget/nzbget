@@ -38,6 +38,7 @@ var config_PostValues;
 var config_ConfigTable;
 var config_filterText = '';
 var config_lastSection;
+var config_ReloadTime;
 
 var config_HIDDEN_SECTION = ['DISPLAY (TERMINAL)', 'POSTPROCESSING-PARAMETERS', 'POST-PROCESSING-PARAMETERS'];
 
@@ -996,7 +997,7 @@ function config_Save()
 
 	config_showSaveBanner();
 
-	show('#ConfigSaved_Restart, #ConfigRestart', serverSaveRequest.length > 0);
+	show('#ConfigSaved_Reload, #ConfigReload', serverSaveRequest.length > 0);
 	show('#ConfigClose, #ConfigSaved_Close', serverSaveRequest.length === 0);
 
 	if (serverSaveRequest.length > 0)
@@ -1039,18 +1040,12 @@ function config_save_completed(result)
 	config_removeSaveBanner();
 	if (result)
 	{
-		$('#ConfigSaved').show();
-		$('#ConfigContent').hide();
+		$('#ConfigContent').fadeOut(function() { $('#ConfigSaved').fadeIn(); });
 	}
 	else
 	{
 		animateAlert('#Notif_Config_Failed');
 	}
-}
-
-function config_Restart()
-{
-	animateAlert('#Notif_Config_Restart');
 }
 
 function config_Close()
@@ -1160,4 +1155,65 @@ function config_filterOption(option, words)
 	}
 
 	return true;
+}
+
+function config_ReloadConfirm()
+{
+	confirm_dialog_show('ReloadConfirmDialog', config_Reload);
+}
+
+function config_Reload()
+{
+	refresh_pause();
+	
+	$('#ConfigReloadAction').text('Stopping all activities and reloading...');
+	$('#ConfigReloadInfoNotes').hide();
+	
+	$('body').fadeOut(function()
+	{
+		$('#Navbar, #MainContent').hide();
+		$('#ConfigSaved').hide();
+		$('body').toggleClass('navfixed', false);
+		$('body').show();
+		$('#ConfigReloadInfo').fadeIn();
+		config_ReloadTime = new Date();
+		rpc('reload', [], config_Reload_CheckStatus);
+	});
+}
+
+function config_Reload_CheckStatus()
+{
+	rpc('status', [], function(status)
+	{
+		// OK, checking if it is a restarted instance
+		if (status.UpTimeSec >= Status.UpTimeSec)
+		{
+			// the old instance is not restarted yet
+			// waiting 0.5 sec. and retrying
+			setTimeout(config_Reload_CheckStatus, 500);
+			config_Reload_CheckNotes();
+		}
+		else
+		{
+			// restarted successfully
+			$('#ConfigReloadAction').text('Reloaded successfully. Refreshing the page...');
+			// refresh page
+			document.location.reload(true);
+		}
+	},
+	function()
+	{
+		// Failure, waiting 0.5 sec. and retrying
+		setTimeout(config_Reload_CheckStatus, 500);
+		config_Reload_CheckNotes();
+	});
+}
+
+function config_Reload_CheckNotes()
+{
+	// if reload takes more than 30 sec. show additional tips
+	if (new Date() - config_ReloadTime > 30000)
+	{
+		$('#ConfigReloadInfoNotes').show(1000);
+	}
 }

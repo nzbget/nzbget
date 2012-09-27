@@ -110,6 +110,12 @@ public:
 	virtual void		Execute();
 };
 
+class ReloadBinCommand: public BinCommand
+{
+public:
+	virtual void		Execute();
+};
+
 class VersionBinCommand: public BinCommand
 {
 public:

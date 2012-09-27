@@ -59,10 +59,11 @@ extern QueueCoordinator* g_pQueueCoordinator;
 extern UrlCoordinator* g_pUrlCoordinator;
 extern PrePostProcessor* g_pPrePostProcessor;
 extern void ExitProc();
+extern void Reload();
 
 const char* g_szMessageRequestNames[] =
     { "N/A", "Download", "Pause/Unpause", "List", "Set download rate", "Dump debug", 
-		"Edit queue", "Log", "Quit", "Version", "Post-queue", "Write log", "Scan", 
+		"Edit queue", "Log", "Quit", "Reload", "Version", "Post-queue", "Write log", "Scan", 
 		"Pause/Unpause postprocessor", "History", "Download URL", "URL-queue" };
 
 const unsigned int g_iMessageRequestSizes[] =
@@ -75,11 +76,14 @@ const unsigned int g_iMessageRequestSizes[] =
 		sizeof(SNZBEditQueueRequest),
 		sizeof(SNZBLogRequest),
 		sizeof(SNZBShutdownRequest),
+		sizeof(SNZBReloadRequest),
 		sizeof(SNZBVersionRequest),
 		sizeof(SNZBPostQueueRequest),
 		sizeof(SNZBWriteLogRequest),
 		sizeof(SNZBScanRequest),
-		sizeof(SNZBHistoryRequest)
+		sizeof(SNZBHistoryRequest),
+		sizeof(SNZBDownloadUrlRequest),
+		sizeof(SNZBUrlQueueRequest)
     };
 
 //*****************************************************************
@@ -157,6 +161,10 @@ void BinRpcProcessor::Dispatch()
 
 		case eRemoteRequestShutdown:
 			command = new ShutdownBinCommand();
+			break;
+
+		case eRemoteRequestReload:
+			command = new ReloadBinCommand();
 			break;
 
 		case eRemoteRequestVersion:
@@ -301,6 +309,18 @@ void ShutdownBinCommand::Execute()
 
 	SendBoolResponse(true, "Stopping server");
 	ExitProc();
+}
+
+void ReloadBinCommand::Execute()
+{
+	SNZBReloadRequest ReloadRequest;
+	if (!ReceiveRequest(&ReloadRequest, sizeof(ReloadRequest)))
+	{
+		return;
+	}
+
+	SendBoolResponse(true, "Reloading server");
+	Reload();
 }
 
 void VersionBinCommand::Execute()

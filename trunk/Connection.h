@@ -88,7 +88,7 @@ public:
 						Connection(const char* szHost, int iPort, bool bTLS);
 						Connection(SOCKET iSocket, bool bAutoClose);
 	virtual 			~Connection();
-	static void			Init(bool bTLS);
+	static void			Init();
 	static void			Final();
 	bool 				Connect();
 	bool				Disconnect();

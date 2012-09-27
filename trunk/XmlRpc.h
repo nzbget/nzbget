@@ -160,6 +160,12 @@ public:
 	virtual void		Execute();
 };
 
+class ReloadXmlCommand: public XmlCommand
+{
+public:
+	virtual void		Execute();
+};
+
 class VersionXmlCommand: public XmlCommand
 {
 public:
