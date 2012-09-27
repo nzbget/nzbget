@@ -75,7 +75,7 @@ function config_cleanup()
 	config_ServerValues = null;
 	config_PostValues = null;
 	config_ConfigNav.children().not('.config-static').remove();
-	config_ConfigData.empty();
+	config_ConfigData.children().not('.config-static').remove();
 }
 
 function config_update()
@@ -717,7 +717,7 @@ function config_build()
 	}
 
 	config_ConfigNav.children().not('.config-static').remove();
-	config_ConfigData.empty();
+	config_ConfigData.children().not('.config-static').remove();
 
 	config_ConfigNav.append('<li class="nav-header">NZBGet Settings</li>');
 	config_buildConfig(config_ServerConfig, 'S');
@@ -775,6 +775,8 @@ function config_showSection(sectionId)
 	link.closest('li').addClass('active');
 	$('#ConfigContent').removeClass('search');
 
+	$('#ConfigInfo').hide();
+	
 	if (sectionId === 'Search')
 	{
 		config_search();
@@ -791,10 +793,19 @@ function config_showSection(sectionId)
 		return;
 	}
 
-	$('#ConfigInfo').hide();
+	if (sectionId === 'Config-System')
+	{
+		config_ConfigData.children().hide();
+		$('.config-system', config_ConfigData).show();
+		config_markLastControlGroup();
+		$('#ConfigTitle').text('SYSTEM');
+		return;
+	}
+	
 	config_ConfigData.children().hide();
 	var opts = $('.' + sectionId, config_ConfigData);
 	opts.show();
+	config_markLastControlGroup();
 
 	var section = config_FindSectionById(sectionId);
 	$('#ConfigTitle').text(section.name);
@@ -1103,7 +1114,6 @@ function config_filterClear()
 
 function config_search()
 {
-	$('#ConfigInfo').hide();
 	config_ConfigTabBadge.show();
 	config_ConfigTabBadgeEmpty.hide();
 	$('#ConfigContent').addClass('search');
@@ -1136,6 +1146,10 @@ function config_search()
 		}
 	}
 
+	config_filterStaticPages(words);
+	
+	config_markLastControlGroup();
+	
 	$('#ConfigTitle').text('SEARCH RESULTS');
 
 	tab_updateInfo(config_ConfigTabBadge, { filter: true, available: available, total: total});
@@ -1143,8 +1157,21 @@ function config_search()
 
 function config_filterOption(option, words)
 {
-	var search = option.name + ' ' + option.description + ' ' + option.value;
-	search = search.toLowerCase();
+	return config_filterWords(option.name + ' ' + option.description + ' ' + option.value, words);
+}
+
+function config_filterStaticPages(words)
+{
+	config_ConfigData.children().filter('.config-static').each(function(index, element)
+		{
+			var text = $(element).text();
+			show(element, config_filterWords(text, words));
+		});
+}
+
+function config_filterWords(text, words)
+{
+	var search = text.toLowerCase();
 
 	for (var i = 0; i < words.length; i++)
 	{
@@ -1155,6 +1182,12 @@ function config_filterOption(option, words)
 	}
 
 	return true;
+}
+
+function config_markLastControlGroup()
+{
+	config_ConfigData.children().removeClass('last-group');
+	config_ConfigData.children().filter(':visible').last().addClass('last-group');
 }
 
 function config_ReloadConfirm()

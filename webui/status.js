@@ -33,7 +33,7 @@ var status_StatusPaused;
 var status_StatusSoftPaused;
 var status_StatusLeft;
 var status_StatusSpeed;
-var status_StatusSpeedBlock;
+var status_StatusSpeedIcon;
 var status_StatusTime;
 var status_StatusURLs;
 var status_PlayBlock;
@@ -68,7 +68,7 @@ function status_init()
 	status_StatusSoftPaused = $('#StatusSoftPaused');
 	status_StatusLeft = $('#StatusLeft');
 	status_StatusSpeed = $('#StatusSpeed');
-	status_StatusSpeedBlock = $('#StatusSpeedBlock');
+	status_StatusSpeedIcon = $('#StatusSpeedIcon');
 	status_StatusTime = $('#StatusTime');
 	status_StatusURLs = $('#StatusURLs');
 	status_CurSpeedLimit = $('#CurSpeedLimit');
@@ -206,7 +206,8 @@ function status_info()
 	show(status_StatusURLs, Urls.length > 0);
 	*/
 
-	status_StatusSpeedBlock.toggleClass('speedlimit', Status.DownloadLimit !== 0);
+	status_StatusSpeedIcon.toggleClass('icon-plane', Status.DownloadLimit === 0);
+	status_StatusSpeedIcon.toggleClass('icon-truck', Status.DownloadLimit !== 0);
 
 	//TODO: remove DEBUG
 	//status_StatusSpeed.html('99999 KB/s');

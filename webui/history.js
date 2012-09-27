@@ -177,11 +177,11 @@ function history_fillFieldsCallback(item)
 
 	if (!Settings_MiniTheme)
 	{
-		item.fields = ['<div class="check"></div>', status, item.data.time, name, category, item.data.size];
+		item.fields = ['<div class="check img-check"></div>', status, item.data.time, name, category, item.data.size];
 	}
 	else
 	{
-		var info = '<div class="check"></div><span class="row-title">' + name + '</span>' +
+		var info = '<div class="check img-check"></div><span class="row-title">' + name + '</span>' +
 			' ' + status + ' <span class="label">' + item.data.time + '</span>';
 		if (category)
 		{
