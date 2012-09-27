@@ -45,6 +45,7 @@ public:
 		opClientRequestEditQueue,
 		opClientRequestLog,
 		opClientRequestShutdown,
+		opClientRequestReload,
 		opClientRequestVersion,
 		opClientRequestPostQueue,
 		opClientRequestWriteLog,

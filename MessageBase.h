@@ -27,7 +27,7 @@
 #ifndef MESSAGEBASE_H
 #define MESSAGEBASE_H
 
-static const int32_t NZBMESSAGE_SIGNATURE = 0x6E7A6210; // = "nzb-XX" (protocol version)
+static const int32_t NZBMESSAGE_SIGNATURE = 0x6E7A6211; // = "nzb-XX" (protocol version)
 static const int NZBREQUESTFILENAMESIZE = 512;
 static const int NZBREQUESTPASSWORDSIZE = 32;
 
@@ -56,6 +56,7 @@ enum eRemoteRequest
 	eRemoteRequestEditQueue,
 	eRemoteRequestLog,
 	eRemoteRequestShutdown,
+	eRemoteRequestReload,
 	eRemoteRequestVersion,
 	eRemoteRequestPostQueue,
 	eRemoteRequestWriteLog,
@@ -355,6 +356,21 @@ struct SNZBShutdownRequest
 
 // Shutdown server response
 struct SNZBShutdownResponse
+{
+	SNZBResponseBase		m_MessageBase;			// Must be the first in the struct
+	int32_t					m_bSuccess;				// 0 - command failed, 1 - command executed successfully
+	int32_t					m_iTrailingDataLength;	// Length of Text-string (m_szText), following to this record
+	//char					m_szText[m_iTrailingDataLength];	// variable sized
+};
+
+// Reload server request
+struct SNZBReloadRequest
+{
+	SNZBRequestBase			m_MessageBase;			// Must be the first in the struct
+};
+
+// Reload server response
+struct SNZBReloadResponse
 {
 	SNZBResponseBase		m_MessageBase;			// Must be the first in the struct
 	int32_t					m_bSuccess;				// 0 - command failed, 1 - command executed successfully

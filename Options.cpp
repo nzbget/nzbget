@@ -80,6 +80,7 @@ static struct option long_options[] =
 	    {"edit", required_argument, 0, 'E'},
 	    {"connect", no_argument, 0, 'C'},
 	    {"quit", no_argument, 0, 'Q'},
+	    {"reload", no_argument, 0, 'O'},
 	    {"write", required_argument, 0, 'W'},
 	    {"category", required_argument, 0, 'K'},
 	    {"scan", no_argument, 0, 'S'},
@@ -87,7 +88,7 @@ static struct option long_options[] =
     };
 #endif
 
-static char short_options[] = "c:hno:psvAB:DCE:G:K:LPR:STUQVW:";
+static char short_options[] = "c:hno:psvAB:DCE:G:K:LPR:STUQOVW:";
 
 // Program options
 static const char* OPTION_CONFIGFILE			= "ConfigFile";
@@ -1320,6 +1321,9 @@ void Options::InitCommandLine(int argc, char* argv[])
 			case 'Q':
 				m_eClientOperation = opClientRequestShutdown;
 				break;
+			case 'O':
+				m_eClientOperation = opClientRequestReload;
+				break;
 			case 'V':
 				m_eClientOperation = opClientRequestVersion;
 				break;
@@ -1404,6 +1408,7 @@ void Options::PrintUsage(char* com)
 #endif
 	    "  -V, --serverversion       Print server's version and exit\n"
 		"  -Q, --quit                Shutdown server\n"
+		"  -O, --reload              Reload config and restart all services\n"
 		"  -A, --append  [F|U] <nzb-file/url> Send file/url to server's download queue\n"
 		"                 F          Send file (default)\n"
 		"                 U          Send url\n"

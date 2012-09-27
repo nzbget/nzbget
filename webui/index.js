@@ -172,7 +172,11 @@ function rpc_failure(res)
 	$('#FirstUpdateInfo').hide();
 	$('#RPCError-text').html(res);
 	$('#RPCError').show();
-	status_redraw();
+	if (Status)
+	{
+		// stop animations
+		status_redraw();
+	}
 }
 
 function refresh()

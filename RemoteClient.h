@@ -69,6 +69,7 @@ public:
 		int* pIDList, int iIDCount, NameList* pNameList, eRemoteMatchMode iMatchMode, bool bSmartOrder);
 	bool			RequestServerLog(int iLines);
 	bool			RequestServerShutdown();
+	bool			RequestServerReload();
 	bool			RequestServerVersion();
 	bool			RequestPostQueue();
 	bool 			RequestWriteLog(int iKind, const char* szText);

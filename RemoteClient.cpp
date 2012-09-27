@@ -948,6 +948,27 @@ bool RemoteClient::RequestServerShutdown()
 	return OK;
 }
 
+bool RemoteClient::RequestServerReload()
+{
+	if (!InitConnection()) return false;
+
+	SNZBReloadRequest ReloadRequest;
+	InitMessageBase(&ReloadRequest.m_MessageBase, eRemoteRequestReload, sizeof(ReloadRequest));
+
+	bool OK = m_pConnection->Send((char*)(&ReloadRequest), sizeof(ReloadRequest)) >= 0;
+	if (OK)
+	{
+		OK = ReceiveBoolResponse();
+	}
+	else
+	{
+		perror("m_pConnection->Send");
+	}
+
+	m_pConnection->Disconnect();
+	return OK;
+}
+
 bool RemoteClient::RequestServerVersion()
 {
 	if (!InitConnection()) return false;

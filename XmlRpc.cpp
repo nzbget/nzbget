@@ -55,6 +55,7 @@ extern QueueCoordinator* g_pQueueCoordinator;
 extern UrlCoordinator* g_pUrlCoordinator;
 extern PrePostProcessor* g_pPrePostProcessor;
 extern void ExitProc();
+extern void Reload();
 
 //*****************************************************************
 // StringBuilder
@@ -342,6 +343,10 @@ XmlCommand* XmlRpcProcessor::CreateCommand(const char* szMethodName)
 	else if (!strcasecmp(szMethodName, "shutdown"))
 	{
 		command = new ShutdownXmlCommand();
+	}
+	else if (!strcasecmp(szMethodName, "reload"))
+	{
+		command = new ReloadXmlCommand();
 	}
 	else if (!strcasecmp(szMethodName, "version"))
 	{
@@ -806,6 +811,17 @@ void ShutdownXmlCommand::Execute()
 
 	BuildBoolResponse(true);
 	ExitProc();
+}
+
+void ReloadXmlCommand::Execute()
+{
+	if (!CheckSafeMethod())
+	{
+		return;
+	}
+
+	BuildBoolResponse(true);
+	Reload();
 }
 
 void VersionXmlCommand::Execute()
