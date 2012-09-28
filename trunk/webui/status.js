@@ -127,13 +127,20 @@ function status_statistics()
 	}
 	content += '</td></tr>';
 
-	content += '<tr><td>Post-processing</td><td class="text-right">' + (Status.PostPaused ?
+	var option = config_FindOption(Config, 'PostProcess');
+	content += '<tr><td>Post-processing</td><td class="text-right">' + (option && option.Value === '' ?
+		'<span class="label label-status">disabled</span>' :
+		(Status.PostPaused ?
 		'<span class="label label-status label-warning">paused</span>' :
-		'<span class="label label-status label-success">active</span>') +
+		'<span class="label label-status label-success">active</span>')) +
 		'</td></tr>';
-	content += '<tr><td>NZB-Directory scan</td><td class="text-right">' + (Status.ScanPaused ?
+
+	option = config_FindOption(Config, 'NzbDirInterval');
+	content += '<tr><td>NZB-Directory scan</td><td class="text-right">' + (option && option.Value === '0' ?
+		'<span class="label label-status">disabled</span>' :
+		(Status.ScanPaused ?
 		'<span class="label label-status label-warning">paused</span>' :
-		'<span class="label label-status label-success">active</span>') +
+		'<span class="label label-status label-success">active</span>')) +
 		'</td></tr>';
 
 	content += '</tbody>';
@@ -148,12 +155,6 @@ function status_info()
 	show(status_CHPausePostProcess, Status.PostPaused);
 	show(status_CHPauseScan, Status.ScanPaused);
 	show(status_CHSoftPauseDownload, Status.DownloadPaused);
-
-	/*
-	show(status_StatusPausing, (Status.DownloadPaused || Status.Download2Paused) && !Status.ServerStandBy);
-	show(status_StatusPaused, Status.Download2Paused && Status.ServerStandBy);
-	show(status_StatusSoftPaused, Status.DownloadPaused && !Status.Download2Paused && Status.ServerStandBy);
-	*/
 
 	status_updatePlayButton();
 	status_updatePlayAnim();
@@ -191,27 +192,8 @@ function status_info()
 	}
 
 
-	/*
-	if (Status.RemainingSizeMB > 0)
-	{
-		status_StatusLeft.html('Left: ' + FormatSizeMB(Status.RemainingSizeMB));
-		status_StatusLeft.show();
-	}
-	else
-	{
-		status_StatusLeft.hide();
-	}
-
-	status_StatusURLs.text(Urls.length + (Urls.length > 1 ? ' URLs queued' : ' URL queued'));
-	show(status_StatusURLs, Urls.length > 0);
-	*/
-
 	status_StatusSpeedIcon.toggleClass('icon-plane', Status.DownloadLimit === 0);
 	status_StatusSpeedIcon.toggleClass('icon-truck', Status.DownloadLimit !== 0);
-
-	//TODO: remove DEBUG
-	//status_StatusSpeed.html('99999 KB/s');
-	//status_StatusTime.html('10h 10m');
 }
 
 function status_updatePlayButton()
