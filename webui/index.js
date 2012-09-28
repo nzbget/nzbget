@@ -97,7 +97,7 @@ $(document).ready(
 
 function rpc(method, params, completed_callback, failure_callback)
 {
-	var request = JSON.stringify({method: method, params: params});
+	var request = JSON.stringify({nocache: new Date().getTime(), method: method, params: params});
 	var xhr = createXMLHttpRequest();
 
 	xhr.open('post', NZBGET_RPC_URL);
