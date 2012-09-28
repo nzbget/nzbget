@@ -286,7 +286,8 @@ function upload_fileNext()
 	{
 		var base64str = window.btoa(event.target.result);
 		var category = $('#AddDialog_Category').val();
-		rpc('append', [file.name, category, false, base64str], upload_fileCompleted, upload_fileFailure);
+		var priority = parseInt($('#AddDialog_Priority').val());
+		rpc('append', [file.name, category, priority, false, base64str], upload_fileCompleted, upload_fileFailure);
 	};
 
 	reader.readAsBinaryString(file);
