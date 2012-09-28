@@ -1409,6 +1409,7 @@ void EditQueueXmlCommand::Execute()
 	BuildBoolResponse(bOK);
 }
 
+// bool append(string NZBFilename, string Category, int Priority, bool AddToTop, string Content) 
 void DownloadXmlCommand::Execute()
 {
 	if (!CheckSafeMethod())
@@ -1434,6 +1435,10 @@ void DownloadXmlCommand::Execute()
 	DecodeStr(szCategory);
 
 	debug("FileName=%s", szFileName);
+
+	// For backward compatibility with 0.8 parameter "Priority" is optional (error checking omitted)
+	int iPriority = 0;
+	NextParamAsInt(&iPriority);
 
 	bool bAddTop;
 	if (!NextParamAsBool(&bAddTop))
@@ -1464,6 +1469,13 @@ void DownloadXmlCommand::Execute()
 	if (pNZBFile)
 	{
 		info("Request: Queue collection %s", szFileName);
+
+		for (NZBFile::FileInfos::iterator it = pNZBFile->GetFileInfos()->begin(); it != pNZBFile->GetFileInfos()->end(); it++)
+		{
+			FileInfo* pFileInfo = *it;
+			pFileInfo->SetPriority(iPriority);
+		}
+
 		g_pQueueCoordinator->AddNZBFileToQueue(pNZBFile, bAddTop);
 		delete pNZBFile;
 		BuildBoolResponse(true);
