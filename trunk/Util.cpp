@@ -610,7 +610,7 @@ long long Util::FreeDiskSize(const char* szPath)
 	struct statvfs diskdata;
 	if (!statvfs(szPath, &diskdata)) 
 	{
-		return (long long)diskdata.f_bsize * (long long)diskdata.f_bavail;
+		return (long long)diskdata.f_frsize * (long long)diskdata.f_bavail;
 	}
 #endif
 	return -1;
