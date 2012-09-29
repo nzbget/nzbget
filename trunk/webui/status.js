@@ -107,6 +107,7 @@ function status_statistics()
 	content += '<tr><td>Download time</td><td class="text-right">' + FormatTimeHMS(Status.DownloadTimeSec) + '</td></tr>';
 	content += '<tr><td>Total downloaded</td><td class="text-right">' + FormatSizeMB(Status.DownloadedSizeMB) + '</td></tr>';
 	content += '<tr><td>Remaining</td><td class="text-right">' + FormatSizeMB(Status.RemainingSizeMB) + '</td></tr>';
+	content += '<tr><td>Free disk space</td><td class="text-right">' + FormatSizeMB(Status.FreeDiskSpaceMB) + '</td></tr>';
 	content += '<tr><td>Average download speed</td><td class="text-right">' + round0(Status.AverageDownloadRate / 1024) + ' KB/s</td></tr>';
 	content += '<tr><td>Current download speed</td><td class="text-right">' + round0(Status.DownloadRate / 1024) + ' KB/s</td></tr>';
 	content += '<tr><td>Current speed limit</td><td class="text-right">' + round0(Status.DownloadLimit / 1024) + ' KB/s</td></tr>';

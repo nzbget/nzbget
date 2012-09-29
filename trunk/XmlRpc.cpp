@@ -886,6 +886,9 @@ void StatusXmlCommand::Execute()
 		"<member><name>ServerStandBy</name><value><boolean>%s</boolean></value></member>\n"
 		"<member><name>PostPaused</name><value><boolean>%s</boolean></value></member>\n"
 		"<member><name>ScanPaused</name><value><boolean>%s</boolean></value></member>\n"
+		"<member><name>FreeDiskSpaceLo</name><value><i4>%i</i4></value></member>\n"
+		"<member><name>FreeDiskSpaceHi</name><value><i4>%i</i4></value></member>\n"
+		"<member><name>FreeDiskSpaceMB</name><value><i4>%i</i4></value></member>\n"
 		"</struct>\n";
 
 	const char* JSON_RESPONSE_STATUS_BODY = 
@@ -910,7 +913,10 @@ void StatusXmlCommand::Execute()
 		"\"Download2Paused\" : %s,\n"
 		"\"ServerStandBy\" : %s,\n"
 		"\"PostPaused\" : %s,\n"
-		"\"ScanPaused\" : %s\n"
+		"\"ScanPaused\" : %s,\n"
+		"\"FreeDiskSpaceLo\" : %i,\n"
+		"\"FreeDiskSpaceHi\" : %i,\n"
+		"\"FreeDiskSpaceMB\" : %i\n"
 		"}\n";
 
 	unsigned long iRemainingSizeHi, iRemainingSizeLo;
@@ -936,6 +942,10 @@ void StatusXmlCommand::Execute()
 	int iDownloadedMBytes = (int)(iAllBytes / 1024 / 1024);
 	Util::SplitInt64(iAllBytes, &iDownloadedSizeHi, &iDownloadedSizeLo);
 	int iAverageDownloadRate = (int)(iDownloadTimeSec > 0 ? iAllBytes / iDownloadTimeSec : 0);
+	unsigned long iFreeDiskSpaceHi, iFreeDiskSpaceLo;
+	long long iFreeDiskSpace = Util::FreeDiskSize(g_pOptions->GetDestDir());
+	Util::SplitInt64(iFreeDiskSpace, &iFreeDiskSpaceHi, &iFreeDiskSpaceLo);
+	int iFreeDiskSpaceMB = (int)(iFreeDiskSpace / 1024 / 1024);
 
 	char szContent[2048];
 	snprintf(szContent, 2048, IsJson() ? JSON_RESPONSE_STATUS_BODY : XML_RESPONSE_STATUS_BODY, 
@@ -943,7 +953,8 @@ void StatusXmlCommand::Execute()
 		iDownloadedMBytes, iDownloadRate, iAverageDownloadRate, iDownloadLimit,	iThreadCount, 
 		iPostJobCount, iPostJobCount, iUrlCount, iUpTimeSec, iDownloadTimeSec, 
 		BoolToStr(bDownloadPaused), BoolToStr(bDownloadPaused), BoolToStr(bDownload2Paused), 
-		BoolToStr(bServerStandBy), BoolToStr(bPostPaused), BoolToStr(bScanPaused));
+		BoolToStr(bServerStandBy), BoolToStr(bPostPaused), BoolToStr(bScanPaused),
+		iFreeDiskSpaceLo, iFreeDiskSpaceHi,	iFreeDiskSpaceMB);
 	szContent[2048-1] = '\0';
 
 	AppendResponse(szContent);
