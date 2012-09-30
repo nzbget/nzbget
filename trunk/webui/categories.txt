@@ -1,7 +1,0 @@
-Movies
-Series
-Series/My Series
-Music
-Music/Pop
-Music/Rock
-Software

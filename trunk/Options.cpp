@@ -2086,7 +2086,17 @@ bool Options::ValidateOptionName(const char * optname)
 			return true;
 		}
 	}
-
+	
+	if (!strncasecmp(optname, "category", 8))
+	{
+		char* p = (char*)optname + 8;
+		while (*p >= '0' && *p <= '9') p++;
+		if (p && (!strcasecmp(p, ".name")))
+		{
+			return true;
+		}
+	}
+	
 	// suppress abort on obsolete options; print a warning message instead
 	if (!strcasecmp(optname, OPTION_POSTLOGKIND) || !strcasecmp(optname, OPTION_NZBLOGKIND))
 	{
