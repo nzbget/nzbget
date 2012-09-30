@@ -197,11 +197,6 @@ function refresh()
 		loadQueue.shift();
 		loadQueue.shift();
 	}
-	else
-	{
-		// load categories only on first refresh
-		categories_load();
-	}
 
 	loadNext();
 }
@@ -260,13 +255,6 @@ function version_update()
 		setSetting('version', version);
 		loadNext();
 	});
-}
-
-function categories_load()
-{
-	$.get('categories.txt', function(data) {
-		Categories = $.trim(data).replace(/\r/g, '').split('\n');
-	}, 'html');
 }
 
 /****************************************************************

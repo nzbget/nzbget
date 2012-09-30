@@ -83,6 +83,7 @@ function config_update()
 	// RPC-function "config" returns CURRENT configurations settings loaded in NZBGet
 	rpc('config', [], function(config) {
 		Config = config;
+		config_initCategories();
 		loadNext();
 	});
 }
@@ -436,6 +437,19 @@ function config_MergeValues(config, values)
 	}
 }
 
+function config_initCategories()
+{
+	Categories = [];
+	for (var i=0; i < Config.length; i++)
+	{
+		var option = Config[i];
+		if ((option.Name.toLowerCase().substring(0, 8) === 'category') && (option.Name.toLowerCase().indexOf('.name') > -1))
+		{
+			Categories.push(option.Value);
+		}
+	}
+}
+
 /*** GENERATE HTML PAGE *****************************************************************/
 
 function config_BuildOptionsContent(section, sectionframe)
@@ -776,7 +790,7 @@ function config_showSection(sectionId)
 	$('#ConfigContent').removeClass('search');
 
 	$('#ConfigInfo').hide();
-	
+
 	if (sectionId === 'Search')
 	{
 		config_search();
@@ -801,7 +815,7 @@ function config_showSection(sectionId)
 		$('#ConfigTitle').text('SYSTEM');
 		return;
 	}
-	
+
 	config_ConfigData.children().hide();
 	var opts = $('.' + sectionId, config_ConfigData);
 	opts.show();
@@ -882,6 +896,9 @@ function config_ReformatSection(section, setname)
 			var oldFormId = option.formId;
 			option.formId = option.formId.replace(new RegExp(option.multiid), newMultiId);
 			$('#' + oldFormId).attr('id', option.formId);
+
+			// update name
+			option.name = option.name.replace(new RegExp(option.multiid), newMultiId);
 
 			option.multiid = newMultiId;
 		}
@@ -1147,9 +1164,9 @@ function config_search()
 	}
 
 	config_filterStaticPages(words);
-	
+
 	config_markLastControlGroup();
-	
+
 	$('#ConfigTitle').text('SEARCH RESULTS');
 
 	tab_updateInfo(config_ConfigTabBadge, { filter: true, available: available, total: total});
@@ -1198,10 +1215,10 @@ function config_ReloadConfirm()
 function config_Reload()
 {
 	refresh_pause();
-	
+
 	$('#ConfigReloadAction').text('Stopping all activities and reloading...');
 	$('#ConfigReloadInfoNotes').hide();
-	
+
 	$('body').fadeOut(function()
 	{
 		$('#Navbar, #MainContent').hide();
