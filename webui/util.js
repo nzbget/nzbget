@@ -124,7 +124,7 @@ function FormatSizeMB(sizeMB, sizeLo)
 {
 	if (sizeLo !== undefined && sizeMB < 100)
 	{
-		sizeMB += sizeLo / 1024 / 1024;
+		sizeMB = sizeLo / 1024 / 1024;
 	}
 
 	if (sizeMB > 10240)
