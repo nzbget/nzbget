@@ -33,20 +33,13 @@
 #        PostProcess=/home/user/nzbget/nzbget-postprocess.sh
 #
 # o  The script needs a configuration file. An example configuration file
-#    is provided in file "postprocess-example.conf". Put the configuration file 
-#    into the directory where nzbget's configuration file (nzbget.conf) or where
-#    this script itself is located. Then edit the configuration file in any
-#    text editor to adjust the settings.
+#    is provided in file "nzbget-postprocess.conf". Put the configuration file 
+#    into the directory where nzbget's configuration file (nzbget.conf) is located.
+#    Then edit the configuration file in any text editor to adjust the settings.
 #
-# o  You can also edit the script's configuration via web-interface (requires
-#    NZBGetWeb 1.4 or later). Set the options "PostProcessConfigFile" and 
-#    "PostProcessConfigTemplate" to point to "postprocess-example.conf"
-#    (including full path). The both options are under the section 
-#    "CONFIGURATION OF POSTPROCESSING-SCRIPT" in NZBGetWeb.
+# o  You can also edit the script's configuration via web-interface.
 #
-# o  There are few options, which can be ajdusted for each nzb-file 
-#    individually. To view/edit them in web-interface click on a spanner icon
-#    near the name of nzb-file.
+# o  There are few options, which can be ajdusted for each nzb-file individually.
 #
 # o  The script supports the feature called "delayed par-check".
 #    That means it can try to unpack downloaded files without par-checking
@@ -147,7 +140,7 @@ if [ "$NZBOP_PARREPAIR" = "no" ]; then
 fi
 
 if [ "$BadConfig" -eq 1 ]; then
-	echo "[ERROR] Post-Process: Existing because of not compatible nzbget configuration"
+	echo "[ERROR] Post-Process: Exiting because of not compatible nzbget configuration"
 	exit $POSTPROCESS_ERROR
 fi 
 
@@ -216,7 +209,7 @@ if (ls *.rar >/dev/null 2>&1); then
 	fi
 
 	$UnrarCmd x -y -p- "$rarpasswordparam" -o+ "*.rar"  ./extracted/
-	if [ "$?" -eq 3 ]; then
+	if [ "$?" -ne 0 ]; then
 		echo "[ERROR] Post-Process: Unrar failed"
 		if [ "$ExtractedDirExists" -eq 0 ]; then
 			rm -R extracted
@@ -245,7 +238,7 @@ if (ls *.rar >/dev/null 2>&1); then
 		echo "[INFO] Post-Process: Unraring (second pass)"
 		$UnrarCmd x -y -p- -o+ "*.rar"
 
-		if [ "$?" -eq 3 ]; then
+		if [ "$?" -ne 0 ]; then
 			echo "[INFO] Post-Process: Unrar (second pass) failed"
 			exit $POSTPROCESS_ERROR
 		fi
