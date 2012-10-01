@@ -838,14 +838,29 @@ uninstall-am: uninstall-binPROGRAMS uninstall-binSCRIPTS \
 	uninstall-sbinSCRIPTS
 
 
+# Note about "sed": 
+# We need to make some changes in installed files.
+# On Linux "sed" has option "-i" for in-place-edit. Unfortunateley the BSD version of "sed"
+# has incompatible syntax. To solve the problem we perform in-place-edit in three steps:
+# 1) copy the original file to original.temp (delete existing original.temp, if any);
+# 2) sed < original.temp > original
+# 3) delete original.temp
+# These steps ensure that the output file has the same permissions as the original file.
+
 # Configure installed script
 install-exec-hook:
-	sed -i 's?/usr/local/bin?$(bindir)?' "$(DESTDIR)$(sbindir)/nzbgetd"
+	rm -f "$(DESTDIR)$(sbindir)/nzbgetd.temp"
+	cp "$(DESTDIR)$(sbindir)/nzbgetd" "$(DESTDIR)$(sbindir)/nzbgetd.temp"
+	sed 's?/usr/local/bin?$(bindir)?' < "$(DESTDIR)$(sbindir)/nzbgetd.temp" > "$(DESTDIR)$(sbindir)/nzbgetd"
+	rm "$(DESTDIR)$(sbindir)/nzbgetd.temp"
 
 # Prepare example configuration files
 install-data-hook:
-	sed -i 's:"nzbget-postprocess.sh":"nzbget-postprocess.sh" (installed into $(bindir)):' "$(DESTDIR)$(exampleconfdir)/nzbget.conf"
-	sed -i 's:^WebDir=:WebDir=$(webuidir)/webui:' "$(DESTDIR)$(exampleconfdir)/nzbget.conf"
+	rm -f "$(DESTDIR)$(exampleconfdir)/nzbget.conf.temp"
+	cp "$(DESTDIR)$(exampleconfdir)/nzbget.conf" "$(DESTDIR)$(exampleconfdir)/nzbget.conf.temp"
+	sed 's:"nzbget-postprocess.sh":"nzbget-postprocess.sh" (installed into $(bindir)):' < "$(DESTDIR)$(exampleconfdir)/nzbget.conf" > "$(DESTDIR)$(exampleconfdir)/nzbget.conf.temp"
+	sed 's:^WebDir=:WebDir=$(webuidir)/webui:' < "$(DESTDIR)$(exampleconfdir)/nzbget.conf.temp" > "$(DESTDIR)$(exampleconfdir)/nzbget.conf"
+	rm "$(DESTDIR)$(exampleconfdir)/nzbget.conf.temp"
 
 # Install configuration files into /etc
 # (only if they do not exist there to prevent override by update)
@@ -853,7 +868,10 @@ install-conf:
 	if test ! -f "$(DESTDIR)$(sysconfdir)/nzbget.conf" ; then \
 		$(mkinstalldirs) "$(DESTDIR)$(sysconfdir)" ; \
 		cp "$(DESTDIR)$(exampleconfdir)/nzbget.conf" "$(DESTDIR)$(sysconfdir)/nzbget.conf" ; \
-		sed -i 's:^PostProcess=:PostProcess=$(bindir)/nzbget-postprocess.sh:' "$(DESTDIR)$(sysconfdir)/nzbget.conf" ; \
+		rm -f "$(DESTDIR)$(sysconfdir)/nzbget.conf.temp" ; \
+		cp "$(DESTDIR)$(sysconfdir)/nzbget.conf" "$(DESTDIR)$(sysconfdir)/nzbget.conf.temp" ; \
+		sed 's:^PostProcess=:PostProcess=$(bindir)/nzbget-postprocess.sh:' < "$(DESTDIR)$(sysconfdir)/nzbget.conf.temp" > "$(DESTDIR)$(sysconfdir)/nzbget.conf" ; \
+		rm "$(DESTDIR)$(sysconfdir)/nzbget.conf.temp" ; \
 	fi
 	if test ! -f "$(DESTDIR)$(sysconfdir)/nzbget-postprocess.conf" ; then \
 		$(mkinstalldirs) "$(DESTDIR)$(sysconfdir)" ; \
