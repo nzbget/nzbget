@@ -110,7 +110,10 @@ function downloads_mergequeues(posts)
 			if (group.NZBID === post.NZBID)
 			{
 				found = true;
-				group.post = post;
+				if (!group.post)
+				{
+					group.post = post;
+				}
 				lastPPItemIndex = j;
 				break;
 			}
