@@ -41,6 +41,7 @@ var config_lastSection;
 var config_ReloadTime;
 
 var config_HIDDEN_SECTION = ['DISPLAY (TERMINAL)', 'POSTPROCESSING-PARAMETERS', 'POST-PROCESSING-PARAMETERS'];
+var config_POSTPARAM_SECTION = ['POSTPROCESSING-PARAMETERS', 'POST-PROCESSING-PARAMETERS'];
 
 function config_init()
 {
@@ -84,7 +85,17 @@ function config_update()
 	rpc('config', [], function(config) {
 		Config = config;
 		config_initCategories();
-		loadNext();
+
+		PostParamConfig = [];
+		config_loadPostTemplate(function(data)
+			{
+				config_initPostParamConfig(data);
+				loadNext();
+			},
+			function()
+			{
+				loadNext();
+			});
 	});
 }
 
@@ -149,33 +160,36 @@ function config_postValuesLoaded(data)
 
 	if (config_PostValues.length > 0)
 	{
-		// loading post-processing configuration (if the option PostProcess is set)
-		var optionPostProcess = config_FindOption(Config, 'PostProcess');
-		var filename = optionPostProcess.Value.replace(/^.*[\\\/]/, ''); // extract file name (remove path)
-		if (filename.lastIndexOf('.') > -1)
-		{
-			filename = filename.substr(0, filename.lastIndexOf('.')) + '.conf'; // replace extension to '.conf'
-		}
-		else
-		{
-			filename += '.conf';
-		}
-
-		$.get(filename, config_postTemplateLoaded, 'html').error(
-			function ()
+		config_loadPostTemplate(config_postTemplateLoaded, function()
 			{
 				//$('#ConfigLoadInfo').hide();
 				$('.ConfigLoadPostTemplateErrorFilename').text(filename);
 				$('#ConfigLoadPostTemplateError').show();
 				config_PostValues = null;
 				config_loadComplete();
-			}
-		);
+			});
 	}
 	else
 	{
 		config_loadComplete();
 	}
+}
+
+function config_loadPostTemplate(okCallback, failureCallback)
+{
+	// loading post-processing configuration (if the option PostProcess is set)
+	var optionPostProcess = config_FindOption(Config, 'PostProcess');
+	var filename = optionPostProcess.Value.replace(/^.*[\\\/]/, ''); // extract file name (remove path)
+	if (filename.lastIndexOf('.') > -1)
+	{
+		filename = filename.substr(0, filename.lastIndexOf('.')) + '.conf'; // replace extension to '.conf'
+	}
+	else
+	{
+		filename += '.conf';
+	}
+
+	$.get(filename, okCallback, 'html').error(failureCallback);
 }
 
 function config_postTemplateLoaded(data)
@@ -193,7 +207,7 @@ function config_loadComplete()
 
 /*** PARSE CONFIG AND BUILD INTERNAL STRUCTURES **********************************************/
 
-function config_readConfigTemplate(filedata, hiddensections, category)
+function config_readConfigTemplate(filedata, visiblesections, hiddensections, category)
 {
 	var config = [];
 	var section = null;
@@ -213,7 +227,8 @@ function config_readConfigTemplate(filedata, hiddensections, category)
 			section.category = category;
 			section.options = [];
 			description = '';
-			section.hidden = !(hiddensections === undefined || hiddensections.indexOf(section.name) == -1);
+			section.hidden = !(hiddensections === undefined || (hiddensections.indexOf(section.name) == -1)) ||
+				(visiblesections !== undefined && (visiblesections.indexOf(section.name) == -1));
 			config.push(section);
 		}
 		else if (line.substring(0, 2) === '# ' || line === '#')
@@ -450,16 +465,29 @@ function config_initCategories()
 	}
 }
 
+function config_initPostParamConfig(data)
+{
+	var postConfig = config_readConfigTemplate(data, config_POSTPARAM_SECTION, undefined, 'P');
+
+	PostParamConfig = [];
+
+	// delete all sections except of "POSTPROCESSING-PARAMETERS" or "POST-PROCESSING-PARAMETERS"
+	for (var i=0; i < postConfig.length; i++)
+	{
+		var section = postConfig[i];
+		if (!section.hidden)
+		{
+			section.postparam = true;
+			PostParamConfig.push(section);
+		}
+	}
+}
+
 /*** GENERATE HTML PAGE *****************************************************************/
 
-function config_BuildOptionsContent(section, sectionframe)
+function config_BuildOptionsContent(section)
 {
 	var html = '';
-
-	if (sectionframe)
-	{
-		html += '<div class = "block"><center><b>' + section.name + '</b></center><br>';
-	}
 
 	var lastmultiid = 1;
 	var firstmultioption = true;
@@ -491,11 +519,6 @@ function config_BuildOptionsContent(section, sectionframe)
 	if (section.multi)
 	{
 		html += config_BuildMultiRowEnd(section, lastmultiid, false, hasoptions);
-	}
-
-	if (sectionframe)
-	{
-		html += '</div><br>';
 	}
 
 	return html;
@@ -545,7 +568,8 @@ function config_BuildOptionRow(option, section)
 
 	var html =
 		'<div class="control-group ' + section.id + (section.multi ? ' multiid' + option.multiid + ' multiset' : '') + '">'+
-			'<label class="control-label nowrap">' + caption + (option.value === '' && value !== '' ? ' <a data-toggle="modal" href="#ConfigNewOptionHelp" class="label label-info">new</a>' : '') + '</label>'+
+			'<label class="control-label nowrap">' + caption + (option.value === '' && value !== '' && !section.postparam ?
+				' <a data-toggle="modal" href="#ConfigNewOptionHelp" class="label label-info">new</a>' : '') + '</label>'+
 			'<div class="controls">';
 
 	if (option.select.length > 1)
@@ -708,7 +732,7 @@ function config_buildConfig(config, category)
 			var html = $('<li><a href="#' + section.id + '">' + section.name + '</a></li>');
 			config_ConfigNav.append(html);
 
-			var content = config_BuildOptionsContent(section, false);
+			var content = config_BuildOptionsContent(section);
 			config_ConfigData.append(content);
 		}
 	}
@@ -716,7 +740,7 @@ function config_buildConfig(config, category)
 
 function config_build()
 {
-	config_ServerConfig = config_readConfigTemplate(config_ServerTemplateData, config_HIDDEN_SECTION, 'S');
+	config_ServerConfig = config_readConfigTemplate(config_ServerTemplateData, undefined, config_HIDDEN_SECTION, 'S');
 	config_MergeValues(config_ServerConfig, config_ServerValues);
 
 	config_AllConfig = [];
@@ -724,7 +748,7 @@ function config_build()
 
 	if (config_PostTemplateData)
 	{
-		config_PostConfig = config_readConfigTemplate(config_PostTemplateData, config_HIDDEN_SECTION, 'P');
+		config_PostConfig = config_readConfigTemplate(config_PostTemplateData, undefined, config_HIDDEN_SECTION, 'P');
 		config_MergeValues(config_PostConfig, config_PostValues);
 
 		config_AllConfig.push.apply(config_AllConfig, config_PostConfig);

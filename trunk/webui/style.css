@@ -461,6 +461,18 @@ body.navfixed.scrolled .navbar-fixed-top .navbar-inner {
 	background-position: -368px -16px;
 }
 
+.icon-back {
+	background-position: -304px -80px;
+}
+
+.icon-forward {
+	background-position: -336px -80px;
+}
+
+.icon-nextpage {
+	background-position: -368px -80px;
+}
+
 .icon-refresh {
 	background-position: -16px -48px;
 }
@@ -493,7 +505,8 @@ body.navfixed.scrolled .navbar-fixed-top .navbar-inner {
 	background-position: -240px -48px;
 }
 
-.icon-remove {
+.icon-remove,
+.icon-close {
 	background-position: -272px -48px;
 }
 
@@ -631,6 +644,9 @@ form {
 	margin-bottom: 0px;
 }
 
+#DownloadsEdit_PostParamData {
+	padding-bottom: 1px;
+}
 
 /* BEGIN: Tables */
 .table {
@@ -781,8 +797,43 @@ tr.checked  td {
 }
 
 /* BEGIN: override bootstrap styles for modals */
-.modal-body {
-    padding-bottom1: 5px;
+.modal-header h3 {
+	text-align: center;
+}
+
+.modal-header .close {
+	margin-top: 6px;
+	margin-left: 10px;
+	opacity: 0.6;
+	filter: alpha(opacity=60);
+	outline: 0;
+}
+
+.modal-header .close:hover {
+	opacity: 0.9;
+	filter: alpha(opacity=90);
+}
+
+.modal-header .back {
+	float: left;
+	margin-top: 6px;
+	margin-right: 10px;
+	font-size: 20px;
+	font-weight: bold;
+	line-height: 18px;
+	opacity: 0.6;
+	filter: alpha(opacity=60);
+	outline: 0;
+}
+
+.modal-header .back:hover {
+	cursor: pointer;
+	opacity: 0.9;
+	filter: alpha(opacity=90);
+}
+
+.modal-header .back-hidden:hover {
+	cursor: inherit;
 }
 
 .form-horizontal .control-group {
@@ -1689,11 +1740,6 @@ body.phone,
 
 	.modal.fade.in {
 		top: auto;
-	}
-
-	.modal-header .close {
-		padding: 10px;
-		margin: -10px;
 	}
 
 	.modal .input-xlarge ,

@@ -42,6 +42,7 @@ var Urls;
 var Messages;
 var History;
 var Config;
+var PostParamConfig;
 var secondsToUpdate = -1;
 var refreshTimer = 0;
 var indicatorTimer = 0;
@@ -756,6 +757,39 @@ function tab_updateInfo(control, stat)
 		resizeNavbar();
 		control.lastOuterWidth = control.outerWidth();
 	}
+}
+
+function tab_switchSlide(dialog, fromTab, toTab, back, duration)
+{
+	var sign = back ? -1 : 1;
+	var bodyPadding = 30;
+	var body = $('.modal-body', dialog);
+	var oldBodyHeight = body.height();
+	var oldWinHeight = dialog.height();
+	fromTab.hide();
+	toTab.show();
+	var newBodyHeight = body.height();
+	var newWinHeight = dialog.height();
+	var newTabHeight = toTab.height();
+	var newTabWidth = toTab.width();
+	var leftPos = toTab.position().left;
+	fromTab.show();
+
+	body.css({position: 'relative', height: oldBodyHeight});
+	dialog.css('overflow', 'hidden');
+	fromTab.css({position: 'absolute', width: newTabWidth});
+	toTab.css({position: 'absolute', width: newTabWidth, height: newBodyHeight, left: sign * (newTabWidth + bodyPadding)});
+
+	body.animate({height: newBodyHeight}, duration);
+	fromTab.animate({left: sign * -(newTabWidth + bodyPadding)}, duration);
+	toTab.animate({left: leftPos}, duration, function()
+		{
+			fromTab.hide();
+			fromTab.css({position: '', width: '', height: '', left: ''});
+			toTab.css({position: '', width: '', height: '', left: ''});
+			body.css({position: '', height: ''});
+			dialog.css('overflow', '');
+		});
 }
 
 /* END - Common Tab functions

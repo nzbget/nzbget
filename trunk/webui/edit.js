@@ -32,6 +32,8 @@ var edit_MergeEditIDList;
 var edit_MultiIDList;
 var edit_OldPriority;
 var edit_OldCategory;
+var edit_PostParams;
+var edit_LastPage;
 
 function edit_init()
 {
@@ -77,6 +79,8 @@ function edit_group_init()
 	$('#DownloadsEdit_Resume').click(edit_group_Resume);
 	$('#DownloadsEdit_Delete').click(edit_group_Delete);
 	$('#DownloadsEdit_CancelPP').click(edit_group_CancelPP);
+	$('#DownloadsEdit_Param, #DownloadsEdit_Log').click(edit_group_Tab_click);
+	$('#DownloadsEdit_Back').click(edit_group_Back_click);
 
 	edit_GroupDialog.on('hidden', function ()
 	{
@@ -171,10 +175,13 @@ function edit_group_dialog(nzbid)
 	show($('#DownloadsEdit_PauseGroup'), !group.postprocess);
 	show($('#DownloadsEdit_ResumeGroup'), false);
 	show($('#DownloadsEdit_Save'), !group.postprocess);
-	show($('#DownloadsEdit_Log'), group.postprocess && group.post.Log.length > 0);
-	show($('#DownloadsEdit_PostProcessingGroup'), group.postprocess && group.post.Log.length > 0);
-	group.postprocess && group.post.Log.length > 0 ? 
-		$('#DownloadsEdit_StatisticsGroup').removeClass('control-group-last') : 
+	var postParam = PostParamConfig && PostParamConfig.length > 0;
+	var postLog = group.postprocess && group.post.Log.length > 0;
+	show($('#DownloadsEdit_PostParam'), postParam);
+	show($('#DownloadsEdit_Log'), postLog);
+	show($('#DownloadsEdit_PostProcessingGroup'), postParam || postLog);
+	postParam || postLog ?
+		$('#DownloadsEdit_StatisticsGroup').removeClass('control-group-last') :
 		$('#DownloadsEdit_StatisticsGroup').addClass('control-group-last');
 
 	if (group.postprocess)
@@ -198,10 +205,46 @@ function edit_group_dialog(nzbid)
 		}
 	}
 
+	if (postParam)
+	{
+		edit_PostParams = $.extend(true, [], PostParamConfig);
+		config_MergeValues(edit_PostParams, group.Parameters);
+		var content = config_BuildOptionsContent(edit_PostParams[0]);
+		var configData = $('#DownloadsEdit_ParamData');
+		configData.empty();
+		configData.append(content);
+	}
+
 	edit_group_EnableAllButtons();
-	$('#DownloadsEdit_GeneralTabLink').tab('show');
+
+	$('#DownloadsEdit_GeneralTab').show();
+	$('#DownloadsEdit_ParamTab').hide();
+	$('#DownloadsEdit_LogTab').hide();
+	$('#DownloadsEdit_Back').hide();
+	$('#DownloadsEdit_BackSpace').show();
 
 	edit_GroupDialog.modal({backdrop: 'static'});
+}
+
+function edit_group_Tab_click(e)
+{
+	e.preventDefault();
+	$('#DownloadsEdit_Back').fadeIn(500);
+	$('#DownloadsEdit_BackSpace').hide();
+	var tab = '#' + $(this).attr('data-tab');
+	edit_LastPage = $(tab);
+	tab_switchSlide(edit_GroupDialog, $('#DownloadsEdit_GeneralTab'), edit_LastPage, false, e.shiftKey ? 0 : 500);
+}
+
+function edit_group_Back_click(e)
+{
+	e.preventDefault();
+	$('#DownloadsEdit_Back').fadeOut(500, function()
+	{
+		$('#DownloadsEdit_BackSpace').show();
+	});
+
+	tab_switchSlide(edit_GroupDialog, edit_LastPage, $('#DownloadsEdit_GeneralTab'), true, e.shiftKey ? 0 : 500);
 }
 
 function edit_fillPostLog()
@@ -300,9 +343,56 @@ function edit_group_SaveCategory()
 		rpc('editqueue', ['GroupSetCategory', 0, category, [edit_curGroup.LastID]], function()
 		{
 			edit_notification = '#Notif_Downloads_Saved';
-			edit_completed();
+			edit_group_SaveParam();
 		})
-		: edit_completed();
+		: edit_group_SaveParam();
+}
+
+function edit_group_PrepareParamRequest()
+{
+	var request = [];
+	for (var i=0; i < edit_PostParams.length; i++)
+	{
+		var section = edit_PostParams[i];
+		for (var j=0; j < section.options.length; j++)
+		{
+			var option = section.options[j];
+			if (!option.template && !section.hidden)
+			{
+				var oldValue = option.value;
+				var newValue = config_GetOptionValue(option);
+				if (oldValue != newValue && !(oldValue === '' && newValue === option.defvalue))
+				{
+					opt = option.name + '=' + newValue;
+					request.push(opt);
+				}
+			}
+		}
+	}
+
+	return request;
+}
+
+function edit_group_SaveParam()
+{
+	paramList = edit_group_PrepareParamRequest();
+	edit_group_SaveNextParam(paramList);
+}
+
+function edit_group_SaveNextParam(paramList)
+{
+	if (paramList.length > 0)
+	{
+		rpc('editqueue', ['GroupSetParameter', 0, paramList[0], [edit_curGroup.LastID]], function()
+		{
+			paramList.shift();
+			edit_group_SaveNextParam(paramList);
+		})
+	}
+	else
+	{
+		edit_completed();
+	}
 }
 
 function edit_group_Pause()
@@ -465,7 +555,7 @@ function edit_multi_dialog(nzbIdList)
 		PriorityDiff = PriorityDiff || (Priority !== group.MaxPriority);
 		CategoryDiff = CategoryDiff || (Category !== group.Category);
 	}
-	
+
 	var size = FormatSizeMB(FileSizeMB, FileSizeLo);
 	var remaining = FormatSizeMB(RemainingSizeMB-PausedSizeMB, RemainingSizeLo-PausedSizeLo);
 	var unpausedSize = FormatSizeMB(PausedSizeMB, PausedSizeLo);
