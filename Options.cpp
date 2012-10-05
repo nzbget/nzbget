@@ -95,6 +95,7 @@ static const char* OPTION_CONFIGFILE			= "ConfigFile";
 static const char* OPTION_APPBIN				= "AppBin";
 static const char* OPTION_APPDIR				= "AppDir";
 static const char* OPTION_VERSION				= "Version";
+static const char* OPTION_MAINDIR				= "MainDir";
 static const char* OPTION_DESTDIR				= "DestDir";
 static const char* OPTION_TEMPDIR				= "TempDir";
 static const char* OPTION_QUEUEDIR				= "QueueDir";
@@ -110,9 +111,9 @@ static const char* OPTION_OUTPUTMODE			= "OutputMode";
 static const char* OPTION_DUPECHECK				= "DupeCheck";
 static const char* OPTION_DOWNLOADRATE			= "DownloadRate";
 static const char* OPTION_RENAMEBROKEN			= "RenameBroken";
-static const char* OPTION_SERVERIP				= "ServerIp";
-static const char* OPTION_SERVERPORT			= "ServerPort";
-static const char* OPTION_SERVERPASSWORD		= "ServerPassword";
+static const char* OPTION_CONTROLIP				= "ControlIp";
+static const char* OPTION_CONTROLPORT			= "ControlPort";
+static const char* OPTION_CONTROLPASSWORD		= "ControlPassword";
 static const char* OPTION_CONNECTIONTIMEOUT		= "ConnectionTimeout";
 static const char* OPTION_SAVEQUEUE				= "SaveQueue";
 static const char* OPTION_RELOADQUEUE			= "ReloadQueue";
@@ -317,9 +318,9 @@ Options::Options(int argc, char* argv[])
 	m_bDupeCheck			= false;
 	m_iRetries				= 0;
 	m_iRetryInterval		= 0;
-	m_szServerPort			= 0;
-	m_szServerIP			= NULL;
-	m_szServerPassword		= NULL;
+	m_szControlPort			= 0;
+	m_szControlIP			= NULL;
+	m_szControlPassword		= NULL;
 	m_szLockFile			= NULL;
 	m_szDaemonUserName		= NULL;
 	m_eOutputMode			= omLoggable;
@@ -487,13 +488,13 @@ Options::~Options()
 	{
 		free(m_szLastArg);
 	}
-	if (m_szServerIP)
+	if (m_szControlIP)
 	{
-		free(m_szServerIP);
+		free(m_szControlIP);
 	}
-	if (m_szServerPassword)
+	if (m_szControlPassword)
 	{
-		free(m_szServerPassword);
+		free(m_szControlPassword);
 	}
 	if (m_szLogFile)
 	{
@@ -559,20 +560,16 @@ void Options::ConfigError(const char* msg, ...)
 void Options::InitDefault()
 {
 #ifdef WIN32
-	SetOption(OPTION_TEMPDIR, "${AppDir}\\temp");
-	SetOption(OPTION_DESTDIR, "${AppDir}\\dest");
-	SetOption(OPTION_QUEUEDIR, "${AppDir}\\queue");
-	SetOption(OPTION_NZBDIR, "${AppDir}\\nzb");
-	SetOption(OPTION_LOGFILE, "${AppDir}\\nzbget.log");
-	SetOption(OPTION_LOCKFILE, "${AppDir}\\nzbget.lock");
+	SetOption(OPTION_MAINDIR, "${AppDir}");
 #else
-	SetOption(OPTION_TEMPDIR, "~/nzbget/temp");
-	SetOption(OPTION_DESTDIR, "~/nzbget/dest");
-	SetOption(OPTION_QUEUEDIR, "~/nzbget/queue");
-	SetOption(OPTION_NZBDIR, "~/nzbget/nzb");
-	SetOption(OPTION_LOGFILE, "~/nzbget/nzbget.log");
-	SetOption(OPTION_LOCKFILE, "/tmp/nzbget.lock");
+	SetOption(OPTION_MAINDIR, "~/downloads");
 #endif
+	SetOption(OPTION_TEMPDIR, "${MainDir}/tmp");
+	SetOption(OPTION_DESTDIR, "${MainDir}/dst");
+	SetOption(OPTION_QUEUEDIR, "${MainDir}/queue");
+	SetOption(OPTION_NZBDIR, "${MainDir}/nzb");
+	SetOption(OPTION_LOCKFILE, "${MainDir}/nzbget.lock");
+	SetOption(OPTION_LOGFILE, "${DestDir}/nzbget.log");
 	SetOption(OPTION_WEBDIR, "");
 	SetOption(OPTION_CREATELOG, "yes");
 	SetOption(OPTION_APPENDNZBDIR, "yes");
@@ -581,9 +578,9 @@ void Options::InitDefault()
 	SetOption(OPTION_DUPECHECK, "yes");
 	SetOption(OPTION_DOWNLOADRATE, "0");
 	SetOption(OPTION_RENAMEBROKEN, "no");
-	SetOption(OPTION_SERVERIP, "127.0.0.1");
-	SetOption(OPTION_SERVERPASSWORD, "tegbzn6789");
-	SetOption(OPTION_SERVERPORT, "6789");
+	SetOption(OPTION_CONTROLIP, "0.0.0.0");
+	SetOption(OPTION_CONTROLPASSWORD, "tegbzn6789");
+	SetOption(OPTION_CONTROLPORT, "6789");
 	SetOption(OPTION_CONNECTIONTIMEOUT, "60");
 	SetOption(OPTION_SAVEQUEUE, "yes");
 	SetOption(OPTION_RELOADQUEUE, "yes");
@@ -738,8 +735,8 @@ void Options::InitOptions()
 
 	m_szPostProcess			= strdup(GetOption(OPTION_POSTPROCESS));
 	m_szNZBProcess			= strdup(GetOption(OPTION_NZBPROCESS));
-	m_szServerIP			= strdup(GetOption(OPTION_SERVERIP));
-	m_szServerPassword		= strdup(GetOption(OPTION_SERVERPASSWORD));
+	m_szControlIP			= strdup(GetOption(OPTION_CONTROLIP));
+	m_szControlPassword		= strdup(GetOption(OPTION_CONTROLPASSWORD));
 	m_szLockFile			= strdup(GetOption(OPTION_LOCKFILE));
 	m_szDaemonUserName		= strdup(GetOption(OPTION_DAEMONUSERNAME));
 	m_szLogFile				= strdup(GetOption(OPTION_LOGFILE));
@@ -749,7 +746,7 @@ void Options::InitOptions()
 	m_iTerminateTimeout		= ParseIntValue(OPTION_TERMINATETIMEOUT, 10);
 	m_iRetries				= ParseIntValue(OPTION_RETRIES, 10);
 	m_iRetryInterval		= ParseIntValue(OPTION_RETRYINTERVAL, 10);
-	m_szServerPort			= ParseIntValue(OPTION_SERVERPORT, 10);
+	m_szControlPort			= ParseIntValue(OPTION_CONTROLPORT, 10);
 	m_iUrlConnections		= ParseIntValue(OPTION_URLCONNECTIONS, 10);
 	m_iLogBufferSize		= ParseIntValue(OPTION_LOGBUFFERSIZE, 10);
 	m_iUMask				= ParseIntValue(OPTION_UMASK, 8);
@@ -2019,17 +2016,14 @@ bool Options::SetOptionString(const char * option)
 		optvalue[1000]  = '\0';
 		if (strlen(optname) > 0)
 		{
+			ConvertOldOptionName(optname, sizeof(optname));
+
 			if (!ValidateOptionName(optname))
 			{
 				ConfigError("Invalid option \"%s\"", optname);
 				return false;
 			}
-			char* optname2 = optname;
-			if (optname2[0] ==  '$')
-			{
-				optname2++;
-			}
-			SetOption(optname2, optvalue);
+			SetOption(optname, optvalue);
 		}
 		return true;
 	}
@@ -2053,12 +2047,6 @@ bool Options::ValidateOptionName(const char * optname)
 	if (v)
 	{
 		// it's predefined option, OK
-		return true;
-	}
-
-	if (optname[0] == '$')
-	{
-		// it's variable, OK
 		return true;
 	}
 
@@ -2278,6 +2266,11 @@ bool Options::LoadConfig(EDomain eDomain, OptEntries* pOptEntries)
 			optvalue[1024-1]  = '\0';
 			if (strlen(optname) > 0)
 			{
+				if (eDomain == dmServer)
+				{
+					ConvertOldOptionName(optname, sizeof(optname));
+				}
+
 				OptEntry* pOptEntry = new OptEntry();
 				pOptEntry->SetName(optname);
 				pOptEntry->SetValue(optvalue);
@@ -2348,6 +2341,11 @@ bool Options::SaveConfig(EDomain eDomain, OptEntries* pOptEntries)
 			optvalue[1024-1]  = '\0';
 			if (strlen(optname) > 0)
 			{
+				if (eDomain == dmServer)
+				{
+					ConvertOldOptionName(optname, sizeof(optname));
+				}
+
 				OptEntry *pOptEntry = pOptEntries->FindOption(optname);
 				if (pOptEntry)
 				{
@@ -2386,4 +2384,31 @@ bool Options::SaveConfig(EDomain eDomain, OptEntries* pOptEntries)
 	Util::TruncateFile(szConfigFile, pos);
 
 	return true;
+}
+
+void Options::ConvertOldOptionName(char *szOption, int iBufLen)
+{
+	// for compatibility with older versions accept old option names
+
+	if (!strcasecmp(szOption, "$MAINDIR"))
+	{
+		strncpy(szOption, "MainDir", iBufLen);
+	}
+
+	if (!strcasecmp(szOption, "ServerIP"))
+	{
+		strncpy(szOption, "ControlIP", iBufLen);
+	}
+
+	if (!strcasecmp(szOption, "ServerPort"))
+	{
+		strncpy(szOption, "ControlPort", iBufLen);
+	}
+
+	if (!strcasecmp(szOption, "ServerPassword"))
+	{
+		strncpy(szOption, "ControlPassword", iBufLen);
+	}
+
+	szOption[iBufLen-1] = '\0';
 }

@@ -101,13 +101,13 @@ void BinRpcProcessor::Execute()
 	// Make sure this is a nzbget request from a client
 	if ((int)ntohl(m_MessageBase.m_iSignature) != (int)NZBMESSAGE_SIGNATURE)
 	{
-		warn("Non-nzbget request received on port %i from %s", g_pOptions->GetServerPort(), m_szClientIP);
+		warn("Non-nzbget request received on port %i from %s", g_pOptions->GetControlPort(), m_szClientIP);
 		return;
 	}
 
-	if (strcmp(m_MessageBase.m_szPassword, g_pOptions->GetServerPassword()))
+	if (strcmp(m_MessageBase.m_szPassword, g_pOptions->GetControlPassword()))
 	{
-		warn("nzbget request received on port %i from %s, but password invalid", g_pOptions->GetServerPort(), m_szClientIP);
+		warn("nzbget request received on port %i from %s, but password invalid", g_pOptions->GetControlPort(), m_szClientIP);
 		return;
 	}
 

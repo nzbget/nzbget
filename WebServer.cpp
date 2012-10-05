@@ -177,9 +177,9 @@ void WebProcessor::Execute()
 	// Authorization
 	char* pw = strchr(szAuthInfo, ':');
 	if (pw) *pw++ = '\0';
-	if (strcmp(szAuthInfo, "nzbget") || strcmp(pw, g_pOptions->GetServerPassword()))
+	if (strcmp(szAuthInfo, "nzbget") || strcmp(pw, g_pOptions->GetControlPassword()))
 	{
-		warn("request received on port %i from %s, but password invalid", g_pOptions->GetServerPort(), m_szClientIP);
+		warn("request received on port %i from %s, but password invalid", g_pOptions->GetControlPort(), m_szClientIP);
 		SendAuthResponse();
 		return;
 	}

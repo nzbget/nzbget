@@ -87,7 +87,7 @@ bool Frontend::PrepareData()
 		}
 		if (!RequestMessages() || ((m_bSummary || m_bFileList) && !RequestFileList()))
 		{
-			printf("\nUnable to send request to nzbget-server at %s (port %i)    \n", g_pOptions->GetServerIP(), g_pOptions->GetServerPort());
+			printf("\nUnable to send request to nzbget-server at %s (port %i)    \n", g_pOptions->GetControlIP(), g_pOptions->GetControlPort());
 			Stop();
 			return false;
 		}
@@ -235,13 +235,13 @@ void Frontend::InitMessageBase(SNZBRequestBase* pMessageBase, int iRequest, int 
 	pMessageBase->m_iSignature	= htonl(NZBMESSAGE_SIGNATURE);
 	pMessageBase->m_iType = htonl(iRequest);
 	pMessageBase->m_iStructSize = htonl(iSize);
-	strncpy(pMessageBase->m_szPassword, g_pOptions->GetServerPassword(), NZBREQUESTPASSWORDSIZE);
+	strncpy(pMessageBase->m_szPassword, g_pOptions->GetControlPassword(), NZBREQUESTPASSWORDSIZE);
 	pMessageBase->m_szPassword[NZBREQUESTPASSWORDSIZE - 1] = '\0';
 }
 
 bool Frontend::RequestMessages()
 {
-	Connection connection(g_pOptions->GetServerIP(), g_pOptions->GetServerPort(), false);
+	Connection connection(g_pOptions->GetControlIP(), g_pOptions->GetControlPort(), false);
 
 	bool OK = connection.Connect();
 	if (!OK)
@@ -312,7 +312,7 @@ bool Frontend::RequestMessages()
 
 bool Frontend::RequestFileList()
 {
-	Connection connection(g_pOptions->GetServerIP(), g_pOptions->GetServerPort(), false);
+	Connection connection(g_pOptions->GetControlIP(), g_pOptions->GetControlPort(), false);
 
 	bool OK = connection.Connect();
 	if (!OK)
