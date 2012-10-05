@@ -419,7 +419,7 @@ Running client & server on seperate machines:
 Since nzbget communicates via TCP/IP it's possible to have a server running on
 one computer and adding downloads via a client on another computer.
 
-Do this by setting the "serverip" option in the nzbget.conf file to point to the
+Do this by setting the "ControlIP" option in the nzbget.conf file to point to the
 IP of the server (default is localhost which means client and server runs on 
 same computer)
 

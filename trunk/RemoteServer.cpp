@@ -80,7 +80,7 @@ void RemoteServer::Run()
 
 		if (!m_pConnection)
 		{
-			m_pConnection = new Connection(g_pOptions->GetServerIP(), g_pOptions->GetServerPort(), false);
+			m_pConnection = new Connection(g_pOptions->GetControlIP(), g_pOptions->GetControlPort(), false);
 			m_pConnection->SetTimeout(g_pOptions->GetConnectionTimeout());
 			m_pConnection->SetSuppressErrors(false);
 			bBind = m_pConnection->Bind() == 0;
@@ -212,12 +212,12 @@ void RequestProcessor::Run()
 
 	if (!bOK && iBytesReceived > 0)
 	{
-		warn("Non-nzbget request received on port %i from %s", g_pOptions->GetServerPort(), ip);
+		warn("Non-nzbget request received on port %i from %s", g_pOptions->GetControlPort(), ip);
 	}
 
 	if (!bOK && iBytesReceived == 0)
 	{
-		debug("empty request received on port %i from %s", g_pOptions->GetServerPort(), ip);
+		debug("empty request received on port %i from %s", g_pOptions->GetControlPort(), ip);
 	}
 
 	closesocket(m_iSocket);

@@ -172,9 +172,9 @@ private:
 	int					m_iRetryInterval;
 	bool				m_bSaveQueue;
 	bool				m_bDupeCheck;
-	char*				m_szServerIP;
-	char*				m_szServerPassword;
-	int					m_szServerPort;
+	char*				m_szControlIP;
+	char*				m_szControlPassword;
+	int					m_szControlPort;
 	char*				m_szLockFile;
 	char*				m_szDaemonUserName;
 	EOutputMode			m_eOutputMode;
@@ -275,6 +275,7 @@ private:
 	bool				ParseTime(const char** pTime, int* pHours, int* pMinutes);
 	bool				ParseWeekDays(const char* szWeekDays, int* pWeekDaysBits);
 	void				ConfigError(const char* msg, ...);
+	void				ConvertOldOptionName(char *szOption, int iBufLen);
 
 public:
 						Options(int argc, char* argv[]);
@@ -310,9 +311,9 @@ public:
 	int					GetRetryInterval() { return m_iRetryInterval; }
 	bool				GetSaveQueue() { return m_bSaveQueue; }
 	bool				GetDupeCheck() { return m_bDupeCheck; }
-	const char*			GetServerIP() { return m_szServerIP; }
-	const char*			GetServerPassword() { return m_szServerPassword; }
-	int					GetServerPort() { return m_szServerPort; }
+	const char*			GetControlIP() { return m_szControlIP; }
+	const char*			GetControlPassword() { return m_szControlPassword; }
+	int					GetControlPort() { return m_szControlPort; }
 	const char*			GetLockFile() { return m_szLockFile; }
 	const char*			GetDaemonUserName() { return m_szDaemonUserName; }
 	EOutputMode			GetOutputMode() { return m_eOutputMode; }
