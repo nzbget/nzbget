@@ -30,6 +30,7 @@ var config_ConfigTabBadgeEmpty;
 
 var config_ServerTemplateData = null;
 var config_PostTemplateData = null;
+var config_PostTemplateFilename;
 var config_ServerConfig;
 var config_PostConfig;
 var config_AllConfig;
@@ -163,7 +164,7 @@ function config_postValuesLoaded(data)
 		config_loadPostTemplate(config_postTemplateLoaded, function()
 			{
 				//$('#ConfigLoadInfo').hide();
-				$('.ConfigLoadPostTemplateErrorFilename').text(filename);
+				$('.ConfigLoadPostTemplateErrorFilename').text(config_PostTemplateFilename);
 				$('#ConfigLoadPostTemplateError').show();
 				config_PostValues = null;
 				config_loadComplete();
@@ -188,6 +189,8 @@ function config_loadPostTemplate(okCallback, failureCallback)
 	{
 		filename += '.conf';
 	}
+	
+	config_PostTemplateFilename = filename;
 
 	$.get(filename, okCallback, 'html').error(failureCallback);
 }
