@@ -87,15 +87,23 @@ function config_update()
 		Config = config;
 		config_initCategories();
 
+		// loading post-processing script parameters config (if exists)
 		PostParamConfig = [];
-		config_loadPostTemplate(function(data)
+		rpc('loadconfig', ['POST'], function(postValues)
 			{
-				config_initPostParamConfig(data);
-				loadNext();
-			},
-			function()
-			{
-				loadNext();
+				if (postValues.length > 0)
+				{
+					config_loadPostTemplate(function(data)
+						{
+							config_initPostParamConfig(data);
+							loadNext();
+						}, 
+						loadNext);
+				}
+				else
+				{
+					loadNext();
+				}
 			});
 	});
 }
@@ -166,7 +174,7 @@ function config_postValuesLoaded(data)
 				//$('#ConfigLoadInfo').hide();
 				$('.ConfigLoadPostTemplateErrorFilename').text(config_PostTemplateFilename);
 				$('#ConfigLoadPostTemplateError').show();
-				config_PostValues = null;
+				config_PostValues = [];
 				config_loadComplete();
 			});
 	}
@@ -1095,6 +1103,7 @@ function config_save_completed(result)
 	config_removeSaveBanner();
 	if (result)
 	{
+		$('#ConfigLoadPostTemplateError').hide();
 		$('#ConfigContent').fadeOut(function() { $('#ConfigSaved').fadeIn(); });
 	}
 	else
