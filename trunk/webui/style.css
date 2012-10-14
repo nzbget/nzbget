@@ -104,8 +104,16 @@ body.navfixed.scrolled .navbar-fixed-top .navbar-inner {
 	background-position: -176px -80px;
 }
 
+.img-download-orange-orange {
+	background-position: -176px -144px;
+}
+
 .img-download-green {
 	background-position: -112px -80px;
+}
+
+.img-download-green-orange {
+	background-position: -112px -144px;
 }
 
 .img-download-bg {
@@ -398,9 +406,9 @@ body.navfixed.scrolled .navbar-fixed-top .navbar-inner {
 	[class^="img-"],
 	[class*=" img-"] {
 		background-image: url("./img/icons-2x.png");
-		-webkit-background-size: 512px 136px;
-		-moz-background-size: 512px 136px;
-		background-size: 512px 136px;
+		-webkit-background-size: 512px 200px;
+		-moz-background-size: 512px 200px;
+		background-size: 512px 200px;
 	}
 }
 
@@ -707,7 +715,7 @@ div.check:hover {
 }
 
 table.table-cancheck tr  div.img-check {
-	background-position: 200px 200px;
+	background-position: 10px 10px;
 }
 
 table.table-cancheck tr.checked  div.img-check {
