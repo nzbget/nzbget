@@ -51,6 +51,7 @@ var status_PlayFrame = 0;
 var status_PlayFrameSize = 40;
 var status_PlayState = 0;
 var status_PlayStep = 0;
+var status_LastSoftPauseState = 0;
 
 function status_init()
 {
@@ -157,8 +158,8 @@ function status_info()
 	show(status_CHPauseScan, Status.ScanPaused);
 	show(status_CHSoftPauseDownload, Status.DownloadPaused);
 
-	status_updatePlayButton();
 	status_updatePlayAnim();
+	status_updatePlayButton();
 
 	if (Status.ServerStandBy)
 	{
@@ -199,6 +200,16 @@ function status_info()
 
 function status_updatePlayButton()
 {
+	var SoftPause = Status.DownloadPaused && (!status_LastAnimState || !Settings_PlayAnimation);
+	if (SoftPause !== status_LastSoftPauseState)
+	{
+		status_LastSoftPauseState = SoftPause;
+		$('#PauseButton').removeClass('img-download-green').removeClass('img-download-green-orange').
+			addClass(SoftPause ? 'img-download-green-orange' : 'img-download-green');
+		$('#PlayButton').removeClass('img-download-orange').removeClass('img-download-orange-orange').
+			addClass(SoftPause ? 'img-download-orange-orange' : 'img-download-orange');
+	}
+
 	var Play = !Status.Download2Paused;
 	if (Play === status_LastPlayState)
 	{
