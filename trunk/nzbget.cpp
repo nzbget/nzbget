@@ -2,7 +2,7 @@
  *  This file is part of nzbget
  *
  *  Copyright (C) 2004 Sven Henkel <sidddy@users.sourceforge.net>
- *  Copyright (C) 2007-2010 Andrey Prygunkov <hugbug@users.sourceforge.net>
+ *  Copyright (C) 2007-2012 Andrey Prygunkov <hugbug@users.sourceforge.net>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -190,7 +190,6 @@ void Run(bool bReload)
 	if (!bReload)
 	{
 		Thread::Init();
-		Connection::Init();
 	}
 
 	g_pServerPool = new ServerPool();
@@ -231,6 +230,11 @@ void Run(bool bReload)
 	else if (g_pOptions->GetRemoteClientMode())
 	{
 		info("nzbget %s remote-mode", Util::VersionRevision());
+	}
+
+	if (!bReload)
+	{
+		Connection::Init();
 	}
 
 	if (!g_pOptions->GetRemoteClientMode())
