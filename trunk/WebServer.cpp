@@ -144,6 +144,24 @@ void WebProcessor::Execute()
 		return;
 	}
 
+	// remove subfolder "nzbget" from the path (if exists)
+	// http://localhost:6789/nzbget/username:password/jsonrpc -> http://localhost:6789/username:password/jsonrpc
+	if (!strncmp(m_szUrl, "/nzbget/", 8))
+	{
+		char* sz_OldUrl = m_szUrl;
+		m_szUrl = strdup(m_szUrl + 7);
+		free(sz_OldUrl);
+	}
+	// http://localhost:6789/nzbget -> http://localhost:6789
+	if (!strcmp(m_szUrl, "/nzbget"))
+	{
+		char szRedirectURL[1024];
+		snprintf(szRedirectURL, 1024, "%s/", m_szUrl);
+		szRedirectURL[1024-1] = '\0';
+		SendRedirectResponse(szRedirectURL);
+		return;
+	}
+
 	// authorization via URL in format:
 	// http://localhost:6789/username:password/jsonrpc
 	char* pauth1 = strchr(m_szUrl + 1, ':');
@@ -167,6 +185,8 @@ void WebProcessor::Execute()
 		m_szUrl = strdup(pend);
 		free(sz_OldUrl);
 	}
+
+	debug("Final URL=%s", m_szUrl);
 
 	if (strlen(szAuthInfo) == 0)
 	{
@@ -325,6 +345,22 @@ void WebProcessor::SendErrorResponse(const char* szErrCode)
 	// Send the response answer
 	m_pConnection->Send(szResponseHeader, strlen(szResponseHeader));
 	m_pConnection->Send(szResponseBody, iPageContentLen);
+}
+
+void WebProcessor::SendRedirectResponse(const char* szURL)
+{
+	const char* REDIRECT_RESPONSE_HEADER =
+		"HTTP/1.0 301 Moved Permanently\r\n"
+		"Location: %s\r\n"
+		"Connection: close\r\n"
+		"Server: nzbget-%s\r\n"
+		"\r\n";
+	char szResponseHeader[1024];
+	snprintf(szResponseHeader, 1024, REDIRECT_RESPONSE_HEADER, szURL, Util::VersionRevision());
+	 
+	// Send the response answer
+	debug("ResponseHeader=%s", szResponseHeader);
+	m_pConnection->Send(szResponseHeader, strlen(szResponseHeader));
 }
 
 void WebProcessor::SendBodyResponse(const char* szBody, int iBodyLen, const char* szContentType)
