@@ -53,6 +53,7 @@ private:
 	void				SendErrorResponse(const char* szErrCode);
 	void				SendFileResponse(const char* szFilename);
 	void				SendBodyResponse(const char* szBody, int iBodyLen, const char* szContentType);
+	void				SendRedirectResponse(const char* szURL);
 	const char*			DetectContentType(const char* szFilename);
 
 public:
