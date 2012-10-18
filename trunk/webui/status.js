@@ -52,6 +52,7 @@ var status_PlayFrameSize = 40;
 var status_PlayState = 0;
 var status_PlayStep = 0;
 var status_LastSoftPauseState = 0;
+var status_ModalShown = false;
 
 function status_init()
 {
@@ -80,6 +81,10 @@ function status_init()
 	status_limit_dialog = $('#LimitDialog');
 
 	status_PlayAnimation.hover(function() { status_PlayBlock.addClass('hover'); }, function() { status_PlayBlock.removeClass('hover'); });
+	
+	// temporary pause the play animation if any modal is shown (to avoid artifacts in safari)
+	$('body >.modal').on('show', status_modalShow);
+	$('body > .modal').on('hide', status_modalHide);
 }
 
 function status_update()
@@ -260,7 +265,7 @@ function status_updatePlayAnim()
 
 	status_LastAnimState = Anim;
 
-	if (Settings_PlayAnimation)
+	if (Settings_PlayAnimation && !status_ModalShown)
 	{
 		if (Anim)
 		{
@@ -433,3 +438,20 @@ function status_PlayRotate()
 	}
 }
 
+function status_modalShow()
+{
+	status_ModalShown = true;
+	if (status_LastAnimState)
+	{
+		status_PlayAnimation.hide();
+	}
+}
+
+function status_modalHide()
+{
+	if (status_LastAnimState)
+	{
+		status_PlayAnimation.show();
+	}
+	status_ModalShown = false;
+}
