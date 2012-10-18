@@ -730,7 +730,7 @@ void Cleanup()
 	debug("Deleting Options");
 	if (g_pOptions)
 	{
-		if (g_pOptions->GetDaemonMode())
+		if (g_pOptions->GetDaemonMode() && !g_bReloading)
 		{
 			info("Deleting lock file");
 			remove(g_pOptions->GetLockFile());
