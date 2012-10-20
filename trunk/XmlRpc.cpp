@@ -1039,11 +1039,23 @@ void LogXmlCommand::Execute()
 	AppendResponse(IsJson() ? "\n]" : "</data></array>\n");
 }
 
+// struct[] listfiles(int IDFrom, int IDTo, int NZBID) 
+// For backward compatibility with 0.8 parameter "NZBID" is optional
 void ListFilesXmlCommand::Execute()
 {
 	int iIDStart = 0;
 	int iIDEnd = 0;
 	if (NextParamAsInt(&iIDStart) && (!NextParamAsInt(&iIDEnd) || iIDEnd < iIDStart))
+	{
+		BuildErrorResponse(2, "Invalid parameter");
+		return;
+	}
+
+	// For backward compatibility with 0.8 parameter "NZBID" is optional (error checking omitted)
+	int iNZBID = 0;
+	NextParamAsInt(&iNZBID);
+
+	if (iNZBID > 0 && (iIDStart != 0 || iIDEnd != 0))
 	{
 		BuildErrorResponse(2, "Invalid parameter");
 		return;
@@ -1106,7 +1118,8 @@ void ListFilesXmlCommand::Execute()
 	for (FileQueue::iterator it = pDownloadQueue->GetFileQueue()->begin(); it != pDownloadQueue->GetFileQueue()->end(); it++)
 	{
 		FileInfo* pFileInfo = *it;
-		if (iIDStart == 0 || (iIDStart <= pFileInfo->GetID() && pFileInfo->GetID() <= iIDEnd))
+		if ((iNZBID > 0 && iNZBID == pFileInfo->GetNZBInfo()->GetID()) ||
+			(iNZBID == 0) && (iIDStart == 0 || (iIDStart <= pFileInfo->GetID() && pFileInfo->GetID() <= iIDEnd)))
 		{
 			unsigned long iFileSizeHi, iFileSizeLo;
 			unsigned long iRemainingSizeLo, iRemainingSizeHi;
@@ -1328,6 +1341,7 @@ EditCommandEntry EditCommandNameMap[] = {
 	{ QueueEditor::eaFilePauseAllPars, "FilePauseAllPars" },
 	{ QueueEditor::eaFilePauseExtraPars, "FilePauseExtraPars" },
 	{ QueueEditor::eaFileSetPriority, "FileSetPriority" },
+	{ QueueEditor::eaFileReorder, "FileReorder" },
 	{ QueueEditor::eaGroupMoveOffset, "GroupMoveOffset" },
 	{ QueueEditor::eaGroupMoveTop, "GroupMoveTop" },
 	{ QueueEditor::eaGroupMoveBottom, "GroupMoveBottom" },
@@ -1421,6 +1435,7 @@ void EditQueueXmlCommand::Execute()
 }
 
 // bool append(string NZBFilename, string Category, int Priority, bool AddToTop, string Content) 
+// For backward compatibility with 0.8 parameter "Priority" is optional
 void DownloadXmlCommand::Execute()
 {
 	if (!CheckSafeMethod())

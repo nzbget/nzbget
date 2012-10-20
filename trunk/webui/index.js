@@ -22,9 +22,11 @@
  *
  */
 
-var Settings_RefreshInterval = 1;
 var Settings_RefreshAnimation = true;
 var Settings_PlayAnimation = true;
+var Settings_SlideAnimation = true;
+
+var Settings_RefreshInterval = 1;
 var Settings_TimeZoneCorrection = 0; // not fully implemented
 var Settings_MaxMessages = 1000;  // must be the same as in nzbget.conf
 var Settings_SetFocus = false; // automatically set focus to the first control in dialogs (not good on touch devices, because pops up the on-screen-keyboard)
@@ -70,6 +72,13 @@ var NZBGET_RPC_URL = './jsonrpc';
 $(document).ready(
 	function()
 	{
+		if ($.browser.msie && parseInt($.browser.version, 10) < 9)
+		{
+			$('#FirstUpdateInfo').hide();
+			$('#UnsupportedBrowserIE8').show();
+			return;
+		}
+
 		$('#FirstUpdateInfo').show();
 
 		index_init();
@@ -720,19 +729,6 @@ function checkMobileTheme()
 	}
 }
 
-function switch_click(control)
-{
-    var state = $(control).val().toLowerCase();
-	$('.btn', $(control).parent()).removeClass('btn-primary');
-	$(control).addClass('btn-primary');
-}
-
-function switch_getValue(control)
-{
-	var state = $('.btn-primary', $(control).parent()).val();
-	return state;
-}
-
 /****************************************************************
 * Common Tab functions
 */
@@ -759,39 +755,5 @@ function tab_updateInfo(control, stat)
 	}
 }
 
-function tab_switchSlide(dialog, fromTab, toTab, back, duration)
-{
-	var sign = back ? -1 : 1;
-	var bodyPadding = 30;
-	var body = $('.modal-body', dialog);
-	var oldBodyHeight = body.height();
-	var oldWinHeight = dialog.height();
-	fromTab.hide();
-	toTab.show();
-	var newBodyHeight = body.height();
-	var newWinHeight = dialog.height();
-	var newTabHeight = toTab.height();
-	var newTabWidth = toTab.width();
-	var leftPos = toTab.position().left;
-	fromTab.show();
-
-	body.css({position: 'relative', height: oldBodyHeight});
-	dialog.css('overflow', 'hidden');
-	fromTab.css({position: 'absolute', width: newTabWidth});
-	toTab.css({position: 'absolute', width: newTabWidth, height: newBodyHeight, left: sign * (newTabWidth + bodyPadding)});
-
-	body.animate({height: newBodyHeight}, duration);
-	fromTab.animate({left: sign * -(newTabWidth + bodyPadding)}, duration);
-	toTab.animate({left: leftPos}, duration, function()
-		{
-			fromTab.hide();
-			fromTab.css({position: '', width: '', height: '', left: ''});
-			toTab.css({position: '', width: '', height: '', left: ''});
-			body.css({position: '', height: ''});
-			dialog.css('overflow', '');
-		});
-}
-
 /* END - Common Tab functions
 *****************************************************************/
-

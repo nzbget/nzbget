@@ -50,7 +50,7 @@ function downloads_init()
 			infoContainer: $('#DownloadsTable_info'),
 			headerCheck: $('#DownloadsTable > thead > tr:first-child'),
 			filterCaseSensitive: false,
-			//infoEmpty: '&nbsp;',
+			infoEmpty: '&nbsp;',
 			pageSize: RecordsPerPage,
 			maxPages: Settings_MiniTheme ? 1 : 5,
 			pageDots: !Settings_MiniTheme,
@@ -293,7 +293,7 @@ function downloads_build_status(group)
 		case 'downloading': return '<span class="label label-status label-success">downloading</span>';
 		case 'paused': return '<span class="label label-status label-warning">paused</span>';
 		case 'queued': return '<span class="label label-status">queued</span>';
-		default: return '<span class="label label-status label-danger">internal error(' + group.status + ')</span>';
+		default: return '<span class="label label-status label-important">internal error(' + group.status + ')</span>';
 	}
 }
 
