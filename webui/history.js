@@ -216,7 +216,7 @@ function history_build_status(hist)
 		case 'unknown': return '<span class="label label-status label-info">unknown</span>';
 		case 'repairable': return '<span class="label label-status label-success">repairable</span>';
 		case 'none': return '<span class="label label-status">unknown</span>';
-		default: return '<span class="label label-status label-danger">internal error(' + hist.status + ')</span>';
+		default: return '<span class="label label-status label-important">internal error(' + hist.status + ')</span>';
 	}
 }
 

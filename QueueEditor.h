@@ -44,6 +44,7 @@ public:
 		eaFilePauseAllPars,
 		eaFilePauseExtraPars,
 		eaFileSetPriority,
+		eaFileReorder,
 		eaGroupMoveOffset,				// move to m_iOffset relative to the current position in queue
 		eaGroupMoveTop,
 		eaGroupMoveBottom,
@@ -89,13 +90,14 @@ private:
 	void					BuildGroupList(DownloadQueue* pDownloadQueue, FileList* pGroupList);
 	void					AlignAffectedGroups(DownloadQueue* pDownloadQueue, IDList* pIDList, bool bSmartOrder, int iOffset);
 	bool					ItemExists(FileList* pFileList, FileInfo* pFileInfo);
-	void					AlignGroup(DownloadQueue* pDownloadQueue, FileInfo* pFirstFileInfo);
+	void					AlignGroup(DownloadQueue* pDownloadQueue, NZBInfo* pNZBInfo);
 	void					PauseParsInGroups(ItemList* pItemList, bool bExtraParsOnly);
 	void					PausePars(FileList* pFileList, bool bExtraParsOnly);
 	void					SetNZBCategory(NZBInfo* pNZBInfo, const char* szCategory);
 	void					SetNZBName(NZBInfo* pNZBInfo, const char* szName);
 	bool					CanCleanupDisk(DownloadQueue* pDownloadQueue, NZBInfo* pNZBInfo);
 	void					MergeGroups(DownloadQueue* pDownloadQueue, ItemList* pItemList);
+	void					ReorderFiles(DownloadQueue* pDownloadQueue, ItemList* pItemList);
 	void					SetNZBParameter(NZBInfo* pNZBInfo, const char* szParamString);
 
 	void					PauseUnpauseEntry(FileInfo* pFileInfo, bool bPause);

@@ -21,7 +21,7 @@
  * $Date$
  *
  */
-
+ 
 function createXMLHttpRequest()
 {
 	var xmlHttp;
@@ -270,4 +270,156 @@ function util_disableShiftMouseDown(event)
 		event.stopPropagation();
 		event.preventDefault();
 	}
+}
+
+function switch_click(control)
+{
+    var state = $(control).val().toLowerCase();
+	$('.btn', $(control).parent()).removeClass('btn-primary');
+	$(control).addClass('btn-primary');
+}
+
+function switch_getValue(control)
+{
+	var state = $('.btn-primary', $(control).parent()).val();
+	return state;
+}
+
+function util_restoreTab(dialog)
+{
+	var body = $('.modal-body', dialog);
+	var footer = $('.modal-footer', dialog);
+	var header = $('.modal-header', dialog);
+	dialog.css({margin: '', left: '', top: '', bottom: '', right: '', width: '', height: ''});
+	body.css({position: '', height: '', left: '', right: '', top: '', bottom: '', 'max-height': ''});
+	footer.css({position: '', left: '', right: '', bottom: ''});
+}
+
+function util_switchTab(dialog, fromTab, toTab, duration, options)
+{
+	var sign = options.back ? -1 : 1;
+	var fullscreen = options.fullscreen && !options.back;
+	var bodyPadding = 30;
+	var dialogMargin = options.mini ? 0 : 15;
+	var dialogBorder = 2;
+
+	var body = $('.modal-body', dialog);
+	var footer = $('.modal-footer', dialog);
+	var header = $('.modal-header', dialog);
+
+	var oldBodyHeight = body.height();
+	var oldWinHeight = dialog.height();
+	var windowWidth = $(window).width();
+	var windowHeight = $(window).height();
+	var oldTabWidth = fromTab.width();
+	var dialogStyleFS, bodyStyleFS, footerStyleFS;
+
+	if (options.fullscreen && options.back)
+	{
+		// save fullscreen state for later use
+		dialogStyleFS = dialog.attr('style');
+		bodyStyleFS = body.attr('style');
+		footerStyleFS = footer.attr('style');
+		// restore non-fullscreen state to calculate proper destination sizes
+		util_restoreTab(dialog);
+	}
+
+	fromTab.hide();
+	toTab.show();
+
+	// CONTROL POINT: at this point the destination dialog size is active
+	// store destination positions and sizes
+
+	var newBodyHeight = fullscreen ? windowHeight - header.outerHeight() - footer.outerHeight() - dialogMargin*2 - bodyPadding : body.height();
+	var newTabWidth = fullscreen ? windowWidth - dialogMargin*2 - dialogBorder - bodyPadding : toTab.width();
+	var leftPos = toTab.position().left;
+	var newDialogPosition = dialog.position();
+	var newDialogWidth = dialog.width();
+	var newDialogHeight = dialog.height();
+	var newDialogMarginLeft = dialog.css('margin-left');
+	var newDialogMarginTop = dialog.css('margin-top');
+
+	// restore source dialog size
+
+	if (options.fullscreen && options.back)
+	{
+		// restore fullscreen state
+		dialog.attr('style', dialogStyleFS);
+		body.attr('style', bodyStyleFS);
+		footer.attr('style', footerStyleFS);
+	}
+
+	body.css({position: '', height: oldBodyHeight});
+	dialog.css('overflow', 'hidden');
+	fromTab.css({position: 'absolute', left: leftPos, width: oldTabWidth});
+	toTab.css({position: 'absolute', width: newTabWidth, height: newBodyHeight, 
+		left: sign * ((options.back ? newTabWidth : oldTabWidth) + bodyPadding)});
+	fromTab.show();
+
+	// animate dialog to destination position and sizes
+
+	if (options.fullscreen && options.back)
+	{
+		body.css({position: 'absolute'});
+		dialog.animate({
+				'margin-left': newDialogMarginLeft,
+				'margin-top': newDialogMarginTop,
+				left: newDialogPosition.left,
+				top: newDialogPosition.top,
+				right: newDialogPosition.left + newDialogWidth,
+				bottom: newDialogPosition.top + newDialogHeight,
+				width: newDialogWidth,
+				height: newDialogHeight
+			},
+			duration);
+
+		body.animate({height: newBodyHeight, 'max-height': newBodyHeight}, duration);
+	}
+	else if (options.fullscreen)
+	{
+		dialog.css({height: dialog.height()});
+		footer.css({position: 'absolute', left: 0, right: 0, bottom: 0});
+		dialog.animate({
+				margin: dialogMargin,
+				left: '0%', top: '0%', bottom: '0%', right: '0%',
+				width: windowWidth - dialogMargin*2,
+				height: windowHeight - dialogMargin*2
+			},
+			duration);
+
+		body.animate({height: newBodyHeight, 'max-height': newBodyHeight}, duration);
+	}
+	else
+	{
+		body.animate({height: newBodyHeight}, duration);
+	}
+
+	fromTab.animate({left: sign * -((options.back ? newTabWidth : oldTabWidth) + bodyPadding)}, duration);
+	toTab.animate({left: leftPos}, duration, function()
+		{
+			fromTab.hide();
+			fromTab.css({position: '', width: '', height: '', left: ''});
+			toTab.css({position: '', width: '', height: '', left: ''});
+			dialog.css({overflow: '', width: (fullscreen ? 'auto' : ''), height: (fullscreen ? 'auto' : '')});
+			if (fullscreen)
+			{
+				body.css({position: 'absolute', height: '', left: 0, right: 0, 
+					top: header.outerHeight(),
+					bottom: footer.outerHeight(),
+					'max-height': 'inherit'});
+			}
+			else
+			{
+				body.css({position: '', height: ''});
+			}
+			if (options.fullscreen && options.back)
+			{
+				// restore non-fullscreen state
+				util_restoreTab(dialog);
+			}
+			if (options.complete)
+			{
+				options.complete();
+			}
+		});
 }

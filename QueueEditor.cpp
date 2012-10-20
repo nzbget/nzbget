@@ -229,6 +229,10 @@ bool QueueEditor::InternEditList(DownloadQueue* pDownloadQueue, IDList* pIDList,
 	{
 		MergeGroups(pDownloadQueue, &cItemList);
 	}
+	else if (eAction == eaFileReorder)
+	{
+		ReorderFiles(pDownloadQueue, &cItemList);
+	}
 	else
 	{
 		for (ItemList::iterator it = cItemList.begin(); it != cItemList.end(); it++)
@@ -285,6 +289,7 @@ bool QueueEditor::InternEditList(DownloadQueue* pDownloadQueue, IDList* pIDList,
 				case eaFilePauseAllPars:
 				case eaFilePauseExtraPars:
 				case eaGroupMerge:
+				case eaFileReorder:
 					// remove compiler warning "enumeration not handled in switch"
 					break;
 			}
@@ -539,7 +544,7 @@ bool QueueEditor::EditGroup(DownloadQueue* pDownloadQueue, FileInfo* pFileInfo, 
 	}
 
 	EEditAction GroupToFileMap[] = { (EEditAction)0, eaFileMoveOffset, eaFileMoveTop, eaFileMoveBottom, 
-		eaFilePause, eaFileResume, eaFileDelete, eaFilePauseAllPars, eaFilePauseExtraPars, eaFileSetPriority,
+		eaFilePause, eaFileResume, eaFileDelete, eaFilePauseAllPars, eaFilePauseExtraPars, eaFileSetPriority, eaFileReorder,
 		eaFileMoveOffset, eaFileMoveTop, eaFileMoveBottom, eaFilePause, eaFileResume, eaFileDelete, 
 		eaFilePauseAllPars, eaFilePauseExtraPars, eaFileSetPriority,
 		(EEditAction)0, (EEditAction)0, (EEditAction)0 };
@@ -643,11 +648,11 @@ void QueueEditor::AlignAffectedGroups(DownloadQueue* pDownloadQueue, IDList* pID
 	for (FileList::iterator it = cAffectedGroupList.begin(); it != cAffectedGroupList.end(); it++)
 	{
 		FileInfo* pFileInfo = *it;
-		AlignGroup(pDownloadQueue, pFileInfo);
+		AlignGroup(pDownloadQueue, pFileInfo->GetNZBInfo());
 	}
 }
 
-void QueueEditor::AlignGroup(DownloadQueue* pDownloadQueue, FileInfo* pFirstFileInfo)
+void QueueEditor::AlignGroup(DownloadQueue* pDownloadQueue, NZBInfo* pNZBInfo)
 {
 	FileInfo* pLastFileInfo = NULL;
 	unsigned int iLastNum = 0;
@@ -655,7 +660,7 @@ void QueueEditor::AlignGroup(DownloadQueue* pDownloadQueue, FileInfo* pFirstFile
 	while (iNum < pDownloadQueue->GetFileQueue()->size())
 	{
 		FileInfo* pFileInfo = pDownloadQueue->GetFileQueue()->at(iNum);
-		if (pFirstFileInfo->GetNZBInfo() == pFileInfo->GetNZBInfo())
+		if (pFileInfo->GetNZBInfo() == pNZBInfo)
 		{
 			if (pLastFileInfo && iNum - iLastNum > 1)
 			{
@@ -849,18 +854,55 @@ void QueueEditor::MergeGroups(DownloadQueue* pDownloadQueue, ItemList* pItemList
 		delete pItem;
 	}
 
-	// align group ("AlignGroup" needs the first file item as parameter)
-	for (FileQueue::iterator it = pDownloadQueue->GetFileQueue()->begin(); it != pDownloadQueue->GetFileQueue()->end(); it++)
-	{
-		FileInfo* pFileInfo = *it;
-		if (pFileInfo->GetNZBInfo() == pDestItem->m_pFileInfo->GetNZBInfo())
-		{
-			AlignGroup(pDownloadQueue, pFileInfo);
-			break;
-		}
-	}
+	// align group
+	AlignGroup(pDownloadQueue, pDestItem->m_pFileInfo->GetNZBInfo());
 
 	delete pDestItem;
+}
+
+void QueueEditor::ReorderFiles(DownloadQueue* pDownloadQueue, ItemList* pItemList)
+{
+	if (pItemList->size() == 0)
+	{
+		return;
+	}
+
+	EditItem* pFirstItem = pItemList->front();
+	NZBInfo* pNZBInfo = pFirstItem->m_pFileInfo->GetNZBInfo();
+	unsigned int iInsertPos = 0;
+
+	// find first file of the group
+    for (FileQueue::iterator it = pDownloadQueue->GetFileQueue()->begin(); it != pDownloadQueue->GetFileQueue()->end(); it++)
+    {
+        FileInfo* pFileInfo = *it;
+		if (pFileInfo->GetNZBInfo() == pNZBInfo)
+		{
+			break;
+		}
+		iInsertPos++;
+	}
+
+	// now can reorder
+	for (ItemList::iterator it = pItemList->begin(); it != pItemList->end(); it++)
+	{
+		EditItem* pItem = *it;
+		FileInfo* pFileInfo = pItem->m_pFileInfo;
+
+		// move file item
+		for (FileQueue::iterator it = pDownloadQueue->GetFileQueue()->begin(); it != pDownloadQueue->GetFileQueue()->end(); it++)
+		{
+			FileInfo* pFileInfo1 = *it;
+			if (pFileInfo1 == pFileInfo)
+			{
+				pDownloadQueue->GetFileQueue()->erase(it);
+				pDownloadQueue->GetFileQueue()->insert(pDownloadQueue->GetFileQueue()->begin() + iInsertPos, pFileInfo);
+				iInsertPos++;				
+				break;
+			}
+		}
+
+		delete pItem;
+	}
 }
 
 void QueueEditor::SetNZBParameter(NZBInfo* pNZBInfo, const char* szParamString)

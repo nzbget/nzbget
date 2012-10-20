@@ -27,6 +27,7 @@ var edit_GroupDialog;
 var edit_MergeDialog;
 var edit_MultiDialog;
 var edit_DownloadsEdit_LogTable;
+var edit_DownloadsEdit_FileTable;
 var edit_notification = null;
 var edit_MergeEditIDList;
 var edit_MultiIDList;
@@ -34,6 +35,9 @@ var edit_OldPriority;
 var edit_OldCategory;
 var edit_PostParams;
 var edit_LastPage;
+var edit_LastFullscreen;
+var edit_Log;
+var edit_Files;
 
 function edit_init()
 {
@@ -43,18 +47,6 @@ function edit_init()
 	edit_group_init();
 	edit_merge_init();
 	edit_multi_init();
-
-	edit_DownloadsEdit_LogTable = $('#DownloadsEdit_LogTable');
-	edit_DownloadsEdit_LogTable.fasttable(
-		{
-			filterInput: $('#DownloadsEdit_LogTable_filter'),
-			pagerContainer: $('#DownloadsEdit_LogTable_pager'),
-			filterCaseSensitive: false,
-			pageSize: 5,
-			maxPages: 3,
-			hasHeader: false,
-			renderCellCallback: edit_DownloadsEdit_LogTable_renderCellCallback
-		});
 }
 
 function edit_completed()
@@ -79,11 +71,45 @@ function edit_group_init()
 	$('#DownloadsEdit_Resume').click(edit_group_Resume);
 	$('#DownloadsEdit_Delete').click(edit_group_Delete);
 	$('#DownloadsEdit_CancelPP').click(edit_group_CancelPP);
-	$('#DownloadsEdit_Param, #DownloadsEdit_Log').click(edit_group_Tab_click);
+	$('#DownloadsEdit_Param, #DownloadsEdit_Log, #DownloadsEdit_File').click(edit_group_Tab_click);
 	$('#DownloadsEdit_Back').click(edit_group_Back_click);
 
+	edit_DownloadsEdit_LogTable = $('#DownloadsEdit_LogTable');
+	edit_DownloadsEdit_LogTable.fasttable(
+		{
+			filterInput: $('#DownloadsEdit_LogTable_filter'),
+			pagerContainer: $('#DownloadsEdit_LogTable_pager'),
+			filterCaseSensitive: false,
+			pageSize: 100,
+			maxPages: 3,
+			hasHeader: true,
+			renderCellCallback: edit_group_DownloadsEdit_LogTable_renderCellCallback
+		});
+		
+	edit_DownloadsEdit_FileTable = $('#DownloadsEdit_FileTable');
+	edit_DownloadsEdit_FileTable.fasttable(
+		{
+			filterInput: $('#DownloadsEdit_FileTable_filter'),
+			pagerContainer: $('#DownloadsEdit_FileTable_pager'),
+			filterCaseSensitive: false,
+			headerCheck: $('#DownloadsEdit_FileTable > thead > tr:first-child'),
+			pageSize: 10000,
+			hasHeader: true,
+			renderCellCallback: edit_group_DownloadsEdit_FileTable_renderCellCallback
+		});
+
+	edit_DownloadsEdit_FileTable.on('click', 'tbody div.check',
+		function(event) { edit_DownloadsEdit_FileTable.fasttable('itemCheckClick', this.parentNode.parentNode, event); });
+	edit_DownloadsEdit_FileTable.on('click', 'thead div.check',
+		function() { edit_DownloadsEdit_FileTable.fasttable('titleCheckClick') });
+	edit_DownloadsEdit_FileTable.on('mousedown', util_disableShiftMouseDown);
+		
 	edit_GroupDialog.on('hidden', function ()
 	{
+		// cleanup
+		edit_DownloadsEdit_LogTable.fasttable('update', []);
+		edit_DownloadsEdit_FileTable.fasttable('update', []);
+		// resume updates
 		refresh_resume();
 	});
 
@@ -164,25 +190,19 @@ function edit_group_dialog(nzbid)
 		v.append($('<option selected="selected"></option>').text(group.Category));
 	}
 
-	if (group.post && group.post.Log && group.post.Log.length > 0)
-	{
-		edit_fillPostLog();
-	}
+	edit_DownloadsEdit_LogTable.fasttable('update', []);
+	edit_DownloadsEdit_FileTable.fasttable('update', []);
 
-	show($('#DownloadsEdit_NZBNameReadonly'), group.postprocess);
-	show($('#DownloadsEdit_CancelPPGroup'), group.postprocess);
-	show($('#DownloadsEdit_DeleteGroup'), !group.postprocess);
-	show($('#DownloadsEdit_PauseGroup'), !group.postprocess);
-	show($('#DownloadsEdit_ResumeGroup'), false);
-	show($('#DownloadsEdit_Save'), !group.postprocess);
+	show('#DownloadsEdit_NZBNameReadonly', group.postprocess);
+	show('#DownloadsEdit_CancelPPGroup', group.postprocess);
+	show('#DownloadsEdit_DeleteGroup', !group.postprocess);
+	show('#DownloadsEdit_PauseGroup', !group.postprocess);
+	show('#DownloadsEdit_ResumeGroup', false);
+	show('#DownloadsEdit_Save', !group.postprocess);
 	var postParam = PostParamConfig && PostParamConfig.length > 0;
 	var postLog = group.postprocess && group.post.Log.length > 0;
-	show($('#DownloadsEdit_PostParam'), postParam);
-	show($('#DownloadsEdit_Log'), postLog);
-	show($('#DownloadsEdit_PostProcessingGroup'), postParam || postLog);
-	postParam || postLog ?
-		$('#DownloadsEdit_StatisticsGroup').removeClass('control-group-last') :
-		$('#DownloadsEdit_StatisticsGroup').addClass('control-group-last');
+	show('#DownloadsEdit_Param', postParam);
+	show('#DownloadsEdit_Log', postLog);
 
 	if (group.postprocess)
 	{
@@ -220,8 +240,16 @@ function edit_group_dialog(nzbid)
 	$('#DownloadsEdit_GeneralTab').show();
 	$('#DownloadsEdit_ParamTab').hide();
 	$('#DownloadsEdit_LogTab').hide();
+	$('#DownloadsEdit_FileTab').hide();
 	$('#DownloadsEdit_Back').hide();
 	$('#DownloadsEdit_BackSpace').show();
+	util_restoreTab(edit_GroupDialog);
+	
+	$('#DownloadsEdit_FileTable_filter').val('');
+	$('#DownloadsEdit_LogTable_filter').val('');
+	$('#DownloadsEdit_LogTable_pagerBlock').hide();
+	edit_Files = null;
+	edit_Log = null;
 
 	edit_GroupDialog.modal({backdrop: 'static'});
 }
@@ -229,11 +257,52 @@ function edit_group_dialog(nzbid)
 function edit_group_Tab_click(e)
 {
 	e.preventDefault();
+
 	$('#DownloadsEdit_Back').fadeIn(500);
 	$('#DownloadsEdit_BackSpace').hide();
 	var tab = '#' + $(this).attr('data-tab');
 	edit_LastPage = $(tab);
-	tab_switchSlide(edit_GroupDialog, $('#DownloadsEdit_GeneralTab'), edit_LastPage, false, e.shiftKey ? 0 : 500);
+	edit_LastFullscreen = ($(this).attr('data-fullscreen') === 'true') && !Settings_MiniTheme;
+	
+	$('#DownloadsEdit_FileBlock').removeClass('modal-inner-scroll');
+	$('#DownloadsEdit_FileBlock').css('top', '');
+	
+	if (Settings_MiniTheme && edit_Files === null)
+	{
+		$('#DownloadsEdit_FileBlock').css('min-height', edit_GroupDialog.height());
+	}
+
+	if (Settings_MiniTheme && edit_Log === null)
+	{
+		$('#DownloadsEdit_LogBlock').css('min-height', edit_GroupDialog.height());
+	}
+	
+	util_switchTab(edit_GroupDialog, $('#DownloadsEdit_GeneralTab'), edit_LastPage, 
+		e.shiftKey || !Settings_SlideAnimation ? 0 : (edit_LastFullscreen ? 500 : 500), 
+		{fullscreen: edit_LastFullscreen, mini: Settings_MiniTheme, complete: function()
+			{
+				if (!Settings_MiniTheme)
+				{
+					$('#DownloadsEdit_FileBlock').css('top', $('#DownloadsEdit_FileBlock').position().top);
+					$('#DownloadsEdit_FileBlock').addClass('modal-inner-scroll');
+				}
+				else
+				{
+					$('#DownloadsEdit_FileBlock').css('min-height', '');
+					$('#DownloadsEdit_LogBlock').css('min-height', '');
+				}
+			}});
+
+	if (tab === '#DownloadsEdit_LogTab' && edit_Log === null && edit_curGroup.post && 
+		edit_curGroup.post.Log && edit_curGroup.post.Log.length > 0)
+	{
+		edit_group_fillLog();
+	}
+
+	if (tab === '#DownloadsEdit_FileTab' && edit_Files === null)
+	{
+		edit_group_fillFiles();
+	}
 }
 
 function edit_group_Back_click(e)
@@ -244,50 +313,12 @@ function edit_group_Back_click(e)
 		$('#DownloadsEdit_BackSpace').show();
 	});
 
-	tab_switchSlide(edit_GroupDialog, edit_LastPage, $('#DownloadsEdit_GeneralTab'), true, e.shiftKey ? 0 : 500);
-}
-
-function edit_fillPostLog()
-{
-	var data = [];
-
-	for (var i=0; i < edit_curGroup.post.Log.length; i++)
-	{
-		var message = edit_curGroup.post.Log[i];
-
-		var kind;
-		switch (message.Kind)
-		{
-			case 'INFO': kind = '<span class="label label-status label-success">info</span>'; break;
-			case 'DETAIL': kind = '<span class="label label-status label-info">detail</span>'; break;
-			case 'WARNING': kind = '<span class="label label-status label-warning">warning</span>'; break;
-			case 'ERROR': kind = '<span class="label label-status label-important">error</span>'; break;
-			case 'DEBUG': kind = '<span class="label label-status">debug</span>'; break;
-		}
-
-		var text = TextToHtml(message.Text);
-
-		var item =
-		{
-			id: message,
-			fields: [kind, text],
-			search: message.Kind + ' ' + message.Text
-		};
-
-		data.unshift(item);
-	}
-
-	$('#DownloadsEdit_LogTable_filter').val('');
-	edit_DownloadsEdit_LogTable.fasttable('update', data);
-	edit_DownloadsEdit_LogTable.fasttable('setCurPage', 1);
-}
-
-function edit_DownloadsEdit_LogTable_renderCellCallback(cell, index, item)
-{
-	if (index === 0)
-	{
-		cell.width = '65px';
-	}
+	$('#DownloadsEdit_FileBlock').removeClass('modal-inner-scroll');
+	$('#DownloadsEdit_FileBlock').css('top', '');
+	
+	util_switchTab(edit_GroupDialog, edit_LastPage, $('#DownloadsEdit_GeneralTab'), 
+		e.shiftKey || !Settings_SlideAnimation ? 0 : (edit_LastFullscreen ? 500 : 500), 
+		{fullscreen: edit_LastFullscreen, mini: Settings_MiniTheme, back: true});
 }
 
 function edit_group_DisableAllButtons()
@@ -348,53 +379,6 @@ function edit_group_SaveCategory()
 		: edit_group_SaveParam();
 }
 
-function edit_group_PrepareParamRequest()
-{
-	var request = [];
-	for (var i=0; i < edit_PostParams.length; i++)
-	{
-		var section = edit_PostParams[i];
-		for (var j=0; j < section.options.length; j++)
-		{
-			var option = section.options[j];
-			if (!option.template && !section.hidden)
-			{
-				var oldValue = option.value;
-				var newValue = config_GetOptionValue(option);
-				if (oldValue != newValue && !(oldValue === '' && newValue === option.defvalue))
-				{
-					opt = option.name + '=' + newValue;
-					request.push(opt);
-				}
-			}
-		}
-	}
-
-	return request;
-}
-
-function edit_group_SaveParam()
-{
-	paramList = edit_group_PrepareParamRequest();
-	edit_group_SaveNextParam(paramList);
-}
-
-function edit_group_SaveNextParam(paramList)
-{
-	if (paramList.length > 0)
-	{
-		rpc('editqueue', ['GroupSetParameter', 0, paramList[0], [edit_curGroup.LastID]], function()
-		{
-			paramList.shift();
-			edit_group_SaveNextParam(paramList);
-		})
-	}
-	else
-	{
-		edit_completed();
-	}
-}
-
 function edit_group_Pause()
 {
 	edit_group_DisableAllButtons();
@@ -436,6 +420,363 @@ function edit_group_CancelPP()
 	else
 	{
 		postDelete();
+	}
+}
+
+/*** TAB: POST-PROCESSING PARAMETERS **************************************************/
+
+function edit_group_PrepareParamRequest()
+{
+	var request = [];
+	for (var i=0; i < edit_PostParams.length; i++)
+	{
+		var section = edit_PostParams[i];
+		for (var j=0; j < section.options.length; j++)
+		{
+			var option = section.options[j];
+			if (!option.template && !section.hidden)
+			{
+				var oldValue = option.value;
+				var newValue = config_GetOptionValue(option);
+				if (oldValue != newValue && !(oldValue === '' && newValue === option.defvalue))
+				{
+					opt = option.name + '=' + newValue;
+					request.push(opt);
+				}
+			}
+		}
+	}
+
+	return request;
+}
+
+function edit_group_SaveParam()
+{
+	paramList = edit_group_PrepareParamRequest();
+	edit_group_SaveNextParam(paramList);
+}
+
+function edit_group_SaveNextParam(paramList)
+{
+	if (paramList.length > 0)
+	{
+		rpc('editqueue', ['GroupSetParameter', 0, paramList[0], [edit_curGroup.LastID]], function()
+		{
+			edit_notification = '#Notif_Downloads_Saved';
+			paramList.shift();
+			edit_group_SaveNextParam(paramList);
+		})
+	}
+	else
+	{
+		edit_group_SaveFiles();
+	}
+}
+
+/*** TAB: LOG *************************************************************************/
+
+function edit_group_fillLog()
+{
+	edit_Log = true;
+	var data = [];
+
+	for (var i=0; i < edit_curGroup.post.Log.length; i++)
+	{
+		var message = edit_curGroup.post.Log[i];
+
+		var kind;
+		switch (message.Kind)
+		{
+			case 'INFO': kind = '<span class="label label-status label-success">info</span>'; break;
+			case 'DETAIL': kind = '<span class="label label-status label-info">detail</span>'; break;
+			case 'WARNING': kind = '<span class="label label-status label-warning">warning</span>'; break;
+			case 'ERROR': kind = '<span class="label label-status label-important">error</span>'; break;
+			case 'DEBUG': kind = '<span class="label label-status">debug</span>'; break;
+		}
+
+		var text = TextToHtml(message.Text);
+		var time = FormatDateTime(message.Time);
+		var fields;
+
+		if (!Settings_MiniTheme)
+		{
+			fields = [kind, time, text];
+		}
+		else
+		{
+			var info = kind + ' <span class="label">' + time + '</span> ' + text;
+			fields = [info];
+		}
+		
+		var item =
+		{
+			id: message,
+			fields: fields,
+			search: message.Kind + ' ' + time + ' ' + message.Text
+		};
+
+		data.unshift(item);
+	}
+
+	edit_DownloadsEdit_LogTable.fasttable('update', data);
+	edit_DownloadsEdit_LogTable.fasttable('setCurPage', 1);
+	show('#DownloadsEdit_LogTable_pagerBlock', data.length > 100);
+}
+
+function edit_group_DownloadsEdit_LogTable_renderCellCallback(cell, index, item)
+{
+	if (index === 0)
+	{
+		cell.width = '65px';
+	}
+}
+
+/*** TAB: FILES *************************************************************************/
+
+function edit_group_fillFiles()
+{
+	$('.loading-block', edit_GroupDialog).show();
+	rpc('listfiles', [0, 0, edit_curGroup.NZBID], edit_group_files_loaded);
+}
+
+function edit_group_files_loaded(files)
+{
+	$('.loading-block', edit_GroupDialog).hide();
+
+	edit_Files = files;
+
+	var data = [];
+
+	for (var i=0; i < files.length; i++)
+	{
+		var file = files[i];
+
+		if (!file.status)
+		{
+			file.status = file.Paused ? (file.ActiveDownloads > 0 ? 'pausing' : 'paused') : (file.ActiveDownloads > 0 ? 'downloading' : 'queued');
+		}
+		
+		var age = FormatAge(file.PostTime + Settings_TimeZoneCorrection*60*60);
+		var size = FormatSizeMB(0, file.FileSizeLo);
+		if (file.FileSizeLo !== file.RemainingSizeLo)
+		{
+			size = '(' + round0(file.RemainingSizeLo / file.FileSizeLo * 100) + '%) ' + size;
+		}	
+
+		var status;
+		switch (file.status)
+		{
+			case 'downloading':
+			case 'pausing': status = '<span class="label label-status label-success">' + file.status + '</span>'; break;
+			case 'paused': status = '<span class="label label-status label-warning">paused</span>'; break;
+			case 'queued': status = '<span class="label label-status">queued</span>'; break;
+			case 'deleted': status = '<span class="label label-status label-important">deleted</span>'; break;
+			default: status = '<span class="label label-status label-important">internal error(' + file.status + ')</span>';
+		}
+		
+		var priority = '';
+		if (file.Priority != edit_curGroup.MaxPriority)
+		{
+			priority = downloads_build_priority(file.Priority);
+		}
+
+		var name = TextToHtml(file.Filename);
+		var fields;
+
+		if (!Settings_MiniTheme)
+		{
+			var info = name + ' ' + priority;
+			fields = ['<div class="check img-check"></div>', status, info, age, size];
+		}
+		else
+		{
+			var info = '<div class="check img-check"></div><span class="row-title">' + name + '</span>' +
+				' ' + (file.status === 'queued' ? '' : status) + ' ' + priority;
+			fields = [info];
+		}
+		
+		var item =
+		{
+			id: file.ID,
+			file: file,
+			fields: fields,
+			search: file.status + ' ' + file.Filename + ' ' + priority + ' ' + age + ' ' + size
+		};
+
+		data.push(item);
+	}
+
+	edit_DownloadsEdit_FileTable.fasttable('update', data);
+	edit_DownloadsEdit_FileTable.fasttable('setCurPage', 1);
+}
+
+function edit_group_DownloadsEdit_FileTable_renderCellCallback(cell, index, item)
+{
+	if (index > 2)
+	{
+		cell.className = 'text-right';
+	}
+}
+
+function edit_group_files_edit_click(action)
+{
+	if (edit_Files.length == 0)
+	{
+		return;
+	}
+
+	var checkedRows = edit_DownloadsEdit_FileTable.fasttable('checkedRows');
+	if (checkedRows.length == 0)
+	{
+		animateAlert('#Notif_Edit_Select');
+		return;
+	}
+
+	for (var i = 0; i < edit_Files.length; i++)
+	{
+		var file = edit_Files[i];
+		file.moved = false;
+	}
+	
+	for (var i = 0; i < edit_Files.length; i++)
+	{
+		var n = i;
+		if (action === 'down' || action === 'top')
+		{
+			// iterate backwards in the file list
+			n = edit_Files.length-1-i;
+		}
+		var file = edit_Files[n];
+		
+		if (checkedRows.indexOf(file.ID) > -1)
+		{
+			switch (action)
+			{
+				case 'pause':
+					file.status = 'paused';
+					file.editAction = action;
+					break;
+				case 'resume':
+					file.status = 'queued';
+					file.editAction = action;
+					break;
+				case 'delete':
+					file.status = 'deleted';
+					file.editAction = action;
+					break;
+				case 'top':
+					if (!file.moved)
+					{
+						edit_Files.splice(n, 1);
+						edit_Files.unshift(file);
+						file.moved = true;
+						file.editMoved = true;
+						i--;
+					}
+					break;
+				case 'up':
+					if (!file.moved && i > 0)
+					{
+						edit_Files.splice(i, 1);
+						edit_Files.splice(i-1, 0, file);
+						file.moved = true;
+						file.editMoved = true;
+					}
+					break;
+				case 'down':
+					if (!file.moved && i > 0)
+					{
+						edit_Files.splice(n, 1);
+						edit_Files.splice(n+1, 0, file);
+						file.moved = true;
+						file.editMoved = true;
+					}
+					break;
+				case 'bottom':
+					if (!file.moved)
+					{
+						edit_Files.splice(i, 1);
+						edit_Files.push(file);
+						file.moved = true;
+						file.editMoved = true;
+						i--;
+					}
+					break;
+			}
+		}
+	}
+	
+	edit_group_files_loaded(edit_Files);
+}
+
+function edit_group_SaveFilesActions(actions, commands)
+{
+	if (actions.length === 0 || !edit_Files || edit_Files.length === 0)
+	{
+		edit_group_SaveFileOrder();
+		return;
+	}
+	
+	var action = actions.shift();
+	var command = commands.shift();
+
+	var IDs = [];
+	for (var i = 0; i < edit_Files.length; i++)
+	{
+		var file = edit_Files[i];
+		if (file.editAction === action)
+		{
+			IDs.push(file.ID);
+		}
+	}
+
+	if (IDs.length > 0)
+	{
+		rpc('editqueue', [command, 0, '', IDs], function()
+		{
+			edit_notification = '#Notif_Downloads_Saved';
+			edit_group_SaveFilesActions(actions, commands);
+		})
+	}
+	else
+	{
+		edit_group_SaveFilesActions(actions, commands);
+	}
+}
+
+function edit_group_SaveFiles()
+{
+	edit_group_SaveFilesActions(['pause', 'resume', 'delete'], ['FilePause', 'FileResume', 'FileDelete']);
+}
+
+function edit_group_SaveFileOrder()
+{
+	if (!edit_Files || edit_Files.length === 0)
+	{
+		edit_completed();
+		return;
+	}
+
+	var IDs = [];
+	var hasMovedFiles = false;
+	for (var i = 0; i < edit_Files.length; i++)
+	{
+		var file = edit_Files[i];
+		IDs.push(file.ID);
+		hasMovedFiles |= file.editMoved;
+	}
+	
+	if (hasMovedFiles)
+	{
+		rpc('editqueue', ['FileReorder', 0, '', IDs], function()
+		{
+			edit_notification = '#Notif_Downloads_Saved';
+			edit_completed();
+		})
+	}
+	else
+	{
+		edit_completed();
 	}
 }
 
