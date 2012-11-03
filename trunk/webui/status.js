@@ -1,457 +1,387 @@
 /*
- *	This file is part of nzbget
+ * This file is part of nzbget
  *
- *	Copyright (C) 2012 Andrey Prygunkov <hugbug@users.sourceforge.net>
+ * Copyright (C) 2012 Andrey Prygunkov <hugbug@users.sourceforge.net>
  *
- *	This program is free software; you can redistribute it and/or modify
- *	it under the terms of the GNU General Public License as published by
- *	the Free Software Foundation; either version 2 of the License, or
- *	(at your option) any later version.
+ * This program is free software; you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation; either version 2 of the License, or
+ * (at your option) any later version.
  *
- *	This program is distributed in the hope that it will be useful,
- *	but WITHOUT ANY WARRANTY; without even the implied warranty of
- *	MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- *	GNU General Public License for more details.
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
  *
- *	You should have received a copy of the GNU General Public License
- *	along with this program; if not, write to the Free Software
- *	Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
+ * You should have received a copy of the GNU General Public License
+ * along with this program; if not, write to the Free Software
+ * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  *
  * $Revision$
  * $Date$
  *
  */
 
-/* controls */
-var status_SpeedLimitInput;
-var status_CHPauseDownload;
-var status_CHPausePostProcess;
-var status_CHPauseScan;
-var status_CHSoftPauseDownload;
-var status_StatusPausing;
-var status_StatusPaused;
-var status_StatusSoftPaused;
-var status_StatusLeft;
-var status_StatusSpeed;
-var status_StatusSpeedIcon;
-var status_StatusTime;
-var status_StatusURLs;
-var status_PlayBlock;
-var status_PlayButton;
-var status_PauseButton;
-var status_PlayAnimation;
-var status_CurSpeedLimit;
-var status_CurSpeedLimitBlock;
+/*
+ * In this module:
+ *   1) Status Infos on main page (speed, time, paused state etc.);
+ *   2) Statistics and Status dialog.
+ */
 
-var status_LastPlayState = 0;
-var status_LastAnimState = 0;
-var status_PlayInitialized = false;
-var status_limit_dialog;
-var status_PlayFrame = 0;
-var status_PlayFrameSize = 40;
-var status_PlayState = 0;
-var status_PlayStep = 0;
-var status_LastSoftPauseState = 0;
-var status_ModalShown = false;
-
-function status_init()
+/*** STATUS INFOS ON MAIN PAGE AND STATISTICS DIALOG ****************************************/
+ 
+var Status = (new function($)
 {
-	status_SpeedLimitInput = $('#SpeedLimitInput');
-	status_CHPauseDownload = $('#CHPauseDownload');
-	status_CHPausePostProcess = $('#CHPausePostProcess');
-	status_CHPauseScan = $('#CHPauseScan');
-	status_CHSoftPauseDownload = $('#CHSoftPauseDownload');
-	status_PlayBlock = $('#PlayBlock');
-	status_PlayButton = $('#PlayButton');
-	status_PauseButton = $('#PauseButton');
-	status_PlayAnimation = $('#PlayAnimation');
-	status_StatusPausing = $('#StatusPausing');
-	status_StatusPaused = $('#StatusPaused');
-	status_StatusSoftPaused = $('#StatusSoftPaused');
-	status_StatusLeft = $('#StatusLeft');
-	status_StatusSpeed = $('#StatusSpeed');
-	status_StatusSpeedIcon = $('#StatusSpeedIcon');
-	status_StatusTime = $('#StatusTime');
-	status_StatusURLs = $('#StatusURLs');
-	status_CurSpeedLimit = $('#CurSpeedLimit');
-	status_CurSpeedLimitBlock = $('#CurSpeedLimitBlock');
+	'use strict';
 
-	$('#PlayMenu li[data] a').click(status_Pause_click);
-
-	status_limit_dialog = $('#LimitDialog');
-
-	status_PlayAnimation.hover(function() { status_PlayBlock.addClass('hover'); }, function() { status_PlayBlock.removeClass('hover'); });
+	// Properties (public)
+	this.status;
 	
-	// temporary pause the play animation if any modal is shown (to avoid artifacts in safari)
-	$('body >.modal').on('show', status_modalShow);
-	$('body > .modal').on('hide', status_modalHide);
-}
+	// Controls
+	var $SpeedLimitInput;
+	var $CHPauseDownload;
+	var $CHPausePostProcess;
+	var $CHPauseScan;
+	var $CHSoftPauseDownload;
+	var $StatusPausing;
+	var $StatusPaused;
+	var $StatusSoftPaused;
+	var $StatusLeft;
+	var $StatusSpeed;
+	var $StatusSpeedIcon;
+	var $StatusTime;
+	var $StatusURLs;
+	var $PlayBlock;
+	var $PlayButton;
+	var $PauseButton;
+	var $PlayAnimation;
+	var $CurSpeedLimit;
+	var $CurSpeedLimitBlock;
+	var $LimitDialog;
 
-function status_update()
-{
-	rpc('status', [], status_loaded);
-}
+	// State
+	var status;
+	var lastPlayState = 0;
+	var lastAnimState = 0;
+	var playInitialized = false;
+	var lastSoftPauseState = 0;
+	var modalShown = false;
 
-function status_loaded(status)
-{
-	Status = status;
-	loadNext();
-}
-
-function status_redraw()
-{
-	status_statistics();
-	status_info()
-}
-
-function status_statistics()
-{
-	var content = '';
-
-	content += '<tr><td>NZBGet version</td><td class="text-right">' + nzbgetVersion + '</td></tr>';
-	content += '<tr><td>Uptime</td><td class="text-right">' + FormatTimeHMS(Status.UpTimeSec) + '</td></tr>';
-	content += '<tr><td>Download time</td><td class="text-right">' + FormatTimeHMS(Status.DownloadTimeSec) + '</td></tr>';
-	content += '<tr><td>Total downloaded</td><td class="text-right">' + FormatSizeMB(Status.DownloadedSizeMB) + '</td></tr>';
-	content += '<tr><td>Remaining</td><td class="text-right">' + FormatSizeMB(Status.RemainingSizeMB) + '</td></tr>';
-	content += '<tr><td>Free disk space</td><td class="text-right">' + FormatSizeMB(Status.FreeDiskSpaceMB) + '</td></tr>';
-	content += '<tr><td>Average download speed</td><td class="text-right">' + round0(Status.AverageDownloadRate / 1024) + ' KB/s</td></tr>';
-	content += '<tr><td>Current download speed</td><td class="text-right">' + round0(Status.DownloadRate / 1024) + ' KB/s</td></tr>';
-	content += '<tr><td>Current speed limit</td><td class="text-right">' + round0(Status.DownloadLimit / 1024) + ' KB/s</td></tr>';
-
-	$('#StatisticsTable tbody').html(content);
-
-	content = '';
-	content += '<tr><td>Download</td><td class="text-right">';
-	if (Status.DownloadPaused || Status.Download2Paused)
+	this.init = function()
 	{
-		content += Status.Download2Paused ? '<span class="label label-status label-warning">paused</span>' : '';
-		content += Status.Download2Paused && Status.DownloadPaused ? ' + ' : '';
-		content += Status.DownloadPaused ? '<span class="label label-status label-warning">soft-paused</span>' : '';
-	}
-	else
-	{
-		content += '<span class="label label-status label-success">active</span>';
-	}
-	content += '</td></tr>';
-
-	var option = config_FindOption(Config, 'PostProcess');
-	content += '<tr><td>Post-processing</td><td class="text-right">' + (option && option.Value === '' ?
-		'<span class="label label-status">disabled</span>' :
-		(Status.PostPaused ?
-		'<span class="label label-status label-warning">paused</span>' :
-		'<span class="label label-status label-success">active</span>')) +
-		'</td></tr>';
-
-	option = config_FindOption(Config, 'NzbDirInterval');
-	content += '<tr><td>NZB-Directory scan</td><td class="text-right">' + (option && option.Value === '0' ?
-		'<span class="label label-status">disabled</span>' :
-		(Status.ScanPaused ?
-		'<span class="label label-status label-warning">paused</span>' :
-		'<span class="label label-status label-success">active</span>')) +
-		'</td></tr>';
-
-	content += '</tbody>';
-	content += '</table>';
-
-	$('#StatusTable tbody').html(content);
-}
-
-function status_info()
-{
-	show(status_CHPauseDownload, Status.Download2Paused);
-	show(status_CHPausePostProcess, Status.PostPaused);
-	show(status_CHPauseScan, Status.ScanPaused);
-	show(status_CHSoftPauseDownload, Status.DownloadPaused);
-
-	status_updatePlayAnim();
-	status_updatePlayButton();
-
-	if (Status.ServerStandBy)
-	{
-		status_StatusSpeed.html('--- KB/s');
-		if (Status.RemainingSizeHi > 0 || Status.RemainingSizeLo > 0)
+		$SpeedLimitInput = $('#SpeedLimitInput');
+		$CHPauseDownload = $('#CHPauseDownload');
+		$CHPausePostProcess = $('#CHPausePostProcess');
+		$CHPauseScan = $('#CHPauseScan');
+		$CHSoftPauseDownload = $('#CHSoftPauseDownload');
+		$PlayBlock = $('#PlayBlock');
+		$PlayButton = $('#PlayButton');
+		$PauseButton = $('#PauseButton');
+		$PlayAnimation = $('#PlayAnimation');
+		$StatusPausing = $('#StatusPausing');
+		$StatusPaused = $('#StatusPaused');
+		$StatusSoftPaused = $('#StatusSoftPaused');
+		$StatusLeft = $('#StatusLeft');
+		$StatusSpeed = $('#StatusSpeed');
+		$StatusSpeedIcon = $('#StatusSpeedIcon');
+		$StatusTime = $('#StatusTime');
+		$StatusURLs = $('#StatusURLs');
+		$CurSpeedLimit = $('#CurSpeedLimit');
+		$CurSpeedLimitBlock = $('#CurSpeedLimitBlock');
+		$LimitDialog = $('#LimitDialog');
+		
+		if (UISettings.setFocus)
 		{
-			if (Status.AverageDownloadRate > 0)
+			$LimitDialog.on('shown', function()
 			{
-				status_StatusTime.html(FormatTimeLeft(Status.RemainingSizeMB*1024/(Status.AverageDownloadRate/1024)));
+				$('#SpeedLimitInput').focus();
+			});
+		}
+
+		$PlayAnimation.hover(function() { $PlayBlock.addClass('hover'); }, function() { $PlayBlock.removeClass('hover'); });
+		
+		// temporary pause the play animation if any modal is shown (to avoid artifacts in safari)
+		$('body >.modal').on('show', modalShow);
+		$('body > .modal').on('hide', modalHide);
+	}
+
+	this.update = function()
+	{
+		var _this = this;
+		RPC.call('status', [], 
+			function(curStatus)
+			{
+				status = curStatus;
+				_this.status = status;
+				RPC.next();
+			});
+	}
+
+	this.redraw = function()
+	{
+		redrawStatistics();
+		redrawInfo()
+	}
+	
+	function redrawStatistics()
+	{
+		var content = '';
+
+		content += '<tr><td>NZBGet version</td><td class="text-right">' + Options.option('Version') + '</td></tr>';
+		content += '<tr><td>Uptime</td><td class="text-right">' + Util.formatTimeHMS(status.UpTimeSec) + '</td></tr>';
+		content += '<tr><td>Download time</td><td class="text-right">' + Util.formatTimeHMS(status.DownloadTimeSec) + '</td></tr>';
+		content += '<tr><td>Total downloaded</td><td class="text-right">' + Util.formatSizeMB(status.DownloadedSizeMB) + '</td></tr>';
+		content += '<tr><td>Remaining</td><td class="text-right">' + Util.formatSizeMB(status.RemainingSizeMB) + '</td></tr>';
+		content += '<tr><td>Free disk space</td><td class="text-right">' + Util.formatSizeMB(status.FreeDiskSpaceMB) + '</td></tr>';
+		content += '<tr><td>Average download speed</td><td class="text-right">' + Util.round0(status.AverageDownloadRate / 1024) + ' KB/s</td></tr>';
+		content += '<tr><td>Current download speed</td><td class="text-right">' + Util.round0(status.DownloadRate / 1024) + ' KB/s</td></tr>';
+		content += '<tr><td>Current speed limit</td><td class="text-right">' + Util.round0(status.DownloadLimit / 1024) + ' KB/s</td></tr>';
+
+		$('#StatisticsTable tbody').html(content);
+
+		content = '';
+		content += '<tr><td>Download</td><td class="text-right">';
+		if (status.DownloadPaused || status.Download2Paused)
+		{
+			content += status.Download2Paused ? '<span class="label label-status label-warning">paused</span>' : '';
+			content += status.Download2Paused && status.DownloadPaused ? ' + ' : '';
+			content += status.DownloadPaused ? '<span class="label label-status label-warning">soft-paused</span>' : '';
+		}
+		else
+		{
+			content += '<span class="label label-status label-success">active</span>';
+		}
+		content += '</td></tr>';
+
+		content += '<tr><td>Post-processing</td><td class="text-right">' + (Options.option('PostProcess') === '' ?
+			'<span class="label label-status">disabled</span>' :
+			(status.PostPaused ?
+			'<span class="label label-status label-warning">paused</span>' :
+			'<span class="label label-status label-success">active</span>')) +
+			'</td></tr>';
+
+		content += '<tr><td>NZB-Directory scan</td><td class="text-right">' + (Options.option('NzbDirInterval') === '0' ?
+			'<span class="label label-status">disabled</span>' :
+			(status.ScanPaused ?
+			'<span class="label label-status label-warning">paused</span>' :
+			'<span class="label label-status label-success">active</span>')) +
+			'</td></tr>';
+
+		content += '</tbody>';
+		content += '</table>';
+
+		$('#StatusTable tbody').html(content);
+	}
+
+	function redrawInfo()
+	{
+		Util.show($CHPauseDownload, status.Download2Paused);
+		Util.show($CHPausePostProcess, status.PostPaused);
+		Util.show($CHPauseScan, status.ScanPaused);
+		Util.show($CHSoftPauseDownload, status.DownloadPaused);
+
+		updatePlayAnim();
+		updatePlayButton();
+
+		if (status.ServerStandBy)
+		{
+			$StatusSpeed.html('--- KB/s');
+			if (status.RemainingSizeHi > 0 || status.RemainingSizeLo > 0)
+			{
+				if (status.AverageDownloadRate > 0)
+				{
+					$StatusTime.html(Util.formatTimeLeft(status.RemainingSizeMB*1024/(status.AverageDownloadRate/1024)));
+				}
+				else
+				{
+					$StatusTime.html('--h --m');
+				}
 			}
 			else
 			{
-				status_StatusTime.html('--h --m');
+				$StatusTime.html('0h 0m');
 			}
 		}
 		else
 		{
-			status_StatusTime.html('0h 0m');
+			$StatusSpeed.html(Util.round0(status.DownloadRate / 1024) + ' KB/s');
+			if (status.DownloadRate > 0)
+			{
+				$StatusTime.html(Util.formatTimeLeft(status.RemainingSizeMB*1024/(status.DownloadRate/1024)));
+			}
+			else
+			{
+				$StatusTime.html('--h --m');
+			}
 		}
+
+
+		$StatusSpeedIcon.toggleClass('icon-plane', status.DownloadLimit === 0);
+		$StatusSpeedIcon.toggleClass('icon-truck', status.DownloadLimit !== 0);
 	}
-	else
+
+	function updatePlayButton()
 	{
-		status_StatusSpeed.html(round0(Status.DownloadRate / 1024) + ' KB/s');
-		if (Status.DownloadRate > 0)
+		var SoftPause = status.DownloadPaused && (!lastAnimState || !UISettings.activityAnimation);
+		if (SoftPause !== lastSoftPauseState)
 		{
-			status_StatusTime.html(FormatTimeLeft(Status.RemainingSizeMB*1024/(Status.DownloadRate/1024)));
+			lastSoftPauseState = SoftPause;
+			$PauseButton.removeClass('img-download-green').removeClass('img-download-green-orange').
+				addClass(SoftPause ? 'img-download-green-orange' : 'img-download-green');
+			$PlayButton.removeClass('img-download-orange').removeClass('img-download-orange-orange').
+				addClass(SoftPause ? 'img-download-orange-orange' : 'img-download-orange');
 		}
-		else
-		{
-			status_StatusTime.html('--h --m');
-		}
-	}
 
-
-	status_StatusSpeedIcon.toggleClass('icon-plane', Status.DownloadLimit === 0);
-	status_StatusSpeedIcon.toggleClass('icon-truck', Status.DownloadLimit !== 0);
-}
-
-function status_updatePlayButton()
-{
-	var SoftPause = Status.DownloadPaused && (!status_LastAnimState || !Settings_PlayAnimation);
-	if (SoftPause !== status_LastSoftPauseState)
-	{
-		status_LastSoftPauseState = SoftPause;
-		$('#PauseButton').removeClass('img-download-green').removeClass('img-download-green-orange').
-			addClass(SoftPause ? 'img-download-green-orange' : 'img-download-green');
-		$('#PlayButton').removeClass('img-download-orange').removeClass('img-download-orange-orange').
-			addClass(SoftPause ? 'img-download-orange-orange' : 'img-download-orange');
-	}
-
-	var Play = !Status.Download2Paused;
-	if (Play === status_LastPlayState)
-	{
-		return;
-	}
-
-	status_LastPlayState = Play;
-
-	var hideBtn = Play ? $('#PlayButton') : $('#PauseButton');
-	var showBtn = !Play ? $('#PlayButton') : $('#PauseButton');
-
-	if (status_PlayInitialized)
-	{
-		hideBtn.fadeOut(500);
-		showBtn.fadeIn(500);
-		if (!Play && !Status.ServerStandBy)
-		{
-			animateAlert('#Notif_Downloads_Pausing');
-		}
-	}
-	else
-	{
-		hideBtn.hide();
-		showBtn.show();
-	}
-
-	if (Play)
-	{
-		status_PlayAnimation.removeClass('pause').addClass('play');
-	}
-	else
-	{
-		status_PlayAnimation.removeClass('play').addClass('pause');
-	}
-
-	status_PlayInitialized = true;
-}
-
-function status_updatePlayAnim()
-{
-	// Animate if either any downloads or post-processing is in progress
-	var Anim = (!Status.ServerStandBy || (Status.PostJobCount > 0 && !Status.PostPaused)) &&
-		(Settings_RefreshInterval !== 0) && !State_ConnectionError;
-	if (Anim === status_LastAnimState)
-	{
-		return;
-	}
-
-	status_LastAnimState = Anim;
-
-	if (Settings_PlayAnimation && !status_ModalShown)
-	{
-		if (Anim)
-		{
-			status_PlayAnimation.fadeIn(1000);
-		}
-		else
-		{
-			status_PlayAnimation.fadeOut(1000);
-		}
-	}
-}
-
-function status_Play_click()
-{
-	//animateAlert('#Notif_Play');
-
-	if (status_LastPlayState)
-	{
-		// pause all activities
-		rpc('pausedownload2', [],
-			function(){rpc('pausepost', [],
-			function(){rpc('pausescan', [], refresh_update)})});
-	}
-	else
-	{
-		// resume all activities
-		rpc('resumedownload2', [],
-			function(){rpc('resumepost', [],
-			function(){rpc('resumescan', [], refresh_update)})});
-	}
-}
-
-function status_setSpeedLimit_click()
-{
-	var val = status_SpeedLimitInput.val();
-	var rate = 0;
-	if (val == '')
-	{
-		rate = 0;
-	}
-	else
-	{
-		rate = parseInt(val);
-		if (isNaN(rate))
+		var Play = !status.Download2Paused;
+		if (Play === lastPlayState)
 		{
 			return;
 		}
-	}
-	rpc('rate', [rate], function()
-	{
-		$('#LimitDialog').modal('hide');
-		animateAlert('#Notif_SetSpeedLimit');
-		refresh_update();
-	});
-}
 
-function status_Pause_click(data)
-{
-	switch (data)
-	{
-		case 'download2':
-			var method = Status.Download2Paused ? 'resumedownload2' : 'pausedownload2';
-			break;
-		case 'post':
-			var method = Status.PostPaused ? 'resumepost' : 'pausepost';
-			break;
-		case 'scan':
-			var method = Status.ScanPaused ? 'resumescan' : 'pausescan';
-			break;
-		case 'download':
-			var method = Status.DownloadPaused ? 'resumedownload' : 'pausedownload';
-			break;
-	}
-	rpc(method, [], refresh_update);
-}
+		lastPlayState = Play;
 
-function status_limit_click()
-{
-	status_SpeedLimitInput.val('');
-	status_CurSpeedLimit.text(Status.DownloadLimit === 0 ? 'none' : round0(Status.DownloadLimit / 1024) + ' KB/s');
-	show(status_CurSpeedLimitBlock, Status.DownloadLimit !== 0);
-	status_limit_dialog.modal();
-}
+		var hideBtn = Play ? $PlayButton : $PauseButton;
+		var showBtn = !Play ? $PlayButton : $PauseButton;
 
-function status_PlayRotate()
-{
-	// animate next frame
-	status_PlayFrame++;
-
-	if (status_PlayFrame >= status_PlayFrameSize)
-	{
-		status_PlayFrame = 0;
-	}
-
-	var f = status_PlayFrame <= status_PlayFrameSize ? status_PlayFrame : 0;
-
-	var degree = 360 * f / status_PlayFrameSize;
-
-	status_PlayAnimation.css({
-		'-webkit-transform': 'rotate(' + degree + 'deg)',
-		   '-moz-transform': 'rotate(' + degree + 'deg)',
-			'-ms-transform': 'rotate(' + degree + 'deg)',
-			 '-o-transform': 'rotate(' + degree + 'deg)',
-				'transform': 'rotate(' + degree + 'deg)'
-	});
-
-
-	var extra = '';
-	status_PlayStep++;
-
-	if (status_PlayState === 0)
-	{
-		status_PlayFrameSize -= 0.2;
-
-		// fading in
-		if (status_PlayStep <= 20)
+		if (playInitialized)
 		{
-			status_PlayAnimation.css('opacity', status_PlayStep / 20);
+			hideBtn.fadeOut(500);
+			showBtn.fadeIn(500);
+			if (!Play && !status.ServerStandBy)
+			{
+				Notification.show('#Notif_Downloads_Pausing');
+			}
+		}
+		else
+		{
+			hideBtn.hide();
+			showBtn.show();
 		}
 
-		// fastening
-		if (status_PlayFrameSize < 20)
+		if (Play)
 		{
-			status_PlayFrameSize = 20;
-			status_PlayState++;
-			status_PlayStep = 0;
+			$PlayAnimation.removeClass('pause').addClass('play');
 		}
-	}
-	else if (status_PlayState === 1)
-	{
-		if (status_PlayStep > 100)
+		else
 		{
-			status_PlayState++;
-			status_PlayStep = 0;
-			//status_PlayState = 4;
-		}
-	}
-	else if (status_PlayState === 2)
-	{
-		status_PlayFrameSize += 0.2;
-		// slowing
-		if (status_PlayFrameSize > 50)
-		{
-			status_PlayFrameSize = 50;
-			status_PlayState++;
-			status_PlayStep = 0;
-		}
-	}
-	else if (status_PlayState === 3)
-	{
-		if (status_PlayStep > 100)
-		{
-			status_PlayState++;
-			status_PlayStep = 0;
-		}
-	}
-	else if (status_PlayState === 4)
-	{
-		// fading out
-		if (status_PlayStep <= 50)
-		{
-			status_PlayAnimation.css('opacity', (50 - status_PlayStep) / 50);
+			$PlayAnimation.removeClass('play').addClass('pause');
 		}
 
-		if (status_PlayStep > 100)
+		playInitialized = true;
+	}
+
+	function updatePlayAnim()
+	{
+		// Animate if either any downloads or post-processing is in progress
+		var Anim = (!status.ServerStandBy || (status.PostJobCount > 0 && !status.PostPaused)) &&
+			(UISettings.refreshInterval !== 0) && !UISettings.connectionError;
+		if (Anim === lastAnimState)
 		{
-			status_PlayState = 0;
-			status_PlayStep = 0;
+			return;
+		}
+
+		lastAnimState = Anim;
+
+		if (UISettings.activityAnimation && !modalShown)
+		{
+			if (Anim)
+			{
+				$PlayAnimation.fadeIn(1000);
+			}
+			else
+			{
+				$PlayAnimation.fadeOut(1000);
+			}
 		}
 	}
-}
 
-function status_modalShow()
-{
-	status_ModalShown = true;
-	if (status_LastAnimState)
+	this.playClick = function()
 	{
-		status_PlayAnimation.hide();
-	}
-}
+		//Notification.show('#Notif_Play');
 
-function status_modalHide()
-{
-	if (status_LastAnimState)
-	{
-		status_PlayAnimation.show();
+		if (lastPlayState)
+		{
+			// pause all activities
+			RPC.call('pausedownload2', [],
+				function(){RPC.call('pausepost', [],
+				function(){RPC.call('pausescan', [], Refresher.update)})});
+		}
+		else
+		{
+			// resume all activities
+			RPC.call('resumedownload2', [],
+				function(){RPC.call('resumepost', [],
+				function(){RPC.call('resumescan', [], Refresher.update)})});
+		}
 	}
-	status_ModalShown = false;
-}
+
+	this.pauseClick = function(data)
+	{
+		switch (data)
+		{
+			case 'download2':
+				var method = status.Download2Paused ? 'resumedownload2' : 'pausedownload2';
+				break;
+			case 'post':
+				var method = status.PostPaused ? 'resumepost' : 'pausepost';
+				break;
+			case 'scan':
+				var method = status.ScanPaused ? 'resumescan' : 'pausescan';
+				break;
+			case 'download':
+				var method = status.DownloadPaused ? 'resumedownload' : 'pausedownload';
+				break;
+		}
+		RPC.call(method, [], Refresher.update);
+	}
+
+	this.limitDialogClick = function()
+	{
+		$SpeedLimitInput.val('');
+		$CurSpeedLimit.text(status.DownloadLimit === 0 ? 'none' : Util.round0(status.DownloadLimit / 1024) + ' KB/s');
+		Util.show($CurSpeedLimitBlock, status.DownloadLimit !== 0);
+		$LimitDialog.modal();
+	}
+
+	this.setSpeedLimitClick = function()
+	{
+		var val = $SpeedLimitInput.val();
+		var rate = 0;
+		if (val == '')
+		{
+			rate = 0;
+		}
+		else
+		{
+			rate = parseInt(val);
+			if (isNaN(rate))
+			{
+				return;
+			}
+		}
+		RPC.call('rate', [rate], function()
+		{
+			$LimitDialog.modal('hide');
+			Notification.show('#Notif_SetSpeedLimit');
+			Refresher.update();
+		});
+	}
+
+	function modalShow()
+	{
+		modalShown = true;
+		if (lastAnimState)
+		{
+			$PlayAnimation.hide();
+		}
+	}
+
+	function modalHide()
+	{
+		if (lastAnimState)
+		{
+			$PlayAnimation.show();
+		}
+		modalShown = false;
+	}
+}(jQuery));

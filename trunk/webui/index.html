@@ -1,22 +1,22 @@
 <!DOCTYPE html>
 <!--
- *	This file is part of nzbget
+ * This file is part of nzbget
  *
- *	Copyright (C) 2012 Andrey Prygunkov <hugbug@users.sourceforge.net>
+ * Copyright (C) 2012 Andrey Prygunkov <hugbug@users.sourceforge.net>
  *
- *	This program is free software; you can redistribute it and/or modify
- *	it under the terms of the GNU General Public License as published by
- *	the Free Software Foundation; either version 2 of the License, or
- *	(at your option) any later version.
+ * This program is free software; you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation; either version 2 of the License, or
+ * (at your option) any later version.
  *
- *	This program is distributed in the hope that it will be useful,
- *	but WITHOUT ANY WARRANTY; without even the implied warranty of
- *	MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- *	GNU General Public License for more details.
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
  *
- *	You should have received a copy of the GNU General Public License
- *	along with this program; if not, write to the Free Software
- *	Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
+ * You should have received a copy of the GNU General Public License
+ * along with this program; if not, write to the Free Software
+ * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  *
  * $Revision$
  * $Date$
@@ -40,9 +40,9 @@
 	<script language="javascript" type="text/javascript" src="lib/bootstrap.js"></script>
 
 	<!-- NZBGet -->
-	<script language="javascript" type="text/javascript" src="util.js"></script>
 	<script language="javascript" type="text/javascript" src="fasttable.js"></script>
 	<script language="javascript" type="text/javascript" src="index.js"></script>
+	<script language="javascript" type="text/javascript" src="util.js"></script>
 	<script language="javascript" type="text/javascript" src="downloads.js"></script>
 	<script language="javascript" type="text/javascript" src="edit.js"></script>
 	<script language="javascript" type="text/javascript" src="status.js"></script>
@@ -53,11 +53,6 @@
 
 	<link rel="stylesheet" type="text/css" href="lib/bootstrap.css" />
 	<link rel="stylesheet" type="text/css" href="style.css" />
-
-	<!-- Le HTML5 shim, for IE6-8 support of HTML5 elements -->
-	<!--[if lt IE 9]>
-	  <script src="http://html5shim.googlecode.com/svn/trunk/html5.js"></script>
-	<![endif]-->
 
 	<!-- fav and touch icons -->
 	<link rel="shortcut icon" href="img/favicon.ico">
@@ -85,25 +80,25 @@
 			<div id="PlayBlock">
 				<div id="PlayPauseBg"><div class="img-download-bg"></div></div>
 				<div id="PlayButton" class="img-download-orange" style="display:none;">
-					<div class="PlayBlockInner" onclick="status_Play_click()" title="Download paused (click to resume)">
+					<div class="PlayBlockInner" onclick="Status.playClick()" title="Download paused (click to resume)">
 						<div class="img-download-btn"></div>
 					</div>
 				</div>
 				<div id="PauseButton" class="img-download-green">
-					<div class="PlayBlockInner" onclick="status_Play_click()" title="Download active (click to pause)">
+					<div class="PlayBlockInner" onclick="Status.playClick()" title="Download active (click to pause)">
 						<div class="img-download-btn"></div>
 					</div>
 				</div>
-				<div id="PlayAnimation" style="display:none;" onclick="status_Play_click()"></div>
+				<div id="PlayAnimation" style="display:none;" onclick="Status.playClick()"></div>
 				<div id="PlayCaretBlock">
 					<button id="PlayCaretButton" class="dropdown-toggle" data-toggle="dropdown"><span id="PlayCaret" class="caret"></span></button>
 					<ul class="dropdown-menu menu-check" id="PlayMenu">
 						<li class="menu-header">Pause activities</li>
-						<li><a href="#" onclick="status_Pause_click('download2')"><table><tr><td><i class="icon-ok" id="CHPauseDownload"></td><td>Pause Download</td></tr></table></a></li>
-						<li><a href="#" onclick="status_Pause_click('post')"><table><tr><td><i class="icon-ok" id="CHPausePostProcess"></td><td>Pause Post-Processing</td></tr></table></a></li>
-						<li><a href="#" onclick="status_Pause_click('scan')"><table><tr><td><i class="icon-ok" id="CHPauseScan"></td><td>Pause NZB Scan</td></tr></table></a></li>
+						<li><a href="#" onclick="Status.pauseClick('download2')"><table><tr><td><i class="icon-ok" id="CHPauseDownload"></td><td>Pause Download</td></tr></table></a></li>
+						<li><a href="#" onclick="Status.pauseClick('post')"><table><tr><td><i class="icon-ok" id="CHPausePostProcess"></td><td>Pause Post-Processing</td></tr></table></a></li>
+						<li><a href="#" onclick="Status.pauseClick('scan')"><table><tr><td><i class="icon-ok" id="CHPauseScan"></td><td>Pause NZB Scan</td></tr></table></a></li>
 						<li class="divider"></li>
-						<li><a href="#" onclick="status_Pause_click('download')"><table><tr><td><i class="icon-ok" id="CHSoftPauseDownload"></td><td>Soft-Pause Download</td></tr></table></a></li>
+						<li><a href="#" onclick="Status.pauseClick('download')"><table><tr><td><i class="icon-ok" id="CHSoftPauseDownload"></td><td>Soft-Pause Download</td></tr></table></a></li>
 						<li class="divider"></li>
 						<li><a data-toggle="modal" href="#PauseHelp"><table><tr><td></td><td>Quick Help</td></tr></table></a></li>
 					</ul>
@@ -112,7 +107,7 @@
 
 			<!-- SPEED/TIME -->
 			<div id="InfoBlock">
-				<div href="#" onclick="status_limit_click()" title="Current speed (click to set speed limit)"><i class="icon-plane" id="StatusSpeedIcon"></i> <span id="StatusSpeed">--- KB/s</span></div>
+				<div href="#" onclick="Status.limitDialogClick()" title="Current speed (click to set speed limit)"><i class="icon-plane" id="StatusSpeedIcon"></i> <span id="StatusSpeed">--- KB/s</span></div>
 				<div data-toggle="modal" href="#StatDialog" title="Remaining time (click for more statistics)"><i class="icon-time"></i> <span id="StatusTime">--h --m</span></div>
 			</div>
 
@@ -120,7 +115,7 @@
 			<div id="RefreshBlockDesktop" class="pull-right phone-hide">
 				<div class="btn-toolbar" id="RefreshBlock">
 					<div class="btn-group">
-						<button class="btn btn-inverse" id="RefreshButton" onclick="refresh_click()"><i class="icon-refresh" id="RefreshAnimation"></i></button>
+						<button class="btn btn-inverse" id="RefreshButton"><i class="icon-refresh" id="RefreshAnimation"></i></button>
 						<button class="btn btn-inverse dropdown-toggle" data-toggle="dropdown"><span class="caret"></span></button>
 						<ul class="dropdown-menu menu-refresh" id="RefreshMenu">
 							<li class="menu-header">Automatic refresh</li>
@@ -175,9 +170,9 @@
 </div>
 
 <!-- *** ERROR BLOCK  ****************************************************************** -->
-<div class="alert alert-danger alert-block" style="display:none; margin-bottom:25px;" id="RPCError">
-	<h4 class="alert-heading" id="RPCError-title">Communication error!</h4>
-	<p id="RPCError-text"></p>
+<div class="alert alert-danger alert-block" style="display:none; margin-bottom:25px;" id="ErrorAlert">
+	<h4 class="alert-heading" id="ErrorAlert-title">Communication error!</h4>
+	<p id="ErrorAlert-text"></p>
 </div>
 
 <!-- *** INIT LOADING-ALERT ************************************************************ -->
@@ -188,8 +183,8 @@
 </div>
 
 <!-- *** UNSUPPORTED BROWSER: IE < 9 *************************************************** -->
-<div class="alert alert-danger alert-block unsupported-browser" style="display:none;" id="UnsupportedBrowserIE8">
-	<h4 class="alert-heading" id="RPCError-title">Unsupported browser!</h4>
+<div class="alert alert-danger alert-block unsupported-browser" style="display:none;" id="UnsupportedBrowserIE8Alert">
+	<h4 class="alert-heading">Unsupported browser!</h4>
 	<p>Sorry but this application doesn't work with Internet Explorer versions below 9. Please
 	upgrade to at least IE 9 or use another browser.</p>
 </div>
@@ -210,34 +205,34 @@
 
 				<!-- ADD BUTTON -->
 				<div class="btn-group" id="TBAddButton">
-					<button class="btn" onclick="downloads_add_click()" title="Add nzb-files"><i class="icon-plus"></i><span class="btn-caption"> Add</span></button>
+					<button class="btn" onclick="Upload.addClick()" title="Add nzb-files"><i class="icon-plus"></i><span class="btn-caption"> Add</span></button>
 				</div>
 
 				<!-- NZB-ACTIONS BUTTONS -->
 				<div class="btn-group phone-hide">
-					<button class="btn" onclick="downloads_selected_edit_click()" title="Edit selected nzb-files"><i class="icon-edit"></i><span class="btn-caption"> Edit</span></button>
-					<button class="btn" onclick="downloads_selected_merge_click()" title="Merge selected nzb-files"><i class="icon-merge"></i><span class="btn-caption"> Merge</span></button>
-					<button class="btn" onclick="downloads_selected_pause_click()" title="Pause selected nzb-files"><i class="icon-pause"></i><span class="btn-caption"> Pause</span></button>
-					<button class="btn" onclick="downloads_selected_resume_click()" title="Resume selected nzb-files"><i class="icon-play"></i><span class="btn-caption"> Resume</span></button>
-					<button class="btn" onclick="downloads_selected_delete_click()" title="Delete selected nzb-files"><i class="icon-trash"></i><span class="btn-caption"> Delete</span></button>
+					<button class="btn" onclick="Downloads.editClick()" title="Edit selected nzb-files"><i class="icon-edit"></i><span class="btn-caption"> Edit</span></button>
+					<button class="btn" onclick="Downloads.mergeClick()" title="Merge selected nzb-files"><i class="icon-merge"></i><span class="btn-caption"> Merge</span></button>
+					<button class="btn" onclick="Downloads.pauseClick()" title="Pause selected nzb-files"><i class="icon-pause"></i><span class="btn-caption"> Pause</span></button>
+					<button class="btn" onclick="Downloads.resumeClick()" title="Resume selected nzb-files"><i class="icon-play"></i><span class="btn-caption"> Resume</span></button>
+					<button class="btn" onclick="Downloads.deleteClick()" title="Delete selected nzb-files"><i class="icon-trash"></i><span class="btn-caption"> Delete</span></button>
 				</div>
-				<div class="btn-group phone-only inline"><button class="btn" onclick="downloads_selected_edit_click()" title="Edit selected nzb-files"><i class="icon-edit"></i><span class="btn-caption"> Edit</span></button></div>
-				<div class="btn-group phone-only inline"><button class="btn" onclick="downloads_selected_merge_click()" title="Merge selected nzb-files"><i class="icon-merge"></i><span class="btn-caption"> Merge</span></button></div>
-				<div class="btn-group phone-only inline"><button class="btn" onclick="downloads_selected_pause_click()" title="Pause selected nzb-files"><i class="icon-pause"></i><span class="btn-caption"> Pause</span></button></div>
-				<div class="btn-group phone-only inline"><button class="btn" onclick="downloads_selected_resume_click()" title="Resume selected nzb-files"><i class="icon-play"></i><span class="btn-caption"> Resume</span></button></div>
-				<div class="btn-group phone-only inline"><button class="btn" onclick="downloads_selected_delete_click()" title="Delete selected nzb-files"><i class="icon-trash"></i><span class="btn-caption"> Delete</span></button></div>
+				<div class="btn-group phone-only inline"><button class="btn" onclick="Downloads.editClick()" title="Edit selected nzb-files"><i class="icon-edit"></i><span class="btn-caption"> Edit</span></button></div>
+				<div class="btn-group phone-only inline"><button class="btn" onclick="Downloads.mergeClick()" title="Merge selected nzb-files"><i class="icon-merge"></i><span class="btn-caption"> Merge</span></button></div>
+				<div class="btn-group phone-only inline"><button class="btn" onclick="Downloads.pauseClick()" title="Pause selected nzb-files"><i class="icon-pause"></i><span class="btn-caption"> Pause</span></button></div>
+				<div class="btn-group phone-only inline"><button class="btn" onclick="Downloads.resumeClick()" title="Resume selected nzb-files"><i class="icon-play"></i><span class="btn-caption"> Resume</span></button></div>
+				<div class="btn-group phone-only inline"><button class="btn" onclick="Downloads.deleteClick()" title="Delete selected nzb-files"><i class="icon-trash"></i><span class="btn-caption"> Delete</span></button></div>
 
 				<!-- MOVE BUTTONS -->
 				<div class="btn-group phone-hide">
-					<button class="btn" onclick="downloads_selected_move_click('top')" title="Move selected nzb-files to the top"><i class="icon-top"></i></button>
-					<button class="btn" onclick="downloads_selected_move_click('up')" title="Move selected nzb-files up"><i class="icon-up"></i></button>
-					<button class="btn" onclick="downloads_selected_move_click('down')" title="Move selected nzb-files down"><i class="icon-down"></i></button>
-					<button class="btn" onclick="downloads_selected_move_click('bottom')" title="Move selected nzb-files to the bottom"><i class="icon-bottom"></i></button>
+					<button class="btn" onclick="Downloads.moveClick('top')" title="Move selected nzb-files to the top"><i class="icon-top"></i></button>
+					<button class="btn" onclick="Downloads.moveClick('up')" title="Move selected nzb-files up"><i class="icon-up"></i></button>
+					<button class="btn" onclick="Downloads.moveClick('down')" title="Move selected nzb-files down"><i class="icon-down"></i></button>
+					<button class="btn" onclick="Downloads.moveClick('bottom')" title="Move selected nzb-files to the bottom"><i class="icon-bottom"></i></button>
 				</div>
-				<div class="btn-group phone-only inline"><button class="btn" onclick="downloads_selected_move_click('top')" title="Move selected nzb-files to the top"><i class="icon-top"></i></button></div>
-				<div class="btn-group phone-only inline"><button class="btn" onclick="downloads_selected_move_click('up')" title="Move selected nzb-files up"><i class="icon-up"></i></button></div>
-				<div class="btn-group phone-only inline"><button class="btn" onclick="downloads_selected_move_click('down')" title="Move selected nzb-files down"><i class="icon-down"></i></button></div>
-				<div class="btn-group phone-only inline"><button class="btn" onclick="downloads_selected_move_click('bottom')" title="Move selected nzb-files to the bottom"><i class="icon-bottom"></i></button></div>
+				<div class="btn-group phone-only inline"><button class="btn" onclick="Downloads.moveClick('top')" title="Move selected nzb-files to the top"><i class="icon-top"></i></button></div>
+				<div class="btn-group phone-only inline"><button class="btn" onclick="Downloads.moveClick('up')" title="Move selected nzb-files up"><i class="icon-up"></i></button></div>
+				<div class="btn-group phone-only inline"><button class="btn" onclick="Downloads.moveClick('down')" title="Move selected nzb-files down"><i class="icon-down"></i></button></div>
+				<div class="btn-group phone-only inline"><button class="btn" onclick="Downloads.moveClick('bottom')" title="Move selected nzb-files to the bottom"><i class="icon-bottom"></i></button></div>
 
 				<div class="btn-group phone-only inline" id="DownloadsRecordsPerPageBlockPhone">
 				</div>
@@ -248,7 +243,7 @@
 
 			<div class="form-inline toolbox-top clearfix" id="DownloadsTableTopBlock">
 				<div class="pull-left toolbox-length" id="DownloadsRecordsPerPageBlock">
-					<select size="1" id="DownloadsRecordsPerPage" onchange="downloads_RecordsPerPage_change()">
+					<select size="1" id="DownloadsRecordsPerPage" onchange="Downloads.recordsPerPageChange()">
 						<option value="5">5</option>
 						<option selected="selected" value="10">10</option>
 						<option value="15">15</option>
@@ -287,7 +282,7 @@
 
 			<div class="btn-toolbar form-inline section-toolbar">
 				<div class="btn-group">
-					<button class="btn" onclick="history_delete_click()" title="Delete selected records"><i class="icon-trash"></i><span class="btn-caption"> Delete</span></button>
+					<button class="btn" onclick="History.deleteClick()" title="Delete selected records"><i class="icon-trash"></i><span class="btn-caption"> Delete</span></button>
 				</div>
 
 				<div class="btn-group phone-only inline" id="HistoryRecordsPerPageBlockPhone">
@@ -299,7 +294,7 @@
 
 			<div class="form-inline toolbox-top clearfix" id="HistoryTableTopBlock">
 				<div class="pull-left toolbox-length" id="HistoryRecordsPerPageBlock">
-					<select size="1" id="HistoryRecordsPerPage" onchange="history_RecordsPerPage_change()">
+					<select size="1" id="HistoryRecordsPerPage" onchange="History.recordsPerPageChange()">
 						<option value="5">5</option>
 						<option selected="selected" value="10">10</option>
 						<option value="15">15</option>
@@ -358,7 +353,7 @@
 
 			<div class="form-inline toolbox-top clearfix" id="MessagesTableTopBlock">
 				<div class="pull-left toolbox-length" id="MessagesRecordsPerPageBlock">
-					<select size="1" id="MessagesRecordsPerPage" onchange="messages_RecordsPerPage_change()">
+					<select size="1" id="MessagesRecordsPerPage" onchange="Messages.recordsPerPageChange()">
 						<option value="5">5</option>
 						<option selected="selected" value="10">10</option>
 						<option value="15">15</option>
@@ -419,8 +414,8 @@
 						TIP: You can reload anytime later in section <em><strong>SYSTEM</strong></em> on settings page.</p>
 						<p id="ConfigSaved_Close">The changes made to post-processing settings will be in effect for the next post-processing job.</p>
 					</div>
-					<button type="button" class="btn btn-primary" id="ConfigReload" onclick="config_Reload()">Reload NZBGet</button>
-					<button type="button" class="btn btn-primary" id="ConfigClose" onclick="config_Close()">Return to Downloads</button>
+					<button type="button" class="btn btn-primary" id="ConfigReload" onclick="Config.reload()">Reload NZBGet</button>
+					<button type="button" class="btn btn-primary" id="ConfigClose" onclick="Config.close()">Return to Downloads</button>
 				</div>
 
 				<div id="ConfigContent">
@@ -457,7 +452,7 @@
 									<h4>NZBGet settings</h4>
 									<p>
 									With these settings you configure NZBGet. When you configure NZBGet for the first time you need
-									to check at least the option <a class="option" href="#" data-category="S" onclick="config_scrollToOption(event, this)">MainDir</a> and configure one news server.
+									to check at least the option <a class="option" href="#" data-category="S" onclick="Config.scrollToOption(event, this)">MainDir</a> and configure one news server.
 									Any changes of NZBGet settings require a restart or reload (soft-restart) of NZBGet.
 									</p>
 
@@ -465,11 +460,11 @@
 									<p>
 									When NZBGet finishes download
 									of nzb-file it can start a post-processing script for further processing (unpacking etc.).
-									You can configure what script must be executed using option <a class="option" href="#" data-category="S" onclick="config_scrollToOption(event, this)">PostProcess</a>
-									on page <em><strong>POST-PROCESSING</strong></em>.
+									You can configure what script must be executed using option <a class="option" href="#" data-category="S" onclick="Config.scrollToOption(event, this)">PostProcess</a>
+									in section <em><strong>POST-PROCESSING</strong></em>.
 									</p>
 									<p>
-									The section <em><strong>POST-PROCESSING SCRIPT SETTINGS</strong></em> is shown on the navigation bar
+									The <em><strong>POST-PROCESSING SCRIPT SETTINGS</strong></em> are shown on the navigation bar
 									only if you have setup a post-processing script and if it has a configuration file. For your convenience
 									NZBGet proivides you with a way to configure the post-processing script options via web-interface.
 									These settings however do not
@@ -479,14 +474,14 @@
 								</div>
 
 								<div>
-									<form class="form-horizontal">
+									<div class="form-horizontal">
 										<fieldset id="ConfigData">
 
 											<!-- *** SYSTEM -->
 											<div class="control-group config-static config-system">
 												<label class="control-label nowrap">Reload NZBGet</label>
 												<div class="controls">
-													<button type="button" class="btn btn-danger" onclick="config_ReloadConfirm()">Reload</button>
+													<button type="button" class="btn btn-danger" onclick="Config.reloadConfirm()">Reload</button>
 													<p class="help-block">
 													<span class="help-option-title">Reload configuration and reinitialize the program.</span><br><br>
 													If the configuration file was edited externaly (in a texteditor) or you have not reloaded NZBGet directly after saving the changes in web-interface you can do this here.
@@ -519,7 +514,7 @@
 											-->
 
 										</fieldset>
-									</form>
+									</div>
 								</div>
 
 							</div>
@@ -528,7 +523,7 @@
 
 					<div class="ConfigFooter">
 						<hr>
-						<button type="button" class="btn btn-primary" id="Config_Save" onclick="config_Save()">Save all changes</button>
+						<button type="button" class="btn btn-primary" id="Config_Save" onclick="Config.saveChanges()">Save all changes</button>
 					</div>
 				</div>
 			</div>
@@ -611,7 +606,7 @@
 	<h3>Speed Limit</h3>
 	</div>
 	<div class="modal-body">
-		<form class="form-horizontal">
+		<div class="form-horizontal">
 			<fieldset>
 				<div class="control-group">
 					<label class="control-label" for="SpeedLimitInputGroup">New speed limit</label>
@@ -623,12 +618,12 @@
 					</div>
 				</div>
 			</fieldset>
-		</form>
+		</div>
 	</div>
 	<div class="modal-footer">
 		<div class="dialog-transmit hide" style="position:absolute;margin-left:260px;" id="Limit_Transmit"><img src="img/transmit.gif"></div>
 		<a href="#" class="btn" data-dismiss="modal">Close</a>
-		<a href="#" class="btn btn-primary" onclick="status_setSpeedLimit_click()">Set limit</a>
+		<a href="#" class="btn btn-primary" onclick="Status.setSpeedLimitClick()">Set limit</a>
 	</div>
 </div>
 
@@ -653,7 +648,7 @@
 
 <!-- *** EDIT DOWNLOAD DIALOG ************************************************************ -->
 
-<div class="modal hide" id="DownloadsEdit">
+<div class="modal hide" id="DownloadsEditDialog">
 	<div class="modal-header">
 		<a class="close" href='#' data-dismiss="modal"><i class="icon-close"></i></a>
 		<a class="back" id="DownloadsEdit_Back" href="#" title="Back"><i class="icon-back"></i></a>
@@ -665,7 +660,7 @@
 
 		<div>
 			<div class="modal-tab" id="DownloadsEdit_GeneralTab">
-				<form class="form-horizontal">
+				<div class="form-horizontal">
 					<fieldset>
 
 						<div class="control-group">
@@ -714,7 +709,7 @@
 						</div>
 
 					</fieldset>
-				</form>
+				</div>
 			</div>
 
 			<div class="modal-tab hide" id="DownloadsEdit_FileTab">
@@ -726,25 +721,25 @@
 						<div class="pull-left btn-toolbar form-inline modal-toolbar">
 							<!-- EDIT BUTTONS -->
 							<div class="btn-group phone-hide">
-								<button class="btn" onclick="edit_group_files_edit_click('pause')" title="Pause selected files"><i class="icon-pause"></i><span class="btn-caption"> Pause</span></button>
-								<button class="btn" onclick="edit_group_files_edit_click('resume')" title="Resume selected files"><i class="icon-play"></i><span class="btn-caption"> Resume</span></button>
-								<button class="btn" onclick="edit_group_files_edit_click('delete')" title="Delete selected files"><i class="icon-trash"></i><span class="btn-caption"> Delete</span></button>
+								<button class="btn" onclick="DownloadsEditDialog.editActionClick('pause')" title="Pause selected files"><i class="icon-pause"></i><span class="btn-caption"> Pause</span></button>
+								<button class="btn" onclick="DownloadsEditDialog.editActionClick('resume')" title="Resume selected files"><i class="icon-play"></i><span class="btn-caption"> Resume</span></button>
+								<button class="btn" onclick="DownloadsEditDialog.editActionClick('delete')" title="Delete selected files"><i class="icon-trash"></i><span class="btn-caption"> Delete</span></button>
 							</div>
-							<div class="btn-group phone-only inline"><button class="btn" onclick="edit_group_files_edit_click('pause')" title="Pause selected files"><i class="icon-pause"></i><span class="btn-caption"> Pause</span></button></div>
-							<div class="btn-group phone-only inline"><button class="btn" onclick="edit_group_files_edit_click('resume')" title="Resume selected files"><i class="icon-play"></i><span class="btn-caption"> Resume</span></button></div>
-							<div class="btn-group phone-only inline"><button class="btn" onclick="edit_group_files_edit_click('delete')" title="Delete selected files"><i class="icon-trash"></i><span class="btn-caption"> Delete</span></button></div>
+							<div class="btn-group phone-only inline"><button class="btn" onclick="DownloadsEditDialog.editActionClick('pause')" title="Pause selected files"><i class="icon-pause"></i><span class="btn-caption"> Pause</span></button></div>
+							<div class="btn-group phone-only inline"><button class="btn" onclick="DownloadsEditDialog.editActionClick('resume')" title="Resume selected files"><i class="icon-play"></i><span class="btn-caption"> Resume</span></button></div>
+							<div class="btn-group phone-only inline"><button class="btn" onclick="DownloadsEditDialog.editActionClick('delete')" title="Delete selected files"><i class="icon-trash"></i><span class="btn-caption"> Delete</span></button></div>
 
 							<!-- MOVE BUTTONS -->
 							<div class="btn-group phone-hide">
-								<button class="btn" onclick="edit_group_files_edit_click('top')" title="Move selected files to the top"><i class="icon-top"></i></button>
-								<button class="btn" onclick="edit_group_files_edit_click('up')" title="Move selected files up"><i class="icon-up"></i></button>
-								<button class="btn" onclick="edit_group_files_edit_click('down')" title="Move selected files down"><i class="icon-down"></i></button>
-								<button class="btn" onclick="edit_group_files_edit_click('bottom')" title="Move selected files to the bottom"><i class="icon-bottom"></i></button>
+								<button class="btn" onclick="DownloadsEditDialog.editActionClick('top')" title="Move selected files to the top"><i class="icon-top"></i></button>
+								<button class="btn" onclick="DownloadsEditDialog.editActionClick('up')" title="Move selected files up"><i class="icon-up"></i></button>
+								<button class="btn" onclick="DownloadsEditDialog.editActionClick('down')" title="Move selected files down"><i class="icon-down"></i></button>
+								<button class="btn" onclick="DownloadsEditDialog.editActionClick('bottom')" title="Move selected files to the bottom"><i class="icon-bottom"></i></button>
 							</div>
-							<div class="btn-group phone-only inline"><button class="btn" onclick="edit_group_files_edit_click('top')" title="Move selected files to the top"><i class="icon-top"></i></button></div>
-							<div class="btn-group phone-only inline"><button class="btn" onclick="edit_group_files_edit_click('up')" title="Move selected files up"><i class="icon-up"></i></button></div>
-							<div class="btn-group phone-only inline"><button class="btn" onclick="edit_group_files_edit_click('down')" title="Move selected files down"><i class="icon-down"></i></button></div>
-							<div class="btn-group phone-only inline"><button class="btn" onclick="edit_group_files_edit_click('bottom')" title="Move selected files to the bottom"><i class="icon-bottom"></i></button></div>
+							<div class="btn-group phone-only inline"><button class="btn" onclick="DownloadsEditDialog.editActionClick('top')" title="Move selected files to the top"><i class="icon-top"></i></button></div>
+							<div class="btn-group phone-only inline"><button class="btn" onclick="DownloadsEditDialog.editActionClick('up')" title="Move selected files up"><i class="icon-up"></i></button></div>
+							<div class="btn-group phone-only inline"><button class="btn" onclick="DownloadsEditDialog.editActionClick('down')" title="Move selected files down"><i class="icon-down"></i></button></div>
+							<div class="btn-group phone-only inline"><button class="btn" onclick="DownloadsEditDialog.editActionClick('bottom')" title="Move selected files to the bottom"><i class="icon-bottom"></i></button></div>
 						</div>
 						<div class="pull-right" style="margin-bottom:10px;"><input id="DownloadsEdit_FileTable_filter" class="search-query" placeholder="Search" type="text"></div>
 					</div>
@@ -760,10 +755,10 @@
 			</div>
 			
 			<div class="modal-tab hide" id="DownloadsEdit_ParamTab">
-				<form class="form-horizontal">
+				<div class="form-horizontal">
 					<fieldset id="DownloadsEdit_ParamData">
 					</fieldset>
-				</form>
+				</div>
 			</div>
 
 			<div class="modal-tab hide" id="DownloadsEdit_LogTab">
@@ -820,7 +815,7 @@
 
 <!-- *** MULTI EDIT DOWNLOAD DIALOG ************************************************************ -->
 
-<div class="modal hide" id="DownloadsMulti">
+<div class="modal hide" id="DownloadsMultiDialog">
 	<div class="modal-header">
 		<a class="close" href='#' data-dismiss="modal"><i class="icon-close"></i></a>
 		<h3 id ="DownloadsMulti_Title">Multiple records</h3>
@@ -831,7 +826,7 @@
 		<div class="tab-content">
 			<div class="tab-pane active" id="DownloadsMulti_GeneralTab">
 				<a class="hide" href="#DownloadsMulti_GeneralTab" id="DownloadsMulti_GeneralTabLink" data-toggle="tab"></a>
-				<form class="form-horizontal">
+				<div class="form-horizontal">
 					<fieldset>
 
 						<div class="control-group">
@@ -871,11 +866,11 @@
 						-->
 
 					</fieldset>
-				</form>
+				</div>
 			</div>
 
 			<div class="tab-pane" id="DownloadsMulti_PostProcessingTab">
-				<form class="form-horizontal">
+				<div class="form-horizontal">
 					<fieldset>
 
 						<div class="alert alert-info alert-block hide">
@@ -890,7 +885,7 @@
 						<a class="btn" href="#DownloadsMulti_GeneralTab" data-toggle="tab">Go Back</a>
 
 					</fieldset>
-				</form>
+				</div>
 			</div>
 
 		</div>
@@ -901,6 +896,32 @@
 		<div class="dialog-transmit hide" style="position:absolute;margin-left:260px;" id="DownloadsMulti_Transmit"><img src="img/transmit.gif"></div>
 		<a href="#" class="btn" data-dismiss="modal" id="DownloadsMulti_Close">Close</a>
 		<a href="#" class="btn btn-primary" id="DownloadsMulti_Save">Save changes</a>
+	</div>
+</div>
+
+<!-- *** MERGE DOWNLOADS DIALOG ************************************************************ -->
+
+<div class="modal modal-padded hide" id="DownloadsMergeDialog">
+	<div class="modal-header">
+		<a class="close" href='#' data-dismiss="modal"><i class="icon-close"></i></a>
+		<h3>Merge Downloads</h3>
+	</div>
+
+	<div class="modal-body">
+		<div class="form-horizontal">
+			<fieldset>
+				<p>Merge listed downloads?</p>
+				<div class="dialog-add-files" id="DownloadsMerge_Files"></div>
+				<p class="help-block" style="margin-top:10px;">The first item in the list is the target - the resulting download inherits
+				the properties such as destination directory, category, etc. from that item.</p>
+			</fieldset>
+		</div>
+	</div>
+
+	<div class="modal-footer">
+		<div class="dialog-transmit hide" style="position:absolute;margin-left:260px;" id="DownloadsMerge_Transmit"><img src="img/transmit.gif"></div>
+		<a href="#" class="btn" data-dismiss="modal">Close</a>
+		<a href="#" class="btn btn-primary" id="DownloadsMerge_Merge">Merge</a>
 	</div>
 </div>
 
@@ -918,14 +939,14 @@
 
 <!-- *** HISTORY EDIT DIALOG ************************************************************ -->
 
-<div class="modal hide" id="HistoryEdit">
+<div class="modal hide" id="HistoryEditDialog">
 	<div class="modal-header">
 		<a class="close" href='#' data-dismiss="modal"><i class="icon-close"></i></a>
 		<h3 id="HistoryEdit_Title"></h3>
 	</div>
 
 	<div class="modal-body">
-		<form class="form-horizontal">
+		<div class="form-horizontal">
 			<fieldset>
 
 				<div class="control-group">
@@ -961,7 +982,7 @@
 				</div>
 
 			</fieldset>
-		</form>
+		</div>
 	</div>
 
 	<div class="modal-footer">
@@ -1074,7 +1095,7 @@
 	</div>
 
 	<div class="modal-body" id="AddDialog_Target">
-		<form class="form-horizontal">
+		<div class="form-horizontal">
 			<fieldset>
 
 				<div class="control-group">
@@ -1120,7 +1141,7 @@
 				</div>
 
 			</fieldset>
-		</form>
+		</div>
 	</div>
 
 	<div class="modal-footer">
@@ -1162,32 +1183,6 @@
 			<li>The categories can be configured in section <strong>CATEGORIES</strong> on settings page.</li>
 			<li>Use button <strong>Scan</strong> if the automatic scanning of incoming nzb-directory is disabled (see options <em>NzbDir</em> and <em>NzbDirInterval</em>).</li>
 		</ul>
-	</div>
-</div>
-
-<!-- *** MERGE DOWNLOADS DIALOG ************************************************************ -->
-
-<div class="modal modal-padded hide" id="DownloadsMerge">
-	<div class="modal-header">
-		<a class="close" href='#' data-dismiss="modal"><i class="icon-close"></i></a>
-		<h3>Merge Downloads</h3>
-	</div>
-
-	<div class="modal-body">
-		<form class="form-horizontal">
-			<fieldset>
-				<p>Merge listed downloads?</p>
-				<div class="dialog-add-files" id="DownloadsMerge_Files"></div>
-				<p class="help-block" style="margin-top:10px;">The first item in the list is the target - the resulting download inherits
-				the properties such as destination directory, category, etc. from that item.</p>
-			</fieldset>
-		</form>
-	</div>
-
-	<div class="modal-footer">
-		<div class="dialog-transmit hide" style="position:absolute;margin-left:260px;" id="DownloadsMerge_Transmit"><img src="img/transmit.gif"></div>
-		<a href="#" class="btn" data-dismiss="modal">Close</a>
-		<a href="#" class="btn btn-primary" id="DownloadsMerge_Merge">Merge</a>
 	</div>
 </div>
 

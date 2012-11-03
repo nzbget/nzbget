@@ -1,391 +1,430 @@
 /*
- *	This file is part of nzbget
+ * This file is part of nzbget
  *
- *	Copyright (C) 2012 Andrey Prygunkov <hugbug@users.sourceforge.net>
+ * Copyright (C) 2012 Andrey Prygunkov <hugbug@users.sourceforge.net>
  *
- *	This program is free software; you can redistribute it and/or modify
- *	it under the terms of the GNU General Public License as published by
- *	the Free Software Foundation; either version 2 of the License, or
- *	(at your option) any later version.
+ * This program is free software; you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation; either version 2 of the License, or
+ * (at your option) any later version.
  *
- *	This program is distributed in the hope that it will be useful,
- *	but WITHOUT ANY WARRANTY; without even the implied warranty of
- *	MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- *	GNU General Public License for more details.
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
  *
- *	You should have received a copy of the GNU General Public License
- *	along with this program; if not, write to the Free Software
- *	Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
+ * You should have received a copy of the GNU General Public License
+ * along with this program; if not, write to the Free Software
+ * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  *
  * $Revision$
  * $Date$
  *
  */
 
-/* controls */
-var history_HistoryTable;
-var history_HistoryTabBadge;
-var history_HistoryTabBadgeEmpty;
-var history_HistoryRecordsPerPage;
-
-var history_dialog;
-var history_curHist;
-var history_notification = null;
-
-function history_init()
+/*
+ * In this module:
+ *   1) History tab;
+ *   2) History edit dialog.
+ */
+ 
+/*** HISTORY TAB AND EDIT HISTORY DIALOG **********************************************/
+ 
+var History = (new function($)
 {
-	history_HistoryTable = $('#HistoryTable');
-	history_HistoryTabBadge = $('#HistoryTabBadge');
-	history_HistoryTabBadgeEmpty = $('#HistoryTabBadgeEmpty');
-	history_HistoryRecordsPerPage = $('#HistoryRecordsPerPage');
-	history_dialog = $('#HistoryEdit');
-	history_edit_init();
+	'use strict';
+ 
+	// Controls
+	var $HistoryTable;
+	var $HistoryTabBadge;
+	var $HistoryTabBadgeEmpty;
+	var $HistoryRecordsPerPage;
 
-	var RecordsPerPage = getSetting('HistoryRecordsPerPage', 10);
-	history_HistoryRecordsPerPage.val(RecordsPerPage);
+	// State
+	var history;
+	var notification = null;
+	var updateTabInfo;
 
-	history_HistoryTable.fasttable(
-		{
-			filterInput: $('#HistoryTable_filter'),
-			filterClearButton: $("#HistoryTable_clearfilter"),
-			pagerContainer: $('#HistoryTable_pager'),
-			infoContainer: $('#HistoryTable_info'),
-			headerCheck: $('#HistoryTable > thead > tr:first-child'),
-			filterCaseSensitive: false,
-			pageSize: RecordsPerPage,
-			maxPages: Settings_MiniTheme ? 1 : 5,
-			pageDots: !Settings_MiniTheme,
-			fillFieldsCallback: history_fillFieldsCallback,
-			renderCellCallback: history_renderCellCallback,
-			updateInfoCallback: history_updateInfo
-		});
-
-	history_HistoryTable.on('click', 'a', history_edit_click);
-	history_HistoryTable.on('click', 'tbody div.check',
-		function(event) { history_HistoryTable.fasttable('itemCheckClick', this.parentNode.parentNode, event); });
-	history_HistoryTable.on('click', 'thead div.check',
-		function() { history_HistoryTable.fasttable('titleCheckClick') });
-	history_HistoryTable.on('mousedown', util_disableShiftMouseDown);
-}
-
-function history_theme()
-{
-	history_HistoryTable.fasttable('setPageSize', getSetting('HistoryRecordsPerPage', 10),
-		Settings_MiniTheme ? 1 : 5, !Settings_MiniTheme);
-}
-
-function history_update()
-{
-	rpc('history', [], history_loaded);
-}
-
-function history_loaded(history)
-{
-	History = history;
-	history_prepare();
-	loadNext();
-}
-
-function history_prepare()
-{
-	for (var j=0, jl=History.length; j < jl; j++)
+	this.init = function(options)
 	{
-		history_detect_status(History[j]);
+		updateTabInfo = options.updateTabInfo;
+
+		$HistoryTable = $('#HistoryTable');
+		$HistoryTabBadge = $('#HistoryTabBadge');
+		$HistoryTabBadgeEmpty = $('#HistoryTabBadgeEmpty');
+		$HistoryRecordsPerPage = $('#HistoryRecordsPerPage');
+		
+		historyEditDialog.init();
+
+		var recordsPerPage = UISettings.read('HistoryRecordsPerPage', 10);
+		$HistoryRecordsPerPage.val(recordsPerPage);
+
+		$HistoryTable.fasttable(
+			{
+				filterInput: $('#HistoryTable_filter'),
+				filterClearButton: $("#HistoryTable_clearfilter"),
+				pagerContainer: $('#HistoryTable_pager'),
+				infoContainer: $('#HistoryTable_info'),
+				headerCheck: $('#HistoryTable > thead > tr:first-child'),
+				filterCaseSensitive: false,
+				pageSize: recordsPerPage,
+				maxPages: UISettings.miniTheme ? 1 : 5,
+				pageDots: !UISettings.miniTheme,
+				fillFieldsCallback: fillFieldsCallback,
+				renderCellCallback: renderCellCallback,
+				updateInfoCallback: updateInfo
+			});
+
+		$HistoryTable.on('click', 'a', editClick);
+		$HistoryTable.on('click', 'tbody div.check',
+			function(event) { $HistoryTable.fasttable('itemCheckClick', this.parentNode.parentNode, event); });
+		$HistoryTable.on('click', 'thead div.check',
+			function() { $HistoryTable.fasttable('titleCheckClick') });
+		$HistoryTable.on('mousedown', Util.disableShiftMouseDown);
 	}
-}
 
-function history_detect_status(hist)
-{
-	if (hist.Kind === 'NZB')
+	this.applyTheme = function()
 	{
-		switch (hist.ScriptStatus)
+		$HistoryTable.fasttable('setPageSize', UISettings.read('HistoryRecordsPerPage', 10),
+			UISettings.miniTheme ? 1 : 5, !UISettings.miniTheme);
+	}
+
+	this.update = function()
+	{
+		RPC.call('history', [], loaded);
+	}
+
+	function loaded(curHistory)
+	{
+		history = curHistory;
+		prepare();
+		RPC.next();
+	}
+
+	function prepare()
+	{
+		for (var j=0, jl=history.length; j < jl; j++)
 		{
-			case 'SUCCESS': hist.status = 'success'; break;
-			case 'FAILURE': hist.status = 'failure'; break;
-			case 'UNKNOWN': hist.status = 'unknown'; break;
-			case 'NONE':
-				switch (hist.ParStatus)
-				{
-					case 'SUCCESS': hist.status = 'success'; break;
-					case 'REPAIR_POSSIBLE': hist.status = 'repairable'; break;
-					case 'FAILURE': hist.status = 'failure'; break;
-					case 'NONE': hist.status = 'none'; break;
-				}
+			detectStatus(history[j]);
 		}
 	}
-	else if (hist.Kind === 'URL')
+
+	function detectStatus(hist)
 	{
-		switch (hist.UrlStatus)
-		{
-			case 'SUCCESS': hist.status = 'success'; break;
-			case 'FAILURE': hist.status = 'failure'; break;
-			case 'UNKNOWN': hist.status = 'unknown'; break;
-		}
-	}
-}
-
-function history_redraw()
-{
-	var data = [];
-
-	for (var i=0; i < History.length; i++)
-	{
-		var hist = History[i];
-
-		var kind = hist.Kind;
-		var statustext = hist.status === 'none' ? 'unknown' : hist.status;
-		var size = kind === 'NZB' ? FormatSizeMB(hist.FileSizeMB) : '';
-
-		var textname = hist.Name;
-		if (kind === 'URL')
-		{
-			textname += ' URL';
-		}
-
-		var time = FormatDateTime(hist.HistoryTime);
-
-		var item =
-		{
-			id: hist.ID,
-			hist: hist,
-			data: {time: time, size: size},
-			search: statustext + ' ' + time + ' ' + textname + ' ' + hist.Category + ' ' + size
-		};
-
-		data.push(item);
-	}
-
-	history_HistoryTable.fasttable('update', data);
-
-	show(history_HistoryTabBadge, History.length > 0);
-	show(history_HistoryTabBadgeEmpty, History.length === 0 && Settings_MiniTheme);
-}
-
-function history_fillFieldsCallback(item)
-{
-	var hist = item.hist;
-
-	var status = history_build_status(hist);
-
-	var name = '<a href="#" histid="' + hist.ID + '">' + TextToHtml(FormatNZBName(hist.Name)) + '</a>';
-	var category = TextToHtml(hist.Category);
-
-	if (hist.Kind === 'URL')
-	{
-		name += ' <span class="label label-info">URL</span>';
-	}
-
-	if (!Settings_MiniTheme)
-	{
-		item.fields = ['<div class="check img-check"></div>', status, item.data.time, name, category, item.data.size];
-	}
-	else
-	{
-		var info = '<div class="check img-check"></div><span class="row-title">' + name + '</span>' +
-			' ' + status + ' <span class="label">' + item.data.time + '</span>';
-		if (category)
-		{
-			info += ' <span class="label label-status">' + category + '</span>';
-		}
 		if (hist.Kind === 'NZB')
 		{
-			info += ' <span class="label">' + item.data.size + '</span>';
+			switch (hist.ScriptStatus)
+			{
+				case 'SUCCESS': hist.status = 'success'; break;
+				case 'FAILURE': hist.status = 'failure'; break;
+				case 'UNKNOWN': hist.status = 'unknown'; break;
+				case 'NONE':
+					switch (hist.ParStatus)
+					{
+						case 'SUCCESS': hist.status = 'success'; break;
+						case 'REPAIR_POSSIBLE': hist.status = 'repairable'; break;
+						case 'FAILURE': hist.status = 'failure'; break;
+						case 'NONE': hist.status = 'none'; break;
+					}
+			}
 		}
-		item.fields = [info];
-	}
-}
-
-function history_renderCellCallback(cell, index, item)
-{
-	if (index === 2)
-	{
-		cell.className = 'text-center';
-	}
-	else if (index === 5)
-	{
-		cell.className = 'text-right';
-	}
-}
-
-function history_build_status(hist)
-{
-	switch (hist.status)
-	{
-		case 'success': return '<span class="label label-status label-success">success</span>';
-		case 'failure': return '<span class="label label-status label-important">failure</span>';
-		case 'unknown': return '<span class="label label-status label-info">unknown</span>';
-		case 'repairable': return '<span class="label label-status label-success">repairable</span>';
-		case 'none': return '<span class="label label-status">unknown</span>';
-		default: return '<span class="label label-status label-important">internal error(' + hist.status + ')</span>';
-	}
-}
-
-function history_RecordsPerPage_change()
-{
-	var val = history_HistoryRecordsPerPage.val();
-	setSetting('HistoryRecordsPerPage', val);
-	history_HistoryTable.fasttable('setPageSize', val);
-}
-
-function history_updateInfo(stat)
-{
-	tab_updateInfo(history_HistoryTabBadge, stat);
-}
-
-function history_edit_init()
-{
-	$('#HistoryEdit_Delete').click(history_edit_Delete);
-	$('#HistoryEdit_Return').click(history_edit_Return);
-	$('#HistoryEdit_Reprocess').click(history_edit_Reprocess);
-
-	history_dialog.on('hidden', function () {
-		refresh_resume();
-	});
-}
-
-function history_edit_click()
-{
-	var histid = $(this).attr('histid');
-
-	var hist = null;
-
-	// find History object
-	for (var i=0; i<History.length; i++)
-	{
-		var gr = History[i];
-		if (gr.ID == histid)
+		else if (hist.Kind === 'URL')
 		{
-			hist = gr;
-			break;
+			switch (hist.UrlStatus)
+			{
+				case 'SUCCESS': hist.status = 'success'; break;
+				case 'FAILURE': hist.status = 'failure'; break;
+				case 'UNKNOWN': hist.status = 'unknown'; break;
+			}
 		}
 	}
-	if (hist == null)
+
+	this.redraw = function()
 	{
-		return;
+		var data = [];
+
+		for (var i=0; i < history.length; i++)
+		{
+			var hist = history[i];
+
+			var kind = hist.Kind;
+			var statustext = hist.status === 'none' ? 'unknown' : hist.status;
+			var size = kind === 'NZB' ? Util.formatSizeMB(hist.FileSizeMB) : '';
+
+			var textname = hist.Name;
+			if (kind === 'URL')
+			{
+				textname += ' URL';
+			}
+
+			var time = Util.formatDateTime(hist.HistoryTime + UISettings.timeZoneCorrection*60*60);
+
+			var item =
+			{
+				id: hist.ID,
+				hist: hist,
+				data: {time: time, size: size},
+				search: statustext + ' ' + time + ' ' + textname + ' ' + hist.Category + ' ' + size
+			};
+
+			data.push(item);
+		}
+
+		$HistoryTable.fasttable('update', data);
+
+		Util.show($HistoryTabBadge, history.length > 0);
+		Util.show($HistoryTabBadgeEmpty, history.length === 0 && UISettings.miniTheme);
 	}
 
-	refresh_pause();
-
-	history_curHist = hist; // global
-
-	var status = history_build_status(hist);
-
-	$('#HistoryEdit_Title').text(FormatNZBName(hist.Name));
-	if (hist.Kind === 'URL')
+	function fillFieldsCallback(item)
 	{
-		$('#HistoryEdit_Title').html($('#HistoryEdit_Title').html() + '&nbsp;' + '<span class="label label-info">URL</span>');
+		var hist = item.hist;
+
+		var status = buildStatus(hist);
+
+		var name = '<a href="#" histid="' + hist.ID + '">' + Util.textToHtml(Util.formatNZBName(hist.Name)) + '</a>';
+		var category = Util.textToHtml(hist.Category);
+
+		if (hist.Kind === 'URL')
+		{
+			name += ' <span class="label label-info">URL</span>';
+		}
+
+		if (!UISettings.miniTheme)
+		{
+			item.fields = ['<div class="check img-check"></div>', status, item.data.time, name, category, item.data.size];
+		}
+		else
+		{
+			var info = '<div class="check img-check"></div><span class="row-title">' + name + '</span>' +
+				' ' + status + ' <span class="label">' + item.data.time + '</span>';
+			if (category)
+			{
+				info += ' <span class="label label-status">' + category + '</span>';
+			}
+			if (hist.Kind === 'NZB')
+			{
+				info += ' <span class="label">' + item.data.size + '</span>';
+			}
+			item.fields = [info];
+		}
 	}
 
-	$('#HistoryEdit_Status').html(status);
-	$('#HistoryEdit_Category').text(hist.Category !== '' ? hist.Category : '<empty>');
-	$('#HistoryEdit_Path').text(hist.DestDir);
-
-	var size = FormatSizeMB(hist.FileSizeMB, hist.FileSizeLo);
-
-	var table = '';
-	table += '<tr><td>Total</td><td class="text-right">' + size + '</td></tr>';
-	table += '<tr><td>Files (total/parked)</td><td class="text-right">' + hist.FileCount + '/' + hist.RemainingFileCount + '</td></tr>';
-	$('#HistoryEdit_Statistics').html(table);
-
-	show($('#HistoryEdit_ReturnGroup'), hist.RemainingFileCount > 0 || hist.Kind === 'URL');
-	show($('#HistoryEdit_PathGroup, #HistoryEdit_StatisticsGroup, #HistoryEdit_ReprocessGroup'), hist.Kind === 'NZB');
-
-	history_edit_EnableAllButtons();
-
-	history_dialog.modal({backdrop: 'static'});
-}
-
-function history_edit_DisableAllButtons()
-{
-	$('#HistoryEdit .modal-footer .btn').attr('disabled', 'disabled');
-	setTimeout(function()
+	function renderCellCallback(cell, index, item)
 	{
-		$('#HistoryEdit_Transmit').show();
-	}, 500);
-}
-
-function history_edit_EnableAllButtons()
-{
-	$('#HistoryEdit .modal-footer .btn').removeAttr('disabled');
-	$('#HistoryEdit_Transmit').hide();
-}
-
-function history_edit_completed()
-{
-	history_dialog.modal('hide');
-	refresh_update();
-	if (history_notification)
-	{
-		animateAlert(history_notification);
-		history_notification = null;
-	}
-}
-
-function history_edit_Delete()
-{
-	history_edit_DisableAllButtons();
-	history_notification = '#Notif_History_Deleted';
-	rpc('editqueue', ['HistoryDelete', 0, '', [history_curHist.ID]], history_edit_completed);
-}
-
-function history_edit_Return()
-{
-	history_edit_DisableAllButtons();
-	history_notification = '#Notif_History_Returned';
-	rpc('editqueue', ['HistoryReturn', 0, '', [history_curHist.ID]], history_edit_completed);
-}
-
-function history_edit_Reprocess()
-{
-	history_edit_DisableAllButtons();
-	history_notification = '#Notif_History_Reproces';
-	rpc('editqueue', ['HistoryProcess', 0, '', [history_curHist.ID]], history_edit_completed);
-}
-
-function history_delete_click()
-{
-	if (History.length == 0)
-	{
-		return;
+		if (index === 2)
+		{
+			cell.className = 'text-center';
+		}
+		else if (index === 5)
+		{
+			cell.className = 'text-right';
+		}
 	}
 
-	var checkedRows = history_HistoryTable.fasttable('checkedRows');
-	if (checkedRows.length > 0)
+	function buildStatus(hist)
 	{
-		confirm_dialog_show('HistoryDeleteConfirmDialog', history_delete);
-	}
-	else
-	{
-		confirm_dialog_show('HistoryClearConfirmDialog', history_clear);
-	}
-}
-
-function history_delete()
-{
-	refresh_pause();
-
-	var IDs = history_HistoryTable.fasttable('checkedRows');
-
-	rpc('editqueue', ['HistoryDelete', 0, '', [IDs]], function()
-	{
-		history_notification = '#Notif_History_Deleted';
-		history_edit_completed();
-	});
-}
-
-function history_clear()
-{
-	refresh_pause();
-
-	var IDs = [];
-	for (var i=0; i<History.length; i++)
-	{
-		IDs.push(History[i].ID);
+		switch (hist.status)
+		{
+			case 'success': return '<span class="label label-status label-success">success</span>';
+			case 'failure': return '<span class="label label-status label-important">failure</span>';
+			case 'unknown': return '<span class="label label-status label-info">unknown</span>';
+			case 'repairable': return '<span class="label label-status label-success">repairable</span>';
+			case 'none': return '<span class="label label-status">unknown</span>';
+			default: return '<span class="label label-status label-important">internal error(' + hist.status + ')</span>';
+		}
 	}
 
-	rpc('editqueue', ['HistoryDelete', 0, '', [IDs]], function()
+	this.recordsPerPageChange = function()
 	{
-		history_notification = '#Notif_History_Cleared';
-		history_edit_completed();
-	});
-}
+		var val = $HistoryRecordsPerPage.val();
+		UISettings.write('HistoryRecordsPerPage', val);
+		$HistoryTable.fasttable('setPageSize', val);
+	}
+
+	function updateInfo(stat)
+	{
+		updateTabInfo($HistoryTabBadge, stat);
+	}
+
+	this.deleteClick = function()
+	{
+		if (history.length == 0)
+		{
+			return;
+		}
+
+		var checkedRows = $HistoryTable.fasttable('checkedRows');
+		if (checkedRows.length > 0)
+		{
+			ConfirmDialog.showModal('HistoryDeleteConfirmDialog', historyDelete);
+		}
+		else
+		{
+			ConfirmDialog.showModal('HistoryClearConfirmDialog', historyClear);
+		}
+	}
+
+	function historyDelete()
+	{
+		Refresher.pause();
+
+		var IDs = $HistoryTable.fasttable('checkedRows');
+
+		RPC.call('editqueue', ['HistoryDelete', 0, '', [IDs]], function()
+		{
+			notification = '#Notif_History_Deleted';
+			editCompleted();
+		});
+	}
+
+	function historyClear()
+	{
+		Refresher.pause();
+
+		var IDs = [];
+		for (var i=0; i<history.length; i++)
+		{
+			IDs.push(history[i].ID);
+		}
+
+		RPC.call('editqueue', ['HistoryDelete', 0, '', [IDs]], function()
+		{
+			notification = '#Notif_History_Cleared';
+			editCompleted();
+		});
+	}
+
+	function editCompleted()
+	{
+		Refresher.update();
+		if (notification)
+		{
+			Notification.show(notification);
+			notification = null;
+		}
+	}
+	
+	function editClick()
+	{
+		var histid = $(this).attr('histid');
+		$(this).blur();
+		historyEditDialog.showModal(histid);
+	}
+	
+/*** EDIT HISTORY DIALOG *************************************************************************/
+
+	var historyEditDialog = new function()
+	{
+		// Controls
+		var $HistoryEditDialog;
+
+		// State
+		var curHist;
+
+		this.init = function()
+		{
+			$HistoryEditDialog = $('#HistoryEditDialog');
+			
+			$('#HistoryEdit_Delete').click(itemDelete);
+			$('#HistoryEdit_Return').click(itemReturn);
+			$('#HistoryEdit_Reprocess').click(itemReprocess);
+
+			$HistoryEditDialog.on('hidden', function () {
+				Refresher.resume();
+			});
+		}
+
+		this.showModal = function(histid)
+		{
+			var hist = null;
+
+			// find history object
+			for (var i=0; i<history.length; i++)
+			{
+				var gr = history[i];
+				if (gr.ID == histid)
+				{
+					hist = gr;
+					break;
+				}
+			}
+			if (hist == null)
+			{
+				return;
+			}
+
+			Refresher.pause();
+
+			curHist = hist;
+
+			var status = buildStatus(hist);
+
+			$('#HistoryEdit_Title').text(Util.formatNZBName(hist.Name));
+			if (hist.Kind === 'URL')
+			{
+				$('#HistoryEdit_Title').html($('#HistoryEdit_Title').html() + '&nbsp;' + '<span class="label label-info">URL</span>');
+			}
+
+			$('#HistoryEdit_Status').html(status);
+			$('#HistoryEdit_Category').text(hist.Category !== '' ? hist.Category : '<empty>');
+			$('#HistoryEdit_Path').text(hist.DestDir);
+
+			var size = Util.formatSizeMB(hist.FileSizeMB, hist.FileSizeLo);
+
+			var table = '';
+			table += '<tr><td>Total</td><td class="text-right">' + size + '</td></tr>';
+			table += '<tr><td>Files (total/parked)</td><td class="text-right">' + hist.FileCount + '/' + hist.RemainingFileCount + '</td></tr>';
+			$('#HistoryEdit_Statistics').html(table);
+
+			Util.show($('#HistoryEdit_ReturnGroup'), hist.RemainingFileCount > 0 || hist.Kind === 'URL');
+			Util.show($('#HistoryEdit_PathGroup, #HistoryEdit_StatisticsGroup, #HistoryEdit_ReprocessGroup'), hist.Kind === 'NZB');
+
+			enableAllButtons();
+
+			$HistoryEditDialog.modal({backdrop: 'static'});
+		}
+
+		function disableAllButtons()
+		{
+			$('#HistoryEditDialog .modal-footer .btn').attr('disabled', 'disabled');
+			setTimeout(function()
+			{
+				$('#HistoryEdit_Transmit').show();
+			}, 500);
+		}
+
+		function enableAllButtons()
+		{
+			$('#HistoryEditDialog .modal-footer .btn').removeAttr('disabled');
+			$('#HistoryEdit_Transmit').hide();
+		}
+
+		function itemDelete()
+		{
+			disableAllButtons();
+			notification = '#Notif_History_Deleted';
+			RPC.call('editqueue', ['HistoryDelete', 0, '', [curHist.ID]], completed);
+		}
+
+		function itemReturn()
+		{
+			disableAllButtons();
+			notification = '#Notif_History_Returned';
+			RPC.call('editqueue', ['HistoryReturn', 0, '', [curHist.ID]], completed);
+		}
+
+		function itemReprocess()
+		{
+			disableAllButtons();
+			notification = '#Notif_History_Reproces';
+			RPC.call('editqueue', ['HistoryProcess', 0, '', [curHist.ID]], completed);
+		}
+
+		function completed()
+		{
+			$HistoryEditDialog.modal('hide');
+			editCompleted();
+		}
+	}();
+}(jQuery));
