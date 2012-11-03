@@ -1,21 +1,21 @@
 /*
- *  This file is part of nzbget
+ * This file is part of nzbget
  *
- *  Copyright (C) 2012 Andrey Prygunkov <hugbug@users.sourceforge.net>
+ * Copyright (C) 2012 Andrey Prygunkov <hugbug@users.sourceforge.net>
  *
- *  This program is free software; you can redistribute it and/or modify
- *  it under the terms of the GNU General Public License as published by
- *  the Free Software Foundation; either version 2 of the License, or
- *  (at your option) any later version.
+ * This program is free software; you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation; either version 2 of the License, or
+ * (at your option) any later version.
  *
- *  This program is distributed in the hope that it will be useful,
- *  but WITHOUT ANY WARRANTY; without even the implied warranty of
- *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- *  GNU General Public License for more details.
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
  *
- *  You should have received a copy of the GNU General Public License
- *  along with this program; if not, write to the Free Software
- *  Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
+ * You should have received a copy of the GNU General Public License
+ * along with this program; if not, write to the Free Software
+ * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  *
  * $Revision$
  * $Date$
@@ -30,8 +30,33 @@
 * 4. Allan Jardine's Bootstrap Pagination jQuery plugin for DataTables (http://datatables.net/)
 */
 
+/*
+ * In this module:
+ *   HTML tables with:
+ *     1) very fast content updates;
+ *     2) automatic pagination;
+ *     3) search/filtering.
+ *
+ * What makes it unique and fast?
+ * The tables are designed to be updated very often (up to 10 times per second). This has two challenges:
+ *   1) updating of whole content is slow because the DOM updates are slow.
+ *   2) if the DOM is updated during user interaction the user input is not processed correctly.
+ *       For example if the table is updated after the user pressed mouse key but before he/she released
+ *       the key, the click is not processed because the element, on which the click was performed,
+ *       doesn't exist after the update of DOM anymore.
+ *
+ * How Fasttable solves these problems? The solutions is to update only rows and cells,
+ * which were changed by keeping the unchanged DOM-elements.
+ *
+ * Important: the UI of table must be designed in a way, that the cells which are frequently changed
+ * (like remaining download size) should not be clickable, whereas the cells which are rarely changed
+ * (e. g. Download name) can be clickable.
+ */
+
 (function($) {
 
+	'use strict';
+	
 	$.fn.fasttable = function(method)
 	{
 		if (methods[method])
@@ -50,7 +75,7 @@
 
 	var methods =
 	{
-		init : function( options )
+		init : function(options)
 		{
 			return this.each(function()
 			{
@@ -64,8 +89,14 @@
 					Do more setup stuff here
 					*/
 
-					config = {};
+					var config = {};
 					config = $.extend(config, defaults, options);
+					
+					config.filterInput = $(config.filterInput);
+					config.filterClearButton = $(config.filterClearButton);
+					config.pagerContainer = $(config.pagerContainer);
+					config.infoContainer = $(config.infoContainer);
+					config.headerCheck = $(config.headerCheck);
 
 					// Create a timer which gets reset upon every keyup event.
 					// Perform filter only when the timer's wait is reached (user finished typing or paused long enough to elapse the timer).
@@ -74,7 +105,7 @@
 
 					var timer;
 
-					$(config.filterInput).keyup(function()
+					config.filterInput.keyup(function()
 					{
 						var timerWait = 500;
 						var overrideBool = false;
@@ -114,11 +145,11 @@
 						return false;
 					});
 
-					$(config.filterClearButton).click(function()
+					config.filterClearButton.click(function()
 					{
 						var data = $this.data('fasttable');
 						data.lastFilter = '';
-						$(data.config.filterInput).val('');
+						data.config.filterInput.val('');
 						if (data.content)
 						{
 							refresh(data);
@@ -129,11 +160,11 @@
 						}								
 					});
 						
-					$(config.pagerContainer).on('click', 'li', function (e)
+					config.pagerContainer.on('click', 'li', function (e)
 					{
 						e.preventDefault();
 						var data = $this.data('fasttable');
-						pageNum = $(this).text();
+						var pageNum = $(this).text();
 						if (pageNum.indexOf('Prev') > -1)
 						{
 							data.curPage--;
@@ -158,7 +189,7 @@
 							config : config,
 							pageSize : parseInt(config.pageSize),
 							maxPages : parseInt(config.maxPages),
-							pageDots : parseBool(config.pageDots),
+							pageDots : Util.parseBool(config.pageDots),
 							curPage : 1,
 							checkedRows: [],
 							lastClickedRowID: 0
@@ -237,7 +268,7 @@
 
 	function refilter(data)
 	{
-		filterInput = $(data.config.filterInput);
+		var filterInput = data.config.filterInput;
 		var phrase = filterInput.length > 0 ? filterInput.val() : '';
 		var caseSensitive = data.config.filterCaseSensitive;
 		var words = caseSensitive ? phrase.split(' ') : phrase.toLowerCase().split(' ');
@@ -389,7 +420,7 @@
 		var startIndex = (data.curPage - 1) * data.pageSize;
 		data.pageContent = data.filteredContent.slice(startIndex, startIndex + data.pageSize);
 
-		var pagerObj = $(data.config.pagerContainer);
+		var pagerObj = data.config.pagerContainer;
 		var pagerHtml = buildPagerHtml(data);
 		
 		var oldPager = pagerObj[0];
@@ -515,7 +546,7 @@
 				infoText += ' filtered (total ' + data.content.length + ')';
 			}
 		}
-		$(data.config.infoContainer).html(infoText);
+		data.config.infoContainer.html(infoText);
 
 		if (data.config.updateInfoCallback)
 		{
@@ -573,15 +604,15 @@
 		
 		if (hasSelectedItems && hasUnselectedItems)
 		{
-			$(data.config.headerCheck).removeClass('checked').addClass('checkremove');
+			data.config.headerCheck.removeClass('checked').addClass('checkremove');
 		}
 		else if (hasSelectedItems)
 		{
-			$(data.config.headerCheck).removeClass('checkremove').addClass('checked');
+			data.config.headerCheck.removeClass('checkremove').addClass('checked');
 		}
 		else
 		{
-			$(data.config.headerCheck).removeClass('checked').removeClass('checkremove');
+			data.config.headerCheck.removeClass('checked').removeClass('checkremove');
 		}
 	}
 
