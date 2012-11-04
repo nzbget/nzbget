@@ -41,6 +41,7 @@
 #include <par2cmdline.h>
 #include <par2repairer.h>
 #else
+#include <unistd.h>
 #include <libpar2/par2cmdline.h>
 #include <libpar2/par2repairer.h>
 #endif
