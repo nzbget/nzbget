@@ -460,6 +460,35 @@ please open the file in a text editor to read them.
 NOTE: The post-processing script "nzbget-postprocess.sh" is for
 POSIX systems and will not work on Windows.
 
+Web-interface
+-------------
+
+NZBGet has a built-in web-server providing the access to the program
+functions via web-interface.
+
+To activate web-interface set the option "WebDir" to the path with
+web-interface files. If you install using "make install-conf" as
+described above the option is set automatically. If you install using
+binary files you should check if the option is set correctly.
+
+To access web-interface from your web-browser use the server address
+and port defined in NZBGet configuration file in options "ControlIP" and
+"ControlPort". For example:
+
+  http://localhost:6789/
+
+For login credentials type username "nzbget" (predefined and not changeable)
+and the password from the option "ControlPassword" (default is tegbzn6789).
+
+In a case your browser forget credentials, to prevent typing them each
+time, there is a workaround - use URL in the form:
+
+  http://localhost:6789/nzbget:password/
+
+Please note, that in this case the password is saved in a bookmark or in
+browser history in plain text and is easy to find by persons having
+access to your computer. 
+
 =====================================
 8. Authors
 =====================================
