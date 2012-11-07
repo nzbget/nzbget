@@ -268,7 +268,7 @@ void WebProcessor::Dispatch()
 		}
 	}
 
-	char *szDefRes = "";
+	const char *szDefRes = "";
 	if (m_szUrl[strlen(m_szUrl)-1] == '/')
 	{
 		// default file in directory (if not specified) is "index.html"
