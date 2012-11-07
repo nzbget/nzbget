@@ -616,7 +616,7 @@ int Connection::DoBind()
 	struct sockaddr_in	sSocketAddress;
 	memset(&sSocketAddress, 0, sizeof(sSocketAddress));
 	sSocketAddress.sin_family = AF_INET;
-	if (!m_pNetAddress->GetHost() || strlen(m_szHost) == 0)
+	if (!m_szHost || strlen(m_szHost) == 0)
 	{
 		sSocketAddress.sin_addr.s_addr = htonl(INADDR_ANY);
 	}
