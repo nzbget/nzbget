@@ -833,7 +833,7 @@ void Util::TrimRight(char* szStr)
 {
 	int iLen = strlen(szStr);
 	char ch = szStr[iLen-1];
-	while (*szStr && (ch == '\n' || ch == '\r') || ch == ' ' || ch == '\t')
+	while (*szStr && (ch == '\n' || ch == '\r' || ch == ' ' || ch == '\t'))
 	{
 		szStr[iLen-1] = 0;
 		iLen--;
