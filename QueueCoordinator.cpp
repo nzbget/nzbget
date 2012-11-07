@@ -168,7 +168,10 @@ void QueueCoordinator::Run()
 		int iSleepInterval = bStandBy ? 100 : 5;
 		usleep(iSleepInterval * 1000);
 
-		AddSpeedReading(0);
+		if (!bStandBy)
+		{
+			AddSpeedReading(0);
+		}
 
 		iResetCounter += iSleepInterval;
 		if (iResetCounter >= 1000)
@@ -323,7 +326,7 @@ void QueueCoordinator::AddSpeedReading(int iBytes)
 #endif
 	}
 
-    if (iNowSlot > m_iSpeedTime[m_iSpeedBytesIndex])
+    while (iNowSlot > m_iSpeedTime[m_iSpeedBytesIndex])
     {
         //record bytes in next slot
         m_iSpeedBytesIndex++;
