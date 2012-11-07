@@ -1119,7 +1119,7 @@ void ListFilesXmlCommand::Execute()
 	{
 		FileInfo* pFileInfo = *it;
 		if ((iNZBID > 0 && iNZBID == pFileInfo->GetNZBInfo()->GetID()) ||
-			(iNZBID == 0) && (iIDStart == 0 || (iIDStart <= pFileInfo->GetID() && pFileInfo->GetID() <= iIDEnd)))
+			(iNZBID == 0 && (iIDStart == 0 || (iIDStart <= pFileInfo->GetID() && pFileInfo->GetID() <= iIDEnd))))
 		{
 			unsigned long iFileSizeHi, iFileSizeLo;
 			unsigned long iRemainingSizeLo, iRemainingSizeHi;
