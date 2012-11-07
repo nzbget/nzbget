@@ -130,6 +130,8 @@ var Frontend = (new function($)
 	
 	this.init = function()
 	{
+		window.onerror = error;
+		
 		if (!checkBrowser())
 		{
 			return;
@@ -163,6 +165,10 @@ var Frontend = (new function($)
 		initialized = true;
 
 		Refresher.update();
+
+		// DEBUG: activate config tab
+		//$('#DownloadsTab').removeClass('fade').removeClass('in');
+		//$('#ConfigTabLink').tab('show');
 	}
 	
 	function initControls()
@@ -194,6 +200,27 @@ var Frontend = (new function($)
 		return true;
 	}
 
+	function error(message, source, lineno) 
+	{
+		if (source == "")
+		{
+			// ignore false errors without source information (sometimes happen in Safari)
+			return false;
+		}
+		
+		$('#FirstUpdateInfo').hide();
+		$('#ErrorAlert-title').text('Error in ' + source + ' (line ' + lineno + ')');
+		$('#ErrorAlert-text').text(message);
+		$('#ErrorAlert').show();
+
+		if (Refresher)
+		{
+			Refresher.pause();
+		}
+		
+		return false;
+	}
+	
 	this.loadCompleted = function()
 	{
 		Downloads.redraw();
