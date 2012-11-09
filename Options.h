@@ -268,7 +268,7 @@ private:
 	void				SetOption(const char* optname, const char* value);
 	bool				SetOptionString(const char* option);
 	bool				ValidateOptionName(const char* optname);
-	void				LoadConfig(const char* configfile);
+	void				LoadConfigFile();
 	void				CheckDir(char** dir, const char* szOptionName, bool bAllowEmpty, bool bCreate);
 	void				ParseFileIDList(int argc, char* argv[], int optind);
 	void				ParseFileNameList(int argc, char* argv[], int optind);

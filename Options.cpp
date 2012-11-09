@@ -680,8 +680,23 @@ void Options::InitOptFile()
 
 	if (m_szConfigFilename)
 	{
+		// normalize path in filename
+		char szFilename[MAX_PATH + 1];
+		Util::ExpandFileName(m_szConfigFilename, szFilename, sizeof(szFilename));
+		szFilename[MAX_PATH] = '\0';
+
+		// substitute HOME-variable
+		char szExpandedFilename[1024];
+		if (Util::ExpandHomePath(szFilename, szExpandedFilename, sizeof(szExpandedFilename)))
+		{
+			strncpy(szFilename, szExpandedFilename, sizeof(szFilename));
+		}
+		
+		free(m_szConfigFilename);
+		m_szConfigFilename = strdup(szFilename);
+
 		SetOption(OPTION_CONFIGFILE, m_szConfigFilename);
-		LoadConfig(m_szConfigFilename);
+		LoadConfigFile();
 	}
 
 	m_bConfigInitialized = true;
@@ -1964,13 +1979,13 @@ bool Options::ParseWeekDays(const char* szWeekDays, int* pWeekDaysBits)
 	return true;
 }
 
-void Options::LoadConfig(const char * configfile)
+void Options::LoadConfigFile()
 {
-	FILE* infile = fopen(configfile, "rb");
+	FILE* infile = fopen(m_szConfigFilename, "rb");
 
 	if (!infile)
 	{
-		abort("FATAL ERROR: Could not open file %s\n", configfile);
+		abort("FATAL ERROR: Could not open file %s\n", m_szConfigFilename);
 	}
 
 	m_iConfigLine = 0;
