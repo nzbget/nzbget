@@ -692,9 +692,13 @@ bool Util::ExpandHomePath(const char* szFilename, char* szBuffer, int iBufSize)
 	
 	return true;
 }
+#endif
 
 void Util::ExpandFileName(const char* szFilename, char* szBuffer, int iBufSize)
 {
+#ifdef WIN32
+	_fullpath(szBuffer, szFilename, iBufSize);
+#else
 	if (szFilename[0] != '\0' && szFilename[0] != '/')
 	{
 		char szCurDir[MAX_PATH + 1];
@@ -711,8 +715,8 @@ void Util::ExpandFileName(const char* szFilename, char* szBuffer, int iBufSize)
 		strncpy(szBuffer, szFilename, iBufSize);
 		szBuffer[iBufSize - 1] = '\0';
 	}
-}
 #endif
+}
 
 void Util::FormatFileSize(char * szBuffer, int iBufLen, long long lFileSize)
 {
