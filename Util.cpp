@@ -298,6 +298,15 @@ bool Util::ForceDirectories(const char* szPath)
 	return bOK;
 }
 
+bool Util::CurrentDirectory(char* szBuffer, int iBufSize)
+{
+#ifdef WIN32
+	return GetCurrentDirectory(iBufSize, szBuffer) != NULL;
+#else
+	return getcwd(szBuffer, iBufSize) != NULL;
+#endif
+}
+
 bool Util::DirEmpty(const char* szDirFilename)
 {
 	DirBrowser dir(szDirFilename);
