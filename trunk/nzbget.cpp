@@ -172,10 +172,18 @@ int main(int argc, char *argv[], char *argp[])
 
 void RunMain()
 {
+	// we need to save and later restore current directory each time
+	// the program is reloaded (RPC-Method "reload") in order for
+	// config to properly load in a case relative paths are used 
+	// in command line
+	char szCurDir[MAX_PATH + 1];
+	Util::CurrentDirectory(szCurDir, sizeof(szCurDir));
+	
 	bool bReload = false;
 	while (g_bReloading)
 	{
 		g_bReloading = false;
+		chdir(szCurDir);
 		Run(bReload);
 		bReload = true;
 	}
