@@ -769,8 +769,24 @@ bool QueueCoordinator::IsDupe(FileInfo* pFileInfo)
 void QueueCoordinator::LogDebugInfo()
 {
 	debug("--------------------------------------------");
-	debug("Dumping debug info to log");
+	debug("Dumping debug debug to log");
 	debug("--------------------------------------------");
+
+	debug("   SpeedMeter");
+	debug("   ----------");
+	float fSpeed = CalcCurrentDownloadSpeed();
+	int iTimeDiff = (int)time(NULL) - m_iSpeedStartTime * SPEEDMETER_SLOTSIZE;
+	debug("      Speed: %f", fSpeed);
+	debug("      SpeedStartTime: %i", m_iSpeedStartTime);
+	debug("      SpeedTotalBytes: %i", m_iSpeedTotalBytes);
+	debug("      SpeedBytesIndex: %i", m_iSpeedBytesIndex);
+	debug("      AllBytes: %i", m_iAllBytes);
+	debug("      Time: %i", (int)time(NULL));
+	debug("      TimeDiff: %i", iTimeDiff);
+	for (int i=0; i < SPEEDMETER_SLOTS; i++)
+	{
+		debug("      Bytes[%i]: %i, Time[%i]: %i", i, m_iSpeedBytes[i], i, m_iSpeedTime[i]);
+	}
 
 	debug("   QueueCoordinator");
 	debug("   ----------------");
