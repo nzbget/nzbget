@@ -187,6 +187,12 @@ var Options = (new function($)
 
 	function complete()
 	{
+		if (serverTemplateData === null)
+		{
+			// the loading was cancelled and the data were discarded (via method "cleanup()")
+			return;
+		}
+		
 		var ServerConfig = readConfigTemplate(serverTemplateData, undefined, HIDDEN_SECTION, 'S');
 		mergeValues(ServerConfig, serverValues);
 
