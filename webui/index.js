@@ -233,6 +233,7 @@ var Frontend = (new function($)
 			$('#FirstUpdateInfo').hide();
 			$('#Navbar').show();
 			$('#MainTabContent').show();
+			$('#version').text(Options.option('Version'));
 			windowResized();
 			firstLoad = false;
 		}
