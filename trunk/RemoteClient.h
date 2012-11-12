@@ -60,7 +60,7 @@ public:
 					RemoteClient();
 					~RemoteClient();
 	void			SetVerbose(bool bVerbose) { m_bVerbose = bVerbose; };
-	bool 			RequestServerDownload(const char* szFilename, const char* szCategory, bool bAddFirst);
+	bool 			RequestServerDownload(const char* szFilename, const char* szCategory, bool bAddFirst, bool bAddPaused, int iPriority);
 	bool			RequestServerList(bool bFiles, bool bGroups, const char* szPattern);
 	bool			RequestServerPauseUnpause(bool bPause, eRemotePauseUnpauseAction iAction);
 	bool			RequestServerSetDownloadRate(float fRate);
@@ -75,7 +75,7 @@ public:
 	bool 			RequestWriteLog(int iKind, const char* szText);
 	bool			RequestScan(bool bSyncMode);
 	bool			RequestHistory();
-	bool 			RequestServerDownloadUrl(const char* szURL, const char* szCategory, bool bAddFirst);
+	bool 			RequestServerDownloadUrl(const char* szURL, const char* szNZBFilename, const char* szCategory, bool bAddFirst, bool bAddPaused, int iPriority);
 	bool			RequestUrlQueue();
 	void			BuildFileList(SNZBListResponse* pListResponse, const char* pTrailingData, DownloadQueue* pDownloadQueue);
 };

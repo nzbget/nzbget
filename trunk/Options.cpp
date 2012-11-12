@@ -302,7 +302,10 @@ Options::Options(int argc, char* argv[])
 	m_szEditQueueText		= NULL;
 	m_szArgFilename			= NULL;
 	m_szLastArg				= NULL;
-	m_szCategory			= NULL;
+	m_szAddCategory			= NULL;
+	m_iAddPriority			= 0;
+	m_szAddNZBFilename		= NULL;
+	m_bAddPaused			= false;
 	m_iConnectionTimeout	= 0;
 	m_iTerminateTimeout		= 0;
 	m_bServerMode			= false;
@@ -368,7 +371,7 @@ Options::Options(int argc, char* argv[])
 	m_iParTimeLimit			= 0;
 	m_iKeepHistory			= 0;
 	m_bAccurateRate			= false;
-	m_EMatchMode	= mmID;
+	m_EMatchMode			= mmID;
 
 	// Option "ConfigFile" will be initialized later, but we want
 	// to see it at the top of option list, so we add it first
@@ -476,9 +479,9 @@ Options::~Options()
 	{
 		free(m_szArgFilename);
 	}
-	if (m_szCategory)
+	if (m_szAddCategory)
 	{
-		free(m_szCategory);
+		free(m_szAddCategory);
 	}
 	if (m_szEditQueueText)
 	{
@@ -523,6 +526,10 @@ Options::~Options()
 	if (m_pEditQueueIDList)
 	{
 		free(m_pEditQueueIDList);
+	}
+	if (m_szAddNZBFilename)
+	{
+		free(m_szAddNZBFilename);
 	}
 
 	for (NameList::iterator it = m_EditQueueNameList.begin(); it != m_EditQueueNameList.end(); it++)
@@ -1014,20 +1021,68 @@ void Options::InitCommandLine(int argc, char* argv[])
 				m_bDaemonMode = true;
 				break;
 			case 'A':
-				optind++;
-				optarg = optind > argc ? NULL : argv[optind-1];
-				if (optarg && !strcmp(optarg, "F"))
+				m_eClientOperation = opClientRequestDownload; // default
+
+				while (true)
 				{
-					m_eClientOperation = opClientRequestDownload;
-				}
-				else if (optarg && !strcmp(optarg, "U"))
-				{
-					m_eClientOperation = opClientRequestDownloadUrl;
-				}
-				else
-				{
-					m_eClientOperation = opClientRequestDownload;
-					optind--;
+					optind++;
+					optarg = optind > argc ? NULL : argv[optind-1];
+					if (optarg && !strcmp(optarg, "F"))
+					{
+						m_eClientOperation = opClientRequestDownload;
+					}
+					else if (optarg && !strcmp(optarg, "U"))
+					{
+						m_eClientOperation = opClientRequestDownloadUrl;
+					}
+					else if (optarg && !strcmp(optarg, "T"))
+					{
+						m_bAddTop = true;
+					}
+					else if (optarg && !strcmp(optarg, "P"))
+					{
+						m_bAddPaused = true;
+					}
+					else if (optarg && !strcmp(optarg, "I"))
+					{
+						optind++;
+						if (optind > argc)
+						{
+							abort("FATAL ERROR: Could not parse value of option 'A'\n");
+						}
+						m_iAddPriority = atoi(argv[optind-1]);
+					}
+					else if (optarg && !strcmp(optarg, "C"))
+					{
+						optind++;
+						if (optind > argc)
+						{
+							abort("FATAL ERROR: Could not parse value of option 'A'\n");
+						}
+						if (m_szAddCategory)
+						{
+							free(m_szAddCategory);
+						}
+						m_szAddCategory = strdup(argv[optind-1]);
+					}
+					else if (optarg && !strcmp(optarg, "N"))
+					{
+						optind++;
+						if (optind > argc)
+						{
+							abort("FATAL ERROR: Could not parse value of option 'A'\n");
+						}
+						if (m_szAddNZBFilename)
+						{
+							free(m_szAddNZBFilename);
+						}
+						m_szAddNZBFilename = strdup(argv[optind-1]);
+					}
+					else
+					{
+						optind--;
+						break;
+					}
 				}
 				break;
 			case 'L':
@@ -1364,11 +1419,11 @@ void Options::InitCommandLine(int argc, char* argv[])
 				}
 				break;
 			case 'K':
-				if (m_szCategory)
+				if (m_szAddCategory)
 				{
-					free(m_szCategory);
+					free(m_szAddCategory);
 				}
-				m_szCategory = strdup(optarg);
+				m_szAddCategory = strdup(optarg);
 				break;
 			case 'S':
 				optind++;
@@ -1423,13 +1478,15 @@ void Options::PrintUsage(char* com)
 	    "  -V, --serverversion       Print server's version and exit\n"
 		"  -Q, --quit                Shutdown server\n"
 		"  -O, --reload              Reload config and restart all services\n"
-		"  -A, --append  [F|U] <nzb-file/url> Send file/url to server's download queue\n"
+		"  -A, --append  [F|U] [<options>] <nzb-file/url> Send file/url to server's\n"
+		"                            download queue\n"
 		"                 F          Send file (default)\n"
 		"                 U          Send url\n"
-		"  -T, --top                 Add file to the top (beginning) of queue\n"
-		"                            (for using with switch --append)\n"
-		"  -K, --category <name>     Assign category to nzb-file\n"
-		"                            (for using with switch --append)\n"
+		"    <options> are (multiple options must be separated with space):\n"
+		"       T                    Add file to the top (beginning) of queue\n"
+		"       P                    Pause added files\n"
+		"       C <name>             Assign category to nzb-file\n"
+		"       N <name>             Use this name as nzb-filename (only for URLs)\n"
 		"  -C, --connect             Attach client to server\n"
 		"  -L, --list    [F|FR|G|GR|O|U|H|S] [RegEx] Request list of items from server\n"
 		"                 F          List individual files and server status (default)\n"

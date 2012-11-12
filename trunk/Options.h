@@ -232,7 +232,10 @@ private:
 	EMatchMode			m_EMatchMode;
 	char*				m_szEditQueueText;
 	char*				m_szArgFilename;
-	char*				m_szCategory;
+	char*				m_szAddCategory;
+	int					m_iAddPriority;
+	bool				m_bAddPaused;
+	char*				m_szAddNZBFilename;
 	char*				m_szLastArg;
 	bool				m_bPrintOptions;
 	bool				m_bAddTop;
@@ -371,8 +374,11 @@ public:
 	EMatchMode			GetMatchMode() { return m_EMatchMode; }
 	const char*			GetEditQueueText() { return m_szEditQueueText; }
 	const char*			GetArgFilename() { return m_szArgFilename; }
-	const char*			GetCategory() { return m_szCategory; }
+	const char*			GetAddCategory() { return m_szAddCategory; }
+	bool				GetAddPaused() { return m_bAddPaused; }
 	const char*			GetLastArg() { return m_szLastArg; }
+	int					GetAddPriority() { return m_iAddPriority; }
+	char*				GetAddNZBFilename() { return m_szAddNZBFilename; }
 	bool				GetAddTop() { return m_bAddTop; }
 	float				GetSetRate() { return m_fSetRate; }
 	int					GetLogLines() { return m_iLogLines; }

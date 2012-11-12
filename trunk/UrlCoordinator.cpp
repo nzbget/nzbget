@@ -441,9 +441,10 @@ void UrlCoordinator::AddToNZBQueue(UrlInfo* pUrlInfo, const char* szTempFilename
 		{
 			FileInfo* pFileInfo = *it;
 			pFileInfo->SetPriority(pUrlInfo->GetPriority());
+			pFileInfo->SetPaused(pUrlInfo->GetAddPaused());
 		}
 
-		g_pQueueCoordinator->AddNZBFileToQueue(pNZBFile, false);
+		g_pQueueCoordinator->AddNZBFileToQueue(pNZBFile, pUrlInfo->GetAddTop());
 		delete pNZBFile;
 		info("Collection %s added to queue", szOriginalFilename);
 	}

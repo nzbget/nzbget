@@ -27,7 +27,7 @@
 #ifndef MESSAGEBASE_H
 #define MESSAGEBASE_H
 
-static const int32_t NZBMESSAGE_SIGNATURE = 0x6E7A6211; // = "nzb-XX" (protocol version)
+static const int32_t NZBMESSAGE_SIGNATURE = 0x6E7A6212; // = "nzb-XX" (protocol version)
 static const int NZBREQUESTFILENAMESIZE = 512;
 static const int NZBREQUESTPASSWORDSIZE = 32;
 
@@ -143,6 +143,8 @@ struct SNZBDownloadRequest
 	char					m_szFilename[NZBREQUESTFILENAMESIZE];	// Name of nzb-file, may contain full path (local path on client) or only filename
 	char					m_szCategory[NZBREQUESTFILENAMESIZE];	// Category, can be empty
 	int32_t					m_bAddFirst;			// 1 - add file to the top of download queue
+	int32_t					m_bAddPaused;			// 1 - pause added files
+	int32_t					m_iPriority;			// Priority for files (0 - default)
 	int32_t					m_iTrailingDataLength;	// Length of nzb-file in bytes
 	//char					m_szContent[m_iTrailingDataLength];	// variable sized
 };
@@ -505,8 +507,11 @@ struct SNZBDownloadUrlRequest
 {
 	SNZBRequestBase			m_MessageBase;			// Must be the first in the struct
 	char					m_szURL[NZBREQUESTFILENAMESIZE];		// url to nzb-file
+	char					m_szNZBFilename[NZBREQUESTFILENAMESIZE];// Name of nzb-file. Can be empty, then the filename is read from URL download response
 	char					m_szCategory[NZBREQUESTFILENAMESIZE];	// Category, can be empty
 	int32_t					m_bAddFirst;							// 1 - add url to the top of download queue
+	int32_t					m_bAddPaused;							// 1 - pause added files
+	int32_t					m_iPriority;							// Priority for files (0 - default)
 };
 
 // download url response

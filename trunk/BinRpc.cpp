@@ -363,11 +363,22 @@ void DownloadBinCommand::Execute()
 
 	if (NeedBytes == 0)
 	{
+		int iPriority = ntohl(DownloadRequest.m_iPriority);
+		bool bAddPaused = ntohl(DownloadRequest.m_bAddPaused);
+
 		NZBFile* pNZBFile = NZBFile::CreateFromBuffer(DownloadRequest.m_szFilename, DownloadRequest.m_szCategory, pRecvBuffer, ntohl(DownloadRequest.m_iTrailingDataLength));
 
 		if (pNZBFile)
 		{
 			info("Request: Queue collection %s", DownloadRequest.m_szFilename);
+
+			for (NZBFile::FileInfos::iterator it = pNZBFile->GetFileInfos()->begin(); it != pNZBFile->GetFileInfos()->end(); it++)
+			{
+				FileInfo* pFileInfo = *it;
+				pFileInfo->SetPriority(iPriority);
+				pFileInfo->SetPaused(bAddPaused);				
+			}
+
 			g_pQueueCoordinator->AddNZBFileToQueue(pNZBFile, ntohl(DownloadRequest.m_bAddFirst));
 			delete pNZBFile;
 
@@ -1112,8 +1123,13 @@ void DownloadUrlBinCommand::Execute()
 
 	UrlInfo* pUrlInfo = new UrlInfo();
 	pUrlInfo->SetURL(DownloadUrlRequest.m_szURL);
+	pUrlInfo->SetNZBFilename(DownloadUrlRequest.m_szNZBFilename);
 	pUrlInfo->SetCategory(DownloadUrlRequest.m_szCategory);
-	g_pUrlCoordinator->AddUrlToQueue(pUrlInfo, DownloadUrlRequest.m_bAddFirst);
+	pUrlInfo->SetPriority(ntohl(DownloadUrlRequest.m_iPriority));
+	pUrlInfo->SetAddTop(ntohl(DownloadUrlRequest.m_bAddFirst));
+	pUrlInfo->SetAddPaused(ntohl(DownloadUrlRequest.m_bAddPaused));
+
+	g_pUrlCoordinator->AddUrlToQueue(pUrlInfo, ntohl(DownloadUrlRequest.m_bAddFirst));
 
 	info("Request: Queue url %s", DownloadUrlRequest.m_szURL);
 

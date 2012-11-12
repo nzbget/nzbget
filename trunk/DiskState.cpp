@@ -82,7 +82,7 @@ bool DiskState::SaveDownloadQueue(DownloadQueue* pDownloadQueue)
 		return false;
 	}
 
-	fprintf(outfile, "%s%i\n", FORMATVERSION_SIGNATURE, 15);
+	fprintf(outfile, "%s%i\n", FORMATVERSION_SIGNATURE, 16);
 
 	// save nzb-infos
 	SaveNZBList(pDownloadQueue, outfile);
@@ -136,7 +136,7 @@ bool DiskState::LoadDownloadQueue(DownloadQueue* pDownloadQueue)
 	char FileSignatur[128];
 	fgets(FileSignatur, sizeof(FileSignatur), infile);
 	int iFormatVersion = ParseFormatVersion(FileSignatur);
-	if (iFormatVersion < 3 || iFormatVersion > 15)
+	if (iFormatVersion < 3 || iFormatVersion > 16)
 	{
 		error("Could not load diskstate due to file version mismatch");
 		fclose(infile);
@@ -163,7 +163,7 @@ bool DiskState::LoadDownloadQueue(DownloadQueue* pDownloadQueue)
 	if (iFormatVersion >= 15)
 	{
 		// load url-queue
-		if (!LoadUrlQueue(pDownloadQueue, infile)) goto error;
+		if (!LoadUrlQueue(pDownloadQueue, infile, iFormatVersion)) goto error;
 	}
 
 	if (iFormatVersion >= 9)
@@ -832,7 +832,7 @@ void DiskState::SaveUrlQueue(DownloadQueue* pDownloadQueue, FILE* outfile)
 	}
 }
 
-bool DiskState::LoadUrlQueue(DownloadQueue* pDownloadQueue, FILE* infile)
+bool DiskState::LoadUrlQueue(DownloadQueue* pDownloadQueue, FILE* infile, int iFormatVersion)
 {
 	debug("Loading url-queue from disk");
 
@@ -849,7 +849,7 @@ bool DiskState::LoadUrlQueue(DownloadQueue* pDownloadQueue, FILE* infile)
 			pUrlInfo = new UrlInfo();
 		}
 
-		if (!LoadUrlInfo(pUrlInfo, infile)) goto error;
+		if (!LoadUrlInfo(pUrlInfo, infile, iFormatVersion)) goto error;
 
 		if (!bSkipUrlQueue)
 		{
@@ -867,20 +867,28 @@ error:
 void DiskState::SaveUrlInfo(UrlInfo* pUrlInfo, FILE* outfile)
 {
 	fprintf(outfile, "%i,%i\n", (int)pUrlInfo->GetStatus(), pUrlInfo->GetPriority());
+	fprintf(outfile, "%i,%i\n", (int)pUrlInfo->GetAddTop(), pUrlInfo->GetAddPaused());
 	fprintf(outfile, "%s\n", pUrlInfo->GetURL());
 	fprintf(outfile, "%s\n", pUrlInfo->GetNZBFilename());
 	fprintf(outfile, "%s\n", pUrlInfo->GetCategory());
 }
 
-bool DiskState::LoadUrlInfo(UrlInfo* pUrlInfo, FILE* infile)
+bool DiskState::LoadUrlInfo(UrlInfo* pUrlInfo, FILE* infile, int iFormatVersion)
 {
 	char buf[10240];
 
 	int iStatus, iPriority;
 	if (fscanf(infile, "%i,%i\n", &iStatus, &iPriority) != 2) goto error;
-
 	if (pUrlInfo) pUrlInfo->SetStatus((UrlInfo::EStatus)iStatus);
 	if (pUrlInfo) pUrlInfo->SetPriority(iPriority);
+
+	if (iFormatVersion >= 16)
+	{
+		int iAddTop, iAddPaused;
+		if (fscanf(infile, "%i,%i\n", &iAddTop, &iAddPaused) != 2) goto error;
+		if (pUrlInfo) pUrlInfo->SetAddTop(iAddTop);
+		if (pUrlInfo) pUrlInfo->SetAddPaused(iAddPaused);
+	}
 
 	if (!fgets(buf, sizeof(buf), infile)) goto error;
 	if (buf[0] != 0) buf[strlen(buf)-1] = 0; // remove traling '\n'
@@ -953,7 +961,7 @@ bool DiskState::LoadHistory(DownloadQueue* pDownloadQueue, FILE* infile, int iFo
 		else if (eKind == HistoryInfo::hkUrlInfo)
 		{
 			UrlInfo* pUrlInfo = new UrlInfo();
-			if (!LoadUrlInfo(pUrlInfo, infile)) goto error;
+			if (!LoadUrlInfo(pUrlInfo, infile, iFormatVersion)) goto error;
 			pHistoryInfo = new HistoryInfo(pUrlInfo);
 		}
 
@@ -1010,7 +1018,7 @@ bool DiskState::DiscardDownloadQueue()
 	char FileSignatur[128];
 	fgets(FileSignatur, sizeof(FileSignatur), infile);
 	int iFormatVersion = ParseFormatVersion(FileSignatur);
-	if (3 <= iFormatVersion && iFormatVersion <= 15)
+	if (3 <= iFormatVersion && iFormatVersion <= 16)
 	{
 		// skip nzb-infos
 		int size = 0;

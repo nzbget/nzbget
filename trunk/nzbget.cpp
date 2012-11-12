@@ -334,7 +334,7 @@ void Run(bool bReload)
 		// Standalone-mode
 		if (!g_pOptions->GetServerMode())
 		{
-			NZBFile* pNZBFile = NZBFile::CreateFromFile(g_pOptions->GetArgFilename(), g_pOptions->GetCategory() ? g_pOptions->GetCategory() : "");
+			NZBFile* pNZBFile = NZBFile::CreateFromFile(g_pOptions->GetArgFilename(), g_pOptions->GetAddCategory() ? g_pOptions->GetAddCategory() : "");
 			if (!pNZBFile)
 			{
 				abort("FATAL ERROR: Parsing NZB-document %s failed\n\n", g_pOptions->GetArgFilename() ? g_pOptions->GetArgFilename() : "N/A");
@@ -484,7 +484,7 @@ void ProcessClientRequest()
 			break;
 
 		case Options::opClientRequestDownload:
-			Client->RequestServerDownload(g_pOptions->GetArgFilename(), g_pOptions->GetCategory(), g_pOptions->GetAddTop());
+			Client->RequestServerDownload(g_pOptions->GetArgFilename(), g_pOptions->GetAddCategory(), g_pOptions->GetAddTop(), g_pOptions->GetAddPaused(), g_pOptions->GetAddPriority());
 			break;
 
 		case Options::opClientRequestVersion:
@@ -528,7 +528,7 @@ void ProcessClientRequest()
 			break;
 
 		case Options::opClientRequestDownloadUrl:
-			Client->RequestServerDownloadUrl(g_pOptions->GetLastArg(), g_pOptions->GetCategory(), g_pOptions->GetAddTop());
+			Client->RequestServerDownloadUrl(g_pOptions->GetLastArg(), g_pOptions->GetAddNZBFilename(), g_pOptions->GetAddCategory(), g_pOptions->GetAddTop(), g_pOptions->GetAddPaused(), g_pOptions->GetAddPriority());
 			break;
 
 		case Options::opClientRequestUrlQueue:

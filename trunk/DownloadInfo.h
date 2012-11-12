@@ -439,6 +439,8 @@ private:
 	char*				m_szNZBFilename;
 	char* 				m_szCategory;
 	int					m_iPriority;
+	bool				m_bAddTop;
+	bool				m_bAddPaused;
 	EStatus				m_eStatus;
 
 	static int			m_iIDGen;
@@ -456,6 +458,10 @@ public:
 	void				SetCategory(const char* szCategory);	// needs locking (for shared objects)
 	int					GetPriority() { return m_iPriority; }
 	void				SetPriority(int iPriority) { m_iPriority = iPriority; }
+	bool				GetAddTop() { return m_bAddTop; }
+	void				SetAddTop(bool bAddTop) { m_bAddTop = bAddTop; }
+	bool				GetAddPaused() { return m_bAddPaused; }
+	void				SetAddPaused(bool bAddPaused) { m_bAddPaused = bAddPaused; }
 	void				GetName(char* szBuffer, int iSize);		// needs locking (for shared objects)
 	static void			MakeNiceName(const char* szURL, const char* szNZBFilename, char* szBuffer, int iSize);
 	EStatus				GetStatus() { return m_eStatus; }
