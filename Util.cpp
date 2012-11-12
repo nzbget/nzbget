@@ -298,12 +298,21 @@ bool Util::ForceDirectories(const char* szPath)
 	return bOK;
 }
 
-bool Util::CurrentDirectory(char* szBuffer, int iBufSize)
+bool Util::GetCurrentDirectory(char* szBuffer, int iBufSize)
 {
 #ifdef WIN32
-	return GetCurrentDirectory(iBufSize, szBuffer) != NULL;
+	return ::GetCurrentDirectory(iBufSize, szBuffer) != NULL;
 #else
 	return getcwd(szBuffer, iBufSize) != NULL;
+#endif
+}
+
+bool Util::SetCurrentDirectory(const char* szDirFilename)
+{
+#ifdef WIN32
+	return ::SetCurrentDirectory(szDirFilename);
+#else
+	return chdir(szDirFilename) == 0;
 #endif
 }
 

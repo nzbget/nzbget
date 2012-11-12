@@ -72,7 +72,8 @@ public:
 	static bool DirectoryExists(const char* szDirFilename);
 	static bool CreateDirectory(const char* szDirFilename);
 	static bool ForceDirectories(const char* szPath);
-	static bool CurrentDirectory(char* szBuffer, int iBufSize);
+	static bool GetCurrentDirectory(char* szBuffer, int iBufSize);
+	static bool SetCurrentDirectory(const char* szDirFilename);
 	static long long FileSize(const char* szFilename);
 	static long long FreeDiskSize(const char* szPath);
 	static bool DirEmpty(const char* szDirFilename);

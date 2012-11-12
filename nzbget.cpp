@@ -177,13 +177,13 @@ void RunMain()
 	// config to properly load in a case relative paths are used 
 	// in command line
 	char szCurDir[MAX_PATH + 1];
-	Util::CurrentDirectory(szCurDir, sizeof(szCurDir));
+	Util::GetCurrentDirectory(szCurDir, sizeof(szCurDir));
 	
 	bool bReload = false;
 	while (g_bReloading)
 	{
 		g_bReloading = false;
-		chdir(szCurDir);
+		Util::SetCurrentDirectory(szCurDir);
 		Run(bReload);
 		bReload = true;
 	}
