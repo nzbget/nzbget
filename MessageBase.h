@@ -80,6 +80,7 @@ enum eRemoteEditAction
 	eRemoteEditActionFilePauseAllPars,		// pause only (all) pars (does not affect other files)
 	eRemoteEditActionFilePauseExtraPars,	// pause only (almost all) pars, except main par-file (does not affect other files)
 	eRemoteEditActionFileSetPriority,		// set priority for files
+	eRemoteEditActionFileReorder,			// (not supported)
 	eRemoteEditActionGroupMoveOffset,		// move group to m_iOffset relative to the current position in download-queue
 	eRemoteEditActionGroupMoveTop,			// move group to the top of download-queue
 	eRemoteEditActionGroupMoveBottom,		// move group to the bottom of download-queue
