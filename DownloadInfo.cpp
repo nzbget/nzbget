@@ -770,6 +770,8 @@ UrlInfo::UrlInfo()
 	m_szNZBFilename = strdup("");
 	m_szCategory = strdup("");
 	m_iPriority = 0;
+	m_bAddTop = false;
+	m_bAddPaused = false;
 	m_eStatus = aiUndefined;
 	m_iIDGen++;
 	m_iID = m_iIDGen;

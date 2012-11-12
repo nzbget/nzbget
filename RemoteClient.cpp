@@ -178,7 +178,7 @@ bool RemoteClient::ReceiveBoolResponse()
 /*
  * Sends a message to the running nzbget process.
  */
-bool RemoteClient::RequestServerDownload(const char* szFilename, const char* szCategory, bool bAddFirst)
+bool RemoteClient::RequestServerDownload(const char* szFilename, const char* szCategory, bool bAddFirst, bool bAddPaused, int iPriority)
 {
 	// Read the file into the buffer
 	char* szBuffer	= NULL;
@@ -195,6 +195,8 @@ bool RemoteClient::RequestServerDownload(const char* szFilename, const char* szC
 		SNZBDownloadRequest DownloadRequest;
 		InitMessageBase(&DownloadRequest.m_MessageBase, eRemoteRequestDownload, sizeof(DownloadRequest));
 		DownloadRequest.m_bAddFirst = htonl(bAddFirst);
+		DownloadRequest.m_bAddPaused = htonl(bAddPaused);
+		DownloadRequest.m_iPriority = htonl(iPriority);
 		DownloadRequest.m_iTrailingDataLength = htonl(iLength);
 
 		strncpy(DownloadRequest.m_szFilename, szFilename, NZBREQUESTFILENAMESIZE - 1);
@@ -1228,22 +1230,32 @@ bool RemoteClient::RequestHistory()
 	return true;
 }
 
-bool RemoteClient::RequestServerDownloadUrl(const char* szURL, const char* szCategory, bool bAddFirst)
+bool RemoteClient::RequestServerDownloadUrl(const char* szURL, const char* szNZBFilename, const char* szCategory, bool bAddFirst, bool bAddPaused, int iPriority)
 {
 	if (!InitConnection()) return false;
 
 	SNZBDownloadUrlRequest DownloadUrlRequest;
 	InitMessageBase(&DownloadUrlRequest.m_MessageBase, eRemoteRequestDownloadUrl, sizeof(DownloadUrlRequest));
 	DownloadUrlRequest.m_bAddFirst = htonl(bAddFirst);
+	DownloadUrlRequest.m_bAddPaused = htonl(bAddPaused);
+	DownloadUrlRequest.m_iPriority = htonl(iPriority);
 
 	strncpy(DownloadUrlRequest.m_szURL, szURL, NZBREQUESTFILENAMESIZE - 1);
 	DownloadUrlRequest.m_szURL[NZBREQUESTFILENAMESIZE-1] = '\0';
+
 	DownloadUrlRequest.m_szCategory[0] = '\0';
 	if (szCategory)
 	{
 		strncpy(DownloadUrlRequest.m_szCategory, szCategory, NZBREQUESTFILENAMESIZE - 1);
 	}
 	DownloadUrlRequest.m_szCategory[NZBREQUESTFILENAMESIZE-1] = '\0';
+
+	DownloadUrlRequest.m_szNZBFilename[0] = '\0';
+	if (szNZBFilename)
+	{
+		strncpy(DownloadUrlRequest.m_szNZBFilename, szNZBFilename, NZBREQUESTFILENAMESIZE - 1);
+	}
+	DownloadUrlRequest.m_szNZBFilename[NZBREQUESTFILENAMESIZE-1] = '\0';
 
 	bool OK = m_pConnection->Send((char*)(&DownloadUrlRequest), sizeof(DownloadUrlRequest)) >= 0;
 	if (OK)
