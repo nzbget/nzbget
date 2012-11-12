@@ -1487,6 +1487,7 @@ void Options::PrintUsage(char* com)
 		"       P                    Pause added files\n"
 		"       C <name>             Assign category to nzb-file\n"
 		"       N <name>             Use this name as nzb-filename (only for URLs)\n"
+		"       I <priority>         Set priority (signed integer)\n"
 		"  -C, --connect             Attach client to server\n"
 		"  -L, --list    [F|FR|G|GR|O|U|H|S] [RegEx] Request list of items from server\n"
 		"                 F          List individual files and server status (default)\n"
