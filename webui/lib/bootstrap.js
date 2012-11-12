@@ -37,7 +37,7 @@
                'WebkitTransition' : 'webkitTransitionEnd'
             ,  'MozTransition'    : 'transitionend'
             ,  'OTransition'      : 'oTransitionEnd'
-            ,  'msTransition'     : 'MSTransitionEnd'
+            //,  'msTransition'     : 'MSTransitionEnd'
             ,  'transition'       : 'transitionend'
             }
           , name
