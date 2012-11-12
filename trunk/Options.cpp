@@ -685,12 +685,14 @@ void Options::InitOptFile()
 		Util::ExpandFileName(m_szConfigFilename, szFilename, sizeof(szFilename));
 		szFilename[MAX_PATH] = '\0';
 
+#ifndef WIN32
 		// substitute HOME-variable
 		char szExpandedFilename[1024];
 		if (Util::ExpandHomePath(szFilename, szExpandedFilename, sizeof(szExpandedFilename)))
 		{
 			strncpy(szFilename, szExpandedFilename, sizeof(szFilename));
 		}
+#endif
 		
 		free(m_szConfigFilename);
 		m_szConfigFilename = strdup(szFilename);
