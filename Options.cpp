@@ -139,6 +139,7 @@ static const char* OPTION_PARREPAIR				= "ParRepair";
 static const char* OPTION_POSTPROCESS			= "PostProcess";
 static const char* OPTION_POSTCONFIGFILE		= "PostConfigFile";
 static const char* OPTION_NZBPROCESS			= "NZBProcess";
+static const char* OPTION_NZBADDEDPROCESS		= "NZBAddedProcess";
 static const char* OPTION_STRICTPARNAME			= "StrictParName";
 static const char* OPTION_UMASK					= "UMask";
 static const char* OPTION_UPDATEINTERVAL		= "UpdateInterval";
@@ -342,6 +343,7 @@ Options::Options(int argc, char* argv[])
 	m_szPostProcess			= NULL;
 	m_szPostConfigFilename	= NULL;
 	m_szNZBProcess			= NULL;
+	m_szNZBAddedProcess		= NULL;
 	m_bStrictParName		= false;
 	m_bNoConfig				= false;
 	m_iUMask				= 0;
@@ -523,6 +525,10 @@ Options::~Options()
 	{
 		free(m_szNZBProcess);
 	}
+	if (m_szNZBAddedProcess)
+	{
+		free(m_szNZBAddedProcess);
+	}
 	if (m_pEditQueueIDList)
 	{
 		free(m_pEditQueueIDList);
@@ -613,6 +619,7 @@ void Options::InitDefault()
 	SetOption(OPTION_POSTPROCESS, "");
 	SetOption(OPTION_POSTCONFIGFILE, "");
 	SetOption(OPTION_NZBPROCESS, "");
+	SetOption(OPTION_NZBADDEDPROCESS, "");
 	SetOption(OPTION_STRICTPARNAME, "yes");
 	SetOption(OPTION_DAEMONUSERNAME, "root");
 	SetOption(OPTION_UMASK, "1000");
@@ -759,6 +766,7 @@ void Options::InitOptions()
 
 	m_szPostProcess			= strdup(GetOption(OPTION_POSTPROCESS));
 	m_szNZBProcess			= strdup(GetOption(OPTION_NZBPROCESS));
+	m_szNZBAddedProcess		= strdup(GetOption(OPTION_NZBADDEDPROCESS));
 	m_szControlIP			= strdup(GetOption(OPTION_CONTROLIP));
 	m_szControlPassword		= strdup(GetOption(OPTION_CONTROLPASSWORD));
 	m_szLockFile			= strdup(GetOption(OPTION_LOCKFILE));

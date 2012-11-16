@@ -191,6 +191,7 @@ private:
 	char*				m_szPostProcess;
 	char*				m_szPostConfigFilename;
 	char*				m_szNZBProcess;
+	char*				m_szNZBAddedProcess;
 	bool				m_bStrictParName;
 	bool				m_bNoConfig;
 	int					m_iUMask;
@@ -333,6 +334,7 @@ public:
 	const char*			GetPostProcess() { return m_szPostProcess; }
 	const char*			GetPostConfigFilename() { return m_szPostConfigFilename; }
 	const char*			GetNZBProcess() { return m_szNZBProcess; }
+	const char*			GetNZBAddedProcess() { return m_szNZBAddedProcess; }
 	bool				GetStrictParName() { return m_bStrictParName; }
 	int					GetUMask() { return m_iUMask; }
 	int					GetUpdateInterval() {return m_iUpdateInterval; }

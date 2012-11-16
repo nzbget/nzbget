@@ -894,6 +894,75 @@ void NZBScriptController::AddMessage(Message::EKind eKind, bool bDefaultKind, Op
 	}
 }
 
+void NZBAddedScriptController::StartScript(DownloadQueue* pDownloadQueue, NZBInfo *pNZBInfo, const char* szScript)
+{
+	NZBAddedScriptController* pScriptController = new NZBAddedScriptController();
+	pScriptController->SetScript(szScript);
+	pScriptController->m_szNZBName = strdup(pNZBInfo->GetName());
+	pScriptController->SetEnvVar("NZBNA_NAME", pNZBInfo->GetName());
+	pScriptController->SetEnvVar("NZBNA_FILENAME", pNZBInfo->GetFilename());
+	pScriptController->SetEnvVar("NZBNA_CATEGORY", pNZBInfo->GetCategory());
+
+	int iLastID = 0;
+	int iMaxPriority = 0;
+
+	for (FileQueue::iterator it = pDownloadQueue->GetFileQueue()->begin(); it != pDownloadQueue->GetFileQueue()->end(); it++)
+    {
+        FileInfo* pFileInfo = *it;
+		if (pFileInfo->GetNZBInfo() == pNZBInfo && ( pFileInfo->GetPriority() > iMaxPriority || iLastID == 0))
+		{
+			iMaxPriority = pFileInfo->GetPriority();
+		}
+		if (pFileInfo->GetNZBInfo() == pNZBInfo && pFileInfo->GetID() > iLastID)
+		{
+			iLastID = pFileInfo->GetID();
+		}
+	}
+
+	char buf[100];
+
+	snprintf(buf, 100, "%i", iLastID);
+	pScriptController->SetEnvVar("NZBNA_LASTID", buf);
+
+	snprintf(buf, 100, "%i", iMaxPriority);
+	pScriptController->SetEnvVar("NZBNA_PRIORITY", buf);
+
+	for (NZBParameterList::iterator it = pNZBInfo->GetParameters()->begin(); it != pNZBInfo->GetParameters()->end(); it++)
+	{
+		NZBParameter* pParameter = *it;
+		char szVarname[1024];
+		snprintf(szVarname, sizeof(szVarname), "NZBPR_%s", pParameter->GetName());
+		szVarname[1024-1] = '\0';
+		pScriptController->SetEnvVar(szVarname, pParameter->GetValue());
+	}
+
+	pScriptController->SetAutoDestroy(true);
+
+	pScriptController->Start();
+}
+
+void NZBAddedScriptController::Run()
+{
+	char szInfoName[1024];
+	snprintf(szInfoName, 1024, "nzb-added process-script for %s", m_szNZBName);
+	szInfoName[1024-1] = '\0';
+	SetInfoName(szInfoName);
+
+	info("Executing %s", szInfoName);
+
+	SetDefaultKindPrefix("NZB-Added Process: ");
+	SetDefaultLogKind(g_pOptions->GetProcessLogKind());
+
+	const char* szArgs[2];
+	szArgs[0] = GetScript();
+	szArgs[1] = NULL;
+	SetArgs(szArgs, false);
+
+	Execute();
+
+	free(m_szNZBName);
+}
+
 void SchedulerScriptController::StartScript(const char* szCommandLine)
 {
 	char** argv = NULL;

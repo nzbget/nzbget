@@ -124,6 +124,16 @@ public:
 	static void			ExecuteScript(const char* szScript, const char* szNZBFilename, const char* szDirectory, char** pCategory, int* iPriority, NZBParameterList* pParameterList);
 };
 
+class NZBAddedScriptController : public Thread, ScriptController
+{
+private:
+	char*				m_szNZBName;
+
+public:
+	virtual void		Run();
+	static void			StartScript(DownloadQueue* pDownloadQueue, NZBInfo *pNZBInfo, const char* szScript);
+};
+
 class SchedulerScriptController : public Thread, ScriptController
 {
 public:

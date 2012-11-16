@@ -270,6 +270,11 @@ void PrePostProcessor::NZBAdded(DownloadQueue* pDownloadQueue, NZBInfo* pNZBInfo
 	{
 		PausePars(pDownloadQueue, pNZBInfo);
 	}
+
+	if (strlen(g_pOptions->GetNZBAddedProcess()) > 0)
+	{
+		NZBAddedScriptController::StartScript(pDownloadQueue, pNZBInfo, g_pOptions->GetNZBAddedProcess());
+	}
 }
 
 void PrePostProcessor::NZBDownloaded(DownloadQueue* pDownloadQueue, NZBInfo* pNZBInfo)
