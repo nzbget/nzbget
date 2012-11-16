@@ -1035,23 +1035,23 @@ void Options::InitCommandLine(int argc, char* argv[])
 				{
 					optind++;
 					optarg = optind > argc ? NULL : argv[optind-1];
-					if (optarg && !strcmp(optarg, "F"))
+					if (optarg && !strcasecmp(optarg, "F"))
 					{
 						m_eClientOperation = opClientRequestDownload;
 					}
-					else if (optarg && !strcmp(optarg, "U"))
+					else if (optarg && !strcasecmp(optarg, "U"))
 					{
 						m_eClientOperation = opClientRequestDownloadUrl;
 					}
-					else if (optarg && !strcmp(optarg, "T"))
+					else if (optarg && !strcasecmp(optarg, "T"))
 					{
 						m_bAddTop = true;
 					}
-					else if (optarg && !strcmp(optarg, "P"))
+					else if (optarg && !strcasecmp(optarg, "P"))
 					{
 						m_bAddPaused = true;
 					}
-					else if (optarg && !strcmp(optarg, "I"))
+					else if (optarg && !strcasecmp(optarg, "I"))
 					{
 						optind++;
 						if (optind > argc)
@@ -1060,7 +1060,7 @@ void Options::InitCommandLine(int argc, char* argv[])
 						}
 						m_iAddPriority = atoi(argv[optind-1]);
 					}
-					else if (optarg && !strcmp(optarg, "C"))
+					else if (optarg && !strcasecmp(optarg, "C"))
 					{
 						optind++;
 						if (optind > argc)
@@ -1073,7 +1073,7 @@ void Options::InitCommandLine(int argc, char* argv[])
 						}
 						m_szAddCategory = strdup(argv[optind-1]);
 					}
-					else if (optarg && !strcmp(optarg, "N"))
+					else if (optarg && !strcasecmp(optarg, "N"))
 					{
 						optind++;
 						if (optind > argc)
@@ -1101,27 +1101,27 @@ void Options::InitCommandLine(int argc, char* argv[])
 					m_eClientOperation = opClientRequestListFiles;
 					optind--;
 				}
-				else if (!strcmp(optarg, "F") || !strcmp(optarg, "FR"))
+				else if (!strcasecmp(optarg, "F") || !strcasecmp(optarg, "FR"))
 				{
 					m_eClientOperation = opClientRequestListFiles;
 				}
-				else if (!strcmp(optarg, "G") || !strcmp(optarg, "GR"))
+				else if (!strcasecmp(optarg, "G") || !strcasecmp(optarg, "GR"))
 				{
 					m_eClientOperation = opClientRequestListGroups;
 				}
-				else if (!strcmp(optarg, "O"))
+				else if (!strcasecmp(optarg, "O"))
 				{
 					m_eClientOperation = opClientRequestPostQueue;
 				}
-				else if (!strcmp(optarg, "S"))
+				else if (!strcasecmp(optarg, "S"))
 				{
 					m_eClientOperation = opClientRequestListStatus;
 				}
-				else if (!strcmp(optarg, "H"))
+				else if (!strcasecmp(optarg, "H"))
 				{
 					m_eClientOperation = opClientRequestHistory;
 				}
-				else if (!strcmp(optarg, "U"))
+				else if (!strcasecmp(optarg, "U"))
 				{
 					m_eClientOperation = opClientRequestUrlQueue;
 				}
@@ -1130,7 +1130,7 @@ void Options::InitCommandLine(int argc, char* argv[])
 					abort("FATAL ERROR: Could not parse value of option 'L'\n");
 				}
 
-				if (optarg && (!strcmp(optarg, "FR") || !strcmp(optarg, "GR")))
+				if (optarg && (!strcasecmp(optarg, "FR") || !strcasecmp(optarg, "GR")))
 				{
 					m_EMatchMode = mmRegEx;
 
@@ -1151,19 +1151,19 @@ void Options::InitCommandLine(int argc, char* argv[])
 					m_eClientOperation = c == 'P' ? opClientRequestDownloadPause : opClientRequestDownloadUnpause;
 					optind--;
 				}
-				else if (!strcmp(optarg, "D"))
+				else if (!strcasecmp(optarg, "D"))
 				{
 					m_eClientOperation = c == 'P' ? opClientRequestDownloadPause : opClientRequestDownloadUnpause;
 				}
-				else if (!strcmp(optarg, "D2"))
+				else if (!strcasecmp(optarg, "D2"))
 				{
 					m_eClientOperation = c == 'P' ? opClientRequestDownload2Pause : opClientRequestDownload2Unpause;
 				}
-				else if (!strcmp(optarg, "O"))
+				else if (!strcasecmp(optarg, "O"))
 				{
 					m_eClientOperation = c == 'P' ? opClientRequestPostPause : opClientRequestPostUnpause;
 				}
-				else if (!strcmp(optarg, "S"))
+				else if (!strcasecmp(optarg, "S"))
 				{
 					m_eClientOperation = c == 'P' ? opClientRequestScanPause : opClientRequestScanUnpause;
 				}
@@ -1177,11 +1177,11 @@ void Options::InitCommandLine(int argc, char* argv[])
 				m_fSetRate = (float)atof(optarg);
 				break;
 			case 'B':
-				if (!strcmp(optarg, "dump"))
+				if (!strcasecmp(optarg, "dump"))
 				{
 					m_eClientOperation = opClientRequestDumpDebug;
 				}
-				else if (!strcmp(optarg, "trace"))
+				else if (!strcasecmp(optarg, "trace"))
 				{
 					m_bTestBacktrace = true;
 				}
@@ -1406,19 +1406,19 @@ void Options::InitCommandLine(int argc, char* argv[])
 				break;
 			case 'W':
 				m_eClientOperation = opClientRequestWriteLog;
-				if (!strcmp(optarg, "I")) {
+				if (!strcasecmp(optarg, "I")) {
 					m_iWriteLogKind = (int)Message::mkInfo;
 				}
-				else if (!strcmp(optarg, "W")) {
+				else if (!strcasecmp(optarg, "W")) {
 					m_iWriteLogKind = (int)Message::mkWarning;
 				}
-				else if (!strcmp(optarg, "E")) {
+				else if (!strcasecmp(optarg, "E")) {
 					m_iWriteLogKind = (int)Message::mkError;
 				}
-				else if (!strcmp(optarg, "D")) {
+				else if (!strcasecmp(optarg, "D")) {
 					m_iWriteLogKind = (int)Message::mkDetail;
 				}
-				else if (!strcmp(optarg, "G")) {
+				else if (!strcasecmp(optarg, "G")) {
 					m_iWriteLogKind = (int)Message::mkDebug;
 				}
 				else
@@ -1441,7 +1441,7 @@ void Options::InitCommandLine(int argc, char* argv[])
 					m_eClientOperation = opClientRequestScanAsync;
 					optind--;
 				}
-				else if (!strcmp(optarg, "W"))
+				else if (!strcasecmp(optarg, "W"))
 				{
 					m_eClientOperation = opClientRequestScanSync;
 				}
@@ -1546,7 +1546,7 @@ void Options::PrintUsage(char* com)
 		"       R                    Pause extra pars (for groups)/\n"
 		"                            Return history-item(s) back to download queue\n"
 		"       D                    Delete file(s)/group(s)/post-job(s)/history-item(s)\n"
-		"       K <name>             Set category (for groups)\n"
+		"       C <name>             Set category (for groups)\n"
 		"       N <name>             Rename (for groups)\n"
 		"       M                    Merge (for groups)\n"
 		"       O <name>=<value>     Set post-process parameter (for groups)\n"
