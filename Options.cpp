@@ -1309,8 +1309,9 @@ void Options::InitCommandLine(int argc, char* argv[])
 					{
 						m_iEditQueueAction = bGroup ? eRemoteEditActionGroupDelete : eRemoteEditActionFileDelete;
 					}
-					else if (!strcasecmp(optarg, "K"))
+					else if (!strcasecmp(optarg, "C") || !strcasecmp(optarg, "K"))
 					{
+						// switch "K" is provided for compatibility with v. 0.8.0 and can be removed in future versions
 						if (!bGroup)
 						{
 							abort("FATAL ERROR: Category can be set only for groups\n");
@@ -1427,6 +1428,7 @@ void Options::InitCommandLine(int argc, char* argv[])
 				}
 				break;
 			case 'K':
+				// switch "K" is provided for compatibility with v. 0.8.0 and can be removed in future versions
 				if (m_szAddCategory)
 				{
 					free(m_szAddCategory);
