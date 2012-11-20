@@ -392,6 +392,10 @@ XmlCommand* XmlRpcProcessor::CreateCommand(const char* szMethodName)
 	{
 		command = new WriteLogXmlCommand();
 	}
+	else if (!strcasecmp(szMethodName, "clearlog"))
+	{
+		command = new ClearLogXmlCommand();
+	}
 	else if (!strcasecmp(szMethodName, "scan"))
 	{
 		command = new ScanXmlCommand();
@@ -1703,6 +1707,18 @@ void WriteLogXmlCommand::Execute()
 		BuildErrorResponse(3, "Invalid Kind");
 		return;
 	}
+
+	BuildBoolResponse(true);
+}
+
+void ClearLogXmlCommand::Execute()
+{
+	if (!CheckSafeMethod())
+	{
+		return;
+	}
+
+	g_pLog->Clear();
 
 	BuildBoolResponse(true);
 }
