@@ -110,6 +110,7 @@ public:
 						~Log();
 	Messages*			LockMessages();
 	void				UnlockMessages();
+	void				Clear();
 	void				ResetLog();
 	void				InitOptions();
 };

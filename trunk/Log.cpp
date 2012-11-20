@@ -59,11 +59,7 @@ Log::Log()
 
 Log::~Log()
 {
-	for (Messages::iterator it = m_Messages.begin(); it != m_Messages.end(); it++)
-	{
-		delete *it;
-	}
-	m_Messages.clear();
+	Clear();
 	if (m_szLogFilename)
 	{
 		free(m_szLogFilename);
@@ -313,6 +309,17 @@ Message::~ Message()
 	{
 		free(m_szText);
 	}
+}
+
+void Log::Clear()
+{
+	m_mutexLog.Lock();
+	for (Messages::iterator it = m_Messages.begin(); it != m_Messages.end(); it++)
+	{
+		delete *it;
+	}
+	m_Messages.clear();
+	m_mutexLog.Unlock();
 }
 
 void Log::AppendMessage(Message::EKind eKind, const char * szText)

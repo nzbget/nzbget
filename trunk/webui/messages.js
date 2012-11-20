@@ -44,6 +44,7 @@ var Messages = (new function($)
 	var maxMessages = null;
 	var lastID = 0;
 	var updateTabInfo;
+	var notification = null;
 
 	this.init = function(options)
 	{
@@ -204,4 +205,35 @@ var Messages = (new function($)
 		UISettings.write('MessagesRecordsPerPage', val);
 		$MessagesTable.fasttable('setPageSize', val);
 	}
+
+	this.clearClick = function()
+	{
+		ConfirmDialog.showModal('MessagesClearConfirmDialog', messagesClear);
+	}
+
+	function messagesClear()
+	{
+		Refresher.pause();
+
+		RPC.call('clearlog', [], function()
+		{
+			RPC.call('writelog', ['INFO', 'Messages have been deleted'], function()
+			{
+				notification = '#Notif_Messages_Cleared';
+				lastID = 0;
+				editCompleted();
+			});
+		});
+	}
+
+	function editCompleted()
+	{
+		Refresher.update();
+		if (notification)
+		{
+			Notification.show(notification);
+			notification = null;
+		}
+	}
+	
 }(jQuery));
