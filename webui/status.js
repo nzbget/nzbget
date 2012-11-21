@@ -58,6 +58,7 @@ var Status = (new function($)
 	var $CurSpeedLimit;
 	var $CurSpeedLimitBlock;
 	var $LimitDialog;
+	var $StatDialog;
 
 	// State
 	var status;
@@ -89,6 +90,7 @@ var Status = (new function($)
 		$CurSpeedLimit = $('#CurSpeedLimit');
 		$CurSpeedLimitBlock = $('#CurSpeedLimitBlock');
 		$LimitDialog = $('#LimitDialog');
+		$StatDialog = $('#StatDialog');
 		
 		if (UISettings.setFocus)
 		{
@@ -341,6 +343,11 @@ var Status = (new function($)
 		$CurSpeedLimit.text(status.DownloadLimit === 0 ? 'none' : Util.round0(status.DownloadLimit / 1024) + ' KB/s');
 		Util.show($CurSpeedLimitBlock, status.DownloadLimit !== 0);
 		$LimitDialog.modal();
+	}
+
+	this.statDialogClick = function()
+	{
+		$StatDialog.modal();
 	}
 
 	this.setSpeedLimitClick = function()
