@@ -1,6 +1,139 @@
-nzbget-9.0-testing:
-  - please see subversion log at
-    http://nzbget.svn.sourceforge.net/viewvc/nzbget/?view=log
+nzbget-9.0:
+  - changed version naming scheme by removing the leading zero: current
+    version is now called 9.0 instead of 0.9.0 (it's really the 9th major
+    version of the program);
+  - added built-in web-interface:
+        - completely new designed and written from scratch;
+        - doesn't require a separate web-server;
+        - doesn't require PHP;
+        - 100% Javascript application; the built-in web-server hosts only
+          static files; the javascript app communicates with NZBGet via
+          JSON-RPC;
+        - very efficient usage of server resources (CPU and memory);
+        - easy installation. Since neither a separate web-server nor PHP
+          are needed the installation of new web-interface is very easy.
+          Actually it is performed automatically when you "make install"
+          or "ipkg install nzbget";
+        - modern look: better layout, popup dialogs, nice animations,
+          hi-def icons;
+        - built-in phone-theme (activates automatically);
+        - combined view for "currently downloading", "queued", "currently
+          processing" and "queued for processing";
+        - renaming of nzb-files;
+        - multiselect with multiedit or merge of downloads;
+        - fast paging in the lists (downloads, history, messages);
+        - search box for filtering in the lists (downloads, history, messages)
+          and in settings;
+        - adding nzb-files to download queue was improved in several ways:
+            - add multiple files at once. The "select files dialog" allows
+              to select multiple files;
+            - add files using drag and drop. Just drop the files from your
+              file manager directly into the web-browser;
+            - add files via URLs. Put the URL and NZBGet downloads the
+              nzb-file and adds it to download queue automatically;
+            - the priority of nzb-file can now be set when adding local-files
+              or URLs;
+  - the history can be cleared completely or selected items can be removed;
+  - file mode is now nzb-file related;
+  - added the ability to queue URLs:
+        - the program automatically downloads nzb-files from given URLs
+          and put them to download queue.
+        - when multiple URLs are added in a short time, they are put
+          into a special URL-queue.
+        - the number of simultaneous URL-downloads are controlled via
+          new option UrlConnections.
+        - with the new option ReloadUrlQueue can be controlled if the URL-queue
+          should be reloaded after the program is restarted (if the URL-queue
+          was not empty).
+        - new switch <-U> for remote-command <--append/-A> to queue an URL.
+        - new subcommand <-U> in the remote command <--list/-L> prints the
+          current URL-queue.
+        - if URL-download fails, the URL is moved into history.
+        - with subcommand <-R> of command <--edit> the failed URL can be
+          returned to URL-queue for redownload.
+        - the remote command <--list/-L> for history can now print the infos
+          for URL history items.
+        - new XML/JSON-RPC command <appendurl> to add an URL or multiple
+          URLs for download.
+        - new XML/JSON-RPC command <urlqueue> returns the items from the
+          URL-queue.
+        - the XML/JSON-RPC command <history> was extended to provide
+          infos about URL history items.
+        - the URL-queue obeys the pause-state of download queue.
+        - the URL-downloads support HTTP and HTTPS protocols;
+  - added new field <name> to nzb-info-object.
+        - it is initially set to the cleaned up name of the nzb-file.
+        - the renaming of the group changes this field.
+        - all RPC-methods related to nzb-object return the new field, the
+          old field <NZBNicename> is now deprecated.
+        - the option <MergeNZB> now checks the <name>-field instead of
+          <nzbfilename> (the latter is not changed when the nzb is renamed).
+        - new env-var-parameter <NZBPP_NZBNAME> for post-processing script;
+  - added options <GN> and <FN> for remote command <--edit/-E>. With these
+    options the name of group or file can be used in edit-command instead
+    of file ID;
+  - added support for regular expressions (POSIX ERE Syntax) in remote
+    commands <--list/-L> and <--edit/-E> using new subcommands <GR> and <FR>;
+  - improved performance of RPC-command <listgroups>;
+  - added new command <FileReorder> to RPC-method <editqueue> to set the
+    order of individual files in the group;
+  - added gzip-support to built-in web-server (including RPC);
+  - added processing of http-request <OPTIONS> in RPC-server for better
+    support of cross domain requests;
+  - renamed example configuration file and postprocessing script to make
+    the installation easier;
+  - improved the automatic installation (<make install>) to install all
+    necessary files (not only the binary as it was before);
+  - improved handling of configuration errors: the program now does not
+    terminate on errors but rather logs all of them and uses default option values;
+  - added new XML/JSON-RPC methods <config>, <loadconfig> and <saveconfig>;
+  - with active option <AllowReProcess> the NZB considered completed even if
+    there are paused non-par-files (the paused non-par-files are treated the
+    same way as paused par-files): as a result the reprocessable script is called;
+  - added subcommand <W> to remote command <-S/--scan> to scan synchronously
+    (wait until scan completed);
+  - added parameter <SyncMode> to XML/JSON-RPC method <scan>;
+  - the command <Scan> in web-interface now waits for completing of scan
+    before reporting the status;
+  - added remote command <--reload/-O> and JSON/XML-RPC method <reload> to
+    reload configuration from disk and reintialize the program; the reload
+    can be performed from web-interface;
+  - JSON/XML-RPC method <append> extended with parameter <priority>;
+  - categories available in web-interface are now configured in program
+    configuration file (nzbget.conf) and can be managed via web-interface
+    on settings page;
+  - updated descriptions in example configuration file;
+  - changes in configuration file:
+        - renamed options <ServerIP>, <ServerPort> and <ServerPassword> to
+          <ControlIP>, <ControlPort> and <ControlPassword> to avoid confusion
+          with news-server options <ServerX.Host>, <ServerX.Port> and
+          <ServerX.Password>;
+        - the old option names are still recognized and are automatically
+          renamed when the configuration is saved from web-interface;
+        - also renamed option <$MAINDIR> to <MainDir>;
+  - extended remote command <--append/-A> with optional parameters:
+        - <T> - adds the file/URL to the top of queue;
+        - <P> - pauses added files;
+        - <C category-name> - sets category for added nzb-file/URL;
+        - <N nzb-name> - sets nzb filename for added URL;
+        - the old switches <--category/-K> and <--top/-T> are deprecated
+          but still supported for compatibility;
+  - renamed subcommand <K> of command <--edit/-E> to <C> (the old
+    subcommand is still supported for compatibility);
+  - added new option <NzbAddedProcess> to setup a script called after
+    a nzb-file is added to queue;
+  - added debug messages for speed meter;
+  - fixed: after renaming of a group, the new name was not displayed
+    by remote commands <-L G> and <-C in curses mode>;
+  - fixed incompatibility with OpenSLL 1.0 (thanks to OpenWRT team
+    for the patch);
+  - fixed: RPC-method <log(0, IdFrom)> could return wrong results if
+    the log was filtered with options <XXXTarget>;
+  - fixed: free disk space calculated incorrectly on some OSes;
+  - fixed: unrar failure was not always properly detected causing the
+    post-processing to delete not yet unpacked rar-files;
+  - fixed compilation error on recent linux versions;
+  - fixed compilation error on older systems;
 
 nzbget-0.8.0:
   - added priorities; new action <I> for remote command <--edit/-E> to set
