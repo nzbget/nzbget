@@ -33,6 +33,9 @@ In server/client mode NZBGet runs as server in background.
 Then you use client to send requests to server. The sample requests
 are: download nzb-file, list files in queue, etc.
 
+There is also a built-in web-interface. The server has RPC-support
+and can be controlled from third party applications too.
+
 Standalone-tool, server and client are all contained in only one 
 executable file "nzbget". The mode in which the program works 
 depends on command-line parameters passed to the program.
@@ -530,9 +533,9 @@ libpar2 is distributed under GPL; libsigc++ and GnuTLS - under LGPL.
 10. Contact
 =====================================
 
-If you encounter any problem, feel free to use forums on
+If you encounter any problem, feel free to use the forum
 
-    sourceforge.net/projects/nzbget
+    nzbget.sourceforge.net/forum
 
 or contact me at
 
