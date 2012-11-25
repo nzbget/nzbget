@@ -43,7 +43,7 @@ var DownloadsEditDialog = (new function($)
 	// State
 	var curGroup;
 	var notification = null;
-	var postParams;
+	var postParams = [];
 	var lastPage;
 	var lastFullscreen;
 	var logFilled;
