@@ -123,6 +123,8 @@ nzbget-9.0:
   - added new option <NzbAddedProcess> to setup a script called after
     a nzb-file is added to queue;
   - added debug messages for speed meter;
+  - improved the startup script <nzbgetd> so it can be directly used in
+    </etc/init.d> without modifications;
   - fixed: after renaming of a group, the new name was not displayed
     by remote commands <-L G> and <-C in curses mode>;
   - fixed incompatibility with OpenSLL 1.0 (thanks to OpenWRT team
