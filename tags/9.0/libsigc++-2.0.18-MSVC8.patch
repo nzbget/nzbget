@@ -1,0 +1,480 @@
+diff -urN libsigc++-2.0.18-original/sigc-2.0.sln libsigc++-2.0.18-modified/sigc-2.0.sln
+--- libsigc++-2.0.18-original/sigc-2.0.sln	1970-01-01 01:00:00.000000000 +0100
++++ libsigc++-2.0.18-modified/sigc-2.0.sln	2007-10-31 08:09:51.953427400 +0100
+@@ -0,0 +1,20 @@
++﻿
++Microsoft Visual Studio Solution File, Format Version 9.00
++# Visual C++ Express 2005
++Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "sigc-2.0", "sigc-2.0.vcproj", "{5882A1D7-2F65-4C0D-A88C-11A63A2B29EE}"
++EndProject
++Global
++	GlobalSection(SolutionConfigurationPlatforms) = preSolution
++		Debug|Win32 = Debug|Win32
++		Release|Win32 = Release|Win32
++	EndGlobalSection
++	GlobalSection(ProjectConfigurationPlatforms) = postSolution
++		{5882A1D7-2F65-4C0D-A88C-11A63A2B29EE}.Debug|Win32.ActiveCfg = Debug|Win32
++		{5882A1D7-2F65-4C0D-A88C-11A63A2B29EE}.Debug|Win32.Build.0 = Debug|Win32
++		{5882A1D7-2F65-4C0D-A88C-11A63A2B29EE}.Release|Win32.ActiveCfg = Release|Win32
++		{5882A1D7-2F65-4C0D-A88C-11A63A2B29EE}.Release|Win32.Build.0 = Release|Win32
++	EndGlobalSection
++	GlobalSection(SolutionProperties) = preSolution
++		HideSolutionNode = FALSE
++	EndGlobalSection
++EndGlobal
+diff -urN libsigc++-2.0.18-original/sigc-2.0.vcproj libsigc++-2.0.18-modified/sigc-2.0.vcproj
+--- libsigc++-2.0.18-original/sigc-2.0.vcproj	1970-01-01 01:00:00.000000000 +0100
++++ libsigc++-2.0.18-modified/sigc-2.0.vcproj	2007-10-31 14:04:13.867933500 +0100
+@@ -0,0 +1,367 @@
++﻿<?xml version="1.0" encoding="UTF-8"?>
++<VisualStudioProject
++	ProjectType="Visual C++"
++	Version="8,00"
++	Name="sigc-2.0"
++	ProjectGUID="{5882A1D7-2F65-4C0D-A88C-11A63A2B29EE}"
++	RootNamespace="sigc-2.0"
++	Keyword="Win32Proj"
++	>
++	<Platforms>
++		<Platform
++			Name="Win32"
++		/>
++	</Platforms>
++	<ToolFiles>
++	</ToolFiles>
++	<Configurations>
++		<Configuration
++			Name="Debug|Win32"
++			OutputDirectory="Debug"
++			IntermediateDirectory="Debug"
++			ConfigurationType="4"
++			>
++			<Tool
++				Name="VCPreBuildEventTool"
++			/>
++			<Tool
++				Name="VCCustomBuildTool"
++			/>
++			<Tool
++				Name="VCXMLDataGeneratorTool"
++			/>
++			<Tool
++				Name="VCWebServiceProxyGeneratorTool"
++			/>
++			<Tool
++				Name="VCMIDLTool"
++			/>
++			<Tool
++				Name="VCCLCompilerTool"
++				Optimization="0"
++				AdditionalIncludeDirectories=".\"
++				PreprocessorDefinitions="WIN32;_DEBUG;_LIB;"
++				MinimalRebuild="true"
++				BasicRuntimeChecks="3"
++				RuntimeLibrary="1"
++				UsePrecompiledHeader="0"
++				ProgramDataBaseFileName="$(IntDir)\sigc-2.0d.pdb"
++				WarningLevel="3"
++				Detect64BitPortabilityProblems="true"
++				DebugInformationFormat="4"
++			/>
++			<Tool
++				Name="VCManagedResourceCompilerTool"
++			/>
++			<Tool
++				Name="VCResourceCompilerTool"
++			/>
++			<Tool
++				Name="VCPreLinkEventTool"
++			/>
++			<Tool
++				Name="VCLibrarianTool"
++				OutputFile="$(OutDir)\$(ProjectName)d.lib"
++			/>
++			<Tool
++				Name="VCALinkTool"
++			/>
++			<Tool
++				Name="VCXDCMakeTool"
++			/>
++			<Tool
++				Name="VCBscMakeTool"
++			/>
++			<Tool
++				Name="VCFxCopTool"
++			/>
++			<Tool
++				Name="VCPostBuildEventTool"
++			/>
++		</Configuration>
++		<Configuration
++			Name="Release|Win32"
++			OutputDirectory="Release"
++			IntermediateDirectory="Release"
++			ConfigurationType="4"
++			>
++			<Tool
++				Name="VCPreBuildEventTool"
++			/>
++			<Tool
++				Name="VCCustomBuildTool"
++			/>
++			<Tool
++				Name="VCXMLDataGeneratorTool"
++			/>
++			<Tool
++				Name="VCWebServiceProxyGeneratorTool"
++			/>
++			<Tool
++				Name="VCMIDLTool"
++			/>
++			<Tool
++				Name="VCCLCompilerTool"
++				AdditionalIncludeDirectories=".\"
++				PreprocessorDefinitions="WIN32;NDEBUG;_LIB;"
++				RuntimeLibrary="0"
++				UsePrecompiledHeader="0"
++				ProgramDataBaseFileName="$(IntDir)\sigc-2.0.pdb"
++				WarningLevel="3"
++				Detect64BitPortabilityProblems="true"
++				DebugInformationFormat="3"
++			/>
++			<Tool
++				Name="VCManagedResourceCompilerTool"
++			/>
++			<Tool
++				Name="VCResourceCompilerTool"
++			/>
++			<Tool
++				Name="VCPreLinkEventTool"
++			/>
++			<Tool
++				Name="VCLibrarianTool"
++			/>
++			<Tool
++				Name="VCALinkTool"
++			/>
++			<Tool
++				Name="VCXDCMakeTool"
++			/>
++			<Tool
++				Name="VCBscMakeTool"
++			/>
++			<Tool
++				Name="VCFxCopTool"
++			/>
++			<Tool
++				Name="VCPostBuildEventTool"
++			/>
++		</Configuration>
++	</Configurations>
++	<References>
++	</References>
++	<Files>
++		<Filter
++			Name="Header Files"
++			Filter="h;hpp;hxx;hm;inl;inc;xsd"
++			UniqueIdentifier="{93995380-89BD-4b04-88EB-625FBE52EBFB}"
++			>
++			<File
++				RelativePath=".\sigc++\adaptors\adaptor_trait.h"
++				>
++			</File>
++			<File
++				RelativePath=".\sigc++\adaptors\adaptors.h"
++				>
++			</File>
++			<File
++				RelativePath=".\sigc++\adaptors\lambda\base.h"
++				>
++			</File>
++			<File
++				RelativePath=".\sigc++\adaptors\bind.h"
++				>
++			</File>
++			<File
++				RelativePath=".\sigc++\bind.h"
++				>
++			</File>
++			<File
++				RelativePath=".\sigc++\bind_return.h"
++				>
++			</File>
++			<File
++				RelativePath=".\sigc++\adaptors\bind_return.h"
++				>
++			</File>
++			<File
++				RelativePath=".\sigc++\adaptors\bound_argument.h"
++				>
++			</File>
++			<File
++				RelativePath=".\sigc++\class_slot.h"
++				>
++			</File>
++			<File
++				RelativePath=".\sigc++\compatibility.h"
++				>
++			</File>
++			<File
++				RelativePath=".\sigc++\adaptors\compose.h"
++				>
++			</File>
++			<File
++				RelativePath=".\sigc++\connection.h"
++				>
++			</File>
++			<File
++				RelativePath=".\sigc++\adaptors\deduce_result_type.h"
++				>
++			</File>
++			<File
++				RelativePath=".\sigc++\adaptors\exception_catch.h"
++				>
++			</File>
++			<File
++				RelativePath=".\sigc++\functors\functor_trait.h"
++				>
++			</File>
++			<File
++				RelativePath=".\sigc++\functors\functors.h"
++				>
++			</File>
++			<File
++				RelativePath=".\sigc++\adaptors\lambda\group.h"
++				>
++			</File>
++			<File
++				RelativePath=".\sigc++\hide.h"
++				>
++			</File>
++			<File
++				RelativePath=".\sigc++\adaptors\hide.h"
++				>
++			</File>
++			<File
++				RelativePath=".\sigc++\adaptors\lambda\lambda.h"
++				>
++			</File>
++			<File
++				RelativePath=".\sigc++\limit_reference.h"
++				>
++			</File>
++			<File
++				RelativePath=".\sigc++\functors\mem_fun.h"
++				>
++			</File>
++			<File
++				RelativePath=".\sigc++\method_slot.h"
++				>
++			</File>
++			<File
++				RelativePath=".\sigc++\object.h"
++				>
++			</File>
++			<File
++				RelativePath=".\sigc++\object_slot.h"
++				>
++			</File>
++			<File
++				RelativePath=".\sigc++\adaptors\lambda\operator.h"
++				>
++			</File>
++			<File
++				RelativePath=".\sigc++\functors\ptr_fun.h"
++				>
++			</File>
++			<File
++				RelativePath=".\sigc++\reference_wrapper.h"
++				>
++			</File>
++			<File
++				RelativePath=".\sigc++\adaptors\retype.h"
++				>
++			</File>
++			<File
++				RelativePath=".\sigc++\retype.h"
++				>
++			</File>
++			<File
++				RelativePath=".\sigc++\retype_return.h"
++				>
++			</File>
++			<File
++				RelativePath=".\sigc++\adaptors\retype_return.h"
++				>
++			</File>
++			<File
++				RelativePath=".\sigc++\adaptors\lambda\select.h"
++				>
++			</File>
++			<File
++				RelativePath=".\sigc++\sigc++.h"
++				>
++			</File>
++			<File
++				RelativePath=".\sigc++config.h"
++				>
++			</File>
++			<File
++				RelativePath=".\sigc++\signal.h"
++				>
++			</File>
++			<File
++				RelativePath=".\sigc++\signal_base.h"
++				>
++			</File>
++			<File
++				RelativePath=".\sigc++\slot.h"
++				>
++			</File>
++			<File
++				RelativePath=".\sigc++\functors\slot.h"
++				>
++			</File>
++			<File
++				RelativePath=".\sigc++\functors\slot_base.h"
++				>
++			</File>
++			<File
++				RelativePath=".\sigc++\trackable.h"
++				>
++			</File>
++			<File
++				RelativePath=".\sigc++\type_traits.h"
++				>
++			</File>
++			<File
++				RelativePath=".\sigc++\visit_each.h"
++				>
++			</File>
++		</Filter>
++		<Filter
++			Name="Resource Files"
++			Filter="rc;ico;cur;bmp;dlg;rc2;rct;bin;rgs;gif;jpg;jpeg;jpe;resx"
++			UniqueIdentifier="{67DA6AB6-F800-4c08-8B7A-83BB121AAD01}"
++			>
++		</Filter>
++		<Filter
++			Name="Source Files"
++			Filter="cpp;c;cc;cxx;def;odl;idl;hpj;bat;asm;asmx"
++			UniqueIdentifier="{4FC737F1-C7A5-4376-A066-2A32D752A2FF}"
++			>
++			<File
++				RelativePath=".\sigc++\connection.cc"
++				>
++			</File>
++			<File
++				RelativePath=".\sigc++\adaptors\lambda\lambda.cc"
++				>
++			</File>
++			<File
++				RelativePath=".\sigc++\signal.cc"
++				>
++			</File>
++			<File
++				RelativePath=".\sigc++\signal_base.cc"
++				>
++			</File>
++			<File
++				RelativePath=".\sigc++\functors\slot.cc"
++				>
++			</File>
++			<File
++				RelativePath=".\sigc++\functors\slot_base.cc"
++				>
++			</File>
++			<File
++				RelativePath=".\sigc++\trackable.cc"
++				>
++			</File>
++		</Filter>
++	</Files>
++	<Globals>
++	</Globals>
++</VisualStudioProject>
+diff -urN libsigc++-2.0.18-original/sigc++config.h libsigc++-2.0.18-modified/sigc++config.h
+--- libsigc++-2.0.18-original/sigc++config.h	1970-01-01 01:00:00.000000000 +0100
++++ libsigc++-2.0.18-modified/sigc++config.h	2007-10-31 08:10:45.607783900 +0100
+@@ -0,0 +1,81 @@
++/* sigc++config.h.  Generated from sigc++config.h.in by configure.  */
++
++#ifndef _SIGCXX_CONFIG_H
++#define _SIGCXX_CONFIG_H
++
++// Detect common platforms
++#if defined(_WIN32)
++  // Win32 compilers have a lot of variation
++  #if defined(_MSC_VER)
++    #define SIGC_MSC
++    #define SIGC_WIN32
++//    #define SIGC_DLL
++  #elif defined(__CYGWIN__)
++    #define SIGC_CONFIGURE
++  #elif defined(__MINGW32__)
++    #define SIGC_WIN32
++    #define SIGC_CONFIGURE
++  #else
++    //The Tru64 compiler complains about this "unrecognized preprocessing directive", but it should never get this far anyway.
++    //#warning "libsigc++ config: Unknown win32 architecture (send me gcc --dumpspecs or equiv)"
++  #endif
++#else
++  #define SIGC_CONFIGURE
++#endif /* _WIN32 */
++
++#ifdef SIGC_CONFIGURE
++  // configure checks
++  #define SIGC_GCC_TEMPLATE_SPECIALIZATION_OPERATOR_OVERLOAD 1
++  #define SIGC_MSVC_TEMPLATE_SPECIALIZATION_OPERATOR_OVERLOAD 1
++  #define SIGC_SELF_REFERENCE_IN_MEMBER_INITIALIZATION 1
++
++  #define SIGC_HAVE_NAMESPACE_STD 1
++/*   #undef SIGC_HAVE_SUN_REVERSE_ITERATOR */
++/*   #undef SIGC_TYPEDEF_REDEFINE_ALLOWED */
++
++  // platform specific macros
++  // #define LIBSIGC_DISABLE_DEPRECATED
++  // #define SIGC_NEW_DELETE_IN_LIBRARY_ONLY 
++#endif /* SIGC_CONFIGURE */
++
++#ifdef SIGC_MSC
++
++  // MS VC7 Warning 4251 says that the classes to any member objects in an
++  // exported class must be also be exported.  Some of the libsigc++
++  // template classes contain std::list members.  MS KB article 168958 says
++  // that it's not possible to export a std::list instantiation due to some
++  // wacky class nesting issues, so our only options are to ignore the
++  // warning or to modify libsigc++ to remove the std::list dependency.
++  // AFAICT, the std::list members are used internally by the library code
++  // and don't need to be used from the outside, and ignoring the warning
++  // seems to have no adverse effects, so that seems like a good enough
++  // solution for now.
++  //
++  #pragma warning(disable:4251)
++
++  #define SIGC_MSVC_TEMPLATE_SPECIALIZATION_OPERATOR_OVERLOAD
++  #define SIGC_NEW_DELETE_IN_LIBRARY_ONLY // To keep ABI compatibility
++  #define SIGC_HAVE_NAMESPACE_STD 1
++
++#endif /* SIGC_MSC */
++
++//Put things in the std namespace, if they should be there.
++#ifndef SIGC_HAVE_NAMESPACE_STD
++  # define SIGC_USING_STD(Symbol) namespace std { using ::Symbol; }
++#else
++  #  define SIGC_USING_STD(Symbol) /* empty */
++#endif
++
++#ifdef SIGC_DLL
++  #if defined(SIGC_BUILD) && defined(_WINDLL)
++    #define SIGC_API __declspec(dllexport) 
++  #elif !defined(SIGC_BUILD)
++    #define SIGC_API __declspec(dllimport)
++  #else
++    #define SIGC_API
++  #endif /* SIGC_BUILD - _WINDLL */
++#else
++  #define SIGC_API
++#endif /* SIGC_DLL */
++
++#endif /* _SIGCXX_CONFIG_H */
