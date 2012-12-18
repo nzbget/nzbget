@@ -76,6 +76,7 @@ private:
 	EStatus				Download();
 	bool				Write(char* szLine, int iLen);
 	bool				PrepareFile(char* szLine);
+	bool				CreateOutputFile(int iSize);
 	EStatus				DecodeCheck();
 	void				FreeConnection(bool bKeepConnected);
 	EStatus				CheckResponse(const char* szResponse, const char* szComment);

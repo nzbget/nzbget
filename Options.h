@@ -140,10 +140,33 @@ public:
 
 	typedef std::vector<char*>  NameList;
 
+	class Category
+	{
+	private:
+		char*			m_szName;
+		char*			m_szDestDir;
+
+	public:
+						Category(const char* szName, const char* szDestDir);
+						~Category();
+		const char*		GetName() { return m_szName; }
+		const char*		GetDestDir() { return m_szDestDir; }
+	};
+	
+	typedef std::vector<Category*>  CategoriesBase;
+
+	class Categories: public CategoriesBase
+	{
+	public:
+						~Categories();
+		Category*		FindCategory(const char* szName);
+	};
+
 private:
 	OptEntries			m_OptEntries;
 	bool				m_bConfigInitialized;
 	Mutex				m_mutexOptEntries;
+	Categories			m_Categories;
 
 	// Options
 	bool				m_bConfigErrors;
@@ -260,6 +283,7 @@ private:
 	void				InitPostConfig();
 	void				InitFileArg(int argc, char* argv[]);
 	void				InitServers();
+	void				InitCategories();
 	void				InitScheduler();
 	void				CheckOptions();
 	void				PrintUsage(char* com);
@@ -362,6 +386,7 @@ public:
 	int					GetParTimeLimit() { return m_iParTimeLimit; }
 	int					GetKeepHistory() { return m_iKeepHistory; }
 	bool				GetAccurateRate() { return m_bAccurateRate; }
+	Category*			FindCategory(const char* szName) { return m_Categories.FindCategory(szName); }
 
 	// Parsed command-line parameters
 	bool				GetServerMode() { return m_bServerMode; }

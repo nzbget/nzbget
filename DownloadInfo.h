@@ -91,6 +91,7 @@ private:
 	bool				m_bFilenameConfirmed;
 	int					m_iCompleted;
 	bool				m_bOutputInitialized;
+	char*				m_szOutputFilename;
 	Mutex				m_mutexOutputFile;
 	int					m_iPriority;
 	int					m_iActiveDownloads;
@@ -128,6 +129,8 @@ public:
 	void				ClearArticles();
 	void				LockOutputFile();
 	void				UnlockOutputFile();
+	const char*			GetOutputFilename() { return m_szOutputFilename; }
+	void 				SetOutputFilename(const char* szOutputFilename);
 	bool				GetOutputInitialized() { return m_bOutputInitialized; }
 	void				SetOutputInitialized(bool bOutputInitialized) { m_bOutputInitialized = bOutputInitialized; }
 	bool				IsDupe(const char* szFilename);

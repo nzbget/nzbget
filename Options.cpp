@@ -250,9 +250,9 @@ Options::OptEntries::~OptEntries()
 	}
 }
 
-Options::OptEntry* Options::OptEntries::FindOption(const char* optname)
+Options::OptEntry* Options::OptEntries::FindOption(const char* szName)
 {
-	if (!optname)
+	if (!szName)
 	{
 		return NULL;
 	}
@@ -260,9 +260,55 @@ Options::OptEntry* Options::OptEntries::FindOption(const char* optname)
 	for (iterator it = begin(); it != end(); it++)
 	{
 		OptEntry* pOptEntry = *it;
-		if (!strcasecmp(pOptEntry->GetName(), optname))
+		if (!strcasecmp(pOptEntry->GetName(), szName))
 		{
 			return pOptEntry;
+		}
+	}
+
+	return NULL;
+}
+
+
+Options::Category::Category(const char* szName, const char* szDestDir)
+{
+	m_szName = strdup(szName);
+	m_szDestDir = strdup(szDestDir);
+}
+
+Options::Category::~Category()
+{
+	if (m_szName)
+	{
+		free(m_szName);
+	}
+	if (m_szDestDir)
+	{
+		free(m_szDestDir);
+	}
+}
+
+Options::Categories::~Categories()
+{
+	for (iterator it = begin(); it != end(); it++)
+	{
+		delete *it;
+	}
+}
+
+Options::Category* Options::Categories::FindCategory(const char* szName)
+{
+	if (!szName)
+	{
+		return NULL;
+	}
+
+	for (iterator it = begin(); it != end(); it++)
+	{
+		Category* pCategory = *it;
+		if (!strcasecmp(pCategory->GetName(), szName))
+		{
+			return pCategory;
 		}
 	}
 
@@ -432,6 +478,7 @@ Options::Options(int argc, char* argv[])
 	}
 
 	InitServers();
+	InitCategories();
 	InitScheduler();
 	CheckOptions();
 
@@ -1809,6 +1856,41 @@ void Options::InitServers()
 	g_pServerPool->SetTimeout(GetConnectionTimeout());
 }
 
+void Options::InitCategories()
+{
+	int n = 1;
+	while (true)
+	{
+		char optname[128];
+
+		sprintf(optname, "Category%i.Name", n);
+		const char* nname = GetOption(optname);
+
+		sprintf(optname, "Category%i.DestDir", n);
+		const char* ndestdir = GetOption(optname);
+
+		bool definition = nname || ndestdir;
+		bool completed = nname;
+
+		if (!definition)
+		{
+			break;
+		}
+
+		if (completed)
+		{
+			Category* pCategory = new Category(nname, ndestdir);
+			m_Categories.push_back(pCategory);
+		}
+		else
+		{
+			ConfigError("Category definition not complete for \"Category%i\"", n);
+		}
+
+		n++;
+	}
+}
+
 void Options::InitScheduler()
 {
 	int n = 1;
@@ -2164,7 +2246,7 @@ bool Options::ValidateOptionName(const char * optname)
 	{
 		char* p = (char*)optname + 8;
 		while (*p >= '0' && *p <= '9') p++;
-		if (p && (!strcasecmp(p, ".name")))
+		if (p && (!strcasecmp(p, ".name") || !strcasecmp(p, ".destdir")))
 		{
 			return true;
 		}
