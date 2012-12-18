@@ -2,7 +2,7 @@
  *  This file is part of nzbget
  *
  *  Copyright (C) 2004 Sven Henkel <sidddy@users.sourceforge.net>
- *  Copyright (C) 2007-2011 Andrey Prygunkov <hugbug@users.sourceforge.net>
+ *  Copyright (C) 2007-2012 Andrey Prygunkov <hugbug@users.sourceforge.net>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -609,9 +609,8 @@ bool ArticleDownloader::PrepareFile(char* szLine)
 					{
 						pb += 6; //=strlen(" size=")
 						long iArticleFilesize = atol(pb);
-						if (!Util::CreateSparseFile(m_szOutputFilename, iArticleFilesize))
+						if (!CreateOutputFile(iArticleFilesize))
 						{
-							error("Could not create file %s!", m_szOutputFilename);
 							return false;
 						}
 						m_pFileInfo->SetOutputInitialized(true);
@@ -649,6 +648,33 @@ bool ArticleDownloader::PrepareFile(char* szLine)
 		{
 			setvbuf(m_pOutFile, (char *)NULL, _IOFBF, g_pOptions->GetWriteBufferSize());
 		}
+	}
+
+	return true;
+}
+
+/* creates output file and subdirectores */
+bool ArticleDownloader::CreateOutputFile(int iSize)
+{
+	// delete eventually existing old file from previous program session
+	remove(m_szOutputFilename);
+
+	// ensure the directory exist
+	char szDestDir[1024];
+	int iMaxlen = Util::BaseFileName(m_szOutputFilename) - m_szOutputFilename;
+	strncpy(szDestDir, m_szOutputFilename, iMaxlen < 1024 ? iMaxlen : 1024-1);
+	szDestDir[iMaxlen] = '\0';
+
+	if (!Util::ForceDirectories(szDestDir))
+	{
+		error("Could not create directory %s! Errcode: %i", szDestDir, errno);
+		return false;
+	}
+
+	if (!Util::CreateSparseFile(m_szOutputFilename, iSize))
+	{
+		error("Could not create file %s!", m_szOutputFilename);
+		return false;
 	}
 
 	return true;
@@ -984,6 +1010,23 @@ void ArticleDownloader::CompleteFileParts()
 		if (!Util::MoveFile(m_szOutputFilename, ofn))
 		{
 			error("Could not move file %s to %s! Errcode: %i", m_szOutputFilename, ofn, errno);
+		}
+
+		// if destination directory was changed delete the old directory (if empty)
+		int iLen = strlen(szNZBDestDir);
+		if (!(!strncmp(szNZBDestDir, m_szOutputFilename, iLen) && 
+			(m_szOutputFilename[iLen] == PATH_SEPARATOR || m_szOutputFilename[iLen] == ALT_PATH_SEPARATOR)))
+		{
+			debug("Checking old dir for: %s", m_szOutputFilename);
+			char szOldDestDir[1024];
+			int iMaxlen = Util::BaseFileName(m_szOutputFilename) - m_szOutputFilename;
+			strncpy(szOldDestDir, m_szOutputFilename, iMaxlen < 1024 ? iMaxlen : 1024-1);
+			szOldDestDir[iMaxlen] = '\0';
+			if (Util::DirEmpty(szOldDestDir))
+			{
+				debug("Deleting old dir: %s", szOldDestDir);
+				rmdir(szOldDestDir);
+			}
 		}
 	}
 

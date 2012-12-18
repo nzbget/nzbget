@@ -287,42 +287,44 @@ void NZBInfo::MakeNiceNZBName(const char * szNZBFilename, char * szBuffer, int i
 
 void NZBInfo::BuildDestDirName()
 {
+	char szDestDir[1024];
 	char szBuffer[1024];
-	char szCategory[1024];
-	bool bHasCategory = m_szCategory && m_szCategory[0] != '\0';
-	if (g_pOptions->GetAppendCategoryDir() && bHasCategory)
+	bool bUseCategory = m_szCategory && m_szCategory[0] != '\0';
+
+	snprintf(szDestDir, 1024, "%s", g_pOptions->GetDestDir());
+	szDestDir[1024-1] = '\0';
+
+	if (bUseCategory)
 	{
-		strncpy(szCategory, m_szCategory, 1024);
-		szCategory[1024 - 1] = '\0';
-		Util::MakeValidFilename(szCategory, '_', true);
+		Options::Category *pCategory = g_pOptions->FindCategory(m_szCategory);
+		if (pCategory && pCategory->GetDestDir() && pCategory->GetDestDir()[0] != '\0')
+		{
+			snprintf(szDestDir, 1024, "%s", pCategory->GetDestDir());
+			szDestDir[1024-1] = '\0';
+			bUseCategory = false;
+		}
+	}
+
+	if (g_pOptions->GetAppendCategoryDir() && bUseCategory)
+	{
+		char szCategoryDir[1024];
+		strncpy(szCategoryDir, m_szCategory, 1024);
+		szCategoryDir[1024 - 1] = '\0';
+		Util::MakeValidFilename(szCategoryDir, '_', true);
+
+		snprintf(szBuffer, 1024, "%s%s", szDestDir, szCategoryDir);
+		szBuffer[1024-1] = '\0';
+		strncpy(szDestDir, szBuffer, 1024);
 	}
 
 	if (g_pOptions->GetAppendNZBDir())
 	{
-		if (g_pOptions->GetAppendCategoryDir() && bHasCategory)
-		{
-			snprintf(szBuffer, 1024, "%s%s%c%s", g_pOptions->GetDestDir(), szCategory, PATH_SEPARATOR, GetName());
-		}
-		else
-		{
-			snprintf(szBuffer, 1024, "%s%s", g_pOptions->GetDestDir(), GetName());
-		}
+		snprintf(szBuffer, 1024, "%s%c%s", szDestDir, PATH_SEPARATOR, GetName());
 		szBuffer[1024-1] = '\0';
-	}
-	else
-	{
-		if (g_pOptions->GetAppendCategoryDir() && bHasCategory)
-		{
-			snprintf(szBuffer, 1024, "%s%s", g_pOptions->GetDestDir(), szCategory);
-		}
-		else
-		{
-			strncpy(szBuffer, g_pOptions->GetDestDir(), 1024);
-		}
-		szBuffer[1024-1] = '\0'; // trim the last slash, always returned by GetDestDir()
+		strncpy(szDestDir, szBuffer, 1024);
 	}
 
-	SetDestDir(szBuffer);
+	SetDestDir(szDestDir);
 }
 
 void NZBInfo::SetParameter(const char* szName, const char* szValue)
@@ -440,6 +442,7 @@ FileInfo::FileInfo()
 	m_Groups.clear();
 	m_szSubject = NULL;
 	m_szFilename = NULL;
+	m_szOutputFilename = NULL;
 	m_bFilenameConfirmed = false;
 	m_lSize = 0;
 	m_lRemainingSize = 0;
@@ -466,6 +469,10 @@ FileInfo::~ FileInfo()
 	if (m_szFilename)
 	{
 		free(m_szFilename);
+	}
+	if (m_szOutputFilename)
+	{
+		free(m_szOutputFilename);
 	}
 
 	for (Groups::iterator it = m_Groups.begin(); it != m_Groups.end() ;it++)
@@ -537,6 +544,15 @@ void FileInfo::LockOutputFile()
 void FileInfo::UnlockOutputFile()
 {
 	m_mutexOutputFile.Unlock();
+}
+
+void FileInfo::SetOutputFilename(const char* szOutputFilename)
+{
+	if (m_szOutputFilename)
+	{
+		free(m_szOutputFilename);
+	}
+	m_szOutputFilename = strdup(szOutputFilename);
 }
 
 bool FileInfo::IsDupe(const char* szFilename)
