@@ -82,6 +82,12 @@ public:
 		lpOne,
 		lpAll
 	};
+	enum EParScan
+	{
+		psLimited,
+		psFull,
+		psAuto
+	};
 	enum EScriptLogKind
 	{
 		slNone,
@@ -211,6 +217,7 @@ private:
 	ELoadPars			m_eLoadPars;
 	bool				m_bParCheck;
 	bool				m_bParRepair;
+	EParScan			m_eParScan;
 	char*				m_szPostProcess;
 	char*				m_szPostConfigFilename;
 	char*				m_szNZBProcess;
@@ -355,6 +362,7 @@ public:
 	ELoadPars			GetLoadPars() { return m_eLoadPars; }
 	bool				GetParCheck() { return m_bParCheck; }
 	bool				GetParRepair() { return m_bParRepair; }
+	EParScan			GetParScan() { return m_eParScan; }
 	const char*			GetPostProcess() { return m_szPostProcess; }
 	const char*			GetPostConfigFilename() { return m_szPostConfigFilename; }
 	const char*			GetNZBProcess() { return m_szNZBProcess; }
