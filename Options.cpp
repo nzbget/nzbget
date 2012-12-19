@@ -136,6 +136,7 @@ static const char* OPTION_DETAILTARGET			= "DetailTarget";
 static const char* OPTION_LOADPARS				= "LoadPars";
 static const char* OPTION_PARCHECK				= "ParCheck";
 static const char* OPTION_PARREPAIR				= "ParRepair";
+static const char* OPTION_PARSCAN				= "ParScan";
 static const char* OPTION_POSTPROCESS			= "PostProcess";
 static const char* OPTION_POSTCONFIGFILE		= "PostConfigFile";
 static const char* OPTION_NZBPROCESS			= "NZBProcess";
@@ -386,6 +387,7 @@ Options::Options(int argc, char* argv[])
 	m_eLoadPars				= lpAll;
 	m_bParCheck				= false;
 	m_bParRepair			= false;
+	m_eParScan				= psLimited;
 	m_szPostProcess			= NULL;
 	m_szPostConfigFilename	= NULL;
 	m_szNZBProcess			= NULL;
@@ -663,6 +665,7 @@ void Options::InitDefault()
 	SetOption(OPTION_LOADPARS, "one");
 	SetOption(OPTION_PARCHECK, "no");
 	SetOption(OPTION_PARREPAIR, "yes");
+	SetOption(OPTION_PARSCAN, "limited");
 	SetOption(OPTION_POSTPROCESS, "");
 	SetOption(OPTION_POSTCONFIGFILE, "");
 	SetOption(OPTION_NZBPROCESS, "");
@@ -879,8 +882,13 @@ void Options::InitOptions()
 
 	const char* LoadParsNames[] = { "none", "one", "all", "1", "0" };
 	const int LoadParsValues[] = { lpNone, lpOne, lpAll, lpOne, lpNone };
-	const int LoadParsCount = 4;
+	const int LoadParsCount = 5;
 	m_eLoadPars = (ELoadPars)ParseEnumValue(OPTION_LOADPARS, LoadParsCount, LoadParsNames, LoadParsValues);
+
+	const char* ParScanNames[] = { "limited", "full", "auto" };
+	const int ParScanValues[] = { psLimited, psFull, psAuto };
+	const int ParScanCount = 3;
+	m_eParScan = (EParScan)ParseEnumValue(OPTION_PARSCAN, ParScanCount, ParScanNames, ParScanValues);
 
 	const char* TargetNames[] = { "screen", "log", "both", "none" };
 	const int TargetValues[] = { mtScreen, mtLog, mtBoth, mtNone };
