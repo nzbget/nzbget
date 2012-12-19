@@ -310,6 +310,7 @@ private:
 	bool				ParseTime(const char** pTime, int* pHours, int* pMinutes);
 	bool				ParseWeekDays(const char* szWeekDays, int* pWeekDaysBits);
 	void				ConfigError(const char* msg, ...);
+	void				LocateOptionSrcPos(const char *szOptionName);
 	void				ConvertOldOptionName(char *szOption, int iBufLen);
 
 public:
