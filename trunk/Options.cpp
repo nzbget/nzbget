@@ -619,6 +619,19 @@ void Options::ConfigError(const char* msg, ...)
 	m_bConfigErrors = true;
 }
 
+void Options::LocateOptionSrcPos(const char *szOptionName)
+{
+	OptEntry* pOptEntry = FindOption(szOptionName);
+	if (pOptEntry)
+	{
+		m_iConfigLine = pOptEntry->GetLineNo();
+	}
+	else
+	{
+		m_iConfigLine = 0;
+	}
+}
+
 void Options::InitDefault()
 {
 #ifdef WIN32
@@ -2275,6 +2288,7 @@ void Options::CheckOptions()
 #ifdef DISABLE_PARCHECK
 	if (m_bParCheck)
 	{
+		LocateOptionSrcPos(OPTION_PARCHECK);
 		ConfigError("Invalid value for option \"%s\": program was compiled without parcheck-support", OPTION_PARCHECK);
 	}
 #endif
@@ -2282,6 +2296,7 @@ void Options::CheckOptions()
 #ifdef DISABLE_CURSES
 	if (m_eOutputMode == omNCurses)
 	{
+		LocateOptionSrcPos(OPTION_OUTPUTMODE);
 		ConfigError("Invalid value for option \"%s\": program was compiled without curses-support", OPTION_OUTPUTMODE);
 	}
 #endif
