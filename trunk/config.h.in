@@ -67,6 +67,9 @@
 /* Define to 1 to use OpenSSL library for TLS/SSL-support. */
 #undef HAVE_OPENSSL
 
+/* Define to 1 if libpar2 has recent bugfixes-patch (version 2) */
+#undef HAVE_PAR2_BUGFIXES_V2
+
 /* Define to 1 if libpar2 supports cancelling (needs a special patch) */
 #undef HAVE_PAR2_CANCEL
 
