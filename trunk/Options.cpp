@@ -274,7 +274,7 @@ Options::OptEntry* Options::OptEntries::FindOption(const char* szName)
 Options::Category::Category(const char* szName, const char* szDestDir)
 {
 	m_szName = strdup(szName);
-	m_szDestDir = strdup(szDestDir);
+	m_szDestDir = szDestDir ? strdup(szDestDir) : NULL;
 }
 
 Options::Category::~Category()
@@ -1891,7 +1891,7 @@ void Options::InitCategories()
 		const char* ndestdir = GetOption(optname);
 
 		bool definition = nname || ndestdir;
-		bool completed = nname;
+		bool completed = nname && strlen(nname) > 0;
 
 		if (!definition)
 		{
