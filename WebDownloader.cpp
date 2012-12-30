@@ -390,7 +390,7 @@ WebDownloader::EStatus WebDownloader::DownloadBody()
 		m_pConnection->ReadBuffer(&szBuffer, &iLen);
 		if (iLen == 0)
 		{
-			iLen = m_pConnection->Recv(szLineBuf, LineBufSize);
+			iLen = m_pConnection->TryRecv(szLineBuf, LineBufSize);
 			szBuffer = szLineBuf;
 		}
 
