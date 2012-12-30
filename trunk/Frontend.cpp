@@ -261,15 +261,15 @@ bool Frontend::RequestMessages()
 		LogRequest.m_iIDFrom = 0;
 	}
 
-	if (connection.Send((char*)(&LogRequest), sizeof(LogRequest)) < 0)
+	if (!connection.Send((char*)(&LogRequest), sizeof(LogRequest)))
 	{
 		return false;
 	}
 
 	// Now listen for the returned log
 	SNZBLogResponse LogResponse;
-	int iResponseLen = connection.Recv((char*) &LogResponse, sizeof(LogResponse));
-	if (iResponseLen != sizeof(LogResponse) || 
+	bool bRead = connection.Recv((char*) &LogResponse, sizeof(LogResponse));
+	if (!bRead || 
 		(int)ntohl(LogResponse.m_MessageBase.m_iSignature) != (int)NZBMESSAGE_SIGNATURE ||
 		ntohl(LogResponse.m_MessageBase.m_iStructSize) != sizeof(LogResponse))
 	{
@@ -280,7 +280,7 @@ bool Frontend::RequestMessages()
 	if (ntohl(LogResponse.m_iTrailingDataLength) > 0)
 	{
 		pBuf = (char*)malloc(ntohl(LogResponse.m_iTrailingDataLength));
-		if (!connection.RecvAll(pBuf, ntohl(LogResponse.m_iTrailingDataLength)))
+		if (!connection.Recv(pBuf, ntohl(LogResponse.m_iTrailingDataLength)))
 		{
 			free(pBuf);
 			return false;
@@ -325,15 +325,15 @@ bool Frontend::RequestFileList()
 	ListRequest.m_bFileList = htonl(m_bFileList);
 	ListRequest.m_bServerState = htonl(m_bSummary);
 
-	if (connection.Send((char*)(&ListRequest), sizeof(ListRequest)) < 0)
+	if (!connection.Send((char*)(&ListRequest), sizeof(ListRequest)))
 	{
 		return false;
 	}
 
 	// Now listen for the returned list
 	SNZBListResponse ListResponse;
-	int iResponseLen = connection.Recv((char*) &ListResponse, sizeof(ListResponse));
-	if (iResponseLen != sizeof(ListResponse) || 
+	bool bRead = connection.Recv((char*) &ListResponse, sizeof(ListResponse));
+	if (!bRead || 
 		(int)ntohl(ListResponse.m_MessageBase.m_iSignature) != (int)NZBMESSAGE_SIGNATURE ||
 		ntohl(ListResponse.m_MessageBase.m_iStructSize) != sizeof(ListResponse))
 	{
@@ -344,7 +344,7 @@ bool Frontend::RequestFileList()
 	if (ntohl(ListResponse.m_iTrailingDataLength) > 0)
 	{
 		pBuf = (char*)malloc(ntohl(ListResponse.m_iTrailingDataLength));
-		if (!connection.RecvAll(pBuf, ntohl(ListResponse.m_iTrailingDataLength)))
+		if (!connection.Recv(pBuf, ntohl(ListResponse.m_iTrailingDataLength)))
 		{
 			free(pBuf);
 			return false;
