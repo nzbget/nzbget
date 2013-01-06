@@ -175,6 +175,11 @@ var Upload = (new function($)
 
 	function fileSelectHandler(event)
 	{
+		if (!event.target.files)
+		{
+			alert("Unfortunately your browser doesn't support direct access to local files.\n\nPlease use alternative ways to add files to queue:\nadd via URL or put the files directly into incoming nzb-directory.");
+			return;
+		}
 		addFiles(event.target.files);
 	}
 
