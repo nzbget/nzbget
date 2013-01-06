@@ -1,6 +1,6 @@
-diff -aud -U 5 ../libpar2-0.2-original/par2repairer.cpp ../libpar2-0.2-patched/par2repairer.cpp
+diff -aud -U 5 ../libpar2-0.2-original/par2repairer.cpp ../libpar2-0.2/par2repairer.cpp
 --- ../libpar2-0.2-original/par2repairer.cpp	2012-12-03 10:47:04.000000000 +0100
-+++ ../libpar2-0.2-patched/par2repairer.cpp	2012-12-03 10:48:13.000000000 +0100
++++ ../libpar2-0.2/par2repairer.cpp	2012-12-03 10:48:13.000000000 +0100
 @@ -50,10 +50,12 @@
    outputbuffer = 0;
  
@@ -221,9 +221,9 @@ diff -aud -U 5 ../libpar2-0.2-original/par2repairer.cpp ../libpar2-0.2-patched/p
  
    // For each output block that has been recomputed
    vector<DataBlock*>::iterator outputblock = outputblocks.begin();
-diff -aud -U 5 ../libpar2-0.2-with-bugfixes-patch/par2repairer.h ../libpar2-0.2-patched/par2repairer.h
+diff -aud -U 5 ../libpar2-0.2-with-bugfixes-patch/par2repairer.h ../libpar2-0.2/par2repairer.h
 --- ../libpar2-0.2-original/par2repairer.h	2012-12-03 10:47:04.000000000 +0100
-+++ ../libpar2-0.2-patched/par2repairer.h	2012-12-03 10:48:13.000000000 +0100
++++ ../libpar2-0.2/par2repairer.h	2012-12-03 10:48:13.000000000 +0100
 @@ -186,8 +186,9 @@
  
    u64                       progress;                // How much data has been processed.
