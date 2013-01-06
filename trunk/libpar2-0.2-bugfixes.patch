@@ -1,6 +1,6 @@
-diff -aud -U 5 ../libpar2-0.2-original/par2repairer.cpp ../libpar2-0.2-patched/par2repairer.cpp
+diff -aud -U 5 ../libpar2-0.2-original/par2repairer.cpp ../libpar2-0.2/par2repairer.cpp
 --- ../libpar2-0.2-original/par2repairer.cpp	2006-01-20 18:25:20.000000000 +0100
-+++ ../libpar2-0.2-patched/par2repairer.cpp	2012-11-30 14:23:31.000000000 +0100
++++ ../libpar2-0.2/par2repairer.cpp	2012-11-30 14:23:31.000000000 +0100
 @@ -76,10 +76,11 @@
      ++sf;
    }
@@ -39,9 +39,9 @@ diff -aud -U 5 ../libpar2-0.2-original/par2repairer.cpp ../libpar2-0.2-patched/p
  }
  
  // Find out how much data we have found
-diff -aud -U 5 ../libpar2-0.2-original/par2repairer.h ../libpar2-0.2-patched/par2repairer.h
+diff -aud -U 5 ../libpar2-0.2-original/par2repairer.h ../libpar2-0.2/par2repairer.h
 --- ../libpar2-0.2-original/par2repairer.h	2006-01-20 00:38:27.000000000 +0100
-+++ ../libpar2-0.2-patched/par2repairer.h	2012-11-30 14:24:46.000000000 +0100
++++ ../libpar2-0.2/par2repairer.h	2012-11-30 14:24:46.000000000 +0100
 @@ -34,10 +34,15 @@
    sigc::signal<void, std::string> sig_filename;
    sigc::signal<void, double> sig_progress;
