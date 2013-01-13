@@ -44,17 +44,17 @@
 
 /*
  * If a function with an 'errstr' argument returns a value != TLS_EOK,
- * '*errstr' either points to an allocates string containing an error 
+ * '*errstr' either points to an allocates string containing an error
  * description or is NULL.
  * If such a function returns TLS_EOK, 'errstr' will not be changed.
  */
-#define TLS_EOK		0	/* no error */
-#define TLS_ELIBFAILED	1	/* The underlying library failed */
-#define TLS_ESEED	2	/* Cannot seed pseudo random number generator */
-#define TLS_ECERT	3	/* Certificate check or verification failed */
-#define TLS_EIO		4	/* Input/output error */
-#define TLS_EFILE	5	/* A file does not exist/cannot be read */
-#define TLS_EHANDSHAKE	6	/* TLS handshake failed */
+#define TLS_EOK     0   /* no error */
+#define TLS_ELIBFAILED  1   /* The underlying library failed */
+#define TLS_ESEED   2   /* Cannot seed pseudo random number generator */
+#define TLS_ECERT   3   /* Certificate check or verification failed */
+#define TLS_EIO     4   /* Input/output error */
+#define TLS_EFILE   5   /* A file does not exist/cannot be read */
+#define TLS_EHANDSHAKE  6   /* TLS handshake failed */
 
 
 /*
@@ -64,15 +64,15 @@
 
 typedef struct
 {
-    int have_trust_file;
-    int is_active;
+	int have_trust_file;
+	int is_active;
 #ifdef HAVE_LIBGNUTLS
-    gnutls_session_t session;
-    gnutls_certificate_credentials_t cred;
+	gnutls_session_t session;
+	gnutls_certificate_credentials_t cred;
 #endif /* HAVE_LIBGNUTLS */
 #ifdef HAVE_OPENSSL
-    SSL_CTX *ssl_ctx;
-    SSL *ssl;
+	SSL_CTX *ssl_ctx;
+	SSL *ssl;
 #endif /* HAVE_OPENSSL */
 } tls_t;
 
@@ -89,12 +89,12 @@ typedef struct
  */
 typedef struct
 {
-    unsigned char sha1_fingerprint[20];
-    unsigned char md5_fingerprint[16];
-    time_t activation_time;
-    time_t expiration_time;
-    char *owner_info[6];		
-    char *issuer_info[6];
+	unsigned char sha1_fingerprint[20];
+	unsigned char md5_fingerprint[16];
+	time_t activation_time;
+	time_t expiration_time;
+	char *owner_info[6];
+	char *issuer_info[6];
 } tls_cert_info_t;
 
 /*
@@ -125,8 +125,8 @@ void tls_clear(tls_t *tls);
  * if you have to.
  * Used error codes: TLS_ELIBFAILED, TLS_EFILE
  */
-int tls_init(tls_t *tls, 
-	const char *key_file, const char *ca_file, const char *trust_file, 
+int tls_init(tls_t *tls,
+	const char *key_file, const char *ca_file, const char *trust_file,
 	int force_sslv3, char **errstr);
 
 /*
@@ -135,15 +135,15 @@ int tls_init(tls_t *tls,
  * Starts TLS encryption on a socket.
  * 'tls' must be initialized using tls_init().
  * If 'no_certcheck' is true, then no checks will be performed on the peer
- * certificate. If it is false and no trust file was set with tls_init(), 
- * only sanity checks are performed on the peer certificate. If it is false 
- * and a trust file was set, real verification of the peer certificate is 
+ * certificate. If it is false and no trust file was set with tls_init(),
+ * only sanity checks are performed on the peer certificate. If it is false
+ * and a trust file was set, real verification of the peer certificate is
  * performed.
  * 'hostname' is the host to start TLS with. It is needed for sanity checks/
  * verification.
- * 'tci' must be allocated with tls_cert_info_new(). Information about the 
+ * 'tci' must be allocated with tls_cert_info_new(). Information about the
  * peer's certificata will be stored in it. It can later be freed with
- * tls_cert_info_free(). 'tci' is allowed to be NULL; no certificate 
+ * tls_cert_info_free(). 'tci' is allowed to be NULL; no certificate
  * information will be passed in this case.
  * Used error codes: TLS_ELIBFAILED, TLS_ECERT, TLS_EHANDSHAKE
  */
