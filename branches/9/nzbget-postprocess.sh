@@ -258,6 +258,19 @@ if (ls *.rar >/dev/null 2>&1); then
 	rmdir extracted
 fi
 
+
+# If there were nothing to unrar and the download was not par-checked,
+# we don't know if it's OK. To be sure we force par-check.
+# In particular that helps with downloads containing renamed rar-files.
+# The par-repair will rename files to correct names, then we can unpack.
+if [ "$Unrared" -eq 0 -a "$NZBPP_PARSTATUS" -eq 0 ]; then
+    if (ls *.[pP][aA][rR]2 >/dev/null 2>&1); then
+        echo "[INFO] Post-Process: No rar-files found, requesting par-check"
+        exit $POSTPROCESS_PARCHECK_ALL
+    fi
+fi
+
+
 # If download contains only nzb-files move them into nzb-directory
 # for further download
 # Check if command "wc" exists
