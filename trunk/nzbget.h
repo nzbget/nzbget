@@ -50,6 +50,7 @@
 #define usleep(usec) Sleep((usec) / 1000)
 #define gettimeofday(tm, ignore) _ftime(tm)
 #define socklen_t int
+#define SHUT_WR 0x01
 #define SHUT_RDWR 0x02
 #define PATH_SEPARATOR '\\'
 #define ALT_PATH_SEPARATOR '/'

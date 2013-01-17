@@ -106,6 +106,7 @@ ServerPool* g_pServerPool = NULL;
 QueueCoordinator* g_pQueueCoordinator = NULL;
 UrlCoordinator* g_pUrlCoordinator = NULL;
 RemoteServer* g_pRemoteServer = NULL;
+RemoteServer* g_pRemoteSecureServer = NULL;
 DownloadSpeedMeter* g_pDownloadSpeedMeter = NULL;
 DownloadQueueHolder* g_pDownloadQueueHolder = NULL;
 Log* g_pLog = NULL;
@@ -293,8 +294,14 @@ void Run(bool bReload)
 	// Setup the network-server
 	if (g_pOptions->GetServerMode())
 	{
-		g_pRemoteServer = new RemoteServer();
+		g_pRemoteServer = new RemoteServer(false);
 		g_pRemoteServer->Start();
+
+		if (g_pOptions->GetSecureControl())
+		{
+			g_pRemoteSecureServer = new RemoteServer(true);
+			g_pRemoteSecureServer->Start();
+		}
 	}
 
 	// Creating PrePostProcessor
@@ -403,6 +410,24 @@ void Run(bool bReload)
 			g_pRemoteServer->Kill();
 		}
 		debug("RemoteServer stopped");
+	}
+
+	if (g_pRemoteSecureServer)
+	{
+		debug("stopping RemoteSecureServer");
+		g_pRemoteSecureServer->Stop();
+		int iMaxWaitMSec = 1000;
+		while (g_pRemoteSecureServer->IsRunning() && iMaxWaitMSec > 0)
+		{
+			usleep(100 * 1000);
+			iMaxWaitMSec -= 100;
+		}
+		if (g_pRemoteSecureServer->IsRunning())
+		{
+			debug("Killing RemoteSecureServer");
+			g_pRemoteSecureServer->Kill();
+		}
+		debug("RemoteSecureServer stopped");
 	}
 
 	// Stop Frontend
@@ -702,6 +727,14 @@ void Cleanup()
 		g_pRemoteServer = NULL;
 	}
 	debug("RemoteServer deleted");
+
+	debug("Deleting RemoteSecureServer");
+	if (g_pRemoteSecureServer)
+	{
+		delete g_pRemoteSecureServer;
+		g_pRemoteSecureServer = NULL;
+	}
+	debug("RemoteSecureServer deleted");
 
 	debug("Deleting PrePostProcessor");
 	if (g_pPrePostProcessor)

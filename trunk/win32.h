@@ -1,7 +1,7 @@
 /*
  *  This file is part of nzbget
  *
- *  Copyright (C) 2007-2010 Andrey Prygunkov <hugbug@users.sourceforge.net>
+ *  Copyright (C) 2007-2013 Andrey Prygunkov <hugbug@users.sourceforge.net>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -36,6 +36,8 @@
 #ifndef DISABLE_TLS
 /* Define to 1 to use GnuTLS library for TLS/SSL-support */
 #define HAVE_LIBGNUTLS
+/* Define to 1 to use OpenSSL library for TLS/SSL-support */
+//#define HAVE_OPENSSL
 #endif
 
 /* Define to the name of macro which returns the name of function being

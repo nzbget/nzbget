@@ -203,7 +203,11 @@ private:
 	bool				m_bDupeCheck;
 	char*				m_szControlIP;
 	char*				m_szControlPassword;
-	int					m_szControlPort;
+	int					m_iControlPort;
+	bool				m_bSecureControl;
+	int					m_iSecurePort;
+	char*				m_szSecureCert;
+	char*				m_szSecureKey;
 	char*				m_szLockFile;
 	char*				m_szDaemonUserName;
 	EOutputMode			m_eOutputMode;
@@ -349,7 +353,11 @@ public:
 	bool				GetDupeCheck() { return m_bDupeCheck; }
 	const char*			GetControlIP() { return m_szControlIP; }
 	const char*			GetControlPassword() { return m_szControlPassword; }
-	int					GetControlPort() { return m_szControlPort; }
+	int					GetControlPort() { return m_iControlPort; }
+	bool				GetSecureControl() { return m_bSecureControl; }
+	int					GetSecurePort() { return m_iSecurePort; }
+	const char*			GetSecureCert() { return m_szSecureCert; }
+	const char*			GetSecureKey() { return m_szSecureKey; }
 	const char*			GetLockFile() { return m_szLockFile; }
 	const char*			GetDaemonUserName() { return m_szDaemonUserName; }
 	EOutputMode			GetOutputMode() { return m_eOutputMode; }

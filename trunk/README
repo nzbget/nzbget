@@ -505,9 +505,6 @@ Bo Cordes Petersen (placebodk@users.sourceforge.net) until 2005.
 In 2007 the abandoned project was overtaken by Andrey Prygunkov.
 Since then the program has been completely rewritten.
 
-Module TLS (TLS.c, TLS.h) is based on work by Martin Lambers
-(marlam@marlam.de).
-
 =====================================
 9. Copyright
 =====================================

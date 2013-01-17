@@ -2,7 +2,7 @@
  *  This file is part of nzbget
  *
  *  Copyright (C) 2004 Sven Henkel <sidddy@users.sourceforge.net>
- *  Copyright (C) 2007-2009 Andrey Prygunkov <hugbug@users.sourceforge.net>
+ *  Copyright (C) 2007-2013 Andrey Prygunkov <hugbug@users.sourceforge.net>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -54,17 +54,14 @@
 #include "nzbget.h"
 #include "Connection.h"
 #include "Log.h"
-#include "TLS.h"
 
 static const int CONNECTION_READBUFFER_SIZE = 1024;
-#ifndef DISABLE_TLS
-bool Connection::bTLSLibInitialized = false;
-#endif
 #ifndef HAVE_GETADDRINFO
 #ifndef HAVE_GETHOSTBYNAME_R
 Mutex* Connection::m_pMutexGetHostByName = NULL;
 #endif
 #endif
+
 
 void Connection::Init()
 {
@@ -87,18 +84,7 @@ void Connection::Init()
 #endif
 
 #ifndef DISABLE_TLS
-	debug("Initializing TLS library");
-	char* szErrStr;
-	int iRes = tls_lib_init(&szErrStr);
-	bTLSLibInitialized = iRes == TLS_EOK;
-	if (!bTLSLibInitialized)
-	{
-		error("Could not initialize TLS library: %s", szErrStr ? szErrStr : "unknown error");
-		if (szErrStr)
-		{
-			free(szErrStr);
-		}
-	}
+	TLSSocket::Init();
 #endif
 
 #ifndef HAVE_GETADDRINFO
@@ -117,11 +103,7 @@ void Connection::Final()
 #endif
 
 #ifndef DISABLE_TLS
-	if (bTLSLibInitialized)
-	{
-		debug("Finalizing TLS library");
-		tls_lib_deinit();
-	}
+	TLSSocket::Final();
 #endif
 
 #ifndef HAVE_GETADDRINFO
@@ -145,7 +127,7 @@ Connection::Connection(const char* szHost, int iPort, bool bTLS)
 	m_bSuppressErrors	= true;
 	m_szReadBuf			= (char*)malloc(CONNECTION_READBUFFER_SIZE + 1);
 #ifndef DISABLE_TLS
-	m_pTLS				= NULL;
+	m_pTLSSocket		= NULL;
 	m_bTLSError			= false;
 #endif
 
@@ -169,7 +151,7 @@ Connection::Connection(SOCKET iSocket, bool bTLS)
 	m_bSuppressErrors	= true;
 	m_szReadBuf			= (char*)malloc(CONNECTION_READBUFFER_SIZE + 1);
 #ifndef DISABLE_TLS
-	m_pTLS				= NULL;
+	m_pTLSSocket		= NULL;
 	m_bTLSError			= false;
 #endif
 }
@@ -186,9 +168,20 @@ Connection::~Connection()
 	}
 	free(m_szReadBuf);
 #ifndef DISABLE_TLS
-	if (m_pTLS)
+	if (m_pTLSSocket)
 	{
-		free(m_pTLS);
+		delete m_pTLSSocket;
+	}
+#endif
+}
+
+void Connection::SetSuppressErrors(bool bSuppressErrors)
+{
+	m_bSuppressErrors = bSuppressErrors;
+#ifndef DISABLE_TLS
+	if (m_pTLSSocket)
+	{
+		m_pTLSSocket->SetSuppressErrors(bSuppressErrors);
 	}
 #endif
 }
@@ -464,7 +457,7 @@ bool Connection::DoConnect()
 	}
 
 #ifndef DISABLE_TLS
-	if (m_bTLS && !StartTLS())
+	if (m_bTLS && !StartTLS(true, NULL, NULL))
 	{
 		return false;
 	}
@@ -479,11 +472,11 @@ bool Connection::DoDisconnect()
 
 	if (m_iSocket != INVALID_SOCKET)
 	{
-		closesocket(m_iSocket);
-		m_iSocket = INVALID_SOCKET;
 #ifndef DISABLE_TLS
 		CloseTLS();
 #endif
+		closesocket(m_iSocket);
+		m_iSocket = INVALID_SOCKET;
 	}
 
 	m_eStatus = csDisconnected;
@@ -664,7 +657,7 @@ int Connection::DoBind()
 		return -1;
 	}
 
-	if (listen(m_iSocket, 10) < 0)
+	if (listen(m_iSocket, 100) < 0)
 	{
 		ReportError("Listen on socket failed for %s", m_szHost, true, 0);
 		return -1;
@@ -763,73 +756,40 @@ void Connection::ReportError(const char* szMsgPrefix, const char* szMsgArg, bool
 }
 
 #ifndef DISABLE_TLS
-bool Connection::CheckTLSResult(int iResultCode, char* szErrStr, const char* szErrMsgPrefix)
-{
-	bool bOK = iResultCode == TLS_EOK;
-	if (!bOK)
-	{
-		ReportError(szErrMsgPrefix, szErrStr ? szErrStr : "unknown error", false, 0);
-		if (szErrStr)
-		{
-			free(szErrStr);
-		}
-	}
-	return bOK;
-}
-
-bool Connection::StartTLS()
+bool Connection::StartTLS(bool bIsClient, const char* szCertFile, const char* szKeyFile)
 {
 	debug("Starting TLS");
 
-	if (m_pTLS)
+	if (m_pTLSSocket)
 	{
-		free(m_pTLS);
+		delete m_pTLSSocket;
 	}
 
-	m_pTLS = malloc(sizeof(tls_t));
-	tls_t* pTLS = (tls_t*)m_pTLS;
-	memset(pTLS, 0, sizeof(tls_t));
+	m_pTLSSocket = new TLSSocket(m_iSocket, bIsClient, szCertFile, szKeyFile);
+	m_pTLSSocket->SetSuppressErrors(m_bSuppressErrors);
 
-	char* szErrStr;
-	int iRes;
-
-	iRes = tls_init(pTLS, NULL, NULL, NULL, 0, &szErrStr);
-	if (!CheckTLSResult(iRes, szErrStr, "Could not initialize secure connection: %s"))
-	{
-		return false;
-	}
-
-	debug("tls_start...");
-	iRes = tls_start(pTLS, (int)m_iSocket, NULL, 1, NULL, &szErrStr);
-	debug("tls_start...%i", iRes);
-	if (!CheckTLSResult(iRes, szErrStr, "Could not establish secure connection: %s"))
-	{
-		return false;
-	}
-
-	return true;
+	return m_pTLSSocket->Start();
 }
 
 void Connection::CloseTLS()
 {
-	if (m_pTLS)
+	if (m_pTLSSocket)
 	{
-		tls_close((tls_t*)m_pTLS);
-		free(m_pTLS);
-		m_pTLS = NULL;
+		m_pTLSSocket->Close();
+		delete m_pTLSSocket;
+		m_pTLSSocket = NULL;
 	}
 }
 
 int Connection::recv(SOCKET s, char* buf, int len, int flags)
 {
-	size_t iReceived = 0;
+	int iReceived = 0;
 	
-	if (m_pTLS)
+	if (m_pTLSSocket)
 	{
 		m_bTLSError = false;
-		char* szErrStr;
-		int iRes = tls_getbuf((tls_t*)m_pTLS, buf, len, &iReceived, &szErrStr);
-		if (!CheckTLSResult(iRes, szErrStr, "TLS-error: %s"))
+		iReceived = m_pTLSSocket->Recv(buf, len);
+		if (iReceived < 0)
 		{
 			m_bTLSError = true;
 			return -1;
@@ -844,22 +804,23 @@ int Connection::recv(SOCKET s, char* buf, int len, int flags)
 
 int Connection::send(SOCKET s, const char* buf, int len, int flags)
 {
-	if (m_pTLS)
+	int iSent = 0;
+
+	if (m_pTLSSocket)
 	{
 		m_bTLSError = false;
-		char* szErrStr;
-		int iRes = tls_putbuf((tls_t*)m_pTLS, buf, len, &szErrStr);
-		if (!CheckTLSResult(iRes, szErrStr, "TLS-error: %s"))
+		iSent = m_pTLSSocket->Send(buf, len);
+		if (iSent < 0)
 		{
 			m_bTLSError = true;
 			return -1;
 		}
-		return len;
+		return iSent;
 	}
 	else
 	{
-		int iRet = ::send(s, buf, len, flags);
-		return iRet;
+		iSent = ::send(s, buf, len, flags);
+		return iSent;
 	}
 }
 #endif
@@ -921,7 +882,7 @@ const char* Connection::GetRemoteAddr()
 	if (getpeername(m_iSocket, (struct sockaddr*)&PeerName, (SOCKLEN_T*) &iPeerNameLength) >= 0)
 	{
 #ifdef WIN32
-		 strncpy(m_szRemoteAddr, sizeof(m_szRemoteAddr), inet_ntoa(PeerName.sin_addr));
+		 strncpy(m_szRemoteAddr, inet_ntoa(PeerName.sin_addr), sizeof(m_szRemoteAddr));
 #else
 		inet_ntop(AF_INET, &PeerName.sin_addr, m_szRemoteAddr, sizeof(m_szRemoteAddr));
 #endif
