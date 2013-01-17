@@ -2,7 +2,7 @@
  *  This file is part of nzbget
  *
  *  Copyright (C) 2004 Sven Henkel <sidddy@users.sourceforge.net>
- *  Copyright (C) 2007-2009 Andrey Prygunkov <hugbug@users.sourceforge.net>
+ *  Copyright (C) 2007-2013 Andrey Prygunkov <hugbug@users.sourceforge.net>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -32,6 +32,9 @@
 #include "Thread.h"
 #endif
 #endif
+#ifndef DISABLE_TLS
+#include "TLS.h"
+#endif
 
 class Connection
 {
@@ -43,8 +46,6 @@ public:
 		csListening,
 		csCancelled
 	};
-
-	typedef void TLS;
 
 protected:
 	char*				m_szHost;
@@ -59,8 +60,7 @@ protected:
 	bool				m_bSuppressErrors;
 	char				m_szRemoteAddr[20];
 #ifndef DISABLE_TLS
-	TLS*				m_pTLS;
-	static bool			bTLSLibInitialized;
+	TLSSocket*			m_pTLSSocket;
 	bool				m_bTLSError;
 #endif
 #ifndef HAVE_GETADDRINFO
@@ -81,7 +81,6 @@ protected:
 	unsigned int		ResolveHostAddr(const char* szHost);
 #endif
 #ifndef DISABLE_TLS
-	bool				CheckTLSResult(int iResultCode, char* szErrStr, const char* szErrMsgPrefix);
 	int					recv(SOCKET s, char* buf, int len, int flags);
 	int					send(SOCKET s, const char* buf, int len, int flags);
 	void				CloseTLS();
@@ -108,11 +107,11 @@ public:
 	bool				GetTLS() { return m_bTLS; }
 	void				SetTimeout(int iTimeout) { m_iTimeout = iTimeout; }
 	EStatus				GetStatus() { return m_eStatus; }
-	void				SetSuppressErrors(bool bSuppressErrors) { m_bSuppressErrors = bSuppressErrors; }
+	void				SetSuppressErrors(bool bSuppressErrors);
 	bool				GetSuppressErrors() { return m_bSuppressErrors; }
 	const char*			GetRemoteAddr();
 #ifndef DISABLE_TLS
-	bool				StartTLS();
+	bool				StartTLS(bool bIsClient, const char* szCertFile, const char* szKeyFile);
 #endif
 };
 

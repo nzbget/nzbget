@@ -114,6 +114,10 @@ static const char* OPTION_RENAMEBROKEN			= "RenameBroken";
 static const char* OPTION_CONTROLIP				= "ControlIp";
 static const char* OPTION_CONTROLPORT			= "ControlPort";
 static const char* OPTION_CONTROLPASSWORD		= "ControlPassword";
+static const char* OPTION_SECURECONTROL			= "SecureControl";
+static const char* OPTION_SECUREPORT			= "SecurePort";
+static const char* OPTION_SECURECERT			= "SecureCert";
+static const char* OPTION_SECUREKEY				= "SecureKey";
 static const char* OPTION_CONNECTIONTIMEOUT		= "ConnectionTimeout";
 static const char* OPTION_SAVEQUEUE				= "SaveQueue";
 static const char* OPTION_RELOADQUEUE			= "ReloadQueue";
@@ -369,9 +373,13 @@ Options::Options(int argc, char* argv[])
 	m_bDupeCheck			= false;
 	m_iRetries				= 0;
 	m_iRetryInterval		= 0;
-	m_szControlPort			= 0;
+	m_iControlPort			= 0;
 	m_szControlIP			= NULL;
 	m_szControlPassword		= NULL;
+	m_bSecureControl		= false;
+	m_iSecurePort			= 0;
+	m_szSecureCert			= NULL;
+	m_szSecureKey			= NULL;
 	m_szLockFile			= NULL;
 	m_szDaemonUserName		= NULL;
 	m_eOutputMode			= omLoggable;
@@ -473,6 +481,7 @@ Options::Options(int argc, char* argv[])
 	}
 
 	InitOptions();
+	CheckOptions();
 
 	if (!m_bPrintOptions)
 	{
@@ -482,7 +491,6 @@ Options::Options(int argc, char* argv[])
 	InitServers();
 	InitCategories();
 	InitScheduler();
-	CheckOptions();
 
 	if (m_bPrintOptions)
 	{
@@ -549,6 +557,14 @@ Options::~Options()
 	if (m_szControlPassword)
 	{
 		free(m_szControlPassword);
+	}
+	if (m_szSecureCert)
+	{
+		free(m_szSecureCert);
+	}
+	if (m_szSecureKey)
+	{
+		free(m_szSecureKey);
 	}
 	if (m_szLogFile)
 	{
@@ -656,6 +672,10 @@ void Options::InitDefault()
 	SetOption(OPTION_CONTROLIP, "0.0.0.0");
 	SetOption(OPTION_CONTROLPASSWORD, "tegbzn6789");
 	SetOption(OPTION_CONTROLPORT, "6789");
+	SetOption(OPTION_SECURECONTROL, "no");
+	SetOption(OPTION_SECUREPORT, "6791");
+	SetOption(OPTION_SECURECERT, "");
+	SetOption(OPTION_SECUREKEY, "");
 	SetOption(OPTION_CONNECTIONTIMEOUT, "60");
 	SetOption(OPTION_SAVEQUEUE, "yes");
 	SetOption(OPTION_RELOADQUEUE, "yes");
@@ -832,6 +852,8 @@ void Options::InitOptions()
 	m_szNZBAddedProcess		= strdup(GetOption(OPTION_NZBADDEDPROCESS));
 	m_szControlIP			= strdup(GetOption(OPTION_CONTROLIP));
 	m_szControlPassword		= strdup(GetOption(OPTION_CONTROLPASSWORD));
+	m_szSecureCert			= strdup(GetOption(OPTION_SECURECERT));
+	m_szSecureKey			= strdup(GetOption(OPTION_SECUREKEY));
 	m_szLockFile			= strdup(GetOption(OPTION_LOCKFILE));
 	m_szDaemonUserName		= strdup(GetOption(OPTION_DAEMONUSERNAME));
 	m_szLogFile				= strdup(GetOption(OPTION_LOGFILE));
@@ -841,7 +863,8 @@ void Options::InitOptions()
 	m_iTerminateTimeout		= ParseIntValue(OPTION_TERMINATETIMEOUT, 10);
 	m_iRetries				= ParseIntValue(OPTION_RETRIES, 10);
 	m_iRetryInterval		= ParseIntValue(OPTION_RETRYINTERVAL, 10);
-	m_szControlPort			= ParseIntValue(OPTION_CONTROLPORT, 10);
+	m_iControlPort			= ParseIntValue(OPTION_CONTROLPORT, 10);
+	m_iSecurePort			= ParseIntValue(OPTION_SECUREPORT, 10);
 	m_iUrlConnections		= ParseIntValue(OPTION_URLCONNECTIONS, 10);
 	m_iLogBufferSize		= ParseIntValue(OPTION_LOGBUFFERSIZE, 10);
 	m_iUMask				= ParseIntValue(OPTION_UMASK, 8);
@@ -887,6 +910,7 @@ void Options::InitOptions()
 	m_bDeleteCleanupDisk	= (bool)ParseEnumValue(OPTION_DELETECLEANUPDISK, BoolCount, BoolNames, BoolValues);
 	m_bMergeNzb				= (bool)ParseEnumValue(OPTION_MERGENZB, BoolCount, BoolNames, BoolValues);
 	m_bAccurateRate			= (bool)ParseEnumValue(OPTION_ACCURATERATE, BoolCount, BoolNames, BoolValues);
+	m_bSecureControl		= (bool)ParseEnumValue(OPTION_SECURECONTROL, BoolCount, BoolNames, BoolValues);
 
 	const char* OutputModeNames[] = { "loggable", "logable", "log", "colored", "color", "ncurses", "curses" };
 	const int OutputModeValues[] = { omLoggable, omLoggable, omLoggable, omColored, omColored, omNCurses, omNCurses };
@@ -2298,6 +2322,14 @@ void Options::CheckOptions()
 	{
 		LocateOptionSrcPos(OPTION_OUTPUTMODE);
 		ConfigError("Invalid value for option \"%s\": program was compiled without curses-support", OPTION_OUTPUTMODE);
+	}
+#endif
+
+#ifdef DISABLE_TLS
+	if (m_bSecureControl)
+	{
+		LocateOptionSrcPos(OPTION_SECURECONTROL);
+		ConfigError("Invalid value for option \"%s\": program was compiled without TLS/SSL-support", OPTION_SECURECONTROL);
 	}
 #endif
 

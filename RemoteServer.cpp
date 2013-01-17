@@ -2,7 +2,7 @@
  *  This file is part of nzbget
  *
  *  Copyright (C) 2005 Bo Cordes Petersen <placebodk@sourceforge.net>
- *  Copyright (C) 2007-2009 Andrey Prygunkov <hugbug@users.sourceforge.net>
+ *  Copyright (C) 2007-2013 Andrey Prygunkov <hugbug@users.sourceforge.net>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -54,10 +54,11 @@ extern Options* g_pOptions;
 //*****************************************************************
 // RemoteServer
 
-RemoteServer::RemoteServer()
+RemoteServer::RemoteServer(bool bTLS)
 {
 	debug("Creating RemoteServer");
 
+	m_bTLS = bTLS;
 	m_pConnection = NULL;
 }
 
@@ -75,13 +76,32 @@ void RemoteServer::Run()
 {
 	debug("Entering RemoteServer-loop");
 
+#ifndef DISABLE_TLS
+	if (m_bTLS)
+	{
+		if (strlen(g_pOptions->GetSecureCert()) == 0 || !Util::FileExists(g_pOptions->GetSecureCert()))
+		{
+			error("Could not initialize TLS, secure certificate is not configured or the cert-file was not found. Check option <SecureCert>");
+			return;
+		}
+
+		if (strlen(g_pOptions->GetSecureKey()) == 0 || !Util::FileExists(g_pOptions->GetSecureKey()))
+		{
+			error("Could not initialize TLS, secure key is not configured or the key-file was not found. Check option <SecureKey>");
+			return;
+		}
+	}
+#endif
+
 	while (!IsStopped())
 	{
 		bool bBind = true;
 
 		if (!m_pConnection)
 		{
-			m_pConnection = new Connection(g_pOptions->GetControlIP(), g_pOptions->GetControlPort(), false);
+			m_pConnection = new Connection(g_pOptions->GetControlIP(), 
+				m_bTLS ? g_pOptions->GetSecurePort() : g_pOptions->GetControlPort(),
+				m_bTLS);
 			m_pConnection->SetTimeout(g_pOptions->GetConnectionTimeout());
 			m_pConnection->SetSuppressErrors(false);
 			bBind = m_pConnection->Bind() == 0;
@@ -109,8 +129,12 @@ void RemoteServer::Run()
 		RequestProcessor* commandThread = new RequestProcessor();
 		commandThread->SetAutoDestroy(true);
 		commandThread->SetConnection(pAcceptedConnection);
+#ifndef DISABLE_TLS
+		commandThread->SetTLS(m_bTLS);
+#endif
 		commandThread->Start();
 	}
+
 	if (m_pConnection)
 	{
 		m_pConnection->Disconnect();
@@ -145,11 +169,24 @@ void RequestProcessor::Run()
 {
 	bool bOK = false;
 
+	m_pConnection->SetSuppressErrors(true);
+
+#ifndef DISABLE_TLS
+	if (m_bTLS && !m_pConnection->StartTLS(false, g_pOptions->GetSecureCert(), g_pOptions->GetSecureKey()))
+	{
+		debug("Could not establish secure connection to web-client: Start TLS failed");
+		return;
+	}
+#endif
+
 	// Read the first 4 bytes to determine request type
 	int iSignature = 0;
 	if (!m_pConnection->Recv((char*)&iSignature, 4))
 	{
-		warn("Non-nzbget request received on port %i from %s", g_pOptions->GetControlPort(), m_pConnection->GetRemoteAddr());
+		if (!m_bTLS)
+		{
+			warn("Non-nzbget request received on port %i from %s", m_bTLS ? g_pOptions->GetSecurePort() : g_pOptions->GetControlPort(), m_pConnection->GetRemoteAddr());
+		}
 		return;
 	}
 
@@ -199,6 +236,6 @@ void RequestProcessor::Run()
 
 	if (!bOK)
 	{
-		warn("Non-nzbget request received on port %i from %s", g_pOptions->GetControlPort(), m_pConnection->GetRemoteAddr());
+		warn("Non-nzbget request received on port %i from %s", m_bTLS ? g_pOptions->GetSecurePort() : g_pOptions->GetControlPort(), m_pConnection->GetRemoteAddr());
 	}
 }

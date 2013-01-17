@@ -1,8 +1,8 @@
 /*
  *  This file is part of nzbget
  *
- *  Copyright (C) 2005  Bo Cordes Petersen <placebodk@users.sourceforge.net>
- *  Copyright (C) 2007  Andrey Prygunkov <hugbug@users.sourceforge.net>
+ *  Copyright (C) 2005 Bo Cordes Petersen <placebodk@users.sourceforge.net>
+ *  Copyright (C) 2007-2013 Andrey Prygunkov <hugbug@users.sourceforge.net>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -33,10 +33,11 @@
 class RemoteServer : public Thread
 {
 private:
+	bool				m_bTLS;
 	Connection*			m_pConnection;
 
 public:
-						RemoteServer();
+						RemoteServer(bool bTLS);
 						~RemoteServer();
 	virtual void		Run();
 	virtual void 		Stop();
@@ -45,11 +46,13 @@ public:
 class RequestProcessor : public Thread
 {
 private:
+	bool				m_bTLS;
 	Connection*			m_pConnection;
 
 public:
 						~RequestProcessor();
 	virtual void		Run();
+	void				SetTLS(bool bTLS) { m_bTLS = bTLS; }
 	void				SetConnection(Connection* pConnection) { m_pConnection = pConnection; }
 };
 
