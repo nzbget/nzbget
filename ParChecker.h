@@ -69,7 +69,6 @@ private:
 	int					m_iProcessedFiles;
 	int					m_iFilesToRepair;
 	int					m_iExtraFiles;
-	int					m_iMissingFiles;
 	bool				m_bVerifyingExtraFiles;
 	char*				m_szProgressLabel;
 	int					m_iFileProgress;
@@ -80,7 +79,7 @@ private:
 	bool				LoadMorePars();
 	bool				CheckSplittedFragments();
 	bool				AddSplittedFragments(const char* szFilename);
-	bool				AddAllFiles();
+	bool				AddMissingFiles();
 	void				signal_filename(std::string str);
 	void				signal_progress(double progress);
 	void				signal_done(std::string str, int available, int total);
