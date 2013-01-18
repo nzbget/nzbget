@@ -2,7 +2,7 @@
  *  This file is part of nzbget
  *
  *  Copyright (C) 2004 Sven Henkel <sidddy@users.sourceforge.net>
- *  Copyright (C) 2007-2010 Andrey Prygunkov <hugbug@users.sourceforge.net>
+ *  Copyright (C) 2007-2013 Andrey Prygunkov <hugbug@users.sourceforge.net>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -28,6 +28,7 @@
 #define OPTIONS_H
 
 #include <vector>
+#include <time.h>
 #include "Thread.h"
 
 class Options
@@ -274,7 +275,7 @@ private:
 	char*				m_szLastArg;
 	bool				m_bPrintOptions;
 	bool				m_bAddTop;
-	float				m_fSetRate;
+	int					m_iSetRate;
 	int					m_iLogLines;
 	int					m_iWriteLogKind;
 	bool				m_bTestBacktrace;
@@ -284,7 +285,7 @@ private:
 	bool				m_bPauseDownload2;
 	bool				m_bPausePostProcess;
 	bool				m_bPauseScan;
-	float				m_fDownloadRate;
+	int					m_iDownloadRate;
 	EClientOperation	m_eClientOperation;
 
 	void				InitDefault();
@@ -424,7 +425,7 @@ public:
 	int					GetAddPriority() { return m_iAddPriority; }
 	char*				GetAddNZBFilename() { return m_szAddNZBFilename; }
 	bool				GetAddTop() { return m_bAddTop; }
-	float				GetSetRate() { return m_fSetRate; }
+	int					GetSetRate() { return m_iSetRate; }
 	int					GetLogLines() { return m_iLogLines; }
 	int					GetWriteLogKind() { return m_iWriteLogKind; }
 	bool				GetTestBacktrace() { return m_bTestBacktrace; }
@@ -438,8 +439,8 @@ public:
 	bool				GetPausePostProcess() const { return m_bPausePostProcess; }
 	void				SetPauseScan(bool bPauseScan) { m_bPauseScan = bPauseScan; }
 	bool				GetPauseScan() const { return m_bPauseScan; }
-	void				SetDownloadRate(float fRate) { m_fDownloadRate = fRate; }
-	float				GetDownloadRate() const { return m_fDownloadRate; }
+	void				SetDownloadRate(int iRate) { m_iDownloadRate = iRate; }
+	int					GetDownloadRate() const { return m_iDownloadRate; }
 };
 
 #endif

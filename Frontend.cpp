@@ -63,11 +63,11 @@ Frontend::Frontend()
 	m_iNeededLogEntries = 0;
 	m_bSummary = false;
 	m_bFileList = false;
-	m_fCurrentDownloadSpeed = 0;
+	m_iCurrentDownloadSpeed = 0;
 	m_lRemainingSize = 0;
 	m_bPauseDownload = false;
 	m_bPauseDownload2 = false;
-	m_fDownloadLimit = 0;
+	m_iDownloadLimit = 0;
 	m_iThreadCount = 0;
 	m_iPostJobCount = 0;
 	m_iUpTimeSec = 0;
@@ -96,11 +96,11 @@ bool Frontend::PrepareData()
 	{
 		if (m_bSummary)
 		{
-			m_fCurrentDownloadSpeed = g_pQueueCoordinator->CalcCurrentDownloadSpeed();
+			m_iCurrentDownloadSpeed = g_pQueueCoordinator->CalcCurrentDownloadSpeed();
 			m_lRemainingSize = g_pQueueCoordinator->CalcRemainingSize();
 			m_bPauseDownload = g_pOptions->GetPauseDownload();
 			m_bPauseDownload2 = g_pOptions->GetPauseDownload2();
-			m_fDownloadLimit = g_pOptions->GetDownloadRate();
+			m_iDownloadLimit = g_pOptions->GetDownloadRate();
 			m_iThreadCount = Thread::GetThreadCount();
 			PostQueue* pPostQueue = g_pQueueCoordinator->LockQueue()->GetPostQueue();
 			m_iPostJobCount = pPostQueue->size();
@@ -193,15 +193,15 @@ void Frontend::ServerPauseUnpause(bool bPause, bool bSecondRegister)
 	}
 }
 
-void Frontend::ServerSetDownloadRate(float fRate)
+void Frontend::ServerSetDownloadRate(int iRate)
 {
 	if (IsRemoteMode())
 	{
-		RequestSetDownloadRate(fRate);
+		RequestSetDownloadRate(iRate);
 	}
 	else
 	{
-		g_pOptions->SetDownloadRate(fRate);
+		g_pOptions->SetDownloadRate(iRate);
 	}
 }
 
@@ -358,8 +358,8 @@ bool Frontend::RequestFileList()
 		m_bPauseDownload = ntohl(ListResponse.m_bDownloadPaused);
 		m_bPauseDownload2 = ntohl(ListResponse.m_bDownload2Paused);
 		m_lRemainingSize = Util::JoinInt64(ntohl(ListResponse.m_iRemainingSizeHi), ntohl(ListResponse.m_iRemainingSizeLo));
-		m_fCurrentDownloadSpeed = ntohl(ListResponse.m_iDownloadRate) / 1024.0f;
-		m_fDownloadLimit = ntohl(ListResponse.m_iDownloadLimit) / 1024.0f;
+		m_iCurrentDownloadSpeed = ntohl(ListResponse.m_iDownloadRate);
+		m_iDownloadLimit = ntohl(ListResponse.m_iDownloadLimit);
 		m_iThreadCount = ntohl(ListResponse.m_iThreadCount);
 		m_iPostJobCount = ntohl(ListResponse.m_iPostJobCount);
 		m_iUpTimeSec = ntohl(ListResponse.m_iUpTimeSec);
@@ -390,11 +390,11 @@ bool Frontend::RequestPauseUnpause(bool bPause, bool bSecondRegister)
 	return client.RequestServerPauseUnpause(bPause, bSecondRegister ? eRemotePauseUnpauseActionDownload2 : eRemotePauseUnpauseActionDownload);
 }
 
-bool Frontend::RequestSetDownloadRate(float fRate)
+bool Frontend::RequestSetDownloadRate(int iRate)
 {
 	RemoteClient client;
 	client.SetVerbose(false);
-	return client.RequestServerSetDownloadRate(fRate);
+	return client.RequestServerSetDownloadRate(iRate);
 }
 
 bool Frontend::RequestDumpDebug()

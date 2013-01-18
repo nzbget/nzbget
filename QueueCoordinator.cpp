@@ -297,7 +297,7 @@ void QueueCoordinator::AddNZBFileToQueue(NZBFile* pNZBFile, bool bAddFirst)
 /*
  * NOTE: see note to "AddSpeedReading"
  */
-float QueueCoordinator::CalcCurrentDownloadSpeed()
+int QueueCoordinator::CalcCurrentDownloadSpeed()
 {
 	if (m_bStandBy)
 	{
@@ -309,8 +309,8 @@ float QueueCoordinator::CalcCurrentDownloadSpeed()
     {
     	return 0;
     }
-	float fSpeed = m_iSpeedTotalBytes / 1024.0f / iTimeDiff;
-	return fSpeed;
+
+	return m_iSpeedTotalBytes / iTimeDiff;
 }
 
 void QueueCoordinator::AddSpeedReading(int iBytes)
@@ -785,7 +785,7 @@ void QueueCoordinator::LogDebugInfo()
 
 	debug("   SpeedMeter");
 	debug("   ----------");
-	float fSpeed = CalcCurrentDownloadSpeed();
+	float fSpeed = (float)(CalcCurrentDownloadSpeed() / 1024.0);
 	int iTimeDiff = (int)time(NULL) - m_iSpeedStartTime * SPEEDMETER_SLOTSIZE;
 	debug("      Speed: %f", fSpeed);
 	debug("      SpeedStartTime: %i", m_iSpeedStartTime);

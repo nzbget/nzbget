@@ -106,7 +106,7 @@ public:
 
 	// statistics
 	long long 				CalcRemainingSize();
-	virtual float			CalcCurrentDownloadSpeed();
+	virtual int				CalcCurrentDownloadSpeed();
 	virtual void			AddSpeedReading(int iBytes);
 	void					CalcStat(int* iUpTimeSec, int* iDnTimeSec, long long* iAllBytes, bool* bStandBy);
 

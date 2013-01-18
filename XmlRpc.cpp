@@ -860,7 +860,7 @@ void SetDownloadRateXmlCommand::Execute()
 		return;
 	}
 
-	g_pOptions->SetDownloadRate((float)iRate);
+	g_pOptions->SetDownloadRate(iRate * 1024);
 	BuildBoolResponse(true);
 }
 
@@ -923,11 +923,11 @@ void StatusXmlCommand::Execute()
 		"}\n";
 
 	unsigned long iRemainingSizeHi, iRemainingSizeLo;
-	int iDownloadRate = (int)(g_pQueueCoordinator->CalcCurrentDownloadSpeed() * 1024);
+	int iDownloadRate = (int)(g_pQueueCoordinator->CalcCurrentDownloadSpeed());
 	long long iRemainingSize = g_pQueueCoordinator->CalcRemainingSize();
 	Util::SplitInt64(iRemainingSize, &iRemainingSizeHi, &iRemainingSizeLo);
 	int iRemainingMBytes = (int)(iRemainingSize / 1024 / 1024);
-	int iDownloadLimit = (int)(g_pOptions->GetDownloadRate() * 1024);
+	int iDownloadLimit = (int)(g_pOptions->GetDownloadRate());
 	bool bDownloadPaused = g_pOptions->GetPauseDownload();
 	bool bDownload2Paused = g_pOptions->GetPauseDownload2();
 	bool bPostPaused = g_pOptions->GetPausePostProcess();
