@@ -2,7 +2,7 @@
  *  This file is part of nzbget
  *
  *  Copyright (C) 2004 Sven Henkel <sidddy@users.sourceforge.net>
- *  Copyright (C) 2007-2011 Andrey Prygunkov <hugbug@users.sourceforge.net>
+ *  Copyright (C) 2007-2013 Andrey Prygunkov <hugbug@users.sourceforge.net>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -346,7 +346,7 @@ Options::Options(int argc, char* argv[])
 	m_bPauseScan			= false;
 	m_bCreateBrokenLog		= false;
 	m_bResetLog				= false;
-	m_fDownloadRate			= 0;
+	m_iDownloadRate			= 0;
 	m_iEditQueueAction		= 0;
 	m_pEditQueueIDList		= NULL;
 	m_iEditQueueIDCount		= 0;
@@ -858,7 +858,7 @@ void Options::InitOptions()
 	m_szDaemonUserName		= strdup(GetOption(OPTION_DAEMONUSERNAME));
 	m_szLogFile				= strdup(GetOption(OPTION_LOGFILE));
 
-	m_fDownloadRate			= ParseFloatValue(OPTION_DOWNLOADRATE);
+	m_iDownloadRate			= (int)(ParseFloatValue(OPTION_DOWNLOADRATE) * 1024);
 	m_iConnectionTimeout	= ParseIntValue(OPTION_CONNECTIONTIMEOUT, 10);
 	m_iTerminateTimeout		= ParseIntValue(OPTION_TERMINATETIMEOUT, 10);
 	m_iRetries				= ParseIntValue(OPTION_RETRIES, 10);
@@ -1266,7 +1266,7 @@ void Options::InitCommandLine(int argc, char* argv[])
 				break;
 			case 'R':
 				m_eClientOperation = opClientRequestSetRate;
-				m_fSetRate = (float)atof(optarg);
+				m_iSetRate = (int)(atof(optarg)*1024);
 				break;
 			case 'B':
 				if (!strcasecmp(optarg, "dump"))
@@ -2040,13 +2040,13 @@ void Options::InitScheduler()
 				{
 					for (int iEveryHour = 0; iEveryHour < 24; iEveryHour++)
 					{
-						Scheduler::Task* pTask = new Scheduler::Task(iEveryHour, iMinutes, iWeekDays, eCommand, iDownloadRate, szProcess);
+						Scheduler::Task* pTask = new Scheduler::Task(iEveryHour, iMinutes, iWeekDays, eCommand, iDownloadRate * 1024, szProcess);
 						g_pScheduler->AddTask(pTask);
 					}
 				}
 				else
 				{
-					Scheduler::Task* pTask = new Scheduler::Task(iHours, iMinutes, iWeekDays, eCommand, iDownloadRate, szProcess);
+					Scheduler::Task* pTask = new Scheduler::Task(iHours, iMinutes, iWeekDays, eCommand, iDownloadRate * 1024, szProcess);
 					g_pScheduler->AddTask(pTask);
 				}
 			}

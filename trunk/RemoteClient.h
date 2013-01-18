@@ -63,7 +63,7 @@ public:
 	bool 			RequestServerDownload(const char* szFilename, const char* szCategory, bool bAddFirst, bool bAddPaused, int iPriority);
 	bool			RequestServerList(bool bFiles, bool bGroups, const char* szPattern);
 	bool			RequestServerPauseUnpause(bool bPause, eRemotePauseUnpauseAction iAction);
-	bool			RequestServerSetDownloadRate(float fRate);
+	bool			RequestServerSetDownloadRate(int iRate);
 	bool			RequestServerDumpDebug();
 	bool 			RequestServerEditQueue(eRemoteEditAction iAction, int iOffset, const char* szText, 
 		int* pIDList, int iIDCount, NameList* pNameList, eRemoteMatchMode iMatchMode, bool bSmartOrder);

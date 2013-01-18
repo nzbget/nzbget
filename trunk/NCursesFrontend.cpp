@@ -613,10 +613,10 @@ void NCursesFrontend::PrintStatus()
     char timeString[100];
     timeString[0] = '\0';
 
-	float fCurrentDownloadSpeed = m_bStandBy ? 0 : m_fCurrentDownloadSpeed;
-    if (fCurrentDownloadSpeed > 0.0 && !(m_bPauseDownload || m_bPauseDownload2))
+	int iCurrentDownloadSpeed = m_bStandBy ? 0 : m_iCurrentDownloadSpeed;
+    if (iCurrentDownloadSpeed > 0 && !(m_bPauseDownload || m_bPauseDownload2))
     {
-        long long remain_sec = (long long)(m_lRemainingSize / (fCurrentDownloadSpeed * 1024));
+        long long remain_sec = (long long)(m_lRemainingSize / iCurrentDownloadSpeed);
 		int h = (int)(remain_sec / 3600);
 		int m = (int)((remain_sec % 3600) / 60);
 		int s = (int)(remain_sec % 60);
@@ -624,9 +624,9 @@ void NCursesFrontend::PrintStatus()
     }
 
     char szDownloadLimit[128];
-    if (m_fDownloadLimit > 0.0f)
+    if (m_iDownloadLimit > 0)
     {
-        sprintf(szDownloadLimit, ", Limit %.0f KB/s", m_fDownloadLimit);
+        sprintf(szDownloadLimit, ", Limit %.0f KB/s", (float)m_iDownloadLimit / 1024.0);
     }
     else
     {
@@ -646,7 +646,7 @@ void NCursesFrontend::PrintStatus()
 	float fAverageSpeed = (float)(Util::Int64ToFloat(m_iDnTimeSec > 0 ? m_iAllBytes / m_iDnTimeSec : 0) / 1024.0);
 
 	snprintf(tmp, MAX_SCREEN_WIDTH, " %d threads, %.*f KB/s, %.2f MB remaining%s%s%s%s%s, Avg. %.*f KB/s", 
-		m_iThreadCount, (fCurrentDownloadSpeed >= 10 ? 0 : 1), fCurrentDownloadSpeed, 
+		m_iThreadCount, (iCurrentDownloadSpeed >= 10*1024 ? 0 : 1), (float)iCurrentDownloadSpeed / 1024.0, 
 		(float)(Util::Int64ToFloat(m_lRemainingSize) / 1024.0 / 1024.0), timeString, szPostStatus, 
 		m_bPauseDownload || m_bPauseDownload2 ? (m_bStandBy ? ", Paused" : ", Pausing") : "",
 		m_bPauseDownload || m_bPauseDownload2 ? 
@@ -1065,15 +1065,15 @@ void NCursesFrontend::PrintGroupname(GroupInfo * pGroupInfo, int iRow, bool bSel
 
 		char szTime[100];
 		szTime[0] = '\0';
-		float fCurrentDownloadSpeed = m_bStandBy ? 0 : m_fCurrentDownloadSpeed;
+		int iCurrentDownloadSpeed = m_bStandBy ? 0 : m_iCurrentDownloadSpeed;
 		if (pGroupInfo->GetPausedSize() > 0 && lUnpausedRemainingSize == 0)
 		{
 			snprintf(szTime, 100, "[paused]");
 			Util::FormatFileSize(szRemaining, sizeof(szRemaining), pGroupInfo->GetRemainingSize());
 		}
-		else if (fCurrentDownloadSpeed > 0.0 && !(m_bPauseDownload || m_bPauseDownload2))
+		else if (iCurrentDownloadSpeed > 0 && !(m_bPauseDownload || m_bPauseDownload2))
 		{
-			long long remain_sec = (long long)(lUnpausedRemainingSize / (fCurrentDownloadSpeed * 1024));
+			long long remain_sec = (long long)(lUnpausedRemainingSize / iCurrentDownloadSpeed);
 			int h = (int)(remain_sec / 3600);
 			int m = (int)((remain_sec % 3600) / 60);
 			int s = (int)(remain_sec % 60);
@@ -1448,7 +1448,7 @@ void NCursesFrontend::UpdateInput(int initialKey)
 			// Enter
 			else if (iKey == 10 || iKey == 13)
 			{
-				ServerSetDownloadRate((float)m_iInputValue);
+				ServerSetDownloadRate(m_iInputValue * 1024);
 				m_eInputMode = eNormal;
 				return;
 			}

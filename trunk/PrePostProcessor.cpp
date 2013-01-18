@@ -1394,7 +1394,7 @@ void PrePostProcessor::ApplySchedulerState()
 	if (g_pScheduler->GetDownloadRateChanged())
 	{
 		info("Scheduler: set download rate to %i KB/s", g_pScheduler->GetDownloadRate());
-		g_pOptions->SetDownloadRate((float)g_pScheduler->GetDownloadRate());
+		g_pOptions->SetDownloadRate(g_pScheduler->GetDownloadRate());
 	}
 
 	if (g_pScheduler->GetPauseDownloadChanged())

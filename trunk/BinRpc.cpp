@@ -279,7 +279,7 @@ void SetDownloadRateBinCommand::Execute()
 		return;
 	}
 
-	g_pOptions->SetDownloadRate(ntohl(SetDownloadRequest.m_iDownloadRate) / 1024.0f);
+	g_pOptions->SetDownloadRate(ntohl(SetDownloadRequest.m_iDownloadRate));
 	SendBoolResponse(true, "Rate-Command completed successfully");
 }
 

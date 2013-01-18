@@ -778,13 +778,13 @@ bool RemoteClient::RequestServerPauseUnpause(bool bPause, eRemotePauseUnpauseAct
 	return OK;
 }
 
-bool RemoteClient::RequestServerSetDownloadRate(float fRate)
+bool RemoteClient::RequestServerSetDownloadRate(int iRate)
 {
 	if (!InitConnection()) return false;
 
 	SNZBSetDownloadRateRequest SetDownloadRateRequest;
 	InitMessageBase(&SetDownloadRateRequest.m_MessageBase, eRemoteRequestSetDownloadRate, sizeof(SetDownloadRateRequest));
-	SetDownloadRateRequest.m_iDownloadRate = htonl((unsigned int)(fRate * 1024));
+	SetDownloadRateRequest.m_iDownloadRate = htonl(iRate);
 
 	if (!m_pConnection->Send((char*)(&SetDownloadRateRequest), sizeof(SetDownloadRateRequest)))
 	{

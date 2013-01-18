@@ -112,7 +112,7 @@ class DownloadSpeedMeter
 {
 public:
 	virtual				~DownloadSpeedMeter() {};
-	virtual float		CalcCurrentDownloadSpeed() = 0;
+	virtual int			CalcCurrentDownloadSpeed() = 0;
 	virtual void		AddSpeedReading(int iBytes) = 0;
 };
 
