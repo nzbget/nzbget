@@ -1,6 +1,13 @@
-nzbget-9.1-testing:
-  - please see subversion log at
-    http://nzbget.svn.sourceforge.net/viewvc/nzbget/branches/9/?view=log
+nzbget-9.1:
+  - added full par-scan feature needed to par-check/repair files which
+    were renamed after creation of par-files:
+        - new option <ParScan> to activate full par-scan (always or automatic);
+        - the automatic full par-scan activates if missing files are detected
+          during par-check, this avoids unnecessary full scan for normal
+          (not renamed) par sets;
+  - replaced a browser error message when trying to add local files
+    in IE9 with a better message dialog;
+  - improved the post-processing script to better handle renamed rar-files.
 
 nzbget-9.0:
   - changed version naming scheme by removing the leading zero: current
