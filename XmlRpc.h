@@ -152,6 +152,12 @@ public:
 	virtual void		Execute();
 };
 
+class ScheduleResumeXmlCommand: public XmlCommand
+{
+public:
+	virtual void		Execute();
+};
+
 class ShutdownXmlCommand: public XmlCommand
 {
 public:

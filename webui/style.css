@@ -254,6 +254,14 @@ body.navfixed.scrolled .navbar-fixed-top .navbar-inner {
 	filter: alpha(opacity=100);
 }
 
+#StatusTime.scheduled-resume {
+	color: #F08929;
+}
+
+#StatusTime.scheduled-resume:hover {
+	color: #FFA15A;
+}
+
 .navbar-inner .btn:hover i {
 	opacity: 1;
 	filter: alpha(opacity=100);
@@ -540,6 +548,10 @@ body.navfixed.scrolled .navbar-fixed-top .navbar-inner {
 
 .icon-messages-white {
 	background-position: -464px -48px;
+}
+
+.icon-time-orange {
+	background-position: -400px -80px;
 }
 
 .img-checkmark {

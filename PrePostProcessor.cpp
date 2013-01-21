@@ -164,6 +164,7 @@ void PrePostProcessor::Run()
 			g_pScheduler->IntervalCheck();
 			ApplySchedulerState();
 			iSchedulerInterval = 0;
+			CheckScheduledResume();
 		}
 		iSchedulerInterval += iStepMSec;
 
@@ -1393,7 +1394,7 @@ void PrePostProcessor::ApplySchedulerState()
 {
 	if (g_pScheduler->GetDownloadRateChanged())
 	{
-		info("Scheduler: set download rate to %i KB/s", g_pScheduler->GetDownloadRate());
+		info("Scheduler: set download rate to %i KB/s", g_pScheduler->GetDownloadRate() / 1024);
 		g_pOptions->SetDownloadRate(g_pScheduler->GetDownloadRate());
 	}
 
@@ -1442,6 +1443,20 @@ bool PrePostProcessor::UnpauseDownload()
 		g_pOptions->SetPauseDownload(bPause);
 	}
 	return !bPause;
+}
+
+void PrePostProcessor::CheckScheduledResume()
+{
+	time_t tResumeTime = g_pOptions->GetResumeTime();
+	time_t tCurrentTime = time(NULL);
+	if (tResumeTime > 0 && tCurrentTime >= tResumeTime)
+	{
+		info("Autoresume");
+		g_pOptions->SetResumeTime(0);
+		g_pOptions->SetPauseDownload2(false);
+		g_pOptions->SetPausePostProcess(false);
+		g_pOptions->SetPauseScan(false);
+	}
 }
 
 bool PrePostProcessor::QueueEditList(IDList* pIDList, EEditAction eAction, int iOffset)
