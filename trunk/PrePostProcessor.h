@@ -111,6 +111,7 @@ private:
 	void				SanitisePostQueue(PostQueue* pPostQueue);
 	void				CheckDiskSpace();
 	void				ApplySchedulerState();
+	void				CheckScheduledResume();
 	bool				PauseDownload();
 	bool				UnpauseDownload();
 	void				NZBAdded(DownloadQueue* pDownloadQueue, NZBInfo* pNZBInfo);

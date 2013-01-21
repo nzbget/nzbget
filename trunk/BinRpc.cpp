@@ -249,6 +249,8 @@ void PauseUnpauseBinCommand::Execute()
 		return;
 	}
 
+	g_pOptions->SetResumeTime(0);
+
 	switch (ntohl(PauseUnpauseRequest.m_iAction))
 	{
 		case eRemotePauseUnpauseActionDownload:

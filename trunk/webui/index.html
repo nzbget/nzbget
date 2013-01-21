@@ -2,7 +2,7 @@
 <!--
  * This file is part of nzbget
  *
- * Copyright (C) 2012 Andrey Prygunkov <hugbug@users.sourceforge.net>
+ * Copyright (C) 2012-2013 Andrey Prygunkov <hugbug@users.sourceforge.net>
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -101,6 +101,11 @@
 						<li class="divider"></li>
 						<li><a href="#" onclick="Status.pauseClick('download')"><table><tr><td><i class="icon-ok" id="CHSoftPauseDownload"></td><td>Soft-Pause Download</td></tr></table></a></li>
 						<li class="divider"></li>
+						<li class="menu-header">Pause for</li>
+						<li><a href="#" onclick="Status.scheduledPauseClick(30*60)"><table><tr><td></td><td>30 Minutes</td></tr></table></a></li>
+						<li><a href="#" onclick="Status.scheduledPauseClick(3*60*60)"><table><tr><td></td><td>3 Hours</td></tr></table></a></li>
+						<li><a href="#" onclick="Status.scheduledPauseDialogClick()"><table><tr><td></td><td>Custom...</td></tr></table></a></li>
+						<li class="divider"></li>
 						<li><a data-toggle="modal" href="#PauseHelp"><table><tr><td></td><td>Quick Help</td></tr></table></a></li>
 					</ul>
 				</div>
@@ -109,7 +114,7 @@
 			<!-- SPEED/TIME -->
 			<div id="InfoBlock">
 				<div href="#" onclick="Status.limitDialogClick()" title="Current speed (click to set speed limit)"><i class="icon-plane" id="StatusSpeedIcon"></i> <span id="StatusSpeed">--- KB/s</span></div>
-				<div href="#" onclick="Status.statDialogClick()" title="Remaining time (click for more statistics)"><i class="icon-time"></i> <span id="StatusTime">--h --m</span></div>
+				<div href="#" onclick="Status.statDialogClick()" title="Remaining time (click for more statistics)"><i class="icon-time" id="StatusTimeIcon"></i> <span id="StatusTime">--h --m</span></div>
 			</div>
 
 			<!-- REFRESH MENU -->
@@ -626,6 +631,34 @@
 		<div class="dialog-transmit hide" style="position:absolute;margin-left:260px;" id="Limit_Transmit"><img src="img/transmit.gif"></div>
 		<a href="#" class="btn" data-dismiss="modal">Close</a>
 		<a href="#" class="btn btn-primary" onclick="Status.setSpeedLimitClick()">Set limit</a>
+	</div>
+</div>
+
+<!-- *** PAUSE FOR X MINUTES ***************************************************** -->
+
+<div class="modal modal-mini hide" id="ScheduledPauseDialog">
+	<div class="modal-header">
+	<a class="close" href='#' data-dismiss="modal"><i class="icon-close"></i></a>
+	<h3>Temporary Pause</h3>
+	</div>
+	<div class="modal-body">
+		<div class="form-horizontal">
+			<fieldset>
+				<div class="control-group">
+					<label class="control-label" for="PauseForInputGroup">Pause for</label>
+					<div class="controls" id="PauseForInputGroup">
+						<div class="input-append">
+							<input class="input-mini" id="PauseForInput" size="16" type="text"><span class="add-on">Minutes</span>
+						</div>
+					</div>
+				</div>
+			</fieldset>
+		</div>
+	</div>
+	<div class="modal-footer">
+		<div class="dialog-transmit hide" style="position:absolute;margin-left:260px;" id="ScheduledPause_Transmit"><img src="img/transmit.gif"></div>
+		<a href="#" class="btn" data-dismiss="modal">Close</a>
+		<a href="#" class="btn btn-primary" onclick="Status.pauseForClick()">Pause</a>
 	</div>
 </div>
 

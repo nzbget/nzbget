@@ -415,6 +415,10 @@ XmlCommand* XmlRpcProcessor::CreateCommand(const char* szMethodName)
 	{
 		command = new PauseUnpauseXmlCommand(false, PauseUnpauseXmlCommand::paScan);
 	}
+	else if (!strcasecmp(szMethodName, "scheduleresume"))
+	{
+		command = new ScheduleResumeXmlCommand();
+	}
 	else if (!strcasecmp(szMethodName, "history"))
 	{
 		command = new HistoryXmlCommand();
@@ -780,6 +784,8 @@ void PauseUnpauseXmlCommand::Execute()
 
 	bool bOK = true;
 
+	g_pOptions->SetResumeTime(0);
+
 	switch (m_eEPauseAction)
 	{
 		case paDownload:
@@ -803,6 +809,28 @@ void PauseUnpauseXmlCommand::Execute()
 	}
 
 	BuildBoolResponse(bOK);
+}
+
+// bool scheduleresume(int Seconds) 
+void ScheduleResumeXmlCommand::Execute()
+{
+	if (!CheckSafeMethod())
+	{
+		return;
+	}
+
+	int iSeconds = 0;
+	if (!NextParamAsInt(&iSeconds) || iSeconds < 0)
+	{
+		BuildErrorResponse(2, "Invalid parameter");
+		return;
+	}
+
+	time_t tCurTime = time(NULL);
+
+	g_pOptions->SetResumeTime(tCurTime + iSeconds);
+
+	BuildBoolResponse(true);
 }
 
 void ShutdownXmlCommand::Execute()
@@ -892,6 +920,8 @@ void StatusXmlCommand::Execute()
 		"<member><name>FreeDiskSpaceLo</name><value><i4>%u</i4></value></member>\n"
 		"<member><name>FreeDiskSpaceHi</name><value><i4>%u</i4></value></member>\n"
 		"<member><name>FreeDiskSpaceMB</name><value><i4>%i</i4></value></member>\n"
+		"<member><name>ServerTime</name><value><i4>%i</i4></value></member>\n"
+		"<member><name>ResumeTime</name><value><i4>%i</i4></value></member>\n"
 		"</struct>\n";
 
 	const char* JSON_RESPONSE_STATUS_BODY = 
@@ -919,7 +949,9 @@ void StatusXmlCommand::Execute()
 		"\"ScanPaused\" : %s,\n"
 		"\"FreeDiskSpaceLo\" : %u,\n"
 		"\"FreeDiskSpaceHi\" : %u,\n"
-		"\"FreeDiskSpaceMB\" : %i\n"
+		"\"FreeDiskSpaceMB\" : %i,\n"
+		"\"ServerTime\" : %i,\n"
+		"\"ResumeTime\" : %i\n"
 		"}\n";
 
 	unsigned long iRemainingSizeHi, iRemainingSizeLo;
@@ -949,6 +981,8 @@ void StatusXmlCommand::Execute()
 	long long iFreeDiskSpace = Util::FreeDiskSize(g_pOptions->GetDestDir());
 	Util::SplitInt64(iFreeDiskSpace, &iFreeDiskSpaceHi, &iFreeDiskSpaceLo);
 	int iFreeDiskSpaceMB = (int)(iFreeDiskSpace / 1024 / 1024);
+	int iServerTime = time(NULL);
+	int iResumeTime = g_pOptions->GetResumeTime();
 
 	char szContent[2048];
 	snprintf(szContent, 2048, IsJson() ? JSON_RESPONSE_STATUS_BODY : XML_RESPONSE_STATUS_BODY, 
@@ -957,7 +991,7 @@ void StatusXmlCommand::Execute()
 		iPostJobCount, iPostJobCount, iUrlCount, iUpTimeSec, iDownloadTimeSec, 
 		BoolToStr(bDownloadPaused), BoolToStr(bDownloadPaused), BoolToStr(bDownload2Paused), 
 		BoolToStr(bServerStandBy), BoolToStr(bPostPaused), BoolToStr(bScanPaused),
-		iFreeDiskSpaceLo, iFreeDiskSpaceHi,	iFreeDiskSpaceMB);
+		iFreeDiskSpaceLo, iFreeDiskSpaceHi,	iFreeDiskSpaceMB, iServerTime, iResumeTime);
 	szContent[2048-1] = '\0';
 
 	AppendResponse(szContent);

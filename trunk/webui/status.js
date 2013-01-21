@@ -49,6 +49,7 @@ var Status = (new function($)
 	var $StatusLeft;
 	var $StatusSpeed;
 	var $StatusSpeedIcon;
+	var $StatusTimeIcon;
 	var $StatusTime;
 	var $StatusURLs;
 	var $PlayBlock;
@@ -59,6 +60,8 @@ var Status = (new function($)
 	var $CurSpeedLimitBlock;
 	var $LimitDialog;
 	var $StatDialog;
+	var $ScheduledPauseDialog;
+	var $PauseForInput;
 
 	// State
 	var status;
@@ -85,18 +88,25 @@ var Status = (new function($)
 		$StatusLeft = $('#StatusLeft');
 		$StatusSpeed = $('#StatusSpeed');
 		$StatusSpeedIcon = $('#StatusSpeedIcon');
+		$StatusTimeIcon = $('#StatusTimeIcon');
 		$StatusTime = $('#StatusTime');
 		$StatusURLs = $('#StatusURLs');
 		$CurSpeedLimit = $('#CurSpeedLimit');
 		$CurSpeedLimitBlock = $('#CurSpeedLimitBlock');
 		$LimitDialog = $('#LimitDialog');
 		$StatDialog = $('#StatDialog');
+		$ScheduledPauseDialog = $('#ScheduledPauseDialog')
+		$PauseForInput = $('#PauseForInput');
 		
 		if (UISettings.setFocus)
 		{
 			$LimitDialog.on('shown', function()
 			{
 				$('#SpeedLimitInput').focus();
+			});
+			$ScheduledPauseDialog.on('shown', function()
+			{
+				$('#PauseForInput').focus();
 			});
 		}
 
@@ -169,6 +179,11 @@ var Status = (new function($)
 			'<span class="label label-status label-success">active</span>')) +
 			'</td></tr>';
 
+		if (status.ResumeTime > 0)
+		{
+			content += '<tr><td>Autoresume</td><td class="text-right">' + Util.formatTimeHMS(status.ResumeTime - status.ServerTime) + '</td></tr>';
+		}
+			
 		content += '</tbody>';
 		content += '</table>';
 
@@ -188,7 +203,11 @@ var Status = (new function($)
 		if (status.ServerStandBy)
 		{
 			$StatusSpeed.html('--- KB/s');
-			if (status.RemainingSizeHi > 0 || status.RemainingSizeLo > 0)
+			if (status.ResumeTime > 0)
+			{
+				$StatusTime.html(Util.formatTimeLeft(status.ResumeTime - status.ServerTime));
+			}
+			else if (status.RemainingSizeMB > 0 || status.RemainingSizeLo > 0)
 			{
 				if (status.AverageDownloadRate > 0)
 				{
@@ -217,9 +236,11 @@ var Status = (new function($)
 			}
 		}
 
-
 		$StatusSpeedIcon.toggleClass('icon-plane', status.DownloadLimit === 0);
 		$StatusSpeedIcon.toggleClass('icon-truck', status.DownloadLimit !== 0);
+		$StatusTime.toggleClass('scheduled-resume', status.ServerStandBy && status.ResumeTime > 0);
+		$StatusTimeIcon.toggleClass('icon-time', !(status.ServerStandBy && status.ResumeTime > 0));
+		$StatusTimeIcon.toggleClass('icon-time-orange', status.ServerStandBy && status.ResumeTime > 0);
 	}
 
 	function updatePlayButton()
@@ -372,6 +393,34 @@ var Status = (new function($)
 			Notification.show('#Notif_SetSpeedLimit');
 			Refresher.update();
 		});
+	}
+
+	this.scheduledPauseClick = function(seconds)
+	{
+		RPC.call('pausedownload2', [],
+			function(){RPC.call('pausepost', [],
+			function(){RPC.call('pausescan', [],
+			function(){RPC.call('scheduleresume', [seconds], Refresher.update)})})});
+	}
+
+	this.scheduledPauseDialogClick = function()
+	{
+		$PauseForInput.val('');
+		$ScheduledPauseDialog.modal();
+	}
+
+	this.pauseForClick = function()
+	{
+		var val = $PauseForInput.val();
+		var minutes = parseInt(val);
+
+		if (isNaN(minutes) || minutes <= 0)
+		{
+			return;
+		}
+		
+		$ScheduledPauseDialog.modal('hide');
+		this.scheduledPauseClick(minutes * 60);
 	}
 
 	function modalShow()

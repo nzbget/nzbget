@@ -182,6 +182,7 @@ void Frontend::ServerPauseUnpause(bool bPause, bool bSecondRegister)
 	}
 	else
 	{
+		g_pOptions->SetResumeTime(0);
 		if (bSecondRegister)
 		{
 			g_pOptions->SetPauseDownload2(bPause);

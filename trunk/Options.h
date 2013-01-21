@@ -287,6 +287,7 @@ private:
 	bool				m_bPauseScan;
 	int					m_iDownloadRate;
 	EClientOperation	m_eClientOperation;
+	time_t				m_tResumeTime;
 
 	void				InitDefault();
 	void				InitOptFile();
@@ -441,6 +442,8 @@ public:
 	bool				GetPauseScan() const { return m_bPauseScan; }
 	void				SetDownloadRate(int iRate) { m_iDownloadRate = iRate; }
 	int					GetDownloadRate() const { return m_iDownloadRate; }
+	void				SetResumeTime(time_t tResumeTime) { m_tResumeTime = tResumeTime; }
+	time_t				GetResumeTime() const { return m_tResumeTime; }
 };
 
 #endif

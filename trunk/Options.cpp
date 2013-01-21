@@ -430,6 +430,7 @@ Options::Options(int argc, char* argv[])
 	m_iKeepHistory			= 0;
 	m_bAccurateRate			= false;
 	m_EMatchMode			= mmID;
+	m_tResumeTime			= 0;
 
 	// Option "ConfigFile" will be initialized later, but we want
 	// to see it at the top of option list, so we add it first
