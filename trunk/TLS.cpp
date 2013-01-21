@@ -315,9 +315,13 @@ void TLSSocket::ReportError(const char* szErrMsg)
 		{
 			debug("%s: %s", szErrMsg, errstr);
 		}
-		else
+		else if (errcode != 0)
 		{
 			error("%s: %s", szErrMsg, errstr);
+		}
+		else
+		{
+			error("%s", szErrMsg);
 		}
 	} while (errcode);
 #endif /* HAVE_OPENSSL */
@@ -499,7 +503,14 @@ int TLSSocket::Send(const char* pBuffer, int iSize)
 
 	if (ret < 0)
 	{
-		ReportError("Could not read from TLS-Socket");
+#ifdef HAVE_OPENSSL
+		if (ERR_peek_error() == 0)
+		{
+			ReportError("Could not write to TLS-Socket: Connection closed by remote host");
+		}
+		else
+#endif /* HAVE_OPENSSL */
+		ReportError("Could not write to TLS-Socket");
 		return -1;
 	}
 
@@ -520,7 +531,16 @@ int TLSSocket::Recv(char* pBuffer, int iSize)
 
 	if (ret < 0)
 	{
-		ReportError("Could not read from TLS-Socket");
+#ifdef HAVE_OPENSSL
+		if (ERR_peek_error() == 0)
+		{
+			ReportError("Could not read from TLS-Socket: Connection closed by remote host");
+		}
+		else
+#endif /* HAVE_OPENSSL */
+		{
+			ReportError("Could not read from TLS-Socket");
+		}
 		return -1;
 	}
 
