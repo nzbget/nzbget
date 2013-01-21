@@ -391,6 +391,7 @@ bool Connection::DoConnect()
 
 	for (addr = addr_list; addr != NULL; addr = addr->ai_next)
 	{
+		bool bLastAddr = !addr->ai_next;
 		m_iSocket = socket(addr->ai_family, addr->ai_socktype, addr->ai_protocol);
 		if (m_iSocket != INVALID_SOCKET)
 		{
@@ -401,15 +402,28 @@ bool Connection::DoConnect()
 				break;
 			}
 			// Connection failed
+			if (bLastAddr)
+			{
+				ReportError("Connection to %s failed", m_szHost, true, 0);
+			}
 			closesocket(m_iSocket);
 			m_iSocket = INVALID_SOCKET;
+		}
+		else if (bLastAddr)
+		{
+			ReportError("Socket creation failed for %s", m_szHost, true, 0);
 		}
 	}
 
 	freeaddrinfo(addr_list);
 
+	if (m_iSocket == INVALID_SOCKET)
+	{
+		return false;
+	} 
+
 #else
-	
+
 	struct sockaddr_in	sSocketAddress;
 	memset(&sSocketAddress, 0, sizeof(sSocketAddress));
 	sSocketAddress.sin_family = AF_INET;
@@ -430,17 +444,12 @@ bool Connection::DoConnect()
 	int res = connect(m_iSocket , (struct sockaddr *) & sSocketAddress, sizeof(sSocketAddress));
 	if (res == -1)
 	{
-		// Connection failed
+		ReportError("Connection to %s failed", m_szHost, true, 0);
 		closesocket(m_iSocket);
 		m_iSocket = INVALID_SOCKET;
+		return false;
 	}
 #endif
-
-	if (m_iSocket == INVALID_SOCKET)
-	{
-		ReportError("Connection to %s failed", m_szHost, true, 0);
-		return false;
-	} 
 
 #ifdef WIN32
 	int MSecVal = m_iTimeout * 1000;
@@ -453,7 +462,7 @@ bool Connection::DoConnect()
 #endif
 	if (err != 0)
 	{
-		ReportError("setsockopt failed", NULL, true, 0);
+		ReportError("Socket initialization failed for %s", m_szHost, true, 0);
 	}
 
 #ifndef DISABLE_TLS
@@ -711,14 +720,9 @@ void Connection::ReportError(const char* szMsgPrefix, const char* szMsgArg, bool
 	{
 #ifdef WIN32
 		int ErrCode = WSAGetLastError();
-		if (m_bSuppressErrors)
-		{
-			debug("%s: ErrNo %i", szErrPrefix, ErrCode);
-		}
-		else
-		{
-			error("%s: ErrNo %i", szErrPrefix, ErrCode);
-		}
+		char szErrMsg[1024];
+		FormatMessage(FORMAT_MESSAGE_FROM_SYSTEM, NULL, ErrCode, 0, szErrMsg, 1024, NULL);
+		szErrMsg[1024-1] = '\0';
 #else
 		const char *szErrMsg = NULL;
 		int ErrCode = herrno;
@@ -731,7 +735,7 @@ void Connection::ReportError(const char* szMsgPrefix, const char* szMsgArg, bool
 		{
 			szErrMsg = hstrerror(ErrCode);
 		}
-		
+#endif
 		if (m_bSuppressErrors)
 		{
 			debug("%s: ErrNo %i, %s", szErrPrefix, ErrCode, szErrMsg);
@@ -740,7 +744,6 @@ void Connection::ReportError(const char* szMsgPrefix, const char* szMsgArg, bool
 		{
 			error("%s: ErrNo %i, %s", szErrPrefix, ErrCode, szErrMsg);
 		}
-#endif
 	}
 	else
 	{
