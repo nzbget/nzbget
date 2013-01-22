@@ -312,14 +312,14 @@ void NZBInfo::BuildDestDirName()
 		szCategoryDir[1024 - 1] = '\0';
 		Util::MakeValidFilename(szCategoryDir, '_', true);
 
-		snprintf(szBuffer, 1024, "%s%s", szDestDir, szCategoryDir);
+		snprintf(szBuffer, 1024, "%s%s%c", szDestDir, szCategoryDir, PATH_SEPARATOR);
 		szBuffer[1024-1] = '\0';
 		strncpy(szDestDir, szBuffer, 1024);
 	}
 
 	if (g_pOptions->GetAppendNZBDir())
 	{
-		snprintf(szBuffer, 1024, "%s%c%s", szDestDir, PATH_SEPARATOR, GetName());
+		snprintf(szBuffer, 1024, "%s%s", szDestDir, GetName());
 		szBuffer[1024-1] = '\0';
 		strncpy(szDestDir, szBuffer, 1024);
 	}

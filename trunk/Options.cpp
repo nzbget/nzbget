@@ -1912,8 +1912,9 @@ void Options::InitCategories()
 		sprintf(optname, "Category%i.Name", n);
 		const char* nname = GetOption(optname);
 
-		sprintf(optname, "Category%i.DestDir", n);
-		const char* ndestdir = GetOption(optname);
+		char destdiroptname[128];
+		sprintf(destdiroptname, "Category%i.DestDir", n);
+		const char* ndestdir = GetOption(destdiroptname);
 
 		bool definition = nname || ndestdir;
 		bool completed = nname && strlen(nname) > 0;
@@ -1925,8 +1926,19 @@ void Options::InitCategories()
 
 		if (completed)
 		{
-			Category* pCategory = new Category(nname, ndestdir);
+			char* szDestDir = NULL;
+			if (ndestdir && ndestdir[0] != '\0')
+			{
+				CheckDir(&szDestDir, destdiroptname, false, true);
+			}
+
+			Category* pCategory = new Category(nname, szDestDir);
 			m_Categories.push_back(pCategory);
+
+			if (szDestDir)
+			{
+				free(szDestDir);
+			}
 		}
 		else
 		{
