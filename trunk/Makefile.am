@@ -28,7 +28,7 @@ nzbget_SOURCES = \
 	Log.cpp Log.h LoggableFrontend.cpp LoggableFrontend.h MessageBase.h \
 	NCursesFrontend.cpp NCursesFrontend.h NNTPConnection.cpp NNTPConnection.h NZBFile.cpp \
 	NZBFile.h NewsServer.cpp NewsServer.h Observer.cpp \
-	Observer.h Options.cpp Options.h ParChecker.cpp ParChecker.h \
+	Observer.h Options.cpp Options.h ParChecker.cpp ParChecker.h ParCoordinator.cpp ParCoordinator.h \
 	PrePostProcessor.cpp PrePostProcessor.h QueueCoordinator.cpp \
 	QueueCoordinator.h QueueEditor.cpp QueueEditor.h RemoteClient.cpp RemoteClient.h \
 	RemoteServer.cpp RemoteServer.h Scanner.cpp Scanner.h Scheduler.cpp Scheduler.h ScriptController.cpp \

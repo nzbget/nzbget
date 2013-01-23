@@ -392,6 +392,14 @@
 			>
 		</File>
 		<File
+			RelativePath=".\ParCoordinator.cpp"
+			>
+		</File>
+		<File
+			RelativePath=".\ParCoordinator.h"
+			>
+		</File>
+		<File
 			RelativePath=".\ParChecker.cpp"
 			>
 		</File>

@@ -1,7 +1,7 @@
 /*
  *  This file is part of nzbget
  *
- *  Copyright (C) 2007-2009 Andrey Prygunkov <hugbug@users.sourceforge.net>
+ *  Copyright (C) 2007-2013 Andrey Prygunkov <hugbug@users.sourceforge.net>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -32,10 +32,7 @@
 #include "Observer.h"
 #include "DownloadInfo.h"
 #include "Scanner.h"
-
-#ifndef DISABLE_PARCHECK
-#include "ParChecker.h"
-#endif
+#include "ParCoordinator.h"
 
 class PrePostProcessor : public Thread
 {
@@ -52,48 +49,26 @@ public:
 	};
 
 private:
-	typedef std::deque<char*>		FileList;
-
 	class QueueCoordinatorObserver: public Observer
 	{
 	public:
-		PrePostProcessor* owner;
-		virtual void	Update(Subject* Caller, void* Aspect) { owner->QueueCoordinatorUpdate(Caller, Aspect); }
+		PrePostProcessor* m_pOwner;
+		virtual void	Update(Subject* Caller, void* Aspect) { m_pOwner->QueueCoordinatorUpdate(Caller, Aspect); }
 	};
 
-#ifndef DISABLE_PARCHECK
-	class ParCheckerObserver: public Observer
-	{
-	public:
-		PrePostProcessor* owner;
-		virtual void	Update(Subject* Caller, void* Aspect) { owner->ParCheckerUpdate(Caller, Aspect); }
-	};
-
-	class PostParChecker: public ParChecker
+	class PostParCoordinator: public ParCoordinator
 	{
 	private:
-		PrePostProcessor*	m_Owner;
-		PostInfo*			m_pPostInfo;
+		PrePostProcessor*	m_pOwner;
 	protected:
-		virtual bool	RequestMorePars(int iBlockNeeded, int* pBlockFound);
-		virtual void	UpdateProgress();
-	public:
-		PostInfo*		GetPostInfo() { return m_pPostInfo; }
-		void			SetPostInfo(PostInfo* pPostInfo) { m_pPostInfo = pPostInfo; }
+		virtual bool		PauseDownload() { return m_pOwner->PauseDownload(); }
+		virtual bool		UnpauseDownload() { return m_pOwner->UnpauseDownload(); }
 
 		friend class PrePostProcessor;
 	};
-
-	struct BlockInfo
-	{
-		FileInfo*		m_pFileInfo;
-		int				m_iBlockCount;
-	};
-
-	typedef std::list<BlockInfo*> 	Blocks;
-#endif
 	
 private:
+	PostParCoordinator	m_ParCoordinator;
 	QueueCoordinatorObserver	m_QueueCoordinatorObserver;
 	bool				m_bHasMoreJobs;
 	bool				m_bPostScript;
@@ -118,12 +93,8 @@ private:
 	void				NZBDownloaded(DownloadQueue* pDownloadQueue, NZBInfo* pNZBInfo);
 	void				NZBDeleted(DownloadQueue* pDownloadQueue, NZBInfo* pNZBInfo);
 	void				NZBCompleted(DownloadQueue* pDownloadQueue, NZBInfo* pNZBInfo, bool bSaveQueue);
-	bool				FindMainPars(const char* szPath, FileList* pFileList);
-	bool				ParseParFilename(const char* szParFilename, int* iBaseNameLen, int* iBlocks);
-	bool				SameParCollection(const char* szFilename1, const char* szFilename2);
 	bool				CreatePostJobs(DownloadQueue* pDownloadQueue, NZBInfo* pNZBInfo, bool bParCheck, bool bPostScript, bool bAddTop);
 	void				DeleteQueuedFile(const char* szQueuedFile);
-	void				PausePars(DownloadQueue* pDownloadQueue, NZBInfo* pNZBInfo);
 	NZBInfo*			MergeGroups(DownloadQueue* pDownloadQueue, NZBInfo* pNZBInfo);
 	bool				PostQueueMove(IDList* pIDList, EEditAction eAction, int iOffset);
 	bool				PostQueueDelete(IDList* pIDList);
@@ -133,19 +104,6 @@ private:
 	FileInfo*			GetQueueGroup(DownloadQueue* pDownloadQueue, NZBInfo* pNZBInfo);
 	void				CheckHistory();
 
-#ifndef DISABLE_PARCHECK
-	PostParChecker		m_ParChecker;
-	ParCheckerObserver	m_ParCheckerObserver;
-
-	void				ParCheckerUpdate(Subject* Caller, void* Aspect);
-	bool				AddPar(FileInfo* pFileInfo, bool bDeleted);
-	bool				RequestMorePars(NZBInfo* pNZBInfo, const char* szParFilename, int iBlockNeeded, int* pBlockFound);
-	void				FindPars(DownloadQueue* pDownloadQueue, NZBInfo* pNZBInfo, const char* szParFilename, 
-							Blocks* pBlocks, bool bStrictParName, bool bExactParName, int* pBlockFound);
-	void				UpdateParProgress();
-	void				StartParJob(PostInfo* pPostInfo);
-#endif
-	
 public:
 						PrePostProcessor();
 	virtual				~PrePostProcessor();
