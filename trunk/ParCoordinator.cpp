@@ -445,6 +445,7 @@ bool ParCoordinator::RequestMorePars(NZBInfo* pNZBInfo, const char* szParFilenam
 				{
 					info("Unpausing %s%c%s for par-recovery", pNZBInfo->GetName(), (int)PATH_SEPARATOR, pBestBlockInfo->m_pFileInfo->GetFilename());
 					pBestBlockInfo->m_pFileInfo->SetPaused(false);
+					pBestBlockInfo->m_pFileInfo->SetExtraPriority(true);
 				}
 				iBlockNeeded -= pBestBlockInfo->m_iBlockCount;
 				blocks.remove(pBestBlockInfo);
@@ -468,6 +469,7 @@ bool ParCoordinator::RequestMorePars(NZBInfo* pNZBInfo, const char* szParFilenam
 			{
 				info("Unpausing %s%c%s for par-recovery", pNZBInfo->GetName(), (int)PATH_SEPARATOR, pBlockInfo->m_pFileInfo->GetFilename());
 				pBlockInfo->m_pFileInfo->SetPaused(false);
+				pBlockInfo->m_pFileInfo->SetExtraPriority(true);
 			}
 			iBlockNeeded -= pBlockInfo->m_iBlockCount;
 		}

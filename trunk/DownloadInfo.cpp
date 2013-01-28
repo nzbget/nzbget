@@ -453,6 +453,7 @@ FileInfo::FileInfo()
 	m_bOutputInitialized = false;
 	m_pNZBInfo = NULL;
 	m_iPriority = 0;
+	m_bExtraPriority = false;
 	m_iActiveDownloads = 0;
 	m_iIDGen++;
 	m_iID = m_iIDGen;

@@ -2,7 +2,7 @@
  *  This file is part of nzbget
  *
  *  Copyright (C) 2004 Sven Henkel <sidddy@users.sourceforge.net>
- *  Copyright (C) 2007-2011 Andrey Prygunkov <hugbug@users.sourceforge.net>
+ *  Copyright (C) 2007-2013 Andrey Prygunkov <hugbug@users.sourceforge.net>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -94,6 +94,7 @@ private:
 	char*				m_szOutputFilename;
 	Mutex				m_mutexOutputFile;
 	int					m_iPriority;
+	bool				m_bExtraPriority;
 	int					m_iActiveDownloads;
 
 	static int			m_iIDGen;
@@ -136,6 +137,8 @@ public:
 	bool				IsDupe(const char* szFilename);
 	int					GetPriority() { return m_iPriority; }
 	void				SetPriority(int iPriority) { m_iPriority = iPriority; }
+	bool				GetExtraPriority() { return m_bExtraPriority; }
+	void				SetExtraPriority(bool bExtraPriority) { m_bExtraPriority = bExtraPriority; };
 	int					GetActiveDownloads() { return m_iActiveDownloads; }
 	void				SetActiveDownloads(int iActiveDownloads) { m_iActiveDownloads = iActiveDownloads; }
 };

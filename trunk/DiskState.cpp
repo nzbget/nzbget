@@ -1,7 +1,7 @@
 /*
  *  This file is part of nzbget
  *
- *  Copyright (C) 2007-2011 Andrey Prygunkov <hugbug@users.sourceforge.net>
+ *  Copyright (C) 2007-2013 Andrey Prygunkov <hugbug@users.sourceforge.net>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -82,7 +82,7 @@ bool DiskState::SaveDownloadQueue(DownloadQueue* pDownloadQueue)
 		return false;
 	}
 
-	fprintf(outfile, "%s%i\n", FORMATVERSION_SIGNATURE, 16);
+	fprintf(outfile, "%s%i\n", FORMATVERSION_SIGNATURE, 17);
 
 	// save nzb-infos
 	SaveNZBList(pDownloadQueue, outfile);
@@ -136,7 +136,7 @@ bool DiskState::LoadDownloadQueue(DownloadQueue* pDownloadQueue)
 	char FileSignatur[128];
 	fgets(FileSignatur, sizeof(FileSignatur), infile);
 	int iFormatVersion = ParseFormatVersion(FileSignatur);
-	if (iFormatVersion < 3 || iFormatVersion > 16)
+	if (iFormatVersion < 3 || iFormatVersion > 17)
 	{
 		error("Could not load diskstate due to file version mismatch");
 		fclose(infile);
@@ -409,8 +409,8 @@ void DiskState::SaveFileQueue(DownloadQueue* pDownloadQueue, FileQueue* pFileQue
 		if (!pFileInfo->GetDeleted())
 		{
 			int iNZBIndex = FindNZBInfoIndex(pDownloadQueue, pFileInfo->GetNZBInfo());
-			fprintf(outfile, "%i,%i,%i,%i,%i\n", pFileInfo->GetID(), iNZBIndex, (int)pFileInfo->GetPaused(), 
-				(int)pFileInfo->GetTime(), pFileInfo->GetPriority());
+			fprintf(outfile, "%i,%i,%i,%i,%i,%i\n", pFileInfo->GetID(), iNZBIndex, (int)pFileInfo->GetPaused(), 
+				(int)pFileInfo->GetTime(), pFileInfo->GetPriority(), (int)pFileInfo->GetExtraPriority());
 		}
 	}
 }
@@ -425,8 +425,12 @@ bool DiskState::LoadFileQueue(DownloadQueue* pDownloadQueue, FileQueue* pFileQue
 	{
 		unsigned int id, iNZBIndex, paused;
 		unsigned int iTime = 0;
-		int iPriority = 0;
-		if (iFormatVersion >= 14)
+		int iPriority = 0, iExtraPriority = 0;
+		if (iFormatVersion >= 17)
+		{
+			if (fscanf(infile, "%i,%i,%i,%i,%i,%i\n", &id, &iNZBIndex, &paused, &iTime, &iPriority, &iExtraPriority) != 6) goto error;
+		}
+		else if (iFormatVersion >= 14)
 		{
 			if (fscanf(infile, "%i,%i,%i,%i,%i\n", &id, &iNZBIndex, &paused, &iTime, &iPriority) != 5) goto error;
 		}
@@ -451,6 +455,7 @@ bool DiskState::LoadFileQueue(DownloadQueue* pDownloadQueue, FileQueue* pFileQue
 			pFileInfo->SetPaused(paused);
 			pFileInfo->SetTime(iTime);
 			pFileInfo->SetPriority(iPriority);
+			pFileInfo->SetExtraPriority(iExtraPriority != 0);
 			pFileInfo->SetNZBInfo(pDownloadQueue->GetNZBInfoList()->at(iNZBIndex - 1));
 			pFileQueue->push_back(pFileInfo);
 		}
@@ -1018,7 +1023,7 @@ bool DiskState::DiscardDownloadQueue()
 	char FileSignatur[128];
 	fgets(FileSignatur, sizeof(FileSignatur), infile);
 	int iFormatVersion = ParseFormatVersion(FileSignatur);
-	if (3 <= iFormatVersion && iFormatVersion <= 16)
+	if (3 <= iFormatVersion && iFormatVersion <= 17)
 	{
 		// skip nzb-infos
 		int size = 0;

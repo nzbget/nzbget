@@ -2,7 +2,7 @@
  *  This file is part of nzbget
  *
  *  Copyright (C) 2005 Bo Cordes Petersen <placebodk@users.sourceforge.net>
- *  Copyright (C) 2007-2011 Andrey Prygunkov <hugbug@users.sourceforge.net>
+ *  Copyright (C) 2007-2013 Andrey Prygunkov <hugbug@users.sourceforge.net>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -466,7 +466,10 @@ bool QueueCoordinator::GetNextArticle(FileInfo* &pFileInfo, ArticleInfo* &pArtic
 			FileInfo* pFileInfo1 = *it;
 			if ((!pCheckedFiles || !pCheckedFiles[iNum]) && 
 				!pFileInfo1->GetPaused() && !pFileInfo1->GetDeleted() &&
-				(!pFileInfo || (pFileInfo1->GetPriority() > pFileInfo->GetPriority())))
+				(!pFileInfo ||
+				 (pFileInfo1->GetExtraPriority() == pFileInfo->GetExtraPriority() &&
+				  pFileInfo1->GetPriority() > pFileInfo->GetPriority()) ||
+				 (pFileInfo1->GetExtraPriority() > pFileInfo->GetExtraPriority())))
 			{
 				pFileInfo = pFileInfo1;
 				iFileNum = iNum;
