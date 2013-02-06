@@ -97,7 +97,8 @@ am_nzbget_OBJECTS = ArticleDownloader.$(OBJEXT) BinRpc.$(OBJEXT) \
 	ScriptController.$(OBJEXT) ServerPool.$(OBJEXT) \
 	svn_version.$(OBJEXT) TLS.$(OBJEXT) Thread.$(OBJEXT) \
 	Util.$(OBJEXT) XmlRpc.$(OBJEXT) WebDownloader.$(OBJEXT) \
-	WebServer.$(OBJEXT) UrlCoordinator.$(OBJEXT) nzbget.$(OBJEXT)
+	WebServer.$(OBJEXT) UrlCoordinator.$(OBJEXT) Unpack.$(OBJEXT) \
+	nzbget.$(OBJEXT)
 nzbget_OBJECTS = $(am_nzbget_OBJECTS)
 nzbget_LDADD = $(LDADD)
 binSCRIPT_INSTALL = $(INSTALL_SCRIPT)
@@ -254,7 +255,7 @@ nzbget_SOURCES = \
 	RemoteServer.cpp RemoteServer.h Scanner.cpp Scanner.h Scheduler.cpp Scheduler.h ScriptController.cpp \
 	ScriptController.h ServerPool.cpp ServerPool.h svn_version.cpp TLS.cpp TLS.h Thread.cpp Thread.h \
 	Util.cpp Util.h XmlRpc.cpp XmlRpc.h WebDownloader.cpp WebDownloader.h WebServer.cpp WebServer.h \
-	UrlCoordinator.cpp UrlCoordinator.h nzbget.cpp nzbget.h
+	UrlCoordinator.cpp UrlCoordinator.h Unpack.cpp Unpack.h nzbget.cpp nzbget.h
 
 EXTRA_DIST = \
 	Makefile.cvs nzbgetd nzbget-postprocess.sh \
@@ -456,6 +457,7 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/ServerPool.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/TLS.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/Thread.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/Unpack.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/UrlCoordinator.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/Util.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/WebDownloader.Po@am__quote@

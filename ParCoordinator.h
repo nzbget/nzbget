@@ -87,9 +87,9 @@ public:
 public:
 						ParCoordinator();
 	virtual				~ParCoordinator();
-	bool				FindMainPars(const char* szPath, FileList* pFileList);
-	bool				ParseParFilename(const char* szParFilename, int* iBaseNameLen, int* iBlocks);
-	bool				SameParCollection(const char* szFilename1, const char* szFilename2);
+	static bool			FindMainPars(const char* szPath, FileList* pFileList);
+	static bool			ParseParFilename(const char* szParFilename, int* iBaseNameLen, int* iBlocks);
+	static bool			SameParCollection(const char* szFilename1, const char* szFilename2);
 	void				PausePars(DownloadQueue* pDownloadQueue, NZBInfo* pNZBInfo);
 
 #ifndef DISABLE_PARCHECK

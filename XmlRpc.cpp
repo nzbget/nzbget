@@ -1,7 +1,7 @@
 /*
  *  This file is part of nzbget
  *
- *  Copyright (C) 2007-2011 Andrey Prygunkov <hugbug@users.sourceforge.net>
+ *  Copyright (C) 2007-2013 Andrey Prygunkov <hugbug@users.sourceforge.net>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -1629,7 +1629,7 @@ void PostQueueXmlCommand::Execute()
 	{
 		PostInfo* pPostInfo = *it;
 
-	    const char* szPostStageName[] = { "QUEUED", "LOADING_PARS", "VERIFYING_SOURCES", "REPAIRING", "VERIFYING_REPAIRED", "EXECUTING_SCRIPT", "FINISHED" };
+	    const char* szPostStageName[] = { "QUEUED", "LOADING_PARS", "VERIFYING_SOURCES", "REPAIRING", "VERIFYING_REPAIRED", "UNPACKING", "EXECUTING_SCRIPT", "FINISHED" };
 
 		char* xmlNZBNicename = EncodeStr(pPostInfo->GetNZBInfo()->GetName());
 		char* xmlNZBFilename = EncodeStr(pPostInfo->GetNZBInfo()->GetFilename());
@@ -1786,6 +1786,7 @@ void HistoryXmlCommand::Execute()
 		"<member><name>DestDir</name><value><string>%s</string></value></member>\n"
 		"<member><name>Category</name><value><string>%s</string></value></member>\n"
 		"<member><name>ParStatus</name><value><string>%s</string></value></member>\n"
+		"<member><name>UnpackStatus</name><value><string>%s</string></value></member>\n"
 		"<member><name>ScriptStatus</name><value><string>%s</string></value></member>\n"
 		"<member><name>FileSizeLo</name><value><i4>%u</i4></value></member>\n"
 		"<member><name>FileSizeHi</name><value><i4>%u</i4></value></member>\n"
@@ -1816,6 +1817,7 @@ void HistoryXmlCommand::Execute()
 		"\"DestDir\" : \"%s\",\n"
 		"\"Category\" : \"%s\",\n"
 		"\"ParStatus\" : \"%s\",\n"
+		"\"UnpackStatus\" : \"%s\",\n"
 		"\"ScriptStatus\" : \"%s\",\n"
 		"\"FileSizeLo\" : %u,\n"
 		"\"FileSizeHi\" : %u,\n"
@@ -1864,6 +1866,7 @@ void HistoryXmlCommand::Execute()
 		"}";
 
     const char* szParStatusName[] = { "NONE", "FAILURE", "REPAIR_POSSIBLE", "SUCCESS" };
+    const char* szUnpackStatusName[] = { "NONE", "NONE", "FAILURE", "SUCCESS" };
     const char* szScriptStatusName[] = { "NONE", "UNKNOWN", "FAILURE", "SUCCESS" };
 	const char* szUrlStatusName[] = { "UNKNOWN", "UNKNOWN", "SUCCESS", "FAILURE", "UNKNOWN" };
 	const char* szMessageType[] = { "INFO", "WARNING", "ERROR", "DEBUG", "DETAIL"};
@@ -1899,9 +1902,10 @@ void HistoryXmlCommand::Execute()
 
 			snprintf(szItemBuf, szItemBufSize, IsJson() ? JSON_HISTORY_ITEM_START : XML_HISTORY_ITEM_START,
 				pHistoryInfo->GetID(), pHistoryInfo->GetID(), "NZB", xmlNicename, xmlNicename, xmlNZBFilename, 
-				xmlDestDir, xmlCategory, szParStatusName[pNZBInfo->GetParStatus()], 
-				szScriptStatusName[pNZBInfo->GetScriptStatus()], iFileSizeLo, iFileSizeHi, iFileSizeMB, 
-				pNZBInfo->GetFileCount(), pNZBInfo->GetParkedFileCount(), pHistoryInfo->GetTime(), "", "");
+				xmlDestDir, xmlCategory, szParStatusName[pNZBInfo->GetParStatus()],
+				szUnpackStatusName[pNZBInfo->GetUnpackStatus()], szScriptStatusName[pNZBInfo->GetScriptStatus()],
+				iFileSizeLo, iFileSizeHi, iFileSizeMB, pNZBInfo->GetFileCount(),
+				pNZBInfo->GetParkedFileCount(), pHistoryInfo->GetTime(), "", "");
 
 			free(xmlDestDir);
 		}

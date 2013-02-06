@@ -34,7 +34,7 @@ nzbget_SOURCES = \
 	RemoteServer.cpp RemoteServer.h Scanner.cpp Scanner.h Scheduler.cpp Scheduler.h ScriptController.cpp \
 	ScriptController.h ServerPool.cpp ServerPool.h svn_version.cpp TLS.cpp TLS.h Thread.cpp Thread.h \
 	Util.cpp Util.h XmlRpc.cpp XmlRpc.h WebDownloader.cpp WebDownloader.h WebServer.cpp WebServer.h \
-	UrlCoordinator.cpp UrlCoordinator.h nzbget.cpp nzbget.h
+	UrlCoordinator.cpp UrlCoordinator.h Unpack.cpp Unpack.h nzbget.cpp nzbget.h
 
 EXTRA_DIST = \
 	Makefile.cvs nzbgetd nzbget-postprocess.sh \

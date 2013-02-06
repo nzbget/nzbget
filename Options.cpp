@@ -171,6 +171,11 @@ static const char* OPTION_MERGENZB				= "MergeNzb";
 static const char* OPTION_PARTIMELIMIT			= "ParTimeLimit";
 static const char* OPTION_KEEPHISTORY			= "KeepHistory";
 static const char* OPTION_ACCURATERATE			= "AccurateRate";
+static const char* OPTION_UNPACK				= "Unpack";
+static const char* OPTION_UNPACKCLEANUPDISK		= "UnpackCleanupDisk";
+static const char* OPTION_UNRARCMD				= "UnrarCmd";
+static const char* OPTION_SEVENZIPCMD			= "SevenZipCmd";
+static const char* OPTION_UNPACKPAUSEQUEUE		= "UnpackPauseQueue";
 
 // obsolete options
 static const char* OPTION_POSTLOGKIND		= "PostLogKind";
@@ -431,6 +436,11 @@ Options::Options(int argc, char* argv[])
 	m_bAccurateRate			= false;
 	m_EMatchMode			= mmID;
 	m_tResumeTime			= 0;
+	m_bUnpack				= false;
+	m_bUnpackCleanupDisk	= false;
+	m_szUnrarCmd			= NULL;
+	m_szSevenZipCmd			= NULL;
+	m_bUnpackPauseQueue		= false;
 
 	// Option "ConfigFile" will be initialized later, but we want
 	// to see it at the top of option list, so we add it first
@@ -603,6 +613,14 @@ Options::~Options()
 	{
 		free(m_szAddNZBFilename);
 	}
+	if (m_szUnrarCmd)
+	{
+		free(m_szUnrarCmd);
+	}
+	if (m_szSevenZipCmd)
+	{
+		free(m_szSevenZipCmd);
+	}
 
 	for (NameList::iterator it = m_EditQueueNameList.begin(); it != m_EditQueueNameList.end(); it++)
 	{
@@ -731,6 +749,16 @@ void Options::InitDefault()
 	SetOption(OPTION_PARTIMELIMIT, "0");
 	SetOption(OPTION_KEEPHISTORY, "7");
 	SetOption(OPTION_ACCURATERATE, "no");
+	SetOption(OPTION_UNPACK, "no");
+	SetOption(OPTION_UNPACKCLEANUPDISK, "no");
+#ifdef WIN32
+	SetOption(OPTION_UNRARCMD, "unrar.exe");
+	SetOption(OPTION_SEVENZIPCMD, "7z.exe");
+#else
+	SetOption(OPTION_UNRARCMD, "unrar");
+	SetOption(OPTION_SEVENZIPCMD, "7z");
+#endif
+	SetOption(OPTION_UNPACKPAUSEQUEUE, "no");
 }
 
 void Options::InitOptFile()
@@ -858,6 +886,8 @@ void Options::InitOptions()
 	m_szLockFile			= strdup(GetOption(OPTION_LOCKFILE));
 	m_szDaemonUserName		= strdup(GetOption(OPTION_DAEMONUSERNAME));
 	m_szLogFile				= strdup(GetOption(OPTION_LOGFILE));
+	m_szUnrarCmd			= strdup(GetOption(OPTION_UNRARCMD));
+	m_szSevenZipCmd			= strdup(GetOption(OPTION_SEVENZIPCMD));
 
 	m_iDownloadRate			= (int)(ParseFloatValue(OPTION_DOWNLOADRATE) * 1024);
 	m_iConnectionTimeout	= ParseIntValue(OPTION_CONNECTIONTIMEOUT, 10);
@@ -912,6 +942,9 @@ void Options::InitOptions()
 	m_bMergeNzb				= (bool)ParseEnumValue(OPTION_MERGENZB, BoolCount, BoolNames, BoolValues);
 	m_bAccurateRate			= (bool)ParseEnumValue(OPTION_ACCURATERATE, BoolCount, BoolNames, BoolValues);
 	m_bSecureControl		= (bool)ParseEnumValue(OPTION_SECURECONTROL, BoolCount, BoolNames, BoolValues);
+	m_bUnpack				= (bool)ParseEnumValue(OPTION_UNPACK, BoolCount, BoolNames, BoolValues);
+	m_bUnpackCleanupDisk	= (bool)ParseEnumValue(OPTION_UNPACKCLEANUPDISK, BoolCount, BoolNames, BoolValues);
+	m_bUnpackPauseQueue		= (bool)ParseEnumValue(OPTION_UNPACKPAUSEQUEUE, BoolCount, BoolNames, BoolValues);
 
 	const char* OutputModeNames[] = { "loggable", "logable", "log", "colored", "color", "ncurses", "curses" };
 	const int OutputModeValues[] = { omLoggable, omLoggable, omLoggable, omColored, omColored, omNCurses, omNCurses };
@@ -2349,6 +2382,13 @@ void Options::CheckOptions()
 	if (!m_bDecode)
 	{
 		m_bDirectWrite = false;
+	}
+
+	if (m_bUnpack && m_bAllowReProcess)
+	{
+		LocateOptionSrcPos(OPTION_ALLOWREPROCESS);
+		ConfigError("Options \"%s\" and \"%s\" cannot be both active at the same time", OPTION_UNPACK, OPTION_ALLOWREPROCESS);
+		m_bAllowReProcess = false;
 	}
 }
 

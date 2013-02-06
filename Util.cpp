@@ -599,6 +599,42 @@ bool Util::CreateDirectory(const char* szDirFilename)
 	return DirectoryExists(szDirFilename);
 }
 
+bool Util::RemoveDirectory(const char* szDirFilename)
+{
+#ifdef WIN32
+	return ::RemoveDirectory(szDirFilename);
+#else
+	return remove(szDirFilename) == 0;
+#endif
+}
+
+bool Util::DeleteDirectoryWithContent(const char* szDirFilename)
+{
+	bool bOK = true;
+
+	DirBrowser dir(szDirFilename);
+	while (const char* filename = dir.Next())
+	{
+		char szFullFilename[1024];
+		snprintf(szFullFilename, 1024, "%s%c%s", szDirFilename, PATH_SEPARATOR, filename);
+		szFullFilename[1024-1] = '\0';
+
+		if (strcmp(filename, ".") && strcmp(filename, ".."))
+		{
+			if (Util::DirectoryExists(szFullFilename))
+			{
+				bOK &= DeleteDirectoryWithContent(szFullFilename);
+			}
+			else
+			{
+				bOK &= remove(szFullFilename) == 0;
+			}
+		}
+	}
+
+	return bOK && RemoveDirectory(szDirFilename);
+}
+
 long long Util::FileSize(const char* szFilename)
 {
 #ifdef WIN32

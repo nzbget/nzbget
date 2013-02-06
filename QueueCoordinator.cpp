@@ -446,6 +446,9 @@ bool QueueCoordinator::GetNextArticle(FileInfo* &pFileInfo, ArticleInfo* &pArtic
 	// if the file doesn't have any articles left for download, we store that fact and search again,
 	// ignoring all files which were previously marked as not having any articles.
 
+	// special case: if the file has ExtraPriority-flag set, it has the highest priority and the
+	// Paused-flag is ignored.
+
 	//debug("QueueCoordinator::GetNextArticle()");
 
 	bool bOK = false;

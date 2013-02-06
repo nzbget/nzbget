@@ -2,7 +2,7 @@
  *  This file is part of nzbget
  *
  *  Copyright (C) 2004 Sven Henkel <sidddy@users.sourceforge.net>
- *  Copyright (C) 2007-2011 Andrey Prygunkov <hugbug@users.sourceforge.net>
+ *  Copyright (C) 2007-2013 Andrey Prygunkov <hugbug@users.sourceforge.net>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -130,7 +130,8 @@ NZBInfo::NZBInfo()
 	m_lSize = 0;
 	m_iRefCount = 0;
 	m_bPostProcess = false;
-	m_eParStatus = prNone;
+	m_eParStatus = psNone;
+	m_eUnpackStatus = usNone;
 	m_eScriptStatus = srNone;
 	m_bDeleted = false;
 	m_bParCleanup = false;
@@ -350,9 +351,8 @@ void NZBInfo::AppendMessage(Message::EKind eKind, time_t tTime, const char * szT
 		tTime = time(NULL);
 	}
 
-	Message* pMessage = new Message(++m_iIDMessageGen, eKind, tTime, szText);
-
 	m_mutexLog.Lock();
+	Message* pMessage = new Message(++m_iIDMessageGen, eKind, tTime, szText);
 	m_Messages.push_back(pMessage);
 	m_mutexLog.Unlock();
 }
@@ -610,6 +610,7 @@ PostInfo::PostInfo()
 	m_bDeleted = false;
 	m_bParCheck = false;
 	m_eParStatus = psNone;
+	m_eUnpackStatus = usNone;
 	m_eRequestParCheck = rpNone;
 	m_eScriptStatus = srNone;
 	m_szProgressLabel = strdup("");
@@ -696,9 +697,8 @@ void PostInfo::UnlockMessages()
 
 void PostInfo::AppendMessage(Message::EKind eKind, const char * szText)
 {
-	Message* pMessage = new Message(++m_iIDMessageGen, eKind, time(NULL), szText);
-
 	m_mutexLog.Lock();
+	Message* pMessage = new Message(++m_iIDMessageGen, eKind, time(NULL), szText);
 	m_Messages.push_back(pMessage);
 
 	while (m_Messages.size() > (unsigned int)g_pOptions->GetLogBufferSize())

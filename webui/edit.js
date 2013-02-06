@@ -1,7 +1,7 @@
 /*
  * This file is part of nzbget
  *
- * Copyright (C) 2012 Andrey Prygunkov <hugbug@users.sourceforge.net>
+ * Copyright (C) 2012-2013 Andrey Prygunkov <hugbug@users.sourceforge.net>
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -149,6 +149,7 @@ var DownloadsEditDialog = (new function($)
 		table += '<tr><td>Total</td><td class="text-right">' + size + '</td></tr>';
 		table += '<tr><td>Paused</td><td class="text-right">' + unpausedSize + '</td></tr>';
 		table += '<tr><td>Unpaused</td><td class="text-right">' + remaining + '</td></tr>';
+		//table += '<tr><td>Active downloads</td><td class="text-right">' + group.ActiveDownloads + '</td></tr>';
 		table += '<tr><td>Estimated time</td><td class="text-right">' + estimated + '</td></tr>';
 		table += '<tr><td>Files (total/remaining/pars)</td><td class="text-center">' + group.FileCount + ' / ' +
 			group.RemainingFileCount + ' / ' + group.RemainingParCount + '</td></tr>';
@@ -182,13 +183,16 @@ var DownloadsEditDialog = (new function($)
 		$DownloadsLogTable.fasttable('update', []);
 		$DownloadsFileTable.fasttable('update', []);
 
+		var postParamConfig = Options.postParamConfig;
+		defineBuiltinParams(postParamConfig);
+		
 		Util.show('#DownloadsEdit_NZBNameReadonly', group.postprocess);
 		Util.show('#DownloadsEdit_CancelPPGroup', group.postprocess);
 		Util.show('#DownloadsEdit_DeleteGroup', !group.postprocess);
 		Util.show('#DownloadsEdit_PauseGroup', !group.postprocess);
 		Util.show('#DownloadsEdit_ResumeGroup', false);
 		Util.show('#DownloadsEdit_Save', !group.postprocess);
-		var postParam = Options.postParamConfig && Options.postParamConfig.length > 0;
+		var postParam = postParamConfig && postParamConfig.length > 0;
 		var postLog = group.postprocess && group.post.Log.length > 0;
 		Util.show('#DownloadsEdit_Param', postParam);
 		Util.show('#DownloadsEdit_Log', postLog);
@@ -216,7 +220,7 @@ var DownloadsEditDialog = (new function($)
 
 		if (postParam)
 		{
-			postParams = $.extend(true, [], Options.postParamConfig);
+			postParams = $.extend(true, [], postParamConfig);
 			Options.mergeValues(postParams, group.Parameters);
 			var content = Config.buildOptionsContent(postParams[0]);
 			var configData = $('#DownloadsEdit_ParamData');
@@ -427,6 +431,25 @@ var DownloadsEditDialog = (new function($)
 
 	/*** TAB: POST-PROCESSING PARAMETERS **************************************************/
 
+	function defineBuiltinParams(postParamConfig)
+	{
+		if (Options.option('Unpack') !== 'yes')
+		{
+			return;
+		}
+		
+	    if (postParamConfig.length == 0)
+	    {
+	        postParamConfig.push({category: 'P', postparam: true, options: []});
+	    }
+	    
+		if (!Options.findOption(postParamConfig[0].options, '*Unpack:'))
+		{
+			postParamConfig[0].options.unshift({name: '*Unpack:Password', value: '', defvalue: '', select: [], caption: 'Password', description: 'Unpack-password for encrypted posts.'});
+			postParamConfig[0].options.unshift({name: '*Unpack:', value: '', defvalue: 'yes', select: ['yes', 'no'], caption: 'Unpack', description: 'Set to "no" to disable unpack for this nzb-file.'});
+		}
+	}
+	
 	function prepareParamRequest()
 	{
 		var request = [];

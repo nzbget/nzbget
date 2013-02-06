@@ -76,24 +76,26 @@ private:
 	bool				m_bSchedulerPause;
 	bool				m_bPostPause;
 	Scanner				m_Scanner;
+	const char*			m_szPauseReason;
 
 	bool				IsNZBFileCompleted(DownloadQueue* pDownloadQueue, NZBInfo* pNZBInfo, 
 							bool bIgnorePausedPars, bool bCheckPostQueue, bool bAllowOnlyOneDeleted);
 	void				CheckPostQueue();
 	void				JobCompleted(DownloadQueue* pDownloadQueue, PostInfo* pPostInfo);
-	void				StartScriptJob(DownloadQueue* pDownloadQueue, PostInfo* pPostInfo);
+	void				StartProcessJob(DownloadQueue* pDownloadQueue, PostInfo* pPostInfo);
 	void				SaveQueue(DownloadQueue* pDownloadQueue);
 	void				SanitisePostQueue(PostQueue* pPostQueue);
 	void				CheckDiskSpace();
 	void				ApplySchedulerState();
 	void				CheckScheduledResume();
+	void				UpdatePauseState(bool bNeedPause, const char* szReason);
 	bool				PauseDownload();
 	bool				UnpauseDownload();
 	void				NZBAdded(DownloadQueue* pDownloadQueue, NZBInfo* pNZBInfo);
 	void				NZBDownloaded(DownloadQueue* pDownloadQueue, NZBInfo* pNZBInfo);
 	void				NZBDeleted(DownloadQueue* pDownloadQueue, NZBInfo* pNZBInfo);
 	void				NZBCompleted(DownloadQueue* pDownloadQueue, NZBInfo* pNZBInfo, bool bSaveQueue);
-	bool				CreatePostJobs(DownloadQueue* pDownloadQueue, NZBInfo* pNZBInfo, bool bParCheck, bool bPostScript, bool bAddTop);
+	bool				CreatePostJobs(DownloadQueue* pDownloadQueue, NZBInfo* pNZBInfo, bool bParCheck, bool bUnpackOrScript, bool bAddTop);
 	void				DeleteQueuedFile(const char* szQueuedFile);
 	NZBInfo*			MergeGroups(DownloadQueue* pDownloadQueue, NZBInfo* pNZBInfo);
 	bool				PostQueueMove(IDList* pIDList, EEditAction eAction, int iOffset);

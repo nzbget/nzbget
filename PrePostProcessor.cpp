@@ -49,6 +49,7 @@
 #include "DiskState.h"
 #include "Util.h"
 #include "Scheduler.h"
+#include "Unpack.h"
 
 extern QueueCoordinator* g_pQueueCoordinator;
 extern Options* g_pOptions;
@@ -182,7 +183,9 @@ void PrePostProcessor::Stop()
 	if (!pDownloadQueue->GetPostQueue()->empty())
 	{
 		PostInfo* pPostInfo = pDownloadQueue->GetPostQueue()->front();
-		if (pPostInfo->GetStage() == PostInfo::ptExecutingScript && pPostInfo->GetScriptThread())
+		if ((pPostInfo->GetStage() == PostInfo::ptUnpacking ||
+			 pPostInfo->GetStage() == PostInfo::ptExecutingScript) && 
+			pPostInfo->GetScriptThread())
 		{
 			Thread* pScriptThread = pPostInfo->GetScriptThread();
 			pPostInfo->SetScriptThread(NULL);
@@ -261,7 +264,7 @@ void PrePostProcessor::NZBDownloaded(DownloadQueue* pDownloadQueue, NZBInfo* pNZ
 #else
 		bool bParCheck = g_pOptions->GetParCheck() && g_pOptions->GetDecode();
 #endif
-		if ((bParCheck || m_bPostScript) &&
+		if ((bParCheck || m_bPostScript || g_pOptions->GetUnpack()) &&
 			CreatePostJobs(pDownloadQueue, pNZBInfo, bParCheck, true, false))
 		{
 			pNZBInfo->SetPostProcess(true);
@@ -505,24 +508,18 @@ void PrePostProcessor::CheckPostQueue()
 
 			if (pPostInfo->GetParCheck() && pPostInfo->GetParStatus() == PostInfo::psNone && !g_pOptions->GetPausePostProcess())
 			{
+				UpdatePauseState(g_pOptions->GetParPauseQueue(), "par-check");
 				m_ParCoordinator.StartParJob(pPostInfo);
 			}
 			else
 #endif
 			if (pPostInfo->GetStage() == PostInfo::ptQueued && !g_pOptions->GetPausePostProcess())
 			{
-				StartScriptJob(pDownloadQueue, pPostInfo);
+				StartProcessJob(pDownloadQueue, pPostInfo);
 			}
 			else if (pPostInfo->GetStage() == PostInfo::ptFinished)
 			{
-				if (m_bPostScript && g_pOptions->GetPostPauseQueue())
-				{
-					if (UnpauseDownload())
-					{
-						info("Unpausing queue after post-process-script");
-					}
-				}
-
+				UpdatePauseState(false, NULL);
 				JobCompleted(pDownloadQueue, pPostInfo);
 			}
 			else if (!g_pOptions->GetPausePostProcess())
@@ -565,17 +562,31 @@ void PrePostProcessor::SanitisePostQueue(PostQueue* pPostQueue)
 	}
 }
 
-void PrePostProcessor::StartScriptJob(DownloadQueue* pDownloadQueue, PostInfo* pPostInfo)
+void PrePostProcessor::StartProcessJob(DownloadQueue* pDownloadQueue, PostInfo* pPostInfo)
 {
-	if (!m_bPostScript)
+	bool bUnpack = g_pOptions->GetUnpack() && (pPostInfo->GetUnpackStatus() == PostInfo::usNone);
+	bool bNZBFileCompleted = IsNZBFileCompleted(pDownloadQueue, pPostInfo->GetNZBInfo(), true, true, false);
+	bool bHasFailedParJobs = pPostInfo->GetNZBInfo()->GetParStatus() == NZBInfo::psFailure ||
+		pPostInfo->GetNZBInfo()->GetParStatus() == NZBInfo::psRepairPossible;
+
+	if (bUnpack && bHasFailedParJobs)
+	{
+		warn("Skipping unpack due to par-failure for %s", pPostInfo->GetInfoName());
+		pPostInfo->SetUnpackStatus(PostInfo::usSkipped);
+		pPostInfo->GetNZBInfo()->SetUnpackStatus(NZBInfo::usSkipped);
+		bUnpack = false;
+	}
+
+	if ((!bNZBFileCompleted && !(m_bPostScript && g_pOptions->GetAllowReProcess())) ||
+		(!bUnpack && !m_bPostScript))
 	{
 		pPostInfo->SetStage(PostInfo::ptFinished);
 		return;
 	}
 
-	pPostInfo->SetProgressLabel("Executing post-process-script");
+	pPostInfo->SetProgressLabel(bUnpack ? "Unpacking" : "Executing post-process-script");
 	pPostInfo->SetWorking(true);
-	pPostInfo->SetStage(PostInfo::ptExecutingScript);
+	pPostInfo->SetStage(bUnpack ? PostInfo::ptUnpacking : PostInfo::ptExecutingScript);
 	pPostInfo->SetFileProgress(0);
 	pPostInfo->SetStageProgress(0);
 	SaveQueue(pDownloadQueue);
@@ -586,19 +597,16 @@ void PrePostProcessor::StartScriptJob(DownloadQueue* pDownloadQueue, PostInfo* p
 	}
 	pPostInfo->SetStageTime(time(NULL));
 
-	bool bNZBFileCompleted = IsNZBFileCompleted(pDownloadQueue, pPostInfo->GetNZBInfo(), true, true, false);
-	bool bHasFailedParJobs = pPostInfo->GetNZBInfo()->GetParStatus() == NZBInfo::prFailure ||
-		pPostInfo->GetNZBInfo()->GetParStatus() == NZBInfo::prRepairPossible;
-
-	if (g_pOptions->GetPostPauseQueue())
+	if (bUnpack)
 	{
-		if (PauseDownload())
-		{
-			info("Pausing queue before post-process-script");
-		}
+		UpdatePauseState(g_pOptions->GetUnpackPauseQueue(), "unpack");
+		UnpackController::StartUnpackJob(pPostInfo);
 	}
-
-	PostScriptController::StartScriptJob(pPostInfo, g_pOptions->GetPostProcess(), bNZBFileCompleted, bHasFailedParJobs);
+	else
+	{
+		UpdatePauseState(g_pOptions->GetPostPauseQueue(), "post-process-script");
+		PostScriptController::StartScriptJob(pPostInfo, bNZBFileCompleted, bHasFailedParJobs);
+	}
 }
 
 void PrePostProcessor::JobCompleted(DownloadQueue* pDownloadQueue, PostInfo* pPostInfo)
@@ -632,8 +640,8 @@ void PrePostProcessor::JobCompleted(DownloadQueue* pDownloadQueue, PostInfo* pPo
 	if (IsNZBFileCompleted(pDownloadQueue, pPostInfo->GetNZBInfo(), true, true, false))
 	{
 		// Cleaning up queue if all par-checks were successful or all scripts were successful
-		bool bCanCleanupQueue = pPostInfo->GetNZBInfo()->GetParStatus() == NZBInfo::prSuccess ||
-			 pPostInfo->GetNZBInfo()->GetParStatus() == NZBInfo::prRepairPossible ||
+		bool bCanCleanupQueue = pPostInfo->GetNZBInfo()->GetParStatus() == NZBInfo::psSuccess ||
+			 pPostInfo->GetNZBInfo()->GetParStatus() == NZBInfo::psRepairPossible ||
 			 pPostInfo->GetNZBInfo()->GetScriptStatus() == NZBInfo::srSuccess;
 		if ((g_pOptions->GetParCleanupQueue() || g_pOptions->GetNzbCleanupDisk()) && bCanCleanupQueue)
 		{
@@ -719,7 +727,7 @@ bool PrePostProcessor::IsNZBFileCompleted(DownloadQueue* pDownloadQueue, NZBInfo
 }
 
 bool PrePostProcessor::CreatePostJobs(DownloadQueue* pDownloadQueue, NZBInfo* pNZBInfo,
-	bool bParCheck, bool bPostScript, bool bAddTop)
+	bool bParCheck, bool bUnpackOrScript, bool bAddTop)
 {
 	debug("Queueing post-process-jobs");
 
@@ -750,8 +758,12 @@ bool PrePostProcessor::CreatePostJobs(DownloadQueue* pDownloadQueue, NZBInfo* pN
 			char szParInfoName[1024];
 			snprintf(szParInfoName, 1024, "%s%c%s", pNZBInfo->GetName(), (int)PATH_SEPARATOR, szInfoName);
 			szParInfoName[1024-1] = '\0';
-			
-			info("Queueing %s%c%s for par-check", pNZBInfo->GetName(), (int)PATH_SEPARATOR, szInfoName);
+
+			if (cPostQueue.empty())
+			{
+				info("Queueing %s for post-processing", pNZBInfo->GetName());
+			}
+
 			PostInfo* pPostInfo = new PostInfo();
 			pPostInfo->SetNZBInfo(pNZBInfo);
 			pPostInfo->SetParFilename(szFullParFilename);
@@ -771,9 +783,9 @@ bool PrePostProcessor::CreatePostJobs(DownloadQueue* pDownloadQueue, NZBInfo* pN
 		}
 	}
 
-	if (cPostQueue.empty() && bPostScript && m_bPostScript)
+	if (cPostQueue.empty() && bUnpackOrScript && (m_bPostScript || g_pOptions->GetUnpack()))
 	{
-		info("Queueing %s for post-process-script", pNZBInfo->GetName());
+		info("Queueing %s for post-processing", pNZBInfo->GetName());
 		PostInfo* pPostInfo = new PostInfo();
 		pPostInfo->SetNZBInfo(pNZBInfo);
 		pPostInfo->SetParFilename("");
@@ -844,6 +856,26 @@ void PrePostProcessor::ApplySchedulerState()
 		info("Scheduler: %s scan", g_pScheduler->GetPauseScan() ? "pause" : "unpause");
 		g_pOptions->SetPauseScan(g_pScheduler->GetPauseScan());
 	}
+}
+
+void PrePostProcessor::UpdatePauseState(bool bNeedPause, const char* szReason)
+{
+	if (bNeedPause)
+	{
+		if (PauseDownload())
+		{
+			info("Pausing queue before %s", szReason);
+		}
+	}
+	else if (m_bPostPause)
+	{
+		if (UnpauseDownload())
+		{
+			info("Unpausing queue after %s", m_szPauseReason);
+		}
+	}
+
+	m_szPauseReason = szReason;
 }
 
 bool PrePostProcessor::PauseDownload()
@@ -944,7 +976,7 @@ bool PrePostProcessor::PostQueueDelete(IDList* pIDList)
 #endif
 					if (pPostInfo->GetScriptThread())
 					{
-						debug("Terminating post-process-script for %s", pPostInfo->GetInfoName());
+						debug("Terminating %s for %s", (pPostInfo->GetStage() == PostInfo::ptUnpacking ? "unpack" : "post-process-script"), pPostInfo->GetInfoName());
 						pPostInfo->GetScriptThread()->Stop();
 						bOK = true;
 					}
@@ -1155,8 +1187,9 @@ bool PrePostProcessor::HistoryReturn(IDList* pIDList, bool bReprocess)
 
 					// reset postprocessing status variables
 					pNZBInfo->SetPostProcess(false);
-					pNZBInfo->SetParStatus(NZBInfo::prNone);
+					pNZBInfo->SetParStatus(NZBInfo::psNone);
 					pNZBInfo->SetParCleanup(false);
+					pNZBInfo->SetUnpackStatus(NZBInfo::usNone);
 					pNZBInfo->SetScriptStatus(NZBInfo::srNone);
 					pNZBInfo->SetParkedFileCount(0);
 				}

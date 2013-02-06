@@ -216,10 +216,18 @@ class NZBInfo
 public:
 	enum EParStatus
 	{
-		prNone,
-		prFailure,
-		prRepairPossible,
-		prSuccess
+		psNone,
+		psFailure,
+		psRepairPossible,
+		psSuccess
+	};
+
+	enum EUnpackStatus
+	{
+		usNone,
+		usSkipped,
+		usFailure,
+		usSuccess
 	};
 
 	enum EScriptStatus
@@ -246,6 +254,7 @@ private:
 	Files				m_completedFiles;
 	bool				m_bPostProcess;
 	EParStatus			m_eParStatus;
+	EUnpackStatus		m_eUnpackStatus;
 	EScriptStatus		m_eScriptStatus;
 	char*				m_szQueuedFilename;
 	bool				m_bDeleted;
@@ -289,6 +298,8 @@ public:
 	void				SetPostProcess(bool bPostProcess) { m_bPostProcess = bPostProcess; }
 	EParStatus			GetParStatus() { return m_eParStatus; }
 	void				SetParStatus(EParStatus eParStatus) { m_eParStatus = eParStatus; }
+	EUnpackStatus		GetUnpackStatus() { return m_eUnpackStatus; }
+	void				SetUnpackStatus(EUnpackStatus eUnpackStatus) { m_eUnpackStatus = eUnpackStatus; }
 	EScriptStatus		GetScriptStatus() { return m_eScriptStatus; }
 	void				SetScriptStatus(EScriptStatus eScriptStatus) { m_eScriptStatus = eScriptStatus; }
 	const char*			GetQueuedFilename() { return m_szQueuedFilename; }
@@ -326,6 +337,7 @@ public:
 		ptVerifyingSources,
 		ptRepairing,
 		ptVerifyingRepaired,
+		ptUnpacking,
 		ptExecutingScript,
 		ptFinished
 	};
@@ -343,6 +355,14 @@ public:
 		rpNone,
 		rpCurrent,
 		rpAll
+	};
+
+	enum EUnpackStatus
+	{
+		usNone,
+		usSkipped,
+		usFailure,
+		usSuccess
 	};
 
 	enum EScriptStatus
@@ -364,6 +384,7 @@ private:
 	bool				m_bDeleted;
 	bool				m_bParCheck;
 	EParStatus			m_eParStatus;
+	EUnpackStatus		m_eUnpackStatus;
 	EScriptStatus		m_eScriptStatus;
 	ERequestParCheck	m_eRequestParCheck;
 	EStage				m_eStage;
@@ -410,6 +431,8 @@ public:
 	void				SetParCheck(bool bParCheck) { m_bParCheck = bParCheck; }
 	EParStatus			GetParStatus() { return m_eParStatus; }
 	void				SetParStatus(EParStatus eParStatus) { m_eParStatus = eParStatus; }
+	EUnpackStatus		GetUnpackStatus() { return m_eUnpackStatus; }
+	void				SetUnpackStatus(EUnpackStatus eUnpackStatus) { m_eUnpackStatus = eUnpackStatus; }
 	ERequestParCheck	GetRequestParCheck() { return m_eRequestParCheck; }
 	void				SetRequestParCheck(ERequestParCheck eRequestParCheck) { m_eRequestParCheck = eRequestParCheck; }
 	EScriptStatus		GetScriptStatus() { return m_eScriptStatus; }
