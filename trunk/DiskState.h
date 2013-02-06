@@ -1,7 +1,7 @@
 /*
  *  This file is part of nzbget
  *
- *  Copyright (C) 2007-2009 Andrey Prygunkov <hugbug@users.sourceforge.net>
+ *  Copyright (C) 2007-2013 Andrey Prygunkov <hugbug@users.sourceforge.net>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -39,7 +39,7 @@ private:
 	void				SaveFileQueue(DownloadQueue* pDownloadQueue, FileQueue* pFileQueue, FILE* outfile);
 	bool				LoadFileQueue(DownloadQueue* pDownloadQueue, FileQueue* pFileQueue, FILE* infile, int iFormatVersion);
 	void				SavePostQueue(DownloadQueue* pDownloadQueue, FILE* outfile);
-	bool				LoadPostQueue(DownloadQueue* pDownloadQueue, FILE* infile);
+	bool				LoadPostQueue(DownloadQueue* pDownloadQueue, FILE* infile, int iFormatVersion);
 	bool				LoadOldPostQueue(DownloadQueue* pDownloadQueue);
 	void				SaveUrlQueue(DownloadQueue* pDownloadQueue, FILE* outfile);
 	bool				LoadUrlQueue(DownloadQueue* pDownloadQueue, FILE* infile, int iFormatVersion);

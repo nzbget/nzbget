@@ -1,7 +1,7 @@
 /*
  *  This file is part of nzbget
  *
- *  Copyright (C) 2007-2011 Andrey Prygunkov <hugbug@users.sourceforge.net>
+ *  Copyright (C) 2007-2013 Andrey Prygunkov <hugbug@users.sourceforge.net>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -43,6 +43,7 @@
 #include <errno.h>
 #include <fcntl.h>
 #include <stdio.h>
+#include <stdarg.h>
 
 #include "nzbget.h"
 #include "ScriptController.h"
@@ -243,12 +244,6 @@ void ScriptController::PrepareEnvironmentStrings()
 
 int ScriptController::Execute()
 {
-	if (!Util::FileExists(m_szScript))
-	{
-		error("Could not start %s: could not find file %s", m_szInfoName, m_szScript);
-		return -1;
-	}
-
 	PrepareEnvironmentStrings();
 
 	int iExitCode = 0;
@@ -299,14 +294,17 @@ int ScriptController::Execute()
 		DWORD dwErrCode = GetLastError();
 		char szErrMsg[255];
 		szErrMsg[255-1] = '\0';
-		if (FormatMessage(FORMAT_MESSAGE_FROM_SYSTEM || FORMAT_MESSAGE_IGNORE_INSERTS || FORMAT_MESSAGE_ARGUMENT_ARRAY, 
-			NULL, dwErrCode, 0, szErrMsg, 255, NULL))
+		if (FormatMessage(FORMAT_MESSAGE_FROM_SYSTEM, NULL, dwErrCode, 0, szErrMsg, 255, NULL))
 		{
 			error("Could not start %s: %s", m_szInfoName, szErrMsg);
 		}
 		else
 		{
 			error("Could not start %s: error %i", m_szInfoName, dwErrCode);
+		}
+		if (!Util::FileExists(m_szScript))
+		{
+			error("Could not find file %s", m_szScript);
 		}
 		free(szEnvironmentStrings);
 		return -1;
@@ -370,6 +368,7 @@ int ScriptController::Execute()
 		fflush(stdout);
 #endif
 
+		chdir(m_szWorkingDir);
 		execve(m_szScript, (char* const*)m_szArgs, (char* const*)pEnvironmentStrings);
 		fprintf(stdout, "[ERROR] Could not start script: %s", strerror(errno));
 		fflush(stdout);
@@ -409,7 +408,7 @@ int ScriptController::Execute()
 	debug("Entering pipe-loop");
 	while (!feof(readpipe) && !m_bTerminated)
 	{
-		if (fgets(buf, 10240, readpipe))
+		if (ReadLine(buf, 10240, readpipe))
 		{
 #ifdef CHILD_WATCHDOG
 			if (!bChildConfirmed)
@@ -503,6 +502,11 @@ void ScriptController::Terminate()
 	debug("Stopped %s", m_szInfoName);
 }
 
+bool ScriptController::ReadLine(char* szBuf, int iBufSize, FILE* pStream)
+{
+	return fgets(szBuf, iBufSize, pStream);
+}
+
 void ScriptController::ProcessOutput(char* szText)
 {
 	debug("Processing output received from script");
@@ -517,23 +521,23 @@ void ScriptController::ProcessOutput(char* szText)
 
 	if (!strncmp(szText, "[INFO] ", 7))
 	{
-		AddMessage(Message::mkInfo, false, g_pOptions->GetInfoTarget(), szText + 7);
+		AddMessage(Message::mkInfo, false, szText + 7);
 	}
 	else if (!strncmp(szText, "[WARNING] ", 10))
 	{
-		AddMessage(Message::mkWarning, false, g_pOptions->GetWarningTarget(), szText + 10);
+		AddMessage(Message::mkWarning, false, szText + 10);
 	}
 	else if (!strncmp(szText, "[ERROR] ", 8))
 	{
-		AddMessage(Message::mkError, false, g_pOptions->GetErrorTarget(), szText + 8);
+		AddMessage(Message::mkError, false, szText + 8);
 	}
 	else if (!strncmp(szText, "[DETAIL] ", 9))
 	{
-		AddMessage(Message::mkDetail, false, g_pOptions->GetDetailTarget(), szText + 9);
+		AddMessage(Message::mkDetail, false, szText + 9);
 	}
 	else if (!strncmp(szText, "[DEBUG] ", 8))
 	{
-		AddMessage(Message::mkDebug, false, g_pOptions->GetDebugTarget(), szText + 8);
+		AddMessage(Message::mkDebug, false, szText + 8);
 	}
 	else 
 	{	
@@ -543,23 +547,23 @@ void ScriptController::ProcessOutput(char* szText)
 				break;
 
 			case Options::slDetail:
-				AddMessage(Message::mkDetail, true, g_pOptions->GetDetailTarget(), szText);
+				AddMessage(Message::mkDetail, true, szText);
 				break;
 
 			case Options::slInfo:
-				AddMessage(Message::mkInfo, true, g_pOptions->GetInfoTarget(), szText);
+				AddMessage(Message::mkInfo, true, szText);
 				break;
 
 			case Options::slWarning:
-				AddMessage(Message::mkWarning, true, g_pOptions->GetWarningTarget(), szText);
+				AddMessage(Message::mkWarning, true, szText);
 				break;
 
 			case Options::slError:
-				AddMessage(Message::mkError, true, g_pOptions->GetErrorTarget(), szText);
+				AddMessage(Message::mkError, true, szText);
 				break;
 
 			case Options::slDebug:
-				AddMessage(Message::mkDebug, true, g_pOptions->GetDebugTarget(), szText);
+				AddMessage(Message::mkDebug, true, szText);
 				break;
 		}
 	}
@@ -567,7 +571,7 @@ void ScriptController::ProcessOutput(char* szText)
 	debug("Processing output received from script - completed");
 }
 
-void ScriptController::AddMessage(Message::EKind eKind, bool bDefaultKind, Options::EMessageTarget eMessageTarget, const char* szText)
+void ScriptController::AddMessage(Message::EKind eKind, bool bDefaultKind, const char* szText)
 {
 	switch (eKind)
 	{
@@ -593,13 +597,26 @@ void ScriptController::AddMessage(Message::EKind eKind, bool bDefaultKind, Optio
 	}
 }
 
-void PostScriptController::StartScriptJob(PostInfo* pPostInfo, const char* szScript, bool bNZBFileCompleted, bool bHasFailedParJobs)
+void ScriptController::PrintMessage(Message::EKind eKind, const char* szFormat, ...)
+{
+	char tmp2[1024];
+
+	va_list ap;
+	va_start(ap, szFormat);
+	vsnprintf(tmp2, 1024, szFormat, ap);
+	tmp2[1024-1] = '\0';
+	va_end(ap);
+	
+	AddMessage(eKind, false, tmp2);
+}
+
+void PostScriptController::StartScriptJob(PostInfo* pPostInfo, bool bNZBFileCompleted, bool bHasFailedParJobs)
 {
 	info("Executing post-process-script for %s", pPostInfo->GetInfoName());
 
 	PostScriptController* pScriptController = new PostScriptController();
 	pScriptController->m_pPostInfo = pPostInfo;
-	pScriptController->SetScript(szScript);
+	pScriptController->SetScript(g_pOptions->GetPostProcess());
 	pScriptController->SetWorkingDir(g_pOptions->GetDestDir());
 	pScriptController->m_bNZBFileCompleted = bNZBFileCompleted;
 	pScriptController->m_bHasFailedParJobs = bHasFailedParJobs;
@@ -620,8 +637,13 @@ void PostScriptController::Run()
 	szNZBName[1024-1] = '\0';
 
 	char szParStatus[10];
-	snprintf(szParStatus, 10, "%i", m_pPostInfo->GetParStatus());
+	snprintf(szParStatus, 10, "%i", g_pOptions->GetAllowReProcess() ? (int)m_pPostInfo->GetParStatus() : (int)m_pPostInfo->GetNZBInfo()->GetParStatus());
 	szParStatus[10-1] = '\0';
+
+	int iUnpackStatus[] = { 0, 0, 1, 2 };
+	char szUnpackStatus[10];
+	snprintf(szUnpackStatus, 10, "%i", g_pOptions->GetAllowReProcess() ? 0 : iUnpackStatus[m_pPostInfo->GetNZBInfo()->GetUnpackStatus()]);
+	szUnpackStatus[10-1] = '\0';
 
 	char szCollectionCompleted[10];
 	snprintf(szCollectionCompleted, 10, "%i", (int)m_bNZBFileCompleted);
@@ -648,7 +670,7 @@ void PostScriptController::Run()
 	szCategory[1024-1] = '\0';
 
 	char szInfoName[1024];
-	snprintf(szInfoName, 1024, "post-process-script for %s", m_pPostInfo->GetInfoName());
+	snprintf(szInfoName, 1024, "post-process-script for %s", g_pOptions->GetAllowReProcess() ? m_pPostInfo->GetInfoName() : m_pPostInfo->GetNZBInfo()->GetName());
 	szInfoName[1024-1] = '\0';
 	SetInfoName(szInfoName);
 
@@ -672,6 +694,7 @@ void PostScriptController::Run()
 	SetEnvVar("NZBPP_NZBFILENAME", szNZBFilename);
 	SetEnvVar("NZBPP_PARFILENAME", szParFilename);
 	SetEnvVar("NZBPP_PARSTATUS", szParStatus);
+	SetEnvVar("NZBPP_UNPACKSTATUS", szUnpackStatus);
 	SetEnvVar("NZBPP_NZBCOMPLETED", szCollectionCompleted);
 	SetEnvVar("NZBPP_PARFAILED", szHasFailedParJobs);
 	SetEnvVar("NZBPP_CATEGORY", szCategory);
@@ -689,14 +712,17 @@ void PostScriptController::Run()
 
 	int iResult = Execute();
 
+	szInfoName[0] = 'P'; // uppercase
+
 	switch (iResult)
 	{
 		case POSTPROCESS_SUCCESS:
-			info("%s sucessful", szInfoName);
+			info("%s successful", szInfoName);
 			m_pPostInfo->SetScriptStatus(PostInfo::srSuccess);
 			break;
 
 		case POSTPROCESS_ERROR:
+		case -1: // Execute() returns -1 if the process could not be started (file not found or other problem)
 			info("%s failed", szInfoName);
 			m_pPostInfo->SetScriptStatus(PostInfo::srFailure);
 			break;
@@ -755,25 +781,17 @@ void PostScriptController::Run()
 	m_pPostInfo->SetWorking(false);
 }
 
-void PostScriptController::AddMessage(Message::EKind eKind, bool bDefaultKind, Options::EMessageTarget eMessageTarget, const char* szText)
+void PostScriptController::AddMessage(Message::EKind eKind, bool bDefaultKind, const char* szText)
 {
 	if (!strncmp(szText, "[HISTORY] ", 10))
 	{
-		if (eMessageTarget == Options::mtScreen || eMessageTarget == Options::mtBoth)
-		{
-			m_pPostInfo->GetNZBInfo()->AppendMessage(eKind, 0, szText + 10);
-		}
+		m_pPostInfo->GetNZBInfo()->AppendMessage(eKind, 0, szText + 10);
 	}
 	else
 	{
-		ScriptController::AddMessage(eKind, bDefaultKind, eMessageTarget, szText);
-
-		if (eMessageTarget == Options::mtScreen || eMessageTarget == Options::mtBoth)
-		{
-			m_pPostInfo->AppendMessage(eKind, szText);
-		}
+		ScriptController::AddMessage(eKind, bDefaultKind, szText);
+		m_pPostInfo->AppendMessage(eKind, szText);
 	}
-
 
 	if (g_pOptions->GetPausePostProcess())
 	{
@@ -854,7 +872,7 @@ void NZBScriptController::ExecuteScript(const char* szScript, const char* szNZBF
 	delete pScriptController;
 }
 
-void NZBScriptController::AddMessage(Message::EKind eKind, bool bDefaultKind, Options::EMessageTarget eMessageTarget, const char* szText)
+void NZBScriptController::AddMessage(Message::EKind eKind, bool bDefaultKind, const char* szText)
 {
 	if (!strncmp(szText, "[NZB] ", 6))
 	{
@@ -890,7 +908,7 @@ void NZBScriptController::AddMessage(Message::EKind eKind, bool bDefaultKind, Op
 	}
 	else
 	{
-		ScriptController::AddMessage(eKind, bDefaultKind, eMessageTarget, szText);
+		ScriptController::AddMessage(eKind, bDefaultKind, szText);
 	}
 }
 

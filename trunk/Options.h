@@ -255,6 +255,11 @@ private:
 	int					m_iParTimeLimit;
 	int					m_iKeepHistory;
 	bool				m_bAccurateRate;
+	bool				m_bUnpack;
+	bool				m_bUnpackCleanupDisk;
+	char*				m_szUnrarCmd;
+	char*				m_szSevenZipCmd;
+	bool				m_bUnpackPauseQueue;
 
 	// Parsed command-line parameters
 	bool				m_bServerMode;
@@ -405,6 +410,12 @@ public:
 	int					GetParTimeLimit() { return m_iParTimeLimit; }
 	int					GetKeepHistory() { return m_iKeepHistory; }
 	bool				GetAccurateRate() { return m_bAccurateRate; }
+	bool				GetUnpack() { return m_bUnpack; }
+	bool				GetUnpackCleanupDisk() { return m_bUnpackCleanupDisk; }
+	const char*			GetUnrarCmd() { return m_szUnrarCmd; }
+	const char*			GetSevenZipCmd() { return m_szSevenZipCmd; }
+	bool				GetUnpackPauseQueue() { return m_bUnpackPauseQueue; }
+
 	Category*			FindCategory(const char* szName) { return m_Categories.FindCategory(szName); }
 
 	// Parsed command-line parameters

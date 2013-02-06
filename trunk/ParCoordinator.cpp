@@ -130,13 +130,22 @@ void ParCoordinator::PausePars(DownloadQueue* pDownloadQueue, NZBInfo* pNZBInfo)
 
 bool ParCoordinator::FindMainPars(const char* szPath, FileList* pFileList)
 {
-	pFileList->clear();
+	if (pFileList)
+	{
+		pFileList->clear();
+	}
+
 	DirBrowser dir(szPath);
 	while (const char* filename = dir.Next())
 	{
 		int iBaseLen = 0;
 		if (ParseParFilename(filename, &iBaseLen, NULL))
 		{
+			if (!pFileList)
+			{
+				return true;
+			}
+
 			// check if the base file already added to list
 			bool exists = false;
 			for (FileList::iterator it = pFileList->begin(); it != pFileList->end(); it++)
@@ -154,7 +163,7 @@ bool ParCoordinator::FindMainPars(const char* szPath, FileList* pFileList)
 			}
 		}
 	}
-	return !pFileList->empty();
+	return pFileList && !pFileList->empty();
 }
 
 bool ParCoordinator::SameParCollection(const char* szFilename1, const char* szFilename2)
@@ -226,14 +235,6 @@ bool ParCoordinator::ParseParFilename(const char* szParFilename, int* iBaseNameL
  */
 void ParCoordinator::StartParJob(PostInfo* pPostInfo)
 {
-	if (g_pOptions->GetParPauseQueue())
-	{
-		if (PauseDownload())
-		{
-			info("Pausing queue before par-check");
-		}
-	}
-
 	info("Checking pars for %s", pPostInfo->GetInfoName());
 	m_ParChecker.SetPostInfo(pPostInfo);
 	m_ParChecker.SetParFilename(pPostInfo->GetParFilename());
@@ -357,23 +358,23 @@ void ParCoordinator::ParCheckerUpdate(Subject* Caller, void* Aspect)
 		if (m_ParChecker.GetStatus() == ParChecker::psFailed && !m_ParChecker.GetCancelled())
 		{
 			pPostInfo->SetParStatus(PostInfo::psFailure);
-			pPostInfo->GetNZBInfo()->SetParStatus(NZBInfo::prFailure);
+			pPostInfo->GetNZBInfo()->SetParStatus(NZBInfo::psFailure);
 		}
 		else if (m_ParChecker.GetStatus() == ParChecker::psFinished &&
 			(g_pOptions->GetParRepair() || m_ParChecker.GetRepairNotNeeded()))
 		{
 			pPostInfo->SetParStatus(PostInfo::psSuccess);
-			if (pPostInfo->GetNZBInfo()->GetParStatus() == NZBInfo::prNone)
+			if (pPostInfo->GetNZBInfo()->GetParStatus() == NZBInfo::psNone)
 			{
-				pPostInfo->GetNZBInfo()->SetParStatus(NZBInfo::prSuccess);
+				pPostInfo->GetNZBInfo()->SetParStatus(NZBInfo::psSuccess);
 			}
 		}
 		else
 		{
 			pPostInfo->SetParStatus(PostInfo::psRepairPossible);
-			if (pPostInfo->GetNZBInfo()->GetParStatus() != NZBInfo::prFailure)
+			if (pPostInfo->GetNZBInfo()->GetParStatus() != NZBInfo::psFailure)
 			{
-				pPostInfo->GetNZBInfo()->SetParStatus(NZBInfo::prRepairPossible);
+				pPostInfo->GetNZBInfo()->SetParStatus(NZBInfo::psRepairPossible);
 			}
 		}
 
@@ -383,14 +384,6 @@ void ParCoordinator::ParCheckerUpdate(Subject* Caller, void* Aspect)
 		}
 
 		g_pQueueCoordinator->UnlockQueue();
-
-		if (g_pOptions->GetParPauseQueue() && !(g_pOptions->GetPostPauseQueue() && m_bPostScript))
-		{
-			if (UnpauseDownload())
-			{
-				info("Unpausing queue after par-check");
-			}
-		}
 	}
 }
 

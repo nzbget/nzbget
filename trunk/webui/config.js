@@ -1,7 +1,7 @@
 /*
  * This file is part of nzbget
  *
- * Copyright (C) 2012 Andrey Prygunkov <hugbug@users.sourceforge.net>
+ * Copyright (C) 2012-2013 Andrey Prygunkov <hugbug@users.sourceforge.net>
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -336,6 +336,7 @@ var Options = (new function($)
 		}
 		return null;
 	}
+	this.findOption = findOption;
 
 	function mergeValues(config, values)
 	{
@@ -662,9 +663,9 @@ var Config = (new function($)
 			value = option.defvalue;
 		}
 
-		option.formId = section.category + '-' + option.name.replace(/[\.|$]/g, '_');
+		option.formId = section.category + '-' + option.name.replace(/[\.|$|\:|\*]/g, '_');
 
-		var caption = option.name;
+		var caption = option.caption ? option.caption : option.name;
 		if (section.multi)
 		{
 			caption = '<span class="config-multicaption">' + caption.substring(0, caption.indexOf('.') + 1) + '</span>' + caption.substring(caption.indexOf('.') + 1);

@@ -46,6 +46,7 @@
 
 #include "nzbget.h"
 #include "RemoteClient.h"
+#include "DownloadInfo.h"
 #include "Options.h"
 #include "Log.h"
 #include "Util.h"
@@ -1026,15 +1027,14 @@ bool RemoteClient::RequestPostQueue()
 
 			int iStageProgress = ntohl(pPostQueueAnswer->m_iStageProgress);
 
-			static const int EXECUTING_SCRIPT = 5;
 			char szCompleted[100];
 			szCompleted[0] = '\0';
-			if (iStageProgress > 0 && (int)ntohl(pPostQueueAnswer->m_iStage) != EXECUTING_SCRIPT)
+			if (iStageProgress > 0 && (int)ntohl(pPostQueueAnswer->m_iStage) != (int)PostInfo::ptExecutingScript)
 			{
 				sprintf(szCompleted, ", %i%s", (int)(iStageProgress / 10), "%");
 			}
 
-			const char* szPostStageName[] = { "", ", Loading Pars", ", Verifying source files", ", Repairing", ", Verifying repaired files", ", Executing postprocess-script", "" };
+			const char* szPostStageName[] = { "", ", Loading Pars", ", Verifying source files", ", Repairing", ", Verifying repaired files", ", Unpacking", ", Executing postprocess-script", "" };
 			char* szInfoName = pBufPtr + sizeof(SNZBPostQueueResponseEntry) + ntohl(pPostQueueAnswer->m_iNZBFilenameLen) + ntohl(pPostQueueAnswer->m_iParFilename);
 			
 			printf("[%i] %s%s%s\n", ntohl(pPostQueueAnswer->m_iID), szInfoName, szPostStageName[ntohl(pPostQueueAnswer->m_iStage)], szCompleted);

@@ -1,7 +1,7 @@
 /*
  * This file is part of nzbget
  *
- * Copyright (C) 2012 Andrey Prygunkov <hugbug@users.sourceforge.net>
+ * Copyright (C) 2012-2013 Andrey Prygunkov <hugbug@users.sourceforge.net>
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -113,19 +113,29 @@ var History = (new function($)
 	{
 		if (hist.Kind === 'NZB')
 		{
-			switch (hist.ScriptStatus)
+			if (hist.ParStatus == 'FAILURE' || hist.UnpackStatus == 'FAILURE' || hist.ScriptStatus == 'FAILURE')
 			{
-				case 'SUCCESS': hist.status = 'success'; break;
-				case 'FAILURE': hist.status = 'failure'; break;
-				case 'UNKNOWN': hist.status = 'unknown'; break;
-				case 'NONE':
-					switch (hist.ParStatus)
-					{
-						case 'SUCCESS': hist.status = 'success'; break;
-						case 'REPAIR_POSSIBLE': hist.status = 'repairable'; break;
-						case 'FAILURE': hist.status = 'failure'; break;
-						case 'NONE': hist.status = 'none'; break;
-					}
+				hist.status = 'failure'; 
+			}
+			else
+			{
+				switch (hist.ScriptStatus)
+				{
+					case 'SUCCESS': hist.status = 'success'; break;
+					case 'UNKNOWN': hist.status = 'unknown'; break;
+					case 'NONE':
+						switch (hist.UnpackStatus)
+						{
+							case 'SUCCESS': hist.status = 'success'; break;
+							case 'NONE':
+								switch (hist.ParStatus)
+								{
+									case 'SUCCESS': hist.status = 'success'; break;
+									case 'REPAIR_POSSIBLE': hist.status = 'repairable'; break;
+									case 'NONE': hist.status = 'unknown'; break;
+								}
+						}
+				}
 			}
 		}
 		else if (hist.Kind === 'URL')
@@ -180,7 +190,7 @@ var History = (new function($)
 	{
 		var hist = item.hist;
 
-		var status = buildStatus(hist);
+		var status = buildStatus(hist.status, '');
 
 		var name = '<a href="#" histid="' + hist.ID + '">' + Util.textToHtml(Util.formatNZBName(hist.Name)) + '</a>';
 		var category = Util.textToHtml(hist.Category);
@@ -222,16 +232,27 @@ var History = (new function($)
 		}
 	}
 
-	function buildStatus(hist)
+	function buildStatus(status, prefix)
 	{
-		switch (hist.status)
+		switch (status)
 		{
-			case 'success': return '<span class="label label-status label-success">success</span>';
-			case 'failure': return '<span class="label label-status label-important">failure</span>';
-			case 'unknown': return '<span class="label label-status label-info">unknown</span>';
-			case 'repairable': return '<span class="label label-status label-success">repairable</span>';
-			case 'none': return '<span class="label label-status">unknown</span>';
-			default: return '<span class="label label-status label-important">internal error(' + hist.status + ')</span>';
+			case 'success':
+			case 'SUCCESS':
+				return '<span class="label label-status label-success">' + prefix + 'success</span>';
+			case 'failure':
+			case 'FAILURE':
+				return '<span class="label label-status label-important">' + prefix + 'failure</span>';
+			case 'unknown':
+			case 'UNKNOWN':
+				return '<span class="label label-status label-info">' + prefix + 'unknown</span>';
+			case 'repairable':
+			case 'REPAIR_POSSIBLE':
+				return '<span class="label label-status label-success">' + prefix + 'repairable</span>';
+			case 'none':
+			case 'NONE':
+				return '<span class="label label-status">' + prefix + 'none</span>';
+			default:
+				return '<span class="label label-status">' + prefix + status + '</span>';
 		}
 	}
 
@@ -358,7 +379,17 @@ var History = (new function($)
 
 			curHist = hist;
 
-			var status = buildStatus(hist);
+			var status;
+			if (hist.Kind === 'URL')
+			{
+				status = buildStatus(hist.status, '');
+			}
+			else
+			{
+				status = buildStatus(hist.ParStatus, 'Par: ') + ' ' +
+				    (Options.option('Unpack') == 'yes' || hist.UnpackStatus != 'NONE' ? buildStatus(hist.UnpackStatus, 'Unpack: ') + ' ' : '')  +
+					buildStatus(hist.ScriptStatus, 'Script: ');
+			}
 
 			$('#HistoryEdit_Title').text(Util.formatNZBName(hist.Name));
 			if (hist.Kind === 'URL')

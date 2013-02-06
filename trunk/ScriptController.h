@@ -1,7 +1,7 @@
 /*
  *  This file is part of nzbget
  *
- *  Copyright (C) 2007-2011 Andrey Prygunkov <hugbug@users.sourceforge.net>
+ *  Copyright (C) 2007-2013 Andrey Prygunkov <hugbug@users.sourceforge.net>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -70,11 +70,14 @@ private:
 	pid_t				m_hProcess;
 #endif
 
-	void				ProcessOutput(char* szText);
 	void				PrepareEnvironmentStrings();
 
 protected:
-	virtual void		AddMessage(Message::EKind eKind, bool bDefaultKind, Options::EMessageTarget eMessageTarget, const char* szText);
+	void				ProcessOutput(char* szText);
+	virtual bool		ReadLine(char* szBuf, int iBufSize, FILE* pStream);
+	void				PrintMessage(Message::EKind eKind, const char* szFormat, ...);
+	virtual void		AddMessage(Message::EKind eKind, bool bDefaultKind, const char* szText);
+	bool				GetTerminated() { return m_bTerminated; }
 
 public:
 						ScriptController();
@@ -93,7 +96,7 @@ public:
 	void				SetEnvVar(const char* szName, const char* szValue);
 };
 
-class PostScriptController : public Thread, ScriptController
+class PostScriptController : public Thread, public ScriptController
 {
 private:
 	PostInfo*			m_pPostInfo;
@@ -101,13 +104,12 @@ private:
 	bool				m_bHasFailedParJobs;
 
 protected:
-	virtual void		AddMessage(Message::EKind eKind, bool bDefaultKind, Options::EMessageTarget eMessageTarget, const char* szText);
+	virtual void		AddMessage(Message::EKind eKind, bool bDefaultKind, const char* szText);
 
 public:
 	virtual void		Run();
 	virtual void		Stop();
-	static void			StartScriptJob(PostInfo* pPostInfo, const char* szScript, 
-							bool bNZBFileCompleted, bool bHasFailedParJobs);
+	static void			StartScriptJob(PostInfo* pPostInfo, bool bNZBFileCompleted, bool bHasFailedParJobs);
 };
 
 class NZBScriptController : public ScriptController
@@ -118,13 +120,13 @@ private:
 	NZBParameterList*	m_pParameterList;
 
 protected:
-	virtual void		AddMessage(Message::EKind eKind, bool bDefaultKind, Options::EMessageTarget eMessageTarget, const char* szText);
+	virtual void		AddMessage(Message::EKind eKind, bool bDefaultKind, const char* szText);
 
 public:
 	static void			ExecuteScript(const char* szScript, const char* szNZBFilename, const char* szDirectory, char** pCategory, int* iPriority, NZBParameterList* pParameterList);
 };
 
-class NZBAddedScriptController : public Thread, ScriptController
+class NZBAddedScriptController : public Thread, public ScriptController
 {
 private:
 	char*				m_szNZBName;
@@ -134,7 +136,7 @@ public:
 	static void			StartScript(DownloadQueue* pDownloadQueue, NZBInfo *pNZBInfo, const char* szScript);
 };
 
-class SchedulerScriptController : public Thread, ScriptController
+class SchedulerScriptController : public Thread, public ScriptController
 {
 public:
 	virtual void		Run();
