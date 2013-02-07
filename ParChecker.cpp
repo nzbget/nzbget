@@ -85,8 +85,6 @@ Result Repairer::PreProcess(const char *szParFilename)
 	BugfixesPatchVersion2();
 #endif
 
-	bool bFullScan = true;
-
 	if (g_pOptions->GetParScan() == Options::psFull)
 	{
 		char szWildcardParam[1024];
