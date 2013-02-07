@@ -27,6 +27,7 @@
 #define SCRIPTCONTROLLER_H
 
 #include <list>
+#include <fstream>
 
 #include "Log.h"
 #include "Thread.h"
