@@ -75,12 +75,16 @@ POSTPROCESS_SUCCESS=93
 POSTPROCESS_ERROR=94
 POSTPROCESS_NONE=95
 
-# Check if the script is called from nzbget
+# Check if the script is called from nzbget 10.0 or later
 if [ "$NZBPP_DIRECTORY" = "" -o "$NZBOP_CONFIGFILE" = "" ]; then
-	echo "*** NZBGet post-process script ***"
-	echo "This script is supposed to be called from nzbget (0.7.0 or later)."
+	echo "*** NZBGet post-processing script ***"
+	echo "This script is supposed to be called from nzbget (10.0 or later)."
 	exit $POSTPROCESS_ERROR
-fi 
+fi
+if [ "$NZBOP_UNPACK" = "" ]; then
+	echo "[ERROR] This script requires nzbget version at least 10.0-testing-r555 or 10.0-stable."
+	exit $POSTPROCESS_ERROR
+fi
 
 # Check if postprocessing was disabled in postprocessing parameters 
 # (for current nzb-file) via web-interface or via command line with 
@@ -90,16 +94,12 @@ if [ "$NZBPR_PostProcess" = "no" ]; then
 	exit $POSTPROCESS_NONE
 fi
 
-echo "[INFO] Post-Process: Post-process script successfully started"
+echo "[INFO] Post-Process: Post-processing script successfully started"
 
 # Determine the location of configuration file (it must be stored in
-# the directory with nzbget.conf or in this script's directory).
+# the directory with nzbget.conf).
 ConfigDir="${NZBOP_CONFIGFILE%/*}"
 ScriptConfigFile="$ConfigDir/$SCRIPT_CONFIG_FILE"
-if [ ! -f "$ScriptConfigFile" ]; then
-	ConfigDir="${0%/*}"
-	ScriptConfigFile="$ConfigDir/$SCRIPT_CONFIG_FILE"
-fi
 if [ ! -f "$ScriptConfigFile" ]; then
 	echo "[ERROR] Post-Process: Configuration file $ScriptConfigFile not found, exiting"
 	exit $POSTPROCESS_ERROR
@@ -114,28 +114,33 @@ BadConfig=0
 if [ "$NZBOP_ALLOWREPROCESS" = "yes" ]; then
 	echo "[ERROR] Post-Process: Please disable option \"AllowReProcess\" in nzbget configuration file"
 	BadConfig=1
-fi 
+fi
+
+if [ "$NZBOP_UNPACK" != "yes" ]; then
+	echo "[ERROR] Post-Process: Please enable option \"Unpack\" in nzbget configuration file"
+	BadConfig=1
+fi
 
 if [ "$BadConfig" -eq 1 ]; then
 	echo "[ERROR] Post-Process: Exiting due to incompatible nzbget configuration"
 	exit $POSTPROCESS_ERROR
-fi 
+fi
 
 # Check par status
-if [ "$NZBPP_PARSTATUS" -eq 1 -o "$NZBPP_PARSTATUS" -eq 3 -o "$NZBPP_PARFAILED" -eq 1 ]; then
-	if [ "$NZBPP_PARSTATUS" -eq 3 ]; then
-		echo "[WARNING] Post-Process: Par-check successful, but Par-repair disabled, exiting"
-	else
-		echo "[WARNING] Post-Process: Par-check failed, exiting"
-	fi
+if [ "$NZBPP_PARSTATUS" -eq 3 ]; then
+	echo "[WARNING] Post-Process: Par-check successful, but Par-repair disabled, exiting"
 	exit $POSTPROCESS_NONE
-fi 
+fi
+if [ "$NZBPP_PARSTATUS" -eq 3 ]; then
+	echo "[WARNING] Post-Process: Par-check failed, exiting"
+	exit $POSTPROCESS_NONE
+fi
 
 # Check unpack status
 if [ "$NZBPP_UNPACKSTATUS" -ne 2 ]; then
 	echo "[WARNING] Post-Process: Unpack failed or disabled, exiting"
 	exit $POSTPROCESS_NONE
-fi 
+fi
 
 # Check if destination directory exists (important for reprocessing of history items)
 if [ ! -d "$NZBPP_DIRECTORY" ]; then
@@ -173,13 +178,13 @@ if [ "$JoinTS" = "yes" ]; then
 	# Join any split .ts files if they are named xxxx.0000.ts xxxx.0001.ts
 	# They will be joined together to a file called xxxx.0001.ts
 	if (ls *.ts >/dev/null 2>&1); then
-	    echo "[INFO] Post-Process: Joining ts-files"
+		echo "[INFO] Post-Process: Joining ts-files"
 		tsname=`find . -name "*0001.ts" |awk -F/ '{print $NF}'`
 		cat *0???.ts > ./$tsname
-	fi   
-   
+	fi
+
 	# Remove all the split .ts files
-    echo "[INFO] Post-Process: Deleting source ts-files"
+	echo "[INFO] Post-Process: Deleting source ts-files"
 	rm *0???.ts >/dev/null 2>&1
 fi
 
@@ -187,10 +192,10 @@ if [ "$RenameIMG" = "yes" ]; then
 	# Rename img file to iso
 	# It will be renamed to .img.iso so you can see that it has been renamed
 	if (ls *.img >/dev/null 2>&1); then
-	    echo "[INFO] Post-Process: Renaming img-files to iso"
+		echo "[INFO] Post-Process: Renaming img-files to iso"
 		imgname=`find . -name "*.img" |awk -F/ '{print $NF}'`
 		mv $imgname $imgname.iso
-	fi   
+	fi
 fi
 
 # Check if destination directory was set in postprocessing parameters
