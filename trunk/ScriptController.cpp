@@ -50,6 +50,9 @@
 #include "Log.h"
 #include "Util.h"
 
+// System global variable holding environments variables
+extern char** environ;
+
 extern Options* g_pOptions;
 extern char* (*g_szEnvironmentVariables)[];
 extern DownloadQueueHolder* g_pDownloadQueueHolder;
@@ -369,8 +372,9 @@ int ScriptController::Execute()
 #endif
 
 		chdir(m_szWorkingDir);
-		execve(m_szScript, (char* const*)m_szArgs, (char* const*)pEnvironmentStrings);
-		fprintf(stdout, "[ERROR] Could not start script: %s", strerror(errno));
+		environ = pEnvironmentStrings;
+		execvp(m_szScript, (char* const*)m_szArgs);
+		fprintf(stdout, "[ERROR] Could not start %s: %s", m_szScript, strerror(errno));
 		fflush(stdout);
 		_exit(-1);
 	}
