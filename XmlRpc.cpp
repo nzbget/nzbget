@@ -1919,7 +1919,7 @@ void HistoryXmlCommand::Execute()
 
 			snprintf(szItemBuf, szItemBufSize, IsJson() ? JSON_HISTORY_ITEM_START : XML_HISTORY_ITEM_START,
 				pHistoryInfo->GetID(), pHistoryInfo->GetID(), "URL", xmlNicename, xmlNicename, xmlNZBFilename, 
-				"", xmlCategory, "", "", 0, 0, 0, 0, 0, pHistoryInfo->GetTime(), xmlURL,
+				"", xmlCategory, "", "", "", 0, 0, 0, 0, 0, pHistoryInfo->GetTime(), xmlURL,
 				szUrlStatusName[pUrlInfo->GetStatus()]);
 
 			free(xmlURL);
