@@ -620,7 +620,7 @@ var DownloadsUI = (new function($)
 		{
 			if (group.post.StageProgress > 0)
 			{
-				return Util.formatTimeHMS(group.post.StageTimeSec / group.post.StageProgress * (1000 - group.post.StageProgress));
+				return Util.formatTimeLeft(group.post.StageTimeSec / group.post.StageProgress * (1000 - group.post.StageProgress));
 			}
 		}
 		else if (!group.paused && Status.status.DownloadRate > 0)
