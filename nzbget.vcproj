@@ -496,6 +496,14 @@
 			>
 		</File>
 		<File
+			RelativePath=".\Unpack.cpp"
+			>
+		</File>
+		<File
+			RelativePath=".\Unpack.h"
+			>
+		</File>
+		<File
 			RelativePath=".\UrlCoordinator.cpp"
 			>
 		</File>
