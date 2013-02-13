@@ -181,11 +181,11 @@ if [ "$JoinTS" = "yes" ]; then
 		echo "[INFO] Post-Process: Joining ts-files"
 		tsname=`find . -name "*0001.ts" |awk -F/ '{print $NF}'`
 		cat *0???.ts > ./$tsname
-	fi
 
-	# Remove all the split .ts files
-	echo "[INFO] Post-Process: Deleting source ts-files"
-	rm *0???.ts >/dev/null 2>&1
+        # Remove all the split .ts files
+        echo "[INFO] Post-Process: Deleting source ts-files"
+        rm *0???.ts >/dev/null 2>&1
+	fi
 fi
 
 if [ "$RenameIMG" = "yes" ]; then
