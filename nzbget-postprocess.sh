@@ -131,7 +131,7 @@ if [ "$NZBPP_PARSTATUS" -eq 3 ]; then
 	echo "[WARNING] Post-Process: Par-check successful, but Par-repair disabled, exiting"
 	exit $POSTPROCESS_NONE
 fi
-if [ "$NZBPP_PARSTATUS" -eq 3 ]; then
+if [ "$NZBPP_PARSTATUS" -eq 1 ]; then
 	echo "[WARNING] Post-Process: Par-check failed, exiting"
 	exit $POSTPROCESS_NONE
 fi
