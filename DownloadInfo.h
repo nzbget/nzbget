@@ -218,8 +218,8 @@ public:
 	{
 		psNone,
 		psFailure,
-		psRepairPossible,
-		psSuccess
+		psSuccess,
+		psRepairPossible
 	};
 
 	enum EUnpackStatus
