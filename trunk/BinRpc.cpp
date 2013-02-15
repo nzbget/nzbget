@@ -592,11 +592,11 @@ void ListBinCommand::Execute()
 	if (htonl(ListRequest.m_bServerState))
 	{
 		unsigned long iSizeHi, iSizeLo;
-		ListResponse.m_iDownloadRate = htonl((int)(g_pQueueCoordinator->CalcCurrentDownloadSpeed() * 1024));
+		ListResponse.m_iDownloadRate = htonl(g_pQueueCoordinator->CalcCurrentDownloadSpeed());
 		Util::SplitInt64(g_pQueueCoordinator->CalcRemainingSize(), &iSizeHi, &iSizeLo);
 		ListResponse.m_iRemainingSizeHi = htonl(iSizeHi);
 		ListResponse.m_iRemainingSizeLo = htonl(iSizeLo);
-		ListResponse.m_iDownloadLimit = htonl((int)(g_pOptions->GetDownloadRate() * 1024));
+		ListResponse.m_iDownloadLimit = htonl(g_pOptions->GetDownloadRate());
 		ListResponse.m_bDownloadPaused = htonl(g_pOptions->GetPauseDownload());
 		ListResponse.m_bDownload2Paused = htonl(g_pOptions->GetPauseDownload2());
 		ListResponse.m_bPostPaused = htonl(g_pOptions->GetPausePostProcess());
