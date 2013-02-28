@@ -217,6 +217,7 @@ public:
 	enum EParStatus
 	{
 		psNone,
+		psSkipped,
 		psFailure,
 		psSuccess,
 		psRepairPossible
@@ -260,6 +261,7 @@ private:
 	bool				m_bDeleted;
 	bool				m_bParCleanup;
 	bool				m_bCleanupDisk;
+	bool				m_bUnpackCleanedUpDisk;
 	NZBInfoList*		m_Owner;
 	NZBParameterList	m_ppParameters;
 	Mutex				m_mutexLog;
@@ -310,6 +312,8 @@ public:
 	void				SetParCleanup(bool bParCleanup) { m_bParCleanup = bParCleanup; }
 	bool				GetCleanupDisk() { return m_bCleanupDisk; }
 	void				SetCleanupDisk(bool bCleanupDisk) { m_bCleanupDisk = bCleanupDisk; }
+	bool				GetUnpackCleanedUpDisk() { return m_bUnpackCleanedUpDisk; }
+	void				SetUnpackCleanedUpDisk(bool bUnpackCleanedUpDisk) { m_bUnpackCleanedUpDisk = bUnpackCleanedUpDisk; }
 	NZBParameterList*	GetParameters() { return &m_ppParameters; }				// needs locking (for shared objects)
 	void				SetParameter(const char* szName, const char* szValue);	// needs locking (for shared objects)
 	void				AppendMessage(Message::EKind eKind, time_t tTime, const char* szText);
@@ -345,6 +349,7 @@ public:
 	enum EParStatus
 	{
 		psNone,
+		psSkipped,
 		psFailure,
 		psSuccess,
 		psRepairPossible
@@ -382,7 +387,6 @@ private:
 	char*				m_szInfoName;
 	bool				m_bWorking;
 	bool				m_bDeleted;
-	bool				m_bParCheck;
 	EParStatus			m_eParStatus;
 	EUnpackStatus		m_eUnpackStatus;
 	EScriptStatus		m_eScriptStatus;
@@ -427,8 +431,6 @@ public:
 	void				SetWorking(bool bWorking) { m_bWorking = bWorking; }
 	bool				GetDeleted() { return m_bDeleted; }
 	void				SetDeleted(bool bDeleted) { m_bDeleted = bDeleted; }
-	bool				GetParCheck() { return m_bParCheck; }
-	void				SetParCheck(bool bParCheck) { m_bParCheck = bParCheck; }
 	EParStatus			GetParStatus() { return m_eParStatus; }
 	void				SetParStatus(EParStatus eParStatus) { m_eParStatus = eParStatus; }
 	EUnpackStatus		GetUnpackStatus() { return m_eUnpackStatus; }

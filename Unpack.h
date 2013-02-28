@@ -56,6 +56,7 @@ private:
 	bool				m_bHasSevenZipMultiFiles;
 	bool				m_bUnpackOK;
 	bool				m_bUnpackStartError;
+	bool				m_bCleanedUpDisk;
 	EUnpacker			m_eUnpacker;
 
 	typedef std::deque<char*>		FileList;

@@ -136,6 +136,7 @@ NZBInfo::NZBInfo()
 	m_bDeleted = false;
 	m_bParCleanup = false;
 	m_bCleanupDisk = false;
+	m_bUnpackCleanedUpDisk = false;
 	m_szQueuedFilename = strdup("");
 	m_Owner = NULL;
 	m_Messages.clear();
@@ -608,7 +609,6 @@ PostInfo::PostInfo()
 	m_szInfoName = NULL;
 	m_bWorking = false;
 	m_bDeleted = false;
-	m_bParCheck = false;
 	m_eParStatus = psNone;
 	m_eUnpackStatus = usNone;
 	m_eRequestParCheck = rpNone;
