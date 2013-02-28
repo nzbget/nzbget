@@ -324,7 +324,7 @@ bool DiskState::LoadNZBList(DownloadQueue* pDownloadQueue, FILE* infile, int iFo
 			pNZBInfo->SetScriptStatus((NZBInfo::EScriptStatus)iScriptStatus);
 		}
 
-		if (iFormatVersion >= 18)
+		if (iFormatVersion >= 19)
 		{
 			int iUnpackCleanedUpDisk;
 			if (fscanf(infile, "%i\n", &iUnpackCleanedUpDisk) != 1) goto error;
