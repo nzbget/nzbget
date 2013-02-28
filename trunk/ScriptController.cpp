@@ -640,8 +640,9 @@ void PostScriptController::Run()
 	strncpy(szNZBName, m_pPostInfo->GetNZBInfo()->GetName(), 1024);
 	szNZBName[1024-1] = '\0';
 
+	int iParStatus[] = { 0, 0, 1, 2, 3 };
 	char szParStatus[10];
-	snprintf(szParStatus, 10, "%i", g_pOptions->GetAllowReProcess() ? (int)m_pPostInfo->GetParStatus() : (int)m_pPostInfo->GetNZBInfo()->GetParStatus());
+	snprintf(szParStatus, 10, "%i", iParStatus[g_pOptions->GetAllowReProcess() ? m_pPostInfo->GetParStatus() : m_pPostInfo->GetNZBInfo()->GetParStatus()]);
 	szParStatus[10-1] = '\0';
 
 	int iUnpackStatus[] = { 0, 0, 1, 2 };
@@ -738,7 +739,7 @@ void PostScriptController::Run()
 
 #ifndef DISABLE_PARCHECK
 		case POSTPROCESS_PARCHECK_ALL:
-			if (m_pPostInfo->GetParCheck())
+			if (m_pPostInfo->GetParStatus() > PostInfo::psSkipped)
 			{
 				error("%s requested par-check/repair for all collections, but they were already checked", szInfoName);
 				m_pPostInfo->SetScriptStatus(PostInfo::srFailure);
@@ -757,7 +758,7 @@ void PostScriptController::Run()
 			break;
 
 		case POSTPROCESS_PARCHECK_CURRENT:
-			if (m_pPostInfo->GetParCheck())
+			if (m_pPostInfo->GetParStatus() > PostInfo::psSkipped)
 			{
 				error("%s requested par-check/repair for current collection, but it was already checked", szInfoName);
 				m_pPostInfo->SetScriptStatus(PostInfo::srFailure);

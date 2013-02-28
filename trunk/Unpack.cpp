@@ -79,6 +79,7 @@ void UnpackController::Run()
 	strncpy(szName, m_pPostInfo->GetNZBInfo()->GetName(), 1024);
 	szName[1024-1] = '\0';
 
+	m_bCleanedUpDisk = false;
 	bool bUnpack = true;
 	m_szPassword[0] = '\0';
 	
@@ -105,7 +106,7 @@ void UnpackController::Run()
 	m_szInfoNameUp[1024-1] = '\0';
 	
 #ifndef DISABLE_PARCHECK
-	if (bUnpack && HasBrokenFiles() && !m_pPostInfo->GetParCheck() && HasParFiles())
+	if (bUnpack && HasBrokenFiles() && m_pPostInfo->GetNZBInfo()->GetParStatus() <= NZBInfo::psSkipped && HasParFiles())
 	{
 		info("%s has broken files", szName);
 		RequestParCheck();
@@ -157,7 +158,7 @@ void UnpackController::Run()
 		PrintMessage(Message::mkInfo, (bUnpack ? "Nothing to unpack for %s" : "Unpack for %s skipped"), szName);
 
 #ifndef DISABLE_PARCHECK
-		if (bUnpack && !m_pPostInfo->GetParCheck() && HasParFiles())
+		if (bUnpack && m_pPostInfo->GetNZBInfo()->GetParStatus() <= NZBInfo::psSkipped && HasParFiles())
 		{
 			RequestParCheck();
 		}
@@ -262,12 +263,13 @@ void UnpackController::Completed()
 		PrintMessage(Message::mkInfo, "%s %s", m_szInfoNameUp, "successful");
 		m_pPostInfo->SetUnpackStatus(PostInfo::usSuccess);
 		m_pPostInfo->GetNZBInfo()->SetUnpackStatus(NZBInfo::usSuccess);
+		m_pPostInfo->GetNZBInfo()->SetUnpackCleanedUpDisk(m_bCleanedUpDisk);
 		m_pPostInfo->SetStage(PostInfo::ptQueued);
 	}
 	else
 	{
 #ifndef DISABLE_PARCHECK
-		if (!m_bUnpackOK && !m_pPostInfo->GetParCheck() && !m_bUnpackStartError && !GetTerminated() && HasParFiles())
+		if (!m_bUnpackOK && m_pPostInfo->GetNZBInfo()->GetParStatus() <= NZBInfo::psSkipped && !m_bUnpackStartError && !GetTerminated() && HasParFiles())
 		{
 			RequestParCheck();
 		}
@@ -438,6 +440,8 @@ bool UnpackController::Cleanup()
 				}
 			}
 		}
+
+		m_bCleanedUpDisk = true;
 	}
 
 	return bOK;
