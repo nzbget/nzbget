@@ -38,6 +38,7 @@
 #ifndef WIN32
 #include <unistd.h>
 #endif
+#include <errno.h>
 
 #include "nzbget.h"
 #include "Unpack.h"
@@ -62,7 +63,7 @@ void UnpackController::StartUnpackJob(PostInfo* pPostInfo)
 	pUnpackController->m_pPostInfo = pPostInfo;
 	pUnpackController->SetAutoDestroy(false);
 
-	pPostInfo->SetScriptThread(pUnpackController);
+	pPostInfo->SetPostThread(pUnpackController);
 
 	pUnpackController->Start();
 }
@@ -82,6 +83,7 @@ void UnpackController::Run()
 	m_bCleanedUpDisk = false;
 	bool bUnpack = true;
 	m_szPassword[0] = '\0';
+	m_szFinalDir[0] = '\0';
 	
 	for (NZBParameterList::iterator it = m_pPostInfo->GetNZBInfo()->GetParameters()->begin(); it != m_pPostInfo->GetNZBInfo()->GetParameters()->end(); it++)
 	{
@@ -192,7 +194,7 @@ void UnpackController::ExecuteUnrar()
 	}
 	szArgs[4] = "-o+";
 	szArgs[5] = "*.rar";
-	szArgs[6] = "./_unpack";
+	szArgs[6] = m_szUnpackDir;
 	szArgs[7] = NULL;
 	SetArgs(szArgs, false);
 
@@ -225,13 +227,18 @@ void UnpackController::ExecuteSevenZip(bool bMultiVolumes)
 	szArgs[0] = g_pOptions->GetSevenZipCmd();
 	szArgs[1] = "x";
 	szArgs[2] = "-y";
+
 	szArgs[3] = "-p-";
 	if (strlen(m_szPassword) > 0)
 	{
 		snprintf(szPasswordParam, 1024, "-p%s", m_szPassword);
 		szArgs[3] = szPasswordParam;
 	}
-	szArgs[4] = "-o./_unpack";
+
+	char szUnpackDirParam[1024];
+	snprintf(szUnpackDirParam, 1024, "-o%s", m_szUnpackDir);
+	szArgs[4] = szUnpackDirParam;
+
 	szArgs[5] = bMultiVolumes ? "*.7z.001" : "*.7z";
 	szArgs[6] = NULL;
 	SetArgs(szArgs, false);
@@ -308,7 +315,18 @@ bool UnpackController::HasBrokenFiles()
 
 void UnpackController::CreateUnpackDir()
 {
-	snprintf(m_szUnpackDir, 1024, "%s%c%s", m_szDestDir, PATH_SEPARATOR, "_unpack");
+	if (strlen(g_pOptions->GetInterDir()) > 0 &&
+		!strncmp(m_szDestDir, g_pOptions->GetInterDir(), strlen(g_pOptions->GetInterDir())))
+	{
+		m_pPostInfo->GetNZBInfo()->BuildFinalDirName(m_szFinalDir, 1024);
+		m_szFinalDir[1024-1] = '\0';
+		Util::ForceDirectories(m_szFinalDir);
+		snprintf(m_szUnpackDir, 1024, "%s%c%s", m_szFinalDir, PATH_SEPARATOR, "_unpack");
+	}
+	else
+	{
+		snprintf(m_szUnpackDir, 1024, "%s%c%s", m_szDestDir, PATH_SEPARATOR, "_unpack");
+	}
 	m_szUnpackDir[1024-1] = '\0';
 	Util::ForceDirectories(m_szUnpackDir);
 }
@@ -373,7 +391,7 @@ bool UnpackController::Cleanup()
 				szSrcFile[1024-1] = '\0';
 
 				char szDstFile[1024];
-				snprintf(szDstFile, 1024, "%s%c%s", m_szDestDir, PATH_SEPARATOR, filename);
+				snprintf(szDstFile, 1024, "%s%c%s", m_szFinalDir[0] != '\0' ? m_szFinalDir : m_szDestDir, PATH_SEPARATOR, filename);
 				szDstFile[1024-1] = '\0';
 
 				// silently overwrite existing files
@@ -512,19 +530,32 @@ bool UnpackController::ReadLine(char* szBuf, int iBufSize, FILE* pStream)
 
 void UnpackController::AddMessage(Message::EKind eKind, bool bDefaultKind, const char* szText)
 {
-	ScriptController::AddMessage(eKind, bDefaultKind, szText);
-	m_pPostInfo->AppendMessage(eKind, szText);
+	char szMsgText[1024];
+	strncpy(szMsgText, szText, 1024);
+	szMsgText[1024-1] = '\0';
+	
+	// Modify unrar messages for better readability:
+	// remove the destination path part from message "Extracting file.xxx"
+	if (m_eUnpacker == upUnrar && !strncmp(szText, "Extracting  ", 12) &&
+		!strncmp(szText + 12, m_szUnpackDir, strlen(m_szUnpackDir)))
+	{
+		snprintf(szMsgText, 1024, "Extracting %s", szText + 12 + strlen(m_szUnpackDir) + 1);
+		szMsgText[1024-1] = '\0';
+	}
+
+	ScriptController::AddMessage(eKind, bDefaultKind, szMsgText);
+	m_pPostInfo->AppendMessage(eKind, szMsgText);
+
+	if (m_eUnpacker == upUnrar && !strncmp(szMsgText, "Extracting ", 11))
+	{
+		m_pPostInfo->SetProgressLabel(szMsgText);
+	}
 
 	if (m_eUnpacker == upUnrar && !strncmp(szText, "Extracting from ", 16))
 	{
 		const char *szFilename = szText + 16;
 		debug("Filename: %s", szFilename);
 		m_archiveFiles.push_back(strdup(szFilename));
-		m_pPostInfo->SetProgressLabel(szText);
-	}
-
-	if (m_eUnpacker == upUnrar && !strncmp(szText, "Extracting ", 11))
-	{
 		m_pPostInfo->SetProgressLabel(szText);
 	}
 
@@ -540,4 +571,108 @@ void UnpackController::Stop()
 	debug("Stopping unpack");
 	Thread::Stop();
 	Terminate();
+}
+
+
+void MoveController::StartMoveJob(PostInfo* pPostInfo)
+{
+	MoveController* pMoveController = new MoveController();
+	pMoveController->m_pPostInfo = pPostInfo;
+	pMoveController->SetAutoDestroy(false);
+
+	pPostInfo->SetPostThread(pMoveController);
+
+	pMoveController->Start();
+}
+
+void MoveController::Run()
+{
+	// the locking is needed for accessing the members of NZBInfo
+	g_pDownloadQueueHolder->LockQueue();
+
+	char szNZBName[1024];
+	strncpy(szNZBName, m_pPostInfo->GetNZBInfo()->GetName(), 1024);
+	szNZBName[1024-1] = '\0';
+
+	char szInfoName[1024];
+	snprintf(szInfoName, 1024, "move for %s", m_pPostInfo->GetNZBInfo()->GetName());
+	szInfoName[1024-1] = '\0';
+	SetInfoName(szInfoName);
+
+	SetDefaultKindPrefix("Move: ");
+	SetDefaultLogKind(g_pOptions->GetProcessLogKind());
+
+	strncpy(m_szInterDir, m_pPostInfo->GetNZBInfo()->GetDestDir(), 1024);
+	m_szInterDir[1024-1] = '\0';
+
+	m_pPostInfo->GetNZBInfo()->BuildFinalDirName(m_szDestDir, 1024);
+	m_szDestDir[1024-1] = '\0';
+
+	g_pDownloadQueueHolder->UnlockQueue();
+
+	info("Moving completed files for %s", szNZBName);
+
+	bool bOK = MoveFiles();
+
+	szInfoName[0] = 'M'; // uppercase
+
+	if (bOK)
+	{
+		info("%s successful", szInfoName);
+		// save new dest dir
+		g_pDownloadQueueHolder->LockQueue();
+		m_pPostInfo->GetNZBInfo()->SetDestDir(m_szDestDir);
+		m_pPostInfo->GetNZBInfo()->SetMoveStatus(NZBInfo::msSuccess);
+		g_pDownloadQueueHolder->UnlockQueue();
+	}
+	else
+	{
+		error("%s failed", szInfoName);
+		m_pPostInfo->GetNZBInfo()->SetMoveStatus(NZBInfo::msFailure);
+	}
+
+	m_pPostInfo->SetStage(PostInfo::ptQueued);
+	m_pPostInfo->SetWorking(false);
+}
+
+bool MoveController::MoveFiles()
+{
+	bool bOK = true;
+
+	bOK = Util::ForceDirectories(m_szDestDir);
+
+	DirBrowser dir(m_szInterDir);
+	while (const char* filename = dir.Next())
+	{
+		if (strcmp(filename, ".") && strcmp(filename, ".."))
+		{
+			char szSrcFile[1024];
+			snprintf(szSrcFile, 1024, "%s%c%s", m_szInterDir, PATH_SEPARATOR, filename);
+			szSrcFile[1024-1] = '\0';
+
+			char szDstFile[1024];
+			snprintf(szDstFile, 1024, "%s%c%s", m_szDestDir, PATH_SEPARATOR, filename);
+			szDstFile[1024-1] = '\0';
+
+			// prevent overwriting of existing files
+			int dupcount = 0;
+			while (Util::FileExists(szDstFile))
+			{
+				dupcount++;
+				snprintf(szDstFile, 1024, "%s%c%s_duplicate%d", m_szDestDir, PATH_SEPARATOR, filename, dupcount);
+				szDstFile[1024-1] = '\0';
+			}
+
+			PrintMessage(Message::mkDetail, "Moving file %s to %s", szSrcFile, szDstFile);
+			if (!Util::MoveFile(szSrcFile, szDstFile))
+			{
+				PrintMessage(Message::mkError, "Could not move file %s to %s! Errcode: %i", szSrcFile, szDstFile, errno);
+				bOK = false;
+			}
+		}
+	}
+
+	Util::RemoveDirectory(m_szInterDir);
+
+	return bOK;
 }

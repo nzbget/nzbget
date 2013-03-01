@@ -113,7 +113,7 @@ var History = (new function($)
 	{
 		if (hist.Kind === 'NZB')
 		{
-			if (hist.ParStatus == 'FAILURE' || hist.UnpackStatus == 'FAILURE' || hist.ScriptStatus == 'FAILURE')
+			if (hist.ParStatus == 'FAILURE' || hist.UnpackStatus == 'FAILURE' || hist.MoveStatus == 'FAILURE' || hist.ScriptStatus == 'FAILURE')
 			{
 				hist.status = 'failure'; 
 			}
@@ -388,6 +388,7 @@ var History = (new function($)
 			{
 				status = buildStatus(hist.ParStatus, 'Par: ') + ' ' +
 				    (Options.option('Unpack') == 'yes' || hist.UnpackStatus != 'NONE' ? buildStatus(hist.UnpackStatus, 'Unpack: ') + ' ' : '')  +
+					(hist.MoveStatus === "FAILURE" ? buildStatus(hist.MoveStatus, 'Move: ') + ' ' : "") +
 					buildStatus(hist.ScriptStatus, 'Script: ');
 			}
 

@@ -239,6 +239,13 @@ public:
 		srSuccess
 	};
 
+	enum EMoveStatus
+	{
+		msNone,
+		msFailure,
+		msSuccess
+	};
+
 	typedef std::vector<char*>			Files;
 	typedef std::deque<Message*>		Messages;
 
@@ -257,6 +264,7 @@ private:
 	EParStatus			m_eParStatus;
 	EUnpackStatus		m_eUnpackStatus;
 	EScriptStatus		m_eScriptStatus;
+	EMoveStatus			m_eMoveStatus;
 	char*				m_szQueuedFilename;
 	bool				m_bDeleted;
 	bool				m_bParCleanup;
@@ -294,6 +302,7 @@ public:
 	int					GetParkedFileCount() { return m_iParkedFileCount; }
 	void 				SetParkedFileCount(int iParkedFileCount) { m_iParkedFileCount = iParkedFileCount; }
 	void				BuildDestDirName();
+	void				BuildFinalDirName(char* szFinalDirBuf, int iBufSize);
 	Files*				GetCompletedFiles() { return &m_completedFiles; }		// needs locking (for shared objects)
 	void				ClearCompletedFiles();
 	bool				GetPostProcess() { return m_bPostProcess; }
@@ -302,6 +311,8 @@ public:
 	void				SetParStatus(EParStatus eParStatus) { m_eParStatus = eParStatus; }
 	EUnpackStatus		GetUnpackStatus() { return m_eUnpackStatus; }
 	void				SetUnpackStatus(EUnpackStatus eUnpackStatus) { m_eUnpackStatus = eUnpackStatus; }
+	EMoveStatus			GetMoveStatus() { return m_eMoveStatus; }
+	void				SetMoveStatus(EMoveStatus eMoveStatus) { m_eMoveStatus = eMoveStatus; }
 	EScriptStatus		GetScriptStatus() { return m_eScriptStatus; }
 	void				SetScriptStatus(EScriptStatus eScriptStatus) { m_eScriptStatus = eScriptStatus; }
 	const char*			GetQueuedFilename() { return m_szQueuedFilename; }
@@ -342,6 +353,7 @@ public:
 		ptRepairing,
 		ptVerifyingRepaired,
 		ptUnpacking,
+		ptMoving,
 		ptExecutingScript,
 		ptFinished
 	};
@@ -397,7 +409,7 @@ private:
 	int					m_iStageProgress;
 	time_t				m_tStartTime;
 	time_t				m_tStageTime;
-	Thread*				m_pScriptThread;
+	Thread*				m_pPostThread;
 	
 	Mutex				m_mutexLog;
 	Messages			m_Messages;
@@ -440,8 +452,8 @@ public:
 	EScriptStatus		GetScriptStatus() { return m_eScriptStatus; }
 	void				SetScriptStatus(EScriptStatus eScriptStatus) { m_eScriptStatus = eScriptStatus; }
 	void				AppendMessage(Message::EKind eKind, const char* szText);
-	Thread*				GetScriptThread() { return m_pScriptThread; }
-	void				SetScriptThread(Thread* pScriptThread) { m_pScriptThread = pScriptThread; }
+	Thread*				GetPostThread() { return m_pPostThread; }
+	void				SetPostThread(Thread* pPostThread) { m_pPostThread = pPostThread; }
 	Messages*			LockMessages();
 	void				UnlockMessages();
 };

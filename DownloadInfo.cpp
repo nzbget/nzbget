@@ -132,6 +132,7 @@ NZBInfo::NZBInfo()
 	m_bPostProcess = false;
 	m_eParStatus = psNone;
 	m_eUnpackStatus = usNone;
+	m_eMoveStatus = msNone;
 	m_eScriptStatus = srNone;
 	m_bDeleted = false;
 	m_bParCleanup = false;
@@ -290,19 +291,35 @@ void NZBInfo::MakeNiceNZBName(const char * szNZBFilename, char * szBuffer, int i
 void NZBInfo::BuildDestDirName()
 {
 	char szDestDir[1024];
+
+	if (strlen(g_pOptions->GetInterDir()) == 0)
+	{
+		BuildFinalDirName(szDestDir, 1024);
+	}
+	else
+	{
+		snprintf(szDestDir, 1024, "%s%s", g_pOptions->GetInterDir(), GetName());
+		szDestDir[1024-1] = '\0';
+	}
+
+	SetDestDir(szDestDir);
+}
+
+void NZBInfo::BuildFinalDirName(char* szFinalDirBuf, int iBufSize)
+{
 	char szBuffer[1024];
 	bool bUseCategory = m_szCategory && m_szCategory[0] != '\0';
 
-	snprintf(szDestDir, 1024, "%s", g_pOptions->GetDestDir());
-	szDestDir[1024-1] = '\0';
+	snprintf(szFinalDirBuf, iBufSize, "%s", g_pOptions->GetDestDir());
+	szFinalDirBuf[iBufSize-1] = '\0';
 
 	if (bUseCategory)
 	{
 		Options::Category *pCategory = g_pOptions->FindCategory(m_szCategory);
 		if (pCategory && pCategory->GetDestDir() && pCategory->GetDestDir()[0] != '\0')
 		{
-			snprintf(szDestDir, 1024, "%s", pCategory->GetDestDir());
-			szDestDir[1024-1] = '\0';
+			snprintf(szFinalDirBuf, iBufSize, "%s", pCategory->GetDestDir());
+			szFinalDirBuf[iBufSize-1] = '\0';
 			bUseCategory = false;
 		}
 	}
@@ -314,19 +331,17 @@ void NZBInfo::BuildDestDirName()
 		szCategoryDir[1024 - 1] = '\0';
 		Util::MakeValidFilename(szCategoryDir, '_', true);
 
-		snprintf(szBuffer, 1024, "%s%s%c", szDestDir, szCategoryDir, PATH_SEPARATOR);
+		snprintf(szBuffer, 1024, "%s%s%c", szFinalDirBuf, szCategoryDir, PATH_SEPARATOR);
 		szBuffer[1024-1] = '\0';
-		strncpy(szDestDir, szBuffer, 1024);
+		strncpy(szFinalDirBuf, szBuffer, iBufSize);
 	}
 
 	if (g_pOptions->GetAppendNZBDir())
 	{
-		snprintf(szBuffer, 1024, "%s%s", szDestDir, GetName());
+		snprintf(szBuffer, 1024, "%s%s", szFinalDirBuf, GetName());
 		szBuffer[1024-1] = '\0';
-		strncpy(szDestDir, szBuffer, 1024);
+		strncpy(szFinalDirBuf, szBuffer, iBufSize);
 	}
-
-	SetDestDir(szDestDir);
 }
 
 void NZBInfo::SetParameter(const char* szName, const char* szValue)
@@ -619,7 +634,7 @@ PostInfo::PostInfo()
 	m_tStartTime = 0;
 	m_tStageTime = 0;
 	m_eStage = ptQueued;
-	m_pScriptThread = NULL;
+	m_pPostThread = NULL;
 	m_Messages.clear();
 	m_iIDMessageGen = 0;
 	m_iIDGen++;

@@ -180,6 +180,7 @@ private:
 	int					m_iConfigLine;
 	char*				m_szConfigFilename;
 	char*				m_szDestDir;
+	char*				m_szInterDir;
 	char*				m_szTempDir;
 	char*				m_szQueueDir;
 	char*				m_szNzbDir;
@@ -336,6 +337,7 @@ public:
 	void				UnlockOptEntries();
 	const char*			GetConfigFilename() { return m_szConfigFilename; }
 	const char*			GetDestDir() { return m_szDestDir; }
+	const char*			GetInterDir() { return m_szInterDir; }
 	const char*			GetTempDir() { return m_szTempDir; }
 	const char*			GetQueueDir() { return m_szQueueDir; }
 	const char*			GetNzbDir() { return m_szNzbDir; }
