@@ -97,6 +97,7 @@ static const char* OPTION_APPDIR				= "AppDir";
 static const char* OPTION_VERSION				= "Version";
 static const char* OPTION_MAINDIR				= "MainDir";
 static const char* OPTION_DESTDIR				= "DestDir";
+static const char* OPTION_INTERDIR				= "InterDir";
 static const char* OPTION_TEMPDIR				= "TempDir";
 static const char* OPTION_QUEUEDIR				= "QueueDir";
 static const char* OPTION_NZBDIR				= "NzbDir";
@@ -335,6 +336,7 @@ Options::Options(int argc, char* argv[])
 	m_bConfigInitialized	= false;
 	m_szConfigFilename		= NULL;
 	m_szDestDir				= NULL;
+	m_szInterDir			= NULL;
 	m_szTempDir				= NULL;
 	m_szQueueDir			= NULL;
 	m_szNzbDir				= NULL;
@@ -529,6 +531,10 @@ Options::~Options()
 	{
 		free(m_szDestDir);
 	}
+	if (m_szInterDir)
+	{
+		free(m_szInterDir);
+	}
 	if (m_szTempDir)
 	{
 		free(m_szTempDir);
@@ -676,6 +682,7 @@ void Options::InitDefault()
 #endif
 	SetOption(OPTION_TEMPDIR, "${MainDir}/tmp");
 	SetOption(OPTION_DESTDIR, "${MainDir}/dst");
+	SetOption(OPTION_INTERDIR, "");
 	SetOption(OPTION_QUEUEDIR, "${MainDir}/queue");
 	SetOption(OPTION_NZBDIR, "${MainDir}/nzb");
 	SetOption(OPTION_LOCKFILE, "${MainDir}/nzbget.lock");
@@ -872,6 +879,7 @@ void Options::CheckDir(char** dir, const char* szOptionName, bool bAllowEmpty, b
 void Options::InitOptions()
 {
 	CheckDir(&m_szDestDir, OPTION_DESTDIR, false, true);
+	CheckDir(&m_szInterDir, OPTION_INTERDIR, true, true);
 	CheckDir(&m_szTempDir, OPTION_TEMPDIR, false, true);
 	CheckDir(&m_szQueueDir, OPTION_QUEUEDIR, false, true);
 	CheckDir(&m_szWebDir, OPTION_WEBDIR, true, false);

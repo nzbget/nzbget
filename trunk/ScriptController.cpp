@@ -616,8 +616,6 @@ void ScriptController::PrintMessage(Message::EKind eKind, const char* szFormat, 
 
 void PostScriptController::StartScriptJob(PostInfo* pPostInfo, bool bNZBFileCompleted, bool bHasFailedParJobs)
 {
-	info("Executing post-process-script for %s", pPostInfo->GetInfoName());
-
 	PostScriptController* pScriptController = new PostScriptController();
 	pScriptController->m_pPostInfo = pPostInfo;
 	pScriptController->SetScript(g_pOptions->GetPostProcess());
@@ -626,7 +624,7 @@ void PostScriptController::StartScriptJob(PostInfo* pPostInfo, bool bNZBFileComp
 	pScriptController->m_bHasFailedParJobs = bHasFailedParJobs;
 	pScriptController->SetAutoDestroy(false);
 
-	pPostInfo->SetScriptThread(pScriptController);
+	pPostInfo->SetPostThread(pScriptController);
 
 	pScriptController->Start();
 }
@@ -714,6 +712,8 @@ void PostScriptController::Run()
 	}
 
 	g_pDownloadQueueHolder->UnlockQueue();
+
+	info("Executing post-process-script for %s", g_pOptions->GetAllowReProcess() ? m_pPostInfo->GetInfoName() : szNZBName);
 
 	int iResult = Execute();
 

@@ -105,6 +105,7 @@ private:
 	void				Cleanup();
 	FileInfo*			GetQueueGroup(DownloadQueue* pDownloadQueue, NZBInfo* pNZBInfo);
 	void				CheckHistory();
+	void				DeletePostThread(PostInfo* pPostInfo);
 
 public:
 						PrePostProcessor();

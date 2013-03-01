@@ -47,6 +47,7 @@ private:
 	char				m_szInfoName[1024];
 	char				m_szInfoNameUp[1024];
 	char				m_szDestDir[1024];
+	char				m_szFinalDir[1024];
 	char				m_szUnpackDir[1024];
 	char				m_szPassword[1024];
 	bool				m_bAllOKMessageReceived;
@@ -83,6 +84,20 @@ public:
 	virtual void		Run();
 	virtual void		Stop();
 	static void			StartUnpackJob(PostInfo* pPostInfo);
+};
+
+class MoveController : public Thread, public ScriptController
+{
+private:
+	PostInfo*			m_pPostInfo;
+	char				m_szInterDir[1024];
+	char				m_szDestDir[1024];
+
+	bool				MoveFiles();
+
+public:
+	virtual void		Run();
+	static void			StartMoveJob(PostInfo* pPostInfo);
 };
 
 #endif
