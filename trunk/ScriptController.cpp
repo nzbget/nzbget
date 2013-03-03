@@ -640,7 +640,7 @@ void PostScriptController::Run()
 
 	int iParStatus[] = { 0, 0, 1, 2, 3 };
 	char szParStatus[10];
-	snprintf(szParStatus, 10, "%i", iParStatus[g_pOptions->GetAllowReProcess() ? m_pPostInfo->GetParStatus() : m_pPostInfo->GetNZBInfo()->GetParStatus()]);
+	snprintf(szParStatus, 10, "%i", iParStatus[g_pOptions->GetAllowReProcess() ? (int)m_pPostInfo->GetParStatus() : (int)m_pPostInfo->GetNZBInfo()->GetParStatus()]);
 	szParStatus[10-1] = '\0';
 
 	int iUnpackStatus[] = { 0, 0, 1, 2 };
