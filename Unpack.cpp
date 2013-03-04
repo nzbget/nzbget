@@ -455,7 +455,7 @@ bool UnpackController::Cleanup()
 			{
 				if (regExSevenZip.Match(filename))
 				{
-					PrintMessage(Message::mkDetail, "Deleting file %s", filename);
+					PrintMessage(Message::mkInfo, "Deleting file %s", filename);
 
 					if (remove(szFullFilename) != 0)
 					{
