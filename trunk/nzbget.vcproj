@@ -408,6 +408,14 @@
 			>
 		</File>
 		<File
+			RelativePath=".\ParRenamer.cpp"
+			>
+		</File>
+		<File
+			RelativePath=".\ParRenamer.h"
+			>
+		</File>
+		<File
 			RelativePath=".\PrePostProcessor.cpp"
 			>
 		</File>
