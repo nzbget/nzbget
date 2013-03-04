@@ -633,7 +633,7 @@ void DiskState::SavePostQueue(DownloadQueue* pDownloadQueue, FILE* outfile)
 		PostInfo* pPostInfo = *it;
 		int iNZBIndex = FindNZBInfoIndex(pDownloadQueue, pPostInfo->GetNZBInfo());
 		fprintf(outfile, "%i,%i,%i,%i\n", iNZBIndex,
-			(int)pPostInfo->GetParStatus(), (int)pPostInfo->GetStage());
+			(int)pPostInfo->GetParStatus(), (int)pPostInfo->GetUnpackStatus(), (int)pPostInfo->GetStage());
 		fprintf(outfile, "%s\n", pPostInfo->GetInfoName());
 		fprintf(outfile, "%s\n", pPostInfo->GetParFilename());
 	}
