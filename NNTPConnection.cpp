@@ -50,6 +50,7 @@ NNTPConnection::NNTPConnection(NewsServer* pNewsServer) : Connection(pNewsServer
 	m_szActiveGroup = NULL;
 	m_szLineBuf = (char*)malloc(CONNECTION_LINEBUFFER_SIZE);
 	m_bAuthError = false;
+	SetCipher(pNewsServer->GetCipher());
 }
 
 NNTPConnection::~NNTPConnection()

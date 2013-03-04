@@ -261,12 +261,13 @@ void TLSSocket::Final()
 #endif /* HAVE_OPENSSL */
 }
 
-TLSSocket::TLSSocket(SOCKET iSocket, bool bIsClient, const char* szCertFile, const char* szKeyFile)
+TLSSocket::TLSSocket(SOCKET iSocket, bool bIsClient, const char* szCertFile, const char* szKeyFile, const char* szCipher)
 {
 	m_iSocket = iSocket;
 	m_bIsClient = bIsClient;
 	m_szCertFile = szCertFile ? strdup(szCertFile) : NULL;
 	m_szKeyFile = szKeyFile ? strdup(szKeyFile) : NULL;
+	m_szCipher = szCipher && strlen(szCipher) > 0 ? strdup(szCipher) : NULL;
 	m_pContext = NULL;
 	m_pSession = NULL;
 	m_bSuppressErrors = false;
@@ -283,6 +284,10 @@ TLSSocket::~TLSSocket()
 	if (m_szKeyFile)
 	{
 		free(m_szKeyFile);
+	}
+	if (m_szCipher)
+	{
+		free(m_szCipher);
 	}
 	Close();
 }
@@ -365,10 +370,12 @@ bool TLSSocket::Start()
 
 	m_bInitialized = true;
 
-	m_iRetCode = gnutls_set_default_priority((gnutls_session_t)m_pSession);
+	const char* szPriority = m_szCipher ? m_szCipher : "NORMAL";
+
+	m_iRetCode = gnutls_priority_set_direct((gnutls_session_t)m_pSession, szPriority, NULL);
 	if (m_iRetCode != 0)
 	{
-		ReportError("Could not initialize TLS session");
+		ReportError("Could not select cipher for TLS session");
 		Close();
 		return false;
 	}
@@ -425,6 +432,13 @@ bool TLSSocket::Start()
 	if (!m_pSession)
 	{
 		ReportError("Could not create TLS session");
+		Close();
+		return false;
+	}
+
+	if (m_szCipher && !SSL_set_cipher_list((SSL*)m_pSession, m_szCipher))
+	{
+		ReportError("Could not select cipher for TLS");
 		Close();
 		return false;
 	}

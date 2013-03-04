@@ -52,6 +52,7 @@ protected:
 	int					m_iPort;
 	SOCKET				m_iSocket;
 	bool				m_bTLS;
+	char*				m_szCipher;
 	char*				m_szReadBuf;
 	int					m_iBufAvail;
 	char*				m_szBufPtr;
@@ -105,6 +106,8 @@ public:
 	const char*			GetHost() { return m_szHost; }
 	int					GetPort() { return m_iPort; }
 	bool				GetTLS() { return m_bTLS; }
+	const char*			GetCipher() { return m_szCipher; }
+	void				SetCipher(const char* szCipher);
 	void				SetTimeout(int iTimeout) { m_iTimeout = iTimeout; }
 	EStatus				GetStatus() { return m_eStatus; }
 	void				SetSuppressErrors(bool bSuppressErrors);
