@@ -1,7 +1,7 @@
 #
 #  This file if part of nzbget
 #
-# Copyright (C) 2008-2012 Andrey Prygunkov <hugbug@users.sourceforge.net>
+# Copyright (C) 2008-2013 Andrey Prygunkov <hugbug@users.sourceforge.net>
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -28,8 +28,8 @@ nzbget_SOURCES = \
 	Log.cpp Log.h LoggableFrontend.cpp LoggableFrontend.h MessageBase.h \
 	NCursesFrontend.cpp NCursesFrontend.h NNTPConnection.cpp NNTPConnection.h NZBFile.cpp \
 	NZBFile.h NewsServer.cpp NewsServer.h Observer.cpp \
-	Observer.h Options.cpp Options.h ParChecker.cpp ParChecker.h ParCoordinator.cpp ParCoordinator.h \
-	PrePostProcessor.cpp PrePostProcessor.h QueueCoordinator.cpp \
+	Observer.h Options.cpp Options.h ParChecker.cpp ParChecker.h ParRenamer.cpp ParRenamer.h \
+	ParCoordinator.cpp ParCoordinator.h PrePostProcessor.cpp PrePostProcessor.h QueueCoordinator.cpp \
 	QueueCoordinator.h QueueEditor.cpp QueueEditor.h RemoteClient.cpp RemoteClient.h \
 	RemoteServer.cpp RemoteServer.h Scanner.cpp Scanner.h Scheduler.cpp Scheduler.h ScriptController.cpp \
 	ScriptController.h ServerPool.cpp ServerPool.h svn_version.cpp TLS.cpp TLS.h Thread.cpp Thread.h \

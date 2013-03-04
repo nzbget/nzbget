@@ -17,7 +17,7 @@
 #
 #  This file if part of nzbget
 #
-# Copyright (C) 2008-2012 Andrey Prygunkov <hugbug@users.sourceforge.net>
+# Copyright (C) 2008-2013 Andrey Prygunkov <hugbug@users.sourceforge.net>
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -89,7 +89,7 @@ am_nzbget_OBJECTS = ArticleDownloader.$(OBJEXT) BinRpc.$(OBJEXT) \
 	Frontend.$(OBJEXT) Log.$(OBJEXT) LoggableFrontend.$(OBJEXT) \
 	NCursesFrontend.$(OBJEXT) NNTPConnection.$(OBJEXT) \
 	NZBFile.$(OBJEXT) NewsServer.$(OBJEXT) Observer.$(OBJEXT) \
-	Options.$(OBJEXT) ParChecker.$(OBJEXT) \
+	Options.$(OBJEXT) ParChecker.$(OBJEXT) ParRenamer.$(OBJEXT) \
 	ParCoordinator.$(OBJEXT) PrePostProcessor.$(OBJEXT) \
 	QueueCoordinator.$(OBJEXT) QueueEditor.$(OBJEXT) \
 	RemoteClient.$(OBJEXT) RemoteServer.$(OBJEXT) \
@@ -249,8 +249,8 @@ nzbget_SOURCES = \
 	Log.cpp Log.h LoggableFrontend.cpp LoggableFrontend.h MessageBase.h \
 	NCursesFrontend.cpp NCursesFrontend.h NNTPConnection.cpp NNTPConnection.h NZBFile.cpp \
 	NZBFile.h NewsServer.cpp NewsServer.h Observer.cpp \
-	Observer.h Options.cpp Options.h ParChecker.cpp ParChecker.h ParCoordinator.cpp ParCoordinator.h \
-	PrePostProcessor.cpp PrePostProcessor.h QueueCoordinator.cpp \
+	Observer.h Options.cpp Options.h ParChecker.cpp ParChecker.h ParRenamer.cpp ParRenamer.h \
+	ParCoordinator.cpp ParCoordinator.h PrePostProcessor.cpp PrePostProcessor.h QueueCoordinator.cpp \
 	QueueCoordinator.h QueueEditor.cpp QueueEditor.h RemoteClient.cpp RemoteClient.h \
 	RemoteServer.cpp RemoteServer.h Scanner.cpp Scanner.h Scheduler.cpp Scheduler.h ScriptController.cpp \
 	ScriptController.h ServerPool.cpp ServerPool.h svn_version.cpp TLS.cpp TLS.h Thread.cpp Thread.h \
@@ -446,6 +446,7 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/Options.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/ParChecker.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/ParCoordinator.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/ParRenamer.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/PrePostProcessor.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/QueueCoordinator.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/QueueEditor.Po@am__quote@

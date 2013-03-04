@@ -44,6 +44,7 @@ private:
 
 private:
 	PostInfo*			m_pPostInfo;
+	char				m_szName[1024];
 	char				m_szInfoName[1024];
 	char				m_szInfoNameUp[1024];
 	char				m_szDestDir[1024];
@@ -76,7 +77,7 @@ protected:
 	bool				HasBrokenFiles();
 	void				CheckArchiveFiles();
 #ifndef DISABLE_PARCHECK
-	void				RequestParCheck();
+	void				RequestParCheck(bool bRename);
 #endif
 
 public:
