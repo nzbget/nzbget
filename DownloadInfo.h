@@ -214,6 +214,14 @@ class NZBInfoList;
 class NZBInfo
 {
 public:
+	enum ERenameStatus
+	{
+		rsNone,
+		rsSkipped,
+		rsFailure,
+		rsSuccess
+	};
+
 	enum EParStatus
 	{
 		psNone,
@@ -261,6 +269,7 @@ private:
 	long long 			m_lSize;
 	Files				m_completedFiles;
 	bool				m_bPostProcess;
+	ERenameStatus		m_eRenameStatus;
 	EParStatus			m_eParStatus;
 	EUnpackStatus		m_eUnpackStatus;
 	EScriptStatus		m_eScriptStatus;
@@ -307,6 +316,8 @@ public:
 	void				ClearCompletedFiles();
 	bool				GetPostProcess() { return m_bPostProcess; }
 	void				SetPostProcess(bool bPostProcess) { m_bPostProcess = bPostProcess; }
+	ERenameStatus		GetRenameStatus() { return m_eRenameStatus; }
+	void				SetRenameStatus(ERenameStatus eRenameStatus) { m_eRenameStatus = eRenameStatus; }
 	EParStatus			GetParStatus() { return m_eParStatus; }
 	void				SetParStatus(EParStatus eParStatus) { m_eParStatus = eParStatus; }
 	EUnpackStatus		GetUnpackStatus() { return m_eUnpackStatus; }
@@ -352,10 +363,19 @@ public:
 		ptVerifyingSources,
 		ptRepairing,
 		ptVerifyingRepaired,
+		ptRenaming,
 		ptUnpacking,
 		ptMoving,
 		ptExecutingScript,
 		ptFinished
+	};
+
+	enum ERenameStatus
+	{
+		rsNone,
+		rsSkipped,
+		rsFailure,
+		rsSuccess
 	};
 
 	enum EParStatus
@@ -399,10 +419,12 @@ private:
 	char*				m_szInfoName;
 	bool				m_bWorking;
 	bool				m_bDeleted;
+	ERenameStatus		m_eRenameStatus;
 	EParStatus			m_eParStatus;
 	EUnpackStatus		m_eUnpackStatus;
 	EScriptStatus		m_eScriptStatus;
 	ERequestParCheck	m_eRequestParCheck;
+	bool				m_bRequestParRename;
 	EStage				m_eStage;
 	char*				m_szProgressLabel;
 	int					m_iFileProgress;
@@ -443,12 +465,16 @@ public:
 	void				SetWorking(bool bWorking) { m_bWorking = bWorking; }
 	bool				GetDeleted() { return m_bDeleted; }
 	void				SetDeleted(bool bDeleted) { m_bDeleted = bDeleted; }
+	ERenameStatus		GetRenameStatus() { return m_eRenameStatus; }
+	void				SetRenameStatus(ERenameStatus eRenameStatus) { m_eRenameStatus = eRenameStatus; }
 	EParStatus			GetParStatus() { return m_eParStatus; }
 	void				SetParStatus(EParStatus eParStatus) { m_eParStatus = eParStatus; }
 	EUnpackStatus		GetUnpackStatus() { return m_eUnpackStatus; }
 	void				SetUnpackStatus(EUnpackStatus eUnpackStatus) { m_eUnpackStatus = eUnpackStatus; }
 	ERequestParCheck	GetRequestParCheck() { return m_eRequestParCheck; }
 	void				SetRequestParCheck(ERequestParCheck eRequestParCheck) { m_eRequestParCheck = eRequestParCheck; }
+	bool				GetRequestParRename() { return m_bRequestParRename; }
+	void				SetRequestParRename(bool bRequestParRename) { m_bRequestParRename = bRequestParRename; }
 	EScriptStatus		GetScriptStatus() { return m_eScriptStatus; }
 	void				SetScriptStatus(EScriptStatus eScriptStatus) { m_eScriptStatus = eScriptStatus; }
 	void				AppendMessage(Message::EKind eKind, const char* szText);

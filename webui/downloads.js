@@ -273,6 +273,8 @@ var Downloads = (new function($)
 				case 'VERIFYING_SOURCES': group.status = 'checking'; break;
 				case 'REPAIRING': group.status = 'repairing'; break;
 				case 'VERIFYING_REPAIRED': group.status = 'verifying'; break;
+				case 'RENAMING': group.status = 'renaming'; break;
+				case 'MOVING': group.status = 'moving'; break;
 				case 'UNPACKING': group.status = 'unpacking'; break;
 				case 'EXECUTING_SCRIPT': group.status = 'processing'; break;
 				case 'FINISHED': group.status = 'finished'; break;
@@ -644,6 +646,7 @@ var DownloadsUI = (new function($)
 				case "VERIFYING_SOURCES":
 				case "VERIFYING_REPAIRED":
 				case "UNPACKING":
+				case "RENAMING":
 					text = group.post.ProgressLabel;
 					break;
 				case "EXECUTING_SCRIPT":

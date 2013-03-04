@@ -60,7 +60,12 @@ bool ParCoordinator::PostParChecker::RequestMorePars(int iBlockNeeded, int* pBlo
 
 void ParCoordinator::PostParChecker::UpdateProgress()
 {
-	m_pOwner->UpdateParProgress();
+	m_pOwner->UpdateParCheckProgress();
+}
+
+void ParCoordinator::PostParRenamer::UpdateProgress()
+{
+	m_pOwner->UpdateParRenameProgress();
 }
 #endif
 
@@ -72,6 +77,11 @@ ParCoordinator::ParCoordinator()
 	m_ParCheckerObserver.m_pOwner = this;
 	m_ParChecker.Attach(&m_ParCheckerObserver);
 	m_ParChecker.m_pOwner = this;
+
+	m_ParRenamerObserver.m_pOwner = this;
+	m_ParRenamer.Attach(&m_ParRenamerObserver);
+	m_ParRenamer.m_pOwner = this;
+	
 	m_bStopped = false;
 
 	const char* szPostScript = g_pOptions->GetPostProcess();
@@ -233,9 +243,10 @@ bool ParCoordinator::ParseParFilename(const char* szParFilename, int* iBaseNameL
 /**
  * DownloadQueue must be locked prior to call of this function.
  */
-void ParCoordinator::StartParJob(PostInfo* pPostInfo)
+void ParCoordinator::StartParCheckJob(PostInfo* pPostInfo)
 {
 	info("Checking pars for %s", pPostInfo->GetInfoName());
+	m_eCurrentJob = jkParCheck;
 	m_ParChecker.SetPostInfo(pPostInfo);
 	m_ParChecker.SetParFilename(pPostInfo->GetParFilename());
 	m_ParChecker.SetInfoName(pPostInfo->GetInfoName());
@@ -243,18 +254,44 @@ void ParCoordinator::StartParJob(PostInfo* pPostInfo)
 	m_ParChecker.Start();
 }
 
+/**
+ * DownloadQueue must be locked prior to call of this function.
+ */
+void ParCoordinator::StartParRenameJob(PostInfo* pPostInfo)
+{
+	info("Checking renamed files for %s", pPostInfo->GetNZBInfo()->GetName());
+	m_eCurrentJob = jkParRename;
+	m_ParRenamer.SetPostInfo(pPostInfo);
+	m_ParRenamer.SetDestDir(pPostInfo->GetNZBInfo()->GetDestDir());
+	m_ParRenamer.SetInfoName(pPostInfo->GetNZBInfo()->GetName());
+	pPostInfo->SetWorking(true);
+	m_ParRenamer.Start();
+}
+
 bool ParCoordinator::Cancel()
 {
-#ifdef HAVE_PAR2_CANCEL
-	if (!m_ParChecker.GetCancelled())
+	if (m_eCurrentJob == jkParCheck)
 	{
-		debug("Cancelling par-repair for %s", m_ParChecker.GetInfoName());
-		m_ParChecker.Cancel();
-		return true;
-	}
+#ifdef HAVE_PAR2_CANCEL
+		if (!m_ParChecker.GetCancelled())
+		{
+			debug("Cancelling par-repair for %s", m_ParChecker.GetInfoName());
+			m_ParChecker.Cancel();
+			return true;
+		}
 #else
-	warn("Cannot cancel par-repair for %s, used version of libpar2 does not support cancelling", m_ParChecker.GetInfoName());
+		warn("Cannot cancel par-repair for %s, used version of libpar2 does not support cancelling", m_ParChecker.GetInfoName());
 #endif
+	}
+	else if (m_eCurrentJob == jkParRename)
+	{
+		if (!m_ParRenamer.GetCancelled())
+		{
+			debug("Cancelling par-rename for %s", m_ParRenamer.GetInfoName());
+			m_ParRenamer.Cancel();
+			return true;
+		}
+	}
 	return false;
 }
 
@@ -576,7 +613,7 @@ void ParCoordinator::FindPars(DownloadQueue* pDownloadQueue, NZBInfo* pNZBInfo, 
 	}
 }
 
-void ParCoordinator::UpdateParProgress()
+void ParCoordinator::UpdateParCheckProgress()
 {
 	DownloadQueue* pDownloadQueue = g_pQueueCoordinator->LockQueue();
 
@@ -630,33 +667,102 @@ void ParCoordinator::UpdateParProgress()
 	}
 
 	g_pQueueCoordinator->UnlockQueue();
+	
+	CheckPauseState(pPostInfo);
+}
 
+void ParCoordinator::CheckPauseState(PostInfo* pPostInfo)
+{
 	if (g_pOptions->GetPausePostProcess())
 	{
 		time_t tStageTime = pPostInfo->GetStageTime();
 		time_t tStartTime = pPostInfo->GetStartTime();
 		time_t tWaitTime = time(NULL);
-
+		
 		// wait until Post-processor is unpaused
 		while (g_pOptions->GetPausePostProcess() && !m_bStopped)
 		{
 			usleep(100 * 1000);
-
+			
 			// update time stamps
-
+			
 			time_t tDelta = time(NULL) - tWaitTime;
-
+			
 			if (tStageTime > 0)
 			{
 				pPostInfo->SetStageTime(tStageTime + tDelta);
 			}
-
+			
 			if (tStartTime > 0)
 			{
 				pPostInfo->SetStartTime(tStartTime + tDelta);
 			}
 		}
 	}
+}
+
+void ParCoordinator::ParRenamerUpdate(Subject* Caller, void* Aspect)
+{
+	if (m_ParRenamer.GetStatus() == ParRenamer::psFinished ||
+		m_ParRenamer.GetStatus() == ParRenamer::psFailed)
+	{
+		DownloadQueue* pDownloadQueue = g_pQueueCoordinator->LockQueue();
+		
+		PostInfo* pPostInfo = m_ParRenamer.GetPostInfo();
+		pPostInfo->SetWorking(false);
+		if (pPostInfo->GetDeleted())
+		{
+			pPostInfo->SetStage(PostInfo::ptFinished);
+		}
+		else
+		{
+			pPostInfo->SetStage(PostInfo::ptQueued);
+		}
+		
+		// Update ParStatus by NZBInfo
+		if (m_ParRenamer.GetStatus() == ParRenamer::psFailed && !m_ParRenamer.GetCancelled())
+		{
+			pPostInfo->SetRenameStatus(PostInfo::rsFailure);
+			pPostInfo->GetNZBInfo()->SetRenameStatus(NZBInfo::rsFailure);
+		}
+		else if (m_ParRenamer.GetStatus() == ParRenamer::psFinished)
+		{
+			pPostInfo->SetRenameStatus(PostInfo::rsSuccess);
+			pPostInfo->GetNZBInfo()->SetRenameStatus(NZBInfo::rsSuccess);
+		}
+		
+		if (g_pOptions->GetSaveQueue() && g_pOptions->GetServerMode())
+		{
+			g_pDiskState->SaveDownloadQueue(pDownloadQueue);
+		}
+		
+		g_pQueueCoordinator->UnlockQueue();
+	}
+}
+
+void ParCoordinator::UpdateParRenameProgress()
+{
+	DownloadQueue* pDownloadQueue = g_pQueueCoordinator->LockQueue();
+	
+	PostInfo* pPostInfo = pDownloadQueue->GetPostQueue()->front();
+	pPostInfo->SetProgressLabel(m_ParRenamer.GetProgressLabel());
+	pPostInfo->SetStageProgress(m_ParRenamer.GetStageProgress());
+	time_t tCurrent = time(NULL);
+	
+	if (!pPostInfo->GetStartTime())
+	{
+		pPostInfo->SetStartTime(tCurrent);
+	}
+	
+	if (pPostInfo->GetStage() != PostInfo::ptRenaming)
+	{
+		pPostInfo->SetStage(PostInfo::ptRenaming);
+		pPostInfo->SetStageTime(tCurrent);
+	}
+	
+	g_pQueueCoordinator->UnlockQueue();
+	
+	CheckPauseState(pPostInfo);
 }
 
 #endif

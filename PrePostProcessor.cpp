@@ -501,11 +501,23 @@ void PrePostProcessor::CheckPostQueue()
 				pPostInfo->SetStage(PostInfo::ptQueued);
 				DeletePostThread(pPostInfo);
 			}
+			else if (pPostInfo->GetRequestParRename())
+			{
+				pPostInfo->SetRenameStatus(PostInfo::rsNone);
+				pPostInfo->SetRequestParRename(false);
+				pPostInfo->SetStage(PostInfo::ptQueued);
+				DeletePostThread(pPostInfo);
+			}
 
-			if (pPostInfo->GetStage() == PostInfo::ptQueued && pPostInfo->GetParStatus() == PostInfo::psNone && !g_pOptions->GetPausePostProcess())
+			if (pPostInfo->GetStage() == PostInfo::ptQueued && pPostInfo->GetRenameStatus() == PostInfo::rsNone && !g_pOptions->GetPausePostProcess())
+			{
+				UpdatePauseState(g_pOptions->GetParPauseQueue(), "par-rename");
+				m_ParCoordinator.StartParRenameJob(pPostInfo);
+			}
+			else if (pPostInfo->GetStage() == PostInfo::ptQueued && pPostInfo->GetParStatus() == PostInfo::psNone && !g_pOptions->GetPausePostProcess())
 			{
 				UpdatePauseState(g_pOptions->GetParPauseQueue(), "par-check");
-				m_ParCoordinator.StartParJob(pPostInfo);
+				m_ParCoordinator.StartParCheckJob(pPostInfo);
 			}
 			else
 #endif
@@ -783,6 +795,7 @@ bool PrePostProcessor::CreatePostJobs(DownloadQueue* pDownloadQueue, NZBInfo* pN
 			pPostInfo->SetNZBInfo(pNZBInfo);
 			pPostInfo->SetParFilename(szFullParFilename);
 			pPostInfo->SetInfoName(szParInfoName);
+			pPostInfo->SetRenameStatus(PostInfo::rsSkipped);
 			pPostInfo->SetParStatus(bParCheck && !pNZBInfo->GetUnpackCleanedUpDisk() ? PostInfo::psNone : PostInfo::psSkipped);
 			pPostInfo->SetUnpackStatus(!pNZBInfo->GetUnpackCleanedUpDisk() ? PostInfo::usNone : PostInfo::usSkipped);
 			if (bAddTop)
@@ -806,6 +819,7 @@ bool PrePostProcessor::CreatePostJobs(DownloadQueue* pDownloadQueue, NZBInfo* pN
 		pPostInfo->SetNZBInfo(pNZBInfo);
 		pPostInfo->SetParFilename("");
 		pPostInfo->SetInfoName(pNZBInfo->GetName());
+		pPostInfo->SetRenameStatus(PostInfo::rsSkipped);
 		pPostInfo->SetParStatus(PostInfo::psSkipped);
 		pPostInfo->SetUnpackStatus(!pNZBInfo->GetUnpackCleanedUpDisk() ? PostInfo::usNone : PostInfo::usSkipped);
 		cPostQueue.push_back(pPostInfo);
@@ -982,7 +996,7 @@ bool PrePostProcessor::PostQueueDelete(IDList* pIDList)
 					info("Deleting active post-job %s", pPostInfo->GetInfoName());
 					pPostInfo->SetDeleted(true);
 #ifndef DISABLE_PARCHECK
-					if (PostInfo::ptLoadingPars <= pPostInfo->GetStage() && pPostInfo->GetStage() <= PostInfo::ptVerifyingRepaired)
+					if (PostInfo::ptLoadingPars <= pPostInfo->GetStage() && pPostInfo->GetStage() <= PostInfo::ptRenaming)
 					{
 						if (m_ParCoordinator.Cancel())
 						{
@@ -1208,6 +1222,7 @@ bool PrePostProcessor::HistoryReturn(IDList* pIDList, bool bReprocess)
 					if (!pNZBInfo->GetUnpackCleanedUpDisk())
 					{
 						pNZBInfo->SetParStatus(NZBInfo::psNone);
+						pNZBInfo->SetRenameStatus(NZBInfo::rsNone);
 						pNZBInfo->SetUnpackStatus(NZBInfo::usNone);
 					}
 					pNZBInfo->SetScriptStatus(NZBInfo::srNone);

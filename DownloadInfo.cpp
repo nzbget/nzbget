@@ -130,6 +130,7 @@ NZBInfo::NZBInfo()
 	m_lSize = 0;
 	m_iRefCount = 0;
 	m_bPostProcess = false;
+	m_eRenameStatus = rsNone;
 	m_eParStatus = psNone;
 	m_eUnpackStatus = usNone;
 	m_eMoveStatus = msNone;
@@ -624,9 +625,11 @@ PostInfo::PostInfo()
 	m_szInfoName = NULL;
 	m_bWorking = false;
 	m_bDeleted = false;
+	m_eRenameStatus = rsNone;
 	m_eParStatus = psNone;
 	m_eUnpackStatus = usNone;
 	m_eRequestParCheck = rpNone;
+	m_bRequestParRename = false;
 	m_eScriptStatus = srNone;
 	m_szProgressLabel = strdup("");
 	m_iFileProgress = 0;

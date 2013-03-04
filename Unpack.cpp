@@ -76,9 +76,8 @@ void UnpackController::Run()
 	strncpy(m_szDestDir, m_pPostInfo->GetNZBInfo()->GetDestDir(), 1024);
 	m_szDestDir[1024-1] = '\0';
 
-	char szName[1024];
-	strncpy(szName, m_pPostInfo->GetNZBInfo()->GetName(), 1024);
-	szName[1024-1] = '\0';
+	strncpy(m_szName, m_pPostInfo->GetNZBInfo()->GetName(), 1024);
+	m_szName[1024-1] = '\0';
 
 	m_bCleanedUpDisk = false;
 	bool bUnpack = true;
@@ -101,17 +100,17 @@ void UnpackController::Run()
 	
 	g_pDownloadQueueHolder->UnlockQueue();
 
-	snprintf(m_szInfoName, 1024, "unpack for %s", szName);
+	snprintf(m_szInfoName, 1024, "unpack for %s", m_szName);
 	m_szInfoName[1024-1] = '\0';
 
-	snprintf(m_szInfoNameUp, 1024, "Unpack for %s", szName); // first letter in upper case
+	snprintf(m_szInfoNameUp, 1024, "Unpack for %s", m_szName); // first letter in upper case
 	m_szInfoNameUp[1024-1] = '\0';
 	
 #ifndef DISABLE_PARCHECK
 	if (bUnpack && HasBrokenFiles() && m_pPostInfo->GetNZBInfo()->GetParStatus() <= NZBInfo::psSkipped && HasParFiles())
 	{
-		info("%s has broken files", szName);
-		RequestParCheck();
+		info("%s has broken files", m_szName);
+		RequestParCheck(false);
 		m_pPostInfo->SetWorking(false);
 		return;
 	}
@@ -128,7 +127,7 @@ void UnpackController::Run()
 		SetDefaultLogKind(g_pOptions->GetProcessLogKind());
 		SetWorkingDir(m_szDestDir);
 
-		PrintMessage(Message::mkInfo, "Unpacking %s", szName);
+		PrintMessage(Message::mkInfo, "Unpacking %s", m_szName);
 
 		CreateUnpackDir();
 
@@ -157,12 +156,12 @@ void UnpackController::Run()
 	}
 	else
 	{
-		PrintMessage(Message::mkInfo, (bUnpack ? "Nothing to unpack for %s" : "Unpack for %s skipped"), szName);
+		PrintMessage(Message::mkInfo, (bUnpack ? "Nothing to unpack for %s" : "Unpack for %s skipped"), m_szName);
 
 #ifndef DISABLE_PARCHECK
 		if (bUnpack && m_pPostInfo->GetNZBInfo()->GetParStatus() <= NZBInfo::psSkipped && HasParFiles())
 		{
-			RequestParCheck();
+			RequestParCheck(m_pPostInfo->GetNZBInfo()->GetRenameStatus() <= NZBInfo::rsSkipped);
 		}
 		else
 #endif
@@ -278,7 +277,7 @@ void UnpackController::Completed()
 #ifndef DISABLE_PARCHECK
 		if (!m_bUnpackOK && m_pPostInfo->GetNZBInfo()->GetParStatus() <= NZBInfo::psSkipped && !m_bUnpackStartError && !GetTerminated() && HasParFiles())
 		{
-			RequestParCheck();
+			RequestParCheck(false);
 		}
 		else
 #endif
@@ -292,10 +291,17 @@ void UnpackController::Completed()
 }
 
 #ifndef DISABLE_PARCHECK
-void UnpackController::RequestParCheck()
+void UnpackController::RequestParCheck(bool bRename)
 {
-	PrintMessage(Message::mkInfo, "%s requested par-check/repair", m_szInfoNameUp);
-	m_pPostInfo->SetRequestParCheck(PostInfo::rpAll);
+	PrintMessage(Message::mkInfo, "%s requested %s", m_szInfoNameUp, bRename ? "par-rename": "par-check/repair");
+	if (bRename)
+	{
+		m_pPostInfo->SetRequestParRename(true);
+	}
+	else
+	{
+		m_pPostInfo->SetRequestParCheck(PostInfo::rpAll);
+	}
 	m_pPostInfo->SetStage(PostInfo::ptFinished);
 }
 #endif

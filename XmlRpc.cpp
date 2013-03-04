@@ -1629,7 +1629,7 @@ void PostQueueXmlCommand::Execute()
 	{
 		PostInfo* pPostInfo = *it;
 
-	    const char* szPostStageName[] = { "QUEUED", "LOADING_PARS", "VERIFYING_SOURCES", "REPAIRING", "VERIFYING_REPAIRED", "UNPACKING", "MOVING", "EXECUTING_SCRIPT", "FINISHED" };
+	    const char* szPostStageName[] = { "QUEUED", "LOADING_PARS", "VERIFYING_SOURCES", "REPAIRING", "VERIFYING_REPAIRED", "RENAMING", "UNPACKING", "MOVING", "EXECUTING_SCRIPT", "FINISHED" };
 
 		char* xmlNZBNicename = EncodeStr(pPostInfo->GetNZBInfo()->GetName());
 		char* xmlNZBFilename = EncodeStr(pPostInfo->GetNZBInfo()->GetFilename());

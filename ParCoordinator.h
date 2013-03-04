@@ -34,6 +34,7 @@
 
 #ifndef DISABLE_PARCHECK
 #include "ParChecker.h"
+#include "ParRenamer.h"
 #endif
 
 class ParCoordinator 
@@ -62,6 +63,27 @@ private:
 		friend class ParCoordinator;
 	};
 
+	class ParRenamerObserver: public Observer
+	{
+	public:
+		ParCoordinator*	m_pOwner;
+		virtual void	Update(Subject* Caller, void* Aspect) { m_pOwner->ParRenamerUpdate(Caller, Aspect); }
+	};
+
+	class PostParRenamer: public ParRenamer
+	{
+	private:
+		ParCoordinator*	m_pOwner;
+		PostInfo*		m_pPostInfo;
+	protected:
+		virtual void	UpdateProgress();
+	public:
+		PostInfo*		GetPostInfo() { return m_pPostInfo; }
+		void			SetPostInfo(PostInfo* pPostInfo) { m_pPostInfo = pPostInfo; }
+		
+		friend class ParCoordinator;
+	};
+	
 	struct BlockInfo
 	{
 		FileInfo*		m_pFileInfo;
@@ -69,12 +91,21 @@ private:
 	};
 
 	typedef std::list<BlockInfo*> 	Blocks;
+	
+	enum EJobKind
+	{
+		jkParCheck,
+		jkParRename
+	};
 
 private:
 	PostParChecker		m_ParChecker;
 	ParCheckerObserver	m_ParCheckerObserver;
 	bool				m_bStopped;
 	bool				m_bPostScript;
+	PostParRenamer		m_ParRenamer;
+	ParRenamerObserver	m_ParRenamerObserver;
+	EJobKind			m_eCurrentJob;
 
 protected:
 	virtual bool		PauseDownload() = 0;
@@ -94,12 +125,16 @@ public:
 
 #ifndef DISABLE_PARCHECK
 	void				ParCheckerUpdate(Subject* Caller, void* Aspect);
+	void				ParRenamerUpdate(Subject* Caller, void* Aspect);
+	void				CheckPauseState(PostInfo* pPostInfo);
 	bool				AddPar(FileInfo* pFileInfo, bool bDeleted);
 	bool				RequestMorePars(NZBInfo* pNZBInfo, const char* szParFilename, int iBlockNeeded, int* pBlockFound);
 	void				FindPars(DownloadQueue* pDownloadQueue, NZBInfo* pNZBInfo, const char* szParFilename, 
 							Blocks* pBlocks, bool bStrictParName, bool bExactParName, int* pBlockFound);
-	void				UpdateParProgress();
-	void				StartParJob(PostInfo* pPostInfo);
+	void				UpdateParCheckProgress();
+	void				UpdateParRenameProgress();
+	void				StartParCheckJob(PostInfo* pPostInfo);
+	void				StartParRenameJob(PostInfo* pPostInfo);
 	void				Stop();
 	bool				Cancel();
 #endif
