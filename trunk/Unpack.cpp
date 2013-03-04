@@ -430,7 +430,7 @@ bool UnpackController::Cleanup()
 			snprintf(szFullFilename, 1024, "%s%c%s", m_szDestDir, PATH_SEPARATOR, szFilename);
 			szFullFilename[1024-1] = '\0';
 
-			PrintMessage(Message::mkDetail, "Deleting file %s", szFilename);
+			PrintMessage(Message::mkInfo, "Deleting file %s", szFilename);
 
 			if (remove(szFullFilename) != 0)
 			{
@@ -669,7 +669,7 @@ bool MoveController::MoveFiles()
 				szDstFile[1024-1] = '\0';
 			}
 
-			PrintMessage(Message::mkDetail, "Moving file %s to %s", szSrcFile, szDstFile);
+			PrintMessage(Message::mkInfo, "Moving file %s to %s", Util::BaseFileName(szSrcFile), m_szDestDir);
 			if (!Util::MoveFile(szSrcFile, szDstFile))
 			{
 				PrintMessage(Message::mkError, "Could not move file %s to %s! Errcode: %i", szSrcFile, szDstFile, errno);
