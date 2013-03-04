@@ -120,6 +120,7 @@ Connection::Connection(const char* szHost, int iPort, bool bTLS)
 	m_szHost			= NULL;
 	m_iPort				= iPort;
 	m_bTLS				= bTLS;
+	m_szCipher			= NULL;
 	m_eStatus			= csDisconnected;
 	m_iSocket			= INVALID_SOCKET;
 	m_iBufAvail			= 0;
@@ -144,6 +145,7 @@ Connection::Connection(SOCKET iSocket, bool bTLS)
 	m_szHost			= NULL;
 	m_iPort				= 0;
 	m_bTLS				= bTLS;
+	m_szCipher			= NULL;
 	m_eStatus			= csConnected;
 	m_iSocket			= iSocket;
 	m_iBufAvail			= 0;
@@ -166,6 +168,11 @@ Connection::~Connection()
 	{
 		free(m_szHost);
 	}
+	if (m_szCipher)
+	{
+		free(m_szCipher);
+	}
+
 	free(m_szReadBuf);
 #ifndef DISABLE_TLS
 	if (m_pTLSSocket)
@@ -184,6 +191,15 @@ void Connection::SetSuppressErrors(bool bSuppressErrors)
 		m_pTLSSocket->SetSuppressErrors(bSuppressErrors);
 	}
 #endif
+}
+
+void Connection::SetCipher(const char* szCipher)
+{
+	if (m_szCipher)
+	{
+		free(m_szCipher);
+	}
+	m_szCipher = szCipher ? strdup(szCipher) : NULL;
 }
 
 bool Connection::Connect()
@@ -768,7 +784,7 @@ bool Connection::StartTLS(bool bIsClient, const char* szCertFile, const char* sz
 		delete m_pTLSSocket;
 	}
 
-	m_pTLSSocket = new TLSSocket(m_iSocket, bIsClient, szCertFile, szKeyFile);
+	m_pTLSSocket = new TLSSocket(m_iSocket, bIsClient, szCertFile, szKeyFile, m_szCipher);
 	m_pTLSSocket->SetSuppressErrors(m_bSuppressErrors);
 
 	return m_pTLSSocket->Start();

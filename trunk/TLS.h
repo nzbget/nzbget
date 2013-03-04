@@ -33,6 +33,7 @@ private:
 	bool				m_bIsClient;
 	char*				m_szCertFile;
 	char*				m_szKeyFile;
+	char*				m_szCipher;
 	SOCKET				m_iSocket;
 	bool				m_bSuppressErrors;
 	int					m_iRetCode;
@@ -46,7 +47,7 @@ private:
 	void				ReportError(const char* szErrMsg);
 
 public:
-						TLSSocket(SOCKET iSocket, bool bIsClient, const char* szCertFile, const char* szKeyFile);
+						TLSSocket(SOCKET iSocket, bool bIsClient, const char* szCertFile, const char* szKeyFile, const char* szCipher);
 						~TLSSocket();
 	static void			Init();
 	static void			Final();

@@ -38,9 +38,11 @@ private:
 	int				m_iLevel;
 	bool			m_bJoinGroup;
 	bool			m_bTLS;
+	char*			m_szCipher;
 
 public:
-					NewsServer(const char* szHost, int iPort, const char* szUser, const char* szPass, bool bJoinGroup, bool bTLS, int iMaxConnections, int iLevel);
+					NewsServer(const char* szHost, int iPort, const char* szUser, const char* szPass, bool bJoinGroup,
+						bool bTLS, const char* szCipher, int iMaxConnections, int iLevel);
 					~NewsServer();
 	const char*		GetHost() { return m_szHost; }
 	int				GetPort() { return m_iPort; }
@@ -50,6 +52,7 @@ public:
 	int				GetLevel() { return m_iLevel; }
 	int				GetJoinGroup() { return m_bJoinGroup; }
 	bool			GetTLS() { return m_bTLS; }
+	const char*		GetCipher() { return m_szCipher; }
 };
 
 #endif
