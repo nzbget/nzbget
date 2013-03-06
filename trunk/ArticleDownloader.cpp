@@ -312,6 +312,7 @@ void ArticleDownloader::Run()
 		if (IsStopped())
 		{
 			detail("Download %s cancelled", m_szInfoName);
+			Status = adRetry;
 		}
 		else
 		{

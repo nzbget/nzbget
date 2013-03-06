@@ -824,8 +824,7 @@ void QueueCoordinator::LogDebugInfo()
 
 void QueueCoordinator::ResetHangingDownloads()
 {
-	const int TimeOut = g_pOptions->GetTerminateTimeout();
-	if (TimeOut == 0)
+	if (g_pOptions->GetTerminateTimeout() == 0 && g_pOptions->GetConnectionTimeout() == 0)
 	{
 		return;
 	}
@@ -836,7 +835,16 @@ void QueueCoordinator::ResetHangingDownloads()
 	for (ActiveDownloads::iterator it = m_ActiveDownloads.begin(); it != m_ActiveDownloads.end();)
 	{
 		ArticleDownloader* pArticleDownloader = *it;
-		if (tm - pArticleDownloader->GetLastUpdateTime() > TimeOut &&
+
+		if (tm - pArticleDownloader->GetLastUpdateTime() > g_pOptions->GetConnectionTimeout() + 1 &&
+		   pArticleDownloader->GetStatus() == ArticleDownloader::adRunning)
+		{
+			ArticleInfo* pArticleInfo = pArticleDownloader->GetArticleInfo();
+			error("Cancelling hanging download %s", pArticleDownloader->GetInfoName());
+			pArticleDownloader->Stop();
+		}
+		
+		if (tm - pArticleDownloader->GetLastUpdateTime() > g_pOptions->GetTerminateTimeout() &&
 		   pArticleDownloader->GetStatus() == ArticleDownloader::adRunning)
 		{
 			ArticleInfo* pArticleInfo = pArticleDownloader->GetArticleInfo();
