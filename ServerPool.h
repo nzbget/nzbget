@@ -28,6 +28,7 @@
 #define SERVERPOOL_H
 
 #include <vector>
+#include <list>
 #include <time.h>
 
 #include "Thread.h"
@@ -50,7 +51,7 @@ private:
 		void			SetFreeTimeNow() { m_tFreeTime = ::time(NULL); }
 	};
 
-	typedef std::vector<NewsServer*>		Servers;
+	typedef std::list<NewsServer*>			Servers;
 	typedef std::vector<int>				Levels;
 	typedef std::vector<PooledConnection*>	Connections;
 
@@ -60,6 +61,9 @@ private:
 	int					m_iMaxLevel;
 	Mutex			 	m_mutexConnections;
 	int					m_iTimeout;
+
+	void				NormalizeLevels();
+	static bool			CompareServers(NewsServer* pServer1, NewsServer* pServer2);
 
 public:
 						ServerPool();
