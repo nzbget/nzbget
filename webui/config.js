@@ -766,6 +766,10 @@ var Config = (new function($)
 			htmldescr = htmldescr.replace(/CLOSETAG/g, '</a>');
 			htmldescr = htmldescr.replace(/&/g, '&amp;');
 
+			// replace URLs
+			var exp = /(http:\/\/[-A-Z0-9+&@#\/%?=~_|!:,.;]*[-A-Z0-9+&@#\/%=~_|])/ig;
+			htmldescr = htmldescr.replace(exp, "<a href='$1'>$1</a>"); 
+			
 			// highlight first line
 			htmldescr = htmldescr.replace(/\n/, '</span>\n');
 			htmldescr = '<span class="help-option-title">' + htmldescr;
