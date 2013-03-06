@@ -82,42 +82,71 @@ void ServerPool::AddServer(NewsServer* pNewsServer)
 {
 	debug("Adding server to ServerPool");
 
-	m_Servers.push_back(pNewsServer);
+	if (pNewsServer->GetMaxConnections() > 0)
+	{
+		m_Servers.push_back(pNewsServer);
+	}
+	else
+	{
+		delete pNewsServer;
+	}
+}
+
+void ServerPool::NormalizeLevels()
+{
+	if (m_Servers.empty())
+	{
+		return;
+	}
+
+	m_Servers.sort(CompareServers);
+
+	NewsServer* pNewsServer = m_Servers.front();
+
+	m_iMaxLevel = 0;
+	int iCurLevel = pNewsServer->GetLevel();
+	for (Servers::iterator it = m_Servers.begin(); it != m_Servers.end(); it++)
+	{
+		NewsServer* pNewsServer = *it;
+		if (pNewsServer->GetLevel() != iCurLevel)
+		{
+			m_iMaxLevel++;
+		}
+
+		pNewsServer->SetLevel(m_iMaxLevel);
+	}
+}
+
+bool ServerPool::CompareServers(NewsServer* pServer1, NewsServer* pServer2)
+{
+	return pServer1->GetLevel() < pServer2->GetLevel();
 }
 
 void ServerPool::InitConnections()
 {
 	debug("Initializing connections in ServerPool");
 
-	m_iMaxLevel = 0;
+	NormalizeLevels();
+
 	for (Servers::iterator it = m_Servers.begin(); it != m_Servers.end(); it++)
 	{
 		NewsServer* pNewsServer = *it;
-		if (m_iMaxLevel < pNewsServer->GetLevel())
-		{
-			m_iMaxLevel = pNewsServer->GetLevel();
-		}
 		for (int i = 0; i < pNewsServer->GetMaxConnections(); i++)
 		{
 			PooledConnection* pConnection = new PooledConnection(pNewsServer);
 			pConnection->SetTimeout(m_iTimeout);
 			m_Connections.push_back(pConnection);
 		}
+		if ((int)m_Levels.size() <= pNewsServer->GetLevel())
+		{
+			m_Levels.push_back(0);
+		}
+		m_Levels[pNewsServer->GetLevel()] += pNewsServer->GetMaxConnections();
 	}
 
-	for (int iLevel = 0; iLevel <= m_iMaxLevel; iLevel++)
+	if (m_Levels.empty())
 	{
-		int iMaxConnectionsForLevel = 0;
-		for (Servers::iterator it = m_Servers.begin(); it != m_Servers.end(); it++)
-		{
-			NewsServer* pNewsServer = *it;
-			if (iLevel == pNewsServer->GetLevel())
-			{
-				iMaxConnectionsForLevel += pNewsServer->GetMaxConnections();
-			}
-		}
-
-		m_Levels.push_back(iMaxConnectionsForLevel);
+		warn("No news servers defined, download is not possible");
 	}
 }
 
@@ -127,7 +156,7 @@ NNTPConnection* ServerPool::GetConnection(int iLevel)
 
 	m_mutexConnections.Lock();
 
-	if (m_Levels[iLevel] > 0)
+	if (iLevel < m_Levels.size() && m_Levels[iLevel] > 0)
 	{
 		for (Connections::iterator it = m_Connections.begin(); it != m_Connections.end(); it++)
 		{
@@ -208,7 +237,7 @@ void ServerPool::LogDebugInfo()
 	debug("    Connections: %i", m_Connections.size());
 	for (Connections::iterator it = m_Connections.begin(); it != m_Connections.end(); it++)
 	{
-		debug("      Connection: Level=%i, InUse:%i", (*it)->GetNewsServer()->GetLevel(), (int)(*it)->GetInUse());
+		debug("      %s: Level=%i, InUse:%i", (*it)->GetNewsServer()->GetHost(), (*it)->GetNewsServer()->GetLevel(), (int)(*it)->GetInUse());
 	}
 
 	m_mutexConnections.Unlock();

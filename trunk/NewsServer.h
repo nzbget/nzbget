@@ -50,6 +50,7 @@ public:
 	const char*		GetPassword() { return m_szPassword; }
 	int				GetMaxConnections() { return m_iMaxConnections; }
 	int				GetLevel() { return m_iLevel; }
+	void			SetLevel(int iLevel) { m_iLevel = iLevel; }
 	int				GetJoinGroup() { return m_bJoinGroup; }
 	bool			GetTLS() { return m_bTLS; }
 	const char*		GetCipher() { return m_szCipher; }
