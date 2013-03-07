@@ -218,7 +218,7 @@ void ScriptController::SetEnvVar(const char* szName, const char* szValue)
 	m_environmentStrings.Append(szVar);
 }
 
-void ScriptController::PrepareEnvironmentStrings()
+void ScriptController::PrepareEnvOptions()
 {
 	Options::OptEntries* pOptEntries = g_pOptions->LockOptEntries();
 
@@ -231,10 +231,7 @@ void ScriptController::PrepareEnvironmentStrings()
 		// convert to upper case; replace "." with "_".
 		for (char* szPtr = szVarname; *szPtr; szPtr++)
 		{
-			if (*szPtr == '.')
-			{
-				*szPtr = '_';
-			}
+			if (*szPtr == '.') *szPtr = '_';
 			*szPtr = toupper(*szPtr);
 		}
 
@@ -245,9 +242,40 @@ void ScriptController::PrepareEnvironmentStrings()
 	g_pOptions->UnlockOptEntries();
 }
 
+void ScriptController::PrepareEnvParameters(NZBInfo* pNZBInfo)
+{
+	for (NZBParameterList::iterator it = pNZBInfo->GetParameters()->begin(); it != pNZBInfo->GetParameters()->end(); it++)
+	{
+		NZBParameter* pParameter = *it;
+		char szVarname[1024];
+		snprintf(szVarname, sizeof(szVarname), "NZBPR_%s", pParameter->GetName());
+		szVarname[1024-1] = '\0';
+
+		// Original name
+		SetEnvVar(szVarname, pParameter->GetValue());
+
+		char szNormVarname[1024];
+		strncpy(szNormVarname, szVarname, sizeof(szVarname));
+		szNormVarname[1024-1] = '\0';
+
+		// replace ".*:"  with "_".
+		for (char* szPtr = szNormVarname; *szPtr; szPtr++)
+		{
+			if (*szPtr == '.' || *szPtr == ':' || *szPtr == '*') *szPtr = '_';
+			*szPtr = toupper(*szPtr);
+		}
+
+		// Another env var with normalized name (replaced special chars and converted to upper case)
+		if (strcmp(szVarname, szNormVarname))
+		{
+			SetEnvVar(szNormVarname, pParameter->GetValue());
+		}
+	}
+}
+
 int ScriptController::Execute()
 {
-	PrepareEnvironmentStrings();
+	PrepareEnvOptions();
 
 	int iExitCode = 0;
 	int pipein;
@@ -702,14 +730,7 @@ void PostScriptController::Run()
 	SetEnvVar("NZBPP_PARFAILED", szHasFailedParJobs);
 	SetEnvVar("NZBPP_CATEGORY", szCategory);
 
-	for (NZBParameterList::iterator it = m_pPostInfo->GetNZBInfo()->GetParameters()->begin(); it != m_pPostInfo->GetNZBInfo()->GetParameters()->end(); it++)
-	{
-		NZBParameter* pParameter = *it;
-		char szVarname[1024];
-		snprintf(szVarname, sizeof(szVarname), "NZBPR_%s", pParameter->GetName());
-		szVarname[1024-1] = '\0';
-		SetEnvVar(szVarname, pParameter->GetValue());
-	}
+	PrepareEnvParameters(m_pPostInfo->GetNZBInfo());
 
 	g_pDownloadQueueHolder->UnlockQueue();
 
@@ -950,14 +971,7 @@ void NZBAddedScriptController::StartScript(DownloadQueue* pDownloadQueue, NZBInf
 	snprintf(buf, 100, "%i", iMaxPriority);
 	pScriptController->SetEnvVar("NZBNA_PRIORITY", buf);
 
-	for (NZBParameterList::iterator it = pNZBInfo->GetParameters()->begin(); it != pNZBInfo->GetParameters()->end(); it++)
-	{
-		NZBParameter* pParameter = *it;
-		char szVarname[1024];
-		snprintf(szVarname, sizeof(szVarname), "NZBPR_%s", pParameter->GetName());
-		szVarname[1024-1] = '\0';
-		pScriptController->SetEnvVar(szVarname, pParameter->GetValue());
-	}
+	pScriptController->PrepareEnvParameters(pNZBInfo);
 
 	pScriptController->SetAutoDestroy(true);
 

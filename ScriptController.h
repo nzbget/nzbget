@@ -71,7 +71,7 @@ private:
 	pid_t				m_hProcess;
 #endif
 
-	void				PrepareEnvironmentStrings();
+	void				PrepareEnvOptions();
 
 protected:
 	void				ProcessOutput(char* szText);
@@ -79,6 +79,7 @@ protected:
 	void				PrintMessage(Message::EKind eKind, const char* szFormat, ...);
 	virtual void		AddMessage(Message::EKind eKind, bool bDefaultKind, const char* szText);
 	bool				GetTerminated() { return m_bTerminated; }
+	void				PrepareEnvParameters(NZBInfo* pNZBInfo);
 
 public:
 						ScriptController();
