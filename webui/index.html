@@ -446,7 +446,7 @@
 
 								<div id="ConfigInfo">
 									<p>
-									On this page your can review and change settings. When you done with changes click
+									On this page you can review and change settings. When you done with changes click
 									<em><strong>Save all changes</strong></em>, which will save the changes made on all pages.
 									It's not neccessary to save the changes on each page individually.
 									</p>
@@ -464,16 +464,22 @@
 									to check at least the option <a class="option" href="#" data-category="S" onclick="Config.scrollToOption(event, this)">MainDir</a> and configure one news server.
 									Any changes of NZBGet settings require a restart or reload (soft-restart) of NZBGet.
 									</p>
-
+									<p>
+									There are many configuration options affecting performance. If you use
+									NZBGet on a computer with limited capabilities, such as NAS, media player,
+									router, etc. you should take your time to configure NZBGet for best
+									performance - see <a href="http://nzbget.sourceforge.net/Performance_tips">Performance tips</a>.
+									</p>
+									
 									<h4>Post-processing script settings</h4>
 									<p>
 									When NZBGet finishes download
-									of nzb-file it can start a post-processing script for further processing (unpacking etc.).
+									of nzb-file it can start a post-processing script for further processing (cleanup, etc.).
 									You can configure what script must be executed using option <a class="option" href="#" data-category="S" onclick="Config.scrollToOption(event, this)">PostProcess</a>
 									in section <em><strong>POST-PROCESSING</strong></em>.
 									</p>
 									<p>
-									The <em><strong>POST-PROCESSING SCRIPT SETTINGS</strong></em> are shown on the navigation bar
+									The post-processing script settings are shown on the navigation bar
 									only if you have setup a post-processing script and if it has a configuration file. For your convenience
 									NZBGet proivides you with a way to configure the post-processing script options via web-interface.
 									These settings however do not
