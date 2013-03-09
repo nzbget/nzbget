@@ -1893,7 +1893,7 @@ void Options::InitServers()
 
 		sprintf(optname, "Server%i.JoinGroup", n);
 		const char* njoingroup = GetOption(optname);
-		bool bJoinGroup = true;
+		bool bJoinGroup = false;
 		if (njoingroup)
 		{
 			bJoinGroup = (bool)ParseEnumValue(optname, BoolCount, BoolNames, BoolValues);
