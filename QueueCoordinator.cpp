@@ -865,7 +865,6 @@ void QueueCoordinator::ResetHangingDownloads()
 		if (tm - pArticleDownloader->GetLastUpdateTime() > g_pOptions->GetConnectionTimeout() + 1 &&
 		   pArticleDownloader->GetStatus() == ArticleDownloader::adRunning)
 		{
-			ArticleInfo* pArticleInfo = pArticleDownloader->GetArticleInfo();
 			error("Cancelling hanging download %s", pArticleDownloader->GetInfoName());
 			pArticleDownloader->Stop();
 		}
