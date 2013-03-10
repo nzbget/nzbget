@@ -402,9 +402,11 @@ int ScriptController::Execute()
 		chdir(m_szWorkingDir);
 		environ = pEnvironmentStrings;
 		execvp(m_szScript, (char* const*)m_szArgs);
+		// NOTE: the text "[ERROR] Could not start " is checked later,
+		// by changing adjust the dependent code below.
 		fprintf(stdout, "[ERROR] Could not start %s: %s", m_szScript, strerror(errno));
 		fflush(stdout);
-		_exit(-1);
+		_exit(254);
 	}
 
 	// continue the first instance
@@ -438,6 +440,8 @@ int ScriptController::Execute()
 	char* buf = (char*)malloc(10240);
 
 	debug("Entering pipe-loop");
+	bool bFirstLine = true;
+	bool bStartError = false;
 	while (!feof(readpipe) && !m_bTerminated)
 	{
 		if (ReadLine(buf, 10240, readpipe))
@@ -448,9 +452,15 @@ int ScriptController::Execute()
 				bChildConfirmed = true;
 				pWatchDog->Stop();
 				debug("Child confirmed");
+				continue;
 			}
 #endif
+			if (bFirstLine && !strncmp(buf, "[ERROR] Could not start ", 24))
+			{
+				bStartError = true;
+			}
 			ProcessOutput(buf);
+			bFirstLine = false;
 		}
 	}
 	debug("Exited pipe-loop");
@@ -489,6 +499,10 @@ int ScriptController::Execute()
 	if (WIFEXITED(iStatus))
 	{
 		iExitCode = WEXITSTATUS(iStatus);
+		if (iExitCode == 254 && bStartError)
+		{
+			iExitCode = -1;
+		}
 	}
 #endif
 	
