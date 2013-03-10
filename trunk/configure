@@ -711,6 +711,8 @@ libxml2_CFLAGS
 libxml2_LIBS
 libsigc_CFLAGS
 libsigc_LIBS
+openssl_CFLAGS
+openssl_LIBS
 CFLAGS
 AR
 ADDSRCS
@@ -731,7 +733,9 @@ PKG_CONFIG
 libxml2_CFLAGS
 libxml2_LIBS
 libsigc_CFLAGS
-libsigc_LIBS'
+libsigc_LIBS
+openssl_CFLAGS
+openssl_LIBS'
 
 
 # Initialize some variables set by options.
@@ -1382,6 +1386,10 @@ Some influential environment variables:
               C compiler flags for libsigc, overriding pkg-config
   libsigc_LIBS
               linker flags for libsigc, overriding pkg-config
+  openssl_CFLAGS
+              C compiler flags for openssl, overriding pkg-config
+  openssl_LIBS
+              linker flags for openssl, overriding pkg-config
 
 Use these variables to override the choices made by `configure' or to help
 it to find libraries and programs with nonstandard names/locations.
@@ -5925,7 +5933,7 @@ else
 	libxml2_LIBS=$pkg_cv_libxml2_LIBS
         { echo "$as_me:$LINENO: result: yes" >&5
 echo "${ECHO_T}yes" >&6; }
-	LDFLAGS="${LDFLAGS} $libxml2_LIBS"
+	LIBS="${LIBS} $libxml2_LIBS"
 		CPPFLAGS="${CPPFLAGS} $libxml2_CFLAGS"
 		CFLAGS="${CFLAGS} $libxml2_CFLAGS"
 fi
@@ -6862,7 +6870,7 @@ else
 	libsigc_LIBS=$pkg_cv_libsigc_LIBS
         { echo "$as_me:$LINENO: result: yes" >&5
 echo "${ECHO_T}yes" >&6; }
-	LDFLAGS="${LDFLAGS} $libsigc_LIBS"
+	LIBS="${LIBS} $libsigc_LIBS"
 			CPPFLAGS="${CPPFLAGS} $libsigc_CFLAGS"
 fi
 	fi
@@ -7813,23 +7821,140 @@ _ACEOF
 	fi
 
 	if test "$TLSLIB" = "OpenSSL" -o "$TLSLIB" = ""; then
-		INCVAL="${LIBPREF}/include"
-		LIBVAL="${LIBPREF}/lib"
 
 # Check whether --with-openssl_includes was given.
 if test "${with_openssl_includes+set}" = set; then
-  withval=$with_openssl_includes; INCVAL="$withval"
+  withval=$with_openssl_includes; CPPFLAGS="${CPPFLAGS} -I${withval}"
+			CFLAGS="${CFLAGS} -I${withval}"
+			INCVAL="yes"
+else
+  INCVAL="no"
 fi
 
-		CPPFLAGS="${CPPFLAGS} -I${INCVAL}"
-		CFLAGS="${CFLAGS} -I${INCVAL}"
 
 # Check whether --with-openssl_libraries was given.
 if test "${with_openssl_libraries+set}" = set; then
-  withval=$with_openssl_libraries; LIBVAL="$withval"
+  withval=$with_openssl_libraries; LDFLAGS="${LDFLAGS} -L${withval}"
+			LIBVAL="yes"
+else
+  LIBVAL="no"
 fi
 
-		LDFLAGS="${LDFLAGS} -L${LIBVAL}"
+		if test "$INCVAL" = "no" -o "$LIBVAL" = "no"; then
+
+pkg_failed=no
+{ echo "$as_me:$LINENO: checking for openssl" >&5
+echo $ECHO_N "checking for openssl... $ECHO_C" >&6; }
+
+if test -n "$PKG_CONFIG"; then
+    if test -n "$openssl_CFLAGS"; then
+        pkg_cv_openssl_CFLAGS="$openssl_CFLAGS"
+    else
+        if test -n "$PKG_CONFIG" && \
+    { (echo "$as_me:$LINENO: \$PKG_CONFIG --exists --print-errors \"openssl\"") >&5
+  ($PKG_CONFIG --exists --print-errors "openssl") 2>&5
+  ac_status=$?
+  echo "$as_me:$LINENO: \$? = $ac_status" >&5
+  (exit $ac_status); }; then
+  pkg_cv_openssl_CFLAGS=`$PKG_CONFIG --cflags "openssl" 2>/dev/null`
+else
+  pkg_failed=yes
+fi
+    fi
+else
+	pkg_failed=untried
+fi
+if test -n "$PKG_CONFIG"; then
+    if test -n "$openssl_LIBS"; then
+        pkg_cv_openssl_LIBS="$openssl_LIBS"
+    else
+        if test -n "$PKG_CONFIG" && \
+    { (echo "$as_me:$LINENO: \$PKG_CONFIG --exists --print-errors \"openssl\"") >&5
+  ($PKG_CONFIG --exists --print-errors "openssl") 2>&5
+  ac_status=$?
+  echo "$as_me:$LINENO: \$? = $ac_status" >&5
+  (exit $ac_status); }; then
+  pkg_cv_openssl_LIBS=`$PKG_CONFIG --libs "openssl" 2>/dev/null`
+else
+  pkg_failed=yes
+fi
+    fi
+else
+	pkg_failed=untried
+fi
+
+
+
+if test $pkg_failed = yes; then
+
+if $PKG_CONFIG --atleast-pkgconfig-version 0.20; then
+        _pkg_short_errors_supported=yes
+else
+        _pkg_short_errors_supported=no
+fi
+        if test $_pkg_short_errors_supported = yes; then
+	        openssl_PKG_ERRORS=`$PKG_CONFIG --short-errors --errors-to-stdout --print-errors "openssl"`
+        else
+	        openssl_PKG_ERRORS=`$PKG_CONFIG --errors-to-stdout --print-errors "openssl"`
+        fi
+	# Put the nasty error message in config.log where it belongs
+	echo "$openssl_PKG_ERRORS" >&5
+
+	{ { echo "$as_me:$LINENO: error: Package requirements (openssl) were not met:
+
+$openssl_PKG_ERRORS
+
+Consider adjusting the PKG_CONFIG_PATH environment variable if you
+installed software in a non-standard prefix.
+
+Alternatively, you may set the environment variables openssl_CFLAGS
+and openssl_LIBS to avoid the need to call pkg-config.
+See the pkg-config man page for more details.
+" >&5
+echo "$as_me: error: Package requirements (openssl) were not met:
+
+$openssl_PKG_ERRORS
+
+Consider adjusting the PKG_CONFIG_PATH environment variable if you
+installed software in a non-standard prefix.
+
+Alternatively, you may set the environment variables openssl_CFLAGS
+and openssl_LIBS to avoid the need to call pkg-config.
+See the pkg-config man page for more details.
+" >&2;}
+   { (exit 1); exit 1; }; }
+elif test $pkg_failed = untried; then
+	{ { echo "$as_me:$LINENO: error: The pkg-config script could not be found or is too old.  Make sure it
+is in your PATH or set the PKG_CONFIG environment variable to the full
+path to pkg-config.
+
+Alternatively, you may set the environment variables openssl_CFLAGS
+and openssl_LIBS to avoid the need to call pkg-config.
+See the pkg-config man page for more details.
+
+To get pkg-config, see <http://pkg-config.freedesktop.org/>.
+See \`config.log' for more details." >&5
+echo "$as_me: error: The pkg-config script could not be found or is too old.  Make sure it
+is in your PATH or set the PKG_CONFIG environment variable to the full
+path to pkg-config.
+
+Alternatively, you may set the environment variables openssl_CFLAGS
+and openssl_LIBS to avoid the need to call pkg-config.
+See the pkg-config man page for more details.
+
+To get pkg-config, see <http://pkg-config.freedesktop.org/>.
+See \`config.log' for more details." >&2;}
+   { (exit 1); exit 1; }; }
+else
+	openssl_CFLAGS=$pkg_cv_openssl_CFLAGS
+	openssl_LIBS=$pkg_cv_openssl_LIBS
+        { echo "$as_me:$LINENO: result: yes" >&5
+echo "${ECHO_T}yes" >&6; }
+	LIBS="${LIBS} $openssl_LIBS"
+				CPPFLAGS="${CPPFLAGS} $openssl_CFLAGS"
+				CFLAGS="${CFLAGS} $openssl_CFLAGS"
+fi
+		fi
 
 		if test "${ac_cv_header_openssl_ssl_h+set}" = set; then
   { echo "$as_me:$LINENO: checking for openssl/ssl.h" >&5
@@ -7975,7 +8100,87 @@ echo "$as_me: error: Couldn't find OpenSSL headers (ssl.h)" >&2;}
    { (exit 1); exit 1; }; }
 		fi
 		if test "$FOUND" = "yes"; then
-			{ echo "$as_me:$LINENO: checking for library containing SSL_library_init" >&5
+			{ echo "$as_me:$LINENO: checking for library containing CRYPTO_set_locking_callback" >&5
+echo $ECHO_N "checking for library containing CRYPTO_set_locking_callback... $ECHO_C" >&6; }
+if test "${ac_cv_search_CRYPTO_set_locking_callback+set}" = set; then
+  echo $ECHO_N "(cached) $ECHO_C" >&6
+else
+  ac_func_search_save_LIBS=$LIBS
+cat >conftest.$ac_ext <<_ACEOF
+/* confdefs.h.  */
+_ACEOF
+cat confdefs.h >>conftest.$ac_ext
+cat >>conftest.$ac_ext <<_ACEOF
+/* end confdefs.h.  */
+
+/* Override any GCC internal prototype to avoid an error.
+   Use char because int might match the return type of a GCC
+   builtin and then its argument prototype would still apply.  */
+#ifdef __cplusplus
+extern "C"
+#endif
+char CRYPTO_set_locking_callback ();
+int
+main ()
+{
+return CRYPTO_set_locking_callback ();
+  ;
+  return 0;
+}
+_ACEOF
+for ac_lib in '' crypto; do
+  if test -z "$ac_lib"; then
+    ac_res="none required"
+  else
+    ac_res=-l$ac_lib
+    LIBS="-l$ac_lib  $ac_func_search_save_LIBS"
+  fi
+  rm -f conftest.$ac_objext conftest$ac_exeext
+if { (ac_try="$ac_link"
+case "(($ac_try" in
+  *\"* | *\`* | *\\*) ac_try_echo=\$ac_try;;
+  *) ac_try_echo=$ac_try;;
+esac
+eval "echo \"\$as_me:$LINENO: $ac_try_echo\"") >&5
+  (eval "$ac_link") 2>conftest.er1
+  ac_status=$?
+  grep -v '^ *+' conftest.er1 >conftest.err
+  rm -f conftest.er1
+  cat conftest.err >&5
+  echo "$as_me:$LINENO: \$? = $ac_status" >&5
+  (exit $ac_status); } && {
+	 test -z "$ac_cxx_werror_flag" ||
+	 test ! -s conftest.err
+       } && test -s conftest$ac_exeext &&
+       $as_test_x conftest$ac_exeext; then
+  ac_cv_search_CRYPTO_set_locking_callback=$ac_res
+else
+  echo "$as_me: failed program was:" >&5
+sed 's/^/| /' conftest.$ac_ext >&5
+
+
+fi
+
+rm -f core conftest.err conftest.$ac_objext conftest_ipa8_conftest.oo \
+      conftest$ac_exeext
+  if test "${ac_cv_search_CRYPTO_set_locking_callback+set}" = set; then
+  break
+fi
+done
+if test "${ac_cv_search_CRYPTO_set_locking_callback+set}" = set; then
+  :
+else
+  ac_cv_search_CRYPTO_set_locking_callback=no
+fi
+rm conftest.$ac_ext
+LIBS=$ac_func_search_save_LIBS
+fi
+{ echo "$as_me:$LINENO: result: $ac_cv_search_CRYPTO_set_locking_callback" >&5
+echo "${ECHO_T}$ac_cv_search_CRYPTO_set_locking_callback" >&6; }
+ac_res=$ac_cv_search_CRYPTO_set_locking_callback
+if test "$ac_res" != no; then
+  test "$ac_res" = "none required" || LIBS="$ac_res $LIBS"
+  { echo "$as_me:$LINENO: checking for library containing SSL_library_init" >&5
 echo $ECHO_N "checking for library containing SSL_library_init... $ECHO_C" >&6; }
 if test "${ac_cv_search_SSL_library_init+set}" = set; then
   echo $ECHO_N "(cached) $ECHO_C" >&6
@@ -8056,6 +8261,10 @@ ac_res=$ac_cv_search_SSL_library_init
 if test "$ac_res" != no; then
   test "$ac_res" = "none required" || LIBS="$ac_res $LIBS"
   FOUND=yes
+else
+  FOUND=no
+fi
+
 else
   FOUND=no
 fi
@@ -9420,7 +9629,7 @@ libxml2_CFLAGS!$libxml2_CFLAGS$ac_delim
 libxml2_LIBS!$libxml2_LIBS$ac_delim
 libsigc_CFLAGS!$libsigc_CFLAGS$ac_delim
 libsigc_LIBS!$libsigc_LIBS$ac_delim
-CFLAGS!$CFLAGS$ac_delim
+openssl_CFLAGS!$openssl_CFLAGS$ac_delim
 _ACEOF
 
   if test `sed -n "s/.*$ac_delim\$/X/p" conf$$subs.sed | grep -c X` = 97; then
@@ -9462,13 +9671,15 @@ _ACEOF
 ac_delim='%!_!# '
 for ac_last_try in false false false false false :; do
   cat >conf$$subs.sed <<_ACEOF
+openssl_LIBS!$openssl_LIBS$ac_delim
+CFLAGS!$CFLAGS$ac_delim
 AR!$AR$ac_delim
 ADDSRCS!$ADDSRCS$ac_delim
 LIBOBJS!$LIBOBJS$ac_delim
 LTLIBOBJS!$LTLIBOBJS$ac_delim
 _ACEOF
 
-  if test `sed -n "s/.*$ac_delim\$/X/p" conf$$subs.sed | grep -c X` = 4; then
+  if test `sed -n "s/.*$ac_delim\$/X/p" conf$$subs.sed | grep -c X` = 6; then
     break
   elif $ac_last_try; then
     { { echo "$as_me:$LINENO: error: could not make $CONFIG_STATUS" >&5

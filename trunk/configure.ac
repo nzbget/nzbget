@@ -197,7 +197,7 @@ AC_ARG_WITH(libxml2_libraries,
 	[LIBVAL="no"])
 if test "$INCVAL" = "no" -o "$LIBVAL" = "no"; then
 	PKG_CHECK_MODULES(libxml2, libxml-2.0,
-		[LDFLAGS="${LDFLAGS} $libxml2_LIBS"]
+		[LIBS="${LIBS} $libxml2_LIBS"]
 		[CPPFLAGS="${CPPFLAGS} $libxml2_CFLAGS"]
 		[CFLAGS="${CFLAGS} $libxml2_CFLAGS"])
 fi
@@ -283,7 +283,7 @@ if test "$ENABLEPARCHECK" = "yes"; then
 		[LIBVAL="no"])
 	if test "$INCVAL" = "no" -o "$LIBVAL" = "no"; then
 		PKG_CHECK_MODULES(libsigc, sigc++-2.0,
-			[LDFLAGS="${LDFLAGS} $libsigc_LIBS"]
+			[LIBS="${LIBS} $libsigc_LIBS"]
 			[CPPFLAGS="${CPPFLAGS} $libsigc_CFLAGS"])
 	fi
 	
@@ -398,7 +398,7 @@ if test "$USETLS" = "yes"; then
 			[AS_HELP_STRING([--with-libgnutls-libraries=DIR], [GnuTLS library directory])],
 			[LIBVAL="$withval"])
 		LDFLAGS="${LDFLAGS} -L${LIBVAL}"
-	
+
 		AC_CHECK_HEADER(gnutls/gnutls.h,
 			FOUND=yes
 			TLSHEADERS=yes,
@@ -423,18 +423,24 @@ if test "$USETLS" = "yes"; then
 	fi
 	
 	if test "$TLSLIB" = "OpenSSL" -o "$TLSLIB" = ""; then
-		INCVAL="${LIBPREF}/include"
-		LIBVAL="${LIBPREF}/lib"
 		AC_ARG_WITH(openssl_includes,
 			[AS_HELP_STRING([--with-openssl-includes=DIR], [OpenSSL include directory])],
-			[INCVAL="$withval"])
-		CPPFLAGS="${CPPFLAGS} -I${INCVAL}"
-		CFLAGS="${CFLAGS} -I${INCVAL}"
+			[CPPFLAGS="${CPPFLAGS} -I${withval}"]
+			[CFLAGS="${CFLAGS} -I${withval}"]
+			[INCVAL="yes"],
+			[INCVAL="no"])
 		AC_ARG_WITH(openssl_libraries,
 			[AS_HELP_STRING([--with-openssl-libraries=DIR], [OpenSSL library directory])],
-			[LIBVAL="$withval"])
-		LDFLAGS="${LDFLAGS} -L${LIBVAL}"
-	
+			[LDFLAGS="${LDFLAGS} -L${withval}"]
+			[LIBVAL="yes"],
+			[LIBVAL="no"])
+		if test "$INCVAL" = "no" -o "$LIBVAL" = "no"; then
+			PKG_CHECK_MODULES(openssl, openssl,
+				[LIBS="${LIBS} $openssl_LIBS"]
+				[CPPFLAGS="${CPPFLAGS} $openssl_CFLAGS"]
+				[CFLAGS="${CFLAGS} $openssl_CFLAGS"])
+		fi
+
 		AC_CHECK_HEADER(openssl/ssl.h,
 			FOUND=yes
 			TLSHEADERS=yes,
@@ -443,8 +449,10 @@ if test "$USETLS" = "yes"; then
 			AC_MSG_ERROR([Couldn't find OpenSSL headers (ssl.h)])
 		fi
 		if test "$FOUND" = "yes"; then
-			AC_SEARCH_LIBS([SSL_library_init], [ssl],
-				FOUND=yes,
+			AC_SEARCH_LIBS([CRYPTO_set_locking_callback], [crypto],
+				AC_SEARCH_LIBS([SSL_library_init], [ssl],
+					FOUND=yes,
+					FOUND=no),
 				FOUND=no)
 			if test "$FOUND" = "no" -a "$TLSLIB" = "OpenSSL"; then
 				AC_MSG_ERROR([Couldn't find OpenSSL library])
