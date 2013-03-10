@@ -304,19 +304,18 @@ int QueueCoordinator::CalcCurrentDownloadSpeed()
 		return 0;
 	}
 
-	int iTimeDiff = (int)time(NULL) - m_iSpeedStartTime * SPEEDMETER_SLOTSIZE;
-	if (iTimeDiff == 0)
-	{
-		return 0;
-	}
+    int iTimeDiff = (int)time(NULL) - m_iSpeedStartTime * SPEEDMETER_SLOTSIZE;
+    if (iTimeDiff == 0)
+    {
+    	return 0;
+    }
 
 	return m_iSpeedTotalBytes / iTimeDiff;
 }
 
 void QueueCoordinator::AddSpeedReading(int iBytes)
 {
-	time_t tCurTime = time(NULL);
-	int iNowSlot = (int)tCurTime / SPEEDMETER_SLOTSIZE;
+    int iNowSlot = (int)time(NULL) / SPEEDMETER_SLOTSIZE;
 
 	if (g_pOptions->GetAccurateRate())
 	{
@@ -327,39 +326,33 @@ void QueueCoordinator::AddSpeedReading(int iBytes)
 #endif
 	}
 
-	while (iNowSlot > m_iSpeedTime[m_iSpeedBytesIndex])
-	{
-		//record bytes in next slot
-		m_iSpeedBytesIndex++;
-		if (m_iSpeedBytesIndex >= SPEEDMETER_SLOTS)
-		{
-			m_iSpeedBytesIndex = 0;
-		}
-		//Adjust counters with outgoing information.
-		m_iSpeedTotalBytes -= m_iSpeedBytes[m_iSpeedBytesIndex];
+    while (iNowSlot > m_iSpeedTime[m_iSpeedBytesIndex])
+    {
+        //record bytes in next slot
+        m_iSpeedBytesIndex++;
+        if (m_iSpeedBytesIndex >= SPEEDMETER_SLOTS)
+        {
+            m_iSpeedBytesIndex = 0;
+        }
+        //Adjust counters with outging information.
+        m_iSpeedTotalBytes -= m_iSpeedBytes[m_iSpeedBytesIndex];
 
-		//Note we should really use the start time of the next slot
-		//but its easier to just use the outgoing slot time. This
-		//will result in a small error.
-		m_iSpeedStartTime = m_iSpeedTime[m_iSpeedBytesIndex];
+        //Note we should really use the start time of the next slot
+        //but its easier to just use the outgoing slot time. This 
+        //will result in a small error.
+        m_iSpeedStartTime = m_iSpeedTime[m_iSpeedBytesIndex];
 
-		//Now reset.
-		m_iSpeedBytes[m_iSpeedBytesIndex] = 0;
-		m_iSpeedTime[m_iSpeedBytesIndex] = iNowSlot;
-	}
+        //Now reset.
+        m_iSpeedBytes[m_iSpeedBytesIndex] = 0;
+        m_iSpeedTime[m_iSpeedBytesIndex] = iNowSlot;
+    } 
 
-	// Check statistical data for synchronisation errors every 30 seconds
-	if (tCurTime > m_tLastSpeedStatSanitation + 30)
-	{
-		SanitiseSpeedStat();
-	}
-
-	if (m_iSpeedTotalBytes == 0)
-	{
-		m_iSpeedStartTime = iNowSlot;
-	}
-	m_iSpeedBytes[m_iSpeedBytesIndex] += iBytes;
-	m_iSpeedTotalBytes += iBytes;
+    if (m_iSpeedTotalBytes == 0)
+    {
+        m_iSpeedStartTime = iNowSlot;
+    }
+    m_iSpeedBytes[m_iSpeedBytesIndex] += iBytes;
+    m_iSpeedTotalBytes += iBytes;
 	m_iAllBytes += iBytes;
 
 	if (g_pOptions->GetAccurateRate())
@@ -374,33 +367,14 @@ void QueueCoordinator::AddSpeedReading(int iBytes)
 
 void QueueCoordinator::ResetSpeedStat()
 {
-	time_t tCurTime = time(NULL);
-	m_iSpeedStartTime = (int)tCurTime / SPEEDMETER_SLOTSIZE;
+    m_iSpeedStartTime = (int)time(NULL) / SPEEDMETER_SLOTSIZE;
 	for (int i = 0; i < SPEEDMETER_SLOTS; i++)
 	{
 		m_iSpeedBytes[i] = 0;
-		m_iSpeedTime[i] = m_iSpeedStartTime;
+        m_iSpeedTime[i] = m_iSpeedStartTime;
 	}
 	m_iSpeedBytesIndex = 0;
-	m_iSpeedTotalBytes = 0;
-	m_tLastSpeedStatSanitation = tCurTime;
-}
-
-void QueueCoordinator::SanitiseSpeedStat()
-{
-	m_tLastSpeedStatSanitation = time(NULL);
-	
-	int iSpeedTotalBytes = 0;
-	for (int i = 0; i < SPEEDMETER_SLOTS; i++)
-	{
-		iSpeedTotalBytes += m_iSpeedBytes[i];
-	}
-	
-	if (iSpeedTotalBytes != m_iSpeedTotalBytes)
-	{
-		ResetSpeedStat();
-		warn("Synchronisation errors in speed meter detected. Resetting speed meter");
-	}
+    m_iSpeedTotalBytes = 0;
 }
 
 long long QueueCoordinator::CalcRemainingSize()
@@ -865,6 +839,7 @@ void QueueCoordinator::ResetHangingDownloads()
 		if (tm - pArticleDownloader->GetLastUpdateTime() > g_pOptions->GetConnectionTimeout() + 1 &&
 		   pArticleDownloader->GetStatus() == ArticleDownloader::adRunning)
 		{
+			ArticleInfo* pArticleInfo = pArticleDownloader->GetArticleInfo();
 			error("Cancelling hanging download %s", pArticleDownloader->GetInfoName());
 			pArticleDownloader->Stop();
 		}
