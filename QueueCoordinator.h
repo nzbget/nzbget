@@ -71,7 +71,6 @@ private:
     int                     m_iSpeedTotalBytes;
     int 					m_iSpeedTime[SPEEDMETER_SLOTS];
     int                     m_iSpeedStartTime; 
-	time_t					m_tLastSpeedStatSanitation;
 #ifdef HAVE_SPINLOCK
 	SpinLock				m_spinlockSpeed;
 #else
@@ -95,7 +94,6 @@ private:
 	void					DeleteFileInfo(FileInfo* pFileInfo, bool bCompleted);
 	void					ResetHangingDownloads();
 	void					ResetSpeedStat();
-	void					SanitiseSpeedStat();
 	void					EnterLeaveStandBy(bool bEnter);
 	void					AdjustStartTime();
 
