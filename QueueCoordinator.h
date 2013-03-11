@@ -71,6 +71,7 @@ private:
     int                     m_iSpeedTotalBytes;
     int 					m_iSpeedTime[SPEEDMETER_SLOTS];
     int                     m_iSpeedStartTime; 
+	time_t					m_tSpeedCorrection;
 #ifdef HAVE_SPINLOCK
 	SpinLock				m_spinlockSpeed;
 #else
