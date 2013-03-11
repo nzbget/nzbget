@@ -42,6 +42,14 @@ private:
 		upSevenZip
 	};
 
+	typedef std::deque<char*>		FileListBase;
+	class FileList : public FileListBase
+	{
+	public:
+		void			Clear();
+		bool			Exists(const char* szFilename);
+	};
+
 private:
 	PostInfo*			m_pPostInfo;
 	char				m_szName[1024];
@@ -60,9 +68,6 @@ private:
 	bool				m_bUnpackStartError;
 	bool				m_bCleanedUpDisk;
 	EUnpacker			m_eUnpacker;
-
-	typedef std::deque<char*>		FileList;
-	
 	FileList			m_archiveFiles;
 
 protected:
