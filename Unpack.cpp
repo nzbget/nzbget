@@ -204,6 +204,7 @@ void UnpackController::ExecuteUnrar()
 	m_eUnpacker = upUnrar;
 	
 	int iExitCode = Execute();
+	m_pPostInfo->SetProgressLabel("");
 
 	m_bUnpackOK = iExitCode == 0 && m_bAllOKMessageReceived && !GetTerminated();
 	m_bUnpackStartError = iExitCode == -1;
@@ -250,6 +251,7 @@ void UnpackController::ExecuteSevenZip(bool bMultiVolumes)
 
 	PrintMessage(Message::mkInfo, "Executing 7-Zip");
 	int iExitCode = Execute();
+	m_pPostInfo->SetProgressLabel("");
 
 	m_bUnpackOK = iExitCode == 0 && m_bAllOKMessageReceived && !GetTerminated();
 	m_bUnpackStartError = iExitCode == -1;
