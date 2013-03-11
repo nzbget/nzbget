@@ -49,12 +49,32 @@
 extern Options* g_pOptions;
 extern DownloadQueueHolder* g_pDownloadQueueHolder;
 
-UnpackController::~UnpackController()
+void UnpackController::FileList::Clear()
 {
-	for (FileList::iterator it = m_archiveFiles.begin(); it != m_archiveFiles.end(); it++)
+	for (iterator it = begin(); it != end(); it++)
 	{
 		free(*it);
 	}
+	clear();
+}
+
+bool UnpackController::FileList::Exists(const char* szFilename)
+{
+	for (iterator it = begin(); it != end(); it++)
+	{
+		char* szFilename1 = *it;
+		if (!strcmp(szFilename1, szFilename))
+		{
+			return true;
+		}
+	}
+
+	return false;
+}
+
+UnpackController::~UnpackController()
+{
+	m_archiveFiles.Clear();
 }
 
 void UnpackController::StartUnpackJob(PostInfo* pPostInfo)
@@ -386,6 +406,8 @@ bool UnpackController::Cleanup()
 
 	bool bOK = true;
 
+	FileList extractedFiles;
+
 	if (m_bUnpackOK)
 	{
 		// moving files back
@@ -410,6 +432,8 @@ bool UnpackController::Cleanup()
 					PrintMessage(Message::mkError, "Could not move file %s to %s", szSrcFile, szDstFile);
 					bOK = false;
 				}
+
+				extractedFiles.push_back(strdup(filename));
 			}
 		}
 	}
@@ -428,15 +452,18 @@ bool UnpackController::Cleanup()
 		{
 			char* szFilename = *it;
 
-			char szFullFilename[1024];
-			snprintf(szFullFilename, 1024, "%s%c%s", m_szDestDir, PATH_SEPARATOR, szFilename);
-			szFullFilename[1024-1] = '\0';
-
-			PrintMessage(Message::mkInfo, "Deleting file %s", szFilename);
-
-			if (remove(szFullFilename) != 0)
+			if (!extractedFiles.Exists(szFilename))
 			{
-				PrintMessage(Message::mkError, "Could not delete file %s", szFullFilename);
+				char szFullFilename[1024];
+				snprintf(szFullFilename, 1024, "%s%c%s", m_szDestDir, PATH_SEPARATOR, szFilename);
+				szFullFilename[1024-1] = '\0';
+
+				PrintMessage(Message::mkInfo, "Deleting file %s", szFilename);
+
+				if (remove(szFullFilename) != 0)
+				{
+					PrintMessage(Message::mkError, "Could not delete file %s", szFullFilename);
+				}
 			}
 		}
 
@@ -453,22 +480,22 @@ bool UnpackController::Cleanup()
 			snprintf(szFullFilename, 1024, "%s%c%s", m_szDestDir, PATH_SEPARATOR, filename);
 			szFullFilename[1024-1] = '\0';
 
-			if (strcmp(filename, ".") && strcmp(filename, "..") && !Util::DirectoryExists(szFullFilename))
+			if (strcmp(filename, ".") && strcmp(filename, "..") && !Util::DirectoryExists(szFullFilename) 
+				&& regExSevenZip.Match(filename) && !extractedFiles.Exists(filename))
 			{
-				if (regExSevenZip.Match(filename))
-				{
-					PrintMessage(Message::mkInfo, "Deleting file %s", filename);
+				PrintMessage(Message::mkInfo, "Deleting file %s", filename);
 
-					if (remove(szFullFilename) != 0)
-					{
-						PrintMessage(Message::mkError, "Could not delete file %s", szFullFilename);
-					}
+				if (remove(szFullFilename) != 0)
+				{
+					PrintMessage(Message::mkError, "Could not delete file %s", szFullFilename);
 				}
 			}
 		}
 
 		m_bCleanedUpDisk = true;
 	}
+
+	extractedFiles.Clear();
 
 	return bOK;
 }
