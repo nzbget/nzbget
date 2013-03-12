@@ -168,15 +168,10 @@ void ArticleDownloader::Run()
 		{
 			m_pConnection = g_pServerPool->GetConnection(level);
 			usleep(5 * 1000);
+			SetLastUpdateTimeNow();
 		}
 
-		if (IsStopped())
-		{
-			Status = adFailed;
-			break;
-		}
-
-		if (g_pOptions->GetPauseDownload() || g_pOptions->GetPauseDownload2())
+		if (IsStopped() || g_pOptions->GetPauseDownload() || g_pOptions->GetPauseDownload2())
 		{
 			Status = adRetry;
 			break;
@@ -240,21 +235,16 @@ void ArticleDownloader::Run()
 			{
 				usleep(100 * 1000);
 				msec += 100;
+				SetLastUpdateTimeNow();
 			}
 		}
 
-		if (g_pOptions->GetPauseDownload() || g_pOptions->GetPauseDownload2())
+		if (IsStopped() || g_pOptions->GetPauseDownload() || g_pOptions->GetPauseDownload2())
 		{
 			Status = adRetry;
 			break;
 		}
 
-		if (IsStopped())
-		{
-			Status = adFailed;
-			break;
-		}
-	 
 		if ((Status == adFinished) || (Status == adFatalError) ||
 			(Status == adCrcError && !g_pOptions->GetRetryOnCrcError()))
 		{
@@ -307,17 +297,15 @@ void ArticleDownloader::Run()
 		Status = adFailed;
 	}
 
+	if (IsStopped())
+	{
+		detail("Download %s cancelled", m_szInfoName);
+		Status = adRetry;
+	}
+
 	if (Status == adFailed)
 	{
-		if (IsStopped())
-		{
-			detail("Download %s cancelled", m_szInfoName);
-			Status = adRetry;
-		}
-		else
-		{
-			warn("Download %s failed", m_szInfoName);
-		}
+		warn("Download %s failed", m_szInfoName);
 	}
 
 	SetStatus(Status);
