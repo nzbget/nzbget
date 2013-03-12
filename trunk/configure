@@ -713,9 +713,6 @@ libsigc_CFLAGS
 libsigc_LIBS
 openssl_CFLAGS
 openssl_LIBS
-CFLAGS
-AR
-ADDSRCS
 LIBOBJS
 LTLIBOBJS'
 ac_subst_files=''
@@ -3832,7 +3829,7 @@ if (eval "$ac_cpp conftest.$ac_ext") 2>&5 |
 else
   ac_cv_header_stdc=no
 fi
-rm -f -r conftest*
+rm -f conftest*
 
 fi
 
@@ -3853,7 +3850,7 @@ if (eval "$ac_cpp conftest.$ac_ext") 2>&5 |
 else
   ac_cv_header_stdc=no
 fi
-rm -f -r conftest*
+rm -f conftest*
 
 fi
 
@@ -5688,7 +5685,6 @@ _ACEOF
 # Check whether --with-libxml2_includes was given.
 if test "${with_libxml2_includes+set}" = set; then
   withval=$with_libxml2_includes; CPPFLAGS="${CPPFLAGS} -I${withval}"
-	CFLAGS="${CFLAGS} -I${withval}"
 	INCVAL="yes"
 else
   INCVAL="no"
@@ -5935,7 +5931,6 @@ else
 echo "${ECHO_T}yes" >&6; }
 	LIBS="${LIBS} $libxml2_LIBS"
 		CPPFLAGS="${CPPFLAGS} $libxml2_CFLAGS"
-		CFLAGS="${CFLAGS} $libxml2_CFLAGS"
 fi
 fi
 if test "${ac_cv_header_libxml_tree_h+set}" = set; then
@@ -6187,7 +6182,6 @@ if test "${with_libcurses_includes+set}" = set; then
 fi
 
 	CPPFLAGS="${CPPFLAGS} -I${INCVAL}"
-	CFLAGS="${CFLAGS} -I${INCVAL}"
 
 # Check whether --with-libcurses_libraries was given.
 if test "${with_libcurses_libraries+set}" = set; then
@@ -7482,7 +7476,6 @@ if test "${with_libgnutls_includes+set}" = set; then
 fi
 
 		CPPFLAGS="${CPPFLAGS} -I${INCVAL}"
-		CFLAGS="${CFLAGS} -I${INCVAL}"
 
 # Check whether --with-libgnutls_libraries was given.
 if test "${with_libgnutls_libraries+set}" = set; then
@@ -7825,7 +7818,6 @@ _ACEOF
 # Check whether --with-openssl_includes was given.
 if test "${with_openssl_includes+set}" = set; then
   withval=$with_openssl_includes; CPPFLAGS="${CPPFLAGS} -I${withval}"
-			CFLAGS="${CFLAGS} -I${withval}"
 			INCVAL="yes"
 else
   INCVAL="no"
@@ -7952,7 +7944,6 @@ else
 echo "${ECHO_T}yes" >&6; }
 	LIBS="${LIBS} $openssl_LIBS"
 				CPPFLAGS="${CPPFLAGS} $openssl_CFLAGS"
-				CFLAGS="${CFLAGS} $openssl_CFLAGS"
 fi
 		fi
 
@@ -8326,7 +8317,6 @@ if test "${with_zlib_includes+set}" = set; then
 fi
 
 	CPPFLAGS="${CPPFLAGS} -I${INCVAL}"
-	CFLAGS="${CFLAGS} -I${INCVAL}"
 
 # Check whether --with-zlib_libraries was given.
 if test "${with_zlib_libraries+set}" = set; then
@@ -8879,15 +8869,6 @@ rm -f core conftest.err conftest.$ac_objext conftest_ipa8_conftest.oo \
       conftest$ac_exeext conftest.$ac_ext
 
 fi
-
-
-
-
-
-
-
-
-
 
 
 ac_config_files="$ac_config_files Makefile"
@@ -9672,14 +9653,11 @@ ac_delim='%!_!# '
 for ac_last_try in false false false false false :; do
   cat >conf$$subs.sed <<_ACEOF
 openssl_LIBS!$openssl_LIBS$ac_delim
-CFLAGS!$CFLAGS$ac_delim
-AR!$AR$ac_delim
-ADDSRCS!$ADDSRCS$ac_delim
 LIBOBJS!$LIBOBJS$ac_delim
 LTLIBOBJS!$LTLIBOBJS$ac_delim
 _ACEOF
 
-  if test `sed -n "s/.*$ac_delim\$/X/p" conf$$subs.sed | grep -c X` = 6; then
+  if test `sed -n "s/.*$ac_delim\$/X/p" conf$$subs.sed | grep -c X` = 3; then
     break
   elif $ac_last_try; then
     { { echo "$as_me:$LINENO: error: could not make $CONFIG_STATUS" >&5
@@ -10040,7 +10018,7 @@ do
     cat >>$CONFIG_STATUS <<_ACEOF
     # First, check the format of the line:
     cat >"\$tmp/defines.sed" <<\\CEOF
-/^[	 ]*#[	 ]*undef[	 ][	 ]*$ac_word_re[	 ]*/b def
+/^[	 ]*#[	 ]*undef[	 ][	 ]*$ac_word_re[	 ]*\$/b def
 /^[	 ]*#[	 ]*define[	 ][	 ]*$ac_word_re[(	 ]/b def
 b
 :def

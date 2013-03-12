@@ -187,7 +187,6 @@ dnl
 AC_ARG_WITH(libxml2_includes,
 	[AS_HELP_STRING([--with-libxml2-includes=DIR], [libxml2 include directory])],
 	[CPPFLAGS="${CPPFLAGS} -I${withval}"]
-	[CFLAGS="${CFLAGS} -I${withval}"]
 	[INCVAL="yes"],
 	[INCVAL="no"])
 AC_ARG_WITH(libxml2_libraries,
@@ -198,8 +197,7 @@ AC_ARG_WITH(libxml2_libraries,
 if test "$INCVAL" = "no" -o "$LIBVAL" = "no"; then
 	PKG_CHECK_MODULES(libxml2, libxml-2.0,
 		[LIBS="${LIBS} $libxml2_LIBS"]
-		[CPPFLAGS="${CPPFLAGS} $libxml2_CFLAGS"]
-		[CFLAGS="${CFLAGS} $libxml2_CFLAGS"])
+		[CPPFLAGS="${CPPFLAGS} $libxml2_CFLAGS"])
 fi
 AC_CHECK_HEADER(libxml/tree.h,,
 	AC_MSG_ERROR("libxml2 header files not found"))
@@ -223,7 +221,6 @@ if test "$USECURSES" = "yes"; then
 		[AS_HELP_STRING([--with-libcurses-includes=DIR], [libcurses include directory])],
 		[INCVAL="$withval"])
 	CPPFLAGS="${CPPFLAGS} -I${INCVAL}"
-	CFLAGS="${CFLAGS} -I${INCVAL}"
 	AC_ARG_WITH(libcurses_libraries,
 		[AS_HELP_STRING([--with-libcurses-libraries=DIR], [libcurses library directory])],
 		[LIBVAL="$withval"])
@@ -393,7 +390,6 @@ if test "$USETLS" = "yes"; then
 			[AS_HELP_STRING([--with-libgnutls-includes=DIR], [GnuTLS include directory])],
 			[INCVAL="$withval"])
 		CPPFLAGS="${CPPFLAGS} -I${INCVAL}"
-		CFLAGS="${CFLAGS} -I${INCVAL}"
 		AC_ARG_WITH(libgnutls_libraries,
 			[AS_HELP_STRING([--with-libgnutls-libraries=DIR], [GnuTLS library directory])],
 			[LIBVAL="$withval"])
@@ -426,7 +422,6 @@ if test "$USETLS" = "yes"; then
 		AC_ARG_WITH(openssl_includes,
 			[AS_HELP_STRING([--with-openssl-includes=DIR], [OpenSSL include directory])],
 			[CPPFLAGS="${CPPFLAGS} -I${withval}"]
-			[CFLAGS="${CFLAGS} -I${withval}"]
 			[INCVAL="yes"],
 			[INCVAL="no"])
 		AC_ARG_WITH(openssl_libraries,
@@ -437,8 +432,7 @@ if test "$USETLS" = "yes"; then
 		if test "$INCVAL" = "no" -o "$LIBVAL" = "no"; then
 			PKG_CHECK_MODULES(openssl, openssl,
 				[LIBS="${LIBS} $openssl_LIBS"]
-				[CPPFLAGS="${CPPFLAGS} $openssl_CFLAGS"]
-				[CFLAGS="${CFLAGS} $openssl_CFLAGS"])
+				[CPPFLAGS="${CPPFLAGS} $openssl_CFLAGS"])
 		fi
 
 		AC_CHECK_HEADER(openssl/ssl.h,
@@ -492,7 +486,6 @@ if test "$USEZLIB" = "yes"; then
 		[AS_HELP_STRING([--with-zlib-includes=DIR], [zlib include directory])],
 		[INCVAL="$withval"])
 	CPPFLAGS="${CPPFLAGS} -I${INCVAL}"
-	CFLAGS="${CFLAGS} -I${INCVAL}"
 	AC_ARG_WITH(zlib_libraries,
 		[AS_HELP_STRING([--with-zlib-libraries=DIR], [zlib library directory])],
 		[LIBVAL="$withval"])
@@ -626,16 +619,6 @@ dnl
 dnl End of debugging code
 dnl
 fi
-
-
-dnl Substitute flags.
-AC_SUBST(CFLAGS)
-AC_SUBST(CPPFLAGS)
-AC_SUBST(LDFLAGS)
-AC_SUBST(CXXFLAGS)
-AC_SUBST(TAR)
-AC_SUBST(AR)
-AC_SUBST(ADDSRCS)
 
 
 AC_CONFIG_FILES([Makefile])
