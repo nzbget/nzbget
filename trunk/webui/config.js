@@ -714,17 +714,17 @@ var Config = (new function($)
 				var pvalue = option.select[j];
 				if (value && pvalue.toLowerCase() === value.toLowerCase())
 				{
-					html += '<input type="button" class="btn btn-primary" value="' + pvalue + '" onclick="Config.switchClick(this)">';
+					html += '<input type="button" class="btn btn-primary" value="' + Util.textToAttr(pvalue) + '" onclick="Config.switchClick(this)">';
 					valfound = true;
 				}
 				else
 				{
-					html += '<input type="button" class="btn" value="' + pvalue + '" onclick="Config.switchClick(this)">';
+					html += '<input type="button" class="btn" value="' + Util.textToAttr(pvalue) + '" onclick="Config.switchClick(this)">';
 				}
 			}
 			if (!valfound)
 			{
-				html += '<input type="button" class="btn btn-primary" value="' + value + '" onclick="Config.switchClick(this)">';
+				html += '<input type="button" class="btn btn-primary" value="' + Util.textToAttr(value) + '" onclick="Config.switchClick(this)">';
 			}
 
 			html +='</div>';
@@ -734,26 +734,26 @@ var Config = (new function($)
 		{
 			option.type = 'numeric';
 			html += '<div class="input-append">'+
-				'<input type="text" id="' + option.formId + '" value="' + value + '" class="editnumeric">'+
+				'<input type="text" id="' + option.formId + '" value="' + Util.textToAttr(value) + '" class="editnumeric">'+
 				'<span class="add-on">'+ option.select[0] +'</span>'+
 				'</div>';
 		}
 		else if (option.name.toLowerCase() === 'serverpassword')
 		{
 			option.type = 'password';
-			html += '<input type="password" id="' + option.formId + '" value="' + value + '" class="editsmall">';
+			html += '<input type="password" id="' + option.formId + '" value="' + Util.textToAttr(value) + '" class="editsmall">';
 		}
 		else if (option.name.toLowerCase().indexOf('username') > -1 ||
 				option.name.toLowerCase().indexOf('password') > -1 ||
 				   option.name.indexOf('IP') > -1)
 		{
 			option.type = 'text';
-			html += '<input type="text" id="' + option.formId + '" value="' + value + '" class="editsmall">';
+			html += '<input type="text" id="' + option.formId + '" value="' + Util.textToAttr(value) + '" class="editsmall">';
 		}
 		else
 		{
 			option.type = 'text';
-			html += '<input type="text" id="' + option.formId + '" value="' + value + '" class="editlarge">';
+			html += '<input type="text" id="' + option.formId + '" value="' + Util.textToAttr(value) + '" class="editlarge">';
 		}
 
 		if (option.description !== '')

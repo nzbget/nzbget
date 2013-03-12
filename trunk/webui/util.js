@@ -172,6 +172,14 @@ var Util = (new function($)
 			.replace(/>/g, '&gt;');
 	}
 
+	this.textToAttr = function(str)
+	{
+		return str.replace(/&/g, '&amp;')
+			.replace(/</g, '&lt;')
+			.replace(/"/g, '&quot;')
+			.replace(/'/g, '&#39;');
+	}
+
 	this.setMenuMark = function(menu, data)
 	{
 		// remove marks from all items
