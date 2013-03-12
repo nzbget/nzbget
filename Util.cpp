@@ -1145,7 +1145,7 @@ char* WebUtil::JsonEncode(const char* raw)
 				iReqSize++;
                 break;
 			default:
-				if (ch >= 0x80)
+				if (ch < 0x20 || ch >= 0x80)
 				{
 					iReqSize += 6;
 					break;
@@ -1197,7 +1197,7 @@ char* WebUtil::JsonEncode(const char* raw)
 				output += 2;
 				break;
 			default:
-				if (ch >= 0x80)
+				if (ch < 0x20 || ch >= 0x80)
 				{
 					sprintf(output, "\\u%04x", ch);
 					output += 6;
