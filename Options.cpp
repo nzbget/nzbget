@@ -153,7 +153,6 @@ static const char* OPTION_CURSESNZBNAME			= "CursesNzbName";
 static const char* OPTION_CURSESTIME			= "CursesTime";
 static const char* OPTION_CURSESGROUP			= "CursesGroup";
 static const char* OPTION_CRCCHECK				= "CrcCheck";
-static const char* OPTION_RETRYONCRCERROR		= "RetryOnCrcError";
 static const char* OPTION_THREADLIMIT			= "ThreadLimit";
 static const char* OPTION_DIRECTWRITE			= "DirectWrite";
 static const char* OPTION_WRITEBUFFERSIZE		= "WriteBufferSize";
@@ -179,8 +178,9 @@ static const char* OPTION_SEVENZIPCMD			= "SevenZipCmd";
 static const char* OPTION_UNPACKPAUSEQUEUE		= "UnpackPauseQueue";
 
 // obsolete options
-static const char* OPTION_POSTLOGKIND		= "PostLogKind";
-static const char* OPTION_NZBLOGKIND		= "NZBLogKind";
+static const char* OPTION_POSTLOGKIND			= "PostLogKind";
+static const char* OPTION_NZBLOGKIND			= "NZBLogKind";
+static const char* OPTION_RETRYONCRCERROR		= "RetryOnCrcError";
 
 const char* BoolNames[] = { "yes", "no", "true", "false", "1", "0", "on", "off", "enable", "disable", "enabled", "disabled" };
 const int BoolValues[] = { 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0 };
@@ -415,7 +415,6 @@ Options::Options(int argc, char* argv[])
 	m_bCursesTime			= false;
 	m_bCursesGroup			= false;
 	m_bCrcCheck				= false;
-	m_bRetryOnCrcError		= false;
 	m_bDirectWrite			= false;
 	m_iThreadLimit			= 0;
 	m_iWriteBufferSize		= 0;
@@ -737,7 +736,6 @@ void Options::InitDefault()
 	SetOption(OPTION_CURSESTIME, "no");
 	SetOption(OPTION_CURSESGROUP, "no");
 	SetOption(OPTION_CRCCHECK, "yes");
-	SetOption(OPTION_RETRYONCRCERROR, "no");
 	SetOption(OPTION_THREADLIMIT, "100");
 	SetOption(OPTION_DIRECTWRITE, "yes");
 	SetOption(OPTION_WRITEBUFFERSIZE, "0");
@@ -937,7 +935,6 @@ void Options::InitOptions()
 	m_bCursesTime			= (bool)ParseEnumValue(OPTION_CURSESTIME, BoolCount, BoolNames, BoolValues);
 	m_bCursesGroup			= (bool)ParseEnumValue(OPTION_CURSESGROUP, BoolCount, BoolNames, BoolValues);
 	m_bCrcCheck				= (bool)ParseEnumValue(OPTION_CRCCHECK, BoolCount, BoolNames, BoolValues);
-	m_bRetryOnCrcError		= (bool)ParseEnumValue(OPTION_RETRYONCRCERROR, BoolCount, BoolNames, BoolValues);
 	m_bDirectWrite			= (bool)ParseEnumValue(OPTION_DIRECTWRITE, BoolCount, BoolNames, BoolValues);
 	m_bParCleanupQueue		= (bool)ParseEnumValue(OPTION_PARCLEANUPQUEUE, BoolCount, BoolNames, BoolValues);
 	m_bDecode				= (bool)ParseEnumValue(OPTION_DECODE, BoolCount, BoolNames, BoolValues);
@@ -1931,7 +1928,7 @@ void Options::InitServers()
 
 		if (completed)
 		{
-			NewsServer* pNewsServer = new NewsServer(nhost, atoi(nport), nusername, npassword,
+			NewsServer* pNewsServer = new NewsServer(n, nhost, atoi(nport), nusername, npassword,
 				bJoinGroup, bTLS, ncipher, atoi((char*)nconnections), atoi((char*)nlevel));
 			g_pServerPool->AddServer(pNewsServer);
 		}
@@ -2355,10 +2352,15 @@ bool Options::ValidateOptionName(const char * optname)
 		}
 	}
 	
-	// suppress abort on obsolete options; print a warning message instead
+	// print a warning message for obsolete options
 	if (!strcasecmp(optname, OPTION_POSTLOGKIND) || !strcasecmp(optname, OPTION_NZBLOGKIND))
 	{
 		ConfigError("Option \"%s\" is obsolete, use \"%s\" instead", optname, OPTION_PROCESSLOGKIND);
+		return true;
+	}
+	if (!strcasecmp(optname, OPTION_RETRYONCRCERROR))
+	{
+		ConfigError("Option \"%s\" is obsolete, ignored", optname);
 		return true;
 	}
 

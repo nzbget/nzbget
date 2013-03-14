@@ -236,7 +236,6 @@ private:
 	bool				m_bCursesTime;
 	bool				m_bCursesGroup;
 	bool				m_bCrcCheck;
-	bool				m_bRetryOnCrcError;
 	int					m_iThreadLimit;
 	bool				m_bDirectWrite;
 	int					m_iWriteBufferSize;
@@ -392,7 +391,6 @@ public:
 	bool				GetCursesTime() { return m_bCursesTime; }
 	bool				GetCursesGroup() { return m_bCursesGroup; }
 	bool				GetCrcCheck() { return m_bCrcCheck; }
-	bool				GetRetryOnCrcError() { return m_bRetryOnCrcError; }
 	int					GetThreadLimit() { return m_iThreadLimit; }
 	bool				GetDirectWrite() { return m_bDirectWrite; }
 	int					GetWriteBufferSize() { return m_iWriteBufferSize; }

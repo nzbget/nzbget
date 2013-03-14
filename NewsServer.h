@@ -30,6 +30,7 @@
 class NewsServer
 {
 private:
+	int				m_iID;
 	char*			m_szHost;
 	int				m_iPort;
 	char*			m_szUser;
@@ -41,9 +42,10 @@ private:
 	char*			m_szCipher;
 
 public:
-					NewsServer(const char* szHost, int iPort, const char* szUser, const char* szPass, bool bJoinGroup,
+					NewsServer(int iID, const char* szHost, int iPort, const char* szUser, const char* szPass, bool bJoinGroup,
 						bool bTLS, const char* szCipher, int iMaxConnections, int iLevel);
 					~NewsServer();
+	int				GetID() { return m_iID; }
 	const char*		GetHost() { return m_szHost; }
 	int				GetPort() { return m_iPort; }
 	const char*		GetUser() { return m_szUser; }

@@ -38,6 +38,7 @@
 #include <unistd.h>
 #include <errno.h>
 #endif
+#include <algorithm>
 
 #include "nzbget.h"
 #include "ServerPool.h"
@@ -99,7 +100,7 @@ void ServerPool::NormalizeLevels()
 		return;
 	}
 
-	m_Servers.sort(CompareServers);
+	std::sort(m_Servers.begin(), m_Servers.end(), CompareServers);
 
 	NewsServer* pNewsServer = m_Servers.front();
 
@@ -150,31 +151,48 @@ void ServerPool::InitConnections()
 	}
 }
 
-NNTPConnection* ServerPool::GetConnection(int iLevel)
+NNTPConnection* ServerPool::GetConnection(int iLevel, NewsServer* pWantServer, Servers* pIgnoreServers)
 {
 	PooledConnection* pConnection = NULL;
 
 	m_mutexConnections.Lock();
 
-	if (iLevel < m_Levels.size() && m_Levels[iLevel] > 0)
+	if (iLevel < (int)m_Levels.size() && m_Levels[iLevel] > 0)
 	{
 		for (Connections::iterator it = m_Connections.begin(); it != m_Connections.end(); it++)
 		{
 			PooledConnection* pConnection1 = *it;
-			if (!pConnection1->GetInUse() && pConnection1->GetNewsServer()->GetLevel() == iLevel)
+			NewsServer* pNewsServer1 = pConnection1->GetNewsServer();
+			if (!pConnection1->GetInUse() && pNewsServer1->GetLevel() == iLevel && 
+				(!pWantServer || pNewsServer1 == pWantServer))
 			{
-				// free connection found, take it!
-				pConnection = pConnection1;
-				pConnection->SetInUse(true);
-				break;
+				// free connection found, check if it's not from the server which should be ignored
+				bool bUseConnection = true;
+				if (pIgnoreServers && !pWantServer)
+				{
+					for (Servers::iterator it = pIgnoreServers->begin(); it != pIgnoreServers->end(); it++)
+					{
+						NewsServer* pNewsServer = *it;
+						if (pNewsServer == pNewsServer1)
+						{
+							bUseConnection = false;
+							break;
+						}
+					}
+				}
+
+				if (bUseConnection)
+				{
+					pConnection = pConnection1;
+					pConnection->SetInUse(true);
+					break;
+				}
 			}
 		}
 
-		m_Levels[iLevel]--;
-
-		if (!pConnection)
+		if (pConnection)
 		{
-			error("ServerPool: internal error, no free connection found, but there should be one");
+			m_Levels[iLevel]--;
 		}
 	}
 
