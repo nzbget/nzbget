@@ -42,6 +42,7 @@ public:
 	{
 		adUndefined,
 		adRunning,
+		adWaiting,
 		adFinished,
 		adFailed,
 		adRetry,
@@ -80,6 +81,7 @@ private:
 	EStatus				DecodeCheck();
 	void				FreeConnection(bool bKeepConnected);
 	EStatus				CheckResponse(const char* szResponse, const char* szComment);
+	void				SetStatus(EStatus eStatus) { m_eStatus = eStatus; }
 
 public:
 						ArticleDownloader();
@@ -88,7 +90,6 @@ public:
 	FileInfo*			GetFileInfo() { return m_pFileInfo; }
 	void				SetArticleInfo(ArticleInfo* pArticleInfo) { m_pArticleInfo = pArticleInfo; }
 	ArticleInfo*		GetArticleInfo() { return m_pArticleInfo; }
-	void				SetStatus(EStatus eStatus);
 	EStatus				GetStatus() { return m_eStatus; }
 	virtual void		Run();
 	virtual void		Stop();

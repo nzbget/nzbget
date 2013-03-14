@@ -110,12 +110,27 @@ void ArticleDownloader::SetInfoName(const char * v)
 	m_szInfoName = strdup(v);
 }
 
-void ArticleDownloader::SetStatus(EStatus eStatus)
-{
-	m_eStatus = eStatus;
-	Notify(NULL);
-}
+/*
+ * How server management (for one particular article) works:
+	- there is a list of failed servers which is initially empty;
+	- level is initially 0;
 
+	<loop>
+		- request a connection from server pool for current level;
+		  Exception: this step is skipped for the very first download attempt, because a
+		  level-0 connection is initially passed from queue manager;
+		- try to download from server;
+		- if connection to server cannot be established or download fails due to interrupted connection,
+		  try again (as many times as needed without limit) the same server until connection is OK;
+		- if download fails with error "Not-Found" (article or group not found) or with CRC error,
+		  add the server to failed server list;
+		- if download fails with general failure error (article incomplete, other unknown error
+		  codes), try the same server again as many times as defined by option <Retries>; if all attempts
+		  fail, add the server to failed server list;
+		- if all servers from current level were tried, increase level;
+		- if all servers from all levels were tried, break the loop with failure status.
+	<end-loop>
+*/
 void ArticleDownloader::Run()
 {
 	debug("Entering ArticleDownloader-loop");
@@ -135,47 +150,37 @@ void ArticleDownloader::Run()
 		}
 	}
 
-	int iRemainedDownloadRetries = g_pOptions->GetRetries() > 0 ? g_pOptions->GetRetries() : 1;
-
-#ifdef THREADCONNECT_WORKAROUND
-	// NOTE: about iRemainedConnectRetries:
-	// Sometimes connections just do not want to work in a particular thread,
-	// regardless of retry count. However they work in other threads.
-	// If ArticleDownloader can't start download after many attempts, it terminates
-	// and let QueueCoordinator retry the article in a new thread.
-	// It wasn't confirmed that this workaround actually helps.
-	// Therefore it is disabled by default. Define symbol "THREADCONNECT_WORKAROUND"
-	// to activate the workaround.
-	int iRemainedConnectRetries = iRemainedDownloadRetries > 5 ? iRemainedDownloadRetries * 2 : 10;
-#endif
-
 	EStatus Status = adFailed;
-	int iMaxLevel = g_pServerPool->GetMaxLevel();
-	int* LevelStatus = (int*)malloc((iMaxLevel + 1) * sizeof(int));
-	for (int i = 0; i <= iMaxLevel; i++)
-	{
-		LevelStatus[i] = 0;
-	}
-	int level = 0;
 
-	while (!IsStopped() && iRemainedDownloadRetries > 0)
+	int iRetries = g_pOptions->GetRetries() > 0 ? g_pOptions->GetRetries() : 1;
+	int iRemainedRetries = iRetries;
+	ServerPool::Servers failedServers;
+	failedServers.reserve(g_pServerPool->GetServers()->size());
+	NewsServer* pWantServer = NULL;
+	NewsServer* pLastServer = NULL;
+	int iLevel = 0;
+
+	while (!IsStopped())
 	{
 		SetLastUpdateTimeNow();
 
 		Status = adFailed;
 
+		SetStatus(adWaiting);
 		while (!IsStopped() && !m_pConnection)
 		{
-			m_pConnection = g_pServerPool->GetConnection(level);
+			m_pConnection = g_pServerPool->GetConnection(iLevel, pWantServer, &failedServers);
 			usleep(5 * 1000);
-			SetLastUpdateTimeNow();
 		}
+		SetStatus(adRunning);
 
 		if (IsStopped() || g_pOptions->GetPauseDownload() || g_pOptions->GetPauseDownload2())
 		{
 			Status = adRetry;
 			break;
 		}
+
+		pLastServer = m_pConnection->GetNewsServer();
 
 		m_pConnection->SetSuppressErrors(false);
 
@@ -184,7 +189,8 @@ void ArticleDownloader::Run()
 		if (bConnected && !IsStopped())
 		{
 			// Okay, we got a Connection. Now start downloading.
-			detail("Downloading %s @ %s", m_szInfoName, m_pConnection->GetHost());
+			detail("Downloading %s @ server%i (%s)", m_szInfoName,
+				m_pConnection->GetNewsServer()->GetID(), m_pConnection->GetHost());
 			Status = Download();
 		}
 
@@ -195,9 +201,6 @@ void ArticleDownloader::Run()
 				m_pConnection->Disconnect();
 				bConnected = false;
 				Status = adFailed;
-#ifdef THREADCONNECT_WORKAROUND
-				iRemainedConnectRetries--;
-#endif
 			}
 			else
 			{
@@ -210,22 +213,30 @@ void ArticleDownloader::Run()
 				FreeConnection(Status == adFinished);
 			}
 		}
-#ifdef THREADCONNECT_WORKAROUND
-		else
-		{
-			iRemainedConnectRetries--;
-		}
 
-		if (iRemainedConnectRetries == 0)
+		if (Status == adFinished || Status == adFatalError)
 		{
-			debug("Can't connect from this thread, retry later from another");
-			Status = adRetry;
 			break;
 		}
-#endif
 
-		if (((Status == adFailed) || (Status == adCrcError && g_pOptions->GetRetryOnCrcError())) && 
-			(iRemainedDownloadRetries > 1 || !bConnected) && !IsStopped() &&
+		pWantServer = NULL;
+
+		if (bConnected && Status == adFailed)
+		{
+			iRemainedRetries--;
+		}
+
+		if (!bConnected || (Status == adFailed && iRemainedRetries > 1))
+		{
+			pWantServer = pLastServer;
+		}
+
+		if (Status == adNotFound || Status == adCrcError || (Status == adFailed && iRemainedRetries == 0))
+		{
+			failedServers.push_back(pLastServer);
+		}
+
+		if (pWantServer && !IsStopped() &&
 			!(g_pOptions->GetPauseDownload() || g_pOptions->GetPauseDownload2()))
 		{
 			detail("Waiting %i sec to retry", g_pOptions->GetRetryInterval());
@@ -245,47 +256,52 @@ void ArticleDownloader::Run()
 			break;
 		}
 
-		if ((Status == adFinished) || (Status == adFatalError) ||
-			(Status == adCrcError && !g_pOptions->GetRetryOnCrcError()))
+		if (!pWantServer)
 		{
-			break;
-		}
-
-		LevelStatus[level] = Status;
-
-		bool bAllLevelNotFound = true;
-		for (int lev = 0; lev <= iMaxLevel; lev++)
-		{
-			if (LevelStatus[lev] != adNotFound)
+			// if all servers from all levels were tried, break the loop with failure status
+			if (failedServers.size() == g_pServerPool->GetServers()->size())
 			{
-				bAllLevelNotFound = false;
+				warn("Article %s @ all servers failed", m_szInfoName);
+				Status = adFailed;
 				break;
 			}
-		}
-		if (bAllLevelNotFound)
-		{
-			if (iMaxLevel > 0)
-			{
-				warn("Article %s @ all servers failed: Article not found", m_szInfoName);
-			}
-			break;
-		}
 
-		// do not count connect-errors, only article- and group-errors
-		if (bConnected)
-		{
-			level++;
-			if (level > iMaxLevel)
+			// if all servers from current level were tried, increase level
+			bool bAllServersOnLevelFailed = true;
+			for (ServerPool::Servers::iterator it = g_pServerPool->GetServers()->begin(); it != g_pServerPool->GetServers()->end(); it++)
 			{
-				level = 0;
+				NewsServer* pNewsServer = *it;
+				if (pNewsServer->GetLevel() == iLevel)
+				{
+					bool bServerFailed = false;
+					for (ServerPool::Servers::iterator it = failedServers.begin(); it != failedServers.end(); it++)
+					{
+						NewsServer* pFailedServer = *it;
+						if (pNewsServer == pFailedServer)
+						{
+							bServerFailed = true;
+							break;
+						}					
+					}
+					if (!bServerFailed)
+					{
+						bAllServersOnLevelFailed = false;
+						break;
+					}
+				}
 			}
-			iRemainedDownloadRetries--;
+
+			if (bAllServersOnLevelFailed)
+			{
+				detail("Article %s @ all level %i servers failed, increasing level", m_szInfoName, iLevel);
+				iLevel++;
+			}
+
+			iRemainedRetries = iRetries;
 		}
 	}
 
 	FreeConnection(Status == adFinished);
-
-	free(LevelStatus);
 
 	if (m_bDuplicate)
 	{
@@ -309,6 +325,7 @@ void ArticleDownloader::Run()
 	}
 
 	SetStatus(Status);
+	Notify(NULL);
 
 	debug("Exiting ArticleDownloader-loop");
 }
@@ -396,7 +413,8 @@ ArticleDownloader::EStatus ArticleDownloader::Download()
 		{
 			if (!IsStopped())
 			{
-				warn("Article %s @ %s failed: Unexpected end of article", m_szInfoName, m_pConnection->GetHost());
+				warn("Article %s @ server%i (%s) failed: Unexpected end of article", m_szInfoName,
+					m_pConnection->GetNewsServer()->GetID(), m_pConnection->GetHost());
 			}
 			Status = adFailed;
 			break;
@@ -430,7 +448,8 @@ ArticleDownloader::EStatus ArticleDownloader::Download()
 				if (strncmp(p, m_pArticleInfo->GetMessageID(), strlen(m_pArticleInfo->GetMessageID())))
 				{
 					if (char* e = strrchr(p, '\r')) *e = '\0'; // remove trailing CR-character
-					warn("Article %s @ %s failed: Wrong message-id, expected %s, returned %s", m_szInfoName, m_pConnection->GetHost(), m_pArticleInfo->GetMessageID(), p);
+					warn("Article %s @ server%i (%s) failed: Wrong message-id, expected %s, returned %s", m_szInfoName,
+						m_pConnection->GetNewsServer()->GetID(), m_pConnection->GetHost(), m_pArticleInfo->GetMessageID(), p);
 					Status = adFailed;
 					break;
 				}
@@ -458,7 +477,8 @@ ArticleDownloader::EStatus ArticleDownloader::Download()
 
 	if (!bEnd && Status == adRunning && !IsStopped())
 	{
-		warn("Article %s @ %s failed: article incomplete", m_szInfoName, m_pConnection->GetHost());
+		warn("Article %s @ server%i (%s) failed: article incomplete", m_szInfoName,
+			m_pConnection->GetNewsServer()->GetID(), m_pConnection->GetHost());
 		Status = adFailed;
 	}
 
@@ -485,18 +505,21 @@ ArticleDownloader::EStatus ArticleDownloader::CheckResponse(const char* szRespon
 	{
 		if (!IsStopped())
 		{
-			warn("Article %s @ %s failed, %s: Connection closed by remote host", m_szInfoName, m_pConnection->GetHost(), szComment);
+			warn("Article %s @ server%i (%s) failed, %s: Connection closed by remote host", m_szInfoName, 
+				m_pConnection->GetNewsServer()->GetID(), m_pConnection->GetHost(), szComment);
 		}
 		return adConnectError;
 	}
 	else if (m_pConnection->GetAuthError() || !strncmp(szResponse, "400", 3) || !strncmp(szResponse, "499", 3))
 	{
-		warn("Article %s @ %s failed, %s: %s", m_szInfoName, m_pConnection->GetHost(), szComment, szResponse);
+		warn("Article %s @ server%i (%s) failed, %s: %s", m_szInfoName,
+			 m_pConnection->GetNewsServer()->GetID(), m_pConnection->GetHost(), szComment, szResponse);
 		return adConnectError;
 	}
 	else if (!strncmp(szResponse, "41", 2) || !strncmp(szResponse, "42", 2) || !strncmp(szResponse, "43", 2))
 	{
-		warn("Article %s @ %s failed, %s: %s", m_szInfoName, m_pConnection->GetHost(), szComment, szResponse);
+		warn("Article %s @ server%i (%s) failed, %s: %s", m_szInfoName,
+			 m_pConnection->GetNewsServer()->GetID(), m_pConnection->GetHost(), szComment, szResponse);
 		return adNotFound;
 	}
 	else if (!strncmp(szResponse, "2", 1))
@@ -507,7 +530,8 @@ ArticleDownloader::EStatus ArticleDownloader::CheckResponse(const char* szRespon
 	else 
 	{
 		// unknown error, no special handling
-		warn("Article %s @ %s failed, %s: %s", m_szInfoName, m_pConnection->GetHost(), szComment, szResponse);
+		warn("Article %s @ server%i (%s) failed, %s: %s", m_szInfoName,
+			 m_pConnection->GetNewsServer()->GetID(), m_pConnection->GetHost(), szComment, szResponse);
 		return adFailed;
 	}
 }

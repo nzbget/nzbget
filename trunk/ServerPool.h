@@ -28,7 +28,6 @@
 #define SERVERPOOL_H
 
 #include <vector>
-#include <list>
 #include <time.h>
 
 #include "Thread.h"
@@ -37,6 +36,9 @@
 
 class ServerPool
 {
+public:
+	typedef std::vector<NewsServer*>		Servers;
+
 private:
 	class PooledConnection : public NNTPConnection
 	{
@@ -51,7 +53,6 @@ private:
 		void			SetFreeTimeNow() { m_tFreeTime = ::time(NULL); }
 	};
 
-	typedef std::list<NewsServer*>			Servers;
 	typedef std::vector<int>				Levels;
 	typedef std::vector<PooledConnection*>	Connections;
 
@@ -72,7 +73,8 @@ public:
 	void 				AddServer(NewsServer* pNewsServer);
 	void				InitConnections();
 	int					GetMaxLevel() { return m_iMaxLevel; }
-	NNTPConnection*		GetConnection(int iLevel);
+	Servers*			GetServers() { return &m_Servers; } // Only for read access (no lockings)
+	NNTPConnection*		GetConnection(int iLevel, NewsServer* pWantServer, Servers* pIgnoreServers);
 	void 				FreeConnection(NNTPConnection* pConnection, bool bUsed);
 	void				CloseUnusedConnections();
 
