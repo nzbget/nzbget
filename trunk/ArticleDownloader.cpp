@@ -162,8 +162,6 @@ void ArticleDownloader::Run()
 
 	while (!IsStopped())
 	{
-		SetLastUpdateTimeNow();
-
 		Status = adFailed;
 
 		SetStatus(adWaiting);
@@ -172,6 +170,7 @@ void ArticleDownloader::Run()
 			m_pConnection = g_pServerPool->GetConnection(iLevel, pWantServer, &failedServers);
 			usleep(5 * 1000);
 		}
+		SetLastUpdateTimeNow();
 		SetStatus(adRunning);
 
 		if (IsStopped() || g_pOptions->GetPauseDownload() || g_pOptions->GetPauseDownload2())
