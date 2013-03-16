@@ -209,7 +209,7 @@ void ArticleDownloader::Run()
 				// free the connection, to prevent starting of thousands of threads 
 				// (cause each of them will also free it's connection after the 
 				// same connect-error).
-				FreeConnection(Status == adFinished);
+				FreeConnection(Status == adFinished || Status == adNotFound);
 			}
 		}
 
