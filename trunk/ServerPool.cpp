@@ -175,7 +175,8 @@ NNTPConnection* ServerPool::GetConnection(int iLevel, NewsServer* pWantServer, S
 					{
 						NewsServer* pIgnoreServer = *it;
 						if (pIgnoreServer == pCandidateServer ||
-							(pIgnoreServer->GetGroup() > 0 && pIgnoreServer->GetGroup() == pCandidateServer->GetGroup()))
+							(pIgnoreServer->GetGroup() > 0 && pIgnoreServer->GetGroup() == pCandidateServer->GetGroup() &&
+							 pIgnoreServer->GetLevel() == pCandidateServer->GetLevel()))
 						{
 							bUseConnection = false;
 							break;
