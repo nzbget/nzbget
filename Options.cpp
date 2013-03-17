@@ -2089,7 +2089,6 @@ void Options::InitScheduler()
 			if (!ParseTime(pTime, &iHours, &iMinutes))
 			{
 				ConfigError("Invalid value for option \"Task%i.Time\": \"%s\"", n, pTime);
-				bOK = false;
 				break;
 			}
 
