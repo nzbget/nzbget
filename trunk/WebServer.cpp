@@ -93,7 +93,6 @@ void WebProcessor::Execute()
 
 	// reading http header
 	char szBuffer[1024];
-	bool bBody = false;
 	int iContentLen = 0;
 	while (char* p = m_pConnection->ReadLine(szBuffer, sizeof(szBuffer), NULL))
 	{
@@ -123,7 +122,6 @@ void WebProcessor::Execute()
 		}
 		if (*p == '\0')
 		{
-			bBody = true;
 			break;
 		}
 	}

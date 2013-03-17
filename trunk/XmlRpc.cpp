@@ -1665,12 +1665,11 @@ void PostQueueXmlCommand::Execute()
 			PostInfo::Messages* pMessages = pPostInfo->LockMessages();
 			if (!pMessages->empty())
 			{
-				int iStart = pMessages->size();
 				if (iNrEntries > (int)pMessages->size())
 				{
 					iNrEntries = pMessages->size();
 				}
-				iStart = pMessages->size() - iNrEntries;
+				int iStart = pMessages->size() - iNrEntries;
 
 				int index = 0;
 				for (unsigned int i = (unsigned int)iStart; i < pMessages->size(); i++)
@@ -2280,18 +2279,16 @@ void SaveConfigXmlCommand::Execute()
 		return;
 	}
 
-	const char* szConfigFile = NULL;
 	Options::EDomain eDomain;
 
 	if (!strcasecmp(szDomain, "SERVER"))
 	{
 		eDomain = Options::dmServer;
-		szConfigFile = g_pOptions->GetConfigFilename();
 	}
 	else if (!strcasecmp(szDomain, "POST"))
 	{
 		eDomain = Options::dmPostProcess;
-		szConfigFile = g_pOptions->GetPostConfigFilename();
+		const char* szConfigFile = g_pOptions->GetPostConfigFilename();
 		if (!szConfigFile)
 		{
 			BuildErrorResponse(3, "Post-processing script configuration file is not defined");
