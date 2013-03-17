@@ -39,7 +39,7 @@
 #include "NewsServer.h"
 
 NewsServer::NewsServer(int iID, const char* szHost, int iPort, const char* szUser, const char* szPass, bool bJoinGroup,
-	bool bTLS, const char* szCipher, int iMaxConnections, int iLevel)
+	bool bTLS, const char* szCipher, int iMaxConnections, int iLevel, int iGroup)
 {
 	m_iID = iID;
 	m_szHost = NULL;
@@ -47,6 +47,7 @@ NewsServer::NewsServer(int iID, const char* szHost, int iPort, const char* szUse
 	m_szUser = NULL;
 	m_szPassword = NULL;
 	m_iLevel = iLevel;
+	m_iGroup = iGroup;
 	m_iMaxConnections = iMaxConnections;
 	m_bJoinGroup = bJoinGroup;
 	m_bTLS = bTLS;

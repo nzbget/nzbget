@@ -239,14 +239,16 @@ void ArticleDownloader::Run()
 			!(g_pOptions->GetPauseDownload() || g_pOptions->GetPauseDownload2()))
 		{
 			detail("Waiting %i sec to retry", g_pOptions->GetRetryInterval());
+			SetStatus(adWaiting);
 			int msec = 0;
 			while (!IsStopped() && (msec < g_pOptions->GetRetryInterval() * 1000) && 
 				!(g_pOptions->GetPauseDownload() || g_pOptions->GetPauseDownload2()))
 			{
 				usleep(100 * 1000);
 				msec += 100;
-				SetLastUpdateTimeNow();
 			}
+			SetLastUpdateTimeNow();
+			SetStatus(adRunning);
 		}
 
 		if (IsStopped() || g_pOptions->GetPauseDownload() || g_pOptions->GetPauseDownload2())
@@ -257,26 +259,21 @@ void ArticleDownloader::Run()
 
 		if (!pWantServer)
 		{
-			// if all servers from all levels were tried, break the loop with failure status
-			if (failedServers.size() == g_pServerPool->GetServers()->size())
-			{
-				warn("Article %s @ all servers failed", m_szInfoName);
-				Status = adFailed;
-				break;
-			}
-
 			// if all servers from current level were tried, increase level
+			// if all servers from all levels were tried, break the loop with failure status
+
 			bool bAllServersOnLevelFailed = true;
 			for (ServerPool::Servers::iterator it = g_pServerPool->GetServers()->begin(); it != g_pServerPool->GetServers()->end(); it++)
 			{
-				NewsServer* pNewsServer = *it;
-				if (pNewsServer->GetLevel() == iLevel)
+				NewsServer* pCandidateServer = *it;
+				if (pCandidateServer->GetLevel() == iLevel)
 				{
 					bool bServerFailed = false;
 					for (ServerPool::Servers::iterator it = failedServers.begin(); it != failedServers.end(); it++)
 					{
-						NewsServer* pFailedServer = *it;
-						if (pNewsServer == pFailedServer)
+						NewsServer* pIgnoreServer = *it;
+						if (pIgnoreServer == pCandidateServer ||
+							(pIgnoreServer->GetGroup() > 0 && pIgnoreServer->GetGroup() == pCandidateServer->GetGroup()))
 						{
 							bServerFailed = true;
 							break;
@@ -292,10 +289,19 @@ void ArticleDownloader::Run()
 
 			if (bAllServersOnLevelFailed)
 			{
-				detail("Article %s @ all level %i servers failed, increasing level", m_szInfoName, iLevel);
-				iLevel++;
+				if (iLevel < g_pServerPool->GetMaxLevel())
+				{
+					detail("Article %s @ all level %i servers failed, increasing level", m_szInfoName, iLevel);
+					iLevel++;
+				}
+				else
+				{
+					warn("Article %s @ all servers failed", m_szInfoName);
+					Status = adFailed;
+					break;
+				}
 			}
-
+			
 			iRemainedRetries = iRetries;
 		}
 	}
