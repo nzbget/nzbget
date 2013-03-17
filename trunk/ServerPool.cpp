@@ -161,10 +161,11 @@ NNTPConnection* ServerPool::GetConnection(int iLevel, NewsServer* pWantServer, S
 	{
 		for (Connections::iterator it = m_Connections.begin(); it != m_Connections.end(); it++)
 		{
-			PooledConnection* pConnection1 = *it;
-			NewsServer* pNewsServer1 = pConnection1->GetNewsServer();
-			if (!pConnection1->GetInUse() && pNewsServer1->GetLevel() == iLevel && 
-				(!pWantServer || pNewsServer1 == pWantServer))
+			PooledConnection* pCandidateConnection = *it;
+			NewsServer* pCandidateServer = pCandidateConnection->GetNewsServer();
+			if (!pCandidateConnection->GetInUse() && pCandidateServer->GetLevel() == iLevel && 
+				(!pWantServer || pCandidateServer == pWantServer ||
+				 (pWantServer->GetGroup() > 0 && pWantServer->GetGroup() == pCandidateServer->GetGroup())))
 			{
 				// free connection found, check if it's not from the server which should be ignored
 				bool bUseConnection = true;
@@ -172,8 +173,9 @@ NNTPConnection* ServerPool::GetConnection(int iLevel, NewsServer* pWantServer, S
 				{
 					for (Servers::iterator it = pIgnoreServers->begin(); it != pIgnoreServers->end(); it++)
 					{
-						NewsServer* pNewsServer = *it;
-						if (pNewsServer == pNewsServer1)
+						NewsServer* pIgnoreServer = *it;
+						if (pIgnoreServer == pCandidateServer ||
+							(pIgnoreServer->GetGroup() > 0 && pIgnoreServer->GetGroup() == pCandidateServer->GetGroup()))
 						{
 							bUseConnection = false;
 							break;
@@ -183,7 +185,7 @@ NNTPConnection* ServerPool::GetConnection(int iLevel, NewsServer* pWantServer, S
 
 				if (bUseConnection)
 				{
-					pConnection = pConnection1;
+					pConnection = pCandidateConnection;
 					pConnection->SetInUse(true);
 					break;
 				}

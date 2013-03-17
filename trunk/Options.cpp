@@ -1876,6 +1876,9 @@ void Options::InitServers()
 		sprintf(optname, "Server%i.Level", n);
 		const char* nlevel = GetOption(optname);
 
+		sprintf(optname, "Server%i.Group", n);
+		const char* ngroup = GetOption(optname);
+		
 		sprintf(optname, "Server%i.Host", n);
 		const char* nhost = GetOption(optname);
 
@@ -1918,8 +1921,8 @@ void Options::InitServers()
 		sprintf(optname, "Server%i.Connections", n);
 		const char* nconnections = GetOption(optname);
 
-		bool definition = nlevel || nhost || nport || nusername || npassword || nconnections || njoingroup || ntls || ncipher;
-		bool completed = nlevel && nhost && nport && nconnections;
+		bool definition = nlevel || ngroup || nhost || nport || nusername || npassword || nconnections || njoingroup || ntls || ncipher;
+		bool completed = nhost && nport && nconnections;
 
 		if (!definition)
 		{
@@ -1929,7 +1932,9 @@ void Options::InitServers()
 		if (completed)
 		{
 			NewsServer* pNewsServer = new NewsServer(n, nhost, atoi(nport), nusername, npassword,
-				bJoinGroup, bTLS, ncipher, atoi((char*)nconnections), atoi((char*)nlevel));
+				bJoinGroup, bTLS, ncipher, atoi((char*)nconnections),
+				nlevel ? atoi((char*)nlevel) : 0,
+				ngroup ? atoi((char*)ngroup) : 0);
 			g_pServerPool->AddServer(pNewsServer);
 		}
 		else
@@ -2325,7 +2330,7 @@ bool Options::ValidateOptionName(const char * optname)
 			!strcasecmp(p, ".port") || !strcasecmp(p, ".username") ||
 			!strcasecmp(p, ".password") || !strcasecmp(p, ".joingroup") ||
 			!strcasecmp(p, ".encryption") || !strcasecmp(p, ".connections") ||
-			!strcasecmp(p, ".cipher")))
+			!strcasecmp(p, ".cipher") || !strcasecmp(p, ".group")))
 		{
 			return true;
 		}
