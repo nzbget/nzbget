@@ -1,7 +1,7 @@
 /*
  * This file is part of nzbget
  *
- * Copyright (C) 2012 Andrey Prygunkov <hugbug@users.sourceforge.net>
+ * Copyright (C) 2012-2013 Andrey Prygunkov <hugbug@users.sourceforge.net>
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -170,7 +170,13 @@ var Upload = (new function($)
 
 	function selectFiles()
 	{
-		$('#AddDialog_Input').click();
+		var inp = $('#AddDialog_Input');
+
+		// Reset file input control (needed for IE10)
+		inp.wrap('<form>').closest('form').get(0).reset();
+		inp.unwrap();
+		
+		inp.click();
 	}
 
 	function fileSelectHandler(event)
@@ -255,10 +261,10 @@ var Upload = (new function($)
 			}
 
 			var testreader = new FileReader();
-			if (!testreader.readAsBinaryString)
+			if (!testreader.readAsBinaryString && !testreader.readAsDataURL)
 			{
 				$AddDialog.modal('hide');
-				alert("Unfortunately your browser doesn't support the function \"readAsBinaryString\" of FileReader API.\n\nPlease use alternative ways to add files to queue:\nadd via URL or put the files directly into incoming nzb-directory.");
+				alert("Unfortunately your browser doesn't support neither \"readAsBinaryString\" nor \"readAsDataURL\" functions of FileReader API.\n\nPlease use alternative ways to add files to queue:\nadd via URL or put the files directly into incoming nzb-directory.");
 				return;
 			}
 		}
@@ -309,13 +315,28 @@ var Upload = (new function($)
 		var reader = new FileReader();
 		reader.onload = function (event)
 		{
-			var base64str = window.btoa(event.target.result);
+			var base64str;
+			if (reader.readAsBinaryString)
+			{
+				base64str = window.btoa(event.target.result);
+			}
+			else
+			{
+				base64str = event.target.result.replace(/^data:[^,]+,/, '');
+			}
 			var category = $('#AddDialog_Category').val();
 			var priority = parseInt($('#AddDialog_Priority').val());
 			RPC.call('append', [file.name, category, priority, false, base64str], fileCompleted, fileFailure);
 		};
 
-		reader.readAsBinaryString(file);
+		if (reader.readAsBinaryString)
+		{
+			reader.readAsBinaryString(file);
+		}
+		else
+		{
+			reader.readAsDataURL(file);
+		}
 	}
 
 	function fileCompleted(result)
