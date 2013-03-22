@@ -2,7 +2,7 @@
  *  This file is part of nzbget
  *
  *  Copyright (C) 2004 Sven Henkel <sidddy@users.sourceforge.net>
- *  Copyright (C) 2007-2012 Andrey Prygunkov <hugbug@users.sourceforge.net>
+ *  Copyright (C) 2007-2013 Andrey Prygunkov <hugbug@users.sourceforge.net>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -144,8 +144,9 @@ void ArticleDownloader::Run()
 		{
 			// file exists from previous program's start
 			detail("Article %s already downloaded, skipping", m_szInfoName);
-			SetStatus(adFinished);
 			FreeConnection(true);
+			SetStatus(adFinished);
+			Notify(NULL);
 			return;
 		}
 	}
