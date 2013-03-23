@@ -659,6 +659,20 @@ void Options::ConfigError(const char* msg, ...)
 	m_bConfigErrors = true;
 }
 
+void Options::ConfigWarn(const char* msg, ...)
+{
+	char tmp2[1024];
+	
+	va_list ap;
+	va_start(ap, msg);
+	vsnprintf(tmp2, 1024, msg, ap);
+	tmp2[1024-1] = '\0';
+	va_end(ap);
+	
+	printf("%s(%i): %s\n", Util::BaseFileName(m_szConfigFilename), m_iConfigLine, tmp2);
+	warn("%s(%i): %s", Util::BaseFileName(m_szConfigFilename), m_iConfigLine, tmp2);
+}
+
 void Options::LocateOptionSrcPos(const char *szOptionName)
 {
 	OptEntry* pOptEntry = FindOption(szOptionName);
@@ -2359,12 +2373,12 @@ bool Options::ValidateOptionName(const char * optname)
 	// print a warning message for obsolete options
 	if (!strcasecmp(optname, OPTION_POSTLOGKIND) || !strcasecmp(optname, OPTION_NZBLOGKIND))
 	{
-		ConfigError("Option \"%s\" is obsolete, use \"%s\" instead", optname, OPTION_PROCESSLOGKIND);
+		ConfigWarn("Option \"%s\" is obsolete, use \"%s\" instead", optname, OPTION_PROCESSLOGKIND);
 		return true;
 	}
 	if (!strcasecmp(optname, OPTION_RETRYONCRCERROR))
 	{
-		ConfigError("Option \"%s\" is obsolete, ignored", optname);
+		ConfigWarn("Option \"%s\" is obsolete, ignored", optname);
 		return true;
 	}
 
