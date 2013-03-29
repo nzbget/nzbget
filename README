@@ -429,14 +429,15 @@ same computer)
 Security warning
 ----------------
 
-NZBGet communicates via unsecured socket connections. This makes it vulnerable.
-Although server checks the password passed by client, this password is still 
-transmitted in unsecured way. For this reason it is highly recommended 
-to configure your Firewall to not expose the port used by NZBGet to WAN. 
+NZBGet client communicates with NZBGet server via unsecured socket connections.
+This makes it vulnerable. Although server checks the password passed by client,
+this password is still transmitted in unsecured way. For this reason it is
+highly recommended to configure your firewall to not expose the port used by
+NZBGet (option <ControlPort>) to WAN. 
 
-If you need to control server from WAN it is better to connect to server's
-terminal via SSH (POSIX) or remote desktop (Windows) and then run
-nzbget-client-commands in this terminal.
+If you need to control server from WAN it is better to use web-interface via HTTPS
+or (if you prefer remote commands) connect to server's terminal via SSH (POSIX)
+or remote desktop (Windows) and then run nzbget-client-commands in this terminal.
 
 Post processing scripts
 -----------------------
@@ -523,8 +524,11 @@ Binary distribution for Windows contains code from the following libraries:
    - libpar2     (http://parchive.sourceforge.net)
    - libsigc++   (http://libsigc.sourceforge.net)
    - GnuTLS      (http://www.gnu.org/software/gnutls)
+   - zlib        (http://www.zlib.net)
+   - regex       (http://gnuwin32.sourceforge.net/packages/regex.htm)
 
-libpar2 is distributed under GPL; libsigc++ and GnuTLS - under LGPL.
+libpar2 is distributed under GPL; libsigc++, GnuTLS and regex - under LGPL;
+zlib - under zlib license.
 
 =====================================
 10. Contact
