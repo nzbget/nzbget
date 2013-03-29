@@ -1,6 +1,161 @@
-nzbget-10.0-testing:
-  - please see subversion log at
-    http://nzbget.svn.sourceforge.net/viewvc/nzbget/?view=log
+nzbget-10.0:
+  - added built-in unpack:
+        - rar and 7-zip formats are supported (via external Unrar and
+          7-Zip executables);
+        - new options <Unpack>, <UnpackPauseQueue>, <UnpackCleanupDisk>,
+          <UnrarCmd>, <SevenZipCmd>;
+        - web-interface now shows progress and estimated time during
+          unpack (rar only; for 7-Zip progress is not available due to 
+          limitations of 7-Zip);
+        - when built-in unpack is enabled, the post-processing script is
+          called after unpack and possibly par-check/repair (if needed);
+        - for nzb-files containing multiple collections (par-sets) the
+          post-processing script is called only once, after the last
+          par-set;
+        - new parameter <NZBPP_UNPACKSTATUS> passed to post-processing
+          script;
+        - if the option <AllowReProcess> is enabled the post-processing-
+          script is called after each par-set (as in previous versions);
+        - example post-processing script updated: removed unrar-code, 
+          added check for unpack status;
+        - new field <UnpackStatus> in result of RPC-method <history>;
+        - history-dialog in web-interface shows three status: par-status,
+          unpack-status, script-status;
+        - with two built-in special post-processing parameters <*Unpack:>
+          and <*Unpack:Password> the unpack can be disabled for individual
+          nzb-file or the password can be set;
+        - built-in special post-processing parameters can be set via web-
+          interface on page <PP-Parameters> (when built-in unpack is
+          enabled);
+  - added support for HTTPS to the built-in web-server (web-interface and 
+    XML/JSON-RPC):
+        - new options <SecureControl>, <SecurePort>, <SecureCert> and 
+          <SecureKey>;
+        - module <TLS.c/h> completely rewritten with support for server-
+          side sockets, newer versions of GnuTLS, proper thread lockings
+          in OpenSSL;
+  - improved the automatic par-scan (option <ParScan=auto>) to 
+    significantly reduce the verify-time in some common cases with renamed
+    rar-files:
+        - the extra files are scanned in an optimized order;
+        - the scan stops when all missings files are found;
+  - added fast renaming of intentionally misnamed (rar-) files:
+        - the new renaming algorithm doesn't require full par-scan and 
+          restores original filenames in just a few seconds, even on very
+          slow computers (NAS, media players, etc.);
+        - the fast renaming is performed automatically when requested by
+          the built-in unpacker (option <Unpack> must be active);
+  - added new option <InterDir> to put intermediate files during download
+    into a separate directory (instead of storing them directly in 
+    destination directory (option <DestDir>):
+        - when nzb-file is completely (successfully) downloaded, repaired 
+          (if neccessary) and unpacked the files are moved to destination 
+          directory (option <DestDir> or <CategoryX.DestDir>);
+        - intermediate directory can significantly improve unpack 
+           performance if it is located on a separate physical hard drive;
+  - added new option <ServerX.Cipher> to manually select cipher for 
+    encrypted communication with news server:
+        - manually choosing a faster cipher (such as <RC4>) can 
+          significantly improve performance (if CPU is a limiting factor);
+  - major improvements in news-server/connection management (main and fill
+    servers):
+        - if download of article fails, the program tries all servers of 
+          the same level before trying higher level servers;
+        - this ensures that fill servers are used only if all main servers
+          fail;
+        - this makes the configuring of multiple servers much easier than
+          before: in most cases the simple configuration of level 0 for 
+          all main servers and level 1 for all fill servers suffices;
+        - in previous versions the level was increased immediately after
+          the first tried server of the level failed; to make sure all 
+          main servers were tried before downloading from fill servers it
+          was required to create complex server configurations with 
+          duplicates; these configurations were still not as effective as
+          now;
+        - do not reconnect on <article/group not found> errors since this
+          doesn't help but unnecessary increases CPU load and network 
+          traffic;
+        - removed option <RetryOnCrcError>; it's not required anymore; 
+        - new option <ServerX.Group> allows more flexible configuration 
+          of news servers when using multiple accounts on the same server;
+          with this option it's also possible to imitate the old server 
+          management behavior regarding levels;
+  - news servers configuration is now less error-prone:
+        - the option <ServerX.Level> is not required to start from <0> and
+          when several news servers are configured the Levels can be any
+          integers - the program sorts the servers and corrects the Levels
+          to 0,1,2,etc. automatically if needed;
+        - when option <ServerX.Connections> is set to <0> the server is 
+          ignored (in previous version such a server could cause hanging
+          when the program was trying to go to the next level);
+        - if no news servers are defined (or all definitions are invalid) 
+          a warning is printed to inform that the download is not 
+          possible;
+  - categories can now have their own destination directories; new option
+    <CategoryX.DestDir>;
+  - new feature <Pause for X Minutes> in web-interface; new XML-/JSON-RPC
+    method <scheduleresume>;
+  - improved the handling of hanging connections: if a connection hangs 
+    longer than defined by option <ConnectionTimeout> the program tries to
+    gracefully close connection first (this is new); if it still hangs 
+    after <TerminateTimeout> the download thread is terminated as a last 
+    resort (as in previous versions);
+  - added automatic speed meter recalibration to recover after possible
+    synchronization errors which can occur when the option <AccurateRate>
+    is not active; this makes the default (less accurate but fast) speed
+    meter almost as good as the accurate one; important when speed 
+    throttling is active;
+  - when the par-checked requests more par-files, they get an extra 
+    priority and are downloaded before other files regardless of their 
+    priorities; this is needed to avoid hanging of par-checker-job if a 
+    file with a higher priority gets added to queue during par-check;
+  - when post-processing-parameters are passed to the post-processing 
+    script a second version of each parameter with a normalized parameter-
+    name is passed in addition to the original parameter name; in the 
+    normalized name the special characters <*> and <:> are replaced with
+    <_> and all characters are passed in upper case; this is important for
+    internal post-processing-parameters (*Unpack:=yes/no) which include
+    special characters;
+  - warning <Non-nzbget request received> now is not printed when the 
+    connection was aborted before the request signature was read;
+  - changed formatting of remaining time for post-processing to short 
+    format (as used for remaining download time);
+  - added link to article <Performance tips> to settings tab on web-
+    interface;
+  - removed hint <Post-processing script may have moved files elsewhere> 
+    from history dialog since it caused more questions than helped;
+  - changed default value for option <ServerX.JoinGroup> to <no>; most 
+    news servers nowadays do not require joining the group and many 
+    servers do not keep headers for many groups making the join-command
+    fail even if the articles still can be successfully downloaded;
+  - small change in example post-processing script: message <Deleting 
+    source ts-files> are now printed only if ts-files really existed;
+  - improved configure-script:
+        - libs which are added via pkgconfig are now put into LIBS instead
+          of LDFLAGS - improves compatibility with newer Linux linkers;
+        - OpenSSL libs/includes are now added using pkgconfig to better 
+          handle dependencies;
+        - additional check for libcrypto (part of OpenSSL) ensures the 
+          library is added to linker command even if pkgconfig is not 
+          used;
+  - adding of local files via web-interface now works in IE10;
+  - if an obsolete option is found in the config file a warning is printed
+    instead of an error and the program is not paused anymore;
+  - fixed: the reported line numbers for configuration errors were 
+    sometimes inaccurate;
+  - fixed warning <file glyphicons-halflings.png not found>;
+  - fixed: some XML-/JSON-RPC methods may return negative values for file
+    sizes between 2-4GB; this had also influence on web-interface.
+  - fixed: if an external program (unrar, pp-script, etc.) could not be
+    started, the execute-function has returned code 255 although the code
+    -1 were expected in this case; this could break designed post-
+    processing flow;
+  - fixed: some characters with codes below 32 were not properly encoded
+    in JSON-RPC; sometimes output from unrar contained such characters 
+    and could break web-interface;
+  - fixed: special characters (quotation marks, etc.) in unpack password
+    and in configuration options were not displayed properly and could be
+    discarded on saving;
 
 nzbget-9.0:
   - changed version naming scheme by removing the leading zero: current
