@@ -1,0 +1,75 @@
+#!/bin/sh 
+#
+# Script used to start and stop the nzbget usenet service
+#
+# Copyright (C) 2009 orbisvicis <orbisvicis@users.sourceforge.net>
+# Copyright (C) 2009-2012 Andrey Prygunkov <hugbug@users.sourceforge.net>
+#
+# This program is free software; you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation; either version 2 of the License, or
+# (at your option) any later version.
+# 
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+# 
+# You should have received a copy of the GNU General Public License
+# along with this program; if not, write to the Free Software
+# Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
+#
+#
+
+# --- CONFIGURATION -----------------------------------------------
+# Location of the nzbget executable
+NZBGET_BINARY="/usr/local/bin/nzbget"
+
+# Additional options, e. g. config file location:
+# NZBGET_OPTS="-c /mnt/hdd/tools/nzbget/conf/nzbget.conf"
+NZBGET_OPTS=""
+# -----------------------------------------------------------------
+
+
+if [ -z "$1" ] ; then
+    case `echo "$0" | sed 's:^.*/\(.*\):\1:g'` in
+        S??*) rc="start" ;;
+        K??*) rc="stop" ;;
+        *) rc="usage" ;;
+    esac
+else
+    rc="$1"
+fi
+
+case "$rc" in
+	start)
+		"$NZBGET_BINARY" $NZBGET_OPTS -D
+		;;
+	stop)
+		"$NZBGET_BINARY" $NZBGET_OPTS -Q
+		;;
+	restart)
+		"$NZBGET_BINARY" $NZBGET_OPTS -Q
+		sleep 10 # since stop is backgrounded
+		"$NZBGET_BINARY" $NZBGET_OPTS -D
+		;;
+	status)
+		"$NZBGET_BINARY" $NZBGET_OPTS -L S
+		;;
+	pstatus) 
+		retval=$(pgrep -l -f nzbget  > /dev/null ; echo $?)
+		if [ "$retval" = "0" ] ; then 
+			echo "        ------- nzbget *is* running -------"
+			ps -Ho user,pid,cmd:32,pcpu -C nzbget
+			exit 0
+		else 
+			echo "        ------- nzbget is *not* running -------"
+			exit 0
+		fi
+		;;
+	*)
+		echo "Usage: $0 {start|stop|restart|status|pstatus|usage}"
+		exit 1
+esac
+
+exit 0
