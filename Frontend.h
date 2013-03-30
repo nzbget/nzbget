@@ -50,11 +50,11 @@ protected:
 	int					m_iUpdateInterval;
 
 	// summary
-	int					m_iCurrentDownloadSpeed;
+	float				m_fCurrentDownloadSpeed;
 	long long 			m_lRemainingSize;
 	bool				m_bPauseDownload;
 	bool				m_bPauseDownload2;
-	int					m_iDownloadLimit;
+	float				m_fDownloadLimit;
 	int					m_iThreadCount;
 	int					m_iPostJobCount;
 	int					m_iUpTimeSec;
@@ -72,8 +72,8 @@ protected:
 	void				InitMessageBase(SNZBRequestBase* pMessageBase, int iRequest, int iSize);
 	void				ServerPauseUnpause(bool bPause, bool bSecondRegister);
 	bool				RequestPauseUnpause(bool bPause, bool bSecondRegister);
-	void				ServerSetDownloadRate(int iRate);
-	bool				RequestSetDownloadRate(int iRate);
+	void				ServerSetDownloadRate(float fRate);
+	bool				RequestSetDownloadRate(float fRate);
 	void				ServerDumpDebug();
 	bool				RequestDumpDebug();
 	bool 				ServerEditQueue(QueueEditor::EEditAction eAction, int iOffset, int iEntry);

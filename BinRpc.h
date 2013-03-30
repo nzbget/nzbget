@@ -33,21 +33,23 @@
 class BinRpcProcessor
 {
 private:
+	SOCKET				m_iSocket;
 	SNZBRequestBase		m_MessageBase;
-	Connection*			m_pConnection;
+	const char*			m_szClientIP;
 
 	void				Dispatch();
 
 public:
-						BinRpcProcessor();
 	void				Execute();
-	void				SetConnection(Connection* pConnection) { m_pConnection = pConnection; }
+	void				SetSocket(SOCKET iSocket) { m_iSocket = iSocket; }
+	void				SetSignature(int iSignature) { m_MessageBase.m_iSignature = iSignature; }
+	void				SetClientIP(const char* szClientIP) { m_szClientIP = szClientIP; }
 };
 
 class BinCommand
 {
 protected:
-	Connection*			m_pConnection;
+	SOCKET				m_iSocket;
 	SNZBRequestBase*	m_pMessageBase;
 
 	bool				ReceiveRequest(void* pBuffer, int iSize);
@@ -56,7 +58,7 @@ protected:
 public:
 	virtual				~BinCommand() {}
 	virtual void		Execute() = 0;
-	void				SetConnection(Connection* pConnection) { m_pConnection = pConnection; }
+	void				SetSocket(SOCKET iSocket) { m_iSocket = iSocket; }
 	void				SetMessageBase(SNZBRequestBase*	pMessageBase) { m_pMessageBase = pMessageBase; }
 };
 

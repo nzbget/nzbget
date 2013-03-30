@@ -63,11 +63,11 @@ Frontend::Frontend()
 	m_iNeededLogEntries = 0;
 	m_bSummary = false;
 	m_bFileList = false;
-	m_iCurrentDownloadSpeed = 0;
+	m_fCurrentDownloadSpeed = 0;
 	m_lRemainingSize = 0;
 	m_bPauseDownload = false;
 	m_bPauseDownload2 = false;
-	m_iDownloadLimit = 0;
+	m_fDownloadLimit = 0;
 	m_iThreadCount = 0;
 	m_iPostJobCount = 0;
 	m_iUpTimeSec = 0;
@@ -96,11 +96,11 @@ bool Frontend::PrepareData()
 	{
 		if (m_bSummary)
 		{
-			m_iCurrentDownloadSpeed = g_pQueueCoordinator->CalcCurrentDownloadSpeed();
+			m_fCurrentDownloadSpeed = g_pQueueCoordinator->CalcCurrentDownloadSpeed();
 			m_lRemainingSize = g_pQueueCoordinator->CalcRemainingSize();
 			m_bPauseDownload = g_pOptions->GetPauseDownload();
 			m_bPauseDownload2 = g_pOptions->GetPauseDownload2();
-			m_iDownloadLimit = g_pOptions->GetDownloadRate();
+			m_fDownloadLimit = g_pOptions->GetDownloadRate();
 			m_iThreadCount = Thread::GetThreadCount();
 			PostQueue* pPostQueue = g_pQueueCoordinator->LockQueue()->GetPostQueue();
 			m_iPostJobCount = pPostQueue->size();
@@ -182,7 +182,6 @@ void Frontend::ServerPauseUnpause(bool bPause, bool bSecondRegister)
 	}
 	else
 	{
-		g_pOptions->SetResumeTime(0);
 		if (bSecondRegister)
 		{
 			g_pOptions->SetPauseDownload2(bPause);
@@ -194,15 +193,15 @@ void Frontend::ServerPauseUnpause(bool bPause, bool bSecondRegister)
 	}
 }
 
-void Frontend::ServerSetDownloadRate(int iRate)
+void Frontend::ServerSetDownloadRate(float fRate)
 {
 	if (IsRemoteMode())
 	{
-		RequestSetDownloadRate(iRate);
+		RequestSetDownloadRate(fRate);
 	}
 	else
 	{
-		g_pOptions->SetDownloadRate(iRate);
+		g_pOptions->SetDownloadRate(fRate);
 	}
 }
 
@@ -262,15 +261,15 @@ bool Frontend::RequestMessages()
 		LogRequest.m_iIDFrom = 0;
 	}
 
-	if (!connection.Send((char*)(&LogRequest), sizeof(LogRequest)))
+	if (connection.Send((char*)(&LogRequest), sizeof(LogRequest)) < 0)
 	{
 		return false;
 	}
 
 	// Now listen for the returned log
 	SNZBLogResponse LogResponse;
-	bool bRead = connection.Recv((char*) &LogResponse, sizeof(LogResponse));
-	if (!bRead || 
+	int iResponseLen = connection.Recv((char*) &LogResponse, sizeof(LogResponse));
+	if (iResponseLen != sizeof(LogResponse) || 
 		(int)ntohl(LogResponse.m_MessageBase.m_iSignature) != (int)NZBMESSAGE_SIGNATURE ||
 		ntohl(LogResponse.m_MessageBase.m_iStructSize) != sizeof(LogResponse))
 	{
@@ -281,7 +280,7 @@ bool Frontend::RequestMessages()
 	if (ntohl(LogResponse.m_iTrailingDataLength) > 0)
 	{
 		pBuf = (char*)malloc(ntohl(LogResponse.m_iTrailingDataLength));
-		if (!connection.Recv(pBuf, ntohl(LogResponse.m_iTrailingDataLength)))
+		if (!connection.RecvAll(pBuf, ntohl(LogResponse.m_iTrailingDataLength)))
 		{
 			free(pBuf);
 			return false;
@@ -326,15 +325,15 @@ bool Frontend::RequestFileList()
 	ListRequest.m_bFileList = htonl(m_bFileList);
 	ListRequest.m_bServerState = htonl(m_bSummary);
 
-	if (!connection.Send((char*)(&ListRequest), sizeof(ListRequest)))
+	if (connection.Send((char*)(&ListRequest), sizeof(ListRequest)) < 0)
 	{
 		return false;
 	}
 
 	// Now listen for the returned list
 	SNZBListResponse ListResponse;
-	bool bRead = connection.Recv((char*) &ListResponse, sizeof(ListResponse));
-	if (!bRead || 
+	int iResponseLen = connection.Recv((char*) &ListResponse, sizeof(ListResponse));
+	if (iResponseLen != sizeof(ListResponse) || 
 		(int)ntohl(ListResponse.m_MessageBase.m_iSignature) != (int)NZBMESSAGE_SIGNATURE ||
 		ntohl(ListResponse.m_MessageBase.m_iStructSize) != sizeof(ListResponse))
 	{
@@ -345,7 +344,7 @@ bool Frontend::RequestFileList()
 	if (ntohl(ListResponse.m_iTrailingDataLength) > 0)
 	{
 		pBuf = (char*)malloc(ntohl(ListResponse.m_iTrailingDataLength));
-		if (!connection.Recv(pBuf, ntohl(ListResponse.m_iTrailingDataLength)))
+		if (!connection.RecvAll(pBuf, ntohl(ListResponse.m_iTrailingDataLength)))
 		{
 			free(pBuf);
 			return false;
@@ -359,8 +358,8 @@ bool Frontend::RequestFileList()
 		m_bPauseDownload = ntohl(ListResponse.m_bDownloadPaused);
 		m_bPauseDownload2 = ntohl(ListResponse.m_bDownload2Paused);
 		m_lRemainingSize = Util::JoinInt64(ntohl(ListResponse.m_iRemainingSizeHi), ntohl(ListResponse.m_iRemainingSizeLo));
-		m_iCurrentDownloadSpeed = ntohl(ListResponse.m_iDownloadRate);
-		m_iDownloadLimit = ntohl(ListResponse.m_iDownloadLimit);
+		m_fCurrentDownloadSpeed = ntohl(ListResponse.m_iDownloadRate) / 1024.0f;
+		m_fDownloadLimit = ntohl(ListResponse.m_iDownloadLimit) / 1024.0f;
 		m_iThreadCount = ntohl(ListResponse.m_iThreadCount);
 		m_iPostJobCount = ntohl(ListResponse.m_iPostJobCount);
 		m_iUpTimeSec = ntohl(ListResponse.m_iUpTimeSec);
@@ -391,11 +390,11 @@ bool Frontend::RequestPauseUnpause(bool bPause, bool bSecondRegister)
 	return client.RequestServerPauseUnpause(bPause, bSecondRegister ? eRemotePauseUnpauseActionDownload2 : eRemotePauseUnpauseActionDownload);
 }
 
-bool Frontend::RequestSetDownloadRate(int iRate)
+bool Frontend::RequestSetDownloadRate(float fRate)
 {
 	RemoteClient client;
 	client.SetVerbose(false);
-	return client.RequestServerSetDownloadRate(iRate);
+	return client.RequestServerSetDownloadRate(fRate);
 }
 
 bool Frontend::RequestDumpDebug()

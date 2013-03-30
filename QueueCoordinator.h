@@ -71,7 +71,6 @@ private:
     int                     m_iSpeedTotalBytes;
     int 					m_iSpeedTime[SPEEDMETER_SLOTS];
     int                     m_iSpeedStartTime; 
-	time_t					m_tSpeedCorrection;
 #ifdef HAVE_SPINLOCK
 	SpinLock				m_spinlockSpeed;
 #else
@@ -107,7 +106,7 @@ public:
 
 	// statistics
 	long long 				CalcRemainingSize();
-	virtual int				CalcCurrentDownloadSpeed();
+	virtual float			CalcCurrentDownloadSpeed();
 	virtual void			AddSpeedReading(int iBytes);
 	void					CalcStat(int* iUpTimeSec, int* iDnTimeSec, long long* iAllBytes, bool* bStandBy);
 

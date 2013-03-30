@@ -2,7 +2,7 @@
  *  This file is part of nzbget
  *
  *  Copyright (C) 2004 Sven Henkel <sidddy@users.sourceforge.net>
- *  Copyright (C) 2007-2013 Andrey Prygunkov <hugbug@users.sourceforge.net>
+ *  Copyright (C) 2007-2011 Andrey Prygunkov <hugbug@users.sourceforge.net>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -130,15 +130,11 @@ NZBInfo::NZBInfo()
 	m_lSize = 0;
 	m_iRefCount = 0;
 	m_bPostProcess = false;
-	m_eRenameStatus = rsNone;
-	m_eParStatus = psNone;
-	m_eUnpackStatus = usNone;
-	m_eMoveStatus = msNone;
+	m_eParStatus = prNone;
 	m_eScriptStatus = srNone;
 	m_bDeleted = false;
 	m_bParCleanup = false;
 	m_bCleanupDisk = false;
-	m_bUnpackCleanedUpDisk = false;
 	m_szQueuedFilename = strdup("");
 	m_Owner = NULL;
 	m_Messages.clear();
@@ -291,58 +287,42 @@ void NZBInfo::MakeNiceNZBName(const char * szNZBFilename, char * szBuffer, int i
 
 void NZBInfo::BuildDestDirName()
 {
-	char szDestDir[1024];
-
-	if (strlen(g_pOptions->GetInterDir()) == 0)
-	{
-		BuildFinalDirName(szDestDir, 1024);
-	}
-	else
-	{
-		snprintf(szDestDir, 1024, "%s%s", g_pOptions->GetInterDir(), GetName());
-		szDestDir[1024-1] = '\0';
-	}
-
-	SetDestDir(szDestDir);
-}
-
-void NZBInfo::BuildFinalDirName(char* szFinalDirBuf, int iBufSize)
-{
 	char szBuffer[1024];
-	bool bUseCategory = m_szCategory && m_szCategory[0] != '\0';
-
-	snprintf(szFinalDirBuf, iBufSize, "%s", g_pOptions->GetDestDir());
-	szFinalDirBuf[iBufSize-1] = '\0';
-
-	if (bUseCategory)
+	char szCategory[1024];
+	bool bHasCategory = m_szCategory && m_szCategory[0] != '\0';
+	if (g_pOptions->GetAppendCategoryDir() && bHasCategory)
 	{
-		Options::Category *pCategory = g_pOptions->FindCategory(m_szCategory);
-		if (pCategory && pCategory->GetDestDir() && pCategory->GetDestDir()[0] != '\0')
-		{
-			snprintf(szFinalDirBuf, iBufSize, "%s", pCategory->GetDestDir());
-			szFinalDirBuf[iBufSize-1] = '\0';
-			bUseCategory = false;
-		}
-	}
-
-	if (g_pOptions->GetAppendCategoryDir() && bUseCategory)
-	{
-		char szCategoryDir[1024];
-		strncpy(szCategoryDir, m_szCategory, 1024);
-		szCategoryDir[1024 - 1] = '\0';
-		Util::MakeValidFilename(szCategoryDir, '_', true);
-
-		snprintf(szBuffer, 1024, "%s%s%c", szFinalDirBuf, szCategoryDir, PATH_SEPARATOR);
-		szBuffer[1024-1] = '\0';
-		strncpy(szFinalDirBuf, szBuffer, iBufSize);
+		strncpy(szCategory, m_szCategory, 1024);
+		szCategory[1024 - 1] = '\0';
+		Util::MakeValidFilename(szCategory, '_', true);
 	}
 
 	if (g_pOptions->GetAppendNZBDir())
 	{
-		snprintf(szBuffer, 1024, "%s%s", szFinalDirBuf, GetName());
+		if (g_pOptions->GetAppendCategoryDir() && bHasCategory)
+		{
+			snprintf(szBuffer, 1024, "%s%s%c%s", g_pOptions->GetDestDir(), szCategory, PATH_SEPARATOR, GetName());
+		}
+		else
+		{
+			snprintf(szBuffer, 1024, "%s%s", g_pOptions->GetDestDir(), GetName());
+		}
 		szBuffer[1024-1] = '\0';
-		strncpy(szFinalDirBuf, szBuffer, iBufSize);
 	}
+	else
+	{
+		if (g_pOptions->GetAppendCategoryDir() && bHasCategory)
+		{
+			snprintf(szBuffer, 1024, "%s%s", g_pOptions->GetDestDir(), szCategory);
+		}
+		else
+		{
+			strncpy(szBuffer, g_pOptions->GetDestDir(), 1024);
+		}
+		szBuffer[1024-1] = '\0'; // trim the last slash, always returned by GetDestDir()
+	}
+
+	SetDestDir(szBuffer);
 }
 
 void NZBInfo::SetParameter(const char* szName, const char* szValue)
@@ -368,8 +348,9 @@ void NZBInfo::AppendMessage(Message::EKind eKind, time_t tTime, const char * szT
 		tTime = time(NULL);
 	}
 
-	m_mutexLog.Lock();
 	Message* pMessage = new Message(++m_iIDMessageGen, eKind, tTime, szText);
+
+	m_mutexLog.Lock();
 	m_Messages.push_back(pMessage);
 	m_mutexLog.Unlock();
 }
@@ -459,7 +440,6 @@ FileInfo::FileInfo()
 	m_Groups.clear();
 	m_szSubject = NULL;
 	m_szFilename = NULL;
-	m_szOutputFilename = NULL;
 	m_bFilenameConfirmed = false;
 	m_lSize = 0;
 	m_lRemainingSize = 0;
@@ -470,7 +450,6 @@ FileInfo::FileInfo()
 	m_bOutputInitialized = false;
 	m_pNZBInfo = NULL;
 	m_iPriority = 0;
-	m_bExtraPriority = false;
 	m_iActiveDownloads = 0;
 	m_iIDGen++;
 	m_iID = m_iIDGen;
@@ -487,10 +466,6 @@ FileInfo::~ FileInfo()
 	if (m_szFilename)
 	{
 		free(m_szFilename);
-	}
-	if (m_szOutputFilename)
-	{
-		free(m_szOutputFilename);
 	}
 
 	for (Groups::iterator it = m_Groups.begin(); it != m_Groups.end() ;it++)
@@ -564,15 +539,6 @@ void FileInfo::UnlockOutputFile()
 	m_mutexOutputFile.Unlock();
 }
 
-void FileInfo::SetOutputFilename(const char* szOutputFilename)
-{
-	if (m_szOutputFilename)
-	{
-		free(m_szOutputFilename);
-	}
-	m_szOutputFilename = strdup(szOutputFilename);
-}
-
 bool FileInfo::IsDupe(const char* szFilename)
 {
 	char fileName[1024];
@@ -625,11 +591,9 @@ PostInfo::PostInfo()
 	m_szInfoName = NULL;
 	m_bWorking = false;
 	m_bDeleted = false;
-	m_eRenameStatus = rsNone;
+	m_bParCheck = false;
 	m_eParStatus = psNone;
-	m_eUnpackStatus = usNone;
 	m_eRequestParCheck = rpNone;
-	m_bRequestParRename = false;
 	m_eScriptStatus = srNone;
 	m_szProgressLabel = strdup("");
 	m_iFileProgress = 0;
@@ -637,7 +601,7 @@ PostInfo::PostInfo()
 	m_tStartTime = 0;
 	m_tStageTime = 0;
 	m_eStage = ptQueued;
-	m_pPostThread = NULL;
+	m_pScriptThread = NULL;
 	m_Messages.clear();
 	m_iIDMessageGen = 0;
 	m_iIDGen++;
@@ -715,8 +679,9 @@ void PostInfo::UnlockMessages()
 
 void PostInfo::AppendMessage(Message::EKind eKind, const char * szText)
 {
-	m_mutexLog.Lock();
 	Message* pMessage = new Message(++m_iIDMessageGen, eKind, time(NULL), szText);
+
+	m_mutexLog.Lock();
 	m_Messages.push_back(pMessage);
 
 	while (m_Messages.size() > (unsigned int)g_pOptions->GetLogBufferSize())

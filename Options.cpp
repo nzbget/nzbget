@@ -2,7 +2,7 @@
  *  This file is part of nzbget
  *
  *  Copyright (C) 2004 Sven Henkel <sidddy@users.sourceforge.net>
- *  Copyright (C) 2007-2013 Andrey Prygunkov <hugbug@users.sourceforge.net>
+ *  Copyright (C) 2007-2011 Andrey Prygunkov <hugbug@users.sourceforge.net>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -97,7 +97,6 @@ static const char* OPTION_APPDIR				= "AppDir";
 static const char* OPTION_VERSION				= "Version";
 static const char* OPTION_MAINDIR				= "MainDir";
 static const char* OPTION_DESTDIR				= "DestDir";
-static const char* OPTION_INTERDIR				= "InterDir";
 static const char* OPTION_TEMPDIR				= "TempDir";
 static const char* OPTION_QUEUEDIR				= "QueueDir";
 static const char* OPTION_NZBDIR				= "NzbDir";
@@ -115,10 +114,6 @@ static const char* OPTION_RENAMEBROKEN			= "RenameBroken";
 static const char* OPTION_CONTROLIP				= "ControlIp";
 static const char* OPTION_CONTROLPORT			= "ControlPort";
 static const char* OPTION_CONTROLPASSWORD		= "ControlPassword";
-static const char* OPTION_SECURECONTROL			= "SecureControl";
-static const char* OPTION_SECUREPORT			= "SecurePort";
-static const char* OPTION_SECURECERT			= "SecureCert";
-static const char* OPTION_SECUREKEY				= "SecureKey";
 static const char* OPTION_CONNECTIONTIMEOUT		= "ConnectionTimeout";
 static const char* OPTION_SAVEQUEUE				= "SaveQueue";
 static const char* OPTION_RELOADQUEUE			= "ReloadQueue";
@@ -153,6 +148,7 @@ static const char* OPTION_CURSESNZBNAME			= "CursesNzbName";
 static const char* OPTION_CURSESTIME			= "CursesTime";
 static const char* OPTION_CURSESGROUP			= "CursesGroup";
 static const char* OPTION_CRCCHECK				= "CrcCheck";
+static const char* OPTION_RETRYONCRCERROR		= "RetryOnCrcError";
 static const char* OPTION_THREADLIMIT			= "ThreadLimit";
 static const char* OPTION_DIRECTWRITE			= "DirectWrite";
 static const char* OPTION_WRITEBUFFERSIZE		= "WriteBufferSize";
@@ -171,16 +167,10 @@ static const char* OPTION_MERGENZB				= "MergeNzb";
 static const char* OPTION_PARTIMELIMIT			= "ParTimeLimit";
 static const char* OPTION_KEEPHISTORY			= "KeepHistory";
 static const char* OPTION_ACCURATERATE			= "AccurateRate";
-static const char* OPTION_UNPACK				= "Unpack";
-static const char* OPTION_UNPACKCLEANUPDISK		= "UnpackCleanupDisk";
-static const char* OPTION_UNRARCMD				= "UnrarCmd";
-static const char* OPTION_SEVENZIPCMD			= "SevenZipCmd";
-static const char* OPTION_UNPACKPAUSEQUEUE		= "UnpackPauseQueue";
 
 // obsolete options
-static const char* OPTION_POSTLOGKIND			= "PostLogKind";
-static const char* OPTION_NZBLOGKIND			= "NZBLogKind";
-static const char* OPTION_RETRYONCRCERROR		= "RetryOnCrcError";
+static const char* OPTION_POSTLOGKIND		= "PostLogKind";
+static const char* OPTION_NZBLOGKIND		= "NZBLogKind";
 
 const char* BoolNames[] = { "yes", "no", "true", "false", "1", "0", "on", "off", "enable", "disable", "enabled", "disabled" };
 const int BoolValues[] = { 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0 };
@@ -261,9 +251,9 @@ Options::OptEntries::~OptEntries()
 	}
 }
 
-Options::OptEntry* Options::OptEntries::FindOption(const char* szName)
+Options::OptEntry* Options::OptEntries::FindOption(const char* optname)
 {
-	if (!szName)
+	if (!optname)
 	{
 		return NULL;
 	}
@@ -271,55 +261,9 @@ Options::OptEntry* Options::OptEntries::FindOption(const char* szName)
 	for (iterator it = begin(); it != end(); it++)
 	{
 		OptEntry* pOptEntry = *it;
-		if (!strcasecmp(pOptEntry->GetName(), szName))
+		if (!strcasecmp(pOptEntry->GetName(), optname))
 		{
 			return pOptEntry;
-		}
-	}
-
-	return NULL;
-}
-
-
-Options::Category::Category(const char* szName, const char* szDestDir)
-{
-	m_szName = strdup(szName);
-	m_szDestDir = szDestDir ? strdup(szDestDir) : NULL;
-}
-
-Options::Category::~Category()
-{
-	if (m_szName)
-	{
-		free(m_szName);
-	}
-	if (m_szDestDir)
-	{
-		free(m_szDestDir);
-	}
-}
-
-Options::Categories::~Categories()
-{
-	for (iterator it = begin(); it != end(); it++)
-	{
-		delete *it;
-	}
-}
-
-Options::Category* Options::Categories::FindCategory(const char* szName)
-{
-	if (!szName)
-	{
-		return NULL;
-	}
-
-	for (iterator it = begin(); it != end(); it++)
-	{
-		Category* pCategory = *it;
-		if (!strcasecmp(pCategory->GetName(), szName))
-		{
-			return pCategory;
 		}
 	}
 
@@ -336,7 +280,6 @@ Options::Options(int argc, char* argv[])
 	m_bConfigInitialized	= false;
 	m_szConfigFilename		= NULL;
 	m_szDestDir				= NULL;
-	m_szInterDir			= NULL;
 	m_szTempDir				= NULL;
 	m_szQueueDir			= NULL;
 	m_szNzbDir				= NULL;
@@ -353,7 +296,7 @@ Options::Options(int argc, char* argv[])
 	m_bPauseScan			= false;
 	m_bCreateBrokenLog		= false;
 	m_bResetLog				= false;
-	m_iDownloadRate			= 0;
+	m_fDownloadRate			= 0;
 	m_iEditQueueAction		= 0;
 	m_pEditQueueIDList		= NULL;
 	m_iEditQueueIDCount		= 0;
@@ -380,13 +323,9 @@ Options::Options(int argc, char* argv[])
 	m_bDupeCheck			= false;
 	m_iRetries				= 0;
 	m_iRetryInterval		= 0;
-	m_iControlPort			= 0;
+	m_szControlPort			= 0;
 	m_szControlIP			= NULL;
 	m_szControlPassword		= NULL;
-	m_bSecureControl		= false;
-	m_iSecurePort			= 0;
-	m_szSecureCert			= NULL;
-	m_szSecureKey			= NULL;
 	m_szLockFile			= NULL;
 	m_szDaemonUserName		= NULL;
 	m_eOutputMode			= omLoggable;
@@ -415,6 +354,7 @@ Options::Options(int argc, char* argv[])
 	m_bCursesTime			= false;
 	m_bCursesGroup			= false;
 	m_bCrcCheck				= false;
+	m_bRetryOnCrcError		= false;
 	m_bDirectWrite			= false;
 	m_iThreadLimit			= 0;
 	m_iWriteBufferSize		= 0;
@@ -436,12 +376,6 @@ Options::Options(int argc, char* argv[])
 	m_iKeepHistory			= 0;
 	m_bAccurateRate			= false;
 	m_EMatchMode			= mmID;
-	m_tResumeTime			= 0;
-	m_bUnpack				= false;
-	m_bUnpackCleanupDisk	= false;
-	m_szUnrarCmd			= NULL;
-	m_szSevenZipCmd			= NULL;
-	m_bUnpackPauseQueue		= false;
 
 	// Option "ConfigFile" will be initialized later, but we want
 	// to see it at the top of option list, so we add it first
@@ -493,7 +427,6 @@ Options::Options(int argc, char* argv[])
 	}
 
 	InitOptions();
-	CheckOptions();
 
 	if (!m_bPrintOptions)
 	{
@@ -501,8 +434,8 @@ Options::Options(int argc, char* argv[])
 	}
 
 	InitServers();
-	InitCategories();
 	InitScheduler();
+	CheckOptions();
 
 	if (m_bPrintOptions)
 	{
@@ -529,10 +462,6 @@ Options::~Options()
 	if (m_szDestDir)
 	{
 		free(m_szDestDir);
-	}
-	if (m_szInterDir)
-	{
-		free(m_szInterDir);
 	}
 	if (m_szTempDir)
 	{
@@ -574,14 +503,6 @@ Options::~Options()
 	{
 		free(m_szControlPassword);
 	}
-	if (m_szSecureCert)
-	{
-		free(m_szSecureCert);
-	}
-	if (m_szSecureKey)
-	{
-		free(m_szSecureKey);
-	}
 	if (m_szLogFile)
 	{
 		free(m_szLogFile);
@@ -618,14 +539,6 @@ Options::~Options()
 	{
 		free(m_szAddNZBFilename);
 	}
-	if (m_szUnrarCmd)
-	{
-		free(m_szUnrarCmd);
-	}
-	if (m_szSevenZipCmd)
-	{
-		free(m_szSevenZipCmd);
-	}
 
 	for (NameList::iterator it = m_EditQueueNameList.begin(); it != m_EditQueueNameList.end(); it++)
 	{
@@ -659,33 +572,6 @@ void Options::ConfigError(const char* msg, ...)
 	m_bConfigErrors = true;
 }
 
-void Options::ConfigWarn(const char* msg, ...)
-{
-	char tmp2[1024];
-	
-	va_list ap;
-	va_start(ap, msg);
-	vsnprintf(tmp2, 1024, msg, ap);
-	tmp2[1024-1] = '\0';
-	va_end(ap);
-	
-	printf("%s(%i): %s\n", Util::BaseFileName(m_szConfigFilename), m_iConfigLine, tmp2);
-	warn("%s(%i): %s", Util::BaseFileName(m_szConfigFilename), m_iConfigLine, tmp2);
-}
-
-void Options::LocateOptionSrcPos(const char *szOptionName)
-{
-	OptEntry* pOptEntry = FindOption(szOptionName);
-	if (pOptEntry)
-	{
-		m_iConfigLine = pOptEntry->GetLineNo();
-	}
-	else
-	{
-		m_iConfigLine = 0;
-	}
-}
-
 void Options::InitDefault()
 {
 #ifdef WIN32
@@ -695,7 +581,6 @@ void Options::InitDefault()
 #endif
 	SetOption(OPTION_TEMPDIR, "${MainDir}/tmp");
 	SetOption(OPTION_DESTDIR, "${MainDir}/dst");
-	SetOption(OPTION_INTERDIR, "");
 	SetOption(OPTION_QUEUEDIR, "${MainDir}/queue");
 	SetOption(OPTION_NZBDIR, "${MainDir}/nzb");
 	SetOption(OPTION_LOCKFILE, "${MainDir}/nzbget.lock");
@@ -711,10 +596,6 @@ void Options::InitDefault()
 	SetOption(OPTION_CONTROLIP, "0.0.0.0");
 	SetOption(OPTION_CONTROLPASSWORD, "tegbzn6789");
 	SetOption(OPTION_CONTROLPORT, "6789");
-	SetOption(OPTION_SECURECONTROL, "no");
-	SetOption(OPTION_SECUREPORT, "6791");
-	SetOption(OPTION_SECURECERT, "");
-	SetOption(OPTION_SECUREKEY, "");
 	SetOption(OPTION_CONNECTIONTIMEOUT, "60");
 	SetOption(OPTION_SAVEQUEUE, "yes");
 	SetOption(OPTION_RELOADQUEUE, "yes");
@@ -750,6 +631,7 @@ void Options::InitDefault()
 	SetOption(OPTION_CURSESTIME, "no");
 	SetOption(OPTION_CURSESGROUP, "no");
 	SetOption(OPTION_CRCCHECK, "yes");
+	SetOption(OPTION_RETRYONCRCERROR, "no");
 	SetOption(OPTION_THREADLIMIT, "100");
 	SetOption(OPTION_DIRECTWRITE, "yes");
 	SetOption(OPTION_WRITEBUFFERSIZE, "0");
@@ -768,16 +650,6 @@ void Options::InitDefault()
 	SetOption(OPTION_PARTIMELIMIT, "0");
 	SetOption(OPTION_KEEPHISTORY, "7");
 	SetOption(OPTION_ACCURATERATE, "no");
-	SetOption(OPTION_UNPACK, "no");
-	SetOption(OPTION_UNPACKCLEANUPDISK, "no");
-#ifdef WIN32
-	SetOption(OPTION_UNRARCMD, "unrar.exe");
-	SetOption(OPTION_SEVENZIPCMD, "7z.exe");
-#else
-	SetOption(OPTION_UNRARCMD, "unrar");
-	SetOption(OPTION_SEVENZIPCMD, "7z");
-#endif
-	SetOption(OPTION_UNPACKPAUSEQUEUE, "no");
 }
 
 void Options::InitOptFile()
@@ -891,7 +763,6 @@ void Options::CheckDir(char** dir, const char* szOptionName, bool bAllowEmpty, b
 void Options::InitOptions()
 {
 	CheckDir(&m_szDestDir, OPTION_DESTDIR, false, true);
-	CheckDir(&m_szInterDir, OPTION_INTERDIR, true, true);
 	CheckDir(&m_szTempDir, OPTION_TEMPDIR, false, true);
 	CheckDir(&m_szQueueDir, OPTION_QUEUEDIR, false, true);
 	CheckDir(&m_szWebDir, OPTION_WEBDIR, true, false);
@@ -901,21 +772,16 @@ void Options::InitOptions()
 	m_szNZBAddedProcess		= strdup(GetOption(OPTION_NZBADDEDPROCESS));
 	m_szControlIP			= strdup(GetOption(OPTION_CONTROLIP));
 	m_szControlPassword		= strdup(GetOption(OPTION_CONTROLPASSWORD));
-	m_szSecureCert			= strdup(GetOption(OPTION_SECURECERT));
-	m_szSecureKey			= strdup(GetOption(OPTION_SECUREKEY));
 	m_szLockFile			= strdup(GetOption(OPTION_LOCKFILE));
 	m_szDaemonUserName		= strdup(GetOption(OPTION_DAEMONUSERNAME));
 	m_szLogFile				= strdup(GetOption(OPTION_LOGFILE));
-	m_szUnrarCmd			= strdup(GetOption(OPTION_UNRARCMD));
-	m_szSevenZipCmd			= strdup(GetOption(OPTION_SEVENZIPCMD));
 
-	m_iDownloadRate			= (int)(ParseFloatValue(OPTION_DOWNLOADRATE) * 1024);
+	m_fDownloadRate			= ParseFloatValue(OPTION_DOWNLOADRATE);
 	m_iConnectionTimeout	= ParseIntValue(OPTION_CONNECTIONTIMEOUT, 10);
 	m_iTerminateTimeout		= ParseIntValue(OPTION_TERMINATETIMEOUT, 10);
 	m_iRetries				= ParseIntValue(OPTION_RETRIES, 10);
 	m_iRetryInterval		= ParseIntValue(OPTION_RETRYINTERVAL, 10);
-	m_iControlPort			= ParseIntValue(OPTION_CONTROLPORT, 10);
-	m_iSecurePort			= ParseIntValue(OPTION_SECUREPORT, 10);
+	m_szControlPort			= ParseIntValue(OPTION_CONTROLPORT, 10);
 	m_iUrlConnections		= ParseIntValue(OPTION_URLCONNECTIONS, 10);
 	m_iLogBufferSize		= ParseIntValue(OPTION_LOGBUFFERSIZE, 10);
 	m_iUMask				= ParseIntValue(OPTION_UMASK, 8);
@@ -949,6 +815,7 @@ void Options::InitOptions()
 	m_bCursesTime			= (bool)ParseEnumValue(OPTION_CURSESTIME, BoolCount, BoolNames, BoolValues);
 	m_bCursesGroup			= (bool)ParseEnumValue(OPTION_CURSESGROUP, BoolCount, BoolNames, BoolValues);
 	m_bCrcCheck				= (bool)ParseEnumValue(OPTION_CRCCHECK, BoolCount, BoolNames, BoolValues);
+	m_bRetryOnCrcError		= (bool)ParseEnumValue(OPTION_RETRYONCRCERROR, BoolCount, BoolNames, BoolValues);
 	m_bDirectWrite			= (bool)ParseEnumValue(OPTION_DIRECTWRITE, BoolCount, BoolNames, BoolValues);
 	m_bParCleanupQueue		= (bool)ParseEnumValue(OPTION_PARCLEANUPQUEUE, BoolCount, BoolNames, BoolValues);
 	m_bDecode				= (bool)ParseEnumValue(OPTION_DECODE, BoolCount, BoolNames, BoolValues);
@@ -960,10 +827,6 @@ void Options::InitOptions()
 	m_bDeleteCleanupDisk	= (bool)ParseEnumValue(OPTION_DELETECLEANUPDISK, BoolCount, BoolNames, BoolValues);
 	m_bMergeNzb				= (bool)ParseEnumValue(OPTION_MERGENZB, BoolCount, BoolNames, BoolValues);
 	m_bAccurateRate			= (bool)ParseEnumValue(OPTION_ACCURATERATE, BoolCount, BoolNames, BoolValues);
-	m_bSecureControl		= (bool)ParseEnumValue(OPTION_SECURECONTROL, BoolCount, BoolNames, BoolValues);
-	m_bUnpack				= (bool)ParseEnumValue(OPTION_UNPACK, BoolCount, BoolNames, BoolValues);
-	m_bUnpackCleanupDisk	= (bool)ParseEnumValue(OPTION_UNPACKCLEANUPDISK, BoolCount, BoolNames, BoolValues);
-	m_bUnpackPauseQueue		= (bool)ParseEnumValue(OPTION_UNPACKPAUSEQUEUE, BoolCount, BoolNames, BoolValues);
 
 	const char* OutputModeNames[] = { "loggable", "logable", "log", "colored", "color", "ncurses", "curses" };
 	const int OutputModeValues[] = { omLoggable, omLoggable, omLoggable, omColored, omColored, omNCurses, omNCurses };
@@ -1319,7 +1182,7 @@ void Options::InitCommandLine(int argc, char* argv[])
 				break;
 			case 'R':
 				m_eClientOperation = opClientRequestSetRate;
-				m_iSetRate = (int)(atof(optarg)*1024);
+				m_fSetRate = (float)atof(optarg);
 				break;
 			case 'B':
 				if (!strcasecmp(optarg, "dump"))
@@ -1890,9 +1753,6 @@ void Options::InitServers()
 		sprintf(optname, "Server%i.Level", n);
 		const char* nlevel = GetOption(optname);
 
-		sprintf(optname, "Server%i.Group", n);
-		const char* ngroup = GetOption(optname);
-		
 		sprintf(optname, "Server%i.Host", n);
 		const char* nhost = GetOption(optname);
 
@@ -1907,7 +1767,7 @@ void Options::InitServers()
 
 		sprintf(optname, "Server%i.JoinGroup", n);
 		const char* njoingroup = GetOption(optname);
-		bool bJoinGroup = false;
+		bool bJoinGroup = true;
 		if (njoingroup)
 		{
 			bJoinGroup = (bool)ParseEnumValue(optname, BoolCount, BoolNames, BoolValues);
@@ -1929,14 +1789,11 @@ void Options::InitServers()
 			m_bTLS |= bTLS;
 		}
 
-		sprintf(optname, "Server%i.Cipher", n);
-		const char* ncipher = GetOption(optname);
-
 		sprintf(optname, "Server%i.Connections", n);
 		const char* nconnections = GetOption(optname);
 
-		bool definition = nlevel || ngroup || nhost || nport || nusername || npassword || nconnections || njoingroup || ntls || ncipher;
-		bool completed = nhost && nport && nconnections;
+		bool definition = nlevel || nhost || nport || nusername || npassword || nconnections || njoingroup || ntls;
+		bool completed = nlevel && nhost && nport && nconnections;
 
 		if (!definition)
 		{
@@ -1945,10 +1802,8 @@ void Options::InitServers()
 
 		if (completed)
 		{
-			NewsServer* pNewsServer = new NewsServer(n, nhost, atoi(nport), nusername, npassword,
-				bJoinGroup, bTLS, ncipher, atoi((char*)nconnections),
-				nlevel ? atoi((char*)nlevel) : 0,
-				ngroup ? atoi((char*)ngroup) : 0);
+			NewsServer* pNewsServer = new NewsServer(nhost, atoi(nport), nusername, npassword,
+				bJoinGroup, bTLS, atoi((char*)nconnections), atoi((char*)nlevel));
 			g_pServerPool->AddServer(pNewsServer);
 		}
 		else
@@ -1960,53 +1815,6 @@ void Options::InitServers()
 	}
 
 	g_pServerPool->SetTimeout(GetConnectionTimeout());
-}
-
-void Options::InitCategories()
-{
-	int n = 1;
-	while (true)
-	{
-		char optname[128];
-
-		sprintf(optname, "Category%i.Name", n);
-		const char* nname = GetOption(optname);
-
-		char destdiroptname[128];
-		sprintf(destdiroptname, "Category%i.DestDir", n);
-		const char* ndestdir = GetOption(destdiroptname);
-
-		bool definition = nname || ndestdir;
-		bool completed = nname && strlen(nname) > 0;
-
-		if (!definition)
-		{
-			break;
-		}
-
-		if (completed)
-		{
-			char* szDestDir = NULL;
-			if (ndestdir && ndestdir[0] != '\0')
-			{
-				CheckDir(&szDestDir, destdiroptname, false, true);
-			}
-
-			Category* pCategory = new Category(nname, szDestDir);
-			m_Categories.push_back(pCategory);
-
-			if (szDestDir)
-			{
-				free(szDestDir);
-			}
-		}
-		else
-		{
-			ConfigError("Category definition not complete for \"Category%i\"", n);
-		}
-
-		n++;
-	}
 }
 
 void Options::InitScheduler()
@@ -2103,6 +1911,7 @@ void Options::InitScheduler()
 			if (!ParseTime(pTime, &iHours, &iMinutes))
 			{
 				ConfigError("Invalid value for option \"Task%i.Time\": \"%s\"", n, pTime);
+				bOK = false;
 				break;
 			}
 
@@ -2112,13 +1921,13 @@ void Options::InitScheduler()
 				{
 					for (int iEveryHour = 0; iEveryHour < 24; iEveryHour++)
 					{
-						Scheduler::Task* pTask = new Scheduler::Task(iEveryHour, iMinutes, iWeekDays, eCommand, iDownloadRate * 1024, szProcess);
+						Scheduler::Task* pTask = new Scheduler::Task(iEveryHour, iMinutes, iWeekDays, eCommand, iDownloadRate, szProcess);
 						g_pScheduler->AddTask(pTask);
 					}
 				}
 				else
 				{
-					Scheduler::Task* pTask = new Scheduler::Task(iHours, iMinutes, iWeekDays, eCommand, iDownloadRate * 1024, szProcess);
+					Scheduler::Task* pTask = new Scheduler::Task(iHours, iMinutes, iWeekDays, eCommand, iDownloadRate, szProcess);
 					g_pScheduler->AddTask(pTask);
 				}
 			}
@@ -2342,8 +2151,7 @@ bool Options::ValidateOptionName(const char * optname)
 			(!strcasecmp(p, ".level") || !strcasecmp(p, ".host") ||
 			!strcasecmp(p, ".port") || !strcasecmp(p, ".username") ||
 			!strcasecmp(p, ".password") || !strcasecmp(p, ".joingroup") ||
-			!strcasecmp(p, ".encryption") || !strcasecmp(p, ".connections") ||
-			!strcasecmp(p, ".cipher") || !strcasecmp(p, ".group")))
+			!strcasecmp(p, ".encryption") || !strcasecmp(p, ".connections")))
 		{
 			return true;
 		}
@@ -2364,21 +2172,16 @@ bool Options::ValidateOptionName(const char * optname)
 	{
 		char* p = (char*)optname + 8;
 		while (*p >= '0' && *p <= '9') p++;
-		if (p && (!strcasecmp(p, ".name") || !strcasecmp(p, ".destdir")))
+		if (p && (!strcasecmp(p, ".name")))
 		{
 			return true;
 		}
 	}
 	
-	// print a warning message for obsolete options
+	// suppress abort on obsolete options; print a warning message instead
 	if (!strcasecmp(optname, OPTION_POSTLOGKIND) || !strcasecmp(optname, OPTION_NZBLOGKIND))
 	{
-		ConfigWarn("Option \"%s\" is obsolete, use \"%s\" instead", optname, OPTION_PROCESSLOGKIND);
-		return true;
-	}
-	if (!strcasecmp(optname, OPTION_RETRYONCRCERROR))
-	{
-		ConfigWarn("Option \"%s\" is obsolete, ignored", optname);
+		ConfigError("Option \"%s\" is obsolete, use \"%s\" instead", optname, OPTION_PROCESSLOGKIND);
 		return true;
 	}
 
@@ -2390,7 +2193,6 @@ void Options::CheckOptions()
 #ifdef DISABLE_PARCHECK
 	if (m_bParCheck)
 	{
-		LocateOptionSrcPos(OPTION_PARCHECK);
 		ConfigError("Invalid value for option \"%s\": program was compiled without parcheck-support", OPTION_PARCHECK);
 	}
 #endif
@@ -2398,29 +2200,13 @@ void Options::CheckOptions()
 #ifdef DISABLE_CURSES
 	if (m_eOutputMode == omNCurses)
 	{
-		LocateOptionSrcPos(OPTION_OUTPUTMODE);
 		ConfigError("Invalid value for option \"%s\": program was compiled without curses-support", OPTION_OUTPUTMODE);
-	}
-#endif
-
-#ifdef DISABLE_TLS
-	if (m_bSecureControl)
-	{
-		LocateOptionSrcPos(OPTION_SECURECONTROL);
-		ConfigError("Invalid value for option \"%s\": program was compiled without TLS/SSL-support", OPTION_SECURECONTROL);
 	}
 #endif
 
 	if (!m_bDecode)
 	{
 		m_bDirectWrite = false;
-	}
-
-	if (m_bUnpack && m_bAllowReProcess)
-	{
-		LocateOptionSrcPos(OPTION_ALLOWREPROCESS);
-		ConfigError("Options \"%s\" and \"%s\" cannot be both active at the same time", OPTION_UNPACK, OPTION_ALLOWREPROCESS);
-		m_bAllowReProcess = false;
 	}
 }
 

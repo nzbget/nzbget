@@ -89,27 +89,29 @@ const unsigned int g_iMessageRequestSizes[] =
 //*****************************************************************
 // BinProcessor
 
-BinRpcProcessor::BinRpcProcessor()
-{
-	m_MessageBase.m_iSignature = (int)NZBMESSAGE_SIGNATURE;
-}
-
 void BinRpcProcessor::Execute()
 {
 	// Read the first package which needs to be a request
-	if (!m_pConnection->Recv(((char*)&m_MessageBase) + sizeof(m_MessageBase.m_iSignature), sizeof(m_MessageBase) - sizeof(m_MessageBase.m_iSignature)))
+	int iBytesReceived = recv(m_iSocket, ((char*)&m_MessageBase) + sizeof(m_MessageBase.m_iSignature), sizeof(m_MessageBase) - sizeof(m_MessageBase.m_iSignature), 0);
+	if (iBytesReceived < 0)
 	{
-		warn("Non-nzbget request received on port %i from %s", g_pOptions->GetControlPort(), m_pConnection->GetRemoteAddr());
+		return;
+	}
+
+	// Make sure this is a nzbget request from a client
+	if ((int)ntohl(m_MessageBase.m_iSignature) != (int)NZBMESSAGE_SIGNATURE)
+	{
+		warn("Non-nzbget request received on port %i from %s", g_pOptions->GetControlPort(), m_szClientIP);
 		return;
 	}
 
 	if (strcmp(m_MessageBase.m_szPassword, g_pOptions->GetControlPassword()))
 	{
-		warn("nzbget request received on port %i from %s, but password invalid", g_pOptions->GetControlPort(), m_pConnection->GetRemoteAddr());
+		warn("nzbget request received on port %i from %s, but password invalid", g_pOptions->GetControlPort(), m_szClientIP);
 		return;
 	}
 
-	debug("%s request received from %s", g_szMessageRequestNames[ntohl(m_MessageBase.m_iType)], m_pConnection->GetRemoteAddr());
+	debug("%s request received from %s", g_szMessageRequestNames[ntohl(m_MessageBase.m_iType)], m_szClientIP);
 
 	Dispatch();
 }
@@ -200,7 +202,7 @@ void BinRpcProcessor::Dispatch()
 
 	if (command)
 	{
-		command->SetConnection(m_pConnection);
+		command->SetSocket(m_iSocket);
 		command->SetMessageBase(&m_MessageBase);
 		command->Execute();
 		delete command;
@@ -222,8 +224,8 @@ void BinCommand::SendBoolResponse(bool bSuccess, const char* szText)
 	BoolResponse.m_iTrailingDataLength = htonl(iTextLen);
 
 	// Send the request answer
-	m_pConnection->Send((char*) &BoolResponse, sizeof(BoolResponse));
-	m_pConnection->Send((char*)szText, iTextLen);
+	send(m_iSocket, (char*) &BoolResponse, sizeof(BoolResponse), 0);
+	send(m_iSocket, (char*)szText, iTextLen, 0);
 }
 
 bool BinCommand::ReceiveRequest(void* pBuffer, int iSize)
@@ -232,7 +234,8 @@ bool BinCommand::ReceiveRequest(void* pBuffer, int iSize)
 	iSize -= sizeof(SNZBRequestBase);
 	if (iSize > 0)
 	{
-		if (!m_pConnection->Recv(((char*)pBuffer) + sizeof(SNZBRequestBase), iSize))
+		int iBytesReceived = recv(m_iSocket, ((char*)pBuffer) + sizeof(SNZBRequestBase), iSize, 0);
+		if (iBytesReceived != iSize)
 		{
 			error("invalid request");
 			return false;
@@ -248,8 +251,6 @@ void PauseUnpauseBinCommand::Execute()
 	{
 		return;
 	}
-
-	g_pOptions->SetResumeTime(0);
 
 	switch (ntohl(PauseUnpauseRequest.m_iAction))
 	{
@@ -281,7 +282,7 @@ void SetDownloadRateBinCommand::Execute()
 		return;
 	}
 
-	g_pOptions->SetDownloadRate(ntohl(SetDownloadRequest.m_iDownloadRate));
+	g_pOptions->SetDownloadRate(ntohl(SetDownloadRequest.m_iDownloadRate) / 1024.0f);
 	SendBoolResponse(true, "Rate-Command completed successfully");
 }
 
@@ -342,44 +343,57 @@ void DownloadBinCommand::Execute()
 	}
 
 	char* pRecvBuffer = (char*)malloc(ntohl(DownloadRequest.m_iTrailingDataLength) + 1);
+	char* pBufPtr = pRecvBuffer;
 
-	if (!m_pConnection->Recv(pRecvBuffer, ntohl(DownloadRequest.m_iTrailingDataLength)))
+	// Read from the socket until nothing remains
+	int iResult = 0;
+	int NeedBytes = ntohl(DownloadRequest.m_iTrailingDataLength);
+	while (NeedBytes > 0)
 	{
-		error("invalid request");
-		free(pRecvBuffer);
-		return;
-	}
-	
-	int iPriority = ntohl(DownloadRequest.m_iPriority);
-	bool bAddPaused = ntohl(DownloadRequest.m_bAddPaused);
-	
-	NZBFile* pNZBFile = NZBFile::CreateFromBuffer(DownloadRequest.m_szFilename, DownloadRequest.m_szCategory, pRecvBuffer, ntohl(DownloadRequest.m_iTrailingDataLength));
-	
-	if (pNZBFile)
-	{
-		info("Request: Queue collection %s", DownloadRequest.m_szFilename);
-		
-		for (NZBFile::FileInfos::iterator it = pNZBFile->GetFileInfos()->begin(); it != pNZBFile->GetFileInfos()->end(); it++)
+		iResult = recv(m_iSocket, pBufPtr, NeedBytes, 0);
+		// Did the recv succeed?
+		if (iResult <= 0)
 		{
-			FileInfo* pFileInfo = *it;
-			pFileInfo->SetPriority(iPriority);
-			pFileInfo->SetPaused(bAddPaused);
+			error("invalid request");
+			break;
 		}
-		
-		g_pQueueCoordinator->AddNZBFileToQueue(pNZBFile, ntohl(DownloadRequest.m_bAddFirst));
-		delete pNZBFile;
-		
-		char tmp[1024];
-		snprintf(tmp, 1024, "Collection %s added to queue", Util::BaseFileName(DownloadRequest.m_szFilename));
-		tmp[1024-1] = '\0';
-		SendBoolResponse(true, tmp);
+		pBufPtr += iResult;
+		NeedBytes -= iResult;
 	}
-	else
+
+	if (NeedBytes == 0)
 	{
-		char tmp[1024];
-		snprintf(tmp, 1024, "Download Request failed for %s", Util::BaseFileName(DownloadRequest.m_szFilename));
-		tmp[1024-1] = '\0';
-		SendBoolResponse(false, tmp);
+		int iPriority = ntohl(DownloadRequest.m_iPriority);
+		bool bAddPaused = ntohl(DownloadRequest.m_bAddPaused);
+
+		NZBFile* pNZBFile = NZBFile::CreateFromBuffer(DownloadRequest.m_szFilename, DownloadRequest.m_szCategory, pRecvBuffer, ntohl(DownloadRequest.m_iTrailingDataLength));
+
+		if (pNZBFile)
+		{
+			info("Request: Queue collection %s", DownloadRequest.m_szFilename);
+
+			for (NZBFile::FileInfos::iterator it = pNZBFile->GetFileInfos()->begin(); it != pNZBFile->GetFileInfos()->end(); it++)
+			{
+				FileInfo* pFileInfo = *it;
+				pFileInfo->SetPriority(iPriority);
+				pFileInfo->SetPaused(bAddPaused);				
+			}
+
+			g_pQueueCoordinator->AddNZBFileToQueue(pNZBFile, ntohl(DownloadRequest.m_bAddFirst));
+			delete pNZBFile;
+
+			char tmp[1024];
+			snprintf(tmp, 1024, "Collection %s added to queue", Util::BaseFileName(DownloadRequest.m_szFilename));
+			tmp[1024-1] = '\0';
+			SendBoolResponse(true, tmp);
+		}
+		else
+		{
+			char tmp[1024];
+			snprintf(tmp, 1024, "Download Request failed for %s", Util::BaseFileName(DownloadRequest.m_szFilename));
+			tmp[1024-1] = '\0';
+			SendBoolResponse(false, tmp);
+		}
 	}
 
 	free(pRecvBuffer);
@@ -592,11 +606,11 @@ void ListBinCommand::Execute()
 	if (htonl(ListRequest.m_bServerState))
 	{
 		unsigned long iSizeHi, iSizeLo;
-		ListResponse.m_iDownloadRate = htonl(g_pQueueCoordinator->CalcCurrentDownloadSpeed());
+		ListResponse.m_iDownloadRate = htonl((int)(g_pQueueCoordinator->CalcCurrentDownloadSpeed() * 1024));
 		Util::SplitInt64(g_pQueueCoordinator->CalcRemainingSize(), &iSizeHi, &iSizeLo);
 		ListResponse.m_iRemainingSizeHi = htonl(iSizeHi);
 		ListResponse.m_iRemainingSizeLo = htonl(iSizeLo);
-		ListResponse.m_iDownloadLimit = htonl(g_pOptions->GetDownloadRate());
+		ListResponse.m_iDownloadLimit = htonl((int)(g_pOptions->GetDownloadRate() * 1024));
 		ListResponse.m_bDownloadPaused = htonl(g_pOptions->GetPauseDownload());
 		ListResponse.m_bDownload2Paused = htonl(g_pOptions->GetPauseDownload2());
 		ListResponse.m_bPostPaused = htonl(g_pOptions->GetPausePostProcess());
@@ -619,12 +633,12 @@ void ListBinCommand::Execute()
 	}
 
 	// Send the request answer
-	m_pConnection->Send((char*) &ListResponse, sizeof(ListResponse));
+	send(m_iSocket, (char*) &ListResponse, sizeof(ListResponse), 0);
 
 	// Send the data
 	if (bufsize > 0)
 	{
-		m_pConnection->Send(buf, bufsize);
+		send(m_iSocket, buf, bufsize, 0);
 	}
 
 	if (buf)
@@ -710,12 +724,12 @@ void LogBinCommand::Execute()
 	LogResponse.m_iTrailingDataLength = htonl(bufsize);
 
 	// Send the request answer
-	m_pConnection->Send((char*) &LogResponse, sizeof(LogResponse));
+	send(m_iSocket, (char*) &LogResponse, sizeof(LogResponse), 0);
 
 	// Send the data
 	if (bufsize > 0)
 	{
-		m_pConnection->Send(buf, bufsize);
+		send(m_iSocket, buf, bufsize, 0);
 	}
 
 	free(buf);
@@ -746,13 +760,24 @@ void EditQueueBinCommand::Execute()
 	}
 
 	char* pBuf = (char*)malloc(iBufLength);
-	
-	if (!m_pConnection->Recv(pBuf, iBufLength))
+
+	// Read from the socket until nothing remains
+	char* pBufPtr = pBuf;
+	int NeedBytes = iBufLength;
+	int iResult = 0;
+	while (NeedBytes > 0)
 	{
-		error("invalid request");
-		free(pBuf);
-		return;
+		iResult = recv(m_iSocket, pBufPtr, NeedBytes, 0);
+		// Did the recv succeed?
+		if (iResult <= 0)
+		{
+			error("invalid request");
+			break;
+		}
+		pBufPtr += iResult;
+		NeedBytes -= iResult;
 	}
+	bool bOK = NeedBytes == 0;
 
 	if (iNrIDEntries <= 0 && iNrNameEntries <= 0)
 	{
@@ -760,44 +785,45 @@ void EditQueueBinCommand::Execute()
 		return;
 	}
 
-	char* szText = iTextLen > 0 ? pBuf : NULL;
-	int32_t* pIDs = (int32_t*)(pBuf + iTextLen);
-	char* pNames = (pBuf + iTextLen + iNrIDEntries * sizeof(int32_t));
-
-	IDList cIDList;
-	NameList cNameList;
-
-	if (iNrIDEntries > 0)
+	if (bOK)
 	{
-		cIDList.reserve(iNrIDEntries);
-		for (int i = 0; i < iNrIDEntries; i++)
+		char* szText = iTextLen > 0 ? pBuf : NULL;
+		int32_t* pIDs = (int32_t*)(pBuf + iTextLen);
+		char* pNames = (pBuf + iTextLen + iNrIDEntries * sizeof(int32_t));
+
+		IDList cIDList;
+		NameList cNameList;
+
+		if (iNrIDEntries > 0)
 		{
-			cIDList.push_back(ntohl(pIDs[i]));
+			cIDList.reserve(iNrIDEntries);
+			for (int i = 0; i < iNrIDEntries; i++)
+			{
+				cIDList.push_back(ntohl(pIDs[i]));
+			}
 		}
-	}
 
-	if (iNrNameEntries > 0)
-	{
-		cNameList.reserve(iNrNameEntries);
-		for (int i = 0; i < iNrNameEntries; i++)
+		if (iNrNameEntries > 0)
 		{
-			cNameList.push_back(pNames);
-			pNames += strlen(pNames) + 1;
+			cNameList.reserve(iNrNameEntries);
+			for (int i = 0; i < iNrNameEntries; i++)
+			{
+				cNameList.push_back(pNames);
+				pNames += strlen(pNames) + 1;
+			}
 		}
-	}
 
-	bool bOK = false;
-	
-	if (iAction < eRemoteEditActionPostMoveOffset)
-	{
-		bOK = g_pQueueCoordinator->GetQueueEditor()->EditList(
-			iNrIDEntries > 0 ? &cIDList : NULL,
-			iNrNameEntries > 0 ? &cNameList : NULL,
-			(QueueEditor::EMatchMode)iMatchMode, bSmartOrder, (QueueEditor::EEditAction)iAction, iOffset, szText);
-	}
-	else
-	{
-		bOK = g_pPrePostProcessor->QueueEditList(&cIDList, (PrePostProcessor::EEditAction)iAction, iOffset);
+		if (iAction < eRemoteEditActionPostMoveOffset)
+		{
+			bOK = g_pQueueCoordinator->GetQueueEditor()->EditList(
+				iNrIDEntries > 0 ? &cIDList : NULL,
+				iNrNameEntries > 0 ? &cNameList : NULL,
+				(QueueEditor::EMatchMode)iMatchMode, bSmartOrder, (QueueEditor::EEditAction)iAction, iOffset, szText);
+		}
+		else
+		{
+			bOK = g_pPrePostProcessor->QueueEditList(&cIDList, (PrePostProcessor::EEditAction)iAction, iOffset);
+		}
 	}
 
 	free(pBuf);
@@ -900,12 +926,12 @@ void PostQueueBinCommand::Execute()
 	PostQueueResponse.m_iTrailingDataLength = htonl(bufsize);
 
 	// Send the request answer
-	m_pConnection->Send((char*) &PostQueueResponse, sizeof(PostQueueResponse));
+	send(m_iSocket, (char*) &PostQueueResponse, sizeof(PostQueueResponse), 0);
 
 	// Send the data
 	if (bufsize > 0)
 	{
-		m_pConnection->Send(buf, bufsize);
+		send(m_iSocket, buf, bufsize, 0);
 	}
 
 	free(buf);
@@ -920,36 +946,50 @@ void WriteLogBinCommand::Execute()
 	}
 
 	char* pRecvBuffer = (char*)malloc(ntohl(WriteLogRequest.m_iTrailingDataLength) + 1);
-	
-	if (!m_pConnection->Recv(pRecvBuffer, ntohl(WriteLogRequest.m_iTrailingDataLength)))
+	char* pBufPtr = pRecvBuffer;
+
+	// Read from the socket until nothing remains
+	int iResult = 0;
+	int NeedBytes = ntohl(WriteLogRequest.m_iTrailingDataLength);
+	pRecvBuffer[NeedBytes] = '\0';
+	while (NeedBytes > 0)
 	{
-		error("invalid request");
-		free(pRecvBuffer);
-		return;
+		iResult = recv(m_iSocket, pBufPtr, NeedBytes, 0);
+		// Did the recv succeed?
+		if (iResult <= 0)
+		{
+			error("invalid request");
+			break;
+		}
+		pBufPtr += iResult;
+		NeedBytes -= iResult;
 	}
-	
-	bool OK = true;
-	switch ((Message::EKind)ntohl(WriteLogRequest.m_iKind))
+
+	if (NeedBytes == 0)
 	{
-		case Message::mkDetail:
-			detail(pRecvBuffer);
-			break;
-		case Message::mkInfo:
-			info(pRecvBuffer);
-			break;
-		case Message::mkWarning:
-			warn(pRecvBuffer);
-			break;
-		case Message::mkError:
-			error(pRecvBuffer);
-			break;
-		case Message::mkDebug:
-			debug(pRecvBuffer);
-			break;
-		default:
-			OK = false;
+		bool OK = true;
+		switch ((Message::EKind)ntohl(WriteLogRequest.m_iKind))
+		{
+			case Message::mkDetail:
+				detail(pRecvBuffer);
+				break;
+			case Message::mkInfo:
+				info(pRecvBuffer);
+				break;
+			case Message::mkWarning:
+				warn(pRecvBuffer);
+				break;
+			case Message::mkError:
+				error(pRecvBuffer);
+				break;
+			case Message::mkDebug:
+				debug(pRecvBuffer);
+				break;
+			default:
+				OK = false;
+		}
+		SendBoolResponse(OK, OK ? "Message added to log" : "Invalid message-kind");
 	}
-	SendBoolResponse(OK, OK ? "Message added to log" : "Invalid message-kind");
 
 	free(pRecvBuffer);
 }
@@ -1052,12 +1092,12 @@ void HistoryBinCommand::Execute()
 	HistoryResponse.m_iTrailingDataLength = htonl(bufsize);
 
 	// Send the request answer
-	m_pConnection->Send((char*) &HistoryResponse, sizeof(HistoryResponse));
+	send(m_iSocket, (char*) &HistoryResponse, sizeof(HistoryResponse), 0);
 
 	// Send the data
 	if (bufsize > 0)
 	{
-		m_pConnection->Send(buf, bufsize);
+		send(m_iSocket, buf, bufsize, 0);
 	}
 
 	free(buf);
@@ -1162,12 +1202,12 @@ void UrlQueueBinCommand::Execute()
 	UrlQueueResponse.m_iTrailingDataLength = htonl(bufsize);
 
 	// Send the request answer
-	m_pConnection->Send((char*) &UrlQueueResponse, sizeof(UrlQueueResponse));
+	send(m_iSocket, (char*) &UrlQueueResponse, sizeof(UrlQueueResponse), 0);
 
 	// Send the data
 	if (bufsize > 0)
 	{
-		m_pConnection->Send(buf, bufsize);
+		send(m_iSocket, buf, bufsize, 0);
 	}
 
 	free(buf);

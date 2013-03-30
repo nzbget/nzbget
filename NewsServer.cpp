@@ -38,23 +38,29 @@
 #include "nzbget.h"
 #include "NewsServer.h"
 
-NewsServer::NewsServer(int iID, const char* szHost, int iPort, const char* szUser, const char* szPass, bool bJoinGroup,
-	bool bTLS, const char* szCipher, int iMaxConnections, int iLevel, int iGroup)
+NewsServer::NewsServer(const char* szHost, int iPort, const char* szUser, const char* szPass, bool bJoinGroup, bool bTLS, int iMaxConnections, int iLevel)
 {
-	m_iID = iID;
 	m_szHost = NULL;
 	m_iPort = iPort;
 	m_szUser = NULL;
 	m_szPassword = NULL;
 	m_iLevel = iLevel;
-	m_iGroup = iGroup;
 	m_iMaxConnections = iMaxConnections;
 	m_bJoinGroup = bJoinGroup;
 	m_bTLS = bTLS;
-	m_szHost = szHost ? strdup(szHost) : NULL;
-	m_szUser = szUser ? strdup(szUser) : NULL;
-	m_szPassword = szPass ? strdup(szPass) : NULL;
-	m_szCipher = szCipher ? strdup(szCipher) : NULL;
+
+	if (szHost)
+	{
+		m_szHost = strdup(szHost);
+	}
+	if (szUser)
+	{
+		m_szUser = strdup(szUser);
+	}
+	if (szPass)
+	{
+		m_szPassword = strdup(szPass);
+	}
 }
 
 NewsServer::~NewsServer()
@@ -70,9 +76,5 @@ NewsServer::~NewsServer()
 	if (m_szPassword)
 	{
 		free(m_szPassword);
-	}
-	if (m_szCipher)
-	{
-		free(m_szCipher);
 	}
 }

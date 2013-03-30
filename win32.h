@@ -36,8 +36,6 @@
 #ifndef DISABLE_TLS
 /* Define to 1 to use GnuTLS library for TLS/SSL-support */
 #define HAVE_LIBGNUTLS
-/* Define to 1 to use OpenSSL library for TLS/SSL-support */
-//#define HAVE_OPENSSL
 #endif
 
 /* Define to the name of macro which returns the name of function being
@@ -74,7 +72,7 @@
 /* Define to 1 if spinlocks are supported */
 #define HAVE_SPINLOCK
 
-#define VERSION "10.0"
+#define VERSION "9.1"
 
 /* Suppress warnings */
 #define _CRT_SECURE_NO_DEPRECATE

@@ -59,6 +59,7 @@ static const int MAX_UNCOMPRESSED_SIZE = 500;
 WebProcessor::WebProcessor()
 {
 	m_pConnection = NULL;
+	m_szClientIP = NULL;
 	m_szRequest = NULL;
 	m_szUrl = NULL;
 	m_szOrigin = NULL;
@@ -93,6 +94,7 @@ void WebProcessor::Execute()
 
 	// reading http header
 	char szBuffer[1024];
+	bool bBody = false;
 	int iContentLen = 0;
 	while (char* p = m_pConnection->ReadLine(szBuffer, sizeof(szBuffer), NULL))
 	{
@@ -122,6 +124,7 @@ void WebProcessor::Execute()
 		}
 		if (*p == '\0')
 		{
+			bBody = true;
 			break;
 		}
 	}
@@ -196,7 +199,7 @@ void WebProcessor::Execute()
 	if (pw) *pw++ = '\0';
 	if (strcmp(szAuthInfo, "nzbget") || strcmp(pw, g_pOptions->GetControlPassword()))
 	{
-		warn("request received on port %i from %s, but password invalid", g_pOptions->GetControlPort(), m_pConnection->GetRemoteAddr());
+		warn("request received on port %i from %s, but password invalid", g_pOptions->GetControlPort(), m_szClientIP);
 		SendAuthResponse();
 		return;
 	}
@@ -207,7 +210,7 @@ void WebProcessor::Execute()
 		m_szRequest = (char*)malloc(iContentLen + 1);
 		m_szRequest[iContentLen] = '\0';
 		
-		if (!m_pConnection->Recv(m_szRequest, iContentLen))
+		if (!m_pConnection->RecvAll(m_szRequest, iContentLen))
 		{
 			free(m_szRequest);
 			error("invalid-request: could not read data");
@@ -216,7 +219,7 @@ void WebProcessor::Execute()
 		debug("Request=%s", m_szRequest);
 	}
 	
-	debug("request received from %s", m_pConnection->GetRemoteAddr());
+	debug("request received from %s", m_szClientIP);
 
 	Dispatch();
 }
@@ -233,6 +236,7 @@ void WebProcessor::Dispatch()
 	{
 		XmlRpcProcessor processor;
 		processor.SetRequest(m_szRequest);
+		processor.SetClientIP(m_szClientIP);
 		processor.SetHttpMethod(m_eHttpMethod == hmGet ? XmlRpcProcessor::hmGet : XmlRpcProcessor::hmPost);
 		processor.SetUrl(m_szUrl);
 		processor.Execute();

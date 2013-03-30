@@ -50,7 +50,6 @@ NNTPConnection::NNTPConnection(NewsServer* pNewsServer) : Connection(pNewsServer
 	m_szActiveGroup = NULL;
 	m_szLineBuf = (char*)malloc(CONNECTION_LINEBUFFER_SIZE);
 	m_bAuthError = false;
-	SetCipher(pNewsServer->GetCipher());
 }
 
 NNTPConnection::~NNTPConnection()
@@ -128,7 +127,7 @@ bool NNTPConnection::AuthInfoUser(int iRecur)
 	char* answer = ReadLine(m_szLineBuf, CONNECTION_LINEBUFFER_SIZE, NULL);
 	if (!answer)
 	{
-		ReportError("Authorization for %s failed: Connection closed by remote host", GetHost(), false, 0);
+		ReportError("Authorization for %s failed: Connection closed by remote host.", GetHost(), true, 0);
 		return false;
 	}
 
@@ -171,7 +170,7 @@ bool NNTPConnection::AuthInfoPass(int iRecur)
 	char* answer = ReadLine(m_szLineBuf, CONNECTION_LINEBUFFER_SIZE, NULL);
 	if (!answer)
 	{
-		ReportError("Authorization for %s failed: Connection closed by remote host", GetHost(), false, 0);
+		ReportError("Authorization for %s failed: Connection closed by remote host.", GetHost(), true, 0);
 		return false;
 	}
 	else if (!strncmp(answer, "2", 1))
@@ -243,7 +242,7 @@ bool NNTPConnection::DoConnect()
 
 	if (!answer)
 	{
-		ReportError("Connection to %s failed: Connection closed by remote host", GetHost(), false, 0);
+		ReportError("Connection to %s failed: Connection closed by remote host.", GetHost(), true, 0);
 		return false;
 	}
 

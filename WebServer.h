@@ -40,6 +40,7 @@ public:
 
 private:
 	Connection*			m_pConnection;
+	const char*			m_szClientIP;
 	char*				m_szRequest;
 	char*				m_szUrl;
 	EHttpMethod			m_eHttpMethod;
@@ -62,6 +63,7 @@ public:
 	void				SetConnection(Connection* pConnection) { m_pConnection = pConnection; }
 	void				SetUrl(const char* szUrl);
 	void				SetHttpMethod(EHttpMethod eHttpMethod) { m_eHttpMethod = eHttpMethod; }
+	void				SetClientIP(const char* szClientIP) { m_szClientIP = szClientIP; }
 };
 
 #endif

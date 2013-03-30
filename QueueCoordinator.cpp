@@ -2,7 +2,7 @@
  *  This file is part of nzbget
  *
  *  Copyright (C) 2005 Bo Cordes Petersen <placebodk@users.sourceforge.net>
- *  Copyright (C) 2007-2013 Andrey Prygunkov <hugbug@users.sourceforge.net>
+ *  Copyright (C) 2007-2011 Andrey Prygunkov <hugbug@users.sourceforge.net>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -127,7 +127,7 @@ void QueueCoordinator::Run()
 	{
 		if (!(g_pOptions->GetPauseDownload() || g_pOptions->GetPauseDownload2()))
 		{
-			NNTPConnection* pConnection = g_pServerPool->GetConnection(0, NULL, NULL);
+			NNTPConnection* pConnection = g_pServerPool->GetConnection(0);
 			if (pConnection)
 			{
 				// start download for next article
@@ -297,26 +297,25 @@ void QueueCoordinator::AddNZBFileToQueue(NZBFile* pNZBFile, bool bAddFirst)
 /*
  * NOTE: see note to "AddSpeedReading"
  */
-int QueueCoordinator::CalcCurrentDownloadSpeed()
+float QueueCoordinator::CalcCurrentDownloadSpeed()
 {
 	if (m_bStandBy)
 	{
 		return 0;
 	}
 
-	int iTimeDiff = (int)time(NULL) - m_iSpeedStartTime * SPEEDMETER_SLOTSIZE;
-	if (iTimeDiff == 0)
-	{
-		return 0;
-	}
-
-	return m_iSpeedTotalBytes / iTimeDiff;
+    int iTimeDiff = (int)time(NULL) - m_iSpeedStartTime * SPEEDMETER_SLOTSIZE;
+    if (iTimeDiff == 0)
+    {
+    	return 0;
+    }
+	float fSpeed = m_iSpeedTotalBytes / 1024.0f / iTimeDiff;
+	return fSpeed;
 }
 
 void QueueCoordinator::AddSpeedReading(int iBytes)
 {
-	time_t tCurTime = time(NULL);
-	int iNowSlot = (int)tCurTime / SPEEDMETER_SLOTSIZE;
+    int iNowSlot = (int)time(NULL) / SPEEDMETER_SLOTSIZE;
 
 	if (g_pOptions->GetAccurateRate())
 	{
@@ -327,45 +326,33 @@ void QueueCoordinator::AddSpeedReading(int iBytes)
 #endif
 	}
 
-	while (iNowSlot > m_iSpeedTime[m_iSpeedBytesIndex])
-	{
-		//record bytes in next slot
-		m_iSpeedBytesIndex++;
-		if (m_iSpeedBytesIndex >= SPEEDMETER_SLOTS)
-		{
-			m_iSpeedBytesIndex = 0;
-		}
-		//Adjust counters with outgoing information.
-		m_iSpeedTotalBytes -= m_iSpeedBytes[m_iSpeedBytesIndex];
+    while (iNowSlot > m_iSpeedTime[m_iSpeedBytesIndex])
+    {
+        //record bytes in next slot
+        m_iSpeedBytesIndex++;
+        if (m_iSpeedBytesIndex >= SPEEDMETER_SLOTS)
+        {
+            m_iSpeedBytesIndex = 0;
+        }
+        //Adjust counters with outging information.
+        m_iSpeedTotalBytes -= m_iSpeedBytes[m_iSpeedBytesIndex];
 
-		//Note we should really use the start time of the next slot
-		//but its easier to just use the outgoing slot time. This
-		//will result in a small error.
-		m_iSpeedStartTime = m_iSpeedTime[m_iSpeedBytesIndex];
+        //Note we should really use the start time of the next slot
+        //but its easier to just use the outgoing slot time. This 
+        //will result in a small error.
+        m_iSpeedStartTime = m_iSpeedTime[m_iSpeedBytesIndex];
 
-		//Now reset.
-		m_iSpeedBytes[m_iSpeedBytesIndex] = 0;
-		m_iSpeedTime[m_iSpeedBytesIndex] = iNowSlot;
-	}
+        //Now reset.
+        m_iSpeedBytes[m_iSpeedBytesIndex] = 0;
+        m_iSpeedTime[m_iSpeedBytesIndex] = iNowSlot;
+    } 
 
-	// Once per second recalculate summary field "m_iSpeedTotalBytes" to recover from possible synchronisation errors
-	if (tCurTime > m_tSpeedCorrection)
-	{
-		int iSpeedTotalBytes = 0;
-		for (int i = 0; i < SPEEDMETER_SLOTS; i++)
-		{
-			iSpeedTotalBytes += m_iSpeedBytes[i];
-		}
-		m_iSpeedTotalBytes = iSpeedTotalBytes;
-		m_tSpeedCorrection = tCurTime;
-	}
-
-	if (m_iSpeedTotalBytes == 0)
-	{
-		m_iSpeedStartTime = iNowSlot;
-	}
-	m_iSpeedBytes[m_iSpeedBytesIndex] += iBytes;
-	m_iSpeedTotalBytes += iBytes;
+    if (m_iSpeedTotalBytes == 0)
+    {
+        m_iSpeedStartTime = iNowSlot;
+    }
+    m_iSpeedBytes[m_iSpeedBytesIndex] += iBytes;
+    m_iSpeedTotalBytes += iBytes;
 	m_iAllBytes += iBytes;
 
 	if (g_pOptions->GetAccurateRate())
@@ -380,16 +367,14 @@ void QueueCoordinator::AddSpeedReading(int iBytes)
 
 void QueueCoordinator::ResetSpeedStat()
 {
-	time_t tCurTime = time(NULL);
-	m_iSpeedStartTime = (int)tCurTime / SPEEDMETER_SLOTSIZE;
+    m_iSpeedStartTime = (int)time(NULL) / SPEEDMETER_SLOTSIZE;
 	for (int i = 0; i < SPEEDMETER_SLOTS; i++)
 	{
 		m_iSpeedBytes[i] = 0;
-		m_iSpeedTime[i] = m_iSpeedStartTime;
+        m_iSpeedTime[i] = m_iSpeedStartTime;
 	}
 	m_iSpeedBytesIndex = 0;
-	m_iSpeedTotalBytes = 0;
-	m_tSpeedCorrection = tCurTime;
+    m_iSpeedTotalBytes = 0;
 }
 
 long long QueueCoordinator::CalcRemainingSize()
@@ -461,9 +446,6 @@ bool QueueCoordinator::GetNextArticle(FileInfo* &pFileInfo, ArticleInfo* &pArtic
 	// if the file doesn't have any articles left for download, we store that fact and search again,
 	// ignoring all files which were previously marked as not having any articles.
 
-	// special case: if the file has ExtraPriority-flag set, it has the highest priority and the
-	// Paused-flag is ignored.
-
 	//debug("QueueCoordinator::GetNextArticle()");
 
 	bool bOK = false;
@@ -484,10 +466,7 @@ bool QueueCoordinator::GetNextArticle(FileInfo* &pFileInfo, ArticleInfo* &pArtic
 			FileInfo* pFileInfo1 = *it;
 			if ((!pCheckedFiles || !pCheckedFiles[iNum]) && 
 				!pFileInfo1->GetPaused() && !pFileInfo1->GetDeleted() &&
-				(!pFileInfo ||
-				 (pFileInfo1->GetExtraPriority() == pFileInfo->GetExtraPriority() &&
-				  pFileInfo1->GetPriority() > pFileInfo->GetPriority()) ||
-				 (pFileInfo1->GetExtraPriority() > pFileInfo->GetExtraPriority())))
+				(!pFileInfo || (pFileInfo1->GetPriority() > pFileInfo->GetPriority())))
 			{
 				pFileInfo = pFileInfo1;
 				iFileNum = iNum;
@@ -576,22 +555,8 @@ void QueueCoordinator::BuildArticleFilename(ArticleDownloader* pArticleDownloade
 
 	if (g_pOptions->GetDirectWrite())
 	{
-		pFileInfo->LockOutputFile();
-
-		if (pFileInfo->GetOutputFilename())
-		{
-			strncpy(name, pFileInfo->GetOutputFilename(), 1024);
-			name[1024-1] = '\0';
-		}
-		else
-		{
-			snprintf(name, 1024, "%s%c%i.out.tmp", pFileInfo->GetNZBInfo()->GetDestDir(), (int)PATH_SEPARATOR, pFileInfo->GetID());
-			name[1024-1] = '\0';
-			pFileInfo->SetOutputFilename(name);
-		}
-
-		pFileInfo->UnlockOutputFile();
-
+		snprintf(name, 1024, "%s%i.out", g_pOptions->GetTempDir(), pFileInfo->GetID());
+		name[1024-1] = '\0';
 		pArticleDownloader->SetOutputFilename(name);
 	}
 }
@@ -767,9 +732,12 @@ void QueueCoordinator::DiscardDiskFile(FileInfo* pFileInfo)
 		}
 	}
 
-	if (g_pOptions->GetDirectWrite() && pFileInfo->GetOutputFilename())
+	if (g_pOptions->GetDirectWrite())
 	{
-		remove(pFileInfo->GetOutputFilename());
+		char name[1024];
+		snprintf(name, 1024, "%s%i.out", g_pOptions->GetTempDir(), pFileInfo->GetID());
+		name[1024-1] = '\0';
+		remove(name);
 	}
 }
 
@@ -806,7 +774,7 @@ void QueueCoordinator::LogDebugInfo()
 
 	debug("   SpeedMeter");
 	debug("   ----------");
-	float fSpeed = (float)(CalcCurrentDownloadSpeed() / 1024.0);
+	float fSpeed = CalcCurrentDownloadSpeed();
 	int iTimeDiff = (int)time(NULL) - m_iSpeedStartTime * SPEEDMETER_SLOTSIZE;
 	debug("      Speed: %f", fSpeed);
 	debug("      SpeedStartTime: %i", m_iSpeedStartTime);
@@ -839,7 +807,8 @@ void QueueCoordinator::LogDebugInfo()
 
 void QueueCoordinator::ResetHangingDownloads()
 {
-	if (g_pOptions->GetTerminateTimeout() == 0 && g_pOptions->GetConnectionTimeout() == 0)
+	const int TimeOut = g_pOptions->GetTerminateTimeout();
+	if (TimeOut == 0)
 	{
 		return;
 	}
@@ -850,15 +819,7 @@ void QueueCoordinator::ResetHangingDownloads()
 	for (ActiveDownloads::iterator it = m_ActiveDownloads.begin(); it != m_ActiveDownloads.end();)
 	{
 		ArticleDownloader* pArticleDownloader = *it;
-
-		if (tm - pArticleDownloader->GetLastUpdateTime() > g_pOptions->GetConnectionTimeout() + 1 &&
-		   pArticleDownloader->GetStatus() == ArticleDownloader::adRunning)
-		{
-			error("Cancelling hanging download %s", pArticleDownloader->GetInfoName());
-			pArticleDownloader->Stop();
-		}
-		
-		if (tm - pArticleDownloader->GetLastUpdateTime() > g_pOptions->GetTerminateTimeout() &&
+		if (tm - pArticleDownloader->GetLastUpdateTime() > TimeOut &&
 		   pArticleDownloader->GetStatus() == ArticleDownloader::adRunning)
 		{
 			ArticleInfo* pArticleInfo = pArticleDownloader->GetArticleInfo();

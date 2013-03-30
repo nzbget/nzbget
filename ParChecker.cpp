@@ -85,6 +85,8 @@ Result Repairer::PreProcess(const char *szParFilename)
 	BugfixesPatchVersion2();
 #endif
 
+	bool bFullScan = true;
+
 	if (g_pOptions->GetParScan() == Options::psFull)
 	{
 		char szWildcardParam[1024];
@@ -121,36 +123,6 @@ Result Repairer::Process(bool dorepair)
 }
 
 
-class MissingFilesComparator
-{
-private:
-	const char* m_szBaseParFilename;
-public:
-	MissingFilesComparator(const char* szBaseParFilename) : m_szBaseParFilename(szBaseParFilename) {}
-	bool operator()(CommandLine::ExtraFile* pFirst, CommandLine::ExtraFile* pSecond) const;
-};
-
-
-/*
- * Files with the same name as in par-file (and a differnt extension) are
- * placed at the top of the list to be scanned first.
- */
-bool MissingFilesComparator::operator()(CommandLine::ExtraFile* pFile1, CommandLine::ExtraFile* pFile2) const
-{
-	char name1[1024];
-	strncpy(name1, Util::BaseFileName(pFile1->FileName().c_str()), 1024);
-	name1[1024-1] = '\0';
-	if (char* ext = strrchr(name1, '.')) *ext = '\0'; // trim extension
-
-	char name2[1024];
-	strncpy(name2, Util::BaseFileName(pFile2->FileName().c_str()), 1024);
-	name2[1024-1] = '\0';
-	if (char* ext = strrchr(name2, '.')) *ext = '\0'; // trim extension
-
-	return strcmp(name1, m_szBaseParFilename) == 0 && strcmp(name1, name2) != 0;
-}
-
-
 ParChecker::ParChecker()
 {
     debug("Creating ParChecker");
@@ -163,6 +135,7 @@ ParChecker::ParChecker()
 	m_iFileProgress = 0;
 	m_iStageProgress = 0;
 	m_iExtraFiles = 0;
+	m_iMissingFiles = 0;
 	m_bVerifyingExtraFiles = false;
 	m_bCancelled = false;
 	m_eStage = ptLoadingPars;
@@ -235,6 +208,7 @@ void ParChecker::Run()
 	m_eStage = ptLoadingPars;
 	m_iProcessedFiles = 0;
 	m_iExtraFiles = 0;
+	m_iMissingFiles = 0;
 	m_bVerifyingExtraFiles = false;
 	m_bCancelled = false;
 
@@ -291,8 +265,9 @@ void ParChecker::Run()
     res = pRepairer->Process(false);
     debug("ParChecker: Process-result=%i", res);
 
-	if (!IsStopped() && pRepairer->missingfilecount > 0 && g_pOptions->GetParScan() == Options::psAuto && AddMissingFiles())
+	if (!IsStopped() && m_iMissingFiles > 0 && g_pOptions->GetParScan() == Options::psAuto && AddAllFiles())
 	{
+		pRepairer->UpdateVerificationResults();
 		res = pRepairer->Process(false);
 		debug("ParChecker: Process-result=%i", res);
 	}
@@ -481,7 +456,7 @@ bool ParChecker::CheckSplittedFragments()
 {
 	bool bFragmentsAdded = false;
 
-	for (std::vector<Par2RepairerSourceFile*>::iterator it = ((Repairer*)m_pRepairer)->sourcefiles.begin();
+	for (vector<Par2RepairerSourceFile*>::iterator it = ((Repairer*)m_pRepairer)->sourcefiles.begin();
 		it != ((Repairer*)m_pRepairer)->sourcefiles.end(); it++)
 	{
 		Par2RepairerSourceFile *sourcefile = *it;
@@ -508,7 +483,7 @@ bool ParChecker::AddSplittedFragments(const char* szFilename)
 	szBasename[-1] = '\0';
 	int iBaseLen = strlen(szBasename);
 
-	std::list<CommandLine::ExtraFile> extrafiles;
+	list<CommandLine::ExtraFile> extrafiles;
 
 	DirBrowser dir(szDirectory);
 	while (const char* filename = dir.Next())
@@ -547,9 +522,9 @@ bool ParChecker::AddSplittedFragments(const char* szFilename)
 	return bFragmentsAdded;
 }
 
-bool ParChecker::AddMissingFiles()
+bool ParChecker::AddAllFiles()
 {
-    info("Performing extra par-scan for %s", m_szInfoName);
+    info("Performing full par-scan for %s", m_szInfoName);
 
 	char szDirectory[1024];
 	strncpy(szDirectory, m_szParFilename, 1024);
@@ -562,7 +537,7 @@ bool ParChecker::AddMissingFiles()
 	}
 	szBasename[-1] = '\0';
 
-	std::list<CommandLine::ExtraFile*> extrafiles;
+	list<CommandLine::ExtraFile> extrafiles;
 
 	DirBrowser dir(szDirectory);
 	while (const char* filename = dir.Next())
@@ -586,49 +561,20 @@ bool ParChecker::AddMissingFiles()
 				snprintf(fullfilename, 1024, "%s%c%s", szDirectory, PATH_SEPARATOR, filename);
 				fullfilename[1024-1] = '\0';
 
-				extrafiles.push_back(new CommandLine::ExtraFile(fullfilename, Util::FileSize(fullfilename)));
+				CommandLine::ExtraFile extrafile(fullfilename, Util::FileSize(fullfilename));
+				extrafiles.push_back(extrafile);
 			}
 		}
 	}
 
-	// Sort the list
-	char* szBaseParFilename = strdup(Util::BaseFileName(m_szParFilename));
-	if (char* ext = strrchr(szBaseParFilename, '.')) *ext = '\0'; // trim extension
-	extrafiles.sort(MissingFilesComparator(szBaseParFilename));
-	free(szBaseParFilename);
-
-	// Scan files
 	bool bFilesAdded = false;
+
 	if (!extrafiles.empty())
 	{
 		m_iExtraFiles += extrafiles.size();
 		m_bVerifyingExtraFiles = true;
-
-		std::list<CommandLine::ExtraFile> extrafiles1;
-
-		// adding files one by one until all missing files are found
-
-		while (!IsStopped() && !m_bCancelled && extrafiles.size() > 0 && ((Repairer*)m_pRepairer)->missingfilecount > 0)
-		{
-			CommandLine::ExtraFile* pExtraFile = extrafiles.front();
-			extrafiles.pop_front();
-
-			extrafiles1.clear();
-			extrafiles1.push_back(*pExtraFile);
-
-			bFilesAdded = ((Repairer*)m_pRepairer)->VerifyExtraFiles(extrafiles1) || bFilesAdded;
-			((Repairer*)m_pRepairer)->UpdateVerificationResults();
-
-			delete pExtraFile;
-		}
-
+		bFilesAdded = ((Repairer*)m_pRepairer)->VerifyExtraFiles(extrafiles);
 		m_bVerifyingExtraFiles = false;
-
-		// free any remaining objects
-		for (std::list<CommandLine::ExtraFile*>::iterator it = extrafiles.begin(); it != extrafiles.end() ;it++)
-		{
-			delete *it;
-		}
 	}
 
 	return bFilesAdded;
@@ -713,7 +659,7 @@ void ParChecker::signal_done(std::string str, int available, int total)
 		{
 			bool bFileExists = true;
 
-			for (std::vector<Par2RepairerSourceFile*>::iterator it = ((Repairer*)m_pRepairer)->sourcefiles.begin();
+			for (vector<Par2RepairerSourceFile*>::iterator it = ((Repairer*)m_pRepairer)->sourcefiles.begin();
 				it != ((Repairer*)m_pRepairer)->sourcefiles.end(); it++)
 			{
 				Par2RepairerSourceFile *sourcefile = *it;
@@ -732,6 +678,7 @@ void ParChecker::signal_done(std::string str, int available, int total)
 			else
 			{
 				warn("File %s with %i block(s) is missing", str.c_str(), total);
+				m_iMissingFiles++;
 			}
 		}
 	}

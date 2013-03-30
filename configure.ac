@@ -2,9 +2,9 @@
 # Process this file with autoconf to produce a configure script.
 
 AC_PREREQ(2.59)
-AC_INIT(nzbget, 10.0, hugbug@users.sourceforge.net)
+AC_INIT(nzbget, 9.1, hugbug@users.sourceforge.net)
 AC_CANONICAL_SYSTEM
-AM_INIT_AUTOMAKE(nzbget, 10.0)
+AM_INIT_AUTOMAKE(nzbget, 9.1)
 AC_CONFIG_SRCDIR([nzbget.cpp])
 AC_CONFIG_HEADERS([config.h])
 
@@ -187,6 +187,7 @@ dnl
 AC_ARG_WITH(libxml2_includes,
 	[AS_HELP_STRING([--with-libxml2-includes=DIR], [libxml2 include directory])],
 	[CPPFLAGS="${CPPFLAGS} -I${withval}"]
+	[CFLAGS="${CFLAGS} -I${withval}"]
 	[INCVAL="yes"],
 	[INCVAL="no"])
 AC_ARG_WITH(libxml2_libraries,
@@ -196,8 +197,9 @@ AC_ARG_WITH(libxml2_libraries,
 	[LIBVAL="no"])
 if test "$INCVAL" = "no" -o "$LIBVAL" = "no"; then
 	PKG_CHECK_MODULES(libxml2, libxml-2.0,
-		[LIBS="${LIBS} $libxml2_LIBS"]
-		[CPPFLAGS="${CPPFLAGS} $libxml2_CFLAGS"])
+		[LDFLAGS="${LDFLAGS} $libxml2_LIBS"]
+		[CPPFLAGS="${CPPFLAGS} $libxml2_CFLAGS"]
+		[CFLAGS="${CFLAGS} $libxml2_CFLAGS"])
 fi
 AC_CHECK_HEADER(libxml/tree.h,,
 	AC_MSG_ERROR("libxml2 header files not found"))
@@ -221,6 +223,7 @@ if test "$USECURSES" = "yes"; then
 		[AS_HELP_STRING([--with-libcurses-includes=DIR], [libcurses include directory])],
 		[INCVAL="$withval"])
 	CPPFLAGS="${CPPFLAGS} -I${INCVAL}"
+	CFLAGS="${CFLAGS} -I${INCVAL}"
 	AC_ARG_WITH(libcurses_libraries,
 		[AS_HELP_STRING([--with-libcurses-libraries=DIR], [libcurses library directory])],
 		[LIBVAL="$withval"])
@@ -280,7 +283,7 @@ if test "$ENABLEPARCHECK" = "yes"; then
 		[LIBVAL="no"])
 	if test "$INCVAL" = "no" -o "$LIBVAL" = "no"; then
 		PKG_CHECK_MODULES(libsigc, sigc++-2.0,
-			[LIBS="${LIBS} $libsigc_LIBS"]
+			[LDFLAGS="${LDFLAGS} $libsigc_LIBS"]
 			[CPPFLAGS="${CPPFLAGS} $libsigc_CFLAGS"])
 	fi
 	
@@ -390,11 +393,12 @@ if test "$USETLS" = "yes"; then
 			[AS_HELP_STRING([--with-libgnutls-includes=DIR], [GnuTLS include directory])],
 			[INCVAL="$withval"])
 		CPPFLAGS="${CPPFLAGS} -I${INCVAL}"
+		CFLAGS="${CFLAGS} -I${INCVAL}"
 		AC_ARG_WITH(libgnutls_libraries,
 			[AS_HELP_STRING([--with-libgnutls-libraries=DIR], [GnuTLS library directory])],
 			[LIBVAL="$withval"])
 		LDFLAGS="${LDFLAGS} -L${LIBVAL}"
-
+	
 		AC_CHECK_HEADER(gnutls/gnutls.h,
 			FOUND=yes
 			TLSHEADERS=yes,
@@ -419,22 +423,18 @@ if test "$USETLS" = "yes"; then
 	fi
 	
 	if test "$TLSLIB" = "OpenSSL" -o "$TLSLIB" = ""; then
+		INCVAL="${LIBPREF}/include"
+		LIBVAL="${LIBPREF}/lib"
 		AC_ARG_WITH(openssl_includes,
 			[AS_HELP_STRING([--with-openssl-includes=DIR], [OpenSSL include directory])],
-			[CPPFLAGS="${CPPFLAGS} -I${withval}"]
-			[INCVAL="yes"],
-			[INCVAL="no"])
+			[INCVAL="$withval"])
+		CPPFLAGS="${CPPFLAGS} -I${INCVAL}"
+		CFLAGS="${CFLAGS} -I${INCVAL}"
 		AC_ARG_WITH(openssl_libraries,
 			[AS_HELP_STRING([--with-openssl-libraries=DIR], [OpenSSL library directory])],
-			[LDFLAGS="${LDFLAGS} -L${withval}"]
-			[LIBVAL="yes"],
-			[LIBVAL="no"])
-		if test "$INCVAL" = "no" -o "$LIBVAL" = "no"; then
-			PKG_CHECK_MODULES(openssl, openssl,
-				[LIBS="${LIBS} $openssl_LIBS"]
-				[CPPFLAGS="${CPPFLAGS} $openssl_CFLAGS"])
-		fi
-
+			[LIBVAL="$withval"])
+		LDFLAGS="${LDFLAGS} -L${LIBVAL}"
+	
 		AC_CHECK_HEADER(openssl/ssl.h,
 			FOUND=yes
 			TLSHEADERS=yes,
@@ -443,10 +443,8 @@ if test "$USETLS" = "yes"; then
 			AC_MSG_ERROR([Couldn't find OpenSSL headers (ssl.h)])
 		fi
 		if test "$FOUND" = "yes"; then
-			AC_SEARCH_LIBS([CRYPTO_set_locking_callback], [crypto],
-				AC_SEARCH_LIBS([SSL_library_init], [ssl],
-					FOUND=yes,
-					FOUND=no),
+			AC_SEARCH_LIBS([SSL_library_init], [ssl],
+				FOUND=yes,
 				FOUND=no)
 			if test "$FOUND" = "no" -a "$TLSLIB" = "OpenSSL"; then
 				AC_MSG_ERROR([Couldn't find OpenSSL library])
@@ -486,6 +484,7 @@ if test "$USEZLIB" = "yes"; then
 		[AS_HELP_STRING([--with-zlib-includes=DIR], [zlib include directory])],
 		[INCVAL="$withval"])
 	CPPFLAGS="${CPPFLAGS} -I${INCVAL}"
+	CFLAGS="${CFLAGS} -I${INCVAL}"
 	AC_ARG_WITH(zlib_libraries,
 		[AS_HELP_STRING([--with-zlib-libraries=DIR], [zlib library directory])],
 		[LIBVAL="$withval"])
@@ -619,6 +618,16 @@ dnl
 dnl End of debugging code
 dnl
 fi
+
+
+dnl Substitute flags.
+AC_SUBST(CFLAGS)
+AC_SUBST(CPPFLAGS)
+AC_SUBST(LDFLAGS)
+AC_SUBST(CXXFLAGS)
+AC_SUBST(TAR)
+AC_SUBST(AR)
+AC_SUBST(ADDSRCS)
 
 
 AC_CONFIG_FILES([Makefile])

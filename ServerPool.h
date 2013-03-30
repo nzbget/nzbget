@@ -36,9 +36,6 @@
 
 class ServerPool
 {
-public:
-	typedef std::vector<NewsServer*>		Servers;
-
 private:
 	class PooledConnection : public NNTPConnection
 	{
@@ -53,6 +50,7 @@ private:
 		void			SetFreeTimeNow() { m_tFreeTime = ::time(NULL); }
 	};
 
+	typedef std::vector<NewsServer*>		Servers;
 	typedef std::vector<int>				Levels;
 	typedef std::vector<PooledConnection*>	Connections;
 
@@ -63,9 +61,6 @@ private:
 	Mutex			 	m_mutexConnections;
 	int					m_iTimeout;
 
-	void				NormalizeLevels();
-	static bool			CompareServers(NewsServer* pServer1, NewsServer* pServer2);
-
 public:
 						ServerPool();
 						~ServerPool();
@@ -73,8 +68,7 @@ public:
 	void 				AddServer(NewsServer* pNewsServer);
 	void				InitConnections();
 	int					GetMaxLevel() { return m_iMaxLevel; }
-	Servers*			GetServers() { return &m_Servers; } // Only for read access (no lockings)
-	NNTPConnection*		GetConnection(int iLevel, NewsServer* pWantServer, Servers* pIgnoreServers);
+	NNTPConnection*		GetConnection(int iLevel);
 	void 				FreeConnection(NNTPConnection* pConnection, bool bUsed);
 	void				CloseUnusedConnections();
 

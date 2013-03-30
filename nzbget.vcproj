@@ -392,27 +392,11 @@
 			>
 		</File>
 		<File
-			RelativePath=".\ParCoordinator.cpp"
-			>
-		</File>
-		<File
-			RelativePath=".\ParCoordinator.h"
-			>
-		</File>
-		<File
 			RelativePath=".\ParChecker.cpp"
 			>
 		</File>
 		<File
 			RelativePath=".\ParChecker.h"
-			>
-		</File>
-		<File
-			RelativePath=".\ParRenamer.cpp"
-			>
-		</File>
-		<File
-			RelativePath=".\ParRenamer.h"
 			>
 		</File>
 		<File
@@ -501,14 +485,6 @@
 		</File>
 		<File
 			RelativePath=".\TLS.h"
-			>
-		</File>
-		<File
-			RelativePath=".\Unpack.cpp"
-			>
-		</File>
-		<File
-			RelativePath=".\Unpack.h"
 			>
 		</File>
 		<File

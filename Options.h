@@ -2,7 +2,7 @@
  *  This file is part of nzbget
  *
  *  Copyright (C) 2004 Sven Henkel <sidddy@users.sourceforge.net>
- *  Copyright (C) 2007-2013 Andrey Prygunkov <hugbug@users.sourceforge.net>
+ *  Copyright (C) 2007-2010 Andrey Prygunkov <hugbug@users.sourceforge.net>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -28,7 +28,6 @@
 #define OPTIONS_H
 
 #include <vector>
-#include <time.h>
 #include "Thread.h"
 
 class Options
@@ -147,40 +146,16 @@ public:
 
 	typedef std::vector<char*>  NameList;
 
-	class Category
-	{
-	private:
-		char*			m_szName;
-		char*			m_szDestDir;
-
-	public:
-						Category(const char* szName, const char* szDestDir);
-						~Category();
-		const char*		GetName() { return m_szName; }
-		const char*		GetDestDir() { return m_szDestDir; }
-	};
-	
-	typedef std::vector<Category*>  CategoriesBase;
-
-	class Categories: public CategoriesBase
-	{
-	public:
-						~Categories();
-		Category*		FindCategory(const char* szName);
-	};
-
 private:
 	OptEntries			m_OptEntries;
 	bool				m_bConfigInitialized;
 	Mutex				m_mutexOptEntries;
-	Categories			m_Categories;
 
 	// Options
 	bool				m_bConfigErrors;
 	int					m_iConfigLine;
 	char*				m_szConfigFilename;
 	char*				m_szDestDir;
-	char*				m_szInterDir;
 	char*				m_szTempDir;
 	char*				m_szQueueDir;
 	char*				m_szNzbDir;
@@ -205,11 +180,7 @@ private:
 	bool				m_bDupeCheck;
 	char*				m_szControlIP;
 	char*				m_szControlPassword;
-	int					m_iControlPort;
-	bool				m_bSecureControl;
-	int					m_iSecurePort;
-	char*				m_szSecureCert;
-	char*				m_szSecureKey;
+	int					m_szControlPort;
 	char*				m_szLockFile;
 	char*				m_szDaemonUserName;
 	EOutputMode			m_eOutputMode;
@@ -236,6 +207,7 @@ private:
 	bool				m_bCursesTime;
 	bool				m_bCursesGroup;
 	bool				m_bCrcCheck;
+	bool				m_bRetryOnCrcError;
 	int					m_iThreadLimit;
 	bool				m_bDirectWrite;
 	int					m_iWriteBufferSize;
@@ -255,11 +227,6 @@ private:
 	int					m_iParTimeLimit;
 	int					m_iKeepHistory;
 	bool				m_bAccurateRate;
-	bool				m_bUnpack;
-	bool				m_bUnpackCleanupDisk;
-	char*				m_szUnrarCmd;
-	char*				m_szSevenZipCmd;
-	bool				m_bUnpackPauseQueue;
 
 	// Parsed command-line parameters
 	bool				m_bServerMode;
@@ -280,7 +247,7 @@ private:
 	char*				m_szLastArg;
 	bool				m_bPrintOptions;
 	bool				m_bAddTop;
-	int					m_iSetRate;
+	float				m_fSetRate;
 	int					m_iLogLines;
 	int					m_iWriteLogKind;
 	bool				m_bTestBacktrace;
@@ -290,9 +257,8 @@ private:
 	bool				m_bPauseDownload2;
 	bool				m_bPausePostProcess;
 	bool				m_bPauseScan;
-	int					m_iDownloadRate;
+	float				m_fDownloadRate;
 	EClientOperation	m_eClientOperation;
-	time_t				m_tResumeTime;
 
 	void				InitDefault();
 	void				InitOptFile();
@@ -301,7 +267,6 @@ private:
 	void				InitPostConfig();
 	void				InitFileArg(int argc, char* argv[]);
 	void				InitServers();
-	void				InitCategories();
 	void				InitScheduler();
 	void				CheckOptions();
 	void				PrintUsage(char* com);
@@ -321,8 +286,6 @@ private:
 	bool				ParseTime(const char** pTime, int* pHours, int* pMinutes);
 	bool				ParseWeekDays(const char* szWeekDays, int* pWeekDaysBits);
 	void				ConfigError(const char* msg, ...);
-	void				ConfigWarn(const char* msg, ...);
-	void				LocateOptionSrcPos(const char *szOptionName);
 	void				ConvertOldOptionName(char *szOption, int iBufLen);
 
 public:
@@ -337,7 +300,6 @@ public:
 	void				UnlockOptEntries();
 	const char*			GetConfigFilename() { return m_szConfigFilename; }
 	const char*			GetDestDir() { return m_szDestDir; }
-	const char*			GetInterDir() { return m_szInterDir; }
 	const char*			GetTempDir() { return m_szTempDir; }
 	const char*			GetQueueDir() { return m_szQueueDir; }
 	const char*			GetNzbDir() { return m_szNzbDir; }
@@ -362,11 +324,7 @@ public:
 	bool				GetDupeCheck() { return m_bDupeCheck; }
 	const char*			GetControlIP() { return m_szControlIP; }
 	const char*			GetControlPassword() { return m_szControlPassword; }
-	int					GetControlPort() { return m_iControlPort; }
-	bool				GetSecureControl() { return m_bSecureControl; }
-	int					GetSecurePort() { return m_iSecurePort; }
-	const char*			GetSecureCert() { return m_szSecureCert; }
-	const char*			GetSecureKey() { return m_szSecureKey; }
+	int					GetControlPort() { return m_szControlPort; }
 	const char*			GetLockFile() { return m_szLockFile; }
 	const char*			GetDaemonUserName() { return m_szDaemonUserName; }
 	EOutputMode			GetOutputMode() { return m_eOutputMode; }
@@ -392,6 +350,7 @@ public:
 	bool				GetCursesTime() { return m_bCursesTime; }
 	bool				GetCursesGroup() { return m_bCursesGroup; }
 	bool				GetCrcCheck() { return m_bCrcCheck; }
+	bool				GetRetryOnCrcError() { return m_bRetryOnCrcError; }
 	int					GetThreadLimit() { return m_iThreadLimit; }
 	bool				GetDirectWrite() { return m_bDirectWrite; }
 	int					GetWriteBufferSize() { return m_iWriteBufferSize; }
@@ -411,13 +370,6 @@ public:
 	int					GetParTimeLimit() { return m_iParTimeLimit; }
 	int					GetKeepHistory() { return m_iKeepHistory; }
 	bool				GetAccurateRate() { return m_bAccurateRate; }
-	bool				GetUnpack() { return m_bUnpack; }
-	bool				GetUnpackCleanupDisk() { return m_bUnpackCleanupDisk; }
-	const char*			GetUnrarCmd() { return m_szUnrarCmd; }
-	const char*			GetSevenZipCmd() { return m_szSevenZipCmd; }
-	bool				GetUnpackPauseQueue() { return m_bUnpackPauseQueue; }
-
-	Category*			FindCategory(const char* szName) { return m_Categories.FindCategory(szName); }
 
 	// Parsed command-line parameters
 	bool				GetServerMode() { return m_bServerMode; }
@@ -438,7 +390,7 @@ public:
 	int					GetAddPriority() { return m_iAddPriority; }
 	char*				GetAddNZBFilename() { return m_szAddNZBFilename; }
 	bool				GetAddTop() { return m_bAddTop; }
-	int					GetSetRate() { return m_iSetRate; }
+	float				GetSetRate() { return m_fSetRate; }
 	int					GetLogLines() { return m_iLogLines; }
 	int					GetWriteLogKind() { return m_iWriteLogKind; }
 	bool				GetTestBacktrace() { return m_bTestBacktrace; }
@@ -452,10 +404,8 @@ public:
 	bool				GetPausePostProcess() const { return m_bPausePostProcess; }
 	void				SetPauseScan(bool bPauseScan) { m_bPauseScan = bPauseScan; }
 	bool				GetPauseScan() const { return m_bPauseScan; }
-	void				SetDownloadRate(int iRate) { m_iDownloadRate = iRate; }
-	int					GetDownloadRate() const { return m_iDownloadRate; }
-	void				SetResumeTime(time_t tResumeTime) { m_tResumeTime = tResumeTime; }
-	time_t				GetResumeTime() const { return m_tResumeTime; }
+	void				SetDownloadRate(float fRate) { m_fDownloadRate = fRate; }
+	float				GetDownloadRate() const { return m_fDownloadRate; }
 };
 
 #endif

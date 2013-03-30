@@ -17,7 +17,7 @@
 #
 #  This file if part of nzbget
 #
-# Copyright (C) 2008-2013 Andrey Prygunkov <hugbug@users.sourceforge.net>
+# Copyright (C) 2008-2012 Andrey Prygunkov <hugbug@users.sourceforge.net>
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -89,16 +89,14 @@ am_nzbget_OBJECTS = ArticleDownloader.$(OBJEXT) BinRpc.$(OBJEXT) \
 	Frontend.$(OBJEXT) Log.$(OBJEXT) LoggableFrontend.$(OBJEXT) \
 	NCursesFrontend.$(OBJEXT) NNTPConnection.$(OBJEXT) \
 	NZBFile.$(OBJEXT) NewsServer.$(OBJEXT) Observer.$(OBJEXT) \
-	Options.$(OBJEXT) ParChecker.$(OBJEXT) ParRenamer.$(OBJEXT) \
-	ParCoordinator.$(OBJEXT) PrePostProcessor.$(OBJEXT) \
-	QueueCoordinator.$(OBJEXT) QueueEditor.$(OBJEXT) \
-	RemoteClient.$(OBJEXT) RemoteServer.$(OBJEXT) \
-	Scanner.$(OBJEXT) Scheduler.$(OBJEXT) \
+	Options.$(OBJEXT) ParChecker.$(OBJEXT) \
+	PrePostProcessor.$(OBJEXT) QueueCoordinator.$(OBJEXT) \
+	QueueEditor.$(OBJEXT) RemoteClient.$(OBJEXT) \
+	RemoteServer.$(OBJEXT) Scanner.$(OBJEXT) Scheduler.$(OBJEXT) \
 	ScriptController.$(OBJEXT) ServerPool.$(OBJEXT) \
 	svn_version.$(OBJEXT) TLS.$(OBJEXT) Thread.$(OBJEXT) \
 	Util.$(OBJEXT) XmlRpc.$(OBJEXT) WebDownloader.$(OBJEXT) \
-	WebServer.$(OBJEXT) UrlCoordinator.$(OBJEXT) Unpack.$(OBJEXT) \
-	nzbget.$(OBJEXT)
+	WebServer.$(OBJEXT) UrlCoordinator.$(OBJEXT) nzbget.$(OBJEXT)
 nzbget_OBJECTS = $(am_nzbget_OBJECTS)
 nzbget_LDADD = $(LDADD)
 binSCRIPT_INSTALL = $(INSTALL_SCRIPT)
@@ -143,13 +141,16 @@ DIST_ARCHIVES = $(distdir).tar.gz
 GZIP_ENV = --best
 distuninstallcheck_listfiles = find . -type f -print
 ACLOCAL = @ACLOCAL@
+ADDSRCS = @ADDSRCS@
 AMDEP_FALSE = @AMDEP_FALSE@
 AMDEP_TRUE = @AMDEP_TRUE@
 AMTAR = @AMTAR@
+AR = @AR@
 AUTOCONF = @AUTOCONF@
 AUTOHEADER = @AUTOHEADER@
 AUTOMAKE = @AUTOMAKE@
 AWK = @AWK@
+CFLAGS = @CFLAGS@
 CPPFLAGS = @CPPFLAGS@
 CXX = @CXX@
 CXXCPP = @CXXCPP@
@@ -227,8 +228,6 @@ localstatedir = @localstatedir@
 mandir = @mandir@
 mkdir_p = @mkdir_p@
 oldincludedir = @oldincludedir@
-openssl_CFLAGS = @openssl_CFLAGS@
-openssl_LIBS = @openssl_LIBS@
 pdfdir = @pdfdir@
 prefix = @prefix@
 program_transform_name = @program_transform_name@
@@ -248,13 +247,13 @@ nzbget_SOURCES = \
 	Log.cpp Log.h LoggableFrontend.cpp LoggableFrontend.h MessageBase.h \
 	NCursesFrontend.cpp NCursesFrontend.h NNTPConnection.cpp NNTPConnection.h NZBFile.cpp \
 	NZBFile.h NewsServer.cpp NewsServer.h Observer.cpp \
-	Observer.h Options.cpp Options.h ParChecker.cpp ParChecker.h ParRenamer.cpp ParRenamer.h \
-	ParCoordinator.cpp ParCoordinator.h PrePostProcessor.cpp PrePostProcessor.h QueueCoordinator.cpp \
+	Observer.h Options.cpp Options.h ParChecker.cpp ParChecker.h \
+	PrePostProcessor.cpp PrePostProcessor.h QueueCoordinator.cpp \
 	QueueCoordinator.h QueueEditor.cpp QueueEditor.h RemoteClient.cpp RemoteClient.h \
 	RemoteServer.cpp RemoteServer.h Scanner.cpp Scanner.h Scheduler.cpp Scheduler.h ScriptController.cpp \
 	ScriptController.h ServerPool.cpp ServerPool.h svn_version.cpp TLS.cpp TLS.h Thread.cpp Thread.h \
 	Util.cpp Util.h XmlRpc.cpp XmlRpc.h WebDownloader.cpp WebDownloader.h WebServer.cpp WebServer.h \
-	UrlCoordinator.cpp UrlCoordinator.h Unpack.cpp Unpack.h nzbget.cpp nzbget.h
+	UrlCoordinator.cpp UrlCoordinator.h nzbget.cpp nzbget.h
 
 EXTRA_DIST = \
 	Makefile.cvs nzbgetd nzbget-postprocess.sh \
@@ -444,8 +443,6 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/Observer.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/Options.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/ParChecker.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/ParCoordinator.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/ParRenamer.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/PrePostProcessor.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/QueueCoordinator.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/QueueEditor.Po@am__quote@
@@ -457,7 +454,6 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/ServerPool.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/TLS.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/Thread.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/Unpack.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/UrlCoordinator.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/Util.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/WebDownloader.Po@am__quote@

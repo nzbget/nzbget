@@ -61,6 +61,7 @@ public:
 	};
 
 private:
+	const char*			m_szClientIP;
 	char*				m_szRequest;
 	const char*			m_szContentType;
 	ERpcProtocol		m_eProtocol;
@@ -79,6 +80,7 @@ public:
 	void				Execute();
 	void				SetHttpMethod(EHttpMethod eHttpMethod) { m_eHttpMethod = eHttpMethod; }
 	void				SetUrl(const char* szUrl);
+	void				SetClientIP(const char* szClientIP) { m_szClientIP = szClientIP; }
 	void				SetRequest(char* szRequest) { m_szRequest = szRequest; }
 	const char*			GetResponse() { return m_cResponse.GetBuffer(); }
 	const char*			GetContentType() { return m_szContentType; }
@@ -149,12 +151,6 @@ private:
 
 public:
 						PauseUnpauseXmlCommand(bool bPause, EPauseAction eEPauseAction);
-	virtual void		Execute();
-};
-
-class ScheduleResumeXmlCommand: public XmlCommand
-{
-public:
 	virtual void		Execute();
 };
 

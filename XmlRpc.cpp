@@ -1,7 +1,7 @@
 /*
  *  This file is part of nzbget
  *
- *  Copyright (C) 2007-2013 Andrey Prygunkov <hugbug@users.sourceforge.net>
+ *  Copyright (C) 2007-2011 Andrey Prygunkov <hugbug@users.sourceforge.net>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -93,6 +93,7 @@ void StringBuilder::Append(const char* szStr)
 
 XmlRpcProcessor::XmlRpcProcessor()
 {
+	m_szClientIP = NULL;
 	m_szRequest = NULL;
 	m_eProtocol = rpUndefined;
 	m_eHttpMethod = hmPost;
@@ -414,10 +415,6 @@ XmlCommand* XmlRpcProcessor::CreateCommand(const char* szMethodName)
 	else if (!strcasecmp(szMethodName, "resumescan"))
 	{
 		command = new PauseUnpauseXmlCommand(false, PauseUnpauseXmlCommand::paScan);
-	}
-	else if (!strcasecmp(szMethodName, "scheduleresume"))
-	{
-		command = new ScheduleResumeXmlCommand();
 	}
 	else if (!strcasecmp(szMethodName, "history"))
 	{
@@ -784,8 +781,6 @@ void PauseUnpauseXmlCommand::Execute()
 
 	bool bOK = true;
 
-	g_pOptions->SetResumeTime(0);
-
 	switch (m_eEPauseAction)
 	{
 		case paDownload:
@@ -809,28 +804,6 @@ void PauseUnpauseXmlCommand::Execute()
 	}
 
 	BuildBoolResponse(bOK);
-}
-
-// bool scheduleresume(int Seconds) 
-void ScheduleResumeXmlCommand::Execute()
-{
-	if (!CheckSafeMethod())
-	{
-		return;
-	}
-
-	int iSeconds = 0;
-	if (!NextParamAsInt(&iSeconds) || iSeconds < 0)
-	{
-		BuildErrorResponse(2, "Invalid parameter");
-		return;
-	}
-
-	time_t tCurTime = time(NULL);
-
-	g_pOptions->SetResumeTime(tCurTime + iSeconds);
-
-	BuildBoolResponse(true);
 }
 
 void ShutdownXmlCommand::Execute()
@@ -888,7 +861,7 @@ void SetDownloadRateXmlCommand::Execute()
 		return;
 	}
 
-	g_pOptions->SetDownloadRate(iRate * 1024);
+	g_pOptions->SetDownloadRate((float)iRate);
 	BuildBoolResponse(true);
 }
 
@@ -896,11 +869,11 @@ void StatusXmlCommand::Execute()
 {
 	const char* XML_RESPONSE_STATUS_BODY = 
 		"<struct>\n"
-		"<member><name>RemainingSizeLo</name><value><i4>%u</i4></value></member>\n"
-		"<member><name>RemainingSizeHi</name><value><i4>%u</i4></value></member>\n"
+		"<member><name>RemainingSizeLo</name><value><i4>%i</i4></value></member>\n"
+		"<member><name>RemainingSizeHi</name><value><i4>%i</i4></value></member>\n"
 		"<member><name>RemainingSizeMB</name><value><i4>%i</i4></value></member>\n"
-		"<member><name>DownloadedSizeLo</name><value><i4>%u</i4></value></member>\n"
-		"<member><name>DownloadedSizeHi</name><value><i4>%u</i4></value></member>\n"
+		"<member><name>DownloadedSizeLo</name><value><i4>%i</i4></value></member>\n"
+		"<member><name>DownloadedSizeHi</name><value><i4>%i</i4></value></member>\n"
 		"<member><name>DownloadedSizeMB</name><value><i4>%i</i4></value></member>\n"
 		"<member><name>DownloadRate</name><value><i4>%i</i4></value></member>\n"
 		"<member><name>AverageDownloadRate</name><value><i4>%i</i4></value></member>\n"
@@ -917,20 +890,18 @@ void StatusXmlCommand::Execute()
 		"<member><name>ServerStandBy</name><value><boolean>%s</boolean></value></member>\n"
 		"<member><name>PostPaused</name><value><boolean>%s</boolean></value></member>\n"
 		"<member><name>ScanPaused</name><value><boolean>%s</boolean></value></member>\n"
-		"<member><name>FreeDiskSpaceLo</name><value><i4>%u</i4></value></member>\n"
-		"<member><name>FreeDiskSpaceHi</name><value><i4>%u</i4></value></member>\n"
+		"<member><name>FreeDiskSpaceLo</name><value><i4>%i</i4></value></member>\n"
+		"<member><name>FreeDiskSpaceHi</name><value><i4>%i</i4></value></member>\n"
 		"<member><name>FreeDiskSpaceMB</name><value><i4>%i</i4></value></member>\n"
-		"<member><name>ServerTime</name><value><i4>%i</i4></value></member>\n"
-		"<member><name>ResumeTime</name><value><i4>%i</i4></value></member>\n"
 		"</struct>\n";
 
 	const char* JSON_RESPONSE_STATUS_BODY = 
 		"{\n"
-		"\"RemainingSizeLo\" : %u,\n"
-		"\"RemainingSizeHi\" : %u,\n"
+		"\"RemainingSizeLo\" : %i,\n"
+		"\"RemainingSizeHi\" : %i,\n"
 		"\"RemainingSizeMB\" : %i,\n"
-		"\"DownloadedSizeLo\" : %u,\n"
-		"\"DownloadedSizeHi\" : %u,\n"
+		"\"DownloadedSizeLo\" : %i,\n"
+		"\"DownloadedSizeHi\" : %i,\n"
 		"\"DownloadedSizeMB\" : %i,\n"
 		"\"DownloadRate\" : %i,\n"
 		"\"AverageDownloadRate\" : %i,\n"
@@ -947,19 +918,17 @@ void StatusXmlCommand::Execute()
 		"\"ServerStandBy\" : %s,\n"
 		"\"PostPaused\" : %s,\n"
 		"\"ScanPaused\" : %s,\n"
-		"\"FreeDiskSpaceLo\" : %u,\n"
-		"\"FreeDiskSpaceHi\" : %u,\n"
-		"\"FreeDiskSpaceMB\" : %i,\n"
-		"\"ServerTime\" : %i,\n"
-		"\"ResumeTime\" : %i\n"
+		"\"FreeDiskSpaceLo\" : %i,\n"
+		"\"FreeDiskSpaceHi\" : %i,\n"
+		"\"FreeDiskSpaceMB\" : %i\n"
 		"}\n";
 
 	unsigned long iRemainingSizeHi, iRemainingSizeLo;
-	int iDownloadRate = (int)(g_pQueueCoordinator->CalcCurrentDownloadSpeed());
+	int iDownloadRate = (int)(g_pQueueCoordinator->CalcCurrentDownloadSpeed() * 1024);
 	long long iRemainingSize = g_pQueueCoordinator->CalcRemainingSize();
 	Util::SplitInt64(iRemainingSize, &iRemainingSizeHi, &iRemainingSizeLo);
 	int iRemainingMBytes = (int)(iRemainingSize / 1024 / 1024);
-	int iDownloadLimit = (int)(g_pOptions->GetDownloadRate());
+	int iDownloadLimit = (int)(g_pOptions->GetDownloadRate() * 1024);
 	bool bDownloadPaused = g_pOptions->GetPauseDownload();
 	bool bDownload2Paused = g_pOptions->GetPauseDownload2();
 	bool bPostPaused = g_pOptions->GetPausePostProcess();
@@ -981,8 +950,6 @@ void StatusXmlCommand::Execute()
 	long long iFreeDiskSpace = Util::FreeDiskSize(g_pOptions->GetDestDir());
 	Util::SplitInt64(iFreeDiskSpace, &iFreeDiskSpaceHi, &iFreeDiskSpaceLo);
 	int iFreeDiskSpaceMB = (int)(iFreeDiskSpace / 1024 / 1024);
-	int iServerTime = time(NULL);
-	int iResumeTime = g_pOptions->GetResumeTime();
 
 	char szContent[2048];
 	snprintf(szContent, 2048, IsJson() ? JSON_RESPONSE_STATUS_BODY : XML_RESPONSE_STATUS_BODY, 
@@ -991,7 +958,7 @@ void StatusXmlCommand::Execute()
 		iPostJobCount, iPostJobCount, iUrlCount, iUpTimeSec, iDownloadTimeSec, 
 		BoolToStr(bDownloadPaused), BoolToStr(bDownloadPaused), BoolToStr(bDownload2Paused), 
 		BoolToStr(bServerStandBy), BoolToStr(bPostPaused), BoolToStr(bScanPaused),
-		iFreeDiskSpaceLo, iFreeDiskSpaceHi,	iFreeDiskSpaceMB, iServerTime, iResumeTime);
+		iFreeDiskSpaceLo, iFreeDiskSpaceHi,	iFreeDiskSpaceMB);
 	szContent[2048-1] = '\0';
 
 	AppendResponse(szContent);
@@ -1107,10 +1074,10 @@ void ListFilesXmlCommand::Execute()
 	const char* XML_LIST_ITEM = 
 		"<value><struct>\n"
 		"<member><name>ID</name><value><i4>%i</i4></value></member>\n"
-		"<member><name>FileSizeLo</name><value><i4>%u</i4></value></member>\n"
-		"<member><name>FileSizeHi</name><value><i4>%u</i4></value></member>\n"
-		"<member><name>RemainingSizeLo</name><value><i4>%u</i4></value></member>\n"
-		"<member><name>RemainingSizeHi</name><value><i4>%u</i4></value></member>\n"
+		"<member><name>FileSizeLo</name><value><i4>%i</i4></value></member>\n"
+		"<member><name>FileSizeHi</name><value><i4>%i</i4></value></member>\n"
+		"<member><name>RemainingSizeLo</name><value><i4>%i</i4></value></member>\n"
+		"<member><name>RemainingSizeHi</name><value><i4>%i</i4></value></member>\n"
 		"<member><name>PostTime</name><value><i4>%i</i4></value></member>\n"
 		"<member><name>FilenameConfirmed</name><value><boolean>%s</boolean></value></member>\n"
 		"<member><name>Paused</name><value><boolean>%s</boolean></value></member>\n"
@@ -1129,10 +1096,10 @@ void ListFilesXmlCommand::Execute()
 	const char* JSON_LIST_ITEM = 
 		"{\n"
 		"\"ID\" : %i,\n"
-		"\"FileSizeLo\" : %u,\n"
-		"\"FileSizeHi\" : %u,\n"
-		"\"RemainingSizeLo\" : %u,\n"
-		"\"RemainingSizeHi\" : %u,\n"
+		"\"FileSizeLo\" : %i,\n"
+		"\"FileSizeHi\" : %i,\n"
+		"\"RemainingSizeLo\" : %i,\n"
+		"\"RemainingSizeHi\" : %i,\n"
 		"\"PostTime\" : %i,\n"
 		"\"FilenameConfirmed\" : %s,\n"
 		"\"Paused\" : %s,\n"
@@ -1205,14 +1172,14 @@ void ListGroupsXmlCommand::Execute()
 		"<value><struct>\n"
 		"<member><name>FirstID</name><value><i4>%i</i4></value></member>\n"
 		"<member><name>LastID</name><value><i4>%i</i4></value></member>\n"
-		"<member><name>FileSizeLo</name><value><i4>%u</i4></value></member>\n"
-		"<member><name>FileSizeHi</name><value><i4>%u</i4></value></member>\n"
+		"<member><name>FileSizeLo</name><value><i4>%i</i4></value></member>\n"
+		"<member><name>FileSizeHi</name><value><i4>%i</i4></value></member>\n"
 		"<member><name>FileSizeMB</name><value><i4>%i</i4></value></member>\n"
-		"<member><name>RemainingSizeLo</name><value><i4>%u</i4></value></member>\n"
-		"<member><name>RemainingSizeHi</name><value><i4>%u</i4></value></member>\n"
+		"<member><name>RemainingSizeLo</name><value><i4>%i</i4></value></member>\n"
+		"<member><name>RemainingSizeHi</name><value><i4>%i</i4></value></member>\n"
 		"<member><name>RemainingSizeMB</name><value><i4>%i</i4></value></member>\n"
-		"<member><name>PausedSizeLo</name><value><i4>%u</i4></value></member>\n"
-		"<member><name>PausedSizeHi</name><value><i4>%u</i4></value></member>\n"
+		"<member><name>PausedSizeLo</name><value><i4>%i</i4></value></member>\n"
+		"<member><name>PausedSizeHi</name><value><i4>%i</i4></value></member>\n"
 		"<member><name>PausedSizeMB</name><value><i4>%i</i4></value></member>\n"
 		"<member><name>FileCount</name><value><i4>%i</i4></value></member>\n"
 		"<member><name>RemainingFileCount</name><value><i4>%i</i4></value></member>\n"
@@ -1238,14 +1205,14 @@ void ListGroupsXmlCommand::Execute()
 		"{\n"
 		"\"FirstID\" : %i,\n"
 		"\"LastID\" : %i,\n"
-		"\"FileSizeLo\" : %u,\n"
-		"\"FileSizeHi\" : %u,\n"
+		"\"FileSizeLo\" : %i,\n"
+		"\"FileSizeHi\" : %i,\n"
 		"\"FileSizeMB\" : %i,\n"
-		"\"RemainingSizeLo\" : %u,\n"
-		"\"RemainingSizeHi\" : %u,\n"
+		"\"RemainingSizeLo\" : %i,\n"
+		"\"RemainingSizeHi\" : %i,\n"
 		"\"RemainingSizeMB\" : %i,\n"
-		"\"PausedSizeLo\" : %u,\n"
-		"\"PausedSizeHi\" : %u,\n"
+		"\"PausedSizeLo\" : %i,\n"
+		"\"PausedSizeHi\" : %i,\n"
 		"\"PausedSizeMB\" : %i,\n"
 		"\"FileCount\" : %i,\n"
 		"\"RemainingFileCount\" : %i,\n"
@@ -1629,7 +1596,7 @@ void PostQueueXmlCommand::Execute()
 	{
 		PostInfo* pPostInfo = *it;
 
-	    const char* szPostStageName[] = { "QUEUED", "LOADING_PARS", "VERIFYING_SOURCES", "REPAIRING", "VERIFYING_REPAIRED", "RENAMING", "UNPACKING", "MOVING", "EXECUTING_SCRIPT", "FINISHED" };
+	    const char* szPostStageName[] = { "QUEUED", "LOADING_PARS", "VERIFYING_SOURCES", "REPAIRING", "VERIFYING_REPAIRED", "EXECUTING_SCRIPT", "FINISHED" };
 
 		char* xmlNZBNicename = EncodeStr(pPostInfo->GetNZBInfo()->GetName());
 		char* xmlNZBFilename = EncodeStr(pPostInfo->GetNZBInfo()->GetFilename());
@@ -1665,11 +1632,12 @@ void PostQueueXmlCommand::Execute()
 			PostInfo::Messages* pMessages = pPostInfo->LockMessages();
 			if (!pMessages->empty())
 			{
+				int iStart = pMessages->size();
 				if (iNrEntries > (int)pMessages->size())
 				{
 					iNrEntries = pMessages->size();
 				}
-				int iStart = pMessages->size() - iNrEntries;
+				iStart = pMessages->size() - iNrEntries;
 
 				int index = 0;
 				for (unsigned int i = (unsigned int)iStart; i < pMessages->size(); i++)
@@ -1785,11 +1753,9 @@ void HistoryXmlCommand::Execute()
 		"<member><name>DestDir</name><value><string>%s</string></value></member>\n"
 		"<member><name>Category</name><value><string>%s</string></value></member>\n"
 		"<member><name>ParStatus</name><value><string>%s</string></value></member>\n"
-		"<member><name>UnpackStatus</name><value><string>%s</string></value></member>\n"
-		"<member><name>MoveStatus</name><value><string>%s</string></value></member>\n"
 		"<member><name>ScriptStatus</name><value><string>%s</string></value></member>\n"
-		"<member><name>FileSizeLo</name><value><i4>%u</i4></value></member>\n"
-		"<member><name>FileSizeHi</name><value><i4>%u</i4></value></member>\n"
+		"<member><name>FileSizeLo</name><value><i4>%i</i4></value></member>\n"
+		"<member><name>FileSizeHi</name><value><i4>%i</i4></value></member>\n"
 		"<member><name>FileSizeMB</name><value><i4>%i</i4></value></member>\n"
 		"<member><name>FileCount</name><value><i4>%i</i4></value></member>\n"
 		"<member><name>RemainingFileCount</name><value><i4>%i</i4></value></member>\n"
@@ -1817,11 +1783,9 @@ void HistoryXmlCommand::Execute()
 		"\"DestDir\" : \"%s\",\n"
 		"\"Category\" : \"%s\",\n"
 		"\"ParStatus\" : \"%s\",\n"
-		"\"UnpackStatus\" : \"%s\",\n"
-		"\"MoveStatus\" : \"%s\",\n"
 		"\"ScriptStatus\" : \"%s\",\n"
-		"\"FileSizeLo\" : %u,\n"
-		"\"FileSizeHi\" : %u,\n"
+		"\"FileSizeLo\" : %i,\n"
+		"\"FileSizeHi\" : %i,\n"
 		"\"FileSizeMB\" : %i,\n"
 		"\"FileCount\" : %i,\n"
 		"\"RemainingFileCount\" : %i,\n"
@@ -1866,9 +1830,7 @@ void HistoryXmlCommand::Execute()
 		"\"Text\" : \"%s\"\n"
 		"}";
 
-    const char* szParStatusName[] = { "NONE", "NONE", "FAILURE", "SUCCESS", "REPAIR_POSSIBLE" };
-    const char* szUnpackStatusName[] = { "NONE", "NONE", "FAILURE", "SUCCESS" };
-    const char* szMoveStatusName[] = { "NONE", "FAILURE", "SUCCESS" };
+    const char* szParStatusName[] = { "NONE", "FAILURE", "REPAIR_POSSIBLE", "SUCCESS" };
     const char* szScriptStatusName[] = { "NONE", "UNKNOWN", "FAILURE", "SUCCESS" };
 	const char* szUrlStatusName[] = { "UNKNOWN", "UNKNOWN", "SUCCESS", "FAILURE", "UNKNOWN" };
 	const char* szMessageType[] = { "INFO", "WARNING", "ERROR", "DEBUG", "DETAIL"};
@@ -1904,11 +1866,9 @@ void HistoryXmlCommand::Execute()
 
 			snprintf(szItemBuf, szItemBufSize, IsJson() ? JSON_HISTORY_ITEM_START : XML_HISTORY_ITEM_START,
 				pHistoryInfo->GetID(), pHistoryInfo->GetID(), "NZB", xmlNicename, xmlNicename, xmlNZBFilename, 
-				xmlDestDir, xmlCategory, szParStatusName[pNZBInfo->GetParStatus()],
-				szUnpackStatusName[pNZBInfo->GetUnpackStatus()], szMoveStatusName[pNZBInfo->GetMoveStatus()],
-				szScriptStatusName[pNZBInfo->GetScriptStatus()],
-				iFileSizeLo, iFileSizeHi, iFileSizeMB, pNZBInfo->GetFileCount(),
-				pNZBInfo->GetParkedFileCount(), pHistoryInfo->GetTime(), "", "");
+				xmlDestDir, xmlCategory, szParStatusName[pNZBInfo->GetParStatus()], 
+				szScriptStatusName[pNZBInfo->GetScriptStatus()], iFileSizeLo, iFileSizeHi, iFileSizeMB, 
+				pNZBInfo->GetFileCount(), pNZBInfo->GetParkedFileCount(), pHistoryInfo->GetTime(), "", "");
 
 			free(xmlDestDir);
 		}
@@ -1922,7 +1882,7 @@ void HistoryXmlCommand::Execute()
 
 			snprintf(szItemBuf, szItemBufSize, IsJson() ? JSON_HISTORY_ITEM_START : XML_HISTORY_ITEM_START,
 				pHistoryInfo->GetID(), pHistoryInfo->GetID(), "URL", xmlNicename, xmlNicename, xmlNZBFilename, 
-				"", xmlCategory, "", "", "", "", 0, 0, 0, 0, 0, pHistoryInfo->GetTime(), xmlURL,
+				"", xmlCategory, "", "", 0, 0, 0, 0, 0, pHistoryInfo->GetTime(), xmlURL,
 				szUrlStatusName[pUrlInfo->GetStatus()]);
 
 			free(xmlURL);
@@ -2279,16 +2239,18 @@ void SaveConfigXmlCommand::Execute()
 		return;
 	}
 
+	const char* szConfigFile = NULL;
 	Options::EDomain eDomain;
 
 	if (!strcasecmp(szDomain, "SERVER"))
 	{
 		eDomain = Options::dmServer;
+		szConfigFile = g_pOptions->GetConfigFilename();
 	}
 	else if (!strcasecmp(szDomain, "POST"))
 	{
 		eDomain = Options::dmPostProcess;
-		const char* szConfigFile = g_pOptions->GetPostConfigFilename();
+		szConfigFile = g_pOptions->GetPostConfigFilename();
 		if (!szConfigFile)
 		{
 			BuildErrorResponse(3, "Post-processing script configuration file is not defined");

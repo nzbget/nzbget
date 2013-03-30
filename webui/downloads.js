@@ -1,7 +1,7 @@
 /*
  * This file is part of nzbget
  *
- * Copyright (C) 2012-2013 Andrey Prygunkov <hugbug@users.sourceforge.net>
+ * Copyright (C) 2012 Andrey Prygunkov <hugbug@users.sourceforge.net>
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -273,10 +273,7 @@ var Downloads = (new function($)
 				case 'VERIFYING_SOURCES': group.status = 'checking'; break;
 				case 'REPAIRING': group.status = 'repairing'; break;
 				case 'VERIFYING_REPAIRED': group.status = 'verifying'; break;
-				case 'RENAMING': group.status = 'renaming'; break;
-				case 'MOVING': group.status = 'moving'; break;
-				case 'UNPACKING': group.status = 'unpacking'; break;
-				case 'EXECUTING_SCRIPT': group.status = 'processing'; break;
+				case 'EXECUTING_SCRIPT': group.status = 'unpacking'; break;
 				case 'FINISHED': group.status = 'finished'; break;
 				default: group.status = 'error: ' + group.post.Stage; break;
 			}
@@ -622,7 +619,7 @@ var DownloadsUI = (new function($)
 		{
 			if (group.post.StageProgress > 0)
 			{
-				return Util.formatTimeLeft(group.post.StageTimeSec / group.post.StageProgress * (1000 - group.post.StageProgress));
+				return Util.formatTimeHMS(group.post.StageTimeSec / group.post.StageProgress * (1000 - group.post.StageProgress));
 			}
 		}
 		else if (!group.paused && Status.status.DownloadRate > 0)
@@ -636,29 +633,15 @@ var DownloadsUI = (new function($)
 	this.buildProgressLabel = function(group)
 	{
 		var text = '';
-		if (group.postprocess && !Status.status.PostPaused)
+		if (group.postprocess && !Status.status.PostPaused && group.post.Stage !== 'REPAIRING')
 		{
-			switch (group.post.Stage)
+			if (group.post.Log && group.post.Log.length > 0)
 			{
-				case "REPAIRING":
-					break;
-				case "LOADING_PARS":
-				case "VERIFYING_SOURCES":
-				case "VERIFYING_REPAIRED":
-				case "UNPACKING":
-				case "RENAMING":
-					text = group.post.ProgressLabel;
-					break;
-				case "EXECUTING_SCRIPT":
-					if (group.post.Log && group.post.Log.length > 0)
-					{
-						text = group.post.Log[group.post.Log.length-1].Text;
-					}
-					else
-					{
-						text = group.post.ProgressLabel;
-					}
-					break;
+				text = group.post.Log[group.post.Log.length-1].Text;
+			}
+			else if (group.post.ProgressLabel !== '')
+			{
+				text = group.post.ProgressLabel;
 			}
 		}
 

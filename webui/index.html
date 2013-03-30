@@ -2,7 +2,7 @@
 <!--
  * This file is part of nzbget
  *
- * Copyright (C) 2012-2013 Andrey Prygunkov <hugbug@users.sourceforge.net>
+ * Copyright (C) 2012 Andrey Prygunkov <hugbug@users.sourceforge.net>
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -101,11 +101,6 @@
 						<li class="divider"></li>
 						<li><a href="#" onclick="Status.pauseClick('download')"><table><tr><td><i class="icon-ok" id="CHSoftPauseDownload"></td><td>Soft-Pause Download</td></tr></table></a></li>
 						<li class="divider"></li>
-						<li class="menu-header">Pause for</li>
-						<li><a href="#" onclick="Status.scheduledPauseClick(30*60)"><table><tr><td></td><td>30 Minutes</td></tr></table></a></li>
-						<li><a href="#" onclick="Status.scheduledPauseClick(3*60*60)"><table><tr><td></td><td>3 Hours</td></tr></table></a></li>
-						<li><a href="#" onclick="Status.scheduledPauseDialogClick()"><table><tr><td></td><td>Custom...</td></tr></table></a></li>
-						<li class="divider"></li>
 						<li><a data-toggle="modal" href="#PauseHelp"><table><tr><td></td><td>Quick Help</td></tr></table></a></li>
 					</ul>
 				</div>
@@ -114,7 +109,7 @@
 			<!-- SPEED/TIME -->
 			<div id="InfoBlock">
 				<div href="#" onclick="Status.limitDialogClick()" title="Current speed (click to set speed limit)"><i class="icon-plane" id="StatusSpeedIcon"></i> <span id="StatusSpeed">--- KB/s</span></div>
-				<div href="#" onclick="Status.statDialogClick()" title="Remaining time (click for more statistics)"><i class="icon-time" id="StatusTimeIcon"></i> <span id="StatusTime">--h --m</span></div>
+				<div href="#" onclick="Status.statDialogClick()" title="Remaining time (click for more statistics)"><i class="icon-time"></i> <span id="StatusTime">--h --m</span></div>
 			</div>
 
 			<!-- REFRESH MENU -->
@@ -446,7 +441,7 @@
 
 								<div id="ConfigInfo">
 									<p>
-									On this page you can review and change settings. When you done with changes click
+									On this page your can review and change settings. When you done with changes click
 									<em><strong>Save all changes</strong></em>, which will save the changes made on all pages.
 									It's not neccessary to save the changes on each page individually.
 									</p>
@@ -464,22 +459,16 @@
 									to check at least the option <a class="option" href="#" data-category="S" onclick="Config.scrollToOption(event, this)">MainDir</a> and configure one news server.
 									Any changes of NZBGet settings require a restart or reload (soft-restart) of NZBGet.
 									</p>
-									<p>
-									There are many configuration options affecting performance. If you use
-									NZBGet on a computer with limited capabilities, such as NAS, media player,
-									router, etc. you should take your time to configure NZBGet for best
-									performance - see <a href="http://nzbget.sourceforge.net/Performance_tips">Performance tips</a>.
-									</p>
-									
+
 									<h4>Post-processing script settings</h4>
 									<p>
 									When NZBGet finishes download
-									of nzb-file it can start a post-processing script for further processing (cleanup, etc.).
+									of nzb-file it can start a post-processing script for further processing (unpacking etc.).
 									You can configure what script must be executed using option <a class="option" href="#" data-category="S" onclick="Config.scrollToOption(event, this)">PostProcess</a>
 									in section <em><strong>POST-PROCESSING</strong></em>.
 									</p>
 									<p>
-									The post-processing script settings are shown on the navigation bar
+									The <em><strong>POST-PROCESSING SCRIPT SETTINGS</strong></em> are shown on the navigation bar
 									only if you have setup a post-processing script and if it has a configuration file. For your convenience
 									NZBGet proivides you with a way to configure the post-processing script options via web-interface.
 									These settings however do not
@@ -561,6 +550,8 @@
 
 		<p>The original project was initially created by Sven Henkel (sidddy@users.sourceforge.net) in 2004 and later developed by Bo Cordes Petersen (placebodk@users.sourceforge.net) until 2005. In 2007 the abandoned project was overtaken by Andrey Prygunkov. Since then the program has been completely rewritten.</p>
 
+		<p>Module TLS (TLS.c, TLS.h) is based on work by Martin Lambers (marlam@marlam.de).</p>
+
 		<h2>Copyright</h2>
 		<p>This program is free software; you can redistribute it and/or modify
 		it under the terms of the GNU General Public License as published by
@@ -640,34 +631,6 @@
 	</div>
 </div>
 
-<!-- *** PAUSE FOR X MINUTES ***************************************************** -->
-
-<div class="modal modal-mini hide" id="ScheduledPauseDialog">
-	<div class="modal-header">
-	<a class="close" href='#' data-dismiss="modal"><i class="icon-close"></i></a>
-	<h3>Temporary Pause</h3>
-	</div>
-	<div class="modal-body">
-		<div class="form-horizontal">
-			<fieldset>
-				<div class="control-group">
-					<label class="control-label" for="PauseForInputGroup">Pause for</label>
-					<div class="controls" id="PauseForInputGroup">
-						<div class="input-append">
-							<input class="input-mini" id="PauseForInput" size="16" type="text"><span class="add-on">Minutes</span>
-						</div>
-					</div>
-				</div>
-			</fieldset>
-		</div>
-	</div>
-	<div class="modal-footer">
-		<div class="dialog-transmit hide" style="position:absolute;margin-left:260px;" id="ScheduledPause_Transmit"><img src="img/transmit.gif"></div>
-		<a href="#" class="btn" data-dismiss="modal">Close</a>
-		<a href="#" class="btn btn-primary" onclick="Status.pauseForClick()">Pause</a>
-	</div>
-</div>
-
 <!-- *** QUICK HELP: EXPLAINING PAUSE OPTIONS ************************************************************ -->
 
 <div class="modal hide" id="PauseHelp">
@@ -738,13 +701,13 @@
 							</table>
 							</div>
 						</div>
-						
+
 						<div class="control-group">
 							<div class="controls">
 								<div class="modal-bottom-toolbar">
-									<button class="btn" data-tab="DownloadsEdit_FileTab" data-fullscreen="true" id="DownloadsEdit_File" title="File list">Files <i class="icon-forward" style="opacity:0.6;"></i></button>
-									<button class="btn" data-tab="DownloadsEdit_ParamTab" id="DownloadsEdit_Param" title="Post-processing parameters">PP-Parameters <i class="icon-forward" style="opacity:0.6;"></i></button>
-									<button class="btn" data-tab="DownloadsEdit_LogTab" data-fullscreen="true" id="DownloadsEdit_Log" title="Post-processing messages">PP-Messages <i class="icon-forward" style="opacity:0.6;"></i></button>
+									<button class="btn" data-tab="DownloadsEdit_FileTab" data-fullscreen="true" id="DownloadsEdit_File">Files <i class="icon-forward" style="opacity:0.6;"></i></button>
+									<button class="btn" data-tab="DownloadsEdit_ParamTab" id="DownloadsEdit_Param" title="Post-processing parameters">PP Parameters <i class="icon-forward" style="opacity:0.6;"></i></button>
+									<button class="btn" data-tab="DownloadsEdit_LogTab" data-fullscreen="true" id="DownloadsEdit_Log" title="Post-processing messages">PP Messages <i class="icon-forward" style="opacity:0.6;"></i></button>
 								</div>
 							</div>
 						</div>
@@ -1008,6 +971,7 @@
 					<label class="control-label" for="HistoryEdit_Path">Download Path</label>
 					<div class="controls">
 						<span class="uneditable-mulitline-input" id="HistoryEdit_Path"></span>
+						<p class="help-block">Post-processing script may have moved files elsewhere.</p>
 					</div>
 				</div>
 

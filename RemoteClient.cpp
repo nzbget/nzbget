@@ -46,7 +46,6 @@
 
 #include "nzbget.h"
 #include "RemoteClient.h"
-#include "DownloadInfo.h"
 #include "Options.h"
 #include "Log.h"
 #include "Util.h"
@@ -138,21 +137,35 @@ bool RemoteClient::ReceiveBoolResponse()
 	SNZBDownloadResponse BoolResponse;
 	memset(&BoolResponse, 0, sizeof(BoolResponse));
 
-	bool bRead = m_pConnection->Recv((char*)&BoolResponse, sizeof(BoolResponse));
-	if (!bRead || 
+	int iResponseLen = m_pConnection->Recv((char*)&BoolResponse, sizeof(BoolResponse));
+	if (iResponseLen != sizeof(BoolResponse) || 
 		(int)ntohl(BoolResponse.m_MessageBase.m_iSignature) != (int)NZBMESSAGE_SIGNATURE ||
 		ntohl(BoolResponse.m_MessageBase.m_iStructSize) != sizeof(BoolResponse))
 	{
-		printf("No response or invalid response (timeout, not nzbget-server or wrong nzbget-server version)\n");
+		if (iResponseLen < 0)
+		{
+			printf("No response received (timeout)\n");
+		}
+		else
+		{
+			printf("Invalid response received: either not nzbget-server or wrong server version\n");
+		}
 		return false;
 	}
 
 	int iTextLen = ntohl(BoolResponse.m_iTrailingDataLength);
 	char* buf = (char*)malloc(iTextLen);
-	bRead = m_pConnection->Recv(buf, iTextLen);
-	if (!bRead)
+	iResponseLen = m_pConnection->Recv(buf, iTextLen);
+	if (iResponseLen != iTextLen)
 	{
-		printf("No response or invalid response (timeout, not nzbget-server or wrong nzbget-server version)\n");
+		if (iResponseLen < 0)
+		{
+			printf("No response received (timeout)\n");
+		}
+		else
+		{
+			printf("Invalid response received: either not nzbget-server or wrong server version\n");
+		}
 		free(buf);
 		return false;
 	}
@@ -195,7 +208,7 @@ bool RemoteClient::RequestServerDownload(const char* szFilename, const char* szC
 		}
 		DownloadRequest.m_szCategory[NZBREQUESTFILENAMESIZE-1] = '\0';
 
-		if (!m_pConnection->Send((char*)(&DownloadRequest), sizeof(DownloadRequest)))
+		if (m_pConnection->Send((char*)(&DownloadRequest), sizeof(DownloadRequest)) < 0)
 		{
 			perror("m_pConnection->Send");
 			OK = false;
@@ -319,7 +332,7 @@ bool RemoteClient::RequestServerList(bool bFiles, bool bGroups, const char* szPa
 		ListRequest.m_szPattern[NZBREQUESTFILENAMESIZE-1] = '\0';
 	}
 
-	if (!m_pConnection->Send((char*)(&ListRequest), sizeof(ListRequest)))
+	if (m_pConnection->Send((char*)(&ListRequest), sizeof(ListRequest)) < 0)
 	{
 		perror("m_pConnection->Send");
 		return false;
@@ -329,12 +342,19 @@ bool RemoteClient::RequestServerList(bool bFiles, bool bGroups, const char* szPa
 
 	// Now listen for the returned list
 	SNZBListResponse ListResponse;
-	bool bRead = m_pConnection->Recv((char*) &ListResponse, sizeof(ListResponse));
-	if (!bRead || 
+	int iResponseLen = m_pConnection->Recv((char*) &ListResponse, sizeof(ListResponse));
+	if (iResponseLen != sizeof(ListResponse) || 
 		(int)ntohl(ListResponse.m_MessageBase.m_iSignature) != (int)NZBMESSAGE_SIGNATURE ||
 		ntohl(ListResponse.m_MessageBase.m_iStructSize) != sizeof(ListResponse))
 	{
-		printf("No response or invalid response (timeout, not nzbget-server or wrong nzbget-server version)\n");
+		if (iResponseLen < 0)
+		{
+			printf("No response received (timeout)\n");
+		}
+		else
+		{
+			printf("Invalid response received: either not nzbget-server or wrong server version\n");
+		}
 		return false;
 	}
 
@@ -342,7 +362,7 @@ bool RemoteClient::RequestServerList(bool bFiles, bool bGroups, const char* szPa
 	if (ntohl(ListResponse.m_iTrailingDataLength) > 0)
 	{
 		pBuf = (char*)malloc(ntohl(ListResponse.m_iTrailingDataLength));
-		if (!m_pConnection->Recv(pBuf, ntohl(ListResponse.m_iTrailingDataLength)))
+		if (!m_pConnection->RecvAll(pBuf, ntohl(ListResponse.m_iTrailingDataLength)))
 		{
 			free(pBuf);
 			return false;
@@ -680,7 +700,7 @@ bool RemoteClient::RequestServerLog(int iLines)
 	LogRequest.m_iLines = htonl(iLines);
 	LogRequest.m_iIDFrom = 0;
 
-	if (!m_pConnection->Send((char*)(&LogRequest), sizeof(LogRequest)))
+	if (m_pConnection->Send((char*)(&LogRequest), sizeof(LogRequest)) < 0)
 	{
 		perror("m_pConnection->Send");
 		return false;
@@ -690,12 +710,19 @@ bool RemoteClient::RequestServerLog(int iLines)
 
 	// Now listen for the returned log
 	SNZBLogResponse LogResponse;
-	bool bRead = m_pConnection->Recv((char*) &LogResponse, sizeof(LogResponse));
-	if (!bRead || 
+	int iResponseLen = m_pConnection->Recv((char*) &LogResponse, sizeof(LogResponse));
+	if (iResponseLen != sizeof(LogResponse) || 
 		(int)ntohl(LogResponse.m_MessageBase.m_iSignature) != (int)NZBMESSAGE_SIGNATURE ||
 		ntohl(LogResponse.m_MessageBase.m_iStructSize) != sizeof(LogResponse))
 	{
-		printf("No response or invalid response (timeout, not nzbget-server or wrong nzbget-server version)\n");
+		if (iResponseLen < 0)
+		{
+			printf("No response received (timeout)\n");
+		}
+		else
+		{
+			printf("Invalid response received: either not nzbget-server or wrong server version\n");
+		}
 		return false;
 	}
 
@@ -703,7 +730,7 @@ bool RemoteClient::RequestServerLog(int iLines)
 	if (ntohl(LogResponse.m_iTrailingDataLength) > 0)
 	{
 		pBuf = (char*)malloc(ntohl(LogResponse.m_iTrailingDataLength));
-		if (!m_pConnection->Recv(pBuf, ntohl(LogResponse.m_iTrailingDataLength)))
+		if (!m_pConnection->RecvAll(pBuf, ntohl(LogResponse.m_iTrailingDataLength)))
 		{
 			free(pBuf);
 			return false;
@@ -766,7 +793,7 @@ bool RemoteClient::RequestServerPauseUnpause(bool bPause, eRemotePauseUnpauseAct
 	PauseUnpauseRequest.m_bPause = htonl(bPause);
 	PauseUnpauseRequest.m_iAction = htonl(iAction);
 
-	if (!m_pConnection->Send((char*)(&PauseUnpauseRequest), sizeof(PauseUnpauseRequest)))
+	if (m_pConnection->Send((char*)(&PauseUnpauseRequest), sizeof(PauseUnpauseRequest)) < 0)
 	{
 		perror("m_pConnection->Send");
 		m_pConnection->Disconnect();
@@ -779,15 +806,15 @@ bool RemoteClient::RequestServerPauseUnpause(bool bPause, eRemotePauseUnpauseAct
 	return OK;
 }
 
-bool RemoteClient::RequestServerSetDownloadRate(int iRate)
+bool RemoteClient::RequestServerSetDownloadRate(float fRate)
 {
 	if (!InitConnection()) return false;
 
 	SNZBSetDownloadRateRequest SetDownloadRateRequest;
 	InitMessageBase(&SetDownloadRateRequest.m_MessageBase, eRemoteRequestSetDownloadRate, sizeof(SetDownloadRateRequest));
-	SetDownloadRateRequest.m_iDownloadRate = htonl(iRate);
+	SetDownloadRateRequest.m_iDownloadRate = htonl((unsigned int)(fRate * 1024));
 
-	if (!m_pConnection->Send((char*)(&SetDownloadRateRequest), sizeof(SetDownloadRateRequest)))
+	if (m_pConnection->Send((char*)(&SetDownloadRateRequest), sizeof(SetDownloadRateRequest)) < 0)
 	{
 		perror("m_pConnection->Send");
 		m_pConnection->Disconnect();
@@ -807,7 +834,7 @@ bool RemoteClient::RequestServerDumpDebug()
 	SNZBDumpDebugRequest DumpDebugInfo;
 	InitMessageBase(&DumpDebugInfo.m_MessageBase, eRemoteRequestDumpDebug, sizeof(DumpDebugInfo));
 
-	if (!m_pConnection->Send((char*)(&DumpDebugInfo), sizeof(DumpDebugInfo)))
+	if (m_pConnection->Send((char*)(&DumpDebugInfo), sizeof(DumpDebugInfo)) < 0)
 	{
 		perror("m_pConnection->Send");
 		m_pConnection->Disconnect();
@@ -892,7 +919,7 @@ bool RemoteClient::RequestServerEditQueue(eRemoteEditAction iAction, int iOffset
 	}
 
 	bool OK = false;
-	if (!m_pConnection->Send((char*)(&EditQueueRequest), sizeof(EditQueueRequest)))
+	if (m_pConnection->Send((char*)(&EditQueueRequest), sizeof(EditQueueRequest)) < 0)
 	{
 		perror("m_pConnection->Send");
 	}
@@ -916,7 +943,7 @@ bool RemoteClient::RequestServerShutdown()
 	SNZBShutdownRequest ShutdownRequest;
 	InitMessageBase(&ShutdownRequest.m_MessageBase, eRemoteRequestShutdown, sizeof(ShutdownRequest));
 
-	bool OK = m_pConnection->Send((char*)(&ShutdownRequest), sizeof(ShutdownRequest));
+	bool OK = m_pConnection->Send((char*)(&ShutdownRequest), sizeof(ShutdownRequest)) >= 0;
 	if (OK)
 	{
 		OK = ReceiveBoolResponse();
@@ -937,7 +964,7 @@ bool RemoteClient::RequestServerReload()
 	SNZBReloadRequest ReloadRequest;
 	InitMessageBase(&ReloadRequest.m_MessageBase, eRemoteRequestReload, sizeof(ReloadRequest));
 
-	bool OK = m_pConnection->Send((char*)(&ReloadRequest), sizeof(ReloadRequest));
+	bool OK = m_pConnection->Send((char*)(&ReloadRequest), sizeof(ReloadRequest)) >= 0;
 	if (OK)
 	{
 		OK = ReceiveBoolResponse();
@@ -958,7 +985,7 @@ bool RemoteClient::RequestServerVersion()
 	SNZBVersionRequest VersionRequest;
 	InitMessageBase(&VersionRequest.m_MessageBase, eRemoteRequestVersion, sizeof(VersionRequest));
 
-	bool OK = m_pConnection->Send((char*)(&VersionRequest), sizeof(VersionRequest));
+	bool OK = m_pConnection->Send((char*)(&VersionRequest), sizeof(VersionRequest)) >= 0;
 	if (OK)
 	{
 		OK = ReceiveBoolResponse();
@@ -979,7 +1006,7 @@ bool RemoteClient::RequestPostQueue()
 	SNZBPostQueueRequest PostQueueRequest;
 	InitMessageBase(&PostQueueRequest.m_MessageBase, eRemoteRequestPostQueue, sizeof(PostQueueRequest));
 
-	if (!m_pConnection->Send((char*)(&PostQueueRequest), sizeof(PostQueueRequest)))
+	if (m_pConnection->Send((char*)(&PostQueueRequest), sizeof(PostQueueRequest)) < 0)
 	{
 		perror("m_pConnection->Send");
 		return false;
@@ -989,12 +1016,19 @@ bool RemoteClient::RequestPostQueue()
 
 	// Now listen for the returned list
 	SNZBPostQueueResponse PostQueueResponse;
-	bool bRead = m_pConnection->Recv((char*) &PostQueueResponse, sizeof(PostQueueResponse));
-	if (!bRead || 
+	int iResponseLen = m_pConnection->Recv((char*) &PostQueueResponse, sizeof(PostQueueResponse));
+	if (iResponseLen != sizeof(PostQueueResponse) || 
 		(int)ntohl(PostQueueResponse.m_MessageBase.m_iSignature) != (int)NZBMESSAGE_SIGNATURE ||
 		ntohl(PostQueueResponse.m_MessageBase.m_iStructSize) != sizeof(PostQueueResponse))
 	{
-		printf("No response or invalid response (timeout, not nzbget-server or wrong nzbget-server version)\n");
+		if (iResponseLen < 0)
+		{
+			printf("No response received (timeout)\n");
+		}
+		else
+		{
+			printf("Invalid response received: either not nzbget-server or wrong server version\n");
+		}
 		return false;
 	}
 
@@ -1002,7 +1036,7 @@ bool RemoteClient::RequestPostQueue()
 	if (ntohl(PostQueueResponse.m_iTrailingDataLength) > 0)
 	{
 		pBuf = (char*)malloc(ntohl(PostQueueResponse.m_iTrailingDataLength));
-		if (!m_pConnection->Recv(pBuf, ntohl(PostQueueResponse.m_iTrailingDataLength)))
+		if (!m_pConnection->RecvAll(pBuf, ntohl(PostQueueResponse.m_iTrailingDataLength)))
 		{
 			free(pBuf);
 			return false;
@@ -1027,14 +1061,15 @@ bool RemoteClient::RequestPostQueue()
 
 			int iStageProgress = ntohl(pPostQueueAnswer->m_iStageProgress);
 
+			static const int EXECUTING_SCRIPT = 5;
 			char szCompleted[100];
 			szCompleted[0] = '\0';
-			if (iStageProgress > 0 && (int)ntohl(pPostQueueAnswer->m_iStage) != (int)PostInfo::ptExecutingScript)
+			if (iStageProgress > 0 && (int)ntohl(pPostQueueAnswer->m_iStage) != EXECUTING_SCRIPT)
 			{
 				sprintf(szCompleted, ", %i%s", (int)(iStageProgress / 10), "%");
 			}
 
-			const char* szPostStageName[] = { "", ", Loading Pars", ", Verifying source files", ", Repairing", ", Verifying repaired files", ", Unpacking", ", Executing postprocess-script", "" };
+			const char* szPostStageName[] = { "", ", Loading Pars", ", Verifying source files", ", Repairing", ", Verifying repaired files", ", Executing postprocess-script", "" };
 			char* szInfoName = pBufPtr + sizeof(SNZBPostQueueResponseEntry) + ntohl(pPostQueueAnswer->m_iNZBFilenameLen) + ntohl(pPostQueueAnswer->m_iParFilename);
 			
 			printf("[%i] %s%s%s\n", ntohl(pPostQueueAnswer->m_iID), szInfoName, szPostStageName[ntohl(pPostQueueAnswer->m_iStage)], szCompleted);
@@ -1062,7 +1097,7 @@ bool RemoteClient::RequestWriteLog(int iKind, const char* szText)
 	int iLength = strlen(szText) + 1;
 	WriteLogRequest.m_iTrailingDataLength = htonl(iLength);
 
-	if (!m_pConnection->Send((char*)(&WriteLogRequest), sizeof(WriteLogRequest)))
+	if (m_pConnection->Send((char*)(&WriteLogRequest), sizeof(WriteLogRequest)) < 0)
 	{
 		perror("m_pConnection->Send");
 		return false;
@@ -1083,7 +1118,7 @@ bool RemoteClient::RequestScan(bool bSyncMode)
 
 	ScanRequest.m_bSyncMode = htonl(bSyncMode);
 
-	bool OK = m_pConnection->Send((char*)(&ScanRequest), sizeof(ScanRequest));
+	bool OK = m_pConnection->Send((char*)(&ScanRequest), sizeof(ScanRequest)) >= 0;
 	if (OK)
 	{
 		OK = ReceiveBoolResponse();
@@ -1104,7 +1139,7 @@ bool RemoteClient::RequestHistory()
 	SNZBHistoryRequest HistoryRequest;
 	InitMessageBase(&HistoryRequest.m_MessageBase, eRemoteRequestHistory, sizeof(HistoryRequest));
 
-	if (!m_pConnection->Send((char*)(&HistoryRequest), sizeof(HistoryRequest)))
+	if (m_pConnection->Send((char*)(&HistoryRequest), sizeof(HistoryRequest)) < 0)
 	{
 		perror("m_pConnection->Send");
 		return false;
@@ -1114,12 +1149,19 @@ bool RemoteClient::RequestHistory()
 
 	// Now listen for the returned list
 	SNZBHistoryResponse HistoryResponse;
-	bool bRead = m_pConnection->Recv((char*) &HistoryResponse, sizeof(HistoryResponse));
-	if (!bRead || 
+	int iResponseLen = m_pConnection->Recv((char*) &HistoryResponse, sizeof(HistoryResponse));
+	if (iResponseLen != sizeof(HistoryResponse) || 
 		(int)ntohl(HistoryResponse.m_MessageBase.m_iSignature) != (int)NZBMESSAGE_SIGNATURE ||
 		ntohl(HistoryResponse.m_MessageBase.m_iStructSize) != sizeof(HistoryResponse))
 	{
-		printf("No response or invalid response (timeout, not nzbget-server or wrong nzbget-server version)\n");
+		if (iResponseLen < 0)
+		{
+			printf("No response received (timeout)\n");
+		}
+		else
+		{
+			printf("Invalid response received: either not nzbget-server or wrong server version\n");
+		}
 		return false;
 	}
 
@@ -1127,7 +1169,7 @@ bool RemoteClient::RequestHistory()
 	if (ntohl(HistoryResponse.m_iTrailingDataLength) > 0)
 	{
 		pBuf = (char*)malloc(ntohl(HistoryResponse.m_iTrailingDataLength));
-		if (!m_pConnection->Recv(pBuf, ntohl(HistoryResponse.m_iTrailingDataLength)))
+		if (!m_pConnection->RecvAll(pBuf, ntohl(HistoryResponse.m_iTrailingDataLength)))
 		{
 			free(pBuf);
 			return false;
@@ -1215,7 +1257,7 @@ bool RemoteClient::RequestServerDownloadUrl(const char* szURL, const char* szNZB
 	}
 	DownloadUrlRequest.m_szNZBFilename[NZBREQUESTFILENAMESIZE-1] = '\0';
 
-	bool OK = m_pConnection->Send((char*)(&DownloadUrlRequest), sizeof(DownloadUrlRequest));
+	bool OK = m_pConnection->Send((char*)(&DownloadUrlRequest), sizeof(DownloadUrlRequest)) >= 0;
 	if (OK)
 	{
 		OK = ReceiveBoolResponse();
@@ -1236,7 +1278,7 @@ bool RemoteClient::RequestUrlQueue()
 	SNZBUrlQueueRequest UrlQueueRequest;
 	InitMessageBase(&UrlQueueRequest.m_MessageBase, eRemoteRequestUrlQueue, sizeof(UrlQueueRequest));
 
-	if (!m_pConnection->Send((char*)(&UrlQueueRequest), sizeof(UrlQueueRequest)))
+	if (m_pConnection->Send((char*)(&UrlQueueRequest), sizeof(UrlQueueRequest)) < 0)
 	{
 		perror("m_pConnection->Send");
 		return false;
@@ -1246,12 +1288,19 @@ bool RemoteClient::RequestUrlQueue()
 
 	// Now listen for the returned list
 	SNZBUrlQueueResponse UrlQueueResponse;
-	bool bRead = m_pConnection->Recv((char*) &UrlQueueResponse, sizeof(UrlQueueResponse));
-	if (!bRead || 
+	int iResponseLen = m_pConnection->Recv((char*) &UrlQueueResponse, sizeof(UrlQueueResponse));
+	if (iResponseLen != sizeof(UrlQueueResponse) || 
 		(int)ntohl(UrlQueueResponse.m_MessageBase.m_iSignature) != (int)NZBMESSAGE_SIGNATURE ||
 		ntohl(UrlQueueResponse.m_MessageBase.m_iStructSize) != sizeof(UrlQueueResponse))
 	{
-		printf("No response or invalid response (timeout, not nzbget-server or wrong nzbget-server version)\n");
+		if (iResponseLen < 0)
+		{
+			printf("No response received (timeout)\n");
+		}
+		else
+		{
+			printf("Invalid response received: either not nzbget-server or wrong server version\n");
+		}
 		return false;
 	}
 
@@ -1259,7 +1308,7 @@ bool RemoteClient::RequestUrlQueue()
 	if (ntohl(UrlQueueResponse.m_iTrailingDataLength) > 0)
 	{
 		pBuf = (char*)malloc(ntohl(UrlQueueResponse.m_iTrailingDataLength));
-		if (!m_pConnection->Recv(pBuf, ntohl(UrlQueueResponse.m_iTrailingDataLength)))
+		if (!m_pConnection->RecvAll(pBuf, ntohl(UrlQueueResponse.m_iTrailingDataLength)))
 		{
 			free(pBuf);
 			return false;

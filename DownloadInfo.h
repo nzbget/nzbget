@@ -2,7 +2,7 @@
  *  This file is part of nzbget
  *
  *  Copyright (C) 2004 Sven Henkel <sidddy@users.sourceforge.net>
- *  Copyright (C) 2007-2013 Andrey Prygunkov <hugbug@users.sourceforge.net>
+ *  Copyright (C) 2007-2011 Andrey Prygunkov <hugbug@users.sourceforge.net>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -91,10 +91,8 @@ private:
 	bool				m_bFilenameConfirmed;
 	int					m_iCompleted;
 	bool				m_bOutputInitialized;
-	char*				m_szOutputFilename;
 	Mutex				m_mutexOutputFile;
 	int					m_iPriority;
-	bool				m_bExtraPriority;
 	int					m_iActiveDownloads;
 
 	static int			m_iIDGen;
@@ -130,15 +128,11 @@ public:
 	void				ClearArticles();
 	void				LockOutputFile();
 	void				UnlockOutputFile();
-	const char*			GetOutputFilename() { return m_szOutputFilename; }
-	void 				SetOutputFilename(const char* szOutputFilename);
 	bool				GetOutputInitialized() { return m_bOutputInitialized; }
 	void				SetOutputInitialized(bool bOutputInitialized) { m_bOutputInitialized = bOutputInitialized; }
 	bool				IsDupe(const char* szFilename);
 	int					GetPriority() { return m_iPriority; }
 	void				SetPriority(int iPriority) { m_iPriority = iPriority; }
-	bool				GetExtraPriority() { return m_bExtraPriority; }
-	void				SetExtraPriority(bool bExtraPriority) { m_bExtraPriority = bExtraPriority; };
 	int					GetActiveDownloads() { return m_iActiveDownloads; }
 	void				SetActiveDownloads(int iActiveDownloads) { m_iActiveDownloads = iActiveDownloads; }
 };
@@ -214,29 +208,12 @@ class NZBInfoList;
 class NZBInfo
 {
 public:
-	enum ERenameStatus
-	{
-		rsNone,
-		rsSkipped,
-		rsFailure,
-		rsSuccess
-	};
-
 	enum EParStatus
 	{
-		psNone,
-		psSkipped,
-		psFailure,
-		psSuccess,
-		psRepairPossible
-	};
-
-	enum EUnpackStatus
-	{
-		usNone,
-		usSkipped,
-		usFailure,
-		usSuccess
+		prNone,
+		prFailure,
+		prRepairPossible,
+		prSuccess
 	};
 
 	enum EScriptStatus
@@ -245,13 +222,6 @@ public:
 		srUnknown,
 		srFailure,
 		srSuccess
-	};
-
-	enum EMoveStatus
-	{
-		msNone,
-		msFailure,
-		msSuccess
 	};
 
 	typedef std::vector<char*>			Files;
@@ -269,16 +239,12 @@ private:
 	long long 			m_lSize;
 	Files				m_completedFiles;
 	bool				m_bPostProcess;
-	ERenameStatus		m_eRenameStatus;
 	EParStatus			m_eParStatus;
-	EUnpackStatus		m_eUnpackStatus;
 	EScriptStatus		m_eScriptStatus;
-	EMoveStatus			m_eMoveStatus;
 	char*				m_szQueuedFilename;
 	bool				m_bDeleted;
 	bool				m_bParCleanup;
 	bool				m_bCleanupDisk;
-	bool				m_bUnpackCleanedUpDisk;
 	NZBInfoList*		m_Owner;
 	NZBParameterList	m_ppParameters;
 	Mutex				m_mutexLog;
@@ -311,19 +277,12 @@ public:
 	int					GetParkedFileCount() { return m_iParkedFileCount; }
 	void 				SetParkedFileCount(int iParkedFileCount) { m_iParkedFileCount = iParkedFileCount; }
 	void				BuildDestDirName();
-	void				BuildFinalDirName(char* szFinalDirBuf, int iBufSize);
 	Files*				GetCompletedFiles() { return &m_completedFiles; }		// needs locking (for shared objects)
 	void				ClearCompletedFiles();
 	bool				GetPostProcess() { return m_bPostProcess; }
 	void				SetPostProcess(bool bPostProcess) { m_bPostProcess = bPostProcess; }
-	ERenameStatus		GetRenameStatus() { return m_eRenameStatus; }
-	void				SetRenameStatus(ERenameStatus eRenameStatus) { m_eRenameStatus = eRenameStatus; }
 	EParStatus			GetParStatus() { return m_eParStatus; }
 	void				SetParStatus(EParStatus eParStatus) { m_eParStatus = eParStatus; }
-	EUnpackStatus		GetUnpackStatus() { return m_eUnpackStatus; }
-	void				SetUnpackStatus(EUnpackStatus eUnpackStatus) { m_eUnpackStatus = eUnpackStatus; }
-	EMoveStatus			GetMoveStatus() { return m_eMoveStatus; }
-	void				SetMoveStatus(EMoveStatus eMoveStatus) { m_eMoveStatus = eMoveStatus; }
 	EScriptStatus		GetScriptStatus() { return m_eScriptStatus; }
 	void				SetScriptStatus(EScriptStatus eScriptStatus) { m_eScriptStatus = eScriptStatus; }
 	const char*			GetQueuedFilename() { return m_szQueuedFilename; }
@@ -334,8 +293,6 @@ public:
 	void				SetParCleanup(bool bParCleanup) { m_bParCleanup = bParCleanup; }
 	bool				GetCleanupDisk() { return m_bCleanupDisk; }
 	void				SetCleanupDisk(bool bCleanupDisk) { m_bCleanupDisk = bCleanupDisk; }
-	bool				GetUnpackCleanedUpDisk() { return m_bUnpackCleanedUpDisk; }
-	void				SetUnpackCleanedUpDisk(bool bUnpackCleanedUpDisk) { m_bUnpackCleanedUpDisk = bUnpackCleanedUpDisk; }
 	NZBParameterList*	GetParameters() { return &m_ppParameters; }				// needs locking (for shared objects)
 	void				SetParameter(const char* szName, const char* szValue);	// needs locking (for shared objects)
 	void				AppendMessage(Message::EKind eKind, time_t tTime, const char* szText);
@@ -363,25 +320,13 @@ public:
 		ptVerifyingSources,
 		ptRepairing,
 		ptVerifyingRepaired,
-		ptRenaming,
-		ptUnpacking,
-		ptMoving,
 		ptExecutingScript,
 		ptFinished
-	};
-
-	enum ERenameStatus
-	{
-		rsNone,
-		rsSkipped,
-		rsFailure,
-		rsSuccess
 	};
 
 	enum EParStatus
 	{
 		psNone,
-		psSkipped,
 		psFailure,
 		psSuccess,
 		psRepairPossible
@@ -392,14 +337,6 @@ public:
 		rpNone,
 		rpCurrent,
 		rpAll
-	};
-
-	enum EUnpackStatus
-	{
-		usNone,
-		usSkipped,
-		usFailure,
-		usSuccess
 	};
 
 	enum EScriptStatus
@@ -419,19 +356,17 @@ private:
 	char*				m_szInfoName;
 	bool				m_bWorking;
 	bool				m_bDeleted;
-	ERenameStatus		m_eRenameStatus;
+	bool				m_bParCheck;
 	EParStatus			m_eParStatus;
-	EUnpackStatus		m_eUnpackStatus;
 	EScriptStatus		m_eScriptStatus;
 	ERequestParCheck	m_eRequestParCheck;
-	bool				m_bRequestParRename;
 	EStage				m_eStage;
 	char*				m_szProgressLabel;
 	int					m_iFileProgress;
 	int					m_iStageProgress;
 	time_t				m_tStartTime;
 	time_t				m_tStageTime;
-	Thread*				m_pPostThread;
+	Thread*				m_pScriptThread;
 	
 	Mutex				m_mutexLog;
 	Messages			m_Messages;
@@ -465,21 +400,17 @@ public:
 	void				SetWorking(bool bWorking) { m_bWorking = bWorking; }
 	bool				GetDeleted() { return m_bDeleted; }
 	void				SetDeleted(bool bDeleted) { m_bDeleted = bDeleted; }
-	ERenameStatus		GetRenameStatus() { return m_eRenameStatus; }
-	void				SetRenameStatus(ERenameStatus eRenameStatus) { m_eRenameStatus = eRenameStatus; }
+	bool				GetParCheck() { return m_bParCheck; }
+	void				SetParCheck(bool bParCheck) { m_bParCheck = bParCheck; }
 	EParStatus			GetParStatus() { return m_eParStatus; }
 	void				SetParStatus(EParStatus eParStatus) { m_eParStatus = eParStatus; }
-	EUnpackStatus		GetUnpackStatus() { return m_eUnpackStatus; }
-	void				SetUnpackStatus(EUnpackStatus eUnpackStatus) { m_eUnpackStatus = eUnpackStatus; }
 	ERequestParCheck	GetRequestParCheck() { return m_eRequestParCheck; }
 	void				SetRequestParCheck(ERequestParCheck eRequestParCheck) { m_eRequestParCheck = eRequestParCheck; }
-	bool				GetRequestParRename() { return m_bRequestParRename; }
-	void				SetRequestParRename(bool bRequestParRename) { m_bRequestParRename = bRequestParRename; }
 	EScriptStatus		GetScriptStatus() { return m_eScriptStatus; }
 	void				SetScriptStatus(EScriptStatus eScriptStatus) { m_eScriptStatus = eScriptStatus; }
 	void				AppendMessage(Message::EKind eKind, const char* szText);
-	Thread*				GetPostThread() { return m_pPostThread; }
-	void				SetPostThread(Thread* pPostThread) { m_pPostThread = pPostThread; }
+	Thread*				GetScriptThread() { return m_pScriptThread; }
+	void				SetScriptThread(Thread* pScriptThread) { m_pScriptThread = pScriptThread; }
 	Messages*			LockMessages();
 	void				UnlockMessages();
 };

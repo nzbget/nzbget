@@ -2,7 +2,7 @@
  *  This file is part of nzbget
  *
  *  Copyright (C) 2004 Sven Henkel <sidddy@users.sourceforge.net>
- *  Copyright (C) 2007-2013 Andrey Prygunkov <hugbug@users.sourceforge.net>
+ *  Copyright (C) 2007-2009 Andrey Prygunkov <hugbug@users.sourceforge.net>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -32,9 +32,6 @@
 #include "Thread.h"
 #endif
 #endif
-#ifndef DISABLE_TLS
-#include "TLS.h"
-#endif
 
 class Connection
 {
@@ -46,22 +43,22 @@ public:
 		csListening,
 		csCancelled
 	};
-
+	
 protected:
 	char*				m_szHost;
 	int					m_iPort;
 	SOCKET				m_iSocket;
 	bool				m_bTLS;
-	char*				m_szCipher;
 	char*				m_szReadBuf;
 	int					m_iBufAvail;
 	char*				m_szBufPtr;
 	EStatus				m_eStatus;
 	int					m_iTimeout;
 	bool				m_bSuppressErrors;
-	char				m_szRemoteAddr[20];
+	bool				m_bAutoClose;
 #ifndef DISABLE_TLS
-	TLSSocket*			m_pTLSSocket;
+	void*				m_pTLS;
+	static bool			bTLSLibInitialized;
 	bool				m_bTLSError;
 #endif
 #ifndef HAVE_GETADDRINFO
@@ -70,7 +67,6 @@ protected:
 #endif
 #endif
 
-						Connection(SOCKET iSocket, bool bTLS);
 	void				ReportError(const char* szMsgPrefix, const char* szMsgArg, bool PrintErrCode, int herrno);
 	virtual bool 		DoConnect();
 	virtual bool		DoDisconnect();
@@ -82,6 +78,7 @@ protected:
 	unsigned int		ResolveHostAddr(const char* szHost);
 #endif
 #ifndef DISABLE_TLS
+	bool				CheckTLSResult(int iResultCode, char* szErrStr, const char* szErrMsgPrefix);
 	int					recv(SOCKET s, char* buf, int len, int flags);
 	int					send(SOCKET s, const char* buf, int len, int flags);
 	void				CloseTLS();
@@ -89,32 +86,31 @@ protected:
 
 public:
 						Connection(const char* szHost, int iPort, bool bTLS);
+						Connection(SOCKET iSocket, bool bAutoClose);
 	virtual 			~Connection();
 	static void			Init();
 	static void			Final();
 	bool 				Connect();
 	bool				Disconnect();
 	int					Bind();
-	bool				Send(const char* pBuffer, int iSize);
-	bool				Recv(char* pBuffer, int iSize);
-	int					TryRecv(char* pBuffer, int iSize);
+	int					Send(const char* pBuffer, int iSize);
+	int					Recv(char* pBuffer, int iSize);
+	bool				RecvAll(char* pBuffer, int iSize);
 	char*				ReadLine(char* pBuffer, int iSize, int* pBytesRead);
 	void				ReadBuffer(char** pBuffer, int *iBufLen);
 	int					WriteLine(const char* pBuffer);
-	Connection*			Accept();
+	SOCKET				Accept();
 	void				Cancel();
 	const char*			GetHost() { return m_szHost; }
 	int					GetPort() { return m_iPort; }
 	bool				GetTLS() { return m_bTLS; }
-	const char*			GetCipher() { return m_szCipher; }
-	void				SetCipher(const char* szCipher);
+	SOCKET				GetSocket() { return m_iSocket; }
 	void				SetTimeout(int iTimeout) { m_iTimeout = iTimeout; }
 	EStatus				GetStatus() { return m_eStatus; }
-	void				SetSuppressErrors(bool bSuppressErrors);
+	void				SetSuppressErrors(bool bSuppressErrors) { m_bSuppressErrors = bSuppressErrors; }
 	bool				GetSuppressErrors() { return m_bSuppressErrors; }
-	const char*			GetRemoteAddr();
 #ifndef DISABLE_TLS
-	bool				StartTLS(bool bIsClient, const char* szCertFile, const char* szKeyFile);
+	bool				StartTLS();
 #endif
 };
 
