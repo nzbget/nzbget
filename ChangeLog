@@ -1,3 +1,7 @@
+nzbget-10.1:
+  - please see subversion log at
+    http://nzbget.svn.sourceforge.net/viewvc/nzbget/?view=log
+
 nzbget-10.0:
   - added built-in unpack:
         - rar and 7-zip formats are supported (via external Unrar and

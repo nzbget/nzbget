@@ -2,9 +2,9 @@
 # Process this file with autoconf to produce a configure script.
 
 AC_PREREQ(2.59)
-AC_INIT(nzbget, 10.0, hugbug@users.sourceforge.net)
+AC_INIT(nzbget, 10.1, hugbug@users.sourceforge.net)
 AC_CANONICAL_SYSTEM
-AM_INIT_AUTOMAKE(nzbget, 10.0)
+AM_INIT_AUTOMAKE(nzbget, 10.1)
 AC_CONFIG_SRCDIR([nzbget.cpp])
 AC_CONFIG_HEADERS([config.h])
 
