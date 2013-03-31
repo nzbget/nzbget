@@ -1,6 +1,6 @@
 nzbget-10.1:
-  - please see subversion log at
-    http://nzbget.svn.sourceforge.net/viewvc/nzbget/?view=log
+  - fixed: articles with decoding errors (incomplete or damaged posts)
+    caused infinite retry-loop in downloader.
 
 nzbget-10.0:
   - added built-in unpack:
