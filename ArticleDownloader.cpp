@@ -226,14 +226,9 @@ void ArticleDownloader::Run()
 			iRemainedRetries--;
 		}
 
-		if (!bConnected || (Status == adFailed && iRemainedRetries > 1))
+		if (!bConnected || (Status == adFailed && iRemainedRetries > 0))
 		{
 			pWantServer = pLastServer;
-		}
-
-		if (Status == adNotFound || Status == adCrcError || (Status == adFailed && iRemainedRetries == 0))
-		{
-			failedServers.push_back(pLastServer);
 		}
 
 		if (pWantServer && !IsStopped() &&
@@ -260,6 +255,8 @@ void ArticleDownloader::Run()
 
 		if (!pWantServer)
 		{
+			failedServers.push_back(pLastServer);
+
 			// if all servers from current level were tried, increase level
 			// if all servers from all levels were tried, break the loop with failure status
 
