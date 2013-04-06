@@ -2,7 +2,7 @@
  *  This file is part of nzbget
  *
  *  Copyright (C) 2005 Bo Cordes Petersen <placebodk@sourceforge.net>
- *  Copyright (C) 2007-2011 Andrey Prygunkov <hugbug@users.sourceforge.net>
+ *  Copyright (C) 2007-2013 Andrey Prygunkov <hugbug@users.sourceforge.net>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -847,7 +847,6 @@ void PostQueueBinCommand::Execute()
 	{
 		PostInfo* pPostInfo = *it;
 		bufsize += strlen(pPostInfo->GetNZBInfo()->GetFilename()) + 1;
-		bufsize += strlen(pPostInfo->GetParFilename()) + 1;
 		bufsize += strlen(pPostInfo->GetInfoName()) + 1;
 		bufsize += strlen(pPostInfo->GetNZBInfo()->GetDestDir()) + 1;
 		bufsize += strlen(pPostInfo->GetProgressLabel()) + 1;
@@ -870,15 +869,12 @@ void PostQueueBinCommand::Execute()
 		pPostQueueAnswer->m_iTotalTimeSec	= htonl((int)(pPostInfo->GetStartTime() ? tCurTime - pPostInfo->GetStartTime() : 0));
 		pPostQueueAnswer->m_iStageTimeSec	= htonl((int)(pPostInfo->GetStageTime() ? tCurTime - pPostInfo->GetStageTime() : 0));
 		pPostQueueAnswer->m_iNZBFilenameLen		= htonl(strlen(pPostInfo->GetNZBInfo()->GetFilename()) + 1);
-		pPostQueueAnswer->m_iParFilename		= htonl(strlen(pPostInfo->GetParFilename()) + 1);
 		pPostQueueAnswer->m_iInfoNameLen		= htonl(strlen(pPostInfo->GetInfoName()) + 1);
 		pPostQueueAnswer->m_iDestDirLen			= htonl(strlen(pPostInfo->GetNZBInfo()->GetDestDir()) + 1);
 		pPostQueueAnswer->m_iProgressLabelLen	= htonl(strlen(pPostInfo->GetProgressLabel()) + 1);
 		bufptr += sizeof(SNZBPostQueueResponseEntry);
 		strcpy(bufptr, pPostInfo->GetNZBInfo()->GetFilename());
 		bufptr += ntohl(pPostQueueAnswer->m_iNZBFilenameLen);
-		strcpy(bufptr, pPostInfo->GetParFilename());
-		bufptr += ntohl(pPostQueueAnswer->m_iParFilename);
 		strcpy(bufptr, pPostInfo->GetInfoName());
 		bufptr += ntohl(pPostQueueAnswer->m_iInfoNameLen);
 		strcpy(bufptr, pPostInfo->GetNZBInfo()->GetDestDir());

@@ -74,15 +74,9 @@ ParCoordinator::ParCoordinator()
 	debug("Creating ParCoordinator");
 
 #ifndef DISABLE_PARCHECK
-	m_ParCheckerObserver.m_pOwner = this;
-	m_ParChecker.Attach(&m_ParCheckerObserver);
-	m_ParChecker.m_pOwner = this;
-
-	m_ParRenamerObserver.m_pOwner = this;
-	m_ParRenamer.Attach(&m_ParRenamerObserver);
-	m_ParRenamer.m_pOwner = this;
-	
 	m_bStopped = false;
+	m_ParChecker.m_pOwner = this;
+	m_ParRenamer.m_pOwner = this;
 
 	const char* szPostScript = g_pOptions->GetPostProcess();
 	m_bPostScript = szPostScript && strlen(szPostScript) > 0;
@@ -248,8 +242,8 @@ void ParCoordinator::StartParCheckJob(PostInfo* pPostInfo)
 	info("Checking pars for %s", pPostInfo->GetInfoName());
 	m_eCurrentJob = jkParCheck;
 	m_ParChecker.SetPostInfo(pPostInfo);
-	m_ParChecker.SetParFilename(pPostInfo->GetParFilename());
-	m_ParChecker.SetInfoName(pPostInfo->GetInfoName());
+	m_ParChecker.SetDestDir(pPostInfo->GetNZBInfo()->GetDestDir());
+	m_ParChecker.SetNZBName(pPostInfo->GetNZBInfo()->GetName());
 	pPostInfo->SetWorking(true);
 	m_ParChecker.Start();
 }
@@ -322,106 +316,38 @@ bool ParCoordinator::AddPar(FileInfo* pFileInfo, bool bDeleted)
 	return bSameCollection;
 }
 
-void ParCoordinator::ParCheckerUpdate(Subject* Caller, void* Aspect)
+void ParCoordinator::ParCheckCompleted()
 {
-	if (m_ParChecker.GetStatus() == ParChecker::psFinished ||
-		m_ParChecker.GetStatus() == ParChecker::psFailed)
+	DownloadQueue* pDownloadQueue = g_pQueueCoordinator->LockQueue();
+
+	PostInfo* pPostInfo = m_ParChecker.GetPostInfo();
+
+	// Update ParStatus (accumulate result)
+	if ((m_ParChecker.GetStatus() == ParChecker::psRepaired ||
+		m_ParChecker.GetStatus() == ParChecker::psRepairNotNeeded) &&
+		pPostInfo->GetNZBInfo()->GetParStatus() <= NZBInfo::psSkipped)
 	{
-		char szPath[1024];
-		strncpy(szPath, m_ParChecker.GetParFilename(), 1024);
-		szPath[1024-1] = '\0';
-		if (char* p = strrchr(szPath, PATH_SEPARATOR)) *p = '\0';
-
-		if (g_pOptions->GetCreateBrokenLog())
-		{
-			char szBrokenLogName[1024];
-			snprintf(szBrokenLogName, 1024, "%s%c_brokenlog.txt", szPath, (int)PATH_SEPARATOR);
-			szBrokenLogName[1024-1] = '\0';
-			
-			if (!m_ParChecker.GetRepairNotNeeded() || Util::FileExists(szBrokenLogName))
-			{
-				FILE* file = fopen(szBrokenLogName, "ab");
-				if (file)
-				{
-					if (m_ParChecker.GetStatus() == ParChecker::psFailed)
-					{
-						if (m_ParChecker.GetCancelled())
-						{
-							fprintf(file, "Repair cancelled for %s\n", m_ParChecker.GetInfoName());
-						}
-						else
-						{
-							fprintf(file, "Repair failed for %s: %s\n", m_ParChecker.GetInfoName(), m_ParChecker.GetErrMsg() ? m_ParChecker.GetErrMsg() : "");
-						}
-					}
-					else if (m_ParChecker.GetRepairNotNeeded())
-					{
-						fprintf(file, "Repair not needed for %s\n", m_ParChecker.GetInfoName());
-					}
-					else
-					{
-						if (g_pOptions->GetParRepair())
-						{
-							fprintf(file, "Successfully repaired %s\n", m_ParChecker.GetInfoName());
-						}
-						else
-						{
-							fprintf(file, "Repair possible for %s\n", m_ParChecker.GetInfoName());
-						}
-					}
-					fclose(file);
-				}
-				else
-				{
-					error("Could not open file %s", szBrokenLogName);
-				}
-			}
-		}
-
-		DownloadQueue* pDownloadQueue = g_pQueueCoordinator->LockQueue();
-
-		PostInfo* pPostInfo = m_ParChecker.GetPostInfo();
-		pPostInfo->SetWorking(false);
-		if (pPostInfo->GetDeleted())
-		{
-			pPostInfo->SetStage(PostInfo::ptFinished);
-		}
-		else
-		{
-			pPostInfo->SetStage(PostInfo::ptQueued);
-		}
-
-		// Update ParStatus by NZBInfo (accumulate result)
-		if (m_ParChecker.GetStatus() == ParChecker::psFailed && !m_ParChecker.GetCancelled())
-		{
-			pPostInfo->SetParStatus(PostInfo::psFailure);
-			pPostInfo->GetNZBInfo()->SetParStatus(NZBInfo::psFailure);
-		}
-		else if (m_ParChecker.GetStatus() == ParChecker::psFinished &&
-			(g_pOptions->GetParRepair() || m_ParChecker.GetRepairNotNeeded()))
-		{
-			pPostInfo->SetParStatus(PostInfo::psSuccess);
-			if (pPostInfo->GetNZBInfo()->GetParStatus() == NZBInfo::psNone)
-			{
-				pPostInfo->GetNZBInfo()->SetParStatus(NZBInfo::psSuccess);
-			}
-		}
-		else
-		{
-			pPostInfo->SetParStatus(PostInfo::psRepairPossible);
-			if (pPostInfo->GetNZBInfo()->GetParStatus() != NZBInfo::psFailure)
-			{
-				pPostInfo->GetNZBInfo()->SetParStatus(NZBInfo::psRepairPossible);
-			}
-		}
-
-		if (g_pOptions->GetSaveQueue() && g_pOptions->GetServerMode())
-		{
-			g_pDiskState->SaveDownloadQueue(pDownloadQueue);
-		}
-
-		g_pQueueCoordinator->UnlockQueue();
+		pPostInfo->GetNZBInfo()->SetParStatus(NZBInfo::psSuccess);
 	}
+	else if (m_ParChecker.GetStatus() == ParChecker::psRepairPossible &&
+		pPostInfo->GetNZBInfo()->GetParStatus() != NZBInfo::psFailure)
+	{
+		pPostInfo->GetNZBInfo()->SetParStatus(NZBInfo::psRepairPossible);
+	}
+	else
+	{
+		pPostInfo->GetNZBInfo()->SetParStatus(NZBInfo::psFailure);
+	}
+
+	pPostInfo->SetWorking(false);
+	pPostInfo->SetStage(PostInfo::ptQueued);
+
+	if (g_pOptions->GetSaveQueue() && g_pOptions->GetServerMode())
+	{
+		g_pDiskState->SaveDownloadQueue(pDownloadQueue);
+	}
+
+	g_pQueueCoordinator->UnlockQueue();
 }
 
 /**
@@ -701,43 +627,21 @@ void ParCoordinator::CheckPauseState(PostInfo* pPostInfo)
 	}
 }
 
-void ParCoordinator::ParRenamerUpdate(Subject* Caller, void* Aspect)
+void ParCoordinator::ParRenameCompleted()
 {
-	if (m_ParRenamer.GetStatus() == ParRenamer::psFinished ||
-		m_ParRenamer.GetStatus() == ParRenamer::psFailed)
+	DownloadQueue* pDownloadQueue = g_pQueueCoordinator->LockQueue();
+	
+	PostInfo* pPostInfo = m_ParRenamer.GetPostInfo();
+	pPostInfo->GetNZBInfo()->SetRenameStatus(m_ParRenamer.GetStatus() == ParRenamer::psSuccess ? NZBInfo::rsSuccess : NZBInfo::rsFailure);
+	pPostInfo->SetWorking(false);
+	pPostInfo->SetStage(PostInfo::ptQueued);
+	
+	if (g_pOptions->GetSaveQueue() && g_pOptions->GetServerMode())
 	{
-		DownloadQueue* pDownloadQueue = g_pQueueCoordinator->LockQueue();
-		
-		PostInfo* pPostInfo = m_ParRenamer.GetPostInfo();
-		pPostInfo->SetWorking(false);
-		if (pPostInfo->GetDeleted())
-		{
-			pPostInfo->SetStage(PostInfo::ptFinished);
-		}
-		else
-		{
-			pPostInfo->SetStage(PostInfo::ptQueued);
-		}
-		
-		// Update ParStatus by NZBInfo
-		if (m_ParRenamer.GetStatus() == ParRenamer::psFailed && !m_ParRenamer.GetCancelled())
-		{
-			pPostInfo->SetRenameStatus(PostInfo::rsFailure);
-			pPostInfo->GetNZBInfo()->SetRenameStatus(NZBInfo::rsFailure);
-		}
-		else if (m_ParRenamer.GetStatus() == ParRenamer::psFinished)
-		{
-			pPostInfo->SetRenameStatus(PostInfo::rsSuccess);
-			pPostInfo->GetNZBInfo()->SetRenameStatus(NZBInfo::rsSuccess);
-		}
-		
-		if (g_pOptions->GetSaveQueue() && g_pOptions->GetServerMode())
-		{
-			g_pDiskState->SaveDownloadQueue(pDownloadQueue);
-		}
-		
-		g_pQueueCoordinator->UnlockQueue();
+		g_pDiskState->SaveDownloadQueue(pDownloadQueue);
 	}
+	
+	g_pQueueCoordinator->UnlockQueue();
 }
 
 void ParCoordinator::UpdateParRenameProgress()

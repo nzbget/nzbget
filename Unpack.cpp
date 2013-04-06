@@ -77,7 +77,7 @@ UnpackController::~UnpackController()
 	m_archiveFiles.Clear();
 }
 
-void UnpackController::StartUnpackJob(PostInfo* pPostInfo)
+void UnpackController::StartJob(PostInfo* pPostInfo)
 {
 	UnpackController* pUnpackController = new UnpackController();
 	pUnpackController->m_pPostInfo = pPostInfo;
@@ -186,7 +186,6 @@ void UnpackController::Run()
 		else
 #endif
 		{
-			m_pPostInfo->SetUnpackStatus(PostInfo::usSkipped);
 			m_pPostInfo->GetNZBInfo()->SetUnpackStatus(NZBInfo::usSkipped);
 			m_pPostInfo->SetStage(PostInfo::ptQueued);
 		}
@@ -289,7 +288,6 @@ void UnpackController::Completed()
 	if (m_bUnpackOK && bCleanupSuccess)
 	{
 		PrintMessage(Message::mkInfo, "%s %s", m_szInfoNameUp, "successful");
-		m_pPostInfo->SetUnpackStatus(PostInfo::usSuccess);
 		m_pPostInfo->GetNZBInfo()->SetUnpackStatus(NZBInfo::usSuccess);
 		m_pPostInfo->GetNZBInfo()->SetUnpackCleanedUpDisk(m_bCleanedUpDisk);
 		m_pPostInfo->SetStage(PostInfo::ptQueued);
@@ -305,7 +303,6 @@ void UnpackController::Completed()
 #endif
 		{
 			PrintMessage(Message::mkError, "%s failed", m_szInfoNameUp);
-			m_pPostInfo->SetUnpackStatus(PostInfo::usFailure);
 			m_pPostInfo->GetNZBInfo()->SetUnpackStatus(NZBInfo::usFailure);
 			m_pPostInfo->SetStage(PostInfo::ptQueued);
 		}
@@ -322,7 +319,7 @@ void UnpackController::RequestParCheck(bool bRename)
 	}
 	else
 	{
-		m_pPostInfo->SetRequestParCheck(PostInfo::rpAll);
+		m_pPostInfo->SetRequestParCheck(true);
 	}
 	m_pPostInfo->SetStage(PostInfo::ptFinished);
 }
@@ -609,7 +606,7 @@ void UnpackController::Stop()
 }
 
 
-void MoveController::StartMoveJob(PostInfo* pPostInfo)
+void MoveController::StartJob(PostInfo* pPostInfo)
 {
 	MoveController* pMoveController = new MoveController();
 	pMoveController->m_pPostInfo = pPostInfo;

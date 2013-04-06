@@ -57,8 +57,7 @@ extern Options* g_pOptions;
 extern char* (*g_szEnvironmentVariables)[];
 extern DownloadQueueHolder* g_pDownloadQueueHolder;
 
-static const int POSTPROCESS_PARCHECK_CURRENT = 91;
-static const int POSTPROCESS_PARCHECK_ALL = 92;
+static const int POSTPROCESS_PARCHECK = 92;
 static const int POSTPROCESS_SUCCESS = 93;
 static const int POSTPROCESS_ERROR = 94;
 static const int POSTPROCESS_NONE = 95;
@@ -656,14 +655,12 @@ void ScriptController::PrintMessage(Message::EKind eKind, const char* szFormat, 
 	AddMessage(eKind, false, tmp2);
 }
 
-void PostScriptController::StartScriptJob(PostInfo* pPostInfo, bool bNZBFileCompleted, bool bHasFailedParJobs)
+void PostScriptController::StartJob(PostInfo* pPostInfo)
 {
 	PostScriptController* pScriptController = new PostScriptController();
 	pScriptController->m_pPostInfo = pPostInfo;
 	pScriptController->SetScript(g_pOptions->GetPostProcess());
 	pScriptController->SetWorkingDir(g_pOptions->GetDestDir());
-	pScriptController->m_bNZBFileCompleted = bNZBFileCompleted;
-	pScriptController->m_bHasFailedParJobs = bHasFailedParJobs;
 	pScriptController->SetAutoDestroy(false);
 
 	pPostInfo->SetPostThread(pScriptController);
@@ -682,21 +679,13 @@ void PostScriptController::Run()
 
 	int iParStatus[] = { 0, 0, 1, 2, 3 };
 	char szParStatus[10];
-	snprintf(szParStatus, 10, "%i", iParStatus[g_pOptions->GetAllowReProcess() ? (int)m_pPostInfo->GetParStatus() : (int)m_pPostInfo->GetNZBInfo()->GetParStatus()]);
+	snprintf(szParStatus, 10, "%i", iParStatus[m_pPostInfo->GetNZBInfo()->GetParStatus()]);
 	szParStatus[10-1] = '\0';
 
 	int iUnpackStatus[] = { 0, 0, 1, 2 };
 	char szUnpackStatus[10];
-	snprintf(szUnpackStatus, 10, "%i", g_pOptions->GetAllowReProcess() ? 0 : iUnpackStatus[m_pPostInfo->GetNZBInfo()->GetUnpackStatus()]);
+	snprintf(szUnpackStatus, 10, "%i", iUnpackStatus[m_pPostInfo->GetNZBInfo()->GetUnpackStatus()]);
 	szUnpackStatus[10-1] = '\0';
-
-	char szCollectionCompleted[10];
-	snprintf(szCollectionCompleted, 10, "%i", (int)m_bNZBFileCompleted);
-	szCollectionCompleted[10-1] = '\0';
-
-	char szHasFailedParJobs[10];
-	snprintf(szHasFailedParJobs, 10, "%i", (int)m_bHasFailedParJobs);
-	szHasFailedParJobs[10-1] = '\0';
 
 	char szDestDir[1024];
 	strncpy(szDestDir, m_pPostInfo->GetNZBInfo()->GetDestDir(), 1024);
@@ -706,49 +695,35 @@ void PostScriptController::Run()
 	strncpy(szNZBFilename, m_pPostInfo->GetNZBInfo()->GetFilename(), 1024);
 	szNZBFilename[1024-1] = '\0';
 	
-	char szParFilename[1024];
-	strncpy(szParFilename, m_pPostInfo->GetParFilename(), 1024);
-	szParFilename[1024-1] = '\0';
-
 	char szCategory[1024];
 	strncpy(szCategory, m_pPostInfo->GetNZBInfo()->GetCategory(), 1024);
 	szCategory[1024-1] = '\0';
 
 	char szInfoName[1024];
-	snprintf(szInfoName, 1024, "post-process-script for %s", g_pOptions->GetAllowReProcess() ? m_pPostInfo->GetInfoName() : m_pPostInfo->GetNZBInfo()->GetName());
+	snprintf(szInfoName, 1024, "post-process-script for %s", m_pPostInfo->GetInfoName());
 	szInfoName[1024-1] = '\0';
 	SetInfoName(szInfoName);
 
 	SetDefaultKindPrefix("Post-Process: ");
 	SetDefaultLogKind(g_pOptions->GetProcessLogKind());
 
-	const char* szArgs[9];
+	const char* szArgs[2];
 	szArgs[0] = GetScript();
-	szArgs[1] = szDestDir;
-	szArgs[2] = szNZBFilename;
-	szArgs[3] = szParFilename;
-	szArgs[4] = szParStatus;
-	szArgs[5] = szCollectionCompleted;
-	szArgs[6] = szHasFailedParJobs;
-	szArgs[7] = szCategory;
-	szArgs[8] = NULL;
+	szArgs[1] = NULL;
 	SetArgs(szArgs, false);
 
 	SetEnvVar("NZBPP_NZBNAME", szNZBName);
 	SetEnvVar("NZBPP_DIRECTORY", szDestDir);
 	SetEnvVar("NZBPP_NZBFILENAME", szNZBFilename);
-	SetEnvVar("NZBPP_PARFILENAME", szParFilename);
 	SetEnvVar("NZBPP_PARSTATUS", szParStatus);
 	SetEnvVar("NZBPP_UNPACKSTATUS", szUnpackStatus);
-	SetEnvVar("NZBPP_NZBCOMPLETED", szCollectionCompleted);
-	SetEnvVar("NZBPP_PARFAILED", szHasFailedParJobs);
 	SetEnvVar("NZBPP_CATEGORY", szCategory);
 
 	PrepareEnvParameters(m_pPostInfo->GetNZBInfo());
 
 	g_pDownloadQueueHolder->UnlockQueue();
 
-	info("Executing post-process-script for %s", g_pOptions->GetAllowReProcess() ? m_pPostInfo->GetInfoName() : szNZBName);
+	info("Executing post-process-script for %s", m_pPostInfo->GetInfoName());
 
 	int iResult = Execute();
 
@@ -758,63 +733,39 @@ void PostScriptController::Run()
 	{
 		case POSTPROCESS_SUCCESS:
 			info("%s successful", szInfoName);
-			m_pPostInfo->SetScriptStatus(PostInfo::srSuccess);
+			m_pPostInfo->GetNZBInfo()->SetScriptStatus(NZBInfo::srSuccess);
 			break;
 
 		case POSTPROCESS_ERROR:
 		case -1: // Execute() returns -1 if the process could not be started (file not found or other problem)
 			info("%s failed", szInfoName);
-			m_pPostInfo->SetScriptStatus(PostInfo::srFailure);
+			m_pPostInfo->GetNZBInfo()->SetScriptStatus(NZBInfo::srFailure);
 			break;
 
 		case POSTPROCESS_NONE:
 			info("%s skipped", szInfoName);
-			m_pPostInfo->SetScriptStatus(PostInfo::srNone);
+			m_pPostInfo->GetNZBInfo()->SetScriptStatus(NZBInfo::srNone);
 			break;
 
 #ifndef DISABLE_PARCHECK
-		case POSTPROCESS_PARCHECK_ALL:
-			if (m_pPostInfo->GetParStatus() > PostInfo::psSkipped)
+		case POSTPROCESS_PARCHECK:
+			if (m_pPostInfo->GetNZBInfo()->GetParStatus() > NZBInfo::psSkipped)
 			{
-				error("%s requested par-check/repair for all collections, but they were already checked", szInfoName);
-				m_pPostInfo->SetScriptStatus(PostInfo::srFailure);
-			}
-			else if (!m_bNZBFileCompleted)
-			{
-				error("%s requested par-check/repair for all collections, but it was not the call for the last collection", szInfoName);
-				m_pPostInfo->SetScriptStatus(PostInfo::srFailure);
+				error("%s requested par-check/repair, but the collection was already checked", szInfoName);
+				m_pPostInfo->GetNZBInfo()->SetScriptStatus(NZBInfo::srFailure);
 			}
 			else
 			{
-				info("%s requested par-check/repair for all collections", szInfoName);
-				m_pPostInfo->SetRequestParCheck(PostInfo::rpAll);
-				m_pPostInfo->SetScriptStatus(PostInfo::srSuccess);
-			}
-			break;
-
-		case POSTPROCESS_PARCHECK_CURRENT:
-			if (m_pPostInfo->GetParStatus() > PostInfo::psSkipped)
-			{
-				error("%s requested par-check/repair for current collection, but it was already checked", szInfoName);
-				m_pPostInfo->SetScriptStatus(PostInfo::srFailure);
-			}
-			else if (strlen(m_pPostInfo->GetParFilename()) == 0)
-			{
-				error("%s requested par-check/repair for current collection, but it doesn't have any par-files", szInfoName);
-				m_pPostInfo->SetScriptStatus(PostInfo::srFailure);
-			}
-			else
-			{
-				info("%s requested par-check/repair for current collection", szInfoName);
-				m_pPostInfo->SetRequestParCheck(PostInfo::rpCurrent);
-				m_pPostInfo->SetScriptStatus(PostInfo::srSuccess);
+				info("%s requested par-check/repair", szInfoName);
+				m_pPostInfo->SetRequestParCheck(true);
+				m_pPostInfo->GetNZBInfo()->SetScriptStatus(NZBInfo::srSuccess);
 			}
 			break;
 #endif
 
 		default:
 			info("%s terminated with unknown status", szInfoName);
-			m_pPostInfo->SetScriptStatus(PostInfo::srUnknown);
+			m_pPostInfo->GetNZBInfo()->SetScriptStatus(NZBInfo::srUnknown);
 	}
 
 	m_pPostInfo->SetStage(PostInfo::ptFinished);

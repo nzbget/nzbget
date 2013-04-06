@@ -31,16 +31,14 @@
 #include <deque>
 
 #include "Thread.h"
-#include "Observer.h"
 
-class ParRenamer : public Thread, public Subject
+class ParRenamer : public Thread
 {
 public:
 	enum EStatus
 	{
-        psUnknown,
 		psFailed,
-		psFinished
+		psSuccess
 	};
 	
 	class FileHash
@@ -76,6 +74,7 @@ private:
 
 protected:
 	virtual void		UpdateProgress() {}
+	virtual void		Completed() {}
 	const char*			GetProgressLabel() { return m_szProgressLabel; }
 	int					GetStageProgress() { return m_iStageProgress; }
 

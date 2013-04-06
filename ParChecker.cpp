@@ -48,6 +48,7 @@
 
 #include "nzbget.h"
 #include "ParChecker.h"
+#include "ParCoordinator.h"
 #include "Log.h"
 #include "Options.h"
 #include "Util.h"
@@ -155,7 +156,9 @@ ParChecker::ParChecker()
 {
     debug("Creating ParChecker");
 
-	m_eStatus = psUndefined;
+	m_eStatus = psFailed;
+	m_szDestDir = NULL;
+	m_szNZBName = NULL;
 	m_szParFilename = NULL;
 	m_szInfoName = NULL;
 	m_szErrMsg = NULL;
@@ -172,9 +175,13 @@ ParChecker::~ParChecker()
 {
     debug("Destroying ParChecker");
 
-	if (m_szParFilename)
+	if (m_szDestDir)
 	{
-		free(m_szParFilename);
+		free(m_szDestDir);
+	}
+	if (m_szNZBName)
+	{
+		free(m_szNZBName);
 	}
 	if (m_szInfoName)
 	{
@@ -204,13 +211,22 @@ void ParChecker::Cleanup()
 	m_ProcessedFiles.clear();
 }
 
-void ParChecker::SetParFilename(const char * szParFilename)
+void ParChecker::SetDestDir(const char * szDestDir)
 {
-	if (m_szParFilename)
+	if (m_szDestDir)
 	{
-		free(m_szParFilename);
+		free(m_szDestDir);
 	}
-	m_szParFilename = strdup(szParFilename);
+	m_szDestDir = strdup(szDestDir);
+}
+
+void ParChecker::SetNZBName(const char * szNZBName)
+{
+	if (m_szNZBName)
+	{
+		free(m_szNZBName);
+	}
+	m_szNZBName = strdup(szNZBName);
 }
 
 void ParChecker::SetInfoName(const char * szInfoName)
@@ -222,24 +238,118 @@ void ParChecker::SetInfoName(const char * szInfoName)
 	m_szInfoName = strdup(szInfoName);
 }
 
-void ParChecker::SetStatus(EStatus eStatus)
-{
-	m_eStatus = eStatus;
-	Notify(NULL);
-}
-
 void ParChecker::Run()
 {
+	ParCoordinator::FileList fileList;
+	if (!ParCoordinator::FindMainPars(m_szDestDir, &fileList))
+	{
+		error("Could not start par-check for %s. Could not find any par-files", m_szInfoName);
+		m_eStatus = psFailed;
+		Completed();
+		return;
+	}
+
+	m_eStatus = psRepairNotNeeded;
+	m_bCancelled = false;
+
+	for (ParCoordinator::FileList::iterator it = fileList.begin(); it != fileList.end(); it++)
+	{
+		char* szParFilename = *it;
+		debug("Found par: %s", szParFilename);
+
+		if (!IsStopped() && !m_bCancelled)
+		{
+			char szFullParFilename[1024];
+			snprintf(szFullParFilename, 1024, "%s%c%s", m_szDestDir, (int)PATH_SEPARATOR, szParFilename);
+			szFullParFilename[1024-1] = '\0';
+
+			char szInfoName[1024];
+			int iBaseLen = 0;
+			ParCoordinator::ParseParFilename(szParFilename, &iBaseLen, NULL);
+			int maxlen = iBaseLen < 1024 ? iBaseLen : 1024 - 1;
+			strncpy(szInfoName, szParFilename, maxlen);
+			szInfoName[maxlen] = '\0';
+			
+			char szParInfoName[1024];
+			snprintf(szParInfoName, 1024, "%s%c%s", m_szNZBName, (int)PATH_SEPARATOR, szInfoName);
+			szParInfoName[1024-1] = '\0';
+
+			SetInfoName(szParInfoName);
+
+			EStatus eStatus = RunParCheck(szFullParFilename);
+
+			// accumulate total status, the worst status has priority
+			if (m_eStatus > eStatus)
+			{
+				m_eStatus = eStatus;
+			}
+
+			if (g_pOptions->GetCreateBrokenLog())
+			{
+				WriteBrokenLog(eStatus);
+			}
+		}
+
+		free(szParFilename);
+	}
+
+	Completed();
+}
+
+void ParChecker::WriteBrokenLog(EStatus eStatus)
+{
+	char szBrokenLogName[1024];
+	snprintf(szBrokenLogName, 1024, "%s%c_brokenlog.txt", m_szDestDir, (int)PATH_SEPARATOR);
+	szBrokenLogName[1024-1] = '\0';
+	
+	if (eStatus != psRepairNotNeeded || Util::FileExists(szBrokenLogName))
+	{
+		FILE* file = fopen(szBrokenLogName, "ab");
+		if (file)
+		{
+			if (eStatus == psFailed)
+			{
+				if (m_bCancelled)
+				{
+					fprintf(file, "Repair cancelled for %s\n", m_szInfoName);
+				}
+				else
+				{
+					fprintf(file, "Repair failed for %s: %s\n", m_szInfoName, m_szErrMsg ? m_szErrMsg : "");
+				}
+			}
+			else if (eStatus == psRepairPossible)
+			{
+				fprintf(file, "Repair possible for %s\n", m_szInfoName);
+			}
+			else if (eStatus == psRepaired)
+			{
+				fprintf(file, "Successfully repaired %s\n", m_szInfoName);
+			}
+			else if (eStatus == psRepairNotNeeded)
+			{
+				fprintf(file, "Repair not needed for %s\n", m_szInfoName);
+			}
+			fclose(file);
+		}
+		else
+		{
+			error("Could not open file %s", szBrokenLogName);
+		}
+	}
+}
+
+ParChecker::EStatus ParChecker::RunParCheck(const char* szParFilename)
+{
 	Cleanup();
-	m_bRepairNotNeeded = false;
+	m_szParFilename = szParFilename;
 	m_eStage = ptLoadingPars;
 	m_iProcessedFiles = 0;
 	m_iExtraFiles = 0;
 	m_bVerifyingExtraFiles = false;
-	m_bCancelled = false;
+	EStatus eStatus = psFailed;
 
 	info("Verifying %s", m_szInfoName);
-	SetStatus(psWorking);
 
     debug("par: %s", m_szParFilename);
 	
@@ -273,10 +383,9 @@ void ParChecker::Run()
 			error("Could not verify %s: %s", m_szInfoName, IsStopped() ? "due stopping" : "par2-file could not be processed");
 			m_szErrMsg = strdup("par2-file could not be processed");
 		}
-		SetStatus(psFailed);
 		delete pRepairer;
 		Cleanup();
-		return;
+		return psFailed;
 	}
 
 	char BufReason[1024];
@@ -372,19 +481,21 @@ void ParChecker::Run()
 
 	if (IsStopped())
 	{
-		SetStatus(psFailed);
 		delete pRepairer;
 		Cleanup();
-		return;
+		return psFailed;
 	}
+	
+	eStatus = psFailed;
 	
 	if (res == eSuccess)
 	{
     	info("Repair not needed for %s", m_szInfoName);
-		m_bRepairNotNeeded = true;
+		eStatus = psRepairNotNeeded;
 	}
 	else if (res == eRepairPossible)
 	{
+		eStatus = psRepairPossible;
 		if (g_pOptions->GetParRepair())
 		{
     		info("Repairing %s", m_szInfoName);
@@ -403,37 +514,42 @@ void ParChecker::Run()
 			if (res == eSuccess)
 			{
     			info("Successfully repaired %s", m_szInfoName);
+				eStatus = psRepaired;
 			}
 		}
 		else
 		{
     		info("Repair possible for %s", m_szInfoName);
-			res = eSuccess;
 		}
 	}
 	
 	if (m_bCancelled)
 	{
-		warn("Repair cancelled for %s", m_szInfoName);
-		m_szErrMsg = strdup("repair cancelled");
-		SetStatus(psFailed);
+		if (m_eStage >= ptRepairing)
+		{
+			warn("Repair cancelled for %s", m_szInfoName);
+			m_szErrMsg = strdup("repair cancelled");
+			eStatus = psRepairPossible;
+		}
+		else
+		{
+			warn("Par-check cancelled for %s", m_szInfoName);
+			m_szErrMsg = strdup("par-check cancelled");
+			eStatus = psFailed;
+		}
 	}
-	else if (res == eSuccess)
-	{
-		SetStatus(psFinished);
-	}
-	else
+	else if (eStatus == psFailed)
 	{
 		if (!m_szErrMsg && (int)res >= 0 && (int)res <= 8)
 		{
 			m_szErrMsg = strdup(Par2CmdLineErrStr[res]);
 		}
 		error("Repair failed for %s: %s", m_szInfoName, m_szErrMsg ? m_szErrMsg : "");
-		SetStatus(psFailed);
 	}
 	
 	delete pRepairer;
 	Cleanup();
+	return eStatus;
 }
 
 bool ParChecker::LoadMorePars()

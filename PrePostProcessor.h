@@ -79,10 +79,10 @@ private:
 	const char*			m_szPauseReason;
 
 	bool				IsNZBFileCompleted(DownloadQueue* pDownloadQueue, NZBInfo* pNZBInfo, 
-							bool bIgnorePausedPars, bool bCheckPostQueue, bool bAllowOnlyOneDeleted);
+							bool bIgnorePausedPars, bool bAllowOnlyOneDeleted);
 	void				CheckPostQueue();
 	void				JobCompleted(DownloadQueue* pDownloadQueue, PostInfo* pPostInfo);
-	void				StartProcessJob(DownloadQueue* pDownloadQueue, PostInfo* pPostInfo);
+	void				StartJob(DownloadQueue* pDownloadQueue, PostInfo* pPostInfo);
 	void				SaveQueue(DownloadQueue* pDownloadQueue);
 	void				SanitisePostQueue(PostQueue* pPostQueue);
 	void				CheckDiskSpace();
@@ -95,7 +95,6 @@ private:
 	void				NZBDownloaded(DownloadQueue* pDownloadQueue, NZBInfo* pNZBInfo);
 	void				NZBDeleted(DownloadQueue* pDownloadQueue, NZBInfo* pNZBInfo);
 	void				NZBCompleted(DownloadQueue* pDownloadQueue, NZBInfo* pNZBInfo, bool bSaveQueue);
-	bool				CreatePostJobs(DownloadQueue* pDownloadQueue, NZBInfo* pNZBInfo, bool bParCheck, bool bUnpackOrScript, bool bAddTop);
 	void				DeleteQueuedFile(const char* szQueuedFile);
 	NZBInfo*			MergeGroups(DownloadQueue* pDownloadQueue, NZBInfo* pNZBInfo);
 	bool				PostQueueMove(IDList* pIDList, EEditAction eAction, int iOffset);

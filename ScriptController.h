@@ -102,8 +102,6 @@ class PostScriptController : public Thread, public ScriptController
 {
 private:
 	PostInfo*			m_pPostInfo;
-	bool				m_bNZBFileCompleted;
-	bool				m_bHasFailedParJobs;
 
 protected:
 	virtual void		AddMessage(Message::EKind eKind, bool bDefaultKind, const char* szText);
@@ -111,7 +109,7 @@ protected:
 public:
 	virtual void		Run();
 	virtual void		Stop();
-	static void			StartScriptJob(PostInfo* pPostInfo, bool bNZBFileCompleted, bool bHasFailedParJobs);
+	static void			StartJob(PostInfo* pPostInfo);
 };
 
 class NZBScriptController : public ScriptController

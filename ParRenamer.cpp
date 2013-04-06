@@ -79,7 +79,7 @@ ParRenamer::ParRenamer()
 {
     debug("Creating ParRenamer");
 
-	m_eStatus = psUnknown;
+	m_eStatus = psFailed;
 	m_szDestDir = NULL;
 	m_szInfoName = NULL;
 	m_szProgressLabel = (char*)malloc(1024);
@@ -131,12 +131,6 @@ void ParRenamer::SetInfoName(const char * szInfoName)
 	m_szInfoName = strdup(szInfoName);
 }
 
-void ParRenamer::SetStatus(EStatus eStatus)
-{
-	m_eStatus = eStatus;
-	Notify(NULL);
-}
-
 void ParRenamer::Cancel()
 {
 	m_bCancelled = true;
@@ -147,8 +141,7 @@ void ParRenamer::Run()
 	Cleanup();
 	m_bCancelled = false;
 	m_iRenamedCount = 0;
-
-	SetStatus(psUnknown);
+	m_eStatus = psFailed;
 
 	snprintf(m_szProgressLabel, 1024, "Checking renamed files for %s", m_szInfoName);
 	m_szProgressLabel[1024-1] = '\0';
@@ -161,20 +154,19 @@ void ParRenamer::Run()
 	if (m_bCancelled)
 	{
 		warn("Renaming cancelled for %s", m_szInfoName);
-		SetStatus(psFailed);
 	}
 	else if (m_iRenamedCount > 0)
 	{
 		info("Successfully renamed %i file(s) for %s", m_iRenamedCount, m_szInfoName);
-		SetStatus(psFinished);
+		m_eStatus = psSuccess;
 	}
 	else
 	{
 		info("Could not rename any files for %s", m_szInfoName);
-		SetStatus(psFailed);
 	}
 
 	Cleanup();
+	Completed();
 }
 
 void ParRenamer::LoadParFiles()
