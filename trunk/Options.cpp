@@ -161,7 +161,6 @@ static const char* OPTION_NZBDIRFILEAGE			= "NzbDirFileAge";
 static const char* OPTION_PARCLEANUPQUEUE		= "ParCleanupQueue";
 static const char* OPTION_DISKSPACE				= "DiskSpace";
 static const char* OPTION_PROCESSLOGKIND		= "ProcessLogKind";
-static const char* OPTION_ALLOWREPROCESS		= "AllowReProcess";
 static const char* OPTION_DUMPCORE				= "DumpCore";
 static const char* OPTION_PARPAUSEQUEUE			= "ParPauseQueue";
 static const char* OPTION_POSTPAUSEQUEUE		= "PostPauseQueue";
@@ -181,6 +180,7 @@ static const char* OPTION_UNPACKPAUSEQUEUE		= "UnpackPauseQueue";
 static const char* OPTION_POSTLOGKIND			= "PostLogKind";
 static const char* OPTION_NZBLOGKIND			= "NZBLogKind";
 static const char* OPTION_RETRYONCRCERROR		= "RetryOnCrcError";
+static const char* OPTION_ALLOWREPROCESS		= "AllowReProcess";
 
 const char* BoolNames[] = { "yes", "no", "true", "false", "1", "0", "on", "off", "enable", "disable", "enabled", "disabled" };
 const int BoolValues[] = { 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0 };
@@ -423,7 +423,6 @@ Options::Options(int argc, char* argv[])
 	m_bParCleanupQueue		= false;
 	m_iDiskSpace			= 0;
 	m_eProcessLogKind		= slNone;
-	m_bAllowReProcess		= false;
 	m_bTestBacktrace		= false;
 	m_bTLS					= false;
 	m_bDumpCore				= false;
@@ -758,7 +757,6 @@ void Options::InitDefault()
 	SetOption(OPTION_PARCLEANUPQUEUE, "yes");
 	SetOption(OPTION_DISKSPACE, "250");
 	SetOption(OPTION_PROCESSLOGKIND, "detail");
-	SetOption(OPTION_ALLOWREPROCESS, "no");
 	SetOption(OPTION_DUMPCORE, "no");
 	SetOption(OPTION_PARPAUSEQUEUE, "no");
 	SetOption(OPTION_POSTPAUSEQUEUE, "no");
@@ -952,7 +950,6 @@ void Options::InitOptions()
 	m_bDirectWrite			= (bool)ParseEnumValue(OPTION_DIRECTWRITE, BoolCount, BoolNames, BoolValues);
 	m_bParCleanupQueue		= (bool)ParseEnumValue(OPTION_PARCLEANUPQUEUE, BoolCount, BoolNames, BoolValues);
 	m_bDecode				= (bool)ParseEnumValue(OPTION_DECODE, BoolCount, BoolNames, BoolValues);
-	m_bAllowReProcess		= (bool)ParseEnumValue(OPTION_ALLOWREPROCESS, BoolCount, BoolNames, BoolValues);
 	m_bDumpCore				= (bool)ParseEnumValue(OPTION_DUMPCORE, BoolCount, BoolNames, BoolValues);
 	m_bParPauseQueue		= (bool)ParseEnumValue(OPTION_PARPAUSEQUEUE, BoolCount, BoolNames, BoolValues);
 	m_bPostPauseQueue		= (bool)ParseEnumValue(OPTION_POSTPAUSEQUEUE, BoolCount, BoolNames, BoolValues);
@@ -2376,7 +2373,7 @@ bool Options::ValidateOptionName(const char * optname)
 		ConfigWarn("Option \"%s\" is obsolete, use \"%s\" instead", optname, OPTION_PROCESSLOGKIND);
 		return true;
 	}
-	if (!strcasecmp(optname, OPTION_RETRYONCRCERROR))
+	if (!strcasecmp(optname, OPTION_RETRYONCRCERROR) || !strcasecmp(optname, OPTION_ALLOWREPROCESS))
 	{
 		ConfigWarn("Option \"%s\" is obsolete, ignored", optname);
 		return true;
@@ -2414,13 +2411,6 @@ void Options::CheckOptions()
 	if (!m_bDecode)
 	{
 		m_bDirectWrite = false;
-	}
-
-	if (m_bUnpack && m_bAllowReProcess)
-	{
-		LocateOptionSrcPos(OPTION_ALLOWREPROCESS);
-		ConfigError("Options \"%s\" and \"%s\" cannot be both active at the same time", OPTION_UNPACK, OPTION_ALLOWREPROCESS);
-		m_bAllowReProcess = false;
 	}
 }
 

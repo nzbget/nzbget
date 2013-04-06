@@ -244,7 +244,6 @@ private:
 	bool				m_bParCleanupQueue;
 	int					m_iDiskSpace;
 	EScriptLogKind		m_eProcessLogKind;
-	bool				m_bAllowReProcess;
 	bool				m_bTLS;
 	bool				m_bDumpCore;
 	bool				m_bParPauseQueue;
@@ -400,7 +399,6 @@ public:
 	bool				GetParCleanupQueue() { return m_bParCleanupQueue; }
 	int					GetDiskSpace() { return m_iDiskSpace; }
 	EScriptLogKind		GetProcessLogKind() { return m_eProcessLogKind; }
-	bool				GetAllowReProcess() { return m_bAllowReProcess; }
 	bool				GetTLS() { return m_bTLS; }
 	bool				GetDumpCore() { return m_bDumpCore; }
 	bool				GetParPauseQueue() { return m_bParPauseQueue; }

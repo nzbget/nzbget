@@ -621,16 +621,11 @@ PostInfo::PostInfo()
 	debug("Creating PostInfo");
 
 	m_pNZBInfo = NULL;
-	m_szParFilename = NULL;
 	m_szInfoName = NULL;
 	m_bWorking = false;
 	m_bDeleted = false;
-	m_eRenameStatus = rsNone;
-	m_eParStatus = psNone;
-	m_eUnpackStatus = usNone;
-	m_eRequestParCheck = rpNone;
+	m_bRequestParCheck = false;
 	m_bRequestParRename = false;
-	m_eScriptStatus = srNone;
 	m_szProgressLabel = strdup("");
 	m_iFileProgress = 0;
 	m_iStageProgress = 0;
@@ -648,10 +643,6 @@ PostInfo::~ PostInfo()
 {
 	debug("Destroying PostInfo");
 
-	if (m_szParFilename)
-	{
-		free(m_szParFilename);
-	}
 	if (m_szInfoName)
 	{
 		free(m_szInfoName);
@@ -681,11 +672,6 @@ void PostInfo::SetNZBInfo(NZBInfo* pNZBInfo)
 	}
 	m_pNZBInfo = pNZBInfo;
 	m_pNZBInfo->AddReference();
-}
-
-void PostInfo::SetParFilename(const char* szParFilename)
-{
-	m_szParFilename = strdup(szParFilename);
 }
 
 void PostInfo::SetInfoName(const char* szInfoName)

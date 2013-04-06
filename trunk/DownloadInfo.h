@@ -370,60 +370,15 @@ public:
 		ptFinished
 	};
 
-	enum ERenameStatus
-	{
-		rsNone,
-		rsSkipped,
-		rsFailure,
-		rsSuccess
-	};
-
-	enum EParStatus
-	{
-		psNone,
-		psSkipped,
-		psFailure,
-		psSuccess,
-		psRepairPossible
-	};
-
-	enum ERequestParCheck
-	{
-		rpNone,
-		rpCurrent,
-		rpAll
-	};
-
-	enum EUnpackStatus
-	{
-		usNone,
-		usSkipped,
-		usFailure,
-		usSuccess
-	};
-
-	enum EScriptStatus
-	{
-		srNone,
-		srUnknown,
-		srFailure,
-		srSuccess
-	};
-
 	typedef std::deque<Message*>	Messages;
 
 private:
 	int					m_iID;
 	NZBInfo*			m_pNZBInfo;
-	char*				m_szParFilename;
 	char*				m_szInfoName;
 	bool				m_bWorking;
 	bool				m_bDeleted;
-	ERenameStatus		m_eRenameStatus;
-	EParStatus			m_eParStatus;
-	EUnpackStatus		m_eUnpackStatus;
-	EScriptStatus		m_eScriptStatus;
-	ERequestParCheck	m_eRequestParCheck;
+	bool				m_bRequestParCheck;
 	bool				m_bRequestParRename;
 	EStage				m_eStage;
 	char*				m_szProgressLabel;
@@ -445,8 +400,6 @@ public:
 	int					GetID() { return m_iID; }
 	NZBInfo*			GetNZBInfo() { return m_pNZBInfo; }
 	void				SetNZBInfo(NZBInfo* pNZBInfo);
-	const char*			GetParFilename() { return m_szParFilename; }
-	void				SetParFilename(const char* szParFilename);
 	const char*			GetInfoName() { return m_szInfoName; }
 	void				SetInfoName(const char* szInfoName);
 	EStage				GetStage() { return m_eStage; }
@@ -465,18 +418,10 @@ public:
 	void				SetWorking(bool bWorking) { m_bWorking = bWorking; }
 	bool				GetDeleted() { return m_bDeleted; }
 	void				SetDeleted(bool bDeleted) { m_bDeleted = bDeleted; }
-	ERenameStatus		GetRenameStatus() { return m_eRenameStatus; }
-	void				SetRenameStatus(ERenameStatus eRenameStatus) { m_eRenameStatus = eRenameStatus; }
-	EParStatus			GetParStatus() { return m_eParStatus; }
-	void				SetParStatus(EParStatus eParStatus) { m_eParStatus = eParStatus; }
-	EUnpackStatus		GetUnpackStatus() { return m_eUnpackStatus; }
-	void				SetUnpackStatus(EUnpackStatus eUnpackStatus) { m_eUnpackStatus = eUnpackStatus; }
-	ERequestParCheck	GetRequestParCheck() { return m_eRequestParCheck; }
-	void				SetRequestParCheck(ERequestParCheck eRequestParCheck) { m_eRequestParCheck = eRequestParCheck; }
+	bool				GetRequestParCheck() { return m_bRequestParCheck; }
+	void				SetRequestParCheck(bool bRequestParCheck) { m_bRequestParCheck = bRequestParCheck; }
 	bool				GetRequestParRename() { return m_bRequestParRename; }
 	void				SetRequestParRename(bool bRequestParRename) { m_bRequestParRename = bRequestParRename; }
-	EScriptStatus		GetScriptStatus() { return m_eScriptStatus; }
-	void				SetScriptStatus(EScriptStatus eScriptStatus) { m_eScriptStatus = eScriptStatus; }
 	void				AppendMessage(Message::EKind eKind, const char* szText);
 	Thread*				GetPostThread() { return m_pPostThread; }
 	void				SetPostThread(Thread* pPostThread) { m_pPostThread = pPostThread; }
