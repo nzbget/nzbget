@@ -74,7 +74,7 @@
 /* Define to 1 if spinlocks are supported */
 #define HAVE_SPINLOCK
 
-#define VERSION "10.1"
+#define VERSION "11.0-testing"
 
 /* Suppress warnings */
 #define _CRT_SECURE_NO_DEPRECATE
