@@ -554,6 +554,10 @@ body.navfixed.scrolled .navbar-fixed-top .navbar-inner {
 	background-position: -400px -80px;
 }
 
+.icon-split {
+	background-position: -432px -80px;
+}
+
 .img-checkmark {
 	background-position: -432px -16px;
 }
@@ -911,6 +915,11 @@ tr.checked  td {
 .modal .input-xlarge {
 	width: 350px;
 }
+
+.modal.modal-padded .input-xxlarge {
+	width: 470px;
+}
+
 /* END: override bootstrap styles for modals */
 
 .modal-bottom-toolbar .btn {
@@ -1717,7 +1726,8 @@ body.phone,
 	text-align: center;
 }
 
-.phone .modal-mini .modal-body {
+.phone .modal-mini .modal-body,
+.phone .modal-padded .modal-body {
   padding-left: 15px;
   padding-right: 15px;
 }
@@ -1805,6 +1815,8 @@ body.phone,
 	}
 
 	.modal .input-xlarge ,
+	.modal .input-xxlarge,
+	.modal.modal-padded .input-xxlarge,
 	.uneditable-mulitline-input {
 		width: 95%;
 	}

@@ -1486,9 +1486,20 @@ void Options::InitCommandLine(int argc, char* argv[])
 					{
 						if (!bGroup)
 						{
-							abort("FATAL ERROR: only groups can be merged\n");
+							abort("FATAL ERROR: Only groups can be merged\n");
 						}
 						m_iEditQueueAction = eRemoteEditActionGroupMerge;
+					}
+					else if (!strcasecmp(optarg, "S"))
+					{
+						m_iEditQueueAction = eRemoteEditActionFileSplit;
+
+						optind++;
+						if (optind > argc)
+						{
+							abort("FATAL ERROR: Could not parse value of option 'E'\n");
+						}
+						m_szEditQueueText = strdup(argv[optind-1]);
 					}
 					else if (!strcasecmp(optarg, "O"))
 					{
@@ -1693,6 +1704,7 @@ void Options::PrintUsage(char* com)
 		"       C <name>             Set category (for groups)\n"
 		"       N <name>             Rename (for groups)\n"
 		"       M                    Merge (for groups)\n"
+		"       S <name>             Split - create new group from selected files\n"
 		"       O <name>=<value>     Set post-process parameter (for groups)\n"
 		"       I <priority>         Set priority (signed integer) for file(s)/group(s)\n"
 		"    <IDs>                   Comma-separated list of file-ids or ranges\n"

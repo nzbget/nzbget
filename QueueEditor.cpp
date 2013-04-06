@@ -1,7 +1,7 @@
 /*
  *  This file is part of nzbget
  *
- *  Copyright (C) 2007-2011 Andrey Prygunkov <hugbug@users.sourceforge.net>
+ *  Copyright (C) 2007-2013 Andrey Prygunkov <hugbug@users.sourceforge.net>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -227,7 +227,11 @@ bool QueueEditor::InternEditList(DownloadQueue* pDownloadQueue, IDList* pIDList,
 	}
 	else if (eAction == eaGroupMerge)
 	{
-		MergeGroups(pDownloadQueue, &cItemList);
+		return MergeGroups(pDownloadQueue, &cItemList);
+	}
+	else if (eAction == eaFileSplit)
+	{
+		return SplitGroup(pDownloadQueue, &cItemList, szText);
 	}
 	else if (eAction == eaFileReorder)
 	{
@@ -290,6 +294,7 @@ bool QueueEditor::InternEditList(DownloadQueue* pDownloadQueue, IDList* pIDList,
 				case eaFilePauseExtraPars:
 				case eaGroupMerge:
 				case eaFileReorder:
+				case eaFileSplit:
 					// remove compiler warning "enumeration not handled in switch"
 					break;
 			}
@@ -543,8 +548,8 @@ bool QueueEditor::EditGroup(DownloadQueue* pDownloadQueue, FileInfo* pFileInfo, 
 		pFileInfo->GetNZBInfo()->SetCleanupDisk(CanCleanupDisk(pDownloadQueue, pFileInfo->GetNZBInfo()));
 	}
 
-	EEditAction GroupToFileMap[] = { (EEditAction)0, eaFileMoveOffset, eaFileMoveTop, eaFileMoveBottom, 
-		eaFilePause, eaFileResume, eaFileDelete, eaFilePauseAllPars, eaFilePauseExtraPars, eaFileSetPriority, eaFileReorder,
+	EEditAction GroupToFileMap[] = { (EEditAction)0, eaFileMoveOffset, eaFileMoveTop, eaFileMoveBottom, eaFilePause,
+		eaFileResume, eaFileDelete, eaFilePauseAllPars, eaFilePauseExtraPars, eaFileSetPriority, eaFileReorder, eaFileSplit,
 		eaFileMoveOffset, eaFileMoveTop, eaFileMoveBottom, eaFilePause, eaFileResume, eaFileDelete, 
 		eaFilePauseAllPars, eaFilePauseExtraPars, eaFileSetPriority,
 		(EEditAction)0, (EEditAction)0, (EEditAction)0 };
@@ -834,12 +839,14 @@ bool QueueEditor::CanCleanupDisk(DownloadQueue* pDownloadQueue, NZBInfo* pNZBInf
 	return false;
 }
 
-void QueueEditor::MergeGroups(DownloadQueue* pDownloadQueue, ItemList* pItemList)
+bool QueueEditor::MergeGroups(DownloadQueue* pDownloadQueue, ItemList* pItemList)
 {
 	if (pItemList->size() == 0)
 	{
-		return;
+		return false;
 	}
+
+	bool bOK = true;
 
 	EditItem* pDestItem = pItemList->front();
 
@@ -849,15 +856,45 @@ void QueueEditor::MergeGroups(DownloadQueue* pDownloadQueue, ItemList* pItemList
 		if (pItem->m_pFileInfo->GetNZBInfo() != pDestItem->m_pFileInfo->GetNZBInfo())
 		{
 			debug("merge %s to %s", pItem->m_pFileInfo->GetNZBInfo()->GetFilename(), pDestItem->m_pFileInfo->GetNZBInfo()->GetFilename());
-			g_pQueueCoordinator->MergeQueueEntries(pDestItem->m_pFileInfo->GetNZBInfo(), pItem->m_pFileInfo->GetNZBInfo());
+			if (g_pQueueCoordinator->MergeQueueEntries(pDestItem->m_pFileInfo->GetNZBInfo(), pItem->m_pFileInfo->GetNZBInfo()))
+			{
+				bOK = false;
+			}
 		}
 		delete pItem;
 	}
 
-	// align group
 	AlignGroup(pDownloadQueue, pDestItem->m_pFileInfo->GetNZBInfo());
 
 	delete pDestItem;
+	return bOK;
+}
+
+bool QueueEditor::SplitGroup(DownloadQueue* pDownloadQueue, ItemList* pItemList, const char* szName)
+{
+	if (pItemList->size() == 0)
+	{
+		return false;
+	}
+
+	FileQueue* pFileList = new FileQueue();
+
+	for (ItemList::iterator it = pItemList->begin(); it != pItemList->end(); it++)
+	{
+		EditItem* pItem = *it;
+		pFileList->push_back(pItem->m_pFileInfo);
+		delete pItem;
+	}
+
+	NZBInfo* pNewNZBInfo = NULL;
+	bool bOK = g_pQueueCoordinator->SplitQueueEntries(pFileList, szName, &pNewNZBInfo);
+	if (bOK)
+	{
+		AlignGroup(pDownloadQueue, pNewNZBInfo);
+	}
+
+	delete pFileList;
+	return bOK;
 }
 
 void QueueEditor::ReorderFiles(DownloadQueue* pDownloadQueue, ItemList* pItemList)

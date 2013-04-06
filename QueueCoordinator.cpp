@@ -1048,3 +1048,76 @@ bool QueueCoordinator::MergeQueueEntries(NZBInfo* pDestNZBInfo, NZBInfo* pSrcNZB
 
 	return true;
 }
+
+/*
+ * Creates new nzb-item out of existing files from other nzb-items.
+ * If any of file-items is being downloaded the command fail.
+ * For each file-item an event "eaFileDeleted" is fired.
+ *
+ * NOTE: DownloadQueue must be locked prior to call of this function
+ */
+bool QueueCoordinator::SplitQueueEntries(FileQueue* pFileList, const char* szName, NZBInfo** pNewNZBInfo)
+{
+	if (pFileList->empty())
+	{
+		return false;
+	}
+
+	NZBInfo* pSrcNZBInfo = NULL;
+
+	for (FileQueue::iterator it = pFileList->begin(); it != pFileList->end(); it++)
+	{
+		FileInfo* pFileInfo = *it;
+		if (pFileInfo->GetActiveDownloads() > 0 || pFileInfo->GetCompleted() > 0)
+		{
+			error("Could not split %s. File is already (partially) downloaded", pFileInfo->GetFilename());
+			return false;
+		}
+		if (pFileInfo->GetNZBInfo()->GetPostProcess())
+		{
+			error("Could not split %s. File in post-process-stage", pFileInfo->GetFilename());
+			return false;
+		}
+		if (!pSrcNZBInfo)
+		{
+			pSrcNZBInfo = pFileInfo->GetNZBInfo();
+		}
+	}
+
+	NZBInfo* pNZBInfo = new NZBInfo();
+	pNZBInfo->AddReference();
+	m_DownloadQueue.GetNZBInfoList()->Add(pNZBInfo);
+
+	pNZBInfo->SetFilename(pSrcNZBInfo->GetFilename());
+	pNZBInfo->SetName(szName);
+	pNZBInfo->SetCategory(pSrcNZBInfo->GetCategory());
+	pNZBInfo->BuildDestDirName();
+	pNZBInfo->SetQueuedFilename(pSrcNZBInfo->GetQueuedFilename());
+
+	for (NZBParameterList::iterator it = pSrcNZBInfo->GetParameters()->begin(); it != pSrcNZBInfo->GetParameters()->end(); it++)
+	{
+		NZBParameter* pNZBParameter = *it;
+		pNZBInfo->SetParameter(pNZBParameter->GetName(), pNZBParameter->GetValue());
+	}
+
+	for (FileQueue::iterator it = pFileList->begin(); it != pFileList->end(); it++)
+	{
+		FileInfo* pFileInfo = *it;
+
+		Aspect aspect = { eaFileDeleted, &m_DownloadQueue, pFileInfo->GetNZBInfo(), pFileInfo };
+		Notify(&aspect);
+
+		pFileInfo->SetNZBInfo(pNZBInfo);
+
+		pSrcNZBInfo->SetFileCount(pSrcNZBInfo->GetFileCount() - 1);
+		pSrcNZBInfo->SetSize(pSrcNZBInfo->GetSize() - pFileInfo->GetSize());
+
+		pNZBInfo->SetFileCount(pNZBInfo->GetFileCount() + 1);
+		pNZBInfo->SetSize(pNZBInfo->GetSize() + pFileInfo->GetSize());
+	}
+
+	pNZBInfo->Release();
+
+	*pNewNZBInfo = pNZBInfo;
+	return true;
+}

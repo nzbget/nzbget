@@ -27,7 +27,7 @@
 #ifndef MESSAGEBASE_H
 #define MESSAGEBASE_H
 
-static const int32_t NZBMESSAGE_SIGNATURE = 0x6E7A6213; // = "nzb-XX" (protocol version)
+static const int32_t NZBMESSAGE_SIGNATURE = 0x6E7A6214; // = "nzb-XX" (protocol version)
 static const int NZBREQUESTFILENAMESIZE = 512;
 static const int NZBREQUESTPASSWORDSIZE = 32;
 
@@ -81,6 +81,7 @@ enum eRemoteEditAction
 	eRemoteEditActionFilePauseExtraPars,	// pause only (almost all) pars, except main par-file (does not affect other files)
 	eRemoteEditActionFileSetPriority,		// set priority for files
 	eRemoteEditActionFileReorder,			// (not supported)
+	eRemoteEditActionFileSplit,				// split - create new group from selected files
 	eRemoteEditActionGroupMoveOffset,		// move group to m_iOffset relative to the current position in download-queue
 	eRemoteEditActionGroupMoveTop,			// move group to the top of download-queue
 	eRemoteEditActionGroupMoveBottom,		// move group to the bottom of download-queue

@@ -662,6 +662,9 @@ var DownloadsEditDialog = (new function($)
 			var file = files[i];
 			file.moved = false;
 		}
+
+		var editIDList = [];
+		var splitError = false;
 		
 		for (var i = 0; i < files.length; i++)
 		{
@@ -675,6 +678,8 @@ var DownloadsEditDialog = (new function($)
 			
 			if (checkedRows.indexOf(file.ID) > -1)
 			{
+				editIDList.push(file.ID);
+				
 				switch (action)
 				{
 					case 'pause':
@@ -727,10 +732,28 @@ var DownloadsEditDialog = (new function($)
 							i--;
 						}
 						break;
+					case 'split':
+						if (file.ActiveDownloads > 0 || file.FileSizeLo !== file.RemainingSizeLo)
+						{
+							splitError = true;
+						}
+						break;
 				}
 			}
 		}
-		
+	
+		if (action === 'split')
+		{
+			if (splitError)
+			{
+				Notification.show('#Notif_Downloads_SplitNotPossible');
+			}
+			else
+			{
+				DownloadsSplitDialog.showModal(curGroup, editIDList);
+			}
+		}
+	
 		filesLoaded(files);
 	}
 
@@ -1067,5 +1090,62 @@ var DownloadsMergeDialog = (new function($)
 		$DownloadsMergeDialog.modal('hide');
 		Refresher.update();
 		Notification.show('#Notif_Downloads_Merged');
+	}
+}(jQuery));
+
+
+/*** DOWNLOAD SPLIT DIALOG ************************************************************/
+
+var DownloadsSplitDialog = (new function($)
+{
+	'use strict'
+
+	// Controls
+	var $DownloadsSplitDialog;
+	
+	// State
+	var splitEditIDList;
+
+	this.init = function()
+	{
+		$DownloadsSplitDialog = $('#DownloadsSplitDialog');
+		
+		$('#DownloadsSplit_Split').click(split);
+
+		$DownloadsSplitDialog.on('hidden', function ()
+		{
+			Refresher.resume();
+		});
+
+		if (UISettings.setFocus)
+		{
+			$DownloadsSplitDialog.on('shown', function ()
+			{
+				$('#DownloadsSplit_Merge').focus();
+			});
+		}
+	}
+
+	this.showModal = function(group, editIDList)
+	{
+		Refresher.pause();
+		splitEditIDList = editIDList;
+		var groupName = group.NZBName + ' (' + editIDList[0] + (editIDList.length > 1 ? '-' + editIDList[editIDList.length-1] : '') + ')';
+		$('#DownloadsSplit_NZBName').attr('value', groupName);
+		$DownloadsSplitDialog.modal({backdrop: 'static'});
+	}
+
+	function split()
+	{
+		var groupName = $('#DownloadsSplit_NZBName').val();
+		RPC.call('editqueue', ['FileSplit', 0, groupName, splitEditIDList], completed);
+	}
+
+	function completed(result)
+	{
+		$('#DownloadsEditDialog').modal('hide');
+		$DownloadsSplitDialog.modal('hide');
+		Refresher.update();
+		Notification.show(result ? '#Notif_Downloads_Splitted' : '#Notif_Downloads_SplitError');
 	}
 }(jQuery));
