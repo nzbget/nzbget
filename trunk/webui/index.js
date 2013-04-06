@@ -152,6 +152,7 @@ var Frontend = (new function($)
 		DownloadsEditDialog.init();
 		DownloadsMultiDialog.init();
 		DownloadsMergeDialog.init();
+		DownloadsSplitDialog.init();
 		Messages.init({ updateTabInfo: updateTabInfo });
 		History.init({ updateTabInfo: updateTabInfo });
 		Upload.init();

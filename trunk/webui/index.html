@@ -765,10 +765,12 @@
 								<button class="btn" onclick="DownloadsEditDialog.editActionClick('pause')" title="Pause selected files"><i class="icon-pause"></i><span class="btn-caption"> Pause</span></button>
 								<button class="btn" onclick="DownloadsEditDialog.editActionClick('resume')" title="Resume selected files"><i class="icon-play"></i><span class="btn-caption"> Resume</span></button>
 								<button class="btn" onclick="DownloadsEditDialog.editActionClick('delete')" title="Delete selected files"><i class="icon-trash"></i><span class="btn-caption"> Delete</span></button>
+								<button class="btn" onclick="DownloadsEditDialog.editActionClick('split')" title="Split selected files into new download"><i class="icon-split"></i><span class="btn-caption"> Split</span></button>
 							</div>
 							<div class="btn-group phone-only inline"><button class="btn" onclick="DownloadsEditDialog.editActionClick('pause')" title="Pause selected files"><i class="icon-pause"></i><span class="btn-caption"> Pause</span></button></div>
 							<div class="btn-group phone-only inline"><button class="btn" onclick="DownloadsEditDialog.editActionClick('resume')" title="Resume selected files"><i class="icon-play"></i><span class="btn-caption"> Resume</span></button></div>
 							<div class="btn-group phone-only inline"><button class="btn" onclick="DownloadsEditDialog.editActionClick('delete')" title="Delete selected files"><i class="icon-trash"></i><span class="btn-caption"> Delete</span></button></div>
+							<div class="btn-group phone-only inline"><button class="btn" onclick="DownloadsEditDialog.editActionClick('split')" title="Split selected files into new download"><i class="icon-split"></i><span class="btn-caption"> Split</span></button></div>
 
 							<!-- MOVE BUTTONS -->
 							<div class="btn-group phone-hide">
@@ -963,6 +965,40 @@
 		<div class="dialog-transmit hide" style="position:absolute;margin-left:260px;" id="DownloadsMerge_Transmit"><img src="img/transmit.gif"></div>
 		<a href="#" class="btn" data-dismiss="modal">Close</a>
 		<a href="#" class="btn btn-primary" id="DownloadsMerge_Merge">Merge</a>
+	</div>
+</div>
+
+<!-- *** SPLIT DOWNLOAD DIALOG ************************************************************ -->
+
+<div class="modal modal-padded hide" id="DownloadsSplitDialog">
+	<div class="modal-header">
+		<a class="close" href='#' data-dismiss="modal"><i class="icon-close"></i></a>
+		<h3>Split Download</h3>
+	</div>
+
+	<div class="modal-body">
+		<div class="form-vertical">
+			<fieldset>
+				<p>New download will be created from selected files. Please choose the name for new download.</p>
+				
+				<div class="control-group">
+					<div class="controls" id="DownloadsSplit_NZBNameGroup">
+						<input type="text" class="input-xxlarge" id="DownloadsSplit_NZBName" />
+					</div>
+				</div>
+
+				<p class="help-block" style="margin-top:10px;">The new download inherits
+				all other properties such as category, priority, etc. from the source item.
+				This action closes the download-edit-dialog. Any changes made in the dialog will not be saved.</p>
+				
+			</fieldset>
+		</div>
+	</div>
+
+	<div class="modal-footer">
+		<div class="dialog-transmit hide" style="position:absolute;margin-left:260px;" id="DownloadsSplit_Transmit"><img src="img/transmit.gif"></div>
+		<a href="#" class="btn" data-dismiss="modal">Close</a>
+		<a href="#" class="btn btn-primary" id="DownloadsSplit_Split">Split</a>
 	</div>
 </div>
 
@@ -1338,6 +1374,18 @@
 
 <div id="Notif_Downloads_Merged" data-duration="1000" class="alert alert-inverse alert-center alert-center-small hide">
     <strong>Merged</strong>
+</div>
+
+<div id="Notif_Downloads_Splitted" data-duration="1000" class="alert alert-inverse alert-center alert-center-small hide">
+    <strong>Splitted</strong>
+</div>
+
+<div id="Notif_Downloads_SplitError" data-duration="2000" class="alert alert-error alert-center alert-center-medium hide">
+    <strong>Could not split. Check messages for errors.</strong>
+</div>
+
+<div id="Notif_Downloads_SplitNotPossible" data-duration="4000" class="alert alert-error alert-center alert-center-medium hide">
+    <strong>Cannot split. Some of selected files are already (partially) downloaded.</strong>
 </div>
 
 <div id="Notif_Downloads_Select" data-duration="2000" class="alert alert-error alert-center alert-center-small hide">

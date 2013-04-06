@@ -1379,6 +1379,7 @@ EditCommandEntry EditCommandNameMap[] = {
 	{ QueueEditor::eaFilePauseExtraPars, "FilePauseExtraPars" },
 	{ QueueEditor::eaFileSetPriority, "FileSetPriority" },
 	{ QueueEditor::eaFileReorder, "FileReorder" },
+	{ QueueEditor::eaFileSplit, "FileSplit" },
 	{ QueueEditor::eaGroupMoveOffset, "GroupMoveOffset" },
 	{ QueueEditor::eaGroupMoveTop, "GroupMoveTop" },
 	{ QueueEditor::eaGroupMoveBottom, "GroupMoveBottom" },

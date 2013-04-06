@@ -1,7 +1,7 @@
 /*
  *  This file if part of nzbget
  *
- *  Copyright (C) 2007-2011 Andrey Prygunkov <hugbug@users.sourceforge.net>
+ *  Copyright (C) 2007-2013 Andrey Prygunkov <hugbug@users.sourceforge.net>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -45,6 +45,7 @@ public:
 		eaFilePauseExtraPars,
 		eaFileSetPriority,
 		eaFileReorder,
+		eaFileSplit,
 		eaGroupMoveOffset,				// move to m_iOffset relative to the current position in queue
 		eaGroupMoveTop,
 		eaGroupMoveBottom,
@@ -96,7 +97,8 @@ private:
 	void					SetNZBCategory(NZBInfo* pNZBInfo, const char* szCategory);
 	void					SetNZBName(NZBInfo* pNZBInfo, const char* szName);
 	bool					CanCleanupDisk(DownloadQueue* pDownloadQueue, NZBInfo* pNZBInfo);
-	void					MergeGroups(DownloadQueue* pDownloadQueue, ItemList* pItemList);
+	bool					MergeGroups(DownloadQueue* pDownloadQueue, ItemList* pItemList);
+	bool					SplitGroup(DownloadQueue* pDownloadQueue, ItemList* pItemList, const char* szName);
 	void					ReorderFiles(DownloadQueue* pDownloadQueue, ItemList* pItemList);
 	void					SetNZBParameter(NZBInfo* pNZBInfo, const char* szParamString);
 
