@@ -1197,9 +1197,37 @@ char* WebUtil::JsonEncode(const char* raw)
 				output += 2;
 				break;
 			default:
-				if (ch < 0x20 || ch >= 0x80)
+				if (ch < 0x20 || ch > 0x80)
 				{
-					sprintf(output, "\\u%04x", ch);
+					unsigned int cp = ch;
+
+					// decode utf8
+					if ((cp >> 5) == 0x6 && (p[1] & 0xc0) == 0x80)
+					{
+						// 2 bytes
+						if (!(ch = *++p)) goto BreakLoop; // read next char
+						cp = ((cp << 6) & 0x7ff) + (ch & 0x3f);
+					}
+					else if ((cp >> 4) == 0xe && (p[1] & 0xc0) == 0x80)
+					{
+						// 3 bytes
+						if (!(ch = *++p)) goto BreakLoop; // read next char
+						cp = ((cp << 12) & 0xffff) + ((ch << 6) & 0xfff);
+						if (!(ch = *++p)) goto BreakLoop; // read next char
+						cp += ch & 0x3f;
+					}
+					else if ((cp >> 3) == 0x1e && (p[1] & 0xc0) == 0x80)
+					{
+						// 4 bytes
+						if (!(ch = *++p)) goto BreakLoop; // read next char
+						cp = ((cp << 18) & 0x1fffff) + ((ch << 12) & 0x3ffff);
+						if (!(ch = *++p)) goto BreakLoop; // read next char
+						cp += (ch << 6) & 0xfff;
+						if (!(ch = *++p)) goto BreakLoop; // read next char
+						cp += ch & 0x3f;
+					}
+
+					sprintf(output, "\\u%04x", cp);
 					output += 6;
 				}
 				else
