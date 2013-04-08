@@ -673,6 +673,13 @@ bool ArticleDownloader::PrepareFile(char* szLine)
 /* creates output file and subdirectores */
 bool ArticleDownloader::CreateOutputFile(int iSize)
 {
+	if (g_pOptions->GetDirectWrite() && Util::FileExists(m_szOutputFilename) &&
+		Util::FileSize(m_szOutputFilename) == iSize)
+	{
+		// keep existing old file from previous program session
+		return true;
+	}
+		
 	// delete eventually existing old file from previous program session
 	remove(m_szOutputFilename);
 
