@@ -679,7 +679,8 @@ bool ArticleDownloader::CreateOutputFile(int iSize)
 	// ensure the directory exist
 	char szDestDir[1024];
 	int iMaxlen = Util::BaseFileName(m_szOutputFilename) - m_szOutputFilename;
-	strncpy(szDestDir, m_szOutputFilename, iMaxlen < 1024 ? iMaxlen : 1024-1);
+	if (iMaxlen > 1024-1) iMaxlen = 1024-1;
+	strncpy(szDestDir, m_szOutputFilename, iMaxlen);
 	szDestDir[iMaxlen] = '\0';
 
 	if (!Util::ForceDirectories(szDestDir))
@@ -1037,7 +1038,8 @@ void ArticleDownloader::CompleteFileParts()
 			debug("Checking old dir for: %s", m_szOutputFilename);
 			char szOldDestDir[1024];
 			int iMaxlen = Util::BaseFileName(m_szOutputFilename) - m_szOutputFilename;
-			strncpy(szOldDestDir, m_szOutputFilename, iMaxlen < 1024 ? iMaxlen : 1024-1);
+			if (iMaxlen > 1024-1) iMaxlen = 1024-1;
+			strncpy(szOldDestDir, m_szOutputFilename, iMaxlen);
 			szOldDestDir[iMaxlen] = '\0';
 			if (Util::DirEmpty(szOldDestDir))
 			{
