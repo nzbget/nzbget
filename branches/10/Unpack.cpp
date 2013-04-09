@@ -156,19 +156,16 @@ void UnpackController::Run()
 
 		if (m_bHasRarFiles)
 		{
-			m_pPostInfo->SetProgressLabel("");
 			ExecuteUnrar();
 		}
 
 		if (m_bHasSevenZipFiles && m_bUnpackOK)
 		{
-			m_pPostInfo->SetProgressLabel("");
 			ExecuteSevenZip(false);
 		}
 
 		if (m_bHasSevenZipMultiFiles && m_bUnpackOK)
 		{
-			m_pPostInfo->SetProgressLabel("");
 			ExecuteSevenZip(true);
 		}
 
@@ -223,8 +220,9 @@ void UnpackController::ExecuteUnrar()
 	m_bAllOKMessageReceived = false;
 	m_eUnpacker = upUnrar;
 	
+	SetProgressLabel("");
 	int iExitCode = Execute();
-	m_pPostInfo->SetProgressLabel("");
+	SetProgressLabel("");
 
 	m_bUnpackOK = iExitCode == 0 && m_bAllOKMessageReceived && !GetTerminated();
 	m_bUnpackStartError = iExitCode == -1;
@@ -270,8 +268,9 @@ void UnpackController::ExecuteSevenZip(bool bMultiVolumes)
 	m_eUnpacker = upSevenZip;
 
 	PrintMessage(Message::mkInfo, "Executing 7-Zip");
+	SetProgressLabel("");
 	int iExitCode = Execute();
-	m_pPostInfo->SetProgressLabel("");
+	SetProgressLabel("");
 
 	m_bUnpackOK = iExitCode == 0 && m_bAllOKMessageReceived && !GetTerminated();
 	m_bUnpackStartError = iExitCode == -1;
@@ -583,7 +582,7 @@ void UnpackController::AddMessage(Message::EKind eKind, bool bDefaultKind, const
 
 	if (m_eUnpacker == upUnrar && !strncmp(szMsgText, "Extracting ", 11))
 	{
-		m_pPostInfo->SetProgressLabel(szMsgText);
+		SetProgressLabel(szMsgText);
 	}
 
 	if (m_eUnpacker == upUnrar && !strncmp(szText, "Extracting from ", 16))
@@ -591,7 +590,7 @@ void UnpackController::AddMessage(Message::EKind eKind, bool bDefaultKind, const
 		const char *szFilename = szText + 16;
 		debug("Filename: %s", szFilename);
 		m_archiveFiles.push_back(strdup(szFilename));
-		m_pPostInfo->SetProgressLabel(szText);
+		SetProgressLabel(szText);
 	}
 
 	if ((m_eUnpacker == upUnrar && !strncmp(szText, "All OK", 6)) ||
@@ -606,6 +605,13 @@ void UnpackController::Stop()
 	debug("Stopping unpack");
 	Thread::Stop();
 	Terminate();
+}
+
+void UnpackController::SetProgressLabel(const char* szProgressLabel)
+{
+	g_pDownloadQueueHolder->LockQueue();
+	m_pPostInfo->SetProgressLabel(szProgressLabel);
+	g_pDownloadQueueHolder->UnlockQueue();
 }
 
 

@@ -81,6 +81,7 @@ protected:
 	bool				HasParFiles();
 	bool				HasBrokenFiles();
 	void				CheckArchiveFiles();
+	void				SetProgressLabel(const char* szProgressLabel);
 #ifndef DISABLE_PARCHECK
 	void				RequestParCheck(bool bRename);
 #endif
