@@ -102,6 +102,8 @@ static const char* OPTION_TEMPDIR				= "TempDir";
 static const char* OPTION_QUEUEDIR				= "QueueDir";
 static const char* OPTION_NZBDIR				= "NzbDir";
 static const char* OPTION_WEBDIR				= "WebDir";
+static const char* OPTION_CONFIGTEMPLATE		= "ConfigTemplate";
+static const char* OPTION_SCRIPTDIR				= "ScriptDir";
 static const char* OPTION_CREATELOG				= "CreateLog";
 static const char* OPTION_LOGFILE				= "LogFile";
 static const char* OPTION_APPENDNZBDIR			= "AppendNzbDir";
@@ -142,8 +144,6 @@ static const char* OPTION_LOADPARS				= "LoadPars";
 static const char* OPTION_PARCHECK				= "ParCheck";
 static const char* OPTION_PARREPAIR				= "ParRepair";
 static const char* OPTION_PARSCAN				= "ParScan";
-static const char* OPTION_POSTPROCESS			= "PostProcess";
-static const char* OPTION_POSTCONFIGFILE		= "PostConfigFile";
 static const char* OPTION_NZBPROCESS			= "NZBProcess";
 static const char* OPTION_NZBADDEDPROCESS		= "NZBAddedProcess";
 static const char* OPTION_STRICTPARNAME			= "StrictParName";
@@ -163,7 +163,7 @@ static const char* OPTION_DISKSPACE				= "DiskSpace";
 static const char* OPTION_PROCESSLOGKIND		= "ProcessLogKind";
 static const char* OPTION_DUMPCORE				= "DumpCore";
 static const char* OPTION_PARPAUSEQUEUE			= "ParPauseQueue";
-static const char* OPTION_POSTPAUSEQUEUE		= "PostPauseQueue";
+static const char* OPTION_SCRIPTPAUSEQUEUE		= "ScriptPauseQueue";
 static const char* OPTION_NZBCLEANUPDISK		= "NzbCleanupDisk";
 static const char* OPTION_DELETECLEANUPDISK		= "DeleteCleanupDisk";
 static const char* OPTION_MERGENZB				= "MergeNzb";
@@ -175,12 +175,15 @@ static const char* OPTION_UNPACKCLEANUPDISK		= "UnpackCleanupDisk";
 static const char* OPTION_UNRARCMD				= "UnrarCmd";
 static const char* OPTION_SEVENZIPCMD			= "SevenZipCmd";
 static const char* OPTION_UNPACKPAUSEQUEUE		= "UnpackPauseQueue";
+static const char* OPTION_SCRIPTORDER			= "ScriptOrder";
+static const char* OPTION_DEFSCRIPT				= "DefScript";
 
 // obsolete options
 static const char* OPTION_POSTLOGKIND			= "PostLogKind";
 static const char* OPTION_NZBLOGKIND			= "NZBLogKind";
 static const char* OPTION_RETRYONCRCERROR		= "RetryOnCrcError";
 static const char* OPTION_ALLOWREPROCESS		= "AllowReProcess";
+static const char* OPTION_POSTPROCESS			= "PostProcess";
 
 const char* BoolNames[] = { "yes", "no", "true", "false", "1", "0", "on", "off", "enable", "disable", "enabled", "disabled" };
 const int BoolValues[] = { 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0 };
@@ -281,10 +284,38 @@ Options::OptEntry* Options::OptEntries::FindOption(const char* szName)
 }
 
 
-Options::Category::Category(const char* szName, const char* szDestDir)
+Options::ConfigTemplate::ConfigTemplate(const char* szName, const char* szTemplate)
+{
+	m_szName = strdup(szName);
+	m_szTemplate = strdup(szTemplate ? szTemplate : "");
+}
+
+Options::ConfigTemplate::~ConfigTemplate()
+{
+	if (m_szName)
+	{
+		free(m_szName);
+	}
+	if (m_szTemplate)
+	{
+		free(m_szTemplate);
+	}
+}
+
+Options::ConfigTemplates::~ConfigTemplates()
+{
+	for (iterator it = begin(); it != end(); it++)
+	{
+		delete *it;
+	}
+}
+
+
+Options::Category::Category(const char* szName, const char* szDestDir, const char* szDefScript)
 {
 	m_szName = strdup(szName);
 	m_szDestDir = szDestDir ? strdup(szDestDir) : NULL;
+	m_szDefScript = szDefScript ? strdup(szDefScript) : NULL;
 }
 
 Options::Category::~Category()
@@ -296,6 +327,10 @@ Options::Category::~Category()
 	if (m_szDestDir)
 	{
 		free(m_szDestDir);
+	}
+	if (m_szDefScript)
+	{
+		free(m_szDefScript);
 	}
 }
 
@@ -327,6 +362,47 @@ Options::Category* Options::Categories::FindCategory(const char* szName)
 }
 
 
+Options::Script::Script(const char* szName, const char* szLocation)
+{
+	m_szName = strdup(szName);
+	m_szLocation = strdup(szLocation);
+}
+
+Options::Script::~Script()
+{
+	if (m_szName)
+	{
+		free(m_szName);
+	}
+	if (m_szLocation)
+	{
+		free(m_szLocation);
+	}
+}
+
+Options::ScriptList::~ScriptList()
+{
+	for (iterator it = begin(); it != end(); it++)
+	{
+		delete *it;
+	}
+}
+
+Options::Script* Options::ScriptList::Find(const char* szName)
+{
+	for (iterator it = begin(); it != end(); it++)
+	{
+		Script* pScript = *it;
+		if (!strcmp(pScript->GetName(), szName))
+		{
+			return pScript;
+		}
+	}
+
+	return NULL;
+}
+
+
 Options::Options(int argc, char* argv[])
 {
 	m_bConfigErrors = false;
@@ -341,6 +417,8 @@ Options::Options(int argc, char* argv[])
 	m_szQueueDir			= NULL;
 	m_szNzbDir				= NULL;
 	m_szWebDir				= NULL;
+	m_szConfigTemplate		= NULL;
+	m_szScriptDir			= NULL;
 	m_eInfoTarget			= mtScreen;
 	m_eWarningTarget		= mtScreen;
 	m_eErrorTarget			= mtScreen;
@@ -403,8 +481,8 @@ Options::Options(int argc, char* argv[])
 	m_bParCheck				= false;
 	m_bParRepair			= false;
 	m_eParScan				= psLimited;
-	m_szPostProcess			= NULL;
-	m_szPostConfigFilename	= NULL;
+	m_szScriptOrder			= NULL;
+	m_szDefScript			= NULL;
 	m_szNZBProcess			= NULL;
 	m_szNZBAddedProcess		= NULL;
 	m_bStrictParName		= false;
@@ -427,7 +505,7 @@ Options::Options(int argc, char* argv[])
 	m_bTLS					= false;
 	m_bDumpCore				= false;
 	m_bParPauseQueue		= false;
-	m_bPostPauseQueue		= false;
+	m_bScriptPauseQueue		= false;
 	m_bNzbCleanupDisk		= false;
 	m_bDeleteCleanupDisk	= false;
 	m_bMergeNzb				= false;
@@ -549,6 +627,14 @@ Options::~Options()
 	{
 		free(m_szWebDir);
 	}
+	if (m_szConfigTemplate)
+	{
+		free(m_szConfigTemplate);
+	}
+	if (m_szScriptDir)
+	{
+		free(m_szScriptDir);
+	}
 	if (m_szArgFilename)
 	{
 		free(m_szArgFilename);
@@ -593,13 +679,13 @@ Options::~Options()
 	{
 		free(m_szDaemonUserName);
 	}
-	if (m_szPostProcess)
+	if (m_szScriptOrder)
 	{
-		free(m_szPostProcess);
+		free(m_szScriptOrder);
 	}
-	if (m_szPostConfigFilename)
+	if (m_szDefScript)
 	{
-		free(m_szPostConfigFilename);
+		free(m_szDefScript);
 	}
 	if (m_szNZBProcess)
 	{
@@ -700,6 +786,8 @@ void Options::InitDefault()
 	SetOption(OPTION_LOCKFILE, "${MainDir}/nzbget.lock");
 	SetOption(OPTION_LOGFILE, "${DestDir}/nzbget.log");
 	SetOption(OPTION_WEBDIR, "");
+	SetOption(OPTION_CONFIGTEMPLATE, "");
+	SetOption(OPTION_SCRIPTDIR, "${MainDir}/ppscripts");
 	SetOption(OPTION_CREATELOG, "yes");
 	SetOption(OPTION_APPENDNZBDIR, "yes");
 	SetOption(OPTION_APPENDCATEGORYDIR, "yes");
@@ -737,8 +825,8 @@ void Options::InitDefault()
 	SetOption(OPTION_PARCHECK, "no");
 	SetOption(OPTION_PARREPAIR, "yes");
 	SetOption(OPTION_PARSCAN, "limited");
-	SetOption(OPTION_POSTPROCESS, "");
-	SetOption(OPTION_POSTCONFIGFILE, "");
+	SetOption(OPTION_SCRIPTORDER, "");
+	SetOption(OPTION_DEFSCRIPT, "");
 	SetOption(OPTION_NZBPROCESS, "");
 	SetOption(OPTION_NZBADDEDPROCESS, "");
 	SetOption(OPTION_STRICTPARNAME, "yes");
@@ -759,7 +847,7 @@ void Options::InitDefault()
 	SetOption(OPTION_PROCESSLOGKIND, "detail");
 	SetOption(OPTION_DUMPCORE, "no");
 	SetOption(OPTION_PARPAUSEQUEUE, "no");
-	SetOption(OPTION_POSTPAUSEQUEUE, "no");
+	SetOption(OPTION_SCRIPTPAUSEQUEUE, "no");
 	SetOption(OPTION_NZBCLEANUPDISK, "no");
 	SetOption(OPTION_DELETECLEANUPDISK, "no");
 	SetOption(OPTION_MERGENZB, "no");
@@ -893,8 +981,11 @@ void Options::InitOptions()
 	CheckDir(&m_szTempDir, OPTION_TEMPDIR, false, true);
 	CheckDir(&m_szQueueDir, OPTION_QUEUEDIR, false, true);
 	CheckDir(&m_szWebDir, OPTION_WEBDIR, true, false);
+	CheckDir(&m_szScriptDir, OPTION_SCRIPTDIR, true, false);
 
-	m_szPostProcess			= strdup(GetOption(OPTION_POSTPROCESS));
+	m_szConfigTemplate		= strdup(GetOption(OPTION_CONFIGTEMPLATE));
+	m_szScriptOrder			= strdup(GetOption(OPTION_SCRIPTORDER));
+	m_szDefScript			= strdup(GetOption(OPTION_DEFSCRIPT));
 	m_szNZBProcess			= strdup(GetOption(OPTION_NZBPROCESS));
 	m_szNZBAddedProcess		= strdup(GetOption(OPTION_NZBADDEDPROCESS));
 	m_szControlIP			= strdup(GetOption(OPTION_CONTROLIP));
@@ -952,7 +1043,7 @@ void Options::InitOptions()
 	m_bDecode				= (bool)ParseEnumValue(OPTION_DECODE, BoolCount, BoolNames, BoolValues);
 	m_bDumpCore				= (bool)ParseEnumValue(OPTION_DUMPCORE, BoolCount, BoolNames, BoolValues);
 	m_bParPauseQueue		= (bool)ParseEnumValue(OPTION_PARPAUSEQUEUE, BoolCount, BoolNames, BoolValues);
-	m_bPostPauseQueue		= (bool)ParseEnumValue(OPTION_POSTPAUSEQUEUE, BoolCount, BoolNames, BoolValues);
+	m_bScriptPauseQueue		= (bool)ParseEnumValue(OPTION_SCRIPTPAUSEQUEUE, BoolCount, BoolNames, BoolValues);
 	m_bNzbCleanupDisk		= (bool)ParseEnumValue(OPTION_NZBCLEANUPDISK, BoolCount, BoolNames, BoolValues);
 	m_bDeleteCleanupDisk	= (bool)ParseEnumValue(OPTION_DELETECLEANUPDISK, BoolCount, BoolNames, BoolValues);
 	m_bMergeNzb				= (bool)ParseEnumValue(OPTION_MERGENZB, BoolCount, BoolNames, BoolValues);
@@ -990,8 +1081,6 @@ void Options::InitOptions()
 	const int ScriptLogKindValues[] = { slNone, slDetail, slInfo, slWarning, slError, slDebug };
 	const int ScriptLogKindCount = 6;
 	m_eProcessLogKind = (EScriptLogKind)ParseEnumValue(OPTION_PROCESSLOGKIND, ScriptLogKindCount, ScriptLogKindNames, ScriptLogKindValues);
-
-	InitPostConfig();
 }
 
 int Options::ParseEnumValue(const char* OptName, int argc, const char * argn[], const int argv[])
@@ -1080,40 +1169,6 @@ float Options::ParseFloatValue(const char* OptName)
 	}
 
 	return val;
-}
-
-void Options::InitPostConfig()
-{
-	if (!m_szPostProcess || strlen(m_szPostProcess) == 0)
-	{
-		return;
-	}
-
-	//extract directory of config file name
-	char szConfigFileDir[1024];
-	strncpy(szConfigFileDir, m_szConfigFilename, 1024);
-	szConfigFileDir[1024-1] = '\0';
-	char *base = Util::BaseFileName(szConfigFileDir);
-	if (base)
-	{
-		*base = '\0';
-	}
-
-	char szPostConfig[1024];
-	snprintf(szPostConfig, sizeof(szPostConfig) - 1, "%s%s", szConfigFileDir, Util::BaseFileName(m_szPostProcess));
-
-	// replace extension with ".conf"
-	char *szExt = strrchr(Util::BaseFileName(szPostConfig), '.');
-	if (szExt && (szExt + 5 - szPostConfig < sizeof(szPostConfig)))
-	{
-		strncpy(szExt, ".conf\0", 6);
-	}
-
-	if (Util::FileExists(szPostConfig))
-	{
-		m_szPostConfigFilename = strdup(szPostConfig);
-		SetOption(OPTION_POSTCONFIGFILE, m_szPostConfigFilename);
-	}
 }
 
 void Options::InitCommandLine(int argc, char* argv[])
@@ -1985,7 +2040,10 @@ void Options::InitCategories()
 		sprintf(destdiroptname, "Category%i.DestDir", n);
 		const char* ndestdir = GetOption(destdiroptname);
 
-		bool definition = nname || ndestdir;
+		sprintf(optname, "Category%i.DefScript", n);
+		const char* ndefscript = GetOption(optname);
+
+		bool definition = nname || ndestdir || ndefscript;
 		bool completed = nname && strlen(nname) > 0;
 
 		if (!definition)
@@ -2001,7 +2059,7 @@ void Options::InitCategories()
 				CheckDir(&szDestDir, destdiroptname, false, true);
 			}
 
-			Category* pCategory = new Category(nname, szDestDir);
+			Category* pCategory = new Category(nname, szDestDir, ndefscript);
 			m_Categories.push_back(pCategory);
 
 			if (szDestDir)
@@ -2373,21 +2431,32 @@ bool Options::ValidateOptionName(const char * optname)
 	{
 		char* p = (char*)optname + 8;
 		while (*p >= '0' && *p <= '9') p++;
-		if (p && (!strcasecmp(p, ".name") || !strcasecmp(p, ".destdir")))
+		if (p && (!strcasecmp(p, ".name") || !strcasecmp(p, ".destdir") || !strcasecmp(p, ".defscript")))
 		{
 			return true;
 		}
 	}
-	
+
+	// post-processing scripts options
+	if (strchr(optname, ':'))
+	{
+		return true;
+	}
+
 	// print a warning message for obsolete options
 	if (!strcasecmp(optname, OPTION_POSTLOGKIND) || !strcasecmp(optname, OPTION_NZBLOGKIND))
 	{
-		ConfigWarn("Option \"%s\" is obsolete, use \"%s\" instead", optname, OPTION_PROCESSLOGKIND);
+		ConfigError("Option \"%s\" is obsolete, ignored, use \"%s\" instead", optname, OPTION_PROCESSLOGKIND);
 		return true;
 	}
 	if (!strcasecmp(optname, OPTION_RETRYONCRCERROR) || !strcasecmp(optname, OPTION_ALLOWREPROCESS))
 	{
 		ConfigWarn("Option \"%s\" is obsolete, ignored", optname);
+		return true;
+	}
+	if (!strcasecmp(optname, OPTION_POSTPROCESS))
+	{
+		ConfigError("Option \"%s\" is obsolete, ignored, use \"%s\" and \"%s\" instead", optname, OPTION_SCRIPTDIR, OPTION_DEFSCRIPT);
 		return true;
 	}
 
@@ -2423,6 +2492,25 @@ void Options::CheckOptions()
 	if (!m_bDecode)
 	{
 		m_bDirectWrite = false;
+	}
+
+	// if option "ConfigTemplate" is not set, use "WebDir" as default location for template
+	// (for compatibility with versions 9 and 10).
+	if (!m_szConfigTemplate || m_szConfigTemplate[0] == '\0')
+	{
+		if (m_szConfigTemplate)
+		{
+			free(m_szConfigTemplate);
+		}
+		int iLen = strlen(m_szWebDir) + 15;
+		m_szConfigTemplate = (char*)malloc(iLen);
+		snprintf(m_szConfigTemplate, iLen, "%s%s", m_szWebDir, "nzbget.conf");
+		m_szConfigTemplate[iLen-1] = '\0';
+		if (!Util::FileExists(m_szConfigTemplate))
+		{
+			free(m_szConfigTemplate);
+			m_szConfigTemplate = strdup("");
+		}
 	}
 }
 
@@ -2526,25 +2614,10 @@ void Options::UnlockOptEntries()
 	m_mutexOptEntries.Unlock();
 }
 
-bool Options::LoadConfig(EDomain eDomain, OptEntries* pOptEntries)
+bool Options::LoadConfig(OptEntries* pOptEntries)
 {
-	const char* szConfigFile = NULL;
-
-	if (eDomain == dmServer)
-	{
-		szConfigFile = GetConfigFilename();
-	}
-	else if (eDomain == dmPostProcess)
-	{
-		szConfigFile = GetPostConfigFilename();
-		if (!szConfigFile)
-		{
-			return true;
-		}
-	}
-
 	// read config file
-	FILE* infile = fopen(szConfigFile, "rb");
+	FILE* infile = fopen(m_szConfigFilename, "rb");
 
 	if (!infile)
 	{
@@ -2575,10 +2648,7 @@ bool Options::LoadConfig(EDomain eDomain, OptEntries* pOptEntries)
 			optvalue[1024-1]  = '\0';
 			if (strlen(optname) > 0)
 			{
-				if (eDomain == dmServer)
-				{
-					ConvertOldOptionName(optname, sizeof(optname));
-				}
+				ConvertOldOptionName(optname, sizeof(optname));
 
 				OptEntry* pOptEntry = new OptEntry();
 				pOptEntry->SetName(optname);
@@ -2593,25 +2663,10 @@ bool Options::LoadConfig(EDomain eDomain, OptEntries* pOptEntries)
 	return true;
 }
 
-bool Options::SaveConfig(EDomain eDomain, OptEntries* pOptEntries)
+bool Options::SaveConfig(OptEntries* pOptEntries)
 {
-	const char* szConfigFile = NULL;
-
-	if (eDomain == dmServer)
-	{
-		szConfigFile = GetConfigFilename();
-	}
-	else if (eDomain == dmPostProcess)
-	{
-		szConfigFile = GetPostConfigFilename();
-		if (!szConfigFile)
-		{
-			return true;
-		}
-	}
-
 	// save to config file
-	FILE* infile = fopen(szConfigFile, "r+b");
+	FILE* infile = fopen(m_szConfigFilename, "r+b");
 
 	if (!infile)
 	{
@@ -2629,7 +2684,7 @@ bool Options::SaveConfig(EDomain eDomain, OptEntries* pOptEntries)
 		config.push_back(strdup(buf));
 	}
 
-	// write config file back to disk, replace old vcalues of existing options with new values
+	// write config file back to disk, replace old values of existing options with new values
 	rewind(infile);
 	for (std::vector<char*>::iterator it = config.begin(); it != config.end(); it++)
     {
@@ -2650,10 +2705,7 @@ bool Options::SaveConfig(EDomain eDomain, OptEntries* pOptEntries)
 			optvalue[1024-1]  = '\0';
 			if (strlen(optname) > 0)
 			{
-				if (eDomain == dmServer)
-				{
-					ConvertOldOptionName(optname, sizeof(optname));
-				}
+				ConvertOldOptionName(optname, sizeof(optname));
 
 				OptEntry *pOptEntry = pOptEntries->FindOption(optname);
 				if (pOptEntry)
@@ -2678,7 +2730,7 @@ bool Options::SaveConfig(EDomain eDomain, OptEntries* pOptEntries)
 	{
 		Options::OptEntry* pOptEntry = *it;
 		std::set<OptEntry*>::iterator fit = writtenOptions.find(pOptEntry);
-		if (fit == writtenOptions.end() && strlen(pOptEntry->GetValue()) > 0)
+		if (fit == writtenOptions.end())
 		{
 			snprintf(val, sizeof(val) - 1, "%s=%s\n", pOptEntry->GetName(), pOptEntry->GetValue());
 			val[sizeof(val) - 1] = '\0';
@@ -2690,7 +2742,7 @@ bool Options::SaveConfig(EDomain eDomain, OptEntries* pOptEntries)
 	int pos = ftell(infile);
 	fclose(infile);
 
-	Util::TruncateFile(szConfigFile, pos);
+	Util::TruncateFile(m_szConfigFilename, pos);
 
 	return true;
 }
@@ -2719,5 +2771,154 @@ void Options::ConvertOldOptionName(char *szOption, int iBufLen)
 		strncpy(szOption, "ControlPassword", iBufLen);
 	}
 
+	if (!strcasecmp(szOption, "PostPauseQueue"))
+	{
+		strncpy(szOption, "ScriptPauseQueue", iBufLen);
+	}
+
 	szOption[iBufLen-1] = '\0';
+}
+
+bool Options::LoadConfigTemplates(ConfigTemplates* pConfigTemplates)
+{
+	char* szBuffer;
+	int iLength;
+	if (!Util::LoadFileIntoBuffer(m_szConfigTemplate, &szBuffer, &iLength))
+	{
+		return false;
+	}
+	ConfigTemplate* pConfigTemplate = new ConfigTemplate("", szBuffer);
+	pConfigTemplates->push_back(pConfigTemplate);
+	free(szBuffer);
+
+	if (!m_szScriptDir)
+	{
+		return true;
+	}
+
+	ScriptList scriptList;
+	LoadScriptList(&scriptList);
+
+	for (ScriptList::iterator it = scriptList.begin(); it != scriptList.end(); it++)
+	{
+		Script* pScript = *it;
+
+		FILE* infile = fopen(pScript->GetLocation(), "rb");
+		if (!infile)
+		{
+			ConfigTemplate* pConfigTemplate = new ConfigTemplate(pScript->GetName(), "");
+			pConfigTemplates->push_back(pConfigTemplate);
+			continue;
+		}
+
+		const char* szConfigSignature = "### NZBGET POST-PROCESSING SCRIPT";
+		const int iConfigSignatureLen = strlen(szConfigSignature);
+		StringBuilder stringBuilder;
+		char buf[1024];
+		bool bInConfig = false;
+
+		while (fgets(buf, sizeof(buf) - 1, infile))
+		{
+			if (!strncmp(buf, szConfigSignature, iConfigSignatureLen))
+			{
+				if (bInConfig)
+				{
+					break;
+				}
+				bInConfig = true;
+				continue;
+			}
+
+			if (bInConfig)
+			{
+				stringBuilder.Append(buf);
+			}
+		}
+
+		fclose(infile);
+
+		ConfigTemplate* pConfigTemplate = new ConfigTemplate(pScript->GetName(), stringBuilder.GetBuffer());
+		pConfigTemplates->push_back(pConfigTemplate);
+	}
+
+	return true;
+}
+
+void Options::LoadScriptList(ScriptList* pScriptList)
+{
+	if (strlen(m_szScriptDir) == 0)
+	{
+		return;
+	}
+
+	ScriptList tmpScriptList;
+	DirBrowser dir(m_szScriptDir);
+	while (const char* szFilename = dir.Next())
+	{
+		if (szFilename[0] != '.' && szFilename[0] != '_')
+		{
+			char szFullFilename[1024];
+			snprintf(szFullFilename, 1024, "%s%s", m_szScriptDir, szFilename);
+			szFullFilename[1024-1] = '\0';
+
+			if (!Util::DirectoryExists(szFullFilename))
+			{
+				Script* pScript = new Script(szFilename, szFullFilename);
+				tmpScriptList.push_back(pScript);
+			}
+			else
+			{
+				// It's a directory, looking for file "start.<any-extension>"
+				DirBrowser dir2(szFullFilename);
+				while (const char* szFilename2 = dir2.Next())
+				{
+					char szFullFilename2[1024];
+					snprintf(szFullFilename2, 1024, "%s%c%s", szFullFilename, PATH_SEPARATOR, szFilename2);
+					szFullFilename2[1024-1] = '\0';
+					if (!strncasecmp(szFilename2, "start", 5) && (strlen(szFilename2) == 5 || szFilename2[5] == '.') &&
+						!Util::DirectoryExists(szFullFilename2))
+					{
+						Script* pScript = new Script(szFilename, szFullFilename2);
+						tmpScriptList.push_back(pScript);
+						break;
+					}
+				}
+			}
+		}
+	}
+	tmpScriptList.sort(CompareScripts);
+
+	// first add all scripts from m_szScriptOrder
+	char* szScriptOrder = strdup(m_szScriptOrder);
+	char* saveptr;
+	char* szScriptName = strtok_r(szScriptOrder, ",;", &saveptr);
+	while (szScriptName)
+	{
+		szScriptName = Util::Trim(szScriptName);
+		if (szScriptName[0] != '\0')
+		{
+			Script* pScript = tmpScriptList.Find(szScriptName);
+			if (pScript)
+			{
+				pScriptList->push_back(new Script(pScript->GetName(), pScript->GetLocation()));
+			}
+		}
+		szScriptName = strtok_r(NULL, ",;", &saveptr);
+	}
+	free(szScriptOrder);
+
+	// second add all other scripts from scripts directory
+	for (ScriptList::iterator it = tmpScriptList.begin(); it != tmpScriptList.end(); it++)
+	{
+		Script* pScript = *it;
+		if (!pScriptList->Find(pScript->GetName()))
+		{
+			pScriptList->push_back(new Script(pScript->GetName(), pScript->GetLocation()));
+		}
+	}
+}
+
+bool Options::CompareScripts(Script* pScript1, Script* pScript2)
+{
+	return strcmp(pScript1->GetName(), pScript2->GetName()) < 0;
 }

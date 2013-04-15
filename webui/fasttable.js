@@ -227,6 +227,11 @@
 			return $(this).data('fasttable').checkedRows;
 		},
 		
+		checkRow : function(id, checked)
+		{
+			checkRow($(this).data('fasttable'), id, checked);
+		},
+		
 		itemCheckClick : itemCheckClick,
 		
 		titleCheckClick : titleCheckClick

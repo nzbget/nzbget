@@ -653,6 +653,8 @@ var DownloadsUI = (new function($)
 					if (group.post.Log && group.post.Log.length > 0)
 					{
 						text = group.post.Log[group.post.Log.length-1].Text;
+						// remove "for <nzb-name>" from label text
+						text = text.replace(' for ' + group.NZBName, ' ');
 					}
 					else
 					{

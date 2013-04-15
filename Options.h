@@ -28,8 +28,11 @@
 #define OPTIONS_H
 
 #include <vector>
+#include <list>
 #include <time.h>
+
 #include "Thread.h"
+#include "Util.h"
 
 class Options
 {
@@ -106,12 +109,6 @@ public:
 		mmRegEx
 	};
 
-	enum EDomain
-	{
-		dmServer = 1,
-		dmPostProcess
-	};
-
 	class OptEntry
 	{
 	private:
@@ -145,6 +142,29 @@ public:
 		OptEntry*		FindOption(const char* szName);
 	};
 
+	class ConfigTemplate
+	{
+	private:
+		char*			m_szName;
+		char*			m_szTemplate;
+
+		friend class Options;
+
+	public:
+						ConfigTemplate(const char* szName, const char* szTemplate);
+						~ConfigTemplate();
+		const char*		GetName() { return m_szName; }
+		const char*		GetTemplate() { return m_szTemplate; }
+	};
+	
+	typedef std::vector<ConfigTemplate*>  ConfigTemplatesBase;
+
+	class ConfigTemplates: public ConfigTemplatesBase
+	{
+	public:
+						~ConfigTemplates();
+	};
+
 	typedef std::vector<char*>  NameList;
 
 	class Category
@@ -152,12 +172,14 @@ public:
 	private:
 		char*			m_szName;
 		char*			m_szDestDir;
+		char*			m_szDefScript;
 
 	public:
-						Category(const char* szName, const char* szDestDir);
+						Category(const char* szName, const char* szDestDir, const char* szDefScript);
 						~Category();
 		const char*		GetName() { return m_szName; }
 		const char*		GetDestDir() { return m_szDestDir; }
+		const char*		GetDefScript() { return m_szDefScript; }
 	};
 	
 	typedef std::vector<Category*>  CategoriesBase;
@@ -167,6 +189,28 @@ public:
 	public:
 						~Categories();
 		Category*		FindCategory(const char* szName);
+	};
+
+	class Script
+	{
+	private:
+		char*			m_szName;
+		char*			m_szLocation;
+
+	public:
+						Script(const char* szName, const char* szLocation);
+						~Script();
+		const char*		GetName() { return m_szName; }
+		const char*		GetLocation() { return m_szLocation; }
+	};
+
+	typedef std::list<Script*>  ScriptListBase;
+
+	class ScriptList: public ScriptListBase
+	{
+	public:
+						~ScriptList();
+		Script*			Find(const char* szName);	
 	};
 
 private:
@@ -185,6 +229,8 @@ private:
 	char*				m_szQueueDir;
 	char*				m_szNzbDir;
 	char*				m_szWebDir;
+	char*				m_szConfigTemplate;
+	char*				m_szScriptDir;
 	EMessageTarget		m_eInfoTarget;
 	EMessageTarget		m_eWarningTarget;
 	EMessageTarget		m_eErrorTarget;
@@ -224,8 +270,8 @@ private:
 	bool				m_bParCheck;
 	bool				m_bParRepair;
 	EParScan			m_eParScan;
-	char*				m_szPostProcess;
-	char*				m_szPostConfigFilename;
+	char*				m_szDefScript;
+	char*				m_szScriptOrder;
 	char*				m_szNZBProcess;
 	char*				m_szNZBAddedProcess;
 	bool				m_bStrictParName;
@@ -247,7 +293,7 @@ private:
 	bool				m_bTLS;
 	bool				m_bDumpCore;
 	bool				m_bParPauseQueue;
-	bool				m_bPostPauseQueue;
+	bool				m_bScriptPauseQueue;
 	bool				m_bNzbCleanupDisk;
 	bool				m_bDeleteCleanupDisk;
 	bool				m_bMergeNzb;
@@ -297,7 +343,6 @@ private:
 	void				InitOptFile();
 	void				InitCommandLine(int argc, char* argv[]);
 	void				InitOptions();
-	void				InitPostConfig();
 	void				InitFileArg(int argc, char* argv[]);
 	void				InitServers();
 	void				InitCategories();
@@ -323,13 +368,16 @@ private:
 	void				ConfigWarn(const char* msg, ...);
 	void				LocateOptionSrcPos(const char *szOptionName);
 	void				ConvertOldOptionName(char *szOption, int iBufLen);
+	static bool			CompareScripts(Script* pScript1, Script* pScript2);
 
 public:
 						Options(int argc, char* argv[]);
 						~Options();
 
-	bool				LoadConfig(EDomain eDomain, OptEntries* pOptEntries);
-	bool				SaveConfig(EDomain eDomain, OptEntries* pOptEntries);
+	bool				LoadConfig(OptEntries* pOptEntries);
+	bool				SaveConfig(OptEntries* pOptEntries);
+	bool				LoadConfigTemplates(ConfigTemplates* pConfigTemplates);
+	void				LoadScriptList(ScriptList* pScriptList);
 
 	// Options
 	OptEntries*			LockOptEntries();
@@ -341,6 +389,8 @@ public:
 	const char*			GetQueueDir() { return m_szQueueDir; }
 	const char*			GetNzbDir() { return m_szNzbDir; }
 	const char*			GetWebDir() { return m_szWebDir; }
+	const char*			GetConfigTemplate() { return m_szConfigTemplate; }
+	const char*			GetScriptDir() { return m_szScriptDir; }
 	bool				GetCreateBrokenLog() const { return m_bCreateBrokenLog; }
 	bool				GetResetLog() const { return m_bResetLog; }
 	EMessageTarget		GetInfoTarget() const { return m_eInfoTarget; }
@@ -380,8 +430,8 @@ public:
 	bool				GetParCheck() { return m_bParCheck; }
 	bool				GetParRepair() { return m_bParRepair; }
 	EParScan			GetParScan() { return m_eParScan; }
-	const char*			GetPostProcess() { return m_szPostProcess; }
-	const char*			GetPostConfigFilename() { return m_szPostConfigFilename; }
+	const char*			GetScriptOrder() { return m_szScriptOrder; }
+	const char*			GetDefScript() { return m_szDefScript; }
 	const char*			GetNZBProcess() { return m_szNZBProcess; }
 	const char*			GetNZBAddedProcess() { return m_szNZBAddedProcess; }
 	bool				GetStrictParName() { return m_bStrictParName; }
@@ -402,7 +452,7 @@ public:
 	bool				GetTLS() { return m_bTLS; }
 	bool				GetDumpCore() { return m_bDumpCore; }
 	bool				GetParPauseQueue() { return m_bParPauseQueue; }
-	bool				GetPostPauseQueue() { return m_bPostPauseQueue; }
+	bool				GetScriptPauseQueue() { return m_bScriptPauseQueue; }
 	bool				GetNzbCleanupDisk() { return m_bNzbCleanupDisk; }
 	bool				GetDeleteCleanupDisk() { return m_bDeleteCleanupDisk; }
 	bool				GetMergeNzb() { return m_bMergeNzb; }

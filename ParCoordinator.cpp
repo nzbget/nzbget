@@ -77,9 +77,6 @@ ParCoordinator::ParCoordinator()
 	m_bStopped = false;
 	m_ParChecker.m_pOwner = this;
 	m_ParRenamer.m_pOwner = this;
-
-	const char* szPostScript = g_pOptions->GetPostProcess();
-	m_bPostScript = szPostScript && strlen(szPostScript) > 0;
 #endif
 }
 

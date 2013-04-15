@@ -156,19 +156,16 @@ void UnpackController::Run()
 
 		if (m_bHasRarFiles)
 		{
-			m_pPostInfo->SetProgressLabel("");
 			ExecuteUnrar();
 		}
 
 		if (m_bHasSevenZipFiles && m_bUnpackOK)
 		{
-			m_pPostInfo->SetProgressLabel("");
 			ExecuteSevenZip(false);
 		}
 
 		if (m_bHasSevenZipMultiFiles && m_bUnpackOK)
 		{
-			m_pPostInfo->SetProgressLabel("");
 			ExecuteSevenZip(true);
 		}
 
@@ -217,13 +214,15 @@ void UnpackController::ExecuteUnrar()
 	SetArgs(szArgs, false);
 
 	SetScript(g_pOptions->GetUnrarCmd());
-	SetDefaultKindPrefix("Unrar: ");
+	SetLogPrefix("Unrar");
 
 	m_bAllOKMessageReceived = false;
 	m_eUnpacker = upUnrar;
 	
+	SetProgressLabel("");
 	int iExitCode = Execute();
-	m_pPostInfo->SetProgressLabel("");
+	SetLogPrefix(NULL);
+	SetProgressLabel("");
 
 	m_bUnpackOK = iExitCode == 0 && m_bAllOKMessageReceived && !GetTerminated();
 	m_bUnpackStartError = iExitCode == -1;
@@ -263,14 +262,16 @@ void UnpackController::ExecuteSevenZip(bool bMultiVolumes)
 	SetArgs(szArgs, false);
 
 	SetScript(g_pOptions->GetSevenZipCmd());
-	SetDefaultKindPrefix("7-Zip: ");
 
 	m_bAllOKMessageReceived = false;
 	m_eUnpacker = upSevenZip;
 
 	PrintMessage(Message::mkInfo, "Executing 7-Zip");
+	SetLogPrefix("7-Zip");
+	SetProgressLabel("");
 	int iExitCode = Execute();
-	m_pPostInfo->SetProgressLabel("");
+	SetLogPrefix(NULL);
+	SetProgressLabel("");
 
 	m_bUnpackOK = iExitCode == 0 && m_bAllOKMessageReceived && !GetTerminated();
 	m_bUnpackStartError = iExitCode == -1;
@@ -560,7 +561,7 @@ bool UnpackController::ReadLine(char* szBuf, int iBufSize, FILE* pStream)
 	return i > 0;
 }
 
-void UnpackController::AddMessage(Message::EKind eKind, bool bDefaultKind, const char* szText)
+void UnpackController::AddMessage(Message::EKind eKind, const char* szText)
 {
 	char szMsgText[1024];
 	strncpy(szMsgText, szText, 1024);
@@ -568,31 +569,31 @@ void UnpackController::AddMessage(Message::EKind eKind, bool bDefaultKind, const
 	
 	// Modify unrar messages for better readability:
 	// remove the destination path part from message "Extracting file.xxx"
-	if (m_eUnpacker == upUnrar && !strncmp(szText, "Extracting  ", 12) &&
-		!strncmp(szText + 12, m_szUnpackDir, strlen(m_szUnpackDir)))
+	if (m_eUnpacker == upUnrar && !strncmp(szText, "Unrar: Extracting  ", 19) &&
+		!strncmp(szText + 19, m_szUnpackDir, strlen(m_szUnpackDir)))
 	{
-		snprintf(szMsgText, 1024, "Extracting %s", szText + 12 + strlen(m_szUnpackDir) + 1);
+		snprintf(szMsgText, 1024, "Unrar: Extracting %s", szText + 19 + strlen(m_szUnpackDir) + 1);
 		szMsgText[1024-1] = '\0';
 	}
 
-	ScriptController::AddMessage(eKind, bDefaultKind, szMsgText);
+	ScriptController::AddMessage(eKind, szMsgText);
 	m_pPostInfo->AppendMessage(eKind, szMsgText);
 
-	if (m_eUnpacker == upUnrar && !strncmp(szMsgText, "Extracting ", 11))
+	if (m_eUnpacker == upUnrar && !strncmp(szMsgText, "Unrar: Extracting ", 18))
 	{
-		m_pPostInfo->SetProgressLabel(szMsgText);
+		SetProgressLabel(szMsgText + 7);
 	}
 
-	if (m_eUnpacker == upUnrar && !strncmp(szText, "Extracting from ", 16))
+	if (m_eUnpacker == upUnrar && !strncmp(szText, "Unrar: Extracting from ", 23))
 	{
-		const char *szFilename = szText + 16;
+		const char *szFilename = szText + 23;
 		debug("Filename: %s", szFilename);
 		m_archiveFiles.push_back(strdup(szFilename));
-		m_pPostInfo->SetProgressLabel(szText);
+		SetProgressLabel(szText + 7);
 	}
 
-	if ((m_eUnpacker == upUnrar && !strncmp(szText, "All OK", 6)) ||
-		(m_eUnpacker == upSevenZip && !strncmp(szText, "Everything is Ok", 16)))
+	if ((m_eUnpacker == upUnrar && !strncmp(szText, "Unrar: All OK", 13)) ||
+		(m_eUnpacker == upSevenZip && !strncmp(szText, "7-Zip: Everything is Ok", 23)))
 	{
 		m_bAllOKMessageReceived = true;
 	}
@@ -603,6 +604,13 @@ void UnpackController::Stop()
 	debug("Stopping unpack");
 	Thread::Stop();
 	Terminate();
+}
+
+void UnpackController::SetProgressLabel(const char* szProgressLabel)
+{
+	g_pDownloadQueueHolder->LockQueue();
+	m_pPostInfo->SetProgressLabel(szProgressLabel);
+	g_pDownloadQueueHolder->UnlockQueue();
 }
 
 
@@ -631,7 +639,6 @@ void MoveController::Run()
 	szInfoName[1024-1] = '\0';
 	SetInfoName(szInfoName);
 
-	SetDefaultKindPrefix("Move: ");
 	SetDefaultLogKind(g_pOptions->GetProcessLogKind());
 
 	strncpy(m_szInterDir, m_pPostInfo->GetNZBInfo()->GetDestDir(), 1024);

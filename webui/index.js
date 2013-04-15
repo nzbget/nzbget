@@ -158,6 +158,7 @@ var Frontend = (new function($)
 		Upload.init();
 		Config.init({ updateTabInfo: updateTabInfo });
 		ConfirmDialog.init();
+		ScriptListDialog.init();
 
 		Refresher.init(RPCController.refresh);
 

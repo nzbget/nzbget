@@ -211,6 +211,36 @@ const char* DirBrowser::Next()
 
 #endif
 
+
+StringBuilder::StringBuilder()
+{
+	m_szBuffer = NULL;
+	m_iBufferSize = 0;
+	m_iUsedSize = 0;
+}
+
+StringBuilder::~StringBuilder()
+{
+	if (m_szBuffer)
+	{
+		free(m_szBuffer);
+	}
+}
+
+void StringBuilder::Append(const char* szStr)
+{
+	int iPartLen = strlen(szStr);
+	if (m_iUsedSize + iPartLen + 1 > m_iBufferSize)
+	{
+		m_iBufferSize += iPartLen + 10240;
+		m_szBuffer = (char*)realloc(m_szBuffer, m_iBufferSize);
+	}
+	strcpy(m_szBuffer + m_iUsedSize, szStr);
+	m_iUsedSize += iPartLen;
+	m_szBuffer[m_iUsedSize] = '\0';
+}
+
+
 char Util::VersionRevisionBuf[40];
 
 char* Util::BaseFileName(const char* filename)
@@ -793,6 +823,15 @@ void Util::FormatFileSize(char * szBuffer, int iBufLen, long long lFileSize)
 	szBuffer[iBufLen - 1] = '\0';
 }
 
+bool Util::SameFilename(const char* szFilename1, const char* szFilename2)
+{
+#ifdef WIN32
+	return strcasecmp(szFilename1, szFilename2) == 0;
+#else
+	return strcmp(szFilename1, szFilename2) == 0;
+#endif
+}
+
 void Util::InitVersionRevision()
 {
 #ifndef WIN32
@@ -891,13 +930,41 @@ void Util::TrimRight(char* szStr)
 {
 	int iLen = strlen(szStr);
 	char ch = szStr[iLen-1];
-	while (*szStr && (ch == '\n' || ch == '\r' || ch == ' ' || ch == '\t'))
+	while (iLen > 0 && (ch == '\n' || ch == '\r' || ch == ' ' || ch == '\t'))
 	{
 		szStr[iLen-1] = 0;
 		iLen--;
 		ch = szStr[iLen-1];
 	}
 }
+
+char* Util::Trim(char* szStr)
+{
+	TrimRight(szStr);
+	char ch = *szStr;
+	while (ch == '\n' || ch == '\r' || ch == ' ' || ch == '\t')
+	{
+		szStr++;
+		ch = *szStr;
+	}
+	return szStr;
+}
+
+#ifdef WIN32
+bool Util::RegReadStr(HKEY hKey, const char* szKeyName, const char* szValueName, char* szBuffer, int* iBufLen)
+{
+	HKEY hSubKey;
+	if (!RegOpenKeyEx(hKey, szKeyName, 0, KEY_READ, &hSubKey))
+	{
+		DWORD iRetBytes = *iBufLen;
+		LONG iRet = RegQueryValueEx(hSubKey, szValueName, NULL, NULL, (LPBYTE)szBuffer, &iRetBytes);
+		*iBufLen = iRetBytes;
+		RegCloseKey(hSubKey);
+		return iRet == 0;
+	}
+	return false;
+}
+#endif
 
 
 unsigned int WebUtil::DecodeBase64(char* szInputBuffer, int iInputBufferLength, char* szOutputBuffer)

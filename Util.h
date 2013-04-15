@@ -1,7 +1,7 @@
 /*
  *  This file is part of nzbget
  *
- *  Copyright (C) 2007-2009 Andrey Prygunkov <hugbug@users.sourceforge.net>
+ *  Copyright (C) 2007-2013 Andrey Prygunkov <hugbug@users.sourceforge.net>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -57,6 +57,19 @@ public:
 	const char*			Next();
 };
 
+class StringBuilder
+{
+private:
+	char*				m_szBuffer;
+	int					m_iBufferSize;
+	int					m_iUsedSize;
+public:
+						StringBuilder();
+						~StringBuilder();
+	void				Append(const char* szStr);
+	const char*			GetBuffer() { return m_szBuffer; }
+};
+
 class Util 
 {
 public:
@@ -85,6 +98,7 @@ public:
 #endif
 	static void ExpandFileName(const char* szFilename, char* szBuffer, int iBufSize);
 	static void FormatFileSize(char* szBuffer, int iBufLen, long long lFileSize);
+	static bool SameFilename(const char* szFilename1, const char* szFilename2);
 
 	/*
 	 * Split command line int arguments.
@@ -111,6 +125,12 @@ public:
 	static float Int64ToFloat(long long Int64);
 
 	static void TrimRight(char* szStr);
+
+	static char* Trim(char* szStr);
+
+#ifdef WIN32
+	static bool RegReadStr(HKEY hKey, const char* szKeyName, const char* szValueName, char* szBuffer, int* iBufLen);
+#endif
 
 	/*
 	 * Returns program version and revision number as string formatted like "0.7.0-r295".

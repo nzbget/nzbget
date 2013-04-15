@@ -57,36 +57,6 @@ extern PrePostProcessor* g_pPrePostProcessor;
 extern void ExitProc();
 extern void Reload();
 
-//*****************************************************************
-// StringBuilder
-
-StringBuilder::StringBuilder()
-{
-	m_szBuffer = NULL;
-	m_iBufferSize = 0;
-	m_iUsedSize = 0;
-}
-
-StringBuilder::~StringBuilder()
-{
-	if (m_szBuffer)
-	{
-		free(m_szBuffer);
-	}
-}
-
-void StringBuilder::Append(const char* szStr)
-{
-	int iPartLen = strlen(szStr);
-	if (m_iUsedSize + iPartLen + 1 > m_iBufferSize)
-	{
-		m_iBufferSize += iPartLen + 10240;
-		m_szBuffer = (char*)realloc(m_szBuffer, m_iBufferSize);
-	}
-	strcpy(m_szBuffer + m_iUsedSize, szStr);
-	m_iUsedSize += iPartLen;
-	m_szBuffer[m_iUsedSize] = '\0';
-}
 
 //*****************************************************************
 // XmlRpcProcessor
@@ -442,6 +412,10 @@ XmlCommand* XmlRpcProcessor::CreateCommand(const char* szMethodName)
 	else if (!strcasecmp(szMethodName, "saveconfig"))
 	{
 		command = new SaveConfigXmlCommand();
+	}
+	else if (!strcasecmp(szMethodName, "configtemplates"))
+	{
+		command = new ConfigTemplatesXmlCommand();
 	}
 	else 
 	{
@@ -2186,7 +2160,7 @@ void ConfigXmlCommand::Execute()
 	AppendResponse(IsJson() ? "\n]" : "</data></array>\n");
 }
 
-// struct[] loadconfig(string domain)
+// struct[] loadconfig()
 void LoadConfigXmlCommand::Execute()
 {
 	const char* XML_CONFIG_ITEM = 
@@ -2201,36 +2175,10 @@ void LoadConfigXmlCommand::Execute()
 		"\"Value\" : \"%s\"\n"
 		"}";
 
-	char* szDomain;
-	if (!NextParamAsStr(&szDomain))
-	{
-		BuildErrorResponse(2, "Invalid parameter");
-		return;
-	}
-
-	const char* szConfigFile = NULL;
-	Options::EDomain eDomain;
-
-	if (!strcasecmp(szDomain, "SERVER"))
-	{
-		eDomain = Options::dmServer;
-		szConfigFile = g_pOptions->GetConfigFilename();
-	}
-	else if (!strcasecmp(szDomain, "POST"))
-	{
-		eDomain = Options::dmPostProcess;
-		szConfigFile = g_pOptions->GetPostConfigFilename();
-	}
-	else
-	{
-		BuildErrorResponse(2, "Invalid parameter");
-		return;
-	}
-
 	Options::OptEntries* pOptEntries = new Options::OptEntries();
-	if (!g_pOptions->LoadConfig(eDomain, pOptEntries))
+	if (!g_pOptions->LoadConfig(pOptEntries))
 	{
-		BuildErrorResponse(3, "Could not read configuration file %s", szConfigFile);
+		BuildErrorResponse(3, "Could not read configuration file");
 		delete pOptEntries;
 		return;
 	}
@@ -2268,38 +2216,9 @@ void LoadConfigXmlCommand::Execute()
 	AppendResponse(IsJson() ? "\n]" : "</data></array>\n");
 }
 
-// bool saveconfig(string domain, struct[] data)
+// bool saveconfig(struct[] data)
 void SaveConfigXmlCommand::Execute()
 {
-	char* szDomain;
-	if (!NextParamAsStr(&szDomain))
-	{
-		BuildErrorResponse(2, "Invalid parameter");
-		return;
-	}
-
-	Options::EDomain eDomain;
-
-	if (!strcasecmp(szDomain, "SERVER"))
-	{
-		eDomain = Options::dmServer;
-	}
-	else if (!strcasecmp(szDomain, "POST"))
-	{
-		eDomain = Options::dmPostProcess;
-		const char* szConfigFile = g_pOptions->GetPostConfigFilename();
-		if (!szConfigFile)
-		{
-			BuildErrorResponse(3, "Post-processing script configuration file is not defined");
-			return;
-		}
-	}
-	else
-	{
-		BuildErrorResponse(2, "Invalid parameter");
-		return;
-	}
-
 	Options::OptEntries* pOptEntries = new Options::OptEntries();
 
 	char* szName;
@@ -2313,9 +2232,67 @@ void SaveConfigXmlCommand::Execute()
 	}
 
 	// save to config file
-	bool bOK = g_pOptions->SaveConfig(eDomain, pOptEntries);
+	bool bOK = g_pOptions->SaveConfig(pOptEntries);
 
 	delete pOptEntries;
 
 	BuildBoolResponse(bOK);
+}
+
+// struct[] configtemplates()
+void ConfigTemplatesXmlCommand::Execute()
+{
+	const char* XML_CONFIG_ITEM = 
+		"<value><struct>\n"
+		"<member><name>Name</name><value><string>%s</string></value></member>\n"
+		"<member><name>Template</name><value><string>%s</string></value></member>\n"
+		"</struct></value>\n";
+
+	const char* JSON_CONFIG_ITEM = 
+		"{\n"
+		"\"Name\" : \"%s\",\n"
+		"\"Template\" : \"%s\"\n"
+		"}";
+
+	Options::ConfigTemplates* pConfigTemplates = new Options::ConfigTemplates();
+
+	if (!g_pOptions->LoadConfigTemplates(pConfigTemplates))
+	{
+		BuildErrorResponse(3, "Could not read configuration templates");
+		delete pConfigTemplates;
+		return;
+	}
+
+	AppendResponse(IsJson() ? "[\n" : "<array><data>\n");
+
+	int index = 0;
+
+	for (Options::ConfigTemplates::iterator it = pConfigTemplates->begin(); it != pConfigTemplates->end(); it++)
+	{
+		Options::ConfigTemplate* pConfigTemplate = *it;
+
+		char* xmlName = EncodeStr(pConfigTemplate->GetName());
+		char* xmlTemplate = EncodeStr(pConfigTemplate->GetTemplate());
+
+		int szItemBufSize = strlen(xmlName) + strlen(xmlTemplate) + 1024;
+		char* szItemBuf = (char*)malloc(szItemBufSize);
+
+		snprintf(szItemBuf, szItemBufSize, IsJson() ? JSON_CONFIG_ITEM : XML_CONFIG_ITEM, xmlName, xmlTemplate);
+		szItemBuf[szItemBufSize-1] = '\0';
+
+		free(xmlName);
+		free(xmlTemplate);
+
+		if (IsJson() && index++ > 0)
+		{
+			AppendResponse(",\n");
+		}
+		AppendResponse(szItemBuf);
+
+		free(szItemBuf);
+	}
+
+	delete pConfigTemplates;
+
+	AppendResponse(IsJson() ? "\n]" : "</data></array>\n");
 }
