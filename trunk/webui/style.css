@@ -225,7 +225,7 @@ body.navfixed.scrolled .navbar-fixed-top .navbar-inner {
 	margin-right: 10px;
 	padding-top: 2px;
 	cursor: pointer;
-	width: 85px;
+	width: 86px;
 }
 
 #InfoBlock div {
@@ -787,6 +787,11 @@ tr.checked  td {
 	background-color: #FFFFCC;
 }
 
+table.table-hidecheck thead > tr > th:first-child,
+table.table-hidecheck tbody > tr > td:first-child {
+	display: none;
+}
+
 .checked .progress {
 	background-color: #FFFFE1;
 }
@@ -896,7 +901,11 @@ tr.checked  td {
 }
 
 .modal .form-horizontal .control-group:last-child {
-	margin-bottom: 0;
+    margin-bottom: 0;
+}
+
+.modal .form-horizontal .retain-margin .control-group:last-child {
+	margin-bottom: 15px;
 }
 
 .form-horizontal .control-group-last {
@@ -1100,6 +1109,11 @@ ul.help > li {
 	font-size: 12px;
 }
 
+#ConfigNav.nav-list.long-list a {
+	padding-top: 3px;
+	padding-bottom: 3px;
+}
+
 #ConfigNav.nav-list > .active > a,
 #ConfigNav.nav-list > .active > a:hover {
     color: #ffffff;
@@ -1137,7 +1151,7 @@ ul.help > li {
 	margin-right: 15px;
 }
 
-#ConfigContent span.help-option-title {
+span.help-option-title {
 	color: #8D1212;
 }
 
@@ -1164,6 +1178,19 @@ ul.help > li {
 
 #ConfigContent .editsmall {
 	width: 150px;
+}
+
+#ConfigContent table.editor {
+	width: 97%;
+}
+
+#ConfigContent table.editor td:first-child {
+	width: 100%;
+	padding-right:15px;
+}
+
+#ConfigContent table.editor input {
+	width: 100%;
 }
 
 .ConfigFooter hr {
@@ -1196,6 +1223,7 @@ div.ConfigFooter {
 	font-weight: normal;
 }
 
+#DownloadsEdit_ParamTab div.control-group.wants-divider,
 #ConfigContent div.control-group,
 #ConfigContent.search div.control-group.multiset {
 	border-bottom: 1px solid #eeeeee;
@@ -1260,10 +1288,36 @@ div.ConfigFooter {
 	color: #005580;
 }
 
-/* table "LIST OF ALL OPTIONS" */
-#ConfigContent .datatable td:first-child {
-	font-weight: bold;
+#ScriptListDialog_ScriptTable td:nth-child(2) {
+	padding-right: 100px;
 }
+
+#ScriptListDialog_ScriptTable .btn-row-order-block {
+	float: right;
+	width: 100px;
+	margin-right: -115px;
+	display: block;
+}
+
+#ScriptListDialog_ScriptTable .btn-row-order {
+	float: none;
+	width: 20px;
+	display: none;
+}
+
+#ScriptListDialog_ScriptTable tr:hover .btn-row-order {
+	display: inline-block;
+	cursor: pointer;
+}
+
+#ScriptListDialog_ScriptTable tbody > tr:first-child div.btn-row-order:first-child,
+#ScriptListDialog_ScriptTable tbody > tr:last-child div.btn-row-order:last-child,
+#ScriptListDialog_ScriptTable tbody > tr:first-child div.btn-row-order:nth-child(2),
+#ScriptListDialog_ScriptTable tbody > tr:last-child div.btn-row-order:nth-child(3) {
+	opacity: 0.4;
+}
+
+/*#ScriptListDialog_ScriptTable*/
 
 /****************************************************************************/
 /* SMARTPHONE THEME */

@@ -220,12 +220,7 @@ var DownloadsEditDialog = (new function($)
 
 		if (postParam)
 		{
-			postParams = $.extend(true, [], postParamConfig);
-			Options.mergeValues(postParams, group.Parameters);
-			var content = Config.buildOptionsContent(postParams[0]);
-			var configData = $('#DownloadsEdit_ParamData');
-			configData.empty();
-			configData.append(content);
+			buildPostParamTab(postParamConfig);
 		}
 
 		enableAllButtons();
@@ -431,6 +426,31 @@ var DownloadsEditDialog = (new function($)
 
 	/*** TAB: POST-PROCESSING PARAMETERS **************************************************/
 
+	function buildPostParamTab(postParamConfig)
+	{
+		postParams = $.extend(true, [], postParamConfig);
+		Options.mergeValues(postParams, curGroup.Parameters);
+		var content = Config.buildOptionsContent(postParams[0]);
+		var configData = $('#DownloadsEdit_ParamData');
+		configData.empty();
+		configData.append(content);
+		configData.addClass('retain-margin');
+
+		var lastClass = '';
+		var lastDiv = null;
+		for (var i=0; i < configData.children().length; i++)
+		{
+			var div = $(configData.children()[i]);
+			var divClass = div.attr('class');
+			if (divClass != lastClass && lastClass != '')
+			{
+				lastDiv.addClass('wants-divider');
+			}
+			lastDiv = div;
+			lastClass = divClass;
+		}
+	}
+	
 	function defineBuiltinParams(postParamConfig)
 	{
 		if (Options.option('Unpack') !== 'yes')
@@ -445,8 +465,8 @@ var DownloadsEditDialog = (new function($)
 	    
 		if (!Options.findOption(postParamConfig[0].options, '*Unpack:'))
 		{
-			postParamConfig[0].options.unshift({name: '*Unpack:Password', value: '', defvalue: '', select: [], caption: 'Password', description: 'Unpack-password for encrypted posts.'});
-			postParamConfig[0].options.unshift({name: '*Unpack:', value: '', defvalue: 'yes', select: ['yes', 'no'], caption: 'Unpack', description: 'Set to "no" to disable unpack for this nzb-file.'});
+			postParamConfig[0].options.unshift({name: '*Unpack:Password', value: '', defvalue: '', select: [], caption: 'Password', sectionId: '_Unpack_', description: 'Unpack-password for encrypted archives.'});
+			postParamConfig[0].options.unshift({name: '*Unpack:', value: '', defvalue: 'yes', select: ['yes', 'no'], caption: 'Unpack', sectionId: '_Unpack_', description: 'Unpack rar and 7-zip archives.'});
 		}
 	}
 	

@@ -401,16 +401,7 @@
 				<div class="alert alert-error alert-block hide" id="ConfigLoadServerTemplateError">
 					<h4 class="alert-heading">Loading configuration failed</h4>
 					Could not load template configuration file <em>nzbget.conf</em>. NZBGet reads the description of options from this file.
-					Please put the file <em>nzbget.conf</em> which comes with the distribution archive of NZBGet into webui-directory
-					(option <em>WebDir</em>).
-					Do not put your actual configuration file but rather the unchanged original file.
-				</div>
-				<div class="alert alert-error alert-block hide" id="ConfigLoadPostTemplateError">
-					<h4 class="alert-heading">Loading configuration of post-processing script failed</h4>
-					Could not load template post-processing configuration file <em class="ConfigLoadPostTemplateErrorFilename"></em>. NZBGet reads the description of options from this file.
-					Please put the file <em class="ConfigLoadPostTemplateErrorFilename"></em> which comes with the post-processing script into webui-directory
-					(option <em>WebDir</em>).
-					Do not put your actual configuration file but rather the unchanged original file.
+					Please check option <em>ConfigTemplate</em> and put there the path to file <em>nzbget.conf</em> which comes with the distribution archive of NZBGet.
 				</div>
 				<div class="alert alert-error alert-block hide" id="ConfigLoadError">
 					<h4 class="alert-heading">Loading configuration failed</h4>
@@ -447,22 +438,14 @@
 								<div id="ConfigInfo">
 									<p>
 									On this page you can review and change settings. When you done with changes click
-									<em><strong>Save all changes</strong></em>, which will save the changes made on all pages.
-									It's not neccessary to save the changes on each page individually.
-									</p>
-
-									<p>The configuration consists of two parts:
-									<ul>
-									<li>NZBGet settings</li>
-									<li>Post-processing script settings</li>
-									</ul>
+									<em><strong>Save all changes</strong></em>, which saves the changes made in all sections.
+									It's not neccessary to save changes in each section individually.
 									</p>
 
 									<h4>NZBGet settings</h4>
 									<p>
-									With these settings you configure NZBGet. When you configure NZBGet for the first time you need
+									When you configure NZBGet for the first time you need
 									to check at least the option <a class="option" href="#" data-category="S" onclick="Config.scrollToOption(event, this)">MainDir</a> and configure one news server.
-									Any changes of NZBGet settings require a restart or reload (soft-restart) of NZBGet.
 									</p>
 									<p>
 									There are many configuration options affecting performance. If you use
@@ -471,20 +454,13 @@
 									performance - see <a href="http://nzbget.sourceforge.net/Performance_tips">Performance tips</a>.
 									</p>
 									
-									<h4>Post-processing script settings</h4>
+									<h4>Post-processing scripts settings</h4>
 									<p>
-									When NZBGet finishes download
-									of nzb-file it can start a post-processing script for further processing (cleanup, etc.).
-									You can configure what script must be executed using option <a class="option" href="#" data-category="S" onclick="Config.scrollToOption(event, this)">PostProcess</a>
-									in section <em><strong>POST-PROCESSING</strong></em>.
+									When NZBGet finishes download of a nzb-file it can execute post-processing scripts for further processing (cleanup, etc.).
+									To configure scripts use options in section <em><strong>POST-PROCESSING SCRIPTS</strong></em>.
 									</p>
 									<p>
-									The post-processing script settings are shown on the navigation bar
-									only if you have setup a post-processing script and if it has a configuration file. For your convenience
-									NZBGet proivides you with a way to configure the post-processing script options via web-interface.
-									These settings however do not
-									have any effect on NZBGet but rather on the post-processing script only. The changes made here are in
-									effect after saving for the next post-processing job started by NZBGet. A restart of NZBGet is not required.
+									If your post-processing scripts define own options they are also shown here and can be configured like NZBGets built-in options.
 									</p>
 								</div>
 
@@ -989,7 +965,7 @@
 
 				<p class="help-block" style="margin-top:10px;">The new download inherits
 				all other properties such as category, priority, etc. from the source item.
-				This action closes the download-edit-dialog. Any changes made in the dialog will not be saved.</p>
+				This action closes the download-edit-dialog. Any changes made in the dialog are not saved.</p>
 				
 			</fieldset>
 		</div>
@@ -1274,6 +1250,42 @@
 			<li>The categories can be configured in section <strong>CATEGORIES</strong> on settings page.</li>
 			<li>Use button <strong>Scan</strong> if the automatic scanning of incoming nzb-directory is disabled (see options <em>NzbDir</em> and <em>NzbDirInterval</em>).</li>
 		</ul>
+	</div>
+</div>
+
+<!-- *** CHOOSE SCRIPT DIALOG ****************************************************** -->
+
+<div class="modal modal-padded hide" id="ScriptListDialog">
+	<div class="modal-header">
+		<a class="close" href='#' data-dismiss="modal"><i class="icon-close"></i></a>
+		<h3 id="ScriptListDialog_Title">Choose scripts</h3>
+	</div>
+
+	<div class="modal-body" style="padding-bottom:0px">
+		<div class="form-vertical">
+			<fieldset>
+
+				<p id="ScriptListDialog_Instruction">Select scripts for option <strong>DefScript</strong></p>
+
+				<div>
+					<table class="table table-striped table-bordered table-check table-cancheck order-mode datatable" id="ScriptListDialog_ScriptTable" style="margin-bottom:15px;">
+						<thead><tr><th><div class="check img-check"/></th><th>Name</th></tr></thead>
+						<tbody></tbody>
+					</table>
+				</div>
+
+				<p id="ScriptListDialog_OrderInfo" class="hide" style="margin-top:-5px; margin-bottom:10px;">The script execution order is saved globally in the option <em><strong>ScriptOrder</strong></em> and affects all
+				categories as well as the order of scripts in the edit download dialog.</p>
+			
+				<div class="hide" id="ScriptListDialog_ScriptTable_pager"></div>
+				
+			</fieldset>
+		</div>
+	</div>
+
+	<div class="modal-footer">
+		<a href="#" class="btn" data-dismiss="modal">Close</a>
+		<a href="#" class="btn btn-primary" id="ScriptListDialog_Save">Save</a>
 	</div>
 </div>
 

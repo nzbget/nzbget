@@ -71,7 +71,6 @@ private:
 	PostParCoordinator	m_ParCoordinator;
 	QueueCoordinatorObserver	m_QueueCoordinatorObserver;
 	bool				m_bHasMoreJobs;
-	bool				m_bPostScript;
 	bool				m_bSchedulerPauseChanged;
 	bool				m_bSchedulerPause;
 	bool				m_bPostPause;

@@ -37,7 +37,7 @@ nzbget_SOURCES = \
 	UrlCoordinator.cpp UrlCoordinator.h Unpack.cpp Unpack.h nzbget.cpp nzbget.h
 
 EXTRA_DIST = \
-	Makefile.cvs nzbgetd nzbget-postprocess.sh \
+	Makefile.cvs nzbgetd \
 	$(patches_FILES) $(windows_FILES)
 
 patches_FILES = \
@@ -51,7 +51,7 @@ doc_FILES = \
 	README ChangeLog COPYING
 
 exampleconf_FILES = \
-	nzbget.conf nzbget-postprocess.conf
+	nzbget.conf
 
 webui_FILES = \
 	webui/index.html webui/index.js webui/downloads.js webui/edit.js webui/fasttable.js \
@@ -64,16 +64,18 @@ webui_FILES = \
 	webui/img/download-anim-green-2x.png webui/img/download-anim-orange-2x.png \
 	webui/img/transmit-reload-2x.gif
 
+ppscripts_FILES = \
+	ppscripts/Cleanup.sh
+
 # Install
 sbin_SCRIPTS = nzbgetd
-bin_SCRIPTS = nzbget-postprocess.sh
 dist_doc_DATA = $(doc_FILES)
 exampleconfdir = $(datadir)/nzbget
 dist_exampleconf_DATA = $(exampleconf_FILES)
-webuiconfdir = $(datadir)/nzbget/webui
-dist_webuiconf_DATA = $(exampleconf_FILES)
 webuidir = $(datadir)/nzbget
 nobase_dist_webui_DATA = $(webui_FILES)
+ppscriptsdir = $(datadir)/nzbget
+nobase_dist_ppscripts_SCRIPTS = $(ppscripts_FILES)
 
 # Note about "sed": 
 # We need to make some changes in installed files.
@@ -91,12 +93,15 @@ install-exec-hook:
 	sed 's?/usr/local/bin?$(bindir)?' < "$(DESTDIR)$(sbindir)/nzbgetd.temp" > "$(DESTDIR)$(sbindir)/nzbgetd"
 	rm "$(DESTDIR)$(sbindir)/nzbgetd.temp"
 
-# Prepare example configuration files
+# Prepare example configuration file
 install-data-hook:
 	rm -f "$(DESTDIR)$(exampleconfdir)/nzbget.conf.temp"
 	cp "$(DESTDIR)$(exampleconfdir)/nzbget.conf" "$(DESTDIR)$(exampleconfdir)/nzbget.conf.temp"
-	sed 's:"nzbget-postprocess.sh":"nzbget-postprocess.sh" (installed into $(bindir)):' < "$(DESTDIR)$(exampleconfdir)/nzbget.conf" > "$(DESTDIR)$(exampleconfdir)/nzbget.conf.temp"
-	sed 's:^WebDir=:WebDir=$(webuidir)/webui:' < "$(DESTDIR)$(exampleconfdir)/nzbget.conf.temp" > "$(DESTDIR)$(exampleconfdir)/nzbget.conf"
+	sed 's:^ConfigTemplate=:ConfigTemplate=$(exampleconfdir)/nzbget.conf:' < "$(DESTDIR)$(exampleconfdir)/nzbget.conf.temp" > "$(DESTDIR)$(exampleconfdir)/nzbget.conf"
+	sed 's:configuration file (typically installed:configuration file (installed:' < "$(DESTDIR)$(exampleconfdir)/nzbget.conf" > "$(DESTDIR)$(exampleconfdir)/nzbget.conf.temp"
+	sed 's:/usr/local/share/nzbget/nzbget.conf):$(exampleconfdir)/nzbget.conf):' < "$(DESTDIR)$(exampleconfdir)/nzbget.conf.temp" > "$(DESTDIR)$(exampleconfdir)/nzbget.conf"
+	sed 's:^WebDir=:WebDir=$(webuidir)/webui:' < "$(DESTDIR)$(exampleconfdir)/nzbget.conf" > "$(DESTDIR)$(exampleconfdir)/nzbget.conf.temp"
+	sed 's:typically installed to /usr/local/share/nzbget/ppscripts:installed to $(ppscriptsdir)/ppscripts:' < "$(DESTDIR)$(exampleconfdir)/nzbget.conf.temp" > "$(DESTDIR)$(exampleconfdir)/nzbget.conf"
 	rm "$(DESTDIR)$(exampleconfdir)/nzbget.conf.temp"
 
 # Install configuration files into /etc
@@ -105,18 +110,9 @@ install-conf:
 	if test ! -f "$(DESTDIR)$(sysconfdir)/nzbget.conf" ; then \
 		$(mkinstalldirs) "$(DESTDIR)$(sysconfdir)" ; \
 		cp "$(DESTDIR)$(exampleconfdir)/nzbget.conf" "$(DESTDIR)$(sysconfdir)/nzbget.conf" ; \
-		rm -f "$(DESTDIR)$(sysconfdir)/nzbget.conf.temp" ; \
-		cp "$(DESTDIR)$(sysconfdir)/nzbget.conf" "$(DESTDIR)$(sysconfdir)/nzbget.conf.temp" ; \
-		sed 's:^PostProcess=:PostProcess=$(bindir)/nzbget-postprocess.sh:' < "$(DESTDIR)$(sysconfdir)/nzbget.conf.temp" > "$(DESTDIR)$(sysconfdir)/nzbget.conf" ; \
-		rm "$(DESTDIR)$(sysconfdir)/nzbget.conf.temp" ; \
-	fi
-	if test ! -f "$(DESTDIR)$(sysconfdir)/nzbget-postprocess.conf" ; then \
-		$(mkinstalldirs) "$(DESTDIR)$(sysconfdir)" ; \
-		cp "$(DESTDIR)$(exampleconfdir)/nzbget-postprocess.conf" "$(DESTDIR)$(sysconfdir)/nzbget-postprocess.conf" ; \
 	fi
 
 uninstall-conf:
-	rm -f "$(DESTDIR)$(sysconfdir)/nzbget-postprocess.conf"
 	rm -f "$(DESTDIR)$(sysconfdir)/nzbget.conf"
 
 # Determining subversion revision:

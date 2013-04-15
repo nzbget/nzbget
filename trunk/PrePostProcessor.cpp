@@ -66,9 +66,6 @@ PrePostProcessor::PrePostProcessor()
 	m_QueueCoordinatorObserver.m_pOwner = this;
 	g_pQueueCoordinator->Attach(&m_QueueCoordinatorObserver);
 
-	const char* szPostScript = g_pOptions->GetPostProcess();
-	m_bPostScript = szPostScript && strlen(szPostScript) > 0;
-
 #ifndef DISABLE_PARCHECK
 	m_ParCoordinator.m_pOwner = this;
 #endif
@@ -237,6 +234,8 @@ void PrePostProcessor::QueueCoordinatorUpdate(Subject * Caller, void * Aspect)
 
 void PrePostProcessor::NZBAdded(DownloadQueue* pDownloadQueue, NZBInfo* pNZBInfo)
 {
+	PostScriptController::InitParamsForNewNZB(pNZBInfo);
+
 	if (g_pOptions->GetMergeNzb())
 	{
 		pNZBInfo = MergeGroups(pDownloadQueue, pNZBInfo);
@@ -255,38 +254,30 @@ void PrePostProcessor::NZBAdded(DownloadQueue* pDownloadQueue, NZBInfo* pNZBInfo
 
 void PrePostProcessor::NZBDownloaded(DownloadQueue* pDownloadQueue, NZBInfo* pNZBInfo)
 {
-	bool bAddedToPostQueue = false;
-
 	if (!pNZBInfo->GetPostProcess() && g_pOptions->GetDecode())
 	{
-		bool bParCheck = g_pOptions->GetParCheck() && ParCoordinator::FindMainPars(pNZBInfo->GetDestDir(), NULL);
-		if (bParCheck || m_bPostScript || g_pOptions->GetUnpack() || strlen(g_pOptions->GetInterDir()) > 0)
+		info("Queueing %s for post-processing", pNZBInfo->GetName());
+
+		PostInfo* pPostInfo = new PostInfo();
+		pPostInfo->SetNZBInfo(pNZBInfo);
+		pPostInfo->SetInfoName(pNZBInfo->GetName());
+
+		if (pNZBInfo->GetParStatus() == NZBInfo::psNone && !g_pOptions->GetParCheck())
 		{
-			info("Queueing %s for post-processing", pNZBInfo->GetName());
-
-			PostInfo* pPostInfo = new PostInfo();
-			pPostInfo->SetNZBInfo(pNZBInfo);
-			pPostInfo->SetInfoName(pNZBInfo->GetName());
-
-			if (pNZBInfo->GetParStatus() == NZBInfo::psNone && !g_pOptions->GetParCheck())
-			{
-				pNZBInfo->SetParStatus(NZBInfo::psSkipped);
-			}
-
-			if (pNZBInfo->GetRenameStatus() == NZBInfo::rsNone)
-			{
-				pNZBInfo->SetRenameStatus(NZBInfo::rsSkipped);
-			}
-
-			pNZBInfo->SetPostProcess(true);
-			pDownloadQueue->GetPostQueue()->push_back(pPostInfo);
-			SaveQueue(pDownloadQueue);
-			m_bHasMoreJobs = true;
-			bAddedToPostQueue = true;
+			pNZBInfo->SetParStatus(NZBInfo::psSkipped);
 		}
-	}
 
-	if (!bAddedToPostQueue)
+		if (pNZBInfo->GetRenameStatus() == NZBInfo::rsNone)
+		{
+			pNZBInfo->SetRenameStatus(NZBInfo::rsSkipped);
+		}
+
+		pNZBInfo->SetPostProcess(true);
+		pDownloadQueue->GetPostQueue()->push_back(pPostInfo);
+		SaveQueue(pDownloadQueue);
+		m_bHasMoreJobs = true;
+	}
+	else
 	{
 		NZBCompleted(pDownloadQueue, pNZBInfo, true);
 	}
@@ -600,12 +591,14 @@ void PrePostProcessor::StartJob(DownloadQueue* pDownloadQueue, PostInfo* pPostIn
 	bool bUnpack = g_pOptions->GetUnpack() && (pPostInfo->GetNZBInfo()->GetUnpackStatus() == NZBInfo::usNone);
 	bool bParFailed = pPostInfo->GetNZBInfo()->GetParStatus() == NZBInfo::psFailure ||
 		pPostInfo->GetNZBInfo()->GetParStatus() == NZBInfo::psRepairPossible;
-	bool bMoveInterToDest = !bUnpack &&
+	bool bMoveInter = !bUnpack &&
 		pPostInfo->GetNZBInfo()->GetMoveStatus() == NZBInfo::msNone &&
 		pPostInfo->GetNZBInfo()->GetUnpackStatus() != NZBInfo::usFailure &&
 		pPostInfo->GetNZBInfo()->GetParStatus() != NZBInfo::psFailure &&
 		strlen(g_pOptions->GetInterDir()) > 0 &&
 		!strncmp(pPostInfo->GetNZBInfo()->GetDestDir(), g_pOptions->GetInterDir(), strlen(g_pOptions->GetInterDir()));
+	// TODO: check if download has pp-scripts defined
+	bool bPostScript = true;
 
 	if (bUnpack && bParFailed)
 	{
@@ -614,15 +607,15 @@ void PrePostProcessor::StartJob(DownloadQueue* pDownloadQueue, PostInfo* pPostIn
 		bUnpack = false;
 	}
 
-	if (!bUnpack && !m_bPostScript && !bMoveInterToDest)
+	if (!bUnpack && !bMoveInter && !bPostScript)
 	{
 		pPostInfo->SetStage(PostInfo::ptFinished);
 		return;
 	}
 
-	pPostInfo->SetProgressLabel(bUnpack ? "Unpacking" : bMoveInterToDest ? "Moving" : "Executing post-process-script");
+	pPostInfo->SetProgressLabel(bUnpack ? "Unpacking" : bMoveInter ? "Moving" : "Executing post-process-script");
 	pPostInfo->SetWorking(true);
-	pPostInfo->SetStage(bUnpack ? PostInfo::ptUnpacking : bMoveInterToDest ? PostInfo::ptMoving : PostInfo::ptExecutingScript);
+	pPostInfo->SetStage(bUnpack ? PostInfo::ptUnpacking : bMoveInter ? PostInfo::ptMoving : PostInfo::ptExecutingScript);
 	pPostInfo->SetFileProgress(0);
 	pPostInfo->SetStageProgress(0);
 	SaveQueue(pDownloadQueue);
@@ -638,14 +631,14 @@ void PrePostProcessor::StartJob(DownloadQueue* pDownloadQueue, PostInfo* pPostIn
 		UpdatePauseState(g_pOptions->GetUnpackPauseQueue(), "unpack");
 		UnpackController::StartJob(pPostInfo);
 	}
-	else if (bMoveInterToDest)
+	else if (bMoveInter)
 	{
-		UpdatePauseState(g_pOptions->GetUnpackPauseQueue() || g_pOptions->GetPostPauseQueue(), "move");
+		UpdatePauseState(g_pOptions->GetUnpackPauseQueue() || g_pOptions->GetScriptPauseQueue(), "move");
 		MoveController::StartJob(pPostInfo);
 	}
 	else
 	{
-		UpdatePauseState(g_pOptions->GetPostPauseQueue(), "post-process-script");
+		UpdatePauseState(g_pOptions->GetScriptPauseQueue(), "post-process-script");
 		PostScriptController::StartJob(pPostInfo);
 	}
 }

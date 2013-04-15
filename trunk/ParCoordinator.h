@@ -88,7 +88,6 @@ private:
 private:
 	PostParChecker		m_ParChecker;
 	bool				m_bStopped;
-	bool				m_bPostScript;
 	PostParRenamer		m_ParRenamer;
 	EJobKind			m_eCurrentJob;
 

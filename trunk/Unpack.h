@@ -72,7 +72,7 @@ private:
 
 protected:
 	virtual bool		ReadLine(char* szBuf, int iBufSize, FILE* pStream);
-	virtual void		AddMessage(Message::EKind eKind, bool bDefaultKind, const char* szText);
+	virtual void		AddMessage(Message::EKind eKind, const char* szText);
 	void				ExecuteUnrar();
 	void				ExecuteSevenZip(bool bMultiVolumes);
 	void				Completed();
@@ -81,6 +81,7 @@ protected:
 	bool				HasParFiles();
 	bool				HasBrokenFiles();
 	void				CheckArchiveFiles();
+	void				SetProgressLabel(const char* szProgressLabel);
 #ifndef DISABLE_PARCHECK
 	void				RequestParCheck(bool bRename);
 #endif
