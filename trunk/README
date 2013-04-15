@@ -442,26 +442,15 @@ Post processing scripts
 -----------------------
 
 After the download of nzb-file is completed nzbget can call post-processing
-script, defined in configuration file. See example configuration file for
-the description of parameters passed to the script (option "PostProcess").
+scripts, defined in configuration file.
 
-An example script for unraring of downloaded files is provided in file
-"nzbget-postprocess.sh" installed into "<prefix>/bin". The script requires
-configuration file "nzbget-postprocess.conf". If you have installed the
-program with "make install" this file is copied to "<prefix>/etc",
-where the post-processing script finds it automatically. If you install
-the program manually from a binary archive you have to copy the file
-from "<prefix>/share/nzbget" to the directory where you have put the
-nzbget configuration file ("nzbget.conf").
+Example post-processing scripts are provided in directory "ppscripts".
 
-Set the option "PostProcess" in "nzbget.conf" to point to the post-
-processing script.
+To use the scripts copy them into your local directory and set options
+<ScriptDir>, <DefScript> and <ScriptOrder>.
 
-Additional usage instructions are included in "nzbget-postprocess.sh",
-please open the file in a text editor to read them.
-
-NOTE: The post-processing script "nzbget-postprocess.sh" is for
-POSIX systems and will not work on Windows.
+For information on writing your own post-processing scripts please
+visit NZBGet web site.
 
 Web-interface
 -------------
