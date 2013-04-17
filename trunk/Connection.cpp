@@ -219,7 +219,7 @@ bool Connection::Connect()
 	}
 	else
 	{
-		Connection::DoDisconnect();
+		DoDisconnect();
 	}
 
 	return bRes;
@@ -243,35 +243,120 @@ bool Connection::Disconnect()
 	return bRes;
 }
 
-int Connection::Bind()
+bool Connection::Bind()
 {
 	debug("Binding");
 
 	if (m_eStatus == csListening)
 	{
-		return 0;
+		return true;
 	}
 
-	int iRes = DoBind();
-
-	if (iRes == 0)
+#ifdef HAVE_GETADDRINFO
+	struct addrinfo addr_hints, *addr_list, *addr;
+	char iPortStr[sizeof(int) * 4 + 1]; // is enough to hold any converted int
+	
+	memset(&addr_hints, 0, sizeof(addr_hints));
+	addr_hints.ai_family = AF_UNSPEC;    // Allow IPv4 or IPv6
+	addr_hints.ai_socktype = SOCK_STREAM,
+	addr_hints.ai_flags = AI_PASSIVE;    // For wildcard IP address
+	
+	sprintf(iPortStr, "%d", m_iPort);
+	
+	int res = getaddrinfo(m_szHost, iPortStr, &addr_hints, &addr_list);
+	if (res != 0)
 	{
-		m_eStatus = csListening;
+		error("Could not resolve hostname %s", m_szHost);
+		return false;
 	}
+	
+	m_iSocket = INVALID_SOCKET;
+	for (addr = addr_list; addr != NULL; addr = addr->ai_next)
+	{
+		m_iSocket = socket(addr->ai_family, addr->ai_socktype, addr->ai_protocol);
+		if (m_iSocket != INVALID_SOCKET)
+		{
+			int opt = 1;
+			setsockopt(m_iSocket, SOL_SOCKET, SO_REUSEADDR, (char*)&opt, sizeof(opt));
+			res = bind(m_iSocket, addr->ai_addr, addr->ai_addrlen);
+			if (res != -1)
+			{
+				// Connection established
+				break;
+			}
+			// Connection failed
+			closesocket(m_iSocket);
+			m_iSocket = INVALID_SOCKET;
+		}
+	}
+	
+	freeaddrinfo(addr_list);
+	
+#else
+	
+	struct sockaddr_in	sSocketAddress;
+	memset(&sSocketAddress, 0, sizeof(sSocketAddress));
+	sSocketAddress.sin_family = AF_INET;
+	if (!m_szHost || strlen(m_szHost) == 0)
+	{
+		sSocketAddress.sin_addr.s_addr = htonl(INADDR_ANY);
+	}
+	else
+	{
+		sSocketAddress.sin_addr.s_addr = ResolveHostAddr(m_szHost);
+		if (sSocketAddress.sin_addr.s_addr == (unsigned int)-1)
+		{
+			return false;
+		}
+	}
+	sSocketAddress.sin_port = htons(m_iPort);
+	
+	m_iSocket = socket(PF_INET, SOCK_STREAM, 0);
+	if (m_iSocket == INVALID_SOCKET)
+	{
+		ReportError("Socket creation failed for %s", m_szHost, true, 0);
+		return false;
+	}
+	
+	int opt = 1;
+	setsockopt(m_iSocket, SOL_SOCKET, SO_REUSEADDR, (char*)&opt, sizeof(opt));
+	
+	int res = bind(m_iSocket, (struct sockaddr *) &sSocketAddress, sizeof(sSocketAddress));
+	if (res == -1)
+	{
+		// Connection failed
+		closesocket(m_iSocket);
+		m_iSocket = INVALID_SOCKET;
+	}
+#endif
+	
+	if (m_iSocket == INVALID_SOCKET)
+	{
+		ReportError("Binding socket failed for %s", m_szHost, true, 0);
+		return false;
+	}
+	
+	if (listen(m_iSocket, 100) < 0)
+	{
+		ReportError("Listen on socket failed for %s", m_szHost, true, 0);
+		return false;
+	}
+	
+	m_eStatus = csListening;
 
-	return iRes;
+	return true;
 }
 
 int Connection::WriteLine(const char* pBuffer)
 {
-	//debug("Connection::write(char* line)");
+	//debug("Connection::WriteLine");
 
 	if (m_eStatus != csConnected)
 	{
 		return -1;
 	}
 
-	int iRes = DoWriteLine(pBuffer);
+	int iRes = send(m_iSocket, pBuffer, strlen(pBuffer), 0);
 
 	return iRes;
 }
@@ -306,9 +391,73 @@ char* Connection::ReadLine(char* pBuffer, int iSize, int* pBytesRead)
 		return NULL;
 	}
 
-	char* res = DoReadLine(pBuffer, iSize, pBytesRead);
-
-	return res;
+	char* pBufPtr = pBuffer;
+	iSize--; // for trailing '0'
+	int iBytesRead = 0;
+	int iBufAvail = m_iBufAvail; // local variable is faster
+	char* szBufPtr = m_szBufPtr; // local variable is faster
+	while (iSize)
+	{
+		if (!iBufAvail)
+		{
+			iBufAvail = recv(m_iSocket, m_szReadBuf, CONNECTION_READBUFFER_SIZE, 0);
+			if (iBufAvail < 0)
+			{
+				ReportError("Could not receive data on socket", NULL, true, 0);
+				break;
+			}
+			else if (iBufAvail == 0)
+			{
+				break;
+			}
+			szBufPtr = m_szReadBuf;
+			m_szReadBuf[iBufAvail] = '\0';
+		}
+		
+		int len = 0;
+		char* p = (char*)memchr(szBufPtr, '\n', iBufAvail);
+		if (p)
+		{
+			len = (int)(p - szBufPtr + 1);
+		}
+		else
+		{
+			len = iBufAvail;
+		}
+		
+		if (len > iSize)
+		{
+			len = iSize;
+		}
+		
+		memcpy(pBufPtr, szBufPtr, len);
+		pBufPtr += len;
+		szBufPtr += len;
+		iBufAvail -= len;
+		iBytesRead += len;
+		iSize -= len;
+		
+		if (p)
+		{
+			break;
+		}
+	}
+	*pBufPtr = '\0';
+	
+	m_iBufAvail = iBufAvail > 0 ? iBufAvail : 0; // copy back to member
+	m_szBufPtr = szBufPtr; // copy back to member
+	
+	if (pBytesRead)
+	{
+		*pBytesRead = iBytesRead;
+	}
+	
+	if (pBufPtr == pBuffer)
+	{
+		return NULL;
+	}
+	
+	return pBuffer;
 }
 
 Connection* Connection::Accept()
@@ -320,13 +469,17 @@ Connection* Connection::Accept()
 		return NULL;
 	}
 
-	SOCKET iRes = DoAccept();
-	if (iRes == INVALID_SOCKET)
+	SOCKET iSocket = accept(m_iSocket, NULL, NULL);
+	if (iSocket == INVALID_SOCKET && m_eStatus != csCancelled)
+	{
+		ReportError("Could not accept connection", NULL, true, 0);
+	}
+	if (iSocket == INVALID_SOCKET)
 	{
 		return NULL;
 	}
 	
-	Connection* pCon = new Connection(iRes, m_bTLS);
+	Connection* pCon = new Connection(iSocket, m_bTLS);
 
 	return pCon;
 }
@@ -508,200 +661,12 @@ bool Connection::DoDisconnect()
 	return true;
 }
 
-int Connection::DoWriteLine(const char* pBuffer)
-{
-	//debug("Connection::doWrite()");
-	return send(m_iSocket, pBuffer, strlen(pBuffer), 0);
-}
-
-char* Connection::DoReadLine(char* pBuffer, int iSize, int* pBytesRead)
-{
-	//debug( "Connection::DoReadLine()" );
-	char* pBufPtr = pBuffer;
-	iSize--; // for trailing '0'
-	int iBytesRead = 0;
-	int iBufAvail = m_iBufAvail; // local variable is faster
-	char* szBufPtr = m_szBufPtr; // local variable is faster
-	while (iSize)
-	{
-		if (!iBufAvail)
-		{
-			iBufAvail = recv(m_iSocket, m_szReadBuf, CONNECTION_READBUFFER_SIZE, 0);
-			if (iBufAvail < 0)
-			{
-				ReportError("Could not receive data on socket", NULL, true, 0);
-				break;
-			}
-			else if (iBufAvail == 0)
-			{
-				break;
-			}
-			szBufPtr = m_szReadBuf;
-			m_szReadBuf[iBufAvail] = '\0';
-		}
-
-		int len = 0;
-		char* p = (char*)memchr(szBufPtr, '\n', iBufAvail);
-		if (p)
-		{
-			len = (int)(p - szBufPtr + 1);
-		}
-		else
-		{
-			len = iBufAvail;
-		}
-
-		if (len > iSize)
-		{
-			len = iSize;
-		}
-		
-		memcpy(pBufPtr, szBufPtr, len);
-		pBufPtr += len;
-		szBufPtr += len;
-		iBufAvail -= len;
-		iBytesRead += len;
-		iSize -= len;
-		
-		if (p)
-		{
-			break;
-		}
-	}
-	*pBufPtr = '\0';
-
-	m_iBufAvail = iBufAvail > 0 ? iBufAvail : 0; // copy back to member
-	m_szBufPtr = szBufPtr; // copy back to member
-	
-	if (pBytesRead)
-	{
-		*pBytesRead = iBytesRead;
-	}
-	
-	if (pBufPtr == pBuffer)
-	{
-		return NULL;
-	}
-	return pBuffer;
-}
-
-
 void Connection::ReadBuffer(char** pBuffer, int *iBufLen)
 {
 	*iBufLen = m_iBufAvail;
 	*pBuffer = m_szBufPtr;
 	m_iBufAvail = 0;
- };
-
-
-int Connection::DoBind()
-{
-	debug("Do binding");
-
-#ifdef HAVE_GETADDRINFO
-	struct addrinfo addr_hints, *addr_list, *addr;
-	char iPortStr[sizeof(int) * 4 + 1]; // is enough to hold any converted int
-
-	memset(&addr_hints, 0, sizeof(addr_hints));
-	addr_hints.ai_family = AF_UNSPEC;    // Allow IPv4 or IPv6
-	addr_hints.ai_socktype = SOCK_STREAM,
-	addr_hints.ai_flags = AI_PASSIVE;    // For wildcard IP address
-
-	sprintf(iPortStr, "%d", m_iPort);
-
-	int res = getaddrinfo(m_szHost, iPortStr, &addr_hints, &addr_list);
-	if (res != 0)
-	{
-		error("Could not resolve hostname %s", m_szHost);
-		return -1;
-	}
-
-	m_iSocket = INVALID_SOCKET;
-	for (addr = addr_list; addr != NULL; addr = addr->ai_next)
-	{
-		m_iSocket = socket(addr->ai_family, addr->ai_socktype, addr->ai_protocol);
-		if (m_iSocket != INVALID_SOCKET)
-		{
-			int opt = 1;
-			setsockopt(m_iSocket, SOL_SOCKET, SO_REUSEADDR, (char*)&opt, sizeof(opt));
-			res = bind(m_iSocket, addr->ai_addr, addr->ai_addrlen);
-			if (res != -1)
-			{
-				// Connection established
-				break;
-			}
-			// Connection failed
-			closesocket(m_iSocket);
-			m_iSocket = INVALID_SOCKET;
-		}
-	}
-
-	freeaddrinfo(addr_list);
-
-#else
-
-	struct sockaddr_in	sSocketAddress;
-	memset(&sSocketAddress, 0, sizeof(sSocketAddress));
-	sSocketAddress.sin_family = AF_INET;
-	if (!m_szHost || strlen(m_szHost) == 0)
-	{
-		sSocketAddress.sin_addr.s_addr = htonl(INADDR_ANY);
-	}
-	else
-	{
-		sSocketAddress.sin_addr.s_addr = ResolveHostAddr(m_szHost);
-		if (sSocketAddress.sin_addr.s_addr == (unsigned int)-1)
-		{
-			return -1;
-		}
-	}
-	sSocketAddress.sin_port = htons(m_iPort);
-
-	m_iSocket = socket(PF_INET, SOCK_STREAM, 0);
-	if (m_iSocket == INVALID_SOCKET)
-	{
-		ReportError("Socket creation failed for %s", m_szHost, true, 0);
-		return -1;
-	}
-	
-	int opt = 1;
-	setsockopt(m_iSocket, SOL_SOCKET, SO_REUSEADDR, (char*)&opt, sizeof(opt));
-
-	int res = bind(m_iSocket, (struct sockaddr *) &sSocketAddress, sizeof(sSocketAddress));
-	if (res == -1)
-	{
-		// Connection failed
-		closesocket(m_iSocket);
-		m_iSocket = INVALID_SOCKET;
-	}
-#endif
-
-	if (m_iSocket == INVALID_SOCKET)
-	{
-		ReportError("Binding socket failed for %s", m_szHost, true, 0);
-		return -1;
-	}
-
-	if (listen(m_iSocket, 100) < 0)
-	{
-		ReportError("Listen on socket failed for %s", m_szHost, true, 0);
-		return -1;
-	}
-
-	return 0;
-}
-
-SOCKET Connection::DoAccept()
-{
-	SOCKET iSocket = accept(m_iSocket, NULL, NULL);
-
-	if (iSocket == INVALID_SOCKET && m_eStatus != csCancelled)
-	{
-		ReportError("Could not accept connection", NULL, true, 0);
-	}
-
-	return iSocket;
-}
+};
 
 void Connection::Cancel()
 {
