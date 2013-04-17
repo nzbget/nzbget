@@ -41,8 +41,8 @@ private:
 	void				Clear();
 	void				ReportErrorAnswer(const char* szMsgPrefix, const char* szAnswer);
 	bool 				Authenticate();
-	bool 				AuthInfoUser(int iRecur = 0);
-	bool 				AuthInfoPass(int iRecur = 0);
+	bool 				AuthInfoUser(int iRecur);
+	bool 				AuthInfoPass(int iRecur);
 
 public:
 						NNTPConnection(NewsServer* pNewsServer);
