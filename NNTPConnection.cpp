@@ -230,26 +230,33 @@ const char* NNTPConnection::JoinGroup(const char* grp)
 	return answer;
 }
 
-bool NNTPConnection::DoConnect()
+bool NNTPConnection::Connect()
 {
 	debug("Opening connection to %s", GetHost());
-	bool res = Connection::DoConnect();
-	if (!res)
+
+	if (m_eStatus == csConnected)
 	{
-		return res;
+		return true;
 	}
 
-	char* answer = DoReadLine(m_szLineBuf, CONNECTION_LINEBUFFER_SIZE, NULL);
+	if (!Connection::Connect())
+	{
+		return false;
+	}
+
+	char* answer = ReadLine(m_szLineBuf, CONNECTION_LINEBUFFER_SIZE, NULL);
 
 	if (!answer)
 	{
 		ReportError("Connection to %s failed: Connection closed by remote host", GetHost(), false, 0);
+		Disconnect();
 		return false;
 	}
 
 	if (strncmp(answer, "2", 1))
 	{
 		ReportErrorAnswer("Connection to %s failed (Answer: %s)", answer);
+		Disconnect();
 		return false;
 	}
 
@@ -258,7 +265,7 @@ bool NNTPConnection::DoConnect()
 	return true;
 }
 
-bool NNTPConnection::DoDisconnect()
+bool NNTPConnection::Disconnect()
 {
 	if (m_eStatus == csConnected)
 	{
@@ -269,7 +276,7 @@ bool NNTPConnection::DoDisconnect()
 			m_szActiveGroup = NULL;
 		}
 	}
-	return Connection::DoDisconnect();
+	return Connection::Disconnect();
 }
 
 void NNTPConnection::ReportErrorAnswer(const char* szMsgPrefix, const char* szAnswer)

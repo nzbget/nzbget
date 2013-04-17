@@ -72,12 +72,8 @@ protected:
 
 						Connection(SOCKET iSocket, bool bTLS);
 	void				ReportError(const char* szMsgPrefix, const char* szMsgArg, bool PrintErrCode, int herrno);
-	virtual bool 		DoConnect();
-	virtual bool		DoDisconnect();
-	int					DoBind();
-	int					DoWriteLine(const char* pBuffer);
-	char*				DoReadLine(char* pBuffer, int iSize, int* pBytesRead);
-	SOCKET				DoAccept();
+	bool				DoConnect();
+	bool				DoDisconnect();
 #ifndef HAVE_GETADDRINFO
 	unsigned int		ResolveHostAddr(const char* szHost);
 #endif
@@ -92,9 +88,9 @@ public:
 	virtual 			~Connection();
 	static void			Init();
 	static void			Final();
-	bool 				Connect();
-	bool				Disconnect();
-	int					Bind();
+	virtual bool 		Connect();
+	virtual bool		Disconnect();
+	bool				Bind();
 	bool				Send(const char* pBuffer, int iSize);
 	bool				Recv(char* pBuffer, int iSize);
 	int					TryRecv(char* pBuffer, int iSize);
