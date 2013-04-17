@@ -103,13 +103,12 @@ const char* NNTPConnection::Request(const char* req)
 
 bool NNTPConnection::Authenticate()
 {
-	if (!(m_pNewsServer)->GetUser() ||
-		!(m_pNewsServer)->GetPassword())
+	if (!m_pNewsServer->GetUser() || !m_pNewsServer->GetPassword())
 	{
 		return true;
 	}
 
-	return AuthInfoUser();
+	return AuthInfoUser(0);
 }
 
 bool NNTPConnection::AuthInfoUser(int iRecur)
@@ -257,6 +256,11 @@ bool NNTPConnection::Connect()
 	{
 		ReportErrorAnswer("Connection to %s failed (Answer: %s)", answer);
 		Disconnect();
+		return false;
+	}
+
+	if (!Authenticate())
+	{
 		return false;
 	}
 
