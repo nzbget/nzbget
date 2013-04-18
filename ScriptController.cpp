@@ -1022,15 +1022,18 @@ void PostScriptController::InitParamsForNewNZB(NZBInfo* pNZBInfo)
 	// split szDefScript into tokens and create pp-parameter for each token
 	char* szDefScript2 = strdup(szDefScript);
 	char* saveptr;
-	char* szScriptName = strtok_r(szDefScript2, " ,;", &saveptr);
+	char* szScriptName = strtok_r(szDefScript2, ",;", &saveptr);
 	while (szScriptName)
 	{
-		char szParam[1024];
-		snprintf(szParam, 1024, "%s:", szScriptName);
-		szParam[1024-1] = '\0';
-		pNZBInfo->GetParameters()->SetParameter(szParam, "yes");
-
-		szScriptName = strtok_r(NULL, " ,;", &saveptr);
+		szScriptName = Util::Trim(szScriptName);
+		if (szScriptName[0] != '\0')
+		{
+			char szParam[1024];
+			snprintf(szParam, 1024, "%s:", szScriptName);
+			szParam[1024-1] = '\0';
+			pNZBInfo->GetParameters()->SetParameter(szParam, "yes");
+		}
+		szScriptName = strtok_r(NULL, ",;", &saveptr);
 	}
 	free(szDefScript2);
 }
