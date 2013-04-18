@@ -189,6 +189,8 @@ const char* BoolNames[] = { "yes", "no", "true", "false", "1", "0", "on", "off",
 const int BoolValues[] = { 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0 };
 const int BoolCount = 12;
 
+static const char* PPSCRIPT_SIGNATURE = "### NZBGET POST-PROCESSING SCRIPT";
+
 #ifndef WIN32
 const char* PossibleConfigLocations[] =
 	{
@@ -2811,15 +2813,14 @@ bool Options::LoadConfigTemplates(ConfigTemplates* pConfigTemplates)
 			continue;
 		}
 
-		const char* szConfigSignature = "### NZBGET POST-PROCESSING SCRIPT";
-		const int iConfigSignatureLen = strlen(szConfigSignature);
+		const int iConfigSignatureLen = strlen(PPSCRIPT_SIGNATURE);
 		StringBuilder stringBuilder;
 		char buf[1024];
 		bool bInConfig = false;
 
 		while (fgets(buf, sizeof(buf) - 1, infile))
 		{
-			if (!strncmp(buf, szConfigSignature, iConfigSignatureLen))
+			if (!strncmp(buf, PPSCRIPT_SIGNATURE, iConfigSignatureLen))
 			{
 				if (bInConfig)
 				{
@@ -2851,41 +2852,11 @@ void Options::LoadScriptList(ScriptList* pScriptList)
 		return;
 	}
 
-	ScriptList tmpScriptList;
-	DirBrowser dir(m_szScriptDir);
-	while (const char* szFilename = dir.Next())
-	{
-		if (szFilename[0] != '.' && szFilename[0] != '_')
-		{
-			char szFullFilename[1024];
-			snprintf(szFullFilename, 1024, "%s%s", m_szScriptDir, szFilename);
-			szFullFilename[1024-1] = '\0';
+	int iBufSize = 1024*10;
+	char* szBuffer = (char*)malloc(iBufSize+1);
 
-			if (!Util::DirectoryExists(szFullFilename))
-			{
-				Script* pScript = new Script(szFilename, szFullFilename);
-				tmpScriptList.push_back(pScript);
-			}
-			else
-			{
-				// It's a directory, looking for file "start.<any-extension>"
-				DirBrowser dir2(szFullFilename);
-				while (const char* szFilename2 = dir2.Next())
-				{
-					char szFullFilename2[1024];
-					snprintf(szFullFilename2, 1024, "%s%c%s", szFullFilename, PATH_SEPARATOR, szFilename2);
-					szFullFilename2[1024-1] = '\0';
-					if (!strncasecmp(szFilename2, "start", 5) && (strlen(szFilename2) == 5 || szFilename2[5] == '.') &&
-						!Util::DirectoryExists(szFullFilename2))
-					{
-						Script* pScript = new Script(szFilename, szFullFilename2);
-						tmpScriptList.push_back(pScript);
-						break;
-					}
-				}
-			}
-		}
-	}
+	ScriptList tmpScriptList;
+	LoadScriptDir(&tmpScriptList, m_szScriptDir, false);
 	tmpScriptList.sort(CompareScripts);
 
 	// first add all scripts from m_szScriptOrder
@@ -2916,6 +2887,73 @@ void Options::LoadScriptList(ScriptList* pScriptList)
 			pScriptList->push_back(new Script(pScript->GetName(), pScript->GetLocation()));
 		}
 	}
+
+	free(szBuffer);
+}
+
+void Options::LoadScriptDir(ScriptList* pScriptList, const char* szDirectory, bool bIsSubDir)
+{
+	int iBufSize = 1024*10;
+	char* szBuffer = (char*)malloc(iBufSize+1);
+
+	DirBrowser dir(szDirectory);
+	while (const char* szFilename = dir.Next())
+	{
+		if (szFilename[0] != '.' && szFilename[0] != '_')
+		{
+			char szFullFilename[1024];
+			snprintf(szFullFilename, 1024, "%s%s", szDirectory, szFilename);
+			szFullFilename[1024-1] = '\0';
+
+			if (!Util::DirectoryExists(szFullFilename))
+			{
+				// check if the file contains pp-script-signature
+				FILE* infile = fopen(szFullFilename, "rb");
+				if (infile)
+				{
+					// read first 10KB of the file and look for signature
+					int iReadBytes = fread(szBuffer, 1, iBufSize, infile);
+					fclose(infile);
+					szBuffer[iReadBytes] = 0;
+					if (strstr(szBuffer, PPSCRIPT_SIGNATURE))
+					{
+						char szScriptName[1024];
+						if (bIsSubDir)
+						{
+							char szDirectory2[1024];
+							snprintf(szDirectory2, 1024, "%s", szDirectory);
+							szDirectory2[1024-1] = '\0';
+							int iLen = strlen(szDirectory2);
+							if (szDirectory2[iLen-1] == PATH_SEPARATOR || szDirectory2[iLen-1] == ALT_PATH_SEPARATOR)
+							{
+								// trim last path-separator
+								szDirectory2[iLen-1] = '\0';
+							}
+
+							snprintf(szScriptName, 1024, "%s%c%s", Util::BaseFileName(szDirectory2), PATH_SEPARATOR, szFilename);
+						}
+						else
+						{
+							snprintf(szScriptName, 1024, "%s", szFilename);
+						}
+						szScriptName[1024-1] = '\0';
+
+						Script* pScript = new Script(szScriptName, szFullFilename);
+						pScriptList->push_back(pScript);
+					}
+				}
+			}
+			else if (!bIsSubDir)
+			{
+				snprintf(szFullFilename, 1024, "%s%s%c", szDirectory, szFilename, PATH_SEPARATOR);
+				szFullFilename[1024-1] = '\0';
+
+				LoadScriptDir(pScriptList, szFullFilename, true);
+			}
+		}
+	}
+
+	free(szBuffer);
 }
 
 bool Options::CompareScripts(Script* pScript1, Script* pScript2)

@@ -142,11 +142,30 @@ var Options = (new function($)
 		{
 			var scriptName = serverTemplateData[i].Name;
 			var scriptConfig = readConfigTemplate(serverTemplateData[i].Template, undefined, HIDDEN_SECTIONS, scriptName + ':');
-			var name = scriptName.substr(0, scriptName.lastIndexOf('.')) || scriptName; // remove file extension
-			scriptConfig.name = name.toUpperCase();
 			scriptConfig.scriptName = scriptName;
-			scriptConfig.id = scriptName.replace(/ |\/|[\.|$|\:|\*]/g, '_');
+			scriptConfig.id = scriptName.replace(/ |\/|\\|[\.|$|\:|\*]/g, '_');
+			scriptConfig.name = scriptName.substr(0, scriptName.lastIndexOf('.')) || scriptName; // remove file extension
+			scriptConfig.name = scriptConfig.name.replace(/\\/, ' \\ ').replace(/\//, ' / ');
 
+			scriptConfig.scriptShortName = scriptName.replace(/\\/, ' \\ ').replace(/\//, ' / ');
+
+			// trying to use short name (for scripts in subfolders)
+			var scriptShortName = scriptConfig.scriptShortName.replace(/^.*[\\\/]/, '').trim(); // leave only file name (remove path)
+			for (var j=1; j < serverTemplateData.length; j++)
+			{
+				var scriptShortName2 = serverTemplateData[j].Name;
+				scriptShortName2 = scriptShortName2.replace(/\\/, ' \\ ').replace(/\//, ' / ');
+				scriptShortName2 = scriptShortName2.replace(/^.*[\\\/]/, '').trim(); // leave only file name (remove path)
+				if (scriptShortName == scriptShortName2 && i != j)
+				{
+					// there is another script with the same short name, we must use the long name then
+					scriptShortName = scriptConfig.scriptShortName;
+					break;
+				}
+			}
+			scriptConfig.scriptShortName = scriptShortName;
+			scriptConfig.shortName = scriptConfig.scriptShortName.substr(0, scriptConfig.scriptShortName.lastIndexOf('.')) || scriptConfig.scriptShortName; // remove file extension
+			
 			mergeValues(scriptConfig.sections, serverValues);
 			config.push(scriptConfig);
 		}
@@ -173,7 +192,7 @@ var Options = (new function($)
 			{
 				var section = {};
 				section.name = line.substr(4, line.length - 8).trim();
-				section.id = (nameprefix + section.name).replace(/ |\/|[\.|$|\:|\*]/g, '_');
+				section.id = (nameprefix + section.name).replace(/ |\/|\\|[\.|$|\:|\*]/g, '_');
 				section.options = [];
 				description = '';
 				section.hidden = !(hiddensections === undefined || (hiddensections.indexOf(section.name) == -1)) ||
@@ -387,6 +406,25 @@ var Options = (new function($)
 			var option = {};
 			option.name = scriptName + ':';
 			option.caption = scriptName.substr(0, scriptName.lastIndexOf('.')) || scriptName;
+			option.caption = option.caption.replace(/\\/, ' \\ ').replace(/\//, ' / ');
+
+			// trying to use short name (for scripts in subfolders)
+			var caption = option.caption.replace(/^.*[\\\/]/, '').trim(); // leave only file name (remove path)
+			for (var j=1; j < data.length; j++)
+			{
+				var scriptName2 = data[j].Name;
+				var caption2 = scriptName2.substr(0, scriptName2.lastIndexOf('.')) || scriptName2;
+				caption2 = caption2.replace(/\\/, ' \\ ').replace(/\//, ' / ');
+				caption2 = caption2.replace(/^.*[\\\/]/, '').trim(); // leave only file name (remove path)
+				if (caption == caption2 && i != j)
+				{
+					// there is another script with the same short name, we must use the long name then
+					caption = option.caption;
+					break;
+				}
+			}
+			option.caption = caption;
+			
 			option.defvalue = 'no';
 			option.description = (data[i].Template.trim().split('\n')[0].substr(1, 1000).trim() || 'Post-processing script ' + scriptName + '.');
 			option.value = '';
@@ -649,7 +687,7 @@ var Config = (new function($)
 			value = option.defvalue;
 		}
 
-		option.formId = (option.name.indexOf(':') == -1 ? 'S_' : '') + option.name.replace(/ |\/|[\.|$|\:|\*]/g, '_');
+		option.formId = (option.name.indexOf(':') == -1 ? 'S_' : '') + option.name.replace(/ |\/|\\|[\.|$|\:|\*]/g, '_');
 
 		var caption = option.caption;
 		if (section.multi)
@@ -659,7 +697,7 @@ var Config = (new function($)
 
 		var html =
 			'<div class="control-group ' + option.sectionId + (section.multi ? ' multiid' + option.multiid + ' multiset' : '') + '">'+
-				'<label class="control-label nowrap">' +
+				'<label class="control-label">' +
 				'<a class="option-name" href="#" data-optid="' + option.formId + '" '+
 				'onclick="Config.scrollToOption(event, this)">' + caption + '</a>' +
 				(!option.exists && !section.postparam ?
@@ -867,7 +905,6 @@ var Config = (new function($)
 
 	function extendConfig()
 	{
-		var scriptList = '';
 		for (var i=1; i < config.length; i++)
 		{
 			var conf = config[i];
@@ -890,14 +927,16 @@ var Config = (new function($)
 			for (var j=0; j < conf.sections.length; j++)
 			{
 				var section = conf.sections[j];
-				section.name = conf.name.toUpperCase() + (visibleSections > 1? ' - ' + section.name.toUpperCase() + '' : '');
+				section.name = conf.shortName.toUpperCase() + (visibleSections > 1 ? ' - ' + section.name.toUpperCase() + '' : '');
+				section.caption = conf.name.toUpperCase() + (visibleSections > 1 ? ' - ' + section.name.toUpperCase() + '' : '');
 			}
 
 			if (!firstVisibleSection)
 			{
 				// create new section for virtual option "About".
 				var section = {};
-				section.name = conf.name;
+				section.name = conf.shortName.toUpperCase();
+				section.caption = conf.name.toUpperCase();
 				section.id = conf.id + '_';
 				section.options = [];
 				firstVisibleSection = section;
@@ -906,7 +945,8 @@ var Config = (new function($)
 
 			// create virtual option "About" with scripts description.
 			var option = {};
-			option.caption = 'About ' + conf.scriptName;
+			var shortName = conf.scriptName.replace(/^.*[\\\/]/, ''); // leave only file name (remove path)
+			option.caption = 'About ' + shortName;
 			option.name = conf.nameprefix + option.caption;
 			option.value = '';
 			option.defvalue = '';
@@ -918,34 +958,24 @@ var Config = (new function($)
 			option.exists = true;
 			option.nocontent = true;
 			firstVisibleSection.options.unshift(option);
-
-			scriptList += (scriptList === '' ? '' : ', ') + config[i].scriptName;
 		}
 
-		// add the list of available scripts to the description of options "ScriptDir" and "ScriptOrder"
-		if (scriptList != '')
+		// register editors for options "DefScript" and "ScriptOrder"
+		var conf = config[0];
+		for (var j=0; j < conf.sections.length; j++)
 		{
-			var conf = config[0];
-			for (var j=0; j < conf.sections.length; j++)
+			var section = conf.sections[j];
+			for (var k=0; k < section.options.length; k++)
 			{
-				var section = conf.sections[j];
-				for (var k=0; k < section.options.length; k++)
+				var option = section.options[k];
+				var optname = option.name.toLowerCase();
+				if (optname.indexOf('scriptorder') > -1)
 				{
-					var option = section.options[k];
-					var optname = option.name.toLowerCase();
-					if (optname == 'scriptorder' || optname == 'scriptdir')
-					{
-						option.description = option.description + '\n' +
-							'INFO: Scripts found: ' + scriptList + '.';
-					}
-					if (optname.indexOf('scriptorder') > -1)
-					{
-						option.editor = { caption: 'Reorder', click: 'Config.editScriptOrder' };
-					}
-					if (optname.indexOf('defscript') > -1)
-					{
-						option.editor = { caption: 'Choose', click: 'Config.editDefScript' };
-					}
+					option.editor = { caption: 'Reorder', click: 'Config.editScriptOrder' };
+				}
+				if (optname.indexOf('defscript') > -1)
+				{
+					option.editor = { caption: 'Choose', click: 'Config.editDefScript' };
 				}
 			}
 		}
@@ -1031,7 +1061,7 @@ var Config = (new function($)
 		markLastControlGroup();
 
 		var section = findSectionById(sectionId);
-		$ConfigTitle.text(section.name);
+		$ConfigTitle.text(section.caption ? section.caption : section.name);
 	}
 
 	this.deleteSet = function(control, setname, sectionId)
@@ -1569,7 +1599,21 @@ var ScriptListDialog = (new function($)
 		for (var i=0; i < scriptList.length; i++)
 		{
 			var scriptName = scriptList[i];
-			var fields = ['<div class="check img-check"></div>', '<span data-index="' + i + '">' + scriptName + '</span>' + reorderButtons];
+			var scriptShortName = scriptName.replace(/^.*[\\\/]/, '').trim(); // leave only file name (remove path)
+
+			// trying to use short name (for scripts in subfolders)
+			for (var j=0; j < scriptList.length; j++)
+			{
+				var scriptShortName2 = scriptList[j].replace(/^.*[\\\/]/, '').trim(); // leave only file name (remove path)
+				if (scriptShortName2 == scriptShortName && i != j)
+				{
+					// there is another script with the same short name, we must use the long name then
+					scriptShortName = scriptName;
+					break;
+				}
+			}
+
+			var fields = ['<div class="check img-check"></div>', '<span data-index="' + i + '">' + scriptShortName + '</span>' + reorderButtons];
 			var item =
 			{
 				id: scriptName,

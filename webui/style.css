@@ -1244,7 +1244,6 @@ div.ConfigFooter {
 
 #ConfigContent .control-label {
 	width: 170px;
-	white-space: nowrap;
 }
 
 #ConfigContent .form-horizontal .controls {
