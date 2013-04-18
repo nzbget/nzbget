@@ -582,8 +582,18 @@ void PrePostProcessor::StartJob(DownloadQueue* pDownloadQueue, PostInfo* pPostIn
 	}
 	else if (pPostInfo->GetNZBInfo()->GetParStatus() == NZBInfo::psNone)
 	{
-		UpdatePauseState(g_pOptions->GetParPauseQueue(), "par-check");
-		m_ParCoordinator.StartParCheckJob(pPostInfo);
+		if (m_ParCoordinator.FindMainPars(pPostInfo->GetNZBInfo()->GetDestDir(), NULL))
+		{
+			UpdatePauseState(g_pOptions->GetParPauseQueue(), "par-check");
+			m_ParCoordinator.StartParCheckJob(pPostInfo);
+		}
+		else
+		{
+			info("Nothing to par-check for %s", pPostInfo->GetInfoName());
+			pPostInfo->GetNZBInfo()->SetParStatus(NZBInfo::psSkipped);
+			pPostInfo->SetWorking(false);
+			pPostInfo->SetStage(PostInfo::ptQueued);
+		}
 		return;
 	}
 #endif

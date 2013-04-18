@@ -243,7 +243,7 @@ void ParChecker::Run()
 	ParCoordinator::FileList fileList;
 	if (!ParCoordinator::FindMainPars(m_szDestDir, &fileList))
 	{
-		error("Could not start par-check for %s. Could not find any par-files", m_szInfoName);
+		error("Could not start par-check for %s. Could not find any par-files", m_szNZBName);
 		m_eStatus = psFailed;
 		Completed();
 		return;
