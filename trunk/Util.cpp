@@ -140,15 +140,7 @@ int getopt(int argc, char *argv[], char *optstring)
 DirBrowser::DirBrowser(const char* szPath)
 {
 	char szMask[MAX_PATH + 1];
-	int len = strlen(szPath);
-	if (szPath[len] == '\\' || szPath[len] == '/')
-	{
-		snprintf(szMask, MAX_PATH + 1, "%s*.*", szPath);
-	}
-	else
-	{
-		snprintf(szMask, MAX_PATH + 1, "%s%c*.*", szPath, (int)PATH_SEPARATOR);
-	}
+	snprintf(szMask, MAX_PATH + 1, "%s%c*.*", szPath, (int)PATH_SEPARATOR);
 	szMask[MAX_PATH] = '\0';
 	m_hFile = _findfirst(szMask, &m_FindData);
 	m_bFirst = true;

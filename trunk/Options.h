@@ -369,6 +369,7 @@ private:
 	void				LocateOptionSrcPos(const char *szOptionName);
 	void				ConvertOldOptionName(char *szOption, int iBufLen);
 	static bool			CompareScripts(Script* pScript1, Script* pScript2);
+	void				LoadScriptDir(ScriptList* pScriptList, const char* szDirectory, bool bIsSubDir);
 
 public:
 						Options(int argc, char* argv[]);
