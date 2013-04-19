@@ -1008,7 +1008,7 @@ void PostScriptController::InitParamsForNewNZB(NZBInfo* pNZBInfo)
 	if (pNZBInfo->GetCategory() && strlen(pNZBInfo->GetCategory()) > 0)
 	{
 		Options::Category* pCategory = g_pOptions->FindCategory(pNZBInfo->GetCategory());
-		if (pCategory)
+		if (pCategory && pCategory->GetDefScript() && strlen(pCategory->GetDefScript()) > 0)
 		{
 			szDefScript = pCategory->GetDefScript();
 		}
