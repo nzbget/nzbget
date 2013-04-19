@@ -85,17 +85,14 @@ const char* NNTPConnection::Request(const char* req)
 	{
 		debug("%s requested authorization", GetHost());
 
-		//authentication required!
 		if (!Authenticate())
 		{
-			m_bAuthError = true;
 			return NULL;
 		}
 
 		//try again
 		WriteLine(req);
 		answer = ReadLine(m_szLineBuf, CONNECTION_LINEBUFFER_SIZE, NULL);
-		return answer;
 	}
 
 	return answer;
@@ -103,12 +100,16 @@ const char* NNTPConnection::Request(const char* req)
 
 bool NNTPConnection::Authenticate()
 {
-	if (!m_pNewsServer->GetUser() || !m_pNewsServer->GetPassword())
+	if (!m_pNewsServer->GetUser() || strlen(m_pNewsServer->GetUser()) == 0 || 
+		!m_pNewsServer->GetPassword() || strlen(m_pNewsServer->GetPassword()) == 0)
 	{
-		return true;
+		error("Server%i (%s) requested authorization but username/password are not set in settings", m_pNewsServer->GetID(), m_pNewsServer->GetHost());
+		m_bAuthError = true;
+		return false;
 	}
 
-	return AuthInfoUser(0);
+	m_bAuthError = !AuthInfoUser(0);
+	return !m_bAuthError;
 }
 
 bool NNTPConnection::AuthInfoUser(int iRecur)
@@ -127,7 +128,7 @@ bool NNTPConnection::AuthInfoUser(int iRecur)
 	char* answer = ReadLine(m_szLineBuf, CONNECTION_LINEBUFFER_SIZE, NULL);
 	if (!answer)
 	{
-		ReportError("Authorization for %s failed: Connection closed by remote host", GetHost(), false, 0);
+		ReportErrorAnswer("Authorization for server%i (%s) failed: Connection closed by remote host", NULL);
 		return false;
 	}
 
@@ -149,7 +150,7 @@ bool NNTPConnection::AuthInfoUser(int iRecur)
 
 	if (GetStatus() != csCancelled)
 	{
-		ReportErrorAnswer("Authorization for %s failed (Answer: %s)", answer);
+		ReportErrorAnswer("Authorization for server%i (%s) failed (Answer: %s)", answer);
 	}
 	return false;
 }
@@ -170,7 +171,7 @@ bool NNTPConnection::AuthInfoPass(int iRecur)
 	char* answer = ReadLine(m_szLineBuf, CONNECTION_LINEBUFFER_SIZE, NULL);
 	if (!answer)
 	{
-		ReportError("Authorization for %s failed: Connection closed by remote host", GetHost(), false, 0);
+		ReportErrorAnswer("Authorization for server%i (%s) failed: Connection closed by remote host", NULL);
 		return false;
 	}
 	else if (!strncmp(answer, "2", 1))
@@ -187,7 +188,7 @@ bool NNTPConnection::AuthInfoPass(int iRecur)
 
 	if (GetStatus() != csCancelled)
 	{
-		ReportErrorAnswer("Authorization for %s failed (Answer: %s)", answer);
+		ReportErrorAnswer("Authorization for server%i (%s) failed (Answer: %s)", answer);
 	}
 	return false;
 }
@@ -206,10 +207,6 @@ const char* NNTPConnection::JoinGroup(const char* grp)
 	tmp[1024-1] = '\0';
 
 	const char* answer = Request(tmp);
-	if (m_bAuthError)
-	{
-		return answer;
-	}
 
 	if (answer && !strncmp(answer, "2", 1))
 	{
@@ -247,19 +244,21 @@ bool NNTPConnection::Connect()
 
 	if (!answer)
 	{
-		ReportError("Connection to %s failed: Connection closed by remote host", GetHost(), false, 0);
+		ReportErrorAnswer("Connection to server%i (%s) failed: Connection closed by remote host", NULL);
 		Disconnect();
 		return false;
 	}
 
 	if (strncmp(answer, "2", 1))
 	{
-		ReportErrorAnswer("Connection to %s failed (Answer: %s)", answer);
+		ReportErrorAnswer("Connection to server%i (%s) failed (Answer: %s)", answer);
 		Disconnect();
 		return false;
 	}
 
-	if (!Authenticate())
+	if ((m_pNewsServer->GetUser() && strlen(m_pNewsServer->GetUser()) > 0 &&
+		 m_pNewsServer->GetPassword() && strlen(m_pNewsServer->GetPassword()) > 0) &&
+		!Authenticate())
 	{
 		return false;
 	}
@@ -286,7 +285,7 @@ bool NNTPConnection::Disconnect()
 void NNTPConnection::ReportErrorAnswer(const char* szMsgPrefix, const char* szAnswer)
 {
 	char szErrStr[1024];
-	snprintf(szErrStr, 1024, szMsgPrefix, GetHost(), szAnswer);
+	snprintf(szErrStr, 1024, szMsgPrefix, m_pNewsServer->GetID(), m_pNewsServer->GetHost(), szAnswer);
 	szErrStr[1024-1] = '\0';
 	
 	ReportError(szErrStr, NULL, false, 0);

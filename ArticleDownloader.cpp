@@ -366,7 +366,7 @@ ArticleDownloader::EStatus ArticleDownloader::Download()
 	for (int retry = 3; retry > 0; retry--)
 	{
 		szResponse = m_pConnection->Request(tmp);
-		if (szResponse && !strncmp(szResponse, "2", 1))
+		if ((szResponse && !strncmp(szResponse, "2", 1) || m_pConnection->GetAuthError()))
 		{
 			break;
 		}
