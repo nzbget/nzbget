@@ -943,7 +943,7 @@ void QueueCoordinator::AdjustStartTime()
 	if (tDiff > 60 || tDiff < 0)
 	{
 		m_tStartServer += tDiff + 1; // "1" because the method is called once per second
-		if (m_tStartDownload != 0)
+		if (m_tStartDownload != 0 && !m_bStandBy)
 		{
 			m_tStartDownload += tDiff + 1;
 		}
