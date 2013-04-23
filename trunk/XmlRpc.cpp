@@ -1771,11 +1771,15 @@ void HistoryXmlCommand::Execute()
 		"<member><name>UrlStatus</name><value><string>%s</string></value></member>\n"
 		"<member><name>Parameters</name><value><array><data>\n";
 
-	const char* XML_HISTORY_ITEM_LOG_START = 
+	const char* XML_HISTORY_ITEM_SCRIPT_START =
+		"</data></array></value></member>\n"
+		"<member><name>ScriptStatuses</name><value><array><data>\n";
+
+	const char* XML_HISTORY_ITEM_LOG_START =
 		"</data></array></value></member>\n"
 		"<member><name>Log</name><value><array><data>\n";
 
-	const char* XML_HISTORY_ITEM_END = 
+	const char* XML_HISTORY_ITEM_END =
 		"</data></array></value></member>\n"
 		"</struct></value>\n";
 
@@ -1803,7 +1807,11 @@ void HistoryXmlCommand::Execute()
 		"\"UrlStatus\" : \"%s\",\n"
 		"\"Parameters\" : [\n";
 
-	const char* JSON_HISTORY_ITEM_LOG_START = 
+	const char* JSON_HISTORY_ITEM_SCRIPT_START =
+		"],\n"
+		"\"ScriptStatuses\" : [\n";
+
+	const char* JSON_HISTORY_ITEM_LOG_START =
 		"],\n"
 		"\"Log\" : [\n";
 
@@ -1823,7 +1831,19 @@ void HistoryXmlCommand::Execute()
 		"\"Value\" : \"%s\"\n"
 		"}";
 
-	const char* XML_LOG_ITEM = 
+	const char* XML_SCRIPT_ITEM =
+		"<value><struct>\n"
+		"<member><name>Name</name><value><string>%s</string></value></member>\n"
+		"<member><name>Status</name><value><string>%s</string></value></member>\n"
+		"</struct></value>\n";
+
+	const char* JSON_SCRIPT_ITEM =
+		"{\n"
+		"\"Name\" : \"%s\",\n"
+		"\"Status\" : \"%s\"\n"
+		"}";
+
+	const char* XML_LOG_ITEM =
 		"<value><struct>\n"
 		"<member><name>ID</name><value><i4>%i</i4></value></member>\n"
 		"<member><name>Kind</name><value><string>%s</string></value></member>\n"
@@ -1879,7 +1899,7 @@ void HistoryXmlCommand::Execute()
 				pHistoryInfo->GetID(), pHistoryInfo->GetID(), "NZB", xmlNicename, xmlNicename, xmlNZBFilename, 
 				xmlDestDir, xmlCategory, szParStatusName[pNZBInfo->GetParStatus()],
 				szUnpackStatusName[pNZBInfo->GetUnpackStatus()], szMoveStatusName[pNZBInfo->GetMoveStatus()],
-				szScriptStatusName[pNZBInfo->GetScriptStatus()],
+				szScriptStatusName[pNZBInfo->GetScriptStatuses()->CalcTotalStatus()],
 				iFileSizeLo, iFileSizeHi, iFileSizeMB, pNZBInfo->GetFileCount(),
 				pNZBInfo->GetParkedFileCount(), pHistoryInfo->GetTime(), "", "");
 
@@ -1931,6 +1951,33 @@ void HistoryXmlCommand::Execute()
 				free(xmlValue);
 
 				if (IsJson() && iParamIndex++ > 0)
+				{
+					AppendResponse(",\n");
+				}
+				AppendResponse(szItemBuf);
+			}
+		}
+
+		AppendResponse(IsJson() ? JSON_HISTORY_ITEM_SCRIPT_START : XML_HISTORY_ITEM_SCRIPT_START);
+
+		if (pNZBInfo)
+		{
+			// Script statuses
+			int iScriptIndex = 0;
+			for (ScriptStatusList::iterator it = pNZBInfo->GetScriptStatuses()->begin(); it != pNZBInfo->GetScriptStatuses()->end(); it++)
+			{
+				ScriptStatus* pScriptStatus = *it;
+				
+				char* xmlName = EncodeStr(pScriptStatus->GetName());
+				char* xmlStatus = EncodeStr(szScriptStatusName[pScriptStatus->GetStatus()]);
+				
+				snprintf(szItemBuf, szItemBufSize, IsJson() ? JSON_SCRIPT_ITEM : XML_SCRIPT_ITEM, xmlName, xmlStatus);
+				szItemBuf[szItemBufSize-1] = '\0';
+				
+				free(xmlName);
+				free(xmlStatus);
+				
+				if (IsJson() && iScriptIndex++ > 0)
 				{
 					AppendResponse(",\n");
 				}

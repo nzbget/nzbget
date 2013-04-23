@@ -117,6 +117,59 @@ void NZBParameterList::SetParameter(const char* szName, const char* szValue)
 }
 
 
+ScriptStatus::ScriptStatus(const char* szName, EStatus eStatus)
+{
+	m_szName = strdup(szName);
+	m_eStatus = eStatus;
+}
+
+ScriptStatus::~ScriptStatus()
+{
+	if (m_szName)
+	{
+		free(m_szName);
+	}
+}
+
+
+ScriptStatusList::~ScriptStatusList()
+{
+	Clear();
+}
+
+void ScriptStatusList::Clear()
+{
+	for (iterator it = begin(); it != end(); it++)
+	{
+		delete *it;
+	}
+	clear();
+}
+
+void ScriptStatusList::Add(const char* szScriptName, ScriptStatus::EStatus eStatus)
+{
+	push_back(new ScriptStatus(szScriptName, eStatus));
+}
+
+ScriptStatus::EStatus ScriptStatusList::CalcTotalStatus()
+{
+	ScriptStatus::EStatus eStatus = ScriptStatus::srNone;
+
+	for (iterator it = begin(); it != end(); it++)
+	{
+		ScriptStatus* pScriptStatus = *it;
+		// worst Status override better Status
+		if ((pScriptStatus->GetStatus() == ScriptStatus::srSuccess && eStatus == ScriptStatus::srNone) ||
+			(pScriptStatus->GetStatus() < ScriptStatus::srSuccess && (pScriptStatus->GetStatus() > eStatus || eStatus == ScriptStatus::srSuccess)))
+		{
+			eStatus = pScriptStatus->GetStatus();
+		}
+	}
+	
+	return eStatus;
+}
+
+
 NZBInfo::NZBInfo()
 {
 	debug("Creating NZBInfo");
@@ -134,7 +187,6 @@ NZBInfo::NZBInfo()
 	m_eParStatus = psNone;
 	m_eUnpackStatus = usNone;
 	m_eMoveStatus = msNone;
-	m_eScriptStatus = srNone;
 	m_bDeleted = false;
 	m_bParCleanup = false;
 	m_bCleanupDisk = false;

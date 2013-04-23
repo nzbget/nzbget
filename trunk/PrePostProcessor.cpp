@@ -497,6 +497,7 @@ void PrePostProcessor::CheckPostQueue()
 				pPostInfo->GetNZBInfo()->SetParStatus(NZBInfo::psNone);
 				pPostInfo->SetRequestParCheck(false);
 				pPostInfo->SetStage(PostInfo::ptQueued);
+				pPostInfo->GetNZBInfo()->GetScriptStatuses()->Clear();
 				DeletePostThread(pPostInfo);
 			}
 			else if (pPostInfo->GetRequestParRename())
@@ -669,7 +670,7 @@ void PrePostProcessor::JobCompleted(DownloadQueue* pDownloadQueue, PostInfo* pPo
 			 pPostInfo->GetNZBInfo()->GetParStatus() == NZBInfo::psRepairPossible ||
 			 pPostInfo->GetNZBInfo()->GetUnpackStatus() == NZBInfo::usSuccess ||
 			 (pPostInfo->GetNZBInfo()->GetUnpackStatus() == NZBInfo::usNone &&
-			  pPostInfo->GetNZBInfo()->GetScriptStatus() == NZBInfo::srSuccess);
+			  pPostInfo->GetNZBInfo()->GetScriptStatuses()->CalcTotalStatus() == ScriptStatus::srSuccess);
 		if ((g_pOptions->GetParCleanupQueue() || g_pOptions->GetNzbCleanupDisk()) && bCanCleanupQueue)
 		{
 			if (g_pOptions->GetParCleanupQueue())
@@ -1115,7 +1116,7 @@ bool PrePostProcessor::HistoryReturn(IDList* pIDList, bool bReprocess)
 						pNZBInfo->SetRenameStatus(NZBInfo::rsNone);
 						pNZBInfo->SetUnpackStatus(NZBInfo::usNone);
 					}
-					pNZBInfo->SetScriptStatus(NZBInfo::srNone);
+					pNZBInfo->GetScriptStatuses()->Clear();
 					pNZBInfo->SetParkedFileCount(0);
 				}
 

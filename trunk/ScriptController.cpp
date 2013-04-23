@@ -788,6 +788,7 @@ void PostScriptController::Run()
 			activeList.push_back(szScriptName);
 		}
 	}
+	m_pPostInfo->GetNZBInfo()->GetScriptStatuses()->Clear();
 	g_pDownloadQueueHolder->UnlockQueue();
 
 	Options::ScriptList scriptList;
@@ -843,7 +844,12 @@ void PostScriptController::ExecuteScript(const char* szScriptName, const char* s
 	szInfoName[0] = 'P'; // uppercase
 
 	SetLogPrefix(NULL);
-	AnalyseExitCode(iExitCode);
+	ScriptStatus::EStatus eStatus = AnalyseExitCode(iExitCode);
+	
+	// the locking is needed for accessing the members of NZBInfo
+	g_pDownloadQueueHolder->LockQueue();
+	m_pPostInfo->GetNZBInfo()->GetScriptStatuses()->Add(szScriptName, eStatus);
+	g_pDownloadQueueHolder->UnlockQueue();
 }
 
 void PostScriptController::PrepareParams(const char* szScriptName)
@@ -898,7 +904,7 @@ void PostScriptController::PrepareParams(const char* szScriptName)
 	g_pDownloadQueueHolder->UnlockQueue();
 }
 
-void PostScriptController::AnalyseExitCode(int iExitCode)
+ScriptStatus::EStatus PostScriptController::AnalyseExitCode(int iExitCode)
 {
 	// The ScriptStatus is accumulated for all scripts:
 	// If any script has failed the status is "failure", etc.
@@ -907,47 +913,36 @@ void PostScriptController::AnalyseExitCode(int iExitCode)
 	{
 		case POSTPROCESS_SUCCESS:
 			PrintMessage(Message::mkInfo, "%s successful", GetInfoName());
-			if (m_pPostInfo->GetNZBInfo()->GetScriptStatus() == NZBInfo::srNone)
-			{
-				m_pPostInfo->GetNZBInfo()->SetScriptStatus(NZBInfo::srSuccess);
-			}
-			break;
+			return ScriptStatus::srSuccess;
 
 		case POSTPROCESS_ERROR:
 		case -1: // Execute() returns -1 if the process could not be started (file not found or other problem)
 			PrintMessage(Message::mkError, "%s failed", GetInfoName());
-			m_pPostInfo->GetNZBInfo()->SetScriptStatus(NZBInfo::srFailure);
-			break;
+			return ScriptStatus::srFailure;
 
 		case POSTPROCESS_NONE:
 			PrintMessage(Message::mkInfo, "%s skipped", GetInfoName());
-			break;
+			return ScriptStatus::srNone;
 
 #ifndef DISABLE_PARCHECK
 		case POSTPROCESS_PARCHECK:
 			if (m_pPostInfo->GetNZBInfo()->GetParStatus() > NZBInfo::psSkipped)
 			{
 				PrintMessage(Message::mkError, "%s requested par-check/repair, but the collection was already checked", GetInfoName());
-				m_pPostInfo->GetNZBInfo()->SetScriptStatus(NZBInfo::srFailure);
+				return ScriptStatus::srFailure;
 			}
 			else
 			{
 				PrintMessage(Message::mkInfo, "%s requested par-check/repair", GetInfoName());
 				m_pPostInfo->SetRequestParCheck(true);
-				if (m_pPostInfo->GetNZBInfo()->GetScriptStatus() == NZBInfo::srNone)
-				{
-					m_pPostInfo->GetNZBInfo()->SetScriptStatus(NZBInfo::srSuccess);
-				}
+				return ScriptStatus::srSuccess;
 			}
 			break;
 #endif
 
 		default:
 			PrintMessage(Message::mkWarning, "%s terminated with unknown status", GetInfoName());
-			if (m_pPostInfo->GetNZBInfo()->GetScriptStatus() == NZBInfo::srNone)
-			{
-				m_pPostInfo->GetNZBInfo()->SetScriptStatus(NZBInfo::srUnknown);
-			}
+			return ScriptStatus::srUnknown;
 	}
 }
 

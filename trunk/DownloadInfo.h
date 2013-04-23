@@ -209,6 +209,41 @@ public:
 	void				SetParameter(const char* szName, const char* szValue);
 };
 
+class ScriptStatus
+{
+public:
+	enum EStatus
+	{
+		srNone,
+		srUnknown,
+		srFailure,
+		srSuccess
+	};
+
+private:
+	char* 				m_szName;
+	EStatus				m_eStatus;
+	
+	friend class ScriptStatusList;
+	
+public:
+						ScriptStatus(const char* szName, EStatus eStatus);
+						~ScriptStatus();
+	const char*			GetName() { return m_szName; }
+	EStatus				GetStatus() { return m_eStatus; }
+};
+
+typedef std::deque<ScriptStatus*> ScriptStatusListBase;
+
+class ScriptStatusList : public ScriptStatusListBase
+{
+public:
+						~ScriptStatusList();
+	void				Add(const char* szScriptName, ScriptStatus::EStatus eStatus);
+	void				Clear();
+	ScriptStatus::EStatus	CalcTotalStatus();
+};
+
 class NZBInfoList;
 
 class NZBInfo
@@ -239,14 +274,6 @@ public:
 		usSuccess
 	};
 
-	enum EScriptStatus
-	{
-		srNone,
-		srUnknown,
-		srFailure,
-		srSuccess
-	};
-
 	enum EMoveStatus
 	{
 		msNone,
@@ -272,7 +299,6 @@ private:
 	ERenameStatus		m_eRenameStatus;
 	EParStatus			m_eParStatus;
 	EUnpackStatus		m_eUnpackStatus;
-	EScriptStatus		m_eScriptStatus;
 	EMoveStatus			m_eMoveStatus;
 	char*				m_szQueuedFilename;
 	bool				m_bDeleted;
@@ -281,6 +307,7 @@ private:
 	bool				m_bUnpackCleanedUpDisk;
 	NZBInfoList*		m_Owner;
 	NZBParameterList	m_ppParameters;
+	ScriptStatusList	m_scriptStatuses;
 	Mutex				m_mutexLog;
 	Messages			m_Messages;
 	int					m_iIDMessageGen;
@@ -324,8 +351,6 @@ public:
 	void				SetUnpackStatus(EUnpackStatus eUnpackStatus) { m_eUnpackStatus = eUnpackStatus; }
 	EMoveStatus			GetMoveStatus() { return m_eMoveStatus; }
 	void				SetMoveStatus(EMoveStatus eMoveStatus) { m_eMoveStatus = eMoveStatus; }
-	EScriptStatus		GetScriptStatus() { return m_eScriptStatus; }
-	void				SetScriptStatus(EScriptStatus eScriptStatus) { m_eScriptStatus = eScriptStatus; }
 	const char*			GetQueuedFilename() { return m_szQueuedFilename; }
 	void				SetQueuedFilename(const char* szQueuedFilename);
 	bool				GetDeleted() { return m_bDeleted; }
@@ -338,6 +363,7 @@ public:
 	void				SetUnpackCleanedUpDisk(bool bUnpackCleanedUpDisk) { m_bUnpackCleanedUpDisk = bUnpackCleanedUpDisk; }
 	NZBParameterList*	GetParameters() { return &m_ppParameters; }				// needs locking (for shared objects)
 	void				SetParameter(const char* szName, const char* szValue);	// needs locking (for shared objects)
+	ScriptStatusList*	GetScriptStatuses() { return &m_scriptStatuses; }        // needs locking (for shared objects)
 	void				AppendMessage(Message::EKind eKind, time_t tTime, const char* szText);
 	Messages*			LockMessages();
 	void				UnlockMessages();

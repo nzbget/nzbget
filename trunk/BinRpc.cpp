@@ -1022,7 +1022,7 @@ void HistoryBinCommand::Execute()
 			pListAnswer->m_iSizeHi				= htonl(iSizeHi);
 			pListAnswer->m_iFileCount			= htonl(pNZBInfo->GetFileCount());
 			pListAnswer->m_iParStatus			= htonl(pNZBInfo->GetParStatus());
-			pListAnswer->m_iScriptStatus		= htonl(pNZBInfo->GetScriptStatus());
+			pListAnswer->m_iScriptStatus		= htonl(pNZBInfo->GetScriptStatuses()->CalcTotalStatus());
 		}
 		else if (pHistoryInfo->GetKind() == HistoryInfo::hkUrlInfo)
 		{
