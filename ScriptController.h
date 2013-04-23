@@ -111,7 +111,7 @@ private:
  
 	void				ExecuteScript(const char* szScriptName, const char* szLocation);
 	void				PrepareParams(const char* szScriptName);
-	void				AnalyseExitCode(int iExitCode);
+	ScriptStatus::EStatus	AnalyseExitCode(int iExitCode);
 
 	typedef std::deque<char*>		FileList;
 

@@ -82,7 +82,7 @@ bool DiskState::SaveDownloadQueue(DownloadQueue* pDownloadQueue)
 		return false;
 	}
 
-	fprintf(outfile, "%s%i\n", FORMATVERSION_SIGNATURE, 22);
+	fprintf(outfile, "%s%i\n", FORMATVERSION_SIGNATURE, 23);
 
 	// save nzb-infos
 	SaveNZBList(pDownloadQueue, outfile);
@@ -136,7 +136,7 @@ bool DiskState::LoadDownloadQueue(DownloadQueue* pDownloadQueue)
 	char FileSignatur[128];
 	fgets(FileSignatur, sizeof(FileSignatur), infile);
 	int iFormatVersion = ParseFormatVersion(FileSignatur);
-	if (iFormatVersion < 3 || iFormatVersion > 22)
+	if (iFormatVersion < 3 || iFormatVersion > 23)
 	{
 		error("Could not load diskstate due to file version mismatch");
 		fclose(infile);
@@ -204,7 +204,7 @@ void DiskState::SaveNZBList(DownloadQueue* pDownloadQueue, FILE* outfile)
 		fprintf(outfile, "%s\n", pNZBInfo->GetName());
 		fprintf(outfile, "%s\n", pNZBInfo->GetCategory());
 		fprintf(outfile, "%i\n", (int)pNZBInfo->GetPostProcess());
-		fprintf(outfile, "%i,%i,%i,%i,%i\n", (int)pNZBInfo->GetParStatus(), (int)pNZBInfo->GetUnpackStatus(), (int)pNZBInfo->GetScriptStatus(), (int)pNZBInfo->GetMoveStatus(), (int)pNZBInfo->GetRenameStatus());
+		fprintf(outfile, "%i,%i,%i,%i\n", (int)pNZBInfo->GetParStatus(), (int)pNZBInfo->GetUnpackStatus(), (int)pNZBInfo->GetMoveStatus(), (int)pNZBInfo->GetRenameStatus());
 		fprintf(outfile, "%i\n", (int)pNZBInfo->GetUnpackCleanedUpDisk());
 		fprintf(outfile, "%i\n", pNZBInfo->GetFileCount());
 		fprintf(outfile, "%i\n", pNZBInfo->GetParkedFileCount());
@@ -237,6 +237,13 @@ void DiskState::SaveNZBList(DownloadQueue* pDownloadQueue, FILE* outfile)
 		{
 			NZBParameter* pParameter = *it;
 			fprintf(outfile, "%s=%s\n", pParameter->GetName(), pParameter->GetValue());
+		}
+
+		fprintf(outfile, "%i\n", pNZBInfo->GetScriptStatuses()->size());
+		for (ScriptStatusList::iterator it = pNZBInfo->GetScriptStatuses()->begin(); it != pNZBInfo->GetScriptStatuses()->end(); it++)
+		{
+			ScriptStatus* pScriptStatus = *it;
+			fprintf(outfile, "%i,%s\n", pScriptStatus->GetStatus(), pScriptStatus->GetName());
 		}
 
 		NZBInfo::Messages* pMessages = pNZBInfo->LockMessages();
@@ -312,13 +319,17 @@ bool DiskState::LoadNZBList(DownloadQueue* pDownloadQueue, FILE* infile, int iFo
 		{
 			int iScriptStatus;
 			if (fscanf(infile, "%i\n", &iScriptStatus) != 1) goto error;
-			pNZBInfo->SetScriptStatus((NZBInfo::EScriptStatus)iScriptStatus);
+			pNZBInfo->GetScriptStatuses()->Add("SCRIPT", (ScriptStatus::EStatus)iScriptStatus);
 		}
 
 		if (iFormatVersion >= 18)
 		{
 			int iParStatus, iUnpackStatus, iScriptStatus, iMoveStatus = 0, iRenameStatus = 0;
-			if (iFormatVersion >= 21)
+			if (iFormatVersion >= 23)
+			{
+				if (fscanf(infile, "%i,%i,%i,%i\n", &iParStatus, &iUnpackStatus, &iMoveStatus, &iRenameStatus) != 4) goto error;
+			}
+			else if (iFormatVersion >= 21)
 			{
 				if (fscanf(infile, "%i,%i,%i,%i,%i\n", &iParStatus, &iUnpackStatus, &iScriptStatus, &iMoveStatus, &iRenameStatus) != 5) goto error;
 			}
@@ -332,9 +343,12 @@ bool DiskState::LoadNZBList(DownloadQueue* pDownloadQueue, FILE* infile, int iFo
 			}
 			pNZBInfo->SetParStatus((NZBInfo::EParStatus)iParStatus);
 			pNZBInfo->SetUnpackStatus((NZBInfo::EUnpackStatus)iUnpackStatus);
-			pNZBInfo->SetScriptStatus((NZBInfo::EScriptStatus)iScriptStatus);
 			pNZBInfo->SetMoveStatus((NZBInfo::EMoveStatus)iMoveStatus);
 			pNZBInfo->SetRenameStatus((NZBInfo::ERenameStatus)iRenameStatus);
+			if (iFormatVersion < 23)
+			{
+				pNZBInfo->GetScriptStatuses()->Add("SCRIPT", (ScriptStatus::EStatus)iScriptStatus);
+			}
 		}
 
 		if (iFormatVersion >= 19)
@@ -395,6 +409,25 @@ bool DiskState::LoadNZBList(DownloadQueue* pDownloadQueue, FILE* infile, int iFo
 					*szValue = '\0';
 					szValue++;
 					pNZBInfo->SetParameter(buf, szValue);
+				}
+			}
+		}
+
+		if (iFormatVersion >= 23)
+		{
+			int iScriptCount;
+			if (fscanf(infile, "%i\n", &iScriptCount) != 1) goto error;
+			for (int i = 0; i < iScriptCount; i++)
+			{
+				if (!fgets(buf, sizeof(buf), infile)) goto error;
+				if (buf[0] != 0) buf[strlen(buf)-1] = 0; // remove traling '\n'
+				
+				char* szScriptName = strchr(buf, ',');
+				if (szScriptName)
+				{
+					szScriptName++;
+					int iStatus = atoi(buf);
+					pNZBInfo->GetScriptStatuses()->Add(szScriptName, (ScriptStatus::EStatus)iStatus);
 				}
 			}
 		}
@@ -1063,7 +1096,7 @@ bool DiskState::DiscardDownloadQueue()
 	char FileSignatur[128];
 	fgets(FileSignatur, sizeof(FileSignatur), infile);
 	int iFormatVersion = ParseFormatVersion(FileSignatur);
-	if (3 <= iFormatVersion && iFormatVersion <= 22)
+	if (3 <= iFormatVersion && iFormatVersion <= 23)
 	{
 		// skip nzb-infos
 		int size = 0;

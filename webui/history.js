@@ -388,8 +388,12 @@ var History = (new function($)
 			{
 				status = buildStatus(hist.ParStatus, 'Par: ') + ' ' +
 				    (Options.option('Unpack') == 'yes' || hist.UnpackStatus != 'NONE' ? buildStatus(hist.UnpackStatus, 'Unpack: ') + ' ' : '')  +
-					(hist.MoveStatus === "FAILURE" ? buildStatus(hist.MoveStatus, 'Move: ') + ' ' : "") +
-					buildStatus(hist.ScriptStatus, 'Script: ');
+					(hist.MoveStatus === "FAILURE" ? buildStatus(hist.MoveStatus, 'Move: ') + ' ' : "");
+				for (var i=0; i<hist.ScriptStatuses.length; i++)
+				{
+					var scriptStatus = hist.ScriptStatuses[i];
+					status += buildStatus(scriptStatus.Status, Options.shortScriptName(scriptStatus.Name) + ': ') + ' ';
+				}
 			}
 
 			$('#HistoryEdit_Title').text(Util.formatNZBName(hist.Name));
