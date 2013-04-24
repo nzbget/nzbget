@@ -715,3 +715,120 @@ bool MoveController::MoveFiles()
 
 	return bOK;
 }
+
+
+void CleanupController::StartJob(PostInfo* pPostInfo)
+{
+	CleanupController* pCleanupController = new CleanupController();
+	pCleanupController->m_pPostInfo = pPostInfo;
+	pCleanupController->SetAutoDestroy(false);
+
+	pPostInfo->SetPostThread(pCleanupController);
+
+	pCleanupController->Start();
+}
+
+void CleanupController::Run()
+{
+	// the locking is needed for accessing the members of NZBInfo
+	g_pDownloadQueueHolder->LockQueue();
+
+	char szNZBName[1024];
+	strncpy(szNZBName, m_pPostInfo->GetNZBInfo()->GetName(), 1024);
+	szNZBName[1024-1] = '\0';
+
+	char szInfoName[1024];
+	snprintf(szInfoName, 1024, "cleanup for %s", m_pPostInfo->GetNZBInfo()->GetName());
+	szInfoName[1024-1] = '\0';
+	SetInfoName(szInfoName);
+
+	SetDefaultLogKind(g_pOptions->GetProcessLogKind());
+
+	strncpy(m_szDestDir, m_pPostInfo->GetNZBInfo()->GetDestDir(), 1024);
+	m_szDestDir[1024-1] = '\0';
+
+	g_pDownloadQueueHolder->UnlockQueue();
+
+	info("Cleaning up %s", szNZBName);
+
+	bool bDeleted = false;
+	bool bOK = Cleanup(&bDeleted);
+
+	szInfoName[0] = 'C'; // uppercase
+
+	if (bOK && bDeleted)
+	{
+		info("%s successful", szInfoName);
+		m_pPostInfo->GetNZBInfo()->SetCleanupStatus(NZBInfo::csSuccess);
+	}
+	else if (bOK)
+	{
+		info("Nothing to cleanup for %s", szNZBName);
+		m_pPostInfo->GetNZBInfo()->SetCleanupStatus(NZBInfo::csSuccess);
+	}
+	else
+	{
+		error("%s failed", szInfoName);
+		m_pPostInfo->GetNZBInfo()->SetCleanupStatus(NZBInfo::csFailure);
+	}
+
+	m_pPostInfo->SetStage(PostInfo::ptQueued);
+	m_pPostInfo->SetWorking(false);
+}
+
+bool CleanupController::Cleanup(bool *bDeleted)
+{
+	*bDeleted = false;
+	bool bOK = true;
+
+	ExtList extList;
+	
+	// split ExtCleanupDisk into tokens and create a list
+	char* szExtCleanupDisk = strdup(g_pOptions->GetExtCleanupDisk());
+	
+	char* saveptr;
+	char* szExt = strtok_r(szExtCleanupDisk, ",; ", &saveptr);
+	while (szExt)
+	{
+		extList.push_back(szExt);
+		szExt = strtok_r(NULL, ",;", &saveptr);
+	}
+	
+	DirBrowser dir(m_szDestDir);
+	while (const char* filename = dir.Next())
+	{
+		// check file extension
+		
+		bool bDeleteIt = false;
+		const char *szExt = strrchr(filename, '.');
+		for (ExtList::iterator it = extList.begin(); it != extList.end(); it++)
+		{
+			const char* szExt2 = *it;
+			if (szExt && !strcasecmp(szExt+1, szExt2))
+			{
+				bDeleteIt = true;
+				break;
+			}
+		}
+
+		if (bDeleteIt)
+		{
+			char szFullFilename[1024];
+			snprintf(szFullFilename, 1024, "%s%c%s", m_szDestDir, PATH_SEPARATOR, filename);
+			szFullFilename[1024-1] = '\0';
+
+			PrintMessage(Message::mkInfo, "Deleting file %s", filename);
+			if (remove(szFullFilename) != 0)
+			{
+				PrintMessage(Message::mkError, "Could not delete file %s! Errcode: %i", szFullFilename, errno);
+				bOK = false;
+			}
+
+			*bDeleted = true;
+		}
+	}
+
+	free(szExtCleanupDisk);
+
+	return bOK;
+}

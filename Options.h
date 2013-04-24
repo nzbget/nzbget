@@ -305,6 +305,7 @@ private:
 	char*				m_szUnrarCmd;
 	char*				m_szSevenZipCmd;
 	bool				m_bUnpackPauseQueue;
+	char*				m_szExtCleanupDisk;
 
 	// Parsed command-line parameters
 	bool				m_bServerMode;
@@ -465,6 +466,7 @@ public:
 	const char*			GetUnrarCmd() { return m_szUnrarCmd; }
 	const char*			GetSevenZipCmd() { return m_szSevenZipCmd; }
 	bool				GetUnpackPauseQueue() { return m_bUnpackPauseQueue; }
+	const char*			GetExtCleanupDisk() { return m_szExtCleanupDisk; }
 
 	Category*			FindCategory(const char* szName) { return m_Categories.FindCategory(szName); }
 

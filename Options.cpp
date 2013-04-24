@@ -177,6 +177,7 @@ static const char* OPTION_SEVENZIPCMD			= "SevenZipCmd";
 static const char* OPTION_UNPACKPAUSEQUEUE		= "UnpackPauseQueue";
 static const char* OPTION_SCRIPTORDER			= "ScriptOrder";
 static const char* OPTION_DEFSCRIPT				= "DefScript";
+static const char* OPTION_EXTCLEANUPDISK		= "ExtCleanupDisk";
 
 // obsolete options
 static const char* OPTION_POSTLOGKIND			= "PostLogKind";
@@ -521,6 +522,7 @@ Options::Options(int argc, char* argv[])
 	m_szUnrarCmd			= NULL;
 	m_szSevenZipCmd			= NULL;
 	m_bUnpackPauseQueue		= false;
+	m_szExtCleanupDisk		= NULL;
 
 	// Option "ConfigFile" will be initialized later, but we want
 	// to see it at the top of option list, so we add it first
@@ -713,6 +715,10 @@ Options::~Options()
 	{
 		free(m_szSevenZipCmd);
 	}
+	if (m_szExtCleanupDisk)
+	{
+		free(m_szExtCleanupDisk);
+	}
 
 	for (NameList::iterator it = m_EditQueueNameList.begin(); it != m_EditQueueNameList.end(); it++)
 	{
@@ -866,6 +872,7 @@ void Options::InitDefault()
 	SetOption(OPTION_SEVENZIPCMD, "7z");
 #endif
 	SetOption(OPTION_UNPACKPAUSEQUEUE, "no");
+	SetOption(OPTION_EXTCLEANUPDISK, "");
 }
 
 void Options::InitOptFile()
@@ -999,6 +1006,7 @@ void Options::InitOptions()
 	m_szLogFile				= strdup(GetOption(OPTION_LOGFILE));
 	m_szUnrarCmd			= strdup(GetOption(OPTION_UNRARCMD));
 	m_szSevenZipCmd			= strdup(GetOption(OPTION_SEVENZIPCMD));
+	m_szExtCleanupDisk		= strdup(GetOption(OPTION_EXTCLEANUPDISK));
 
 	m_iDownloadRate			= (int)(ParseFloatValue(OPTION_DOWNLOADRATE) * 1024);
 	m_iConnectionTimeout	= ParseIntValue(OPTION_CONNECTIONTIMEOUT, 10);

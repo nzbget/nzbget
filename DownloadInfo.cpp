@@ -186,6 +186,7 @@ NZBInfo::NZBInfo()
 	m_eRenameStatus = rsNone;
 	m_eParStatus = psNone;
 	m_eUnpackStatus = usNone;
+	m_eCleanupStatus = csNone;
 	m_eMoveStatus = msNone;
 	m_bDeleted = false;
 	m_bParCleanup = false;
