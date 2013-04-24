@@ -65,7 +65,7 @@ webui_FILES = \
 	webui/img/transmit-reload-2x.gif
 
 ppscripts_FILES = \
-	ppscripts/Cleanup.sh ppscripts/EMail.py ppscripts/Logger.py
+	ppscripts/EMail.py ppscripts/Logger.py
 
 # Install
 sbin_SCRIPTS = nzbgetd
