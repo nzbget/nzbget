@@ -107,4 +107,19 @@ public:
 	static void			StartJob(PostInfo* pPostInfo);
 };
 
+class CleanupController : public Thread, public ScriptController
+{
+private:
+	PostInfo*			m_pPostInfo;
+	char				m_szDestDir[1024];
+
+	bool				Cleanup(bool *bDeleted);
+
+	typedef std::deque<char*>	ExtList;
+
+public:
+	virtual void		Run();
+	static void			StartJob(PostInfo* pPostInfo);
+};
+
 #endif

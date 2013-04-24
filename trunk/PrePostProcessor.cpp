@@ -600,14 +600,24 @@ void PrePostProcessor::StartJob(DownloadQueue* pDownloadQueue, PostInfo* pPostIn
 #endif
 
 	bool bUnpack = g_pOptions->GetUnpack() && (pPostInfo->GetNZBInfo()->GetUnpackStatus() == NZBInfo::usNone);
+
 	bool bParFailed = pPostInfo->GetNZBInfo()->GetParStatus() == NZBInfo::psFailure ||
 		pPostInfo->GetNZBInfo()->GetParStatus() == NZBInfo::psRepairPossible;
+
+	bool bCleanup = !bUnpack &&
+		pPostInfo->GetNZBInfo()->GetCleanupStatus() == NZBInfo::csNone &&
+		(pPostInfo->GetNZBInfo()->GetParStatus() == NZBInfo::psSuccess ||
+		 (pPostInfo->GetNZBInfo()->GetUnpackStatus() == NZBInfo::usSuccess &&
+		  pPostInfo->GetNZBInfo()->GetParStatus() != NZBInfo::psFailure)) &&
+		strlen(g_pOptions->GetExtCleanupDisk()) > 0;
+
 	bool bMoveInter = !bUnpack &&
 		pPostInfo->GetNZBInfo()->GetMoveStatus() == NZBInfo::msNone &&
 		pPostInfo->GetNZBInfo()->GetUnpackStatus() != NZBInfo::usFailure &&
 		pPostInfo->GetNZBInfo()->GetParStatus() != NZBInfo::psFailure &&
 		strlen(g_pOptions->GetInterDir()) > 0 &&
 		!strncmp(pPostInfo->GetNZBInfo()->GetDestDir(), g_pOptions->GetInterDir(), strlen(g_pOptions->GetInterDir()));
+
 	// TODO: check if download has pp-scripts defined
 	bool bPostScript = true;
 
@@ -641,6 +651,11 @@ void PrePostProcessor::StartJob(DownloadQueue* pDownloadQueue, PostInfo* pPostIn
 	{
 		UpdatePauseState(g_pOptions->GetUnpackPauseQueue(), "unpack");
 		UnpackController::StartJob(pPostInfo);
+	}
+	else if (bCleanup)
+	{
+		UpdatePauseState(g_pOptions->GetUnpackPauseQueue() || g_pOptions->GetScriptPauseQueue(), "cleanup");
+		CleanupController::StartJob(pPostInfo);
 	}
 	else if (bMoveInter)
 	{
@@ -1115,6 +1130,7 @@ bool PrePostProcessor::HistoryReturn(IDList* pIDList, bool bReprocess)
 						pNZBInfo->SetParStatus(NZBInfo::psNone);
 						pNZBInfo->SetRenameStatus(NZBInfo::rsNone);
 						pNZBInfo->SetUnpackStatus(NZBInfo::usNone);
+						pNZBInfo->SetCleanupStatus(NZBInfo::csNone);
 					}
 					pNZBInfo->GetScriptStatuses()->Clear();
 					pNZBInfo->SetParkedFileCount(0);

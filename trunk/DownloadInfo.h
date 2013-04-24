@@ -274,6 +274,13 @@ public:
 		usSuccess
 	};
 
+	enum ECleanupStatus
+	{
+		csNone,
+		csFailure,
+		csSuccess
+	};
+
 	enum EMoveStatus
 	{
 		msNone,
@@ -299,6 +306,7 @@ private:
 	ERenameStatus		m_eRenameStatus;
 	EParStatus			m_eParStatus;
 	EUnpackStatus		m_eUnpackStatus;
+	ECleanupStatus		m_eCleanupStatus;
 	EMoveStatus			m_eMoveStatus;
 	char*				m_szQueuedFilename;
 	bool				m_bDeleted;
@@ -349,6 +357,8 @@ public:
 	void				SetParStatus(EParStatus eParStatus) { m_eParStatus = eParStatus; }
 	EUnpackStatus		GetUnpackStatus() { return m_eUnpackStatus; }
 	void				SetUnpackStatus(EUnpackStatus eUnpackStatus) { m_eUnpackStatus = eUnpackStatus; }
+	ECleanupStatus		GetCleanupStatus() { return m_eCleanupStatus; }
+	void				SetCleanupStatus(ECleanupStatus eCleanupStatus) { m_eCleanupStatus = eCleanupStatus; }
 	EMoveStatus			GetMoveStatus() { return m_eMoveStatus; }
 	void				SetMoveStatus(EMoveStatus eMoveStatus) { m_eMoveStatus = eMoveStatus; }
 	const char*			GetQueuedFilename() { return m_szQueuedFilename; }
