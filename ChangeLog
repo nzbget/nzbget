@@ -2,6 +2,17 @@ nzbget-11.0:
   - please see subversion log at
     http://nzbget.svn.sourceforge.net/viewvc/nzbget/?view=log
 
+nzbget-10.2:
+  - fixed potential segfault which could happen with file paths longer
+    than 1024 characters;
+  - fixed: when options <DirectWrite> and <ContinuePartial> were both
+    active, a restart or reload of the program during download may cause
+    damaged files in the active download;
+  - increased width of speed indication ui-element to avoid layout
+    breaking on some linux-browsers;
+  - fixed a race condition in unpacker which could lead to a segfault
+    (although the chances were low because the code wasn't executed often).
+
 nzbget-10.1:
   - fixed: articles with decoding errors (incomplete or damaged posts)
     caused infinite retry-loop in downloader.
