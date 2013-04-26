@@ -2292,12 +2292,14 @@ void ConfigTemplatesXmlCommand::Execute()
 	const char* XML_CONFIG_ITEM = 
 		"<value><struct>\n"
 		"<member><name>Name</name><value><string>%s</string></value></member>\n"
+		"<member><name>DisplayName</name><value><string>%s</string></value></member>\n"
 		"<member><name>Template</name><value><string>%s</string></value></member>\n"
 		"</struct></value>\n";
 
 	const char* JSON_CONFIG_ITEM = 
 		"{\n"
 		"\"Name\" : \"%s\",\n"
+		"\"DisplayName\" : \"%s\",\n"
 		"\"Template\" : \"%s\"\n"
 		"}";
 
@@ -2319,15 +2321,17 @@ void ConfigTemplatesXmlCommand::Execute()
 		Options::ConfigTemplate* pConfigTemplate = *it;
 
 		char* xmlName = EncodeStr(pConfigTemplate->GetName());
+		char* xmlDisplayName = EncodeStr(pConfigTemplate->GetDisplayName());
 		char* xmlTemplate = EncodeStr(pConfigTemplate->GetTemplate());
 
 		int szItemBufSize = strlen(xmlName) + strlen(xmlTemplate) + 1024;
 		char* szItemBuf = (char*)malloc(szItemBufSize);
 
-		snprintf(szItemBuf, szItemBufSize, IsJson() ? JSON_CONFIG_ITEM : XML_CONFIG_ITEM, xmlName, xmlTemplate);
+		snprintf(szItemBuf, szItemBufSize, IsJson() ? JSON_CONFIG_ITEM : XML_CONFIG_ITEM, xmlName, xmlDisplayName, xmlTemplate);
 		szItemBuf[szItemBufSize-1] = '\0';
 
 		free(xmlName);
+		free(xmlDisplayName);
 		free(xmlTemplate);
 
 		if (IsJson() && index++ > 0)

@@ -803,7 +803,7 @@ void PostScriptController::Run()
 			// if any script has requested par-check, do not execute other scripts
 			if (Util::SameFilename(pScript->GetName(), szActiveName) && !m_pPostInfo->GetRequestParCheck())
 			{
-				ExecuteScript(pScript->GetName(), pScript->GetLocation());
+				ExecuteScript(pScript->GetName(), pScript->GetDisplayName(), pScript->GetLocation());
 			}
 		}
 	}
@@ -817,7 +817,7 @@ void PostScriptController::Run()
 	m_pPostInfo->SetWorking(false);
 }
 
-void PostScriptController::ExecuteScript(const char* szScriptName, const char* szLocation)
+void PostScriptController::ExecuteScript(const char* szScriptName, const char* szDisplayName, const char* szLocation)
 {
 	PrintMessage(Message::mkInfo, "Executing post-process-script %s for %s", szScriptName, m_pPostInfo->GetInfoName());
 
@@ -829,12 +829,7 @@ void PostScriptController::ExecuteScript(const char* szScriptName, const char* s
 	szInfoName[1024-1] = '\0';
 	SetInfoName(szInfoName);
 
-	char szLogPrefix[1024];
-	strncpy(szLogPrefix, szScriptName, 1024);
-	szLogPrefix[1024-1] = '\0';
-	if (char* ext = strrchr(szLogPrefix, '.')) *ext = '\0'; // strip file extension
-	SetLogPrefix(szLogPrefix);
-
+	SetLogPrefix(szDisplayName);
 	SetDefaultLogKind(g_pOptions->GetProcessLogKind());
 
 	PrepareParams(szScriptName);

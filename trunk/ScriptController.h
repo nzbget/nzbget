@@ -109,7 +109,7 @@ private:
 	PostInfo*			m_pPostInfo;
 	char				m_szNZBName[1024];
  
-	void				ExecuteScript(const char* szScriptName, const char* szLocation);
+	void				ExecuteScript(const char* szScriptName, const char* szDisplayName, const char* szLocation);
 	void				PrepareParams(const char* szScriptName);
 	ScriptStatus::EStatus	AnalyseExitCode(int iExitCode);
 

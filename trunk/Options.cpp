@@ -287,9 +287,10 @@ Options::OptEntry* Options::OptEntries::FindOption(const char* szName)
 }
 
 
-Options::ConfigTemplate::ConfigTemplate(const char* szName, const char* szTemplate)
+Options::ConfigTemplate::ConfigTemplate(const char* szName, const char* szDisplayName, const char* szTemplate)
 {
 	m_szName = strdup(szName);
+	m_szDisplayName = strdup(szDisplayName);
 	m_szTemplate = strdup(szTemplate ? szTemplate : "");
 }
 
@@ -298,6 +299,10 @@ Options::ConfigTemplate::~ConfigTemplate()
 	if (m_szName)
 	{
 		free(m_szName);
+	}
+	if (m_szDisplayName)
+	{
+		free(m_szDisplayName);
 	}
 	if (m_szTemplate)
 	{
@@ -369,6 +374,7 @@ Options::Script::Script(const char* szName, const char* szLocation)
 {
 	m_szName = strdup(szName);
 	m_szLocation = strdup(szLocation);
+	m_szDisplayName = strdup(szName);
 }
 
 Options::Script::~Script()
@@ -381,7 +387,21 @@ Options::Script::~Script()
 	{
 		free(m_szLocation);
 	}
+	if (m_szDisplayName)
+	{
+		free(m_szDisplayName);
+	}
 }
+
+void Options::Script::SetDisplayName(const char* szDisplayName)
+{
+	if (m_szDisplayName)
+	{
+		free(m_szDisplayName);
+	}
+	m_szDisplayName = strdup(szDisplayName);
+}
+
 
 Options::ScriptList::~ScriptList()
 {
@@ -2797,7 +2817,7 @@ bool Options::LoadConfigTemplates(ConfigTemplates* pConfigTemplates)
 	{
 		return false;
 	}
-	ConfigTemplate* pConfigTemplate = new ConfigTemplate("", szBuffer);
+	ConfigTemplate* pConfigTemplate = new ConfigTemplate("", "", szBuffer);
 	pConfigTemplates->push_back(pConfigTemplate);
 	free(szBuffer);
 
@@ -2816,7 +2836,7 @@ bool Options::LoadConfigTemplates(ConfigTemplates* pConfigTemplates)
 		FILE* infile = fopen(pScript->GetLocation(), "rb");
 		if (!infile)
 		{
-			ConfigTemplate* pConfigTemplate = new ConfigTemplate(pScript->GetName(), "");
+			ConfigTemplate* pConfigTemplate = new ConfigTemplate(pScript->GetName(), pScript->GetDisplayName(), "");
 			pConfigTemplates->push_back(pConfigTemplate);
 			continue;
 		}
@@ -2846,7 +2866,7 @@ bool Options::LoadConfigTemplates(ConfigTemplates* pConfigTemplates)
 
 		fclose(infile);
 
-		ConfigTemplate* pConfigTemplate = new ConfigTemplate(pScript->GetName(), stringBuilder.GetBuffer());
+		ConfigTemplate* pConfigTemplate = new ConfigTemplate(pScript->GetName(), pScript->GetDisplayName(), stringBuilder.GetBuffer());
 		pConfigTemplates->push_back(pConfigTemplate);
 	}
 
@@ -2859,9 +2879,6 @@ void Options::LoadScriptList(ScriptList* pScriptList)
 	{
 		return;
 	}
-
-	int iBufSize = 1024*10;
-	char* szBuffer = (char*)malloc(iBufSize+1);
 
 	ScriptList tmpScriptList;
 	LoadScriptDir(&tmpScriptList, m_szScriptDir, false);
@@ -2896,7 +2913,7 @@ void Options::LoadScriptList(ScriptList* pScriptList)
 		}
 	}
 
-	free(szBuffer);
+	BuildScriptDisplayNames(pScriptList);
 }
 
 void Options::LoadScriptDir(ScriptList* pScriptList, const char* szDirectory, bool bIsSubDir)
@@ -2967,4 +2984,49 @@ void Options::LoadScriptDir(ScriptList* pScriptList, const char* szDirectory, bo
 bool Options::CompareScripts(Script* pScript1, Script* pScript2)
 {
 	return strcmp(pScript1->GetName(), pScript2->GetName()) < 0;
+}
+
+void Options::BuildScriptDisplayNames(ScriptList* pScriptList)
+{
+	// trying to use short name without path and extension.
+	// if there are other scripts with the same short name - using a longer name instead (with ot without extension)
+
+	for (ScriptList::iterator it = pScriptList->begin(); it != pScriptList->end(); it++)
+	{
+		Script* pScript = *it;
+
+		char szShortName[256];
+		strncpy(szShortName, pScript->GetName(), 256);
+		szShortName[256-1] = '\0';
+		if (char* ext = strrchr(szShortName, '.')) *ext = '\0'; // strip file extension
+
+		const char* szDisplayName = Util::BaseFileName(szShortName);
+
+		for (ScriptList::iterator it2 = pScriptList->begin(); it2 != pScriptList->end(); it2++)
+		{
+			Script* pScript2 = *it2;
+
+			char szShortName2[256];
+			strncpy(szShortName2, pScript2->GetName(), 256);
+			szShortName2[256-1] = '\0';
+			if (char* ext = strrchr(szShortName2, '.')) *ext = '\0'; // strip file extension
+
+			const char* szDisplayName2 = Util::BaseFileName(szShortName2);
+
+			if (!strcmp(szDisplayName, szDisplayName2) && pScript->GetName() != pScript2->GetName())
+			{
+				if (!strcmp(szShortName, szShortName2))
+				{
+					szDisplayName =	pScript->GetName();
+				}
+				else
+				{
+					szDisplayName =	szShortName;
+				}
+				break;
+			}
+		}
+
+		pScript->SetDisplayName(szDisplayName);
+	}
 }

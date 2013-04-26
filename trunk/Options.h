@@ -146,14 +146,16 @@ public:
 	{
 	private:
 		char*			m_szName;
+		char*			m_szDisplayName;
 		char*			m_szTemplate;
 
 		friend class Options;
 
 	public:
-						ConfigTemplate(const char* szName, const char* szTemplate);
+						ConfigTemplate(const char* szName, const char* szDisplayName, const char* szTemplate);
 						~ConfigTemplate();
 		const char*		GetName() { return m_szName; }
+		const char*		GetDisplayName() { return m_szDisplayName; }
 		const char*		GetTemplate() { return m_szTemplate; }
 	};
 	
@@ -196,12 +198,15 @@ public:
 	private:
 		char*			m_szName;
 		char*			m_szLocation;
+		char*			m_szDisplayName;
 
 	public:
 						Script(const char* szName, const char* szLocation);
 						~Script();
 		const char*		GetName() { return m_szName; }
 		const char*		GetLocation() { return m_szLocation; }
+		void			SetDisplayName(const char* szDisplayName);
+		const char*		GetDisplayName() { return m_szDisplayName; }
 	};
 
 	typedef std::list<Script*>  ScriptListBase;
@@ -371,6 +376,7 @@ private:
 	void				ConvertOldOptionName(char *szOption, int iBufLen);
 	static bool			CompareScripts(Script* pScript1, Script* pScript2);
 	void				LoadScriptDir(ScriptList* pScriptList, const char* szDirectory, bool bIsSubDir);
+	void				BuildScriptDisplayNames(ScriptList* pScriptList);
 
 public:
 						Options(int argc, char* argv[]);
