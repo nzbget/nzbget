@@ -375,32 +375,7 @@ var Options = (new function($)
 	{
 		for (var i=1; i < configTemplatesData.length; i++)
 		{
-			var scriptName = configTemplatesData[i].Name;
-			var shortName = scriptName.substr(0, scriptName.lastIndexOf('.')) || scriptName; // remove extension
-
-			// trying to use short name (for scripts in subfolders)
-			var caption = shortName.replace(/^.*[\\\/]/, '').trim(); // leave only file name (remove path)
-			for (var j=1; j < configTemplatesData.length; j++)
-			{
-				var scriptName2 = configTemplatesData[j].Name;
-				var shortName2 = scriptName2.substr(0, scriptName2.lastIndexOf('.')) || scriptName2; // remove extension
-				var caption2 = shortName2.replace(/^.*[\\\/]/, '').trim(); // leave only file name (remove path)
-				if (caption == caption2 && i != j)
-				{
-					// there is another script with the same short name, we must use the name with extension or the full long name then
-					if (shortName === shortName2)
-					{
-						caption = scriptName;
-					}
-					else
-					{
-						caption = shortName;
-					}
-					//caption = scriptName;
-					break;
-				}
-			}
-			shortScriptNames[scriptName] = caption;
+			shortScriptNames[configTemplatesData[i].Name] = configTemplatesData[i].DisplayName;
 		}
 	}
 	
