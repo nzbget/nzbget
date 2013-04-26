@@ -1019,9 +1019,9 @@ char* WebUtil::XmlEncode(const char* raw)
 				iReqSize += 6;
 				break;
 			default:
-				if (ch >= 0x80)
+				if (ch < 0x20 || ch >= 0x80)
 				{
-					iReqSize += 6;
+					iReqSize += 10;
 					break;
 				}
 		}
@@ -1059,10 +1059,51 @@ char* WebUtil::XmlEncode(const char* raw)
 				output += 6;
 				break;
 			default:
-				if (ch >= 0x80)
+				if (ch < 0x20 || ch > 0x80)
 				{
-					sprintf(output, "&#%i;", ch);
-					output += 6;
+					unsigned int cp = ch;
+
+					// decode utf8
+					if ((cp >> 5) == 0x6 && (p[1] & 0xc0) == 0x80)
+					{
+						// 2 bytes
+						if (!(ch = *++p)) goto BreakLoop; // read next char
+						cp = ((cp << 6) & 0x7ff) + (ch & 0x3f);
+					}
+					else if ((cp >> 4) == 0xe && (p[1] & 0xc0) == 0x80)
+					{
+						// 3 bytes
+						if (!(ch = *++p)) goto BreakLoop; // read next char
+						cp = ((cp << 12) & 0xffff) + ((ch << 6) & 0xfff);
+						if (!(ch = *++p)) goto BreakLoop; // read next char
+						cp += ch & 0x3f;
+					}
+					else if ((cp >> 3) == 0x1e && (p[1] & 0xc0) == 0x80)
+					{
+						// 4 bytes
+						if (!(ch = *++p)) goto BreakLoop; // read next char
+						cp = ((cp << 18) & 0x1fffff) + ((ch << 12) & 0x3ffff);
+						if (!(ch = *++p)) goto BreakLoop; // read next char
+						cp += (ch << 6) & 0xfff;
+						if (!(ch = *++p)) goto BreakLoop; // read next char
+						cp += ch & 0x3f;
+					}
+
+					// accept only valid XML 1.0 characters
+					if (ch == 0x9 || ch == 0xA || ch == 0xD || 
+						(0x20 <= ch && ch <= 0xD7FF) ||
+						(0xE000 <= ch && ch <= 0xFFFD) ||
+						(0x10000 <= ch && ch <= 0x10FFFF))
+					{
+						sprintf(output, "&#x%06x;", cp);
+						output += 10;
+					}
+					else
+					{
+						// replace invalid characters with dots
+						sprintf(output, ".");
+						output += 1;
+					}
 				}
 				else
 				{
@@ -1206,7 +1247,7 @@ char* WebUtil::JsonEncode(const char* raw)
 			default:
 				if (ch < 0x20 || ch >= 0x80)
 				{
-					iReqSize += 6;
+					iReqSize += 8;
 					break;
 				}
 		}
@@ -1286,8 +1327,8 @@ char* WebUtil::JsonEncode(const char* raw)
 						cp += ch & 0x3f;
 					}
 
-					sprintf(output, "\\u%04x", cp);
-					output += 6;
+					sprintf(output, "\\u%06x", cp);
+					output += 8;
 				}
 				else
 				{
