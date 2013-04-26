@@ -726,7 +726,7 @@ ArticleDownloader::EStatus ArticleDownloader::DecodeCheck()
 		else
 		{
 			warn("Decoding %s failed: no binary data or unsupported encoding format", m_szInfoName);
-			return adFatalError;
+			return adFailed;
 		}
 
 		Decoder::EStatus eStatus = pDecoder->Check();
