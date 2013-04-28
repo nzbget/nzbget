@@ -59,6 +59,7 @@ private:
 	char				m_szFinalDir[1024];
 	char				m_szUnpackDir[1024];
 	char				m_szPassword[1024];
+	bool				m_bInterDir;
 	bool				m_bAllOKMessageReceived;
 	bool				m_bNoFilesMessageReceived;
 	bool				m_bHasRarFiles;

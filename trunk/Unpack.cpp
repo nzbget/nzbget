@@ -341,8 +341,9 @@ bool UnpackController::HasBrokenFiles()
 
 void UnpackController::CreateUnpackDir()
 {
-	if (strlen(g_pOptions->GetInterDir()) > 0 &&
-		!strncmp(m_szDestDir, g_pOptions->GetInterDir(), strlen(g_pOptions->GetInterDir())))
+	m_bInterDir = strlen(g_pOptions->GetInterDir()) > 0 &&
+		!strncmp(m_szDestDir, g_pOptions->GetInterDir(), strlen(g_pOptions->GetInterDir()));
+	if (m_bInterDir)
 	{
 		m_pPostInfo->GetNZBInfo()->BuildFinalDirName(m_szFinalDir, 1024);
 		m_szFinalDir[1024-1] = '\0';
@@ -450,7 +451,7 @@ bool UnpackController::Cleanup()
 		{
 			char* szFilename = *it;
 
-			if (!extractedFiles.Exists(szFilename))
+			if (m_bInterDir || !extractedFiles.Exists(szFilename))
 			{
 				char szFullFilename[1024];
 				snprintf(szFullFilename, 1024, "%s%c%s", m_szDestDir, PATH_SEPARATOR, szFilename);
@@ -479,7 +480,7 @@ bool UnpackController::Cleanup()
 			szFullFilename[1024-1] = '\0';
 
 			if (strcmp(filename, ".") && strcmp(filename, "..") && !Util::DirectoryExists(szFullFilename) 
-				&& regExSevenZip.Match(filename) && !extractedFiles.Exists(filename))
+				&& regExSevenZip.Match(filename) && (m_bInterDir || !extractedFiles.Exists(filename)))
 			{
 				PrintMessage(Message::mkInfo, "Deleting file %s", filename);
 
