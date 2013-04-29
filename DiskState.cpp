@@ -694,7 +694,7 @@ bool DiskState::LoadPostQueue(DownloadQueue* pDownloadQueue, FILE* infile, int i
 		}
 		else
 		{
-			if (fscanf(infile, "%i,%i\n", &iNZBIndex, &iStage) != 4) goto error;
+			if (fscanf(infile, "%i,%i\n", &iNZBIndex, &iStage) != 2) goto error;
 		}
 		if (iFormatVersion < 18 && iStage > (int)PostInfo::ptVerifyingRepaired) iStage++;
 		if (iFormatVersion < 21 && iStage > (int)PostInfo::ptVerifyingRepaired) iStage++;
