@@ -83,7 +83,7 @@ log = postqueue[0]['Log']
 if len(log) > 0:
 	f = open('%s/_postprocesslog.txt' % os.environ['NZBPP_DIRECTORY'], 'w')
 	for entry in log:
-		f.write('%s\t%s\t%s\n' % (entry['Kind'], datetime.datetime.fromtimestamp(int(entry['Time'])), entry['Text']))
+		f.write((u'%s\t%s\t%s\n' % (entry['Kind'], datetime.datetime.fromtimestamp(int(entry['Time'])), entry['Text'])).encode('utf8'))
 	f.close()
 
 # All OK, returning exit status 'POSTPROCESS_SUCCESS' (int <93>) to let NZBGet know
