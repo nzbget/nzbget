@@ -52,6 +52,7 @@ public:
 	};
 
 	typedef std::deque<char*>		FileList;
+	typedef std::deque<void*>		SourceList;
 	
 private:
 	char*				m_szInfoName;
@@ -74,6 +75,7 @@ private:
 	int					m_iFileProgress;
 	int					m_iStageProgress;
 	bool				m_bCancelled;
+	SourceList			m_sourceFiles;
 
 	EStatus				RunParCheck(const char* szParFilename);
 	void				WriteBrokenLog(EStatus eStatus);
@@ -82,6 +84,8 @@ private:
 	bool				CheckSplittedFragments();
 	bool				AddSplittedFragments(const char* szFilename);
 	bool				AddMissingFiles();
+	void				SaveSourceList();
+	void				DeleteLeftovers();
 	void				signal_filename(std::string str);
 	void				signal_progress(double progress);
 	void				signal_done(std::string str, int available, int total);

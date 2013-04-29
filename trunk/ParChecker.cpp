@@ -45,6 +45,7 @@
 #include <libpar2/par2cmdline.h>
 #include <libpar2/par2repairer.h>
 #endif
+#include <algorithm>
 
 #include "nzbget.h"
 #include "ParChecker.h"
@@ -77,7 +78,6 @@ public:
 
 	friend class ParChecker;
 };
-
 
 Result Repairer::PreProcess(const char *szParFilename)
 {
@@ -209,6 +209,8 @@ void ParChecker::Cleanup()
 		free(*it);
 	}
 	m_ProcessedFiles.clear();
+
+	m_sourceFiles.clear();
 }
 
 void ParChecker::SetDestDir(const char * szDestDir)
@@ -498,8 +500,9 @@ ParChecker::EStatus ParChecker::RunParCheck(const char* szParFilename)
 		eStatus = psRepairPossible;
 		if (g_pOptions->GetParRepair())
 		{
-    		info("Repairing %s", m_szInfoName);
+			info("Repairing %s", m_szInfoName);
 
+			SaveSourceList();
 			snprintf(m_szProgressLabel, 1024, "Repairing %s", m_szInfoName);
 			m_szProgressLabel[1024-1] = '\0';
 			m_iFileProgress = 0;
@@ -515,6 +518,7 @@ ParChecker::EStatus ParChecker::RunParCheck(const char* szParFilename)
 			{
     			info("Successfully repaired %s", m_szInfoName);
 				eStatus = psRepaired;
+				DeleteLeftovers();
 			}
 		}
 		else
@@ -861,6 +865,58 @@ void ParChecker::Cancel()
 #else
 	error("Could not cancel par-repair. The program was compiled using version of libpar2 which doesn't support cancelling of par-repair. Please apply libpar2-patches supplied with NZBGet and recompile libpar2 and NZBGet (see README for details).");
 #endif
+}
+
+void ParChecker::SaveSourceList()
+{
+	// Buliding a list of DiskFile-objects, marked as source-files
+	
+	for (std::vector<Par2RepairerSourceFile*>::iterator it = ((Repairer*)m_pRepairer)->sourcefiles.begin();
+		it != ((Repairer*)m_pRepairer)->sourcefiles.end(); it++)
+	{
+		Par2RepairerSourceFile* sourcefile = (Par2RepairerSourceFile*)*it;
+		vector<DataBlock>::iterator it2 = sourcefile->SourceBlocks();
+		for (int i = 0; i < sourcefile->BlockCount(); i++, it2++)
+		{
+			DataBlock block = *it2;
+			DiskFile* pSourceFile = block.GetDiskFile();
+			if (pSourceFile &&
+				std::find(m_sourceFiles.begin(), m_sourceFiles.end(), pSourceFile) == m_sourceFiles.end())
+			{
+				m_sourceFiles.push_back(pSourceFile);
+			}
+		}
+	}
+}
+
+void ParChecker::DeleteLeftovers()
+{
+	// After repairing check if all DiskFile-objects saved by "SaveSourceList()" have
+	// corresponding target-files. If not - the source file was replaced. In this case
+	// the DiskFile-object points to the renamed bak-file, which we can delete.
+	
+	for (SourceList::iterator it = m_sourceFiles.begin(); it != m_sourceFiles.end(); it++)
+	{
+		DiskFile* pSourceFile = (DiskFile*)*it;
+
+		bool bFound = false;
+		for (std::vector<Par2RepairerSourceFile*>::iterator it2 = ((Repairer*)m_pRepairer)->sourcefiles.begin();
+			it2 != ((Repairer*)m_pRepairer)->sourcefiles.end(); it2++)
+		{
+			Par2RepairerSourceFile* sourcefile = *it2;
+			if (sourcefile->GetTargetFile() == pSourceFile)
+			{
+				bFound = true;
+				break;
+			}
+		}
+
+		if (!bFound)
+		{
+			info("Deleting file %s", Util::BaseFileName(pSourceFile->FileName().c_str()));
+			remove(pSourceFile->FileName().c_str());
+		}
+	}
 }
 
 #endif
