@@ -259,6 +259,15 @@ void NZBInfo::Release()
 	}
 }
 
+void NZBInfo::SetID(int iID)
+{
+	m_iID = iID;
+	if (m_iIDGen < m_iID)
+	{
+		m_iIDGen = m_iID;
+	}
+}
+
 void NZBInfo::ClearCompletedFiles()
 {
 	for (Files::iterator it = m_completedFiles.begin(); it != m_completedFiles.end(); it++)
@@ -569,9 +578,9 @@ void FileInfo::ClearArticles()
 	m_Articles.clear();
 }
 
-void FileInfo::SetID(int s)
+void FileInfo::SetID(int iID)
 {
-	m_iID = s;
+	m_iID = iID;
 	if (m_iIDGen < m_iID)
 	{
 		m_iIDGen = m_iID;
@@ -876,9 +885,9 @@ void UrlInfo::SetURL(const char* szURL)
 	m_szURL = strdup(szURL);
 }
 
-void UrlInfo::SetID(int s)
+void UrlInfo::SetID(int iID)
 {
-	m_iID = s;
+	m_iID = iID;
 	if (m_iIDGen < m_iID)
 	{
 		m_iIDGen = m_iID;
@@ -958,9 +967,9 @@ HistoryInfo::~HistoryInfo()
 	}
 }
 
-void HistoryInfo::SetID(int s)
+void HistoryInfo::SetID(int iID)
 {
-	m_iID = s;
+	m_iID = iID;
 	if (m_iIDGen < m_iID)
 	{
 		m_iIDGen = m_iID;

@@ -1750,7 +1750,7 @@ void HistoryXmlCommand::Execute()
 	const char* XML_HISTORY_ITEM_START = 
 		"<value><struct>\n"
 		"<member><name>ID</name><value><i4>%i</i4></value></member>\n"
-		"<member><name>NZBID</name><value><i4>%i</i4></value></member>\n"					// deprecated, use ID instead
+		"<member><name>NZBID</name><value><i4>%i</i4></value></member>\n"
 		"<member><name>Kind</name><value><string>%s</string></value></member>\n"
 		"<member><name>Name</name><value><string>%s</string></value></member>\n"
 		"<member><name>NZBNicename</name><value><string>%s</string></value></member>\n"		// deprecated, use Name instead
@@ -1786,9 +1786,9 @@ void HistoryXmlCommand::Execute()
 	const char* JSON_HISTORY_ITEM_START = 
 		"{\n"
 		"\"ID\" : %i,\n"
-		"\"NZBID\" : %i,\n"					// deprecated, use ID instead
+		"\"NZBID\" : %i,\n"
 		"\"Kind\" : \"%s\",\n"
-		"\"Name\" : \"%s\",\n"				// deprecated, use Name instead
+		"\"Name\" : \"%s\",\n"
 		"\"NZBNicename\" : \"%s\",\n"		// deprecated, use Name instead
 		"\"NZBFilename\" : \"%s\",\n"
 		"\"DestDir\" : \"%s\",\n"
@@ -1896,7 +1896,7 @@ void HistoryXmlCommand::Execute()
 			xmlCategory = EncodeStr(pNZBInfo->GetCategory());
 
 			snprintf(szItemBuf, szItemBufSize, IsJson() ? JSON_HISTORY_ITEM_START : XML_HISTORY_ITEM_START,
-				pHistoryInfo->GetID(), pHistoryInfo->GetID(), "NZB", xmlNicename, xmlNicename, xmlNZBFilename, 
+				pHistoryInfo->GetID(), pNZBInfo->GetID(), "NZB", xmlNicename, xmlNicename, xmlNZBFilename, 
 				xmlDestDir, xmlCategory, szParStatusName[pNZBInfo->GetParStatus()],
 				szUnpackStatusName[pNZBInfo->GetUnpackStatus()], szMoveStatusName[pNZBInfo->GetMoveStatus()],
 				szScriptStatusName[pNZBInfo->GetScriptStatuses()->CalcTotalStatus()],
@@ -1914,7 +1914,7 @@ void HistoryXmlCommand::Execute()
 			char* xmlURL = EncodeStr(pUrlInfo->GetURL());
 
 			snprintf(szItemBuf, szItemBufSize, IsJson() ? JSON_HISTORY_ITEM_START : XML_HISTORY_ITEM_START,
-				pHistoryInfo->GetID(), pHistoryInfo->GetID(), "URL", xmlNicename, xmlNicename, xmlNZBFilename, 
+				pHistoryInfo->GetID(), 0, "URL", xmlNicename, xmlNicename, xmlNZBFilename, 
 				"", xmlCategory, "", "", "", "", 0, 0, 0, 0, 0, pHistoryInfo->GetTime(), xmlURL,
 				szUrlStatusName[pUrlInfo->GetStatus()]);
 
