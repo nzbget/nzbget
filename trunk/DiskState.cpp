@@ -82,7 +82,7 @@ bool DiskState::SaveDownloadQueue(DownloadQueue* pDownloadQueue)
 		return false;
 	}
 
-	fprintf(outfile, "%s%i\n", FORMATVERSION_SIGNATURE, 23);
+	fprintf(outfile, "%s%i\n", FORMATVERSION_SIGNATURE, 24);
 
 	// save nzb-infos
 	SaveNZBList(pDownloadQueue, outfile);
@@ -136,7 +136,7 @@ bool DiskState::LoadDownloadQueue(DownloadQueue* pDownloadQueue)
 	char FileSignatur[128];
 	fgets(FileSignatur, sizeof(FileSignatur), infile);
 	int iFormatVersion = ParseFormatVersion(FileSignatur);
-	if (iFormatVersion < 3 || iFormatVersion > 23)
+	if (iFormatVersion < 3 || iFormatVersion > 24)
 	{
 		error("Could not load diskstate due to file version mismatch");
 		fclose(infile);
@@ -198,6 +198,7 @@ void DiskState::SaveNZBList(DownloadQueue* pDownloadQueue, FILE* outfile)
 	for (NZBInfoList::iterator it = pDownloadQueue->GetNZBInfoList()->begin(); it != pDownloadQueue->GetNZBInfoList()->end(); it++)
 	{
 		NZBInfo* pNZBInfo = *it;
+		fprintf(outfile, "%i\n", pNZBInfo->GetID());
 		fprintf(outfile, "%s\n", pNZBInfo->GetFilename());
 		fprintf(outfile, "%s\n", pNZBInfo->GetDestDir());
 		fprintf(outfile, "%s\n", pNZBInfo->GetQueuedFilename());
@@ -271,6 +272,13 @@ bool DiskState::LoadNZBList(DownloadQueue* pDownloadQueue, FILE* infile, int iFo
 		NZBInfo* pNZBInfo = new NZBInfo();
 		pNZBInfo->AddReference();
 		pDownloadQueue->GetNZBInfoList()->Add(pNZBInfo);
+
+		if (iFormatVersion >= 24)
+		{
+			int iID;
+			if (fscanf(infile, "%i\n", &iID) != 1) goto error;
+			pNZBInfo->SetID(iID);
+		}
 
 		if (!fgets(buf, sizeof(buf), infile)) goto error;
 		if (buf[0] != 0) buf[strlen(buf)-1] = 0; // remove traling '\n'
@@ -944,6 +952,7 @@ error:
 
 void DiskState::SaveUrlInfo(UrlInfo* pUrlInfo, FILE* outfile)
 {
+	fprintf(outfile, "%i\n", pUrlInfo->GetID());
 	fprintf(outfile, "%i,%i\n", (int)pUrlInfo->GetStatus(), pUrlInfo->GetPriority());
 	fprintf(outfile, "%i,%i\n", (int)pUrlInfo->GetAddTop(), pUrlInfo->GetAddPaused());
 	fprintf(outfile, "%s\n", pUrlInfo->GetURL());
@@ -954,6 +963,13 @@ void DiskState::SaveUrlInfo(UrlInfo* pUrlInfo, FILE* outfile)
 bool DiskState::LoadUrlInfo(UrlInfo* pUrlInfo, FILE* infile, int iFormatVersion)
 {
 	char buf[10240];
+
+	if (iFormatVersion >= 24)
+	{
+		int iID;
+		if (fscanf(infile, "%i\n", &iID) != 1) goto error;
+		pUrlInfo->SetID(iID);
+	}
 
 	int iStatus, iPriority;
 	if (fscanf(infile, "%i,%i\n", &iStatus, &iPriority) != 2) goto error;
@@ -995,6 +1011,7 @@ void DiskState::SaveHistory(DownloadQueue* pDownloadQueue, FILE* outfile)
 	{
 		HistoryInfo* pHistoryInfo = *it;
 
+		fprintf(outfile, "%i\n", pHistoryInfo->GetID());
 		fprintf(outfile, "%i\n", (int)pHistoryInfo->GetKind());
 
 		if (pHistoryInfo->GetKind() == HistoryInfo::hkNZBInfo)
@@ -1020,6 +1037,13 @@ bool DiskState::LoadHistory(DownloadQueue* pDownloadQueue, FILE* infile, int iFo
 	for (int i = 0; i < size; i++)
 	{
 		HistoryInfo* pHistoryInfo = NULL;
+		int iID = 0;
+
+		if (iFormatVersion >= 24)
+		{
+			if (fscanf(infile, "%i\n", &iID) != 1) goto error;
+		}
+
 		HistoryInfo::EKind eKind = HistoryInfo::hkNZBInfo;
 
 		if (iFormatVersion >= 15)
@@ -1041,6 +1065,11 @@ bool DiskState::LoadHistory(DownloadQueue* pDownloadQueue, FILE* infile, int iFo
 			UrlInfo* pUrlInfo = new UrlInfo();
 			if (!LoadUrlInfo(pUrlInfo, infile, iFormatVersion)) goto error;
 			pHistoryInfo = new HistoryInfo(pUrlInfo);
+		}
+
+		if (iFormatVersion >= 24)
+		{
+			pHistoryInfo->SetID(iID);
 		}
 
 		int iTime;
@@ -1096,7 +1125,7 @@ bool DiskState::DiscardDownloadQueue()
 	char FileSignatur[128];
 	fgets(FileSignatur, sizeof(FileSignatur), infile);
 	int iFormatVersion = ParseFormatVersion(FileSignatur);
-	if (3 <= iFormatVersion && iFormatVersion <= 23)
+	if (3 <= iFormatVersion && iFormatVersion <= 24)
 	{
 		// skip nzb-infos
 		int size = 0;
@@ -1104,6 +1133,10 @@ bool DiskState::DiscardDownloadQueue()
 		fscanf(infile, "%i\n", &size);
 		for (int i = 0; i < size; i++)
 		{
+			if (iFormatVersion >= 23)
+			{
+				if (!fgets(buf, sizeof(buf), infile)) break; // id
+			}
 			if (!fgets(buf, sizeof(buf), infile)) break; // filename
 			if (!fgets(buf, sizeof(buf), infile)) break; // destdir
 			if (iFormatVersion >= 5)

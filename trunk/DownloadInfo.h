@@ -103,7 +103,7 @@ public:
 						FileInfo();
 						~FileInfo();
 	int					GetID() { return m_iID; }
-	void				SetID(int s);
+	void				SetID(int iID);
 	NZBInfo*			GetNZBInfo() { return m_pNZBInfo; }
 	void				SetNZBInfo(NZBInfo* pNZBInfo);
 	Articles* 			GetArticles() { return &m_Articles; }
@@ -330,6 +330,7 @@ public:
 	void				AddReference();
 	void				Release();
 	int					GetID() { return m_iID; }
+	void				SetID(int iID);
 	const char*			GetFilename() { return m_szFilename; }
 	void				SetFilename(const char* szFilename);
 	static void			MakeNiceNZBName(const char* szNZBFilename, char* szBuffer, int iSize, bool bRemoveExt);
@@ -499,7 +500,7 @@ public:
 						UrlInfo();
 						~UrlInfo();
 	int					GetID() { return m_iID; }
-	void				SetID(int s);
+	void				SetID(int iID);
 	const char*			GetURL() { return m_szURL; }			// needs locking (for shared objects)
 	void				SetURL(const char* szURL);				// needs locking (for shared objects)
 	const char*			GetNZBFilename() { return m_szNZBFilename; }		// needs locking (for shared objects)
@@ -543,7 +544,7 @@ public:
 						HistoryInfo(UrlInfo* pUrlInfo);
 						~HistoryInfo();
 	int					GetID() { return m_iID; }
-	void				SetID(int s);
+	void				SetID(int iID);
 	EKind				GetKind() { return m_eKind; }
 	NZBInfo*			GetNZBInfo() { return (NZBInfo*)m_pInfo; }
 	UrlInfo*			GetUrlInfo() { return (UrlInfo*)m_pInfo; }
