@@ -56,7 +56,7 @@ public:
 	bool				LoadDownloadQueue(DownloadQueue* pDownloadQueue);
 	bool				SaveFile(FileInfo* pFileInfo);
 	bool				LoadArticles(FileInfo* pFileInfo);
-	bool				DiscardDownloadQueue();
+	void				DiscardDownloadQueue();
 	bool				DiscardFile(FileInfo* pFileInfo);
 	void				CleanupTempDir(DownloadQueue* pDownloadQueue);
 };

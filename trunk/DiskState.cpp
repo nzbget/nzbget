@@ -77,7 +77,7 @@ bool DiskState::SaveDownloadQueue(DownloadQueue* pDownloadQueue)
 
 	if (!outfile)
 	{
-		error("Could not create file %s", fileName);
+		error("Error saving diskstate: Could not create file %s", fileName);
 		perror(fileName);
 		return false;
 	}
@@ -129,7 +129,7 @@ bool DiskState::LoadDownloadQueue(DownloadQueue* pDownloadQueue)
 
 	if (!infile)
 	{
-		error("Could not open file %s", fileName);
+		error("Error reading diskstate: could not open file %s", fileName);
 		return false;
 	}
 
@@ -531,7 +531,6 @@ bool DiskState::LoadFileQueue(DownloadQueue* pDownloadQueue, FileQueue* pFileQue
 		}
 		else
 		{
-			warn("Could not load diskstate for file %s", fileName);
 			delete pFileInfo;
 		}
 	}
@@ -559,7 +558,7 @@ bool DiskState::SaveFileInfo(FileInfo* pFileInfo, const char* szFilename)
 
 	if (!outfile)
 	{
-		error("Could not create file %s", szFilename);
+		error("Error saving diskstate: could not create file %s", szFilename);
 		return false;
 	}
 
@@ -604,7 +603,7 @@ bool DiskState::LoadFileInfo(FileInfo* pFileInfo, const char * szFilename, bool 
 
 	if (!infile)
 	{
-		error("Could not open file %s", szFilename);
+		error("Error reading diskstate: could not open file %s", szFilename);
 		return false;
 	}
 
@@ -759,7 +758,7 @@ bool DiskState::LoadOldPostQueue(DownloadQueue* pDownloadQueue)
 
 	if (!infile)
 	{
-		error("Could not open file %s", fileName);
+		error("Error reading diskstate: could not open file %s", fileName);
 		return false;
 	}
 
@@ -1102,140 +1101,37 @@ int DiskState::FindNZBInfoIndex(DownloadQueue* pDownloadQueue, NZBInfo* pNZBInfo
 }
 
 /*
- * Delete all files from Queue.
- * Returns true if successful, false if not
+ * Deletes whole download queue including history.
  */
-bool DiskState::DiscardDownloadQueue()
+void DiskState::DiscardDownloadQueue()
 {
 	debug("Discarding queue");
 
-	char fileName[1024];
-	snprintf(fileName, 1024, "%s%s", g_pOptions->GetQueueDir(), "queue");
-	fileName[1024-1] = '\0';
+	char szFullFilename[1024];
+	snprintf(szFullFilename, 1024, "%s%s", g_pOptions->GetQueueDir(), "queue");
+	szFullFilename[1024-1] = '\0';
+	remove(szFullFilename);
 
-	FILE* infile = fopen(fileName, "rb");
-
-	if (!infile)
+	DirBrowser dir(g_pOptions->GetQueueDir());
+	while (const char* filename = dir.Next())
 	{
-		error("Could not open file %s", fileName);
-		return false;
-	}
-
-	bool res = false;
-	char FileSignatur[128];
-	fgets(FileSignatur, sizeof(FileSignatur), infile);
-	int iFormatVersion = ParseFormatVersion(FileSignatur);
-	if (3 <= iFormatVersion && iFormatVersion <= 24)
-	{
-		// skip nzb-infos
-		int size = 0;
-		char buf[1024];
-		fscanf(infile, "%i\n", &size);
-		for (int i = 0; i < size; i++)
+		// delete all files whose names have only characters '0'..'9'
+		bool bOnlyNums = true;
+		for (const char* p = filename; *p != '\0'; p++)
 		{
-			if (iFormatVersion >= 23)
+			if (!('0' <= *p && *p <= '9'))
 			{
-				if (!fgets(buf, sizeof(buf), infile)) break; // id
-			}
-			if (!fgets(buf, sizeof(buf), infile)) break; // filename
-			if (!fgets(buf, sizeof(buf), infile)) break; // destdir
-			if (iFormatVersion >= 5)
-			{
-				if (!fgets(buf, sizeof(buf), infile)) break; // localfile
-			}
-			if (iFormatVersion >= 13)
-			{
-				if (!fgets(buf, sizeof(buf), infile)) break; // name
-			}
-			if (iFormatVersion >= 4)
-			{
-				if (!fgets(buf, sizeof(buf), infile)) break; // category
-				if (!fgets(buf, sizeof(buf), infile)) break; // postprocess
-			}
-			if (iFormatVersion >= 8 && iFormatVersion < 18)
-			{
-				if (!fgets(buf, sizeof(buf), infile)) break; // ParStatus
-			}
-			if (iFormatVersion >= 9 && iFormatVersion < 18)
-			{
-				if (!fgets(buf, sizeof(buf), infile)) break; // ScriptStatus
-			}
-			if (iFormatVersion >= 18)
-			{
-				if (!fgets(buf, sizeof(buf), infile)) break; // ParStatus, UnpackStatus, ScriptStatus
-			}
-			if (iFormatVersion >= 19)
-			{
-				if (!fgets(buf, sizeof(buf), infile)) break; // UnpackCleanedUpDisk
-			}
-			if (!fgets(buf, sizeof(buf), infile)) break; // file count
-			if (iFormatVersion >= 10)
-			{
-				if (!fgets(buf, sizeof(buf), infile)) break; // parked file count
-			}
-			if (!fgets(buf, sizeof(buf), infile)) break; // file size
-			if (iFormatVersion >= 4)
-			{
-				// completed files
-				int iFileCount;
-				if (fscanf(infile, "%i\n", &iFileCount) != 1) break;
-				for (int i = 0; i < iFileCount; i++)
-				{
-					if (!fgets(buf, sizeof(buf), infile)) break; // filename
-				}
-			}
-			if (iFormatVersion >= 6)
-			{
-				// postprocess-parameters
-				int iParameterCount;
-				if (fscanf(infile, "%i\n", &iParameterCount) != 1) break;
-				for (int i = 0; i < iParameterCount; i++)
-				{
-					if (!fgets(buf, sizeof(buf), infile)) break;
-				}
-			}
-
-			if (iFormatVersion >= 11)
-			{
-				// log-messages
-				int iLogCount;
-				if (fscanf(infile, "%i\n", &iLogCount) != 1) break;
-				for (int i = 0; i < iLogCount; i++)
-				{
-					if (!fgets(buf, sizeof(buf), infile)) break;
-				}
+				bOnlyNums = false;
+				break;
 			}
 		}
-
-		// file-infos
-		fscanf(infile, "%i\n", &size);
-		for (int i = 0; i < size; i++)
+		if (bOnlyNums)
 		{
-			int id;
-			char tr[100];
-			if (fscanf(infile, "%i,%s\n", &id, &tr) == 2)
-			{
-				char fileName[1024];
-				snprintf(fileName, 1024, "%s%i", g_pOptions->GetQueueDir(), id);
-				fileName[1024-1] = '\0';
-				remove(fileName);
-			}
+			snprintf(szFullFilename, 1024, "%s%s", g_pOptions->GetQueueDir(), filename);
+			szFullFilename[1024-1] = '\0';
+			remove(szFullFilename);
 		}
-		res = true;
 	}
-	else
-	{
-		error("Could not discard diskstate due to file version mismatch");
-		res = false;
-	}
-
-	fclose(infile);
-	if (res)
-	{
-		remove(fileName);
-	}
-
-	return res;
 }
 
 bool DiskState::DownloadQueueExists()
