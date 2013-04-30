@@ -876,7 +876,7 @@ void ParChecker::SaveSourceList()
 	{
 		Par2RepairerSourceFile* sourcefile = (Par2RepairerSourceFile*)*it;
 		vector<DataBlock>::iterator it2 = sourcefile->SourceBlocks();
-		for (int i = 0; i < sourcefile->BlockCount(); i++, it2++)
+		for (int i = 0; i < (int)sourcefile->BlockCount(); i++, it2++)
 		{
 			DataBlock block = *it2;
 			DiskFile* pSourceFile = block.GetDiskFile();
