@@ -792,7 +792,7 @@ bool CleanupController::Cleanup(bool *bDeleted)
 	while (szExt)
 	{
 		extList.push_back(szExt);
-		szExt = strtok_r(NULL, ",;", &saveptr);
+		szExt = strtok_r(NULL, ",; ", &saveptr);
 	}
 	
 	DirBrowser dir(m_szDestDir);
