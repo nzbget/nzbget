@@ -105,13 +105,17 @@ for	optname in required_options:
 		sys.exit(POSTPROCESS_ERROR)
 		
 # Check par and unpack status for errors.
-Failure = os.environ['NZBPP_PARSTATUS'] == '1' or os.environ['NZBPP_UNPACKSTATUS'] == '1';
-if Failure:
+success=False
+if os.environ['NZBPP_PARSTATUS'] == '1' or os.environ['NZBPP_UNPACKSTATUS'] == '1':
 	subject = 'Failure for "%s"' % (os.environ['NZBPP_NZBNAME'])
 	text = 'Download of "%s" has failed.' % (os.environ['NZBPP_NZBNAME'])
+elif os.environ['NZBPP_PARSTATUS'] == '4':
+	subject = 'Damaged for "%s"' % (os.environ['NZBPP_NZBNAME'])
+	text = 'Download of "%s" requires par-repair.' % (os.environ['NZBPP_NZBNAME'])
 else:
 	subject = 'Success for "%s"' % (os.environ['NZBPP_NZBNAME'])
 	text = 'Download of "%s" has successfully completed.' % (os.environ['NZBPP_NZBNAME'])
+	success=True
 
 #  NZBPP_PARSTATUS    - result of par-check:
 #                       0 = not checked: par-check is disabled or nzb-file does
@@ -119,7 +123,8 @@ else:
 #                       1 = checked and failed to repair;
 #                       2 = checked and successfully repaired;
 #                       3 = checked and can be repaired but repair is disabled.
-parStatus = { '0': 'skipped', '1': 'failed', '2': 'repaired', '3': 'repairable' }
+#                       4 = par-check needed but skipped (option ParCheck=manual);
+parStatus = { '0': 'skipped', '1': 'failed', '2': 'repaired', '3': 'repairable', '4': 'manual' }
 text += '\nPar-Status: %s' % parStatus[os.environ['NZBPP_PARSTATUS']]
 
 #  NZBPP_UNPACKSTATUS - result of unpack:
@@ -145,7 +150,7 @@ if os.environ['NZBPO_BROKENLOG'] == 'yes':
 
 # add post-processing log
 if os.environ['NZBPO_POSTPROCESSLOG'] == 'Always' or \
-	(os.environ['NZBPO_POSTPROCESSLOG'] == 'OnFailure' and Failure):
+	(os.environ['NZBPO_POSTPROCESSLOG'] == 'OnFailure' and not success):
 	# To get the post-processing log we connect to NZBGet via XML-RPC
 	# and call method "postqueue", which returns the list of post-processing job.
 	# The first item in the list is current job. This item has a field 'Log',

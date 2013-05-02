@@ -80,11 +80,11 @@ public:
 		omColored,
 		omNCurses
 	};
-	enum ELoadPars
+	enum EParCheck
 	{
-		lpNone,
-		lpOne,
-		lpAll
+		pcAuto,
+		pcForce,
+		pcManual
 	};
 	enum EParScan
 	{
@@ -271,8 +271,7 @@ private:
 	int					m_iLogBufferSize;
 	bool				m_bCreateLog;
 	char*				m_szLogFile;
-	ELoadPars			m_eLoadPars;
-	bool				m_bParCheck;
+	EParCheck			m_eParCheck;
 	bool				m_bParRepair;
 	EParScan			m_eParScan;
 	char*				m_szDefScript;
@@ -373,7 +372,7 @@ private:
 	void				ConfigError(const char* msg, ...);
 	void				ConfigWarn(const char* msg, ...);
 	void				LocateOptionSrcPos(const char *szOptionName);
-	void				ConvertOldOptionName(char *szOption, int iBufLen);
+	void				ConvertOldOption(char *szOption, int iOptionBufLen, char *szValue, int iValueBufLen);
 	static bool			CompareScripts(Script* pScript1, Script* pScript2);
 	void				LoadScriptDir(ScriptList* pScriptList, const char* szDirectory, bool bIsSubDir);
 	void				BuildScriptDisplayNames(ScriptList* pScriptList);
@@ -434,8 +433,7 @@ public:
 	int					GetLogBufferSize() { return m_iLogBufferSize; }
 	bool				GetCreateLog() { return m_bCreateLog; }
 	const char*			GetLogFile() { return m_szLogFile; }
-	ELoadPars			GetLoadPars() { return m_eLoadPars; }
-	bool				GetParCheck() { return m_bParCheck; }
+	EParCheck			GetParCheck() { return m_eParCheck; }
 	bool				GetParRepair() { return m_bParRepair; }
 	EParScan			GetParScan() { return m_eParScan; }
 	const char*			GetScriptOrder() { return m_szScriptOrder; }

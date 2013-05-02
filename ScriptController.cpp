@@ -856,7 +856,7 @@ void PostScriptController::PrepareParams(const char* szScriptName)
 	strncpy(szNZBName, m_pPostInfo->GetNZBInfo()->GetName(), 1024);
 	szNZBName[1024-1] = '\0';
 
-	int iParStatus[] = { 0, 0, 1, 2, 3 };
+	int iParStatus[] = { 0, 0, 1, 2, 3, 4 };
 	char szParStatus[10];
 	snprintf(szParStatus, 10, "%i", iParStatus[m_pPostInfo->GetNZBInfo()->GetParStatus()]);
 	szParStatus[10-1] = '\0';

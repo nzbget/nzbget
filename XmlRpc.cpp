@@ -1859,7 +1859,7 @@ void HistoryXmlCommand::Execute()
 		"\"Text\" : \"%s\"\n"
 		"}";
 
-    const char* szParStatusName[] = { "NONE", "NONE", "FAILURE", "SUCCESS", "REPAIR_POSSIBLE" };
+    const char* szParStatusName[] = { "NONE", "NONE", "FAILURE", "SUCCESS", "REPAIR_POSSIBLE", "MANUAL" };
     const char* szUnpackStatusName[] = { "NONE", "NONE", "FAILURE", "SUCCESS" };
     const char* szMoveStatusName[] = { "NONE", "FAILURE", "SUCCESS" };
     const char* szScriptStatusName[] = { "NONE", "UNKNOWN", "FAILURE", "SUCCESS" };

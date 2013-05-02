@@ -27,13 +27,13 @@
  *   1) History tab;
  *   2) History edit dialog.
  */
- 
+
 /*** HISTORY TAB AND EDIT HISTORY DIALOG **********************************************/
- 
+
 var History = (new function($)
 {
 	'use strict';
- 
+
 	// Controls
 	var $HistoryTable;
 	var $HistoryTabBadge;
@@ -53,7 +53,7 @@ var History = (new function($)
 		$HistoryTabBadge = $('#HistoryTabBadge');
 		$HistoryTabBadgeEmpty = $('#HistoryTabBadgeEmpty');
 		$HistoryRecordsPerPage = $('#HistoryRecordsPerPage');
-		
+
 		historyEditDialog.init();
 
 		var recordsPerPage = UISettings.read('HistoryRecordsPerPage', 10);
@@ -115,7 +115,11 @@ var History = (new function($)
 		{
 			if (hist.ParStatus == 'FAILURE' || hist.UnpackStatus == 'FAILURE' || hist.MoveStatus == 'FAILURE' || hist.ScriptStatus == 'FAILURE')
 			{
-				hist.status = 'failure'; 
+				hist.status = 'failure';
+			}
+			else if (hist.ParStatus == 'MANUAL')
+			{
+				hist.status = 'damaged';
 			}
 			else
 			{
@@ -248,6 +252,10 @@ var History = (new function($)
 			case 'repairable':
 			case 'REPAIR_POSSIBLE':
 				return '<span class="label label-status label-success">' + prefix + 'repairable</span>';
+			case 'manual':
+			case 'MANUAL':
+			case 'damaged':
+				return '<span class="label label-status label-warning">' + prefix + status + '</span>';
 			case 'none':
 			case 'NONE':
 				return '<span class="label label-status">' + prefix + 'none</span>';
@@ -325,14 +333,14 @@ var History = (new function($)
 			notification = null;
 		}
 	}
-	
+
 	function editClick()
 	{
 		var histid = $(this).attr('histid');
 		$(this).blur();
 		historyEditDialog.showModal(histid);
 	}
-	
+
 /*** EDIT HISTORY DIALOG *************************************************************************/
 
 	var historyEditDialog = new function()
@@ -346,7 +354,7 @@ var History = (new function($)
 		this.init = function()
 		{
 			$HistoryEditDialog = $('#HistoryEditDialog');
-			
+
 			$('#HistoryEdit_Delete').click(itemDelete);
 			$('#HistoryEdit_Return').click(itemReturn);
 			$('#HistoryEdit_Reprocess').click(itemReprocess);
