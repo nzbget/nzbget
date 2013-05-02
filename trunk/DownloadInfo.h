@@ -263,7 +263,8 @@ public:
 		psSkipped,
 		psFailure,
 		psSuccess,
-		psRepairPossible
+		psRepairPossible,
+		psManual
 	};
 
 	enum EUnpackStatus
@@ -311,6 +312,7 @@ private:
 	char*				m_szQueuedFilename;
 	bool				m_bDeleted;
 	bool				m_bParCleanup;
+	bool				m_bParManual;
 	bool				m_bCleanupDisk;
 	bool				m_bUnpackCleanedUpDisk;
 	NZBInfoList*		m_Owner;

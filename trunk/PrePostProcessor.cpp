@@ -241,7 +241,7 @@ void PrePostProcessor::NZBAdded(DownloadQueue* pDownloadQueue, NZBInfo* pNZBInfo
 		pNZBInfo = MergeGroups(pDownloadQueue, pNZBInfo);
 	}
 
-	if (g_pOptions->GetLoadPars() != Options::lpAll)
+	if (g_pOptions->GetParCheck() != Options::pcForce)
 	{
 		m_ParCoordinator.PausePars(pDownloadQueue, pNZBInfo);
 	}
@@ -262,7 +262,7 @@ void PrePostProcessor::NZBDownloaded(DownloadQueue* pDownloadQueue, NZBInfo* pNZ
 		pPostInfo->SetNZBInfo(pNZBInfo);
 		pPostInfo->SetInfoName(pNZBInfo->GetName());
 
-		if (pNZBInfo->GetParStatus() == NZBInfo::psNone && !g_pOptions->GetParCheck())
+		if (pNZBInfo->GetParStatus() == NZBInfo::psNone && g_pOptions->GetParCheck() == Options::pcManual)
 		{
 			pNZBInfo->SetParStatus(NZBInfo::psSkipped);
 		}
@@ -492,13 +492,35 @@ void PrePostProcessor::CheckPostQueue()
 		if (!pPostInfo->GetWorking())
 		{
 #ifndef DISABLE_PARCHECK
-			if (pPostInfo->GetRequestParCheck() && pPostInfo->GetNZBInfo()->GetParStatus() <= NZBInfo::psSkipped)
+			if (pPostInfo->GetRequestParCheck() && pPostInfo->GetNZBInfo()->GetParStatus() <= NZBInfo::psSkipped &&
+				g_pOptions->GetParCheck() != Options::pcManual)
 			{
 				pPostInfo->GetNZBInfo()->SetParStatus(NZBInfo::psNone);
 				pPostInfo->SetRequestParCheck(false);
 				pPostInfo->SetStage(PostInfo::ptQueued);
 				pPostInfo->GetNZBInfo()->GetScriptStatuses()->Clear();
 				DeletePostThread(pPostInfo);
+			}
+			else if (pPostInfo->GetRequestParCheck() && pPostInfo->GetNZBInfo()->GetParStatus() <= NZBInfo::psSkipped &&
+				g_pOptions->GetParCheck() == Options::pcManual)
+			{
+				pPostInfo->SetRequestParCheck(false);
+				pPostInfo->GetNZBInfo()->SetParStatus(NZBInfo::psManual);
+				DeletePostThread(pPostInfo);
+
+				FileInfo* pFileInfo = GetQueueGroup(pDownloadQueue, pPostInfo->GetNZBInfo());
+				if (pFileInfo)
+				{
+					info("Downloading all remaining files for manual par-check for %s", pPostInfo->GetNZBInfo()->GetName());
+					g_pQueueCoordinator->GetQueueEditor()->LockedEditEntry(pDownloadQueue, pFileInfo->GetID(), false, QueueEditor::eaGroupResume, 0, NULL);
+					pPostInfo->SetStage(PostInfo::ptFinished);
+					pPostInfo->GetNZBInfo()->SetPostProcess(false);
+				}
+				else
+				{
+					info("There are no par-files remain for download for %s", pPostInfo->GetNZBInfo()->GetName());
+					pPostInfo->SetStage(PostInfo::ptQueued);
+				}
 			}
 			else if (pPostInfo->GetRequestParRename())
 			{
@@ -602,7 +624,8 @@ void PrePostProcessor::StartJob(DownloadQueue* pDownloadQueue, PostInfo* pPostIn
 	bool bUnpack = g_pOptions->GetUnpack() && (pPostInfo->GetNZBInfo()->GetUnpackStatus() == NZBInfo::usNone);
 
 	bool bParFailed = pPostInfo->GetNZBInfo()->GetParStatus() == NZBInfo::psFailure ||
-		pPostInfo->GetNZBInfo()->GetParStatus() == NZBInfo::psRepairPossible;
+		pPostInfo->GetNZBInfo()->GetParStatus() == NZBInfo::psRepairPossible ||
+		pPostInfo->GetNZBInfo()->GetParStatus() == NZBInfo::psManual;
 
 	bool bCleanup = !bUnpack &&
 		pPostInfo->GetNZBInfo()->GetCleanupStatus() == NZBInfo::csNone &&
@@ -615,6 +638,7 @@ void PrePostProcessor::StartJob(DownloadQueue* pDownloadQueue, PostInfo* pPostIn
 		pPostInfo->GetNZBInfo()->GetMoveStatus() == NZBInfo::msNone &&
 		pPostInfo->GetNZBInfo()->GetUnpackStatus() != NZBInfo::usFailure &&
 		pPostInfo->GetNZBInfo()->GetParStatus() != NZBInfo::psFailure &&
+		pPostInfo->GetNZBInfo()->GetParStatus() != NZBInfo::psManual &&
 		strlen(g_pOptions->GetInterDir()) > 0 &&
 		!strncmp(pPostInfo->GetNZBInfo()->GetDestDir(), g_pOptions->GetInterDir(), strlen(g_pOptions->GetInterDir()));
 
@@ -623,7 +647,9 @@ void PrePostProcessor::StartJob(DownloadQueue* pDownloadQueue, PostInfo* pPostIn
 
 	if (bUnpack && bParFailed)
 	{
-		warn("Skipping unpack due to par-failure for %s", pPostInfo->GetInfoName());
+		warn("Skipping unpack due to %s for %s",
+			pPostInfo->GetNZBInfo()->GetParStatus() == NZBInfo::psManual ? "required par-repair" : "par-failure",
+			pPostInfo->GetInfoName());
 		pPostInfo->GetNZBInfo()->SetUnpackStatus(NZBInfo::usSkipped);
 		bUnpack = false;
 	}

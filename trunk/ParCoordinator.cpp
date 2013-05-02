@@ -120,10 +120,7 @@ void ParCoordinator::PausePars(DownloadQueue* pDownloadQueue, NZBInfo* pNZBInfo)
 		if (pFileInfo->GetNZBInfo() == pNZBInfo)
 		{
 			g_pQueueCoordinator->GetQueueEditor()->LockedEditEntry(pDownloadQueue, pFileInfo->GetID(), false, 
-				(g_pOptions->GetLoadPars() == Options::lpOne ||
-					(g_pOptions->GetLoadPars() == Options::lpNone && g_pOptions->GetParCheck()))
-				? QueueEditor::eaGroupPauseExtraPars : QueueEditor::eaGroupPauseAllPars,
-				0, NULL);
+				QueueEditor::eaGroupPauseExtraPars, 0, NULL);
 			break;
 		}
 	}

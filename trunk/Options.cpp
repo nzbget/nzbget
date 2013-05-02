@@ -140,7 +140,6 @@ static const char* OPTION_WARNINGTARGET			= "WarningTarget";
 static const char* OPTION_ERRORTARGET			= "ErrorTarget";
 static const char* OPTION_DEBUGTARGET			= "DebugTarget";
 static const char* OPTION_DETAILTARGET			= "DetailTarget";
-static const char* OPTION_LOADPARS				= "LoadPars";
 static const char* OPTION_PARCHECK				= "ParCheck";
 static const char* OPTION_PARREPAIR				= "ParRepair";
 static const char* OPTION_PARSCAN				= "ParScan";
@@ -185,6 +184,7 @@ static const char* OPTION_NZBLOGKIND			= "NZBLogKind";
 static const char* OPTION_RETRYONCRCERROR		= "RetryOnCrcError";
 static const char* OPTION_ALLOWREPROCESS		= "AllowReProcess";
 static const char* OPTION_POSTPROCESS			= "PostProcess";
+static const char* OPTION_LOADPARS				= "LoadPars";
 
 const char* BoolNames[] = { "yes", "no", "true", "false", "1", "0", "on", "off", "enable", "disable", "enabled", "disabled" };
 const int BoolValues[] = { 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0 };
@@ -500,8 +500,7 @@ Options::Options(int argc, char* argv[])
 	m_iWriteLogKind			= 0;
 	m_bCreateLog			= false;
 	m_szLogFile				= NULL;
-	m_eLoadPars				= lpAll;
-	m_bParCheck				= false;
+	m_eParCheck				= pcManual;
 	m_bParRepair			= false;
 	m_eParScan				= psLimited;
 	m_szScriptOrder			= NULL;
@@ -849,8 +848,7 @@ void Options::InitDefault()
 	SetOption(OPTION_ERRORTARGET, "both");
 	SetOption(OPTION_DEBUGTARGET, "none");
 	SetOption(OPTION_DETAILTARGET, "both");
-	SetOption(OPTION_LOADPARS, "one");
-	SetOption(OPTION_PARCHECK, "no");
+	SetOption(OPTION_PARCHECK, "auto");
 	SetOption(OPTION_PARREPAIR, "yes");
 	SetOption(OPTION_PARSCAN, "limited");
 	SetOption(OPTION_SCRIPTORDER, "");
@@ -1058,7 +1056,6 @@ void Options::InitOptions()
 	m_bSaveQueue			= (bool)ParseEnumValue(OPTION_SAVEQUEUE, BoolCount, BoolNames, BoolValues);
 	m_bDupeCheck			= (bool)ParseEnumValue(OPTION_DUPECHECK, BoolCount, BoolNames, BoolValues);
 	m_bCreateLog			= (bool)ParseEnumValue(OPTION_CREATELOG, BoolCount, BoolNames, BoolValues);
-	m_bParCheck				= (bool)ParseEnumValue(OPTION_PARCHECK, BoolCount, BoolNames, BoolValues);
 	m_bParRepair			= (bool)ParseEnumValue(OPTION_PARREPAIR, BoolCount, BoolNames, BoolValues);
 	m_bStrictParName		= (bool)ParseEnumValue(OPTION_STRICTPARNAME, BoolCount, BoolNames, BoolValues);
 	m_bReloadQueue			= (bool)ParseEnumValue(OPTION_RELOADQUEUE, BoolCount, BoolNames, BoolValues);
@@ -1088,10 +1085,10 @@ void Options::InitOptions()
 	const int OutputModeCount = 7;
 	m_eOutputMode = (EOutputMode)ParseEnumValue(OPTION_OUTPUTMODE, OutputModeCount, OutputModeNames, OutputModeValues);
 
-	const char* LoadParsNames[] = { "none", "one", "all", "1", "0" };
-	const int LoadParsValues[] = { lpNone, lpOne, lpAll, lpOne, lpNone };
-	const int LoadParsCount = 5;
-	m_eLoadPars = (ELoadPars)ParseEnumValue(OPTION_LOADPARS, LoadParsCount, LoadParsNames, LoadParsValues);
+	const char* ParCheckNames[] = { "auto", "force", "manual", "yes", "no" }; // yes/no for compatibility with older versions
+	const int ParCheckValues[] = { pcAuto, pcForce, pcManual, pcForce, pcAuto };
+	const int ParCheckCount = 5;
+	m_eParCheck = (EParCheck)ParseEnumValue(OPTION_PARCHECK, ParCheckCount, ParCheckNames, ParCheckValues);
 
 	const char* ParScanNames[] = { "limited", "full", "auto" };
 	const int ParScanValues[] = { psLimited, psFull, psAuto };
@@ -2397,7 +2394,7 @@ bool Options::SetOptionString(const char * option)
 		optvalue[1000]  = '\0';
 		if (strlen(optname) > 0)
 		{
-			ConvertOldOptionName(optname, sizeof(optname));
+			ConvertOldOption(optname, sizeof(optname), optvalue, sizeof(optvalue));
 
 			if (!ValidateOptionName(optname))
 			{
@@ -2479,7 +2476,9 @@ bool Options::ValidateOptionName(const char * optname)
 		ConfigError("Option \"%s\" is obsolete, ignored, use \"%s\" instead", optname, OPTION_PROCESSLOGKIND);
 		return true;
 	}
-	if (!strcasecmp(optname, OPTION_RETRYONCRCERROR) || !strcasecmp(optname, OPTION_ALLOWREPROCESS))
+	if (!strcasecmp(optname, OPTION_RETRYONCRCERROR) ||
+		!strcasecmp(optname, OPTION_ALLOWREPROCESS) ||
+		!strcasecmp(optname, OPTION_LOADPARS))
 	{
 		ConfigWarn("Option \"%s\" is obsolete, ignored", optname);
 		return true;
@@ -2496,7 +2495,7 @@ bool Options::ValidateOptionName(const char * optname)
 void Options::CheckOptions()
 {
 #ifdef DISABLE_PARCHECK
-	if (m_bParCheck)
+	if (m_eParCheck != pcManual)
 	{
 		LocateOptionSrcPos(OPTION_PARCHECK);
 		ConfigError("Invalid value for option \"%s\": program was compiled without parcheck-support", OPTION_PARCHECK);
@@ -2678,7 +2677,7 @@ bool Options::LoadConfig(OptEntries* pOptEntries)
 			optvalue[1024-1]  = '\0';
 			if (strlen(optname) > 0)
 			{
-				ConvertOldOptionName(optname, sizeof(optname));
+				ConvertOldOption(optname, sizeof(optname), optvalue, sizeof(optvalue));
 
 				OptEntry* pOptEntry = new OptEntry();
 				pOptEntry->SetName(optname);
@@ -2735,7 +2734,7 @@ bool Options::SaveConfig(OptEntries* pOptEntries)
 			optvalue[1024-1]  = '\0';
 			if (strlen(optname) > 0)
 			{
-				ConvertOldOptionName(optname, sizeof(optname));
+				ConvertOldOption(optname, sizeof(optname), optvalue, sizeof(optvalue));
 
 				OptEntry *pOptEntry = pOptEntries->FindOption(optname);
 				if (pOptEntry)
@@ -2777,36 +2776,47 @@ bool Options::SaveConfig(OptEntries* pOptEntries)
 	return true;
 }
 
-void Options::ConvertOldOptionName(char *szOption, int iBufLen)
+void Options::ConvertOldOption(char *szOption, int iOptionBufLen, char *szValue, int iValueBufLen)
 {
 	// for compatibility with older versions accept old option names
 
 	if (!strcasecmp(szOption, "$MAINDIR"))
 	{
-		strncpy(szOption, "MainDir", iBufLen);
+		strncpy(szOption, "MainDir", iOptionBufLen);
 	}
 
 	if (!strcasecmp(szOption, "ServerIP"))
 	{
-		strncpy(szOption, "ControlIP", iBufLen);
+		strncpy(szOption, "ControlIP", iOptionBufLen);
 	}
 
 	if (!strcasecmp(szOption, "ServerPort"))
 	{
-		strncpy(szOption, "ControlPort", iBufLen);
+		strncpy(szOption, "ControlPort", iOptionBufLen);
 	}
 
 	if (!strcasecmp(szOption, "ServerPassword"))
 	{
-		strncpy(szOption, "ControlPassword", iBufLen);
+		strncpy(szOption, "ControlPassword", iOptionBufLen);
 	}
 
 	if (!strcasecmp(szOption, "PostPauseQueue"))
 	{
-		strncpy(szOption, "ScriptPauseQueue", iBufLen);
+		strncpy(szOption, "ScriptPauseQueue", iOptionBufLen);
 	}
 
-	szOption[iBufLen-1] = '\0';
+	if (!strcasecmp(szOption, "ParCheck") && !strcasecmp(szValue, "yes"))
+	{
+		strncpy(szValue, "force", iValueBufLen);
+	}
+
+	if (!strcasecmp(szOption, "ParCheck") && !strcasecmp(szValue, "no"))
+	{
+		strncpy(szValue, "auto", iValueBufLen);
+	}
+
+	szOption[iOptionBufLen-1] = '\0';
+	szOption[iValueBufLen-1] = '\0';
 }
 
 bool Options::LoadConfigTemplates(ConfigTemplates* pConfigTemplates)
