@@ -190,6 +190,10 @@ var Options = (new function($)
 				{
 					description += ' ';
 				}
+				if (line[2] === ' ' && line[3] !== ' ' && description.substring(description.length-4, 4) != '\n \n ')
+				{
+					description += '\n';
+				}
 				description += line.substr(1, 10000).trim();
 				var lastchar = description.substr(description.length - 1, 1);
 				if (lastchar === '.' && firstdescrline === '')
@@ -197,9 +201,9 @@ var Options = (new function($)
 					firstdescrline = description;
 					description = '';
 				}
-				if (".;:".indexOf(lastchar) > -1 || line === '#')
+				if ('.;:'.indexOf(lastchar) > -1 || line === '#')
 				{
-					description += "\n";
+					description += '\n';
 				}
 			}
 			else if (line.indexOf('=') > -1)
