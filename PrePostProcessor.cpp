@@ -262,7 +262,7 @@ void PrePostProcessor::NZBDownloaded(DownloadQueue* pDownloadQueue, NZBInfo* pNZ
 		pPostInfo->SetNZBInfo(pNZBInfo);
 		pPostInfo->SetInfoName(pNZBInfo->GetName());
 
-		if (pNZBInfo->GetParStatus() == NZBInfo::psNone && g_pOptions->GetParCheck() == Options::pcManual)
+		if (pNZBInfo->GetParStatus() == NZBInfo::psNone && g_pOptions->GetParCheck() != Options::pcForce)
 		{
 			pNZBInfo->SetParStatus(NZBInfo::psSkipped);
 		}
