@@ -92,7 +92,7 @@ private:
 	int					m_iCompleted;
 	bool				m_bOutputInitialized;
 	char*				m_szOutputFilename;
-	Mutex				m_mutexOutputFile;
+	Mutex*				m_pMutexOutputFile;
 	int					m_iPriority;
 	bool				m_bExtraPriority;
 	int					m_iActiveDownloads;
@@ -140,7 +140,7 @@ public:
 	bool				GetExtraPriority() { return m_bExtraPriority; }
 	void				SetExtraPriority(bool bExtraPriority) { m_bExtraPriority = bExtraPriority; };
 	int					GetActiveDownloads() { return m_iActiveDownloads; }
-	void				SetActiveDownloads(int iActiveDownloads) { m_iActiveDownloads = iActiveDownloads; }
+	void				SetActiveDownloads(int iActiveDownloads);
 };
                               
 typedef std::deque<FileInfo*> FileQueue;

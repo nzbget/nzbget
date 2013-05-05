@@ -522,6 +522,7 @@ FileInfo::FileInfo()
 	m_szSubject = NULL;
 	m_szFilename = NULL;
 	m_szOutputFilename = NULL;
+	m_pMutexOutputFile = NULL;
 	m_bFilenameConfirmed = false;
 	m_lSize = 0;
 	m_lRemainingSize = 0;
@@ -553,6 +554,10 @@ FileInfo::~ FileInfo()
 	if (m_szOutputFilename)
 	{
 		free(m_szOutputFilename);
+	}
+	if (m_pMutexOutputFile)
+	{
+		delete m_pMutexOutputFile;
 	}
 
 	for (Groups::iterator it = m_Groups.begin(); it != m_Groups.end() ;it++)
@@ -618,12 +623,12 @@ void FileInfo::MakeValidFilename()
 
 void FileInfo::LockOutputFile()
 {
-	m_mutexOutputFile.Lock();
+	m_pMutexOutputFile->Lock();
 }
 
 void FileInfo::UnlockOutputFile()
 {
-	m_mutexOutputFile.Unlock();
+	m_pMutexOutputFile->Unlock();
 }
 
 void FileInfo::SetOutputFilename(const char* szOutputFilename)
@@ -633,6 +638,21 @@ void FileInfo::SetOutputFilename(const char* szOutputFilename)
 		free(m_szOutputFilename);
 	}
 	m_szOutputFilename = strdup(szOutputFilename);
+}
+
+void FileInfo::SetActiveDownloads(int iActiveDownloads)
+{
+	m_iActiveDownloads = iActiveDownloads;
+
+	if (m_iActiveDownloads > 0 && !m_pMutexOutputFile)
+	{
+		m_pMutexOutputFile = new Mutex();
+	}
+	else if (m_iActiveDownloads == 0 && m_pMutexOutputFile)
+	{
+		delete m_pMutexOutputFile;
+		m_pMutexOutputFile = NULL;
+	}
 }
 
 bool FileInfo::IsDupe(const char* szFilename)
