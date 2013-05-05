@@ -133,7 +133,8 @@ void QueueCoordinator::Run()
 				// start download for next article
 				FileInfo* pFileInfo;
 				ArticleInfo* pArticleInfo;
-
+				bool bFreeConnection = false;
+				
 				m_mutexDownloadQueue.Lock();
 				bool bHasMoreArticles = GetNextArticle(pFileInfo, pArticleInfo);
 				bArticeDownloadsRunning = !m_ActiveDownloads.empty();
@@ -145,9 +146,14 @@ void QueueCoordinator::Run()
 				}
 				else
 				{
-					g_pServerPool->FreeConnection(pConnection, false);
+					bFreeConnection = true;
 				}
 				m_mutexDownloadQueue.Unlock();
+				
+				if (bFreeConnection)
+				{
+					g_pServerPool->FreeConnection(pConnection, false);
+				}
 			}
 		}
 		else
