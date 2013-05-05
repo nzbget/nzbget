@@ -588,7 +588,8 @@ bool ArticleDownloader::PrepareFile(char* szLine)
 			if (g_pOptions->GetDupeCheck())
 			{
 				m_pFileInfo->LockOutputFile();
-				if (!m_pFileInfo->GetOutputInitialized())
+				bool bOutputInitialized = m_pFileInfo->GetOutputInitialized();
+				if (!bOutputInitialized)
 				{
 					char* pb = strstr(szLine, " name=");
 					if (pb)
@@ -602,11 +603,6 @@ bool ArticleDownloader::PrepareFile(char* szLine)
 							strncpy(m_szArticleFilename, pb, pe - pb);
 							m_szArticleFilename[pe - pb] = '\0';
 						}
-						if (m_pFileInfo->IsDupe(m_szArticleFilename))
-						{
-							m_bDuplicate = true;
-							return false;
-						}
 					}
 				}
 				if (!g_pOptions->GetDirectWrite())
@@ -614,6 +610,11 @@ bool ArticleDownloader::PrepareFile(char* szLine)
 					m_pFileInfo->SetOutputInitialized(true);
 				}
 				m_pFileInfo->UnlockOutputFile();
+				if (!bOutputInitialized && m_szArticleFilename && m_pFileInfo->IsDupe(m_szArticleFilename))
+				{
+					m_bDuplicate = true;
+					return false;
+				}
 			}
 
 			if (g_pOptions->GetDirectWrite())
