@@ -554,10 +554,11 @@ void QueueCoordinator::StartArticleDownload(FileInfo* pFileInfo, ArticleInfo* pA
 	pArticleDownloader->SetFileInfo(pFileInfo);
 	pArticleDownloader->SetArticleInfo(pArticleInfo);
 	pArticleDownloader->SetConnection(pConnection);
-	BuildArticleFilename(pArticleDownloader, pFileInfo, pArticleInfo);
 
 	pArticleInfo->SetStatus(ArticleInfo::aiRunning);
 	pFileInfo->SetActiveDownloads(pFileInfo->GetActiveDownloads() + 1);
+
+	BuildArticleFilename(pArticleDownloader, pFileInfo, pArticleInfo);
 
 	m_ActiveDownloads.push_back(pArticleDownloader);
 	pArticleDownloader->Start();
