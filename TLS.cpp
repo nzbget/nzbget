@@ -26,12 +26,12 @@
 # include "config.h"
 #endif
 
-#ifndef DISABLE_TLS
-
 #ifdef WIN32
 #define SKIP_DEFAULT_WINDOWS_HEADERS
 #include "win32.h"
 #endif
+
+#ifndef DISABLE_TLS
 
 #include <stdlib.h>
 #include <string.h>
