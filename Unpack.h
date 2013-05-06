@@ -113,8 +113,9 @@ class CleanupController : public Thread, public ScriptController
 private:
 	PostInfo*			m_pPostInfo;
 	char				m_szDestDir[1024];
+	char				m_szFinalDir[1024];
 
-	bool				Cleanup(bool *bDeleted);
+	bool				Cleanup(const char* szDestDir, bool *bDeleted);
 
 	typedef std::deque<char*>	ExtList;
 

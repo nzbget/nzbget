@@ -748,12 +748,31 @@ void CleanupController::Run()
 	strncpy(m_szDestDir, m_pPostInfo->GetNZBInfo()->GetDestDir(), 1024);
 	m_szDestDir[1024-1] = '\0';
 
+	bool bInterDir = strlen(g_pOptions->GetInterDir()) > 0 &&
+		!strncmp(m_szDestDir, g_pOptions->GetInterDir(), strlen(g_pOptions->GetInterDir()));
+	if (bInterDir)
+	{
+		m_pPostInfo->GetNZBInfo()->BuildFinalDirName(m_szFinalDir, 1024);
+		m_szFinalDir[1024-1] = '\0';
+	}
+	else
+	{
+		m_szFinalDir[0] = '\0';
+	}
+
 	g_pDownloadQueueHolder->UnlockQueue();
 
 	info("Cleaning up %s", szNZBName);
 
 	bool bDeleted = false;
-	bool bOK = Cleanup(&bDeleted);
+	bool bOK = Cleanup(m_szDestDir, &bDeleted);
+
+	if (bOK && m_szFinalDir[0] != '\0')
+	{
+		bool bDeleted2 = false;
+		bOK = Cleanup(m_szFinalDir, &bDeleted2);
+		bDeleted = bDeleted || bDeleted2;
+	}
 
 	szInfoName[0] = 'C'; // uppercase
 
@@ -777,7 +796,7 @@ void CleanupController::Run()
 	m_pPostInfo->SetWorking(false);
 }
 
-bool CleanupController::Cleanup(bool *bDeleted)
+bool CleanupController::Cleanup(const char* szDestDir, bool *bDeleted)
 {
 	*bDeleted = false;
 	bool bOK = true;
@@ -795,17 +814,18 @@ bool CleanupController::Cleanup(bool *bDeleted)
 		szExt = strtok_r(NULL, ",; ", &saveptr);
 	}
 	
-	DirBrowser dir(m_szDestDir);
+	DirBrowser dir(szDestDir);
 	while (const char* filename = dir.Next())
 	{
 		// check file extension
 		
+		int iFilenameLen = strlen(filename);
 		bool bDeleteIt = false;
-		const char *szExt = strrchr(filename, '.');
 		for (ExtList::iterator it = extList.begin(); it != extList.end(); it++)
 		{
-			const char* szExt2 = *it;
-			if (szExt && !strcasecmp(szExt+1, szExt2))
+			const char* szExt = *it;
+			int iExtLen = strlen(szExt);
+			if (iFilenameLen >= iExtLen && !strcasecmp(szExt, filename + iFilenameLen - iExtLen))
 			{
 				bDeleteIt = true;
 				break;
@@ -815,7 +835,7 @@ bool CleanupController::Cleanup(bool *bDeleted)
 		if (bDeleteIt)
 		{
 			char szFullFilename[1024];
-			snprintf(szFullFilename, 1024, "%s%c%s", m_szDestDir, PATH_SEPARATOR, filename);
+			snprintf(szFullFilename, 1024, "%s%c%s", szDestDir, PATH_SEPARATOR, filename);
 			szFullFilename[1024-1] = '\0';
 
 			PrintMessage(Message::mkInfo, "Deleting file %s", filename);
