@@ -82,14 +82,17 @@ import sys
 import datetime
 import smtplib
 from email.mime.text import MIMEText
-from xmlrpclib import ServerProxy
+try:
+	from xmlrpclib import ServerProxy # python 2
+except ImportError:
+	from xmlrpc.client import ServerProxy # python 3
 
 # Exit codes used by NZBGet
 POSTPROCESS_SUCCESS=93
 POSTPROCESS_ERROR=94
 
 # Check if the script is called from nzbget 11.0 or later
-if not os.environ.has_key('NZBOP_SCRIPTDIR'):
+if not 'NZBOP_SCRIPTDIR' in os.environ:
 	print('*** NZBGet post-processing script ***')
 	print('This script is supposed to be called from nzbget (11.0 or later).')
 	sys.exit(POSTPROCESS_ERROR)
@@ -100,7 +103,7 @@ sys.stdout.flush()
 required_options = ('NZBPO_FROM', 'NZBPO_TO', 'NZBPO_SERVER', 'NZBPO_PORT', 'NZBPO_ENCRYPTION',
 	'NZBPO_USERNAME', 'NZBPO_PASSWORD', 'NZBPO_FILELIST', 'NZBPO_BROKENLOG', 'NZBPO_POSTPROCESSLOG')
 for	optname in required_options:
-	if (not os.environ.has_key(optname)):
+	if (not optname in os.environ):
 		print('[ERROR] Option %s is missing in configuration file. Please check script settings' % optname[6:])
 		sys.exit(POSTPROCESS_ERROR)
 		
@@ -205,7 +208,7 @@ try:
 	smtp.sendmail(os.environ['NZBPO_FROM'], os.environ['NZBPO_TO'], msg.as_string())
 	
 	smtp.quit()
-except Exception, err:
+except Exception as err:
 	print('[ERROR] %s' % err)
 	sys.exit(POSTPROCESS_ERROR)
 
