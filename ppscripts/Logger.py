@@ -40,14 +40,17 @@
 import os
 import sys
 import datetime
-from xmlrpclib import ServerProxy
+try:
+	from xmlrpclib import ServerProxy # python 2
+except ImportError:
+	from xmlrpc.client import ServerProxy # python 3
 
 # Exit codes used by NZBGet
 POSTPROCESS_SUCCESS=93
 POSTPROCESS_ERROR=94
 
 # Check if the script is called from nzbget 11.0 or later
-if not os.environ.has_key('NZBOP_SCRIPTDIR'):
+if not 'NZBOP_SCRIPTDIR' in os.environ:
 	print('*** NZBGet post-processing script ***')
 	print('This script is supposed to be called from nzbget (11.0 or later).')
 	sys.exit(POSTPROCESS_ERROR)
@@ -81,7 +84,7 @@ log = postqueue[0]['Log']
 
 # Now iterate through entries and save them to the output file
 if len(log) > 0:
-	f = open('%s/_postprocesslog.txt' % os.environ['NZBPP_DIRECTORY'], 'w')
+	f = open('%s/_postprocesslog.txt' % os.environ['NZBPP_DIRECTORY'], 'wb')
 	for entry in log:
 		f.write((u'%s\t%s\t%s\n' % (entry['Kind'], datetime.datetime.fromtimestamp(int(entry['Time'])), entry['Text'])).encode('utf8'))
 	f.close()
