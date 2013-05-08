@@ -171,7 +171,7 @@ var Options = (new function($)
 		var data = filedata.split('\n');
 		for (var i=0, len=data.length; i < len; i++)
 		{
-			var line = data[i];
+			var line = data[i].trimRight(); // remove possible trailing CR-characters
 
 			if (line.substring(0, 4) === '### ')
 			{
