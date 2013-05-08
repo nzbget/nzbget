@@ -393,7 +393,14 @@ var DownloadsEditDialog = (new function($)
 		notification = '#Notif_Downloads_Resumed';
 		RPC.call('editqueue', ['GroupResume', 0, '', [curGroup.LastID]], function()
 		{
-			RPC.call('editqueue', ['GroupPauseExtraPars', 0, '', [curGroup.LastID]], completed);
+			if (Options.option('ParCheck') === 'force')
+			{
+				completed();
+			}
+			else
+			{
+				RPC.call('editqueue', ['GroupPauseExtraPars', 0, '', [curGroup.LastID]], completed);
+			}
 		});
 	}
 
