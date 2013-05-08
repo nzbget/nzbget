@@ -1089,8 +1089,13 @@
 		<p>
 		Delete selected downloads?
 		</p>
-		<p class="confirm-help-block">
-		Selected items will be removed from the queue. Already downloaded files remain on disk.
+		<p id="DownloadsDeleteConfirmDialog_Remain" class="confirm-help-block">
+		Selected items will be removed from queue. Already downloaded files remain on disk (this behavior can be changed via option
+		<strong><em>DeleteCleanupDisk</em></strong>).
+		</p>
+		<p id="DownloadsDeleteConfirmDialog_Cleanup" class="confirm-help-block">
+		Selected items will be removed from queue. Already downloaded files will be deleted from disk (this behavior can be changed via option
+		<strong><em>DeleteCleanupDisk</em></strong>).
 		</p>
 	</div>
 	<div id="DownloadsDeleteConfirmDialog_OK">Delete</div>
