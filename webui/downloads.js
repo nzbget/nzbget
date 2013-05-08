@@ -480,6 +480,9 @@ var Downloads = (new function($)
 			}
 		};
 
+		Util.show('#DownloadsDeleteConfirmDialog_Cleanup', Options.option('DeleteCleanupDisk') === 'yes');
+		Util.show('#DownloadsDeleteConfirmDialog_Remain', Options.option('DeleteCleanupDisk') != 'yes');
+		
 		ConfirmDialog.showModal('DownloadsDeleteConfirmDialog', deleteGroups);
 	}
 
