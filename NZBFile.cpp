@@ -2,7 +2,7 @@
  *  This file is part of nzbget
  *
  *  Copyright (C) 2004 Sven Henkel <sidddy@users.sourceforge.net>
- *  Copyright (C) 2007-2010 Andrey Prygunkov <hugbug@users.sourceforge.net>
+ *  Copyright (C) 2007-2013 Andrey Prygunkov <hugbug@users.sourceforge.net>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -482,11 +482,14 @@ bool NZBFile::ParseNZB(IUnknown* nzb)
 			int partNumber = atoi(number);
 			int lsize = atoi(bytes);
 
-			ArticleInfo* pArticle = new ArticleInfo();
-			pArticle->SetPartNumber(partNumber);
-			pArticle->SetMessageID(szId);
-			pArticle->SetSize(lsize);
-			AddArticle(pFileInfo, pArticle);
+			if (partNumber > 0)
+			{
+				ArticleInfo* pArticle = new ArticleInfo();
+				pArticle->SetPartNumber(partNumber);
+				pArticle->SetMessageID(szId);
+				pArticle->SetSize(lsize);
+				AddArticle(pFileInfo, pArticle);
+			}
 
             if (lsize > 0)
             {
