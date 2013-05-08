@@ -416,7 +416,14 @@ var Downloads = (new function($)
 		notification = '#Notif_Downloads_Resumed';
 		RPC.call('editqueue', ['GroupResume', 0, '', checkedEditIDs], function()
 		{
-			RPC.call('editqueue', ['GroupPauseExtraPars', 0, '', checkedEditIDs], editCompleted);
+			if (Options.option('ParCheck') === 'force')
+			{
+				editCompleted();
+			}
+			else
+			{
+				RPC.call('editqueue', ['GroupPauseExtraPars', 0, '', checkedEditIDs], editCompleted);
+			}
 		});
 	}
 
