@@ -31,6 +31,7 @@
 #include <deque>
 
 #include "Thread.h"
+#include "Log.h"
 
 class ParRenamer : public Thread
 {
@@ -75,6 +76,7 @@ private:
 protected:
 	virtual void		UpdateProgress() {}
 	virtual void		Completed() {}
+	virtual void		PrintMessage(Message::EKind eKind, const char* szFormat, ...) {}
 	const char*			GetProgressLabel() { return m_szProgressLabel; }
 	int					GetStageProgress() { return m_iStageProgress; }
 
