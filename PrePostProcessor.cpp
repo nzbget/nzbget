@@ -293,15 +293,33 @@ void PrePostProcessor::NZBDeleted(DownloadQueue* pDownloadQueue, NZBInfo* pNZBIn
 			char* szFilename = *it;
 			if (Util::FileExists(szFilename))
 			{
-				detail("Deleting file %s", szFilename);
+				detail("Deleting file %s", Util::BaseFileName(szFilename));
 				remove(szFilename);
-				// delete old directory (if empty)
-				if (g_pOptions->GetAppendNZBDir() && Util::DirEmpty(pNZBInfo->GetDestDir()))
-				{
-					rmdir(pNZBInfo->GetDestDir());
-				}
 			}
 		}
+
+		// delete .out.tmp-files and _brokenlog.txt
+		DirBrowser dir(pNZBInfo->GetDestDir());
+		while (const char* szFilename = dir.Next())
+		{
+			int iLen = strlen(szFilename);
+			if ((iLen > 8 && !strcmp(szFilename + iLen - 8, ".out.tmp")) || !strcmp(szFilename, "_brokenlog.txt"))
+			{
+				char szFullFilename[1024];
+				snprintf(szFullFilename, 1024, "%s%c%s", pNZBInfo->GetDestDir(), PATH_SEPARATOR, szFilename);
+				szFullFilename[1024-1] = '\0';
+
+				detail("Deleting file %s", szFilename);
+				remove(szFullFilename);
+			}
+		}
+	
+		// delete old directory (if empty)
+		if (g_pOptions->GetAppendNZBDir() && Util::DirEmpty(pNZBInfo->GetDestDir()))
+		{
+			rmdir(pNZBInfo->GetDestDir());
+		}
+
 		if (g_pOptions->GetNzbCleanupDisk())
 		{
 			DeleteQueuedFile(pNZBInfo->GetQueuedFilename());
