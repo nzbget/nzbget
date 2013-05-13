@@ -49,6 +49,7 @@ private:
 		virtual bool	RequestMorePars(int iBlockNeeded, int* pBlockFound);
 		virtual void	UpdateProgress();
 		virtual void	Completed() { m_pOwner->ParCheckCompleted(); }
+		virtual void	PrintMessage(Message::EKind eKind, const char* szFormat, ...);
 	public:
 		PostInfo*		GetPostInfo() { return m_pPostInfo; }
 		void			SetPostInfo(PostInfo* pPostInfo) { m_pPostInfo = pPostInfo; }
@@ -64,6 +65,7 @@ private:
 	protected:
 		virtual void	UpdateProgress();
 		virtual void	Completed() { m_pOwner->ParRenameCompleted(); }
+		virtual void	PrintMessage(Message::EKind eKind, const char* szFormat, ...);
 	public:
 		PostInfo*		GetPostInfo() { return m_pPostInfo; }
 		void			SetPostInfo(PostInfo* pPostInfo) { m_pPostInfo = pPostInfo; }
@@ -117,6 +119,7 @@ public:
 							Blocks* pBlocks, bool bStrictParName, bool bExactParName, int* pBlockFound);
 	void				UpdateParCheckProgress();
 	void				UpdateParRenameProgress();
+	void				VPrintMessage(PostInfo* pPostInfo, Message::EKind eKind, const char* szFormat, va_list arg);
 	void				StartParCheckJob(PostInfo* pPostInfo);
 	void				StartParRenameJob(PostInfo* pPostInfo);
 	void				Stop();

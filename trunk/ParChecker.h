@@ -1,7 +1,7 @@
 /*
  *  This file is part of nzbget
  *
- *  Copyright (C) 2007-2009 Andrey Prygunkov <hugbug@users.sourceforge.net>
+ *  Copyright (C) 2007-2013 Andrey Prygunkov <hugbug@users.sourceforge.net>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -31,6 +31,7 @@
 #include <deque>
 
 #include "Thread.h"
+#include "Log.h"
 
 class ParChecker : public Thread
 {
@@ -99,6 +100,7 @@ protected:
 	virtual bool		RequestMorePars(int iBlockNeeded, int* pBlockFound) = 0;
 	virtual void		UpdateProgress() {}
 	virtual void		Completed() {}
+	virtual void		PrintMessage(Message::EKind eKind, const char* szFormat, ...) {}
 	EStage				GetStage() { return m_eStage; }
 	const char*			GetProgressLabel() { return m_szProgressLabel; }
 	int					GetFileProgress() { return m_iFileProgress; }

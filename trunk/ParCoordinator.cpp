@@ -63,9 +63,25 @@ void ParCoordinator::PostParChecker::UpdateProgress()
 	m_pOwner->UpdateParCheckProgress();
 }
 
+void ParCoordinator::PostParChecker::PrintMessage(Message::EKind eKind, const char* szFormat, ...)
+{
+	va_list args;
+	va_start(args, szFormat);
+	m_pOwner->VPrintMessage(m_pPostInfo, eKind, szFormat, args);
+	va_end(args);
+}
+
 void ParCoordinator::PostParRenamer::UpdateProgress()
 {
 	m_pOwner->UpdateParRenameProgress();
+}
+
+void ParCoordinator::PostParRenamer::PrintMessage(Message::EKind eKind, const char* szFormat, ...)
+{
+	va_list args;
+	va_start(args, szFormat);
+	m_pOwner->VPrintMessage(m_pPostInfo, eKind, szFormat, args);
+	va_end(args);
 }
 #endif
 
@@ -233,11 +249,11 @@ bool ParCoordinator::ParseParFilename(const char* szParFilename, int* iBaseNameL
  */
 void ParCoordinator::StartParCheckJob(PostInfo* pPostInfo)
 {
-	info("Checking pars for %s", pPostInfo->GetInfoName());
 	m_eCurrentJob = jkParCheck;
 	m_ParChecker.SetPostInfo(pPostInfo);
 	m_ParChecker.SetDestDir(pPostInfo->GetNZBInfo()->GetDestDir());
 	m_ParChecker.SetNZBName(pPostInfo->GetNZBInfo()->GetName());
+	m_ParChecker.PrintMessage(Message::mkInfo, "Checking pars for %s", pPostInfo->GetInfoName());
 	pPostInfo->SetWorking(true);
 	m_ParChecker.Start();
 }
@@ -247,11 +263,11 @@ void ParCoordinator::StartParCheckJob(PostInfo* pPostInfo)
  */
 void ParCoordinator::StartParRenameJob(PostInfo* pPostInfo)
 {
-	info("Checking renamed files for %s", pPostInfo->GetNZBInfo()->GetName());
 	m_eCurrentJob = jkParRename;
 	m_ParRenamer.SetPostInfo(pPostInfo);
 	m_ParRenamer.SetDestDir(pPostInfo->GetNZBInfo()->GetDestDir());
 	m_ParRenamer.SetInfoName(pPostInfo->GetNZBInfo()->GetName());
+	m_ParRenamer.PrintMessage(Message::mkInfo, "Checking renamed files for %s", pPostInfo->GetNZBInfo()->GetName());
 	pPostInfo->SetWorking(true);
 	m_ParRenamer.Start();
 }
@@ -393,7 +409,7 @@ bool ParCoordinator::RequestMorePars(NZBInfo* pNZBInfo, const char* szParFilenam
 			{
 				if (pBestBlockInfo->m_pFileInfo->GetPaused())
 				{
-					info("Unpausing %s%c%s for par-recovery", pNZBInfo->GetName(), (int)PATH_SEPARATOR, pBestBlockInfo->m_pFileInfo->GetFilename());
+					m_ParChecker.PrintMessage(Message::mkInfo, "Unpausing %s%c%s for par-recovery", pNZBInfo->GetName(), (int)PATH_SEPARATOR, pBestBlockInfo->m_pFileInfo->GetFilename());
 					pBestBlockInfo->m_pFileInfo->SetPaused(false);
 					pBestBlockInfo->m_pFileInfo->SetExtraPriority(true);
 				}
@@ -417,7 +433,7 @@ bool ParCoordinator::RequestMorePars(NZBInfo* pNZBInfo, const char* szParFilenam
 			BlockInfo* pBlockInfo = blocks.front();
 			if (pBlockInfo->m_pFileInfo->GetPaused())
 			{
-				info("Unpausing %s%c%s for par-recovery", pNZBInfo->GetName(), (int)PATH_SEPARATOR, pBlockInfo->m_pFileInfo->GetFilename());
+				m_ParChecker.PrintMessage(Message::mkInfo, "Unpausing %s%c%s for par-recovery", pNZBInfo->GetName(), (int)PATH_SEPARATOR, pBlockInfo->m_pFileInfo->GetFilename());
 				pBlockInfo->m_pFileInfo->SetPaused(false);
 				pBlockInfo->m_pFileInfo->SetExtraPriority(true);
 			}
@@ -537,7 +553,7 @@ void ParCoordinator::UpdateParCheckProgress()
 {
 	DownloadQueue* pDownloadQueue = g_pQueueCoordinator->LockQueue();
 
-	PostInfo* pPostInfo = pDownloadQueue->GetPostQueue()->front();
+	PostInfo* pPostInfo = m_ParChecker.GetPostInfo();
 	if (m_ParChecker.GetFileProgress() == 0)
 	{
 		pPostInfo->SetProgressLabel(m_ParChecker.GetProgressLabel());
@@ -574,7 +590,7 @@ void ParCoordinator::UpdateParCheckProgress()
 			if (iEstimatedRepairTime > g_pOptions->GetParTimeLimit() * 60)
 			{
 				debug("Estimated repair time %i seconds", iEstimatedRepairTime);
-				warn("Cancelling par-repair for %s, estimated repair time (%i minutes) exceeds allowed repair time", m_ParChecker.GetInfoName(), iEstimatedRepairTime / 60);
+				m_ParChecker.PrintMessage(Message::mkWarning, "Cancelling par-repair for %s, estimated repair time (%i minutes) exceeds allowed repair time", m_ParChecker.GetInfoName(), iEstimatedRepairTime / 60);
 				bParCancel = true;
 			}
 		}
@@ -642,7 +658,7 @@ void ParCoordinator::UpdateParRenameProgress()
 {
 	DownloadQueue* pDownloadQueue = g_pQueueCoordinator->LockQueue();
 	
-	PostInfo* pPostInfo = pDownloadQueue->GetPostQueue()->front();
+	PostInfo* pPostInfo = m_ParRenamer.GetPostInfo();
 	pPostInfo->SetProgressLabel(m_ParRenamer.GetProgressLabel());
 	pPostInfo->SetStageProgress(m_ParRenamer.GetStageProgress());
 	time_t tCurrent = time(NULL);
@@ -661,6 +677,39 @@ void ParCoordinator::UpdateParRenameProgress()
 	g_pQueueCoordinator->UnlockQueue();
 	
 	CheckPauseState(pPostInfo);
+}
+
+void ParCoordinator::VPrintMessage(PostInfo* pPostInfo, Message::EKind eKind, const char* szFormat, va_list arg)
+{
+	char szText[1024];
+
+	vsnprintf(szText, 1024, szFormat, arg);
+	szText[1024-1] = '\0';
+
+	pPostInfo->AppendMessage(eKind, szText);
+
+	switch (eKind)
+	{
+		case Message::mkDetail:
+			detail("%s", szText);
+			break;
+
+		case Message::mkInfo:
+			info("%s", szText);
+			break;
+
+		case Message::mkWarning:
+			warn("%s", szText);
+			break;
+
+		case Message::mkError:
+			error("%s", szText);
+			break;
+
+		case Message::mkDebug:
+			debug("%s", szText);
+			break;
+	}
 }
 
 #endif

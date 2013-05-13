@@ -153,16 +153,16 @@ void ParRenamer::Run()
 	
 	if (m_bCancelled)
 	{
-		warn("Renaming cancelled for %s", m_szInfoName);
+		PrintMessage(Message::mkWarning, "Renaming cancelled for %s", m_szInfoName);
 	}
 	else if (m_iRenamedCount > 0)
 	{
-		info("Successfully renamed %i file(s) for %s", m_iRenamedCount, m_szInfoName);
+		PrintMessage(Message::mkInfo, "Successfully renamed %i file(s) for %s", m_iRenamedCount, m_szInfoName);
 		m_eStatus = psSuccess;
 	}
 	else
 	{
-		info("Could not rename any files for %s", m_szInfoName);
+		PrintMessage(Message::mkInfo, "Could not rename any files for %s", m_szInfoName);
 	}
 
 	Cleanup();
@@ -194,7 +194,7 @@ void ParRenamer::LoadParFile(const char* szParFilename)
 
 	if (!pRepairer->LoadPacketsFromFile(szParFilename))
 	{
-		warn("Could not load par2-file %s", szParFilename);
+		PrintMessage(Message::mkWarning, "Could not load par2-file %s", szParFilename);
 		delete pRepairer;
 		return;
 	}
@@ -256,7 +256,7 @@ void ParRenamer::CheckFile(const char* szFilename)
     FILE* pFile = fopen(szFilename, "rb");
     if (!pFile)
     {
-		error("Could not open file %s", szFilename);
+		PrintMessage(Message::mkError, "Could not open file %s", szFilename);
         return;
     }
 
@@ -268,7 +268,7 @@ void ParRenamer::CheckFile(const char* szFilename)
 	int iError = ferror(pFile);
 	if (iReadBytes != iBlockSize && iError)
 	{
-		error("Could not read file %s", szFilename);
+		PrintMessage(Message::mkError, "Could not read file %s", szFilename);
 		return;
 	}
 	
@@ -296,14 +296,14 @@ void ParRenamer::CheckFile(const char* szFilename)
 			
 			if (!Util::FileExists(szDstFilename))
 			{
-				info("Renaming %s to %s", Util::BaseFileName(szFilename), pFileHash->GetFilename());
+				PrintMessage(Message::mkInfo, "Renaming %s to %s", Util::BaseFileName(szFilename), pFileHash->GetFilename());
 				if (Util::MoveFile(szFilename, szDstFilename))
 				{
 					m_iRenamedCount++;
 				}
 				else
 				{
-					error("Could not rename %s to %s", szFilename, szDstFilename);
+					PrintMessage(Message::mkError, "Could not rename %s to %s", szFilename, szDstFilename);
 				}
 			}
 			
