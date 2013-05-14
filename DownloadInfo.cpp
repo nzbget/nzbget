@@ -34,10 +34,10 @@
 
 #include <stdlib.h>
 #include <string.h>
-#include <cctype>
-#include <cstdio>
-#include <map>
+#include <stdio.h>
+#include <ctype.h>
 #include <sys/stat.h>
+#include <map>
 
 #include "nzbget.h"
 #include "DownloadInfo.h"

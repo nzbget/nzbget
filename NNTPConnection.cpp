@@ -34,7 +34,7 @@
 
 #include <stdlib.h>
 #include <string.h>
-#include <cstdio>
+#include <stdio.h>
 
 #include "nzbget.h"
 #include "Log.h"

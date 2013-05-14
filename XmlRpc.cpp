@@ -33,8 +33,7 @@
 
 #include <stdlib.h>
 #include <string.h>
-#include <cstdio>
-#include <fstream>
+#include <stdio.h>
 #include <stdarg.h>
 #ifndef WIN32
 #include <unistd.h>

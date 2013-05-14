@@ -33,8 +33,8 @@
 
 #include <stdlib.h>
 #include <string.h>
-#include <cctype>
-#include <cstdio>
+#include <stdio.h>
+#include <ctype.h>
 #include <sys/stat.h>
 #include <set>
 #ifndef WIN32

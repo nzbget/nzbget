@@ -36,7 +36,6 @@
 #include <stdlib.h>
 #include <string.h>
 #include <ctype.h>
-#include <fstream>
 #ifdef WIN32
 #include <par2cmdline.h>
 #include <par2repairer.h>

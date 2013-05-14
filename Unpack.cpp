@@ -33,8 +33,8 @@
 
 #include <stdlib.h>
 #include <string.h>
+#include <stdio.h>
 #include <ctype.h>
-#include <fstream>
 #ifndef WIN32
 #include <unistd.h>
 #endif
