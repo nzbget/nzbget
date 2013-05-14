@@ -102,7 +102,7 @@ protected:
 	void				ParRenameCompleted();
 	void				CheckPauseState(PostInfo* pPostInfo);
 	bool				RequestMorePars(NZBInfo* pNZBInfo, const char* szParFilename, int iBlockNeeded, int* pBlockFound);
-	void				VPrintMessage(PostInfo* pPostInfo, Message::EKind eKind, const char* szFormat, void* args);
+	void				PrintMessage(PostInfo* pPostInfo, Message::EKind eKind, const char* szFormat, ...);
 #endif
 
 public:
