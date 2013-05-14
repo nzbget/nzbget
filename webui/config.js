@@ -1227,6 +1227,24 @@ var Config = (new function($)
 	}
 	this.getOptionValue = getOptionValue;
 
+	// Checks if there are obsolete or invalid options
+	function invalidOptionsExist()
+	{
+		var hiddenOptions = ['ConfigFile', 'AppBin', 'AppDir', 'Version'];
+		
+		for (var i=0; i < Options.options.length; i++)
+		{
+			var option = Options.options[i];
+			var confOpt = findOptionByName(option.Name);
+			if (!confOpt && hiddenOptions.indexOf(option.Name) === -1)
+			{
+				return true;
+			}
+		}
+		
+		return false;
+	}
+	
 	function prepareSaveRequest()
 	{
 		var modified = false;
@@ -1260,7 +1278,7 @@ var Config = (new function($)
 			}
 		}
 
-		return modified ? request : [];
+		return modified || invalidOptionsExist() ? request : [];
 	}
 
 	this.saveChanges = function()
@@ -1742,3 +1760,4 @@ var ScriptListDialog = (new function($)
 	}
 
 }(jQuery));
+2
