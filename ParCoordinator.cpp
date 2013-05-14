@@ -65,10 +65,14 @@ void ParCoordinator::PostParChecker::UpdateProgress()
 
 void ParCoordinator::PostParChecker::PrintMessage(Message::EKind eKind, const char* szFormat, ...)
 {
+	char szText[1024];
 	va_list args;
 	va_start(args, szFormat);
-	m_pOwner->VPrintMessage(m_pPostInfo, eKind, szFormat, args);
+	vsnprintf(szText, 1024, szFormat, args);
 	va_end(args);
+	szText[1024-1] = '\0';
+
+	m_pOwner->PrintMessage(m_pPostInfo, eKind, "%s", szText);
 }
 
 void ParCoordinator::PostParRenamer::UpdateProgress()
@@ -78,10 +82,14 @@ void ParCoordinator::PostParRenamer::UpdateProgress()
 
 void ParCoordinator::PostParRenamer::PrintMessage(Message::EKind eKind, const char* szFormat, ...)
 {
+	char szText[1024];
 	va_list args;
 	va_start(args, szFormat);
-	m_pOwner->VPrintMessage(m_pPostInfo, eKind, szFormat, args);
+	vsnprintf(szText, 1024, szFormat, args);
 	va_end(args);
+	szText[1024-1] = '\0';
+	
+	m_pOwner->PrintMessage(m_pPostInfo, eKind, "%s", szText);
 }
 #endif
 
@@ -679,11 +687,13 @@ void ParCoordinator::UpdateParRenameProgress()
 	CheckPauseState(pPostInfo);
 }
 
-void ParCoordinator::VPrintMessage(PostInfo* pPostInfo, Message::EKind eKind, const char* szFormat, void* args)
+void ParCoordinator::PrintMessage(PostInfo* pPostInfo, Message::EKind eKind, const char* szFormat, ...)
 {
 	char szText[1024];
-
-	vsnprintf(szText, 1024, szFormat, *((va_list*)args));
+	va_list args;
+	va_start(args, szFormat);
+	vsnprintf(szText, 1024, szFormat, args);
+	va_end(args);
 	szText[1024-1] = '\0';
 
 	pPostInfo->AppendMessage(eKind, szText);
