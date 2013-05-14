@@ -29,6 +29,7 @@
 #ifndef DISABLE_PARCHECK
 
 #include <deque>
+#include <string>
 
 #include "Thread.h"
 #include "Log.h"

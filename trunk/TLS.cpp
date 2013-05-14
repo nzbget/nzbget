@@ -35,7 +35,6 @@
 
 #include <stdlib.h>
 #include <string.h>
-#include <cstdio>
 #ifdef WIN32
 #include <winsock2.h>
 #include <ws2tcpip.h>
@@ -43,7 +42,6 @@
 #include <strings.h>
 #endif
 #include <ctype.h>
-#include <stdarg.h>
 #include <limits.h>
 #include <time.h>
 #include <errno.h>
