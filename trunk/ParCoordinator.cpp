@@ -33,7 +33,7 @@
 
 #include <stdlib.h>
 #include <string.h>
-#include <fstream>
+#include <stdarg.h>
 #ifdef WIN32
 #include <direct.h>
 #else
@@ -551,7 +551,7 @@ void ParCoordinator::FindPars(DownloadQueue* pDownloadQueue, NZBInfo* pNZBInfo, 
 
 void ParCoordinator::UpdateParCheckProgress()
 {
-	DownloadQueue* pDownloadQueue = g_pQueueCoordinator->LockQueue();
+	g_pQueueCoordinator->LockQueue();
 
 	PostInfo* pPostInfo = m_ParChecker.GetPostInfo();
 	if (m_ParChecker.GetFileProgress() == 0)
@@ -656,7 +656,7 @@ void ParCoordinator::ParRenameCompleted()
 
 void ParCoordinator::UpdateParRenameProgress()
 {
-	DownloadQueue* pDownloadQueue = g_pQueueCoordinator->LockQueue();
+	g_pQueueCoordinator->LockQueue();
 	
 	PostInfo* pPostInfo = m_ParRenamer.GetPostInfo();
 	pPostInfo->SetProgressLabel(m_ParRenamer.GetProgressLabel());
@@ -679,11 +679,11 @@ void ParCoordinator::UpdateParRenameProgress()
 	CheckPauseState(pPostInfo);
 }
 
-void ParCoordinator::VPrintMessage(PostInfo* pPostInfo, Message::EKind eKind, const char* szFormat, va_list arg)
+void ParCoordinator::VPrintMessage(PostInfo* pPostInfo, Message::EKind eKind, const char* szFormat, void* args)
 {
 	char szText[1024];
 
-	vsnprintf(szText, 1024, szFormat, arg);
+	vsnprintf(szText, 1024, szFormat, *((va_list*)args));
 	szText[1024-1] = '\0';
 
 	pPostInfo->AppendMessage(eKind, szText);

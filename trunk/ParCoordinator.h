@@ -96,6 +96,13 @@ private:
 protected:
 	virtual bool		PauseDownload() = 0;
 	virtual bool		UnpauseDownload() = 0;
+	void				UpdateParCheckProgress();
+	void				UpdateParRenameProgress();
+	void				ParCheckCompleted();
+	void				ParRenameCompleted();
+	void				CheckPauseState(PostInfo* pPostInfo);
+	bool				RequestMorePars(NZBInfo* pNZBInfo, const char* szParFilename, int iBlockNeeded, int* pBlockFound);
+	void				VPrintMessage(PostInfo* pPostInfo, Message::EKind eKind, const char* szFormat, void* args);
 #endif
 
 public:
@@ -110,16 +117,9 @@ public:
 	void				PausePars(DownloadQueue* pDownloadQueue, NZBInfo* pNZBInfo);
 
 #ifndef DISABLE_PARCHECK
-	void				ParCheckCompleted();
-	void				ParRenameCompleted();
-	void				CheckPauseState(PostInfo* pPostInfo);
 	bool				AddPar(FileInfo* pFileInfo, bool bDeleted);
-	bool				RequestMorePars(NZBInfo* pNZBInfo, const char* szParFilename, int iBlockNeeded, int* pBlockFound);
 	void				FindPars(DownloadQueue* pDownloadQueue, NZBInfo* pNZBInfo, const char* szParFilename, 
 							Blocks* pBlocks, bool bStrictParName, bool bExactParName, int* pBlockFound);
-	void				UpdateParCheckProgress();
-	void				UpdateParRenameProgress();
-	void				VPrintMessage(PostInfo* pPostInfo, Message::EKind eKind, const char* szFormat, va_list arg);
 	void				StartParCheckJob(PostInfo* pPostInfo);
 	void				StartParRenameJob(PostInfo* pPostInfo);
 	void				Stop();
