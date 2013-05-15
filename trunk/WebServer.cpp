@@ -185,20 +185,23 @@ void WebProcessor::Execute()
 
 	debug("Final URL=%s", m_szUrl);
 
-	if (strlen(szAuthInfo) == 0)
+	if (strlen(g_pOptions->GetControlPassword()) > 0)
 	{
-		SendAuthResponse();
-		return;
-	}
+		if (strlen(szAuthInfo) == 0)
+		{
+			SendAuthResponse();
+			return;
+		}
 
-	// Authorization
-	char* pw = strchr(szAuthInfo, ':');
-	if (pw) *pw++ = '\0';
-	if (strcmp(szAuthInfo, "nzbget") || strcmp(pw, g_pOptions->GetControlPassword()))
-	{
-		warn("request received on port %i from %s, but password invalid", g_pOptions->GetControlPort(), m_pConnection->GetRemoteAddr());
-		SendAuthResponse();
-		return;
+		// Authorization
+		char* pw = strchr(szAuthInfo, ':');
+		if (pw) *pw++ = '\0';
+		if (strcmp(szAuthInfo, "nzbget") || strcmp(pw, g_pOptions->GetControlPassword()))
+		{
+			warn("request received on port %i from %s, but password invalid", g_pOptions->GetControlPort(), m_pConnection->GetRemoteAddr());
+			SendAuthResponse();
+			return;
+		}
 	}
 
 	if (m_eHttpMethod == hmPost)
