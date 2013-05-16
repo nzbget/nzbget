@@ -1160,7 +1160,7 @@ bool RemoteClient::RequestHistory()
 				char szSize[20];
 				Util::FormatFileSize(szSize, sizeof(szSize), lSize);
 
-				const char* szParStatusText[] = { "", ", Par failed", ", Par possible", ", Par successful" };
+				const char* szParStatusText[] = { "", "", ", Par failed", ", Par successful", ", Repair possible", ", Repair needed" };
 				const char* szScriptStatusText[] = { "", ", Script status unknown", ", Script failed", ", Script successful" };
 
 				printf("[%i] %s (%i files, %s%s%s)\n", ntohl(pListAnswer->m_iID), szNicename, 
