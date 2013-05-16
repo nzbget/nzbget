@@ -1373,6 +1373,7 @@ EditCommandEntry EditCommandNameMap[] = {
 	{ PrePostProcessor::eaHistoryDelete, "HistoryDelete" },
 	{ PrePostProcessor::eaHistoryReturn, "HistoryReturn" },
 	{ PrePostProcessor::eaHistoryProcess, "HistoryProcess" },
+	{ PrePostProcessor::eaHistorySetParameter, "HistorySetParameter" },
 	{ 0, NULL }
 };
 
@@ -1439,7 +1440,7 @@ void EditQueueXmlCommand::Execute()
 	}
 	else
 	{
-		bOK = g_pPrePostProcessor->QueueEditList(&cIDList, (PrePostProcessor::EEditAction)iAction, iOffset);
+		bOK = g_pPrePostProcessor->QueueEditList(&cIDList, (PrePostProcessor::EEditAction)iAction, iOffset, szEditText);
 	}
 
 	BuildBoolResponse(bOK);

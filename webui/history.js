@@ -25,7 +25,7 @@
 /*
  * In this module:
  *   1) History tab;
- *   2) History edit dialog.
+ *   2) Functions for html generation for history, also used from other modules (edit dialog).
  */
 
 /*** HISTORY TAB AND EDIT HISTORY DIALOG **********************************************/
@@ -53,8 +53,6 @@ var History = (new function($)
 		$HistoryTabBadge = $('#HistoryTabBadge');
 		$HistoryTabBadgeEmpty = $('#HistoryTabBadgeEmpty');
 		$HistoryRecordsPerPage = $('#HistoryRecordsPerPage');
-
-		historyEditDialog.init();
 
 		var recordsPerPage = UISettings.read('HistoryRecordsPerPage', 10);
 		$HistoryRecordsPerPage.val(recordsPerPage);
@@ -194,7 +192,7 @@ var History = (new function($)
 	{
 		var hist = item.hist;
 
-		var status = buildStatus(hist.status, '');
+		var status = HistoryUI.buildStatus(hist.status, '');
 
 		var name = '<a href="#" histid="' + hist.ID + '">' + Util.textToHtml(Util.formatNZBName(hist.Name)) + '</a>';
 		var category = Util.textToHtml(hist.Category);
@@ -233,34 +231,6 @@ var History = (new function($)
 		else if (index === 5)
 		{
 			cell.className = 'text-right';
-		}
-	}
-
-	function buildStatus(status, prefix)
-	{
-		switch (status)
-		{
-			case 'success':
-			case 'SUCCESS':
-				return '<span class="label label-status label-success">' + prefix + 'success</span>';
-			case 'failure':
-			case 'FAILURE':
-				return '<span class="label label-status label-important">' + prefix + 'failure</span>';
-			case 'unknown':
-			case 'UNKNOWN':
-				return '<span class="label label-status label-info">' + prefix + 'unknown</span>';
-			case 'repairable':
-			case 'REPAIR_POSSIBLE':
-				return '<span class="label label-status label-success">' + prefix + 'repairable</span>';
-			case 'manual':
-			case 'MANUAL':
-			case 'damaged':
-				return '<span class="label label-status label-warning">' + prefix + status + '</span>';
-			case 'none':
-			case 'NONE':
-				return '<span class="label label-status">' + prefix + 'none</span>';
-			default:
-				return '<span class="label label-status">' + prefix + status + '</span>';
 		}
 	}
 
@@ -338,137 +308,61 @@ var History = (new function($)
 	{
 		var histid = $(this).attr('histid');
 		$(this).blur();
-		historyEditDialog.showModal(histid);
+
+		var hist = null;
+
+		// find history object
+		for (var i=0; i<history.length; i++)
+		{
+			var gr = history[i];
+			if (gr.ID == histid)
+			{
+				hist = gr;
+				break;
+			}
+		}
+		if (hist == null)
+		{
+			return;
+		}
+		
+		HistoryEditDialog.showModal(hist);
 	}
+}(jQuery));
 
-/*** EDIT HISTORY DIALOG *************************************************************************/
 
-	var historyEditDialog = new function()
+/*** FUNCTIONS FOR HTML GENERATION (also used from other modules) *****************************/
+
+var HistoryUI = (new function($)
+{
+	'use strict';
+
+	this.buildStatus = function(status, prefix)
 	{
-		// Controls
-		var $HistoryEditDialog;
-
-		// State
-		var curHist;
-
-		this.init = function()
+		switch (status)
 		{
-			$HistoryEditDialog = $('#HistoryEditDialog');
-
-			$('#HistoryEdit_Delete').click(itemDelete);
-			$('#HistoryEdit_Return').click(itemReturn);
-			$('#HistoryEdit_Reprocess').click(itemReprocess);
-
-			$HistoryEditDialog.on('hidden', function () {
-				Refresher.resume();
-			});
+			case 'success':
+			case 'SUCCESS':
+				return '<span class="label label-status label-success">' + prefix + 'success</span>';
+			case 'failure':
+			case 'FAILURE':
+				return '<span class="label label-status label-important">' + prefix + 'failure</span>';
+			case 'unknown':
+			case 'UNKNOWN':
+				return '<span class="label label-status label-info">' + prefix + 'unknown</span>';
+			case 'repairable':
+			case 'REPAIR_POSSIBLE':
+				return '<span class="label label-status label-success">' + prefix + 'repairable</span>';
+			case 'manual':
+			case 'MANUAL':
+			case 'damaged':
+				return '<span class="label label-status label-warning">' + prefix + status + '</span>';
+			case 'none':
+			case 'NONE':
+				return '<span class="label label-status">' + prefix + 'none</span>';
+			default:
+				return '<span class="label label-status">' + prefix + status + '</span>';
 		}
-
-		this.showModal = function(histid)
-		{
-			var hist = null;
-
-			// find history object
-			for (var i=0; i<history.length; i++)
-			{
-				var gr = history[i];
-				if (gr.ID == histid)
-				{
-					hist = gr;
-					break;
-				}
-			}
-			if (hist == null)
-			{
-				return;
-			}
-
-			Refresher.pause();
-
-			curHist = hist;
-
-			var status;
-			if (hist.Kind === 'URL')
-			{
-				status = buildStatus(hist.status, '');
-			}
-			else
-			{
-				status = buildStatus(hist.ParStatus, 'Par: ') + ' ' +
-				    (Options.option('Unpack') == 'yes' || hist.UnpackStatus != 'NONE' ? buildStatus(hist.UnpackStatus, 'Unpack: ') + ' ' : '')  +
-					(hist.MoveStatus === "FAILURE" ? buildStatus(hist.MoveStatus, 'Move: ') + ' ' : "");
-				for (var i=0; i<hist.ScriptStatuses.length; i++)
-				{
-					var scriptStatus = hist.ScriptStatuses[i];
-					status += buildStatus(scriptStatus.Status, Options.shortScriptName(scriptStatus.Name) + ': ') + ' ';
-				}
-			}
-
-			$('#HistoryEdit_Title').text(Util.formatNZBName(hist.Name));
-			if (hist.Kind === 'URL')
-			{
-				$('#HistoryEdit_Title').html($('#HistoryEdit_Title').html() + '&nbsp;' + '<span class="label label-info">URL</span>');
-			}
-
-			$('#HistoryEdit_Status').html(status);
-			$('#HistoryEdit_Category').text(hist.Category !== '' ? hist.Category : '<empty>');
-			$('#HistoryEdit_Path').text(hist.DestDir);
-
-			var size = Util.formatSizeMB(hist.FileSizeMB, hist.FileSizeLo);
-
-			var table = '';
-			table += '<tr><td>Total</td><td class="text-right">' + size + '</td></tr>';
-			table += '<tr><td>Files (total/parked)</td><td class="text-right">' + hist.FileCount + '/' + hist.RemainingFileCount + '</td></tr>';
-			$('#HistoryEdit_Statistics').html(table);
-
-			Util.show($('#HistoryEdit_ReturnGroup'), hist.RemainingFileCount > 0 || hist.Kind === 'URL');
-			Util.show($('#HistoryEdit_PathGroup, #HistoryEdit_StatisticsGroup, #HistoryEdit_ReprocessGroup'), hist.Kind === 'NZB');
-
-			enableAllButtons();
-
-			$HistoryEditDialog.modal({backdrop: 'static'});
-		}
-
-		function disableAllButtons()
-		{
-			$('#HistoryEditDialog .modal-footer .btn').attr('disabled', 'disabled');
-			setTimeout(function()
-			{
-				$('#HistoryEdit_Transmit').show();
-			}, 500);
-		}
-
-		function enableAllButtons()
-		{
-			$('#HistoryEditDialog .modal-footer .btn').removeAttr('disabled');
-			$('#HistoryEdit_Transmit').hide();
-		}
-
-		function itemDelete()
-		{
-			disableAllButtons();
-			notification = '#Notif_History_Deleted';
-			RPC.call('editqueue', ['HistoryDelete', 0, '', [curHist.ID]], completed);
-		}
-
-		function itemReturn()
-		{
-			disableAllButtons();
-			notification = '#Notif_History_Returned';
-			RPC.call('editqueue', ['HistoryReturn', 0, '', [curHist.ID]], completed);
-		}
-
-		function itemReprocess()
-		{
-			disableAllButtons();
-			notification = '#Notif_History_Reproces';
-			RPC.call('editqueue', ['HistoryProcess', 0, '', [curHist.ID]], completed);
-		}
-
-		function completed()
-		{
-			$HistoryEditDialog.modal('hide');
-			editCompleted();
-		}
-	}();
+	}
+	
 }(jQuery));

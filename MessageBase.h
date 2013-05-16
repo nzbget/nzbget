@@ -27,7 +27,7 @@
 #ifndef MESSAGEBASE_H
 #define MESSAGEBASE_H
 
-static const int32_t NZBMESSAGE_SIGNATURE = 0x6E7A6214; // = "nzb-XX" (protocol version)
+static const int32_t NZBMESSAGE_SIGNATURE = 0x6E7A6215; // = "nzb-XX" (protocol version)
 static const int NZBREQUESTFILENAMESIZE = 512;
 static const int NZBREQUESTPASSWORDSIZE = 32;
 
@@ -101,7 +101,8 @@ enum eRemoteEditAction
 	eRemoteEditActionPostDelete,			// delete post-job
 	eRemoteEditActionHistoryDelete,			// delete history-item
 	eRemoteEditActionHistoryReturn,			// move history-item back to download queue
-	eRemoteEditActionHistoryProcess			// move history-item back to download queue and start postprocessing
+	eRemoteEditActionHistoryProcess,		// move history-item back to download queue and start postprocessing
+	eRemoteEditActionHistorySetParameter	// set post-process parameter for history-item
 };
 
 // Possible values for field "m_iAction" of struct "SNZBPauseUnpauseRequest":
