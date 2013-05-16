@@ -796,7 +796,7 @@ void EditQueueBinCommand::Execute()
 	}
 	else
 	{
-		bOK = g_pPrePostProcessor->QueueEditList(&cIDList, (PrePostProcessor::EEditAction)iAction, iOffset);
+		bOK = g_pPrePostProcessor->QueueEditList(&cIDList, (PrePostProcessor::EEditAction)iAction, iOffset, szText);
 	}
 
 	free(pBuf);

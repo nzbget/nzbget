@@ -26,7 +26,9 @@
  * In this module:
  *   1) Download edit dialog;
  *   2) Download multi edit dialog (edit multiple items);
- *   3) Download merge dialog.
+ *   3) Download merge dialog;
+ *   4) Download split dialog;
+ *   5) History edit dialog.
  */
  
 /*** DOWNLOAD EDIT DIALOG ************************************************************/
@@ -39,6 +41,7 @@ var DownloadsEditDialog = (new function($)
 	var $DownloadsEditDialog;
 	var $DownloadsLogTable;
 	var $DownloadsFileTable;
+	var $DownloadsEdit_ParamData;
 	
 	// State
 	var curGroup;
@@ -52,6 +55,7 @@ var DownloadsEditDialog = (new function($)
 	this.init = function()
 	{
 		$DownloadsEditDialog = $('#DownloadsEditDialog');
+		$DownloadsEdit_ParamData = $('#DownloadsEdit_ParamData');
 
 		$('#DownloadsEdit_Save').click(saveChanges);
 		$('#DownloadsEdit_Pause').click(itemPause);
@@ -96,6 +100,7 @@ var DownloadsEditDialog = (new function($)
 			// cleanup
 			$DownloadsLogTable.fasttable('update', []);
 			$DownloadsFileTable.fasttable('update', []);
+			$DownloadsEdit_ParamData.empty();
 			// resume updates
 			Refresher.resume();
 		});
@@ -183,8 +188,7 @@ var DownloadsEditDialog = (new function($)
 		$DownloadsLogTable.fasttable('update', []);
 		$DownloadsFileTable.fasttable('update', []);
 
-		var postParamConfig = Options.postParamConfig;
-		defineBuiltinParams(postParamConfig);
+		var postParamConfig = ParamTab.createPostParamConfig();
 		
 		Util.show('#DownloadsEdit_NZBNameReadonly', group.postprocess);
 		Util.show('#DownloadsEdit_CancelPPGroup', group.postprocess);
@@ -192,7 +196,7 @@ var DownloadsEditDialog = (new function($)
 		Util.show('#DownloadsEdit_PauseGroup', !group.postprocess);
 		Util.show('#DownloadsEdit_ResumeGroup', false);
 		Util.show('#DownloadsEdit_Save', !group.postprocess);
-		var postParam = postParamConfig && postParamConfig.length > 0;
+		var postParam = postParamConfig[0].options.length > 0;
 		var postLog = group.postprocess && group.post.Log.length > 0;
 		Util.show('#DownloadsEdit_Param', postParam);
 		Util.show('#DownloadsEdit_Log', postLog);
@@ -220,7 +224,7 @@ var DownloadsEditDialog = (new function($)
 
 		if (postParam)
 		{
-			buildPostParamTab(postParamConfig);
+			postParams = ParamTab.buildPostParamTab($DownloadsEdit_ParamData, postParamConfig, curGroup.Parameters);
 		}
 
 		enableAllButtons();
@@ -433,78 +437,9 @@ var DownloadsEditDialog = (new function($)
 
 	/*** TAB: POST-PROCESSING PARAMETERS **************************************************/
 
-	function buildPostParamTab(postParamConfig)
-	{
-		postParams = $.extend(true, [], postParamConfig);
-		Options.mergeValues(postParams, curGroup.Parameters);
-		var content = Config.buildOptionsContent(postParams[0]);
-		var configData = $('#DownloadsEdit_ParamData');
-		configData.empty();
-		configData.append(content);
-		configData.addClass('retain-margin');
-
-		var lastClass = '';
-		var lastDiv = null;
-		for (var i=0; i < configData.children().length; i++)
-		{
-			var div = $(configData.children()[i]);
-			var divClass = div.attr('class');
-			if (divClass != lastClass && lastClass != '')
-			{
-				lastDiv.addClass('wants-divider');
-			}
-			lastDiv = div;
-			lastClass = divClass;
-		}
-	}
-	
-	function defineBuiltinParams(postParamConfig)
-	{
-		if (Options.option('Unpack') !== 'yes')
-		{
-			return;
-		}
-		
-	    if (postParamConfig.length == 0)
-	    {
-	        postParamConfig.push({category: 'P', postparam: true, options: []});
-	    }
-	    
-		if (!Options.findOption(postParamConfig[0].options, '*Unpack:'))
-		{
-			postParamConfig[0].options.unshift({name: '*Unpack:Password', value: '', defvalue: '', select: [], caption: 'Password', sectionId: '_Unpack_', description: 'Unpack-password for encrypted archives.'});
-			postParamConfig[0].options.unshift({name: '*Unpack:', value: '', defvalue: 'yes', select: ['yes', 'no'], caption: 'Unpack', sectionId: '_Unpack_', description: 'Unpack rar and 7-zip archives.'});
-		}
-	}
-	
-	function prepareParamRequest()
-	{
-		var request = [];
-		for (var i=0; i < postParams.length; i++)
-		{
-			var section = postParams[i];
-			for (var j=0; j < section.options.length; j++)
-			{
-				var option = section.options[j];
-				if (!option.template && !section.hidden)
-				{
-					var oldValue = option.value;
-					var newValue = Config.getOptionValue(option);
-					if (oldValue != newValue && !(oldValue === '' && newValue === option.defvalue))
-					{
-						var opt = option.name + '=' + newValue;
-						request.push(opt);
-					}
-				}
-			}
-		}
-
-		return request;
-	}
-
 	function saveParam()
 	{
-		var paramList = prepareParamRequest();
+		var paramList = ParamTab.prepareParamRequest(postParams);
 		saveNextParam(paramList);
 	}
 
@@ -857,6 +792,89 @@ var DownloadsEditDialog = (new function($)
 }(jQuery));
 
 
+/*** PARAM TAB FOR EDIT DIALOGS ************************************************************/
+
+var ParamTab = (new function($)
+{
+	'use strict'
+
+	this.buildPostParamTab = function(configData, postParamConfig, parameters)
+	{
+		var postParams = $.extend(true, [], postParamConfig);
+		Options.mergeValues(postParams, parameters);
+		var content = Config.buildOptionsContent(postParams[0]);
+		configData.empty();
+		configData.append(content);
+		configData.addClass('retain-margin');
+
+		var lastClass = '';
+		var lastDiv = null;
+		for (var i=0; i < configData.children().length; i++)
+		{
+			var div = $(configData.children()[i]);
+			var divClass = div.attr('class');
+			if (divClass != lastClass && lastClass != '')
+			{
+				lastDiv.addClass('wants-divider');
+			}
+			lastDiv = div;
+			lastClass = divClass;
+		}
+		return postParams;
+	}
+
+	this.createPostParamConfig = function()
+	{
+		var postParamConfig = Options.postParamConfig;
+		defineBuiltinParams(postParamConfig);
+		return postParamConfig;
+	}
+	
+	function defineBuiltinParams(postParamConfig)
+	{
+		if (Options.option('Unpack') !== 'yes')
+		{
+			return;
+		}
+		
+	    if (postParamConfig.length == 0)
+	    {
+	        postParamConfig.push({category: 'P', postparam: true, options: []});
+	    }
+	    
+		if (!Options.findOption(postParamConfig[0].options, '*Unpack:'))
+		{
+			postParamConfig[0].options.unshift({name: '*Unpack:Password', value: '', defvalue: '', select: [], caption: 'Password', sectionId: '_Unpack_', description: 'Unpack-password for encrypted archives.'});
+			postParamConfig[0].options.unshift({name: '*Unpack:', value: '', defvalue: 'yes', select: ['yes', 'no'], caption: 'Unpack', sectionId: '_Unpack_', description: 'Unpack rar and 7-zip archives.'});
+		}
+	}
+	
+	this.prepareParamRequest = function(postParams)
+	{
+		var request = [];
+		for (var i=0; i < postParams.length; i++)
+		{
+			var section = postParams[i];
+			for (var j=0; j < section.options.length; j++)
+			{
+				var option = section.options[j];
+				if (!option.template && !section.hidden)
+				{
+					var oldValue = option.value;
+					var newValue = Config.getOptionValue(option);
+					if (oldValue != newValue && !(oldValue === '' && newValue === option.defvalue))
+					{
+						var opt = option.name + '=' + newValue;
+						request.push(opt);
+					}
+				}
+			}
+		}
+		return request;
+	}
+}(jQuery));
+
+
 /*** DOWNLOAD MULTI EDIT DIALOG ************************************************************/
 
 var DownloadsMultiDialog = (new function($)
@@ -1175,4 +1193,225 @@ var DownloadsSplitDialog = (new function($)
 		Refresher.update();
 		Notification.show(result ? '#Notif_Downloads_Splitted' : '#Notif_Downloads_SplitError');
 	}
+}(jQuery));
+
+
+/*** EDIT HISTORY DIALOG *************************************************************************/
+
+var HistoryEditDialog = (new function()
+{
+	'use strict'
+
+	// Controls
+	var $HistoryEditDialog;
+	var $HistoryEdit_ParamData;
+
+	// State
+	var curHist;
+	var notification = null;
+	var postParams = [];
+	var lastPage;
+	var lastFullscreen;
+	var saveParamCompleted;
+
+	this.init = function()
+	{
+		$HistoryEditDialog = $('#HistoryEditDialog');
+		$HistoryEdit_ParamData = $('#HistoryEdit_ParamData');
+
+		$('#HistoryEdit_Save').click(saveChanges);
+		$('#HistoryEdit_Delete').click(itemDelete);
+		$('#HistoryEdit_Return').click(itemReturn);
+		$('#HistoryEdit_Reprocess').click(itemReprocess);
+		$('#HistoryEdit_Param').click(tabClick);
+		$('#HistoryEdit_Back').click(backClick);
+		
+		$HistoryEditDialog.on('hidden', function ()
+		{
+			$HistoryEdit_ParamData.empty();
+			// resume updates
+			Refresher.resume();
+		});
+		
+		TabDialog.extend($HistoryEditDialog);
+	}
+
+	this.showModal = function(hist)
+	{
+		Refresher.pause();
+
+		curHist = hist;
+
+		var status;
+		if (hist.Kind === 'URL')
+		{
+			status = HistoryUI.buildStatus(hist.status, '');
+		}
+		else
+		{
+			status = HistoryUI.buildStatus(hist.ParStatus, 'Par: ') + ' ' +
+				(Options.option('Unpack') == 'yes' || hist.UnpackStatus != 'NONE' ? HistoryUI.buildStatus(hist.UnpackStatus, 'Unpack: ') + ' ' : '')  +
+				(hist.MoveStatus === "FAILURE" ? HistoryUI.buildStatus(hist.MoveStatus, 'Move: ') + ' ' : "");
+			for (var i=0; i<hist.ScriptStatuses.length; i++)
+			{
+				var scriptStatus = hist.ScriptStatuses[i];
+				status += HistoryUI.buildStatus(scriptStatus.Status, Options.shortScriptName(scriptStatus.Name) + ': ') + ' ';
+			}
+		}
+
+		$('#HistoryEdit_Title').text(Util.formatNZBName(hist.Name));
+		if (hist.Kind === 'URL')
+		{
+			$('#HistoryEdit_Title').html($('#HistoryEdit_Title').html() + '&nbsp;' + '<span class="label label-info">URL</span>');
+		}
+
+		$('#HistoryEdit_Status').html(status);
+		$('#HistoryEdit_Category').text(hist.Category !== '' ? hist.Category : '<empty>');
+		$('#HistoryEdit_Path').text(hist.DestDir);
+
+		var size = Util.formatSizeMB(hist.FileSizeMB, hist.FileSizeLo);
+
+		var table = '';
+		table += '<tr><td>Total</td><td class="text-right">' + size + '</td></tr>';
+		table += '<tr><td>Files (total/parked)</td><td class="text-right">' + hist.FileCount + '/' + hist.RemainingFileCount + '</td></tr>';
+		$('#HistoryEdit_Statistics').html(table);
+
+		Util.show($('#HistoryEdit_ReturnGroup'), hist.RemainingFileCount > 0 || hist.Kind === 'URL');
+		Util.show($('#HistoryEdit_PathGroup, #HistoryEdit_StatisticsGroup, #HistoryEdit_ReprocessGroup'), hist.Kind === 'NZB');
+
+		var postParamConfig = ParamTab.createPostParamConfig();
+		var postParam = hist.Kind === 'NZB' && postParamConfig[0].options.length > 0;
+		Util.show('#HistoryEdit_Param', postParam);
+		Util.show('#HistoryEdit_Save', postParam);
+		$('#HistoryEdit_Close').toggleClass('btn-primary', !postParam);
+		
+		if (postParam)
+		{
+			postParams = ParamTab.buildPostParamTab($HistoryEdit_ParamData, postParamConfig, curHist.Parameters);
+		}
+		
+		enableAllButtons();
+		
+		$('#HistoryEdit_GeneralTab').show();
+		$('#HistoryEdit_ParamTab').hide();
+		$('#HistoryEdit_Back').hide();
+		$('#HistoryEdit_BackSpace').show();
+		$HistoryEditDialog.restoreTab();
+		
+		notification = null;
+		
+		$HistoryEditDialog.modal({backdrop: 'static'});
+	}
+
+	function tabClick(e)
+	{
+		e.preventDefault();
+
+		$('#HistoryEdit_Back').fadeIn(500);
+		$('#HistoryEdit_BackSpace').hide();
+		var tab = '#' + $(this).attr('data-tab');
+		lastPage = $(tab);
+		lastFullscreen = ($(this).attr('data-fullscreen') === 'true') && !UISettings.miniTheme;
+		
+		$HistoryEditDialog.switchTab($('#HistoryEdit_GeneralTab'), lastPage, 
+			e.shiftKey || !UISettings.slideAnimation ? 0 : 500, 
+			{fullscreen: lastFullscreen, mini: UISettings.miniTheme});
+	}
+
+	function backClick(e)
+	{
+		e.preventDefault();
+		$('#HistoryEdit_Back').fadeOut(500, function()
+		{
+			$('#HistoryEdit_BackSpace').show();
+		});
+
+		$HistoryEditDialog.switchTab(lastPage, $('#HistoryEdit_GeneralTab'), 
+			e.shiftKey || !UISettings.slideAnimation ? 0 : 500,
+			{fullscreen: lastFullscreen, mini: UISettings.miniTheme, back: true});
+	}
+
+	function disableAllButtons()
+	{
+		$('#HistoryEditDialog .modal-footer .btn').attr('disabled', 'disabled');
+		setTimeout(function()
+		{
+			$('#HistoryEdit_Transmit').show();
+		}, 500);
+	}
+
+	function enableAllButtons()
+	{
+		$('#HistoryEditDialog .modal-footer .btn').removeAttr('disabled');
+		$('#HistoryEdit_Transmit').hide();
+	}
+
+	function itemDelete()
+	{
+		disableAllButtons();
+		notification = '#Notif_History_Deleted';
+		RPC.call('editqueue', ['HistoryDelete', 0, '', [curHist.ID]], completed);
+	}
+
+	function itemReturn()
+	{
+		disableAllButtons();
+		notification = '#Notif_History_Returned';
+		RPC.call('editqueue', ['HistoryReturn', 0, '', [curHist.ID]], completed);
+	}
+
+	function itemReprocess()
+	{
+		disableAllButtons();
+		saveParam(function()
+			{
+				notification = '#Notif_History_Reproces';
+				RPC.call('editqueue', ['HistoryProcess', 0, '', [curHist.ID]], completed);
+			});
+	}
+
+	function completed()
+	{
+		$HistoryEditDialog.modal('hide');
+		Refresher.update();
+		if (notification)
+		{
+			Notification.show(notification);
+			notification = null;
+		}
+	}
+	
+	function saveChanges()
+	{
+		disableAllButtons();
+		notification = null;
+		saveParam(completed);
+	}
+	
+	/*** TAB: POST-PROCESSING PARAMETERS **************************************************/
+
+	function saveParam(_saveParamCompleted)
+	{
+		saveParamCompleted = _saveParamCompleted;
+		var paramList = ParamTab.prepareParamRequest(postParams);
+		saveNextParam(paramList);
+	}
+
+	function saveNextParam(paramList)
+	{
+		if (paramList.length > 0)
+		{
+			RPC.call('editqueue', ['HistorySetParameter', 0, paramList[0], [curHist.ID]], function()
+			{
+				notification = '#Notif_History_Saved';
+				paramList.shift();
+				saveNextParam(paramList);
+			})
+		}
+		else
+		{
+			saveParamCompleted();
+		}
+	}
+	
 }(jQuery));

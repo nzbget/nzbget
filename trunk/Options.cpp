@@ -1497,6 +1497,22 @@ void Options::InitCommandLine(int argc, char* argv[])
 					{
 						m_iEditQueueAction = eRemoteEditActionHistoryProcess;
 					}
+					else if (!strcasecmp(optarg, "O"))
+					{
+						m_iEditQueueAction = eRemoteEditActionHistorySetParameter;
+						
+						optind++;
+						if (optind > argc)
+						{
+							abort("FATAL ERROR: Could not parse value of option 'E'\n");
+						}
+						m_szEditQueueText = strdup(argv[optind-1]);
+						
+						if (!strchr(m_szEditQueueText, '='))
+						{
+							abort("FATAL ERROR: Could not parse value of option 'E'\n");
+						}
+					}
 					else
 					{
 						abort("FATAL ERROR: Could not parse value of option 'E'\n");
@@ -1772,23 +1788,23 @@ void Options::PrintUsage(char* com)
 		"              O             Edit post-processor-queue\n"
 		"              H             Edit history\n"
 		"    <action> is one of:\n"
-		"       <+offset|-offset>    Move file(s)/group(s)/post-job in queue relative to\n"
+		"       <+offset|-offset>    Move files/groups/post-job in queue relative to\n"
 		"                            current position, offset is an integer value\n"
-		"       T                    Move file(s)/group(s)/post-job to top of queue\n"
-		"       B                    Move file(s)/group(s)/post-job to bottom of queue\n"
+		"       T                    Move files/groups/post-job to top of queue\n"
+		"       B                    Move files/groups/post-job to bottom of queue\n"
 		"       P                    Pause file(s)/group(s)/\n"
 		"                            Postprocess history-item(s) again\n"
-		"       U                    Resume (unpause) file(s)/group(s)\n"
+		"       U                    Resume (unpause) files/groups\n"
 		"       A                    Pause all pars (for groups)\n"
 		"       R                    Pause extra pars (for groups)/\n"
-		"                            Return history-item(s) back to download queue\n"
-		"       D                    Delete file(s)/group(s)/post-job(s)/history-item(s)\n"
+		"                            Return history-items back to download queue\n"
+		"       D                    Delete files/groups/post-jobs/history-items\n"
 		"       C <name>             Set category (for groups)\n"
 		"       N <name>             Rename (for groups)\n"
 		"       M                    Merge (for groups)\n"
 		"       S <name>             Split - create new group from selected files\n"
-		"       O <name>=<value>     Set post-process parameter (for groups)\n"
-		"       I <priority>         Set priority (signed integer) for file(s)/group(s)\n"
+		"       O <name>=<value>     Set post-process parameter (for groups/history)\n"
+		"       I <priority>         Set priority (signed integer) for files/groups\n"
 		"    <IDs>                   Comma-separated list of file-ids or ranges\n"
 		"                            of file-ids, e. g.: 1-5,3,10-22\n"
 		"    <Names>                 List of names (with options \"FN\" and \"GN\"),\n"

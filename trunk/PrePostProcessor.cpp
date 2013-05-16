@@ -902,7 +902,7 @@ void PrePostProcessor::CheckScheduledResume()
 	}
 }
 
-bool PrePostProcessor::QueueEditList(IDList* pIDList, EEditAction eAction, int iOffset)
+bool PrePostProcessor::QueueEditList(IDList* pIDList, EEditAction eAction, int iOffset, const char* szText)
 {
 	debug("Edit-command for post-processor received");
 	switch (eAction)
@@ -916,11 +916,10 @@ bool PrePostProcessor::QueueEditList(IDList* pIDList, EEditAction eAction, int i
 			return PostQueueDelete(pIDList);
 
 		case eaHistoryDelete:
-			return HistoryDelete(pIDList);
-
 		case eaHistoryReturn:
 		case eaHistoryProcess:
-			return HistoryReturn(pIDList, eAction == eaHistoryProcess);
+		case eaHistorySetParameter:
+			return HistoryEdit(pIDList, eAction, iOffset, szText);
 
 		default:
 			return false;
@@ -1054,7 +1053,7 @@ bool PrePostProcessor::PostQueueMove(IDList* pIDList, EEditAction eAction, int i
 	return bOK;
 }
 
-bool PrePostProcessor::HistoryDelete(IDList* pIDList)
+bool PrePostProcessor::HistoryEdit(IDList* pIDList, EEditAction eAction, int iOffset, const char* szText)
 {
 	bool bOK = false;
 
@@ -1068,39 +1067,26 @@ bool PrePostProcessor::HistoryDelete(IDList* pIDList)
 			HistoryInfo* pHistoryInfo = *itHistory;
 			if (pHistoryInfo->GetID() == iID)
 			{
-				char szNiceName[1024];
-				pHistoryInfo->GetName(szNiceName, 1024);
-				info("Deleting %s from history", szNiceName);
-
-				if (pHistoryInfo->GetKind() == HistoryInfo::hkNZBInfo)
+				switch (eAction)
 				{
-					NZBInfo* pNZBInfo = pHistoryInfo->GetNZBInfo();
+					case eaHistoryDelete:
+						HistoryDelete(pDownloadQueue, itHistory, pHistoryInfo);
+						break;
 
-					// delete parked files
-					int index = 0;
-					for (FileQueue::iterator it = pDownloadQueue->GetParkedFiles()->begin(); it != pDownloadQueue->GetParkedFiles()->end(); )
-					{
-						FileInfo* pFileInfo = *it;
-						if (pFileInfo->GetNZBInfo() == pNZBInfo)
-						{
-							pDownloadQueue->GetParkedFiles()->erase(it);
-							if (g_pOptions->GetSaveQueue() && g_pOptions->GetServerMode())
-							{
-								g_pDiskState->DiscardFile(pFileInfo);
-							}
-							delete pFileInfo;
-							it = pDownloadQueue->GetParkedFiles()->begin() + index;
-						}
-						else
-						{
-							it++;
-							index++;
-						}
-					}
+					case eaHistoryReturn:
+					case eaHistoryProcess:
+						HistoryReturn(pDownloadQueue, itHistory, pHistoryInfo, eAction == eaHistoryProcess);
+						break;
+
+					case eaHistorySetParameter:
+						HistorySetParameter(pHistoryInfo, szText);
+						break;
+						
+					default:
+						// nothing, just to avoid compiler warning
+						break;
 				}
 
-				pDownloadQueue->GetHistoryList()->erase(itHistory);
-				delete pHistoryInfo;
 				bOK = true;
 				break;
 			}
@@ -1117,113 +1103,152 @@ bool PrePostProcessor::HistoryDelete(IDList* pIDList)
 	return bOK;
 }
 
-bool PrePostProcessor::HistoryReturn(IDList* pIDList, bool bReprocess)
+void PrePostProcessor::HistoryDelete(DownloadQueue* pDownloadQueue, HistoryList::iterator itHistory, HistoryInfo* pHistoryInfo)
 {
-	bool bOK = false;
+	char szNiceName[1024];
+	pHistoryInfo->GetName(szNiceName, 1024);
+	info("Deleting %s from history", szNiceName);
 
-	DownloadQueue* pDownloadQueue = g_pQueueCoordinator->LockQueue();
-
-	for (IDList::iterator itID = pIDList->begin(); itID != pIDList->end(); itID++)
+	if (pHistoryInfo->GetKind() == HistoryInfo::hkNZBInfo)
 	{
-		int iID = *itID;
-		for (HistoryList::iterator itHistory = pDownloadQueue->GetHistoryList()->begin(); itHistory != pDownloadQueue->GetHistoryList()->end(); itHistory++)
+		NZBInfo* pNZBInfo = pHistoryInfo->GetNZBInfo();
+
+		// delete parked files
+		int index = 0;
+		for (FileQueue::iterator it = pDownloadQueue->GetParkedFiles()->begin(); it != pDownloadQueue->GetParkedFiles()->end(); )
 		{
-			HistoryInfo* pHistoryInfo = *itHistory;
-			if (pHistoryInfo->GetID() == iID)
+			FileInfo* pFileInfo = *it;
+			if (pFileInfo->GetNZBInfo() == pNZBInfo)
 			{
-				char szNiceName[1024];
-				pHistoryInfo->GetName(szNiceName, 1024);
-				debug("Returning %s from history back to download queue", szNiceName);
-				bool bUnparked = false;
-
-				if (bReprocess && pHistoryInfo->GetKind() != HistoryInfo::hkNZBInfo)
+				pDownloadQueue->GetParkedFiles()->erase(it);
+				if (g_pOptions->GetSaveQueue() && g_pOptions->GetServerMode())
 				{
-					error("Could not restart postprocessing for %s: history item has wrong type", szNiceName);
-					break;
+					g_pDiskState->DiscardFile(pFileInfo);
 				}
-
-				if (pHistoryInfo->GetKind() == HistoryInfo::hkNZBInfo)
-				{
-					NZBInfo* pNZBInfo = pHistoryInfo->GetNZBInfo();
-
-					// unpark files
-					int index = 0;
-					for (FileQueue::reverse_iterator it = pDownloadQueue->GetParkedFiles()->rbegin(); it != pDownloadQueue->GetParkedFiles()->rend(); )
-					{
-						FileInfo* pFileInfo = *it;
-						if (pFileInfo->GetNZBInfo() == pNZBInfo)
-						{
-							detail("Unpark file %s", pFileInfo->GetFilename());
-							pDownloadQueue->GetParkedFiles()->erase(pDownloadQueue->GetParkedFiles()->end() - 1 - index);
-							pDownloadQueue->GetFileQueue()->push_front(pFileInfo);
-							bUnparked = true;
-							it = pDownloadQueue->GetParkedFiles()->rbegin() + index;
-						}
-						else
-						{
-							it++;
-							index++;
-						}
-					}
-
-					// reset postprocessing status variables
-					pNZBInfo->SetPostProcess(false);
-					pNZBInfo->SetParCleanup(false);
-					if (!pNZBInfo->GetUnpackCleanedUpDisk())
-					{
-						pNZBInfo->SetParStatus(NZBInfo::psNone);
-						pNZBInfo->SetRenameStatus(NZBInfo::rsNone);
-						pNZBInfo->SetUnpackStatus(NZBInfo::usNone);
-						pNZBInfo->SetCleanupStatus(NZBInfo::csNone);
-					}
-					pNZBInfo->GetScriptStatuses()->Clear();
-					pNZBInfo->SetParkedFileCount(0);
-				}
-
-				if (pHistoryInfo->GetKind() == HistoryInfo::hkUrlInfo)
-				{
-					UrlInfo* pUrlInfo = pHistoryInfo->GetUrlInfo();
-					pHistoryInfo->DiscardUrlInfo();
-					pUrlInfo->SetStatus(UrlInfo::aiUndefined);
-					pDownloadQueue->GetUrlQueue()->push_back(pUrlInfo);
-					bUnparked = true;
-				}
-
-				if (bUnparked || bReprocess)
-				{
-					pDownloadQueue->GetHistoryList()->erase(itHistory);
-					// the object "pHistoryInfo" is released few lines later, after the call to "NZBDownloaded"
-					info("%s returned from history back to download queue", szNiceName);
-					bOK = true;
-				}
-				else
-				{
-					warn("Could not return %s back from history to download queue: history item does not have any files left for download", szNiceName);
-				}
-
-				if (bReprocess)
-				{
-					// start postprocessing
-					debug("Restarting postprocessing for %s", szNiceName);
-					NZBDownloaded(pDownloadQueue, pHistoryInfo->GetNZBInfo());
-				}
-
-				if (bUnparked || bReprocess)
-				{
-					delete pHistoryInfo;
-				}
-
-				break;
+				delete pFileInfo;
+				it = pDownloadQueue->GetParkedFiles()->begin() + index;
+			}
+			else
+			{
+				it++;
+				index++;
 			}
 		}
 	}
 
-	if (bOK)
+	pDownloadQueue->GetHistoryList()->erase(itHistory);
+	delete pHistoryInfo;
+}
+
+void PrePostProcessor::HistoryReturn(DownloadQueue* pDownloadQueue, HistoryList::iterator itHistory, HistoryInfo* pHistoryInfo, bool bReprocess)
+{
+	char szNiceName[1024];
+	pHistoryInfo->GetName(szNiceName, 1024);
+	debug("Returning %s from history back to download queue", szNiceName);
+	bool bUnparked = false;
+
+	if (bReprocess && pHistoryInfo->GetKind() != HistoryInfo::hkNZBInfo)
 	{
-		SaveQueue(pDownloadQueue);
+		error("Could not restart postprocessing for %s: history item has wrong type", szNiceName);
+		return;
 	}
 
-	g_pQueueCoordinator->UnlockQueue();
+	if (pHistoryInfo->GetKind() == HistoryInfo::hkNZBInfo)
+	{
+		NZBInfo* pNZBInfo = pHistoryInfo->GetNZBInfo();
 
-	return bOK;
+		// unpark files
+		int index = 0;
+		for (FileQueue::reverse_iterator it = pDownloadQueue->GetParkedFiles()->rbegin(); it != pDownloadQueue->GetParkedFiles()->rend(); )
+		{
+			FileInfo* pFileInfo = *it;
+			if (pFileInfo->GetNZBInfo() == pNZBInfo)
+			{
+				detail("Unpark file %s", pFileInfo->GetFilename());
+				pDownloadQueue->GetParkedFiles()->erase(pDownloadQueue->GetParkedFiles()->end() - 1 - index);
+				pDownloadQueue->GetFileQueue()->push_front(pFileInfo);
+				bUnparked = true;
+				it = pDownloadQueue->GetParkedFiles()->rbegin() + index;
+			}
+			else
+			{
+				it++;
+				index++;
+			}
+		}
+
+		// reset postprocessing status variables
+		pNZBInfo->SetPostProcess(false);
+		pNZBInfo->SetParCleanup(false);
+		if (!pNZBInfo->GetUnpackCleanedUpDisk())
+		{
+			pNZBInfo->SetParStatus(NZBInfo::psNone);
+			pNZBInfo->SetRenameStatus(NZBInfo::rsNone);
+			pNZBInfo->SetUnpackStatus(NZBInfo::usNone);
+			pNZBInfo->SetCleanupStatus(NZBInfo::csNone);
+		}
+		pNZBInfo->GetScriptStatuses()->Clear();
+		pNZBInfo->SetParkedFileCount(0);
+	}
+
+	if (pHistoryInfo->GetKind() == HistoryInfo::hkUrlInfo)
+	{
+		UrlInfo* pUrlInfo = pHistoryInfo->GetUrlInfo();
+		pHistoryInfo->DiscardUrlInfo();
+		pUrlInfo->SetStatus(UrlInfo::aiUndefined);
+		pDownloadQueue->GetUrlQueue()->push_back(pUrlInfo);
+		bUnparked = true;
+	}
+
+	if (bUnparked || bReprocess)
+	{
+		pDownloadQueue->GetHistoryList()->erase(itHistory);
+		// the object "pHistoryInfo" is released few lines later, after the call to "NZBDownloaded"
+		info("%s returned from history back to download queue", szNiceName);
+	}
+	else
+	{
+		warn("Could not return %s back from history to download queue: history item does not have any files left for download", szNiceName);
+	}
+
+	if (bReprocess)
+	{
+		// start postprocessing
+		debug("Restarting postprocessing for %s", szNiceName);
+		NZBDownloaded(pDownloadQueue, pHistoryInfo->GetNZBInfo());
+	}
+
+	if (bUnparked || bReprocess)
+	{
+		delete pHistoryInfo;
+	}
+}
+
+void PrePostProcessor::HistorySetParameter(HistoryInfo* pHistoryInfo, const char* szText)
+{
+	char szNiceName[1024];
+	pHistoryInfo->GetName(szNiceName, 1024);
+	debug("Setting post-process-parameter '%s' for '%s'", szText, szNiceName);
+
+	if (pHistoryInfo->GetKind() != HistoryInfo::hkNZBInfo)
+	{
+		error("Could not set post-process-parameter for %s: history item has wrong type", szNiceName);
+		return;
+	}
+
+	char* szStr = strdup(szText);
+
+	char* szValue = strchr(szStr, '=');
+	if (szValue)
+	{
+		*szValue = '\0';
+		szValue++;
+		pHistoryInfo->GetNZBInfo()->SetParameter(szStr, szValue);
+	}
+	else
+	{
+		error("Could not set post-process-parameter for %s: invalid argument: %s", pHistoryInfo->GetNZBInfo()->GetName(), szText);
+	}
+
+	free(szStr);
 }

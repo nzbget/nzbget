@@ -674,7 +674,8 @@ form {
 	margin-bottom: 0px;
 }
 
-#DownloadsEdit_PostParamData {
+#DownloadsEdit_PostParamData,
+#HistoryEdit_PostParamData {
 	padding-bottom: 1px;
 }
 
@@ -1228,6 +1229,7 @@ div.ConfigFooter {
 }
 
 #DownloadsEdit_ParamTab div.control-group.wants-divider,
+#HistoryEdit_ParamTab div.control-group.wants-divider,
 #ConfigContent div.control-group,
 #ConfigContent.search div.control-group.multiset {
 	border-bottom: 1px solid #eeeeee;

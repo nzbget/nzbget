@@ -149,10 +149,6 @@ var Frontend = (new function($)
 		Options.init();
 		Status.init();
 		Downloads.init({ updateTabInfo: updateTabInfo });
-		DownloadsEditDialog.init();
-		DownloadsMultiDialog.init();
-		DownloadsMergeDialog.init();
-		DownloadsSplitDialog.init();
 		Messages.init({ updateTabInfo: updateTabInfo });
 		History.init({ updateTabInfo: updateTabInfo });
 		Upload.init();
@@ -160,6 +156,12 @@ var Frontend = (new function($)
 		ConfirmDialog.init();
 		ScriptListDialog.init();
 
+		DownloadsEditDialog.init();
+		DownloadsMultiDialog.init();
+		DownloadsMergeDialog.init();
+		DownloadsSplitDialog.init();
+		HistoryEditDialog.init();
+		
 		Refresher.init(RPCController.refresh);
 
 		$(window).resize(windowResized);
