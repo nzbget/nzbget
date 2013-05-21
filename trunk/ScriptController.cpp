@@ -936,8 +936,8 @@ ScriptStatus::EStatus PostScriptController::AnalyseExitCode(int iExitCode)
 #endif
 
 		default:
-			PrintMessage(Message::mkWarning, "%s terminated with unknown status", GetInfoName());
-			return ScriptStatus::srUnknown;
+			PrintMessage(Message::mkError, "%s failed (terminated with unknown status)", GetInfoName());
+			return ScriptStatus::srFailure;
 	}
 }
 

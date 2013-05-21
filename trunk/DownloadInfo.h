@@ -215,7 +215,6 @@ public:
 	enum EStatus
 	{
 		srNone,
-		srUnknown,
 		srFailure,
 		srSuccess
 	};

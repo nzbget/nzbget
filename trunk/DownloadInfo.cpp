@@ -158,9 +158,9 @@ ScriptStatus::EStatus ScriptStatusList::CalcTotalStatus()
 	for (iterator it = begin(); it != end(); it++)
 	{
 		ScriptStatus* pScriptStatus = *it;
-		// worst Status override better Status
+		// Failure-Status overrides Success-Status
 		if ((pScriptStatus->GetStatus() == ScriptStatus::srSuccess && eStatus == ScriptStatus::srNone) ||
-			(pScriptStatus->GetStatus() < ScriptStatus::srSuccess && (pScriptStatus->GetStatus() > eStatus || eStatus == ScriptStatus::srSuccess)))
+			(pScriptStatus->GetStatus() == ScriptStatus::srFailure))
 		{
 			eStatus = pScriptStatus->GetStatus();
 		}
