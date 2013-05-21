@@ -82,7 +82,7 @@ bool DiskState::SaveDownloadQueue(DownloadQueue* pDownloadQueue)
 		return false;
 	}
 
-	fprintf(outfile, "%s%i\n", FORMATVERSION_SIGNATURE, 24);
+	fprintf(outfile, "%s%i\n", FORMATVERSION_SIGNATURE, 25);
 
 	// save nzb-infos
 	SaveNZBList(pDownloadQueue, outfile);
@@ -136,7 +136,7 @@ bool DiskState::LoadDownloadQueue(DownloadQueue* pDownloadQueue)
 	char FileSignatur[128];
 	fgets(FileSignatur, sizeof(FileSignatur), infile);
 	int iFormatVersion = ParseFormatVersion(FileSignatur);
-	if (iFormatVersion < 3 || iFormatVersion > 24)
+	if (iFormatVersion < 3 || iFormatVersion > 25)
 	{
 		error("Could not load diskstate due to file version mismatch");
 		fclose(infile);
@@ -327,6 +327,7 @@ bool DiskState::LoadNZBList(DownloadQueue* pDownloadQueue, FILE* infile, int iFo
 		{
 			int iScriptStatus;
 			if (fscanf(infile, "%i\n", &iScriptStatus) != 1) goto error;
+			if (iScriptStatus > 1) iScriptStatus--;
 			pNZBInfo->GetScriptStatuses()->Add("SCRIPT", (ScriptStatus::EStatus)iScriptStatus);
 		}
 
@@ -355,6 +356,7 @@ bool DiskState::LoadNZBList(DownloadQueue* pDownloadQueue, FILE* infile, int iFo
 			pNZBInfo->SetRenameStatus((NZBInfo::ERenameStatus)iRenameStatus);
 			if (iFormatVersion < 23)
 			{
+				if (iScriptStatus > 1) iScriptStatus--;
 				pNZBInfo->GetScriptStatuses()->Add("SCRIPT", (ScriptStatus::EStatus)iScriptStatus);
 			}
 		}
@@ -435,6 +437,7 @@ bool DiskState::LoadNZBList(DownloadQueue* pDownloadQueue, FILE* infile, int iFo
 				{
 					szScriptName++;
 					int iStatus = atoi(buf);
+					if (iStatus > 1 && iFormatVersion < 25) iStatus--;
 					pNZBInfo->GetScriptStatuses()->Add(szScriptName, (ScriptStatus::EStatus)iStatus);
 				}
 			}
