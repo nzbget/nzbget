@@ -1,7 +1,7 @@
 /*
  * This file is part of nzbget
  *
- * Copyright (C) 2012 Andrey Prygunkov <hugbug@users.sourceforge.net>
+ * Copyright (C) 2012-2013 Andrey Prygunkov <hugbug@users.sourceforge.net>
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -405,7 +405,7 @@ var RPC = (new function($)
 		var _this = this;
 		
 		var request = JSON.stringify({nocache: new Date().getTime(), method: method, params: params});
-		var xhr = createXMLHttpRequest();
+		var xhr = new XMLHttpRequest();
 
 		xhr.open('post', this.rpcUrl);
 
@@ -471,41 +471,5 @@ var RPC = (new function($)
 			}
 		};
 		xhr.send(request);
-	}
-	
-	function createXMLHttpRequest()
-	{
-		var xmlHttp;
-
-		if (window.XMLHttpRequest)
-		{
-			xmlHttp = new XMLHttpRequest();
-		}
-		else if (window.ActiveXObject)
-		{
-			try
-			{
-				xmlHttp = new ActiveXObject("Msxml2.XMLHTTP");
-			}
-			catch(e)
-			{
-				try
-				{
-					xmlHttp = new ActiveXObject("Microsoft.XMLHTTP");
-				}
-				catch(e)
-				{
-					throw(e);
-				}
-			}
-		}
-
-		if (xmlHttp==null)
-		{
-			alert("Your browser does not support XMLHTTP.");
-			throw("Your browser does not support XMLHTTP.");
-		}
-
-		return xmlHttp;
 	}
 }(jQuery));
