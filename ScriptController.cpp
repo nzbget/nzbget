@@ -870,6 +870,10 @@ void PostScriptController::PrepareParams(const char* szScriptName)
 	strncpy(szDestDir, m_pPostInfo->GetNZBInfo()->GetDestDir(), 1024);
 	szDestDir[1024-1] = '\0';
 	
+	char szNZBID[10];
+	snprintf(szNZBID, 10, "%i", m_pPostInfo->GetNZBInfo()->GetID());
+	szNZBID[10-1] = '\0';
+
 	char szNZBFilename[1024];
 	strncpy(szNZBFilename, m_pPostInfo->GetNZBInfo()->GetFilename(), 1024);
 	szNZBFilename[1024-1] = '\0';
@@ -882,6 +886,7 @@ void PostScriptController::PrepareParams(const char* szScriptName)
 	ResetEnv();
 
 	SetEnvVar("NZBPP_NZBNAME", szNZBName);
+	SetEnvVar("NZBPP_NZBID", szNZBID);
 	SetEnvVar("NZBPP_DIRECTORY", szDestDir);
 	SetEnvVar("NZBPP_NZBFILENAME", szNZBFilename);
 	SetEnvVar("NZBPP_PARSTATUS", szParStatus);
