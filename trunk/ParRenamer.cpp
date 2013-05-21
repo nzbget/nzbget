@@ -162,7 +162,7 @@ void ParRenamer::Run()
 	}
 	else
 	{
-		PrintMessage(Message::mkInfo, "Could not rename any files for %s", m_szInfoName);
+		PrintMessage(Message::mkInfo, "No renamed files found for %s", m_szInfoName);
 	}
 
 	Cleanup();
