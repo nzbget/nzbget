@@ -356,7 +356,7 @@ void DownloadBinCommand::Execute()
 	
 	if (pNZBFile)
 	{
-		info("Request: Queue collection %s", DownloadRequest.m_szFilename);
+		info("Queue collection %s", DownloadRequest.m_szFilename);
 		
 		for (NZBFile::FileInfos::iterator it = pNZBFile->GetFileInfos()->begin(); it != pNZBFile->GetFileInfos()->end(); it++)
 		{

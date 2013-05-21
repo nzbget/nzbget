@@ -1506,7 +1506,7 @@ void DownloadXmlCommand::Execute()
 
 	if (pNZBFile)
 	{
-		info("Request: Queue collection %s", szFileName);
+		info("Queue collection %s", szFileName);
 
 		for (NZBFile::FileInfos::iterator it = pNZBFile->GetFileInfos()->begin(); it != pNZBFile->GetFileInfos()->end(); it++)
 		{
