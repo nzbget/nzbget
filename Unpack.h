@@ -62,7 +62,10 @@ private:
 	bool				m_bInterDir;
 	bool				m_bAllOKMessageReceived;
 	bool				m_bNoFilesMessageReceived;
+	bool				m_bHasParFiles;
+	bool				m_bHasBrokenFiles;
 	bool				m_bHasRarFiles;
+	bool				m_bHasNonStdRarFiles;
 	bool				m_bHasSevenZipFiles;
 	bool				m_bHasSevenZipMultiFiles;
 	bool				m_bUnpackOK;
@@ -79,9 +82,8 @@ protected:
 	void				Completed();
 	void				CreateUnpackDir();
 	bool				Cleanup();
-	bool				HasParFiles();
-	bool				HasBrokenFiles();
-	void				CheckArchiveFiles();
+	void				CheckStateFiles();
+	void				CheckArchiveFiles(bool bScanNonStdFiles);
 	void				SetProgressLabel(const char* szProgressLabel);
 #ifndef DISABLE_PARCHECK
 	void				RequestParCheck(bool bRename);

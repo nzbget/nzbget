@@ -125,11 +125,13 @@ void UnpackController::Run()
 
 	snprintf(m_szInfoNameUp, 1024, "Unpack for %s", m_szName); // first letter in upper case
 	m_szInfoNameUp[1024-1] = '\0';
-	
+
+	CheckStateFiles();
+
 #ifndef DISABLE_PARCHECK
-	if (bUnpack && HasBrokenFiles() && m_pPostInfo->GetNZBInfo()->GetParStatus() <= NZBInfo::psSkipped && HasParFiles())
+	if (bUnpack && m_bHasBrokenFiles && m_pPostInfo->GetNZBInfo()->GetParStatus() <= NZBInfo::psSkipped && m_bHasParFiles)
 	{
-		info("%s has broken files", m_szName);
+		PrintMessage(Message::mkInfo, "%s has broken files", m_szName);
 		RequestParCheck(false);
 		m_pPostInfo->SetWorking(false);
 		return;
@@ -138,10 +140,13 @@ void UnpackController::Run()
 
 	if (bUnpack)
 	{
-		CheckArchiveFiles();
+		bool bScanNonStdFiles = m_pPostInfo->GetNZBInfo()->GetRenameStatus() > NZBInfo::rsSkipped ||
+			m_pPostInfo->GetNZBInfo()->GetParStatus() == NZBInfo::psSuccess ||
+			!m_bHasParFiles;
+		CheckArchiveFiles(bScanNonStdFiles);
 	}
 
-	if (bUnpack && (m_bHasRarFiles || m_bHasSevenZipFiles || m_bHasSevenZipMultiFiles))
+	if (bUnpack && (m_bHasRarFiles || m_bHasNonStdRarFiles || m_bHasSevenZipFiles || m_bHasSevenZipMultiFiles))
 	{
 		SetInfoName(m_szInfoName);
 		SetDefaultLogKind(g_pOptions->GetProcessLogKind());
@@ -154,7 +159,7 @@ void UnpackController::Run()
 		m_bUnpackOK = true;
 		m_bUnpackStartError = false;
 
-		if (m_bHasRarFiles)
+		if (m_bHasRarFiles || m_bHasNonStdRarFiles)
 		{
 			ExecuteUnrar();
 		}
@@ -176,7 +181,7 @@ void UnpackController::Run()
 		PrintMessage(Message::mkInfo, (bUnpack ? "Nothing to unpack for %s" : "Unpack for %s skipped"), m_szName);
 
 #ifndef DISABLE_PARCHECK
-		if (bUnpack && m_pPostInfo->GetNZBInfo()->GetParStatus() <= NZBInfo::psSkipped && HasParFiles())
+		if (bUnpack && m_pPostInfo->GetNZBInfo()->GetParStatus() <= NZBInfo::psSkipped && m_bHasParFiles)
 		{
 			RequestParCheck(m_pPostInfo->GetNZBInfo()->GetRenameStatus() <= NZBInfo::rsSkipped);
 		}
@@ -208,7 +213,7 @@ void UnpackController::ExecuteUnrar()
 		szArgs[3] = szPasswordParam;
 	}
 	szArgs[4] = "-o+";
-	szArgs[5] = "*.rar";
+	szArgs[5] = m_bHasNonStdRarFiles ? "*.*" : "*.rar";
 	szArgs[6] = m_szUnpackDir;
 	szArgs[7] = NULL;
 	SetArgs(szArgs, false);
@@ -296,7 +301,7 @@ void UnpackController::Completed()
 	else
 	{
 #ifndef DISABLE_PARCHECK
-		if (!m_bUnpackOK && m_pPostInfo->GetNZBInfo()->GetParStatus() <= NZBInfo::psSkipped && !m_bUnpackStartError && !GetTerminated() && HasParFiles())
+		if (!m_bUnpackOK && m_pPostInfo->GetNZBInfo()->GetParStatus() <= NZBInfo::psSkipped && !m_bUnpackStartError && !GetTerminated() && m_bHasParFiles)
 		{
 			RequestParCheck(false);
 		}
@@ -326,17 +331,14 @@ void UnpackController::RequestParCheck(bool bRename)
 }
 #endif
 
-bool UnpackController::HasParFiles()
-{
-	return ParCoordinator::FindMainPars(m_szDestDir, NULL);
-}
-
-bool UnpackController::HasBrokenFiles()
+void UnpackController::CheckStateFiles()
 {
 	char szBrokenLog[1024];
 	snprintf(szBrokenLog, 1024, "%s%c%s", m_szDestDir, PATH_SEPARATOR, "_brokenlog.txt");
 	szBrokenLog[1024-1] = '\0';
-	return Util::FileExists(szBrokenLog);
+	m_bHasBrokenFiles = Util::FileExists(szBrokenLog);
+
+	m_bHasParFiles = ParCoordinator::FindMainPars(m_szDestDir, NULL);
 }
 
 void UnpackController::CreateUnpackDir()
@@ -359,13 +361,15 @@ void UnpackController::CreateUnpackDir()
 }
 
 
-void UnpackController::CheckArchiveFiles()
+void UnpackController::CheckArchiveFiles(bool bScanNonStdFiles)
 {
 	m_bHasRarFiles = false;
+	m_bHasNonStdRarFiles = false;
 	m_bHasSevenZipFiles = false;
 	m_bHasSevenZipMultiFiles = false;
 
 	RegEx regExRar(".*\\.rar$");
+	RegEx regExRarMultiSeq(".*\\.(r|s)[0-9][0-9]$");
 	RegEx regExSevenZip(".*\\.7z$");
 	RegEx regExSevenZipMulti(".*\\.7z\\.[0-9]*$");
 
@@ -382,13 +386,31 @@ void UnpackController::CheckArchiveFiles()
 			{
 				m_bHasRarFiles = true;
 			}
-			if (regExSevenZip.Match(filename))
+			else if (regExSevenZip.Match(filename))
 			{
 				m_bHasSevenZipFiles = true;
 			}
-			if (regExSevenZipMulti.Match(filename))
+			else if (regExSevenZipMulti.Match(filename))
 			{
 				m_bHasSevenZipMultiFiles = true;
+			}
+			else if (bScanNonStdFiles && !m_bHasNonStdRarFiles && !regExRarMultiSeq.Match(filename))
+			{
+				// Check if file has RAR signature
+				char rarSignature[] = {0x52, 0x61, 0x72, 0x21, 0x1A, 0x07, 0x00};
+				char fileSignature[7];
+
+				FILE* infile;
+				infile = fopen(szFullFilename, "rb");
+				if (infile)
+				{
+					int cnt = (int)fread(fileSignature, 1, sizeof(fileSignature), infile);
+					fclose(infile);
+					if (cnt == sizeof(fileSignature) && !strcmp(rarSignature, fileSignature))
+					{
+						m_bHasNonStdRarFiles = true;
+					}
+				}
 			}
 		}
 	}
