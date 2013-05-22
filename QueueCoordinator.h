@@ -63,6 +63,7 @@ private:
 	QueueEditor				m_QueueEditor;
 	Mutex			 		m_mutexDownloadQueue;
 	bool					m_bHasMoreJobs;
+	int						m_iDownloadsLimit;
 
 	// statistics
 	static const int		SPEEDMETER_SLOTS = 30;    

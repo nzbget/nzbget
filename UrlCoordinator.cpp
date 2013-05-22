@@ -142,7 +142,7 @@ void UrlCoordinator::Run()
 				bool bHasMoreUrls = GetNextUrl(pDownloadQueue, pUrlInfo);
 				bool bUrlDownloadsRunning = !m_ActiveDownloads.empty();
 				m_bHasMoreJobs = bHasMoreUrls || bUrlDownloadsRunning;
-				if (bHasMoreUrls && !IsStopped() && Thread::GetThreadCount() < g_pOptions->GetThreadLimit())
+				if (bHasMoreUrls && !IsStopped())
 				{
 					StartUrlDownload(pUrlInfo);
 				}

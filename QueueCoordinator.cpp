@@ -117,6 +117,17 @@ void QueueCoordinator::Run()
 
 	m_mutexDownloadQueue.Unlock();
 
+	// compute maximum number of allowed download threads
+	m_iDownloadsLimit = 2; // two extra threads for completing files (when connections are not needed)
+	for (ServerPool::Servers::iterator it = g_pServerPool->GetServers()->begin(); it != g_pServerPool->GetServers()->end(); it++)
+	{
+		NewsServer* pNewsServer = *it;
+		if (pNewsServer->GetLevel() == 0)
+		{
+			m_iDownloadsLimit += pNewsServer->GetMaxConnections();
+		}
+	}
+
 	m_tStartServer = time(NULL);
 	m_tLastCheck = m_tStartServer;
 	bool bWasStandBy = true;
@@ -139,7 +150,7 @@ void QueueCoordinator::Run()
 				bool bHasMoreArticles = GetNextArticle(pFileInfo, pArticleInfo);
 				bArticeDownloadsRunning = !m_ActiveDownloads.empty();
 				m_bHasMoreJobs = bHasMoreArticles || bArticeDownloadsRunning;
-				if (bHasMoreArticles && !IsStopped() && Thread::GetThreadCount() < g_pOptions->GetThreadLimit())
+				if (bHasMoreArticles && !IsStopped() && (int)m_ActiveDownloads.size() < m_iDownloadsLimit)
 				{
 					StartArticleDownload(pFileInfo, pArticleInfo, pConnection);
 					bArticeDownloadsRunning = true;
