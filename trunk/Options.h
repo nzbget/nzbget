@@ -286,7 +286,6 @@ private:
 	bool				m_bCursesTime;
 	bool				m_bCursesGroup;
 	bool				m_bCrcCheck;
-	int					m_iThreadLimit;
 	bool				m_bDirectWrite;
 	int					m_iWriteBufferSize;
 	int					m_iNzbDirInterval;
@@ -447,7 +446,6 @@ public:
 	bool				GetCursesTime() { return m_bCursesTime; }
 	bool				GetCursesGroup() { return m_bCursesGroup; }
 	bool				GetCrcCheck() { return m_bCrcCheck; }
-	int					GetThreadLimit() { return m_iThreadLimit; }
 	bool				GetDirectWrite() { return m_bDirectWrite; }
 	int					GetWriteBufferSize() { return m_iWriteBufferSize; }
 	int					GetNzbDirInterval() { return m_iNzbDirInterval; }

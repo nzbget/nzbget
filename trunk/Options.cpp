@@ -152,7 +152,6 @@ static const char* OPTION_CURSESNZBNAME			= "CursesNzbName";
 static const char* OPTION_CURSESTIME			= "CursesTime";
 static const char* OPTION_CURSESGROUP			= "CursesGroup";
 static const char* OPTION_CRCCHECK				= "CrcCheck";
-static const char* OPTION_THREADLIMIT			= "ThreadLimit";
 static const char* OPTION_DIRECTWRITE			= "DirectWrite";
 static const char* OPTION_WRITEBUFFERSIZE		= "WriteBufferSize";
 static const char* OPTION_NZBDIRINTERVAL		= "NzbDirInterval";
@@ -185,6 +184,7 @@ static const char* OPTION_RETRYONCRCERROR		= "RetryOnCrcError";
 static const char* OPTION_ALLOWREPROCESS		= "AllowReProcess";
 static const char* OPTION_POSTPROCESS			= "PostProcess";
 static const char* OPTION_LOADPARS				= "LoadPars";
+static const char* OPTION_THREADLIMIT			= "ThreadLimit";
 
 const char* BoolNames[] = { "yes", "no", "true", "false", "1", "0", "on", "off", "enable", "disable", "enabled", "disabled" };
 const int BoolValues[] = { 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0 };
@@ -516,7 +516,6 @@ Options::Options(int argc, char* argv[])
 	m_bCursesGroup			= false;
 	m_bCrcCheck				= false;
 	m_bDirectWrite			= false;
-	m_iThreadLimit			= 0;
 	m_iWriteBufferSize		= 0;
 	m_iNzbDirInterval		= 0;
 	m_iNzbDirFileAge		= 0;
@@ -863,7 +862,6 @@ void Options::InitDefault()
 	SetOption(OPTION_CURSESTIME, "no");
 	SetOption(OPTION_CURSESGROUP, "no");
 	SetOption(OPTION_CRCCHECK, "yes");
-	SetOption(OPTION_THREADLIMIT, "100");
 	SetOption(OPTION_DIRECTWRITE, "yes");
 	SetOption(OPTION_WRITEBUFFERSIZE, "0");
 	SetOption(OPTION_NZBDIRINTERVAL, "5");
@@ -1037,7 +1035,6 @@ void Options::InitOptions()
 	m_iLogBufferSize		= ParseIntValue(OPTION_LOGBUFFERSIZE, 10);
 	m_iUMask				= ParseIntValue(OPTION_UMASK, 8);
 	m_iUpdateInterval		= ParseIntValue(OPTION_UPDATEINTERVAL, 10);
-	m_iThreadLimit			= ParseIntValue(OPTION_THREADLIMIT, 10);
 	m_iWriteBufferSize		= ParseIntValue(OPTION_WRITEBUFFERSIZE, 10);
 	m_iNzbDirInterval		= ParseIntValue(OPTION_NZBDIRINTERVAL, 10);
 	m_iNzbDirFileAge		= ParseIntValue(OPTION_NZBDIRFILEAGE, 10);
@@ -2494,7 +2491,8 @@ bool Options::ValidateOptionName(const char * optname)
 	}
 	if (!strcasecmp(optname, OPTION_RETRYONCRCERROR) ||
 		!strcasecmp(optname, OPTION_ALLOWREPROCESS) ||
-		!strcasecmp(optname, OPTION_LOADPARS))
+		!strcasecmp(optname, OPTION_LOADPARS) ||
+		!strcasecmp(optname, OPTION_THREADLIMIT))
 	{
 		ConfigWarn("Option \"%s\" is obsolete, ignored", optname);
 		return true;
