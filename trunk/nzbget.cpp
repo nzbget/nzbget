@@ -223,16 +223,19 @@ void Run(bool bReload)
 
 	g_pLog->InitOptions();
 
-	if (g_pOptions->GetDaemonMode() && !bReload)
+	if (g_pOptions->GetDaemonMode())
 	{
 #ifdef WIN32
 		info("nzbget %s service-mode", Util::VersionRevision());
 #else
-		Daemonize();
+		if (!bReload)
+		{
+			Daemonize();
+		}
 		info("nzbget %s daemon-mode", Util::VersionRevision());
 #endif
 	}
-	else if (g_pOptions->GetServerMode() && !bReload)
+	else if (g_pOptions->GetServerMode())
 	{
 		info("nzbget %s server-mode", Util::VersionRevision());
 	}
