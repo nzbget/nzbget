@@ -1090,10 +1090,10 @@ char* WebUtil::XmlEncode(const char* raw)
 					}
 
 					// accept only valid XML 1.0 characters
-					if (ch == 0x9 || ch == 0xA || ch == 0xD || 
-						(0x20 <= ch && ch <= 0xD7FF) ||
-						(0xE000 <= ch && ch <= 0xFFFD) ||
-						(0x10000 <= ch && ch <= 0x10FFFF))
+					if (cp == 0x9 || cp == 0xA || cp == 0xD || 
+						(0x20 <= cp && cp <= 0xD7FF) ||
+						(0xE000 <= cp && cp <= 0xFFFD) ||
+						(0x10000 <= cp && cp <= 0x10FFFF))
 					{
 						sprintf(output, "&#x%06x;", cp);
 						output += 10;
