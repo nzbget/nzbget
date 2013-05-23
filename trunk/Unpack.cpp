@@ -602,6 +602,14 @@ void UnpackController::AddMessage(Message::EKind eKind, const char* szText)
 	ScriptController::AddMessage(eKind, szMsgText);
 	m_pPostInfo->AppendMessage(eKind, szMsgText);
 
+	if (m_eUnpacker == upUnrar && !strncmp(szMsgText, "Unrar: UNRAR ", 6) &&
+		strstr(szMsgText, " Copyright ") && strstr(szMsgText, " Alexander Roshal"))
+	{
+		// reset start time for a case if user uses unpack-script to do some things
+		// (like sending Wake-On-Lan message) before executing unrar
+		m_pPostInfo->SetStageTime(time(NULL));
+	}
+
 	if (m_eUnpacker == upUnrar && !strncmp(szMsgText, "Unrar: Extracting ", 18))
 	{
 		SetProgressLabel(szMsgText + 7);
