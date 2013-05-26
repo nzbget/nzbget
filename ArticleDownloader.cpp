@@ -136,6 +136,9 @@ void ArticleDownloader::Run()
 	debug("Entering ArticleDownloader-loop");
 
 	SetStatus(adRunning);
+
+	BuildOutputFilename();
+
 	m_szResultFilename = m_pArticleInfo->GetResultFilename();
 
 	if (g_pOptions->GetContinuePartial())
@@ -706,6 +709,41 @@ bool ArticleDownloader::CreateOutputFile(int iSize)
 	}
 
 	return true;
+}
+
+void ArticleDownloader::BuildOutputFilename()
+{
+	char szFilename[1024];
+
+	snprintf(szFilename, 1024, "%s%i.%03i", g_pOptions->GetTempDir(), m_pFileInfo->GetID(), m_pArticleInfo->GetPartNumber());
+	szFilename[1024-1] = '\0';
+	m_pArticleInfo->SetResultFilename(szFilename);
+
+	char tmpname[1024];
+	snprintf(tmpname, 1024, "%s.tmp", szFilename);
+	tmpname[1024-1] = '\0';
+	SetTempFilename(tmpname);
+
+	if (g_pOptions->GetDirectWrite())
+	{
+		m_pFileInfo->LockOutputFile();
+
+		if (m_pFileInfo->GetOutputFilename())
+		{
+			strncpy(szFilename, m_pFileInfo->GetOutputFilename(), 1024);
+			szFilename[1024-1] = '\0';
+		}
+		else
+		{
+			snprintf(szFilename, 1024, "%s%c%i.out.tmp", m_pFileInfo->GetNZBInfo()->GetDestDir(), (int)PATH_SEPARATOR, m_pFileInfo->GetID());
+			szFilename[1024-1] = '\0';
+			m_pFileInfo->SetOutputFilename(szFilename);
+		}
+
+		m_pFileInfo->UnlockOutputFile();
+
+		SetOutputFilename(szFilename);
+	}
 }
 
 ArticleDownloader::EStatus ArticleDownloader::DecodeCheck()

@@ -77,10 +77,14 @@ private:
 	bool				Write(char* szLine, int iLen);
 	bool				PrepareFile(char* szLine);
 	bool				CreateOutputFile(int iSize);
+	void				BuildOutputFilename();
 	EStatus				DecodeCheck();
 	void				FreeConnection(bool bKeepConnected);
 	EStatus				CheckResponse(const char* szResponse, const char* szComment);
 	void				SetStatus(EStatus eStatus) { m_eStatus = eStatus; }
+	const char* 		GetTempFilename() { return m_szTempFilename; }
+	void 				SetTempFilename(const char* v);
+	void 				SetOutputFilename(const char* v);
 
 public:
 						ArticleDownloader();
@@ -95,9 +99,6 @@ public:
 	bool				Terminate();
 	time_t				GetLastUpdateTime() { return m_tLastUpdateTime; }
 	void				SetLastUpdateTimeNow() { m_tLastUpdateTime = ::time(NULL); }
-	const char* 		GetTempFilename() { return m_szTempFilename; }
-	void 				SetTempFilename(const char* v);
-	void 				SetOutputFilename(const char* v);
 	const char* 		GetArticleFilename() { return m_szArticleFilename; }
 	void				SetInfoName(const char* v);
 	const char*			GetInfoName() { return m_szInfoName; }
