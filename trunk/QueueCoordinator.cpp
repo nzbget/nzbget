@@ -566,52 +566,16 @@ void QueueCoordinator::StartArticleDownload(FileInfo* pFileInfo, ArticleInfo* pA
 	pArticleDownloader->SetArticleInfo(pArticleInfo);
 	pArticleDownloader->SetConnection(pConnection);
 
+	char szInfoName[1024];
+	snprintf(szInfoName, 1024, "%s%c%s [%i/%i]", pFileInfo->GetNZBInfo()->GetName(), (int)PATH_SEPARATOR, pFileInfo->GetFilename(), pArticleInfo->GetPartNumber(), pFileInfo->GetArticles()->size());
+	szInfoName[1024-1] = '\0';
+	pArticleDownloader->SetInfoName(szInfoName);
+
 	pArticleInfo->SetStatus(ArticleInfo::aiRunning);
 	pFileInfo->SetActiveDownloads(pFileInfo->GetActiveDownloads() + 1);
 
-	BuildArticleFilename(pArticleDownloader, pFileInfo, pArticleInfo);
-
 	m_ActiveDownloads.push_back(pArticleDownloader);
 	pArticleDownloader->Start();
-}
-
-void QueueCoordinator::BuildArticleFilename(ArticleDownloader* pArticleDownloader, FileInfo* pFileInfo, ArticleInfo* pArticleInfo)
-{
-	char name[1024];
-	
-	snprintf(name, 1024, "%s%i.%03i", g_pOptions->GetTempDir(), pFileInfo->GetID(), pArticleInfo->GetPartNumber());
-	name[1024-1] = '\0';
-	pArticleInfo->SetResultFilename(name);
-
-	char tmpname[1024];
-	snprintf(tmpname, 1024, "%s.tmp", name);
-	tmpname[1024-1] = '\0';
-	pArticleDownloader->SetTempFilename(tmpname);
-
-	snprintf(name, 1024, "%s%c%s [%i/%i]", pFileInfo->GetNZBInfo()->GetName(), (int)PATH_SEPARATOR, pFileInfo->GetFilename(), pArticleInfo->GetPartNumber(), pFileInfo->GetArticles()->size());
-	name[1024-1] = '\0';
-	pArticleDownloader->SetInfoName(name);
-
-	if (g_pOptions->GetDirectWrite())
-	{
-		pFileInfo->LockOutputFile();
-
-		if (pFileInfo->GetOutputFilename())
-		{
-			strncpy(name, pFileInfo->GetOutputFilename(), 1024);
-			name[1024-1] = '\0';
-		}
-		else
-		{
-			snprintf(name, 1024, "%s%c%i.out.tmp", pFileInfo->GetNZBInfo()->GetDestDir(), (int)PATH_SEPARATOR, pFileInfo->GetID());
-			name[1024-1] = '\0';
-			pFileInfo->SetOutputFilename(name);
-		}
-
-		pFileInfo->UnlockOutputFile();
-
-		pArticleDownloader->SetOutputFilename(name);
-	}
 }
 
 DownloadQueue* QueueCoordinator::LockQueue()
