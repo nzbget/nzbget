@@ -992,9 +992,10 @@ void Options::CheckDir(char** dir, const char* szOptionName, bool bAllowEmpty, b
 	}
 
 	// Ensure the dir is created
-	if (bCreate && !Util::ForceDirectories(usedir))
+	char szErrBuf[1024];
+	if (bCreate && !Util::ForceDirectories(usedir, szErrBuf, sizeof(szErrBuf)))
 	{
-		ConfigError("Invalid value for option \"%s\": could not create directory \"%s\"", szOptionName, usedir);
+		ConfigError("Invalid value for option \"%s\" (%s): %s", szOptionName, usedir, szErrBuf);
 	}
 	*dir = usedir;
 }

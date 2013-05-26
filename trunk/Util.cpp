@@ -1,7 +1,7 @@
 /*
  *  This file is part of nzbget
  *
- *  Copyright (C) 2007-2010 Andrey Prygunkov <hugbug@users.sourceforge.net>
+ *  Copyright (C) 2007-2013 Andrey Prygunkov <hugbug@users.sourceforge.net>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -267,9 +267,12 @@ void Util::NormalizePathSeparators(char* szPath)
 	}
 }
 
-bool Util::ForceDirectories(const char* szPath)
+bool Util::ForceDirectories(const char* szPath, char* szErrBuf, int iBufSize)
 {
-	char* szNormPath = strdup(szPath);
+	*szErrBuf = '\0';
+	char szNormPath[1024];
+	strncpy(szNormPath, szPath, 1024);
+	szNormPath[1024-1] = '\0';
 	NormalizePathSeparators(szNormPath);
 	int iLen = strlen(szNormPath);
 	if ((iLen > 0) && szNormPath[iLen-1] == PATH_SEPARATOR
@@ -282,15 +285,30 @@ bool Util::ForceDirectories(const char* szPath)
 	}
 
 	struct stat buffer;
-	bool bOK = !stat(szNormPath, &buffer) && S_ISDIR(buffer.st_mode);
+	bool bOK = !stat(szNormPath, &buffer);
+	if (!bOK && errno != ENOENT)
+	{
+		snprintf(szErrBuf, iBufSize, "could not read information for directory %s: %i, %s", szNormPath, errno, strerror(errno));
+		szErrBuf[iBufSize-1] = 0;
+		return false;
+	}
+	
+	if (bOK && !S_ISDIR(buffer.st_mode))
+	{
+		snprintf(szErrBuf, iBufSize, "path %s is not a directory", szNormPath);
+		szErrBuf[iBufSize-1] = 0;
+		return false;
+	}
+	
 	if (!bOK
 #ifdef WIN32
 		&& strlen(szNormPath) > 2
 #endif
 		)
 	{
-		char* szParentPath = strdup(szNormPath);
-		bOK = true;
+		char szParentPath[1024];
+		strncpy(szParentPath, szNormPath, 1024);
+		szParentPath[1024-1] = '\0';
 		char* p = (char*)strrchr(szParentPath, PATH_SEPARATOR);
 		if (p)
 		{
@@ -304,20 +322,35 @@ bool Util::ForceDirectories(const char* szPath)
 			{
 				*p = '\0';
 			}
-			if (strlen(szParentPath) != strlen(szPath))
+			if (strlen(szParentPath) != strlen(szPath) && !ForceDirectories(szParentPath, szErrBuf, iBufSize))
 			{
-				bOK = ForceDirectories(szParentPath);
+				return false;
 			}
 		}
-		if (bOK)
+		
+		if (mkdir(szNormPath, S_DIRMODE) != 0)
 		{
-			mkdir(szNormPath, S_DIRMODE);
-			bOK = !stat(szNormPath, &buffer) && S_ISDIR(buffer.st_mode);
+			snprintf(szErrBuf, iBufSize, "could not create directory %s: %s", szNormPath, strerror(errno));
+			szErrBuf[iBufSize-1] = 0;
+			return false;
 		}
-		free(szParentPath);
+			
+		if (stat(szNormPath, &buffer) != 0)
+		{
+			snprintf(szErrBuf, iBufSize, "could not read information for directory %s: %s", szNormPath, strerror(errno));
+			szErrBuf[iBufSize-1] = 0;
+			return false;
+		}
+		
+		if (!S_ISDIR(buffer.st_mode))
+		{
+			snprintf(szErrBuf, iBufSize, "path %s is not a directory", szNormPath);
+			szErrBuf[iBufSize-1] = 0;
+			return false;
+		}
 	}
-	free(szNormPath);
-	return bOK;
+
+	return true;
 }
 
 bool Util::GetCurrentDirectory(char* szBuffer, int iBufSize)

@@ -629,6 +629,7 @@ bool ArticleDownloader::PrepareFile(char* szLine)
 						long iArticleFilesize = atol(pb);
 						if (!CreateOutputFile(iArticleFilesize))
 						{
+							m_pFileInfo->UnlockOutputFile();
 							return false;
 						}
 						m_pFileInfo->SetOutputInitialized(true);
@@ -690,16 +691,17 @@ bool ArticleDownloader::CreateOutputFile(int iSize)
 	if (iMaxlen > 1024-1) iMaxlen = 1024-1;
 	strncpy(szDestDir, m_szOutputFilename, iMaxlen);
 	szDestDir[iMaxlen] = '\0';
+	char szErrBuf[1024];
 
-	if (!Util::ForceDirectories(szDestDir))
+	if (!Util::ForceDirectories(szDestDir, szErrBuf, sizeof(szErrBuf)))
 	{
-		error("Could not create directory %s! Errcode: %i", szDestDir, errno);
+		error("Could not create directory %s: %s", szDestDir, szErrBuf);
 		return false;
 	}
 
 	if (!Util::CreateSparseFile(m_szOutputFilename, iSize))
 	{
-		error("Could not create file %s!", m_szOutputFilename);
+		error("Could not create file %s", m_szOutputFilename);
 		return false;
 	}
 
@@ -905,9 +907,10 @@ void ArticleDownloader::CompleteFileParts()
 	}
 
 	// Ensure the DstDir is created
-	if (!Util::ForceDirectories(szNZBDestDir))
+	char szErrBuf[1024];
+	if (!Util::ForceDirectories(szNZBDestDir, szErrBuf, sizeof(szErrBuf)))
 	{
-		error("Could not create directory %s! Errcode: %i", szNZBDestDir, errno);
+		error("Could not create directory %s: %s", szNZBDestDir, szErrBuf);
 		SetStatus(adJoined);
 		return;
 	}
@@ -1127,9 +1130,10 @@ bool ArticleDownloader::MoveCompletedFiles(NZBInfo* pNZBInfo, const char* szOldD
 	}
 
 	// Ensure the DstDir is created
-	if (!Util::ForceDirectories(pNZBInfo->GetDestDir()))
+	char szErrBuf[1024];
+	if (!Util::ForceDirectories(pNZBInfo->GetDestDir(), szErrBuf, sizeof(szErrBuf)))
 	{
-		error("Could not create directory %s! Errcode: %i", pNZBInfo->GetDestDir(), errno);
+		error("Could not create directory %s: %s", pNZBInfo->GetDestDir(), szErrBuf);
 		return false;
 	}
 

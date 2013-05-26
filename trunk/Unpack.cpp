@@ -349,7 +349,6 @@ void UnpackController::CreateUnpackDir()
 	{
 		m_pPostInfo->GetNZBInfo()->BuildFinalDirName(m_szFinalDir, 1024);
 		m_szFinalDir[1024-1] = '\0';
-		Util::ForceDirectories(m_szFinalDir);
 		snprintf(m_szUnpackDir, 1024, "%s%c%s", m_szFinalDir, PATH_SEPARATOR, "_unpack");
 	}
 	else
@@ -357,7 +356,12 @@ void UnpackController::CreateUnpackDir()
 		snprintf(m_szUnpackDir, 1024, "%s%c%s", m_szDestDir, PATH_SEPARATOR, "_unpack");
 	}
 	m_szUnpackDir[1024-1] = '\0';
-	Util::ForceDirectories(m_szUnpackDir);
+
+	char szErrBuf[1024];
+	if (!Util::ForceDirectories(m_szUnpackDir, szErrBuf, sizeof(szErrBuf)))
+	{
+		error("Could not create directory %s: %s", m_szUnpackDir, szErrBuf);
+	}
 }
 
 
@@ -707,10 +711,14 @@ void MoveController::Run()
 
 bool MoveController::MoveFiles()
 {
+	char szErrBuf[1024];
+	if (!Util::ForceDirectories(m_szDestDir, szErrBuf, sizeof(szErrBuf)))
+	{
+		error("Could not create directory %s: %s", m_szDestDir, szErrBuf);
+		return false;
+	}
+
 	bool bOK = true;
-
-	bOK = Util::ForceDirectories(m_szDestDir);
-
 	DirBrowser dir(m_szInterDir);
 	while (const char* filename = dir.Next())
 	{
