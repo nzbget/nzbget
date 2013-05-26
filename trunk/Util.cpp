@@ -328,7 +328,7 @@ bool Util::ForceDirectories(const char* szPath, char* szErrBuf, int iBufSize)
 			}
 		}
 		
-		if (mkdir(szNormPath, S_DIRMODE) != 0)
+		if (mkdir(szNormPath, S_DIRMODE) != 0 && errno != EEXIST)
 		{
 			snprintf(szErrBuf, iBufSize, "could not create directory %s: %s", szNormPath, strerror(errno));
 			szErrBuf[iBufSize-1] = 0;
