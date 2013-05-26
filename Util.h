@@ -86,7 +86,7 @@ public:
 	static bool CreateDirectory(const char* szDirFilename);
 	static bool RemoveDirectory(const char* szDirFilename);
 	static bool DeleteDirectoryWithContent(const char* szDirFilename);
-	static bool ForceDirectories(const char* szPath);
+	static bool ForceDirectories(const char* szPath, char* szErrBuf, int iBufSize);
 	static bool GetCurrentDirectory(char* szBuffer, int iBufSize);
 	static bool SetCurrentDirectory(const char* szDirFilename);
 	static long long FileSize(const char* szFilename);
