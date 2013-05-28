@@ -47,6 +47,7 @@ except ImportError:
 
 # Exit codes used by NZBGet
 POSTPROCESS_SUCCESS=93
+POSTPROCESS_NONE=95
 POSTPROCESS_ERROR=94
 
 # Check if the script is called from nzbget 11.0 or later
@@ -54,6 +55,10 @@ if not 'NZBOP_SCRIPTDIR' in os.environ:
 	print('*** NZBGet post-processing script ***')
 	print('This script is supposed to be called from nzbget (11.0 or later).')
 	sys.exit(POSTPROCESS_ERROR)
+
+if not os.path.exists(os.environ['NZBPP_DIRECTORY']):
+	print('Destination directory doesn\'t exist, exiting')
+	sys.exit(POSTPROCESS_NONE)
 
 # To get the post-processing log we connect to NZBGet via XML-RPC
 # and call method "postqueue", which returns the list of post-processing job.
