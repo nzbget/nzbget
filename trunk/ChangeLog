@@ -1,6 +1,6 @@
 nzbget-11.0:
   - please see subversion log at
-    http://nzbget.svn.sourceforge.net/viewvc/nzbget/?view=log
+    http://sourceforge.net/p/nzbget/code/log
 
 nzbget-10.2:
   - fixed potential segfault which could happen with file paths longer
