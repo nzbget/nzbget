@@ -156,8 +156,10 @@ var Frontend = (new function($)
 		History.init({ updateTabInfo: updateTabInfo });
 		Upload.init();
 		Config.init({ updateTabInfo: updateTabInfo });
+		ConfigBackupRestore.init();
 		ConfirmDialog.init();
 		ScriptListDialog.init();
+		RestoreSettingsDialog.init();
 
 		DownloadsEditDialog.init();
 		DownloadsMultiDialog.init();

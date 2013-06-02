@@ -986,7 +986,7 @@ ul.help > li {
 }
 
 /* Make "select files" native control invisible */
-#AddDialog_Input {
+.hidden-file-input {
 	position: absolute;
 	left: 0;
 	top: 0;

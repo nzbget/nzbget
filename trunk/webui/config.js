@@ -138,6 +138,7 @@ var Options = (new function($)
 		var config = [];
 		var serverConfig = readConfigTemplate(serverTemplateData[0].Template, undefined, HIDDEN_SECTIONS, '', '');
 		mergeValues(serverConfig.sections, serverValues);
+		config.values = serverValues;
 		config.push(serverConfig);
 
 		// read scripts configs
@@ -157,6 +158,13 @@ var Options = (new function($)
 
 		serverValues = null;
 		loadComplete(config);
+	}
+
+	this.reloadConfig = function(_serverValues, _complete)
+	{
+		loadComplete = _complete;
+		serverValues = _serverValues;
+		complete();
 	}
 
 	/*** PARSE CONFIG AND BUILD INTERNAL STRUCTURES **********************************************/
@@ -182,6 +190,7 @@ var Options = (new function($)
 				description = '';
 				section.hidden = !(hiddensections === undefined || (hiddensections.indexOf(section.name) == -1)) ||
 					(visiblesections !== undefined && (visiblesections.indexOf(section.name) == -1));
+				section.postparam = POSTPARAM_SECTIONS.indexOf(section.name) > -1;
 				config.sections.push(section);
 			}
 			else if (line.substring(0, 2) === '# ' || line === '#')
@@ -382,7 +391,7 @@ var Options = (new function($)
 			shortScriptNames[configTemplatesData[i].Name] = configTemplatesData[i].DisplayName;
 		}
 	}
-	
+
 	function shortScriptName(scriptName)
 	{
 		var shortName = shortScriptNames[scriptName];
@@ -460,10 +469,12 @@ var Config = (new function($)
 
 	// State
 	var config;
+	var values;
 	var filterText = '';
 	var lastSection;
 	var reloadTime;
 	var updateTabInfo;
+	var restored = false;
 
 	this.init = function(options)
 	{
@@ -478,6 +489,7 @@ var Config = (new function($)
 		$ConfigInfo = $('#ConfigInfo');
 		$ConfigTitle = $('#ConfigTitle');
 
+		Util.show('#ConfigBackupSafariNote', $.browser.safari);
 		$('#ConfigTable_filter').val('');
 
 		$('#ConfigTabLink').on('show', show);
@@ -501,6 +513,11 @@ var Config = (new function($)
 		config = null;
 		$ConfigNav.children().not('.config-static').remove();
 		$ConfigData.children().not('.config-static').remove();
+	}
+
+	this.config = function()
+	{
+		return config;
 	}
 
 	function show()
@@ -1231,7 +1248,7 @@ var Config = (new function($)
 	function invalidOptionsExist()
 	{
 		var hiddenOptions = ['ConfigFile', 'AppBin', 'AppDir', 'Version'];
-		
+
 		for (var i=0; i < Options.options.length; i++)
 		{
 			var option = Options.options[i];
@@ -1241,10 +1258,10 @@ var Config = (new function($)
 				return true;
 			}
 		}
-		
+
 		return false;
 	}
-	
+
 	function prepareSaveRequest()
 	{
 		var modified = false;
@@ -1255,7 +1272,7 @@ var Config = (new function($)
 			for (var i=0; i < sections.length; i++)
 			{
 				var section = sections[i];
-				if (!section.hidden)
+				if (!section.postparam)
 				{
 					for (var j=0; j < section.options.length; j++)
 					{
@@ -1272,13 +1289,13 @@ var Config = (new function($)
 							var opt = {Name: option.name, Value: newValue};
 							request.push(opt);
 						}
+						modified = modified || section.modified;
 					}
-					modified = modified || section.modified;
 				}
 			}
 		}
 
-		return modified || invalidOptionsExist() ? request : [];
+		return modified || invalidOptionsExist() || restored ? request : [];
 	}
 
 	this.saveChanges = function()
@@ -1468,6 +1485,8 @@ var Config = (new function($)
 		$ConfigData.children().filter(':visible').last().addClass('last-group');
 	}
 
+	/*** RELOAD ********************************************************************/
+
 	this.reloadConfirm = function()
 	{
 		ConfirmDialog.showModal('ReloadConfirmDialog', Config.reload);
@@ -1527,6 +1546,12 @@ var Config = (new function($)
 		{
 			$('#ConfigReloadInfoNotes').show(1000);
 		}
+	}
+
+	this.applyReloadedValues = function(values)
+	{
+		Options.reloadConfig(values, buildPage);
+		restored = true;
 	}
 }(jQuery));
 
@@ -1760,4 +1785,341 @@ var ScriptListDialog = (new function($)
 	}
 
 }(jQuery));
-2
+
+
+/*** BACKUP/RESTORE SETTINGS *******************************************************/
+
+var ConfigBackupRestore = (new function($)
+{
+	'use strict'
+
+	// State
+	var settings;
+	var filename;
+
+	this.init = function(options)
+	{
+		$('#Config_RestoreInput')[0].addEventListener('change', restoreSelectHandler, false);
+	}
+
+	/*** BACKUP ********************************************************************/
+
+	this.backupSettings = function()
+	{
+		var settings = '';
+		for (var i=0; i < Config.config().values.length; i++)
+		{
+			var option = Config.config().values[i];
+			settings += settings==='' ? '' : '\n';
+			settings += option.Name + '=' + option.Value;
+		}
+
+		var pad = function(arg) { return (arg < 10 ? '0' : '') + arg }
+		var dt = new Date();
+		var datestr = dt.getFullYear() + pad(dt.getMonth() + 1) + pad(dt.getDate()) + '-' + pad(dt.getHours()) + pad(dt.getMinutes()) + pad(dt.getSeconds());
+
+		var filename = 'nzbget-' + datestr + '.conf';
+
+		if (window.Blob)
+		{
+			var blob = new Blob([settings], {type: "text/plain;charset=utf-8"});
+
+			if (navigator.msSaveBlob)
+			{
+				navigator.msSaveBlob(blob, filename);
+			}
+			else
+			{
+				var URL = window.URL || window.webkitURL || window;
+				var object_url = URL.createObjectURL(blob);
+
+				var save_link = document.createElement('a');
+				save_link.href = object_url;
+				save_link.download = filename;
+
+				var event = document.createEvent('MouseEvents');
+				event.initMouseEvent('click', true, false, window, 0, 0, 0, 0, 0, false, false, false, false, 0, null);
+				save_link.dispatchEvent(event);
+			}
+		}
+		else
+		{
+			alert('Unfortunately your browser doesn\'t support access to local file system.\n\n'+
+				'To backup settings you can manually save file "nzbget.conf" (' +
+				Options.option('ConfigFile')+ ').');
+		}
+	}
+
+	/*** RESTORE ********************************************************************/
+
+	this.restoreSettings = function()
+	{
+		if (!window.FileReader)
+		{
+			alert("Unfortunately your browser doesn't support FileReader API.");
+			return;
+		}
+
+		var testreader = new FileReader();
+		if (!testreader.readAsBinaryString && !testreader.readAsDataURL)
+		{
+			alert("Unfortunately your browser doesn't support neither \"readAsBinaryString\" nor \"readAsDataURL\" functions of FileReader API.");
+			return;
+		}
+
+		var inp = $('#Config_RestoreInput');
+
+		// Reset file input control (needed for IE10)
+		inp.wrap('<form>').closest('form').get(0).reset();
+		inp.unwrap();
+
+		inp.click();
+	}
+
+	function restoreSelectHandler(event)
+	{
+		if (!event.target.files)
+		{
+			alert("Unfortunately your browser doesn't support direct access to local files.");
+			return;
+		}
+		if (event.target.files.length > 0)
+		{
+			restoreFromFile(event.target.files[0]);
+		}
+	}
+
+	function restoreFromFile(file)
+	{
+		var reader = new FileReader();
+		reader.onload = function (event)
+		{
+			if (reader.readAsBinaryString)
+			{
+				settings = event.target.result;
+			}
+			else
+			{
+				var base64str = event.target.result.replace(/^data:[^,]+,/, '');
+				settings = atob(base64str);
+			}
+			filename = file.name;
+
+			if (settings.indexOf('MainDir=') < 0)
+			{
+				alert('File ' + filename + ' is not a valid NZBGet backup.');
+				return;
+			}
+
+			RestoreSettingsDialog.showModal(Config.config(), restoreExecute);
+		};
+
+		if (reader.readAsBinaryString)
+		{
+			reader.readAsBinaryString(file);
+		}
+		else
+		{
+			reader.readAsDataURL(file);
+		}
+	}
+
+	function restoreExecute(selectedSections)
+	{
+		$('#Notif_Config_Restoring').show();
+		setTimeout(function() {
+			var values = restoreValues(selectedSections);
+			Config.applyReloadedValues(values);
+			$('#Notif_Config_Restoring').hide();
+			$('#SettingsRestoredDialog').modal({backdrop: 'static'});
+		}, 50);
+	}
+
+	function restoreValues(selectedSections)
+	{
+		var config = Config.config();
+		var values = config.values;
+
+		settings = settings.split('\n');
+
+		for (var i=0; i < settings.length; i++)
+		{
+			var optstr = settings[i];
+			var ind = optstr.indexOf('=');
+			var option = { Name: optstr.substr(0, ind).trim(), Value: optstr.substr(ind+1, 100000).trim() };
+			settings[i] = option;
+		}
+
+		function removeValue(name)
+		{
+			var name = name.toLowerCase();
+			for (var i=0; i < values.length; i++)
+			{
+				if (values[i].Name.toLowerCase() === name)
+				{
+					values.splice(i, 1);
+					return true;
+				}
+			}
+			return false;
+		}
+
+		function addValue(name)
+		{
+			var name = name.toLowerCase();
+			for (var i=0; i < settings.length; i++)
+			{
+				if (settings[i].Name.toLowerCase() === name)
+				{
+					values.push(settings[i]);
+					return true;
+				}
+			}
+			return false;
+		}
+
+		function restoreOption(option)
+		{
+			if (!option.template && !option.multiid)
+			{
+				removeValue(option.name);
+				addValue(option.name);
+			}
+			else if (!option.template && option.multiid === 1)
+			{
+				// delete all multi-options
+				for (var j=1; ; j++)
+				{
+					var optname = option.name.replace('1', j);
+					if (!removeValue(optname))
+					{
+						break;
+					}
+				}
+				// add all multi-options
+				for (var j=1; ; j++)
+				{
+					var optname = option.name.replace('1', j);
+					if (!addValue(optname))
+					{
+						break;
+					}
+				}
+			}
+		}
+		
+		for (var k=0; k < config.length; k++)
+		{
+			var conf = config[k];
+			for (var i=0; i < conf.sections.length; i++)
+			{
+				var section = conf.sections[i];
+				if (!section.hidden && selectedSections.indexOf(section.id) > -1)
+				{
+					for (var m=0; m < section.options.length; m++)
+					{
+						restoreOption(section.options[m]);
+					}
+				}
+			}
+		}
+
+		return values;
+	}
+}(jQuery));
+
+
+/*** RESTORE SETTINGS DIALOG *******************************************************/
+
+var RestoreSettingsDialog = (new function($)
+{
+	'use strict'
+
+	// Controls
+	var $RestoreSettingsDialog;
+	var $SectionTable;
+
+	// State
+	var config;
+	var restoreClick;
+
+	this.init = function()
+	{
+		$RestoreSettingsDialog = $('#RestoreSettingsDialog');
+		$('#RestoreSettingsDialog_Restore').click(restore);
+
+		$SectionTable = $('#RestoreSettingsDialog_SectionTable');
+
+		$SectionTable.fasttable(
+			{
+				pagerContainer: $('#RestoreSettingsDialog_SectionTable_pager'),
+				headerCheck: $('#RestoreSettingsDialog_SectionTable > thead > tr:first-child'),
+				infoEmpty: 'No sections found.',
+				pageSize: 1000
+			});
+
+		$SectionTable.on('click', 'tbody div.check',
+			function(event) { $SectionTable.fasttable('itemCheckClick', this.parentNode.parentNode, event); });
+		$SectionTable.on('click', 'thead div.check',
+			function() { $SectionTable.fasttable('titleCheckClick') });
+		$SectionTable.on('mousedown', Util.disableShiftMouseDown);
+
+		$RestoreSettingsDialog.on('hidden', function()
+		{
+			// cleanup
+			$SectionTable.fasttable('update', []);
+		});
+	}
+
+	this.showModal = function(_config, _restoreClick)
+	{
+		config = _config;
+		restoreClick = _restoreClick;
+		updateTable();
+		$RestoreSettingsDialog.modal({backdrop: 'static'});
+	}
+
+	function updateTable()
+	{
+		var data = [];
+		for (var k=0; k < config.length; k++)
+		{
+			var conf = config[k];
+			for (var i=0; i < conf.sections.length; i++)
+			{
+				var section = conf.sections[i];
+				if (!section.hidden)
+				{
+					var fields = ['<div class="check img-check"></div>', '<span data-section="' + section.id + '">' + section.name + '</span>'];
+					var item =
+					{
+						id: section.id,
+						fields: fields,
+						search: ''
+					};
+					data.push(item);
+				}
+			}
+		}
+		$SectionTable.fasttable('update', data);
+	}
+
+	function restore(e)
+	{
+		e.preventDefault();
+
+		var	 selectedSections = [];
+		var checkedRows = $SectionTable.fasttable('checkedRows');
+		if (checkedRows.length === 0)
+		{
+			Notification.show('#Notif_Config_RestoreSections');
+			return;
+		}
+
+		checkedRows = $.extend([], checkedRows); // clone
+		$RestoreSettingsDialog.modal('hide');
+
+		setTimeout(function() { restoreClick(checkedRows); }, 0);
+	}
+
+}(jQuery));

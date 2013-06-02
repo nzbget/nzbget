@@ -1,7 +1,7 @@
 /*
  * This file is part of nzbget
  *
- * Copyright (C) 2012 Andrey Prygunkov <hugbug@users.sourceforge.net>
+ * Copyright (C) 2012-2013 Andrey Prygunkov <hugbug@users.sourceforge.net>
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -192,7 +192,7 @@
 							pageDots : Util.parseBool(config.pageDots),
 							curPage : 1,
 							checkedRows: [],
-							lastClickedRowID: 0
+							lastClickedRowID: null
 						});
 				}
 			});
@@ -629,7 +629,7 @@
 		var id = row.fasttableID;
 		var doToggle = true;
 
-		if (event.shiftKey && data.lastClickedRowID > 0)
+		if (event.shiftKey && data.lastClickedRowID != null)
 		{
 			var checked = checkedRows.indexOf(id) > -1;
 			doToggle = !checkRange(data, id, data.lastClickedRowID, !checked);
@@ -661,7 +661,7 @@
 			}
 		}
 
-		data.lastClickedRowID = 0;
+		data.lastClickedRowID = null;
 		checkAll(data, !hasSelectedItems);
 	}
 
