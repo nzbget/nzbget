@@ -127,7 +127,7 @@
 							<li class="menu-header">Automatic refresh</li>
 							<li data="0.1"><a href="#"><table><tr><td></td><td>0.1</td><td>Second</td></tr></table></a></li>
 							<li data="0.2"><a href="#"><table><tr><td></td><td>0.2</td><td>Second</td></tr></table></a></li>
-							<li data="0.5"><a href="#"><table><tr><td></td></i><td>0.5</td><td>Second</td></tr></table></a></li>
+							<li data="0.5"><a href="#"><table><tr><td></td><td>0.5</td><td>Second</td></tr></table></a></li>
 							<li data="1"><a href="#"><table><tr><td></td><td>1</td><td>Second</td></tr></table></a></li>
 							<li data="5"><a href="#"><table><tr><td></td><td>5</td><td>Seconds</td></tr></table></a></li>
 							<li data="15"><a href="#"><table><tr><td></td><td>15</td><td>Seconds</td></tr></table></a></li>
@@ -466,6 +466,11 @@
 									<p>
 									If your post-processing scripts define own options they are also shown here and can be configured like NZBGets built-in options.
 									</p>
+									
+									<h4>Backup and restore settings</h4>
+									<p>
+									This can be done in section <em><strong>SYSTEM</strong></em>.
+									</p>
 								</div>
 
 								<div>
@@ -484,14 +489,16 @@
 												</div>
 											</div>
 
-											<!--
 											<div class="control-group config-static config-system">
 												<label class="control-label nowrap">Backup Settings</label>
 												<div class="controls">
-													<button type="button" class="btn" onclick="TODO()">Backup</button>
+													<button type="button" class="btn" onclick="ConfigBackupRestore.backupSettings()">Backup</button>
 													<p class="help-block">
-													<span class="help-option-title">Save settings to local file.</span><br><br>
+													<span class="help-option-title">Save settings to a local file.</span><br><br>
 													Export all settings for backup purpose.
+													<span id="ConfigBackupSafariNote"><br><br>
+													<span class="label label-warning">NOTE:</span>
+													This works with all major browsers except Safari (tested with 6.0.4; may work with newer versions).</span>
 													</p>
 												</div>
 											</div>
@@ -499,14 +506,14 @@
 											<div class="control-group config-static config-system">
 												<label class="control-label nowrap">Restore Settings</label>
 												<div class="controls">
-													<button type="button" class="btn" onclick="TODO()">Restore</button>
+													<button type="button" class="btn" onclick="ConfigBackupRestore.restoreSettings()">Restore</button>
+													<input type="file" id="Config_RestoreInput" class="hidden-file-input">
 													<p class="help-block">
-													<span class="help-option-title">Load settings from local file.</span><br><br>
-													Import all settings from a perviously created backup file.
+													<span class="help-option-title">Load settings from a local file.</span><br><br>
+													Import settings from a previously created backup file. You can restore the whole configuration file or choose individual sections.
 													</p>
 												</div>
 											</div>
-											-->
 
 										</fieldset>
 									</div>
@@ -1212,7 +1219,7 @@
 					<label class="control-label" for="URL">Add local files</label>
 					<div class="controls">
 						<div style="margin-top:6px; margin-bottom:10px;"><a href="#" class="btn" style="margin-top: -6px;" id="AddDialog_Select">Select files</a> or drop files here.</div>
-						<input multiple="multiple" type="file" id="AddDialog_Input">
+						<input multiple="multiple" type="file" id="AddDialog_Input" class="hidden-file-input">
 						<p class="help-block" id="AddDialog_FilesHelp">You need a modern browser for this to work.</p>
 						<div class="dialog-add-files hide" id="AddDialog_Files"></div>
 					</div>
@@ -1321,6 +1328,55 @@
 	<div class="modal-footer">
 		<a href="#" class="btn" data-dismiss="modal">Close</a>
 		<a href="#" class="btn btn-primary" id="ScriptListDialog_Save">Save</a>
+	</div>
+</div>
+
+<!-- *** RESTORE SETTINGS DIALOG ****************************************************** -->
+
+<div class="modal modal-padded hide" id="RestoreSettingsDialog">
+	<div class="modal-header">
+		<a class="close" href='#' data-dismiss="modal"><i class="icon-close"></i></a>
+		<h3>Restore Settings</h3>
+	</div>
+
+	<div class="modal-body" style="padding-bottom:0px">
+		<div class="form-vertical">
+			<fieldset>
+
+				<p id="RestoreSettingsDialog_Instruction">Select sections to restore. Tip: click on the checkbox of the table header to select all sections.</p>
+
+				<div>
+					<table class="table table-striped table-bordered table-check table-cancheck datatable" id="RestoreSettingsDialog_SectionTable" style="margin-bottom:15px;">
+						<thead><tr><th><div class="check img-check"/></th><th>Section</th></tr></thead>
+						<tbody></tbody>
+					</table>
+				</div>
+
+				<div class="hide" id="RestoreSettingsDialog_SectionTable_pager"></div>
+				
+			</fieldset>
+		</div>
+	</div>
+
+	<div class="modal-footer">
+		<a href="#" class="btn" data-dismiss="modal">Close</a>
+		<a href="#" class="btn btn-primary" id="RestoreSettingsDialog_Restore">Restore</a>
+	</div>
+</div>
+
+<!-- *** SETTINGS RESTORED DIALOG ************************************************** -->
+
+<div class="modal modal-mini modal-center hide" id="SettingsRestoredDialog">
+	<div class="modal-header">
+	<a class="close" href='#' data-dismiss="modal"><i class="icon-close"></i></a>
+	<h3>Settings restored</h3>
+	</div>
+	<div class="modal-body">
+	<p>Settings have been loaded from backup file.</p>
+	<p>You can review the loaded settings and then save them by clicking on <em><strong>Save all changes</strong></em>.</p>
+	</div>
+	<div class="modal-footer">
+	<a href="#" class="btn btn-primary" data-dismiss="modal">Close</a>
 	</div>
 </div>
 
@@ -1486,6 +1542,14 @@
 <div id="Config_Reload" data-duration="100000000" class="alert alert-success alert-center alert-center-medium hide">
 	<h4 class="alert-heading">Reload command has been sent</h4>
 	Please wait few seconds, then refresh the page.
+</div>
+
+<div id="Notif_Config_RestoreSections" data-duration="2000" class="alert alert-error alert-center alert-center-medium hide">
+    <strong>Please select at least one section</strong>
+</div>
+
+<div id="Notif_Config_Restoring" class="alert alert-inverse alert-center alert-center-small hide">
+    <strong>Restoring settings...</strong>
 </div>
 
 <div id="Notif_Debug" data-duration="400" class="alert alert-inverse alert-center alert-center-small hide">
