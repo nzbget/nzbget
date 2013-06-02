@@ -1123,6 +1123,8 @@ void NZBAddedScriptController::StartScript(DownloadQueue* pDownloadQueue, NZBInf
 	NZBAddedScriptController* pScriptController = new NZBAddedScriptController();
 	pScriptController->SetScript(szScript);
 	pScriptController->m_szNZBName = strdup(pNZBInfo->GetName());
+	pScriptController->SetEnvVar("NZBNA_NZBNAME", pNZBInfo->GetName());
+	// "NZBNA_NAME" is not correct but kept for compatibility with older versions where this name was used by mistake
 	pScriptController->SetEnvVar("NZBNA_NAME", pNZBInfo->GetName());
 	pScriptController->SetEnvVar("NZBNA_FILENAME", pNZBInfo->GetFilename());
 	pScriptController->SetEnvVar("NZBNA_CATEGORY", pNZBInfo->GetCategory());
