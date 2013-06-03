@@ -64,7 +64,6 @@ private:
 	const char*			m_szInfoName;
 	const char*			m_szLogPrefix;
 	EnvironmentStrings	m_environmentStrings;
-	Options::EScriptLogKind	m_eDefaultLogKind;
 	bool				m_bTerminated;
 #ifdef WIN32
 	HANDLE				m_hProcess;
@@ -97,7 +96,6 @@ public:
 	void				SetInfoName(const char* szInfoName) { m_szInfoName = szInfoName; }
 	const char*			GetInfoName() { return m_szInfoName; }
 	void				SetLogPrefix(const char* szLogPrefix) { m_szLogPrefix = szLogPrefix; }
-	void				SetDefaultLogKind(Options::EScriptLogKind eDefaultLogKind) { m_eDefaultLogKind = eDefaultLogKind; }
 	void				SetEnvVar(const char* szName, const char* szValue);
 	void				SetEnvVarSpecial(const char* szPrefix, const char* szName, const char* szValue);
 };

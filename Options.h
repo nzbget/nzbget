@@ -292,7 +292,6 @@ private:
 	int					m_iNzbDirFileAge;
 	bool				m_bParCleanupQueue;
 	int					m_iDiskSpace;
-	EScriptLogKind		m_eProcessLogKind;
 	bool				m_bTLS;
 	bool				m_bDumpCore;
 	bool				m_bParPauseQueue;
@@ -452,7 +451,6 @@ public:
 	int					GetNzbDirFileAge() { return m_iNzbDirFileAge; }
 	bool				GetParCleanupQueue() { return m_bParCleanupQueue; }
 	int					GetDiskSpace() { return m_iDiskSpace; }
-	EScriptLogKind		GetProcessLogKind() { return m_eProcessLogKind; }
 	bool				GetTLS() { return m_bTLS; }
 	bool				GetDumpCore() { return m_bDumpCore; }
 	bool				GetParPauseQueue() { return m_bParPauseQueue; }
