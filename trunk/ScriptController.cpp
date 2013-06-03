@@ -677,32 +677,8 @@ void ScriptController::ProcessOutput(char* szText)
 		PrintMessage(Message::mkDebug, szText + 8);
 	}
 	else 
-	{	
-		switch (m_eDefaultLogKind)
-		{
-			case Options::slNone:
-				break;
-
-			case Options::slDetail:
-				PrintMessage(Message::mkDetail, szText);
-				break;
-
-			case Options::slInfo:
-				PrintMessage(Message::mkInfo, szText);
-				break;
-
-			case Options::slWarning:
-				PrintMessage(Message::mkWarning, szText);
-				break;
-
-			case Options::slError:
-				PrintMessage(Message::mkError, szText);
-				break;
-
-			case Options::slDebug:
-				PrintMessage(Message::mkDebug, szText);
-				break;
-		}
+	{
+		PrintMessage(Message::mkInfo, szText);
 	}
 
 	debug("Processing output received from script - completed");
@@ -830,8 +806,6 @@ void PostScriptController::ExecuteScript(const char* szScriptName, const char* s
 	SetInfoName(szInfoName);
 
 	SetLogPrefix(szDisplayName);
-	SetDefaultLogKind(g_pOptions->GetProcessLogKind());
-
 	PrepareParams(szScriptName);
 
 	int iExitCode = Execute();
@@ -1066,8 +1040,6 @@ void NZBScriptController::ExecuteScript(const char* szScript, const char* szNZBF
 	pScriptController->SetLogPrefix(szLogPrefix);
 	pScriptController->m_iPrefixLen = strlen(szLogPrefix) + 2; // 2 = strlen(": ");
 
-	pScriptController->SetDefaultLogKind(g_pOptions->GetProcessLogKind());
-
 	pScriptController->SetEnvVar("NZBNP_DIRECTORY", szDir);
 	pScriptController->SetEnvVar("NZBNP_FILENAME", szNZBFilename);
 
@@ -1175,8 +1147,6 @@ void NZBAddedScriptController::Run()
 	if (char* ext = strrchr(szLogPrefix, '.')) *ext = '\0'; // strip file extension
 	SetLogPrefix(szLogPrefix);
 
-	SetDefaultLogKind(g_pOptions->GetProcessLogKind());
-
 	Execute();
 
 	free(m_szNZBName);
@@ -1213,8 +1183,6 @@ void SchedulerScriptController::Run()
 	szLogPrefix[1024-1] = '\0';
 	if (char* ext = strrchr(szLogPrefix, '.')) *ext = '\0'; // strip file extension
 	SetLogPrefix(szLogPrefix);
-
-	SetDefaultLogKind(g_pOptions->GetProcessLogKind());
 
 	Execute();
 }

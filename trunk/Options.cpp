@@ -158,7 +158,6 @@ static const char* OPTION_NZBDIRINTERVAL		= "NzbDirInterval";
 static const char* OPTION_NZBDIRFILEAGE			= "NzbDirFileAge";
 static const char* OPTION_PARCLEANUPQUEUE		= "ParCleanupQueue";
 static const char* OPTION_DISKSPACE				= "DiskSpace";
-static const char* OPTION_PROCESSLOGKIND		= "ProcessLogKind";
 static const char* OPTION_DUMPCORE				= "DumpCore";
 static const char* OPTION_PARPAUSEQUEUE			= "ParPauseQueue";
 static const char* OPTION_SCRIPTPAUSEQUEUE		= "ScriptPauseQueue";
@@ -185,6 +184,7 @@ static const char* OPTION_ALLOWREPROCESS		= "AllowReProcess";
 static const char* OPTION_POSTPROCESS			= "PostProcess";
 static const char* OPTION_LOADPARS				= "LoadPars";
 static const char* OPTION_THREADLIMIT			= "ThreadLimit";
+static const char* OPTION_PROCESSLOGKIND		= "ProcessLogKind";
 
 const char* BoolNames[] = { "yes", "no", "true", "false", "1", "0", "on", "off", "enable", "disable", "enabled", "disabled" };
 const int BoolValues[] = { 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0 };
@@ -521,7 +521,6 @@ Options::Options(int argc, char* argv[])
 	m_iNzbDirFileAge		= 0;
 	m_bParCleanupQueue		= false;
 	m_iDiskSpace			= 0;
-	m_eProcessLogKind		= slNone;
 	m_bTestBacktrace		= false;
 	m_bTLS					= false;
 	m_bDumpCore				= false;
@@ -868,7 +867,6 @@ void Options::InitDefault()
 	SetOption(OPTION_NZBDIRFILEAGE, "60");
 	SetOption(OPTION_PARCLEANUPQUEUE, "yes");
 	SetOption(OPTION_DISKSPACE, "250");
-	SetOption(OPTION_PROCESSLOGKIND, "detail");
 	SetOption(OPTION_DUMPCORE, "no");
 	SetOption(OPTION_PARPAUSEQUEUE, "no");
 	SetOption(OPTION_SCRIPTPAUSEQUEUE, "no");
@@ -1101,11 +1099,6 @@ void Options::InitOptions()
 	m_eErrorTarget = (EMessageTarget)ParseEnumValue(OPTION_ERRORTARGET, TargetCount, TargetNames, TargetValues);
 	m_eDebugTarget = (EMessageTarget)ParseEnumValue(OPTION_DEBUGTARGET, TargetCount, TargetNames, TargetValues);
 	m_eDetailTarget = (EMessageTarget)ParseEnumValue(OPTION_DETAILTARGET, TargetCount, TargetNames, TargetValues);
-
-	const char* ScriptLogKindNames[] = { "none", "detail", "info", "warning", "error", "debug" };
-	const int ScriptLogKindValues[] = { slNone, slDetail, slInfo, slWarning, slError, slDebug };
-	const int ScriptLogKindCount = 6;
-	m_eProcessLogKind = (EScriptLogKind)ParseEnumValue(OPTION_PROCESSLOGKIND, ScriptLogKindCount, ScriptLogKindNames, ScriptLogKindValues);
 }
 
 int Options::ParseEnumValue(const char* OptName, int argc, const char * argn[], const int argv[])
@@ -2484,16 +2477,14 @@ bool Options::ValidateOptionName(const char * optname)
 		return true;
 	}
 
-	// print a warning message for obsolete options
-	if (!strcasecmp(optname, OPTION_POSTLOGKIND) || !strcasecmp(optname, OPTION_NZBLOGKIND))
-	{
-		ConfigError("Option \"%s\" is obsolete, ignored, use \"%s\" instead", optname, OPTION_PROCESSLOGKIND);
-		return true;
-	}
+	// print warning messages for obsolete options
 	if (!strcasecmp(optname, OPTION_RETRYONCRCERROR) ||
 		!strcasecmp(optname, OPTION_ALLOWREPROCESS) ||
 		!strcasecmp(optname, OPTION_LOADPARS) ||
-		!strcasecmp(optname, OPTION_THREADLIMIT))
+		!strcasecmp(optname, OPTION_THREADLIMIT) ||
+		!strcasecmp(optname, OPTION_POSTLOGKIND) ||
+		!strcasecmp(optname, OPTION_NZBLOGKIND) ||
+		!strcasecmp(optname, OPTION_PROCESSLOGKIND))
 	{
 		ConfigWarn("Option \"%s\" is obsolete, ignored", optname);
 		return true;

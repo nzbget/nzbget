@@ -149,7 +149,6 @@ void UnpackController::Run()
 	if (bUnpack && (m_bHasRarFiles || m_bHasNonStdRarFiles || m_bHasSevenZipFiles || m_bHasSevenZipMultiFiles))
 	{
 		SetInfoName(m_szInfoName);
-		SetDefaultLogKind(g_pOptions->GetProcessLogKind());
 		SetWorkingDir(m_szDestDir);
 
 		PrintMessage(Message::mkInfo, "Unpacking %s", m_szName);
@@ -674,8 +673,6 @@ void MoveController::Run()
 	szInfoName[1024-1] = '\0';
 	SetInfoName(szInfoName);
 
-	SetDefaultLogKind(g_pOptions->GetProcessLogKind());
-
 	strncpy(m_szInterDir, m_pPostInfo->GetNZBInfo()->GetDestDir(), 1024);
 	m_szInterDir[1024-1] = '\0';
 
@@ -780,8 +777,6 @@ void CleanupController::Run()
 	snprintf(szInfoName, 1024, "cleanup for %s", m_pPostInfo->GetNZBInfo()->GetName());
 	szInfoName[1024-1] = '\0';
 	SetInfoName(szInfoName);
-
-	SetDefaultLogKind(g_pOptions->GetProcessLogKind());
 
 	strncpy(m_szDestDir, m_pPostInfo->GetNZBInfo()->GetDestDir(), 1024);
 	m_szDestDir[1024-1] = '\0';
