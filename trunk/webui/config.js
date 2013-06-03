@@ -233,7 +233,7 @@ var Options = (new function($)
 				option.caption = line.substr(enabled ? 0 : 1, line.indexOf('=') - (enabled ? 0 : 1)).trim();
 				option.name = (nameprefix != '' ? nameprefix : '') + option.caption;
 				option.defvalue = line.substr(line.indexOf('=') + 1, 1000).trim();
-				option.value = '';
+				option.value = null;
 				option.sectionId = section.id;
 				option.select = [];
 
@@ -353,13 +353,13 @@ var Options = (new function($)
 								newoption.caption = option.caption.replace(/1/, k);
 								newoption.template = false;
 								newoption.multiid = k;
+								newoption.value = null;
 								section.options.push(newoption);
 								var val = findOption(values, name);
 								if (val)
 								{
 									newoption.value = val.Value;
 								}
-								newoption.exists = !!val;
 							}
 						}
 					}
@@ -372,12 +372,12 @@ var Options = (new function($)
 				for (var j=0; j < section.options.length; j++)
 				{
 					var option = section.options[j];
+					option.value = null;
 					var val = findOption(values, option.name);
 					if (val)
 					{
 						option.value = val.Value;
 					}
-					option.exists = !!val;
 				}
 			}
 		}
@@ -425,7 +425,7 @@ var Options = (new function($)
 
 			option.defvalue = 'no';
 			option.description = (data[i].Template.trim().split('\n')[0].substr(1, 1000).trim() || 'Post-processing script ' + scriptName + '.');
-			option.value = '';
+			option.value = null;
 			option.sectionId = sectionId;
 			option.select = ['yes', 'no'];
 			section.options.push(option);
@@ -690,7 +690,7 @@ var Config = (new function($)
 	function buildOptionRow(option, section)
 	{
 		var value = option.value;
-		if (!option.exists)
+		if (option.value === null)
 		{
 			value = option.defvalue;
 		}
@@ -708,7 +708,7 @@ var Config = (new function($)
 				'<label class="control-label">' +
 				'<a class="option-name" href="#" data-optid="' + option.formId + '" '+
 				'onclick="Config.scrollToOption(event, this)">' + caption + '</a>' +
-				(!option.exists && !section.postparam ?
+				(option.value === null && !section.postparam ?
 					' <a data-toggle="modal" href="#ConfigNewOptionHelp" class="label label-info">new</a>' : '') + '</label>'+
 				'<div class="controls">';
 
@@ -964,7 +964,6 @@ var Config = (new function($)
 			var description = conf.description;
 			option.description = description !== '' ? description : 'No description available.\n\nNOTE: The script doesn\'t have a description section. '+
 				'It\'s either not NZBGet script or a script created for an older NZBGet version and might not work properly.';
-			option.exists = true;
 			option.nocontent = true;
 			firstVisibleSection.options.unshift(option);
 		}
@@ -1285,9 +1284,12 @@ var Config = (new function($)
 							{
 								newValue = oldValue;
 							}
-							modified = modified || (oldValue != newValue) || !option.exists;
-							var opt = {Name: option.name, Value: newValue};
-							request.push(opt);
+							if (newValue != null)
+							{
+								modified = modified || (oldValue != newValue) || (option.value === null);
+								var opt = {Name: option.name, Value: newValue};
+								request.push(opt);
+							}
 						}
 						modified = modified || section.modified;
 					}
@@ -1452,7 +1454,7 @@ var Config = (new function($)
 
 	function filterOption(option, words)
 	{
-		return filterWords(option.caption + ' ' + option.description + ' ' + option.value, words);
+		return filterWords(option.caption + ' ' + option.description + ' ' + (option.value === null ? '' : option.value), words);
 	}
 
 	function filterStaticPages(words)
@@ -1810,8 +1812,11 @@ var ConfigBackupRestore = (new function($)
 		for (var i=0; i < Config.config().values.length; i++)
 		{
 			var option = Config.config().values[i];
-			settings += settings==='' ? '' : '\n';
-			settings += option.Name + '=' + option.Value;
+			if (option.Value !== null)
+			{
+				settings += settings==='' ? '' : '\n';
+				settings += option.Name + '=' + option.Value;
+			}
 		}
 
 		var pad = function(arg) { return (arg < 10 ? '0' : '') + arg }
