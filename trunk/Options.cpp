@@ -106,7 +106,6 @@ static const char* OPTION_CONFIGTEMPLATE		= "ConfigTemplate";
 static const char* OPTION_SCRIPTDIR				= "ScriptDir";
 static const char* OPTION_CREATELOG				= "CreateLog";
 static const char* OPTION_LOGFILE				= "LogFile";
-static const char* OPTION_APPENDNZBDIR			= "AppendNzbDir";
 static const char* OPTION_APPENDCATEGORYDIR		= "AppendCategoryDir";
 static const char* OPTION_LOCKFILE				= "LockFile";
 static const char* OPTION_DAEMONUSERNAME		= "DaemonUserName";
@@ -185,6 +184,7 @@ static const char* OPTION_POSTPROCESS			= "PostProcess";
 static const char* OPTION_LOADPARS				= "LoadPars";
 static const char* OPTION_THREADLIMIT			= "ThreadLimit";
 static const char* OPTION_PROCESSLOGKIND		= "ProcessLogKind";
+static const char* OPTION_APPENDNZBDIR			= "AppendNzbDir";
 
 const char* BoolNames[] = { "yes", "no", "true", "false", "1", "0", "on", "off", "enable", "disable", "enabled", "disabled" };
 const int BoolValues[] = { 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0 };
@@ -473,7 +473,6 @@ Options::Options(int argc, char* argv[])
 	m_bRemoteClientMode		= false;
 	m_bPrintOptions			= false;
 	m_bAddTop				= false;
-	m_bAppendNZBDir			= false;
 	m_bAppendCategoryDir	= false;
 	m_bContinuePartial		= false;
 	m_bRenameBroken			= false;
@@ -814,7 +813,6 @@ void Options::InitDefault()
 	SetOption(OPTION_CONFIGTEMPLATE, "");
 	SetOption(OPTION_SCRIPTDIR, "${MainDir}/ppscripts");
 	SetOption(OPTION_CREATELOG, "yes");
-	SetOption(OPTION_APPENDNZBDIR, "yes");
 	SetOption(OPTION_APPENDCATEGORYDIR, "yes");
 	SetOption(OPTION_OUTPUTMODE, "curses");
 	SetOption(OPTION_DUPECHECK, "yes");
@@ -1045,7 +1043,6 @@ void Options::InitOptions()
 
 	m_bCreateBrokenLog		= (bool)ParseEnumValue(OPTION_CREATEBROKENLOG, BoolCount, BoolNames, BoolValues);
 	m_bResetLog				= (bool)ParseEnumValue(OPTION_RESETLOG, BoolCount, BoolNames, BoolValues);
-	m_bAppendNZBDir			= (bool)ParseEnumValue(OPTION_APPENDNZBDIR, BoolCount, BoolNames, BoolValues);
 	m_bAppendCategoryDir	= (bool)ParseEnumValue(OPTION_APPENDCATEGORYDIR, BoolCount, BoolNames, BoolValues);
 	m_bContinuePartial		= (bool)ParseEnumValue(OPTION_CONTINUEPARTIAL, BoolCount, BoolNames, BoolValues);
 	m_bRenameBroken			= (bool)ParseEnumValue(OPTION_RENAMEBROKEN, BoolCount, BoolNames, BoolValues);
@@ -2484,7 +2481,8 @@ bool Options::ValidateOptionName(const char * optname)
 		!strcasecmp(optname, OPTION_THREADLIMIT) ||
 		!strcasecmp(optname, OPTION_POSTLOGKIND) ||
 		!strcasecmp(optname, OPTION_NZBLOGKIND) ||
-		!strcasecmp(optname, OPTION_PROCESSLOGKIND))
+		!strcasecmp(optname, OPTION_PROCESSLOGKIND) ||
+		!strcasecmp(optname, OPTION_APPENDNZBDIR))
 	{
 		ConfigWarn("Option \"%s\" is obsolete, ignored", optname);
 		return true;

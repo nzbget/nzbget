@@ -246,7 +246,6 @@ private:
 	bool				m_bResetLog;
 	int					m_iConnectionTimeout;
 	int					m_iTerminateTimeout;
-	bool				m_bAppendNZBDir;
 	bool				m_bAppendCategoryDir;
 	bool				m_bContinuePartial;
 	bool				m_bRenameBroken;
@@ -406,7 +405,6 @@ public:
 	int					GetConnectionTimeout() { return m_iConnectionTimeout; }
 	int					GetTerminateTimeout() { return m_iTerminateTimeout; }
 	bool				GetDecode() { return m_bDecode; };
-	bool				GetAppendNZBDir() { return m_bAppendNZBDir; }
 	bool				GetAppendCategoryDir() { return m_bAppendCategoryDir; }
 	bool				GetContinuePartial() { return m_bContinuePartial; }
 	bool				GetRenameBroken() { return m_bRenameBroken; }
