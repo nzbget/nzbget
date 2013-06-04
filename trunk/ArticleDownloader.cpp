@@ -1115,27 +1115,6 @@ void ArticleDownloader::CompleteFileParts()
 	{
 		warn("%i of %i article downloads failed for \"%s\"", iBrokenCount, m_pFileInfo->GetArticles()->size(), InfoFilename);
 
-		if (g_pOptions->GetRenameBroken())
-		{
-			char brokenfn[1024];
-			snprintf(brokenfn, 1024, "%s_broken", ofn);
-			brokenfn[1024-1] = '\0';
-			if (Util::MoveFile(ofn, brokenfn))
-			{
-				detail("Renaming broken file from %s to %s", ofn, brokenfn);
-			}
-			else
-			{
-				warn("Renaming broken file from %s to %s failed", ofn, brokenfn);
-			}
-			strncpy(ofn, brokenfn, 1024);
-			ofn[1024-1] = '\0';
-		}
-		else
-		{
-			detail("Not renaming broken file %s", ofn);
-		}
-
 		if (g_pOptions->GetCreateBrokenLog())
 		{
 			char szBrokenLogName[1024];

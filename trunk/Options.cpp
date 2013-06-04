@@ -112,7 +112,6 @@ static const char* OPTION_DAEMONUSERNAME		= "DaemonUserName";
 static const char* OPTION_OUTPUTMODE			= "OutputMode";
 static const char* OPTION_DUPECHECK				= "DupeCheck";
 static const char* OPTION_DOWNLOADRATE			= "DownloadRate";
-static const char* OPTION_RENAMEBROKEN			= "RenameBroken";
 static const char* OPTION_CONTROLIP				= "ControlIp";
 static const char* OPTION_CONTROLPORT			= "ControlPort";
 static const char* OPTION_CONTROLPASSWORD		= "ControlPassword";
@@ -185,6 +184,7 @@ static const char* OPTION_LOADPARS				= "LoadPars";
 static const char* OPTION_THREADLIMIT			= "ThreadLimit";
 static const char* OPTION_PROCESSLOGKIND		= "ProcessLogKind";
 static const char* OPTION_APPENDNZBDIR			= "AppendNzbDir";
+static const char* OPTION_RENAMEBROKEN			= "RenameBroken";
 
 const char* BoolNames[] = { "yes", "no", "true", "false", "1", "0", "on", "off", "enable", "disable", "enabled", "disabled" };
 const int BoolValues[] = { 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0 };
@@ -475,7 +475,6 @@ Options::Options(int argc, char* argv[])
 	m_bAddTop				= false;
 	m_bAppendCategoryDir	= false;
 	m_bContinuePartial		= false;
-	m_bRenameBroken			= false;
 	m_bSaveQueue			= false;
 	m_bDupeCheck			= false;
 	m_iRetries				= 0;
@@ -817,7 +816,6 @@ void Options::InitDefault()
 	SetOption(OPTION_OUTPUTMODE, "curses");
 	SetOption(OPTION_DUPECHECK, "yes");
 	SetOption(OPTION_DOWNLOADRATE, "0");
-	SetOption(OPTION_RENAMEBROKEN, "no");
 	SetOption(OPTION_CONTROLIP, "0.0.0.0");
 	SetOption(OPTION_CONTROLPASSWORD, "tegbzn6789");
 	SetOption(OPTION_CONTROLPORT, "6789");
@@ -1045,7 +1043,6 @@ void Options::InitOptions()
 	m_bResetLog				= (bool)ParseEnumValue(OPTION_RESETLOG, BoolCount, BoolNames, BoolValues);
 	m_bAppendCategoryDir	= (bool)ParseEnumValue(OPTION_APPENDCATEGORYDIR, BoolCount, BoolNames, BoolValues);
 	m_bContinuePartial		= (bool)ParseEnumValue(OPTION_CONTINUEPARTIAL, BoolCount, BoolNames, BoolValues);
-	m_bRenameBroken			= (bool)ParseEnumValue(OPTION_RENAMEBROKEN, BoolCount, BoolNames, BoolValues);
 	m_bSaveQueue			= (bool)ParseEnumValue(OPTION_SAVEQUEUE, BoolCount, BoolNames, BoolValues);
 	m_bDupeCheck			= (bool)ParseEnumValue(OPTION_DUPECHECK, BoolCount, BoolNames, BoolValues);
 	m_bCreateLog			= (bool)ParseEnumValue(OPTION_CREATELOG, BoolCount, BoolNames, BoolValues);
@@ -2482,7 +2479,8 @@ bool Options::ValidateOptionName(const char * optname)
 		!strcasecmp(optname, OPTION_POSTLOGKIND) ||
 		!strcasecmp(optname, OPTION_NZBLOGKIND) ||
 		!strcasecmp(optname, OPTION_PROCESSLOGKIND) ||
-		!strcasecmp(optname, OPTION_APPENDNZBDIR))
+		!strcasecmp(optname, OPTION_APPENDNZBDIR) ||
+		!strcasecmp(optname, OPTION_RENAMEBROKEN))
 	{
 		ConfigWarn("Option \"%s\" is obsolete, ignored", optname);
 		return true;

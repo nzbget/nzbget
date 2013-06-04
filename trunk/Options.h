@@ -248,7 +248,6 @@ private:
 	int					m_iTerminateTimeout;
 	bool				m_bAppendCategoryDir;
 	bool				m_bContinuePartial;
-	bool				m_bRenameBroken;
 	int					m_iRetries;
 	int					m_iRetryInterval;
 	bool				m_bSaveQueue;
@@ -407,7 +406,6 @@ public:
 	bool				GetDecode() { return m_bDecode; };
 	bool				GetAppendCategoryDir() { return m_bAppendCategoryDir; }
 	bool				GetContinuePartial() { return m_bContinuePartial; }
-	bool				GetRenameBroken() { return m_bRenameBroken; }
 	int					GetRetries() { return m_iRetries; }
 	int					GetRetryInterval() { return m_iRetryInterval; }
 	bool				GetSaveQueue() { return m_bSaveQueue; }
