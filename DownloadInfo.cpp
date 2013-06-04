@@ -399,12 +399,9 @@ void NZBInfo::BuildFinalDirName(char* szFinalDirBuf, int iBufSize)
 		strncpy(szFinalDirBuf, szBuffer, iBufSize);
 	}
 
-	if (g_pOptions->GetAppendNZBDir())
-	{
-		snprintf(szBuffer, 1024, "%s%s", szFinalDirBuf, GetName());
-		szBuffer[1024-1] = '\0';
-		strncpy(szFinalDirBuf, szBuffer, iBufSize);
-	}
+	snprintf(szBuffer, 1024, "%s%s", szFinalDirBuf, GetName());
+	szBuffer[1024-1] = '\0';
+	strncpy(szFinalDirBuf, szBuffer, iBufSize);
 }
 
 void NZBInfo::SetParameter(const char* szName, const char* szValue)

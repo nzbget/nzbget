@@ -315,7 +315,7 @@ void PrePostProcessor::NZBDeleted(DownloadQueue* pDownloadQueue, NZBInfo* pNZBIn
 		}
 	
 		// delete old directory (if empty)
-		if (g_pOptions->GetAppendNZBDir() && Util::DirEmpty(pNZBInfo->GetDestDir()))
+		if (Util::DirEmpty(pNZBInfo->GetDestDir()))
 		{
 			rmdir(pNZBInfo->GetDestDir());
 		}
