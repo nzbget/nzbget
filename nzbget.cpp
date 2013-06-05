@@ -836,14 +836,14 @@ void Daemonize()
 	/* Drop user if there is one, and we were run as root */
 	if ( getuid() == 0 || geteuid() == 0 )
 	{
-		struct passwd *pw = getpwnam(g_pOptions->GetDaemonUserName());
+		struct passwd *pw = getpwnam(g_pOptions->GetDaemonUsername());
 		if (pw)
 		{
 			fchown(lfp, pw->pw_uid, pw->pw_gid); /* change owner of lock file  */
 			setgroups( 0, (const gid_t*) 0 ); /* Set aux groups to null. */
 			setgid(pw->pw_gid); /* Set primary group. */
 			/* Try setting aux groups correctly - not critical if this fails. */
-			initgroups( g_pOptions->GetDaemonUserName(),pw->pw_gid); 
+			initgroups( g_pOptions->GetDaemonUsername(),pw->pw_gid); 
 			/* Finally, set uid. */
 			setuid(pw->pw_uid);
 		}

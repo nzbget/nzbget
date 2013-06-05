@@ -253,6 +253,7 @@ private:
 	bool				m_bSaveQueue;
 	bool				m_bDupeCheck;
 	char*				m_szControlIP;
+	char*				m_szControlUsername;
 	char*				m_szControlPassword;
 	int					m_iControlPort;
 	bool				m_bSecureControl;
@@ -260,7 +261,7 @@ private:
 	char*				m_szSecureCert;
 	char*				m_szSecureKey;
 	char*				m_szLockFile;
-	char*				m_szDaemonUserName;
+	char*				m_szDaemonUsername;
 	EOutputMode			m_eOutputMode;
 	bool				m_bReloadQueue;
 	bool				m_bReloadUrlQueue;
@@ -411,6 +412,7 @@ public:
 	bool				GetSaveQueue() { return m_bSaveQueue; }
 	bool				GetDupeCheck() { return m_bDupeCheck; }
 	const char*			GetControlIP() { return m_szControlIP; }
+	const char*			GetControlUsername() { return m_szControlUsername; }
 	const char*			GetControlPassword() { return m_szControlPassword; }
 	int					GetControlPort() { return m_iControlPort; }
 	bool				GetSecureControl() { return m_bSecureControl; }
@@ -418,7 +420,7 @@ public:
 	const char*			GetSecureCert() { return m_szSecureCert; }
 	const char*			GetSecureKey() { return m_szSecureKey; }
 	const char*			GetLockFile() { return m_szLockFile; }
-	const char*			GetDaemonUserName() { return m_szDaemonUserName; }
+	const char*			GetDaemonUsername() { return m_szDaemonUsername; }
 	EOutputMode			GetOutputMode() { return m_eOutputMode; }
 	bool				GetReloadQueue() { return m_bReloadQueue; }
 	bool				GetReloadUrlQueue() { return m_bReloadUrlQueue; }

@@ -108,12 +108,13 @@ static const char* OPTION_CREATELOG				= "CreateLog";
 static const char* OPTION_LOGFILE				= "LogFile";
 static const char* OPTION_APPENDCATEGORYDIR		= "AppendCategoryDir";
 static const char* OPTION_LOCKFILE				= "LockFile";
-static const char* OPTION_DAEMONUSERNAME		= "DaemonUserName";
+static const char* OPTION_DAEMONUSERNAME		= "DaemonUsername";
 static const char* OPTION_OUTPUTMODE			= "OutputMode";
 static const char* OPTION_DUPECHECK				= "DupeCheck";
 static const char* OPTION_DOWNLOADRATE			= "DownloadRate";
 static const char* OPTION_CONTROLIP				= "ControlIp";
 static const char* OPTION_CONTROLPORT			= "ControlPort";
+static const char* OPTION_CONTROLUSERNAME		= "ControlUsername";
 static const char* OPTION_CONTROLPASSWORD		= "ControlPassword";
 static const char* OPTION_SECURECONTROL			= "SecureControl";
 static const char* OPTION_SECUREPORT			= "SecurePort";
@@ -481,13 +482,14 @@ Options::Options(int argc, char* argv[])
 	m_iRetryInterval		= 0;
 	m_iControlPort			= 0;
 	m_szControlIP			= NULL;
+	m_szControlUsername		= NULL;
 	m_szControlPassword		= NULL;
 	m_bSecureControl		= false;
 	m_iSecurePort			= 0;
 	m_szSecureCert			= NULL;
 	m_szSecureKey			= NULL;
 	m_szLockFile			= NULL;
-	m_szDaemonUserName		= NULL;
+	m_szDaemonUsername		= NULL;
 	m_eOutputMode			= omLoggable;
 	m_bReloadQueue			= false;
 	m_bReloadUrlQueue		= false;
@@ -674,6 +676,10 @@ Options::~Options()
 	{
 		free(m_szControlIP);
 	}
+	if (m_szControlUsername)
+	{
+		free(m_szControlUsername);
+	}
 	if (m_szControlPassword)
 	{
 		free(m_szControlPassword);
@@ -694,9 +700,9 @@ Options::~Options()
 	{
 		free(m_szLockFile);
 	}
-	if (m_szDaemonUserName)
+	if (m_szDaemonUsername)
 	{
-		free(m_szDaemonUserName);
+		free(m_szDaemonUsername);
 	}
 	if (m_szScriptOrder)
 	{
@@ -817,6 +823,7 @@ void Options::InitDefault()
 	SetOption(OPTION_DUPECHECK, "yes");
 	SetOption(OPTION_DOWNLOADRATE, "0");
 	SetOption(OPTION_CONTROLIP, "0.0.0.0");
+	SetOption(OPTION_CONTROLUSERNAME, "nzbget");
 	SetOption(OPTION_CONTROLPASSWORD, "tegbzn6789");
 	SetOption(OPTION_CONTROLPORT, "6789");
 	SetOption(OPTION_SECURECONTROL, "no");
@@ -1009,11 +1016,12 @@ void Options::InitOptions()
 	m_szNZBProcess			= strdup(GetOption(OPTION_NZBPROCESS));
 	m_szNZBAddedProcess		= strdup(GetOption(OPTION_NZBADDEDPROCESS));
 	m_szControlIP			= strdup(GetOption(OPTION_CONTROLIP));
+	m_szControlUsername		= strdup(GetOption(OPTION_CONTROLUSERNAME));
 	m_szControlPassword		= strdup(GetOption(OPTION_CONTROLPASSWORD));
 	m_szSecureCert			= strdup(GetOption(OPTION_SECURECERT));
 	m_szSecureKey			= strdup(GetOption(OPTION_SECUREKEY));
 	m_szLockFile			= strdup(GetOption(OPTION_LOCKFILE));
-	m_szDaemonUserName		= strdup(GetOption(OPTION_DAEMONUSERNAME));
+	m_szDaemonUsername		= strdup(GetOption(OPTION_DAEMONUSERNAME));
 	m_szLogFile				= strdup(GetOption(OPTION_LOGFILE));
 	m_szUnrarCmd			= strdup(GetOption(OPTION_UNRARCMD));
 	m_szSevenZipCmd			= strdup(GetOption(OPTION_SEVENZIPCMD));

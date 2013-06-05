@@ -102,9 +102,10 @@ void BinRpcProcessor::Execute()
 		return;
 	}
 
-	if (strcmp(m_MessageBase.m_szPassword, g_pOptions->GetControlPassword()))
+	if ((strlen(g_pOptions->GetControlUsername()) > 0 && strcmp(m_MessageBase.m_szUsername, g_pOptions->GetControlUsername())) ||
+		strcmp(m_MessageBase.m_szPassword, g_pOptions->GetControlPassword()))
 	{
-		warn("nzbget request received on port %i from %s, but password invalid", g_pOptions->GetControlPort(), m_pConnection->GetRemoteAddr());
+		warn("nzbget request received on port %i from %s, but username or password invalid", g_pOptions->GetControlPort(), m_pConnection->GetRemoteAddr());
 		return;
 	}
 

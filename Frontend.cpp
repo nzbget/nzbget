@@ -235,6 +235,10 @@ void Frontend::InitMessageBase(SNZBRequestBase* pMessageBase, int iRequest, int 
 	pMessageBase->m_iSignature	= htonl(NZBMESSAGE_SIGNATURE);
 	pMessageBase->m_iType = htonl(iRequest);
 	pMessageBase->m_iStructSize = htonl(iSize);
+
+	strncpy(pMessageBase->m_szUsername, g_pOptions->GetControlUsername(), NZBREQUESTPASSWORDSIZE - 1);
+	pMessageBase->m_szUsername[NZBREQUESTPASSWORDSIZE - 1] = '\0';
+
 	strncpy(pMessageBase->m_szPassword, g_pOptions->GetControlPassword(), NZBREQUESTPASSWORDSIZE);
 	pMessageBase->m_szPassword[NZBREQUESTPASSWORDSIZE - 1] = '\0';
 }

@@ -27,7 +27,7 @@
 #ifndef MESSAGEBASE_H
 #define MESSAGEBASE_H
 
-static const int32_t NZBMESSAGE_SIGNATURE = 0x6E7A6215; // = "nzb-XX" (protocol version)
+static const int32_t NZBMESSAGE_SIGNATURE = 0x6E7A6216; // = "nzb-XX" (protocol version)
 static const int NZBREQUESTFILENAMESIZE = 512;
 static const int NZBREQUESTPASSWORDSIZE = 32;
 
@@ -128,7 +128,8 @@ struct SNZBRequestBase
 	int32_t					m_iSignature;			// Signature must be NZBMESSAGE_SIGNATURE in integer-value
 	int32_t					m_iStructSize;			// Size of the entire struct
 	int32_t					m_iType;				// Message type, see enum in NZBMessageRequest-namespace
-	char					m_szPassword[NZBREQUESTPASSWORDSIZE];	// Password needs to be in every request
+	char					m_szUsername[NZBREQUESTPASSWORDSIZE];	// User name
+	char					m_szPassword[NZBREQUESTPASSWORDSIZE];	// Password
 };
 
 // The basic SNZBResposneBase struct, used in all responses
