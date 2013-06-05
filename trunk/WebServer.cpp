@@ -107,7 +107,7 @@ void WebProcessor::Execute()
 			char* szAuthInfo64 = p + 21;
 			if (strlen(szAuthInfo64) > sizeof(szAuthInfo))
 			{
-				error("invalid-request: auth-info too big");
+				error("Invalid-request: auth-info too big");
 				return;
 			}
 			szAuthInfo[WebUtil::DecodeBase64(szAuthInfo64, 0, szAuthInfo)] = '\0';
@@ -131,7 +131,7 @@ void WebProcessor::Execute()
 
 	if (m_eHttpMethod == hmPost && iContentLen <= 0)
 	{
-		error("invalid-request: content length is 0");
+		error("Invalid-request: content length is 0");
 		return;
 	}
 
@@ -196,9 +196,11 @@ void WebProcessor::Execute()
 		// Authorization
 		char* pw = strchr(szAuthInfo, ':');
 		if (pw) *pw++ = '\0';
-		if (strcmp(szAuthInfo, "nzbget") || strcmp(pw, g_pOptions->GetControlPassword()))
+		if ((strlen(g_pOptions->GetControlUsername()) > 0 && strcmp(szAuthInfo, g_pOptions->GetControlUsername())) ||
+			strcmp(pw, g_pOptions->GetControlPassword()))
 		{
-			warn("request received on port %i from %s, but password invalid", g_pOptions->GetControlPort(), m_pConnection->GetRemoteAddr());
+			warn("Request received on port %i from %s, but username or password invalid (%s:%s)",
+				g_pOptions->GetControlPort(), m_pConnection->GetRemoteAddr(), szAuthInfo, pw);
 			SendAuthResponse();
 			return;
 		}
@@ -213,7 +215,7 @@ void WebProcessor::Execute()
 		if (!m_pConnection->Recv(m_szRequest, iContentLen))
 		{
 			free(m_szRequest);
-			error("invalid-request: could not read data");
+			error("Invalid-request: could not read data");
 			return;
 		}
 		debug("Request=%s", m_szRequest);
