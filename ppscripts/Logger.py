@@ -71,12 +71,13 @@ if not os.path.exists(os.environ['NZBPP_DIRECTORY']):
 # environment variables.
 host = os.environ['NZBOP_CONTROLIP'];
 port = os.environ['NZBOP_CONTROLPORT'];
+username = os.environ['NZBOP_CONTROLUSERNAME'];
 password = os.environ['NZBOP_CONTROLPASSWORD'];
 
 if host == '0.0.0.0': host = '127.0.0.1'
 
 # Build an URL for XML-RPC requests
-rpcUrl = 'http://nzbget:%s@%s:%s/xmlrpc' % (password, host, port);
+rpcUrl = 'http://%s:%s@%s:%s/xmlrpc' % (username, password, host, port);
 
 # Create remote server object
 server = ServerProxy(rpcUrl)
