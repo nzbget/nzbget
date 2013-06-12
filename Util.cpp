@@ -1280,7 +1280,7 @@ char* WebUtil::JsonEncode(const char* raw)
 			default:
 				if (ch < 0x20 || ch >= 0x80)
 				{
-					iReqSize += 8;
+					iReqSize += 6;
 					break;
 				}
 		}
@@ -1360,8 +1360,9 @@ char* WebUtil::JsonEncode(const char* raw)
 						cp += ch & 0x3f;
 					}
 
-					sprintf(output, "\\u%06x", cp);
-					output += 8;
+					// we support only Unicode range U+0000-U+FFFF
+					sprintf(output, "\\u%04x", cp <= 0xFFFF ? cp : '.');
+					output += 6;
 				}
 				else
 				{
