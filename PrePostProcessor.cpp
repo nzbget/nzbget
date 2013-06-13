@@ -216,12 +216,14 @@ void PrePostProcessor::QueueCoordinatorUpdate(Subject * Caller, void * Aspect)
 			IsNZBFileCompleted(pAspect->pDownloadQueue, pAspect->pNZBInfo, true, false) &&
 			(!pAspect->pFileInfo->GetPaused() || IsNZBFileCompleted(pAspect->pDownloadQueue, pAspect->pNZBInfo, false, false)))
 		{
-			if (pAspect->eAction == QueueCoordinator::eaFileCompleted)
+			if (pAspect->eAction == QueueCoordinator::eaFileCompleted ||
+				(pAspect->pFileInfo->GetAutoDeleted() &&
+				 IsNZBFileCompleted(pAspect->pDownloadQueue, pAspect->pNZBInfo, false, true)))
 			{
 				info("Collection %s completely downloaded", pAspect->pNZBInfo->GetName());
 				NZBDownloaded(pAspect->pDownloadQueue, pAspect->pNZBInfo);
 			}
-			else if (pAspect->pNZBInfo->GetDeleted() &&
+			else if (pAspect->eAction == QueueCoordinator::eaFileDeleted &&
 				!pAspect->pNZBInfo->GetParCleanup() &&
 				IsNZBFileCompleted(pAspect->pDownloadQueue, pAspect->pNZBInfo, false, true))
 			{
