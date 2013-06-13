@@ -644,6 +644,7 @@ void QueueCoordinator::ArticleCompleted(ArticleDownloader* pArticleDownloader)
 		{
 			warn("File \"%s\" seems to be duplicate, cancelling download and deleting file from queue", pFileInfo->GetFilename());
 			fileCompleted = false;
+			pFileInfo->SetAutoDeleted(true);
 			DeleteQueueEntry(pFileInfo);
 		}
 	}

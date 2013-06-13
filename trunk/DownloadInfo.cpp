@@ -532,6 +532,7 @@ FileInfo::FileInfo()
 	m_iPriority = 0;
 	m_bExtraPriority = false;
 	m_iActiveDownloads = 0;
+	m_bAutoDeleted = false;
 	m_iIDGen++;
 	m_iID = m_iIDGen;
 }

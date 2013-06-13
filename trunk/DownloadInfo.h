@@ -96,6 +96,7 @@ private:
 	int					m_iPriority;
 	bool				m_bExtraPriority;
 	int					m_iActiveDownloads;
+	bool				m_bAutoDeleted;
 
 	static int			m_iIDGen;
 
@@ -141,6 +142,8 @@ public:
 	void				SetExtraPriority(bool bExtraPriority) { m_bExtraPriority = bExtraPriority; };
 	int					GetActiveDownloads() { return m_iActiveDownloads; }
 	void				SetActiveDownloads(int iActiveDownloads);
+	bool				GetAutoDeleted() { return m_bAutoDeleted; }
+	void				SetAutoDeleted(bool bAutoDeleted) { m_bAutoDeleted = bAutoDeleted; }
 };
                               
 typedef std::deque<FileInfo*> FileQueue;
