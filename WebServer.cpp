@@ -214,7 +214,6 @@ void WebProcessor::Execute()
 		
 		if (!m_pConnection->Recv(m_szRequest, iContentLen))
 		{
-			free(m_szRequest);
 			error("Invalid-request: could not read data");
 			return;
 		}
