@@ -1007,16 +1007,19 @@ void PostScriptController::InitParamsForNewNZB(NZBInfo* pNZBInfo)
 	free(szDefScript2);
 }
 
-void NZBScriptController::ExecuteScript(const char* szScript, const char* szNZBFilename, 
-	const char* szDirectory, char** pCategory, int* iPriority, NZBParameterList* pParameterList)
+void NZBScriptController::ExecuteScript(const char* szScript, const char* szNZBFilename, const char* szDirectory,
+	char** pNZBName, char** pCategory, int* iPriority, NZBParameterList* pParameters, bool* bAddTop, bool* bAddPaused)
 {
 	info("Executing nzb-process-script for %s", Util::BaseFileName(szNZBFilename));
 
 	NZBScriptController* pScriptController = new NZBScriptController();
 	pScriptController->SetScript(szScript);
+	pScriptController->m_pNZBName = pNZBName;
 	pScriptController->m_pCategory = pCategory;
-	pScriptController->m_pParameterList = pParameterList;
+	pScriptController->m_pParameters = pParameters;
 	pScriptController->m_iPriority = iPriority;
+	pScriptController->m_bAddTop = bAddTop;
+	pScriptController->m_bAddPaused = bAddPaused;
 
 	char szInfoName[1024];
 	snprintf(szInfoName, 1024, "nzb-process-script for %s", Util::BaseFileName(szNZBFilename));
@@ -1033,6 +1036,18 @@ void NZBScriptController::ExecuteScript(const char* szScript, const char* szNZBF
 		szDir[iLen-1] = '\0';
 	}
 
+	char szPriority[20];
+	snprintf(szPriority, 20, "%i", *iPriority);
+	szPriority[20-1] = '\0';
+
+	char szAddTop[10];
+	snprintf(szAddTop, 10, "%i", *bAddTop ? 1 : 0);
+	szAddTop[10-1] = '\0';
+
+	char szAddPaused[10];
+	snprintf(szAddPaused, 10, "%i", *bAddPaused ? 1 : 0);
+	szAddPaused[10-1] = '\0';
+
 	char szLogPrefix[1024];
 	strncpy(szLogPrefix, Util::BaseFileName(szScript), 1024);
 	szLogPrefix[1024-1] = '\0';
@@ -1042,6 +1057,11 @@ void NZBScriptController::ExecuteScript(const char* szScript, const char* szNZBF
 
 	pScriptController->SetEnvVar("NZBNP_DIRECTORY", szDir);
 	pScriptController->SetEnvVar("NZBNP_FILENAME", szNZBFilename);
+	pScriptController->SetEnvVar("NZBNP_NZBNAME", strlen(*pNZBName) > 0 ? *pNZBName : Util::BaseFileName(szNZBFilename));
+	pScriptController->SetEnvVar("NZBNP_CATEGORY", *pCategory);
+	pScriptController->SetEnvVar("NZBNP_PRIORITY", szPriority);
+	pScriptController->SetEnvVar("NZBNP_TOP", szAddTop);
+	pScriptController->SetEnvVar("NZBNP_PAUSED", szAddPaused);
 
 	pScriptController->Execute();
 
@@ -1055,7 +1075,12 @@ void NZBScriptController::AddMessage(Message::EKind eKind, const char* szText)
 	if (!strncmp(szText, "[NZB] ", 6))
 	{
 		debug("Command %s detected", szText + 6);
-		if (!strncmp(szText + 6, "CATEGORY=", 9))
+		if (!strncmp(szText + 6, "NZBNAME=", 8))
+		{
+			free(*m_pNZBName);
+			*m_pNZBName = strdup(szText + 6 + 8);
+		}
+		else if (!strncmp(szText + 6, "CATEGORY=", 9))
 		{
 			free(*m_pCategory);
 			*m_pCategory = strdup(szText + 6 + 9);
@@ -1067,7 +1092,7 @@ void NZBScriptController::AddMessage(Message::EKind eKind, const char* szText)
 			if (szValue)
 			{
 				*szValue = '\0';
-				m_pParameterList->SetParameter(szParam, szValue + 1);
+				m_pParameters->SetParameter(szParam, szValue + 1);
 			}
 			else
 			{
@@ -1078,6 +1103,14 @@ void NZBScriptController::AddMessage(Message::EKind eKind, const char* szText)
 		else if (!strncmp(szText + 6, "PRIORITY=", 9))
 		{
 			*m_iPriority = atoi(szText + 6 + 9);
+		}
+		else if (!strncmp(szText + 6, "TOP=", 4))
+		{
+			*m_bAddTop = atoi(szText + 6 + 4) != 0;
+		}
+		else if (!strncmp(szText + 6, "PAUSED=", 7))
+		{
+			*m_bAddPaused = atoi(szText + 6 + 7) != 0;
 		}
 		else
 		{

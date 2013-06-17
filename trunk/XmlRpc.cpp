@@ -47,12 +47,14 @@
 #include "UrlCoordinator.h"
 #include "QueueEditor.h"
 #include "PrePostProcessor.h"
+#include "Scanner.h"
 #include "Util.h"
 
 extern Options* g_pOptions;
 extern QueueCoordinator* g_pQueueCoordinator;
 extern UrlCoordinator* g_pUrlCoordinator;
 extern PrePostProcessor* g_pPrePostProcessor;
+extern Scanner* g_pScanner;
 extern void ExitProc();
 extern void Reload();
 
@@ -1502,26 +1504,10 @@ void DownloadXmlCommand::Execute()
 	szFileContent[iLen] = '\0';
 	//debug("FileContent=%s", szFileContent);
 
-	NZBFile* pNZBFile = NZBFile::CreateFromBuffer(szFileName, szCategory, szFileContent, iLen + 1);
+	bool bOK = g_pScanner->AddExternalFile(szFileName, szCategory, iPriority, NULL, bAddTop,
+		false, NULL, szFileContent, iLen, true);
 
-	if (pNZBFile)
-	{
-		info("Queue collection %s", szFileName);
-
-		for (NZBFile::FileInfos::iterator it = pNZBFile->GetFileInfos()->begin(); it != pNZBFile->GetFileInfos()->end(); it++)
-		{
-			FileInfo* pFileInfo = *it;
-			pFileInfo->SetPriority(iPriority);
-		}
-
-		g_pQueueCoordinator->AddNZBFileToQueue(pNZBFile, bAddTop);
-		delete pNZBFile;
-		BuildBoolResponse(true);
-	}
-	else
-	{
-		BuildBoolResponse(false);
-	}
+	BuildBoolResponse(bOK);
 }
 
 void PostQueueXmlCommand::Execute()
@@ -1739,7 +1725,7 @@ void ScanXmlCommand::Execute()
 	// optional parameter "SyncMode"
 	NextParamAsBool(&bSyncMode);
 
-	g_pPrePostProcessor->ScanNZBDir(bSyncMode);
+	g_pScanner->ScanNZBDir(bSyncMode);
 	BuildBoolResponse(true);
 }
 
@@ -2079,7 +2065,7 @@ void DownloadUrlXmlCommand::Execute()
 
 		char szNicename[1024];
 		pUrlInfo->GetName(szNicename, sizeof(szNicename));
-		info("Request: Queue %s", szNicename);
+		info("Queue %s", szNicename);
 
 		g_pUrlCoordinator->AddUrlToQueue(pUrlInfo, bAddTop);
 

@@ -125,16 +125,21 @@ public:
 class NZBScriptController : public ScriptController
 {
 private:
+	char**				m_pNZBName;
 	char**				m_pCategory;
 	int*				m_iPriority;
-	NZBParameterList*	m_pParameterList;
+	NZBParameterList*	m_pParameters;
+	bool*				m_bAddTop;
+	bool*				m_bAddPaused;
 	int					m_iPrefixLen;
 
 protected:
 	virtual void		AddMessage(Message::EKind eKind, const char* szText);
 
 public:
-	static void			ExecuteScript(const char* szScript, const char* szNZBFilename, const char* szDirectory, char** pCategory, int* iPriority, NZBParameterList* pParameterList);
+	static void			ExecuteScript(const char* szScript, const char* szNZBFilename, const char* szDirectory,
+							char** pNZBName, char** pCategory, int* iPriority, NZBParameterList* pParameters,
+							bool* bAddTop, bool* bAddPaused);
 };
 
 class NZBAddedScriptController : public Thread, public ScriptController

@@ -49,10 +49,13 @@
 #include "Util.h"
 #include "NZBFile.h"
 #include "QueueCoordinator.h"
+#include "Scanner.h"
 
 extern Options* g_pOptions;
 extern DiskState* g_pDiskState;
 extern QueueCoordinator* g_pQueueCoordinator;
+extern Scanner* g_pScanner;
+
 
 UrlDownloader::UrlDownloader() : WebDownloader()
 {
@@ -418,38 +421,8 @@ void UrlCoordinator::UrlCompleted(UrlDownloader* pUrlDownloader)
 
 void UrlCoordinator::AddToNZBQueue(UrlInfo* pUrlInfo, const char* szTempFilename, const char* szOriginalFilename, const char* szOriginalCategory)
 {
-	info("Queue downloaded collection %s", szOriginalFilename);
-
-	NZBFile* pNZBFile = NZBFile::CreateFromFile(szTempFilename, pUrlInfo->GetCategory());
-	if (pNZBFile)
-	{
-		pNZBFile->GetNZBInfo()->SetName(NULL);
-		pNZBFile->GetNZBInfo()->SetFilename(pUrlInfo->GetNZBFilename() && strlen(pUrlInfo->GetNZBFilename()) > 0 ? pUrlInfo->GetNZBFilename() : szOriginalFilename);
-
-		if (strlen(pUrlInfo->GetCategory()) > 0)
-		{
-			pNZBFile->GetNZBInfo()->SetCategory(pUrlInfo->GetCategory());
-		}
-		else if (szOriginalCategory)
-		{
-			pNZBFile->GetNZBInfo()->SetCategory(szOriginalCategory);
-		}
-
-		pNZBFile->GetNZBInfo()->BuildDestDirName();
-
-		for (NZBFile::FileInfos::iterator it = pNZBFile->GetFileInfos()->begin(); it != pNZBFile->GetFileInfos()->end(); it++)
-		{
-			FileInfo* pFileInfo = *it;
-			pFileInfo->SetPriority(pUrlInfo->GetPriority());
-			pFileInfo->SetPaused(pUrlInfo->GetAddPaused());
-		}
-
-		g_pQueueCoordinator->AddNZBFileToQueue(pNZBFile, pUrlInfo->GetAddTop());
-		delete pNZBFile;
-		info("Collection %s added to queue", szOriginalFilename);
-	}
-	else
-	{
-		error("Could not add downloaded collection %s to queue", szOriginalFilename);
-	}
+	g_pScanner->AddExternalFile(
+		pUrlInfo->GetNZBFilename() && strlen(pUrlInfo->GetNZBFilename()) > 0 ? pUrlInfo->GetNZBFilename() : szOriginalFilename,
+		strlen(pUrlInfo->GetCategory()) > 0 ? pUrlInfo->GetCategory() : szOriginalCategory,
+		pUrlInfo->GetPriority(), NULL, pUrlInfo->GetAddTop(), pUrlInfo->GetAddPaused(), szTempFilename, NULL, 0, false);
 }
