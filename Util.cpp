@@ -270,6 +270,7 @@ void Util::NormalizePathSeparators(char* szPath)
 bool Util::ForceDirectories(const char* szPath, char* szErrBuf, int iBufSize)
 {
 	*szErrBuf = '\0';
+	char szSysErrStr[256];
 	char szNormPath[1024];
 	strncpy(szNormPath, szPath, 1024);
 	szNormPath[1024-1] = '\0';
@@ -288,7 +289,7 @@ bool Util::ForceDirectories(const char* szPath, char* szErrBuf, int iBufSize)
 	bool bOK = !stat(szNormPath, &buffer);
 	if (!bOK && errno != ENOENT)
 	{
-		snprintf(szErrBuf, iBufSize, "could not read information for directory %s: %i, %s", szNormPath, errno, strerror(errno));
+		snprintf(szErrBuf, iBufSize, "could not read information for directory %s: errno %i, %s", szNormPath, errno, GetLastErrorMessage(szSysErrStr, sizeof(szSysErrStr)));
 		szErrBuf[iBufSize-1] = 0;
 		return false;
 	}
@@ -330,14 +331,14 @@ bool Util::ForceDirectories(const char* szPath, char* szErrBuf, int iBufSize)
 		
 		if (mkdir(szNormPath, S_DIRMODE) != 0 && errno != EEXIST)
 		{
-			snprintf(szErrBuf, iBufSize, "could not create directory %s: %s", szNormPath, strerror(errno));
+			snprintf(szErrBuf, iBufSize, "could not create directory %s: %s", szNormPath, GetLastErrorMessage(szSysErrStr, sizeof(szSysErrStr)));
 			szErrBuf[iBufSize-1] = 0;
 			return false;
 		}
 			
 		if (stat(szNormPath, &buffer) != 0)
 		{
-			snprintf(szErrBuf, iBufSize, "could not read information for directory %s: %s", szNormPath, strerror(errno));
+			snprintf(szErrBuf, iBufSize, "could not read information for directory %s: %s", szNormPath, GetLastErrorMessage(szSysErrStr, sizeof(szSysErrStr)));
 			szErrBuf[iBufSize-1] = 0;
 			return false;
 		}
@@ -414,6 +415,20 @@ bool Util::LoadFileIntoBuffer(const char* szFileName, char** pBuffer, int* pBuff
     *pBufferLength = iSize + 1;
 
     return true;
+}
+
+bool Util::SaveBufferIntoFile(const char* szFileName, const char* szBuffer, int iBufLen)
+{
+    FILE* pFile = fopen(szFileName, "wb");
+    if (!pFile)
+    {
+        return false;
+    }
+
+	int iWrittenBytes = fwrite(szBuffer, 1, iBufLen, pFile);
+    fclose(pFile);
+
+	return iWrittenBytes = iBufLen;
 }
 
 bool Util::CreateSparseFile(const char* szFilename, int iSize)
@@ -855,6 +870,14 @@ bool Util::SameFilename(const char* szFilename1, const char* szFilename2)
 #else
 	return strcmp(szFilename1, szFilename2) == 0;
 #endif
+}
+
+char* Util::GetLastErrorMessage(char* szBuffer, int iBufLen)
+{
+	szBuffer[0] = '\0';
+	strerror_r(errno, szBuffer, iBufLen);
+	szBuffer[iBufLen-1] = '\0';
+	return szBuffer;
 }
 
 void Util::InitVersionRevision()

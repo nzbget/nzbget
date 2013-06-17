@@ -1,7 +1,7 @@
 /*
  *  This file is part of nzbget
  *
- *  Copyright (C) 2007-2011 Andrey Prygunkov <hugbug@users.sourceforge.net>
+ *  Copyright (C) 2007-2013 Andrey Prygunkov <hugbug@users.sourceforge.net>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -29,6 +29,7 @@
 #include <deque>
 #include <time.h>
 #include "DownloadInfo.h"
+#include "Thread.h"
 
 class Scanner
 {
@@ -52,26 +53,57 @@ private:
 
 	typedef std::deque<FileData*>		FileList;
 
+	class QueueData
+	{
+	private:
+		char*				m_szFilename;
+		char*				m_szNZBName;
+		char*				m_szCategory;
+		int					m_iPriority;
+		NZBParameterList	m_Parameters;
+		bool				m_bAddTop;
+		bool				m_bAddPaused;
+
+	public:
+							QueueData(const char* szFilename, const char* szNZBName, const char* szCategory, int iPriority,
+								NZBParameterList* pParameters, bool bAddTop, bool bAddPaused);
+							~QueueData();
+		const char*			GetFilename() { return m_szFilename; }
+		const char*			GetNZBName() { return m_szNZBName; }
+		const char*			GetCategory() { return m_szCategory; }
+		int					GetPriority() { return m_iPriority; }
+		NZBParameterList*	GetParameters() { return &m_Parameters; }
+		bool				GetAddTop() { return m_bAddTop; }
+		bool				GetAddPaused() { return m_bAddPaused; }
+	};
+
+	typedef std::deque<QueueData*>		QueueList;
+
 	bool				m_bRequestedNZBDirScan;
 	int					m_iNZBDirInterval;
 	bool				m_bNZBScript;
 	int					m_iPass;
-	int					m_iStepMSec;
 	FileList			m_FileList;
+	QueueList			m_QueueList;
 	bool				m_bScanning;
+	Mutex				m_mutexScan;
 
 	void				CheckIncomingNZBs(const char* szDirectory, const char* szCategory, bool bCheckStat);
-	void				AddFileToQueue(const char* szFilename, const char* szCategory, int iPriority, NZBParameterList* pParameterList);
+	void				AddFileToQueue(const char* szFilename, const char* szNZBName, const char* szCategory, int iPriority,
+							NZBParameterList* pParameters, bool bAddTop, bool bAddPaused);
 	void				ProcessIncomingFile(const char* szDirectory, const char* szBaseFilename, const char* szFullFilename, const char* szCategory);
 	bool				CanProcessFile(const char* szFullFilename, bool bCheckStat);
 	void				DropOldFiles();
+	void				ClearQueueList();
 
 public:
 						Scanner();
 						~Scanner();
-	void				SetStepInterval(int iStepMSec) { m_iStepMSec = iStepMSec; }
 	void				ScanNZBDir(bool bSyncMode);
 	void				Check();
+	bool				AddExternalFile(const char* szNZBName, const char* szCategory, int iPriority,
+							NZBParameterList* pParameters, bool bAddPaused, bool bAddTop,
+							const char* szFileName, const char* szBuffer, int iBufSize, bool bSyncMode);
 };
 
 #endif

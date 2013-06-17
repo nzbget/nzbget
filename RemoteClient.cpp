@@ -188,7 +188,7 @@ bool RemoteClient::RequestServerDownload(const char* szFilename, const char* szC
 		DownloadRequest.m_bAddFirst = htonl(bAddFirst);
 		DownloadRequest.m_bAddPaused = htonl(bAddPaused);
 		DownloadRequest.m_iPriority = htonl(iPriority);
-		DownloadRequest.m_iTrailingDataLength = htonl(iLength);
+		DownloadRequest.m_iTrailingDataLength = htonl(iLength - 1);
 
 		strncpy(DownloadRequest.m_szFilename, szFilename, NZBREQUESTFILENAMESIZE - 1);
 		DownloadRequest.m_szFilename[NZBREQUESTFILENAMESIZE-1] = '\0';

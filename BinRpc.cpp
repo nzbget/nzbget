@@ -52,11 +52,13 @@
 #include "PrePostProcessor.h"
 #include "Util.h"
 #include "DownloadInfo.h"
+#include "Scanner.h"
 
 extern Options* g_pOptions;
 extern QueueCoordinator* g_pQueueCoordinator;
 extern UrlCoordinator* g_pUrlCoordinator;
 extern PrePostProcessor* g_pPrePostProcessor;
+extern Scanner* g_pScanner;
 extern void ExitProc();
 extern void Reload();
 
@@ -341,9 +343,10 @@ void DownloadBinCommand::Execute()
 		return;
 	}
 
-	char* pRecvBuffer = (char*)malloc(ntohl(DownloadRequest.m_iTrailingDataLength) + 1);
+	int iBufLen = ntohl(DownloadRequest.m_iTrailingDataLength);
+	char* pRecvBuffer = (char*)malloc(iBufLen);
 
-	if (!m_pConnection->Recv(pRecvBuffer, ntohl(DownloadRequest.m_iTrailingDataLength)))
+	if (!m_pConnection->Recv(pRecvBuffer, iBufLen))
 	{
 		error("invalid request");
 		free(pRecvBuffer);
@@ -352,35 +355,17 @@ void DownloadBinCommand::Execute()
 	
 	int iPriority = ntohl(DownloadRequest.m_iPriority);
 	bool bAddPaused = ntohl(DownloadRequest.m_bAddPaused);
-	
-	NZBFile* pNZBFile = NZBFile::CreateFromBuffer(DownloadRequest.m_szFilename, DownloadRequest.m_szCategory, pRecvBuffer, ntohl(DownloadRequest.m_iTrailingDataLength));
-	
-	if (pNZBFile)
-	{
-		info("Queue collection %s", DownloadRequest.m_szFilename);
-		
-		for (NZBFile::FileInfos::iterator it = pNZBFile->GetFileInfos()->begin(); it != pNZBFile->GetFileInfos()->end(); it++)
-		{
-			FileInfo* pFileInfo = *it;
-			pFileInfo->SetPriority(iPriority);
-			pFileInfo->SetPaused(bAddPaused);
-		}
-		
-		g_pQueueCoordinator->AddNZBFileToQueue(pNZBFile, ntohl(DownloadRequest.m_bAddFirst));
-		delete pNZBFile;
-		
-		char tmp[1024];
-		snprintf(tmp, 1024, "Collection %s added to queue", Util::BaseFileName(DownloadRequest.m_szFilename));
-		tmp[1024-1] = '\0';
-		SendBoolResponse(true, tmp);
-	}
-	else
-	{
-		char tmp[1024];
-		snprintf(tmp, 1024, "Download Request failed for %s", Util::BaseFileName(DownloadRequest.m_szFilename));
-		tmp[1024-1] = '\0';
-		SendBoolResponse(false, tmp);
-	}
+	bool bAddTop = ntohl(DownloadRequest.m_bAddFirst);
+
+	bool bOK = g_pScanner->AddExternalFile(DownloadRequest.m_szFilename, DownloadRequest.m_szCategory,
+		iPriority, NULL, bAddTop, bAddPaused, NULL, pRecvBuffer, iBufLen, true);
+
+	char tmp[1024];
+	snprintf(tmp, 1024, bOK ? "Collection %s added to queue" : "Download Request failed for %s",
+		Util::BaseFileName(DownloadRequest.m_szFilename));
+	tmp[1024-1] = '\0';
+
+	SendBoolResponse(bOK, tmp);
 
 	free(pRecvBuffer);
 }
@@ -960,7 +945,7 @@ void ScanBinCommand::Execute()
 
 	bool bSyncMode = ntohl(ScanRequest.m_bSyncMode);
 
-	g_pPrePostProcessor->ScanNZBDir(bSyncMode);
+	g_pScanner->ScanNZBDir(bSyncMode);
 	SendBoolResponse(true, bSyncMode ? "Scan-Command completed" : "Scan-Command scheduled successfully");
 }
 

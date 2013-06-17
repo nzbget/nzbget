@@ -77,6 +77,7 @@ public:
 	static char* BaseFileName(const char* filename);
 	static void NormalizePathSeparators(char* szPath);
 	static bool LoadFileIntoBuffer(const char* szFileName, char** pBuffer, int* pBufferLength);
+	static bool SaveBufferIntoFile(const char* szFileName, const char* szBuffer, int iBufLen);
 	static bool CreateSparseFile(const char* szFilename, int iSize);
 	static bool TruncateFile(const char* szFilename, int iSize);
 	static void MakeValidFilename(char* szFilename, char cReplaceChar, bool bAllowSlashes);
@@ -99,6 +100,7 @@ public:
 	static void ExpandFileName(const char* szFilename, char* szBuffer, int iBufSize);
 	static void FormatFileSize(char* szBuffer, int iBufLen, long long lFileSize);
 	static bool SameFilename(const char* szFilename1, const char* szFilename2);
+	static char* GetLastErrorMessage(char* szBuffer, int iBufLen);
 
 	/*
 	 * Split command line int arguments.

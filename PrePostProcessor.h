@@ -31,7 +31,6 @@
 #include "Thread.h"
 #include "Observer.h"
 #include "DownloadInfo.h"
-#include "Scanner.h"
 #include "ParCoordinator.h"
 
 class PrePostProcessor : public Thread
@@ -75,7 +74,6 @@ private:
 	bool				m_bSchedulerPauseChanged;
 	bool				m_bSchedulerPause;
 	bool				m_bPostPause;
-	Scanner				m_Scanner;
 	const char*			m_szPauseReason;
 
 	bool				IsNZBFileCompleted(DownloadQueue* pDownloadQueue, NZBInfo* pNZBInfo, 
@@ -115,7 +113,6 @@ public:
 	virtual void		Stop();
 	void				QueueCoordinatorUpdate(Subject* Caller, void* Aspect);
 	bool				HasMoreJobs() { return m_bHasMoreJobs; }
-	void				ScanNZBDir(bool bSyncMode);
 	bool				QueueEditList(IDList* pIDList, EEditAction eAction, int iOffset, const char* szText);
 };
 

@@ -49,12 +49,15 @@
 #include "DiskState.h"
 #include "Util.h"
 #include "Scheduler.h"
+#include "Scanner.h"
 #include "Unpack.h"
+#include "NZBFile.h"
 
 extern QueueCoordinator* g_pQueueCoordinator;
 extern Options* g_pOptions;
 extern DiskState* g_pDiskState;
 extern Scheduler* g_pScheduler;
+extern Scanner* g_pScanner;
 
 PrePostProcessor::PrePostProcessor()
 {
@@ -122,12 +125,11 @@ void PrePostProcessor::Run()
 	int iSchedulerInterval = 1000;
 	int iHistoryInterval = 60000;
 	const int iStepMSec = 200;
-	m_Scanner.SetStepInterval(iStepMSec);
 
 	while (!IsStopped())
 	{
 		// check incoming nzb directory
-		m_Scanner.Check();
+		g_pScanner->Check();
 
 		if (!(g_pOptions->GetPauseDownload() || g_pOptions->GetPauseDownload2()) && 
 			g_pOptions->GetDiskSpace() > 0 && !g_pQueueCoordinator->GetStandBy() && 
@@ -485,11 +487,6 @@ NZBInfo* PrePostProcessor::MergeGroups(DownloadQueue* pDownloadQueue, NZBInfo* p
 	}
 
 	return pNZBInfo;
-}
-
-void PrePostProcessor::ScanNZBDir(bool bSyncMode)
-{
-	m_Scanner.ScanNZBDir(bSyncMode);
 }
 
 void PrePostProcessor::CheckDiskSpace()

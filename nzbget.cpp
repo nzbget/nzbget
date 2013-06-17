@@ -2,7 +2,7 @@
  *  This file is part of nzbget
  *
  *  Copyright (C) 2004 Sven Henkel <sidddy@users.sourceforge.net>
- *  Copyright (C) 2007-2012 Andrey Prygunkov <hugbug@users.sourceforge.net>
+ *  Copyright (C) 2007-2013 Andrey Prygunkov <hugbug@users.sourceforge.net>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -74,6 +74,7 @@
 #include "PrePostProcessor.h"
 #include "ParChecker.h"
 #include "Scheduler.h"
+#include "Scanner.h"
 #include "Util.h"
 #ifdef WIN32
 #include "NTService.h"
@@ -113,6 +114,7 @@ Log* g_pLog = NULL;
 PrePostProcessor* g_pPrePostProcessor = NULL;
 DiskState* g_pDiskState = NULL;
 Scheduler* g_pScheduler = NULL;
+Scanner* g_pScanner = NULL;
 int g_iArgumentCount;
 char* (*g_szEnvironmentVariables)[] = NULL;
 char* (*g_szArguments)[] = NULL;
@@ -310,6 +312,7 @@ void Run(bool bReload)
 	// Creating PrePostProcessor
 	if (!g_pOptions->GetRemoteClientMode())
 	{
+		g_pScanner = new Scanner();
 		g_pPrePostProcessor = new PrePostProcessor();
 	}
 
@@ -344,7 +347,7 @@ void Run(bool bReload)
 		// Standalone-mode
 		if (!g_pOptions->GetServerMode())
 		{
-			NZBFile* pNZBFile = NZBFile::CreateFromFile(g_pOptions->GetArgFilename(), g_pOptions->GetAddCategory() ? g_pOptions->GetAddCategory() : "");
+			NZBFile* pNZBFile = NZBFile::Create(g_pOptions->GetArgFilename(), g_pOptions->GetAddCategory() ? g_pOptions->GetAddCategory() : "");
 			if (!pNZBFile)
 			{
 				abort("FATAL ERROR: Parsing NZB-document %s failed\n\n", g_pOptions->GetArgFilename() ? g_pOptions->GetArgFilename() : "N/A");
@@ -744,6 +747,11 @@ void Cleanup()
 	{
 		delete g_pPrePostProcessor;
 		g_pPrePostProcessor = NULL;
+	}
+	if (g_pScanner)
+	{
+		delete g_pScanner;
+		g_pScanner = NULL;
 	}
 	debug("PrePostProcessor deleted");
 

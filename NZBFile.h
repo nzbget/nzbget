@@ -2,7 +2,7 @@
  *  This file is part of nzbget
  *
  *  Copyright (C) 2004 Sven Henkel <sidddy@users.sourceforge.net>
- *  Copyright (C) 2007-2010 Andrey Prygunkov <hugbug@users.sourceforge.net>
+ *  Copyright (C) 2007-2013 Andrey Prygunkov <hugbug@users.sourceforge.net>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -66,12 +66,10 @@ private:
 	void				Parse_EndElement(const char *name);
 	void				Parse_Content(const char *buf, int len);
 #endif
-	static NZBFile*		Create(const char* szFileName, const char* szCategory, const char* szBuffer, int iSize, bool bFromBuffer);
 
 public:
 	virtual 			~NZBFile();
-	static NZBFile*		CreateFromBuffer(const char* szFileName, const char* szCategory, const char* szBuffer, int iSize);
-	static NZBFile*		CreateFromFile(const char* szFileName, const char* szCategory);
+	static NZBFile*		Create(const char* szFileName, const char* szCategory);
 	const char* 		GetFileName() const { return m_szFileName; }
 	FileInfos*			GetFileInfos() { return &m_FileInfos; }
 	NZBInfo*			GetNZBInfo() { return m_pNZBInfo; }

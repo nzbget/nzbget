@@ -121,16 +121,6 @@ void NZBFile::DetachFileInfos()
     m_FileInfos.clear();
 }
 
-NZBFile* NZBFile::CreateFromBuffer(const char* szFileName, const char* szCategory, const char* szBuffer, int iSize)
-{
-	return Create(szFileName, szCategory, szBuffer, iSize, true);
-}
-
-NZBFile* NZBFile::CreateFromFile(const char* szFileName, const char* szCategory)
-{
-	return Create(szFileName, szCategory, NULL, 0, false);
-}
-
 void NZBFile::AddArticle(FileInfo* pFileInfo, ArticleInfo* pArticleInfo)
 {
 	// make Article-List big enough
@@ -357,7 +347,7 @@ void NZBFile::ProcessFilenames()
 }
 
 #ifdef WIN32
-NZBFile* NZBFile::Create(const char* szFileName, const char* szCategory, const char* szBuffer, int iSize, bool bFromBuffer)
+NZBFile* NZBFile::Create(const char* szFileName, const char* szCategory)
 {
     CoInitialize(NULL);
 
@@ -374,21 +364,15 @@ NZBFile* NZBFile::Create(const char* szFileName, const char* szCategory, const c
 	doc->put_resolveExternals(VARIANT_FALSE);
 	doc->put_validateOnParse(VARIANT_FALSE);
 	doc->put_async(VARIANT_FALSE);
-	VARIANT_BOOL success;
-	if (bFromBuffer)
-	{
-		success = doc->loadXML(szBuffer);
-	}
-	else
-	{
-		// filename needs to be properly encoded
-		char* szURL = (char*)malloc(strlen(szFileName)*3 + 1);
-		EncodeURL(szFileName, szURL);
-		debug("url=\"%s\"", szURL);
-		_variant_t v(szURL);
-		free(szURL);
-		success = doc->load(v);
-	} 
+
+	// filename needs to be properly encoded
+	char* szURL = (char*)malloc(strlen(szFileName)*3 + 1);
+	EncodeURL(szFileName, szURL);
+	debug("url=\"%s\"", szURL);
+	_variant_t v(szURL);
+	free(szURL);
+
+	VARIANT_BOOL success = doc->load(v);
 	if (success == VARIANT_FALSE)
 	{
 		_bstr_t r(doc->GetparseError()->reason);
@@ -504,7 +488,7 @@ bool NZBFile::ParseNZB(IUnknown* nzb)
 
 #else
 
-NZBFile* NZBFile::Create(const char* szFileName, const char* szCategory, const char* szBuffer, int iSize, bool bFromBuffer)
+NZBFile* NZBFile::Create(const char* szFileName, const char* szCategory)
 {
     NZBFile* pFile = new NZBFile(szFileName, szCategory);
 
@@ -515,18 +499,10 @@ NZBFile* NZBFile::Create(const char* szFileName, const char* szCategory, const c
 	SAX_handler.error = reinterpret_cast<errorSAXFunc>(SAX_error);
 	SAX_handler.getEntity = reinterpret_cast<getEntitySAXFunc>(SAX_getEntity);
 
-	int ret = 0;
 	pFile->m_bIgnoreNextError = false;
 
-	if (bFromBuffer)
-	{
-		ret = xmlSAXUserParseMemory(&SAX_handler, pFile, szBuffer, iSize);
-	}
-	else
-	{
-		ret = xmlSAXUserParseFile(&SAX_handler, pFile, szFileName);
-	}
-        
+	int ret = xmlSAXUserParseFile(&SAX_handler, pFile, szFileName);
+    
     if (ret == 0)
 	{
 		pFile->ProcessFilenames();
