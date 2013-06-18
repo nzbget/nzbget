@@ -605,7 +605,7 @@ bool ParChecker::CheckSplittedFragments()
 		it != ((Repairer*)m_pRepairer)->sourcefiles.end(); it++)
 	{
 		Par2RepairerSourceFile *sourcefile = *it;
-		if (!sourcefile->GetTargetExists() && AddSplittedFragments(sourcefile->TargetFileName().c_str()))
+		if (AddSplittedFragments(sourcefile->TargetFileName().c_str()))
 		{
 			bFragmentsAdded = true;
 		}
