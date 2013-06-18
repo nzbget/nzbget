@@ -503,22 +503,14 @@ fi
 dnl 
 dnl Some Linux systems require an empty signal handler for SIGCHLD
 dnl in order for exit codes to be correctly delivered to parent process.
-dnl Some BSD systems however may not function properly if the handler is installed.
-dnl The default behavior is to check the target and disable the handler on BSD but keep it enabled on other systems.
+dnl Some 32-Bit BSD systems however may not function properly if the handler is installed.
+dnl The default behavior is to install the handler.
 dnl
 AC_MSG_CHECKING(whether to use an empty SIGCHLD handler)
 AC_ARG_ENABLE(sigchld-handler,
-	[AS_HELP_STRING([--disable-sigchld-handler], [do not use sigchld-handler (the disabling is recommended for BSD)])],
+	[AS_HELP_STRING([--disable-sigchld-handler], [do not use sigchld-handler (the disabling may be neccessary on 32-Bit BSD)])],
 	[SIGCHLDHANDLER=$enableval],
-	[SIGCHLDHANDLER=auto])
-if test "$SIGCHLDHANDLER" = "auto"; then
-	SIGCHLDHANDLER=yes
-	case "$target" in
-		*bsd*)
-			SIGCHLDHANDLER=no
-			;;
-	esac
-fi
+	[SIGCHLDHANDLER=yes])
 AC_MSG_RESULT($SIGCHLDHANDLER)
 if test "$SIGCHLDHANDLER" = "yes"; then
 	AC_DEFINE([SIGCHLD_HANDLER], 1, [Define to 1 to install an empty signal handler for SIGCHLD])
