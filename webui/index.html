@@ -404,8 +404,16 @@
 				</div>
 				<div class="alert alert-error alert-block hide" id="ConfigLoadServerTemplateError">
 					<h4 class="alert-heading">Loading configuration failed</h4>
-					Could not load template configuration file <em>nzbget.conf</em>. NZBGet reads the description of options from this file.
-					Please check option <em>ConfigTemplate</em> and put there the path to file <em>nzbget.conf</em> which comes with the distribution archive of NZBGet.
+					Could not load template configuration file <em>nzbget.conf</em>. The file contains descriptions of options
+					and is needed to display settings page. The file comes with NZBGet distribution archive and is usually
+					automaically installed into the right location. This seems not to be a case with your installation though.<br><br>
+					
+					<span id="ConfigLoadServerTemplateErrorEmpty">Please put the template configuration file <em>nzbget.conf</em> into the 
+					directory with web-interface files (<em><span id="ConfigLoadServerTemplateErrorWebDir"></span></em>).</span>
+					
+					<span id="ConfigLoadServerTemplateErrorNotFound">Please edit your configuration file
+					(<em><span id="ConfigLoadServerTemplateErrorConfigFile"></span></em>) in a text editor
+					and set the option <em>ConfigTemplate</em> to point to the template configuration file <em>nzbget.conf</em>.</span>
 				</div>
 				<div class="alert alert-error alert-block hide" id="ConfigLoadError">
 					<h4 class="alert-heading">Loading configuration failed</h4>
