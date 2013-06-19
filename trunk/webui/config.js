@@ -554,6 +554,11 @@ var Config = (new function($)
 	{
 		$('#ConfigLoadInfo').hide();
 		$('#ConfigLoadServerTemplateError').show();
+		var optConfigTemplate = Options.option('ConfigTemplate');
+		$('#ConfigLoadServerTemplateErrorEmpty').toggle(optConfigTemplate === '');
+		$('#ConfigLoadServerTemplateErrorNotFound').toggle(optConfigTemplate !== '');
+		$('#ConfigLoadServerTemplateErrorWebDir').text(Options.option('WebDir'));
+		$('#ConfigLoadServerTemplateErrorConfigFile').text(Options.option('ConfigFile'));
 	}
 
 	function findOptionByName(name)
