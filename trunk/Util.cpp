@@ -711,13 +711,8 @@ long long Util::FileSize(const char* szFilename)
 	struct _stat32i64 buffer;
 	_stat32i64(szFilename, &buffer);
 #else
-#ifdef HAVE_STAT64
-	struct stat64 buffer;
-	stat64(szFilename, &buffer);
-#else
 	struct stat buffer;
 	stat(szFilename, &buffer);
-#endif
 #endif
 	return buffer.st_size;
 }
