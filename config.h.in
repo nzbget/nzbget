@@ -79,9 +79,6 @@
 /* Define to 1 if spinlocks are supported */
 #undef HAVE_SPINLOCK
 
-/* Define to 1 if stat64 is supported */
-#undef HAVE_STAT64
-
 /* Define to 1 if you have the <stdint.h> header file. */
 #undef HAVE_STDINT_H
 
@@ -138,3 +135,9 @@
 
 /* Version number of package */
 #undef VERSION
+
+/* Number of bits in a file offset, on hosts where this is settable. */
+#undef _FILE_OFFSET_BITS
+
+/* Define for large files, on AIX-style hosts. */
+#undef _LARGE_FILES
