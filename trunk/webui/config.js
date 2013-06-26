@@ -905,7 +905,7 @@ var Config = (new function($)
 
 		$ConfigNav.toggleClass('long-list', $ConfigNav.children().length > 20);
 
-		showSection('Config-Info');
+		showSection('Config-Info', false);
 
 		if (filterText !== '')
 		{
@@ -999,7 +999,7 @@ var Config = (new function($)
 		var option = findOptionById(optFormId);
 
 		// switch to tab and scroll the option into view
-		showSection(option.sectionId);
+		showSection(option.sectionId, false);
 
 		var element = $('#' + option.formId);
 		var parent = $('html,body');
@@ -1031,10 +1031,10 @@ var Config = (new function($)
 	{
 		event.preventDefault();
 		var sectionId = $(this).attr('href').substr(1);
-		showSection(sectionId);
+		showSection(sectionId, true);
 	}
 
-	function showSection(sectionId)
+	function showSection(sectionId, animateScroll)
 	{
 		var link = $('a[href="#' + sectionId + '"]', $ConfigNav);
 		$('li', $ConfigNav).removeClass('active');
@@ -1076,7 +1076,7 @@ var Config = (new function($)
 		var section = findSectionById(sectionId);
 		$ConfigTitle.text(section.caption ? section.caption : section.name);
 
-		$Body.animate({ scrollTop: 0 }, { duration: 'slow', easing: 'swing' });
+		$Body.animate({ scrollTop: 0 }, { duration: animateScroll ? 'slow' : 0, easing: 'swing' });
 	}
 
 	this.deleteSet = function(control, setname, sectionId)
@@ -1393,7 +1393,7 @@ var Config = (new function($)
 		if (filterText.trim() !== '')
 		{
 			$('.ConfigSearch').show();
-			showSection('Search');
+			showSection('Search', true);
 		}
 		else
 		{
@@ -1404,7 +1404,7 @@ var Config = (new function($)
 	function filterClear()
 	{
 		filterText = '';
-		showSection(lastSection);
+		showSection(lastSection, true);
 		$('.ConfigSearch').hide();
 		$ConfigTabBadge.hide();
 		$ConfigTabBadgeEmpty.show();
@@ -1453,6 +1453,7 @@ var Config = (new function($)
 		markLastControlGroup();
 
 		$ConfigTitle.text('SEARCH RESULTS');
+		$Body.animate({ scrollTop: 0 }, { duration: 0 });
 
 		updateTabInfo($ConfigTabBadge, { filter: true, available: available, total: total});
 	}
