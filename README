@@ -429,28 +429,40 @@ same computer)
 Security warning
 ----------------
 
-NZBGet communicates via unsecured socket connections. This makes it vulnerable.
-Although server checks the password passed by client, this password is still 
-transmitted in unsecured way. For this reason it is highly recommended 
-to configure your Firewall to not expose the port used by NZBGet to WAN. 
+NZBGet client communicates with NZBGet server via unsecured socket connections.
+This makes it vulnerable. Although server checks the password passed by client,
+this password is still transmitted in unsecured way. For this reason it is
+highly recommended to configure your firewall to not expose the port used by
+NZBGet (option <ControlPort>) to WAN. 
 
-If you need to control server from WAN it is better to connect to server's
-terminal via SSH (POSIX) or remote desktop (Windows) and then run
-nzbget-client-commands in this terminal.
+If you need to control server from WAN it is better to use web-interface via HTTPS
+or (if you prefer remote commands) connect to server's terminal via SSH (POSIX)
+or remote desktop (Windows) and then run nzbget-client-commands in this terminal.
 
 Post processing scripts
 -----------------------
 
 After the download of nzb-file is completed nzbget can call post-processing
-scripts, defined in configuration file.
+script, defined in configuration file. See example configuration file for
+the description of parameters passed to the script (option "PostProcess").
 
-Example post-processing scripts are provided in directory "ppscripts".
+An example script for unraring of downloaded files is provided in file
+"nzbget-postprocess.sh" installed into "<prefix>/bin". The script requires
+configuration file "nzbget-postprocess.conf". If you have installed the
+program with "make install" this file is copied to "<prefix>/etc",
+where the post-processing script finds it automatically. If you install
+the program manually from a binary archive you have to copy the file
+from "<prefix>/share/nzbget" to the directory where you have put the
+nzbget configuration file ("nzbget.conf").
 
-To use the scripts copy them into your local directory and set options
-<ScriptDir>, <DefScript> and <ScriptOrder>.
+Set the option "PostProcess" in "nzbget.conf" to point to the post-
+processing script.
 
-For information on writing your own post-processing scripts please
-visit NZBGet web site.
+Additional usage instructions are included in "nzbget-postprocess.sh",
+please open the file in a text editor to read them.
+
+NOTE: The post-processing script "nzbget-postprocess.sh" is for
+POSIX systems and will not work on Windows.
 
 Web-interface
 -------------
@@ -512,8 +524,11 @@ Binary distribution for Windows contains code from the following libraries:
    - libpar2     (http://parchive.sourceforge.net)
    - libsigc++   (http://libsigc.sourceforge.net)
    - GnuTLS      (http://www.gnu.org/software/gnutls)
+   - zlib        (http://www.zlib.net)
+   - regex       (http://gnuwin32.sourceforge.net/packages/regex.htm)
 
-libpar2 is distributed under GPL; libsigc++ and GnuTLS - under LGPL.
+libpar2 is distributed under GPL; libsigc++, GnuTLS and regex - under LGPL;
+zlib - under zlib license.
 
 =====================================
 10. Contact

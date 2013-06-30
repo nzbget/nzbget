@@ -104,7 +104,7 @@ void RemoteServer::Run()
 				m_bTLS);
 			m_pConnection->SetTimeout(g_pOptions->GetConnectionTimeout());
 			m_pConnection->SetSuppressErrors(false);
-			bBind = m_pConnection->Bind();
+			bBind = m_pConnection->Bind() == 0;
 		}
 
 		// Accept connections and store the new Connection

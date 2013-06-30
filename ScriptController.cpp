@@ -57,7 +57,8 @@ extern Options* g_pOptions;
 extern char* (*g_szEnvironmentVariables)[];
 extern DownloadQueueHolder* g_pDownloadQueueHolder;
 
-static const int POSTPROCESS_PARCHECK = 92;
+static const int POSTPROCESS_PARCHECK_CURRENT = 91;
+static const int POSTPROCESS_PARCHECK_ALL = 92;
 static const int POSTPROCESS_SUCCESS = 93;
 static const int POSTPROCESS_ERROR = 94;
 static const int POSTPROCESS_NONE = 95;
@@ -113,11 +114,6 @@ EnvironmentStrings::EnvironmentStrings()
 }
 
 EnvironmentStrings::~EnvironmentStrings()
-{
-	Clear();
-}
-
-void EnvironmentStrings::Clear()
 {
 	for (Strings::iterator it = m_strings.begin(); it != m_strings.end(); it++)
 	{
@@ -197,7 +193,7 @@ ScriptController::ScriptController()
 	m_szArgs = NULL;
 	m_bFreeArgs = false;
 	m_szInfoName = NULL;
-	m_szLogPrefix = NULL;
+	m_szDefaultKindPrefix = NULL;
 	m_bTerminated = false;
 	m_environmentStrings.InitFromCurrentProcess();
 }
@@ -214,12 +210,6 @@ ScriptController::~ScriptController()
 	}
 }
 
-void ScriptController::ResetEnv()
-{
-	m_environmentStrings.Clear();
-	m_environmentStrings.InitFromCurrentProcess();
-}
-
 void ScriptController::SetEnvVar(const char* szName, const char* szValue)
 {
 	int iLen = strlen(szName) + strlen(szValue) + 2;
@@ -228,139 +218,64 @@ void ScriptController::SetEnvVar(const char* szName, const char* szValue)
 	m_environmentStrings.Append(szVar);
 }
 
-/**
- * If szStripPrefix is not NULL, only options, whose names start with the prefix
- * are processed. The prefix is then stripped from the names.
- * If szStripPrefix is NULL, all options are processed; without stripping.
- */
-void ScriptController::PrepareEnvOptions(const char* szStripPrefix)
+void ScriptController::PrepareEnvOptions()
 {
-	int iPrefixLen = szStripPrefix ? strlen(szStripPrefix) : 0;
-
 	Options::OptEntries* pOptEntries = g_pOptions->LockOptEntries();
 
 	for (Options::OptEntries::iterator it = pOptEntries->begin(); it != pOptEntries->end(); it++)
 	{
 		Options::OptEntry* pOptEntry = *it;
-		
-		if (szStripPrefix && !strncmp(pOptEntry->GetName(), szStripPrefix, iPrefixLen) && (int)strlen(pOptEntry->GetName()) > iPrefixLen)
+		char szVarname[1024];
+		snprintf(szVarname, sizeof(szVarname), "NZBOP_%s", pOptEntry->GetName());
+
+		// convert to upper case; replace "." with "_".
+		for (char* szPtr = szVarname; *szPtr; szPtr++)
 		{
-			SetEnvVarSpecial("NZBPO", pOptEntry->GetName() + iPrefixLen, pOptEntry->GetValue());
+			if (*szPtr == '.') *szPtr = '_';
+			*szPtr = toupper(*szPtr);
 		}
-		else if (!szStripPrefix)
-		{
-			SetEnvVarSpecial("NZBOP", pOptEntry->GetName(), pOptEntry->GetValue());
-		}
+
+		szVarname[1024-1] = '\0';
+		SetEnvVar(szVarname, pOptEntry->GetValue());
 	}
 
 	g_pOptions->UnlockOptEntries();
 }
 
-/**
- * If szStripPrefix is not NULL, only pp-parameters, whose names start with the prefix
- * are processed. The prefix is then stripped from the names.
- * If szStripPrefix is NULL, all pp-parameters are processed; without stripping.
- */
-void ScriptController::PrepareEnvParameters(NZBInfo* pNZBInfo, const char* szStripPrefix)
+void ScriptController::PrepareEnvParameters(NZBInfo* pNZBInfo)
 {
-	int iPrefixLen = szStripPrefix ? strlen(szStripPrefix) : 0;
-
 	for (NZBParameterList::iterator it = pNZBInfo->GetParameters()->begin(); it != pNZBInfo->GetParameters()->end(); it++)
 	{
 		NZBParameter* pParameter = *it;
-		
-		if (szStripPrefix && !strncmp(pParameter->GetName(), szStripPrefix, iPrefixLen) && (int)strlen(pParameter->GetName()) > iPrefixLen)
-		{
-			SetEnvVarSpecial("NZBPR", pParameter->GetName() + iPrefixLen, pParameter->GetValue());
-		}
-		else if (!szStripPrefix)
-		{
-			SetEnvVarSpecial("NZBPR", pParameter->GetName(), pParameter->GetValue());
-		}
-	}
-}
+		char szVarname[1024];
+		snprintf(szVarname, sizeof(szVarname), "NZBPR_%s", pParameter->GetName());
+		szVarname[1024-1] = '\0';
 
-void ScriptController::SetEnvVarSpecial(const char* szPrefix, const char* szName, const char* szValue)
-{
-	char szVarname[1024];
-	snprintf(szVarname, sizeof(szVarname), "%s_%s", szPrefix, szName);
-	szVarname[1024-1] = '\0';
-	
-	// Original name
-	SetEnvVar(szVarname, szValue);
-	
-	char szNormVarname[1024];
-	strncpy(szNormVarname, szVarname, sizeof(szVarname));
-	szNormVarname[1024-1] = '\0';
-	
-	// Replace special characters  with "_" and convert to upper case
-	for (char* szPtr = szNormVarname; *szPtr; szPtr++)
-	{
-		if (strchr(".:*!\"$%&/()=`+~#'{}[]@- ", *szPtr)) *szPtr = '_';
-		*szPtr = toupper(*szPtr);
-	}
-	
-	// Another env var with normalized name (replaced special chars and converted to upper case)
-	if (strcmp(szVarname, szNormVarname))
-	{
-		SetEnvVar(szNormVarname, szValue);
-	}
-}
+		// Original name
+		SetEnvVar(szVarname, pParameter->GetValue());
 
-void ScriptController::PrepareArgs()
-{
-#ifdef WIN32
-	if (!m_szArgs)
-	{
-		// Special support for script languages:
-		// automatically find the app registered for this extension and run it
-		const char* szExtension = strrchr(GetScript(), '.');
-		if (szExtension && strcasecmp(szExtension, ".exe") && strcasecmp(szExtension, ".bat") && strcasecmp(szExtension, ".cmd"))
+		char szNormVarname[1024];
+		strncpy(szNormVarname, szVarname, sizeof(szVarname));
+		szNormVarname[1024-1] = '\0';
+
+		// replace ".*:"  with "_".
+		for (char* szPtr = szNormVarname; *szPtr; szPtr++)
 		{
-			debug("Looking for associated program for %s", szExtension);
-			char szCommand[512];
-			int iBufLen = 512-1;
-			if (Util::RegReadStr(HKEY_CLASSES_ROOT, szExtension, NULL, szCommand, &iBufLen))
-			{
-				szCommand[iBufLen] = '\0';
-				debug("Extension: %s", szCommand);
-				
-				char szRegPath[512];
-				snprintf(szRegPath, 512, "%s\\shell\\open\\command", szCommand);
-				szRegPath[512-1] = '\0';
-				
-				iBufLen = 512-1;
-				if (Util::RegReadStr(HKEY_CLASSES_ROOT, szRegPath, NULL, szCommand, &iBufLen))
-				{
-					szCommand[iBufLen] = '\0';
-					debug("Command: %s", szCommand);
-					
-					DWORD_PTR pArgs[] = { (DWORD_PTR)GetScript(), (DWORD_PTR)0 };
-					if (FormatMessage(FORMAT_MESSAGE_FROM_STRING | FORMAT_MESSAGE_ARGUMENT_ARRAY, szCommand, 0, 0,
-									  m_szCmdLine, sizeof(m_szCmdLine), (va_list*)pArgs))
-					{
-						debug("CmdLine: %s", m_szCmdLine);
-						return;
-					}
-				}
-			}
-			warn("Could not found associated program for %s. Trying to execute %s directly", szExtension, Util::BaseFileName(GetScript()));
+			if (*szPtr == '.' || *szPtr == ':' || *szPtr == '*') *szPtr = '_';
+			*szPtr = toupper(*szPtr);
 		}
-	}
-#endif
 
-	if (!m_szArgs)
-	{
-		m_szStdArgs[0] = GetScript();
-		m_szStdArgs[1] = NULL;
-		SetArgs(m_szStdArgs, false);
+		// Another env var with normalized name (replaced special chars and converted to upper case)
+		if (strcmp(szVarname, szNormVarname))
+		{
+			SetEnvVar(szNormVarname, pParameter->GetValue());
+		}
 	}
 }
 
 int ScriptController::Execute()
 {
-	PrepareEnvOptions(NULL);
-	PrepareArgs();
+	PrepareEnvOptions();
 
 	int iExitCode = 0;
 	int pipein;
@@ -373,24 +288,14 @@ int ScriptController::Execute()
 
 #ifdef WIN32
 	// build command line
-
-	char* szCmdLine = NULL;
-	if (m_szArgs)
+	char szCmdLine[2048];
+	int iUsedLen = 0;
+	for (const char** szArgPtr = m_szArgs; *szArgPtr; szArgPtr++)
 	{
-		char szCmdLineBuf[2048];
-		int iUsedLen = 0;
-		for (const char** szArgPtr = m_szArgs; *szArgPtr; szArgPtr++)
-		{
-			snprintf(szCmdLineBuf + iUsedLen, 2048 - iUsedLen, "\"%s\" ", *szArgPtr);
-			iUsedLen += strlen(*szArgPtr) + 3;
-		}
-		szCmdLineBuf[iUsedLen < 2048 ? iUsedLen - 1 : 2048 - 1] = '\0';
-		szCmdLine = szCmdLineBuf;
+		snprintf(szCmdLine + iUsedLen, 2048 - iUsedLen, "\"%s\" ", *szArgPtr);
+		iUsedLen += strlen(*szArgPtr) + 3;
 	}
-	else
-	{
-		szCmdLine = m_szCmdLine;
-	}
+	szCmdLine[iUsedLen < 2048 ? iUsedLen - 1 : 2048 - 1] = '\0';
 	
 	// create pipes to write and read data
 	HANDLE hReadPipe, hWritePipe;
@@ -605,7 +510,11 @@ int ScriptController::Execute()
 	}	// while (!bChildConfirmed && !m_bTerminated)
 #endif
 	
-	debug("Exit code %i", iExitCode);
+	if (!m_bTerminated)
+	{
+		info("Completed %s", m_szInfoName);
+		debug("Exit code %i", iExitCode);
+	}
 
 	return iExitCode;
 }
@@ -650,7 +559,7 @@ void ScriptController::ProcessOutput(char* szText)
 
 	for (char* pend = szText + strlen(szText) - 1; pend >= szText && (*pend == '\n' || *pend == '\r' || *pend == ' '); pend--) *pend = '\0';
 
-	if (szText[0] == '\0')
+	if (strlen(szText) == 0)
 	{
 		// skip empty lines
 		return;
@@ -658,54 +567,78 @@ void ScriptController::ProcessOutput(char* szText)
 
 	if (!strncmp(szText, "[INFO] ", 7))
 	{
-		PrintMessage(Message::mkInfo, szText + 7);
+		AddMessage(Message::mkInfo, false, szText + 7);
 	}
 	else if (!strncmp(szText, "[WARNING] ", 10))
 	{
-		PrintMessage(Message::mkWarning, szText + 10);
+		AddMessage(Message::mkWarning, false, szText + 10);
 	}
 	else if (!strncmp(szText, "[ERROR] ", 8))
 	{
-		PrintMessage(Message::mkError, szText + 8);
+		AddMessage(Message::mkError, false, szText + 8);
 	}
 	else if (!strncmp(szText, "[DETAIL] ", 9))
 	{
-		PrintMessage(Message::mkDetail, szText + 9);
+		AddMessage(Message::mkDetail, false, szText + 9);
 	}
 	else if (!strncmp(szText, "[DEBUG] ", 8))
 	{
-		PrintMessage(Message::mkDebug, szText + 8);
+		AddMessage(Message::mkDebug, false, szText + 8);
 	}
 	else 
-	{
-		PrintMessage(Message::mkInfo, szText);
+	{	
+		switch (m_eDefaultLogKind)
+		{
+			case Options::slNone:
+				break;
+
+			case Options::slDetail:
+				AddMessage(Message::mkDetail, true, szText);
+				break;
+
+			case Options::slInfo:
+				AddMessage(Message::mkInfo, true, szText);
+				break;
+
+			case Options::slWarning:
+				AddMessage(Message::mkWarning, true, szText);
+				break;
+
+			case Options::slError:
+				AddMessage(Message::mkError, true, szText);
+				break;
+
+			case Options::slDebug:
+				AddMessage(Message::mkDebug, true, szText);
+				break;
+		}
 	}
 
 	debug("Processing output received from script - completed");
 }
 
-void ScriptController::AddMessage(Message::EKind eKind, const char* szText)
+void ScriptController::AddMessage(Message::EKind eKind, bool bDefaultKind, const char* szText)
 {
 	switch (eKind)
 	{
 		case Message::mkDetail:
-			detail("%s", szText);
+			detail("%s%s", (bDefaultKind && m_szDefaultKindPrefix ? m_szDefaultKindPrefix : ""), szText);
 			break;
 
 		case Message::mkInfo:
-			info("%s", szText);
+			info("%s%s", (bDefaultKind && m_szDefaultKindPrefix ? m_szDefaultKindPrefix : ""), szText);
 			break;
 
 		case Message::mkWarning:
-			warn("%s", szText);
+			warn("%s%s", (bDefaultKind && m_szDefaultKindPrefix ? m_szDefaultKindPrefix : ""), szText);
 			break;
 
 		case Message::mkError:
-			error("%s", szText);
+			error("%s%s", (bDefaultKind && m_szDefaultKindPrefix ? m_szDefaultKindPrefix : ""), szText);
 			break;
 
 		case Message::mkDebug:
-			debug("%s", szText);
+			debug("%s%s", (bDefaultKind && m_szDefaultKindPrefix ? m_szDefaultKindPrefix : ""), szText);
 			break;
 	}
 }
@@ -719,26 +652,18 @@ void ScriptController::PrintMessage(Message::EKind eKind, const char* szFormat, 
 	vsnprintf(tmp2, 1024, szFormat, ap);
 	tmp2[1024-1] = '\0';
 	va_end(ap);
-
-	char tmp3[1024];
-	if (m_szLogPrefix)
-	{
-		snprintf(tmp3, 1024, "%s: %s", m_szLogPrefix, tmp2);
-	}
-	else
-	{
-		strncpy(tmp3, tmp2, 1024);
-	}
-	tmp3[1024-1] = '\0';
-
-	AddMessage(eKind, tmp3);
+	
+	AddMessage(eKind, false, tmp2);
 }
 
-void PostScriptController::StartJob(PostInfo* pPostInfo)
+void PostScriptController::StartScriptJob(PostInfo* pPostInfo, bool bNZBFileCompleted, bool bHasFailedParJobs)
 {
 	PostScriptController* pScriptController = new PostScriptController();
 	pScriptController->m_pPostInfo = pPostInfo;
+	pScriptController->SetScript(g_pOptions->GetPostProcess());
 	pScriptController->SetWorkingDir(g_pOptions->GetDestDir());
+	pScriptController->m_bNZBFileCompleted = bNZBFileCompleted;
+	pScriptController->m_bHasFailedParJobs = bHasFailedParJobs;
 	pScriptController->SetAutoDestroy(false);
 
 	pPostInfo->SetPostThread(pScriptController);
@@ -748,81 +673,6 @@ void PostScriptController::StartJob(PostInfo* pPostInfo)
 
 void PostScriptController::Run()
 {
-	FileList activeList;
-
-	// the locking is needed for accessing the members of NZBInfo
-	g_pDownloadQueueHolder->LockQueue();
-	for (NZBParameterList::iterator it = m_pPostInfo->GetNZBInfo()->GetParameters()->begin(); it != m_pPostInfo->GetNZBInfo()->GetParameters()->end(); it++)
-	{
-		NZBParameter* pParameter = *it;
-		const char* szVarname = pParameter->GetName();
-		if (strlen(szVarname) > 0 && szVarname[0] != '*' && szVarname[strlen(szVarname)-1] == ':' &&
-			(!strcasecmp(pParameter->GetValue(), "yes") || !strcasecmp(pParameter->GetValue(), "on") || !strcasecmp(pParameter->GetValue(), "1")))
-		{
-			char* szScriptName = strdup(szVarname);
-			szScriptName[strlen(szScriptName)-1] = '\0'; // remove trailing ':'
-			activeList.push_back(szScriptName);
-		}
-	}
-	m_pPostInfo->GetNZBInfo()->GetScriptStatuses()->Clear();
-	g_pDownloadQueueHolder->UnlockQueue();
-
-	Options::ScriptList scriptList;
-	g_pOptions->LoadScriptList(&scriptList);
-
-	for (Options::ScriptList::iterator it = scriptList.begin(); it != scriptList.end(); it++)
-	{
-		Options::Script* pScript = *it;
-		for (FileList::iterator it2 = activeList.begin(); it2 != activeList.end(); it2++)
-		{
-			char* szActiveName = *it2;
-			// if any script has requested par-check, do not execute other scripts
-			if (Util::SameFilename(pScript->GetName(), szActiveName) && !m_pPostInfo->GetRequestParCheck())
-			{
-				ExecuteScript(pScript->GetName(), pScript->GetDisplayName(), pScript->GetLocation());
-			}
-		}
-	}
-	
-	for (FileList::iterator it = activeList.begin(); it != activeList.end(); it++)
-	{
-		free(*it);
-	}
-
-	m_pPostInfo->SetStage(PostInfo::ptFinished);
-	m_pPostInfo->SetWorking(false);
-}
-
-void PostScriptController::ExecuteScript(const char* szScriptName, const char* szDisplayName, const char* szLocation)
-{
-	PrintMessage(Message::mkInfo, "Executing post-process-script %s for %s", szScriptName, m_pPostInfo->GetInfoName());
-
-	SetScript(szLocation);
-	SetArgs(NULL, false);
-
-	char szInfoName[1024];
-	snprintf(szInfoName, 1024, "post-process-script %s for %s", szScriptName, m_pPostInfo->GetInfoName());
-	szInfoName[1024-1] = '\0';
-	SetInfoName(szInfoName);
-
-	SetLogPrefix(szDisplayName);
-	PrepareParams(szScriptName);
-
-	int iExitCode = Execute();
-
-	szInfoName[0] = 'P'; // uppercase
-
-	SetLogPrefix(NULL);
-	ScriptStatus::EStatus eStatus = AnalyseExitCode(iExitCode);
-	
-	// the locking is needed for accessing the members of NZBInfo
-	g_pDownloadQueueHolder->LockQueue();
-	m_pPostInfo->GetNZBInfo()->GetScriptStatuses()->Add(szScriptName, eStatus);
-	g_pDownloadQueueHolder->UnlockQueue();
-}
-
-void PostScriptController::PrepareParams(const char* szScriptName)
-{
 	// the locking is needed for accessing the members of NZBInfo
 	g_pDownloadQueueHolder->LockQueue();
 
@@ -830,105 +680,156 @@ void PostScriptController::PrepareParams(const char* szScriptName)
 	strncpy(szNZBName, m_pPostInfo->GetNZBInfo()->GetName(), 1024);
 	szNZBName[1024-1] = '\0';
 
-	int iParStatus[] = { 0, 0, 1, 2, 3, 4 };
+	int iParStatus[] = { 0, 0, 1, 2, 3 };
 	char szParStatus[10];
-	snprintf(szParStatus, 10, "%i", iParStatus[m_pPostInfo->GetNZBInfo()->GetParStatus()]);
+	snprintf(szParStatus, 10, "%i", iParStatus[g_pOptions->GetAllowReProcess() ? (int)m_pPostInfo->GetParStatus() : (int)m_pPostInfo->GetNZBInfo()->GetParStatus()]);
 	szParStatus[10-1] = '\0';
 
 	int iUnpackStatus[] = { 0, 0, 1, 2 };
 	char szUnpackStatus[10];
-	snprintf(szUnpackStatus, 10, "%i", iUnpackStatus[m_pPostInfo->GetNZBInfo()->GetUnpackStatus()]);
+	snprintf(szUnpackStatus, 10, "%i", g_pOptions->GetAllowReProcess() ? 0 : iUnpackStatus[m_pPostInfo->GetNZBInfo()->GetUnpackStatus()]);
 	szUnpackStatus[10-1] = '\0';
+
+	char szCollectionCompleted[10];
+	snprintf(szCollectionCompleted, 10, "%i", (int)m_bNZBFileCompleted);
+	szCollectionCompleted[10-1] = '\0';
+
+	char szHasFailedParJobs[10];
+	snprintf(szHasFailedParJobs, 10, "%i", (int)m_bHasFailedParJobs);
+	szHasFailedParJobs[10-1] = '\0';
 
 	char szDestDir[1024];
 	strncpy(szDestDir, m_pPostInfo->GetNZBInfo()->GetDestDir(), 1024);
 	szDestDir[1024-1] = '\0';
 	
-	char szNZBID[10];
-	snprintf(szNZBID, 10, "%i", m_pPostInfo->GetNZBInfo()->GetID());
-	szNZBID[10-1] = '\0';
-
 	char szNZBFilename[1024];
 	strncpy(szNZBFilename, m_pPostInfo->GetNZBInfo()->GetFilename(), 1024);
 	szNZBFilename[1024-1] = '\0';
 	
+	char szParFilename[1024];
+	strncpy(szParFilename, m_pPostInfo->GetParFilename(), 1024);
+	szParFilename[1024-1] = '\0';
+
 	char szCategory[1024];
 	strncpy(szCategory, m_pPostInfo->GetNZBInfo()->GetCategory(), 1024);
 	szCategory[1024-1] = '\0';
 
-	// Reset
-	ResetEnv();
+	char szInfoName[1024];
+	snprintf(szInfoName, 1024, "post-process-script for %s", g_pOptions->GetAllowReProcess() ? m_pPostInfo->GetInfoName() : m_pPostInfo->GetNZBInfo()->GetName());
+	szInfoName[1024-1] = '\0';
+	SetInfoName(szInfoName);
+
+	SetDefaultKindPrefix("Post-Process: ");
+	SetDefaultLogKind(g_pOptions->GetProcessLogKind());
+
+	const char* szArgs[9];
+	szArgs[0] = GetScript();
+	szArgs[1] = szDestDir;
+	szArgs[2] = szNZBFilename;
+	szArgs[3] = szParFilename;
+	szArgs[4] = szParStatus;
+	szArgs[5] = szCollectionCompleted;
+	szArgs[6] = szHasFailedParJobs;
+	szArgs[7] = szCategory;
+	szArgs[8] = NULL;
+	SetArgs(szArgs, false);
 
 	SetEnvVar("NZBPP_NZBNAME", szNZBName);
-	SetEnvVar("NZBPP_NZBID", szNZBID);
 	SetEnvVar("NZBPP_DIRECTORY", szDestDir);
 	SetEnvVar("NZBPP_NZBFILENAME", szNZBFilename);
+	SetEnvVar("NZBPP_PARFILENAME", szParFilename);
 	SetEnvVar("NZBPP_PARSTATUS", szParStatus);
 	SetEnvVar("NZBPP_UNPACKSTATUS", szUnpackStatus);
+	SetEnvVar("NZBPP_NZBCOMPLETED", szCollectionCompleted);
+	SetEnvVar("NZBPP_PARFAILED", szHasFailedParJobs);
 	SetEnvVar("NZBPP_CATEGORY", szCategory);
 
-	PrepareEnvParameters(m_pPostInfo->GetNZBInfo(), NULL);
+	PrepareEnvParameters(m_pPostInfo->GetNZBInfo());
 
-	char szParamPrefix[1024];
-	snprintf(szParamPrefix, 1024, "%s:", szScriptName);
-	szParamPrefix[1024-1] = '\0';
-	PrepareEnvParameters(m_pPostInfo->GetNZBInfo(), szParamPrefix);
-	PrepareEnvOptions(szParamPrefix);
-	
 	g_pDownloadQueueHolder->UnlockQueue();
-}
 
-ScriptStatus::EStatus PostScriptController::AnalyseExitCode(int iExitCode)
-{
-	// The ScriptStatus is accumulated for all scripts:
-	// If any script has failed the status is "failure", etc.
+	info("Executing post-process-script for %s", g_pOptions->GetAllowReProcess() ? m_pPostInfo->GetInfoName() : szNZBName);
 
-	switch (iExitCode)
+	int iResult = Execute();
+
+	szInfoName[0] = 'P'; // uppercase
+
+	switch (iResult)
 	{
 		case POSTPROCESS_SUCCESS:
-			PrintMessage(Message::mkInfo, "%s successful", GetInfoName());
-			return ScriptStatus::srSuccess;
+			info("%s successful", szInfoName);
+			m_pPostInfo->SetScriptStatus(PostInfo::srSuccess);
+			break;
 
 		case POSTPROCESS_ERROR:
 		case -1: // Execute() returns -1 if the process could not be started (file not found or other problem)
-			PrintMessage(Message::mkError, "%s failed", GetInfoName());
-			return ScriptStatus::srFailure;
+			info("%s failed", szInfoName);
+			m_pPostInfo->SetScriptStatus(PostInfo::srFailure);
+			break;
 
 		case POSTPROCESS_NONE:
-			PrintMessage(Message::mkInfo, "%s skipped", GetInfoName());
-			return ScriptStatus::srNone;
+			info("%s skipped", szInfoName);
+			m_pPostInfo->SetScriptStatus(PostInfo::srNone);
+			break;
 
 #ifndef DISABLE_PARCHECK
-		case POSTPROCESS_PARCHECK:
-			if (m_pPostInfo->GetNZBInfo()->GetParStatus() > NZBInfo::psSkipped)
+		case POSTPROCESS_PARCHECK_ALL:
+			if (m_pPostInfo->GetParStatus() > PostInfo::psSkipped)
 			{
-				PrintMessage(Message::mkError, "%s requested par-check/repair, but the collection was already checked", GetInfoName());
-				return ScriptStatus::srFailure;
+				error("%s requested par-check/repair for all collections, but they were already checked", szInfoName);
+				m_pPostInfo->SetScriptStatus(PostInfo::srFailure);
+			}
+			else if (!m_bNZBFileCompleted)
+			{
+				error("%s requested par-check/repair for all collections, but it was not the call for the last collection", szInfoName);
+				m_pPostInfo->SetScriptStatus(PostInfo::srFailure);
 			}
 			else
 			{
-				PrintMessage(Message::mkInfo, "%s requested par-check/repair", GetInfoName());
-				m_pPostInfo->SetRequestParCheck(true);
-				return ScriptStatus::srSuccess;
+				info("%s requested par-check/repair for all collections", szInfoName);
+				m_pPostInfo->SetRequestParCheck(PostInfo::rpAll);
+				m_pPostInfo->SetScriptStatus(PostInfo::srSuccess);
+			}
+			break;
+
+		case POSTPROCESS_PARCHECK_CURRENT:
+			if (m_pPostInfo->GetParStatus() > PostInfo::psSkipped)
+			{
+				error("%s requested par-check/repair for current collection, but it was already checked", szInfoName);
+				m_pPostInfo->SetScriptStatus(PostInfo::srFailure);
+			}
+			else if (strlen(m_pPostInfo->GetParFilename()) == 0)
+			{
+				error("%s requested par-check/repair for current collection, but it doesn't have any par-files", szInfoName);
+				m_pPostInfo->SetScriptStatus(PostInfo::srFailure);
+			}
+			else
+			{
+				info("%s requested par-check/repair for current collection", szInfoName);
+				m_pPostInfo->SetRequestParCheck(PostInfo::rpCurrent);
+				m_pPostInfo->SetScriptStatus(PostInfo::srSuccess);
 			}
 			break;
 #endif
 
 		default:
-			PrintMessage(Message::mkError, "%s failed (terminated with unknown status)", GetInfoName());
-			return ScriptStatus::srFailure;
+			info("%s terminated with unknown status", szInfoName);
+			m_pPostInfo->SetScriptStatus(PostInfo::srUnknown);
 	}
+
+	m_pPostInfo->SetStage(PostInfo::ptFinished);
+	m_pPostInfo->SetWorking(false);
 }
 
-void PostScriptController::AddMessage(Message::EKind eKind, const char* szText)
+void PostScriptController::AddMessage(Message::EKind eKind, bool bDefaultKind, const char* szText)
 {
 	if (!strncmp(szText, "[HISTORY] ", 10))
 	{
-		m_pPostInfo->GetNZBInfo()->AppendMessage(eKind, 0, szText);
+		m_pPostInfo->GetNZBInfo()->AppendMessage(eKind, 0, szText + 10);
 	}
 	else
 	{
-		ScriptController::AddMessage(eKind, szText);
+		ScriptController::AddMessage(eKind, bDefaultKind, szText);
 		m_pPostInfo->AppendMessage(eKind, szText);
 	}
 
@@ -967,59 +868,16 @@ void PostScriptController::Stop()
 	Terminate();
 }
 
-/**
- * DownloadQueue must be locked prior to call of this function.
- */
-void PostScriptController::InitParamsForNewNZB(NZBInfo* pNZBInfo)
-{
-	const char* szDefScript = g_pOptions->GetDefScript();
-
-	if (pNZBInfo->GetCategory() && strlen(pNZBInfo->GetCategory()) > 0)
-	{
-		Options::Category* pCategory = g_pOptions->FindCategory(pNZBInfo->GetCategory());
-		if (pCategory && pCategory->GetDefScript() && strlen(pCategory->GetDefScript()) > 0)
-		{
-			szDefScript = pCategory->GetDefScript();
-		}
-	}
-
-	if (!szDefScript || strlen(szDefScript) == 0)
-	{
-		return;
-	}
-
-	// split szDefScript into tokens and create pp-parameter for each token
-	char* szDefScript2 = strdup(szDefScript);
-	char* saveptr;
-	char* szScriptName = strtok_r(szDefScript2, ",;", &saveptr);
-	while (szScriptName)
-	{
-		szScriptName = Util::Trim(szScriptName);
-		if (szScriptName[0] != '\0')
-		{
-			char szParam[1024];
-			snprintf(szParam, 1024, "%s:", szScriptName);
-			szParam[1024-1] = '\0';
-			pNZBInfo->GetParameters()->SetParameter(szParam, "yes");
-		}
-		szScriptName = strtok_r(NULL, ",;", &saveptr);
-	}
-	free(szDefScript2);
-}
-
-void NZBScriptController::ExecuteScript(const char* szScript, const char* szNZBFilename, const char* szDirectory,
-	char** pNZBName, char** pCategory, int* iPriority, NZBParameterList* pParameters, bool* bAddTop, bool* bAddPaused)
+void NZBScriptController::ExecuteScript(const char* szScript, const char* szNZBFilename, 
+	const char* szDirectory, char** pCategory, int* iPriority, NZBParameterList* pParameterList)
 {
 	info("Executing nzb-process-script for %s", Util::BaseFileName(szNZBFilename));
 
 	NZBScriptController* pScriptController = new NZBScriptController();
 	pScriptController->SetScript(szScript);
-	pScriptController->m_pNZBName = pNZBName;
 	pScriptController->m_pCategory = pCategory;
-	pScriptController->m_pParameters = pParameters;
+	pScriptController->m_pParameterList = pParameterList;
 	pScriptController->m_iPriority = iPriority;
-	pScriptController->m_bAddTop = bAddTop;
-	pScriptController->m_bAddPaused = bAddPaused;
 
 	char szInfoName[1024];
 	snprintf(szInfoName, 1024, "nzb-process-script for %s", Util::BaseFileName(szNZBFilename));
@@ -1036,51 +894,30 @@ void NZBScriptController::ExecuteScript(const char* szScript, const char* szNZBF
 		szDir[iLen-1] = '\0';
 	}
 
-	char szPriority[20];
-	snprintf(szPriority, 20, "%i", *iPriority);
-	szPriority[20-1] = '\0';
+	pScriptController->SetDefaultKindPrefix("NZB-Process: ");
+	pScriptController->SetDefaultLogKind(g_pOptions->GetProcessLogKind());
 
-	char szAddTop[10];
-	snprintf(szAddTop, 10, "%i", *bAddTop ? 1 : 0);
-	szAddTop[10-1] = '\0';
-
-	char szAddPaused[10];
-	snprintf(szAddPaused, 10, "%i", *bAddPaused ? 1 : 0);
-	szAddPaused[10-1] = '\0';
-
-	char szLogPrefix[1024];
-	strncpy(szLogPrefix, Util::BaseFileName(szScript), 1024);
-	szLogPrefix[1024-1] = '\0';
-	if (char* ext = strrchr(szLogPrefix, '.')) *ext = '\0'; // strip file extension
-	pScriptController->SetLogPrefix(szLogPrefix);
-	pScriptController->m_iPrefixLen = strlen(szLogPrefix) + 2; // 2 = strlen(": ");
+	const char* szArgs[4];
+	szArgs[0] = szScript;
+	szArgs[1] = szDir;
+	szArgs[2] = szNZBFilename;
+	szArgs[3] = NULL;
+	pScriptController->SetArgs(szArgs, false);
 
 	pScriptController->SetEnvVar("NZBNP_DIRECTORY", szDir);
 	pScriptController->SetEnvVar("NZBNP_FILENAME", szNZBFilename);
-	pScriptController->SetEnvVar("NZBNP_NZBNAME", strlen(*pNZBName) > 0 ? *pNZBName : Util::BaseFileName(szNZBFilename));
-	pScriptController->SetEnvVar("NZBNP_CATEGORY", *pCategory);
-	pScriptController->SetEnvVar("NZBNP_PRIORITY", szPriority);
-	pScriptController->SetEnvVar("NZBNP_TOP", szAddTop);
-	pScriptController->SetEnvVar("NZBNP_PAUSED", szAddPaused);
 
 	pScriptController->Execute();
 
 	delete pScriptController;
 }
 
-void NZBScriptController::AddMessage(Message::EKind eKind, const char* szText)
+void NZBScriptController::AddMessage(Message::EKind eKind, bool bDefaultKind, const char* szText)
 {
-	szText = szText + m_iPrefixLen;
-
 	if (!strncmp(szText, "[NZB] ", 6))
 	{
 		debug("Command %s detected", szText + 6);
-		if (!strncmp(szText + 6, "NZBNAME=", 8))
-		{
-			free(*m_pNZBName);
-			*m_pNZBName = strdup(szText + 6 + 8);
-		}
-		else if (!strncmp(szText + 6, "CATEGORY=", 9))
+		if (!strncmp(szText + 6, "CATEGORY=", 9))
 		{
 			free(*m_pCategory);
 			*m_pCategory = strdup(szText + 6 + 9);
@@ -1092,7 +929,7 @@ void NZBScriptController::AddMessage(Message::EKind eKind, const char* szText)
 			if (szValue)
 			{
 				*szValue = '\0';
-				m_pParameters->SetParameter(szParam, szValue + 1);
+				m_pParameterList->SetParameter(szParam, szValue + 1);
 			}
 			else
 			{
@@ -1104,14 +941,6 @@ void NZBScriptController::AddMessage(Message::EKind eKind, const char* szText)
 		{
 			*m_iPriority = atoi(szText + 6 + 9);
 		}
-		else if (!strncmp(szText + 6, "TOP=", 4))
-		{
-			*m_bAddTop = atoi(szText + 6 + 4) != 0;
-		}
-		else if (!strncmp(szText + 6, "PAUSED=", 7))
-		{
-			*m_bAddPaused = atoi(szText + 6 + 7) != 0;
-		}
 		else
 		{
 			error("Invalid command \"%s\" received from %s", szText, GetInfoName());
@@ -1119,7 +948,7 @@ void NZBScriptController::AddMessage(Message::EKind eKind, const char* szText)
 	}
 	else
 	{
-		ScriptController::AddMessage(eKind, szText);
+		ScriptController::AddMessage(eKind, bDefaultKind, szText);
 	}
 }
 
@@ -1128,8 +957,6 @@ void NZBAddedScriptController::StartScript(DownloadQueue* pDownloadQueue, NZBInf
 	NZBAddedScriptController* pScriptController = new NZBAddedScriptController();
 	pScriptController->SetScript(szScript);
 	pScriptController->m_szNZBName = strdup(pNZBInfo->GetName());
-	pScriptController->SetEnvVar("NZBNA_NZBNAME", pNZBInfo->GetName());
-	// "NZBNA_NAME" is not correct but kept for compatibility with older versions where this name was used by mistake
 	pScriptController->SetEnvVar("NZBNA_NAME", pNZBInfo->GetName());
 	pScriptController->SetEnvVar("NZBNA_FILENAME", pNZBInfo->GetFilename());
 	pScriptController->SetEnvVar("NZBNA_CATEGORY", pNZBInfo->GetCategory());
@@ -1158,7 +985,7 @@ void NZBAddedScriptController::StartScript(DownloadQueue* pDownloadQueue, NZBInf
 	snprintf(buf, 100, "%i", iMaxPriority);
 	pScriptController->SetEnvVar("NZBNA_PRIORITY", buf);
 
-	pScriptController->PrepareEnvParameters(pNZBInfo, NULL);
+	pScriptController->PrepareEnvParameters(pNZBInfo);
 
 	pScriptController->SetAutoDestroy(true);
 
@@ -1174,11 +1001,13 @@ void NZBAddedScriptController::Run()
 
 	info("Executing %s", szInfoName);
 
-	char szLogPrefix[1024];
-	strncpy(szLogPrefix, Util::BaseFileName(GetScript()), 1024);
-	szLogPrefix[1024-1] = '\0';
-	if (char* ext = strrchr(szLogPrefix, '.')) *ext = '\0'; // strip file extension
-	SetLogPrefix(szLogPrefix);
+	SetDefaultKindPrefix("NZB-Added Process: ");
+	SetDefaultLogKind(g_pOptions->GetProcessLogKind());
+
+	const char* szArgs[2];
+	szArgs[0] = GetScript();
+	szArgs[1] = NULL;
+	SetArgs(szArgs, false);
 
 	Execute();
 
@@ -1211,11 +1040,8 @@ void SchedulerScriptController::Run()
 	szInfoName[1024-1] = '\0';
 	SetInfoName(szInfoName);
 
-	char szLogPrefix[1024];
-	strncpy(szLogPrefix, Util::BaseFileName(GetScript()), 1024);
-	szLogPrefix[1024-1] = '\0';
-	if (char* ext = strrchr(szLogPrefix, '.')) *ext = '\0'; // strip file extension
-	SetLogPrefix(szLogPrefix);
+	SetDefaultKindPrefix("Scheduled Process: ");
+	SetDefaultLogKind(g_pOptions->GetProcessLogKind());
 
 	Execute();
 }

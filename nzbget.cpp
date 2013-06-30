@@ -2,7 +2,7 @@
  *  This file is part of nzbget
  *
  *  Copyright (C) 2004 Sven Henkel <sidddy@users.sourceforge.net>
- *  Copyright (C) 2007-2013 Andrey Prygunkov <hugbug@users.sourceforge.net>
+ *  Copyright (C) 2007-2012 Andrey Prygunkov <hugbug@users.sourceforge.net>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -74,7 +74,6 @@
 #include "PrePostProcessor.h"
 #include "ParChecker.h"
 #include "Scheduler.h"
-#include "Scanner.h"
 #include "Util.h"
 #ifdef WIN32
 #include "NTService.h"
@@ -114,7 +113,6 @@ Log* g_pLog = NULL;
 PrePostProcessor* g_pPrePostProcessor = NULL;
 DiskState* g_pDiskState = NULL;
 Scheduler* g_pScheduler = NULL;
-Scanner* g_pScanner = NULL;
 int g_iArgumentCount;
 char* (*g_szEnvironmentVariables)[] = NULL;
 char* (*g_szArguments)[] = NULL;
@@ -225,19 +223,16 @@ void Run(bool bReload)
 
 	g_pLog->InitOptions();
 
-	if (g_pOptions->GetDaemonMode())
+	if (g_pOptions->GetDaemonMode() && !bReload)
 	{
 #ifdef WIN32
 		info("nzbget %s service-mode", Util::VersionRevision());
 #else
-		if (!bReload)
-		{
-			Daemonize();
-		}
+		Daemonize();
 		info("nzbget %s daemon-mode", Util::VersionRevision());
 #endif
 	}
-	else if (g_pOptions->GetServerMode())
+	else if (g_pOptions->GetServerMode() && !bReload)
 	{
 		info("nzbget %s server-mode", Util::VersionRevision());
 	}
@@ -312,7 +307,6 @@ void Run(bool bReload)
 	// Creating PrePostProcessor
 	if (!g_pOptions->GetRemoteClientMode())
 	{
-		g_pScanner = new Scanner();
 		g_pPrePostProcessor = new PrePostProcessor();
 	}
 
@@ -347,7 +341,7 @@ void Run(bool bReload)
 		// Standalone-mode
 		if (!g_pOptions->GetServerMode())
 		{
-			NZBFile* pNZBFile = NZBFile::Create(g_pOptions->GetArgFilename(), g_pOptions->GetAddCategory() ? g_pOptions->GetAddCategory() : "");
+			NZBFile* pNZBFile = NZBFile::CreateFromFile(g_pOptions->GetArgFilename(), g_pOptions->GetAddCategory() ? g_pOptions->GetAddCategory() : "");
 			if (!pNZBFile)
 			{
 				abort("FATAL ERROR: Parsing NZB-document %s failed\n\n", g_pOptions->GetArgFilename() ? g_pOptions->GetArgFilename() : "N/A");
@@ -748,11 +742,6 @@ void Cleanup()
 		delete g_pPrePostProcessor;
 		g_pPrePostProcessor = NULL;
 	}
-	if (g_pScanner)
-	{
-		delete g_pScanner;
-		g_pScanner = NULL;
-	}
 	debug("PrePostProcessor deleted");
 
 	debug("Deleting Frontend");
@@ -844,14 +833,14 @@ void Daemonize()
 	/* Drop user if there is one, and we were run as root */
 	if ( getuid() == 0 || geteuid() == 0 )
 	{
-		struct passwd *pw = getpwnam(g_pOptions->GetDaemonUsername());
+		struct passwd *pw = getpwnam(g_pOptions->GetDaemonUserName());
 		if (pw)
 		{
 			fchown(lfp, pw->pw_uid, pw->pw_gid); /* change owner of lock file  */
 			setgroups( 0, (const gid_t*) 0 ); /* Set aux groups to null. */
 			setgid(pw->pw_gid); /* Set primary group. */
 			/* Try setting aux groups correctly - not critical if this fails. */
-			initgroups( g_pOptions->GetDaemonUsername(),pw->pw_gid); 
+			initgroups( g_pOptions->GetDaemonUserName(),pw->pw_gid); 
 			/* Finally, set uid. */
 			setuid(pw->pw_uid);
 		}

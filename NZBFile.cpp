@@ -2,7 +2,7 @@
  *  This file is part of nzbget
  *
  *  Copyright (C) 2004 Sven Henkel <sidddy@users.sourceforge.net>
- *  Copyright (C) 2007-2013 Andrey Prygunkov <hugbug@users.sourceforge.net>
+ *  Copyright (C) 2007-2010 Andrey Prygunkov <hugbug@users.sourceforge.net>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -119,6 +119,16 @@ void NZBFile::LogDebugInfo()
 void NZBFile::DetachFileInfos()
 {
     m_FileInfos.clear();
+}
+
+NZBFile* NZBFile::CreateFromBuffer(const char* szFileName, const char* szCategory, const char* szBuffer, int iSize)
+{
+	return Create(szFileName, szCategory, szBuffer, iSize, true);
+}
+
+NZBFile* NZBFile::CreateFromFile(const char* szFileName, const char* szCategory)
+{
+	return Create(szFileName, szCategory, NULL, 0, false);
 }
 
 void NZBFile::AddArticle(FileInfo* pFileInfo, ArticleInfo* pArticleInfo)
@@ -347,7 +357,7 @@ void NZBFile::ProcessFilenames()
 }
 
 #ifdef WIN32
-NZBFile* NZBFile::Create(const char* szFileName, const char* szCategory)
+NZBFile* NZBFile::Create(const char* szFileName, const char* szCategory, const char* szBuffer, int iSize, bool bFromBuffer)
 {
     CoInitialize(NULL);
 
@@ -364,15 +374,21 @@ NZBFile* NZBFile::Create(const char* szFileName, const char* szCategory)
 	doc->put_resolveExternals(VARIANT_FALSE);
 	doc->put_validateOnParse(VARIANT_FALSE);
 	doc->put_async(VARIANT_FALSE);
-
-	// filename needs to be properly encoded
-	char* szURL = (char*)malloc(strlen(szFileName)*3 + 1);
-	EncodeURL(szFileName, szURL);
-	debug("url=\"%s\"", szURL);
-	_variant_t v(szURL);
-	free(szURL);
-
-	VARIANT_BOOL success = doc->load(v);
+	VARIANT_BOOL success;
+	if (bFromBuffer)
+	{
+		success = doc->loadXML(szBuffer);
+	}
+	else
+	{
+		// filename needs to be properly encoded
+		char* szURL = (char*)malloc(strlen(szFileName)*3 + 1);
+		EncodeURL(szFileName, szURL);
+		debug("url=\"%s\"", szURL);
+		_variant_t v(szURL);
+		free(szURL);
+		success = doc->load(v);
+	} 
 	if (success == VARIANT_FALSE)
 	{
 		_bstr_t r(doc->GetparseError()->reason);
@@ -466,14 +482,11 @@ bool NZBFile::ParseNZB(IUnknown* nzb)
 			int partNumber = atoi(number);
 			int lsize = atoi(bytes);
 
-			if (partNumber > 0)
-			{
-				ArticleInfo* pArticle = new ArticleInfo();
-				pArticle->SetPartNumber(partNumber);
-				pArticle->SetMessageID(szId);
-				pArticle->SetSize(lsize);
-				AddArticle(pFileInfo, pArticle);
-			}
+			ArticleInfo* pArticle = new ArticleInfo();
+			pArticle->SetPartNumber(partNumber);
+			pArticle->SetMessageID(szId);
+			pArticle->SetSize(lsize);
+			AddArticle(pFileInfo, pArticle);
 
             if (lsize > 0)
             {
@@ -488,7 +501,7 @@ bool NZBFile::ParseNZB(IUnknown* nzb)
 
 #else
 
-NZBFile* NZBFile::Create(const char* szFileName, const char* szCategory)
+NZBFile* NZBFile::Create(const char* szFileName, const char* szCategory, const char* szBuffer, int iSize, bool bFromBuffer)
 {
     NZBFile* pFile = new NZBFile(szFileName, szCategory);
 
@@ -499,10 +512,18 @@ NZBFile* NZBFile::Create(const char* szFileName, const char* szCategory)
 	SAX_handler.error = reinterpret_cast<errorSAXFunc>(SAX_error);
 	SAX_handler.getEntity = reinterpret_cast<getEntitySAXFunc>(SAX_getEntity);
 
+	int ret = 0;
 	pFile->m_bIgnoreNextError = false;
 
-	int ret = xmlSAXUserParseFile(&SAX_handler, pFile, szFileName);
-    
+	if (bFromBuffer)
+	{
+		ret = xmlSAXUserParseMemory(&SAX_handler, pFile, szBuffer, iSize);
+	}
+	else
+	{
+		ret = xmlSAXUserParseFile(&SAX_handler, pFile, szFileName);
+	}
+        
     if (ret == 0)
 	{
 		pFile->ProcessFilenames();

@@ -35,8 +35,8 @@
 
 #include <stdlib.h>
 #include <string.h>
-#include <stdio.h>
 #include <ctype.h>
+#include <fstream>
 #ifdef WIN32
 #include <par2cmdline.h>
 #include <par2repairer.h>
@@ -79,7 +79,7 @@ ParRenamer::ParRenamer()
 {
     debug("Creating ParRenamer");
 
-	m_eStatus = psFailed;
+	m_eStatus = psUnknown;
 	m_szDestDir = NULL;
 	m_szInfoName = NULL;
 	m_szProgressLabel = (char*)malloc(1024);
@@ -131,6 +131,12 @@ void ParRenamer::SetInfoName(const char * szInfoName)
 	m_szInfoName = strdup(szInfoName);
 }
 
+void ParRenamer::SetStatus(EStatus eStatus)
+{
+	m_eStatus = eStatus;
+	Notify(NULL);
+}
+
 void ParRenamer::Cancel()
 {
 	m_bCancelled = true;
@@ -141,7 +147,8 @@ void ParRenamer::Run()
 	Cleanup();
 	m_bCancelled = false;
 	m_iRenamedCount = 0;
-	m_eStatus = psFailed;
+
+	SetStatus(psUnknown);
 
 	snprintf(m_szProgressLabel, 1024, "Checking renamed files for %s", m_szInfoName);
 	m_szProgressLabel[1024-1] = '\0';
@@ -153,20 +160,21 @@ void ParRenamer::Run()
 	
 	if (m_bCancelled)
 	{
-		PrintMessage(Message::mkWarning, "Renaming cancelled for %s", m_szInfoName);
+		warn("Renaming cancelled for %s", m_szInfoName);
+		SetStatus(psFailed);
 	}
 	else if (m_iRenamedCount > 0)
 	{
-		PrintMessage(Message::mkInfo, "Successfully renamed %i file(s) for %s", m_iRenamedCount, m_szInfoName);
-		m_eStatus = psSuccess;
+		info("Successfully renamed %i file(s) for %s", m_iRenamedCount, m_szInfoName);
+		SetStatus(psFinished);
 	}
 	else
 	{
-		PrintMessage(Message::mkInfo, "No renamed files found for %s", m_szInfoName);
+		info("Could not rename any files for %s", m_szInfoName);
+		SetStatus(psFailed);
 	}
 
 	Cleanup();
-	Completed();
 }
 
 void ParRenamer::LoadParFiles()
@@ -194,7 +202,7 @@ void ParRenamer::LoadParFile(const char* szParFilename)
 
 	if (!pRepairer->LoadPacketsFromFile(szParFilename))
 	{
-		PrintMessage(Message::mkWarning, "Could not load par2-file %s", szParFilename);
+		warn("Could not load par2-file %s", szParFilename);
 		delete pRepairer;
 		return;
 	}
@@ -256,7 +264,7 @@ void ParRenamer::CheckFile(const char* szFilename)
     FILE* pFile = fopen(szFilename, "rb");
     if (!pFile)
     {
-		PrintMessage(Message::mkError, "Could not open file %s", szFilename);
+		error("Could not open file %s", szFilename);
         return;
     }
 
@@ -268,7 +276,7 @@ void ParRenamer::CheckFile(const char* szFilename)
 	int iError = ferror(pFile);
 	if (iReadBytes != iBlockSize && iError)
 	{
-		PrintMessage(Message::mkError, "Could not read file %s", szFilename);
+		error("Could not read file %s", szFilename);
 		return;
 	}
 	
@@ -296,14 +304,14 @@ void ParRenamer::CheckFile(const char* szFilename)
 			
 			if (!Util::FileExists(szDstFilename))
 			{
-				PrintMessage(Message::mkInfo, "Renaming %s to %s", Util::BaseFileName(szFilename), pFileHash->GetFilename());
+				info("Renaming %s to %s", Util::BaseFileName(szFilename), pFileHash->GetFilename());
 				if (Util::MoveFile(szFilename, szDstFilename))
 				{
 					m_iRenamedCount++;
 				}
 				else
 				{
-					PrintMessage(Message::mkError, "Could not rename %s to %s", szFilename, szDstFilename);
+					error("Could not rename %s to %s", szFilename, szDstFilename);
 				}
 			}
 			

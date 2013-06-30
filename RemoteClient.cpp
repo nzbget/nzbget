@@ -2,7 +2,7 @@
  *  This file is part of nzbget
  *
  *  Copyright (C) 2005 Bo Cordes Petersen <placebodk@sourceforge.net>
- *  Copyright (C) 2007-2013 Andrey Prygunkov <hugbug@users.sourceforge.net>
+ *  Copyright (C) 2007-2011 Andrey Prygunkov <hugbug@users.sourceforge.net>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -34,7 +34,7 @@
 
 #include <stdlib.h>
 #include <string.h>
-#include <stdio.h>
+#include <cstdio>
 #ifdef WIN32
 #include <windows.h>
 #else
@@ -126,10 +126,6 @@ void RemoteClient::InitMessageBase(SNZBRequestBase* pMessageBase, int iRequest, 
 	pMessageBase->m_iSignature	= htonl(NZBMESSAGE_SIGNATURE);
 	pMessageBase->m_iType = htonl(iRequest);
 	pMessageBase->m_iStructSize = htonl(iSize);
-
-	strncpy(pMessageBase->m_szUsername, g_pOptions->GetControlUsername(), NZBREQUESTPASSWORDSIZE - 1);
-	pMessageBase->m_szUsername[NZBREQUESTPASSWORDSIZE - 1] = '\0';
-
 	strncpy(pMessageBase->m_szPassword, g_pOptions->GetControlPassword(), NZBREQUESTPASSWORDSIZE - 1);
 	pMessageBase->m_szPassword[NZBREQUESTPASSWORDSIZE - 1] = '\0';
 }
@@ -188,7 +184,7 @@ bool RemoteClient::RequestServerDownload(const char* szFilename, const char* szC
 		DownloadRequest.m_bAddFirst = htonl(bAddFirst);
 		DownloadRequest.m_bAddPaused = htonl(bAddPaused);
 		DownloadRequest.m_iPriority = htonl(iPriority);
-		DownloadRequest.m_iTrailingDataLength = htonl(iLength - 1);
+		DownloadRequest.m_iTrailingDataLength = htonl(iLength);
 
 		strncpy(DownloadRequest.m_szFilename, szFilename, NZBREQUESTFILENAMESIZE - 1);
 		DownloadRequest.m_szFilename[NZBREQUESTFILENAMESIZE-1] = '\0';
@@ -1039,13 +1035,13 @@ bool RemoteClient::RequestPostQueue()
 			}
 
 			const char* szPostStageName[] = { "", ", Loading Pars", ", Verifying source files", ", Repairing", ", Verifying repaired files", ", Unpacking", ", Executing postprocess-script", "" };
-			char* szInfoName = pBufPtr + sizeof(SNZBPostQueueResponseEntry) + ntohl(pPostQueueAnswer->m_iNZBFilenameLen);
+			char* szInfoName = pBufPtr + sizeof(SNZBPostQueueResponseEntry) + ntohl(pPostQueueAnswer->m_iNZBFilenameLen) + ntohl(pPostQueueAnswer->m_iParFilename);
 			
 			printf("[%i] %s%s%s\n", ntohl(pPostQueueAnswer->m_iID), szInfoName, szPostStageName[ntohl(pPostQueueAnswer->m_iStage)], szCompleted);
 
 			pBufPtr += sizeof(SNZBPostQueueResponseEntry) + ntohl(pPostQueueAnswer->m_iNZBFilenameLen) + 
-				ntohl(pPostQueueAnswer->m_iInfoNameLen) + ntohl(pPostQueueAnswer->m_iDestDirLen) +
-				ntohl(pPostQueueAnswer->m_iProgressLabelLen);
+				ntohl(pPostQueueAnswer->m_iParFilename) + ntohl(pPostQueueAnswer->m_iInfoNameLen) +
+				ntohl(pPostQueueAnswer->m_iDestDirLen) + ntohl(pPostQueueAnswer->m_iProgressLabelLen);
 		}
 
 		free(pBuf);
@@ -1164,7 +1160,7 @@ bool RemoteClient::RequestHistory()
 				char szSize[20];
 				Util::FormatFileSize(szSize, sizeof(szSize), lSize);
 
-				const char* szParStatusText[] = { "", "", ", Par failed", ", Par successful", ", Repair possible", ", Repair needed" };
+				const char* szParStatusText[] = { "", ", Par failed", ", Par possible", ", Par successful" };
 				const char* szScriptStatusText[] = { "", ", Script status unknown", ", Script failed", ", Script successful" };
 
 				printf("[%i] %s (%i files, %s%s%s)\n", ntohl(pListAnswer->m_iID), szNicename, 

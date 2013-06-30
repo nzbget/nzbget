@@ -1,7 +1,7 @@
 /*
  *  This file is part of nzbget
  *
- *  Copyright (C) 2007-2013 Andrey Prygunkov <hugbug@users.sourceforge.net>
+ *  Copyright (C) 2007-2011 Andrey Prygunkov <hugbug@users.sourceforge.net>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -33,13 +33,14 @@
 
 #include <stdlib.h>
 #include <string.h>
-#include <stdio.h>
+#include <fstream>
 #ifdef WIN32
 #include <direct.h>
 #else
 #include <unistd.h>
 #endif
 #include <sys/stat.h>
+#include <errno.h>
 
 #include "nzbget.h"
 #include "Scanner.h"
@@ -66,41 +67,6 @@ Scanner::FileData::~FileData()
 	free(m_szFilename);
 }
 
-
-Scanner::QueueData::QueueData(const char* szFilename, const char* szNZBName, const char* szCategory, int iPriority,
-	NZBParameterList* pParameters, bool bAddTop, bool bAddPaused)
-{
-	m_szFilename = strdup(szFilename);
-	m_szNZBName = strdup(szNZBName);
-	m_szCategory = strdup(szCategory ? szCategory : "");
-	m_iPriority = iPriority;
-	m_bAddTop = bAddTop;
-	m_bAddPaused = bAddPaused;
-
-	if (pParameters)
-	{
-		for (NZBParameterList::iterator it = pParameters->begin(); it != pParameters->end(); it++)
-		{
-			NZBParameter* pNZBParameter = *it;
-			m_Parameters.SetParameter(pNZBParameter->GetName(), pNZBParameter->GetValue());
-		}
-	}
-}
-
-Scanner::QueueData::~QueueData()
-{
-	free(m_szFilename);
-	free(m_szNZBName);
-	free(m_szCategory);
-
-	for (NZBParameterList::iterator it = m_Parameters.begin(); it != m_Parameters.end(); it++)
-	{
-		delete *it;
-	}
-	m_Parameters.clear();
-}
-
-
 Scanner::Scanner()
 {
 	debug("Creating Scanner");
@@ -109,6 +75,7 @@ Scanner::Scanner()
 	m_bScanning = false;
 	m_iNZBDirInterval = g_pOptions->GetNzbDirInterval() * 1000;
 	m_iPass = 0;
+	m_iStepMSec = 0;
 
 	const char* szNZBScript = g_pOptions->GetNZBProcess();
 	m_bNZBScript = szNZBScript && strlen(szNZBScript) > 0;
@@ -123,26 +90,13 @@ Scanner::~Scanner()
         delete *it;
 	}
 	m_FileList.clear();
-
-	ClearQueueList();
-}
-
-void Scanner::ClearQueueList()
-{
-	for (QueueList::iterator it = m_QueueList.begin(); it != m_QueueList.end(); it++)
-    {
-        delete *it;
-	}
-	m_QueueList.clear();
 }
 
 void Scanner::Check()
 {
-	m_mutexScan.Lock();
-
-	if (m_bRequestedNZBDirScan || 
+	if (g_pOptions->GetNzbDir() && (m_bRequestedNZBDirScan || 
 		(!g_pOptions->GetPauseScan() && g_pOptions->GetNzbDirInterval() > 0 && 
-		 m_iNZBDirInterval >= g_pOptions->GetNzbDirInterval() * 1000))
+		 m_iNZBDirInterval >= g_pOptions->GetNzbDirInterval() * 1000)))
 	{
 		// check nzbdir every g_pOptions->GetNzbDirInterval() seconds or if requested
 		bool bCheckStat = !m_bRequestedNZBDirScan;
@@ -151,7 +105,7 @@ void Scanner::Check()
 		CheckIncomingNZBs(g_pOptions->GetNzbDir(), "", bCheckStat);
 		if (!bCheckStat && m_bNZBScript)
 		{
-			// if immediate scan requested, we need second scan to process files extracted by NzbProcess-script
+			// if immediate scan requesten, we need second scan to process files extracted by NzbProcess-script
 			CheckIncomingNZBs(g_pOptions->GetNzbDir(), "", bCheckStat);
 		}
 		m_bScanning = false;
@@ -162,7 +116,7 @@ void Scanner::Check()
 		//   - one additional scan is neccessary to check sizes of detected files;
 		//   - another scan is required to check files which were extracted by NzbProcess-script;
 		//   - third scan is needed to check sizes of extracted files.
-		if (g_pOptions->GetNzbDirInterval() > 0 && g_pOptions->GetNzbDirFileAge() < g_pOptions->GetNzbDirInterval())
+		if (g_pOptions->GetNzbDirFileAge() < g_pOptions->GetNzbDirInterval())
 		{
 			int iMaxPass = m_bNZBScript ? 3 : 1;
 			if (m_iPass < iMaxPass)
@@ -179,10 +133,7 @@ void Scanner::Check()
 
 		DropOldFiles();
 	}
-	m_iNZBDirInterval += 200;
-
-	ClearQueueList();
-	m_mutexScan.Unlock();
+	m_iNZBDirInterval += m_iStepMSec;
 }
 
 /**
@@ -327,34 +278,16 @@ void Scanner::ProcessIncomingFile(const char* szDirectory, const char* szBaseFil
 		return;
 	}
 
-	char* szNZBName = strdup("");
 	char* szNZBCategory = strdup(szCategory);
-	NZBParameterList* pParameters = new NZBParameterList();
+	NZBParameterList* pParameterList = new NZBParameterList;
 	int iPriority = 0;
-	bool bAddTop = false;
-	bool bAddPaused = false;
-
-	for (QueueList::iterator it = m_QueueList.begin(); it != m_QueueList.end(); it++)
-    {
-        QueueData* pQueueData = *it;
-		if (Util::SameFilename(pQueueData->GetFilename(), szFullFilename))
-		{
-			free(szNZBName);
-			szNZBName = strdup(pQueueData->GetNZBName());
-			free(szNZBCategory);
-			szNZBCategory = strdup(pQueueData->GetCategory());
-			iPriority = pQueueData->GetPriority();
-			bAddTop = pQueueData->GetAddTop();
-			bAddPaused = pQueueData->GetAddPaused();
-		}
-	}
 
 	bool bExists = true;
 
 	if (m_bNZBScript && strcasecmp(szExtension, ".nzb_processed"))
 	{
 		NZBScriptController::ExecuteScript(g_pOptions->GetNZBProcess(), szFullFilename, szDirectory, 
-			&szNZBName, &szNZBCategory, &iPriority, pParameters, &bAddTop, &bAddPaused); 
+			&szNZBCategory, &iPriority, pParameterList); 
 		bExists = Util::FileExists(szFullFilename);
 		if (bExists && strcasecmp(szExtension, ".nzb"))
 		{
@@ -362,8 +295,7 @@ void Scanner::ProcessIncomingFile(const char* szDirectory, const char* szBaseFil
 			bool bRenameOK = Util::RenameBak(szFullFilename, "processed", false, bakname2, 1024);
 			if (!bRenameOK)
 			{
-				char szSysErrStr[256];
-				error("Could not rename file %s to %s: %s", szFullFilename, bakname2, Util::GetLastErrorMessage(szSysErrStr, sizeof(szSysErrStr)));
+				error("Could not rename file %s to %s! Errcode: %i", szFullFilename, bakname2, errno);
 			}
 		}
 	}
@@ -374,38 +306,35 @@ void Scanner::ProcessIncomingFile(const char* szDirectory, const char* szBaseFil
 		bool bRenameOK = Util::RenameBak(szFullFilename, "nzb", true, szRenamedName, 1024);
 		if (bRenameOK)
 		{
-			AddFileToQueue(szRenamedName, szNZBName, szNZBCategory, iPriority, pParameters, bAddTop, bAddPaused);
+			AddFileToQueue(szRenamedName, szNZBCategory, iPriority, pParameterList);
 		}
 		else
 		{
-			char szSysErrStr[256];
-			error("Could not rename file %s to %s: %s", szFullFilename, szRenamedName, Util::GetLastErrorMessage(szSysErrStr, sizeof(szSysErrStr)));
+			error("Could not rename file %s to %s! Errcode: %i", szFullFilename, szRenamedName, errno);
 		}
 	}
 	else if (bExists && !strcasecmp(szExtension, ".nzb"))
 	{
-		AddFileToQueue(szFullFilename, szNZBName, szNZBCategory, iPriority, pParameters, bAddTop, bAddPaused);
+		AddFileToQueue(szFullFilename, szNZBCategory, iPriority, pParameterList);
 	}
 
-	for (NZBParameterList::iterator it = pParameters->begin(); it != pParameters->end(); it++)
+	for (NZBParameterList::iterator it = pParameterList->begin(); it != pParameterList->end(); it++)
 	{
 		delete *it;
 	}
-	pParameters->clear();
-	delete pParameters;
+	pParameterList->clear();
+	delete pParameterList;
 
-	free(szNZBName);
 	free(szNZBCategory);
 }
 
-void Scanner::AddFileToQueue(const char* szFilename, const char* szNZBName, const char* szCategory, int iPriority,
-	NZBParameterList* pParameters, bool bAddTop, bool bAddPaused)
+void Scanner::AddFileToQueue(const char* szFilename, const char* szCategory, int iPriority, NZBParameterList* pParameterList)
 {
 	const char* szBasename = Util::BaseFileName(szFilename);
 
 	info("Collection %s found", szBasename);
 
-	NZBFile* pNZBFile = NZBFile::Create(szFilename, szCategory);
+	NZBFile* pNZBFile = NZBFile::CreateFromFile(szFilename, szCategory);
 	if (!pNZBFile)
 	{
 		error("Could not add collection %s to queue", szBasename);
@@ -415,22 +344,14 @@ void Scanner::AddFileToQueue(const char* szFilename, const char* szNZBName, cons
 	bool bRenameOK = Util::RenameBak(szFilename, pNZBFile ? "queued" : "error", false, bakname2, 1024);
 	if (!bRenameOK)
 	{
-		char szSysErrStr[256];
-		error("Could not rename file %s to %s: %s", szFilename, bakname2, Util::GetLastErrorMessage(szSysErrStr, sizeof(szSysErrStr)));
+		error("Could not rename file %s to %s! Errcode: %i", szFilename, bakname2, errno);
 	}
 
 	if (pNZBFile && bRenameOK)
 	{
 		pNZBFile->GetNZBInfo()->SetQueuedFilename(bakname2);
 
-		if (szNZBName && strlen(szNZBName) > 0)
-		{
-			pNZBFile->GetNZBInfo()->SetName(NULL);
-			pNZBFile->GetNZBInfo()->SetFilename(szNZBName);
-			pNZBFile->GetNZBInfo()->BuildDestDirName();
-		}
-
-		for (NZBParameterList::iterator it = pParameters->begin(); it != pParameters->end(); it++)
+		for (NZBParameterList::iterator it = pParameterList->begin(); it != pParameterList->end(); it++)
 		{
 			NZBParameter* pParameter = *it;
 			pNZBFile->GetNZBInfo()->SetParameter(pParameter->GetName(), pParameter->GetValue());
@@ -440,10 +361,9 @@ void Scanner::AddFileToQueue(const char* szFilename, const char* szNZBName, cons
 		{
 			FileInfo* pFileInfo = *it;
 			pFileInfo->SetPriority(iPriority);
-			pFileInfo->SetPaused(bAddPaused);
 		}
 
-		g_pQueueCoordinator->AddNZBFileToQueue(pNZBFile, bAddTop);
+		g_pQueueCoordinator->AddNZBFileToQueue(pNZBFile, false);
 		info("Collection %s added to queue", szBasename);
 	}
 
@@ -455,91 +375,13 @@ void Scanner::AddFileToQueue(const char* szFilename, const char* szNZBName, cons
 
 void Scanner::ScanNZBDir(bool bSyncMode)
 {
-	m_mutexScan.Lock();
+	// ideally we should use mutex to access "m_bRequestedNZBDirScan",
+	// but it's not critical here.
 	m_bScanning = true;
 	m_bRequestedNZBDirScan = true;
-	m_mutexScan.Unlock();
 
 	while (bSyncMode && (m_bScanning || m_bRequestedNZBDirScan))
 	{
 		usleep(100 * 1000);
 	}
-}
-
-bool Scanner::AddExternalFile(const char* szNZBName, const char* szCategory, int iPriority,
-	NZBParameterList* pParameters, bool bAddTop, bool bAddPaused,
-	const char* szFileName, const char* szBuffer, int iBufSize, bool bSyncMode)
-{
-	char szTempFileName[1024];
-
-	if (szFileName)
-	{
-		strncpy(szTempFileName, szFileName, 1024);
-		szTempFileName[1024-1] = '\0';
-	}
-	else
-	{
-		int iNum = 1;
-		while (iNum == 1 || Util::FileExists(szTempFileName))
-		{
-			snprintf(szTempFileName, 1024, "%snzb-%i.tmp", g_pOptions->GetTempDir(), iNum);
-			szTempFileName[1024-1] = '\0';
-			iNum++;
-		}
-
-		if (!Util::SaveBufferIntoFile(szTempFileName, szBuffer, iBufSize))
-		{
-			error("Could not create file %s", szTempFileName);
-			return false;
-		}
-	}
-
-	// move file into NzbDir, make sure the file name is unique
-	char szValidNZBName[1024];
-	strncpy(szValidNZBName, Util::BaseFileName(szNZBName), 1024);
-	szValidNZBName[1024-1] = '\0';
-	Util::MakeValidFilename(szValidNZBName, '_', false);
-
-	char szScanFileName[1024];
-	snprintf(szScanFileName, 1024, "%s%s", g_pOptions->GetNzbDir(), szValidNZBName);
-
-	char *szExt = strrchr(szValidNZBName, '.');
-	if (szExt)
-	{
-		*szExt = '\0';
-		szExt++;
-	}
-
-	int iNum = 2;
-	while (Util::FileExists(szScanFileName))
-	{
-		if (szExt)
-		{
-			snprintf(szScanFileName, 1024, "%s%s_%i.%s", g_pOptions->GetNzbDir(), szValidNZBName, iNum, szExt);
-		}
-		else
-		{
-			snprintf(szScanFileName, 1024, "%s%s_%i", g_pOptions->GetNzbDir(), szValidNZBName, iNum);
-		}
-		szScanFileName[1024-1] = '\0';
-		iNum++;
-	}
-
-	if (!Util::MoveFile(szTempFileName, szScanFileName))
-	{
-		char szSysErrStr[256];
-		error("Could not move file %s to %s: %s", szTempFileName, szScanFileName, Util::GetLastErrorMessage(szSysErrStr, sizeof(szSysErrStr)));
-		remove(szTempFileName);
-		return false;
-	}
-
-	QueueData* pQueueData = new QueueData(szScanFileName, szNZBName, szCategory, iPriority, pParameters, bAddTop, bAddPaused);
-
-	m_mutexScan.Lock();
-	m_QueueList.push_back(pQueueData);
-	m_mutexScan.Unlock();
-
-	ScanNZBDir(bSyncMode);
-
-	return true;
 }

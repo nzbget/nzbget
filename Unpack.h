@@ -59,13 +59,9 @@ private:
 	char				m_szFinalDir[1024];
 	char				m_szUnpackDir[1024];
 	char				m_szPassword[1024];
-	bool				m_bInterDir;
 	bool				m_bAllOKMessageReceived;
 	bool				m_bNoFilesMessageReceived;
-	bool				m_bHasParFiles;
-	bool				m_bHasBrokenFiles;
 	bool				m_bHasRarFiles;
-	bool				m_bHasNonStdRarFiles;
 	bool				m_bHasSevenZipFiles;
 	bool				m_bHasSevenZipMultiFiles;
 	bool				m_bUnpackOK;
@@ -76,14 +72,15 @@ private:
 
 protected:
 	virtual bool		ReadLine(char* szBuf, int iBufSize, FILE* pStream);
-	virtual void		AddMessage(Message::EKind eKind, const char* szText);
+	virtual void		AddMessage(Message::EKind eKind, bool bDefaultKind, const char* szText);
 	void				ExecuteUnrar();
 	void				ExecuteSevenZip(bool bMultiVolumes);
 	void				Completed();
 	void				CreateUnpackDir();
 	bool				Cleanup();
-	void				CheckStateFiles();
-	void				CheckArchiveFiles(bool bScanNonStdFiles);
+	bool				HasParFiles();
+	bool				HasBrokenFiles();
+	void				CheckArchiveFiles();
 	void				SetProgressLabel(const char* szProgressLabel);
 #ifndef DISABLE_PARCHECK
 	void				RequestParCheck(bool bRename);
@@ -93,7 +90,7 @@ public:
 	virtual				~UnpackController();
 	virtual void		Run();
 	virtual void		Stop();
-	static void			StartJob(PostInfo* pPostInfo);
+	static void			StartUnpackJob(PostInfo* pPostInfo);
 };
 
 class MoveController : public Thread, public ScriptController
@@ -107,23 +104,7 @@ private:
 
 public:
 	virtual void		Run();
-	static void			StartJob(PostInfo* pPostInfo);
-};
-
-class CleanupController : public Thread, public ScriptController
-{
-private:
-	PostInfo*			m_pPostInfo;
-	char				m_szDestDir[1024];
-	char				m_szFinalDir[1024];
-
-	bool				Cleanup(const char* szDestDir, bool *bDeleted);
-
-	typedef std::deque<char*>	ExtList;
-
-public:
-	virtual void		Run();
-	static void			StartJob(PostInfo* pPostInfo);
+	static void			StartMoveJob(PostInfo* pPostInfo);
 };
 
 #endif

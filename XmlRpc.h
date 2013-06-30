@@ -27,7 +27,19 @@
 #define XMLRPC_H
 
 #include "Connection.h"
-#include "Util.h"
+
+class StringBuilder
+{
+private:
+	char*				m_szBuffer;
+	int					m_iBufferSize;
+	int					m_iUsedSize;
+public:
+						StringBuilder();
+						~StringBuilder();
+	void				Append(const char* szStr);
+	const char*			GetBuffer() { return m_szBuffer; }
+};
 
 class XmlCommand;
 
@@ -270,12 +282,7 @@ class SaveConfigXmlCommand: public XmlCommand
 {
 public:
 	virtual void		Execute();
-};
-
-class ConfigTemplatesXmlCommand: public XmlCommand
-{
-public:
-	virtual void		Execute();
+	void				Save(const char *szFilename);
 };
 
 #endif

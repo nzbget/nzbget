@@ -1,7 +1,7 @@
 /*
  *  This file is part of nzbget
  *
- *  Copyright (C) 2007-2013 Andrey Prygunkov <hugbug@users.sourceforge.net>
+ *  Copyright (C) 2007-2009 Andrey Prygunkov <hugbug@users.sourceforge.net>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -57,19 +57,6 @@ public:
 	const char*			Next();
 };
 
-class StringBuilder
-{
-private:
-	char*				m_szBuffer;
-	int					m_iBufferSize;
-	int					m_iUsedSize;
-public:
-						StringBuilder();
-						~StringBuilder();
-	void				Append(const char* szStr);
-	const char*			GetBuffer() { return m_szBuffer; }
-};
-
 class Util 
 {
 public:
@@ -77,7 +64,6 @@ public:
 	static char* BaseFileName(const char* filename);
 	static void NormalizePathSeparators(char* szPath);
 	static bool LoadFileIntoBuffer(const char* szFileName, char** pBuffer, int* pBufferLength);
-	static bool SaveBufferIntoFile(const char* szFileName, const char* szBuffer, int iBufLen);
 	static bool CreateSparseFile(const char* szFilename, int iSize);
 	static bool TruncateFile(const char* szFilename, int iSize);
 	static void MakeValidFilename(char* szFilename, char cReplaceChar, bool bAllowSlashes);
@@ -87,7 +73,7 @@ public:
 	static bool CreateDirectory(const char* szDirFilename);
 	static bool RemoveDirectory(const char* szDirFilename);
 	static bool DeleteDirectoryWithContent(const char* szDirFilename);
-	static bool ForceDirectories(const char* szPath, char* szErrBuf, int iBufSize);
+	static bool ForceDirectories(const char* szPath);
 	static bool GetCurrentDirectory(char* szBuffer, int iBufSize);
 	static bool SetCurrentDirectory(const char* szDirFilename);
 	static long long FileSize(const char* szFilename);
@@ -99,8 +85,6 @@ public:
 #endif
 	static void ExpandFileName(const char* szFilename, char* szBuffer, int iBufSize);
 	static void FormatFileSize(char* szBuffer, int iBufLen, long long lFileSize);
-	static bool SameFilename(const char* szFilename1, const char* szFilename2);
-	static char* GetLastErrorMessage(char* szBuffer, int iBufLen);
 
 	/*
 	 * Split command line int arguments.
@@ -127,12 +111,6 @@ public:
 	static float Int64ToFloat(long long Int64);
 
 	static void TrimRight(char* szStr);
-
-	static char* Trim(char* szStr);
-
-#ifdef WIN32
-	static bool RegReadStr(HKEY hKey, const char* szKeyName, const char* szValueName, char* szBuffer, int* iBufLen);
-#endif
 
 	/*
 	 * Returns program version and revision number as string formatted like "0.7.0-r295".

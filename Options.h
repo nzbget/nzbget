@@ -28,11 +28,8 @@
 #define OPTIONS_H
 
 #include <vector>
-#include <list>
 #include <time.h>
-
 #include "Thread.h"
-#include "Util.h"
 
 class Options
 {
@@ -80,11 +77,11 @@ public:
 		omColored,
 		omNCurses
 	};
-	enum EParCheck
+	enum ELoadPars
 	{
-		pcAuto,
-		pcForce,
-		pcManual
+		lpNone,
+		lpOne,
+		lpAll
 	};
 	enum EParScan
 	{
@@ -107,6 +104,12 @@ public:
 		mmID = 1,
 		mmName,
 		mmRegEx
+	};
+
+	enum EDomain
+	{
+		dmServer = 1,
+		dmPostProcess
 	};
 
 	class OptEntry
@@ -142,31 +145,6 @@ public:
 		OptEntry*		FindOption(const char* szName);
 	};
 
-	class ConfigTemplate
-	{
-	private:
-		char*			m_szName;
-		char*			m_szDisplayName;
-		char*			m_szTemplate;
-
-		friend class Options;
-
-	public:
-						ConfigTemplate(const char* szName, const char* szDisplayName, const char* szTemplate);
-						~ConfigTemplate();
-		const char*		GetName() { return m_szName; }
-		const char*		GetDisplayName() { return m_szDisplayName; }
-		const char*		GetTemplate() { return m_szTemplate; }
-	};
-	
-	typedef std::vector<ConfigTemplate*>  ConfigTemplatesBase;
-
-	class ConfigTemplates: public ConfigTemplatesBase
-	{
-	public:
-						~ConfigTemplates();
-	};
-
 	typedef std::vector<char*>  NameList;
 
 	class Category
@@ -174,14 +152,12 @@ public:
 	private:
 		char*			m_szName;
 		char*			m_szDestDir;
-		char*			m_szDefScript;
 
 	public:
-						Category(const char* szName, const char* szDestDir, const char* szDefScript);
+						Category(const char* szName, const char* szDestDir);
 						~Category();
 		const char*		GetName() { return m_szName; }
 		const char*		GetDestDir() { return m_szDestDir; }
-		const char*		GetDefScript() { return m_szDefScript; }
 	};
 	
 	typedef std::vector<Category*>  CategoriesBase;
@@ -191,31 +167,6 @@ public:
 	public:
 						~Categories();
 		Category*		FindCategory(const char* szName);
-	};
-
-	class Script
-	{
-	private:
-		char*			m_szName;
-		char*			m_szLocation;
-		char*			m_szDisplayName;
-
-	public:
-						Script(const char* szName, const char* szLocation);
-						~Script();
-		const char*		GetName() { return m_szName; }
-		const char*		GetLocation() { return m_szLocation; }
-		void			SetDisplayName(const char* szDisplayName);
-		const char*		GetDisplayName() { return m_szDisplayName; }
-	};
-
-	typedef std::list<Script*>  ScriptListBase;
-
-	class ScriptList: public ScriptListBase
-	{
-	public:
-						~ScriptList();
-		Script*			Find(const char* szName);	
 	};
 
 private:
@@ -234,8 +185,6 @@ private:
 	char*				m_szQueueDir;
 	char*				m_szNzbDir;
 	char*				m_szWebDir;
-	char*				m_szConfigTemplate;
-	char*				m_szScriptDir;
 	EMessageTarget		m_eInfoTarget;
 	EMessageTarget		m_eWarningTarget;
 	EMessageTarget		m_eErrorTarget;
@@ -246,14 +195,15 @@ private:
 	bool				m_bResetLog;
 	int					m_iConnectionTimeout;
 	int					m_iTerminateTimeout;
+	bool				m_bAppendNZBDir;
 	bool				m_bAppendCategoryDir;
 	bool				m_bContinuePartial;
+	bool				m_bRenameBroken;
 	int					m_iRetries;
 	int					m_iRetryInterval;
 	bool				m_bSaveQueue;
 	bool				m_bDupeCheck;
 	char*				m_szControlIP;
-	char*				m_szControlUsername;
 	char*				m_szControlPassword;
 	int					m_iControlPort;
 	bool				m_bSecureControl;
@@ -261,7 +211,7 @@ private:
 	char*				m_szSecureCert;
 	char*				m_szSecureKey;
 	char*				m_szLockFile;
-	char*				m_szDaemonUsername;
+	char*				m_szDaemonUserName;
 	EOutputMode			m_eOutputMode;
 	bool				m_bReloadQueue;
 	bool				m_bReloadUrlQueue;
@@ -270,11 +220,12 @@ private:
 	int					m_iLogBufferSize;
 	bool				m_bCreateLog;
 	char*				m_szLogFile;
-	EParCheck			m_eParCheck;
+	ELoadPars			m_eLoadPars;
+	bool				m_bParCheck;
 	bool				m_bParRepair;
 	EParScan			m_eParScan;
-	char*				m_szDefScript;
-	char*				m_szScriptOrder;
+	char*				m_szPostProcess;
+	char*				m_szPostConfigFilename;
 	char*				m_szNZBProcess;
 	char*				m_szNZBAddedProcess;
 	bool				m_bStrictParName;
@@ -285,16 +236,19 @@ private:
 	bool				m_bCursesTime;
 	bool				m_bCursesGroup;
 	bool				m_bCrcCheck;
+	int					m_iThreadLimit;
 	bool				m_bDirectWrite;
 	int					m_iWriteBufferSize;
 	int					m_iNzbDirInterval;
 	int					m_iNzbDirFileAge;
 	bool				m_bParCleanupQueue;
 	int					m_iDiskSpace;
+	EScriptLogKind		m_eProcessLogKind;
+	bool				m_bAllowReProcess;
 	bool				m_bTLS;
 	bool				m_bDumpCore;
 	bool				m_bParPauseQueue;
-	bool				m_bScriptPauseQueue;
+	bool				m_bPostPauseQueue;
 	bool				m_bNzbCleanupDisk;
 	bool				m_bDeleteCleanupDisk;
 	bool				m_bMergeNzb;
@@ -306,7 +260,6 @@ private:
 	char*				m_szUnrarCmd;
 	char*				m_szSevenZipCmd;
 	bool				m_bUnpackPauseQueue;
-	char*				m_szExtCleanupDisk;
 
 	// Parsed command-line parameters
 	bool				m_bServerMode;
@@ -345,6 +298,7 @@ private:
 	void				InitOptFile();
 	void				InitCommandLine(int argc, char* argv[]);
 	void				InitOptions();
+	void				InitPostConfig();
 	void				InitFileArg(int argc, char* argv[]);
 	void				InitServers();
 	void				InitCategories();
@@ -369,19 +323,14 @@ private:
 	void				ConfigError(const char* msg, ...);
 	void				ConfigWarn(const char* msg, ...);
 	void				LocateOptionSrcPos(const char *szOptionName);
-	void				ConvertOldOption(char *szOption, int iOptionBufLen, char *szValue, int iValueBufLen);
-	static bool			CompareScripts(Script* pScript1, Script* pScript2);
-	void				LoadScriptDir(ScriptList* pScriptList, const char* szDirectory, bool bIsSubDir);
-	void				BuildScriptDisplayNames(ScriptList* pScriptList);
+	void				ConvertOldOptionName(char *szOption, int iBufLen);
 
 public:
 						Options(int argc, char* argv[]);
 						~Options();
 
-	bool				LoadConfig(OptEntries* pOptEntries);
-	bool				SaveConfig(OptEntries* pOptEntries);
-	bool				LoadConfigTemplates(ConfigTemplates* pConfigTemplates);
-	void				LoadScriptList(ScriptList* pScriptList);
+	bool				LoadConfig(EDomain eDomain, OptEntries* pOptEntries);
+	bool				SaveConfig(EDomain eDomain, OptEntries* pOptEntries);
 
 	// Options
 	OptEntries*			LockOptEntries();
@@ -393,8 +342,6 @@ public:
 	const char*			GetQueueDir() { return m_szQueueDir; }
 	const char*			GetNzbDir() { return m_szNzbDir; }
 	const char*			GetWebDir() { return m_szWebDir; }
-	const char*			GetConfigTemplate() { return m_szConfigTemplate; }
-	const char*			GetScriptDir() { return m_szScriptDir; }
 	bool				GetCreateBrokenLog() const { return m_bCreateBrokenLog; }
 	bool				GetResetLog() const { return m_bResetLog; }
 	EMessageTarget		GetInfoTarget() const { return m_eInfoTarget; }
@@ -405,14 +352,15 @@ public:
 	int					GetConnectionTimeout() { return m_iConnectionTimeout; }
 	int					GetTerminateTimeout() { return m_iTerminateTimeout; }
 	bool				GetDecode() { return m_bDecode; };
+	bool				GetAppendNZBDir() { return m_bAppendNZBDir; }
 	bool				GetAppendCategoryDir() { return m_bAppendCategoryDir; }
 	bool				GetContinuePartial() { return m_bContinuePartial; }
+	bool				GetRenameBroken() { return m_bRenameBroken; }
 	int					GetRetries() { return m_iRetries; }
 	int					GetRetryInterval() { return m_iRetryInterval; }
 	bool				GetSaveQueue() { return m_bSaveQueue; }
 	bool				GetDupeCheck() { return m_bDupeCheck; }
 	const char*			GetControlIP() { return m_szControlIP; }
-	const char*			GetControlUsername() { return m_szControlUsername; }
 	const char*			GetControlPassword() { return m_szControlPassword; }
 	int					GetControlPort() { return m_iControlPort; }
 	bool				GetSecureControl() { return m_bSecureControl; }
@@ -420,7 +368,7 @@ public:
 	const char*			GetSecureCert() { return m_szSecureCert; }
 	const char*			GetSecureKey() { return m_szSecureKey; }
 	const char*			GetLockFile() { return m_szLockFile; }
-	const char*			GetDaemonUsername() { return m_szDaemonUsername; }
+	const char*			GetDaemonUserName() { return m_szDaemonUserName; }
 	EOutputMode			GetOutputMode() { return m_eOutputMode; }
 	bool				GetReloadQueue() { return m_bReloadQueue; }
 	bool				GetReloadUrlQueue() { return m_bReloadUrlQueue; }
@@ -429,11 +377,12 @@ public:
 	int					GetLogBufferSize() { return m_iLogBufferSize; }
 	bool				GetCreateLog() { return m_bCreateLog; }
 	const char*			GetLogFile() { return m_szLogFile; }
-	EParCheck			GetParCheck() { return m_eParCheck; }
+	ELoadPars			GetLoadPars() { return m_eLoadPars; }
+	bool				GetParCheck() { return m_bParCheck; }
 	bool				GetParRepair() { return m_bParRepair; }
 	EParScan			GetParScan() { return m_eParScan; }
-	const char*			GetScriptOrder() { return m_szScriptOrder; }
-	const char*			GetDefScript() { return m_szDefScript; }
+	const char*			GetPostProcess() { return m_szPostProcess; }
+	const char*			GetPostConfigFilename() { return m_szPostConfigFilename; }
 	const char*			GetNZBProcess() { return m_szNZBProcess; }
 	const char*			GetNZBAddedProcess() { return m_szNZBAddedProcess; }
 	bool				GetStrictParName() { return m_bStrictParName; }
@@ -443,16 +392,19 @@ public:
 	bool				GetCursesTime() { return m_bCursesTime; }
 	bool				GetCursesGroup() { return m_bCursesGroup; }
 	bool				GetCrcCheck() { return m_bCrcCheck; }
+	int					GetThreadLimit() { return m_iThreadLimit; }
 	bool				GetDirectWrite() { return m_bDirectWrite; }
 	int					GetWriteBufferSize() { return m_iWriteBufferSize; }
 	int					GetNzbDirInterval() { return m_iNzbDirInterval; }
 	int					GetNzbDirFileAge() { return m_iNzbDirFileAge; }
 	bool				GetParCleanupQueue() { return m_bParCleanupQueue; }
 	int					GetDiskSpace() { return m_iDiskSpace; }
+	EScriptLogKind		GetProcessLogKind() { return m_eProcessLogKind; }
+	bool				GetAllowReProcess() { return m_bAllowReProcess; }
 	bool				GetTLS() { return m_bTLS; }
 	bool				GetDumpCore() { return m_bDumpCore; }
 	bool				GetParPauseQueue() { return m_bParPauseQueue; }
-	bool				GetScriptPauseQueue() { return m_bScriptPauseQueue; }
+	bool				GetPostPauseQueue() { return m_bPostPauseQueue; }
 	bool				GetNzbCleanupDisk() { return m_bNzbCleanupDisk; }
 	bool				GetDeleteCleanupDisk() { return m_bDeleteCleanupDisk; }
 	bool				GetMergeNzb() { return m_bMergeNzb; }
@@ -464,7 +416,6 @@ public:
 	const char*			GetUnrarCmd() { return m_szUnrarCmd; }
 	const char*			GetSevenZipCmd() { return m_szSevenZipCmd; }
 	bool				GetUnpackPauseQueue() { return m_bUnpackPauseQueue; }
-	const char*			GetExtCleanupDisk() { return m_szExtCleanupDisk; }
 
 	Category*			FindCategory(const char* szName) { return m_Categories.FindCategory(szName); }
 

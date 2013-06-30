@@ -1,7 +1,7 @@
 /*!
  * This file is part of nzbget
  *
- * Copyright (C) 2012-2013 Andrey Prygunkov <hugbug@users.sourceforge.net>
+ * Copyright (C) 2012 Andrey Prygunkov <hugbug@users.sourceforge.net>
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -554,10 +554,6 @@ body.navfixed.scrolled .navbar-fixed-top .navbar-inner {
 	background-position: -400px -80px;
 }
 
-.icon-split {
-	background-position: -432px -80px;
-}
-
 .img-checkmark {
 	background-position: -432px -16px;
 }
@@ -588,10 +584,6 @@ body.navfixed.scrolled .navbar-fixed-top .navbar-inner {
 
 .label-status {
 	text-transform: uppercase;
-}
-
-.controls .label-status {
-	line-height: 22px;
 }
 
 /* links in black color */
@@ -674,8 +666,7 @@ form {
 	margin-bottom: 0px;
 }
 
-#DownloadsEdit_PostParamData,
-#HistoryEdit_PostParamData {
+#DownloadsEdit_PostParamData {
 	padding-bottom: 1px;
 }
 
@@ -792,11 +783,6 @@ tr.checked  td {
 	background-color: #FFFFCC;
 }
 
-table.table-hidecheck thead > tr > th:first-child,
-table.table-hidecheck tbody > tr > td:first-child {
-	display: none;
-}
-
 .checked .progress {
 	background-color: #FFFFE1;
 }
@@ -906,11 +892,7 @@ table.table-hidecheck tbody > tr > td:first-child {
 }
 
 .modal .form-horizontal .control-group:last-child {
-    margin-bottom: 0;
-}
-
-.modal .form-horizontal .retain-margin .control-group:last-child {
-	margin-bottom: 15px;
+	margin-bottom: 0;
 }
 
 .form-horizontal .control-group-last {
@@ -929,11 +911,6 @@ table.table-hidecheck tbody > tr > td:first-child {
 .modal .input-xlarge {
 	width: 350px;
 }
-
-.modal.modal-padded .input-xxlarge {
-	width: 470px;
-}
-
 /* END: override bootstrap styles for modals */
 
 .modal-bottom-toolbar .btn {
@@ -986,7 +963,7 @@ ul.help > li {
 }
 
 /* Make "select files" native control invisible */
-.hidden-file-input {
+#AddDialog_Input {
 	position: absolute;
 	left: 0;
 	top: 0;
@@ -1114,11 +1091,6 @@ ul.help > li {
 	font-size: 12px;
 }
 
-#ConfigNav.nav-list.long-list a {
-	padding-top: 3px;
-	padding-bottom: 3px;
-}
-
 #ConfigNav.nav-list > .active > a,
 #ConfigNav.nav-list > .active > a:hover {
     color: #ffffff;
@@ -1156,7 +1128,7 @@ ul.help > li {
 	margin-right: 15px;
 }
 
-span.help-option-title {
+#ConfigContent span.help-option-title {
 	color: #8D1212;
 }
 
@@ -1183,19 +1155,6 @@ span.help-option-title {
 
 #ConfigContent .editsmall {
 	width: 150px;
-}
-
-#ConfigContent table.editor {
-	width: 97%;
-}
-
-#ConfigContent table.editor td:first-child {
-	width: 100%;
-	padding-right:15px;
-}
-
-#ConfigContent table.editor input {
-	width: 100%;
 }
 
 .ConfigFooter hr {
@@ -1228,8 +1187,6 @@ div.ConfigFooter {
 	font-weight: normal;
 }
 
-#DownloadsEdit_ParamTab div.control-group.wants-divider,
-#HistoryEdit_ParamTab div.control-group.wants-divider,
 #ConfigContent div.control-group,
 #ConfigContent.search div.control-group.multiset {
 	border-bottom: 1px solid #eeeeee;
@@ -1250,6 +1207,7 @@ div.ConfigFooter {
 
 #ConfigContent .control-label {
 	width: 170px;
+	white-space: nowrap;
 }
 
 #ConfigContent .form-horizontal .controls {
@@ -1293,36 +1251,10 @@ div.ConfigFooter {
 	color: #005580;
 }
 
-#ScriptListDialog_ScriptTable td:nth-child(2) {
-	padding-right: 100px;
+/* table "LIST OF ALL OPTIONS" */
+#ConfigContent .datatable td:first-child {
+	font-weight: bold;
 }
-
-#ScriptListDialog_ScriptTable .btn-row-order-block {
-	float: right;
-	width: 100px;
-	margin-right: -115px;
-	display: block;
-}
-
-#ScriptListDialog_ScriptTable .btn-row-order {
-	float: none;
-	width: 20px;
-	display: none;
-}
-
-#ScriptListDialog_ScriptTable tr:hover .btn-row-order {
-	display: inline-block;
-	cursor: pointer;
-}
-
-#ScriptListDialog_ScriptTable tbody > tr:first-child div.btn-row-order:first-child,
-#ScriptListDialog_ScriptTable tbody > tr:last-child div.btn-row-order:last-child,
-#ScriptListDialog_ScriptTable tbody > tr:first-child div.btn-row-order:nth-child(2),
-#ScriptListDialog_ScriptTable tbody > tr:last-child div.btn-row-order:nth-child(3) {
-	opacity: 0.4;
-}
-
-/*#ScriptListDialog_ScriptTable*/
 
 /****************************************************************************/
 /* SMARTPHONE THEME */
@@ -1402,10 +1334,6 @@ body.phone,
 	font-size: 18px;
 	line-height: 24px;
 	height: inherit;
-}
-
-.phone .controls .label-status {
-	line-height: 28px;
 }
 
 .phone .menu-header {
@@ -1789,8 +1717,7 @@ body.phone,
 	text-align: center;
 }
 
-.phone .modal-mini .modal-body,
-.phone .modal-padded .modal-body {
+.phone .modal-mini .modal-body {
   padding-left: 15px;
   padding-right: 15px;
 }
@@ -1878,8 +1805,6 @@ body.phone,
 	}
 
 	.modal .input-xlarge ,
-	.modal .input-xxlarge,
-	.modal.modal-padded .input-xxlarge,
 	.uneditable-mulitline-input {
 		width: 95%;
 	}

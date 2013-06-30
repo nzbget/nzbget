@@ -33,7 +33,7 @@
 
 #include <stdlib.h>
 #include <string.h>
-#include <stdio.h>
+#include <fstream>
 #ifdef WIN32
 #include <direct.h>
 #else
@@ -49,15 +49,12 @@
 #include "DiskState.h"
 #include "Util.h"
 #include "Scheduler.h"
-#include "Scanner.h"
 #include "Unpack.h"
-#include "NZBFile.h"
 
 extern QueueCoordinator* g_pQueueCoordinator;
 extern Options* g_pOptions;
 extern DiskState* g_pDiskState;
 extern Scheduler* g_pScheduler;
-extern Scanner* g_pScanner;
 
 PrePostProcessor::PrePostProcessor()
 {
@@ -68,6 +65,9 @@ PrePostProcessor::PrePostProcessor()
 
 	m_QueueCoordinatorObserver.m_pOwner = this;
 	g_pQueueCoordinator->Attach(&m_QueueCoordinatorObserver);
+
+	const char* szPostScript = g_pOptions->GetPostProcess();
+	m_bPostScript = szPostScript && strlen(szPostScript) > 0;
 
 #ifndef DISABLE_PARCHECK
 	m_ParCoordinator.m_pOwner = this;
@@ -125,11 +125,12 @@ void PrePostProcessor::Run()
 	int iSchedulerInterval = 1000;
 	int iHistoryInterval = 60000;
 	const int iStepMSec = 200;
+	m_Scanner.SetStepInterval(iStepMSec);
 
 	while (!IsStopped())
 	{
 		// check incoming nzb directory
-		g_pScanner->Check();
+		m_Scanner.Check();
 
 		if (!(g_pOptions->GetPauseDownload() || g_pOptions->GetPauseDownload2()) && 
 			g_pOptions->GetDiskSpace() > 0 && !g_pQueueCoordinator->GetStandBy() && 
@@ -215,19 +216,17 @@ void PrePostProcessor::QueueCoordinatorUpdate(Subject * Caller, void * Aspect)
 #ifndef DISABLE_PARCHECK
 			!m_ParCoordinator.AddPar(pAspect->pFileInfo, pAspect->eAction == QueueCoordinator::eaFileDeleted) &&
 #endif
-			IsNZBFileCompleted(pAspect->pDownloadQueue, pAspect->pNZBInfo, true, false) &&
-			(!pAspect->pFileInfo->GetPaused() || IsNZBFileCompleted(pAspect->pDownloadQueue, pAspect->pNZBInfo, false, false)))
+			IsNZBFileCompleted(pAspect->pDownloadQueue, pAspect->pNZBInfo, true, false, false) &&
+			(!pAspect->pFileInfo->GetPaused() || IsNZBFileCompleted(pAspect->pDownloadQueue, pAspect->pNZBInfo, false, false, false)))
 		{
-			if (pAspect->eAction == QueueCoordinator::eaFileCompleted ||
-				(pAspect->pFileInfo->GetAutoDeleted() &&
-				 IsNZBFileCompleted(pAspect->pDownloadQueue, pAspect->pNZBInfo, false, true)))
+			if (pAspect->eAction == QueueCoordinator::eaFileCompleted)
 			{
 				info("Collection %s completely downloaded", pAspect->pNZBInfo->GetName());
 				NZBDownloaded(pAspect->pDownloadQueue, pAspect->pNZBInfo);
 			}
-			else if (pAspect->eAction == QueueCoordinator::eaFileDeleted &&
+			else if (pAspect->pNZBInfo->GetDeleted() &&
 				!pAspect->pNZBInfo->GetParCleanup() &&
-				IsNZBFileCompleted(pAspect->pDownloadQueue, pAspect->pNZBInfo, false, true))
+				IsNZBFileCompleted(pAspect->pDownloadQueue, pAspect->pNZBInfo, false, false, true))
 			{
 				info("Collection %s deleted from queue", pAspect->pNZBInfo->GetName());
 				NZBDeleted(pAspect->pDownloadQueue, pAspect->pNZBInfo);
@@ -238,14 +237,12 @@ void PrePostProcessor::QueueCoordinatorUpdate(Subject * Caller, void * Aspect)
 
 void PrePostProcessor::NZBAdded(DownloadQueue* pDownloadQueue, NZBInfo* pNZBInfo)
 {
-	PostScriptController::InitParamsForNewNZB(pNZBInfo);
-
 	if (g_pOptions->GetMergeNzb())
 	{
 		pNZBInfo = MergeGroups(pDownloadQueue, pNZBInfo);
 	}
 
-	if (g_pOptions->GetParCheck() != Options::pcForce)
+	if (g_pOptions->GetLoadPars() != Options::lpAll)
 	{
 		m_ParCoordinator.PausePars(pDownloadQueue, pNZBInfo);
 	}
@@ -258,30 +255,24 @@ void PrePostProcessor::NZBAdded(DownloadQueue* pDownloadQueue, NZBInfo* pNZBInfo
 
 void PrePostProcessor::NZBDownloaded(DownloadQueue* pDownloadQueue, NZBInfo* pNZBInfo)
 {
-	if (!pNZBInfo->GetPostProcess() && g_pOptions->GetDecode())
+	bool bPostProcessed = false;
+
+	if (!pNZBInfo->GetPostProcess() || (m_bPostScript && g_pOptions->GetAllowReProcess()))
 	{
-		info("Queueing %s for post-processing", pNZBInfo->GetName());
-
-		PostInfo* pPostInfo = new PostInfo();
-		pPostInfo->SetNZBInfo(pNZBInfo);
-		pPostInfo->SetInfoName(pNZBInfo->GetName());
-
-		if (pNZBInfo->GetParStatus() == NZBInfo::psNone && g_pOptions->GetParCheck() != Options::pcForce)
+#ifdef DISABLE_PARCHECK
+		bool bParCheck = false;
+#else
+		bool bParCheck = g_pOptions->GetParCheck() && g_pOptions->GetDecode();
+#endif
+		if ((bParCheck || m_bPostScript || g_pOptions->GetUnpack() || strlen(g_pOptions->GetInterDir()) > 0) &&
+			CreatePostJobs(pDownloadQueue, pNZBInfo, bParCheck, true, false))
 		{
-			pNZBInfo->SetParStatus(NZBInfo::psSkipped);
+			pNZBInfo->SetPostProcess(true);
+			bPostProcessed = true;
 		}
-
-		if (pNZBInfo->GetRenameStatus() == NZBInfo::rsNone)
-		{
-			pNZBInfo->SetRenameStatus(NZBInfo::rsSkipped);
-		}
-
-		pNZBInfo->SetPostProcess(true);
-		pDownloadQueue->GetPostQueue()->push_back(pPostInfo);
-		SaveQueue(pDownloadQueue);
-		m_bHasMoreJobs = true;
 	}
-	else
+
+	if (!bPostProcessed)
 	{
 		NZBCompleted(pDownloadQueue, pNZBInfo, true);
 	}
@@ -297,33 +288,15 @@ void PrePostProcessor::NZBDeleted(DownloadQueue* pDownloadQueue, NZBInfo* pNZBIn
 			char* szFilename = *it;
 			if (Util::FileExists(szFilename))
 			{
-				detail("Deleting file %s", Util::BaseFileName(szFilename));
-				remove(szFilename);
-			}
-		}
-
-		// delete .out.tmp-files and _brokenlog.txt
-		DirBrowser dir(pNZBInfo->GetDestDir());
-		while (const char* szFilename = dir.Next())
-		{
-			int iLen = strlen(szFilename);
-			if ((iLen > 8 && !strcmp(szFilename + iLen - 8, ".out.tmp")) || !strcmp(szFilename, "_brokenlog.txt"))
-			{
-				char szFullFilename[1024];
-				snprintf(szFullFilename, 1024, "%s%c%s", pNZBInfo->GetDestDir(), PATH_SEPARATOR, szFilename);
-				szFullFilename[1024-1] = '\0';
-
 				detail("Deleting file %s", szFilename);
-				remove(szFullFilename);
+				remove(szFilename);
+				// delete old directory (if empty)
+				if (g_pOptions->GetAppendNZBDir() && Util::DirEmpty(pNZBInfo->GetDestDir()))
+				{
+					rmdir(pNZBInfo->GetDestDir());
+				}
 			}
 		}
-	
-		// delete old directory (if empty)
-		if (Util::DirEmpty(pNZBInfo->GetDestDir()))
-		{
-			rmdir(pNZBInfo->GetDestDir());
-		}
-
 		if (g_pOptions->GetNzbCleanupDisk())
 		{
 			DeleteQueuedFile(pNZBInfo->GetQueuedFilename());
@@ -489,6 +462,11 @@ NZBInfo* PrePostProcessor::MergeGroups(DownloadQueue* pDownloadQueue, NZBInfo* p
 	return pNZBInfo;
 }
 
+void PrePostProcessor::ScanNZBDir(bool bSyncMode)
+{
+	m_Scanner.ScanNZBDir(bSyncMode);
+}
+
 void PrePostProcessor::CheckDiskSpace()
 {
 	long long lFreeSpace = Util::FreeDiskSize(g_pOptions->GetDestDir());
@@ -509,54 +487,44 @@ void PrePostProcessor::CheckPostQueue()
 		if (!pPostInfo->GetWorking())
 		{
 #ifndef DISABLE_PARCHECK
-			if (pPostInfo->GetRequestParCheck() && pPostInfo->GetNZBInfo()->GetParStatus() <= NZBInfo::psSkipped &&
-				g_pOptions->GetParCheck() != Options::pcManual)
+			if (pPostInfo->GetRequestParCheck() == PostInfo::rpAll)
 			{
-				pPostInfo->GetNZBInfo()->SetParStatus(NZBInfo::psNone);
-				pPostInfo->SetRequestParCheck(false);
-				pPostInfo->SetStage(PostInfo::ptQueued);
-				pPostInfo->GetNZBInfo()->GetScriptStatuses()->Clear();
-				DeletePostThread(pPostInfo);
+				if (!CreatePostJobs(pDownloadQueue, pPostInfo->GetNZBInfo(), true, false, true))
+				{
+					error("Could not par-check %s: there are no par-files", pPostInfo->GetNZBInfo()->GetName());
+				}
 			}
-			else if (pPostInfo->GetRequestParCheck() && pPostInfo->GetNZBInfo()->GetParStatus() <= NZBInfo::psSkipped &&
-				g_pOptions->GetParCheck() == Options::pcManual)
+			else if (pPostInfo->GetRequestParCheck() == PostInfo::rpCurrent && pPostInfo->GetParStatus() <= PostInfo::psSkipped)
 			{
-				pPostInfo->SetRequestParCheck(false);
-				pPostInfo->GetNZBInfo()->SetParStatus(NZBInfo::psManual);
+				pPostInfo->SetParStatus(PostInfo::psNone);
+				pPostInfo->SetRequestParCheck(PostInfo::rpNone);
+				pPostInfo->SetStage(PostInfo::ptQueued);
 				DeletePostThread(pPostInfo);
-
-				FileInfo* pFileInfo = GetQueueGroup(pDownloadQueue, pPostInfo->GetNZBInfo());
-				if (pFileInfo)
-				{
-					info("Downloading all remaining files for manual par-check for %s", pPostInfo->GetNZBInfo()->GetName());
-					g_pQueueCoordinator->GetQueueEditor()->LockedEditEntry(pDownloadQueue, pFileInfo->GetID(), false, QueueEditor::eaGroupResume, 0, NULL);
-					pPostInfo->SetStage(PostInfo::ptFinished);
-					pPostInfo->GetNZBInfo()->SetPostProcess(false);
-				}
-				else
-				{
-					info("There are no par-files remain for download for %s", pPostInfo->GetNZBInfo()->GetName());
-					pPostInfo->SetStage(PostInfo::ptQueued);
-				}
 			}
 			else if (pPostInfo->GetRequestParRename())
 			{
-				pPostInfo->GetNZBInfo()->SetRenameStatus(NZBInfo::rsNone);
+				pPostInfo->SetRenameStatus(PostInfo::rsNone);
 				pPostInfo->SetRequestParRename(false);
 				pPostInfo->SetStage(PostInfo::ptQueued);
 				DeletePostThread(pPostInfo);
 			}
 
-#endif
-			if (pPostInfo->GetDeleted())
+			if (pPostInfo->GetStage() == PostInfo::ptQueued && pPostInfo->GetRenameStatus() == PostInfo::rsNone && !g_pOptions->GetPausePostProcess())
 			{
-				pPostInfo->SetStage(PostInfo::ptFinished);
+				UpdatePauseState(g_pOptions->GetParPauseQueue(), "par-rename");
+				m_ParCoordinator.StartParRenameJob(pPostInfo);
 			}
-
+			else if (pPostInfo->GetStage() == PostInfo::ptQueued && pPostInfo->GetParStatus() == PostInfo::psNone && !g_pOptions->GetPausePostProcess())
+			{
+				UpdatePauseState(g_pOptions->GetParPauseQueue(), "par-check");
+				m_ParCoordinator.StartParCheckJob(pPostInfo);
+			}
+			else
+#endif
 			if (pPostInfo->GetStage() == PostInfo::ptQueued && !g_pOptions->GetPausePostProcess())
 			{
 				DeletePostThread(pPostInfo);
-				StartJob(pDownloadQueue, pPostInfo);
+				StartProcessJob(pDownloadQueue, pPostInfo);
 			}
 			else if (pPostInfo->GetStage() == PostInfo::ptFinished)
 			{
@@ -611,75 +579,37 @@ void PrePostProcessor::DeletePostThread(PostInfo* pPostInfo)
 	}
 }
 
-void PrePostProcessor::StartJob(DownloadQueue* pDownloadQueue, PostInfo* pPostInfo)
+void PrePostProcessor::StartProcessJob(DownloadQueue* pDownloadQueue, PostInfo* pPostInfo)
 {
-#ifndef DISABLE_PARCHECK
-	if (pPostInfo->GetNZBInfo()->GetRenameStatus() == NZBInfo::rsNone)
-	{
-		UpdatePauseState(g_pOptions->GetParPauseQueue(), "par-rename");
-		m_ParCoordinator.StartParRenameJob(pPostInfo);
-		return;
-	}
-	else if (pPostInfo->GetNZBInfo()->GetParStatus() == NZBInfo::psNone)
-	{
-		if (m_ParCoordinator.FindMainPars(pPostInfo->GetNZBInfo()->GetDestDir(), NULL))
-		{
-			UpdatePauseState(g_pOptions->GetParPauseQueue(), "par-check");
-			m_ParCoordinator.StartParCheckJob(pPostInfo);
-		}
-		else
-		{
-			info("Nothing to par-check for %s", pPostInfo->GetInfoName());
-			pPostInfo->GetNZBInfo()->SetParStatus(NZBInfo::psSkipped);
-			pPostInfo->SetWorking(false);
-			pPostInfo->SetStage(PostInfo::ptQueued);
-		}
-		return;
-	}
-#endif
-
-	bool bUnpack = g_pOptions->GetUnpack() && (pPostInfo->GetNZBInfo()->GetUnpackStatus() == NZBInfo::usNone);
-
-	bool bParFailed = pPostInfo->GetNZBInfo()->GetParStatus() == NZBInfo::psFailure ||
-		pPostInfo->GetNZBInfo()->GetParStatus() == NZBInfo::psRepairPossible ||
-		pPostInfo->GetNZBInfo()->GetParStatus() == NZBInfo::psManual;
-
-	bool bCleanup = !bUnpack &&
-		pPostInfo->GetNZBInfo()->GetCleanupStatus() == NZBInfo::csNone &&
-		(pPostInfo->GetNZBInfo()->GetParStatus() == NZBInfo::psSuccess ||
-		 (pPostInfo->GetNZBInfo()->GetUnpackStatus() == NZBInfo::usSuccess &&
-		  pPostInfo->GetNZBInfo()->GetParStatus() != NZBInfo::psFailure)) &&
-		strlen(g_pOptions->GetExtCleanupDisk()) > 0;
-
-	bool bMoveInter = !bUnpack &&
+	bool bUnpack = g_pOptions->GetUnpack() && (pPostInfo->GetUnpackStatus() == PostInfo::usNone);
+	bool bNZBFileCompleted = IsNZBFileCompleted(pDownloadQueue, pPostInfo->GetNZBInfo(), true, true, false);
+	bool bHasFailedParJobs = pPostInfo->GetNZBInfo()->GetParStatus() == NZBInfo::psFailure ||
+		pPostInfo->GetNZBInfo()->GetParStatus() == NZBInfo::psRepairPossible;
+	bool bMoveInterToDest = !bUnpack &&
 		pPostInfo->GetNZBInfo()->GetMoveStatus() == NZBInfo::msNone &&
-		pPostInfo->GetNZBInfo()->GetUnpackStatus() != NZBInfo::usFailure &&
-		pPostInfo->GetNZBInfo()->GetParStatus() != NZBInfo::psFailure &&
-		pPostInfo->GetNZBInfo()->GetParStatus() != NZBInfo::psManual &&
+		pPostInfo->GetUnpackStatus() != PostInfo::usFailure &&
+		pPostInfo->GetParStatus() != PostInfo::psFailure &&
 		strlen(g_pOptions->GetInterDir()) > 0 &&
 		!strncmp(pPostInfo->GetNZBInfo()->GetDestDir(), g_pOptions->GetInterDir(), strlen(g_pOptions->GetInterDir()));
 
-	// TODO: check if download has pp-scripts defined
-	bool bPostScript = true;
-
-	if (bUnpack && bParFailed)
+	if (bUnpack && bHasFailedParJobs)
 	{
-		warn("Skipping unpack due to %s for %s",
-			pPostInfo->GetNZBInfo()->GetParStatus() == NZBInfo::psManual ? "required par-repair" : "par-failure",
-			pPostInfo->GetInfoName());
+		warn("Skipping unpack due to par-failure for %s", pPostInfo->GetInfoName());
+		pPostInfo->SetUnpackStatus(PostInfo::usSkipped);
 		pPostInfo->GetNZBInfo()->SetUnpackStatus(NZBInfo::usSkipped);
 		bUnpack = false;
 	}
 
-	if (!bUnpack && !bMoveInter && !bPostScript)
+	if ((!bNZBFileCompleted && !(m_bPostScript && g_pOptions->GetAllowReProcess())) ||
+		(!bUnpack && !m_bPostScript && !bMoveInterToDest))
 	{
 		pPostInfo->SetStage(PostInfo::ptFinished);
 		return;
 	}
 
-	pPostInfo->SetProgressLabel(bUnpack ? "Unpacking" : bMoveInter ? "Moving" : "Executing post-process-script");
+	pPostInfo->SetProgressLabel(bUnpack ? "Unpacking" : bMoveInterToDest ? "Moving" : "Executing post-process-script");
 	pPostInfo->SetWorking(true);
-	pPostInfo->SetStage(bUnpack ? PostInfo::ptUnpacking : bMoveInter ? PostInfo::ptMoving : PostInfo::ptExecutingScript);
+	pPostInfo->SetStage(bUnpack ? PostInfo::ptUnpacking : bMoveInterToDest ? PostInfo::ptMoving : PostInfo::ptExecutingScript);
 	pPostInfo->SetFileProgress(0);
 	pPostInfo->SetStageProgress(0);
 	SaveQueue(pDownloadQueue);
@@ -693,22 +623,17 @@ void PrePostProcessor::StartJob(DownloadQueue* pDownloadQueue, PostInfo* pPostIn
 	if (bUnpack)
 	{
 		UpdatePauseState(g_pOptions->GetUnpackPauseQueue(), "unpack");
-		UnpackController::StartJob(pPostInfo);
+		UnpackController::StartUnpackJob(pPostInfo);
 	}
-	else if (bCleanup)
+	else if (bMoveInterToDest)
 	{
-		UpdatePauseState(g_pOptions->GetUnpackPauseQueue() || g_pOptions->GetScriptPauseQueue(), "cleanup");
-		CleanupController::StartJob(pPostInfo);
-	}
-	else if (bMoveInter)
-	{
-		UpdatePauseState(g_pOptions->GetUnpackPauseQueue() || g_pOptions->GetScriptPauseQueue(), "move");
-		MoveController::StartJob(pPostInfo);
+		UpdatePauseState(g_pOptions->GetUnpackPauseQueue() || g_pOptions->GetPostPauseQueue(), "move");
+		MoveController::StartMoveJob(pPostInfo);
 	}
 	else
 	{
-		UpdatePauseState(g_pOptions->GetScriptPauseQueue(), "post-process-script");
-		PostScriptController::StartJob(pPostInfo);
+		UpdatePauseState(g_pOptions->GetPostPauseQueue(), "post-process-script");
+		PostScriptController::StartScriptJob(pPostInfo, bNZBFileCompleted, bHasFailedParJobs);
 	}
 }
 
@@ -720,15 +645,31 @@ void PrePostProcessor::JobCompleted(DownloadQueue* pDownloadQueue, PostInfo* pPo
 
 	DeletePostThread(pPostInfo);
 
-	if (IsNZBFileCompleted(pDownloadQueue, pPostInfo->GetNZBInfo(), true, false))
+	// Update ScriptStatus by NZBInfo (accumulate result)
+	if (pPostInfo->GetScriptStatus() == PostInfo::srUnknown &&
+		pPostInfo->GetNZBInfo()->GetScriptStatus() != NZBInfo::srFailure)
 	{
-		// Cleaning up queue if par-check was successful or unpack was successful or
-		// script was successful (if unpack was not performed)
+		pPostInfo->GetNZBInfo()->SetScriptStatus(NZBInfo::srUnknown);
+	}
+	else if (pPostInfo->GetScriptStatus() == PostInfo::srFailure)
+	{
+		pPostInfo->GetNZBInfo()->SetScriptStatus(NZBInfo::srFailure);
+	}
+	else if (pPostInfo->GetScriptStatus() == PostInfo::srSuccess &&
+		pPostInfo->GetNZBInfo()->GetScriptStatus() == NZBInfo::srNone)
+	{
+		pPostInfo->GetNZBInfo()->SetScriptStatus(NZBInfo::srSuccess);
+	}
+
+	if (IsNZBFileCompleted(pDownloadQueue, pPostInfo->GetNZBInfo(), true, true, false))
+	{
+		// Cleaning up queue if all par-checks were successful or all unpacks were successful or
+		// all scripts were successful (if unpack was not performed)
 		bool bCanCleanupQueue = pPostInfo->GetNZBInfo()->GetParStatus() == NZBInfo::psSuccess ||
 			 pPostInfo->GetNZBInfo()->GetParStatus() == NZBInfo::psRepairPossible ||
 			 pPostInfo->GetNZBInfo()->GetUnpackStatus() == NZBInfo::usSuccess ||
 			 (pPostInfo->GetNZBInfo()->GetUnpackStatus() == NZBInfo::usNone &&
-			  pPostInfo->GetNZBInfo()->GetScriptStatuses()->CalcTotalStatus() == ScriptStatus::srSuccess);
+			  pPostInfo->GetNZBInfo()->GetScriptStatus() == NZBInfo::srSuccess);
 		if ((g_pOptions->GetParCleanupQueue() || g_pOptions->GetNzbCleanupDisk()) && bCanCleanupQueue)
 		{
 			if (g_pOptions->GetParCleanupQueue())
@@ -768,7 +709,7 @@ void PrePostProcessor::JobCompleted(DownloadQueue* pDownloadQueue, PostInfo* pPo
 }
 
 bool PrePostProcessor::IsNZBFileCompleted(DownloadQueue* pDownloadQueue, NZBInfo* pNZBInfo,
-	bool bIgnorePausedPars, bool bAllowOnlyOneDeleted)
+	bool bIgnorePausedPars, bool bCheckPostQueue, bool bAllowOnlyOneDeleted)
 {
 	bool bNZBFileCompleted = true;
 	int iDeleted = 0;
@@ -782,8 +723,11 @@ bool PrePostProcessor::IsNZBFileCompleted(DownloadQueue* pDownloadQueue, NZBInfo
 			{
 				iDeleted++;
 			}
+			// Special case if option "AllowReProcess" is active: 
+			// paused non-par-files are treated the same way as paused par-files,
+			// meaning: the NZB considered completed even if there are paused non-par-files.
 			if (((!pFileInfo->GetPaused() || !bIgnorePausedPars ||
-				!(m_ParCoordinator.ParseParFilename(pFileInfo->GetFilename(), NULL, NULL))) && 
+				!(m_ParCoordinator.ParseParFilename(pFileInfo->GetFilename(), NULL, NULL) || g_pOptions->GetAllowReProcess())) && 
 				!pFileInfo->GetDeleted()) ||
 				(bAllowOnlyOneDeleted && iDeleted > 1))
 			{
@@ -793,7 +737,114 @@ bool PrePostProcessor::IsNZBFileCompleted(DownloadQueue* pDownloadQueue, NZBInfo
 		}
 	}
 
+	if (bNZBFileCompleted && bCheckPostQueue)
+	{
+		for (PostQueue::iterator it = pDownloadQueue->GetPostQueue()->begin() + 1; it != pDownloadQueue->GetPostQueue()->end(); it++)
+		{
+			PostInfo* pPostInfo = *it;
+			if (pPostInfo->GetNZBInfo() == pNZBInfo)
+			{
+				bNZBFileCompleted = false;
+				break;
+			}
+		}
+	}
+
 	return bNZBFileCompleted;
+}
+
+bool PrePostProcessor::CreatePostJobs(DownloadQueue* pDownloadQueue, NZBInfo* pNZBInfo,
+	bool bParCheck, bool bUnpackOrScript, bool bAddTop)
+{
+	debug("Queueing post-process-jobs");
+
+	PostQueue cPostQueue;
+	bool bJobsAdded = false;
+
+	ParCoordinator::FileList fileList;
+	if (m_ParCoordinator.FindMainPars(pNZBInfo->GetDestDir(), &fileList))
+	{
+		debug("Found pars");
+		
+		for (ParCoordinator::FileList::iterator it = fileList.begin(); it != fileList.end(); it++)
+		{
+			char* szParFilename = *it;
+			debug("Found par: %s", szParFilename);
+
+			char szFullParFilename[1024];
+			snprintf(szFullParFilename, 1024, "%s%c%s", pNZBInfo->GetDestDir(), (int)PATH_SEPARATOR, szParFilename);
+			szFullParFilename[1024-1] = '\0';
+
+			char szInfoName[1024];
+			int iBaseLen = 0;
+			m_ParCoordinator.ParseParFilename(szParFilename, &iBaseLen, NULL);
+			int maxlen = iBaseLen < 1024 ? iBaseLen : 1024 - 1;
+			strncpy(szInfoName, szParFilename, maxlen);
+			szInfoName[maxlen] = '\0';
+			
+			char szParInfoName[1024];
+			snprintf(szParInfoName, 1024, "%s%c%s", pNZBInfo->GetName(), (int)PATH_SEPARATOR, szInfoName);
+			szParInfoName[1024-1] = '\0';
+
+			if (cPostQueue.empty())
+			{
+				info("Queueing %s for post-processing", pNZBInfo->GetName());
+			}
+
+			PostInfo* pPostInfo = new PostInfo();
+			pPostInfo->SetNZBInfo(pNZBInfo);
+			pPostInfo->SetParFilename(szFullParFilename);
+			pPostInfo->SetInfoName(szParInfoName);
+			pPostInfo->SetRenameStatus(PostInfo::rsSkipped);
+			pPostInfo->SetParStatus(bParCheck && !pNZBInfo->GetUnpackCleanedUpDisk() ? PostInfo::psNone : PostInfo::psSkipped);
+			pPostInfo->SetUnpackStatus(!pNZBInfo->GetUnpackCleanedUpDisk() ? PostInfo::usNone : PostInfo::usSkipped);
+			if (bAddTop)
+			{
+				cPostQueue.push_front(pPostInfo);
+			}
+			else
+			{
+				cPostQueue.push_back(pPostInfo);
+			}
+			bJobsAdded = true;
+
+			free(szParFilename);
+		}
+	}
+
+	if (cPostQueue.empty() && bUnpackOrScript && (m_bPostScript || g_pOptions->GetUnpack()))
+	{
+		info("Queueing %s for post-processing", pNZBInfo->GetName());
+		PostInfo* pPostInfo = new PostInfo();
+		pPostInfo->SetNZBInfo(pNZBInfo);
+		pPostInfo->SetParFilename("");
+		pPostInfo->SetInfoName(pNZBInfo->GetName());
+		pPostInfo->SetRenameStatus(PostInfo::rsSkipped);
+		pPostInfo->SetParStatus(PostInfo::psSkipped);
+		pPostInfo->SetUnpackStatus(!pNZBInfo->GetUnpackCleanedUpDisk() ? PostInfo::usNone : PostInfo::usSkipped);
+		cPostQueue.push_back(pPostInfo);
+		bJobsAdded = true;
+	}
+
+	for (PostQueue::iterator it = cPostQueue.begin(); it != cPostQueue.end(); it++)
+	{
+		if (bAddTop)
+		{
+			pDownloadQueue->GetPostQueue()->push_front(*it);
+		}
+		else
+		{
+			pDownloadQueue->GetPostQueue()->push_back(*it);
+		}
+	}
+
+	if (bJobsAdded)
+	{
+		SaveQueue(pDownloadQueue);
+		m_bHasMoreJobs = true;
+	}
+
+	return bJobsAdded;
 }
 
 /**
@@ -901,7 +952,7 @@ void PrePostProcessor::CheckScheduledResume()
 	}
 }
 
-bool PrePostProcessor::QueueEditList(IDList* pIDList, EEditAction eAction, int iOffset, const char* szText)
+bool PrePostProcessor::QueueEditList(IDList* pIDList, EEditAction eAction, int iOffset)
 {
 	debug("Edit-command for post-processor received");
 	switch (eAction)
@@ -915,10 +966,11 @@ bool PrePostProcessor::QueueEditList(IDList* pIDList, EEditAction eAction, int i
 			return PostQueueDelete(pIDList);
 
 		case eaHistoryDelete:
+			return HistoryDelete(pIDList);
+
 		case eaHistoryReturn:
 		case eaHistoryProcess:
-		case eaHistorySetParameter:
-			return HistoryEdit(pIDList, eAction, iOffset, szText);
+			return HistoryReturn(pIDList, eAction == eaHistoryProcess);
 
 		default:
 			return false;
@@ -1052,7 +1104,7 @@ bool PrePostProcessor::PostQueueMove(IDList* pIDList, EEditAction eAction, int i
 	return bOK;
 }
 
-bool PrePostProcessor::HistoryEdit(IDList* pIDList, EEditAction eAction, int iOffset, const char* szText)
+bool PrePostProcessor::HistoryDelete(IDList* pIDList)
 {
 	bool bOK = false;
 
@@ -1066,26 +1118,39 @@ bool PrePostProcessor::HistoryEdit(IDList* pIDList, EEditAction eAction, int iOf
 			HistoryInfo* pHistoryInfo = *itHistory;
 			if (pHistoryInfo->GetID() == iID)
 			{
-				switch (eAction)
+				char szNiceName[1024];
+				pHistoryInfo->GetName(szNiceName, 1024);
+				info("Deleting %s from history", szNiceName);
+
+				if (pHistoryInfo->GetKind() == HistoryInfo::hkNZBInfo)
 				{
-					case eaHistoryDelete:
-						HistoryDelete(pDownloadQueue, itHistory, pHistoryInfo);
-						break;
+					NZBInfo* pNZBInfo = pHistoryInfo->GetNZBInfo();
 
-					case eaHistoryReturn:
-					case eaHistoryProcess:
-						HistoryReturn(pDownloadQueue, itHistory, pHistoryInfo, eAction == eaHistoryProcess);
-						break;
-
-					case eaHistorySetParameter:
-						HistorySetParameter(pHistoryInfo, szText);
-						break;
-						
-					default:
-						// nothing, just to avoid compiler warning
-						break;
+					// delete parked files
+					int index = 0;
+					for (FileQueue::iterator it = pDownloadQueue->GetParkedFiles()->begin(); it != pDownloadQueue->GetParkedFiles()->end(); )
+					{
+						FileInfo* pFileInfo = *it;
+						if (pFileInfo->GetNZBInfo() == pNZBInfo)
+						{
+							pDownloadQueue->GetParkedFiles()->erase(it);
+							if (g_pOptions->GetSaveQueue() && g_pOptions->GetServerMode())
+							{
+								g_pDiskState->DiscardFile(pFileInfo);
+							}
+							delete pFileInfo;
+							it = pDownloadQueue->GetParkedFiles()->begin() + index;
+						}
+						else
+						{
+							it++;
+							index++;
+						}
+					}
 				}
 
+				pDownloadQueue->GetHistoryList()->erase(itHistory);
+				delete pHistoryInfo;
 				bOK = true;
 				break;
 			}
@@ -1102,152 +1167,112 @@ bool PrePostProcessor::HistoryEdit(IDList* pIDList, EEditAction eAction, int iOf
 	return bOK;
 }
 
-void PrePostProcessor::HistoryDelete(DownloadQueue* pDownloadQueue, HistoryList::iterator itHistory, HistoryInfo* pHistoryInfo)
+bool PrePostProcessor::HistoryReturn(IDList* pIDList, bool bReprocess)
 {
-	char szNiceName[1024];
-	pHistoryInfo->GetName(szNiceName, 1024);
-	info("Deleting %s from history", szNiceName);
+	bool bOK = false;
 
-	if (pHistoryInfo->GetKind() == HistoryInfo::hkNZBInfo)
+	DownloadQueue* pDownloadQueue = g_pQueueCoordinator->LockQueue();
+
+	for (IDList::iterator itID = pIDList->begin(); itID != pIDList->end(); itID++)
 	{
-		NZBInfo* pNZBInfo = pHistoryInfo->GetNZBInfo();
-
-		// delete parked files
-		int index = 0;
-		for (FileQueue::iterator it = pDownloadQueue->GetParkedFiles()->begin(); it != pDownloadQueue->GetParkedFiles()->end(); )
+		int iID = *itID;
+		for (HistoryList::iterator itHistory = pDownloadQueue->GetHistoryList()->begin(); itHistory != pDownloadQueue->GetHistoryList()->end(); itHistory++)
 		{
-			FileInfo* pFileInfo = *it;
-			if (pFileInfo->GetNZBInfo() == pNZBInfo)
+			HistoryInfo* pHistoryInfo = *itHistory;
+			if (pHistoryInfo->GetID() == iID)
 			{
-				pDownloadQueue->GetParkedFiles()->erase(it);
-				if (g_pOptions->GetSaveQueue() && g_pOptions->GetServerMode())
+				char szNiceName[1024];
+				pHistoryInfo->GetName(szNiceName, 1024);
+				debug("Returning %s from history back to download queue", szNiceName);
+				bool bUnparked = false;
+
+				if (bReprocess && pHistoryInfo->GetKind() != HistoryInfo::hkNZBInfo)
 				{
-					g_pDiskState->DiscardFile(pFileInfo);
+					error("Could not restart postprocessing for %s: history item has wrong type", szNiceName);
+					break;
 				}
-				delete pFileInfo;
-				it = pDownloadQueue->GetParkedFiles()->begin() + index;
-			}
-			else
-			{
-				it++;
-				index++;
+
+				if (pHistoryInfo->GetKind() == HistoryInfo::hkNZBInfo)
+				{
+					NZBInfo* pNZBInfo = pHistoryInfo->GetNZBInfo();
+
+					// unpark files
+					int index = 0;
+					for (FileQueue::reverse_iterator it = pDownloadQueue->GetParkedFiles()->rbegin(); it != pDownloadQueue->GetParkedFiles()->rend(); )
+					{
+						FileInfo* pFileInfo = *it;
+						if (pFileInfo->GetNZBInfo() == pNZBInfo)
+						{
+							detail("Unpark file %s", pFileInfo->GetFilename());
+							pDownloadQueue->GetParkedFiles()->erase(pDownloadQueue->GetParkedFiles()->end() - 1 - index);
+							pDownloadQueue->GetFileQueue()->push_front(pFileInfo);
+							bUnparked = true;
+							it = pDownloadQueue->GetParkedFiles()->rbegin() + index;
+						}
+						else
+						{
+							it++;
+							index++;
+						}
+					}
+
+					// reset postprocessing status variables
+					pNZBInfo->SetPostProcess(false);
+					pNZBInfo->SetParCleanup(false);
+					if (!pNZBInfo->GetUnpackCleanedUpDisk())
+					{
+						pNZBInfo->SetParStatus(NZBInfo::psNone);
+						pNZBInfo->SetRenameStatus(NZBInfo::rsNone);
+						pNZBInfo->SetUnpackStatus(NZBInfo::usNone);
+					}
+					pNZBInfo->SetScriptStatus(NZBInfo::srNone);
+					pNZBInfo->SetParkedFileCount(0);
+				}
+
+				if (pHistoryInfo->GetKind() == HistoryInfo::hkUrlInfo)
+				{
+					UrlInfo* pUrlInfo = pHistoryInfo->GetUrlInfo();
+					pHistoryInfo->DiscardUrlInfo();
+					pUrlInfo->SetStatus(UrlInfo::aiUndefined);
+					pDownloadQueue->GetUrlQueue()->push_back(pUrlInfo);
+					bUnparked = true;
+				}
+
+				if (bUnparked || bReprocess)
+				{
+					pDownloadQueue->GetHistoryList()->erase(itHistory);
+					// the object "pHistoryInfo" is released few lines later, after the call to "NZBDownloaded"
+					info("%s returned from history back to download queue", szNiceName);
+					bOK = true;
+				}
+				else
+				{
+					warn("Could not return %s back from history to download queue: history item does not have any files left for download", szNiceName);
+				}
+
+				if (bReprocess)
+				{
+					// start postprocessing
+					debug("Restarting postprocessing for %s", szNiceName);
+					NZBDownloaded(pDownloadQueue, pHistoryInfo->GetNZBInfo());
+				}
+
+				if (bUnparked || bReprocess)
+				{
+					delete pHistoryInfo;
+				}
+
+				break;
 			}
 		}
 	}
 
-	pDownloadQueue->GetHistoryList()->erase(itHistory);
-	delete pHistoryInfo;
-}
-
-void PrePostProcessor::HistoryReturn(DownloadQueue* pDownloadQueue, HistoryList::iterator itHistory, HistoryInfo* pHistoryInfo, bool bReprocess)
-{
-	char szNiceName[1024];
-	pHistoryInfo->GetName(szNiceName, 1024);
-	debug("Returning %s from history back to download queue", szNiceName);
-	bool bUnparked = false;
-
-	if (bReprocess && pHistoryInfo->GetKind() != HistoryInfo::hkNZBInfo)
+	if (bOK)
 	{
-		error("Could not restart postprocessing for %s: history item has wrong type", szNiceName);
-		return;
+		SaveQueue(pDownloadQueue);
 	}
 
-	if (pHistoryInfo->GetKind() == HistoryInfo::hkNZBInfo)
-	{
-		NZBInfo* pNZBInfo = pHistoryInfo->GetNZBInfo();
+	g_pQueueCoordinator->UnlockQueue();
 
-		// unpark files
-		int index = 0;
-		for (FileQueue::reverse_iterator it = pDownloadQueue->GetParkedFiles()->rbegin(); it != pDownloadQueue->GetParkedFiles()->rend(); )
-		{
-			FileInfo* pFileInfo = *it;
-			if (pFileInfo->GetNZBInfo() == pNZBInfo)
-			{
-				detail("Unpark file %s", pFileInfo->GetFilename());
-				pDownloadQueue->GetParkedFiles()->erase(pDownloadQueue->GetParkedFiles()->end() - 1 - index);
-				pDownloadQueue->GetFileQueue()->push_front(pFileInfo);
-				bUnparked = true;
-				it = pDownloadQueue->GetParkedFiles()->rbegin() + index;
-			}
-			else
-			{
-				it++;
-				index++;
-			}
-		}
-
-		// reset postprocessing status variables
-		pNZBInfo->SetPostProcess(false);
-		pNZBInfo->SetParCleanup(false);
-		if (!pNZBInfo->GetUnpackCleanedUpDisk())
-		{
-			pNZBInfo->SetParStatus(NZBInfo::psNone);
-			pNZBInfo->SetRenameStatus(NZBInfo::rsNone);
-			pNZBInfo->SetUnpackStatus(NZBInfo::usNone);
-			pNZBInfo->SetCleanupStatus(NZBInfo::csNone);
-		}
-		pNZBInfo->GetScriptStatuses()->Clear();
-		pNZBInfo->SetParkedFileCount(0);
-	}
-
-	if (pHistoryInfo->GetKind() == HistoryInfo::hkUrlInfo)
-	{
-		UrlInfo* pUrlInfo = pHistoryInfo->GetUrlInfo();
-		pHistoryInfo->DiscardUrlInfo();
-		pUrlInfo->SetStatus(UrlInfo::aiUndefined);
-		pDownloadQueue->GetUrlQueue()->push_back(pUrlInfo);
-		bUnparked = true;
-	}
-
-	if (bUnparked || bReprocess)
-	{
-		pDownloadQueue->GetHistoryList()->erase(itHistory);
-		// the object "pHistoryInfo" is released few lines later, after the call to "NZBDownloaded"
-		info("%s returned from history back to download queue", szNiceName);
-	}
-	else
-	{
-		warn("Could not return %s back from history to download queue: history item does not have any files left for download", szNiceName);
-	}
-
-	if (bReprocess)
-	{
-		// start postprocessing
-		debug("Restarting postprocessing for %s", szNiceName);
-		NZBDownloaded(pDownloadQueue, pHistoryInfo->GetNZBInfo());
-	}
-
-	if (bUnparked || bReprocess)
-	{
-		delete pHistoryInfo;
-	}
-}
-
-void PrePostProcessor::HistorySetParameter(HistoryInfo* pHistoryInfo, const char* szText)
-{
-	char szNiceName[1024];
-	pHistoryInfo->GetName(szNiceName, 1024);
-	debug("Setting post-process-parameter '%s' for '%s'", szText, szNiceName);
-
-	if (pHistoryInfo->GetKind() != HistoryInfo::hkNZBInfo)
-	{
-		error("Could not set post-process-parameter for %s: history item has wrong type", szNiceName);
-		return;
-	}
-
-	char* szStr = strdup(szText);
-
-	char* szValue = strchr(szStr, '=');
-	if (szValue)
-	{
-		*szValue = '\0';
-		szValue++;
-		pHistoryInfo->GetNZBInfo()->SetParameter(szStr, szValue);
-	}
-	else
-	{
-		error("Could not set post-process-parameter for %s: invalid argument: %s", pHistoryInfo->GetNZBInfo()->GetName(), szText);
-	}
-
-	free(szStr);
+	return bOK;
 }

@@ -2,7 +2,7 @@
  *  This file is part of nzbget
  *
  *  Copyright (C) 2005 Bo Cordes Petersen <placebodk@users.sourceforge.net>
- *  Copyright (C) 2007-2013 Andrey Prygunkov <hugbug@users.sourceforge.net>
+ *  Copyright (C) 2007-2011 Andrey Prygunkov <hugbug@users.sourceforge.net>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -27,7 +27,7 @@
 #ifndef MESSAGEBASE_H
 #define MESSAGEBASE_H
 
-static const int32_t NZBMESSAGE_SIGNATURE = 0x6E7A6217; // = "nzb-XX" (protocol version)
+static const int32_t NZBMESSAGE_SIGNATURE = 0x6E7A6212; // = "nzb-XX" (protocol version)
 static const int NZBREQUESTFILENAMESIZE = 512;
 static const int NZBREQUESTPASSWORDSIZE = 32;
 
@@ -81,7 +81,6 @@ enum eRemoteEditAction
 	eRemoteEditActionFilePauseExtraPars,	// pause only (almost all) pars, except main par-file (does not affect other files)
 	eRemoteEditActionFileSetPriority,		// set priority for files
 	eRemoteEditActionFileReorder,			// (not supported)
-	eRemoteEditActionFileSplit,				// split - create new group from selected files
 	eRemoteEditActionGroupMoveOffset,		// move group to m_iOffset relative to the current position in download-queue
 	eRemoteEditActionGroupMoveTop,			// move group to the top of download-queue
 	eRemoteEditActionGroupMoveBottom,		// move group to the bottom of download-queue
@@ -101,8 +100,7 @@ enum eRemoteEditAction
 	eRemoteEditActionPostDelete,			// delete post-job
 	eRemoteEditActionHistoryDelete,			// delete history-item
 	eRemoteEditActionHistoryReturn,			// move history-item back to download queue
-	eRemoteEditActionHistoryProcess,		// move history-item back to download queue and start postprocessing
-	eRemoteEditActionHistorySetParameter	// set post-process parameter for history-item
+	eRemoteEditActionHistoryProcess			// move history-item back to download queue and start postprocessing
 };
 
 // Possible values for field "m_iAction" of struct "SNZBPauseUnpauseRequest":
@@ -128,8 +126,7 @@ struct SNZBRequestBase
 	int32_t					m_iSignature;			// Signature must be NZBMESSAGE_SIGNATURE in integer-value
 	int32_t					m_iStructSize;			// Size of the entire struct
 	int32_t					m_iType;				// Message type, see enum in NZBMessageRequest-namespace
-	char					m_szUsername[NZBREQUESTPASSWORDSIZE];	// User name
-	char					m_szPassword[NZBREQUESTPASSWORDSIZE];	// Password
+	char					m_szPassword[NZBREQUESTPASSWORDSIZE];	// Password needs to be in every request
 };
 
 // The basic SNZBResposneBase struct, used in all responses
@@ -425,10 +422,12 @@ struct SNZBPostQueueResponseEntry
 	int32_t					m_iTotalTimeSec;		// Number of seconds this post-job is beeing processed (after it first changed the state from QUEUED).
 	int32_t					m_iStageTimeSec;		// Number of seconds the current stage is beeing processed.
 	int32_t					m_iNZBFilenameLen;		// Length of NZBFileName-string (m_szNZBFilename), following to this record
+	int32_t					m_iParFilename;			// Length of ParFilename-string (m_szParFilename), following to this record
 	int32_t					m_iInfoNameLen;			// Length of Filename-string (m_szFilename), following to this record
 	int32_t					m_iDestDirLen;			// Length of DestDir-string (m_szDestDir), following to this record
 	int32_t					m_iProgressLabelLen;	// Length of ProgressLabel-string (m_szProgressLabel), following to this record
 	//char					m_szNZBFilename[m_iNZBFilenameLen];		// variable sized, may contain full path (local path on client) or only filename
+	//char					m_szParFilename[m_iParFilename];		// variable sized
 	//char					m_szInfoName[m_iInfoNameLen];			// variable sized
 	//char					m_szDestDir[m_iDestDirLen];				// variable sized
 	//char					m_szProgressLabel[m_iProgressLabelLen];	// variable sized

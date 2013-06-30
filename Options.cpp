@@ -34,10 +34,10 @@
 
 #include <stdlib.h>
 #include <string.h>
-#include <stdio.h>
-#include <stdarg.h>
-#include <sys/stat.h>
 #include <set>
+#include <sys/stat.h>
+#include <stdarg.h>
+#include <cstdio>
 #ifdef WIN32
 #include <direct.h>
 #else
@@ -102,19 +102,18 @@ static const char* OPTION_TEMPDIR				= "TempDir";
 static const char* OPTION_QUEUEDIR				= "QueueDir";
 static const char* OPTION_NZBDIR				= "NzbDir";
 static const char* OPTION_WEBDIR				= "WebDir";
-static const char* OPTION_CONFIGTEMPLATE		= "ConfigTemplate";
-static const char* OPTION_SCRIPTDIR				= "ScriptDir";
 static const char* OPTION_CREATELOG				= "CreateLog";
 static const char* OPTION_LOGFILE				= "LogFile";
+static const char* OPTION_APPENDNZBDIR			= "AppendNzbDir";
 static const char* OPTION_APPENDCATEGORYDIR		= "AppendCategoryDir";
 static const char* OPTION_LOCKFILE				= "LockFile";
-static const char* OPTION_DAEMONUSERNAME		= "DaemonUsername";
+static const char* OPTION_DAEMONUSERNAME		= "DaemonUserName";
 static const char* OPTION_OUTPUTMODE			= "OutputMode";
 static const char* OPTION_DUPECHECK				= "DupeCheck";
 static const char* OPTION_DOWNLOADRATE			= "DownloadRate";
+static const char* OPTION_RENAMEBROKEN			= "RenameBroken";
 static const char* OPTION_CONTROLIP				= "ControlIp";
 static const char* OPTION_CONTROLPORT			= "ControlPort";
-static const char* OPTION_CONTROLUSERNAME		= "ControlUsername";
 static const char* OPTION_CONTROLPASSWORD		= "ControlPassword";
 static const char* OPTION_SECURECONTROL			= "SecureControl";
 static const char* OPTION_SECUREPORT			= "SecurePort";
@@ -139,9 +138,12 @@ static const char* OPTION_WARNINGTARGET			= "WarningTarget";
 static const char* OPTION_ERRORTARGET			= "ErrorTarget";
 static const char* OPTION_DEBUGTARGET			= "DebugTarget";
 static const char* OPTION_DETAILTARGET			= "DetailTarget";
+static const char* OPTION_LOADPARS				= "LoadPars";
 static const char* OPTION_PARCHECK				= "ParCheck";
 static const char* OPTION_PARREPAIR				= "ParRepair";
 static const char* OPTION_PARSCAN				= "ParScan";
+static const char* OPTION_POSTPROCESS			= "PostProcess";
+static const char* OPTION_POSTCONFIGFILE		= "PostConfigFile";
 static const char* OPTION_NZBPROCESS			= "NZBProcess";
 static const char* OPTION_NZBADDEDPROCESS		= "NZBAddedProcess";
 static const char* OPTION_STRICTPARNAME			= "StrictParName";
@@ -151,15 +153,18 @@ static const char* OPTION_CURSESNZBNAME			= "CursesNzbName";
 static const char* OPTION_CURSESTIME			= "CursesTime";
 static const char* OPTION_CURSESGROUP			= "CursesGroup";
 static const char* OPTION_CRCCHECK				= "CrcCheck";
+static const char* OPTION_THREADLIMIT			= "ThreadLimit";
 static const char* OPTION_DIRECTWRITE			= "DirectWrite";
 static const char* OPTION_WRITEBUFFERSIZE		= "WriteBufferSize";
 static const char* OPTION_NZBDIRINTERVAL		= "NzbDirInterval";
 static const char* OPTION_NZBDIRFILEAGE			= "NzbDirFileAge";
 static const char* OPTION_PARCLEANUPQUEUE		= "ParCleanupQueue";
 static const char* OPTION_DISKSPACE				= "DiskSpace";
+static const char* OPTION_PROCESSLOGKIND		= "ProcessLogKind";
+static const char* OPTION_ALLOWREPROCESS		= "AllowReProcess";
 static const char* OPTION_DUMPCORE				= "DumpCore";
 static const char* OPTION_PARPAUSEQUEUE			= "ParPauseQueue";
-static const char* OPTION_SCRIPTPAUSEQUEUE		= "ScriptPauseQueue";
+static const char* OPTION_POSTPAUSEQUEUE		= "PostPauseQueue";
 static const char* OPTION_NZBCLEANUPDISK		= "NzbCleanupDisk";
 static const char* OPTION_DELETECLEANUPDISK		= "DeleteCleanupDisk";
 static const char* OPTION_MERGENZB				= "MergeNzb";
@@ -171,27 +176,15 @@ static const char* OPTION_UNPACKCLEANUPDISK		= "UnpackCleanupDisk";
 static const char* OPTION_UNRARCMD				= "UnrarCmd";
 static const char* OPTION_SEVENZIPCMD			= "SevenZipCmd";
 static const char* OPTION_UNPACKPAUSEQUEUE		= "UnpackPauseQueue";
-static const char* OPTION_SCRIPTORDER			= "ScriptOrder";
-static const char* OPTION_DEFSCRIPT				= "DefScript";
-static const char* OPTION_EXTCLEANUPDISK		= "ExtCleanupDisk";
 
 // obsolete options
 static const char* OPTION_POSTLOGKIND			= "PostLogKind";
 static const char* OPTION_NZBLOGKIND			= "NZBLogKind";
 static const char* OPTION_RETRYONCRCERROR		= "RetryOnCrcError";
-static const char* OPTION_ALLOWREPROCESS		= "AllowReProcess";
-static const char* OPTION_POSTPROCESS			= "PostProcess";
-static const char* OPTION_LOADPARS				= "LoadPars";
-static const char* OPTION_THREADLIMIT			= "ThreadLimit";
-static const char* OPTION_PROCESSLOGKIND		= "ProcessLogKind";
-static const char* OPTION_APPENDNZBDIR			= "AppendNzbDir";
-static const char* OPTION_RENAMEBROKEN			= "RenameBroken";
 
 const char* BoolNames[] = { "yes", "no", "true", "false", "1", "0", "on", "off", "enable", "disable", "enabled", "disabled" };
 const int BoolValues[] = { 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0 };
 const int BoolCount = 12;
-
-static const char* PPSCRIPT_SIGNATURE = "### NZBGET POST-PROCESSING SCRIPT";
 
 #ifndef WIN32
 const char* PossibleConfigLocations[] =
@@ -288,43 +281,10 @@ Options::OptEntry* Options::OptEntries::FindOption(const char* szName)
 }
 
 
-Options::ConfigTemplate::ConfigTemplate(const char* szName, const char* szDisplayName, const char* szTemplate)
-{
-	m_szName = strdup(szName);
-	m_szDisplayName = strdup(szDisplayName);
-	m_szTemplate = strdup(szTemplate ? szTemplate : "");
-}
-
-Options::ConfigTemplate::~ConfigTemplate()
-{
-	if (m_szName)
-	{
-		free(m_szName);
-	}
-	if (m_szDisplayName)
-	{
-		free(m_szDisplayName);
-	}
-	if (m_szTemplate)
-	{
-		free(m_szTemplate);
-	}
-}
-
-Options::ConfigTemplates::~ConfigTemplates()
-{
-	for (iterator it = begin(); it != end(); it++)
-	{
-		delete *it;
-	}
-}
-
-
-Options::Category::Category(const char* szName, const char* szDestDir, const char* szDefScript)
+Options::Category::Category(const char* szName, const char* szDestDir)
 {
 	m_szName = strdup(szName);
 	m_szDestDir = szDestDir ? strdup(szDestDir) : NULL;
-	m_szDefScript = szDefScript ? strdup(szDefScript) : NULL;
 }
 
 Options::Category::~Category()
@@ -336,10 +296,6 @@ Options::Category::~Category()
 	if (m_szDestDir)
 	{
 		free(m_szDestDir);
-	}
-	if (m_szDefScript)
-	{
-		free(m_szDefScript);
 	}
 }
 
@@ -371,62 +327,6 @@ Options::Category* Options::Categories::FindCategory(const char* szName)
 }
 
 
-Options::Script::Script(const char* szName, const char* szLocation)
-{
-	m_szName = strdup(szName);
-	m_szLocation = strdup(szLocation);
-	m_szDisplayName = strdup(szName);
-}
-
-Options::Script::~Script()
-{
-	if (m_szName)
-	{
-		free(m_szName);
-	}
-	if (m_szLocation)
-	{
-		free(m_szLocation);
-	}
-	if (m_szDisplayName)
-	{
-		free(m_szDisplayName);
-	}
-}
-
-void Options::Script::SetDisplayName(const char* szDisplayName)
-{
-	if (m_szDisplayName)
-	{
-		free(m_szDisplayName);
-	}
-	m_szDisplayName = strdup(szDisplayName);
-}
-
-
-Options::ScriptList::~ScriptList()
-{
-	for (iterator it = begin(); it != end(); it++)
-	{
-		delete *it;
-	}
-}
-
-Options::Script* Options::ScriptList::Find(const char* szName)
-{
-	for (iterator it = begin(); it != end(); it++)
-	{
-		Script* pScript = *it;
-		if (!strcmp(pScript->GetName(), szName))
-		{
-			return pScript;
-		}
-	}
-
-	return NULL;
-}
-
-
 Options::Options(int argc, char* argv[])
 {
 	m_bConfigErrors = false;
@@ -441,8 +341,6 @@ Options::Options(int argc, char* argv[])
 	m_szQueueDir			= NULL;
 	m_szNzbDir				= NULL;
 	m_szWebDir				= NULL;
-	m_szConfigTemplate		= NULL;
-	m_szScriptDir			= NULL;
 	m_eInfoTarget			= mtScreen;
 	m_eWarningTarget		= mtScreen;
 	m_eErrorTarget			= mtScreen;
@@ -474,22 +372,23 @@ Options::Options(int argc, char* argv[])
 	m_bRemoteClientMode		= false;
 	m_bPrintOptions			= false;
 	m_bAddTop				= false;
+	m_bAppendNZBDir			= false;
 	m_bAppendCategoryDir	= false;
 	m_bContinuePartial		= false;
+	m_bRenameBroken			= false;
 	m_bSaveQueue			= false;
 	m_bDupeCheck			= false;
 	m_iRetries				= 0;
 	m_iRetryInterval		= 0;
 	m_iControlPort			= 0;
 	m_szControlIP			= NULL;
-	m_szControlUsername		= NULL;
 	m_szControlPassword		= NULL;
 	m_bSecureControl		= false;
 	m_iSecurePort			= 0;
 	m_szSecureCert			= NULL;
 	m_szSecureKey			= NULL;
 	m_szLockFile			= NULL;
-	m_szDaemonUsername		= NULL;
+	m_szDaemonUserName		= NULL;
 	m_eOutputMode			= omLoggable;
 	m_bReloadQueue			= false;
 	m_bReloadUrlQueue		= false;
@@ -500,11 +399,12 @@ Options::Options(int argc, char* argv[])
 	m_iWriteLogKind			= 0;
 	m_bCreateLog			= false;
 	m_szLogFile				= NULL;
-	m_eParCheck				= pcManual;
+	m_eLoadPars				= lpAll;
+	m_bParCheck				= false;
 	m_bParRepair			= false;
 	m_eParScan				= psLimited;
-	m_szScriptOrder			= NULL;
-	m_szDefScript			= NULL;
+	m_szPostProcess			= NULL;
+	m_szPostConfigFilename	= NULL;
 	m_szNZBProcess			= NULL;
 	m_szNZBAddedProcess		= NULL;
 	m_bStrictParName		= false;
@@ -516,16 +416,19 @@ Options::Options(int argc, char* argv[])
 	m_bCursesGroup			= false;
 	m_bCrcCheck				= false;
 	m_bDirectWrite			= false;
+	m_iThreadLimit			= 0;
 	m_iWriteBufferSize		= 0;
 	m_iNzbDirInterval		= 0;
 	m_iNzbDirFileAge		= 0;
 	m_bParCleanupQueue		= false;
 	m_iDiskSpace			= 0;
+	m_eProcessLogKind		= slNone;
+	m_bAllowReProcess		= false;
 	m_bTestBacktrace		= false;
 	m_bTLS					= false;
 	m_bDumpCore				= false;
 	m_bParPauseQueue		= false;
-	m_bScriptPauseQueue		= false;
+	m_bPostPauseQueue		= false;
 	m_bNzbCleanupDisk		= false;
 	m_bDeleteCleanupDisk	= false;
 	m_bMergeNzb				= false;
@@ -539,7 +442,6 @@ Options::Options(int argc, char* argv[])
 	m_szUnrarCmd			= NULL;
 	m_szSevenZipCmd			= NULL;
 	m_bUnpackPauseQueue		= false;
-	m_szExtCleanupDisk		= NULL;
 
 	// Option "ConfigFile" will be initialized later, but we want
 	// to see it at the top of option list, so we add it first
@@ -648,14 +550,6 @@ Options::~Options()
 	{
 		free(m_szWebDir);
 	}
-	if (m_szConfigTemplate)
-	{
-		free(m_szConfigTemplate);
-	}
-	if (m_szScriptDir)
-	{
-		free(m_szScriptDir);
-	}
 	if (m_szArgFilename)
 	{
 		free(m_szArgFilename);
@@ -675,10 +569,6 @@ Options::~Options()
 	if (m_szControlIP)
 	{
 		free(m_szControlIP);
-	}
-	if (m_szControlUsername)
-	{
-		free(m_szControlUsername);
 	}
 	if (m_szControlPassword)
 	{
@@ -700,17 +590,17 @@ Options::~Options()
 	{
 		free(m_szLockFile);
 	}
-	if (m_szDaemonUsername)
+	if (m_szDaemonUserName)
 	{
-		free(m_szDaemonUsername);
+		free(m_szDaemonUserName);
 	}
-	if (m_szScriptOrder)
+	if (m_szPostProcess)
 	{
-		free(m_szScriptOrder);
+		free(m_szPostProcess);
 	}
-	if (m_szDefScript)
+	if (m_szPostConfigFilename)
 	{
-		free(m_szDefScript);
+		free(m_szPostConfigFilename);
 	}
 	if (m_szNZBProcess)
 	{
@@ -735,10 +625,6 @@ Options::~Options()
 	if (m_szSevenZipCmd)
 	{
 		free(m_szSevenZipCmd);
-	}
-	if (m_szExtCleanupDisk)
-	{
-		free(m_szExtCleanupDisk);
 	}
 
 	for (NameList::iterator it = m_EditQueueNameList.begin(); it != m_EditQueueNameList.end(); it++)
@@ -815,15 +701,14 @@ void Options::InitDefault()
 	SetOption(OPTION_LOCKFILE, "${MainDir}/nzbget.lock");
 	SetOption(OPTION_LOGFILE, "${DestDir}/nzbget.log");
 	SetOption(OPTION_WEBDIR, "");
-	SetOption(OPTION_CONFIGTEMPLATE, "");
-	SetOption(OPTION_SCRIPTDIR, "${MainDir}/ppscripts");
 	SetOption(OPTION_CREATELOG, "yes");
+	SetOption(OPTION_APPENDNZBDIR, "yes");
 	SetOption(OPTION_APPENDCATEGORYDIR, "yes");
 	SetOption(OPTION_OUTPUTMODE, "curses");
 	SetOption(OPTION_DUPECHECK, "yes");
 	SetOption(OPTION_DOWNLOADRATE, "0");
+	SetOption(OPTION_RENAMEBROKEN, "no");
 	SetOption(OPTION_CONTROLIP, "0.0.0.0");
-	SetOption(OPTION_CONTROLUSERNAME, "nzbget");
 	SetOption(OPTION_CONTROLPASSWORD, "tegbzn6789");
 	SetOption(OPTION_CONTROLPORT, "6789");
 	SetOption(OPTION_SECURECONTROL, "no");
@@ -849,11 +734,12 @@ void Options::InitDefault()
 	SetOption(OPTION_ERRORTARGET, "both");
 	SetOption(OPTION_DEBUGTARGET, "none");
 	SetOption(OPTION_DETAILTARGET, "both");
-	SetOption(OPTION_PARCHECK, "auto");
+	SetOption(OPTION_LOADPARS, "one");
+	SetOption(OPTION_PARCHECK, "no");
 	SetOption(OPTION_PARREPAIR, "yes");
 	SetOption(OPTION_PARSCAN, "limited");
-	SetOption(OPTION_SCRIPTORDER, "");
-	SetOption(OPTION_DEFSCRIPT, "");
+	SetOption(OPTION_POSTPROCESS, "");
+	SetOption(OPTION_POSTCONFIGFILE, "");
 	SetOption(OPTION_NZBPROCESS, "");
 	SetOption(OPTION_NZBADDEDPROCESS, "");
 	SetOption(OPTION_STRICTPARNAME, "yes");
@@ -864,15 +750,18 @@ void Options::InitDefault()
 	SetOption(OPTION_CURSESTIME, "no");
 	SetOption(OPTION_CURSESGROUP, "no");
 	SetOption(OPTION_CRCCHECK, "yes");
+	SetOption(OPTION_THREADLIMIT, "100");
 	SetOption(OPTION_DIRECTWRITE, "yes");
 	SetOption(OPTION_WRITEBUFFERSIZE, "0");
 	SetOption(OPTION_NZBDIRINTERVAL, "5");
 	SetOption(OPTION_NZBDIRFILEAGE, "60");
 	SetOption(OPTION_PARCLEANUPQUEUE, "yes");
 	SetOption(OPTION_DISKSPACE, "250");
+	SetOption(OPTION_PROCESSLOGKIND, "detail");
+	SetOption(OPTION_ALLOWREPROCESS, "no");
 	SetOption(OPTION_DUMPCORE, "no");
 	SetOption(OPTION_PARPAUSEQUEUE, "no");
-	SetOption(OPTION_SCRIPTPAUSEQUEUE, "no");
+	SetOption(OPTION_POSTPAUSEQUEUE, "no");
 	SetOption(OPTION_NZBCLEANUPDISK, "no");
 	SetOption(OPTION_DELETECLEANUPDISK, "no");
 	SetOption(OPTION_MERGENZB, "no");
@@ -889,7 +778,6 @@ void Options::InitDefault()
 	SetOption(OPTION_SEVENZIPCMD, "7z");
 #endif
 	SetOption(OPTION_UNPACKPAUSEQUEUE, "no");
-	SetOption(OPTION_EXTCLEANUPDISK, "");
 }
 
 void Options::InitOptFile()
@@ -993,10 +881,9 @@ void Options::CheckDir(char** dir, const char* szOptionName, bool bAllowEmpty, b
 	}
 
 	// Ensure the dir is created
-	char szErrBuf[1024];
-	if (bCreate && !Util::ForceDirectories(usedir, szErrBuf, sizeof(szErrBuf)))
+	if (bCreate && !Util::ForceDirectories(usedir))
 	{
-		ConfigError("Invalid value for option \"%s\" (%s): %s", szOptionName, usedir, szErrBuf);
+		ConfigError("Invalid value for option \"%s\": could not create directory \"%s\"", szOptionName, usedir);
 	}
 	*dir = usedir;
 }
@@ -1008,24 +895,19 @@ void Options::InitOptions()
 	CheckDir(&m_szTempDir, OPTION_TEMPDIR, false, true);
 	CheckDir(&m_szQueueDir, OPTION_QUEUEDIR, false, true);
 	CheckDir(&m_szWebDir, OPTION_WEBDIR, true, false);
-	CheckDir(&m_szScriptDir, OPTION_SCRIPTDIR, true, false);
 
-	m_szConfigTemplate		= strdup(GetOption(OPTION_CONFIGTEMPLATE));
-	m_szScriptOrder			= strdup(GetOption(OPTION_SCRIPTORDER));
-	m_szDefScript			= strdup(GetOption(OPTION_DEFSCRIPT));
+	m_szPostProcess			= strdup(GetOption(OPTION_POSTPROCESS));
 	m_szNZBProcess			= strdup(GetOption(OPTION_NZBPROCESS));
 	m_szNZBAddedProcess		= strdup(GetOption(OPTION_NZBADDEDPROCESS));
 	m_szControlIP			= strdup(GetOption(OPTION_CONTROLIP));
-	m_szControlUsername		= strdup(GetOption(OPTION_CONTROLUSERNAME));
 	m_szControlPassword		= strdup(GetOption(OPTION_CONTROLPASSWORD));
 	m_szSecureCert			= strdup(GetOption(OPTION_SECURECERT));
 	m_szSecureKey			= strdup(GetOption(OPTION_SECUREKEY));
 	m_szLockFile			= strdup(GetOption(OPTION_LOCKFILE));
-	m_szDaemonUsername		= strdup(GetOption(OPTION_DAEMONUSERNAME));
+	m_szDaemonUserName		= strdup(GetOption(OPTION_DAEMONUSERNAME));
 	m_szLogFile				= strdup(GetOption(OPTION_LOGFILE));
 	m_szUnrarCmd			= strdup(GetOption(OPTION_UNRARCMD));
 	m_szSevenZipCmd			= strdup(GetOption(OPTION_SEVENZIPCMD));
-	m_szExtCleanupDisk		= strdup(GetOption(OPTION_EXTCLEANUPDISK));
 
 	m_iDownloadRate			= (int)(ParseFloatValue(OPTION_DOWNLOADRATE) * 1024);
 	m_iConnectionTimeout	= ParseIntValue(OPTION_CONNECTIONTIMEOUT, 10);
@@ -1038,6 +920,7 @@ void Options::InitOptions()
 	m_iLogBufferSize		= ParseIntValue(OPTION_LOGBUFFERSIZE, 10);
 	m_iUMask				= ParseIntValue(OPTION_UMASK, 8);
 	m_iUpdateInterval		= ParseIntValue(OPTION_UPDATEINTERVAL, 10);
+	m_iThreadLimit			= ParseIntValue(OPTION_THREADLIMIT, 10);
 	m_iWriteBufferSize		= ParseIntValue(OPTION_WRITEBUFFERSIZE, 10);
 	m_iNzbDirInterval		= ParseIntValue(OPTION_NZBDIRINTERVAL, 10);
 	m_iNzbDirFileAge		= ParseIntValue(OPTION_NZBDIRFILEAGE, 10);
@@ -1049,11 +932,14 @@ void Options::InitOptions()
 
 	m_bCreateBrokenLog		= (bool)ParseEnumValue(OPTION_CREATEBROKENLOG, BoolCount, BoolNames, BoolValues);
 	m_bResetLog				= (bool)ParseEnumValue(OPTION_RESETLOG, BoolCount, BoolNames, BoolValues);
+	m_bAppendNZBDir			= (bool)ParseEnumValue(OPTION_APPENDNZBDIR, BoolCount, BoolNames, BoolValues);
 	m_bAppendCategoryDir	= (bool)ParseEnumValue(OPTION_APPENDCATEGORYDIR, BoolCount, BoolNames, BoolValues);
 	m_bContinuePartial		= (bool)ParseEnumValue(OPTION_CONTINUEPARTIAL, BoolCount, BoolNames, BoolValues);
+	m_bRenameBroken			= (bool)ParseEnumValue(OPTION_RENAMEBROKEN, BoolCount, BoolNames, BoolValues);
 	m_bSaveQueue			= (bool)ParseEnumValue(OPTION_SAVEQUEUE, BoolCount, BoolNames, BoolValues);
 	m_bDupeCheck			= (bool)ParseEnumValue(OPTION_DUPECHECK, BoolCount, BoolNames, BoolValues);
 	m_bCreateLog			= (bool)ParseEnumValue(OPTION_CREATELOG, BoolCount, BoolNames, BoolValues);
+	m_bParCheck				= (bool)ParseEnumValue(OPTION_PARCHECK, BoolCount, BoolNames, BoolValues);
 	m_bParRepair			= (bool)ParseEnumValue(OPTION_PARREPAIR, BoolCount, BoolNames, BoolValues);
 	m_bStrictParName		= (bool)ParseEnumValue(OPTION_STRICTPARNAME, BoolCount, BoolNames, BoolValues);
 	m_bReloadQueue			= (bool)ParseEnumValue(OPTION_RELOADQUEUE, BoolCount, BoolNames, BoolValues);
@@ -1066,9 +952,10 @@ void Options::InitOptions()
 	m_bDirectWrite			= (bool)ParseEnumValue(OPTION_DIRECTWRITE, BoolCount, BoolNames, BoolValues);
 	m_bParCleanupQueue		= (bool)ParseEnumValue(OPTION_PARCLEANUPQUEUE, BoolCount, BoolNames, BoolValues);
 	m_bDecode				= (bool)ParseEnumValue(OPTION_DECODE, BoolCount, BoolNames, BoolValues);
+	m_bAllowReProcess		= (bool)ParseEnumValue(OPTION_ALLOWREPROCESS, BoolCount, BoolNames, BoolValues);
 	m_bDumpCore				= (bool)ParseEnumValue(OPTION_DUMPCORE, BoolCount, BoolNames, BoolValues);
 	m_bParPauseQueue		= (bool)ParseEnumValue(OPTION_PARPAUSEQUEUE, BoolCount, BoolNames, BoolValues);
-	m_bScriptPauseQueue		= (bool)ParseEnumValue(OPTION_SCRIPTPAUSEQUEUE, BoolCount, BoolNames, BoolValues);
+	m_bPostPauseQueue		= (bool)ParseEnumValue(OPTION_POSTPAUSEQUEUE, BoolCount, BoolNames, BoolValues);
 	m_bNzbCleanupDisk		= (bool)ParseEnumValue(OPTION_NZBCLEANUPDISK, BoolCount, BoolNames, BoolValues);
 	m_bDeleteCleanupDisk	= (bool)ParseEnumValue(OPTION_DELETECLEANUPDISK, BoolCount, BoolNames, BoolValues);
 	m_bMergeNzb				= (bool)ParseEnumValue(OPTION_MERGENZB, BoolCount, BoolNames, BoolValues);
@@ -1083,10 +970,10 @@ void Options::InitOptions()
 	const int OutputModeCount = 7;
 	m_eOutputMode = (EOutputMode)ParseEnumValue(OPTION_OUTPUTMODE, OutputModeCount, OutputModeNames, OutputModeValues);
 
-	const char* ParCheckNames[] = { "auto", "force", "manual", "yes", "no" }; // yes/no for compatibility with older versions
-	const int ParCheckValues[] = { pcAuto, pcForce, pcManual, pcForce, pcAuto };
-	const int ParCheckCount = 5;
-	m_eParCheck = (EParCheck)ParseEnumValue(OPTION_PARCHECK, ParCheckCount, ParCheckNames, ParCheckValues);
+	const char* LoadParsNames[] = { "none", "one", "all", "1", "0" };
+	const int LoadParsValues[] = { lpNone, lpOne, lpAll, lpOne, lpNone };
+	const int LoadParsCount = 5;
+	m_eLoadPars = (ELoadPars)ParseEnumValue(OPTION_LOADPARS, LoadParsCount, LoadParsNames, LoadParsValues);
 
 	const char* ParScanNames[] = { "limited", "full", "auto" };
 	const int ParScanValues[] = { psLimited, psFull, psAuto };
@@ -1101,6 +988,13 @@ void Options::InitOptions()
 	m_eErrorTarget = (EMessageTarget)ParseEnumValue(OPTION_ERRORTARGET, TargetCount, TargetNames, TargetValues);
 	m_eDebugTarget = (EMessageTarget)ParseEnumValue(OPTION_DEBUGTARGET, TargetCount, TargetNames, TargetValues);
 	m_eDetailTarget = (EMessageTarget)ParseEnumValue(OPTION_DETAILTARGET, TargetCount, TargetNames, TargetValues);
+
+	const char* ScriptLogKindNames[] = { "none", "detail", "info", "warning", "error", "debug" };
+	const int ScriptLogKindValues[] = { slNone, slDetail, slInfo, slWarning, slError, slDebug };
+	const int ScriptLogKindCount = 6;
+	m_eProcessLogKind = (EScriptLogKind)ParseEnumValue(OPTION_PROCESSLOGKIND, ScriptLogKindCount, ScriptLogKindNames, ScriptLogKindValues);
+
+	InitPostConfig();
 }
 
 int Options::ParseEnumValue(const char* OptName, int argc, const char * argn[], const int argv[])
@@ -1189,6 +1083,40 @@ float Options::ParseFloatValue(const char* OptName)
 	}
 
 	return val;
+}
+
+void Options::InitPostConfig()
+{
+	if (!m_szPostProcess || strlen(m_szPostProcess) == 0)
+	{
+		return;
+	}
+
+	//extract directory of config file name
+	char szConfigFileDir[1024];
+	strncpy(szConfigFileDir, m_szConfigFilename, 1024);
+	szConfigFileDir[1024-1] = '\0';
+	char *base = Util::BaseFileName(szConfigFileDir);
+	if (base)
+	{
+		*base = '\0';
+	}
+
+	char szPostConfig[1024];
+	snprintf(szPostConfig, sizeof(szPostConfig) - 1, "%s%s", szConfigFileDir, Util::BaseFileName(m_szPostProcess));
+
+	// replace extension with ".conf"
+	char *szExt = strrchr(Util::BaseFileName(szPostConfig), '.');
+	if (szExt && (szExt + 5 - szPostConfig < sizeof(szPostConfig)))
+	{
+		strncpy(szExt, ".conf\0", 6);
+	}
+
+	if (Util::FileExists(szPostConfig))
+	{
+		m_szPostConfigFilename = strdup(szPostConfig);
+		SetOption(OPTION_POSTCONFIGFILE, m_szPostConfigFilename);
+	}
 }
 
 void Options::InitCommandLine(int argc, char* argv[])
@@ -1490,22 +1418,6 @@ void Options::InitCommandLine(int argc, char* argv[])
 					{
 						m_iEditQueueAction = eRemoteEditActionHistoryProcess;
 					}
-					else if (!strcasecmp(optarg, "O"))
-					{
-						m_iEditQueueAction = eRemoteEditActionHistorySetParameter;
-						
-						optind++;
-						if (optind > argc)
-						{
-							abort("FATAL ERROR: Could not parse value of option 'E'\n");
-						}
-						m_szEditQueueText = strdup(argv[optind-1]);
-						
-						if (!strchr(m_szEditQueueText, '='))
-						{
-							abort("FATAL ERROR: Could not parse value of option 'E'\n");
-						}
-					}
 					else
 					{
 						abort("FATAL ERROR: Could not parse value of option 'E'\n");
@@ -1577,20 +1489,9 @@ void Options::InitCommandLine(int argc, char* argv[])
 					{
 						if (!bGroup)
 						{
-							abort("FATAL ERROR: Only groups can be merged\n");
+							abort("FATAL ERROR: only groups can be merged\n");
 						}
 						m_iEditQueueAction = eRemoteEditActionGroupMerge;
-					}
-					else if (!strcasecmp(optarg, "S"))
-					{
-						m_iEditQueueAction = eRemoteEditActionFileSplit;
-
-						optind++;
-						if (optind > argc)
-						{
-							abort("FATAL ERROR: Could not parse value of option 'E'\n");
-						}
-						m_szEditQueueText = strdup(argv[optind-1]);
 					}
 					else if (!strcasecmp(optarg, "O"))
 					{
@@ -1781,23 +1682,22 @@ void Options::PrintUsage(char* com)
 		"              O             Edit post-processor-queue\n"
 		"              H             Edit history\n"
 		"    <action> is one of:\n"
-		"       <+offset|-offset>    Move files/groups/post-job in queue relative to\n"
+		"       <+offset|-offset>    Move file(s)/group(s)/post-job in queue relative to\n"
 		"                            current position, offset is an integer value\n"
-		"       T                    Move files/groups/post-job to top of queue\n"
-		"       B                    Move files/groups/post-job to bottom of queue\n"
+		"       T                    Move file(s)/group(s)/post-job to top of queue\n"
+		"       B                    Move file(s)/group(s)/post-job to bottom of queue\n"
 		"       P                    Pause file(s)/group(s)/\n"
 		"                            Postprocess history-item(s) again\n"
-		"       U                    Resume (unpause) files/groups\n"
+		"       U                    Resume (unpause) file(s)/group(s)\n"
 		"       A                    Pause all pars (for groups)\n"
 		"       R                    Pause extra pars (for groups)/\n"
-		"                            Return history-items back to download queue\n"
-		"       D                    Delete files/groups/post-jobs/history-items\n"
+		"                            Return history-item(s) back to download queue\n"
+		"       D                    Delete file(s)/group(s)/post-job(s)/history-item(s)\n"
 		"       C <name>             Set category (for groups)\n"
 		"       N <name>             Rename (for groups)\n"
 		"       M                    Merge (for groups)\n"
-		"       S <name>             Split - create new group from selected files\n"
-		"       O <name>=<value>     Set post-process parameter (for groups/history)\n"
-		"       I <priority>         Set priority (signed integer) for files/groups\n"
+		"       O <name>=<value>     Set post-process parameter (for groups)\n"
+		"       I <priority>         Set priority (signed integer) for file(s)/group(s)\n"
 		"    <IDs>                   Comma-separated list of file-ids or ranges\n"
 		"                            of file-ids, e. g.: 1-5,3,10-22\n"
 		"    <Names>                 List of names (with options \"FN\" and \"GN\"),\n"
@@ -2076,10 +1976,7 @@ void Options::InitCategories()
 		sprintf(destdiroptname, "Category%i.DestDir", n);
 		const char* ndestdir = GetOption(destdiroptname);
 
-		sprintf(optname, "Category%i.DefScript", n);
-		const char* ndefscript = GetOption(optname);
-
-		bool definition = nname || ndestdir || ndefscript;
+		bool definition = nname || ndestdir;
 		bool completed = nname && strlen(nname) > 0;
 
 		if (!definition)
@@ -2095,7 +1992,7 @@ void Options::InitCategories()
 				CheckDir(&szDestDir, destdiroptname, false, true);
 			}
 
-			Category* pCategory = new Category(nname, szDestDir, ndefscript);
+			Category* pCategory = new Category(nname, szDestDir);
 			m_Categories.push_back(pCategory);
 
 			if (szDestDir)
@@ -2403,7 +2300,7 @@ bool Options::SetOptionString(const char * option)
 		optvalue[1000]  = '\0';
 		if (strlen(optname) > 0)
 		{
-			ConvertOldOption(optname, sizeof(optname), optvalue, sizeof(optvalue));
+			ConvertOldOptionName(optname, sizeof(optname));
 
 			if (!ValidateOptionName(optname))
 			{
@@ -2467,35 +2364,21 @@ bool Options::ValidateOptionName(const char * optname)
 	{
 		char* p = (char*)optname + 8;
 		while (*p >= '0' && *p <= '9') p++;
-		if (p && (!strcasecmp(p, ".name") || !strcasecmp(p, ".destdir") || !strcasecmp(p, ".defscript")))
+		if (p && (!strcasecmp(p, ".name") || !strcasecmp(p, ".destdir")))
 		{
 			return true;
 		}
 	}
-
-	// post-processing scripts options
-	if (strchr(optname, ':'))
+	
+	// print a warning message for obsolete options
+	if (!strcasecmp(optname, OPTION_POSTLOGKIND) || !strcasecmp(optname, OPTION_NZBLOGKIND))
 	{
+		ConfigWarn("Option \"%s\" is obsolete, use \"%s\" instead", optname, OPTION_PROCESSLOGKIND);
 		return true;
 	}
-
-	// print warning messages for obsolete options
-	if (!strcasecmp(optname, OPTION_RETRYONCRCERROR) ||
-		!strcasecmp(optname, OPTION_ALLOWREPROCESS) ||
-		!strcasecmp(optname, OPTION_LOADPARS) ||
-		!strcasecmp(optname, OPTION_THREADLIMIT) ||
-		!strcasecmp(optname, OPTION_POSTLOGKIND) ||
-		!strcasecmp(optname, OPTION_NZBLOGKIND) ||
-		!strcasecmp(optname, OPTION_PROCESSLOGKIND) ||
-		!strcasecmp(optname, OPTION_APPENDNZBDIR) ||
-		!strcasecmp(optname, OPTION_RENAMEBROKEN))
+	if (!strcasecmp(optname, OPTION_RETRYONCRCERROR))
 	{
 		ConfigWarn("Option \"%s\" is obsolete, ignored", optname);
-		return true;
-	}
-	if (!strcasecmp(optname, OPTION_POSTPROCESS))
-	{
-		ConfigError("Option \"%s\" is obsolete, ignored, use \"%s\" and \"%s\" instead", optname, OPTION_SCRIPTDIR, OPTION_DEFSCRIPT);
 		return true;
 	}
 
@@ -2505,7 +2388,7 @@ bool Options::ValidateOptionName(const char * optname)
 void Options::CheckOptions()
 {
 #ifdef DISABLE_PARCHECK
-	if (m_eParCheck != pcManual)
+	if (m_bParCheck)
 	{
 		LocateOptionSrcPos(OPTION_PARCHECK);
 		ConfigError("Invalid value for option \"%s\": program was compiled without parcheck-support", OPTION_PARCHECK);
@@ -2533,23 +2416,11 @@ void Options::CheckOptions()
 		m_bDirectWrite = false;
 	}
 
-	// if option "ConfigTemplate" is not set, use "WebDir" as default location for template
-	// (for compatibility with versions 9 and 10).
-	if (!m_szConfigTemplate || m_szConfigTemplate[0] == '\0')
+	if (m_bUnpack && m_bAllowReProcess)
 	{
-		if (m_szConfigTemplate)
-		{
-			free(m_szConfigTemplate);
-		}
-		int iLen = strlen(m_szWebDir) + 15;
-		m_szConfigTemplate = (char*)malloc(iLen);
-		snprintf(m_szConfigTemplate, iLen, "%s%s", m_szWebDir, "nzbget.conf");
-		m_szConfigTemplate[iLen-1] = '\0';
-		if (!Util::FileExists(m_szConfigTemplate))
-		{
-			free(m_szConfigTemplate);
-			m_szConfigTemplate = strdup("");
-		}
+		LocateOptionSrcPos(OPTION_ALLOWREPROCESS);
+		ConfigError("Options \"%s\" and \"%s\" cannot be both active at the same time", OPTION_UNPACK, OPTION_ALLOWREPROCESS);
+		m_bAllowReProcess = false;
 	}
 }
 
@@ -2653,10 +2524,25 @@ void Options::UnlockOptEntries()
 	m_mutexOptEntries.Unlock();
 }
 
-bool Options::LoadConfig(OptEntries* pOptEntries)
+bool Options::LoadConfig(EDomain eDomain, OptEntries* pOptEntries)
 {
+	const char* szConfigFile = NULL;
+
+	if (eDomain == dmServer)
+	{
+		szConfigFile = GetConfigFilename();
+	}
+	else if (eDomain == dmPostProcess)
+	{
+		szConfigFile = GetPostConfigFilename();
+		if (!szConfigFile)
+		{
+			return true;
+		}
+	}
+
 	// read config file
-	FILE* infile = fopen(m_szConfigFilename, "rb");
+	FILE* infile = fopen(szConfigFile, "rb");
 
 	if (!infile)
 	{
@@ -2687,7 +2573,10 @@ bool Options::LoadConfig(OptEntries* pOptEntries)
 			optvalue[1024-1]  = '\0';
 			if (strlen(optname) > 0)
 			{
-				ConvertOldOption(optname, sizeof(optname), optvalue, sizeof(optvalue));
+				if (eDomain == dmServer)
+				{
+					ConvertOldOptionName(optname, sizeof(optname));
+				}
 
 				OptEntry* pOptEntry = new OptEntry();
 				pOptEntry->SetName(optname);
@@ -2702,10 +2591,25 @@ bool Options::LoadConfig(OptEntries* pOptEntries)
 	return true;
 }
 
-bool Options::SaveConfig(OptEntries* pOptEntries)
+bool Options::SaveConfig(EDomain eDomain, OptEntries* pOptEntries)
 {
+	const char* szConfigFile = NULL;
+
+	if (eDomain == dmServer)
+	{
+		szConfigFile = GetConfigFilename();
+	}
+	else if (eDomain == dmPostProcess)
+	{
+		szConfigFile = GetPostConfigFilename();
+		if (!szConfigFile)
+		{
+			return true;
+		}
+	}
+
 	// save to config file
-	FILE* infile = fopen(m_szConfigFilename, "r+b");
+	FILE* infile = fopen(szConfigFile, "r+b");
 
 	if (!infile)
 	{
@@ -2723,7 +2627,7 @@ bool Options::SaveConfig(OptEntries* pOptEntries)
 		config.push_back(strdup(buf));
 	}
 
-	// write config file back to disk, replace old values of existing options with new values
+	// write config file back to disk, replace old vcalues of existing options with new values
 	rewind(infile);
 	for (std::vector<char*>::iterator it = config.begin(); it != config.end(); it++)
     {
@@ -2744,7 +2648,10 @@ bool Options::SaveConfig(OptEntries* pOptEntries)
 			optvalue[1024-1]  = '\0';
 			if (strlen(optname) > 0)
 			{
-				ConvertOldOption(optname, sizeof(optname), optvalue, sizeof(optvalue));
+				if (eDomain == dmServer)
+				{
+					ConvertOldOptionName(optname, sizeof(optname));
+				}
 
 				OptEntry *pOptEntry = pOptEntries->FindOption(optname);
 				if (pOptEntry)
@@ -2769,7 +2676,7 @@ bool Options::SaveConfig(OptEntries* pOptEntries)
 	{
 		Options::OptEntry* pOptEntry = *it;
 		std::set<OptEntry*>::iterator fit = writtenOptions.find(pOptEntry);
-		if (fit == writtenOptions.end())
+		if (fit == writtenOptions.end() && strlen(pOptEntry->GetValue()) > 0)
 		{
 			snprintf(val, sizeof(val) - 1, "%s=%s\n", pOptEntry->GetName(), pOptEntry->GetValue());
 			val[sizeof(val) - 1] = '\0';
@@ -2781,272 +2688,34 @@ bool Options::SaveConfig(OptEntries* pOptEntries)
 	int pos = ftell(infile);
 	fclose(infile);
 
-	Util::TruncateFile(m_szConfigFilename, pos);
+	Util::TruncateFile(szConfigFile, pos);
 
 	return true;
 }
 
-void Options::ConvertOldOption(char *szOption, int iOptionBufLen, char *szValue, int iValueBufLen)
+void Options::ConvertOldOptionName(char *szOption, int iBufLen)
 {
 	// for compatibility with older versions accept old option names
 
 	if (!strcasecmp(szOption, "$MAINDIR"))
 	{
-		strncpy(szOption, "MainDir", iOptionBufLen);
+		strncpy(szOption, "MainDir", iBufLen);
 	}
 
 	if (!strcasecmp(szOption, "ServerIP"))
 	{
-		strncpy(szOption, "ControlIP", iOptionBufLen);
+		strncpy(szOption, "ControlIP", iBufLen);
 	}
 
 	if (!strcasecmp(szOption, "ServerPort"))
 	{
-		strncpy(szOption, "ControlPort", iOptionBufLen);
+		strncpy(szOption, "ControlPort", iBufLen);
 	}
 
 	if (!strcasecmp(szOption, "ServerPassword"))
 	{
-		strncpy(szOption, "ControlPassword", iOptionBufLen);
+		strncpy(szOption, "ControlPassword", iBufLen);
 	}
 
-	if (!strcasecmp(szOption, "PostPauseQueue"))
-	{
-		strncpy(szOption, "ScriptPauseQueue", iOptionBufLen);
-	}
-
-	if (!strcasecmp(szOption, "ParCheck") && !strcasecmp(szValue, "yes"))
-	{
-		strncpy(szValue, "force", iValueBufLen);
-	}
-
-	if (!strcasecmp(szOption, "ParCheck") && !strcasecmp(szValue, "no"))
-	{
-		strncpy(szValue, "auto", iValueBufLen);
-	}
-
-	szOption[iOptionBufLen-1] = '\0';
-	szOption[iValueBufLen-1] = '\0';
-}
-
-bool Options::LoadConfigTemplates(ConfigTemplates* pConfigTemplates)
-{
-	char* szBuffer;
-	int iLength;
-	if (!Util::LoadFileIntoBuffer(m_szConfigTemplate, &szBuffer, &iLength))
-	{
-		return false;
-	}
-	ConfigTemplate* pConfigTemplate = new ConfigTemplate("", "", szBuffer);
-	pConfigTemplates->push_back(pConfigTemplate);
-	free(szBuffer);
-
-	if (!m_szScriptDir)
-	{
-		return true;
-	}
-
-	ScriptList scriptList;
-	LoadScriptList(&scriptList);
-
-	for (ScriptList::iterator it = scriptList.begin(); it != scriptList.end(); it++)
-	{
-		Script* pScript = *it;
-
-		FILE* infile = fopen(pScript->GetLocation(), "rb");
-		if (!infile)
-		{
-			ConfigTemplate* pConfigTemplate = new ConfigTemplate(pScript->GetName(), pScript->GetDisplayName(), "");
-			pConfigTemplates->push_back(pConfigTemplate);
-			continue;
-		}
-
-		const int iConfigSignatureLen = strlen(PPSCRIPT_SIGNATURE);
-		StringBuilder stringBuilder;
-		char buf[1024];
-		bool bInConfig = false;
-
-		while (fgets(buf, sizeof(buf) - 1, infile))
-		{
-			if (!strncmp(buf, PPSCRIPT_SIGNATURE, iConfigSignatureLen))
-			{
-				if (bInConfig)
-				{
-					break;
-				}
-				bInConfig = true;
-				continue;
-			}
-
-			if (bInConfig)
-			{
-				stringBuilder.Append(buf);
-			}
-		}
-
-		fclose(infile);
-
-		ConfigTemplate* pConfigTemplate = new ConfigTemplate(pScript->GetName(), pScript->GetDisplayName(), stringBuilder.GetBuffer());
-		pConfigTemplates->push_back(pConfigTemplate);
-	}
-
-	return true;
-}
-
-void Options::LoadScriptList(ScriptList* pScriptList)
-{
-	if (strlen(m_szScriptDir) == 0)
-	{
-		return;
-	}
-
-	ScriptList tmpScriptList;
-	LoadScriptDir(&tmpScriptList, m_szScriptDir, false);
-	tmpScriptList.sort(CompareScripts);
-
-	// first add all scripts from m_szScriptOrder
-	char* szScriptOrder = strdup(m_szScriptOrder);
-	char* saveptr;
-	char* szScriptName = strtok_r(szScriptOrder, ",;", &saveptr);
-	while (szScriptName)
-	{
-		szScriptName = Util::Trim(szScriptName);
-		if (szScriptName[0] != '\0')
-		{
-			Script* pScript = tmpScriptList.Find(szScriptName);
-			if (pScript)
-			{
-				pScriptList->push_back(new Script(pScript->GetName(), pScript->GetLocation()));
-			}
-		}
-		szScriptName = strtok_r(NULL, ",;", &saveptr);
-	}
-	free(szScriptOrder);
-
-	// second add all other scripts from scripts directory
-	for (ScriptList::iterator it = tmpScriptList.begin(); it != tmpScriptList.end(); it++)
-	{
-		Script* pScript = *it;
-		if (!pScriptList->Find(pScript->GetName()))
-		{
-			pScriptList->push_back(new Script(pScript->GetName(), pScript->GetLocation()));
-		}
-	}
-
-	BuildScriptDisplayNames(pScriptList);
-}
-
-void Options::LoadScriptDir(ScriptList* pScriptList, const char* szDirectory, bool bIsSubDir)
-{
-	int iBufSize = 1024*10;
-	char* szBuffer = (char*)malloc(iBufSize+1);
-
-	DirBrowser dir(szDirectory);
-	while (const char* szFilename = dir.Next())
-	{
-		if (szFilename[0] != '.' && szFilename[0] != '_')
-		{
-			char szFullFilename[1024];
-			snprintf(szFullFilename, 1024, "%s%s", szDirectory, szFilename);
-			szFullFilename[1024-1] = '\0';
-
-			if (!Util::DirectoryExists(szFullFilename))
-			{
-				// check if the file contains pp-script-signature
-				FILE* infile = fopen(szFullFilename, "rb");
-				if (infile)
-				{
-					// read first 10KB of the file and look for signature
-					int iReadBytes = fread(szBuffer, 1, iBufSize, infile);
-					fclose(infile);
-					szBuffer[iReadBytes] = 0;
-					if (strstr(szBuffer, PPSCRIPT_SIGNATURE))
-					{
-						char szScriptName[1024];
-						if (bIsSubDir)
-						{
-							char szDirectory2[1024];
-							snprintf(szDirectory2, 1024, "%s", szDirectory);
-							szDirectory2[1024-1] = '\0';
-							int iLen = strlen(szDirectory2);
-							if (szDirectory2[iLen-1] == PATH_SEPARATOR || szDirectory2[iLen-1] == ALT_PATH_SEPARATOR)
-							{
-								// trim last path-separator
-								szDirectory2[iLen-1] = '\0';
-							}
-
-							snprintf(szScriptName, 1024, "%s%c%s", Util::BaseFileName(szDirectory2), PATH_SEPARATOR, szFilename);
-						}
-						else
-						{
-							snprintf(szScriptName, 1024, "%s", szFilename);
-						}
-						szScriptName[1024-1] = '\0';
-
-						Script* pScript = new Script(szScriptName, szFullFilename);
-						pScriptList->push_back(pScript);
-					}
-				}
-			}
-			else if (!bIsSubDir)
-			{
-				snprintf(szFullFilename, 1024, "%s%s%c", szDirectory, szFilename, PATH_SEPARATOR);
-				szFullFilename[1024-1] = '\0';
-
-				LoadScriptDir(pScriptList, szFullFilename, true);
-			}
-		}
-	}
-
-	free(szBuffer);
-}
-
-bool Options::CompareScripts(Script* pScript1, Script* pScript2)
-{
-	return strcmp(pScript1->GetName(), pScript2->GetName()) < 0;
-}
-
-void Options::BuildScriptDisplayNames(ScriptList* pScriptList)
-{
-	// trying to use short name without path and extension.
-	// if there are other scripts with the same short name - using a longer name instead (with ot without extension)
-
-	for (ScriptList::iterator it = pScriptList->begin(); it != pScriptList->end(); it++)
-	{
-		Script* pScript = *it;
-
-		char szShortName[256];
-		strncpy(szShortName, pScript->GetName(), 256);
-		szShortName[256-1] = '\0';
-		if (char* ext = strrchr(szShortName, '.')) *ext = '\0'; // strip file extension
-
-		const char* szDisplayName = Util::BaseFileName(szShortName);
-
-		for (ScriptList::iterator it2 = pScriptList->begin(); it2 != pScriptList->end(); it2++)
-		{
-			Script* pScript2 = *it2;
-
-			char szShortName2[256];
-			strncpy(szShortName2, pScript2->GetName(), 256);
-			szShortName2[256-1] = '\0';
-			if (char* ext = strrchr(szShortName2, '.')) *ext = '\0'; // strip file extension
-
-			const char* szDisplayName2 = Util::BaseFileName(szShortName2);
-
-			if (!strcmp(szDisplayName, szDisplayName2) && pScript->GetName() != pScript2->GetName())
-			{
-				if (!strcmp(szShortName, szShortName2))
-				{
-					szDisplayName =	pScript->GetName();
-				}
-				else
-				{
-					szDisplayName =	szShortName;
-				}
-				break;
-			}
-		}
-
-		pScript->SetDisplayName(szDisplayName);
-	}
+	szOption[iBufLen-1] = '\0';
 }

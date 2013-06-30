@@ -2,7 +2,7 @@
  *  This file is part of nzbget
  *
  *  Copyright (C) 2005 Bo Cordes Petersen <placebodk@sourceforge.net>
- *  Copyright (C) 2007-2013 Andrey Prygunkov <hugbug@users.sourceforge.net>
+ *  Copyright (C) 2007-2011 Andrey Prygunkov <hugbug@users.sourceforge.net>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -34,7 +34,8 @@
 
 #include <stdlib.h>
 #include <string.h>
-#include <stdio.h>
+#include <cstdio>
+#include <fstream>
 #ifndef WIN32
 #include <unistd.h>
 #include <sys/socket.h>
@@ -52,13 +53,11 @@
 #include "PrePostProcessor.h"
 #include "Util.h"
 #include "DownloadInfo.h"
-#include "Scanner.h"
 
 extern Options* g_pOptions;
 extern QueueCoordinator* g_pQueueCoordinator;
 extern UrlCoordinator* g_pUrlCoordinator;
 extern PrePostProcessor* g_pPrePostProcessor;
-extern Scanner* g_pScanner;
 extern void ExitProc();
 extern void Reload();
 
@@ -104,10 +103,9 @@ void BinRpcProcessor::Execute()
 		return;
 	}
 
-	if ((strlen(g_pOptions->GetControlUsername()) > 0 && strcmp(m_MessageBase.m_szUsername, g_pOptions->GetControlUsername())) ||
-		strcmp(m_MessageBase.m_szPassword, g_pOptions->GetControlPassword()))
+	if (strcmp(m_MessageBase.m_szPassword, g_pOptions->GetControlPassword()))
 	{
-		warn("nzbget request received on port %i from %s, but username or password invalid", g_pOptions->GetControlPort(), m_pConnection->GetRemoteAddr());
+		warn("nzbget request received on port %i from %s, but password invalid", g_pOptions->GetControlPort(), m_pConnection->GetRemoteAddr());
 		return;
 	}
 
@@ -343,10 +341,9 @@ void DownloadBinCommand::Execute()
 		return;
 	}
 
-	int iBufLen = ntohl(DownloadRequest.m_iTrailingDataLength);
-	char* pRecvBuffer = (char*)malloc(iBufLen);
+	char* pRecvBuffer = (char*)malloc(ntohl(DownloadRequest.m_iTrailingDataLength) + 1);
 
-	if (!m_pConnection->Recv(pRecvBuffer, iBufLen))
+	if (!m_pConnection->Recv(pRecvBuffer, ntohl(DownloadRequest.m_iTrailingDataLength)))
 	{
 		error("invalid request");
 		free(pRecvBuffer);
@@ -355,17 +352,35 @@ void DownloadBinCommand::Execute()
 	
 	int iPriority = ntohl(DownloadRequest.m_iPriority);
 	bool bAddPaused = ntohl(DownloadRequest.m_bAddPaused);
-	bool bAddTop = ntohl(DownloadRequest.m_bAddFirst);
-
-	bool bOK = g_pScanner->AddExternalFile(DownloadRequest.m_szFilename, DownloadRequest.m_szCategory,
-		iPriority, NULL, bAddTop, bAddPaused, NULL, pRecvBuffer, iBufLen, true);
-
-	char tmp[1024];
-	snprintf(tmp, 1024, bOK ? "Collection %s added to queue" : "Download Request failed for %s",
-		Util::BaseFileName(DownloadRequest.m_szFilename));
-	tmp[1024-1] = '\0';
-
-	SendBoolResponse(bOK, tmp);
+	
+	NZBFile* pNZBFile = NZBFile::CreateFromBuffer(DownloadRequest.m_szFilename, DownloadRequest.m_szCategory, pRecvBuffer, ntohl(DownloadRequest.m_iTrailingDataLength));
+	
+	if (pNZBFile)
+	{
+		info("Request: Queue collection %s", DownloadRequest.m_szFilename);
+		
+		for (NZBFile::FileInfos::iterator it = pNZBFile->GetFileInfos()->begin(); it != pNZBFile->GetFileInfos()->end(); it++)
+		{
+			FileInfo* pFileInfo = *it;
+			pFileInfo->SetPriority(iPriority);
+			pFileInfo->SetPaused(bAddPaused);
+		}
+		
+		g_pQueueCoordinator->AddNZBFileToQueue(pNZBFile, ntohl(DownloadRequest.m_bAddFirst));
+		delete pNZBFile;
+		
+		char tmp[1024];
+		snprintf(tmp, 1024, "Collection %s added to queue", Util::BaseFileName(DownloadRequest.m_szFilename));
+		tmp[1024-1] = '\0';
+		SendBoolResponse(true, tmp);
+	}
+	else
+	{
+		char tmp[1024];
+		snprintf(tmp, 1024, "Download Request failed for %s", Util::BaseFileName(DownloadRequest.m_szFilename));
+		tmp[1024-1] = '\0';
+		SendBoolResponse(false, tmp);
+	}
 
 	free(pRecvBuffer);
 }
@@ -782,7 +797,7 @@ void EditQueueBinCommand::Execute()
 	}
 	else
 	{
-		bOK = g_pPrePostProcessor->QueueEditList(&cIDList, (PrePostProcessor::EEditAction)iAction, iOffset, szText);
+		bOK = g_pPrePostProcessor->QueueEditList(&cIDList, (PrePostProcessor::EEditAction)iAction, iOffset);
 	}
 
 	free(pBuf);
@@ -832,6 +847,7 @@ void PostQueueBinCommand::Execute()
 	{
 		PostInfo* pPostInfo = *it;
 		bufsize += strlen(pPostInfo->GetNZBInfo()->GetFilename()) + 1;
+		bufsize += strlen(pPostInfo->GetParFilename()) + 1;
 		bufsize += strlen(pPostInfo->GetInfoName()) + 1;
 		bufsize += strlen(pPostInfo->GetNZBInfo()->GetDestDir()) + 1;
 		bufsize += strlen(pPostInfo->GetProgressLabel()) + 1;
@@ -854,12 +870,15 @@ void PostQueueBinCommand::Execute()
 		pPostQueueAnswer->m_iTotalTimeSec	= htonl((int)(pPostInfo->GetStartTime() ? tCurTime - pPostInfo->GetStartTime() : 0));
 		pPostQueueAnswer->m_iStageTimeSec	= htonl((int)(pPostInfo->GetStageTime() ? tCurTime - pPostInfo->GetStageTime() : 0));
 		pPostQueueAnswer->m_iNZBFilenameLen		= htonl(strlen(pPostInfo->GetNZBInfo()->GetFilename()) + 1);
+		pPostQueueAnswer->m_iParFilename		= htonl(strlen(pPostInfo->GetParFilename()) + 1);
 		pPostQueueAnswer->m_iInfoNameLen		= htonl(strlen(pPostInfo->GetInfoName()) + 1);
 		pPostQueueAnswer->m_iDestDirLen			= htonl(strlen(pPostInfo->GetNZBInfo()->GetDestDir()) + 1);
 		pPostQueueAnswer->m_iProgressLabelLen	= htonl(strlen(pPostInfo->GetProgressLabel()) + 1);
 		bufptr += sizeof(SNZBPostQueueResponseEntry);
 		strcpy(bufptr, pPostInfo->GetNZBInfo()->GetFilename());
 		bufptr += ntohl(pPostQueueAnswer->m_iNZBFilenameLen);
+		strcpy(bufptr, pPostInfo->GetParFilename());
+		bufptr += ntohl(pPostQueueAnswer->m_iParFilename);
 		strcpy(bufptr, pPostInfo->GetInfoName());
 		bufptr += ntohl(pPostQueueAnswer->m_iInfoNameLen);
 		strcpy(bufptr, pPostInfo->GetNZBInfo()->GetDestDir());
@@ -945,7 +964,7 @@ void ScanBinCommand::Execute()
 
 	bool bSyncMode = ntohl(ScanRequest.m_bSyncMode);
 
-	g_pScanner->ScanNZBDir(bSyncMode);
+	g_pPrePostProcessor->ScanNZBDir(bSyncMode);
 	SendBoolResponse(true, bSyncMode ? "Scan-Command completed" : "Scan-Command scheduled successfully");
 }
 
@@ -1007,7 +1026,7 @@ void HistoryBinCommand::Execute()
 			pListAnswer->m_iSizeHi				= htonl(iSizeHi);
 			pListAnswer->m_iFileCount			= htonl(pNZBInfo->GetFileCount());
 			pListAnswer->m_iParStatus			= htonl(pNZBInfo->GetParStatus());
-			pListAnswer->m_iScriptStatus		= htonl(pNZBInfo->GetScriptStatuses()->CalcTotalStatus());
+			pListAnswer->m_iScriptStatus		= htonl(pNZBInfo->GetScriptStatus());
 		}
 		else if (pHistoryInfo->GetKind() == HistoryInfo::hkUrlInfo)
 		{

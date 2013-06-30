@@ -33,7 +33,8 @@
 
 #include <stdlib.h>
 #include <string.h>
-#include <stdio.h>
+#include <cstdio>
+#include <fstream>
 #include <stdarg.h>
 #ifndef WIN32
 #include <unistd.h>
@@ -47,17 +48,45 @@
 #include "UrlCoordinator.h"
 #include "QueueEditor.h"
 #include "PrePostProcessor.h"
-#include "Scanner.h"
 #include "Util.h"
 
 extern Options* g_pOptions;
 extern QueueCoordinator* g_pQueueCoordinator;
 extern UrlCoordinator* g_pUrlCoordinator;
 extern PrePostProcessor* g_pPrePostProcessor;
-extern Scanner* g_pScanner;
 extern void ExitProc();
 extern void Reload();
 
+//*****************************************************************
+// StringBuilder
+
+StringBuilder::StringBuilder()
+{
+	m_szBuffer = NULL;
+	m_iBufferSize = 0;
+	m_iUsedSize = 0;
+}
+
+StringBuilder::~StringBuilder()
+{
+	if (m_szBuffer)
+	{
+		free(m_szBuffer);
+	}
+}
+
+void StringBuilder::Append(const char* szStr)
+{
+	int iPartLen = strlen(szStr);
+	if (m_iUsedSize + iPartLen + 1 > m_iBufferSize)
+	{
+		m_iBufferSize += iPartLen + 10240;
+		m_szBuffer = (char*)realloc(m_szBuffer, m_iBufferSize);
+	}
+	strcpy(m_szBuffer + m_iUsedSize, szStr);
+	m_iUsedSize += iPartLen;
+	m_szBuffer[m_iUsedSize] = '\0';
+}
 
 //*****************************************************************
 // XmlRpcProcessor
@@ -413,10 +442,6 @@ XmlCommand* XmlRpcProcessor::CreateCommand(const char* szMethodName)
 	else if (!strcasecmp(szMethodName, "saveconfig"))
 	{
 		command = new SaveConfigXmlCommand();
-	}
-	else if (!strcasecmp(szMethodName, "configtemplates"))
-	{
-		command = new ConfigTemplatesXmlCommand();
 	}
 	else 
 	{
@@ -1354,7 +1379,6 @@ EditCommandEntry EditCommandNameMap[] = {
 	{ QueueEditor::eaFilePauseExtraPars, "FilePauseExtraPars" },
 	{ QueueEditor::eaFileSetPriority, "FileSetPriority" },
 	{ QueueEditor::eaFileReorder, "FileReorder" },
-	{ QueueEditor::eaFileSplit, "FileSplit" },
 	{ QueueEditor::eaGroupMoveOffset, "GroupMoveOffset" },
 	{ QueueEditor::eaGroupMoveTop, "GroupMoveTop" },
 	{ QueueEditor::eaGroupMoveBottom, "GroupMoveBottom" },
@@ -1375,7 +1399,6 @@ EditCommandEntry EditCommandNameMap[] = {
 	{ PrePostProcessor::eaHistoryDelete, "HistoryDelete" },
 	{ PrePostProcessor::eaHistoryReturn, "HistoryReturn" },
 	{ PrePostProcessor::eaHistoryProcess, "HistoryProcess" },
-	{ PrePostProcessor::eaHistorySetParameter, "HistorySetParameter" },
 	{ 0, NULL }
 };
 
@@ -1442,7 +1465,7 @@ void EditQueueXmlCommand::Execute()
 	}
 	else
 	{
-		bOK = g_pPrePostProcessor->QueueEditList(&cIDList, (PrePostProcessor::EEditAction)iAction, iOffset, szEditText);
+		bOK = g_pPrePostProcessor->QueueEditList(&cIDList, (PrePostProcessor::EEditAction)iAction, iOffset);
 	}
 
 	BuildBoolResponse(bOK);
@@ -1504,10 +1527,26 @@ void DownloadXmlCommand::Execute()
 	szFileContent[iLen] = '\0';
 	//debug("FileContent=%s", szFileContent);
 
-	bool bOK = g_pScanner->AddExternalFile(szFileName, szCategory, iPriority, NULL, bAddTop,
-		false, NULL, szFileContent, iLen, true);
+	NZBFile* pNZBFile = NZBFile::CreateFromBuffer(szFileName, szCategory, szFileContent, iLen + 1);
 
-	BuildBoolResponse(bOK);
+	if (pNZBFile)
+	{
+		info("Request: Queue collection %s", szFileName);
+
+		for (NZBFile::FileInfos::iterator it = pNZBFile->GetFileInfos()->begin(); it != pNZBFile->GetFileInfos()->end(); it++)
+		{
+			FileInfo* pFileInfo = *it;
+			pFileInfo->SetPriority(iPriority);
+		}
+
+		g_pQueueCoordinator->AddNZBFileToQueue(pNZBFile, bAddTop);
+		delete pNZBFile;
+		BuildBoolResponse(true);
+	}
+	else
+	{
+		BuildBoolResponse(false);
+	}
 }
 
 void PostQueueXmlCommand::Execute()
@@ -1525,7 +1564,7 @@ void PostQueueXmlCommand::Execute()
 		"<member><name>NZBNicename</name><value><string>%s</string></value></member>\n"		// deprecated, use "NZBName" instead
 		"<member><name>NZBFilename</name><value><string>%s</string></value></member>\n"
 		"<member><name>DestDir</name><value><string>%s</string></value></member>\n"
-		"<member><name>ParFilename</name><value><string>%s</string></value></member>\n"		// deprecated, always empty
+		"<member><name>ParFilename</name><value><string>%s</string></value></member>\n"
 		"<member><name>InfoName</name><value><string>%s</string></value></member>\n"
 		"<member><name>Stage</name><value><string>%s</string></value></member>\n"
 		"<member><name>ProgressLabel</name><value><string>%s</string></value></member>\n"
@@ -1547,7 +1586,7 @@ void PostQueueXmlCommand::Execute()
 		"\"NZBNicename\" : \"%s\",\n"	// deprecated, use "NZBName" instead
 		"\"NZBFilename\" : \"%s\",\n"
 		"\"DestDir\" : \"%s\",\n"
-		"\"ParFilename\" : \"%s\",\n"	// deprecated, always empty
+		"\"ParFilename\" : \"%s\",\n"
 		"\"InfoName\" : \"%s\",\n"
 		"\"Stage\" : \"%s\",\n"
 		"\"ProgressLabel\" : \"%s\",\n"
@@ -1595,12 +1634,13 @@ void PostQueueXmlCommand::Execute()
 		char* xmlNZBNicename = EncodeStr(pPostInfo->GetNZBInfo()->GetName());
 		char* xmlNZBFilename = EncodeStr(pPostInfo->GetNZBInfo()->GetFilename());
 		char* xmlDestDir = EncodeStr(pPostInfo->GetNZBInfo()->GetDestDir());
+		char* xmlParFilename = EncodeStr(pPostInfo->GetParFilename());
 		char* xmlInfoName = EncodeStr(pPostInfo->GetInfoName());
 		char* xmlProgressLabel = EncodeStr(pPostInfo->GetProgressLabel());
 
 		snprintf(szItemBuf, szItemBufSize, IsJson() ? JSON_POSTQUEUE_ITEM_START : XML_POSTQUEUE_ITEM_START,
 			pPostInfo->GetID(), pPostInfo->GetNZBInfo()->GetID(), xmlNZBNicename,
-			xmlNZBNicename, xmlNZBFilename, xmlDestDir, "",
+			xmlNZBNicename, xmlNZBFilename, xmlDestDir, xmlParFilename,
 			xmlInfoName, szPostStageName[pPostInfo->GetStage()], xmlProgressLabel,
 			pPostInfo->GetFileProgress(), pPostInfo->GetStageProgress(),
 			pPostInfo->GetStartTime() ? tCurTime - pPostInfo->GetStartTime() : 0,
@@ -1610,6 +1650,7 @@ void PostQueueXmlCommand::Execute()
 		free(xmlNZBNicename);
 		free(xmlNZBFilename);
 		free(xmlDestDir);
+		free(xmlParFilename);
 		free(xmlInfoName);
 		free(xmlProgressLabel);
 
@@ -1725,7 +1766,7 @@ void ScanXmlCommand::Execute()
 	// optional parameter "SyncMode"
 	NextParamAsBool(&bSyncMode);
 
-	g_pScanner->ScanNZBDir(bSyncMode);
+	g_pPrePostProcessor->ScanNZBDir(bSyncMode);
 	BuildBoolResponse(true);
 }
 
@@ -1736,7 +1777,7 @@ void HistoryXmlCommand::Execute()
 	const char* XML_HISTORY_ITEM_START = 
 		"<value><struct>\n"
 		"<member><name>ID</name><value><i4>%i</i4></value></member>\n"
-		"<member><name>NZBID</name><value><i4>%i</i4></value></member>\n"
+		"<member><name>NZBID</name><value><i4>%i</i4></value></member>\n"					// deprecated, use ID instead
 		"<member><name>Kind</name><value><string>%s</string></value></member>\n"
 		"<member><name>Name</name><value><string>%s</string></value></member>\n"
 		"<member><name>NZBNicename</name><value><string>%s</string></value></member>\n"		// deprecated, use Name instead
@@ -1757,24 +1798,20 @@ void HistoryXmlCommand::Execute()
 		"<member><name>UrlStatus</name><value><string>%s</string></value></member>\n"
 		"<member><name>Parameters</name><value><array><data>\n";
 
-	const char* XML_HISTORY_ITEM_SCRIPT_START =
-		"</data></array></value></member>\n"
-		"<member><name>ScriptStatuses</name><value><array><data>\n";
-
-	const char* XML_HISTORY_ITEM_LOG_START =
+	const char* XML_HISTORY_ITEM_LOG_START = 
 		"</data></array></value></member>\n"
 		"<member><name>Log</name><value><array><data>\n";
 
-	const char* XML_HISTORY_ITEM_END =
+	const char* XML_HISTORY_ITEM_END = 
 		"</data></array></value></member>\n"
 		"</struct></value>\n";
 
 	const char* JSON_HISTORY_ITEM_START = 
 		"{\n"
 		"\"ID\" : %i,\n"
-		"\"NZBID\" : %i,\n"
+		"\"NZBID\" : %i,\n"					// deprecated, use ID instead
 		"\"Kind\" : \"%s\",\n"
-		"\"Name\" : \"%s\",\n"
+		"\"Name\" : \"%s\",\n"				// deprecated, use Name instead
 		"\"NZBNicename\" : \"%s\",\n"		// deprecated, use Name instead
 		"\"NZBFilename\" : \"%s\",\n"
 		"\"DestDir\" : \"%s\",\n"
@@ -1793,11 +1830,7 @@ void HistoryXmlCommand::Execute()
 		"\"UrlStatus\" : \"%s\",\n"
 		"\"Parameters\" : [\n";
 
-	const char* JSON_HISTORY_ITEM_SCRIPT_START =
-		"],\n"
-		"\"ScriptStatuses\" : [\n";
-
-	const char* JSON_HISTORY_ITEM_LOG_START =
+	const char* JSON_HISTORY_ITEM_LOG_START = 
 		"],\n"
 		"\"Log\" : [\n";
 
@@ -1817,19 +1850,7 @@ void HistoryXmlCommand::Execute()
 		"\"Value\" : \"%s\"\n"
 		"}";
 
-	const char* XML_SCRIPT_ITEM =
-		"<value><struct>\n"
-		"<member><name>Name</name><value><string>%s</string></value></member>\n"
-		"<member><name>Status</name><value><string>%s</string></value></member>\n"
-		"</struct></value>\n";
-
-	const char* JSON_SCRIPT_ITEM =
-		"{\n"
-		"\"Name\" : \"%s\",\n"
-		"\"Status\" : \"%s\"\n"
-		"}";
-
-	const char* XML_LOG_ITEM =
+	const char* XML_LOG_ITEM = 
 		"<value><struct>\n"
 		"<member><name>ID</name><value><i4>%i</i4></value></member>\n"
 		"<member><name>Kind</name><value><string>%s</string></value></member>\n"
@@ -1845,10 +1866,10 @@ void HistoryXmlCommand::Execute()
 		"\"Text\" : \"%s\"\n"
 		"}";
 
-    const char* szParStatusName[] = { "NONE", "NONE", "FAILURE", "SUCCESS", "REPAIR_POSSIBLE", "MANUAL" };
+    const char* szParStatusName[] = { "NONE", "NONE", "FAILURE", "SUCCESS", "REPAIR_POSSIBLE" };
     const char* szUnpackStatusName[] = { "NONE", "NONE", "FAILURE", "SUCCESS" };
     const char* szMoveStatusName[] = { "NONE", "FAILURE", "SUCCESS" };
-    const char* szScriptStatusName[] = { "NONE", "FAILURE", "SUCCESS" };
+    const char* szScriptStatusName[] = { "NONE", "UNKNOWN", "FAILURE", "SUCCESS" };
 	const char* szUrlStatusName[] = { "UNKNOWN", "UNKNOWN", "SUCCESS", "FAILURE", "UNKNOWN" };
 	const char* szMessageType[] = { "INFO", "WARNING", "ERROR", "DEBUG", "DETAIL"};
 
@@ -1882,10 +1903,10 @@ void HistoryXmlCommand::Execute()
 			xmlCategory = EncodeStr(pNZBInfo->GetCategory());
 
 			snprintf(szItemBuf, szItemBufSize, IsJson() ? JSON_HISTORY_ITEM_START : XML_HISTORY_ITEM_START,
-				pHistoryInfo->GetID(), pNZBInfo->GetID(), "NZB", xmlNicename, xmlNicename, xmlNZBFilename, 
+				pHistoryInfo->GetID(), pHistoryInfo->GetID(), "NZB", xmlNicename, xmlNicename, xmlNZBFilename, 
 				xmlDestDir, xmlCategory, szParStatusName[pNZBInfo->GetParStatus()],
 				szUnpackStatusName[pNZBInfo->GetUnpackStatus()], szMoveStatusName[pNZBInfo->GetMoveStatus()],
-				szScriptStatusName[pNZBInfo->GetScriptStatuses()->CalcTotalStatus()],
+				szScriptStatusName[pNZBInfo->GetScriptStatus()],
 				iFileSizeLo, iFileSizeHi, iFileSizeMB, pNZBInfo->GetFileCount(),
 				pNZBInfo->GetParkedFileCount(), pHistoryInfo->GetTime(), "", "");
 
@@ -1900,7 +1921,7 @@ void HistoryXmlCommand::Execute()
 			char* xmlURL = EncodeStr(pUrlInfo->GetURL());
 
 			snprintf(szItemBuf, szItemBufSize, IsJson() ? JSON_HISTORY_ITEM_START : XML_HISTORY_ITEM_START,
-				pHistoryInfo->GetID(), 0, "URL", xmlNicename, xmlNicename, xmlNZBFilename, 
+				pHistoryInfo->GetID(), pHistoryInfo->GetID(), "URL", xmlNicename, xmlNicename, xmlNZBFilename, 
 				"", xmlCategory, "", "", "", "", 0, 0, 0, 0, 0, pHistoryInfo->GetTime(), xmlURL,
 				szUrlStatusName[pUrlInfo->GetStatus()]);
 
@@ -1937,33 +1958,6 @@ void HistoryXmlCommand::Execute()
 				free(xmlValue);
 
 				if (IsJson() && iParamIndex++ > 0)
-				{
-					AppendResponse(",\n");
-				}
-				AppendResponse(szItemBuf);
-			}
-		}
-
-		AppendResponse(IsJson() ? JSON_HISTORY_ITEM_SCRIPT_START : XML_HISTORY_ITEM_SCRIPT_START);
-
-		if (pNZBInfo)
-		{
-			// Script statuses
-			int iScriptIndex = 0;
-			for (ScriptStatusList::iterator it = pNZBInfo->GetScriptStatuses()->begin(); it != pNZBInfo->GetScriptStatuses()->end(); it++)
-			{
-				ScriptStatus* pScriptStatus = *it;
-				
-				char* xmlName = EncodeStr(pScriptStatus->GetName());
-				char* xmlStatus = EncodeStr(szScriptStatusName[pScriptStatus->GetStatus()]);
-				
-				snprintf(szItemBuf, szItemBufSize, IsJson() ? JSON_SCRIPT_ITEM : XML_SCRIPT_ITEM, xmlName, xmlStatus);
-				szItemBuf[szItemBufSize-1] = '\0';
-				
-				free(xmlName);
-				free(xmlStatus);
-				
-				if (IsJson() && iScriptIndex++ > 0)
 				{
 					AppendResponse(",\n");
 				}
@@ -2065,7 +2059,7 @@ void DownloadUrlXmlCommand::Execute()
 
 		char szNicename[1024];
 		pUrlInfo->GetName(szNicename, sizeof(szNicename));
-		info("Queue %s", szNicename);
+		info("Request: Queue %s", szNicename);
 
 		g_pUrlCoordinator->AddUrlToQueue(pUrlInfo, bAddTop);
 
@@ -2193,7 +2187,7 @@ void ConfigXmlCommand::Execute()
 	AppendResponse(IsJson() ? "\n]" : "</data></array>\n");
 }
 
-// struct[] loadconfig()
+// struct[] loadconfig(string domain)
 void LoadConfigXmlCommand::Execute()
 {
 	const char* XML_CONFIG_ITEM = 
@@ -2208,10 +2202,36 @@ void LoadConfigXmlCommand::Execute()
 		"\"Value\" : \"%s\"\n"
 		"}";
 
-	Options::OptEntries* pOptEntries = new Options::OptEntries();
-	if (!g_pOptions->LoadConfig(pOptEntries))
+	char* szDomain;
+	if (!NextParamAsStr(&szDomain))
 	{
-		BuildErrorResponse(3, "Could not read configuration file");
+		BuildErrorResponse(2, "Invalid parameter");
+		return;
+	}
+
+	const char* szConfigFile = NULL;
+	Options::EDomain eDomain;
+
+	if (!strcasecmp(szDomain, "SERVER"))
+	{
+		eDomain = Options::dmServer;
+		szConfigFile = g_pOptions->GetConfigFilename();
+	}
+	else if (!strcasecmp(szDomain, "POST"))
+	{
+		eDomain = Options::dmPostProcess;
+		szConfigFile = g_pOptions->GetPostConfigFilename();
+	}
+	else
+	{
+		BuildErrorResponse(2, "Invalid parameter");
+		return;
+	}
+
+	Options::OptEntries* pOptEntries = new Options::OptEntries();
+	if (!g_pOptions->LoadConfig(eDomain, pOptEntries))
+	{
+		BuildErrorResponse(3, "Could not read configuration file %s", szConfigFile);
 		delete pOptEntries;
 		return;
 	}
@@ -2249,9 +2269,38 @@ void LoadConfigXmlCommand::Execute()
 	AppendResponse(IsJson() ? "\n]" : "</data></array>\n");
 }
 
-// bool saveconfig(struct[] data)
+// bool saveconfig(string domain, struct[] data)
 void SaveConfigXmlCommand::Execute()
 {
+	char* szDomain;
+	if (!NextParamAsStr(&szDomain))
+	{
+		BuildErrorResponse(2, "Invalid parameter");
+		return;
+	}
+
+	Options::EDomain eDomain;
+
+	if (!strcasecmp(szDomain, "SERVER"))
+	{
+		eDomain = Options::dmServer;
+	}
+	else if (!strcasecmp(szDomain, "POST"))
+	{
+		eDomain = Options::dmPostProcess;
+		const char* szConfigFile = g_pOptions->GetPostConfigFilename();
+		if (!szConfigFile)
+		{
+			BuildErrorResponse(3, "Post-processing script configuration file is not defined");
+			return;
+		}
+	}
+	else
+	{
+		BuildErrorResponse(2, "Invalid parameter");
+		return;
+	}
+
 	Options::OptEntries* pOptEntries = new Options::OptEntries();
 
 	char* szName;
@@ -2265,71 +2314,9 @@ void SaveConfigXmlCommand::Execute()
 	}
 
 	// save to config file
-	bool bOK = g_pOptions->SaveConfig(pOptEntries);
+	bool bOK = g_pOptions->SaveConfig(eDomain, pOptEntries);
 
 	delete pOptEntries;
 
 	BuildBoolResponse(bOK);
-}
-
-// struct[] configtemplates()
-void ConfigTemplatesXmlCommand::Execute()
-{
-	const char* XML_CONFIG_ITEM = 
-		"<value><struct>\n"
-		"<member><name>Name</name><value><string>%s</string></value></member>\n"
-		"<member><name>DisplayName</name><value><string>%s</string></value></member>\n"
-		"<member><name>Template</name><value><string>%s</string></value></member>\n"
-		"</struct></value>\n";
-
-	const char* JSON_CONFIG_ITEM = 
-		"{\n"
-		"\"Name\" : \"%s\",\n"
-		"\"DisplayName\" : \"%s\",\n"
-		"\"Template\" : \"%s\"\n"
-		"}";
-
-	Options::ConfigTemplates* pConfigTemplates = new Options::ConfigTemplates();
-
-	if (!g_pOptions->LoadConfigTemplates(pConfigTemplates))
-	{
-		BuildErrorResponse(3, "Could not read configuration templates");
-		delete pConfigTemplates;
-		return;
-	}
-
-	AppendResponse(IsJson() ? "[\n" : "<array><data>\n");
-
-	int index = 0;
-
-	for (Options::ConfigTemplates::iterator it = pConfigTemplates->begin(); it != pConfigTemplates->end(); it++)
-	{
-		Options::ConfigTemplate* pConfigTemplate = *it;
-
-		char* xmlName = EncodeStr(pConfigTemplate->GetName());
-		char* xmlDisplayName = EncodeStr(pConfigTemplate->GetDisplayName());
-		char* xmlTemplate = EncodeStr(pConfigTemplate->GetTemplate());
-
-		int szItemBufSize = strlen(xmlName) + strlen(xmlTemplate) + 1024;
-		char* szItemBuf = (char*)malloc(szItemBufSize);
-
-		snprintf(szItemBuf, szItemBufSize, IsJson() ? JSON_CONFIG_ITEM : XML_CONFIG_ITEM, xmlName, xmlDisplayName, xmlTemplate);
-		szItemBuf[szItemBufSize-1] = '\0';
-
-		free(xmlName);
-		free(xmlDisplayName);
-		free(xmlTemplate);
-
-		if (IsJson() && index++ > 0)
-		{
-			AppendResponse(",\n");
-		}
-		AppendResponse(szItemBuf);
-
-		free(szItemBuf);
-	}
-
-	delete pConfigTemplates;
-
-	AppendResponse(IsJson() ? "\n]" : "</data></array>\n");
 }

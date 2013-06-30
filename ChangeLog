@@ -1,7 +1,3 @@
-nzbget-11.0:
-  - please see subversion log at
-    http://sourceforge.net/p/nzbget/code/log
-
 nzbget-10.2:
   - fixed potential segfault which could happen with file paths longer
     than 1024 characters;

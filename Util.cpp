@@ -1,7 +1,7 @@
 /*
  *  This file is part of nzbget
  *
- *  Copyright (C) 2007-2013 Andrey Prygunkov <hugbug@users.sourceforge.net>
+ *  Copyright (C) 2007-2010 Andrey Prygunkov <hugbug@users.sourceforge.net>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -140,7 +140,15 @@ int getopt(int argc, char *argv[], char *optstring)
 DirBrowser::DirBrowser(const char* szPath)
 {
 	char szMask[MAX_PATH + 1];
-	snprintf(szMask, MAX_PATH + 1, "%s%c*.*", szPath, (int)PATH_SEPARATOR);
+	int len = strlen(szPath);
+	if (szPath[len] == '\\' || szPath[len] == '/')
+	{
+		snprintf(szMask, MAX_PATH + 1, "%s*.*", szPath);
+	}
+	else
+	{
+		snprintf(szMask, MAX_PATH + 1, "%s%c*.*", szPath, (int)PATH_SEPARATOR);
+	}
 	szMask[MAX_PATH] = '\0';
 	m_hFile = _findfirst(szMask, &m_FindData);
 	m_bFirst = true;
@@ -203,36 +211,6 @@ const char* DirBrowser::Next()
 
 #endif
 
-
-StringBuilder::StringBuilder()
-{
-	m_szBuffer = NULL;
-	m_iBufferSize = 0;
-	m_iUsedSize = 0;
-}
-
-StringBuilder::~StringBuilder()
-{
-	if (m_szBuffer)
-	{
-		free(m_szBuffer);
-	}
-}
-
-void StringBuilder::Append(const char* szStr)
-{
-	int iPartLen = strlen(szStr);
-	if (m_iUsedSize + iPartLen + 1 > m_iBufferSize)
-	{
-		m_iBufferSize += iPartLen + 10240;
-		m_szBuffer = (char*)realloc(m_szBuffer, m_iBufferSize);
-	}
-	strcpy(m_szBuffer + m_iUsedSize, szStr);
-	m_iUsedSize += iPartLen;
-	m_szBuffer[m_iUsedSize] = '\0';
-}
-
-
 char Util::VersionRevisionBuf[40];
 
 char* Util::BaseFileName(const char* filename)
@@ -267,13 +245,9 @@ void Util::NormalizePathSeparators(char* szPath)
 	}
 }
 
-bool Util::ForceDirectories(const char* szPath, char* szErrBuf, int iBufSize)
+bool Util::ForceDirectories(const char* szPath)
 {
-	*szErrBuf = '\0';
-	char szSysErrStr[256];
-	char szNormPath[1024];
-	strncpy(szNormPath, szPath, 1024);
-	szNormPath[1024-1] = '\0';
+	char* szNormPath = strdup(szPath);
 	NormalizePathSeparators(szNormPath);
 	int iLen = strlen(szNormPath);
 	if ((iLen > 0) && szNormPath[iLen-1] == PATH_SEPARATOR
@@ -286,30 +260,15 @@ bool Util::ForceDirectories(const char* szPath, char* szErrBuf, int iBufSize)
 	}
 
 	struct stat buffer;
-	bool bOK = !stat(szNormPath, &buffer);
-	if (!bOK && errno != ENOENT)
-	{
-		snprintf(szErrBuf, iBufSize, "could not read information for directory %s: errno %i, %s", szNormPath, errno, GetLastErrorMessage(szSysErrStr, sizeof(szSysErrStr)));
-		szErrBuf[iBufSize-1] = 0;
-		return false;
-	}
-	
-	if (bOK && !S_ISDIR(buffer.st_mode))
-	{
-		snprintf(szErrBuf, iBufSize, "path %s is not a directory", szNormPath);
-		szErrBuf[iBufSize-1] = 0;
-		return false;
-	}
-	
+	bool bOK = !stat(szNormPath, &buffer) && S_ISDIR(buffer.st_mode);
 	if (!bOK
 #ifdef WIN32
 		&& strlen(szNormPath) > 2
 #endif
 		)
 	{
-		char szParentPath[1024];
-		strncpy(szParentPath, szNormPath, 1024);
-		szParentPath[1024-1] = '\0';
+		char* szParentPath = strdup(szNormPath);
+		bOK = true;
 		char* p = (char*)strrchr(szParentPath, PATH_SEPARATOR);
 		if (p)
 		{
@@ -323,35 +282,20 @@ bool Util::ForceDirectories(const char* szPath, char* szErrBuf, int iBufSize)
 			{
 				*p = '\0';
 			}
-			if (strlen(szParentPath) != strlen(szPath) && !ForceDirectories(szParentPath, szErrBuf, iBufSize))
+			if (strlen(szParentPath) != strlen(szPath))
 			{
-				return false;
+				bOK = ForceDirectories(szParentPath);
 			}
 		}
-		
-		if (mkdir(szNormPath, S_DIRMODE) != 0 && errno != EEXIST)
+		if (bOK)
 		{
-			snprintf(szErrBuf, iBufSize, "could not create directory %s: %s", szNormPath, GetLastErrorMessage(szSysErrStr, sizeof(szSysErrStr)));
-			szErrBuf[iBufSize-1] = 0;
-			return false;
+			mkdir(szNormPath, S_DIRMODE);
+			bOK = !stat(szNormPath, &buffer) && S_ISDIR(buffer.st_mode);
 		}
-			
-		if (stat(szNormPath, &buffer) != 0)
-		{
-			snprintf(szErrBuf, iBufSize, "could not read information for directory %s: %s", szNormPath, GetLastErrorMessage(szSysErrStr, sizeof(szSysErrStr)));
-			szErrBuf[iBufSize-1] = 0;
-			return false;
-		}
-		
-		if (!S_ISDIR(buffer.st_mode))
-		{
-			snprintf(szErrBuf, iBufSize, "path %s is not a directory", szNormPath);
-			szErrBuf[iBufSize-1] = 0;
-			return false;
-		}
+		free(szParentPath);
 	}
-
-	return true;
+	free(szNormPath);
+	return bOK;
 }
 
 bool Util::GetCurrentDirectory(char* szBuffer, int iBufSize)
@@ -415,20 +359,6 @@ bool Util::LoadFileIntoBuffer(const char* szFileName, char** pBuffer, int* pBuff
     *pBufferLength = iSize + 1;
 
     return true;
-}
-
-bool Util::SaveBufferIntoFile(const char* szFileName, const char* szBuffer, int iBufLen)
-{
-    FILE* pFile = fopen(szFileName, "wb");
-    if (!pFile)
-    {
-        return false;
-    }
-
-	int iWrittenBytes = fwrite(szBuffer, 1, iBufLen, pFile);
-    fclose(pFile);
-
-	return iWrittenBytes = iBufLen;
 }
 
 bool Util::CreateSparseFile(const char* szFilename, int iSize)
@@ -711,8 +641,13 @@ long long Util::FileSize(const char* szFilename)
 	struct _stat32i64 buffer;
 	_stat32i64(szFilename, &buffer);
 #else
+#ifdef HAVE_STAT64
+	struct stat64 buffer;
+	stat64(szFilename, &buffer);
+#else
 	struct stat buffer;
 	stat(szFilename, &buffer);
+#endif
 #endif
 	return buffer.st_size;
 }
@@ -858,23 +793,6 @@ void Util::FormatFileSize(char * szBuffer, int iBufLen, long long lFileSize)
 	szBuffer[iBufLen - 1] = '\0';
 }
 
-bool Util::SameFilename(const char* szFilename1, const char* szFilename2)
-{
-#ifdef WIN32
-	return strcasecmp(szFilename1, szFilename2) == 0;
-#else
-	return strcmp(szFilename1, szFilename2) == 0;
-#endif
-}
-
-char* Util::GetLastErrorMessage(char* szBuffer, int iBufLen)
-{
-	szBuffer[0] = '\0';
-	strerror_r(errno, szBuffer, iBufLen);
-	szBuffer[iBufLen-1] = '\0';
-	return szBuffer;
-}
-
 void Util::InitVersionRevision()
 {
 #ifndef WIN32
@@ -973,41 +891,13 @@ void Util::TrimRight(char* szStr)
 {
 	int iLen = strlen(szStr);
 	char ch = szStr[iLen-1];
-	while (iLen > 0 && (ch == '\n' || ch == '\r' || ch == ' ' || ch == '\t'))
+	while (*szStr && (ch == '\n' || ch == '\r' || ch == ' ' || ch == '\t'))
 	{
 		szStr[iLen-1] = 0;
 		iLen--;
 		ch = szStr[iLen-1];
 	}
 }
-
-char* Util::Trim(char* szStr)
-{
-	TrimRight(szStr);
-	char ch = *szStr;
-	while (ch == '\n' || ch == '\r' || ch == ' ' || ch == '\t')
-	{
-		szStr++;
-		ch = *szStr;
-	}
-	return szStr;
-}
-
-#ifdef WIN32
-bool Util::RegReadStr(HKEY hKey, const char* szKeyName, const char* szValueName, char* szBuffer, int* iBufLen)
-{
-	HKEY hSubKey;
-	if (!RegOpenKeyEx(hKey, szKeyName, 0, KEY_READ, &hSubKey))
-	{
-		DWORD iRetBytes = *iBufLen;
-		LONG iRet = RegQueryValueEx(hSubKey, szValueName, NULL, NULL, (LPBYTE)szBuffer, &iRetBytes);
-		*iBufLen = iRetBytes;
-		RegCloseKey(hSubKey);
-		return iRet == 0;
-	}
-	return false;
-}
-#endif
 
 
 unsigned int WebUtil::DecodeBase64(char* szInputBuffer, int iInputBufferLength, char* szOutputBuffer)
@@ -1070,9 +960,9 @@ char* WebUtil::XmlEncode(const char* raw)
 				iReqSize += 6;
 				break;
 			default:
-				if (ch < 0x20 || ch >= 0x80)
+				if (ch >= 0x80)
 				{
-					iReqSize += 10;
+					iReqSize += 6;
 					break;
 				}
 		}
@@ -1110,51 +1000,10 @@ char* WebUtil::XmlEncode(const char* raw)
 				output += 6;
 				break;
 			default:
-				if (ch < 0x20 || ch > 0x80)
+				if (ch >= 0x80)
 				{
-					unsigned int cp = ch;
-
-					// decode utf8
-					if ((cp >> 5) == 0x6 && (p[1] & 0xc0) == 0x80)
-					{
-						// 2 bytes
-						if (!(ch = *++p)) goto BreakLoop; // read next char
-						cp = ((cp << 6) & 0x7ff) + (ch & 0x3f);
-					}
-					else if ((cp >> 4) == 0xe && (p[1] & 0xc0) == 0x80)
-					{
-						// 3 bytes
-						if (!(ch = *++p)) goto BreakLoop; // read next char
-						cp = ((cp << 12) & 0xffff) + ((ch << 6) & 0xfff);
-						if (!(ch = *++p)) goto BreakLoop; // read next char
-						cp += ch & 0x3f;
-					}
-					else if ((cp >> 3) == 0x1e && (p[1] & 0xc0) == 0x80)
-					{
-						// 4 bytes
-						if (!(ch = *++p)) goto BreakLoop; // read next char
-						cp = ((cp << 18) & 0x1fffff) + ((ch << 12) & 0x3ffff);
-						if (!(ch = *++p)) goto BreakLoop; // read next char
-						cp += (ch << 6) & 0xfff;
-						if (!(ch = *++p)) goto BreakLoop; // read next char
-						cp += ch & 0x3f;
-					}
-
-					// accept only valid XML 1.0 characters
-					if (cp == 0x9 || cp == 0xA || cp == 0xD || 
-						(0x20 <= cp && cp <= 0xD7FF) ||
-						(0xE000 <= cp && cp <= 0xFFFD) ||
-						(0x10000 <= cp && cp <= 0x10FFFF))
-					{
-						sprintf(output, "&#x%06x;", cp);
-						output += 10;
-					}
-					else
-					{
-						// replace invalid characters with dots
-						sprintf(output, ".");
-						output += 1;
-					}
+					sprintf(output, "&#%i;", ch);
+					output += 6;
 				}
 				else
 				{
@@ -1348,38 +1197,9 @@ char* WebUtil::JsonEncode(const char* raw)
 				output += 2;
 				break;
 			default:
-				if (ch < 0x20 || ch > 0x80)
+				if (ch < 0x20 || ch >= 0x80)
 				{
-					unsigned int cp = ch;
-
-					// decode utf8
-					if ((cp >> 5) == 0x6 && (p[1] & 0xc0) == 0x80)
-					{
-						// 2 bytes
-						if (!(ch = *++p)) goto BreakLoop; // read next char
-						cp = ((cp << 6) & 0x7ff) + (ch & 0x3f);
-					}
-					else if ((cp >> 4) == 0xe && (p[1] & 0xc0) == 0x80)
-					{
-						// 3 bytes
-						if (!(ch = *++p)) goto BreakLoop; // read next char
-						cp = ((cp << 12) & 0xffff) + ((ch << 6) & 0xfff);
-						if (!(ch = *++p)) goto BreakLoop; // read next char
-						cp += ch & 0x3f;
-					}
-					else if ((cp >> 3) == 0x1e && (p[1] & 0xc0) == 0x80)
-					{
-						// 4 bytes
-						if (!(ch = *++p)) goto BreakLoop; // read next char
-						cp = ((cp << 18) & 0x1fffff) + ((ch << 12) & 0x3ffff);
-						if (!(ch = *++p)) goto BreakLoop; // read next char
-						cp += (ch << 6) & 0xfff;
-						if (!(ch = *++p)) goto BreakLoop; // read next char
-						cp += ch & 0x3f;
-					}
-
-					// we support only Unicode range U+0000-U+FFFF
-					sprintf(output, "\\u%04x", cp <= 0xFFFF ? cp : '.');
+					sprintf(output, "\\u%04x", ch);
 					output += 6;
 				}
 				else

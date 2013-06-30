@@ -63,7 +63,6 @@ private:
 	QueueEditor				m_QueueEditor;
 	Mutex			 		m_mutexDownloadQueue;
 	bool					m_bHasMoreJobs;
-	int						m_iDownloadsLimit;
 
 	// statistics
 	static const int		SPEEDMETER_SLOTS = 30;    
@@ -90,6 +89,7 @@ private:
 
 	bool					GetNextArticle(FileInfo* &pFileInfo, ArticleInfo* &pArticleInfo);
 	void					StartArticleDownload(FileInfo* pFileInfo, ArticleInfo* pArticleInfo, NNTPConnection* pConnection);
+	void					BuildArticleFilename(ArticleDownloader* pArticleDownloader, FileInfo* pFileInfo, ArticleInfo* pArticleInfo);
 	bool					IsDupe(FileInfo* pFileInfo);
 	void					ArticleCompleted(ArticleDownloader* pArticleDownloader);
 	void					DeleteFileInfo(FileInfo* pFileInfo, bool bCompleted);
@@ -121,7 +121,6 @@ public:
 	bool					SetQueueEntryNZBCategory(NZBInfo* pNZBInfo, const char* szCategory);
 	bool					SetQueueEntryNZBName(NZBInfo* pNZBInfo, const char* szName);
 	bool					MergeQueueEntries(NZBInfo* pDestNZBInfo, NZBInfo* pSrcNZBInfo);
-	bool					SplitQueueEntries(FileQueue* pFileList, const char* szName, NZBInfo** pNewNZBInfo);
 	void					DiscardDiskFile(FileInfo* pFileInfo);
 	QueueEditor*			GetQueueEditor() { return &m_QueueEditor; }
 

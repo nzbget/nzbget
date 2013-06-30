@@ -27,6 +27,7 @@
 #define SCRIPTCONTROLLER_H
 
 #include <list>
+#include <fstream>
 
 #include "Log.h"
 #include "Thread.h"
@@ -43,7 +44,6 @@ private:
 public:
 						EnvironmentStrings();
 						~EnvironmentStrings();
-	void				Clear();
 	void				InitFromCurrentProcess();
 	void				Append(char* szString);
 #ifdef WIN32
@@ -60,28 +60,26 @@ private:
 	const char*			m_szWorkingDir;
 	const char**		m_szArgs;
 	bool				m_bFreeArgs;
-	const char*			m_szStdArgs[2];
 	const char*			m_szInfoName;
-	const char*			m_szLogPrefix;
+	const char*			m_szDefaultKindPrefix;
 	EnvironmentStrings	m_environmentStrings;
+	Options::EScriptLogKind	m_eDefaultLogKind;
 	bool				m_bTerminated;
 #ifdef WIN32
 	HANDLE				m_hProcess;
-	char				m_szCmdLine[2048];
 #else
 	pid_t				m_hProcess;
 #endif
+
+	void				PrepareEnvOptions();
 
 protected:
 	void				ProcessOutput(char* szText);
 	virtual bool		ReadLine(char* szBuf, int iBufSize, FILE* pStream);
 	void				PrintMessage(Message::EKind eKind, const char* szFormat, ...);
-	virtual void		AddMessage(Message::EKind eKind, const char* szText);
+	virtual void		AddMessage(Message::EKind eKind, bool bDefaultKind, const char* szText);
 	bool				GetTerminated() { return m_bTerminated; }
-	void				ResetEnv();
-	void				PrepareEnvOptions(const char* szStripPrefix);
-	void				PrepareEnvParameters(NZBInfo* pNZBInfo, const char* szStripPrefix);
-	void				PrepareArgs();
+	void				PrepareEnvParameters(NZBInfo* pNZBInfo);
 
 public:
 						ScriptController();
@@ -95,51 +93,39 @@ public:
 	void				SetArgs(const char** szArgs, bool bFreeArgs) { m_szArgs = szArgs; m_bFreeArgs = bFreeArgs; }
 	void				SetInfoName(const char* szInfoName) { m_szInfoName = szInfoName; }
 	const char*			GetInfoName() { return m_szInfoName; }
-	void				SetLogPrefix(const char* szLogPrefix) { m_szLogPrefix = szLogPrefix; }
+	void				SetDefaultKindPrefix(const char* szDefaultKindPrefix) { m_szDefaultKindPrefix = szDefaultKindPrefix; }
+	void				SetDefaultLogKind(Options::EScriptLogKind eDefaultLogKind) { m_eDefaultLogKind = eDefaultLogKind; }
 	void				SetEnvVar(const char* szName, const char* szValue);
-	void				SetEnvVarSpecial(const char* szPrefix, const char* szName, const char* szValue);
 };
 
 class PostScriptController : public Thread, public ScriptController
 {
 private:
 	PostInfo*			m_pPostInfo;
-	char				m_szNZBName[1024];
- 
-	void				ExecuteScript(const char* szScriptName, const char* szDisplayName, const char* szLocation);
-	void				PrepareParams(const char* szScriptName);
-	ScriptStatus::EStatus	AnalyseExitCode(int iExitCode);
-
-	typedef std::deque<char*>		FileList;
+	bool				m_bNZBFileCompleted;
+	bool				m_bHasFailedParJobs;
 
 protected:
-	virtual void		AddMessage(Message::EKind eKind, const char* szText);
+	virtual void		AddMessage(Message::EKind eKind, bool bDefaultKind, const char* szText);
 
 public:
 	virtual void		Run();
 	virtual void		Stop();
-	static void			StartJob(PostInfo* pPostInfo);
-	static void			InitParamsForNewNZB(NZBInfo* pNZBInfo);
+	static void			StartScriptJob(PostInfo* pPostInfo, bool bNZBFileCompleted, bool bHasFailedParJobs);
 };
 
 class NZBScriptController : public ScriptController
 {
 private:
-	char**				m_pNZBName;
 	char**				m_pCategory;
 	int*				m_iPriority;
-	NZBParameterList*	m_pParameters;
-	bool*				m_bAddTop;
-	bool*				m_bAddPaused;
-	int					m_iPrefixLen;
+	NZBParameterList*	m_pParameterList;
 
 protected:
-	virtual void		AddMessage(Message::EKind eKind, const char* szText);
+	virtual void		AddMessage(Message::EKind eKind, bool bDefaultKind, const char* szText);
 
 public:
-	static void			ExecuteScript(const char* szScript, const char* szNZBFilename, const char* szDirectory,
-							char** pNZBName, char** pCategory, int* iPriority, NZBParameterList* pParameters,
-							bool* bAddTop, bool* bAddPaused);
+	static void			ExecuteScript(const char* szScript, const char* szNZBFilename, const char* szDirectory, char** pCategory, int* iPriority, NZBParameterList* pParameterList);
 };
 
 class NZBAddedScriptController : public Thread, public ScriptController

@@ -416,14 +416,7 @@ var Downloads = (new function($)
 		notification = '#Notif_Downloads_Resumed';
 		RPC.call('editqueue', ['GroupResume', 0, '', checkedEditIDs], function()
 		{
-			if (Options.option('ParCheck') === 'force')
-			{
-				editCompleted();
-			}
-			else
-			{
-				RPC.call('editqueue', ['GroupPauseExtraPars', 0, '', checkedEditIDs], editCompleted);
-			}
+			RPC.call('editqueue', ['GroupPauseExtraPars', 0, '', checkedEditIDs], editCompleted);
 		});
 	}
 
@@ -480,9 +473,6 @@ var Downloads = (new function($)
 			}
 		};
 
-		Util.show('#DownloadsDeleteConfirmDialog_Cleanup', Options.option('DeleteCleanupDisk') === 'yes');
-		Util.show('#DownloadsDeleteConfirmDialog_Remain', Options.option('DeleteCleanupDisk') != 'yes');
-		
 		ConfirmDialog.showModal('DownloadsDeleteConfirmDialog', deleteGroups);
 	}
 
@@ -663,8 +653,6 @@ var DownloadsUI = (new function($)
 					if (group.post.Log && group.post.Log.length > 0)
 					{
 						text = group.post.Log[group.post.Log.length-1].Text;
-						// remove "for <nzb-name>" from label text
-						text = text.replace(' for ' + group.NZBName, ' ');
 					}
 					else
 					{

@@ -2,7 +2,7 @@
  *  This file is part of nzbget
  *
  *  Copyright (C) 2004 Sven Henkel <sidddy@users.sourceforge.net>
- *  Copyright (C) 2007-2013 Andrey Prygunkov <hugbug@users.sourceforge.net>
+ *  Copyright (C) 2007-2010 Andrey Prygunkov <hugbug@users.sourceforge.net>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -34,7 +34,8 @@
 
 #include <stdlib.h>
 #include <string.h>
-#include <stdio.h>
+#include <cstdio>
+#include <fstream>
 #ifndef WIN32
 #include <unistd.h>
 #include <arpa/inet.h>
@@ -235,10 +236,6 @@ void Frontend::InitMessageBase(SNZBRequestBase* pMessageBase, int iRequest, int 
 	pMessageBase->m_iSignature	= htonl(NZBMESSAGE_SIGNATURE);
 	pMessageBase->m_iType = htonl(iRequest);
 	pMessageBase->m_iStructSize = htonl(iSize);
-
-	strncpy(pMessageBase->m_szUsername, g_pOptions->GetControlUsername(), NZBREQUESTPASSWORDSIZE - 1);
-	pMessageBase->m_szUsername[NZBREQUESTPASSWORDSIZE - 1] = '\0';
-
 	strncpy(pMessageBase->m_szPassword, g_pOptions->GetControlPassword(), NZBREQUESTPASSWORDSIZE);
 	pMessageBase->m_szPassword[NZBREQUESTPASSWORDSIZE - 1] = '\0';
 }

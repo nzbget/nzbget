@@ -34,7 +34,7 @@
 
 #include <stdlib.h>
 #include <string.h>
-#include <stdio.h>
+#include <cstdio>
 #include <sys/stat.h>
 #ifndef WIN32
 #include <unistd.h>
@@ -117,17 +117,6 @@ void QueueCoordinator::Run()
 
 	m_mutexDownloadQueue.Unlock();
 
-	// compute maximum number of allowed download threads
-	m_iDownloadsLimit = 2; // two extra threads for completing files (when connections are not needed)
-	for (ServerPool::Servers::iterator it = g_pServerPool->GetServers()->begin(); it != g_pServerPool->GetServers()->end(); it++)
-	{
-		NewsServer* pNewsServer = *it;
-		if (pNewsServer->GetLevel() == 0)
-		{
-			m_iDownloadsLimit += pNewsServer->GetMaxConnections();
-		}
-	}
-
 	m_tStartServer = time(NULL);
 	m_tLastCheck = m_tStartServer;
 	bool bWasStandBy = true;
@@ -144,27 +133,21 @@ void QueueCoordinator::Run()
 				// start download for next article
 				FileInfo* pFileInfo;
 				ArticleInfo* pArticleInfo;
-				bool bFreeConnection = false;
-				
+
 				m_mutexDownloadQueue.Lock();
 				bool bHasMoreArticles = GetNextArticle(pFileInfo, pArticleInfo);
 				bArticeDownloadsRunning = !m_ActiveDownloads.empty();
 				m_bHasMoreJobs = bHasMoreArticles || bArticeDownloadsRunning;
-				if (bHasMoreArticles && !IsStopped() && (int)m_ActiveDownloads.size() < m_iDownloadsLimit)
+				if (bHasMoreArticles && !IsStopped() && Thread::GetThreadCount() < g_pOptions->GetThreadLimit())
 				{
 					StartArticleDownload(pFileInfo, pArticleInfo, pConnection);
 					bArticeDownloadsRunning = true;
 				}
 				else
 				{
-					bFreeConnection = true;
-				}
-				m_mutexDownloadQueue.Unlock();
-				
-				if (bFreeConnection)
-				{
 					g_pServerPool->FreeConnection(pConnection, false);
 				}
+				m_mutexDownloadQueue.Unlock();
 			}
 		}
 		else
@@ -565,17 +548,52 @@ void QueueCoordinator::StartArticleDownload(FileInfo* pFileInfo, ArticleInfo* pA
 	pArticleDownloader->SetFileInfo(pFileInfo);
 	pArticleDownloader->SetArticleInfo(pArticleInfo);
 	pArticleDownloader->SetConnection(pConnection);
-
-	char szInfoName[1024];
-	snprintf(szInfoName, 1024, "%s%c%s [%i/%i]", pFileInfo->GetNZBInfo()->GetName(), (int)PATH_SEPARATOR, pFileInfo->GetFilename(), pArticleInfo->GetPartNumber(), pFileInfo->GetArticles()->size());
-	szInfoName[1024-1] = '\0';
-	pArticleDownloader->SetInfoName(szInfoName);
+	BuildArticleFilename(pArticleDownloader, pFileInfo, pArticleInfo);
 
 	pArticleInfo->SetStatus(ArticleInfo::aiRunning);
 	pFileInfo->SetActiveDownloads(pFileInfo->GetActiveDownloads() + 1);
 
 	m_ActiveDownloads.push_back(pArticleDownloader);
 	pArticleDownloader->Start();
+}
+
+void QueueCoordinator::BuildArticleFilename(ArticleDownloader* pArticleDownloader, FileInfo* pFileInfo, ArticleInfo* pArticleInfo)
+{
+	char name[1024];
+	
+	snprintf(name, 1024, "%s%i.%03i", g_pOptions->GetTempDir(), pFileInfo->GetID(), pArticleInfo->GetPartNumber());
+	name[1024-1] = '\0';
+	pArticleInfo->SetResultFilename(name);
+
+	char tmpname[1024];
+	snprintf(tmpname, 1024, "%s.tmp", name);
+	tmpname[1024-1] = '\0';
+	pArticleDownloader->SetTempFilename(tmpname);
+
+	snprintf(name, 1024, "%s%c%s [%i/%i]", pFileInfo->GetNZBInfo()->GetName(), (int)PATH_SEPARATOR, pFileInfo->GetFilename(), pArticleInfo->GetPartNumber(), pFileInfo->GetArticles()->size());
+	name[1024-1] = '\0';
+	pArticleDownloader->SetInfoName(name);
+
+	if (g_pOptions->GetDirectWrite())
+	{
+		pFileInfo->LockOutputFile();
+
+		if (pFileInfo->GetOutputFilename())
+		{
+			strncpy(name, pFileInfo->GetOutputFilename(), 1024);
+			name[1024-1] = '\0';
+		}
+		else
+		{
+			snprintf(name, 1024, "%s%c%i.out.tmp", pFileInfo->GetNZBInfo()->GetDestDir(), (int)PATH_SEPARATOR, pFileInfo->GetID());
+			name[1024-1] = '\0';
+			pFileInfo->SetOutputFilename(name);
+		}
+
+		pFileInfo->UnlockOutputFile();
+
+		pArticleDownloader->SetOutputFilename(name);
+	}
 }
 
 DownloadQueue* QueueCoordinator::LockQueue()
@@ -644,7 +662,6 @@ void QueueCoordinator::ArticleCompleted(ArticleDownloader* pArticleDownloader)
 		{
 			warn("File \"%s\" seems to be duplicate, cancelling download and deleting file from queue", pFileInfo->GetFilename());
 			fileCompleted = false;
-			pFileInfo->SetAutoDeleted(true);
 			DeleteQueueEntry(pFileInfo);
 		}
 	}
@@ -926,7 +943,7 @@ void QueueCoordinator::AdjustStartTime()
 	if (tDiff > 60 || tDiff < 0)
 	{
 		m_tStartServer += tDiff + 1; // "1" because the method is called once per second
-		if (m_tStartDownload != 0 && !m_bStandBy)
+		if (m_tStartDownload != 0)
 		{
 			m_tStartDownload += tDiff + 1;
 		}
@@ -1029,78 +1046,5 @@ bool QueueCoordinator::MergeQueueEntries(NZBInfo* pDestNZBInfo, NZBInfo* pSrcNZB
 	pDestNZBInfo->SetQueuedFilename(szQueuedFilename);
 	free(szQueuedFilename);
 
-	return true;
-}
-
-/*
- * Creates new nzb-item out of existing files from other nzb-items.
- * If any of file-items is being downloaded the command fail.
- * For each file-item an event "eaFileDeleted" is fired.
- *
- * NOTE: DownloadQueue must be locked prior to call of this function
- */
-bool QueueCoordinator::SplitQueueEntries(FileQueue* pFileList, const char* szName, NZBInfo** pNewNZBInfo)
-{
-	if (pFileList->empty())
-	{
-		return false;
-	}
-
-	NZBInfo* pSrcNZBInfo = NULL;
-
-	for (FileQueue::iterator it = pFileList->begin(); it != pFileList->end(); it++)
-	{
-		FileInfo* pFileInfo = *it;
-		if (pFileInfo->GetActiveDownloads() > 0 || pFileInfo->GetCompleted() > 0)
-		{
-			error("Could not split %s. File is already (partially) downloaded", pFileInfo->GetFilename());
-			return false;
-		}
-		if (pFileInfo->GetNZBInfo()->GetPostProcess())
-		{
-			error("Could not split %s. File in post-process-stage", pFileInfo->GetFilename());
-			return false;
-		}
-		if (!pSrcNZBInfo)
-		{
-			pSrcNZBInfo = pFileInfo->GetNZBInfo();
-		}
-	}
-
-	NZBInfo* pNZBInfo = new NZBInfo();
-	pNZBInfo->AddReference();
-	m_DownloadQueue.GetNZBInfoList()->Add(pNZBInfo);
-
-	pNZBInfo->SetFilename(pSrcNZBInfo->GetFilename());
-	pNZBInfo->SetName(szName);
-	pNZBInfo->SetCategory(pSrcNZBInfo->GetCategory());
-	pNZBInfo->BuildDestDirName();
-	pNZBInfo->SetQueuedFilename(pSrcNZBInfo->GetQueuedFilename());
-
-	for (NZBParameterList::iterator it = pSrcNZBInfo->GetParameters()->begin(); it != pSrcNZBInfo->GetParameters()->end(); it++)
-	{
-		NZBParameter* pNZBParameter = *it;
-		pNZBInfo->SetParameter(pNZBParameter->GetName(), pNZBParameter->GetValue());
-	}
-
-	for (FileQueue::iterator it = pFileList->begin(); it != pFileList->end(); it++)
-	{
-		FileInfo* pFileInfo = *it;
-
-		Aspect aspect = { eaFileDeleted, &m_DownloadQueue, pFileInfo->GetNZBInfo(), pFileInfo };
-		Notify(&aspect);
-
-		pFileInfo->SetNZBInfo(pNZBInfo);
-
-		pSrcNZBInfo->SetFileCount(pSrcNZBInfo->GetFileCount() - 1);
-		pSrcNZBInfo->SetSize(pSrcNZBInfo->GetSize() - pFileInfo->GetSize());
-
-		pNZBInfo->SetFileCount(pNZBInfo->GetFileCount() + 1);
-		pNZBInfo->SetSize(pNZBInfo->GetSize() + pFileInfo->GetSize());
-	}
-
-	pNZBInfo->Release();
-
-	*pNewNZBInfo = pNZBInfo;
 	return true;
 }

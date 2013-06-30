@@ -26,10 +26,11 @@
  * In this module:
  *   1) Web-interface intialization;
  *   2) Web-interface settings;
- *   3) Refresh handling;
- *   4) Window resize handling including automatic theme switching (desktop/phone);
- *   5) Confirmation dialog;
- *   6) Popup notifications.
+ *   3) RPC queue;
+ *   4) Refresh handling;
+ *   5) Window resize handling including automatic theme switching (desktop/phone);
+ *   6) Confirmation dialog;
+ *   7) Popup notifications.
  */
 
 /*** WEB-INTERFACE SETTINGS (THIS IS NOT NZBGET CONFIG!) ***********************************/
@@ -64,10 +65,6 @@ var UISettings = (new function($)
 	// The choosen interval is saved in web-browser and then restored.
 	// The default value sets the interval on first use only.
 	this.refreshInterval = 1;
-	
-	// Number of refresh attempts if a communication error occurs.
-	// If all attempts fail, an error is displayed and the automatic refresh stops.
-	this.refreshRetries = 4;
 
 	// URL for communication with NZBGet via JSON-RPC
 	this.rpcUrl = './jsonrpc';
@@ -143,7 +140,7 @@ var Frontend = (new function($)
 		$('#FirstUpdateInfo').show();
 
 		UISettings.load();
-		Refresher.init();
+		RPCController.init();
 		
 		initControls();
 		switchTheme();
@@ -152,26 +149,26 @@ var Frontend = (new function($)
 		Options.init();
 		Status.init();
 		Downloads.init({ updateTabInfo: updateTabInfo });
+		DownloadsEditDialog.init();
+		DownloadsMultiDialog.init();
+		DownloadsMergeDialog.init();
 		Messages.init({ updateTabInfo: updateTabInfo });
 		History.init({ updateTabInfo: updateTabInfo });
 		Upload.init();
 		Config.init({ updateTabInfo: updateTabInfo });
-		ConfigBackupRestore.init();
 		ConfirmDialog.init();
-		ScriptListDialog.init();
-		RestoreSettingsDialog.init();
 
-		DownloadsEditDialog.init();
-		DownloadsMultiDialog.init();
-		DownloadsMergeDialog.init();
-		DownloadsSplitDialog.init();
-		HistoryEditDialog.init();
-		
+		Refresher.init(RPCController.refresh);
+
 		$(window).resize(windowResized);
 
 		initialized = true;
 
 		Refresher.update();
+
+		// DEBUG: activate config tab
+		//$('#DownloadsTab').removeClass('fade').removeClass('in');
+		//$('#ConfigTabLink').tab('show');
 	}
 	
 	function initControls()
@@ -240,6 +237,8 @@ var Frontend = (new function($)
 			windowResized();
 			firstLoad = false;
 		}
+
+		Refresher.refreshCompleted();
 	}
 	
 	function beforeTabShow(e)
@@ -460,23 +459,15 @@ var Frontend = (new function($)
 }(jQuery));
 
 
-/*** REFRESH CONTROL *********************************************************/
+/*** RPC CONTROL *********************************************************/
 
-var Refresher = (new function($)
+var RPCController = (new function($)
 {
 	'use strict';
 
 	// State
 	var loadQueue;
 	var firstLoad = true;
-	var secondsToUpdate = -1;
-	var refreshTimer = 0;
-	var indicatorTimer = 0;
-	var indicatorFrame=0;
-	var refreshPaused = 0;
-	var refreshing = false;
-	var refreshNeeded = false;
-	var refreshErrors = 0;
 	
 	this.init = function()
 	{
@@ -484,17 +475,13 @@ var Refresher = (new function($)
 		RPC.connectErrorMessage = 'Cannot establish connection to NZBGet.'
 		RPC.defaultFailureCallback = rpcFailure;
 		RPC.next = loadNext;
-
-		$('#RefreshMenu li a').click(refreshIntervalClick);
-		$('#RefreshButton').click(refreshClick);
-		updateRefreshMenu();
 	}
 
-	function refresh()
+	this.refresh = function()
 	{
 		UISettings.connectionError = false;
 		$('#ErrorAlert').hide();
-		refreshStarted();
+		Refresher.refreshStarted();
 
 		loadQueue = new Array(
 			function() { Options.update(); },
@@ -524,44 +511,49 @@ var Refresher = (new function($)
 		{
 			firstLoad = false;
 			Frontend.loadCompleted();
-			refreshCompleted();
 		}
 	}
 
-	function rpcFailure(res, result)
+	function rpcFailure(res)
 	{
-		// If a communication error occurs during status refresh we retry:
-		// first attempt is made immediately, other attempts are made after defined refresh interval
-		if (refreshing && !(result && result.error))
-		{
-			refreshErrors = refreshErrors + 1;
-			if (refreshErrors === 1 && refreshErrors <= UISettings.refreshRetries)
-			{
-				refresh();
-				return;
-			}
-			else if (refreshErrors <= UISettings.refreshRetries)
-			{
-				$('#RefreshError').show();
-				scheduleNextRefresh();
-				return;
-			}
-		}
-		
-		Refresher.pause();
 		UISettings.connectionError = true;
 		$('#FirstUpdateInfo').hide();
 		$('#ErrorAlert-text').html(res);
 		$('#ErrorAlert').show();
-		$('#RefreshError').hide();
 		if (Status.status)
 		{
 			// stop animations
 			Status.redraw();
 		}
 	};
+}(jQuery));
 
-	function refreshStarted()
+
+/*** REFRESH CONTROL *********************************************************/
+
+var Refresher = (new function($)
+{
+	'use strict';
+
+	// State
+	var secondsToUpdate = -1;
+	var refreshTimer = 0;
+	var indicatorTimer = 0;
+	var indicatorFrame=0;
+	var refreshPaused = 0;
+	var refreshing = false;
+	var refreshNeeded = false;
+	var refreshCallback;
+	
+	this.init = function(refresh)
+	{
+		refreshCallback = refresh;
+		$('#RefreshMenu li a').click(refreshIntervalClick);
+		$('#RefreshButton').click(refreshClick);
+		updateRefreshMenu();
+	}
+
+	this.refreshStarted = function()
 	{
 		clearTimeout(refreshTimer);
 		refreshPaused = 0;
@@ -570,11 +562,9 @@ var Refresher = (new function($)
 		refreshAnimationShow();
 	}
 
-	function refreshCompleted()
+	this.refreshCompleted = function()
 	{
 		refreshing = false;
-		refreshErrors = 0;
-		$('#RefreshError').hide();
 		scheduleNextRefresh();
 	}
 
@@ -611,8 +601,7 @@ var Refresher = (new function($)
 			// force animation restart
 			indicatorFrame = 0;
 		}
-		refreshErrors = 0;
-		refresh();
+		refreshCallback();
 	}
 
 	function scheduleNextRefresh()
@@ -636,7 +625,7 @@ var Refresher = (new function($)
 		secondsToUpdate -= 0.1;
 		if (secondsToUpdate <= 0)
 		{
-			refresh();
+			refreshCallback();
 		}
 		else
 		{
@@ -674,7 +663,7 @@ var Refresher = (new function($)
 					'transform': 'rotate(' + degree + 'deg)'
 		});
 
-		if ((!refreshing && indicatorFrame === 0 && (UISettings.refreshInterval === 0 || UISettings.refreshInterval > 1 || !UISettings.refreshAnimation)) || UISettings.connectionError)
+		if (!refreshing && indicatorFrame === 0 && (UISettings.refreshInterval === 0 || UISettings.refreshInterval > 1 || !UISettings.refreshAnimation) || UISettings.connectionError)
 		{
 			indicatorTimer = 0;
 		}

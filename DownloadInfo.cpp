@@ -34,10 +34,10 @@
 
 #include <stdlib.h>
 #include <string.h>
-#include <stdio.h>
-#include <ctype.h>
-#include <sys/stat.h>
+#include <cctype>
+#include <cstdio>
 #include <map>
+#include <sys/stat.h>
 
 #include "nzbget.h"
 #include "DownloadInfo.h"
@@ -117,59 +117,6 @@ void NZBParameterList::SetParameter(const char* szName, const char* szValue)
 }
 
 
-ScriptStatus::ScriptStatus(const char* szName, EStatus eStatus)
-{
-	m_szName = strdup(szName);
-	m_eStatus = eStatus;
-}
-
-ScriptStatus::~ScriptStatus()
-{
-	if (m_szName)
-	{
-		free(m_szName);
-	}
-}
-
-
-ScriptStatusList::~ScriptStatusList()
-{
-	Clear();
-}
-
-void ScriptStatusList::Clear()
-{
-	for (iterator it = begin(); it != end(); it++)
-	{
-		delete *it;
-	}
-	clear();
-}
-
-void ScriptStatusList::Add(const char* szScriptName, ScriptStatus::EStatus eStatus)
-{
-	push_back(new ScriptStatus(szScriptName, eStatus));
-}
-
-ScriptStatus::EStatus ScriptStatusList::CalcTotalStatus()
-{
-	ScriptStatus::EStatus eStatus = ScriptStatus::srNone;
-
-	for (iterator it = begin(); it != end(); it++)
-	{
-		ScriptStatus* pScriptStatus = *it;
-		// Failure-Status overrides Success-Status
-		if ((pScriptStatus->GetStatus() == ScriptStatus::srSuccess && eStatus == ScriptStatus::srNone) ||
-			(pScriptStatus->GetStatus() == ScriptStatus::srFailure))
-		{
-			eStatus = pScriptStatus->GetStatus();
-		}
-	}
-	
-	return eStatus;
-}
-
-
 NZBInfo::NZBInfo()
 {
 	debug("Creating NZBInfo");
@@ -186,8 +133,8 @@ NZBInfo::NZBInfo()
 	m_eRenameStatus = rsNone;
 	m_eParStatus = psNone;
 	m_eUnpackStatus = usNone;
-	m_eCleanupStatus = csNone;
 	m_eMoveStatus = msNone;
+	m_eScriptStatus = srNone;
 	m_bDeleted = false;
 	m_bParCleanup = false;
 	m_bCleanupDisk = false;
@@ -256,15 +203,6 @@ void NZBInfo::Release()
 	if (m_iRefCount <= 0)
 	{
 		delete this;
-	}
-}
-
-void NZBInfo::SetID(int iID)
-{
-	m_iID = iID;
-	if (m_iIDGen < m_iID)
-	{
-		m_iIDGen = m_iID;
 	}
 }
 
@@ -399,9 +337,12 @@ void NZBInfo::BuildFinalDirName(char* szFinalDirBuf, int iBufSize)
 		strncpy(szFinalDirBuf, szBuffer, iBufSize);
 	}
 
-	snprintf(szBuffer, 1024, "%s%s", szFinalDirBuf, GetName());
-	szBuffer[1024-1] = '\0';
-	strncpy(szFinalDirBuf, szBuffer, iBufSize);
+	if (g_pOptions->GetAppendNZBDir())
+	{
+		snprintf(szBuffer, 1024, "%s%s", szFinalDirBuf, GetName());
+		szBuffer[1024-1] = '\0';
+		strncpy(szFinalDirBuf, szBuffer, iBufSize);
+	}
 }
 
 void NZBInfo::SetParameter(const char* szName, const char* szValue)
@@ -519,7 +460,6 @@ FileInfo::FileInfo()
 	m_szSubject = NULL;
 	m_szFilename = NULL;
 	m_szOutputFilename = NULL;
-	m_pMutexOutputFile = NULL;
 	m_bFilenameConfirmed = false;
 	m_lSize = 0;
 	m_lRemainingSize = 0;
@@ -532,7 +472,6 @@ FileInfo::FileInfo()
 	m_iPriority = 0;
 	m_bExtraPriority = false;
 	m_iActiveDownloads = 0;
-	m_bAutoDeleted = false;
 	m_iIDGen++;
 	m_iID = m_iIDGen;
 }
@@ -552,10 +491,6 @@ FileInfo::~ FileInfo()
 	if (m_szOutputFilename)
 	{
 		free(m_szOutputFilename);
-	}
-	if (m_pMutexOutputFile)
-	{
-		delete m_pMutexOutputFile;
 	}
 
 	for (Groups::iterator it = m_Groups.begin(); it != m_Groups.end() ;it++)
@@ -581,9 +516,9 @@ void FileInfo::ClearArticles()
 	m_Articles.clear();
 }
 
-void FileInfo::SetID(int iID)
+void FileInfo::SetID(int s)
 {
-	m_iID = iID;
+	m_iID = s;
 	if (m_iIDGen < m_iID)
 	{
 		m_iIDGen = m_iID;
@@ -621,12 +556,12 @@ void FileInfo::MakeValidFilename()
 
 void FileInfo::LockOutputFile()
 {
-	m_pMutexOutputFile->Lock();
+	m_mutexOutputFile.Lock();
 }
 
 void FileInfo::UnlockOutputFile()
 {
-	m_pMutexOutputFile->Unlock();
+	m_mutexOutputFile.Unlock();
 }
 
 void FileInfo::SetOutputFilename(const char* szOutputFilename)
@@ -636,21 +571,6 @@ void FileInfo::SetOutputFilename(const char* szOutputFilename)
 		free(m_szOutputFilename);
 	}
 	m_szOutputFilename = strdup(szOutputFilename);
-}
-
-void FileInfo::SetActiveDownloads(int iActiveDownloads)
-{
-	m_iActiveDownloads = iActiveDownloads;
-
-	if (m_iActiveDownloads > 0 && !m_pMutexOutputFile)
-	{
-		m_pMutexOutputFile = new Mutex();
-	}
-	else if (m_iActiveDownloads == 0 && m_pMutexOutputFile)
-	{
-		delete m_pMutexOutputFile;
-		m_pMutexOutputFile = NULL;
-	}
 }
 
 bool FileInfo::IsDupe(const char* szFilename)
@@ -701,11 +621,16 @@ PostInfo::PostInfo()
 	debug("Creating PostInfo");
 
 	m_pNZBInfo = NULL;
+	m_szParFilename = NULL;
 	m_szInfoName = NULL;
 	m_bWorking = false;
 	m_bDeleted = false;
-	m_bRequestParCheck = false;
+	m_eRenameStatus = rsNone;
+	m_eParStatus = psNone;
+	m_eUnpackStatus = usNone;
+	m_eRequestParCheck = rpNone;
 	m_bRequestParRename = false;
+	m_eScriptStatus = srNone;
 	m_szProgressLabel = strdup("");
 	m_iFileProgress = 0;
 	m_iStageProgress = 0;
@@ -723,6 +648,10 @@ PostInfo::~ PostInfo()
 {
 	debug("Destroying PostInfo");
 
+	if (m_szParFilename)
+	{
+		free(m_szParFilename);
+	}
 	if (m_szInfoName)
 	{
 		free(m_szInfoName);
@@ -752,6 +681,11 @@ void PostInfo::SetNZBInfo(NZBInfo* pNZBInfo)
 	}
 	m_pNZBInfo = pNZBInfo;
 	m_pNZBInfo->AddReference();
+}
+
+void PostInfo::SetParFilename(const char* szParFilename)
+{
+	m_szParFilename = strdup(szParFilename);
 }
 
 void PostInfo::SetInfoName(const char* szInfoName)
@@ -903,9 +837,9 @@ void UrlInfo::SetURL(const char* szURL)
 	m_szURL = strdup(szURL);
 }
 
-void UrlInfo::SetID(int iID)
+void UrlInfo::SetID(int s)
 {
-	m_iID = iID;
+	m_iID = s;
 	if (m_iIDGen < m_iID)
 	{
 		m_iIDGen = m_iID;
@@ -985,9 +919,9 @@ HistoryInfo::~HistoryInfo()
 	}
 }
 
-void HistoryInfo::SetID(int iID)
+void HistoryInfo::SetID(int s)
 {
-	m_iID = iID;
+	m_iID = s;
 	if (m_iIDGen < m_iID)
 	{
 		m_iIDGen = m_iID;

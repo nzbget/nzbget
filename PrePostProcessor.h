@@ -31,6 +31,7 @@
 #include "Thread.h"
 #include "Observer.h"
 #include "DownloadInfo.h"
+#include "Scanner.h"
 #include "ParCoordinator.h"
 
 class PrePostProcessor : public Thread
@@ -44,8 +45,7 @@ public:
 		eaPostDelete,
 		eaHistoryDelete,
 		eaHistoryReturn,
-		eaHistoryProcess,
-		eaHistorySetParameter
+		eaHistoryProcess
 	};
 
 private:
@@ -71,16 +71,18 @@ private:
 	PostParCoordinator	m_ParCoordinator;
 	QueueCoordinatorObserver	m_QueueCoordinatorObserver;
 	bool				m_bHasMoreJobs;
+	bool				m_bPostScript;
 	bool				m_bSchedulerPauseChanged;
 	bool				m_bSchedulerPause;
 	bool				m_bPostPause;
+	Scanner				m_Scanner;
 	const char*			m_szPauseReason;
 
 	bool				IsNZBFileCompleted(DownloadQueue* pDownloadQueue, NZBInfo* pNZBInfo, 
-							bool bIgnorePausedPars, bool bAllowOnlyOneDeleted);
+							bool bIgnorePausedPars, bool bCheckPostQueue, bool bAllowOnlyOneDeleted);
 	void				CheckPostQueue();
 	void				JobCompleted(DownloadQueue* pDownloadQueue, PostInfo* pPostInfo);
-	void				StartJob(DownloadQueue* pDownloadQueue, PostInfo* pPostInfo);
+	void				StartProcessJob(DownloadQueue* pDownloadQueue, PostInfo* pPostInfo);
 	void				SaveQueue(DownloadQueue* pDownloadQueue);
 	void				SanitisePostQueue(PostQueue* pPostQueue);
 	void				CheckDiskSpace();
@@ -93,14 +95,13 @@ private:
 	void				NZBDownloaded(DownloadQueue* pDownloadQueue, NZBInfo* pNZBInfo);
 	void				NZBDeleted(DownloadQueue* pDownloadQueue, NZBInfo* pNZBInfo);
 	void				NZBCompleted(DownloadQueue* pDownloadQueue, NZBInfo* pNZBInfo, bool bSaveQueue);
+	bool				CreatePostJobs(DownloadQueue* pDownloadQueue, NZBInfo* pNZBInfo, bool bParCheck, bool bUnpackOrScript, bool bAddTop);
 	void				DeleteQueuedFile(const char* szQueuedFile);
 	NZBInfo*			MergeGroups(DownloadQueue* pDownloadQueue, NZBInfo* pNZBInfo);
 	bool				PostQueueMove(IDList* pIDList, EEditAction eAction, int iOffset);
 	bool				PostQueueDelete(IDList* pIDList);
-	bool				HistoryEdit(IDList* pIDList, EEditAction eAction, int iOffset, const char* szText);
-	void				HistoryDelete(DownloadQueue* pDownloadQueue, HistoryList::iterator itHistory, HistoryInfo* pHistoryInfo);
-	void				HistoryReturn(DownloadQueue* pDownloadQueue, HistoryList::iterator itHistory, HistoryInfo* pHistoryInfo, bool bReprocess);
-	void				HistorySetParameter(HistoryInfo* pHistoryInfo, const char* szText);
+	bool				HistoryDelete(IDList* pIDList);
+	bool				HistoryReturn(IDList* pIDList, bool bReprocess);
 	void				Cleanup();
 	FileInfo*			GetQueueGroup(DownloadQueue* pDownloadQueue, NZBInfo* pNZBInfo);
 	void				CheckHistory();
@@ -113,7 +114,8 @@ public:
 	virtual void		Stop();
 	void				QueueCoordinatorUpdate(Subject* Caller, void* Aspect);
 	bool				HasMoreJobs() { return m_bHasMoreJobs; }
-	bool				QueueEditList(IDList* pIDList, EEditAction eAction, int iOffset, const char* szText);
+	void				ScanNZBDir(bool bSyncMode);
+	bool				QueueEditList(IDList* pIDList, EEditAction eAction, int iOffset);
 };
 
 #endif

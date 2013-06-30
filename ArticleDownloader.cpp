@@ -34,7 +34,7 @@
 
 #include <stdlib.h>
 #include <string.h>
-#include <stdio.h>
+#include <cstdio>
 #ifdef WIN32
 #include <direct.h>
 #else
@@ -136,9 +136,6 @@ void ArticleDownloader::Run()
 	debug("Entering ArticleDownloader-loop");
 
 	SetStatus(adRunning);
-
-	BuildOutputFilename();
-
 	m_szResultFilename = m_pArticleInfo->GetResultFilename();
 
 	if (g_pOptions->GetContinuePartial())
@@ -369,7 +366,7 @@ ArticleDownloader::EStatus ArticleDownloader::Download()
 	for (int retry = 3; retry > 0; retry--)
 	{
 		szResponse = m_pConnection->Request(tmp);
-		if ((szResponse && !strncmp(szResponse, "2", 1)) || m_pConnection->GetAuthError())
+		if (szResponse && !strncmp(szResponse, "2", 1))
 		{
 			break;
 		}
@@ -591,8 +588,7 @@ bool ArticleDownloader::PrepareFile(char* szLine)
 			if (g_pOptions->GetDupeCheck())
 			{
 				m_pFileInfo->LockOutputFile();
-				bool bOutputInitialized = m_pFileInfo->GetOutputInitialized();
-				if (!bOutputInitialized)
+				if (!m_pFileInfo->GetOutputInitialized())
 				{
 					char* pb = strstr(szLine, " name=");
 					if (pb)
@@ -606,6 +602,11 @@ bool ArticleDownloader::PrepareFile(char* szLine)
 							strncpy(m_szArticleFilename, pb, pe - pb);
 							m_szArticleFilename[pe - pb] = '\0';
 						}
+						if (m_pFileInfo->IsDupe(m_szArticleFilename))
+						{
+							m_bDuplicate = true;
+							return false;
+						}
 					}
 				}
 				if (!g_pOptions->GetDirectWrite())
@@ -613,11 +614,6 @@ bool ArticleDownloader::PrepareFile(char* szLine)
 					m_pFileInfo->SetOutputInitialized(true);
 				}
 				m_pFileInfo->UnlockOutputFile();
-				if (!bOutputInitialized && m_szArticleFilename && m_pFileInfo->IsDupe(m_szArticleFilename))
-				{
-					m_bDuplicate = true;
-					return false;
-				}
 			}
 
 			if (g_pOptions->GetDirectWrite())
@@ -632,7 +628,6 @@ bool ArticleDownloader::PrepareFile(char* szLine)
 						long iArticleFilesize = atol(pb);
 						if (!CreateOutputFile(iArticleFilesize))
 						{
-							m_pFileInfo->UnlockOutputFile();
 							return false;
 						}
 						m_pFileInfo->SetOutputInitialized(true);
@@ -694,56 +689,20 @@ bool ArticleDownloader::CreateOutputFile(int iSize)
 	if (iMaxlen > 1024-1) iMaxlen = 1024-1;
 	strncpy(szDestDir, m_szOutputFilename, iMaxlen);
 	szDestDir[iMaxlen] = '\0';
-	char szErrBuf[1024];
 
-	if (!Util::ForceDirectories(szDestDir, szErrBuf, sizeof(szErrBuf)))
+	if (!Util::ForceDirectories(szDestDir))
 	{
-		error("Could not create directory %s: %s", szDestDir, szErrBuf);
+		error("Could not create directory %s! Errcode: %i", szDestDir, errno);
 		return false;
 	}
 
 	if (!Util::CreateSparseFile(m_szOutputFilename, iSize))
 	{
-		error("Could not create file %s", m_szOutputFilename);
+		error("Could not create file %s!", m_szOutputFilename);
 		return false;
 	}
 
 	return true;
-}
-
-void ArticleDownloader::BuildOutputFilename()
-{
-	char szFilename[1024];
-
-	snprintf(szFilename, 1024, "%s%i.%03i", g_pOptions->GetTempDir(), m_pFileInfo->GetID(), m_pArticleInfo->GetPartNumber());
-	szFilename[1024-1] = '\0';
-	m_pArticleInfo->SetResultFilename(szFilename);
-
-	char tmpname[1024];
-	snprintf(tmpname, 1024, "%s.tmp", szFilename);
-	tmpname[1024-1] = '\0';
-	SetTempFilename(tmpname);
-
-	if (g_pOptions->GetDirectWrite())
-	{
-		m_pFileInfo->LockOutputFile();
-
-		if (m_pFileInfo->GetOutputFilename())
-		{
-			strncpy(szFilename, m_pFileInfo->GetOutputFilename(), 1024);
-			szFilename[1024-1] = '\0';
-		}
-		else
-		{
-			snprintf(szFilename, 1024, "%s%c%i.out.tmp", m_pFileInfo->GetNZBInfo()->GetDestDir(), (int)PATH_SEPARATOR, m_pFileInfo->GetID());
-			szFilename[1024-1] = '\0';
-			m_pFileInfo->SetOutputFilename(szFilename);
-		}
-
-		m_pFileInfo->UnlockOutputFile();
-
-		SetOutputFilename(szFilename);
-	}
 }
 
 ArticleDownloader::EStatus ArticleDownloader::DecodeCheck()
@@ -767,7 +726,7 @@ ArticleDownloader::EStatus ArticleDownloader::DecodeCheck()
 		else
 		{
 			warn("Decoding %s failed: no binary data or unsupported encoding format", m_szInfoName);
-			return adFailed;
+			return adFatalError;
 		}
 
 		Decoder::EStatus eStatus = pDecoder->Check();
@@ -945,10 +904,9 @@ void ArticleDownloader::CompleteFileParts()
 	}
 
 	// Ensure the DstDir is created
-	char szErrBuf[1024];
-	if (!Util::ForceDirectories(szNZBDestDir, szErrBuf, sizeof(szErrBuf)))
+	if (!Util::ForceDirectories(szNZBDestDir))
 	{
-		error("Could not create directory %s: %s", szNZBDestDir, szErrBuf);
+		error("Could not create directory %s! Errcode: %i", szNZBDestDir, errno);
 		SetStatus(adJoined);
 		return;
 	}
@@ -1115,6 +1073,27 @@ void ArticleDownloader::CompleteFileParts()
 	{
 		warn("%i of %i article downloads failed for \"%s\"", iBrokenCount, m_pFileInfo->GetArticles()->size(), InfoFilename);
 
+		if (g_pOptions->GetRenameBroken())
+		{
+			char brokenfn[1024];
+			snprintf(brokenfn, 1024, "%s_broken", ofn);
+			brokenfn[1024-1] = '\0';
+			if (Util::MoveFile(ofn, brokenfn))
+			{
+				detail("Renaming broken file from %s to %s", ofn, brokenfn);
+			}
+			else
+			{
+				warn("Renaming broken file from %s to %s failed", ofn, brokenfn);
+			}
+			strncpy(ofn, brokenfn, 1024);
+			ofn[1024-1] = '\0';
+		}
+		else
+		{
+			detail("Not renaming broken file %s", ofn);
+		}
+
 		if (g_pOptions->GetCreateBrokenLog())
 		{
 			char szBrokenLogName[1024];
@@ -1147,10 +1126,9 @@ bool ArticleDownloader::MoveCompletedFiles(NZBInfo* pNZBInfo, const char* szOldD
 	}
 
 	// Ensure the DstDir is created
-	char szErrBuf[1024];
-	if (!Util::ForceDirectories(pNZBInfo->GetDestDir(), szErrBuf, sizeof(szErrBuf)))
+	if (!Util::ForceDirectories(pNZBInfo->GetDestDir()))
 	{
-		error("Could not create directory %s: %s", pNZBInfo->GetDestDir(), szErrBuf);
+		error("Could not create directory %s! Errcode: %i", pNZBInfo->GetDestDir(), errno);
 		return false;
 	}
 

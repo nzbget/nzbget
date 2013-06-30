@@ -92,11 +92,10 @@ private:
 	int					m_iCompleted;
 	bool				m_bOutputInitialized;
 	char*				m_szOutputFilename;
-	Mutex*				m_pMutexOutputFile;
+	Mutex				m_mutexOutputFile;
 	int					m_iPriority;
 	bool				m_bExtraPriority;
 	int					m_iActiveDownloads;
-	bool				m_bAutoDeleted;
 
 	static int			m_iIDGen;
 
@@ -104,7 +103,7 @@ public:
 						FileInfo();
 						~FileInfo();
 	int					GetID() { return m_iID; }
-	void				SetID(int iID);
+	void				SetID(int s);
 	NZBInfo*			GetNZBInfo() { return m_pNZBInfo; }
 	void				SetNZBInfo(NZBInfo* pNZBInfo);
 	Articles* 			GetArticles() { return &m_Articles; }
@@ -141,9 +140,7 @@ public:
 	bool				GetExtraPriority() { return m_bExtraPriority; }
 	void				SetExtraPriority(bool bExtraPriority) { m_bExtraPriority = bExtraPriority; };
 	int					GetActiveDownloads() { return m_iActiveDownloads; }
-	void				SetActiveDownloads(int iActiveDownloads);
-	bool				GetAutoDeleted() { return m_bAutoDeleted; }
-	void				SetAutoDeleted(bool bAutoDeleted) { m_bAutoDeleted = bAutoDeleted; }
+	void				SetActiveDownloads(int iActiveDownloads) { m_iActiveDownloads = iActiveDownloads; }
 };
                               
 typedef std::deque<FileInfo*> FileQueue;
@@ -212,40 +209,6 @@ public:
 	void				SetParameter(const char* szName, const char* szValue);
 };
 
-class ScriptStatus
-{
-public:
-	enum EStatus
-	{
-		srNone,
-		srFailure,
-		srSuccess
-	};
-
-private:
-	char* 				m_szName;
-	EStatus				m_eStatus;
-	
-	friend class ScriptStatusList;
-	
-public:
-						ScriptStatus(const char* szName, EStatus eStatus);
-						~ScriptStatus();
-	const char*			GetName() { return m_szName; }
-	EStatus				GetStatus() { return m_eStatus; }
-};
-
-typedef std::deque<ScriptStatus*> ScriptStatusListBase;
-
-class ScriptStatusList : public ScriptStatusListBase
-{
-public:
-						~ScriptStatusList();
-	void				Add(const char* szScriptName, ScriptStatus::EStatus eStatus);
-	void				Clear();
-	ScriptStatus::EStatus	CalcTotalStatus();
-};
-
 class NZBInfoList;
 
 class NZBInfo
@@ -265,8 +228,7 @@ public:
 		psSkipped,
 		psFailure,
 		psSuccess,
-		psRepairPossible,
-		psManual
+		psRepairPossible
 	};
 
 	enum EUnpackStatus
@@ -277,11 +239,12 @@ public:
 		usSuccess
 	};
 
-	enum ECleanupStatus
+	enum EScriptStatus
 	{
-		csNone,
-		csFailure,
-		csSuccess
+		srNone,
+		srUnknown,
+		srFailure,
+		srSuccess
 	};
 
 	enum EMoveStatus
@@ -309,17 +272,15 @@ private:
 	ERenameStatus		m_eRenameStatus;
 	EParStatus			m_eParStatus;
 	EUnpackStatus		m_eUnpackStatus;
-	ECleanupStatus		m_eCleanupStatus;
+	EScriptStatus		m_eScriptStatus;
 	EMoveStatus			m_eMoveStatus;
 	char*				m_szQueuedFilename;
 	bool				m_bDeleted;
 	bool				m_bParCleanup;
-	bool				m_bParManual;
 	bool				m_bCleanupDisk;
 	bool				m_bUnpackCleanedUpDisk;
 	NZBInfoList*		m_Owner;
 	NZBParameterList	m_ppParameters;
-	ScriptStatusList	m_scriptStatuses;
 	Mutex				m_mutexLog;
 	Messages			m_Messages;
 	int					m_iIDMessageGen;
@@ -334,7 +295,6 @@ public:
 	void				AddReference();
 	void				Release();
 	int					GetID() { return m_iID; }
-	void				SetID(int iID);
 	const char*			GetFilename() { return m_szFilename; }
 	void				SetFilename(const char* szFilename);
 	static void			MakeNiceNZBName(const char* szNZBFilename, char* szBuffer, int iSize, bool bRemoveExt);
@@ -362,10 +322,10 @@ public:
 	void				SetParStatus(EParStatus eParStatus) { m_eParStatus = eParStatus; }
 	EUnpackStatus		GetUnpackStatus() { return m_eUnpackStatus; }
 	void				SetUnpackStatus(EUnpackStatus eUnpackStatus) { m_eUnpackStatus = eUnpackStatus; }
-	ECleanupStatus		GetCleanupStatus() { return m_eCleanupStatus; }
-	void				SetCleanupStatus(ECleanupStatus eCleanupStatus) { m_eCleanupStatus = eCleanupStatus; }
 	EMoveStatus			GetMoveStatus() { return m_eMoveStatus; }
 	void				SetMoveStatus(EMoveStatus eMoveStatus) { m_eMoveStatus = eMoveStatus; }
+	EScriptStatus		GetScriptStatus() { return m_eScriptStatus; }
+	void				SetScriptStatus(EScriptStatus eScriptStatus) { m_eScriptStatus = eScriptStatus; }
 	const char*			GetQueuedFilename() { return m_szQueuedFilename; }
 	void				SetQueuedFilename(const char* szQueuedFilename);
 	bool				GetDeleted() { return m_bDeleted; }
@@ -378,7 +338,6 @@ public:
 	void				SetUnpackCleanedUpDisk(bool bUnpackCleanedUpDisk) { m_bUnpackCleanedUpDisk = bUnpackCleanedUpDisk; }
 	NZBParameterList*	GetParameters() { return &m_ppParameters; }				// needs locking (for shared objects)
 	void				SetParameter(const char* szName, const char* szValue);	// needs locking (for shared objects)
-	ScriptStatusList*	GetScriptStatuses() { return &m_scriptStatuses; }        // needs locking (for shared objects)
 	void				AppendMessage(Message::EKind eKind, time_t tTime, const char* szText);
 	Messages*			LockMessages();
 	void				UnlockMessages();
@@ -411,15 +370,60 @@ public:
 		ptFinished
 	};
 
+	enum ERenameStatus
+	{
+		rsNone,
+		rsSkipped,
+		rsFailure,
+		rsSuccess
+	};
+
+	enum EParStatus
+	{
+		psNone,
+		psSkipped,
+		psFailure,
+		psSuccess,
+		psRepairPossible
+	};
+
+	enum ERequestParCheck
+	{
+		rpNone,
+		rpCurrent,
+		rpAll
+	};
+
+	enum EUnpackStatus
+	{
+		usNone,
+		usSkipped,
+		usFailure,
+		usSuccess
+	};
+
+	enum EScriptStatus
+	{
+		srNone,
+		srUnknown,
+		srFailure,
+		srSuccess
+	};
+
 	typedef std::deque<Message*>	Messages;
 
 private:
 	int					m_iID;
 	NZBInfo*			m_pNZBInfo;
+	char*				m_szParFilename;
 	char*				m_szInfoName;
 	bool				m_bWorking;
 	bool				m_bDeleted;
-	bool				m_bRequestParCheck;
+	ERenameStatus		m_eRenameStatus;
+	EParStatus			m_eParStatus;
+	EUnpackStatus		m_eUnpackStatus;
+	EScriptStatus		m_eScriptStatus;
+	ERequestParCheck	m_eRequestParCheck;
 	bool				m_bRequestParRename;
 	EStage				m_eStage;
 	char*				m_szProgressLabel;
@@ -441,6 +445,8 @@ public:
 	int					GetID() { return m_iID; }
 	NZBInfo*			GetNZBInfo() { return m_pNZBInfo; }
 	void				SetNZBInfo(NZBInfo* pNZBInfo);
+	const char*			GetParFilename() { return m_szParFilename; }
+	void				SetParFilename(const char* szParFilename);
 	const char*			GetInfoName() { return m_szInfoName; }
 	void				SetInfoName(const char* szInfoName);
 	EStage				GetStage() { return m_eStage; }
@@ -459,10 +465,18 @@ public:
 	void				SetWorking(bool bWorking) { m_bWorking = bWorking; }
 	bool				GetDeleted() { return m_bDeleted; }
 	void				SetDeleted(bool bDeleted) { m_bDeleted = bDeleted; }
-	bool				GetRequestParCheck() { return m_bRequestParCheck; }
-	void				SetRequestParCheck(bool bRequestParCheck) { m_bRequestParCheck = bRequestParCheck; }
+	ERenameStatus		GetRenameStatus() { return m_eRenameStatus; }
+	void				SetRenameStatus(ERenameStatus eRenameStatus) { m_eRenameStatus = eRenameStatus; }
+	EParStatus			GetParStatus() { return m_eParStatus; }
+	void				SetParStatus(EParStatus eParStatus) { m_eParStatus = eParStatus; }
+	EUnpackStatus		GetUnpackStatus() { return m_eUnpackStatus; }
+	void				SetUnpackStatus(EUnpackStatus eUnpackStatus) { m_eUnpackStatus = eUnpackStatus; }
+	ERequestParCheck	GetRequestParCheck() { return m_eRequestParCheck; }
+	void				SetRequestParCheck(ERequestParCheck eRequestParCheck) { m_eRequestParCheck = eRequestParCheck; }
 	bool				GetRequestParRename() { return m_bRequestParRename; }
 	void				SetRequestParRename(bool bRequestParRename) { m_bRequestParRename = bRequestParRename; }
+	EScriptStatus		GetScriptStatus() { return m_eScriptStatus; }
+	void				SetScriptStatus(EScriptStatus eScriptStatus) { m_eScriptStatus = eScriptStatus; }
 	void				AppendMessage(Message::EKind eKind, const char* szText);
 	Thread*				GetPostThread() { return m_pPostThread; }
 	void				SetPostThread(Thread* pPostThread) { m_pPostThread = pPostThread; }
@@ -504,7 +518,7 @@ public:
 						UrlInfo();
 						~UrlInfo();
 	int					GetID() { return m_iID; }
-	void				SetID(int iID);
+	void				SetID(int s);
 	const char*			GetURL() { return m_szURL; }			// needs locking (for shared objects)
 	void				SetURL(const char* szURL);				// needs locking (for shared objects)
 	const char*			GetNZBFilename() { return m_szNZBFilename; }		// needs locking (for shared objects)
@@ -548,7 +562,7 @@ public:
 						HistoryInfo(UrlInfo* pUrlInfo);
 						~HistoryInfo();
 	int					GetID() { return m_iID; }
-	void				SetID(int iID);
+	void				SetID(int s);
 	EKind				GetKind() { return m_eKind; }
 	NZBInfo*			GetNZBInfo() { return (NZBInfo*)m_pInfo; }
 	UrlInfo*			GetUrlInfo() { return (UrlInfo*)m_pInfo; }

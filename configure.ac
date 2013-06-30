@@ -2,9 +2,9 @@
 # Process this file with autoconf to produce a configure script.
 
 AC_PREREQ(2.59)
-AC_INIT(nzbget, 11.0-testing, hugbug@users.sourceforge.net)
+AC_INIT(nzbget, 10.2, hugbug@users.sourceforge.net)
 AC_CANONICAL_SYSTEM
-AM_INIT_AUTOMAKE(nzbget, 11.0-testing)
+AM_INIT_AUTOMAKE(nzbget, 10.2)
 AC_CONFIG_SRCDIR([nzbget.cpp])
 AC_CONFIG_HEADERS([config.h])
 
@@ -56,9 +56,10 @@ AC_CHECK_FUNC(getopt_long,
 
 
 dnl
-dnl use 64-Bits for file sizes
+dnl stat64
 dnl
-AC_SYS_LARGEFILE
+AC_CHECK_FUNC(stat64,
+	[AC_DEFINE([HAVE_STAT64], 1, [Define to 1 if stat64 is supported])],)
 
 
 dnl
@@ -502,14 +503,22 @@ fi
 dnl 
 dnl Some Linux systems require an empty signal handler for SIGCHLD
 dnl in order for exit codes to be correctly delivered to parent process.
-dnl Some 32-Bit BSD systems however may not function properly if the handler is installed.
-dnl The default behavior is to install the handler.
+dnl Some BSD systems however may not function properly if the handler is installed.
+dnl The default behavior is to check the target and disable the handler on BSD but keep it enabled on other systems.
 dnl
 AC_MSG_CHECKING(whether to use an empty SIGCHLD handler)
 AC_ARG_ENABLE(sigchld-handler,
-	[AS_HELP_STRING([--disable-sigchld-handler], [do not use sigchld-handler (the disabling may be neccessary on 32-Bit BSD)])],
+	[AS_HELP_STRING([--disable-sigchld-handler], [do not use sigchld-handler (the disabling is recommended for BSD)])],
 	[SIGCHLDHANDLER=$enableval],
-	[SIGCHLDHANDLER=yes])
+	[SIGCHLDHANDLER=auto])
+if test "$SIGCHLDHANDLER" = "auto"; then
+	SIGCHLDHANDLER=yes
+	case "$target" in
+		*bsd*)
+			SIGCHLDHANDLER=no
+			;;
+	esac
+fi
 AC_MSG_RESULT($SIGCHLDHANDLER)
 if test "$SIGCHLDHANDLER" = "yes"; then
 	AC_DEFINE([SIGCHLD_HANDLER], 1, [Define to 1 to install an empty signal handler for SIGCHLD])

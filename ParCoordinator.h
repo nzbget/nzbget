@@ -29,6 +29,7 @@
 #include <list>
 #include <deque>
 
+#include "Observer.h"
 #include "DownloadInfo.h"
 
 #ifndef DISABLE_PARCHECK
@@ -40,6 +41,13 @@ class ParCoordinator
 {
 private:
 #ifndef DISABLE_PARCHECK
+	class ParCheckerObserver: public Observer
+	{
+	public:
+		ParCoordinator*	m_pOwner;
+		virtual void	Update(Subject* Caller, void* Aspect) { m_pOwner->ParCheckerUpdate(Caller, Aspect); }
+	};
+
 	class PostParChecker: public ParChecker
 	{
 	private:
@@ -48,13 +56,18 @@ private:
 	protected:
 		virtual bool	RequestMorePars(int iBlockNeeded, int* pBlockFound);
 		virtual void	UpdateProgress();
-		virtual void	Completed() { m_pOwner->ParCheckCompleted(); }
-		virtual void	PrintMessage(Message::EKind eKind, const char* szFormat, ...);
 	public:
 		PostInfo*		GetPostInfo() { return m_pPostInfo; }
 		void			SetPostInfo(PostInfo* pPostInfo) { m_pPostInfo = pPostInfo; }
 
 		friend class ParCoordinator;
+	};
+
+	class ParRenamerObserver: public Observer
+	{
+	public:
+		ParCoordinator*	m_pOwner;
+		virtual void	Update(Subject* Caller, void* Aspect) { m_pOwner->ParRenamerUpdate(Caller, Aspect); }
 	};
 
 	class PostParRenamer: public ParRenamer
@@ -64,8 +77,6 @@ private:
 		PostInfo*		m_pPostInfo;
 	protected:
 		virtual void	UpdateProgress();
-		virtual void	Completed() { m_pOwner->ParRenameCompleted(); }
-		virtual void	PrintMessage(Message::EKind eKind, const char* szFormat, ...);
 	public:
 		PostInfo*		GetPostInfo() { return m_pPostInfo; }
 		void			SetPostInfo(PostInfo* pPostInfo) { m_pPostInfo = pPostInfo; }
@@ -89,20 +100,16 @@ private:
 
 private:
 	PostParChecker		m_ParChecker;
+	ParCheckerObserver	m_ParCheckerObserver;
 	bool				m_bStopped;
+	bool				m_bPostScript;
 	PostParRenamer		m_ParRenamer;
+	ParRenamerObserver	m_ParRenamerObserver;
 	EJobKind			m_eCurrentJob;
 
 protected:
 	virtual bool		PauseDownload() = 0;
 	virtual bool		UnpauseDownload() = 0;
-	void				UpdateParCheckProgress();
-	void				UpdateParRenameProgress();
-	void				ParCheckCompleted();
-	void				ParRenameCompleted();
-	void				CheckPauseState(PostInfo* pPostInfo);
-	bool				RequestMorePars(NZBInfo* pNZBInfo, const char* szParFilename, int iBlockNeeded, int* pBlockFound);
-	void				PrintMessage(PostInfo* pPostInfo, Message::EKind eKind, const char* szFormat, ...);
 #endif
 
 public:
@@ -117,9 +124,15 @@ public:
 	void				PausePars(DownloadQueue* pDownloadQueue, NZBInfo* pNZBInfo);
 
 #ifndef DISABLE_PARCHECK
+	void				ParCheckerUpdate(Subject* Caller, void* Aspect);
+	void				ParRenamerUpdate(Subject* Caller, void* Aspect);
+	void				CheckPauseState(PostInfo* pPostInfo);
 	bool				AddPar(FileInfo* pFileInfo, bool bDeleted);
+	bool				RequestMorePars(NZBInfo* pNZBInfo, const char* szParFilename, int iBlockNeeded, int* pBlockFound);
 	void				FindPars(DownloadQueue* pDownloadQueue, NZBInfo* pNZBInfo, const char* szParFilename, 
 							Blocks* pBlocks, bool bStrictParName, bool bExactParName, int* pBlockFound);
+	void				UpdateParCheckProgress();
+	void				UpdateParRenameProgress();
 	void				StartParCheckJob(PostInfo* pPostInfo);
 	void				StartParRenameJob(PostInfo* pPostInfo);
 	void				Stop();
