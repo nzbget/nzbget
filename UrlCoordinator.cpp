@@ -101,6 +101,7 @@ UrlCoordinator::UrlCoordinator()
 	debug("Creating UrlCoordinator");
 
 	m_bHasMoreJobs = true;
+	m_bForce = false;
 }
 
 UrlCoordinator::~UrlCoordinator()
@@ -134,7 +135,7 @@ void UrlCoordinator::Run()
 
 	while (!IsStopped())
 	{
-		if (!(g_pOptions->GetPauseDownload() || g_pOptions->GetPauseDownload2()))
+		if (!(g_pOptions->GetPauseDownload() || g_pOptions->GetPauseDownload2()) || m_bForce)
 		{
 			// start download for next URL
 			DownloadQueue* pDownloadQueue = g_pQueueCoordinator->LockQueue();
@@ -148,6 +149,10 @@ void UrlCoordinator::Run()
 				if (bHasMoreUrls && !IsStopped())
 				{
 					StartUrlDownload(pUrlInfo);
+				}
+				if (!bHasMoreUrls)
+				{
+					m_bForce = false;
 				}
 			}
 			g_pQueueCoordinator->UnlockQueue();
@@ -263,6 +268,11 @@ void UrlCoordinator::AddUrlToQueue(UrlInfo* pUrlInfo, bool AddFirst)
 		g_pDiskState->SaveDownloadQueue(pDownloadQueue);
 	}
 
+	if (pUrlInfo->GetForce())
+	{
+		m_bForce = true;
+	}
+
 	g_pQueueCoordinator->UnlockQueue();
 }
 
@@ -271,19 +281,19 @@ void UrlCoordinator::AddUrlToQueue(UrlInfo* pUrlInfo, bool AddFirst)
  */
 bool UrlCoordinator::GetNextUrl(DownloadQueue* pDownloadQueue, UrlInfo* &pUrlInfo)
 {
-	bool bOK = false;
+	bool bPauseDownload = g_pOptions->GetPauseDownload() || g_pOptions->GetPauseDownload2();
 
 	for (UrlQueue::iterator at = pDownloadQueue->GetUrlQueue()->begin(); at != pDownloadQueue->GetUrlQueue()->end(); at++)
 	{
 		pUrlInfo = *at;
-		if (pUrlInfo->GetStatus() == 0)
+		if (pUrlInfo->GetStatus() == 0 && (!bPauseDownload || pUrlInfo->GetForce()))
 		{
-			bOK = true;
+			return true;
 			break;
 		}
 	}
 
-	return bOK;
+	return false;
 }
 
 void UrlCoordinator::StartUrlDownload(UrlInfo* pUrlInfo)
@@ -295,6 +305,7 @@ void UrlCoordinator::StartUrlDownload(UrlInfo* pUrlInfo)
 	pUrlDownloader->Attach(this);
 	pUrlDownloader->SetUrlInfo(pUrlInfo);
 	pUrlDownloader->SetURL(pUrlInfo->GetURL());
+	pUrlDownloader->SetForce(pUrlInfo->GetForce());
 
 	char tmp[1024];
 
@@ -311,11 +322,11 @@ void UrlCoordinator::StartUrlDownload(UrlInfo* pUrlInfo)
 	pUrlDownloader->Start();
 }
 
-void UrlCoordinator::Update(Subject* Caller, void* Aspect)
+void UrlCoordinator::Update(Subject* pCaller, void* pAspect)
 {
 	debug("Notification from UrlDownloader received");
 
-	UrlDownloader* pUrlDownloader = (UrlDownloader*) Caller;
+	UrlDownloader* pUrlDownloader = (UrlDownloader*) pCaller;
 	if ((pUrlDownloader->GetStatus() == WebDownloader::adFinished) ||
 		(pUrlDownloader->GetStatus() == WebDownloader::adFailed) ||
 		(pUrlDownloader->GetStatus() == WebDownloader::adRetry))
@@ -406,6 +417,9 @@ void UrlCoordinator::UrlCompleted(UrlDownloader* pUrlDownloader)
 	}
 
 	g_pQueueCoordinator->UnlockQueue();
+
+	Aspect aspect = { eaUrlCompleted, pUrlInfo };
+	Notify(&aspect);
 
 	if (pUrlInfo->GetStatus() == UrlInfo::aiFinished)
 	{

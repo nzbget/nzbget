@@ -62,6 +62,7 @@ WebDownloader::WebDownloader()
 	m_bConfirmedLength = false;
 	m_eStatus = adUndefined;
 	m_szOriginalFilename = NULL;
+	m_bForce = false;
 	SetLastUpdateTimeNow();
 }
 
@@ -127,19 +128,19 @@ void WebDownloader::Run()
 
 		if ((((Status == adFailed) && (iRemainedDownloadRetries > 1)) ||
 			((Status == adConnectError) && (iRemainedConnectRetries > 1)))
-			&& !IsStopped() && !(g_pOptions->GetPauseDownload() || g_pOptions->GetPauseDownload2()))
+			&& !IsStopped() && !(!m_bForce && (g_pOptions->GetPauseDownload() || g_pOptions->GetPauseDownload2())))
 		{
 			detail("Waiting %i sec to retry", g_pOptions->GetRetryInterval());
 			int msec = 0;
 			while (!IsStopped() && (msec < g_pOptions->GetRetryInterval() * 1000) && 
-				!(g_pOptions->GetPauseDownload() || g_pOptions->GetPauseDownload2()))
+				!(!m_bForce && (g_pOptions->GetPauseDownload() || g_pOptions->GetPauseDownload2())))
 			{
 				usleep(100 * 1000);
 				msec += 100;
 			}
 		}
 
-		if (IsStopped() || g_pOptions->GetPauseDownload() || g_pOptions->GetPauseDownload2())
+		if (IsStopped() || (!m_bForce && (g_pOptions->GetPauseDownload() || g_pOptions->GetPauseDownload2())))
 		{
 			Status = adRetry;
 			break;
@@ -397,7 +398,7 @@ WebDownloader::EStatus WebDownloader::DownloadBody()
 		// Have we encountered a timeout?
 		if (iLen <= 0)
 		{
-			if (m_iContentLen == -1)
+			if (m_iContentLen == -1 && iWrittenLen > 0)
 			{
 				bEnd = true;
 				break;

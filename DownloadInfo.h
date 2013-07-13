@@ -496,6 +496,7 @@ private:
 	int					m_iPriority;
 	bool				m_bAddTop;
 	bool				m_bAddPaused;
+	bool				m_bForce;
 	EStatus				m_eStatus;
 
 	static int			m_iIDGen;
@@ -519,6 +520,8 @@ public:
 	void				SetAddPaused(bool bAddPaused) { m_bAddPaused = bAddPaused; }
 	void				GetName(char* szBuffer, int iSize);		// needs locking (for shared objects)
 	static void			MakeNiceName(const char* szURL, const char* szNZBFilename, char* szBuffer, int iSize);
+	bool				GetForce() { return m_bForce; }
+	void				SetForce(bool bForce) { m_bForce = bForce; }
 	EStatus				GetStatus() { return m_eStatus; }
 	void				SetStatus(EStatus Status) { m_eStatus = Status; }
 };
@@ -586,6 +589,139 @@ public:
 	virtual					~DownloadQueueHolder() {};
 	virtual DownloadQueue*	LockQueue() = 0;
 	virtual void			UnlockQueue() = 0;
+};
+
+class FeedInfo
+{
+public:
+	enum EStatus
+	{
+		fsUndefined,
+		fsRunning,
+		fsFinished,
+		fsFailed
+	};
+
+private:
+	int					m_iID;
+	char*				m_szName;
+	char*				m_szUrl;
+	int					m_iInterval;
+	char*				m_szFilter;
+	bool				m_bPauseNzb;
+	char*				m_szCategory;
+	int					m_iPriority;
+	time_t				m_tLastUpdate;
+	bool				m_bPreview;
+	EStatus				m_eStatus;
+	char*				m_szOutputFilename;
+	bool				m_bFetch;
+	bool				m_bForce;
+
+public:
+						FeedInfo(int iID, const char* szName, const char* szUrl, int iInterval,
+							const char* szFilter, bool bPauseNzb, const char* szCategory, int iPriority);
+						~FeedInfo();
+	int					GetID() { return m_iID; }
+	const char*			GetName() { return m_szName; }
+	const char*			GetUrl() { return m_szUrl; }
+	int					GetInterval() { return m_iInterval; }
+	const char*			GetFilter() { return m_szFilter; }
+	bool				GetPauseNzb() { return m_bPauseNzb; }
+	const char*			GetCategory() { return m_szCategory; }
+	int					GetPriority() { return m_iPriority; }
+	time_t				GetLastUpdate() { return m_tLastUpdate; }
+	void				SetLastUpdate(time_t tLastUpdate) { m_tLastUpdate = tLastUpdate; }
+	bool				GetPreview() { return m_bPreview; }
+	void				SetPreview(bool bPreview) { m_bPreview = bPreview; }
+	EStatus				GetStatus() { return m_eStatus; }
+	void				SetStatus(EStatus Status) { m_eStatus = Status; }
+	const char*			GetOutputFilename() { return m_szOutputFilename; }
+	void 				SetOutputFilename(const char* szOutputFilename);
+	bool				GetFetch() { return m_bFetch; }
+	void				SetFetch(bool bFetch) { m_bFetch = bFetch; }
+	bool				GetForce() { return m_bForce; }
+	void				SetForce(bool bForce) { m_bForce = bForce; }
+};
+
+typedef std::deque<FeedInfo*> Feeds;
+
+class FeedItemInfo
+{
+public:
+	enum EStatus
+	{
+		isUnknown,
+		isBacklog,
+		isFetched,
+		isNew
+	};
+
+private:
+	char*				m_szName;
+	char*				m_szUrl;
+	time_t				m_tTime;
+	long long			m_lSize;
+	char*				m_szCategory;
+	bool				m_bFetched;
+	EStatus				m_eStatus;
+
+public:
+						FeedItemInfo();
+						~FeedItemInfo();
+	const char*			GetName() { return m_szName; }
+	void				SetName(const char* szName);
+	const char*			GetUrl() { return m_szUrl; }
+	void				SetUrl(const char* szUrl);
+	long long			GetSize() { return m_lSize; }
+	void				SetSize(long long lSize) { m_lSize = lSize; }
+	const char*			GetCategory() { return m_szCategory; }
+	void				SetCategory(const char* szCategory);
+	time_t				GetTime() { return m_tTime; }
+	void				SetTime(time_t tTime) { m_tTime = tTime; }
+	bool				GetFetched() { return m_bFetched; }
+	void				SetFetched(bool bFetched) { m_bFetched = bFetched; }
+	EStatus				GetStatus() { return m_eStatus; }
+	void				SetStatus(EStatus Status) { m_eStatus = Status; }
+};
+
+typedef std::deque<FeedItemInfo*>	FeedItemInfos;
+
+class FeedHistoryInfo
+{
+public:
+	enum EStatus
+	{
+		hsUnknown,
+		hsBacklog,
+		hsFetched
+	};
+
+private:
+	char*				m_szUrl;
+	EStatus				m_eStatus;
+	time_t				m_tLastSeen;
+
+public:
+						FeedHistoryInfo(const char* szUrl, EStatus eStatus, time_t tLastSeen);
+						~FeedHistoryInfo();
+	const char*			GetUrl() { return m_szUrl; }
+	EStatus				GetStatus() { return m_eStatus; }
+	void				SetStatus(EStatus Status) { m_eStatus = Status; }
+	time_t				GetLastSeen() { return m_tLastSeen; }
+	void				SetLastSeen(time_t tLastSeen) { m_tLastSeen = tLastSeen; }
+};
+
+typedef std::deque<FeedHistoryInfo*> FeedHistoryBase;
+
+class FeedHistory : public FeedHistoryBase
+{
+public:
+						~FeedHistory();
+	void				Clear();
+	void				Add(const char* szUrl, FeedHistoryInfo::EStatus eStatus, time_t tLastSeen);
+	void				Remove(const char* szUrl);
+	FeedHistoryInfo*	Find(const char* szUrl);
 };
 
 #endif

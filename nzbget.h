@@ -58,6 +58,7 @@
 #define ALT_PATH_SEPARATOR '/'
 #define LINE_ENDING "\r\n"
 #define pid_t int
+#define atoll _atoi64
 #ifndef FSCTL_SET_SPARSE
 #define FSCTL_SET_SPARSE 590020
 #endif

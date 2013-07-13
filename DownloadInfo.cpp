@@ -873,6 +873,7 @@ UrlInfo::UrlInfo()
 	m_iPriority = 0;
 	m_bAddTop = false;
 	m_bAddPaused = false;
+	m_bForce = false;
 	m_eStatus = aiUndefined;
 	m_iIDGen++;
 	m_iID = m_iIDGen;
@@ -1009,4 +1010,176 @@ void HistoryInfo::GetName(char* szBuffer, int iSize)
 	{
 		strncpy(szBuffer, "<unknown>", iSize);
 	}
+}
+
+
+FeedInfo::FeedInfo(int iID, const char* szName, const char* szUrl, int iInterval,
+	const char* szFilter, bool bPauseNzb, const char* szCategory, int iPriority)
+{
+	m_iID = iID;
+	m_szName = strdup(szName ? szName : "");
+	m_szUrl = strdup(szUrl ? szUrl : "");
+	m_szFilter = strdup(szFilter ? szFilter : "");
+	m_szCategory = strdup(szCategory ? szCategory : "");
+	m_iInterval = iInterval;
+	m_bPauseNzb = bPauseNzb;
+	m_iPriority = iPriority;
+	m_tLastUpdate = 0;
+	m_bPreview = false;
+	m_eStatus = fsUndefined;
+	m_szOutputFilename = NULL;
+	m_bFetch = false;
+	m_bForce = false;
+}
+
+FeedInfo::~FeedInfo()
+{
+	if (m_szName)
+	{
+		free(m_szName);
+	}
+	if (m_szUrl)
+	{
+		free(m_szUrl);
+	}
+	if (m_szFilter)
+	{
+		free(m_szFilter);
+	}
+	if (m_szCategory)
+	{
+		free(m_szCategory);
+	}
+	if (m_szOutputFilename)
+	{
+		free(m_szOutputFilename);
+	}
+}
+
+void FeedInfo::SetOutputFilename(const char* szOutputFilename)
+{
+	if (m_szOutputFilename)
+	{
+		free(m_szOutputFilename);
+	}
+	m_szOutputFilename = strdup(szOutputFilename);
+}
+
+
+FeedItemInfo::FeedItemInfo()
+{
+	m_szName = NULL;
+	m_szUrl = NULL;
+	m_szCategory = NULL;
+	m_lSize = 0;
+	m_tTime = 0;
+	m_bFetched = false;
+	m_eStatus = isUnknown;
+}
+
+FeedItemInfo::~FeedItemInfo()
+{
+	if (m_szName)
+	{
+		free(m_szName);
+	}
+	if (m_szUrl)
+	{
+		free(m_szUrl);
+	}
+	if (m_szCategory)
+	{
+		free(m_szCategory);
+	}
+}
+
+void FeedItemInfo::SetName(const char* szName)
+{
+	if (m_szName)
+	{
+		free(m_szName);
+	}
+	m_szName = strdup(szName ? szName : NULL);
+}
+
+void FeedItemInfo::SetUrl(const char* szUrl)
+{
+	if (m_szUrl)
+	{
+		free(m_szUrl);
+	}
+	m_szUrl = strdup(szUrl ? szUrl : NULL);
+}
+
+void FeedItemInfo::SetCategory(const char* szCategory)
+{
+	if (m_szCategory)
+	{
+		free(m_szCategory);
+	}
+	m_szCategory = strdup(szCategory ? szCategory : NULL);
+}
+
+
+FeedHistoryInfo::FeedHistoryInfo(const char* szUrl, FeedHistoryInfo::EStatus eStatus, time_t tLastSeen)
+{
+	m_szUrl = szUrl ? strdup(szUrl) : NULL;
+	m_eStatus = eStatus;
+	m_tLastSeen = tLastSeen;
+}
+
+FeedHistoryInfo::~FeedHistoryInfo()
+{
+	if (m_szUrl)
+	{
+		free(m_szUrl);
+	}
+}
+
+
+FeedHistory::~FeedHistory()
+{
+	Clear();
+}
+
+void FeedHistory::Clear()
+{
+	for (iterator it = begin(); it != end(); it++)
+	{
+		delete *it;
+	}
+	clear();
+}
+
+void FeedHistory::Add(const char* szUrl, FeedHistoryInfo::EStatus eStatus, time_t tLastSeen)
+{
+	push_back(new FeedHistoryInfo(szUrl, eStatus, tLastSeen));
+}
+
+void FeedHistory::Remove(const char* szUrl)
+{
+	for (iterator it = begin(); it != end(); it++)
+	{
+		FeedHistoryInfo* pFeedHistoryInfo = *it;
+		if (!strcmp(pFeedHistoryInfo->GetUrl(), szUrl))
+		{
+			delete pFeedHistoryInfo;
+			erase(it);
+			break;
+		}
+	}
+}
+
+FeedHistoryInfo* FeedHistory::Find(const char* szUrl)
+{
+	for (iterator it = begin(); it != end(); it++)
+	{
+		FeedHistoryInfo* pFeedHistoryInfo = *it;
+		if (!strcmp(pFeedHistoryInfo->GetUrl(), szUrl))
+		{
+			return pFeedHistoryInfo;
+		}
+	}
+
+	return NULL;
 }

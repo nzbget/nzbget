@@ -300,6 +300,22 @@
 			>
 		</File>
 		<File
+			RelativePath=".\FeedCoordinator.cpp"
+			>
+		</File>
+		<File
+			RelativePath=".\FeedCoordinator.h"
+			>
+		</File>
+		<File
+			RelativePath=".\FeedFile.cpp"
+			>
+		</File>
+		<File
+			RelativePath=".\FeedFile.h"
+			>
+		</File>
+		<File
 			RelativePath=".\Frontend.cpp"
 			>
 		</File>

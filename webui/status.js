@@ -296,7 +296,9 @@ var Status = (new function($)
 	function updatePlayAnim()
 	{
 		// Animate if either any downloads or post-processing is in progress
-		var Anim = (!status.ServerStandBy || (status.PostJobCount > 0 && !status.PostPaused)) &&
+		var Anim = (!status.ServerStandBy || status.FeedActive ||
+			(status.PostJobCount > 0 && !status.PostPaused) ||
+			(status.UrlCount > 0 && !status.DownloadPaused && !status.Download2Paused)) &&
 			(UISettings.refreshInterval !== 0) && !UISettings.connectionError;
 		if (Anim === lastAnimState)
 		{

@@ -243,8 +243,25 @@ var TabDialog = (new function($)
 	{
 		dialog.restoreTab = restoreTab;
 		dialog.switchTab = switchTab;
+		dialog.maximize = maximize;
 	}
 	
+	function maximize(options)
+	{
+		var bodyPadding = 15;
+		var dialog = this;
+		var body = $('.modal-body', dialog);
+		var footer = $('.modal-footer', dialog);
+		var header = $('.modal-header', dialog);
+		body.css({top: header.outerHeight(), bottom: footer.outerHeight()});
+		if (options.mini)
+		{
+			var scrollheader = $('.modal-scrollheader', dialog);
+			var scroll = $('.modal-inner-scroll', dialog);
+			scroll.css('min-height', dialog.height() - header.outerHeight() - footer.outerHeight() - scrollheader.height() - bodyPadding*2);
+		}
+	}
+
 	function restoreTab()
 	{
 		var dialog = this;

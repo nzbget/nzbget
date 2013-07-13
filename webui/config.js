@@ -574,8 +574,9 @@ var Config = (new function($)
 				for (var j=0; j < section.options.length; j++)
 				{
 					var option = section.options[j];
-					if ((option.Name && option.Name.toLowerCase() === name) ||
-						(option.name && option.name.toLowerCase() === name))
+					if (!option.template &&
+						((option.Name && option.Name.toLowerCase() === name) ||
+						 (option.name && option.name.toLowerCase() === name)))
 					{
 						return option;
 					}
@@ -812,6 +813,12 @@ var Config = (new function($)
 				htmldescr += '</span>';
 			}
 
+			if (htmldescr.indexOf('MORE INFO:') > -1)
+			{
+				htmldescr = htmldescr.replace(/MORE INFO:<br>/g, '<input class="btn btn-mini" value="Show more info" type="button" onclick="Config.showSpoiler(this)"><span class="hide">');
+				htmldescr += '</span>';
+			}
+			
 			if (section.multi)
 			{
 				// replace strings like "TaskX.Command" and "Task1.Command"
@@ -846,6 +853,11 @@ var Config = (new function($)
 			html += '<div class="' + section.id + ' multiid' + multiid + ' multiset">';
 			html += '<button type="button" class="btn config-delete" data-multiid="' + multiid + ' multiset" ' +
 				'onclick="Config.deleteSet(this, \'' + setname + '\',\'' + section.id + '\')">Delete ' + setname + multiid + '</button>';
+			if (setname.toLowerCase() === 'feed')
+			{
+				html += ' <button type="button" class="btn config-previewfeed config-feed" data-multiid="' + multiid + ' multiset" ' +
+					'onclick="Config.previewFeed(this, \'' + setname + '\',\'' + section.id + '\')">Preview Feed</button>';
+			}
 			html += '<hr>';
 			html += '</div>';
 		}
@@ -1141,6 +1153,7 @@ var Config = (new function($)
 					$('.config-settitle.' + section.id + '.multiid' + oldMultiId, $ConfigData).text(setname + newMultiId);
 					$('.' + section.id + '.multiid' + oldMultiId + ' .config-multicaption', $ConfigData).text(setname + newMultiId + '.');
 					$('.' + section.id + '.multiid' + oldMultiId + ' .config-delete', $ConfigData).text('Delete ' + setname + newMultiId).attr('data-multiid', newMultiId);
+					$('.' + section.id + '.multiid' + oldMultiId + ' .config-feed', $ConfigData).attr('data-multiid', newMultiId);
 
 					//update class
 					$('.' + section.id + '.multiid' + oldMultiId, $ConfigData).removeClass('multiid' + oldMultiId).addClass('multiid' + newMultiId);
@@ -1232,6 +1245,19 @@ var Config = (new function($)
 		ScriptListDialog.showModal(option, config);
 	}
 
+	/*** RSS FEEDS ********************************************************************/
+
+	this.previewFeed = function(control, setname, sectionId)
+	{
+		var multiid = parseInt($(control).attr('data-multiid'));
+		FeedDialog.showModal(0, 
+			getOptionValue(findOptionByName('Feed' + multiid + '.Name')),
+			getOptionValue(findOptionByName('Feed' + multiid + '.URL')),
+			''/*getOptionValue(findOptionByName('Feed' + multiid + '.Filter'))*/,
+			getOptionValue(findOptionByName('Feed' + multiid + '.Category')),
+			getOptionValue(findOptionByName('Feed' + multiid + '.Priority')));
+	}
+
 	/*** SAVE ********************************************************************/
 
 	function getOptionValue(option)
@@ -1318,7 +1344,6 @@ var Config = (new function($)
 		showSaveBanner();
 
 		Util.show('#ConfigSaved_Reload, #ConfigReload', serverSaveRequest.length > 0);
-		Util.show('#ConfigClose, #ConfigSaved_Close', serverSaveRequest.length === 0);
 
 		if (serverSaveRequest.length > 0)
 		{
@@ -1348,11 +1373,6 @@ var Config = (new function($)
 		{
 			Notification.show('#Notif_Config_Failed');
 		}
-	}
-
-	this.close = function()
-	{
-		$('#DownloadsTabLink').tab('show');
 	}
 
 	this.scrollToOption = function(event, control)

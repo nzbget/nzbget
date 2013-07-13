@@ -307,6 +307,7 @@ private:
 	char*				m_szSevenZipCmd;
 	bool				m_bUnpackPauseQueue;
 	char*				m_szExtCleanupDisk;
+	int					m_iFeedHistory;
 
 	// Parsed command-line parameters
 	bool				m_bServerMode;
@@ -349,6 +350,7 @@ private:
 	void				InitServers();
 	void				InitCategories();
 	void				InitScheduler();
+	void				InitFeeds();
 	void				CheckOptions();
 	void				PrintUsage(char* com);
 	void				Dump();
@@ -465,6 +467,7 @@ public:
 	const char*			GetSevenZipCmd() { return m_szSevenZipCmd; }
 	bool				GetUnpackPauseQueue() { return m_bUnpackPauseQueue; }
 	const char*			GetExtCleanupDisk() { return m_szExtCleanupDisk; }
+	int					GetFeedHistory() { return m_iFeedHistory; }
 
 	Category*			FindCategory(const char* szName) { return m_Categories.FindCategory(szName); }
 

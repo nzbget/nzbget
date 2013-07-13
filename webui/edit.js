@@ -615,7 +615,7 @@ var DownloadsEditDialog = (new function($)
 		var checkedRows = $DownloadsFileTable.fasttable('checkedRows');
 		if (checkedRows.length == 0)
 		{
-			Notification.show('#Notif_Select');
+			Notification.show('#Notif_Edit_Select');
 			return;
 		}
 
