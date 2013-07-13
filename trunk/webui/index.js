@@ -1,7 +1,7 @@
 /*
  * This file is part of nzbget
  *
- * Copyright (C) 2012 Andrey Prygunkov <hugbug@users.sourceforge.net>
+ * Copyright (C) 2012-2013 Andrey Prygunkov <hugbug@users.sourceforge.net>
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -155,9 +155,12 @@ var Frontend = (new function($)
 		Messages.init({ updateTabInfo: updateTabInfo });
 		History.init({ updateTabInfo: updateTabInfo });
 		Upload.init();
+		Feeds.init();
+		FeedDialog.init();
 		Config.init({ updateTabInfo: updateTabInfo });
 		ConfigBackupRestore.init();
 		ConfirmDialog.init();
+		AlertDialog.init();
 		ScriptListDialog.init();
 		RestoreSettingsDialog.init();
 
@@ -233,6 +236,7 @@ var Frontend = (new function($)
 
 		if (firstLoad)
 		{
+			Feeds.redraw();
 			$('#FirstUpdateInfo').hide();
 			$('#Navbar').show();
 			$('#MainTabContent').show();
@@ -302,16 +306,14 @@ var Frontend = (new function($)
 
 		resizeNavbar();
 
-		if (UISettings.miniTheme)
-		{
-			centerPopupMenu('#PlayMenu', true);
-			centerPopupMenu('#RefreshMenu', true);
-		}
+		alignPopupMenu('#PlayMenu', UISettings.miniTheme);
+		alignPopupMenu('#RefreshMenu', UISettings.miniTheme);
+		alignPopupMenu('#RssMenu', UISettings.miniTheme);
 
-		centerCenterDialogs();
+		alignCenterDialogs();
 	}
 
-	function centerPopupMenu(menu, center)
+	function alignPopupMenu(menu, center)
 	{
 		var $elem = $(menu);
 		if (center)
@@ -336,10 +338,16 @@ var Frontend = (new function($)
 				top: '',
 				right: ''
 			});
+			var off = $elem.parent().offset();
+			if (off.left + $elem.outerWidth() > $(window).width())
+			{
+				var left = $(window).width() - $elem.outerWidth() - off.left;
+				$elem.css({ left: left });
+			}
 		}
 	}
 
-	function centerCenterDialogs()
+	function alignCenterDialogs()
 	{
 		$.each($('.modal-center'), function(index, element) {
 			Util.centerDialog(element, true);
@@ -425,8 +433,9 @@ var Frontend = (new function($)
 		$('#DownloadsTable').toggleClass('table-check', !UISettings.miniTheme || UISettings.showEditButtons);
 		$('#HistoryTable').toggleClass('table-check', !UISettings.miniTheme || UISettings.showEditButtons);
 
-		centerPopupMenu('#PlayMenu', UISettings.miniTheme);
-		centerPopupMenu('#RefreshMenu', UISettings.miniTheme);
+		alignPopupMenu('#PlayMenu', UISettings.miniTheme);
+		alignPopupMenu('#RefreshMenu', UISettings.miniTheme);
+		alignPopupMenu('#RssMenu', UISettings.miniTheme);
 
 		if (UISettings.miniTheme)
 		{
@@ -756,6 +765,30 @@ var ConfirmDialog = (new function($)
 		event.preventDefault(); // avoid scrolling
 		actionCallback();
 		$ConfirmDialog.modal('hide');
+	}
+}(jQuery));
+
+
+/*** ALERT DIALOG *****************************************************/
+
+var AlertDialog = (new function($)
+{
+	'use strict';
+
+	// Controls
+	var $AlertDialog;
+	
+	this.init = function()
+	{
+		$AlertDialog = $('#AlertDialog');
+	}
+
+	this.showModal = function(title, text)
+	{
+		$('#AlertDialog_Title').html(title);
+		$('#AlertDialog_Text').html(text);
+		Util.centerDialog($AlertDialog, true);
+		$AlertDialog.modal();
 	}
 }(jQuery));
 

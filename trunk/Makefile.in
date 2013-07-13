@@ -85,7 +85,8 @@ PROGRAMS = $(bin_PROGRAMS)
 am_nzbget_OBJECTS = ArticleDownloader.$(OBJEXT) BinRpc.$(OBJEXT) \
 	ColoredFrontend.$(OBJEXT) Connection.$(OBJEXT) \
 	Decoder.$(OBJEXT) DiskState.$(OBJEXT) DownloadInfo.$(OBJEXT) \
-	Frontend.$(OBJEXT) Log.$(OBJEXT) LoggableFrontend.$(OBJEXT) \
+	Frontend.$(OBJEXT) FeedCoordinator.$(OBJEXT) \
+	FeedFile.$(OBJEXT) Log.$(OBJEXT) LoggableFrontend.$(OBJEXT) \
 	NCursesFrontend.$(OBJEXT) NNTPConnection.$(OBJEXT) \
 	NZBFile.$(OBJEXT) NewsServer.$(OBJEXT) Observer.$(OBJEXT) \
 	Options.$(OBJEXT) ParChecker.$(OBJEXT) ParRenamer.$(OBJEXT) \
@@ -243,6 +244,7 @@ nzbget_SOURCES = \
 	ArticleDownloader.cpp ArticleDownloader.h BinRpc.cpp BinRpc.h \
 	ColoredFrontend.cpp ColoredFrontend.h Connection.cpp Connection.h Decoder.cpp Decoder.h \
 	DiskState.cpp DiskState.h DownloadInfo.cpp DownloadInfo.h Frontend.cpp Frontend.h \
+	FeedCoordinator.cpp FeedCoordinator.h FeedFile.cpp FeedFile.h \
 	Log.cpp Log.h LoggableFrontend.cpp LoggableFrontend.h MessageBase.h \
 	NCursesFrontend.cpp NCursesFrontend.h NNTPConnection.cpp NNTPConnection.h NZBFile.cpp \
 	NZBFile.h NewsServer.cpp NewsServer.h Observer.cpp \
@@ -440,6 +442,8 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/Decoder.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/DiskState.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/DownloadInfo.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/FeedCoordinator.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/FeedFile.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/Frontend.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/Log.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/LoggableFrontend.Po@am__quote@

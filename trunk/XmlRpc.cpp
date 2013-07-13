@@ -48,6 +48,7 @@
 #include "QueueEditor.h"
 #include "PrePostProcessor.h"
 #include "Scanner.h"
+#include "FeedCoordinator.h"
 #include "Util.h"
 
 extern Options* g_pOptions;
@@ -55,6 +56,7 @@ extern QueueCoordinator* g_pQueueCoordinator;
 extern UrlCoordinator* g_pUrlCoordinator;
 extern PrePostProcessor* g_pPrePostProcessor;
 extern Scanner* g_pScanner;
+extern FeedCoordinator* g_pFeedCoordinator;
 extern void ExitProc();
 extern void Reload();
 
@@ -417,6 +419,18 @@ XmlCommand* XmlRpcProcessor::CreateCommand(const char* szMethodName)
 	else if (!strcasecmp(szMethodName, "configtemplates"))
 	{
 		command = new ConfigTemplatesXmlCommand();
+	}
+	else if (!strcasecmp(szMethodName, "viewfeed"))
+	{
+		command = new ViewFeedXmlCommand(false);
+	}
+	else if (!strcasecmp(szMethodName, "previewfeed"))
+	{
+		command = new ViewFeedXmlCommand(true);
+	}
+	else if (!strcasecmp(szMethodName, "fetchfeeds"))
+	{
+		command = new FetchFeedsXmlCommand();
 	}
 	else 
 	{
@@ -846,6 +860,7 @@ void DumpDebugXmlCommand::Execute()
 {
 	g_pQueueCoordinator->LogDebugInfo();
 	g_pUrlCoordinator->LogDebugInfo();
+	g_pFeedCoordinator->LogDebugInfo();
 	BuildBoolResponse(true);
 }
 
@@ -897,6 +912,7 @@ void StatusXmlCommand::Execute()
 		"<member><name>FreeDiskSpaceMB</name><value><i4>%i</i4></value></member>\n"
 		"<member><name>ServerTime</name><value><i4>%i</i4></value></member>\n"
 		"<member><name>ResumeTime</name><value><i4>%i</i4></value></member>\n"
+		"<member><name>FeedActive</name><value><boolean>%s</boolean></value></member>\n"
 		"</struct>\n";
 
 	const char* JSON_RESPONSE_STATUS_BODY = 
@@ -926,7 +942,8 @@ void StatusXmlCommand::Execute()
 		"\"FreeDiskSpaceHi\" : %u,\n"
 		"\"FreeDiskSpaceMB\" : %i,\n"
 		"\"ServerTime\" : %i,\n"
-		"\"ResumeTime\" : %i\n"
+		"\"ResumeTime\" : %i,\n"
+		"\"FeedActive\" : %s\n"
 		"}\n";
 
 	unsigned long iRemainingSizeHi, iRemainingSizeLo;
@@ -958,7 +975,8 @@ void StatusXmlCommand::Execute()
 	int iFreeDiskSpaceMB = (int)(iFreeDiskSpace / 1024 / 1024);
 	int iServerTime = time(NULL);
 	int iResumeTime = g_pOptions->GetResumeTime();
-
+	bool bFeedActive = g_pFeedCoordinator->HasActiveDownloads();
+	
 	char szContent[2048];
 	snprintf(szContent, 2048, IsJson() ? JSON_RESPONSE_STATUS_BODY : XML_RESPONSE_STATUS_BODY, 
 		iRemainingSizeLo, iRemainingSizeHi,	iRemainingMBytes, iDownloadedSizeLo, iDownloadedSizeHi, 
@@ -966,7 +984,8 @@ void StatusXmlCommand::Execute()
 		iPostJobCount, iPostJobCount, iUrlCount, iUpTimeSec, iDownloadTimeSec, 
 		BoolToStr(bDownloadPaused), BoolToStr(bDownloadPaused), BoolToStr(bDownload2Paused), 
 		BoolToStr(bServerStandBy), BoolToStr(bPostPaused), BoolToStr(bScanPaused),
-		iFreeDiskSpaceLo, iFreeDiskSpaceHi,	iFreeDiskSpaceMB, iServerTime, iResumeTime);
+		iFreeDiskSpaceLo, iFreeDiskSpaceHi,	iFreeDiskSpaceMB, iServerTime, iResumeTime,
+		BoolToStr(bFeedActive));
 	szContent[2048-1] = '\0';
 
 	AppendResponse(szContent);
@@ -2332,4 +2351,144 @@ void ConfigTemplatesXmlCommand::Execute()
 	delete pConfigTemplates;
 
 	AppendResponse(IsJson() ? "\n]" : "</data></array>\n");
+}
+
+ViewFeedXmlCommand::ViewFeedXmlCommand(bool bPreview)
+{
+	m_bPreview = bPreview;
+}
+
+// struct[] viewfeed(int id)
+// struct[] previewfeed(string name, string url, string filter)
+void ViewFeedXmlCommand::Execute()
+{
+	bool bOK = false;
+	FeedItemInfos* pFeedItemInfos = NULL;
+
+	if (m_bPreview)
+	{
+		char* szName;
+		char* szUrl;
+		char* szFilter;
+		if (!NextParamAsStr(&szName) || !NextParamAsStr(&szUrl) || !NextParamAsStr(&szFilter))
+		{
+			BuildErrorResponse(2, "Invalid parameter");
+			return;
+		}
+
+		DecodeStr(szName);
+		DecodeStr(szUrl);
+		DecodeStr(szFilter);
+
+		debug("Url=%s", szUrl);
+		debug("Filter=%s", szFilter);
+
+		pFeedItemInfos = new FeedItemInfos();
+		bOK = g_pFeedCoordinator->PreviewFeed(szName, szUrl, szFilter, pFeedItemInfos);
+	}
+	else
+	{
+		int iID = 0;
+		if (!NextParamAsInt(&iID))
+		{
+			BuildErrorResponse(2, "Invalid parameter");
+			return;
+		}
+
+		debug("ID=%i", iID);
+
+		pFeedItemInfos = new FeedItemInfos();
+		bOK = g_pFeedCoordinator->ViewFeed(iID, pFeedItemInfos);
+	}
+
+	if (!bOK)
+	{
+		delete pFeedItemInfos;
+		BuildErrorResponse(3, "Could not read feed");
+		return;
+	}
+
+	const char* XML_FEED_ITEM = 
+		"<value><struct>\n"
+		"<member><name>Name</name><value><string>%s</string></value></member>\n"
+		"<member><name>URL</name><value><string>%s</string></value></member>\n"
+		"<member><name>SizeLo</name><value><i4>%i</i4></value></member>\n"
+		"<member><name>SizeHi</name><value><i4>%i</i4></value></member>\n"
+		"<member><name>SizeMB</name><value><i4>%i</i4></value></member>\n"
+		"<member><name>Category</name><value><string>%s</string></value></member>\n"
+		"<member><name>Time</name><value><i4>%i</i4></value></member>\n"
+		"<member><name>Fetched</name><value><boolean>%s</boolean></value></member>\n"
+		"<member><name>Status</name><value><string>%s</string></value></member>\n"
+		"</struct></value>\n";
+
+	const char* JSON_FEED_ITEM = 
+		"{\n"
+		"\"Name\" : \"%s\",\n"
+		"\"URL\" : \"%s\",\n"
+		"\"SizeLo\" : %i,\n"
+		"\"SizeHi\" : %i,\n"
+		"\"SizeMB\" : %i,\n"
+		"\"Category\" : \"%s\",\n"
+		"\"Time\" : %i,\n"
+		"\"Fetched\" : \"%s\",\n"
+		"\"Status\" : \"%s\"\n"
+		"}";
+
+    const char* szStatusType[] = { "UNKNOWN", "BACKLOG", "FETCHED", "NEW" };
+
+	int szItemBufSize = 10240;
+	char* szItemBuf = (char*)malloc(szItemBufSize);
+
+	AppendResponse(IsJson() ? "[\n" : "<array><data>\n");
+	int index = 0;
+
+    for (FeedItemInfos::iterator it = pFeedItemInfos->begin(); it != pFeedItemInfos->end(); it++)
+    {
+        FeedItemInfo* pFeedItemInfo = *it;
+
+		unsigned long iSizeHi, iSizeLo;
+		Util::SplitInt64(pFeedItemInfo->GetSize(), &iSizeHi, &iSizeLo);
+		int iSizeMB = (int)(pFeedItemInfo->GetSize() / 1024 / 1024);
+
+		char* xmlname = EncodeStr(pFeedItemInfo->GetName());
+		char* xmlurl = EncodeStr(pFeedItemInfo->GetUrl());
+		char* xmlcategory = EncodeStr(pFeedItemInfo->GetCategory());
+
+		snprintf(szItemBuf, szItemBufSize, IsJson() ? JSON_FEED_ITEM : XML_FEED_ITEM,
+			xmlname, xmlurl, iSizeLo, iSizeHi, iSizeMB, xmlcategory, pFeedItemInfo->GetTime(),
+			BoolToStr(pFeedItemInfo->GetFetched()), szStatusType[pFeedItemInfo->GetStatus()]);
+		szItemBuf[szItemBufSize-1] = '\0';
+
+		free(xmlname);
+		free(xmlurl);
+		free(xmlcategory);
+
+		if (IsJson() && index++ > 0)
+		{
+			AppendResponse(",\n");
+		}
+		AppendResponse(szItemBuf);
+    }
+
+	free(szItemBuf);
+
+    for (FeedItemInfos::iterator it = pFeedItemInfos->begin(); it != pFeedItemInfos->end(); it++)
+    {
+        delete *it;
+    }
+	delete pFeedItemInfos;
+
+	AppendResponse(IsJson() ? "\n]" : "</data></array>\n");
+}
+
+void FetchFeedsXmlCommand::Execute()
+{
+	if (!CheckSafeMethod())
+	{
+		return;
+	}
+
+	g_pFeedCoordinator->FetchAllFeeds();
+
+	BuildBoolResponse(true);
 }

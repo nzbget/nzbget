@@ -75,6 +75,7 @@
 #include "ParChecker.h"
 #include "Scheduler.h"
 #include "Scanner.h"
+#include "FeedCoordinator.h"
 #include "Util.h"
 #ifdef WIN32
 #include "NTService.h"
@@ -115,6 +116,7 @@ PrePostProcessor* g_pPrePostProcessor = NULL;
 DiskState* g_pDiskState = NULL;
 Scheduler* g_pScheduler = NULL;
 Scanner* g_pScanner = NULL;
+FeedCoordinator* g_pFeedCoordinator = NULL;
 int g_iArgumentCount;
 char* (*g_szEnvironmentVariables)[] = NULL;
 char* (*g_szArguments)[] = NULL;
@@ -146,6 +148,8 @@ int main(int argc, char *argv[], char *argp[])
 #ifndef DISABLE_PARCHECK
 	DisableCout();
 #endif
+
+	srand (time(NULL));
 
 	g_iArgumentCount = argc;
 	g_szArguments = (char*(*)[])argv;
@@ -205,6 +209,8 @@ void Run(bool bReload)
 
 	g_pServerPool = new ServerPool();
 	g_pScheduler = new Scheduler();
+	g_pUrlCoordinator = new UrlCoordinator();
+	g_pFeedCoordinator = new FeedCoordinator();
 
 	debug("Reading options");
 	g_pOptions = new Options(g_iArgumentCount, *g_szArguments);
@@ -292,8 +298,6 @@ void Run(bool bReload)
 		g_pQueueCoordinator = new QueueCoordinator();
 		g_pDownloadSpeedMeter = g_pQueueCoordinator;
 		g_pDownloadQueueHolder = g_pQueueCoordinator;
-
-		g_pUrlCoordinator = new UrlCoordinator();
 	}
 
 	// Setup the network-server
@@ -365,11 +369,13 @@ void Run(bool bReload)
 		g_pQueueCoordinator->Start();
 		g_pUrlCoordinator->Start();
 		g_pPrePostProcessor->Start();
+		g_pFeedCoordinator->Start();
 
 		// enter main program-loop
 		while (g_pQueueCoordinator->IsRunning() || 
 			g_pUrlCoordinator->IsRunning() || 
-			g_pPrePostProcessor->IsRunning())
+			g_pPrePostProcessor->IsRunning() ||
+			g_pFeedCoordinator->IsRunning())
 		{
 			if (!g_pOptions->GetServerMode() && 
 				!g_pQueueCoordinator->HasMoreJobs() && 
@@ -389,6 +395,10 @@ void Run(bool bReload)
 				{
 					g_pPrePostProcessor->Stop();
 				}
+				if (!g_pFeedCoordinator->IsStopped())
+				{
+					g_pFeedCoordinator->Stop();
+				}
 			}
 			usleep(100 * 1000);
 		}
@@ -397,6 +407,7 @@ void Run(bool bReload)
 		debug("QueueCoordinator stopped");
 		debug("UrlCoordinator stopped");
 		debug("PrePostProcessor stopped");
+		debug("FeedCoordinator stopped");
 	}
 
 	// Stop network-server
@@ -595,6 +606,7 @@ void ExitProc()
 			g_pQueueCoordinator->Stop();
 			g_pUrlCoordinator->Stop();
 			g_pPrePostProcessor->Stop();
+			g_pFeedCoordinator->Stop();
 		}
 	}
 }
@@ -807,6 +819,14 @@ void Cleanup()
 		g_pScheduler = NULL;
 	}
 	debug("Scheduler deleted");
+
+	debug("Deleting FeedCoordinator");
+	if (g_pFeedCoordinator)
+	{
+		delete g_pFeedCoordinator;
+		g_pFeedCoordinator = NULL;
+	}
+	debug("FeedCoordinator deleted");
 
 	if (!g_bReloading)
 	{

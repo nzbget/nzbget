@@ -53,9 +53,11 @@
 #include "NewsServer.h"
 #include "MessageBase.h"
 #include "Scheduler.h"
+#include "FeedCoordinator.h"
 
 extern ServerPool* g_pServerPool;
 extern Scheduler* g_pScheduler;
+extern FeedCoordinator* g_pFeedCoordinator;
 
 #ifdef HAVE_GETOPT_LONG
 static struct option long_options[] =
@@ -174,6 +176,7 @@ static const char* OPTION_UNPACKPAUSEQUEUE		= "UnpackPauseQueue";
 static const char* OPTION_SCRIPTORDER			= "ScriptOrder";
 static const char* OPTION_DEFSCRIPT				= "DefScript";
 static const char* OPTION_EXTCLEANUPDISK		= "ExtCleanupDisk";
+static const char* OPTION_FEEDHISTORY			= "FeedHistory";
 
 // obsolete options
 static const char* OPTION_POSTLOGKIND			= "PostLogKind";
@@ -540,6 +543,7 @@ Options::Options(int argc, char* argv[])
 	m_szSevenZipCmd			= NULL;
 	m_bUnpackPauseQueue		= false;
 	m_szExtCleanupDisk		= NULL;
+	m_iFeedHistory			= 0;
 
 	// Option "ConfigFile" will be initialized later, but we want
 	// to see it at the top of option list, so we add it first
@@ -601,6 +605,7 @@ Options::Options(int argc, char* argv[])
 	InitServers();
 	InitCategories();
 	InitScheduler();
+	InitFeeds();
 
 	if (m_bPrintOptions)
 	{
@@ -890,6 +895,7 @@ void Options::InitDefault()
 #endif
 	SetOption(OPTION_UNPACKPAUSEQUEUE, "no");
 	SetOption(OPTION_EXTCLEANUPDISK, "");
+	SetOption(OPTION_FEEDHISTORY, "7");
 }
 
 void Options::InitOptFile()
@@ -1044,6 +1050,7 @@ void Options::InitOptions()
 	m_iDiskSpace			= ParseIntValue(OPTION_DISKSPACE, 10);
 	m_iParTimeLimit			= ParseIntValue(OPTION_PARTIMELIMIT, 10);
 	m_iKeepHistory			= ParseIntValue(OPTION_KEEPHISTORY, 10);
+	m_iFeedHistory			= ParseIntValue(OPTION_FEEDHISTORY, 10);
 
 	CheckDir(&m_szNzbDir, OPTION_NZBDIR, m_iNzbDirInterval == 0, true);
 
@@ -2112,6 +2119,62 @@ void Options::InitCategories()
 	}
 }
 
+void Options::InitFeeds()
+{
+	int n = 1;
+	while (true)
+	{
+		char optname[128];
+
+		sprintf(optname, "Feed%i.Name", n);
+		const char* nname = GetOption(optname);
+
+		sprintf(optname, "Feed%i.URL", n);
+		const char* nurl = GetOption(optname);
+		
+		sprintf(optname, "Feed%i.Filter", n);
+		const char* nfilter = GetOption(optname);
+
+		sprintf(optname, "Feed%i.Category", n);
+		const char* ncategory = GetOption(optname);
+
+		sprintf(optname, "Feed%i.PauseNzb", n);
+		const char* npausenzb = GetOption(optname);
+		bool bPauseNzb = false;
+		if (npausenzb)
+		{
+			bPauseNzb = (bool)ParseEnumValue(optname, BoolCount, BoolNames, BoolValues);
+		}
+
+		sprintf(optname, "Feed%i.Interval", n);
+		const char* ninterval = GetOption(optname);
+
+		sprintf(optname, "Feed%i.Priority", n);
+		const char* npriority = GetOption(optname);
+
+		bool definition = nname || nurl || nfilter || ncategory || npausenzb || ninterval || npriority;
+		bool completed = nurl;
+
+		if (!definition)
+		{
+			break;
+		}
+
+		if (completed)
+		{
+			FeedInfo* pFeedInfo = new FeedInfo(n, nname, nurl, ninterval ? atoi(ninterval) : 0, nfilter, 
+				bPauseNzb, ncategory, npriority ? atoi(npriority) : 0);
+			g_pFeedCoordinator->AddFeed(pFeedInfo);
+		}
+		else
+		{
+			ConfigError("Feed definition not complete for \"Feed%i\"", n);
+		}
+
+		n++;
+	}
+}
+
 void Options::InitScheduler()
 {
 	int n = 1;
@@ -2468,6 +2531,18 @@ bool Options::ValidateOptionName(const char * optname)
 		char* p = (char*)optname + 8;
 		while (*p >= '0' && *p <= '9') p++;
 		if (p && (!strcasecmp(p, ".name") || !strcasecmp(p, ".destdir") || !strcasecmp(p, ".defscript")))
+		{
+			return true;
+		}
+	}
+
+	if (!strncasecmp(optname, "feed", 4))
+	{
+		char* p = (char*)optname + 4;
+		while (*p >= '0' && *p <= '9') p++;
+		if (p && (!strcasecmp(p, ".name") || !strcasecmp(p, ".url") || !strcasecmp(p, ".interval") ||
+			 !strcasecmp(p, ".filter") || !strcasecmp(p, ".pausenzb") || !strcasecmp(p, ".category") ||
+			 !strcasecmp(p, ".priority")))
 		{
 			return true;
 		}

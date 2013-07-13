@@ -1,7 +1,7 @@
 /*
  *  This file is part of nzbget
  *
- *  Copyright (C) 2012 Andrey Prygunkov <hugbug@users.sourceforge.net>
+ *  Copyright (C) 2012-2013 Andrey Prygunkov <hugbug@users.sourceforge.net>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -60,6 +60,7 @@ private:
 	int					m_iContentLen;
 	bool				m_bConfirmedLength;
 	char*				m_szOriginalFilename;
+	bool				m_bForce;
 	bool				m_bGZip;
 #ifndef DISABLE_GZIP
 	GUnzipStream*		m_pGUnzipStream;
@@ -96,6 +97,7 @@ public:
 	void				SetLastUpdateTimeNow() { m_tLastUpdateTime = ::time(NULL); }
 	bool				GetConfirmedLength() { return m_bConfirmedLength; }
 	const char*			GetOriginalFilename() { return m_szOriginalFilename; }
+	void				SetForce(bool bForce) { m_bForce = bForce; }
 
 	void				LogDebugInfo();
 };

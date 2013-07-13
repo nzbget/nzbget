@@ -134,6 +134,8 @@ public:
 	static bool RegReadStr(HKEY hKey, const char* szKeyName, const char* szValueName, char* szBuffer, int* iBufLen);
 #endif
 
+	static time_t ParseRfc822DateTime(const char* szDateTimeStr);
+
 	/*
 	 * Returns program version and revision number as string formatted like "0.7.0-r295".
 	 * If revision number is not available only version is returned ("0.7.0").

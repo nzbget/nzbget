@@ -931,17 +931,17 @@ bool DiskState::LoadUrlQueue(DownloadQueue* pDownloadQueue, FILE* infile, int iF
 	if (fscanf(infile, "%i\n", &size) != 1) goto error;
 	for (int i = 0; i < size; i++)
 	{
-		UrlInfo* pUrlInfo = NULL;
-		if (!bSkipUrlQueue)
-		{
-			pUrlInfo = new UrlInfo();
-		}
+		UrlInfo* pUrlInfo = new UrlInfo();
 
 		if (!LoadUrlInfo(pUrlInfo, infile, iFormatVersion)) goto error;
 
 		if (!bSkipUrlQueue)
 		{
 			pDownloadQueue->GetUrlQueue()->push_back(pUrlInfo);
+		}
+		else
+		{
+			delete pUrlInfo;
 		}
 	}
 
@@ -1207,4 +1207,185 @@ void DiskState::CleanupTempDir(DownloadQueue* pDownloadQueue)
 	}
      
 	free(ids);
+}
+
+bool DiskState::SaveFeeds(Feeds* pFeeds, FeedHistory* pFeedHistory)
+{
+	debug("Saving feeds state to disk");
+
+	char fileName[1024];
+	snprintf(fileName, 1024, "%s%s", g_pOptions->GetQueueDir(), "feeds");
+	fileName[1024-1] = '\0';
+
+	if (pFeeds->empty() && pFeedHistory->empty())
+	{
+		remove(fileName);
+		return true;
+	}
+
+	FILE* outfile = fopen(fileName, "wb");
+
+	if (!outfile)
+	{
+		error("Error saving diskstate: Could not create file %s", fileName);
+		perror(fileName);
+		return false;
+	}
+
+	fprintf(outfile, "%s%i\n", FORMATVERSION_SIGNATURE, 1);
+
+	// save status
+	SaveFeedStatus(pFeeds, outfile);
+
+	// save history
+	SaveFeedHistory(pFeedHistory, outfile);
+
+	fclose(outfile);
+
+	return true;
+}
+
+bool DiskState::LoadFeeds(Feeds* pFeeds, FeedHistory* pFeedHistory)
+{
+	debug("Loading feeds state from disk");
+
+	bool bOK = false;
+
+	char fileName[1024];
+	snprintf(fileName, 1024, "%s%s", g_pOptions->GetQueueDir(), "feeds");
+	fileName[1024-1] = '\0';
+
+	if (!Util::FileExists(fileName))
+	{
+		return true;
+	}
+
+	FILE* infile = fopen(fileName, "rb");
+
+	if (!infile)
+	{
+		error("Error reading diskstate: could not open file %s", fileName);
+		return false;
+	}
+
+	char FileSignatur[128];
+	fgets(FileSignatur, sizeof(FileSignatur), infile);
+	int iFormatVersion = ParseFormatVersion(FileSignatur);
+	if (iFormatVersion > 1)
+	{
+		error("Could not load diskstate due to file version mismatch");
+		fclose(infile);
+		return false;
+	}
+
+	// load feed status
+	if (!LoadFeedStatus(pFeeds, infile, iFormatVersion)) goto error;
+
+	// load feed history
+	if (!LoadFeedHistory(pFeedHistory, infile, iFormatVersion)) goto error;
+
+	bOK = true;
+
+error:
+
+	fclose(infile);
+	if (!bOK)
+	{
+		error("Error reading diskstate for file %s", fileName);
+	}
+
+	return bOK;
+}
+
+bool DiskState::SaveFeedStatus(Feeds* pFeeds, FILE* outfile)
+{
+	debug("Saving feed status to disk");
+
+	fprintf(outfile, "%i\n", pFeeds->size());
+	for (Feeds::iterator it = pFeeds->begin(); it != pFeeds->end(); it++)
+	{
+		FeedInfo* pFeedInfo = *it;
+
+		fprintf(outfile, "%s\n", pFeedInfo->GetUrl());
+		fprintf(outfile, "%i\n", (int)pFeedInfo->GetLastUpdate());
+	}
+
+	return true;
+}
+
+bool DiskState::LoadFeedStatus(Feeds* pFeeds, FILE* infile, int iFormatVersion)
+{
+	debug("Loading feed status from disk");
+
+	int size;
+	if (fscanf(infile, "%i\n", &size) != 1) goto error;
+	for (int i = 0; i < size; i++)
+	{
+		char szUrl[1024];
+		if (!fgets(szUrl, sizeof(szUrl), infile)) goto error;
+		if (szUrl[0] != 0) szUrl[strlen(szUrl)-1] = 0; // remove traling '\n'
+
+		int iLastUpdate = 0;
+		if (fscanf(infile, "%i\n", &iLastUpdate) != 1) goto error;
+
+		for (Feeds::iterator it = pFeeds->begin(); it != pFeeds->end(); it++)
+		{
+			FeedInfo* pFeedInfo = *it;
+
+			if (!strcmp(pFeedInfo->GetUrl(), szUrl))
+			{
+				pFeedInfo->SetLastUpdate((time_t)iLastUpdate);
+			}
+		}
+	}
+
+	return true;
+
+error:
+	error("Error reading feed history from disk");
+	return false;
+}
+
+bool DiskState::SaveFeedHistory(FeedHistory* pFeedHistory, FILE* outfile)
+{
+	debug("Saving feed history to disk");
+
+	fprintf(outfile, "%i\n", pFeedHistory->size());
+	for (FeedHistory::iterator it = pFeedHistory->begin(); it != pFeedHistory->end(); it++)
+	{
+		FeedHistoryInfo* pFeedHistoryInfo = *it;
+
+		fprintf(outfile, "%i,%i\n", (int)pFeedHistoryInfo->GetStatus(), (int)pFeedHistoryInfo->GetLastSeen());
+		fprintf(outfile, "%s\n", pFeedHistoryInfo->GetUrl());
+	}
+
+	fclose(outfile);
+
+	return true;
+}
+
+bool DiskState::LoadFeedHistory(FeedHistory* pFeedHistory, FILE* infile, int iFormatVersion)
+{
+	debug("Loading feed history from disk");
+
+	int size;
+	if (fscanf(infile, "%i\n", &size) != 1) goto error;
+	for (int i = 0; i < size; i++)
+	{
+		int iStatus = 0;
+		int iLastSeen = 0;
+		if (fscanf(infile, "%i, %i\n", &iStatus, &iLastSeen) != 2) goto error;
+
+		char szUrl[1024];
+		if (!fgets(szUrl, sizeof(szUrl), infile)) goto error;
+		if (szUrl[0] != 0) szUrl[strlen(szUrl)-1] = 0; // remove traling '\n'
+
+		pFeedHistory->Add(szUrl, (FeedHistoryInfo::EStatus)(iStatus), (time_t)(iLastSeen));
+	}
+
+	return true;
+
+error:
+	error("Error reading feed history from disk");
+	return false;
 }

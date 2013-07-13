@@ -1,7 +1,7 @@
 /*
  *  This file is part of nzbget
  *
- *  Copyright (C) 2007-2010 Andrey Prygunkov <hugbug@users.sourceforge.net>
+ *  Copyright (C) 2007-2013 Andrey Prygunkov <hugbug@users.sourceforge.net>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -273,6 +273,22 @@ public:
 };
 
 class ConfigTemplatesXmlCommand: public XmlCommand
+{
+public:
+	virtual void		Execute();
+};
+
+class ViewFeedXmlCommand: public XmlCommand
+{
+private:
+	bool				m_bPreview;
+
+public:
+						ViewFeedXmlCommand(bool bPreview);
+	virtual void		Execute();
+};
+
+class FetchFeedsXmlCommand: public XmlCommand
 {
 public:
 	virtual void		Execute();

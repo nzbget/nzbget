@@ -1,7 +1,7 @@
 /*
  *  This file is part of nzbget
  *
- *  Copyright (C) 2012 Andrey Prygunkov <hugbug@users.sourceforge.net>
+ *  Copyright (C) 2012-2013 Andrey Prygunkov <hugbug@users.sourceforge.net>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -41,10 +41,21 @@ class UrlCoordinator : public Thread, public Observer, public Subject
 {
 public:
 	typedef std::list<UrlDownloader*>	ActiveDownloads;
+	enum EAspectAction
+	{
+		eaUrlAdded,
+		eaUrlCompleted
+	};
+	struct Aspect
+	{
+		EAspectAction eAction;
+		UrlInfo* pUrlInfo;
+	};
 
 private:
 	ActiveDownloads			m_ActiveDownloads;
 	bool					m_bHasMoreJobs;
+	bool					m_bForce;
 
 	bool					GetNextUrl(DownloadQueue* pDownloadQueue, UrlInfo* &pUrlInfo);
 	void					StartUrlDownload(UrlInfo* pUrlInfo);
@@ -57,7 +68,7 @@ public:
 	virtual					~UrlCoordinator();
 	virtual void			Run();
 	virtual void 			Stop();
-	void					Update(Subject* Caller, void* Aspect);
+	void					Update(Subject* pCaller, void* pAspect);
 
 	// Editing the queue
 	void					AddUrlToQueue(UrlInfo* pUrlInfo, bool AddFirst);

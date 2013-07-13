@@ -48,6 +48,10 @@ private:
 	void				SaveHistory(DownloadQueue* pDownloadQueue, FILE* outfile);
 	bool				LoadHistory(DownloadQueue* pDownloadQueue, FILE* infile, int iFormatVersion);
 	int					FindNZBInfoIndex(DownloadQueue* pDownloadQueue, NZBInfo* pNZBInfo);
+	bool				SaveFeedStatus(Feeds* pFeeds, FILE* outfile);
+	bool				LoadFeedStatus(Feeds* pFeeds, FILE* infile, int iFormatVersion);
+	bool				SaveFeedHistory(FeedHistory* pFeedHistory, FILE* outfile);
+	bool				LoadFeedHistory(FeedHistory* pFeedHistory, FILE* infile, int iFormatVersion);
 
 public:
 	bool				DownloadQueueExists();
@@ -58,6 +62,8 @@ public:
 	bool				LoadArticles(FileInfo* pFileInfo);
 	void				DiscardDownloadQueue();
 	bool				DiscardFile(FileInfo* pFileInfo);
+	bool				SaveFeeds(Feeds* pFeeds, FeedHistory* pFeedHistory);
+	bool				LoadFeeds(Feeds* pFeeds, FeedHistory* pFeedHistory);
 	void				CleanupTempDir(DownloadQueue* pDownloadQueue);
 };
 

@@ -399,6 +399,11 @@ body.navfixed.scrolled .navbar-fixed-top .navbar-inner {
 	min-width: 215px;
 }
 
+#RssMenu {
+	max-width: 300px;
+	overflow: hidden;
+}
+
 /* BEGIN: Icons */
 [class^="icon-"],
 [class*=" icon-"],
@@ -431,6 +436,10 @@ body.navfixed.scrolled .navbar-fixed-top .navbar-inner {
 
 .icon-plus {
 	background-position: -16px -16px;
+}
+
+.icon-minus {
+	background-position: -368px -112px;
 }
 
 .icon-remove-white {
@@ -528,6 +537,10 @@ body.navfixed.scrolled .navbar-fixed-top .navbar-inner {
 
 .icon-merge {
 	background-position: -304px -48px;
+}
+
+.icon-rss {
+	background-position: -304px -112px;
 }
 
 .icon-trash-white {
@@ -680,7 +693,8 @@ form {
 }
 
 #DownloadsEdit_FileTable_filter,
-#DownloadsEdit_LogTable_filter {
+#DownloadsEdit_LogTable_filter,
+#FeedDialog_ItemTable_filter {
 	width: 180px;
 }
 
@@ -699,6 +713,36 @@ form {
 	left: 50%;
 }
 
+.modal-max {
+	margin: 15px;
+	left: 0;
+	top: 0;
+	bottom: 0;
+	right: 0;
+	width: auto;
+	height: auto;
+}
+
+.modal-max .modal-body {
+	position: absolute;
+	left: 0;
+	right: 0;
+	max-height: inherit;
+	/* top: 46px;      // must be calculated at runtime */
+	/* bottom: 58px;   // must be calculated at runtime */
+}
+
+.modal-max .modal-inner-scroll {
+	top: 54px;
+}
+
+.modal-max .modal-footer {
+	position: absolute;
+	left: 0;
+	right: 0;
+	bottom: 0;
+}
+
 .modal-inner-scroll {
 	bottom: 0;
 	left: 15px;
@@ -706,6 +750,10 @@ form {
 	position: absolute;
 	right: 0;
 	padding-right: 15px;
+}
+
+.modal-inner-scroll .toolbox-info {
+	margin-bottom: 10px;
 }
 
 /* BEGIN: Tables */
@@ -1293,6 +1341,10 @@ div.ConfigFooter {
 	color: #005580;
 }
 
+.config-previewfeed {
+	margin-left: 15px;
+}
+
 #ScriptListDialog_ScriptTable td:nth-child(2) {
 	padding-right: 100px;
 }
@@ -1795,6 +1847,21 @@ body.phone,
   padding-right: 15px;
 }
 
+.phone .modal-max .modal-body {
+	position: static;
+}
+
+.phone .modal-max .modal-footer {
+	position: static;
+}
+
+.phone .modal-max .modal-inner-scroll {
+	position: static;
+	top: inherit;
+	left: 0;
+	padding-right: 0;
+}
+
 .phone .data-statistics {
 	width: 100%;
 }
@@ -1884,7 +1951,7 @@ body.phone,
 		width: 95%;
 	}
 
-	.modal-body {
+	.modal-body	{
 		max-height: none;
 	}
 
