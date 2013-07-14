@@ -65,6 +65,8 @@ var Feeds = (new function($)
 				insertPos.before(item);
 			}
 		}
+		
+		Util.show('#RssMenuBlock', $('.feed-menu', menu).length > 0);
 	}
 
 	function viewFeed()
