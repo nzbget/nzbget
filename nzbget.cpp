@@ -209,6 +209,9 @@ void Run(bool bReload)
 
 	g_pServerPool = new ServerPool();
 	g_pScheduler = new Scheduler();
+	g_pQueueCoordinator = new QueueCoordinator();
+	g_pDownloadSpeedMeter = g_pQueueCoordinator;
+	g_pDownloadQueueHolder = g_pQueueCoordinator;
 	g_pUrlCoordinator = new UrlCoordinator();
 	g_pFeedCoordinator = new FeedCoordinator();
 
@@ -290,14 +293,6 @@ void Run(bool bReload)
 		ProcessClientRequest();
 		Cleanup();
 		return;
-	}
-
-	// Create the queue coordinator
-	if (!g_pOptions->GetRemoteClientMode())
-	{                                    
-		g_pQueueCoordinator = new QueueCoordinator();
-		g_pDownloadSpeedMeter = g_pQueueCoordinator;
-		g_pDownloadQueueHolder = g_pQueueCoordinator;
 	}
 
 	// Setup the network-server
