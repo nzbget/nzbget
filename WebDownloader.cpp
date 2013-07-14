@@ -501,18 +501,18 @@ WebDownloader::EStatus WebDownloader::CheckResponse(const char* szResponse)
 
 void WebDownloader::ProcessHeader(const char* szLine)
 {
-	if (!strncmp(szLine, "Content-Length: ", 16))
+	if (!strncasecmp(szLine, "Content-Length: ", 16))
 	{
 		m_iContentLen = atoi(szLine + 16);
 		m_bConfirmedLength = true;
 	}
 
-	if (!strncmp(szLine, "Content-Encoding: gzip", 22))
+	if (!strncasecmp(szLine, "Content-Encoding: gzip", 22))
 	{
 		m_bGZip = true;
 	}
 
-	if (!strncmp(szLine, "Content-Disposition: ", 21))
+	if (!strncasecmp(szLine, "Content-Disposition: ", 21))
 	{
 		ParseFilename(szLine);
 	}
