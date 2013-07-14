@@ -57,7 +57,7 @@ exampleconf_FILES = \
 webui_FILES = \
 	webui/index.html webui/index.js webui/downloads.js webui/edit.js webui/fasttable.js \
 	webui/history.js webui/messages.js webui/status.js webui/style.css webui/upload.js \
-	webui/util.js webui/config.js \
+	webui/util.js webui/config.js webui/feed.js \
 	webui/lib/bootstrap.js webui/lib/bootstrap.min.js webui/lib/bootstrap.css  \
 	webui/lib/jquery.js webui/lib/jquery.min.js \
 	webui/img/icons.png webui/img/icons-2x.png \
