@@ -3830,7 +3830,7 @@ if (eval "$ac_cpp conftest.$ac_ext") 2>&5 |
 else
   ac_cv_header_stdc=no
 fi
-rm -f -r conftest*
+rm -f conftest*
 
 fi
 
@@ -3851,7 +3851,7 @@ if (eval "$ac_cpp conftest.$ac_ext") 2>&5 |
 else
   ac_cv_header_stdc=no
 fi
-rm -f -r conftest*
+rm -f conftest*
 
 fi
 
@@ -4947,7 +4947,7 @@ cat >>confdefs.h <<_ACEOF
 _ACEOF
 ;;
 esac
-rm -f -r conftest*
+rm -f conftest*
   if test $ac_cv_sys_file_offset_bits = unknown; then
     { echo "$as_me:$LINENO: checking for _LARGE_FILES value needed for large files" >&5
 echo $ECHO_N "checking for _LARGE_FILES value needed for large files... $ECHO_C" >&6; }
@@ -5068,7 +5068,7 @@ cat >>confdefs.h <<_ACEOF
 _ACEOF
 ;;
 esac
-rm -f -r conftest*
+rm -f conftest*
   fi
 fi
 
@@ -10272,7 +10272,7 @@ do
     cat >>$CONFIG_STATUS <<_ACEOF
     # First, check the format of the line:
     cat >"\$tmp/defines.sed" <<\\CEOF
-/^[	 ]*#[	 ]*undef[	 ][	 ]*$ac_word_re[	 ]*/b def
+/^[	 ]*#[	 ]*undef[	 ][	 ]*$ac_word_re[	 ]*\$/b def
 /^[	 ]*#[	 ]*define[	 ][	 ]*$ac_word_re[(	 ]/b def
 b
 :def
