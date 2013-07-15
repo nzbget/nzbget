@@ -378,7 +378,7 @@ void NZBInfo::BuildFinalDirName(char* szFinalDirBuf, int iBufSize)
 
 	if (bUseCategory)
 	{
-		Options::Category *pCategory = g_pOptions->FindCategory(m_szCategory);
+		Options::Category *pCategory = g_pOptions->FindCategory(m_szCategory, false);
 		if (pCategory && pCategory->GetDestDir() && pCategory->GetDestDir()[0] != '\0')
 		{
 			snprintf(szFinalDirBuf, iBufSize, "%s", pCategory->GetDestDir());

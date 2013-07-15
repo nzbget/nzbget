@@ -175,6 +175,7 @@ public:
 		char*			m_szName;
 		char*			m_szDestDir;
 		char*			m_szDefScript;
+		NameList		m_Aliases;
 
 	public:
 						Category(const char* szName, const char* szDestDir, const char* szDefScript);
@@ -182,6 +183,7 @@ public:
 		const char*		GetName() { return m_szName; }
 		const char*		GetDestDir() { return m_szDestDir; }
 		const char*		GetDefScript() { return m_szDefScript; }
+		NameList*		GetAliases() { return &m_Aliases; }
 	};
 	
 	typedef std::vector<Category*>  CategoriesBase;
@@ -190,7 +192,7 @@ public:
 	{
 	public:
 						~Categories();
-		Category*		FindCategory(const char* szName);
+		Category*		FindCategory(const char* szName, bool bSearchAliases);
 	};
 
 	class Script
@@ -469,7 +471,7 @@ public:
 	const char*			GetExtCleanupDisk() { return m_szExtCleanupDisk; }
 	int					GetFeedHistory() { return m_iFeedHistory; }
 
-	Category*			FindCategory(const char* szName) { return m_Categories.FindCategory(szName); }
+	Category*			FindCategory(const char* szName, bool bSearchAliases) { return m_Categories.FindCategory(szName, bSearchAliases); }
 
 	// Parsed command-line parameters
 	bool				GetServerMode() { return m_bServerMode; }
