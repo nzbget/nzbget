@@ -355,6 +355,8 @@ void FeedCoordinator::FeedCompleted(FeedDownloader* pFeedDownloader)
 
 void FeedCoordinator::ProcessFeed(FeedInfo* pFeedInfo, FeedItemInfos* pFeedItemInfos)
 {
+	debug("Process feed %s", pFeedInfo->GetName());
+
 	bool bFirstFetch = pFeedInfo->GetLastUpdate() == 0;
 	int iAdded = 0;
 
@@ -396,6 +398,8 @@ void FeedCoordinator::ProcessFeed(FeedInfo* pFeedInfo, FeedItemInfos* pFeedItemI
 
 void FeedCoordinator::DownloadItem(FeedInfo* pFeedInfo, FeedItemInfo* pFeedItemInfo)
 {
+	debug("Download %s from %s", pFeedItemInfo->GetUrl(), pFeedInfo->GetName());
+
 	UrlInfo* pUrlInfo = new UrlInfo();
 	pUrlInfo->SetURL(pFeedItemInfo->GetUrl());
 
@@ -437,6 +441,8 @@ bool FeedCoordinator::ViewFeed(int iID, FeedItemInfos* pFeedItemInfos)
 
 bool FeedCoordinator::PreviewFeed(const char* szName, const char* szUrl, const char* szFilter, FeedItemInfos* pFeedItemInfos)
 {
+	debug("Preview feed %s", szName);
+
 	FeedInfo* pFeedInfo = new FeedInfo(0, szName, szUrl, 0, szFilter, false, NULL, 0);
 
 	pFeedInfo->SetPreview(true);
@@ -501,6 +507,8 @@ bool FeedCoordinator::PreviewFeed(const char* szName, const char* szUrl, const c
 
 void FeedCoordinator::FetchAllFeeds()
 {
+	debug("FetchAllFeeds");
+
 	m_mutexDownloads.Lock();
 	for (Feeds::iterator it = m_Feeds.begin(); it != m_Feeds.end(); it++)
 	{
@@ -513,6 +521,8 @@ void FeedCoordinator::FetchAllFeeds()
 
 void FeedCoordinator::UrlCoordinatorUpdate(Subject* pCaller, void* pAspect)
 {
+	debug("Notification from URL-Coordinator received");
+
 	UrlCoordinator::Aspect* pUrlAspect = (UrlCoordinator::Aspect*)pAspect;
 	if (pUrlAspect->eAction == UrlCoordinator::eaUrlCompleted)
 	{
@@ -526,7 +536,6 @@ void FeedCoordinator::UrlCoordinatorUpdate(Subject* pCaller, void* pAspect)
 		{
 			m_FeedHistory.Add(pUrlAspect->pUrlInfo->GetURL(), FeedHistoryInfo::hsFetched, time(NULL));
 		}
-
 		m_bSave = true;
 		m_mutexDownloads.Unlock();
 	}
@@ -542,6 +551,7 @@ bool FeedCoordinator::HasActiveDownloads()
 
 void FeedCoordinator::CheckSaveFeeds()
 {
+	debug("CheckSaveFeeds");
 	m_mutexDownloads.Lock();
 	if (m_bSave)
 	{
@@ -556,6 +566,8 @@ void FeedCoordinator::CheckSaveFeeds()
 
 void FeedCoordinator::CleanupHistory()
 {
+	debug("CleanupHistory");
+
 	m_mutexDownloads.Lock();
 
 	time_t tOldestUpdate = time(NULL);
