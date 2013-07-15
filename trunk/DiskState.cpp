@@ -1359,8 +1359,6 @@ bool DiskState::SaveFeedHistory(FeedHistory* pFeedHistory, FILE* outfile)
 		fprintf(outfile, "%s\n", pFeedHistoryInfo->GetUrl());
 	}
 
-	fclose(outfile);
-
 	return true;
 }
 
