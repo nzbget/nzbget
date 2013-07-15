@@ -2099,7 +2099,7 @@ void Options::InitCategories()
 			char* szDestDir = NULL;
 			if (ndestdir && ndestdir[0] != '\0')
 			{
-				CheckDir(&szDestDir, destdiroptname, false, true);
+				CheckDir(&szDestDir, destdiroptname, false, false);
 			}
 
 			Category* pCategory = new Category(nname, szDestDir, ndefscript);
