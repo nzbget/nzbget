@@ -64,21 +64,39 @@ int DiskState::ParseFormatVersion(const char* szFormatSignature)
  * and of one diskstate-file for each file in download queue.
  * This function saves file "queue" and files with NZB-info. It does not
  * save file-infos.
+ *
+ * For safety:
+ * - first save to temp-file (feeds.new)
+ * - then rename feeds to feeds.bak
+ * - then rename feeds.new to feeds
+ * - then delete feeds.bak
  */
 bool DiskState::SaveDownloadQueue(DownloadQueue* pDownloadQueue)
 {
 	debug("Saving queue to disk");
 
-	char fileName[1024];
-	snprintf(fileName, 1024, "%s%s", g_pOptions->GetQueueDir(), "queue");
-	fileName[1024-1] = '\0';
+	char destFilename[1024];
+	snprintf(destFilename, 1024, "%s%s", g_pOptions->GetQueueDir(), "queue");
+	destFilename[1024-1] = '\0';
 
-	FILE* outfile = fopen(fileName, "wb");
+	char tempFilename[1024];
+	snprintf(tempFilename, 1024, "%s%s", g_pOptions->GetQueueDir(), "queue.new");
+	tempFilename[1024-1] = '\0';
+
+	if (pDownloadQueue->GetFileQueue()->empty() && 
+		pDownloadQueue->GetUrlQueue()->empty() &&
+		pDownloadQueue->GetPostQueue()->empty() &&
+		pDownloadQueue->GetHistoryList()->empty())
+	{
+		remove(destFilename);
+		return true;
+	}
+
+	FILE* outfile = fopen(tempFilename, "wb");
 
 	if (!outfile)
 	{
-		error("Error saving diskstate: Could not create file %s", fileName);
-		perror(fileName);
+		error("Error saving diskstate: Could not create file %s", tempFilename);
 		return false;
 	}
 
@@ -104,12 +122,12 @@ bool DiskState::SaveDownloadQueue(DownloadQueue* pDownloadQueue)
 
 	fclose(outfile);
 
-	if (pDownloadQueue->GetFileQueue()->empty() && 
-		pDownloadQueue->GetUrlQueue()->empty() &&
-		pDownloadQueue->GetPostQueue()->empty() &&
-		pDownloadQueue->GetHistoryList()->empty())
+	// now rename to dest file name
+	remove(destFilename);
+	if (rename(tempFilename, destFilename))
 	{
-		remove(fileName);
+		error("Error saving diskstate: Could not rename file %s to %s", tempFilename, destFilename);
+		return false;
 	}
 
 	return true;
@@ -1209,26 +1227,35 @@ void DiskState::CleanupTempDir(DownloadQueue* pDownloadQueue)
 	free(ids);
 }
 
+/* For safety:
+ * - first save to temp-file (feeds.new)
+ * - then rename feeds to feeds.bak
+ * - then rename feeds.new to feeds
+ * - then delete feeds.bak
+ */
 bool DiskState::SaveFeeds(Feeds* pFeeds, FeedHistory* pFeedHistory)
 {
 	debug("Saving feeds state to disk");
 
-	char fileName[1024];
-	snprintf(fileName, 1024, "%s%s", g_pOptions->GetQueueDir(), "feeds");
-	fileName[1024-1] = '\0';
+	char destFilename[1024];
+	snprintf(destFilename, 1024, "%s%s", g_pOptions->GetQueueDir(), "feeds");
+	destFilename[1024-1] = '\0';
+
+	char tempFilename[1024];
+	snprintf(tempFilename, 1024, "%s%s", g_pOptions->GetQueueDir(), "feeds.new");
+	tempFilename[1024-1] = '\0';
 
 	if (pFeeds->empty() && pFeedHistory->empty())
 	{
-		remove(fileName);
+		remove(destFilename);
 		return true;
 	}
 
-	FILE* outfile = fopen(fileName, "wb");
+	FILE* outfile = fopen(tempFilename, "wb");
 
 	if (!outfile)
 	{
-		error("Error saving diskstate: Could not create file %s", fileName);
-		perror(fileName);
+		error("Error saving diskstate: Could not create file %s", tempFilename);
 		return false;
 	}
 
@@ -1241,6 +1268,14 @@ bool DiskState::SaveFeeds(Feeds* pFeeds, FeedHistory* pFeedHistory)
 	SaveFeedHistory(pFeedHistory, outfile);
 
 	fclose(outfile);
+
+	// now rename to dest file name
+	remove(destFilename);
+	if (rename(tempFilename, destFilename))
+	{
+		error("Error saving diskstate: Could not rename file %s to %s", tempFilename, destFilename);
+		return false;
+	}
 
 	return true;
 }
