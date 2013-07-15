@@ -383,7 +383,18 @@ Options::Category* Options::Categories::FindCategory(const char* szName, bool bS
 			for (NameList::iterator it2 = pCategory->GetAliases()->begin(); it2 != pCategory->GetAliases()->end(); it2++)
 			{
 				const char* szAlias = *it2;
-				if (Util::MatchMask(szName, szAlias))
+
+				char szLowerAlias[1024];
+				strncpy(szLowerAlias, szAlias, sizeof(szLowerAlias));
+				szLowerAlias[1024-1] = '\0';
+				for (char* p = szLowerAlias; *p; p++) *p = tolower(*p); // convert string to lowercase
+
+				char szLowerName[1024];
+				strncpy(szLowerName, szName, sizeof(szLowerName));
+				szLowerName[1024-1] = '\0';
+				for (char* p = szLowerName; *p; p++) *p = tolower(*p); // convert string to lowercase
+				
+				if (Util::MatchMask(szLowerName, szLowerAlias))
 				{
 					return pCategory;
 				}
