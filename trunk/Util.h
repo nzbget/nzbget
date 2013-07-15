@@ -100,6 +100,7 @@ public:
 	static void ExpandFileName(const char* szFilename, char* szBuffer, int iBufSize);
 	static void FormatFileSize(char* szBuffer, int iBufLen, long long lFileSize);
 	static bool SameFilename(const char* szFilename1, const char* szFilename2);
+	static bool MatchMask(const char* name, const char* pat);
 	static char* GetLastErrorMessage(char* szBuffer, int iBufLen);
 
 	/*

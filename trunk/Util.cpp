@@ -1060,6 +1060,53 @@ time_t Util::ParseRfc822DateTime(const char* szDateTimeStr)
 	return enctime;
 }
 
+// From http://bytes.com/topic/c/answers/212179-string-matching
+bool Util::MatchMask(const char* name, const char* pat)
+{
+	const char *spos, *wpos;
+
+	spos = wpos = name;
+	while (*name && *pat != '*')
+	{
+		if (*pat != *name && *pat != '?')
+		{
+			return false;
+		}
+		name++;
+		pat++;
+	}
+
+	while (*name)
+	{
+		if (*pat == '*')
+		{
+			if (*++pat == '\0')
+			{
+				return 1;
+			}
+			wpos = pat;
+			spos = name + 1;
+		}
+		else if (*pat == *name || *pat == '?')
+		{
+			pat++;
+			name++;
+		}
+		else
+		{
+			pat = wpos;
+			name = spos++;
+		}
+	}
+
+	while (*pat == '*' || (*pat && *(pat - 1) == '?'))
+	{
+		pat++;
+	}
+
+	return *pat == '\0';
+}
+
 unsigned int WebUtil::DecodeBase64(char* szInputBuffer, int iInputBufferLength, char* szOutputBuffer)
 {
 	unsigned int InputBufferIndex  = 0;

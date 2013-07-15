@@ -533,7 +533,17 @@ bool Scanner::AddExternalFile(const char* szNZBName, const char* szCategory, int
 		return false;
 	}
 
-	QueueData* pQueueData = new QueueData(szScanFileName, szNZBName, szCategory, iPriority, pParameters, bAddTop, bAddPaused);
+	char* szUseCategory = strdup(szCategory ? szCategory : "");
+	Options::Category *pCategory = g_pOptions->FindCategory(szCategory, true);
+	if (pCategory && strcmp(szCategory, pCategory->GetName()))
+	{
+		free(szUseCategory);
+		szUseCategory = strdup(pCategory->GetName());
+		detail("Category %s matched to %s for %s", szCategory, szUseCategory, szNZBName);
+	}
+
+	QueueData* pQueueData = new QueueData(szScanFileName, szNZBName, szUseCategory, iPriority, pParameters, bAddTop, bAddPaused);
+	free(szUseCategory);
 
 	m_mutexScan.Lock();
 	m_QueueList.push_back(pQueueData);

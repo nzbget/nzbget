@@ -344,6 +344,11 @@ Options::Category::~Category()
 	{
 		free(m_szDefScript);
 	}
+
+	for (NameList::iterator it = m_Aliases.begin(); it != m_Aliases.end(); it++)
+	{
+		free(*it);
+	}
 }
 
 Options::Categories::~Categories()
@@ -354,7 +359,7 @@ Options::Categories::~Categories()
 	}
 }
 
-Options::Category* Options::Categories::FindCategory(const char* szName)
+Options::Category* Options::Categories::FindCategory(const char* szName, bool bSearchAliases)
 {
 	if (!szName)
 	{
@@ -367,6 +372,22 @@ Options::Category* Options::Categories::FindCategory(const char* szName)
 		if (!strcasecmp(pCategory->GetName(), szName))
 		{
 			return pCategory;
+		}
+	}
+
+	if (bSearchAliases)
+	{
+		for (iterator it = begin(); it != end(); it++)
+		{
+			Category* pCategory = *it;
+			for (NameList::iterator it2 = pCategory->GetAliases()->begin(); it2 != pCategory->GetAliases()->end(); it2++)
+			{
+				const char* szAlias = *it2;
+				if (Util::MatchMask(szName, szAlias))
+				{
+					return pCategory;
+				}
+			}
 		}
 	}
 
@@ -2086,7 +2107,10 @@ void Options::InitCategories()
 		sprintf(optname, "Category%i.DefScript", n);
 		const char* ndefscript = GetOption(optname);
 
-		bool definition = nname || ndestdir || ndefscript;
+		sprintf(optname, "Category%i.Aliases", n);
+		const char* naliases = GetOption(optname);
+
+		bool definition = nname || ndestdir || ndefscript || naliases;
 		bool completed = nname && strlen(nname) > 0;
 
 		if (!definition)
@@ -2108,6 +2132,24 @@ void Options::InitCategories()
 			if (szDestDir)
 			{
 				free(szDestDir);
+			}
+			
+			// split Aliases into tokens and create items for each token
+			if (naliases)
+			{
+				char* szAliases = strdup(naliases);
+				char* saveptr;
+				char* szAliasName = strtok_r(szAliases, ",;", &saveptr);
+				while (szAliasName)
+				{
+					szAliasName = Util::Trim(szAliasName);
+					if (szAliasName[0] != '\0')
+					{
+						pCategory->GetAliases()->push_back(strdup(szAliasName));
+					}
+					szAliasName = strtok_r(NULL, ",;", &saveptr);
+				}
+				free(szAliases);
 			}
 		}
 		else
@@ -2530,7 +2572,8 @@ bool Options::ValidateOptionName(const char * optname)
 	{
 		char* p = (char*)optname + 8;
 		while (*p >= '0' && *p <= '9') p++;
-		if (p && (!strcasecmp(p, ".name") || !strcasecmp(p, ".destdir") || !strcasecmp(p, ".defscript")))
+		if (p && (!strcasecmp(p, ".name") || !strcasecmp(p, ".destdir") ||
+			!strcasecmp(p, ".defscript") || !strcasecmp(p, ".aliases")))
 		{
 			return true;
 		}
