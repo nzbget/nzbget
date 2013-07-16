@@ -1069,8 +1069,8 @@ bool Util::MatchMask(const char* name, const char* pat, bool bCaseSensitive)
 	spos = wpos = name;
 	while (*name && *pat != '*')
 	{
-		if ((bCaseSensitive && *pat != *name) || 
-			(!bCaseSensitive && tolower(*pat) != tolower(*name)) &&
+		if (((bCaseSensitive && *pat != *name) ||
+			(!bCaseSensitive && tolower(*pat) != tolower(*name))) &&
 			*pat != '?')
 		{
 			return false;
