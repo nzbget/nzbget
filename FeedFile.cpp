@@ -316,15 +316,25 @@ void FeedFile::Parse_StartElement(const char *name, const char **atts)
 	
 	if (!strcmp("item", name))
 	{
-		if (!m_pFeedItemInfo)
-		{
-			// error: bad rss feed
-			delete m_pFeedItemInfo;
-		}
-
 		m_pFeedItemInfo = new FeedItemInfo();
 	}
-	else if (!strcmp("newznab:attr", name))
+	else if (!strcmp("enclosure", name) && m_pFeedItemInfo)
+	{
+		//<enclosure url="http://myindexer.com/fetch/9eeb264aecce961a6e0d" length="150263340" type="application/x-nzb" />
+		for (; *atts; atts+=2)
+		{
+			if (!strcmp("url", atts[0]))
+			{
+				m_pFeedItemInfo->SetUrl(atts[1]);
+			}
+			else if (!strcmp("length", atts[0]))
+			{
+				long long lSize = atoll(atts[1]);
+				m_pFeedItemInfo->SetSize(lSize);
+			}
+		}
+	}
+	else if (!strcmp("newznab:attr", name) && m_pFeedItemInfo && m_pFeedItemInfo->GetSize() == 0)
 	{
 		//<newznab:attr name="size" value="5423523453534" />
 		if (atts[0] && atts[1] && atts[2] && atts[3] &&
@@ -344,51 +354,28 @@ void FeedFile::Parse_EndElement(const char *name)
 		AddItem(m_pFeedItemInfo);
 		m_pFeedItemInfo = NULL;
 	}
-	else if (!strcmp("title", name))
+	else if (!strcmp("title", name) && m_pFeedItemInfo)
 	{
-		if (!m_pFeedItemInfo)
-		{
-			// error: bad rss feed
-			return;
-		}
-		
 		m_pFeedItemInfo->SetName(m_szTagContent);
 		ParseSubject(m_pFeedItemInfo);
 		m_szTagContent = NULL;
 		m_iTagContentLen = 0;
 	}
-	else if (!strcmp("link", name))
+	else if (!strcmp("link", name) && m_pFeedItemInfo &&
+		(!m_pFeedItemInfo->GetUrl() || strlen(m_pFeedItemInfo->GetUrl()) == 0))
 	{
-		if (!m_pFeedItemInfo)
-		{
-			// error: bad rss feed
-			return;
-		}
-		
 		m_pFeedItemInfo->SetUrl(m_szTagContent);
 		m_szTagContent = NULL;
 		m_iTagContentLen = 0;
 	}
-	else if (!strcmp("category", name))
+	else if (!strcmp("category", name) && m_pFeedItemInfo)
 	{
-		if (!m_pFeedItemInfo)
-		{
-			// error: bad rss feed
-			return;
-		}
-		
 		m_pFeedItemInfo->SetCategory(m_szTagContent);
 		m_szTagContent = NULL;
 		m_iTagContentLen = 0;
 	}
-	else if (!strcmp("pubDate", name))
+	else if (!strcmp("pubDate", name) && m_pFeedItemInfo)
 	{
-		if (!m_pFeedItemInfo)
-		{
-			// error: bad rss feed
-			return;
-		}
-
 		time_t unixtime = Util::ParseRfc822DateTime(m_szTagContent);
 		if (unixtime > 0)
 		{
