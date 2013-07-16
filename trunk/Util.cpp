@@ -36,6 +36,7 @@
 #include <sys/stat.h>
 #include <stdio.h>
 #include <errno.h>
+#include <ctype.h>
 #ifdef WIN32
 #include <direct.h>
 #include <WinIoCtl.h>
@@ -1061,14 +1062,16 @@ time_t Util::ParseRfc822DateTime(const char* szDateTimeStr)
 }
 
 // From http://bytes.com/topic/c/answers/212179-string-matching
-bool Util::MatchMask(const char* name, const char* pat)
+bool Util::MatchMask(const char* name, const char* pat, bool bCaseSensitive)
 {
 	const char *spos, *wpos;
 
 	spos = wpos = name;
 	while (*name && *pat != '*')
 	{
-		if (*pat != *name && *pat != '?')
+		if ((bCaseSensitive && *pat != *name) || 
+			(!bCaseSensitive && tolower(*pat) != tolower(*name)) &&
+			*pat != '?')
 		{
 			return false;
 		}
@@ -1087,7 +1090,9 @@ bool Util::MatchMask(const char* name, const char* pat)
 			wpos = pat;
 			spos = name + 1;
 		}
-		else if (*pat == *name || *pat == '?')
+		else if ((bCaseSensitive && *pat == *name) || 
+			(!bCaseSensitive && tolower(*pat) == tolower(*name)) ||
+			*pat == '?')
 		{
 			pat++;
 			name++;
