@@ -100,6 +100,7 @@ var FeedDialog = (new function($)
 	var category = null;
 	var priority = null;
 	var pageSize = 100;
+	var curFilter = 'ALL';
 
 	this.init = function()
 	{
@@ -155,6 +156,10 @@ var FeedDialog = (new function($)
 		$('#FeedDialog_ItemTable_pagerBlock').hide();
 
 		items = null;
+
+		curFilter = 'ALL';
+		$('#FeedDialog_Toolbar .badge').text('?');
+		updateFilterButtons();
 		
 		$FeedDialog.modal({backdrop: 'static'});
 		$FeedDialog.maximize({mini: UISettings.miniTheme});
@@ -202,9 +207,16 @@ var FeedDialog = (new function($)
 	function itemsLoaded(itemsArr)
 	{
 		$('.loading-block', $FeedDialog).hide();
-
 		items = itemsArr;
+		updateTable();
+	}
 
+	function updateTable()
+	{
+		var countNew = 0;
+		var countFetched = 0;
+		var countBacklog = 0;
+		
 		var data = [];
 
 		for (var i=0; i < items.length; i++)
@@ -218,10 +230,15 @@ var FeedDialog = (new function($)
 			switch (item.Status)
 			{
 				case 'UNKNOWN': status = '<span class="label label-status label-important">UNKNOWN</span>'; break;
-				case 'BACKLOG': status = '<span class="label label-status">BACKLOG</span>'; break;
-				case 'FETCHED': status = '<span class="label label-status label-success">FETCHED</span>'; break;
-				case 'NEW': status = '<span class="label label-status  label-info">NEW</span>'; break;
+				case 'BACKLOG': status = '<span class="label label-status">BACKLOG</span>'; countBacklog +=1; break;
+				case 'FETCHED': status = '<span class="label label-status label-success">FETCHED</span>'; countFetched +=1; break;
+				case 'NEW': status = '<span class="label label-status  label-info">NEW</span>'; countNew +=1; break;
 				default: status = '<span class="label label-status label-important">internal error(' + item.Status + ')</span>';
+			}
+			
+			if (!(curFilter === item.Status || curFilter === 'ALL'))
+			{
+				continue;
 			}
 			
 			var name = Util.textToHtml(item.Name);
@@ -254,6 +271,7 @@ var FeedDialog = (new function($)
 		$ItemTable.fasttable('setCurPage', 1);
 
 		Util.show('#FeedDialog_ItemTable_pagerBlock', data.length > pageSize);
+		updateFilterButtons(countNew, countFetched, countBacklog);
 	}
 
 	function itemsTableRenderCellCallback(cell, index, item)
@@ -262,6 +280,26 @@ var FeedDialog = (new function($)
 		{
 			cell.className = 'text-right';
 		}
+	}
+	
+	function updateFilterButtons(countNew, countFetched, countBacklog)
+	{
+		if (countNew != undefined)
+		{
+			$('#FeedDialog_Badge_ALL').text(countNew + countFetched + countBacklog);
+			$('#FeedDialog_Badge_NEW').text(countNew);
+			$('#FeedDialog_Badge_FETCHED').text(countFetched);
+			$('#FeedDialog_Badge_BACKLOG').text(countBacklog);
+			$('#FeedDialog_Badge_ALL2').text(countNew + countFetched + countBacklog);
+			$('#FeedDialog_Badge_NEW2').text(countNew);
+			$('#FeedDialog_Badge_FETCHED2').text(countFetched);
+			$('#FeedDialog_Badge_BACKLOG2').text(countBacklog);
+		}
+		
+		$('#FeedDialog_Toolbar .btn').removeClass('btn-primary');
+		$('#FeedDialog_Badge_' + curFilter).closest('.btn').addClass('btn-primary');
+		$('#FeedDialog_Toolbar .badge').removeClass('badge-primary');
+		$('#FeedDialog_Badge_' + curFilter).addClass('badge-primary');
 	}
 	
 	this.fetch = function()
@@ -310,4 +348,9 @@ var FeedDialog = (new function($)
 		}
 	}
 	
+	this.filter = function(type)
+	{
+		curFilter = type;
+		updateTable();
+	}
 }(jQuery));
