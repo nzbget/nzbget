@@ -2016,7 +2016,7 @@ var ConfigBackupRestore = (new function($)
 				removeValue(option.name);
 				addValue(option.name);
 			}
-			else if (!option.template && option.multiid === 1)
+			else if (option.template)
 			{
 				// delete all multi-options
 				for (var j=1; ; j++)
