@@ -756,6 +756,12 @@ form {
 	margin-bottom: 10px;
 }
 
+.badge-primary {
+    background-color: #FFFFFF;
+    color: #000000;
+    text-shadow: none;
+}
+
 /* BEGIN: Tables */
 .table {
     margin-bottom: 0px;
