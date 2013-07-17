@@ -2081,6 +2081,7 @@ void DownloadUrlXmlCommand::Execute()
 		pUrlInfo->SetNZBFilename(szNZBFileName);
 		pUrlInfo->SetCategory(szCategory);
 		pUrlInfo->SetPriority(iPriority);
+		pUrlInfo->SetAddTop(bAddTop);
 
 		char szNicename[1024];
 		pUrlInfo->GetName(szNicename, sizeof(szNicename));
