@@ -2087,7 +2087,6 @@ void DownloadUrlXmlCommand::Execute()
 		info("Queue %s", szNicename);
 
 		g_pUrlCoordinator->AddUrlToQueue(pUrlInfo, bAddTop);
-
 	}
 
 	if (bFirst)
@@ -2410,7 +2409,8 @@ void ViewFeedXmlCommand::Execute()
 
 	const char* XML_FEED_ITEM = 
 		"<value><struct>\n"
-		"<member><name>Name</name><value><string>%s</string></value></member>\n"
+		"<member><name>Title</name><value><string>%s</string></value></member>\n"
+		"<member><name>Filename</name><value><string>%s</string></value></member>\n"
 		"<member><name>URL</name><value><string>%s</string></value></member>\n"
 		"<member><name>SizeLo</name><value><i4>%i</i4></value></member>\n"
 		"<member><name>SizeHi</name><value><i4>%i</i4></value></member>\n"
@@ -2423,7 +2423,8 @@ void ViewFeedXmlCommand::Execute()
 
 	const char* JSON_FEED_ITEM = 
 		"{\n"
-		"\"Name\" : \"%s\",\n"
+		"\"Title\" : \"%s\",\n"
+		"\"Filename\" : \"%s\",\n"
 		"\"URL\" : \"%s\",\n"
 		"\"SizeLo\" : %i,\n"
 		"\"SizeHi\" : %i,\n"
@@ -2450,16 +2451,18 @@ void ViewFeedXmlCommand::Execute()
 		Util::SplitInt64(pFeedItemInfo->GetSize(), &iSizeHi, &iSizeLo);
 		int iSizeMB = (int)(pFeedItemInfo->GetSize() / 1024 / 1024);
 
-		char* xmlname = EncodeStr(pFeedItemInfo->GetName());
+		char* xmltitle = EncodeStr(pFeedItemInfo->GetTitle());
+		char* xmlfilename = EncodeStr(pFeedItemInfo->GetFilename());
 		char* xmlurl = EncodeStr(pFeedItemInfo->GetUrl());
 		char* xmlcategory = EncodeStr(pFeedItemInfo->GetCategory());
 
 		snprintf(szItemBuf, szItemBufSize, IsJson() ? JSON_FEED_ITEM : XML_FEED_ITEM,
-			xmlname, xmlurl, iSizeLo, iSizeHi, iSizeMB, xmlcategory, pFeedItemInfo->GetTime(),
+			xmltitle, xmlfilename, xmlurl, iSizeLo, iSizeHi, iSizeMB, xmlcategory, pFeedItemInfo->GetTime(),
 			BoolToStr(pFeedItemInfo->GetFetched()), szStatusType[pFeedItemInfo->GetStatus()]);
 		szItemBuf[szItemBufSize-1] = '\0';
 
-		free(xmlname);
+		free(xmltitle);
+		free(xmlfilename);
 		free(xmlurl);
 		free(xmlcategory);
 

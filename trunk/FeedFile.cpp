@@ -113,7 +113,7 @@ void FeedFile::DetachFeedItemInfos()
 void FeedFile::ParseSubject(FeedItemInfo* pFeedItemInfo)
 {
 	// if title has quatation marks we use only part within quatation marks 
-	char* p = (char*)pFeedItemInfo->GetName();
+	char* p = (char*)pFeedItemInfo->GetTitle();
 	char* start = strchr(p, '\"');
 	if (start)
 	{
@@ -135,12 +135,14 @@ void FeedFile::ParseSubject(FeedItemInfo* pFeedItemInfo)
 					*ext = '\0';
 				}
 
-				pFeedItemInfo->SetName(filename);
+				pFeedItemInfo->SetFilename(filename);
 				free(filename);
 				return;
 			}
 		}
 	}
+
+	pFeedItemInfo->SetFilename(pFeedItemInfo->GetTitle());
 }
 
 #ifdef WIN32
@@ -234,7 +236,7 @@ bool FeedFile::ParseFeed(IUnknown* nzb)
 			return false;
 		}
 		_bstr_t title(tag->Gettext());
-		pFeedItemInfo->SetName(title);
+		pFeedItemInfo->SetTitle(title);
 		ParseSubject(pFeedItemInfo);
 
 		// <pubDate>Wed, 26 Jun 2013 00:02:54 -0600</pubDate>
@@ -390,7 +392,7 @@ void FeedFile::Parse_EndElement(const char *name)
 	}
 	else if (!strcmp("title", name) && m_pFeedItemInfo)
 	{
-		m_pFeedItemInfo->SetName(m_szTagContent);
+		m_pFeedItemInfo->SetTitle(m_szTagContent);
 		ParseSubject(m_pFeedItemInfo);
 		m_szTagContent = NULL;
 		m_iTagContentLen = 0;
