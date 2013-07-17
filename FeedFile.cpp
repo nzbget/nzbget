@@ -228,16 +228,14 @@ bool FeedFile::ParseFeed(IUnknown* nzb)
 		
 		// <title>Debian 6</title> 
 		tag = node->selectSingleNode("title");
-		if (!tag) return false;
+		if (!tag)
+		{
+			// bad rss feed
+			return false;
+		}
 		_bstr_t title(tag->Gettext());
 		pFeedItemInfo->SetName(title);
 		ParseSubject(pFeedItemInfo);
-
-		// <link>https://nzb.org/fetch/334534ce/4364564564</link>
-		tag = node->selectSingleNode("link");
-		if (!tag) return false;
-		_bstr_t link(tag->Gettext());
-		pFeedItemInfo->SetUrl(link);
 
 		// <pubDate>Wed, 26 Jun 2013 00:02:54 -0600</pubDate>
 		tag = node->selectSingleNode("pubDate");
@@ -259,13 +257,18 @@ bool FeedFile::ParseFeed(IUnknown* nzb)
 			pFeedItemInfo->SetCategory(category);
 		}
 
-		// newznab special
-
-		//<newznab:attr name="size" value="5423523453534" />
-		tag = node->selectSingleNode("newznab:attr[@name='size']");
+		//<enclosure url="http://myindexer.com/fetch/9eeb264aecce961a6e0d" length="150263340" type="application/x-nzb" />
+		tag = node->selectSingleNode("enclosure");
 		if (tag)
 		{
-			attr = tag->Getattributes()->getNamedItem("value");
+			attr = tag->Getattributes()->getNamedItem("url");
+			if (attr)
+			{
+				_bstr_t url(attr->Gettext());
+				pFeedItemInfo->SetUrl(url);
+			}
+
+			attr = tag->Getattributes()->getNamedItem("length");
 			if (attr)
 			{
 				_bstr_t size(attr->Gettext());
@@ -274,6 +277,37 @@ bool FeedFile::ParseFeed(IUnknown* nzb)
 			}
 		}
 
+		if (!pFeedItemInfo->GetUrl())
+		{
+			// <link>https://nzb.org/fetch/334534ce/4364564564</link>
+			tag = node->selectSingleNode("link");
+			if (!tag)
+			{
+				// bad rss feed
+				return false;
+			}
+			_bstr_t link(tag->Gettext());
+			pFeedItemInfo->SetUrl(link);
+		}
+
+
+		// newznab special
+
+		//<newznab:attr name="size" value="5423523453534" />
+		if (pFeedItemInfo->GetSize() == 0)
+		{
+			tag = node->selectSingleNode("newznab:attr[@name='size']");
+			if (tag)
+			{
+				attr = tag->Getattributes()->getNamedItem("value");
+				if (attr)
+				{
+					_bstr_t size(attr->Gettext());
+					long long lSize = atoll(size);
+					pFeedItemInfo->SetSize(lSize);
+				}
+			}
+		}
 	}
 	return true;
 }
