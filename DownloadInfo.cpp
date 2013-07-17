@@ -1068,7 +1068,8 @@ void FeedInfo::SetOutputFilename(const char* szOutputFilename)
 
 FeedItemInfo::FeedItemInfo()
 {
-	m_szName = NULL;
+	m_szTitle = NULL;
+	m_szFilename = NULL;
 	m_szUrl = NULL;
 	m_szCategory = NULL;
 	m_lSize = 0;
@@ -1079,9 +1080,13 @@ FeedItemInfo::FeedItemInfo()
 
 FeedItemInfo::~FeedItemInfo()
 {
-	if (m_szName)
+	if (m_szTitle)
 	{
-		free(m_szName);
+		free(m_szTitle);
+	}
+	if (m_szFilename)
+	{
+		free(m_szFilename);
 	}
 	if (m_szUrl)
 	{
@@ -1093,13 +1098,22 @@ FeedItemInfo::~FeedItemInfo()
 	}
 }
 
-void FeedItemInfo::SetName(const char* szName)
+void FeedItemInfo::SetTitle(const char* szTitle)
 {
-	if (m_szName)
+	if (m_szTitle)
 	{
-		free(m_szName);
+		free(m_szTitle);
 	}
-	m_szName = strdup(szName ? szName : NULL);
+	m_szTitle = strdup(szTitle ? szTitle : NULL);
+}
+
+void FeedItemInfo::SetFilename(const char* szFilename)
+{
+	if (m_szFilename)
+	{
+		free(m_szFilename);
+	}
+	m_szFilename = strdup(szFilename ? szFilename : NULL);
 }
 
 void FeedItemInfo::SetUrl(const char* szUrl)

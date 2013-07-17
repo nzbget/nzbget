@@ -101,6 +101,8 @@ var FeedDialog = (new function($)
 	var priority = null;
 	var pageSize = 100;
 	var curFilter = 'ALL';
+	var filenameMode = false;
+	var tableInitialized = false;
 
 	this.init = function()
 	{
@@ -158,12 +160,15 @@ var FeedDialog = (new function($)
 		items = null;
 
 		curFilter = 'ALL';
+		filenameMode = false;
+		tableInitialized = false;
 		$('#FeedDialog_Toolbar .badge').text('?');
-		updateFilterButtons();
+		updateFilterButtons(undefined, undefined, undefined, false);
+		tableInitialized = false;
 		
 		$FeedDialog.modal({backdrop: 'static'});
 		$FeedDialog.maximize({mini: UISettings.miniTheme});
-
+		
 		$('.loading-block', $FeedDialog).show();
 
 		if (id > 0)
@@ -209,6 +214,7 @@ var FeedDialog = (new function($)
 		$('.loading-block', $FeedDialog).hide();
 		items = itemsArr;
 		updateTable();
+		$('.modal-inner-scroll', $FeedDialog).scrollTop(100).scrollTop(0);
 	}
 
 	function updateTable()
@@ -216,6 +222,7 @@ var FeedDialog = (new function($)
 		var countNew = 0;
 		var countFetched = 0;
 		var countBacklog = 0;
+		var differentFilenames = false;
 		
 		var data = [];
 
@@ -241,7 +248,10 @@ var FeedDialog = (new function($)
 				continue;
 			}
 			
-			var name = Util.textToHtml(item.Name);
+			differentFilenames = differentFilenames || (item.Filename !== item.Title);
+			
+			var itemName = filenameMode ? item.Filename : item.Title;
+			var name = Util.textToHtml(itemName);
 			name = name.replace(/\./g, '.<wbr>').replace(/_/g, '_<wbr>');
 			
 			var fields;
@@ -261,7 +271,7 @@ var FeedDialog = (new function($)
 				id: item.URL,
 				item: item,
 				fields: fields,
-				search: item.Status + ' ' + item.Name + ' ' + item.URL + ' ' + item.Category  + ' ' + age + ' ' + size
+				search: item.Status + ' ' + itemName + ' ' + item.Category  + ' ' + age + ' ' + size
 			};
 
 			data.push(item);
@@ -271,7 +281,7 @@ var FeedDialog = (new function($)
 		$ItemTable.fasttable('setCurPage', 1);
 
 		Util.show('#FeedDialog_ItemTable_pagerBlock', data.length > pageSize);
-		updateFilterButtons(countNew, countFetched, countBacklog);
+		updateFilterButtons(countNew, countFetched, countBacklog, differentFilenames);
 	}
 
 	function itemsTableRenderCellCallback(cell, index, item)
@@ -282,24 +292,30 @@ var FeedDialog = (new function($)
 		}
 	}
 	
-	function updateFilterButtons(countNew, countFetched, countBacklog)
+	function updateFilterButtons(countNew, countFetched, countBacklog, differentFilenames)
 	{
 		if (countNew != undefined)
 		{
-			$('#FeedDialog_Badge_ALL').text(countNew + countFetched + countBacklog);
-			$('#FeedDialog_Badge_NEW').text(countNew);
-			$('#FeedDialog_Badge_FETCHED').text(countFetched);
-			$('#FeedDialog_Badge_BACKLOG').text(countBacklog);
-			$('#FeedDialog_Badge_ALL2').text(countNew + countFetched + countBacklog);
-			$('#FeedDialog_Badge_NEW2').text(countNew);
-			$('#FeedDialog_Badge_FETCHED2').text(countFetched);
-			$('#FeedDialog_Badge_BACKLOG2').text(countBacklog);
+			$('#FeedDialog_Badge_ALL,#FeedDialog_Badge_ALL2').text(countNew + countFetched + countBacklog);
+			$('#FeedDialog_Badge_NEW,#FeedDialog_Badge_NEW2').text(countNew);
+			$('#FeedDialog_Badge_FETCHED,#FeedDialog_Badge_FETCHED2').text(countFetched);
+			$('#FeedDialog_Badge_BACKLOG,#FeedDialog_Badge_BACKLOG2').text(countBacklog);
+		}
+
+		$('#FeedDialog_Toolbar .btn').removeClass('btn-primary');
+		$('#FeedDialog_Badge_' + curFilter + ',#FeedDialog_Badge_' + curFilter + '2').closest('.btn').addClass('btn-primary');
+		$('#FeedDialog_Toolbar .badge').removeClass('badge-primary');
+		$('#FeedDialog_Badge_' + curFilter + ',#FeedDialog_Badge_' + curFilter + '2').addClass('badge-primary');
+
+		if (differentFilenames != undefined && !tableInitialized)
+		{
+			Util.show('#FeedDialog .FeedDialog-names', differentFilenames);
+			tableInitialized = true;
 		}
 		
-		$('#FeedDialog_Toolbar .btn').removeClass('btn-primary');
-		$('#FeedDialog_Badge_' + curFilter).closest('.btn').addClass('btn-primary');
-		$('#FeedDialog_Toolbar .badge').removeClass('badge-primary');
-		$('#FeedDialog_Badge_' + curFilter).addClass('badge-primary');
+		$('#FeedDialog_Titles,#FeedDialog_Titles2').toggleClass('btn-primary', !filenameMode);
+		$('#FeedDialog_Filenames,#FeedDialog_Filenames2').toggleClass('btn-primary', filenameMode);
+		$('#FeedDialog_ItemTable_Name').text(filenameMode ? 'Filename' : 'Title');
 	}
 	
 	this.fetch = function()
@@ -330,8 +346,8 @@ var FeedDialog = (new function($)
 	{
 		if (fetchItems.length > 0)
 		{
-			var name = fetchItems[0].Name;
-			if (name.substr(name, name.length-3, 3).toLowerCase() !== '.nzb')
+			var name = fetchItems[0].Filename;
+			if (name.substr(name.length-4, 4).toLowerCase() !== '.nzb')
 			{
 				name += '.nzb';
 			}
@@ -351,6 +367,12 @@ var FeedDialog = (new function($)
 	this.filter = function(type)
 	{
 		curFilter = type;
+		updateTable();
+	}
+	
+	this.setFilenameMode = function(mode)
+	{
+		filenameMode = mode;
 		updateTable();
 	}
 }(jQuery));

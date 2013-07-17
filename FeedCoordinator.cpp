@@ -405,7 +405,7 @@ void FeedCoordinator::DownloadItem(FeedInfo* pFeedInfo, FeedItemInfo* pFeedItemI
 
 	// add .nzb-extension if not present
 	char szNZBName[1024];
-	strncpy(szNZBName, pFeedItemInfo->GetName(), 1024);
+	strncpy(szNZBName, pFeedItemInfo->GetFilename(), 1024);
 	szNZBName[1024-1] = '\0';
 	char* ext = strrchr(szNZBName, '.');
 	if (ext && !strcasecmp(ext, ".nzb"))

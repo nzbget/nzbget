@@ -658,7 +658,8 @@ public:
 	};
 
 private:
-	char*				m_szName;
+	char*				m_szTitle;
+	char*				m_szFilename;
 	char*				m_szUrl;
 	time_t				m_tTime;
 	long long			m_lSize;
@@ -669,8 +670,10 @@ private:
 public:
 						FeedItemInfo();
 						~FeedItemInfo();
-	const char*			GetName() { return m_szName; }
-	void				SetName(const char* szName);
+	const char*			GetTitle() { return m_szTitle; }
+	void				SetTitle(const char* szTitle);
+	const char*			GetFilename() { return m_szFilename; }
+	void				SetFilename(const char* szFilename);
 	const char*			GetUrl() { return m_szUrl; }
 	void				SetUrl(const char* szUrl);
 	long long			GetSize() { return m_lSize; }
