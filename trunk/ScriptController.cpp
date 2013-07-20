@@ -658,27 +658,27 @@ void ScriptController::ProcessOutput(char* szText)
 
 	if (!strncmp(szText, "[INFO] ", 7))
 	{
-		PrintMessage(Message::mkInfo, szText + 7);
+		PrintMessage(Message::mkInfo, "%s", szText + 7);
 	}
 	else if (!strncmp(szText, "[WARNING] ", 10))
 	{
-		PrintMessage(Message::mkWarning, szText + 10);
+		PrintMessage(Message::mkWarning, "%s", szText + 10);
 	}
 	else if (!strncmp(szText, "[ERROR] ", 8))
 	{
-		PrintMessage(Message::mkError, szText + 8);
+		PrintMessage(Message::mkError, "%s", szText + 8);
 	}
 	else if (!strncmp(szText, "[DETAIL] ", 9))
 	{
-		PrintMessage(Message::mkDetail, szText + 9);
+		PrintMessage(Message::mkDetail, "%s", szText + 9);
 	}
 	else if (!strncmp(szText, "[DEBUG] ", 8))
 	{
-		PrintMessage(Message::mkDebug, szText + 8);
+		PrintMessage(Message::mkDebug, "%s", szText + 8);
 	}
 	else 
 	{
-		PrintMessage(Message::mkInfo, szText);
+		PrintMessage(Message::mkInfo, "%s", szText);
 	}
 
 	debug("Processing output received from script - completed");
