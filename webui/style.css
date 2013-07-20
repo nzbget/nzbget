@@ -785,7 +785,7 @@ td.text-center,th.text-center {
   background-color: #f5f5f5;
 }
 
-.table th, .table  td {
+.table th, .table td {
 	padding: 5px;
 }
 
@@ -833,7 +833,7 @@ table.table-cancheck tr.checkremove div.img-check {
 }
 
 tr.checked,
-tr.checked  td {
+tr.checked td {
 	background-color: #FFFFE1;
 }
 
@@ -844,6 +844,17 @@ tr.checked  td {
 .table tbody tr.checked:hover,
 .table tbody tr.checked:hover td {
 	background-color: #FFFFCC;
+}
+
+.check-simple tr.checked,
+.check-simple tr.checked td,
+.table-striped.check-simple tbody tr.checked:nth-child(odd) td {
+	background-color: inherit;
+}
+
+.table.check-simple tbody tr.checked:hover,
+.table.check-simple tbody tr.checked:hover td {
+  background-color: #f5f5f5;
 }
 
 table.table-hidecheck thead > tr > th:first-child,
@@ -1018,9 +1029,14 @@ table.table-hidecheck tbody > tr > td:first-child {
   margin-left:-200px;
 }
 
-.modal-mini .modal-body {
-  padding-left: 40px;
-  padding-right: 40px;
+.modal-small {
+  width: 480px;
+  margin-left:-240px;
+}
+
+.modal-padded-small .modal-body {
+  padding-left: 25px;
+  padding-right: 25px;
 }
 
 .modal-padded .modal-body {
@@ -1289,6 +1305,10 @@ div.ConfigFooter {
 	border-bottom: 1px solid #eeeeee;
 	margin-bottom: 15px;
 	padding-bottom: 12px;
+}
+
+div.control-group.last-group {
+	margin-bottom: 0;
 }
 
 #ConfigContent div.control-group.last-group,
@@ -1847,8 +1867,8 @@ body.phone,
 	text-align: center;
 }
 
-.phone .modal-mini .modal-body,
-.phone .modal-padded .modal-body {
+.phone .modal-padded .modal-body,
+.phone .modal-padded-small .modal-body {
   padding-left: 15px;
   padding-right: 15px;
 }

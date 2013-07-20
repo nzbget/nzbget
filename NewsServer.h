@@ -2,7 +2,7 @@
  *  This file if part of nzbget
  *
  *  Copyright (C) 2004 Sven Henkel <sidddy@users.sourceforge.net>
- *  Copyright (C) 2007-2008 Andrey Prygunkov <hugbug@users.sourceforge.net>
+ *  Copyright (C) 2007-2013 Andrey Prygunkov <hugbug@users.sourceforge.net>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -31,6 +31,8 @@ class NewsServer
 {
 private:
 	int				m_iID;
+	bool			m_bActive;
+	char*			m_szName;
 	int				m_iGroup;
 	char*			m_szHost;
 	int				m_iPort;
@@ -38,15 +40,20 @@ private:
 	char*			m_szPassword;
 	int				m_iMaxConnections;
 	int				m_iLevel;
+	int				m_iNormLevel;
 	bool			m_bJoinGroup;
 	bool			m_bTLS;
 	char*			m_szCipher;
 
 public:
-					NewsServer(int iID, const char* szHost, int iPort, const char* szUser, const char* szPass, bool bJoinGroup,
+					NewsServer(int iID, bool bActive, const char* szName, const char* szHost, int iPort,
+						const char* szUser, const char* szPass, bool bJoinGroup,
 						bool bTLS, const char* szCipher, int iMaxConnections, int iLevel, int iGroup);
 					~NewsServer();
 	int				GetID() { return m_iID; }
+	bool			GetActive() { return m_bActive; }
+	void			SetActive(bool bActive) { m_bActive = bActive; }
+	const char*		GetName() { return m_szName; }
 	int				GetGroup() { return m_iGroup; }
 	const char*		GetHost() { return m_szHost; }
 	int				GetPort() { return m_iPort; }
@@ -54,7 +61,8 @@ public:
 	const char*		GetPassword() { return m_szPassword; }
 	int				GetMaxConnections() { return m_iMaxConnections; }
 	int				GetLevel() { return m_iLevel; }
-	void			SetLevel(int iLevel) { m_iLevel = iLevel; }
+	int				GetNormLevel() { return m_iNormLevel; }
+	void			SetNormLevel(int iLevel) { m_iNormLevel = iLevel; }
 	int				GetJoinGroup() { return m_bJoinGroup; }
 	bool			GetTLS() { return m_bTLS; }
 	const char*		GetCipher() { return m_szCipher; }

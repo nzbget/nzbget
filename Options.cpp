@@ -2015,6 +2015,17 @@ void Options::InitServers()
 	{
 		char optname[128];
 
+		sprintf(optname, "Server%i.Active", n);
+		const char* nactive = GetOption(optname);
+		bool bActive = true;
+		if (nactive)
+		{
+			bActive = (bool)ParseEnumValue(optname, BoolCount, BoolNames, BoolValues);
+		}
+
+		sprintf(optname, "Server%i.Name", n);
+		const char* nname = GetOption(optname);
+
 		sprintf(optname, "Server%i.Level", n);
 		const char* nlevel = GetOption(optname);
 
@@ -2063,7 +2074,8 @@ void Options::InitServers()
 		sprintf(optname, "Server%i.Connections", n);
 		const char* nconnections = GetOption(optname);
 
-		bool definition = nlevel || ngroup || nhost || nport || nusername || npassword || nconnections || njoingroup || ntls || ncipher;
+		bool definition = nactive || nname || nlevel || ngroup || nhost || nport ||
+			nusername || npassword || nconnections || njoingroup || ntls || ncipher;
 		bool completed = nhost && nport && nconnections;
 
 		if (!definition)
@@ -2073,7 +2085,8 @@ void Options::InitServers()
 
 		if (completed)
 		{
-			NewsServer* pNewsServer = new NewsServer(n, nhost, atoi(nport), nusername, npassword,
+			NewsServer* pNewsServer = new NewsServer(n, bActive, nname,
+				nhost, atoi(nport), nusername, npassword,
 				bJoinGroup, bTLS, ncipher, atoi((char*)nconnections),
 				nlevel ? atoi((char*)nlevel) : 0,
 				ngroup ? atoi((char*)ngroup) : 0);
@@ -2547,7 +2560,8 @@ bool Options::ValidateOptionName(const char * optname)
 		char* p = (char*)optname + 6;
 		while (*p >= '0' && *p <= '9') p++;
 		if (p &&
-			(!strcasecmp(p, ".level") || !strcasecmp(p, ".host") ||
+			(!strcasecmp(p, ".active") || !strcasecmp(p, ".name") ||
+			!strcasecmp(p, ".level") || !strcasecmp(p, ".host") ||
 			!strcasecmp(p, ".port") || !strcasecmp(p, ".username") ||
 			!strcasecmp(p, ".password") || !strcasecmp(p, ".joingroup") ||
 			!strcasecmp(p, ".encryption") || !strcasecmp(p, ".connections") ||

@@ -103,7 +103,8 @@ bool NNTPConnection::Authenticate()
 	if (!m_pNewsServer->GetUser() || strlen(m_pNewsServer->GetUser()) == 0 || 
 		!m_pNewsServer->GetPassword() || strlen(m_pNewsServer->GetPassword()) == 0)
 	{
-		error("Server%i (%s) requested authorization but username/password are not set in settings", m_pNewsServer->GetID(), m_pNewsServer->GetHost());
+		error("%c%s (%s) requested authorization but username/password are not set in settings", 
+			toupper(m_pNewsServer->GetName()[0]), m_pNewsServer->GetName() + 1, m_pNewsServer->GetHost());
 		m_bAuthError = true;
 		return false;
 	}

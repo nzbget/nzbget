@@ -1,7 +1,7 @@
 /*
  * This file is part of nzbget
  *
- * Copyright (C) 2012 Andrey Prygunkov <hugbug@users.sourceforge.net>
+ * Copyright (C) 2012-2013 Andrey Prygunkov <hugbug@users.sourceforge.net>
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -25,7 +25,8 @@
 /*
  * In this module:
  *   1) Status Infos on main page (speed, time, paused state etc.);
- *   2) Statistics and Status dialog.
+ *   2) Statistics and Status dialog;
+ *   3) Limit dialog (speed and active news servers).
  */
 
 /*** STATUS INFOS ON MAIN PAGE AND STATISTICS DIALOG ****************************************/
@@ -38,7 +39,6 @@ var Status = (new function($)
 	this.status;
 	
 	// Controls
-	var $SpeedLimitInput;
 	var $CHPauseDownload;
 	var $CHPausePostProcess;
 	var $CHPauseScan;
@@ -56,9 +56,6 @@ var Status = (new function($)
 	var $PlayButton;
 	var $PauseButton;
 	var $PlayAnimation;
-	var $CurSpeedLimit;
-	var $CurSpeedLimitBlock;
-	var $LimitDialog;
 	var $StatDialog;
 	var $ScheduledPauseDialog;
 	var $PauseForInput;
@@ -73,7 +70,6 @@ var Status = (new function($)
 
 	this.init = function()
 	{
-		$SpeedLimitInput = $('#SpeedLimitInput');
 		$CHPauseDownload = $('#CHPauseDownload');
 		$CHPausePostProcess = $('#CHPausePostProcess');
 		$CHPauseScan = $('#CHPauseScan');
@@ -91,9 +87,6 @@ var Status = (new function($)
 		$StatusTimeIcon = $('#StatusTimeIcon');
 		$StatusTime = $('#StatusTime');
 		$StatusURLs = $('#StatusURLs');
-		$CurSpeedLimit = $('#CurSpeedLimit');
-		$CurSpeedLimitBlock = $('#CurSpeedLimitBlock');
-		$LimitDialog = $('#LimitDialog');
 		$StatDialog = $('#StatDialog');
 		$ScheduledPauseDialog = $('#ScheduledPauseDialog')
 		$PauseForInput = $('#PauseForInput');
@@ -236,8 +229,21 @@ var Status = (new function($)
 			}
 		}
 
-		$StatusSpeedIcon.toggleClass('icon-plane', status.DownloadLimit === 0);
-		$StatusSpeedIcon.toggleClass('icon-truck', status.DownloadLimit !== 0);
+		var limit = status.DownloadLimit > 0;
+		if (!limit)
+		{
+			for (var i=0; i < Status.status.NewsServers.length; i++)
+			{
+				limit = !Status.status.NewsServers[i].Active;
+				if (limit)
+				{
+					break;
+				}
+			}
+		}
+		
+		$StatusSpeedIcon.toggleClass('icon-plane', !limit);
+		$StatusSpeedIcon.toggleClass('icon-truck', limit);
 		$StatusTime.toggleClass('scheduled-resume', status.ServerStandBy && status.ResumeTime > 0);
 		$StatusTimeIcon.toggleClass('icon-time', !(status.ServerStandBy && status.ResumeTime > 0));
 		$StatusTimeIcon.toggleClass('icon-time-orange', status.ServerStandBy && status.ResumeTime > 0);
@@ -360,41 +366,9 @@ var Status = (new function($)
 		RPC.call(method, [], Refresher.update);
 	}
 
-	this.limitDialogClick = function()
-	{
-		$SpeedLimitInput.val('');
-		$CurSpeedLimit.text(status.DownloadLimit === 0 ? 'none' : Util.round0(status.DownloadLimit / 1024) + ' KB/s');
-		Util.show($CurSpeedLimitBlock, status.DownloadLimit !== 0);
-		$LimitDialog.modal();
-	}
-
 	this.statDialogClick = function()
 	{
 		$StatDialog.modal();
-	}
-
-	this.setSpeedLimitClick = function()
-	{
-		var val = $SpeedLimitInput.val();
-		var rate = 0;
-		if (val == '')
-		{
-			rate = 0;
-		}
-		else
-		{
-			rate = parseInt(val);
-			if (isNaN(rate))
-			{
-				return;
-			}
-		}
-		RPC.call('rate', [rate], function()
-		{
-			$LimitDialog.modal('hide');
-			Notification.show('#Notif_SetSpeedLimit');
-			Refresher.update();
-		});
 	}
 
 	this.scheduledPauseClick = function(seconds)
@@ -441,5 +415,158 @@ var Status = (new function($)
 			$PlayAnimation.show();
 		}
 		modalShown = false;
+	}
+}(jQuery));
+
+
+/*** LIMIT DIALOG *******************************************************/
+
+var LimitDialog = (new function($)
+{
+	'use strict'
+
+	// Controls
+	var $LimitDialog;
+	var $ServerTable;
+	var $LimitDialog_SpeedInput;
+
+	// State
+	var changed;
+
+	this.init = function()
+	{
+		$LimitDialog = $('#LimitDialog');
+		$LimitDialog_SpeedInput = $('#LimitDialog_SpeedInput');
+		$('#LimitDialog_Save').click(save);
+		$ServerTable = $('#LimitDialog_ServerTable');
+
+		$ServerTable.fasttable(
+			{
+				pagerContainer: $('#LimitDialog_ServerTable_pager'),
+				headerCheck: $('#LimitDialog_ServerTable > thead > tr:first-child'),
+				hasHeader: false,
+				pageSize: 100
+			});
+
+		$ServerTable.on('click', 'tbody div.check',
+			function(event) { $ServerTable.fasttable('itemCheckClick', this.parentNode.parentNode, event); });
+		$ServerTable.on('click', 'thead div.check',
+			function() { $ServerTable.fasttable('titleCheckClick') });
+		$ServerTable.on('mousedown', Util.disableShiftMouseDown);
+
+		$LimitDialog.on('hidden', function()
+		{
+			// cleanup
+			$ServerTable.fasttable('update', []);
+		});
+	}
+
+	this.showModal = function()
+	{
+		changed = false;
+		var rate = Util.round0(Status.status.DownloadLimit / 1024);
+		$LimitDialog_SpeedInput.val(rate > 0 ? rate : '');
+		updateTable();
+		$LimitDialog.modal({backdrop: 'static'});
+	}
+
+	function updateTable()
+	{
+		var data = [];
+		for (var i=0; i < Status.status.NewsServers.length; i++)
+		{
+			var server = Status.status.NewsServers[i];
+			var name = Options.option('Server' + server.ID + '.Name');
+			if (name === null || name === '')
+			{
+				var host = Options.option('Server' + server.ID + '.Host');
+				var port = Options.option('Server' + server.ID + '.Port');
+				name = (host === null ? '' : host) + ':' + (port === null ? '119' : port);
+			}
+			var fields = ['<div class="check img-check"></div>', server.ID + '. ' + name];
+			var item =
+			{
+				id: server.ID,
+				fields: fields,
+				search: ''
+			};
+			data.push(item);
+			
+			$ServerTable.fasttable('checkRow', server.ID, server.Active);
+		}
+		$ServerTable.fasttable('update', data);
+		Util.show('#LimitDialog_ServerBlock', data.length > 0);
+	}
+
+	function save(e)
+	{
+		var val = $LimitDialog_SpeedInput.val();
+		var rate = 0;
+		if (val == '')
+		{
+			rate = 0;
+		}
+		else
+		{
+			rate = parseInt(val);
+			if (isNaN(rate))
+			{
+				return;
+			}
+		}
+		
+		var oldRate = Util.round0(Status.status.DownloadLimit / 1024);
+		
+		if (rate != oldRate)
+		{
+			changed = true;
+			RPC.call('rate', [rate], function()
+			{
+				saveServers();
+			});
+		}
+		else
+		{
+			saveServers();
+		}
+	}
+	
+	function saveServers()
+	{
+		var checkedRows = $ServerTable.fasttable('checkedRows');
+		var command = [];
+		
+		for (var i=0; i < Status.status.NewsServers.length; i++)
+		{
+			var server = Status.status.NewsServers[i];
+			var selected = checkedRows.indexOf(server.ID) > -1;
+			if (server.Active != selected)
+			{
+				command.push([server.ID, selected]);
+				changed = true;
+			}
+		}
+		
+		if (command.length > 0)
+		{
+			RPC.call('editserver', command, function()
+			{
+				completed();
+			});
+		}
+		else
+		{
+			completed();
+		}
+	}
+	
+	function completed()
+	{
+		$LimitDialog.modal('hide');
+		if (changed)
+		{
+			Notification.show('#Notif_SetSpeedLimit');
+		}
+		Refresher.update();
 	}
 }(jQuery));

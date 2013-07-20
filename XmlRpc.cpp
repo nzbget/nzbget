@@ -49,6 +49,7 @@
 #include "PrePostProcessor.h"
 #include "Scanner.h"
 #include "FeedCoordinator.h"
+#include "ServerPool.h"
 #include "Util.h"
 
 extern Options* g_pOptions;
@@ -57,6 +58,7 @@ extern UrlCoordinator* g_pUrlCoordinator;
 extern PrePostProcessor* g_pPrePostProcessor;
 extern Scanner* g_pScanner;
 extern FeedCoordinator* g_pFeedCoordinator;
+extern ServerPool* g_pServerPool;
 extern void ExitProc();
 extern void Reload();
 
@@ -431,6 +433,10 @@ XmlCommand* XmlRpcProcessor::CreateCommand(const char* szMethodName)
 	else if (!strcasecmp(szMethodName, "fetchfeeds"))
 	{
 		command = new FetchFeedsXmlCommand();
+	}
+	else if (!strcasecmp(szMethodName, "editserver"))
+	{
+		command = new EditServerXmlCommand();
 	}
 	else 
 	{
@@ -884,7 +890,7 @@ void SetDownloadRateXmlCommand::Execute()
 
 void StatusXmlCommand::Execute()
 {
-	const char* XML_RESPONSE_STATUS_BODY = 
+	const char* XML_STATUS_START = 
 		"<struct>\n"
 		"<member><name>RemainingSizeLo</name><value><i4>%u</i4></value></member>\n"
 		"<member><name>RemainingSizeHi</name><value><i4>%u</i4></value></member>\n"
@@ -913,9 +919,13 @@ void StatusXmlCommand::Execute()
 		"<member><name>ServerTime</name><value><i4>%i</i4></value></member>\n"
 		"<member><name>ResumeTime</name><value><i4>%i</i4></value></member>\n"
 		"<member><name>FeedActive</name><value><boolean>%s</boolean></value></member>\n"
+		"<member><name>NewsServers</name><value><array><data>\n";
+
+	const char* XML_STATUS_END =
+		"</data></array></value></member>\n"
 		"</struct>\n";
 
-	const char* JSON_RESPONSE_STATUS_BODY = 
+	const char* JSON_STATUS_START = 
 		"{\n"
 		"\"RemainingSizeLo\" : %u,\n"
 		"\"RemainingSizeHi\" : %u,\n"
@@ -943,8 +953,24 @@ void StatusXmlCommand::Execute()
 		"\"FreeDiskSpaceMB\" : %i,\n"
 		"\"ServerTime\" : %i,\n"
 		"\"ResumeTime\" : %i,\n"
-		"\"FeedActive\" : %s\n"
-		"}\n";
+		"\"FeedActive\" : %s,\n"
+		"\"NewsServers\" : [\n";
+
+	const char* JSON_STATUS_END = 
+		"]\n"
+		"}";
+
+	const char* XML_NEWSSERVER_ITEM = 
+		"<value><struct>\n"
+		"<member><name>ID</name><value><i4>%i</i4></value></member>\n"
+		"<member><name>Active</name><value><boolean>%s</boolean></value></member>\n"
+		"</struct></value>\n";
+
+	const char* JSON_NEWSSERVER_ITEM = 
+		"{\n"
+		"\"ID\" : %i,\n"
+		"\"Active\" : %s\n"
+		"}";
 
 	unsigned long iRemainingSizeHi, iRemainingSizeLo;
 	int iDownloadRate = (int)(g_pQueueCoordinator->CalcCurrentDownloadSpeed());
@@ -977,8 +1003,8 @@ void StatusXmlCommand::Execute()
 	int iResumeTime = g_pOptions->GetResumeTime();
 	bool bFeedActive = g_pFeedCoordinator->HasActiveDownloads();
 	
-	char szContent[2048];
-	snprintf(szContent, 2048, IsJson() ? JSON_RESPONSE_STATUS_BODY : XML_RESPONSE_STATUS_BODY, 
+	char szContent[3072];
+	snprintf(szContent, 3072, IsJson() ? JSON_STATUS_START : XML_STATUS_START, 
 		iRemainingSizeLo, iRemainingSizeHi,	iRemainingMBytes, iDownloadedSizeLo, iDownloadedSizeHi, 
 		iDownloadedMBytes, iDownloadRate, iAverageDownloadRate, iDownloadLimit,	iThreadCount, 
 		iPostJobCount, iPostJobCount, iUrlCount, iUpTimeSec, iDownloadTimeSec, 
@@ -986,9 +1012,26 @@ void StatusXmlCommand::Execute()
 		BoolToStr(bServerStandBy), BoolToStr(bPostPaused), BoolToStr(bScanPaused),
 		iFreeDiskSpaceLo, iFreeDiskSpaceHi,	iFreeDiskSpaceMB, iServerTime, iResumeTime,
 		BoolToStr(bFeedActive));
-	szContent[2048-1] = '\0';
+	szContent[3072-1] = '\0';
 
 	AppendResponse(szContent);
+
+	int index = 0;
+	for (ServerPool::Servers::iterator it = g_pServerPool->GetServers()->begin(); it != g_pServerPool->GetServers()->end(); it++)
+	{
+		NewsServer* pServer = *it;
+		snprintf(szContent, sizeof(szContent), IsJson() ? JSON_NEWSSERVER_ITEM : XML_NEWSSERVER_ITEM,
+			pServer->GetID(), BoolToStr(pServer->GetActive()));
+		szContent[3072-1] = '\0';
+
+		if (IsJson() && index++ > 0)
+		{
+			AppendResponse(",\n");
+		}
+		AppendResponse(szContent);
+	}
+
+	AppendResponse(IsJson() ? JSON_STATUS_END : XML_STATUS_END);
 }
 
 void LogXmlCommand::Execute()
@@ -2495,4 +2538,52 @@ void FetchFeedsXmlCommand::Execute()
 	g_pFeedCoordinator->FetchAllFeeds();
 
 	BuildBoolResponse(true);
+}
+
+// bool editserver(int ID, bool Active)
+void EditServerXmlCommand::Execute()
+{
+	if (!CheckSafeMethod())
+	{
+		return;
+	}
+
+	bool bOK = false;
+	int bFirst = true;
+
+	int iID;
+	while (NextParamAsInt(&iID))
+	{
+		bFirst = false;
+
+		bool bActive;
+		if (!NextParamAsBool(&bActive))
+		{
+			BuildErrorResponse(2, "Invalid parameter");
+			return;
+		}
+
+		for (ServerPool::Servers::iterator it = g_pServerPool->GetServers()->begin(); it != g_pServerPool->GetServers()->end(); it++)
+		{
+			NewsServer* pServer = *it;
+			if (pServer->GetID() == iID)
+			{
+				pServer->SetActive(bActive);
+				bOK = true;
+			}
+		}
+	}
+
+	if (bFirst)
+	{
+		BuildErrorResponse(2, "Invalid parameter");
+		return;
+	}
+
+	if (bOK)
+	{
+		g_pServerPool->Changed();
+	}
+
+	BuildBoolResponse(bOK);
 }

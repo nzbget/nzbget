@@ -294,4 +294,10 @@ public:
 	virtual void		Execute();
 };
 
+class EditServerXmlCommand: public XmlCommand
+{
+public:
+	virtual void		Execute();
+};
+
 #endif

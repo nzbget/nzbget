@@ -2,7 +2,7 @@
  *  This file is part of nzbget
  *
  *  Copyright (C) 2004 Sven Henkel <sidddy@users.sourceforge.net>
- *  Copyright (C) 2007-2009 Andrey Prygunkov <hugbug@users.sourceforge.net>
+ *  Copyright (C) 2007-2013 Andrey Prygunkov <hugbug@users.sourceforge.net>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -57,11 +57,13 @@ private:
 	typedef std::vector<PooledConnection*>	Connections;
 
 	Servers				m_Servers;
+	Servers				m_SortedServers;
 	Connections			m_Connections;
 	Levels				m_Levels;
-	int					m_iMaxLevel;
+	int					m_iMaxNormLevel;
 	Mutex			 	m_mutexConnections;
 	int					m_iTimeout;
+	int					m_iGeneration;
 
 	void				NormalizeLevels();
 	static bool			CompareServers(NewsServer* pServer1, NewsServer* pServer2);
@@ -72,11 +74,13 @@ public:
 	void				SetTimeout(int iTimeout) { m_iTimeout = iTimeout; }
 	void 				AddServer(NewsServer* pNewsServer);
 	void				InitConnections();
-	int					GetMaxLevel() { return m_iMaxLevel; }
+	int					GetMaxNormLevel() { return m_iMaxNormLevel; }
 	Servers*			GetServers() { return &m_Servers; } // Only for read access (no lockings)
 	NNTPConnection*		GetConnection(int iLevel, NewsServer* pWantServer, Servers* pIgnoreServers);
 	void 				FreeConnection(NNTPConnection* pConnection, bool bUsed);
 	void				CloseUnusedConnections();
+	void				Changed();
+	int					GetGeneration() { return m_iGeneration; }
 
 	void				LogDebugInfo();
 };

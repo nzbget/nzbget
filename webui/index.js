@@ -163,6 +163,7 @@ var Frontend = (new function($)
 		AlertDialog.init();
 		ScriptListDialog.init();
 		RestoreSettingsDialog.init();
+		LimitDialog.init();
 
 		DownloadsEditDialog.init();
 		DownloadsMultiDialog.init();
