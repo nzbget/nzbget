@@ -2,7 +2,7 @@
  *  This file is part of nzbget
  *
  *  Copyright (C) 2004 Sven Henkel <sidddy@users.sourceforge.net>
- *  Copyright (C) 2007-2010 Andrey Prygunkov <hugbug@users.sourceforge.net>
+ *  Copyright (C) 2007-2013 Andrey Prygunkov <hugbug@users.sourceforge.net>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -64,6 +64,7 @@ private:
 	Mutex			 		m_mutexDownloadQueue;
 	bool					m_bHasMoreJobs;
 	int						m_iDownloadsLimit;
+	int						m_iServerConfigGeneration;
 
 	// statistics
 	static const int		SPEEDMETER_SLOTS = 30;    
@@ -97,6 +98,7 @@ private:
 	void					ResetSpeedStat();
 	void					EnterLeaveStandBy(bool bEnter);
 	void					AdjustStartTime();
+	void					AdjustDownloadsLimit();
 
 public:
 							QueueCoordinator();                

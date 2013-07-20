@@ -263,9 +263,6 @@ void Run(bool bReload)
 	if (!g_pOptions->GetRemoteClientMode())
 	{
 		g_pServerPool->InitConnections();
-#ifdef DEBUG
-		g_pServerPool->LogDebugInfo();
-#endif
 	}
 
 #ifndef WIN32

@@ -67,6 +67,7 @@ QueueCoordinator::QueueCoordinator()
 	m_tStartDownload = 0;
 	m_tPausedFrom = 0;
 	m_bStandBy = true;
+	m_iServerConfigGeneration = 0;
 
 	YDecoder::Init();
 }
@@ -117,17 +118,7 @@ void QueueCoordinator::Run()
 
 	m_mutexDownloadQueue.Unlock();
 
-	// compute maximum number of allowed download threads
-	m_iDownloadsLimit = 2; // two extra threads for completing files (when connections are not needed)
-	for (ServerPool::Servers::iterator it = g_pServerPool->GetServers()->begin(); it != g_pServerPool->GetServers()->end(); it++)
-	{
-		NewsServer* pNewsServer = *it;
-		if (pNewsServer->GetLevel() == 0)
-		{
-			m_iDownloadsLimit += pNewsServer->GetMaxConnections();
-		}
-	}
-
+	AdjustDownloadsLimit();
 	m_tStartServer = time(NULL);
 	m_tLastCheck = m_tStartServer;
 	bool bWasStandBy = true;
@@ -136,6 +127,7 @@ void QueueCoordinator::Run()
 
 	while (!IsStopped())
 	{
+		bool bDownloadsChecked = false;
 		if (!(g_pOptions->GetPauseDownload() || g_pOptions->GetPauseDownload2()))
 		{
 			NNTPConnection* pConnection = g_pServerPool->GetConnection(0, NULL, NULL);
@@ -149,6 +141,7 @@ void QueueCoordinator::Run()
 				m_mutexDownloadQueue.Lock();
 				bool bHasMoreArticles = GetNextArticle(pFileInfo, pArticleInfo);
 				bArticeDownloadsRunning = !m_ActiveDownloads.empty();
+				bDownloadsChecked = true;
 				m_bHasMoreJobs = bHasMoreArticles || bArticeDownloadsRunning;
 				if (bHasMoreArticles && !IsStopped() && (int)m_ActiveDownloads.size() < m_iDownloadsLimit)
 				{
@@ -167,7 +160,8 @@ void QueueCoordinator::Run()
 				}
 			}
 		}
-		else
+
+		if (!bDownloadsChecked)
 		{
 			m_mutexDownloadQueue.Lock();
 			bArticeDownloadsRunning = !m_ActiveDownloads.empty();
@@ -198,6 +192,7 @@ void QueueCoordinator::Run()
 			ResetHangingDownloads();
 			iResetCounter = 0;
 			AdjustStartTime();
+			AdjustDownloadsLimit();
 		}
 	}
 
@@ -215,6 +210,31 @@ void QueueCoordinator::Run()
 	debug("QueueCoordinator: Downloads are completed");
 
 	debug("Exiting QueueCoordinator-loop");
+}
+
+/*
+ * Compute maximum number of allowed download threads
+**/
+void QueueCoordinator::AdjustDownloadsLimit()
+{
+	if (m_iServerConfigGeneration == g_pServerPool->GetGeneration())
+	{
+		return;
+	}
+
+	// two extra threads for completing files (when connections are not needed)
+	int iDownloadsLimit = 2;
+
+	for (ServerPool::Servers::iterator it = g_pServerPool->GetServers()->begin(); it != g_pServerPool->GetServers()->end(); it++)
+	{
+		NewsServer* pNewsServer = *it;
+		if (pNewsServer->GetNormLevel() == 0 && pNewsServer->GetActive())
+		{
+			iDownloadsLimit += pNewsServer->GetMaxConnections();
+		}
+	}
+
+	m_iDownloadsLimit = iDownloadsLimit;
 }
 
 void QueueCoordinator::AddNZBFileToQueue(NZBFile* pNZBFile, bool bAddFirst)

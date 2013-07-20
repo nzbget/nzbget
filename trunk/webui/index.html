@@ -114,7 +114,7 @@
 
 			<!-- SPEED/TIME -->
 			<div id="InfoBlock">
-				<div href="#" onclick="Status.limitDialogClick()" title="Current speed (click to set speed limit)"><i class="icon-plane" id="StatusSpeedIcon"></i> <span id="StatusSpeed">--- KB/s</span></div>
+				<div href="#" onclick="LimitDialog.showModal()" title="Current speed (click to set speed limit)"><i class="icon-plane" id="StatusSpeedIcon"></i> <span id="StatusSpeed">--- KB/s</span></div>
 				<div href="#" onclick="Status.statDialogClick()" title="Remaining time (click for more statistics)"><i class="icon-time" id="StatusTimeIcon"></i> <span id="StatusTime">--h --m</span></div>
 			</div>
 
@@ -599,7 +599,7 @@
 
 <!-- *** STATISTICS ************************************************************ -->
 
-<div class="modal modal-mini hide" id="StatDialog">
+<div class="modal modal-mini modal-padded hide" id="StatDialog">
 	<div class="modal-header">
 	<a class="close" href='#' data-dismiss="modal"><i class="icon-close"></i></a>
 	<h3>Statistics and Status</h3>
@@ -615,9 +615,9 @@
 	</div>
 </div>
 
-<!-- *** SPEED LIMIT ************************************************************ -->
+<!-- *** LIMIT DIALOG ************************************************************ -->
 
-<div class="modal modal-mini hide" id="LimitDialog">
+<div class="modal modal-small modal-padded-small hide" id="LimitDialog">
 	<div class="modal-header">
 	<a class="close" href='#' data-dismiss="modal"><i class="icon-close"></i></a>
 	<h3>Speed Limit</h3>
@@ -626,27 +626,40 @@
 		<div class="form-horizontal">
 			<fieldset>
 				<div class="control-group">
-					<label class="control-label" for="SpeedLimitInputGroup">New speed limit</label>
-					<div class="controls" id="SpeedLimitInputGroup">
+					<label class="control-label" for="LimitDialog_SpeedInputGroup">Speed limit</label>
+					<div class="controls" id="LimitDialog_SpeedInputGroup">
 						<div class="input-append">
-							<input class="input-mini" id="SpeedLimitInput" size="16" type="text" placeholder="none"><span class="add-on">KB/s</span>
+							<input class="input-mini" id="LimitDialog_SpeedInput" size="16" type="text" placeholder="none"><span class="add-on">KB/s</span>
 						</div>
-						<p class="help-block" id="CurSpeedLimitBlock">Current limit: <span id="CurSpeedLimit"></span>.</p>
 					</div>
 				</div>
+				
+				<div class="control-group last-group" id="LimitDialog_ServerBlock">
+					<label class="control-label" for="LimitDialog_ServerGroup">Active news servers</label>
+					<div class="controls" id="LimitDialog_ServerGroup">
+						<div>
+							<table class="table table-striped table-bordered table-check table-cancheck check-simple datatable" id="LimitDialog_ServerTable">
+								<tbody></tbody>
+							</table>
+						</div>
+					</div>
+				</div>
+
+				<div class="hide" id="LimitDialog_ServerTable_pager"></div>
+				
 			</fieldset>
 		</div>
 	</div>
 	<div class="modal-footer">
-		<div class="dialog-transmit hide" style="position:absolute;margin-left:260px;" id="Limit_Transmit"><img src="img/transmit.gif"></div>
+		<div class="dialog-transmit hide" style="position:absolute;margin-left:260px;" id="LimitDialog_Transmit"><img src="img/transmit.gif"></div>
 		<a href="#" class="btn" data-dismiss="modal">Close</a>
-		<a href="#" class="btn btn-primary" onclick="Status.setSpeedLimitClick()">Set limit</a>
+		<a href="#" class="btn btn-primary" id="LimitDialog_Save">Set limit</a>
 	</div>
 </div>
 
 <!-- *** PAUSE FOR X MINUTES ***************************************************** -->
 
-<div class="modal modal-mini hide" id="ScheduledPauseDialog">
+<div class="modal modal-mini modal-padded hide" id="ScheduledPauseDialog">
 	<div class="modal-header">
 	<a class="close" href='#' data-dismiss="modal"><i class="icon-close"></i></a>
 	<h3>Temporary Pause</h3>
@@ -1007,7 +1020,7 @@
 
 <!-- *** QUICK HELP: Configure Categores ************************************************** -->
 
-<div class="modal modal-mini modal-center hide" id="ConfigureCategoriesHelp">
+<div class="modal modal-mini modal-padded modal-center hide" id="ConfigureCategoriesHelp">
 	<div class="modal-header">
 	<a class="close" href='#' data-dismiss="modal"><i class="icon-close"></i></a>
 	<h3>Help: Configuring categories</h3>
@@ -1178,7 +1191,7 @@
 
 <!-- *** CONFIRMATION DIALOG ************************************************************ -->
 
-<div class="modal modal-mini modal-center hide" id="ConfirmDialog">
+<div class="modal modal-mini modal-padded modal-center hide" id="ConfirmDialog">
 	<div class="modal-header">
 		<a class="close" href='#' data-dismiss="modal"><i class="icon-close"></i></a>
 		<h3 id="ConfirmDialog_Title">Title</h3>
@@ -1442,7 +1455,7 @@
 
 <!-- *** SETTINGS RESTORED DIALOG ************************************************** -->
 
-<div class="modal modal-mini modal-center hide" id="SettingsRestoredDialog">
+<div class="modal modal-mini modal-padded modal-center hide" id="SettingsRestoredDialog">
 	<div class="modal-header">
 	<a class="close" href='#' data-dismiss="modal"><i class="icon-close"></i></a>
 	<h3>Settings restored</h3>
@@ -1458,7 +1471,7 @@
 
 <!-- *** QUICK HELP: New Configuration Option ************************************************** -->
 
-<div class="modal modal-mini modal-center hide" id="ConfigNewOptionHelp">
+<div class="modal modal-mini modal-padded modal-center hide" id="ConfigNewOptionHelp">
 	<div class="modal-header">
 	<a class="close" href='#' data-dismiss="modal"><i class="icon-close"></i></a>
 	<h3>Help: New configuration option</h3>
@@ -1474,7 +1487,7 @@
 
 <!-- *** FEED ERROR DIALOG ************************************************** -->
 
-<div class="modal modal-mini modal-center hide" id="AlertDialog">
+<div class="modal modal-mini modal-padded modal-center hide" id="AlertDialog">
 	<div class="modal-header">
 	<a class="close" href='#' data-dismiss="modal"><i class="icon-close"></i></a>
 	<h3 id="AlertDialog_Title">Title</h3>

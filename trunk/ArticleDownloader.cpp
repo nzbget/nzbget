@@ -163,13 +163,14 @@ void ArticleDownloader::Run()
 	NewsServer* pWantServer = NULL;
 	NewsServer* pLastServer = NULL;
 	int iLevel = 0;
+	int iServerConfigGeneration = g_pServerPool->GetGeneration();
 
 	while (!IsStopped())
 	{
 		Status = adFailed;
 
 		SetStatus(adWaiting);
-		while (!IsStopped() && !m_pConnection)
+		while (!m_pConnection && !(IsStopped() || iServerConfigGeneration != g_pServerPool->GetGeneration()))
 		{
 			m_pConnection = g_pServerPool->GetConnection(iLevel, pWantServer, &failedServers);
 			usleep(5 * 1000);
@@ -177,7 +178,8 @@ void ArticleDownloader::Run()
 		SetLastUpdateTimeNow();
 		SetStatus(adRunning);
 
-		if (IsStopped() || g_pOptions->GetPauseDownload() || g_pOptions->GetPauseDownload2())
+		if (IsStopped() || g_pOptions->GetPauseDownload() || g_pOptions->GetPauseDownload2() ||
+			iServerConfigGeneration != g_pServerPool->GetGeneration())
 		{
 			Status = adRetry;
 			break;
@@ -192,8 +194,8 @@ void ArticleDownloader::Run()
 		if (bConnected && !IsStopped())
 		{
 			// Okay, we got a Connection. Now start downloading.
-			detail("Downloading %s @ server%i (%s)", m_szInfoName,
-				m_pConnection->GetNewsServer()->GetID(), m_pConnection->GetHost());
+			detail("Downloading %s @ %s (%s)", m_szInfoName,
+				m_pConnection->GetNewsServer()->GetName(), m_pConnection->GetHost());
 			Status = Download();
 		}
 
@@ -234,14 +236,16 @@ void ArticleDownloader::Run()
 			pWantServer = pLastServer;
 		}
 
-		if (pWantServer && !IsStopped() &&
-			!(g_pOptions->GetPauseDownload() || g_pOptions->GetPauseDownload2()))
+		if (pWantServer && 
+			!(IsStopped() || g_pOptions->GetPauseDownload() || g_pOptions->GetPauseDownload2() ||
+			 iServerConfigGeneration != g_pServerPool->GetGeneration()))
 		{
 			detail("Waiting %i sec to retry", g_pOptions->GetRetryInterval());
 			SetStatus(adWaiting);
 			int msec = 0;
-			while (!IsStopped() && (msec < g_pOptions->GetRetryInterval() * 1000) && 
-				!(g_pOptions->GetPauseDownload() || g_pOptions->GetPauseDownload2()))
+			while (!(IsStopped() || g_pOptions->GetPauseDownload() || g_pOptions->GetPauseDownload2() ||
+				  iServerConfigGeneration != g_pServerPool->GetGeneration()) &&
+				  msec < g_pOptions->GetRetryInterval() * 1000)
 			{
 				usleep(100 * 1000);
 				msec += 100;
@@ -250,7 +254,8 @@ void ArticleDownloader::Run()
 			SetStatus(adRunning);
 		}
 
-		if (IsStopped() || g_pOptions->GetPauseDownload() || g_pOptions->GetPauseDownload2())
+		if (IsStopped() || g_pOptions->GetPauseDownload() || g_pOptions->GetPauseDownload2() ||
+			iServerConfigGeneration != g_pServerPool->GetGeneration())
 		{
 			Status = adRetry;
 			break;
@@ -267,19 +272,22 @@ void ArticleDownloader::Run()
 			for (ServerPool::Servers::iterator it = g_pServerPool->GetServers()->begin(); it != g_pServerPool->GetServers()->end(); it++)
 			{
 				NewsServer* pCandidateServer = *it;
-				if (pCandidateServer->GetLevel() == iLevel)
+				if (pCandidateServer->GetNormLevel() == iLevel)
 				{
-					bool bServerFailed = false;
-					for (ServerPool::Servers::iterator it = failedServers.begin(); it != failedServers.end(); it++)
+					bool bServerFailed = !pCandidateServer->GetActive();
+					if (!bServerFailed)
 					{
-						NewsServer* pIgnoreServer = *it;
-						if (pIgnoreServer == pCandidateServer ||
-							(pIgnoreServer->GetGroup() > 0 && pIgnoreServer->GetGroup() == pCandidateServer->GetGroup() &&
-							 pIgnoreServer->GetLevel() == pCandidateServer->GetLevel()))
+						for (ServerPool::Servers::iterator it = failedServers.begin(); it != failedServers.end(); it++)
 						{
-							bServerFailed = true;
-							break;
-						}					
+							NewsServer* pIgnoreServer = *it;
+							if (pIgnoreServer == pCandidateServer ||
+								(pIgnoreServer->GetGroup() > 0 && pIgnoreServer->GetGroup() == pCandidateServer->GetGroup() &&
+								 pIgnoreServer->GetNormLevel() == pCandidateServer->GetNormLevel()))
+							{
+								bServerFailed = true;
+								break;
+							}					
+						}
 					}
 					if (!bServerFailed)
 					{
@@ -291,7 +299,7 @@ void ArticleDownloader::Run()
 
 			if (bAllServersOnLevelFailed)
 			{
-				if (iLevel < g_pServerPool->GetMaxLevel())
+				if (iLevel < g_pServerPool->GetMaxNormLevel())
 				{
 					detail("Article %s @ all level %i servers failed, increasing level", m_szInfoName, iLevel);
 					iLevel++;
@@ -420,8 +428,8 @@ ArticleDownloader::EStatus ArticleDownloader::Download()
 		{
 			if (!IsStopped())
 			{
-				warn("Article %s @ server%i (%s) failed: Unexpected end of article", m_szInfoName,
-					m_pConnection->GetNewsServer()->GetID(), m_pConnection->GetHost());
+				warn("Article %s @ %s (%s) failed: Unexpected end of article", m_szInfoName,
+					m_pConnection->GetNewsServer()->GetName(), m_pConnection->GetHost());
 			}
 			Status = adFailed;
 			break;
@@ -455,8 +463,8 @@ ArticleDownloader::EStatus ArticleDownloader::Download()
 				if (strncmp(p, m_pArticleInfo->GetMessageID(), strlen(m_pArticleInfo->GetMessageID())))
 				{
 					if (char* e = strrchr(p, '\r')) *e = '\0'; // remove trailing CR-character
-					warn("Article %s @ server%i (%s) failed: Wrong message-id, expected %s, returned %s", m_szInfoName,
-						m_pConnection->GetNewsServer()->GetID(), m_pConnection->GetHost(), m_pArticleInfo->GetMessageID(), p);
+					warn("Article %s @ %s (%s) failed: Wrong message-id, expected %s, returned %s", m_szInfoName,
+						m_pConnection->GetNewsServer()->GetName(), m_pConnection->GetHost(), m_pArticleInfo->GetMessageID(), p);
 					Status = adFailed;
 					break;
 				}
@@ -484,8 +492,8 @@ ArticleDownloader::EStatus ArticleDownloader::Download()
 
 	if (!bEnd && Status == adRunning && !IsStopped())
 	{
-		warn("Article %s @ server%i (%s) failed: article incomplete", m_szInfoName,
-			m_pConnection->GetNewsServer()->GetID(), m_pConnection->GetHost());
+		warn("Article %s @ %s (%s) failed: article incomplete", m_szInfoName,
+			m_pConnection->GetNewsServer()->GetName(), m_pConnection->GetHost());
 		Status = adFailed;
 	}
 
@@ -512,21 +520,21 @@ ArticleDownloader::EStatus ArticleDownloader::CheckResponse(const char* szRespon
 	{
 		if (!IsStopped())
 		{
-			warn("Article %s @ server%i (%s) failed, %s: Connection closed by remote host", m_szInfoName, 
-				m_pConnection->GetNewsServer()->GetID(), m_pConnection->GetHost(), szComment);
+			warn("Article %s @ %s (%s) failed, %s: Connection closed by remote host", m_szInfoName, 
+				m_pConnection->GetNewsServer()->GetName(), m_pConnection->GetHost(), szComment);
 		}
 		return adConnectError;
 	}
 	else if (m_pConnection->GetAuthError() || !strncmp(szResponse, "400", 3) || !strncmp(szResponse, "499", 3))
 	{
-		warn("Article %s @ server%i (%s) failed, %s: %s", m_szInfoName,
-			 m_pConnection->GetNewsServer()->GetID(), m_pConnection->GetHost(), szComment, szResponse);
+		warn("Article %s @ %s (%s) failed, %s: %s", m_szInfoName,
+			 m_pConnection->GetNewsServer()->GetName(), m_pConnection->GetHost(), szComment, szResponse);
 		return adConnectError;
 	}
 	else if (!strncmp(szResponse, "41", 2) || !strncmp(szResponse, "42", 2) || !strncmp(szResponse, "43", 2))
 	{
-		warn("Article %s @ server%i (%s) failed, %s: %s", m_szInfoName,
-			 m_pConnection->GetNewsServer()->GetID(), m_pConnection->GetHost(), szComment, szResponse);
+		warn("Article %s @ %s (%s) failed, %s: %s", m_szInfoName,
+			 m_pConnection->GetNewsServer()->GetName(), m_pConnection->GetHost(), szComment, szResponse);
 		return adNotFound;
 	}
 	else if (!strncmp(szResponse, "2", 1))
@@ -537,8 +545,8 @@ ArticleDownloader::EStatus ArticleDownloader::CheckResponse(const char* szRespon
 	else 
 	{
 		// unknown error, no special handling
-		warn("Article %s @ server%i (%s) failed, %s: %s", m_szInfoName,
-			 m_pConnection->GetNewsServer()->GetID(), m_pConnection->GetHost(), szComment, szResponse);
+		warn("Article %s @ %s (%s) failed, %s: %s", m_szInfoName,
+			 m_pConnection->GetNewsServer()->GetName(), m_pConnection->GetHost(), szComment, szResponse);
 		return adFailed;
 	}
 }
