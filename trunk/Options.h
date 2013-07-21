@@ -174,14 +174,16 @@ public:
 	private:
 		char*			m_szName;
 		char*			m_szDestDir;
+		bool			m_bUnpack;
 		char*			m_szDefScript;
 		NameList		m_Aliases;
 
 	public:
-						Category(const char* szName, const char* szDestDir, const char* szDefScript);
+						Category(const char* szName, const char* szDestDir, bool bUnpack, const char* szDefScript);
 						~Category();
 		const char*		GetName() { return m_szName; }
 		const char*		GetDestDir() { return m_szDestDir; }
+		bool			GetUnpack() { return m_bUnpack; }
 		const char*		GetDefScript() { return m_szDefScript; }
 		NameList*		GetAliases() { return &m_Aliases; }
 	};

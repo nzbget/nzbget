@@ -349,6 +349,8 @@ void Scanner::ProcessIncomingFile(const char* szDirectory, const char* szBaseFil
 		}
 	}
 
+	InitPPParameters(szNZBCategory, pParameters);
+
 	bool bExists = true;
 
 	if (m_bNZBScript && strcasecmp(szExtension, ".nzb_processed"))
@@ -396,6 +398,48 @@ void Scanner::ProcessIncomingFile(const char* szDirectory, const char* szBaseFil
 
 	free(szNZBName);
 	free(szNZBCategory);
+}
+
+void Scanner::InitPPParameters(const char* szCategory, NZBParameterList* pParameters)
+{
+	bool bUnpack = g_pOptions->GetUnpack();
+	const char* szDefScript = g_pOptions->GetDefScript();
+	
+	if (szCategory && *szCategory)
+	{
+		Options::Category* pCategory = g_pOptions->FindCategory(szCategory, false);
+		if (pCategory)
+		{
+			bUnpack = pCategory->GetUnpack();
+			if (pCategory->GetDefScript() && *pCategory->GetDefScript())
+			{
+				szDefScript = pCategory->GetDefScript();
+			}
+		}
+	}
+	
+	pParameters->SetParameter("*Unpack:", bUnpack ? "yes" : "no");
+	
+	if (szDefScript && *szDefScript)
+	{
+		// split szDefScript into tokens and create pp-parameter for each token
+		char* szDefScript2 = strdup(szDefScript);
+		char* saveptr;
+		char* szScriptName = strtok_r(szDefScript2, ",;", &saveptr);
+		while (szScriptName)
+		{
+			szScriptName = Util::Trim(szScriptName);
+			if (szScriptName[0] != '\0')
+			{
+				char szParam[1024];
+				snprintf(szParam, 1024, "%s:", szScriptName);
+				szParam[1024-1] = '\0';
+				pParameters->SetParameter(szParam, "yes");
+			}
+			szScriptName = strtok_r(NULL, ",;", &saveptr);
+		}
+		free(szDefScript2);
+	}
 }
 
 void Scanner::AddFileToQueue(const char* szFilename, const char* szNZBName, const char* szCategory, int iPriority,

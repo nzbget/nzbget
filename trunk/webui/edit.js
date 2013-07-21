@@ -832,11 +832,6 @@ var ParamTab = (new function($)
 	
 	function defineBuiltinParams(postParamConfig)
 	{
-		if (Options.option('Unpack') !== 'yes')
-		{
-			return;
-		}
-		
 	    if (postParamConfig.length == 0)
 	    {
 	        postParamConfig.push({category: 'P', postparam: true, options: []});

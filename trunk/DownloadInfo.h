@@ -210,6 +210,7 @@ class NZBParameterList : public NZBParameterListBase
 {
 public:
 	void				SetParameter(const char* szName, const char* szValue);
+	NZBParameter*		Find(const char* szName, bool bCaseSensitive);
 };
 
 class ScriptStatus

@@ -116,6 +116,21 @@ void NZBParameterList::SetParameter(const char* szName, const char* szValue)
 	pParameter->SetValue(szValue);
 }
 
+NZBParameter* NZBParameterList::Find(const char* szName, bool bCaseSensitive)
+{
+	for (iterator it = begin(); it != end(); it++)
+	{
+		NZBParameter* pParameter = *it;
+		if ((bCaseSensitive && !strcmp(pParameter->GetName(), szName)) ||
+			(!bCaseSensitive && !strcasecmp(pParameter->GetName(), szName)))
+		{
+			return pParameter;
+		}
+	}
+	
+	return NULL;
+}
+
 
 ScriptStatus::ScriptStatus(const char* szName, EStatus eStatus)
 {
