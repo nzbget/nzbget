@@ -967,45 +967,6 @@ void PostScriptController::Stop()
 	Terminate();
 }
 
-/**
- * DownloadQueue must be locked prior to call of this function.
- */
-void PostScriptController::InitParamsForNewNZB(NZBInfo* pNZBInfo)
-{
-	const char* szDefScript = g_pOptions->GetDefScript();
-
-	if (pNZBInfo->GetCategory() && strlen(pNZBInfo->GetCategory()) > 0)
-	{
-		Options::Category* pCategory = g_pOptions->FindCategory(pNZBInfo->GetCategory(), false);
-		if (pCategory && pCategory->GetDefScript() && strlen(pCategory->GetDefScript()) > 0)
-		{
-			szDefScript = pCategory->GetDefScript();
-		}
-	}
-
-	if (!szDefScript || strlen(szDefScript) == 0)
-	{
-		return;
-	}
-
-	// split szDefScript into tokens and create pp-parameter for each token
-	char* szDefScript2 = strdup(szDefScript);
-	char* saveptr;
-	char* szScriptName = strtok_r(szDefScript2, ",;", &saveptr);
-	while (szScriptName)
-	{
-		szScriptName = Util::Trim(szScriptName);
-		if (szScriptName[0] != '\0')
-		{
-			char szParam[1024];
-			snprintf(szParam, 1024, "%s:", szScriptName);
-			szParam[1024-1] = '\0';
-			pNZBInfo->GetParameters()->SetParameter(szParam, "yes");
-		}
-		szScriptName = strtok_r(NULL, ",;", &saveptr);
-	}
-	free(szDefScript2);
-}
 
 void NZBScriptController::ExecuteScript(const char* szScript, const char* szNZBFilename, const char* szDirectory,
 	char** pNZBName, char** pCategory, int* iPriority, NZBParameterList* pParameters, bool* bAddTop, bool* bAddPaused)

@@ -238,8 +238,6 @@ void PrePostProcessor::QueueCoordinatorUpdate(Subject * Caller, void * Aspect)
 
 void PrePostProcessor::NZBAdded(DownloadQueue* pDownloadQueue, NZBInfo* pNZBInfo)
 {
-	PostScriptController::InitParamsForNewNZB(pNZBInfo);
-
 	if (g_pOptions->GetMergeNzb())
 	{
 		pNZBInfo = MergeGroups(pDownloadQueue, pNZBInfo);
@@ -638,7 +636,9 @@ void PrePostProcessor::StartJob(DownloadQueue* pDownloadQueue, PostInfo* pPostIn
 	}
 #endif
 
-	bool bUnpack = g_pOptions->GetUnpack() && (pPostInfo->GetNZBInfo()->GetUnpackStatus() == NZBInfo::usNone);
+	NZBParameter* pUnpackParameter = pPostInfo->GetNZBInfo()->GetParameters()->Find("*Unpack:", false);
+	bool bUnpackParam = !(pUnpackParameter && !strcasecmp(pUnpackParameter->GetValue(), "no"));
+	bool bUnpack = bUnpackParam && (pPostInfo->GetNZBInfo()->GetUnpackStatus() == NZBInfo::usNone);
 
 	bool bParFailed = pPostInfo->GetNZBInfo()->GetParStatus() == NZBInfo::psFailure ||
 		pPostInfo->GetNZBInfo()->GetParStatus() == NZBInfo::psRepairPossible ||

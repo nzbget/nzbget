@@ -66,10 +66,9 @@ int DiskState::ParseFormatVersion(const char* szFormatSignature)
  * save file-infos.
  *
  * For safety:
- * - first save to temp-file (feeds.new)
- * - then rename feeds to feeds.bak
- * - then rename feeds.new to feeds
- * - then delete feeds.bak
+ * - first save to temp-file (queue.new)
+ * - then delete queue
+ * - then rename queue.new to queue
  */
 bool DiskState::SaveDownloadQueue(DownloadQueue* pDownloadQueue)
 {
@@ -100,7 +99,7 @@ bool DiskState::SaveDownloadQueue(DownloadQueue* pDownloadQueue)
 		return false;
 	}
 
-	fprintf(outfile, "%s%i\n", FORMATVERSION_SIGNATURE, 25);
+	fprintf(outfile, "%s%i\n", FORMATVERSION_SIGNATURE, 26);
 
 	// save nzb-infos
 	SaveNZBList(pDownloadQueue, outfile);
@@ -154,7 +153,7 @@ bool DiskState::LoadDownloadQueue(DownloadQueue* pDownloadQueue)
 	char FileSignatur[128];
 	fgets(FileSignatur, sizeof(FileSignatur), infile);
 	int iFormatVersion = ParseFormatVersion(FileSignatur);
-	if (iFormatVersion < 3 || iFormatVersion > 25)
+	if (iFormatVersion < 3 || iFormatVersion > 26)
 	{
 		error("Could not load diskstate due to file version mismatch");
 		fclose(infile);
@@ -477,6 +476,15 @@ bool DiskState::LoadNZBList(DownloadQueue* pDownloadQueue, FILE* infile, int iFo
 					szText++;
 				}
 				pNZBInfo->AppendMessage((Message::EKind)iKind, (time_t)iTime, szText);
+			}
+		}
+		
+		if (iFormatVersion < 26)
+		{
+			NZBParameter* pUnpackParameter = pNZBInfo->GetParameters()->Find("*Unpack:", false);
+			if (!pUnpackParameter)
+			{
+				pNZBInfo->SetParameter("*Unpack:", g_pOptions->GetUnpack() ? "yes" : "no");
 			}
 		}
 	}
@@ -1229,9 +1237,8 @@ void DiskState::CleanupTempDir(DownloadQueue* pDownloadQueue)
 
 /* For safety:
  * - first save to temp-file (feeds.new)
- * - then rename feeds to feeds.bak
+ * - then delete feeds
  * - then rename feeds.new to feeds
- * - then delete feeds.bak
  */
 bool DiskState::SaveFeeds(Feeds* pFeeds, FeedHistory* pFeedHistory)
 {

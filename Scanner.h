@@ -93,6 +93,7 @@ private:
 							NZBParameterList* pParameters, bool bAddTop, bool bAddPaused);
 	void				ProcessIncomingFile(const char* szDirectory, const char* szBaseFilename, const char* szFullFilename, const char* szCategory);
 	bool				CanProcessFile(const char* szFullFilename, bool bCheckStat);
+	void				InitPPParameters(const char* szCategory, NZBParameterList* pParameters);
 	void				DropOldFiles();
 	void				ClearQueueList();
 

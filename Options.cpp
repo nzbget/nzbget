@@ -323,10 +323,11 @@ Options::ConfigTemplates::~ConfigTemplates()
 }
 
 
-Options::Category::Category(const char* szName, const char* szDestDir, const char* szDefScript)
+Options::Category::Category(const char* szName, const char* szDestDir, bool bUnpack, const char* szDefScript)
 {
 	m_szName = strdup(szName);
 	m_szDestDir = szDestDir ? strdup(szDestDir) : NULL;
+	m_bUnpack = bUnpack;
 	m_szDefScript = szDefScript ? strdup(szDefScript) : NULL;
 }
 
@@ -2117,13 +2118,21 @@ void Options::InitCategories()
 		sprintf(destdiroptname, "Category%i.DestDir", n);
 		const char* ndestdir = GetOption(destdiroptname);
 
+		sprintf(optname, "Category%i.Unpack", n);
+		const char* nunpack = GetOption(optname);
+		bool bUnpack = true;
+		if (nunpack)
+		{
+			bUnpack = (bool)ParseEnumValue(optname, BoolCount, BoolNames, BoolValues);
+		}
+
 		sprintf(optname, "Category%i.DefScript", n);
 		const char* ndefscript = GetOption(optname);
 
 		sprintf(optname, "Category%i.Aliases", n);
 		const char* naliases = GetOption(optname);
 
-		bool definition = nname || ndestdir || ndefscript || naliases;
+		bool definition = nname || ndestdir || nunpack || ndefscript || naliases;
 		bool completed = nname && strlen(nname) > 0;
 
 		if (!definition)
@@ -2139,7 +2148,7 @@ void Options::InitCategories()
 				CheckDir(&szDestDir, destdiroptname, false, false);
 			}
 
-			Category* pCategory = new Category(nname, szDestDir, ndefscript);
+			Category* pCategory = new Category(nname, szDestDir, bUnpack, ndefscript);
 			m_Categories.push_back(pCategory);
 
 			if (szDestDir)
@@ -2586,8 +2595,8 @@ bool Options::ValidateOptionName(const char * optname)
 	{
 		char* p = (char*)optname + 8;
 		while (*p >= '0' && *p <= '9') p++;
-		if (p && (!strcasecmp(p, ".name") || !strcasecmp(p, ".destdir") ||
-			!strcasecmp(p, ".defscript") || !strcasecmp(p, ".aliases")))
+		if (p && (!strcasecmp(p, ".name") || !strcasecmp(p, ".destdir") || !strcasecmp(p, ".defscript") ||
+			!strcasecmp(p, ".unpack") || !strcasecmp(p, ".aliases")))
 		{
 			return true;
 		}

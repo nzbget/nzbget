@@ -100,22 +100,17 @@ void UnpackController::Run()
 	m_szName[1024-1] = '\0';
 
 	m_bCleanedUpDisk = false;
-	bool bUnpack = true;
 	m_szPassword[0] = '\0';
 	m_szFinalDir[0] = '\0';
 	
-	for (NZBParameterList::iterator it = m_pPostInfo->GetNZBInfo()->GetParameters()->begin(); it != m_pPostInfo->GetNZBInfo()->GetParameters()->end(); it++)
+	NZBParameter* pParameter = m_pPostInfo->GetNZBInfo()->GetParameters()->Find("*Unpack:", false);
+	bool bUnpack = !(pParameter && !strcasecmp(pParameter->GetValue(), "no"));
+
+	pParameter = m_pPostInfo->GetNZBInfo()->GetParameters()->Find("*Unpack:Password", false);
+	if (pParameter)
 	{
-		NZBParameter* pParameter = *it;
-		if (!strcasecmp(pParameter->GetName(), "*Unpack:") && !strcasecmp(pParameter->GetValue(), "no"))
-		{
-			bUnpack = false;
-		}
-		if (!strcasecmp(pParameter->GetName(), "*Unpack:Password"))
-		{
-			strncpy(m_szPassword, pParameter->GetValue(), 1024-1);
-			m_szPassword[1024-1] = '\0';
-		}
+		strncpy(m_szPassword, pParameter->GetValue(), 1024-1);
+		m_szPassword[1024-1] = '\0';
 	}
 	
 	g_pDownloadQueueHolder->UnlockQueue();
