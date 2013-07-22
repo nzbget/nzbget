@@ -1089,8 +1089,8 @@ FeedItemInfo::FeedItemInfo()
 	m_szCategory = NULL;
 	m_lSize = 0;
 	m_tTime = 0;
-	m_bFetched = false;
 	m_eStatus = isUnknown;
+	m_bMatch = false;
 }
 
 FeedItemInfo::~FeedItemInfo()

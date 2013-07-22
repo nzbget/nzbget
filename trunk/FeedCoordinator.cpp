@@ -47,6 +47,7 @@
 #include "Log.h"
 #include "Util.h"
 #include "FeedFile.h"
+#include "FeedFilter.h"
 #include "UrlCoordinator.h"
 #include "DiskState.h"
 
@@ -353,9 +354,31 @@ void FeedCoordinator::FeedCompleted(FeedDownloader* pFeedDownloader)
 	}
 }
 
+void FeedCoordinator::FilterFeed(FeedInfo* pFeedInfo, FeedItemInfos* pFeedItemInfos)
+{
+	debug("Filtering feed %s", pFeedInfo->GetName());
+
+	FeedFilter* pFeedFilter = NULL;
+	if (pFeedInfo->GetFilter() && strlen(pFeedInfo->GetFilter()) > 0)
+	{
+		pFeedFilter = new FeedFilter(pFeedInfo->GetFilter());
+	}
+
+	for (FeedItemInfos::iterator it = pFeedItemInfos->begin(); it != pFeedItemInfos->end(); it++)
+    {
+        FeedItemInfo* pFeedItemInfo = *it;
+		bool bMatch = !pFeedFilter || pFeedFilter->Match(pFeedItemInfo);
+		pFeedItemInfo->SetMatch(bMatch);
+    }
+
+	delete pFeedFilter;
+}
+
 void FeedCoordinator::ProcessFeed(FeedInfo* pFeedInfo, FeedItemInfos* pFeedItemInfos)
 {
 	debug("Process feed %s", pFeedInfo->GetName());
+
+	FilterFeed(pFeedInfo, pFeedItemInfos);
 
 	bool bFirstFetch = pFeedInfo->GetLastUpdate() == 0;
 	int iAdded = 0;
@@ -363,26 +386,29 @@ void FeedCoordinator::ProcessFeed(FeedInfo* pFeedInfo, FeedItemInfos* pFeedItemI
     for (FeedItemInfos::iterator it = pFeedItemInfos->begin(); it != pFeedItemInfos->end(); it++)
     {
         FeedItemInfo* pFeedItemInfo = *it;
-		FeedHistoryInfo* pFeedHistoryInfo = m_FeedHistory.Find(pFeedItemInfo->GetUrl());
-		FeedHistoryInfo::EStatus eStatus = FeedHistoryInfo::hsUnknown;
-		if (bFirstFetch)
+		if (pFeedItemInfo->GetMatch())
 		{
-			eStatus = FeedHistoryInfo::hsBacklog;
-		}
-		else if (!pFeedHistoryInfo)
-		{
-			DownloadItem(pFeedInfo, pFeedItemInfo);
-			eStatus = FeedHistoryInfo::hsFetched;
-			iAdded++;
-		}
+			FeedHistoryInfo* pFeedHistoryInfo = m_FeedHistory.Find(pFeedItemInfo->GetUrl());
+			FeedHistoryInfo::EStatus eStatus = FeedHistoryInfo::hsUnknown;
+			if (bFirstFetch)
+			{
+				eStatus = FeedHistoryInfo::hsBacklog;
+			}
+			else if (!pFeedHistoryInfo)
+			{
+				DownloadItem(pFeedInfo, pFeedItemInfo);
+				eStatus = FeedHistoryInfo::hsFetched;
+				iAdded++;
+			}
 
-		if (pFeedHistoryInfo)
-		{
-			pFeedHistoryInfo->SetLastSeen(time(NULL));
-		}
-		else
-		{
-			m_FeedHistory.Add(pFeedItemInfo->GetUrl(), eStatus, time(NULL));
+			if (pFeedHistoryInfo)
+			{
+				pFeedHistoryInfo->SetLastSeen(time(NULL));
+			}
+			else
+			{
+				m_FeedHistory.Add(pFeedItemInfo->GetUrl(), eStatus, time(NULL));
+			}
 		}
     }
 
@@ -480,10 +506,10 @@ bool FeedCoordinator::PreviewFeed(const char* szName, const char* szUrl, const c
 	}
 
 	remove(pFeedInfo->GetOutputFilename());
-	delete pFeedInfo;
 
 	if (!pFeedFile)
 	{
+		delete pFeedInfo;
 		return false;
 	}
 
@@ -501,6 +527,9 @@ bool FeedCoordinator::PreviewFeed(const char* szName, const char* szUrl, const c
 
 	pFeedFile->DetachFeedItemInfos();
 	delete pFeedFile;
+
+	FilterFeed(pFeedInfo, pFeedItemInfos);
+	delete pFeedInfo;
 
 	return true;
 }

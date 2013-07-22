@@ -2402,10 +2402,11 @@ ViewFeedXmlCommand::ViewFeedXmlCommand(bool bPreview)
 }
 
 // struct[] viewfeed(int id)
-// struct[] previewfeed(string name, string url, string filter)
+// struct[] previewfeed(string name, string url, string filter, bool includeNonMatching)
 void ViewFeedXmlCommand::Execute()
 {
 	bool bOK = false;
+	bool bIncludeNonMatching = false;
 	FeedItemInfos* pFeedItemInfos = NULL;
 
 	if (m_bPreview)
@@ -2413,7 +2414,8 @@ void ViewFeedXmlCommand::Execute()
 		char* szName;
 		char* szUrl;
 		char* szFilter;
-		if (!NextParamAsStr(&szName) || !NextParamAsStr(&szUrl) || !NextParamAsStr(&szFilter))
+		if (!NextParamAsStr(&szName) || !NextParamAsStr(&szUrl) || !NextParamAsStr(&szFilter) ||
+			!NextParamAsBool(&bIncludeNonMatching))
 		{
 			BuildErrorResponse(2, "Invalid parameter");
 			return;
@@ -2432,7 +2434,7 @@ void ViewFeedXmlCommand::Execute()
 	else
 	{
 		int iID = 0;
-		if (!NextParamAsInt(&iID))
+		if (!NextParamAsInt(&iID) || !NextParamAsBool(&bIncludeNonMatching))
 		{
 			BuildErrorResponse(2, "Invalid parameter");
 			return;
@@ -2461,7 +2463,7 @@ void ViewFeedXmlCommand::Execute()
 		"<member><name>SizeMB</name><value><i4>%i</i4></value></member>\n"
 		"<member><name>Category</name><value><string>%s</string></value></member>\n"
 		"<member><name>Time</name><value><i4>%i</i4></value></member>\n"
-		"<member><name>Fetched</name><value><boolean>%s</boolean></value></member>\n"
+		"<member><name>Match</name><value><boolean>%s</boolean></value></member>\n"
 		"<member><name>Status</name><value><string>%s</string></value></member>\n"
 		"</struct></value>\n";
 
@@ -2475,7 +2477,7 @@ void ViewFeedXmlCommand::Execute()
 		"\"SizeMB\" : %i,\n"
 		"\"Category\" : \"%s\",\n"
 		"\"Time\" : %i,\n"
-		"\"Fetched\" : \"%s\",\n"
+		"\"Match\" : %s,\n"
 		"\"Status\" : \"%s\"\n"
 		"}";
 
@@ -2491,30 +2493,33 @@ void ViewFeedXmlCommand::Execute()
     {
         FeedItemInfo* pFeedItemInfo = *it;
 
-		unsigned long iSizeHi, iSizeLo;
-		Util::SplitInt64(pFeedItemInfo->GetSize(), &iSizeHi, &iSizeLo);
-		int iSizeMB = (int)(pFeedItemInfo->GetSize() / 1024 / 1024);
-
-		char* xmltitle = EncodeStr(pFeedItemInfo->GetTitle());
-		char* xmlfilename = EncodeStr(pFeedItemInfo->GetFilename());
-		char* xmlurl = EncodeStr(pFeedItemInfo->GetUrl());
-		char* xmlcategory = EncodeStr(pFeedItemInfo->GetCategory());
-
-		snprintf(szItemBuf, szItemBufSize, IsJson() ? JSON_FEED_ITEM : XML_FEED_ITEM,
-			xmltitle, xmlfilename, xmlurl, iSizeLo, iSizeHi, iSizeMB, xmlcategory, pFeedItemInfo->GetTime(),
-			BoolToStr(pFeedItemInfo->GetFetched()), szStatusType[pFeedItemInfo->GetStatus()]);
-		szItemBuf[szItemBufSize-1] = '\0';
-
-		free(xmltitle);
-		free(xmlfilename);
-		free(xmlurl);
-		free(xmlcategory);
-
-		if (IsJson() && index++ > 0)
+		if (bIncludeNonMatching || pFeedItemInfo->GetMatch())
 		{
-			AppendResponse(",\n");
+			unsigned long iSizeHi, iSizeLo;
+			Util::SplitInt64(pFeedItemInfo->GetSize(), &iSizeHi, &iSizeLo);
+			int iSizeMB = (int)(pFeedItemInfo->GetSize() / 1024 / 1024);
+
+			char* xmltitle = EncodeStr(pFeedItemInfo->GetTitle());
+			char* xmlfilename = EncodeStr(pFeedItemInfo->GetFilename());
+			char* xmlurl = EncodeStr(pFeedItemInfo->GetUrl());
+			char* xmlcategory = EncodeStr(pFeedItemInfo->GetCategory());
+
+			snprintf(szItemBuf, szItemBufSize, IsJson() ? JSON_FEED_ITEM : XML_FEED_ITEM,
+				xmltitle, xmlfilename, xmlurl, iSizeLo, iSizeHi, iSizeMB, xmlcategory, pFeedItemInfo->GetTime(),
+				BoolToStr(pFeedItemInfo->GetMatch()), szStatusType[pFeedItemInfo->GetStatus()]);
+			szItemBuf[szItemBufSize-1] = '\0';
+
+			free(xmltitle);
+			free(xmlfilename);
+			free(xmlurl);
+			free(xmlcategory);
+
+			if (IsJson() && index++ > 0)
+			{
+				AppendResponse(",\n");
+			}
+			AppendResponse(szItemBuf);
 		}
-		AppendResponse(szItemBuf);
     }
 
 	free(szItemBuf);
