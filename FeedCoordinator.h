@@ -17,8 +17,8 @@
  *  along with this program; if not, write to the Free Software
  *  Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  *
- * $Revision: 0 $
- * $Date: 2013-06-24 00:00:00 +0200 (Mo, 24 Jun 2013) $
+ * $Revision$
+ * $Date$
  *
  */
 
