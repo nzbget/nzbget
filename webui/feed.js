@@ -177,14 +177,14 @@ var FeedDialog = (new function($)
 			category = Options.option('Feed' + id + '.Category');
 			priority = Options.option('Feed' + id + '.Priority');
 			$('#FeedDialog_Title').text(name !== '' ? name : 'Feed');
-			RPC.call('viewfeed', [id], itemsLoaded, feedFailure);
+			RPC.call('viewfeed', [id, false], itemsLoaded, feedFailure);
 		}
 		else
 		{
 			$('#FeedDialog_Title').text(name !== '' ? name : 'Feed Preview');
 			category = _category;
 			priority = _priority;
-			RPC.call('previewfeed', [name, url, filter], itemsLoaded, feedFailure);
+			RPC.call('previewfeed', [name, url, filter, false], itemsLoaded, feedFailure);
 		}
 	}
 
@@ -247,7 +247,7 @@ var FeedDialog = (new function($)
 			{
 				continue;
 			}
-			
+
 			differentFilenames = differentFilenames || (item.Filename !== item.Title);
 			
 			var itemName = filenameMode ? item.Filename : item.Title;

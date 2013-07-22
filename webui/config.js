@@ -789,14 +789,15 @@ var Config = (new function($)
 		{
 			var htmldescr = option.description;
 			htmldescr = htmldescr.replace(/NOTE: do not forget to uncomment the next line.\n/, '');
-			htmldescr = htmldescr.replace(/\</g, 'OPENTAG');
-			htmldescr = htmldescr.replace(/\>/g, 'CLOSETAG');
-			htmldescr = htmldescr.replace(/OPENTAG/g, '<a class="option" href="#" onclick="Config.scrollToOption(event, this)">');
-			htmldescr = htmldescr.replace(/CLOSETAG/g, '</a>');
+
+			// replace option references
+			var exp = /\<([A-Z0-9]*)\>/ig;
+			htmldescr = htmldescr.replace(exp, '<a class="option" href="#" onclick="Config.scrollToOption(event, this)">$1</a>');
+
 			htmldescr = htmldescr.replace(/&/g, '&amp;');
 
 			// replace URLs
-			var exp = /(http:\/\/[-A-Z0-9+&@#\/%?=~_|!:,.;]*[-A-Z0-9+&@#\/%=~_|])/ig;
+			exp = /(http:\/\/[-A-Z0-9+&@#\/%?=~_|!:,.;]*[-A-Z0-9+&@#\/%=~_|])/ig;
 			htmldescr = htmldescr.replace(exp, "<a href='$1'>$1</a>");
 
 			// highlight first line
@@ -1253,7 +1254,7 @@ var Config = (new function($)
 		FeedDialog.showModal(0, 
 			getOptionValue(findOptionByName('Feed' + multiid + '.Name')),
 			getOptionValue(findOptionByName('Feed' + multiid + '.URL')),
-			''/*getOptionValue(findOptionByName('Feed' + multiid + '.Filter'))*/,
+			getOptionValue(findOptionByName('Feed' + multiid + '.Filter')),
 			getOptionValue(findOptionByName('Feed' + multiid + '.Category')),
 			getOptionValue(findOptionByName('Feed' + multiid + '.Priority')));
 	}

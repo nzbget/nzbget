@@ -62,6 +62,7 @@ private:
 
 	void					StartFeedDownload(FeedInfo* pFeedInfo, bool bForce);
 	void					FeedCompleted(FeedDownloader* pFeedDownloader);
+	void					FilterFeed(FeedInfo* pFeedInfo, FeedItemInfos* pFeedItemInfos);
 	void					ProcessFeed(FeedInfo* pFeedInfo, FeedItemInfos* pFeedItemInfos);
 	void					DownloadItem(FeedInfo* pFeedInfo, FeedItemInfo* pFeedItemInfo);
 	void					ResetHangingDownloads();

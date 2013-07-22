@@ -665,8 +665,8 @@ private:
 	time_t				m_tTime;
 	long long			m_lSize;
 	char*				m_szCategory;
-	bool				m_bFetched;
 	EStatus				m_eStatus;
+	bool				m_bMatch;
 
 public:
 						FeedItemInfo();
@@ -683,10 +683,10 @@ public:
 	void				SetCategory(const char* szCategory);
 	time_t				GetTime() { return m_tTime; }
 	void				SetTime(time_t tTime) { m_tTime = tTime; }
-	bool				GetFetched() { return m_bFetched; }
-	void				SetFetched(bool bFetched) { m_bFetched = bFetched; }
 	EStatus				GetStatus() { return m_eStatus; }
 	void				SetStatus(EStatus Status) { m_eStatus = Status; }
+	bool				GetMatch() { return m_bMatch; }
+	void				SetMatch(bool bMatch) { m_bMatch = bMatch; }
 };
 
 typedef std::deque<FeedItemInfo*>	FeedItemInfos;
