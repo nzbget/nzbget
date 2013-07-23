@@ -346,6 +346,12 @@ void Scanner::ProcessIncomingFile(const char* szDirectory, const char* szBaseFil
 			iPriority = pQueueData->GetPriority();
 			bAddTop = pQueueData->GetAddTop();
 			bAddPaused = pQueueData->GetAddPaused();
+
+			for (NZBParameterList::iterator it = pQueueData->GetParameters()->begin(); it != pQueueData->GetParameters()->end(); it++)
+			{
+				NZBParameter* pNZBParameter = *it;
+				pParameters->SetParameter(pNZBParameter->GetName(), pNZBParameter->GetValue());
+			}
 		}
 	}
 

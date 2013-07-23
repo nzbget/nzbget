@@ -404,6 +404,15 @@ body.navfixed.scrolled .navbar-fixed-top .navbar-inner {
 	overflow: hidden;
 }
 
+#DownloadsEdit_ActionsMenu,
+#HistoryEdit_ActionsMenu {
+	min-width: 120px;
+}
+
+ul.dropdown-menu > li > a > i {
+	margin-right: 5px;
+}
+
 /* BEGIN: Icons */
 [class^="icon-"],
 [class*=" icon-"],
@@ -432,6 +441,10 @@ body.navfixed.scrolled .navbar-fixed-top .navbar-inner {
 	width: 16px;
 	height: 16px;
 	line-height: 16px;
+}
+
+.icon-empty {
+	background-position: -1000px -1000px;
 }
 
 .icon-plus {
@@ -578,6 +591,23 @@ body.navfixed.scrolled .navbar-fixed-top .navbar-inner {
 .img-checkminus {
 	background-position: -400px -16px;
 }
+
+.icon-postcard {
+	background-position: -432px -112px;
+}
+
+.icon-link {
+	background-position: -400px -112px;
+}
+
+.icon-alert {
+	background-position: -336px -112px;
+}
+
+.icon-process {
+	background-position: -304px -144px;
+}
+
 /* END: Icons */
 
 .btn-toolbar {
@@ -991,6 +1021,10 @@ table.table-hidecheck tbody > tr > td:first-child {
 	margin-top: 3px;
 }
 
+.modal .input-medium {
+	width: 200px;
+}
+
 .modal .input-xlarge {
 	width: 350px;
 }
@@ -1164,6 +1198,10 @@ ul.help > li {
 	min-width: 10px;
 	right: 0;
 	left: auto;
+}
+
+.footer-button-menu {
+	text-align: left;
 }
 
 .data-statistics {

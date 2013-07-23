@@ -61,7 +61,6 @@ private:
 	void					StartUrlDownload(UrlInfo* pUrlInfo);
 	void					UrlCompleted(UrlDownloader* pUrlDownloader);
 	void					ResetHangingDownloads();
-	void					AddToNZBQueue(UrlInfo* pUrlInfo, const char* szTempFilename, const char* szOriginalFilename, const char* szOriginalCategory);
 
 public:
 							UrlCoordinator();                
@@ -82,6 +81,7 @@ class UrlDownloader : public WebDownloader
 private:
 	UrlInfo*				m_pUrlInfo;
 	char*					m_szCategory;
+	NZBParameterList		m_ppParameters;
 
 protected:
 	virtual void			ProcessHeader(const char* szLine);
@@ -92,6 +92,7 @@ public:
 	void					SetUrlInfo(UrlInfo* pUrlInfo) { m_pUrlInfo = pUrlInfo; }
 	UrlInfo*				GetUrlInfo() { return m_pUrlInfo; }
 	const char*				GetCategory() { return m_szCategory; }
+	NZBParameterList*		GetParameters() { return &m_ppParameters; }
 };
 
 #endif

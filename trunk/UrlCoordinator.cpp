@@ -74,25 +74,40 @@ void UrlDownloader::ProcessHeader(const char* szLine)
 {
 	WebDownloader::ProcessHeader(szLine);
 
-	if (!strncmp(szLine, "X-DNZB-Category: ", 17))
+	if (!strncmp(szLine, "X-DNZB-Category:", 16))
 	{
 		if (m_szCategory)
 		{
 			free(m_szCategory);
 		}
 
-		const char *szCat = szLine + 17;
-
-		int iCatLen = strlen(szCat);
-
-		// trim trailing CR/LF/spaces
-		while (iCatLen > 0 && (szCat[iCatLen-1] == '\n' || szCat[iCatLen-1] == '\r' || szCat[iCatLen-1] == ' ')) iCatLen--; 
-
-		m_szCategory = (char*)malloc(iCatLen + 1);
-		strncpy(m_szCategory, szCat, iCatLen);
-		m_szCategory[iCatLen] = '\0';
+		char* szCategory = strdup(szLine + 16);
+		m_szCategory = strdup(Util::Trim(szCategory));
+		free(szCategory);
 
 		debug("Category: %s", m_szCategory);
+	}
+	else if (!strncmp(szLine, "X-DNZB-", 7))
+	{
+		char* szModLine = strdup(szLine);
+		char* szValue = strchr(szModLine, ':');
+		if (szValue)
+		{
+			*szValue = NULL;
+			szValue++;
+			while (*szValue == ' ') szValue++;
+			Util::Trim(szValue);
+			
+			debug("X-DNZB: %s", szModLine);
+			debug("Value: %s", szValue);
+
+			char szParamName[100];
+			snprintf(szParamName, 100, "*DNZB:%s", szModLine + 7);
+			szParamName[100-1] = '\0';
+
+			m_ppParameters.SetParameter(szParamName, szValue);
+		}
+		free(szModLine);
 	}
 }
 
@@ -424,19 +439,15 @@ void UrlCoordinator::UrlCompleted(UrlDownloader* pUrlDownloader)
 	if (pUrlInfo->GetStatus() == UrlInfo::aiFinished)
 	{
 		// add nzb-file to download queue
-		AddToNZBQueue(pUrlInfo, pUrlDownloader->GetOutputFilename(), filename, pUrlDownloader->GetCategory());
+		g_pScanner->AddExternalFile(
+			pUrlInfo->GetNZBFilename() && strlen(pUrlInfo->GetNZBFilename()) > 0 ? pUrlInfo->GetNZBFilename() : filename,
+			strlen(pUrlInfo->GetCategory()) > 0 ? pUrlInfo->GetCategory() : pUrlDownloader->GetCategory(),
+			pUrlInfo->GetPriority(), pUrlDownloader->GetParameters(), pUrlInfo->GetAddTop(), pUrlInfo->GetAddPaused(),
+			pUrlDownloader->GetOutputFilename(), NULL, 0, false);
 	}
 
 	if (bDeleteObj)
 	{
 		delete pUrlInfo;
 	}
-}
-
-void UrlCoordinator::AddToNZBQueue(UrlInfo* pUrlInfo, const char* szTempFilename, const char* szOriginalFilename, const char* szOriginalCategory)
-{
-	g_pScanner->AddExternalFile(
-		pUrlInfo->GetNZBFilename() && strlen(pUrlInfo->GetNZBFilename()) > 0 ? pUrlInfo->GetNZBFilename() : szOriginalFilename,
-		strlen(pUrlInfo->GetCategory()) > 0 ? pUrlInfo->GetCategory() : szOriginalCategory,
-		pUrlInfo->GetPriority(), NULL, pUrlInfo->GetAddTop(), pUrlInfo->GetAddPaused(), szTempFilename, NULL, 0, false);
 }
