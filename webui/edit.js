@@ -191,10 +191,10 @@ var DownloadsEditDialog = (new function($)
 		var postParamConfig = ParamTab.createPostParamConfig();
 		
 		Util.show('#DownloadsEdit_NZBNameReadonly', group.postprocess);
-		Util.show('#DownloadsEdit_CancelPPGroup', group.postprocess);
-		Util.show('#DownloadsEdit_DeleteGroup', !group.postprocess);
-		Util.show('#DownloadsEdit_PauseGroup', !group.postprocess);
-		Util.show('#DownloadsEdit_ResumeGroup', false);
+		Util.show('#DownloadsEdit_CancelPP', group.postprocess);
+		Util.show('#DownloadsEdit_Delete', !group.postprocess);
+		Util.show('#DownloadsEdit_Pause', !group.postprocess);
+		Util.show('#DownloadsEdit_Resume', false);
 		Util.show('#DownloadsEdit_Save', !group.postprocess);
 		var postParam = postParamConfig[0].options.length > 0;
 		var postLog = group.postprocess && group.post.Log.length > 0;
@@ -217,8 +217,8 @@ var DownloadsEditDialog = (new function($)
 
 			if (group.RemainingSizeHi == group.PausedSizeHi && group.RemainingSizeLo == group.PausedSizeLo)
 			{
-				$('#DownloadsEdit_ResumeGroup').show();
-				$('#DownloadsEdit_PauseGroup').hide();
+				$('#DownloadsEdit_Resume').show();
+				$('#DownloadsEdit_Pause').hide();
 			}
 		}
 
@@ -227,6 +227,8 @@ var DownloadsEditDialog = (new function($)
 			postParams = ParamTab.buildPostParamTab($DownloadsEdit_ParamData, postParamConfig, curGroup.Parameters);
 		}
 
+		EditUI.buildDNZBLinks(curGroup.Parameters, 'DownloadsEdit_DNZB');
+		
 		enableAllButtons();
 
 		$('#DownloadsEdit_GeneralTab').show();
@@ -792,6 +794,38 @@ var DownloadsEditDialog = (new function($)
 }(jQuery));
 
 
+/*** COMMON FUNCTIONS FOR EDIT DIALOGS ************************************************************/
+
+var EditUI = (new function($)
+{
+	'use strict'
+
+	this.buildDNZBLinks = function(parameters, prefix)
+	{
+		$('.' + prefix).hide();
+		var hasItems = false;
+		
+		for (var i=0; i < parameters.length; i++)
+		{
+			var param = parameters[i];
+			if (param.Name.substr(0, 6) === '*DNZB:')
+			{
+				var linkName = param.Name.substr(6, 100);
+				var $paramLink = $('#' + prefix + '_' + linkName);
+				if($paramLink.length > 0)
+				{
+					$paramLink.attr('href', param.Value);
+					$paramLink.show();
+					hasItems = true;
+				}
+			}
+		}
+		
+		Util.show('#' + prefix + '_Section', hasItems);
+	}
+}(jQuery));
+
+
 /*** PARAM TAB FOR EDIT DIALOGS ************************************************************/
 
 var ParamTab = (new function($)
@@ -1216,7 +1250,7 @@ var HistoryEditDialog = (new function()
 
 		$('#HistoryEdit_Save').click(saveChanges);
 		$('#HistoryEdit_Delete').click(itemDelete);
-		$('#HistoryEdit_Return').click(itemReturn);
+		$('#HistoryEdit_Return, #HistoryEdit_ReturnURL').click(itemReturn);
 		$('#HistoryEdit_Reprocess').click(itemReprocess);
 		$('#HistoryEdit_Param').click(tabClick);
 		$('#HistoryEdit_Back').click(backClick);
@@ -1271,8 +1305,9 @@ var HistoryEditDialog = (new function()
 		table += '<tr><td>Files (total/parked)</td><td class="text-right">' + hist.FileCount + '/' + hist.RemainingFileCount + '</td></tr>';
 		$('#HistoryEdit_Statistics').html(table);
 
-		Util.show($('#HistoryEdit_ReturnGroup'), hist.RemainingFileCount > 0 || hist.Kind === 'URL');
-		Util.show($('#HistoryEdit_PathGroup, #HistoryEdit_StatisticsGroup, #HistoryEdit_ReprocessGroup'), hist.Kind === 'NZB');
+		Util.show($('#HistoryEdit_Return'), hist.RemainingFileCount > 0);
+		Util.show($('#HistoryEdit_ReturnURL'), hist.Kind === 'URL');
+		Util.show($('#HistoryEdit_PathGroup, #HistoryEdit_StatisticsGroup, #HistoryEdit_Reprocess'), hist.Kind === 'NZB');
 
 		var postParamConfig = ParamTab.createPostParamConfig();
 		var postParam = hist.Kind === 'NZB' && postParamConfig[0].options.length > 0;
@@ -1285,6 +1320,8 @@ var HistoryEditDialog = (new function()
 			postParams = ParamTab.buildPostParamTab($HistoryEdit_ParamData, postParamConfig, curHist.Parameters);
 		}
 		
+		EditUI.buildDNZBLinks(curHist.Parameters, 'HistoryEdit_DNZB');
+
 		enableAllButtons();
 		
 		$('#HistoryEdit_GeneralTab').show();

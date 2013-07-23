@@ -742,7 +742,6 @@
 							<div class="controls">
 								<select id="DownloadsEdit_Category">
 								</select>
-								&nbsp;<a data-toggle="modal" href="#ConfigureCategoriesHelp" class="btn btn-small phone-hide">Quick Help</a>
 							</div>
 						</div>
 
@@ -842,28 +841,18 @@
 	</div>
 
 	<div class="modal-footer">
-		<div class="btn-group pull-left hide" id="DownloadsEdit_ResumeGroup">
-			<a href="#" class="btn pull-left" id="DownloadsEdit_Resume"><i class="icon-play"></i> Resume</a>
-		</div>
-
-		<div class="btn-group pull-left" id="DownloadsEdit_PauseGroup">
-			<a href="#" class="btn" id="DownloadsEdit_Pause"><i class="icon-pause"></i> Pause</a>
-		</div>
-
-		<div class="btn-group dropup pull-left" id="DownloadsEdit_DeleteGroup">
-			<a class="btn dropdown-toggle btn-danger" data-toggle="dropdown"><i class="icon-trash-white"></i> Delete <span class="caret"></span></a>
-			<ul class="dropdown-menu confirm-menu open">
-				<li class="menu-header">Confirm</li>
-				<li><a href="#" id="DownloadsEdit_Delete">Yes, Delete</a></li>
+		<div class="btn-group dropup pull-left">
+			<a class="btn dropdown-toggle" data-toggle="dropdown">Actions <span class="caret"></span></a>
+			<ul class="dropdown-menu footer-button-menu" id="DownloadsEdit_ActionsMenu">
+				<li class="menu-header">Actions</li>
+				<li><a href="#" id="DownloadsEdit_Resume"><i class="icon-play"></i> Resume</a></li>
+				<li><a href="#" id="DownloadsEdit_Pause"><i class="icon-pause"></i> Pause</a></li>
+				<li><a href="#" id="DownloadsEdit_Delete"><i class="icon-trash"></i> Delete</a></li>
+				<li><a href="#" id="DownloadsEdit_CancelPP"><i class="icon-remove"></i> Cancel Post-Processing</a></li>
+				<li class="menu-header" id="DownloadsEdit_DNZB_Section">Indexer Links</li>
+				<li><a href="#" target="_blank" class="DownloadsEdit_DNZB" id="DownloadsEdit_DNZB_MoreInfo"><i class="icon-postcard"></i> More Info</a></li>
+				<li><a href="#" target="_blank" class="DownloadsEdit_DNZB" id="DownloadsEdit_DNZB_Link"><i class="icon-link"></i> External Link</a></li>
 			</ul>
-		</div>
-
-		<div class="btn-group dropup pull-left hide" id="DownloadsEdit_CancelPPGroup">
-		<a class="btn dropdown-toggle btn-danger" data-toggle="dropdown">Cancel Post-Processing <span class="caret"></span></a>
-		<ul class="dropdown-menu confirm-menu">
-			<li class="menu-header">Confirm</li>
-			<li><a href="#" id="DownloadsEdit_CancelPP">Yes, Cancel</a></li>
-		</ul>
 		</div>
 
 		<div class="dialog-transmit hide" style="position:absolute;margin-left:260px;" id="DownloadsEdit_Transmit"><img src="img/transmit.gif"></div>
@@ -901,7 +890,6 @@
 							<div class="controls">
 								<select id="DownloadsMulti_Category">
 								</select>
-								&nbsp;<a data-toggle="modal" href="#ConfigureCategoriesHelp" class="btn btn-small">Quick Help</a>
 							</div>
 						</div>
 
@@ -1018,18 +1006,6 @@
 	</div>
 </div>
 
-<!-- *** QUICK HELP: Configure Categores ************************************************** -->
-
-<div class="modal modal-mini modal-padded modal-center hide" id="ConfigureCategoriesHelp">
-	<div class="modal-header">
-	<a class="close" href='#' data-dismiss="modal"><i class="icon-close"></i></a>
-	<h3>Help: Configuring categories</h3>
-	</div>
-	<div class="modal-body">
-	The categories can be configured in section <strong>CATEGORIES</strong> on settings page.
-	</div>
-</div>
-
 <!-- *** HISTORY EDIT DIALOG ************************************************************ -->
 
 <div class="modal hide" id="HistoryEditDialog">
@@ -1056,7 +1032,7 @@
 						<div class="control-group">
 							<label class="control-label" for="HistoryEdit_Category">Category</label>
 							<div class="controls">
-								<span class="input-xlarge uneditable-input" id="HistoryEdit_Category"></span>
+								<span class="input-medium uneditable-input" id="HistoryEdit_Category"></span>
 							</div>
 						</div>
 
@@ -1099,30 +1075,22 @@
 	</div>
 			
 	<div class="modal-footer">
-		<div class="btn-group dropup pull-left" id="HistoryEdit_DeleteGroup">
-		<a class="btn dropdown-toggle btn-danger" data-toggle="dropdown"><i class="icon-trash-white"></i> Delete <span class="caret"></span></a>
-		<ul class="dropdown-menu confirm-menu">
-			<li class="menu-header">Confirm</li>
-			<li><a href="#" id="HistoryEdit_Delete">Yes, Delete</a></li>
-		</ul>
-		</div>
 
-		<div class="btn-group dropup pull-left" id="HistoryEdit_ReprocessGroup">
-		<a class="btn dropdown-toggle" data-toggle="dropdown">Post-Process Again <span class="caret"></span></a>
-		<ul class="dropdown-menu confirm-menu">
-			<li class="menu-header">Confirm</li>
-			<li><a href="#" id="HistoryEdit_Reprocess">Yes, Post-Process</a></li>
-		</ul>
+		<div class="btn-group dropup pull-left">
+			<a class="btn dropdown-toggle" data-toggle="dropdown">Actions <span class="caret"></span></a>
+			<ul class="dropdown-menu footer-button-menu" id="HistoryEdit_ActionsMenu">
+				<li class="menu-header">Actions</li>
+				<li><a href="#" id="HistoryEdit_Delete"><i class="icon-trash"></i> Delete</a></li>
+				<li><a href="#" id="HistoryEdit_Reprocess"><i class="icon-process"></i> Post-Process Again</a></li>
+				<li><a href="#" id="HistoryEdit_Return"><i class="icon-downloads"></i> Download Remaining Files</a></li>
+				<li><a href="#" id="HistoryEdit_ReturnURL"><i class="icon-downloads"></i> Download Again</a></li>
+				<li class="menu-header" id="HistoryEdit_DNZB_Section">Indexer Links</li>
+				<li><a href="#" target="_blank" class="HistoryEdit_DNZB" id="HistoryEdit_DNZB_MoreInfo"><i class="icon-postcard"></i> More Info</a></li>
+				<li><a href="#" target="_blank" class="HistoryEdit_DNZB" id="HistoryEdit_DNZB_Link"><i class="icon-link"></i> External Link</a></li>
+				<li><a href="#" target="_blank" class="HistoryEdit_DNZB" id="HistoryEdit_DNZB_Report"><i class="icon-alert"></i> Report This NZB</a></li>
+			</ul>
 		</div>
-
-		<div class="btn-group dropup pull-left" id="HistoryEdit_ReturnGroup">
-		<a class="btn dropdown-toggle" data-toggle="dropdown">Return <span class="caret"></span></a>
-		<ul class="dropdown-menu confirm-menu">
-			<li class="menu-header">Confirm</li>
-			<li><a href="#" id="HistoryEdit_Return">Yes, Return to Queue</a></li>
-		</ul>
-		</div>
-
+	
 		<div class="dialog-transmit" style="position:absolute;margin-left:320px;" id="HistoryEdit_Transmit"><img src="img/transmit.gif"></div>
 		<a href="#" class="btn" data-dismiss="modal" id="HistoryEdit_Close">Close</a>
 		<a href="#" class="btn btn-primary" id="HistoryEdit_Save">Save changes</a>
