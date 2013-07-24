@@ -1242,7 +1242,7 @@ void PrePostProcessor::HistorySetParameter(HistoryInfo* pHistoryInfo, const char
 	{
 		*szValue = '\0';
 		szValue++;
-		pHistoryInfo->GetNZBInfo()->SetParameter(szStr, szValue);
+		pHistoryInfo->GetNZBInfo()->GetParameters()->SetParameter(szStr, szValue);
 	}
 	else
 	{

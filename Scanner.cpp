@@ -79,11 +79,7 @@ Scanner::QueueData::QueueData(const char* szFilename, const char* szNZBName, con
 
 	if (pParameters)
 	{
-		for (NZBParameterList::iterator it = pParameters->begin(); it != pParameters->end(); it++)
-		{
-			NZBParameter* pNZBParameter = *it;
-			m_Parameters.SetParameter(pNZBParameter->GetName(), pNZBParameter->GetValue());
-		}
+		m_Parameters.CopyFrom(pParameters);
 	}
 }
 
@@ -92,12 +88,6 @@ Scanner::QueueData::~QueueData()
 	free(m_szFilename);
 	free(m_szNZBName);
 	free(m_szCategory);
-
-	for (NZBParameterList::iterator it = m_Parameters.begin(); it != m_Parameters.end(); it++)
-	{
-		delete *it;
-	}
-	m_Parameters.clear();
 }
 
 
@@ -346,12 +336,7 @@ void Scanner::ProcessIncomingFile(const char* szDirectory, const char* szBaseFil
 			iPriority = pQueueData->GetPriority();
 			bAddTop = pQueueData->GetAddTop();
 			bAddPaused = pQueueData->GetAddPaused();
-
-			for (NZBParameterList::iterator it = pQueueData->GetParameters()->begin(); it != pQueueData->GetParameters()->end(); it++)
-			{
-				NZBParameter* pNZBParameter = *it;
-				pParameters->SetParameter(pNZBParameter->GetName(), pNZBParameter->GetValue());
-			}
+			pParameters->CopyFrom(pQueueData->GetParameters());
 		}
 	}
 
@@ -395,11 +380,6 @@ void Scanner::ProcessIncomingFile(const char* szDirectory, const char* szBaseFil
 		AddFileToQueue(szFullFilename, szNZBName, szNZBCategory, iPriority, pParameters, bAddTop, bAddPaused);
 	}
 
-	for (NZBParameterList::iterator it = pParameters->begin(); it != pParameters->end(); it++)
-	{
-		delete *it;
-	}
-	pParameters->clear();
 	delete pParameters;
 
 	free(szNZBName);
@@ -480,11 +460,7 @@ void Scanner::AddFileToQueue(const char* szFilename, const char* szNZBName, cons
 			pNZBFile->GetNZBInfo()->BuildDestDirName();
 		}
 
-		for (NZBParameterList::iterator it = pParameters->begin(); it != pParameters->end(); it++)
-		{
-			NZBParameter* pParameter = *it;
-			pNZBFile->GetNZBInfo()->SetParameter(pParameter->GetName(), pParameter->GetValue());
-		}
+		pNZBFile->GetNZBInfo()->GetParameters()->CopyFrom(pParameters);
 
 		for (NZBFile::FileInfos::iterator it = pNZBFile->GetFileInfos()->begin(); it != pNZBFile->GetFileInfos()->end(); it++)
 		{

@@ -435,7 +435,7 @@ bool DiskState::LoadNZBList(DownloadQueue* pDownloadQueue, FILE* infile, int iFo
 				{
 					*szValue = '\0';
 					szValue++;
-					pNZBInfo->SetParameter(buf, szValue);
+					pNZBInfo->GetParameters()->SetParameter(buf, szValue);
 				}
 			}
 		}
@@ -484,7 +484,7 @@ bool DiskState::LoadNZBList(DownloadQueue* pDownloadQueue, FILE* infile, int iFo
 			NZBParameter* pUnpackParameter = pNZBInfo->GetParameters()->Find("*Unpack:", false);
 			if (!pUnpackParameter)
 			{
-				pNZBInfo->SetParameter("*Unpack:", g_pOptions->GetUnpack() ? "yes" : "no");
+				pNZBInfo->GetParameters()->SetParameter("*Unpack:", g_pOptions->GetUnpack() ? "yes" : "no");
 			}
 		}
 	}
@@ -916,7 +916,7 @@ bool DiskState::LoadOldPostQueue(DownloadQueue* pDownloadQueue)
 					szValue++;
 					if (bNewNZBInfo)
 					{
-						pNZBInfo->SetParameter(buf, szValue);
+						pNZBInfo->GetParameters()->SetParameter(buf, szValue);
 					}
 				}
 			}

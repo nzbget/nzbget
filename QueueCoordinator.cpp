@@ -1096,12 +1096,7 @@ bool QueueCoordinator::SplitQueueEntries(FileQueue* pFileList, const char* szNam
 	pNZBInfo->SetCategory(pSrcNZBInfo->GetCategory());
 	pNZBInfo->BuildDestDirName();
 	pNZBInfo->SetQueuedFilename(pSrcNZBInfo->GetQueuedFilename());
-
-	for (NZBParameterList::iterator it = pSrcNZBInfo->GetParameters()->begin(); it != pSrcNZBInfo->GetParameters()->end(); it++)
-	{
-		NZBParameter* pNZBParameter = *it;
-		pNZBInfo->SetParameter(pNZBParameter->GetName(), pNZBParameter->GetValue());
-	}
+	pNZBInfo->GetParameters()->CopyFrom(pSrcNZBInfo->GetParameters());
 
 	for (FileQueue::iterator it = pFileList->begin(); it != pFileList->end(); it++)
 	{
