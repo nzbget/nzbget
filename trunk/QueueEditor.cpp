@@ -953,7 +953,7 @@ void QueueEditor::SetNZBParameter(NZBInfo* pNZBInfo, const char* szParamString)
 	{
 		*szValue = '\0';
 		szValue++;
-		pNZBInfo->SetParameter(szStr, szValue);
+		pNZBInfo->GetParameters()->SetParameter(szStr, szValue);
 	}
 	else
 	{

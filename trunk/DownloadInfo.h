@@ -209,8 +209,11 @@ typedef std::deque<NZBParameter*> NZBParameterListBase;
 class NZBParameterList : public NZBParameterListBase
 {
 public:
+						~NZBParameterList();
 	void				SetParameter(const char* szName, const char* szValue);
 	NZBParameter*		Find(const char* szName, bool bCaseSensitive);
+	void				Clear();
+	void				CopyFrom(NZBParameterList* pSourceParameters);
 };
 
 class ScriptStatus
@@ -378,7 +381,6 @@ public:
 	bool				GetUnpackCleanedUpDisk() { return m_bUnpackCleanedUpDisk; }
 	void				SetUnpackCleanedUpDisk(bool bUnpackCleanedUpDisk) { m_bUnpackCleanedUpDisk = bUnpackCleanedUpDisk; }
 	NZBParameterList*	GetParameters() { return &m_ppParameters; }				// needs locking (for shared objects)
-	void				SetParameter(const char* szName, const char* szValue);	// needs locking (for shared objects)
 	ScriptStatusList*	GetScriptStatuses() { return &m_scriptStatuses; }        // needs locking (for shared objects)
 	void				AppendMessage(Message::EKind eKind, time_t tTime, const char* szText);
 	Messages*			LockMessages();

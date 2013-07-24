@@ -267,7 +267,7 @@ void RemoteClient::BuildFileList(SNZBListResponse* pListResponse, const char* pT
 			const char* szValue = pBufPtr + sizeof(SNZBListResponsePPPEntry) + ntohl(pListAnswer->m_iNameLen);
 
 			NZBInfo* pNZBInfo = pDownloadQueue->GetNZBInfoList()->at(ntohl(pListAnswer->m_iNZBIndex) - 1);
-			pNZBInfo->SetParameter(szName, szValue);
+			pNZBInfo->GetParameters()->SetParameter(szName, szValue);
 
 			pBufPtr += sizeof(SNZBListResponsePPPEntry) + ntohl(pListAnswer->m_iNameLen) +
 				ntohl(pListAnswer->m_iValueLen);

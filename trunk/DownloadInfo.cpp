@@ -81,6 +81,20 @@ void NZBParameter::SetValue(const char* szValue)
 }
 
 
+NZBParameterList::~NZBParameterList()
+{
+	Clear();
+}
+
+void NZBParameterList::Clear()
+{
+	for (iterator it = begin(); it != end(); it++)
+	{
+		delete *it;
+	}
+	clear();
+}
+
 void NZBParameterList::SetParameter(const char* szName, const char* szValue)
 {
 	NZBParameter* pParameter = NULL;
@@ -130,6 +144,15 @@ NZBParameter* NZBParameterList::Find(const char* szName, bool bCaseSensitive)
 	
 	return NULL;
 }
+
+void NZBParameterList::CopyFrom(NZBParameterList* pSourceParameters)
+{
+	for (iterator it = pSourceParameters->begin(); it != pSourceParameters->end(); it++)
+	{
+		NZBParameter* pParameter = *it;
+		SetParameter(pParameter->GetName(), pParameter->GetValue());
+	}
+}									  
 
 
 ScriptStatus::ScriptStatus(const char* szName, EStatus eStatus)
@@ -241,12 +264,6 @@ NZBInfo::~NZBInfo()
 	}
 
 	ClearCompletedFiles();
-
-	for (NZBParameterList::iterator it = m_ppParameters.begin(); it != m_ppParameters.end(); it++)
-	{
-		delete *it;
-	}
-	m_ppParameters.clear();
 
 	for (Messages::iterator it = m_Messages.begin(); it != m_Messages.end(); it++)
 	{
@@ -417,11 +434,6 @@ void NZBInfo::BuildFinalDirName(char* szFinalDirBuf, int iBufSize)
 	snprintf(szBuffer, 1024, "%s%s", szFinalDirBuf, GetName());
 	szBuffer[1024-1] = '\0';
 	strncpy(szFinalDirBuf, szBuffer, iBufSize);
-}
-
-void NZBInfo::SetParameter(const char* szName, const char* szValue)
-{
-	m_ppParameters.SetParameter(szName, szValue);
 }
 
 NZBInfo::Messages* NZBInfo::LockMessages()
