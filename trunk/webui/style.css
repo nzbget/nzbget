@@ -64,20 +64,22 @@ body.navfixed.scrolled .navbar-fixed-top .navbar-inner {
 	float: left;
 	margin-top: 1px;
 	margin-right: 5px;
-	width: 39px;
+	width: 88px;
 	height: 36px;
 	cursor: pointer;
+	opacity: 1;
 }
 
+#Logo i,
 #Logo i:hover {
 	opacity: 1;
 	filter: alpha(opacity=100);
 }
 
 .img-logo {
-	background-position: -48px -80px;
-	width: 39px;
-	height: 36px;
+	background-position: -8px -139px;
+	width: 88px;
+	height: 38px;
 	display: inline-block;
 }
 
@@ -428,9 +430,9 @@ ul.dropdown-menu > li > a > i {
 	[class^="img-"],
 	[class*=" img-"] {
 		background-image: url("./img/icons-2x.png");
-		-webkit-background-size: 512px 200px;
-		-moz-background-size: 512px 200px;
-		background-size: 512px 200px;
+		-webkit-background-size: 700px 300px;
+		-moz-background-size: 700px 300px;
+		background-size: 700px 300px;
 	}
 }
 
