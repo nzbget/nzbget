@@ -27,6 +27,7 @@
 #define FEEDFILTER_H
 
 #include "DownloadInfo.h"
+#include "Util.h"
 
 class FeedFilter
 {
@@ -49,14 +50,21 @@ private:
 		char*			m_szField;
 		ECommand		m_eCommand;
 		char*			m_szParam;
+		long long		m_iIntParam;
+		RegEx*			m_pRegEx;
+
+		bool			MatchWord(const char* szStrValue);
+		bool			MatchSubstr(const char* szStrValue);
+		bool			MatchRegex(const char* szStrValue);
 
 	public:
-						Term(bool bPositive, const char* szField, ECommand eCommand, const char* szParam);
+						Term(bool bPositive, const char* szField, ECommand eCommand, const char* szParam, long long iIntParam);
 						~Term();
 		bool			GetPositive() { return m_bPositive; }
 		const char*		GetField() { return m_szField; }
 		ECommand		GetCommand() { return m_eCommand; }
 		const char*		GetParam() { return m_szParam; }
+		bool			Match(const char* szStrValue, const long long iIntValue);
 	};
 
 	typedef std::deque<Term*> TermList;
@@ -68,10 +76,10 @@ private:
 
 	bool				Compile(const char* szFilter);
 	bool				CompileToken(char* szToken);
-	bool				GetValueForTerm(Term* pTerm, FeedItemInfo* pFeedItemInfo, const char** StrValue, long long* IntValue);
-	bool				MatchTermWord(Term* pTerm, FeedItemInfo* pFeedItemInfo, const char* szStrValue);
-	bool				MatchTermSubstr(Term* pTerm, FeedItemInfo* pFeedItemInfo, const char* szStrValue);
+	bool				GetFieldValue(const char* szField, FeedItemInfo* pFeedItemInfo, const char** StrValue, long long* IntValue);
 	bool				ValidateFieldName(const char* szField);
+	bool				ParseSizeParam(const char* szParam, long long* pIntValue);
+	bool				ParseAgeParam(const char* szParam, long long* pIntValue);
 
 public:
 						FeedFilter(const char* szFilter);

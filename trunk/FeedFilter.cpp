@@ -56,7 +56,7 @@
 #  -       - declares a negative rule. If the rule succeed the feed
 #            item is ignored;
 #  field   - field to which apply the rule. Available fields: title,
-#            filename, category, link, size, age, date. If
+#            filename, category, link, size, age. If
 #            not specified the default field "title" is used;
 #  command - one of the special characters defining how to interpret the
 #            parameter (followed after the command):
@@ -73,16 +73,18 @@
 #  param   - parameter for command.
 #
 # Commands @, " and $ are for use with text fields (title, filename, category,
-# link). Commands <, <=, > and >= are for use with numeric and date
-# fields (size, age, date). Commands @ and " support wildcard characters * and ?.
+# link). Commands <, <=, > and >= are for use with numeric fields (size, age).
+# Commands @ and " support wildcard characters * and ?.
 */
 
-FeedFilter::Term::Term(bool bPositive, const char* szField, ECommand eCommand, const char* szParam)
+FeedFilter::Term::Term(bool bPositive, const char* szField, ECommand eCommand, const char* szParam, long long iIntParam)
 {
 	m_bPositive = bPositive;
 	m_szField = szField ? strdup(szField) : NULL;
 	m_eCommand = eCommand;
 	m_szParam = strdup(szParam);
+	m_iIntParam = iIntParam;
+	m_pRegEx = NULL;
 }
 
 FeedFilter::Term::~Term()
@@ -95,6 +97,85 @@ FeedFilter::Term::~Term()
 	{
 		free(m_szParam);
 	}
+	if (m_pRegEx)
+	{
+		delete m_pRegEx;
+	}
+}
+
+bool FeedFilter::Term::Match(const char* szStrValue, const long long iIntValue)
+{
+	switch (m_eCommand)
+	{
+		case fcWord:
+			return MatchWord(szStrValue);
+
+		case fcSubstr:
+			return MatchSubstr(szStrValue);
+
+		case fcRegex:
+			return MatchRegex(szStrValue);
+
+		case fcLess:
+			return iIntValue < m_iIntParam;
+
+		case fcLessEqual:
+			return iIntValue <= m_iIntParam;
+
+		case fcGreater:
+			return iIntValue > m_iIntParam;
+
+		case fcGreaterEqual:
+			return iIntValue >= m_iIntParam;
+	}
+
+	return false;
+}
+
+bool FeedFilter::Term::MatchWord(const char* szStrValue)
+{
+	const char* WORD_SEPARATORS = "!\"#$%&'()*+,-./:;<=>?@[\\]^_`{|}~";
+
+	// split szStrValue into tokens and create pp-parameter for each token
+	char* szStrValue2 = strdup(szStrValue);
+	char* saveptr;
+	bool bFound = false;
+	char* szWord = strtok_r(szStrValue2, WORD_SEPARATORS, &saveptr);
+	while (szWord)
+	{
+		szWord = Util::Trim(szWord);
+		bFound = *szWord && Util::MatchMask(szWord, m_szParam, false);
+		if (bFound)
+		{
+			break;
+		}
+		szWord = strtok_r(NULL, WORD_SEPARATORS, &saveptr);
+	}
+	free(szStrValue2);
+
+	return bFound;
+}
+
+bool FeedFilter::Term::MatchSubstr(const char* szStrValue)
+{
+	int iLen = strlen(m_szParam) + 2 + 1;
+	char* szMask = (char*)malloc(iLen);
+	snprintf(szMask, iLen, "*%s*", m_szParam);
+	szMask[iLen-1] = '\0';
+
+	bool bFound = Util::MatchMask(szStrValue, szMask, false);
+	return bFound;
+}
+
+bool FeedFilter::Term::MatchRegex(const char* szStrValue)
+{
+	if (!m_pRegEx)
+	{
+		m_pRegEx = new RegEx(m_szParam);
+	}
+
+	bool bFound = m_pRegEx->Match(szStrValue);
+	return bFound;
 }
 
 
@@ -121,13 +202,13 @@ bool FeedFilter::Compile(const char* szFilter)
 	char* szToken = szFilter2;
 	bool bQuote = false;
 
-	for (char* p = szFilter2; *p; p++)
+	for (char* p = szFilter2; *p && bOK; p++)
 	{
 		char ch = *p;
 		if ((ch == ' ' && !bQuote) || (ch == '"' && bQuote))
 		{
 			*p = '\0';
-			CompileToken(szToken);
+			bOK = CompileToken(szToken);
 			szToken = p + 1;
 			bQuote = false;
 		}
@@ -136,7 +217,8 @@ bool FeedFilter::Compile(const char* szFilter)
 			bQuote = true;
 		}
 	}
-	CompileToken(szToken);
+
+	bOK = bOK && CompileToken(szToken);
 
 	free(szFilter2);
 
@@ -222,7 +304,15 @@ bool FeedFilter::CompileToken(char* szToken)
 		return false;
 	}
 
-	m_Terms.push_back(new Term(bPositive, szField, eCommand, szToken));
+	long long iIntValue = 0;
+
+	if ((szField && !strcasecmp(szField, "size") && !ParseSizeParam(szToken, &iIntValue)) ||
+		(szField && !strcasecmp(szField, "age") && !ParseAgeParam(szToken, &iIntValue)))
+	{
+		return false;
+	}
+
+	m_Terms.push_back(new Term(bPositive, szField, eCommand, szToken, iIntValue));
 
 	return true;
 }
@@ -230,42 +320,28 @@ bool FeedFilter::CompileToken(char* szToken)
 bool FeedFilter::ValidateFieldName(const char* szField)
 {
 	return !szField || !strcasecmp(szField, "title") || !strcasecmp(szField, "filename") ||
-		!strcasecmp(szField, "category") || !strcasecmp(szField, "size") ||
-		!strcasecmp(szField, "date") || !strcasecmp(szField, "age");
+		!strcasecmp(szField, "category") || !strcasecmp(szField, "size") || !strcasecmp(szField, "age");
 }
 
 bool FeedFilter::Match(FeedItemInfo* pFeedItemInfo)
 {
+	if (!m_bValid)
+	{
+		return false;
+	}
+
 	for (TermList::iterator it = m_Terms.begin(); it != m_Terms.end(); it++)
 	{
 		Term* pTerm = *it;
 
 		const char* szStrValue = NULL;
 		long long iIntValue = 0;
-		if (!GetValueForTerm(pTerm, pFeedItemInfo, &szStrValue, &iIntValue))
+		if (!GetFieldValue(pTerm->GetField(), pFeedItemInfo, &szStrValue, &iIntValue))
 		{
 			return false;
 		}
 
-		bool bMatch = false;
-		switch (pTerm->GetCommand())
-		{
-			case fcWord:
-				bMatch = MatchTermWord(pTerm, pFeedItemInfo, szStrValue);
-				break;
-
-			case fcSubstr:
-				bMatch = MatchTermSubstr(pTerm, pFeedItemInfo, szStrValue);
-				break;
-
-			case fcRegex:
-			case fcLess:
-			case fcLessEqual:
-			case fcGreater:
-			case fcGreaterEqual:
-				bMatch = false; // not yet implemented
-				break;
-		}
+		bool bMatch = pTerm->Match(szStrValue, iIntValue);
 
 		if (pTerm->GetPositive() != bMatch)
 		{
@@ -276,42 +352,37 @@ bool FeedFilter::Match(FeedItemInfo* pFeedItemInfo)
 	return true;
 }
 
-bool FeedFilter::GetValueForTerm(Term* pTerm, FeedItemInfo* pFeedItemInfo, const char** StrValue, long long* IntValue)
+bool FeedFilter::GetFieldValue(const char* szField, FeedItemInfo* pFeedItemInfo, const char** StrValue, long long* IntValue)
 {
 	*StrValue = NULL;
 	*IntValue = 0;
 
-	if (!pTerm->GetField() || !strcasecmp(pTerm->GetField(), "title"))
+	if (!szField || !strcasecmp(szField, "title"))
 	{
 		*StrValue = pFeedItemInfo->GetTitle();
 		return true;
 	}
-	else if (!strcasecmp(pTerm->GetField(), "filename"))
+	else if (!strcasecmp(szField, "filename"))
 	{
 		*StrValue = pFeedItemInfo->GetFilename();
 		return true;
 	}
-	else if (!strcasecmp(pTerm->GetField(), "category"))
+	else if (!strcasecmp(szField, "category"))
 	{
 		*StrValue = pFeedItemInfo->GetCategory();
 		return true;
 	}
-	else if (!strcasecmp(pTerm->GetField(), "link") || !strcasecmp(pTerm->GetField(), "url"))
+	else if (!strcasecmp(szField, "link") || !strcasecmp(szField, "url"))
 	{
 		*StrValue = pFeedItemInfo->GetUrl();
 		return true;
 	}
-	else if (!strcasecmp(pTerm->GetField(), "size"))
+	else if (!strcasecmp(szField, "size"))
 	{
 		*IntValue = pFeedItemInfo->GetSize();
 		return true;
 	}
-	else if (!strcasecmp(pTerm->GetField(), "date"))
-	{
-		*IntValue = pFeedItemInfo->GetTime();
-		return true;
-	}
-	else if (!strcasecmp(pTerm->GetField(), "age"))
+	else if (!strcasecmp(szField, "age"))
 	{
 		*IntValue = time(NULL) - pFeedItemInfo->GetTime();
 		return true;
@@ -320,38 +391,74 @@ bool FeedFilter::GetValueForTerm(Term* pTerm, FeedItemInfo* pFeedItemInfo, const
 	return false;
 }
 
-bool FeedFilter::MatchTermWord(Term* pTerm, FeedItemInfo* pFeedItemInfo, const char* szStrValue)
+bool FeedFilter::ParseSizeParam(const char* szParam, long long* pIntValue)
 {
-	const char* WORD_SEPARATORS = "!\"#$%&'()*+,-./:;<=>?@[\\]^_`{|}~";
+	*pIntValue = 0;
 
-	// split szStrValue into tokens and create pp-parameter for each token
-	char* szStrValue2 = strdup(szStrValue);
-	char* saveptr;
-	bool bFound = false;
-	char* szWord = strtok_r(szStrValue2, WORD_SEPARATORS, &saveptr);
-	while (szWord)
+	double fParam = atof(szParam);
+
+	const char* p;
+	for (p = szParam; *p && ((*p >= '0' && *p <='9') || *p == '.'); p++) ;
+	if (*p)
 	{
-		szWord = Util::Trim(szWord);
-		bFound = *szWord && Util::MatchMask(szWord, pTerm->GetParam(), false);
-		if (bFound)
+		if (!strcasecmp(p, "K") || !strcasecmp(p, "KB"))
 		{
-			break;
+			*pIntValue = (long long)(fParam*1024);
 		}
-		szWord = strtok_r(NULL, WORD_SEPARATORS, &saveptr);
+		else if (!strcasecmp(p, "M") || !strcasecmp(p, "MB"))
+		{
+			*pIntValue = (long long)(fParam*1024*1024);
+		}
+		else if (!strcasecmp(p, "G") || !strcasecmp(p, "GB"))
+		{
+			*pIntValue = (long long)(fParam*1024*1024*1024);
+		}
+		else
+		{
+			return false;
+		}
 	}
-	free(szStrValue2);
+	else
+	{
+		*pIntValue = (long long)fParam;
+	}
 
-	return bFound;
+	return true;
 }
 
-bool FeedFilter::MatchTermSubstr(Term* pTerm, FeedItemInfo* pFeedItemInfo, const char* szStrValue)
+bool FeedFilter::ParseAgeParam(const char* szParam, long long* pIntValue)
 {
-	int iLen = strlen(pTerm->GetParam()) + 2 + 1;
-	char* szParam = (char*)malloc(iLen);
-	snprintf(szParam, iLen, "*%s*", pTerm->GetParam());
-	szParam[iLen-1] = '\0';
+	*pIntValue = atoll(szParam);
 
-	bool bFound = Util::MatchMask(szStrValue, szParam, false);
+	const char* p;
+	for (p = szParam; *p && ((*p >= '0' && *p <='9') || *p == '.'); p++) ;
+	if (*p)
+	{
+		if (!strcasecmp(p, "m"))
+		{
+			// minutes
+			*pIntValue *= 60;
+		}
+		else if (!strcasecmp(p, "h"))
+		{
+			// hours
+			*pIntValue *= 60 * 60;
+		}
+		else if (!strcasecmp(p, "d"))
+		{
+			// days
+			*pIntValue *= 60 * 60 * 24;
+		}
+		else
+		{
+			return false;
+		}
+	}
+	else
+	{
+		// days by default
+		*pIntValue *= 60 * 60 * 24;
+	}
 
-	return bFound;
+	return true;
 }
