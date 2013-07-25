@@ -745,6 +745,10 @@ form {
 	left: 50%;
 }
 
+.modal-body {
+  max-height: 360px;
+}
+
 .modal-max {
 	margin: 15px;
 	left: 0;
