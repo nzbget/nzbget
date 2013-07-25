@@ -412,6 +412,13 @@ var DownloadsEditDialog = (new function($)
 
 	function itemDelete()
 	{
+		Util.show('#DownloadEditDeleteConfirmDialog_Cleanup', Options.option('DeleteCleanupDisk') === 'yes');
+		Util.show('#DownloadEditDeleteConfirmDialog_Remain', Options.option('DeleteCleanupDisk') != 'yes');
+		ConfirmDialog.showModal('DownloadEditDeleteConfirmDialog', doItemDelete);
+	}
+
+	function doItemDelete()
+	{
 		disableAllButtons();
 		notification = '#Notif_Downloads_Deleted';
 		RPC.call('editqueue', ['GroupDelete', 0, '', [curGroup.LastID]], completed);
@@ -1379,6 +1386,11 @@ var HistoryEditDialog = (new function()
 	}
 
 	function itemDelete()
+	{
+		ConfirmDialog.showModal('HistoryEditDeleteConfirmDialog', doItemDelete);
+	}
+
+	function doItemDelete()
 	{
 		disableAllButtons();
 		notification = '#Notif_History_Deleted';
