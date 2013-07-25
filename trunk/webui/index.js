@@ -749,7 +749,15 @@ var ConfirmDialog = (new function($)
 		$('#ConfirmDialog_OK').html($('#' + id + '_OK').html());
 		Util.centerDialog($ConfirmDialog, true);
 		actionCallback = callback;
-		$ConfirmDialog.modal();
+		
+		$ConfirmDialog.modal({backdrop: 'static'});
+		
+		// avoid showing multiple backdrops when the modal is shown from other modal
+		var backdrops = $('.modal-backdrop');
+		if (backdrops.length > 1)
+		{
+			backdrops.last().remove();
+		}
 	}
 
 	function hidden()
