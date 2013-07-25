@@ -61,6 +61,7 @@ NZBFile::NZBFile(const char* szFileName, const char* szCategory)
     debug("Creating NZBFile");
 
     m_szFileName = strdup(szFileName);
+	m_szPassword = NULL;
 	m_pNZBInfo = new NZBInfo();
 	m_pNZBInfo->AddReference();
 	m_pNZBInfo->SetFilename(szFileName);
@@ -68,6 +69,7 @@ NZBFile::NZBFile(const char* szFileName, const char* szCategory)
 	m_pNZBInfo->BuildDestDirName();
 
 #ifndef WIN32
+	m_bPassword = false;
 	m_pFileInfo = NULL;
 	m_pArticle = NULL;
 	m_szTagContent = NULL;
@@ -85,6 +87,10 @@ NZBFile::~NZBFile()
     if (m_szFileName)
     {
         free(m_szFileName);
+    }
+    if (m_szPassword)
+    {
+        free(m_szPassword);
     }
 
     for (FileInfos::iterator it = m_FileInfos.begin(); it != m_FileInfos.end(); it++)
@@ -422,10 +428,17 @@ bool NZBFile::ParseNZB(IUnknown* nzb)
 	MSXML::IXMLDOMDocumentPtr doc = nzb;
 	MSXML::IXMLDOMNodePtr root = doc->documentElement;
 
+	MSXML::IXMLDOMNodePtr node = root->selectSingleNode("/nzb/head/meta[@type='password']");
+	if (node)
+	{
+		_bstr_t password(node->Gettext());
+		m_szPassword = strdup(password);
+	}
+
 	MSXML::IXMLDOMNodeListPtr fileList = root->selectNodes("/nzb/file");
 	for (int i = 0; i < fileList->Getlength(); i++)
 	{
-		MSXML::IXMLDOMNodePtr node = fileList->Getitem(i);
+		node = fileList->Getitem(i);
 		MSXML::IXMLDOMNodePtr attribute = node->Getattributes()->getNamedItem("subject");
 		if (!attribute) return false;
 		_bstr_t subject(attribute->Gettext());
@@ -583,6 +596,10 @@ void NZBFile::Parse_StartElement(const char *name, const char **atts)
 			AddArticle(m_pFileInfo, m_pArticle);
 		}
 	}
+	else if (!strcmp("meta", name))
+	{
+		m_bPassword = atts[0] && atts[1] && !strcmp("type", atts[0]) && !strcmp("password", atts[1]);
+	}
 }
 
 void NZBFile::Parse_EndElement(const char *name)
@@ -619,6 +636,10 @@ void NZBFile::Parse_EndElement(const char *name)
 		snprintf(ID, 2048, "<%s>", m_szTagContent);
 		m_pArticle->SetMessageID(ID);
 		m_pArticle = NULL;
+	}
+	else if (!strcmp("meta", name) && m_bPassword)
+	{
+		m_szPassword = strdup(m_szTagContent);
 	}
 }
 

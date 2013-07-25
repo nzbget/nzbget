@@ -460,6 +460,11 @@ void Scanner::AddFileToQueue(const char* szFilename, const char* szNZBName, cons
 			pNZBFile->GetNZBInfo()->BuildDestDirName();
 		}
 
+		if (pNZBFile->GetPassword())
+		{
+			pNZBFile->GetNZBInfo()->GetParameters()->SetParameter("*Unpack:Password", pNZBFile->GetPassword());
+		}
+
 		pNZBFile->GetNZBInfo()->GetParameters()->CopyFrom(pParameters);
 
 		for (NZBFile::FileInfos::iterator it = pNZBFile->GetFileInfos()->begin(); it != pNZBFile->GetFileInfos()->end(); it++)
