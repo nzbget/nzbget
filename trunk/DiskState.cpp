@@ -1266,7 +1266,7 @@ bool DiskState::SaveFeeds(Feeds* pFeeds, FeedHistory* pFeedHistory)
 		return false;
 	}
 
-	fprintf(outfile, "%s%i\n", FORMATVERSION_SIGNATURE, 1);
+	fprintf(outfile, "%s%i\n", FORMATVERSION_SIGNATURE, 2);
 
 	// save status
 	SaveFeedStatus(pFeeds, outfile);
@@ -1313,7 +1313,7 @@ bool DiskState::LoadFeeds(Feeds* pFeeds, FeedHistory* pFeedHistory)
 	char FileSignatur[128];
 	fgets(FileSignatur, sizeof(FileSignatur), infile);
 	int iFormatVersion = ParseFormatVersion(FileSignatur);
-	if (iFormatVersion > 1)
+	if (iFormatVersion > 2)
 	{
 		error("Could not load diskstate due to file version mismatch");
 		fclose(infile);
@@ -1349,6 +1349,7 @@ bool DiskState::SaveFeedStatus(Feeds* pFeeds, FILE* outfile)
 		FeedInfo* pFeedInfo = *it;
 
 		fprintf(outfile, "%s\n", pFeedInfo->GetUrl());
+		fprintf(outfile, "%s\n", pFeedInfo->GetFilter());
 		fprintf(outfile, "%i\n", (int)pFeedInfo->GetLastUpdate());
 	}
 
@@ -1367,6 +1368,13 @@ bool DiskState::LoadFeedStatus(Feeds* pFeeds, FILE* infile, int iFormatVersion)
 		if (!fgets(szUrl, sizeof(szUrl), infile)) goto error;
 		if (szUrl[0] != 0) szUrl[strlen(szUrl)-1] = 0; // remove traling '\n'
 
+		char szFilter[1024];
+		if (iFormatVersion > 1)
+		{
+			if (!fgets(szFilter, sizeof(szFilter), infile)) goto error;
+			if (szFilter[0] != 0) szFilter[strlen(szFilter)-1] = 0; // remove traling '\n'
+		}
+
 		int iLastUpdate = 0;
 		if (fscanf(infile, "%i\n", &iLastUpdate) != 1) goto error;
 
@@ -1374,7 +1382,8 @@ bool DiskState::LoadFeedStatus(Feeds* pFeeds, FILE* infile, int iFormatVersion)
 		{
 			FeedInfo* pFeedInfo = *it;
 
-			if (!strcmp(pFeedInfo->GetUrl(), szUrl))
+			if (!strcmp(pFeedInfo->GetUrl(), szUrl) && 
+				(iFormatVersion == 1 || !strcmp(pFeedInfo->GetFilter(), szFilter)))
 			{
 				pFeedInfo->SetLastUpdate((time_t)iLastUpdate);
 			}
