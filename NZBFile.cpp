@@ -133,7 +133,12 @@ void NZBFile::AddArticle(FileInfo* pFileInfo, ArticleInfo* pArticleInfo)
 	while ((int)pFileInfo->GetArticles()->size() < pArticleInfo->GetPartNumber())
 		pFileInfo->GetArticles()->push_back(NULL);
 
-	(*pFileInfo->GetArticles())[pArticleInfo->GetPartNumber() - 1] = pArticleInfo;
+	int index = pArticleInfo->GetPartNumber() - 1;
+	if ((*pFileInfo->GetArticles())[index])
+	{
+		delete (*pFileInfo->GetArticles())[index];
+	}
+	(*pFileInfo->GetArticles())[index] = pArticleInfo;
 }
 
 void NZBFile::AddFileInfo(FileInfo* pFileInfo)

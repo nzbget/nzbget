@@ -524,6 +524,10 @@ ArticleInfo::~ ArticleInfo()
 
 void ArticleInfo::SetMessageID(const char * szMessageID)
 {
+	if (m_szMessageID)
+	{
+		free(m_szMessageID);
+	}
 	m_szMessageID = strdup(szMessageID);
 }
 
