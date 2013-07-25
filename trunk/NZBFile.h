@@ -40,6 +40,7 @@ private:
 	FileInfos			m_FileInfos;
 	NZBInfo*			m_pNZBInfo;
 	char*				m_szFileName;
+	char*				m_szPassword;
 
 						NZBFile(const char* szFileName, const char* szCategory);
 	void				AddArticle(FileInfo* pFileInfo, ArticleInfo* pArticleInfo);
@@ -56,6 +57,7 @@ private:
 	char*				m_szTagContent;
 	int					m_iTagContentLen;
 	bool				m_bIgnoreNextError;
+	bool				m_bPassword;
 
 	static void			SAX_StartElement(NZBFile* pFile, const char *name, const char **atts);
 	static void			SAX_EndElement(NZBFile* pFile, const char *name);
@@ -73,6 +75,7 @@ public:
 	const char* 		GetFileName() const { return m_szFileName; }
 	FileInfos*			GetFileInfos() { return &m_FileInfos; }
 	NZBInfo*			GetNZBInfo() { return m_pNZBInfo; }
+	const char*			GetPassword() { return m_szPassword; }
 	void				DetachFileInfos();
 
 	void				LogDebugInfo();
