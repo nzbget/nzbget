@@ -274,7 +274,7 @@ void ArticleDownloader::Run()
 				NewsServer* pCandidateServer = *it;
 				if (pCandidateServer->GetNormLevel() == iLevel)
 				{
-					bool bServerFailed = !pCandidateServer->GetActive();
+					bool bServerFailed = !pCandidateServer->GetActive() || pCandidateServer->GetMaxConnections() == 0;
 					if (!bServerFailed)
 					{
 						for (ServerPool::Servers::iterator it = failedServers.begin(); it != failedServers.end(); it++)
