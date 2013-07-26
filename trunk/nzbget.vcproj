@@ -316,6 +316,14 @@
 			>
 		</File>
 		<File
+			RelativePath=".\FeedFilter.cpp"
+			>
+		</File>
+		<File
+			RelativePath=".\FeedFilter.h"
+			>
+		</File>
+		<File
 			RelativePath=".\Frontend.cpp"
 			>
 		</File>
