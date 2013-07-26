@@ -34,8 +34,7 @@ class FeedFilter
 private:
 	enum ECommand
 	{
-		fcWord,
-		fcSubstr,
+		fcText,
 		fcRegex,
 		fcLess,
 		fcLessEqual,
@@ -53,8 +52,7 @@ private:
 		long long		m_iIntParam;
 		RegEx*			m_pRegEx;
 
-		bool			MatchWord(const char* szStrValue);
-		bool			MatchSubstr(const char* szStrValue);
+		bool			MatchText(const char* szStrValue);
 		bool			MatchRegex(const char* szStrValue);
 
 	public:

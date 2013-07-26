@@ -42,41 +42,6 @@
 #include "FeedFilter.h"
 
 
-/*
-# Filter string is similar to used in search engines. It consists of
-# search rules separated with spaces. Every rule is checked for a feed
-# item and if they all success the feed item is considered good. If
-# any of the rules fails the feed item is ignored (rejected).
-#
-# Definition of rules:
-#  [+|-][field:][command]param
-#
-#  +       - declares a positive rule. Rules are positive by default,
-#            the "+" can be omitted;
-#  -       - declares a negative rule. If the rule succeed the feed
-#            item is ignored;
-#  field   - field to which apply the rule. Available fields: title,
-#            filename, category, link, size, age. If
-#            not specified the default field "title" is used;
-#  command - one of the special characters defining how to interpret the
-#            parameter (followed after the command):
-#            @  - search for word "param" This is default command,
-#                 the "@" can be omitted;
-#            " (quotation mark) - search for substring "param". The parameter
-#                  must end with quotation mark as well;
-#            $  - "param" defines a regular expression (using POSIX Extended
-#                 Regular Expressions syntax);
-#            <  - less than;
-#            <= - equal or less than;
-#            >  - greater than;
-#            >= - equal or greater than;
-#  param   - parameter for command.
-#
-# Commands @, " and $ are for use with text fields (title, filename, category,
-# link). Commands <, <=, > and >= are for use with numeric fields (size, age).
-# Commands @ and " support wildcard characters * and ?.
-*/
-
 FeedFilter::Term::Term(bool bPositive, const char* szField, ECommand eCommand, const char* szParam, long long iIntParam)
 {
 	m_bPositive = bPositive;
@@ -107,11 +72,8 @@ bool FeedFilter::Term::Match(const char* szStrValue, const long long iIntValue)
 {
 	switch (m_eCommand)
 	{
-		case fcWord:
-			return MatchWord(szStrValue);
-
-		case fcSubstr:
-			return MatchSubstr(szStrValue);
+		case fcText:
+			return MatchText(szStrValue);
 
 		case fcRegex:
 			return MatchRegex(szStrValue);
@@ -132,39 +94,77 @@ bool FeedFilter::Term::Match(const char* szStrValue, const long long iIntValue)
 	return false;
 }
 
-bool FeedFilter::Term::MatchWord(const char* szStrValue)
+bool FeedFilter::Term::MatchText(const char* szStrValue)
 {
 	const char* WORD_SEPARATORS = "!\"#$%&'()*+,-./:;<=>?@[\\]^_`{|}~";
 
-	// split szStrValue into tokens and create pp-parameter for each token
-	char* szStrValue2 = strdup(szStrValue);
-	char* saveptr;
-	bool bFound = false;
-	char* szWord = strtok_r(szStrValue2, WORD_SEPARATORS, &saveptr);
-	while (szWord)
+	// first check if we should make word-search or substring-search
+	int iParamLen = strlen(m_szParam);
+	bool bSubstr = iParamLen >= 2 && m_szParam[0] == '*' && m_szParam[iParamLen-1] == '*';
+	if (!bSubstr)
 	{
-		szWord = Util::Trim(szWord);
-		bFound = *szWord && Util::MatchMask(szWord, m_szParam, false);
-		if (bFound)
+		for (const char* p = m_szParam; *p; p++)
 		{
-			break;
+			char ch = *p;
+			if (strchr(WORD_SEPARATORS, ch) && ch != '*' && ch != '?')
+			{
+				bSubstr = true;
+				break;
+			}
 		}
-		szWord = strtok_r(NULL, WORD_SEPARATORS, &saveptr);
 	}
-	free(szStrValue2);
 
-	return bFound;
-}
+	bool bMatch = false;
 
-bool FeedFilter::Term::MatchSubstr(const char* szStrValue)
-{
-	int iLen = strlen(m_szParam) + 2 + 1;
-	char* szMask = (char*)malloc(iLen);
-	snprintf(szMask, iLen, "*%s*", m_szParam);
-	szMask[iLen-1] = '\0';
+	if (!bSubstr)
+	{
+		// Word-search
 
-	bool bFound = Util::MatchMask(szStrValue, szMask, false);
-	return bFound;
+		// split szStrValue into tokens and create pp-parameter for each token
+		char* szStrValue2 = strdup(szStrValue);
+		char* saveptr;
+		char* szWord = strtok_r(szStrValue2, WORD_SEPARATORS, &saveptr);
+		while (szWord)
+		{
+			szWord = Util::Trim(szWord);
+			bMatch = *szWord && Util::MatchMask(szWord, m_szParam, false);
+			if (bMatch)
+			{
+				break;
+			}
+			szWord = strtok_r(NULL, WORD_SEPARATORS, &saveptr);
+		}
+		free(szStrValue2);
+	}
+	else
+	{
+		// Substring-search
+
+		const char* szFormat = "*%s*";
+		if (iParamLen >= 2 && m_szParam[0] == '*' && m_szParam[iParamLen-1] == '*')
+		{
+			szFormat = "%s";
+		}
+		else if (iParamLen >= 1 && m_szParam[0] == '*')
+		{
+			szFormat = "%s*";
+		}
+		else if (iParamLen >= 1 && m_szParam[iParamLen-1] == '*')
+		{
+			szFormat = "*%s";
+		}
+
+		int iMaskLen = strlen(m_szParam) + 2 + 1;
+		char* szMask = (char*)malloc(iMaskLen);
+		snprintf(szMask, iMaskLen, szFormat, m_szParam);
+		szMask[iMaskLen-1] = '\0';
+
+		bMatch = Util::MatchMask(szStrValue, szMask, false);
+
+		free(szMask);
+	}
+
+	return bMatch;
 }
 
 bool FeedFilter::Term::MatchRegex(const char* szStrValue)
@@ -200,21 +200,15 @@ bool FeedFilter::Compile(const char* szFilter)
 
 	char* szFilter2 = strdup(szFilter);
 	char* szToken = szFilter2;
-	bool bQuote = false;
 
 	for (char* p = szFilter2; *p && bOK; p++)
 	{
 		char ch = *p;
-		if ((ch == ' ' && !bQuote) || (ch == '"' && bQuote))
+		if (ch == ' ')
 		{
 			*p = '\0';
 			bOK = CompileToken(szToken);
 			szToken = p + 1;
-			bQuote = false;
-		}
-		else if (ch == '"')
-		{
-			bQuote = true;
 		}
 	}
 
@@ -238,7 +232,7 @@ bool FeedFilter::CompileToken(char* szToken)
 	}
 
 	char *szField = NULL;
-	ECommand eCommand = fcWord;
+	ECommand eCommand = fcText;
 
 	char* szColon = strchr(szToken, ':');
 	if (szColon)
@@ -258,17 +252,7 @@ bool FeedFilter::CompileToken(char* szToken)
 
 	if (ch == '@')
 	{
-		eCommand = fcWord;
-		szToken++;
-	}
-	else if (ch == '"')
-	{
-		eCommand = fcSubstr;
-		char* szEnd = szToken + strlen(szToken);
-		if (*szEnd == '"')
-		{
-			*szEnd = '\0';
-		}
+		eCommand = fcText;
 		szToken++;
 	}
 	else if (ch == '$')
