@@ -749,6 +749,10 @@ form {
   max-height: 360px;
 }
 
+.modal.no-footer .modal-body {
+  max-height: 400px;
+}
+
 .modal-body .alert {
 	margin-bottom: 0px;
 	padding: 6px;
