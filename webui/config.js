@@ -1516,16 +1516,9 @@ var Config = (new function($)
 
 	/*** RELOAD ********************************************************************/
 
-	this.reloadConfirm = function()
-	{
-		ConfirmDialog.showModal('ReloadConfirmDialog', Config.reload);
-	}
-
-	this.reload = function()
+	function restart(callback)
 	{
 		Refresher.pause();
-
-		$('#ConfigReloadAction').text('Stopping all activities and reloading...');
 		$('#ConfigReloadInfoNotes').hide();
 
 		$('body').fadeOut(function()
@@ -1536,8 +1529,19 @@ var Config = (new function($)
 			$('body').show();
 			$('#ConfigReloadInfo').fadeIn();
 			reloadTime = new Date();
-			RPC.call('reload', [], reloadCheckStatus);
+			callback();
 		});
+	}
+
+	this.reloadConfirm = function()
+	{
+		ConfirmDialog.showModal('ReloadConfirmDialog', Config.reload);
+	}
+
+	this.reload = function()
+	{
+		$('#ConfigReloadAction').text('Stopping all activities and reloading...');
+		restart(function() { RPC.call('reload', [], reloadCheckStatus); });
 	}
 
 	function reloadCheckStatus()
@@ -1581,6 +1585,35 @@ var Config = (new function($)
 	{
 		Options.reloadConfig(values, buildPage);
 		restored = true;
+	}
+	
+	/*** SHUTDOWN ********************************************************************/
+
+	this.shutdownConfirm = function()
+	{
+		ConfirmDialog.showModal('ShutdownConfirmDialog', Config.shutdown);
+	}
+
+	this.shutdown = function()
+	{
+		$('#ConfigReloadTitle').text('Shutdown NZBGet');
+		$('#ConfigReloadAction').text('Stopping all activities...');
+		restart(function() { RPC.call('shutdown', [], shutdownCheckStatus); });
+	}
+
+	function shutdownCheckStatus()
+	{
+		RPC.call('version', [], function(version)
+			{
+				// the program still runs, waiting 0.5 sec. and retrying
+				setTimeout(shutdownCheckStatus, 500);
+			},
+			function()
+			{
+				// the program has been stopped
+				$('#ConfigReloadTransmit').hide();
+				$('#ConfigReloadAction').text('The program has been stopped.');
+			});
 	}
 }(jQuery));
 

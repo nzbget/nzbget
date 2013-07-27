@@ -507,6 +507,17 @@
 											</div>
 
 											<div class="control-group config-static config-system">
+												<label class="control-label nowrap">Shutdown NZBGet</label>
+												<div class="controls">
+													<button type="button" class="btn btn-danger" onclick="Config.shutdownConfirm()">Shutdown</button>
+													<p class="help-block">
+													<span class="help-option-title">Stop the program.</span><br><br>
+													There is no way to start the program again from web-interface. Make sure you know how to do this.
+													</p>
+												</div>
+											</div>
+
+											<div class="control-group config-static config-system">
 												<label class="control-label nowrap">Backup Settings</label>
 												<div class="controls">
 													<button type="button" class="btn" onclick="ConfigBackupRestore.backupSettings()">Backup</button>
@@ -1527,9 +1538,9 @@
 <!-- ***  RELOAD INFO BLOCK ***************************************** -->
 
 <div id="ConfigReloadInfo" class="alert alert-success hide">
-	<h4 class="alert-heading">Reloading NZBGet</h4>
+	<h4 class="alert-heading" id="ConfigReloadTitle">Reloading NZBGet</h4>
 	<p>
-	<img style="vertical-align:top; margin-top:1px; width:16px; height:16px;" src="img/transmit-reload-2x.gif"> <span id="ConfigReloadAction">Stopping all activities and reloading...</span>
+	<img style="vertical-align:top; margin-top:1px; width:16px; height:16px;" src="img/transmit-reload-2x.gif" id="ConfigReloadTransmit"> <span id="ConfigReloadAction">Stopping all activities and reloading...</span>
 	</p>
 	<div id="ConfigReloadInfoNotes" class="hide">
 	Should this take too long:
@@ -1538,6 +1549,21 @@
 		<li>If you changed remote control settings (IP, Port, Password) update the URL in browser accordingly.</li>
 	</ul>
 	</div>
+</div>
+
+<!-- *** SHUTDOWN DIALOG DATA ***************************************** -->
+
+<div class="hide" id="ShutdownConfirmDialog">
+	<div id="ShutdownConfirmDialog_Title">Shutdown</div>
+	<div id="ShutdownConfirmDialog_Text">
+		<p>
+		Shutdown NZBGet?
+		</p>
+		<p class="alert alert-danger">
+		The program will be stopped. You will no longer be able to access or start it via web-interface. Make sure you know how to start the program again.
+		</p>
+	</div>
+	<div id="ShutdownConfirmDialog_OK">Shutdown</div>
 </div>
 
 <!-- ***  NOTIFICATIONS ************************************************************ -->
