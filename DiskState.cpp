@@ -99,7 +99,7 @@ bool DiskState::SaveDownloadQueue(DownloadQueue* pDownloadQueue)
 		return false;
 	}
 
-	fprintf(outfile, "%s%i\n", FORMATVERSION_SIGNATURE, 26);
+	fprintf(outfile, "%s%i\n", FORMATVERSION_SIGNATURE, 27);
 
 	// save nzb-infos
 	SaveNZBList(pDownloadQueue, outfile);
@@ -153,7 +153,7 @@ bool DiskState::LoadDownloadQueue(DownloadQueue* pDownloadQueue)
 	char FileSignatur[128];
 	fgets(FileSignatur, sizeof(FileSignatur), infile);
 	int iFormatVersion = ParseFormatVersion(FileSignatur);
-	if (iFormatVersion < 3 || iFormatVersion > 26)
+	if (iFormatVersion < 3 || iFormatVersion > 27)
 	{
 		error("Could not load diskstate due to file version mismatch");
 		fclose(infile);
@@ -218,6 +218,7 @@ void DiskState::SaveNZBList(DownloadQueue* pDownloadQueue, FILE* outfile)
 		fprintf(outfile, "%i\n", pNZBInfo->GetID());
 		fprintf(outfile, "%s\n", pNZBInfo->GetFilename());
 		fprintf(outfile, "%s\n", pNZBInfo->GetDestDir());
+		fprintf(outfile, "%s\n", pNZBInfo->GetFinalDir());
 		fprintf(outfile, "%s\n", pNZBInfo->GetQueuedFilename());
 		fprintf(outfile, "%s\n", pNZBInfo->GetName());
 		fprintf(outfile, "%s\n", pNZBInfo->GetCategory());
@@ -304,6 +305,13 @@ bool DiskState::LoadNZBList(DownloadQueue* pDownloadQueue, FILE* infile, int iFo
 		if (!fgets(buf, sizeof(buf), infile)) goto error;
 		if (buf[0] != 0) buf[strlen(buf)-1] = 0; // remove traling '\n'
 		pNZBInfo->SetDestDir(buf);
+
+		if (iFormatVersion >= 27)
+		{
+			if (!fgets(buf, sizeof(buf), infile)) goto error;
+			if (buf[0] != 0) buf[strlen(buf)-1] = 0; // remove traling '\n'
+			pNZBInfo->SetFinalDir(buf);
+		}
 
 		if (iFormatVersion >= 5)
 		{

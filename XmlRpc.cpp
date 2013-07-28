@@ -1804,6 +1804,7 @@ void HistoryXmlCommand::Execute()
 		"<member><name>NZBNicename</name><value><string>%s</string></value></member>\n"		// deprecated, use Name instead
 		"<member><name>NZBFilename</name><value><string>%s</string></value></member>\n"
 		"<member><name>DestDir</name><value><string>%s</string></value></member>\n"
+		"<member><name>FinalDir</name><value><string>%s</string></value></member>\n"
 		"<member><name>Category</name><value><string>%s</string></value></member>\n"
 		"<member><name>ParStatus</name><value><string>%s</string></value></member>\n"
 		"<member><name>UnpackStatus</name><value><string>%s</string></value></member>\n"
@@ -1840,6 +1841,7 @@ void HistoryXmlCommand::Execute()
 		"\"NZBNicename\" : \"%s\",\n"		// deprecated, use Name instead
 		"\"NZBFilename\" : \"%s\",\n"
 		"\"DestDir\" : \"%s\",\n"
+		"\"FinalDir\" : \"%s\",\n"
 		"\"Category\" : \"%s\",\n"
 		"\"ParStatus\" : \"%s\",\n"
 		"\"UnpackStatus\" : \"%s\",\n"
@@ -1941,17 +1943,19 @@ void HistoryXmlCommand::Execute()
 
 			xmlNZBFilename = EncodeStr(pNZBInfo->GetFilename());
 			char* xmlDestDir = EncodeStr(pNZBInfo->GetDestDir());
+			char* xmlFinalDir = EncodeStr(pNZBInfo->GetFinalDir());
 			xmlCategory = EncodeStr(pNZBInfo->GetCategory());
 
 			snprintf(szItemBuf, szItemBufSize, IsJson() ? JSON_HISTORY_ITEM_START : XML_HISTORY_ITEM_START,
 				pHistoryInfo->GetID(), pNZBInfo->GetID(), "NZB", xmlNicename, xmlNicename, xmlNZBFilename, 
-				xmlDestDir, xmlCategory, szParStatusName[pNZBInfo->GetParStatus()],
+				xmlDestDir, xmlFinalDir, xmlCategory, szParStatusName[pNZBInfo->GetParStatus()],
 				szUnpackStatusName[pNZBInfo->GetUnpackStatus()], szMoveStatusName[pNZBInfo->GetMoveStatus()],
 				szScriptStatusName[pNZBInfo->GetScriptStatuses()->CalcTotalStatus()],
 				iFileSizeLo, iFileSizeHi, iFileSizeMB, pNZBInfo->GetFileCount(),
 				pNZBInfo->GetParkedFileCount(), pHistoryInfo->GetTime(), "", "");
 
 			free(xmlDestDir);
+			free(xmlFinalDir);
 		}
 		else if (pHistoryInfo->GetKind() == HistoryInfo::hkUrlInfo)
 		{
@@ -1963,7 +1967,7 @@ void HistoryXmlCommand::Execute()
 
 			snprintf(szItemBuf, szItemBufSize, IsJson() ? JSON_HISTORY_ITEM_START : XML_HISTORY_ITEM_START,
 				pHistoryInfo->GetID(), 0, "URL", xmlNicename, xmlNicename, xmlNZBFilename, 
-				"", xmlCategory, "", "", "", "", 0, 0, 0, 0, 0, pHistoryInfo->GetTime(), xmlURL,
+				"", "", xmlCategory, "", "", "", "", 0, 0, 0, 0, 0, pHistoryInfo->GetTime(), xmlURL,
 				szUrlStatusName[pUrlInfo->GetStatus()]);
 
 			free(xmlURL);

@@ -105,7 +105,8 @@ class PostScriptController : public Thread, public ScriptController
 private:
 	PostInfo*			m_pPostInfo;
 	char				m_szNZBName[1024];
- 
+ 	int					m_iPrefixLen;
+
 	void				ExecuteScript(const char* szScriptName, const char* szDisplayName, const char* szLocation);
 	void				PrepareParams(const char* szScriptName);
 	ScriptStatus::EStatus	AnalyseExitCode(int iExitCode);
