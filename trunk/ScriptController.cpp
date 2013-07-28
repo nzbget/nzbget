@@ -740,6 +740,7 @@ void PostScriptController::StartJob(PostInfo* pPostInfo)
 	pScriptController->m_pPostInfo = pPostInfo;
 	pScriptController->SetWorkingDir(g_pOptions->GetDestDir());
 	pScriptController->SetAutoDestroy(false);
+	pScriptController->m_iPrefixLen = 0;
 
 	pPostInfo->SetPostThread(pScriptController);
 
@@ -806,6 +807,7 @@ void PostScriptController::ExecuteScript(const char* szScriptName, const char* s
 	SetInfoName(szInfoName);
 
 	SetLogPrefix(szDisplayName);
+	m_iPrefixLen = strlen(szDisplayName) + 2; // 2 = strlen(": ");
 	PrepareParams(szScriptName);
 
 	int iExitCode = Execute();
@@ -922,9 +924,25 @@ ScriptStatus::EStatus PostScriptController::AnalyseExitCode(int iExitCode)
 
 void PostScriptController::AddMessage(Message::EKind eKind, const char* szText)
 {
-	if (!strncmp(szText, "[HISTORY] ", 10))
+	const char* szMsgText = szText + m_iPrefixLen;
+
+	if (!strncmp(szMsgText, "[NZB] ", 6))
 	{
-		m_pPostInfo->GetNZBInfo()->AppendMessage(eKind, 0, szText);
+		debug("Command %s detected", szMsgText + 6);
+		if (!strncmp(szMsgText + 6, "FINALDIR=", 9))
+		{
+			g_pDownloadQueueHolder->LockQueue();
+			m_pPostInfo->GetNZBInfo()->SetFinalDir(szMsgText + 6 + 9);
+			g_pDownloadQueueHolder->UnlockQueue();
+		}
+		else
+		{
+			error("Invalid command \"%s\" received from %s", szMsgText, GetInfoName());
+		}
+	}
+	else if (!strncmp(szMsgText, "[HISTORY] ", 10))
+	{
+		m_pPostInfo->GetNZBInfo()->AppendMessage(eKind, 0, szMsgText);
 	}
 	else
 	{

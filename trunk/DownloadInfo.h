@@ -304,6 +304,7 @@ private:
 	char* 				m_szFilename;
 	char*				m_szName;
 	char* 				m_szDestDir;
+	char* 				m_szFinalDir;
 	char* 				m_szCategory;
 	int		 			m_iFileCount;
 	int		 			m_iParkedFileCount;
@@ -344,6 +345,8 @@ public:
 	static void			MakeNiceNZBName(const char* szNZBFilename, char* szBuffer, int iSize, bool bRemoveExt);
 	const char*			GetDestDir() { return m_szDestDir; }   // needs locking (for shared objects)
 	void				SetDestDir(const char* szDestDir);     // needs locking (for shared objects)
+	const char*			GetFinalDir() { return m_szFinalDir; }   // needs locking (for shared objects)
+	void				SetFinalDir(const char* szFinalDir);     // needs locking (for shared objects)
 	const char*			GetCategory() { return m_szCategory; } // needs locking (for shared objects)
 	void				SetCategory(const char* szCategory);   // needs locking (for shared objects)
 	const char*			GetName() { return m_szName; } 	   // needs locking (for shared objects)

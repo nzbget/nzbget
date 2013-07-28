@@ -1302,8 +1302,8 @@ var HistoryEditDialog = (new function()
 		}
 
 		$('#HistoryEdit_Status').html(status);
-		$('#HistoryEdit_Category').text(hist.Category !== '' ? hist.Category : '<empty>');
-		$('#HistoryEdit_Path').text(hist.DestDir);
+		$('#HistoryEdit_Category').text(hist.Category);
+		$('#HistoryEdit_Path').text(hist.FinalDir !== '' ? hist.FinalDir.replace(':', ' | ') : hist.DestDir);
 
 		var size = Util.formatSizeMB(hist.FileSizeMB, hist.FileSizeLo);
 

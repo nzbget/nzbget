@@ -214,6 +214,7 @@ NZBInfo::NZBInfo()
 
 	m_szFilename = NULL;
 	m_szDestDir = NULL;
+	m_szFinalDir = strdup("");
 	m_szCategory = strdup("");
 	m_szName = NULL;
 	m_iFileCount = 0;
@@ -316,6 +317,15 @@ void NZBInfo::SetDestDir(const char* szDestDir)
 		free(m_szDestDir);
 	}
 	m_szDestDir = strdup(szDestDir);
+}
+
+void NZBInfo::SetFinalDir(const char* szFinalDir)
+{
+	if (m_szFinalDir)
+	{
+		free(m_szFinalDir);
+	}
+	m_szFinalDir = strdup(szFinalDir);
 }
 
 void NZBInfo::SetFilename(const char * szFilename)
