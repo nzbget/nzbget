@@ -361,7 +361,10 @@ void FeedFile::Parse_StartElement(const char *name, const char **atts)
 		{
 			if (!strcmp("url", atts[0]))
 			{
-				m_pFeedItemInfo->SetUrl(atts[1]);
+				char* szUrl = strdup(atts[1]);
+				WebUtil::XmlDecode(szUrl);
+				m_pFeedItemInfo->SetUrl(szUrl);
+				free(szUrl);
 			}
 			else if (!strcmp("length", atts[0]))
 			{

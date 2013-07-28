@@ -1309,6 +1309,13 @@ void WebUtil::XmlDecode(char* raw)
 						*output++ = '\"';
 						p += 5;
 					}
+					else if (*p == '#')
+					{
+						int code = atoi(p+1);
+						p = strchr(p+1, ';');
+						if (p) p++;
+						*output++ = (char)code;
+					}
 					else
 					{
 						// unknown entity
