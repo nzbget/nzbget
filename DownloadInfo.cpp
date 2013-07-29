@@ -251,6 +251,10 @@ NZBInfo::~NZBInfo()
 	{
 		free(m_szDestDir);
 	}
+	if (m_szFinalDir)
+	{
+		free(m_szFinalDir);
+	}
 	if (m_szCategory)
 	{
 		free(m_szCategory);
