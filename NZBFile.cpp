@@ -63,7 +63,7 @@ NZBFile::NZBFile(const char* szFileName, const char* szCategory)
     m_szFileName = strdup(szFileName);
 	m_szPassword = NULL;
 	m_pNZBInfo = new NZBInfo();
-	m_pNZBInfo->AddReference();
+	m_pNZBInfo->Retain();
 	m_pNZBInfo->SetFilename(szFileName);
 	m_pNZBInfo->SetCategory(szCategory);
 	m_pNZBInfo->BuildDestDirName();

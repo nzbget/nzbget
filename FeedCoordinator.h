@@ -51,6 +51,29 @@ private:
 		virtual void		Update(Subject* pCaller, void* pAspect) { m_pOwner->UrlCoordinatorUpdate(pCaller, pAspect); }
 	};
 
+	class FeedCacheItem
+	{
+	private:
+		char*				m_szUrl;
+		int					m_iCacheTimeSec;
+		char*				m_szCacheId;
+		time_t				m_tLastUsage;
+		FeedItemInfos*		m_pFeedItemInfos;
+
+	public:
+							FeedCacheItem(const char* szUrl, int iCacheTimeSec,const char* szCacheId,
+								time_t tLastUsage, FeedItemInfos* pFeedItemInfos);
+							~FeedCacheItem();
+		const char*			GetUrl() { return m_szUrl; }
+		int					GetCacheTimeSec() { return m_iCacheTimeSec; }
+		const char*			GetCacheId() { return m_szCacheId; }
+		time_t				GetLastUsage() { return m_tLastUsage; }
+		void				SetLastUsage(time_t tLastUsage) { m_tLastUsage = tLastUsage; }
+		FeedItemInfos*		GetFeedItemInfos() { return m_pFeedItemInfos; }
+	};
+
+	typedef std::deque<FeedCacheItem*>	FeedCache;
+
 private:
 	Feeds					m_Feeds;
 	ActiveDownloads			m_ActiveDownloads;
@@ -59,6 +82,7 @@ private:
 	UrlCoordinatorObserver	m_UrlCoordinatorObserver;
 	bool					m_bForce;
 	bool					m_bSave;
+	FeedCache				m_FeedCache;
 
 	void					StartFeedDownload(FeedInfo* pFeedInfo, bool bForce);
 	void					FeedCompleted(FeedDownloader* pFeedDownloader);
@@ -68,6 +92,7 @@ private:
 	void					ResetHangingDownloads();
 	void					UrlCoordinatorUpdate(Subject* pCaller, void* pAspect);
 	void					CleanupHistory();
+	void					CleanupCache();
 	void					CheckSaveFeeds();
 
 public:
@@ -77,8 +102,10 @@ public:
 	virtual void 			Stop();
 	void					Update(Subject* pCaller, void* pAspect);
 	void					AddFeed(FeedInfo* pFeedInfo);
-	bool					PreviewFeed(const char* szName, const char* szUrl, const char* szFilter, FeedItemInfos* pFeedItemInfos);
-	bool					ViewFeed(int iID, FeedItemInfos* pFeedItemInfos);
+	bool					PreviewFeed(const char* szName, const char* szUrl, const char* szFilter,
+								bool bPauseNzb, const char* szCategory, int iPriority,
+								int iCacheTimeSec, const char* szCacheId, FeedItemInfos** ppFeedItemInfos);
+	bool					ViewFeed(int iID, FeedItemInfos** ppFeedItemInfos);
 	void					FetchAllFeeds();
 	bool					HasActiveDownloads();
 

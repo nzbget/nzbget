@@ -1088,7 +1088,7 @@ bool QueueCoordinator::SplitQueueEntries(FileQueue* pFileList, const char* szNam
 	}
 
 	NZBInfo* pNZBInfo = new NZBInfo();
-	pNZBInfo->AddReference();
+	pNZBInfo->Retain();
 	m_DownloadQueue.GetNZBInfoList()->Add(pNZBInfo);
 
 	pNZBInfo->SetFilename(pSrcNZBInfo->GetFilename());

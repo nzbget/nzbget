@@ -34,7 +34,7 @@ class FeedFile
 {
 private:
 	FeedInfo*			m_pFeedInfo;
-	FeedItemInfos		m_FeedItemInfos;
+	FeedItemInfos*		m_pFeedItemInfos;
 	char*				m_szFileName;
 
 						FeedFile(const char* szFileName);
@@ -62,8 +62,7 @@ private:
 public:
 	virtual 			~FeedFile();
 	static FeedFile*	Create(const char* szFileName);
-	FeedItemInfos*		GetFeedItemInfos() { return &m_FeedItemInfos; }
-	void				DetachFeedItemInfos();
+	FeedItemInfos*		GetFeedItemInfos() { return m_pFeedItemInfos; }
 
 	void				LogDebugInfo();
 };

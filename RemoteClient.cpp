@@ -250,7 +250,7 @@ void RemoteClient::BuildFileList(SNZBListResponse* pListResponse, const char* pT
 			pNZBInfo->SetQueuedFilename(m_szQueuedFilename);
 			pNZBInfo->m_bMatch = ntohl(pListAnswer->m_bMatch);
 
-			pNZBInfo->AddReference();
+			pNZBInfo->Retain();
 			pDownloadQueue->GetNZBInfoList()->Add(pNZBInfo);
 
 			pBufPtr += sizeof(SNZBListResponseNZBEntry) + ntohl(pListAnswer->m_iFilenameLen) +

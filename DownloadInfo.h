@@ -336,7 +336,7 @@ private:
 public:
 						NZBInfo();
 						~NZBInfo();
-	void				AddReference();
+	void				Retain();
 	void				Release();
 	int					GetID() { return m_iID; }
 	void				SetID(int iID);
@@ -614,6 +614,7 @@ private:
 	char*				m_szUrl;
 	int					m_iInterval;
 	char*				m_szFilter;
+	unsigned int		m_iFilterHash;
 	bool				m_bPauseNzb;
 	char*				m_szCategory;
 	int					m_iPriority;
@@ -633,6 +634,7 @@ public:
 	const char*			GetUrl() { return m_szUrl; }
 	int					GetInterval() { return m_iInterval; }
 	const char*			GetFilter() { return m_szFilter; }
+	unsigned int		GetFilterHash() { return m_iFilterHash; }
 	bool				GetPauseNzb() { return m_bPauseNzb; }
 	const char*			GetCategory() { return m_szCategory; }
 	int					GetPriority() { return m_iPriority; }
@@ -663,6 +665,13 @@ public:
 		isNew
 	};
 
+	enum EMatchStatus
+	{
+		msIgnored,
+		msAccepted,
+		msRejected
+	};
+
 private:
 	char*				m_szTitle;
 	char*				m_szFilename;
@@ -670,8 +679,12 @@ private:
 	time_t				m_tTime;
 	long long			m_lSize;
 	char*				m_szCategory;
+	char*				m_szAddCategory;
+	bool				m_bPauseNzb;
+	int					m_iPriority;
 	EStatus				m_eStatus;
-	bool				m_bMatch;
+	EMatchStatus		m_eMatchStatus;
+	int					m_iMatchRule;
 
 public:
 						FeedItemInfo();
@@ -686,15 +699,35 @@ public:
 	void				SetSize(long long lSize) { m_lSize = lSize; }
 	const char*			GetCategory() { return m_szCategory; }
 	void				SetCategory(const char* szCategory);
+	const char*			GetAddCategory() { return m_szAddCategory; }
+	void				SetAddCategory(const char* szAddCategory);
+	bool				GetPauseNzb() { return m_bPauseNzb; }
+	void				SetPauseNzb(bool bPauseNzb) { m_bPauseNzb = bPauseNzb; }
+	int					GetPriority() { return m_iPriority; }
+	void				SetPriority(int iPriority) { m_iPriority = iPriority; }
 	time_t				GetTime() { return m_tTime; }
 	void				SetTime(time_t tTime) { m_tTime = tTime; }
 	EStatus				GetStatus() { return m_eStatus; }
-	void				SetStatus(EStatus Status) { m_eStatus = Status; }
-	bool				GetMatch() { return m_bMatch; }
-	void				SetMatch(bool bMatch) { m_bMatch = bMatch; }
+	void				SetStatus(EStatus eStatus) { m_eStatus = eStatus; }
+	EMatchStatus		GetMatchStatus() { return m_eMatchStatus; }
+	void				SetMatchStatus(EMatchStatus eMatchStatus) { m_eMatchStatus = eMatchStatus; }
+	int					GetMatchRule() { return m_iMatchRule; }
+	void				SetMatchRule(int iMatchRule) { m_iMatchRule = iMatchRule; }
 };
 
-typedef std::deque<FeedItemInfo*>	FeedItemInfos;
+typedef std::deque<FeedItemInfo*>	FeedItemInfosBase;
+
+class FeedItemInfos : public FeedItemInfosBase
+{
+private:
+	int					m_iRefCount;
+
+public:
+						FeedItemInfos();
+						~FeedItemInfos();
+	void				Retain();
+	void				Release();
+};
 
 class FeedHistoryInfo
 {

@@ -365,6 +365,7 @@ private:
 	const char*			GetOption(const char* optname);
 	void				SetOption(const char* optname, const char* value);
 	bool				SetOptionString(const char* option);
+	bool				SplitOptionString(const char* option, char** pOptName, char** pOptValue);
 	bool				ValidateOptionName(const char* optname);
 	void				LoadConfigFile();
 	void				CheckDir(char** dir, const char* szOptionName, bool bAllowEmpty, bool bCreate);

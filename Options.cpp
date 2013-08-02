@@ -1937,40 +1937,51 @@ void Options::SetOption(const char* optname, const char* value)
 	pOptEntry->SetLineNo(m_iConfigLine);
 	bool bOK = true;
 
-	// expand variables
-	while (char* dollar = strstr(curvalue, "${"))
+	bool bExpandVars = true;
+	int namelen = strlen(optname);
+	if (!strncasecmp(optname, "Feed", 4) && 
+		((namelen > 7 && !strcasecmp(optname + namelen - 7, ".Filter")) || !strcasecmp(optname + namelen - 4, ".Url")))
 	{
-		char* end = strchr(dollar, '}');
-		if (end)
+		bExpandVars = false;
+	}
+
+	if (bExpandVars)
+	{
+		// expand variables
+		while (char* dollar = strstr(curvalue, "${"))
 		{
-			int varlen = (int)(end - dollar - 2);
-			char variable[101];
-			int maxlen = varlen < 100 ? varlen : 100;
-			strncpy(variable, dollar + 2, maxlen);
-			variable[maxlen] = '\0';
-			const char* varvalue = GetOption(variable);
-			if (varvalue)
+			char* end = strchr(dollar, '}');
+			if (end)
 			{
-				int newlen = strlen(varvalue);
-				char* newvalue = (char*)malloc(strlen(curvalue) - varlen - 3 + newlen + 1);
-				strncpy(newvalue, curvalue, dollar - curvalue);
-				strncpy(newvalue + (dollar - curvalue), varvalue, newlen);
-				strcpy(newvalue + (dollar - curvalue) + newlen, end + 1);
-				free(curvalue);
-				curvalue = newvalue;
+				int varlen = (int)(end - dollar - 2);
+				char variable[101];
+				int maxlen = varlen < 100 ? varlen : 100;
+				strncpy(variable, dollar + 2, maxlen);
+				variable[maxlen] = '\0';
+				const char* varvalue = GetOption(variable);
+				if (varvalue)
+				{
+					int newlen = strlen(varvalue);
+					char* newvalue = (char*)malloc(strlen(curvalue) - varlen - 3 + newlen + 1);
+					strncpy(newvalue, curvalue, dollar - curvalue);
+					strncpy(newvalue + (dollar - curvalue), varvalue, newlen);
+					strcpy(newvalue + (dollar - curvalue) + newlen, end + 1);
+					free(curvalue);
+					curvalue = newvalue;
+				}
+				else
+				{
+					ConfigError("Invalid value for option \"%s\": variable \"%s\" not found", optname, variable);
+					bOK = false;
+					break;
+				}
 			}
 			else
 			{
-				ConfigError("Invalid value for option \"%s\": variable \"%s\" not found", optname, variable);
+				ConfigError("Invalid value for option \"%s\": syntax error in variable-substitution \"%s\"", optname, curvalue);
 				bOK = false;
 				break;
 			}
-		}
-		else
-		{
-			ConfigError("Invalid value for option \"%s\": syntax error in variable-substitution \"%s\"", optname, curvalue);
-			bOK = false;
-			break;
 		}
 	}
 
@@ -2488,9 +2499,11 @@ void Options::LoadConfigFile()
 	}
 
 	m_iConfigLine = 0;
+	int iBufLen = (int)Util::FileSize(m_szConfigFilename) + 1;
+	char* buf = (char*)malloc(iBufLen);
+
 	int iLine = 0;
-	char buf[1024];
-	while (fgets(buf, sizeof(buf) - 1, infile))
+	while (fgets(buf, iBufLen - 1, infile))
 	{
 		m_iConfigLine = ++iLine;
 
@@ -2512,40 +2525,80 @@ void Options::LoadConfigFile()
 	}
 
 	fclose(infile);
+	free(buf);
 
 	m_iConfigLine = 0;
 }
 
-bool Options::SetOptionString(const char * option)
+bool Options::SetOptionString(const char* option)
 {
-	const char* eq = strchr(option, '=');
-	if (eq)
-	{
-		char optname[1001];
-		char optvalue[1001];
-		int maxlen = (int)(eq - option < 1000 ? eq - option : 1000);
-		strncpy(optname, option, maxlen);
-		optname[maxlen] = '\0';
-		strncpy(optvalue, eq + 1, 1000);
-		optvalue[1000]  = '\0';
-		if (strlen(optname) > 0)
-		{
-			ConvertOldOption(optname, sizeof(optname), optvalue, sizeof(optvalue));
+	char* optname;
+	char* optvalue;
 
-			if (!ValidateOptionName(optname))
-			{
-				ConfigError("Invalid option \"%s\"", optname);
-				return false;
-			}
-			SetOption(optname, optvalue);
-		}
-		return true;
-	}
-	else
+	if (!SplitOptionString(option, &optname, &optvalue))
 	{
 		ConfigError("Invalid option \"%s\"", option);
 		return false;
 	}
+
+	bool bOK = ValidateOptionName(optname);
+	if (bOK)
+	{
+		SetOption(optname, optvalue);
+	}
+	else
+	{
+		ConfigError("Invalid option \"%s\"", optname);
+	}
+
+	free(optname);
+	free(optvalue);
+
+	return bOK;
+}
+
+/*
+ * Splits option string into name and value;
+ * Converts old names and values if necessary;
+ * Allocates buffers for name and value;
+ * Returns true if the option string has name and value;
+ * If "true" is returned the caller is responsible for freeing optname and optvalue.
+ */
+bool Options::SplitOptionString(const char* option, char** pOptName, char** pOptValue)
+{
+	const char* eq = strchr(option, '=');
+	if (!eq)
+	{
+		return false;
+	}
+
+	const char* value = eq + 1;
+
+	char optname[1001];
+	char optvalue[1001];
+	int maxlen = (int)(eq - option < 1000 ? eq - option : 1000);
+	strncpy(optname, option, maxlen);
+	optname[maxlen] = '\0';
+	strncpy(optvalue, eq + 1, 1000);
+	optvalue[1000]  = '\0';
+	if (strlen(optname) == 0)
+	{
+		return false;
+	}
+
+	ConvertOldOption(optname, sizeof(optname), optvalue, sizeof(optvalue));
+
+	// if value was (old-)converted use the new value, which is linited to 1000 characters,
+	// otherwise use original (length-unlimited) value
+	if (strncmp(value, optvalue, 1000))
+	{
+		value = optvalue;
+	}
+
+	*pOptName = strdup(optname);
+	*pOptValue = strdup(value);
+
+	return true;
 }
 
 bool Options::ValidateOptionName(const char * optname)
@@ -2641,6 +2694,49 @@ bool Options::ValidateOptionName(const char * optname)
 	}
 
 	return false;
+}
+
+void Options::ConvertOldOption(char *szOption, int iOptionBufLen, char *szValue, int iValueBufLen)
+{
+	// for compatibility with older versions accept old option names
+
+	if (!strcasecmp(szOption, "$MAINDIR"))
+	{
+		strncpy(szOption, "MainDir", iOptionBufLen);
+	}
+
+	if (!strcasecmp(szOption, "ServerIP"))
+	{
+		strncpy(szOption, "ControlIP", iOptionBufLen);
+	}
+
+	if (!strcasecmp(szOption, "ServerPort"))
+	{
+		strncpy(szOption, "ControlPort", iOptionBufLen);
+	}
+
+	if (!strcasecmp(szOption, "ServerPassword"))
+	{
+		strncpy(szOption, "ControlPassword", iOptionBufLen);
+	}
+
+	if (!strcasecmp(szOption, "PostPauseQueue"))
+	{
+		strncpy(szOption, "ScriptPauseQueue", iOptionBufLen);
+	}
+
+	if (!strcasecmp(szOption, "ParCheck") && !strcasecmp(szValue, "yes"))
+	{
+		strncpy(szValue, "force", iValueBufLen);
+	}
+
+	if (!strcasecmp(szOption, "ParCheck") && !strcasecmp(szValue, "no"))
+	{
+		strncpy(szValue, "auto", iValueBufLen);
+	}
+
+	szOption[iOptionBufLen-1] = '\0';
+	szOption[iValueBufLen-1] = '\0';
 }
 
 void Options::CheckOptions()
@@ -2804,8 +2900,10 @@ bool Options::LoadConfig(OptEntries* pOptEntries)
 		return false;
 	}
 
-	char buf[1024];
-	while (fgets(buf, sizeof(buf) - 1, infile))
+	int iBufLen = (int)Util::FileSize(m_szConfigFilename) + 1;
+	char* buf = (char*)malloc(iBufLen);
+
+	while (fgets(buf, iBufLen - 1, infile))
 	{
 		// remove trailing '\n' and '\r' and spaces
 		Util::TrimRight(buf);
@@ -2816,29 +2914,22 @@ bool Options::LoadConfig(OptEntries* pOptEntries)
 			continue;
 		}
 
-		const char* eq = strchr(buf, '=');
-		if (eq)
+		char* optname;
+		char* optvalue;
+		if (SplitOptionString(buf, &optname, &optvalue))
 		{
-			char optname[1024];
-			char optvalue[1024];
-			int len = (int)(eq - buf);
-			strncpy(optname, buf, len);
-			optname[len] = '\0';
-			strncpy(optvalue, eq + 1, 1024);
-			optvalue[1024-1]  = '\0';
-			if (strlen(optname) > 0)
-			{
-				ConvertOldOption(optname, sizeof(optname), optvalue, sizeof(optvalue));
+			OptEntry* pOptEntry = new OptEntry();
+			pOptEntry->SetName(optname);
+			pOptEntry->SetValue(optvalue);
+			pOptEntries->push_back(pOptEntry);
 
-				OptEntry* pOptEntry = new OptEntry();
-				pOptEntry->SetName(optname);
-				pOptEntry->SetValue(optvalue);
-				pOptEntries->push_back(pOptEntry);
-			}
+			free(optname);
+			free(optvalue);
 		}
 	}
 
 	fclose(infile);
+	free(buf);
 
 	return true;
 }
@@ -2857,12 +2948,13 @@ bool Options::SaveConfig(OptEntries* pOptEntries)
 	std::set<OptEntry*> writtenOptions;
 
 	// read config file into memory array
-	char buf[1024];
-	char val[1024];
-	while (fgets(buf, sizeof(buf) - 1, infile))
+	int iBufLen = (int)Util::FileSize(m_szConfigFilename) + 1;
+	char* buf = (char*)malloc(iBufLen);
+	while (fgets(buf, iBufLen - 1, infile))
 	{
 		config.push_back(strdup(buf));
 	}
+	free(buf);
 
 	// write config file back to disk, replace old values of existing options with new values
 	rewind(infile);
@@ -2876,25 +2968,22 @@ bool Options::SaveConfig(OptEntries* pOptEntries)
 			// remove trailing '\n' and '\r' and spaces
 			Util::TrimRight(buf);
 
-			char optname[1024];
-			char optvalue[1024];
-			int len = (int)(eq - buf);
-			strncpy(optname, buf, len);
-			optname[len] = '\0';
-			strncpy(optvalue, eq + 1, 1024);
-			optvalue[1024-1]  = '\0';
-			if (strlen(optname) > 0)
+			char* optname;
+			char* optvalue;
+			if (SplitOptionString(buf, &optname, &optvalue))
 			{
-				ConvertOldOption(optname, sizeof(optname), optvalue, sizeof(optvalue));
-
 				OptEntry *pOptEntry = pOptEntries->FindOption(optname);
 				if (pOptEntry)
 				{
-					snprintf(val, sizeof(val) - 1, "%s=%s\n", pOptEntry->GetName(), pOptEntry->GetValue());
-					val[sizeof(val) - 1] = '\0';
-					fputs(val, infile);
+					fputs(pOptEntry->GetName(), infile);
+					fputs("=", infile);
+					fputs(pOptEntry->GetValue(), infile);
+					fputs("\n", infile);
 					writtenOptions.insert(pOptEntry);
 				}
+
+				free(optname);
+				free(optvalue);
 			}
 		}
 		else
@@ -2912,9 +3001,10 @@ bool Options::SaveConfig(OptEntries* pOptEntries)
 		std::set<OptEntry*>::iterator fit = writtenOptions.find(pOptEntry);
 		if (fit == writtenOptions.end())
 		{
-			snprintf(val, sizeof(val) - 1, "%s=%s\n", pOptEntry->GetName(), pOptEntry->GetValue());
-			val[sizeof(val) - 1] = '\0';
-			fputs(val, infile);
+			fputs(pOptEntry->GetName(), infile);
+			fputs("=", infile);
+			fputs(pOptEntry->GetValue(), infile);
+			fputs("\n", infile);
 		}
 	}
 
@@ -2925,49 +3015,6 @@ bool Options::SaveConfig(OptEntries* pOptEntries)
 	Util::TruncateFile(m_szConfigFilename, pos);
 
 	return true;
-}
-
-void Options::ConvertOldOption(char *szOption, int iOptionBufLen, char *szValue, int iValueBufLen)
-{
-	// for compatibility with older versions accept old option names
-
-	if (!strcasecmp(szOption, "$MAINDIR"))
-	{
-		strncpy(szOption, "MainDir", iOptionBufLen);
-	}
-
-	if (!strcasecmp(szOption, "ServerIP"))
-	{
-		strncpy(szOption, "ControlIP", iOptionBufLen);
-	}
-
-	if (!strcasecmp(szOption, "ServerPort"))
-	{
-		strncpy(szOption, "ControlPort", iOptionBufLen);
-	}
-
-	if (!strcasecmp(szOption, "ServerPassword"))
-	{
-		strncpy(szOption, "ControlPassword", iOptionBufLen);
-	}
-
-	if (!strcasecmp(szOption, "PostPauseQueue"))
-	{
-		strncpy(szOption, "ScriptPauseQueue", iOptionBufLen);
-	}
-
-	if (!strcasecmp(szOption, "ParCheck") && !strcasecmp(szValue, "yes"))
-	{
-		strncpy(szValue, "force", iValueBufLen);
-	}
-
-	if (!strcasecmp(szOption, "ParCheck") && !strcasecmp(szValue, "no"))
-	{
-		strncpy(szValue, "auto", iValueBufLen);
-	}
-
-	szOption[iOptionBufLen-1] = '\0';
-	szOption[iValueBufLen-1] = '\0';
 }
 
 bool Options::LoadConfigTemplates(ConfigTemplates* pConfigTemplates)

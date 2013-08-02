@@ -418,10 +418,10 @@
 					Could not load template configuration file <em>nzbget.conf</em>. The file contains descriptions of options
 					and is needed to display settings page. The file comes with NZBGet distribution archive and is usually
 					automaically installed into the right location. This seems not to be a case with your installation though.<br><br>
-					
-					<span id="ConfigLoadServerTemplateErrorEmpty">Please put the template configuration file <em>nzbget.conf</em> into the 
+
+					<span id="ConfigLoadServerTemplateErrorEmpty">Please put the template configuration file <em>nzbget.conf</em> into the
 					directory with web-interface files (<em><span id="ConfigLoadServerTemplateErrorWebDir"></span></em>).</span>
-					
+
 					<span id="ConfigLoadServerTemplateErrorNotFound">Please edit your configuration file
 					(<em><span id="ConfigLoadServerTemplateErrorConfigFile"></span></em>) in a text editor
 					and set the option <em>ConfigTemplate</em> to point to the template configuration file <em>nzbget.conf</em>.</span>
@@ -474,7 +474,7 @@
 									router, etc. you should take your time to configure NZBGet for best
 									performance - see <a href="http://nzbget.sourceforge.net/Performance_tips">Performance tips</a>.
 									</p>
-									
+
 									<h4>Post-processing scripts settings</h4>
 									<p>
 									When NZBGet finishes download of a nzb-file it can execute post-processing scripts for further processing (cleanup, etc.).
@@ -483,7 +483,7 @@
 									<p>
 									If your post-processing scripts define own options they are also shown here and can be configured like NZBGets built-in options.
 									</p>
-									
+
 									<h4>Backup and restore settings</h4>
 									<p>
 									This can be done in section <em><strong>SYSTEM</strong></em>.
@@ -644,7 +644,7 @@
 						</div>
 					</div>
 				</div>
-				
+
 				<div class="control-group last-group" id="LimitDialog_ServerBlock">
 					<label class="control-label" for="LimitDialog_ServerGroup">Active news servers</label>
 					<div class="controls" id="LimitDialog_ServerGroup">
@@ -657,7 +657,7 @@
 				</div>
 
 				<div class="hide" id="LimitDialog_ServerTable_pager"></div>
-				
+
 			</fieldset>
 		</div>
 	</div>
@@ -765,7 +765,7 @@
 							</table>
 							</div>
 						</div>
-						
+
 						<div class="control-group">
 							<div class="controls">
 								<div class="modal-bottom-toolbar">
@@ -823,7 +823,7 @@
 					<div class="hide"><div class="pagination" id ="DownloadsEdit_FileTable_pager"></div></div>
 				</div>
 			</div>
-			
+
 			<div class="modal-tab hide" id="DownloadsEdit_ParamTab">
 				<div class="form-horizontal">
 					<fieldset id="DownloadsEdit_ParamData">
@@ -846,7 +846,7 @@
 					<div class="pull-right hide" id="DownloadsEdit_LogTable_pagerBlock"><div class="pagination" id ="DownloadsEdit_LogTable_pager"></div></div>
 				</div>
 			</div>
-			
+
 		</div>
 
 	</div>
@@ -995,7 +995,7 @@
 		<div class="form-vertical">
 			<fieldset>
 				<p>New download will be created from selected files. Please choose the name for new download.</p>
-				
+
 				<div class="control-group">
 					<div class="controls" id="DownloadsSplit_NZBNameGroup">
 						<input type="text" class="input-xxlarge" id="DownloadsSplit_NZBName" />
@@ -1005,7 +1005,7 @@
 				<p class="help-block" style="margin-top:10px;">The new download inherits
 				all other properties such as category, priority, etc. from the source item.
 				This action closes the download-edit-dialog. Any changes made in the dialog are not saved.</p>
-				
+
 			</fieldset>
 		</div>
 	</div>
@@ -1071,7 +1071,7 @@
 								</div>
 							</div>
 						</div>
-						
+
 					</fieldset>
 				</div>
 			</div>
@@ -1084,7 +1084,7 @@
 			</div>
 		</div>
 	</div>
-			
+
 	<div class="modal-footer">
 
 		<div class="btn-group dropup pull-left">
@@ -1101,7 +1101,7 @@
 				<li><a href="#" target="_blank" class="HistoryEdit_DNZB" id="HistoryEdit_DNZB_Report"><i class="icon-alert"></i> Report This NZB</a></li>
 			</ul>
 		</div>
-	
+
 		<div class="dialog-transmit" style="position:absolute;margin-left:320px;" id="HistoryEdit_Transmit"><img src="img/transmit.gif"></div>
 		<a href="#" class="btn" data-dismiss="modal" id="HistoryEdit_Close">Close</a>
 		<a href="#" class="btn btn-primary" id="HistoryEdit_Save">Save changes</a>
@@ -1127,23 +1127,23 @@
 						<div class="pull-left btn-toolbar form-inline modal-toolbar" id="FeedDialog_Toolbar">
 							<!-- STATUS FILTER BUTTONS -->
 							<div class="btn-group phone-hide">
-								<button class="btn btn-primary" onclick="FeedDialog.filter('ALL')" title="Show All"></i>All &nbsp;<span class="badge badge-primary" id="FeedDialog_Badge_ALL">?</span></button>
-								<button class="btn" onclick="FeedDialog.filter('NEW')" title="Show only New"></i>New &nbsp;<span class="badge" id="FeedDialog_Badge_NEW">?</span></button>
-								<button class="btn" onclick="FeedDialog.filter('FETCHED')" title="Show only Fetched"></i>Fetched &nbsp;<span class="badge" id="FeedDialog_Badge_FETCHED">?</span></button>
-								<button class="btn" onclick="FeedDialog.filter('BACKLOG')" title="Show only Backlog"></i>Backlog &nbsp;<span class="badge" id="FeedDialog_Badge_BACKLOG">?</span></button>
+								<button class="btn btn-primary" onclick="FeedDialog.filter('ALL')" title="Show All">All &nbsp;<span class="badge badge-primary" id="FeedDialog_Badge_ALL">?</span></button>
+								<button class="btn" onclick="FeedDialog.filter('NEW')" title="Show only New">New &nbsp;<span class="badge" id="FeedDialog_Badge_NEW">?</span></button>
+								<button class="btn" onclick="FeedDialog.filter('FETCHED')" title="Show only Fetched">Fetched &nbsp;<span class="badge" id="FeedDialog_Badge_FETCHED">?</span></button>
+								<button class="btn" onclick="FeedDialog.filter('BACKLOG')" title="Show only Backlog">Backlog &nbsp;<span class="badge" id="FeedDialog_Badge_BACKLOG">?</span></button>
 							</div>
-							<div class="btn-group phone-only inline"><button class="btn btn-primary" onclick="FeedDialog.filter('ALL')" title="Show All"></i>All <span class="badge badge-primary" id="FeedDialog_Badge_ALL2">?</span></button></div>
-							<div class="btn-group phone-only inline"><button class="btn" onclick="FeedDialog.filter('NEW')" title="Show only New"></i>New <span class="badge" id="FeedDialog_Badge_NEW2">?</span></button></div>
-							<div class="btn-group phone-only inline"><button class="btn" onclick="FeedDialog.filter('FETCHED')" title="Show only Fetched"></i>Fetched <span class="badge" id="FeedDialog_Badge_FETCHED2">?</span></button></div>
-							<div class="btn-group phone-only inline"><button class="btn" onclick="FeedDialog.filter('BACKLOG')" title="Show only Backlog"></i>Backlog <span class="badge" id="FeedDialog_Badge_BACKLOG2">?</span></button></div>
+							<div class="btn-group phone-only inline"><button class="btn btn-primary" onclick="FeedDialog.filter('ALL')" title="Show All">All <span class="badge badge-primary" id="FeedDialog_Badge_ALL2">?</span></button></div>
+							<div class="btn-group phone-only inline"><button class="btn" onclick="FeedDialog.filter('NEW')" title="Show only New">New <span class="badge" id="FeedDialog_Badge_NEW2">?</span></button></div>
+							<div class="btn-group phone-only inline"><button class="btn" onclick="FeedDialog.filter('FETCHED')" title="Show only Fetched">Fetched <span class="badge" id="FeedDialog_Badge_FETCHED2">?</span></button></div>
+							<div class="btn-group phone-only inline"><button class="btn" onclick="FeedDialog.filter('BACKLOG')" title="Show only Backlog">Backlog <span class="badge" id="FeedDialog_Badge_BACKLOG2">?</span></button></div>
 
 							<!-- TITLE/FILENAME BUTTONS -->
 							<div class="btn-group phone-hide">
-								<button class="btn btn-primary FeedDialog-names" id="FeedDialog_Titles" onclick="FeedDialog.setFilenameMode(false)" title="Show Titles"></i>Titles</button>
-								<button class="btn FeedDialog-names" id="FeedDialog_Filenames" onclick="FeedDialog.setFilenameMode(true)" title="Show Filenames"></i>Filenames</button>
+								<button class="btn btn-primary FeedDialog-names" id="FeedDialog_Titles" onclick="FeedDialog.setFilenameMode(false)" title="Show Titles">Titles</button>
+								<button class="btn FeedDialog-names" id="FeedDialog_Filenames" onclick="FeedDialog.setFilenameMode(true)" title="Show Filenames">Filenames</button>
 							</div>
-							<div class="btn-group phone-only inline"><button class="btn FeedDialog-names btn-primary" id="FeedDialog_Titles2" onclick="FeedDialog.setFilenameMode(false)" title="Show Titles"></i>Titles</button></div>
-							<div class="btn-group phone-only inline"><button class="btn FeedDialog-names" id="FeedDialog_Filenames2" onclick="FeedDialog.setFilenameMode(true)" title="Show Filenames"></i>Filenames</button></div>
+							<div class="btn-group phone-only inline"><button class="btn FeedDialog-names btn-primary" id="FeedDialog_Titles2" onclick="FeedDialog.setFilenameMode(false)" title="Show Titles">Titles</button></div>
+							<div class="btn-group phone-only inline"><button class="btn FeedDialog-names" id="FeedDialog_Filenames2" onclick="FeedDialog.setFilenameMode(true)" title="Show Filenames">Filenames</button></div>
 						</div>
 						<div class="pull-right" style="margin-bottom:10px;"><input id="FeedDialog_ItemTable_filter" class="search-query" placeholder="Search" type="text"></div>
 					</div>
@@ -1165,6 +1165,272 @@
 		<div class="dialog-transmit hide" style="position:absolute;right:220px;" id="FeedDialog_Transmit"><img src="img/transmit.gif"></div>
 		<a href="#" class="btn" data-dismiss="modal" id="FeedDialog_Close">Close</a>
 		<a href="#" class="btn btn-primary" id="FeedDialog_Save" onclick="FeedDialog.fetch()">Fetch selected</a>
+	</div>
+</div>
+
+<!-- *** FEED FILTER DIALOG ************************************************************ -->
+
+<div class="modal hide modal-max" id="FeedFilterDialog">
+	<div class="modal-header">
+		<a class="close" href='#' data-dismiss="modal"><i class="icon-close"></i></a>
+		<h3 id ="FeedFilterDialog_Title">Title</h3>
+	</div>
+
+	<div class="modal-body">
+		<div>
+			<div class="modal-tab">
+				<div class="row-fluid modal-scrollheader">
+					<div class="pull-left btn-toolbar form-inline modal-toolbar" id="FeedFilterDialog_Toolbar">
+
+						<!-- FILTER INPUT BUTTONS -->
+						<div class="btn-group">
+							<button class="btn" onclick="FeedFilterDialog.rematch()"><i class="icon-process" id="FeedFilterDialog_RematchIcon"></i> Rematch</button>
+							<button class="btn dropdown-toggle" data-toggle="dropdown"><span class="caret"></span></button>
+							<ul class="dropdown-menu menu-check">
+								<li><a href="#" onclick="FeedFilterDialog.autoRematch()"><table><tr><td><i class="icon-ok" id="FeedFilterDialog_CHAutoRematch"></td><td>Automatic</td></tr></table></a></li>
+							</ul>
+						</div>
+
+						<!-- STATUS FILTER BUTTONS -->
+						<div class="btn-group phone-hide FeedFilterDialog-filter">
+							<button class="btn btn-primary" onclick="FeedFilterDialog.filter('ALL')" title="Show All">All &nbsp;<span class="badge badge-primary" id="FeedFilterDialog_Badge_ALL">?</span></button>
+							<button class="btn" onclick="FeedFilterDialog.filter('ACCEPTED')" title="Show only Accepted">Accepted &nbsp;<span class="badge" id="FeedFilterDialog_Badge_ACCEPTED">?</span></button>
+							<button class="btn" onclick="FeedFilterDialog.filter('REJECTED')" title="Show only Rejected">Rejected &nbsp;<span class="badge" id="FeedFilterDialog_Badge_REJECTED">?</span></button>
+							<button class="btn" onclick="FeedFilterDialog.filter('IGNORED')" title="Show only Ignored">Ignored &nbsp;<span class="badge" id="FeedFilterDialog_Badge_IGNORED">?</span></button>
+						</div>
+						<div class="btn-group phone-only inline FeedFilterDialog-filter"><button class="btn btn-primary" onclick="FeedFilterDialog.filter('ALL')" title="Show All">All <span class="badge badge-primary" id="FeedFilterDialog_Badge_ALL2">?</span></button></div>
+						<div class="btn-group phone-only inline FeedFilterDialog-filter"><button class="btn" onclick="FeedFilterDialog.filter('ACCEPTED')" title="Show only Accepted">Accepted <span class="badge" id="FeedFilterDialog_Badge_ACCEPTED2">?</span></button></div>
+						<div class="btn-group phone-only inline FeedFilterDialog-filter"><button class="btn" onclick="FeedFilterDialog.filter('REJECTED')" title="Show only Rejected">Rejected <span class="badge" id="FeedFilterDialog_Badge_REJECTED2">?</span></button></div>
+						<div class="btn-group phone-only inline FeedFilterDialog-filter"><button class="btn" onclick="FeedFilterDialog.filter('IGNORED')" title="Show only Ignored">Rejected <span class="badge" id="FeedFilterDialog_Badge_IGNORED2">?</span></button></div>
+
+						<!-- TITLE/FILENAME BUTTONS -->
+						<div class="btn-group phone-hide FeedFilterDialog-filter">
+							<button class="btn btn-primary FeedFilterDialog-names" id="FeedFilterDialog_Titles" onclick="FeedFilterDialog.setFilenameMode(false)" title="Show Titles">Titles</button>
+							<button class="btn FeedFilterDialog-names" id="FeedFilterDialog_Filenames" onclick="FeedFilterDialog.setFilenameMode(true)" title="Show Filenames">Filenames</button>
+						</div>
+						<div class="btn-group phone-only inline FeedFilterDialog-filter"><button class="btn FeedFilterDialog-names btn-primary" id="FeedFilterDialog_Titles2" onclick="FeedFilterDialog.setFilenameMode(false)" title="Show Titles">Titles</button></div>
+						<div class="btn-group phone-only inline FeedFilterDialog-filter"><button class="btn FeedFilterDialog-names" id="FeedFilterDialog_Filenames2" onclick="FeedFilterDialog.setFilenameMode(true)" title="Show Filenames">Filenames</button></div>
+
+					</div>
+				</div>
+
+				<!-- FILTER EDIT -->
+				<div class="modal-inner-scroll" id="FeedFilterDialog_FilterBlock">
+					<div id="FeedFilterDialog_FilterHeader">Filter</div>
+					<div id="FeedFilterDialog_FilterLines" class="phone-hide">
+						<div id="FeedFilterDialog_FilterNumbers"></div>
+					</div>
+					<div id="FeedFilterDialog_FilterClient">
+						<textarea id="FeedFilterDialog_FilterInput" wrap="off" spellcheck="false" placeholder='Type your filter here'></textarea>
+					</div>
+				</div>
+
+				<!-- SPLITTER -->
+				<div class="modal-inner-scroll phone-hide" id="FeedFilterDialog_Splitter"></div>
+				
+				<!-- PREVIEW TABLE -->
+				<div class="modal-inner-scroll" id="FeedFilterDialog_PreviewBlock">
+					<div class="loading-block hide">
+						<img src="img/transmit.gif"></img>
+					</div>
+
+					<table class="table table-striped table-bordered datatable" id="FeedFilterDialog_ItemTable" style="margin-bottom:15px;">
+						<thead><tr><th>Match</th><th>Rule</th><th id="FeedFilterDialog_ItemTable_Name">Title</th><th>Category</th><th class="text-right">Age</th><th class="text-right">Size</th></tr></thead>
+						<tbody></tbody>
+					</table>
+					<div class="pull-right" id ="FeedFilterDialog_ItemTable_pagerBlock"><div class="pagination" id ="FeedFilterDialog_ItemTable_pager"></div></div>
+				</div>
+				
+			</div>
+		</div>
+
+	</div>
+
+	<div class="modal-footer">
+		<div class="btn-group pull-left">
+			<a data-toggle="modal" href="#FeedFilterDialogHelp" class="btn pull-left">Quick Help</a>
+		</div>
+
+		<div class="dialog-transmit hide" style="position:absolute;right:220px;" id="FeedFilterDialog_Transmit"><img src="img/transmit.gif"></div>
+		<a href="#" class="btn" data-dismiss="modal">Close</a>
+		<a href="#" class="btn btn-primary" id="FeedFilterDialog_Save">Save Filter</a>
+	</div>
+</div>
+
+<!-- ***  QUICK HELP: FEED FILTER ************************************************************ -->
+
+<div class="modal no-footer hide" id="FeedFilterDialogHelp">
+	<div class="modal-header">
+	<a class="close" href='#' data-dismiss="modal"><i class="icon-close"></i></a>
+	<h3>Help: Filter for RSS Feed</h3>
+	</div>
+	<div class="modal-body">
+
+		<p>
+		Feed filter consists of rules - one rule per line. Each rule defines a search string
+		and a command, which must be performed if the search string matches.
+		There are five kinds of rule-commands: Accept, Reject, Require, Options, Comment.
+		</p>
+
+		<p>
+		Definition of a rule:
+		</p>
+		<p><strong>
+		 [A:|A(options):|R:|Q:|O(options):|#] &lt;search string&gt;
+		</strong></p>
+
+		<p>
+		<table class="table table-bordered">
+		<tbody>
+		<tr><td>A</td>
+		<td>
+		declares Accept-rule. Rules are accept-rules by default, the "A:" can be imitted.
+		If the feed item matches to the rule the
+		item is considered good and no further rules are checked.
+		</td></tr>
+		<tr><td>R</td>
+		<td>
+		declares Reject-rule. If the feed item matches to the rule the
+		item is considered bad and no further rules are checked.
+		</td></tr>
+		<tr><td>Q</td>
+		<td>
+		declares Require-rule. If the feed item DOES NOT match to the rule the
+		item is considered bad and no further rules are checked.
+		</td></tr>
+		<tr><td>O</td>
+		<td>
+		declares Options-rule. If the feed item matches to the rule the
+		options declared in the rule are set for the item. The item is neither accepted
+		nor rejected via this rule but can be accepted later by one of Accept-rules.
+		In this case the item will have its options already set (unless the Accept-rule
+		overrides them).
+		</td></tr>
+		<tr><td>#</td>
+		<td>
+		lines starting with # are considered comments and are ignored. You can use comments to
+		explain complex rules or to temporary disable rules for debugging.
+		</td></tr>
+		</tbody>
+		</table>
+		</p>
+
+		<h4>Options</h4>
+		<p>
+		<em>Options</em> allow to set category, priority and a flag to add nzb-file in paused state.
+		</p>
+		<p>
+		Definition of options:
+		</p>
+		<p><strong>
+		[category,] [priority,] [paused|unpaused]
+		</strong></p>
+
+		<p>
+		<table class="table table-bordered">
+		<tbody>
+		<tr><td>category</td><td>category name which must not be "paused", "unpaused" and must not start with a digit or plus/minus;</td></tr>
+		<tr><td>priority</td><td>signed integer number;</td></tr>
+		<tr><td>paused</td><td>add nzb in paused state;</td></tr>
+		<tr><td>unpaused</td><td>add nzb in unpaused state.</td></tr>
+		</tbody>
+		</table>
+		</p>
+
+		<p>
+		Rule-options override values set in feed-options.
+		</p>
+		
+		<h4>Search string</h4>
+		<p>
+		The <em>search string</em> is similar to used in search engines. It consists of
+		search terms separated with spaces. Every term is checked for a feed
+		item and if they all succeed the rule is considered matching.
+		</p>
+		
+		<p>
+		Definition of a term:
+		</p>
+		<p><strong>
+		 [+|-][field:][command]param
+		</strong></p>
+		
+		<p>
+		<table class="table table-bordered">
+		<tbody>
+		<tr><td>+</td>
+		<td>
+		declares a positive term. Terms are positive by default,
+				   the "+" can be omitted;
+		</td></tr>
+		<tr><td>-</td>
+		<td>
+		declares a negative term. If the term succeed the feed
+				   item is ignored;
+		</td></tr>
+		<tr>
+		<td>field</td>
+		<td>
+		field to which apply the term. Available fields: title,
+				   filename, category, link, size, age. If not specified
+				   the default field "title" is used;
+		</td></tr>
+		<tr><td>command</td>
+		<td>
+		a special character defining how to interpret the
+				   parameter (followed after the command):
+			<table class="table-nonbordered">
+			<tbody>
+			<tr><td>@</td><td> - search for string "param". This is default command, the "@" can be omitted;</td></tr>
+			<tr><td>$</td><td> - "param" defines a regular expression (using POSIX Extended Regular Expressions syntax);</td></tr>
+			<tr><td>&lt;</td><td>  - less than;</td></tr>
+			<tr><td>&lt;=</td><td>  - equal or less than;</td></tr>
+			<tr><td>&gt;</td><td>  - greater than;</td></tr>
+			<tr><td>&gt;=</td><td>  - equal or greater than.</td></tr>
+			</tbody>
+			</table>
+		</td></tr>
+		<tr><td>param</td>
+		<td>
+		parameter for command.
+		</td></tr>
+		</tbody>
+		</table>
+		</p>
+		
+		<ul>
+		<li>Commands @ and $ are for use with text fields (title, filename, category,
+		link).</li>
+		<li>Commands &lt;, &lt;=, &gt; and &gt;= are for use with numeric fields (size,
+		age).</li>
+		</ul>
+
+		<strong>More about text search (command @):</strong>
+		<ul>
+		<li>Text search supports wildcard characters * and ?.</li>
+		<li>Text search is by default performed against words (word-search mode): the field content
+		is separated into words and then each word is checked against pattern.</li>
+		<li>If the search pattern starts and ends with * (star) the search is performed against the
+		whole field content (substring-search mode).</li>
+		<li>If the search pattern contains word separator characters (except * and ?) the search
+		is performed on the whole field (the word-search would be obviously never successful in this case).</li>
+		<li>Word separators: !\"#$%&'()*+,-./:;&lt;=&gt;?@[\\]^_`{|}~</li>
+		</ul>
+		
+		<h4>Examples</h4>
+		<ul>
+		<li>A: s01* -category:anime</li>
+		<li>my show WEB-DL</li>
+		<li>*my?show* WEB-DL size:&lt;1.8GB age:&gt;2h</li>
+		<li>R: size:&gt;9GB</li>
+		<li>Q: HDTV</li>
+		<li>A(big movies,50,paused): size:&gt;8GB</>
+		</ul>
+		
+		<p><span class="label label-warning">NOTE:</span>
+		This is a short documentation. For more info visit
+		<a href="http://nzbget.sourceforge.net/RSS">nzbget.sourceforge.net/RSS</a>.
+		</p>
 	</div>
 </div>
 
@@ -1385,7 +1651,7 @@
 			<tr><td>Chrome</th><td class="text-center">6</td><td class="text-center">19</td></tr>
 			<tr><td>Opera</th><td class="text-center">11.1</td><td class="text-center">12</td></tr>
 			<tr><td>Safari</th><td class="text-center">6</td><td class="text-center">6.0</td></tr>
-			<tr><td>IE</th><td class="text-center">10</td><td class="text-center">not tested</td></tr>
+			<tr><td>IE</th><td class="text-center">10</td><td class="text-center">10</td></tr>
 			</tbody>
 			</table>
 			</li>
@@ -1421,9 +1687,9 @@
 
 				<p id="ScriptListDialog_OrderInfo" class="hide" style="margin-top:-5px; margin-bottom:10px;">The script execution order is saved globally in the option <em><strong>ScriptOrder</strong></em> and affects all
 				categories as well as the order of scripts in the edit download dialog.</p>
-			
+
 				<div class="hide" id="ScriptListDialog_ScriptTable_pager"></div>
-				
+
 			</fieldset>
 		</div>
 	</div>
@@ -1456,7 +1722,7 @@
 				</div>
 
 				<div class="hide" id="RestoreSettingsDialog_SectionTable_pager"></div>
-				
+
 			</fieldset>
 		</div>
 	</div>

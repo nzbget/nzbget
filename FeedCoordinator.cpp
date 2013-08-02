@@ -56,6 +56,31 @@ extern UrlCoordinator* g_pUrlCoordinator;
 extern DiskState* g_pDiskState;
 
 
+FeedCoordinator::FeedCacheItem::FeedCacheItem(const char* szUrl, int iCacheTimeSec,const char* szCacheId,
+	time_t tLastUsage, FeedItemInfos* pFeedItemInfos)
+{
+	m_szUrl = strdup(szUrl);
+	m_iCacheTimeSec = iCacheTimeSec;
+	m_szCacheId = strdup(szCacheId);
+	m_tLastUsage = tLastUsage;
+	m_pFeedItemInfos = pFeedItemInfos;
+	m_pFeedItemInfos->Retain();
+}
+
+FeedCoordinator::FeedCacheItem::~FeedCacheItem()
+{
+	if (m_szUrl)
+	{
+		free(m_szUrl);
+	}
+	if (m_szCacheId)
+	{
+		free(m_szCacheId);
+	}
+
+	m_pFeedItemInfos->Release();
+}
+
 FeedCoordinator::FeedCoordinator()
 {
 	debug("Creating FeedCoordinator");
@@ -84,6 +109,13 @@ FeedCoordinator::~FeedCoordinator()
 		delete *it;
 	}
 	m_Feeds.clear();
+	
+	debug("Deleting FeedCache");
+	for (FeedCache::iterator it = m_FeedCache.begin(); it != m_FeedCache.end(); it++)
+	{
+		delete *it;
+	}
+	m_FeedCache.clear();
 
 	debug("FeedCoordinator destroyed");
 }
@@ -155,6 +187,7 @@ void FeedCoordinator::Run()
 		{
 			// clean up feed history once a minute
 			CleanupHistory();
+			CleanupCache();
 			CheckSaveFeeds();
 			iCleanupCounter = 0;
 		}
@@ -367,8 +400,15 @@ void FeedCoordinator::FilterFeed(FeedInfo* pFeedInfo, FeedItemInfos* pFeedItemIn
 	for (FeedItemInfos::iterator it = pFeedItemInfos->begin(); it != pFeedItemInfos->end(); it++)
     {
         FeedItemInfo* pFeedItemInfo = *it;
-		bool bMatch = !pFeedFilter || pFeedFilter->Match(pFeedItemInfo);
-		pFeedItemInfo->SetMatch(bMatch);
+		pFeedItemInfo->SetMatchStatus(FeedItemInfo::msAccepted);
+		pFeedItemInfo->SetMatchRule(0);
+		pFeedItemInfo->SetPauseNzb(pFeedInfo->GetPauseNzb());
+		pFeedItemInfo->SetPriority(pFeedInfo->GetPriority());
+		pFeedItemInfo->SetAddCategory(pFeedInfo->GetCategory());
+		if (pFeedFilter)
+		{
+			pFeedFilter->Match(pFeedItemInfo);
+		}
     }
 
 	delete pFeedFilter;
@@ -386,7 +426,7 @@ void FeedCoordinator::ProcessFeed(FeedInfo* pFeedInfo, FeedItemInfos* pFeedItemI
     for (FeedItemInfos::iterator it = pFeedItemInfos->begin(); it != pFeedItemInfos->end(); it++)
     {
         FeedItemInfo* pFeedItemInfo = *it;
-		if (pFeedItemInfo->GetMatch())
+		if (pFeedItemInfo->GetMatchStatus() == FeedItemInfo::msAccepted)
 		{
 			FeedHistoryInfo* pFeedHistoryInfo = m_FeedHistory.Find(pFeedItemInfo->GetUrl());
 			FeedHistoryInfo::EStatus eStatus = FeedHistoryInfo::hsUnknown;
@@ -446,14 +486,14 @@ void FeedCoordinator::DownloadItem(FeedInfo* pFeedInfo, FeedItemInfo* pFeedItemI
 		pUrlInfo->SetNZBFilename(szNZBName2);
 	}
 	
-	pUrlInfo->SetCategory(pFeedInfo->GetCategory());
-	pUrlInfo->SetPriority(pFeedInfo->GetPriority());
-	pUrlInfo->SetAddPaused(pFeedInfo->GetPauseNzb());
+	pUrlInfo->SetCategory(pFeedItemInfo->GetAddCategory());
+	pUrlInfo->SetPriority(pFeedItemInfo->GetPriority());
+	pUrlInfo->SetAddPaused(pFeedItemInfo->GetPauseNzb());
 	pUrlInfo->SetForce(pFeedInfo->GetForce());
 	g_pUrlCoordinator->AddUrlToQueue(pUrlInfo, false);
 }
 
-bool FeedCoordinator::ViewFeed(int iID, FeedItemInfos* pFeedItemInfos)
+bool FeedCoordinator::ViewFeed(int iID, FeedItemInfos** ppFeedItemInfos)
 {
 	if (iID < 1 || iID > (int)m_Feeds.size())
 	{
@@ -462,74 +502,111 @@ bool FeedCoordinator::ViewFeed(int iID, FeedItemInfos* pFeedItemInfos)
 
 	FeedInfo* pFeedInfo = m_Feeds.at(iID - 1);
 
-	return PreviewFeed(pFeedInfo->GetName(), pFeedInfo->GetUrl(), pFeedInfo->GetFilter(), pFeedItemInfos);
+	return PreviewFeed(pFeedInfo->GetName(), pFeedInfo->GetUrl(), pFeedInfo->GetFilter(), 
+		pFeedInfo->GetPauseNzb(), pFeedInfo->GetCategory(), pFeedInfo->GetPriority(),
+		0, NULL, ppFeedItemInfos);
 }
 
-bool FeedCoordinator::PreviewFeed(const char* szName, const char* szUrl, const char* szFilter, FeedItemInfos* pFeedItemInfos)
+bool FeedCoordinator::PreviewFeed(const char* szName, const char* szUrl, const char* szFilter,
+	bool bPauseNzb, const char* szCategory, int iPriority,
+	int iCacheTimeSec, const char* szCacheId, FeedItemInfos** ppFeedItemInfos)
 {
 	debug("Preview feed %s", szName);
 
-	FeedInfo* pFeedInfo = new FeedInfo(0, szName, szUrl, 0, szFilter, false, NULL, 0);
-
+	FeedInfo* pFeedInfo = new FeedInfo(0, szName, szUrl, 0, szFilter, bPauseNzb, szCategory, iPriority);
 	pFeedInfo->SetPreview(true);
-
-	m_mutexDownloads.Lock();
-
-	bool bFirstFetch = true;
-	for (Feeds::iterator it = m_Feeds.begin(); it != m_Feeds.end(); it++)
+	
+	FeedItemInfos* pFeedItemInfos = NULL;
+	bool bHasCache = false;
+	if (iCacheTimeSec > 0 && *szCacheId != '\0')
 	{
-		FeedInfo* pFeedInfo2 = *it;
-		if (!strcmp(pFeedInfo2->GetUrl(), pFeedInfo->GetUrl()) &&
-			pFeedInfo2->GetLastUpdate() > 0)
+		m_mutexDownloads.Lock();
+		for (FeedCache::iterator it = m_FeedCache.begin(); it != m_FeedCache.end(); it++)
 		{
-			bFirstFetch = false;
-			break;
+			FeedCacheItem* pFeedCacheItem = *it;
+			if (!strcmp(pFeedCacheItem->GetCacheId(), szCacheId))
+			{
+				pFeedCacheItem->SetLastUsage(time(NULL));
+				pFeedItemInfos = pFeedCacheItem->GetFeedItemInfos();
+				pFeedItemInfos->Retain();
+				bHasCache = true;
+				break;
+			}
+		}
+		m_mutexDownloads.Unlock();
+	}
+
+	if (!bHasCache)
+	{
+		m_mutexDownloads.Lock();
+
+		bool bFirstFetch = true;
+		for (Feeds::iterator it = m_Feeds.begin(); it != m_Feeds.end(); it++)
+		{
+			FeedInfo* pFeedInfo2 = *it;
+			if (!strcmp(pFeedInfo2->GetUrl(), pFeedInfo->GetUrl()) &&
+				!strcmp(pFeedInfo2->GetFilter(), pFeedInfo->GetFilter()) &&
+				pFeedInfo2->GetLastUpdate() > 0)
+			{
+				bFirstFetch = false;
+				break;
+			}
+		}
+
+		StartFeedDownload(pFeedInfo, true);
+		m_mutexDownloads.Unlock();
+
+		// wait until the download in a separate thread completes
+		while (pFeedInfo->GetStatus() == FeedInfo::fsRunning)
+		{
+			usleep(100 * 1000);
+		}
+
+		// now can process the feed
+
+		FeedFile* pFeedFile = NULL;
+
+		if (pFeedInfo->GetStatus() == FeedInfo::fsFinished)
+		{
+			pFeedFile = FeedFile::Create(pFeedInfo->GetOutputFilename());
+		}
+
+		remove(pFeedInfo->GetOutputFilename());
+
+		if (!pFeedFile)
+		{
+			delete pFeedInfo;
+			return false;
+		}
+
+		pFeedItemInfos = pFeedFile->GetFeedItemInfos();
+		pFeedItemInfos->Retain();
+		delete pFeedFile;
+
+		for (FeedItemInfos::iterator it = pFeedItemInfos->begin(); it != pFeedItemInfos->end(); it++)
+		{
+			FeedItemInfo* pFeedItemInfo = *it;
+			pFeedItemInfo->SetStatus(bFirstFetch ? FeedItemInfo::isBacklog : FeedItemInfo::isNew);
+			FeedHistoryInfo* pFeedHistoryInfo = m_FeedHistory.Find(pFeedItemInfo->GetUrl());
+			if (pFeedHistoryInfo)
+			{
+				pFeedItemInfo->SetStatus((FeedItemInfo::EStatus)pFeedHistoryInfo->GetStatus());
+			}
 		}
 	}
-
-	StartFeedDownload(pFeedInfo, true);
-	m_mutexDownloads.Unlock();
-
-	// wait until the download in a separate thread completes
-	while (pFeedInfo->GetStatus() == FeedInfo::fsRunning)
-	{
-		usleep(100 * 1000);
-	}
-
-	// now can process the feed
-
-	FeedFile* pFeedFile = NULL;
-
-	if (pFeedInfo->GetStatus() == FeedInfo::fsFinished)
-	{
-		pFeedFile = FeedFile::Create(pFeedInfo->GetOutputFilename());
-	}
-
-	remove(pFeedInfo->GetOutputFilename());
-
-	if (!pFeedFile)
-	{
-		delete pFeedInfo;
-		return false;
-	}
-
-    for (FeedItemInfos::iterator it = pFeedFile->GetFeedItemInfos()->begin(); it != pFeedFile->GetFeedItemInfos()->end(); it++)
-    {
-        FeedItemInfo* pFeedItemInfo = *it;
-		pFeedItemInfo->SetStatus(bFirstFetch ? FeedItemInfo::isBacklog : FeedItemInfo::isNew);
-		FeedHistoryInfo* pFeedHistoryInfo = m_FeedHistory.Find(pFeedItemInfo->GetUrl());
-		if (pFeedHistoryInfo)
-		{
-			pFeedItemInfo->SetStatus((FeedItemInfo::EStatus)pFeedHistoryInfo->GetStatus());
-		}
-		pFeedItemInfos->push_back(pFeedItemInfo);
-    }
-
-	pFeedFile->DetachFeedItemInfos();
-	delete pFeedFile;
 
 	FilterFeed(pFeedInfo, pFeedItemInfos);
 	delete pFeedInfo;
+
+	if (iCacheTimeSec > 0 && *szCacheId != '\0' && !bHasCache)
+	{
+		FeedCacheItem* pFeedCacheItem = new FeedCacheItem(szUrl, iCacheTimeSec, szCacheId, time(NULL), pFeedItemInfos);
+		m_mutexDownloads.Lock();
+		m_FeedCache.push_back(pFeedCacheItem);
+		m_mutexDownloads.Unlock();
+	}
+	
+	*ppFeedItemInfos = pFeedItemInfos;
 
 	return true;
 }
@@ -630,5 +707,34 @@ void FeedCoordinator::CleanupHistory()
 		}
 	}
 
+	m_mutexDownloads.Unlock();
+}
+
+void FeedCoordinator::CleanupCache()
+{
+	debug("CleanupCache");
+	
+	m_mutexDownloads.Lock();
+	
+	time_t tCurTime = time(NULL);
+	int i = 0;
+	for (FeedCache::iterator it = m_FeedCache.begin(); it != m_FeedCache.end(); )
+	{
+		FeedCacheItem* pFeedCacheItem = *it;
+		if (pFeedCacheItem->GetLastUsage() + pFeedCacheItem->GetCacheTimeSec() < tCurTime ||
+			pFeedCacheItem->GetLastUsage() > tCurTime)
+		{
+			debug("Deleting %s from feed cache", pFeedCacheItem->GetUrl());
+			delete pFeedCacheItem;
+			m_FeedCache.erase(it);
+			it = m_FeedCache.begin() + i;
+		}
+		else
+		{
+			it++;
+			i++;
+		}
+	}
+	
 	m_mutexDownloads.Unlock();
 }
