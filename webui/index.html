@@ -663,7 +663,7 @@
 	</div>
 	<div class="modal-footer">
 		<div class="dialog-transmit hide" style="position:absolute;margin-left:260px;" id="LimitDialog_Transmit"><img src="img/transmit.gif"></div>
-		<a href="#" class="btn" data-dismiss="modal">Close</a>
+		<a href="#" class="btn" data-dismiss="modal">Cancel</a>
 		<a href="#" class="btn btn-primary" id="LimitDialog_Save">Set limit</a>
 	</div>
 </div>
@@ -691,7 +691,7 @@
 	</div>
 	<div class="modal-footer">
 		<div class="dialog-transmit hide" style="position:absolute;margin-left:260px;" id="ScheduledPause_Transmit"><img src="img/transmit.gif"></div>
-		<a href="#" class="btn" data-dismiss="modal">Close</a>
+		<a href="#" class="btn" data-dismiss="modal">Cancel</a>
 		<a href="#" class="btn btn-primary" onclick="Status.pauseForClick()">Pause</a>
 	</div>
 </div>
@@ -867,8 +867,8 @@
 		</div>
 
 		<div class="dialog-transmit hide" style="position:absolute;margin-left:260px;" id="DownloadsEdit_Transmit"><img src="img/transmit.gif"></div>
-		<a href="#" class="btn" data-dismiss="modal" id="DownloadsEdit_Close">Close</a>
-		<a href="#" class="btn btn-primary" id="DownloadsEdit_Save">Save changes</a>
+		<a href="#" class="btn" data-dismiss="modal" id="DownloadsEdit_Close">Cancel</a>
+		<a href="#" class="btn btn-primary" id="DownloadsEdit_Save">Save</a>
 	</div>
 </div>
 
@@ -952,8 +952,8 @@
 
 	<div class="modal-footer">
 		<div class="dialog-transmit hide" style="position:absolute;margin-left:260px;" id="DownloadsMulti_Transmit"><img src="img/transmit.gif"></div>
-		<a href="#" class="btn" data-dismiss="modal" id="DownloadsMulti_Close">Close</a>
-		<a href="#" class="btn btn-primary" id="DownloadsMulti_Save">Save changes</a>
+		<a href="#" class="btn" data-dismiss="modal" id="DownloadsMulti_Close">Cancel</a>
+		<a href="#" class="btn btn-primary" id="DownloadsMulti_Save">Save</a>
 	</div>
 </div>
 
@@ -978,7 +978,7 @@
 
 	<div class="modal-footer">
 		<div class="dialog-transmit hide" style="position:absolute;margin-left:260px;" id="DownloadsMerge_Transmit"><img src="img/transmit.gif"></div>
-		<a href="#" class="btn" data-dismiss="modal">Close</a>
+		<a href="#" class="btn" data-dismiss="modal">Cancel</a>
 		<a href="#" class="btn btn-primary" id="DownloadsMerge_Merge">Merge</a>
 	</div>
 </div>
@@ -1003,8 +1003,8 @@
 				</div>
 
 				<p class="help-block" style="margin-top:10px;">The new download inherits
-				all other properties such as category, priority, etc. from the source item.
-				This action closes the download-edit-dialog. Any changes made in the dialog are not saved.</p>
+				all properties such as category, priority, etc. from the source item.
+				This action closes the download-edit-dialog. Any changes made in the dialog will be discarded.</p>
 
 			</fieldset>
 		</div>
@@ -1012,7 +1012,7 @@
 
 	<div class="modal-footer">
 		<div class="dialog-transmit hide" style="position:absolute;margin-left:260px;" id="DownloadsSplit_Transmit"><img src="img/transmit.gif"></div>
-		<a href="#" class="btn" data-dismiss="modal">Close</a>
+		<a href="#" class="btn" data-dismiss="modal">Cancel</a>
 		<a href="#" class="btn btn-primary" id="DownloadsSplit_Split">Split</a>
 	</div>
 </div>
@@ -1103,8 +1103,8 @@
 		</div>
 
 		<div class="dialog-transmit" style="position:absolute;margin-left:320px;" id="HistoryEdit_Transmit"><img src="img/transmit.gif"></div>
-		<a href="#" class="btn" data-dismiss="modal" id="HistoryEdit_Close">Close</a>
-		<a href="#" class="btn btn-primary" id="HistoryEdit_Save">Save changes</a>
+		<a href="#" class="btn" data-dismiss="modal" id="HistoryEdit_Close">Cancel</a>
+		<a href="#" class="btn btn-primary" id="HistoryEdit_Save">Save</a>
 	</div>
 </div>
 
@@ -1163,7 +1163,7 @@
 
 	<div class="modal-footer">
 		<div class="dialog-transmit hide" style="position:absolute;right:220px;" id="FeedDialog_Transmit"><img src="img/transmit.gif"></div>
-		<a href="#" class="btn" data-dismiss="modal" id="FeedDialog_Close">Close</a>
+		<a href="#" class="btn" data-dismiss="modal" id="FeedDialog_Close">Cancel</a>
 		<a href="#" class="btn btn-primary" id="FeedDialog_Save" onclick="FeedDialog.fetch()">Fetch selected</a>
 	</div>
 </div>
@@ -1252,8 +1252,8 @@
 		</div>
 
 		<div class="dialog-transmit hide" style="position:absolute;right:220px;" id="FeedFilterDialog_Transmit"><img src="img/transmit.gif"></div>
-		<a href="#" class="btn" data-dismiss="modal">Close</a>
-		<a href="#" class="btn btn-primary" id="FeedFilterDialog_Save">Save Filter</a>
+		<a href="#" class="btn" data-dismiss="modal">Discard</a>
+		<a href="#" class="btn btn-primary" id="FeedFilterDialog_Save">Apply</a>
 	</div>
 </div>
 
@@ -1284,7 +1284,7 @@
 		<tbody>
 		<tr><td>A</td>
 		<td>
-		declares Accept-rule. Rules are accept-rules by default, the "A:" can be imitted.
+		declares Accept-rule. Rules are accept-rules by default, the "A:" can be omitted.
 		If the feed item matches to the rule the
 		item is considered good and no further rules are checked.
 		</td></tr>
@@ -1447,7 +1447,7 @@
 	</div>
 
 	<div class="modal-footer">
-		<a href="#" class="btn" data-dismiss="modal" id="ConfirmDialog_Close">Close</a>
+		<a href="#" class="btn" data-dismiss="modal" id="ConfirmDialog_Close">Cancel</a>
 		<a href="#" class="btn btn-primary" id="ConfirmDialog_OK">Action</a>
 	</div>
 </div>
@@ -1628,7 +1628,7 @@
 		</div>
 
 		<div class="dialog-transmit hide" style="position:absolute;margin-left:260px;" id="AddDialog_Transmit"><img src="img/transmit.gif"></div>
-		<a href="#" class="btn" data-dismiss="modal">Close</a>
+		<a href="#" class="btn" data-dismiss="modal">Cancel</a>
 		<a href="#" class="btn btn-primary" id="AddDialog_Submit">Submit</a>
 	</div>
 </div>
@@ -1695,8 +1695,8 @@
 	</div>
 
 	<div class="modal-footer">
-		<a href="#" class="btn" data-dismiss="modal">Close</a>
-		<a href="#" class="btn btn-primary" id="ScriptListDialog_Save">Save</a>
+		<a href="#" class="btn" data-dismiss="modal">Discard</a>
+		<a href="#" class="btn btn-primary" id="ScriptListDialog_Save">Apply</a>
 	</div>
 </div>
 
@@ -1728,7 +1728,7 @@
 	</div>
 
 	<div class="modal-footer">
-		<a href="#" class="btn" data-dismiss="modal">Close</a>
+		<a href="#" class="btn" data-dismiss="modal">Cancel</a>
 		<a href="#" class="btn btn-primary" id="RestoreSettingsDialog_Restore">Restore</a>
 	</div>
 </div>
