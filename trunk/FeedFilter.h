@@ -32,7 +32,7 @@
 class FeedFilter
 {
 private:
-	enum ECommand
+	enum ETermCommand
 	{
 		fcText,
 		fcRegex,
@@ -47,43 +47,81 @@ private:
 	private:
 		bool			m_bPositive;
 		char*			m_szField;
-		ECommand		m_eCommand;
+		ETermCommand	m_eCommand;
 		char*			m_szParam;
 		long long		m_iIntParam;
 		RegEx*			m_pRegEx;
 
+		bool			GetFieldValue(const char* szField, FeedItemInfo* pFeedItemInfo, const char** StrValue, long long* IntValue);
+		bool			ValidateFieldName(const char* szField);
+		bool			ParseSizeParam(const char* szParam, long long* pIntValue);
+		bool			ParseAgeParam(const char* szParam, long long* pIntValue);
+		bool			MatchValue(const char* szStrValue, const long long iIntValue);
 		bool			MatchText(const char* szStrValue);
 		bool			MatchRegex(const char* szStrValue);
 
 	public:
-						Term(bool bPositive, const char* szField, ECommand eCommand, const char* szParam, long long iIntParam);
+						Term();
 						~Term();
-		bool			GetPositive() { return m_bPositive; }
-		const char*		GetField() { return m_szField; }
-		ECommand		GetCommand() { return m_eCommand; }
-		const char*		GetParam() { return m_szParam; }
-		bool			Match(const char* szStrValue, const long long iIntValue);
+		bool			Compile(char* szToken);
+		bool			Match(FeedItemInfo* pFeedItemInfo);
 	};
 
 	typedef std::deque<Term*> TermList;
 
+	enum ERuleCommand
+	{
+		frAccept,
+		frReject,
+		frRequire,
+		frOptions,
+		frComment
+	};
+
+	class Rule
+	{
+	private:
+		bool			m_bIsValid;
+		ERuleCommand	m_eCommand;
+		char*			m_szCategory;
+		int				m_iPriority;
+		bool			m_bPause;
+		bool			m_bHasCategory;
+		bool			m_bHasPriority;
+		bool			m_bHasPause;
+		TermList		m_Terms;
+
+		char*			CompileCommand(char* szRule);
+		bool			CompileTerm(char* szTerm);
+
+	public:
+						Rule();
+						~Rule();
+		void			Compile(char* szRule);
+		bool			IsValid() { return m_bIsValid; }
+		ERuleCommand	GetCommand() { return m_eCommand; }
+		const char*		GetCategory() { return m_szCategory; }
+		int				GetPriority() { return m_iPriority; }
+		bool			GetPause() { return m_bPause; }
+		bool			HasCategory() { return m_bHasCategory; }
+		bool			HasPriority() { return m_bHasPriority; }
+		bool			HasPause() { return m_bHasPause; }
+		bool			Match(FeedItemInfo* pFeedItemInfo);
+	};
+
+	typedef std::deque<Rule*> RuleList;
+
 private:
-	bool				m_bValid;
-	TermList			m_Terms;
+	RuleList			m_Rules;
 	FeedItemInfo*		m_pFeedItemInfo;
 
-	bool				Compile(const char* szFilter);
-	bool				CompileToken(char* szToken);
-	bool				GetFieldValue(const char* szField, FeedItemInfo* pFeedItemInfo, const char** StrValue, long long* IntValue);
-	bool				ValidateFieldName(const char* szField);
-	bool				ParseSizeParam(const char* szParam, long long* pIntValue);
-	bool				ParseAgeParam(const char* szParam, long long* pIntValue);
+	void				Compile(const char* szFilter);
+	void				CompileRule(char* szRule);
 
 public:
 						FeedFilter(const char* szFilter);
 						~FeedFilter();
-	bool				IsValid() { return m_bValid; }
-	bool				Match(FeedItemInfo* pFeedItemInfo);
+	void				Match(FeedItemInfo* pFeedItemInfo);
 };
 
 #endif

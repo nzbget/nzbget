@@ -610,6 +610,10 @@ ul.dropdown-menu > li > a > i {
 	background-position: -304px -144px;
 }
 
+.icon-process-auto {
+	background-position: -336px -144px;
+}
+
 /* END: Icons */
 
 .btn-toolbar {
@@ -838,6 +842,12 @@ td.text-center,th.text-center {
 .table-condensed td {
 	padding: 2px;
 }
+
+.table-nonbordered,
+.table-nonbordered td {
+	border: none;
+}
+ 
 /* END: Tables */
 
 
@@ -1454,6 +1464,133 @@ div.control-group.last-group {
 }
 
 /*#ScriptListDialog_ScriptTable*/
+
+/* FEED FILTER DIALOG */
+
+#FeedFilterDialog_FilterBlock {
+	position: absolute;
+	left: 15px;
+	width: 300px;
+	bottom: 0;
+	height: auto;
+	padding-top: 0;
+	margin-bottom: 12px;
+	padding: 0;
+	font-size: 12px;
+	line-height: 18px;
+	border: 1px solid #ccc;
+	border: 1px solid rgba(0, 0, 0, 0.15);
+	-webkit-border-radius: 4px;
+	 -moz-border-radius: 4px;
+		  border-radius: 4px;
+}
+
+#FeedFilterDialog_FilterHeader {
+	font-size: 13px;
+	font-weight: bold;
+	margin-top: 5px;
+	padding-left: 6px;
+	height: 23px;
+	border-bottom: 1px solid #ccc;
+	border-bottom: 1px solid rgba(0, 0, 0, 0.15);
+}
+
+#FeedFilterDialog_FilterLines {
+	position: absolute;
+	left: 0;
+	top: 29px;
+	bottom: 0px;
+	width: 32px;
+	height: auto;
+	overflow: hidden;
+	background-color: #ffffff;
+	border-right: 1px solid #ccc;
+	border-right: 1px solid rgba(0, 0, 0, 0.15);
+}
+
+#FeedFilterDialog_FilterNumbers {
+	font-family: Menlo, Monaco, Consolas, "Courier New", monospace;
+}
+
+#FeedFilterDialog_FilterNumbers .lineno {
+	color: #3A87AD;
+	padding-right: 5px;
+	padding-top: 0;
+	text-align: right;
+	font-weight: bold;
+	white-space: nowrap;
+}
+
+#FeedFilterDialog_FilterClient {
+	position: absolute;
+	left: 33px;
+	right: 0px;
+	top: 29px;
+	bottom: 0px;
+	width: auto;
+	padding-left: 3px;
+	height: auto;
+	background-color: #ffffff;
+}
+
+#FeedFilterDialog_FilterInput {
+	width: 100%;
+	height: 100%;
+	margin: 0;
+	padding: 0;
+	border: 0;
+	resize: none;
+	outline: none;
+	border: none;
+	font-family: Menlo, Monaco, Consolas, "Courier New", monospace;
+	-webkit-box-shadow: none;
+	-moz-box-shadow: none;
+	box-shadow: none;
+	-webkit-border-radius: 0;
+	-moz-border-radius: 0;
+	border-radius: 0;
+}
+
+#FeedFilterDialog_PreviewBlock {
+	position: absolute;
+	left: 325px;
+	right: 0;
+	bottom: 0;
+	height: auto;
+	width: auto;
+	padding-right: 15px;
+	margin-bottom: 12px;
+}
+
+#FeedFilterDialog_Splitter {
+	position: absolute;
+	left: 319px;
+	width: 5px;
+	padding: 0;
+	right: 5px;
+	bottom: 0;
+	height: auto;
+	cursor: col-resize;
+}
+
+.phone #FeedFilterDialog_FilterBlock,
+.phone #FeedFilterDialog_PreviewBlock,
+.phone #FeedFilterDialog_FilterClient {
+	position: static;
+	top: inherit;
+	left: 0;
+	width: inherit;
+	padding-right: 0;
+}
+
+.phone #FeedFilterDialog_FilterInput {
+	height: 380px;
+}
+
+.filter-rule {
+	cursor: pointer;
+}
+
 
 /****************************************************************************/
 /* SMARTPHONE THEME */

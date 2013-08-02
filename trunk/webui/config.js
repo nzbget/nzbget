@@ -819,7 +819,7 @@ var Config = (new function($)
 				htmldescr = htmldescr.replace(/MORE INFO:<br>/g, '<input class="btn btn-mini" value="Show more info" type="button" onclick="Config.showSpoiler(this)"><span class="hide">');
 				htmldescr += '</span>';
 			}
-			
+
 			if (section.multi)
 			{
 				// replace strings like "TaskX.Command" and "Task1.Command"
@@ -986,7 +986,7 @@ var Config = (new function($)
 			firstVisibleSection.options.unshift(option);
 		}
 
-		// register editors for options "DefScript" and "ScriptOrder"
+		// register editors for options "DefScript", "ScriptOrder" and FeedX.Filter
 		var conf = config[0];
 		for (var j=0; j < conf.sections.length; j++)
 		{
@@ -1002,6 +1002,10 @@ var Config = (new function($)
 				if (optname.indexOf('defscript') > -1)
 				{
 					option.editor = { caption: 'Choose', click: 'Config.editDefScript' };
+				}
+				if (optname.indexOf('.filter') > -1)
+				{
+					option.editor = { caption: 'Change', click: 'Config.editFilter' };
 				}
 			}
 		}
@@ -1234,6 +1238,7 @@ var Config = (new function($)
 	}
 
 	/*** OPTION SPECIFIC EDITORS *************************************************/
+	
 	this.editScriptOrder = function(optFormId)
 	{
 		var option = findOptionById(optFormId);
@@ -1248,13 +1253,31 @@ var Config = (new function($)
 
 	/*** RSS FEEDS ********************************************************************/
 
+	this.editFilter = function(optFormId)
+	{
+		var option = findOptionById(optFormId);
+		FeedFilterDialog.showModal(
+			getOptionValue(findOptionByName('Feed' + option.multiid + '.Name')),
+			getOptionValue(findOptionByName('Feed' + option.multiid + '.URL')),
+			getOptionValue(findOptionByName('Feed' + option.multiid + '.Filter')),
+			getOptionValue(findOptionByName('Feed' + option.multiid + '.PauseNzb')),
+			getOptionValue(findOptionByName('Feed' + option.multiid + '.Category')),
+			getOptionValue(findOptionByName('Feed' + option.multiid + '.Priority')),
+			function(filter)
+				{
+					var control = $('#' + option.formId);
+					control.val(filter);
+				});
+	}
+
 	this.previewFeed = function(control, setname, sectionId)
 	{
 		var multiid = parseInt($(control).attr('data-multiid'));
-		FeedDialog.showModal(0, 
+		FeedDialog.showModal(0,
 			getOptionValue(findOptionByName('Feed' + multiid + '.Name')),
 			getOptionValue(findOptionByName('Feed' + multiid + '.URL')),
 			getOptionValue(findOptionByName('Feed' + multiid + '.Filter')),
+			getOptionValue(findOptionByName('Feed' + multiid + '.PauseNzb')),
 			getOptionValue(findOptionByName('Feed' + multiid + '.Category')),
 			getOptionValue(findOptionByName('Feed' + multiid + '.Priority')));
 	}
@@ -1586,7 +1609,7 @@ var Config = (new function($)
 		Options.reloadConfig(values, buildPage);
 		restored = true;
 	}
-	
+
 	/*** SHUTDOWN ********************************************************************/
 
 	this.shutdownConfirm = function()
@@ -2072,7 +2095,7 @@ var ConfigBackupRestore = (new function($)
 				}
 			}
 		}
-		
+
 		for (var k=0; k < config.length; k++)
 		{
 			var conf = config[k];

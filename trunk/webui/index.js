@@ -157,6 +157,7 @@ var Frontend = (new function($)
 		Upload.init();
 		Feeds.init();
 		FeedDialog.init();
+		FeedFilterDialog.init();
 		Config.init({ updateTabInfo: updateTabInfo });
 		ConfigBackupRestore.init();
 		ConfirmDialog.init();

@@ -282,7 +282,7 @@ NZBInfo::~NZBInfo()
 	}
 }
 
-void NZBInfo::AddReference()
+void NZBInfo::Retain()
 {
 	m_iRefCount++;
 }
@@ -642,7 +642,7 @@ void FileInfo::SetNZBInfo(NZBInfo* pNZBInfo)
 		m_pNZBInfo->Release();
 	}
 	m_pNZBInfo = pNZBInfo;
-	m_pNZBInfo->AddReference();
+	m_pNZBInfo->Retain();
 }
 
 void FileInfo::SetSubject(const char* szSubject)
@@ -796,7 +796,7 @@ void PostInfo::SetNZBInfo(NZBInfo* pNZBInfo)
 		m_pNZBInfo->Release();
 	}
 	m_pNZBInfo = pNZBInfo;
-	m_pNZBInfo->AddReference();
+	m_pNZBInfo->Retain();
 }
 
 void PostInfo::SetInfoName(const char* szInfoName)
@@ -851,7 +851,7 @@ void DownloadQueue::BuildGroups(GroupQueue* pGroupQueue)
 		{
 			pGroupInfo = new GroupInfo();
 			pGroupInfo->m_pNZBInfo = pFileInfo->GetNZBInfo();
-			pGroupInfo->m_pNZBInfo->AddReference();
+			pGroupInfo->m_pNZBInfo->Retain();
 			pGroupInfo->m_iFirstID = pFileInfo->GetID();
 			pGroupInfo->m_iLastID = pFileInfo->GetID();
 			pGroupInfo->m_tMinTime = pFileInfo->GetTime();
@@ -1004,7 +1004,7 @@ HistoryInfo::HistoryInfo(NZBInfo* pNZBInfo)
 {
 	m_eKind = hkNZBInfo;
 	m_pInfo = pNZBInfo;
-	pNZBInfo->AddReference();
+	pNZBInfo->Retain();
 	m_tTime = 0;
 	m_iIDGen++;
 	m_iID = m_iIDGen;
@@ -1065,6 +1065,7 @@ FeedInfo::FeedInfo(int iID, const char* szName, const char* szUrl, int iInterval
 	m_szName = strdup(szName ? szName : "");
 	m_szUrl = strdup(szUrl ? szUrl : "");
 	m_szFilter = strdup(szFilter ? szFilter : "");
+	m_iFilterHash = Util::HashBJ96(szFilter, strlen(szFilter));
 	m_szCategory = strdup(szCategory ? szCategory : "");
 	m_iInterval = iInterval;
 	m_bPauseNzb = bPauseNzb;
@@ -1116,11 +1117,15 @@ FeedItemInfo::FeedItemInfo()
 	m_szTitle = NULL;
 	m_szFilename = NULL;
 	m_szUrl = NULL;
-	m_szCategory = NULL;
+	m_szCategory = strdup("");
 	m_lSize = 0;
 	m_tTime = 0;
+	m_szAddCategory = strdup("");
+	m_bPauseNzb = false;
+	m_iPriority = 0;
 	m_eStatus = isUnknown;
-	m_bMatch = false;
+	m_eMatchStatus = msIgnored;
+	m_iMatchRule = 0;
 }
 
 FeedItemInfo::~FeedItemInfo()
@@ -1141,6 +1146,10 @@ FeedItemInfo::~FeedItemInfo()
 	{
 		free(m_szCategory);
 	}
+	if (m_szAddCategory)
+	{
+		free(m_szAddCategory);
+	}
 }
 
 void FeedItemInfo::SetTitle(const char* szTitle)
@@ -1149,7 +1158,7 @@ void FeedItemInfo::SetTitle(const char* szTitle)
 	{
 		free(m_szTitle);
 	}
-	m_szTitle = strdup(szTitle ? szTitle : NULL);
+	m_szTitle = szTitle ? strdup(szTitle) : NULL;
 }
 
 void FeedItemInfo::SetFilename(const char* szFilename)
@@ -1158,7 +1167,7 @@ void FeedItemInfo::SetFilename(const char* szFilename)
 	{
 		free(m_szFilename);
 	}
-	m_szFilename = strdup(szFilename ? szFilename : NULL);
+	m_szFilename = szFilename ? strdup(szFilename) : NULL;
 }
 
 void FeedItemInfo::SetUrl(const char* szUrl)
@@ -1167,7 +1176,7 @@ void FeedItemInfo::SetUrl(const char* szUrl)
 	{
 		free(m_szUrl);
 	}
-	m_szUrl = strdup(szUrl ? szUrl : NULL);
+	m_szUrl = szUrl ? strdup(szUrl) : NULL;
 }
 
 void FeedItemInfo::SetCategory(const char* szCategory)
@@ -1176,7 +1185,16 @@ void FeedItemInfo::SetCategory(const char* szCategory)
 	{
 		free(m_szCategory);
 	}
-	m_szCategory = strdup(szCategory ? szCategory : NULL);
+	m_szCategory = strdup(szCategory ? szCategory: "");
+}
+
+void FeedItemInfo::SetAddCategory(const char* szAddCategory)
+{
+	if (m_szAddCategory)
+	{
+		free(m_szAddCategory);
+	}
+	m_szAddCategory = strdup(szAddCategory ? szAddCategory : "");
 }
 
 
@@ -1242,3 +1260,36 @@ FeedHistoryInfo* FeedHistory::Find(const char* szUrl)
 
 	return NULL;
 }
+
+
+FeedItemInfos::FeedItemInfos()
+{
+	debug("Creating FeedItemInfos");
+	
+	m_iRefCount = 0;
+}
+
+FeedItemInfos::~FeedItemInfos()
+{
+	debug("Destroing FeedItemInfos");
+	
+	for (iterator it = begin(); it != end(); it++)
+    {
+        delete *it;
+    }
+}
+
+void FeedItemInfos::Retain()
+{
+	m_iRefCount++;
+}
+
+void FeedItemInfos::Release()
+{
+	m_iRefCount--;
+	if (m_iRefCount <= 0)
+	{
+		delete this;
+	}
+}
+

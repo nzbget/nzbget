@@ -2226,11 +2226,11 @@ void ConfigXmlCommand::Execute()
 
 	AppendResponse(IsJson() ? "[\n" : "<array><data>\n");
 
-	Options::OptEntries* pOptEntries = g_pOptions->LockOptEntries();
-
-	int szItemBufSize = 10240;
-	char* szItemBuf = (char*)malloc(szItemBufSize);
+	int iItemBufSize = 1024;
+	char* szItemBuf = (char*)malloc(iItemBufSize);
 	int index = 0;
+
+	Options::OptEntries* pOptEntries = g_pOptions->LockOptEntries();
 
 	for (Options::OptEntries::iterator it = pOptEntries->begin(); it != pOptEntries->end(); it++)
 	{
@@ -2239,8 +2239,16 @@ void ConfigXmlCommand::Execute()
 		char* xmlName = EncodeStr(pOptEntry->GetName());
 		char* xmlValue = EncodeStr(pOptEntry->GetValue());
 
-		snprintf(szItemBuf, szItemBufSize, IsJson() ? JSON_CONFIG_ITEM : XML_CONFIG_ITEM, xmlName, xmlValue);
-		szItemBuf[szItemBufSize-1] = '\0';
+		// option values can sometimes have unlimited length
+		int iValLen = strlen(xmlValue);
+		if (iValLen > iItemBufSize - 500)
+		{
+			iItemBufSize = iValLen + 500;
+			szItemBuf = (char*)realloc(szItemBuf, iItemBufSize);
+		}
+
+		snprintf(szItemBuf, iItemBufSize, IsJson() ? JSON_CONFIG_ITEM : XML_CONFIG_ITEM, xmlName, xmlValue);
+		szItemBuf[iItemBufSize-1] = '\0';
 
 		free(xmlName);
 		free(xmlValue);
@@ -2284,8 +2292,8 @@ void LoadConfigXmlCommand::Execute()
 
 	AppendResponse(IsJson() ? "[\n" : "<array><data>\n");
 
-	int szItemBufSize = 10240;
-	char* szItemBuf = (char*)malloc(szItemBufSize);
+	int iItemBufSize = 1024;
+	char* szItemBuf = (char*)malloc(iItemBufSize);
 	int index = 0;
 
 	for (Options::OptEntries::iterator it = pOptEntries->begin(); it != pOptEntries->end(); it++)
@@ -2295,8 +2303,16 @@ void LoadConfigXmlCommand::Execute()
 		char* xmlName = EncodeStr(pOptEntry->GetName());
 		char* xmlValue = EncodeStr(pOptEntry->GetValue());
 
-		snprintf(szItemBuf, szItemBufSize, IsJson() ? JSON_CONFIG_ITEM : XML_CONFIG_ITEM, xmlName, xmlValue);
-		szItemBuf[szItemBufSize-1] = '\0';
+		// option values can sometimes have unlimited length
+		int iValLen = strlen(xmlValue);
+		if (iValLen > iItemBufSize - 500)
+		{
+			iItemBufSize = iValLen + 500;
+			szItemBuf = (char*)realloc(szItemBuf, iItemBufSize);
+		}
+
+		snprintf(szItemBuf, iItemBufSize, IsJson() ? JSON_CONFIG_ITEM : XML_CONFIG_ITEM, xmlName, xmlValue);
+		szItemBuf[iItemBufSize-1] = '\0';
 
 		free(xmlName);
 		free(xmlValue);
@@ -2407,6 +2423,8 @@ ViewFeedXmlCommand::ViewFeedXmlCommand(bool bPreview)
 
 // struct[] viewfeed(int id)
 // struct[] previewfeed(string name, string url, string filter, bool includeNonMatching)
+// struct[] previewfeed(string name, string url, string filter, bool pauseNzb, string category, int priority,
+//		bool includeNonMatching, int cacheTimeSec, string cacheId)
 void ViewFeedXmlCommand::Execute()
 {
 	bool bOK = false;
@@ -2418,8 +2436,15 @@ void ViewFeedXmlCommand::Execute()
 		char* szName;
 		char* szUrl;
 		char* szFilter;
+		bool bPauseNzb;
+		char* szCategory;
+		int iPriority;
+		char* szCacheId;
+		int iCacheTimeSec;
 		if (!NextParamAsStr(&szName) || !NextParamAsStr(&szUrl) || !NextParamAsStr(&szFilter) ||
-			!NextParamAsBool(&bIncludeNonMatching))
+			!NextParamAsBool(&bPauseNzb) || !NextParamAsStr(&szCategory) || !NextParamAsInt(&iPriority) ||
+			!NextParamAsBool(&bIncludeNonMatching) || !NextParamAsInt(&iCacheTimeSec) ||
+			!NextParamAsStr(&szCacheId))
 		{
 			BuildErrorResponse(2, "Invalid parameter");
 			return;
@@ -2428,12 +2453,14 @@ void ViewFeedXmlCommand::Execute()
 		DecodeStr(szName);
 		DecodeStr(szUrl);
 		DecodeStr(szFilter);
+		DecodeStr(szCacheId);
+		DecodeStr(szCategory);
 
 		debug("Url=%s", szUrl);
 		debug("Filter=%s", szFilter);
 
-		pFeedItemInfos = new FeedItemInfos();
-		bOK = g_pFeedCoordinator->PreviewFeed(szName, szUrl, szFilter, pFeedItemInfos);
+		bOK = g_pFeedCoordinator->PreviewFeed(szName, szUrl, szFilter,
+			bPauseNzb, szCategory, iPriority, iCacheTimeSec, szCacheId, &pFeedItemInfos);
 	}
 	else
 	{
@@ -2446,13 +2473,11 @@ void ViewFeedXmlCommand::Execute()
 
 		debug("ID=%i", iID);
 
-		pFeedItemInfos = new FeedItemInfos();
-		bOK = g_pFeedCoordinator->ViewFeed(iID, pFeedItemInfos);
+		bOK = g_pFeedCoordinator->ViewFeed(iID, &pFeedItemInfos);
 	}
 
 	if (!bOK)
 	{
-		delete pFeedItemInfos;
 		BuildErrorResponse(3, "Could not read feed");
 		return;
 	}
@@ -2466,8 +2491,12 @@ void ViewFeedXmlCommand::Execute()
 		"<member><name>SizeHi</name><value><i4>%i</i4></value></member>\n"
 		"<member><name>SizeMB</name><value><i4>%i</i4></value></member>\n"
 		"<member><name>Category</name><value><string>%s</string></value></member>\n"
+		"<member><name>AddCategory</name><value><string>%s</string></value></member>\n"
+		"<member><name>PauseNzb</name><value><boolean>%s</boolean></value></member>\n"
+		"<member><name>Priority</name><value><i4>%i</i4></value></member>\n"
 		"<member><name>Time</name><value><i4>%i</i4></value></member>\n"
-		"<member><name>Match</name><value><boolean>%s</boolean></value></member>\n"
+		"<member><name>Match</name><value><string>%s</string></value></member>\n"
+		"<member><name>Rule</name><value><i4>%i</i4></value></member>\n"
 		"<member><name>Status</name><value><string>%s</string></value></member>\n"
 		"</struct></value>\n";
 
@@ -2480,12 +2509,17 @@ void ViewFeedXmlCommand::Execute()
 		"\"SizeHi\" : %i,\n"
 		"\"SizeMB\" : %i,\n"
 		"\"Category\" : \"%s\",\n"
+		"\"AddCategory\" : \"%s\",\n"
+		"\"PauseNzb\" : %s,\n"
+		"\"Priority\" : %i,\n"
 		"\"Time\" : %i,\n"
-		"\"Match\" : %s,\n"
+		"\"Match\" : \"%s\",\n"
+		"\"Rule\" : %i,\n"
 		"\"Status\" : \"%s\"\n"
 		"}";
 
     const char* szStatusType[] = { "UNKNOWN", "BACKLOG", "FETCHED", "NEW" };
+    const char* szMatchStatusType[] = { "IGNORED", "ACCEPTED", "REJECTED" };
 
 	int szItemBufSize = 10240;
 	char* szItemBuf = (char*)malloc(szItemBufSize);
@@ -2497,7 +2531,7 @@ void ViewFeedXmlCommand::Execute()
     {
         FeedItemInfo* pFeedItemInfo = *it;
 
-		if (bIncludeNonMatching || pFeedItemInfo->GetMatch())
+		if (bIncludeNonMatching || pFeedItemInfo->GetMatchStatus() == FeedItemInfo::msAccepted)
 		{
 			unsigned long iSizeHi, iSizeLo;
 			Util::SplitInt64(pFeedItemInfo->GetSize(), &iSizeHi, &iSizeLo);
@@ -2507,16 +2541,20 @@ void ViewFeedXmlCommand::Execute()
 			char* xmlfilename = EncodeStr(pFeedItemInfo->GetFilename());
 			char* xmlurl = EncodeStr(pFeedItemInfo->GetUrl());
 			char* xmlcategory = EncodeStr(pFeedItemInfo->GetCategory());
+			char* xmladdcategory = EncodeStr(pFeedItemInfo->GetAddCategory());
 
 			snprintf(szItemBuf, szItemBufSize, IsJson() ? JSON_FEED_ITEM : XML_FEED_ITEM,
-				xmltitle, xmlfilename, xmlurl, iSizeLo, iSizeHi, iSizeMB, xmlcategory, pFeedItemInfo->GetTime(),
-				BoolToStr(pFeedItemInfo->GetMatch()), szStatusType[pFeedItemInfo->GetStatus()]);
+				xmltitle, xmlfilename, xmlurl, iSizeLo, iSizeHi, iSizeMB, xmlcategory, xmladdcategory,
+				BoolToStr(pFeedItemInfo->GetPauseNzb()), pFeedItemInfo->GetPriority(), pFeedItemInfo->GetTime(),
+				szMatchStatusType[pFeedItemInfo->GetMatchStatus()], pFeedItemInfo->GetMatchRule(),
+				szStatusType[pFeedItemInfo->GetStatus()]);
 			szItemBuf[szItemBufSize-1] = '\0';
 
 			free(xmltitle);
 			free(xmlfilename);
 			free(xmlurl);
 			free(xmlcategory);
+			free(xmladdcategory);
 
 			if (IsJson() && index++ > 0)
 			{
@@ -2528,11 +2566,7 @@ void ViewFeedXmlCommand::Execute()
 
 	free(szItemBuf);
 
-    for (FeedItemInfos::iterator it = pFeedItemInfos->begin(); it != pFeedItemInfos->end(); it++)
-    {
-        delete *it;
-    }
-	delete pFeedItemInfos;
+	pFeedItemInfos->Release();
 
 	AppendResponse(IsJson() ? "\n]" : "</data></array>\n");
 }

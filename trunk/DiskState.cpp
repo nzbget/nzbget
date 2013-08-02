@@ -36,6 +36,7 @@
 #include <sys/stat.h>
 #include <stdio.h>
 #include <time.h>
+#include <stdarg.h>
 
 #include "nzbget.h"
 #include "DiskState.h"
@@ -46,6 +47,41 @@
 extern Options* g_pOptions;
 
 static const char* FORMATVERSION_SIGNATURE = "nzbget diskstate file version ";
+
+#ifdef WIN32
+// Windows doesn't have standard "vsscanf"
+// Hack from http://stackoverflow.com/questions/2457331/replacement-for-vsscanf-on-msvc
+int vsscanf(const char *s, const char *fmt, va_list ap)
+{
+	// up to max 10 arguments
+	void *a[10];
+	for (int i = 0; i < sizeof(a)/sizeof(a[0]); i++)
+	{
+		a[i] = va_arg(ap, void*);
+	}
+	return sscanf(s, fmt, a[0], a[1], a[2], a[3], a[4], a[5], a[6], a[7], a[8], a[9]);
+}
+#endif
+
+/*
+ * Standard fscanf scans beoynd current line if the next line is empty.
+ * This wrapper fixes that.
+ */
+int DiskState::fscanf(FILE* infile, const char* Format, ...)
+{
+	char szLine[1024];
+	if (!fgets(szLine, sizeof(szLine), infile)) 
+	{
+		return 0;
+	}
+
+	va_list ap;
+	va_start(ap, Format);
+	int res = vsscanf(szLine, Format, ap);
+	va_end(ap);
+
+	return res;
+}
 
 /* Parse signature and return format version number
 */
@@ -288,7 +324,7 @@ bool DiskState::LoadNZBList(DownloadQueue* pDownloadQueue, FILE* infile, int iFo
 	for (int i = 0; i < size; i++)
 	{
 		NZBInfo* pNZBInfo = new NZBInfo();
-		pNZBInfo->AddReference();
+		pNZBInfo->Retain();
 		pDownloadQueue->GetNZBInfoList()->Add(pNZBInfo);
 
 		if (iFormatVersion >= 24)
@@ -838,7 +874,7 @@ bool DiskState::LoadOldPostQueue(DownloadQueue* pDownloadQueue)
 		if (bNewNZBInfo)
 		{
 			pNZBInfo = new NZBInfo();
-			pNZBInfo->AddReference();
+			pNZBInfo->Retain();
 			pDownloadQueue->GetNZBInfoList()->Add(pNZBInfo);
 			pNZBInfo->SetFilename(buf);
 		}
@@ -1274,7 +1310,7 @@ bool DiskState::SaveFeeds(Feeds* pFeeds, FeedHistory* pFeedHistory)
 		return false;
 	}
 
-	fprintf(outfile, "%s%i\n", FORMATVERSION_SIGNATURE, 2);
+	fprintf(outfile, "%s%i\n", FORMATVERSION_SIGNATURE, 3);
 
 	// save status
 	SaveFeedStatus(pFeeds, outfile);
@@ -1321,7 +1357,7 @@ bool DiskState::LoadFeeds(Feeds* pFeeds, FeedHistory* pFeedHistory)
 	char FileSignatur[128];
 	fgets(FileSignatur, sizeof(FileSignatur), infile);
 	int iFormatVersion = ParseFormatVersion(FileSignatur);
-	if (iFormatVersion > 2)
+	if (iFormatVersion > 3)
 	{
 		error("Could not load diskstate due to file version mismatch");
 		fclose(infile);
@@ -1357,7 +1393,7 @@ bool DiskState::SaveFeedStatus(Feeds* pFeeds, FILE* outfile)
 		FeedInfo* pFeedInfo = *it;
 
 		fprintf(outfile, "%s\n", pFeedInfo->GetUrl());
-		fprintf(outfile, "%s\n", pFeedInfo->GetFilter());
+		fprintf(outfile, "%u\n", pFeedInfo->GetFilterHash());
 		fprintf(outfile, "%i\n", (int)pFeedInfo->GetLastUpdate());
 	}
 
@@ -1377,10 +1413,16 @@ bool DiskState::LoadFeedStatus(Feeds* pFeeds, FILE* infile, int iFormatVersion)
 		if (szUrl[0] != 0) szUrl[strlen(szUrl)-1] = 0; // remove traling '\n'
 
 		char szFilter[1024];
-		if (iFormatVersion > 1)
+		if (iFormatVersion == 2)
 		{
 			if (!fgets(szFilter, sizeof(szFilter), infile)) goto error;
 			if (szFilter[0] != 0) szFilter[strlen(szFilter)-1] = 0; // remove traling '\n'
+		}
+
+		unsigned int iFilterHash = 0;
+		if (iFormatVersion >= 3)
+		{
+			if (fscanf(infile, "%u\n", &iFilterHash) != 1) goto error;
 		}
 
 		int iLastUpdate = 0;
@@ -1390,8 +1432,10 @@ bool DiskState::LoadFeedStatus(Feeds* pFeeds, FILE* infile, int iFormatVersion)
 		{
 			FeedInfo* pFeedInfo = *it;
 
-			if (!strcmp(pFeedInfo->GetUrl(), szUrl) && 
-				(iFormatVersion == 1 || !strcmp(pFeedInfo->GetFilter(), szFilter)))
+			if (!strcmp(pFeedInfo->GetUrl(), szUrl) &&
+				((iFormatVersion == 1) ||
+				 (iFormatVersion == 2 && !strcmp(pFeedInfo->GetFilter(), szFilter)) ||
+				 (iFormatVersion >= 3 && pFeedInfo->GetFilterHash() == iFilterHash)))
 			{
 				pFeedInfo->SetLastUpdate((time_t)iLastUpdate);
 			}
@@ -1401,7 +1445,7 @@ bool DiskState::LoadFeedStatus(Feeds* pFeeds, FILE* infile, int iFormatVersion)
 	return true;
 
 error:
-	error("Error reading feed history from disk");
+	error("Error reading feed status from disk");
 	return false;
 }
 
@@ -1431,7 +1475,8 @@ bool DiskState::LoadFeedHistory(FeedHistory* pFeedHistory, FILE* infile, int iFo
 	{
 		int iStatus = 0;
 		int iLastSeen = 0;
-		if (fscanf(infile, "%i, %i\n", &iStatus, &iLastSeen) != 2) goto error;
+		int r = fscanf(infile, "%i,%i\n", &iStatus, &iLastSeen);
+		if (r != 2) goto error;
 
 		char szUrl[1024];
 		if (!fgets(szUrl, sizeof(szUrl), infile)) goto error;

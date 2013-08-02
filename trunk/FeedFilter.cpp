@@ -42,13 +42,11 @@
 #include "FeedFilter.h"
 
 
-FeedFilter::Term::Term(bool bPositive, const char* szField, ECommand eCommand, const char* szParam, long long iIntParam)
+FeedFilter::Term::Term()
 {
-	m_bPositive = bPositive;
-	m_szField = szField ? strdup(szField) : NULL;
-	m_eCommand = eCommand;
-	m_szParam = strdup(szParam);
-	m_iIntParam = iIntParam;
+	m_szField = NULL;
+	m_szParam = NULL;
+	m_iIntParam = 0;
 	m_pRegEx = NULL;
 }
 
@@ -68,7 +66,26 @@ FeedFilter::Term::~Term()
 	}
 }
 
-bool FeedFilter::Term::Match(const char* szStrValue, const long long iIntValue)
+bool FeedFilter::Term::Match(FeedItemInfo* pFeedItemInfo)
+{
+	const char* szStrValue = NULL;
+	long long iIntValue = 0;
+	if (!GetFieldValue(m_szField, pFeedItemInfo, &szStrValue, &iIntValue))
+	{
+		return false;
+	}
+
+	bool bMatch = MatchValue(szStrValue, iIntValue);
+
+	if (m_bPositive != bMatch)
+	{
+		return false;
+	}
+
+	return true;
+}
+
+bool FeedFilter::Term::MatchValue(const char* szStrValue, const long long iIntValue)
 {
 	switch (m_eCommand)
 	{
@@ -178,61 +195,20 @@ bool FeedFilter::Term::MatchRegex(const char* szStrValue)
 	return bFound;
 }
 
-
-FeedFilter::FeedFilter(const char* szFilter)
-{
-	m_bValid = Compile(szFilter);
-}
-
-FeedFilter::~FeedFilter()
-{
-	for (TermList::iterator it = m_Terms.begin(); it != m_Terms.end(); it++)
-	{
-		delete *it;
-	}
-}
-
-bool FeedFilter::Compile(const char* szFilter)
-{
-	debug("Compiling filter: %s", szFilter);
-
-	bool bOK = true;
-
-	char* szFilter2 = strdup(szFilter);
-	char* szToken = szFilter2;
-
-	for (char* p = szFilter2; *p && bOK; p++)
-	{
-		char ch = *p;
-		if (ch == ' ')
-		{
-			*p = '\0';
-			bOK = CompileToken(szToken);
-			szToken = p + 1;
-		}
-	}
-
-	bOK = bOK && CompileToken(szToken);
-
-	free(szFilter2);
-
-	return bOK;
-}
-
-bool FeedFilter::CompileToken(char* szToken)
+bool FeedFilter::Term::Compile(char* szToken)
 {
 	debug("Token: %s", szToken);
 
 	char ch = szToken[0];
 
-	bool bPositive = ch != '-';
+	m_bPositive = ch != '-';
 	if (ch == '-' || ch == '+')
 	{
 		szToken++;
 	}
 
 	char *szField = NULL;
-	ECommand eCommand = fcText;
+	m_eCommand = fcText;
 
 	char* szColon = strchr(szToken, ':');
 	if (szColon)
@@ -252,91 +228,62 @@ bool FeedFilter::CompileToken(char* szToken)
 
 	if (ch == '@')
 	{
-		eCommand = fcText;
+		m_eCommand = fcText;
 		szToken++;
 	}
 	else if (ch == '$')
 	{
-		eCommand = fcRegex;
+		m_eCommand = fcRegex;
 		szToken++;
 	}
 	else if (ch == '<')
 	{
-		eCommand = fcLess;
+		m_eCommand = fcLess;
 		szToken++;
 	}
 	else if (ch == '<' && ch2 == '=')
 	{
-		eCommand = fcLessEqual;
+		m_eCommand = fcLessEqual;
 		szToken += 2;
 	}
 	else if (ch == '>')
 	{
-		eCommand = fcGreater;
+		m_eCommand = fcGreater;
 		szToken++;
 	}
 	else if (ch == '>' && ch2 == '=')
 	{
-		eCommand = fcGreaterEqual;
+		m_eCommand = fcGreaterEqual;
 		szToken += 2;
 	}
 
-	debug("%s, Field: %s, Command: %i, Param: %s", (bPositive ? "Positive" : "Negative"), szField, eCommand, szToken);
+	debug("%s, Field: %s, Command: %i, Param: %s", (m_bPositive ? "Positive" : "Negative"), szField, m_eCommand, szToken);
 
 	if (!ValidateFieldName(szField))
 	{
 		return false;
 	}
 
-	long long iIntValue = 0;
-
-	if ((szField && !strcasecmp(szField, "size") && !ParseSizeParam(szToken, &iIntValue)) ||
-		(szField && !strcasecmp(szField, "age") && !ParseAgeParam(szToken, &iIntValue)))
+	if ((szField && !strcasecmp(szField, "size") && !ParseSizeParam(szToken, &m_iIntParam)) ||
+		(szField && !strcasecmp(szField, "age") && !ParseAgeParam(szToken, &m_iIntParam)))
 	{
 		return false;
 	}
 
-	m_Terms.push_back(new Term(bPositive, szField, eCommand, szToken, iIntValue));
+	m_szField = szField ? strdup(szField) : NULL;
+	m_szParam = strdup(szToken);
 
 	return true;
 }
 
-bool FeedFilter::ValidateFieldName(const char* szField)
+bool FeedFilter::Term::ValidateFieldName(const char* szField)
 {
 	return !szField || !strcasecmp(szField, "title") || !strcasecmp(szField, "filename") ||
-		!strcasecmp(szField, "category") || !strcasecmp(szField, "size") || !strcasecmp(szField, "age");
+		!strcasecmp(szField, "link") || !strcasecmp(szField, "url") || !strcasecmp(szField, "category") ||
+		!strcasecmp(szField, "size") || !strcasecmp(szField, "age");
 }
 
-bool FeedFilter::Match(FeedItemInfo* pFeedItemInfo)
-{
-	if (!m_bValid)
-	{
-		return false;
-	}
-
-	for (TermList::iterator it = m_Terms.begin(); it != m_Terms.end(); it++)
-	{
-		Term* pTerm = *it;
-
-		const char* szStrValue = NULL;
-		long long iIntValue = 0;
-		if (!GetFieldValue(pTerm->GetField(), pFeedItemInfo, &szStrValue, &iIntValue))
-		{
-			return false;
-		}
-
-		bool bMatch = pTerm->Match(szStrValue, iIntValue);
-
-		if (pTerm->GetPositive() != bMatch)
-		{
-			return false;
-		}
-	}
-
-	return true;
-}
-
-bool FeedFilter::GetFieldValue(const char* szField, FeedItemInfo* pFeedItemInfo, const char** StrValue, long long* IntValue)
+bool FeedFilter::Term::GetFieldValue(const char* szField, FeedItemInfo* pFeedItemInfo, const char** StrValue, long long* IntValue)
 {
 	*StrValue = NULL;
 	*IntValue = 0;
@@ -375,7 +322,7 @@ bool FeedFilter::GetFieldValue(const char* szField, FeedItemInfo* pFeedItemInfo,
 	return false;
 }
 
-bool FeedFilter::ParseSizeParam(const char* szParam, long long* pIntValue)
+bool FeedFilter::Term::ParseSizeParam(const char* szParam, long long* pIntValue)
 {
 	*pIntValue = 0;
 
@@ -410,7 +357,7 @@ bool FeedFilter::ParseSizeParam(const char* szParam, long long* pIntValue)
 	return true;
 }
 
-bool FeedFilter::ParseAgeParam(const char* szParam, long long* pIntValue)
+bool FeedFilter::Term::ParseAgeParam(const char* szParam, long long* pIntValue)
 {
 	*pIntValue = atoll(szParam);
 
@@ -445,4 +392,289 @@ bool FeedFilter::ParseAgeParam(const char* szParam, long long* pIntValue)
 	}
 
 	return true;
+}
+
+
+FeedFilter::Rule::Rule()
+{
+	m_eCommand = frAccept;
+	m_bIsValid = false;
+	m_szCategory = NULL;
+	m_iPriority = 0;
+	m_bPause = false;
+	m_bHasCategory = false;
+	m_bHasPriority = false;
+	m_bHasPause = false;
+}
+
+FeedFilter::Rule::~Rule()
+{
+	if (m_szCategory)
+	{
+		free(m_szCategory);
+	}
+
+	for (TermList::iterator it = m_Terms.begin(); it != m_Terms.end(); it++)
+	{
+		delete *it;
+	}
+}
+
+void FeedFilter::Rule::Compile(char* szRule)
+{
+	debug("Compiling rule: %s", szRule);
+
+	m_bIsValid = true;
+
+	char* szFilter3 = Util::Trim(szRule);
+
+	char* szTerm = CompileCommand(szFilter3);
+	if (!szTerm)
+	{
+		m_bIsValid = false;
+		return;
+	}
+	if (m_eCommand == frComment)
+	{
+		return;
+	}
+
+	szTerm = Util::Trim(szTerm);
+
+	for (char* p = szTerm; *p && m_bIsValid; p++)
+	{
+		char ch = *p;
+		if (ch == ' ')
+		{
+			*p = '\0';
+			m_bIsValid = CompileTerm(szTerm);
+			szTerm = p + 1;
+			while (*szTerm == ' ') szTerm++;
+		}
+	}
+
+	m_bIsValid = m_bIsValid && CompileTerm(szTerm);
+}
+
+/* Checks if the rule starts with command and compiles it.
+ * Returns a pointer to the next (first) term or NULL in a case of compilation error.
+ */
+char* FeedFilter::Rule::CompileCommand(char* szRule)
+{
+	if (!strncasecmp(szRule, "A:", 2) || !strncasecmp(szRule, "Accept:", 7) ||
+		!strncasecmp(szRule, "A(", 2) || !strncasecmp(szRule, "Accept(", 7))
+	{
+		m_eCommand = frAccept;
+		szRule += szRule[1] == ':' || szRule[1] == '(' ? 2 : 7;
+	}
+	else if (!strncasecmp(szRule, "O(", 2) || !strncasecmp(szRule, "Options(", 8))
+	{
+		m_eCommand = frOptions;
+		szRule += szRule[1] == ':' || szRule[1] == '(' ? 2 : 7;
+	}
+	else if (!strncasecmp(szRule, "R:", 2) || !strncasecmp(szRule, "Reject:", 7))
+	{
+		m_eCommand = frReject;
+		szRule += szRule[1] == ':' || szRule[1] == '(' ? 2 : 7;
+	}
+	else if (!strncasecmp(szRule, "Q:", 2) || !strncasecmp(szRule, "Require:", 8))
+	{
+		m_eCommand = frRequire;
+		szRule += szRule[1] == ':' || szRule[1] == '(' ? 2 : 8;
+	}
+	else if (*szRule == '#')
+	{
+		m_eCommand = frComment;
+		return szRule;
+	}
+	else
+	{
+		// not a command
+		return szRule;
+	}
+
+	if ((m_eCommand == frAccept || m_eCommand == frOptions) && szRule[-1] == '(')
+	{
+		if (char* p = strchr(szRule, ')'))
+		{
+			// split command into tokens
+			*p = '\0';
+			char* saveptr;
+			char* szToken = strtok_r(szRule, ",", &saveptr);
+			while (szToken)
+			{
+				szToken = Util::Trim(szToken);
+				if (*szToken)
+				{
+					if (!strcasecmp(szToken, "paused") || !strcasecmp(szToken, "unpaused"))
+					{
+						m_bHasPause = true;
+						m_bPause = !strcasecmp(szToken, "paused");
+					}
+					else if (strchr("0123456789-+", *szToken))
+					{
+						m_bHasPriority = true;
+						m_iPriority = atoi(szToken);
+					}
+					else
+					{
+						m_bHasCategory = true;
+						m_szCategory = strdup(szToken);
+					}
+				}
+				szToken = strtok_r(NULL, ",", &saveptr);
+			}
+
+			szRule = p + 1;
+			if (*szRule == ':')
+			{
+				szRule++;
+			}
+		}
+		else
+		{
+			// error
+			return NULL;
+		}
+	}
+
+	return szRule;
+}
+
+bool FeedFilter::Rule::CompileTerm(char* szTerm)
+{
+	Term* pTerm = new Term();
+	if (pTerm->Compile(szTerm))
+	{
+		m_Terms.push_back(pTerm);
+		return true;
+	}
+	else
+	{
+		delete pTerm;
+		return false;
+	}
+}
+
+bool FeedFilter::Rule::Match(FeedItemInfo* pFeedItemInfo)
+{
+	for (TermList::iterator it = m_Terms.begin(); it != m_Terms.end(); it++)
+	{
+		Term* pTerm = *it;
+		if (!pTerm->Match(pFeedItemInfo))
+		{
+			return false;
+		}
+	}
+
+	return true;
+}
+
+
+FeedFilter::FeedFilter(const char* szFilter)
+{
+	Compile(szFilter);
+}
+
+FeedFilter::~FeedFilter()
+{
+	for (RuleList::iterator it = m_Rules.begin(); it != m_Rules.end(); it++)
+	{
+		delete *it;
+	}
+}
+
+void FeedFilter::Compile(const char* szFilter)
+{
+	debug("Compiling filter: %s", szFilter);
+
+	char* szFilter2 = strdup(szFilter);
+	char* szRule = szFilter2;
+
+	for (char* p = szRule; *p; p++)
+	{
+		char ch = *p;
+		if (ch == '%')
+		{
+			*p = '\0';
+			CompileRule(szRule);
+			szRule = p + 1;
+		}
+	}
+
+	CompileRule(szRule);
+
+	free(szFilter2);
+}
+
+void FeedFilter::CompileRule(char* szRule)
+{
+	Rule* pRule = new Rule();
+	m_Rules.push_back(pRule);
+	pRule->Compile(szRule);
+}
+
+void FeedFilter::Match(FeedItemInfo* pFeedItemInfo)
+{
+	int index = 0;
+	for (RuleList::iterator it = m_Rules.begin(); it != m_Rules.end(); it++)
+	{
+		Rule* pRule = *it;
+		index++;
+		if (pRule->IsValid())
+		{
+			bool bMatch = pRule->Match(pFeedItemInfo);
+			switch (pRule->GetCommand())
+			{
+				case frAccept:
+				case frOptions:
+					if (bMatch)
+					{
+						pFeedItemInfo->SetMatchStatus(FeedItemInfo::msAccepted);
+						pFeedItemInfo->SetMatchRule(index);
+						if (pRule->HasPause())
+						{
+							pFeedItemInfo->SetPauseNzb(pRule->GetPause());
+						}
+						if (pRule->HasCategory())
+						{
+							pFeedItemInfo->SetAddCategory(pRule->GetCategory());
+						}
+						if (pRule->HasPriority())
+						{
+							pFeedItemInfo->SetPriority(pRule->GetPriority());
+						}
+						if (pRule->GetCommand() == frAccept)
+						{
+							return;
+						}
+					}
+					break;
+
+				case frReject:
+					if (bMatch)
+					{
+						pFeedItemInfo->SetMatchStatus(FeedItemInfo::msRejected);
+						pFeedItemInfo->SetMatchRule(index);
+						return;
+					}
+					break;
+
+				case frRequire:
+					if (!bMatch)
+					{
+						pFeedItemInfo->SetMatchStatus(FeedItemInfo::msRejected);
+						pFeedItemInfo->SetMatchRule(index);
+						return;
+					}
+					break;
+
+				case frComment:
+					break;
+			}
+		}
+	}
+
+	pFeedItemInfo->SetMatchStatus(FeedItemInfo::msIgnored);
+	pFeedItemInfo->SetMatchRule(0);
 }

@@ -128,8 +128,10 @@ public:
 	static float Int64ToFloat(long long Int64);
 
 	static void TrimRight(char* szStr);
-
 	static char* Trim(char* szStr);
+
+	/* Calculate Hash using Bob Jenkins (1996) algorithm */
+	static unsigned int HashBJ96(const char* szBuffer, int iBufSize);
 
 #ifdef WIN32
 	static bool RegReadStr(HKEY hKey, const char* szKeyName, const char* szValueName, char* szBuffer, int* iBufLen);

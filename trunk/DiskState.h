@@ -31,6 +31,7 @@
 class DiskState
 {
 private:
+	int					fscanf(FILE* infile, const char* Format, ...);
 	int					ParseFormatVersion(const char* szFormatSignature);
 	bool				SaveFileInfo(FileInfo* pFileInfo, const char* szFilename);
 	bool				LoadFileInfo(FileInfo* pFileInfo, const char* szFilename, bool bFileSummary, bool bArticles);

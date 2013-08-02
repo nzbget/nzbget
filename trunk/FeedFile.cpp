@@ -58,6 +58,8 @@ FeedFile::FeedFile(const char* szFileName)
     debug("Creating FeedFile");
 
     m_szFileName = strdup(szFileName);
+	m_pFeedItemInfos = new FeedItemInfos();
+	m_pFeedItemInfos->Retain();
 
 #ifndef WIN32
 	m_pFeedItemInfo = NULL;
@@ -76,11 +78,7 @@ FeedFile::~FeedFile()
         free(m_szFileName);
     }
 
-    for (FeedItemInfos::iterator it = m_FeedItemInfos.begin(); it != m_FeedItemInfos.end(); it++)
-    {
-        delete *it;
-    }
-    m_FeedItemInfos.clear();
+	m_pFeedItemInfos->Release();
 
 #ifndef WIN32
 	if (m_pFeedItemInfo)
@@ -102,12 +100,7 @@ void FeedFile::LogDebugInfo()
 
 void FeedFile::AddItem(FeedItemInfo* pFeedItemInfo)
 {
-	m_FeedItemInfos.push_back(pFeedItemInfo);
-}
-
-void FeedFile::DetachFeedItemInfos()
-{
-    m_FeedItemInfos.clear();
+	m_pFeedItemInfos->push_back(pFeedItemInfo);
 }
 
 void FeedFile::ParseSubject(FeedItemInfo* pFeedItemInfo)
