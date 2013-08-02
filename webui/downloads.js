@@ -531,11 +531,11 @@ var DownloadsUI = (new function($)
 	this.fillPriorityCombo = function(combo)
 	{
 		combo.empty();
-		combo.append('<option value="-100">very low</option>');
-		combo.append('<option value="-50">low</option>');
-		combo.append('<option value="0">normal</option>');
-		combo.append('<option value="50">high</option>');
 		combo.append('<option value="100">very high</option>');
+		combo.append('<option value="50">high</option>');
+		combo.append('<option value="0">normal</option>');
+		combo.append('<option value="-50">low</option>');
+		combo.append('<option value="-100">very low</option>');
 	}
 
 	this.fillCategoryCombo = function(combo)
