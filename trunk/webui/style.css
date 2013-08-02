@@ -750,11 +750,15 @@ form {
 }
 
 .modal-body {
-  max-height: 360px;
+	max-height: 360px;
 }
 
 .modal.no-footer .modal-body {
-  max-height: 400px;
+	max-height: 400px;
+}
+
+.modal-footer .btn-primary {
+	min-width: 40px;
 }
 
 .modal-body .alert {
@@ -1084,8 +1088,8 @@ table.table-hidecheck tbody > tr > td:first-child {
 }
 
 .modal-mini {
-  width: 400px;
-  margin-left:-200px;
+  width: 420px;
+  margin-left:-210px;
 }
 
 .modal-small {
