@@ -70,7 +70,9 @@ bool FeedFilter::Term::Match(FeedItemInfo* pFeedItemInfo)
 {
 	const char* szStrValue = NULL;
 	long long iIntValue = 0;
-	if (!GetFieldValue(m_szField, pFeedItemInfo, &szStrValue, &iIntValue))
+	EFieldType FieldType;
+
+	if (!GetFieldData(m_szField, pFeedItemInfo, &FieldType, &szStrValue, &iIntValue))
 	{
 		return false;
 	}
@@ -264,7 +266,12 @@ bool FeedFilter::Term::Compile(char* szToken)
 
 	debug("%s, Field: %s, Command: %i, Param: %s", (m_bPositive ? "Positive" : "Negative"), szField, m_eCommand, szToken);
 
-	if (!ValidateFieldName(szField))
+	const char* szStrValue;
+	long long iIntValue;
+	EFieldType eFieldType;
+	if (!GetFieldData(szField, NULL, &eFieldType, &szStrValue, &iIntValue) ||
+		(m_eCommand < fcLess && eFieldType != ftString) ||
+		(m_eCommand >= fcLess && eFieldType != ftNumeric))
 	{
 		return false;
 	}
@@ -281,46 +288,49 @@ bool FeedFilter::Term::Compile(char* szToken)
 	return true;
 }
 
-bool FeedFilter::Term::ValidateFieldName(const char* szField)
-{
-	return !szField || !strcasecmp(szField, "title") || !strcasecmp(szField, "filename") ||
-		!strcasecmp(szField, "link") || !strcasecmp(szField, "url") || !strcasecmp(szField, "category") ||
-		!strcasecmp(szField, "size") || !strcasecmp(szField, "age");
-}
-
-bool FeedFilter::Term::GetFieldValue(const char* szField, FeedItemInfo* pFeedItemInfo, const char** StrValue, long long* IntValue)
+/*
+ * If pFeedItemInfo is NULL, only field type info is returned
+ */
+bool FeedFilter::Term::GetFieldData(const char* szField, FeedItemInfo* pFeedItemInfo,
+	EFieldType* FieldType, const char** StrValue, long long* IntValue)
 {
 	*StrValue = NULL;
 	*IntValue = 0;
 
 	if (!szField || !strcasecmp(szField, "title"))
 	{
-		*StrValue = pFeedItemInfo->GetTitle();
+		*StrValue = pFeedItemInfo ? pFeedItemInfo->GetTitle() : NULL;
+		*FieldType = ftString;
 		return true;
 	}
 	else if (!strcasecmp(szField, "filename"))
 	{
-		*StrValue = pFeedItemInfo->GetFilename();
+		*StrValue = pFeedItemInfo ? pFeedItemInfo->GetFilename() : NULL;
+		*FieldType = ftString;
 		return true;
 	}
 	else if (!strcasecmp(szField, "category"))
 	{
-		*StrValue = pFeedItemInfo->GetCategory();
+		*StrValue = pFeedItemInfo ? pFeedItemInfo->GetCategory() : NULL;
+		*FieldType = ftString;
 		return true;
 	}
 	else if (!strcasecmp(szField, "link") || !strcasecmp(szField, "url"))
 	{
-		*StrValue = pFeedItemInfo->GetUrl();
+		*StrValue = pFeedItemInfo ? pFeedItemInfo->GetUrl() : NULL;
+		*FieldType = ftString;
 		return true;
 	}
 	else if (!strcasecmp(szField, "size"))
 	{
-		*IntValue = pFeedItemInfo->GetSize();
+		*IntValue = pFeedItemInfo ? pFeedItemInfo->GetSize() : NULL;
+		*FieldType = ftNumeric;
 		return true;
 	}
 	else if (!strcasecmp(szField, "age"))
 	{
-		*IntValue = time(NULL) - pFeedItemInfo->GetTime();
+		*IntValue = pFeedItemInfo ? time(NULL) - pFeedItemInfo->GetTime() : NULL;
+		*FieldType = ftNumeric;
 		return true;
 	}
 

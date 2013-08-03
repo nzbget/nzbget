@@ -41,6 +41,12 @@ private:
 		fcGreater,
 		fcGreaterEqual,
 	};
+	
+	enum EFieldType
+	{
+		ftString,
+		ftNumeric
+	};
 
 	class Term
 	{
@@ -52,8 +58,8 @@ private:
 		long long		m_iIntParam;
 		RegEx*			m_pRegEx;
 
-		bool			GetFieldValue(const char* szField, FeedItemInfo* pFeedItemInfo, const char** StrValue, long long* IntValue);
-		bool			ValidateFieldName(const char* szField);
+		bool			GetFieldData(const char* szField, FeedItemInfo* pFeedItemInfo,
+							EFieldType* FieldType, const char** StrValue, long long* IntValue);
 		bool			ParseSizeParam(const char* szParam, long long* pIntValue);
 		bool			ParseAgeParam(const char* szParam, long long* pIntValue);
 		bool			MatchValue(const char* szStrValue, const long long iIntValue);
