@@ -205,20 +205,25 @@ bool FeedFilter::Term::Compile(char* szToken)
 	if (ch == '-' || ch == '+')
 	{
 		szToken++;
+		ch = szToken[0];
 	}
 
 	char *szField = NULL;
 	m_eCommand = fcText;
 
-	char* szColon = strchr(szToken, ':');
+	char* szColon = NULL;
+	if (ch != '@' && ch != '$' && ch != '<' && ch != '>' && ch != '=')
+	{
+		szColon = strchr(szToken, ':');
+	}
 	if (szColon)
 	{
 		szField = szToken;
 		szColon[0] = '\0';
 		szToken = szColon + 1;
+		ch = szToken[0];
 	}
 
-	ch = szToken[0];
 	if (ch == '\0')
 	{
 		return false;
