@@ -243,25 +243,25 @@ bool FeedFilter::Term::Compile(char* szToken)
 		m_eCommand = fcRegex;
 		szToken++;
 	}
-	else if (ch == '<')
-	{
-		m_eCommand = fcLess;
-		szToken++;
-	}
 	else if (ch == '<' && ch2 == '=')
 	{
 		m_eCommand = fcLessEqual;
 		szToken += 2;
 	}
-	else if (ch == '>')
-	{
-		m_eCommand = fcGreater;
-		szToken++;
-	}
 	else if (ch == '>' && ch2 == '=')
 	{
 		m_eCommand = fcGreaterEqual;
 		szToken += 2;
+	}
+	else if (ch == '<')
+	{
+		m_eCommand = fcLess;
+		szToken++;
+	}
+	else if (ch == '>')
+	{
+		m_eCommand = fcGreater;
+		szToken++;
 	}
 
 	debug("%s, Field: %s, Command: %i, Param: %s", (m_bPositive ? "Positive" : "Negative"), szField, m_eCommand, szToken);
