@@ -679,6 +679,8 @@ private:
 	time_t				m_tTime;
 	long long			m_lSize;
 	char*				m_szCategory;
+	int					m_iRating;
+	char*				m_szGenre;
 	char*				m_szAddCategory;
 	bool				m_bPauseNzb;
 	int					m_iPriority;
@@ -699,6 +701,10 @@ public:
 	void				SetSize(long long lSize) { m_lSize = lSize; }
 	const char*			GetCategory() { return m_szCategory; }
 	void				SetCategory(const char* szCategory);
+	int					GetRating() { return m_iRating; }
+	void				SetRating(int iRating) { m_iRating = iRating; }
+	const char*			GetGenre() { return m_szGenre; }
+	void				SetGenre(const char* szGenre);
 	const char*			GetAddCategory() { return m_szAddCategory; }
 	void				SetAddCategory(const char* szAddCategory);
 	bool				GetPauseNzb() { return m_bPauseNzb; }

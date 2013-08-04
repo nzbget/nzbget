@@ -277,7 +277,8 @@ bool FeedFilter::Term::Compile(char* szToken)
 	}
 
 	if ((szField && !strcasecmp(szField, "size") && !ParseSizeParam(szToken, &m_iIntParam)) ||
-		(szField && !strcasecmp(szField, "age") && !ParseAgeParam(szToken, &m_iIntParam)))
+		(szField && !strcasecmp(szField, "age") && !ParseAgeParam(szToken, &m_iIntParam)) ||
+		(szField && !strcasecmp(szField, "rating") && !ParseRatingParam(szToken, &m_iIntParam)))
 	{
 		return false;
 	}
@@ -321,6 +322,12 @@ bool FeedFilter::Term::GetFieldData(const char* szField, FeedItemInfo* pFeedItem
 		*FieldType = ftString;
 		return true;
 	}
+	else if (!strcasecmp(szField, "genre"))
+	{
+		*StrValue = pFeedItemInfo ? pFeedItemInfo->GetGenre() : NULL;
+		*FieldType = ftString;
+		return true;
+	}
 	else if (!strcasecmp(szField, "size"))
 	{
 		*IntValue = pFeedItemInfo ? pFeedItemInfo->GetSize() : NULL;
@@ -330,6 +337,12 @@ bool FeedFilter::Term::GetFieldData(const char* szField, FeedItemInfo* pFeedItem
 	else if (!strcasecmp(szField, "age"))
 	{
 		*IntValue = pFeedItemInfo ? time(NULL) - pFeedItemInfo->GetTime() : NULL;
+		*FieldType = ftNumeric;
+		return true;
+	}
+	else if (!strcasecmp(szField, "rating"))
+	{
+		*IntValue = pFeedItemInfo ? pFeedItemInfo->GetRating() : NULL;
 		*FieldType = ftNumeric;
 		return true;
 	}
@@ -377,7 +390,7 @@ bool FeedFilter::Term::ParseAgeParam(const char* szParam, long long* pIntValue)
 	*pIntValue = atoll(szParam);
 
 	const char* p;
-	for (p = szParam; *p && ((*p >= '0' && *p <='9') || *p == '.'); p++) ;
+	for (p = szParam; *p && (*p >= '0' && *p <='9'); p++) ;
 	if (*p)
 	{
 		if (!strcasecmp(p, "m"))
@@ -409,6 +422,29 @@ bool FeedFilter::Term::ParseAgeParam(const char* szParam, long long* pIntValue)
 	return true;
 }
 
+bool FeedFilter::Term::ParseRatingParam(const char* szParam, long long* pIntValue)
+{
+	*pIntValue = 0;
+	
+	double fParam = atof(szParam);
+	
+	const char* p;
+	for (p = szParam; *p && ((*p >= '0' && *p <='9') || *p == '.'); p++) ;
+	if (*p)
+	{
+		return false;
+	}
+	else if (strchr(szParam, '.'))
+	{
+		*pIntValue = (long long)(fParam * 10);
+	}
+	else
+	{
+		*pIntValue = (long long)fParam;
+	}
+	
+	return true;
+}
 
 FeedFilter::Rule::Rule()
 {

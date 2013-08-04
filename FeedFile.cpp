@@ -366,14 +366,30 @@ void FeedFile::Parse_StartElement(const char *name, const char **atts)
 			}
 		}
 	}
-	else if (!strcmp("newznab:attr", name) && m_pFeedItemInfo && m_pFeedItemInfo->GetSize() == 0)
+	else if (!strcmp("newznab:attr", name))
 	{
 		//<newznab:attr name="size" value="5423523453534" />
-		if (atts[0] && atts[1] && atts[2] && atts[3] &&
+		if (m_pFeedItemInfo && m_pFeedItemInfo->GetSize() == 0 &&
+			atts[0] && atts[1] && atts[2] && atts[3] &&
 			!strcmp("name", atts[0]) && !strcmp("size", atts[1]) && !strcmp("value", atts[2]))
 		{
 			long long lSize = atoll(atts[3]);
 			m_pFeedItemInfo->SetSize(lSize);
+		}
+
+		//<newznab:attr name="genre" value="Adventure|Animation|Family" />
+		else if (atts[0] && atts[1] && atts[2] && atts[3] &&
+			!strcmp("name", atts[0]) && !strcmp("genre", atts[1]) && !strcmp("value", atts[2]))
+		{
+			m_pFeedItemInfo->SetGenre(atts[3]);
+		}
+
+		//<newznab:attr name="rating" value="70" />
+		//<newznab:attr name="rating" value="7.0" />
+		else if (atts[0] && atts[1] && atts[2] && atts[3] &&
+			!strcmp("name", atts[0]) && !strcmp("rating", atts[1]) && !strcmp("value", atts[2]))
+		{
+			m_pFeedItemInfo->SetRating(int(atof(atts[3]) * (strchr(atts[3], '.') ? 10 : 1)));
 		}
 	}
 }

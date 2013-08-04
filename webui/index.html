@@ -1372,7 +1372,7 @@
 		<td>field</td>
 		<td>
 		field to which apply the term. Available fields: title,
-				   filename, category, link, size, age. If not specified
+				   filename, category, link, size, age, genre, rating. If not specified
 				   the default field "title" is used;
 		</td></tr>
 		<tr><td>command</td>
@@ -1400,9 +1400,9 @@
 		
 		<ul>
 		<li>Commands @ and $ are for use with text fields (title, filename, category,
-		link).</li>
+		link, genre).</li>
 		<li>Commands &lt;, &lt;=, &gt; and &gt;= are for use with numeric fields (size,
-		age).</li>
+		age, rating).</li>
 		</ul>
 
 		<strong>More about text search (command @):</strong>
@@ -1415,6 +1415,17 @@
 		<li>If the search pattern contains word separator characters (except * and ?) the search
 		is performed on the whole field (the word-search would be obviously never successful in this case).</li>
 		<li>Word separators: !\"#$%&'()*+,-./:;&lt;=&gt;?@[\\]^_`{|}~</li>
+		</ul>
+
+		<strong>About numeric fields:</strong>
+		<ul>
+		<li>Field "size" can have suffixes "K" or "KB" for kilobytes, "M" or "MB" for megabytes and
+		"G" or "GB" for gigabytes.</li>
+		<li>Field "age" can have suffixes "m" for minutes, "h" for hours and "d" for days. If suffix
+		is not specified default is days.</li>
+		<li>Field "rating" can be used with integer or floating point parameter. Integer parameter
+		is interpreted as value of rating between 0 and 100. A floating point value is used
+		as rating between 0.0 and 10.0.</li>
 		</ul>
 		
 		<h4>Examples</h4>
