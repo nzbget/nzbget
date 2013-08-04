@@ -1120,6 +1120,8 @@ FeedItemInfo::FeedItemInfo()
 	m_szCategory = strdup("");
 	m_lSize = 0;
 	m_tTime = 0;
+	m_iRating = 0;
+	m_szGenre = strdup("");
 	m_szAddCategory = strdup("");
 	m_bPauseNzb = false;
 	m_iPriority = 0;
@@ -1145,6 +1147,10 @@ FeedItemInfo::~FeedItemInfo()
 	if (m_szCategory)
 	{
 		free(m_szCategory);
+	}
+	if (m_szGenre)
+	{
+		free(m_szGenre);
 	}
 	if (m_szAddCategory)
 	{
@@ -1186,6 +1192,15 @@ void FeedItemInfo::SetCategory(const char* szCategory)
 		free(m_szCategory);
 	}
 	m_szCategory = strdup(szCategory ? szCategory: "");
+}
+
+void FeedItemInfo::SetGenre(const char* szGenre)
+{
+	if (m_szGenre)
+	{
+		free(m_szGenre);
+	}
+	m_szGenre = strdup(szGenre ? szGenre: "");
 }
 
 void FeedItemInfo::SetAddCategory(const char* szAddCategory)
