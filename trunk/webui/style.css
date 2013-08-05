@@ -1277,13 +1277,12 @@ ul.help > li {
 }
 
 #ConfigContent .config-header {
-	font-size: 16px;
-	font-weight: bold;
 	padding: 7px;
 	-webkit-border-radius: 3px;
 	-moz-border-radius: 3px;
 	border-radius: 3px;
 	margin-bottom: 20px;
+	padding-right: 0;
 	padding-top: 0;
 	border-bottom: 1px solid #eeeeee;
 }
@@ -1291,6 +1290,23 @@ ul.help > li {
 #ConfigTitle {
 	margin-top: 15px;
 	margin-right: 15px;
+	font-size: 16px;
+	font-weight: bold;
+}
+
+.config-header .btn-group {
+	margin-right: 0;
+}
+
+.config-header .btn {
+	margin-top: 7px;
+	margin-right: 0;
+	background-color: #ffffff;
+	background-image: none;
+	border: none;
+  -webkit-box-shadow: none;
+     -moz-box-shadow: none;
+          box-shadow: none;
 }
 
 span.help-option-title {
@@ -1300,6 +1316,10 @@ span.help-option-title {
 #ConfigContent p.help-block {
 	margin-top: 6px;
 	line-height: 16px;
+}
+
+#ConfigContent.hide-help-block p.help-block {
+	display: none;
 }
 
 #ConfigContent .control-label {
@@ -1360,6 +1380,10 @@ div.ConfigFooter {
 	border-bottom: 1px solid #eeeeee;
 }
 
+#ConfigContent.hide-help-block .config-settitle {
+	margin-bottom: 15px;
+}
+
 .config-multicaption {
 	color: #c0c0c0;
 	font-weight: normal;
@@ -1371,6 +1395,13 @@ div.ConfigFooter {
 #ConfigContent.search div.control-group.multiset {
 	border-bottom: 1px solid #eeeeee;
 	margin-bottom: 15px;
+	padding-bottom: 12px;
+}
+
+#ConfigContent.hide-help-block div.control-group,
+#ConfigContent.hide-help-block div.control-group.multiset {
+	border-bottom: none;
+	margin-bottom: 0px;
 	padding-bottom: 12px;
 }
 

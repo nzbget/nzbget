@@ -453,7 +453,14 @@
 							<div>
 
 								<div class="config-header clearfix">
-									<div class="pull-left config-title" id="ConfigTitle">INFO: SETTINGS</div>
+									<div class="pull-left" id="ConfigTitle">INFO: SETTINGS</div>
+									<div class="btn-group pull-right">
+										<a class="btn dropdown-toggle" data-toggle="dropdown">View <span class="caret"></span></a>
+										<ul class="dropdown-menu footer-button-menu" id="Config_ViewMenu">
+											<li class="menu-header">View Options</li>
+											<li><a href="#" id="Config_ViewCompact" onclick="Config.viewMode()"><i class="icon-ok"></i> Compact Mode</a></li>
+										</ul>
+									</div>
 								</div>
 
 								<div id="ConfigInfo">
