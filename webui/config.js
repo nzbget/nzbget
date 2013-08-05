@@ -475,6 +475,7 @@ var Config = (new function($)
 	var reloadTime;
 	var updateTabInfo;
 	var restored = false;
+	var compactMode = false;
 
 	this.init = function(options)
 	{
@@ -491,6 +492,8 @@ var Config = (new function($)
 
 		Util.show('#ConfigBackupSafariNote', $.browser.safari);
 		$('#ConfigTable_filter').val('');
+		compactMode = UISettings.read('$Config_ViewCompact', 'no') == 'yes';
+		setViewMode();
 
 		$('#ConfigTabLink').on('show', show);
 		$('#ConfigTabLink').on('shown', shown);
@@ -1237,8 +1240,21 @@ var Config = (new function($)
 		});
 	}
 
-	/*** OPTION SPECIFIC EDITORS *************************************************/
+	this.viewMode = function()
+	{
+		compactMode = !compactMode;
+		UISettings.write('$Config_ViewCompact', compactMode ? 'yes' : 'no');
+		setViewMode();
+	}
 	
+	function setViewMode()
+	{
+		$('#Config_ViewCompact i').toggleClass('icon-ok', compactMode).toggleClass('icon-empty', !compactMode);
+		$ConfigContent.toggleClass('hide-help-block', compactMode);
+	}
+
+	/*** OPTION SPECIFIC EDITORS *************************************************/
+
 	this.editScriptOrder = function(optFormId)
 	{
 		var option = findOptionById(optFormId);
