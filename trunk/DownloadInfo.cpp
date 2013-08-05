@@ -1122,6 +1122,9 @@ FeedItemInfo::FeedItemInfo()
 	m_tTime = 0;
 	m_iRating = 0;
 	m_szGenre = strdup("");
+	m_iRageId = 0;
+	m_iSeason = 0;
+	m_iEpisode = 0;
 	m_szAddCategory = strdup("");
 	m_bPauseNzb = false;
 	m_iPriority = 0;

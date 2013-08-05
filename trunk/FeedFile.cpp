@@ -138,6 +138,16 @@ void FeedFile::ParseSubject(FeedItemInfo* pFeedItemInfo)
 	pFeedItemInfo->SetFilename(pFeedItemInfo->GetTitle());
 }
 
+int FeedFile::ParsePrefixedInt(const char *szValue)
+{
+	const char* szVal = szValue;
+	if (!strchr("0123456789", *szVal))
+	{
+		szVal++;
+	}
+	return atoi(szVal);
+}
+
 #ifdef WIN32
 FeedFile* FeedFile::Create(const char* szFileName)
 {
@@ -303,6 +313,70 @@ bool FeedFile::ParseFeed(IUnknown* nzb)
 				}
 			}
 		}
+
+		//<newznab:attr name="genre" value="Adventure|Animation|Family" />
+		tag = node->selectSingleNode("newznab:attr[@name='genre']");
+		if (tag)
+		{
+			attr = tag->Getattributes()->getNamedItem("value");
+			if (attr)
+			{
+				_bstr_t val(attr->Gettext());
+				pFeedItemInfo->SetGenre(val);
+			}
+		}
+
+		//<newznab:attr name="rating" value="70" />
+		//<newznab:attr name="rating" value="7.0" />
+		tag = node->selectSingleNode("newznab:attr[@name='rating']");
+		if (tag)
+		{
+			attr = tag->Getattributes()->getNamedItem("value");
+			if (attr)
+			{
+				_bstr_t val(attr->Gettext());
+				pFeedItemInfo->SetRating(int(atof(val) * (strchr((const char*)val, '.') ? 10 : 1)));
+			}
+		}
+
+		//<newznab:attr name="rageid" value="33877"/>
+		tag = node->selectSingleNode("newznab:attr[@name='rageid']");
+		if (tag)
+		{
+			attr = tag->Getattributes()->getNamedItem("value");
+			if (attr)
+			{
+				_bstr_t val(attr->Gettext());
+				int iVal = atoi(val);
+				pFeedItemInfo->SetRageId(iVal);
+			}
+		}
+
+		//<newznab:attr name="episode" value="E09"/>
+		//<newznab:attr name="episode" value="9"/>
+		tag = node->selectSingleNode("newznab:attr[@name='episode']");
+		if (tag)
+		{
+			attr = tag->Getattributes()->getNamedItem("value");
+			if (attr)
+			{
+				_bstr_t val(attr->Gettext());
+				pFeedItemInfo->SetEpisode(ParsePrefixedInt(val));
+			}
+		}
+
+		//<newznab:attr name="season" value="S03"/>
+		//<newznab:attr name="season" value="3"/>
+		tag = node->selectSingleNode("newznab:attr[@name='season']");
+		if (tag)
+		{
+			attr = tag->Getattributes()->getNamedItem("value");
+			if (attr)
+			{
+				_bstr_t val(attr->Gettext());
+				pFeedItemInfo->SetSeason(ParsePrefixedInt(val));
+			}
+		}
 	}
 	return true;
 }
@@ -390,6 +464,29 @@ void FeedFile::Parse_StartElement(const char *name, const char **atts)
 			!strcmp("name", atts[0]) && !strcmp("rating", atts[1]) && !strcmp("value", atts[2]))
 		{
 			m_pFeedItemInfo->SetRating(int(atof(atts[3]) * (strchr(atts[3], '.') ? 10 : 1)));
+		}
+
+		//<newznab:attr name="rageid" value="33877"/>
+		else if (atts[0] && atts[1] && atts[2] && atts[3] &&
+			!strcmp("name", atts[0]) && !strcmp("rageid", atts[1]) && !strcmp("value", atts[2]))
+		{
+			m_pFeedItemInfo->SetRageId(atoi(atts[3]));
+		}
+
+		//<newznab:attr name="episode" value="E09"/>
+		//<newznab:attr name="episode" value="9"/>
+		else if (atts[0] && atts[1] && atts[2] && atts[3] &&
+			!strcmp("name", atts[0]) && !strcmp("episode", atts[1]) && !strcmp("value", atts[2]))
+		{
+			m_pFeedItemInfo->SetEpisode(ParsePrefixedInt(atts[3]));
+		}
+
+		//<newznab:attr name="season" value="S03"/>
+		//<newznab:attr name="season" value="3"/>
+		else if (atts[0] && atts[1] && atts[2] && atts[3] &&
+			!strcmp("name", atts[0]) && !strcmp("season", atts[1]) && !strcmp("value", atts[2]))
+		{
+			m_pFeedItemInfo->SetSeason(ParsePrefixedInt(atts[3]));
 		}
 	}
 }

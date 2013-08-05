@@ -40,6 +40,7 @@ private:
 						FeedFile(const char* szFileName);
 	void				AddItem(FeedItemInfo* pFeedItemInfo);
 	void				ParseSubject(FeedItemInfo* pFeedItemInfo);
+	int					ParsePrefixedInt(const char *szValue);
 #ifdef WIN32
     bool 				ParseFeed(IUnknown* nzb);
 	static void			EncodeURL(const char* szFilename, char* szURL);

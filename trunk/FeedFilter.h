@@ -36,6 +36,7 @@ private:
 	{
 		fcText,
 		fcRegex,
+		fcEqual,
 		fcLess,
 		fcLessEqual,
 		fcGreater,
@@ -63,6 +64,7 @@ private:
 		bool			ParseSizeParam(const char* szParam, long long* pIntValue);
 		bool			ParseAgeParam(const char* szParam, long long* pIntValue);
 		bool			ParseRatingParam(const char* szParam, long long* pIntValue);
+		bool			ParseIntParam(const char* szParam, long long* pIntValue);
 		bool			MatchValue(const char* szStrValue, const long long iIntValue);
 		bool			MatchText(const char* szStrValue);
 		bool			MatchRegex(const char* szStrValue);
