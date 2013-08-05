@@ -252,6 +252,13 @@ var Frontend = (new function($)
 	{
 		var tabname = $(e.target).attr('href');
 		tabname = tabname.substr(1, tabname.length - 4);
+
+		if ($('#ConfigTab').hasClass('active') && !Config.canLeaveTab(e.target))
+		{
+			e.preventDefault();
+			return;
+		}
+
 		$('#SearchBlock .search-query, #SearchBlock .search-clear').hide();
 		$('#' + tabname + 'Table_filter, #' + tabname + 'Table_clearfilter').show();
 	}
