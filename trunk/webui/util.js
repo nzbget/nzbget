@@ -221,7 +221,7 @@ var Util = (new function($)
 		var $elem = $(dialog);
 		if (center)
 		{
-			var top = ($(window).height() - $elem.outerHeight())/2;
+			var top = ($(window).height() - $elem.outerHeight()) * 0.4;
 			top = top > 0 ? top : 0;
 			$elem.css({ top: top});
 		}

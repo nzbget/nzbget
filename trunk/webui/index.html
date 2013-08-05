@@ -455,7 +455,7 @@
 								<div class="config-header clearfix">
 									<div class="pull-left" id="ConfigTitle">INFO: SETTINGS</div>
 									<div class="btn-group pull-right">
-										<a class="btn dropdown-toggle" data-toggle="dropdown">View <span class="caret"></span></a>
+										<a class="btn dropdown-toggle" id="Config_ViewButton" data-toggle="dropdown">View <span class="caret"></span></a>
 										<ul class="dropdown-menu footer-button-menu" id="Config_ViewMenu">
 											<li class="menu-header">View Options</li>
 											<li><a href="#" id="Config_ViewCompact" onclick="Config.viewMode()"><i class="icon-ok"></i> Compact Mode</a></li>
@@ -1764,6 +1764,29 @@
 	</div>
 	<div class="modal-footer">
 	<a href="#" class="btn btn-primary" data-dismiss="modal">Close</a>
+	</div>
+</div>
+
+<!-- *** LEAVE CONFIG TAB CONFIRMATION DIALOG ************************************** -->
+
+<div class="modal modal-mini modal-padded modal-center hide" id="LeaveConfigDialog">
+	<div class="modal-header">
+		<a class="close" href='#' data-dismiss="modal"><i class="icon-close"></i></a>
+		<h3>Not saved changes</h3>
+	</div>
+
+	<div class="modal-body">
+		<div>
+		<p>
+		There are unsaved changes on setings page. If you leave the page now all changes will be discarded.
+		</p>
+		</div>
+	</div>
+
+	<div class="modal-footer">
+		<a href="#" class="btn btn-danger pull-left" onclick="Config.discardChanges()">Discard changes</a>
+		<a href="#" class="btn" data-dismiss="modal">Stop</a>
+		<a href="#" class="btn btn-primary" onclick="Config.saveChanges()">Save changes</a>
 	</div>
 </div>
 

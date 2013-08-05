@@ -465,10 +465,12 @@ var Config = (new function($)
 	var $ConfigInfo;
 	var $ConfigTitle;
 	var $ConfigTable;
+	var $ViewButton;
+	var $LeaveConfigDialog;
 	var $Body;
 
 	// State
-	var config;
+	var config = null;
 	var values;
 	var filterText = '';
 	var lastSection;
@@ -476,6 +478,8 @@ var Config = (new function($)
 	var updateTabInfo;
 	var restored = false;
 	var compactMode = false;
+	var configSaved = false;
+	var leaveTarget;
 
 	this.init = function(options)
 	{
@@ -489,11 +493,15 @@ var Config = (new function($)
 		$ConfigContent = $('#ConfigContent');
 		$ConfigInfo = $('#ConfigInfo');
 		$ConfigTitle = $('#ConfigTitle');
+		$ViewButton = $('#Config_ViewButton');
+		$LeaveConfigDialog = $('#LeaveConfigDialog');
 
 		Util.show('#ConfigBackupSafariNote', $.browser.safari);
 		$('#ConfigTable_filter').val('');
 		compactMode = UISettings.read('$Config_ViewCompact', 'no') == 'yes';
 		setViewMode();
+		
+		$(window).bind('beforeunload', userLeavesPage);
 
 		$('#ConfigTabLink').on('show', show);
 		$('#ConfigTabLink').on('shown', shown);
@@ -531,6 +539,7 @@ var Config = (new function($)
 		$('#ConfigLoadServerTemplateError').hide();
 		$('#ConfigLoadError').hide();
 		$ConfigContent.hide();
+		configSaved = false;
 	}
 
 	function shown()
@@ -1060,6 +1069,7 @@ var Config = (new function($)
 		$('li', $ConfigNav).removeClass('active');
 		link.closest('li').addClass('active');
 		$ConfigContent.removeClass('search');
+		Util.show($ViewButton, sectionId !== 'Config-Info');
 
 		$ConfigInfo.hide();
 
@@ -1332,7 +1342,7 @@ var Config = (new function($)
 		return false;
 	}
 
-	function prepareSaveRequest()
+	function prepareSaveRequest(onlyUserChanges)
 	{
 		var modified = false;
 		var request = [];
@@ -1357,7 +1367,14 @@ var Config = (new function($)
 							}
 							if (newValue != null)
 							{
-								modified = modified || (oldValue != newValue) || (option.value === null);
+								if (onlyUserChanges)
+								{
+									modified = modified || (oldValue != newValue && oldValue !== null);
+								}
+								else
+								{
+									modified = modified || (oldValue != newValue) || (option.value === null);
+								}
 								var opt = {Name: option.name, Value: newValue};
 								request.push(opt);
 							}
@@ -1373,7 +1390,9 @@ var Config = (new function($)
 
 	this.saveChanges = function()
 	{
-		var serverSaveRequest = prepareSaveRequest();
+		$LeaveConfigDialog.modal('hide');
+		
+		var serverSaveRequest = prepareSaveRequest(false);
 
 		if (serverSaveRequest.length === 0)
 		{
@@ -1413,6 +1432,35 @@ var Config = (new function($)
 		{
 			Notification.show('#Notif_Config_Failed');
 		}
+		configSaved = true;
+	}
+	
+	this.canLeaveTab = function(target)
+	{
+		var serverSaveRequest = prepareSaveRequest(true);
+		if (serverSaveRequest.length === 0 || configSaved)
+		{
+			return true;
+		}
+
+		leaveTarget = target;
+		$LeaveConfigDialog.modal({backdrop: 'static'});
+		return false;
+	}
+	
+	function userLeavesPage(e)
+	{
+		if (config && !configSaved && !UISettings.connectionError && prepareSaveRequest(true).length > 0)
+		{
+			return "Discard changes?";
+		}
+	}
+	
+	this.discardChanges = function()
+	{
+		configSaved = true;
+		$LeaveConfigDialog.modal('hide');
+		leaveTarget.click();
 	}
 
 	this.scrollToOption = function(event, control)
