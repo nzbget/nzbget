@@ -97,6 +97,9 @@ bool FeedFilter::Term::MatchValue(const char* szStrValue, const long long iIntVa
 		case fcRegex:
 			return MatchRegex(szStrValue);
 
+		case fcEqual:
+			return iIntValue == m_iIntParam;
+
 		case fcLess:
 			return iIntValue < m_iIntParam;
 
@@ -243,6 +246,11 @@ bool FeedFilter::Term::Compile(char* szToken)
 		m_eCommand = fcRegex;
 		szToken++;
 	}
+	else if (ch == '=')
+	{
+		m_eCommand = fcEqual;
+		szToken++;
+	}
 	else if (ch == '<' && ch2 == '=')
 	{
 		m_eCommand = fcLessEqual;
@@ -270,15 +278,18 @@ bool FeedFilter::Term::Compile(char* szToken)
 	long long iIntValue;
 	EFieldType eFieldType;
 	if (!GetFieldData(szField, NULL, &eFieldType, &szStrValue, &iIntValue) ||
-		(m_eCommand < fcLess && eFieldType != ftString) ||
-		(m_eCommand >= fcLess && eFieldType != ftNumeric))
+		(m_eCommand < fcEqual && eFieldType != ftString) ||
+		(m_eCommand >= fcEqual && eFieldType != ftNumeric))
 	{
 		return false;
 	}
 
 	if ((szField && !strcasecmp(szField, "size") && !ParseSizeParam(szToken, &m_iIntParam)) ||
 		(szField && !strcasecmp(szField, "age") && !ParseAgeParam(szToken, &m_iIntParam)) ||
-		(szField && !strcasecmp(szField, "rating") && !ParseRatingParam(szToken, &m_iIntParam)))
+		(szField && !strcasecmp(szField, "rating") && !ParseRatingParam(szToken, &m_iIntParam)) ||
+		(szField && !strcasecmp(szField, "rageid") && !ParseIntParam(szToken, &m_iIntParam)) ||
+		(szField && !strcasecmp(szField, "season") && !ParseIntParam(szToken, &m_iIntParam)) ||
+		(szField && !strcasecmp(szField, "episode") && !ParseIntParam(szToken, &m_iIntParam)))
 	{
 		return false;
 	}
@@ -343,6 +354,24 @@ bool FeedFilter::Term::GetFieldData(const char* szField, FeedItemInfo* pFeedItem
 	else if (!strcasecmp(szField, "rating"))
 	{
 		*IntValue = pFeedItemInfo ? pFeedItemInfo->GetRating() : NULL;
+		*FieldType = ftNumeric;
+		return true;
+	}
+	else if (!strcasecmp(szField, "rageid"))
+	{
+		*IntValue = pFeedItemInfo ? pFeedItemInfo->GetRageId() : NULL;
+		*FieldType = ftNumeric;
+		return true;
+	}
+	else if (!strcasecmp(szField, "season"))
+	{
+		*IntValue = pFeedItemInfo ? pFeedItemInfo->GetSeason() : NULL;
+		*FieldType = ftNumeric;
+		return true;
+	}
+	else if (!strcasecmp(szField, "episode"))
+	{
+		*IntValue = pFeedItemInfo ? pFeedItemInfo->GetEpisode() : NULL;
 		*FieldType = ftNumeric;
 		return true;
 	}
@@ -441,6 +470,20 @@ bool FeedFilter::Term::ParseRatingParam(const char* szParam, long long* pIntValu
 	else
 	{
 		*pIntValue = (long long)fParam;
+	}
+	
+	return true;
+}
+
+bool FeedFilter::Term::ParseIntParam(const char* szParam, long long* pIntValue)
+{
+	*pIntValue = atoi(szParam);
+	
+	const char* p;
+	for (p = szParam; *p && *p >= '0' && *p <='9'; p++) ;
+	if (*p)
+	{
+		return false;
 	}
 	
 	return true;

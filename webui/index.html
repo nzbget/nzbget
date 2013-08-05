@@ -1390,6 +1390,7 @@
 			<tbody>
 			<tr><td>@</td><td> - search for string "param". This is default command, the "@" can be omitted;</td></tr>
 			<tr><td>$</td><td> - "param" defines a regular expression (using POSIX Extended Regular Expressions syntax);</td></tr>
+			<tr><td>=</td><td>  - equal;</td></tr>
 			<tr><td>&lt;</td><td>  - less than;</td></tr>
 			<tr><td>&lt;=</td><td>  - equal or less than;</td></tr>
 			<tr><td>&gt;</td><td>  - greater than;</td></tr>
@@ -1408,8 +1409,8 @@
 		<ul>
 		<li>Commands @ and $ are for use with text fields (title, filename, category,
 		link, genre).</li>
-		<li>Commands &lt;, &lt;=, &gt; and &gt;= are for use with numeric fields (size,
-		age, rating).</li>
+		<li>Commands =, &lt;, &lt;=, &gt; and &gt;= are for use with numeric fields (size,
+		age, rating, rageid, season, episode).</li>
 		</ul>
 
 		<strong>More about text search (command @):</strong>
@@ -1435,6 +1436,11 @@
 		as rating between 0.0 and 10.0.</li>
 		</ul>
 		
+		<p><span class="label label-warning">NOTE:</span>
+		Only fields title, filename and age are always present. The availability of other fields
+		depend on rss feed provider.
+		</p>
+
 		<h4>Examples</h4>
 		<ul>
 		<li>A: s01* -category:anime</li>

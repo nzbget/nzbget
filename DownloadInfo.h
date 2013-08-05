@@ -681,6 +681,9 @@ private:
 	char*				m_szCategory;
 	int					m_iRating;
 	char*				m_szGenre;
+	int					m_iRageId;
+	int					m_iSeason;
+	int					m_iEpisode;
 	char*				m_szAddCategory;
 	bool				m_bPauseNzb;
 	int					m_iPriority;
@@ -705,6 +708,12 @@ public:
 	void				SetRating(int iRating) { m_iRating = iRating; }
 	const char*			GetGenre() { return m_szGenre; }
 	void				SetGenre(const char* szGenre);
+	int					GetRageId() { return m_iRageId; }
+	void				SetRageId(int iRageId) { m_iRageId = iRageId; }
+	int					GetSeason() { return m_iSeason; }
+	void				SetSeason(int iSeason) { m_iSeason = iSeason; }
+	int					GetEpisode() { return m_iEpisode; }
+	void				SetEpisode(int iEpisode) { m_iEpisode = iEpisode; }
 	const char*			GetAddCategory() { return m_szAddCategory; }
 	void				SetAddCategory(const char* szAddCategory);
 	bool				GetPauseNzb() { return m_bPauseNzb; }
