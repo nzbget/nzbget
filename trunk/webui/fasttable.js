@@ -222,6 +222,11 @@
 			return $(this).data('fasttable').filteredContent;
 		},
 
+		availableContent : function()
+		{
+			return $(this).data('fasttable').availableContent;
+		},
+
 		checkedRows : function()
 		{
 			return $(this).data('fasttable').checkedRows;
@@ -277,23 +282,22 @@
 		var phrase = filterInput.length > 0 ? filterInput.val() : '';
 		var caseSensitive = data.config.filterCaseSensitive;
 		var words = caseSensitive ? phrase.split(' ') : phrase.toLowerCase().split(' ');
+		var hasFilter = !(words.length === 1 && words[0] === '');
 
-		if (words.length === 1 && words[0] === '')
+		data.availableContent = [];
+		data.filteredContent = [];
+		for (var i = 0; i < data.content.length; i++)
 		{
-			data.filteredContent = data.content;
-		}
-		else
-		{
-			data.filteredContent = [];
-			for (var i = 0; i < data.content.length; i++)
+			var item = data.content[i];
+			if (hasFilter && item.search === undefined && data.config.fillSearchCallback)
 			{
-				var item = data.content[i];
-				if (item.search === undefined && data.config.fillSearchCallback)
-				{
-					data.config.fillSearchCallback(item);
-				}
-				
-				if (has_words(item.search, words, caseSensitive))
+				data.config.fillSearchCallback(item);
+			}
+			
+			if (!hasFilter || has_words(item.search, words, caseSensitive))
+			{
+				data.availableContent.push(item);
+				if (!data.config.filterCallback || data.config.filterCallback(item))
 				{
 					data.filteredContent.push(item);
 				}
@@ -546,7 +550,7 @@
 			var firstRecord = (data.curPage - 1) * data.pageSize + 1;
 			var lastRecord = firstRecord + data.pageContent.length - 1;
 			var infoText = 'Showing records ' + firstRecord + '-' + lastRecord + ' from ' + data.filteredContent.length;
-			if (data.filteredContent != data.content)
+			if (data.filteredContent.length != data.content.length)
 			{
 				infoText += ' filtered (total ' + data.content.length + ')';
 			}
@@ -557,8 +561,8 @@
 		{
 			data.config.updateInfoCallback({
 				total: data.content.length,
-				available: data.filteredContent.length,
-				filter: data.filteredContent != data.content,
+				available: data.availableContent.length,
+				filtered: data.filteredContent.length,
 				firstRecord: firstRecord,
 				lastRecord: lastRecord				
 			});
@@ -786,6 +790,7 @@
 		filterInputCallback: undefined,
 		filterClearCallback: undefined,
 		fillSearchCallback: undefined,
+		filterCallback: undefined,
 		headerCheck: '#table-header-check'
 	};
 

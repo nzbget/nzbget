@@ -503,9 +503,6 @@ var Config = (new function($)
 		
 		$(window).bind('beforeunload', userLeavesPage);
 
-		$('#ConfigTabLink').on('show', show);
-		$('#ConfigTabLink').on('shown', shown);
-
 		$ConfigNav.on('click', 'li > a', navClick);
 
 		$ConfigTable = $({});
@@ -518,20 +515,12 @@ var Config = (new function($)
 			});
 	}
 
-	this.cleanup = function()
-	{
-		Options.cleanup();
-		config = null;
-		$ConfigNav.children().not('.config-static').remove();
-		$ConfigData.children().not('.config-static').remove();
-	}
-
 	this.config = function()
 	{
 		return config;
 	}
 
-	function show()
+	this.show = function()
 	{
 		removeSaveBanner();
 		$('#ConfigSaved').hide();
@@ -542,13 +531,21 @@ var Config = (new function($)
 		configSaved = false;
 	}
 
-	function shown()
+	this.shown = function()
 	{
 		Options.loadConfig({
 			complete: buildPage,
 			configError: loadConfigError,
 			serverTemplateError: loadServerTemplateError
 			});
+	}
+
+	this.hide = function()
+	{
+		Options.cleanup();
+		config = null;
+		$ConfigNav.children().not('.config-static').remove();
+		$ConfigData.children().not('.config-static').remove();
 	}
 
 	function loadConfigError(message, resultObj)
@@ -1437,8 +1434,7 @@ var Config = (new function($)
 	
 	this.canLeaveTab = function(target)
 	{
-		var serverSaveRequest = prepareSaveRequest(true);
-		if (serverSaveRequest.length === 0 || configSaved)
+		if (!config || prepareSaveRequest(true).length === 0 || configSaved)
 		{
 			return true;
 		}

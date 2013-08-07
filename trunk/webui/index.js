@@ -130,6 +130,8 @@ var Frontend = (new function($)
 	var mobileSafari = false;
 	var scrollbarWidth = 0;
 	var switchingTheme = false;
+	var activeTab = 'DownloadsTab';
+	var lastTab = '';
 	
 	this.init = function()
 	{
@@ -253,21 +255,35 @@ var Frontend = (new function($)
 		var tabname = $(e.target).attr('href');
 		tabname = tabname.substr(1, tabname.length - 4);
 
-		if ($('#ConfigTab').hasClass('active') && !Config.canLeaveTab(e.target))
+		if (activeTab === 'Config' && !Config.canLeaveTab(e.target))
 		{
 			e.preventDefault();
 			return;
 		}
 
+		lastTab = activeTab;
+		activeTab = tabname;
+		
 		$('#SearchBlock .search-query, #SearchBlock .search-clear').hide();
-		$('#' + tabname + 'Table_filter, #' + tabname + 'Table_clearfilter').show();
+		$('#' + activeTab + 'Table_filter, #' + activeTab + 'Table_clearfilter').show();
+
+		switch (activeTab)
+		{
+			case 'Config': Config.show(); break;
+			case 'Messages': Messages.show(); break;
+		}
 	}
 
 	function afterTabShow(e)
 	{
-		if ($(e.target).attr('href') !== '#ConfigTab')
+		switch (lastTab)
 		{
-			Config.cleanup();
+			case 'Config': Config.hide(); break;
+			case 'Messages': Messages.hide(); break;
+		}
+		switch (activeTab)
+		{
+			case 'Config': Config.shown(); break;
 		}
 	}
 
@@ -409,15 +425,7 @@ var Frontend = (new function($)
 
 	function updateTabInfo(control, stat)
 	{
-		if (stat.filter)
-		{
-			control.removeClass('badge-info').addClass('badge-warning');
-		}
-		else
-		{
-			control.removeClass('badge-warning').addClass('badge-info');
-		}
-
+		control.toggleClass('badge-info', stat.available == stat.total).toggleClass('badge-warning', stat.available != stat.total);
 		control.html(stat.available);
 		control.toggleClass('badge2', stat.total > 9);
 		control.toggleClass('badge3', stat.total > 99);
