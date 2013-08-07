@@ -1,7 +1,7 @@
 /*
  * This file is part of nzbget
  *
- * Copyright (C) 2012 Andrey Prygunkov <hugbug@users.sourceforge.net>
+ * Copyright (C) 2012-2013 Andrey Prygunkov <hugbug@users.sourceforge.net>
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -45,6 +45,8 @@ var Messages = (new function($)
 	var lastID = 0;
 	var updateTabInfo;
 	var notification = null;
+	var curFilter = 'ALL';
+	var activeTab = false;
 
 	this.init = function(options)
 	{
@@ -70,6 +72,7 @@ var Messages = (new function($)
 				pageDots: !UISettings.miniTheme,
 				fillFieldsCallback: fillFieldsCallback,
 				fillSearchCallback: fillSearchCallback,
+				filterCallback: filterCallback,
 				renderCellCallback: renderCellCallback,
 				updateInfoCallback: updateInfo
 			});
@@ -81,11 +84,23 @@ var Messages = (new function($)
 			UISettings.miniTheme ? 1 : 5, !UISettings.miniTheme);
 	}
 
+	this.show = function()
+	{
+		activeTab = true;
+		this.redraw();
+	}
+	
+	this.hide = function()
+	{
+		activeTab = false;
+	}
+	
 	this.update = function()
 	{
 		if (maxMessages === null)
 		{
 			maxMessages = parseInt(Options.option('LogBufferSize'));
+			initFilterButtons();
 		}
 		
 		if (lastID === 0)
@@ -129,7 +144,7 @@ var Messages = (new function($)
 		for (var i=0; i < messages.length; i++)
 		{
 			var message = messages[i];
-
+			
 			var item =
 			{
 				id: message.ID,
@@ -197,6 +212,10 @@ var Messages = (new function($)
 	function updateInfo(stat)
 	{
 		updateTabInfo($MessagesTabBadge, stat);
+		if (activeTab)
+		{
+			updateFilterButtons();
+		}
 	}
 
 	this.recordsPerPageChange = function()
@@ -204,6 +223,64 @@ var Messages = (new function($)
 		var val = $MessagesRecordsPerPage.val();
 		UISettings.write('MessagesRecordsPerPage', val);
 		$MessagesTable.fasttable('setPageSize', val);
+	}
+
+	function filterCallback(item)
+	{
+		return !activeTab || curFilter === 'ALL' || item.message.Kind === curFilter;
+	}
+
+	function initFilterButtons()
+	{
+		var detail = ['both', 'screen'].indexOf(Options.option('DetailTarget')) > -1
+		var info = ['both', 'screen'].indexOf(Options.option('InfoTarget')) > -1;
+		var warning = ['both', 'screen'].indexOf(Options.option('WarningTarget')) > -1;
+		var error = ['both', 'screen'].indexOf(Options.option('ErrorTarget')) > -1;
+		Util.show($('#Messages_Badge_DETAIL, #Messages_Badge_DETAIL2').closest('.btn'), detail);
+		Util.show($('#Messages_Badge_INFO, #Messages_Badge_INFO2 ').closest('.btn'), info);
+		Util.show($('#Messages_Badge_WARNING, #Messages_Badge_WARNING2').closest('.btn'), warning);
+		Util.show($('#Messages_Badge_ERROR, #Messages_Badge_ERROR2').closest('.btn'), error);
+		Util.show($('#Messages_Badge_ALL, #Messages_Badge_ALL2').closest('.btn'), detail || info || warning || error);
+	}
+	
+	function updateFilterButtons()
+	{
+		var countDebug = 0;
+		var countDetail = 0;
+		var countInfo = 0;
+		var countWarning = 0;
+		var countError = 0;
+
+		var data = $MessagesTable.fasttable('availableContent');
+
+		for (var i=0; i < data.length; i++)
+		{
+			var message = data[i].message;
+			switch (message.Kind)
+			{
+				case 'INFO': countInfo++; break;
+				case 'DETAIL': countDetail++; break;
+				case 'WARNING': countWarning++; break;
+				case 'ERROR': countError++; break;
+				case 'DEBUG': countDebug++; break;
+			}
+		}
+		$('#Messages_Badge_ALL,#Messages_Badge_ALL2').text(countDebug + countDetail + countInfo + countWarning + countError);
+		$('#Messages_Badge_DETAIL,#Messages_Badge_DETAIL2').text(countDetail);
+		$('#Messages_Badge_INFO,#Messages_Badge_INFO2').text(countInfo);
+		$('#Messages_Badge_WARNING,#Messages_Badge_WARNING2').text(countWarning);
+		$('#Messages_Badge_ERROR,#Messages_Badge_ERROR2').text(countError);
+
+		$('#MessagesTab_Toolbar .btn').removeClass('btn-inverse');
+		$('#Messages_Badge_' + curFilter + ',#Messages_Badge_' + curFilter + '2').closest('.btn').addClass('btn-inverse');
+		$('#MessagesTab_Toolbar .badge').removeClass('badge-active');
+		$('#Messages_Badge_' + curFilter + ',#Messages_Badge_' + curFilter + '2').addClass('badge-active');
+	}
+
+	this.filter = function(type)
+	{
+		curFilter = type;
+		Messages.redraw();
 	}
 
 	this.clearClick = function()
