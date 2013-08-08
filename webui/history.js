@@ -111,13 +111,22 @@ var History = (new function($)
 	{
 		if (hist.Kind === 'NZB')
 		{
-			if (hist.ParStatus == 'FAILURE' || hist.UnpackStatus == 'FAILURE' || hist.MoveStatus == 'FAILURE' || hist.ScriptStatus == 'FAILURE')
+			if (hist.Deleted)
+			{
+				hist.status = hist.HealthDeleted ? 'failure' : 'deleted';
+			}
+			else if (hist.ParStatus == 'FAILURE' || hist.UnpackStatus == 'FAILURE' || hist.MoveStatus == 'FAILURE' || hist.ScriptStatus == 'FAILURE')
 			{
 				hist.status = 'failure';
 			}
 			else if (hist.ParStatus == 'MANUAL')
 			{
 				hist.status = 'damaged';
+			}
+			else if (hist.ParStatus == 'NONE' && hist.UnpackStatus == 'NONE')
+			{
+				hist.status = hist.Health === 1000 ? 'success' : 
+					hist.Health >= hist.CriticalHealth ? 'damaged' : 'failure';
 			}
 			else
 			{
@@ -347,6 +356,8 @@ var HistoryUI = (new function($)
 			case 'failure':
 			case 'FAILURE':
 				return '<span class="label label-status label-important">' + prefix + 'failure</span>';
+			case 'aborted':
+				return '<span class="label label-status label-important">' + prefix + 'aborted</span>';
 			case 'unknown':
 			case 'UNKNOWN':
 				return '<span class="label label-status label-info">' + prefix + 'unknown</span>';
@@ -357,6 +368,9 @@ var HistoryUI = (new function($)
 			case 'MANUAL':
 			case 'damaged':
 				return '<span class="label label-status label-warning">' + prefix + status + '</span>';
+			case 'deleted':
+			case 'DELETED':
+				return '<span class="label label-status">' + prefix + 'deleted</span>';
 			case 'none':
 			case 'NONE':
 				return '<span class="label label-status">' + prefix + 'none</span>';

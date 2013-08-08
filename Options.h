@@ -92,6 +92,12 @@ public:
 		psFull,
 		psAuto
 	};
+	enum EHealthCheck
+	{
+		hcPause,
+		hcDelete,
+		hcNone
+	};
 	enum EScriptLogKind
 	{
 		slNone,
@@ -101,7 +107,6 @@ public:
 		slError,
 		slDebug
 	};
-
 	enum EMatchMode
 	{
 		mmID = 1,
@@ -277,6 +282,7 @@ private:
 	EParCheck			m_eParCheck;
 	bool				m_bParRepair;
 	EParScan			m_eParScan;
+	EHealthCheck		m_eHealthCheck;
 	char*				m_szDefScript;
 	char*				m_szScriptOrder;
 	char*				m_szNZBProcess;
@@ -439,6 +445,7 @@ public:
 	EParCheck			GetParCheck() { return m_eParCheck; }
 	bool				GetParRepair() { return m_bParRepair; }
 	EParScan			GetParScan() { return m_eParScan; }
+	EHealthCheck		GetHealthCheck() { return m_eHealthCheck; }
 	const char*			GetScriptOrder() { return m_szScriptOrder; }
 	const char*			GetDefScript() { return m_szDefScript; }
 	const char*			GetNZBProcess() { return m_szNZBProcess; }

@@ -143,18 +143,37 @@ void NZBFile::AddArticle(FileInfo* pFileInfo, ArticleInfo* pArticleInfo)
 
 void NZBFile::AddFileInfo(FileInfo* pFileInfo)
 {
-	// deleting empty articles
+	// calculate file size and delete empty articles
+
+	long long lSize = 0;
+	long long lMissedSize = 0;
+	long long lOneSize = 0;
+	int iUncountedArticles = 0;
 	FileInfo::Articles* pArticles = pFileInfo->GetArticles();
 	int i = 0;
-	for (FileInfo::Articles::iterator it = pArticles->begin(); it != pArticles->end();)
+	for (FileInfo::Articles::iterator it = pArticles->begin(); it != pArticles->end(); )
 	{
-		if (*it == NULL)
+		ArticleInfo* pArticle = *it;
+		if (!pArticle)
 		{
 			pArticles->erase(it);
 			it = pArticles->begin() + i;
+			if (lOneSize > 0)
+			{
+				lMissedSize += lOneSize;
+			}
+			else
+			{
+				iUncountedArticles++;
+			}
 		}
 		else
 		{
+			lSize += pArticle->GetSize();
+			if (lOneSize == 0)
+			{
+				lOneSize = pArticle->GetSize();
+			}
 			it++;
 			i++;
 		}
@@ -162,10 +181,13 @@ void NZBFile::AddFileInfo(FileInfo* pFileInfo)
 
 	if (!pArticles->empty())
 	{
+		lMissedSize += iUncountedArticles * lOneSize;
+		lSize += lMissedSize;
 		m_FileInfos.push_back(pFileInfo);
 		pFileInfo->SetNZBInfo(m_pNZBInfo);
-		m_pNZBInfo->SetSize(m_pNZBInfo->GetSize() + pFileInfo->GetSize());
-		m_pNZBInfo->SetFileCount(m_pNZBInfo->GetFileCount() + 1);
+		pFileInfo->SetSize(lSize);
+		pFileInfo->SetRemainingSize(lSize - lMissedSize);
+		pFileInfo->SetMissedSize(lMissedSize);
 	}
 	else
 	{
@@ -349,6 +371,26 @@ void NZBFile::ProcessFilenames()
     {
         FileInfo* pFileInfo = *it;
 		pFileInfo->MakeValidFilename();
+
+		char szLoFileName[1024];
+		strncpy(szLoFileName, pFileInfo->GetFilename(), 1024);
+		szLoFileName[1024-1] = '\0';
+		for (char* p = szLoFileName; *p; p++) *p = tolower(*p); // convert string to lowercase
+		bool bParFile = strstr(szLoFileName, ".par2");
+
+		m_pNZBInfo->SetSize(m_pNZBInfo->GetSize() + pFileInfo->GetSize());
+		m_pNZBInfo->SetFileCount(m_pNZBInfo->GetFileCount() + 1);
+		m_pNZBInfo->SetFailedSize(m_pNZBInfo->GetFailedSize() + pFileInfo->GetMissedSize());
+		m_pNZBInfo->SetCurrentFailedSize(m_pNZBInfo->GetFailedSize());
+
+		pFileInfo->SetParFile(bParFile);
+		if (bParFile)
+		{
+			m_pNZBInfo->SetParSize(m_pNZBInfo->GetParSize() + pFileInfo->GetSize());
+			m_pNZBInfo->SetParFailedSize(m_pNZBInfo->GetParFailedSize() + pFileInfo->GetMissedSize());
+			m_pNZBInfo->SetParCurrentFailedSize(m_pNZBInfo->GetParFailedSize());
+		}
+
 		if (g_pOptions->GetSaveQueue() && g_pOptions->GetServerMode())
 		{
 			g_pDiskState->SaveFile(pFileInfo);
@@ -492,11 +534,6 @@ bool NZBFile::ParseNZB(IUnknown* nzb)
 				pArticle->SetSize(lsize);
 				AddArticle(pFileInfo, pArticle);
 			}
-
-            if (lsize > 0)
-            {
-                pFileInfo->SetSize(pFileInfo->GetSize() + lsize);
-            }
 		}
 
 		AddFileInfo(pFileInfo);
@@ -586,10 +623,6 @@ void NZBFile::Parse_StartElement(const char *name, const char **atts)
 			{
 				partNumber = atol(attrvalue);
 			}
-		}
-		if (lsize > 0)
-		{
-			m_pFileInfo->SetSize(m_pFileInfo->GetSize() + lsize);
 		}
 
 		if (partNumber > 0)

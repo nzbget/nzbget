@@ -155,7 +155,9 @@ var DownloadsEditDialog = (new function($)
 		table += '<tr><td>Paused</td><td class="text-right">' + unpausedSize + '</td></tr>';
 		table += '<tr><td>Unpaused</td><td class="text-right">' + remaining + '</td></tr>';
 		//table += '<tr><td>Active downloads</td><td class="text-right">' + group.ActiveDownloads + '</td></tr>';
-		table += '<tr><td>Estimated time</td><td class="text-right">' + estimated + '</td></tr>';
+		//table += '<tr><td>Estimated time</td><td class="text-right">' + estimated + '</td></tr>';
+		table += '<tr><td>Health (current/critical)</td><td class="text-center">' + Math.floor(group.Health / 10) + 
+			'% / ' + Math.floor(group.CriticalHealth / 10) + '%</td></tr>';
 		table += '<tr><td>Files (total/remaining/pars)</td><td class="text-center">' + group.FileCount + ' / ' +
 			group.RemainingFileCount + ' / ' + group.RemainingParCount + '</td></tr>';
 		$('#DownloadsEdit_Statistics').html(table);
@@ -207,6 +209,7 @@ var DownloadsEditDialog = (new function($)
 			$('#DownloadsEdit_Priority').attr('disabled', 'disabled');
 			$('#DownloadsEdit_Category').attr('disabled', 'disabled');
 			$('#DownloadsEdit_Close').addClass('btn-primary');
+			$('#DownloadsEdit_Close').text('Close');
 		}
 		else
 		{
@@ -214,6 +217,7 @@ var DownloadsEditDialog = (new function($)
 			$('#DownloadsEdit_Priority').removeAttr('disabled');
 			$('#DownloadsEdit_Category').removeAttr('disabled');
 			$('#DownloadsEdit_Close').removeClass('btn-primary');
+			$('#DownloadsEdit_Close').text('Cancel');
 
 			if (group.RemainingSizeHi == group.PausedSizeHi && group.RemainingSizeLo == group.PausedSizeLo)
 			{
@@ -1285,13 +1289,31 @@ var HistoryEditDialog = (new function()
 		}
 		else
 		{
-			status = HistoryUI.buildStatus(hist.ParStatus, 'Par: ') + ' ' +
-				(Options.option('Unpack') == 'yes' || hist.UnpackStatus != 'NONE' ? HistoryUI.buildStatus(hist.UnpackStatus, 'Unpack: ') + ' ' : '')  +
-				(hist.MoveStatus === "FAILURE" ? HistoryUI.buildStatus(hist.MoveStatus, 'Move: ') + ' ' : "");
-			for (var i=0; i<hist.ScriptStatuses.length; i++)
+			status = '<span class="label label-status ' + 
+				(hist.Health === 1000 ? 'label-success' : hist.Health >= hist.CriticalHealth ? 'label-warning' : 'label-important') +
+				'">health: ' + Math.floor(hist.Health / 10) + '%</span>';
+
+			if (hist.Deleted && !hist.HealthDeleted)
 			{
-				var scriptStatus = hist.ScriptStatuses[i];
-				status += HistoryUI.buildStatus(scriptStatus.Status, Options.shortScriptName(scriptStatus.Name) + ': ') + ' ';
+				status += ' ' + HistoryUI.buildStatus('deleted', '');
+			}
+			else
+			{
+				if (hist.HealthDeleted)
+				{
+					status += ' ' + HistoryUI.buildStatus('aborted', '');
+				}
+				else
+				{
+					status += ' ' + HistoryUI.buildStatus(hist.ParStatus, 'Par: ') +
+						' ' + (Options.option('Unpack') == 'yes' || hist.UnpackStatus != 'NONE' ? HistoryUI.buildStatus(hist.UnpackStatus, 'Unpack: ') : '')  +
+						' ' + (hist.MoveStatus === "FAILURE" ? HistoryUI.buildStatus(hist.MoveStatus, 'Move: ') : '');
+				}
+				for (var i=0; i<hist.ScriptStatuses.length; i++)
+				{
+					var scriptStatus = hist.ScriptStatuses[i];
+					status += ' ' + HistoryUI.buildStatus(scriptStatus.Status, Options.shortScriptName(scriptStatus.Name) + ': ') + ' ';
+				}
 			}
 		}
 
@@ -1321,6 +1343,7 @@ var HistoryEditDialog = (new function()
 		Util.show('#HistoryEdit_Param', postParam);
 		Util.show('#HistoryEdit_Save', postParam);
 		$('#HistoryEdit_Close').toggleClass('btn-primary', !postParam);
+		$('#HistoryEdit_Close').text(postParam ? 'Cancel' : 'Close');
 		
 		if (postParam)
 		{

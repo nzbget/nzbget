@@ -135,7 +135,7 @@ bool DiskState::SaveDownloadQueue(DownloadQueue* pDownloadQueue)
 		return false;
 	}
 
-	fprintf(outfile, "%s%i\n", FORMATVERSION_SIGNATURE, 27);
+	fprintf(outfile, "%s%i\n", FORMATVERSION_SIGNATURE, 28);
 
 	// save nzb-infos
 	SaveNZBList(pDownloadQueue, outfile);
@@ -189,7 +189,7 @@ bool DiskState::LoadDownloadQueue(DownloadQueue* pDownloadQueue)
 	char FileSignatur[128];
 	fgets(FileSignatur, sizeof(FileSignatur), infile);
 	int iFormatVersion = ParseFormatVersion(FileSignatur);
-	if (iFormatVersion < 3 || iFormatVersion > 27)
+	if (iFormatVersion < 3 || iFormatVersion > 28)
 	{
 		error("Could not load diskstate due to file version mismatch");
 		fclose(infile);
@@ -259,14 +259,22 @@ void DiskState::SaveNZBList(DownloadQueue* pDownloadQueue, FILE* outfile)
 		fprintf(outfile, "%s\n", pNZBInfo->GetName());
 		fprintf(outfile, "%s\n", pNZBInfo->GetCategory());
 		fprintf(outfile, "%i\n", (int)pNZBInfo->GetPostProcess());
-		fprintf(outfile, "%i,%i,%i,%i\n", (int)pNZBInfo->GetParStatus(), (int)pNZBInfo->GetUnpackStatus(), (int)pNZBInfo->GetMoveStatus(), (int)pNZBInfo->GetRenameStatus());
-		fprintf(outfile, "%i\n", (int)pNZBInfo->GetUnpackCleanedUpDisk());
-		fprintf(outfile, "%i\n", pNZBInfo->GetFileCount());
-		fprintf(outfile, "%i\n", pNZBInfo->GetParkedFileCount());
+		fprintf(outfile, "%i,%i,%i,%i\n", (int)pNZBInfo->GetParStatus(), (int)pNZBInfo->GetUnpackStatus(),
+			(int)pNZBInfo->GetMoveStatus(), (int)pNZBInfo->GetRenameStatus());
+		fprintf(outfile, "%i,%i,%i,%i\n", (int)pNZBInfo->GetDeleted(), (int)pNZBInfo->GetUnpackCleanedUpDisk(),
+			(int)pNZBInfo->GetHealthPaused(), (int)pNZBInfo->GetHealthDeleted());
+		fprintf(outfile, "%i,%i\n", pNZBInfo->GetFileCount(), pNZBInfo->GetParkedFileCount());
 
-		unsigned long High, Low;
-		Util::SplitInt64(pNZBInfo->GetSize(), &High, &Low);
-		fprintf(outfile, "%lu,%lu\n", High, Low);
+		unsigned long High1, Low1, High2, Low2, High3, Low3;
+		Util::SplitInt64(pNZBInfo->GetSize(), &High1, &Low1);
+		Util::SplitInt64(pNZBInfo->GetSuccessSize(), &High2, &Low2);
+		Util::SplitInt64(pNZBInfo->GetFailedSize(), &High3, &Low3);
+		fprintf(outfile, "%lu,%lu,%lu,%lu,%lu,%lu\n", High1, Low1, High2, Low2, High3, Low3);
+
+		Util::SplitInt64(pNZBInfo->GetParSize(), &High1, &Low1);
+		Util::SplitInt64(pNZBInfo->GetParSuccessSize(), &High2, &Low2);
+		Util::SplitInt64(pNZBInfo->GetParFailedSize(), &High3, &Low3);
+		fprintf(outfile, "%lu,%lu,%lu,%lu,%lu,%lu\n", High1, Low1, High2, Low2, High3, Low3);
 
 		char DestDirSlash[1024];
 		snprintf(DestDirSlash, 1023, "%s%c", pNZBInfo->GetDestDir(), PATH_SEPARATOR);
@@ -422,26 +430,63 @@ bool DiskState::LoadNZBList(DownloadQueue* pDownloadQueue, FILE* infile, int iFo
 			}
 		}
 
-		if (iFormatVersion >= 19)
+		if (iFormatVersion >= 28)
 		{
-			int iUnpackCleanedUpDisk;
-			if (fscanf(infile, "%i\n", &iUnpackCleanedUpDisk) != 1) goto error;
+			int iDeleted, iUnpackCleanedUpDisk, bHealthPaused, bHealthDeleted;
+			if (fscanf(infile, "%i,%i,%i,%i\n", &iDeleted, &iUnpackCleanedUpDisk, &bHealthPaused, &bHealthDeleted) != 4) goto error;
+			pNZBInfo->SetDeleted((bool)iDeleted);
 			pNZBInfo->SetUnpackCleanedUpDisk((bool)iUnpackCleanedUpDisk);
-		}
-		
-		int iFileCount;
-		if (fscanf(infile, "%i\n", &iFileCount) != 1) goto error;
-		pNZBInfo->SetFileCount(iFileCount);
+			pNZBInfo->SetHealthPaused((bool)bHealthPaused);
+			pNZBInfo->SetHealthDeleted((bool)bHealthDeleted);
 
-		if (iFormatVersion >= 10)
+			int iFileCount, iParkedFileCount;
+			if (fscanf(infile, "%i,%i\n", &iFileCount, &iParkedFileCount) != 2) goto error;
+			pNZBInfo->SetFileCount(iFileCount);
+			pNZBInfo->SetParkedFileCount(iParkedFileCount);
+		}
+		else
 		{
+			if (iFormatVersion >= 19)
+			{
+				int iUnpackCleanedUpDisk;
+				if (fscanf(infile, "%i\n", &iUnpackCleanedUpDisk) != 1) goto error;
+				pNZBInfo->SetUnpackCleanedUpDisk((bool)iUnpackCleanedUpDisk);
+			}
+			
+			int iFileCount;
 			if (fscanf(infile, "%i\n", &iFileCount) != 1) goto error;
-			pNZBInfo->SetParkedFileCount(iFileCount);
+			pNZBInfo->SetFileCount(iFileCount);
+
+			if (iFormatVersion >= 10)
+			{
+				if (fscanf(infile, "%i\n", &iFileCount) != 1) goto error;
+				pNZBInfo->SetParkedFileCount(iFileCount);
+			}
 		}
 
-		unsigned long High, Low;
-		if (fscanf(infile, "%lu,%lu\n", &High, &Low) != 2) goto error;
-		pNZBInfo->SetSize(Util::JoinInt64(High, Low));
+		if (iFormatVersion >= 28)
+		{
+			unsigned long High1, Low1, High2, Low2, High3, Low3;
+			if (fscanf(infile, "%lu,%lu,%lu,%lu,%lu,%lu\n", &High1, &Low1, &High2, &Low2, &High3, &Low3) != 6) goto error;
+			pNZBInfo->SetSize(Util::JoinInt64(High1, Low1));
+			pNZBInfo->SetSuccessSize(Util::JoinInt64(High2, Low2));
+			pNZBInfo->SetCurrentSuccessSize(pNZBInfo->GetSuccessSize());
+			pNZBInfo->SetFailedSize(Util::JoinInt64(High3, Low3));
+			pNZBInfo->SetCurrentFailedSize(pNZBInfo->GetFailedSize());
+
+			if (fscanf(infile, "%lu,%lu,%lu,%lu,%lu,%lu\n", &High1, &Low1, &High2, &Low2, &High3, &Low3) != 6) goto error;
+			pNZBInfo->SetParSize(Util::JoinInt64(High1, Low1));
+			pNZBInfo->SetParSuccessSize(Util::JoinInt64(High2, Low2));
+			pNZBInfo->SetParCurrentSuccessSize(pNZBInfo->GetParSuccessSize());
+			pNZBInfo->SetParFailedSize(Util::JoinInt64(High3, Low3));
+			pNZBInfo->SetParCurrentFailedSize(pNZBInfo->GetParFailedSize());
+		}
+		else
+		{
+			unsigned long High, Low;
+			if (fscanf(infile, "%lu,%lu\n", &High, &Low) != 2) goto error;
+			pNZBInfo->SetSize(Util::JoinInt64(High, Low));
+		}
 
 		if (iFormatVersion >= 4)
 		{
@@ -635,12 +680,19 @@ bool DiskState::SaveFileInfo(FileInfo* pFileInfo, const char* szFilename)
 		return false;
 	}
 
+	fprintf(outfile, "%s%i\n", FORMATVERSION_SIGNATURE, 2);
+
 	fprintf(outfile, "%s\n", pFileInfo->GetSubject());
 	fprintf(outfile, "%s\n", pFileInfo->GetFilename());
-	fprintf(outfile, "%i\n", pFileInfo->GetFilenameConfirmed());
+
 	unsigned long High, Low;
 	Util::SplitInt64(pFileInfo->GetSize(), &High, &Low);
 	fprintf(outfile, "%lu,%lu\n", High, Low);
+
+	Util::SplitInt64(pFileInfo->GetMissedSize(), &High, &Low);
+	fprintf(outfile, "%lu,%lu\n", High, Low);
+
+	fprintf(outfile, "%i\n", (int)pFileInfo->GetParFile());
 
 	fprintf(outfile, "%i\n", pFileInfo->GetGroups()->size());
 	for (FileInfo::Groups::iterator it = pFileInfo->GetGroups()->begin(); it != pFileInfo->GetGroups()->end(); it++)
@@ -681,23 +733,57 @@ bool DiskState::LoadFileInfo(FileInfo* pFileInfo, const char * szFilename, bool 
 	}
 
 	char buf[1024];
+	int iFormatVersion = 0;
 
-	if (!fgets(buf, sizeof(buf), infile)) goto error;
-	if (buf[0] != 0) buf[strlen(buf)-1] = 0; // remove traling '\n'
+	if (fgets(buf, sizeof(buf), infile))
+	{
+		if (buf[0] != 0) buf[strlen(buf)-1] = 0; // remove traling '\n'
+		iFormatVersion = ParseFormatVersion(buf);
+		if (iFormatVersion > 2)
+		{
+			error("Could not load diskstate due to file version mismatch");
+			goto error;
+		}
+	}
+	else
+	{
+		goto error;
+	}
+	
+	if (iFormatVersion >= 2)
+	{
+		if (!fgets(buf, sizeof(buf), infile)) goto error;
+		if (buf[0] != 0) buf[strlen(buf)-1] = 0; // remove traling '\n'
+	}
+
 	if (bFileSummary) pFileInfo->SetSubject(buf);
 
 	if (!fgets(buf, sizeof(buf), infile)) goto error;
 	if (buf[0] != 0) buf[strlen(buf)-1] = 0; // remove traling '\n'
 	if (bFileSummary) pFileInfo->SetFilename(buf);
 
-	int iFilenameConfirmed;
-	if (fscanf(infile, "%i\n", &iFilenameConfirmed) != 1) goto error;
-	if (bFileSummary) pFileInfo->SetFilenameConfirmed(iFilenameConfirmed);
+	if (iFormatVersion < 2)
+	{
+		int iFilenameConfirmed;
+		if (fscanf(infile, "%i\n", &iFilenameConfirmed) != 1) goto error;
+		if (bFileSummary) pFileInfo->SetFilenameConfirmed(iFilenameConfirmed);
+	}
 	
 	unsigned long High, Low;
 	if (fscanf(infile, "%lu,%lu\n", &High, &Low) != 2) goto error;
 	if (bFileSummary) pFileInfo->SetSize(Util::JoinInt64(High, Low));
 	if (bFileSummary) pFileInfo->SetRemainingSize(pFileInfo->GetSize());
+
+	if (iFormatVersion >= 2)
+	{
+		if (fscanf(infile, "%lu,%lu\n", &High, &Low) != 2) goto error;
+		if (bFileSummary) pFileInfo->SetMissedSize(Util::JoinInt64(High, Low));
+		if (bFileSummary) pFileInfo->SetRemainingSize(pFileInfo->GetSize() - pFileInfo->GetMissedSize());
+
+		int iParFile;
+		if (fscanf(infile, "%i\n", &iParFile) != 1) goto error;
+		if (bFileSummary) pFileInfo->SetParFile((bool)iParFile);
+	}
 
 	int size;
 	if (fscanf(infile, "%i\n", &size) != 1) goto error;
@@ -708,9 +794,10 @@ bool DiskState::LoadFileInfo(FileInfo* pFileInfo, const char * szFilename, bool 
 		if (bFileSummary) pFileInfo->GetGroups()->push_back(strdup(buf));
 	}
 
+	if (fscanf(infile, "%i\n", &size) != 1) goto error;
+
 	if (bArticles)
 	{
-		if (fscanf(infile, "%i\n", &size) != 1) goto error;
 		for (int i = 0; i < size; i++)
 		{
 			int PartNumber, PartSize;
@@ -1131,6 +1218,12 @@ bool DiskState::LoadHistory(DownloadQueue* pDownloadQueue, FILE* infile, int iFo
 			if (fscanf(infile, "%i\n", &iNZBIndex) != 1) goto error;
 			NZBInfo* pNZBInfo = pDownloadQueue->GetNZBInfoList()->at(iNZBIndex - 1);
 			pHistoryInfo = new HistoryInfo(pNZBInfo);
+			
+			if (iFormatVersion < 28 && pNZBInfo->GetParStatus() == 0 &&
+				pNZBInfo->GetUnpackStatus() == 0 && pNZBInfo->GetMoveStatus() == 0)
+			{
+				pNZBInfo->SetDeleted(true);
+			}
 		}
 		else if (eKind == HistoryInfo::hkUrlInfo)
 		{

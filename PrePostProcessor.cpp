@@ -218,15 +218,18 @@ void PrePostProcessor::QueueCoordinatorUpdate(Subject * Caller, void * Aspect)
 			IsNZBFileCompleted(pAspect->pDownloadQueue, pAspect->pNZBInfo, true, false) &&
 			(!pAspect->pFileInfo->GetPaused() || IsNZBFileCompleted(pAspect->pDownloadQueue, pAspect->pNZBInfo, false, false)))
 		{
-			if (pAspect->eAction == QueueCoordinator::eaFileCompleted ||
+			if ((pAspect->eAction == QueueCoordinator::eaFileCompleted ||
 				(pAspect->pFileInfo->GetAutoDeleted() &&
-				 IsNZBFileCompleted(pAspect->pDownloadQueue, pAspect->pNZBInfo, false, true)))
+				 IsNZBFileCompleted(pAspect->pDownloadQueue, pAspect->pNZBInfo, false, true))) &&
+				 !pAspect->pFileInfo->GetNZBInfo()->GetHealthDeleted())
 			{
 				info("Collection %s completely downloaded", pAspect->pNZBInfo->GetName());
 				NZBDownloaded(pAspect->pDownloadQueue, pAspect->pNZBInfo);
 			}
-			else if (pAspect->eAction == QueueCoordinator::eaFileDeleted &&
-				!pAspect->pNZBInfo->GetParCleanup() &&
+			else if ((pAspect->eAction == QueueCoordinator::eaFileDeleted ||
+				(pAspect->eAction == QueueCoordinator::eaFileCompleted &&
+				 pAspect->pFileInfo->GetNZBInfo()->GetHealthDeleted())) &&
+				!pAspect->pNZBInfo->GetParCleanup() && !pAspect->pNZBInfo->GetPostProcess() &&
 				IsNZBFileCompleted(pAspect->pDownloadQueue, pAspect->pNZBInfo, false, true))
 			{
 				info("Collection %s deleted from queue", pAspect->pNZBInfo->GetName());
@@ -274,6 +277,14 @@ void PrePostProcessor::NZBDownloaded(DownloadQueue* pDownloadQueue, NZBInfo* pNZ
 			pNZBInfo->SetRenameStatus(NZBInfo::rsSkipped);
 		}
 
+		if (pNZBInfo->GetDeleted())
+		{
+			pNZBInfo->SetParStatus(NZBInfo::psFailure);
+			pNZBInfo->SetUnpackStatus(NZBInfo::usFailure);
+			pNZBInfo->SetRenameStatus(NZBInfo::rsFailure);
+			pNZBInfo->SetMoveStatus(NZBInfo::msFailure);
+		}
+
 		pNZBInfo->SetPostProcess(true);
 		pDownloadQueue->GetPostQueue()->push_back(pPostInfo);
 		SaveQueue(pDownloadQueue);
@@ -287,6 +298,8 @@ void PrePostProcessor::NZBDownloaded(DownloadQueue* pDownloadQueue, NZBInfo* pNZ
 
 void PrePostProcessor::NZBDeleted(DownloadQueue* pDownloadQueue, NZBInfo* pNZBInfo)
 {
+	pNZBInfo->SetDeleted(true);
+
 	if (g_pOptions->GetDeleteCleanupDisk() && pNZBInfo->GetCleanupDisk())
 	{
 		// download was cancelled, deleting already downloaded files from disk
@@ -328,7 +341,14 @@ void PrePostProcessor::NZBDeleted(DownloadQueue* pDownloadQueue, NZBInfo* pNZBIn
 		}
 	}
 
-	NZBCompleted(pDownloadQueue, pNZBInfo, true);
+	if (pNZBInfo->GetHealthDeleted())
+	{
+		NZBDownloaded(pDownloadQueue, pNZBInfo);
+	}
+	else
+	{
+		NZBCompleted(pDownloadQueue, pNZBInfo, true);
+	}
 }
 
 void PrePostProcessor::NZBCompleted(DownloadQueue* pDownloadQueue, NZBInfo* pNZBInfo, bool bSaveQueue)
@@ -634,6 +654,24 @@ void PrePostProcessor::StartJob(DownloadQueue* pDownloadQueue, PostInfo* pPostIn
 		}
 		return;
 	}
+	else if (pPostInfo->GetNZBInfo()->GetParStatus() == NZBInfo::psSkipped &&
+		pPostInfo->GetNZBInfo()->CalcHealth() < pPostInfo->GetNZBInfo()->CalcCriticalHealth() &&
+		m_ParCoordinator.FindMainPars(pPostInfo->GetNZBInfo()->GetDestDir(), NULL))
+	{
+		warn("Skipping par-check for %s due to health %.1f%% below critical %.1f%%", pPostInfo->GetInfoName(),
+			pPostInfo->GetNZBInfo()->CalcHealth() / 10.0, pPostInfo->GetNZBInfo()->CalcCriticalHealth() / 10.0);
+		pPostInfo->GetNZBInfo()->SetParStatus(NZBInfo::psFailure);
+		return;
+	}
+	else if (pPostInfo->GetNZBInfo()->GetParStatus() == NZBInfo::psSkipped &&
+		pPostInfo->GetNZBInfo()->GetFailedSize() - pPostInfo->GetNZBInfo()->GetParFailedSize() > 0 &&
+		m_ParCoordinator.FindMainPars(pPostInfo->GetNZBInfo()->GetDestDir(), NULL))
+	{
+		info("Collection %s with health %.1f%% needs par-check",
+			pPostInfo->GetInfoName(), pPostInfo->GetNZBInfo()->CalcHealth() / 10.0);
+		pPostInfo->SetRequestParCheck(true);
+		return;
+	}
 #endif
 
 	NZBParameter* pUnpackParameter = pPostInfo->GetNZBInfo()->GetParameters()->Find("*Unpack:", false);
@@ -664,9 +702,8 @@ void PrePostProcessor::StartJob(DownloadQueue* pDownloadQueue, PostInfo* pPostIn
 
 	if (bUnpack && bParFailed)
 	{
-		warn("Skipping unpack due to %s for %s",
-			pPostInfo->GetNZBInfo()->GetParStatus() == NZBInfo::psManual ? "required par-repair" : "par-failure",
-			pPostInfo->GetInfoName());
+		warn("Skipping unpack for %s due to %s", pPostInfo->GetInfoName(),
+			pPostInfo->GetNZBInfo()->GetParStatus() == NZBInfo::psManual ? "required par-repair" : "par-failure");
 		pPostInfo->GetNZBInfo()->SetUnpackStatus(NZBInfo::usSkipped);
 		bUnpack = false;
 	}
@@ -1181,10 +1218,14 @@ void PrePostProcessor::HistoryReturn(DownloadQueue* pDownloadQueue, HistoryList:
 		pNZBInfo->SetParCleanup(false);
 		if (!pNZBInfo->GetUnpackCleanedUpDisk())
 		{
-			pNZBInfo->SetParStatus(NZBInfo::psNone);
-			pNZBInfo->SetRenameStatus(NZBInfo::rsNone);
 			pNZBInfo->SetUnpackStatus(NZBInfo::usNone);
 			pNZBInfo->SetCleanupStatus(NZBInfo::csNone);
+
+			if (m_ParCoordinator.FindMainPars(pNZBInfo->GetDestDir(), NULL))
+			{
+				pNZBInfo->SetParStatus(NZBInfo::psNone);
+				pNZBInfo->SetRenameStatus(NZBInfo::rsNone);
+			}
 		}
 		pNZBInfo->GetScriptStatuses()->Clear();
 		pNZBInfo->SetParkedFileCount(0);

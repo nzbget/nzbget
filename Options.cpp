@@ -144,6 +144,7 @@ static const char* OPTION_DETAILTARGET			= "DetailTarget";
 static const char* OPTION_PARCHECK				= "ParCheck";
 static const char* OPTION_PARREPAIR				= "ParRepair";
 static const char* OPTION_PARSCAN				= "ParScan";
+static const char* OPTION_HEALTHCHECK			= "HealthCheck";
 static const char* OPTION_NZBPROCESS			= "NZBProcess";
 static const char* OPTION_NZBADDEDPROCESS		= "NZBAddedProcess";
 static const char* OPTION_STRICTPARNAME			= "StrictParName";
@@ -528,6 +529,7 @@ Options::Options(int argc, char* argv[])
 	m_eParCheck				= pcManual;
 	m_bParRepair			= false;
 	m_eParScan				= psLimited;
+	m_eHealthCheck			= hcNone;
 	m_szScriptOrder			= NULL;
 	m_szDefScript			= NULL;
 	m_szNZBProcess			= NULL;
@@ -879,6 +881,7 @@ void Options::InitDefault()
 	SetOption(OPTION_PARCHECK, "auto");
 	SetOption(OPTION_PARREPAIR, "yes");
 	SetOption(OPTION_PARSCAN, "limited");
+	SetOption(OPTION_HEALTHCHECK, "none");
 	SetOption(OPTION_SCRIPTORDER, "");
 	SetOption(OPTION_DEFSCRIPT, "");
 	SetOption(OPTION_NZBPROCESS, "");
@@ -1121,6 +1124,11 @@ void Options::InitOptions()
 	const int ParScanValues[] = { psLimited, psFull, psAuto };
 	const int ParScanCount = 3;
 	m_eParScan = (EParScan)ParseEnumValue(OPTION_PARSCAN, ParScanCount, ParScanNames, ParScanValues);
+
+	const char* HealthCheckNames[] = { "pause", "delete", "none" };
+	const int HealthCheckValues[] = { hcPause, hcDelete, hcNone };
+	const int HealthCheckCount = 3;
+	m_eHealthCheck = (EHealthCheck)ParseEnumValue(OPTION_HEALTHCHECK, HealthCheckCount, HealthCheckNames, HealthCheckValues);
 
 	const char* TargetNames[] = { "screen", "log", "both", "none" };
 	const int TargetValues[] = { mtScreen, mtLog, mtBoth, mtNone };
