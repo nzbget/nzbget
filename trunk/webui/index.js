@@ -130,7 +130,7 @@ var Frontend = (new function($)
 	var mobileSafari = false;
 	var scrollbarWidth = 0;
 	var switchingTheme = false;
-	var activeTab = 'DownloadsTab';
+	var activeTab = 'Downloads';
 	var lastTab = '';
 	
 	this.init = function()

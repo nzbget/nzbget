@@ -282,7 +282,16 @@
 			</div>
 
 			<table class="table table-striped table-bordered table-check table-cancheck datatable" id="DownloadsTable">
-				<thead><tr><th><div class="check img-check"></div></th><th>Status</th><th>Name</th><th>Category</th><th class="text-right">Age</th><th width="120px"><div style="float:left; position:relative; width:50%; text-align:left;">Size</div><div style="float:right; position:relative; width:50%; text-align:right;">Left</div></th><th class="text-right">Estimated time</th></tr></thead>
+				<thead>
+					<tr>
+						<th><div class="check img-check"></div></th>
+						<th width="95px">Status</th><th>Name</th>
+						<th id="DownloadsTable_Category">Category</th>
+						<th width="30px" class="text-right">Age</th>
+						<th width="120px"><div style="float:left; position:relative; width:50%; text-align:left;">Size</div><div style="float:right; position:relative; width:50%; text-align:right;">Left</div></th>
+						<th width="58px" class="text-right">Est. time</th>
+					</tr>
+				</thead>
 				<tbody></tbody>
 			</table>
 
@@ -333,7 +342,14 @@
 			</div>
 
 			<table class="table table-striped table-bordered table-check table-cancheck datatable" id="HistoryTable">
-				<thead><tr><th><div class="check img-check"></div></th><th>Status</th><th width="170px" class="text-center">Time</th><th>Name</th><th>Category</th><th class="text-right">Size</th></tr></thead>
+				<thead><tr>
+					<th><div class="check img-check"></div></th>
+					<th width="75px">Status</th>
+					<th width="170px" class="text-center">Time</th>
+					<th>Name</th>
+					<th id="HistoryTable_Category">Category</th>
+					<th width="70px" class="text-right">Size</th>
+				</tr></thead>
 				<tbody></tbody>
 			</table>
 
@@ -396,7 +412,11 @@
 			</div>
 
 			<table class="table table-striped table-bordered datatable" id="MessagesTable">
-				<thead><tr><th width="65px">Kind</th><th width="170px" class="text-center">Time</th><th>Text</th></tr></thead>
+				<thead><tr>
+					<th width="60px">Kind</th>
+					<th width="170px" class="text-center">Time</th>
+					<th>Text</th>
+				</tr></thead>
 				<tbody></tbody>
 			</table>
 
