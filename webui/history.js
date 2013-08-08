@@ -89,6 +89,11 @@ var History = (new function($)
 
 	this.update = function()
 	{
+		if (!history)
+		{
+			$('#HistoryTable_Category').css('width', DownloadsUI.calcCategoryColumnWidth());
+		}
+
 		RPC.call('history', [], loaded);
 	}
 

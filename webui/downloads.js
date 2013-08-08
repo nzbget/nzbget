@@ -93,6 +93,11 @@ var Downloads = (new function($)
 
 	this.update = function()
 	{
+		if (!groups)
+		{
+			$('#DownloadsTable_Category').css('width', DownloadsUI.calcCategoryColumnWidth());
+		}
+		
 		RPC.call('listgroups', [], groups_loaded);
 	}
 
@@ -156,6 +161,7 @@ var Downloads = (new function($)
 				group.FileCount = 0;
 				group.RemainingFileCount = 0;
 				group.RemainingParCount = 0;
+				group.Parameters = [];
 
 				// insert it after the last pp-item
 				if (lastPPItemIndex > -1)
@@ -537,6 +543,9 @@ var DownloadsUI = (new function($)
 {
 	'use strict';
 	
+	// State
+	var categoryColumnWidth = null;
+	
 	this.fillPriorityCombo = function(combo)
 	{
 		combo.empty();
@@ -717,5 +726,34 @@ var DownloadsUI = (new function($)
 		{
 			return ' <span class="label label-priority label-info">priority: ' + priority + '</span>';
 		}
+	}
+	
+	this.calcCategoryColumnWidth = function()
+	{
+		if (categoryColumnWidth === null)
+		{
+			var widthHelper = $('<div></div>').css({'position': 'absolute', 'float': 'left', 'white-space': 'nowrap', 'visibility': 'hidden'}).appendTo($('body'));
+
+			// default (min) width
+			categoryColumnWidth = 60;
+
+			for (var i = 1; ; i++)
+			{
+				var opt = Options.option('Category' + i + '.Name');
+				if (!opt)
+				{
+					break;
+				}
+				widthHelper.text(opt);
+				var catWidth = widthHelper.width();
+				categoryColumnWidth = Math.max(categoryColumnWidth, catWidth);
+			}
+						
+			widthHelper.remove();
+			
+			categoryColumnWidth += 'px';
+		}
+
+		return categoryColumnWidth;
 	}
 }(jQuery));
