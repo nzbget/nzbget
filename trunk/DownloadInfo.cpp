@@ -220,6 +220,15 @@ NZBInfo::NZBInfo()
 	m_iFileCount = 0;
 	m_iParkedFileCount = 0;
 	m_lSize = 0;
+	m_lSuccessSize = 0;
+	m_lFailedSize = 0;
+	m_lCurrentSuccessSize = 0;
+	m_lCurrentFailedSize = 0;
+	m_lParSize = 0;
+	m_lParSuccessSize = 0;
+	m_lParFailedSize = 0;
+	m_lParCurrentSuccessSize = 0;
+	m_lParCurrentFailedSize = 0;
 	m_iRefCount = 0;
 	m_bPostProcess = false;
 	m_eRenameStatus = rsNone;
@@ -228,6 +237,8 @@ NZBInfo::NZBInfo()
 	m_eCleanupStatus = csNone;
 	m_eMoveStatus = msNone;
 	m_bDeleted = false;
+	m_bHealthPaused = false;
+	m_bHealthDeleted = false;
 	m_bParCleanup = false;
 	m_bCleanupDisk = false;
 	m_bUnpackCleanedUpDisk = false;
@@ -450,6 +461,43 @@ void NZBInfo::BuildFinalDirName(char* szFinalDirBuf, int iBufSize)
 	strncpy(szFinalDirBuf, szBuffer, iBufSize);
 }
 
+int NZBInfo::CalcHealth()
+{
+	if (m_lCurrentFailedSize == 0)
+	{
+		return 1000;
+	}
+
+	int iHealth = (int)(Util::Int64ToFloat(m_lSize - m_lParSize -
+		(m_lCurrentFailedSize - m_lParCurrentFailedSize)) * 1000.0 /
+		Util::Int64ToFloat(m_lSize - m_lParSize));
+
+	if (iHealth == 1000 && m_lCurrentFailedSize - m_lParCurrentFailedSize > 0)
+	{
+		iHealth = 999;
+	}
+
+	return iHealth;
+}
+
+int NZBInfo::CalcCriticalHealth()
+{
+	long long lGoodParSize = m_lParSize - m_lParCurrentFailedSize;
+	int iCriticalHealth = (int)(Util::Int64ToFloat(m_lSize - lGoodParSize*2) * 1000.0 /
+		Util::Int64ToFloat(m_lSize - lGoodParSize));
+
+	if (iCriticalHealth < 0)
+	{
+		iCriticalHealth = 0;
+	}
+	else if (iCriticalHealth == 1000 && m_lParSize > 0)
+	{
+		iCriticalHealth = 999;
+	}
+
+	return iCriticalHealth;
+}
+
 NZBInfo::Messages* NZBInfo::LockMessages()
 {
 	m_mutexLog.Lock();
@@ -568,10 +616,14 @@ FileInfo::FileInfo()
 	m_bFilenameConfirmed = false;
 	m_lSize = 0;
 	m_lRemainingSize = 0;
+	m_lMissedSize = 0;
+	m_lSuccessSize = 0;
+	m_lFailedSize = 0;
 	m_tTime = 0;
 	m_bPaused = false;
 	m_bDeleted = false;
 	m_iCompleted = 0;
+	m_bParFile = false;
 	m_bOutputInitialized = false;
 	m_pNZBInfo = NULL;
 	m_iPriority = 0;

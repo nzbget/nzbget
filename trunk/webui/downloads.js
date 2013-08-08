@@ -228,17 +228,26 @@ var Downloads = (new function($)
 		var progress = DownloadsUI.buildProgress(group, item.data.size, item.data.remaining, item.data.estimated);
 
 		var name = '<a href="#" nzbid="' + group.NZBID + '">' + Util.textToHtml(Util.formatNZBName(group.NZBName)) + '</a>';
+		
+		var health = '';
+		if (group.Health < 1000 && !group.postprocess)
+		{
+			health = ' <span class="label ' + 
+				(group.Health >= group.CriticalHealth ? 'label-warning' : 'label-important') +
+				'">health: ' + Math.floor(group.Health / 10) + '%</span>';
+		}
+		
 		var category = Util.textToHtml(group.Category);
 
 		if (!UISettings.miniTheme)
 		{
-			var info = name + ' ' + priority + progresslabel;
+			var info = name + ' ' + priority + health + progresslabel;
 			item.fields = ['<div class="check img-check"></div>', status, info, category, item.data.age, progress, item.data.estimated];
 		}
 		else
 		{
 			var info = '<div class="check img-check"></div><span class="row-title">' + name + '</span>' +
-				' ' + (group.status === 'queued' ? '' : status) + ' ' + priority;
+				' ' + (group.status === 'queued' ? '' : status) + ' ' + priority + health;
 			if (category)
 			{
 				info += ' <span class="label label-status">' + category + '</span>';

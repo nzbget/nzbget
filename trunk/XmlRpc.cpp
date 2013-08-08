@@ -1087,17 +1087,17 @@ void LogXmlCommand::Execute()
 
     const char* szMessageType[] = { "INFO", "WARNING", "ERROR", "DEBUG", "DETAIL" };
 
-	int szItemBufSize = 10240;
-	char* szItemBuf = (char*)malloc(szItemBufSize);
+	int iItemBufSize = 10240;
+	char* szItemBuf = (char*)malloc(iItemBufSize);
 	int index = 0;
 
 	for (unsigned int i = (unsigned int)iStart; i < pMessages->size(); i++)
 	{
 		Message* pMessage = (*pMessages)[i];
 		char* xmltext = EncodeStr(pMessage->GetText());
-		snprintf(szItemBuf, szItemBufSize, IsJson() ? JSON_LOG_ITEM : XML_LOG_ITEM,
+		snprintf(szItemBuf, iItemBufSize, IsJson() ? JSON_LOG_ITEM : XML_LOG_ITEM,
 			pMessage->GetID(), szMessageType[pMessage->GetKind()], pMessage->GetTime(), xmltext);
-		szItemBuf[szItemBufSize-1] = '\0';
+		szItemBuf[iItemBufSize-1] = '\0';
 		free(xmltext);
 
 		if (IsJson() && index++ > 0)
@@ -1185,8 +1185,8 @@ void ListFilesXmlCommand::Execute()
 		"\"ActiveDownloads\" : %i\n"
 		"}";
 
-	int szItemBufSize = 10240;
-	char* szItemBuf = (char*)malloc(szItemBufSize);
+	int iItemBufSize = 10240;
+	char* szItemBuf = (char*)malloc(iItemBufSize);
 	int index = 0;
 
 	for (FileQueue::iterator it = pDownloadQueue->GetFileQueue()->begin(); it != pDownloadQueue->GetFileQueue()->end(); it++)
@@ -1206,13 +1206,13 @@ void ListFilesXmlCommand::Execute()
 			char* xmlCategory = EncodeStr(pFileInfo->GetNZBInfo()->GetCategory());
 			char* xmlNZBNicename = EncodeStr(pFileInfo->GetNZBInfo()->GetName());
 
-			snprintf(szItemBuf, szItemBufSize, IsJson() ? JSON_LIST_ITEM : XML_LIST_ITEM,
+			snprintf(szItemBuf, iItemBufSize, IsJson() ? JSON_LIST_ITEM : XML_LIST_ITEM,
 				pFileInfo->GetID(), iFileSizeLo, iFileSizeHi, iRemainingSizeLo, iRemainingSizeHi, 
 				pFileInfo->GetTime(), BoolToStr(pFileInfo->GetFilenameConfirmed()), 
 				BoolToStr(pFileInfo->GetPaused()), pFileInfo->GetNZBInfo()->GetID(), xmlNZBNicename,
 				xmlNZBNicename, xmlNZBFilename, xmlSubject, xmlFilename, xmlDestDir, xmlCategory,
 				pFileInfo->GetPriority(), pFileInfo->GetActiveDownloads());
-			szItemBuf[szItemBufSize-1] = '\0';
+			szItemBuf[iItemBufSize-1] = '\0';
 
 			free(xmlNZBFilename);
 			free(xmlSubject);
@@ -1265,6 +1265,8 @@ void ListGroupsXmlCommand::Execute()
 		"<member><name>MinPriority</name><value><i4>%i</i4></value></member>\n"
 		"<member><name>MaxPriority</name><value><i4>%i</i4></value></member>\n"
 		"<member><name>ActiveDownloads</name><value><i4>%i</i4></value></member>\n"
+		"<member><name>Health</name><value><i4>%i</i4></value></member>\n"
+		"<member><name>CriticalHealth</name><value><i4>%i</i4></value></member>\n"
 		"<member><name>Parameters</name><value><array><data>\n";
 
 	const char* XML_LIST_ITEM_END = 
@@ -1298,9 +1300,11 @@ void ListGroupsXmlCommand::Execute()
 		"\"MinPriority\" : %i,\n"
 		"\"MaxPriority\" : %i,\n"
 		"\"ActiveDownloads\" : %i,\n"
+		"\"Health\" : %i,\n"
+		"\"CriticalHealth\" : %i,\n"
 		"\"Parameters\" : [\n";
-
-	const char* JSON_LIST_ITEM_END = 
+	
+	const char* JSON_LIST_ITEM_END =
 		"]\n"
 		"}";
 
@@ -1322,13 +1326,14 @@ void ListGroupsXmlCommand::Execute()
 	pDownloadQueue->BuildGroups(&groupQueue);
 	g_pQueueCoordinator->UnlockQueue();
 
-	int szItemBufSize = 10240;
-	char* szItemBuf = (char*)malloc(szItemBufSize);
+	int iItemBufSize = 10240;
+	char* szItemBuf = (char*)malloc(iItemBufSize);
 	int index = 0;
 
 	for (GroupQueue::iterator it = groupQueue.begin(); it != groupQueue.end(); it++)
 	{
 		GroupInfo* pGroupInfo = *it;
+
 		unsigned long iFileSizeHi, iFileSizeLo, iFileSizeMB;
 		unsigned long iRemainingSizeLo, iRemainingSizeHi, iRemainingSizeMB;
 		unsigned long iPausedSizeLo, iPausedSizeHi, iPausedSizeMB;
@@ -1344,14 +1349,15 @@ void ListGroupsXmlCommand::Execute()
 		char* xmlDestDir = EncodeStr(pGroupInfo->GetNZBInfo()->GetDestDir());
 		char* xmlCategory = EncodeStr(pGroupInfo->GetNZBInfo()->GetCategory());
 
-		snprintf(szItemBuf, szItemBufSize, IsJson() ? JSON_LIST_ITEM_START : XML_LIST_ITEM_START,
+		snprintf(szItemBuf, iItemBufSize, IsJson() ? JSON_LIST_ITEM_START : XML_LIST_ITEM_START,
 			pGroupInfo->GetFirstID(), pGroupInfo->GetLastID(), iFileSizeLo, iFileSizeHi, iFileSizeMB, 
 			iRemainingSizeLo, iRemainingSizeHi, iRemainingSizeMB, iPausedSizeLo, iPausedSizeHi, iPausedSizeMB, 
 			pGroupInfo->GetNZBInfo()->GetFileCount(), pGroupInfo->GetRemainingFileCount(), 
 			pGroupInfo->GetRemainingParCount(), pGroupInfo->GetMinTime(), pGroupInfo->GetMaxTime(),
 			pGroupInfo->GetNZBInfo()->GetID(), xmlNZBNicename, xmlNZBNicename, xmlNZBFilename, xmlDestDir, xmlCategory,
-			pGroupInfo->GetMinPriority(), pGroupInfo->GetMaxPriority(), pGroupInfo->GetActiveDownloads());
-		szItemBuf[szItemBufSize-1] = '\0';
+			pGroupInfo->GetMinPriority(), pGroupInfo->GetMaxPriority(), pGroupInfo->GetActiveDownloads(),
+			pGroupInfo->GetNZBInfo()->CalcHealth(), pGroupInfo->GetNZBInfo()->CalcCriticalHealth());
+		szItemBuf[iItemBufSize-1] = '\0';
 
 		free(xmlNZBNicename);
 		free(xmlNZBFilename);
@@ -1373,8 +1379,8 @@ void ListGroupsXmlCommand::Execute()
 			char* xmlName = EncodeStr(pParameter->GetName());
 			char* xmlValue = EncodeStr(pParameter->GetValue());
 
-			snprintf(szItemBuf, szItemBufSize, IsJson() ? JSON_PARAMETER_ITEM : XML_PARAMETER_ITEM, xmlName, xmlValue);
-			szItemBuf[szItemBufSize-1] = '\0';
+			snprintf(szItemBuf, iItemBufSize, IsJson() ? JSON_PARAMETER_ITEM : XML_PARAMETER_ITEM, xmlName, xmlValue);
+			szItemBuf[iItemBufSize-1] = '\0';
 
 			free(xmlName);
 			free(xmlValue);
@@ -1644,8 +1650,8 @@ void PostQueueXmlCommand::Execute()
 	PostQueue* pPostQueue = g_pQueueCoordinator->LockQueue()->GetPostQueue();
 
 	time_t tCurTime = time(NULL);
-	int szItemBufSize = 10240;
-	char* szItemBuf = (char*)malloc(szItemBufSize);
+	int iItemBufSize = 10240;
+	char* szItemBuf = (char*)malloc(iItemBufSize);
 	int index = 0;
 
 	for (PostQueue::iterator it = pPostQueue->begin(); it != pPostQueue->end(); it++)
@@ -1660,14 +1666,14 @@ void PostQueueXmlCommand::Execute()
 		char* xmlInfoName = EncodeStr(pPostInfo->GetInfoName());
 		char* xmlProgressLabel = EncodeStr(pPostInfo->GetProgressLabel());
 
-		snprintf(szItemBuf, szItemBufSize, IsJson() ? JSON_POSTQUEUE_ITEM_START : XML_POSTQUEUE_ITEM_START,
+		snprintf(szItemBuf, iItemBufSize, IsJson() ? JSON_POSTQUEUE_ITEM_START : XML_POSTQUEUE_ITEM_START,
 			pPostInfo->GetID(), pPostInfo->GetNZBInfo()->GetID(), xmlNZBNicename,
 			xmlNZBNicename, xmlNZBFilename, xmlDestDir, "",
 			xmlInfoName, szPostStageName[pPostInfo->GetStage()], xmlProgressLabel,
 			pPostInfo->GetFileProgress(), pPostInfo->GetStageProgress(),
 			pPostInfo->GetStartTime() ? tCurTime - pPostInfo->GetStartTime() : 0,
 			pPostInfo->GetStageTime() ? tCurTime - pPostInfo->GetStageTime() : 0);
-		szItemBuf[szItemBufSize-1] = '\0';
+		szItemBuf[iItemBufSize-1] = '\0';
 
 		free(xmlNZBNicename);
 		free(xmlNZBFilename);
@@ -1697,9 +1703,9 @@ void PostQueueXmlCommand::Execute()
 				{
 					Message* pMessage = (*pMessages)[i];
 					char* xmltext = EncodeStr(pMessage->GetText());
-					snprintf(szItemBuf, szItemBufSize, IsJson() ? JSON_LOG_ITEM : XML_LOG_ITEM,
+					snprintf(szItemBuf, iItemBufSize, IsJson() ? JSON_LOG_ITEM : XML_LOG_ITEM,
 						pMessage->GetID(), szMessageType[pMessage->GetKind()], pMessage->GetTime(), xmltext);
-					szItemBuf[szItemBufSize-1] = '\0';
+					szItemBuf[iItemBufSize-1] = '\0';
 					free(xmltext);
 
 					if (IsJson() && index++ > 0)
@@ -1818,6 +1824,10 @@ void HistoryXmlCommand::Execute()
 		"<member><name>HistoryTime</name><value><i4>%i</i4></value></member>\n"
 		"<member><name>URL</name><value><string>%s</string></value></member>\n"
 		"<member><name>UrlStatus</name><value><string>%s</string></value></member>\n"
+		"<member><name>Health</name><value><i4>%i</i4></value></member>\n"
+		"<member><name>CriticalHealth</name><value><i4>%i</i4></value></member>\n"
+		"<member><name>Deleted</name><value><boolean>%s</boolean></value></member>\n"
+		"<member><name>HealthDeleted</name><value><boolean>%s</boolean></value></member>\n"
 		"<member><name>Parameters</name><value><array><data>\n";
 
 	const char* XML_HISTORY_ITEM_SCRIPT_START =
@@ -1855,6 +1865,10 @@ void HistoryXmlCommand::Execute()
 		"\"HistoryTime\" : %i,\n"
 		"\"URL\" : \"%s\",\n"
 		"\"UrlStatus\" : \"%s\",\n"
+		"\"Health\" : %i,\n"
+		"\"CriticalHealth\" : %i,\n"
+		"\"Deleted\" : %s,\n"
+		"\"HealthDeleted\" : %s,\n"
 		"\"Parameters\" : [\n";
 
 	const char* JSON_HISTORY_ITEM_SCRIPT_START =
@@ -1918,8 +1932,8 @@ void HistoryXmlCommand::Execute()
 
 	DownloadQueue* pDownloadQueue = g_pQueueCoordinator->LockQueue();
 
-	int szItemBufSize = 10240;
-	char* szItemBuf = (char*)malloc(szItemBufSize);
+	int iItemBufSize = 10240;
+	char* szItemBuf = (char*)malloc(iItemBufSize);
 	int index = 0;
 
 	for (HistoryList::iterator it = pDownloadQueue->GetHistoryList()->begin(); it != pDownloadQueue->GetHistoryList()->end(); it++)
@@ -1946,13 +1960,15 @@ void HistoryXmlCommand::Execute()
 			char* xmlFinalDir = EncodeStr(pNZBInfo->GetFinalDir());
 			xmlCategory = EncodeStr(pNZBInfo->GetCategory());
 
-			snprintf(szItemBuf, szItemBufSize, IsJson() ? JSON_HISTORY_ITEM_START : XML_HISTORY_ITEM_START,
+			snprintf(szItemBuf, iItemBufSize, IsJson() ? JSON_HISTORY_ITEM_START : XML_HISTORY_ITEM_START,
 				pHistoryInfo->GetID(), pNZBInfo->GetID(), "NZB", xmlNicename, xmlNicename, xmlNZBFilename, 
 				xmlDestDir, xmlFinalDir, xmlCategory, szParStatusName[pNZBInfo->GetParStatus()],
 				szUnpackStatusName[pNZBInfo->GetUnpackStatus()], szMoveStatusName[pNZBInfo->GetMoveStatus()],
 				szScriptStatusName[pNZBInfo->GetScriptStatuses()->CalcTotalStatus()],
 				iFileSizeLo, iFileSizeHi, iFileSizeMB, pNZBInfo->GetFileCount(),
-				pNZBInfo->GetParkedFileCount(), pHistoryInfo->GetTime(), "", "");
+				pNZBInfo->GetParkedFileCount(), pHistoryInfo->GetTime(), "", "",
+				pNZBInfo->CalcHealth(), pNZBInfo->CalcCriticalHealth(), BoolToStr(pNZBInfo->GetDeleted()),
+				BoolToStr(pNZBInfo->GetHealthDeleted()));
 
 			free(xmlDestDir);
 			free(xmlFinalDir);
@@ -1965,15 +1981,15 @@ void HistoryXmlCommand::Execute()
 			xmlCategory = EncodeStr(pUrlInfo->GetCategory());
 			char* xmlURL = EncodeStr(pUrlInfo->GetURL());
 
-			snprintf(szItemBuf, szItemBufSize, IsJson() ? JSON_HISTORY_ITEM_START : XML_HISTORY_ITEM_START,
+			snprintf(szItemBuf, iItemBufSize, IsJson() ? JSON_HISTORY_ITEM_START : XML_HISTORY_ITEM_START,
 				pHistoryInfo->GetID(), 0, "URL", xmlNicename, xmlNicename, xmlNZBFilename, 
 				"", "", xmlCategory, "", "", "", "", 0, 0, 0, 0, 0, pHistoryInfo->GetTime(), xmlURL,
-				szUrlStatusName[pUrlInfo->GetStatus()]);
+				szUrlStatusName[pUrlInfo->GetStatus()], 0, 0, BoolToStr(false), BoolToStr(false));
 
 			free(xmlURL);
 		}
 
-		szItemBuf[szItemBufSize-1] = '\0';
+		szItemBuf[iItemBufSize-1] = '\0';
 
 		free(xmlNicename);
 		free(xmlNZBFilename);
@@ -1996,8 +2012,8 @@ void HistoryXmlCommand::Execute()
 				char* xmlName = EncodeStr(pParameter->GetName());
 				char* xmlValue = EncodeStr(pParameter->GetValue());
 
-				snprintf(szItemBuf, szItemBufSize, IsJson() ? JSON_PARAMETER_ITEM : XML_PARAMETER_ITEM, xmlName, xmlValue);
-				szItemBuf[szItemBufSize-1] = '\0';
+				snprintf(szItemBuf, iItemBufSize, IsJson() ? JSON_PARAMETER_ITEM : XML_PARAMETER_ITEM, xmlName, xmlValue);
+				szItemBuf[iItemBufSize-1] = '\0';
 
 				free(xmlName);
 				free(xmlValue);
@@ -2023,8 +2039,8 @@ void HistoryXmlCommand::Execute()
 				char* xmlName = EncodeStr(pScriptStatus->GetName());
 				char* xmlStatus = EncodeStr(szScriptStatusName[pScriptStatus->GetStatus()]);
 				
-				snprintf(szItemBuf, szItemBufSize, IsJson() ? JSON_SCRIPT_ITEM : XML_SCRIPT_ITEM, xmlName, xmlStatus);
-				szItemBuf[szItemBufSize-1] = '\0';
+				snprintf(szItemBuf, iItemBufSize, IsJson() ? JSON_SCRIPT_ITEM : XML_SCRIPT_ITEM, xmlName, xmlStatus);
+				szItemBuf[iItemBufSize-1] = '\0';
 				
 				free(xmlName);
 				free(xmlStatus);
@@ -2050,9 +2066,9 @@ void HistoryXmlCommand::Execute()
 				{
 					Message* pMessage = *it;
 					char* xmltext = EncodeStr(pMessage->GetText());
-					snprintf(szItemBuf, szItemBufSize, IsJson() ? JSON_LOG_ITEM : XML_LOG_ITEM,
+					snprintf(szItemBuf, iItemBufSize, IsJson() ? JSON_LOG_ITEM : XML_LOG_ITEM,
 						pMessage->GetID(), szMessageType[pMessage->GetKind()], pMessage->GetTime(), xmltext);
-					szItemBuf[szItemBufSize-1] = '\0';
+					szItemBuf[iItemBufSize-1] = '\0';
 					free(xmltext);
 
 					if (IsJson() && iLogIndex++ > 0)
@@ -2172,8 +2188,8 @@ void UrlQueueXmlCommand::Execute()
 
 	UrlQueue* pUrlQueue = g_pQueueCoordinator->LockQueue()->GetUrlQueue();
 
-	int szItemBufSize = 10240;
-	char* szItemBuf = (char*)malloc(szItemBufSize);
+	int iItemBufSize = 10240;
+	char* szItemBuf = (char*)malloc(iItemBufSize);
 	int index = 0;
 
 	for (UrlQueue::iterator it = pUrlQueue->begin(); it != pUrlQueue->end(); it++)
@@ -2187,9 +2203,9 @@ void UrlQueueXmlCommand::Execute()
 		char* xmlURL = EncodeStr(pUrlInfo->GetURL());
 		char* xmlCategory = EncodeStr(pUrlInfo->GetCategory());
 
-		snprintf(szItemBuf, szItemBufSize, IsJson() ? JSON_URLQUEUE_ITEM : XML_URLQUEUE_ITEM,
+		snprintf(szItemBuf, iItemBufSize, IsJson() ? JSON_URLQUEUE_ITEM : XML_URLQUEUE_ITEM,
 			pUrlInfo->GetID(), xmlNZBFilename, xmlURL, xmlNicename, xmlCategory, pUrlInfo->GetPriority());
-		szItemBuf[szItemBufSize-1] = '\0';
+		szItemBuf[iItemBufSize-1] = '\0';
 
 		free(xmlNicename);
 		free(xmlNZBFilename);
@@ -2392,11 +2408,11 @@ void ConfigTemplatesXmlCommand::Execute()
 		char* xmlDisplayName = EncodeStr(pConfigTemplate->GetDisplayName());
 		char* xmlTemplate = EncodeStr(pConfigTemplate->GetTemplate());
 
-		int szItemBufSize = strlen(xmlName) + strlen(xmlTemplate) + 1024;
-		char* szItemBuf = (char*)malloc(szItemBufSize);
+		int iItemBufSize = strlen(xmlName) + strlen(xmlTemplate) + 1024;
+		char* szItemBuf = (char*)malloc(iItemBufSize);
 
-		snprintf(szItemBuf, szItemBufSize, IsJson() ? JSON_CONFIG_ITEM : XML_CONFIG_ITEM, xmlName, xmlDisplayName, xmlTemplate);
-		szItemBuf[szItemBufSize-1] = '\0';
+		snprintf(szItemBuf, iItemBufSize, IsJson() ? JSON_CONFIG_ITEM : XML_CONFIG_ITEM, xmlName, xmlDisplayName, xmlTemplate);
+		szItemBuf[iItemBufSize-1] = '\0';
 
 		free(xmlName);
 		free(xmlDisplayName);
@@ -2521,8 +2537,8 @@ void ViewFeedXmlCommand::Execute()
     const char* szStatusType[] = { "UNKNOWN", "BACKLOG", "FETCHED", "NEW" };
     const char* szMatchStatusType[] = { "IGNORED", "ACCEPTED", "REJECTED" };
 
-	int szItemBufSize = 10240;
-	char* szItemBuf = (char*)malloc(szItemBufSize);
+	int iItemBufSize = 10240;
+	char* szItemBuf = (char*)malloc(iItemBufSize);
 
 	AppendResponse(IsJson() ? "[\n" : "<array><data>\n");
 	int index = 0;
@@ -2543,12 +2559,12 @@ void ViewFeedXmlCommand::Execute()
 			char* xmlcategory = EncodeStr(pFeedItemInfo->GetCategory());
 			char* xmladdcategory = EncodeStr(pFeedItemInfo->GetAddCategory());
 
-			snprintf(szItemBuf, szItemBufSize, IsJson() ? JSON_FEED_ITEM : XML_FEED_ITEM,
+			snprintf(szItemBuf, iItemBufSize, IsJson() ? JSON_FEED_ITEM : XML_FEED_ITEM,
 				xmltitle, xmlfilename, xmlurl, iSizeLo, iSizeHi, iSizeMB, xmlcategory, xmladdcategory,
 				BoolToStr(pFeedItemInfo->GetPauseNzb()), pFeedItemInfo->GetPriority(), pFeedItemInfo->GetTime(),
 				szMatchStatusType[pFeedItemInfo->GetMatchStatus()], pFeedItemInfo->GetMatchRule(),
 				szStatusType[pFeedItemInfo->GetStatus()]);
-			szItemBuf[szItemBufSize-1] = '\0';
+			szItemBuf[iItemBufSize-1] = '\0';
 
 			free(xmltitle);
 			free(xmlfilename);

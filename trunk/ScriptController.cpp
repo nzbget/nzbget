@@ -832,6 +832,14 @@ void PostScriptController::PrepareParams(const char* szScriptName)
 	strncpy(szNZBName, m_pPostInfo->GetNZBInfo()->GetName(), 1024);
 	szNZBName[1024-1] = '\0';
 
+	char szHealth[10];
+	snprintf(szHealth, 10, "%i", m_pPostInfo->GetNZBInfo()->CalcHealth());
+	szHealth[10-1] = '\0';
+
+	char szCriticalHealth[10];
+	snprintf(szCriticalHealth, 10, "%i", m_pPostInfo->GetNZBInfo()->CalcCriticalHealth());
+	szCriticalHealth[10-1] = '\0';
+
 	int iParStatus[] = { 0, 0, 1, 2, 3, 4 };
 	char szParStatus[10];
 	snprintf(szParStatus, 10, "%i", iParStatus[m_pPostInfo->GetNZBInfo()->GetParStatus()]);
@@ -865,6 +873,8 @@ void PostScriptController::PrepareParams(const char* szScriptName)
 	SetEnvVar("NZBPP_NZBID", szNZBID);
 	SetEnvVar("NZBPP_DIRECTORY", szDestDir);
 	SetEnvVar("NZBPP_NZBFILENAME", szNZBFilename);
+	SetEnvVar("NZBPP_HEALTH", szHealth);
+	SetEnvVar("NZBPP_CRITICALHEALTH", szCriticalHealth);
 	SetEnvVar("NZBPP_PARSTATUS", szParStatus);
 	SetEnvVar("NZBPP_UNPACKSTATUS", szUnpackStatus);
 	SetEnvVar("NZBPP_CATEGORY", szCategory);

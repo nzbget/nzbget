@@ -121,17 +121,7 @@ void UnpackController::Run()
 	snprintf(m_szInfoNameUp, 1024, "Unpack for %s", m_szName); // first letter in upper case
 	m_szInfoNameUp[1024-1] = '\0';
 
-	CheckStateFiles();
-
-#ifndef DISABLE_PARCHECK
-	if (bUnpack && m_bHasBrokenFiles && m_pPostInfo->GetNZBInfo()->GetParStatus() <= NZBInfo::psSkipped && m_bHasParFiles)
-	{
-		PrintMessage(Message::mkInfo, "%s has broken files", m_szName);
-		RequestParCheck(false);
-		m_pPostInfo->SetWorking(false);
-		return;
-	}
-#endif
+	m_bHasParFiles = ParCoordinator::FindMainPars(m_szDestDir, NULL);
 
 	if (bUnpack)
 	{
@@ -324,16 +314,6 @@ void UnpackController::RequestParCheck(bool bRename)
 	m_pPostInfo->SetStage(PostInfo::ptFinished);
 }
 #endif
-
-void UnpackController::CheckStateFiles()
-{
-	char szBrokenLog[1024];
-	snprintf(szBrokenLog, 1024, "%s%c%s", m_szDestDir, PATH_SEPARATOR, "_brokenlog.txt");
-	szBrokenLog[1024-1] = '\0';
-	m_bHasBrokenFiles = Util::FileExists(szBrokenLog);
-
-	m_bHasParFiles = ParCoordinator::FindMainPars(m_szDestDir, NULL);
-}
 
 void UnpackController::CreateUnpackDir()
 {

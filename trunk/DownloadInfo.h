@@ -85,10 +85,14 @@ private:
 	char*				m_szFilename;
 	long long 			m_lSize;
 	long long 			m_lRemainingSize;
+	long long			m_lSuccessSize;
+	long long			m_lFailedSize;
+	long long			m_lMissedSize;
 	time_t				m_tTime;
 	bool				m_bPaused;
 	bool				m_bDeleted;
 	bool				m_bFilenameConfirmed;
+	bool				m_bParFile;
 	int					m_iCompleted;
 	bool				m_bOutputInitialized;
 	char*				m_szOutputFilename;
@@ -116,10 +120,16 @@ public:
 	void				MakeValidFilename();
 	bool				GetFilenameConfirmed() { return m_bFilenameConfirmed; }
 	void				SetFilenameConfirmed(bool bFilenameConfirmed) { m_bFilenameConfirmed = bFilenameConfirmed; }
-	void 				SetSize(long long s) { m_lSize = s; m_lRemainingSize = s; }
+	void 				SetSize(long long lSize) { m_lSize = lSize; m_lRemainingSize = lSize; }
 	long long 			GetSize() { return m_lSize; }
 	long long 			GetRemainingSize() { return m_lRemainingSize; }
-	void 				SetRemainingSize(long long s) { m_lRemainingSize = s; }
+	void 				SetRemainingSize(long long lRemainingSize) { m_lRemainingSize = lRemainingSize; }
+	long long			GetMissedSize() { return m_lMissedSize; }
+	void 				SetMissedSize(long long lMissedSize) { m_lMissedSize = lMissedSize; }
+	long long			GetSuccessSize() { return m_lSuccessSize; }
+	void 				SetSuccessSize(long long lSuccessSize) { m_lSuccessSize = lSuccessSize; }
+	long long			GetFailedSize() { return m_lFailedSize; }
+	void 				SetFailedSize(long long lFailedSize) { m_lFailedSize = lFailedSize; }
 	time_t				GetTime() { return m_tTime; }
 	void				SetTime(time_t tTime) { m_tTime = tTime; }
 	bool				GetPaused() { return m_bPaused; }
@@ -127,7 +137,9 @@ public:
 	bool				GetDeleted() { return m_bDeleted; }
 	void				SetDeleted(bool Deleted) { m_bDeleted = Deleted; }
 	int					GetCompleted() { return m_iCompleted; }
-	void				SetCompleted(int s) { m_iCompleted = s; }
+	void				SetCompleted(int iCompleted) { m_iCompleted = iCompleted; }
+	bool				GetParFile() { return m_bParFile; }
+	void				SetParFile(bool bParFile) { m_bParFile = bParFile; }
 	void				ClearArticles();
 	void				LockOutputFile();
 	void				UnlockOutputFile();
@@ -309,6 +321,15 @@ private:
 	int		 			m_iFileCount;
 	int		 			m_iParkedFileCount;
 	long long 			m_lSize;
+	long long			m_lSuccessSize;
+	long long			m_lFailedSize;
+	long long			m_lCurrentSuccessSize;
+	long long			m_lCurrentFailedSize;
+	long long			m_lParSize;
+	long long			m_lParSuccessSize;
+	long long			m_lParFailedSize;
+	long long			m_lParCurrentSuccessSize;
+	long long			m_lParCurrentFailedSize;
 	Files				m_completedFiles;
 	bool				m_bPostProcess;
 	ERenameStatus		m_eRenameStatus;
@@ -318,6 +339,8 @@ private:
 	EMoveStatus			m_eMoveStatus;
 	char*				m_szQueuedFilename;
 	bool				m_bDeleted;
+	bool				m_bHealthPaused;
+	bool				m_bHealthDeleted;
 	bool				m_bParCleanup;
 	bool				m_bParManual;
 	bool				m_bCleanupDisk;
@@ -353,6 +376,24 @@ public:
 	void				SetName(const char* szName);	   // needs locking (for shared objects)
 	long long 			GetSize() { return m_lSize; }
 	void 				SetSize(long long lSize) { m_lSize = lSize; }
+	long long			GetSuccessSize() { return m_lSuccessSize; }
+	void 				SetSuccessSize(long long lSuccessSize) { m_lSuccessSize = lSuccessSize; }
+	long long			GetFailedSize() { return m_lFailedSize; }
+	void 				SetFailedSize(long long lFailedSize) { m_lFailedSize = lFailedSize; }
+	long long			GetCurrentSuccessSize() { return m_lCurrentSuccessSize; }
+	void 				SetCurrentSuccessSize(long long lCurrentSuccessSize) { m_lCurrentSuccessSize = lCurrentSuccessSize; }
+	long long			GetCurrentFailedSize() { return m_lCurrentFailedSize; }
+	void 				SetCurrentFailedSize(long long lCurrentFailedSize) { m_lCurrentFailedSize = lCurrentFailedSize; }
+	long long			GetParSize() { return m_lParSize; }
+	void 				SetParSize(long long lParSize) { m_lParSize = lParSize; }
+	long long			GetParSuccessSize() { return m_lParSuccessSize; }
+	void 				SetParSuccessSize(long long lParSuccessSize) { m_lParSuccessSize = lParSuccessSize; }
+	long long			GetParFailedSize() { return m_lParFailedSize; }
+	void 				SetParFailedSize(long long lParFailedSize) { m_lParFailedSize = lParFailedSize; }
+	long long			GetParCurrentSuccessSize() { return m_lParCurrentSuccessSize; }
+	void 				SetParCurrentSuccessSize(long long lParCurrentSuccessSize) { m_lParCurrentSuccessSize = lParCurrentSuccessSize; }
+	long long			GetParCurrentFailedSize() { return m_lParCurrentFailedSize; }
+	void 				SetParCurrentFailedSize(long long lParCurrentFailedSize) { m_lParCurrentFailedSize = lParCurrentFailedSize; }
 	int					GetFileCount() { return m_iFileCount; }
 	void 				SetFileCount(int iFileCount) { m_iFileCount = iFileCount; }
 	int					GetParkedFileCount() { return m_iParkedFileCount; }
@@ -377,6 +418,10 @@ public:
 	void				SetQueuedFilename(const char* szQueuedFilename);
 	bool				GetDeleted() { return m_bDeleted; }
 	void				SetDeleted(bool bDeleted) { m_bDeleted = bDeleted; }
+	bool				GetHealthPaused() { return m_bHealthPaused; }
+	void				SetHealthPaused(bool bHealthPaused) { m_bHealthPaused = bHealthPaused; }
+	bool				GetHealthDeleted() { return m_bHealthDeleted; }
+	void				SetHealthDeleted(bool bHealthDeleted) { m_bHealthDeleted = bHealthDeleted; }
 	bool				GetParCleanup() { return m_bParCleanup; }
 	void				SetParCleanup(bool bParCleanup) { m_bParCleanup = bParCleanup; }
 	bool				GetCleanupDisk() { return m_bCleanupDisk; }
@@ -385,6 +430,8 @@ public:
 	void				SetUnpackCleanedUpDisk(bool bUnpackCleanedUpDisk) { m_bUnpackCleanedUpDisk = bUnpackCleanedUpDisk; }
 	NZBParameterList*	GetParameters() { return &m_ppParameters; }				// needs locking (for shared objects)
 	ScriptStatusList*	GetScriptStatuses() { return &m_scriptStatuses; }        // needs locking (for shared objects)
+	int					CalcHealth();
+	int					CalcCriticalHealth();
 	void				AppendMessage(Message::EKind eKind, time_t tTime, const char* szText);
 	Messages*			LockMessages();
 	void				UnlockMessages();

@@ -43,12 +43,14 @@ class QueueCoordinator : public Thread, public Observer, public Subject, public 
 {
 public:
 	typedef std::list<ArticleDownloader*>	ActiveDownloads;
+
 	enum EAspectAction
 	{
 		eaNZBFileAdded,
 		eaFileCompleted,
 		eaFileDeleted
 	};
+
 	struct Aspect
 	{
 		EAspectAction eAction;
@@ -94,6 +96,8 @@ private:
 	bool					IsDupe(FileInfo* pFileInfo);
 	void					ArticleCompleted(ArticleDownloader* pArticleDownloader);
 	void					DeleteFileInfo(FileInfo* pFileInfo, bool bCompleted);
+	void					StatFileInfo(FileInfo* pFileInfo, bool bCompleted);
+	void					CheckHealth(FileInfo* pFileInfo);
 	void					ResetHangingDownloads();
 	void					ResetSpeedStat();
 	void					EnterLeaveStandBy(bool bEnter);

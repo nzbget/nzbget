@@ -82,7 +82,6 @@ protected:
 	void				Completed();
 	void				CreateUnpackDir();
 	bool				Cleanup();
-	void				CheckStateFiles();
 	void				CheckArchiveFiles(bool bScanNonStdFiles);
 	void				SetProgressLabel(const char* szProgressLabel);
 #ifndef DISABLE_PARCHECK

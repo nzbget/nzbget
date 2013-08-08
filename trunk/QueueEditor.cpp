@@ -544,7 +544,6 @@ bool QueueEditor::EditGroup(DownloadQueue* pDownloadQueue, FileInfo* pFileInfo, 
 	}
 	else if (eAction == eaGroupDelete)
 	{
-		pFileInfo->GetNZBInfo()->SetDeleted(true);
 		pFileInfo->GetNZBInfo()->SetCleanupDisk(CanCleanupDisk(pDownloadQueue, pFileInfo->GetNZBInfo()));
 	}
 
