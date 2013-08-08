@@ -34,6 +34,7 @@
 
 #include <string.h>
 #include <list>
+#include <ctype.h>
 #ifdef WIN32
 #include <comutil.h>
 #import <msxml.tlb> named_guids 
