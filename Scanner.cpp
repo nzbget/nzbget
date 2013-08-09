@@ -556,11 +556,14 @@ bool Scanner::AddExternalFile(const char* szNZBName, const char* szCategory, int
 		iNum++;
 	}
 
+	m_mutexScan.Lock();
+
 	if (!Util::MoveFile(szTempFileName, szScanFileName))
 	{
 		char szSysErrStr[256];
 		error("Could not move file %s to %s: %s", szTempFileName, szScanFileName, Util::GetLastErrorMessage(szSysErrStr, sizeof(szSysErrStr)));
 		remove(szTempFileName);
+		m_mutexScan.Unlock(); // UNLOCK
 		return false;
 	}
 
@@ -575,9 +578,8 @@ bool Scanner::AddExternalFile(const char* szNZBName, const char* szCategory, int
 
 	QueueData* pQueueData = new QueueData(szScanFileName, szNZBName, szUseCategory, iPriority, pParameters, bAddTop, bAddPaused);
 	free(szUseCategory);
-
-	m_mutexScan.Lock();
 	m_QueueList.push_back(pQueueData);
+
 	m_mutexScan.Unlock();
 
 	ScanNZBDir(bSyncMode);
