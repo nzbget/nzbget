@@ -244,9 +244,7 @@ void QueueCoordinator::AddNZBFileToQueue(NZBFile* pNZBFile, bool bAddFirst)
 	m_mutexDownloadQueue.Lock();
 
 	FileQueue tmpFileQueue;
-	tmpFileQueue.clear();
 	FileQueue DupeList;
-	DupeList.clear();
 
 	int index1 = 0;
 	for (NZBFile::FileInfos::iterator it = pNZBFile->GetFileInfos()->begin(); it != pNZBFile->GetFileInfos()->end(); it++)
@@ -272,7 +270,7 @@ void QueueCoordinator::AddNZBFileToQueue(NZBFile* pNZBFile, bool bAddFirst)
 					(pFileInfo->GetSize() < pFileInfo2->GetSize() || 
 					 (pFileInfo->GetSize() == pFileInfo2->GetSize() && index2 < index1)))
 				{
-					warn("File \"%s\" appears twice in nzb-request, adding only the biggest file", pFileInfo->GetFilename());
+					warn("File \"%s\" appears twice in collection, adding only the biggest file", pFileInfo->GetFilename());
 					dupe = true;
 					break;
 				}
@@ -280,6 +278,7 @@ void QueueCoordinator::AddNZBFileToQueue(NZBFile* pNZBFile, bool bAddFirst)
 			if (dupe)
 			{
 				DupeList.push_back(pFileInfo);
+				StatFileInfo(pFileInfo, false);
 				continue;
 			}
 		}
@@ -743,31 +742,33 @@ void QueueCoordinator::ArticleCompleted(ArticleDownloader* pArticleDownloader)
 
 void QueueCoordinator::StatFileInfo(FileInfo* pFileInfo, bool bCompleted)
 {
+	NZBInfo* pNZBInfo = pFileInfo->GetNZBInfo();
 	if (bCompleted)
 	{
-		pFileInfo->GetNZBInfo()->SetSuccessSize(pFileInfo->GetNZBInfo()->GetSuccessSize() + pFileInfo->GetSuccessSize());
-		pFileInfo->GetNZBInfo()->SetFailedSize(pFileInfo->GetNZBInfo()->GetFailedSize() + pFileInfo->GetFailedSize());
+		pNZBInfo->SetSuccessSize(pNZBInfo->GetSuccessSize() + pFileInfo->GetSuccessSize());
+		pNZBInfo->SetFailedSize(pNZBInfo->GetFailedSize() + pFileInfo->GetFailedSize());
 		if (pFileInfo->GetParFile())
 		{
-			pFileInfo->GetNZBInfo()->SetParSuccessSize(pFileInfo->GetNZBInfo()->GetParSuccessSize() + pFileInfo->GetSuccessSize());
-			pFileInfo->GetNZBInfo()->SetParFailedSize(pFileInfo->GetNZBInfo()->GetParFailedSize() + pFileInfo->GetFailedSize());
+			pNZBInfo->SetParSuccessSize(pNZBInfo->GetParSuccessSize() + pFileInfo->GetSuccessSize());
+			pNZBInfo->SetParFailedSize(pNZBInfo->GetParFailedSize() + pFileInfo->GetFailedSize());
 		}
 	}
-	else if (!pFileInfo->GetNZBInfo()->GetDeleted())
+	else if (!pNZBInfo->GetDeleted())
 	{
 		// file deleted
-		pFileInfo->GetNZBInfo()->SetSize(pFileInfo->GetNZBInfo()->GetSize() - pFileInfo->GetSize());
-		pFileInfo->GetNZBInfo()->SetSuccessSize(pFileInfo->GetNZBInfo()->GetSuccessSize() - pFileInfo->GetSuccessSize());
-		pFileInfo->GetNZBInfo()->SetCurrentSuccessSize(pFileInfo->GetNZBInfo()->GetCurrentSuccessSize() - pFileInfo->GetSuccessSize());
-		pFileInfo->GetNZBInfo()->SetFailedSize(pFileInfo->GetNZBInfo()->GetFailedSize() - pFileInfo->GetFailedSize() - pFileInfo->GetMissedSize());
-		pFileInfo->GetNZBInfo()->SetCurrentFailedSize(pFileInfo->GetNZBInfo()->GetCurrentFailedSize() - pFileInfo->GetFailedSize() - pFileInfo->GetMissedSize());
+		pNZBInfo->SetFileCount(pNZBInfo->GetFileCount() - 1);
+		pNZBInfo->SetSize(pNZBInfo->GetSize() - pFileInfo->GetSize());
+		pNZBInfo->SetSuccessSize(pNZBInfo->GetSuccessSize() - pFileInfo->GetSuccessSize());
+		pNZBInfo->SetCurrentSuccessSize(pNZBInfo->GetCurrentSuccessSize() - pFileInfo->GetSuccessSize());
+		pNZBInfo->SetFailedSize(pNZBInfo->GetFailedSize() - pFileInfo->GetFailedSize() - pFileInfo->GetMissedSize());
+		pNZBInfo->SetCurrentFailedSize(pNZBInfo->GetCurrentFailedSize() - pFileInfo->GetFailedSize() - pFileInfo->GetMissedSize());
 		if (pFileInfo->GetParFile())
 		{
-			pFileInfo->GetNZBInfo()->SetParSize(pFileInfo->GetNZBInfo()->GetParSize() - pFileInfo->GetSize());
-			pFileInfo->GetNZBInfo()->SetParSuccessSize(pFileInfo->GetNZBInfo()->GetParSuccessSize() - pFileInfo->GetSuccessSize());
-			pFileInfo->GetNZBInfo()->SetParCurrentSuccessSize(pFileInfo->GetNZBInfo()->GetParCurrentSuccessSize() - pFileInfo->GetSuccessSize());
-			pFileInfo->GetNZBInfo()->SetParFailedSize(pFileInfo->GetNZBInfo()->GetParFailedSize() - pFileInfo->GetFailedSize() - pFileInfo->GetMissedSize());
-			pFileInfo->GetNZBInfo()->SetParCurrentFailedSize(pFileInfo->GetNZBInfo()->GetParCurrentFailedSize() - pFileInfo->GetFailedSize() - pFileInfo->GetMissedSize());
+			pNZBInfo->SetParSize(pNZBInfo->GetParSize() - pFileInfo->GetSize());
+			pNZBInfo->SetParSuccessSize(pNZBInfo->GetParSuccessSize() - pFileInfo->GetSuccessSize());
+			pNZBInfo->SetParCurrentSuccessSize(pNZBInfo->GetParCurrentSuccessSize() - pFileInfo->GetSuccessSize());
+			pNZBInfo->SetParFailedSize(pNZBInfo->GetParFailedSize() - pFileInfo->GetFailedSize() - pFileInfo->GetMissedSize());
+			pNZBInfo->SetParCurrentFailedSize(pNZBInfo->GetParCurrentFailedSize() - pFileInfo->GetFailedSize() - pFileInfo->GetMissedSize());
 		}
 	}
 }
