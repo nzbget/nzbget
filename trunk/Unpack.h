@@ -63,7 +63,6 @@ private:
 	bool				m_bAllOKMessageReceived;
 	bool				m_bNoFilesMessageReceived;
 	bool				m_bHasParFiles;
-	bool				m_bHasBrokenFiles;
 	bool				m_bHasRarFiles;
 	bool				m_bHasNonStdRarFiles;
 	bool				m_bHasSevenZipFiles;
@@ -71,6 +70,7 @@ private:
 	bool				m_bUnpackOK;
 	bool				m_bUnpackStartError;
 	bool				m_bCleanedUpDisk;
+	bool				m_bHasParInArchive;
 	EUnpacker			m_eUnpacker;
 	FileList			m_archiveFiles;
 
