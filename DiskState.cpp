@@ -37,6 +37,8 @@
 #include <stdio.h>
 #include <time.h>
 #include <stdarg.h>
+#include <ctype.h>
+#include <set>
 
 #include "nzbget.h"
 #include "DiskState.h"
@@ -135,7 +137,7 @@ bool DiskState::SaveDownloadQueue(DownloadQueue* pDownloadQueue)
 		return false;
 	}
 
-	fprintf(outfile, "%s%i\n", FORMATVERSION_SIGNATURE, 28);
+	fprintf(outfile, "%s%i\n", FORMATVERSION_SIGNATURE, 29);
 
 	// save nzb-infos
 	SaveNZBList(pDownloadQueue, outfile);
@@ -189,7 +191,7 @@ bool DiskState::LoadDownloadQueue(DownloadQueue* pDownloadQueue)
 	char FileSignatur[128];
 	fgets(FileSignatur, sizeof(FileSignatur), infile);
 	int iFormatVersion = ParseFormatVersion(FileSignatur);
-	if (iFormatVersion < 3 || iFormatVersion > 28)
+	if (iFormatVersion < 3 || iFormatVersion > 29)
 	{
 		error("Could not load diskstate due to file version mismatch");
 		fclose(infile);
@@ -226,6 +228,11 @@ bool DiskState::LoadDownloadQueue(DownloadQueue* pDownloadQueue)
 
 		// load parked file-infos
 		if (!LoadFileQueue(pDownloadQueue, pDownloadQueue->GetParkedFiles(), infile, iFormatVersion)) goto error;
+	}
+
+	if (iFormatVersion < 29)
+	{
+		CalcCriticalHealth(pDownloadQueue);
 	}
 
 	bOK = true;
@@ -1583,4 +1590,42 @@ bool DiskState::LoadFeedHistory(FeedHistory* pFeedHistory, FILE* infile, int iFo
 error:
 	error("Error reading feed history from disk");
 	return false;
+}
+
+// calculate critical health for old NZBs
+void DiskState::CalcCriticalHealth(DownloadQueue* pDownloadQueue)
+{
+	std::set<NZBInfo*> oldNZBs;
+
+	// build list of old NZBs which do not have critical health calculated
+	for (NZBInfoList::iterator it = pDownloadQueue->GetNZBInfoList()->begin(); it != pDownloadQueue->GetNZBInfoList()->end(); it++)
+	{
+		NZBInfo* pNZBInfo = *it;
+		if (pNZBInfo->CalcCriticalHealth() == 1000)
+		{
+			oldNZBs.insert(pNZBInfo);
+		}
+	}
+
+	for (FileQueue::iterator it = pDownloadQueue->GetFileQueue()->begin(); it != pDownloadQueue->GetFileQueue()->end(); it++)
+	{
+		FileInfo* pFileInfo = *it;
+		NZBInfo* pNZBInfo = pFileInfo->GetNZBInfo();
+		if (oldNZBs.find(pNZBInfo) != oldNZBs.end())
+		{
+			debug("Calculating critical health for %s", pNZBInfo->GetName());
+
+			char szLoFileName[1024];
+			strncpy(szLoFileName, pFileInfo->GetFilename(), 1024);
+			szLoFileName[1024-1] = '\0';
+			for (char* p = szLoFileName; *p; p++) *p = tolower(*p); // convert string to lowercase
+			bool bParFile = strstr(szLoFileName, ".par2");
+
+			pFileInfo->SetParFile(bParFile);
+			if (bParFile)
+			{
+				pNZBInfo->SetParSize(pNZBInfo->GetParSize() + pFileInfo->GetSize());
+			}
+		}
+	}
 }
