@@ -56,6 +56,8 @@ public:
 	};
 
 	typedef std::deque<FileHash*>		FileHashList;
+
+	typedef std::deque<char*>			DirList;
 	
 private:
 	char*				m_szInfoName;
@@ -64,14 +66,20 @@ private:
 	char*				m_szProgressLabel;
 	int					m_iStageProgress;
 	bool				m_bCancelled;
-	FileHashList		m_fileHashList;
+	DirList				m_DirList;
+	FileHashList		m_FileHashList;
+	int					m_iFileCount;
+	int					m_iCurFile;
 	int					m_iRenamedCount;
 
 	void				Cleanup();
-	void				LoadParFiles();
+	void				ClearHashList();
+	void				BuildDirList(const char* szDestDir);
+	void				CheckDir(const char* szDestDir);
+	void				LoadParFiles(const char* szDestDir);
 	void				LoadParFile(const char* szParFilename);
-	void				CheckFiles();
-	void				CheckFile(const char* szFilename);
+	void				CheckFiles(const char* szDestDir);
+	void				CheckFile(const char* szDestDir, const char* szFilename);
 
 protected:
 	virtual void		UpdateProgress() {}

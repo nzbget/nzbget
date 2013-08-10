@@ -272,9 +272,19 @@ void ParCoordinator::StartParCheckJob(PostInfo* pPostInfo)
  */
 void ParCoordinator::StartParRenameJob(PostInfo* pPostInfo)
 {
+	const char* szDestDir = pPostInfo->GetNZBInfo()->GetDestDir();
+
+	char szFinalDir[1024];
+	if (pPostInfo->GetNZBInfo()->GetUnpackStatus() == NZBInfo::usSuccess)
+	{
+		pPostInfo->GetNZBInfo()->BuildFinalDirName(szFinalDir, 1024);
+		szFinalDir[1024-1] = '\0';
+		szDestDir = szFinalDir;
+	}
+
 	m_eCurrentJob = jkParRename;
 	m_ParRenamer.SetPostInfo(pPostInfo);
-	m_ParRenamer.SetDestDir(pPostInfo->GetNZBInfo()->GetDestDir());
+	m_ParRenamer.SetDestDir(szDestDir);
 	m_ParRenamer.SetInfoName(pPostInfo->GetNZBInfo()->GetName());
 	m_ParRenamer.PrintMessage(Message::mkInfo, "Checking renamed files for %s", pPostInfo->GetNZBInfo()->GetName());
 	pPostInfo->SetWorking(true);

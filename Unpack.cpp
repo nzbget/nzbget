@@ -100,6 +100,7 @@ void UnpackController::Run()
 	m_szName[1024-1] = '\0';
 
 	m_bCleanedUpDisk = false;
+	m_bHasParInArchive = false;
 	m_szPassword[0] = '\0';
 	m_szFinalDir[0] = '\0';
 	
@@ -281,6 +282,13 @@ void UnpackController::Completed()
 		m_pPostInfo->GetNZBInfo()->SetUnpackStatus(NZBInfo::usSuccess);
 		m_pPostInfo->GetNZBInfo()->SetUnpackCleanedUpDisk(m_bCleanedUpDisk);
 		m_pPostInfo->SetStage(PostInfo::ptQueued);
+#ifndef DISABLE_PARCHECK
+		if (m_bHasParInArchive)
+		{
+			PrintMessage(Message::mkInfo, "%s found par-files in archive", m_szInfoNameUp);
+			RequestParCheck(true);
+		}
+#endif
 	}
 	else
 	{
@@ -433,6 +441,10 @@ bool UnpackController::Cleanup()
 				}
 
 				extractedFiles.push_back(strdup(filename));
+
+				int iLen = strlen(filename);
+				bool bParFile = iLen > 5 && strcasecmp(filename + iLen - 5, ".par2");
+				m_bHasParInArchive |= bParFile;
 			}
 		}
 	}
