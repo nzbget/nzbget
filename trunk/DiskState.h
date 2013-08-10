@@ -53,7 +53,8 @@ private:
 	bool				LoadFeedStatus(Feeds* pFeeds, FILE* infile, int iFormatVersion);
 	bool				SaveFeedHistory(FeedHistory* pFeedHistory, FILE* outfile);
 	bool				LoadFeedHistory(FeedHistory* pFeedHistory, FILE* infile, int iFormatVersion);
-
+	void				CalcCriticalHealth(DownloadQueue* pDownloadQueue);
+	
 public:
 	bool				DownloadQueueExists();
 	bool				PostQueueExists(bool bCompleted);
