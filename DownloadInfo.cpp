@@ -486,7 +486,7 @@ int NZBInfo::CalcCriticalHealth()
 	int iCriticalHealth = (int)(Util::Int64ToFloat(m_lSize - lGoodParSize*2) * 1000.0 /
 		Util::Int64ToFloat(m_lSize - lGoodParSize));
 
-	if (iCriticalHealth < 0)
+	if (lGoodParSize*2 > m_lSize)
 	{
 		iCriticalHealth = 0;
 	}
