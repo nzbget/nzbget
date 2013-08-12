@@ -168,10 +168,10 @@ void Scanner::Check()
 		}
 
 		DropOldFiles();
+		ClearQueueList();
 	}
 	m_iNZBDirInterval += 200;
 
-	ClearQueueList();
 	m_mutexScan.Unlock();
 }
 
