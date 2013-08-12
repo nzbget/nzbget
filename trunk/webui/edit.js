@@ -1325,7 +1325,7 @@ var HistoryEditDialog = (new function()
 
 		$('#HistoryEdit_Status').html(status);
 		$('#HistoryEdit_Category').text(hist.Category);
-		$('#HistoryEdit_Path').text(hist.FinalDir !== '' ? hist.FinalDir.replace(':', ' | ') : hist.DestDir);
+		$('#HistoryEdit_Path').text(hist.FinalDir !== '' ? hist.FinalDir : hist.DestDir);
 
 		var size = Util.formatSizeMB(hist.FileSizeMB, hist.FileSizeLo);
 
