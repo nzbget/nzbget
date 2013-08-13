@@ -100,6 +100,10 @@ void WebDownloader::SetInfoName(const char* v)
 
 void WebDownloader::SetURL(const char * szURL)
 {
+	if (m_szURL)
+	{
+		free(m_szURL);
+	}
 	m_szURL = strdup(szURL);
 }
 
@@ -117,6 +121,7 @@ void WebDownloader::Run()
 
 	int iRemainedDownloadRetries = g_pOptions->GetRetries() > 0 ? g_pOptions->GetRetries() : 1;
 	int iRemainedConnectRetries = iRemainedDownloadRetries > 10 ? iRemainedDownloadRetries : 10;
+	m_iRedirects = 0;
 
 	EStatus Status = adFailed;
 
@@ -149,6 +154,17 @@ void WebDownloader::Run()
 		if (Status == adFinished || Status == adFatalError || Status == adNotFound)
 		{
 			break;
+		}
+
+		if (Status == adRedirect)
+		{
+			m_iRedirects++;
+			if (m_iRedirects > 5)
+			{
+				warn("Too many redirects for %s", m_szInfoName);
+				Status = adFailed;
+				break;
+			}
 		}
 
 		if (Status != adConnectError)
@@ -313,6 +329,8 @@ WebDownloader::EStatus WebDownloader::DownloadHeaders()
 	m_iContentLen = -1;
 	bool bFirstLine = true;
 	m_bGZip = false;
+	m_bRedirecting = false;
+	m_bRedirected = false;
 
 	// Headers
 	while (!IsStopped())
@@ -355,7 +373,14 @@ WebDownloader::EStatus WebDownloader::DownloadHeaders()
 			break;
 		}
 
+		Util::TrimRight(line);
 		ProcessHeader(line);
+
+		if (m_bRedirected)
+		{
+			Status = adRedirect;
+			break;
+		}
 	}
 
 	free(szLineBuf);
@@ -486,6 +511,11 @@ WebDownloader::EStatus WebDownloader::CheckResponse(const char* szResponse)
 		warn("URL %s failed: %s", m_szInfoName, szHTTPResponse);
 		return adNotFound;
 	}
+	else if (!strncmp(szHTTPResponse, "301", 3) || !strncmp(szHTTPResponse, "302", 3))
+	{
+		m_bRedirecting = true;
+		return adRunning;
+	}
 	else if (!strncmp(szHTTPResponse, "200", 3))
 	{
 		// OK
@@ -506,15 +536,18 @@ void WebDownloader::ProcessHeader(const char* szLine)
 		m_iContentLen = atoi(szLine + 16);
 		m_bConfirmedLength = true;
 	}
-
-	if (!strncasecmp(szLine, "Content-Encoding: gzip", 22))
+	else if (!strncasecmp(szLine, "Content-Encoding: gzip", 22))
 	{
 		m_bGZip = true;
 	}
-
-	if (!strncasecmp(szLine, "Content-Disposition: ", 21))
+	else if (!strncasecmp(szLine, "Content-Disposition: ", 21))
 	{
 		ParseFilename(szLine);
+	}
+	else if (m_bRedirecting && !strncasecmp(szLine, "Location: ", 10))
+	{
+		ParseRedirect(szLine + 10);
+		m_bRedirected = true;
 	}
 }
 
@@ -559,6 +592,30 @@ void WebDownloader::ParseFilename(const char* szContentDisposition)
 	m_szOriginalFilename = strdup(Util::BaseFileName(fname));
 
 	debug("OriginalFilename: %s", m_szOriginalFilename);
+}
+
+void WebDownloader::ParseRedirect(const char* szLocation)
+{
+	const char* szNewURL = szLocation;
+	char szUrlBuf[1024];
+	URL newUrl(szNewURL);
+	if (!newUrl.IsValid())
+	{
+		// relative address
+		URL oldUrl(m_szURL);
+		if (oldUrl.GetPort() > 0)
+		{
+			snprintf(szUrlBuf, 1024, "%s://%s:%i%s", oldUrl.GetProtocol(), oldUrl.GetHost(), oldUrl.GetPort(), szNewURL);
+		}
+		else
+		{
+			snprintf(szUrlBuf, 1024, "%s://%s%s", oldUrl.GetProtocol(), oldUrl.GetHost(), szNewURL);
+		}
+		szUrlBuf[1024-1] = '\0';
+		szNewURL = szUrlBuf;
+	}
+	detail("URL %s redirected to %s", m_szURL, szNewURL);
+	SetURL(szNewURL);
 }
 
 bool WebDownloader::Write(void* pBuffer, int iLen)
