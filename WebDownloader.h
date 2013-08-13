@@ -44,6 +44,7 @@ public:
 		adFailed,
 		adRetry,
 		adNotFound,
+		adRedirect,
 		adConnectError,
 		adFatalError
 	};
@@ -61,6 +62,9 @@ private:
 	bool				m_bConfirmedLength;
 	char*				m_szOriginalFilename;
 	bool				m_bForce;
+	bool				m_bRedirecting;
+	bool				m_bRedirected;
+	int					m_iRedirects;
 	bool				m_bGZip;
 #ifndef DISABLE_GZIP
 	GUnzipStream*		m_pGUnzipStream;
@@ -77,6 +81,7 @@ private:
 	void				SendHeaders(URL *pUrl);
 	EStatus				DownloadHeaders();
 	EStatus				DownloadBody();
+	void				ParseRedirect(const char* szLocation); 
 
 protected:
 	virtual void		ProcessHeader(const char* szLine);
