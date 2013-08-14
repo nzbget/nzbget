@@ -336,6 +336,11 @@ var Frontend = (new function($)
 		alignPopupMenu('#RssMenu', UISettings.miniTheme);
 
 		alignCenterDialogs();
+		
+		if (initialized)
+		{
+			Downloads.resize();
+		}
 	}
 
 	function alignPopupMenu(menu, center)

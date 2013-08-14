@@ -639,6 +639,14 @@ ul.dropdown-menu > li > a > i {
 	text-transform: uppercase;
 }
 
+
+.label-inline {
+	display: inline-block;
+	margin-bottom: -4px;
+	overflow-x: hidden;
+	text-overflow: ellipsis;
+}
+
 .controls .label-status {
 	line-height: 22px;
 }
@@ -1899,6 +1907,10 @@ body.phone,
 .phone .downloads-progresslabel {
 	margin-top: -8px;
 	margin-bottom: 10px;
+}
+
+.phone .label-inline {
+	display: inline;
 }
 
 /* CONTROLS AROUND DATATABLE */
