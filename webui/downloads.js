@@ -40,12 +40,14 @@ var Downloads = (new function($)
 	var $DownloadsTabBadgeEmpty;
 	var $DownloadQueueEmpty;
 	var $DownloadsRecordsPerPage;
+	var $DownloadsTable_Name;
 
 	// State
 	var notification = null;
 	var updateTabInfo;
 	var groups;
 	var urls;
+	var nameColumnWidth = null;
 
 	this.init = function(options)
 	{
@@ -56,6 +58,7 @@ var Downloads = (new function($)
 		$DownloadsTabBadgeEmpty = $('#DownloadsTabBadgeEmpty');
 		$DownloadQueueEmpty = $('#DownloadQueueEmpty');
 		$DownloadsRecordsPerPage = $('#DownloadsRecordsPerPage');
+		$DownloadsTable_Name = $('#DownloadsTable_Name');
 
 		var recordsPerPage = UISettings.read('$DownloadsRecordsPerPage', 10);
 		$DownloadsRecordsPerPage.val(recordsPerPage);
@@ -193,6 +196,11 @@ var Downloads = (new function($)
 		Util.show($DownloadQueueEmpty, groups.length === 0);
 	}
 
+	this.resize = function()
+	{
+		calcProgressLabels();
+	}
+	
 	/*** TABLE *************************************************************************/
 
 	function redraw_table()
@@ -230,7 +238,7 @@ var Downloads = (new function($)
 
 		var status = DownloadsUI.buildStatus(group);
 		var priority = DownloadsUI.buildPriority(group.MaxPriority);
-		var progresslabel = DownloadsUI.buildProgressLabel(group);
+		var progresslabel = DownloadsUI.buildProgressLabel(group, nameColumnWidth);
 		var progress = DownloadsUI.buildProgress(group, item.data.size, item.data.remaining, item.data.estimated);
 
 		var name = '<a href="#" nzbid="' + group.NZBID + '">' + Util.textToHtml(Util.formatNZBName(group.NZBName)) + '</a>';
@@ -322,6 +330,23 @@ var Downloads = (new function($)
 		updateTabInfo($DownloadsTabBadge, stat);
 	}
 
+	function calcProgressLabels()
+	{
+		var progressLabels = $('.label-inline', $DownloadsTable);
+
+		if (UISettings.miniTheme)
+		{
+			nameColumnWidth = null;
+			progressLabels.css('max-width', '');
+			return;
+		}
+
+		progressLabels.hide();
+		nameColumnWidth = Math.max($DownloadsTable_Name.width(), 50) - 4*2;  // 4 - padding of span
+		progressLabels.css('max-width', nameColumnWidth);
+		progressLabels.show();
+	}
+	
 	/*** EDIT ******************************************************/
 
 	function itemClick()
@@ -661,7 +686,7 @@ var DownloadsUI = (new function($)
 		return '';
 	}
 
-	this.buildProgressLabel = function(group)
+	this.buildProgressLabel = function(group, maxWidth)
 	{
 		var text = '';
 		if (group.postprocess && !Status.status.PostPaused)
@@ -692,7 +717,8 @@ var DownloadsUI = (new function($)
 			}
 		}
 
-		return text !== '' ? ' <span class="label label-success">' + text + '</span>' : '';
+		return text !== '' ? ' <span class="label label-success label-inline" style="max-width:' +
+			maxWidth +'px">' + text + '</span>' : '';
 	}
 
 	this.buildPriorityText = function(priority)
@@ -728,6 +754,11 @@ var DownloadsUI = (new function($)
 		}
 	}
 	
+	this.resetCategoryColumnWidth = function()
+	{
+		categoryColumnWidth = null;
+	}
+
 	this.calcCategoryColumnWidth = function()
 	{
 		if (categoryColumnWidth === null)
