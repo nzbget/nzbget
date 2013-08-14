@@ -244,7 +244,8 @@ var Downloads = (new function($)
 		var name = '<a href="#" nzbid="' + group.NZBID + '">' + Util.textToHtml(Util.formatNZBName(group.NZBName)) + '</a>';
 		
 		var health = '';
-		if (group.Health < 1000 && !group.postprocess)
+		if (group.Health < 1000 && (!group.postprocess ||
+			(group.status === 'pp-queued' && group.post.TotalTimeSec === 0)))
 		{
 			health = ' <span class="label ' + 
 				(group.Health >= group.CriticalHealth ? 'label-warning' : 'label-important') +
