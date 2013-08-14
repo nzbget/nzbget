@@ -1382,7 +1382,7 @@ var Config = (new function($)
 			}
 		}
 
-		return modified || invalidOptionsExist() || restored ? request : [];
+		return modified || (!onlyUserChanges && invalidOptionsExist()) || restored ? request : [];
 	}
 
 	this.saveChanges = function()
