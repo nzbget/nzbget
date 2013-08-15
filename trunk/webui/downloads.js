@@ -350,8 +350,9 @@ var Downloads = (new function($)
 	
 	/*** EDIT ******************************************************/
 
-	function itemClick()
+	function itemClick(e)
 	{
+		e.preventDefault();
 		var nzbid = $(this).attr('nzbid');
 		$(this).blur();
 		DownloadsEditDialog.showModal(nzbid, groups);

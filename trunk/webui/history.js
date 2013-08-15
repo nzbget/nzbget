@@ -318,8 +318,10 @@ var History = (new function($)
 		}
 	}
 
-	function editClick()
+	function editClick(e)
 	{
+		e.preventDefault();
+
 		var histid = $(this).attr('histid');
 		$(this).blur();
 
