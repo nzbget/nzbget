@@ -347,8 +347,9 @@ var DownloadsEditDialog = (new function($)
 		$('#DownloadsEdit_Transmit').hide();
 	}
 
-	function saveChanges()
+	function saveChanges(e)
 	{
+		e.preventDefault();
 		disableAllButtons();
 		notification = null;
 		saveName();
@@ -390,15 +391,17 @@ var DownloadsEditDialog = (new function($)
 			: saveParam();
 	}
 
-	function itemPause()
+	function itemPause(e)
 	{
+		e.preventDefault();
 		disableAllButtons();
 		notification = '#Notif_Downloads_Paused';
 		RPC.call('editqueue', ['GroupPause', 0, '', [curGroup.LastID]], completed);
 	}
 
-	function itemResume()
+	function itemResume(e)
 	{
+		e.preventDefault();
 		disableAllButtons();
 		notification = '#Notif_Downloads_Resumed';
 		RPC.call('editqueue', ['GroupResume', 0, '', [curGroup.LastID]], function()
@@ -414,8 +417,9 @@ var DownloadsEditDialog = (new function($)
 		});
 	}
 
-	function itemDelete()
+	function itemDelete(e)
 	{
+		e.preventDefault();
 		Util.show('#DownloadEditDeleteConfirmDialog_Cleanup', Options.option('DeleteCleanupDisk') === 'yes');
 		Util.show('#DownloadEditDeleteConfirmDialog_Remain', Options.option('DeleteCleanupDisk') != 'yes');
 		ConfirmDialog.showModal('DownloadEditDeleteConfirmDialog', doItemDelete);
@@ -428,8 +432,9 @@ var DownloadsEditDialog = (new function($)
 		RPC.call('editqueue', ['GroupDelete', 0, '', [curGroup.LastID]], completed);
 	}
 
-	function itemCancelPP()
+	function itemCancelPP(e)
 	{
+		e.preventDefault();
 		disableAllButtons();
 		notification = '#Notif_Downloads_PostCanceled';
 
@@ -1070,8 +1075,9 @@ var DownloadsMultiDialog = (new function($)
 		}, 500);
 	}
 
-	function saveChanges()
+	function saveChanges(e)
 	{
+		e.preventDefault();
 		disableAllButtons();
 		savePriority();
 	}
@@ -1408,8 +1414,9 @@ var HistoryEditDialog = (new function()
 		$('#HistoryEdit_Transmit').hide();
 	}
 
-	function itemDelete()
+	function itemDelete(e)
 	{
+		e.preventDefault();
 		ConfirmDialog.showModal('HistoryEditDeleteConfirmDialog', doItemDelete);
 	}
 
@@ -1420,15 +1427,17 @@ var HistoryEditDialog = (new function()
 		RPC.call('editqueue', ['HistoryDelete', 0, '', [curHist.ID]], completed);
 	}
 
-	function itemReturn()
+	function itemReturn(e)
 	{
+		e.preventDefault();
 		disableAllButtons();
 		notification = '#Notif_History_Returned';
 		RPC.call('editqueue', ['HistoryReturn', 0, '', [curHist.ID]], completed);
 	}
 
-	function itemReprocess()
+	function itemReprocess(e)
 	{
+		e.preventDefault();
 		disableAllButtons();
 		saveParam(function()
 			{
@@ -1448,8 +1457,9 @@ var HistoryEditDialog = (new function()
 		}
 	}
 	
-	function saveChanges()
+	function saveChanges(e)
 	{
+		e.preventDefault();
 		disableAllButtons();
 		notification = null;
 		saveParam(completed);
