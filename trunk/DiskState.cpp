@@ -38,6 +38,7 @@
 #include <time.h>
 #include <stdarg.h>
 #include <ctype.h>
+#include <deque>
 #include <set>
 
 #include "nzbget.h"
@@ -137,7 +138,7 @@ bool DiskState::SaveDownloadQueue(DownloadQueue* pDownloadQueue)
 		return false;
 	}
 
-	fprintf(outfile, "%s%i\n", FORMATVERSION_SIGNATURE, 29);
+	fprintf(outfile, "%s%i\n", FORMATVERSION_SIGNATURE, 30);
 
 	// save nzb-infos
 	SaveNZBList(pDownloadQueue, outfile);
@@ -191,7 +192,7 @@ bool DiskState::LoadDownloadQueue(DownloadQueue* pDownloadQueue)
 	char FileSignatur[128];
 	fgets(FileSignatur, sizeof(FileSignatur), infile);
 	int iFormatVersion = ParseFormatVersion(FileSignatur);
-	if (iFormatVersion < 3 || iFormatVersion > 29)
+	if (iFormatVersion < 3 || iFormatVersion > 30)
 	{
 		error("Could not load diskstate due to file version mismatch");
 		fclose(infile);
@@ -283,6 +284,8 @@ void DiskState::SaveNZBList(DownloadQueue* pDownloadQueue, FILE* outfile)
 		Util::SplitInt64(pNZBInfo->GetParFailedSize(), &High3, &Low3);
 		fprintf(outfile, "%lu,%lu,%lu,%lu,%lu,%lu\n", High1, Low1, High2, Low2, High3, Low3);
 
+		fprintf(outfile, "%i,%i,%i\n", pNZBInfo->GetTotalArticles(), pNZBInfo->GetSuccessArticles(), pNZBInfo->GetFailedArticles());
+
 		char DestDirSlash[1024];
 		snprintf(DestDirSlash, 1023, "%s%c", pNZBInfo->GetDestDir(), PATH_SEPARATOR);
 		int iDestDirLen = strlen(DestDirSlash);
@@ -314,6 +317,13 @@ void DiskState::SaveNZBList(DownloadQueue* pDownloadQueue, FILE* outfile)
 		{
 			ScriptStatus* pScriptStatus = *it;
 			fprintf(outfile, "%i,%s\n", pScriptStatus->GetStatus(), pScriptStatus->GetName());
+		}
+
+		fprintf(outfile, "%i\n", pNZBInfo->GetServerStats()->size());
+		for (ServerStatList::iterator it = pNZBInfo->GetServerStats()->begin(); it != pNZBInfo->GetServerStats()->end(); it++)
+		{
+			ServerStat* pServerStat = *it;
+			fprintf(outfile, "%i,%i,%i\n", pServerStat->GetServerID(), pServerStat->GetSuccessArticles(), pServerStat->GetFailedArticles());
 		}
 
 		NZBInfo::Messages* pMessages = pNZBInfo->LockMessages();
@@ -494,6 +504,15 @@ bool DiskState::LoadNZBList(DownloadQueue* pDownloadQueue, FILE* infile, int iFo
 			if (fscanf(infile, "%lu,%lu\n", &High, &Low) != 2) goto error;
 			pNZBInfo->SetSize(Util::JoinInt64(High, Low));
 		}
+		
+		if (iFormatVersion >= 30)
+		{
+			int iTotalArticles, iSuccessArticles, iFailedArticles;
+			if (fscanf(infile, "%i,%i,%i\n", &iTotalArticles, &iSuccessArticles, &iFailedArticles) != 3) goto error;
+			pNZBInfo->SetTotalArticles(iTotalArticles);
+			pNZBInfo->SetSuccessArticles(iSuccessArticles);
+			pNZBInfo->SetFailedArticles(iFailedArticles);
+		}
 
 		if (iFormatVersion >= 4)
 		{
@@ -553,6 +572,18 @@ bool DiskState::LoadNZBList(DownloadQueue* pDownloadQueue, FILE* infile, int iFo
 					if (iStatus > 1 && iFormatVersion < 25) iStatus--;
 					pNZBInfo->GetScriptStatuses()->Add(szScriptName, (ScriptStatus::EStatus)iStatus);
 				}
+			}
+		}
+
+		if (iFormatVersion >= 30)
+		{
+			int iStatCount;
+			if (fscanf(infile, "%i\n", &iStatCount) != 1) goto error;
+			for (int i = 0; i < iStatCount; i++)
+			{
+				int iServerID, iSuccessArticles, iFailedArticles;
+				if (fscanf(infile, "%i,%i,%i\n", &iServerID, &iSuccessArticles, &iFailedArticles) != 3) goto error;
+				pNZBInfo->GetServerStats()->SetStat(iServerID, iSuccessArticles, iFailedArticles, false);
 			}
 		}
 
@@ -652,6 +683,11 @@ bool DiskState::LoadFileQueue(DownloadQueue* pDownloadQueue, FileQueue* pFileQue
 			pFileInfo->SetPriority(iPriority);
 			pFileInfo->SetExtraPriority(iExtraPriority != 0);
 			pFileInfo->SetNZBInfo(pDownloadQueue->GetNZBInfoList()->at(iNZBIndex - 1));
+			if (iFormatVersion < 30)
+			{
+				pFileInfo->GetNZBInfo()->SetTotalArticles(
+					pFileInfo->GetNZBInfo()->GetTotalArticles() + pFileInfo->GetTotalArticles());
+			}
 			pFileQueue->push_back(pFileInfo);
 		}
 		else
@@ -687,7 +723,7 @@ bool DiskState::SaveFileInfo(FileInfo* pFileInfo, const char* szFilename)
 		return false;
 	}
 
-	fprintf(outfile, "%s%i\n", FORMATVERSION_SIGNATURE, 2);
+	fprintf(outfile, "%s%i\n", FORMATVERSION_SIGNATURE, 3);
 
 	fprintf(outfile, "%s\n", pFileInfo->GetSubject());
 	fprintf(outfile, "%s\n", pFileInfo->GetFilename());
@@ -700,6 +736,7 @@ bool DiskState::SaveFileInfo(FileInfo* pFileInfo, const char* szFilename)
 	fprintf(outfile, "%lu,%lu\n", High, Low);
 
 	fprintf(outfile, "%i\n", (int)pFileInfo->GetParFile());
+	fprintf(outfile, "%i,%i\n", pFileInfo->GetTotalArticles(), pFileInfo->GetMissedArticles());
 
 	fprintf(outfile, "%i\n", pFileInfo->GetGroups()->size());
 	for (FileInfo::Groups::iterator it = pFileInfo->GetGroups()->begin(); it != pFileInfo->GetGroups()->end(); it++)
@@ -746,7 +783,7 @@ bool DiskState::LoadFileInfo(FileInfo* pFileInfo, const char * szFilename, bool 
 	{
 		if (buf[0] != 0) buf[strlen(buf)-1] = 0; // remove traling '\n'
 		iFormatVersion = ParseFormatVersion(buf);
-		if (iFormatVersion > 2)
+		if (iFormatVersion > 3)
 		{
 			error("Could not load diskstate due to file version mismatch");
 			goto error;
@@ -792,6 +829,14 @@ bool DiskState::LoadFileInfo(FileInfo* pFileInfo, const char * szFilename, bool 
 		if (bFileSummary) pFileInfo->SetParFile((bool)iParFile);
 	}
 
+	if (iFormatVersion >= 3)
+	{
+		int iTotalArticles, iMissedArticles;
+		if (fscanf(infile, "%i,%i\n", &iTotalArticles, &iMissedArticles) != 2) goto error;
+		if (bFileSummary) pFileInfo->SetTotalArticles(iTotalArticles);
+		if (bFileSummary) pFileInfo->SetMissedArticles(iMissedArticles);
+	}
+	
 	int size;
 	if (fscanf(infile, "%i\n", &size) != 1) goto error;
 	for (int i = 0; i < size; i++)
@@ -802,6 +847,11 @@ bool DiskState::LoadFileInfo(FileInfo* pFileInfo, const char * szFilename, bool 
 	}
 
 	if (fscanf(infile, "%i\n", &size) != 1) goto error;
+
+	if (iFormatVersion < 3 && bFileSummary)
+	{
+		pFileInfo->SetTotalArticles(size);
+	}
 
 	if (bArticles)
 	{
@@ -1628,4 +1678,326 @@ void DiskState::CalcCriticalHealth(DownloadQueue* pDownloadQueue)
 			}
 		}
 	}
+}
+
+bool DiskState::SaveStats(Servers* pServers)
+{
+	debug("Saving stats to disk");
+
+	char destFilename[1024];
+	snprintf(destFilename, 1024, "%s%s", g_pOptions->GetQueueDir(), "stats");
+	destFilename[1024-1] = '\0';
+
+	char tempFilename[1024];
+	snprintf(tempFilename, 1024, "%s%s", g_pOptions->GetQueueDir(), "stats.new");
+	tempFilename[1024-1] = '\0';
+
+	if (pServers->empty())
+	{
+		remove(destFilename);
+		return true;
+	}
+
+	FILE* outfile = fopen(tempFilename, "wb");
+
+	if (!outfile)
+	{
+		error("Error saving diskstate: Could not create file %s", tempFilename);
+		return false;
+	}
+
+	fprintf(outfile, "%s%i\n", FORMATVERSION_SIGNATURE, 1);
+
+	// save status
+	SaveServerStats(pServers, outfile);
+
+	fclose(outfile);
+
+	// now rename to dest file name
+	remove(destFilename);
+	if (rename(tempFilename, destFilename))
+	{
+		error("Error saving diskstate: Could not rename file %s to %s", tempFilename, destFilename);
+		return false;
+	}
+
+	return true;
+}
+
+bool DiskState::LoadStats(Servers* pServers)
+{
+	debug("Loading stats from disk");
+
+	bool bOK = false;
+
+	char fileName[1024];
+	snprintf(fileName, 1024, "%s%s", g_pOptions->GetQueueDir(), "stats");
+	fileName[1024-1] = '\0';
+
+	if (!Util::FileExists(fileName))
+	{
+		return true;
+	}
+
+	FILE* infile = fopen(fileName, "rb");
+
+	if (!infile)
+	{
+		error("Error reading diskstate: could not open file %s", fileName);
+		return false;
+	}
+
+	char FileSignatur[128];
+	fgets(FileSignatur, sizeof(FileSignatur), infile);
+	int iFormatVersion = ParseFormatVersion(FileSignatur);
+	if (iFormatVersion > 1)
+	{
+		error("Could not load diskstate due to file version mismatch");
+		fclose(infile);
+		return false;
+	}
+
+	if (!LoadServerStats(pServers, infile, iFormatVersion)) goto error;
+
+	bOK = true;
+
+error:
+
+	fclose(infile);
+	if (!bOK)
+	{
+		error("Error reading diskstate for file %s", fileName);
+	}
+
+	return bOK;
+}
+
+bool DiskState::SaveServerStats(Servers* pServers, FILE* outfile)
+{
+	debug("Saving server stats to disk");
+
+	fprintf(outfile, "%i\n", pServers->size());
+	for (Servers::iterator it = pServers->begin(); it != pServers->end(); it++)
+	{
+		NewsServer* pNewsServer = *it;
+
+		fprintf(outfile, "%s\n", pNewsServer->GetName());
+		fprintf(outfile, "%s\n", pNewsServer->GetHost());
+		fprintf(outfile, "%i\n", pNewsServer->GetPort());
+		fprintf(outfile, "%s\n", pNewsServer->GetUser());
+	}
+
+	return true;
+}
+
+
+/*
+ ***************************************************************************************
+ * Server matching
+ */
+
+class ServerRef							 
+{
+public:
+	int				m_iStateID;
+	char*			m_szName;
+	char*			m_szHost;
+	int				m_iPort;
+	char*			m_szUser;
+	bool			m_bMatched;
+
+					~ServerRef();
+	int				GetStateID() { return m_iStateID; }
+	const char*		GetName() { return m_szName; }
+	const char*		GetHost() { return m_szHost; }
+	int				GetPort() { return m_iPort; }
+	const char*		GetUser() { return m_szUser; }
+	bool			GetMatched() { return m_bMatched; }
+	void			SetMatched(bool bMatched) { m_bMatched = bMatched; }
+};
+
+typedef std::deque<ServerRef*> ServerRefList;
+
+ServerRef::~ServerRef()
+{
+	free(m_szName);
+	free(m_szHost);
+	free(m_szUser);
+}
+
+enum ECriteria
+{
+	eName,
+	eHost,
+	ePort,
+	eUser
+};
+
+void FindCandidates(NewsServer* pNewsServer, ServerRefList* pRefs, ECriteria eCriteria, bool bKeepIfNothing)
+{
+	ServerRefList originalRefs;
+	originalRefs.insert(originalRefs.begin(), pRefs->begin(), pRefs->end());
+
+	int index = 0;
+	for (ServerRefList::iterator it = pRefs->begin(); it != pRefs->end(); )
+	{
+		ServerRef* pRef = *it;
+		bool bMatch = false;
+		switch(eCriteria)
+		{
+			case eName:
+				bMatch = !strcasecmp(pNewsServer->GetName(), pRef->GetName());
+				break;
+			case eHost:
+				bMatch = !strcasecmp(pNewsServer->GetHost(), pRef->GetHost());
+				break;
+			case ePort:
+				bMatch = pNewsServer->GetPort() == pRef->GetPort();
+				break;
+			case eUser:
+				bMatch = !strcasecmp(pNewsServer->GetUser(), pRef->GetUser());
+				break;
+		}
+		if (bMatch && !pRef->GetMatched())
+		{
+			it++;
+			index++;
+		}
+		else
+		{
+			pRefs->erase(it);
+			it = pRefs->begin() + index;
+		}
+	}
+
+	if (pRefs->size() == 0 && bKeepIfNothing)
+	{
+		pRefs->insert(pRefs->begin(), originalRefs.begin(), originalRefs.end());
+	}
+}
+
+void MatchServers(Servers* pServers, ServerRefList* pServerRefs)
+{
+	// Step 1: trying perfect match
+	for (Servers::iterator it = pServers->begin(); it != pServers->end(); it++)
+	{
+		NewsServer* pNewsServer = *it;
+		ServerRefList matchedRefs;
+		matchedRefs.insert(matchedRefs.begin(), pServerRefs->begin(), pServerRefs->end());
+		FindCandidates(pNewsServer, &matchedRefs, eName, false);
+		FindCandidates(pNewsServer, &matchedRefs, eHost, false);
+		FindCandidates(pNewsServer, &matchedRefs, ePort, false);
+		FindCandidates(pNewsServer, &matchedRefs, eUser, false);
+
+		if (matchedRefs.size() == 1)
+		{
+			ServerRef* pRef = matchedRefs.front();
+			pNewsServer->SetStateID(pRef->GetStateID());
+			pRef->SetMatched(true);
+		}
+	}
+
+	// Step 2: matching host, port, username ans server-name
+	for (Servers::iterator it = pServers->begin(); it != pServers->end(); it++)
+	{
+		NewsServer* pNewsServer = *it;
+		if (!pNewsServer->GetStateID())
+		{
+			ServerRefList matchedRefs;
+			matchedRefs.insert(matchedRefs.begin(), pServerRefs->begin(), pServerRefs->end());
+
+			FindCandidates(pNewsServer, &matchedRefs, eHost, false);
+
+			if (matchedRefs.size() > 1)
+			{
+				FindCandidates(pNewsServer, &matchedRefs, eName, true);
+			}
+
+			if (matchedRefs.size() > 1)
+			{
+				FindCandidates(pNewsServer, &matchedRefs, eUser, true);
+			}
+
+			if (matchedRefs.size() > 1)
+			{
+				FindCandidates(pNewsServer, &matchedRefs, ePort, true);
+			}
+
+			if (!matchedRefs.empty())
+			{
+				ServerRef* pRef = matchedRefs.front();
+				pNewsServer->SetStateID(pRef->GetStateID());
+				pRef->SetMatched(true);
+			}
+		}
+	}
+}
+
+/*
+ * END: Server matching
+ ***************************************************************************************
+ */
+
+bool DiskState::LoadServerStats(Servers* pServers, FILE* infile, int iFormatVersion)
+{
+	debug("Loading server stats from disk");
+
+	ServerRefList serverRefs;
+
+	int size;
+	if (fscanf(infile, "%i\n", &size) != 1) goto error;
+	for (int i = 0; i < size; i++)
+	{
+		char szName[1024];
+		if (!fgets(szName, sizeof(szName), infile)) goto error;
+		if (szName[0] != 0) szName[strlen(szName)-1] = 0; // remove traling '\n'
+
+		char szHost[200];
+		if (!fgets(szHost, sizeof(szHost), infile)) goto error;
+		if (szHost[0] != 0) szHost[strlen(szHost)-1] = 0; // remove traling '\n'
+
+		int iPort;
+		if (fscanf(infile, "%i\n", &iPort) != 1) goto error;
+
+		char szUser[100];
+		if (!fgets(szUser, sizeof(szUser), infile)) goto error;
+		if (szUser[0] != 0) szUser[strlen(szUser)-1] = 0; // remove traling '\n'
+
+		ServerRef* pRef = new ServerRef();
+		pRef->m_iStateID = i + 1;
+		pRef->m_szName = strdup(szName);
+		pRef->m_szHost = strdup(szHost);
+		pRef->m_iPort = iPort;
+		pRef->m_szUser = strdup(szUser);
+		pRef->m_bMatched = false;
+		serverRefs.push_back(pRef);
+	}
+
+	MatchServers(pServers, &serverRefs);
+
+	for (ServerRefList::iterator it = serverRefs.begin(); it != serverRefs.end(); it++)
+	{
+		delete *it;
+	}
+
+	debug("******** MATCHING NEWS-SERVERS **********");
+	for (Servers::iterator it = pServers->begin(); it != pServers->end(); it++)
+	{
+		NewsServer* pNewsServer = *it;
+		debug("Server %i -> %i", pNewsServer->GetID(), pNewsServer->GetStateID());
+		debug("Server %i.Name: %s", pNewsServer->GetID(), pNewsServer->GetName());
+		debug("Server %i.Host: %s:%i", pNewsServer->GetID(), pNewsServer->GetHost(), pNewsServer->GetPort());
+	}
+
+	return true;
+
+error:
+	error("Error reading server stats from disk");
+
+	for (ServerRefList::iterator it = serverRefs.begin(); it != serverRefs.end(); it++)
+	{
+		delete *it;
+	}
+
+	return false;
 }

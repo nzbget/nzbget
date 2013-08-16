@@ -44,6 +44,7 @@ NewsServer::NewsServer(int iID, bool bActive, const char* szName, const char* sz
 	const char* szCipher, int iMaxConnections, int iLevel, int iGroup)
 {
 	m_iID = iID;
+	m_iStateID = 0;
 	m_bActive = bActive;
 	m_iPort = iPort;
 	m_iLevel = iLevel;
@@ -52,10 +53,10 @@ NewsServer::NewsServer(int iID, bool bActive, const char* szName, const char* sz
 	m_iMaxConnections = iMaxConnections;
 	m_bJoinGroup = bJoinGroup;
 	m_bTLS = bTLS;
-	m_szHost = szHost ? strdup(szHost) : NULL;
-	m_szUser = szUser ? strdup(szUser) : NULL;
-	m_szPassword = szPass ? strdup(szPass) : NULL;
-	m_szCipher = szCipher ? strdup(szCipher) : NULL;
+	m_szHost = strdup(szHost ? szHost : "");
+	m_szUser = strdup(szUser ? szUser : "");
+	m_szPassword = strdup(szPass ? szPass : "");
+	m_szCipher = strdup(szCipher ? szCipher : "");
 
 	if (szName && strlen(szName) > 0)
 	{

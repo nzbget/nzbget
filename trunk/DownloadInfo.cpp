@@ -208,6 +208,61 @@ ScriptStatus::EStatus ScriptStatusList::CalcTotalStatus()
 }
 
 
+ServerStat::ServerStat(int iServerID)
+{
+	m_iServerID = iServerID;
+	m_iSuccessArticles = 0;
+	m_iFailedArticles = 0;
+}
+
+
+ServerStatList::~ServerStatList()
+{
+	Clear();
+}
+
+void ServerStatList::Clear()
+{
+	for (iterator it = begin(); it != end(); it++)
+	{
+		delete *it;
+	}
+	clear();
+}
+
+void ServerStatList::SetStat(int iServerID, int iSuccessArticles, int iFailedArticles, bool bAdd)
+{
+	ServerStat* pServerStat = NULL;
+	for (iterator it = begin(); it != end(); it++)
+	{
+		ServerStat* pServerStat1 = *it;
+		if (pServerStat1->GetServerID() == iServerID)
+		{
+			pServerStat = pServerStat1;
+			break;
+		}
+	}
+
+	if (!pServerStat)
+	{
+		pServerStat = new ServerStat(iServerID);
+		push_back(pServerStat);
+	}
+
+	pServerStat->SetSuccessArticles((bAdd ? pServerStat->GetSuccessArticles() : 0) + iSuccessArticles);
+	pServerStat->SetFailedArticles((bAdd ? pServerStat->GetFailedArticles() : 0) + iFailedArticles);
+}
+
+void ServerStatList::Add(ServerStatList* pServerStats)
+{
+	for (iterator it = pServerStats->begin(); it != pServerStats->end(); it++)
+	{
+		ServerStat* pServerStat = *it;
+		SetStat(pServerStat->GetServerID(), pServerStat->GetSuccessArticles(), pServerStat->GetFailedArticles(), true);
+	}
+}
+
+
 NZBInfo::NZBInfo()
 {
 	debug("Creating NZBInfo");
@@ -229,6 +284,9 @@ NZBInfo::NZBInfo()
 	m_lParFailedSize = 0;
 	m_lParCurrentSuccessSize = 0;
 	m_lParCurrentFailedSize = 0;
+	m_iTotalArticles = 0;
+	m_iSuccessArticles = 0;
+	m_iFailedArticles = 0;
 	m_iRefCount = 0;
 	m_bPostProcess = false;
 	m_eRenameStatus = rsNone;
@@ -236,6 +294,7 @@ NZBInfo::NZBInfo()
 	m_eUnpackStatus = usNone;
 	m_eCleanupStatus = csNone;
 	m_eMoveStatus = msNone;
+	m_bDeleting = false;
 	m_bDeleted = false;
 	m_bHealthPaused = false;
 	m_bHealthDeleted = false;
@@ -619,6 +678,10 @@ FileInfo::FileInfo()
 	m_lMissedSize = 0;
 	m_lSuccessSize = 0;
 	m_lFailedSize = 0;
+	m_iTotalArticles = 0;
+	m_iMissedArticles = 0;
+	m_iFailedArticles = 0;
+	m_iSuccessArticles = 0;
 	m_tTime = 0;
 	m_bPaused = false;
 	m_bDeleted = false;

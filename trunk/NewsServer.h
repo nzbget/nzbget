@@ -27,10 +27,13 @@
 #ifndef NEWSSERVER_H
 #define NEWSSERVER_H
 
+#include <vector>
+
 class NewsServer
 {
 private:
 	int				m_iID;
+	int				m_iStateID;
 	bool			m_bActive;
 	char*			m_szName;
 	int				m_iGroup;
@@ -51,6 +54,8 @@ public:
 						bool bTLS, const char* szCipher, int iMaxConnections, int iLevel, int iGroup);
 					~NewsServer();
 	int				GetID() { return m_iID; }
+	int				GetStateID() { return m_iStateID; }
+	void			SetStateID(int iStateID) { m_iStateID = iStateID; }
 	bool			GetActive() { return m_bActive; }
 	void			SetActive(bool bActive) { m_bActive = bActive; }
 	const char*		GetName() { return m_szName; }
@@ -67,5 +72,7 @@ public:
 	bool			GetTLS() { return m_bTLS; }
 	const char*		GetCipher() { return m_szCipher; }
 };
+
+typedef std::vector<NewsServer*>		Servers;
 
 #endif

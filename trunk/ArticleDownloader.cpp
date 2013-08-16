@@ -158,7 +158,7 @@ void ArticleDownloader::Run()
 
 	int iRetries = g_pOptions->GetRetries() > 0 ? g_pOptions->GetRetries() : 1;
 	int iRemainedRetries = iRetries;
-	ServerPool::Servers failedServers;
+	Servers failedServers;
 	failedServers.reserve(g_pServerPool->GetServers()->size());
 	NewsServer* pWantServer = NULL;
 	NewsServer* pLastServer = NULL;
@@ -193,10 +193,15 @@ void ArticleDownloader::Run()
 		bool bConnected = m_pConnection && m_pConnection->Connect();
 		if (bConnected && !IsStopped())
 		{
-			// Okay, we got a Connection. Now start downloading.
-			detail("Downloading %s @ %s (%s)", m_szInfoName,
-				m_pConnection->GetNewsServer()->GetName(), m_pConnection->GetHost());
+			NewsServer* pNewsServer = m_pConnection->GetNewsServer();
+			detail("Downloading %s @ %s (%s)", m_szInfoName, pNewsServer->GetName(), m_pConnection->GetHost());
+
 			Status = Download();
+
+			if (Status == adFinished || Status == adFailed || Status == adNotFound || Status == adCrcError)
+			{
+				m_ServerStats.SetStat(pNewsServer->GetID(), Status == adFinished ? 1 : 0, Status == adFinished ? 0 : 1, false);
+			}
 		}
 
 		if (bConnected)
@@ -269,7 +274,7 @@ void ArticleDownloader::Run()
 			// if all servers from all levels were tried, break the loop with failure status
 
 			bool bAllServersOnLevelFailed = true;
-			for (ServerPool::Servers::iterator it = g_pServerPool->GetServers()->begin(); it != g_pServerPool->GetServers()->end(); it++)
+			for (Servers::iterator it = g_pServerPool->GetServers()->begin(); it != g_pServerPool->GetServers()->end(); it++)
 			{
 				NewsServer* pCandidateServer = *it;
 				if (pCandidateServer->GetNormLevel() == iLevel)
@@ -277,7 +282,7 @@ void ArticleDownloader::Run()
 					bool bServerFailed = !pCandidateServer->GetActive() || pCandidateServer->GetMaxConnections() == 0;
 					if (!bServerFailed)
 					{
-						for (ServerPool::Servers::iterator it = failedServers.begin(); it != failedServers.end(); it++)
+						for (Servers::iterator it = failedServers.begin(); it != failedServers.end(); it++)
 						{
 							NewsServer* pIgnoreServer = *it;
 							if (pIgnoreServer == pCandidateServer ||
@@ -1121,7 +1126,9 @@ void ArticleDownloader::CompleteFileParts()
 	}
 	else
 	{
-		warn("%i of %i article downloads failed for \"%s\"", iBrokenCount, m_pFileInfo->GetArticles()->size(), InfoFilename);
+		warn("%i of %i article downloads failed for \"%s\"",
+			iBrokenCount + m_pFileInfo->GetMissedArticles(),
+			m_pFileInfo->GetTotalArticles(), InfoFilename);
 
 		if (g_pOptions->GetCreateBrokenLog())
 		{
@@ -1129,7 +1136,9 @@ void ArticleDownloader::CompleteFileParts()
 			snprintf(szBrokenLogName, 1024, "%s%c_brokenlog.txt", szNZBDestDir, (int)PATH_SEPARATOR);
 			szBrokenLogName[1024-1] = '\0';
 			FILE* file = fopen(szBrokenLogName, "ab");
-			fprintf(file, "%s (%i/%i)%s", m_pFileInfo->GetFilename(), m_pFileInfo->GetArticles()->size() - iBrokenCount, m_pFileInfo->GetArticles()->size(), LINE_ENDING);
+			fprintf(file, "%s (%i/%i)%s", m_pFileInfo->GetFilename(),
+				m_pFileInfo->GetTotalArticles() - iBrokenCount - m_pFileInfo->GetMissedArticles(),
+				m_pFileInfo->GetTotalArticles(), LINE_ENDING);
 			fclose(file);
 		}
 	}

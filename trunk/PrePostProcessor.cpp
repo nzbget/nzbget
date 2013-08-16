@@ -299,6 +299,7 @@ void PrePostProcessor::NZBDownloaded(DownloadQueue* pDownloadQueue, NZBInfo* pNZ
 void PrePostProcessor::NZBDeleted(DownloadQueue* pDownloadQueue, NZBInfo* pNZBInfo)
 {
 	pNZBInfo->SetDeleted(true);
+	pNZBInfo->SetDeleting(false);
 
 	if (g_pOptions->GetDeleteCleanupDisk() && pNZBInfo->GetCleanupDisk())
 	{

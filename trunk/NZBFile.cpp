@@ -150,7 +150,9 @@ void NZBFile::AddFileInfo(FileInfo* pFileInfo)
 	long long lMissedSize = 0;
 	long long lOneSize = 0;
 	int iUncountedArticles = 0;
+	int iMissedArticles = 0;
 	FileInfo::Articles* pArticles = pFileInfo->GetArticles();
+	int iTotalArticles = (int)pArticles->size();
 	int i = 0;
 	for (FileInfo::Articles::iterator it = pArticles->begin(); it != pArticles->end(); )
 	{
@@ -159,6 +161,7 @@ void NZBFile::AddFileInfo(FileInfo* pFileInfo)
 		{
 			pArticles->erase(it);
 			it = pArticles->begin() + i;
+			iMissedArticles++;
 			if (lOneSize > 0)
 			{
 				lMissedSize += lOneSize;
@@ -189,6 +192,8 @@ void NZBFile::AddFileInfo(FileInfo* pFileInfo)
 		pFileInfo->SetSize(lSize);
 		pFileInfo->SetRemainingSize(lSize - lMissedSize);
 		pFileInfo->SetMissedSize(lMissedSize);
+		pFileInfo->SetTotalArticles(iTotalArticles);
+		pFileInfo->SetMissedArticles(iMissedArticles);
 	}
 	else
 	{
@@ -379,8 +384,9 @@ void NZBFile::ProcessFilenames()
 		for (char* p = szLoFileName; *p; p++) *p = tolower(*p); // convert string to lowercase
 		bool bParFile = strstr(szLoFileName, ".par2");
 
-		m_pNZBInfo->SetSize(m_pNZBInfo->GetSize() + pFileInfo->GetSize());
 		m_pNZBInfo->SetFileCount(m_pNZBInfo->GetFileCount() + 1);
+		m_pNZBInfo->SetTotalArticles(m_pNZBInfo->GetTotalArticles() + pFileInfo->GetTotalArticles());
+		m_pNZBInfo->SetSize(m_pNZBInfo->GetSize() + pFileInfo->GetSize());
 		m_pNZBInfo->SetFailedSize(m_pNZBInfo->GetFailedSize() + pFileInfo->GetMissedSize());
 		m_pNZBInfo->SetCurrentFailedSize(m_pNZBInfo->GetFailedSize());
 

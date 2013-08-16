@@ -88,6 +88,10 @@ private:
 	long long			m_lSuccessSize;
 	long long			m_lFailedSize;
 	long long			m_lMissedSize;
+	int					m_iTotalArticles;
+	int					m_iMissedArticles;
+	int					m_iFailedArticles;
+	int					m_iSuccessArticles;
 	time_t				m_tTime;
 	bool				m_bPaused;
 	bool				m_bDeleted;
@@ -130,6 +134,14 @@ public:
 	void 				SetSuccessSize(long long lSuccessSize) { m_lSuccessSize = lSuccessSize; }
 	long long			GetFailedSize() { return m_lFailedSize; }
 	void 				SetFailedSize(long long lFailedSize) { m_lFailedSize = lFailedSize; }
+	int					GetTotalArticles() { return m_iTotalArticles; }
+	void 				SetTotalArticles(int iTotalArticles) { m_iTotalArticles = iTotalArticles; }
+	int					GetMissedArticles() { return m_iMissedArticles; }
+	void 				SetMissedArticles(int iMissedArticles) { m_iMissedArticles = iMissedArticles; }
+	int					GetFailedArticles() { return m_iFailedArticles; }
+	void 				SetFailedArticles(int iFailedArticles) { m_iFailedArticles = iFailedArticles; }
+	int					GetSuccessArticles() { return m_iSuccessArticles; }
+	void 				SetSuccessArticles(int iSuccessArticles) { m_iSuccessArticles = iSuccessArticles; }
 	time_t				GetTime() { return m_tTime; }
 	void				SetTime(time_t tTime) { m_tTime = tTime; }
 	bool				GetPaused() { return m_bPaused; }
@@ -262,6 +274,33 @@ public:
 	ScriptStatus::EStatus	CalcTotalStatus();
 };
 
+class ServerStat
+{
+private:
+	int					m_iServerID;
+	int					m_iSuccessArticles;
+	int					m_iFailedArticles;
+
+public:
+						ServerStat(int iServerID);
+	int					GetServerID() { return m_iServerID; }
+	int					GetSuccessArticles() { return m_iSuccessArticles; }
+	void				SetSuccessArticles(int iSuccessArticles) { m_iSuccessArticles = iSuccessArticles; }
+	int					GetFailedArticles() { return m_iFailedArticles; }
+	void				SetFailedArticles(int iFailedArticles) { m_iFailedArticles = iFailedArticles; }
+};
+
+typedef std::vector<ServerStat*>	ServerStatListBase;
+
+class ServerStatList : public ServerStatListBase
+{
+public:
+						~ServerStatList();
+	void				SetStat(int iServerID, int iSuccessArticles, int iFailedArticles, bool bAdd);
+	void				Add(ServerStatList* pServerStats);
+	void				Clear();
+};
+
 class NZBInfoList;
 
 class NZBInfo
@@ -330,6 +369,9 @@ private:
 	long long			m_lParFailedSize;
 	long long			m_lParCurrentSuccessSize;
 	long long			m_lParCurrentFailedSize;
+	int					m_iTotalArticles;
+	int					m_iSuccessArticles;
+	int					m_iFailedArticles;
 	Files				m_completedFiles;
 	bool				m_bPostProcess;
 	ERenameStatus		m_eRenameStatus;
@@ -339,6 +381,7 @@ private:
 	EMoveStatus			m_eMoveStatus;
 	char*				m_szQueuedFilename;
 	bool				m_bDeleted;
+	bool				m_bDeleting;
 	bool				m_bHealthPaused;
 	bool				m_bHealthDeleted;
 	bool				m_bParCleanup;
@@ -348,6 +391,7 @@ private:
 	NZBInfoList*		m_Owner;
 	NZBParameterList	m_ppParameters;
 	ScriptStatusList	m_scriptStatuses;
+	ServerStatList		m_ServerStats;
 	Mutex				m_mutexLog;
 	Messages			m_Messages;
 	int					m_iIDMessageGen;
@@ -374,6 +418,10 @@ public:
 	void				SetCategory(const char* szCategory);   // needs locking (for shared objects)
 	const char*			GetName() { return m_szName; } 	   // needs locking (for shared objects)
 	void				SetName(const char* szName);	   // needs locking (for shared objects)
+	int					GetFileCount() { return m_iFileCount; }
+	void 				SetFileCount(int iFileCount) { m_iFileCount = iFileCount; }
+	int					GetParkedFileCount() { return m_iParkedFileCount; }
+	void 				SetParkedFileCount(int iParkedFileCount) { m_iParkedFileCount = iParkedFileCount; }
 	long long 			GetSize() { return m_lSize; }
 	void 				SetSize(long long lSize) { m_lSize = lSize; }
 	long long			GetSuccessSize() { return m_lSuccessSize; }
@@ -394,10 +442,12 @@ public:
 	void 				SetParCurrentSuccessSize(long long lParCurrentSuccessSize) { m_lParCurrentSuccessSize = lParCurrentSuccessSize; }
 	long long			GetParCurrentFailedSize() { return m_lParCurrentFailedSize; }
 	void 				SetParCurrentFailedSize(long long lParCurrentFailedSize) { m_lParCurrentFailedSize = lParCurrentFailedSize; }
-	int					GetFileCount() { return m_iFileCount; }
-	void 				SetFileCount(int iFileCount) { m_iFileCount = iFileCount; }
-	int					GetParkedFileCount() { return m_iParkedFileCount; }
-	void 				SetParkedFileCount(int iParkedFileCount) { m_iParkedFileCount = iParkedFileCount; }
+	int					GetTotalArticles() { return m_iTotalArticles; }
+	void 				SetTotalArticles(int iTotalArticles) { m_iTotalArticles = iTotalArticles; }
+	int					GetSuccessArticles() { return m_iSuccessArticles; }
+	void 				SetSuccessArticles(int iSuccessArticles) { m_iSuccessArticles = iSuccessArticles; }
+	int					GetFailedArticles() { return m_iFailedArticles; }
+	void 				SetFailedArticles(int iFailedArticles) { m_iFailedArticles = iFailedArticles; }
 	void				BuildDestDirName();
 	void				BuildFinalDirName(char* szFinalDirBuf, int iBufSize);
 	Files*				GetCompletedFiles() { return &m_completedFiles; }		// needs locking (for shared objects)
@@ -416,6 +466,8 @@ public:
 	void				SetMoveStatus(EMoveStatus eMoveStatus) { m_eMoveStatus = eMoveStatus; }
 	const char*			GetQueuedFilename() { return m_szQueuedFilename; }
 	void				SetQueuedFilename(const char* szQueuedFilename);
+	bool				GetDeleting() { return m_bDeleting; }
+	void				SetDeleting(bool bDeleting) { m_bDeleting = bDeleting; }
 	bool				GetDeleted() { return m_bDeleted; }
 	void				SetDeleted(bool bDeleted) { m_bDeleted = bDeleted; }
 	bool				GetHealthPaused() { return m_bHealthPaused; }
@@ -430,6 +482,7 @@ public:
 	void				SetUnpackCleanedUpDisk(bool bUnpackCleanedUpDisk) { m_bUnpackCleanedUpDisk = bUnpackCleanedUpDisk; }
 	NZBParameterList*	GetParameters() { return &m_ppParameters; }				// needs locking (for shared objects)
 	ScriptStatusList*	GetScriptStatuses() { return &m_scriptStatuses; }        // needs locking (for shared objects)
+	ServerStatList*		GetServerStats() { return &m_ServerStats; }
 	int					CalcHealth();
 	int					CalcCriticalHealth();
 	void				AppendMessage(Message::EKind eKind, time_t tTime, const char* szText);

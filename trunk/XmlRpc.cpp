@@ -1017,7 +1017,7 @@ void StatusXmlCommand::Execute()
 	AppendResponse(szContent);
 
 	int index = 0;
-	for (ServerPool::Servers::iterator it = g_pServerPool->GetServers()->begin(); it != g_pServerPool->GetServers()->end(); it++)
+	for (Servers::iterator it = g_pServerPool->GetServers()->begin(); it != g_pServerPool->GetServers()->end(); it++)
 	{
 		NewsServer* pServer = *it;
 		snprintf(szContent, sizeof(szContent), IsJson() ? JSON_NEWSSERVER_ITEM : XML_NEWSSERVER_ITEM,
@@ -1821,6 +1821,9 @@ void HistoryXmlCommand::Execute()
 		"<member><name>FileSizeMB</name><value><i4>%i</i4></value></member>\n"
 		"<member><name>FileCount</name><value><i4>%i</i4></value></member>\n"
 		"<member><name>RemainingFileCount</name><value><i4>%i</i4></value></member>\n"
+		"<member><name>TotalArticles</name><value><i4>%i</i4></value></member>\n"
+		"<member><name>SuccessArticles</name><value><i4>%i</i4></value></member>\n"
+		"<member><name>FailedArticles</name><value><i4>%i</i4></value></member>\n"
 		"<member><name>HistoryTime</name><value><i4>%i</i4></value></member>\n"
 		"<member><name>URL</name><value><string>%s</string></value></member>\n"
 		"<member><name>UrlStatus</name><value><string>%s</string></value></member>\n"
@@ -1833,6 +1836,10 @@ void HistoryXmlCommand::Execute()
 	const char* XML_HISTORY_ITEM_SCRIPT_START =
 		"</data></array></value></member>\n"
 		"<member><name>ScriptStatuses</name><value><array><data>\n";
+
+	const char* XML_HISTORY_ITEM_STATS_START =
+		"</data></array></value></member>\n"
+		"<member><name>ServerStats</name><value><array><data>\n";
 
 	const char* XML_HISTORY_ITEM_LOG_START =
 		"</data></array></value></member>\n"
@@ -1862,6 +1869,9 @@ void HistoryXmlCommand::Execute()
 		"\"FileSizeMB\" : %i,\n"
 		"\"FileCount\" : %i,\n"
 		"\"RemainingFileCount\" : %i,\n"
+		"\"TotalArticles\" : %i,\n"
+		"\"SuccessArticles\" : %i,\n"
+		"\"FailedArticles\" : %i,\n"
 		"\"HistoryTime\" : %i,\n"
 		"\"URL\" : \"%s\",\n"
 		"\"UrlStatus\" : \"%s\",\n"
@@ -1874,6 +1884,10 @@ void HistoryXmlCommand::Execute()
 	const char* JSON_HISTORY_ITEM_SCRIPT_START =
 		"],\n"
 		"\"ScriptStatuses\" : [\n";
+
+	const char* JSON_HISTORY_ITEM_STATS_START =
+		"],\n"
+		"\"ServerStats\" : [\n";
 
 	const char* JSON_HISTORY_ITEM_LOG_START =
 		"],\n"
@@ -1905,6 +1919,20 @@ void HistoryXmlCommand::Execute()
 		"{\n"
 		"\"Name\" : \"%s\",\n"
 		"\"Status\" : \"%s\"\n"
+		"}";
+
+	const char* XML_STAT_ITEM =
+		"<value><struct>\n"
+		"<member><name>ServerID</name><value><i4>%i</i4></value></member>\n"
+		"<member><name>SuccessArticles</name><value><i4>%i</i4></value></member>\n"
+		"<member><name>FailedArticles</name><value><i4>%i</i4></value></member>\n"
+		"</struct></value>\n";
+
+	const char* JSON_STAT_ITEM =
+		"{\n"
+		"\"ServerID\" : %i,\n"
+		"\"SuccessArticles\" : %i,\n"
+		"\"FailedArticles\" : %i\n"
 		"}";
 
 	const char* XML_LOG_ITEM =
@@ -1965,10 +1993,10 @@ void HistoryXmlCommand::Execute()
 				xmlDestDir, xmlFinalDir, xmlCategory, szParStatusName[pNZBInfo->GetParStatus()],
 				szUnpackStatusName[pNZBInfo->GetUnpackStatus()], szMoveStatusName[pNZBInfo->GetMoveStatus()],
 				szScriptStatusName[pNZBInfo->GetScriptStatuses()->CalcTotalStatus()],
-				iFileSizeLo, iFileSizeHi, iFileSizeMB, pNZBInfo->GetFileCount(),
-				pNZBInfo->GetParkedFileCount(), pHistoryInfo->GetTime(), "", "",
-				pNZBInfo->CalcHealth(), pNZBInfo->CalcCriticalHealth(), BoolToStr(pNZBInfo->GetDeleted()),
-				BoolToStr(pNZBInfo->GetHealthDeleted()));
+				iFileSizeLo, iFileSizeHi, iFileSizeMB, pNZBInfo->GetFileCount(), pNZBInfo->GetParkedFileCount(),
+				pNZBInfo->GetTotalArticles(), pNZBInfo->GetSuccessArticles(), pNZBInfo->GetFailedArticles(),
+				pHistoryInfo->GetTime(), "", "", pNZBInfo->CalcHealth(), pNZBInfo->CalcCriticalHealth(),
+				BoolToStr(pNZBInfo->GetDeleted()), BoolToStr(pNZBInfo->GetHealthDeleted()));
 
 			free(xmlDestDir);
 			free(xmlFinalDir);
@@ -1983,7 +2011,7 @@ void HistoryXmlCommand::Execute()
 
 			snprintf(szItemBuf, iItemBufSize, IsJson() ? JSON_HISTORY_ITEM_START : XML_HISTORY_ITEM_START,
 				pHistoryInfo->GetID(), 0, "URL", xmlNicename, xmlNicename, xmlNZBFilename, 
-				"", "", xmlCategory, "", "", "", "", 0, 0, 0, 0, 0, pHistoryInfo->GetTime(), xmlURL,
+				"", "", xmlCategory, "", "", "", "", 0, 0, 0, 0, 0, 0, 0, 0, pHistoryInfo->GetTime(), xmlURL,
 				szUrlStatusName[pUrlInfo->GetStatus()], 0, 0, BoolToStr(false), BoolToStr(false));
 
 			free(xmlURL);
@@ -2046,6 +2074,28 @@ void HistoryXmlCommand::Execute()
 				free(xmlStatus);
 				
 				if (IsJson() && iScriptIndex++ > 0)
+				{
+					AppendResponse(",\n");
+				}
+				AppendResponse(szItemBuf);
+			}
+		}
+
+		AppendResponse(IsJson() ? JSON_HISTORY_ITEM_STATS_START : XML_HISTORY_ITEM_STATS_START);
+
+		if (pNZBInfo)
+		{
+			// Server stats
+			int iStatIndex = 0;
+			for (ServerStatList::iterator it = pNZBInfo->GetServerStats()->begin(); it != pNZBInfo->GetServerStats()->end(); it++)
+			{
+				ServerStat* pServerStat = *it;
+				
+				snprintf(szItemBuf, iItemBufSize, IsJson() ? JSON_STAT_ITEM : XML_STAT_ITEM,
+					pServerStat->GetServerID(), pServerStat->GetSuccessArticles(), pServerStat->GetFailedArticles());
+				szItemBuf[iItemBufSize-1] = '\0';
+				
+				if (IsJson() && iStatIndex++ > 0)
 				{
 					AppendResponse(",\n");
 				}
@@ -2622,7 +2672,7 @@ void EditServerXmlCommand::Execute()
 			return;
 		}
 
-		for (ServerPool::Servers::iterator it = g_pServerPool->GetServers()->begin(); it != g_pServerPool->GetServers()->end(); it++)
+		for (Servers::iterator it = g_pServerPool->GetServers()->begin(); it != g_pServerPool->GetServers()->end(); it++)
 		{
 			NewsServer* pServer = *it;
 			if (pServer->GetID() == iID)
