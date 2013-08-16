@@ -36,9 +36,6 @@
 
 class ServerPool
 {
-public:
-	typedef std::vector<NewsServer*>		Servers;
-
 private:
 	class PooledConnection : public NNTPConnection
 	{

@@ -27,6 +27,7 @@
 #define DISKSTATE_H
 
 #include "DownloadInfo.h"
+#include "NewsServer.h"
 
 class DiskState
 {
@@ -54,10 +55,11 @@ private:
 	bool				SaveFeedHistory(FeedHistory* pFeedHistory, FILE* outfile);
 	bool				LoadFeedHistory(FeedHistory* pFeedHistory, FILE* infile, int iFormatVersion);
 	void				CalcCriticalHealth(DownloadQueue* pDownloadQueue);
+	bool				SaveServerStats(Servers* pServers, FILE* outfile);
+	bool				LoadServerStats(Servers* pServers, FILE* infile, int iFormatVersion);
 	
 public:
 	bool				DownloadQueueExists();
-	bool				PostQueueExists(bool bCompleted);
 	bool				SaveDownloadQueue(DownloadQueue* pDownloadQueue);
 	bool				LoadDownloadQueue(DownloadQueue* pDownloadQueue);
 	bool				SaveFile(FileInfo* pFileInfo);
@@ -66,6 +68,8 @@ public:
 	bool				DiscardFile(FileInfo* pFileInfo);
 	bool				SaveFeeds(Feeds* pFeeds, FeedHistory* pFeedHistory);
 	bool				LoadFeeds(Feeds* pFeeds, FeedHistory* pFeedHistory);
+	bool				SaveStats(Servers* pServers);
+	bool				LoadStats(Servers* pServers);
 	void				CleanupTempDir(DownloadQueue* pDownloadQueue);
 };
 

@@ -101,8 +101,7 @@ const char* NNTPConnection::Request(const char* req)
 
 bool NNTPConnection::Authenticate()
 {
-	if (!m_pNewsServer->GetUser() || strlen(m_pNewsServer->GetUser()) == 0 || 
-		!m_pNewsServer->GetPassword() || strlen(m_pNewsServer->GetPassword()) == 0)
+	if (strlen(m_pNewsServer->GetUser()) == 0 || strlen(m_pNewsServer->GetPassword()) == 0)
 	{
 		error("%c%s (%s) requested authorization but username/password are not set in settings", 
 			toupper(m_pNewsServer->GetName()[0]), m_pNewsServer->GetName() + 1, m_pNewsServer->GetHost());
@@ -258,8 +257,7 @@ bool NNTPConnection::Connect()
 		return false;
 	}
 
-	if ((m_pNewsServer->GetUser() && strlen(m_pNewsServer->GetUser()) > 0 &&
-		 m_pNewsServer->GetPassword() && strlen(m_pNewsServer->GetPassword()) > 0) &&
+	if ((strlen(m_pNewsServer->GetUser()) > 0 && strlen(m_pNewsServer->GetPassword()) > 0) &&
 		!Authenticate())
 	{
 		return false;

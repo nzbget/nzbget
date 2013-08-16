@@ -2,7 +2,7 @@
  *  This file is part of nzbget
  *
  *  Copyright (C) 2004 Sven Henkel <sidddy@users.sourceforge.net>
- *  Copyright (C) 2007-2009 Andrey Prygunkov <hugbug@users.sourceforge.net>
+ *  Copyright (C) 2007-2013 Andrey Prygunkov <hugbug@users.sourceforge.net>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -72,6 +72,7 @@ private:
 	UDecoder			m_UDecoder;
 	FILE*				m_pOutFile;
 	bool				m_bDuplicate;
+	ServerStatList		m_ServerStats;
 
 	EStatus				Download();
 	bool				Write(char* szLine, int iLen);
@@ -94,6 +95,7 @@ public:
 	void				SetArticleInfo(ArticleInfo* pArticleInfo) { m_pArticleInfo = pArticleInfo; }
 	ArticleInfo*		GetArticleInfo() { return m_pArticleInfo; }
 	EStatus				GetStatus() { return m_eStatus; }
+	ServerStatList*		GetServerStats() { return &m_ServerStats; }
 	virtual void		Run();
 	virtual void		Stop();
 	bool				Terminate();

@@ -652,12 +652,12 @@ ul.dropdown-menu > li > a > i {
 }
 
 /* links in black color */
-.datatable a {
+.table a {
 	color: #000000;
 }
 
 /* links in black color */
-.datatable a:hover {
+.table a:hover {
 	color: #000000;
 }
 
@@ -697,6 +697,11 @@ div.toolbox-length select {
 
 .modal-tab .pagination {
 	margin-bottom: 10px;
+}
+
+.padded-tab {
+	padding-left: 20px;
+	padding-right: 20px;
 }
 
 h1 {
@@ -1241,8 +1246,12 @@ ul.help > li {
 	text-align: left;
 }
 
+.data-statistics-full {
+	width: 364px;
+}
+
 .data-statistics {
-	width: 280px;
+	width: 290px;
 }
 
 .modal-center {

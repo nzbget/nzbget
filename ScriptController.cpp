@@ -866,6 +866,26 @@ void PostScriptController::PrepareParams(const char* szScriptName)
 	strncpy(szCategory, m_pPostInfo->GetNZBInfo()->GetCategory(), 1024);
 	szCategory[1024-1] = '\0';
 
+	char szDeleted[10];
+	snprintf(szDeleted, 10, "%i", (int)m_pPostInfo->GetNZBInfo()->GetDeleted());
+	szDeleted[10-1] = '\0';
+
+	char szHealthDeleted[10];
+	snprintf(szHealthDeleted, 10, "%i", (int)m_pPostInfo->GetNZBInfo()->GetHealthDeleted());
+	szHealthDeleted[10-1] = '\0';
+
+	char szTotalArticles[20];
+	snprintf(szTotalArticles, 20, "%i", (int)m_pPostInfo->GetNZBInfo()->GetTotalArticles());
+	szTotalArticles[20-1] = '\0';
+
+	char szSuccessArticles[20];
+	snprintf(szSuccessArticles, 20, "%i", (int)m_pPostInfo->GetNZBInfo()->GetSuccessArticles());
+	szSuccessArticles[20-1] = '\0';
+
+	char szFailedArticles[20];
+	snprintf(szFailedArticles, 20, "%i", (int)m_pPostInfo->GetNZBInfo()->GetFailedArticles());
+	szFailedArticles[20-1] = '\0';
+
 	// Reset
 	ResetEnv();
 
@@ -878,6 +898,35 @@ void PostScriptController::PrepareParams(const char* szScriptName)
 	SetEnvVar("NZBPP_PARSTATUS", szParStatus);
 	SetEnvVar("NZBPP_UNPACKSTATUS", szUnpackStatus);
 	SetEnvVar("NZBPP_CATEGORY", szCategory);
+	SetEnvVar("NZBPP_DELETED", szDeleted);
+	SetEnvVar("NZBPP_HEALTHDELETED", szHealthDeleted);
+	SetEnvVar("NZBPP_TOTALARTICLES", szTotalArticles);
+	SetEnvVar("NZBPP_SUCCESSARTICLES", szSuccessArticles);
+	SetEnvVar("NZBPP_FAILEDARTICLES", szFailedArticles);
+
+	for (ServerStatList::iterator it = m_pPostInfo->GetNZBInfo()->GetServerStats()->begin(); it != m_pPostInfo->GetNZBInfo()->GetServerStats()->end(); it++)
+	{
+		ServerStat* pServerStat = *it;
+
+		char szName[50];
+		char szValue[30];
+
+		snprintf(szName, 50, "NZBPP_SERVER%i_SUCCESSARTICLES", pServerStat->GetServerID());
+		szName[50-1] = '\0';
+
+		snprintf(szValue, 30, "%i", pServerStat->GetSuccessArticles());
+		szValue[30-1] = '\0';
+
+		SetEnvVar(szName, szValue);
+
+		snprintf(szName, 50, "NZBPP_SERVER%i_FAILEDARTICLES", pServerStat->GetServerID());
+		szName[50-1] = '\0';
+
+		snprintf(szValue, 30, "%i", pServerStat->GetFailedArticles());
+		szValue[30-1] = '\0';
+
+		SetEnvVar(szName, szValue);
+	}
 
 	PrepareEnvParameters(m_pPostInfo->GetNZBInfo(), NULL);
 
