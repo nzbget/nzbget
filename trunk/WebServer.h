@@ -54,6 +54,7 @@ private:
 	void				SendBodyResponse(const char* szBody, int iBodyLen, const char* szContentType);
 	void				SendRedirectResponse(const char* szURL);
 	const char*			DetectContentType(const char* szFilename);
+	bool				IsApprovedIP(const char* szRemoteAddr);
 
 public:
 						WebProcessor();
