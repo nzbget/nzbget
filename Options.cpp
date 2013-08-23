@@ -122,6 +122,7 @@ static const char* OPTION_SECURECONTROL			= "SecureControl";
 static const char* OPTION_SECUREPORT			= "SecurePort";
 static const char* OPTION_SECURECERT			= "SecureCert";
 static const char* OPTION_SECUREKEY				= "SecureKey";
+static const char* OPTION_APPROVEDIP			= "ApprovedIP";
 static const char* OPTION_CONNECTIONTIMEOUT		= "ConnectionTimeout";
 static const char* OPTION_SAVEQUEUE				= "SaveQueue";
 static const char* OPTION_RELOADQUEUE			= "ReloadQueue";
@@ -514,6 +515,7 @@ Options::Options(int argc, char* argv[])
 	m_iSecurePort			= 0;
 	m_szSecureCert			= NULL;
 	m_szSecureKey			= NULL;
+	m_szApprovedIP			= NULL;
 	m_szLockFile			= NULL;
 	m_szDaemonUsername		= NULL;
 	m_eOutputMode			= omLoggable;
@@ -721,6 +723,10 @@ Options::~Options()
 	{
 		free(m_szSecureKey);
 	}
+	if (m_szApprovedIP)
+	{
+		free(m_szApprovedIP);
+	}
 	if (m_szLogFile)
 	{
 		free(m_szLogFile);
@@ -859,6 +865,7 @@ void Options::InitDefault()
 	SetOption(OPTION_SECUREPORT, "6791");
 	SetOption(OPTION_SECURECERT, "");
 	SetOption(OPTION_SECUREKEY, "");
+	SetOption(OPTION_APPROVEDIP, "");
 	SetOption(OPTION_CONNECTIONTIMEOUT, "60");
 	SetOption(OPTION_SAVEQUEUE, "yes");
 	SetOption(OPTION_RELOADQUEUE, "yes");
@@ -1051,6 +1058,7 @@ void Options::InitOptions()
 	m_szControlPassword		= strdup(GetOption(OPTION_CONTROLPASSWORD));
 	m_szSecureCert			= strdup(GetOption(OPTION_SECURECERT));
 	m_szSecureKey			= strdup(GetOption(OPTION_SECUREKEY));
+	m_szApprovedIP			= strdup(GetOption(OPTION_APPROVEDIP));
 	m_szLockFile			= strdup(GetOption(OPTION_LOCKFILE));
 	m_szDaemonUsername		= strdup(GetOption(OPTION_DAEMONUSERNAME));
 	m_szLogFile				= strdup(GetOption(OPTION_LOGFILE));

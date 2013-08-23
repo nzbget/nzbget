@@ -269,6 +269,7 @@ private:
 	int					m_iSecurePort;
 	char*				m_szSecureCert;
 	char*				m_szSecureKey;
+	char*				m_szApprovedIP;
 	char*				m_szLockFile;
 	char*				m_szDaemonUsername;
 	EOutputMode			m_eOutputMode;
@@ -432,6 +433,7 @@ public:
 	int					GetSecurePort() { return m_iSecurePort; }
 	const char*			GetSecureCert() { return m_szSecureCert; }
 	const char*			GetSecureKey() { return m_szSecureKey; }
+	const char*			GetApprovedIP() { return m_szApprovedIP; }
 	const char*			GetLockFile() { return m_szLockFile; }
 	const char*			GetDaemonUsername() { return m_szDaemonUsername; }
 	EOutputMode			GetOutputMode() { return m_eOutputMode; }
