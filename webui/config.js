@@ -774,7 +774,7 @@ var Config = (new function($)
 		}
 		else if (option.name.toLowerCase().indexOf('username') > -1 ||
 				option.name.toLowerCase().indexOf('password') > -1 ||
-				(option.name.indexOf('IP') > -1 && option.name.toLowerCase() !== 'approvedip'))
+				(option.name.indexOf('IP') > -1 && option.name.toLowerCase() !== 'authorizedip'))
 		{
 			option.type = 'text';
 			html += '<input type="text" id="' + option.formId + '" value="' + Util.textToAttr(value) + '" class="editsmall">';
