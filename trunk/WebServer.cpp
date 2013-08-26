@@ -186,7 +186,7 @@ void WebProcessor::Execute()
 	debug("Final URL=%s", m_szUrl);
 
 	if (strlen(g_pOptions->GetControlPassword()) > 0 &&
-		!(strlen(g_pOptions->GetApprovedIP()) > 0 && IsApprovedIP(m_pConnection->GetRemoteAddr())))
+		!(strlen(g_pOptions->GetAuthorizedIP()) > 0 && IsAuthorizedIP(m_pConnection->GetRemoteAddr())))
 	{
 		if (strlen(szAuthInfo) == 0)
 		{
@@ -226,14 +226,14 @@ void WebProcessor::Execute()
 	Dispatch();
 }
 
-bool WebProcessor::IsApprovedIP(const char* szRemoteAddr)
+bool WebProcessor::IsAuthorizedIP(const char* szRemoteAddr)
 {
 	const char* szRemoteIP = m_pConnection->GetRemoteAddr();
 
-	// split option ApprovedIP into tokens and check each token
-	char* szApprovedIP = strdup(g_pOptions->GetApprovedIP());
+	// split option AuthorizedIP into tokens and check each token
+	char* szAuthorizedIP = strdup(g_pOptions->GetAuthorizedIP());
 	char* saveptr;
-	char* szIP = strtok_r(szApprovedIP, ",;", &saveptr);
+	char* szIP = strtok_r(szAuthorizedIP, ",;", &saveptr);
 	while (szIP)
 	{
 		szIP = Util::Trim(szIP);
@@ -243,7 +243,7 @@ bool WebProcessor::IsApprovedIP(const char* szRemoteAddr)
 		}
 		szIP = strtok_r(NULL, ",;", &saveptr);
 	}
-	free(szApprovedIP);
+	free(szAuthorizedIP);
 	
 	return false;
 }
