@@ -1096,7 +1096,7 @@ time_t Util::ParseRfc822DateTime(const char* szDateTimeStr)
 {
 	char month[4];
 	int day, year, hours, minutes, seconds, zonehours, zoneminutes;
-	int r = sscanf(szDateTimeStr, "%*s %d %3s %d %d:%d:%d %3d %2d", &day, &month, &year, &hours, &minutes, &seconds, &zonehours, &zoneminutes);
+	int r = sscanf(szDateTimeStr, "%*s %d %3s %d %d:%d:%d %3d %2d", &day, &month[0], &year, &hours, &minutes, &seconds, &zonehours, &zoneminutes);
 	if (r != 8)
 	{
 		return 0;

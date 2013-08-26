@@ -1850,7 +1850,7 @@ void Options::PrintUsage(char* com)
 		"    <RegExs>                List of regular expressions (options \"FR\", \"GR\")\n"
 		"                            using POSIX Extended Regular Expression Syntax",
 		Util::BaseFileName(com),
-		PATH_SEPARATOR, PATH_SEPARATOR);
+		PATH_SEPARATOR);
 }
 
 void Options::InitFileArg(int argc, char* argv[])

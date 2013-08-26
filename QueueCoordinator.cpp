@@ -595,7 +595,7 @@ void QueueCoordinator::StartArticleDownload(FileInfo* pFileInfo, ArticleInfo* pA
 	pArticleDownloader->SetConnection(pConnection);
 
 	char szInfoName[1024];
-	snprintf(szInfoName, 1024, "%s%c%s [%i/%i]", pFileInfo->GetNZBInfo()->GetName(), (int)PATH_SEPARATOR, pFileInfo->GetFilename(), pArticleInfo->GetPartNumber(), pFileInfo->GetArticles()->size());
+	snprintf(szInfoName, 1024, "%s%c%s [%i/%i]", pFileInfo->GetNZBInfo()->GetName(), (int)PATH_SEPARATOR, pFileInfo->GetFilename(), pArticleInfo->GetPartNumber(), (int)pFileInfo->GetArticles()->size());
 	szInfoName[1024-1] = '\0';
 	pArticleDownloader->SetInfoName(szInfoName);
 
