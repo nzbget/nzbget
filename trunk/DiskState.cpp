@@ -255,7 +255,7 @@ void DiskState::SaveNZBList(DownloadQueue* pDownloadQueue, FILE* outfile)
 {
 	debug("Saving nzb list to disk");
 
-	fprintf(outfile, "%i\n", pDownloadQueue->GetNZBInfoList()->size());
+	fprintf(outfile, "%i\n", (int)pDownloadQueue->GetNZBInfoList()->size());
 	for (NZBInfoList::iterator it = pDownloadQueue->GetNZBInfoList()->begin(); it != pDownloadQueue->GetNZBInfoList()->end(); it++)
 	{
 		NZBInfo* pNZBInfo = *it;
@@ -290,7 +290,7 @@ void DiskState::SaveNZBList(DownloadQueue* pDownloadQueue, FILE* outfile)
 		snprintf(DestDirSlash, 1023, "%s%c", pNZBInfo->GetDestDir(), PATH_SEPARATOR);
 		int iDestDirLen = strlen(DestDirSlash);
 
-		fprintf(outfile, "%i\n", pNZBInfo->GetCompletedFiles()->size());
+		fprintf(outfile, "%i\n", (int)pNZBInfo->GetCompletedFiles()->size());
 		for (NZBInfo::Files::iterator it = pNZBInfo->GetCompletedFiles()->begin(); it != pNZBInfo->GetCompletedFiles()->end(); it++)
 		{
 			char* szFilename = *it;
@@ -305,21 +305,21 @@ void DiskState::SaveNZBList(DownloadQueue* pDownloadQueue, FILE* outfile)
 			}
 		}
 
-		fprintf(outfile, "%i\n", pNZBInfo->GetParameters()->size());
+		fprintf(outfile, "%i\n", (int)pNZBInfo->GetParameters()->size());
 		for (NZBParameterList::iterator it = pNZBInfo->GetParameters()->begin(); it != pNZBInfo->GetParameters()->end(); it++)
 		{
 			NZBParameter* pParameter = *it;
 			fprintf(outfile, "%s=%s\n", pParameter->GetName(), pParameter->GetValue());
 		}
 
-		fprintf(outfile, "%i\n", pNZBInfo->GetScriptStatuses()->size());
+		fprintf(outfile, "%i\n", (int)pNZBInfo->GetScriptStatuses()->size());
 		for (ScriptStatusList::iterator it = pNZBInfo->GetScriptStatuses()->begin(); it != pNZBInfo->GetScriptStatuses()->end(); it++)
 		{
 			ScriptStatus* pScriptStatus = *it;
 			fprintf(outfile, "%i,%s\n", pScriptStatus->GetStatus(), pScriptStatus->GetName());
 		}
 
-		fprintf(outfile, "%i\n", pNZBInfo->GetServerStats()->size());
+		fprintf(outfile, "%i\n", (int)pNZBInfo->GetServerStats()->size());
 		for (ServerStatList::iterator it = pNZBInfo->GetServerStats()->begin(); it != pNZBInfo->GetServerStats()->end(); it++)
 		{
 			ServerStat* pServerStat = *it;
@@ -327,7 +327,7 @@ void DiskState::SaveNZBList(DownloadQueue* pDownloadQueue, FILE* outfile)
 		}
 
 		NZBInfo::Messages* pMessages = pNZBInfo->LockMessages();
-		fprintf(outfile, "%i\n", pMessages->size());
+		fprintf(outfile, "%i\n", (int)pMessages->size());
 		for (NZBInfo::Messages::iterator it = pMessages->begin(); it != pMessages->end(); it++)
 		{
 			Message* pMessage = *it;
@@ -628,7 +628,7 @@ void DiskState::SaveFileQueue(DownloadQueue* pDownloadQueue, FileQueue* pFileQue
 	debug("Saving file queue to disk");
 
 	// save file-infos
-	fprintf(outfile, "%i\n", pFileQueue->size());
+	fprintf(outfile, "%i\n", (int)pFileQueue->size());
 	for (FileQueue::iterator it = pFileQueue->begin(); it != pFileQueue->end(); it++)
 	{
 		FileInfo* pFileInfo = *it;
@@ -738,13 +738,13 @@ bool DiskState::SaveFileInfo(FileInfo* pFileInfo, const char* szFilename)
 	fprintf(outfile, "%i\n", (int)pFileInfo->GetParFile());
 	fprintf(outfile, "%i,%i\n", pFileInfo->GetTotalArticles(), pFileInfo->GetMissedArticles());
 
-	fprintf(outfile, "%i\n", pFileInfo->GetGroups()->size());
+	fprintf(outfile, "%i\n", (int)pFileInfo->GetGroups()->size());
 	for (FileInfo::Groups::iterator it = pFileInfo->GetGroups()->begin(); it != pFileInfo->GetGroups()->end(); it++)
 	{
 		fprintf(outfile, "%s\n", *it);
 	}
 
-	fprintf(outfile, "%i\n", pFileInfo->GetArticles()->size());
+	fprintf(outfile, "%i\n", (int)pFileInfo->GetArticles()->size());
 	for (FileInfo::Articles::iterator it = pFileInfo->GetArticles()->begin(); it != pFileInfo->GetArticles()->end(); it++)
 	{
 		ArticleInfo* pArticleInfo = *it;
@@ -884,7 +884,7 @@ void DiskState::SavePostQueue(DownloadQueue* pDownloadQueue, FILE* outfile)
 {
 	debug("Saving post-queue to disk");
 
-	fprintf(outfile, "%i\n", pDownloadQueue->GetPostQueue()->size());
+	fprintf(outfile, "%i\n", (int)pDownloadQueue->GetPostQueue()->size());
 	for (PostQueue::iterator it = pDownloadQueue->GetPostQueue()->begin(); it != pDownloadQueue->GetPostQueue()->end(); it++)
 	{
 		PostInfo* pPostInfo = *it;
@@ -1126,7 +1126,7 @@ void DiskState::SaveUrlQueue(DownloadQueue* pDownloadQueue, FILE* outfile)
 {
 	debug("Saving url-queue to disk");
 
-	fprintf(outfile, "%i\n", pDownloadQueue->GetUrlQueue()->size());
+	fprintf(outfile, "%i\n", (int)pDownloadQueue->GetUrlQueue()->size());
 	for (UrlQueue::iterator it = pDownloadQueue->GetUrlQueue()->begin(); it != pDownloadQueue->GetUrlQueue()->end(); it++)
 	{
 		UrlInfo* pUrlInfo = *it;
@@ -1222,7 +1222,7 @@ void DiskState::SaveHistory(DownloadQueue* pDownloadQueue, FILE* outfile)
 {
 	debug("Saving history to disk");
 
-	fprintf(outfile, "%i\n", pDownloadQueue->GetHistoryList()->size());
+	fprintf(outfile, "%i\n", (int)pDownloadQueue->GetHistoryList()->size());
 	for (HistoryList::iterator it = pDownloadQueue->GetHistoryList()->begin(); it != pDownloadQueue->GetHistoryList()->end(); it++)
 	{
 		HistoryInfo* pHistoryInfo = *it;
@@ -1537,7 +1537,7 @@ bool DiskState::SaveFeedStatus(Feeds* pFeeds, FILE* outfile)
 {
 	debug("Saving feed status to disk");
 
-	fprintf(outfile, "%i\n", pFeeds->size());
+	fprintf(outfile, "%i\n", (int)pFeeds->size());
 	for (Feeds::iterator it = pFeeds->begin(); it != pFeeds->end(); it++)
 	{
 		FeedInfo* pFeedInfo = *it;
@@ -1603,7 +1603,7 @@ bool DiskState::SaveFeedHistory(FeedHistory* pFeedHistory, FILE* outfile)
 {
 	debug("Saving feed history to disk");
 
-	fprintf(outfile, "%i\n", pFeedHistory->size());
+	fprintf(outfile, "%i\n", (int)pFeedHistory->size());
 	for (FeedHistory::iterator it = pFeedHistory->begin(); it != pFeedHistory->end(); it++)
 	{
 		FeedHistoryInfo* pFeedHistoryInfo = *it;
@@ -1776,7 +1776,7 @@ bool DiskState::SaveServerStats(Servers* pServers, FILE* outfile)
 {
 	debug("Saving server stats to disk");
 
-	fprintf(outfile, "%i\n", pServers->size());
+	fprintf(outfile, "%i\n", (int)pServers->size());
 	for (Servers::iterator it = pServers->begin(); it != pServers->end(); it++)
 	{
 		NewsServer* pNewsServer = *it;

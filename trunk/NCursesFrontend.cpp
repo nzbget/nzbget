@@ -792,8 +792,8 @@ void NCursesFrontend::PrintFileQueue()
 		
 		char szBuffer[MAX_SCREEN_WIDTH];
 		snprintf(szBuffer, sizeof(szBuffer), " %sFiles for downloading - %i / %i files in queue - %s / %s", 
-			m_bUseColor ? "" : "*** ", pDownloadQueue->GetFileQueue()->size(), 
-			pDownloadQueue->GetFileQueue()->size() - iPausedFiles, szRemaining, szUnpaused);
+			m_bUseColor ? "" : "*** ", (int)pDownloadQueue->GetFileQueue()->size(),
+			(int)pDownloadQueue->GetFileQueue()->size() - iPausedFiles, szRemaining, szUnpaused);
 		szBuffer[MAX_SCREEN_WIDTH - 1] = '\0';
 		PrintTopHeader(szBuffer, m_iQueueWinTop, true);
     }
@@ -977,7 +977,7 @@ void NCursesFrontend::PrintGroupQueue()
 		
 		char szBuffer[MAX_SCREEN_WIDTH];
 		snprintf(szBuffer, sizeof(szBuffer), " %sNZBs for downloading - %i NZBs in queue - %s / %s", 
-			m_bUseColor ? "" : "*** ", pGroupQueue->size(), szRemaining, szUnpaused);
+			m_bUseColor ? "" : "*** ", (int)pGroupQueue->size(), szRemaining, szUnpaused);
 		szBuffer[MAX_SCREEN_WIDTH - 1] = '\0';
 		PrintTopHeader(szBuffer, m_iQueueWinTop, false);
     }
