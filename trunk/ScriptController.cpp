@@ -228,6 +228,14 @@ void ScriptController::SetEnvVar(const char* szName, const char* szValue)
 	m_environmentStrings.Append(szVar);
 }
 
+void ScriptController::SetIntEnvVar(const char* szName, int iValue)
+{
+	char szValue[1024];
+	snprintf(szValue, 10, "%i", iValue);
+	szValue[1024-1] = '\0';
+	SetEnvVar(szName, szValue);
+}
+
 /**
  * If szStripPrefix is not NULL, only options, whose names start with the prefix
  * are processed. The prefix is then stripped from the names.
@@ -828,99 +836,41 @@ void PostScriptController::PrepareParams(const char* szScriptName)
 	// the locking is needed for accessing the members of NZBInfo
 	g_pDownloadQueueHolder->LockQueue();
 
-	char szNZBName[1024];
-	strncpy(szNZBName, m_pPostInfo->GetNZBInfo()->GetName(), 1024);
-	szNZBName[1024-1] = '\0';
-
-	char szHealth[10];
-	snprintf(szHealth, 10, "%i", m_pPostInfo->GetNZBInfo()->CalcHealth());
-	szHealth[10-1] = '\0';
-
-	char szCriticalHealth[10];
-	snprintf(szCriticalHealth, 10, "%i", m_pPostInfo->GetNZBInfo()->CalcCriticalHealth());
-	szCriticalHealth[10-1] = '\0';
-
-	int iParStatus[] = { 0, 0, 1, 2, 3, 4 };
-	char szParStatus[10];
-	snprintf(szParStatus, 10, "%i", iParStatus[m_pPostInfo->GetNZBInfo()->GetParStatus()]);
-	szParStatus[10-1] = '\0';
-
-	int iUnpackStatus[] = { 0, 0, 1, 2 };
-	char szUnpackStatus[10];
-	snprintf(szUnpackStatus, 10, "%i", iUnpackStatus[m_pPostInfo->GetNZBInfo()->GetUnpackStatus()]);
-	szUnpackStatus[10-1] = '\0';
-
-	char szDestDir[1024];
-	strncpy(szDestDir, m_pPostInfo->GetNZBInfo()->GetDestDir(), 1024);
-	szDestDir[1024-1] = '\0';
-	
-	char szNZBID[10];
-	snprintf(szNZBID, 10, "%i", m_pPostInfo->GetNZBInfo()->GetID());
-	szNZBID[10-1] = '\0';
-
-	char szNZBFilename[1024];
-	strncpy(szNZBFilename, m_pPostInfo->GetNZBInfo()->GetFilename(), 1024);
-	szNZBFilename[1024-1] = '\0';
-	
-	char szCategory[1024];
-	strncpy(szCategory, m_pPostInfo->GetNZBInfo()->GetCategory(), 1024);
-	szCategory[1024-1] = '\0';
-
-	char szHealthDeleted[10];
-	snprintf(szHealthDeleted, 10, "%i", (int)m_pPostInfo->GetNZBInfo()->GetHealthDeleted());
-	szHealthDeleted[10-1] = '\0';
-
-	char szTotalArticles[20];
-	snprintf(szTotalArticles, 20, "%i", (int)m_pPostInfo->GetNZBInfo()->GetTotalArticles());
-	szTotalArticles[20-1] = '\0';
-
-	char szSuccessArticles[20];
-	snprintf(szSuccessArticles, 20, "%i", (int)m_pPostInfo->GetNZBInfo()->GetSuccessArticles());
-	szSuccessArticles[20-1] = '\0';
-
-	char szFailedArticles[20];
-	snprintf(szFailedArticles, 20, "%i", (int)m_pPostInfo->GetNZBInfo()->GetFailedArticles());
-	szFailedArticles[20-1] = '\0';
-
 	// Reset
 	ResetEnv();
 
-	SetEnvVar("NZBPP_NZBNAME", szNZBName);
-	SetEnvVar("NZBPP_NZBID", szNZBID);
-	SetEnvVar("NZBPP_DIRECTORY", szDestDir);
-	SetEnvVar("NZBPP_NZBFILENAME", szNZBFilename);
-	SetEnvVar("NZBPP_HEALTH", szHealth);
-	SetEnvVar("NZBPP_CRITICALHEALTH", szCriticalHealth);
-	SetEnvVar("NZBPP_PARSTATUS", szParStatus);
-	SetEnvVar("NZBPP_UNPACKSTATUS", szUnpackStatus);
-	SetEnvVar("NZBPP_CATEGORY", szCategory);
-	SetEnvVar("NZBPP_HEALTHDELETED", szHealthDeleted);
-	SetEnvVar("NZBPP_TOTALARTICLES", szTotalArticles);
-	SetEnvVar("NZBPP_SUCCESSARTICLES", szSuccessArticles);
-	SetEnvVar("NZBPP_FAILEDARTICLES", szFailedArticles);
+	SetEnvVar("NZBPP_NZBNAME", m_pPostInfo->GetNZBInfo()->GetName());
+	SetEnvVar("NZBPP_DIRECTORY", m_pPostInfo->GetNZBInfo()->GetDestDir());
+	SetEnvVar("NZBPP_NZBFILENAME", m_pPostInfo->GetNZBInfo()->GetFilename());
+	SetEnvVar("NZBPP_CATEGORY", m_pPostInfo->GetNZBInfo()->GetCategory());
+	SetIntEnvVar("NZBPP_HEALTH", m_pPostInfo->GetNZBInfo()->CalcHealth());
+	SetIntEnvVar("NZBPP_CRITICALHEALTH", m_pPostInfo->GetNZBInfo()->CalcCriticalHealth());
+
+	int iParStatus[] = { 0, 0, 1, 2, 3, 4 };
+	SetIntEnvVar("NZBPP_PARSTATUS", iParStatus[m_pPostInfo->GetNZBInfo()->GetParStatus()]);
+
+	int iUnpackStatus[] = { 0, 0, 1, 2 };
+	SetIntEnvVar("NZBPP_UNPACKSTATUS", iUnpackStatus[m_pPostInfo->GetNZBInfo()->GetUnpackStatus()]);
+
+	SetIntEnvVar("NZBPP_NZBID", m_pPostInfo->GetNZBInfo()->GetID());
+	SetIntEnvVar("NZBPP_HEALTHDELETED", (int)m_pPostInfo->GetNZBInfo()->GetHealthDeleted());
+	SetIntEnvVar("NZBPP_TOTALARTICLES", (int)m_pPostInfo->GetNZBInfo()->GetTotalArticles());
+	SetIntEnvVar("NZBPP_SUCCESSARTICLES", (int)m_pPostInfo->GetNZBInfo()->GetSuccessArticles());
+	SetIntEnvVar("NZBPP_FAILEDARTICLES", (int)m_pPostInfo->GetNZBInfo()->GetFailedArticles());
 
 	for (ServerStatList::iterator it = m_pPostInfo->GetNZBInfo()->GetServerStats()->begin(); it != m_pPostInfo->GetNZBInfo()->GetServerStats()->end(); it++)
 	{
 		ServerStat* pServerStat = *it;
 
 		char szName[50];
-		char szValue[30];
 
 		snprintf(szName, 50, "NZBPP_SERVER%i_SUCCESSARTICLES", pServerStat->GetServerID());
 		szName[50-1] = '\0';
-
-		snprintf(szValue, 30, "%i", pServerStat->GetSuccessArticles());
-		szValue[30-1] = '\0';
-
-		SetEnvVar(szName, szValue);
+		SetIntEnvVar(szName, pServerStat->GetSuccessArticles());
 
 		snprintf(szName, 50, "NZBPP_SERVER%i_FAILEDARTICLES", pServerStat->GetServerID());
 		szName[50-1] = '\0';
-
-		snprintf(szValue, 30, "%i", pServerStat->GetFailedArticles());
-		szValue[30-1] = '\0';
-
-		SetEnvVar(szName, szValue);
+		SetIntEnvVar(szName, pServerStat->GetFailedArticles());
 	}
 
 	PrepareEnvParameters(m_pPostInfo->GetNZBInfo(), NULL);
@@ -1059,6 +1009,13 @@ void NZBScriptController::ExecuteScript(const char* szScript, const char* szNZBF
 	szInfoName[1024-1] = '\0';
 	pScriptController->SetInfoName(szInfoName);
 
+	pScriptController->SetEnvVar("NZBNP_FILENAME", szNZBFilename);
+	pScriptController->SetEnvVar("NZBNP_NZBNAME", strlen(*pNZBName) > 0 ? *pNZBName : Util::BaseFileName(szNZBFilename));
+	pScriptController->SetEnvVar("NZBNP_CATEGORY", *pCategory);
+	pScriptController->SetIntEnvVar("NZBNP_PRIORITY", *iPriority);
+	pScriptController->SetIntEnvVar("NZBNP_TOP", *bAddTop ? 1 : 0);
+	pScriptController->SetIntEnvVar("NZBNP_PAUSED", *bAddPaused ? 1 : 0);
+
 	// remove trailing slash
 	char szDir[1024];
 	strncpy(szDir, szDirectory, 1024);
@@ -1068,18 +1025,7 @@ void NZBScriptController::ExecuteScript(const char* szScript, const char* szNZBF
 	{
 		szDir[iLen-1] = '\0';
 	}
-
-	char szPriority[20];
-	snprintf(szPriority, 20, "%i", *iPriority);
-	szPriority[20-1] = '\0';
-
-	char szAddTop[10];
-	snprintf(szAddTop, 10, "%i", *bAddTop ? 1 : 0);
-	szAddTop[10-1] = '\0';
-
-	char szAddPaused[10];
-	snprintf(szAddPaused, 10, "%i", *bAddPaused ? 1 : 0);
-	szAddPaused[10-1] = '\0';
+	pScriptController->SetEnvVar("NZBNP_DIRECTORY", szDir);
 
 	char szLogPrefix[1024];
 	strncpy(szLogPrefix, Util::BaseFileName(szScript), 1024);
@@ -1087,14 +1033,6 @@ void NZBScriptController::ExecuteScript(const char* szScript, const char* szNZBF
 	if (char* ext = strrchr(szLogPrefix, '.')) *ext = '\0'; // strip file extension
 	pScriptController->SetLogPrefix(szLogPrefix);
 	pScriptController->m_iPrefixLen = strlen(szLogPrefix) + 2; // 2 = strlen(": ");
-
-	pScriptController->SetEnvVar("NZBNP_DIRECTORY", szDir);
-	pScriptController->SetEnvVar("NZBNP_FILENAME", szNZBFilename);
-	pScriptController->SetEnvVar("NZBNP_NZBNAME", strlen(*pNZBName) > 0 ? *pNZBName : Util::BaseFileName(szNZBFilename));
-	pScriptController->SetEnvVar("NZBNP_CATEGORY", *pCategory);
-	pScriptController->SetEnvVar("NZBNP_PRIORITY", szPriority);
-	pScriptController->SetEnvVar("NZBNP_TOP", szAddTop);
-	pScriptController->SetEnvVar("NZBNP_PAUSED", szAddPaused);
 
 	pScriptController->Execute();
 
@@ -1183,13 +1121,8 @@ void NZBAddedScriptController::StartScript(DownloadQueue* pDownloadQueue, NZBInf
 		}
 	}
 
-	char buf[100];
-
-	snprintf(buf, 100, "%i", iLastID);
-	pScriptController->SetEnvVar("NZBNA_LASTID", buf);
-
-	snprintf(buf, 100, "%i", iMaxPriority);
-	pScriptController->SetEnvVar("NZBNA_PRIORITY", buf);
+	pScriptController->SetIntEnvVar("NZBNA_LASTID", iLastID);
+	pScriptController->SetIntEnvVar("NZBNA_PRIORITY", iMaxPriority);
 
 	pScriptController->PrepareEnvParameters(pNZBInfo, NULL);
 

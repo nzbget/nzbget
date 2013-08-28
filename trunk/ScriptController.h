@@ -98,6 +98,7 @@ public:
 	void				SetLogPrefix(const char* szLogPrefix) { m_szLogPrefix = szLogPrefix; }
 	void				SetEnvVar(const char* szName, const char* szValue);
 	void				SetEnvVarSpecial(const char* szPrefix, const char* szName, const char* szValue);
+	void				SetIntEnvVar(const char* szName, int iValue);
 };
 
 class PostScriptController : public Thread, public ScriptController
