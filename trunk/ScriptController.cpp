@@ -866,10 +866,6 @@ void PostScriptController::PrepareParams(const char* szScriptName)
 	strncpy(szCategory, m_pPostInfo->GetNZBInfo()->GetCategory(), 1024);
 	szCategory[1024-1] = '\0';
 
-	char szDeleted[10];
-	snprintf(szDeleted, 10, "%i", (int)m_pPostInfo->GetNZBInfo()->GetDeleted());
-	szDeleted[10-1] = '\0';
-
 	char szHealthDeleted[10];
 	snprintf(szHealthDeleted, 10, "%i", (int)m_pPostInfo->GetNZBInfo()->GetHealthDeleted());
 	szHealthDeleted[10-1] = '\0';
@@ -898,7 +894,6 @@ void PostScriptController::PrepareParams(const char* szScriptName)
 	SetEnvVar("NZBPP_PARSTATUS", szParStatus);
 	SetEnvVar("NZBPP_UNPACKSTATUS", szUnpackStatus);
 	SetEnvVar("NZBPP_CATEGORY", szCategory);
-	SetEnvVar("NZBPP_DELETED", szDeleted);
 	SetEnvVar("NZBPP_HEALTHDELETED", szHealthDeleted);
 	SetEnvVar("NZBPP_TOTALARTICLES", szTotalArticles);
 	SetEnvVar("NZBPP_SUCCESSARTICLES", szSuccessArticles);
