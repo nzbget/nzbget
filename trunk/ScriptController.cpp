@@ -940,6 +940,23 @@ void PostScriptController::AddMessage(Message::EKind eKind, const char* szText)
 			m_pPostInfo->GetNZBInfo()->SetFinalDir(szMsgText + 6 + 9);
 			g_pDownloadQueueHolder->UnlockQueue();
 		}
+		else if (!strncmp(szMsgText + 6, "NZBPR_", 6))
+		{
+			char* szParam = strdup(szMsgText + 6 + 6);
+			char* szValue = strchr(szParam, '=');
+			if (szValue)
+			{
+				*szValue = '\0';
+				g_pDownloadQueueHolder->LockQueue();
+				m_pPostInfo->GetNZBInfo()->GetParameters()->SetParameter(szParam, szValue + 1);
+				g_pDownloadQueueHolder->UnlockQueue();
+			}
+			else
+			{
+				error("Invalid command \"%s\" received from %s", szMsgText, GetInfoName());
+			}
+			free(szParam);
+		}
 		else
 		{
 			error("Invalid command \"%s\" received from %s", szMsgText, GetInfoName());
