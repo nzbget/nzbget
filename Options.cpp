@@ -145,6 +145,7 @@ static const char* OPTION_DETAILTARGET			= "DetailTarget";
 static const char* OPTION_PARCHECK				= "ParCheck";
 static const char* OPTION_PARREPAIR				= "ParRepair";
 static const char* OPTION_PARSCAN				= "ParScan";
+static const char* OPTION_PARRENAME				= "ParRename";
 static const char* OPTION_HEALTHCHECK			= "HealthCheck";
 static const char* OPTION_NZBPROCESS			= "NZBProcess";
 static const char* OPTION_NZBADDEDPROCESS		= "NZBAddedProcess";
@@ -531,6 +532,7 @@ Options::Options(int argc, char* argv[])
 	m_eParCheck				= pcManual;
 	m_bParRepair			= false;
 	m_eParScan				= psLimited;
+	m_bParRename			= false;
 	m_eHealthCheck			= hcNone;
 	m_szScriptOrder			= NULL;
 	m_szDefScript			= NULL;
@@ -888,6 +890,7 @@ void Options::InitDefault()
 	SetOption(OPTION_PARCHECK, "auto");
 	SetOption(OPTION_PARREPAIR, "yes");
 	SetOption(OPTION_PARSCAN, "limited");
+	SetOption(OPTION_PARRENAME, "yes");
 	SetOption(OPTION_HEALTHCHECK, "none");
 	SetOption(OPTION_SCRIPTORDER, "");
 	SetOption(OPTION_DEFSCRIPT, "");
@@ -1096,6 +1099,7 @@ void Options::InitOptions()
 	m_bCreateLog			= (bool)ParseEnumValue(OPTION_CREATELOG, BoolCount, BoolNames, BoolValues);
 	m_bParRepair			= (bool)ParseEnumValue(OPTION_PARREPAIR, BoolCount, BoolNames, BoolValues);
 	m_bStrictParName		= (bool)ParseEnumValue(OPTION_STRICTPARNAME, BoolCount, BoolNames, BoolValues);
+	m_bParRename			= (bool)ParseEnumValue(OPTION_PARRENAME, BoolCount, BoolNames, BoolValues);
 	m_bReloadQueue			= (bool)ParseEnumValue(OPTION_RELOADQUEUE, BoolCount, BoolNames, BoolValues);
 	m_bReloadUrlQueue		= (bool)ParseEnumValue(OPTION_RELOADURLQUEUE, BoolCount, BoolNames, BoolValues);
 	m_bReloadPostQueue		= (bool)ParseEnumValue(OPTION_RELOADPOSTQUEUE, BoolCount, BoolNames, BoolValues);
@@ -2762,6 +2766,11 @@ void Options::CheckOptions()
 	{
 		LocateOptionSrcPos(OPTION_PARCHECK);
 		ConfigError("Invalid value for option \"%s\": program was compiled without parcheck-support", OPTION_PARCHECK);
+	}
+	if (m_eParRename)
+	{
+		LocateOptionSrcPos(OPTION_PARRENAME);
+		ConfigError("Invalid value for option \"%s\": program was compiled without parcheck-support", OPTION_PARRENAME);
 	}
 #endif
 

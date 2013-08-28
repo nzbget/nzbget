@@ -272,7 +272,7 @@ void PrePostProcessor::NZBDownloaded(DownloadQueue* pDownloadQueue, NZBInfo* pNZ
 			pNZBInfo->SetParStatus(NZBInfo::psSkipped);
 		}
 
-		if (pNZBInfo->GetRenameStatus() == NZBInfo::rsNone)
+		if (pNZBInfo->GetRenameStatus() == NZBInfo::rsNone && !g_pOptions->GetParRename())
 		{
 			pNZBInfo->SetRenameStatus(NZBInfo::rsSkipped);
 		}
