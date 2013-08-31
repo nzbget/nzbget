@@ -1,0 +1,78 @@
+﻿/*
+ *  This file is part of nzbget
+ *
+ *  Copyright (C) 2007-2013 Andrey Prygunkov <hugbug@users.sourceforge.net>
+ *
+ *  This program is free software; you can redistribute it and/or modify
+ *  it under the terms of the GNU General Public License as published by
+ *  the Free Software Foundation; either version 2 of the License, or
+ *  (at your option) any later version.
+ *
+ *  This program is distributed in the hope that it will be useful,
+ *  but WITHOUT ANY WARRANTY; without even the implied warranty of
+ *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ *  GNU General Public License for more details.
+ *
+ *  You should have received a copy of the GNU General Public License
+ *  along with this program; if not, write to the Free Software
+ *  Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
+ *
+ * $Revision: 0 $
+ * $Date: 2013-08-19 12:00:00 +0200 (Sa, 19 Aug 2013) $
+ *
+ */
+
+"Status.Downloading"="Downloading at %i KB/s";
+"Status.Post-Processing"="Post-Processing";
+"Status.Fetching NZBs"="Fetching NZBs";
+"Status.Fetching Feeds"="Fetching Feeds";
+"Status.Paused"="Paused";
+"Status.Idle"="Idle";
+"Status.Left"="%@ left";
+"Status.NoConnection"="Downloader Not Responding";
+"Status.Restarting"="Restarting";
+
+"Left.Days"="%i days";
+"Left.Days.Hours"="%id %ih";
+"Left.Hours"="%i hours";
+"Left.Hours.Minutes"="%ih %02im";
+"Left.Minutes"="%im";
+"Left.Minutes.Seconds"="%im %02is";
+"Left.Seconds"="%is";
+
+"Menu.LinkHomePage"="http://nzbget.sourceforge.net";
+"Menu.LinkDownloads"="http://nzbget.sourceforge.net/Download";
+"Menu.LinkForum"="http://nzbget.sourceforge.net/forum";
+
+"ShowWebUINoConnection.MessageText"="Could not establish connection to downloader (background process).";
+"ShowWebUINoConnection.InformativeText"="Try to restart the program via Troubleshooting-menu.";
+
+"RestartNoConnection.MessageText"="Could not establish connection to downloader (background process).";
+"RestartNoConnection.InformativeText"="Try to restart the program in recovery mode via Troubleshooting-menu.";
+
+"Restarted.MessageText"="The program has been successfully restarted.";
+"Restarted.InformativeText"="";
+"Restarted.WebUI"="Show Web-Interface";
+"Restarted.OK"="OK";
+
+"RestartedRecoveryMode.MessageText"="The program has been successfully restarted and is now working on address http://127.0.0.1:6789 without password.";
+"RestartedRecoveryMode.InformativeText"="To access the program via address, port and password defined in settings the program must be restarted in normal mode using Troubleshooting-menu. A soft-restart via web-interface is not sufficient!";
+
+"FactoryResetted.MessageText"="The program has been reset to factory defaults.";
+"FactoryResetted.InformativeText"="";
+
+"FactoryReset.MessageText"="Reset to factory defaults?";
+"FactoryReset.InformativeText"="All settings will be reset to defaults. The download queue, history, statstics, log-file, default incoming nzb-directory and default ppscripts-directory will be erased. ";
+"FactoryReset.Cancel"="Cancel";
+"FactoryReset.Reset"="Erase and Reset";
+
+"AlreadyRunning.MessageText"="NZBGet is already running.";
+"AlreadyRunning.InformativeTextWithIcon" = "You can control NZBGet using web-interface or icon in menubar.";
+"AlreadyRunning.InformativeTextWithoutIcon" = "You can control NZBGet using web-interface. The icon in menubar is currently not displayed because the option 'Show in menubar' was unselected in preferences.";
+"AlreadyRunning.Quit"="Quit NZBGet";
+"AlreadyRunning.Preferences"="Open Preferences";
+"AlreadyRunning.WebUI"="Show Web-Interface";
+
+"CantShowInFinder.MessageText"="Cannot open %@.";
+"CantShowInFinder.InformativeTextWithOption"="The path doesn't exist or refers to a volume not mounted at the moment. Check option %@.";
+"CantShowInFinder.InformativeTextForCategory"="The path doesn't exist or refers to a volume not mounted at the moment. Please also note that destination directories for categories are created upon first use.";
