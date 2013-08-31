@@ -39,7 +39,7 @@ nzbget_SOURCES = \
 
 EXTRA_DIST = \
 	Makefile.cvs nzbgetd \
-	$(patches_FILES) $(windows_FILES)
+	$(patches_FILES) $(windows_FILES) $(osx_FILES)
 
 patches_FILES = \
 	libpar2-0.2-bugfixes.patch libpar2-0.2-cancel.patch \
@@ -47,6 +47,22 @@ patches_FILES = \
 
 windows_FILES = \
 	win32.h NTService.cpp NTService.h nzbget.sln nzbget.vcproj nzbget-shell.bat
+
+osx_FILES = \
+	osx/App_Prefix.pch osx/NZBGet-Info.plist \
+	osx/DaemonController.h osx/DaemonController.m \
+	osx/MainApp.h osx/MainApp.m osx/MainApp.xib \
+	osx/PFMoveApplication.h osx/PFMoveApplication.m \
+	osx/PreferencesDialog.h osx/PreferencesDialog.m osx/PreferencesDialog.xib \
+	osx/RPC.h osx/RPC.m osx/WebClient.h osx/WebClient.m \
+	osx/WelcomeDialog.h osx/WelcomeDialog.m osx/WelcomeDialog.xib \
+	osx/NZBGet.xcodeproj/project.pbxproj \
+	osx/Resources/Images/mainicon.icns osx/Resources/Images/statusicon.png \
+	osx/Resources/Images/statusicon@2x.png osx/Resources/Images/statusicon-inv.png \
+	osx/Resources/Images/statusicon-inv@2x.png osx/Resources/licenses/license-bootstrap.txt \
+	osx/Resources/licenses/license-jquery-GPL.txt osx/Resources/licenses/license-jquery-MIT.txt \
+	osx/Resources/licenses/license-nzbget.txt osx/Resources/Credits.rtf \
+	osx/Resources/Localizable.strings osx/Resources/Welcome.rtf
 
 doc_FILES = \
 	README ChangeLog COPYING
