@@ -2767,7 +2767,7 @@ void Options::CheckOptions()
 		LocateOptionSrcPos(OPTION_PARCHECK);
 		ConfigError("Invalid value for option \"%s\": program was compiled without parcheck-support", OPTION_PARCHECK);
 	}
-	if (m_eParRename)
+	if (m_bParRename)
 	{
 		LocateOptionSrcPos(OPTION_PARRENAME);
 		ConfigError("Invalid value for option \"%s\": program was compiled without parcheck-support", OPTION_PARRENAME);

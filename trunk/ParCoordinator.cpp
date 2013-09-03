@@ -35,6 +35,7 @@
 #include <string.h>
 #include <stdio.h>
 #include <stdarg.h>
+#include <ctype.h>
 #ifdef WIN32
 #include <direct.h>
 #else
