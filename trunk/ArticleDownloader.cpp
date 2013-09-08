@@ -311,7 +311,7 @@ void ArticleDownloader::Run()
 				}
 				else
 				{
-					warn("Article %s @ all servers failed", m_szInfoName);
+					detail("Article %s @ all servers failed", m_szInfoName);
 					Status = adFailed;
 					break;
 				}
@@ -341,7 +341,7 @@ void ArticleDownloader::Run()
 
 	if (Status == adFailed)
 	{
-		warn("Download %s failed", m_szInfoName);
+		detail("Download %s failed", m_szInfoName);
 	}
 
 	SetStatus(Status);
@@ -433,7 +433,7 @@ ArticleDownloader::EStatus ArticleDownloader::Download()
 		{
 			if (!IsStopped())
 			{
-				warn("Article %s @ %s (%s) failed: Unexpected end of article", m_szInfoName,
+				detail("Article %s @ %s (%s) failed: Unexpected end of article", m_szInfoName,
 					m_pConnection->GetNewsServer()->GetName(), m_pConnection->GetHost());
 			}
 			Status = adFailed;
@@ -468,7 +468,7 @@ ArticleDownloader::EStatus ArticleDownloader::Download()
 				if (strncmp(p, m_pArticleInfo->GetMessageID(), strlen(m_pArticleInfo->GetMessageID())))
 				{
 					if (char* e = strrchr(p, '\r')) *e = '\0'; // remove trailing CR-character
-					warn("Article %s @ %s (%s) failed: Wrong message-id, expected %s, returned %s", m_szInfoName,
+					detail("Article %s @ %s (%s) failed: Wrong message-id, expected %s, returned %s", m_szInfoName,
 						m_pConnection->GetNewsServer()->GetName(), m_pConnection->GetHost(), m_pArticleInfo->GetMessageID(), p);
 					Status = adFailed;
 					break;
@@ -497,7 +497,7 @@ ArticleDownloader::EStatus ArticleDownloader::Download()
 
 	if (!bEnd && Status == adRunning && !IsStopped())
 	{
-		warn("Article %s @ %s (%s) failed: article incomplete", m_szInfoName,
+		detail("Article %s @ %s (%s) failed: article incomplete", m_szInfoName,
 			m_pConnection->GetNewsServer()->GetName(), m_pConnection->GetHost());
 		Status = adFailed;
 	}
@@ -525,20 +525,20 @@ ArticleDownloader::EStatus ArticleDownloader::CheckResponse(const char* szRespon
 	{
 		if (!IsStopped())
 		{
-			warn("Article %s @ %s (%s) failed, %s: Connection closed by remote host", m_szInfoName, 
+			detail("Article %s @ %s (%s) failed, %s: Connection closed by remote host", m_szInfoName, 
 				m_pConnection->GetNewsServer()->GetName(), m_pConnection->GetHost(), szComment);
 		}
 		return adConnectError;
 	}
 	else if (m_pConnection->GetAuthError() || !strncmp(szResponse, "400", 3) || !strncmp(szResponse, "499", 3))
 	{
-		warn("Article %s @ %s (%s) failed, %s: %s", m_szInfoName,
+		detail("Article %s @ %s (%s) failed, %s: %s", m_szInfoName,
 			 m_pConnection->GetNewsServer()->GetName(), m_pConnection->GetHost(), szComment, szResponse);
 		return adConnectError;
 	}
 	else if (!strncmp(szResponse, "41", 2) || !strncmp(szResponse, "42", 2) || !strncmp(szResponse, "43", 2))
 	{
-		warn("Article %s @ %s (%s) failed, %s: %s", m_szInfoName,
+		detail("Article %s @ %s (%s) failed, %s: %s", m_szInfoName,
 			 m_pConnection->GetNewsServer()->GetName(), m_pConnection->GetHost(), szComment, szResponse);
 		return adNotFound;
 	}
@@ -550,7 +550,7 @@ ArticleDownloader::EStatus ArticleDownloader::CheckResponse(const char* szRespon
 	else 
 	{
 		// unknown error, no special handling
-		warn("Article %s @ %s (%s) failed, %s: %s", m_szInfoName,
+		detail("Article %s @ %s (%s) failed, %s: %s", m_szInfoName,
 			 m_pConnection->GetNewsServer()->GetName(), m_pConnection->GetHost(), szComment, szResponse);
 		return adFailed;
 	}
@@ -576,13 +576,13 @@ bool ArticleDownloader::Write(char* szLine, int iLen)
 		}
 		else
 		{
-			warn("Decoding %s failed: unsupported encoding", m_szInfoName);
+			detail("Decoding %s failed: unsupported encoding", m_szInfoName);
 			return false;
 		}
 		if (!bOK)
 		{
 			debug("Failed line: %s", szLine);
-			warn("Decoding %s failed", m_szInfoName);
+			detail("Decoding %s failed", m_szInfoName);
 		}
 		return bOK;
 	}
@@ -779,7 +779,7 @@ ArticleDownloader::EStatus ArticleDownloader::DecodeCheck()
 		}
 		else
 		{
-			warn("Decoding %s failed: no binary data or unsupported encoding format", m_szInfoName);
+			detail("Decoding %s failed: no binary data or unsupported encoding format", m_szInfoName);
 			return adFailed;
 		}
 
@@ -824,27 +824,27 @@ ArticleDownloader::EStatus ArticleDownloader::DecodeCheck()
 			remove(m_szResultFilename);
 			if (eStatus == Decoder::eCrcError)
 			{
-				warn("Decoding %s failed: CRC-Error", m_szInfoName);
+				detail("Decoding %s failed: CRC-Error", m_szInfoName);
 				return adCrcError;
 			}
 			else if (eStatus == Decoder::eArticleIncomplete)
 			{
-				warn("Decoding %s failed: article incomplete", m_szInfoName);
+				detail("Decoding %s failed: article incomplete", m_szInfoName);
 				return adFailed;
 			}
 			else if (eStatus == Decoder::eInvalidSize)
 			{
-				warn("Decoding %s failed: size mismatch", m_szInfoName);
+				detail("Decoding %s failed: size mismatch", m_szInfoName);
 				return adFailed;
 			}
 			else if (eStatus == Decoder::eNoBinaryData)
 			{
-				warn("Decoding %s failed: no binary data found", m_szInfoName);
+				detail("Decoding %s failed: no binary data found", m_szInfoName);
 				return adFailed;
 			}
 			else
 			{
-				warn("Decoding %s failed", m_szInfoName);
+				detail("Decoding %s failed", m_szInfoName);
 				return adFailed;
 			}
 		}
@@ -1143,7 +1143,7 @@ void ArticleDownloader::CompleteFileParts()
 		}
 	}
 
-	// the locking is needed for accessing the memebers of NZBInfo
+	// the locking is needed for accessing the members of NZBInfo
 	g_pDownloadQueueHolder->LockQueue();
 	m_pFileInfo->GetNZBInfo()->GetCompletedFiles()->push_back(strdup(ofn));
 	if (strcmp(m_pFileInfo->GetNZBInfo()->GetDestDir(), szNZBDestDir))
