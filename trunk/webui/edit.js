@@ -62,6 +62,7 @@ var DownloadsEditDialog = (new function($)
 		$('#DownloadsEdit_Resume').click(itemResume);
 		$('#DownloadsEdit_Delete').click(itemDelete);
 		$('#DownloadsEdit_CancelPP').click(itemCancelPP);
+		$('#DownloadsEdit_UnMarkDupe').click(itemUnMarkDupe);
 		$('#DownloadsEdit_Param, #DownloadsEdit_Log, #DownloadsEdit_File').click(tabClick);
 		$('#DownloadsEdit_Back').click(backClick);
 
@@ -198,6 +199,7 @@ var DownloadsEditDialog = (new function($)
 		Util.show('#DownloadsEdit_Pause', !group.postprocess);
 		Util.show('#DownloadsEdit_Resume', false);
 		Util.show('#DownloadsEdit_Save', !group.postprocess);
+		Util.show('#DownloadsEdit_UnMarkDupe', group.DupeID > 0);
 		var postParam = postParamConfig[0].options.length > 0;
 		var postLog = group.postprocess && group.post.Log.length > 0;
 		Util.show('#DownloadsEdit_Param', postParam);
@@ -453,6 +455,14 @@ var DownloadsEditDialog = (new function($)
 		}
 	}
 
+	function itemUnMarkDupe(e)
+	{
+		e.preventDefault();
+		disableAllButtons();
+		notification = '#Notif_Downloads_Saved';
+		RPC.call('editqueue', ['GroupUnMarkDupe', 0, '', [curGroup.LastID]], completed);
+	}
+	
 	/*** TAB: POST-PROCESSING PARAMETERS **************************************************/
 
 	function saveParam()
@@ -940,6 +950,8 @@ var DownloadsMultiDialog = (new function($)
 		$DownloadsMultiDialog = $('#DownloadsMultiDialog');
 		
 		$('#DownloadsMulti_Save').click(saveChanges);
+		$('#DownloadsMulti_MarkDupe').click(itemMarkDupe);
+		$('#DownloadsMulti_UnMarkDupe').click(itemUnMarkDupe);
 
 		$DownloadsMultiDialog.on('hidden', function ()
 		{
@@ -988,6 +1000,7 @@ var DownloadsMultiDialog = (new function($)
 		var PriorityDiff = false;
 		var Category = groups[0].Category;
 		var CategoryDiff = false;
+		var HasDupes = false;
 
 		for (var i=0; i<groups.length; i++)
 		{
@@ -1003,6 +1016,7 @@ var DownloadsMultiDialog = (new function($)
 			paused = paused && group.paused;
 			PriorityDiff = PriorityDiff || (Priority !== group.MaxPriority);
 			CategoryDiff = CategoryDiff || (Category !== group.Category);
+			HasDupes = HasDupes || group.DupeID > 0;
 		}
 
 		var size = Util.formatSizeMB(FileSizeMB, FileSizeLo);
@@ -1051,6 +1065,8 @@ var DownloadsMultiDialog = (new function($)
 			v.append('<option selected="selected">&lt;multiple values&gt;</option>');
 		}
 		oldCategory = v.val();
+		
+		Util.show('#DownloadsMulti_UnMarkDupe', HasDupes);
 
 		enableAllButtons();
 		$('#DownloadsMulti_GeneralTabLink').tab('show');
@@ -1114,6 +1130,22 @@ var DownloadsMultiDialog = (new function($)
 		{
 			Notification.show(notification);
 		}
+	}
+
+	function itemMarkDupe(e)
+	{
+		e.preventDefault();
+		disableAllButtons();
+		notification = '#Notif_Downloads_Saved';
+		RPC.call('editqueue', ['GroupMarkDupe', 0, '',multiIDList], completed);
+	}
+
+	function itemUnMarkDupe(e)
+	{
+		e.preventDefault();
+		disableAllButtons();
+		notification = '#Notif_Downloads_Saved';
+		RPC.call('editqueue', ['GroupUnMarkDupe', 0, '', multiIDList], completed);
 	}
 }(jQuery));
 
@@ -1303,7 +1335,20 @@ var HistoryEditDialog = (new function()
 		var status;
 		if (hist.Kind === 'URL')
 		{
-			status = HistoryUI.buildStatus(hist.status, '');
+			if (hist.UrlStatus == 'SCAN_SKIPPED')
+			{
+				status = HistoryUI.buildStatus('SUCCESS', 'Download: ') + ' ' +
+					HistoryUI.buildStatus('SCAN_SKIPPED', 'Scan: ');
+			}
+			else if (hist.UrlStatus == 'SCAN_FAILURE')
+			{
+				status = HistoryUI.buildStatus('SUCCESS', 'Download: ') + ' ' +
+					HistoryUI.buildStatus('FAILURE', 'Scan: ');
+			}
+			else
+			{
+				status = HistoryUI.buildStatus(hist.status, 'Download: ');
+			}
 		}
 		else
 		{

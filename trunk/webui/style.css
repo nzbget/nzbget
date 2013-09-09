@@ -614,6 +614,14 @@ ul.dropdown-menu > li > a > i {
 	background-position: -336px -144px;
 }
 
+.icon-duplicates {
+	background-position: -368px -144px;
+}
+
+.icon-not-duplicates {
+	background-position: -400px -144px;
+}
+
 /* END: Icons */
 
 .btn-toolbar {

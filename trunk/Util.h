@@ -83,6 +83,7 @@ public:
 	static void MakeValidFilename(char* szFilename, char cReplaceChar, bool bAllowSlashes);
 	static bool MoveFile(const char* szSrcFilename, const char* szDstFilename);
 	static bool FileExists(const char* szFilename);
+	static bool FileExists(const char* szPath, const char* szFilenameWithoutPath);
 	static bool DirectoryExists(const char* szDirFilename);
 	static bool CreateDirectory(const char* szDirFilename);
 	static bool RemoveDirectory(const char* szDirFilename);
@@ -129,6 +130,7 @@ public:
 
 	static void TrimRight(char* szStr);
 	static char* Trim(char* szStr);
+	static bool EmptyStr(const char* szStr) { return !szStr || !*szStr; }
 
 	/* Calculate Hash using Bob Jenkins (1996) algorithm */
 	static unsigned int HashBJ96(const char* szBuffer, int iBufSize);

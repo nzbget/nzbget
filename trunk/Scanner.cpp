@@ -67,15 +67,20 @@ Scanner::FileData::~FileData()
 }
 
 
-Scanner::QueueData::QueueData(const char* szFilename, const char* szNZBName, const char* szCategory, int iPriority,
-	NZBParameterList* pParameters, bool bAddTop, bool bAddPaused)
+Scanner::QueueData::QueueData(const char* szFilename, const char* szNZBName, const char* szCategory,
+	int iPriority, const char* szDupeKey, int iDupeScore, bool bNoDupeCheck,
+	NZBParameterList* pParameters, bool bAddTop, bool bAddPaused, EAddStatus* pAddStatus)
 {
 	m_szFilename = strdup(szFilename);
 	m_szNZBName = strdup(szNZBName);
 	m_szCategory = strdup(szCategory ? szCategory : "");
 	m_iPriority = iPriority;
+	m_szDupeKey = strdup(szDupeKey ? szDupeKey : "");
+	m_iDupeScore = iDupeScore;
+	m_bNoDupeCheck = bNoDupeCheck;
 	m_bAddTop = bAddTop;
 	m_bAddPaused = bAddPaused;
+	m_pAddStatus = pAddStatus;
 
 	if (pParameters)
 	{
@@ -88,6 +93,15 @@ Scanner::QueueData::~QueueData()
 	free(m_szFilename);
 	free(m_szNZBName);
 	free(m_szCategory);
+	free(m_szDupeKey);
+}
+
+void Scanner::QueueData::SetAddStatus(EAddStatus eAddStatus)
+{
+	if (m_pAddStatus)
+	{
+		*m_pAddStatus = eAddStatus;
+	}
 }
 
 
@@ -309,7 +323,8 @@ void Scanner::DropOldFiles()
 	}
 }
 
-void Scanner::ProcessIncomingFile(const char* szDirectory, const char* szBaseFilename, const char* szFullFilename, const char* szCategory)
+void Scanner::ProcessIncomingFile(const char* szDirectory, const char* szBaseFilename,
+	const char* szFullFilename, const char* szCategory)
 {
 	const char* szExtension = strrchr(szBaseFilename, '.');
 	if (!szExtension)
@@ -323,17 +338,27 @@ void Scanner::ProcessIncomingFile(const char* szDirectory, const char* szBaseFil
 	int iPriority = 0;
 	bool bAddTop = false;
 	bool bAddPaused = false;
+	const char* szDupeKey = NULL;
+	int iDupeScore = 0;
+	bool bNoDupeCheck = false;
+	EAddStatus eAddStatus = asSkipped;
+	bool bAdded = false;
+	QueueData* pQueueData = NULL;
 
 	for (QueueList::iterator it = m_QueueList.begin(); it != m_QueueList.end(); it++)
     {
-        QueueData* pQueueData = *it;
-		if (Util::SameFilename(pQueueData->GetFilename(), szFullFilename))
+		QueueData* pQueueData1 = *it;
+		if (Util::SameFilename(pQueueData1->GetFilename(), szFullFilename))
 		{
+			pQueueData = pQueueData1;
 			free(szNZBName);
 			szNZBName = strdup(pQueueData->GetNZBName());
 			free(szNZBCategory);
 			szNZBCategory = strdup(pQueueData->GetCategory());
 			iPriority = pQueueData->GetPriority();
+			szDupeKey = pQueueData->GetDupeKey();
+			iDupeScore = pQueueData->GetDupeScore();
+			bNoDupeCheck = pQueueData->GetNoDupeCheck();
 			bAddTop = pQueueData->GetAddTop();
 			bAddPaused = pQueueData->GetAddPaused();
 			pParameters->CopyFrom(pQueueData->GetParameters());
@@ -367,23 +392,31 @@ void Scanner::ProcessIncomingFile(const char* szDirectory, const char* szBaseFil
 		bool bRenameOK = Util::RenameBak(szFullFilename, "nzb", true, szRenamedName, 1024);
 		if (bRenameOK)
 		{
-			AddFileToQueue(szRenamedName, szNZBName, szNZBCategory, iPriority, pParameters, bAddTop, bAddPaused);
+			bAdded = AddFileToQueue(szRenamedName, szNZBName, szNZBCategory, iPriority,
+				szDupeKey, iDupeScore, bNoDupeCheck, pParameters, bAddTop, bAddPaused);
 		}
 		else
 		{
 			char szSysErrStr[256];
 			error("Could not rename file %s to %s: %s", szFullFilename, szRenamedName, Util::GetLastErrorMessage(szSysErrStr, sizeof(szSysErrStr)));
+			eAddStatus = asFailed;
 		}
 	}
 	else if (bExists && !strcasecmp(szExtension, ".nzb"))
 	{
-		AddFileToQueue(szFullFilename, szNZBName, szNZBCategory, iPriority, pParameters, bAddTop, bAddPaused);
+		bAdded = AddFileToQueue(szFullFilename, szNZBName, szNZBCategory, iPriority,
+			szDupeKey, iDupeScore, bNoDupeCheck, pParameters, bAddTop, bAddPaused);
 	}
 
 	delete pParameters;
 
 	free(szNZBName);
 	free(szNZBCategory);
+
+	if (pQueueData)
+	{
+		pQueueData->SetAddStatus(eAddStatus == asFailed ? asFailed : bAdded ? asSuccess : asSkipped);
+	}
 }
 
 void Scanner::InitPPParameters(const char* szCategory, NZBParameterList* pParameters)
@@ -428,7 +461,8 @@ void Scanner::InitPPParameters(const char* szCategory, NZBParameterList* pParame
 	}
 }
 
-void Scanner::AddFileToQueue(const char* szFilename, const char* szNZBName, const char* szCategory, int iPriority,
+bool Scanner::AddFileToQueue(const char* szFilename, const char* szNZBName, const char* szCategory,
+	int iPriority, const char* szDupeKey, int iDupeScore, bool bNoDupeCheck,
 	NZBParameterList* pParameters, bool bAddTop, bool bAddPaused)
 {
 	const char* szBasename = Util::BaseFileName(szFilename);
@@ -436,20 +470,21 @@ void Scanner::AddFileToQueue(const char* szFilename, const char* szNZBName, cons
 	info("Collection %s found", szBasename);
 
 	NZBFile* pNZBFile = NZBFile::Create(szFilename, szCategory);
-	if (!pNZBFile)
+	bool bOK = pNZBFile != NULL;
+	if (!bOK)
 	{
 		error("Could not add collection %s to queue", szBasename);
 	}
 
 	char bakname2[1024];
-	bool bRenameOK = Util::RenameBak(szFilename, pNZBFile ? "queued" : "error", false, bakname2, 1024);
-	if (!bRenameOK)
+	if (!Util::RenameBak(szFilename, pNZBFile ? "queued" : "error", false, bakname2, 1024))
 	{
+		bOK = false;
 		char szSysErrStr[256];
 		error("Could not rename file %s to %s: %s", szFilename, bakname2, Util::GetLastErrorMessage(szSysErrStr, sizeof(szSysErrStr)));
 	}
 
-	if (pNZBFile && bRenameOK)
+	if (bOK)
 	{
 		pNZBFile->GetNZBInfo()->SetQueuedFilename(bakname2);
 
@@ -459,6 +494,10 @@ void Scanner::AddFileToQueue(const char* szFilename, const char* szNZBName, cons
 			pNZBFile->GetNZBInfo()->SetFilename(szNZBName);
 			pNZBFile->GetNZBInfo()->BuildDestDirName();
 		}
+
+		pNZBFile->GetNZBInfo()->SetDupeKey(szDupeKey);
+		pNZBFile->GetNZBInfo()->SetDupeScore(iDupeScore);
+		pNZBFile->GetNZBInfo()->SetNoDupeCheck(bNoDupeCheck);
 
 		if (pNZBFile->GetPassword())
 		{
@@ -475,13 +514,14 @@ void Scanner::AddFileToQueue(const char* szFilename, const char* szNZBName, cons
 		}
 
 		g_pQueueCoordinator->AddNZBFileToQueue(pNZBFile, bAddTop);
-		info("Collection %s added to queue", szBasename);
 	}
 
 	if (pNZBFile)
 	{
 		delete pNZBFile;
 	}
+
+	return bOK;
 }
 
 void Scanner::ScanNZBDir(bool bSyncMode)
@@ -497,9 +537,10 @@ void Scanner::ScanNZBDir(bool bSyncMode)
 	}
 }
 
-bool Scanner::AddExternalFile(const char* szNZBName, const char* szCategory, int iPriority,
+Scanner::EAddStatus Scanner::AddExternalFile(const char* szNZBName, const char* szCategory,
+	int iPriority, const char* szDupeKey, int iDupeScore,  bool bNoDupeCheck,
 	NZBParameterList* pParameters, bool bAddTop, bool bAddPaused,
-	const char* szFileName, const char* szBuffer, int iBufSize, bool bSyncMode)
+	const char* szFileName, const char* szBuffer, int iBufSize)
 {
 	char szTempFileName[1024];
 
@@ -521,7 +562,7 @@ bool Scanner::AddExternalFile(const char* szNZBName, const char* szCategory, int
 		if (!Util::SaveBufferIntoFile(szTempFileName, szBuffer, iBufSize))
 		{
 			error("Could not create file %s", szTempFileName);
-			return false;
+			return asFailed;
 		}
 	}
 
@@ -564,7 +605,7 @@ bool Scanner::AddExternalFile(const char* szNZBName, const char* szCategory, int
 		error("Could not move file %s to %s: %s", szTempFileName, szScanFileName, Util::GetLastErrorMessage(szSysErrStr, sizeof(szSysErrStr)));
 		remove(szTempFileName);
 		m_mutexScan.Unlock(); // UNLOCK
-		return false;
+		return asFailed;
 	}
 
 	char* szUseCategory = strdup(szCategory ? szCategory : "");
@@ -576,13 +617,15 @@ bool Scanner::AddExternalFile(const char* szNZBName, const char* szCategory, int
 		detail("Category %s matched to %s for %s", szCategory, szUseCategory, szNZBName);
 	}
 
-	QueueData* pQueueData = new QueueData(szScanFileName, szNZBName, szUseCategory, iPriority, pParameters, bAddTop, bAddPaused);
+	EAddStatus eAddStatus = asSkipped;
+	QueueData* pQueueData = new QueueData(szScanFileName, szNZBName, szUseCategory,
+		iPriority, szDupeKey, iDupeScore, bNoDupeCheck, pParameters, bAddTop, bAddPaused, &eAddStatus);
 	free(szUseCategory);
 	m_QueueList.push_back(pQueueData);
 
 	m_mutexScan.Unlock();
 
-	ScanNZBDir(bSyncMode);
+	ScanNZBDir(true);
 
-	return true;
+	return eAddStatus;
 }

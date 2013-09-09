@@ -339,6 +339,19 @@ bool FeedFile::ParseFeed(IUnknown* nzb)
 			}
 		}
 
+		//<newznab:attr name="imdb" value="1588173"/>
+		tag = node->selectSingleNode("newznab:attr[@name='imdb']");
+		if (tag)
+		{
+			attr = tag->Getattributes()->getNamedItem("value");
+			if (attr)
+			{
+				_bstr_t val(attr->Gettext());
+				int iVal = atoi(val);
+				pFeedItemInfo->SetImdbId(iVal);
+			}
+		}
+
 		//<newznab:attr name="rageid" value="33877"/>
 		tag = node->selectSingleNode("newznab:attr[@name='rageid']");
 		if (tag)
@@ -464,6 +477,13 @@ void FeedFile::Parse_StartElement(const char *name, const char **atts)
 			!strcmp("name", atts[0]) && !strcmp("rating", atts[1]) && !strcmp("value", atts[2]))
 		{
 			m_pFeedItemInfo->SetRating(int(atof(atts[3]) * (strchr(atts[3], '.') ? 10 : 1)));
+		}
+
+		//<newznab:attr name="imdb" value="1588173"/>
+		else if (atts[0] && atts[1] && atts[2] && atts[3] &&
+			!strcmp("name", atts[0]) && !strcmp("imdb", atts[1]) && !strcmp("value", atts[2]))
+		{
+			m_pFeedItemInfo->SetImdbId(atoi(atts[3]));
 		}
 
 		//<newznab:attr name="rageid" value="33877"/>

@@ -161,6 +161,8 @@ var History = (new function($)
 				case 'SUCCESS': hist.status = 'success'; break;
 				case 'FAILURE': hist.status = 'failure'; break;
 				case 'UNKNOWN': hist.status = 'unknown'; break;
+				case 'SCAN_FAILURE': hist.status = 'failure'; break;
+				case 'SCAN_SKIPPED': hist.status = 'skipped'; break;
 			}
 		}
 	}
@@ -184,13 +186,14 @@ var History = (new function($)
 			}
 
 			var time = Util.formatDateTime(hist.HistoryTime + UISettings.timeZoneCorrection*60*60);
+			var dupe = DownloadsUI.buildDupeText(hist.Dupe, hist.DupeKey);
 
 			var item =
 			{
 				id: hist.ID,
 				hist: hist,
 				data: {time: time, size: size},
-				search: statustext + ' ' + time + ' ' + textname + ' ' + hist.Category + ' ' + size
+				search: statustext + ' ' + time + ' ' + textname + ' ' + dupe + ' ' + hist.Category + ' ' + size
 			};
 
 			data.push(item);
@@ -209,6 +212,7 @@ var History = (new function($)
 		var status = HistoryUI.buildStatus(hist.status, '');
 
 		var name = '<a href="#" histid="' + hist.ID + '">' + Util.textToHtml(Util.formatNZBName(hist.Name)) + '</a>';
+		var dupe = DownloadsUI.buildDupe(hist.Dupe, hist.DupeKey);
 		var category = Util.textToHtml(hist.Category);
 
 		if (hist.Kind === 'URL')
@@ -218,11 +222,11 @@ var History = (new function($)
 
 		if (!UISettings.miniTheme)
 		{
-			item.fields = ['<div class="check img-check"></div>', status, item.data.time, name, category, item.data.size];
+			item.fields = ['<div class="check img-check"></div>', status, item.data.time, name + dupe, category, item.data.size];
 		}
 		else
 		{
-			var info = '<div class="check img-check"></div><span class="row-title">' + name + '</span>' +
+			var info = '<div class="check img-check"></div><span class="row-title">' + name + '</span>' + dupe +
 				' ' + status + ' <span class="label">' + item.data.time + '</span>';
 			if (category)
 			{
@@ -378,6 +382,8 @@ var HistoryUI = (new function($)
 			case 'deleted':
 			case 'DELETED':
 				return '<span class="label label-status">' + prefix + 'deleted</span>';
+			case 'SCAN_SKIPPED':
+				return '<span class="label label-status">' + prefix + 'skipped</span>';
 			case 'none':
 			case 'NONE':
 				return '<span class="label label-status">' + prefix + 'none</span>';

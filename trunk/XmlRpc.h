@@ -28,6 +28,7 @@
 
 #include "Connection.h"
 #include "Util.h"
+#include "DownloadInfo.h"
 
 class XmlCommand;
 
@@ -188,13 +189,19 @@ public:
 	virtual void		Execute();
 };
 
+class NzbInfoXmlCommand: public XmlCommand
+{
+protected:
+	void				AppendNZBInfoFields(NZBInfo* pNZBInfo);
+};
+
 class ListFilesXmlCommand: public XmlCommand
 {
 public:
 	virtual void		Execute();
 };
 
-class ListGroupsXmlCommand: public XmlCommand
+class ListGroupsXmlCommand: public NzbInfoXmlCommand
 {
 public:
 	virtual void		Execute();
@@ -212,7 +219,7 @@ public:
 	virtual void		Execute();
 };
 
-class PostQueueXmlCommand: public XmlCommand
+class PostQueueXmlCommand: public NzbInfoXmlCommand
 {
 public:
 	virtual void		Execute();
@@ -236,7 +243,7 @@ public:
 	virtual void		Execute();
 };
 
-class HistoryXmlCommand: public XmlCommand
+class HistoryXmlCommand: public NzbInfoXmlCommand
 {
 public:
 	virtual void		Execute();

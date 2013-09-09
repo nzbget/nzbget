@@ -167,7 +167,6 @@ static const char* OPTION_PARPAUSEQUEUE			= "ParPauseQueue";
 static const char* OPTION_SCRIPTPAUSEQUEUE		= "ScriptPauseQueue";
 static const char* OPTION_NZBCLEANUPDISK		= "NzbCleanupDisk";
 static const char* OPTION_DELETECLEANUPDISK		= "DeleteCleanupDisk";
-static const char* OPTION_MERGENZB				= "MergeNzb";
 static const char* OPTION_PARTIMELIMIT			= "ParTimeLimit";
 static const char* OPTION_KEEPHISTORY			= "KeepHistory";
 static const char* OPTION_ACCURATERATE			= "AccurateRate";
@@ -192,6 +191,7 @@ static const char* OPTION_THREADLIMIT			= "ThreadLimit";
 static const char* OPTION_PROCESSLOGKIND		= "ProcessLogKind";
 static const char* OPTION_APPENDNZBDIR			= "AppendNzbDir";
 static const char* OPTION_RENAMEBROKEN			= "RenameBroken";
+static const char* OPTION_MERGENZB				= "MergeNzb";
 
 const char* BoolNames[] = { "yes", "no", "true", "false", "1", "0", "on", "off", "enable", "disable", "enabled", "disabled" };
 const int BoolValues[] = { 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0 };
@@ -559,7 +559,6 @@ Options::Options(int argc, char* argv[])
 	m_bScriptPauseQueue		= false;
 	m_bNzbCleanupDisk		= false;
 	m_bDeleteCleanupDisk	= false;
-	m_bMergeNzb				= false;
 	m_iParTimeLimit			= 0;
 	m_iKeepHistory			= 0;
 	m_bAccurateRate			= false;
@@ -915,7 +914,6 @@ void Options::InitDefault()
 	SetOption(OPTION_SCRIPTPAUSEQUEUE, "no");
 	SetOption(OPTION_NZBCLEANUPDISK, "no");
 	SetOption(OPTION_DELETECLEANUPDISK, "no");
-	SetOption(OPTION_MERGENZB, "no");
 	SetOption(OPTION_PARTIMELIMIT, "0");
 	SetOption(OPTION_KEEPHISTORY, "7");
 	SetOption(OPTION_ACCURATERATE, "no");
@@ -1115,7 +1113,6 @@ void Options::InitOptions()
 	m_bScriptPauseQueue		= (bool)ParseEnumValue(OPTION_SCRIPTPAUSEQUEUE, BoolCount, BoolNames, BoolValues);
 	m_bNzbCleanupDisk		= (bool)ParseEnumValue(OPTION_NZBCLEANUPDISK, BoolCount, BoolNames, BoolValues);
 	m_bDeleteCleanupDisk	= (bool)ParseEnumValue(OPTION_DELETECLEANUPDISK, BoolCount, BoolNames, BoolValues);
-	m_bMergeNzb				= (bool)ParseEnumValue(OPTION_MERGENZB, BoolCount, BoolNames, BoolValues);
 	m_bAccurateRate			= (bool)ParseEnumValue(OPTION_ACCURATERATE, BoolCount, BoolNames, BoolValues);
 	m_bSecureControl		= (bool)ParseEnumValue(OPTION_SECURECONTROL, BoolCount, BoolNames, BoolValues);
 	m_bUnpack				= (bool)ParseEnumValue(OPTION_UNPACK, BoolCount, BoolNames, BoolValues);
@@ -1630,6 +1627,22 @@ void Options::InitCommandLine(int argc, char* argv[])
 						}
 						m_iEditQueueAction = eRemoteEditActionGroupMerge;
 					}
+					else if (!strcasecmp(optarg, "DM"))
+					{
+						if (!bGroup)
+						{
+							abort("FATAL ERROR: Only groups can be marked as duplicates\n");
+						}
+						m_iEditQueueAction = eRemoteEditActionGroupMarkDupe;
+					}
+					else if (!strcasecmp(optarg, "DU"))
+					{
+						if (!bGroup)
+						{
+							abort("FATAL ERROR: Only groups can be unmarked as duplicates\n");
+						}
+						m_iEditQueueAction = eRemoteEditActionGroupUnMarkDupe;
+					}
 					else if (!strcasecmp(optarg, "S"))
 					{
 						m_iEditQueueAction = eRemoteEditActionFileSplit;
@@ -1835,7 +1848,7 @@ void Options::PrintUsage(char* com)
 		"       T                    Move files/groups/post-job to top of queue\n"
 		"       B                    Move files/groups/post-job to bottom of queue\n"
 		"       P                    Pause file(s)/group(s)/\n"
-		"                            Postprocess history-item(s) again\n"
+		"                            Post-process history-item(s) again\n"
 		"       U                    Resume (unpause) files/groups\n"
 		"       A                    Pause all pars (for groups)\n"
 		"       R                    Pause extra pars (for groups)/\n"
@@ -1845,6 +1858,8 @@ void Options::PrintUsage(char* com)
 		"       N <name>             Rename (for groups)\n"
 		"       M                    Merge (for groups)\n"
 		"       S <name>             Split - create new group from selected files\n"
+		"       DM                   Mark as duplicates (for groups)\n"
+		"       DU                   Unmark duplicates (for groups)\n"
 		"       O <name>=<value>     Set post-process parameter (for groups/history)\n"
 		"       I <priority>         Set priority (signed integer) for files/groups\n"
 		"    <IDs>                   Comma-separated list of file-ids or ranges\n"
@@ -2702,7 +2717,8 @@ bool Options::ValidateOptionName(const char * optname)
 		!strcasecmp(optname, OPTION_NZBLOGKIND) ||
 		!strcasecmp(optname, OPTION_PROCESSLOGKIND) ||
 		!strcasecmp(optname, OPTION_APPENDNZBDIR) ||
-		!strcasecmp(optname, OPTION_RENAMEBROKEN))
+		!strcasecmp(optname, OPTION_RENAMEBROKEN) ||
+		!strcasecmp(optname, OPTION_MERGENZB))
 	{
 		ConfigWarn("Option \"%s\" is obsolete, ignored", optname);
 		return true;

@@ -485,10 +485,11 @@ void FeedCoordinator::DownloadItem(FeedInfo* pFeedInfo, FeedItemInfo* pFeedItemI
 	{
 		pUrlInfo->SetNZBFilename(szNZBName2);
 	}
-	
+
 	pUrlInfo->SetCategory(pFeedItemInfo->GetAddCategory());
 	pUrlInfo->SetPriority(pFeedItemInfo->GetPriority());
 	pUrlInfo->SetAddPaused(pFeedItemInfo->GetPauseNzb());
+	pUrlInfo->SetDupeKey(pFeedItemInfo->GetDupeKey());
 	pUrlInfo->SetForce(pFeedInfo->GetForce());
 	g_pUrlCoordinator->AddUrlToQueue(pUrlInfo, false);
 }

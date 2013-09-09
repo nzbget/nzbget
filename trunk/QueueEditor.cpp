@@ -221,85 +221,93 @@ bool QueueEditor::InternEditList(DownloadQueue* pDownloadQueue, IDList* pIDList,
 	ItemList cItemList;
 	PrepareList(pDownloadQueue, &cItemList, pIDList, bSmartOrder, eAction, iOffset);
 
-	if (eAction == eaFilePauseAllPars || eAction == eaFilePauseExtraPars)
+	switch (eAction)
 	{
-		PauseParsInGroups(&cItemList, eAction == eaFilePauseExtraPars);
-	}
-	else if (eAction == eaGroupMerge)
-	{
-		return MergeGroups(pDownloadQueue, &cItemList);
-	}
-	else if (eAction == eaFileSplit)
-	{
-		return SplitGroup(pDownloadQueue, &cItemList, szText);
-	}
-	else if (eAction == eaFileReorder)
-	{
-		ReorderFiles(pDownloadQueue, &cItemList);
-	}
-	else
-	{
-		for (ItemList::iterator it = cItemList.begin(); it != cItemList.end(); it++)
-		{
-			EditItem* pItem = *it;
-			switch (eAction)
+		case eaFilePauseAllPars:
+		case eaFilePauseExtraPars:
+			PauseParsInGroups(&cItemList, eAction == eaFilePauseExtraPars);	
+			break;
+
+		case eaGroupMerge:
+			return MergeGroups(pDownloadQueue, &cItemList);
+
+		case eaFileSplit:
+			return SplitGroup(pDownloadQueue, &cItemList, szText);
+
+		case eaGroupMarkDupe:
+			return MarkDupeGroups(pDownloadQueue, &cItemList);
+
+		case eaGroupUnMarkDupe:
+			return UnMarkDupeGroups(pDownloadQueue, &cItemList);
+
+		case eaFileReorder:
+			ReorderFiles(pDownloadQueue, &cItemList);
+			break;
+		
+		default:
+			for (ItemList::iterator it = cItemList.begin(); it != cItemList.end(); it++)
 			{
-				case eaFilePause:
-					PauseUnpauseEntry(pItem->m_pFileInfo, true);
-					break;
+				EditItem* pItem = *it;
+				switch (eAction)
+				{
+					case eaFilePause:
+						PauseUnpauseEntry(pItem->m_pFileInfo, true);
+						break;
 
-				case eaFileResume:
-					PauseUnpauseEntry(pItem->m_pFileInfo, false);
-					break;
+					case eaFileResume:
+						PauseUnpauseEntry(pItem->m_pFileInfo, false);
+						break;
 
-				case eaFileMoveOffset:
-				case eaFileMoveTop:
-				case eaFileMoveBottom:
-					MoveEntry(pDownloadQueue, pItem->m_pFileInfo, pItem->m_iOffset);
-					break;
+					case eaFileMoveOffset:
+					case eaFileMoveTop:
+					case eaFileMoveBottom:
+						MoveEntry(pDownloadQueue, pItem->m_pFileInfo, pItem->m_iOffset);
+						break;
 
-				case eaFileDelete:
-					DeleteEntry(pItem->m_pFileInfo);
-					break;
+					case eaFileDelete:
+						DeleteEntry(pItem->m_pFileInfo);
+						break;
 
-				case eaFileSetPriority:
-					SetPriorityEntry(pItem->m_pFileInfo, szText);
-					break;
+					case eaFileSetPriority:
+						SetPriorityEntry(pItem->m_pFileInfo, szText);
+						break;
 
-				case eaGroupSetCategory:
-					SetNZBCategory(pItem->m_pFileInfo->GetNZBInfo(), szText);
-					break;
+					case eaGroupSetCategory:
+						SetNZBCategory(pItem->m_pFileInfo->GetNZBInfo(), szText);
+						break;
 
-				case eaGroupSetName:
-					SetNZBName(pItem->m_pFileInfo->GetNZBInfo(), szText);
-					break;
+					case eaGroupSetName:
+						SetNZBName(pItem->m_pFileInfo->GetNZBInfo(), szText);
+						break;
 
-				case eaGroupSetParameter:
-					SetNZBParameter(pItem->m_pFileInfo->GetNZBInfo(), szText);
-					break;
+					case eaGroupSetParameter:
+						SetNZBParameter(pItem->m_pFileInfo->GetNZBInfo(), szText);
+						break;
 
-				case eaGroupPause:
-				case eaGroupResume:
-				case eaGroupDelete:
-				case eaGroupMoveTop:
-				case eaGroupMoveBottom:
-				case eaGroupMoveOffset:
-				case eaGroupPauseAllPars:
-				case eaGroupPauseExtraPars:
-				case eaGroupSetPriority:
-					EditGroup(pDownloadQueue, pItem->m_pFileInfo, eAction, iOffset, szText);
-					break;
+					case eaGroupPause:
+					case eaGroupResume:
+					case eaGroupDelete:
+					case eaGroupMoveTop:
+					case eaGroupMoveBottom:
+					case eaGroupMoveOffset:
+					case eaGroupPauseAllPars:
+					case eaGroupPauseExtraPars:
+					case eaGroupSetPriority:
+						EditGroup(pDownloadQueue, pItem->m_pFileInfo, eAction, iOffset, szText);
+						break;
 
-				case eaFilePauseAllPars:
-				case eaFilePauseExtraPars:
-				case eaGroupMerge:
-				case eaFileReorder:
-				case eaFileSplit:
-					// remove compiler warning "enumeration not handled in switch"
-					break;
+					case eaFilePauseAllPars:
+					case eaFilePauseExtraPars:
+					case eaGroupMerge:
+					case eaGroupMarkDupe:
+					case eaGroupUnMarkDupe:
+					case eaFileReorder:
+					case eaFileSplit:
+						// remove compiler warning "enumeration not handled in switch"
+						break;
+				}
+				delete pItem;
 			}
-			delete pItem;
-		}
 	}
 
 	return cItemList.size() > 0;
@@ -895,6 +903,59 @@ bool QueueEditor::SplitGroup(DownloadQueue* pDownloadQueue, ItemList* pItemList,
 
 	delete pFileList;
 	return bOK;
+}
+
+bool QueueEditor::MarkDupeGroups(DownloadQueue* pDownloadQueue, ItemList* pItemList)
+{
+	if (pItemList->size() < 2)
+	{
+		return false;
+	}
+
+	// find existing DupeKey (if exists)
+	char* szDupeKey = NULL;
+	for (ItemList::iterator it = pItemList->begin(); it != pItemList->end(); it++)
+	{
+		EditItem* pItem = *it;
+		const char* szFileDupeKey = pItem->m_pFileInfo->GetNZBInfo()->GetDupeKey();
+		if (*szFileDupeKey)
+		{
+			szDupeKey = strdup(szFileDupeKey);
+			break;
+		}
+	}
+
+	if (!szDupeKey)
+	{
+		// taking ID of the first NZB as DupeKey
+		szDupeKey = (char*)malloc(20);
+		snprintf(szDupeKey, 20, "nzb=%i", pItemList->front()->m_pFileInfo->GetNZBInfo()->GetID());
+		szDupeKey[20-1] = '\0';
+	}
+
+	for (ItemList::iterator it = pItemList->begin(); it != pItemList->end(); it++)
+	{
+		EditItem* pItem = *it;
+		pItem->m_pFileInfo->GetNZBInfo()->SetDupeKey(szDupeKey);
+		pItem->m_pFileInfo->GetNZBInfo()->SetDupe(true);
+		delete pItem;
+	}
+
+	free(szDupeKey);
+
+	return true;
+}
+
+bool QueueEditor::UnMarkDupeGroups(DownloadQueue* pDownloadQueue, ItemList* pItemList)
+{
+	for (ItemList::iterator it = pItemList->begin(); it != pItemList->end(); it++)
+	{
+		EditItem* pItem = *it;
+		pItem->m_pFileInfo->GetNZBInfo()->SetDupe(false);
+		delete pItem;
+	}
+
+	return true;
 }
 
 void QueueEditor::ReorderFiles(DownloadQueue* pDownloadQueue, ItemList* pItemList)

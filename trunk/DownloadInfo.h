@@ -159,7 +159,6 @@ public:
 	void 				SetOutputFilename(const char* szOutputFilename);
 	bool				GetOutputInitialized() { return m_bOutputInitialized; }
 	void				SetOutputInitialized(bool bOutputInitialized) { m_bOutputInitialized = bOutputInitialized; }
-	bool				IsDupe(const char* szFilename);
 	int					GetPriority() { return m_iPriority; }
 	void				SetPriority(int iPriority) { m_iPriority = iPriority; }
 	bool				GetExtraPriority() { return m_bExtraPriority; }
@@ -388,6 +387,10 @@ private:
 	bool				m_bParManual;
 	bool				m_bCleanupDisk;
 	bool				m_bUnpackCleanedUpDisk;
+	char*				m_szDupeKey;
+	int					m_iDupeScore;
+	bool				m_bNoDupeCheck;
+	bool				m_bDupe;
 	NZBInfoList*		m_Owner;
 	NZBParameterList	m_ppParameters;
 	ScriptStatusList	m_scriptStatuses;
@@ -485,6 +488,14 @@ public:
 	ServerStatList*		GetServerStats() { return &m_ServerStats; }
 	int					CalcHealth();
 	int					CalcCriticalHealth();
+	const char*			GetDupeKey() { return m_szDupeKey; }
+	void				SetDupeKey(const char* szDupeKey);
+	int					GetDupeScore() { return m_iDupeScore; }
+	void				SetDupeScore(int iDupeScore) { m_iDupeScore = iDupeScore; }
+	bool				GetNoDupeCheck() { return m_bNoDupeCheck; }
+	void				SetNoDupeCheck(bool bNoDupeCheck) { m_bNoDupeCheck = bNoDupeCheck; }
+	int					GetDupe() { return m_bDupe; }
+	void				SetDupe(bool bDupe) { m_bDupe = bDupe; }
 	void				AppendMessage(Message::EKind eKind, time_t tTime, const char* szText);
 	Messages*			LockMessages();
 	void				UnlockMessages();
@@ -591,7 +602,9 @@ public:
 		aiRunning,
 		aiFinished,
 		aiFailed,
-		aiRetry
+		aiRetry,
+		aiScanSkipped,
+		aiScanFailed
 	};
 
 private:
@@ -600,6 +613,9 @@ private:
 	char*				m_szNZBFilename;
 	char* 				m_szCategory;
 	int					m_iPriority;
+	char*				m_szDupeKey;
+	int					m_iDupeScore;
+	bool				m_bNoDupeCheck;
 	bool				m_bAddTop;
 	bool				m_bAddPaused;
 	bool				m_bForce;
@@ -620,6 +636,12 @@ public:
 	void				SetCategory(const char* szCategory);	// needs locking (for shared objects)
 	int					GetPriority() { return m_iPriority; }
 	void				SetPriority(int iPriority) { m_iPriority = iPriority; }
+	const char*			GetDupeKey() { return m_szDupeKey; }
+	void				SetDupeKey(const char* szDupeKey);
+	int					GetDupeScore() { return m_iDupeScore; }
+	void				SetDupeScore(int iDupeScore) { m_iDupeScore = iDupeScore; }
+	bool				GetNoDupeCheck() { return m_bNoDupeCheck; }
+	void				SetNoDupeCheck(bool bNoDupeCheck) { m_bNoDupeCheck = bNoDupeCheck; }
 	bool				GetAddTop() { return m_bAddTop; }
 	void				SetAddTop(bool bAddTop) { m_bAddTop = bAddTop; }
 	bool				GetAddPaused() { return m_bAddPaused; }
@@ -781,6 +803,7 @@ private:
 	char*				m_szCategory;
 	int					m_iRating;
 	char*				m_szGenre;
+	int					m_iImdbId;
 	int					m_iRageId;
 	int					m_iSeason;
 	int					m_iEpisode;
@@ -790,6 +813,7 @@ private:
 	EStatus				m_eStatus;
 	EMatchStatus		m_eMatchStatus;
 	int					m_iMatchRule;
+	char*				m_szDupeKey;
 
 public:
 						FeedItemInfo();
@@ -808,6 +832,8 @@ public:
 	void				SetRating(int iRating) { m_iRating = iRating; }
 	const char*			GetGenre() { return m_szGenre; }
 	void				SetGenre(const char* szGenre);
+	int					GetImdbId() { return m_iImdbId; }
+	void				SetImdbId(int iImdbId) { m_iImdbId = iImdbId; }
 	int					GetRageId() { return m_iRageId; }
 	void				SetRageId(int iRageId) { m_iRageId = iRageId; }
 	int					GetSeason() { return m_iSeason; }
@@ -828,6 +854,7 @@ public:
 	void				SetMatchStatus(EMatchStatus eMatchStatus) { m_eMatchStatus = eMatchStatus; }
 	int					GetMatchRule() { return m_iMatchRule; }
 	void				SetMatchRule(int iMatchRule) { m_iMatchRule = iMatchRule; }
+	const char*			GetDupeKey();
 };
 
 typedef std::deque<FeedItemInfo*>	FeedItemInfosBase;

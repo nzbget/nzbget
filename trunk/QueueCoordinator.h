@@ -46,6 +46,7 @@ public:
 
 	enum EAspectAction
 	{
+		eaNZBFileFound,
 		eaNZBFileAdded,
 		eaFileCompleted,
 		eaFileDeleted
@@ -93,7 +94,6 @@ private:
 
 	bool					GetNextArticle(FileInfo* &pFileInfo, ArticleInfo* &pArticleInfo);
 	void					StartArticleDownload(FileInfo* pFileInfo, ArticleInfo* pArticleInfo, NNTPConnection* pConnection);
-	bool					IsDupe(FileInfo* pFileInfo);
 	void					ArticleCompleted(ArticleDownloader* pArticleDownloader);
 	void					DeleteFileInfo(FileInfo* pFileInfo, bool bCompleted);
 	void					StatFileInfo(FileInfo* pFileInfo, bool bCompleted);
