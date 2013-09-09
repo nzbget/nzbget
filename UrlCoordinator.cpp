@@ -387,9 +387,8 @@ void UrlCoordinator::UrlCompleted(UrlDownloader* pUrlDownloader)
 
 	debug("Filename: [%s]", filename);
 
+	// delete Download from active jobs
 	DownloadQueue* pDownloadQueue = g_pQueueCoordinator->LockQueue();
-
-	// delete Download from Queue
 	for (ActiveDownloads::iterator it = m_ActiveDownloads.begin(); it != m_ActiveDownloads.end(); it++)
 	{
 		UrlDownloader* pa = *it;
@@ -399,12 +398,32 @@ void UrlCoordinator::UrlCompleted(UrlDownloader* pUrlDownloader)
 			break;
 		}
 	}
+	g_pQueueCoordinator->UnlockQueue();
 
-	bool bDeleteObj = false;
+	Aspect aspect = { eaUrlCompleted, pUrlInfo };
+	Notify(&aspect);
 
-	if (pUrlInfo->GetStatus() == UrlInfo::aiFinished || pUrlInfo->GetStatus() == UrlInfo::aiFailed)
+	if (pUrlInfo->GetStatus() == UrlInfo::aiFinished)
 	{
-		// delete UrlInfo from Queue
+		// add nzb-file to download queue
+		Scanner::EAddStatus eAddStatus = g_pScanner->AddExternalFile(
+			pUrlInfo->GetNZBFilename() && strlen(pUrlInfo->GetNZBFilename()) > 0 ? pUrlInfo->GetNZBFilename() : filename,
+			strlen(pUrlInfo->GetCategory()) > 0 ? pUrlInfo->GetCategory() : pUrlDownloader->GetCategory(),
+			pUrlInfo->GetPriority(), pUrlInfo->GetDupeKey(), pUrlInfo->GetDupeScore(), pUrlInfo->GetNoDupeCheck(),
+			pUrlDownloader->GetParameters(), pUrlInfo->GetAddTop(), pUrlInfo->GetAddPaused(),
+			pUrlDownloader->GetOutputFilename(), NULL, 0);
+
+		if (eAddStatus != Scanner::asSuccess)
+		{
+			pUrlInfo->SetStatus(eAddStatus == Scanner::asFailed ? UrlInfo::aiScanFailed : UrlInfo::aiScanSkipped);
+		}
+	}
+
+	// delete Download from Url Queue
+	if (pUrlInfo->GetStatus() != UrlInfo::aiRetry)
+	{
+		pDownloadQueue = g_pQueueCoordinator->LockQueue();
+
 		for (UrlQueue::iterator it = pDownloadQueue->GetUrlQueue()->begin(); it != pDownloadQueue->GetUrlQueue()->end(); it++)
 		{
 			UrlInfo* pa = *it;
@@ -415,9 +434,9 @@ void UrlCoordinator::UrlCompleted(UrlDownloader* pUrlDownloader)
 			}
 		}
 
-		bDeleteObj = true;
+		bool bDeleteObj = true;
 
-		if (g_pOptions->GetKeepHistory() > 0 && pUrlInfo->GetStatus() == UrlInfo::aiFailed)
+		if (g_pOptions->GetKeepHistory() > 0 && pUrlInfo->GetStatus() != UrlInfo::aiFinished)
 		{
 			HistoryInfo* pHistoryInfo = new HistoryInfo(pUrlInfo);
 			pHistoryInfo->SetTime(time(NULL));
@@ -429,25 +448,12 @@ void UrlCoordinator::UrlCompleted(UrlDownloader* pUrlDownloader)
 		{
 			g_pDiskState->SaveDownloadQueue(pDownloadQueue);
 		}
-	}
 
-	g_pQueueCoordinator->UnlockQueue();
+		g_pQueueCoordinator->UnlockQueue();
 
-	Aspect aspect = { eaUrlCompleted, pUrlInfo };
-	Notify(&aspect);
-
-	if (pUrlInfo->GetStatus() == UrlInfo::aiFinished)
-	{
-		// add nzb-file to download queue
-		g_pScanner->AddExternalFile(
-			pUrlInfo->GetNZBFilename() && strlen(pUrlInfo->GetNZBFilename()) > 0 ? pUrlInfo->GetNZBFilename() : filename,
-			strlen(pUrlInfo->GetCategory()) > 0 ? pUrlInfo->GetCategory() : pUrlDownloader->GetCategory(),
-			pUrlInfo->GetPriority(), pUrlDownloader->GetParameters(), pUrlInfo->GetAddTop(), pUrlInfo->GetAddPaused(),
-			pUrlDownloader->GetOutputFilename(), NULL, 0, false);
-	}
-
-	if (bDeleteObj)
-	{
-		delete pUrlInfo;
+		if (bDeleteObj)
+		{
+			delete pUrlInfo;
+		}
 	}
 }

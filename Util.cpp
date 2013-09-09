@@ -658,6 +658,15 @@ bool Util::FileExists(const char* szFilename)
 	return bExists;
 }
 
+bool Util::FileExists(const char* szPath, const char* szFilenameWithoutPath)
+{
+	char fullFilename[1024];
+	snprintf(fullFilename, 1024, "%s%c%s", szPath, (int)PATH_SEPARATOR, szFilenameWithoutPath);
+	fullFilename[1024-1] = '\0';
+	bool bExists = Util::FileExists(fullFilename);
+	return bExists;
+}
+
 bool Util::DirectoryExists(const char* szDirFilename)
 {
 	struct stat buffer;

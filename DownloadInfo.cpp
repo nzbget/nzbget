@@ -53,6 +53,7 @@ int PostInfo::m_iIDGen = 0;
 int UrlInfo::m_iIDGen = 0;
 int HistoryInfo::m_iIDGen = 0;
 
+
 NZBParameter::NZBParameter(const char* szName)
 {
 	m_szName = strdup(szName);
@@ -302,6 +303,10 @@ NZBInfo::NZBInfo()
 	m_bCleanupDisk = false;
 	m_bUnpackCleanedUpDisk = false;
 	m_szQueuedFilename = strdup("");
+	m_szDupeKey = strdup("");
+	m_iDupeScore = 0;
+	m_bDupe = false;
+	m_bNoDupeCheck = false;
 	m_Owner = NULL;
 	m_Messages.clear();
 	m_iIDMessageGen = 0;
@@ -336,6 +341,10 @@ NZBInfo::~NZBInfo()
 	if (m_szQueuedFilename)
 	{
 		free(m_szQueuedFilename);
+	}
+	if (m_szDupeKey)
+	{
+		free(m_szDupeKey);
 	}
 
 	ClearCompletedFiles();
@@ -444,6 +453,15 @@ void NZBInfo::SetQueuedFilename(const char * szQueuedFilename)
 		free(m_szQueuedFilename);
 	}
 	m_szQueuedFilename = strdup(szQueuedFilename);
+}
+
+void NZBInfo::SetDupeKey(const char* szDupeKey)
+{
+	if (m_szDupeKey)
+	{
+		free(m_szDupeKey);
+	}
+	m_szDupeKey = strdup(szDupeKey);
 }
 
 void NZBInfo::MakeNiceNZBName(const char * szNZBFilename, char * szBuffer, int iSize, bool bRemoveExt)
@@ -813,24 +831,6 @@ void FileInfo::SetActiveDownloads(int iActiveDownloads)
 	}
 }
 
-bool FileInfo::IsDupe(const char* szFilename)
-{
-	char fileName[1024];
-	snprintf(fileName, 1024, "%s%c%s", m_pNZBInfo->GetDestDir(), (int)PATH_SEPARATOR, szFilename);
-	fileName[1024-1] = '\0';
-	if (Util::FileExists(fileName))
-	{
-		return true;
-	}
-	snprintf(fileName, 1024, "%s%c%s_broken", m_pNZBInfo->GetDestDir(), (int)PATH_SEPARATOR, szFilename);
-	fileName[1024-1] = '\0';
-	if (Util::FileExists(fileName))
-	{
-		return true;
-	}
-
-	return false;
-}
 
 GroupInfo::GroupInfo()
 {
@@ -954,6 +954,7 @@ void PostInfo::AppendMessage(Message::EKind eKind, const char * szText)
 	m_mutexLog.Unlock();
 }
 
+
 void DownloadQueue::BuildGroups(GroupQueue* pGroupQueue)
 {
 	std::map<int, GroupInfo*> groupMap;
@@ -1026,11 +1027,14 @@ void DownloadQueue::BuildGroups(GroupQueue* pGroupQueue)
 
 UrlInfo::UrlInfo()
 {
-	//debug("Creating ArticleInfo");
+	//debug("Creating UrlInfo");
 	m_szURL = NULL;
 	m_szNZBFilename = strdup("");
 	m_szCategory = strdup("");
 	m_iPriority = 0;
+	m_iDupeScore = 0;
+	m_szDupeKey = strdup("");
+	m_bNoDupeCheck = false;
 	m_bAddTop = false;
 	m_bAddPaused = false;
 	m_bForce = false;
@@ -1052,6 +1056,10 @@ UrlInfo::~ UrlInfo()
 	if (m_szCategory)
 	{
 		free(m_szCategory);
+	}
+	if (m_szDupeKey)
+	{
+		free(m_szDupeKey);
 	}
 }
 
@@ -1089,6 +1097,15 @@ void UrlInfo::SetCategory(const char* szCategory)
 		free(m_szCategory);
 	}
 	m_szCategory = strdup(szCategory);
+}
+
+void UrlInfo::SetDupeKey(const char* szDupeKey)
+{
+	if (m_szDupeKey)
+	{
+		free(m_szDupeKey);
+	}
+	m_szDupeKey = strdup(szDupeKey);
 }
 
 void UrlInfo::GetName(char* szBuffer, int iSize)
@@ -1237,6 +1254,7 @@ FeedItemInfo::FeedItemInfo()
 	m_tTime = 0;
 	m_iRating = 0;
 	m_szGenre = strdup("");
+	m_iImdbId = 0;
 	m_iRageId = 0;
 	m_iSeason = 0;
 	m_iEpisode = 0;
@@ -1246,6 +1264,7 @@ FeedItemInfo::FeedItemInfo()
 	m_eStatus = isUnknown;
 	m_eMatchStatus = msIgnored;
 	m_iMatchRule = 0;
+	m_szDupeKey = NULL;
 }
 
 FeedItemInfo::~FeedItemInfo()
@@ -1273,6 +1292,10 @@ FeedItemInfo::~FeedItemInfo()
 	if (m_szAddCategory)
 	{
 		free(m_szAddCategory);
+	}
+	if (m_szDupeKey)
+	{
+		free(m_szDupeKey);
 	}
 }
 
@@ -1330,6 +1353,28 @@ void FeedItemInfo::SetAddCategory(const char* szAddCategory)
 	m_szAddCategory = strdup(szAddCategory ? szAddCategory : "");
 }
 
+const char* FeedItemInfo::GetDupeKey()
+{
+	if (!m_szDupeKey)
+	{
+		if (m_iImdbId != 0)
+		{
+			m_szDupeKey = (char*)malloc(20);
+			snprintf(m_szDupeKey, 20, "imdb=%i", m_iImdbId);
+		}
+		else if (m_iRageId != 0)
+		{
+			m_szDupeKey = (char*)malloc(30);
+			snprintf(m_szDupeKey, 20, "rageid=%i,%i,%i", m_iRageId, m_iSeason, m_iEpisode);
+		}
+		else
+		{
+			m_szDupeKey = strdup("");
+		}
+	}
+
+	return m_szDupeKey;
+}
 
 FeedHistoryInfo::FeedHistoryInfo(const char* szUrl, FeedHistoryInfo::EStatus eStatus, time_t tLastSeen)
 {

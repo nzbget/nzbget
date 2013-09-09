@@ -40,6 +40,7 @@
 #include <unistd.h>
 #include <sys/time.h>
 #endif
+#include <algorithm>
 
 #include "nzbget.h"
 #include "QueueCoordinator.h"
@@ -250,6 +251,14 @@ void QueueCoordinator::AddNZBFileToQueue(NZBFile* pNZBFile, bool bAddFirst)
 
 	m_mutexDownloadQueue.Lock();
 
+	Aspect foundAspect = { eaNZBFileFound, &m_DownloadQueue, pNZBFile->GetNZBInfo(), NULL };
+	Notify(&foundAspect);
+	if (pNZBFile->GetNZBInfo()->GetDeleted())
+	{
+		m_mutexDownloadQueue.Unlock(); // UNLOCK
+		return;
+	}
+
 	FileQueue tmpFileQueue;
 	FileQueue DupeList;
 
@@ -259,14 +268,9 @@ void QueueCoordinator::AddNZBFileToQueue(NZBFile* pNZBFile, bool bAddFirst)
 		index1++;
 		FileInfo* pFileInfo = *it;
 
-		if (g_pOptions->GetDupeCheck())
+		if (g_pOptions->GetDupeCheck() && !pNZBFile->GetNZBInfo()->GetNoDupeCheck())
 		{
 			bool dupe = false;
-			if (IsDupe(pFileInfo))
-			{
-				warn("File \"%s\" seems to be duplicate, skipping", pFileInfo->GetFilename());
-				dupe = true;
-			}
 			int index2 = 0;
 			for (NZBFile::FileInfos::iterator it2 = pNZBFile->GetFileInfos()->begin(); it2 != pNZBFile->GetFileInfos()->end(); it2++)
 			{
@@ -326,6 +330,9 @@ void QueueCoordinator::AddNZBFileToQueue(NZBFile* pNZBFile, bool bAddFirst)
 
 	pNZBFile->DetachFileInfos();
 
+	char szNZBName[1024];
+	strncpy(szNZBName, pNZBFile->GetNZBInfo()->GetName(), sizeof(szNZBName)-1);
+
 	Aspect aspect = { eaNZBFileAdded, &m_DownloadQueue, pNZBFile->GetNZBInfo(), NULL };
 	Notify(&aspect);
 	
@@ -335,6 +342,8 @@ void QueueCoordinator::AddNZBFileToQueue(NZBFile* pNZBFile, bool bAddFirst)
 	}
 
 	m_mutexDownloadQueue.Unlock();
+
+	info("Collection %s added to queue", szNZBName);
 }
 
 /*
@@ -677,7 +686,7 @@ void QueueCoordinator::ArticleCompleted(ArticleDownloader* pArticleDownloader)
 	{
 		pFileInfo->SetFilename(pArticleDownloader->GetArticleFilename());
 		pFileInfo->SetFilenameConfirmed(true);
-		if (g_pOptions->GetDupeCheck() && pFileInfo->IsDupe(pFileInfo->GetFilename()))
+		if (g_pOptions->GetDupeCheck() && Util::FileExists(pFileInfo->GetNZBInfo()->GetDestDir(), pFileInfo->GetFilename()))
 		{
 			warn("File \"%s\" seems to be duplicate, cancelling download and deleting file from queue", pFileInfo->GetFilename());
 			fileCompleted = false;
@@ -687,23 +696,6 @@ void QueueCoordinator::ArticleCompleted(ArticleDownloader* pArticleDownloader)
 	}
 
 	bool deleteFileObj = false;
-
-	if (pFileInfo->GetDeleted())
-	{
-		int cnt = 0;
-		for (ActiveDownloads::iterator it = m_ActiveDownloads.begin(); it != m_ActiveDownloads.end(); it++)
-		{
-			if ((*it)->GetFileInfo() == pFileInfo)
-			{
-				cnt++;
-			}
-		}
-		if (cnt == 1)
-		{
-			// this was the last Download for a file deleted from queue
-			deleteFileObj = true;
-		}
-	}
 
 	if (fileCompleted && !IsStopped() && !pFileInfo->GetDeleted())
 	{
@@ -716,16 +708,20 @@ void QueueCoordinator::ArticleCompleted(ArticleDownloader* pArticleDownloader)
 
 	CheckHealth(pFileInfo);
 
-	// remove downloader from downloader list
+	bool hasOtherDownloaders = false;
 	for (ActiveDownloads::iterator it = m_ActiveDownloads.begin(); it != m_ActiveDownloads.end(); it++)
 	{
-		ArticleDownloader* pa = *it;
-		if (pa == pArticleDownloader)
+		ArticleDownloader* pDownloader = *it;
+		if (pDownloader != pArticleDownloader && pDownloader->GetFileInfo() == pFileInfo)
 		{
-			m_ActiveDownloads.erase(it);
+			hasOtherDownloaders = true;
 			break;
 		}
 	}
+	deleteFileObj |= pFileInfo->GetDeleted() && !hasOtherDownloaders;
+
+	// remove downloader from downloader list
+	m_ActiveDownloads.erase(std::find(m_ActiveDownloads.begin(), m_ActiveDownloads.end(), pArticleDownloader));
 
 	pFileInfo->SetActiveDownloads(pFileInfo->GetActiveDownloads() - 1);
 
@@ -855,31 +851,6 @@ void QueueCoordinator::CheckHealth(FileInfo* pFileInfo)
 		pFileInfo->GetNZBInfo()->SetHealthDeleted(true);
 		m_QueueEditor.LockedEditEntry(&m_DownloadQueue, pFileInfo->GetID(), false, QueueEditor::eaGroupDelete, 0, NULL);
 	}
-}
-
-bool QueueCoordinator::IsDupe(FileInfo* pFileInfo)
-{
-	debug("Checking if the file is already queued");
-
-	// checking on disk
-	if (pFileInfo->IsDupe(pFileInfo->GetFilename()))
-	{
-		return true;
-	}
-
-	// checking in queue
-	for (FileQueue::iterator it = m_DownloadQueue.GetFileQueue()->begin(); it != m_DownloadQueue.GetFileQueue()->end(); it++)
-	{
-		FileInfo* pQueueEntry = *it;
-		if (!strcmp(pFileInfo->GetNZBInfo()->GetDestDir(), pQueueEntry->GetNZBInfo()->GetDestDir()) &&
-			!strcmp(pFileInfo->GetFilename(), pQueueEntry->GetFilename()) &&
-			pFileInfo != pQueueEntry)
-		{
-			return true;
-		}
-	}
-
-	return false;
 }
 
 void QueueCoordinator::LogDebugInfo()

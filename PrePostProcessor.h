@@ -89,12 +89,16 @@ private:
 	void				UpdatePauseState(bool bNeedPause, const char* szReason);
 	bool				PauseDownload();
 	bool				UnpauseDownload();
+	void				NZBFound(DownloadQueue* pDownloadQueue, NZBInfo* pNZBInfo);
 	void				NZBAdded(DownloadQueue* pDownloadQueue, NZBInfo* pNZBInfo);
 	void				NZBDownloaded(DownloadQueue* pDownloadQueue, NZBInfo* pNZBInfo);
 	void				NZBDeleted(DownloadQueue* pDownloadQueue, NZBInfo* pNZBInfo);
 	void				NZBCompleted(DownloadQueue* pDownloadQueue, NZBInfo* pNZBInfo, bool bSaveQueue);
+	void				DupeCompleted(DownloadQueue* pDownloadQueue, NZBInfo* pNZBInfo);
+	void				CheckDupeFound(DownloadQueue* pDownloadQueue, NZBInfo* pNZBInfo);
+	void				CheckDupeAdded(DownloadQueue* pDownloadQueue, NZBInfo* pNZBInfo);
 	void				DeleteQueuedFile(const char* szQueuedFile);
-	NZBInfo*			MergeGroups(DownloadQueue* pDownloadQueue, NZBInfo* pNZBInfo);
+	int					FindGroupID(DownloadQueue* pDownloadQueue, NZBInfo* pNZBInfo);
 	bool				PostQueueMove(IDList* pIDList, EEditAction eAction, int iOffset);
 	bool				PostQueueDelete(IDList* pIDList);
 	bool				HistoryEdit(IDList* pIDList, EEditAction eAction, int iOffset, const char* szText);

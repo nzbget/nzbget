@@ -33,6 +33,14 @@
 
 class Scanner
 {
+public:
+	enum EAddStatus
+	{
+		asSkipped,
+		asSuccess,
+		asFailed
+	};
+
 private:
 	class FileData
 	{
@@ -60,21 +68,30 @@ private:
 		char*				m_szNZBName;
 		char*				m_szCategory;
 		int					m_iPriority;
+		char*				m_szDupeKey;
+		int					m_iDupeScore;
+		bool				m_bNoDupeCheck;
 		NZBParameterList	m_Parameters;
 		bool				m_bAddTop;
 		bool				m_bAddPaused;
+		EAddStatus*			m_pAddStatus;
 
 	public:
-							QueueData(const char* szFilename, const char* szNZBName, const char* szCategory, int iPriority,
-								NZBParameterList* pParameters, bool bAddTop, bool bAddPaused);
+							QueueData(const char* szFilename, const char* szNZBName, const char* szCategory,
+								int iPriority, const char* szDupeKey, int iDupeScore, bool bNoDupeCheck,
+								NZBParameterList* pParameters, bool bAddTop, bool bAddPaused, EAddStatus* pAddStatus);
 							~QueueData();
 		const char*			GetFilename() { return m_szFilename; }
 		const char*			GetNZBName() { return m_szNZBName; }
 		const char*			GetCategory() { return m_szCategory; }
 		int					GetPriority() { return m_iPriority; }
+		const char*			GetDupeKey() { return m_szDupeKey; }
+		int					GetDupeScore() { return m_iDupeScore; }
+		bool				GetNoDupeCheck() { return m_bNoDupeCheck; }
 		NZBParameterList*	GetParameters() { return &m_Parameters; }
 		bool				GetAddTop() { return m_bAddTop; }
 		bool				GetAddPaused() { return m_bAddPaused; }
+		void				SetAddStatus(EAddStatus eAddStatus);
 	};
 
 	typedef std::deque<QueueData*>		QueueList;
@@ -89,9 +106,11 @@ private:
 	Mutex				m_mutexScan;
 
 	void				CheckIncomingNZBs(const char* szDirectory, const char* szCategory, bool bCheckStat);
-	void				AddFileToQueue(const char* szFilename, const char* szNZBName, const char* szCategory, int iPriority,
+	bool				AddFileToQueue(const char* szFilename, const char* szNZBName, const char* szCategory,
+							int iPriority, const char* szDupeKey, int iDupeScore, bool bNoDupeCheck,
 							NZBParameterList* pParameters, bool bAddTop, bool bAddPaused);
-	void				ProcessIncomingFile(const char* szDirectory, const char* szBaseFilename, const char* szFullFilename, const char* szCategory);
+	void				ProcessIncomingFile(const char* szDirectory, const char* szBaseFilename,
+							const char* szFullFilename, const char* szCategory);
 	bool				CanProcessFile(const char* szFullFilename, bool bCheckStat);
 	void				InitPPParameters(const char* szCategory, NZBParameterList* pParameters);
 	void				DropOldFiles();
@@ -102,9 +121,10 @@ public:
 						~Scanner();
 	void				ScanNZBDir(bool bSyncMode);
 	void				Check();
-	bool				AddExternalFile(const char* szNZBName, const char* szCategory, int iPriority,
-							NZBParameterList* pParameters, bool bAddPaused, bool bAddTop,
-							const char* szFileName, const char* szBuffer, int iBufSize, bool bSyncMode);
+	EAddStatus			AddExternalFile(const char* szNZBName, const char* szCategory, int iPriority,
+							const char* szDupeKey, int iDupeScore, bool bNoDupeCheck,
+							NZBParameterList* pParameters, bool bAddTop, bool bAddPaused,
+							const char* szFileName, const char* szBuffer, int iBufSize);
 };
 
 #endif

@@ -626,7 +626,8 @@ bool ArticleDownloader::PrepareFile(char* szLine)
 					m_pFileInfo->SetOutputInitialized(true);
 				}
 				m_pFileInfo->UnlockOutputFile();
-				if (!bOutputInitialized && m_szArticleFilename && m_pFileInfo->IsDupe(m_szArticleFilename))
+				if (!bOutputInitialized && m_szArticleFilename &&
+					Util::FileExists(m_pFileInfo->GetNZBInfo()->GetDestDir(), m_szArticleFilename))
 				{
 					m_bDuplicate = true;
 					return false;

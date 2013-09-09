@@ -331,7 +331,7 @@ var Upload = (new function($)
 			var category = $('#AddDialog_Category').val();
 			var priority = parseInt($('#AddDialog_Priority').val());
 			var filename = file.name.replace(/\.queued$/g, '');
-			RPC.call('append', [filename, category, priority, false, base64str], fileCompleted, fileFailure);
+			RPC.call('append', [filename, category, priority, false, base64str, false, '', 0, false], fileCompleted, fileFailure);
 		};
 
 		if (reader.readAsBinaryString)
@@ -373,7 +373,7 @@ var Upload = (new function($)
 		var category = $('#AddDialog_Category').val();
 		var priority = parseInt($('#AddDialog_Priority').val());
 
-		RPC.call('appendurl', ['', category, priority, false, url], urlCompleted, urlFailure);
+		RPC.call('appendurl', ['', category, priority, false, url, false, '', 0, false], urlCompleted, urlFailure);
 	}
 
 	function urlCompleted(result)

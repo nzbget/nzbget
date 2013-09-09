@@ -309,7 +309,6 @@ private:
 	bool				m_bScriptPauseQueue;
 	bool				m_bNzbCleanupDisk;
 	bool				m_bDeleteCleanupDisk;
-	bool				m_bMergeNzb;
 	int					m_iParTimeLimit;
 	int					m_iKeepHistory;
 	bool				m_bAccurateRate;
@@ -473,7 +472,6 @@ public:
 	bool				GetScriptPauseQueue() { return m_bScriptPauseQueue; }
 	bool				GetNzbCleanupDisk() { return m_bNzbCleanupDisk; }
 	bool				GetDeleteCleanupDisk() { return m_bDeleteCleanupDisk; }
-	bool				GetMergeNzb() { return m_bMergeNzb; }
 	int					GetParTimeLimit() { return m_iParTimeLimit; }
 	int					GetKeepHistory() { return m_iKeepHistory; }
 	bool				GetAccurateRate() { return m_bAccurateRate; }

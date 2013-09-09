@@ -1,5 +1,5 @@
 /*
- *  This file if part of nzbget
+ *  This file is part of nzbget
  *
  *  Copyright (C) 2007-2013 Andrey Prygunkov <hugbug@users.sourceforge.net>
  *
@@ -58,7 +58,9 @@ public:
 		eaGroupSetCategory,
 		eaGroupMerge,
 		eaGroupSetParameter,
-		eaGroupSetName
+		eaGroupSetName,
+		eaGroupMarkDupe,
+		eaGroupUnMarkDupe
 	};
 
 	enum EMatchMode
@@ -99,6 +101,8 @@ private:
 	bool					CanCleanupDisk(DownloadQueue* pDownloadQueue, NZBInfo* pNZBInfo);
 	bool					MergeGroups(DownloadQueue* pDownloadQueue, ItemList* pItemList);
 	bool					SplitGroup(DownloadQueue* pDownloadQueue, ItemList* pItemList, const char* szName);
+	bool					MarkDupeGroups(DownloadQueue* pDownloadQueue, ItemList* pItemList);
+	bool					UnMarkDupeGroups(DownloadQueue* pDownloadQueue, ItemList* pItemList);
 	void					ReorderFiles(DownloadQueue* pDownloadQueue, ItemList* pItemList);
 	void					SetNZBParameter(NZBInfo* pNZBInfo, const char* szParamString);
 

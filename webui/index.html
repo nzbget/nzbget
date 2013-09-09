@@ -890,6 +890,7 @@
 				<li><a href="#" id="DownloadsEdit_Resume"><i class="icon-play"></i> Resume</a></li>
 				<li><a href="#" id="DownloadsEdit_Pause"><i class="icon-pause"></i> Pause</a></li>
 				<li><a href="#" id="DownloadsEdit_Delete"><i class="icon-trash"></i> Delete</a></li>
+				<li><a href="#" id="DownloadsEdit_UnMarkDupe"><i class="icon-not-duplicates"></i> Unmark Duplicate</a></li>
 				<li><a href="#" id="DownloadsEdit_CancelPP"><i class="icon-remove"></i> Cancel Post-Processing</a></li>
 				<li class="menu-header" id="DownloadsEdit_DNZB_Section">Indexer Links</li>
 				<li><a href="#" target="_blank" class="DownloadsEdit_DNZB" id="DownloadsEdit_DNZB_Details"><i class="icon-postcard"></i> Details</a></li>
@@ -982,6 +983,15 @@
 	</div>
 
 	<div class="modal-footer">
+		<div class="btn-group dropup pull-left">
+			<a class="btn dropdown-toggle" data-toggle="dropdown">Actions <span class="caret"></span></a>
+			<ul class="dropdown-menu footer-button-menu" id="DownloadsMulti_ActionsMenu">
+				<li class="menu-header">Actions</li>
+				<li><a href="#" id="DownloadsMulti_MarkDupe"><i class="icon-duplicates"></i> Mark as Duplicates</a></li>
+				<li><a href="#" id="DownloadsMulti_UnMarkDupe"><i class="icon-not-duplicates"></i> Unmark Duplicates</a></li>
+			</ul>
+		</div>
+
 		<div class="dialog-transmit hide" style="position:absolute;margin-left:260px;" id="DownloadsMulti_Transmit"><img src="img/transmit.gif"></div>
 		<a href="#" class="btn" data-dismiss="modal" id="DownloadsMulti_Close">Cancel</a>
 		<a href="#" class="btn btn-primary" id="DownloadsMulti_Save">Save</a>
