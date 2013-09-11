@@ -1653,7 +1653,6 @@
 					<label class="control-label" for="URL" id="AddDialog_URLLabel"><i class="icon-remove"></i><img class="hide" src="img/transmit-file.gif"> Add from URL</label>
 					<div class="controls">
 						<input type="text" class="input-xlarge" id="AddDialog_URL" />
-						<p class="help-block">The nzb-file will be downloaded from the URL and added to queue.</p>
 					</div>
 				</div>
 
@@ -1662,7 +1661,6 @@
 					<div class="controls">
 						<div style="margin-top:6px; margin-bottom:10px;"><a href="#" class="btn" style="margin-top: -6px;" id="AddDialog_Select">Select files</a> or drop files here.</div>
 						<input multiple="multiple" type="file" id="AddDialog_Input" class="hidden-file-input">
-						<p class="help-block" id="AddDialog_FilesHelp">You need a modern browser for this to work.</p>
 						<div class="dialog-add-files hide" id="AddDialog_Files"></div>
 					</div>
 				</div>
@@ -1684,13 +1682,20 @@
 				</div>
 
 				<div class="control-group">
-					<label class="control-label" for="URL">Add from incoming directory</label>
+					<label class="control-label" for="URL">Options</label>
 					<div class="controls">
-						<a href="#" class="btn" id="AddDialog_Scan">Scan</a>
-						<p class="help-block">Click Scan if you have already put files to incoming directory (option <em>NzbDir</em>). The dialog will be closed automatically.</p>
+						<label class="checkbox"><input type="checkbox" id="AddDialog_Paused"> Add paused</label>
+						<label class="checkbox"><input type="checkbox" id="AddDialog_NoDupeCheck"> Disable duplicate check</label>
 					</div>
 				</div>
 
+				<div class="control-group">
+					<label class="control-label" for="URL">Add from NzbDir</label>
+					<div class="controls">
+						<a href="#" class="btn" id="AddDialog_Scan">Scan incoming directory</a>
+					</div>
+				</div>
+				
 			</fieldset>
 		</div>
 	</div>
@@ -1732,7 +1737,7 @@
 			The <strong>Add Dialog</strong> will show automatically.</li>
 			<li>Priority and category can be changed later in the edit dialog.</li>
 			<li>The categories can be configured in section <strong>CATEGORIES</strong> on settings page.</li>
-			<li>Use button <strong>Scan</strong> if the automatic scanning of incoming nzb-directory is disabled (see options <em>NzbDir</em> and <em>NzbDirInterval</em>).</li>
+			<li>Use button <strong>Scan incoming directory</strong> if the automatic scanning of incoming nzb-directory is disabled (see options <em>NzbDir</em> and <em>NzbDirInterval</em>).</li>
 		</ul>
 	</div>
 </div>
