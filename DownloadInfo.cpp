@@ -461,7 +461,7 @@ void NZBInfo::SetDupeKey(const char* szDupeKey)
 	{
 		free(m_szDupeKey);
 	}
-	m_szDupeKey = strdup(szDupeKey);
+	m_szDupeKey = strdup(szDupeKey ? szDupeKey : "");
 }
 
 void NZBInfo::MakeNiceNZBName(const char * szNZBFilename, char * szBuffer, int iSize, bool bRemoveExt)
@@ -1265,6 +1265,8 @@ FeedItemInfo::FeedItemInfo()
 	m_eMatchStatus = msIgnored;
 	m_iMatchRule = 0;
 	m_szDupeKey = NULL;
+	m_iDupeScore = 0;
+	m_bNoDupeCheck = false;
 }
 
 FeedItemInfo::~FeedItemInfo()
@@ -1353,27 +1355,56 @@ void FeedItemInfo::SetAddCategory(const char* szAddCategory)
 	m_szAddCategory = strdup(szAddCategory ? szAddCategory : "");
 }
 
-const char* FeedItemInfo::GetDupeKey()
+void FeedItemInfo::SetDupeKey(const char* szDupeKey)
 {
-	if (!m_szDupeKey)
+	if (m_szDupeKey)
 	{
-		if (m_iImdbId != 0)
-		{
-			m_szDupeKey = (char*)malloc(20);
-			snprintf(m_szDupeKey, 20, "imdb=%i", m_iImdbId);
-		}
-		else if (m_iRageId != 0)
-		{
-			m_szDupeKey = (char*)malloc(30);
-			snprintf(m_szDupeKey, 20, "rageid=%i,%i,%i", m_iRageId, m_iSeason, m_iEpisode);
-		}
-		else
-		{
-			m_szDupeKey = strdup("");
-		}
+		free(m_szDupeKey);
+	}
+	m_szDupeKey = strdup(szDupeKey ? szDupeKey : "");
+}
+
+void FeedItemInfo::AppendDupeKey(const char* szExtraDupeKey)
+{
+	if (!m_szDupeKey || *m_szDupeKey == '\0')
+	{
+		return;
 	}
 
-	return m_szDupeKey;
+	int iLen = (m_szDupeKey ? strlen(m_szDupeKey) : 0) + 1 + strlen(szExtraDupeKey) + 1;
+	char* szNewKey = (char*)malloc(iLen);
+	snprintf(szNewKey, iLen, "%s,%s", m_szDupeKey, szExtraDupeKey);
+	szNewKey[iLen - 1] = '\0';
+
+	if (m_szDupeKey)
+	{
+		free(m_szDupeKey);
+	}
+
+	m_szDupeKey = szNewKey;
+}
+
+void FeedItemInfo::BuildDupeKey()
+{
+	if (m_szDupeKey)
+	{
+		free(m_szDupeKey);
+	}
+
+	if (m_iImdbId != 0)
+	{
+		m_szDupeKey = (char*)malloc(20);
+		snprintf(m_szDupeKey, 20, "imdb=%i", m_iImdbId);
+	}
+	else if (m_iRageId != 0)
+	{
+		m_szDupeKey = (char*)malloc(30);
+		snprintf(m_szDupeKey, 20, "rageid=%i,%i,%i", m_iRageId, m_iSeason, m_iEpisode);
+	}
+	else
+	{
+		m_szDupeKey = strdup("");
+	}
 }
 
 FeedHistoryInfo::FeedHistoryInfo(const char* szUrl, FeedHistoryInfo::EStatus eStatus, time_t tLastSeen)

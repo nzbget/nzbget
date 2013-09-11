@@ -405,6 +405,9 @@ void FeedCoordinator::FilterFeed(FeedInfo* pFeedInfo, FeedItemInfos* pFeedItemIn
 		pFeedItemInfo->SetPauseNzb(pFeedInfo->GetPauseNzb());
 		pFeedItemInfo->SetPriority(pFeedInfo->GetPriority());
 		pFeedItemInfo->SetAddCategory(pFeedInfo->GetCategory());
+		pFeedItemInfo->SetDupeScore(0);
+		pFeedItemInfo->SetNoDupeCheck(false);
+		pFeedItemInfo->BuildDupeKey();
 		if (pFeedFilter)
 		{
 			pFeedFilter->Match(pFeedItemInfo);
@@ -490,6 +493,8 @@ void FeedCoordinator::DownloadItem(FeedInfo* pFeedInfo, FeedItemInfo* pFeedItemI
 	pUrlInfo->SetPriority(pFeedItemInfo->GetPriority());
 	pUrlInfo->SetAddPaused(pFeedItemInfo->GetPauseNzb());
 	pUrlInfo->SetDupeKey(pFeedItemInfo->GetDupeKey());
+	pUrlInfo->SetDupeScore(pFeedItemInfo->GetDupeScore());
+	pUrlInfo->SetNoDupeCheck(pFeedItemInfo->GetNoDupeCheck());
 	pUrlInfo->SetForce(pFeedInfo->GetForce());
 	g_pUrlCoordinator->AddUrlToQueue(pUrlInfo, false);
 }

@@ -186,7 +186,7 @@ var History = (new function($)
 			}
 
 			var time = Util.formatDateTime(hist.HistoryTime + UISettings.timeZoneCorrection*60*60);
-			var dupe = DownloadsUI.buildDupeText(hist.Dupe, hist.DupeKey);
+			var dupe = DownloadsUI.buildDupeText(hist.Dupe, hist.DupeKey, hist.DupeScore);
 
 			var item =
 			{
@@ -212,7 +212,7 @@ var History = (new function($)
 		var status = HistoryUI.buildStatus(hist.status, '');
 
 		var name = '<a href="#" histid="' + hist.ID + '">' + Util.textToHtml(Util.formatNZBName(hist.Name)) + '</a>';
-		var dupe = DownloadsUI.buildDupe(hist.Dupe, hist.DupeKey);
+		var dupe = DownloadsUI.buildDupe(hist.Dupe, hist.DupeKey, hist.DupeScore);
 		var category = Util.textToHtml(hist.Category);
 
 		if (hist.Kind === 'URL')
