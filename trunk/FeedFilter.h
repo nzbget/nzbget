@@ -95,12 +95,19 @@ private:
 		char*			m_szCategory;
 		int				m_iPriority;
 		bool			m_bPause;
+		int				m_iDupeScore;
+		char*			m_szDupeKey;
+		bool			m_bNoDupeCheck;
 		bool			m_bHasCategory;
 		bool			m_bHasPriority;
 		bool			m_bHasPause;
+		bool			m_bHasDupeScore;
+		bool			m_bHasDupeKey;
+		bool			m_bHasNoDupeCheck;
 		TermList		m_Terms;
 
 		char*			CompileCommand(char* szRule);
+		char*			CompileOptions(char* szRule);
 		bool			CompileTerm(char* szTerm);
 
 	public:
@@ -112,9 +119,15 @@ private:
 		const char*		GetCategory() { return m_szCategory; }
 		int				GetPriority() { return m_iPriority; }
 		bool			GetPause() { return m_bPause; }
+		const char*		GetDupeKey() { return m_szDupeKey; }
+		int				GetDupeScore() { return m_iDupeScore; }
+		bool			GetNoDupeCheck() { return m_bNoDupeCheck; }
 		bool			HasCategory() { return m_bHasCategory; }
 		bool			HasPriority() { return m_bHasPriority; }
 		bool			HasPause() { return m_bHasPause; }
+		bool			HasDupeScore() { return m_bHasDupeScore; }
+		bool			HasDupeKey() { return m_bHasDupeKey; }
+		bool			HasNoDupeCheck() { return m_bHasNoDupeCheck; }
 		bool			Match(FeedItemInfo* pFeedItemInfo);
 	};
 

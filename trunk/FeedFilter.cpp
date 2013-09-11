@@ -496,9 +496,15 @@ FeedFilter::Rule::Rule()
 	m_szCategory = NULL;
 	m_iPriority = 0;
 	m_bPause = false;
+	m_szDupeKey = NULL;
+	m_iDupeScore = 0;
+	m_bNoDupeCheck = false;
 	m_bHasCategory = false;
 	m_bHasPriority = false;
 	m_bHasPause = false;
+	m_bHasDupeScore = false;
+	m_bHasDupeKey = false;
+	m_bHasNoDupeCheck = false;
 }
 
 FeedFilter::Rule::~Rule()
@@ -506,6 +512,10 @@ FeedFilter::Rule::~Rule()
 	if (m_szCategory)
 	{
 		free(m_szCategory);
+	}
+	if (m_szDupeKey)
+	{
+		free(m_szDupeKey);
 	}
 
 	for (TermList::iterator it = m_Terms.begin(); it != m_Terms.end(); it++)
@@ -564,7 +574,7 @@ char* FeedFilter::Rule::CompileCommand(char* szRule)
 	else if (!strncasecmp(szRule, "O(", 2) || !strncasecmp(szRule, "Options(", 8))
 	{
 		m_eCommand = frOptions;
-		szRule += szRule[1] == ':' || szRule[1] == '(' ? 2 : 7;
+		szRule += szRule[1] == ':' || szRule[1] == '(' ? 2 : 8;
 	}
 	else if (!strncasecmp(szRule, "R:", 2) || !strncasecmp(szRule, "Reject:", 7))
 	{
@@ -589,47 +599,126 @@ char* FeedFilter::Rule::CompileCommand(char* szRule)
 
 	if ((m_eCommand == frAccept || m_eCommand == frOptions) && szRule[-1] == '(')
 	{
-		if (char* p = strchr(szRule, ')'))
+		szRule = CompileOptions(szRule);
+	}
+
+	return szRule;
+}
+
+char* FeedFilter::Rule::CompileOptions(char* szRule)
+{
+	char* p = strchr(szRule, ')');
+	if (!p)
+	{
+		// error
+		return NULL;
+	}
+
+	// split command into tokens
+	*p = '\0';
+	char* saveptr;
+	char* szToken = strtok_r(szRule, ",", &saveptr);
+	while (szToken)
+	{
+		szToken = Util::Trim(szToken);
+		if (*szToken)
 		{
-			// split command into tokens
-			*p = '\0';
-			char* saveptr;
-			char* szToken = strtok_r(szRule, ",", &saveptr);
-			while (szToken)
+			char* szOption = szToken;
+			char* szValue = NULL;
+			char* szColon = strchr(szToken, ':');
+			if (szColon)
 			{
-				szToken = Util::Trim(szToken);
-				if (*szToken)
-				{
-					if (!strcasecmp(szToken, "paused") || !strcasecmp(szToken, "unpaused"))
-					{
-						m_bHasPause = true;
-						m_bPause = !strcasecmp(szToken, "paused");
-					}
-					else if (strchr("0123456789-+", *szToken))
-					{
-						m_bHasPriority = true;
-						m_iPriority = atoi(szToken);
-					}
-					else
-					{
-						m_bHasCategory = true;
-						m_szCategory = strdup(szToken);
-					}
-				}
-				szToken = strtok_r(NULL, ",", &saveptr);
+				*szColon = '\0';
+				szValue = Util::Trim(szColon + 1);
 			}
 
-			szRule = p + 1;
-			if (*szRule == ':')
+			if (!strcasecmp(szOption, "category") || !strcasecmp(szOption, "cat") || !strcasecmp(szOption, "c"))
 			{
-				szRule++;
+				m_bHasCategory = true;
+				if (m_szCategory)
+				{
+					free(m_szCategory);
+				}
+				m_szCategory = strdup(szValue);
+			}
+			else if (!strcasecmp(szOption, "pause") || !strcasecmp(szOption, "p"))
+			{
+				m_bHasPause = true;
+				m_bPause = !szValue || !strcasecmp(szValue, "yes") || !strcasecmp(szValue, "y");
+				if (!m_bPause && !(!strcasecmp(szValue, "no") || !strcasecmp(szValue, "n")))
+				{
+					// error
+					return NULL;
+				}
+			}
+			else if (!strcasecmp(szOption, "priority") || !strcasecmp(szOption, "pr") || !strcasecmp(szOption, "r"))
+			{
+				if (!strchr("0123456789-+", *szValue))
+				{
+					// error
+					return NULL;
+				}
+				m_bHasPriority = true;
+				m_iPriority = atoi(szValue);
+			}
+			else if (!strcasecmp(szOption, "dupescore") || !strcasecmp(szOption, "ds") || !strcasecmp(szOption, "s"))
+			{
+				if (!strchr("0123456789-+", *szValue))
+				{
+					// error
+					return NULL;
+				}
+				m_bHasDupeScore = true;
+				m_iDupeScore = atoi(szValue);
+			}
+			else if (!strcasecmp(szOption, "dupekey") || !strcasecmp(szOption, "dk") || !strcasecmp(szOption, "k"))
+			{
+				m_bHasDupeKey = true;
+				if (m_szDupeKey)
+				{
+					free(m_szDupeKey);
+				}
+				m_szDupeKey = strdup(szValue);
+			}
+			else if (!strcasecmp(szOption, "nodupe") || !strcasecmp(szOption, "nd") || !strcasecmp(szOption, "n"))
+			{
+				m_bHasNoDupeCheck = true;
+				m_bNoDupeCheck = !szValue || !strcasecmp(szValue, "yes") || !strcasecmp(szValue, "y");
+				if (!m_bNoDupeCheck && !(!strcasecmp(szValue, "no") || !strcasecmp(szValue, "n")))
+				{
+					// error
+					return NULL;
+				}
+			}
+
+			// for compatibility with older version we support old commands too
+			else if (!strcasecmp(szOption, "paused") || !strcasecmp(szOption, "unpaused"))
+			{
+				m_bHasPause = true;
+				m_bPause = !strcasecmp(szOption, "paused");
+			}
+			else if (strchr("0123456789-+", *szOption))
+			{
+				m_bHasPriority = true;
+				m_iPriority = atoi(szOption);
+			}
+			else
+			{
+				m_bHasCategory = true;
+				if (m_szCategory)
+				{
+					free(m_szCategory);
+				}
+				m_szCategory = strdup(szOption);
 			}
 		}
-		else
-		{
-			// error
-			return NULL;
-		}
+		szToken = strtok_r(NULL, ",", &saveptr);
+	}
+
+	szRule = p + 1;
+	if (*szRule == ':')
+	{
+		szRule++;
 	}
 
 	return szRule;
@@ -737,6 +826,18 @@ void FeedFilter::Match(FeedItemInfo* pFeedItemInfo)
 						if (pRule->HasPriority())
 						{
 							pFeedItemInfo->SetPriority(pRule->GetPriority());
+						}
+						if (pRule->HasDupeScore())
+						{
+							pFeedItemInfo->SetDupeScore(pRule->GetDupeScore());
+						}
+						if (pRule->HasDupeKey())
+						{
+							pFeedItemInfo->AppendDupeKey(pRule->GetDupeKey());
+						}
+						if (pRule->HasNoDupeCheck())
+						{
+							pFeedItemInfo->SetNoDupeCheck(pRule->GetNoDupeCheck());
 						}
 						if (pRule->GetCommand() == frAccept)
 						{

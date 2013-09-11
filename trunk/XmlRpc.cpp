@@ -1258,6 +1258,7 @@ void NzbInfoXmlCommand::AppendNZBInfoFields(NZBInfo* pNZBInfo)
 	"<member><name>Health</name><value><i4>%i</i4></value></member>\n"
 	"<member><name>CriticalHealth</name><value><i4>%i</i4></value></member>\n"
 	"<member><name>DupeKey</name><value><string>%s</string></value></member>\n"
+	"<member><name>DupeScore</name><value><i4>%i</i4></value></member>\n"
 	"<member><name>Dupe</name><value><boolean>%s</boolean></value></member>\n"
 	"<member><name>Deleted</name><value><boolean>%s</boolean></value></member>\n"
 	"<member><name>HealthDeleted</name><value><boolean>%s</boolean></value></member>\n"
@@ -1296,6 +1297,7 @@ void NzbInfoXmlCommand::AppendNZBInfoFields(NZBInfo* pNZBInfo)
 	"\"Health\" : %i,\n"
 	"\"CriticalHealth\" : %i,\n"
 	"\"DupeKey\" : \"%s\",\n"
+	"\"DupeScore\" : %i,\n"
 	"\"Dupe\" : %s,\n"
 	"\"Deleted\" : %s,\n"
 	"\"HealthDeleted\" : %s,\n"
@@ -1377,7 +1379,7 @@ void NzbInfoXmlCommand::AppendNZBInfoFields(NZBInfo* pNZBInfo)
 			 iFileSizeLo, iFileSizeHi, iFileSizeMB, pNZBInfo->GetFileCount(),
 			 pNZBInfo->GetTotalArticles(), pNZBInfo->GetSuccessArticles(), pNZBInfo->GetFailedArticles(),
 			 pNZBInfo->CalcHealth(), pNZBInfo->CalcCriticalHealth(),
-			 xmlDupeKey, BoolToStr(pNZBInfo->GetDupe()),
+			 xmlDupeKey, pNZBInfo->GetDupeScore(), BoolToStr(pNZBInfo->GetDupe()),
 			 BoolToStr(pNZBInfo->GetDeleted()), BoolToStr(pNZBInfo->GetHealthDeleted()));
 	
 	free(xmlNZBNicename);
@@ -2570,6 +2572,8 @@ void ViewFeedXmlCommand::Execute()
 		"<member><name>Match</name><value><string>%s</string></value></member>\n"
 		"<member><name>Rule</name><value><i4>%i</i4></value></member>\n"
 		"<member><name>DupeKey</name><value><string>%s</string></value></member>\n"
+		"<member><name>DupeScore</name><value><i4>%i</i4></value></member>\n"
+		"<member><name>NoDupeCheck</name><value><boolean>%s</boolean></value></member>\n"
 		"<member><name>Status</name><value><string>%s</string></value></member>\n"
 		"</struct></value>\n";
 
@@ -2589,6 +2593,8 @@ void ViewFeedXmlCommand::Execute()
 		"\"Match\" : \"%s\",\n"
 		"\"Rule\" : %i,\n"
 		"\"DupeKey\" : \"%s\",\n"
+		"\"DupeScore\" : %i,\n"
+		"\"NoDupeCheck\" : %s,\n"
 		"\"Status\" : \"%s\"\n"
 		"}";
 
@@ -2622,7 +2628,8 @@ void ViewFeedXmlCommand::Execute()
 				xmltitle, xmlfilename, xmlurl, iSizeLo, iSizeHi, iSizeMB, xmlcategory, xmladdcategory,
 				BoolToStr(pFeedItemInfo->GetPauseNzb()), pFeedItemInfo->GetPriority(), pFeedItemInfo->GetTime(),
 				szMatchStatusType[pFeedItemInfo->GetMatchStatus()], pFeedItemInfo->GetMatchRule(),
-				xmldupekey, szStatusType[pFeedItemInfo->GetStatus()]);
+				xmldupekey, pFeedItemInfo->GetDupeScore(), BoolToStr(pFeedItemInfo->GetNoDupeCheck()),
+				szStatusType[pFeedItemInfo->GetStatus()]);
 			szItemBuf[iItemBufSize-1] = '\0';
 
 			free(xmltitle);

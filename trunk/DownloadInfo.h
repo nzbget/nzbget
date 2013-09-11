@@ -814,6 +814,8 @@ private:
 	EMatchStatus		m_eMatchStatus;
 	int					m_iMatchRule;
 	char*				m_szDupeKey;
+	int					m_iDupeScore;
+	bool				m_bNoDupeCheck;
 
 public:
 						FeedItemInfo();
@@ -854,7 +856,14 @@ public:
 	void				SetMatchStatus(EMatchStatus eMatchStatus) { m_eMatchStatus = eMatchStatus; }
 	int					GetMatchRule() { return m_iMatchRule; }
 	void				SetMatchRule(int iMatchRule) { m_iMatchRule = iMatchRule; }
-	const char*			GetDupeKey();
+	const char*			GetDupeKey() { return m_szDupeKey; }
+	void				SetDupeKey(const char* szDupeKey);
+	void				AppendDupeKey(const char* szExtraDupeKey);
+	void				BuildDupeKey();
+	int					GetDupeScore() { return m_iDupeScore; }
+	void				SetDupeScore(int iDupeScore) { m_iDupeScore = iDupeScore; }
+	bool				GetNoDupeCheck() { return m_bNoDupeCheck; }
+	void				SetNoDupeCheck(bool bNoDupeCheck) { m_bNoDupeCheck = bNoDupeCheck; }
 };
 
 typedef std::deque<FeedItemInfo*>	FeedItemInfosBase;

@@ -1372,22 +1372,25 @@
 
 		<h4>Options</h4>
 		<p>
-		<em>Options</em> allow to set category, priority and a flag to add nzb-file in paused state.
+		<em>Options</em> allow to set properties on nzb-file. It's a comma-separated list of property names with their values.
 		</p>
 		<p>
-		Definition of options:
+		Definition of an option:
 		</p>
 		<p><strong>
-		[category,] [priority,] [paused|unpaused]
+		name:value
 		</strong></p>
 
 		<p>
+		Options can be defined using long option names or short names:
 		<table class="table table-bordered">
 		<tbody>
-		<tr><td>category</td><td>category name which must not be "paused", "unpaused" and must not start with a digit or plus/minus;</td></tr>
-		<tr><td>priority</td><td>signed integer number;</td></tr>
-		<tr><td>paused</td><td>add nzb in paused state;</td></tr>
-		<tr><td>unpaused</td><td>add nzb in unpaused state.</td></tr>
+		<tr><td width="110px">category (cat, c)</td><td>set category name, value is a string;</td></tr>
+		<tr><td>pause (p)</td><td>add nzb in paused or unpaused state, possible values are: "yes", "y", "no", "n";</td></tr>
+		<tr><td>priority (pr, r)</td><td>option value is a signed integer number;</td></tr>
+		<tr><td>dupescore (ds, s)</td><td>set duplicate score, value is a signed integer number;</td></tr>
+		<tr><td>dupekey (dk, k)</td><td>add to duplicate key, value is a string;</td></tr>
+		<tr><td>nodupe (nd, n)</td><td>disable duplicate check for the item, possible values are: "yes", "y", "no", "n".</td></tr>
 		</tbody>
 		</table>
 		</p>
@@ -1494,7 +1497,7 @@
 		<li>*my?show* WEB-DL size:&lt;1.8GB age:&gt;2h</li>
 		<li>R: size:&gt;9GB</li>
 		<li>Q: HDTV</li>
-		<li>A(big movies,50,paused): size:&gt;8GB</>
+		<li>A(category:big movies, priority:50, pause:yes): size:&gt;8GB</>
 		</ul>
 		
 		<p><span class="label label-warning">NOTE:</span>

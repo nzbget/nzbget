@@ -447,6 +447,7 @@ void PrePostProcessor::DupeCompleted(DownloadQueue* pDownloadQueue, NZBInfo* pNZ
 
 	IDList groupIDList;
 	std::set<NZBInfo*> groupNZBs;
+	FileInfo* pDupeFileInfo = NULL;
 
 	for (FileQueue::iterator it = pDownloadQueue->GetFileQueue()->begin(); it != pDownloadQueue->GetFileQueue()->end(); it++)
 	{
@@ -457,10 +458,11 @@ void PrePostProcessor::DupeCompleted(DownloadQueue* pDownloadQueue, NZBInfo* pNZ
 		{
 			if (bFailure)
 			{
-				info("Unpausing duplicate %s", pFileInfo->GetNZBInfo()->GetName());
-				g_pQueueCoordinator->GetQueueEditor()->LockedEditEntry(pDownloadQueue, pFileInfo->GetID(), false, QueueEditor::eaGroupResume, 0, NULL);
-				g_pQueueCoordinator->GetQueueEditor()->LockedEditEntry(pDownloadQueue, pFileInfo->GetID(), false, QueueEditor::eaGroupPauseExtraPars, 0, NULL);
-				break;
+				// find nzb with highest DupeScore
+				if (!pDupeFileInfo || pFileInfo->GetNZBInfo()->GetDupeScore() > pDupeFileInfo->GetNZBInfo()->GetDupeScore())
+				{
+					pDupeFileInfo = pFileInfo;
+				}
 			}
 			else if (groupNZBs.find(pFileInfo->GetNZBInfo()) == groupNZBs.end())
 			{
@@ -468,6 +470,13 @@ void PrePostProcessor::DupeCompleted(DownloadQueue* pDownloadQueue, NZBInfo* pNZ
 				groupNZBs.insert(pFileInfo->GetNZBInfo());
 			}
 		}
+	}
+
+	if (bFailure && pDupeFileInfo)
+	{
+		info("Unpausing duplicate %s", pDupeFileInfo->GetNZBInfo()->GetName());
+		g_pQueueCoordinator->GetQueueEditor()->LockedEditEntry(pDownloadQueue, pDupeFileInfo->GetID(), false, QueueEditor::eaGroupResume, 0, NULL);
+		g_pQueueCoordinator->GetQueueEditor()->LockedEditEntry(pDownloadQueue, pDupeFileInfo->GetID(), false, QueueEditor::eaGroupPauseExtraPars, 0, NULL);
 	}
 
 	if (!bFailure && !groupIDList.empty())
@@ -500,7 +509,8 @@ void PrePostProcessor::CheckDupeFound(DownloadQueue* pDownloadQueue, NZBInfo* pN
 				(pHistoryInfo->GetNZBInfo()->GetParStatus() == NZBInfo::psSkipped &&
 				pHistoryInfo->GetNZBInfo()->GetUnpackStatus() == NZBInfo::usSkipped &&
 				pHistoryInfo->GetNZBInfo()->CalcHealth() < pHistoryInfo->GetNZBInfo()->CalcCriticalHealth());
-			if (!bFailure  && !pHistoryInfo->GetNZBInfo()->GetNoDupeCheck())
+			if (!bFailure && !pHistoryInfo->GetNZBInfo()->GetNoDupeCheck() &&
+				pNZBInfo->GetDupeScore() <= pHistoryInfo->GetNZBInfo()->GetDupeScore())
 			{
 				if (!strcmp(pNZBInfo->GetName(), pHistoryInfo->GetNZBInfo()->GetName()))
 				{
@@ -508,7 +518,7 @@ void PrePostProcessor::CheckDupeFound(DownloadQueue* pDownloadQueue, NZBInfo* pN
 				}
 				else
 				{
-					warn("Skipping duplicate %s, found in history as %s with success status",
+					warn("Skipping duplicate %s, found in history %s with success status",
 						pNZBInfo->GetName(), pHistoryInfo->GetNZBInfo()->GetName());
 				}
 				pNZBInfo->SetDeleted(true); // Flag saying QueueCoordinator to skip nzb-file
@@ -528,43 +538,61 @@ void PrePostProcessor::CheckDupeAdded(DownloadQueue* pDownloadQueue, NZBInfo* pN
 	debug("Checking duplicates for %s", pNZBInfo->GetName());
 
 	bool bHasDupeKey = !Util::EmptyStr(pNZBInfo->GetDupeKey());
+	bool bHigherScore = true;
 	NZBInfo* pDupeNZBInfo = NULL;
-	std::set<NZBInfo*> checkedNZBs;
 
-	// check download queue
-	for (FileQueue::iterator it = pDownloadQueue->GetFileQueue()->begin(); it != pDownloadQueue->GetFileQueue()->end(); it++)
-	{
-		FileInfo* pFileInfo = *it;
-		if (pFileInfo->GetNZBInfo() != pNZBInfo &&
-			checkedNZBs.find(pFileInfo->GetNZBInfo()) == checkedNZBs.end() &&
-			!pFileInfo->GetNZBInfo()->GetNoDupeCheck() &&
-			(!strcmp(pFileInfo->GetNZBInfo()->GetName(), pNZBInfo->GetName()) ||
-			 (bHasDupeKey && !strcmp(pFileInfo->GetNZBInfo()->GetDupeKey(), pNZBInfo->GetDupeKey()))))
-		{
-			pDupeNZBInfo = pFileInfo->GetNZBInfo();
-			break;
-		}
-		checkedNZBs.insert(pFileInfo->GetNZBInfo());
-	}
-	
-	// check post queue
+	// find all duplicates in post queue
+	std::set<NZBInfo*> postDupes;
+
 	for (PostQueue::iterator it = pDownloadQueue->GetPostQueue()->begin(); it != pDownloadQueue->GetPostQueue()->end(); it++)
 	{
 		PostInfo* pPostInfo = *it;
 		if (!pPostInfo->GetNZBInfo()->GetNoDupeCheck() &&
-			!strcmp(pPostInfo->GetNZBInfo()->GetName(), pNZBInfo->GetName()) ||
-			(bHasDupeKey && !strcmp(pPostInfo->GetNZBInfo()->GetDupeKey(), pNZBInfo->GetDupeKey())))
+			(!strcmp(pPostInfo->GetNZBInfo()->GetName(), pNZBInfo->GetName()) ||
+			 (bHasDupeKey && !strcmp(pPostInfo->GetNZBInfo()->GetDupeKey(), pNZBInfo->GetDupeKey()))))
 		{
-			pDupeNZBInfo = pPostInfo->GetNZBInfo();
-			break;
+			postDupes.insert(pPostInfo->GetNZBInfo());
+			if (!pDupeNZBInfo)
+			{
+				pDupeNZBInfo = pPostInfo->GetNZBInfo();
+			}
+			bHigherScore = bHigherScore && pPostInfo->GetNZBInfo()->GetDupeScore() < pNZBInfo->GetDupeScore();
 		}
 	}
-	
+
+	// find all duplicates in download queue
+	GroupQueue groupQueue;
+	pDownloadQueue->BuildGroups(&groupQueue);
+	std::list<GroupInfo*> queueDupes;
+	GroupInfo* pNewGroupInfo = NULL;
+
+	for (GroupQueue::iterator it = groupQueue.begin(); it != groupQueue.end(); it++)
+	{
+		GroupInfo* pGroupInfo = *it;
+		NZBInfo* pGroupNZBInfo = pGroupInfo->GetNZBInfo();
+		if (pGroupNZBInfo != pNZBInfo && !pGroupNZBInfo->GetNoDupeCheck() &&
+			(!strcmp(pGroupNZBInfo->GetName(), pNZBInfo->GetName()) ||
+			 (bHasDupeKey && !strcmp(pGroupNZBInfo->GetDupeKey(), pNZBInfo->GetDupeKey()))))
+		{
+			queueDupes.push_back(pGroupInfo);
+			if (!pDupeNZBInfo)
+			{
+				pDupeNZBInfo = pGroupNZBInfo;
+			}
+			bHigherScore = bHigherScore && pGroupNZBInfo->GetDupeScore() < pNZBInfo->GetDupeScore();
+		}
+		if (pGroupNZBInfo == pNZBInfo)
+		{
+			pNewGroupInfo = pGroupInfo;
+		}
+	}
+
 	if (pDupeNZBInfo)
 	{
 		info("Marking collection %s as duplicate to %s", pNZBInfo->GetName(), pDupeNZBInfo->GetName());
 		pNZBInfo->SetDupe(true);
 		pDupeNZBInfo->SetDupe(true);
+
 		if (!bHasDupeKey)
 		{
 			if (!Util::EmptyStr(pDupeNZBInfo->GetDupeKey()))
@@ -581,8 +609,30 @@ void PrePostProcessor::CheckDupeAdded(DownloadQueue* pDownloadQueue, NZBInfo* pN
 				pDupeNZBInfo->SetDupeKey(szDupeKey);
 			}
 		}
-		int iGroupID = FindGroupID(pDownloadQueue, pNZBInfo);
-		g_pQueueCoordinator->GetQueueEditor()->LockedEditEntry(pDownloadQueue, iGroupID, false, QueueEditor::eaGroupPause, 0, NULL);
+
+		// pause all duplicates with lower DupeScore, which are not in post-processing
+		for (std::list<GroupInfo*>::iterator it = queueDupes.begin(); it != queueDupes.end(); it++)
+		{
+			GroupInfo* pGroupInfo = *it;
+			NZBInfo* pDupeNZB = pGroupInfo->GetNZBInfo();
+			if (pDupeNZB->GetDupeScore() < pNZBInfo->GetDupeScore() &&
+				postDupes.find(pDupeNZB) == postDupes.end() &&
+				pGroupInfo->GetPausedFileCount() < pGroupInfo->GetRemainingFileCount())
+			{
+				info("Pausing collection %s with lower duplicate score", pDupeNZB->GetName());
+				g_pQueueCoordinator->GetQueueEditor()->LockedEditEntry(pDownloadQueue, pGroupInfo->GetLastID(), false, QueueEditor::eaGroupPause, 0, NULL);
+			}
+		}
+
+		if (!bHigherScore)
+		{
+			g_pQueueCoordinator->GetQueueEditor()->LockedEditEntry(pDownloadQueue, pNewGroupInfo->GetLastID(), false, QueueEditor::eaGroupPause, 0, NULL);
+		}
+	}
+
+	for (GroupQueue::iterator it = groupQueue.begin(); it != groupQueue.end(); it++)
+	{
+		delete *it;
 	}
 }
 
