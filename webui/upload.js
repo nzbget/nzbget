@@ -222,6 +222,8 @@ var Upload = (new function($)
 		$('#AddDialog_FilesHelp').show();
 		$('#AddDialog_URLLabel img').hide();
 		$('#AddDialog_URLLabel i').hide();
+		$('#AddDialog_Paused').prop('checked', false);
+		$('#AddDialog_NoDupeCheck').prop('checked', false);
 		enableAllButtons();
 
 		var v = $('#AddDialog_Priority');
@@ -331,7 +333,9 @@ var Upload = (new function($)
 			var category = $('#AddDialog_Category').val();
 			var priority = parseInt($('#AddDialog_Priority').val());
 			var filename = file.name.replace(/\.queued$/g, '');
-			RPC.call('append', [filename, category, priority, false, base64str, false, '', 0, false], fileCompleted, fileFailure);
+			var AddPaused = $('#AddDialog_Paused').is(':checked');
+			var NoDupeCheck = $('#AddDialog_NoDupeCheck').is(':checked');
+			RPC.call('append', [filename, category, priority, false, base64str, AddPaused, '', 0, NoDupeCheck], fileCompleted, fileFailure);
 		};
 
 		if (reader.readAsBinaryString)
@@ -372,8 +376,10 @@ var Upload = (new function($)
 
 		var category = $('#AddDialog_Category').val();
 		var priority = parseInt($('#AddDialog_Priority').val());
+		var AddPaused = $('#AddDialog_Paused').is(':checked');
+		var NoDupeCheck = $('#AddDialog_NoDupeCheck').is(':checked');
 
-		RPC.call('appendurl', ['', category, priority, false, url, false, '', 0, false], urlCompleted, urlFailure);
+		RPC.call('appendurl', ['', category, priority, false, url, AddPaused, '', 0, NoDupeCheck], urlCompleted, urlFailure);
 	}
 
 	function urlCompleted(result)
