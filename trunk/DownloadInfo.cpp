@@ -307,6 +307,7 @@ NZBInfo::NZBInfo()
 	m_iDupeScore = 0;
 	m_bDupe = false;
 	m_bNoDupeCheck = false;
+	m_iContentHash = 0;
 	m_Owner = NULL;
 	m_Messages.clear();
 	m_iIDMessageGen = 0;
@@ -856,6 +857,22 @@ GroupInfo::~GroupInfo()
 	}
 }
 
+
+GroupQueue::~GroupQueue()
+{
+	Clear();
+}
+
+void GroupQueue::Clear()
+{
+	for (iterator it = begin(); it != end(); it++)
+	{
+		delete *it;
+	}
+	clear();
+}
+
+
 PostInfo::PostInfo()
 {
 	debug("Creating PostInfo");
@@ -1197,7 +1214,7 @@ FeedInfo::FeedInfo(int iID, const char* szName, const char* szUrl, int iInterval
 	m_szName = strdup(szName ? szName : "");
 	m_szUrl = strdup(szUrl ? szUrl : "");
 	m_szFilter = strdup(szFilter ? szFilter : "");
-	m_iFilterHash = Util::HashBJ96(szFilter, strlen(szFilter));
+	m_iFilterHash = Util::HashBJ96(szFilter, strlen(szFilter), 0);
 	m_szCategory = strdup(szCategory ? szCategory : "");
 	m_iInterval = iInterval;
 	m_bPauseNzb = bPauseNzb;

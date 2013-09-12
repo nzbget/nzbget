@@ -1550,12 +1550,6 @@ void ListGroupsXmlCommand::Execute()
 	free(szItemBuf);
 
 	AppendResponse(IsJson() ? "\n]" : "</data></array>\n");
-
-	for (GroupQueue::iterator it = groupQueue.begin(); it != groupQueue.end(); it++)
-	{
-		delete *it;
-	}
-	groupQueue.clear();
 }
 
 typedef struct 

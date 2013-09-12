@@ -487,8 +487,7 @@ void PrePostProcessor::DupeCompleted(DownloadQueue* pDownloadQueue, NZBInfo* pNZ
 }
 
 /**
-  Check if the title was already downloaded.
-  If history contains the title with status "success" the duplicate is skipped (not added to queue);
+  Check if the title was already downloaded or is already queued.
 */
 void PrePostProcessor::CheckDupeFound(DownloadQueue* pDownloadQueue, NZBInfo* pNZBInfo)
 {
@@ -496,34 +495,91 @@ void PrePostProcessor::CheckDupeFound(DownloadQueue* pDownloadQueue, NZBInfo* pN
 
 	bool bHasDupeKey = !Util::EmptyStr(pNZBInfo->GetDupeKey());
 	
+	// find duplicates in download queue having exactly same content
+	GroupQueue groupQueue;
+	pDownloadQueue->BuildGroups(&groupQueue);
+
+	for (GroupQueue::iterator it = groupQueue.begin(); it != groupQueue.end(); it++)
+	{
+		GroupInfo* pGroupInfo = *it;
+		NZBInfo* pGroupNZBInfo = pGroupInfo->GetNZBInfo();
+		bool bSameContent = pNZBInfo->GetContentHash() > 0 &&
+			pNZBInfo->GetSize() == pGroupNZBInfo->GetSize() &&
+			pNZBInfo->GetContentHash() == pGroupNZBInfo->GetContentHash();
+		if (pGroupNZBInfo != pNZBInfo && bSameContent)
+		{
+			if (!strcmp(pNZBInfo->GetName(), pGroupNZBInfo->GetName()))
+			{
+				warn("Skipping duplicate %s, already queued", pNZBInfo->GetName());
+			}
+			else
+			{
+				warn("Skipping duplicate %s, already queued as %s",
+					pNZBInfo->GetName(), pGroupNZBInfo->GetName());
+			}
+			pNZBInfo->SetDeleted(true); // Flag saying QueueCoordinator to skip nzb-file
+			return;
+		}
+	}
+
+	// find duplicates in post queue having exactly same content
+	for (PostQueue::iterator it = pDownloadQueue->GetPostQueue()->begin(); it != pDownloadQueue->GetPostQueue()->end(); it++)
+	{
+		PostInfo* pPostInfo = *it;
+		bool bSameContent = pNZBInfo->GetContentHash() > 0 &&
+			pNZBInfo->GetSize() == pPostInfo->GetNZBInfo()->GetSize() &&
+			pNZBInfo->GetContentHash() == pPostInfo->GetNZBInfo()->GetContentHash();
+		if (bSameContent)
+		{
+			if (!strcmp(pNZBInfo->GetName(), pPostInfo->GetNZBInfo()->GetName()))
+			{
+				warn("Skipping duplicate %s, already queued", pNZBInfo->GetName());
+			}
+			else
+			{
+				warn("Skipping duplicate %s, already queued as %s",
+					pNZBInfo->GetName(), pPostInfo->GetNZBInfo()->GetName());
+			}
+			pNZBInfo->SetDeleted(true); // Flag saying QueueCoordinator to skip nzb-file
+			return;
+		}
+	}
+
+	// find duplicates in history
 	for (HistoryList::iterator it = pDownloadQueue->GetHistoryList()->begin(); it != pDownloadQueue->GetHistoryList()->end(); it++)
 	{
 		HistoryInfo* pHistoryInfo = *it;
+		bool bSkip = false;
 		if (pHistoryInfo->GetKind() == HistoryInfo::hkNZBInfo &&
 			(!strcmp(pHistoryInfo->GetNZBInfo()->GetName(), pNZBInfo->GetName()) ||
-			(bHasDupeKey && !strcmp(pHistoryInfo->GetNZBInfo()->GetDupeKey(), pNZBInfo->GetDupeKey()))))
+			 (bHasDupeKey && !strcmp(pHistoryInfo->GetNZBInfo()->GetDupeKey(), pNZBInfo->GetDupeKey()))))
 		{
 			bool bFailure = pHistoryInfo->GetNZBInfo()->GetDeleted() ||
-				pHistoryInfo->GetNZBInfo()->GetParStatus() == NZBInfo::psFailure ||
-				pHistoryInfo->GetNZBInfo()->GetUnpackStatus() == NZBInfo::usFailure ||
-				(pHistoryInfo->GetNZBInfo()->GetParStatus() == NZBInfo::psSkipped &&
-				pHistoryInfo->GetNZBInfo()->GetUnpackStatus() == NZBInfo::usSkipped &&
-				pHistoryInfo->GetNZBInfo()->CalcHealth() < pHistoryInfo->GetNZBInfo()->CalcCriticalHealth());
-			if (!bFailure && !pHistoryInfo->GetNZBInfo()->GetNoDupeCheck() &&
-				pNZBInfo->GetDupeScore() <= pHistoryInfo->GetNZBInfo()->GetDupeScore())
+			pHistoryInfo->GetNZBInfo()->GetParStatus() == NZBInfo::psFailure ||
+			pHistoryInfo->GetNZBInfo()->GetUnpackStatus() == NZBInfo::usFailure ||
+			(pHistoryInfo->GetNZBInfo()->GetParStatus() == NZBInfo::psSkipped &&
+			 pHistoryInfo->GetNZBInfo()->GetUnpackStatus() == NZBInfo::usSkipped &&
+			 pHistoryInfo->GetNZBInfo()->CalcHealth() < pHistoryInfo->GetNZBInfo()->CalcCriticalHealth());
+			bSkip = (!bFailure && pNZBInfo->GetDupeScore() <= pHistoryInfo->GetNZBInfo()->GetDupeScore());
+		}
+		bool bSameContent = pNZBInfo->GetContentHash() > 0 &&
+		pNZBInfo->GetSize() == pHistoryInfo->GetNZBInfo()->GetSize() &&
+		pNZBInfo->GetContentHash() == pHistoryInfo->GetNZBInfo()->GetContentHash();
+		if (bSkip || bSameContent)
+		{
+			if (!strcmp(pNZBInfo->GetName(), pHistoryInfo->GetNZBInfo()->GetName()))
 			{
-				if (!strcmp(pNZBInfo->GetName(), pHistoryInfo->GetNZBInfo()->GetName()))
-				{
-					warn("Skipping duplicate %s, found in history with success status", pNZBInfo->GetName());
-				}
-				else
-				{
-					warn("Skipping duplicate %s, found in history %s with success status",
-						pNZBInfo->GetName(), pHistoryInfo->GetNZBInfo()->GetName());
-				}
-				pNZBInfo->SetDeleted(true); // Flag saying QueueCoordinator to skip nzb-file
-				return;
+				warn("Skipping duplicate %s, found in history with %s", pNZBInfo->GetName(),
+					 bSameContent ? "exactly same content" : "success status");
 			}
+			else
+			{
+				warn("Skipping duplicate %s, found in history %s with %s",
+					 pNZBInfo->GetName(), pHistoryInfo->GetNZBInfo()->GetName(),
+					 bSameContent ? "exactly same content" : "success status");
+			}
+			pNZBInfo->SetDeleted(true); // Flag saying QueueCoordinator to skip nzb-file
+			return;
 		}
 	}
 }
@@ -547,9 +603,8 @@ void PrePostProcessor::CheckDupeAdded(DownloadQueue* pDownloadQueue, NZBInfo* pN
 	for (PostQueue::iterator it = pDownloadQueue->GetPostQueue()->begin(); it != pDownloadQueue->GetPostQueue()->end(); it++)
 	{
 		PostInfo* pPostInfo = *it;
-		if (!pPostInfo->GetNZBInfo()->GetNoDupeCheck() &&
-			(!strcmp(pPostInfo->GetNZBInfo()->GetName(), pNZBInfo->GetName()) ||
-			 (bHasDupeKey && !strcmp(pPostInfo->GetNZBInfo()->GetDupeKey(), pNZBInfo->GetDupeKey()))))
+		if (!strcmp(pPostInfo->GetNZBInfo()->GetName(), pNZBInfo->GetName()) ||
+			 (bHasDupeKey && !strcmp(pPostInfo->GetNZBInfo()->GetDupeKey(), pNZBInfo->GetDupeKey())))
 		{
 			postDupes.insert(pPostInfo->GetNZBInfo());
 			if (!pDupeNZBInfo)
@@ -570,7 +625,7 @@ void PrePostProcessor::CheckDupeAdded(DownloadQueue* pDownloadQueue, NZBInfo* pN
 	{
 		GroupInfo* pGroupInfo = *it;
 		NZBInfo* pGroupNZBInfo = pGroupInfo->GetNZBInfo();
-		if (pGroupNZBInfo != pNZBInfo && !pGroupNZBInfo->GetNoDupeCheck() &&
+		if (pGroupNZBInfo != pNZBInfo &&
 			(!strcmp(pGroupNZBInfo->GetName(), pNZBInfo->GetName()) ||
 			 (bHasDupeKey && !strcmp(pGroupNZBInfo->GetDupeKey(), pNZBInfo->GetDupeKey()))))
 		{
@@ -628,11 +683,6 @@ void PrePostProcessor::CheckDupeAdded(DownloadQueue* pDownloadQueue, NZBInfo* pN
 		{
 			g_pQueueCoordinator->GetQueueEditor()->LockedEditEntry(pDownloadQueue, pNewGroupInfo->GetLastID(), false, QueueEditor::eaGroupPause, 0, NULL);
 		}
-	}
-
-	for (GroupQueue::iterator it = groupQueue.begin(); it != groupQueue.end(); it++)
-	{
-		delete *it;
 	}
 }
 
