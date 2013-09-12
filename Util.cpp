@@ -1071,9 +1071,9 @@ ub4 hash(register ub1 *k, register ub4  length, register ub4  initval)
 	return c;
 }
 
-unsigned int Util::HashBJ96(const char* szBuffer, int iBufSize)
+unsigned int Util::HashBJ96(const char* szBuffer, int iBufSize, unsigned int iInitValue)
 {
-	return (unsigned int)hash((ub1*)szBuffer, (ub4)iBufSize, 0);
+	return (unsigned int)hash((ub1*)szBuffer, (ub4)iBufSize, (ub4)iInitValue);
 }
 
 #ifdef WIN32

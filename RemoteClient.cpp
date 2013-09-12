@@ -551,8 +551,6 @@ bool RemoteClient::RequestServerList(bool bFiles, bool bGroups, const char* szPa
 						szPaused, szThreads, szCategory, szParameters);
 					iMatches++;
 				}
-
-				delete pGroupInfo;
 			}
 
 			for (FileQueue::iterator it = cRemoteQueue.GetFileQueue()->begin(); it != cRemoteQueue.GetFileQueue()->end(); it++)

@@ -133,7 +133,7 @@ public:
 	static bool EmptyStr(const char* szStr) { return !szStr || !*szStr; }
 
 	/* Calculate Hash using Bob Jenkins (1996) algorithm */
-	static unsigned int HashBJ96(const char* szBuffer, int iBufSize);
+	static unsigned int HashBJ96(const char* szBuffer, int iBufSize, unsigned int iInitValue);
 
 #ifdef WIN32
 	static bool RegReadStr(HKEY hKey, const char* szKeyName, const char* szValueName, char* szBuffer, int* iBufLen);

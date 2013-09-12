@@ -208,7 +208,15 @@ public:
 	int					GetActiveDownloads() { return m_iActiveDownloads; }
 };
 
-typedef std::deque<GroupInfo*> GroupQueue;
+typedef std::deque<GroupInfo*> GroupQueueBase;
+
+class GroupQueue : public GroupQueueBase
+{
+public:
+						~GroupQueue();
+	void				Clear();
+};
+
 
 class NZBParameter
 {
@@ -391,6 +399,7 @@ private:
 	int					m_iDupeScore;
 	bool				m_bNoDupeCheck;
 	bool				m_bDupe;
+	unsigned int		m_iContentHash;
 	NZBInfoList*		m_Owner;
 	NZBParameterList	m_ppParameters;
 	ScriptStatusList	m_scriptStatuses;
@@ -496,6 +505,8 @@ public:
 	void				SetNoDupeCheck(bool bNoDupeCheck) { m_bNoDupeCheck = bNoDupeCheck; }
 	int					GetDupe() { return m_bDupe; }
 	void				SetDupe(bool bDupe) { m_bDupe = bDupe; }
+	unsigned int		GetContentHash() { return m_iContentHash; }
+	void				SetContentHash(unsigned int iContentHash) { m_iContentHash = iContentHash; }
 	void				AppendMessage(Message::EKind eKind, time_t tTime, const char* szText);
 	Messages*			LockMessages();
 	void				UnlockMessages();

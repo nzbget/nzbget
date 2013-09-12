@@ -540,6 +540,7 @@ bool NZBFile::ParseNZB(IUnknown* nzb)
 				pArticle->SetMessageID(szId);
 				pArticle->SetSize(lsize);
 				AddArticle(pFileInfo, pArticle);
+				m_pNZBInfo->SetContentHash(Util::HashBJ96(pArticle->GetMessageID(), strlen(pArticle->GetMessageID()), m_pNZBInfo->GetContentHash()));
 			}
 		}
 
@@ -680,6 +681,7 @@ void NZBFile::Parse_EndElement(const char *name)
 		char ID[2048];
 		snprintf(ID, 2048, "<%s>", m_szTagContent);
 		m_pArticle->SetMessageID(ID);
+		m_pNZBInfo->SetContentHash(Util::HashBJ96(m_pArticle->GetMessageID(), strlen(m_pArticle->GetMessageID()), m_pNZBInfo->GetContentHash()));
 		m_pArticle = NULL;
 	}
 	else if (!strcmp("meta", name) && m_bPassword)

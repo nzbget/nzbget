@@ -1128,11 +1128,7 @@ void NCursesFrontend::PrepareGroupQueue()
 
 void NCursesFrontend::ClearGroupQueue()
 {
-	for (GroupQueue::iterator it = m_groupQueue.begin(); it != m_groupQueue.end(); it++)
-	{
-		delete *it;
-	}
-	m_groupQueue.clear();
+	m_groupQueue.Clear();
 }
 
 bool NCursesFrontend::EditQueue(QueueEditor::EEditAction eAction, int iOffset)
