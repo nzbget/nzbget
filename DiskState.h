@@ -47,6 +47,8 @@ private:
 	bool				LoadUrlQueue(DownloadQueue* pDownloadQueue, FILE* infile, int iFormatVersion);
 	void				SaveUrlInfo(UrlInfo* pUrlInfo, FILE* outfile);
 	bool				LoadUrlInfo(UrlInfo* pUrlInfo, FILE* infile, int iFormatVersion);
+	void				SaveDupInfo(DupInfo* pDupInfo, FILE* outfile);
+	bool				LoadDupInfo(DupInfo* pDupInfo, FILE* infile, int iFormatVersion);
 	void				SaveHistory(DownloadQueue* pDownloadQueue, FILE* outfile);
 	bool				LoadHistory(DownloadQueue* pDownloadQueue, FILE* infile, int iFormatVersion);
 	int					FindNZBInfoIndex(DownloadQueue* pDownloadQueue, NZBInfo* pNZBInfo);

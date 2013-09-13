@@ -138,7 +138,7 @@ bool DiskState::SaveDownloadQueue(DownloadQueue* pDownloadQueue)
 		return false;
 	}
 
-	fprintf(outfile, "%s%i\n", FORMATVERSION_SIGNATURE, 32);
+	fprintf(outfile, "%s%i\n", FORMATVERSION_SIGNATURE, 33);
 
 	// save nzb-infos
 	SaveNZBList(pDownloadQueue, outfile);
@@ -192,7 +192,7 @@ bool DiskState::LoadDownloadQueue(DownloadQueue* pDownloadQueue)
 	char FileSignatur[128];
 	fgets(FileSignatur, sizeof(FileSignatur), infile);
 	int iFormatVersion = ParseFormatVersion(FileSignatur);
-	if (iFormatVersion < 3 || iFormatVersion > 32)
+	if (iFormatVersion < 3 || iFormatVersion > 33)
 	{
 		error("Could not load diskstate due to file version mismatch");
 		fclose(infile);
@@ -1216,28 +1216,28 @@ bool DiskState::LoadUrlInfo(UrlInfo* pUrlInfo, FILE* infile, int iFormatVersion)
 
 	int iStatus, iPriority;
 	if (fscanf(infile, "%i,%i\n", &iStatus, &iPriority) != 2) goto error;
-	if (pUrlInfo) pUrlInfo->SetStatus((UrlInfo::EStatus)iStatus);
-	if (pUrlInfo) pUrlInfo->SetPriority(iPriority);
+	pUrlInfo->SetStatus((UrlInfo::EStatus)iStatus);
+	pUrlInfo->SetPriority(iPriority);
 
 	if (iFormatVersion >= 16)
 	{
 		int iAddTop, iAddPaused;
 		if (fscanf(infile, "%i,%i\n", &iAddTop, &iAddPaused) != 2) goto error;
-		if (pUrlInfo) pUrlInfo->SetAddTop(iAddTop);
-		if (pUrlInfo) pUrlInfo->SetAddPaused(iAddPaused);
+		pUrlInfo->SetAddTop(iAddTop);
+		pUrlInfo->SetAddPaused(iAddPaused);
 	}
 
 	if (!fgets(buf, sizeof(buf), infile)) goto error;
 	if (buf[0] != 0) buf[strlen(buf)-1] = 0; // remove traling '\n'
-	if (pUrlInfo) pUrlInfo->SetURL(buf);
+	pUrlInfo->SetURL(buf);
 
 	if (!fgets(buf, sizeof(buf), infile)) goto error;
 	if (buf[0] != 0) buf[strlen(buf)-1] = 0; // remove traling '\n'
-	if (pUrlInfo) pUrlInfo->SetNZBFilename(buf);
+	pUrlInfo->SetNZBFilename(buf);
 
 	if (!fgets(buf, sizeof(buf), infile)) goto error;
 	if (buf[0] != 0) buf[strlen(buf)-1] = 0; // remove traling '\n'
-	if (pUrlInfo) pUrlInfo->SetCategory(buf);
+	pUrlInfo->SetCategory(buf);
 
 	if (iFormatVersion >= 31)
 	{
@@ -1257,6 +1257,43 @@ error:
 	return false;
 }
 
+void DiskState::SaveDupInfo(DupInfo* pDupInfo, FILE* outfile)
+{
+	unsigned long High, Low;
+	Util::SplitInt64(pDupInfo->GetSize(), &High, &Low);
+	fprintf(outfile, "%i,%lu,%lu,%u,%i\n", (int)pDupInfo->GetStatus(), High, Low, pDupInfo->GetContentHash(), pDupInfo->GetDupeScore());
+	fprintf(outfile, "%s\n", pDupInfo->GetName());
+	fprintf(outfile, "%s\n", pDupInfo->GetDupeKey());
+}
+
+bool DiskState::LoadDupInfo(DupInfo* pDupInfo, FILE* infile, int iFormatVersion)
+{
+	char buf[1024];
+
+	int iStatus;
+	unsigned long High, Low;
+	unsigned int iContentHash;
+	int iDupeScore;
+	if (fscanf(infile, "%i,%lu,%lu,%u,%i\n", &iStatus, &High, &Low, &iContentHash, &iDupeScore) != 5) goto error;
+	pDupInfo->SetStatus((DupInfo::EStatus)iStatus);
+	pDupInfo->SetContentHash(iContentHash);
+	pDupInfo->SetSize(Util::JoinInt64(High, Low));
+	pDupInfo->SetDupeScore(iDupeScore);
+
+	if (!fgets(buf, sizeof(buf), infile)) goto error;
+	if (buf[0] != 0) buf[strlen(buf)-1] = 0; // remove traling '\n'
+	pDupInfo->SetName(buf);
+
+	if (!fgets(buf, sizeof(buf), infile)) goto error;
+	if (buf[0] != 0) buf[strlen(buf)-1] = 0; // remove traling '\n'
+	pDupInfo->SetDupeKey(buf);
+
+	return true;
+
+error:
+	return false;
+}
+
 void DiskState::SaveHistory(DownloadQueue* pDownloadQueue, FILE* outfile)
 {
 	debug("Saving history to disk");
@@ -1266,8 +1303,7 @@ void DiskState::SaveHistory(DownloadQueue* pDownloadQueue, FILE* outfile)
 	{
 		HistoryInfo* pHistoryInfo = *it;
 
-		fprintf(outfile, "%i\n", pHistoryInfo->GetID());
-		fprintf(outfile, "%i\n", (int)pHistoryInfo->GetKind());
+		fprintf(outfile, "%i,%i,%i\n", pHistoryInfo->GetID(), (int)pHistoryInfo->GetKind(), (int)pHistoryInfo->GetTime());
 
 		if (pHistoryInfo->GetKind() == HistoryInfo::hkNZBInfo)
 		{
@@ -1278,8 +1314,10 @@ void DiskState::SaveHistory(DownloadQueue* pDownloadQueue, FILE* outfile)
 		{
 			SaveUrlInfo(pHistoryInfo->GetUrlInfo(), outfile);
 		}
-
-		fprintf(outfile, "%i\n", (int)pHistoryInfo->GetTime());
+		else if (pHistoryInfo->GetKind() == HistoryInfo::hkDupInfo)
+		{
+			SaveDupInfo(pHistoryInfo->GetDupInfo(), outfile);
+		}
 	}
 }
 
@@ -1292,20 +1330,29 @@ bool DiskState::LoadHistory(DownloadQueue* pDownloadQueue, FILE* infile, int iFo
 	for (int i = 0; i < size; i++)
 	{
 		HistoryInfo* pHistoryInfo = NULL;
-		int iID = 0;
-
-		if (iFormatVersion >= 24)
-		{
-			if (fscanf(infile, "%i\n", &iID) != 1) goto error;
-		}
-
 		HistoryInfo::EKind eKind = HistoryInfo::hkNZBInfo;
-
-		if (iFormatVersion >= 15)
+		int iID = 0;
+		int iTime;
+	
+		if (iFormatVersion >= 33)
 		{
 			int iKind = 0;
-			if (fscanf(infile, "%i\n", &iKind) != 1) goto error;
+			if (fscanf(infile, "%i,%i,%i\n", &iID, &iKind, &iTime) != 3) goto error;
 			eKind = (HistoryInfo::EKind)iKind;
+		}
+		else
+		{
+			if (iFormatVersion >= 24)
+			{
+				if (fscanf(infile, "%i\n", &iID) != 1) goto error;
+			}
+
+			if (iFormatVersion >= 15)
+			{
+				int iKind = 0;
+				if (fscanf(infile, "%i\n", &iKind) != 1) goto error;
+				eKind = (HistoryInfo::EKind)iKind;
+			}
 		}
 
 		if (eKind == HistoryInfo::hkNZBInfo)
@@ -1327,14 +1374,23 @@ bool DiskState::LoadHistory(DownloadQueue* pDownloadQueue, FILE* infile, int iFo
 			if (!LoadUrlInfo(pUrlInfo, infile, iFormatVersion)) goto error;
 			pHistoryInfo = new HistoryInfo(pUrlInfo);
 		}
+		else if (eKind == HistoryInfo::hkDupInfo)
+		{
+			DupInfo* pDupInfo = new DupInfo();
+			if (!LoadDupInfo(pDupInfo, infile, iFormatVersion)) goto error;
+			pHistoryInfo = new HistoryInfo(pDupInfo);
+		}
 
 		if (iFormatVersion >= 24)
 		{
 			pHistoryInfo->SetID(iID);
 		}
 
-		int iTime;
-		if (fscanf(infile, "%i\n", &iTime) != 1) goto error;
+		if (iFormatVersion < 33)
+		{
+			if (fscanf(infile, "%i\n", &iTime) != 1) goto error;
+		}
+
 		pHistoryInfo->SetTime((time_t)iTime);
 
 		pDownloadQueue->GetHistoryList()->push_back(pHistoryInfo);

@@ -1961,6 +1961,8 @@ void ScanXmlCommand::Execute()
 	BuildBoolResponse(true);
 }
 
+// struct[] history(bool Dup)
+// Parameter "Dup" is optional (new in v12)
 void HistoryXmlCommand::Execute()
 {
 	AppendResponse(IsJson() ? "[\n" : "<array><data>\n");
@@ -2015,8 +2017,37 @@ void HistoryXmlCommand::Execute()
 		"\"Text\" : \"%s\"\n"
 		"}";
 
+	const char* XML_HISTORY_DUP_ITEM =
+		"<value><struct>\n"
+		"<member><name>ID</name><value><i4>%i</i4></value></member>\n"
+		"<member><name>Kind</name><value><string>%s</string></value></member>\n"
+		"<member><name>Name</name><value><string>%s</string></value></member>\n"
+		"<member><name>HistoryTime</name><value><i4>%i</i4></value></member>\n"
+		"<member><name>FileSizeLo</name><value><i4>%u</i4></value></member>\n"
+		"<member><name>FileSizeHi</name><value><i4>%u</i4></value></member>\n"
+		"<member><name>FileSizeMB</name><value><i4>%i</i4></value></member>\n"
+		"<member><name>DupeKey</name><value><string>%s</string></value></member>\n"
+		"<member><name>DupStatus</name><value><string>%s</string></value></member>\n"
+		"</struct></value>\n";
+
+	const char* JSON_HISTORY_DUP_ITEM =
+		"{\n"
+		"\"ID\" : %i,\n"
+		"\"Kind\" : \"%s\",\n"
+		"\"Name\" : \"%s\",\n"
+		"\"HistoryTime\" : %i,\n"
+		"\"FileSizeLo\" : %i,\n"
+		"\"FileSizeHi\" : %i,\n"
+		"\"FileSizeMB\" : %i,\n"
+		"\"DupeKey\" : \"%s\",\n"
+		"\"DupStatus\" : \"%s\",\n";
+
 	const char* szUrlStatusName[] = { "UNKNOWN", "UNKNOWN", "SUCCESS", "FAILURE", "UNKNOWN", "SCAN_SKIPPED", "SCAN_FAILURE" };
+	const char* szDupStatusName[] = { "UNKNOWN", "SUCCESS", "FAILURE", "DELETED" };
 	const char* szMessageType[] = { "INFO", "WARNING", "ERROR", "DEBUG", "DETAIL"};
+
+	bool bDup = false;
+	NextParamAsBool(&bDup);
 
 	DownloadQueue* pDownloadQueue = g_pQueueCoordinator->LockQueue();
 
@@ -2028,8 +2059,13 @@ void HistoryXmlCommand::Execute()
 	for (HistoryList::iterator it = pDownloadQueue->GetHistoryList()->begin(); it != pDownloadQueue->GetHistoryList()->end(); it++)
 	{
 		HistoryInfo* pHistoryInfo = *it;
-		NZBInfo* pNZBInfo = NULL;
 
+		if (pHistoryInfo->GetKind() == HistoryInfo::hkDupInfo && !bDup)
+		{
+			continue;
+		}
+
+		NZBInfo* pNZBInfo = NULL;
 		char szNicename[1024];
 		pHistoryInfo->GetName(szNicename, sizeof(szNicename));
 
@@ -2058,6 +2094,22 @@ void HistoryXmlCommand::Execute()
 			pUrlNZBInfo->SetCategory(pUrlInfo->GetCategory());
 			pUrlNZBInfo->SetFilename(pUrlInfo->GetNZBFilename());
 			pNZBInfo = pUrlNZBInfo;
+		}
+		else if (pHistoryInfo->GetKind() == HistoryInfo::hkDupInfo)
+		{
+			DupInfo* pDupInfo = pHistoryInfo->GetDupInfo();
+
+			unsigned long iFileSizeHi, iFileSizeLo, iFileSizeMB;
+			Util::SplitInt64(pDupInfo->GetSize(), &iFileSizeHi, &iFileSizeLo);
+			iFileSizeMB = (int)(pDupInfo->GetSize() / 1024 / 1024);
+
+			char* xmlDupeKey = EncodeStr(pDupInfo->GetDupeKey());
+
+			snprintf(szItemBuf, iItemBufSize, IsJson() ? JSON_HISTORY_DUP_ITEM : XML_HISTORY_DUP_ITEM,
+				pHistoryInfo->GetID(), "DUP", xmlNicename, pHistoryInfo->GetTime(),
+				iFileSizeLo, iFileSizeHi, iFileSizeMB, xmlDupeKey, szDupStatusName[pDupInfo->GetStatus()]);
+
+			free(xmlDupeKey);
 		}
 
 		szItemBuf[iItemBufSize-1] = '\0';

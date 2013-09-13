@@ -319,6 +319,10 @@
 					<button class="btn" onclick="History.deleteClick()" title="Delete selected records"><i class="icon-trash"></i><span class="btn-caption"> Delete</span></button>
 				</div>
 
+				<div class="btn-group">
+					<button class="btn" id="History_Dup" onclick="History.dupClick()" title="Show old records used for duplicate check"><i class="icon-duplicates" id="History_DupIcon"></i><span class="btn-caption"> Old</span></button>
+				</div>
+
 				<div class="btn-group phone-only inline" id="HistoryRecordsPerPageBlockPhone">
 				</div>
 
@@ -1081,7 +1085,7 @@
 							</div>
 						</div>
 
-						<div class="control-group">
+						<div class="control-group" id="HistoryEdit_CategoryGroup">
 							<label class="control-label" for="HistoryEdit_Category">Category</label>
 							<div class="controls">
 								<span class="input-medium uneditable-input" id="HistoryEdit_Category"></span>
@@ -1102,6 +1106,13 @@
 								<tbody id="HistoryEdit_Statistics">
 								</tbody>
 							</table>
+							</div>
+						</div>
+
+						<div class="control-group control-group-last" id="HistoryEdit_DupGroup">
+							<div class="controls">
+								This old history item has no information other than status. It is kept
+								in history for duplicate check.
 							</div>
 						</div>
 
@@ -2029,6 +2040,10 @@
 
 <div id="Notif_History_Saved" data-duration="1000" class="alert alert-inverse alert-center alert-center-small hide">
     <strong>Saved</strong>
+</div>
+
+<div id="Notif_History_Select" data-duration="2000" class="alert alert-error alert-center alert-center-small hide">
+    <strong>Please select records first</strong>
 </div>
 
 <div id="Notif_Feeds_FetchAll" data-duration="1000" class="alert alert-inverse alert-center alert-center-small hide">

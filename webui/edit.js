@@ -1333,24 +1333,7 @@ var HistoryEditDialog = (new function()
 		curHist = hist;
 
 		var status;
-		if (hist.Kind === 'URL')
-		{
-			if (hist.UrlStatus == 'SCAN_SKIPPED')
-			{
-				status = HistoryUI.buildStatus('SUCCESS', 'Download: ') + ' ' +
-					HistoryUI.buildStatus('SCAN_SKIPPED', 'Scan: ');
-			}
-			else if (hist.UrlStatus == 'SCAN_FAILURE')
-			{
-				status = HistoryUI.buildStatus('SUCCESS', 'Download: ') + ' ' +
-					HistoryUI.buildStatus('FAILURE', 'Scan: ');
-			}
-			else
-			{
-				status = HistoryUI.buildStatus(hist.status, 'Download: ');
-			}
-		}
-		else
+		if (hist.Kind === 'NZB')
 		{
 			status = '<span class="label label-status ' + 
 				(hist.Health === 1000 ? 'label-success' : hist.Health >= hist.CriticalHealth ? 'label-warning' : 'label-important') +
@@ -1379,35 +1362,65 @@ var HistoryEditDialog = (new function()
 				}
 			}
 		}
+		else if (hist.Kind === 'URL')
+		{
+			if (hist.UrlStatus == 'SCAN_SKIPPED')
+			{
+				status = HistoryUI.buildStatus('SUCCESS', 'Download: ') + ' ' +
+					HistoryUI.buildStatus('SCAN_SKIPPED', 'Scan: ');
+			}
+			else if (hist.UrlStatus == 'SCAN_FAILURE')
+			{
+				status = HistoryUI.buildStatus('SUCCESS', 'Download: ') + ' ' +
+					HistoryUI.buildStatus('FAILURE', 'Scan: ');
+			}
+			else
+			{
+				status = HistoryUI.buildStatus(hist.status, 'Download: ');
+			}
+		}
+		else if (hist.Kind === 'DUP')
+		{
+			status = HistoryUI.buildStatus(hist.status, '');
+		}
+		$('#HistoryEdit_Status').html(status);
 
 		$('#HistoryEdit_Title').text(Util.formatNZBName(hist.Name));
-		if (hist.Kind === 'URL')
+		if (hist.Kind !== 'NZB')
 		{
-			$('#HistoryEdit_Title').html($('#HistoryEdit_Title').html() + '&nbsp;' + '<span class="label label-info">URL</span>');
+			$('#HistoryEdit_Title').html($('#HistoryEdit_Title').html() + '&nbsp;' + '<span class="label label-info">' + hist.Kind + '</span>');
 		}
 
-		$('#HistoryEdit_Status').html(status);
-		$('#HistoryEdit_Category').text(hist.Category);
-		$('#HistoryEdit_Path').text(hist.FinalDir !== '' ? hist.FinalDir : hist.DestDir);
+		if (hist.Kind !== 'DUP')
+		{
+			$('#HistoryEdit_Category').text(hist.Category);
+		}
 
-		var size = Util.formatSizeMB(hist.FileSizeMB, hist.FileSizeLo);
-		var completion = hist.SuccessArticles + hist.FailedArticles > 0 ? Util.round0(hist.SuccessArticles * 100.0 / (hist.SuccessArticles +  hist.FailedArticles)) + '%' : '--';
+		if (hist.Kind === 'NZB')
+		{
+			$('#HistoryEdit_Path').text(hist.FinalDir !== '' ? hist.FinalDir : hist.DestDir);
 
-		var table = '';
-		table += '<tr><td>Total</td><td class="text-right">' + size + '</td></tr>';
-		table += '<tr><td>Files (total/parked)</td><td class="text-center">' + hist.FileCount + ' / ' + hist.RemainingFileCount + '</td></tr>';
-		table += '<tr><td>Articles (total/completion)</td><td class="text-center">' + 
-			(hist.ServerStats.length > 0 ? '<a href="#" id="HistoryEdit_ServStat" data-tab="HistoryEdit_ServStatsTab" title="Per-server statistics">' : '') +
-			hist.TotalArticles + ' / ' + completion + 
-			(hist.ServerStats.length > 0 ? ' <i class="icon-forward" style="opacity:0.6;"></i></a>' : '') +
-			'</td></tr>';
-		$('#HistoryEdit_Statistics').html(table);
-		$('#HistoryEdit_ServStat').click(tabClick);
-		fillServStats();
+			var size = Util.formatSizeMB(hist.FileSizeMB, hist.FileSizeLo);
+			var completion = hist.SuccessArticles + hist.FailedArticles > 0 ? Util.round0(hist.SuccessArticles * 100.0 / (hist.SuccessArticles +  hist.FailedArticles)) + '%' : '--';
 
-		Util.show($('#HistoryEdit_Return'), hist.RemainingFileCount > 0);
-		Util.show($('#HistoryEdit_ReturnURL'), hist.Kind === 'URL');
-		Util.show($('#HistoryEdit_PathGroup, #HistoryEdit_StatisticsGroup, #HistoryEdit_Reprocess'), hist.Kind === 'NZB');
+			var table = '';
+			table += '<tr><td>Total</td><td class="text-right">' + size + '</td></tr>';
+			table += '<tr><td>Files (total/parked)</td><td class="text-center">' + hist.FileCount + ' / ' + hist.RemainingFileCount + '</td></tr>';
+			table += '<tr><td>Articles (total/completion)</td><td class="text-center">' + 
+				(hist.ServerStats.length > 0 ? '<a href="#" id="HistoryEdit_ServStat" data-tab="HistoryEdit_ServStatsTab" title="Per-server statistics">' : '') +
+				hist.TotalArticles + ' / ' + completion + 
+				(hist.ServerStats.length > 0 ? ' <i class="icon-forward" style="opacity:0.6;"></i></a>' : '') +
+				'</td></tr>';
+			$('#HistoryEdit_Statistics').html(table);
+			$('#HistoryEdit_ServStat').click(tabClick);
+			fillServStats();
+		}
+
+		Util.show('#HistoryEdit_Return', hist.RemainingFileCount > 0);
+		Util.show('#HistoryEdit_ReturnURL', hist.Kind === 'URL');
+		Util.show('#HistoryEdit_PathGroup, #HistoryEdit_StatisticsGroup, #HistoryEdit_Reprocess', hist.Kind === 'NZB');
+		Util.show('#HistoryEdit_CategoryGroup', hist.Kind !== 'DUP');
+		Util.show('#HistoryEdit_DupGroup', hist.Kind === 'DUP');
 
 		var postParamConfig = ParamTab.createPostParamConfig();
 		var postParam = hist.Kind === 'NZB' && postParamConfig[0].options.length > 0;
@@ -1421,7 +1434,7 @@ var HistoryEditDialog = (new function()
 			postParams = ParamTab.buildPostParamTab($HistoryEdit_ParamData, postParamConfig, curHist.Parameters);
 		}
 		
-		EditUI.buildDNZBLinks(curHist.Parameters, 'HistoryEdit_DNZB');
+		EditUI.buildDNZBLinks(curHist.Parameters ? curHist.Parameters : [], 'HistoryEdit_DNZB');
 
 		enableAllButtons();
 		

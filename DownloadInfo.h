@@ -497,8 +497,8 @@ public:
 	ServerStatList*		GetServerStats() { return &m_ServerStats; }
 	int					CalcHealth();
 	int					CalcCriticalHealth();
-	const char*			GetDupeKey() { return m_szDupeKey; }
-	void				SetDupeKey(const char* szDupeKey);
+	const char*			GetDupeKey() { return m_szDupeKey; }					// needs locking (for shared objects)
+	void				SetDupeKey(const char* szDupeKey);						// needs locking (for shared objects)
 	int					GetDupeScore() { return m_iDupeScore; }
 	void				SetDupeScore(int iDupeScore) { m_iDupeScore = iDupeScore; }
 	bool				GetNoDupeCheck() { return m_bNoDupeCheck; }
@@ -667,6 +667,42 @@ public:
 
 typedef std::deque<UrlInfo*> UrlQueue;
 
+class DupInfo
+{
+public:
+	enum EStatus
+	{
+		dsUndefined,
+		dsSuccess,
+		dsFailed,
+		dsDeleted
+	};
+
+private:
+	char*				m_szName;
+	char*				m_szDupeKey;
+	int					m_iDupeScore;
+	long long 			m_lSize;
+	unsigned int		m_iContentHash;
+	EStatus				m_eStatus;
+
+public:
+						DupInfo();
+						~DupInfo();
+	const char*			GetName() { return m_szName; }			// needs locking (for shared objects)
+	void				SetName(const char* szName);			// needs locking (for shared objects)
+	const char*			GetDupeKey() { return m_szDupeKey; }	// needs locking (for shared objects)
+	void				SetDupeKey(const char* szDupeKey);		// needs locking (for shared objects)
+	int					GetDupeScore() { return m_iDupeScore; }
+	void				SetDupeScore(int iDupeScore) { m_iDupeScore = iDupeScore; }
+	long long			GetSize() { return m_lSize; }
+	void 				SetSize(long long lSize) { m_lSize = lSize; }
+	unsigned int		GetContentHash() { return m_iContentHash; }
+	void				SetContentHash(unsigned int iContentHash) { m_iContentHash = iContentHash; }
+	EStatus				GetStatus() { return m_eStatus; }
+	void				SetStatus(EStatus Status) { m_eStatus = Status; }
+};
+
 class HistoryInfo
 {
 public:
@@ -674,7 +710,8 @@ public:
 	{
 		hkUnknown,
 		hkNZBInfo,
-		hkUrlInfo
+		hkUrlInfo,
+		hkDupInfo
 	};
 
 private:
@@ -688,12 +725,14 @@ private:
 public:
 						HistoryInfo(NZBInfo* pNZBInfo);
 						HistoryInfo(UrlInfo* pUrlInfo);
+						HistoryInfo(DupInfo* pDupInfo);
 						~HistoryInfo();
 	int					GetID() { return m_iID; }
 	void				SetID(int iID);
 	EKind				GetKind() { return m_eKind; }
 	NZBInfo*			GetNZBInfo() { return (NZBInfo*)m_pInfo; }
 	UrlInfo*			GetUrlInfo() { return (UrlInfo*)m_pInfo; }
+	DupInfo*			GetDupInfo() { return (DupInfo*)m_pInfo; }
 	void				DiscardUrlInfo() { m_pInfo = NULL; }
 	time_t				GetTime() { return m_tTime; }
 	void				SetTime(time_t tTime) { m_tTime = tTime; }

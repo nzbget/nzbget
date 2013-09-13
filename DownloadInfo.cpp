@@ -1149,6 +1149,47 @@ void UrlInfo::MakeNiceName(const char* szURL, const char* szNZBFilename, char* s
 }
 
 
+DupInfo::DupInfo()
+{
+	m_szName = NULL;
+	m_szDupeKey = NULL;
+	m_iDupeScore = 0;
+	m_lSize = 0;
+	m_iContentHash = 0;
+	m_eStatus = dsUndefined;
+}
+
+DupInfo::~DupInfo()
+{
+	if (m_szName)
+	{
+		free(m_szName);
+	}
+	if (m_szDupeKey)
+	{
+		free(m_szDupeKey);
+	}
+}
+
+void DupInfo::SetName(const char* szName)
+{
+	if (m_szName)
+	{
+		free(m_szName);
+	}
+	m_szName = strdup(szName);
+}
+
+void DupInfo::SetDupeKey(const char* szDupeKey)
+{
+	if (m_szDupeKey)
+	{
+		free(m_szDupeKey);
+	}
+	m_szDupeKey = strdup(szDupeKey);
+}
+
+
 HistoryInfo::HistoryInfo(NZBInfo* pNZBInfo)
 {
 	m_eKind = hkNZBInfo;
@@ -1168,6 +1209,15 @@ HistoryInfo::HistoryInfo(UrlInfo* pUrlInfo)
 	m_iID = m_iIDGen;
 }
 
+HistoryInfo::HistoryInfo(DupInfo* pDupInfo)
+{
+	m_eKind = hkDupInfo;
+	m_pInfo = pDupInfo;
+	m_tTime = 0;
+	m_iIDGen++;
+	m_iID = m_iIDGen;
+}
+
 HistoryInfo::~HistoryInfo()
 {
 	if (m_eKind == hkNZBInfo && m_pInfo)
@@ -1177,6 +1227,10 @@ HistoryInfo::~HistoryInfo()
 	else if (m_eKind == hkUrlInfo && m_pInfo)
 	{
 		delete (UrlInfo*)m_pInfo;
+	}
+	else if (m_eKind == hkDupInfo && m_pInfo)
+	{
+		delete (DupInfo*)m_pInfo;
 	}
 }
 
@@ -1199,6 +1253,11 @@ void HistoryInfo::GetName(char* szBuffer, int iSize)
 	else if (m_eKind == hkUrlInfo)
 	{
 		GetUrlInfo()->GetName(szBuffer, iSize);
+	}
+	else if (m_eKind == hkDupInfo)
+	{
+		strncpy(szBuffer, GetDupInfo()->GetName(), iSize);
+		szBuffer[iSize-1] = '\0';
 	}
 	else
 	{
@@ -1518,4 +1577,3 @@ void FeedItemInfos::Release()
 		delete this;
 	}
 }
-
