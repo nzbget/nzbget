@@ -44,6 +44,7 @@ var History = (new function($)
 	var history;
 	var notification = null;
 	var updateTabInfo;
+	var showDup = false;
 
 	this.init = function(options)
 	{
@@ -94,7 +95,7 @@ var History = (new function($)
 			$('#HistoryTable_Category').css('width', DownloadsUI.calcCategoryColumnWidth());
 		}
 
-		RPC.call('history', [], loaded);
+		RPC.call('history', [showDup], loaded);
 	}
 
 	function loaded(curHistory)
@@ -130,7 +131,7 @@ var History = (new function($)
 			}
 			else if (hist.ParStatus == 'NONE' && hist.UnpackStatus == 'NONE')
 			{
-				hist.status = hist.Health === 1000 ? 'success' : 
+				hist.status = hist.Health === 1000 ? 'success' :
 					hist.Health >= hist.CriticalHealth ? 'damaged' : 'failure';
 			}
 			else
@@ -165,6 +166,16 @@ var History = (new function($)
 				case 'SCAN_SKIPPED': hist.status = 'skipped'; break;
 			}
 		}
+		else if (hist.Kind === 'DUP')
+		{
+			switch (hist.DupStatus)
+			{
+				case 'SUCCESS': hist.status = 'success'; break;
+				case 'FAILURE': hist.status = 'failure'; break;
+				case 'DELETED': hist.status = 'deleted'; break;
+				case 'UNKNOWN': hist.status = 'unknown'; break;
+			}
+		}
 	}
 
 	this.redraw = function()
@@ -177,23 +188,33 @@ var History = (new function($)
 
 			var kind = hist.Kind;
 			var statustext = hist.status === 'none' ? 'unknown' : hist.status;
-			var size = kind === 'NZB' ? Util.formatSizeMB(hist.FileSizeMB) : '';
+			var size = kind === 'URL' ? '' : Util.formatSizeMB(hist.FileSizeMB);
+			var time = Util.formatDateTime(hist.HistoryTime + UISettings.timeZoneCorrection*60*60);
+			var dupe = '';
+			var category = '';
 
 			var textname = hist.Name;
 			if (kind === 'URL')
 			{
 				textname += ' URL';
 			}
+			else if (kind === 'DUP')
+			{
+				textname += ' DUP';
+			}
 
-			var time = Util.formatDateTime(hist.HistoryTime + UISettings.timeZoneCorrection*60*60);
-			var dupe = DownloadsUI.buildDupeText(hist.Dupe, hist.DupeKey, hist.DupeScore);
+			if (kind !== 'DUP')
+			{
+				category = hist.Category;
+				dupe = DownloadsUI.buildDupeText(hist.Dupe, hist.DupeKey, hist.DupeScore);
+			}
 
 			var item =
 			{
 				id: hist.ID,
 				hist: hist,
 				data: {time: time, size: size},
-				search: statustext + ' ' + time + ' ' + textname + ' ' + dupe + ' ' + hist.Category + ' ' + size
+				search: statustext + ' ' + time + ' ' + textname + ' ' + dupe + ' ' + category + ' ' + size
 			};
 
 			data.push(item);
@@ -212,12 +233,18 @@ var History = (new function($)
 		var status = HistoryUI.buildStatus(hist.status, '');
 
 		var name = '<a href="#" histid="' + hist.ID + '">' + Util.textToHtml(Util.formatNZBName(hist.Name)) + '</a>';
-		var dupe = DownloadsUI.buildDupe(hist.Dupe, hist.DupeKey, hist.DupeScore);
-		var category = Util.textToHtml(hist.Category);
+		var dupe = '';
+		var category = '';
 
-		if (hist.Kind === 'URL')
+		if (hist.Kind !== 'DUP')
 		{
-			name += ' <span class="label label-info">URL</span>';
+			var dupe = DownloadsUI.buildDupe(hist.Dupe, hist.DupeKey, hist.DupeScore);
+			var category = Util.textToHtml(hist.Category);
+		}
+
+		if (hist.Kind !== 'NZB')
+		{
+			name += ' <span class="label label-info">' + hist.Kind + '</span>';
 		}
 
 		if (!UISettings.miniTheme)
@@ -266,11 +293,6 @@ var History = (new function($)
 
 	this.deleteClick = function()
 	{
-		if (history.length == 0)
-		{
-			return;
-		}
-
 		var checkedRows = $HistoryTable.fasttable('checkedRows');
 		if (checkedRows.length > 0)
 		{
@@ -278,7 +300,7 @@ var History = (new function($)
 		}
 		else
 		{
-			ConfirmDialog.showModal('HistoryClearConfirmDialog', historyClear);
+			Notification.show('#Notif_History_Select');
 		}
 	}
 
@@ -291,23 +313,6 @@ var History = (new function($)
 		RPC.call('editqueue', ['HistoryDelete', 0, '', [IDs]], function()
 		{
 			notification = '#Notif_History_Deleted';
-			editCompleted();
-		});
-	}
-
-	function historyClear()
-	{
-		Refresher.pause();
-
-		var IDs = [];
-		for (var i=0; i<history.length; i++)
-		{
-			IDs.push(history[i].ID);
-		}
-
-		RPC.call('editqueue', ['HistoryDelete', 0, '', [IDs]], function()
-		{
-			notification = '#Notif_History_Cleared';
 			editCompleted();
 		});
 	}
@@ -345,9 +350,18 @@ var History = (new function($)
 		{
 			return;
 		}
-		
+
 		HistoryEditDialog.showModal(hist);
 	}
+
+	this.dupClick = function()
+	{
+		showDup = !showDup;
+		$('#History_Dup').toggleClass('btn-inverse', showDup);
+		$('#History_DupIcon').toggleClass('icon-duplicates', !showDup).toggleClass('icon-duplicates-white', showDup);
+		Refresher.update();
+	}
+
 }(jQuery));
 
 
@@ -391,5 +405,5 @@ var HistoryUI = (new function($)
 				return '<span class="label label-status">' + prefix + status + '</span>';
 		}
 	}
-	
+
 }(jQuery));
