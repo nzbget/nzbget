@@ -1083,7 +1083,8 @@ bool QueueCoordinator::MergeQueueEntries(NZBInfo* pDestNZBInfo, NZBInfo* pSrcNZB
 	}
 
 	pDestNZBInfo->SetFileCount(pDestNZBInfo->GetFileCount() + pSrcNZBInfo->GetFileCount());
-	pDestNZBInfo->SetContentHash(0);
+	pDestNZBInfo->SetFullContentHash(0);
+	pDestNZBInfo->SetFilteredContentHash(0);
 
 	pDestNZBInfo->SetSize(pDestNZBInfo->GetSize() + pSrcNZBInfo->GetSize());
 	pDestNZBInfo->SetSuccessSize(pDestNZBInfo->GetSuccessSize() + pSrcNZBInfo->GetSuccessSize());
@@ -1158,12 +1159,14 @@ bool QueueCoordinator::SplitQueueEntries(FileQueue* pFileList, const char* szNam
 	pNZBInfo->SetFilename(pSrcNZBInfo->GetFilename());
 	pNZBInfo->SetName(szName);
 	pNZBInfo->SetCategory(pSrcNZBInfo->GetCategory());
-	pNZBInfo->SetContentHash(0);
+	pNZBInfo->SetFullContentHash(0);
+	pNZBInfo->SetFilteredContentHash(0);
 	pNZBInfo->BuildDestDirName();
 	pNZBInfo->SetQueuedFilename(pSrcNZBInfo->GetQueuedFilename());
 	pNZBInfo->GetParameters()->CopyFrom(pSrcNZBInfo->GetParameters());
 
-	pSrcNZBInfo->SetContentHash(0);
+	pSrcNZBInfo->SetFullContentHash(0);
+	pSrcNZBInfo->SetFilteredContentHash(0);
 
 	for (FileQueue::iterator it = pFileList->begin(); it != pFileList->end(); it++)
 	{

@@ -399,7 +399,8 @@ private:
 	int					m_iDupeScore;
 	bool				m_bNoDupeCheck;
 	bool				m_bDupe;
-	unsigned int		m_iContentHash;
+	unsigned int		m_iFullContentHash;
+	unsigned int		m_iFilteredContentHash;
 	NZBInfoList*		m_Owner;
 	NZBParameterList	m_ppParameters;
 	ScriptStatusList	m_scriptStatuses;
@@ -505,8 +506,10 @@ public:
 	void				SetNoDupeCheck(bool bNoDupeCheck) { m_bNoDupeCheck = bNoDupeCheck; }
 	int					GetDupe() { return m_bDupe; }
 	void				SetDupe(bool bDupe) { m_bDupe = bDupe; }
-	unsigned int		GetContentHash() { return m_iContentHash; }
-	void				SetContentHash(unsigned int iContentHash) { m_iContentHash = iContentHash; }
+	unsigned int		GetFullContentHash() { return m_iFullContentHash; }
+	void				SetFullContentHash(unsigned int iFullContentHash) { m_iFullContentHash = iFullContentHash; }
+	unsigned int		GetFilteredContentHash() { return m_iFilteredContentHash; }
+	void				SetFilteredContentHash(unsigned int iFilteredContentHash) { m_iFilteredContentHash = iFilteredContentHash; }
 	void				AppendMessage(Message::EKind eKind, time_t tTime, const char* szText);
 	Messages*			LockMessages();
 	void				UnlockMessages();
@@ -683,7 +686,8 @@ private:
 	char*				m_szDupeKey;
 	int					m_iDupeScore;
 	long long 			m_lSize;
-	unsigned int		m_iContentHash;
+	unsigned int		m_iFullContentHash;
+	unsigned int		m_iFilteredContentHash;
 	EStatus				m_eStatus;
 
 public:
@@ -697,8 +701,10 @@ public:
 	void				SetDupeScore(int iDupeScore) { m_iDupeScore = iDupeScore; }
 	long long			GetSize() { return m_lSize; }
 	void 				SetSize(long long lSize) { m_lSize = lSize; }
-	unsigned int		GetContentHash() { return m_iContentHash; }
-	void				SetContentHash(unsigned int iContentHash) { m_iContentHash = iContentHash; }
+	unsigned int		GetFullContentHash() { return m_iFullContentHash; }
+	void				SetFullContentHash(unsigned int iFullContentHash) { m_iFullContentHash = iFullContentHash; }
+	unsigned int		GetFilteredContentHash() { return m_iFilteredContentHash; }
+	void				SetFilteredContentHash(unsigned int iFilteredContentHash) { m_iFilteredContentHash = iFilteredContentHash; }
 	EStatus				GetStatus() { return m_eStatus; }
 	void				SetStatus(EStatus Status) { m_eStatus = Status; }
 };
