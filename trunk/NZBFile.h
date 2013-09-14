@@ -28,6 +28,7 @@
 #define NZBFILE_H
 
 #include <vector>
+#include <list>
 
 #include "DownloadInfo.h"
 
@@ -35,6 +36,8 @@ class NZBFile
 {
 public:
 	typedef std::vector<FileInfo*>	FileInfos;
+	typedef std::list<FileInfo*>	FileInfoList;
+	typedef std::list<char*>		ExtList;
 
 private:
 	FileInfos			m_FileInfos;
@@ -46,7 +49,9 @@ private:
 	void				AddArticle(FileInfo* pFileInfo, ArticleInfo* pArticleInfo);
 	void				AddFileInfo(FileInfo* pFileInfo);
 	void				ParseSubject(FileInfo* pFileInfo, bool TryQuotes);
-	void				ProcessFilenames();
+	void				BuildFilenames();
+	void				ProcessFiles();
+	void				CalcHashes();
 	bool				HasDuplicateFilenames();
 #ifdef WIN32
     bool 				ParseNZB(IUnknown* nzb);

@@ -503,9 +503,10 @@ void PrePostProcessor::CheckDupeFound(DownloadQueue* pDownloadQueue, NZBInfo* pN
 	{
 		GroupInfo* pGroupInfo = *it;
 		NZBInfo* pGroupNZBInfo = pGroupInfo->GetNZBInfo();
-		bool bSameContent = pNZBInfo->GetContentHash() > 0 &&
-			pNZBInfo->GetSize() == pGroupNZBInfo->GetSize() &&
-			pNZBInfo->GetContentHash() == pGroupNZBInfo->GetContentHash();
+		bool bSameContent = (pNZBInfo->GetFullContentHash() > 0 &&
+			pNZBInfo->GetFullContentHash() == pGroupNZBInfo->GetFullContentHash()) ||
+			(pNZBInfo->GetFilteredContentHash() > 0 &&
+			 pNZBInfo->GetFilteredContentHash() == pGroupNZBInfo->GetFilteredContentHash());
 		if (pGroupNZBInfo != pNZBInfo && bSameContent)
 		{
 			if (!strcmp(pNZBInfo->GetName(), pGroupNZBInfo->GetName()))
@@ -526,9 +527,10 @@ void PrePostProcessor::CheckDupeFound(DownloadQueue* pDownloadQueue, NZBInfo* pN
 	for (PostQueue::iterator it = pDownloadQueue->GetPostQueue()->begin(); it != pDownloadQueue->GetPostQueue()->end(); it++)
 	{
 		PostInfo* pPostInfo = *it;
-		bool bSameContent = pNZBInfo->GetContentHash() > 0 &&
-			pNZBInfo->GetSize() == pPostInfo->GetNZBInfo()->GetSize() &&
-			pNZBInfo->GetContentHash() == pPostInfo->GetNZBInfo()->GetContentHash();
+		bool bSameContent = (pNZBInfo->GetFullContentHash() > 0 &&
+			pNZBInfo->GetFullContentHash() == pPostInfo->GetNZBInfo()->GetFullContentHash()) ||
+			(pNZBInfo->GetFilteredContentHash() > 0 &&
+			 pNZBInfo->GetFilteredContentHash() == pPostInfo->GetNZBInfo()->GetFilteredContentHash());
 		if (bSameContent)
 		{
 			if (!strcmp(pNZBInfo->GetName(), pPostInfo->GetNZBInfo()->GetName()))
@@ -579,9 +581,10 @@ void PrePostProcessor::CheckDupeFound(DownloadQueue* pDownloadQueue, NZBInfo* pN
 
 		if (!bSkip &&
 			pHistoryInfo->GetKind() == HistoryInfo::hkNZBInfo &&
-			pNZBInfo->GetContentHash() > 0 &&
-			pNZBInfo->GetSize() == pHistoryInfo->GetNZBInfo()->GetSize() &&
-			pNZBInfo->GetContentHash() == pHistoryInfo->GetNZBInfo()->GetContentHash())
+			((pNZBInfo->GetFullContentHash() > 0 &&
+			pNZBInfo->GetFullContentHash() == pHistoryInfo->GetNZBInfo()->GetFullContentHash()) ||
+			(pNZBInfo->GetFilteredContentHash() > 0 &&
+			 pNZBInfo->GetFilteredContentHash() == pHistoryInfo->GetNZBInfo()->GetFilteredContentHash())))
 		{
 			bSkip = true;
 			bSameContent = true;
@@ -590,9 +593,10 @@ void PrePostProcessor::CheckDupeFound(DownloadQueue* pDownloadQueue, NZBInfo* pN
 
 		if (!bSkip &&
 			pHistoryInfo->GetKind() == HistoryInfo::hkDupInfo &&
-			pNZBInfo->GetContentHash() > 0 &&
-			pNZBInfo->GetSize() == pHistoryInfo->GetDupInfo()->GetSize() &&
-			pNZBInfo->GetContentHash() == pHistoryInfo->GetDupInfo()->GetContentHash())
+			((pNZBInfo->GetFullContentHash() > 0 &&
+			  pNZBInfo->GetFullContentHash() == pHistoryInfo->GetDupInfo()->GetFullContentHash()) ||
+			 (pNZBInfo->GetFilteredContentHash() > 0 &&
+			  pNZBInfo->GetFilteredContentHash() == pHistoryInfo->GetDupInfo()->GetFilteredContentHash())))
 		{
 			bSkip = true;
 			bSameContent = true;
@@ -750,7 +754,8 @@ void PrePostProcessor::CheckHistory()
 				pDupInfo->SetDupeKey(pHistoryInfo->GetNZBInfo()->GetDupeKey());
 				pDupInfo->SetDupeScore(pHistoryInfo->GetNZBInfo()->GetDupeScore());
 				pDupInfo->SetSize(pHistoryInfo->GetNZBInfo()->GetSize());
-				pDupInfo->SetContentHash(pHistoryInfo->GetNZBInfo()->GetContentHash());
+				pDupInfo->SetFullContentHash(pHistoryInfo->GetNZBInfo()->GetFullContentHash());
+				pDupInfo->SetFilteredContentHash(pHistoryInfo->GetNZBInfo()->GetFilteredContentHash());
 
 				bool bFailure = pHistoryInfo->GetNZBInfo()->GetDeleted() ||
 					pHistoryInfo->GetNZBInfo()->GetParStatus() == NZBInfo::psFailure ||

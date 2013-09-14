@@ -307,7 +307,8 @@ NZBInfo::NZBInfo()
 	m_iDupeScore = 0;
 	m_bDupe = false;
 	m_bNoDupeCheck = false;
-	m_iContentHash = 0;
+	m_iFullContentHash = 0;
+	m_iFilteredContentHash = 0;
 	m_Owner = NULL;
 	m_Messages.clear();
 	m_iIDMessageGen = 0;
@@ -1155,7 +1156,8 @@ DupInfo::DupInfo()
 	m_szDupeKey = NULL;
 	m_iDupeScore = 0;
 	m_lSize = 0;
-	m_iContentHash = 0;
+	m_iFullContentHash = 0;
+	m_iFilteredContentHash = 0;
 	m_eStatus = dsUndefined;
 }
 

@@ -183,22 +183,21 @@ void NZBFile::AddFileInfo(FileInfo* pFileInfo)
 		}
 	}
 
-	if (!pArticles->empty())
+	if (pArticles->empty())
 	{
-		lMissedSize += iUncountedArticles * lOneSize;
-		lSize += lMissedSize;
-		m_FileInfos.push_back(pFileInfo);
-		pFileInfo->SetNZBInfo(m_pNZBInfo);
-		pFileInfo->SetSize(lSize);
-		pFileInfo->SetRemainingSize(lSize - lMissedSize);
-		pFileInfo->SetMissedSize(lMissedSize);
-		pFileInfo->SetTotalArticles(iTotalArticles);
-		pFileInfo->SetMissedArticles(iMissedArticles);
+		delete pFileInfo;
+		return;
 	}
-	else
-	{
-		delete pFileInfo; 
-	}
+
+	lMissedSize += iUncountedArticles * lOneSize;
+	lSize += lMissedSize;
+	m_FileInfos.push_back(pFileInfo);
+	pFileInfo->SetNZBInfo(m_pNZBInfo);
+	pFileInfo->SetSize(lSize);
+	pFileInfo->SetRemainingSize(lSize - lMissedSize);
+	pFileInfo->SetMissedSize(lMissedSize);
+	pFileInfo->SetTotalArticles(iTotalArticles);
+	pFileInfo->SetMissedArticles(iMissedArticles);
 }
 
 void NZBFile::ParseSubject(FileInfo* pFileInfo, bool TryQuotes)
@@ -347,7 +346,7 @@ bool NZBFile::HasDuplicateFilenames()
 /**
  * Generate filenames from subjects and check if the parsing of subject was correct
  */
-void NZBFile::ProcessFilenames()
+void NZBFile::BuildFilenames()
 {
 	for (FileInfos::iterator it = m_FileInfos.begin(); it != m_FileInfos.end(); it++)
     {
@@ -372,10 +371,91 @@ void NZBFile::ProcessFilenames()
 			pFileInfo->SetFilename(pFileInfo->GetSubject());
 		}
     }
+}
+
+bool CompareFileInfo(FileInfo* pFirst, FileInfo* pSecond)
+{
+	return strcmp(pFirst->GetFilename(), pSecond->GetFilename()) > 0;
+}
+
+void NZBFile::CalcHashes()
+{
+	FileInfoList fileList;
 
 	for (FileInfos::iterator it = m_FileInfos.begin(); it != m_FileInfos.end(); it++)
-    {
-        FileInfo* pFileInfo = *it;
+	{
+		fileList.push_back(*it);
+	}
+
+	fileList.sort(CompareFileInfo);
+
+	// split ExtCleanupDisk into tokens and create a list
+	ExtList extList;
+	char* szExtCleanupDisk = strdup(g_pOptions->GetExtCleanupDisk());
+	char* saveptr;
+	char* szExt = strtok_r(szExtCleanupDisk, ",; ", &saveptr);
+	while (szExt)
+	{
+		extList.push_back(szExt);
+		szExt = strtok_r(NULL, ",; ", &saveptr);
+	}
+
+	unsigned int iFullContentHash = 0;
+	unsigned int iFilteredContentHash = 0;
+	int iUseForFilteredCount = 0;
+
+	for (FileInfoList::iterator it = fileList.begin(); it != fileList.end(); it++)
+	{
+		FileInfo* pFileInfo = *it;
+
+		// check file extension
+		int iFilenameLen = strlen(pFileInfo->GetFilename());
+		bool bSkip = false;
+		for (ExtList::iterator it = extList.begin(); it != extList.end(); it++)
+		{
+			const char* szExt = *it;
+			int iExtLen = strlen(szExt);
+			if (iFilenameLen >= iExtLen && !strcasecmp(szExt, pFileInfo->GetFilename() + iFilenameLen - iExtLen))
+			{
+				bSkip = true;
+				break;
+			}
+		}
+
+		bSkip = bSkip && !pFileInfo->GetParFile();
+
+		for (FileInfo::Articles::iterator it = pFileInfo->GetArticles()->begin(); it != pFileInfo->GetArticles()->end(); it++)
+		{
+			ArticleInfo* pArticle = *it;
+			int iLen = strlen(pArticle->GetMessageID());
+			iFullContentHash = Util::HashBJ96(pArticle->GetMessageID(), iLen, iFullContentHash);
+			if (!bSkip)
+			{
+				iFilteredContentHash = Util::HashBJ96(pArticle->GetMessageID(), iLen, iFilteredContentHash);
+				iUseForFilteredCount++;
+			}
+		}
+	}
+
+	free(szExtCleanupDisk);
+
+	// if filtered hash is based on less than a half of files - do not use filtered hash at all
+	if (iUseForFilteredCount < fileList.size() / 2)
+	{
+		iFilteredContentHash = 0;
+	}
+
+	m_pNZBInfo->SetFullContentHash(iFullContentHash);
+	m_pNZBInfo->SetFilteredContentHash(iFilteredContentHash);
+}
+
+void NZBFile::ProcessFiles()
+{
+	BuildFilenames();
+
+	for (FileInfos::iterator it = m_FileInfos.begin(); it != m_FileInfos.end(); it++)
+	{
+		FileInfo* pFileInfo = *it;
 		pFileInfo->MakeValidFilename();
 
 		char szLoFileName[1024];
@@ -397,9 +477,15 @@ void NZBFile::ProcessFilenames()
 			m_pNZBInfo->SetParFailedSize(m_pNZBInfo->GetParFailedSize() + pFileInfo->GetMissedSize());
 			m_pNZBInfo->SetParCurrentFailedSize(m_pNZBInfo->GetParFailedSize());
 		}
+	}
 
-		if (g_pOptions->GetSaveQueue() && g_pOptions->GetServerMode())
+	CalcHashes();
+
+	if (g_pOptions->GetSaveQueue() && g_pOptions->GetServerMode())
+	{
+		for (FileInfos::iterator it = m_FileInfos.begin(); it != m_FileInfos.end(); it++)
 		{
+			FileInfo* pFileInfo = *it;
 			g_pDiskState->SaveFile(pFileInfo);
 			pFileInfo->ClearArticles();
 		}
@@ -444,7 +530,7 @@ NZBFile* NZBFile::Create(const char* szFileName, const char* szCategory)
     NZBFile* pFile = new NZBFile(szFileName, szCategory);
     if (pFile->ParseNZB(doc))
 	{
-		pFile->ProcessFilenames();
+		pFile->ProcessFiles();
 	}
 	else
 	{
@@ -540,7 +626,6 @@ bool NZBFile::ParseNZB(IUnknown* nzb)
 				pArticle->SetMessageID(szId);
 				pArticle->SetSize(lsize);
 				AddArticle(pFileInfo, pArticle);
-				m_pNZBInfo->SetContentHash(Util::HashBJ96(pArticle->GetMessageID(), strlen(pArticle->GetMessageID()), m_pNZBInfo->GetContentHash()));
 			}
 		}
 
@@ -568,7 +653,7 @@ NZBFile* NZBFile::Create(const char* szFileName, const char* szCategory)
     
     if (ret == 0)
 	{
-		pFile->ProcessFilenames();
+		pFile->ProcessFiles();
 	}
 	else
 	{
@@ -681,7 +766,6 @@ void NZBFile::Parse_EndElement(const char *name)
 		char ID[2048];
 		snprintf(ID, 2048, "<%s>", m_szTagContent);
 		m_pArticle->SetMessageID(ID);
-		m_pNZBInfo->SetContentHash(Util::HashBJ96(m_pArticle->GetMessageID(), strlen(m_pArticle->GetMessageID()), m_pNZBInfo->GetContentHash()));
 		m_pArticle = NULL;
 	}
 	else if (!strcmp("meta", name) && m_bPassword)

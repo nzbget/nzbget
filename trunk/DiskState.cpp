@@ -138,7 +138,7 @@ bool DiskState::SaveDownloadQueue(DownloadQueue* pDownloadQueue)
 		return false;
 	}
 
-	fprintf(outfile, "%s%i\n", FORMATVERSION_SIGNATURE, 33);
+	fprintf(outfile, "%s%i\n", FORMATVERSION_SIGNATURE, 34);
 
 	// save nzb-infos
 	SaveNZBList(pDownloadQueue, outfile);
@@ -192,7 +192,7 @@ bool DiskState::LoadDownloadQueue(DownloadQueue* pDownloadQueue)
 	char FileSignatur[128];
 	fgets(FileSignatur, sizeof(FileSignatur), infile);
 	int iFormatVersion = ParseFormatVersion(FileSignatur);
-	if (iFormatVersion < 3 || iFormatVersion > 33)
+	if (iFormatVersion < 3 || iFormatVersion > 34)
 	{
 		error("Could not load diskstate due to file version mismatch");
 		fclose(infile);
@@ -273,7 +273,7 @@ void DiskState::SaveNZBList(DownloadQueue* pDownloadQueue, FILE* outfile)
 			(int)pNZBInfo->GetHealthPaused(), (int)pNZBInfo->GetHealthDeleted());
 		fprintf(outfile, "%i,%i\n", pNZBInfo->GetFileCount(), pNZBInfo->GetParkedFileCount());
 
-		fprintf(outfile, "%u\n", pNZBInfo->GetContentHash());
+		fprintf(outfile, "%u,%u\n", pNZBInfo->GetFullContentHash(), pNZBInfo->GetFilteredContentHash());
 
 		unsigned long High1, Low1, High2, Low2, High3, Low3;
 		Util::SplitInt64(pNZBInfo->GetSize(), &High1, &Low1);
@@ -486,12 +486,17 @@ bool DiskState::LoadNZBList(DownloadQueue* pDownloadQueue, FILE* infile, int iFo
 			}
 		}
 
-		if (iFormatVersion >= 32)
+		unsigned int iFullContentHash, iFilteredContentHash;
+		if (iFormatVersion >= 34)
 		{
-			unsigned int iContentHash;
-			if (fscanf(infile, "%u\n", &iContentHash) != 1) goto error;
-			pNZBInfo->SetContentHash(iContentHash);
+			if (fscanf(infile, "%u,%u\n", &iFullContentHash, &iFilteredContentHash) != 2) goto error;
 		}
+		else if (iFormatVersion >= 32)
+		{
+			if (fscanf(infile, "%u\n", &iFullContentHash) != 1) goto error;
+		}
+		pNZBInfo->SetFullContentHash(iFullContentHash);
+		pNZBInfo->SetFilteredContentHash(iFilteredContentHash);
 
 		if (iFormatVersion >= 28)
 		{
@@ -1261,7 +1266,8 @@ void DiskState::SaveDupInfo(DupInfo* pDupInfo, FILE* outfile)
 {
 	unsigned long High, Low;
 	Util::SplitInt64(pDupInfo->GetSize(), &High, &Low);
-	fprintf(outfile, "%i,%lu,%lu,%u,%i\n", (int)pDupInfo->GetStatus(), High, Low, pDupInfo->GetContentHash(), pDupInfo->GetDupeScore());
+	fprintf(outfile, "%i,%lu,%lu,%u,%u,%i\n", (int)pDupInfo->GetStatus(), High, Low,
+		pDupInfo->GetFullContentHash(), pDupInfo->GetFilteredContentHash(), pDupInfo->GetDupeScore());
 	fprintf(outfile, "%s\n", pDupInfo->GetName());
 	fprintf(outfile, "%s\n", pDupInfo->GetDupeKey());
 }
@@ -1272,11 +1278,21 @@ bool DiskState::LoadDupInfo(DupInfo* pDupInfo, FILE* infile, int iFormatVersion)
 
 	int iStatus;
 	unsigned long High, Low;
-	unsigned int iContentHash;
+	unsigned int iFullContentHash, iFilteredContentHash;
 	int iDupeScore;
-	if (fscanf(infile, "%i,%lu,%lu,%u,%i\n", &iStatus, &High, &Low, &iContentHash, &iDupeScore) != 5) goto error;
+	
+	if (iFormatVersion >= 34)
+	{
+		if (fscanf(infile, "%i,%lu,%lu,%u,%i\n", &iStatus, &High, &Low, &iFullContentHash, &iFilteredContentHash, &iDupeScore) != 6) goto error;
+	}
+	else if (iFormatVersion >= 33)
+	{
+		if (fscanf(infile, "%i,%lu,%lu,%u,%i\n", &iStatus, &High, &Low, &iFullContentHash, &iDupeScore) != 5) goto error;
+	}
+
 	pDupInfo->SetStatus((DupInfo::EStatus)iStatus);
-	pDupInfo->SetContentHash(iContentHash);
+	pDupInfo->SetFullContentHash(iFullContentHash);
+	pDupInfo->SetFilteredContentHash(iFilteredContentHash);
 	pDupInfo->SetSize(Util::JoinInt64(High, Low));
 	pDupInfo->SetDupeScore(iDupeScore);
 
