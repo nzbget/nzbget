@@ -94,14 +94,18 @@ private:
 		ERuleCommand	m_eCommand;
 		char*			m_szCategory;
 		int				m_iPriority;
+		int				m_iAddPriority;
 		bool			m_bPause;
 		int				m_iDupeScore;
+		int				m_iAddDupeScore;
 		char*			m_szDupeKey;
 		bool			m_bNoDupeCheck;
 		bool			m_bHasCategory;
 		bool			m_bHasPriority;
+		bool			m_bHasAddPriority;
 		bool			m_bHasPause;
 		bool			m_bHasDupeScore;
+		bool			m_bHasAddDupeScore;
 		bool			m_bHasDupeKey;
 		bool			m_bHasNoDupeCheck;
 		TermList		m_Terms;
@@ -118,14 +122,18 @@ private:
 		ERuleCommand	GetCommand() { return m_eCommand; }
 		const char*		GetCategory() { return m_szCategory; }
 		int				GetPriority() { return m_iPriority; }
+		int				GetAddPriority() { return m_iAddPriority; }
 		bool			GetPause() { return m_bPause; }
 		const char*		GetDupeKey() { return m_szDupeKey; }
 		int				GetDupeScore() { return m_iDupeScore; }
+		int				GetAddDupeScore() { return m_iAddDupeScore; }
 		bool			GetNoDupeCheck() { return m_bNoDupeCheck; }
 		bool			HasCategory() { return m_bHasCategory; }
 		bool			HasPriority() { return m_bHasPriority; }
+		bool			HasAddPriority() { return m_bHasAddPriority; }
 		bool			HasPause() { return m_bHasPause; }
 		bool			HasDupeScore() { return m_bHasDupeScore; }
+		bool			HasAddDupeScore() { return m_bHasAddDupeScore; }
 		bool			HasDupeKey() { return m_bHasDupeKey; }
 		bool			HasNoDupeCheck() { return m_bHasNoDupeCheck; }
 		bool			Match(FeedItemInfo* pFeedItemInfo);
