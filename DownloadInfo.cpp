@@ -1444,7 +1444,7 @@ void FeedItemInfo::SetDupeKey(const char* szDupeKey)
 
 void FeedItemInfo::AppendDupeKey(const char* szExtraDupeKey)
 {
-	if (!m_szDupeKey || *m_szDupeKey == '\0')
+	if (!m_szDupeKey || *m_szDupeKey == '\0' || !szExtraDupeKey || *szExtraDupeKey == '\0')
 	{
 		return;
 	}

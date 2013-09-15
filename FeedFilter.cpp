@@ -498,6 +498,7 @@ FeedFilter::Rule::Rule()
 	m_iAddPriority = 0;
 	m_bPause = false;
 	m_szDupeKey = NULL;
+	m_szAddDupeKey = NULL;
 	m_iDupeScore = 0;
 	m_iAddDupeScore = 0;
 	m_bNoDupeCheck = false;
@@ -508,6 +509,7 @@ FeedFilter::Rule::Rule()
 	m_bHasDupeScore = false;
 	m_bHasAddDupeScore = false;
 	m_bHasDupeKey = false;
+	m_bHasAddDupeKey = false;
 	m_bHasNoDupeCheck = false;
 }
 
@@ -520,6 +522,10 @@ FeedFilter::Rule::~Rule()
 	if (m_szDupeKey)
 	{
 		free(m_szDupeKey);
+	}
+	if (m_szAddDupeKey)
+	{
+		free(m_szAddDupeKey);
 	}
 
 	for (TermList::iterator it = m_Terms.begin(); it != m_Terms.end(); it++)
@@ -704,6 +710,15 @@ char* FeedFilter::Rule::CompileOptions(char* szRule)
 				}
 				m_szDupeKey = strdup(szValue);
 			}
+			else if (!strcasecmp(szOption, "dupekey+") || !strcasecmp(szOption, "dk+") || !strcasecmp(szOption, "k+"))
+			{
+				m_bHasAddDupeKey = true;
+				if (m_szAddDupeKey)
+				{
+					free(m_szAddDupeKey);
+				}
+				m_szAddDupeKey = strdup(szValue);
+			}
 			else if (!strcasecmp(szOption, "nodupe") || !strcasecmp(szOption, "nd") || !strcasecmp(szOption, "n"))
 			{
 				m_bHasNoDupeCheck = true;
@@ -865,7 +880,11 @@ void FeedFilter::Match(FeedItemInfo* pFeedItemInfo)
 						}
 						if (pRule->HasDupeKey())
 						{
-							pFeedItemInfo->AppendDupeKey(pRule->GetDupeKey());
+							pFeedItemInfo->SetDupeKey(pRule->GetDupeKey());
+						}
+						if (pRule->HasAddDupeKey())
+						{
+							pFeedItemInfo->AppendDupeKey(pRule->GetAddDupeKey());
 						}
 						if (pRule->HasNoDupeCheck())
 						{

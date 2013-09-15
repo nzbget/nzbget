@@ -99,6 +99,7 @@ private:
 		int				m_iDupeScore;
 		int				m_iAddDupeScore;
 		char*			m_szDupeKey;
+		char*			m_szAddDupeKey;
 		bool			m_bNoDupeCheck;
 		bool			m_bHasCategory;
 		bool			m_bHasPriority;
@@ -107,6 +108,7 @@ private:
 		bool			m_bHasDupeScore;
 		bool			m_bHasAddDupeScore;
 		bool			m_bHasDupeKey;
+		bool			m_bHasAddDupeKey;
 		bool			m_bHasNoDupeCheck;
 		TermList		m_Terms;
 
@@ -125,6 +127,7 @@ private:
 		int				GetAddPriority() { return m_iAddPriority; }
 		bool			GetPause() { return m_bPause; }
 		const char*		GetDupeKey() { return m_szDupeKey; }
+		const char*		GetAddDupeKey() { return m_szAddDupeKey; }
 		int				GetDupeScore() { return m_iDupeScore; }
 		int				GetAddDupeScore() { return m_iAddDupeScore; }
 		bool			GetNoDupeCheck() { return m_bNoDupeCheck; }
@@ -135,6 +138,7 @@ private:
 		bool			HasDupeScore() { return m_bHasDupeScore; }
 		bool			HasAddDupeScore() { return m_bHasAddDupeScore; }
 		bool			HasDupeKey() { return m_bHasDupeKey; }
+		bool			HasAddDupeKey() { return m_bHasAddDupeKey; }
 		bool			HasNoDupeCheck() { return m_bHasNoDupeCheck; }
 		bool			Match(FeedItemInfo* pFeedItemInfo);
 	};
