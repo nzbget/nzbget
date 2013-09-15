@@ -495,14 +495,18 @@ FeedFilter::Rule::Rule()
 	m_bIsValid = false;
 	m_szCategory = NULL;
 	m_iPriority = 0;
+	m_iAddPriority = 0;
 	m_bPause = false;
 	m_szDupeKey = NULL;
 	m_iDupeScore = 0;
+	m_iAddDupeScore = 0;
 	m_bNoDupeCheck = false;
 	m_bHasCategory = false;
 	m_bHasPriority = false;
+	m_bHasAddPriority = false;
 	m_bHasPause = false;
 	m_bHasDupeScore = false;
+	m_bHasAddDupeScore = false;
 	m_bHasDupeKey = false;
 	m_bHasNoDupeCheck = false;
 }
@@ -661,6 +665,16 @@ char* FeedFilter::Rule::CompileOptions(char* szRule)
 				m_bHasPriority = true;
 				m_iPriority = atoi(szValue);
 			}
+			else if (!strcasecmp(szOption, "priority+") || !strcasecmp(szOption, "pr+") || !strcasecmp(szOption, "r+"))
+			{
+				if (!strchr("0123456789-+", *szValue))
+				{
+					// error
+					return NULL;
+				}
+				m_bHasAddPriority = true;
+				m_iAddPriority = atoi(szValue);
+			}
 			else if (!strcasecmp(szOption, "dupescore") || !strcasecmp(szOption, "ds") || !strcasecmp(szOption, "s"))
 			{
 				if (!strchr("0123456789-+", *szValue))
@@ -670,6 +684,16 @@ char* FeedFilter::Rule::CompileOptions(char* szRule)
 				}
 				m_bHasDupeScore = true;
 				m_iDupeScore = atoi(szValue);
+			}
+			else if (!strcasecmp(szOption, "dupescore+") || !strcasecmp(szOption, "ds+") || !strcasecmp(szOption, "s+"))
+			{
+				if (!strchr("0123456789-+", *szValue))
+				{
+					// error
+					return NULL;
+				}
+				m_bHasAddDupeScore = true;
+				m_iAddDupeScore = atoi(szValue);
 			}
 			else if (!strcasecmp(szOption, "dupekey") || !strcasecmp(szOption, "dk") || !strcasecmp(szOption, "k"))
 			{
@@ -827,9 +851,17 @@ void FeedFilter::Match(FeedItemInfo* pFeedItemInfo)
 						{
 							pFeedItemInfo->SetPriority(pRule->GetPriority());
 						}
+						if (pRule->HasAddPriority())
+						{
+							pFeedItemInfo->SetPriority(pFeedItemInfo->GetPriority() + pRule->GetAddPriority());
+						}
 						if (pRule->HasDupeScore())
 						{
 							pFeedItemInfo->SetDupeScore(pRule->GetDupeScore());
+						}
+						if (pRule->HasAddDupeScore())
+						{
+							pFeedItemInfo->SetDupeScore(pFeedItemInfo->GetDupeScore() + pRule->GetAddDupeScore());
 						}
 						if (pRule->HasDupeKey())
 						{
