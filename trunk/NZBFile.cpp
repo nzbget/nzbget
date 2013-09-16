@@ -440,7 +440,7 @@ void NZBFile::CalcHashes()
 	free(szExtCleanupDisk);
 
 	// if filtered hash is based on less than a half of files - do not use filtered hash at all
-	if (iUseForFilteredCount < fileList.size() / 2)
+	if (iUseForFilteredCount < (int)fileList.size() / 2)
 	{
 		iFilteredContentHash = 0;
 	}
