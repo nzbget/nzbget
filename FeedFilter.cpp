@@ -48,6 +48,7 @@ FeedFilter::Term::Term()
 	m_szParam = NULL;
 	m_iIntParam = 0;
 	m_pRegEx = NULL;
+	m_pRefValues = NULL;
 }
 
 FeedFilter::Term::~Term()
@@ -142,16 +143,18 @@ bool FeedFilter::Term::MatchText(const char* szStrValue)
 	{
 		// Word-search
 
-		// split szStrValue into tokens and create pp-parameter for each token
+		// split szStrValue into tokens
 		char* szStrValue2 = strdup(szStrValue);
 		char* saveptr;
 		char* szWord = strtok_r(szStrValue2, WORD_SEPARATORS, &saveptr);
 		while (szWord)
 		{
 			szWord = Util::Trim(szWord);
-			bMatch = *szWord && Util::MatchMask(szWord, m_szParam, false);
+			WildMask mask(m_szParam, m_pRefValues != NULL);
+			bMatch = *szWord && mask.Match(szWord);
 			if (bMatch)
 			{
+				FillRefValues(&mask);
 				break;
 			}
 			szWord = strtok_r(NULL, WORD_SEPARATORS, &saveptr);
@@ -181,7 +184,13 @@ bool FeedFilter::Term::MatchText(const char* szStrValue)
 		snprintf(szMask, iMaskLen, szFormat, m_szParam);
 		szMask[iMaskLen-1] = '\0';
 
-		bMatch = Util::MatchMask(szStrValue, szMask, false);
+		WildMask mask(szMask, m_pRefValues != NULL);
+		bMatch = mask.Match(szStrValue);
+
+		if (bMatch)
+		{
+			FillRefValues(&mask);
+		}
 
 		free(szMask);
 	}
@@ -489,6 +498,25 @@ bool FeedFilter::Term::ParseIntParam(const char* szParam, long long* pIntValue)
 	return true;
 }
 
+void FeedFilter::Term::FillRefValues(WildMask* pMask)
+{
+	if (!m_pRefValues)
+	{
+		return;
+	}
+
+	for (int i=0; i < pMask->GetWildCount(); i++)
+	{
+		int iLen = pMask->GetWildLen(i);
+		char* szValue = (char*)malloc(iLen + 1);
+		strncpy(szValue, pMask->GetWildStart(i), iLen);
+		szValue[iLen] = '\0';
+
+		m_pRefValues->push_back(szValue);
+	}
+}
+
+
 FeedFilter::Rule::Rule()
 {
 	m_eCommand = frAccept;
@@ -511,6 +539,12 @@ FeedFilter::Rule::Rule()
 	m_bHasDupeKey = false;
 	m_bHasAddDupeKey = false;
 	m_bHasNoDupeCheck = false;
+	m_bPatCategory = false;
+	m_bPatDupeKey = false;
+	m_bPatAddDupeKey = false;
+	m_szPatCategory = NULL;
+	m_szPatDupeKey = NULL;
+	m_szPatAddDupeKey = NULL;
 }
 
 FeedFilter::Rule::~Rule()
@@ -527,8 +561,25 @@ FeedFilter::Rule::~Rule()
 	{
 		free(m_szAddDupeKey);
 	}
+	if (m_szPatCategory)
+	{
+		free(m_szPatCategory);
+	}
+	if (m_szPatDupeKey)
+	{
+		free(m_szPatDupeKey);
+	}
+	if (m_szPatAddDupeKey)
+	{
+		free(m_szPatAddDupeKey);
+	}
 
 	for (TermList::iterator it = m_Terms.begin(); it != m_Terms.end(); it++)
+	{
+		delete *it;
+	}
+
+	for (RefValues::iterator it = m_RefValues.begin(); it != m_RefValues.end(); it++)
 	{
 		delete *it;
 	}
@@ -568,6 +619,22 @@ void FeedFilter::Rule::Compile(char* szRule)
 	}
 
 	m_bIsValid = m_bIsValid && CompileTerm(szTerm);
+
+	if (m_bIsValid && m_bPatCategory)
+	{
+		m_szPatCategory = m_szCategory;
+		m_szCategory = NULL;
+	}
+	if (m_bIsValid && m_bPatDupeKey)
+	{
+		m_szPatDupeKey = m_szDupeKey;
+		m_szDupeKey = NULL;
+	}
+	if (m_bIsValid && m_bPatAddDupeKey)
+	{
+		m_szPatAddDupeKey = m_szAddDupeKey;
+		m_szAddDupeKey = NULL;
+	}
 }
 
 /* Checks if the rule starts with command and compiles it.
@@ -650,6 +717,7 @@ char* FeedFilter::Rule::CompileOptions(char* szRule)
 					free(m_szCategory);
 				}
 				m_szCategory = strdup(szValue);
+				m_bPatCategory = strstr(szValue, "${");
 			}
 			else if (!strcasecmp(szOption, "pause") || !strcasecmp(szOption, "p"))
 			{
@@ -709,6 +777,7 @@ char* FeedFilter::Rule::CompileOptions(char* szRule)
 					free(m_szDupeKey);
 				}
 				m_szDupeKey = strdup(szValue);
+				m_bPatDupeKey = strstr(szValue, "${");
 			}
 			else if (!strcasecmp(szOption, "dupekey+") || !strcasecmp(szOption, "dk+") || !strcasecmp(szOption, "k+"))
 			{
@@ -718,6 +787,7 @@ char* FeedFilter::Rule::CompileOptions(char* szRule)
 					free(m_szAddDupeKey);
 				}
 				m_szAddDupeKey = strdup(szValue);
+				m_bPatAddDupeKey = strstr(szValue, "${");
 			}
 			else if (!strcasecmp(szOption, "nodupe") || !strcasecmp(szOption, "nd") || !strcasecmp(szOption, "n"))
 			{
@@ -766,6 +836,7 @@ char* FeedFilter::Rule::CompileOptions(char* szRule)
 bool FeedFilter::Rule::CompileTerm(char* szTerm)
 {
 	Term* pTerm = new Term();
+	pTerm->SetRefValues(m_bPatCategory || m_bPatDupeKey || m_bPatAddDupeKey ? &m_RefValues : NULL);
 	if (pTerm->Compile(szTerm))
 	{
 		m_Terms.push_back(pTerm);
@@ -780,6 +851,12 @@ bool FeedFilter::Rule::CompileTerm(char* szTerm)
 
 bool FeedFilter::Rule::Match(FeedItemInfo* pFeedItemInfo)
 {
+	for (RefValues::iterator it = m_RefValues.begin(); it != m_RefValues.end(); it++)
+	{
+		delete *it;
+	}
+	m_RefValues.clear();
+
 	for (TermList::iterator it = m_Terms.begin(); it != m_Terms.end(); it++)
 	{
 		Term* pTerm = *it;
@@ -789,7 +866,69 @@ bool FeedFilter::Rule::Match(FeedItemInfo* pFeedItemInfo)
 		}
 	}
 
+	if (m_bPatCategory)
+	{
+		ExpandRefValues(&m_szCategory, m_szPatCategory);
+	}
+	if (m_bPatDupeKey)
+	{
+		ExpandRefValues(&m_szDupeKey, m_szPatDupeKey);
+	}
+	if (m_bPatAddDupeKey)
+	{
+		ExpandRefValues(&m_szAddDupeKey, m_szPatAddDupeKey);
+	}
+
 	return true;
+}
+
+void FeedFilter::Rule::ExpandRefValues(char** pDestStr, char* pPatStr)
+{
+	if (*pDestStr)
+	{
+		free(*pDestStr);
+	}
+
+	*pDestStr = strdup(pPatStr);
+	char* curvalue = *pDestStr;
+
+	int iAttempts = 0;
+	while (char* dollar = strstr(curvalue, "${"))
+	{
+		iAttempts++;
+		if (iAttempts > 100)
+		{
+			break; // error
+		}
+
+		char* end = strchr(dollar, '}');
+		if (!end)
+		{
+			break; // error
+		}
+
+		int varlen = (int)(end - dollar - 2);
+		char variable[101];
+		int maxlen = varlen < 100 ? varlen : 100;
+		strncpy(variable, dollar + 2, maxlen);
+		variable[maxlen] = '\0';
+
+		int iIndex = atoi(variable) - 1;
+		if (iIndex < 0 || iIndex > (int)m_RefValues.size()-1)
+		{
+			break; // error
+		}
+
+		const char* varvalue = m_RefValues[iIndex];
+		int newlen = strlen(varvalue);
+		char* newvalue = (char*)malloc(strlen(curvalue) - varlen - 3 + newlen + 1);
+		strncpy(newvalue, curvalue, dollar - curvalue);
+		strncpy(newvalue + (dollar - curvalue), varvalue, newlen);
+		strcpy(newvalue + (dollar - curvalue) + newlen, end + 1);
+		free(curvalue);
+		curvalue = newvalue;
+		*pDestStr = curvalue;
+	}
 }
 
 
@@ -854,42 +993,7 @@ void FeedFilter::Match(FeedItemInfo* pFeedItemInfo)
 					{
 						pFeedItemInfo->SetMatchStatus(FeedItemInfo::msAccepted);
 						pFeedItemInfo->SetMatchRule(index);
-						if (pRule->HasPause())
-						{
-							pFeedItemInfo->SetPauseNzb(pRule->GetPause());
-						}
-						if (pRule->HasCategory())
-						{
-							pFeedItemInfo->SetAddCategory(pRule->GetCategory());
-						}
-						if (pRule->HasPriority())
-						{
-							pFeedItemInfo->SetPriority(pRule->GetPriority());
-						}
-						if (pRule->HasAddPriority())
-						{
-							pFeedItemInfo->SetPriority(pFeedItemInfo->GetPriority() + pRule->GetAddPriority());
-						}
-						if (pRule->HasDupeScore())
-						{
-							pFeedItemInfo->SetDupeScore(pRule->GetDupeScore());
-						}
-						if (pRule->HasAddDupeScore())
-						{
-							pFeedItemInfo->SetDupeScore(pFeedItemInfo->GetDupeScore() + pRule->GetAddDupeScore());
-						}
-						if (pRule->HasDupeKey())
-						{
-							pFeedItemInfo->SetDupeKey(pRule->GetDupeKey());
-						}
-						if (pRule->HasAddDupeKey())
-						{
-							pFeedItemInfo->AppendDupeKey(pRule->GetAddDupeKey());
-						}
-						if (pRule->HasNoDupeCheck())
-						{
-							pFeedItemInfo->SetNoDupeCheck(pRule->GetNoDupeCheck());
-						}
+						ApplyOptions(pRule, pFeedItemInfo);
 						if (pRule->GetCommand() == frAccept)
 						{
 							return;
@@ -923,4 +1027,44 @@ void FeedFilter::Match(FeedItemInfo* pFeedItemInfo)
 
 	pFeedItemInfo->SetMatchStatus(FeedItemInfo::msIgnored);
 	pFeedItemInfo->SetMatchRule(0);
+}
+
+void FeedFilter::ApplyOptions(Rule* pRule, FeedItemInfo* pFeedItemInfo)
+{
+	if (pRule->HasPause())
+	{
+		pFeedItemInfo->SetPauseNzb(pRule->GetPause());
+	}
+	if (pRule->HasCategory())
+	{
+		pFeedItemInfo->SetAddCategory(pRule->GetCategory());
+	}
+	if (pRule->HasPriority())
+	{
+		pFeedItemInfo->SetPriority(pRule->GetPriority());
+	}
+	if (pRule->HasAddPriority())
+	{
+		pFeedItemInfo->SetPriority(pFeedItemInfo->GetPriority() + pRule->GetAddPriority());
+	}
+	if (pRule->HasDupeScore())
+	{
+		pFeedItemInfo->SetDupeScore(pRule->GetDupeScore());
+	}
+	if (pRule->HasAddDupeScore())
+	{
+		pFeedItemInfo->SetDupeScore(pFeedItemInfo->GetDupeScore() + pRule->GetAddDupeScore());
+	}
+	if (pRule->HasDupeKey())
+	{
+		pFeedItemInfo->SetDupeKey(pRule->GetDupeKey());
+	}
+	if (pRule->HasAddDupeKey())
+	{
+		pFeedItemInfo->AppendDupeKey(pRule->GetAddDupeKey());
+	}
+	if (pRule->HasNoDupeCheck())
+	{
+		pFeedItemInfo->SetNoDupeCheck(pRule->GetNoDupeCheck());
+	}
 }

@@ -101,7 +101,6 @@ public:
 	static void ExpandFileName(const char* szFilename, char* szBuffer, int iBufSize);
 	static void FormatFileSize(char* szBuffer, int iBufLen, long long lFileSize);
 	static bool SameFilename(const char* szFilename1, const char* szFilename2);
-	static bool MatchMask(const char* name, const char* pat, bool bCaseSensitive);
 	static char* GetLastErrorMessage(char* szBuffer, int iBufLen);
 
 	/*
@@ -255,6 +254,27 @@ public:
 						~RegEx();
 	bool				IsValid() { return m_bValid; }
 	bool				Match(const char *szStr);
+};
+
+class WildMask
+{
+private:
+	char*				m_szPattern;
+	bool				m_bWantsPositions;
+	int					m_iWildCount;
+	const char**		m_WildStart;
+	int*				m_WildLen;
+	int					m_iArrLen;
+
+	void				ExpandArray();
+
+public:
+						WildMask(const char *szPattern, bool bWantsPositions);
+						~WildMask();
+	bool				Match(const char *szStr);
+	int					GetWildCount() { return m_iWildCount; }
+	const char*			GetWildStart(int index) { return m_WildStart[index]; }
+	int					GetWildLen(int index) { return m_WildLen[index]; }
 };
 
 #ifndef DISABLE_GZIP
