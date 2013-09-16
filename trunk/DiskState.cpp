@@ -486,7 +486,7 @@ bool DiskState::LoadNZBList(DownloadQueue* pDownloadQueue, FILE* infile, int iFo
 			}
 		}
 
-		unsigned int iFullContentHash, iFilteredContentHash;
+		unsigned int iFullContentHash = 0, iFilteredContentHash = 0;
 		if (iFormatVersion >= 34)
 		{
 			if (fscanf(infile, "%u,%u\n", &iFullContentHash, &iFilteredContentHash) != 2) goto error;
@@ -1285,7 +1285,7 @@ bool DiskState::LoadDupInfo(DupInfo* pDupInfo, FILE* infile, int iFormatVersion)
 	{
 		if (fscanf(infile, "%i,%lu,%lu,%u,%i\n", &iStatus, &High, &Low, &iFullContentHash, &iFilteredContentHash, &iDupeScore) != 6) goto error;
 	}
-	else if (iFormatVersion >= 33)
+	else
 	{
 		if (fscanf(infile, "%i,%lu,%lu,%u,%i\n", &iStatus, &High, &Low, &iFullContentHash, &iDupeScore) != 5) goto error;
 	}
