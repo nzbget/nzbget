@@ -1142,56 +1142,6 @@ time_t Util::ParseRfc822DateTime(const char* szDateTimeStr)
 	return enctime;
 }
 
-// From http://bytes.com/topic/c/answers/212179-string-matching
-bool Util::MatchMask(const char* name, const char* pat, bool bCaseSensitive)
-{
-	const char *spos, *wpos;
-
-	spos = wpos = name;
-	while (*name && *pat != '*')
-	{
-		if (((bCaseSensitive && *pat != *name) ||
-			(!bCaseSensitive && tolower(*pat) != tolower(*name))) &&
-			*pat != '?')
-		{
-			return false;
-		}
-		name++;
-		pat++;
-	}
-
-	while (*name)
-	{
-		if (*pat == '*')
-		{
-			if (*++pat == '\0')
-			{
-				return 1;
-			}
-			wpos = pat;
-			spos = name + 1;
-		}
-		else if ((bCaseSensitive && *pat == *name) || 
-			(!bCaseSensitive && tolower(*pat) == tolower(*name)) ||
-			*pat == '?')
-		{
-			pat++;
-			name++;
-		}
-		else
-		{
-			pat = wpos;
-			name = spos++;
-		}
-	}
-
-	while (*pat == '*' || (*pat && *(pat - 1) == '?'))
-	{
-		pat++;
-	}
-
-	return *pat == '\0';
-}
 
 unsigned int WebUtil::DecodeBase64(char* szInputBuffer, int iInputBufferLength, char* szOutputBuffer)
 {
@@ -1884,6 +1834,178 @@ bool RegEx::Match(const char *szStr)
 	return false;
 #endif
 }
+
+
+WildMask::WildMask(const char *szPattern, bool bWantsPositions)
+{
+	m_szPattern = strdup(szPattern);
+	m_bWantsPositions = bWantsPositions;
+	m_WildStart = NULL;
+	m_WildLen = NULL;
+	m_iArrLen = 0;
+}
+
+WildMask::~WildMask()
+{
+	free(m_szPattern);
+	if (m_WildStart)
+	{
+		free(m_WildStart);
+	}
+	if (m_WildLen)
+	{
+		free(m_WildLen);
+	}
+}
+
+void WildMask::ExpandArray()
+{
+	m_iWildCount++;
+	if (m_iWildCount > m_iArrLen)
+	{
+		m_iArrLen += 100;
+		m_WildStart = (const char**)realloc(m_WildStart, sizeof(*m_WildStart) * m_iArrLen);
+		m_WildLen = (int*)realloc(m_WildLen, sizeof(*m_WildLen) * m_iArrLen);
+	}
+}
+
+// Based on code from http://bytes.com/topic/c/answers/212179-string-matching
+// Extended to save positions of matches.
+bool WildMask::Match(const char *szStr)
+{
+	const char* pat = m_szPattern;
+	const char* str = szStr;
+	const char *spos, *wpos;
+	m_iWildCount = 0;
+	bool qmark = false;
+	bool star = false;
+
+	spos = wpos = str;
+	while (*str && *pat != '*')
+	{
+		if (m_bWantsPositions && *pat == '?')
+		{
+			if (!qmark)
+			{
+				ExpandArray();
+				m_WildStart[m_iWildCount-1] = str;
+				m_WildLen[m_iWildCount-1] = 0;
+				qmark = true;
+			}
+		}
+		else if (m_bWantsPositions && qmark)
+		{
+			m_WildLen[m_iWildCount-1] = str - m_WildStart[m_iWildCount-1];
+			qmark = false;
+		}
+
+		if (tolower(*pat) != tolower(*str) && *pat != '?')
+		{
+			return false;
+		}
+		str++;
+		pat++;
+	}
+
+	if (m_bWantsPositions && qmark)
+	{
+		m_WildLen[m_iWildCount-1] = str - m_WildStart[m_iWildCount-1];
+		qmark = false;
+	}
+
+	while (*str)
+	{
+		if (*pat == '*')
+		{
+			if (m_bWantsPositions && qmark)
+			{
+				m_WildLen[m_iWildCount-1] = str - m_WildStart[m_iWildCount-1];
+				qmark = false;
+			}
+			if (m_bWantsPositions && !star)
+			{
+				ExpandArray();
+				m_WildStart[m_iWildCount-1] = str;
+				m_WildLen[m_iWildCount-1] = 0;
+				star = true;
+			}
+
+			if (*++pat == '\0')
+			{
+				if (m_bWantsPositions && star)
+				{
+					m_WildLen[m_iWildCount-1] = strlen(str);
+					star = false;
+				}
+
+				return true;
+			}
+			wpos = pat;
+			spos = str + 1;
+		}
+		else if (*pat == '?')
+		{
+			if (m_bWantsPositions && !qmark)
+			{
+				ExpandArray();
+				m_WildStart[m_iWildCount-1] = str;
+				m_WildLen[m_iWildCount-1] = 0;
+				qmark = true;
+			}
+
+			pat++;
+			str++;
+		}
+		else if (tolower(*pat) == tolower(*str))
+		{
+			if (m_bWantsPositions && qmark)
+			{
+				m_WildLen[m_iWildCount-1] = str - m_WildStart[m_iWildCount-1];
+				qmark = false;
+			}
+			else if (m_bWantsPositions && star)
+			{
+				m_WildLen[m_iWildCount-1] = str - m_WildStart[m_iWildCount-1];
+				star = false;
+			}
+
+			pat++;
+			str++;
+		}
+		else
+		{
+			if (m_bWantsPositions && qmark)
+			{
+				m_iWildCount--;
+				qmark = false;
+			}
+
+			pat = wpos;
+			str = spos++;
+			star = true;
+		}
+	}
+
+	if (m_bWantsPositions && qmark)
+	{
+		m_WildLen[m_iWildCount-1] = str - m_WildStart[m_iWildCount-1];
+	}
+
+	if (*pat == '*' && m_bWantsPositions && !star)
+	{
+		ExpandArray();
+		m_WildStart[m_iWildCount-1] = str;
+		m_WildLen[m_iWildCount-1] = strlen(str);
+	}
+
+	while (*pat == '*' || (*pat && *(pat - 1) == '?'))
+	{
+		pat++;
+	}
+
+	return *pat == '\0';
+}
+
 
 #ifndef DISABLE_GZIP
 unsigned int ZLib::GZipLen(int iInputBufferLength)

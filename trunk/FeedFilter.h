@@ -32,6 +32,8 @@
 class FeedFilter
 {
 private:
+	typedef std::deque<char*> RefValues;
+
 	enum ETermCommand
 	{
 		fcText,
@@ -58,6 +60,7 @@ private:
 		char*			m_szParam;
 		long long		m_iIntParam;
 		RegEx*			m_pRegEx;
+		RefValues*		m_pRefValues;
 
 		bool			GetFieldData(const char* szField, FeedItemInfo* pFeedItemInfo,
 							EFieldType* FieldType, const char** StrValue, long long* IntValue);
@@ -68,10 +71,12 @@ private:
 		bool			MatchValue(const char* szStrValue, const long long iIntValue);
 		bool			MatchText(const char* szStrValue);
 		bool			MatchRegex(const char* szStrValue);
+		void			FillRefValues(WildMask* pMask);
 
 	public:
 						Term();
 						~Term();
+		void			SetRefValues(RefValues* pRefValues) { m_pRefValues = pRefValues; }
 		bool			Compile(char* szToken);
 		bool			Match(FeedItemInfo* pFeedItemInfo);
 	};
@@ -110,7 +115,14 @@ private:
 		bool			m_bHasDupeKey;
 		bool			m_bHasAddDupeKey;
 		bool			m_bHasNoDupeCheck;
+		bool			m_bPatCategory;
+		bool			m_bPatDupeKey;
+		bool			m_bPatAddDupeKey;
+		char*			m_szPatCategory;
+		char*			m_szPatDupeKey;
+		char*			m_szPatAddDupeKey;
 		TermList		m_Terms;
+		RefValues		m_RefValues;
 
 		char*			CompileCommand(char* szRule);
 		char*			CompileOptions(char* szRule);
@@ -141,16 +153,18 @@ private:
 		bool			HasAddDupeKey() { return m_bHasAddDupeKey; }
 		bool			HasNoDupeCheck() { return m_bHasNoDupeCheck; }
 		bool			Match(FeedItemInfo* pFeedItemInfo);
+		RefValues*		GetRefValues() { return &m_RefValues; }
+		void			ExpandRefValues(char** pDestStr, char* pPatStr);
 	};
 
 	typedef std::deque<Rule*> RuleList;
 
 private:
 	RuleList			m_Rules;
-	FeedItemInfo*		m_pFeedItemInfo;
 
 	void				Compile(const char* szFilter);
 	void				CompileRule(char* szRule);
+	void				ApplyOptions(Rule* pRule, FeedItemInfo* pFeedItemInfo);
 
 public:
 						FeedFilter(const char* szFilter);
