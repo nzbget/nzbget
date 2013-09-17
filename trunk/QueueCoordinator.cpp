@@ -256,6 +256,15 @@ void QueueCoordinator::AddNZBFileToQueue(NZBFile* pNZBFile, bool bAddFirst)
 	if (pNZBFile->GetNZBInfo()->GetDeleted())
 	{
 		m_mutexDownloadQueue.Unlock(); // UNLOCK
+
+		for (NZBFile::FileInfos::iterator it = pNZBFile->GetFileInfos()->begin(); it != pNZBFile->GetFileInfos()->end(); it++)
+		{
+			FileInfo* pFileInfo = *it;
+			if (g_pOptions->GetSaveQueue() && g_pOptions->GetServerMode())
+			{
+				g_pDiskState->DiscardFile(pFileInfo);
+			}
+		}
 		return;
 	}
 
