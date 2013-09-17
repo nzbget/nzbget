@@ -387,7 +387,7 @@ Options::Category* Options::Categories::FindCategory(const char* szName, bool bS
 			for (NameList::iterator it2 = pCategory->GetAliases()->begin(); it2 != pCategory->GetAliases()->end(); it2++)
 			{
 				const char* szAlias = *it2;
-				WildMask mask(szAlias, false);
+				WildMask mask(szAlias);
 				if (mask.Match(szName))
 				{
 					return pCategory;
