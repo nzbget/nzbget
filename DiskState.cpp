@@ -1278,7 +1278,7 @@ bool DiskState::LoadDupInfo(DupInfo* pDupInfo, FILE* infile, int iFormatVersion)
 
 	int iStatus;
 	unsigned long High, Low;
-	unsigned int iFullContentHash, iFilteredContentHash;
+	unsigned int iFullContentHash, iFilteredContentHash = 0;
 	int iDupeScore;
 	
 	if (iFormatVersion >= 34)
