@@ -71,7 +71,8 @@ private:
 		bool			MatchValue(const char* szStrValue, const long long iIntValue);
 		bool			MatchText(const char* szStrValue);
 		bool			MatchRegex(const char* szStrValue);
-		void			FillRefValues(WildMask* pMask);
+		void			FillWildMaskRefValues(const char* szStrValue, WildMask* pMask);
+		void			FillRegExRefValues(const char* szStrValue, RegEx* pRegEx);
 
 	public:
 						Term();

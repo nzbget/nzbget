@@ -1808,11 +1808,20 @@ void URL::ParseURL()
 	m_bValid = true;
 }
 
-RegEx::RegEx(const char *szPattern)
+RegEx::RegEx(const char *szPattern, int iMatchBufSize)
 {
 #ifdef HAVE_REGEX_H
 	m_pContext = malloc(sizeof(regex_t));
-	m_bValid = regcomp((regex_t*)m_pContext, szPattern, REG_EXTENDED | REG_ICASE | REG_NOSUB) == 0;
+	m_bValid = regcomp((regex_t*)m_pContext, szPattern, REG_EXTENDED | REG_ICASE | (iMatchBufSize > 0 ? 0 : REG_NOSUB)) == 0;
+	m_iMatchBufSize = iMatchBufSize;
+	if (iMatchBufSize > 0)
+	{
+		m_pMatches = malloc(sizeof(regmatch_t) * iMatchBufSize);
+	}
+	else
+	{
+		m_pMatches = NULL;
+	}
 #else
 	m_bValid = false;
 #endif
@@ -1823,15 +1832,57 @@ RegEx::~RegEx()
 #ifdef HAVE_REGEX_H
 	regfree((regex_t*)m_pContext);
 	free(m_pContext);
+	if (m_pMatches)
+	{
+		free(m_pMatches);
+	}
 #endif
 }
 
 bool RegEx::Match(const char *szStr)
 {
 #ifdef HAVE_REGEX_H
-	return m_bValid ? regexec((regex_t*)m_pContext, szStr, 0, NULL, 0) == 0 : false;
+	return m_bValid ? regexec((regex_t*)m_pContext, szStr, m_iMatchBufSize, (regmatch_t*)m_pMatches, 0) == 0 : false;
 #else
 	return false;
+#endif
+}
+
+int RegEx::GetMatchCount()
+{
+#ifdef HAVE_REGEX_H
+	int iCount = 0;
+	if (m_pMatches)
+	{
+		regmatch_t* pMatches = (regmatch_t*)m_pMatches;
+		while (iCount < m_iMatchBufSize && pMatches[iCount].rm_so > -1)
+		{
+			iCount++;
+		}
+	}
+	return iCount;
+#else
+	return 0;
+#endif
+}
+
+int RegEx::GetMatchStart(int index)
+{
+#ifdef HAVE_REGEX_H
+	regmatch_t* pMatches = (regmatch_t*)m_pMatches;
+	return pMatches[index].rm_so;
+#else
+	return NULL;
+#endif
+}
+
+int RegEx::GetMatchLen(int index)
+{
+#ifdef HAVE_REGEX_H
+	regmatch_t* pMatches = (regmatch_t*)m_pMatches;
+	return pMatches[index].rm_eo - pMatches[index].rm_so;
+#else
+	return 0;
 #endif
 }
 
@@ -1864,7 +1915,7 @@ void WildMask::ExpandArray()
 	if (m_iWildCount > m_iArrLen)
 	{
 		m_iArrLen += 100;
-		m_WildStart = (const char**)realloc(m_WildStart, sizeof(*m_WildStart) * m_iArrLen);
+		m_WildStart = (int*)realloc(m_WildStart, sizeof(*m_WildStart) * m_iArrLen);
 		m_WildLen = (int*)realloc(m_WildLen, sizeof(*m_WildLen) * m_iArrLen);
 	}
 }
@@ -1888,14 +1939,14 @@ bool WildMask::Match(const char *szStr)
 			if (!qmark)
 			{
 				ExpandArray();
-				m_WildStart[m_iWildCount-1] = str;
+				m_WildStart[m_iWildCount-1] = str - szStr;
 				m_WildLen[m_iWildCount-1] = 0;
 				qmark = true;
 			}
 		}
 		else if (m_bWantsPositions && qmark)
 		{
-			m_WildLen[m_iWildCount-1] = str - m_WildStart[m_iWildCount-1];
+			m_WildLen[m_iWildCount-1] = str - (szStr + m_WildStart[m_iWildCount-1]);
 			qmark = false;
 		}
 
@@ -1910,7 +1961,7 @@ bool WildMask::Match(const char *szStr)
 
 	if (m_bWantsPositions && qmark)
 	{
-		m_WildLen[m_iWildCount-1] = str - m_WildStart[m_iWildCount-1];
+		m_WildLen[m_iWildCount-1] = str - (szStr + m_WildStart[m_iWildCount-1]);
 		qmark = false;
 	}
 
@@ -1920,13 +1971,13 @@ bool WildMask::Match(const char *szStr)
 		{
 			if (m_bWantsPositions && qmark)
 			{
-				m_WildLen[m_iWildCount-1] = str - m_WildStart[m_iWildCount-1];
+				m_WildLen[m_iWildCount-1] = str - (szStr + m_WildStart[m_iWildCount-1]);
 				qmark = false;
 			}
 			if (m_bWantsPositions && !star)
 			{
 				ExpandArray();
-				m_WildStart[m_iWildCount-1] = str;
+				m_WildStart[m_iWildCount-1] = str - szStr;
 				m_WildLen[m_iWildCount-1] = 0;
 				star = true;
 			}
@@ -1949,7 +2000,7 @@ bool WildMask::Match(const char *szStr)
 			if (m_bWantsPositions && !qmark)
 			{
 				ExpandArray();
-				m_WildStart[m_iWildCount-1] = str;
+				m_WildStart[m_iWildCount-1] = str - szStr;
 				m_WildLen[m_iWildCount-1] = 0;
 				qmark = true;
 			}
@@ -1961,12 +2012,12 @@ bool WildMask::Match(const char *szStr)
 		{
 			if (m_bWantsPositions && qmark)
 			{
-				m_WildLen[m_iWildCount-1] = str - m_WildStart[m_iWildCount-1];
+				m_WildLen[m_iWildCount-1] = str - (szStr + m_WildStart[m_iWildCount-1]);
 				qmark = false;
 			}
 			else if (m_bWantsPositions && star)
 			{
-				m_WildLen[m_iWildCount-1] = str - m_WildStart[m_iWildCount-1];
+				m_WildLen[m_iWildCount-1] = str - (szStr + m_WildStart[m_iWildCount-1]);
 				star = false;
 			}
 
@@ -1989,13 +2040,13 @@ bool WildMask::Match(const char *szStr)
 
 	if (m_bWantsPositions && qmark)
 	{
-		m_WildLen[m_iWildCount-1] = str - m_WildStart[m_iWildCount-1];
+		m_WildLen[m_iWildCount-1] = str - (szStr + m_WildStart[m_iWildCount-1]);
 	}
 
 	if (*pat == '*' && m_bWantsPositions && !star)
 	{
 		ExpandArray();
-		m_WildStart[m_iWildCount-1] = str;
+		m_WildStart[m_iWildCount-1] = str - szStr;
 		m_WildLen[m_iWildCount-1] = strlen(str);
 	}
 

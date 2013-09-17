@@ -154,7 +154,7 @@ bool FeedFilter::Term::MatchText(const char* szStrValue)
 			bMatch = *szWord && mask.Match(szWord);
 			if (bMatch)
 			{
-				FillRefValues(&mask);
+				FillWildMaskRefValues(szWord, &mask);
 				break;
 			}
 			szWord = strtok_r(NULL, WORD_SEPARATORS, &saveptr);
@@ -189,7 +189,7 @@ bool FeedFilter::Term::MatchText(const char* szStrValue)
 
 		if (bMatch)
 		{
-			FillRefValues(&mask);
+			FillWildMaskRefValues(szStrValue, &mask);
 		}
 
 		free(szMask);
@@ -202,10 +202,14 @@ bool FeedFilter::Term::MatchRegex(const char* szStrValue)
 {
 	if (!m_pRegEx)
 	{
-		m_pRegEx = new RegEx(m_szParam);
+		m_pRegEx = new RegEx(m_szParam, m_pRefValues == NULL ? 0 : 100);
 	}
 
 	bool bFound = m_pRegEx->Match(szStrValue);
+	if (bFound)
+	{
+		FillRegExRefValues(szStrValue, m_pRegEx);
+	}
 	return bFound;
 }
 
@@ -498,18 +502,36 @@ bool FeedFilter::Term::ParseIntParam(const char* szParam, long long* pIntValue)
 	return true;
 }
 
-void FeedFilter::Term::FillRefValues(WildMask* pMask)
+void FeedFilter::Term::FillWildMaskRefValues(const char* szStrValue, WildMask* pMask)
 {
 	if (!m_pRefValues)
 	{
 		return;
 	}
 
-	for (int i=0; i < pMask->GetWildCount(); i++)
+	for (int i = 0; i < pMask->GetMatchCount(); i++)
 	{
-		int iLen = pMask->GetWildLen(i);
+		int iLen = pMask->GetMatchLen(i);
 		char* szValue = (char*)malloc(iLen + 1);
-		strncpy(szValue, pMask->GetWildStart(i), iLen);
+		strncpy(szValue, szStrValue + pMask->GetMatchStart(i), iLen);
+		szValue[iLen] = '\0';
+
+		m_pRefValues->push_back(szValue);
+	}
+}
+
+void FeedFilter::Term::FillRegExRefValues(const char* szStrValue, RegEx* pRegEx)
+{
+	if (!m_pRefValues)
+	{
+		return;
+	}
+
+	for (int i = 1; i < pRegEx->GetMatchCount(); i++)
+	{
+		int iLen = pRegEx->GetMatchLen(i);
+		char* szValue = (char*)malloc(iLen + 1);
+		strncpy(szValue, szStrValue + pRegEx->GetMatchStart(i), iLen);
 		szValue[iLen] = '\0';
 
 		m_pRefValues->push_back(szValue);

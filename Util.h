@@ -248,12 +248,17 @@ class RegEx
 private:
 	void*				m_pContext;
 	bool				m_bValid;
+	void*				m_pMatches;
+	int					m_iMatchBufSize;
 
 public:
-						RegEx(const char *szPattern);
+						RegEx(const char *szPattern, int iMatchBufSize = 100);
 						~RegEx();
 	bool				IsValid() { return m_bValid; }
 	bool				Match(const char *szStr);
+	int					GetMatchCount();
+	int					GetMatchStart(int index);
+	int					GetMatchLen(int index);
 };
 
 class WildMask
@@ -262,19 +267,19 @@ private:
 	char*				m_szPattern;
 	bool				m_bWantsPositions;
 	int					m_iWildCount;
-	const char**		m_WildStart;
+	int*				m_WildStart;
 	int*				m_WildLen;
 	int					m_iArrLen;
 
 	void				ExpandArray();
 
 public:
-						WildMask(const char *szPattern, bool bWantsPositions);
+						WildMask(const char *szPattern, bool bWantsPositions = false);
 						~WildMask();
 	bool				Match(const char *szStr);
-	int					GetWildCount() { return m_iWildCount; }
-	const char*			GetWildStart(int index) { return m_WildStart[index]; }
-	int					GetWildLen(int index) { return m_WildLen[index]; }
+	int					GetMatchCount() { return m_iWildCount; }
+	int					GetMatchStart(int index) { return m_WildStart[index]; }
+	int					GetMatchLen(int index) { return m_WildLen[index]; }
 };
 
 #ifndef DISABLE_GZIP
