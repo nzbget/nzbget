@@ -129,7 +129,7 @@ bool FeedFilter::Term::MatchText(const char* szStrValue)
 		for (const char* p = m_szParam; *p; p++)
 		{
 			char ch = *p;
-			if (strchr(WORD_SEPARATORS, ch) && ch != '*' && ch != '?')
+			if (strchr(WORD_SEPARATORS, ch) && ch != '*' && ch != '?' && ch != '#')
 			{
 				bSubstr = true;
 				break;

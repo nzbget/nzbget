@@ -1883,7 +1883,7 @@ bool WildMask::Match(const char *szStr)
 	spos = wpos = str;
 	while (*str && *pat != '*')
 	{
-		if (m_bWantsPositions && *pat == '?')
+		if (m_bWantsPositions && (*pat == '?' || *pat == '#'))
 		{
 			if (!qmark)
 			{
@@ -1899,7 +1899,8 @@ bool WildMask::Match(const char *szStr)
 			qmark = false;
 		}
 
-		if (tolower(*pat) != tolower(*str) && *pat != '?')
+		if (!(tolower(*pat) == tolower(*str) || *pat == '?' ||
+			(*pat == '#' && strchr("0123456789", *str))))
 		{
 			return false;
 		}
@@ -1943,7 +1944,7 @@ bool WildMask::Match(const char *szStr)
 			wpos = pat;
 			spos = str + 1;
 		}
-		else if (*pat == '?')
+		else if (*pat == '?' || (*pat == '#' && strchr("0123456789", *str)))
 		{
 			if (m_bWantsPositions && !qmark)
 			{
@@ -1998,7 +1999,7 @@ bool WildMask::Match(const char *szStr)
 		m_WildLen[m_iWildCount-1] = strlen(str);
 	}
 
-	while (*pat == '*' || (*pat && *(pat - 1) == '?'))
+	while (*pat == '*')
 	{
 		pat++;
 	}
