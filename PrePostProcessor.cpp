@@ -351,12 +351,9 @@ void PrePostProcessor::NZBDeleted(DownloadQueue* pDownloadQueue, NZBInfo* pNZBIn
 		{
 			rmdir(pNZBInfo->GetDestDir());
 		}
-
-		if (g_pOptions->GetNzbCleanupDisk())
-		{
-			DeleteQueuedFile(pNZBInfo->GetQueuedFilename());
-		}
 	}
+
+	DeleteQueuedFile(pNZBInfo->GetQueuedFilename());
 
 	if (pNZBInfo->GetDeleteStatus() == NZBInfo::dsHealth)
 	{
@@ -523,6 +520,7 @@ void PrePostProcessor::CheckDupeFound(DownloadQueue* pDownloadQueue, NZBInfo* pN
 					pNZBInfo->GetName(), pGroupNZBInfo->GetName());
 			}
 			pNZBInfo->SetDeleteStatus(NZBInfo::dsDupe); // Flag saying QueueCoordinator to skip nzb-file
+			DeleteQueuedFile(pNZBInfo->GetQueuedFilename());
 			return;
 		}
 	}
@@ -547,6 +545,7 @@ void PrePostProcessor::CheckDupeFound(DownloadQueue* pDownloadQueue, NZBInfo* pN
 					pNZBInfo->GetName(), pPostInfo->GetNZBInfo()->GetName());
 			}
 			pNZBInfo->SetDeleteStatus(NZBInfo::dsDupe); // Flag saying QueueCoordinator to skip nzb-file
+			DeleteQueuedFile(pNZBInfo->GetQueuedFilename());
 			return;
 		}
 	}
@@ -621,6 +620,7 @@ void PrePostProcessor::CheckDupeFound(DownloadQueue* pDownloadQueue, NZBInfo* pN
 					bSameContent ? "exactly same content" : "success status");
 			}
 			pNZBInfo->SetDeleteStatus(NZBInfo::dsDupe); // Flag saying QueueCoordinator to skip nzb-file
+			DeleteQueuedFile(pNZBInfo->GetQueuedFilename());
 			return;
 		}
 	}
@@ -785,6 +785,12 @@ void PrePostProcessor::CheckHistory()
 				pDownloadQueue->GetHistoryList()->erase(pDownloadQueue->GetHistoryList()->end() - 1 - index);
 				info("Collection %s removed from history", szNiceName);
 			}
+
+			if (pHistoryInfo->GetKind() == HistoryInfo::hkNZBInfo)
+			{
+				DeleteQueuedFile(pHistoryInfo->GetNZBInfo()->GetQueuedFilename());
+			}
+
 			delete pHistoryInfo;
 			it = pDownloadQueue->GetHistoryList()->rbegin() + index;
 			bChanged = true;
@@ -806,7 +812,12 @@ void PrePostProcessor::CheckHistory()
 
 void PrePostProcessor::DeleteQueuedFile(const char* szQueuedFile)
 {
-	// szQueuedFile may contain one filename or several filenames separated 
+	if (!g_pOptions->GetNzbCleanupDisk())
+	{
+		return;
+	}
+
+	// szQueuedFile may contain one filename or several filenames separated
 	// with "|"-character (for merged groups)
 	char* szFilename = strdup(szQueuedFile);
 	char* szEnd = szFilename - 1;
@@ -1103,22 +1114,15 @@ void PrePostProcessor::JobCompleted(DownloadQueue* pDownloadQueue, PostInfo* pPo
 			 pPostInfo->GetNZBInfo()->GetUnpackStatus() == NZBInfo::usSuccess ||
 			 (pPostInfo->GetNZBInfo()->GetUnpackStatus() == NZBInfo::usNone &&
 			  pPostInfo->GetNZBInfo()->GetScriptStatuses()->CalcTotalStatus() == ScriptStatus::srSuccess);
-		if ((g_pOptions->GetParCleanupQueue() || g_pOptions->GetNzbCleanupDisk()) && bCanCleanupQueue)
+		if (g_pOptions->GetParCleanupQueue() && bCanCleanupQueue)
 		{
-			if (g_pOptions->GetParCleanupQueue())
+			FileInfo* pFileInfo = GetQueueGroup(pDownloadQueue, pPostInfo->GetNZBInfo());
+			if (pFileInfo)
 			{
-				FileInfo* pFileInfo = GetQueueGroup(pDownloadQueue, pPostInfo->GetNZBInfo());
-				if (pFileInfo)
-				{
-					info("Cleaning up download queue for %s", pPostInfo->GetNZBInfo()->GetName());
-					pFileInfo->GetNZBInfo()->ClearCompletedFiles();
-					pFileInfo->GetNZBInfo()->SetParCleanup(true);
-					g_pQueueCoordinator->GetQueueEditor()->LockedEditEntry(pDownloadQueue, pFileInfo->GetID(), false, QueueEditor::eaGroupDelete, 0, NULL);
-				}
-			}
-			if (g_pOptions->GetNzbCleanupDisk())
-			{
-				DeleteQueuedFile(pPostInfo->GetNZBInfo()->GetQueuedFilename());
+				info("Cleaning up download queue for %s", pPostInfo->GetNZBInfo()->GetName());
+				pFileInfo->GetNZBInfo()->ClearCompletedFiles();
+				pFileInfo->GetNZBInfo()->SetParCleanup(true);
+				g_pQueueCoordinator->GetQueueEditor()->LockedEditEntry(pDownloadQueue, pFileInfo->GetID(), false, QueueEditor::eaGroupDelete, 0, NULL);
 			}
 		}
 
@@ -1507,6 +1511,8 @@ void PrePostProcessor::HistoryDelete(DownloadQueue* pDownloadQueue, HistoryList:
 				index++;
 			}
 		}
+
+		DeleteQueuedFile(pNZBInfo->GetQueuedFilename());
 	}
 
 	pDownloadQueue->GetHistoryList()->erase(itHistory);
