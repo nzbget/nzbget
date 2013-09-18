@@ -138,16 +138,6 @@ void FeedFile::ParseSubject(FeedItemInfo* pFeedItemInfo)
 	pFeedItemInfo->SetFilename(pFeedItemInfo->GetTitle());
 }
 
-int FeedFile::ParsePrefixedInt(const char *szValue)
-{
-	const char* szVal = szValue;
-	if (!strchr("0123456789", *szVal))
-	{
-		szVal++;
-	}
-	return atoi(szVal);
-}
-
 #ifdef WIN32
 FeedFile* FeedFile::Create(const char* szFileName)
 {
@@ -374,7 +364,7 @@ bool FeedFile::ParseFeed(IUnknown* nzb)
 			if (attr)
 			{
 				_bstr_t val(attr->Gettext());
-				pFeedItemInfo->SetEpisode(ParsePrefixedInt(val));
+				pFeedItemInfo->SetEpisode(val);
 			}
 		}
 
@@ -387,7 +377,7 @@ bool FeedFile::ParseFeed(IUnknown* nzb)
 			if (attr)
 			{
 				_bstr_t val(attr->Gettext());
-				pFeedItemInfo->SetSeason(ParsePrefixedInt(val));
+				pFeedItemInfo->SetSeason(val);
 			}
 		}
 
@@ -500,7 +490,7 @@ void FeedFile::Parse_StartElement(const char *name, const char **atts)
 		else if (atts[0] && atts[1] && atts[2] && atts[3] &&
 			!strcmp("name", atts[0]) && !strcmp("episode", atts[1]) && !strcmp("value", atts[2]))
 		{
-			m_pFeedItemInfo->SetEpisode(ParsePrefixedInt(atts[3]));
+			m_pFeedItemInfo->SetEpisode(atts[3]);
 		}
 
 		//<newznab:attr name="season" value="S03"/>
@@ -508,7 +498,7 @@ void FeedFile::Parse_StartElement(const char *name, const char **atts)
 		else if (atts[0] && atts[1] && atts[2] && atts[3] &&
 			!strcmp("name", atts[0]) && !strcmp("season", atts[1]) && !strcmp("value", atts[2]))
 		{
-			m_pFeedItemInfo->SetSeason(ParsePrefixedInt(atts[3]));
+			m_pFeedItemInfo->SetSeason(atts[3]);
 		}
 	}
 }

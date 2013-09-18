@@ -138,7 +138,7 @@ bool DiskState::SaveDownloadQueue(DownloadQueue* pDownloadQueue)
 		return false;
 	}
 
-	fprintf(outfile, "%s%i\n", FORMATVERSION_SIGNATURE, 35);
+	fprintf(outfile, "%s%i\n", FORMATVERSION_SIGNATURE, 36);
 
 	// save nzb-infos
 	SaveNZBList(pDownloadQueue, outfile);
@@ -192,7 +192,7 @@ bool DiskState::LoadDownloadQueue(DownloadQueue* pDownloadQueue)
 	char FileSignatur[128];
 	fgets(FileSignatur, sizeof(FileSignatur), infile);
 	int iFormatVersion = ParseFormatVersion(FileSignatur);
-	if (iFormatVersion < 3 || iFormatVersion > 35)
+	if (iFormatVersion < 3 || iFormatVersion > 36)
 	{
 		error("Could not load diskstate due to file version mismatch");
 		fclose(infile);
@@ -548,6 +548,7 @@ bool DiskState::LoadNZBList(DownloadQueue* pDownloadQueue, FILE* infile, int iFo
 		{
 			if (!fgets(buf, sizeof(buf), infile)) goto error;
 			if (buf[0] != 0) buf[strlen(buf)-1] = 0; // remove traling '\n'
+			if (iFormatVersion < 36) ConvertDupeKey(buf, sizeof(buf));
 			pNZBInfo->SetDupeKey(buf);
 
 			int iDupe, iNoDupeCheck, iDupeScore;
@@ -1261,6 +1262,7 @@ bool DiskState::LoadUrlInfo(UrlInfo* pUrlInfo, FILE* infile, int iFormatVersion)
 	{
 		if (!fgets(buf, sizeof(buf), infile)) goto error;
 		if (buf[0] != 0) buf[strlen(buf)-1] = 0; // remove traling '\n'
+		if (iFormatVersion < 36) ConvertDupeKey(buf, sizeof(buf));
 		pUrlInfo->SetDupeKey(buf);
 
 		int iNoDupeCheck, iDupeScore;
@@ -1315,6 +1317,7 @@ bool DiskState::LoadDupInfo(DupInfo* pDupInfo, FILE* infile, int iFormatVersion)
 
 	if (!fgets(buf, sizeof(buf), infile)) goto error;
 	if (buf[0] != 0) buf[strlen(buf)-1] = 0; // remove traling '\n'
+	if (iFormatVersion < 36) ConvertDupeKey(buf, sizeof(buf));
 	pDupInfo->SetDupeKey(buf);
 
 	return true;
@@ -2124,4 +2127,31 @@ error:
 	}
 
 	return false;
+}
+
+void DiskState::ConvertDupeKey(char* buf, int bufsize)
+{
+	if (strncmp(buf, "rageid=", 7))
+	{
+		return;
+	}
+
+	int iRageId = atoi(buf + 7);
+	int iSeason = 0;
+	int iEpisode = 0;
+	char* p = strchr(buf + 7, ',');
+	if (p)
+	{
+		iSeason = atoi(p + 1);
+		p = strchr(p + 1, ',');
+		if (p)
+		{
+			iEpisode = atoi(p + 1);
+		}
+	}
+
+	if (iRageId != 0 && iSeason != 0 && iEpisode != 0)
+	{
+		snprintf(buf, bufsize, "rageid=%i-S%02i-E%02i", iRageId, iSeason, iEpisode);
+	}
 }

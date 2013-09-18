@@ -378,13 +378,13 @@ bool FeedFilter::Term::GetFieldData(const char* szField, FeedItemInfo* pFeedItem
 	}
 	else if (!strcasecmp(szField, "season"))
 	{
-		*IntValue = pFeedItemInfo ? pFeedItemInfo->GetSeason() : NULL;
+		*IntValue = pFeedItemInfo ? pFeedItemInfo->GetSeasonNum() : NULL;
 		*FieldType = ftNumeric;
 		return true;
 	}
 	else if (!strcasecmp(szField, "episode"))
 	{
-		*IntValue = pFeedItemInfo ? pFeedItemInfo->GetEpisode() : NULL;
+		*IntValue = pFeedItemInfo ? pFeedItemInfo->GetEpisodeNum() : NULL;
 		*FieldType = ftNumeric;
 		return true;
 	}
