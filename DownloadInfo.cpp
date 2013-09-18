@@ -295,10 +295,9 @@ NZBInfo::NZBInfo()
 	m_eUnpackStatus = usNone;
 	m_eCleanupStatus = csNone;
 	m_eMoveStatus = msNone;
+	m_eDeleteStatus = dsNone;
 	m_bDeleting = false;
-	m_bDeleted = false;
 	m_bHealthPaused = false;
-	m_bHealthDeleted = false;
 	m_bParCleanup = false;
 	m_bCleanupDisk = false;
 	m_bUnpackCleanedUpDisk = false;

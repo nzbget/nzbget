@@ -1339,22 +1339,18 @@ var HistoryEditDialog = (new function()
 				(hist.Health === 1000 ? 'label-success' : hist.Health >= hist.CriticalHealth ? 'label-warning' : 'label-important') +
 				'">health: ' + Math.floor(hist.Health / 10) + '%</span>';
 
-			if (hist.Deleted && !hist.HealthDeleted)
+			if (hist.DeleteStatus === 'NONE')
 			{
-				status += ' ' + HistoryUI.buildStatus('deleted', '');
+				status += ' ' + HistoryUI.buildStatus(hist.ParStatus, 'Par: ') +
+					' ' + (Options.option('Unpack') == 'yes' || hist.UnpackStatus != 'NONE' ? HistoryUI.buildStatus(hist.UnpackStatus, 'Unpack: ') : '')  +
+					' ' + (hist.MoveStatus === "FAILURE" ? HistoryUI.buildStatus(hist.MoveStatus, 'Move: ') : '');
 			}
 			else
 			{
-				if (hist.HealthDeleted)
-				{
-					status += ' ' + HistoryUI.buildStatus('aborted', '');
-				}
-				else
-				{
-					status += ' ' + HistoryUI.buildStatus(hist.ParStatus, 'Par: ') +
-						' ' + (Options.option('Unpack') == 'yes' || hist.UnpackStatus != 'NONE' ? HistoryUI.buildStatus(hist.UnpackStatus, 'Unpack: ') : '')  +
-						' ' + (hist.MoveStatus === "FAILURE" ? HistoryUI.buildStatus(hist.MoveStatus, 'Move: ') : '');
-				}
+				status += ' ' + HistoryUI.buildStatus('edit-deleted-' + hist.DeleteStatus, 'Delete: ');
+			}
+			if (hist.DeleteStatus === 'NONE' || hist.DeleteStatus === 'HEALTH')
+			{
 				for (var i=0; i<hist.ScriptStatuses.length; i++)
 				{
 					var scriptStatus = hist.ScriptStatuses[i];

@@ -353,6 +353,14 @@ public:
 		msSuccess
 	};
 
+	enum EDeleteStatus
+	{
+		dsNone,
+		dsManual,
+		dsHealth,
+		dsDupe
+	};
+
 	typedef std::vector<char*>			Files;
 	typedef std::deque<Message*>		Messages;
 
@@ -386,11 +394,10 @@ private:
 	EUnpackStatus		m_eUnpackStatus;
 	ECleanupStatus		m_eCleanupStatus;
 	EMoveStatus			m_eMoveStatus;
+	EDeleteStatus		m_eDeleteStatus;
 	char*				m_szQueuedFilename;
-	bool				m_bDeleted;
 	bool				m_bDeleting;
 	bool				m_bHealthPaused;
-	bool				m_bHealthDeleted;
 	bool				m_bParCleanup;
 	bool				m_bParManual;
 	bool				m_bCleanupDisk;
@@ -477,16 +484,14 @@ public:
 	void				SetCleanupStatus(ECleanupStatus eCleanupStatus) { m_eCleanupStatus = eCleanupStatus; }
 	EMoveStatus			GetMoveStatus() { return m_eMoveStatus; }
 	void				SetMoveStatus(EMoveStatus eMoveStatus) { m_eMoveStatus = eMoveStatus; }
+	EDeleteStatus		GetDeleteStatus() { return m_eDeleteStatus; }
+	void				SetDeleteStatus(EDeleteStatus eDeleteStatus) { m_eDeleteStatus = eDeleteStatus; }
 	const char*			GetQueuedFilename() { return m_szQueuedFilename; }
 	void				SetQueuedFilename(const char* szQueuedFilename);
 	bool				GetDeleting() { return m_bDeleting; }
 	void				SetDeleting(bool bDeleting) { m_bDeleting = bDeleting; }
-	bool				GetDeleted() { return m_bDeleted; }
-	void				SetDeleted(bool bDeleted) { m_bDeleted = bDeleted; }
 	bool				GetHealthPaused() { return m_bHealthPaused; }
 	void				SetHealthPaused(bool bHealthPaused) { m_bHealthPaused = bHealthPaused; }
-	bool				GetHealthDeleted() { return m_bHealthDeleted; }
-	void				SetHealthDeleted(bool bHealthDeleted) { m_bHealthDeleted = bHealthDeleted; }
 	bool				GetParCleanup() { return m_bParCleanup; }
 	void				SetParCleanup(bool bParCleanup) { m_bParCleanup = bParCleanup; }
 	bool				GetCleanupDisk() { return m_bCleanupDisk; }

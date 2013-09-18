@@ -226,14 +226,14 @@ void PrePostProcessor::QueueCoordinatorUpdate(Subject * Caller, void * Aspect)
 			if ((pAspect->eAction == QueueCoordinator::eaFileCompleted ||
 				(pAspect->pFileInfo->GetAutoDeleted() &&
 				 IsNZBFileCompleted(pAspect->pDownloadQueue, pAspect->pNZBInfo, false, true))) &&
-				 !pAspect->pFileInfo->GetNZBInfo()->GetHealthDeleted())
+				 pAspect->pFileInfo->GetNZBInfo()->GetDeleteStatus() != NZBInfo::dsHealth)
 			{
 				info("Collection %s completely downloaded", pAspect->pNZBInfo->GetName());
 				NZBDownloaded(pAspect->pDownloadQueue, pAspect->pNZBInfo);
 			}
 			else if ((pAspect->eAction == QueueCoordinator::eaFileDeleted ||
 				(pAspect->eAction == QueueCoordinator::eaFileCompleted &&
-				 pAspect->pFileInfo->GetNZBInfo()->GetHealthDeleted())) &&
+				 pAspect->pFileInfo->GetNZBInfo()->GetDeleteStatus() > NZBInfo::dsNone)) &&
 				!pAspect->pNZBInfo->GetParCleanup() && !pAspect->pNZBInfo->GetPostProcess() &&
 				IsNZBFileCompleted(pAspect->pDownloadQueue, pAspect->pNZBInfo, false, true))
 			{
@@ -290,7 +290,7 @@ void PrePostProcessor::NZBDownloaded(DownloadQueue* pDownloadQueue, NZBInfo* pNZ
 			pNZBInfo->SetRenameStatus(NZBInfo::rsSkipped);
 		}
 
-		if (pNZBInfo->GetDeleted())
+		if (pNZBInfo->GetDeleteStatus() != NZBInfo::dsNone)
 		{
 			pNZBInfo->SetParStatus(NZBInfo::psFailure);
 			pNZBInfo->SetUnpackStatus(NZBInfo::usFailure);
@@ -311,7 +311,10 @@ void PrePostProcessor::NZBDownloaded(DownloadQueue* pDownloadQueue, NZBInfo* pNZ
 
 void PrePostProcessor::NZBDeleted(DownloadQueue* pDownloadQueue, NZBInfo* pNZBInfo)
 {
-	pNZBInfo->SetDeleted(true);
+	if (pNZBInfo->GetDeleteStatus() == NZBInfo::dsNone)
+	{
+		pNZBInfo->SetDeleteStatus(NZBInfo::dsManual);
+	}
 	pNZBInfo->SetDeleting(false);
 
 	if (g_pOptions->GetDeleteCleanupDisk() && pNZBInfo->GetCleanupDisk())
@@ -355,7 +358,7 @@ void PrePostProcessor::NZBDeleted(DownloadQueue* pDownloadQueue, NZBInfo* pNZBIn
 		}
 	}
 
-	if (pNZBInfo->GetHealthDeleted())
+	if (pNZBInfo->GetDeleteStatus() == NZBInfo::dsHealth)
 	{
 		NZBDownloaded(pDownloadQueue, pNZBInfo);
 	}
@@ -414,7 +417,7 @@ void PrePostProcessor::NZBCompleted(DownloadQueue* pDownloadQueue, NZBInfo* pNZB
 		bNeedSave = true;
 	}
 
-	if (pNZBInfo->GetDupe() && (pNZBInfo->GetHealthDeleted() || !pNZBInfo->GetDeleted()))
+	if (pNZBInfo->GetDupe() && pNZBInfo->GetDeleteStatus() != NZBInfo::dsManual)
 	{
 		DupeCompleted(pDownloadQueue, pNZBInfo);
 		bNeedSave = true;
@@ -468,6 +471,7 @@ void PrePostProcessor::DupeCompleted(DownloadQueue* pDownloadQueue, NZBInfo* pNZ
 			{
 				groupIDList.push_back(pFileInfo->GetID());
 				groupNZBs.insert(pFileInfo->GetNZBInfo());
+				pFileInfo->GetNZBInfo()->SetDeleteStatus(NZBInfo::dsDupe);
 			}
 		}
 	}
@@ -518,7 +522,7 @@ void PrePostProcessor::CheckDupeFound(DownloadQueue* pDownloadQueue, NZBInfo* pN
 				warn("Skipping duplicate %s, already queued as %s",
 					pNZBInfo->GetName(), pGroupNZBInfo->GetName());
 			}
-			pNZBInfo->SetDeleted(true); // Flag saying QueueCoordinator to skip nzb-file
+			pNZBInfo->SetDeleteStatus(NZBInfo::dsDupe); // Flag saying QueueCoordinator to skip nzb-file
 			return;
 		}
 	}
@@ -542,7 +546,7 @@ void PrePostProcessor::CheckDupeFound(DownloadQueue* pDownloadQueue, NZBInfo* pN
 				warn("Skipping duplicate %s, already queued as %s",
 					pNZBInfo->GetName(), pPostInfo->GetNZBInfo()->GetName());
 			}
-			pNZBInfo->SetDeleted(true); // Flag saying QueueCoordinator to skip nzb-file
+			pNZBInfo->SetDeleteStatus(NZBInfo::dsDupe); // Flag saying QueueCoordinator to skip nzb-file
 			return;
 		}
 	}
@@ -559,7 +563,7 @@ void PrePostProcessor::CheckDupeFound(DownloadQueue* pDownloadQueue, NZBInfo* pN
 			(!strcmp(pHistoryInfo->GetNZBInfo()->GetName(), pNZBInfo->GetName()) ||
 			 (bHasDupeKey && !strcmp(pHistoryInfo->GetNZBInfo()->GetDupeKey(), pNZBInfo->GetDupeKey()))))
 		{
-			bool bFailure = pHistoryInfo->GetNZBInfo()->GetDeleted() ||
+			bool bFailure = pHistoryInfo->GetNZBInfo()->GetDeleteStatus() != NZBInfo::dsNone ||
 				pHistoryInfo->GetNZBInfo()->GetParStatus() == NZBInfo::psFailure ||
 				pHistoryInfo->GetNZBInfo()->GetUnpackStatus() == NZBInfo::usFailure ||
 				(pHistoryInfo->GetNZBInfo()->GetParStatus() == NZBInfo::psSkipped &&
@@ -616,7 +620,7 @@ void PrePostProcessor::CheckDupeFound(DownloadQueue* pDownloadQueue, NZBInfo* pN
 					pNZBInfo->GetName(), szDupeName,
 					bSameContent ? "exactly same content" : "success status");
 			}
-			pNZBInfo->SetDeleted(true); // Flag saying QueueCoordinator to skip nzb-file
+			pNZBInfo->SetDeleteStatus(NZBInfo::dsDupe); // Flag saying QueueCoordinator to skip nzb-file
 			return;
 		}
 	}
@@ -757,7 +761,7 @@ void PrePostProcessor::CheckHistory()
 				pDupInfo->SetFullContentHash(pHistoryInfo->GetNZBInfo()->GetFullContentHash());
 				pDupInfo->SetFilteredContentHash(pHistoryInfo->GetNZBInfo()->GetFilteredContentHash());
 
-				bool bFailure = pHistoryInfo->GetNZBInfo()->GetDeleted() ||
+				bool bFailure = pHistoryInfo->GetNZBInfo()->GetDeleteStatus() != NZBInfo::dsNone ||
 					pHistoryInfo->GetNZBInfo()->GetParStatus() == NZBInfo::psFailure ||
 					pHistoryInfo->GetNZBInfo()->GetUnpackStatus() == NZBInfo::usFailure ||
 					(pHistoryInfo->GetNZBInfo()->GetParStatus() == NZBInfo::psSkipped &&
@@ -765,8 +769,9 @@ void PrePostProcessor::CheckHistory()
 					 pHistoryInfo->GetNZBInfo()->CalcHealth() < pHistoryInfo->GetNZBInfo()->CalcCriticalHealth());
 
 				pDupInfo->SetStatus(
-					pHistoryInfo->GetNZBInfo()->GetDeleted() && !
-						pHistoryInfo->GetNZBInfo()->GetHealthDeleted() ? DupInfo::dsDeleted :
+					pHistoryInfo->GetNZBInfo()->GetDeleteStatus() == NZBInfo::dsManual ||
+					pHistoryInfo->GetNZBInfo()->GetDeleteStatus() == NZBInfo::dsDupe ?
+					DupInfo::dsDeleted :
 					bFailure ? DupInfo::dsFailed : DupInfo::dsSuccess);
 
 				HistoryInfo* pNewHistoryInfo = new HistoryInfo(pDupInfo);
