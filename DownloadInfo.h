@@ -866,8 +866,10 @@ private:
 	char*				m_szGenre;
 	int					m_iImdbId;
 	int					m_iRageId;
-	int					m_iSeason;
-	int					m_iEpisode;
+	char*				m_szSeason;
+	char*				m_szEpisode;
+	int					m_iSeasonNum;
+	int					m_iEpisodeNum;
 	char*				m_szAddCategory;
 	bool				m_bPauseNzb;
 	int					m_iPriority;
@@ -877,6 +879,8 @@ private:
 	char*				m_szDupeKey;
 	int					m_iDupeScore;
 	bool				m_bNoDupeCheck;
+
+	int					ParsePrefixedInt(const char *szValue);
 
 public:
 						FeedItemInfo();
@@ -899,10 +903,12 @@ public:
 	void				SetImdbId(int iImdbId) { m_iImdbId = iImdbId; }
 	int					GetRageId() { return m_iRageId; }
 	void				SetRageId(int iRageId) { m_iRageId = iRageId; }
-	int					GetSeason() { return m_iSeason; }
-	void				SetSeason(int iSeason) { m_iSeason = iSeason; }
-	int					GetEpisode() { return m_iEpisode; }
-	void				SetEpisode(int iEpisode) { m_iEpisode = iEpisode; }
+	const char*			GetSeason() { return m_szSeason; }
+	void				SetSeason(const char* szSeason);
+	const char*			GetEpisode() { return m_szEpisode; }
+	void				SetEpisode(const char* szEpisode);
+	int					GetSeasonNum() { return m_iSeasonNum; }
+	int					GetEpisodeNum() { return m_iEpisodeNum; }
 	const char*			GetAddCategory() { return m_szAddCategory; }
 	void				SetAddCategory(const char* szAddCategory);
 	bool				GetPauseNzb() { return m_bPauseNzb; }

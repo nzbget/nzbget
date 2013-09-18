@@ -59,7 +59,8 @@ private:
 	void				CalcCriticalHealth(DownloadQueue* pDownloadQueue);
 	bool				SaveServerStats(Servers* pServers, FILE* outfile);
 	bool				LoadServerStats(Servers* pServers, FILE* infile, int iFormatVersion);
-	
+	void				ConvertDupeKey(char* buf, int bufsize);
+
 public:
 	bool				DownloadQueueExists();
 	bool				SaveDownloadQueue(DownloadQueue* pDownloadQueue);
