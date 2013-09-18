@@ -1248,6 +1248,7 @@ void NzbInfoXmlCommand::AppendNZBInfoFields(NZBInfo* pNZBInfo)
 	"<member><name>UnpackStatus</name><value><string>%s</string></value></member>\n"
 	"<member><name>MoveStatus</name><value><string>%s</string></value></member>\n"
 	"<member><name>ScriptStatus</name><value><string>%s</string></value></member>\n"
+	"<member><name>DeleteStatus</name><value><string>%s</string></value></member>\n"
 	"<member><name>FileSizeLo</name><value><i4>%u</i4></value></member>\n"
 	"<member><name>FileSizeHi</name><value><i4>%u</i4></value></member>\n"
 	"<member><name>FileSizeMB</name><value><i4>%i</i4></value></member>\n"
@@ -1260,8 +1261,7 @@ void NzbInfoXmlCommand::AppendNZBInfoFields(NZBInfo* pNZBInfo)
 	"<member><name>DupeKey</name><value><string>%s</string></value></member>\n"
 	"<member><name>DupeScore</name><value><i4>%i</i4></value></member>\n"
 	"<member><name>Dupe</name><value><boolean>%s</boolean></value></member>\n"
-	"<member><name>Deleted</name><value><boolean>%s</boolean></value></member>\n"
-	"<member><name>HealthDeleted</name><value><boolean>%s</boolean></value></member>\n"
+	"<member><name>Deleted</name><value><boolean>%s</boolean></value></member>\n"	 // deprecated, use "DeleteStatus" instead
 	"<member><name>Parameters</name><value><array><data>\n";
 	
 	const char* XML_HISTORY_ITEM_SCRIPT_START =
@@ -1287,6 +1287,7 @@ void NzbInfoXmlCommand::AppendNZBInfoFields(NZBInfo* pNZBInfo)
 	"\"UnpackStatus\" : \"%s\",\n"
 	"\"MoveStatus\" : \"%s\",\n"
 	"\"ScriptStatus\" : \"%s\",\n"
+	"\"DeleteStatus\" : \"%s\",\n"
 	"\"FileSizeLo\" : %u,\n"
 	"\"FileSizeHi\" : %u,\n"
 	"\"FileSizeMB\" : %i,\n"
@@ -1299,8 +1300,7 @@ void NzbInfoXmlCommand::AppendNZBInfoFields(NZBInfo* pNZBInfo)
 	"\"DupeKey\" : \"%s\",\n"
 	"\"DupeScore\" : %i,\n"
 	"\"Dupe\" : %s,\n"
-	"\"Deleted\" : %s,\n"
-	"\"HealthDeleted\" : %s,\n"
+	"\"Deleted\" : %s,\n"			  // deprecated, use "DeleteStatus" instead
 	"\"Parameters\" : [\n";
 	
 	const char* JSON_HISTORY_ITEM_SCRIPT_START =
@@ -1356,6 +1356,7 @@ void NzbInfoXmlCommand::AppendNZBInfoFields(NZBInfo* pNZBInfo)
     const char* szUnpackStatusName[] = { "NONE", "NONE", "FAILURE", "SUCCESS" };
     const char* szMoveStatusName[] = { "NONE", "FAILURE", "SUCCESS" };
     const char* szScriptStatusName[] = { "NONE", "FAILURE", "SUCCESS" };
+    const char* szDeleteStatusName[] = { "NONE", "MANUAL", "HEALTH", "DUPE" };
 	
 	int iItemBufSize = 10240;
 	char* szItemBuf = (char*)malloc(iItemBufSize);
@@ -1376,11 +1377,12 @@ void NzbInfoXmlCommand::AppendNZBInfoFields(NZBInfo* pNZBInfo)
 			 xmlDestDir, xmlFinalDir, xmlCategory, szParStatusName[pNZBInfo->GetParStatus()],
 			 szUnpackStatusName[pNZBInfo->GetUnpackStatus()], szMoveStatusName[pNZBInfo->GetMoveStatus()],
 			 szScriptStatusName[pNZBInfo->GetScriptStatuses()->CalcTotalStatus()],
+			 szDeleteStatusName[pNZBInfo->GetDeleteStatus()],
 			 iFileSizeLo, iFileSizeHi, iFileSizeMB, pNZBInfo->GetFileCount(),
 			 pNZBInfo->GetTotalArticles(), pNZBInfo->GetSuccessArticles(), pNZBInfo->GetFailedArticles(),
 			 pNZBInfo->CalcHealth(), pNZBInfo->CalcCriticalHealth(),
 			 xmlDupeKey, pNZBInfo->GetDupeScore(), BoolToStr(pNZBInfo->GetDupe()),
-			 BoolToStr(pNZBInfo->GetDeleted()), BoolToStr(pNZBInfo->GetHealthDeleted()));
+			 BoolToStr(pNZBInfo->GetDeleteStatus() != NZBInfo::dsNone));
 	
 	free(xmlNZBNicename);
 	free(xmlNZBFilename);

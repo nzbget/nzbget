@@ -253,7 +253,7 @@ void QueueCoordinator::AddNZBFileToQueue(NZBFile* pNZBFile, bool bAddFirst)
 
 	Aspect foundAspect = { eaNZBFileFound, &m_DownloadQueue, pNZBFile->GetNZBInfo(), NULL };
 	Notify(&foundAspect);
-	if (pNZBFile->GetNZBInfo()->GetDeleted())
+	if (pNZBFile->GetNZBInfo()->GetDeleteStatus() != NZBInfo::dsNone)
 	{
 		m_mutexDownloadQueue.Unlock(); // UNLOCK
 
@@ -839,7 +839,8 @@ void QueueCoordinator::DiscardDiskFile(FileInfo* pFileInfo)
 void QueueCoordinator::CheckHealth(FileInfo* pFileInfo)
 {
 	if (g_pOptions->GetHealthCheck() == Options::hcNone ||
-		pFileInfo->GetNZBInfo()->GetHealthPaused() || pFileInfo->GetNZBInfo()->GetHealthDeleted() ||
+		pFileInfo->GetNZBInfo()->GetHealthPaused() ||
+		pFileInfo->GetNZBInfo()->GetDeleteStatus() == NZBInfo::dsHealth ||
 		pFileInfo->GetNZBInfo()->CalcHealth() >= pFileInfo->GetNZBInfo()->CalcCriticalHealth())
 	{
 		return;
@@ -856,8 +857,7 @@ void QueueCoordinator::CheckHealth(FileInfo* pFileInfo)
 	{
 		warn("Cancelling download and deleting %s due to health %.1f%% below critical %.1f%%", pFileInfo->GetNZBInfo()->GetName(),
 			pFileInfo->GetNZBInfo()->CalcHealth() / 10.0, pFileInfo->GetNZBInfo()->CalcCriticalHealth() / 10.0);
-		pFileInfo->GetNZBInfo()->SetDeleted(true);
-		pFileInfo->GetNZBInfo()->SetHealthDeleted(true);
+		pFileInfo->GetNZBInfo()->SetDeleteStatus(NZBInfo::dsHealth);
 		m_QueueEditor.LockedEditEntry(&m_DownloadQueue, pFileInfo->GetID(), false, QueueEditor::eaGroupDelete, 0, NULL);
 	}
 }

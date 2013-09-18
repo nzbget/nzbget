@@ -117,9 +117,14 @@ var History = (new function($)
 	{
 		if (hist.Kind === 'NZB')
 		{
-			if (hist.Deleted)
+			if (hist.DeleteStatus !== 'NONE')
 			{
-				hist.status = hist.HealthDeleted ? 'failure' : 'deleted';
+				switch (hist.DeleteStatus)
+				{
+					case 'HEALTH': hist.status = 'deleted-health'; break;
+					case 'MANUAL': hist.status = 'deleted-manual'; break;
+					case 'DUPE': hist.status = 'deleted-dupe'; break;
+				}
 			}
 			else if (hist.ParStatus == 'FAILURE' || hist.UnpackStatus == 'FAILURE' || hist.MoveStatus == 'FAILURE' || hist.ScriptStatus == 'FAILURE')
 			{
@@ -380,9 +385,8 @@ var HistoryUI = (new function($)
 				return '<span class="label label-status label-success">' + prefix + 'success</span>';
 			case 'failure':
 			case 'FAILURE':
+			case 'deleted-health':
 				return '<span class="label label-status label-important">' + prefix + 'failure</span>';
-			case 'aborted':
-				return '<span class="label label-status label-important">' + prefix + 'aborted</span>';
 			case 'unknown':
 			case 'UNKNOWN':
 				return '<span class="label label-status label-info">' + prefix + 'unknown</span>';
@@ -393,9 +397,15 @@ var HistoryUI = (new function($)
 			case 'MANUAL':
 			case 'damaged':
 				return '<span class="label label-status label-warning">' + prefix + status + '</span>';
-			case 'deleted':
-			case 'DELETED':
+			case 'deleted-manual':
 				return '<span class="label label-status">' + prefix + 'deleted</span>';
+			case 'deleted-dupe':
+			case 'edit-deleted-DUPE':
+				return '<span class="label label-status">' + prefix + 'dupe</span>';
+			case 'edit-deleted-MANUAL':
+				return '<span class="label label-status">' + prefix + 'manual</span>';
+			case 'edit-deleted-HEALTH':
+				return '<span class="label label-status label-important">' + prefix + 'health</span>';
 			case 'SCAN_SKIPPED':
 				return '<span class="label label-status">' + prefix + 'skipped</span>';
 			case 'none':

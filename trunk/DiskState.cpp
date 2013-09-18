@@ -138,7 +138,7 @@ bool DiskState::SaveDownloadQueue(DownloadQueue* pDownloadQueue)
 		return false;
 	}
 
-	fprintf(outfile, "%s%i\n", FORMATVERSION_SIGNATURE, 34);
+	fprintf(outfile, "%s%i\n", FORMATVERSION_SIGNATURE, 35);
 
 	// save nzb-infos
 	SaveNZBList(pDownloadQueue, outfile);
@@ -192,7 +192,7 @@ bool DiskState::LoadDownloadQueue(DownloadQueue* pDownloadQueue)
 	char FileSignatur[128];
 	fgets(FileSignatur, sizeof(FileSignatur), infile);
 	int iFormatVersion = ParseFormatVersion(FileSignatur);
-	if (iFormatVersion < 3 || iFormatVersion > 34)
+	if (iFormatVersion < 3 || iFormatVersion > 35)
 	{
 		error("Could not load diskstate due to file version mismatch");
 		fclose(infile);
@@ -267,10 +267,9 @@ void DiskState::SaveNZBList(DownloadQueue* pDownloadQueue, FILE* outfile)
 		fprintf(outfile, "%s\n", pNZBInfo->GetName());
 		fprintf(outfile, "%s\n", pNZBInfo->GetCategory());
 		fprintf(outfile, "%i\n", (int)pNZBInfo->GetPostProcess());
-		fprintf(outfile, "%i,%i,%i,%i\n", (int)pNZBInfo->GetParStatus(), (int)pNZBInfo->GetUnpackStatus(),
-			(int)pNZBInfo->GetMoveStatus(), (int)pNZBInfo->GetRenameStatus());
-		fprintf(outfile, "%i,%i,%i,%i\n", (int)pNZBInfo->GetDeleted(), (int)pNZBInfo->GetUnpackCleanedUpDisk(),
-			(int)pNZBInfo->GetHealthPaused(), (int)pNZBInfo->GetHealthDeleted());
+		fprintf(outfile, "%i,%i,%i,%i,%i\n", (int)pNZBInfo->GetParStatus(), (int)pNZBInfo->GetUnpackStatus(),
+			(int)pNZBInfo->GetMoveStatus(), (int)pNZBInfo->GetRenameStatus(), (int)pNZBInfo->GetDeleteStatus());
+		fprintf(outfile, "%i,%i\n", (int)pNZBInfo->GetUnpackCleanedUpDisk(), (int)pNZBInfo->GetHealthPaused());
 		fprintf(outfile, "%i,%i\n", pNZBInfo->GetFileCount(), pNZBInfo->GetParkedFileCount());
 
 		fprintf(outfile, "%u,%u\n", pNZBInfo->GetFullContentHash(), pNZBInfo->GetFilteredContentHash());
@@ -424,8 +423,12 @@ bool DiskState::LoadNZBList(DownloadQueue* pDownloadQueue, FILE* infile, int iFo
 
 		if (iFormatVersion >= 18)
 		{
-			int iParStatus, iUnpackStatus, iScriptStatus, iMoveStatus = 0, iRenameStatus = 0;
-			if (iFormatVersion >= 23)
+			int iParStatus, iUnpackStatus, iScriptStatus, iMoveStatus = 0, iRenameStatus = 0, iDeleteStatus = 0;
+			if (iFormatVersion >= 35)
+			{
+				if (fscanf(infile, "%i,%i,%i,%i,%i\n", &iParStatus, &iUnpackStatus, &iMoveStatus, &iRenameStatus, &iDeleteStatus) != 5) goto error;
+			}
+			else if (iFormatVersion >= 23)
 			{
 				if (fscanf(infile, "%i,%i,%i,%i\n", &iParStatus, &iUnpackStatus, &iMoveStatus, &iRenameStatus) != 4) goto error;
 			}
@@ -445,6 +448,7 @@ bool DiskState::LoadNZBList(DownloadQueue* pDownloadQueue, FILE* infile, int iFo
 			pNZBInfo->SetUnpackStatus((NZBInfo::EUnpackStatus)iUnpackStatus);
 			pNZBInfo->SetMoveStatus((NZBInfo::EMoveStatus)iMoveStatus);
 			pNZBInfo->SetRenameStatus((NZBInfo::ERenameStatus)iRenameStatus);
+			pNZBInfo->SetDeleteStatus((NZBInfo::EDeleteStatus)iDeleteStatus);
 			if (iFormatVersion < 23)
 			{
 				if (iScriptStatus > 1) iScriptStatus--;
@@ -452,15 +456,24 @@ bool DiskState::LoadNZBList(DownloadQueue* pDownloadQueue, FILE* infile, int iFo
 			}
 		}
 
-		if (iFormatVersion >= 28)
+		if (iFormatVersion >= 35)
 		{
-			int iDeleted, iUnpackCleanedUpDisk, bHealthPaused, bHealthDeleted;
-			if (fscanf(infile, "%i,%i,%i,%i\n", &iDeleted, &iUnpackCleanedUpDisk, &bHealthPaused, &bHealthDeleted) != 4) goto error;
-			pNZBInfo->SetDeleted((bool)iDeleted);
+			int iUnpackCleanedUpDisk, bHealthPaused;
+			if (fscanf(infile, "%i,%i\n", &iUnpackCleanedUpDisk, &bHealthPaused) != 2) goto error;
 			pNZBInfo->SetUnpackCleanedUpDisk((bool)iUnpackCleanedUpDisk);
 			pNZBInfo->SetHealthPaused((bool)bHealthPaused);
-			pNZBInfo->SetHealthDeleted((bool)bHealthDeleted);
+		}
+		else if (iFormatVersion >= 28)
+		{
+			int iDeleted, iUnpackCleanedUpDisk, iHealthPaused, iHealthDeleted;
+			if (fscanf(infile, "%i,%i,%i,%i\n", &iDeleted, &iUnpackCleanedUpDisk, &iHealthPaused, &iHealthDeleted) != 4) goto error;
+			pNZBInfo->SetUnpackCleanedUpDisk((bool)iUnpackCleanedUpDisk);
+			pNZBInfo->SetHealthPaused((bool)iHealthPaused);
+			pNZBInfo->SetDeleteStatus(iHealthDeleted ? NZBInfo::dsHealth : iDeleted ? NZBInfo::dsManual : NZBInfo::dsNone);
+		}
 
+		if (iFormatVersion >= 28)
+		{
 			int iFileCount, iParkedFileCount;
 			if (fscanf(infile, "%i,%i\n", &iFileCount, &iParkedFileCount) != 2) goto error;
 			pNZBInfo->SetFileCount(iFileCount);
@@ -1381,7 +1394,7 @@ bool DiskState::LoadHistory(DownloadQueue* pDownloadQueue, FILE* infile, int iFo
 			if (iFormatVersion < 28 && pNZBInfo->GetParStatus() == 0 &&
 				pNZBInfo->GetUnpackStatus() == 0 && pNZBInfo->GetMoveStatus() == 0)
 			{
-				pNZBInfo->SetDeleted(true);
+				pNZBInfo->SetDeleteStatus(NZBInfo::dsManual);
 			}
 		}
 		else if (eKind == HistoryInfo::hkUrlInfo)
