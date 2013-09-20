@@ -121,6 +121,7 @@ public:
 	DownloadQueue*			LockQueue();
 	void					UnlockQueue() ;
 	void					AddNZBFileToQueue(NZBFile* pNZBFile, bool bAddFirst);
+	void					AddFileInfosToFileQueue(NZBFile* pNZBFile, FileQueue* pFileQueue, bool bAddFirst);
 	bool					HasMoreJobs() { return m_bHasMoreJobs; }
 	bool					GetStandBy() { return m_bStandBy; }
 	bool					DeleteQueueEntry(FileInfo* pFileInfo);

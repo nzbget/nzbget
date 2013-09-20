@@ -296,6 +296,7 @@ NZBInfo::NZBInfo()
 	m_eCleanupStatus = csNone;
 	m_eMoveStatus = msNone;
 	m_eDeleteStatus = dsNone;
+	m_eMarkStatus = ksNone;
 	m_bDeleting = false;
 	m_bHealthPaused = false;
 	m_bParCleanup = false;
@@ -1152,6 +1153,7 @@ void UrlInfo::MakeNiceName(const char* szURL, const char* szNZBFilename, char* s
 DupInfo::DupInfo()
 {
 	m_szName = NULL;
+	m_bDupe = false;
 	m_szDupeKey = NULL;
 	m_iDupeScore = 0;
 	m_lSize = 0;

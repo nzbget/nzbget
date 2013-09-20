@@ -361,6 +361,13 @@ public:
 		dsDupe
 	};
 
+	enum EMarkStatus
+	{
+		ksNone,
+		ksBad,
+		ksGood
+	};
+
 	typedef std::vector<char*>			Files;
 	typedef std::deque<Message*>		Messages;
 
@@ -395,6 +402,7 @@ private:
 	ECleanupStatus		m_eCleanupStatus;
 	EMoveStatus			m_eMoveStatus;
 	EDeleteStatus		m_eDeleteStatus;
+	EMarkStatus			m_eMarkStatus;
 	char*				m_szQueuedFilename;
 	bool				m_bDeleting;
 	bool				m_bHealthPaused;
@@ -486,6 +494,8 @@ public:
 	void				SetMoveStatus(EMoveStatus eMoveStatus) { m_eMoveStatus = eMoveStatus; }
 	EDeleteStatus		GetDeleteStatus() { return m_eDeleteStatus; }
 	void				SetDeleteStatus(EDeleteStatus eDeleteStatus) { m_eDeleteStatus = eDeleteStatus; }
+	EMarkStatus			GetMarkStatus() { return m_eMarkStatus; }
+	void				SetMarkStatus(EMarkStatus eMarkStatus) { m_eMarkStatus = eMarkStatus; }
 	const char*			GetQueuedFilename() { return m_szQueuedFilename; }
 	void				SetQueuedFilename(const char* szQueuedFilename);
 	bool				GetDeleting() { return m_bDeleting; }
@@ -683,11 +693,15 @@ public:
 		dsUndefined,
 		dsSuccess,
 		dsFailed,
-		dsDeleted
+		dsDeleted,
+		dsDupe,
+		dsBad,
+		dsGood
 	};
 
 private:
 	char*				m_szName;
+	bool				m_bDupe;
 	char*				m_szDupeKey;
 	int					m_iDupeScore;
 	long long 			m_lSize;
@@ -700,6 +714,8 @@ public:
 						~DupInfo();
 	const char*			GetName() { return m_szName; }			// needs locking (for shared objects)
 	void				SetName(const char* szName);			// needs locking (for shared objects)
+	int					GetDupe() { return m_bDupe; }
+	void				SetDupe(bool bDupe) { m_bDupe = bDupe; }
 	const char*			GetDupeKey() { return m_szDupeKey; }	// needs locking (for shared objects)
 	void				SetDupeKey(const char* szDupeKey);		// needs locking (for shared objects)
 	int					GetDupeScore() { return m_iDupeScore; }

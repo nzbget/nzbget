@@ -253,21 +253,52 @@ void QueueCoordinator::AddNZBFileToQueue(NZBFile* pNZBFile, bool bAddFirst)
 
 	Aspect foundAspect = { eaNZBFileFound, &m_DownloadQueue, pNZBFile->GetNZBInfo(), NULL };
 	Notify(&foundAspect);
-	if (pNZBFile->GetNZBInfo()->GetDeleteStatus() != NZBInfo::dsNone)
+
+	if (pNZBFile->GetNZBInfo()->GetDeleteStatus() != NZBInfo::dsNone &&
+		g_pOptions->GetSaveQueue() && g_pOptions->GetServerMode())
+	{
+		for (NZBFile::FileInfos::iterator it = pNZBFile->GetFileInfos()->begin(); it != pNZBFile->GetFileInfos()->end(); it++)
+		{
+			FileInfo* pFileInfo = *it;
+			g_pDiskState->DiscardFile(pFileInfo);
+		}
+	}
+
+	if (pNZBFile->GetNZBInfo()->GetDeleteStatus() == NZBInfo::dsManual)
 	{
 		m_mutexDownloadQueue.Unlock(); // UNLOCK
-
-		if (g_pOptions->GetSaveQueue() && g_pOptions->GetServerMode())
-		{
-			for (NZBFile::FileInfos::iterator it = pNZBFile->GetFileInfos()->begin(); it != pNZBFile->GetFileInfos()->end(); it++)
-			{
-				FileInfo* pFileInfo = *it;
-				g_pDiskState->DiscardFile(pFileInfo);
-			}
-		}
-
 		return;
 	}
+
+	m_DownloadQueue.GetNZBInfoList()->Add(pNZBFile->GetNZBInfo());
+
+	if (pNZBFile->GetNZBInfo()->GetDeleteStatus() == NZBInfo::dsNone)
+	{
+		AddFileInfosToFileQueue(pNZBFile, m_DownloadQueue.GetFileQueue(), bAddFirst);
+	}
+
+	char szNZBName[1024];
+	strncpy(szNZBName, pNZBFile->GetNZBInfo()->GetName(), sizeof(szNZBName)-1);
+
+	Aspect aspect = { eaNZBFileAdded, &m_DownloadQueue, pNZBFile->GetNZBInfo(), NULL };
+	Notify(&aspect);
+	
+	if (g_pOptions->GetSaveQueue() && g_pOptions->GetServerMode())
+	{
+		g_pDiskState->SaveDownloadQueue(&m_DownloadQueue);
+	}
+
+	m_mutexDownloadQueue.Unlock();
+
+	if (pNZBFile->GetNZBInfo()->GetDeleteStatus() == NZBInfo::dsNone)
+	{
+		info("Collection %s added to queue", szNZBName);
+	}
+}
+
+void QueueCoordinator::AddFileInfosToFileQueue(NZBFile* pNZBFile, FileQueue* pFileQueue, bool bAddFirst)
+{
+	debug("Adding NZBFile to queue");
 
 	FileQueue tmpFileQueue;
 	FileQueue DupeList;
@@ -318,11 +349,11 @@ void QueueCoordinator::AddNZBFileToQueue(NZBFile* pNZBFile, bool bAddFirst)
 	{
 		if (bAddFirst)
 		{
-			m_DownloadQueue.GetFileQueue()->push_front(*it);
+			pFileQueue->push_front(*it);
 		}
 		else
 		{
-			m_DownloadQueue.GetFileQueue()->push_back(*it);
+			pFileQueue->push_back(*it);
 		}
 	}
 
@@ -336,24 +367,7 @@ void QueueCoordinator::AddNZBFileToQueue(NZBFile* pNZBFile, bool bAddFirst)
 		delete pFileInfo;
 	}
 
-	m_DownloadQueue.GetNZBInfoList()->Add(pNZBFile->GetNZBInfo());
-
 	pNZBFile->DetachFileInfos();
-
-	char szNZBName[1024];
-	strncpy(szNZBName, pNZBFile->GetNZBInfo()->GetName(), sizeof(szNZBName)-1);
-
-	Aspect aspect = { eaNZBFileAdded, &m_DownloadQueue, pNZBFile->GetNZBInfo(), NULL };
-	Notify(&aspect);
-	
-	if (g_pOptions->GetSaveQueue() && g_pOptions->GetServerMode())
-	{
-		g_pDiskState->SaveDownloadQueue(&m_DownloadQueue);
-	}
-
-	m_mutexDownloadQueue.Unlock();
-
-	info("Collection %s added to queue", szNZBName);
 }
 
 /*

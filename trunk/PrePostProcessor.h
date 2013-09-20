@@ -45,7 +45,9 @@ public:
 		eaHistoryDelete,
 		eaHistoryReturn,
 		eaHistoryProcess,
-		eaHistorySetParameter
+		eaHistorySetParameter,
+		eaHistoryMarkBad,
+		eaHistoryMarkGood
 	};
 
 private:
@@ -66,7 +68,13 @@ private:
 
 		friend class PrePostProcessor;
 	};
-	
+
+	enum EHistoryCleanupMode
+	{
+		cmOld,
+		cmDupe
+	};
+
 private:
 	PostParCoordinator	m_ParCoordinator;
 	QueueCoordinatorObserver	m_QueueCoordinatorObserver;
@@ -95,8 +103,11 @@ private:
 	void				NZBDeleted(DownloadQueue* pDownloadQueue, NZBInfo* pNZBInfo);
 	void				NZBCompleted(DownloadQueue* pDownloadQueue, NZBInfo* pNZBInfo, bool bSaveQueue);
 	void				DupeCompleted(DownloadQueue* pDownloadQueue, NZBInfo* pNZBInfo);
+	void				RemoveDupes(DownloadQueue* pDownloadQueue, NZBInfo* pNZBInfo);
+	void				UnpauseBestDupe(DownloadQueue* pDownloadQueue, NZBInfo* pNZBInfo, const char* szNZBName, const char* szDupeKey);
 	void				CheckDupeFound(DownloadQueue* pDownloadQueue, NZBInfo* pNZBInfo);
 	void				CheckDupeAdded(DownloadQueue* pDownloadQueue, NZBInfo* pNZBInfo);
+	void				MarkDupe(NZBInfo* pNZBInfo, NZBInfo* pDupeNZBInfo);
 	void				DeleteQueuedFile(const char* szQueuedFile);
 	int					FindGroupID(DownloadQueue* pDownloadQueue, NZBInfo* pNZBInfo);
 	bool				PostQueueMove(IDList* pIDList, EEditAction eAction, int iOffset);
@@ -105,6 +116,10 @@ private:
 	void				HistoryDelete(DownloadQueue* pDownloadQueue, HistoryList::iterator itHistory, HistoryInfo* pHistoryInfo);
 	void				HistoryReturn(DownloadQueue* pDownloadQueue, HistoryList::iterator itHistory, HistoryInfo* pHistoryInfo, bool bReprocess);
 	void				HistorySetParameter(HistoryInfo* pHistoryInfo, const char* szText);
+	void				HistoryMark(DownloadQueue* pDownloadQueue, HistoryInfo* pHistoryInfo, bool bGood);
+	void				HistoryReturnDupe(DownloadQueue* pDownloadQueue, HistoryInfo* pHistoryInfo);
+	bool				IsDupeSuccess(NZBInfo* pNZBInfo);
+	void				CleanupHistory(DownloadQueue* pDownloadQueue, EHistoryCleanupMode eMode, HistoryInfo* pMarkHistoryInfo);
 	void				Cleanup();
 	FileInfo*			GetQueueGroup(DownloadQueue* pDownloadQueue, NZBInfo* pNZBInfo);
 	void				CheckHistory();

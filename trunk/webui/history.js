@@ -117,7 +117,11 @@ var History = (new function($)
 	{
 		if (hist.Kind === 'NZB')
 		{
-			if (hist.DeleteStatus !== 'NONE')
+			if (hist.MarkStatus === 'BAD')
+			{
+				hist.status = 'failure';
+			}
+			else if (hist.DeleteStatus !== 'NONE')
 			{
 				switch (hist.DeleteStatus)
 				{
@@ -177,7 +181,10 @@ var History = (new function($)
 			{
 				case 'SUCCESS': hist.status = 'success'; break;
 				case 'FAILURE': hist.status = 'failure'; break;
-				case 'DELETED': hist.status = 'deleted'; break;
+				case 'DELETED': hist.status = 'deleted-manual'; break;
+				case 'DUPE': hist.status = 'deleted-dupe'; break;
+				case 'GOOD': hist.status = 'GOOD'; break;
+				case 'BAD': hist.status = 'failure'; break;
 				case 'UNKNOWN': hist.status = 'unknown'; break;
 			}
 		}
@@ -195,7 +202,7 @@ var History = (new function($)
 			var statustext = hist.status === 'none' ? 'unknown' : hist.status;
 			var size = kind === 'URL' ? '' : Util.formatSizeMB(hist.FileSizeMB);
 			var time = Util.formatDateTime(hist.HistoryTime + UISettings.timeZoneCorrection*60*60);
-			var dupe = '';
+			var dupe = DownloadsUI.buildDupeText(hist.Dupe, hist.DupeKey, hist.DupeScore);
 			var category = '';
 
 			var textname = hist.Name;
@@ -211,7 +218,6 @@ var History = (new function($)
 			if (kind !== 'DUP')
 			{
 				category = hist.Category;
-				dupe = DownloadsUI.buildDupeText(hist.Dupe, hist.DupeKey, hist.DupeScore);
 			}
 
 			var item =
@@ -238,12 +244,11 @@ var History = (new function($)
 		var status = HistoryUI.buildStatus(hist.status, '');
 
 		var name = '<a href="#" histid="' + hist.ID + '">' + Util.textToHtml(Util.formatNZBName(hist.Name)) + '</a>';
-		var dupe = '';
+		var dupe = DownloadsUI.buildDupe(hist.Dupe, hist.DupeKey, hist.DupeScore);
 		var category = '';
 
 		if (hist.Kind !== 'DUP')
 		{
-			var dupe = DownloadsUI.buildDupe(hist.Dupe, hist.DupeKey, hist.DupeScore);
 			var category = Util.textToHtml(hist.Category);
 		}
 
@@ -382,11 +387,14 @@ var HistoryUI = (new function($)
 		{
 			case 'success':
 			case 'SUCCESS':
-				return '<span class="label label-status label-success">' + prefix + 'success</span>';
+			case 'GOOD':
+				return '<span class="label label-status label-success">' + prefix + status + '</span>';
 			case 'failure':
 			case 'FAILURE':
 			case 'deleted-health':
 				return '<span class="label label-status label-important">' + prefix + 'failure</span>';
+			case 'BAD':
+				return '<span class="label label-status label-important">' + prefix + status + '</span>';
 			case 'unknown':
 			case 'UNKNOWN':
 				return '<span class="label label-status label-info">' + prefix + 'unknown</span>';

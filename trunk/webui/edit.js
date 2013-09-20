@@ -1304,6 +1304,8 @@ var HistoryEditDialog = (new function()
 		$('#HistoryEdit_Reprocess').click(itemReprocess);
 		$('#HistoryEdit_Param').click(tabClick);
 		$('#HistoryEdit_Back').click(backClick);
+		$('#HistoryEdit_MarkGood').click(itemGood);
+		$('#HistoryEdit_MarkBad').click(itemBad);
 		
 		$ServStatsTable = $('#HistoryEdit_ServStatsTable');
 		$ServStatsTable.fasttable(
@@ -1339,6 +1341,11 @@ var HistoryEditDialog = (new function()
 				(hist.Health === 1000 ? 'label-success' : hist.Health >= hist.CriticalHealth ? 'label-warning' : 'label-important') +
 				'">health: ' + Math.floor(hist.Health / 10) + '%</span>';
 
+			if (hist.MarkStatus !== 'NONE')
+			{
+				status += ' ' + HistoryUI.buildStatus(hist.MarkStatus, 'Mark: ');
+			}
+			
 			if (hist.DeleteStatus === 'NONE')
 			{
 				status += ' ' + HistoryUI.buildStatus(hist.ParStatus, 'Par: ') +
@@ -1349,13 +1356,11 @@ var HistoryEditDialog = (new function()
 			{
 				status += ' ' + HistoryUI.buildStatus('edit-deleted-' + hist.DeleteStatus, 'Delete: ');
 			}
-			if (hist.DeleteStatus === 'NONE' || hist.DeleteStatus === 'HEALTH')
+			
+			for (var i=0; i<hist.ScriptStatuses.length; i++)
 			{
-				for (var i=0; i<hist.ScriptStatuses.length; i++)
-				{
-					var scriptStatus = hist.ScriptStatuses[i];
-					status += ' ' + HistoryUI.buildStatus(scriptStatus.Status, Options.shortScriptName(scriptStatus.Name) + ': ') + ' ';
-				}
+				var scriptStatus = hist.ScriptStatuses[i];
+				status += ' ' + HistoryUI.buildStatus(scriptStatus.Status, Options.shortScriptName(scriptStatus.Name) + ': ') + ' ';
 			}
 		}
 		else if (hist.Kind === 'URL')
@@ -1417,6 +1422,9 @@ var HistoryEditDialog = (new function()
 		Util.show('#HistoryEdit_PathGroup, #HistoryEdit_StatisticsGroup, #HistoryEdit_Reprocess', hist.Kind === 'NZB');
 		Util.show('#HistoryEdit_CategoryGroup', hist.Kind !== 'DUP');
 		Util.show('#HistoryEdit_DupGroup', hist.Kind === 'DUP');
+		Util.show('#HistoryEdit_MarkGood', (hist.Kind === 'NZB' && hist.MarkStatus !== 'GOOD') || (hist.Kind === 'DUP' && hist.DupStatus !== 'GOOD'));
+		Util.show('#HistoryEdit_MarkBad', hist.Kind !== 'URL');
+		$('#HistoryEdit_CategoryGroup').toggleClass('control-group-last', hist.Kind === 'URL');
 
 		var postParamConfig = ParamTab.createPostParamConfig();
 		var postParam = hist.Kind === 'NZB' && postParamConfig[0].options.length > 0;
@@ -1540,6 +1548,32 @@ var HistoryEditDialog = (new function()
 		saveParam(completed);
 	}
 	
+	function itemGood(e)
+	{
+		e.preventDefault();
+		ConfirmDialog.showModal('HistoryEditGoodConfirmDialog', doItemGood);
+	}
+	
+	function doItemGood()
+	{
+		disableAllButtons();
+		notification = '#Notif_History_Marked';
+		RPC.call('editqueue', ['HistoryMarkGood', 0, '', [curHist.ID]], completed);
+	}
+	
+	function itemBad(e)
+	{
+		e.preventDefault();
+		ConfirmDialog.showModal('HistoryEditBadConfirmDialog', doItemBad);
+	}
+	
+	function doItemBad()
+	{
+		disableAllButtons();
+		notification = '#Notif_History_Marked';
+		RPC.call('editqueue', ['HistoryMarkBad', 0, '', [curHist.ID]], completed);
+	}
+
 	/*** TAB: POST-PROCESSING PARAMETERS **************************************************/
 
 	function saveParam(_saveParamCompleted)
