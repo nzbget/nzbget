@@ -388,7 +388,7 @@ void UrlCoordinator::UrlCompleted(UrlDownloader* pUrlDownloader)
 	debug("Filename: [%s]", filename);
 
 	// delete Download from active jobs
-	DownloadQueue* pDownloadQueue = g_pQueueCoordinator->LockQueue();
+	g_pQueueCoordinator->LockQueue();
 	for (ActiveDownloads::iterator it = m_ActiveDownloads.begin(); it != m_ActiveDownloads.end(); it++)
 	{
 		UrlDownloader* pa = *it;
@@ -422,7 +422,7 @@ void UrlCoordinator::UrlCompleted(UrlDownloader* pUrlDownloader)
 	// delete Download from Url Queue
 	if (pUrlInfo->GetStatus() != UrlInfo::aiRetry)
 	{
-		pDownloadQueue = g_pQueueCoordinator->LockQueue();
+		DownloadQueue* pDownloadQueue = g_pQueueCoordinator->LockQueue();
 
 		for (UrlQueue::iterator it = pDownloadQueue->GetUrlQueue()->begin(); it != pDownloadQueue->GetUrlQueue()->end(); it++)
 		{

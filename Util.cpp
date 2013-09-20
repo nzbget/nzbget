@@ -430,7 +430,7 @@ bool Util::SaveBufferIntoFile(const char* szFileName, const char* szBuffer, int 
 	int iWrittenBytes = fwrite(szBuffer, 1, iBufLen, pFile);
     fclose(pFile);
 
-	return iWrittenBytes = iBufLen;
+	return iWrittenBytes == iBufLen;
 }
 
 bool Util::CreateSparseFile(const char* szFilename, int iSize)
@@ -1987,7 +1987,6 @@ bool WildMask::Match(const char *szStr)
 				if (m_bWantsPositions && star)
 				{
 					m_WildLen[m_iWildCount-1] = strlen(str);
-					star = false;
 				}
 
 				return true;
