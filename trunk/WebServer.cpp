@@ -231,6 +231,7 @@ bool WebProcessor::IsAuthorizedIP(const char* szRemoteAddr)
 	const char* szRemoteIP = m_pConnection->GetRemoteAddr();
 
 	// split option AuthorizedIP into tokens and check each token
+	bool bAuthorized = false;
 	char* szAuthorizedIP = strdup(g_pOptions->GetAuthorizedIP());
 	char* saveptr;
 	char* szIP = strtok_r(szAuthorizedIP, ",;", &saveptr);
@@ -239,13 +240,14 @@ bool WebProcessor::IsAuthorizedIP(const char* szRemoteAddr)
 		szIP = Util::Trim(szIP);
 		if (szIP[0] != '\0' && !strcmp(szIP, szRemoteIP))
 		{
-			return true;
+			bAuthorized = true;
+			break;
 		}
 		szIP = strtok_r(NULL, ",;", &saveptr);
 	}
 	free(szAuthorizedIP);
 	
-	return false;
+	return bAuthorized;
 }
 
 void WebProcessor::Dispatch()
