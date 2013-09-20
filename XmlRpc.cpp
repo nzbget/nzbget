@@ -1249,6 +1249,7 @@ void NzbInfoXmlCommand::AppendNZBInfoFields(NZBInfo* pNZBInfo)
 	"<member><name>MoveStatus</name><value><string>%s</string></value></member>\n"
 	"<member><name>ScriptStatus</name><value><string>%s</string></value></member>\n"
 	"<member><name>DeleteStatus</name><value><string>%s</string></value></member>\n"
+	"<member><name>MarkStatus</name><value><string>%s</string></value></member>\n"
 	"<member><name>FileSizeLo</name><value><i4>%u</i4></value></member>\n"
 	"<member><name>FileSizeHi</name><value><i4>%u</i4></value></member>\n"
 	"<member><name>FileSizeMB</name><value><i4>%i</i4></value></member>\n"
@@ -1288,6 +1289,7 @@ void NzbInfoXmlCommand::AppendNZBInfoFields(NZBInfo* pNZBInfo)
 	"\"MoveStatus\" : \"%s\",\n"
 	"\"ScriptStatus\" : \"%s\",\n"
 	"\"DeleteStatus\" : \"%s\",\n"
+	"\"MarkStatus\" : \"%s\",\n"
 	"\"FileSizeLo\" : %u,\n"
 	"\"FileSizeHi\" : %u,\n"
 	"\"FileSizeMB\" : %i,\n"
@@ -1357,6 +1359,7 @@ void NzbInfoXmlCommand::AppendNZBInfoFields(NZBInfo* pNZBInfo)
     const char* szMoveStatusName[] = { "NONE", "FAILURE", "SUCCESS" };
     const char* szScriptStatusName[] = { "NONE", "FAILURE", "SUCCESS" };
     const char* szDeleteStatusName[] = { "NONE", "MANUAL", "HEALTH", "DUPE" };
+    const char* szMarkStatusName[] = { "NONE", "BAD", "GOOD" };
 	
 	int iItemBufSize = 10240;
 	char* szItemBuf = (char*)malloc(iItemBufSize);
@@ -1377,7 +1380,7 @@ void NzbInfoXmlCommand::AppendNZBInfoFields(NZBInfo* pNZBInfo)
 			 xmlDestDir, xmlFinalDir, xmlCategory, szParStatusName[pNZBInfo->GetParStatus()],
 			 szUnpackStatusName[pNZBInfo->GetUnpackStatus()], szMoveStatusName[pNZBInfo->GetMoveStatus()],
 			 szScriptStatusName[pNZBInfo->GetScriptStatuses()->CalcTotalStatus()],
-			 szDeleteStatusName[pNZBInfo->GetDeleteStatus()],
+			 szDeleteStatusName[pNZBInfo->GetDeleteStatus()], szMarkStatusName[pNZBInfo->GetMarkStatus()],
 			 iFileSizeLo, iFileSizeHi, iFileSizeMB, pNZBInfo->GetFileCount(),
 			 pNZBInfo->GetTotalArticles(), pNZBInfo->GetSuccessArticles(), pNZBInfo->GetFailedArticles(),
 			 pNZBInfo->CalcHealth(), pNZBInfo->CalcCriticalHealth(),
@@ -1595,6 +1598,8 @@ EditCommandEntry EditCommandNameMap[] = {
 	{ PrePostProcessor::eaHistoryReturn, "HistoryReturn" },
 	{ PrePostProcessor::eaHistoryProcess, "HistoryProcess" },
 	{ PrePostProcessor::eaHistorySetParameter, "HistorySetParameter" },
+	{ PrePostProcessor::eaHistoryMarkBad, "HistoryMarkBad" },
+	{ PrePostProcessor::eaHistoryMarkGood, "HistoryMarkGood" },
 	{ 0, NULL }
 };
 
@@ -2029,6 +2034,8 @@ void HistoryXmlCommand::Execute()
 		"<member><name>FileSizeHi</name><value><i4>%u</i4></value></member>\n"
 		"<member><name>FileSizeMB</name><value><i4>%i</i4></value></member>\n"
 		"<member><name>DupeKey</name><value><string>%s</string></value></member>\n"
+		"<member><name>DupeScore</name><value><i4>%i</i4></value></member>\n"
+		"<member><name>Dupe</name><value><boolean>%s</boolean></value></member>\n"
 		"<member><name>DupStatus</name><value><string>%s</string></value></member>\n"
 		"</struct></value>\n";
 
@@ -2042,10 +2049,12 @@ void HistoryXmlCommand::Execute()
 		"\"FileSizeHi\" : %i,\n"
 		"\"FileSizeMB\" : %i,\n"
 		"\"DupeKey\" : \"%s\",\n"
+		"\"DupeScore\" : %i,\n"
+		"\"Dupe\" : %s,\n"
 		"\"DupStatus\" : \"%s\",\n";
 
 	const char* szUrlStatusName[] = { "UNKNOWN", "UNKNOWN", "SUCCESS", "FAILURE", "UNKNOWN", "SCAN_SKIPPED", "SCAN_FAILURE" };
-	const char* szDupStatusName[] = { "UNKNOWN", "SUCCESS", "FAILURE", "DELETED" };
+	const char* szDupStatusName[] = { "UNKNOWN", "SUCCESS", "FAILURE", "DELETED", "DUPE", "BAD", "GOOD" };
 	const char* szMessageType[] = { "INFO", "WARNING", "ERROR", "DEBUG", "DETAIL"};
 
 	bool bDup = false;
@@ -2109,7 +2118,8 @@ void HistoryXmlCommand::Execute()
 
 			snprintf(szItemBuf, iItemBufSize, IsJson() ? JSON_HISTORY_DUP_ITEM : XML_HISTORY_DUP_ITEM,
 				pHistoryInfo->GetID(), "DUP", xmlNicename, pHistoryInfo->GetTime(),
-				iFileSizeLo, iFileSizeHi, iFileSizeMB, xmlDupeKey, szDupStatusName[pDupInfo->GetStatus()]);
+				iFileSizeLo, iFileSizeHi, iFileSizeMB, xmlDupeKey, pDupInfo->GetDupeScore(),
+				BoolToStr(pDupInfo->GetDupe()), szDupStatusName[pDupInfo->GetStatus()]);
 
 			free(xmlDupeKey);
 		}

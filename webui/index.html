@@ -320,7 +320,7 @@
 				</div>
 
 				<div class="btn-group">
-					<button class="btn" id="History_Dup" onclick="History.dupClick()" title="Show old records used for duplicate check"><i class="icon-duplicates" id="History_DupIcon"></i><span class="btn-caption"> Old</span></button>
+					<button class="btn" id="History_Dup" onclick="History.dupClick()" title="Show old records kept for duplicate check"><i class="icon-duplicates" id="History_DupIcon"></i><span class="btn-caption"> Old</span></button>
 				</div>
 
 				<div class="btn-group phone-only inline" id="HistoryRecordsPerPageBlockPhone">
@@ -1159,6 +1159,8 @@
 				<li><a href="#" id="HistoryEdit_Reprocess"><i class="icon-process"></i> Post-Process Again</a></li>
 				<li><a href="#" id="HistoryEdit_Return"><i class="icon-downloads"></i> Download Remaining Files</a></li>
 				<li><a href="#" id="HistoryEdit_ReturnURL"><i class="icon-downloads"></i> Download Again</a></li>
+				<li><a href="#" id="HistoryEdit_MarkGood"><i class="icon-ok"></i> Mark as Good</a></li>
+				<li><a href="#" id="HistoryEdit_MarkBad"><i class="icon-remove"></i> Mark as Bad</a></li>
 				<li class="menu-header" id="HistoryEdit_DNZB_Section">Indexer Links</li>
 				<li><a href="#" target="_blank" class="HistoryEdit_DNZB" id="HistoryEdit_DNZB_Details"><i class="icon-postcard"></i> Details</a></li>
 				<li><a href="#" target="_blank" class="HistoryEdit_DNZB" id="HistoryEdit_DNZB_MoreInfo"><i class="icon-link"></i> More Info</a></li>
@@ -1624,6 +1626,39 @@
 	<div id="HistoryEditDeleteConfirmDialog_OK">Delete</div>
 </div>
 
+<!-- *** MARK AS GOOD CURRENT HISTORY RECORD CONFIRMATION DIALOG DATA ******************************** -->
+
+<div class="hide" id="HistoryEditGoodConfirmDialog">
+	<div id="HistoryEditGoodConfirmDialog_Title">History</div>
+	<div id="HistoryEditGoodConfirmDialog_Text">
+		<p>
+		Mark this history record as good?
+		</p>
+		<p class="confirm-help-block">
+		Marking has an effect on duplicate handling and RSS.<br>For titles marked as good no more duplicates
+		will be downloaded, even with higher duplicate score. Existing dupe-backups will be removed from recent history.
+		</p>
+	</div>
+	<div id="HistoryEditGoodConfirmDialog_OK">Mark Good</div>
+</div>
+
+<!-- *** MARK AS BAD CURRENT HISTORY RECORD CONFIRMATION DIALOG DATA ******************************** -->
+
+<div class="hide" id="HistoryEditBadConfirmDialog">
+	<div id="HistoryEditBadConfirmDialog_Title">History</div>
+	<div id="HistoryEditBadConfirmDialog_Text">
+		<p>
+		Mark this history record as Bad?
+		</p>
+		<p class="confirm-help-block">
+		Marking has an effect on duplicate handling and RSS.<br>If dupe-backups exist in the history
+		they will be moved to queue for download. Otherwise the title will be watched and downloaded
+		when it becomes available.
+		</p>
+	</div>
+	<div id="HistoryEditBadConfirmDialog_OK">Mark Bad</div>
+</div>
+
 <!-- *** CLEAR MESSAGES CONFIRMATION DIALOG DATA ***************************************** -->
 
 <div class="hide" id="MessagesClearConfirmDialog">
@@ -2047,6 +2082,10 @@
 
 <div id="Notif_History_Select" data-duration="2000" class="alert alert-error alert-center alert-center-small hide">
     <strong>Please select records first</strong>
+</div>
+
+<div id="Notif_History_Marked" data-duration="1000" class="alert alert-inverse alert-center alert-center-small hide">
+    <strong>Marked</strong>
 </div>
 
 <div id="Notif_Feeds_FetchAll" data-duration="1000" class="alert alert-inverse alert-center alert-center-small hide">

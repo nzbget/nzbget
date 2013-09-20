@@ -1553,6 +1553,14 @@ void Options::InitCommandLine(int argc, char* argv[])
 							abort("FATAL ERROR: Could not parse value of option 'E'\n");
 						}
 					}
+					else if (!strcasecmp(optarg, "B"))
+					{
+						m_iEditQueueAction = eRemoteEditActionHistoryMarkBad;
+					}
+					else if (!strcasecmp(optarg, "G"))
+					{
+						m_iEditQueueAction = eRemoteEditActionHistoryMarkGood;
+					}
 					else
 					{
 						abort("FATAL ERROR: Could not parse value of option 'E'\n");
@@ -1844,25 +1852,33 @@ void Options::PrintUsage(char* com)
 		"              O             Edit post-processor-queue\n"
 		"              H             Edit history\n"
 		"    <action> is one of:\n"
-		"       <+offset|-offset>    Move files/groups/post-job in queue relative to\n"
-		"                            current position, offset is an integer value\n"
-		"       T                    Move files/groups/post-job to top of queue\n"
-		"       B                    Move files/groups/post-job to bottom of queue\n"
-		"       P                    Pause file(s)/group(s)/\n"
-		"                            Post-process history-item(s) again\n"
-		"       U                    Resume (unpause) files/groups\n"
-		"       A                    Pause all pars (for groups)\n"
-		"       R                    Pause extra pars (for groups)/\n"
-		"                            Return history-items back to download queue\n"
-		"       D                    Delete files/groups/post-jobs/history-items\n"
-		"       C <name>             Set category (for groups)\n"
-		"       N <name>             Rename (for groups)\n"
-		"       M                    Merge (for groups)\n"
+		"    - for files (F), groups (G) and post-jobs (O):\n"
+		"       <+offset|-offset>    Move in queue relative to current position,\n"
+		"                            offset is an integer value\n"
+		"       T                    Move to top of queue\n"
+		"       B                    Move to bottom of queue\n"
+		"       D                    Delete\n"
+		"    - for files (F) and groups (G):\n"
+		"       P                    Pause\n"
+		"       U                    Resume (unpause)\n"
+		"       I <priority>         Set priority (signed integer)\n"
+		"    - for groups (G):\n"
+		"       A                    Pause all pars\n"
+		"       R                    Pause extra pars\n"
+		"       C <name>             Set category\n"
+		"       N <name>             Rename\n"
+		"       M                    Merge\n"
 		"       S <name>             Split - create new group from selected files\n"
-		"       DM                   Mark as duplicates (for groups)\n"
-		"       DU                   Unmark duplicates (for groups)\n"
-		"       O <name>=<value>     Set post-process parameter (for groups/history)\n"
-		"       I <priority>         Set priority (signed integer) for files/groups\n"
+		"       DM                   Mark as duplicates\n"
+		"       DU                   Unmark duplicates\n"
+		"       O <name>=<value>     Set post-process parameter\n"
+		"    - for history (H):\n"
+		"       D                    Delete\n"
+		"       P                    Post-process again\n"
+		"       R                    Return back to download queue\n"
+		"       O <name>=<value>     Set post-process parameter\n"
+		"       B                    Mark as bad\n"
+		"       G                    Mark as good\n"
 		"    <IDs>                   Comma-separated list of file-ids or ranges\n"
 		"                            of file-ids, e. g.: 1-5,3,10-22\n"
 		"    <Names>                 List of names (with options \"FN\" and \"GN\"),\n"
