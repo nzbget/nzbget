@@ -792,7 +792,7 @@ void PrePostProcessor::MarkDupe(NZBInfo* pNZBInfo, NZBInfo* pDupeNZBInfo)
 
 void PrePostProcessor::CleanupHistory(DownloadQueue* pDownloadQueue, EHistoryCleanupMode eMode, HistoryInfo* pMarkHistoryInfo)
 {
-	time_t tMinTime = time(NULL) - g_pOptions->GetKeepHistory() * 60000;
+	time_t tMinTime = time(NULL) - g_pOptions->GetKeepHistory() * 60*60*24;
 	const char* szDupeKey = NULL;
 	const char* szNZBName = NULL;
 	if (eMode == cmDupe)
