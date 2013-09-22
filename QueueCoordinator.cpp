@@ -233,10 +233,11 @@ void QueueCoordinator::AdjustDownloadsLimit()
 	// two extra threads for completing files (when connections are not needed)
 	int iDownloadsLimit = 2;
 
+	// allow one thread per 0-level (main) and 1-level (backup) server connection
 	for (Servers::iterator it = g_pServerPool->GetServers()->begin(); it != g_pServerPool->GetServers()->end(); it++)
 	{
 		NewsServer* pNewsServer = *it;
-		if (pNewsServer->GetNormLevel() == 0 && pNewsServer->GetActive())
+		if ((pNewsServer->GetNormLevel() == 0 || pNewsServer->GetNormLevel() == 1) && pNewsServer->GetActive())
 		{
 			iDownloadsLimit += pNewsServer->GetMaxConnections();
 		}
