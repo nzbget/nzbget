@@ -542,7 +542,7 @@ void NZBInfo::BuildFinalDirName(char* szFinalDirBuf, int iBufSize)
 
 int NZBInfo::CalcHealth()
 {
-	if (m_lCurrentFailedSize == 0)
+	if (m_lCurrentFailedSize == 0 || m_lSize == m_lParSize)
 	{
 		return 1000;
 	}
