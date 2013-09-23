@@ -351,7 +351,7 @@ var FeedDialog = (new function($)
 				name += '.nzb';
 			}
 			RPC.call('appendurl', [name, fetchItems[0].AddCategory, fetchItems[0].Priority, false,
-				fetchItems[0].URL, false, fetchItems[0].DupeKey, fetchItems[0].DupeScore, fetchItems[0].NoDupeCheck],
+				fetchItems[0].URL, false, fetchItems[0].DupeKey, fetchItems[0].DupeScore, fetchItems[0].DupeMode],
 				function()
 			{
 				fetchItems.shift();
@@ -624,7 +624,7 @@ var FeedFilterDialog = (new function($)
 						item.PauseNzb !== feedPauseNzb ? (item.PauseNzb ? 'paused' : 'unpaused') : null,
 						item.DupeScore != 0 ? 'dupe-score: ' + item.DupeScore : null,
 						item.DupeKey !== '' ? 'dupe-key: ' + item.DupeKey : null,
-						item.NoDupeCheck ? 'dupe-check: no' : null].
+						item.DupeMode != '' ? 'dupe-mode: ' + item.DupeMode.toLowerCase() : null].
 						filter(function(e){return e}).join('; ');
 					status = '<span class="label label-status label-success" title="' + Util.textToAttr(addInfo) + '">ACCEPTED</span>';
 					countAccepted += 1;
