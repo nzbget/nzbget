@@ -354,37 +354,37 @@ bool FeedFilter::Term::GetFieldData(const char* szField, FeedItemInfo* pFeedItem
 	}
 	else if (!strcasecmp(szField, "size"))
 	{
-		*IntValue = pFeedItemInfo ? pFeedItemInfo->GetSize() : NULL;
+		*IntValue = pFeedItemInfo ? pFeedItemInfo->GetSize() : 0;
 		*FieldType = ftNumeric;
 		return true;
 	}
 	else if (!strcasecmp(szField, "age"))
 	{
-		*IntValue = pFeedItemInfo ? time(NULL) - pFeedItemInfo->GetTime() : NULL;
+		*IntValue = pFeedItemInfo ? time(NULL) - pFeedItemInfo->GetTime() : 0;
 		*FieldType = ftNumeric;
 		return true;
 	}
 	else if (!strcasecmp(szField, "rating"))
 	{
-		*IntValue = pFeedItemInfo ? pFeedItemInfo->GetRating() : NULL;
+		*IntValue = pFeedItemInfo ? pFeedItemInfo->GetRating() : 0;
 		*FieldType = ftNumeric;
 		return true;
 	}
 	else if (!strcasecmp(szField, "rageid"))
 	{
-		*IntValue = pFeedItemInfo ? pFeedItemInfo->GetRageId() : NULL;
+		*IntValue = pFeedItemInfo ? pFeedItemInfo->GetRageId() : 0;
 		*FieldType = ftNumeric;
 		return true;
 	}
 	else if (!strcasecmp(szField, "season"))
 	{
-		*IntValue = pFeedItemInfo ? pFeedItemInfo->GetSeasonNum() : NULL;
+		*IntValue = pFeedItemInfo ? pFeedItemInfo->GetSeasonNum() : 0;
 		*FieldType = ftNumeric;
 		return true;
 	}
 	else if (!strcasecmp(szField, "episode"))
 	{
-		*IntValue = pFeedItemInfo ? pFeedItemInfo->GetEpisodeNum() : NULL;
+		*IntValue = pFeedItemInfo ? pFeedItemInfo->GetEpisodeNum() : 0;
 		*FieldType = ftNumeric;
 		return true;
 	}
