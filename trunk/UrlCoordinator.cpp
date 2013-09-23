@@ -409,7 +409,7 @@ void UrlCoordinator::UrlCompleted(UrlDownloader* pUrlDownloader)
 		Scanner::EAddStatus eAddStatus = g_pScanner->AddExternalFile(
 			pUrlInfo->GetNZBFilename() && strlen(pUrlInfo->GetNZBFilename()) > 0 ? pUrlInfo->GetNZBFilename() : filename,
 			strlen(pUrlInfo->GetCategory()) > 0 ? pUrlInfo->GetCategory() : pUrlDownloader->GetCategory(),
-			pUrlInfo->GetPriority(), pUrlInfo->GetDupeKey(), pUrlInfo->GetDupeScore(), pUrlInfo->GetNoDupeCheck(),
+			pUrlInfo->GetPriority(), pUrlInfo->GetDupeKey(), pUrlInfo->GetDupeScore(), pUrlInfo->GetDupeMode(),
 			pUrlDownloader->GetParameters(), pUrlInfo->GetAddTop(), pUrlInfo->GetAddPaused(),
 			pUrlDownloader->GetOutputFilename(), NULL, 0);
 

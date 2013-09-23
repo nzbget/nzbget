@@ -551,7 +551,7 @@ FeedFilter::Rule::Rule()
 	m_szAddDupeKey = NULL;
 	m_iDupeScore = 0;
 	m_iAddDupeScore = 0;
-	m_bNoDupeCheck = false;
+	m_eDupeMode = dmScore;
 	m_bHasCategory = false;
 	m_bHasPriority = false;
 	m_bHasAddPriority = false;
@@ -560,7 +560,7 @@ FeedFilter::Rule::Rule()
 	m_bHasAddDupeScore = false;
 	m_bHasDupeKey = false;
 	m_bHasAddDupeKey = false;
-	m_bHasNoDupeCheck = false;
+	m_bHasDupeMode = false;
 	m_bPatCategory = false;
 	m_bPatDupeKey = false;
 	m_bPatAddDupeKey = false;
@@ -723,7 +723,7 @@ char* FeedFilter::Rule::CompileOptions(char* szRule)
 		if (*szToken)
 		{
 			char* szOption = szToken;
-			char* szValue = NULL;
+			const char* szValue = "";
 			char* szColon = strchr(szToken, ':');
 			if (szColon)
 			{
@@ -744,7 +744,7 @@ char* FeedFilter::Rule::CompileOptions(char* szRule)
 			else if (!strcasecmp(szOption, "pause") || !strcasecmp(szOption, "p"))
 			{
 				m_bHasPause = true;
-				m_bPause = !szValue || !strcasecmp(szValue, "yes") || !strcasecmp(szValue, "y");
+				m_bPause = !*szValue || !strcasecmp(szValue, "yes") || !strcasecmp(szValue, "y");
 				if (!m_bPause && !(!strcasecmp(szValue, "no") || !strcasecmp(szValue, "n")))
 				{
 					// error
@@ -811,11 +811,22 @@ char* FeedFilter::Rule::CompileOptions(char* szRule)
 				m_szAddDupeKey = strdup(szValue);
 				m_bPatAddDupeKey = strstr(szValue, "${");
 			}
-			else if (!strcasecmp(szOption, "nodupe") || !strcasecmp(szOption, "nd") || !strcasecmp(szOption, "n"))
+			else if (!strcasecmp(szOption, "dupemode") || !strcasecmp(szOption, "dm") || !strcasecmp(szOption, "m"))
 			{
-				m_bHasNoDupeCheck = true;
-				m_bNoDupeCheck = !szValue || !strcasecmp(szValue, "yes") || !strcasecmp(szValue, "y");
-				if (!m_bNoDupeCheck && !(!strcasecmp(szValue, "no") || !strcasecmp(szValue, "n")))
+				m_bHasDupeMode = true;
+				if (!strcasecmp(szValue, "score") || !strcasecmp(szValue, "s"))
+				{
+					m_eDupeMode = dmScore;
+				}
+				else if (!strcasecmp(szValue, "all") || !strcasecmp(szValue, "a"))
+				{
+					m_eDupeMode = dmAll;
+				}
+				else if (!strcasecmp(szValue, "force") || !strcasecmp(szValue, "f"))
+				{
+					m_eDupeMode = dmForce;
+				}
+				else
 				{
 					// error
 					return NULL;
@@ -1085,8 +1096,8 @@ void FeedFilter::ApplyOptions(Rule* pRule, FeedItemInfo* pFeedItemInfo)
 	{
 		pFeedItemInfo->AppendDupeKey(pRule->GetAddDupeKey());
 	}
-	if (pRule->HasNoDupeCheck())
+	if (pRule->HasDupeMode())
 	{
-		pFeedItemInfo->SetNoDupeCheck(pRule->GetNoDupeCheck());
+		pFeedItemInfo->SetDupeMode(pRule->GetDupeMode());
 	}
 }

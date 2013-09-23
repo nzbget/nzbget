@@ -32,6 +32,7 @@
 #include "Observer.h"
 #include "DownloadInfo.h"
 #include "ParCoordinator.h"
+#include "DupeCoordinator.h"
 
 class PrePostProcessor : public Thread
 {
@@ -65,18 +66,23 @@ private:
 	protected:
 		virtual bool		PauseDownload() { return m_pOwner->PauseDownload(); }
 		virtual bool		UnpauseDownload() { return m_pOwner->UnpauseDownload(); }
-
 		friend class PrePostProcessor;
 	};
 
-	enum EHistoryCleanupMode
+	class PostDupeCoordinator: public DupeCoordinator
 	{
-		cmOld,
-		cmDupe
+	private:
+		PrePostProcessor*	m_pOwner;
+	protected:
+		virtual void		HistoryReturn(DownloadQueue* pDownloadQueue, HistoryList::iterator itHistory,
+			HistoryInfo* pHistoryInfo, bool bReprocess)	{ m_pOwner->HistoryReturn(pDownloadQueue, itHistory, pHistoryInfo, bReprocess); }
+		virtual void		DeleteQueuedFile(const char* szQueuedFile) {  m_pOwner->DeleteQueuedFile(szQueuedFile); }
+		friend class PrePostProcessor;
 	};
 
 private:
 	PostParCoordinator	m_ParCoordinator;
+	PostDupeCoordinator	m_DupeCoordinator;
 	QueueCoordinatorObserver	m_QueueCoordinatorObserver;
 	bool				m_bHasMoreJobs;
 	bool				m_bSchedulerPauseChanged;
@@ -102,12 +108,6 @@ private:
 	void				NZBDownloaded(DownloadQueue* pDownloadQueue, NZBInfo* pNZBInfo);
 	void				NZBDeleted(DownloadQueue* pDownloadQueue, NZBInfo* pNZBInfo);
 	void				NZBCompleted(DownloadQueue* pDownloadQueue, NZBInfo* pNZBInfo, bool bSaveQueue);
-	void				DupeCompleted(DownloadQueue* pDownloadQueue, NZBInfo* pNZBInfo);
-	void				RemoveDupes(DownloadQueue* pDownloadQueue, NZBInfo* pNZBInfo);
-	void				UnpauseBestDupe(DownloadQueue* pDownloadQueue, NZBInfo* pNZBInfo, const char* szNZBName, const char* szDupeKey);
-	void				CheckDupeFound(DownloadQueue* pDownloadQueue, NZBInfo* pNZBInfo);
-	void				CheckDupeAdded(DownloadQueue* pDownloadQueue, NZBInfo* pNZBInfo);
-	void				MarkDupe(NZBInfo* pNZBInfo, NZBInfo* pDupeNZBInfo);
 	void				DeleteQueuedFile(const char* szQueuedFile);
 	int					FindGroupID(DownloadQueue* pDownloadQueue, NZBInfo* pNZBInfo);
 	bool				PostQueueMove(IDList* pIDList, EEditAction eAction, int iOffset);
@@ -116,13 +116,10 @@ private:
 	void				HistoryDelete(DownloadQueue* pDownloadQueue, HistoryList::iterator itHistory, HistoryInfo* pHistoryInfo);
 	void				HistoryReturn(DownloadQueue* pDownloadQueue, HistoryList::iterator itHistory, HistoryInfo* pHistoryInfo, bool bReprocess);
 	void				HistorySetParameter(HistoryInfo* pHistoryInfo, const char* szText);
-	void				HistoryMark(DownloadQueue* pDownloadQueue, HistoryInfo* pHistoryInfo, bool bGood);
-	void				HistoryReturnDupe(DownloadQueue* pDownloadQueue, HistoryInfo* pHistoryInfo);
-	bool				IsDupeSuccess(NZBInfo* pNZBInfo);
-	void				CleanupHistory(DownloadQueue* pDownloadQueue, EHistoryCleanupMode eMode, HistoryInfo* pMarkHistoryInfo);
+	void				HistoryTransformToDup(DownloadQueue* pDownloadQueue, HistoryInfo* pHistoryInfo, int rindex);
+	void				CheckHistory();
 	void				Cleanup();
 	FileInfo*			GetQueueGroup(DownloadQueue* pDownloadQueue, NZBInfo* pNZBInfo);
-	void				CheckHistory();
 	void				DeletePostThread(PostInfo* pPostInfo);
 
 public:

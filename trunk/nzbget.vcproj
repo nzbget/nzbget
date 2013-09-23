@@ -300,6 +300,14 @@
 			>
 		</File>
 		<File
+			RelativePath=".\DupeCoordinator.cpp"
+			>
+		</File>
+		<File
+			RelativePath=".\DupeCoordinator.h"
+			>
+		</File>
+		<File
 			RelativePath=".\FeedCoordinator.cpp"
 			>
 		</File>

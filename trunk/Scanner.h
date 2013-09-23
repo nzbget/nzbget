@@ -70,7 +70,7 @@ private:
 		int					m_iPriority;
 		char*				m_szDupeKey;
 		int					m_iDupeScore;
-		bool				m_bNoDupeCheck;
+		EDupeMode			m_eDupeMode;
 		NZBParameterList	m_Parameters;
 		bool				m_bAddTop;
 		bool				m_bAddPaused;
@@ -78,7 +78,7 @@ private:
 
 	public:
 							QueueData(const char* szFilename, const char* szNZBName, const char* szCategory,
-								int iPriority, const char* szDupeKey, int iDupeScore, bool bNoDupeCheck,
+								int iPriority, const char* szDupeKey, int iDupeScore, EDupeMode eDupeMode,
 								NZBParameterList* pParameters, bool bAddTop, bool bAddPaused, EAddStatus* pAddStatus);
 							~QueueData();
 		const char*			GetFilename() { return m_szFilename; }
@@ -87,7 +87,7 @@ private:
 		int					GetPriority() { return m_iPriority; }
 		const char*			GetDupeKey() { return m_szDupeKey; }
 		int					GetDupeScore() { return m_iDupeScore; }
-		bool				GetNoDupeCheck() { return m_bNoDupeCheck; }
+		EDupeMode			GetDupeMode() { return m_eDupeMode; }
 		NZBParameterList*	GetParameters() { return &m_Parameters; }
 		bool				GetAddTop() { return m_bAddTop; }
 		bool				GetAddPaused() { return m_bAddPaused; }
@@ -107,7 +107,7 @@ private:
 
 	void				CheckIncomingNZBs(const char* szDirectory, const char* szCategory, bool bCheckStat);
 	bool				AddFileToQueue(const char* szFilename, const char* szNZBName, const char* szCategory,
-							int iPriority, const char* szDupeKey, int iDupeScore, bool bNoDupeCheck,
+							int iPriority, const char* szDupeKey, int iDupeScore, EDupeMode eDupeMode,
 							NZBParameterList* pParameters, bool bAddTop, bool bAddPaused);
 	void				ProcessIncomingFile(const char* szDirectory, const char* szBaseFilename,
 							const char* szFullFilename, const char* szCategory);
@@ -122,7 +122,7 @@ public:
 	void				ScanNZBDir(bool bSyncMode);
 	void				Check();
 	EAddStatus			AddExternalFile(const char* szNZBName, const char* szCategory, int iPriority,
-							const char* szDupeKey, int iDupeScore, bool bNoDupeCheck,
+							const char* szDupeKey, int iDupeScore, EDupeMode eDupeMode,
 							NZBParameterList* pParameters, bool bAddTop, bool bAddPaused,
 							const char* szFileName, const char* szBuffer, int iBufSize);
 };

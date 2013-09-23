@@ -68,7 +68,7 @@ Scanner::FileData::~FileData()
 
 
 Scanner::QueueData::QueueData(const char* szFilename, const char* szNZBName, const char* szCategory,
-	int iPriority, const char* szDupeKey, int iDupeScore, bool bNoDupeCheck,
+	int iPriority, const char* szDupeKey, int iDupeScore, EDupeMode eDupeMode,
 	NZBParameterList* pParameters, bool bAddTop, bool bAddPaused, EAddStatus* pAddStatus)
 {
 	m_szFilename = strdup(szFilename);
@@ -77,7 +77,7 @@ Scanner::QueueData::QueueData(const char* szFilename, const char* szNZBName, con
 	m_iPriority = iPriority;
 	m_szDupeKey = strdup(szDupeKey ? szDupeKey : "");
 	m_iDupeScore = iDupeScore;
-	m_bNoDupeCheck = bNoDupeCheck;
+	m_eDupeMode = eDupeMode;
 	m_bAddTop = bAddTop;
 	m_bAddPaused = bAddPaused;
 	m_pAddStatus = pAddStatus;
@@ -340,7 +340,7 @@ void Scanner::ProcessIncomingFile(const char* szDirectory, const char* szBaseFil
 	bool bAddPaused = false;
 	const char* szDupeKey = NULL;
 	int iDupeScore = 0;
-	bool bNoDupeCheck = false;
+	EDupeMode eDupeMode = dmScore;
 	EAddStatus eAddStatus = asSkipped;
 	bool bAdded = false;
 	QueueData* pQueueData = NULL;
@@ -358,7 +358,7 @@ void Scanner::ProcessIncomingFile(const char* szDirectory, const char* szBaseFil
 			iPriority = pQueueData->GetPriority();
 			szDupeKey = pQueueData->GetDupeKey();
 			iDupeScore = pQueueData->GetDupeScore();
-			bNoDupeCheck = pQueueData->GetNoDupeCheck();
+			eDupeMode = pQueueData->GetDupeMode();
 			bAddTop = pQueueData->GetAddTop();
 			bAddPaused = pQueueData->GetAddPaused();
 			pParameters->CopyFrom(pQueueData->GetParameters());
@@ -393,7 +393,7 @@ void Scanner::ProcessIncomingFile(const char* szDirectory, const char* szBaseFil
 		if (bRenameOK)
 		{
 			bAdded = AddFileToQueue(szRenamedName, szNZBName, szNZBCategory, iPriority,
-				szDupeKey, iDupeScore, bNoDupeCheck, pParameters, bAddTop, bAddPaused);
+				szDupeKey, iDupeScore, eDupeMode, pParameters, bAddTop, bAddPaused);
 		}
 		else
 		{
@@ -405,7 +405,7 @@ void Scanner::ProcessIncomingFile(const char* szDirectory, const char* szBaseFil
 	else if (bExists && !strcasecmp(szExtension, ".nzb"))
 	{
 		bAdded = AddFileToQueue(szFullFilename, szNZBName, szNZBCategory, iPriority,
-			szDupeKey, iDupeScore, bNoDupeCheck, pParameters, bAddTop, bAddPaused);
+			szDupeKey, iDupeScore, eDupeMode, pParameters, bAddTop, bAddPaused);
 	}
 
 	delete pParameters;
@@ -462,7 +462,7 @@ void Scanner::InitPPParameters(const char* szCategory, NZBParameterList* pParame
 }
 
 bool Scanner::AddFileToQueue(const char* szFilename, const char* szNZBName, const char* szCategory,
-	int iPriority, const char* szDupeKey, int iDupeScore, bool bNoDupeCheck,
+	int iPriority, const char* szDupeKey, int iDupeScore, EDupeMode eDupeMode,
 	NZBParameterList* pParameters, bool bAddTop, bool bAddPaused)
 {
 	const char* szBasename = Util::BaseFileName(szFilename);
@@ -497,7 +497,7 @@ bool Scanner::AddFileToQueue(const char* szFilename, const char* szNZBName, cons
 
 		pNZBFile->GetNZBInfo()->SetDupeKey(szDupeKey);
 		pNZBFile->GetNZBInfo()->SetDupeScore(iDupeScore);
-		pNZBFile->GetNZBInfo()->SetNoDupeCheck(bNoDupeCheck);
+		pNZBFile->GetNZBInfo()->SetDupeMode(eDupeMode);
 
 		if (pNZBFile->GetPassword())
 		{
@@ -538,7 +538,7 @@ void Scanner::ScanNZBDir(bool bSyncMode)
 }
 
 Scanner::EAddStatus Scanner::AddExternalFile(const char* szNZBName, const char* szCategory,
-	int iPriority, const char* szDupeKey, int iDupeScore,  bool bNoDupeCheck,
+	int iPriority, const char* szDupeKey, int iDupeScore,  EDupeMode eDupeMode,
 	NZBParameterList* pParameters, bool bAddTop, bool bAddPaused,
 	const char* szFileName, const char* szBuffer, int iBufSize)
 {
@@ -619,7 +619,7 @@ Scanner::EAddStatus Scanner::AddExternalFile(const char* szNZBName, const char* 
 
 	EAddStatus eAddStatus = asSkipped;
 	QueueData* pQueueData = new QueueData(szScanFileName, szNZBName, szUseCategory,
-		iPriority, szDupeKey, iDupeScore, bNoDupeCheck, pParameters, bAddTop, bAddPaused, &eAddStatus);
+		iPriority, szDupeKey, iDupeScore, eDupeMode, pParameters, bAddTop, bAddPaused, &eAddStatus);
 	free(szUseCategory);
 	m_QueueList.push_back(pQueueData);
 

@@ -310,7 +310,7 @@ void QueueCoordinator::AddFileInfosToFileQueue(NZBFile* pNZBFile, FileQueue* pFi
 		index1++;
 		FileInfo* pFileInfo = *it;
 
-		if (g_pOptions->GetDupeCheck() && !pNZBFile->GetNZBInfo()->GetNoDupeCheck())
+		if (g_pOptions->GetDupeCheck() && !pNZBFile->GetNZBInfo()->GetDupeMode())
 		{
 			bool dupe = false;
 			int index2 = 0;

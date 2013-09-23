@@ -306,7 +306,7 @@ NZBInfo::NZBInfo()
 	m_szDupeKey = strdup("");
 	m_iDupeScore = 0;
 	m_bDupe = false;
-	m_bNoDupeCheck = false;
+	m_eDupeMode = dmScore;
 	m_iFullContentHash = 0;
 	m_iFilteredContentHash = 0;
 	m_Owner = NULL;
@@ -1052,7 +1052,7 @@ UrlInfo::UrlInfo()
 	m_iPriority = 0;
 	m_iDupeScore = 0;
 	m_szDupeKey = strdup("");
-	m_bNoDupeCheck = false;
+	m_eDupeMode = dmScore;
 	m_bAddTop = false;
 	m_bAddPaused = false;
 	m_bForce = false;
@@ -1156,6 +1156,7 @@ DupInfo::DupInfo()
 	m_bDupe = false;
 	m_szDupeKey = NULL;
 	m_iDupeScore = 0;
+	m_eDupeMode = dmScore;
 	m_lSize = 0;
 	m_iFullContentHash = 0;
 	m_iFilteredContentHash = 0;
@@ -1347,7 +1348,7 @@ FeedItemInfo::FeedItemInfo()
 	m_iMatchRule = 0;
 	m_szDupeKey = NULL;
 	m_iDupeScore = 0;
-	m_bNoDupeCheck = false;
+	m_eDupeMode = dmScore;
 }
 
 FeedItemInfo::~FeedItemInfo()

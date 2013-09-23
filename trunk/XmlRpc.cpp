@@ -1672,7 +1672,7 @@ void EditQueueXmlCommand::Execute()
 	BuildBoolResponse(bOK);
 }
 
-// bool append(string NZBFilename, string Category, int Priority, bool AddToTop, string Content, bool AddPaused, string DupeKey, int DupeScore, bool NoDupeCheck) 
+// bool append(string NZBFilename, string Category, int Priority, bool AddToTop, string Content, bool AddPaused, string DupeKey, int DupeScore, string DupeMode)
 // For backward compatibility with 0.8 parameter "Priority" is optional
 // Parameters starting from "AddPaused" are optional (added in v12)
 void DownloadXmlCommand::Execute()
@@ -1722,7 +1722,7 @@ void DownloadXmlCommand::Execute()
 	bool bAddPaused = false;
 	char* szDupeKey = NULL;
 	int iDupeScore = 0;
-	bool bNoDupeCheck = false;
+	EDupeMode eDupeMode = dmScore;
 	if (NextParamAsBool(&bAddPaused))
 	{
 		if (!NextParamAsStr(&szDupeKey))
@@ -1735,11 +1735,15 @@ void DownloadXmlCommand::Execute()
 			BuildErrorResponse(2, "Invalid parameter (DupeScore)");
 			return;
 		}
-		if (!NextParamAsBool(&bNoDupeCheck))
+		char* szDupeMode = NULL;
+		if (!NextParamAsStr(&szDupeMode) ||
+			(strcasecmp(szDupeMode, "score") && strcasecmp(szDupeMode, "all") && strcasecmp(szDupeMode, "force")))
 		{
-			BuildErrorResponse(2, "Invalid parameter (NoDupeCheck)");
+			BuildErrorResponse(2, "Invalid parameter (DupeMode)");
 			return;
 		}
+		eDupeMode = !strcasecmp(szDupeMode, "all") ? dmAll :
+			!strcasecmp(szDupeMode, "force") ? dmForce : dmScore;
 	}
 
 	if (IsJson())
@@ -1753,7 +1757,7 @@ void DownloadXmlCommand::Execute()
 	//debug("FileContent=%s", szFileContent);
 
 	bool bOK = g_pScanner->AddExternalFile(szFileName, szCategory, iPriority,
-		szDupeKey, iDupeScore, bNoDupeCheck, NULL, bAddTop, bAddPaused, NULL, szFileContent, iLen) != Scanner::asFailed;
+		szDupeKey, iDupeScore, eDupeMode, NULL, bAddTop, bAddPaused, NULL, szFileContent, iLen) != Scanner::asFailed;
 
 	BuildBoolResponse(bOK);
 }
@@ -2181,7 +2185,7 @@ void HistoryXmlCommand::Execute()
 	g_pQueueCoordinator->UnlockQueue();
 }
 
-// bool appendurl(string NZBFilename, string Category, int Priority, bool AddToTop, string URL, bool AddPaused, string DupeKey, int DupeScore, bool NoDupeCheck)
+// bool appendurl(string NZBFilename, string Category, int Priority, bool AddToTop, string URL, bool AddPaused, string DupeKey, int DupeScore, string DupeMode)
 // Parameters starting from "AddPaused" are optional (added in v12)
 void DownloadUrlXmlCommand::Execute()
 {
@@ -2228,7 +2232,7 @@ void DownloadUrlXmlCommand::Execute()
 	bool bAddPaused = false;
 	char* szDupeKey = NULL;
 	int iDupeScore = 0;
-	bool bNoDupeCheck = false;
+	EDupeMode eDupeMode = dmScore;
 	if (NextParamAsBool(&bAddPaused))
 	{
 		if (!NextParamAsStr(&szDupeKey))
@@ -2241,11 +2245,15 @@ void DownloadUrlXmlCommand::Execute()
 			BuildErrorResponse(2, "Invalid parameter (DupeScore)");
 			return;
 		}
-		if (!NextParamAsBool(&bNoDupeCheck))
+		char* szDupeMode = NULL;
+		if (!NextParamAsStr(&szDupeMode) ||
+			(strcasecmp(szDupeMode, "score") && strcasecmp(szDupeMode, "all") && strcasecmp(szDupeMode, "force")))
 		{
-			BuildErrorResponse(2, "Invalid parameter (NoDupeCheck)");
+			BuildErrorResponse(2, "Invalid parameter (DupeMode)");
 			return;
 		}
+		eDupeMode = !strcasecmp(szDupeMode, "all") ? dmAll :
+			!strcasecmp(szDupeMode, "force") ? dmForce : dmScore;
 	}
 
 	DecodeStr(szNZBFileName);
@@ -2267,7 +2275,7 @@ void DownloadUrlXmlCommand::Execute()
 	pUrlInfo->SetAddPaused(bAddPaused);
 	pUrlInfo->SetDupeKey(szDupeKey ? szDupeKey : "");
 	pUrlInfo->SetDupeScore(iDupeScore);
-	pUrlInfo->SetNoDupeCheck(bNoDupeCheck);
+	pUrlInfo->SetDupeMode(eDupeMode);
 
 	char szNicename[1024];
 	pUrlInfo->GetName(szNicename, sizeof(szNicename));
@@ -2631,7 +2639,7 @@ void ViewFeedXmlCommand::Execute()
 		"<member><name>Rule</name><value><i4>%i</i4></value></member>\n"
 		"<member><name>DupeKey</name><value><string>%s</string></value></member>\n"
 		"<member><name>DupeScore</name><value><i4>%i</i4></value></member>\n"
-		"<member><name>NoDupeCheck</name><value><boolean>%s</boolean></value></member>\n"
+		"<member><name>DupeMode</name><value><string>%s</string></value></member>\n"
 		"<member><name>Status</name><value><string>%s</string></value></member>\n"
 		"</struct></value>\n";
 
@@ -2652,12 +2660,13 @@ void ViewFeedXmlCommand::Execute()
 		"\"Rule\" : %i,\n"
 		"\"DupeKey\" : \"%s\",\n"
 		"\"DupeScore\" : %i,\n"
-		"\"NoDupeCheck\" : %s,\n"
+		"\"DupeMode\" : \"%s\",\n"
 		"\"Status\" : \"%s\"\n"
 		"}";
 
     const char* szStatusType[] = { "UNKNOWN", "BACKLOG", "FETCHED", "NEW" };
     const char* szMatchStatusType[] = { "IGNORED", "ACCEPTED", "REJECTED" };
+    const char* szDupeModeType[] = { "SCORE", "ALL", "FORCE" };
 
 	int iItemBufSize = 10240;
 	char* szItemBuf = (char*)malloc(iItemBufSize);
@@ -2686,7 +2695,7 @@ void ViewFeedXmlCommand::Execute()
 				xmltitle, xmlfilename, xmlurl, iSizeLo, iSizeHi, iSizeMB, xmlcategory, xmladdcategory,
 				BoolToStr(pFeedItemInfo->GetPauseNzb()), pFeedItemInfo->GetPriority(), pFeedItemInfo->GetTime(),
 				szMatchStatusType[pFeedItemInfo->GetMatchStatus()], pFeedItemInfo->GetMatchRule(),
-				xmldupekey, pFeedItemInfo->GetDupeScore(), BoolToStr(pFeedItemInfo->GetNoDupeCheck()),
+				xmldupekey, pFeedItemInfo->GetDupeScore(), szDupeModeType[pFeedItemInfo->GetDupeMode()],
 				szStatusType[pFeedItemInfo->GetStatus()]);
 			szItemBuf[iItemBufSize-1] = '\0';
 

@@ -308,6 +308,13 @@ public:
 	void				Clear();
 };
 
+enum EDupeMode
+{
+	dmScore,
+	dmAll,
+	dmForce
+};
+
 class NZBInfoList;
 
 class NZBInfo
@@ -412,7 +419,7 @@ private:
 	bool				m_bUnpackCleanedUpDisk;
 	char*				m_szDupeKey;
 	int					m_iDupeScore;
-	bool				m_bNoDupeCheck;
+	EDupeMode			m_eDupeMode;
 	bool				m_bDupe;
 	unsigned int		m_iFullContentHash;
 	unsigned int		m_iFilteredContentHash;
@@ -517,8 +524,8 @@ public:
 	void				SetDupeKey(const char* szDupeKey);						// needs locking (for shared objects)
 	int					GetDupeScore() { return m_iDupeScore; }
 	void				SetDupeScore(int iDupeScore) { m_iDupeScore = iDupeScore; }
-	bool				GetNoDupeCheck() { return m_bNoDupeCheck; }
-	void				SetNoDupeCheck(bool bNoDupeCheck) { m_bNoDupeCheck = bNoDupeCheck; }
+	EDupeMode			GetDupeMode() { return m_eDupeMode; }
+	void				SetDupeMode(EDupeMode eDupeMode) { m_eDupeMode = eDupeMode; }
 	int					GetDupe() { return m_bDupe; }
 	void				SetDupe(bool bDupe) { m_bDupe = bDupe; }
 	unsigned int		GetFullContentHash() { return m_iFullContentHash; }
@@ -644,7 +651,7 @@ private:
 	int					m_iPriority;
 	char*				m_szDupeKey;
 	int					m_iDupeScore;
-	bool				m_bNoDupeCheck;
+	EDupeMode			m_eDupeMode;
 	bool				m_bAddTop;
 	bool				m_bAddPaused;
 	bool				m_bForce;
@@ -669,8 +676,8 @@ public:
 	void				SetDupeKey(const char* szDupeKey);
 	int					GetDupeScore() { return m_iDupeScore; }
 	void				SetDupeScore(int iDupeScore) { m_iDupeScore = iDupeScore; }
-	bool				GetNoDupeCheck() { return m_bNoDupeCheck; }
-	void				SetNoDupeCheck(bool bNoDupeCheck) { m_bNoDupeCheck = bNoDupeCheck; }
+	EDupeMode			GetDupeMode() { return m_eDupeMode; }
+	void				SetDupeMode(EDupeMode eDupeMode) { m_eDupeMode = eDupeMode; }
 	bool				GetAddTop() { return m_bAddTop; }
 	void				SetAddTop(bool bAddTop) { m_bAddTop = bAddTop; }
 	bool				GetAddPaused() { return m_bAddPaused; }
@@ -704,6 +711,7 @@ private:
 	bool				m_bDupe;
 	char*				m_szDupeKey;
 	int					m_iDupeScore;
+	EDupeMode			m_eDupeMode;
 	long long 			m_lSize;
 	unsigned int		m_iFullContentHash;
 	unsigned int		m_iFilteredContentHash;
@@ -720,6 +728,8 @@ public:
 	void				SetDupeKey(const char* szDupeKey);		// needs locking (for shared objects)
 	int					GetDupeScore() { return m_iDupeScore; }
 	void				SetDupeScore(int iDupeScore) { m_iDupeScore = iDupeScore; }
+	EDupeMode			GetDupeMode() { return m_eDupeMode; }
+	void				SetDupeMode(EDupeMode eDupeMode) { m_eDupeMode = eDupeMode; }
 	long long			GetSize() { return m_lSize; }
 	void 				SetSize(long long lSize) { m_lSize = lSize; }
 	unsigned int		GetFullContentHash() { return m_iFullContentHash; }
@@ -894,7 +904,7 @@ private:
 	int					m_iMatchRule;
 	char*				m_szDupeKey;
 	int					m_iDupeScore;
-	bool				m_bNoDupeCheck;
+	EDupeMode			m_eDupeMode;
 
 	int					ParsePrefixedInt(const char *szValue);
 
@@ -945,8 +955,8 @@ public:
 	void				BuildDupeKey();
 	int					GetDupeScore() { return m_iDupeScore; }
 	void				SetDupeScore(int iDupeScore) { m_iDupeScore = iDupeScore; }
-	bool				GetNoDupeCheck() { return m_bNoDupeCheck; }
-	void				SetNoDupeCheck(bool bNoDupeCheck) { m_bNoDupeCheck = bNoDupeCheck; }
+	EDupeMode			GetDupeMode() { return m_eDupeMode; }
+	void				SetDupeMode(EDupeMode eDupeMode) { m_eDupeMode = eDupeMode; }
 };
 
 typedef std::deque<FeedItemInfo*>	FeedItemInfosBase;

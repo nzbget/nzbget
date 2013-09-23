@@ -106,7 +106,7 @@ private:
 		int				m_iAddDupeScore;
 		char*			m_szDupeKey;
 		char*			m_szAddDupeKey;
-		bool			m_bNoDupeCheck;
+		EDupeMode		m_eDupeMode;
 		bool			m_bHasCategory;
 		bool			m_bHasPriority;
 		bool			m_bHasAddPriority;
@@ -115,7 +115,7 @@ private:
 		bool			m_bHasAddDupeScore;
 		bool			m_bHasDupeKey;
 		bool			m_bHasAddDupeKey;
-		bool			m_bHasNoDupeCheck;
+		bool			m_bHasDupeMode;
 		bool			m_bPatCategory;
 		bool			m_bPatDupeKey;
 		bool			m_bPatAddDupeKey;
@@ -143,7 +143,7 @@ private:
 		const char*		GetAddDupeKey() { return m_szAddDupeKey; }
 		int				GetDupeScore() { return m_iDupeScore; }
 		int				GetAddDupeScore() { return m_iAddDupeScore; }
-		bool			GetNoDupeCheck() { return m_bNoDupeCheck; }
+		EDupeMode		GetDupeMode() { return m_eDupeMode; }
 		bool			HasCategory() { return m_bHasCategory; }
 		bool			HasPriority() { return m_bHasPriority; }
 		bool			HasAddPriority() { return m_bHasAddPriority; }
@@ -152,7 +152,7 @@ private:
 		bool			HasAddDupeScore() { return m_bHasAddDupeScore; }
 		bool			HasDupeKey() { return m_bHasDupeKey; }
 		bool			HasAddDupeKey() { return m_bHasAddDupeKey; }
-		bool			HasNoDupeCheck() { return m_bHasNoDupeCheck; }
+		bool			HasDupeMode() { return m_bHasDupeMode; }
 		bool			Match(FeedItemInfo* pFeedItemInfo);
 		RefValues*		GetRefValues() { return &m_RefValues; }
 		void			ExpandRefValues(char** pDestStr, char* pPatStr);
