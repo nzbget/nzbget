@@ -542,6 +542,7 @@ Scanner::EAddStatus Scanner::AddExternalFile(const char* szNZBName, const char* 
 	NZBParameterList* pParameters, bool bAddTop, bool bAddPaused,
 	const char* szFileName, const char* szBuffer, int iBufSize)
 {
+	bool bNZB = false;
 	char szTempFileName[1024];
 
 	if (szFileName)
@@ -564,6 +565,11 @@ Scanner::EAddStatus Scanner::AddExternalFile(const char* szNZBName, const char* 
 			error("Could not create file %s", szTempFileName);
 			return asFailed;
 		}
+
+		char buf[1024];
+		strncpy(buf, szBuffer, 1024);
+		buf[1024-1] = '\0';
+		bNZB = !strncmp(buf, "<?xml", 5) && strstr(buf, "<nzb");
 	}
 
 	// move file into NzbDir, make sure the file name is unique
@@ -571,6 +577,12 @@ Scanner::EAddStatus Scanner::AddExternalFile(const char* szNZBName, const char* 
 	strncpy(szValidNZBName, Util::BaseFileName(szNZBName), 1024);
 	szValidNZBName[1024-1] = '\0';
 	Util::MakeValidFilename(szValidNZBName, '_', false);
+
+	const char* szExtension = strrchr(szNZBName, '.');
+	if (bNZB && (!szExtension || strcasecmp(szExtension, ".nzb")))
+	{
+		strncat(szValidNZBName, ".nzb", 1024 - strlen(szValidNZBName) - 1);
+	}
 
 	char szScanFileName[1024];
 	snprintf(szScanFileName, 1024, "%s%s", g_pOptions->GetNzbDir(), szValidNZBName);
