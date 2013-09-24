@@ -768,7 +768,7 @@ var DownloadsUI = (new function($)
 	{
 		if (dupe)
 		{
-			return 'dupe: ' + formatDupeText(dupeKey, dupeScore);
+			return formatDupeText(dupeKey, dupeScore);
 		}
 		else
 		{
@@ -781,7 +781,7 @@ var DownloadsUI = (new function($)
 		if (dupe)
 		{
 			return ' <span class="label" title="Duplicate: ' + dupeKey + (dupeScore != 0 ? ' (score: ' + dupeScore + ')' : '') +
-				'">dupe: ' + formatDupeText(dupeKey, dupeScore) + '</span> ';
+				'">' + formatDupeText(dupeKey, dupeScore) + '</span> ';
 		}
 		else
 		{
