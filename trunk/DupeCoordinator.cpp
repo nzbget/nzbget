@@ -140,7 +140,7 @@ void DupeCoordinator::NZBFound(DownloadQueue* pDownloadQueue, NZBInfo* pNZBInfo)
 
 	// find duplicates in queue having exactly same content
 	// also: nzb-files having duplicates marked as good are skipped
-	// also: nzb-files having success-duplicates in dup-history but don't having duplicates in recent history are skipped
+	// also (only in score mode): nzb-files having success-duplicates in dup-history but don't having duplicates in recent history are skipped
 	for (HistoryList::iterator it = pDownloadQueue->GetHistoryList()->begin(); it != pDownloadQueue->GetHistoryList()->end(); it++)
 	{
 		HistoryInfo* pHistoryInfo = *it;
@@ -183,11 +183,12 @@ void DupeCoordinator::NZBFound(DownloadQueue* pDownloadQueue, NZBInfo* pNZBInfo)
 
 		if (pHistoryInfo->GetKind() == HistoryInfo::hkDupInfo &&
 			pHistoryInfo->GetDupInfo()->GetDupeMode() != dmForce &&
-			(!strcmp(pHistoryInfo->GetDupInfo()->GetName(), pNZBInfo->GetName()) ||
-			 (bHasDupeKey && !strcmp(pHistoryInfo->GetDupInfo()->GetDupeKey(), pNZBInfo->GetDupeKey()))) &&
 			(pHistoryInfo->GetDupInfo()->GetStatus() == DupInfo::dsGood ||
-			 (pHistoryInfo->GetDupInfo()->GetStatus() == DupInfo::dsSuccess &&
-			  pNZBInfo->GetDupeScore() <= pHistoryInfo->GetDupInfo()->GetDupeScore())))
+			 (pNZBInfo->GetDupeMode() == dmScore &&
+			  pHistoryInfo->GetDupInfo()->GetStatus() == DupInfo::dsSuccess &&
+			  pNZBInfo->GetDupeScore() <= pHistoryInfo->GetDupInfo()->GetDupeScore())) &&
+			(!strcmp(pHistoryInfo->GetDupInfo()->GetName(), pNZBInfo->GetName()) ||
+			 (bHasDupeKey && !strcmp(pHistoryInfo->GetDupInfo()->GetDupeKey(), pNZBInfo->GetDupeKey()))))
 		{
 			bSkip = true;
 			bGood = pHistoryInfo->GetDupInfo()->GetStatus() == DupInfo::dsGood;
