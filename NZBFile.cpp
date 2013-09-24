@@ -490,6 +490,59 @@ void NZBFile::ProcessFiles()
 			pFileInfo->ClearArticles();
 		}
 	}
+
+	if (m_szPassword)
+	{
+		ReadPassword();
+	}
+}
+
+/**
+ * Password read using XML-parser may have special characters (such as TAB) stripped.
+ * This function rereads password directly from file to keep all characters intact.
+ */
+void NZBFile::ReadPassword()
+{
+    FILE* pFile = fopen(m_szFileName, "rb");
+    if (!pFile)
+    {
+        return;
+    }
+
+    // obtain file size.
+    fseek(pFile , 0 , SEEK_END);
+    int iSize  = ftell(pFile);
+    rewind(pFile);
+
+	// reading first 4KB of the file
+
+    // allocate memory to contain the whole file.
+    char* buf = (char*)malloc(4096);
+
+	iSize = iSize < 4096 ? iSize : 4096;
+
+    // copy the file into the buffer.
+    fread(buf, 1, iSize, pFile);
+
+    fclose(pFile);
+
+    buf[iSize-1] = '\0';
+
+	char* szMetaPassword = strstr(buf, "<meta type=\"password\">");
+	if (szMetaPassword)
+	{
+		szMetaPassword += 22; // length of '<meta type="password">'
+		char* szEnd = strstr(szMetaPassword, "</meta>");
+		if (szEnd)
+		{
+			*szEnd = '\0';
+			WebUtil::XmlDecode(szMetaPassword);
+			free(m_szPassword);
+			m_szPassword = strdup(szMetaPassword);
+		}
+	}
+
+	free(buf);
 }
 
 #ifdef WIN32
