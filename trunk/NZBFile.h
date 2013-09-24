@@ -53,6 +53,7 @@ private:
 	void				ProcessFiles();
 	void				CalcHashes();
 	bool				HasDuplicateFilenames();
+	void				ReadPassword();
 #ifdef WIN32
     bool 				ParseNZB(IUnknown* nzb);
 	static void			EncodeURL(const char* szFilename, char* szURL);
