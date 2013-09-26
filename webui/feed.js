@@ -624,7 +624,7 @@ var FeedFilterDialog = (new function($)
 						item.PauseNzb !== feedPauseNzb ? (item.PauseNzb ? 'paused' : 'unpaused') : null,
 						item.DupeScore != 0 ? 'dupe-score: ' + item.DupeScore : null,
 						item.DupeKey !== '' ? 'dupe-key: ' + item.DupeKey : null,
-						item.DupeMode != '' ? 'dupe-mode: ' + item.DupeMode.toLowerCase() : null].
+						item.DupeMode !== 'SCORE' ? 'dupe-mode: ' + item.DupeMode.toLowerCase() : null].
 						filter(function(e){return e}).join('; ');
 					status = '<span class="label label-status label-success" title="' + Util.textToAttr(addInfo) + '">ACCEPTED</span>';
 					countAccepted += 1;
