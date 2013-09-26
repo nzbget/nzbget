@@ -112,9 +112,10 @@ bool FeedFilter::Term::MatchValue(const char* szStrValue, const long long iIntVa
 
 		case fcGreaterEqual:
 			return iIntValue >= m_iIntParam;
-	}
 
-	return false;
+		default:
+			return false;
+	}
 }
 
 bool FeedFilter::Term::MatchText(const char* szStrValue)
@@ -226,6 +227,23 @@ bool FeedFilter::Term::Compile(char* szToken)
 		ch = szToken[0];
 	}
 
+	char ch2= szToken[1];
+	if ((ch == '(' || ch == ')' || ch == '|') && (ch2 == ' ' || ch2 == '\0'))
+	{
+		switch (ch)
+		{
+			case '(':
+				m_eCommand = fcOpeningBrace;
+				return true;
+			case ')':
+				m_eCommand = fcClosingBrace;
+				return true;
+			case '|':
+				m_eCommand = fcOrOperator;
+				return true;
+		}
+	}
+
 	char *szField = NULL;
 	m_eCommand = fcText;
 
@@ -247,7 +265,7 @@ bool FeedFilter::Term::Compile(char* szToken)
 		return false;
 	}
 
-	char ch2= szToken[1];
+	ch2= szToken[1];
 
 	if (ch == '@')
 	{
@@ -890,13 +908,9 @@ bool FeedFilter::Rule::Match(FeedItemInfo* pFeedItemInfo)
 	}
 	m_RefValues.clear();
 
-	for (TermList::iterator it = m_Terms.begin(); it != m_Terms.end(); it++)
+	if (!MatchExpression(pFeedItemInfo))
 	{
-		Term* pTerm = *it;
-		if (!pTerm->Match(pFeedItemInfo))
-		{
-			return false;
-		}
+		return false;
 	}
 
 	if (m_bPatCategory)
@@ -913,6 +927,76 @@ bool FeedFilter::Rule::Match(FeedItemInfo* pFeedItemInfo)
 	}
 
 	return true;
+}
+
+bool FeedFilter::Rule::MatchExpression(FeedItemInfo* pFeedItemInfo)
+{
+	char* expr = (char*)malloc(m_Terms.size() + 1);
+
+	int index = 0;
+	for (TermList::iterator it = m_Terms.begin(); it != m_Terms.end(); it++, index++)
+	{
+		Term* pTerm = *it;
+		switch (pTerm->GetCommand())
+		{
+			case fcOpeningBrace:
+				expr[index] = '(';
+				break;
+
+			case fcClosingBrace:
+				expr[index] = ')';
+				break;
+
+			case fcOrOperator:
+				expr[index] = '|';
+				break;
+
+			default:
+				expr[index] = pTerm->Match(pFeedItemInfo) ? 'T' : 'F';
+				break;
+		}
+	}
+	expr[index] = '\0';
+
+	// reduce result tree to one element (may be longer if expression has syntax errors)
+	for (int iOldLen = 0, iNewLen = strlen(expr); iNewLen != iOldLen; iOldLen = iNewLen, iNewLen = strlen(expr))
+	{
+		// NOTE: there are no operator priorities.
+		// the order of operators "OR" and "AND" is not defined, they can be checked in any order.
+		// "OR" and "AND" should not be mixed in one group; instead braces should be used to define priorities.
+		ReduceExpr(expr, "TT", "T");
+		ReduceExpr(expr, "TF", "F");
+		ReduceExpr(expr, "FT", "F");
+		ReduceExpr(expr, "FF", "F");
+		ReduceExpr(expr, "||", "|");
+		ReduceExpr(expr, "(|", "(");
+		ReduceExpr(expr, "|)", ")");
+		ReduceExpr(expr, "T|T", "T");
+		ReduceExpr(expr, "T|F", "T");
+		ReduceExpr(expr, "F|T", "T");
+		ReduceExpr(expr, "F|F", "F");
+		ReduceExpr(expr, "(T)", "T");
+		ReduceExpr(expr, "(F)", "F");
+	}
+
+	bool bMatch = *expr && *expr == 'T' && expr[1] == '\0';
+	free(expr);
+	return bMatch;
+}
+
+void FeedFilter::Rule::ReduceExpr(char* szExpr, const char* szFrom, const char* szTo)
+{
+	int iLenFrom = strlen(szFrom);
+	int iLenTo = strlen(szTo);
+	// assert(iLenTo < iLenFrom);
+
+	while (char* p = strstr(szExpr, szFrom))
+	{
+		strcpy(p, szTo);
+		strcpy(p + iLenTo, p + iLenFrom);
+	}
+
+	return;
 }
 
 void FeedFilter::Rule::ExpandRefValues(char** pDestStr, char* pPatStr)
