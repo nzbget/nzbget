@@ -318,9 +318,12 @@ bool FeedFilter::Term::Compile(char* szToken)
 	if ((szField && !strcasecmp(szField, "size") && !ParseSizeParam(szToken, &m_iIntParam)) ||
 		(szField && !strcasecmp(szField, "age") && !ParseAgeParam(szToken, &m_iIntParam)) ||
 		(szField && !strcasecmp(szField, "rating") && !ParseRatingParam(szToken, &m_iIntParam)) ||
+		(szField && !strcasecmp(szField, "imdbid") && !ParseIntParam(szToken, &m_iIntParam)) ||
 		(szField && !strcasecmp(szField, "rageid") && !ParseIntParam(szToken, &m_iIntParam)) ||
 		(szField && !strcasecmp(szField, "season") && !ParseIntParam(szToken, &m_iIntParam)) ||
-		(szField && !strcasecmp(szField, "episode") && !ParseIntParam(szToken, &m_iIntParam)))
+		(szField && !strcasecmp(szField, "episode") && !ParseIntParam(szToken, &m_iIntParam)) ||
+		(szField && !strcasecmp(szField, "dupescore") && !ParseIntParam(szToken, &m_iIntParam)) ||
+		(szField && !strcasecmp(szField, "priority") && !ParseIntParam(szToken, &m_iIntParam)))
 	{
 		return false;
 	}
@@ -388,6 +391,12 @@ bool FeedFilter::Term::GetFieldData(const char* szField, FeedItemInfo* pFeedItem
 		*FieldType = ftNumeric;
 		return true;
 	}
+	else if (!strcasecmp(szField, "imdbid"))
+	{
+		*IntValue = pFeedItemInfo ? pFeedItemInfo->GetImdbId() : 0;
+		*FieldType = ftNumeric;
+		return true;
+	}
 	else if (!strcasecmp(szField, "rageid"))
 	{
 		*IntValue = pFeedItemInfo ? pFeedItemInfo->GetRageId() : 0;
@@ -403,6 +412,24 @@ bool FeedFilter::Term::GetFieldData(const char* szField, FeedItemInfo* pFeedItem
 	else if (!strcasecmp(szField, "episode"))
 	{
 		*IntValue = pFeedItemInfo ? pFeedItemInfo->GetEpisodeNum() : 0;
+		*FieldType = ftNumeric;
+		return true;
+	}
+	else if (!strcasecmp(szField, "priority"))
+	{
+		*IntValue = pFeedItemInfo ? pFeedItemInfo->GetPriority() : 0;
+		*FieldType = ftNumeric;
+		return true;
+	}
+	else if (!strcasecmp(szField, "dupekey"))
+	{
+		*StrValue = pFeedItemInfo ? pFeedItemInfo->GetDupeKey() : NULL;
+		*FieldType = ftString;
+		return true;
+	}
+	else if (!strcasecmp(szField, "dupescore"))
+	{
+		*IntValue = pFeedItemInfo ? pFeedItemInfo->GetDupeScore() : 0;
 		*FieldType = ftNumeric;
 		return true;
 	}
