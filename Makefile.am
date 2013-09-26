@@ -26,9 +26,9 @@ nzbget_SOURCES = \
 	ColoredFrontend.cpp ColoredFrontend.h Connection.cpp Connection.h Decoder.cpp Decoder.h \
 	DiskState.cpp DiskState.h DownloadInfo.cpp DownloadInfo.h DupeCoordinator.cpp DupeCoordinator.h \
 	Frontend.cpp Frontend.h FeedCoordinator.cpp FeedCoordinator.h FeedFile.cpp FeedFile.h \
-	FeedFilter.cpp FeedFilter.h Log.cpp Log.h LoggableFrontend.cpp LoggableFrontend.h MessageBase.h \
-	NCursesFrontend.cpp NCursesFrontend.h NNTPConnection.cpp NNTPConnection.h NZBFile.cpp \
-	NZBFile.h NewsServer.cpp NewsServer.h Observer.cpp \
+	FeedFilter.cpp FeedFilter.h FeedInfo.cpp FeedInfo.h Log.cpp Log.h LoggableFrontend.cpp \
+	LoggableFrontend.h MessageBase.h NCursesFrontend.cpp NCursesFrontend.h NNTPConnection.cpp \
+	NNTPConnection.h NZBFile.cpp NZBFile.h NewsServer.cpp NewsServer.h Observer.cpp \
 	Observer.h Options.cpp Options.h ParChecker.cpp ParChecker.h ParRenamer.cpp ParRenamer.h \
 	ParCoordinator.cpp ParCoordinator.h PrePostProcessor.cpp PrePostProcessor.h QueueCoordinator.cpp \
 	QueueCoordinator.h QueueEditor.cpp QueueEditor.h RemoteClient.cpp RemoteClient.h \

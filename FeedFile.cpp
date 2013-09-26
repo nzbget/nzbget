@@ -100,7 +100,7 @@ void FeedFile::LogDebugInfo()
 
 void FeedFile::AddItem(FeedItemInfo* pFeedItemInfo)
 {
-	m_pFeedItemInfos->push_back(pFeedItemInfo);
+	m_pFeedItemInfos->Add(pFeedItemInfo);
 }
 
 void FeedFile::ParseSubject(FeedItemInfo* pFeedItemInfo)

@@ -27,6 +27,7 @@
 #define FEEDFILTER_H
 
 #include "DownloadInfo.h"
+#include "FeedInfo.h"
 #include "Util.h"
 
 class FeedFilter
@@ -160,7 +161,8 @@ private:
 		bool			HasAddDupeKey() { return m_bHasAddDupeKey; }
 		bool			HasDupeMode() { return m_bHasDupeMode; }
 		bool			Match(FeedItemInfo* pFeedItemInfo);
-		void			ExpandRefValues(char** pDestStr, char* pPatStr);
+		void			ExpandRefValues(FeedItemInfo* pFeedItemInfo, char** pDestStr, char* pPatStr);
+		const char*		GetRefValue(FeedItemInfo* pFeedItemInfo, const char* szVarName);
 	};
 
 	typedef std::deque<Rule*> RuleList;

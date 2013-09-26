@@ -33,6 +33,7 @@
 #include "Thread.h"
 #include "WebDownloader.h"
 #include "DownloadInfo.h"
+#include "FeedInfo.h"
 #include "Observer.h"
 
 

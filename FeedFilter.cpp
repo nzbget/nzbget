@@ -112,10 +112,9 @@ bool FeedFilter::Term::MatchValue(const char* szStrValue, const long long iIntVa
 
 		case fcGreaterEqual:
 			return iIntValue >= m_iIntParam;
-
-		default:
-			return false;
 	}
+
+	return false;
 }
 
 bool FeedFilter::Term::MatchText(const char* szStrValue)
@@ -942,15 +941,15 @@ bool FeedFilter::Rule::Match(FeedItemInfo* pFeedItemInfo)
 
 	if (m_bPatCategory)
 	{
-		ExpandRefValues(&m_szCategory, m_szPatCategory);
+		ExpandRefValues(pFeedItemInfo, &m_szCategory, m_szPatCategory);
 	}
 	if (m_bPatDupeKey)
 	{
-		ExpandRefValues(&m_szDupeKey, m_szPatDupeKey);
+		ExpandRefValues(pFeedItemInfo, &m_szDupeKey, m_szPatDupeKey);
 	}
 	if (m_bPatAddDupeKey)
 	{
-		ExpandRefValues(&m_szAddDupeKey, m_szPatAddDupeKey);
+		ExpandRefValues(pFeedItemInfo, &m_szAddDupeKey, m_szPatAddDupeKey);
 	}
 
 	return true;
@@ -1026,7 +1025,7 @@ void FeedFilter::Rule::ReduceExpr(char* szExpr, const char* szFrom, const char* 
 	return;
 }
 
-void FeedFilter::Rule::ExpandRefValues(char** pDestStr, char* pPatStr)
+void FeedFilter::Rule::ExpandRefValues(FeedItemInfo* pFeedItemInfo, char** pDestStr, char* pPatStr)
 {
 	if (*pDestStr)
 	{
@@ -1057,13 +1056,12 @@ void FeedFilter::Rule::ExpandRefValues(char** pDestStr, char* pPatStr)
 		strncpy(variable, dollar + 2, maxlen);
 		variable[maxlen] = '\0';
 
-		int iIndex = atoi(variable) - 1;
-		if (iIndex < 0 || iIndex > (int)m_RefValues.size()-1)
+		const char* varvalue = GetRefValue(pFeedItemInfo, variable);
+		if (!varvalue)
 		{
 			break; // error
 		}
 
-		const char* varvalue = m_RefValues[iIndex];
 		int newlen = strlen(varvalue);
 		char* newvalue = (char*)malloc(strlen(curvalue) - varlen - 3 + newlen + 1);
 		strncpy(newvalue, curvalue, dollar - curvalue);
@@ -1075,6 +1073,27 @@ void FeedFilter::Rule::ExpandRefValues(char** pDestStr, char* pPatStr)
 	}
 }
 
+const char* FeedFilter::Rule::GetRefValue(FeedItemInfo* pFeedItemInfo, const char* szVarName)
+{
+	if (!strcasecmp(szVarName, "season"))
+	{
+		pFeedItemInfo->GetSeasonNum(); // needed to parse title
+		return pFeedItemInfo->GetSeason() ? pFeedItemInfo->GetSeason() : "";
+	}
+	else if (!strcasecmp(szVarName, "episode"))
+	{
+		pFeedItemInfo->GetEpisodeNum(); // needed to parse title
+		return pFeedItemInfo->GetEpisode() ? pFeedItemInfo->GetEpisode() : "";
+	}
+
+	int iIndex = atoi(szVarName) - 1;
+	if (iIndex > 0 && iIndex < (int)m_RefValues.size())
+	{
+		return m_RefValues[iIndex];
+	}
+
+	return NULL;
+}
 
 FeedFilter::FeedFilter(const char* szFilter)
 {

@@ -332,6 +332,14 @@
 			>
 		</File>
 		<File
+			RelativePath=".\FeedInfo.cpp"
+			>
+		</File>
+		<File
+			RelativePath=".\FeedInfo.h"
+			>
+		</File>
+		<File
 			RelativePath=".\Frontend.cpp"
 			>
 		</File>
