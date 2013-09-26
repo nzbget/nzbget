@@ -43,6 +43,9 @@ private:
 		fcLessEqual,
 		fcGreater,
 		fcGreaterEqual,
+		fcOpeningBrace,
+		fcClosingBrace,
+		fcOrOperator
 	};
 	
 	enum EFieldType
@@ -80,6 +83,7 @@ private:
 		void			SetRefValues(RefValues* pRefValues) { m_pRefValues = pRefValues; }
 		bool			Compile(char* szToken);
 		bool			Match(FeedItemInfo* pFeedItemInfo);
+		ETermCommand	GetCommand() { return m_eCommand; }
 	};
 
 	typedef std::deque<Term*> TermList;
@@ -128,6 +132,8 @@ private:
 		char*			CompileCommand(char* szRule);
 		char*			CompileOptions(char* szRule);
 		bool			CompileTerm(char* szTerm);
+		bool			MatchExpression(FeedItemInfo* pFeedItemInfo);
+		void			ReduceExpr(char* szExpr, const char* szFrom, const char* szTo);
 
 	public:
 						Rule();
@@ -154,7 +160,6 @@ private:
 		bool			HasAddDupeKey() { return m_bHasAddDupeKey; }
 		bool			HasDupeMode() { return m_bHasDupeMode; }
 		bool			Match(FeedItemInfo* pFeedItemInfo);
-		RefValues*		GetRefValues() { return &m_RefValues; }
 		void			ExpandRefValues(char** pDestStr, char* pPatStr);
 	};
 
