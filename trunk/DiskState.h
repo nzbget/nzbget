@@ -27,6 +27,7 @@
 #define DISKSTATE_H
 
 #include "DownloadInfo.h"
+#include "FeedInfo.h"
 #include "NewsServer.h"
 
 class DiskState

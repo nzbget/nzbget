@@ -28,7 +28,7 @@
 
 #include <vector>
 
-#include "DownloadInfo.h"
+#include "FeedInfo.h"
 
 class FeedFile
 {
