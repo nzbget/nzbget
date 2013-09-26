@@ -1087,7 +1087,7 @@ const char* FeedFilter::Rule::GetRefValue(FeedItemInfo* pFeedItemInfo, const cha
 	}
 
 	int iIndex = atoi(szVarName) - 1;
-	if (iIndex > 0 && iIndex < (int)m_RefValues.size())
+	if (iIndex >= 0 && iIndex < (int)m_RefValues.size())
 	{
 		return m_RefValues[iIndex];
 	}
