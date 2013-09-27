@@ -882,6 +882,37 @@
 				</div>
 			</div>
 
+			<div class="modal-tab hide" id="DownloadsEdit_DupeTab">
+				<div class="form-horizontal">
+					<fieldset>
+						<div class="control-group">
+							<label class="control-label" for="DownloadsEdit_DupeKey">Duplicate key</label>
+							<div class="controls">
+								<input type="text" class="input-xlarge" id="DownloadsEdit_DupeKey" />
+							</div>
+						</div>
+
+						<div class="control-group">
+							<label class="control-label" for="DownloadsEdit_DupeScore">Duplicate score</label>
+							<div class="controls">
+								<input type="text" class="input-small" id="DownloadsEdit_DupeScore" />
+							</div>
+						</div>
+
+						<div class="control-group">
+							<label class="control-label" for="DownloadsEdit_DupeMode">Duplicate mode</label>
+							<div class="controls">
+								<select id="DownloadsEdit_DupeMode" class="input-small">
+									<option value="SCORE">Score</option>
+									<option value="ALL">All</option>
+									<option value="FORCE">Force</option>
+								</select>
+							</div>
+						</div>
+					</fieldset>
+				</div>
+			</div>
+			
 		</div>
 
 	</div>
@@ -895,6 +926,7 @@
 				<li><a href="#" id="DownloadsEdit_Pause"><i class="icon-pause"></i> Pause</a></li>
 				<li><a href="#" id="DownloadsEdit_Delete"><i class="icon-trash"></i> Delete</a></li>
 				<li><a href="#" id="DownloadsEdit_UnMarkDupe"><i class="icon-not-duplicates"></i> Unmark Duplicate</a></li>
+				<li><a href="#" id="DownloadsEdit_Dupe" data-tab="DownloadsEdit_DupeTab"><i class="icon-duplicates"></i> Duplicate Properties</a></li>
 				<li><a href="#" id="DownloadsEdit_CancelPP"><i class="icon-remove"></i> Cancel Post-Processing</a></li>
 				<li class="menu-header" id="DownloadsEdit_DNZB_Section">Indexer Links</li>
 				<li><a href="#" target="_blank" class="DownloadsEdit_DNZB" id="DownloadsEdit_DNZB_Details"><i class="icon-postcard"></i> Details</a></li>
@@ -1146,6 +1178,38 @@
 					<div class="pull-right hide" id="HistoryEdit_ServStatsTable_pagerBlock"><div class="pagination" id ="HistoryEdit_ServStatsTable_pager"></div></div>
 				</div>
 			</div>
+
+			<div class="modal-tab hide" id="HistoryEdit_DupeTab">
+				<div class="form-horizontal">
+					<fieldset>
+						<div class="control-group">
+							<label class="control-label" for="HistoryEdit_DupeKey">Duplicate key</label>
+							<div class="controls">
+								<input type="text" class="input-xlarge" id="HistoryEdit_DupeKey" />
+							</div>
+						</div>
+
+						<div class="control-group">
+							<label class="control-label" for="HistoryEdit_DupeScore">Duplicate score</label>
+							<div class="controls">
+								<input type="text" class="input-small" id="HistoryEdit_DupeScore" />
+							</div>
+						</div>
+
+						<div class="control-group">
+							<label class="control-label" for="HistoryEdit_DupeMode">Duplicate mode</label>
+							<div class="controls">
+								<select id="HistoryEdit_DupeMode" class="input-small">
+									<option value="SCORE">Score</option>
+									<option value="ALL">All</option>
+									<option value="FORCE">Force</option>
+								</select>
+							</div>
+						</div>
+					</fieldset>
+				</div>
+			</div>
+
 		</div>
 	</div>
 
@@ -1161,6 +1225,7 @@
 				<li><a href="#" id="HistoryEdit_ReturnURL"><i class="icon-downloads"></i> Download Again</a></li>
 				<li><a href="#" id="HistoryEdit_MarkGood"><i class="icon-ok"></i> Mark as Good</a></li>
 				<li><a href="#" id="HistoryEdit_MarkBad"><i class="icon-remove"></i> Mark as Bad</a></li>
+				<li><a href="#" id="HistoryEdit_Dupe" data-tab="HistoryEdit_DupeTab"><i class="icon-duplicates"></i> Duplicate Properties</a></li>
 				<li class="menu-header" id="HistoryEdit_DNZB_Section">Indexer Links</li>
 				<li><a href="#" target="_blank" class="HistoryEdit_DNZB" id="HistoryEdit_DNZB_Details"><i class="icon-postcard"></i> Details</a></li>
 				<li><a href="#" target="_blank" class="HistoryEdit_DNZB" id="HistoryEdit_DNZB_MoreInfo"><i class="icon-link"></i> More Info</a></li>

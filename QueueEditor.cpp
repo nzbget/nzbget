@@ -237,9 +237,6 @@ bool QueueEditor::InternEditList(DownloadQueue* pDownloadQueue, IDList* pIDList,
 		case eaGroupMarkDupe:
 			return MarkDupeGroups(pDownloadQueue, &cItemList);
 
-		case eaGroupUnMarkDupe:
-			return UnMarkDupeGroups(pDownloadQueue, &cItemList);
-
 		case eaFileReorder:
 			ReorderFiles(pDownloadQueue, &cItemList);
 			break;
@@ -280,6 +277,13 @@ bool QueueEditor::InternEditList(DownloadQueue* pDownloadQueue, IDList* pIDList,
 						SetNZBName(pItem->m_pFileInfo->GetNZBInfo(), szText);
 						break;
 
+					case eaGroupSetDupeKey:
+					case eaGroupSetDupeScore:
+					case eaGroupSetDupeMode:
+					case eaGroupUnMarkDupe:
+						SetNZBDupeParam(pItem->m_pFileInfo->GetNZBInfo(), eAction, szText);
+						break;
+
 					case eaGroupSetParameter:
 						SetNZBParameter(pItem->m_pFileInfo->GetNZBInfo(), szText);
 						break;
@@ -300,7 +304,6 @@ bool QueueEditor::InternEditList(DownloadQueue* pDownloadQueue, IDList* pIDList,
 					case eaFilePauseExtraPars:
 					case eaGroupMerge:
 					case eaGroupMarkDupe:
-					case eaGroupUnMarkDupe:
 					case eaFileReorder:
 					case eaFileSplit:
 						// remove compiler warning "enumeration not handled in switch"
@@ -946,18 +949,6 @@ bool QueueEditor::MarkDupeGroups(DownloadQueue* pDownloadQueue, ItemList* pItemL
 	return true;
 }
 
-bool QueueEditor::UnMarkDupeGroups(DownloadQueue* pDownloadQueue, ItemList* pItemList)
-{
-	for (ItemList::iterator it = pItemList->begin(); it != pItemList->end(); it++)
-	{
-		EditItem* pItem = *it;
-		pItem->m_pFileInfo->GetNZBInfo()->SetDupe(false);
-		delete pItem;
-	}
-
-	return true;
-}
-
 void QueueEditor::ReorderFiles(DownloadQueue* pDownloadQueue, ItemList* pItemList)
 {
 	if (pItemList->size() == 0)
@@ -1022,4 +1013,55 @@ void QueueEditor::SetNZBParameter(NZBInfo* pNZBInfo, const char* szParamString)
 	}
 
 	free(szStr);
+}
+
+void QueueEditor::SetNZBDupeParam(NZBInfo* pNZBInfo, EEditAction eAction, const char* szText)
+{
+	debug("QueueEditor: setting dupe parameter %i='%s' for '%s'", (int)eAction, szText, pNZBInfo->GetName());
+
+	switch (eAction) 
+	{
+		case eaGroupSetDupeKey:
+			pNZBInfo->SetDupeKey(szText);
+			pNZBInfo->SetDupe(true);
+			break;
+
+		case eaGroupSetDupeScore:
+			pNZBInfo->SetDupeScore(atoi(szText));
+			pNZBInfo->SetDupe(true);
+			break;
+
+		case eaGroupSetDupeMode:
+			{
+				EDupeMode eMode = dmScore;
+				if (!strcasecmp(szText, "SCORE"))
+				{
+					eMode = dmScore;
+				}
+				else if (!strcasecmp(szText, "ALL"))
+				{
+					eMode = dmAll;
+				}
+				else if (!strcasecmp(szText, "FORCE"))
+				{
+					eMode = dmForce;
+				}
+				else
+				{
+					error("Could not set duplicate mode for %s: incorrect mode (%s)", pNZBInfo->GetName(), szText);
+					return;
+				}
+				pNZBInfo->SetDupeMode(eMode);
+				pNZBInfo->SetDupe(eMode != dmForce);
+				break;
+			}
+
+		case eaGroupUnMarkDupe:
+			pNZBInfo->SetDupe(false);
+			break;
+
+		default:
+			// suppress compiler warning
+			break;
+	}
 }

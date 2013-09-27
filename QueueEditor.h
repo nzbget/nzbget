@@ -59,6 +59,9 @@ public:
 		eaGroupMerge,
 		eaGroupSetParameter,
 		eaGroupSetName,
+		eaGroupSetDupeKey,
+		eaGroupSetDupeScore,
+		eaGroupSetDupeMode,
 		eaGroupMarkDupe,
 		eaGroupUnMarkDupe
 	};
@@ -102,9 +105,9 @@ private:
 	bool					MergeGroups(DownloadQueue* pDownloadQueue, ItemList* pItemList);
 	bool					SplitGroup(DownloadQueue* pDownloadQueue, ItemList* pItemList, const char* szName);
 	bool					MarkDupeGroups(DownloadQueue* pDownloadQueue, ItemList* pItemList);
-	bool					UnMarkDupeGroups(DownloadQueue* pDownloadQueue, ItemList* pItemList);
 	void					ReorderFiles(DownloadQueue* pDownloadQueue, ItemList* pItemList);
 	void					SetNZBParameter(NZBInfo* pNZBInfo, const char* szParamString);
+	void					SetNZBDupeParam(NZBInfo* pNZBInfo, EEditAction eAction, const char* szText);
 
 	void					PauseUnpauseEntry(FileInfo* pFileInfo, bool bPause);
 	void					DeleteEntry(FileInfo* pFileInfo);
