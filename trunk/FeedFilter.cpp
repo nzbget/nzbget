@@ -112,9 +112,10 @@ bool FeedFilter::Term::MatchValue(const char* szStrValue, const long long iIntVa
 
 		case fcGreaterEqual:
 			return iIntValue >= m_iIntParam;
-	}
 
-	return false;
+		default:
+			return false;
+	}
 }
 
 bool FeedFilter::Term::MatchText(const char* szStrValue)
