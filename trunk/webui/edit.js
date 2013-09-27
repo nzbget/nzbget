@@ -63,7 +63,7 @@ var DownloadsEditDialog = (new function($)
 		$('#DownloadsEdit_Delete').click(itemDelete);
 		$('#DownloadsEdit_CancelPP').click(itemCancelPP);
 		$('#DownloadsEdit_UnMarkDupe').click(itemUnMarkDupe);
-		$('#DownloadsEdit_Param, #DownloadsEdit_Log, #DownloadsEdit_File').click(tabClick);
+		$('#DownloadsEdit_Param, #DownloadsEdit_Log, #DownloadsEdit_File, #DownloadsEdit_Dupe').click(tabClick);
 		$('#DownloadsEdit_Back').click(backClick);
 
 		$DownloadsLogTable = $('#DownloadsEdit_LogTable');
@@ -188,6 +188,11 @@ var DownloadsEditDialog = (new function($)
 			v.append($('<option selected="selected"></option>').text(group.Category));
 		}
 
+		// duplicate settings
+		$('#DownloadsEdit_DupeKey').val(group.DupeKey);
+		$('#DownloadsEdit_DupeScore').val(group.DupeScore);
+		$('#DownloadsEdit_DupeMode').val(group.DupeMode);
+		
 		$DownloadsLogTable.fasttable('update', []);
 		$DownloadsFileTable.fasttable('update', []);
 
@@ -199,7 +204,9 @@ var DownloadsEditDialog = (new function($)
 		Util.show('#DownloadsEdit_Pause', !group.postprocess);
 		Util.show('#DownloadsEdit_Resume', false);
 		Util.show('#DownloadsEdit_Save', !group.postprocess);
-		Util.show('#DownloadsEdit_UnMarkDupe', group.DupeID > 0);
+		var dupeCheck = Options.option('DupeCheck') === 'yes';
+		Util.show('#DownloadsEdit_UnMarkDupe', dupeCheck && group.Dupe);
+		Util.show('#DownloadsEdit_Dupe', dupeCheck);
 		var postParam = postParamConfig[0].options.length > 0;
 		var postLog = group.postprocess && group.post.Log.length > 0;
 		Util.show('#DownloadsEdit_Param', postParam);
@@ -241,6 +248,7 @@ var DownloadsEditDialog = (new function($)
 		$('#DownloadsEdit_ParamTab').hide();
 		$('#DownloadsEdit_LogTab').hide();
 		$('#DownloadsEdit_FileTab').hide();
+		$('#DownloadsEdit_DupeTab').hide();
 		$('#DownloadsEdit_Back').hide();
 		$('#DownloadsEdit_BackSpace').show();
 		$DownloadsEditDialog.restoreTab();
@@ -388,9 +396,9 @@ var DownloadsEditDialog = (new function($)
 			RPC.call('editqueue', ['GroupSetCategory', 0, category, [curGroup.LastID]], function()
 			{
 				notification = '#Notif_Downloads_Saved';
-				saveParam();
+				saveDupeKey();
 			})
-			: saveParam();
+			: saveDupeKey();
 	}
 
 	function itemPause(e)
@@ -486,6 +494,44 @@ var DownloadsEditDialog = (new function($)
 		{
 			saveFiles();
 		}
+	}
+
+	/*** TAB: DUPLICATE SETTINGS **************************************************/
+
+	function saveDupeKey()
+	{
+		var value = $('#DownloadsEdit_DupeKey').val();
+		value !== curGroup.DupeKey ?
+			RPC.call('editqueue', ['GroupSetDupeKey', 0, value, [curGroup.LastID]], function()
+			{
+				notification = '#Notif_Downloads_Saved';
+				saveDupeScore();
+			})
+			:saveDupeScore();
+	}
+
+	function saveDupeScore()
+	{
+		var value = $('#DownloadsEdit_DupeScore').val();
+		value != curGroup.DupeScore ?
+			RPC.call('editqueue', ['GroupSetDupeScore', 0, value, [curGroup.LastID]], function()
+			{
+				notification = '#Notif_Downloads_Saved';
+				saveDupeMode();
+			})
+			:saveDupeMode();
+	}
+	
+	function saveDupeMode()
+	{
+		var value = $('#DownloadsEdit_DupeMode').val();
+		value !== curGroup.DupeMode ?
+			RPC.call('editqueue', ['GroupSetDupeMode', 0, value, [curGroup.LastID]], function()
+			{
+				notification = '#Notif_Downloads_Saved';
+				saveParam();
+			})
+			:saveParam();
 	}
 
 	/*** TAB: LOG *************************************************************************/
@@ -917,7 +963,7 @@ var ParamTab = (new function($)
 				{
 					var oldValue = option.value;
 					var newValue = Config.getOptionValue(option);
-					if (oldValue != newValue && !(oldValue === '' && newValue === option.defvalue))
+					if (oldValue != newValue && !((oldValue === null || oldValue === '') && newValue === option.defvalue))
 					{
 						var opt = option.name + '=' + newValue;
 						request.push(opt);
@@ -1016,7 +1062,7 @@ var DownloadsMultiDialog = (new function($)
 			paused = paused && group.paused;
 			PriorityDiff = PriorityDiff || (Priority !== group.MaxPriority);
 			CategoryDiff = CategoryDiff || (Category !== group.Category);
-			HasDupes = HasDupes || group.DupeID > 0;
+			HasDupes = HasDupes || group.Dupe;
 		}
 
 		var size = Util.formatSizeMB(FileSizeMB, FileSizeLo);
@@ -1066,7 +1112,9 @@ var DownloadsMultiDialog = (new function($)
 		}
 		oldCategory = v.val();
 		
-		Util.show('#DownloadsMulti_UnMarkDupe', HasDupes);
+		var dupeCheck = Options.option('DupeCheck') === 'yes';
+		Util.show('#DownloadsMulti_MarkDupe', dupeCheck);
+		Util.show('#DownloadsMulti_UnMarkDupe', dupeCheck && HasDupes);
 
 		enableAllButtons();
 		$('#DownloadsMulti_GeneralTabLink').tab('show');
@@ -1291,7 +1339,7 @@ var HistoryEditDialog = (new function()
 	var postParams = [];
 	var lastPage;
 	var lastFullscreen;
-	var saveParamCompleted;
+	var saveCompleted;
 
 	this.init = function()
 	{
@@ -1302,7 +1350,7 @@ var HistoryEditDialog = (new function()
 		$('#HistoryEdit_Delete').click(itemDelete);
 		$('#HistoryEdit_Return, #HistoryEdit_ReturnURL').click(itemReturn);
 		$('#HistoryEdit_Reprocess').click(itemReprocess);
-		$('#HistoryEdit_Param').click(tabClick);
+		$('#HistoryEdit_Param, #HistoryEdit_Dupe').click(tabClick);
 		$('#HistoryEdit_Back').click(backClick);
 		$('#HistoryEdit_MarkGood').click(itemGood);
 		$('#HistoryEdit_MarkBad').click(itemBad);
@@ -1417,21 +1465,27 @@ var HistoryEditDialog = (new function()
 			fillServStats();
 		}
 
+		if (hist.Kind !== 'URL')
+		{
+			$('#HistoryEdit_DupeKey').val(hist.DupeKey);
+			$('#HistoryEdit_DupeScore').val(hist.DupeScore);
+			$('#HistoryEdit_DupeMode').val(hist.DupeMode);
+		}
+		
 		Util.show('#HistoryEdit_Return', hist.RemainingFileCount > 0);
 		Util.show('#HistoryEdit_ReturnURL', hist.Kind === 'URL');
 		Util.show('#HistoryEdit_PathGroup, #HistoryEdit_StatisticsGroup, #HistoryEdit_Reprocess', hist.Kind === 'NZB');
 		Util.show('#HistoryEdit_CategoryGroup', hist.Kind !== 'DUP');
 		Util.show('#HistoryEdit_DupGroup', hist.Kind === 'DUP');
-		Util.show('#HistoryEdit_MarkGood', (hist.Kind === 'NZB' && hist.MarkStatus !== 'GOOD') || (hist.Kind === 'DUP' && hist.DupStatus !== 'GOOD'));
-		Util.show('#HistoryEdit_MarkBad', hist.Kind !== 'URL');
+		var dupeCheck = Options.option('DupeCheck') === 'yes';
+		Util.show('#HistoryEdit_MarkGood', dupeCheck && ((hist.Kind === 'NZB' && hist.MarkStatus !== 'GOOD') || (hist.Kind === 'DUP' && hist.DupStatus !== 'GOOD')));
+		Util.show('#HistoryEdit_MarkBad', dupeCheck && hist.Kind !== 'URL');
+		Util.show('#HistoryEdit_Dupe', dupeCheck && hist.Kind !== 'URL');
 		$('#HistoryEdit_CategoryGroup').toggleClass('control-group-last', hist.Kind === 'URL');
 
 		var postParamConfig = ParamTab.createPostParamConfig();
 		var postParam = hist.Kind === 'NZB' && postParamConfig[0].options.length > 0;
 		Util.show('#HistoryEdit_Param', postParam);
-		Util.show('#HistoryEdit_Save', postParam);
-		$('#HistoryEdit_Close').toggleClass('btn-primary', !postParam);
-		$('#HistoryEdit_Close').text(postParam ? 'Cancel' : 'Close');
 		
 		if (postParam)
 		{
@@ -1445,6 +1499,7 @@ var HistoryEditDialog = (new function()
 		$('#HistoryEdit_GeneralTab').show();
 		$('#HistoryEdit_ParamTab').hide();
 		$('#HistoryEdit_ServStatsTab').hide();
+		$('#HistoryEdit_DupeTab').hide();
 		$('#HistoryEdit_Back').hide();
 		$('#HistoryEdit_BackSpace').show();
 		$HistoryEditDialog.restoreTab();
@@ -1522,13 +1577,16 @@ var HistoryEditDialog = (new function()
 	{
 		e.preventDefault();
 		disableAllButtons();
-		saveParam(function()
-			{
-				notification = '#Notif_History_Reproces';
-				RPC.call('editqueue', ['HistoryProcess', 0, '', [curHist.ID]], completed);
-			});
+		saveCompleted = reprocess;
+		saveDupeKey();
 	}
 
+	function reprocess()
+	{
+		notification = '#Notif_History_Reproces';
+		RPC.call('editqueue', ['HistoryProcess', 0, '', [curHist.ID]], completed);
+	}
+	
 	function completed()
 	{
 		$HistoryEditDialog.modal('hide');
@@ -1545,7 +1603,8 @@ var HistoryEditDialog = (new function()
 		e.preventDefault();
 		disableAllButtons();
 		notification = null;
-		saveParam(completed);
+		saveCompleted = completed;
+		saveDupeKey();
 	}
 	
 	function itemGood(e)
@@ -1576,9 +1635,14 @@ var HistoryEditDialog = (new function()
 
 	/*** TAB: POST-PROCESSING PARAMETERS **************************************************/
 
-	function saveParam(_saveParamCompleted)
+	function saveParam()
 	{
-		saveParamCompleted = _saveParamCompleted;
+		if (curHist.Kind === 'DUP')
+		{
+			saveCompleted();
+			return;
+		}
+		
 		var paramList = ParamTab.prepareParamRequest(postParams);
 		saveNextParam(paramList);
 	}
@@ -1596,8 +1660,46 @@ var HistoryEditDialog = (new function()
 		}
 		else
 		{
-			saveParamCompleted();
+			saveCompleted();
 		}
+	}
+
+	/*** TAB: DUPLICATE SETTINGS **************************************************/
+
+	function saveDupeKey()
+	{
+		var value = $('#HistoryEdit_DupeKey').val();
+		value !== curHist.DupeKey ?
+			RPC.call('editqueue', ['HistorySetDupeKey', 0, value, [curHist.ID]], function()
+			{
+				notification = '#Notif_History_Saved';
+				saveDupeScore();
+			})
+			:saveDupeScore();
+	}
+
+	function saveDupeScore()
+	{
+		var value = $('#HistoryEdit_DupeScore').val();
+		value != curHist.DupeScore ?
+			RPC.call('editqueue', ['HistorySetDupeScore', 0, value, [curHist.ID]], function()
+			{
+				notification = '#Notif_History_Saved';
+				saveDupeMode();
+			})
+			:saveDupeMode();
+	}
+	
+	function saveDupeMode()
+	{
+		var value = $('#HistoryEdit_DupeMode').val();
+		value !== curHist.DupeMode ?
+			RPC.call('editqueue', ['HistorySetDupeMode', 0, value, [curHist.ID]], function()
+			{
+				notification = '#Notif_History_Saved';
+				saveParam();
+			})
+			:saveParam();
 	}
 
 	/*** TAB: SERVER STATISTICS **************************************************/

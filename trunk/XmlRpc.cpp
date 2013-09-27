@@ -1261,6 +1261,7 @@ void NzbInfoXmlCommand::AppendNZBInfoFields(NZBInfo* pNZBInfo)
 	"<member><name>CriticalHealth</name><value><i4>%i</i4></value></member>\n"
 	"<member><name>DupeKey</name><value><string>%s</string></value></member>\n"
 	"<member><name>DupeScore</name><value><i4>%i</i4></value></member>\n"
+	"<member><name>DupeMode</name><value><i4>%i</i4></value></member>\n"
 	"<member><name>Dupe</name><value><boolean>%s</boolean></value></member>\n"
 	"<member><name>Deleted</name><value><boolean>%s</boolean></value></member>\n"	 // deprecated, use "DeleteStatus" instead
 	"<member><name>Parameters</name><value><array><data>\n";
@@ -1301,6 +1302,7 @@ void NzbInfoXmlCommand::AppendNZBInfoFields(NZBInfo* pNZBInfo)
 	"\"CriticalHealth\" : %i,\n"
 	"\"DupeKey\" : \"%s\",\n"
 	"\"DupeScore\" : %i,\n"
+	"\"DupeMode\" : \"%s\",\n"
 	"\"Dupe\" : %s,\n"
 	"\"Deleted\" : %s,\n"			  // deprecated, use "DeleteStatus" instead
 	"\"Parameters\" : [\n";
@@ -1360,6 +1362,7 @@ void NzbInfoXmlCommand::AppendNZBInfoFields(NZBInfo* pNZBInfo)
     const char* szScriptStatusName[] = { "NONE", "FAILURE", "SUCCESS" };
     const char* szDeleteStatusName[] = { "NONE", "MANUAL", "HEALTH", "DUPE" };
     const char* szMarkStatusName[] = { "NONE", "BAD", "GOOD" };
+    const char* szDupeModeName[] = { "SCORE", "ALL", "FORCE" };
 	
 	int iItemBufSize = 10240;
 	char* szItemBuf = (char*)malloc(iItemBufSize);
@@ -1384,8 +1387,8 @@ void NzbInfoXmlCommand::AppendNZBInfoFields(NZBInfo* pNZBInfo)
 			 iFileSizeLo, iFileSizeHi, iFileSizeMB, pNZBInfo->GetFileCount(),
 			 pNZBInfo->GetTotalArticles(), pNZBInfo->GetSuccessArticles(), pNZBInfo->GetFailedArticles(),
 			 pNZBInfo->CalcHealth(), pNZBInfo->CalcCriticalHealth(),
-			 xmlDupeKey, pNZBInfo->GetDupeScore(), BoolToStr(pNZBInfo->GetDupe()),
-			 BoolToStr(pNZBInfo->GetDeleteStatus() != NZBInfo::dsNone));
+			 xmlDupeKey, pNZBInfo->GetDupeScore(), szDupeModeName[pNZBInfo->GetDupeMode()],
+			 BoolToStr(pNZBInfo->GetDupe()), BoolToStr(pNZBInfo->GetDeleteStatus() != NZBInfo::dsNone));
 	
 	free(xmlNZBNicename);
 	free(xmlNZBFilename);
@@ -1588,6 +1591,9 @@ EditCommandEntry EditCommandNameMap[] = {
 	{ QueueEditor::eaGroupMerge, "GroupMerge" },
 	{ QueueEditor::eaGroupSetParameter, "GroupSetParameter" },
 	{ QueueEditor::eaGroupSetName, "GroupSetName" },
+	{ QueueEditor::eaGroupSetDupeKey, "GroupSetDupeKey" },
+	{ QueueEditor::eaGroupSetDupeScore, "GroupSetDupeScore" },
+	{ QueueEditor::eaGroupSetDupeMode, "GroupSetDupeMode" },
 	{ QueueEditor::eaGroupMarkDupe, "GroupMarkDupe" },
 	{ QueueEditor::eaGroupUnMarkDupe, "GroupUnMarkDupe" },
 	{ PrePostProcessor::eaPostMoveOffset, "PostMoveOffset" },
@@ -1598,6 +1604,9 @@ EditCommandEntry EditCommandNameMap[] = {
 	{ PrePostProcessor::eaHistoryReturn, "HistoryReturn" },
 	{ PrePostProcessor::eaHistoryProcess, "HistoryProcess" },
 	{ PrePostProcessor::eaHistorySetParameter, "HistorySetParameter" },
+	{ PrePostProcessor::eaHistorySetDupeKey, "HistorySetDupeKey" },
+	{ PrePostProcessor::eaHistorySetDupeScore, "HistorySetDupeScore" },
+	{ PrePostProcessor::eaHistorySetDupeMode, "HistorySetDupeMode" },
 	{ PrePostProcessor::eaHistoryMarkBad, "HistoryMarkBad" },
 	{ PrePostProcessor::eaHistoryMarkGood, "HistoryMarkGood" },
 	{ 0, NULL }
@@ -2039,6 +2048,7 @@ void HistoryXmlCommand::Execute()
 		"<member><name>FileSizeMB</name><value><i4>%i</i4></value></member>\n"
 		"<member><name>DupeKey</name><value><string>%s</string></value></member>\n"
 		"<member><name>DupeScore</name><value><i4>%i</i4></value></member>\n"
+		"<member><name>DupeMode</name><value><string>%s</string></value></member>\n"
 		"<member><name>Dupe</name><value><boolean>%s</boolean></value></member>\n"
 		"<member><name>DupStatus</name><value><string>%s</string></value></member>\n"
 		"</struct></value>\n";
@@ -2054,12 +2064,14 @@ void HistoryXmlCommand::Execute()
 		"\"FileSizeMB\" : %i,\n"
 		"\"DupeKey\" : \"%s\",\n"
 		"\"DupeScore\" : %i,\n"
+		"\"DupeMode\" : \"%s\",\n"
 		"\"Dupe\" : %s,\n"
 		"\"DupStatus\" : \"%s\",\n";
 
 	const char* szUrlStatusName[] = { "UNKNOWN", "UNKNOWN", "SUCCESS", "FAILURE", "UNKNOWN", "SCAN_SKIPPED", "SCAN_FAILURE" };
 	const char* szDupStatusName[] = { "UNKNOWN", "SUCCESS", "FAILURE", "DELETED", "DUPE", "BAD", "GOOD" };
 	const char* szMessageType[] = { "INFO", "WARNING", "ERROR", "DEBUG", "DETAIL"};
+    const char* szDupeModeName[] = { "SCORE", "ALL", "FORCE" };
 
 	bool bDup = false;
 	NextParamAsBool(&bDup);
@@ -2123,7 +2135,8 @@ void HistoryXmlCommand::Execute()
 			snprintf(szItemBuf, iItemBufSize, IsJson() ? JSON_HISTORY_DUP_ITEM : XML_HISTORY_DUP_ITEM,
 				pHistoryInfo->GetID(), "DUP", xmlNicename, pHistoryInfo->GetTime(),
 				iFileSizeLo, iFileSizeHi, iFileSizeMB, xmlDupeKey, pDupInfo->GetDupeScore(),
-				BoolToStr(pDupInfo->GetDupe()), szDupStatusName[pDupInfo->GetStatus()]);
+				szDupeModeName[pDupInfo->GetDupeMode()], BoolToStr(pDupInfo->GetDupe()),
+				szDupStatusName[pDupInfo->GetStatus()]);
 
 			free(xmlDupeKey);
 		}

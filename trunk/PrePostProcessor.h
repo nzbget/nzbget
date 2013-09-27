@@ -47,6 +47,9 @@ public:
 		eaHistoryReturn,
 		eaHistoryProcess,
 		eaHistorySetParameter,
+		eaHistorySetDupeKey,
+		eaHistorySetDupeScore,
+		eaHistorySetDupeMode,
 		eaHistoryMarkBad,
 		eaHistoryMarkGood
 	};
@@ -116,6 +119,7 @@ private:
 	void				HistoryDelete(DownloadQueue* pDownloadQueue, HistoryList::iterator itHistory, HistoryInfo* pHistoryInfo);
 	void				HistoryReturn(DownloadQueue* pDownloadQueue, HistoryList::iterator itHistory, HistoryInfo* pHistoryInfo, bool bReprocess);
 	void				HistorySetParameter(HistoryInfo* pHistoryInfo, const char* szText);
+	void				HistorySetDupeParam(HistoryInfo* pHistoryInfo, EEditAction eAction, const char* szText);
 	void				HistoryTransformToDup(DownloadQueue* pDownloadQueue, HistoryInfo* pHistoryInfo, int rindex);
 	void				CheckHistory();
 	void				Cleanup();

@@ -977,6 +977,9 @@ bool PrePostProcessor::QueueEditList(IDList* pIDList, EEditAction eAction, int i
 		case eaHistoryReturn:
 		case eaHistoryProcess:
 		case eaHistorySetParameter:
+		case eaHistorySetDupeKey:
+		case eaHistorySetDupeScore:
+		case eaHistorySetDupeMode:
 		case eaHistoryMarkBad:
 		case eaHistoryMarkGood:
 			return HistoryEdit(pIDList, eAction, iOffset, szText);
@@ -1140,6 +1143,12 @@ bool PrePostProcessor::HistoryEdit(IDList* pIDList, EEditAction eAction, int iOf
 
 					case eaHistorySetParameter:
 						HistorySetParameter(pHistoryInfo, szText);
+						break;
+
+					case eaHistorySetDupeKey:
+					case eaHistorySetDupeScore:
+					case eaHistorySetDupeMode:
+						HistorySetDupeParam(pHistoryInfo, eAction, szText);
 						break;
 
 					case eaHistoryMarkBad:
@@ -1323,4 +1332,89 @@ void PrePostProcessor::HistorySetParameter(HistoryInfo* pHistoryInfo, const char
 	}
 
 	free(szStr);
+}
+
+void PrePostProcessor::HistorySetDupeParam(HistoryInfo* pHistoryInfo, EEditAction eAction, const char* szText)
+{
+	char szNiceName[1024];
+	pHistoryInfo->GetName(szNiceName, 1024);
+	debug("Setting dupe-parameter '%i'='%s' for '%s'", (int)eAction, szText, szNiceName);
+
+	if (!(pHistoryInfo->GetKind() == HistoryInfo::hkNZBInfo || 
+		pHistoryInfo->GetKind() == HistoryInfo::hkDupInfo))
+	{
+		error("Could not set duplicate parameter for %s: history item has wrong type", szNiceName);
+		return;
+	}
+
+	EDupeMode eMode = dmScore;
+	if (eAction == eaHistorySetDupeMode)
+	{
+		if (!strcasecmp(szText, "SCORE"))
+		{
+			eMode = dmScore;
+		}
+		else if (!strcasecmp(szText, "ALL"))
+		{
+			eMode = dmAll;
+		}
+		else if (!strcasecmp(szText, "FORCE"))
+		{
+			eMode = dmForce;
+		}
+		else
+		{
+			error("Could not set duplicate mode for %s: incorrect mode (%s)", szNiceName, szText);
+			return;
+		}
+	}
+
+	if (pHistoryInfo->GetKind() == HistoryInfo::hkNZBInfo)
+	{
+		switch (eAction) 
+		{
+			case eaHistorySetDupeKey:
+				pHistoryInfo->GetNZBInfo()->SetDupeKey(szText);
+				pHistoryInfo->GetNZBInfo()->SetDupe(true);
+				break;
+
+			case eaHistorySetDupeScore:
+				pHistoryInfo->GetNZBInfo()->SetDupeScore(atoi(szText));
+				pHistoryInfo->GetNZBInfo()->SetDupe(true);
+				break;
+
+			case eaHistorySetDupeMode:
+				pHistoryInfo->GetNZBInfo()->SetDupeMode(eMode);
+				pHistoryInfo->GetNZBInfo()->SetDupe(eMode != dmForce);
+				break;
+
+			default:
+				// suppress compiler warning
+				break;
+		}
+	}
+	else if (pHistoryInfo->GetKind() == HistoryInfo::hkDupInfo)
+	{
+		switch (eAction) 
+		{
+			case eaHistorySetDupeKey:
+				pHistoryInfo->GetDupInfo()->SetDupeKey(szText);
+				pHistoryInfo->GetDupInfo()->SetDupe(true);
+				break;
+
+			case eaHistorySetDupeScore:
+				pHistoryInfo->GetDupInfo()->SetDupeScore(atoi(szText));
+				pHistoryInfo->GetDupInfo()->SetDupe(true);
+				break;
+
+			case eaHistorySetDupeMode:
+				pHistoryInfo->GetDupInfo()->SetDupeMode(eMode);
+				pHistoryInfo->GetDupInfo()->SetDupe(eMode != dmForce);
+				break;
+
+			default:
+				// suppress compiler warning
+				break;
+		}
+	}
 }
