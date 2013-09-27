@@ -289,7 +289,7 @@ void DiskState::SaveNZBList(DownloadQueue* pDownloadQueue, FILE* outfile)
 		fprintf(outfile, "%i,%i,%i\n", pNZBInfo->GetTotalArticles(), pNZBInfo->GetSuccessArticles(), pNZBInfo->GetFailedArticles());
 
 		fprintf(outfile, "%s\n", pNZBInfo->GetDupeKey());
-		fprintf(outfile, "%i,%i,%i\n", (int)pNZBInfo->GetDupe(), (int)pNZBInfo->GetDupeMode(), pNZBInfo->GetDupeScore());
+		fprintf(outfile, "%i,%i,%i\n", (int)pNZBInfo->GetDupeMark(), (int)pNZBInfo->GetDupeMode(), pNZBInfo->GetDupeScore());
 
 		char DestDirSlash[1024];
 		snprintf(DestDirSlash, 1023, "%s%c", pNZBInfo->GetDestDir(), PATH_SEPARATOR);
@@ -559,7 +559,7 @@ bool DiskState::LoadNZBList(DownloadQueue* pDownloadQueue, FILE* infile, int iFo
 
 			int iDupe, iDupeMode, iDupeScore;
 			if (fscanf(infile, "%i,%i,%i\n", &iDupe, &iDupeMode, &iDupeScore) != 3) goto error;
-			pNZBInfo->SetDupe((bool)iDupe);
+			pNZBInfo->SetDupeMark((bool)iDupe);
 			pNZBInfo->SetDupeMode((EDupeMode)iDupeMode);
 			pNZBInfo->SetDupeScore(iDupeScore);
 		}
@@ -1289,7 +1289,7 @@ void DiskState::SaveDupInfo(DupInfo* pDupInfo, FILE* outfile)
 	Util::SplitInt64(pDupInfo->GetSize(), &High, &Low);
 	fprintf(outfile, "%i,%lu,%lu,%u,%u,%i,%i,%i\n", (int)pDupInfo->GetStatus(), High, Low,
 		pDupInfo->GetFullContentHash(), pDupInfo->GetFilteredContentHash(),
-		pDupInfo->GetDupeScore(), (int)pDupInfo->GetDupe(), (int)pDupInfo->GetDupeMode());
+		pDupInfo->GetDupeScore(), (int)pDupInfo->GetDupeMark(), (int)pDupInfo->GetDupeMode());
 	fprintf(outfile, "%s\n", pDupInfo->GetName());
 	fprintf(outfile, "%s\n", pDupInfo->GetDupeKey());
 }
@@ -1325,7 +1325,7 @@ bool DiskState::LoadDupInfo(DupInfo* pDupInfo, FILE* infile, int iFormatVersion)
 	pDupInfo->SetFilteredContentHash(iFilteredContentHash);
 	pDupInfo->SetSize(Util::JoinInt64(High, Low));
 	pDupInfo->SetDupeScore(iDupeScore);
-	pDupInfo->SetDupe((bool)iDupe);
+	pDupInfo->SetDupeMark((bool)iDupe);
 	pDupInfo->SetDupeMode((EDupeMode)iDupeMode);
 
 	if (!fgets(buf, sizeof(buf), infile)) goto error;

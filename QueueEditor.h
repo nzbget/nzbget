@@ -62,8 +62,7 @@ public:
 		eaGroupSetDupeKey,
 		eaGroupSetDupeScore,
 		eaGroupSetDupeMode,
-		eaGroupMarkDupe,
-		eaGroupUnMarkDupe
+		eaGroupMarkDupe
 	};
 
 	enum EMatchMode
