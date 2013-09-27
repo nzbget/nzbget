@@ -202,7 +202,7 @@ var History = (new function($)
 			var statustext = hist.status === 'none' ? 'unknown' : hist.status;
 			var size = kind === 'URL' ? '' : Util.formatSizeMB(hist.FileSizeMB);
 			var time = Util.formatDateTime(hist.HistoryTime + UISettings.timeZoneCorrection*60*60);
-			var dupe = DownloadsUI.buildDupeText(hist.Dupe, hist.DupeKey, hist.DupeScore);
+			var dupe = DownloadsUI.buildDupeText(hist.DupeMark, hist.DupeKey, hist.DupeScore);
 			var category = '';
 
 			var textname = hist.Name;
@@ -244,7 +244,7 @@ var History = (new function($)
 		var status = HistoryUI.buildStatus(hist.status, '');
 
 		var name = '<a href="#" histid="' + hist.ID + '">' + Util.textToHtml(Util.formatNZBName(hist.Name)) + '</a>';
-		var dupe = DownloadsUI.buildDupe(hist.Dupe, hist.DupeKey, hist.DupeScore);
+		var dupe = DownloadsUI.buildDupe(hist.DupeMark, hist.DupeKey, hist.DupeScore);
 		var category = '';
 
 		if (hist.Kind !== 'DUP')

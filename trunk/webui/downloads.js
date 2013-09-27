@@ -213,7 +213,7 @@ var Downloads = (new function($)
 			var age = Util.formatAge(group.MinPostTime + UISettings.timeZoneCorrection*60*60);
 			var size = Util.formatSizeMB(group.FileSizeMB, group.FileSizeLo);
 			var remaining = Util.formatSizeMB(group.RemainingSizeMB-group.PausedSizeMB, group.RemainingSizeLo-group.PausedSizeLo);
-			var dupe = DownloadsUI.buildDupeText(group.Dupe, group.DupeKey, group.DupeScore);
+			var dupe = DownloadsUI.buildDupeText(group.DupeMark, group.DupeKey, group.DupeScore);
 			
 			var item =
 			{
@@ -237,7 +237,7 @@ var Downloads = (new function($)
 		var priority = DownloadsUI.buildPriority(group.MaxPriority);
 		var progresslabel = DownloadsUI.buildProgressLabel(group, nameColumnWidth);
 		var progress = DownloadsUI.buildProgress(group, item.data.size, item.data.remaining, item.data.estimated);
-		var dupe = DownloadsUI.buildDupe(group.Dupe, group.DupeKey, group.DupeScore);
+		var dupe = DownloadsUI.buildDupe(group.DupeMark, group.DupeKey, group.DupeScore);
 
 		var name = '<a href="#" nzbid="' + group.NZBID + '">' + Util.textToHtml(Util.formatNZBName(group.NZBName)) + '</a>';
 		

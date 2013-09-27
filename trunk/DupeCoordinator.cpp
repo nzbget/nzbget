@@ -329,8 +329,8 @@ void DupeCoordinator::MarkDupe(NZBInfo* pNZBInfo, NZBInfo* pDupeNZBInfo)
 {
 	info("Marking collection %s as duplicate to %s", pNZBInfo->GetName(), pDupeNZBInfo->GetName());
 
-	pNZBInfo->SetDupe(true);
-	pDupeNZBInfo->SetDupe(true);
+	pNZBInfo->SetDupeMark(true);
+	pDupeNZBInfo->SetDupeMark(true);
 
 	if (Util::EmptyStr(pNZBInfo->GetDupeKey()) && !Util::EmptyStr(pDupeNZBInfo->GetDupeKey()))
 	{
@@ -349,7 +349,7 @@ void DupeCoordinator::NZBCompleted(DownloadQueue* pDownloadQueue, NZBInfo* pNZBI
 {
 	debug("Processing duplicates for %s", pNZBInfo->GetName());
 
-	if (pNZBInfo->GetDupeMode() == dmScore && pNZBInfo->GetDupe())
+	if (pNZBInfo->GetDupeMode() == dmScore)
 	{
 		if (IsDupeSuccess(pNZBInfo))
 		{
@@ -373,7 +373,6 @@ void DupeCoordinator::RemoveDupes(DownloadQueue* pDownloadQueue, NZBInfo* pNZBIn
 		FileInfo* pFileInfo = *it;
 		if (pFileInfo->GetNZBInfo() != pNZBInfo &&
 			pFileInfo->GetNZBInfo()->GetDupeMode() == dmScore &&
-			pFileInfo->GetNZBInfo()->GetDupe() &&
 			groupNZBs.find(pFileInfo->GetNZBInfo()) == groupNZBs.end() &&
 			(!strcmp(pFileInfo->GetNZBInfo()->GetName(), pNZBInfo->GetName()) ||
 			 (bHasDupeKey && !strcmp(pFileInfo->GetNZBInfo()->GetDupeKey(), pNZBInfo->GetDupeKey()))))
@@ -500,7 +499,6 @@ void DupeCoordinator::HistoryMark(DownloadQueue* pDownloadQueue, HistoryInfo* pH
 
 		if (pHistoryInfo->GetKind() == HistoryInfo::hkNZBInfo &&
 			pHistoryInfo->GetNZBInfo()->GetDupeMode() != dmForce &&
-			pHistoryInfo->GetNZBInfo()->GetDupe() &&
 			(IsDupeSuccess(pHistoryInfo->GetNZBInfo()) ||
 			 pHistoryInfo->GetNZBInfo()->GetMarkStatus() == NZBInfo::ksGood) &&
 			(!strcmp(pHistoryInfo->GetNZBInfo()->GetName(), szNZBName) ||
@@ -516,7 +514,6 @@ void DupeCoordinator::HistoryMark(DownloadQueue* pDownloadQueue, HistoryInfo* pH
 
 		if (pHistoryInfo->GetKind() == HistoryInfo::hkDupInfo &&
 			pHistoryInfo->GetDupInfo()->GetDupeMode() != dmForce &&
-			pHistoryInfo->GetDupInfo()->GetDupe() &&
 			(pHistoryInfo->GetDupInfo()->GetStatus() == DupInfo::dsSuccess ||
 			 pHistoryInfo->GetDupInfo()->GetStatus() == DupInfo::dsGood) &&
 			(!strcmp(pHistoryInfo->GetDupInfo()->GetName(), szNZBName) ||
@@ -544,7 +541,6 @@ void DupeCoordinator::HistoryMark(DownloadQueue* pDownloadQueue, HistoryInfo* pH
 		HistoryInfo* pHistoryInfo = *it;
 		if (pHistoryInfo->GetKind() == HistoryInfo::hkNZBInfo &&
 			pHistoryInfo->GetNZBInfo()->GetDupeMode() != dmForce &&
-			pHistoryInfo->GetNZBInfo()->GetDupe() &&
 			pHistoryInfo->GetNZBInfo()->GetDeleteStatus() == NZBInfo::dsDupe &&
 			(!bSuccessDupe || pHistoryInfo->GetNZBInfo()->GetDupeScore() > iHighScore) &&
 			(!strcmp(pHistoryInfo->GetNZBInfo()->GetName(), szNZBName) ||
@@ -618,7 +614,8 @@ void DupeCoordinator::HistoryCleanup(DownloadQueue* pDownloadQueue, HistoryInfo*
 		HistoryInfo* pHistoryInfo = *it;
 
 		if (pHistoryInfo->GetKind() == HistoryInfo::hkNZBInfo &&
-			pHistoryInfo != pMarkHistoryInfo && pHistoryInfo->GetNZBInfo()->GetDupe() &&
+			pHistoryInfo->GetNZBInfo()->GetDupeMode() != dmForce &&
+			pHistoryInfo != pMarkHistoryInfo &&
 			(!strcmp(pHistoryInfo->GetNZBInfo()->GetName(), szNZBName) ||
 			 (bHasDupeKey && !strcmp(pHistoryInfo->GetNZBInfo()->GetDupeKey(), szDupeKey))))
 		{
@@ -648,7 +645,7 @@ void DupeCoordinator::HistoryTransformToDup(DownloadQueue* pDownloadQueue, Histo
 	// replace history element
 	DupInfo* pDupInfo = new DupInfo();
 	pDupInfo->SetName(pHistoryInfo->GetNZBInfo()->GetName());
-	pDupInfo->SetDupe(pHistoryInfo->GetNZBInfo()->GetDupe());
+	pDupInfo->SetDupeMark(pHistoryInfo->GetNZBInfo()->GetDupeMark());
 	pDupInfo->SetDupeKey(pHistoryInfo->GetNZBInfo()->GetDupeKey());
 	pDupInfo->SetDupeScore(pHistoryInfo->GetNZBInfo()->GetDupeScore());
 	pDupInfo->SetDupeMode(pHistoryInfo->GetNZBInfo()->GetDupeMode());
