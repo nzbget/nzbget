@@ -327,10 +327,7 @@ void DupeCoordinator::NZBAdded(DownloadQueue* pDownloadQueue, NZBInfo* pNZBInfo)
 
 void DupeCoordinator::MarkDupe(NZBInfo* pNZBInfo, NZBInfo* pDupeNZBInfo)
 {
-	info("Marking collection %s as duplicate to %s", pNZBInfo->GetName(), pDupeNZBInfo->GetName());
-
-	pNZBInfo->SetDupeMark(true);
-	pDupeNZBInfo->SetDupeMark(true);
+	info("Collection %s is duplicate to %s", pNZBInfo->GetName(), pDupeNZBInfo->GetName());
 
 	if (Util::EmptyStr(pNZBInfo->GetDupeKey()) && !Util::EmptyStr(pDupeNZBInfo->GetDupeKey()))
 	{
@@ -645,7 +642,6 @@ void DupeCoordinator::HistoryTransformToDup(DownloadQueue* pDownloadQueue, Histo
 	// replace history element
 	DupInfo* pDupInfo = new DupInfo();
 	pDupInfo->SetName(pHistoryInfo->GetNZBInfo()->GetName());
-	pDupInfo->SetDupeMark(pHistoryInfo->GetNZBInfo()->GetDupeMark());
 	pDupInfo->SetDupeKey(pHistoryInfo->GetNZBInfo()->GetDupeKey());
 	pDupInfo->SetDupeScore(pHistoryInfo->GetNZBInfo()->GetDupeScore());
 	pDupInfo->SetDupeMode(pHistoryInfo->GetNZBInfo()->GetDupeMode());

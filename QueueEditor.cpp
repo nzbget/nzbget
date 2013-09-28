@@ -939,7 +939,6 @@ bool QueueEditor::MarkDupeGroups(DownloadQueue* pDownloadQueue, ItemList* pItemL
 	{
 		EditItem* pItem = *it;
 		pItem->m_pFileInfo->GetNZBInfo()->SetDupeKey(szDupeKey);
-		pItem->m_pFileInfo->GetNZBInfo()->SetDupeMark(true);
 		delete pItem;
 	}
 
@@ -1022,12 +1021,10 @@ void QueueEditor::SetNZBDupeParam(NZBInfo* pNZBInfo, EEditAction eAction, const 
 	{
 		case eaGroupSetDupeKey:
 			pNZBInfo->SetDupeKey(szText);
-			pNZBInfo->SetDupeMark(true);
 			break;
 
 		case eaGroupSetDupeScore:
 			pNZBInfo->SetDupeScore(atoi(szText));
-			pNZBInfo->SetDupeMark(true);
 			break;
 
 		case eaGroupSetDupeMode:
@@ -1051,7 +1048,6 @@ void QueueEditor::SetNZBDupeParam(NZBInfo* pNZBInfo, EEditAction eAction, const 
 					return;
 				}
 				pNZBInfo->SetDupeMode(eMode);
-				pNZBInfo->SetDupeMark(eMode != dmForce);
 				break;
 			}
 

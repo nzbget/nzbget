@@ -138,7 +138,7 @@ bool DiskState::SaveDownloadQueue(DownloadQueue* pDownloadQueue)
 		return false;
 	}
 
-	fprintf(outfile, "%s%i\n", FORMATVERSION_SIGNATURE, 38);
+	fprintf(outfile, "%s%i\n", FORMATVERSION_SIGNATURE, 39);
 
 	// save nzb-infos
 	SaveNZBList(pDownloadQueue, outfile);
@@ -192,7 +192,7 @@ bool DiskState::LoadDownloadQueue(DownloadQueue* pDownloadQueue)
 	char FileSignatur[128];
 	fgets(FileSignatur, sizeof(FileSignatur), infile);
 	int iFormatVersion = ParseFormatVersion(FileSignatur);
-	if (iFormatVersion < 3 || iFormatVersion > 38)
+	if (iFormatVersion < 3 || iFormatVersion > 39)
 	{
 		error("Could not load diskstate due to file version mismatch");
 		fclose(infile);
@@ -289,7 +289,7 @@ void DiskState::SaveNZBList(DownloadQueue* pDownloadQueue, FILE* outfile)
 		fprintf(outfile, "%i,%i,%i\n", pNZBInfo->GetTotalArticles(), pNZBInfo->GetSuccessArticles(), pNZBInfo->GetFailedArticles());
 
 		fprintf(outfile, "%s\n", pNZBInfo->GetDupeKey());
-		fprintf(outfile, "%i,%i,%i\n", (int)pNZBInfo->GetDupeMark(), (int)pNZBInfo->GetDupeMode(), pNZBInfo->GetDupeScore());
+		fprintf(outfile, "%i,%i\n", (int)pNZBInfo->GetDupeMode(), pNZBInfo->GetDupeScore());
 
 		char DestDirSlash[1024];
 		snprintf(DestDirSlash, 1023, "%s%c", pNZBInfo->GetDestDir(), PATH_SEPARATOR);
@@ -556,13 +556,20 @@ bool DiskState::LoadNZBList(DownloadQueue* pDownloadQueue, FILE* infile, int iFo
 			if (buf[0] != 0) buf[strlen(buf)-1] = 0; // remove traling '\n'
 			if (iFormatVersion < 36) ConvertDupeKey(buf, sizeof(buf));
 			pNZBInfo->SetDupeKey(buf);
-
-			int iDupe, iDupeMode, iDupeScore;
-			if (fscanf(infile, "%i,%i,%i\n", &iDupe, &iDupeMode, &iDupeScore) != 3) goto error;
-			pNZBInfo->SetDupeMark((bool)iDupe);
-			pNZBInfo->SetDupeMode((EDupeMode)iDupeMode);
-			pNZBInfo->SetDupeScore(iDupeScore);
 		}
+
+		int iDupeMode = 0, iDupeScore = 0;
+		if (iFormatVersion >= 39)
+		{
+			if (fscanf(infile, "%i,%i\n", &iDupeMode, &iDupeScore) != 2) goto error;
+		}
+		else
+		{
+			int iDupe;
+			if (fscanf(infile, "%i,%i,%i\n", &iDupe, &iDupeMode, &iDupeScore) != 3) goto error;
+		}
+		pNZBInfo->SetDupeMode((EDupeMode)iDupeMode);
+		pNZBInfo->SetDupeScore(iDupeScore);
 
 		if (iFormatVersion >= 4)
 		{
@@ -1287,9 +1294,9 @@ void DiskState::SaveDupInfo(DupInfo* pDupInfo, FILE* outfile)
 {
 	unsigned long High, Low;
 	Util::SplitInt64(pDupInfo->GetSize(), &High, &Low);
-	fprintf(outfile, "%i,%lu,%lu,%u,%u,%i,%i,%i\n", (int)pDupInfo->GetStatus(), High, Low,
+	fprintf(outfile, "%i,%lu,%lu,%u,%u,%i,%i\n", (int)pDupInfo->GetStatus(), High, Low,
 		pDupInfo->GetFullContentHash(), pDupInfo->GetFilteredContentHash(),
-		pDupInfo->GetDupeScore(), (int)pDupInfo->GetDupeMark(), (int)pDupInfo->GetDupeMode());
+		pDupInfo->GetDupeScore(), (int)pDupInfo->GetDupeMode());
 	fprintf(outfile, "%s\n", pDupInfo->GetName());
 	fprintf(outfile, "%s\n", pDupInfo->GetDupeKey());
 }
@@ -1303,7 +1310,11 @@ bool DiskState::LoadDupInfo(DupInfo* pDupInfo, FILE* infile, int iFormatVersion)
 	unsigned int iFullContentHash, iFilteredContentHash = 0;
 	int iDupeScore, iDupe = 0, iDupeMode = 0;
 	
-	if (iFormatVersion >= 38)
+	if (iFormatVersion >= 39)
+	{
+		if (fscanf(infile, "%i,%lu,%lu,%u,%u,%i,%i\n", &iStatus, &High, &Low, &iFullContentHash, &iFilteredContentHash, &iDupeScore, &iDupeMode) != 7) goto error;
+	}
+	else if (iFormatVersion >= 38)
 	{
 		if (fscanf(infile, "%i,%lu,%lu,%u,%u,%i,%i,%i\n", &iStatus, &High, &Low, &iFullContentHash, &iFilteredContentHash, &iDupeScore, &iDupe, &iDupeMode) != 8) goto error;
 	}
@@ -1325,7 +1336,6 @@ bool DiskState::LoadDupInfo(DupInfo* pDupInfo, FILE* infile, int iFormatVersion)
 	pDupInfo->SetFilteredContentHash(iFilteredContentHash);
 	pDupInfo->SetSize(Util::JoinInt64(High, Low));
 	pDupInfo->SetDupeScore(iDupeScore);
-	pDupInfo->SetDupeMark((bool)iDupe);
 	pDupInfo->SetDupeMode((EDupeMode)iDupeMode);
 
 	if (!fgets(buf, sizeof(buf), infile)) goto error;

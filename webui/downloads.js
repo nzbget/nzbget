@@ -213,7 +213,7 @@ var Downloads = (new function($)
 			var age = Util.formatAge(group.MinPostTime + UISettings.timeZoneCorrection*60*60);
 			var size = Util.formatSizeMB(group.FileSizeMB, group.FileSizeLo);
 			var remaining = Util.formatSizeMB(group.RemainingSizeMB-group.PausedSizeMB, group.RemainingSizeLo-group.PausedSizeLo);
-			var dupe = DownloadsUI.buildDupeText(group.DupeMark, group.DupeKey, group.DupeScore);
+			var dupe = DownloadsUI.buildDupeText(group.DupeKey, group.DupeScore, group.DupeMode);
 			
 			var item =
 			{
@@ -237,7 +237,7 @@ var Downloads = (new function($)
 		var priority = DownloadsUI.buildPriority(group.MaxPriority);
 		var progresslabel = DownloadsUI.buildProgressLabel(group, nameColumnWidth);
 		var progress = DownloadsUI.buildProgress(group, item.data.size, item.data.remaining, item.data.estimated);
-		var dupe = DownloadsUI.buildDupe(group.DupeMark, group.DupeKey, group.DupeScore);
+		var dupe = DownloadsUI.buildDupe(group.DupeKey, group.DupeScore, group.DupeMode);
 
 		var name = '<a href="#" nzbid="' + group.NZBID + '">' + Util.textToHtml(Util.formatNZBName(group.NZBName)) + '</a>';
 		
@@ -754,7 +754,7 @@ var DownloadsUI = (new function($)
 		}
 	}
 	
-	function formatDupeText(dupeKey, dupeScore)
+	function formatDupeText(dupeKey, dupeScore, dupeMode)
 	{
 		dupeKey = dupeKey.replace('rageid=', '');
 		dupeKey = dupeKey.replace('imdb=', '');
@@ -764,11 +764,11 @@ var DownloadsUI = (new function($)
 		return dupeKey;
 	}
 
-	this.buildDupeText = function(dupe, dupeKey, dupeScore)
+	this.buildDupeText = function(dupeKey, dupeScore, dupeMode)
 	{
-		if (dupe)
+		if (dupeKey != '')
 		{
-			return formatDupeText(dupeKey, dupeScore);
+			return formatDupeText(dupeKey, dupeScore, dupeMode);
 		}
 		else
 		{
@@ -776,12 +776,15 @@ var DownloadsUI = (new function($)
 		}
 	}
 
-	this.buildDupe = function(dupe, dupeKey, dupeScore)
+	this.buildDupe = function(dupeKey, dupeScore, dupeMode)
 	{
-		if (dupe)
+		if (dupeKey != '')
 		{
-			return ' <span class="label" title="Duplicate: ' + dupeKey + (dupeScore != 0 ? ' (score: ' + dupeScore + ')' : '') +
-				'">' + formatDupeText(dupeKey, dupeScore) + '</span> ';
+			return ' <span class="label' + (dupeMode === 'FORCE' ? ' label-important' : '') +
+				'" title="Duplicate key: ' + dupeKey +
+				(dupeScore !== 0 ? '; score: ' + dupeScore : '') +
+				(dupeMode !== 'SCORE' ? '; mode: ' + dupeMode.toLowerCase() : '') +
+				'">' + formatDupeText(dupeKey, dupeScore, dupeMode) + '</span> ';
 		}
 		else
 		{

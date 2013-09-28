@@ -304,7 +304,6 @@ NZBInfo::NZBInfo()
 	m_szQueuedFilename = strdup("");
 	m_szDupeKey = strdup("");
 	m_iDupeScore = 0;
-	m_bDupeMark = false;
 	m_eDupeMode = dmScore;
 	m_iFullContentHash = 0;
 	m_iFilteredContentHash = 0;
@@ -1152,7 +1151,6 @@ void UrlInfo::MakeNiceName(const char* szURL, const char* szNZBFilename, char* s
 DupInfo::DupInfo()
 {
 	m_szName = NULL;
-	m_bDupeMark = false;
 	m_szDupeKey = NULL;
 	m_iDupeScore = 0;
 	m_eDupeMode = dmScore;
