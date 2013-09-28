@@ -68,6 +68,14 @@ bool DupeCoordinator::IsDupeSuccess(NZBInfo* pNZBInfo)
 	return !bFailure;
 }
 
+bool DupeCoordinator::SameNameOrKey(const char* szName1, const char* szDupeKey1,
+	const char* szName2, const char* szDupeKey2)
+{
+	bool bHasDupeKeys = !Util::EmptyStr(szDupeKey1) && !Util::EmptyStr(szDupeKey2);
+	return (bHasDupeKeys && !strcmp(szDupeKey1, szDupeKey2)) ||
+		(!bHasDupeKeys && !strcmp(szName1, szName2));
+}
+
 /**
   Check if the title was already downloaded or is already queued.
 */
@@ -75,8 +83,6 @@ void DupeCoordinator::NZBFound(DownloadQueue* pDownloadQueue, NZBInfo* pNZBInfo)
 {
 	debug("Checking duplicates for %s", pNZBInfo->GetName());
 
-	bool bHasDupeKey = !Util::EmptyStr(pNZBInfo->GetDupeKey());
-	
 	// find duplicates in download queue having exactly same content
 	GroupQueue groupQueue;
 	pDownloadQueue->BuildGroups(&groupQueue);
@@ -172,8 +178,8 @@ void DupeCoordinator::NZBFound(DownloadQueue* pDownloadQueue, NZBInfo* pNZBInfo)
 		if (pHistoryInfo->GetKind() == HistoryInfo::hkNZBInfo &&
 			pHistoryInfo->GetNZBInfo()->GetDupeMode() != dmForce &&
 			pHistoryInfo->GetNZBInfo()->GetMarkStatus() == NZBInfo::ksGood &&
-			(!strcmp(pHistoryInfo->GetNZBInfo()->GetName(), pNZBInfo->GetName()) ||
-			 (bHasDupeKey && !strcmp(pHistoryInfo->GetNZBInfo()->GetDupeKey(), pNZBInfo->GetDupeKey()))))
+			SameNameOrKey(pHistoryInfo->GetNZBInfo()->GetName(), pHistoryInfo->GetNZBInfo()->GetDupeKey(),
+				pNZBInfo->GetName(), pNZBInfo->GetDupeKey()))
 		{
 			bSkip = true;
 			bGood = true;
@@ -187,8 +193,8 @@ void DupeCoordinator::NZBFound(DownloadQueue* pDownloadQueue, NZBInfo* pNZBInfo)
 			 (pNZBInfo->GetDupeMode() == dmScore &&
 			  pHistoryInfo->GetDupInfo()->GetStatus() == DupInfo::dsSuccess &&
 			  pNZBInfo->GetDupeScore() <= pHistoryInfo->GetDupInfo()->GetDupeScore())) &&
-			(!strcmp(pHistoryInfo->GetDupInfo()->GetName(), pNZBInfo->GetName()) ||
-			 (bHasDupeKey && !strcmp(pHistoryInfo->GetDupInfo()->GetDupeKey(), pNZBInfo->GetDupeKey()))))
+			SameNameOrKey(pHistoryInfo->GetDupInfo()->GetName(), pHistoryInfo->GetDupInfo()->GetDupeKey(),
+				pNZBInfo->GetName(), pNZBInfo->GetDupeKey()))
 		{
 			bSkip = true;
 			bGood = pHistoryInfo->GetDupInfo()->GetStatus() == DupInfo::dsGood;
@@ -205,14 +211,14 @@ void DupeCoordinator::NZBFound(DownloadQueue* pDownloadQueue, NZBInfo* pNZBInfo)
 			HistoryInfo* pHistoryInfo = *it;
 			if (pHistoryInfo->GetKind() == HistoryInfo::hkNZBInfo &&
 				pHistoryInfo->GetNZBInfo()->GetDupeMode() != dmForce &&
-				(!strcmp(pHistoryInfo->GetNZBInfo()->GetName(), pNZBInfo->GetName()) ||
-				 (bHasDupeKey && !strcmp(pHistoryInfo->GetNZBInfo()->GetDupeKey(), pNZBInfo->GetDupeKey()))) &&
+				SameNameOrKey(pHistoryInfo->GetNZBInfo()->GetName(), pHistoryInfo->GetNZBInfo()->GetDupeKey(),
+					pNZBInfo->GetName(), pNZBInfo->GetDupeKey()) &&
 				pNZBInfo->GetDupeScore() <= pHistoryInfo->GetNZBInfo()->GetDupeScore() &&
 				IsDupeSuccess(pHistoryInfo->GetNZBInfo()))
 			{
 				// Flag saying QueueCoordinator to skip nzb-file, we also use this flag later in "PrePostProcessor::NZBAdded"
 				pNZBInfo->SetDeleteStatus(NZBInfo::dsDupe);
-				MarkDupe(pNZBInfo, pHistoryInfo->GetNZBInfo());
+				info("Collection %s is duplicate to %s", pNZBInfo->GetName(), pHistoryInfo->GetNZBInfo()->GetName());
 				return;
 			}
 		}
@@ -248,7 +254,6 @@ void DupeCoordinator::NZBAdded(DownloadQueue* pDownloadQueue, NZBInfo* pNZBInfo)
 {
 	debug("Checking duplicates for %s", pNZBInfo->GetName());
 
-	bool bHasDupeKey = !Util::EmptyStr(pNZBInfo->GetDupeKey());
 	bool bHigherScore = true;
 	NZBInfo* pDupeNZBInfo = NULL;
 
@@ -259,8 +264,8 @@ void DupeCoordinator::NZBAdded(DownloadQueue* pDownloadQueue, NZBInfo* pNZBInfo)
 	{
 		PostInfo* pPostInfo = *it;
 		if (pPostInfo->GetNZBInfo()->GetDupeMode() != dmForce &&
-			(!strcmp(pPostInfo->GetNZBInfo()->GetName(), pNZBInfo->GetName()) ||
-			 (bHasDupeKey && !strcmp(pPostInfo->GetNZBInfo()->GetDupeKey(), pNZBInfo->GetDupeKey()))))
+			SameNameOrKey(pPostInfo->GetNZBInfo()->GetName(), pPostInfo->GetNZBInfo()->GetDupeKey(),
+				pNZBInfo->GetName(), pNZBInfo->GetDupeKey()))
 		{
 			postDupes.insert(pPostInfo->GetNZBInfo());
 			if (!pDupeNZBInfo)
@@ -283,8 +288,8 @@ void DupeCoordinator::NZBAdded(DownloadQueue* pDownloadQueue, NZBInfo* pNZBInfo)
 		NZBInfo* pGroupNZBInfo = pGroupInfo->GetNZBInfo();
 		if (pGroupNZBInfo != pNZBInfo &&
 			pGroupNZBInfo->GetDupeMode() != dmForce &&
-			(!strcmp(pGroupNZBInfo->GetName(), pNZBInfo->GetName()) ||
-			 (bHasDupeKey && !strcmp(pGroupNZBInfo->GetDupeKey(), pNZBInfo->GetDupeKey()))))
+			SameNameOrKey(pGroupNZBInfo->GetName(), pGroupNZBInfo->GetDupeKey(),
+				pNZBInfo->GetName(), pNZBInfo->GetDupeKey()))
 		{
 			queueDupes.push_back(pGroupInfo);
 			if (!pDupeNZBInfo)
@@ -301,7 +306,7 @@ void DupeCoordinator::NZBAdded(DownloadQueue* pDownloadQueue, NZBInfo* pNZBInfo)
 
 	if (pDupeNZBInfo)
 	{
-		MarkDupe(pNZBInfo, pDupeNZBInfo);
+		info("Collection %s is duplicate to %s", pNZBInfo->GetName(), pDupeNZBInfo->GetName());
 
 		// pause all duplicates with lower DupeScore, which are not in post-processing (only for dupemode=score)
 		for (std::list<GroupInfo*>::iterator it = queueDupes.begin(); it != queueDupes.end(); it++)
@@ -322,16 +327,6 @@ void DupeCoordinator::NZBAdded(DownloadQueue* pDownloadQueue, NZBInfo* pNZBInfo)
 		{
 			g_pQueueCoordinator->GetQueueEditor()->LockedEditEntry(pDownloadQueue, pNewGroupInfo->GetLastID(), false, QueueEditor::eaGroupPause, 0, NULL);
 		}
-	}
-}
-
-void DupeCoordinator::MarkDupe(NZBInfo* pNZBInfo, NZBInfo* pDupeNZBInfo)
-{
-	info("Collection %s is duplicate to %s", pNZBInfo->GetName(), pDupeNZBInfo->GetName());
-
-	if (Util::EmptyStr(pNZBInfo->GetDupeKey()) && !Util::EmptyStr(pDupeNZBInfo->GetDupeKey()))
-	{
-		pNZBInfo->SetDupeKey(pDupeNZBInfo->GetDupeKey());
 	}
 }
 
@@ -361,7 +356,6 @@ void DupeCoordinator::NZBCompleted(DownloadQueue* pDownloadQueue, NZBInfo* pNZBI
 
 void DupeCoordinator::RemoveDupes(DownloadQueue* pDownloadQueue, NZBInfo* pNZBInfo)
 {
-	bool bHasDupeKey = !Util::EmptyStr(pNZBInfo->GetDupeKey());
 	IDList groupIDList;
 	std::set<NZBInfo*> groupNZBs;
 
@@ -371,8 +365,8 @@ void DupeCoordinator::RemoveDupes(DownloadQueue* pDownloadQueue, NZBInfo* pNZBIn
 		if (pFileInfo->GetNZBInfo() != pNZBInfo &&
 			pFileInfo->GetNZBInfo()->GetDupeMode() == dmScore &&
 			groupNZBs.find(pFileInfo->GetNZBInfo()) == groupNZBs.end() &&
-			(!strcmp(pFileInfo->GetNZBInfo()->GetName(), pNZBInfo->GetName()) ||
-			 (bHasDupeKey && !strcmp(pFileInfo->GetNZBInfo()->GetDupeKey(), pNZBInfo->GetDupeKey()))))
+			SameNameOrKey(pFileInfo->GetNZBInfo()->GetName(), pFileInfo->GetNZBInfo()->GetDupeKey(),
+				pNZBInfo->GetName(), pNZBInfo->GetDupeKey()))
 		{
 			groupIDList.push_back(pFileInfo->GetID());
 			groupNZBs.insert(pFileInfo->GetNZBInfo());
@@ -389,8 +383,6 @@ void DupeCoordinator::RemoveDupes(DownloadQueue* pDownloadQueue, NZBInfo* pNZBIn
 
 void DupeCoordinator::UnpauseBestDupe(DownloadQueue* pDownloadQueue, NZBInfo* pNZBInfo, const char* szNZBName, const char* szDupeKey)
 {
-	bool bHasDupeKey = !Util::EmptyStr(szDupeKey);
-
 	// check if duplicates exist in post-processing queue
 	std::set<NZBInfo*> postDupes;
 	bool bPostProcess = true;
@@ -399,8 +391,7 @@ void DupeCoordinator::UnpauseBestDupe(DownloadQueue* pDownloadQueue, NZBInfo* pN
 	{
 		PostInfo* pPostInfo = *it;
 		if (pPostInfo->GetNZBInfo()->GetDupeMode() != dmForce &&
-			(!strcmp(pPostInfo->GetNZBInfo()->GetName(), szNZBName) ||
-			 (bHasDupeKey && !strcmp(pPostInfo->GetNZBInfo()->GetDupeKey(), szDupeKey))))
+			SameNameOrKey(pPostInfo->GetNZBInfo()->GetName(), pPostInfo->GetNZBInfo()->GetDupeKey(), szNZBName, szDupeKey))
 		{
 			postDupes.insert(pPostInfo->GetNZBInfo());
 			if (!bPostProcess || pPostInfo->GetNZBInfo()->GetDupeScore() > iPostScore)
@@ -423,8 +414,7 @@ void DupeCoordinator::UnpauseBestDupe(DownloadQueue* pDownloadQueue, NZBInfo* pN
 		if (pGroupNZBInfo != pNZBInfo &&
 			pGroupNZBInfo->GetDupeMode() != dmForce &&
 			postDupes.find(pGroupNZBInfo) == postDupes.end() &&
-			(!strcmp(pGroupNZBInfo->GetName(), szNZBName) ||
-			 (bHasDupeKey && !strcmp(pGroupNZBInfo->GetDupeKey(), szDupeKey))) &&
+			SameNameOrKey(pGroupNZBInfo->GetName(), pGroupNZBInfo->GetDupeKey(), szNZBName, szDupeKey) &&
 			(!bPostProcess || pGroupNZBInfo->GetDupeScore() > iPostScore) &&
 			(!pBestNZBInfo || pGroupNZBInfo->GetDupeScore() > pBestNZBInfo->GetDupeScore()))
 		{
@@ -484,7 +474,6 @@ void DupeCoordinator::HistoryMark(DownloadQueue* pDownloadQueue, HistoryInfo* pH
 	const char* szDupeKey = pHistoryInfo->GetKind() == HistoryInfo::hkNZBInfo ? pHistoryInfo->GetNZBInfo()->GetDupeKey() :
 		pHistoryInfo->GetKind() == HistoryInfo::hkDupInfo ? pHistoryInfo->GetDupInfo()->GetDupeKey() :
 		NULL;
-	bool bHasDupeKey = !Util::EmptyStr(szDupeKey);
 
 	// check if history (recent or dup) has other success-duplicates or good-duplicates
 	bool bSuccessDupe = false;
@@ -498,8 +487,7 @@ void DupeCoordinator::HistoryMark(DownloadQueue* pDownloadQueue, HistoryInfo* pH
 			pHistoryInfo->GetNZBInfo()->GetDupeMode() != dmForce &&
 			(IsDupeSuccess(pHistoryInfo->GetNZBInfo()) ||
 			 pHistoryInfo->GetNZBInfo()->GetMarkStatus() == NZBInfo::ksGood) &&
-			(!strcmp(pHistoryInfo->GetNZBInfo()->GetName(), szNZBName) ||
-			 (bHasDupeKey && !strcmp(pHistoryInfo->GetNZBInfo()->GetDupeKey(), szDupeKey))))
+			SameNameOrKey(pHistoryInfo->GetNZBInfo()->GetName(), pHistoryInfo->GetNZBInfo()->GetDupeKey(), szNZBName, szDupeKey))
 		{
 			if (!bSuccessDupe || pHistoryInfo->GetNZBInfo()->GetDupeScore() > iHighScore)
 			{
@@ -513,8 +501,7 @@ void DupeCoordinator::HistoryMark(DownloadQueue* pDownloadQueue, HistoryInfo* pH
 			pHistoryInfo->GetDupInfo()->GetDupeMode() != dmForce &&
 			(pHistoryInfo->GetDupInfo()->GetStatus() == DupInfo::dsSuccess ||
 			 pHistoryInfo->GetDupInfo()->GetStatus() == DupInfo::dsGood) &&
-			(!strcmp(pHistoryInfo->GetDupInfo()->GetName(), szNZBName) ||
-			 (bHasDupeKey && !strcmp(pHistoryInfo->GetDupInfo()->GetDupeKey(), szDupeKey))))
+			SameNameOrKey(pHistoryInfo->GetDupInfo()->GetName(), pHistoryInfo->GetDupInfo()->GetDupeKey(), szNZBName, szDupeKey))
 		{
 			if (!bSuccessDupe || pHistoryInfo->GetDupInfo()->GetDupeScore() > iHighScore)
 			{
@@ -540,8 +527,7 @@ void DupeCoordinator::HistoryMark(DownloadQueue* pDownloadQueue, HistoryInfo* pH
 			pHistoryInfo->GetNZBInfo()->GetDupeMode() != dmForce &&
 			pHistoryInfo->GetNZBInfo()->GetDeleteStatus() == NZBInfo::dsDupe &&
 			(!bSuccessDupe || pHistoryInfo->GetNZBInfo()->GetDupeScore() > iHighScore) &&
-			(!strcmp(pHistoryInfo->GetNZBInfo()->GetName(), szNZBName) ||
-			 (bHasDupeKey && !strcmp(pHistoryInfo->GetNZBInfo()->GetDupeKey(), szDupeKey))))
+			SameNameOrKey(pHistoryInfo->GetNZBInfo()->GetName(), pHistoryInfo->GetNZBInfo()->GetDupeKey(), szNZBName, szDupeKey))
 		{
 			dupeList.push_back(pHistoryInfo);
 		}
@@ -600,7 +586,6 @@ void DupeCoordinator::HistoryCleanup(DownloadQueue* pDownloadQueue, HistoryInfo*
 	const char* szNZBName = pMarkHistoryInfo->GetKind() == HistoryInfo::hkNZBInfo ? pMarkHistoryInfo->GetNZBInfo()->GetName() :
 		pMarkHistoryInfo->GetKind() == HistoryInfo::hkDupInfo ? pMarkHistoryInfo->GetDupInfo()->GetName() :
 		NULL;
-	bool bHasDupeKey = !Util::EmptyStr(szDupeKey);
 	bool bChanged = false;
 	int index = 0;
 
@@ -612,9 +597,9 @@ void DupeCoordinator::HistoryCleanup(DownloadQueue* pDownloadQueue, HistoryInfo*
 
 		if (pHistoryInfo->GetKind() == HistoryInfo::hkNZBInfo &&
 			pHistoryInfo->GetNZBInfo()->GetDupeMode() != dmForce &&
+			pHistoryInfo->GetNZBInfo()->GetDeleteStatus() == NZBInfo::dsDupe &&
 			pHistoryInfo != pMarkHistoryInfo &&
-			(!strcmp(pHistoryInfo->GetNZBInfo()->GetName(), szNZBName) ||
-			 (bHasDupeKey && !strcmp(pHistoryInfo->GetNZBInfo()->GetDupeKey(), szDupeKey))))
+			SameNameOrKey(pHistoryInfo->GetNZBInfo()->GetName(), pHistoryInfo->GetNZBInfo()->GetDupeKey(), szNZBName, szDupeKey))
 		{
 			HistoryTransformToDup(pDownloadQueue, pHistoryInfo, index);
 			index++;
