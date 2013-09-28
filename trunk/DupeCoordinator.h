@@ -38,7 +38,7 @@ private:
 	void				RemoveDupes(DownloadQueue* pDownloadQueue, NZBInfo* pNZBInfo);
 	void				HistoryReturnDupe(DownloadQueue* pDownloadQueue, HistoryInfo* pHistoryInfo);
 	void				HistoryCleanup(DownloadQueue* pDownloadQueue, HistoryInfo* pMarkHistoryInfo);
-	void				MarkDupe(NZBInfo* pNZBInfo, NZBInfo* pDupeNZBInfo);
+	bool				SameNameOrKey(const char* szName1, const char* szDupeKey1, const char* szName2, const char* szDupeKey2);
 
 protected:
 	virtual void		HistoryReturn(DownloadQueue* pDownloadQueue, HistoryList::iterator itHistory, HistoryInfo* pHistoryInfo, bool bReprocess) = 0;
