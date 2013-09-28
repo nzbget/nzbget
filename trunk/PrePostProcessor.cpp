@@ -1375,17 +1375,14 @@ void PrePostProcessor::HistorySetDupeParam(HistoryInfo* pHistoryInfo, EEditActio
 		{
 			case eaHistorySetDupeKey:
 				pHistoryInfo->GetNZBInfo()->SetDupeKey(szText);
-				pHistoryInfo->GetNZBInfo()->SetDupeMark(true);
 				break;
 
 			case eaHistorySetDupeScore:
 				pHistoryInfo->GetNZBInfo()->SetDupeScore(atoi(szText));
-				pHistoryInfo->GetNZBInfo()->SetDupeMark(true);
 				break;
 
 			case eaHistorySetDupeMode:
 				pHistoryInfo->GetNZBInfo()->SetDupeMode(eMode);
-				pHistoryInfo->GetNZBInfo()->SetDupeMark(eMode != dmForce);
 				break;
 
 			default:
@@ -1399,17 +1396,14 @@ void PrePostProcessor::HistorySetDupeParam(HistoryInfo* pHistoryInfo, EEditActio
 		{
 			case eaHistorySetDupeKey:
 				pHistoryInfo->GetDupInfo()->SetDupeKey(szText);
-				pHistoryInfo->GetDupInfo()->SetDupeMark(true);
 				break;
 
 			case eaHistorySetDupeScore:
 				pHistoryInfo->GetDupInfo()->SetDupeScore(atoi(szText));
-				pHistoryInfo->GetDupInfo()->SetDupeMark(true);
 				break;
 
 			case eaHistorySetDupeMode:
 				pHistoryInfo->GetDupInfo()->SetDupeMode(eMode);
-				pHistoryInfo->GetDupInfo()->SetDupeMark(eMode != dmForce);
 				break;
 
 			default:

@@ -420,7 +420,6 @@ private:
 	char*				m_szDupeKey;
 	int					m_iDupeScore;
 	EDupeMode			m_eDupeMode;
-	bool				m_bDupeMark;
 	unsigned int		m_iFullContentHash;
 	unsigned int		m_iFilteredContentHash;
 	NZBInfoList*		m_Owner;
@@ -526,8 +525,6 @@ public:
 	void				SetDupeScore(int iDupeScore) { m_iDupeScore = iDupeScore; }
 	EDupeMode			GetDupeMode() { return m_eDupeMode; }
 	void				SetDupeMode(EDupeMode eDupeMode) { m_eDupeMode = eDupeMode; }
-	int					GetDupeMark() { return m_bDupeMark; }
-	void				SetDupeMark(bool bDupe) { m_bDupeMark = bDupe; }
 	unsigned int		GetFullContentHash() { return m_iFullContentHash; }
 	void				SetFullContentHash(unsigned int iFullContentHash) { m_iFullContentHash = iFullContentHash; }
 	unsigned int		GetFilteredContentHash() { return m_iFilteredContentHash; }
@@ -708,7 +705,6 @@ public:
 
 private:
 	char*				m_szName;
-	bool				m_bDupeMark;
 	char*				m_szDupeKey;
 	int					m_iDupeScore;
 	EDupeMode			m_eDupeMode;
@@ -722,8 +718,6 @@ public:
 						~DupInfo();
 	const char*			GetName() { return m_szName; }			// needs locking (for shared objects)
 	void				SetName(const char* szName);			// needs locking (for shared objects)
-	int					GetDupeMark() { return m_bDupeMark; }
-	void				SetDupeMark(bool bDupe) { m_bDupeMark = bDupe; }
 	const char*			GetDupeKey() { return m_szDupeKey; }	// needs locking (for shared objects)
 	void				SetDupeKey(const char* szDupeKey);		// needs locking (for shared objects)
 	int					GetDupeScore() { return m_iDupeScore; }
