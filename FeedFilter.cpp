@@ -120,7 +120,7 @@ bool FeedFilter::Term::MatchValue(const char* szStrValue, const long long iIntVa
 
 bool FeedFilter::Term::MatchText(const char* szStrValue)
 {
-	const char* WORD_SEPARATORS = "!\"#$%&'()*+,-./:;<=>?@[\\]^_`{|}~";
+	const char* WORD_SEPARATORS = " !\"#$%&'()*+,-./:;<=>?@[\\]^_`{|}~";
 
 	// first check if we should make word-search or substring-search
 	int iParamLen = strlen(m_szParam);
