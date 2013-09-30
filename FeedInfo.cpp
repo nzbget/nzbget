@@ -278,8 +278,10 @@ void FeedItemInfo::AppendDupeKey(const char* szExtraDupeKey)
 	m_szDupeKey = szNewKey;
 }
 
-void FeedItemInfo::BuildDupeKey()
+void FeedItemInfo::BuildDupeKey(const char* szRageId, const char* szSeries)
 {
+	int iRageId = szRageId && *szRageId ? atoi(szRageId) : m_iRageId;
+
 	if (m_szDupeKey)
 	{
 		free(m_szDupeKey);
@@ -290,10 +292,22 @@ void FeedItemInfo::BuildDupeKey()
 		m_szDupeKey = (char*)malloc(20);
 		snprintf(m_szDupeKey, 20, "imdb=%i", m_iImdbId);
 	}
-	else if (m_iRageId != 0 && m_szSeason && *m_szSeason && m_szEpisode && *m_szEpisode)
+	else if (szSeries && *szSeries &&
+		m_szSeason && *m_szSeason && strcasecmp(m_szSeason, "S00") &&
+		m_szEpisode && *m_szEpisode && strcasecmp(m_szEpisode, "E00"))
+	{
+		int iLen = strlen(szSeries) + 50;
+		m_szDupeKey = (char*)malloc(iLen);
+		snprintf(m_szDupeKey, iLen, "series=%s-%s-%s", szSeries, m_szSeason, m_szEpisode);
+		m_szDupeKey[iLen-1] = '\0';
+	}
+	else if (iRageId != 0 &&
+		m_szSeason && *m_szSeason && strcasecmp(m_szSeason, "S00") &&
+		m_szEpisode && *m_szEpisode && strcasecmp(m_szEpisode, "E00"))
 	{
 		m_szDupeKey = (char*)malloc(100);
-		snprintf(m_szDupeKey, 100, "rageid=%i-%s-%s", m_iRageId, m_szSeason, m_szEpisode);
+		snprintf(m_szDupeKey, 100, "rageid=%i-%s-%s", iRageId, m_szSeason, m_szEpisode);
+		m_szDupeKey[100-1] = '\0';
 	}
 	else
 	{
@@ -303,7 +317,7 @@ void FeedItemInfo::BuildDupeKey()
 
 int FeedItemInfo::GetSeasonNum()
 {
-	if (!m_iSeasonNum && !m_bSeasonEpisodeParsed)
+	if (!m_szSeason && !m_bSeasonEpisodeParsed)
 	{
 		ParseSeasonEpisode();
 	}
@@ -313,7 +327,7 @@ int FeedItemInfo::GetSeasonNum()
 
 int FeedItemInfo::GetEpisodeNum()
 {
-	if (!m_iEpisodeNum && !m_bSeasonEpisodeParsed)
+	if (!m_szEpisode && !m_bSeasonEpisodeParsed)
 	{
 		ParseSeasonEpisode();
 	}

@@ -380,8 +380,6 @@ bool FeedFile::ParseFeed(IUnknown* nzb)
 				pFeedItemInfo->SetSeason(val);
 			}
 		}
-
-		pFeedItemInfo->BuildDupeKey();
 	}
 	return true;
 }
@@ -509,7 +507,6 @@ void FeedFile::Parse_EndElement(const char *name)
 	{
 		// Close the file element, add the new file to file-list
 		AddItem(m_pFeedItemInfo);
-		m_pFeedItemInfo->BuildDupeKey();
 		m_pFeedItemInfo = NULL;
 	}
 	else if (!strcmp("title", name) && m_pFeedItemInfo)
