@@ -570,6 +570,7 @@ var DownloadsUI = (new function($)
 	
 	// State
 	var categoryColumnWidth = null;
+	var dupeCheck = null;
 	
 	this.fillPriorityCombo = function(combo)
 	{
@@ -758,6 +759,7 @@ var DownloadsUI = (new function($)
 	{
 		dupeKey = dupeKey.replace('rageid=', '');
 		dupeKey = dupeKey.replace('imdb=', '');
+		dupeKey = dupeKey.replace('series=', '');
 		dupeKey = dupeKey.replace('nzb=', '#');
 		dupeKey = dupeKey.replace('=', ' ');
 		dupeKey = dupeKey === '' ? 'title' : dupeKey;
@@ -766,7 +768,12 @@ var DownloadsUI = (new function($)
 
 	this.buildDupeText = function(dupeKey, dupeScore, dupeMode)
 	{
-		if (dupeKey != '')
+		if (dupeCheck == null)
+		{
+			dupeCheck = Options.option('DupeCheck') === 'yes';
+		}
+
+		if (dupeCheck && dupeKey != '')
 		{
 			return formatDupeText(dupeKey, dupeScore, dupeMode);
 		}
@@ -778,7 +785,12 @@ var DownloadsUI = (new function($)
 
 	this.buildDupe = function(dupeKey, dupeScore, dupeMode)
 	{
-		if (dupeKey != '')
+		if (dupeCheck == null)
+		{
+			dupeCheck = Options.option('DupeCheck') === 'yes';
+		}
+
+		if (dupeCheck && dupeKey != '')
 		{
 			return ' <span class="label' + (dupeMode === 'FORCE' ? ' label-important' : '') +
 				'" title="Duplicate key: ' + dupeKey +
