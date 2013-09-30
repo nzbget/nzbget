@@ -385,12 +385,13 @@ void DupeCoordinator::UnpauseBestDupe(DownloadQueue* pDownloadQueue, NZBInfo* pN
 {
 	// check if duplicates exist in post-processing queue
 	std::set<NZBInfo*> postDupes;
-	bool bPostProcess = true;
+	bool bPostProcess = false;
 	int iPostScore = 0;
 	for (PostQueue::iterator it = pDownloadQueue->GetPostQueue()->begin(); it != pDownloadQueue->GetPostQueue()->end(); it++)
 	{
 		PostInfo* pPostInfo = *it;
-		if (pPostInfo->GetNZBInfo()->GetDupeMode() != dmForce &&
+		if (pPostInfo->GetNZBInfo() != pNZBInfo &&
+			pPostInfo->GetNZBInfo()->GetDupeMode() != dmForce &&
 			SameNameOrKey(pPostInfo->GetNZBInfo()->GetName(), pPostInfo->GetNZBInfo()->GetDupeKey(), szNZBName, szDupeKey))
 		{
 			postDupes.insert(pPostInfo->GetNZBInfo());
