@@ -407,7 +407,7 @@ void FeedCoordinator::FilterFeed(FeedInfo* pFeedInfo, FeedItemInfos* pFeedItemIn
 		pFeedItemInfo->SetAddCategory(pFeedInfo->GetCategory());
 		pFeedItemInfo->SetDupeScore(0);
 		pFeedItemInfo->SetDupeMode(dmScore);
-		pFeedItemInfo->BuildDupeKey();
+		pFeedItemInfo->BuildDupeKey(NULL, NULL);
 		if (pFeedFilter)
 		{
 			pFeedFilter->Match(pFeedItemInfo);

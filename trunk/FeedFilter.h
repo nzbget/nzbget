@@ -112,6 +112,8 @@ private:
 		char*			m_szDupeKey;
 		char*			m_szAddDupeKey;
 		EDupeMode		m_eDupeMode;
+		char*			m_szSeries;
+		char*			m_szRageId;
 		bool			m_bHasCategory;
 		bool			m_bHasPriority;
 		bool			m_bHasAddPriority;
@@ -124,6 +126,8 @@ private:
 		bool			m_bPatCategory;
 		bool			m_bPatDupeKey;
 		bool			m_bPatAddDupeKey;
+		bool			m_bHasSeries;
+		bool			m_bHasRageId;
 		char*			m_szPatCategory;
 		char*			m_szPatDupeKey;
 		char*			m_szPatAddDupeKey;
@@ -151,6 +155,8 @@ private:
 		int				GetDupeScore() { return m_iDupeScore; }
 		int				GetAddDupeScore() { return m_iAddDupeScore; }
 		EDupeMode		GetDupeMode() { return m_eDupeMode; }
+		const char*		GetRageId() { return m_szRageId; }
+		const char*		GetSeries() { return m_szSeries; }
 		bool			HasCategory() { return m_bHasCategory; }
 		bool			HasPriority() { return m_bHasPriority; }
 		bool			HasAddPriority() { return m_bHasAddPriority; }
@@ -160,6 +166,8 @@ private:
 		bool			HasDupeKey() { return m_bHasDupeKey; }
 		bool			HasAddDupeKey() { return m_bHasAddDupeKey; }
 		bool			HasDupeMode() { return m_bHasDupeMode; }
+		bool			HasRageId() { return m_bHasRageId; }
+		bool			HasSeries() { return m_bHasSeries; }
 		bool			Match(FeedItemInfo* pFeedItemInfo);
 		void			ExpandRefValues(FeedItemInfo* pFeedItemInfo, char** pDestStr, char* pPatStr);
 		const char*		GetRefValue(FeedItemInfo* pFeedItemInfo, const char* szVarName);

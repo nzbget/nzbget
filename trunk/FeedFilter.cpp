@@ -597,6 +597,8 @@ FeedFilter::Rule::Rule()
 	m_iDupeScore = 0;
 	m_iAddDupeScore = 0;
 	m_eDupeMode = dmScore;
+	m_szRageId = NULL;
+	m_szSeries = NULL;
 	m_bHasCategory = false;
 	m_bHasPriority = false;
 	m_bHasAddPriority = false;
@@ -606,6 +608,8 @@ FeedFilter::Rule::Rule()
 	m_bHasDupeKey = false;
 	m_bHasAddDupeKey = false;
 	m_bHasDupeMode = false;
+	m_bHasRageId = false;
+	m_bHasSeries = false;
 	m_bPatCategory = false;
 	m_bPatDupeKey = false;
 	m_bPatAddDupeKey = false;
@@ -627,6 +631,14 @@ FeedFilter::Rule::~Rule()
 	if (m_szAddDupeKey)
 	{
 		free(m_szAddDupeKey);
+	}
+	if (m_szRageId)
+	{
+		free(m_szRageId);
+	}
+	if (m_szSeries)
+	{
+		free(m_szSeries);
 	}
 	if (m_szPatCategory)
 	{
@@ -876,6 +888,24 @@ char* FeedFilter::Rule::CompileOptions(char* szRule)
 					// error
 					return NULL;
 				}
+			}
+			else if (!strcasecmp(szOption, "rageid"))
+			{
+				m_bHasRageId = true;
+				if (m_szRageId)
+				{
+					free(m_szRageId);
+				}
+				m_szRageId = strdup(szValue);
+			}
+			else if (!strcasecmp(szOption, "series"))
+			{
+				m_bHasSeries = true;
+				if (m_szSeries)
+				{
+					free(m_szSeries);
+				}
+				m_szSeries = strdup(szValue);
 			}
 
 			// for compatibility with older version we support old commands too
@@ -1218,6 +1248,10 @@ void FeedFilter::ApplyOptions(Rule* pRule, FeedItemInfo* pFeedItemInfo)
 	if (pRule->HasAddDupeScore())
 	{
 		pFeedItemInfo->SetDupeScore(pFeedItemInfo->GetDupeScore() + pRule->GetAddDupeScore());
+	}
+	if (pRule->HasRageId() || pRule->HasSeries())
+	{
+		pFeedItemInfo->BuildDupeKey(pRule->GetRageId(), pRule->GetSeries());
 	}
 	if (pRule->HasDupeKey())
 	{

@@ -194,7 +194,7 @@ public:
 	const char*			GetDupeKey() { return m_szDupeKey; }
 	void				SetDupeKey(const char* szDupeKey);
 	void				AppendDupeKey(const char* szExtraDupeKey);
-	void				BuildDupeKey();
+	void				BuildDupeKey(const char* szRageId, const char* szSeries);
 	int					GetDupeScore() { return m_iDupeScore; }
 	void				SetDupeScore(int iDupeScore) { m_iDupeScore = iDupeScore; }
 	EDupeMode			GetDupeMode() { return m_eDupeMode; }
