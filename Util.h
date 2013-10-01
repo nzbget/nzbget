@@ -131,6 +131,9 @@ public:
 	static char* Trim(char* szStr);
 	static bool EmptyStr(const char* szStr) { return !szStr || !*szStr; }
 
+	/* replace all occurences of szFrom to szTo in string szStr with a limitation that szTo must be shorter than szFrom */
+	static char* ReduceStr(char* szStr, const char* szFrom, const char* szTo);
+
 	/* Calculate Hash using Bob Jenkins (1996) algorithm */
 	static unsigned int HashBJ96(const char* szBuffer, int iBufSize, unsigned int iInitValue);
 

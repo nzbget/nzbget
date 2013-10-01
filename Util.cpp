@@ -1004,6 +1004,21 @@ char* Util::Trim(char* szStr)
 	return szStr;
 }
 
+char* Util::ReduceStr(char* szStr, const char* szFrom, const char* szTo)
+{
+	int iLenFrom = strlen(szFrom);
+	int iLenTo = strlen(szTo);
+	// assert(iLenTo < iLenFrom);
+
+	while (char* p = strstr(szStr, szFrom))
+	{
+		strcpy(p, szTo);
+		strcpy(p + iLenTo, p + iLenFrom);
+	}
+
+	return szStr;
+}
+
 /* Calculate Hash using Bob Jenkins (1996) algorithm
  * http://burtleburtle.net/bob/c/lookup2.c
  */
