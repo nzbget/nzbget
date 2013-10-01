@@ -292,18 +292,14 @@ void FeedItemInfo::BuildDupeKey(const char* szRageId, const char* szSeries)
 		m_szDupeKey = (char*)malloc(20);
 		snprintf(m_szDupeKey, 20, "imdb=%i", m_iImdbId);
 	}
-	else if (szSeries && *szSeries &&
-		m_szSeason && *m_szSeason && strcasecmp(m_szSeason, "S00") &&
-		m_szEpisode && *m_szEpisode && strcasecmp(m_szEpisode, "E00"))
+	else if (szSeries && *szSeries && GetSeasonNum() != 0 && GetEpisodeNum() != 0)
 	{
 		int iLen = strlen(szSeries) + 50;
 		m_szDupeKey = (char*)malloc(iLen);
 		snprintf(m_szDupeKey, iLen, "series=%s-%s-%s", szSeries, m_szSeason, m_szEpisode);
 		m_szDupeKey[iLen-1] = '\0';
 	}
-	else if (iRageId != 0 &&
-		m_szSeason && *m_szSeason && strcasecmp(m_szSeason, "S00") &&
-		m_szEpisode && *m_szEpisode && strcasecmp(m_szEpisode, "E00"))
+	else if (iRageId != 0 && GetSeasonNum() != 0 && GetEpisodeNum() != 0)
 	{
 		m_szDupeKey = (char*)malloc(100);
 		snprintf(m_szDupeKey, 100, "rageid=%i-%s-%s", iRageId, m_szSeason, m_szEpisode);
