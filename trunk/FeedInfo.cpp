@@ -352,6 +352,7 @@ void FeedItemInfo::ParseSeasonEpisode()
 		szRegValue[iLen] = '\0';
 		snprintf(szValue, 100, "E%s", szRegValue);
 		szValue[100-1] = '\0';
+		Util::ReduceStr(szValue, "-", "");
 		for (char* p = szValue; *p; p++) *p = toupper(*p); // convert string to uppercase e02 -> E02
 		SetEpisode(szValue);
 	}
@@ -477,7 +478,7 @@ RegEx* SharedFeedData::GetSeasonEpisodeRegEx()
 {
 	if (!m_pSeasonEpisodeRegEx)
 	{
-		m_pSeasonEpisodeRegEx = new RegEx("[^[:alnum:]]s?([0-9]+)[ex]([0-9]+(e[0-9]+)?)[^[:alnum:]]", 10);
+		m_pSeasonEpisodeRegEx = new RegEx("[^[:alnum:]]s?([0-9]+)[ex]([0-9]+(-?e[0-9]+)?)[^[:alnum:]]", 10);
 	}
 
 	return m_pSeasonEpisodeRegEx;

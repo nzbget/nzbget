@@ -1021,39 +1021,24 @@ bool FeedFilter::Rule::MatchExpression(FeedItemInfo* pFeedItemInfo)
 		// NOTE: there are no operator priorities.
 		// the order of operators "OR" and "AND" is not defined, they can be checked in any order.
 		// "OR" and "AND" should not be mixed in one group; instead braces should be used to define priorities.
-		ReduceExpr(expr, "TT", "T");
-		ReduceExpr(expr, "TF", "F");
-		ReduceExpr(expr, "FT", "F");
-		ReduceExpr(expr, "FF", "F");
-		ReduceExpr(expr, "||", "|");
-		ReduceExpr(expr, "(|", "(");
-		ReduceExpr(expr, "|)", ")");
-		ReduceExpr(expr, "T|T", "T");
-		ReduceExpr(expr, "T|F", "T");
-		ReduceExpr(expr, "F|T", "T");
-		ReduceExpr(expr, "F|F", "F");
-		ReduceExpr(expr, "(T)", "T");
-		ReduceExpr(expr, "(F)", "F");
+		Util::ReduceStr(expr, "TT", "T");
+		Util::ReduceStr(expr, "TF", "F");
+		Util::ReduceStr(expr, "FT", "F");
+		Util::ReduceStr(expr, "FF", "F");
+		Util::ReduceStr(expr, "||", "|");
+		Util::ReduceStr(expr, "(|", "(");
+		Util::ReduceStr(expr, "|)", ")");
+		Util::ReduceStr(expr, "T|T", "T");
+		Util::ReduceStr(expr, "T|F", "T");
+		Util::ReduceStr(expr, "F|T", "T");
+		Util::ReduceStr(expr, "F|F", "F");
+		Util::ReduceStr(expr, "(T)", "T");
+		Util::ReduceStr(expr, "(F)", "F");
 	}
 
 	bool bMatch = *expr && *expr == 'T' && expr[1] == '\0';
 	free(expr);
 	return bMatch;
-}
-
-void FeedFilter::Rule::ReduceExpr(char* szExpr, const char* szFrom, const char* szTo)
-{
-	int iLenFrom = strlen(szFrom);
-	int iLenTo = strlen(szTo);
-	// assert(iLenTo < iLenFrom);
-
-	while (char* p = strstr(szExpr, szFrom))
-	{
-		strcpy(p, szTo);
-		strcpy(p + iLenTo, p + iLenFrom);
-	}
-
-	return;
 }
 
 void FeedFilter::Rule::ExpandRefValues(FeedItemInfo* pFeedItemInfo, char** pDestStr, char* pPatStr)

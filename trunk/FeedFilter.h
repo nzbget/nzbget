@@ -138,7 +138,6 @@ private:
 		char*			CompileOptions(char* szRule);
 		bool			CompileTerm(char* szTerm);
 		bool			MatchExpression(FeedItemInfo* pFeedItemInfo);
-		void			ReduceExpr(char* szExpr, const char* szFrom, const char* szTo);
 
 	public:
 						Rule();
