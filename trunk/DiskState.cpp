@@ -563,7 +563,7 @@ bool DiskState::LoadNZBList(DownloadQueue* pDownloadQueue, FILE* infile, int iFo
 		{
 			if (fscanf(infile, "%i,%i\n", &iDupeMode, &iDupeScore) != 2) goto error;
 		}
-		else
+		else if (iFormatVersion >= 31)
 		{
 			int iDupe;
 			if (fscanf(infile, "%i,%i,%i\n", &iDupe, &iDupeMode, &iDupeScore) != 3) goto error;
