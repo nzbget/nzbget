@@ -30,6 +30,7 @@
 NSString *PreferencesContext = @"PreferencesContext";
 const NSTimeInterval NORMAL_UPDATE_INTERVAL = 10.000;
 const NSTimeInterval MENUOPEN_UPDATE_INTERVAL = 1.000;
+const NSTimeInterval START_UPDATE_INTERVAL = 0.500;
 
 int main(int argc, char *argv[]) {
 	return NSApplicationMain(argc, (const char **)argv);
@@ -81,8 +82,10 @@ void InstallSignalHandlers()
 }
 
 - (void)applicationDidFinishLaunching:(NSNotification *)aNotification {
+	BOOL autoStartWebUI = [[NSUserDefaults standardUserDefaults] boolForKey:@"AutoStartWebUI"];
+
 	daemonController = [[DaemonController alloc] init];
-	daemonController.updateInterval = NORMAL_UPDATE_INTERVAL;
+	daemonController.updateInterval = autoStartWebUI ? START_UPDATE_INTERVAL : NORMAL_UPDATE_INTERVAL;
 	daemonController.delegate = self;
 
 	[self setupDefaultsObserver];
@@ -315,11 +318,15 @@ void InstallSignalHandlers()
 	BOOL autoStartWebUI = [[NSUserDefaults standardUserDefaults] boolForKey:@"AutoStartWebUI"];
 	if (autoStartWebUI) {
 		if (daemonController.connected) {
+			if (daemonController.updateInterval == START_UPDATE_INTERVAL)
+			{
+				daemonController.updateInterval = NORMAL_UPDATE_INTERVAL;
+			}
 			[self showWebUI];
 		} else {
-			// try again in 100 msec for max. 10 seconds, then give up
+			// try again in 100 msec for max. 25 seconds, then give up
 			connectionAttempts++;
-			if (connectionAttempts < 100) {
+			if (connectionAttempts < 250) {
 				[self performSelector:@selector(welcomeContinue) withObject:nil afterDelay: 0.100];
 			} else {
 				// show error message
