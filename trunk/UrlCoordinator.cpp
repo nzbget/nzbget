@@ -320,7 +320,7 @@ void UrlCoordinator::StartUrlDownload(UrlInfo* pUrlInfo)
 	pUrlDownloader->Attach(this);
 	pUrlDownloader->SetUrlInfo(pUrlInfo);
 	pUrlDownloader->SetURL(pUrlInfo->GetURL());
-	pUrlDownloader->SetForce(pUrlInfo->GetForce());
+	pUrlDownloader->SetForce(pUrlInfo->GetForce() || g_pOptions->GetUrlForce());
 
 	char tmp[1024];
 
