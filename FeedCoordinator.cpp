@@ -149,7 +149,7 @@ void FeedCoordinator::Run()
 		{
 			// this code should not be called too often, once per second is OK
 
-			if (!(g_pOptions->GetPauseDownload() || g_pOptions->GetPauseDownload2()) || m_bForce)
+			if (!(g_pOptions->GetPauseDownload() || g_pOptions->GetPauseDownload2()) || m_bForce || g_pOptions->GetUrlForce())
 			{
 				m_mutexDownloads.Lock();
 				time_t tCurrent = time(NULL);
@@ -297,7 +297,7 @@ void FeedCoordinator::StartFeedDownload(FeedInfo* pFeedInfo, bool bForce)
 		UrlInfo::MakeNiceName(pFeedInfo->GetUrl(), "", szUrlName, sizeof(szUrlName));
 		pFeedDownloader->SetInfoName(szUrlName);
 	}
-	pFeedDownloader->SetForce(bForce);
+	pFeedDownloader->SetForce(bForce || g_pOptions->GetUrlForce());
 
 	char tmp[1024];
 
@@ -495,7 +495,7 @@ void FeedCoordinator::DownloadItem(FeedInfo* pFeedInfo, FeedItemInfo* pFeedItemI
 	pUrlInfo->SetDupeKey(pFeedItemInfo->GetDupeKey());
 	pUrlInfo->SetDupeScore(pFeedItemInfo->GetDupeScore());
 	pUrlInfo->SetDupeMode(pFeedItemInfo->GetDupeMode());
-	pUrlInfo->SetForce(pFeedInfo->GetForce());
+	pUrlInfo->SetForce(pFeedInfo->GetForce() || g_pOptions->GetUrlForce());
 	g_pUrlCoordinator->AddUrlToQueue(pUrlInfo, false);
 }
 

@@ -179,6 +179,7 @@ static const char* OPTION_SCRIPTORDER			= "ScriptOrder";
 static const char* OPTION_DEFSCRIPT				= "DefScript";
 static const char* OPTION_EXTCLEANUPDISK		= "ExtCleanupDisk";
 static const char* OPTION_FEEDHISTORY			= "FeedHistory";
+static const char* OPTION_URLFORCE				= "UrlForce";
 
 // obsolete options
 static const char* OPTION_POSTLOGKIND			= "PostLogKind";
@@ -572,6 +573,7 @@ Options::Options(int argc, char* argv[])
 	m_bUnpackPauseQueue		= false;
 	m_szExtCleanupDisk		= NULL;
 	m_iFeedHistory			= 0;
+	m_bUrlForce				= false;
 
 	// Option "ConfigFile" will be initialized later, but we want
 	// to see it at the top of option list, so we add it first
@@ -930,6 +932,7 @@ void Options::InitDefault()
 	SetOption(OPTION_UNPACKPAUSEQUEUE, "no");
 	SetOption(OPTION_EXTCLEANUPDISK, "");
 	SetOption(OPTION_FEEDHISTORY, "7");
+	SetOption(OPTION_URLFORCE, "yes");
 }
 
 void Options::InitOptFile()
@@ -1119,6 +1122,7 @@ void Options::InitOptions()
 	m_bUnpack				= (bool)ParseEnumValue(OPTION_UNPACK, BoolCount, BoolNames, BoolValues);
 	m_bUnpackCleanupDisk	= (bool)ParseEnumValue(OPTION_UNPACKCLEANUPDISK, BoolCount, BoolNames, BoolValues);
 	m_bUnpackPauseQueue		= (bool)ParseEnumValue(OPTION_UNPACKPAUSEQUEUE, BoolCount, BoolNames, BoolValues);
+	m_bUrlForce				= (bool)ParseEnumValue(OPTION_URLFORCE, BoolCount, BoolNames, BoolValues);
 
 	const char* OutputModeNames[] = { "loggable", "logable", "log", "colored", "color", "ncurses", "curses" };
 	const int OutputModeValues[] = { omLoggable, omLoggable, omLoggable, omColored, omColored, omNCurses, omNCurses };
