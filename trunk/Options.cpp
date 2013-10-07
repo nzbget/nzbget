@@ -1046,7 +1046,7 @@ void Options::CheckDir(char** dir, const char* szOptionName, bool bAllowEmpty, b
 
 void Options::InitOptions()
 {
-	CheckDir(&m_szDestDir, OPTION_DESTDIR, false, true);
+	CheckDir(&m_szDestDir, OPTION_DESTDIR, false, false);
 	CheckDir(&m_szInterDir, OPTION_INTERDIR, true, true);
 	CheckDir(&m_szTempDir, OPTION_TEMPDIR, false, true);
 	CheckDir(&m_szQueueDir, OPTION_QUEUEDIR, false, true);
