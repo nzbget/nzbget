@@ -982,24 +982,20 @@ bool Util::SplitCommandLine(const char* szCommandLine, char*** argv)
 
 void Util::TrimRight(char* szStr)
 {
-	int iLen = strlen(szStr);
-	char ch = szStr[iLen-1];
-	while (iLen > 0 && (ch == '\n' || ch == '\r' || ch == ' ' || ch == '\t'))
+	char* szEnd = szStr + strlen(szStr) - 1;
+	while (szEnd >= szStr && (*szEnd == '\n' || *szEnd == '\r' || *szEnd == ' ' || *szEnd == '\t'))
 	{
-		szStr[iLen-1] = 0;
-		iLen--;
-		ch = szStr[iLen-1];
+		*szEnd = '\0';
+		szEnd--;
 	}
 }
 
 char* Util::Trim(char* szStr)
 {
 	TrimRight(szStr);
-	char ch = *szStr;
-	while (ch == '\n' || ch == '\r' || ch == ' ' || ch == '\t')
+	while (*szStr == '\n' || *szStr == '\r' || *szStr == ' ' || *szStr == '\t')
 	{
 		szStr++;
-		ch = *szStr;
 	}
 	return szStr;
 }
