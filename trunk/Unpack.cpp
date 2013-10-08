@@ -421,7 +421,8 @@ bool UnpackController::Cleanup()
 		DirBrowser dir(m_szUnpackDir);
 		while (const char* filename = dir.Next())
 		{
-			if (strcmp(filename, ".") && strcmp(filename, ".."))
+			if (strcmp(filename, ".") && strcmp(filename, "..") &&
+				strcmp(filename, ".AppleDouble") && strcmp(filename, ".DS_Store"))
 			{
 				char szSrcFile[1024];
 				snprintf(szSrcFile, 1024, "%s%c%s", m_szUnpackDir, PATH_SEPARATOR, filename);
@@ -706,7 +707,8 @@ bool MoveController::MoveFiles()
 	DirBrowser dir(m_szInterDir);
 	while (const char* filename = dir.Next())
 	{
-		if (strcmp(filename, ".") && strcmp(filename, ".."))
+		if (strcmp(filename, ".") && strcmp(filename, "..") &&
+			strcmp(filename, ".AppleDouble") && strcmp(filename, ".DS_Store"))
 		{
 			char szSrcFile[1024];
 			snprintf(szSrcFile, 1024, "%s%c%s", m_szInterDir, PATH_SEPARATOR, filename);
@@ -734,7 +736,10 @@ bool MoveController::MoveFiles()
 		}
 	}
 
-	Util::RemoveDirectory(m_szInterDir);
+	if (bOK && !Util::DeleteDirectoryWithContent(m_szInterDir))
+	{
+		PrintMessage(Message::mkError, "Could not remove intermediate directory %s", m_szInterDir);
+	}
 
 	return bOK;
 }
