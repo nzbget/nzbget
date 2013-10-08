@@ -639,7 +639,7 @@ void QueueEditor::AlignAffectedGroups(DownloadQueue* pDownloadQueue, IDList* pID
 				}
 				if (iOffset > 0)
 				{
-					for (unsigned int i = iNum + 1; i <= cGroupList.size() - iOffset; i++)
+					for (int i = iNum + 1; i <= (int)cGroupList.size() - iOffset; i++)
 					{
 						if (!ItemExists(&cAffectedGroupList, cGroupList[i]))
 						{
