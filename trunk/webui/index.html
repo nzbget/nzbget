@@ -320,7 +320,7 @@
 				</div>
 
 				<div class="btn-group">
-					<button class="btn" id="History_Dup" onclick="History.dupClick()" title="Show old records kept for duplicate check"><i class="icon-duplicates" id="History_DupIcon"></i><span class="btn-caption"> Old</span></button>
+					<button class="btn" id="History_Dup" onclick="History.dupClick()" title="Show hidden records kept for duplicate check"><i class="icon-mask" id="History_DupIcon"></i><span class="btn-caption"> Hidden</span></button>
 				</div>
 
 				<div class="btn-group phone-only inline" id="HistoryRecordsPerPageBlockPhone">
@@ -1141,8 +1141,8 @@
 
 						<div class="control-group control-group-last" id="HistoryEdit_DupGroup">
 							<div class="controls">
-								This old history item has no information other than status. It is kept
-								in history for duplicate check.
+								This hidden history record has no information other than status.
+								It remains in history for duplicate check.
 							</div>
 						</div>
 
@@ -1388,7 +1388,7 @@
 	</div>
 </div>
 
-<!-- ***  QUICK HELP: FEED FILTER ************************************************************ -->
+<!-- *** QUICK HELP: FEED FILTER ************************************************************ -->
 
 <div class="modal no-footer hide" id="FeedFilterDialogHelp">
 	<div class="modal-header">
@@ -1602,6 +1602,9 @@
 	</div>
 
 	<div class="modal-footer">
+		<div class="btn-group pull-left">
+			<a data-toggle="modal" href="#" class="btn pull-left" id="ConfirmDialog_Help">Quick Help</a>
+		</div>
 		<a href="#" class="btn" data-dismiss="modal" id="ConfirmDialog_Close">Cancel</a>
 		<a href="#" class="btn btn-primary" id="ConfirmDialog_OK">Action</a>
 	</div>
@@ -1647,49 +1650,55 @@
 	<div id="DownloadEditDeleteConfirmDialog_OK">Delete</div>
 </div>
 
-<!-- *** CLEAR HISTORY CONFIRMATION DIALOG DATA ***************************************** -->
-
-<div class="hide" id="HistoryClearConfirmDialog">
-	<div id="HistoryClearConfirmDialog_Title">History</div>
-	<div id="HistoryClearConfirmDialog_Text">
-		<p>
-		Clear History?
-		</p>
-		<p class="confirm-help-block">
-		All records will be deleted. All files remain on disk.
-		</p>
-	</div>
-	<div id="HistoryClearConfirmDialog_OK">Clear</div>
-</div>
-
 <!-- *** DELETE HISTORY RECORDS CONFIRMATION DIALOG DATA ******************************** -->
 
 <div class="hide" id="HistoryDeleteConfirmDialog">
 	<div id="HistoryDeleteConfirmDialog_Title">History</div>
 	<div id="HistoryDeleteConfirmDialog_Text">
-		<p>
-		Delete selected history records?
+		<p id="HistoryDeleteConfirmDialog_OptionsText">
+			How to delete selected history records?
 		</p>
-		<p class="confirm-help-block">
-		Selected records will be removed from the history. All files remain on disk.
+		<p id="HistoryDeleteConfirmDialog_SimpleText">
+			Delete selected history records?
+		</p>
+	
+		<div id="HistoryDeleteConfirmDialog_Options">
+			<div style="margin-left: 30px; margin-bottom: 10px;" id="HistoryDeleteConfirmDialog_DeleteGroup">
+				<label class="radio"><input type="radio" name ="HistoryDeleteConfirmDialog_Delete" id="HistoryDeleteConfirmDialog_Hide"> Hide records from history (recommended)</label>
+				<label class="radio"><input type="radio" name ="HistoryDeleteConfirmDialog_Delete" id="HistoryDeleteConfirmDialog_Delete"> Remove records from history altogether</label>
+			</div>
+		
+			<div id="HistoryDeleteConfirmDialog_CleanupGroup">
+				<label class="checkbox"><input type="checkbox" id="HistoryDeleteConfirmDialog_Cleanup"> Also delete downloaded files</label>
+			</div>
+		</div>
+
+		<p class="confirm-help-block" id="HistoryDeleteConfirmDialog_DeleteHint">
+			Selected records will be removed from the history. All files remain on disk.
+		</p>
+
+		<p class="alert alert-warning" style="margin-top: 10px;" id="HistoryDeleteConfirmDialog_DupAlert">
+			Permanent deleting of hidden records may have an impact on duplicate check and is not recommended.
 		</p>
 	</div>
 	<div id="HistoryDeleteConfirmDialog_OK">Delete</div>
+	<div id="HistoryDeleteConfirmDialog_Help">HistoryDeleteHelp</div>
 </div>
 
-<!-- *** DELETE CURRENT HISTORY RECORD CONFIRMATION DIALOG DATA ******************************** -->
+<!-- *** QUICK HELP: EXPLAINING PAUSE OPTIONS ************************************************************ -->
 
-<div class="hide" id="HistoryEditDeleteConfirmDialog">
-	<div id="HistoryEditDeleteConfirmDialog_Title">History</div>
-	<div id="HistoryEditDeleteConfirmDialog_Text">
-		<p>
-		Delete this history record?
-		</p>
-		<p class="confirm-help-block">
-		The record will be removed from the history. All files remain on disk.
-		</p>
+<div class="modal no-footer modal-small modal-center hide" id="HistoryDeleteHelp">
+	<div class="modal-header">
+	<a class="close" href='#' data-dismiss="modal"><i class="icon-close"></i></a>
+	<h3>Help: Explaining delete options</h3>
 	</div>
-	<div id="HistoryEditDeleteConfirmDialog_OK">Delete</div>
+	<div class="modal-body">
+	<p>Duplicate check (option <em><strong>DupeCheck</strong></em>) requires information about downloaded and failed nzb-files.</p>
+	<p>If you don't want to see a nzb-file in the history you can hide it. For better performance almost all information
+	associated with the file will be removed, except for few fields required for duplicate check.</p>
+	<p>If you remove history record permanently the duplicate check may not be able to detect duplicates and
+	the same file or a duplicate may be queued later from RSS feed or other source.</p>
+	</div>
 </div>
 
 <!-- *** MARK AS GOOD CURRENT HISTORY RECORD CONFIRMATION DIALOG DATA ******************************** -->
@@ -1826,7 +1835,7 @@
 	</div>
 </div>
 
-<!-- ***  QUICK HELP: ADD FILES ************************************************************ -->
+<!-- *** QUICK HELP: ADD FILES ************************************************************ -->
 
 <div class="modal no-footer hide" id="AddDialogHelp">
 	<div class="modal-header">

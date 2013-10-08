@@ -763,14 +763,22 @@ var ConfirmDialog = (new function($)
 		$('#ConfirmDialog_OK').click(click);
 	}
 
-	this.showModal = function(id, callback)
+	this.showModal = function(id, _actionCallback, initCallback)
 	{
 		$('#ConfirmDialog_Title').html($('#' + id + '_Title').html());
 		$('#ConfirmDialog_Text').html($('#' + id + '_Text').html());
 		$('#ConfirmDialog_OK').html($('#' + id + '_OK').html());
-		Util.centerDialog($ConfirmDialog, true);
-		actionCallback = callback;
+		var helpId = $('#' + id + '_Help').html();
+		$('#ConfirmDialog_Help').attr('href', '#' + helpId);
+		Util.show('#ConfirmDialog_Help', helpId !== null);
 		
+		actionCallback = _actionCallback;
+		if (initCallback)
+		{
+			initCallback($ConfirmDialog);
+		}
+		
+		Util.centerDialog($ConfirmDialog, true);
 		$ConfirmDialog.modal({backdrop: 'static'});
 		
 		// avoid showing multiple backdrops when the modal is shown from other modal
@@ -793,7 +801,7 @@ var ConfirmDialog = (new function($)
 	function click(event)
 	{
 		event.preventDefault(); // avoid scrolling
-		actionCallback();
+		actionCallback($ConfirmDialog);
 		$ConfirmDialog.modal('hide');
 	}
 }(jQuery));

@@ -1416,7 +1416,8 @@ var HistoryEditDialog = (new function()
 		$('#HistoryEdit_Title').text(Util.formatNZBName(hist.Name));
 		if (hist.Kind !== 'NZB')
 		{
-			$('#HistoryEdit_Title').html($('#HistoryEdit_Title').html() + '&nbsp;' + '<span class="label label-info">' + hist.Kind + '</span>');
+			$('#HistoryEdit_Title').html($('#HistoryEdit_Title').html() + '&nbsp;' + '<span class="label label-info">' + 
+				(hist.Kind === 'DUP' ? 'hidden' : hist.Kind) + '</span>');
 		}
 
 		if (hist.Kind !== 'DUP')
@@ -1534,14 +1535,14 @@ var HistoryEditDialog = (new function()
 	function itemDelete(e)
 	{
 		e.preventDefault();
-		ConfirmDialog.showModal('HistoryEditDeleteConfirmDialog', doItemDelete);
+		HistoryUI.deleteConfirm(doItemDelete, curHist.Kind === 'NZB', curHist.Kind === 'DUP', false);
 	}
 
-	function doItemDelete()
+	function doItemDelete(command)
 	{
 		disableAllButtons();
 		notification = '#Notif_History_Deleted';
-		RPC.call('editqueue', ['HistoryDelete', 0, '', [curHist.ID]], completed);
+		RPC.call('editqueue', [command, 0, '', [curHist.ID]], completed);
 	}
 
 	function itemReturn(e)
