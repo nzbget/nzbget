@@ -974,6 +974,9 @@ bool PrePostProcessor::QueueEditList(IDList* pIDList, EEditAction eAction, int i
 			return PostQueueDelete(pIDList);
 
 		case eaHistoryDelete:
+		case eaHistoryDeleteCleanup:
+		case eaHistoryFinalDelete:
+		case eaHistoryFinalDeleteCleanup:
 		case eaHistoryReturn:
 		case eaHistoryProcess:
 		case eaHistorySetParameter:
@@ -1133,7 +1136,10 @@ bool PrePostProcessor::HistoryEdit(IDList* pIDList, EEditAction eAction, int iOf
 				switch (eAction)
 				{
 					case eaHistoryDelete:
-						HistoryDelete(pDownloadQueue, itHistory, pHistoryInfo);
+					case eaHistoryDeleteCleanup:
+					case eaHistoryFinalDelete:
+					case eaHistoryFinalDeleteCleanup:
+						HistoryDelete(pDownloadQueue, itHistory, pHistoryInfo, eAction);
 						break;
 
 					case eaHistoryReturn:
@@ -1177,7 +1183,8 @@ bool PrePostProcessor::HistoryEdit(IDList* pIDList, EEditAction eAction, int iOf
 	return bOK;
 }
 
-void PrePostProcessor::HistoryDelete(DownloadQueue* pDownloadQueue, HistoryList::iterator itHistory, HistoryInfo* pHistoryInfo)
+void PrePostProcessor::HistoryDelete(DownloadQueue* pDownloadQueue, HistoryList::iterator itHistory,
+	HistoryInfo* pHistoryInfo, EEditAction eAction)
 {
 	char szNiceName[1024];
 	pHistoryInfo->GetName(szNiceName, 1024);
@@ -1212,8 +1219,28 @@ void PrePostProcessor::HistoryDelete(DownloadQueue* pDownloadQueue, HistoryList:
 		DeleteQueuedFile(pNZBInfo->GetQueuedFilename());
 	}
 
-	pDownloadQueue->GetHistoryList()->erase(itHistory);
-	delete pHistoryInfo;
+	if (pHistoryInfo->GetKind() == HistoryInfo::hkNZBInfo &&
+		(eAction == eaHistoryDeleteCleanup || eAction == eaHistoryFinalDeleteCleanup) &&
+		Util::DirectoryExists(pHistoryInfo->GetNZBInfo()->GetDestDir()))
+	{
+		info("Deleting %s", pHistoryInfo->GetNZBInfo()->GetDestDir());
+		Util::DeleteDirectoryWithContent(pHistoryInfo->GetNZBInfo()->GetDestDir());
+	}
+
+	if ((eAction == eaHistoryDelete || eAction == eaHistoryDeleteCleanup) && g_pOptions->GetDupeCheck())
+	{
+		if (pHistoryInfo->GetKind() == HistoryInfo::hkNZBInfo)
+		{
+			// replace history element
+			int rindex = pDownloadQueue->GetHistoryList()->size() - 1 - (itHistory - pDownloadQueue->GetHistoryList()->begin());
+			m_DupeCoordinator.HistoryTransformToDup(pDownloadQueue, pHistoryInfo, rindex);
+		}
+	}
+	else
+	{
+		pDownloadQueue->GetHistoryList()->erase(itHistory);
+		delete pHistoryInfo;
+	}
 }
 
 void PrePostProcessor::HistoryReturn(DownloadQueue* pDownloadQueue, HistoryList::iterator itHistory, HistoryInfo* pHistoryInfo, bool bReprocess)

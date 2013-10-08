@@ -212,7 +212,7 @@ var History = (new function($)
 			}
 			else if (kind === 'DUP')
 			{
-				textname += ' DUP';
+				textname += ' hidden';
 			}
 
 			if (kind !== 'DUP')
@@ -252,9 +252,13 @@ var History = (new function($)
 			var category = Util.textToHtml(hist.Category);
 		}
 
-		if (hist.Kind !== 'NZB')
+		if (hist.Kind === 'URL')
 		{
-			name += ' <span class="label label-info">' + hist.Kind + '</span>';
+			name += ' <span class="label label-info">URL</span>';
+		}
+		else if (hist.Kind === 'DUP')
+		{
+			name += ' <span class="label label-info">hidden</span>';
 		}
 
 		if (!UISettings.miniTheme)
@@ -304,23 +308,34 @@ var History = (new function($)
 	this.deleteClick = function()
 	{
 		var checkedRows = $HistoryTable.fasttable('checkedRows');
-		if (checkedRows.length > 0)
-		{
-			ConfirmDialog.showModal('HistoryDeleteConfirmDialog', historyDelete);
-		}
-		else
+		if (checkedRows.length == 0)
 		{
 			Notification.show('#Notif_History_Select');
+			return;
 		}
+
+		var hasNzb = false;
+		var hasDup = false;
+		for (var i = 0; i < history.length; i++)
+		{
+			var hist = history[i];
+			if (checkedRows.indexOf(hist.ID) > -1)
+			{
+				hasNzb |= hist.Kind === 'NZB';
+				hasDup |= hist.Kind === 'DUP';
+			}
+		}
+
+		HistoryUI.deleteConfirm(historyDelete, hasNzb, hasDup, true);
 	}
 
-	function historyDelete()
+	function historyDelete(command)
 	{
 		Refresher.pause();
 
 		var IDs = $HistoryTable.fasttable('checkedRows');
 
-		RPC.call('editqueue', ['HistoryDelete', 0, '', [IDs]], function()
+		RPC.call('editqueue', [command, 0, '', [IDs]], function()
 		{
 			notification = '#Notif_History_Deleted';
 			editCompleted();
@@ -368,7 +383,7 @@ var History = (new function($)
 	{
 		showDup = !showDup;
 		$('#History_Dup').toggleClass('btn-inverse', showDup);
-		$('#History_DupIcon').toggleClass('icon-duplicates', !showDup).toggleClass('icon-duplicates-white', showDup);
+		$('#History_DupIcon').toggleClass('icon-mask', !showDup).toggleClass('icon-mask-white', showDup);
 		Refresher.update();
 	}
 
@@ -422,6 +437,48 @@ var HistoryUI = (new function($)
 			default:
 				return '<span class="label label-status">' + prefix + status + '</span>';
 		}
+	}
+
+	this.deleteConfirm = function(actionCallback, hasNzb, hasDup, multi)
+	{
+		var dupeCheck = Options.option('DupeCheck') === 'yes';
+		var dialog = null;
+
+		function init(_dialog)
+		{
+			dialog = _dialog;
+
+			if (!multi)
+			{
+				var html = $('#ConfirmDialog_Text').html();
+				html = html.replace(/records/g, 'record');
+				$('#ConfirmDialog_Text').html(html);
+			}
+
+			$('#HistoryDeleteConfirmDialog_Hide', dialog).prop('checked', true);
+			$('#HistoryDeleteConfirmDialog_Cleanup', dialog).prop('checked', false);
+			Util.show($('#HistoryDeleteConfirmDialog_Options', dialog), hasNzb);
+			Util.show($('#HistoryDeleteConfirmDialog_DeleteGroup', dialog), dupeCheck);
+			Util.show($('#HistoryDeleteConfirmDialog_OptionsText', dialog), hasNzb && dupeCheck);
+			Util.show($('#HistoryDeleteConfirmDialog_SimpleText', dialog), !(hasNzb && dupeCheck));
+			Util.show($('#HistoryDeleteConfirmDialog_DeleteHint', dialog), !hasNzb);
+			Util.show($('#HistoryDeleteConfirmDialog_DupAlert', dialog), !hasNzb && dupeCheck && hasDup);
+			Util.show('#ConfirmDialog_Help', hasNzb && dupeCheck);
+		};
+
+		function action()
+		{
+			var hide = $('#HistoryDeleteConfirmDialog_Hide', dialog).is(':checked');
+			var cleanup = $('#HistoryDeleteConfirmDialog_Cleanup', dialog).is(':checked');
+
+			var command = hasNzb && hide ?
+				(cleanup ? 'HistoryDeleteCleanup' : 'HistoryDelete') :
+				(cleanup ? 'HistoryFinalDeleteCleanup' : 'HistoryFinalDelete');
+
+			actionCallback(command);
+		}
+
+		ConfirmDialog.showModal('HistoryDeleteConfirmDialog', action, init);
 	}
 
 }(jQuery));
