@@ -357,7 +357,8 @@ void UnpackController::CheckArchiveFiles(bool bScanNonStdFiles)
 	RegEx regExRar(".*\\.rar$");
 	RegEx regExRarMultiSeq(".*\\.(r|s)[0-9][0-9]$");
 	RegEx regExSevenZip(".*\\.7z$");
-	RegEx regExSevenZipMulti(".*\\.7z\\.[0-9]*$");
+	RegEx regExSevenZipMulti(".*\\.7z\\.[0-9]+$");
+	RegEx regExNumExt(".*\\.[0-9]+$");
 
 	DirBrowser dir(m_szDestDir);
 	while (const char* filename = dir.Next())
@@ -380,7 +381,8 @@ void UnpackController::CheckArchiveFiles(bool bScanNonStdFiles)
 			{
 				m_bHasSevenZipMultiFiles = true;
 			}
-			else if (bScanNonStdFiles && !m_bHasNonStdRarFiles && !regExRarMultiSeq.Match(filename))
+			else if (bScanNonStdFiles && !m_bHasNonStdRarFiles &&
+				!regExRarMultiSeq.Match(filename) && regExNumExt.Match(filename))
 			{
 				// Check if file has RAR signature
 				char rarSignature[] = {0x52, 0x61, 0x72, 0x21, 0x1A, 0x07, 0x00};
