@@ -444,7 +444,7 @@ bool UnpackController::Cleanup()
 				extractedFiles.push_back(strdup(filename));
 
 				int iLen = strlen(filename);
-				bool bParFile = iLen > 5 && strcasecmp(filename + iLen - 5, ".par2");
+				bool bParFile = iLen > 5 && !strcasecmp(filename + iLen - 5, ".par2");
 				m_bHasParInArchive |= bParFile;
 			}
 		}
