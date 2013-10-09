@@ -913,7 +913,7 @@
 					</fieldset>
 				</div>
 			</div>
-			
+
 		</div>
 
 	</div>
@@ -1358,7 +1358,7 @@
 
 				<!-- SPLITTER -->
 				<div class="modal-inner-scroll phone-hide" id="FeedFilterDialog_Splitter"></div>
-				
+
 				<!-- PREVIEW TABLE -->
 				<div class="modal-inner-scroll" id="FeedFilterDialog_PreviewBlock">
 					<div class="loading-block hide">
@@ -1371,7 +1371,7 @@
 					</table>
 					<div class="pull-right" id ="FeedFilterDialog_ItemTable_pagerBlock"><div class="pagination" id ="FeedFilterDialog_ItemTable_pager"></div></div>
 				</div>
-				
+
 			</div>
 		</div>
 
@@ -1469,7 +1469,7 @@
 		<tr><td>dupescore+ (ds+, s+)</td><td>increase duplicate score, value is a signed integer number;</td></tr>
 		<tr><td>dupekey (dk, k)</td><td>set duplicate key, value is a string;</td></tr>
 		<tr><td>dupekey+ (dk+, k+)</td><td>add to duplicate key, value is a string;</td></tr>
-		<tr><td>dupemode (dm, m)</td><td>set duplicate check mode, possible values are: score (s), all (a), force (f). 
+		<tr><td>dupemode (dm, m)</td><td>set duplicate check mode, possible values are: score (s), all (a), force (f).
 				<em>Score</em> - download duplicates with higher scores;
 				<em>All</em> - download all duplicates regardless of scores;
 				<em>Force</em> - treat item as unique, ignore all duplicate checks.
@@ -1483,21 +1483,21 @@
 		<p>
 		Rule-options override values set in feed-options.
 		</p>
-		
+
 		<h4>Search string</h4>
 		<p>
 		The <em>search string</em> is similar to used in search engines. It consists of
 		search terms separated with spaces. Every term is checked for a feed
 		item and if they all succeed the rule is considered matching.
 		</p>
-		
+
 		<p>
 		Definition of a term:
 		</p>
 		<p><strong>
 		 [+|-][field:][command]param
 		</strong></p>
-		
+
 		<p>
 		<table class="table table-bordered">
 		<tbody>
@@ -1536,7 +1536,7 @@
 		</tbody>
 		</table>
 		</p>
-		
+
 		<ul>
 		<li>Commands @ and $ are for use with text fields (title, filename, category,
 		link, genre, dupekey).</li>
@@ -1566,7 +1566,7 @@
 		is interpreted as value of rating between 0 and 100. A floating point value is used
 		as rating between 0.0 and 10.0.</li>
 		</ul>
-		
+
 		<p><span class="label label-warning">NOTE:</span>
 		Only fields title, filename and age are always present. The availability of other fields
 		depend on rss feed provider.
@@ -1581,7 +1581,7 @@
 		<li>Q: HDTV</li>
 		<li>A(category:big movies, priority:50, pause:yes): size:&gt;8GB</>
 		</ul>
-		
+
 		<p><span class="label label-warning">NOTE:</span>
 		This is a short documentation. For more info visit
 		<a href="http://nzbget.sourceforge.net/RSS">nzbget.sourceforge.net/RSS</a>.
@@ -1655,29 +1655,35 @@
 <div class="hide" id="HistoryDeleteConfirmDialog">
 	<div id="HistoryDeleteConfirmDialog_Title">History</div>
 	<div id="HistoryDeleteConfirmDialog_Text">
-		<p id="HistoryDeleteConfirmDialog_OptionsText">
-			How to delete selected history records?
-		</p>
-		<p id="HistoryDeleteConfirmDialog_SimpleText">
+		<p id="HistoryDeleteConfirmDialog_Simple">
 			Delete selected history records?
 		</p>
-	
+
 		<div id="HistoryDeleteConfirmDialog_Options">
-			<div style="margin-left: 30px; margin-bottom: 10px;" id="HistoryDeleteConfirmDialog_DeleteGroup">
+			<p>
+				How to delete selected history records?
+			</p>
+			<div style="margin-left: 30px; margin-bottom: 10px;">
 				<label class="radio"><input type="radio" name ="HistoryDeleteConfirmDialog_Delete" id="HistoryDeleteConfirmDialog_Hide"> Hide records from history (recommended)</label>
 				<label class="radio"><input type="radio" name ="HistoryDeleteConfirmDialog_Delete" id="HistoryDeleteConfirmDialog_Delete"> Remove records from history altogether</label>
 			</div>
-		
-			<div id="HistoryDeleteConfirmDialog_CleanupGroup">
-				<label class="checkbox"><input type="checkbox" id="HistoryDeleteConfirmDialog_Cleanup"> Also delete downloaded files</label>
-			</div>
 		</div>
 
-		<p class="confirm-help-block" id="HistoryDeleteConfirmDialog_DeleteHint">
-			Selected records will be removed from the history. All files remain on disk.
+		<p id="HistoryDeleteConfirmDialog_DeleteNoCleanup" class="confirm-help-block">
+			Selected records will be deleted from history. All files remain on disk.
 		</p>
 
-		<p class="alert alert-warning" style="margin-top: 10px;" id="HistoryDeleteConfirmDialog_DupAlert">
+		<p id="HistoryDeleteConfirmDialog_DeleteCanCleanup" class="confirm-help-block">
+			Selected records will be deleted from history. All files remain on disk (for failed downloads this
+			behavior can be changed via option <strong><em>DeleteCleanupDisk</em></strong>).
+		</p>
+
+		<p id="HistoryDeleteConfirmDialog_DeleteWillCleanup" class="confirm-help-block">
+			Selected records will be deleted from history. For failed downloads (par-failure or unpack-failure)
+			all downloaded files will be deleted (this behavior can be changed via option <strong><em>DeleteCleanupDisk</em></strong>).
+		</p>
+
+		<p id="HistoryDeleteConfirmDialog_DupAlert" class="alert alert-warning" style="margin-top: 10px;">
 			Permanent deleting of hidden records may have an impact on duplicate check and is not recommended.
 		</p>
 	</div>
@@ -1819,7 +1825,7 @@
 						<a href="#" class="btn" id="AddDialog_Scan">Scan incoming directory</a>
 					</div>
 				</div>
-				
+
 			</fieldset>
 		</div>
 	</div>

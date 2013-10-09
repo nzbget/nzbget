@@ -974,9 +974,7 @@ bool PrePostProcessor::QueueEditList(IDList* pIDList, EEditAction eAction, int i
 			return PostQueueDelete(pIDList);
 
 		case eaHistoryDelete:
-		case eaHistoryDeleteCleanup:
 		case eaHistoryFinalDelete:
-		case eaHistoryFinalDeleteCleanup:
 		case eaHistoryReturn:
 		case eaHistoryProcess:
 		case eaHistorySetParameter:
@@ -1136,10 +1134,8 @@ bool PrePostProcessor::HistoryEdit(IDList* pIDList, EEditAction eAction, int iOf
 				switch (eAction)
 				{
 					case eaHistoryDelete:
-					case eaHistoryDeleteCleanup:
 					case eaHistoryFinalDelete:
-					case eaHistoryFinalDeleteCleanup:
-						HistoryDelete(pDownloadQueue, itHistory, pHistoryInfo, eAction);
+						HistoryDelete(pDownloadQueue, itHistory, pHistoryInfo, eAction == eaHistoryFinalDelete);
 						break;
 
 					case eaHistoryReturn:
@@ -1184,7 +1180,7 @@ bool PrePostProcessor::HistoryEdit(IDList* pIDList, EEditAction eAction, int iOf
 }
 
 void PrePostProcessor::HistoryDelete(DownloadQueue* pDownloadQueue, HistoryList::iterator itHistory,
-	HistoryInfo* pHistoryInfo, EEditAction eAction)
+	HistoryInfo* pHistoryInfo, bool bFinal)
 {
 	char szNiceName[1024];
 	pHistoryInfo->GetName(szNiceName, 1024);
@@ -1220,14 +1216,22 @@ void PrePostProcessor::HistoryDelete(DownloadQueue* pDownloadQueue, HistoryList:
 	}
 
 	if (pHistoryInfo->GetKind() == HistoryInfo::hkNZBInfo &&
-		(eAction == eaHistoryDeleteCleanup || eAction == eaHistoryFinalDeleteCleanup) &&
+		g_pOptions->GetDeleteCleanupDisk() &&
+		(pHistoryInfo->GetNZBInfo()->GetDeleteStatus() != NZBInfo::dsNone ||
+		pHistoryInfo->GetNZBInfo()->GetParStatus() == NZBInfo::psFailure ||
+		pHistoryInfo->GetNZBInfo()->GetUnpackStatus() == NZBInfo::usFailure) &&
 		Util::DirectoryExists(pHistoryInfo->GetNZBInfo()->GetDestDir()))
 	{
 		info("Deleting %s", pHistoryInfo->GetNZBInfo()->GetDestDir());
 		Util::DeleteDirectoryWithContent(pHistoryInfo->GetNZBInfo()->GetDestDir());
 	}
 
-	if ((eAction == eaHistoryDelete || eAction == eaHistoryDeleteCleanup) && g_pOptions->GetDupeCheck())
+	if (bFinal || !g_pOptions->GetDupeCheck() || pHistoryInfo->GetKind() == HistoryInfo::hkUrlInfo)
+	{
+		pDownloadQueue->GetHistoryList()->erase(itHistory);
+		delete pHistoryInfo;
+	}
+	else
 	{
 		if (pHistoryInfo->GetKind() == HistoryInfo::hkNZBInfo)
 		{
@@ -1235,11 +1239,6 @@ void PrePostProcessor::HistoryDelete(DownloadQueue* pDownloadQueue, HistoryList:
 			int rindex = pDownloadQueue->GetHistoryList()->size() - 1 - (itHistory - pDownloadQueue->GetHistoryList()->begin());
 			m_DupeCoordinator.HistoryTransformToDup(pDownloadQueue, pHistoryInfo, rindex);
 		}
-	}
-	else
-	{
-		pDownloadQueue->GetHistoryList()->erase(itHistory);
-		delete pHistoryInfo;
 	}
 }
 
