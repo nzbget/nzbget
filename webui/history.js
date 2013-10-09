@@ -130,7 +130,7 @@ var History = (new function($)
 					case 'DUPE': hist.status = 'deleted-dupe'; break;
 				}
 			}
-			else if (hist.ParStatus == 'FAILURE' || hist.UnpackStatus == 'FAILURE' || hist.MoveStatus == 'FAILURE' || hist.ScriptStatus == 'FAILURE')
+			else if (hist.ParStatus == 'FAILURE' || hist.UnpackStatus == 'FAILURE' || hist.MoveStatus == 'FAILURE')
 			{
 				hist.status = 'failure';
 			}
@@ -138,7 +138,8 @@ var History = (new function($)
 			{
 				hist.status = 'damaged';
 			}
-			else if (hist.ParStatus == 'NONE' && hist.UnpackStatus == 'NONE')
+			else if (hist.ParStatus == 'NONE' && hist.UnpackStatus == 'NONE' &&
+				(hist.ScriptStatus !== 'FAILURE' || hist.Health < 1000))
 			{
 				hist.status = hist.Health === 1000 ? 'success' :
 					hist.Health >= hist.CriticalHealth ? 'damaged' : 'failure';
@@ -148,6 +149,7 @@ var History = (new function($)
 				switch (hist.ScriptStatus)
 				{
 					case 'SUCCESS': hist.status = 'success'; break;
+					case 'FAILURE': hist.status = 'pp-failure'; break;
 					case 'UNKNOWN': hist.status = 'unknown'; break;
 					case 'NONE':
 						switch (hist.UnpackStatus)
@@ -421,6 +423,7 @@ var HistoryUI = (new function($)
 			case 'manual':
 			case 'MANUAL':
 			case 'damaged':
+			case 'pp-failure':
 				return '<span class="label label-status label-warning">' + prefix + status + '</span>';
 			case 'deleted-manual':
 				return '<span class="label label-status">' + prefix + 'deleted</span>';
