@@ -1535,7 +1535,8 @@ var HistoryEditDialog = (new function()
 	function itemDelete(e)
 	{
 		e.preventDefault();
-		HistoryUI.deleteConfirm(doItemDelete, curHist.Kind === 'NZB', curHist.Kind === 'DUP', false);
+		HistoryUI.deleteConfirm(doItemDelete, curHist.Kind === 'NZB', curHist.Kind === 'DUP',
+			curHist.ParStatus === 'FAILURE' || curHist.UnpackStatus === 'FAILURE', false);
 	}
 
 	function doItemDelete(command)

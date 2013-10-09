@@ -316,6 +316,7 @@ var History = (new function($)
 
 		var hasNzb = false;
 		var hasDup = false;
+		var hasFailed = false;
 		for (var i = 0; i < history.length; i++)
 		{
 			var hist = history[i];
@@ -323,10 +324,11 @@ var History = (new function($)
 			{
 				hasNzb |= hist.Kind === 'NZB';
 				hasDup |= hist.Kind === 'DUP';
+				hasFailed |= hist.ParStatus === 'FAILURE' || hist.UnpackStatus === 'FAILURE';
 			}
 		}
 
-		HistoryUI.deleteConfirm(historyDelete, hasNzb, hasDup, true);
+		HistoryUI.deleteConfirm(historyDelete, hasNzb, hasDup, hasFailed, true);
 	}
 
 	function historyDelete(command)
@@ -439,9 +441,10 @@ var HistoryUI = (new function($)
 		}
 	}
 
-	this.deleteConfirm = function(actionCallback, hasNzb, hasDup, multi)
+	this.deleteConfirm = function(actionCallback, hasNzb, hasDup, hasFailed, multi)
 	{
 		var dupeCheck = Options.option('DupeCheck') === 'yes';
+		var cleanupDisk = Options.option('DeleteCleanupDisk') === 'yes';
 		var dialog = null;
 
 		function init(_dialog)
@@ -457,11 +460,11 @@ var HistoryUI = (new function($)
 
 			$('#HistoryDeleteConfirmDialog_Hide', dialog).prop('checked', true);
 			$('#HistoryDeleteConfirmDialog_Cleanup', dialog).prop('checked', false);
-			Util.show($('#HistoryDeleteConfirmDialog_Options', dialog), hasNzb);
-			Util.show($('#HistoryDeleteConfirmDialog_DeleteGroup', dialog), dupeCheck);
-			Util.show($('#HistoryDeleteConfirmDialog_OptionsText', dialog), hasNzb && dupeCheck);
-			Util.show($('#HistoryDeleteConfirmDialog_SimpleText', dialog), !(hasNzb && dupeCheck));
-			Util.show($('#HistoryDeleteConfirmDialog_DeleteHint', dialog), !hasNzb);
+			Util.show($('#HistoryDeleteConfirmDialog_Options', dialog), hasNzb && dupeCheck);
+			Util.show($('#HistoryDeleteConfirmDialog_Simple', dialog), !(hasNzb && dupeCheck));
+			Util.show($('#HistoryDeleteConfirmDialog_DeleteWillCleanup', dialog), hasNzb && hasFailed && cleanupDisk);
+			Util.show($('#HistoryDeleteConfirmDialog_DeleteCanCleanup', dialog), hasNzb && hasFailed && !cleanupDisk);
+			Util.show($('#HistoryDeleteConfirmDialog_DeleteNoCleanup', dialog), !(hasNzb && hasFailed));
 			Util.show($('#HistoryDeleteConfirmDialog_DupAlert', dialog), !hasNzb && dupeCheck && hasDup);
 			Util.show('#ConfirmDialog_Help', hasNzb && dupeCheck);
 		};

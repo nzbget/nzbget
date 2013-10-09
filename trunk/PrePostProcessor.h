@@ -44,9 +44,7 @@ public:
 		eaPostMoveBottom,
 		eaPostDelete,
 		eaHistoryDelete,
-		eaHistoryDeleteCleanup,
 		eaHistoryFinalDelete,
-		eaHistoryFinalDeleteCleanup,
 		eaHistoryReturn,
 		eaHistoryProcess,
 		eaHistorySetParameter,
@@ -119,7 +117,7 @@ private:
 	bool				PostQueueMove(IDList* pIDList, EEditAction eAction, int iOffset);
 	bool				PostQueueDelete(IDList* pIDList);
 	bool				HistoryEdit(IDList* pIDList, EEditAction eAction, int iOffset, const char* szText);
-	void				HistoryDelete(DownloadQueue* pDownloadQueue, HistoryList::iterator itHistory, HistoryInfo* pHistoryInfo, EEditAction eAction);
+	void				HistoryDelete(DownloadQueue* pDownloadQueue, HistoryList::iterator itHistory, HistoryInfo* pHistoryInfo, bool bFinal);
 	void				HistoryReturn(DownloadQueue* pDownloadQueue, HistoryList::iterator itHistory, HistoryInfo* pHistoryInfo, bool bReprocess);
 	void				HistorySetParameter(HistoryInfo* pHistoryInfo, const char* szText);
 	void				HistorySetDupeParam(HistoryInfo* pHistoryInfo, EEditAction eAction, const char* szText);
