@@ -694,6 +694,7 @@ void FeedFilter::Rule::Compile(char* szRule)
 			m_bIsValid = CompileTerm(szTerm);
 			szTerm = p + 1;
 			while (*szTerm == ' ') szTerm++;
+			p = szTerm;
 		}
 	}
 
