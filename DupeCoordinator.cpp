@@ -369,8 +369,6 @@ void DupeCoordinator::RemoveDupes(DownloadQueue* pDownloadQueue, NZBInfo* pNZBIn
 
 		if (pGroupNZBInfo != pNZBInfo &&
 			pGroupNZBInfo->GetDupeMode() == dmScore &&
-			pGroupNZBInfo->GetFailedArticles() == 0 &&
-			pGroupNZBInfo->GetSuccessArticles() == 0 &&
 			pGroupInfo->GetPausedFileCount() == pGroupInfo->GetRemainingFileCount() &&
 			SameNameOrKey(pGroupNZBInfo->GetName(), pGroupNZBInfo->GetDupeKey(),
 				pNZBInfo->GetName(), pNZBInfo->GetDupeKey()))
