@@ -357,20 +357,26 @@ void DupeCoordinator::NZBCompleted(DownloadQueue* pDownloadQueue, NZBInfo* pNZBI
 void DupeCoordinator::RemoveDupes(DownloadQueue* pDownloadQueue, NZBInfo* pNZBInfo)
 {
 	IDList groupIDList;
-	std::set<NZBInfo*> groupNZBs;
 
-	for (FileQueue::iterator it = pDownloadQueue->GetFileQueue()->begin(); it != pDownloadQueue->GetFileQueue()->end(); it++)
+	GroupQueue groupQueue;
+	pDownloadQueue->BuildGroups(&groupQueue);
+
+	// removing paused duplicates for which nothing was downloaded yet
+	for (GroupQueue::iterator it = groupQueue.begin(); it != groupQueue.end(); it++)
 	{
-		FileInfo* pFileInfo = *it;
-		if (pFileInfo->GetNZBInfo() != pNZBInfo &&
-			pFileInfo->GetNZBInfo()->GetDupeMode() == dmScore &&
-			groupNZBs.find(pFileInfo->GetNZBInfo()) == groupNZBs.end() &&
-			SameNameOrKey(pFileInfo->GetNZBInfo()->GetName(), pFileInfo->GetNZBInfo()->GetDupeKey(),
+		GroupInfo* pGroupInfo = *it;
+		NZBInfo* pGroupNZBInfo = pGroupInfo->GetNZBInfo();
+
+		if (pGroupNZBInfo != pNZBInfo &&
+			pGroupNZBInfo->GetDupeMode() == dmScore &&
+			pGroupNZBInfo->GetFailedArticles() == 0 &&
+			pGroupNZBInfo->GetSuccessArticles() == 0 &&
+			pGroupInfo->GetPausedFileCount() == pGroupInfo->GetRemainingFileCount() &&
+			SameNameOrKey(pGroupNZBInfo->GetName(), pGroupNZBInfo->GetDupeKey(),
 				pNZBInfo->GetName(), pNZBInfo->GetDupeKey()))
 		{
-			groupIDList.push_back(pFileInfo->GetID());
-			groupNZBs.insert(pFileInfo->GetNZBInfo());
-			pFileInfo->GetNZBInfo()->SetDeleteStatus(NZBInfo::dsDupe);
+			groupIDList.push_back(pGroupInfo->GetLastID());
+			pGroupNZBInfo->SetDeleteStatus(NZBInfo::dsDupe);
 		}
 	}
 
