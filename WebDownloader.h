@@ -66,6 +66,7 @@ private:
 	bool				m_bRedirected;
 	int					m_iRedirects;
 	bool				m_bGZip;
+	bool				m_bRetry;
 #ifndef DISABLE_GZIP
 	GUnzipStream*		m_pGUnzipStream;
 #endif
@@ -75,7 +76,6 @@ private:
 	bool				PrepareFile();
 	void				FreeConnection();
 	EStatus				CheckResponse(const char* szResponse);
-	EStatus				Download();
 	EStatus				CreateConnection(URL *pUrl);
 	void				ParseFilename(const char* szContentDisposition);
 	void				SendHeaders(URL *pUrl);
@@ -92,6 +92,7 @@ public:
 	EStatus				GetStatus() { return m_eStatus; }
 	virtual void		Run();
 	virtual void		Stop();
+	EStatus				Download();
 	bool				Terminate();
 	void				SetInfoName(const char* v);
 	const char*			GetInfoName() { return m_szInfoName; }
@@ -103,6 +104,7 @@ public:
 	bool				GetConfirmedLength() { return m_bConfirmedLength; }
 	const char*			GetOriginalFilename() { return m_szOriginalFilename; }
 	void				SetForce(bool bForce) { m_bForce = bForce; }
+	void				SetRetry(bool bRetry) { m_bRetry = bRetry; }
 
 	void				LogDebugInfo();
 };

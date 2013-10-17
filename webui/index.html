@@ -578,6 +578,17 @@
 												</div>
 											</div>
 
+											<div class="control-group config-static config-system">
+												<label class="control-label nowrap">Update NZBGet</label>
+												<div class="controls">
+													<button type="button" class="btn" onclick="Config.checkUpdates()">Check for Updates</button>
+													<p class="help-block">
+													<span class="help-option-title">Check if a new version of NZBGet is available.</span><br><br>
+													Should a new version be found you'll be asked to install it.
+													</p>
+												</div>
+											</div>
+
 										</fieldset>
 									</div>
 								</div>
@@ -1780,14 +1791,14 @@
 			<fieldset>
 
 				<div class="control-group">
-					<label class="control-label" for="URL" id="AddDialog_URLLabel"><i class="icon-remove"></i><img class="hide" src="img/transmit-file.gif"> Add from URL</label>
+					<label class="control-label" for="AddDialog_URL" id="AddDialog_URLLabel"><i class="icon-remove"></i><img class="hide" src="img/transmit-file.gif"> Add from URL</label>
 					<div class="controls">
 						<input type="text" class="input-xlarge" id="AddDialog_URL" />
 					</div>
 				</div>
 
 				<div class="control-group">
-					<label class="control-label" for="URL">Add local files</label>
+					<label class="control-label" for="AddDialog_Files">Add local files</label>
 					<div class="controls">
 						<div style="margin-top:6px; margin-bottom:10px;"><a href="#" class="btn" style="margin-top: -6px;" id="AddDialog_Select">Select files</a> or drop files here.</div>
 						<input multiple="multiple" type="file" id="AddDialog_Input" class="hidden-file-input">
@@ -1812,7 +1823,7 @@
 				</div>
 
 				<div class="control-group">
-					<label class="control-label" for="URL">Options</label>
+					<label class="control-label" for="AddDialog_Paused">Options</label>
 					<div class="controls">
 						<label class="checkbox"><input type="checkbox" id="AddDialog_Paused"> Add paused</label>
 						<label class="checkbox"><input type="checkbox" id="AddDialog_DupeForce"> Disable duplicate check</label>
@@ -1820,7 +1831,7 @@
 				</div>
 
 				<div class="control-group">
-					<label class="control-label" for="URL">Add from NzbDir</label>
+					<label class="control-label" for="AddDialog_Scan">Add from NzbDir</label>
 					<div class="controls">
 						<a href="#" class="btn" id="AddDialog_Scan">Scan incoming directory</a>
 					</div>
@@ -1993,6 +2004,82 @@
 	</div>
 	<div class="modal-footer">
 	<a href="#" class="btn btn-primary" data-dismiss="modal">Close</a>
+	</div>
+</div>
+
+<!-- *** UPDATE DIALOG ************************************************** -->
+
+<div class="modal modal-padded-small modal-center hide" id="UpdateDialog">
+	<div class="modal-header">
+	<a class="close" href='#' data-dismiss="modal"><i class="icon-close"></i></a>
+	<h3>Update NZBGet</h3>
+	</div>
+	<div class="modal-body">
+	
+	<p id="UpdateDialog_InstalledInfo" style="margin-top:0px; margin-bottom:5px;">Currently installed: <span id="UpdateDialog_VerInstalled"></span></p>
+	<p id="UpdateDialog_CheckProgress" class="hide">Checking for updates <img style="margin-left:5px;vertical-align:top;margin-top:1px;" src="img/transmit.gif" width="16px" height="16px"></p>
+	<p id="UpdateDialog_CheckFailed" class="hide failure-message"><strong>Check failed. Please try again later.</strong></p>
+	<p id="UpdateDialog_UpdateAvail"><strong>An update is available for your platform!</strong></p>
+	<p id="UpdateDialog_UpdateNotAvail" class="hide"><strong>No updates are available for your platform.</strong></p>
+	
+	<div id="UpdateDialog_UpdateNoInfo" class="hide">
+	<p><strong>Automatic updates are not configured for your platform.</strong></p>
+	<p class="alert alert-info">
+	If you compiled the program yourself you know how to update.
+	If you installed a binary package ask maintainer to add support for automatic updates.
+	If you create a public package please read <a href="http://nzbget.sourceforge.net/Packaging" target="_blank">"About Packaging"</a>.
+	</p>
+	</div>
+	
+	<table id="UpdateDialog_Versions" class="table" style="margin-top:10px;">
+	<thead>
+		<tr>
+			<th></th>
+			<th class="text-center" width="110">Stable</th>
+			<th class="text-center" width="110">Testing</th>
+			<th class="text-center" width="110">Development</th>
+		</tr>
+	</thead>
+	<tbody>
+		<tr>
+			<td class="update-row-name">Official releases</td>
+			<td class="text-center"><span id="UpdateDialog_CurStable">11.0</span><br>
+			<a class="update-release-notes" id="UpdateDialog_CurNotesStable" href="#" target="_blank">release notes</a></td>
+			<td class="text-center"><span id="UpdateDialog_CurTesting">12.0-r870</span><br>
+			<a class="update-release-notes" id="UpdateDialog_CurNotesTesting" href="#" target="_blank">release notes</a></td>
+			<td class="text-center"><span id="UpdateDialog_CurDevel">12.0-r880</span><br>
+			<a class="update-release-notes" id="UpdateDialog_CurNotesDevel" href="#" target="_blank">code log</a></td>
+		</tr>
+		<tr id="UpdateDialog_AvailRow">
+			<td class="update-row-name">For your platform</td>
+			<td class="text-center"><span id="UpdateDialog_AvailStable"></span><br>
+			<span id="UpdateDialog_AvailNotesStableBlock"><a class="update-release-notes" id="UpdateDialog_AvailNotesStable" href="#" target="_blank">package info</a><br></span>
+			<a class="btn btn-success" id="UpdateDialog_InstallStable" data-kind="stable" href="#">Install</a></td>
+			<td class="text-center"><span id="UpdateDialog_AvailTesting"></span><br>
+			<span id="UpdateDialog_AvailNotesTestingBlock"><a class="update-release-notes" id="UpdateDialog_AvailNotesTesting" href="#" target="_blank">package info</a><br></span>
+			<a class="btn btn-success" id="UpdateDialog_InstallTesting" data-kind="testing" href="#">Install</a></td>
+			<td class="text-center"><span id="UpdateDialog_AvailDevel"></span><br>
+			<span id="UpdateDialog_AvailNotesDevelBlock"><a class="update-release-notes" id="UpdateDialog_AvailNotesDevel" href="#" target="_blank">package info</a><br></span>
+			<a class="btn btn-success" id="UpdateDialog_InstallDevel" data-kind="devel" href="#">Install</a></td>
+		</tr>
+	</tbody></table>
+
+	</div>
+	<div class="modal-footer">
+		<a href="#" class="btn btn-primary" data-dismiss="modal">Cancel</a>
+	</div>
+</div>
+
+<!-- *** INSTALL DIALOG ************************************************** -->
+
+<div class="modal modal-center hide" id="UpdateProgressDialog">
+	<div class="modal-header">
+	<a class="close" href='#' data-dismiss="modal"><i class="icon-close"></i></a>
+	<h3>Updating NZBGet</h3>
+	</div>
+	<div class="modal-body">
+		<pre id="UpdateProgressDialog_Log">
+		</pre>	
 	</div>
 </div>
 
@@ -2200,6 +2287,10 @@
 
 <div id="Notif_Config_Restoring" class="alert alert-inverse alert-center alert-center-small hide">
     <strong>Restoring settings...</strong>
+</div>
+
+<div id="Notif_StartUpdate_Failed" data-duration="2000" class="alert alert-error alert-center alert-center-small hide">
+    <strong>Could not start update script</strong>
 </div>
 
 <div id="Notif_Debug" data-duration="400" class="alert alert-inverse alert-center alert-center-small hide">

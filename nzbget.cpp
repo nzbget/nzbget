@@ -76,6 +76,7 @@
 #include "Scheduler.h"
 #include "Scanner.h"
 #include "FeedCoordinator.h"
+#include "Maintenance.h"
 #include "Util.h"
 #ifdef WIN32
 #include "NTService.h"
@@ -117,6 +118,7 @@ DiskState* g_pDiskState = NULL;
 Scheduler* g_pScheduler = NULL;
 Scanner* g_pScanner = NULL;
 FeedCoordinator* g_pFeedCoordinator = NULL;
+Maintenance* g_pMaintenance = NULL;
 int g_iArgumentCount;
 char* (*g_szEnvironmentVariables)[] = NULL;
 char* (*g_szArguments)[] = NULL;
@@ -214,6 +216,7 @@ void Run(bool bReload)
 	g_pDownloadQueueHolder = g_pQueueCoordinator;
 	g_pUrlCoordinator = new UrlCoordinator();
 	g_pFeedCoordinator = new FeedCoordinator();
+	g_pMaintenance = new Maintenance();
 
 	debug("Reading options");
 	g_pOptions = new Options(g_iArgumentCount, *g_szArguments);
@@ -819,6 +822,14 @@ void Cleanup()
 		g_pFeedCoordinator = NULL;
 	}
 	debug("FeedCoordinator deleted");
+
+	debug("Deleting Maintenance");
+	if (g_pMaintenance)
+	{
+		delete g_pMaintenance;
+		g_pMaintenance = NULL;
+	}
+	debug("Maintenance deleted");
 
 	if (!g_bReloading)
 	{

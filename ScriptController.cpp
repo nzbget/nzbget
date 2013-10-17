@@ -199,6 +199,7 @@ ScriptController::ScriptController()
 	m_szInfoName = NULL;
 	m_szLogPrefix = NULL;
 	m_bTerminated = false;
+	m_bDetached = false;
 	m_environmentStrings.InitFromCurrentProcess();
 }
 
@@ -525,8 +526,8 @@ int ScriptController::Execute()
 #endif
 
 	// open the read end
-	FILE* readpipe = fdopen(pipein, "r");
-	if (!readpipe)
+	m_pReadpipe = fdopen(pipein, "r");
+	if (!m_pReadpipe)
 	{
 		error("Could not open pipe to %s", m_szInfoName);
 		return -1;
@@ -545,9 +546,9 @@ int ScriptController::Execute()
 	debug("Entering pipe-loop");
 	bool bFirstLine = true;
 	bool bStartError = false;
-	while (!feof(readpipe) && !m_bTerminated)
+	while (!m_bTerminated && !m_bDetached && !feof(m_pReadpipe))
 	{
-		if (ReadLine(buf, 10240, readpipe))
+		if (ReadLine(buf, 10240, m_pReadpipe) && m_pReadpipe)
 		{
 #ifdef CHILD_WATCHDOG
 			if (!bChildConfirmed)
@@ -582,7 +583,10 @@ int ScriptController::Execute()
 #endif
 	
 	free(buf);
-	fclose(readpipe);
+	if (m_pReadpipe)
+	{
+		fclose(m_pReadpipe);
+	}
 
 	if (m_bTerminated)
 	{
@@ -591,6 +595,8 @@ int ScriptController::Execute()
 
 	iExitCode = 0;
 
+	if (!m_bTerminated && !m_bDetached)
+	{
 #ifdef WIN32
 	WaitForSingleObject(m_hProcess, INFINITE);
 	DWORD dExitCode = 0;
@@ -608,6 +614,7 @@ int ScriptController::Execute()
 		}
 	}
 #endif
+	}
 	
 #ifdef CHILD_WATCHDOG
 	}	// while (!bChildConfirmed && !m_bTerminated)
@@ -646,6 +653,16 @@ void ScriptController::Terminate()
 
 	debug("Stopped %s", m_szInfoName);
 }
+
+void ScriptController::Detach()
+{
+	debug("Detaching %s", m_szInfoName);
+	m_bDetached = true;
+	FILE* pReadpipe = m_pReadpipe;
+	m_pReadpipe = NULL;
+	fclose(pReadpipe);
+}
+	
 
 bool ScriptController::ReadLine(char* szBuf, int iBufSize, FILE* pStream)
 {

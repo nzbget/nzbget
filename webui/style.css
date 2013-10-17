@@ -1204,6 +1204,11 @@ ul.help > li {
 	margin-bottom: 0;
 }
 
+.table .btn-success,
+.table .btn-success:hover {
+	color: #ffffff;
+}
+
 .btn-group {
 	margin-right: 9px;
 }
@@ -1339,6 +1344,10 @@ ul.help > li {
 }
 
 span.help-option-title {
+	color: #8D1212;
+}
+
+.failure-message {
 	color: #8D1212;
 }
 
@@ -1527,7 +1536,60 @@ div.control-group.last-group {
 	opacity: 0.4;
 }
 
-/*#ScriptListDialog_ScriptTable*/
+/* UPDATE DIALOG */
+
+.table .update-release-notes {
+	color: #005580;
+	font-size: 11px;
+	height: 10px;
+	outline: none;
+}
+
+#UpdateDialog_InstallStable,
+#UpdateDialog_InstallTesting,
+#UpdateDialog_InstallDevel {
+	margin-top: 5px;
+}
+
+.table .update-row-name {
+	font-weight: bold;
+	padding-top: 14px;
+}
+
+#UpdateDialog_Versions #UpdateDialog_AvailRow td:hover {
+	background-color: #f5f5f5;
+}
+
+#UpdateDialog_Versions #UpdateDialog_AvailRow td:first-child:hover,
+#UpdateDialog_Versions tr:hover td {
+	background-color: #ffffff;
+}
+
+#UpdateProgressDialog .modal-body {
+	min-height: 280px;
+	position: relative;
+}
+
+#UpdateProgressDialog_Log {
+	min-height: 270px;
+	background-color: #222222;
+	color: #cccccc;
+	padding: 3px 6px;
+	margin-bottom: 0px;
+	position: absolute;
+	top: 15px;
+	bottom: 15px;
+	left: 15px;
+	right: 15px;
+	overflow-y: auto;
+	-webkit-border-radius: 3px;
+	 -moz-border-radius: 3px;
+		  border-radius: 3px;
+}
+
+.update-log-error {
+	color: #ff0000;
+}
 
 /* FEED FILTER DIALOG */
 
