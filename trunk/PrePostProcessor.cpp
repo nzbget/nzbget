@@ -541,8 +541,18 @@ void PrePostProcessor::CheckDiskSpace()
 	long long lFreeSpace = Util::FreeDiskSize(g_pOptions->GetDestDir());
 	if (lFreeSpace > -1 && lFreeSpace / 1024 / 1024 < g_pOptions->GetDiskSpace())
 	{
-		warn("Low disk space. Pausing download");
+		warn("Low disk space on %s. Pausing download", g_pOptions->GetDestDir());
 		g_pOptions->SetPauseDownload(true);
+	}
+
+	if (!Util::EmptyStr(g_pOptions->GetInterDir()))
+	{
+		lFreeSpace = Util::FreeDiskSize(g_pOptions->GetInterDir());
+		if (lFreeSpace > -1 && lFreeSpace / 1024 / 1024 < g_pOptions->GetDiskSpace())
+		{
+			warn("Low disk space on %s. Pausing download", g_pOptions->GetInterDir());
+			g_pOptions->SetPauseDownload(true);
+		}
 	}
 }
 
