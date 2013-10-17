@@ -75,7 +75,7 @@ private:
 		bool			MatchValue(const char* szStrValue, const long long iIntValue);
 		bool			MatchText(const char* szStrValue);
 		bool			MatchRegex(const char* szStrValue);
-		void			FillWildMaskRefValues(const char* szStrValue, WildMask* pMask);
+		void			FillWildMaskRefValues(const char* szStrValue, WildMask* pMask, int iRefOffset);
 		void			FillRegExRefValues(const char* szStrValue, RegEx* pRegEx);
 
 	public:
