@@ -500,7 +500,7 @@ var Config = (new function($)
 		$('#ConfigTable_filter').val('');
 		compactMode = UISettings.read('$Config_ViewCompact', 'no') == 'yes';
 		setViewMode();
-		
+
 		$(window).bind('beforeunload', userLeavesPage);
 
 		$ConfigNav.on('click', 'li > a', navClick);
@@ -1253,7 +1253,7 @@ var Config = (new function($)
 		UISettings.write('$Config_ViewCompact', compactMode ? 'yes' : 'no');
 		setViewMode();
 	}
-	
+
 	function setViewMode()
 	{
 		$('#Config_ViewCompact i').toggleClass('icon-ok', compactMode).toggleClass('icon-empty', !compactMode);
@@ -1388,7 +1388,7 @@ var Config = (new function($)
 	this.saveChanges = function()
 	{
 		$LeaveConfigDialog.modal('hide');
-		
+
 		var serverSaveRequest = prepareSaveRequest(false);
 
 		if (serverSaveRequest.length === 0)
@@ -1431,7 +1431,7 @@ var Config = (new function($)
 		}
 		configSaved = true;
 	}
-	
+
 	this.canLeaveTab = function(target)
 	{
 		if (!config || prepareSaveRequest(true).length === 0 || configSaved)
@@ -1443,7 +1443,7 @@ var Config = (new function($)
 		$LeaveConfigDialog.modal({backdrop: 'static'});
 		return false;
 	}
-	
+
 	function userLeavesPage(e)
 	{
 		if (config && !configSaved && !UISettings.connectionError && prepareSaveRequest(true).length > 0)
@@ -1451,7 +1451,7 @@ var Config = (new function($)
 			return "Discard changes?";
 		}
 	}
-	
+
 	this.discardChanges = function()
 	{
 		configSaved = true;
@@ -1697,6 +1697,13 @@ var Config = (new function($)
 				$('#ConfigReloadTransmit').hide();
 				$('#ConfigReloadAction').text('The program has been stopped.');
 			});
+	}
+
+	/*** UPDATE ********************************************************************/
+
+	this.checkUpdates = function()
+	{
+		UpdateDialog.showModal();
 	}
 }(jQuery));
 
@@ -2270,4 +2277,333 @@ var RestoreSettingsDialog = (new function($)
 		setTimeout(function() { restoreClick(checkedRows); }, 0);
 	}
 
+}(jQuery));
+
+
+/*** UPDATE DIALOG *******************************************************/
+
+var UpdateDialog = (new function($)
+{
+	'use strict'
+
+	// Controls
+	var $UpdateDialog;
+	var $UpdateProgressDialog;
+	var $UpdateProgressDialog_Log;
+	
+	// State
+	var VersionInfo;
+	var PackageInfo;
+	var UpdateInfo;
+	var lastUpTimeSec;
+	var installing = false;
+
+	this.init = function()
+	{
+		$UpdateDialog = $('#UpdateDialog');
+		$('#UpdateDialog_InstallStable,#UpdateDialog_InstallTesting,#UpdateDialog_InstallDevel').click(install);
+		$UpdateProgressDialog = $('#UpdateProgressDialog');
+		$UpdateProgressDialog_Log = $('#UpdateProgressDialog_Log');
+
+		$UpdateDialog.on('hidden', resumeRefresher);
+		$UpdateProgressDialog.on('hidden', resumeRefresher);
+	}
+
+	function resumeRefresher()
+	{
+		if (!installing)
+		{
+			Refresher.resume();
+		}
+	}
+	
+	this.showModal = function()
+	{
+		$('#UpdateDialog_Install').hide();
+		$('#UpdateDialog_CheckProgress').show();
+		$('#UpdateDialog_CheckFailed').hide();
+		$('#UpdateDialog_Versions').hide();
+		$('#UpdateDialog_UpdateAvail').hide();
+		$('#UpdateDialog_UpdateNotAvail').hide();
+		$('#UpdateDialog_UpdateNoInfo').hide();
+		$('#UpdateDialog_InstalledInfo').show();
+
+		$('#UpdateDialog_VerInstalled').text(Options.option('Version'));
+		
+		PackageInfo = {};
+		VersionInfo = {};
+		UpdateInfo = {};
+
+		installing = false;
+		Refresher.pause();
+
+		$UpdateDialog.modal({backdrop: 'static'});
+
+		RPC.call('readurl', ['http://nzbget.sourceforge.net/info/nzbget-version.php?nocache=' + new Date().getTime(), 'version info'], loadedUpstreamInfo, error);
+	}
+	
+	function error(e)
+	{
+		$('#UpdateDialog_CheckProgress').hide();
+		$('#UpdateDialog_CheckFailed').show();
+	}
+
+	function parseJsonP(jsonp)
+	{
+		var p = jsonp.indexOf('{');
+		var obj = JSON.parse(jsonp.substr(p, 10000));
+		return obj;
+	}
+	
+	function loadedUpstreamInfo(data)
+	{
+		VersionInfo = parseJsonP(data);
+		if (VersionInfo['devel-version'])
+		{
+			loadPackageInfo();
+		}
+		else
+		{
+			loadSvnVerData();
+		}
+	}
+
+	function loadSvnVerData()
+	{
+		// fetching devel version number from svn viewer
+		RPC.call('readurl', ['http://svn.code.sf.net/p/nzbget/code/trunk/', 'svn revision info'], 
+			function(svnRevData)
+			{
+				RPC.call('readurl', ['http://svn.code.sf.net/p/nzbget/code/trunk/configure.ac', 'svn branch info'], 
+					function(svnBranchData)
+					{
+						var rev = svnRevData.match(/.*Revision (\d+).*/);
+						if (rev.length > 1)
+						{
+							var ver = svnBranchData.match(/.*AM_INIT_AUTOMAKE\(nzbget, (.*)\).*/);
+							if (ver.length > 1)
+							{
+								VersionInfo['devel-version'] = ver[1] + '-r' + rev[1];
+							}
+						}
+						
+						loadPackageInfo();
+					}, error);
+			}, error);
+	}
+	
+	function loadPackageInfo()
+	{
+		$.get('package-info.json', loadedPackageInfo, 'html').fail(loadedAll);
+	}
+	
+	function loadedPackageInfo(data)
+	{
+		PackageInfo = parseJsonP(data);
+		if (PackageInfo['update-info-link'])
+		{
+			RPC.call('readurl', [PackageInfo['update-info-link'], 'update info'], loadedUpdateInfo, loadedAll);
+		}
+		else if (PackageInfo['update-info-script'])
+		{
+			RPC.call('checkupdates', [], loadedUpdateInfo, loadedAll);
+		}
+		else
+		{
+			loadedAll();
+		}
+	}
+
+	function loadedUpdateInfo(data)
+	{
+		UpdateInfo = parseJsonP(data);
+		loadedAll();
+	}
+	
+	function formatTesting(str)
+	{
+		return str.replace('-testing-', '-');
+	}
+	
+	function revision(version)
+	{
+		var rev = version.match(/.*r(\d+)/);
+		return rev && rev.length > 1 ? parseInt(rev[1]) : 0;
+	}
+
+	function vernumber(version)
+	{
+		var ver = version.match(/([\d.]+).*/);
+		return ver && ver.length > 1 ? parseFloat(ver[1]) : 0;
+	}
+	
+	function loadedAll()
+	{
+		var installedVersion = Options.option('Version');
+
+		$('#UpdateDialog_CheckProgress').hide();
+		$('#UpdateDialog_Versions').show();
+		$('#UpdateDialog_InstalledInfo').show();
+
+		$('#UpdateDialog_CurStable').text(VersionInfo['stable-version'] ? VersionInfo['stable-version'] : 'no data');
+		$('#UpdateDialog_CurTesting').text(VersionInfo['testing-version'] ? formatTesting(VersionInfo['testing-version']) : 'no data');
+		$('#UpdateDialog_CurDevel').text(VersionInfo['devel-version'] ? formatTesting(VersionInfo['devel-version']) : 'no data');
+
+		$('#UpdateDialog_CurNotesStable').attr('href', VersionInfo['stable-release-notes']);
+		$('#UpdateDialog_CurNotesTesting').attr('href', VersionInfo['testing-release-notes']);
+		$('#UpdateDialog_CurNotesDevel').attr('href', VersionInfo['devel-release-notes']);
+		Util.show('#UpdateDialog_CurNotesStable', VersionInfo['stable-release-notes']);
+		Util.show('#UpdateDialog_CurNotesTesting', VersionInfo['testing-release-notes']);
+		Util.show('#UpdateDialog_CurNotesDevel', VersionInfo['devel-release-notes']);
+	
+		$('#UpdateDialog_AvailStable').text(UpdateInfo['stable-version'] ? UpdateInfo['stable-version'] : 'not available');
+		$('#UpdateDialog_AvailTesting').text(UpdateInfo['testing-version'] ? formatTesting(UpdateInfo['testing-version']) : 'not available');
+		$('#UpdateDialog_AvailDevel').text(UpdateInfo['devel-version'] ? formatTesting(UpdateInfo['devel-version']) : 'not available');
+
+		$('#UpdateDialog_AvailNotesStable').attr('href', UpdateInfo['stable-package-info']);
+		$('#UpdateDialog_AvailNotesTesting').attr('href', UpdateInfo['testing-package-info']);
+		$('#UpdateDialog_AvailNotesDevel').attr('href', UpdateInfo['devel-package-info']);
+		Util.show('#UpdateDialog_AvailNotesStableBlock', UpdateInfo['stable-package-info']);
+		Util.show('#UpdateDialog_AvailNotesTestingBlock', UpdateInfo['testing-package-info']);
+		Util.show('#UpdateDialog_AvailNotesDevelBlock', UpdateInfo['devel-package-info']);
+
+		var installedRev = revision(installedVersion);
+		var installedVer = vernumber(installedVersion);
+		var installedStable = installedRev === 0 && installedVersion.indexOf('testing') === -1;
+		
+		var canInstallStable = UpdateInfo['stable-version'] && 
+			((installedStable && installedVer < vernumber(UpdateInfo['stable-version'])) || 
+			 (!installedStable && installedVer <= vernumber(UpdateInfo['stable-version'])));
+		var canInstallTesting = UpdateInfo['testing-version'] && 
+			((installedStable && installedVer < vernumber(UpdateInfo['testing-version'])) || 
+			 (!installedStable && (installedRev === 0 || installedRev < revision(UpdateInfo['testing-version']))));
+		var canInstallDevel = UpdateInfo['devel-version'] && 
+			((installedStable && installedVer < vernumber(UpdateInfo['devel-version'])) || 
+			 (!installedStable && (installedRev === 0 || installedRev < revision(UpdateInfo['devel-version']))));
+		Util.show('#UpdateDialog_InstallStable', canInstallStable);
+		Util.show('#UpdateDialog_InstallTesting', canInstallTesting);
+		Util.show('#UpdateDialog_InstallDevel', canInstallDevel);
+		
+		var hasUpdateSource = PackageInfo['update-info-link'] || PackageInfo['update-info-script'];
+		var hasUpdateInfo = UpdateInfo['stable-version'] || UpdateInfo['testing-version'] || UpdateInfo['devel-version'];
+		var canUpdate = canInstallStable || canInstallTesting || canInstallDevel;
+		Util.show('#UpdateDialog_UpdateAvail', canUpdate);
+		Util.show('#UpdateDialog_UpdateNotAvail', hasUpdateInfo && !canUpdate);
+		Util.show('#UpdateDialog_UpdateNoInfo', !hasUpdateSource);
+		Util.show('#UpdateDialog_CheckFailed', hasUpdateSource && !hasUpdateInfo);
+		$('#UpdateDialog_AvailRow').toggleClass('hide', !hasUpdateInfo);
+	}
+	
+	function install(e)
+	{
+		e.preventDefault();
+		var kind = $(this).attr('data-kind');
+		var script = PackageInfo['install-script'];
+		var info = PackageInfo['install-' + kind + '-info'];
+		
+		if (!script)
+		{
+			alert('Something is wrong with a package configuration file "package-info.json".');
+			return;
+		}
+
+		RPC.call('status', [], function(status)
+			{
+				lastUpTimeSec = status.UpTimeSec;
+				RPC.call('startupdate', [kind], updateStarted);
+			});
+	}
+	
+	function updateStarted(started)
+	{
+		if (!started)
+		{
+			Notification.show('#Notif_StartUpdate_Failed');
+			return;
+		}
+
+		installing = true;
+		$UpdateDialog.fadeOut(250, function()
+			{
+				$UpdateProgressDialog_Log.text('');
+				$UpdateProgressDialog.fadeIn(250, function()
+					{
+						$UpdateDialog.modal('hide');
+						$UpdateProgressDialog.modal({backdrop: 'static'});
+						updateLog();
+					});
+			});
+	}
+	
+	function updateLog()
+	{
+		RPC.call('logupdate', [0, 100], function(data)
+			{
+				updateLogTable(data);
+				setTimeout(updateLog, 500);
+			},
+			function()
+			{
+				// rpc-failure: the program has been terminated. Waiting for new instance.
+				setLogContentAndScroll($UpdateProgressDialog_Log.html() + '\n' + 'NZBGet has been terminated. Waiting for restart...');
+				setTimeout(checkStatus, 500);
+			},
+			1000);
+	}
+
+	function setLogContentAndScroll(html)
+	{
+		var scroll = $UpdateProgressDialog_Log.prop('scrollHeight') - $UpdateProgressDialog_Log.prop('scrollTop') === $UpdateProgressDialog_Log.prop('clientHeight');
+		$UpdateProgressDialog_Log.html(html);
+		if (scroll)
+		{
+			$UpdateProgressDialog_Log.scrollTop($UpdateProgressDialog_Log.prop('scrollHeight'));
+		}
+	}
+	
+	function updateLogTable(messages)
+	{
+		var html = '';
+		for (var i=0; i < messages.length; i++)
+		{
+			var message = messages[i];
+			var text = Util.textToHtml(message.Text);
+			if (message.Kind === 'ERROR')
+			{
+				text = '<span class="update-log-error">' + text + '</span>';
+			}
+			html = html + text + '\n';
+		}
+		setLogContentAndScroll(html);
+	}
+	
+	function checkStatus()
+	{
+		RPC.call('status', [], function(status)
+			{
+				// OK, checking if it is a restarted instance
+				if (status.UpTimeSec >= lastUpTimeSec)
+				{
+					// the old instance is not restarted yet
+					// waiting 0.5 sec. and retrying
+					setTimeout(checkStatus, 500);
+				}
+				else
+				{
+					// restarted successfully, refresh page
+					setLogContentAndScroll($UpdateProgressDialog_Log.html() + '\n' + 'Successfully started. Refreshing the page...');
+					setTimeout(function()
+						{
+							document.location.reload(true);
+						}, 1000);
+				}
+			},
+			function()
+			{
+				// Failure, waiting 0.5 sec. and retrying
+				setTimeout(checkStatus, 500);
+			},
+			1000);
+	}
+	
 }(jQuery));

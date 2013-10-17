@@ -163,6 +163,7 @@ var Frontend = (new function($)
 		Config.init({ updateTabInfo: updateTabInfo });
 		ConfigBackupRestore.init();
 		ConfirmDialog.init();
+		UpdateDialog.init();
 		AlertDialog.init();
 		ScriptListDialog.init();
 		RestoreSettingsDialog.init();

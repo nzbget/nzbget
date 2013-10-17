@@ -230,6 +230,7 @@ var Util = (new function($)
 			$elem.css({ top: '' });
 		}
 	}
+	
 }(jQuery));
 
 
@@ -417,7 +418,7 @@ var RPC = (new function($)
 	this.defaultFailureCallback;
 	this.connectErrorMessage = 'Cannot establish connection';
 
-	this.call = function(method, params, completed_callback, failure_callback)
+	this.call = function(method, params, completed_callback, failure_callback, timeout)
 	{
 		var _this = this;
 		
@@ -425,6 +426,11 @@ var RPC = (new function($)
 		var xhr = new XMLHttpRequest();
 
 		xhr.open('post', this.rpcUrl);
+		
+		if (timeout)
+		{
+			xhr.timeout = timeout;
+		}
 
 		// Example for cross-domain access:
 		//xhr.open('post', 'http://localhost:6789/jsonrpc');

@@ -51,6 +51,8 @@
 #include "FeedCoordinator.h"
 #include "ServerPool.h"
 #include "Util.h"
+#include "WebDownloader.h"
+#include "Maintenance.h"
 
 extern Options* g_pOptions;
 extern QueueCoordinator* g_pQueueCoordinator;
@@ -59,8 +61,235 @@ extern PrePostProcessor* g_pPrePostProcessor;
 extern Scanner* g_pScanner;
 extern FeedCoordinator* g_pFeedCoordinator;
 extern ServerPool* g_pServerPool;
+extern Maintenance* g_pMaintenance;
 extern void ExitProc();
 extern void Reload();
+
+
+class ErrorXmlCommand: public XmlCommand
+{
+private:
+	int					m_iErrCode;
+	const char*			m_szErrText;
+
+public:
+						ErrorXmlCommand(int iErrCode, const char* szErrText);
+	virtual void		Execute();
+};
+
+class PauseUnpauseXmlCommand: public XmlCommand
+{
+public:
+	enum EPauseAction
+	{
+		paDownload,
+		paDownload2,
+		paPostProcess,
+		paScan
+	};
+
+private:
+	bool			m_bPause;
+	EPauseAction	m_eEPauseAction;
+
+public:
+						PauseUnpauseXmlCommand(bool bPause, EPauseAction eEPauseAction);
+	virtual void		Execute();
+};
+
+class ScheduleResumeXmlCommand: public XmlCommand
+{
+public:
+	virtual void		Execute();
+};
+
+class ShutdownXmlCommand: public XmlCommand
+{
+public:
+	virtual void		Execute();
+};
+
+class ReloadXmlCommand: public XmlCommand
+{
+public:
+	virtual void		Execute();
+};
+
+class VersionXmlCommand: public XmlCommand
+{
+public:
+	virtual void		Execute();
+};
+
+class DumpDebugXmlCommand: public XmlCommand
+{
+public:
+	virtual void		Execute();
+};
+
+class SetDownloadRateXmlCommand: public XmlCommand
+{
+public:
+	virtual void		Execute();
+};
+
+class StatusXmlCommand: public XmlCommand
+{
+public:
+	virtual void		Execute();
+};
+
+class LogXmlCommand: public XmlCommand
+{
+protected:
+	virtual Log::Messages*	LockMessages();
+	virtual void			UnlockMessages();
+public:
+	virtual void		Execute();
+};
+
+class NzbInfoXmlCommand: public XmlCommand
+{
+protected:
+	void				AppendNZBInfoFields(NZBInfo* pNZBInfo);
+};
+
+class ListFilesXmlCommand: public XmlCommand
+{
+public:
+	virtual void		Execute();
+};
+
+class ListGroupsXmlCommand: public NzbInfoXmlCommand
+{
+public:
+	virtual void		Execute();
+};
+
+class EditQueueXmlCommand: public XmlCommand
+{
+public:
+	virtual void		Execute();
+};
+
+class DownloadXmlCommand: public XmlCommand
+{
+public:
+	virtual void		Execute();
+};
+
+class PostQueueXmlCommand: public NzbInfoXmlCommand
+{
+public:
+	virtual void		Execute();
+};
+
+class WriteLogXmlCommand: public XmlCommand
+{
+public:
+	virtual void		Execute();
+};
+
+class ClearLogXmlCommand: public XmlCommand
+{
+public:
+	virtual void		Execute();
+};
+
+class ScanXmlCommand: public XmlCommand
+{
+public:
+	virtual void		Execute();
+};
+
+class HistoryXmlCommand: public NzbInfoXmlCommand
+{
+public:
+	virtual void		Execute();
+};
+
+class DownloadUrlXmlCommand: public XmlCommand
+{
+public:
+	virtual void		Execute();
+};
+
+class UrlQueueXmlCommand: public XmlCommand
+{
+public:
+	virtual void		Execute();
+};
+
+class ConfigXmlCommand: public XmlCommand
+{
+public:
+	virtual void		Execute();
+};
+
+class LoadConfigXmlCommand: public XmlCommand
+{
+public:
+	virtual void		Execute();
+};
+
+class SaveConfigXmlCommand: public XmlCommand
+{
+public:
+	virtual void		Execute();
+};
+
+class ConfigTemplatesXmlCommand: public XmlCommand
+{
+public:
+	virtual void		Execute();
+};
+
+class ViewFeedXmlCommand: public XmlCommand
+{
+private:
+	bool				m_bPreview;
+
+public:
+						ViewFeedXmlCommand(bool bPreview);
+	virtual void		Execute();
+};
+
+class FetchFeedsXmlCommand: public XmlCommand
+{
+public:
+	virtual void		Execute();
+};
+
+class EditServerXmlCommand: public XmlCommand
+{
+public:
+	virtual void		Execute();
+};
+
+class ReadUrlXmlCommand: public XmlCommand
+{
+public:
+	virtual void		Execute();
+};
+
+class CheckUpdatesXmlCommand: public XmlCommand
+{
+public:
+	virtual void		Execute();
+};
+
+class StartUpdateXmlCommand: public XmlCommand
+{
+public:
+	virtual void		Execute();
+};
+
+class LogUpdateXmlCommand: public LogXmlCommand
+{
+protected:
+	virtual Log::Messages*	LockMessages();
+	virtual void			UnlockMessages();
+};
 
 
 //*****************************************************************
@@ -437,6 +666,22 @@ XmlCommand* XmlRpcProcessor::CreateCommand(const char* szMethodName)
 	else if (!strcasecmp(szMethodName, "editserver"))
 	{
 		command = new EditServerXmlCommand();
+	}
+	else if (!strcasecmp(szMethodName, "readurl"))
+	{
+		command = new ReadUrlXmlCommand();
+	}
+	else if (!strcasecmp(szMethodName, "checkupdates"))
+	{
+		command = new CheckUpdatesXmlCommand();
+	}
+	else if (!strcasecmp(szMethodName, "startupdate"))
+	{
+		command = new StartUpdateXmlCommand();
+	}
+	else if (!strcasecmp(szMethodName, "logupdate"))
+	{
+		command = new LogUpdateXmlCommand();
 	}
 	else 
 	{
@@ -1034,6 +1279,7 @@ void StatusXmlCommand::Execute()
 	AppendResponse(IsJson() ? JSON_STATUS_END : XML_STATUS_END);
 }
 
+// struct[] log(idfrom, entries)
 void LogXmlCommand::Execute()
 {
 	int iIDFrom = 0;
@@ -1048,7 +1294,7 @@ void LogXmlCommand::Execute()
 	debug("iNrEntries=%i", iNrEntries);
 
 	AppendResponse(IsJson() ? "[\n" : "<array><data>\n");
-	Log::Messages* pMessages = g_pLog->LockMessages();
+	Log::Messages* pMessages = LockMessages();
 
 	int iStart = pMessages->size();
 	if (iNrEntries > 0)
@@ -1109,8 +1355,18 @@ void LogXmlCommand::Execute()
 
 	free(szItemBuf);
 
-	g_pLog->UnlockMessages();
+	UnlockMessages();
 	AppendResponse(IsJson() ? "\n]" : "</data></array>\n");
+}
+
+Log::Messages* LogXmlCommand::LockMessages()
+{
+	return g_pLog->LockMessages();
+}
+
+void LogXmlCommand::UnlockMessages()
+{
+	g_pLog->UnlockMessages();
 }
 
 // struct[] listfiles(int IDFrom, int IDTo, int NZBID) 
@@ -2787,4 +3043,138 @@ void EditServerXmlCommand::Execute()
 	}
 
 	BuildBoolResponse(bOK);
+}
+
+// string readurl(string url, string infoname)
+void ReadUrlXmlCommand::Execute()
+{
+	char* szURL;
+	if (!NextParamAsStr(&szURL))
+	{
+		BuildErrorResponse(2, "Invalid parameter (URL)");
+		return;
+	}
+	DecodeStr(szURL);
+
+	char* szInfoName;
+	if (!NextParamAsStr(&szInfoName))
+	{
+		BuildErrorResponse(2, "Invalid parameter (InfoName)");
+		return;
+	}
+	DecodeStr(szInfoName);
+
+	// generate temp file name
+	char szTempFileName[1024];
+	int iNum = 1;
+	while (iNum == 1 || Util::FileExists(szTempFileName))
+	{
+		snprintf(szTempFileName, 1024, "%sreadurl-%i.tmp", g_pOptions->GetTempDir(), iNum);
+		szTempFileName[1024-1] = '\0';
+		iNum++;
+	}
+
+	WebDownloader* pDownloader = new WebDownloader();
+	pDownloader->SetURL(szURL);
+	pDownloader->SetForce(true);
+	pDownloader->SetRetry(false);
+	pDownloader->SetOutputFilename(szTempFileName);
+	pDownloader->SetInfoName(szInfoName);
+
+	// do sync download
+	WebDownloader::EStatus eStatus = pDownloader->Download();
+	bool bOK = eStatus == WebDownloader::adFinished;
+
+	delete pDownloader;
+
+	if (bOK)
+	{
+		char* szFileContent = NULL;
+		int iFileContentLen = 0;
+		Util::LoadFileIntoBuffer(szTempFileName, &szFileContent, &iFileContentLen);
+		char* xmlContent = EncodeStr(szFileContent);
+		free(szFileContent);
+		AppendResponse(IsJson() ? "\"" : "<string>");
+		AppendResponse(xmlContent);
+		AppendResponse(IsJson() ? "\"" : "</string>");
+		free(xmlContent);
+	}
+	else
+	{
+		BuildErrorResponse(3, "Could not read url");
+	}
+
+	remove(szTempFileName);
+}
+
+// string checkupdates()
+void CheckUpdatesXmlCommand::Execute()
+{
+	char* szUpdateInfo = NULL;
+	bool bOK = g_pMaintenance->CheckUpdates(&szUpdateInfo);
+
+	if (bOK)
+	{
+		char* xmlContent = EncodeStr(szUpdateInfo);
+		free(szUpdateInfo);
+		AppendResponse(IsJson() ? "\"" : "<string>");
+		AppendResponse(xmlContent);
+		AppendResponse(IsJson() ? "\"" : "</string>");
+		free(xmlContent);
+	}
+	else
+	{
+		BuildErrorResponse(3, "Could not read update info from update-info-script");
+	}
+}
+
+// bool startupdate(string branch)
+void StartUpdateXmlCommand::Execute()
+{
+	if (!CheckSafeMethod())
+	{
+		return;
+	}
+
+	char* szBranch;
+	if (!NextParamAsStr(&szBranch))
+	{
+		BuildErrorResponse(2, "Invalid parameter (Branch)");
+		return;
+	}
+	DecodeStr(szBranch);
+
+	Maintenance::EBranch eBranch;
+	if (!strcasecmp(szBranch, "stable"))
+	{
+		eBranch = Maintenance::brStable;
+	}
+	else if (!strcasecmp(szBranch, "testing"))
+	{
+		eBranch = Maintenance::brTesting;
+	}
+	else if (!strcasecmp(szBranch, "devel"))
+	{
+		eBranch = Maintenance::brDevel;
+	}
+	else
+	{
+		BuildErrorResponse(2, "Invalid parameter (Branch)");
+		return;
+	}
+
+	bool bOK = g_pMaintenance->StartUpdate(eBranch);
+
+	BuildBoolResponse(bOK);
+}
+
+// struct[] logupdate(idfrom, entries)
+Log::Messages* LogUpdateXmlCommand::LockMessages()
+{
+	return g_pMaintenance->LockMessages();
+}
+
+void LogUpdateXmlCommand::UnlockMessages()
+{
+	g_pMaintenance->UnlockMessages();
 }

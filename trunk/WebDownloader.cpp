@@ -63,6 +63,7 @@ WebDownloader::WebDownloader()
 	m_eStatus = adUndefined;
 	m_szOriginalFilename = NULL;
 	m_bForce = false;
+	m_bRetry = true;
 	SetLastUpdateTimeNow();
 }
 
@@ -121,8 +122,13 @@ void WebDownloader::Run()
 
 	int iRemainedDownloadRetries = g_pOptions->GetRetries() > 0 ? g_pOptions->GetRetries() : 1;
 	int iRemainedConnectRetries = iRemainedDownloadRetries > 10 ? iRemainedDownloadRetries : 10;
-	m_iRedirects = 0;
+	if (!m_bRetry)
+	{
+		iRemainedDownloadRetries = 1;
+		iRemainedConnectRetries = 1;
+	}
 
+	m_iRedirects = 0;
 	EStatus Status = adFailed;
 
 	while (!IsStopped() && iRemainedDownloadRetries > 0 && iRemainedConnectRetries > 0)

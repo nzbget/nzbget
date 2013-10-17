@@ -65,6 +65,8 @@ private:
 	const char*			m_szLogPrefix;
 	EnvironmentStrings	m_environmentStrings;
 	bool				m_bTerminated;
+	bool				m_bDetached;
+	FILE*				m_pReadpipe;
 #ifdef WIN32
 	HANDLE				m_hProcess;
 	char				m_szCmdLine[2048];
@@ -88,6 +90,7 @@ public:
 	virtual				~ScriptController();
 	int					Execute();
 	void				Terminate();
+	void				Detach();
 
 	void				SetScript(const char* szScript) { m_szScript = szScript; }
 	const char*			GetScript() { return m_szScript; }
