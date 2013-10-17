@@ -155,7 +155,7 @@ bool FeedFilter::Term::MatchText(const char* szStrValue)
 			bMatch = *szWord && mask.Match(szWord);
 			if (bMatch)
 			{
-				FillWildMaskRefValues(szWord, &mask);
+				FillWildMaskRefValues(szWord, &mask, 0);
 				break;
 			}
 			szWord = strtok_r(NULL, WORD_SEPARATORS, &saveptr);
@@ -166,14 +166,17 @@ bool FeedFilter::Term::MatchText(const char* szStrValue)
 	{
 		// Substring-search
 
+		int iRefOffset = 1;
 		const char* szFormat = "*%s*";
 		if (iParamLen >= 2 && m_szParam[0] == '*' && m_szParam[iParamLen-1] == '*')
 		{
 			szFormat = "%s";
+			iRefOffset = 0;
 		}
 		else if (iParamLen >= 1 && m_szParam[0] == '*')
 		{
 			szFormat = "%s*";
+			iRefOffset = 0;
 		}
 		else if (iParamLen >= 1 && m_szParam[iParamLen-1] == '*')
 		{
@@ -190,7 +193,7 @@ bool FeedFilter::Term::MatchText(const char* szStrValue)
 
 		if (bMatch)
 		{
-			FillWildMaskRefValues(szStrValue, &mask);
+			FillWildMaskRefValues(szStrValue, &mask, iRefOffset);
 		}
 
 		free(szMask);
@@ -547,14 +550,14 @@ bool FeedFilter::Term::ParseIntParam(const char* szParam, long long* pIntValue)
 	return true;
 }
 
-void FeedFilter::Term::FillWildMaskRefValues(const char* szStrValue, WildMask* pMask)
+void FeedFilter::Term::FillWildMaskRefValues(const char* szStrValue, WildMask* pMask, int iRefOffset)
 {
 	if (!m_pRefValues)
 	{
 		return;
 	}
 
-	for (int i = 0; i < pMask->GetMatchCount(); i++)
+	for (int i = iRefOffset; i < pMask->GetMatchCount(); i++)
 	{
 		int iLen = pMask->GetMatchLen(i);
 		char* szValue = (char*)malloc(iLen + 1);
