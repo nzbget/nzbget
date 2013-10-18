@@ -364,6 +364,14 @@
 			>
 		</File>
 		<File
+			RelativePath=".\Maintenance.h"
+			>
+		</File>
+		<File
+			RelativePath=".\Maintenance.cpp"
+			>
+		</File>
+		<File
 			RelativePath=".\MessageBase.h"
 			>
 		</File>
