@@ -84,6 +84,7 @@ protected:
 	bool				Cleanup();
 	void				CheckArchiveFiles(bool bScanNonStdFiles);
 	void				SetProgressLabel(const char* szProgressLabel);
+	bool				CheckHasPar(const char* szDirectory);
 #ifndef DISABLE_PARCHECK
 	void				RequestParCheck(bool bRename);
 #endif

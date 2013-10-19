@@ -419,6 +419,8 @@ bool UnpackController::Cleanup()
 
 	if (m_bUnpackOK)
 	{
+		CheckHasPar(m_szUnpackDir);
+
 		// moving files back
 		DirBrowser dir(m_szUnpackDir);
 		while (const char* filename = dir.Next())
@@ -444,10 +446,6 @@ bool UnpackController::Cleanup()
 				}
 
 				extractedFiles.push_back(strdup(filename));
-
-				int iLen = strlen(filename);
-				bool bParFile = iLen > 5 && !strcasecmp(filename + iLen - 5, ".par2");
-				m_bHasParInArchive |= bParFile;
 			}
 		}
 	}
@@ -512,6 +510,38 @@ bool UnpackController::Cleanup()
 	extractedFiles.Clear();
 
 	return bOK;
+}
+
+bool UnpackController::CheckHasPar(const char* szDirectory)
+{
+	DirBrowser dir(szDirectory);
+	while (const char* filename = dir.Next())
+	{
+		if (strcmp(filename, ".") && strcmp(filename, "..") &&
+			strcmp(filename, ".AppleDouble") && strcmp(filename, ".DS_Store"))
+		{
+			char szSrcFile[1024];
+			snprintf(szSrcFile, 1024, "%s%c%s", m_szUnpackDir, PATH_SEPARATOR, filename);
+			szSrcFile[1024-1] = '\0';
+
+			if (Util::DirectoryExists(szSrcFile))
+			{
+				CheckHasPar(szSrcFile);
+			}
+			else
+			{
+				int iLen = strlen(filename);
+				bool bParFile = iLen > 5 && !strcasecmp(filename + iLen - 5, ".par2");
+				m_bHasParInArchive |= bParFile;
+			}
+
+			if (m_bHasParInArchive)
+			{
+				return true;
+			}
+		}
+	}
+	return m_bHasParInArchive;
 }
 
 /**
