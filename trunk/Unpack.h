@@ -70,7 +70,6 @@ private:
 	bool				m_bUnpackOK;
 	bool				m_bUnpackStartError;
 	bool				m_bCleanedUpDisk;
-	bool				m_bHasParInArchive;
 	EUnpacker			m_eUnpacker;
 	FileList			m_archiveFiles;
 
@@ -84,9 +83,8 @@ protected:
 	bool				Cleanup();
 	void				CheckArchiveFiles(bool bScanNonStdFiles);
 	void				SetProgressLabel(const char* szProgressLabel);
-	bool				CheckHasPar(const char* szDirectory);
 #ifndef DISABLE_PARCHECK
-	void				RequestParCheck(bool bRename);
+	void				RequestParCheck();
 #endif
 
 public:

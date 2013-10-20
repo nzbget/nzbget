@@ -596,14 +596,7 @@ void PrePostProcessor::CheckPostQueue()
 					pPostInfo->SetStage(PostInfo::ptQueued);
 				}
 			}
-			else if (pPostInfo->GetRequestParRename())
-			{
-				pPostInfo->GetNZBInfo()->SetRenameStatus(NZBInfo::rsNone);
-				pPostInfo->SetRequestParRename(false);
-				pPostInfo->SetStage(PostInfo::ptQueued);
-				DeletePostThread(pPostInfo);
-			}
-
+			
 #endif
 			if (pPostInfo->GetDeleted())
 			{

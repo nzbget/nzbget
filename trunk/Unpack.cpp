@@ -100,7 +100,6 @@ void UnpackController::Run()
 	m_szName[1024-1] = '\0';
 
 	m_bCleanedUpDisk = false;
-	m_bHasParInArchive = false;
 	m_szPassword[0] = '\0';
 	m_szFinalDir[0] = '\0';
 	
@@ -168,7 +167,7 @@ void UnpackController::Run()
 #ifndef DISABLE_PARCHECK
 		if (bUnpack && m_pPostInfo->GetNZBInfo()->GetParStatus() <= NZBInfo::psSkipped && m_bHasParFiles)
 		{
-			RequestParCheck(m_pPostInfo->GetNZBInfo()->GetRenameStatus() <= NZBInfo::rsSkipped);
+			RequestParCheck();
 		}
 		else
 #endif
@@ -281,21 +280,19 @@ void UnpackController::Completed()
 		PrintMessage(Message::mkInfo, "%s %s", m_szInfoNameUp, "successful");
 		m_pPostInfo->GetNZBInfo()->SetUnpackStatus(NZBInfo::usSuccess);
 		m_pPostInfo->GetNZBInfo()->SetUnpackCleanedUpDisk(m_bCleanedUpDisk);
-		m_pPostInfo->SetStage(PostInfo::ptQueued);
-#ifndef DISABLE_PARCHECK
-		if (m_bHasParInArchive)
+		if (g_pOptions->GetParRename())
 		{
-			PrintMessage(Message::mkInfo, "%s found par-files in archive", m_szInfoNameUp);
-			RequestParCheck(true);
+			//request par-rename check fro extracted files
+			m_pPostInfo->GetNZBInfo()->SetRenameStatus(NZBInfo::rsNone);
 		}
-#endif
+		m_pPostInfo->SetStage(PostInfo::ptQueued);
 	}
 	else
 	{
 #ifndef DISABLE_PARCHECK
 		if (!m_bUnpackOK && m_pPostInfo->GetNZBInfo()->GetParStatus() <= NZBInfo::psSkipped && !m_bUnpackStartError && !GetTerminated() && m_bHasParFiles)
 		{
-			RequestParCheck(false);
+			RequestParCheck();
 		}
 		else
 #endif
@@ -308,17 +305,10 @@ void UnpackController::Completed()
 }
 
 #ifndef DISABLE_PARCHECK
-void UnpackController::RequestParCheck(bool bRename)
+void UnpackController::RequestParCheck()
 {
-	PrintMessage(Message::mkInfo, "%s requested %s", m_szInfoNameUp, bRename ? "par-rename": "par-check/repair");
-	if (bRename)
-	{
-		m_pPostInfo->SetRequestParRename(true);
-	}
-	else
-	{
-		m_pPostInfo->SetRequestParCheck(true);
-	}
+	PrintMessage(Message::mkInfo, "%s requested par-check/repair", m_szInfoNameUp);
+	m_pPostInfo->SetRequestParCheck(true);
 	m_pPostInfo->SetStage(PostInfo::ptFinished);
 }
 #endif
@@ -419,8 +409,6 @@ bool UnpackController::Cleanup()
 
 	if (m_bUnpackOK)
 	{
-		CheckHasPar(m_szUnpackDir);
-
 		// moving files back
 		DirBrowser dir(m_szUnpackDir);
 		while (const char* filename = dir.Next())
@@ -510,38 +498,6 @@ bool UnpackController::Cleanup()
 	extractedFiles.Clear();
 
 	return bOK;
-}
-
-bool UnpackController::CheckHasPar(const char* szDirectory)
-{
-	DirBrowser dir(szDirectory);
-	while (const char* filename = dir.Next())
-	{
-		if (strcmp(filename, ".") && strcmp(filename, "..") &&
-			strcmp(filename, ".AppleDouble") && strcmp(filename, ".DS_Store"))
-		{
-			char szSrcFile[1024];
-			snprintf(szSrcFile, 1024, "%s%c%s", m_szUnpackDir, PATH_SEPARATOR, filename);
-			szSrcFile[1024-1] = '\0';
-
-			if (Util::DirectoryExists(szSrcFile))
-			{
-				CheckHasPar(szSrcFile);
-			}
-			else
-			{
-				int iLen = strlen(filename);
-				bool bParFile = iLen > 5 && !strcasecmp(filename + iLen - 5, ".par2");
-				m_bHasParInArchive |= bParFile;
-			}
-
-			if (m_bHasParInArchive)
-			{
-				return true;
-			}
-		}
-	}
-	return m_bHasParInArchive;
 }
 
 /**
