@@ -570,7 +570,6 @@ private:
 	bool				m_bWorking;
 	bool				m_bDeleted;
 	bool				m_bRequestParCheck;
-	bool				m_bRequestParRename;
 	EStage				m_eStage;
 	char*				m_szProgressLabel;
 	int					m_iFileProgress;
@@ -611,8 +610,6 @@ public:
 	void				SetDeleted(bool bDeleted) { m_bDeleted = bDeleted; }
 	bool				GetRequestParCheck() { return m_bRequestParCheck; }
 	void				SetRequestParCheck(bool bRequestParCheck) { m_bRequestParCheck = bRequestParCheck; }
-	bool				GetRequestParRename() { return m_bRequestParRename; }
-	void				SetRequestParRename(bool bRequestParRename) { m_bRequestParRename = bRequestParRename; }
 	void				AppendMessage(Message::EKind eKind, const char* szText);
 	Thread*				GetPostThread() { return m_pPostThread; }
 	void				SetPostThread(Thread* pPostThread) { m_pPostThread = pPostThread; }

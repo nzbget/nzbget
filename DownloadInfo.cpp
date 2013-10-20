@@ -881,7 +881,6 @@ PostInfo::PostInfo()
 	m_bWorking = false;
 	m_bDeleted = false;
 	m_bRequestParCheck = false;
-	m_bRequestParRename = false;
 	m_szProgressLabel = strdup("");
 	m_iFileProgress = 0;
 	m_iStageProgress = 0;
