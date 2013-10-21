@@ -506,6 +506,15 @@ int ScriptController::Execute()
 		chdir(m_szWorkingDir);
 		environ = pEnvironmentStrings;
 		execvp(m_szScript, (char* const*)m_szArgs);
+
+		if (errno == EACCES)
+		{
+			fprintf(stdout, "[WARNING] Fixing permissions for %s\n", m_szScript);
+			fflush(stdout);
+			Util::FixExecPermission(m_szScript);
+			execvp(m_szScript, (char* const*)m_szArgs);
+		}
+
 		// NOTE: the text "[ERROR] Could not start " is checked later,
 		// by changing adjust the dependent code below.
 		fprintf(stdout, "[ERROR] Could not start %s: %s", m_szScript, strerror(errno));

@@ -878,6 +878,19 @@ bool Util::SameFilename(const char* szFilename1, const char* szFilename2)
 #endif
 }
 
+#ifndef WIN32
+void Util::FixExecPermission(const char* szFilename)
+{
+	struct stat buffer;
+	bool bOK = !stat(szFilename, &buffer);
+	if (bOK)
+	{
+		buffer.st_mode = buffer.st_mode | S_IXUSR | S_IXGRP | S_IXOTH;
+		chmod(szFilename, buffer.st_mode);
+	}
+}
+#endif
+
 char* Util::GetLastErrorMessage(char* szBuffer, int iBufLen)
 {
 	szBuffer[0] = '\0';

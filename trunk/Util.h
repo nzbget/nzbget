@@ -97,6 +97,7 @@ public:
 	static bool RenameBak(const char* szFilename, const char* szBakPart, bool bRemoveOldExtension, char* szNewNameBuf, int iNewNameBufSize);
 #ifndef WIN32
 	static bool ExpandHomePath(const char* szFilename, char* szBuffer, int iBufSize);
+	static void FixExecPermission(const char* szFilename);
 #endif
 	static void ExpandFileName(const char* szFilename, char* szBuffer, int iBufSize);
 	static void FormatFileSize(char* szBuffer, int iBufLen, long long lFileSize);
