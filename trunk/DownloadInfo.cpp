@@ -489,13 +489,13 @@ void NZBInfo::BuildDestDirName()
 {
 	char szDestDir[1024];
 
-	if (strlen(g_pOptions->GetInterDir()) == 0)
+	if (Util::EmptyStr(g_pOptions->GetInterDir()))
 	{
 		BuildFinalDirName(szDestDir, 1024);
 	}
 	else
 	{
-		snprintf(szDestDir, 1024, "%s%s", g_pOptions->GetInterDir(), GetName());
+		snprintf(szDestDir, 1024, "%s%s.#%i", g_pOptions->GetInterDir(), GetName(), GetID());
 		szDestDir[1024-1] = '\0';
 	}
 
