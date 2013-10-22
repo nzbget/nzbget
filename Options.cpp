@@ -1984,58 +1984,42 @@ void Options::SetOption(const char* optname, const char* value)
 	pOptEntry->SetLineNo(m_iConfigLine);
 	bool bOK = true;
 
-	bool bExpandVars = true;
-	int namelen = strlen(optname);
-	if (!strncasecmp(optname, "Feed", 4) && 
-		((namelen > 7 && !strcasecmp(optname + namelen - 7, ".Filter")) || !strcasecmp(optname + namelen - 4, ".Url")))
+	// expand variables
+	while (char* dollar = strstr(curvalue, "${"))
 	{
-		bExpandVars = false;
-	}
-
-	if (bExpandVars)
-	{
-		// expand variables
-		while (char* dollar = strstr(curvalue, "${"))
+		char* end = strchr(dollar, '}');
+		if (end)
 		{
-			char* end = strchr(dollar, '}');
-			if (end)
+			int varlen = (int)(end - dollar - 2);
+			char variable[101];
+			int maxlen = varlen < 100 ? varlen : 100;
+			strncpy(variable, dollar + 2, maxlen);
+			variable[maxlen] = '\0';
+			const char* varvalue = GetOption(variable);
+			if (varvalue)
 			{
-				int varlen = (int)(end - dollar - 2);
-				char variable[101];
-				int maxlen = varlen < 100 ? varlen : 100;
-				strncpy(variable, dollar + 2, maxlen);
-				variable[maxlen] = '\0';
-				const char* varvalue = GetOption(variable);
-				if (varvalue)
-				{
-					int newlen = strlen(varvalue);
-					char* newvalue = (char*)malloc(strlen(curvalue) - varlen - 3 + newlen + 1);
-					strncpy(newvalue, curvalue, dollar - curvalue);
-					strncpy(newvalue + (dollar - curvalue), varvalue, newlen);
-					strcpy(newvalue + (dollar - curvalue) + newlen, end + 1);
-					free(curvalue);
-					curvalue = newvalue;
-				}
-				else
-				{
-					ConfigError("Invalid value for option \"%s\": variable \"%s\" not found", optname, variable);
-					bOK = false;
-					break;
-				}
+				int newlen = strlen(varvalue);
+				char* newvalue = (char*)malloc(strlen(curvalue) - varlen - 3 + newlen + 1);
+				strncpy(newvalue, curvalue, dollar - curvalue);
+				strncpy(newvalue + (dollar - curvalue), varvalue, newlen);
+				strcpy(newvalue + (dollar - curvalue) + newlen, end + 1);
+				free(curvalue);
+				curvalue = newvalue;
 			}
 			else
 			{
-				ConfigError("Invalid value for option \"%s\": syntax error in variable-substitution \"%s\"", optname, curvalue);
 				bOK = false;
 				break;
 			}
 		}
+		else
+		{
+			bOK = false;
+			break;
+		}
 	}
 
-	if (bOK)
-	{
-		pOptEntry->SetValue(curvalue);
-	}
+	pOptEntry->SetValue(curvalue);
 
 	free(curvalue);
 }
