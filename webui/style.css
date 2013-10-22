@@ -1565,6 +1565,11 @@ div.control-group.last-group {
 	background-color: #ffffff;
 }
 
+#UpdateProgressDialog {
+	width: 640px;
+	margin-left: -320px;
+}
+
 #UpdateProgressDialog .modal-body {
 	min-height: 280px;
 	position: relative;
