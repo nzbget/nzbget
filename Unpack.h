@@ -71,7 +71,6 @@ private:
 	bool				m_bUnpackStartError;
 	bool				m_bCleanedUpDisk;
 	EUnpacker			m_eUnpacker;
-	FileList			m_archiveFiles;
 
 protected:
 	virtual bool		ReadLine(char* szBuf, int iBufSize, FILE* pStream);
@@ -86,9 +85,9 @@ protected:
 #ifndef DISABLE_PARCHECK
 	void				RequestParCheck();
 #endif
+	bool				FileHasRarSignature(const char* szFilename);
 
 public:
-	virtual				~UnpackController();
 	virtual void		Run();
 	virtual void		Stop();
 	static void			StartJob(PostInfo* pPostInfo);

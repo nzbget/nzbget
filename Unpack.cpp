@@ -72,11 +72,6 @@ bool UnpackController::FileList::Exists(const char* szFilename)
 	return false;
 }
 
-UnpackController::~UnpackController()
-{
-	m_archiveFiles.Clear();
-}
-
 void UnpackController::StartJob(PostInfo* pPostInfo)
 {
 	UnpackController* pUnpackController = new UnpackController();
@@ -372,26 +367,33 @@ void UnpackController::CheckArchiveFiles(bool bScanNonStdFiles)
 				m_bHasSevenZipMultiFiles = true;
 			}
 			else if (bScanNonStdFiles && !m_bHasNonStdRarFiles &&
-				!regExRarMultiSeq.Match(filename) && regExNumExt.Match(filename))
+				!regExRarMultiSeq.Match(filename) && regExNumExt.Match(filename) &&
+				FileHasRarSignature(szFullFilename))
 			{
-				// Check if file has RAR signature
-				char rarSignature[] = {0x52, 0x61, 0x72, 0x21, 0x1A, 0x07, 0x00};
-				char fileSignature[7];
-
-				FILE* infile;
-				infile = fopen(szFullFilename, "rb");
-				if (infile)
-				{
-					int cnt = (int)fread(fileSignature, 1, sizeof(fileSignature), infile);
-					fclose(infile);
-					if (cnt == sizeof(fileSignature) && !strcmp(rarSignature, fileSignature))
-					{
-						m_bHasNonStdRarFiles = true;
-					}
-				}
+				m_bHasNonStdRarFiles = true;
 			}
 		}
 	}
+}
+
+bool UnpackController::FileHasRarSignature(const char* szFilename)
+{
+	char rarSignature[] = {0x52, 0x61, 0x72, 0x21, 0x1A, 0x07, 0x00};
+	char fileSignature[7];
+
+	FILE* infile;
+	infile = fopen(szFilename, "rb");
+	if (infile)
+	{
+		int cnt = (int)fread(fileSignature, 1, sizeof(fileSignature), infile);
+		fclose(infile);
+		if (cnt == sizeof(fileSignature) && !strcmp(rarSignature, fileSignature))
+		{
+			return true;
+		}
+	}
+
+	return false;
 }
 
 bool UnpackController::Cleanup()
@@ -447,31 +449,10 @@ bool UnpackController::Cleanup()
 	{
 		PrintMessage(Message::mkInfo, "Deleting archive files");
 
-		// Delete rar-files (only files which were used by unrar)
-		for (FileList::iterator it = m_archiveFiles.begin(); it != m_archiveFiles.end(); it++)
-		{
-			char* szFilename = *it;
-
-			if (m_bInterDir || !extractedFiles.Exists(szFilename))
-			{
-				char szFullFilename[1024];
-				snprintf(szFullFilename, 1024, "%s%c%s", m_szDestDir, PATH_SEPARATOR, szFilename);
-				szFullFilename[1024-1] = '\0';
-
-				PrintMessage(Message::mkInfo, "Deleting file %s", szFilename);
-
-				if (remove(szFullFilename) != 0)
-				{
-					PrintMessage(Message::mkError, "Could not delete file %s", szFullFilename);
-				}
-			}
-		}
-
-		// Unfortunately 7-Zip doesn't print the processed archive-files to the output.
-		// Therefore we don't know for sure which files were extracted.
-		// We just delete all 7z-files in the directory.
-
-		RegEx regExSevenZip(".*\\.7z$|.*\\.7z\\.[0-9]*$");
+		RegEx regExRar(".*\\.rar$");
+		RegEx regExRarMultiSeq(".*\\.(r|s)[0-9][0-9]$");
+		RegEx regExSevenZip(".*\\.7z$|.*\\.7z\\.[0-9]+$");
+		RegEx regExNumExt(".*\\.[0-9]+$");
 
 		DirBrowser dir(m_szDestDir);
 		while (const char* filename = dir.Next())
@@ -480,8 +461,12 @@ bool UnpackController::Cleanup()
 			snprintf(szFullFilename, 1024, "%s%c%s", m_szDestDir, PATH_SEPARATOR, filename);
 			szFullFilename[1024-1] = '\0';
 
-			if (strcmp(filename, ".") && strcmp(filename, "..") && !Util::DirectoryExists(szFullFilename) 
-				&& regExSevenZip.Match(filename) && (m_bInterDir || !extractedFiles.Exists(filename)))
+			if (strcmp(filename, ".") && strcmp(filename, "..") &&
+				!Util::DirectoryExists(szFullFilename) &&
+				(m_bInterDir || !extractedFiles.Exists(filename)) &&
+				(regExRar.Match(filename) || regExSevenZip.Match(filename) ||
+				(regExRarMultiSeq.Match(filename) && FileHasRarSignature(szFullFilename)) ||
+				(m_bHasNonStdRarFiles && regExNumExt.Match(filename) && FileHasRarSignature(szFullFilename))))
 			{
 				PrintMessage(Message::mkInfo, "Deleting file %s", filename);
 
@@ -598,7 +583,6 @@ void UnpackController::AddMessage(Message::EKind eKind, const char* szText)
 	{
 		const char *szFilename = szText + 23;
 		debug("Filename: %s", szFilename);
-		m_archiveFiles.push_back(strdup(szFilename));
 		SetProgressLabel(szText + 7);
 	}
 
