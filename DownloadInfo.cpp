@@ -499,6 +499,10 @@ void NZBInfo::BuildDestDirName()
 		szDestDir[1024-1] = '\0';
 	}
 
+#ifdef WIN32
+	Util::Utf8ToAnsi(szDestDir, 1024);
+#endif
+
 	SetDestDir(szDestDir);
 }
 
@@ -536,6 +540,10 @@ void NZBInfo::BuildFinalDirName(char* szFinalDirBuf, int iBufSize)
 	snprintf(szBuffer, 1024, "%s%s", szFinalDirBuf, GetName());
 	szBuffer[1024-1] = '\0';
 	strncpy(szFinalDirBuf, szBuffer, iBufSize);
+
+#ifdef WIN32
+	Util::Utf8ToAnsi(szFinalDirBuf, iBufSize);
+#endif
 }
 
 int NZBInfo::CalcHealth()

@@ -423,7 +423,12 @@ int ScriptController::Execute()
 
 	char* szEnvironmentStrings = m_environmentStrings.GetStrings();
 
-	BOOL bOK = CreateProcess(NULL, szCmdLine, NULL, NULL, TRUE, NORMAL_PRIORITY_CLASS | CREATE_NO_WINDOW, szEnvironmentStrings, m_szWorkingDir, &StartupInfo, &ProcessInfo);
+	char szWorkingDir[260];
+	strncpy(szWorkingDir, m_szWorkingDir, 260);
+	szWorkingDir[260-1] = '\0';
+	Util::Utf8ToAnsi(szWorkingDir, strlen(m_szWorkingDir) + 1);
+
+	BOOL bOK = CreateProcess(NULL, szCmdLine, NULL, NULL, TRUE, NORMAL_PRIORITY_CLASS | CREATE_NO_WINDOW, szEnvironmentStrings, szWorkingDir, &StartupInfo, &ProcessInfo);
 	if (!bOK)
 	{
 		DWORD dwErrCode = GetLastError();

@@ -1114,6 +1114,18 @@ bool Util::RegReadStr(HKEY hKey, const char* szKeyName, const char* szValueName,
 	}
 	return false;
 }
+
+bool Util::Utf8ToAnsi(char* szBuffer, int iBufLen)
+{
+	WCHAR* wstr = (WCHAR*)malloc(iBufLen * 2);
+	int errcode = MultiByteToWideChar(CP_UTF8, 0, szBuffer, -1, wstr, iBufLen);
+	if (errcode > 0)
+	{
+		errcode = WideCharToMultiByte(CP_ACP, 0, wstr, -1, szBuffer, iBufLen, "_", NULL);
+	}
+	free(wstr);
+	return errcode > 0;
+}
 #endif
 
 /*
