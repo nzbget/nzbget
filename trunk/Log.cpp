@@ -370,6 +370,9 @@ void Log::InitOptions()
 	if (g_pOptions->GetCreateLog() && g_pOptions->GetLogFile())
 	{
 		m_szLogFilename = strdup(g_pOptions->GetLogFile());
+#ifdef WIN32
+		Util::Utf8ToAnsi(m_szLogFilename, strlen(m_szLogFilename) + 1);
+#endif
 	}
 
 	m_iIDGen = 0;
