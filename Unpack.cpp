@@ -378,22 +378,23 @@ void UnpackController::CheckArchiveFiles(bool bScanNonStdFiles)
 
 bool UnpackController::FileHasRarSignature(const char* szFilename)
 {
-	char rarSignature[] = {0x52, 0x61, 0x72, 0x21, 0x1A, 0x07, 0x00};
-	char fileSignature[7];
+	char rar4Signature[] = { 0x52, 0x61, 0x72, 0x21, 0x1A, 0x07, 0x00 };
+	char rar5Signature[] = { 0x52, 0x61, 0x72, 0x21, 0x1A, 0x07, 0x01, 0x00 };
 
+	char fileSignature[8];
+
+	int cnt = 0;
 	FILE* infile;
 	infile = fopen(szFilename, "rb");
 	if (infile)
 	{
-		int cnt = (int)fread(fileSignature, 1, sizeof(fileSignature), infile);
+		cnt = (int)fread(fileSignature, 1, sizeof(fileSignature), infile);
 		fclose(infile);
-		if (cnt == sizeof(fileSignature) && !strcmp(rarSignature, fileSignature))
-		{
-			return true;
-		}
 	}
 
-	return false;
+	bool bRar = cnt == sizeof(fileSignature) && 
+		(!strcmp(rar4Signature, fileSignature) || !strcmp(rar5Signature, fileSignature));
+	return bRar;
 }
 
 bool UnpackController::Cleanup()
