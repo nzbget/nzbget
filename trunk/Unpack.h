@@ -71,6 +71,7 @@ private:
 	bool				m_bUnpackStartError;
 	bool				m_bCleanedUpDisk;
 	EUnpacker			m_eUnpacker;
+	bool				m_bFinalDirCreated;
 
 protected:
 	virtual bool		ReadLine(char* szBuf, int iBufSize, FILE* pStream);
