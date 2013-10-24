@@ -97,6 +97,7 @@ void UnpackController::Run()
 	m_bCleanedUpDisk = false;
 	m_szPassword[0] = '\0';
 	m_szFinalDir[0] = '\0';
+	m_bFinalDirCreated = false;
 	
 	NZBParameter* pParameter = m_pPostInfo->GetNZBInfo()->GetParameters()->Find("*Unpack:", false);
 	bool bUnpack = !(pParameter && !strcasecmp(pParameter->GetValue(), "no"));
@@ -317,6 +318,7 @@ void UnpackController::CreateUnpackDir()
 		m_pPostInfo->GetNZBInfo()->BuildFinalDirName(m_szFinalDir, 1024);
 		m_szFinalDir[1024-1] = '\0';
 		snprintf(m_szUnpackDir, 1024, "%s%c%s", m_szFinalDir, PATH_SEPARATOR, "_unpack");
+		m_bFinalDirCreated = !Util::DirectoryExists(m_szFinalDir);
 	}
 	else
 	{
@@ -445,6 +447,11 @@ bool UnpackController::Cleanup()
 	{
 		PrintMessage(Message::mkError, "Could not remove temporary directory %s", m_szUnpackDir);
 	}
+
+	if (!m_bUnpackOK && m_bFinalDirCreated)
+	{
+		Util::RemoveDirectory(m_szFinalDir);
+	}		
 
 	if (m_bUnpackOK && bOK && g_pOptions->GetUnpackCleanupDisk())
 	{
