@@ -607,7 +607,7 @@ void NZBFile::EncodeURL(const char* szFilename, char* szURL)
 		else
 		{
 			*szURL++ = '%';
-			int a = ch >> 4;
+			int a = (unsigned char)ch >> 4;
 			*szURL++ = a > 9 ? a - 10 + 'a' : a + '0';
 			a = ch & 0xF;
 			*szURL++ = a > 9 ? a - 10 + 'a' : a + '0';

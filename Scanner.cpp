@@ -491,7 +491,14 @@ bool Scanner::AddFileToQueue(const char* szFilename, const char* szNZBName, cons
 		if (szNZBName && strlen(szNZBName) > 0)
 		{
 			pNZBFile->GetNZBInfo()->SetName(NULL);
+#ifdef WIN32
+			char* szAnsiFilename = strdup(szNZBName);
+			Util::Utf8ToAnsi(szAnsiFilename, strlen(szAnsiFilename) + 1);
+			pNZBFile->GetNZBInfo()->SetFilename(szAnsiFilename);
+			free(szAnsiFilename);
+#else
 			pNZBFile->GetNZBInfo()->SetFilename(szNZBName);
+#endif
 			pNZBFile->GetNZBInfo()->BuildDestDirName();
 		}
 
@@ -577,6 +584,10 @@ Scanner::EAddStatus Scanner::AddExternalFile(const char* szNZBName, const char* 
 	strncpy(szValidNZBName, Util::BaseFileName(szNZBName), 1024);
 	szValidNZBName[1024-1] = '\0';
 	Util::MakeValidFilename(szValidNZBName, '_', false);
+
+#ifdef WIN32
+	Util::Utf8ToAnsi(szValidNZBName, 1024);
+#endif
 
 	const char* szExtension = strrchr(szNZBName, '.');
 	if (bNZB && (!szExtension || strcasecmp(szExtension, ".nzb")))

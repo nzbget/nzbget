@@ -424,6 +424,9 @@ void NZBInfo::SetFilename(const char * szFilename)
 		char szNZBNicename[1024];
 		MakeNiceNZBName(m_szFilename, szNZBNicename, sizeof(szNZBNicename), true);
 		szNZBNicename[1024-1] = '\0';
+#ifdef WIN32
+		Util::AnsiToUtf8(szNZBNicename, 1024);
+#endif
 		SetName(szNZBNicename);
 	}
 }
