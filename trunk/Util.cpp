@@ -1126,6 +1126,18 @@ bool Util::Utf8ToAnsi(char* szBuffer, int iBufLen)
 	free(wstr);
 	return errcode > 0;
 }
+
+bool Util::AnsiToUtf8(char* szBuffer, int iBufLen)
+{
+	WCHAR* wstr = (WCHAR*)malloc(iBufLen * 2);
+	int errcode = MultiByteToWideChar(CP_ACP, 0, szBuffer, -1, wstr, iBufLen);
+	if (errcode > 0)
+	{
+		errcode = WideCharToMultiByte(CP_UTF8, 0, wstr, -1, szBuffer, iBufLen, NULL, NULL);
+	}
+	free(wstr);
+	return errcode > 0;
+}
 #endif
 
 /*

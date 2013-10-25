@@ -141,6 +141,7 @@ public:
 #ifdef WIN32
 	static bool RegReadStr(HKEY hKey, const char* szKeyName, const char* szValueName, char* szBuffer, int* iBufLen);
 	static bool Utf8ToAnsi(char* szBuffer, int iBufLen);
+	static bool AnsiToUtf8(char* szBuffer, int iBufLen);
 #endif
 
 	static time_t ParseRfc822DateTime(const char* szDateTimeStr);
