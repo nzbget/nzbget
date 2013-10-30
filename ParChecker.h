@@ -79,13 +79,16 @@ private:
 	bool				m_bCancelled;
 	SourceList			m_sourceFiles;
 
-	EStatus				RunParCheck(const char* szParFilename);
-	void				WriteBrokenLog(EStatus eStatus);
 	void				Cleanup();
+	EStatus				RunParCheck(const char* szParFilename);
+	int					PreProcessPar();
+	bool				LoadMainParBak();
+	int					ProcessMorePars();
 	bool				LoadMorePars();
 	bool				CheckSplittedFragments();
 	bool				AddSplittedFragments(const char* szFilename);
 	bool				AddMissingFiles();
+	void				WriteBrokenLog(EStatus eStatus);
 	void				SaveSourceList();
 	void				DeleteLeftovers();
 	void				signal_filename(std::string str);
