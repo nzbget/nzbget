@@ -161,7 +161,8 @@ void UnpackController::Run()
 		PrintMessage(Message::mkInfo, (bUnpack ? "Nothing to unpack for %s" : "Unpack for %s skipped"), m_szName);
 
 #ifndef DISABLE_PARCHECK
-		if (bUnpack && m_pPostInfo->GetNZBInfo()->GetParStatus() <= NZBInfo::psSkipped && m_bHasParFiles)
+		if (bUnpack && m_pPostInfo->GetNZBInfo()->GetParStatus() <= NZBInfo::psSkipped && 
+			m_pPostInfo->GetNZBInfo()->GetRenameStatus() <= NZBInfo::rsSkipped && m_bHasParFiles)
 		{
 			RequestParCheck();
 		}
@@ -278,7 +279,7 @@ void UnpackController::Completed()
 		m_pPostInfo->GetNZBInfo()->SetUnpackCleanedUpDisk(m_bCleanedUpDisk);
 		if (g_pOptions->GetParRename())
 		{
-			//request par-rename check fro extracted files
+			//request par-rename check for extracted files
 			m_pPostInfo->GetNZBInfo()->SetRenameStatus(NZBInfo::rsNone);
 		}
 		m_pPostInfo->SetStage(PostInfo::ptQueued);
@@ -286,7 +287,8 @@ void UnpackController::Completed()
 	else
 	{
 #ifndef DISABLE_PARCHECK
-		if (!m_bUnpackOK && m_pPostInfo->GetNZBInfo()->GetParStatus() <= NZBInfo::psSkipped && !m_bUnpackStartError && !GetTerminated() && m_bHasParFiles)
+		if (!m_bUnpackOK && m_pPostInfo->GetNZBInfo()->GetParStatus() <= NZBInfo::psSkipped &&
+			!m_bUnpackStartError && !GetTerminated() && m_bHasParFiles)
 		{
 			RequestParCheck();
 		}
