@@ -1029,14 +1029,6 @@
 	</div>
 
 	<div class="modal-footer">
-		<div class="btn-group dropup pull-left">
-			<a class="btn dropdown-toggle" data-toggle="dropdown">Actions <span class="caret"></span></a>
-			<ul class="dropdown-menu footer-button-menu" id="DownloadsMulti_ActionsMenu">
-				<li class="menu-header">Actions</li>
-				<li><a href="#" id="DownloadsMulti_MarkDupe"><i class="icon-duplicates"></i> Mark as Duplicates</a></li>
-			</ul>
-		</div>
-
 		<div class="dialog-transmit hide" style="position:absolute;margin-left:260px;" id="DownloadsMulti_Transmit"><img src="img/transmit.gif"></div>
 		<a href="#" class="btn" data-dismiss="modal" id="DownloadsMulti_Close">Cancel</a>
 		<a href="#" class="btn btn-primary" id="DownloadsMulti_Save">Save</a>
@@ -1214,6 +1206,13 @@
 									<option value="ALL">All</option>
 									<option value="FORCE">Force</option>
 								</select>
+							</div>
+						</div>
+
+						<div class="control-group">
+							<label class="control-label" for="HistoryEdit_DupeBackup">Duplicate backup</label>
+							<div class="controls">
+								<label class="checkbox"><input type="checkbox" id="HistoryEdit_DupeBackup"> Use as duplicate backup</label>
 							</div>
 						</div>
 					</fieldset>
@@ -1626,39 +1625,47 @@
 <div class="hide" id="DownloadsDeleteConfirmDialog">
 	<div id="DownloadsDeleteConfirmDialog_Title">Downloads</div>
 	<div id="DownloadsDeleteConfirmDialog_Text">
-		<p>
-		Delete selected downloads?
+		<p id="DownloadsDeleteConfirmDialog_Simple" class="hide">
+			Delete selected downloads?
 		</p>
+
+		<div id="DownloadsDeleteConfirmDialog_Options">
+			<p>
+				How to delete selected downloads?
+			</p>
+			<div style="margin-left: 30px; margin-bottom: 10px;">
+				<label class="radio"><input type="radio" name ="DownloadsDeleteConfirmDialog_Delete" id="DownloadsDeleteConfirmDialog_Delete"> Move downloads to history (recommended)</label>
+				<label class="radio" id="DownloadsDeleteConfirmDialog_DeleteDupeLabel"><input type="radio" name ="DownloadsDeleteConfirmDialog_Delete" id="DownloadsDeleteConfirmDialog_DeleteDupe"> Move downloads to history as duplicates</label>
+				<label class="radio"><input type="radio" name ="DownloadsDeleteConfirmDialog_Delete" id="DownloadsDeleteConfirmDialog_DeleteFinal"> Delete downloads without history tracking</label>
+			</div>
+		</div>
+		
 		<p id="DownloadsDeleteConfirmDialog_Remain" class="confirm-help-block">
-		Selected items will be removed from queue. Already downloaded files remain on disk (this behavior can be changed via option
-		<strong><em>DeleteCleanupDisk</em></strong>).
+			Selected downloads will be removed from queue. Already downloaded files remain on disk (this behavior can be changed via option
+			<strong><em>DeleteCleanupDisk</em></strong>).
 		</p>
 		<p id="DownloadsDeleteConfirmDialog_Cleanup" class="confirm-help-block">
-		Selected items will be removed from queue. Already downloaded files will be deleted from disk (this behavior can be changed via option
-		<strong><em>DeleteCleanupDisk</em></strong>).
+			Selected downloads will be removed from queue. Already downloaded files will be deleted from disk (this behavior can be changed via option
+			<strong><em>DeleteCleanupDisk</em></strong>).
 		</p>
 	</div>
 	<div id="DownloadsDeleteConfirmDialog_OK">Delete</div>
+	<div id="DownloadsDeleteConfirmDialog_Help">DownloadsDeleteHelp</div>
 </div>
 
-<!-- *** DELETE CURRENT DOWNLOAD CONFIRMATION DIALOG DATA ***************************************** -->
+<!-- *** QUICK HELP: EXPLAINING DELETE DOWNLAODS OPTIONS ********************************* -->
 
-<div class="hide" id="DownloadEditDeleteConfirmDialog">
-	<div id="DownloadEditDeleteConfirmDialog_Title">Download</div>
-	<div id="DownloadEditDeleteConfirmDialog_Text">
-		<p>
-		Delete this download?
-		</p>
-		<p id="DownloadEditDeleteConfirmDialog_Remain" class="confirm-help-block">
-		The item will be removed from queue. Already downloaded files remain on disk (this behavior can be changed via option
-		<strong><em>DeleteCleanupDisk</em></strong>).
-		</p>
-		<p id="DownloadEditDeleteConfirmDialog_Cleanup" class="confirm-help-block">
-		The item will be removed from queue. Already downloaded files will be deleted from disk (this behavior can be changed via option
-		<strong><em>DeleteCleanupDisk</em></strong>).
-		</p>
+<div class="modal no-footer modal-small modal-center hide" id="DownloadsDeleteHelp">
+	<div class="modal-header">
+	<a class="close" href='#' data-dismiss="modal"><i class="icon-close"></i></a>
+	<h3>Help: Explaining delete options</h3>
 	</div>
-	<div id="DownloadEditDeleteConfirmDialog_OK">Delete</div>
+	<div class="modal-body">
+	<p>Duplicate check (option <em><strong>DupeCheck</strong></em>) requires information about downloaded and failed nzb-files.</p>
+	<p>If you delete download without creating history record the duplicate check may not be able to detect duplicates and
+	the same file or a duplicate may be queued later from RSS feed or other source.</p>
+	<p>History records marked as duplicate backups can be used by duplicate check if the main download fails.</p>
+	</div>
 </div>
 
 <!-- *** DELETE HISTORY RECORDS CONFIRMATION DIALOG DATA ******************************** -->
@@ -1702,7 +1709,7 @@
 	<div id="HistoryDeleteConfirmDialog_Help">HistoryDeleteHelp</div>
 </div>
 
-<!-- *** QUICK HELP: EXPLAINING PAUSE OPTIONS ************************************************************ -->
+<!-- *** QUICK HELP: EXPLAINING DELETE FROM HISTORY OPTIONS ********************************** -->
 
 <div class="modal no-footer modal-small modal-center hide" id="HistoryDeleteHelp">
 	<div class="modal-header">
@@ -1728,7 +1735,7 @@
 		</p>
 		<p class="confirm-help-block">
 		Marking has an effect on duplicate handling and RSS.<br>For titles marked as good no more duplicates
-		will be downloaded, even with higher duplicate score. Existing dupe-backups will be removed from recent history.
+		will be downloaded, even with higher duplicate score. Existing dupe-backups will be removed from history.
 		</p>
 	</div>
 	<div id="HistoryEditGoodConfirmDialog_OK">Mark Good</div>
@@ -1744,7 +1751,7 @@
 		</p>
 		<p class="confirm-help-block">
 		Marking has an effect on duplicate handling and RSS.<br>If dupe-backups exist in the history
-		they will be moved to queue for download. Otherwise the title will be watched and downloaded
+		the best of them will be moved to queue for download. Otherwise the title will be watched and downloaded
 		when it becomes available.
 		</p>
 	</div>

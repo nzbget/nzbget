@@ -52,6 +52,8 @@ public:
 		eaGroupPause,
 		eaGroupResume,
 		eaGroupDelete,
+		eaGroupDupeDelete,
+		eaGroupFinalDelete,
 		eaGroupPauseAllPars,
 		eaGroupPauseExtraPars,
 		eaGroupSetPriority,
@@ -61,8 +63,7 @@ public:
 		eaGroupSetName,
 		eaGroupSetDupeKey,
 		eaGroupSetDupeScore,
-		eaGroupSetDupeMode,
-		eaGroupMarkDupe
+		eaGroupSetDupeMode
 	};
 
 	enum EMatchMode
@@ -103,7 +104,6 @@ private:
 	bool					CanCleanupDisk(DownloadQueue* pDownloadQueue, NZBInfo* pNZBInfo);
 	bool					MergeGroups(DownloadQueue* pDownloadQueue, ItemList* pItemList);
 	bool					SplitGroup(DownloadQueue* pDownloadQueue, ItemList* pItemList, const char* szName);
-	bool					MarkDupeGroups(DownloadQueue* pDownloadQueue, ItemList* pItemList);
 	void					ReorderFiles(DownloadQueue* pDownloadQueue, ItemList* pItemList);
 	void					SetNZBParameter(NZBInfo* pNZBInfo, const char* szParamString);
 	void					SetNZBDupeParam(NZBInfo* pNZBInfo, EEditAction eAction, const char* szText);

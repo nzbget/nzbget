@@ -428,16 +428,14 @@ var DownloadsEditDialog = (new function($)
 	function itemDelete(e)
 	{
 		e.preventDefault();
-		Util.show('#DownloadEditDeleteConfirmDialog_Cleanup', Options.option('DeleteCleanupDisk') === 'yes');
-		Util.show('#DownloadEditDeleteConfirmDialog_Remain', Options.option('DeleteCleanupDisk') != 'yes');
-		ConfirmDialog.showModal('DownloadEditDeleteConfirmDialog', doItemDelete);
+		DownloadsUI.deleteConfirm(doItemDelete, false);
 	}
 
-	function doItemDelete()
+	function doItemDelete(command)
 	{
 		disableAllButtons();
 		notification = '#Notif_Downloads_Deleted';
-		RPC.call('editqueue', ['GroupDelete', 0, '', [curGroup.LastID]], completed);
+		RPC.call('editqueue', [command, 0, '', [curGroup.LastID]], completed);
 	}
 
 	function itemCancelPP(e)
@@ -986,7 +984,6 @@ var DownloadsMultiDialog = (new function($)
 		$DownloadsMultiDialog = $('#DownloadsMultiDialog');
 		
 		$('#DownloadsMulti_Save').click(saveChanges);
-		$('#DownloadsMulti_MarkDupe').click(itemMarkDupe);
 
 		$DownloadsMultiDialog.on('hidden', function ()
 		{
@@ -1099,9 +1096,6 @@ var DownloadsMultiDialog = (new function($)
 		}
 		oldCategory = v.val();
 		
-		var dupeCheck = Options.option('DupeCheck') === 'yes';
-		Util.show('#DownloadsMulti_MarkDupe', dupeCheck);
-
 		enableAllButtons();
 		$('#DownloadsMulti_GeneralTabLink').tab('show');
 
@@ -1165,15 +1159,6 @@ var DownloadsMultiDialog = (new function($)
 			Notification.show(notification);
 		}
 	}
-
-	function itemMarkDupe(e)
-	{
-		e.preventDefault();
-		disableAllButtons();
-		notification = '#Notif_Downloads_Saved';
-		RPC.call('editqueue', ['GroupMarkDupe', 0, '',multiIDList], completed);
-	}
-
 }(jQuery));
 
 
@@ -1450,6 +1435,8 @@ var HistoryEditDialog = (new function()
 			$('#HistoryEdit_DupeKey').val(hist.DupeKey);
 			$('#HistoryEdit_DupeScore').val(hist.DupeScore);
 			$('#HistoryEdit_DupeMode').val(hist.DupeMode);
+			$('#HistoryEdit_DupeBackup').prop('checked', hist.DeleteStatus === 'DUPE');
+			$('#HistoryEdit_DupeBackup').prop('disabled', !(hist.DeleteStatus === 'DUPE' || hist.DeleteStatus === 'MANUAL'));
 		}
 		
 		Util.show('#HistoryEdit_Return', hist.RemainingFileCount > 0);
@@ -1678,11 +1665,25 @@ var HistoryEditDialog = (new function()
 			RPC.call('editqueue', ['HistorySetDupeMode', 0, value, [curHist.ID]], function()
 			{
 				notification = '#Notif_History_Saved';
+				saveDupeMode();
+			})
+			:saveDupeMode();
+	}
+
+	function saveDupeMode()
+	{
+		var canChange = curHist.DeleteStatus === 'DUPE' || curHist.DeleteStatus === 'MANUAL';
+		var oldValue = curHist.DeleteStatus === 'DUPE';
+		var value = $('#HistoryEdit_DupeBackup').is(':checked');
+		canChange && value !== oldValue ?
+			RPC.call('editqueue', ['HistorySetDupeBackup', 0, value ? "YES" : "NO", [curHist.ID]], function()
+			{
+				notification = '#Notif_History_Saved';
 				saveParam();
 			})
 			:saveParam();
 	}
-
+	
 	/*** TAB: SERVER STATISTICS **************************************************/
 	
 	function fillServStats()

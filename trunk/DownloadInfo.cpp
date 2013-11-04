@@ -297,6 +297,7 @@ NZBInfo::NZBInfo()
 	m_eDeleteStatus = dsNone;
 	m_eMarkStatus = ksNone;
 	m_bDeleting = false;
+	m_bAvoidHistory = false;
 	m_bHealthPaused = false;
 	m_bParCleanup = false;
 	m_bCleanupDisk = false;

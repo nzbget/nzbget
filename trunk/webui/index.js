@@ -50,11 +50,14 @@ var UISettings = (new function($)
 	this.slideAnimation = true;
 
 	// Automatically set focus to the first control in dialogs.
-	// Not good on touch devices, because may pop up the on-screen-keyboard.
+	// Not good on touch devices, because may pop up an on-screen-keyboard.
 	this.setFocus = false;
 
 	// Show popup notifications.
-	this.showNotifications = true;
+	this.notifications = true;
+
+	// Show badges with duplicate info (downloads and history).
+	this.dupeBadges = false;
 
 	// Time zone correction in hours.
 	// You shouldn't require this unless you can't set the time zone on your computer/device properly.
@@ -840,7 +843,7 @@ var Notification = (new function($)
 	
 	this.show = function(alert, completeFunc)
 	{
-		if (UISettings.showNotifications || $(alert).hasClass('alert-error'))
+		if (UISettings.notifications || $(alert).hasClass('alert-error'))
 		{
 			$(alert).animate({'opacity':'toggle'});
 			var duration = $(alert).attr('data-duration');
