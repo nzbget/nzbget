@@ -462,7 +462,6 @@ var HistoryUI = (new function($)
 			}
 
 			$('#HistoryDeleteConfirmDialog_Hide', dialog).prop('checked', true);
-			$('#HistoryDeleteConfirmDialog_Cleanup', dialog).prop('checked', false);
 			Util.show($('#HistoryDeleteConfirmDialog_Options', dialog), hasNzb && dupeCheck);
 			Util.show($('#HistoryDeleteConfirmDialog_Simple', dialog), !(hasNzb && dupeCheck));
 			Util.show($('#HistoryDeleteConfirmDialog_DeleteWillCleanup', dialog), hasNzb && hasFailed && cleanupDisk);
@@ -475,12 +474,7 @@ var HistoryUI = (new function($)
 		function action()
 		{
 			var hide = $('#HistoryDeleteConfirmDialog_Hide', dialog).is(':checked');
-			var cleanup = $('#HistoryDeleteConfirmDialog_Cleanup', dialog).is(':checked');
-
-			var command = hasNzb && hide ?
-				(cleanup ? 'HistoryDeleteCleanup' : 'HistoryDelete') :
-				(cleanup ? 'HistoryFinalDeleteCleanup' : 'HistoryFinalDelete');
-
+			var command = hasNzb && hide ? 'HistoryDelete' : 'HistoryFinalDelete';
 			actionCallback(command);
 		}
 

@@ -51,6 +51,7 @@ public:
 		eaHistorySetDupeKey,
 		eaHistorySetDupeScore,
 		eaHistorySetDupeMode,
+		eaHistorySetDupeBackup,
 		eaHistoryMarkBad,
 		eaHistoryMarkGood
 	};
@@ -78,8 +79,7 @@ private:
 	private:
 		PrePostProcessor*	m_pOwner;
 	protected:
-		virtual void		HistoryReturn(DownloadQueue* pDownloadQueue, HistoryList::iterator itHistory,
-			HistoryInfo* pHistoryInfo, bool bReprocess)	{ m_pOwner->HistoryReturn(pDownloadQueue, itHistory, pHistoryInfo, bReprocess); }
+		virtual void		HistoryRedownload(DownloadQueue* pDownloadQueue, HistoryInfo* pHistoryInfo)	{ m_pOwner->HistoryRedownload(pDownloadQueue, pHistoryInfo); }
 		virtual void		DeleteQueuedFile(const char* szQueuedFile) {  m_pOwner->DeleteQueuedFile(szQueuedFile); }
 		friend class PrePostProcessor;
 	};
@@ -119,6 +119,7 @@ private:
 	bool				HistoryEdit(IDList* pIDList, EEditAction eAction, int iOffset, const char* szText);
 	void				HistoryDelete(DownloadQueue* pDownloadQueue, HistoryList::iterator itHistory, HistoryInfo* pHistoryInfo, bool bFinal);
 	void				HistoryReturn(DownloadQueue* pDownloadQueue, HistoryList::iterator itHistory, HistoryInfo* pHistoryInfo, bool bReprocess);
+	void				HistoryRedownload(DownloadQueue* pDownloadQueue, HistoryInfo* pHistoryInfo);
 	void				HistorySetParameter(HistoryInfo* pHistoryInfo, const char* szText);
 	void				HistorySetDupeParam(HistoryInfo* pHistoryInfo, EEditAction eAction, const char* szText);
 	void				HistoryTransformToDup(DownloadQueue* pDownloadQueue, HistoryInfo* pHistoryInfo, int rindex);

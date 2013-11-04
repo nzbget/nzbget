@@ -116,7 +116,14 @@ void QueueEditor::PauseUnpauseEntry(FileInfo* pFileInfo, bool bPause)
  */
 void QueueEditor::DeleteEntry(FileInfo* pFileInfo)
 {
-	info("Deleting file %s from download queue", pFileInfo->GetFilename());
+	if (pFileInfo->GetNZBInfo()->GetDeleting())
+	{
+		detail("Deleting file %s from download queue", pFileInfo->GetFilename());
+	}
+	else
+	{
+		info("Deleting file %s from download queue", pFileInfo->GetFilename());
+	}
 	g_pQueueCoordinator->DeleteQueueEntry(pFileInfo);
 }
 
@@ -234,9 +241,6 @@ bool QueueEditor::InternEditList(DownloadQueue* pDownloadQueue, IDList* pIDList,
 		case eaFileSplit:
 			return SplitGroup(pDownloadQueue, &cItemList, szText);
 
-		case eaGroupMarkDupe:
-			return MarkDupeGroups(pDownloadQueue, &cItemList);
-
 		case eaFileReorder:
 			ReorderFiles(pDownloadQueue, &cItemList);
 			break;
@@ -290,6 +294,8 @@ bool QueueEditor::InternEditList(DownloadQueue* pDownloadQueue, IDList* pIDList,
 					case eaGroupPause:
 					case eaGroupResume:
 					case eaGroupDelete:
+					case eaGroupDupeDelete:
+					case eaGroupFinalDelete:
 					case eaGroupMoveTop:
 					case eaGroupMoveBottom:
 					case eaGroupMoveOffset:
@@ -302,7 +308,6 @@ bool QueueEditor::InternEditList(DownloadQueue* pDownloadQueue, IDList* pIDList,
 					case eaFilePauseAllPars:
 					case eaFilePauseExtraPars:
 					case eaGroupMerge:
-					case eaGroupMarkDupe:
 					case eaFileReorder:
 					case eaFileSplit:
 						// remove compiler warning "enumeration not handled in switch"
@@ -552,15 +557,20 @@ bool QueueEditor::EditGroup(DownloadQueue* pDownloadQueue, FileInfo* pFileInfo, 
 		}
 		iOffset = iFileOffset;
 	}
-	else if (eAction == eaGroupDelete)
+	else if (eAction == eaGroupDelete || eAction == eaGroupDupeDelete || eAction == eaGroupFinalDelete)
 	{
 		pFileInfo->GetNZBInfo()->SetDeleting(true);
+		pFileInfo->GetNZBInfo()->SetAvoidHistory(eAction == eaGroupFinalDelete);
+		if (eAction == eaGroupDupeDelete)
+		{
+			pFileInfo->GetNZBInfo()->SetDeleteStatus(NZBInfo::dsDupe);
+		}
 		pFileInfo->GetNZBInfo()->SetCleanupDisk(CanCleanupDisk(pDownloadQueue, pFileInfo->GetNZBInfo()));
 	}
 
 	EEditAction GroupToFileMap[] = { (EEditAction)0, eaFileMoveOffset, eaFileMoveTop, eaFileMoveBottom, eaFilePause,
 		eaFileResume, eaFileDelete, eaFilePauseAllPars, eaFilePauseExtraPars, eaFileSetPriority, eaFileReorder, eaFileSplit,
-		eaFileMoveOffset, eaFileMoveTop, eaFileMoveBottom, eaFilePause, eaFileResume, eaFileDelete, 
+		eaFileMoveOffset, eaFileMoveTop, eaFileMoveBottom, eaFilePause, eaFileResume, eaFileDelete, eaFileDelete, eaFileDelete,
 		eaFilePauseAllPars, eaFilePauseExtraPars, eaFileSetPriority,
 		(EEditAction)0, (EEditAction)0, (EEditAction)0 };
 
@@ -905,46 +915,6 @@ bool QueueEditor::SplitGroup(DownloadQueue* pDownloadQueue, ItemList* pItemList,
 
 	delete pFileList;
 	return bOK;
-}
-
-bool QueueEditor::MarkDupeGroups(DownloadQueue* pDownloadQueue, ItemList* pItemList)
-{
-	if (pItemList->size() < 2)
-	{
-		return false;
-	}
-
-	// find existing DupeKey (if exists)
-	char* szDupeKey = NULL;
-	for (ItemList::iterator it = pItemList->begin(); it != pItemList->end(); it++)
-	{
-		EditItem* pItem = *it;
-		const char* szFileDupeKey = pItem->m_pFileInfo->GetNZBInfo()->GetDupeKey();
-		if (*szFileDupeKey)
-		{
-			szDupeKey = strdup(szFileDupeKey);
-			break;
-		}
-	}
-
-	if (!szDupeKey)
-	{
-		// taking ID of the first NZB as DupeKey
-		szDupeKey = (char*)malloc(20);
-		snprintf(szDupeKey, 20, "nzb=%i", pItemList->front()->m_pFileInfo->GetNZBInfo()->GetID());
-		szDupeKey[20-1] = '\0';
-	}
-
-	for (ItemList::iterator it = pItemList->begin(); it != pItemList->end(); it++)
-	{
-		EditItem* pItem = *it;
-		pItem->m_pFileInfo->GetNZBInfo()->SetDupeKey(szDupeKey);
-		delete pItem;
-	}
-
-	free(szDupeKey);
-
-	return true;
 }
 
 void QueueEditor::ReorderFiles(DownloadQueue* pDownloadQueue, ItemList* pItemList)

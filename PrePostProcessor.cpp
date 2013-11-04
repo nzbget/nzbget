@@ -260,16 +260,10 @@ void PrePostProcessor::NZBAdded(DownloadQueue* pDownloadQueue, NZBInfo* pNZBInfo
 		m_ParCoordinator.PausePars(pDownloadQueue, pNZBInfo);
 	}
 
-	if (g_pOptions->GetDupeCheck() && pNZBInfo->GetDupeMode() != dmForce)
+	if (g_pOptions->GetDupeCheck() && pNZBInfo->GetDupeMode() != dmForce &&
+		pNZBInfo->GetDeleteStatus() == NZBInfo::dsDupe)
 	{
-		if (pNZBInfo->GetDeleteStatus() == NZBInfo::dsDupe)
-		{
-			NZBCompleted(pDownloadQueue, pNZBInfo, false);
-		}
-		else
-		{
-			m_DupeCoordinator.NZBAdded(pDownloadQueue, pNZBInfo);
-		}
+		NZBCompleted(pDownloadQueue, pNZBInfo, false);
 	}
 
 	if (strlen(g_pOptions->GetNZBAddedProcess()) > 0)
@@ -325,7 +319,8 @@ void PrePostProcessor::NZBDeleted(DownloadQueue* pDownloadQueue, NZBInfo* pNZBIn
 	}
 	pNZBInfo->SetDeleting(false);
 
-	if (g_pOptions->GetDeleteCleanupDisk() && pNZBInfo->GetCleanupDisk())
+	if ((g_pOptions->GetDeleteCleanupDisk() && pNZBInfo->GetCleanupDisk()) ||
+		pNZBInfo->GetDeleteStatus() == NZBInfo::dsDupe)
 	{
 		// download was cancelled, deleting already downloaded files from disk
 		for (NZBInfo::Files::reverse_iterator it = pNZBInfo->GetCompletedFiles()->rbegin(); it != pNZBInfo->GetCompletedFiles()->rend(); it++)
@@ -375,7 +370,7 @@ void PrePostProcessor::NZBCompleted(DownloadQueue* pDownloadQueue, NZBInfo* pNZB
 {
 	bool bNeedSave = false;
 
-	if (g_pOptions->GetKeepHistory() > 0)
+	if (g_pOptions->GetKeepHistory() > 0 && !pNZBInfo->GetAvoidHistory())
 	{
 		//remove old item for the same NZB
 		for (HistoryList::iterator it = pDownloadQueue->GetHistoryList()->begin(); it != pDownloadQueue->GetHistoryList()->end(); it++)
@@ -419,6 +414,8 @@ void PrePostProcessor::NZBCompleted(DownloadQueue* pDownloadQueue, NZBInfo* pNZB
 		info("Collection %s added to history", pNZBInfo->GetName());
 		bNeedSave = true;
 	}
+
+	pNZBInfo->SetAvoidHistory(false);
 
 	if (g_pOptions->GetDupeCheck() && pNZBInfo->GetDupeMode() != dmForce &&
 		(pNZBInfo->GetDeleteStatus() == NZBInfo::dsNone ||
@@ -984,6 +981,7 @@ bool PrePostProcessor::QueueEditList(IDList* pIDList, EEditAction eAction, int i
 		case eaHistorySetDupeKey:
 		case eaHistorySetDupeScore:
 		case eaHistorySetDupeMode:
+		case eaHistorySetDupeBackup:
 		case eaHistoryMarkBad:
 		case eaHistoryMarkGood:
 			return HistoryEdit(pIDList, eAction, iOffset, szText);
@@ -1153,6 +1151,7 @@ bool PrePostProcessor::HistoryEdit(IDList* pIDList, EEditAction eAction, int iOf
 					case eaHistorySetDupeKey:
 					case eaHistorySetDupeScore:
 					case eaHistorySetDupeMode:
+					case eaHistorySetDupeBackup:
 						HistorySetDupeParam(pHistoryInfo, eAction, szText);
 						break;
 
@@ -1334,6 +1333,41 @@ void PrePostProcessor::HistoryReturn(DownloadQueue* pDownloadQueue, HistoryList:
 	}
 }
 
+void PrePostProcessor::HistoryRedownload(DownloadQueue* pDownloadQueue, HistoryInfo* pHistoryInfo)
+{
+	NZBInfo* pNZBInfo = pHistoryInfo->GetNZBInfo();
+
+	if (!Util::FileExists(pNZBInfo->GetQueuedFilename()))
+	{
+		error("Could not return collection %s from history back to queue: could not find source nzb-file %s",
+			pNZBInfo->GetName(), pNZBInfo->GetQueuedFilename());
+		return;
+	}
+
+	NZBFile* pNZBFile = NZBFile::Create(pNZBInfo->GetQueuedFilename(), "");
+	if (pNZBFile == NULL)
+	{
+		error("Could not return collection %s from history back to queue: could not parse nzb-file",
+			pNZBInfo->GetName());
+		return;
+	}
+
+	info("Returning collection %s from history back to queue", pNZBInfo->GetName());
+
+	for (NZBFile::FileInfos::iterator it = pNZBFile->GetFileInfos()->begin(); it != pNZBFile->GetFileInfos()->end(); it++)
+	{
+		FileInfo* pFileInfo = *it;
+		pFileInfo->SetNZBInfo(pNZBInfo);
+	}
+
+	g_pQueueCoordinator->AddFileInfosToFileQueue(pNZBFile, pDownloadQueue->GetParkedFiles(), false);
+
+	delete pNZBFile;
+
+	HistoryList::iterator it = std::find(pDownloadQueue->GetHistoryList()->begin(), pDownloadQueue->GetHistoryList()->end(), pHistoryInfo);
+	HistoryReturn(pDownloadQueue, it, pHistoryInfo, false);
+}
+
 void PrePostProcessor::HistorySetParameter(HistoryInfo* pHistoryInfo, const char* szText)
 {
 	char szNiceName[1024];
@@ -1414,6 +1448,17 @@ void PrePostProcessor::HistorySetDupeParam(HistoryInfo* pHistoryInfo, EEditActio
 				pHistoryInfo->GetNZBInfo()->SetDupeMode(eMode);
 				break;
 
+			case eaHistorySetDupeBackup:
+				if (pHistoryInfo->GetNZBInfo()->GetDeleteStatus() != NZBInfo::dsDupe &&
+					pHistoryInfo->GetNZBInfo()->GetDeleteStatus() != NZBInfo::dsManual)
+				{
+					error("Could not set duplicate parameter for %s: history item has wrong delete status", szNiceName);
+					return;
+				}
+				pHistoryInfo->GetNZBInfo()->SetDeleteStatus(!strcasecmp(szText, "YES") ||
+					!strcasecmp(szText, "TRUE") || !strcasecmp(szText, "1") ? NZBInfo::dsDupe : NZBInfo::dsManual);
+				break;
+
 			default:
 				// suppress compiler warning
 				break;
@@ -1434,6 +1479,10 @@ void PrePostProcessor::HistorySetDupeParam(HistoryInfo* pHistoryInfo, EEditActio
 			case eaHistorySetDupeMode:
 				pHistoryInfo->GetDupInfo()->SetDupeMode(eMode);
 				break;
+
+			case eaHistorySetDupeBackup:
+				error("Could not set duplicate parameter for %s: history item has wrong type", szNiceName);
+				return;
 
 			default:
 				// suppress compiler warning

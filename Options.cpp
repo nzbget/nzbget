@@ -1640,14 +1640,6 @@ void Options::InitCommandLine(int argc, char* argv[])
 						}
 						m_iEditQueueAction = eRemoteEditActionGroupMerge;
 					}
-					else if (!strcasecmp(optarg, "DM"))
-					{
-						if (!bGroup)
-						{
-							abort("FATAL ERROR: Only groups can be marked as duplicates\n");
-						}
-						m_iEditQueueAction = eRemoteEditActionGroupMarkDupe;
-					}
 					else if (!strcasecmp(optarg, "S"))
 					{
 						m_iEditQueueAction = eRemoteEditActionFileSplit;
@@ -1865,7 +1857,6 @@ void Options::PrintUsage(char* com)
 		"       N <name>             Rename\n"
 		"       M                    Merge\n"
 		"       S <name>             Split - create new group from selected files\n"
-		"       DM                   Mark as duplicates\n"
 		"       O <name>=<value>     Set post-process parameter\n"
 		"    - for history (H):\n"
 		"       D                    Delete\n"

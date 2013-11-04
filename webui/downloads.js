@@ -508,11 +508,11 @@ var Downloads = (new function($)
 			}
 		};
 
-		var deleteGroups = function()
+		var deleteGroups = function(command)
 		{
 			if (downloadIDs.length > 0)
 			{
-				RPC.call('editqueue', ['GroupDelete', 0, '', downloadIDs], deletePosts);
+				RPC.call('editqueue', [command, 0, '', downloadIDs], deletePosts);
 			}
 			else
 			{
@@ -520,10 +520,7 @@ var Downloads = (new function($)
 			}
 		};
 
-		Util.show('#DownloadsDeleteConfirmDialog_Cleanup', Options.option('DeleteCleanupDisk') === 'yes');
-		Util.show('#DownloadsDeleteConfirmDialog_Remain', Options.option('DeleteCleanupDisk') != 'yes');
-		
-		ConfirmDialog.showModal('DownloadsDeleteConfirmDialog', deleteGroups);
+		DownloadsUI.deleteConfirm(deleteGroups, true);
 	}
 
 	this.moveClick = function(action)
@@ -773,7 +770,7 @@ var DownloadsUI = (new function($)
 			dupeCheck = Options.option('DupeCheck') === 'yes';
 		}
 
-		if (dupeCheck && dupeKey != '')
+		if (dupeCheck && dupeKey != '' && UISettings.dupeBadges)
 		{
 			return formatDupeText(dupeKey, dupeScore, dupeMode);
 		}
@@ -790,7 +787,7 @@ var DownloadsUI = (new function($)
 			dupeCheck = Options.option('DupeCheck') === 'yes';
 		}
 
-		if (dupeCheck && dupeKey != '')
+		if (dupeCheck && dupeKey != '' && UISettings.dupeBadges)
 		{
 			return ' <span class="label' + (dupeMode === 'FORCE' ? ' label-important' : '') +
 				'" title="Duplicate key: ' + dupeKey +
@@ -836,5 +833,47 @@ var DownloadsUI = (new function($)
 		}
 
 		return categoryColumnWidth;
+	}
+
+	this.deleteConfirm = function(actionCallback, multi)
+	{
+		var dupeCheck = Options.option('DupeCheck') === 'yes';
+		var cleanupDisk = Options.option('DeleteCleanupDisk') === 'yes';
+		var history = Options.option('KeepHistory') !== '0';
+		var dialog = null;
+
+		function init(_dialog)
+		{
+			dialog = _dialog;
+
+			if (!multi)
+			{
+				var html = $('#ConfirmDialog_Text').html();
+				html = html.replace(/downloads/g, 'download');
+				$('#ConfirmDialog_Text').html(html);
+			}
+
+			$('#DownloadsDeleteConfirmDialog_Delete', dialog).prop('checked', true);
+			$('#DownloadsDeleteConfirmDialog_Delete', dialog).prop('checked', true);
+			$('#DownloadsDeleteConfirmDialog_DeleteDupe', dialog).prop('checked', false);
+			$('#DownloadsDeleteConfirmDialog_DeleteFinal', dialog).prop('checked', false);
+			Util.show($('#DownloadsDeleteConfirmDialog_Options', dialog), history);
+			Util.show($('#DownloadsDeleteConfirmDialog_Simple', dialog), !history);
+			Util.show($('#DownloadsDeleteConfirmDialog_DeleteDupe,#DownloadsDeleteConfirmDialog_DeleteDupeLabel', dialog), dupeCheck);
+			Util.show($('#DownloadsDeleteConfirmDialog_Remain', dialog), !cleanupDisk);
+			Util.show($('#DownloadsDeleteConfirmDialog_Cleanup', dialog), cleanupDisk);
+			Util.show('#ConfirmDialog_Help', history && dupeCheck);
+		};
+
+		function action()
+		{
+			var deleteNormal = $('#DownloadsDeleteConfirmDialog_Delete', dialog).is(':checked');
+			var deleteDupe = $('#DownloadsDeleteConfirmDialog_DeleteDupe', dialog).is(':checked');
+			var deleteFinal = $('#DownloadsDeleteConfirmDialog_DeleteFinal', dialog).is(':checked');
+			var command = deleteNormal ? 'GroupDelete' : (deleteDupe ? 'GroupDupeDelete' : 'GroupFinalDelete');
+			actionCallback(command);
+		}
+
+		ConfirmDialog.showModal('DownloadsDeleteConfirmDialog', action, init);
 	}
 }(jQuery));
