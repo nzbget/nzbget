@@ -235,7 +235,7 @@ void DupeCoordinator::NZBFound(DownloadQueue* pDownloadQueue, NZBInfo* pNZBInfo)
 				pNZBInfo->GetDupeScore() <= pHistoryInfo->GetNZBInfo()->GetDupeScore() &&
 				IsDupeSuccess(pHistoryInfo->GetNZBInfo()))
 			{
-				// Flag saying QueueCoordinator to skip nzb-file, we also use this flag later in "DupeCoordinator::NZBAdded"
+				// Flag saying QueueCoordinator to skip nzb-file
 				pNZBInfo->SetDeleteStatus(NZBInfo::dsDupe);
 				info("Collection %s is duplicate to %s", pNZBInfo->GetName(), pHistoryInfo->GetNZBInfo()->GetName());
 				return;
@@ -282,7 +282,7 @@ void DupeCoordinator::NZBFound(DownloadQueue* pDownloadQueue, NZBInfo* pNZBInfo)
 				// is moved to history as dupe-backup
 				if (pNZBInfo->GetDupeScore() <= pGroupNZBInfo->GetDupeScore())
 				{
-					// Flag saying QueueCoordinator to skip nzb-file, we also use this flag later in "DupeCoordinator::NZBAdded"
+					// Flag saying QueueCoordinator to skip nzb-file
 					pNZBInfo->SetDeleteStatus(NZBInfo::dsDupe);
 					info("Collection %s is duplicate to %s", pNZBInfo->GetName(), pGroupNZBInfo->GetName());
 					return;
@@ -325,7 +325,7 @@ void DupeCoordinator::NZBFound(DownloadQueue* pDownloadQueue, NZBInfo* pNZBInfo)
 				SameNameOrKey(pPostInfo->GetNZBInfo()->GetName(), pPostInfo->GetNZBInfo()->GetDupeKey(),
 					pNZBInfo->GetName(), pNZBInfo->GetDupeKey()))
 			{
-				// Flag saying QueueCoordinator to skip nzb-file, we also use this flag later in "DupeCoordinator::NZBAdded"
+				// Flag saying QueueCoordinator to skip nzb-file
 				pNZBInfo->SetDeleteStatus(NZBInfo::dsDupe);
 				info("Collection %s is duplicate to %s", pNZBInfo->GetName(), pPostInfo->GetNZBInfo()->GetName());
 				return;

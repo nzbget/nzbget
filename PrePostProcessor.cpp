@@ -1296,6 +1296,7 @@ void PrePostProcessor::HistoryReturn(DownloadQueue* pDownloadQueue, HistoryList:
 			}
 		}
 		pNZBInfo->SetDeleteStatus(NZBInfo::dsNone);
+		pNZBInfo->SetDeletePaused(false);
 		pNZBInfo->GetScriptStatuses()->Clear();
 		pNZBInfo->SetParkedFileCount(0);
 	}
@@ -1336,6 +1337,8 @@ void PrePostProcessor::HistoryReturn(DownloadQueue* pDownloadQueue, HistoryList:
 void PrePostProcessor::HistoryRedownload(DownloadQueue* pDownloadQueue, HistoryInfo* pHistoryInfo)
 {
 	NZBInfo* pNZBInfo = pHistoryInfo->GetNZBInfo();
+	bool bDeletePaused = pNZBInfo->GetDeletePaused();
+	int iGroupdID = -1;
 
 	if (!Util::FileExists(pNZBInfo->GetQueuedFilename()))
 	{
@@ -1358,6 +1361,8 @@ void PrePostProcessor::HistoryRedownload(DownloadQueue* pDownloadQueue, HistoryI
 	{
 		FileInfo* pFileInfo = *it;
 		pFileInfo->SetNZBInfo(pNZBInfo);
+		pFileInfo->SetPaused(bDeletePaused);
+		iGroupdID = pFileInfo->GetID();
 	}
 
 	g_pQueueCoordinator->AddFileInfosToFileQueue(pNZBFile, pDownloadQueue->GetParkedFiles(), false);
@@ -1366,6 +1371,11 @@ void PrePostProcessor::HistoryRedownload(DownloadQueue* pDownloadQueue, HistoryI
 
 	HistoryList::iterator it = std::find(pDownloadQueue->GetHistoryList()->begin(), pDownloadQueue->GetHistoryList()->end(), pHistoryInfo);
 	HistoryReturn(pDownloadQueue, it, pHistoryInfo, false);
+
+	if (!bDeletePaused && g_pOptions->GetParCheck() != Options::pcForce)
+	{
+		g_pQueueCoordinator->GetQueueEditor()->LockedEditEntry(pDownloadQueue, iGroupdID, false, QueueEditor::eaGroupPauseExtraPars, 0, NULL);
+	}
 }
 
 void PrePostProcessor::HistorySetParameter(HistoryInfo* pHistoryInfo, const char* szText)
