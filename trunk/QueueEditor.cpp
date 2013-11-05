@@ -501,6 +501,7 @@ bool QueueEditor::EditGroup(DownloadQueue* pDownloadQueue, FileInfo* pFileInfo, 
 {
 	IDList cIDList;
 	cIDList.clear();
+	bool bAllPaused = true;
 
 	// collecting files belonging to group
 	for (FileQueue::iterator it = pDownloadQueue->GetFileQueue()->begin(); it != pDownloadQueue->GetFileQueue()->end(); it++)
@@ -509,6 +510,7 @@ bool QueueEditor::EditGroup(DownloadQueue* pDownloadQueue, FileInfo* pFileInfo, 
 		if (pFileInfo2->GetNZBInfo() == pFileInfo->GetNZBInfo())
 		{
 			cIDList.push_back(pFileInfo2->GetID());
+			bAllPaused &= pFileInfo2->GetPaused();
 		}
 	}
 
@@ -561,6 +563,7 @@ bool QueueEditor::EditGroup(DownloadQueue* pDownloadQueue, FileInfo* pFileInfo, 
 	{
 		pFileInfo->GetNZBInfo()->SetDeleting(true);
 		pFileInfo->GetNZBInfo()->SetAvoidHistory(eAction == eaGroupFinalDelete);
+		pFileInfo->GetNZBInfo()->SetDeletePaused(bAllPaused);
 		if (eAction == eaGroupDupeDelete)
 		{
 			pFileInfo->GetNZBInfo()->SetDeleteStatus(NZBInfo::dsDupe);

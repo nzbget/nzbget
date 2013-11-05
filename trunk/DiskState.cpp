@@ -138,7 +138,7 @@ bool DiskState::SaveDownloadQueue(DownloadQueue* pDownloadQueue)
 		return false;
 	}
 
-	fprintf(outfile, "%s%i\n", FORMATVERSION_SIGNATURE, 39);
+	fprintf(outfile, "%s%i\n", FORMATVERSION_SIGNATURE, 40);
 
 	// save nzb-infos
 	SaveNZBList(pDownloadQueue, outfile);
@@ -192,7 +192,7 @@ bool DiskState::LoadDownloadQueue(DownloadQueue* pDownloadQueue)
 	char FileSignatur[128];
 	fgets(FileSignatur, sizeof(FileSignatur), infile);
 	int iFormatVersion = ParseFormatVersion(FileSignatur);
-	if (iFormatVersion < 3 || iFormatVersion > 39)
+	if (iFormatVersion < 3 || iFormatVersion > 40)
 	{
 		error("Could not load diskstate due to file version mismatch");
 		fclose(infile);
@@ -266,7 +266,7 @@ void DiskState::SaveNZBList(DownloadQueue* pDownloadQueue, FILE* outfile)
 		fprintf(outfile, "%s\n", pNZBInfo->GetQueuedFilename());
 		fprintf(outfile, "%s\n", pNZBInfo->GetName());
 		fprintf(outfile, "%s\n", pNZBInfo->GetCategory());
-		fprintf(outfile, "%i\n", (int)pNZBInfo->GetPostProcess());
+		fprintf(outfile, "%i,%i\n", (int)pNZBInfo->GetPostProcess(), (int)pNZBInfo->GetDeletePaused());
 		fprintf(outfile, "%i,%i,%i,%i,%i,%i\n", (int)pNZBInfo->GetParStatus(), (int)pNZBInfo->GetUnpackStatus(),
 			(int)pNZBInfo->GetMoveStatus(), (int)pNZBInfo->GetRenameStatus(), (int)pNZBInfo->GetDeleteStatus(),
 			(int)pNZBInfo->GetMarkStatus());
@@ -402,9 +402,17 @@ bool DiskState::LoadNZBList(DownloadQueue* pDownloadQueue, FILE* infile, int iFo
 			if (buf[0] != 0) buf[strlen(buf)-1] = 0; // remove traling '\n'
 			pNZBInfo->SetCategory(buf);
 
-			int iPostProcess;
-			if (fscanf(infile, "%i\n", &iPostProcess) != 1) goto error;
+			int iPostProcess, iDeletePaused = 0;
+			if (iFormatVersion >= 40)
+			{
+				if (fscanf(infile, "%i,%i\n", &iPostProcess, &iDeletePaused) != 2) goto error;
+			}
+			else
+			{
+				if (fscanf(infile, "%i\n", &iPostProcess) != 1) goto error;
+			}
 			pNZBInfo->SetPostProcess((bool)iPostProcess);
+			pNZBInfo->SetDeletePaused((bool)iDeletePaused);
 		}
 
 		if (iFormatVersion >= 8 && iFormatVersion < 18)

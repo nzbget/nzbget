@@ -255,14 +255,19 @@ void QueueCoordinator::AddNZBFileToQueue(NZBFile* pNZBFile, bool bAddFirst)
 	Aspect foundAspect = { eaNZBFileFound, &m_DownloadQueue, pNZBFile->GetNZBInfo(), NULL };
 	Notify(&foundAspect);
 
-	if (pNZBFile->GetNZBInfo()->GetDeleteStatus() != NZBInfo::dsNone &&
-		g_pOptions->GetSaveQueue() && g_pOptions->GetServerMode())
+	if (pNZBFile->GetNZBInfo()->GetDeleteStatus() != NZBInfo::dsNone)
 	{
+		bool bAllPaused = !pNZBFile->GetFileInfos()->empty();
 		for (NZBFile::FileInfos::iterator it = pNZBFile->GetFileInfos()->begin(); it != pNZBFile->GetFileInfos()->end(); it++)
 		{
 			FileInfo* pFileInfo = *it;
-			g_pDiskState->DiscardFile(pFileInfo);
+			bAllPaused &= pFileInfo->GetPaused();
+			if (g_pOptions->GetSaveQueue() && g_pOptions->GetServerMode())
+			{
+				g_pDiskState->DiscardFile(pFileInfo);
+			}
 		}
+		pNZBFile->GetNZBInfo()->SetDeletePaused(bAllPaused);
 	}
 
 	if (pNZBFile->GetNZBInfo()->GetDeleteStatus() == NZBInfo::dsManual)

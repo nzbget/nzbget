@@ -410,6 +410,7 @@ private:
 	EMoveStatus			m_eMoveStatus;
 	EDeleteStatus		m_eDeleteStatus;
 	EMarkStatus			m_eMarkStatus;
+	bool				m_bDeletePaused;
 	char*				m_szQueuedFilename;
 	bool				m_bDeleting;
 	bool				m_bAvoidHistory;
@@ -507,6 +508,8 @@ public:
 	void				SetQueuedFilename(const char* szQueuedFilename);
 	bool				GetDeleting() { return m_bDeleting; }
 	void				SetDeleting(bool bDeleting) { m_bDeleting = bDeleting; }
+	bool				GetDeletePaused() { return m_bDeletePaused; }
+	void				SetDeletePaused(bool bDeletePaused) { m_bDeletePaused = bDeletePaused; }
 	bool				GetAvoidHistory() { return m_bAvoidHistory; }
 	void				SetAvoidHistory(bool bAvoidHistory) { m_bAvoidHistory = bAvoidHistory; }
 	bool				GetHealthPaused() { return m_bHealthPaused; }
