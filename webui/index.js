@@ -275,6 +275,7 @@ var Frontend = (new function($)
 		{
 			case 'Config': Config.show(); break;
 			case 'Messages': Messages.show(); break;
+			case 'History': History.show(); break;
 		}
 	}
 
@@ -284,6 +285,7 @@ var Frontend = (new function($)
 		{
 			case 'Config': Config.hide(); break;
 			case 'Messages': Messages.hide(); break;
+			case 'History': History.hide(); break;
 		}
 		switch (activeTab)
 		{
