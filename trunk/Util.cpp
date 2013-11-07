@@ -523,6 +523,48 @@ void Util::MakeValidFilename(char* szFilename, char cReplaceChar, bool bAllowSla
 	}
 }
 
+// returns TRUE if the name was changed by adding duplicate-suffix
+bool Util::MakeUniqueFilename(char* szDestBufFilename, int iDestBufSize, const char* szDestDir, const char* szBasename)
+{
+	snprintf(szDestBufFilename, iDestBufSize, "%s%c%s", szDestDir, (int)PATH_SEPARATOR, szBasename);
+	szDestBufFilename[iDestBufSize-1] = '\0';
+
+	int iDupeNumber = 0;
+	while (FileExists(szDestBufFilename))
+	{
+		iDupeNumber++;
+
+		const char* szExtension = strrchr(szBasename, '.');
+		if (szExtension && szExtension != szBasename)
+		{
+			char szFilenameWithoutExt[1024];
+			strncpy(szFilenameWithoutExt, szBasename, 1024);
+			int iEnd = szExtension - szBasename;
+			szFilenameWithoutExt[iEnd < 1024 ? iEnd : 1024-1] = '\0';
+
+			if (!strcasecmp(szExtension, ".par2"))
+			{
+				char* szVolExtension = strrchr(szFilenameWithoutExt, '.');
+				if (szVolExtension && szVolExtension != szFilenameWithoutExt && !strncasecmp(szVolExtension, ".vol", 4))
+				{
+					*szVolExtension = '\0';
+					szExtension = szBasename + (szVolExtension - szFilenameWithoutExt);
+				}
+			}
+
+			snprintf(szDestBufFilename, iDestBufSize, "%s%c%s.duplicate%d%s", szDestDir, (int)PATH_SEPARATOR, szFilenameWithoutExt, iDupeNumber, szExtension);
+		}
+		else
+		{
+			snprintf(szDestBufFilename, iDestBufSize, "%s%c%s.duplicate%d", szDestDir, (int)PATH_SEPARATOR, szBasename, iDupeNumber);
+		}
+
+		szDestBufFilename[iDestBufSize-1] = '\0';
+	}
+
+	return iDupeNumber > 0;
+}
+
 long long Util::JoinInt64(unsigned long Hi, unsigned long Lo)
 {
 	return (((long long)Hi) << 32) + Lo;

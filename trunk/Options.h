@@ -289,7 +289,6 @@ private:
 	char*				m_szScriptOrder;
 	char*				m_szNZBProcess;
 	char*				m_szNZBAddedProcess;
-	bool				m_bStrictParName;
 	bool				m_bNoConfig;
 	int					m_iUMask;
 	int					m_iUpdateInterval;
@@ -454,7 +453,6 @@ public:
 	const char*			GetDefScript() { return m_szDefScript; }
 	const char*			GetNZBProcess() { return m_szNZBProcess; }
 	const char*			GetNZBAddedProcess() { return m_szNZBAddedProcess; }
-	bool				GetStrictParName() { return m_bStrictParName; }
 	int					GetUMask() { return m_iUMask; }
 	int					GetUpdateInterval() {return m_iUpdateInterval; }
 	bool				GetCursesNZBName() { return m_bCursesNZBName; }

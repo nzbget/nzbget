@@ -81,6 +81,7 @@ public:
 	static bool CreateSparseFile(const char* szFilename, int iSize);
 	static bool TruncateFile(const char* szFilename, int iSize);
 	static void MakeValidFilename(char* szFilename, char cReplaceChar, bool bAllowSlashes);
+	static bool MakeUniqueFilename(char* szDestBufFilename, int iDestBufSize, const char* szDestDir, const char* szBasename);
 	static bool MoveFile(const char* szSrcFilename, const char* szDstFilename);
 	static bool FileExists(const char* szFilename);
 	static bool FileExists(const char* szPath, const char* szFilenameWithoutPath);

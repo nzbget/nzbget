@@ -411,6 +411,7 @@ private:
 	EDeleteStatus		m_eDeleteStatus;
 	EMarkStatus			m_eMarkStatus;
 	bool				m_bDeletePaused;
+	bool				m_bManyDupeFiles;
 	char*				m_szQueuedFilename;
 	bool				m_bDeleting;
 	bool				m_bAvoidHistory;
@@ -510,6 +511,8 @@ public:
 	void				SetDeleting(bool bDeleting) { m_bDeleting = bDeleting; }
 	bool				GetDeletePaused() { return m_bDeletePaused; }
 	void				SetDeletePaused(bool bDeletePaused) { m_bDeletePaused = bDeletePaused; }
+	bool				GetManyDupeFiles() { return m_bManyDupeFiles; }
+	void				SetManyDupeFiles(bool bManyDupeFiles) { m_bManyDupeFiles = bManyDupeFiles; }
 	bool				GetAvoidHistory() { return m_bAvoidHistory; }
 	void				SetAvoidHistory(bool bAvoidHistory) { m_bAvoidHistory = bAvoidHistory; }
 	bool				GetHealthPaused() { return m_bHealthPaused; }

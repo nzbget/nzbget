@@ -149,7 +149,6 @@ static const char* OPTION_PARRENAME				= "ParRename";
 static const char* OPTION_HEALTHCHECK			= "HealthCheck";
 static const char* OPTION_NZBPROCESS			= "NZBProcess";
 static const char* OPTION_NZBADDEDPROCESS		= "NZBAddedProcess";
-static const char* OPTION_STRICTPARNAME			= "StrictParName";
 static const char* OPTION_UMASK					= "UMask";
 static const char* OPTION_UPDATEINTERVAL		= "UpdateInterval";
 static const char* OPTION_CURSESNZBNAME			= "CursesNzbName";
@@ -193,6 +192,7 @@ static const char* OPTION_PROCESSLOGKIND		= "ProcessLogKind";
 static const char* OPTION_APPENDNZBDIR			= "AppendNzbDir";
 static const char* OPTION_RENAMEBROKEN			= "RenameBroken";
 static const char* OPTION_MERGENZB				= "MergeNzb";
+static const char* OPTION_STRICTPARNAME			= "StrictParName";
 
 const char* BoolNames[] = { "yes", "no", "true", "false", "1", "0", "on", "off", "enable", "disable", "enabled", "disabled" };
 const int BoolValues[] = { 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0 };
@@ -540,7 +540,6 @@ Options::Options(int argc, char* argv[])
 	m_szDefScript			= NULL;
 	m_szNZBProcess			= NULL;
 	m_szNZBAddedProcess		= NULL;
-	m_bStrictParName		= false;
 	m_bNoConfig				= false;
 	m_iUMask				= 0;
 	m_iUpdateInterval		= 0;
@@ -898,7 +897,6 @@ void Options::InitDefault()
 	SetOption(OPTION_DEFSCRIPT, "");
 	SetOption(OPTION_NZBPROCESS, "");
 	SetOption(OPTION_NZBADDEDPROCESS, "");
-	SetOption(OPTION_STRICTPARNAME, "yes");
 	SetOption(OPTION_DAEMONUSERNAME, "root");
 	SetOption(OPTION_UMASK, "1000");
 	SetOption(OPTION_UPDATEINTERVAL, "200");
@@ -1100,7 +1098,6 @@ void Options::InitOptions()
 	m_bDupeCheck			= (bool)ParseEnumValue(OPTION_DUPECHECK, BoolCount, BoolNames, BoolValues);
 	m_bCreateLog			= (bool)ParseEnumValue(OPTION_CREATELOG, BoolCount, BoolNames, BoolValues);
 	m_bParRepair			= (bool)ParseEnumValue(OPTION_PARREPAIR, BoolCount, BoolNames, BoolValues);
-	m_bStrictParName		= (bool)ParseEnumValue(OPTION_STRICTPARNAME, BoolCount, BoolNames, BoolValues);
 	m_bParRename			= (bool)ParseEnumValue(OPTION_PARRENAME, BoolCount, BoolNames, BoolValues);
 	m_bReloadQueue			= (bool)ParseEnumValue(OPTION_RELOADQUEUE, BoolCount, BoolNames, BoolValues);
 	m_bReloadUrlQueue		= (bool)ParseEnumValue(OPTION_RELOADURLQUEUE, BoolCount, BoolNames, BoolValues);
@@ -2705,7 +2702,8 @@ bool Options::ValidateOptionName(const char * optname)
 		!strcasecmp(optname, OPTION_PROCESSLOGKIND) ||
 		!strcasecmp(optname, OPTION_APPENDNZBDIR) ||
 		!strcasecmp(optname, OPTION_RENAMEBROKEN) ||
-		!strcasecmp(optname, OPTION_MERGENZB))
+		!strcasecmp(optname, OPTION_MERGENZB) ||
+		!strcasecmp(optname, OPTION_STRICTPARNAME))
 	{
 		ConfigWarn("Option \"%s\" is obsolete, ignored", optname);
 		return true;

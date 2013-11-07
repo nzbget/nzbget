@@ -298,6 +298,7 @@ NZBInfo::NZBInfo()
 	m_eMarkStatus = ksNone;
 	m_bDeleting = false;
 	m_bDeletePaused = false;
+	m_bManyDupeFiles = false;
 	m_bAvoidHistory = false;
 	m_bHealthPaused = false;
 	m_bParCleanup = false;

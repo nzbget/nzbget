@@ -716,7 +716,10 @@ void QueueCoordinator::ArticleCompleted(ArticleDownloader* pArticleDownloader)
 	{
 		pFileInfo->SetFilename(pArticleDownloader->GetArticleFilename());
 		pFileInfo->SetFilenameConfirmed(true);
-		if (g_pOptions->GetDupeCheck() && Util::FileExists(pFileInfo->GetNZBInfo()->GetDestDir(), pFileInfo->GetFilename()))
+		if (g_pOptions->GetDupeCheck() &&
+			pFileInfo->GetNZBInfo()->GetDupeMode() != dmForce &&
+			!pFileInfo->GetNZBInfo()->GetManyDupeFiles() &&
+			Util::FileExists(pFileInfo->GetNZBInfo()->GetDestDir(), pFileInfo->GetFilename()))
 		{
 			warn("File \"%s\" seems to be duplicate, cancelling download and deleting file from queue", pFileInfo->GetFilename());
 			fileCompleted = false;

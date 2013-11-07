@@ -138,7 +138,7 @@ bool DiskState::SaveDownloadQueue(DownloadQueue* pDownloadQueue)
 		return false;
 	}
 
-	fprintf(outfile, "%s%i\n", FORMATVERSION_SIGNATURE, 40);
+	fprintf(outfile, "%s%i\n", FORMATVERSION_SIGNATURE, 41);
 
 	// save nzb-infos
 	SaveNZBList(pDownloadQueue, outfile);
@@ -192,7 +192,7 @@ bool DiskState::LoadDownloadQueue(DownloadQueue* pDownloadQueue)
 	char FileSignatur[128];
 	fgets(FileSignatur, sizeof(FileSignatur), infile);
 	int iFormatVersion = ParseFormatVersion(FileSignatur);
-	if (iFormatVersion < 3 || iFormatVersion > 40)
+	if (iFormatVersion < 3 || iFormatVersion > 41)
 	{
 		error("Could not load diskstate due to file version mismatch");
 		fclose(infile);
@@ -266,7 +266,8 @@ void DiskState::SaveNZBList(DownloadQueue* pDownloadQueue, FILE* outfile)
 		fprintf(outfile, "%s\n", pNZBInfo->GetQueuedFilename());
 		fprintf(outfile, "%s\n", pNZBInfo->GetName());
 		fprintf(outfile, "%s\n", pNZBInfo->GetCategory());
-		fprintf(outfile, "%i,%i\n", (int)pNZBInfo->GetPostProcess(), (int)pNZBInfo->GetDeletePaused());
+		fprintf(outfile, "%i,%i,%i\n", (int)pNZBInfo->GetPostProcess(), (int)pNZBInfo->GetDeletePaused(),
+			(int)pNZBInfo->GetManyDupeFiles());
 		fprintf(outfile, "%i,%i,%i,%i,%i,%i\n", (int)pNZBInfo->GetParStatus(), (int)pNZBInfo->GetUnpackStatus(),
 			(int)pNZBInfo->GetMoveStatus(), (int)pNZBInfo->GetRenameStatus(), (int)pNZBInfo->GetDeleteStatus(),
 			(int)pNZBInfo->GetMarkStatus());
@@ -401,19 +402,24 @@ bool DiskState::LoadNZBList(DownloadQueue* pDownloadQueue, FILE* infile, int iFo
 			if (!fgets(buf, sizeof(buf), infile)) goto error;
 			if (buf[0] != 0) buf[strlen(buf)-1] = 0; // remove traling '\n'
 			pNZBInfo->SetCategory(buf);
-
-			int iPostProcess, iDeletePaused = 0;
-			if (iFormatVersion >= 40)
-			{
-				if (fscanf(infile, "%i,%i\n", &iPostProcess, &iDeletePaused) != 2) goto error;
-			}
-			else
-			{
-				if (fscanf(infile, "%i\n", &iPostProcess) != 1) goto error;
-			}
-			pNZBInfo->SetPostProcess((bool)iPostProcess);
-			pNZBInfo->SetDeletePaused((bool)iDeletePaused);
 		}
+
+		int iPostProcess = 0, iDeletePaused = 0, iManyDupeFiles = 0;
+		if (iFormatVersion >= 41)
+		{
+			if (fscanf(infile, "%i,%i,%i\n", &iPostProcess, &iDeletePaused, &iManyDupeFiles) != 3) goto error;
+		}
+		else if (iFormatVersion >= 40)
+		{
+			if (fscanf(infile, "%i,%i\n", &iPostProcess, &iDeletePaused) != 2) goto error;
+		}
+		else if (iFormatVersion >= 4)
+		{
+			if (fscanf(infile, "%i\n", &iPostProcess) != 1) goto error;
+		}
+		pNZBInfo->SetPostProcess((bool)iPostProcess);
+		pNZBInfo->SetDeletePaused((bool)iDeletePaused);
+		pNZBInfo->SetManyDupeFiles((bool)iManyDupeFiles);
 
 		if (iFormatVersion >= 8 && iFormatVersion < 18)
 		{
