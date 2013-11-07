@@ -44,6 +44,8 @@ var History = (new function($)
 	var history;
 	var notification = null;
 	var updateTabInfo;
+	var curFilter = 'ALL';
+	var activeTab = false;
 	var showDup = false;
 
 	this.init = function(options)
@@ -70,6 +72,7 @@ var History = (new function($)
 				maxPages: UISettings.miniTheme ? 1 : 5,
 				pageDots: !UISettings.miniTheme,
 				fillFieldsCallback: fillFieldsCallback,
+				filterCallback: filterCallback,
 				renderCellCallback: renderCellCallback,
 				updateInfoCallback: updateInfo
 			});
@@ -88,11 +91,23 @@ var History = (new function($)
 			UISettings.miniTheme ? 1 : 5, !UISettings.miniTheme);
 	}
 
+	this.show = function()
+	{
+		activeTab = true;
+		this.redraw();
+	}
+
+	this.hide = function()
+	{
+		activeTab = false;
+	}
+
 	this.update = function()
 	{
 		if (!history)
 		{
 			$('#HistoryTable_Category').css('width', DownloadsUI.calcCategoryColumnWidth());
+			initFilterButtons();
 		}
 
 		RPC.call('history', [showDup], loaded);
@@ -120,37 +135,41 @@ var History = (new function($)
 			if (hist.MarkStatus === 'BAD')
 			{
 				hist.status = 'failure';
+				hist.FilterKind = 'FAILURE';
 			}
 			else if (hist.DeleteStatus !== 'NONE')
 			{
 				switch (hist.DeleteStatus)
 				{
-					case 'HEALTH': hist.status = 'deleted-health'; break;
-					case 'MANUAL': hist.status = 'deleted-manual'; break;
-					case 'DUPE': hist.status = 'deleted-dupe'; break;
+					case 'HEALTH': hist.status = 'deleted-health'; hist.FilterKind = 'FAILURE'; break;
+					case 'MANUAL': hist.status = 'deleted-manual'; hist.FilterKind = 'DELETED'; break;
+					case 'DUPE': hist.status = 'deleted-dupe'; hist.FilterKind = 'DUPE'; break;
 				}
 			}
 			else if (hist.ParStatus == 'FAILURE' || hist.UnpackStatus == 'FAILURE' || hist.MoveStatus == 'FAILURE')
 			{
 				hist.status = 'failure';
+				hist.FilterKind = 'FAILURE';
 			}
 			else if (hist.ParStatus == 'MANUAL')
 			{
 				hist.status = 'damaged';
+				hist.FilterKind = 'FAILURE';
 			}
 			else if (hist.ParStatus == 'NONE' && hist.UnpackStatus == 'NONE' &&
 				(hist.ScriptStatus !== 'FAILURE' || hist.Health < 1000))
 			{
 				hist.status = hist.Health === 1000 ? 'success' :
 					hist.Health >= hist.CriticalHealth ? 'damaged' : 'failure';
+				hist.FilterKind = hist.status === 'success' ? 'SUCCESS' : 'FAILURE';
 			}
 			else
 			{
 				switch (hist.ScriptStatus)
 				{
-					case 'SUCCESS': hist.status = 'success'; break;
-					case 'FAILURE': hist.status = 'pp-failure'; break;
-					case 'UNKNOWN': hist.status = 'unknown'; break;
+					case 'SUCCESS': hist.status = 'success'; hist.FilterKind = 'SUCCESS'; break;
+					case 'FAILURE': hist.status = 'pp-failure'; hist.FilterKind = 'FAILURE'; break;
+					case 'UNKNOWN': hist.status = 'unknown'; hist.FilterKind = 'FAILURE'; break;
 					case 'NONE':
 						switch (hist.UnpackStatus)
 						{
@@ -158,9 +177,9 @@ var History = (new function($)
 							case 'NONE':
 								switch (hist.ParStatus)
 								{
-									case 'SUCCESS': hist.status = 'success'; break;
-									case 'REPAIR_POSSIBLE': hist.status = 'repairable'; break;
-									case 'NONE': hist.status = 'unknown'; break;
+									case 'SUCCESS': hist.status = 'success'; hist.FilterKind = 'SUCCESS'; break;
+									case 'REPAIR_POSSIBLE': hist.status = 'repairable'; hist.FilterKind = 'FAILURE'; break;
+									case 'NONE': hist.status = 'unknown'; hist.FilterKind = 'FAILURE'; break;
 								}
 						}
 				}
@@ -170,24 +189,24 @@ var History = (new function($)
 		{
 			switch (hist.UrlStatus)
 			{
-				case 'SUCCESS': hist.status = 'success'; break;
-				case 'FAILURE': hist.status = 'failure'; break;
-				case 'UNKNOWN': hist.status = 'unknown'; break;
-				case 'SCAN_FAILURE': hist.status = 'failure'; break;
-				case 'SCAN_SKIPPED': hist.status = 'skipped'; break;
+				case 'SUCCESS': hist.status = 'success'; hist.FilterKind = 'SUCCESS'; break;
+				case 'FAILURE': hist.status = 'failure'; hist.FilterKind = 'FAILURE'; break;
+				case 'UNKNOWN': hist.status = 'unknown'; hist.FilterKind = 'FAILURE'; break;
+				case 'SCAN_FAILURE': hist.status = 'failure'; hist.FilterKind = 'FAILURE'; break;
+				case 'SCAN_SKIPPED': hist.status = 'skipped'; hist.FilterKind = 'FAILURE'; break;
 			}
 		}
 		else if (hist.Kind === 'DUP')
 		{
 			switch (hist.DupStatus)
 			{
-				case 'SUCCESS': hist.status = 'success'; break;
-				case 'FAILURE': hist.status = 'failure'; break;
-				case 'DELETED': hist.status = 'deleted-manual'; break;
-				case 'DUPE': hist.status = 'deleted-dupe'; break;
-				case 'GOOD': hist.status = 'GOOD'; break;
-				case 'BAD': hist.status = 'failure'; break;
-				case 'UNKNOWN': hist.status = 'unknown'; break;
+				case 'SUCCESS': hist.status = 'success'; hist.FilterKind = 'SUCCESS'; break;
+				case 'FAILURE': hist.status = 'failure'; hist.FilterKind = 'FAILURE'; break;
+				case 'DELETED': hist.status = 'deleted-manual'; hist.FilterKind = 'DELETED'; break;
+				case 'DUPE': hist.status = 'deleted-dupe'; hist.FilterKind = 'DUPE'; break;
+				case 'GOOD': hist.status = 'GOOD'; hist.FilterKind = 'SUCCESS'; break;
+				case 'BAD': hist.status = 'failure'; hist.FilterKind = 'FAILURE'; break;
+				case 'UNKNOWN': hist.status = 'unknown'; hist.FilterKind = 'FAILURE'; break;
 			}
 		}
 	}
@@ -305,6 +324,10 @@ var History = (new function($)
 	function updateInfo(stat)
 	{
 		updateTabInfo($HistoryTabBadge, stat);
+		if (activeTab)
+		{
+			updateFilterButtons();
+		}
 	}
 
 	this.deleteClick = function()
@@ -381,6 +404,54 @@ var History = (new function($)
 		}
 
 		HistoryEditDialog.showModal(hist);
+	}
+
+	function filterCallback(item)
+	{
+		return !activeTab || curFilter === 'ALL' || item.hist.FilterKind === curFilter;
+	}
+
+	function initFilterButtons()
+	{
+		Util.show($('#History_Badge_DUPE, #History_Badge_DUPE2').closest('.btn'), Options.option('DupeCheck') === 'yes');
+	}
+
+	function updateFilterButtons()
+	{
+		var countSuccess = 0;
+		var countFailure = 0;
+		var countDeleted = 0;
+		var countDupe = 0;
+
+		var data = $HistoryTable.fasttable('availableContent');
+
+		for (var i=0; i < data.length; i++)
+		{
+			var hist = data[i].hist;
+			switch (hist.FilterKind)
+			{
+				case 'SUCCESS': countSuccess++; break;
+				case 'FAILURE': countFailure++; break;
+				case 'DELETED': countDeleted++; break;
+				case 'DUPE': countDupe++; break;
+			}
+		}
+		$('#History_Badge_ALL,#History_Badge_ALL2').text(countSuccess + countFailure + countDeleted + countDupe);
+		$('#History_Badge_SUCCESS,#History_Badge_SUCCESS2').text(countSuccess);
+		$('#History_Badge_FAILURE,#History_Badge_FAILURE2').text(countFailure);
+		$('#History_Badge_DELETED,#History_Badge_DELETED2').text(countDeleted);
+		$('#History_Badge_DUPE,#History_Badge_DUPE2').text(countDupe);
+
+		$('#HistoryTab_Toolbar .history-filter').removeClass('btn-inverse');
+		$('#History_Badge_' + curFilter + ',#History_Badge_' + curFilter + '2').closest('.history-filter').addClass('btn-inverse');
+		$('#HistoryTab_Toolbar .badge').removeClass('badge-active');
+		$('#History_Badge_' + curFilter + ',#History_Badge_' + curFilter + '2').addClass('badge-active');
+	}
+
+	this.filter = function(type)
+	{
+		curFilter = type;
+		History.redraw();
 	}
 
 	this.dupClick = function()

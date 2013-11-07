@@ -314,11 +314,25 @@
 
 <!-- *** HISTORY: TOOLBAR -->
 
-			<div class="btn-toolbar form-inline section-toolbar">
+			<div class="btn-toolbar form-inline section-toolbar" id ="HistoryTab_Toolbar">
 				<div class="btn-group">
 					<button class="btn" onclick="History.deleteClick()" title="Delete selected records"><i class="icon-trash"></i><span class="btn-caption"> Delete</span></button>
 				</div>
 
+				<!-- STATUS FILTER BUTTONS -->
+				<div class="btn-group phone-hide">
+					<button class="btn history-filter btn-inverse" onclick="History.filter('ALL')" title="Show All">All &nbsp;<span class="badge badge-active" id="History_Badge_ALL">?</span></button>
+					<button class="btn history-filter" onclick="History.filter('SUCCESS')" title="Show only Success">Success &nbsp;<span class="badge" id="History_Badge_SUCCESS">?</span></button>
+					<button class="btn history-filter" onclick="History.filter('FAILURE')" title="Show only Failure">Failure &nbsp;<span class="badge" id="History_Badge_FAILURE">?</span></button>
+					<button class="btn history-filter" onclick="History.filter('DELETED')" title="Show only Warning">Deleted &nbsp;<span class="badge" id="History_Badge_DELETED">?</span></button>
+					<button class="btn history-filter" onclick="History.filter('DUPE')" title="Show only Dupe">Dupe &nbsp;<span class="badge" id="History_Badge_DUPE">?</span></button>
+				</div>
+				<div class="btn-group phone-only inline"><button class="btn history-filter btn-inverse" onclick="History.filter('ALL')" title="Show All">A &nbsp;<span class="badge badge-active" id="History_Badge_ALL2">?</span></button></div>
+				<div class="btn-group phone-only inline"><button class="btn history-filter" onclick="History.filter('SUCCESS')" title="Show only Success">S &nbsp;<span class="badge" id="History_Badge_SUCCESS2">?</span></button></div>
+				<div class="btn-group phone-only inline"><button class="btn history-filter" onclick="History.filter('FAILURE')" title="Show only Failure">F &nbsp;<span class="badge" id="History_Badge_FAILURE2">?</span></button></div>
+				<div class="btn-group phone-only inline"><button class="btn history-filter" onclick="History.filter('DELETED')" title="Show only Warning">D &nbsp;<span class="badge" id="History_Badge_DELETED2">?</span></button></div>
+				<div class="btn-group phone-only inline"><button class="btn history-filter" onclick="History.filter('DUPE')" title="Show only Dupe">U &nbsp;<span class="badge" id="History_Badge_DUPE2">?</span></button></div>
+				
 				<div class="btn-group">
 					<button class="btn" id="History_Dup" onclick="History.dupClick()" title="Show hidden records kept for duplicate check"><i class="icon-mask" id="History_DupIcon"></i><span class="btn-caption"> Hidden</span></button>
 				</div>
