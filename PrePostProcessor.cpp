@@ -873,27 +873,15 @@ FileInfo* PrePostProcessor::GetQueueGroup(DownloadQueue* pDownloadQueue, NZBInfo
 
 void PrePostProcessor::ApplySchedulerState()
 {
-	if (g_pScheduler->GetDownloadRateChanged())
-	{
-		info("Scheduler: set download rate to %i KB/s", g_pScheduler->GetDownloadRate() / 1024);
-		g_pOptions->SetDownloadRate(g_pScheduler->GetDownloadRate());
-	}
-
 	if (g_pScheduler->GetPauseDownloadChanged())
 	{
-		info("Scheduler: %s download queue", g_pScheduler->GetPauseDownload() ? "pause" : "unpause");
+		info("Scheduler: %s download queue", g_pScheduler->GetPauseDownload() ? "pausing" : "unpausing");
 		m_bSchedulerPauseChanged = true;
 		m_bSchedulerPause = g_pScheduler->GetPauseDownload();
 		if (!m_bPostPause)
 		{
 			g_pOptions->SetPauseDownload(m_bSchedulerPause);
 		}
-	}
-
-	if (g_pScheduler->GetPauseScanChanged())
-	{
-		info("Scheduler: %s scan", g_pScheduler->GetPauseScan() ? "pause" : "unpause");
-		g_pOptions->SetPauseScan(g_pScheduler->GetPauseScan());
 	}
 }
 

@@ -2291,7 +2291,19 @@ void Options::InitScheduler()
 		sprintf(optname, "Task%i.Process", n);
 		const char* szProcess = GetOption(optname);
 
-		bool definition = szTime || szWeekDays || szCommand || szDownloadRate || szProcess;
+		sprintf(optname, "Task%i.Param", n);
+		const char* szParam = GetOption(optname);
+
+		if (Util::EmptyStr(szParam) && !Util::EmptyStr(szProcess))
+		{
+			szParam = szProcess;
+		}
+		if (Util::EmptyStr(szParam) && !Util::EmptyStr(szDownloadRate))
+		{
+			szParam = szDownloadRate;
+		}
+
+		bool definition = szTime || szWeekDays || szCommand || szDownloadRate || szParam;
 		bool completed = szTime && szCommand;
 
 		if (!definition)
@@ -2307,21 +2319,26 @@ void Options::InitScheduler()
 			bOK = false;
 		}
 
-		if (szProcess && strlen(szProcess) > 0 && !Util::SplitCommandLine(szProcess, NULL))
-		{
-			ConfigError("Invalid value for option \"Task%i.Process\"", n);
-			bOK = false;
-		}
-
 		snprintf(optname, sizeof(optname), "Task%i.Command", n);
 		optname[sizeof(optname)-1] = '\0';
 
-		const char* CommandNames[] = { "pausedownload", "pause", "unpausedownload", "resumedownload", "unpause", "resume", "downloadrate", "setdownloadrate",
-			"rate", "speed", "script", "process", "pausescan", "unpausescan", "resumescan" };
-		const int CommandValues[] = { Scheduler::scPauseDownload, Scheduler::scPauseDownload, Scheduler::scUnpauseDownload, Scheduler::scUnpauseDownload, Scheduler::scUnpauseDownload, Scheduler::scUnpauseDownload, Scheduler::scDownloadRate, Scheduler::scDownloadRate,
-			Scheduler::scDownloadRate, Scheduler::scDownloadRate, Scheduler::scProcess, Scheduler::scProcess, Scheduler::scPauseScan, Scheduler::scUnpauseScan, Scheduler::scUnpauseScan };
-		const int CommandCount = 15;
+		const char* CommandNames[] = { "pausedownload", "pause", "unpausedownload", "resumedownload", "unpause", "resume",
+			"downloadrate", "setdownloadrate", "rate", "speed", "script", "process", "pausescan", "unpausescan", "resumescan",
+			"activateserver", "deactivateserver"};
+		const int CommandValues[] = { Scheduler::scPauseDownload, Scheduler::scPauseDownload, Scheduler::scUnpauseDownload,
+			Scheduler::scUnpauseDownload, Scheduler::scUnpauseDownload, Scheduler::scUnpauseDownload, Scheduler::scDownloadRate,
+			Scheduler::scDownloadRate, Scheduler::scDownloadRate, Scheduler::scDownloadRate, Scheduler::scProcess,
+			Scheduler::scProcess, Scheduler::scPauseScan, Scheduler::scUnpauseScan, Scheduler::scUnpauseScan,
+			Scheduler::scActivateServer, Scheduler::scDeactivateServer };
+		const int CommandCount = 17;
 		Scheduler::ECommand eCommand = (Scheduler::ECommand)ParseEnumValue(optname, CommandCount, CommandNames, CommandValues);
+
+		if (szParam && strlen(szParam) > 0 && eCommand == Scheduler::scProcess &&
+			!Util::SplitCommandLine(szParam, NULL))
+		{
+			ConfigError("Invalid value for option \"Task%i.Param\"", n);
+			bOK = false;
+		}
 
 		int iWeekDays = 0;
 		if (szWeekDays && !ParseWeekDays(szWeekDays, &iWeekDays))
@@ -2330,29 +2347,31 @@ void Options::InitScheduler()
 			bOK = false;
 		}
 
-		int iDownloadRate = 0;
 		if (eCommand == Scheduler::scDownloadRate)
 		{
-			if (szDownloadRate)
+			if (szParam)
 			{
 				char* szErr;
-				iDownloadRate = strtol(szDownloadRate, &szErr, 10);
+				int iDownloadRate = strtol(szParam, &szErr, 10);
 				if (!szErr || *szErr != '\0' || iDownloadRate < 0)
 				{
-					ConfigError("Invalid value for option \"Task%i.DownloadRate\": \"%s\"", n, szDownloadRate);
+					ConfigError("Invalid value for option \"Task%i.Param\": \"%s\"", n, szDownloadRate);
 					bOK = false;
 				}
 			}
 			else
 			{
-				ConfigError("Task definition not complete for \"Task%i\". Option \"Task%i.DownloadRate\" is missing", n, n);
+				ConfigError("Task definition not complete for \"Task%i\". Option \"Task%i.Param\" is missing", n, n);
 				bOK = false;
 			}
 		}
 
-		if (eCommand == Scheduler::scProcess && (!szProcess || strlen(szProcess) == 0))
+		if ((eCommand == Scheduler::scProcess || 
+			 eCommand == Scheduler::scActivateServer ||
+			 eCommand == Scheduler::scDeactivateServer) && 
+			Util::EmptyStr(szParam))
 		{
-			ConfigError("Task definition not complete for \"Task%i\". Option \"Task%i.Process\" is missing", n, n);
+			ConfigError("Task definition not complete for \"Task%i\". Option \"Task%i.Param\" is missing", n, n);
 			bOK = false;
 		}
 
@@ -2372,13 +2391,13 @@ void Options::InitScheduler()
 				{
 					for (int iEveryHour = 0; iEveryHour < 24; iEveryHour++)
 					{
-						Scheduler::Task* pTask = new Scheduler::Task(iEveryHour, iMinutes, iWeekDays, eCommand, iDownloadRate * 1024, szProcess);
+						Scheduler::Task* pTask = new Scheduler::Task(iEveryHour, iMinutes, iWeekDays, eCommand, szParam);
 						g_pScheduler->AddTask(pTask);
 					}
 				}
 				else
 				{
-					Scheduler::Task* pTask = new Scheduler::Task(iHours, iMinutes, iWeekDays, eCommand, iDownloadRate * 1024, szProcess);
+					Scheduler::Task* pTask = new Scheduler::Task(iHours, iMinutes, iWeekDays, eCommand, szParam);
 					g_pScheduler->AddTask(pTask);
 				}
 			}
@@ -2657,7 +2676,8 @@ bool Options::ValidateOptionName(const char * optname)
 		char* p = (char*)optname + 4;
 		while (*p >= '0' && *p <= '9') p++;
 		if (p && (!strcasecmp(p, ".time") || !strcasecmp(p, ".weekdays") ||
-			!strcasecmp(p, ".command") || !strcasecmp(p, ".downloadrate") || !strcasecmp(p, ".process")))
+			!strcasecmp(p, ".command") || !strcasecmp(p, ".param") ||
+			!strcasecmp(p, ".downloadrate") || !strcasecmp(p, ".process")))
 		{
 			return true;
 		}
