@@ -697,17 +697,7 @@ bool MoveController::MoveFiles()
 			szSrcFile[1024-1] = '\0';
 
 			char szDstFile[1024];
-			snprintf(szDstFile, 1024, "%s%c%s", m_szDestDir, PATH_SEPARATOR, filename);
-			szDstFile[1024-1] = '\0';
-
-			// prevent overwriting of existing files
-			int dupcount = 0;
-			while (Util::FileExists(szDstFile))
-			{
-				dupcount++;
-				snprintf(szDstFile, 1024, "%s%c%s_duplicate%d", m_szDestDir, PATH_SEPARATOR, filename, dupcount);
-				szDstFile[1024-1] = '\0';
-			}
+			Util::MakeUniqueFilename(szDstFile, 1024, m_szDestDir, filename);
 
 			PrintMessage(Message::mkInfo, "Moving file %s to %s", Util::BaseFileName(szSrcFile), m_szDestDir);
 			if (!Util::MoveFile(szSrcFile, szDstFile))

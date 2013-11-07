@@ -401,7 +401,7 @@ bool ParCoordinator::RequestMorePars(NZBInfo* pNZBInfo, const char* szParFilenam
 		FindPars(pDownloadQueue, pNZBInfo, szParFilename, &blocks, true, false, &iCurBlockFound);
         iBlockFound += iCurBlockFound;
 	}
-	if (iBlockFound < iBlockNeeded && !g_pOptions->GetStrictParName())
+	if (iBlockFound < iBlockNeeded)
 	{
 		FindPars(pDownloadQueue, pNZBInfo, szParFilename, &blocks, false, false, &iCurBlockFound);
         iBlockFound += iCurBlockFound;

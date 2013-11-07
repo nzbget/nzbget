@@ -601,7 +601,9 @@ bool ArticleDownloader::PrepareFile(char* szLine)
 	{
 		if (!strncmp(szLine, "=ybegin ", 8))
 		{
-			if (g_pOptions->GetDupeCheck())
+			if (g_pOptions->GetDupeCheck() &&
+				m_pFileInfo->GetNZBInfo()->GetDupeMode() != dmForce &&
+				!m_pFileInfo->GetNZBInfo()->GetManyDupeFiles())
 			{
 				m_pFileInfo->LockOutputFile();
 				bool bOutputInitialized = m_pFileInfo->GetOutputInitialized();
@@ -968,17 +970,7 @@ void ArticleDownloader::CompleteFileParts()
 	}
 
 	char ofn[1024];
-	snprintf(ofn, 1024, "%s%c%s", szNZBDestDir, (int)PATH_SEPARATOR, m_pFileInfo->GetFilename());
-	ofn[1024-1] = '\0';
-
-	// prevent overwriting existing files
-	int dupcount = 0;
-	while (Util::FileExists(ofn))
-	{
-		dupcount++;
-		snprintf(ofn, 1024, "%s%c%s_duplicate%d", szNZBDestDir, (int)PATH_SEPARATOR, m_pFileInfo->GetFilename(), dupcount);
-		ofn[1024-1] = '\0';
-	}
+	Util::MakeUniqueFilename(ofn, 1024, szNZBDestDir, m_pFileInfo->GetFilename());
 
 	FILE* outfile = NULL;
 	char tmpdestfile[1024];
@@ -1184,13 +1176,7 @@ bool ArticleDownloader::MoveCompletedFiles(NZBInfo* pNZBInfo, const char* szOldD
 		if (strcmp(szFileName, szNewFileName))
 		{
 			// prevent overwriting of existing files
-			int dupcount = 0;
-			while (Util::FileExists(szNewFileName))
-			{
-				dupcount++;
-				snprintf(szNewFileName, 1024, "%s%c%s_duplicate%d", pNZBInfo->GetDestDir(), (int)PATH_SEPARATOR, Util::BaseFileName(szFileName), dupcount);
-				szNewFileName[1024-1] = '\0';
-			}
+			Util::MakeUniqueFilename(szNewFileName, 1024, pNZBInfo->GetDestDir(), Util::BaseFileName(szFileName));
 
 			detail("Moving file %s to %s", szFileName, szNewFileName);
 			if (Util::MoveFile(szFileName, szNewFileName))

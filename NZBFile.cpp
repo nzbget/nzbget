@@ -365,6 +365,7 @@ void NZBFile::BuildFilenames()
 
 	if (HasDuplicateFilenames())
     {
+		m_pNZBInfo->SetManyDupeFiles(true);
 		for (FileInfos::iterator it = m_FileInfos.begin(); it != m_FileInfos.end(); it++)
 		{
 			FileInfo* pFileInfo = *it;
