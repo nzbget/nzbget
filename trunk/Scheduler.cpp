@@ -42,30 +42,27 @@
 #include "ScriptController.h"
 #include "Options.h"
 #include "Log.h"
+#include "NewsServer.h"
+#include "ServerPool.h"
 
 extern Options* g_pOptions;
+extern ServerPool* g_pServerPool;
 
-Scheduler::Task::Task(int iHours, int iMinutes, int iWeekDaysBits, ECommand eCommand, 
-	int iDownloadRate, const char* szProcess)
+Scheduler::Task::Task(int iHours, int iMinutes, int iWeekDaysBits, ECommand eCommand, const char* szParam)
 {
 	m_iHours = iHours;
 	m_iMinutes = iMinutes;
 	m_iWeekDaysBits = iWeekDaysBits;
 	m_eCommand = eCommand;
-	m_iDownloadRate = iDownloadRate;
-	m_szProcess = NULL;
-	if (szProcess)
-	{
-		m_szProcess = strdup(szProcess);
-	}
+	m_szParam = szParam ? strdup(szParam) : NULL;
 	m_tLastExecuted = 0;
 }
 
 Scheduler::Task::~Task()
 {
-	if (m_szProcess)
+	if (m_szParam)
 	{
-		free(m_szProcess);
+		free(m_szParam);
 	}
 }
 
@@ -112,9 +109,6 @@ void Scheduler::FirstCheck()
 	m_tLastCheck = tCurrent - 60*60*24*7;
 	m_bDetectClockChanges = false;
 	m_bExecuteProcess = false;
-	m_bDownloadRateChanged = false;
-	m_bPauseDownloadChanged = false;
-	m_bPauseScanChanged = false;
 	CheckTasks();
 }
 
@@ -122,14 +116,13 @@ void Scheduler::IntervalCheck()
 {
 	m_bDetectClockChanges = true;
 	m_bExecuteProcess = true;
-	m_bDownloadRateChanged = false;
-	m_bPauseDownloadChanged = false;
-	m_bPauseScanChanged = false;
 	CheckTasks();
 }
 
 void Scheduler::CheckTasks()
 {
+	PrepareLog();
+
 	m_mutexTaskList.Lock();
 
 	time_t tCurrent = time(NULL);
@@ -204,25 +197,24 @@ void Scheduler::CheckTasks()
 	m_tLastCheck = tCurrent;
 
 	m_mutexTaskList.Unlock();
+
+	PrintLog();
 }
 
 void Scheduler::ExecuteTask(Task* pTask)
 {
-	if (pTask->m_eCommand == scDownloadRate)
-	{
-		debug("Executing scheduled command: Set download rate to %i", pTask->m_iDownloadRate);
-	}
-	else
-	{
-		const char* szCommandName[] = { "Pause", "Unpause", "Set download rate", "Execute program", "Pause Scan", "Unpause Scan" };
-		debug("Executing scheduled command: %s", szCommandName[pTask->m_eCommand]);
-	}
+	const char* szCommandName[] = { "Pause", "Unpause", "Set download rate", "Execute program", "Pause Scan", "Unpause Scan",
+		"Enable Server", "Disable Server" };
+	debug("Executing scheduled command: %s", szCommandName[pTask->m_eCommand]);
 
 	switch (pTask->m_eCommand)
 	{
 		case scDownloadRate:
-			m_iDownloadRate = pTask->m_iDownloadRate;
-			m_bDownloadRateChanged = true;
+			if (!Util::EmptyStr(pTask->m_szParam))
+			{
+				g_pOptions->SetDownloadRate(atoi(pTask->m_szParam) * 1024);
+				m_bDownloadRateChanged = true;
+			}
 			break;
 
 		case scPauseDownload:
@@ -234,14 +226,91 @@ void Scheduler::ExecuteTask(Task* pTask)
 		case scProcess:
 			if (m_bExecuteProcess)
 			{
-				SchedulerScriptController::StartScript(pTask->m_szProcess);
+				SchedulerScriptController::StartScript(pTask->m_szParam);
 			}
 			break;
 
 		case scPauseScan:
 		case scUnpauseScan:
-			m_bPauseScan = pTask->m_eCommand == scPauseScan;
+			g_pOptions->SetPauseScan(pTask->m_eCommand == scPauseScan);
 			m_bPauseScanChanged = true;
 			break;
+
+		case scActivateServer:
+		case scDeactivateServer:
+			EditServer(pTask->m_eCommand == scActivateServer, pTask->m_szParam);
+			break;
 	}
+}
+
+void Scheduler::PrepareLog()
+{
+	m_bDownloadRateChanged = false;
+	m_bPauseDownloadChanged = false;
+	m_bPauseScanChanged = false;
+	m_bServerChanged = false;
+}
+
+void Scheduler::PrintLog()
+{
+	if (m_bDownloadRateChanged)
+	{
+		info("Scheduler: setting download rate to %i KB/s", g_pOptions->GetDownloadRate() / 1024);
+	}
+	if (m_bPauseScanChanged)
+	{
+		info("Scheduler: %s scan", g_pOptions->GetPauseScan() ? "pausing" : "unpausing");
+	}
+	if (m_bServerChanged)
+	{
+		int index = 0;
+		for (Servers::iterator it = g_pServerPool->GetServers()->begin(); it != g_pServerPool->GetServers()->end(); it++, index++)
+		{
+			NewsServer* pServer = *it;
+			if (pServer->GetActive() != m_ServerStatusList[index])
+			{
+				info("Scheduler: %s %s", pServer->GetActive() ? "activating" : "deactivating", pServer->GetName());
+			}
+		}
+		g_pServerPool->Changed();
+	}
+}
+
+void Scheduler::EditServer(bool bActive, const char* szServerList)
+{
+	char* szServerList2 = strdup(szServerList);
+	char* saveptr;
+	char* szServer = strtok_r(szServerList2, ",;", &saveptr);
+	while (szServer)
+	{
+		szServer = Util::Trim(szServer);
+		if (szServer[0] != '\0')
+		{
+			int iID = atoi(szServer);
+			for (Servers::iterator it = g_pServerPool->GetServers()->begin(); it != g_pServerPool->GetServers()->end(); it++)
+			{
+				NewsServer* pServer = *it;
+				if ((iID > 0 && pServer->GetID() == iID) ||
+					!strcasecmp(pServer->GetName(), szServer))
+				{
+					if (!m_bServerChanged)
+					{
+						// store old server status for logging
+						m_ServerStatusList.clear();
+						m_ServerStatusList.reserve(g_pServerPool->GetServers()->size());
+						for (Servers::iterator it2 = g_pServerPool->GetServers()->begin(); it2 != g_pServerPool->GetServers()->end(); it2++)
+						{
+							NewsServer* pServer2 = *it2;
+							m_ServerStatusList.push_back(pServer2->GetActive());
+						}
+					}
+					m_bServerChanged = true;
+					pServer->SetActive(bActive);
+					break;
+				}
+			}
+		}
+		szServer = strtok_r(NULL, ",;", &saveptr);
+	}
+	free(szServerList2);
 }

@@ -1,7 +1,7 @@
 /*
  *  This file is part of nzbget
  *
- *  Copyright (C) 2008-2009 Andrey Prygunkov <hugbug@users.sourceforge.net>
+ *  Copyright (C) 2008-2013 Andrey Prygunkov <hugbug@users.sourceforge.net>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -27,6 +27,7 @@
 #define SCHEDULER_H
 
 #include <list>
+#include <vector>
 #include <time.h>
 
 #include "Thread.h"
@@ -41,7 +42,9 @@ public:
 		scDownloadRate,
 		scProcess,
 		scPauseScan,
-		scUnpauseScan
+		scUnpauseScan,
+		scActivateServer,
+		scDeactivateServer
 	};
 
 	class Task
@@ -51,13 +54,12 @@ public:
 		int				m_iMinutes;
 		int				m_iWeekDaysBits;
 		ECommand		m_eCommand;
-		int				m_iDownloadRate;
-		char*			m_szProcess;
+		char*			m_szParam;
 		time_t			m_tLastExecuted;
 
 	public:
 						Task(int iHours, int iMinutes, int iWeekDaysBits, ECommand eCommand, 
-							int iDownloadRate, const char* szProcess);
+							const char* szParam);
 						~Task();
 		friend class	Scheduler;
 	};
@@ -65,6 +67,7 @@ public:
 private:
 
 	typedef std::list<Task*>		TaskList;
+	typedef std::vector<bool>		ServerStatusList;
 
 	TaskList			m_TaskList;
 	Mutex				m_mutexTaskList;
@@ -72,14 +75,17 @@ private:
 	bool				m_bDetectClockChanges;
 	bool				m_bDownloadRateChanged;
 	bool				m_bExecuteProcess;
-	int					m_iDownloadRate;
 	bool				m_bPauseDownloadChanged;
 	bool				m_bPauseDownload;
 	bool				m_bPauseScanChanged;
-	bool				m_bPauseScan;
+	bool				m_bServerChanged;
+	ServerStatusList	m_ServerStatusList;
 	void				ExecuteTask(Task* pTask);
 	void				CheckTasks();
 	static bool			CompareTasks(Scheduler::Task* pTask1, Scheduler::Task* pTask2);
+	void				PrepareLog();
+	void				PrintLog();
+	void				EditServer(bool bActive, const char* szServerList);
 
 public:
 						Scheduler();
@@ -87,12 +93,8 @@ public:
 	void				AddTask(Task* pTask);
 	void				FirstCheck();
 	void				IntervalCheck();
-	bool				GetDownloadRateChanged() { return m_bDownloadRateChanged; }
-	int					GetDownloadRate() { return m_iDownloadRate; }
 	bool				GetPauseDownloadChanged() { return m_bPauseDownloadChanged; }
 	bool				GetPauseDownload() { return m_bPauseDownload; }
-	bool				GetPauseScanChanged() { return m_bPauseScanChanged; }
-	bool				GetPauseScan() { return m_bPauseScan; }
 };
 
 #endif
