@@ -69,6 +69,8 @@ private:
 	bool				m_bHasSevenZipMultiFiles;
 	bool				m_bUnpackOK;
 	bool				m_bUnpackStartError;
+	bool				m_bUnpackSpaceError;
+	bool				m_bUnpackPasswordError;
 	bool				m_bCleanedUpDisk;
 	EUnpacker			m_eUnpacker;
 	bool				m_bFinalDirCreated;
