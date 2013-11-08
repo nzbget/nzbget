@@ -112,6 +112,9 @@ success=False
 if os.environ['NZBPP_PARSTATUS'] == '1' or os.environ['NZBPP_UNPACKSTATUS'] == '1':
 	subject = 'Failure for "%s"' % (os.environ['NZBPP_NZBNAME'])
 	text = 'Download of "%s" has failed.' % (os.environ['NZBPP_NZBNAME'])
+elif os.environ['NZBPP_UNPACKSTATUS'] in ('3', '4'):
+	subject = 'Unpack failure for "%s"' % (os.environ['NZBPP_NZBNAME'])
+	text = 'Download of "%s" has failed.' % (os.environ['NZBPP_NZBNAME'])
 elif os.environ['NZBPP_PARSTATUS'] == '4':
 	subject = 'Damaged for "%s"' % (os.environ['NZBPP_NZBNAME'])
 	text = 'Download of "%s" requires par-repair.' % (os.environ['NZBPP_NZBNAME'])
@@ -125,7 +128,7 @@ else:
 #                           not contain any par-files;
 #                       1 = checked and failed to repair;
 #                       2 = checked and successfully repaired;
-#                       3 = checked and can be repaired but repair is disabled.
+#                       3 = checked and can be repaired but repair is disabled;
 #                       4 = par-check needed but skipped (option ParCheck=manual);
 parStatus = { '0': 'skipped', '1': 'failed', '2': 'repaired', '3': 'repairable', '4': 'manual' }
 text += '\nPar-Status: %s' % parStatus[os.environ['NZBPP_PARSTATUS']]
@@ -134,8 +137,10 @@ text += '\nPar-Status: %s' % parStatus[os.environ['NZBPP_PARSTATUS']]
 #                       0 = unpack is disabled or was skipped due to nzb-file
 #                           properties or due to errors during par-check;
 #                       1 = unpack failed;
-#                       2 = unpack successful.
-unpackStatus = { '0': 'skipped', '1': 'failed', '2': 'success' }
+#                       2 = unpack successful;
+#                       3 = write error (usually not enough disk space);
+#                       4 = wrong password (only for rar5 archives);
+unpackStatus = { '0': 'skipped', '1': 'failed', '2': 'success', '3': 'write error (usually not enough disk space)', '4': 'wrong password' }
 text += '\nUnpack-Status: %s' % unpackStatus[os.environ['NZBPP_UNPACKSTATUS']]
 
 # add list of downloaded files

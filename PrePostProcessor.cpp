@@ -721,6 +721,8 @@ void PrePostProcessor::StartJob(DownloadQueue* pDownloadQueue, PostInfo* pPostIn
 	bool bMoveInter = !bUnpack &&
 		pPostInfo->GetNZBInfo()->GetMoveStatus() == NZBInfo::msNone &&
 		pPostInfo->GetNZBInfo()->GetUnpackStatus() != NZBInfo::usFailure &&
+		pPostInfo->GetNZBInfo()->GetUnpackStatus() != NZBInfo::usSpace &&
+		pPostInfo->GetNZBInfo()->GetUnpackStatus() != NZBInfo::usPassword &&
 		pPostInfo->GetNZBInfo()->GetParStatus() != NZBInfo::psFailure &&
 		pPostInfo->GetNZBInfo()->GetParStatus() != NZBInfo::psManual &&
 		strlen(g_pOptions->GetInterDir()) > 0 &&
@@ -1209,7 +1211,8 @@ void PrePostProcessor::HistoryDelete(DownloadQueue* pDownloadQueue, HistoryList:
 		g_pOptions->GetDeleteCleanupDisk() &&
 		(pHistoryInfo->GetNZBInfo()->GetDeleteStatus() != NZBInfo::dsNone ||
 		pHistoryInfo->GetNZBInfo()->GetParStatus() == NZBInfo::psFailure ||
-		pHistoryInfo->GetNZBInfo()->GetUnpackStatus() == NZBInfo::usFailure) &&
+		pHistoryInfo->GetNZBInfo()->GetUnpackStatus() == NZBInfo::usFailure ||
+		pHistoryInfo->GetNZBInfo()->GetUnpackStatus() == NZBInfo::usPassword) &&
 		Util::DirectoryExists(pHistoryInfo->GetNZBInfo()->GetDestDir()))
 	{
 		info("Deleting %s", pHistoryInfo->GetNZBInfo()->GetDestDir());

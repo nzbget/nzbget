@@ -138,6 +138,8 @@ void UnpackController::Run()
 
 		m_bUnpackOK = true;
 		m_bUnpackStartError = false;
+		m_bUnpackSpaceError = false;
+		m_bUnpackPasswordError = false;
 
 		if (m_bHasRarFiles || m_bHasNonStdRarFiles)
 		{
@@ -212,6 +214,8 @@ void UnpackController::ExecuteUnrar()
 
 	m_bUnpackOK = iExitCode == 0 && m_bAllOKMessageReceived && !GetTerminated();
 	m_bUnpackStartError = iExitCode == -1;
+	m_bUnpackSpaceError = iExitCode == 5;
+	m_bUnpackPasswordError = iExitCode == 11; // only for rar5-archives
 
 	if (!m_bUnpackOK && iExitCode > 0)
 	{
@@ -288,7 +292,8 @@ void UnpackController::Completed()
 	{
 #ifndef DISABLE_PARCHECK
 		if (!m_bUnpackOK && m_pPostInfo->GetNZBInfo()->GetParStatus() <= NZBInfo::psSkipped &&
-			!m_bUnpackStartError && !GetTerminated() && m_bHasParFiles)
+			!m_bUnpackStartError && !m_bUnpackSpaceError && !m_bUnpackPasswordError &&
+			!GetTerminated() && m_bHasParFiles)
 		{
 			RequestParCheck();
 		}
@@ -296,7 +301,10 @@ void UnpackController::Completed()
 #endif
 		{
 			PrintMessage(Message::mkError, "%s failed", m_szInfoNameUp);
-			m_pPostInfo->GetNZBInfo()->SetUnpackStatus(NZBInfo::usFailure);
+			m_pPostInfo->GetNZBInfo()->SetUnpackStatus(
+				m_bUnpackSpaceError ? NZBInfo::usSpace :
+				m_bUnpackPasswordError ? NZBInfo::usPassword :
+				NZBInfo::usFailure);
 			m_pPostInfo->SetStage(PostInfo::ptQueued);
 		}
 	}

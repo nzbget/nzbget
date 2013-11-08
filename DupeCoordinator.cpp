@@ -62,6 +62,7 @@ bool DupeCoordinator::IsDupeSuccess(NZBInfo* pNZBInfo)
 		pNZBInfo->GetMarkStatus() == NZBInfo::ksBad ||
 		pNZBInfo->GetParStatus() == NZBInfo::psFailure ||
 		pNZBInfo->GetUnpackStatus() == NZBInfo::usFailure ||
+		pNZBInfo->GetUnpackStatus() == NZBInfo::usPassword ||
 		(pNZBInfo->GetParStatus() == NZBInfo::psSkipped &&
 		 pNZBInfo->GetUnpackStatus() == NZBInfo::usSkipped &&
 		 pNZBInfo->CalcHealth() < pNZBInfo->CalcCriticalHealth());

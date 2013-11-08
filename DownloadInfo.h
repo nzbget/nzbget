@@ -343,7 +343,9 @@ public:
 		usNone,
 		usSkipped,
 		usFailure,
-		usSuccess
+		usSuccess,
+		usSpace,
+		usPassword
 	};
 
 	enum ECleanupStatus

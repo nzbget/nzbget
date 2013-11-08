@@ -134,8 +134,7 @@ var History = (new function($)
 		{
 			if (hist.MarkStatus === 'BAD')
 			{
-				hist.status = 'failure';
-				hist.FilterKind = 'FAILURE';
+				hist.status = 'failure'; hist.FilterKind = 'FAILURE';
 			}
 			else if (hist.DeleteStatus !== 'NONE')
 			{
@@ -148,13 +147,15 @@ var History = (new function($)
 			}
 			else if (hist.ParStatus == 'FAILURE' || hist.UnpackStatus == 'FAILURE' || hist.MoveStatus == 'FAILURE')
 			{
-				hist.status = 'failure';
-				hist.FilterKind = 'FAILURE';
+				hist.status = 'failure'; hist.FilterKind = 'FAILURE';
 			}
 			else if (hist.ParStatus == 'MANUAL')
 			{
-				hist.status = 'damaged';
-				hist.FilterKind = 'FAILURE';
+				hist.status = 'damaged'; hist.FilterKind = 'FAILURE';
+			}
+			else if (hist.ParStatus == 'REPAIR_POSSIBLE')
+			{
+				hist.status = 'repairable'; hist.FilterKind = 'FAILURE';
 			}
 			else if (hist.ParStatus == 'NONE' && hist.UnpackStatus == 'NONE' &&
 				(hist.ScriptStatus !== 'FAILURE' || hist.Health < 1000))
@@ -165,22 +166,18 @@ var History = (new function($)
 			}
 			else
 			{
-				switch (hist.ScriptStatus)
+				switch (hist.UnpackStatus)
 				{
-					case 'SUCCESS': hist.status = 'success'; hist.FilterKind = 'SUCCESS'; break;
-					case 'FAILURE': hist.status = 'pp-failure'; hist.FilterKind = 'FAILURE'; break;
-					case 'UNKNOWN': hist.status = 'unknown'; hist.FilterKind = 'FAILURE'; break;
+					case 'SPACE': hist.status = 'space'; hist.FilterKind = 'FAILURE'; break;
+					case 'PASSWORD': hist.status = 'password'; hist.FilterKind = 'FAILURE'; break;
+					case 'SUCCESS':
 					case 'NONE':
-						switch (hist.UnpackStatus)
+						switch (hist.ScriptStatus)
 						{
-							case 'SUCCESS': hist.status = 'success'; break;
-							case 'NONE':
-								switch (hist.ParStatus)
-								{
-									case 'SUCCESS': hist.status = 'success'; hist.FilterKind = 'SUCCESS'; break;
-									case 'REPAIR_POSSIBLE': hist.status = 'repairable'; hist.FilterKind = 'FAILURE'; break;
-									case 'NONE': hist.status = 'unknown'; hist.FilterKind = 'FAILURE'; break;
-								}
+							case 'SUCCESS': hist.status = 'success'; hist.FilterKind = 'SUCCESS'; break;
+							case 'FAILURE': hist.status = 'pp-failure'; hist.FilterKind = 'FAILURE'; break;
+							case 'UNKNOWN': hist.status = 'unknown'; hist.FilterKind = 'FAILURE'; break;
+							case 'NONE': hist.status = 'success'; hist.FilterKind = 'SUCCESS'; break;
 						}
 				}
 			}
@@ -482,7 +479,7 @@ var HistoryUI = (new function($)
 			case 'failure':
 			case 'FAILURE':
 			case 'deleted-health':
-				return '<span class="label label-status label-important">' + prefix + 'failure</span>';
+				return '<span class="label label-status label-important">' + prefix + status + '</span>';
 			case 'BAD':
 				return '<span class="label label-status label-important">' + prefix + status + '</span>';
 			case 'unknown':
@@ -490,11 +487,15 @@ var HistoryUI = (new function($)
 				return '<span class="label label-status label-info">' + prefix + 'unknown</span>';
 			case 'repairable':
 			case 'REPAIR_POSSIBLE':
-				return '<span class="label label-status label-success">' + prefix + 'repairable</span>';
+				return '<span class="label label-status label-warning">' + prefix + 'repairable</span>';
 			case 'manual':
 			case 'MANUAL':
 			case 'damaged':
 			case 'pp-failure':
+			case 'space':
+			case 'password':
+			case 'SPACE':
+			case 'PASSWORD':
 				return '<span class="label label-status label-warning">' + prefix + status + '</span>';
 			case 'deleted-manual':
 				return '<span class="label label-status">' + prefix + 'deleted</span>';

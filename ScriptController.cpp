@@ -876,7 +876,7 @@ void PostScriptController::PrepareParams(const char* szScriptName)
 	int iParStatus[] = { 0, 0, 1, 2, 3, 4 };
 	SetIntEnvVar("NZBPP_PARSTATUS", iParStatus[m_pPostInfo->GetNZBInfo()->GetParStatus()]);
 
-	int iUnpackStatus[] = { 0, 0, 1, 2 };
+	int iUnpackStatus[] = { 0, 0, 1, 2, 3, 4 };
 	SetIntEnvVar("NZBPP_UNPACKSTATUS", iUnpackStatus[m_pPostInfo->GetNZBInfo()->GetUnpackStatus()]);
 
 	SetIntEnvVar("NZBPP_NZBID", m_pPostInfo->GetNZBInfo()->GetID());
