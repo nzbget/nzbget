@@ -79,7 +79,7 @@ var Feeds = (new function($)
 
 	this.fetchAll = function()
 	{
-		RPC.call('fetchfeeds', [], function()
+		RPC.call('fetchfeed', [0], function()
 		{
 			Notification.show('#Notif_Feeds_FetchAll');
 		});

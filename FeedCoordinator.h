@@ -107,8 +107,9 @@ public:
 								bool bPauseNzb, const char* szCategory, int iPriority,
 								int iCacheTimeSec, const char* szCacheId, FeedItemInfos** ppFeedItemInfos);
 	bool					ViewFeed(int iID, FeedItemInfos** ppFeedItemInfos);
-	void					FetchAllFeeds();
+	void					FetchFeed(int iID);
 	bool					HasActiveDownloads();
+	Feeds*					GetFeeds() { return &m_Feeds; }
 
 	void					LogDebugInfo();
 };

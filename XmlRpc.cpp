@@ -254,7 +254,7 @@ public:
 	virtual void		Execute();
 };
 
-class FetchFeedsXmlCommand: public XmlCommand
+class FetchFeedXmlCommand: public XmlCommand
 {
 public:
 	virtual void		Execute();
@@ -659,9 +659,9 @@ XmlCommand* XmlRpcProcessor::CreateCommand(const char* szMethodName)
 	{
 		command = new ViewFeedXmlCommand(true);
 	}
-	else if (!strcasecmp(szMethodName, "fetchfeeds"))
+	else if (!strcasecmp(szMethodName, "fetchfeed"))
 	{
-		command = new FetchFeedsXmlCommand();
+		command = new FetchFeedXmlCommand();
 	}
 	else if (!strcasecmp(szMethodName, "editserver"))
 	{
@@ -2987,14 +2987,22 @@ void ViewFeedXmlCommand::Execute()
 	AppendResponse(IsJson() ? "\n]" : "</data></array>\n");
 }
 
-void FetchFeedsXmlCommand::Execute()
+// bool fetchfeed(int ID)
+void FetchFeedXmlCommand::Execute()
 {
 	if (!CheckSafeMethod())
 	{
 		return;
 	}
 
-	g_pFeedCoordinator->FetchAllFeeds();
+	int iID;
+	if (!NextParamAsInt(&iID))
+	{
+		BuildErrorResponse(2, "Invalid parameter (ID)");
+		return;
+	}
+
+	g_pFeedCoordinator->FetchFeed(iID);
 
 	BuildBoolResponse(true);
 }

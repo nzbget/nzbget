@@ -2324,13 +2324,14 @@ void Options::InitScheduler()
 
 		const char* CommandNames[] = { "pausedownload", "pause", "unpausedownload", "resumedownload", "unpause", "resume",
 			"downloadrate", "setdownloadrate", "rate", "speed", "script", "process", "pausescan", "unpausescan", "resumescan",
-			"activateserver", "deactivateserver"};
+			"activateserver", "activateservers", "deactivateserver", "deactivateservers", "fetchfeed", "fetchfeeds" };
 		const int CommandValues[] = { Scheduler::scPauseDownload, Scheduler::scPauseDownload, Scheduler::scUnpauseDownload,
 			Scheduler::scUnpauseDownload, Scheduler::scUnpauseDownload, Scheduler::scUnpauseDownload, Scheduler::scDownloadRate,
 			Scheduler::scDownloadRate, Scheduler::scDownloadRate, Scheduler::scDownloadRate, Scheduler::scProcess,
 			Scheduler::scProcess, Scheduler::scPauseScan, Scheduler::scUnpauseScan, Scheduler::scUnpauseScan,
-			Scheduler::scActivateServer, Scheduler::scDeactivateServer };
-		const int CommandCount = 17;
+			Scheduler::scActivateServer, Scheduler::scActivateServer, Scheduler::scDeactivateServer,
+			Scheduler::scDeactivateServer, Scheduler::scFetchFeed, Scheduler::scFetchFeed };
+		const int CommandCount = 21;
 		Scheduler::ECommand eCommand = (Scheduler::ECommand)ParseEnumValue(optname, CommandCount, CommandNames, CommandValues);
 
 		if (szParam && strlen(szParam) > 0 && eCommand == Scheduler::scProcess &&
@@ -2368,7 +2369,8 @@ void Options::InitScheduler()
 
 		if ((eCommand == Scheduler::scProcess || 
 			 eCommand == Scheduler::scActivateServer ||
-			 eCommand == Scheduler::scDeactivateServer) && 
+			 eCommand == Scheduler::scDeactivateServer ||
+			 eCommand == Scheduler::scFetchFeed) && 
 			Util::EmptyStr(szParam))
 		{
 			ConfigError("Task definition not complete for \"Task%i\". Option \"Task%i.Param\" is missing", n, n);

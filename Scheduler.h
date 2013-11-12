@@ -44,7 +44,8 @@ public:
 		scPauseScan,
 		scUnpauseScan,
 		scActivateServer,
-		scDeactivateServer
+		scDeactivateServer,
+		scFetchFeed
 	};
 
 	class Task
@@ -86,6 +87,7 @@ private:
 	void				PrepareLog();
 	void				PrintLog();
 	void				EditServer(bool bActive, const char* szServerList);
+	void				FetchFeed(const char* szFeedList);
 
 public:
 						Scheduler();
