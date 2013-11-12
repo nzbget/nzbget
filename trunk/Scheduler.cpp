@@ -44,9 +44,12 @@
 #include "Log.h"
 #include "NewsServer.h"
 #include "ServerPool.h"
+#include "FeedInfo.h"
+#include "FeedCoordinator.h"
 
 extern Options* g_pOptions;
 extern ServerPool* g_pServerPool;
+extern FeedCoordinator* g_pFeedCoordinator;
 
 Scheduler::Task::Task(int iHours, int iMinutes, int iWeekDaysBits, ECommand eCommand, const char* szParam)
 {
@@ -204,7 +207,7 @@ void Scheduler::CheckTasks()
 void Scheduler::ExecuteTask(Task* pTask)
 {
 	const char* szCommandName[] = { "Pause", "Unpause", "Set download rate", "Execute program", "Pause Scan", "Unpause Scan",
-		"Enable Server", "Disable Server" };
+		"Enable Server", "Disable Server", "Fetch Feed" };
 	debug("Executing scheduled command: %s", szCommandName[pTask->m_eCommand]);
 
 	switch (pTask->m_eCommand)
@@ -240,6 +243,13 @@ void Scheduler::ExecuteTask(Task* pTask)
 		case scDeactivateServer:
 			EditServer(pTask->m_eCommand == scActivateServer, pTask->m_szParam);
 			break;
+
+		case scFetchFeed:
+			if (m_bExecuteProcess)
+			{
+				FetchFeed(pTask->m_szParam);
+				break;
+			}
 	}
 }
 
@@ -284,7 +294,7 @@ void Scheduler::EditServer(bool bActive, const char* szServerList)
 	while (szServer)
 	{
 		szServer = Util::Trim(szServer);
-		if (szServer[0] != '\0')
+		if (!Util::EmptyStr(szServer))
 		{
 			int iID = atoi(szServer);
 			for (Servers::iterator it = g_pServerPool->GetServers()->begin(); it != g_pServerPool->GetServers()->end(); it++)
@@ -313,4 +323,32 @@ void Scheduler::EditServer(bool bActive, const char* szServerList)
 		szServer = strtok_r(NULL, ",;", &saveptr);
 	}
 	free(szServerList2);
+}
+
+void Scheduler::FetchFeed(const char* szFeedList)
+{
+	char* szFeedList2 = strdup(szFeedList);
+	char* saveptr;
+	char* szFeed = strtok_r(szFeedList2, ",;", &saveptr);
+	while (szFeed)
+	{
+		szFeed = Util::Trim(szFeed);
+		if (!Util::EmptyStr(szFeed))
+		{
+			int iID = atoi(szFeed);
+			for (Feeds::iterator it = g_pFeedCoordinator->GetFeeds()->begin(); it != g_pFeedCoordinator->GetFeeds()->end(); it++)
+			{
+				FeedInfo* pFeed = *it;
+				if (pFeed->GetID() == iID ||
+					!strcasecmp(pFeed->GetName(), szFeed) ||
+					!strcasecmp("0", szFeed))
+				{
+					g_pFeedCoordinator->FetchFeed(pFeed->GetID());
+					break;
+				}
+			}
+		}
+		szFeed = strtok_r(NULL, ",;", &saveptr);
+	}
+	free(szFeedList2);
 }

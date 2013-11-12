@@ -617,16 +617,19 @@ bool FeedCoordinator::PreviewFeed(const char* szName, const char* szUrl, const c
 	return true;
 }
 
-void FeedCoordinator::FetchAllFeeds()
+void FeedCoordinator::FetchFeed(int iID)
 {
-	debug("FetchAllFeeds");
+	debug("FetchFeeds");
 
 	m_mutexDownloads.Lock();
 	for (Feeds::iterator it = m_Feeds.begin(); it != m_Feeds.end(); it++)
 	{
 		FeedInfo* pFeedInfo = *it;
-		pFeedInfo->SetFetch(true);
-		m_bForce = true;
+		if (pFeedInfo->GetID() == iID || iID == 0)
+		{
+			pFeedInfo->SetFetch(true);
+			m_bForce = true;
+		}
 	}
 	m_mutexDownloads.Unlock();
 }
