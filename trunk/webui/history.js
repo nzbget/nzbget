@@ -479,7 +479,7 @@ var HistoryUI = (new function($)
 			case 'failure':
 			case 'FAILURE':
 			case 'deleted-health':
-				return '<span class="label label-status label-important">' + prefix + status + '</span>';
+				return '<span class="label label-status label-important">' + prefix + 'failure</span>';
 			case 'BAD':
 				return '<span class="label label-status label-important">' + prefix + status + '</span>';
 			case 'unknown':
