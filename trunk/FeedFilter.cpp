@@ -47,6 +47,7 @@ FeedFilter::Term::Term()
 	m_szField = NULL;
 	m_szParam = NULL;
 	m_iIntParam = 0;
+	m_fFloatParam = 0.0;
 	m_pRegEx = NULL;
 	m_pRefValues = NULL;
 }
@@ -71,9 +72,8 @@ bool FeedFilter::Term::Match(FeedItemInfo* pFeedItemInfo)
 {
 	const char* szStrValue = NULL;
 	long long iIntValue = 0;
-	EFieldType FieldType;
 
-	if (!GetFieldData(m_szField, pFeedItemInfo, &FieldType, &szStrValue, &iIntValue))
+	if (!GetFieldData(m_szField, pFeedItemInfo, &szStrValue, &iIntValue))
 	{
 		return false;
 	}
@@ -88,8 +88,24 @@ bool FeedFilter::Term::Match(FeedItemInfo* pFeedItemInfo)
 	return true;
 }
 
-bool FeedFilter::Term::MatchValue(const char* szStrValue, const long long iIntValue)
+bool FeedFilter::Term::MatchValue(const char* szStrValue, long long iIntValue)
 {
+	double fFloatValue = (double)iIntValue;
+	char szIntBuf[100];
+
+	if (m_eCommand < fcEqual && !szStrValue)
+	{
+		snprintf(szIntBuf, 100, "%lld", iIntValue);
+		szIntBuf[100-1] = '\0';
+		szStrValue = szIntBuf;
+	}
+
+	else if (m_eCommand >= fcEqual && szStrValue)
+	{
+		fFloatValue = atof(szStrValue);
+		iIntValue = (long long)fFloatValue;
+	}
+
 	switch (m_eCommand)
 	{
 		case fcText:
@@ -99,19 +115,19 @@ bool FeedFilter::Term::MatchValue(const char* szStrValue, const long long iIntVa
 			return MatchRegex(szStrValue);
 
 		case fcEqual:
-			return iIntValue == m_iIntParam;
+			return m_bFloat ? fFloatValue == m_fFloatParam : iIntValue == m_iIntParam;
 
 		case fcLess:
-			return iIntValue < m_iIntParam;
+			return m_bFloat ? fFloatValue < m_fFloatParam : iIntValue < m_iIntParam;
 
 		case fcLessEqual:
-			return iIntValue <= m_iIntParam;
+			return m_bFloat ? fFloatValue <= m_fFloatParam : iIntValue <= m_iIntParam;
 
 		case fcGreater:
-			return iIntValue > m_iIntParam;
+			return m_bFloat ? fFloatValue > m_fFloatParam : iIntValue > m_iIntParam;
 
 		case fcGreaterEqual:
-			return iIntValue >= m_iIntParam;
+			return m_bFloat ? fFloatValue >= m_fFloatParam : iIntValue >= m_iIntParam;
 
 		default:
 			return false;
@@ -310,23 +326,14 @@ bool FeedFilter::Term::Compile(char* szToken)
 
 	const char* szStrValue;
 	long long iIntValue;
-	EFieldType eFieldType;
-	if (!GetFieldData(szField, NULL, &eFieldType, &szStrValue, &iIntValue) ||
-		(m_eCommand < fcEqual && eFieldType != ftString) ||
-		(m_eCommand >= fcEqual && eFieldType != ftNumeric))
+	if (!GetFieldData(szField, NULL, &szStrValue, &iIntValue))
 	{
 		return false;
 	}
 
-	if ((szField && !strcasecmp(szField, "size") && !ParseSizeParam(szToken, &m_iIntParam)) ||
-		(szField && !strcasecmp(szField, "age") && !ParseAgeParam(szToken, &m_iIntParam)) ||
-		(szField && !strcasecmp(szField, "rating") && !ParseRatingParam(szToken, &m_iIntParam)) ||
-		(szField && !strcasecmp(szField, "imdbid") && !ParseIntParam(szToken, &m_iIntParam)) ||
-		(szField && !strcasecmp(szField, "rageid") && !ParseIntParam(szToken, &m_iIntParam)) ||
-		(szField && !strcasecmp(szField, "season") && !ParseIntParam(szToken, &m_iIntParam)) ||
-		(szField && !strcasecmp(szField, "episode") && !ParseIntParam(szToken, &m_iIntParam)) ||
-		(szField && !strcasecmp(szField, "dupescore") && !ParseIntParam(szToken, &m_iIntParam)) ||
-		(szField && !strcasecmp(szField, "priority") && !ParseIntParam(szToken, &m_iIntParam)))
+	if ((szField && !strcasecmp(szField, "size") && !ParseSizeParam(szToken)) ||
+		(szField && !strcasecmp(szField, "age") && !ParseAgeParam(szToken)) ||
+		(szField && m_eCommand >= fcEqual && !ParseNumericParam(szToken)))
 	{
 		return false;
 	}
@@ -341,7 +348,7 @@ bool FeedFilter::Term::Compile(char* szToken)
  * If pFeedItemInfo is NULL, only field type info is returned
  */
 bool FeedFilter::Term::GetFieldData(const char* szField, FeedItemInfo* pFeedItemInfo,
-	EFieldType* FieldType, const char** StrValue, long long* IntValue)
+	const char** StrValue, long long* IntValue)
 {
 	*StrValue = NULL;
 	*IntValue = 0;
@@ -349,101 +356,88 @@ bool FeedFilter::Term::GetFieldData(const char* szField, FeedItemInfo* pFeedItem
 	if (!szField || !strcasecmp(szField, "title"))
 	{
 		*StrValue = pFeedItemInfo ? pFeedItemInfo->GetTitle() : NULL;
-		*FieldType = ftString;
 		return true;
 	}
 	else if (!strcasecmp(szField, "filename"))
 	{
 		*StrValue = pFeedItemInfo ? pFeedItemInfo->GetFilename() : NULL;
-		*FieldType = ftString;
 		return true;
 	}
 	else if (!strcasecmp(szField, "category"))
 	{
 		*StrValue = pFeedItemInfo ? pFeedItemInfo->GetCategory() : NULL;
-		*FieldType = ftString;
 		return true;
 	}
 	else if (!strcasecmp(szField, "link") || !strcasecmp(szField, "url"))
 	{
 		*StrValue = pFeedItemInfo ? pFeedItemInfo->GetUrl() : NULL;
-		*FieldType = ftString;
-		return true;
-	}
-	else if (!strcasecmp(szField, "genre"))
-	{
-		*StrValue = pFeedItemInfo ? pFeedItemInfo->GetGenre() : NULL;
-		*FieldType = ftString;
 		return true;
 	}
 	else if (!strcasecmp(szField, "size"))
 	{
 		*IntValue = pFeedItemInfo ? pFeedItemInfo->GetSize() : 0;
-		*FieldType = ftNumeric;
 		return true;
 	}
 	else if (!strcasecmp(szField, "age"))
 	{
 		*IntValue = pFeedItemInfo ? time(NULL) - pFeedItemInfo->GetTime() : 0;
-		*FieldType = ftNumeric;
-		return true;
-	}
-	else if (!strcasecmp(szField, "rating"))
-	{
-		*IntValue = pFeedItemInfo ? pFeedItemInfo->GetRating() : 0;
-		*FieldType = ftNumeric;
 		return true;
 	}
 	else if (!strcasecmp(szField, "imdbid"))
 	{
 		*IntValue = pFeedItemInfo ? pFeedItemInfo->GetImdbId() : 0;
-		*FieldType = ftNumeric;
 		return true;
 	}
 	else if (!strcasecmp(szField, "rageid"))
 	{
 		*IntValue = pFeedItemInfo ? pFeedItemInfo->GetRageId() : 0;
-		*FieldType = ftNumeric;
+		return true;
+	}
+	else if (!strcasecmp(szField, "description"))
+	{
+		*StrValue = pFeedItemInfo ? pFeedItemInfo->GetDescription() : NULL;
 		return true;
 	}
 	else if (!strcasecmp(szField, "season"))
 	{
 		*IntValue = pFeedItemInfo ? pFeedItemInfo->GetSeasonNum() : 0;
-		*FieldType = ftNumeric;
 		return true;
 	}
 	else if (!strcasecmp(szField, "episode"))
 	{
 		*IntValue = pFeedItemInfo ? pFeedItemInfo->GetEpisodeNum() : 0;
-		*FieldType = ftNumeric;
 		return true;
 	}
 	else if (!strcasecmp(szField, "priority"))
 	{
 		*IntValue = pFeedItemInfo ? pFeedItemInfo->GetPriority() : 0;
-		*FieldType = ftNumeric;
 		return true;
 	}
 	else if (!strcasecmp(szField, "dupekey"))
 	{
 		*StrValue = pFeedItemInfo ? pFeedItemInfo->GetDupeKey() : NULL;
-		*FieldType = ftString;
 		return true;
 	}
 	else if (!strcasecmp(szField, "dupescore"))
 	{
 		*IntValue = pFeedItemInfo ? pFeedItemInfo->GetDupeScore() : 0;
-		*FieldType = ftNumeric;
+		return true;
+	}
+	else if (!strncasecmp(szField, "attr-", 5))
+	{
+		if (pFeedItemInfo)
+		{
+			FeedItemInfo::Attr* pAttr = pFeedItemInfo->GetAttributes()->Find(szField + 5);
+			*StrValue = pAttr ? pAttr->GetValue() : NULL;
+		}
 		return true;
 	}
 
 	return false;
 }
 
-bool FeedFilter::Term::ParseSizeParam(const char* szParam, long long* pIntValue)
+bool FeedFilter::Term::ParseSizeParam(const char* szParam)
 {
-	*pIntValue = 0;
-
 	double fParam = atof(szParam);
 
 	const char* p;
@@ -452,15 +446,15 @@ bool FeedFilter::Term::ParseSizeParam(const char* szParam, long long* pIntValue)
 	{
 		if (!strcasecmp(p, "K") || !strcasecmp(p, "KB"))
 		{
-			*pIntValue = (long long)(fParam*1024);
+			m_iIntParam = (long long)(fParam*1024);
 		}
 		else if (!strcasecmp(p, "M") || !strcasecmp(p, "MB"))
 		{
-			*pIntValue = (long long)(fParam*1024*1024);
+			m_iIntParam = (long long)(fParam*1024*1024);
 		}
 		else if (!strcasecmp(p, "G") || !strcasecmp(p, "GB"))
 		{
-			*pIntValue = (long long)(fParam*1024*1024*1024);
+			m_iIntParam = (long long)(fParam*1024*1024*1024);
 		}
 		else
 		{
@@ -469,15 +463,15 @@ bool FeedFilter::Term::ParseSizeParam(const char* szParam, long long* pIntValue)
 	}
 	else
 	{
-		*pIntValue = (long long)fParam;
+		m_iIntParam = (long long)fParam;
 	}
 
 	return true;
 }
 
-bool FeedFilter::Term::ParseAgeParam(const char* szParam, long long* pIntValue)
+bool FeedFilter::Term::ParseAgeParam(const char* szParam)
 {
-	*pIntValue = atoll(szParam);
+	m_iIntParam = atoll(szParam);
 
 	const char* p;
 	for (p = szParam; *p && (*p >= '0' && *p <='9'); p++) ;
@@ -486,17 +480,17 @@ bool FeedFilter::Term::ParseAgeParam(const char* szParam, long long* pIntValue)
 		if (!strcasecmp(p, "m"))
 		{
 			// minutes
-			*pIntValue *= 60;
+			m_iIntParam *= 60;
 		}
 		else if (!strcasecmp(p, "h"))
 		{
 			// hours
-			*pIntValue *= 60 * 60;
+			m_iIntParam *= 60 * 60;
 		}
 		else if (!strcasecmp(p, "d"))
 		{
 			// days
-			*pIntValue *= 60 * 60 * 24;
+			m_iIntParam *= 60 * 60 * 24;
 		}
 		else
 		{
@@ -506,42 +500,20 @@ bool FeedFilter::Term::ParseAgeParam(const char* szParam, long long* pIntValue)
 	else
 	{
 		// days by default
-		*pIntValue *= 60 * 60 * 24;
+		m_iIntParam *= 60 * 60 * 24;
 	}
 
 	return true;
 }
 
-bool FeedFilter::Term::ParseRatingParam(const char* szParam, long long* pIntValue)
+bool FeedFilter::Term::ParseNumericParam(const char* szParam)
 {
-	*pIntValue = 0;
-	
-	double fParam = atof(szParam);
+	m_fFloatParam = atof(szParam);
+	m_iIntParam = (long long)m_fFloatParam;
+	m_bFloat = strchr(szParam, '.');
 	
 	const char* p;
-	for (p = szParam; *p && ((*p >= '0' && *p <='9') || *p == '.'); p++) ;
-	if (*p)
-	{
-		return false;
-	}
-	else if (strchr(szParam, '.'))
-	{
-		*pIntValue = (long long)(fParam * 10);
-	}
-	else
-	{
-		*pIntValue = (long long)fParam;
-	}
-	
-	return true;
-}
-
-bool FeedFilter::Term::ParseIntParam(const char* szParam, long long* pIntValue)
-{
-	*pIntValue = atoi(szParam);
-	
-	const char* p;
-	for (p = szParam; *p && *p >= '0' && *p <='9'; p++) ;
+	for (p = szParam; *p && ((*p >= '0' && *p <='9') || *p == '.') ; p++) ;
 	if (*p)
 	{
 		return false;

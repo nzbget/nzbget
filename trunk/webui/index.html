@@ -1563,9 +1563,11 @@
 
 		<ul>
 		<li>Commands @ and $ are for use with text fields (title, filename, category,
-		link, genre, dupekey).</li>
+		link, description, dupekey).</li>
 		<li>Commands =, &lt;, &lt;=, &gt; and &gt;= are for use with numeric fields (size, age,
-		rating, imdbid, rageid, season, episode, priority, dupescore).</li>
+		imdbid, rageid, season, episode, priority, dupescore).</li>
+		<li>Any newznab attribute (encoded as "newznab:attr" in the RSS feed) can be used
+		as search field with prefix "attr-", for example "attr-genre".</li>
 		</ul>
 
 		<strong>More about text search (command @):</strong>
@@ -1586,9 +1588,6 @@
 		"G" or "GB" for gigabytes.</li>
 		<li>Field "age" can have suffixes "m" for minutes, "h" for hours and "d" for days. If suffix
 		is not specified default is days.</li>
-		<li>Field "rating" can be used with integer or floating point parameter. Integer parameter
-		is interpreted as value of rating between 0 and 100. A floating point value is used
-		as rating between 0.0 and 10.0.</li>
 		</ul>
 
 		<p><span class="label label-warning">NOTE:</span>

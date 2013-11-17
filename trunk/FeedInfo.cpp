@@ -96,6 +96,53 @@ void FeedInfo::SetOutputFilename(const char* szOutputFilename)
 }
 
 
+FeedItemInfo::Attr::Attr(const char* szName, const char* szValue)
+{
+	m_szName = strdup(szName ? szName : "");
+	m_szValue = strdup(szValue ? szValue : "");
+}
+
+FeedItemInfo::Attr::~Attr()
+{
+	if (m_szName)
+	{
+		free(m_szName);
+	}
+	if (m_szValue)
+	{
+		free(m_szValue);
+	}
+}
+
+
+FeedItemInfo::Attributes::~Attributes()
+{
+	for (iterator it = begin(); it != end(); it++)
+	{
+		delete *it;
+	}
+}
+
+void FeedItemInfo::Attributes::Add(const char* szName, const char* szValue)
+{
+	push_back(new Attr(szName, szValue));
+}
+
+FeedItemInfo::Attr* FeedItemInfo::Attributes::Find(const char* szName)
+{
+	for (iterator it = begin(); it != end(); it++)
+	{
+		Attr* pAttr = *it;
+		if (!strcasecmp(pAttr->GetName(), szName))
+		{
+			return pAttr;
+		}
+	}
+
+	return NULL;
+}
+
+
 FeedItemInfo::FeedItemInfo()
 {
 	m_pSharedFeedData = NULL;
@@ -105,10 +152,9 @@ FeedItemInfo::FeedItemInfo()
 	m_szCategory = strdup("");
 	m_lSize = 0;
 	m_tTime = 0;
-	m_iRating = 0;
-	m_szGenre = strdup("");
 	m_iImdbId = 0;
 	m_iRageId = 0;
+	m_szDescription = strdup("");
 	m_szSeason = NULL;
 	m_szEpisode = NULL;
 	m_iSeasonNum = 0;
@@ -143,9 +189,9 @@ FeedItemInfo::~FeedItemInfo()
 	{
 		free(m_szCategory);
 	}
-	if (m_szGenre)
+	if (m_szDescription)
 	{
-		free(m_szGenre);
+		free(m_szDescription);
 	}
 	if (m_szSeason)
 	{
@@ -201,13 +247,13 @@ void FeedItemInfo::SetCategory(const char* szCategory)
 	m_szCategory = strdup(szCategory ? szCategory: "");
 }
 
-void FeedItemInfo::SetGenre(const char* szGenre)
+void FeedItemInfo::SetDescription(const char* szDescription)
 {
-	if (m_szGenre)
+	if (m_szDescription)
 	{
-		free(m_szGenre);
+		free(m_szDescription);
 	}
-	m_szGenre = strdup(szGenre ? szGenre: "");
+	m_szDescription = strdup(szDescription ? szDescription: "");
 }
 
 void FeedItemInfo::SetSeason(const char* szSeason)

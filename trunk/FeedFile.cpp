@@ -252,6 +252,14 @@ bool FeedFile::ParseFeed(IUnknown* nzb)
 			pFeedItemInfo->SetCategory(category);
 		}
 
+		// <description>long text</description>
+		tag = node->selectSingleNode("description");
+		if (tag)
+		{
+			_bstr_t description(tag->Gettext());
+			pFeedItemInfo->SetDescription(description);
+		}
+
 		//<enclosure url="http://myindexer.com/fetch/9eeb264aecce961a6e0d" length="150263340" type="application/x-nzb" />
 		tag = node->selectSingleNode("enclosure");
 		if (tag)
@@ -304,31 +312,6 @@ bool FeedFile::ParseFeed(IUnknown* nzb)
 			}
 		}
 
-		//<newznab:attr name="genre" value="Adventure|Animation|Family" />
-		tag = node->selectSingleNode("newznab:attr[@name='genre']");
-		if (tag)
-		{
-			attr = tag->Getattributes()->getNamedItem("value");
-			if (attr)
-			{
-				_bstr_t val(attr->Gettext());
-				pFeedItemInfo->SetGenre(val);
-			}
-		}
-
-		//<newznab:attr name="rating" value="70" />
-		//<newznab:attr name="rating" value="7.0" />
-		tag = node->selectSingleNode("newznab:attr[@name='rating']");
-		if (tag)
-		{
-			attr = tag->Getattributes()->getNamedItem("value");
-			if (attr)
-			{
-				_bstr_t val(attr->Gettext());
-				pFeedItemInfo->SetRating(int(atof(val) * (strchr((const char*)val, '.') ? 10 : 1)));
-			}
-		}
-
 		//<newznab:attr name="imdb" value="1588173"/>
 		tag = node->selectSingleNode("newznab:attr[@name='imdb']");
 		if (tag)
@@ -378,6 +361,20 @@ bool FeedFile::ParseFeed(IUnknown* nzb)
 			{
 				_bstr_t val(attr->Gettext());
 				pFeedItemInfo->SetSeason(val);
+			}
+		}
+
+		MSXML::IXMLDOMNodeListPtr itemList = node->selectNodes("newznab:attr");
+		for (int i = 0; i < itemList->Getlength(); i++)
+		{
+			MSXML::IXMLDOMNodePtr node = itemList->Getitem(i);
+			MSXML::IXMLDOMNodePtr name = node->Getattributes()->getNamedItem("name");
+			MSXML::IXMLDOMNodePtr value = node->Getattributes()->getNamedItem("value");
+			if (name && value)
+			{
+				_bstr_t name(name->Gettext());
+				_bstr_t val(value->Gettext());
+				pFeedItemInfo->GetAttributes()->Add(name, val);
 			}
 		}
 	}
@@ -443,58 +440,42 @@ void FeedFile::Parse_StartElement(const char *name, const char **atts)
 			}
 		}
 	}
-	else if (!strcmp("newznab:attr", name))
+	else if (m_pFeedItemInfo && !strcmp("newznab:attr", name) &&
+		atts[0] && atts[1] && atts[2] && atts[3] &&
+		!strcmp("name", atts[0]) && !strcmp("value", atts[2]))
 	{
+		m_pFeedItemInfo->GetAttributes()->Add(atts[1], atts[3]);
+
 		//<newznab:attr name="size" value="5423523453534" />
-		if (m_pFeedItemInfo && m_pFeedItemInfo->GetSize() == 0 &&
-			atts[0] && atts[1] && atts[2] && atts[3] &&
-			!strcmp("name", atts[0]) && !strcmp("size", atts[1]) && !strcmp("value", atts[2]))
+		if (m_pFeedItemInfo->GetSize() == 0 &&
+			!strcmp("size", atts[1]))
 		{
 			long long lSize = atoll(atts[3]);
 			m_pFeedItemInfo->SetSize(lSize);
 		}
 
-		//<newznab:attr name="genre" value="Adventure|Animation|Family" />
-		else if (atts[0] && atts[1] && atts[2] && atts[3] &&
-			!strcmp("name", atts[0]) && !strcmp("genre", atts[1]) && !strcmp("value", atts[2]))
-		{
-			m_pFeedItemInfo->SetGenre(atts[3]);
-		}
-
-		//<newznab:attr name="rating" value="70" />
-		//<newznab:attr name="rating" value="7.0" />
-		else if (atts[0] && atts[1] && atts[2] && atts[3] &&
-			!strcmp("name", atts[0]) && !strcmp("rating", atts[1]) && !strcmp("value", atts[2]))
-		{
-			m_pFeedItemInfo->SetRating(int(atof(atts[3]) * (strchr(atts[3], '.') ? 10 : 1)));
-		}
-
 		//<newznab:attr name="imdb" value="1588173"/>
-		else if (atts[0] && atts[1] && atts[2] && atts[3] &&
-			!strcmp("name", atts[0]) && !strcmp("imdb", atts[1]) && !strcmp("value", atts[2]))
+		else if (!strcmp("imdb", atts[1]))
 		{
 			m_pFeedItemInfo->SetImdbId(atoi(atts[3]));
 		}
 
 		//<newznab:attr name="rageid" value="33877"/>
-		else if (atts[0] && atts[1] && atts[2] && atts[3] &&
-			!strcmp("name", atts[0]) && !strcmp("rageid", atts[1]) && !strcmp("value", atts[2]))
+		else if (!strcmp("rageid", atts[1]))
 		{
 			m_pFeedItemInfo->SetRageId(atoi(atts[3]));
 		}
 
 		//<newznab:attr name="episode" value="E09"/>
 		//<newznab:attr name="episode" value="9"/>
-		else if (atts[0] && atts[1] && atts[2] && atts[3] &&
-			!strcmp("name", atts[0]) && !strcmp("episode", atts[1]) && !strcmp("value", atts[2]))
+		else if (!strcmp("episode", atts[1]))
 		{
 			m_pFeedItemInfo->SetEpisode(atts[3]);
 		}
 
 		//<newznab:attr name="season" value="S03"/>
 		//<newznab:attr name="season" value="3"/>
-		else if (atts[0] && atts[1] && atts[2] && atts[3] &&
-			!strcmp("name", atts[0]) && !strcmp("season", atts[1]) && !strcmp("value", atts[2]))
+		else if (!strcmp("season", atts[1]))
 		{
 			m_pFeedItemInfo->SetSeason(atts[3]);
 		}
@@ -526,6 +507,12 @@ void FeedFile::Parse_EndElement(const char *name)
 	else if (!strcmp("category", name) && m_pFeedItemInfo)
 	{
 		m_pFeedItemInfo->SetCategory(m_szTagContent);
+		m_szTagContent = NULL;
+		m_iTagContentLen = 0;
+	}
+	else if (!strcmp("description", name) && m_pFeedItemInfo)
+	{
+		m_pFeedItemInfo->SetDescription(m_szTagContent);
 		m_szTagContent = NULL;
 		m_iTagContentLen = 0;
 	}
