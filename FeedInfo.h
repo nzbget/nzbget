@@ -119,6 +119,28 @@ public:
 		msRejected
 	};
 
+	class Attr
+	{
+	private:
+		char*			m_szName;
+		char*			m_szValue;
+	public:
+						Attr(const char* szName, const char* szValue);
+						~Attr();
+		const char*		GetName() { return m_szName; }
+		const char*		GetValue() { return m_szValue; }
+	};
+	
+	typedef std::deque<Attr*>  AttributesBase;
+
+	class Attributes: public AttributesBase
+	{
+	public:
+						~Attributes();
+		void			Add(const char* szName, const char* szValue);
+		Attr*			Find(const char* szName);
+	};
+
 private:
 	char*				m_szTitle;
 	char*				m_szFilename;
@@ -126,10 +148,9 @@ private:
 	time_t				m_tTime;
 	long long			m_lSize;
 	char*				m_szCategory;
-	int					m_iRating;
-	char*				m_szGenre;
 	int					m_iImdbId;
 	int					m_iRageId;
+	char*				m_szDescription;
 	char*				m_szSeason;
 	char*				m_szEpisode;
 	int					m_iSeasonNum;
@@ -145,6 +166,7 @@ private:
 	int					m_iDupeScore;
 	EDupeMode			m_eDupeMode;
 	SharedFeedData*		m_pSharedFeedData;
+	Attributes			m_Attributes;
 
 	int					ParsePrefixedInt(const char *szValue);
 	void				ParseSeasonEpisode();
@@ -163,14 +185,12 @@ public:
 	void				SetSize(long long lSize) { m_lSize = lSize; }
 	const char*			GetCategory() { return m_szCategory; }
 	void				SetCategory(const char* szCategory);
-	int					GetRating() { return m_iRating; }
-	void				SetRating(int iRating) { m_iRating = iRating; }
-	const char*			GetGenre() { return m_szGenre; }
-	void				SetGenre(const char* szGenre);
 	int					GetImdbId() { return m_iImdbId; }
 	void				SetImdbId(int iImdbId) { m_iImdbId = iImdbId; }
 	int					GetRageId() { return m_iRageId; }
 	void				SetRageId(int iRageId) { m_iRageId = iRageId; }
+	const char*			GetDescription() { return m_szDescription; }
+	void				SetDescription(const char* szDescription);
 	const char*			GetSeason() { return m_szSeason; }
 	void				SetSeason(const char* szSeason);
 	const char*			GetEpisode() { return m_szEpisode; }
@@ -199,6 +219,7 @@ public:
 	void				SetDupeScore(int iDupeScore) { m_iDupeScore = iDupeScore; }
 	EDupeMode			GetDupeMode() { return m_eDupeMode; }
 	void				SetDupeMode(EDupeMode eDupeMode) { m_eDupeMode = eDupeMode; }
+	Attributes*			GetAttributes() { return &m_Attributes; }
 };
 
 typedef std::deque<FeedItemInfo*>	FeedItemInfosBase;

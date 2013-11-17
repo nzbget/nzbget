@@ -49,12 +49,6 @@ private:
 		fcOrOperator
 	};
 	
-	enum EFieldType
-	{
-		ftString,
-		ftNumeric
-	};
-
 	class Term
 	{
 	private:
@@ -63,16 +57,17 @@ private:
 		ETermCommand	m_eCommand;
 		char*			m_szParam;
 		long long		m_iIntParam;
+		double			m_fFloatParam;
+		bool			m_bFloat;
 		RegEx*			m_pRegEx;
 		RefValues*		m_pRefValues;
 
 		bool			GetFieldData(const char* szField, FeedItemInfo* pFeedItemInfo,
-							EFieldType* FieldType, const char** StrValue, long long* IntValue);
-		bool			ParseSizeParam(const char* szParam, long long* pIntValue);
-		bool			ParseAgeParam(const char* szParam, long long* pIntValue);
-		bool			ParseRatingParam(const char* szParam, long long* pIntValue);
-		bool			ParseIntParam(const char* szParam, long long* pIntValue);
-		bool			MatchValue(const char* szStrValue, const long long iIntValue);
+							const char** StrValue, long long* IntValue);
+		bool			ParseSizeParam(const char* szParam);
+		bool			ParseAgeParam(const char* szParam);
+		bool			ParseNumericParam(const char* szParam);
+		bool			MatchValue(const char* szStrValue, long long iIntValue);
 		bool			MatchText(const char* szStrValue);
 		bool			MatchRegex(const char* szStrValue);
 		void			FillWildMaskRefValues(const char* szStrValue, WildMask* pMask, int iRefOffset);
