@@ -371,7 +371,7 @@ void Log::InitOptions()
 	{
 		m_szLogFilename = strdup(g_pOptions->GetLogFile());
 #ifdef WIN32
-		Util::Utf8ToAnsi(m_szLogFilename, strlen(m_szLogFilename) + 1);
+		WebUtil::Utf8ToAnsi(m_szLogFilename, strlen(m_szLogFilename) + 1);
 #endif
 	}
 

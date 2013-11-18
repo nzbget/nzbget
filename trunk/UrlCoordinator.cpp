@@ -105,7 +105,9 @@ void UrlDownloader::ProcessHeader(const char* szLine)
 			snprintf(szParamName, 100, "*DNZB:%s", szModLine + 7);
 			szParamName[100-1] = '\0';
 
-			m_ppParameters.SetParameter(szParamName, szValue);
+			char* szVal = WebUtil::Latin1ToUtf8(szValue);
+			m_ppParameters.SetParameter(szParamName, szVal);
+			free(szVal);
 		}
 		free(szModLine);
 	}

@@ -277,15 +277,26 @@ void ScriptController::PrepareEnvParameters(NZBInfo* pNZBInfo, const char* szStr
 	for (NZBParameterList::iterator it = pNZBInfo->GetParameters()->begin(); it != pNZBInfo->GetParameters()->end(); it++)
 	{
 		NZBParameter* pParameter = *it;
+		const char* szValue = pParameter->GetValue();
 		
+#ifdef WIN32
+		char* szAnsiValue = strdup(szValue);
+		WebUtil::Utf8ToAnsi(szAnsiValue, strlen(szAnsiValue) + 1);
+		szValue = szAnsiValue;
+#endif
+
 		if (szStripPrefix && !strncmp(pParameter->GetName(), szStripPrefix, iPrefixLen) && (int)strlen(pParameter->GetName()) > iPrefixLen)
 		{
-			SetEnvVarSpecial("NZBPR", pParameter->GetName() + iPrefixLen, pParameter->GetValue());
+			SetEnvVarSpecial("NZBPR", pParameter->GetName() + iPrefixLen, szValue);
 		}
 		else if (!szStripPrefix)
 		{
-			SetEnvVarSpecial("NZBPR", pParameter->GetName(), pParameter->GetValue());
+			SetEnvVarSpecial("NZBPR", pParameter->GetName(), szValue);
 		}
+
+#ifdef WIN32
+		free(szAnsiValue);
+#endif
 	}
 }
 
