@@ -428,7 +428,7 @@ void NZBInfo::SetFilename(const char * szFilename)
 		MakeNiceNZBName(m_szFilename, szNZBNicename, sizeof(szNZBNicename), true);
 		szNZBNicename[1024-1] = '\0';
 #ifdef WIN32
-		Util::AnsiToUtf8(szNZBNicename, 1024);
+		WebUtil::AnsiToUtf8(szNZBNicename, 1024);
 #endif
 		SetName(szNZBNicename);
 	}
@@ -506,7 +506,7 @@ void NZBInfo::BuildDestDirName()
 	}
 
 #ifdef WIN32
-	Util::Utf8ToAnsi(szDestDir, 1024);
+	WebUtil::Utf8ToAnsi(szDestDir, 1024);
 #endif
 
 	SetDestDir(szDestDir);
@@ -548,7 +548,7 @@ void NZBInfo::BuildFinalDirName(char* szFinalDirBuf, int iBufSize)
 	strncpy(szFinalDirBuf, szBuffer, iBufSize);
 
 #ifdef WIN32
-	Util::Utf8ToAnsi(szFinalDirBuf, iBufSize);
+	WebUtil::Utf8ToAnsi(szFinalDirBuf, iBufSize);
 #endif
 }
 

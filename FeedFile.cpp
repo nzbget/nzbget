@@ -237,7 +237,7 @@ bool FeedFile::ParseFeed(IUnknown* nzb)
 		if (tag)
 		{
 			_bstr_t time(tag->Gettext());
-			time_t unixtime = Util::ParseRfc822DateTime(time);
+			time_t unixtime = WebUtil::ParseRfc822DateTime(time);
 			if (unixtime > 0)
 			{
 				pFeedItemInfo->SetTime(unixtime);
@@ -518,7 +518,7 @@ void FeedFile::Parse_EndElement(const char *name)
 	}
 	else if (!strcmp("pubDate", name) && m_pFeedItemInfo)
 	{
-		time_t unixtime = Util::ParseRfc822DateTime(m_szTagContent);
+		time_t unixtime = WebUtil::ParseRfc822DateTime(m_szTagContent);
 		if (unixtime > 0)
 		{
 			m_pFeedItemInfo->SetTime(unixtime);

@@ -493,7 +493,7 @@ bool Scanner::AddFileToQueue(const char* szFilename, const char* szNZBName, cons
 			pNZBFile->GetNZBInfo()->SetName(NULL);
 #ifdef WIN32
 			char* szAnsiFilename = strdup(szNZBName);
-			Util::Utf8ToAnsi(szAnsiFilename, strlen(szAnsiFilename) + 1);
+			WebUtil::Utf8ToAnsi(szAnsiFilename, strlen(szAnsiFilename) + 1);
 			pNZBFile->GetNZBInfo()->SetFilename(szAnsiFilename);
 			free(szAnsiFilename);
 #else
@@ -586,7 +586,7 @@ Scanner::EAddStatus Scanner::AddExternalFile(const char* szNZBName, const char* 
 	Util::MakeValidFilename(szValidNZBName, '_', false);
 
 #ifdef WIN32
-	Util::Utf8ToAnsi(szValidNZBName, 1024);
+	WebUtil::Utf8ToAnsi(szValidNZBName, 1024);
 #endif
 
 	const char* szExtension = strrchr(szNZBName, '.');

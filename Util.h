@@ -141,11 +141,7 @@ public:
 
 #ifdef WIN32
 	static bool RegReadStr(HKEY hKey, const char* szKeyName, const char* szValueName, char* szBuffer, int* iBufLen);
-	static bool Utf8ToAnsi(char* szBuffer, int iBufLen);
-	static bool AnsiToUtf8(char* szBuffer, int iBufLen);
 #endif
-
-	static time_t ParseRfc822DateTime(const char* szDateTimeStr);
 
 	/*
 	 * Returns program version and revision number as string formatted like "0.7.0-r295".
@@ -220,6 +216,19 @@ public:
 	 * The string is decoded on the place overwriting the content of raw-data.
 	 */
 	static void HttpUnquote(char* raw);
+
+#ifdef WIN32
+	static bool Utf8ToAnsi(char* szBuffer, int iBufLen);
+	static bool AnsiToUtf8(char* szBuffer, int iBufLen);
+#endif
+
+	/*
+	 * Converts ISO-8859-1 (aka Latin-1) into UTF-8.
+	 * Returns new string allocated with malloc, it needs to be freed by caller.
+	 */
+	static char* Latin1ToUtf8(const char* szStr);
+
+	static time_t ParseRfc822DateTime(const char* szDateTimeStr);
 };
 
 class URL

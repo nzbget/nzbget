@@ -1156,81 +1156,7 @@ bool Util::RegReadStr(HKEY hKey, const char* szKeyName, const char* szValueName,
 	}
 	return false;
 }
-
-bool Util::Utf8ToAnsi(char* szBuffer, int iBufLen)
-{
-	WCHAR* wstr = (WCHAR*)malloc(iBufLen * 2);
-	int errcode = MultiByteToWideChar(CP_UTF8, 0, szBuffer, -1, wstr, iBufLen);
-	if (errcode > 0)
-	{
-		errcode = WideCharToMultiByte(CP_ACP, 0, wstr, -1, szBuffer, iBufLen, "_", NULL);
-	}
-	free(wstr);
-	return errcode > 0;
-}
-
-bool Util::AnsiToUtf8(char* szBuffer, int iBufLen)
-{
-	WCHAR* wstr = (WCHAR*)malloc(iBufLen * 2);
-	int errcode = MultiByteToWideChar(CP_ACP, 0, szBuffer, -1, wstr, iBufLen);
-	if (errcode > 0)
-	{
-		errcode = WideCharToMultiByte(CP_UTF8, 0, wstr, -1, szBuffer, iBufLen, NULL, NULL);
-	}
-	free(wstr);
-	return errcode > 0;
-}
 #endif
-
-/*
- The date/time can be formatted according to RFC822 in different ways. Examples:
-   Wed, 26 Jun 2013 01:02:54 -0600
-   Wed, 26 Jun 2013 01:02:54 GMT
-   26 Jun 2013 01:02:54 -0600
-   26 Jun 2013 01:02 -0600
-   26 Jun 2013 01:02 A
- This function however supports only the first format!
-*/
-time_t Util::ParseRfc822DateTime(const char* szDateTimeStr)
-{
-	char month[4];
-	int day, year, hours, minutes, seconds, zonehours, zoneminutes;
-	int r = sscanf(szDateTimeStr, "%*s %d %3s %d %d:%d:%d %3d %2d", &day, &month[0], &year, &hours, &minutes, &seconds, &zonehours, &zoneminutes);
-	if (r != 8)
-	{
-		return 0;
-	}
-
-	int mon = 0;
-	if (!strcasecmp(month, "Jan")) mon = 0;
-	else if (!strcasecmp(month, "Feb")) mon = 1;
-	else if (!strcasecmp(month, "Mar")) mon = 2;
-	else if (!strcasecmp(month, "Apr")) mon = 3;
-	else if (!strcasecmp(month, "May")) mon = 4;
-	else if (!strcasecmp(month, "Jun")) mon = 5;
-	else if (!strcasecmp(month, "Jul")) mon = 6;
-	else if (!strcasecmp(month, "Aug")) mon = 7;
-	else if (!strcasecmp(month, "Sep")) mon = 8;
-	else if (!strcasecmp(month, "Oct")) mon = 9;
-	else if (!strcasecmp(month, "Nov")) mon = 10;
-	else if (!strcasecmp(month, "Dec")) mon = 11;
-
-	struct tm rawtime;
-	memset(&rawtime, 0, sizeof(rawtime));
-
-	rawtime.tm_year = year - 1900;
-	rawtime.tm_mon = mon;
-	rawtime.tm_mday = day;
-	rawtime.tm_hour = hours;
-	rawtime.tm_min = minutes;
-	rawtime.tm_sec = seconds;
-
-	time_t enctime = mktime(&rawtime);
-
-	enctime = enctime - (zonehours * 60 + (zonehours > 0 ? zoneminutes : -zoneminutes)) * 60;
-
-	return enctime;
-}
 
 
 unsigned int WebUtil::DecodeBase64(char* szInputBuffer, int iInputBufferLength, char* szOutputBuffer)
@@ -1765,6 +1691,103 @@ void WebUtil::HttpUnquote(char* raw)
 BreakLoop:
 
 	*output = '\0';
+}
+
+#ifdef WIN32
+bool WebUtil::Utf8ToAnsi(char* szBuffer, int iBufLen)
+{
+	WCHAR* wstr = (WCHAR*)malloc(iBufLen * 2);
+	int errcode = MultiByteToWideChar(CP_UTF8, 0, szBuffer, -1, wstr, iBufLen);
+	if (errcode > 0)
+	{
+		errcode = WideCharToMultiByte(CP_ACP, 0, wstr, -1, szBuffer, iBufLen, "_", NULL);
+	}
+	free(wstr);
+	return errcode > 0;
+}
+
+bool WebUtil::AnsiToUtf8(char* szBuffer, int iBufLen)
+{
+	WCHAR* wstr = (WCHAR*)malloc(iBufLen * 2);
+	int errcode = MultiByteToWideChar(CP_ACP, 0, szBuffer, -1, wstr, iBufLen);
+	if (errcode > 0)
+	{
+		errcode = WideCharToMultiByte(CP_UTF8, 0, wstr, -1, szBuffer, iBufLen, NULL, NULL);
+	}
+	free(wstr);
+	return errcode > 0;
+}
+#endif
+
+char* WebUtil::Latin1ToUtf8(const char* szStr)
+{
+	char *res = (char*)malloc(strlen(szStr) * 2 + 1);
+	const unsigned char *in = (const unsigned char*)szStr;
+	unsigned char *out = (unsigned char*)res;
+	while (*in)
+	{
+		if (*in < 128)
+		{	
+			*out++ = *in++;
+		}
+		else
+		{
+			*out++ = 0xc2 + (*in > 0xbf);
+			*out++ = (*in++ & 0x3f) + 0x80;
+		}
+	}
+	*out = '\0';
+	return res;
+}
+
+/*
+ The date/time can be formatted according to RFC822 in different ways. Examples:
+   Wed, 26 Jun 2013 01:02:54 -0600
+   Wed, 26 Jun 2013 01:02:54 GMT
+   26 Jun 2013 01:02:54 -0600
+   26 Jun 2013 01:02 -0600
+   26 Jun 2013 01:02 A
+ This function however supports only the first format!
+*/
+time_t WebUtil::ParseRfc822DateTime(const char* szDateTimeStr)
+{
+	char month[4];
+	int day, year, hours, minutes, seconds, zonehours, zoneminutes;
+	int r = sscanf(szDateTimeStr, "%*s %d %3s %d %d:%d:%d %3d %2d", &day, &month[0], &year, &hours, &minutes, &seconds, &zonehours, &zoneminutes);
+	if (r != 8)
+	{
+		return 0;
+	}
+
+	int mon = 0;
+	if (!strcasecmp(month, "Jan")) mon = 0;
+	else if (!strcasecmp(month, "Feb")) mon = 1;
+	else if (!strcasecmp(month, "Mar")) mon = 2;
+	else if (!strcasecmp(month, "Apr")) mon = 3;
+	else if (!strcasecmp(month, "May")) mon = 4;
+	else if (!strcasecmp(month, "Jun")) mon = 5;
+	else if (!strcasecmp(month, "Jul")) mon = 6;
+	else if (!strcasecmp(month, "Aug")) mon = 7;
+	else if (!strcasecmp(month, "Sep")) mon = 8;
+	else if (!strcasecmp(month, "Oct")) mon = 9;
+	else if (!strcasecmp(month, "Nov")) mon = 10;
+	else if (!strcasecmp(month, "Dec")) mon = 11;
+
+	struct tm rawtime;
+	memset(&rawtime, 0, sizeof(rawtime));
+
+	rawtime.tm_year = year - 1900;
+	rawtime.tm_mon = mon;
+	rawtime.tm_mday = day;
+	rawtime.tm_hour = hours;
+	rawtime.tm_min = minutes;
+	rawtime.tm_sec = seconds;
+
+	time_t enctime = mktime(&rawtime);
+
+	enctime = enctime - (zonehours * 60 + (zonehours > 0 ? zoneminutes : -zoneminutes)) * 60;
+
+	return enctime;
 }
 
 
