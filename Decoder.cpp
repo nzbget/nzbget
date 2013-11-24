@@ -60,18 +60,12 @@ Decoder::~ Decoder()
 {
 	debug("Destroying Decoder");
 
-	if (m_szArticleFilename)
-	{
-		free(m_szArticleFilename);
-	}
+	free(m_szArticleFilename);
 }
 
 void Decoder::Clear()
 {
-	if (m_szArticleFilename)
-	{
-		free(m_szArticleFilename);
-	}
+	free(m_szArticleFilename);
 	m_szArticleFilename = NULL;
 }
 
@@ -268,10 +262,7 @@ BreakLoop:
 				pb += 6; //=strlen(" name=")
 				char* pe;
 				for (pe = pb; *pe != '\0' && *pe != '\n' && *pe != '\r'; pe++) ;
-				if (m_szArticleFilename)
-				{
-					free(m_szArticleFilename);
-				}
+				free(m_szArticleFilename);
 				m_szArticleFilename = (char*)malloc(pe - pb + 1);
 				strncpy(m_szArticleFilename, pb, pe - pb);
 				m_szArticleFilename[pe - pb] = '\0';
@@ -404,10 +395,7 @@ unsigned int UDecoder::DecodeBuffer(char* buffer, int len)
 			// extracting filename
 			char* pe;
 			for (pe = pb; *pe != '\0' && *pe != '\n' && *pe != '\r'; pe++) ;
-			if (m_szArticleFilename)
-			{
-				free(m_szArticleFilename);
-			}
+			free(m_szArticleFilename);
 			m_szArticleFilename = (char*)malloc(pe - pb + 1);
 			strncpy(m_szArticleFilename, pb, pe - pb);
 			m_szArticleFilename[pe - pb] = '\0';

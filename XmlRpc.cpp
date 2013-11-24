@@ -306,10 +306,7 @@ XmlRpcProcessor::XmlRpcProcessor()
 
 XmlRpcProcessor::~XmlRpcProcessor()
 {
-	if (m_szUrl)
-	{
-		free(m_szUrl);
-	}
+	free(m_szUrl);
 }
 
 void XmlRpcProcessor::SetUrl(const char* szUrl)

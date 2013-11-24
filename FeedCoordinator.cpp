@@ -69,15 +69,8 @@ FeedCoordinator::FeedCacheItem::FeedCacheItem(const char* szUrl, int iCacheTimeS
 
 FeedCoordinator::FeedCacheItem::~FeedCacheItem()
 {
-	if (m_szUrl)
-	{
-		free(m_szUrl);
-	}
-	if (m_szCacheId)
-	{
-		free(m_szCacheId);
-	}
-
+	free(m_szUrl);
+	free(m_szCacheId);
 	m_pFeedItemInfos->Release();
 }
 

@@ -164,21 +164,11 @@ Connection::~Connection()
 
 	Disconnect();
 
-	if (m_szHost)
-	{
-		free(m_szHost);
-	}
-	if (m_szCipher)
-	{
-		free(m_szCipher);
-	}
-
+	free(m_szHost);
+	free(m_szCipher);
 	free(m_szReadBuf);
 #ifndef DISABLE_TLS
-	if (m_pTLSSocket)
-	{
-		delete m_pTLSSocket;
-	}
+	delete m_pTLSSocket;
 #endif
 }
 
@@ -195,10 +185,7 @@ void Connection::SetSuppressErrors(bool bSuppressErrors)
 
 void Connection::SetCipher(const char* szCipher)
 {
-	if (m_szCipher)
-	{
-		free(m_szCipher);
-	}
+	free(m_szCipher);
 	m_szCipher = szCipher ? strdup(szCipher) : NULL;
 }
 
@@ -744,11 +731,7 @@ bool Connection::StartTLS(bool bIsClient, const char* szCertFile, const char* sz
 {
 	debug("Starting TLS");
 
-	if (m_pTLSSocket)
-	{
-		delete m_pTLSSocket;
-	}
-
+	delete m_pTLSSocket;
 	m_pTLSSocket = new TLSSocket(m_iSocket, bIsClient, szCertFile, szKeyFile, m_szCipher);
 	m_pTLSSocket->SetSuppressErrors(m_bSuppressErrors);
 

@@ -56,11 +56,7 @@ NNTPConnection::NNTPConnection(NewsServer* pNewsServer) : Connection(pNewsServer
 
 NNTPConnection::~NNTPConnection()
 {
-	if (m_szActiveGroup)
-	{
-		free(m_szActiveGroup);
-		m_szActiveGroup = NULL;
-	}
+	free(m_szActiveGroup);
 	free(m_szLineBuf);
 }
 
@@ -212,11 +208,7 @@ const char* NNTPConnection::JoinGroup(const char* grp)
 	if (answer && !strncmp(answer, "2", 1))
 	{
 		debug("Changed group to %s on %s", grp, GetHost());
-
-		if (m_szActiveGroup)
-		{
-			free(m_szActiveGroup);
-		}
+		free(m_szActiveGroup);
 		m_szActiveGroup = strdup(grp);
 	}
 	else
@@ -273,11 +265,8 @@ bool NNTPConnection::Disconnect()
 	if (m_eStatus == csConnected)
 	{
 		Request("quit\r\n");
-		if (m_szActiveGroup)
-		{
-			free(m_szActiveGroup);
-			m_szActiveGroup = NULL;
-		}
+		free(m_szActiveGroup);
+		m_szActiveGroup = NULL;
 	}
 	return Connection::Disconnect();
 }

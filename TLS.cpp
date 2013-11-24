@@ -275,18 +275,9 @@ TLSSocket::TLSSocket(SOCKET iSocket, bool bIsClient, const char* szCertFile, con
 
 TLSSocket::~TLSSocket()
 {
-	if (m_szCertFile)
-	{
-		free(m_szCertFile);
-	}
-	if (m_szKeyFile)
-	{
-		free(m_szKeyFile);
-	}
-	if (m_szCipher)
-	{
-		free(m_szCipher);
-	}
+	free(m_szCertFile);
+	free(m_szKeyFile);
+	free(m_szCipher);
 	Close();
 }
 

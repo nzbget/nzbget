@@ -54,18 +54,9 @@ FeedFilter::Term::Term()
 
 FeedFilter::Term::~Term()
 {
-	if (m_szField)
-	{
-		free(m_szField);
-	}
-	if (m_szParam)
-	{
-		free(m_szParam);
-	}
-	if (m_pRegEx)
-	{
-		delete m_pRegEx;
-	}
+	free(m_szField);
+	free(m_szParam);
+	delete m_pRegEx;
 }
 
 bool FeedFilter::Term::Match(FeedItemInfo* pFeedItemInfo)
@@ -595,38 +586,14 @@ FeedFilter::Rule::Rule()
 
 FeedFilter::Rule::~Rule()
 {
-	if (m_szCategory)
-	{
-		free(m_szCategory);
-	}
-	if (m_szDupeKey)
-	{
-		free(m_szDupeKey);
-	}
-	if (m_szAddDupeKey)
-	{
-		free(m_szAddDupeKey);
-	}
-	if (m_szRageId)
-	{
-		free(m_szRageId);
-	}
-	if (m_szSeries)
-	{
-		free(m_szSeries);
-	}
-	if (m_szPatCategory)
-	{
-		free(m_szPatCategory);
-	}
-	if (m_szPatDupeKey)
-	{
-		free(m_szPatDupeKey);
-	}
-	if (m_szPatAddDupeKey)
-	{
-		free(m_szPatAddDupeKey);
-	}
+	free(m_szCategory);
+	free(m_szDupeKey);
+	free(m_szAddDupeKey);
+	free(m_szRageId);
+	free(m_szSeries);
+	free(m_szPatCategory);
+	free(m_szPatDupeKey);
+	free(m_szPatAddDupeKey);
 
 	for (TermList::iterator it = m_Terms.begin(); it != m_Terms.end(); it++)
 	{
@@ -767,10 +734,7 @@ char* FeedFilter::Rule::CompileOptions(char* szRule)
 			if (!strcasecmp(szOption, "category") || !strcasecmp(szOption, "cat") || !strcasecmp(szOption, "c"))
 			{
 				m_bHasCategory = true;
-				if (m_szCategory)
-				{
-					free(m_szCategory);
-				}
+				free(m_szCategory);
 				m_szCategory = strdup(szValue);
 				m_bPatCategory = strstr(szValue, "${");
 			}
@@ -827,20 +791,14 @@ char* FeedFilter::Rule::CompileOptions(char* szRule)
 			else if (!strcasecmp(szOption, "dupekey") || !strcasecmp(szOption, "dk") || !strcasecmp(szOption, "k"))
 			{
 				m_bHasDupeKey = true;
-				if (m_szDupeKey)
-				{
-					free(m_szDupeKey);
-				}
+				free(m_szDupeKey);
 				m_szDupeKey = strdup(szValue);
 				m_bPatDupeKey = strstr(szValue, "${");
 			}
 			else if (!strcasecmp(szOption, "dupekey+") || !strcasecmp(szOption, "dk+") || !strcasecmp(szOption, "k+"))
 			{
 				m_bHasAddDupeKey = true;
-				if (m_szAddDupeKey)
-				{
-					free(m_szAddDupeKey);
-				}
+				free(m_szAddDupeKey);
 				m_szAddDupeKey = strdup(szValue);
 				m_bPatAddDupeKey = strstr(szValue, "${");
 			}
@@ -868,19 +826,13 @@ char* FeedFilter::Rule::CompileOptions(char* szRule)
 			else if (!strcasecmp(szOption, "rageid"))
 			{
 				m_bHasRageId = true;
-				if (m_szRageId)
-				{
-					free(m_szRageId);
-				}
+				free(m_szRageId);
 				m_szRageId = strdup(szValue);
 			}
 			else if (!strcasecmp(szOption, "series"))
 			{
 				m_bHasSeries = true;
-				if (m_szSeries)
-				{
-					free(m_szSeries);
-				}
+				free(m_szSeries);
 				m_szSeries = strdup(szValue);
 			}
 
@@ -898,10 +850,7 @@ char* FeedFilter::Rule::CompileOptions(char* szRule)
 			else
 			{
 				m_bHasCategory = true;
-				if (m_szCategory)
-				{
-					free(m_szCategory);
-				}
+				free(m_szCategory);
 				m_szCategory = strdup(szOption);
 			}
 		}
@@ -1019,10 +968,7 @@ bool FeedFilter::Rule::MatchExpression(FeedItemInfo* pFeedItemInfo)
 
 void FeedFilter::Rule::ExpandRefValues(FeedItemInfo* pFeedItemInfo, char** pDestStr, char* pPatStr)
 {
-	if (*pDestStr)
-	{
-		free(*pDestStr);
-	}
+	free(*pDestStr);
 
 	*pDestStr = strdup(pPatStr);
 	char* curvalue = *pDestStr;

@@ -176,18 +176,9 @@ ParChecker::~ParChecker()
 {
     debug("Destroying ParChecker");
 
-	if (m_szDestDir)
-	{
-		free(m_szDestDir);
-	}
-	if (m_szNZBName)
-	{
-		free(m_szNZBName);
-	}
-	if (m_szInfoName)
-	{
-		free(m_szInfoName);
-	}
+	free(m_szDestDir);
+	free(m_szNZBName);
+	free(m_szInfoName);
 	free(m_szProgressLabel);
 
 	Cleanup();
@@ -195,11 +186,8 @@ ParChecker::~ParChecker()
 
 void ParChecker::Cleanup()
 {
-	if (m_pRepairer)
-	{
-		delete (Repairer*)m_pRepairer;
-		m_pRepairer = NULL;
-	}
+	delete (Repairer*)m_pRepairer;
+	m_pRepairer = NULL;
 
 	for (FileList::iterator it = m_QueuedParFiles.begin(); it != m_QueuedParFiles.end() ;it++)
 	{
@@ -215,37 +203,25 @@ void ParChecker::Cleanup()
 
 	m_sourceFiles.clear();
 
-	if (m_szErrMsg)
-	{
-		free(m_szErrMsg);
-		m_szErrMsg = NULL;
-	}
+	free(m_szErrMsg);
+	m_szErrMsg = NULL;
 }
 
 void ParChecker::SetDestDir(const char * szDestDir)
 {
-	if (m_szDestDir)
-	{
-		free(m_szDestDir);
-	}
+	free(m_szDestDir);
 	m_szDestDir = strdup(szDestDir);
 }
 
 void ParChecker::SetNZBName(const char * szNZBName)
 {
-	if (m_szNZBName)
-	{
-		free(m_szNZBName);
-	}
+	free(m_szNZBName);
 	m_szNZBName = strdup(szNZBName);
 }
 
 void ParChecker::SetInfoName(const char * szInfoName)
 {
-	if (m_szInfoName)
-	{
-		free(m_szInfoName);
-	}
+	free(m_szInfoName);
 	m_szInfoName = strdup(szInfoName);
 }
 

@@ -60,10 +60,7 @@ Log::Log()
 Log::~Log()
 {
 	Clear();
-	if (m_szLogFilename)
-	{
-		free(m_szLogFilename);
-	}
+	free(m_szLogFilename);
 }
 
 void Log::Filelog(const char* msg, ...)
@@ -305,10 +302,7 @@ Message::Message(unsigned int iID, EKind eKind, time_t tTime, const char* szText
 
 Message::~ Message()
 {
-	if (m_szText)
-	{
-		free(m_szText);
-	}
+	free(m_szText);
 }
 
 void Log::Clear()

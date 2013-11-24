@@ -614,10 +614,7 @@ bool QueueCoordinator::GetNextArticle(FileInfo* &pFileInfo, ArticleInfo* &pArtic
 		}
 	}
 
-	if (pCheckedFiles)
-	{
-		free(pCheckedFiles);
-	}
+	free(pCheckedFiles);
 
 	return bOK;
 }

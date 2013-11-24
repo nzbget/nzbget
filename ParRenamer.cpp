@@ -91,14 +91,8 @@ ParRenamer::~ParRenamer()
 {
     debug("Destroying ParRenamer");
 
-	if (m_szDestDir)
-	{
-		free(m_szDestDir);
-	}
-	if (m_szInfoName)
-	{
-		free(m_szInfoName);
-	}
+	free(m_szDestDir);
+	free(m_szInfoName);
 	free(m_szProgressLabel);
 
 	Cleanup();
@@ -126,19 +120,13 @@ void ParRenamer::ClearHashList()
 
 void ParRenamer::SetDestDir(const char * szDestDir)
 {
-	if (m_szDestDir)
-	{
-		free(m_szDestDir);
-	}
+	free(m_szDestDir);
 	m_szDestDir = strdup(szDestDir);
 }
 
 void ParRenamer::SetInfoName(const char * szInfoName)
 {
-	if (m_szInfoName)
-	{
-		free(m_szInfoName);
-	}
+	free(m_szInfoName);
 	m_szInfoName = strdup(szInfoName);
 }
 

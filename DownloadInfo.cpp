@@ -61,22 +61,13 @@ NZBParameter::NZBParameter(const char* szName)
 
 NZBParameter::~NZBParameter()
 {
-	if (m_szName)
-	{
-		free(m_szName);
-	}
-	if (m_szValue)
-	{
-		free(m_szValue);
-	}
+	free(m_szName);
+	free(m_szValue);
 }
 
 void NZBParameter::SetValue(const char* szValue)
 {
-	if (m_szValue)
-	{
-		free(m_szValue);
-	}
+	free(m_szValue);
 	m_szValue = strdup(szValue);
 }
 
@@ -163,10 +154,7 @@ ScriptStatus::ScriptStatus(const char* szName, EStatus eStatus)
 
 ScriptStatus::~ScriptStatus()
 {
-	if (m_szName)
-	{
-		free(m_szName);
-	}
+	free(m_szName);
 }
 
 
@@ -321,34 +309,13 @@ NZBInfo::~NZBInfo()
 {
 	debug("Destroying NZBInfo");
 
-	if (m_szFilename)
-	{
-		free(m_szFilename);
-	}
-	if (m_szDestDir)
-	{
-		free(m_szDestDir);
-	}
-	if (m_szFinalDir)
-	{
-		free(m_szFinalDir);
-	}
-	if (m_szCategory)
-	{
-		free(m_szCategory);
-	}
-	if (m_szName)
-	{
-		free(m_szName);
-	}
-	if (m_szQueuedFilename)
-	{
-		free(m_szQueuedFilename);
-	}
-	if (m_szDupeKey)
-	{
-		free(m_szDupeKey);
-	}
+	free(m_szFilename);
+	free(m_szDestDir);
+	free(m_szFinalDir);
+	free(m_szCategory);
+	free(m_szName);
+	free(m_szQueuedFilename);
+	free(m_szDupeKey);
 
 	ClearCompletedFiles();
 
@@ -398,28 +365,19 @@ void NZBInfo::ClearCompletedFiles()
 
 void NZBInfo::SetDestDir(const char* szDestDir)
 {
-	if (m_szDestDir)
-	{
-		free(m_szDestDir);
-	}
+	free(m_szDestDir);
 	m_szDestDir = strdup(szDestDir);
 }
 
 void NZBInfo::SetFinalDir(const char* szFinalDir)
 {
-	if (m_szFinalDir)
-	{
-		free(m_szFinalDir);
-	}
+	free(m_szFinalDir);
 	m_szFinalDir = strdup(szFinalDir);
 }
 
 void NZBInfo::SetFilename(const char * szFilename)
 {
-	if (m_szFilename)
-	{
-		free(m_szFilename);
-	}
+	free(m_szFilename);
 	m_szFilename = strdup(szFilename);
 
 	if (!m_szName)
@@ -436,37 +394,25 @@ void NZBInfo::SetFilename(const char * szFilename)
 
 void NZBInfo::SetName(const char* szName)
 {
-	if (m_szName)
-	{
-		free(m_szName);
-	}
+	free(m_szName);
 	m_szName = szName ? strdup(szName) : NULL;
 }
 
 void NZBInfo::SetCategory(const char* szCategory)
 {
-	if (m_szCategory)
-	{
-		free(m_szCategory);
-	}
+	free(m_szCategory);
 	m_szCategory = strdup(szCategory);
 }
 
 void NZBInfo::SetQueuedFilename(const char * szQueuedFilename)
 {
-	if (m_szQueuedFilename)
-	{
-		free(m_szQueuedFilename);
-	}
+	free(m_szQueuedFilename);
 	m_szQueuedFilename = strdup(szQueuedFilename);
 }
 
 void NZBInfo::SetDupeKey(const char* szDupeKey)
 {
-	if (m_szDupeKey)
-	{
-		free(m_szDupeKey);
-	}
+	free(m_szDupeKey);
 	m_szDupeKey = strdup(szDupeKey ? szDupeKey : "");
 }
 
@@ -665,31 +611,19 @@ ArticleInfo::~ ArticleInfo()
 {
 	//debug("Destroying ArticleInfo");
 
-	if (m_szMessageID)
-	{
-		free(m_szMessageID);
-	}
-	if (m_szResultFilename)
-	{
-		free(m_szResultFilename);
-	}
+	free(m_szMessageID);
+	free(m_szResultFilename);
 }
 
 void ArticleInfo::SetMessageID(const char * szMessageID)
 {
-	if (m_szMessageID)
-	{
-		free(m_szMessageID);
-	}
+	free(m_szMessageID);
 	m_szMessageID = strdup(szMessageID);
 }
 
 void ArticleInfo::SetResultFilename(const char * v)
 {
-	if (m_szResultFilename)
-	{
-		free(m_szResultFilename);
-	}
+	free(m_szResultFilename);
 	m_szResultFilename = strdup(v);
 }
 
@@ -733,22 +667,10 @@ FileInfo::~ FileInfo()
 {
 	debug("Destroying FileInfo");
 
-	if (m_szSubject)
-	{
-		free(m_szSubject);
-	}
-	if (m_szFilename)
-	{
-		free(m_szFilename);
-	}
-	if (m_szOutputFilename)
-	{
-		free(m_szOutputFilename);
-	}
-	if (m_pMutexOutputFile)
-	{
-		delete m_pMutexOutputFile;
-	}
+	free(m_szSubject);
+	free(m_szFilename);
+	free(m_szOutputFilename);
+	delete m_pMutexOutputFile;
 
 	for (Groups::iterator it = m_Groups.begin(); it != m_Groups.end() ;it++)
 	{
@@ -799,10 +721,7 @@ void FileInfo::SetSubject(const char* szSubject)
 
 void FileInfo::SetFilename(const char* szFilename)
 {
-	if (m_szFilename)
-	{
-		free(m_szFilename);
-	}
+	free(m_szFilename);
 	m_szFilename = strdup(szFilename);
 }
 
@@ -823,10 +742,7 @@ void FileInfo::UnlockOutputFile()
 
 void FileInfo::SetOutputFilename(const char* szOutputFilename)
 {
-	if (m_szOutputFilename)
-	{
-		free(m_szOutputFilename);
-	}
+	free(m_szOutputFilename);
 	m_szOutputFilename = strdup(szOutputFilename);
 }
 
@@ -912,14 +828,8 @@ PostInfo::~ PostInfo()
 {
 	debug("Destroying PostInfo");
 
-	if (m_szInfoName)
-	{
-		free(m_szInfoName);
-	}
-	if (m_szProgressLabel)
-	{
-		free(m_szProgressLabel);
-	}
+	free(m_szInfoName);
+	free(m_szProgressLabel);
 
 	for (Messages::iterator it = m_Messages.begin(); it != m_Messages.end(); it++)
 	{
@@ -950,10 +860,7 @@ void PostInfo::SetInfoName(const char* szInfoName)
 
 void PostInfo::SetProgressLabel(const char* szProgressLabel)
 {
-	if (m_szProgressLabel)
-	{
-		free(m_szProgressLabel);
-	}
+	free(m_szProgressLabel);
 	m_szProgressLabel = strdup(szProgressLabel);
 }
 
@@ -1074,30 +981,15 @@ UrlInfo::UrlInfo()
 
 UrlInfo::~ UrlInfo()
 {
-	if (m_szURL)
-	{
-		free(m_szURL);
-	}
-	if (m_szNZBFilename)
-	{
-		free(m_szNZBFilename);
-	}
-	if (m_szCategory)
-	{
-		free(m_szCategory);
-	}
-	if (m_szDupeKey)
-	{
-		free(m_szDupeKey);
-	}
+	free(m_szURL);
+	free(m_szNZBFilename);
+	free(m_szCategory);
+	free(m_szDupeKey);
 }
 
 void UrlInfo::SetURL(const char* szURL)
 {
-	if (m_szURL)
-	{
-		free(m_szURL);
-	}
+	free(m_szURL);
 	m_szURL = strdup(szURL);
 }
 
@@ -1112,28 +1004,19 @@ void UrlInfo::SetID(int iID)
 
 void UrlInfo::SetNZBFilename(const char* szNZBFilename)
 {
-	if (m_szNZBFilename)
-	{
-		free(m_szNZBFilename);
-	}
+	free(m_szNZBFilename);
 	m_szNZBFilename = strdup(szNZBFilename);
 }
 
 void UrlInfo::SetCategory(const char* szCategory)
 {
-	if (m_szCategory)
-	{
-		free(m_szCategory);
-	}
+	free(m_szCategory);
 	m_szCategory = strdup(szCategory);
 }
 
 void UrlInfo::SetDupeKey(const char* szDupeKey)
 {
-	if (m_szDupeKey)
-	{
-		free(m_szDupeKey);
-	}
+	free(m_szDupeKey);
 	m_szDupeKey = strdup(szDupeKey);
 }
 
@@ -1175,31 +1058,19 @@ DupInfo::DupInfo()
 
 DupInfo::~DupInfo()
 {
-	if (m_szName)
-	{
-		free(m_szName);
-	}
-	if (m_szDupeKey)
-	{
-		free(m_szDupeKey);
-	}
+	free(m_szName);
+	free(m_szDupeKey);
 }
 
 void DupInfo::SetName(const char* szName)
 {
-	if (m_szName)
-	{
-		free(m_szName);
-	}
+	free(m_szName);
 	m_szName = strdup(szName);
 }
 
 void DupInfo::SetDupeKey(const char* szDupeKey)
 {
-	if (m_szDupeKey)
-	{
-		free(m_szDupeKey);
-	}
+	free(m_szDupeKey);
 	m_szDupeKey = strdup(szDupeKey);
 }
 

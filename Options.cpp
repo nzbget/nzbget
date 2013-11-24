@@ -230,35 +230,20 @@ Options::OptEntry::OptEntry(const char* szName, const char* szValue)
 
 Options::OptEntry::~OptEntry()
 {
-	if (m_szName)
-	{
-		free(m_szName);
-	}
-	if (m_szValue)
-	{
-		free(m_szValue);
-	}
-	if (m_szDefValue)
-	{
-		free(m_szDefValue);
-	}
+	free(m_szName);
+	free(m_szValue);
+	free(m_szDefValue);
 }
 
 void Options::OptEntry::SetName(const char* szName)
 {
-	if (m_szName)
-	{
-		free(m_szName);
-	}
+	free(m_szName);
 	m_szName = strdup(szName);
 }
 
 void Options::OptEntry::SetValue(const char* szValue)
 {
-	if (m_szValue)
-	{
-		free(m_szValue);
-	}
+	free(m_szValue);
 	m_szValue = strdup(szValue);
 
 	if (!m_szDefValue)
@@ -304,18 +289,9 @@ Options::ConfigTemplate::ConfigTemplate(const char* szName, const char* szDispla
 
 Options::ConfigTemplate::~ConfigTemplate()
 {
-	if (m_szName)
-	{
-		free(m_szName);
-	}
-	if (m_szDisplayName)
-	{
-		free(m_szDisplayName);
-	}
-	if (m_szTemplate)
-	{
-		free(m_szTemplate);
-	}
+	free(m_szName);
+	free(m_szDisplayName);
+	free(m_szTemplate);
 }
 
 Options::ConfigTemplates::~ConfigTemplates()
@@ -337,18 +313,9 @@ Options::Category::Category(const char* szName, const char* szDestDir, bool bUnp
 
 Options::Category::~Category()
 {
-	if (m_szName)
-	{
-		free(m_szName);
-	}
-	if (m_szDestDir)
-	{
-		free(m_szDestDir);
-	}
-	if (m_szDefScript)
-	{
-		free(m_szDefScript);
-	}
+	free(m_szName);
+	free(m_szDestDir);
+	free(m_szDefScript);
 
 	for (NameList::iterator it = m_Aliases.begin(); it != m_Aliases.end(); it++)
 	{
@@ -410,26 +377,14 @@ Options::Script::Script(const char* szName, const char* szLocation)
 
 Options::Script::~Script()
 {
-	if (m_szName)
-	{
-		free(m_szName);
-	}
-	if (m_szLocation)
-	{
-		free(m_szLocation);
-	}
-	if (m_szDisplayName)
-	{
-		free(m_szDisplayName);
-	}
+	free(m_szName);
+	free(m_szLocation);
+	free(m_szDisplayName);
 }
 
 void Options::Script::SetDisplayName(const char* szDisplayName)
 {
-	if (m_szDisplayName)
-	{
-		free(m_szDisplayName);
-	}
+	free(m_szDisplayName);
 	m_szDisplayName = strdup(szDisplayName);
 }
 
@@ -654,130 +609,37 @@ Options::Options(int argc, char* argv[])
 
 Options::~Options()
 {
-	if (m_szConfigFilename)
-	{
-		free(m_szConfigFilename);
-	}
-	if (m_szDestDir)
-	{
-		free(m_szDestDir);
-	}
-	if (m_szInterDir)
-	{
-		free(m_szInterDir);
-	}
-	if (m_szTempDir)
-	{
-		free(m_szTempDir);
-	}
-	if (m_szQueueDir)
-	{
-		free(m_szQueueDir);
-	}
-	if (m_szNzbDir)
-	{
-		free(m_szNzbDir);
-	}
-	if (m_szWebDir)
-	{
-		free(m_szWebDir);
-	}
-	if (m_szConfigTemplate)
-	{
-		free(m_szConfigTemplate);
-	}
-	if (m_szScriptDir)
-	{
-		free(m_szScriptDir);
-	}
-	if (m_szArgFilename)
-	{
-		free(m_szArgFilename);
-	}
-	if (m_szAddCategory)
-	{
-		free(m_szAddCategory);
-	}
-	if (m_szEditQueueText)
-	{
-		free(m_szEditQueueText);
-	}
-	if (m_szLastArg)
-	{
-		free(m_szLastArg);
-	}
-	if (m_szControlIP)
-	{
-		free(m_szControlIP);
-	}
-	if (m_szControlUsername)
-	{
-		free(m_szControlUsername);
-	}
-	if (m_szControlPassword)
-	{
-		free(m_szControlPassword);
-	}
-	if (m_szSecureCert)
-	{
-		free(m_szSecureCert);
-	}
-	if (m_szSecureKey)
-	{
-		free(m_szSecureKey);
-	}
-	if (m_szAuthorizedIP)
-	{
-		free(m_szAuthorizedIP);
-	}
-	if (m_szLogFile)
-	{
-		free(m_szLogFile);
-	}
-	if (m_szLockFile)
-	{
-		free(m_szLockFile);
-	}
-	if (m_szDaemonUsername)
-	{
-		free(m_szDaemonUsername);
-	}
-	if (m_szScriptOrder)
-	{
-		free(m_szScriptOrder);
-	}
-	if (m_szDefScript)
-	{
-		free(m_szDefScript);
-	}
-	if (m_szNZBProcess)
-	{
-		free(m_szNZBProcess);
-	}
-	if (m_szNZBAddedProcess)
-	{
-		free(m_szNZBAddedProcess);
-	}
-	if (m_pEditQueueIDList)
-	{
-		free(m_pEditQueueIDList);
-	}
-	if (m_szAddNZBFilename)
-	{
-		free(m_szAddNZBFilename);
-	}
-	if (m_szUnrarCmd)
-	{
-		free(m_szUnrarCmd);
-	}
-	if (m_szSevenZipCmd)
-	{
-		free(m_szSevenZipCmd);
-	}
-	if (m_szExtCleanupDisk)
-	{
-		free(m_szExtCleanupDisk);
-	}
+	free(m_szConfigFilename);
+	free(m_szDestDir);
+	free(m_szInterDir);
+	free(m_szTempDir);
+	free(m_szQueueDir);
+	free(m_szNzbDir);
+	free(m_szWebDir);
+	free(m_szConfigTemplate);
+	free(m_szScriptDir);
+	free(m_szArgFilename);
+	free(m_szAddCategory);
+	free(m_szEditQueueText);
+	free(m_szLastArg);
+	free(m_szControlIP);
+	free(m_szControlUsername);
+	free(m_szControlPassword);
+	free(m_szSecureCert);
+	free(m_szSecureKey);
+	free(m_szAuthorizedIP);
+	free(m_szLogFile);
+	free(m_szLockFile);
+	free(m_szDaemonUsername);
+	free(m_szScriptOrder);
+	free(m_szDefScript);
+	free(m_szNZBProcess);
+	free(m_szNZBAddedProcess);
+	free(m_pEditQueueIDList);
+	free(m_szAddNZBFilename);
+	free(m_szUnrarCmd);
+	free(m_szSevenZipCmd);
+	free(m_szExtCleanupDisk);
 
 	for (NameList::iterator it = m_EditQueueNameList.begin(); it != m_EditQueueNameList.end(); it++)
 	{
@@ -1332,10 +1194,7 @@ void Options::InitCommandLine(int argc, char* argv[])
 						{
 							abort("FATAL ERROR: Could not parse value of option 'A'\n");
 						}
-						if (m_szAddCategory)
-						{
-							free(m_szAddCategory);
-						}
+						free(m_szAddCategory);
 						m_szAddCategory = strdup(argv[optind-1]);
 					}
 					else if (optarg && !strcasecmp(optarg, "N"))
@@ -1345,10 +1204,7 @@ void Options::InitCommandLine(int argc, char* argv[])
 						{
 							abort("FATAL ERROR: Could not parse value of option 'A'\n");
 						}
-						if (m_szAddNZBFilename)
-						{
-							free(m_szAddNZBFilename);
-						}
+						free(m_szAddNZBFilename);
 						m_szAddNZBFilename = strdup(argv[optind-1]);
 					}
 					else
@@ -1729,10 +1585,7 @@ void Options::InitCommandLine(int argc, char* argv[])
 				break;
 			case 'K':
 				// switch "K" is provided for compatibility with v. 0.8.0 and can be removed in future versions
-				if (m_szAddCategory)
-				{
-					free(m_szAddCategory);
-				}
+				free(m_szAddCategory);
 				m_szAddCategory = strdup(optarg);
 				break;
 			case 'S':
@@ -2181,10 +2034,7 @@ void Options::InitCategories()
 			Category* pCategory = new Category(nname, szDestDir, bUnpack, ndefscript);
 			m_Categories.push_back(pCategory);
 
-			if (szDestDir)
-			{
-				free(szDestDir);
-			}
+			free(szDestDir);
 			
 			// split Aliases into tokens and create items for each token
 			if (naliases)
@@ -2822,10 +2672,7 @@ void Options::CheckOptions()
 	// (for compatibility with versions 9 and 10).
 	if (!m_szConfigTemplate || m_szConfigTemplate[0] == '\0')
 	{
-		if (m_szConfigTemplate)
-		{
-			free(m_szConfigTemplate);
-		}
+		free(m_szConfigTemplate);
 		int iLen = strlen(m_szWebDir) + 15;
 		m_szConfigTemplate = (char*)malloc(iLen);
 		snprintf(m_szConfigTemplate, iLen, "%s%s", m_szWebDir, "nzbget.conf");

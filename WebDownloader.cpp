@@ -71,22 +71,10 @@ WebDownloader::~WebDownloader()
 {
 	debug("Destroying WebDownloader");
 
-	if (m_szURL)
-	{
-		free(m_szURL);
-	}
-	if (m_szInfoName)
-	{
-		free(m_szInfoName);
-	}
-	if (m_szOutputFilename)
-	{
-		free(m_szOutputFilename);
-	}
-	if (m_szOriginalFilename)
-	{
-		free(m_szOriginalFilename);
-	}
+	free(m_szURL);
+	free(m_szInfoName);
+	free(m_szOutputFilename);
+	free(m_szOriginalFilename);
 }
 
 void WebDownloader::SetOutputFilename(const char* v)
@@ -101,10 +89,7 @@ void WebDownloader::SetInfoName(const char* v)
 
 void WebDownloader::SetURL(const char * szURL)
 {
-	if (m_szURL)
-	{
-		free(m_szURL);
-	}
+	free(m_szURL);
 	m_szURL = strdup(szURL);
 }
 
@@ -462,10 +447,7 @@ WebDownloader::EStatus WebDownloader::DownloadBody()
 	free(szLineBuf);
 
 #ifndef DISABLE_GZIP
-	if (m_pGUnzipStream)
-	{
-		delete m_pGUnzipStream;
-	}
+	delete m_pGUnzipStream;
 #endif
 
 	if (m_pOutFile)
@@ -591,10 +573,7 @@ void WebDownloader::ParseFilename(const char* szContentDisposition)
 
 	WebUtil::HttpUnquote(fname);
 
-	if (m_szOriginalFilename)
-	{
-		free(m_szOriginalFilename);
-	}
+	free(m_szOriginalFilename);
 	m_szOriginalFilename = strdup(Util::BaseFileName(fname));
 
 	debug("OriginalFilename: %s", m_szOriginalFilename);
