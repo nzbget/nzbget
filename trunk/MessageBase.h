@@ -88,6 +88,8 @@ enum eRemoteEditAction
 	eRemoteEditActionGroupPause,			// pause group
 	eRemoteEditActionGroupResume,			// resume (unpause) group
 	eRemoteEditActionGroupDelete,			// delete group
+	eRemoteEditActionGroupDupeDelete,		// delete group
+	eRemoteEditActionGroupFinalDelete,		// delete group
 	eRemoteEditActionGroupPauseAllPars,		// pause only (all) pars (does not affect other files) in group
 	eRemoteEditActionGroupPauseExtraPars,	// pause only (almost all) pars in group, except main par-file (does not affect other files)
 	eRemoteEditActionGroupSetPriority,		// set priority for groups
