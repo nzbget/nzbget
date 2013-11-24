@@ -63,10 +63,7 @@ Scheduler::Task::Task(int iHours, int iMinutes, int iWeekDaysBits, ECommand eCom
 
 Scheduler::Task::~Task()
 {
-	if (m_szParam)
-	{
-		free(m_szParam);
-	}
+	free(m_szParam);
 }
 
 

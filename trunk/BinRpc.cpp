@@ -563,10 +563,7 @@ void ListBinCommand::Execute()
 
 		g_pQueueCoordinator->UnlockQueue();
 
-		if (pRegEx)
-		{
-			delete pRegEx;
-		}
+		delete pRegEx;
 
 		ListResponse.m_iNrTrailingNZBEntries = htonl(iNrNZBEntries);
 		ListResponse.m_iNrTrailingPPPEntries = htonl(iNrPPPEntries);
@@ -612,10 +609,7 @@ void ListBinCommand::Execute()
 		m_pConnection->Send(buf, bufsize);
 	}
 
-	if (buf)
-	{
-		free(buf);
-	}
+	free(buf);
 }
 
 void LogBinCommand::Execute()

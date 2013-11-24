@@ -76,10 +76,7 @@ RemoteClient::RemoteClient()
 
 RemoteClient::~RemoteClient()
 {
-	if (m_pConnection)
-	{
-		delete m_pConnection;
-	}
+	delete m_pConnection;
 }
 
 void RemoteClient::printf(const char * msg,...)
@@ -213,10 +210,7 @@ bool RemoteClient::RequestServerDownload(const char* szFilename, const char* szC
 	}
 
 	// Cleanup
-	if (szBuffer)
-	{
-		free(szBuffer);
-	}
+	free(szBuffer);
 
 	return OK;
 }

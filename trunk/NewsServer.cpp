@@ -72,24 +72,9 @@ NewsServer::NewsServer(int iID, bool bActive, const char* szName, const char* sz
 
 NewsServer::~NewsServer()
 {
-	if (m_szName)
-	{
-		free(m_szName);
-	}
-	if (m_szHost)
-	{
-		free(m_szHost);
-	}
-	if (m_szUser)
-	{
-		free(m_szUser);
-	}
-	if (m_szPassword)
-	{
-		free(m_szPassword);
-	}
-	if (m_szCipher)
-	{
-		free(m_szCipher);
-	}
+	free(m_szName);
+	free(m_szHost);
+	free(m_szUser);
+	free(m_szPassword);
+	free(m_szCipher);
 }

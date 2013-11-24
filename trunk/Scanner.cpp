@@ -523,10 +523,7 @@ bool Scanner::AddFileToQueue(const char* szFilename, const char* szNZBName, cons
 		g_pQueueCoordinator->AddNZBFileToQueue(pNZBFile, bAddTop);
 	}
 
-	if (pNZBFile)
-	{
-		delete pNZBFile;
-	}
+	delete pNZBFile;
 
 	return bOK;
 }

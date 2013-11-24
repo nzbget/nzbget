@@ -85,14 +85,8 @@ NZBFile::~NZBFile()
     debug("Destroying NZBFile");
 
     // Cleanup
-    if (m_szFileName)
-    {
-        free(m_szFileName);
-    }
-    if (m_szPassword)
-    {
-        free(m_szPassword);
-    }
+    free(m_szFileName);
+    free(m_szPassword);
 
     for (FileInfos::iterator it = m_FileInfos.begin(); it != m_FileInfos.end(); it++)
     {
@@ -106,15 +100,8 @@ NZBFile::~NZBFile()
 	}
 
 #ifndef WIN32
-	if (m_pFileInfo)
-	{
-		delete m_pFileInfo;
-	}
-	
-	if (m_szTagContent)
-	{
-		free(m_szTagContent);
-	}
+	delete m_pFileInfo;
+	free(m_szTagContent);
 #endif
 }
 

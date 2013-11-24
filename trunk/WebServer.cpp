@@ -66,18 +66,9 @@ WebProcessor::WebProcessor()
 
 WebProcessor::~WebProcessor()
 {
-	if (m_szRequest)
-	{
-		free(m_szRequest);
-	}
-	if (m_szUrl)
-	{
-		free(m_szUrl);
-	}
-	if (m_szOrigin)
-	{
-		free(m_szOrigin);
-	}
+	free(m_szRequest);
+	free(m_szUrl);
+	free(m_szOrigin);
 }
 
 void WebProcessor::SetUrl(const char* szUrl)
@@ -450,10 +441,7 @@ void WebProcessor::SendBodyResponse(const char* szBody, int iBodyLen, const char
 	m_pConnection->Send(szBody, iBodyLen);
 	
 #ifndef DISABLE_GZIP
-	if (szGBuf)
-	{
-		free(szGBuf);
-	}
+	free(szGBuf);
 #endif
 }
 

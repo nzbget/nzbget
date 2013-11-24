@@ -202,14 +202,9 @@ NCursesFrontend::NCursesFrontend()
 NCursesFrontend::~NCursesFrontend()
 {
 #ifdef WIN32
-	if (m_pScreenBuffer)
-	{
-		free(m_pScreenBuffer);
-	}
-	if (m_pOldScreenBuffer)
-	{
-		free(m_pOldScreenBuffer);
-	}
+	free(m_pScreenBuffer);
+	free(m_pOldScreenBuffer);
+
 	m_ColorAttr.clear();
 
 	HANDLE hConsole = GetStdHandle(STD_OUTPUT_HANDLE);
@@ -723,11 +718,8 @@ void NCursesFrontend::PrintKeyInputBar()
 
 void NCursesFrontend::SetHint(const char* szHint)
 {
-	if (m_szHint)
-	{
-		free(m_szHint);
-		m_szHint = NULL;
-	}
+	free(m_szHint);
+	m_szHint = NULL;
 	if (szHint)
 	{
 		m_szHint = strdup(szHint);

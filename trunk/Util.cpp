@@ -215,10 +215,7 @@ StringBuilder::StringBuilder()
 
 StringBuilder::~StringBuilder()
 {
-	if (m_szBuffer)
-	{
-		free(m_szBuffer);
-	}
+	free(m_szBuffer);
 }
 
 void StringBuilder::Append(const char* szStr)
@@ -1812,30 +1809,12 @@ URL::URL(const char* szAddress)
 
 URL::~URL()
 {
-	if (m_szAddress)
-	{
-		free(m_szAddress);
-	}
-	if (m_szProtocol)
-	{
-		free(m_szProtocol);
-	}
-	if (m_szUser)
-	{
-		free(m_szUser);
-	}
-	if (m_szPassword)
-	{
-		free(m_szPassword);
-	}
-	if (m_szHost)
-	{
-		free(m_szHost);
-	}
-	if (m_szResource)
-	{
-		free(m_szResource);
-	}
+	free(m_szAddress);
+	free(m_szProtocol);
+	free(m_szUser);
+	free(m_szPassword);
+	free(m_szHost);
+	free(m_szResource);
 }
 
 void URL::ParseURL()
@@ -1945,10 +1924,7 @@ RegEx::~RegEx()
 #ifdef HAVE_REGEX_H
 	regfree((regex_t*)m_pContext);
 	free(m_pContext);
-	if (m_pMatches)
-	{
-		free(m_pMatches);
-	}
+	free(m_pMatches);
 #endif
 }
 
@@ -2012,14 +1988,8 @@ WildMask::WildMask(const char *szPattern, bool bWantsPositions)
 WildMask::~WildMask()
 {
 	free(m_szPattern);
-	if (m_WildStart)
-	{
-		free(m_WildStart);
-	}
-	if (m_WildLen)
-	{
-		free(m_WildLen);
-	}
+	free(m_WildStart);
+	free(m_WildLen);
 }
 
 void WildMask::ExpandArray()

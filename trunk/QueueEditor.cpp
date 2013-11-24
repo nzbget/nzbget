@@ -483,10 +483,7 @@ bool QueueEditor::BuildIDListFromNameList(DownloadQueue* pDownloadQueue, IDList*
 			}
 		}
 
-		if (pRegEx)
-		{
-			delete pRegEx;
-		}
+		delete pRegEx;
 
 		if (!bFound && (eMatchMode == mmName))
 		{

@@ -64,34 +64,16 @@ FeedInfo::FeedInfo(int iID, const char* szName, const char* szUrl, int iInterval
 
 FeedInfo::~FeedInfo()
 {
-	if (m_szName)
-	{
-		free(m_szName);
-	}
-	if (m_szUrl)
-	{
-		free(m_szUrl);
-	}
-	if (m_szFilter)
-	{
-		free(m_szFilter);
-	}
-	if (m_szCategory)
-	{
-		free(m_szCategory);
-	}
-	if (m_szOutputFilename)
-	{
-		free(m_szOutputFilename);
-	}
+	free(m_szName);
+	free(m_szUrl);
+	free(m_szFilter);
+	free(m_szCategory);
+	free(m_szOutputFilename);
 }
 
 void FeedInfo::SetOutputFilename(const char* szOutputFilename)
 {
-	if (m_szOutputFilename)
-	{
-		free(m_szOutputFilename);
-	}
+	free(m_szOutputFilename);
 	m_szOutputFilename = strdup(szOutputFilename);
 }
 
@@ -104,14 +86,8 @@ FeedItemInfo::Attr::Attr(const char* szName, const char* szValue)
 
 FeedItemInfo::Attr::~Attr()
 {
-	if (m_szName)
-	{
-		free(m_szName);
-	}
-	if (m_szValue)
-	{
-		free(m_szValue);
-	}
+	free(m_szName);
+	free(m_szValue);
 }
 
 
@@ -173,105 +149,57 @@ FeedItemInfo::FeedItemInfo()
 
 FeedItemInfo::~FeedItemInfo()
 {
-	if (m_szTitle)
-	{
-		free(m_szTitle);
-	}
-	if (m_szFilename)
-	{
-		free(m_szFilename);
-	}
-	if (m_szUrl)
-	{
-		free(m_szUrl);
-	}
-	if (m_szCategory)
-	{
-		free(m_szCategory);
-	}
-	if (m_szDescription)
-	{
-		free(m_szDescription);
-	}
-	if (m_szSeason)
-	{
-		free(m_szSeason);
-	}
-	if (m_szEpisode)
-	{
-		free(m_szEpisode);
-	}
-	if (m_szAddCategory)
-	{
-		free(m_szAddCategory);
-	}
-	if (m_szDupeKey)
-	{
-		free(m_szDupeKey);
-	}
+	free(m_szTitle);
+	free(m_szFilename);
+	free(m_szUrl);
+	free(m_szCategory);
+	free(m_szDescription);
+	free(m_szSeason);
+	free(m_szEpisode);
+	free(m_szAddCategory);
+	free(m_szDupeKey);
 }
 
 void FeedItemInfo::SetTitle(const char* szTitle)
 {
-	if (m_szTitle)
-	{
-		free(m_szTitle);
-	}
+	free(m_szTitle);
 	m_szTitle = szTitle ? strdup(szTitle) : NULL;
 }
 
 void FeedItemInfo::SetFilename(const char* szFilename)
 {
-	if (m_szFilename)
-	{
-		free(m_szFilename);
-	}
+	free(m_szFilename);
 	m_szFilename = szFilename ? strdup(szFilename) : NULL;
 }
 
 void FeedItemInfo::SetUrl(const char* szUrl)
 {
-	if (m_szUrl)
-	{
-		free(m_szUrl);
-	}
+	free(m_szUrl);
 	m_szUrl = szUrl ? strdup(szUrl) : NULL;
 }
 
 void FeedItemInfo::SetCategory(const char* szCategory)
 {
-	if (m_szCategory)
-	{
-		free(m_szCategory);
-	}
+	free(m_szCategory);
 	m_szCategory = strdup(szCategory ? szCategory: "");
 }
 
 void FeedItemInfo::SetDescription(const char* szDescription)
 {
-	if (m_szDescription)
-	{
-		free(m_szDescription);
-	}
+	free(m_szDescription);
 	m_szDescription = strdup(szDescription ? szDescription: "");
 }
 
 void FeedItemInfo::SetSeason(const char* szSeason)
 {
-	if (m_szSeason)
-	{
-		free(m_szSeason);
-	}
+	free(m_szSeason);
 	m_szSeason = szSeason ? strdup(szSeason) : NULL;
 	m_iSeasonNum = szSeason ? ParsePrefixedInt(szSeason) : 0;
 }
 
 void FeedItemInfo::SetEpisode(const char* szEpisode)
 {
-	if (m_szEpisode)
-	{
-		free(m_szEpisode);
-	}
+	free(m_szEpisode);
 	m_szEpisode = szEpisode ? strdup(szEpisode) : NULL;
 	m_iEpisodeNum = szEpisode ? ParsePrefixedInt(szEpisode) : 0;
 }
@@ -288,19 +216,13 @@ int FeedItemInfo::ParsePrefixedInt(const char *szValue)
 
 void FeedItemInfo::SetAddCategory(const char* szAddCategory)
 {
-	if (m_szAddCategory)
-	{
-		free(m_szAddCategory);
-	}
+	free(m_szAddCategory);
 	m_szAddCategory = strdup(szAddCategory ? szAddCategory : "");
 }
 
 void FeedItemInfo::SetDupeKey(const char* szDupeKey)
 {
-	if (m_szDupeKey)
-	{
-		free(m_szDupeKey);
-	}
+	free(m_szDupeKey);
 	m_szDupeKey = strdup(szDupeKey ? szDupeKey : "");
 }
 
@@ -316,11 +238,7 @@ void FeedItemInfo::AppendDupeKey(const char* szExtraDupeKey)
 	snprintf(szNewKey, iLen, "%s-%s", m_szDupeKey, szExtraDupeKey);
 	szNewKey[iLen - 1] = '\0';
 
-	if (m_szDupeKey)
-	{
-		free(m_szDupeKey);
-	}
-
+	free(m_szDupeKey);
 	m_szDupeKey = szNewKey;
 }
 
@@ -328,10 +246,7 @@ void FeedItemInfo::BuildDupeKey(const char* szRageId, const char* szSeries)
 {
 	int iRageId = szRageId && *szRageId ? atoi(szRageId) : m_iRageId;
 
-	if (m_szDupeKey)
-	{
-		free(m_szDupeKey);
-	}
+	free(m_szDupeKey);
 
 	if (m_iImdbId != 0)
 	{
@@ -414,10 +329,7 @@ FeedHistoryInfo::FeedHistoryInfo(const char* szUrl, FeedHistoryInfo::EStatus eSt
 
 FeedHistoryInfo::~FeedHistoryInfo()
 {
-	if (m_szUrl)
-	{
-		free(m_szUrl);
-	}
+	free(m_szUrl);
 }
 
 
@@ -514,10 +426,7 @@ SharedFeedData::SharedFeedData()
 
 SharedFeedData::~SharedFeedData()
 {
-	if (m_pSeasonEpisodeRegEx)
-	{
-		delete m_pSeasonEpisodeRegEx;
-	}
+	delete m_pSeasonEpisodeRegEx;
 }
 
 RegEx* SharedFeedData::GetSeasonEpisodeRegEx()

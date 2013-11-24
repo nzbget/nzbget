@@ -71,10 +71,7 @@ Maintenance::~Maintenance()
 
 	ClearMessages();
 
-	if (m_szUpdateScript)
-	{
-		free(m_szUpdateScript);
-	}
+	free(m_szUpdateScript);
 }
 
 void Maintenance::ResetUpdateController()

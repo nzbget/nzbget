@@ -70,26 +70,15 @@ FeedFile::FeedFile(const char* szFileName)
 
 FeedFile::~FeedFile()
 {
-    debug("Destroying FeedFile");
+	debug("Destroying FeedFile");
 
-    // Cleanup
-    if (m_szFileName)
-    {
-        free(m_szFileName);
-    }
-
+	// Cleanup
+	free(m_szFileName);
 	m_pFeedItemInfos->Release();
 
 #ifndef WIN32
-	if (m_pFeedItemInfo)
-	{
-		delete m_pFeedItemInfo;
-	}
-	
-	if (m_szTagContent)
-	{
-		free(m_szTagContent);
-	}
+	delete m_pFeedItemInfo;
+	free(m_szTagContent);
 #endif
 }
 

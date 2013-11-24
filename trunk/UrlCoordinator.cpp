@@ -64,10 +64,7 @@ UrlDownloader::UrlDownloader() : WebDownloader()
 
 UrlDownloader::~UrlDownloader()
 {
-	if (m_szCategory)
-	{
-		free(m_szCategory);
-	}
+	free(m_szCategory);
 }
 
 void UrlDownloader::ProcessHeader(const char* szLine)
@@ -76,11 +73,7 @@ void UrlDownloader::ProcessHeader(const char* szLine)
 
 	if (!strncmp(szLine, "X-DNZB-Category:", 16))
 	{
-		if (m_szCategory)
-		{
-			free(m_szCategory);
-		}
-
+		free(m_szCategory);
 		char* szCategory = strdup(szLine + 16);
 		m_szCategory = strdup(Util::Trim(szCategory));
 		free(szCategory);

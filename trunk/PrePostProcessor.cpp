@@ -651,11 +651,8 @@ void PrePostProcessor::SanitisePostQueue(PostQueue* pPostQueue)
 
 void PrePostProcessor::DeletePostThread(PostInfo* pPostInfo)
 {
-	if (pPostInfo->GetPostThread())
-	{
-		delete pPostInfo->GetPostThread();
-		pPostInfo->SetPostThread(NULL);
-	}
+	delete pPostInfo->GetPostThread();
+	pPostInfo->SetPostThread(NULL);
 }
 
 void PrePostProcessor::StartJob(DownloadQueue* pDownloadQueue, PostInfo* pPostInfo)

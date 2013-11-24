@@ -66,10 +66,7 @@ RemoteServer::~RemoteServer()
 {
 	debug("Destroying RemoteServer");
 
-	if (m_pConnection)
-	{
-		delete m_pConnection;
-	}
+	delete m_pConnection;
 }
 
 void RemoteServer::Run()

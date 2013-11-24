@@ -726,64 +726,40 @@ void Cleanup()
 	debug("Cleaning up global objects");
 
 	debug("Deleting UrlCoordinator");
-	if (g_pUrlCoordinator)
-	{
-		delete g_pUrlCoordinator;
-		g_pUrlCoordinator = NULL;
-	}
+	delete g_pUrlCoordinator;
+	g_pUrlCoordinator = NULL;
 	debug("UrlCoordinator deleted");
 
 	debug("Deleting RemoteServer");
-	if (g_pRemoteServer)
-	{
-		delete g_pRemoteServer;
-		g_pRemoteServer = NULL;
-	}
+	delete g_pRemoteServer;
+	g_pRemoteServer = NULL;
 	debug("RemoteServer deleted");
 
 	debug("Deleting RemoteSecureServer");
-	if (g_pRemoteSecureServer)
-	{
-		delete g_pRemoteSecureServer;
-		g_pRemoteSecureServer = NULL;
-	}
+	delete g_pRemoteSecureServer;
+	g_pRemoteSecureServer = NULL;
 	debug("RemoteSecureServer deleted");
 
 	debug("Deleting PrePostProcessor");
-	if (g_pPrePostProcessor)
-	{
-		delete g_pPrePostProcessor;
-		g_pPrePostProcessor = NULL;
-	}
-	if (g_pScanner)
-	{
-		delete g_pScanner;
-		g_pScanner = NULL;
-	}
+	delete g_pPrePostProcessor;
+	g_pPrePostProcessor = NULL;
+	delete g_pScanner;
+	g_pScanner = NULL;
 	debug("PrePostProcessor deleted");
 
 	debug("Deleting Frontend");
-	if (g_pFrontend)
-	{
-		delete g_pFrontend;
-		g_pFrontend = NULL;
-	}
+	delete g_pFrontend;
+	g_pFrontend = NULL;
 	debug("Frontend deleted");
 
 	debug("Deleting QueueCoordinator");
-	if (g_pQueueCoordinator)
-	{
-		delete g_pQueueCoordinator;
-		g_pQueueCoordinator = NULL;
-	}
+	delete g_pQueueCoordinator;
+	g_pQueueCoordinator = NULL;
 	debug("QueueCoordinator deleted");
 
 	debug("Deleting DiskState");
-	if (g_pDiskState)
-	{
-		delete g_pDiskState;
-		g_pDiskState = NULL;
-	}
+	delete g_pDiskState;
+	g_pDiskState = NULL;
 	debug("DiskState deleted");
 
 	debug("Deleting Options");
@@ -800,35 +776,23 @@ void Cleanup()
 	debug("Options deleted");
 
 	debug("Deleting ServerPool");
-	if (g_pServerPool)
-	{
-		delete g_pServerPool;
-		g_pServerPool = NULL;
-	}
+	delete g_pServerPool;
+	g_pServerPool = NULL;
 	debug("ServerPool deleted");
 
 	debug("Deleting Scheduler");
-	if (g_pScheduler)
-	{
-		delete g_pScheduler;
-		g_pScheduler = NULL;
-	}
+	delete g_pScheduler;
+	g_pScheduler = NULL;
 	debug("Scheduler deleted");
 
 	debug("Deleting FeedCoordinator");
-	if (g_pFeedCoordinator)
-	{
-		delete g_pFeedCoordinator;
-		g_pFeedCoordinator = NULL;
-	}
+	delete g_pFeedCoordinator;
+	g_pFeedCoordinator = NULL;
 	debug("FeedCoordinator deleted");
 
 	debug("Deleting Maintenance");
-	if (g_pMaintenance)
-	{
-		delete g_pMaintenance;
-		g_pMaintenance = NULL;
-	}
+	delete g_pMaintenance;
+	g_pMaintenance = NULL;
 	debug("Maintenance deleted");
 
 	if (!g_bReloading)
@@ -839,11 +803,8 @@ void Cleanup()
 
 	debug("Global objects cleaned up");
 
-	if (g_pLog)
-	{
-		delete g_pLog;
-		g_pLog = NULL;
-	}
+	delete g_pLog;
+	g_pLog = NULL;
 }
 
 #ifndef WIN32

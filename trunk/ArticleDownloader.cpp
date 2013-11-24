@@ -77,22 +77,10 @@ ArticleDownloader::~ArticleDownloader()
 {
 	debug("Destroying ArticleDownloader");
 
-	if (m_szTempFilename)
-	{
-		free(m_szTempFilename);
-	}
-	if (m_szArticleFilename)
-	{
-		free(m_szArticleFilename);
-	}
-	if (m_szInfoName)
-	{
-		free(m_szInfoName);
-	}
-	if (m_szOutputFilename)
-	{
-		free(m_szOutputFilename);
-	}
+	free(m_szTempFilename);
+	free(m_szArticleFilename);
+	free(m_szInfoName);
+	free(m_szOutputFilename);
 }
 
 void ArticleDownloader::SetTempFilename(const char* v)
@@ -1064,10 +1052,7 @@ void ArticleDownloader::CompleteFileParts()
 		}
 	}
 
-	if (buffer)
-	{
-		free(buffer);
-	}
+	free(buffer);
 
 	if (outfile)
 	{
