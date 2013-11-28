@@ -319,6 +319,7 @@ private:
 	char*				m_szExtCleanupDisk;
 	int					m_iFeedHistory;
 	bool				m_bUrlForce;
+	int					m_iTimeCorrection;
 
 	// Parsed command-line parameters
 	bool				m_bServerMode;
@@ -482,6 +483,7 @@ public:
 	const char*			GetExtCleanupDisk() { return m_szExtCleanupDisk; }
 	int					GetFeedHistory() { return m_iFeedHistory; }
 	bool				GetUrlForce() { return m_bUrlForce; }
+	int					GetTimeCorrection() { return m_iTimeCorrection; }
 
 	Category*			FindCategory(const char* szName, bool bSearchAliases) { return m_Categories.FindCategory(szName, bSearchAliases); }
 

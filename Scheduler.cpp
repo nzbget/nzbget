@@ -126,10 +126,6 @@ void Scheduler::CheckTasks()
 	m_mutexTaskList.Lock();
 
 	time_t tCurrent = time(NULL);
-	struct tm tmCurrent;
-	localtime_r(&tCurrent, &tmCurrent);
-
-	struct tm tmLastCheck;
 
 	if (m_bDetectClockChanges)
 	{
@@ -149,9 +145,12 @@ void Scheduler::CheckTasks()
 		}
 	}
 
+	tm tmCurrent;
+	localtime_r(&tCurrent, &tmCurrent);
+	tm tmLastCheck;
 	localtime_r(&m_tLastCheck, &tmLastCheck);
 
-	struct tm tmLoop;
+	tm tmLoop;
 	memcpy(&tmLoop, &tmLastCheck, sizeof(tmLastCheck));
 	tmLoop.tm_hour = tmCurrent.tm_hour;
 	tmLoop.tm_min = tmCurrent.tm_min;
@@ -165,13 +164,15 @@ void Scheduler::CheckTasks()
 			Task* pTask = *it;
 			if (pTask->m_tLastExecuted != tLoop)
 			{
-				struct tm tmAppoint;
+				tm tmAppoint;
 				memcpy(&tmAppoint, &tmLoop, sizeof(tmLoop));
 				tmAppoint.tm_hour = pTask->m_iHours;
 				tmAppoint.tm_min = pTask->m_iMinutes;
 				tmAppoint.tm_sec = 0;
 
 				time_t tAppoint = mktime(&tmAppoint);
+				tAppoint -= g_pOptions->GetTimeCorrection();
+
 				int iWeekDay = tmAppoint.tm_wday;
 				if (iWeekDay == 0)
 				{

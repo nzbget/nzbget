@@ -179,6 +179,7 @@ static const char* OPTION_DEFSCRIPT				= "DefScript";
 static const char* OPTION_EXTCLEANUPDISK		= "ExtCleanupDisk";
 static const char* OPTION_FEEDHISTORY			= "FeedHistory";
 static const char* OPTION_URLFORCE				= "UrlForce";
+static const char* OPTION_TIMECORRECTION		= "TimeCorrection";
 
 // obsolete options
 static const char* OPTION_POSTLOGKIND			= "PostLogKind";
@@ -528,6 +529,7 @@ Options::Options(int argc, char* argv[])
 	m_szExtCleanupDisk		= NULL;
 	m_iFeedHistory			= 0;
 	m_bUrlForce				= false;
+	m_iTimeCorrection		= 0;
 
 	// Option "ConfigFile" will be initialized later, but we want
 	// to see it at the top of option list, so we add it first
@@ -793,6 +795,7 @@ void Options::InitDefault()
 	SetOption(OPTION_EXTCLEANUPDISK, "");
 	SetOption(OPTION_FEEDHISTORY, "7");
 	SetOption(OPTION_URLFORCE, "yes");
+	SetOption(OPTION_TIMECORRECTION, "0");
 }
 
 void Options::InitOptFile()
@@ -949,6 +952,12 @@ void Options::InitOptions()
 	m_iParTimeLimit			= ParseIntValue(OPTION_PARTIMELIMIT, 10);
 	m_iKeepHistory			= ParseIntValue(OPTION_KEEPHISTORY, 10);
 	m_iFeedHistory			= ParseIntValue(OPTION_FEEDHISTORY, 10);
+	m_iTimeCorrection		= ParseIntValue(OPTION_TIMECORRECTION, 10);
+	if (-24 <= m_iTimeCorrection && m_iTimeCorrection <= 24)
+	{
+		m_iTimeCorrection *= 60;
+	}
+	m_iTimeCorrection *= 60;
 
 	CheckDir(&m_szNzbDir, OPTION_NZBDIR, m_iNzbDirInterval == 0, true);
 

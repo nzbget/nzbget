@@ -545,6 +545,8 @@ int NCursesFrontend::PrintMessage(Message* Msg, int iRow, int iMaxLines)
 		szText = (char*)malloc(iLen);
 
 		time_t rawtime = Msg->GetTime();
+		rawtime += g_pOptions->GetTimeCorrection();
+
 		char szTime[50];
 #ifdef HAVE_CTIME_R_3
 		ctime_r(&rawtime, szTime, 50);
