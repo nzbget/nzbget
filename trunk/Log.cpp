@@ -77,6 +77,7 @@ void Log::Filelog(const char* msg, ...)
 
 		time_t rawtime;
 		time(&rawtime);
+		rawtime += g_pOptions->GetTimeCorrection();
 		
 		char szTime[50];
 #ifdef HAVE_CTIME_R_3
