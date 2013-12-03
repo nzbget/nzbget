@@ -46,6 +46,7 @@ FeedFilter::Term::Term()
 {
 	m_szField = NULL;
 	m_szParam = NULL;
+	m_bFloat = false;
 	m_iIntParam = 0;
 	m_fFloatParam = 0.0;
 	m_pRegEx = NULL;
@@ -322,9 +323,7 @@ bool FeedFilter::Term::Compile(char* szToken)
 		return false;
 	}
 
-	if ((szField && !strcasecmp(szField, "size") && !ParseSizeParam(szToken)) ||
-		(szField && !strcasecmp(szField, "age") && !ParseAgeParam(szToken)) ||
-		(szField && m_eCommand >= fcEqual && !ParseNumericParam(szToken)))
+	if (szField && !ParseParam(szField, szToken))
 	{
 		return false;
 	}
@@ -427,6 +426,24 @@ bool FeedFilter::Term::GetFieldData(const char* szField, FeedItemInfo* pFeedItem
 	return false;
 }
 
+bool FeedFilter::Term::ParseParam(const char* szField, const char* szParam)
+{
+	if (!strcasecmp(szField, "size"))
+	{
+		return ParseSizeParam(szParam);
+	}
+	else if (!strcasecmp(szField, "age"))
+	{
+		return ParseAgeParam(szParam);
+	}
+	else if (m_eCommand >= fcEqual)
+	{
+		return ParseNumericParam(szParam);
+	}
+
+	return true;
+}
+
 bool FeedFilter::Term::ParseSizeParam(const char* szParam)
 {
 	double fParam = atof(szParam);
@@ -462,26 +479,26 @@ bool FeedFilter::Term::ParseSizeParam(const char* szParam)
 
 bool FeedFilter::Term::ParseAgeParam(const char* szParam)
 {
-	m_iIntParam = atoll(szParam);
+	double fParam = atof(szParam);
 
 	const char* p;
-	for (p = szParam; *p && (*p >= '0' && *p <='9'); p++) ;
+	for (p = szParam; *p && ((*p >= '0' && *p <='9') || *p == '.'); p++) ;
 	if (*p)
 	{
 		if (!strcasecmp(p, "m"))
 		{
 			// minutes
-			m_iIntParam *= 60;
+			m_iIntParam = (long long)(fParam*60);
 		}
 		else if (!strcasecmp(p, "h"))
 		{
 			// hours
-			m_iIntParam *= 60 * 60;
+			m_iIntParam = (long long)(fParam*60*60);
 		}
 		else if (!strcasecmp(p, "d"))
 		{
 			// days
-			m_iIntParam *= 60 * 60 * 24;
+			m_iIntParam = (long long)(fParam*60*60*24);
 		}
 		else
 		{
@@ -491,7 +508,7 @@ bool FeedFilter::Term::ParseAgeParam(const char* szParam)
 	else
 	{
 		// days by default
-		m_iIntParam *= 60 * 60 * 24;
+		m_iIntParam = (long long)(fParam*60*60*24);
 	}
 
 	return true;

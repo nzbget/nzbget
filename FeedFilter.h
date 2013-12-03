@@ -64,6 +64,7 @@ private:
 
 		bool			GetFieldData(const char* szField, FeedItemInfo* pFeedItemInfo,
 							const char** StrValue, long long* IntValue);
+		bool			ParseParam(const char* szField, const char* szParam);
 		bool			ParseSizeParam(const char* szParam);
 		bool			ParseAgeParam(const char* szParam);
 		bool			ParseNumericParam(const char* szParam);
