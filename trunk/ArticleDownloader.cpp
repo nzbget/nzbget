@@ -663,7 +663,9 @@ bool ArticleDownloader::PrepareFile(char* szLine)
 		m_pOutFile = fopen(szFilename, bDirectWrite ? "rb+" : "wb");
 		if (!m_pOutFile)
 		{
-			error("Could not %s file %s", bDirectWrite ? "open" : "create", szFilename);
+			char szSysErrStr[256];
+			error("Could not %s file %s! Errcode: %i, %s", bDirectWrite ? "open" : "create", szFilename,
+				errno, Util::GetLastErrorMessage(szSysErrStr, sizeof(szSysErrStr)));
 			return false;
 		}
 		if (g_pOptions->GetWriteBufferSize() == -1)
