@@ -835,7 +835,7 @@ void QueueEditor::SetNZBName(NZBInfo* pNZBInfo, const char* szName)
 }
 
 /**
-* Check if deletion of already downloaded files is possible (when nzb id deleted from queue).
+* Check if deletion of already downloaded files is possible (when nzb is deleted from queue).
 * The deletion is most always possible, except the case if all remaining files in queue 
 * (belonging to this nzb-file) are PARS.
 */
@@ -844,15 +844,18 @@ bool QueueEditor::CanCleanupDisk(DownloadQueue* pDownloadQueue, NZBInfo* pNZBInf
     for (FileQueue::iterator it = pDownloadQueue->GetFileQueue()->begin(); it != pDownloadQueue->GetFileQueue()->end(); it++)
     {
         FileInfo* pFileInfo = *it;
-		char szLoFileName[1024];
-		strncpy(szLoFileName, pFileInfo->GetFilename(), 1024);
-		szLoFileName[1024-1] = '\0';
-		for (char* p = szLoFileName; *p; p++) *p = tolower(*p); // convert string to lowercase
-
-		if (!strstr(szLoFileName, ".par2"))
+		if (pFileInfo->GetNZBInfo() == pNZBInfo)
 		{
-			// non-par file found
-			return true;
+			char szLoFileName[1024];
+			strncpy(szLoFileName, pFileInfo->GetFilename(), 1024);
+			szLoFileName[1024-1] = '\0';
+			for (char* p = szLoFileName; *p; p++) *p = tolower(*p); // convert string to lowercase
+
+			if (!strstr(szLoFileName, ".par2"))
+			{
+				// non-par file found
+				return true;
+			}
 		}
 	}
 
