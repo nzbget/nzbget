@@ -207,7 +207,7 @@ void InstallSignalHandlers()
 	[NSApp activateIgnoringOtherApps:TRUE];
 	NSAlert *alert = [[NSAlert alloc] init];
 	[alert setMessageText:NSLocalizedString(@"AlreadyRunning.MessageText", nil)];
-	[alert setInformativeText:NSLocalizedString(showInMenubar ? @"AlreadyRunning.InformativeTextWithIcon" : @"AlreadyRunningDialog.InformativeTextWithoutIcon", nil)];
+	[alert setInformativeText:NSLocalizedString(showInMenubar ? @"AlreadyRunning.InformativeTextWithIcon" : @"AlreadyRunning.InformativeTextWithoutIcon", nil)];
 	NSButton* webUIButton = [alert addButtonWithTitle:NSLocalizedString(@"AlreadyRunning.WebUI", nil)];
 	[alert addButtonWithTitle:NSLocalizedString(@"AlreadyRunning.Preferences", nil)];
 	[alert addButtonWithTitle:NSLocalizedString(@"AlreadyRunning.Quit", nil)];
