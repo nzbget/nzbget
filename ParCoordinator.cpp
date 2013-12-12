@@ -216,8 +216,13 @@ bool ParCoordinator::ParseParFilename(const char* szParFilename, int* iBaseNameL
 	char* szEnd = szFilename;
 	while (char* p = strstr(szEnd, ".par2")) szEnd = p + 5;
 	*szEnd = '\0';
+
 	iLen = strlen(szFilename);
-	
+	if (iLen < 6)
+	{
+		return false;
+	}
+
 	if (strcasecmp(szFilename + iLen - 5, ".par2"))
 	{
 		return false;
