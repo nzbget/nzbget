@@ -409,6 +409,7 @@ var FeedFilterDialog = (new function($)
 	var splitStartPos;
 	var feedName;
 	var feedUrl;
+	var feedFilter;
 	var feedPauseNzb;
 	var feedCategory;
 	var feedPriority;
@@ -511,6 +512,7 @@ var FeedFilterDialog = (new function($)
 		$('#FeedFilterDialog_Title').text(name !== '' ? name : 'Feed Preview');
 		feedName = name;
 		feedUrl = url;
+		feedFilter = filter;
 		feedPauseNzb = pauseNzb === 'yes';
 		feedCategory = category;
 		feedPriority = parseInt(priority);
@@ -557,7 +559,8 @@ var FeedFilterDialog = (new function($)
 	function feedFailure(msg, result)
 	{
 		updating = false;
-		if (firstUpdate)
+		var filter = $FilterInput.val().replace(/\n/g, ' % ');
+		if (firstUpdate && filter === feedFilter)
 		{
 			$FeedFilterDialog.modal('hide');
 		}
