@@ -138,7 +138,7 @@ bool DiskState::SaveDownloadQueue(DownloadQueue* pDownloadQueue)
 		return false;
 	}
 
-	fprintf(outfile, "%s%i\n", FORMATVERSION_SIGNATURE, 41);
+	fprintf(outfile, "%s%i\n", FORMATVERSION_SIGNATURE, 42);
 
 	// save nzb-infos
 	SaveNZBList(pDownloadQueue, outfile);
@@ -192,7 +192,7 @@ bool DiskState::LoadDownloadQueue(DownloadQueue* pDownloadQueue)
 	char FileSignatur[128];
 	fgets(FileSignatur, sizeof(FileSignatur), infile);
 	int iFormatVersion = ParseFormatVersion(FileSignatur);
-	if (iFormatVersion < 3 || iFormatVersion > 41)
+	if (iFormatVersion < 3 || iFormatVersion > 42)
 	{
 		error("Could not load diskstate due to file version mismatch");
 		fclose(infile);
@@ -247,6 +247,11 @@ error:
 	}
 
 	pDownloadQueue->GetNZBInfoList()->ReleaseAll();
+
+	NZBInfo::ResetGenID(true);
+	FileInfo::ResetGenID(true);
+	UrlInfo::ResetGenID(true);
+	HistoryInfo::ResetGenID(true);
 
 	return bOK;
 }
@@ -684,6 +689,20 @@ bool DiskState::LoadNZBList(DownloadQueue* pDownloadQueue, FILE* infile, int iFo
 			{
 				pNZBInfo->GetParameters()->SetParameter("*Unpack:", g_pOptions->GetUnpack() ? "yes" : "no");
 			}
+		}
+	}
+
+	if (31 <= iFormatVersion && iFormatVersion < 42)
+	{
+		// due to a bug in r811 (v12-testing) new NZBIDs were generated on each refresh of web-ui
+		// this resulted in very high numbers for NZBIDs
+		// here we renumber NZBIDs in order to keep them low.
+		NZBInfo::ResetGenID(false);
+		int iID = 1;
+		for (NZBInfoList::iterator it = pDownloadQueue->GetNZBInfoList()->begin(); it != pDownloadQueue->GetNZBInfoList()->end(); it++)
+		{
+			NZBInfo* pNZBInfo = *it;
+			pNZBInfo->SetID(iID++);
 		}
 	}
 

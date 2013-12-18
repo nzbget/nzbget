@@ -2331,7 +2331,7 @@ void HistoryXmlCommand::Execute()
 
 	int iItemBufSize = 10240;
 	char* szItemBuf = (char*)malloc(iItemBufSize);
-	NZBInfo* pUrlNZBInfo = new NZBInfo(); // fake NZB-Info for Urls
+	NZBInfo* pUrlNZBInfo = new NZBInfo(false); // fake NZB-Info for Urls
 	int index = 0;
 
 	for (HistoryList::iterator it = pDownloadQueue->GetHistoryList()->begin(); it != pDownloadQueue->GetHistoryList()->end(); it++)

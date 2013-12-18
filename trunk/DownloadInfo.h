@@ -107,12 +107,14 @@ private:
 	bool				m_bAutoDeleted;
 
 	static int			m_iIDGen;
+	static int			m_iIDMax;
 
 public:
 						FileInfo();
 						~FileInfo();
 	int					GetID() { return m_iID; }
 	void				SetID(int iID);
+	static void			ResetGenID(bool bMax);
 	NZBInfo*			GetNZBInfo() { return m_pNZBInfo; }
 	void				SetNZBInfo(NZBInfo* pNZBInfo);
 	Articles* 			GetArticles() { return &m_Articles; }
@@ -436,16 +438,18 @@ private:
 	int					m_iIDMessageGen;
 
 	static int			m_iIDGen;
+	static int			m_iIDMax;
 
 	friend class NZBInfoList;
 
 public:
-						NZBInfo();
+						NZBInfo(bool bPersistent = true);
 						~NZBInfo();
 	void				Retain();
 	void				Release();
 	int					GetID() { return m_iID; }
 	void				SetID(int iID);
+	static void			ResetGenID(bool bMax);
 	const char*			GetFilename() { return m_szFilename; }
 	void				SetFilename(const char* szFilename);
 	static void			MakeNiceNZBName(const char* szNZBFilename, char* szBuffer, int iSize, bool bRemoveExt);
@@ -594,6 +598,7 @@ private:
 	int					m_iIDMessageGen;
 
 	static int			m_iIDGen;
+	static int			m_iIDMax;
 
 public:
 						PostInfo();
@@ -663,12 +668,14 @@ private:
 	EStatus				m_eStatus;
 
 	static int			m_iIDGen;
+	static int			m_iIDMax;
 
 public:
 						UrlInfo();
 						~UrlInfo();
 	int					GetID() { return m_iID; }
 	void				SetID(int iID);
+	static void			ResetGenID(bool bMax);
 	const char*			GetURL() { return m_szURL; }			// needs locking (for shared objects)
 	void				SetURL(const char* szURL);				// needs locking (for shared objects)
 	const char*			GetNZBFilename() { return m_szNZBFilename; }		// needs locking (for shared objects)
@@ -760,6 +767,7 @@ private:
 	time_t				m_tTime;
 
 	static int			m_iIDGen;
+	static int			m_iIDMax;
 
 public:
 						HistoryInfo(NZBInfo* pNZBInfo);
@@ -768,6 +776,7 @@ public:
 						~HistoryInfo();
 	int					GetID() { return m_iID; }
 	void				SetID(int iID);
+	static void			ResetGenID(bool bMax);
 	EKind				GetKind() { return m_eKind; }
 	NZBInfo*			GetNZBInfo() { return (NZBInfo*)m_pInfo; }
 	UrlInfo*			GetUrlInfo() { return (UrlInfo*)m_pInfo; }

@@ -47,10 +47,15 @@
 extern Options* g_pOptions;
 
 int FileInfo::m_iIDGen = 0;
+int FileInfo::m_iIDMax = 0;
 int NZBInfo::m_iIDGen = 0;
+int NZBInfo::m_iIDMax = 0;
 int PostInfo::m_iIDGen = 0;
+int PostInfo::m_iIDMax = 0;
 int UrlInfo::m_iIDGen = 0;
+int UrlInfo::m_iIDMax = 0;
 int HistoryInfo::m_iIDGen = 0;
+int HistoryInfo::m_iIDMax = 0;
 
 
 NZBParameter::NZBParameter(const char* szName)
@@ -251,7 +256,7 @@ void ServerStatList::Add(ServerStatList* pServerStats)
 }
 
 
-NZBInfo::NZBInfo()
+NZBInfo::NZBInfo(bool bPersistent)
 {
 	debug("Creating NZBInfo");
 
@@ -301,8 +306,7 @@ NZBInfo::NZBInfo()
 	m_Owner = NULL;
 	m_Messages.clear();
 	m_iIDMessageGen = 0;
-	m_iIDGen++;
-	m_iID = m_iIDGen;
+	m_iID = bPersistent ? ++m_iIDGen : 0;
 }
 
 NZBInfo::~NZBInfo()
@@ -348,9 +352,22 @@ void NZBInfo::Release()
 void NZBInfo::SetID(int iID)
 {
 	m_iID = iID;
-	if (m_iIDGen < m_iID)
+	if (m_iIDMax < m_iID)
 	{
-		m_iIDGen = m_iID;
+		m_iIDMax = m_iID;
+	}
+}
+
+void NZBInfo::ResetGenID(bool bMax)
+{
+	if (bMax)
+	{
+		m_iIDGen = m_iIDMax;
+	}
+	else
+	{
+		m_iIDGen = 0;
+		m_iIDMax = 0;
 	}
 }
 
@@ -659,8 +676,7 @@ FileInfo::FileInfo()
 	m_bExtraPriority = false;
 	m_iActiveDownloads = 0;
 	m_bAutoDeleted = false;
-	m_iIDGen++;
-	m_iID = m_iIDGen;
+	m_iID = ++m_iIDGen;
 }
 
 FileInfo::~ FileInfo()
@@ -698,9 +714,22 @@ void FileInfo::ClearArticles()
 void FileInfo::SetID(int iID)
 {
 	m_iID = iID;
-	if (m_iIDGen < m_iID)
+	if (m_iIDMax < m_iID)
 	{
-		m_iIDGen = m_iID;
+		m_iIDMax = m_iID;
+	}
+}
+
+void FileInfo::ResetGenID(bool bMax)
+{
+	if (bMax)
+	{
+		m_iIDGen = m_iIDMax;
+	}
+	else
+	{
+		m_iIDGen = 0;
+		m_iIDMax = 0;
 	}
 }
 
@@ -820,8 +849,7 @@ PostInfo::PostInfo()
 	m_pPostThread = NULL;
 	m_Messages.clear();
 	m_iIDMessageGen = 0;
-	m_iIDGen++;
-	m_iID = m_iIDGen;
+	m_iID = ++m_iIDGen;
 }
 
 PostInfo::~ PostInfo()
@@ -975,8 +1003,7 @@ UrlInfo::UrlInfo()
 	m_bAddPaused = false;
 	m_bForce = false;
 	m_eStatus = aiUndefined;
-	m_iIDGen++;
-	m_iID = m_iIDGen;
+	m_iID = ++m_iIDGen;
 }
 
 UrlInfo::~ UrlInfo()
@@ -996,9 +1023,22 @@ void UrlInfo::SetURL(const char* szURL)
 void UrlInfo::SetID(int iID)
 {
 	m_iID = iID;
-	if (m_iIDGen < m_iID)
+	if (m_iIDMax < m_iID)
 	{
-		m_iIDGen = m_iID;
+		m_iIDMax = m_iID;
+	}
+}
+
+void UrlInfo::ResetGenID(bool bMax)
+{
+	if (bMax)
+	{
+		m_iIDGen = m_iIDMax;
+	}
+	else
+	{
+		m_iIDGen = 0;
+		m_iIDMax = 0;
 	}
 }
 
@@ -1081,8 +1121,7 @@ HistoryInfo::HistoryInfo(NZBInfo* pNZBInfo)
 	m_pInfo = pNZBInfo;
 	pNZBInfo->Retain();
 	m_tTime = 0;
-	m_iIDGen++;
-	m_iID = m_iIDGen;
+	m_iID = ++m_iIDGen;
 }
 
 HistoryInfo::HistoryInfo(UrlInfo* pUrlInfo)
@@ -1090,8 +1129,7 @@ HistoryInfo::HistoryInfo(UrlInfo* pUrlInfo)
 	m_eKind = hkUrlInfo;
 	m_pInfo = pUrlInfo;
 	m_tTime = 0;
-	m_iIDGen++;
-	m_iID = m_iIDGen;
+	m_iID = ++m_iIDGen;
 }
 
 HistoryInfo::HistoryInfo(DupInfo* pDupInfo)
@@ -1099,8 +1137,7 @@ HistoryInfo::HistoryInfo(DupInfo* pDupInfo)
 	m_eKind = hkDupInfo;
 	m_pInfo = pDupInfo;
 	m_tTime = 0;
-	m_iIDGen++;
-	m_iID = m_iIDGen;
+	m_iID = ++m_iIDGen;
 }
 
 HistoryInfo::~HistoryInfo()
@@ -1122,9 +1159,22 @@ HistoryInfo::~HistoryInfo()
 void HistoryInfo::SetID(int iID)
 {
 	m_iID = iID;
-	if (m_iIDGen < m_iID)
+	if (m_iIDMax < m_iID)
 	{
-		m_iIDGen = m_iID;
+		m_iIDMax = m_iID;
+	}
+}
+
+void HistoryInfo::ResetGenID(bool bMax)
+{
+	if (bMax)
+	{
+		m_iIDGen = m_iIDMax;
+	}
+	else
+	{
+		m_iIDGen = 0;
+		m_iIDMax = 0;
 	}
 }
 
