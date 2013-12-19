@@ -399,15 +399,11 @@ FeedFile* FeedFile::Create(const char* szFileName)
 
 void FeedFile::Parse_StartElement(const char *name, const char **atts)
 {
-	if (m_szTagContent)
-	{
-		free(m_szTagContent);
-		m_szTagContent = NULL;
-		m_iTagContentLen = 0;
-	}
+	ResetTagContent();
 	
 	if (!strcmp("item", name))
 	{
+		delete m_pFeedItemInfo;
 		m_pFeedItemInfo = new FeedItemInfo();
 	}
 	else if (!strcmp("enclosure", name) && m_pFeedItemInfo)
@@ -482,28 +478,24 @@ void FeedFile::Parse_EndElement(const char *name)
 	else if (!strcmp("title", name) && m_pFeedItemInfo)
 	{
 		m_pFeedItemInfo->SetTitle(m_szTagContent);
+		ResetTagContent();
 		ParseSubject(m_pFeedItemInfo);
-		m_szTagContent = NULL;
-		m_iTagContentLen = 0;
 	}
 	else if (!strcmp("link", name) && m_pFeedItemInfo &&
 		(!m_pFeedItemInfo->GetUrl() || strlen(m_pFeedItemInfo->GetUrl()) == 0))
 	{
 		m_pFeedItemInfo->SetUrl(m_szTagContent);
-		m_szTagContent = NULL;
-		m_iTagContentLen = 0;
+		ResetTagContent();
 	}
 	else if (!strcmp("category", name) && m_pFeedItemInfo)
 	{
 		m_pFeedItemInfo->SetCategory(m_szTagContent);
-		m_szTagContent = NULL;
-		m_iTagContentLen = 0;
+		ResetTagContent();
 	}
 	else if (!strcmp("description", name) && m_pFeedItemInfo)
 	{
 		m_pFeedItemInfo->SetDescription(m_szTagContent);
-		m_szTagContent = NULL;
-		m_iTagContentLen = 0;
+		ResetTagContent();
 	}
 	else if (!strcmp("pubDate", name) && m_pFeedItemInfo)
 	{
@@ -512,9 +504,7 @@ void FeedFile::Parse_EndElement(const char *name)
 		{
 			m_pFeedItemInfo->SetTime(unixtime);
 		}
-		
-		m_szTagContent = NULL;
-		m_iTagContentLen = 0;
+		ResetTagContent();
 	}
 }
 
@@ -524,6 +514,13 @@ void FeedFile::Parse_Content(const char *buf, int len)
 	strncpy(m_szTagContent + m_iTagContentLen, buf, len);
 	m_iTagContentLen += len;
 	m_szTagContent[m_iTagContentLen] = '\0';
+}
+
+void FeedFile::ResetTagContent()
+{
+	free(m_szTagContent);
+	m_szTagContent = NULL;
+	m_iTagContentLen = 0;
 }
 
 void FeedFile::SAX_StartElement(FeedFile* pFile, const char *name, const char **atts)
