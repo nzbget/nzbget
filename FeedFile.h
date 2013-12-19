@@ -33,7 +33,6 @@
 class FeedFile
 {
 private:
-	FeedInfo*			m_pFeedInfo;
 	FeedItemInfos*		m_pFeedItemInfos;
 	char*				m_szFileName;
 
@@ -57,6 +56,7 @@ private:
 	void				Parse_StartElement(const char *name, const char **atts);
 	void				Parse_EndElement(const char *name);
 	void				Parse_Content(const char *buf, int len);
+	void				ResetTagContent();
 #endif
 
 public:
