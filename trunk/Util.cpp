@@ -1060,8 +1060,11 @@ char* Util::ReduceStr(char* szStr, const char* szFrom, const char* szTo)
 
 	while (char* p = strstr(szStr, szFrom))
 	{
-		strcpy(p, szTo);
-		strcpy(p + iLenTo, p + iLenFrom);
+		const char* src = szTo;
+		while ((*p++ = *src++)) ;
+
+		src = --p - iLenTo + iLenFrom;
+		while ((*p++ = *src++)) ;
 	}
 
 	return szStr;
