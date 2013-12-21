@@ -37,6 +37,7 @@
 class PrePostProcessor : public Thread
 {
 public:
+	// NOTE: changes to this enum must be synced with "eRemoteEditAction" in unit "MessageBase.h"
 	enum EEditAction
 	{
 		eaPostMoveOffset = 51,			// move post to m_iOffset relative to the current position in post-queue
@@ -47,6 +48,7 @@ public:
 		eaHistoryFinalDelete,
 		eaHistoryReturn,
 		eaHistoryProcess,
+		eaHistoryRedownload,
 		eaHistorySetParameter,
 		eaHistorySetDupeKey,
 		eaHistorySetDupeScore,
@@ -79,8 +81,8 @@ private:
 	private:
 		PrePostProcessor*	m_pOwner;
 	protected:
-		virtual void		HistoryRedownload(DownloadQueue* pDownloadQueue, HistoryInfo* pHistoryInfo)	{ m_pOwner->HistoryRedownload(pDownloadQueue, pHistoryInfo); }
-		virtual void		DeleteQueuedFile(const char* szQueuedFile) {  m_pOwner->DeleteQueuedFile(szQueuedFile); }
+		virtual void		HistoryRedownload(DownloadQueue* pDownloadQueue, HistoryInfo* pHistoryInfo);
+		virtual void		DeleteQueuedFile(const char* szQueuedFile) { m_pOwner->DeleteQueuedFile(szQueuedFile); }
 		friend class PrePostProcessor;
 	};
 
@@ -119,7 +121,7 @@ private:
 	bool				HistoryEdit(IDList* pIDList, EEditAction eAction, int iOffset, const char* szText);
 	void				HistoryDelete(DownloadQueue* pDownloadQueue, HistoryList::iterator itHistory, HistoryInfo* pHistoryInfo, bool bFinal);
 	void				HistoryReturn(DownloadQueue* pDownloadQueue, HistoryList::iterator itHistory, HistoryInfo* pHistoryInfo, bool bReprocess);
-	void				HistoryRedownload(DownloadQueue* pDownloadQueue, HistoryInfo* pHistoryInfo);
+	void				HistoryRedownload(DownloadQueue* pDownloadQueue, HistoryList::iterator itHistory, HistoryInfo* pHistoryInfo, bool bRestorePauseState);
 	void				HistorySetParameter(HistoryInfo* pHistoryInfo, const char* szText);
 	void				HistorySetDupeParam(HistoryInfo* pHistoryInfo, EEditAction eAction, const char* szText);
 	void				HistoryTransformToDup(DownloadQueue* pDownloadQueue, HistoryInfo* pHistoryInfo, int rindex);

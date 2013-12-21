@@ -61,6 +61,13 @@ extern DiskState* g_pDiskState;
 extern Scheduler* g_pScheduler;
 extern Scanner* g_pScanner;
 
+void PrePostProcessor::PostDupeCoordinator::HistoryRedownload(DownloadQueue* pDownloadQueue, HistoryInfo* pHistoryInfo)
+{
+	HistoryList::iterator it = std::find(pDownloadQueue->GetHistoryList()->begin(),
+		pDownloadQueue->GetHistoryList()->end(), pHistoryInfo);
+	m_pOwner->HistoryRedownload(pDownloadQueue, it, pHistoryInfo, true);
+}
+
 PrePostProcessor::PrePostProcessor()
 {
 	debug("Creating PrePostProcessor");
@@ -964,6 +971,7 @@ bool PrePostProcessor::QueueEditList(IDList* pIDList, EEditAction eAction, int i
 		case eaHistoryFinalDelete:
 		case eaHistoryReturn:
 		case eaHistoryProcess:
+		case eaHistoryRedownload:
 		case eaHistorySetParameter:
 		case eaHistorySetDupeKey:
 		case eaHistorySetDupeScore:
@@ -1131,6 +1139,10 @@ bool PrePostProcessor::HistoryEdit(IDList* pIDList, EEditAction eAction, int iOf
 						HistoryReturn(pDownloadQueue, itHistory, pHistoryInfo, eAction == eaHistoryProcess);
 						break;
 
+					case eaHistoryRedownload:
+						HistoryRedownload(pDownloadQueue, itHistory, pHistoryInfo, false);
+						break;
+
 					case eaHistorySetParameter:
 						HistorySetParameter(pHistoryInfo, szText);
 						break;
@@ -1285,6 +1297,7 @@ void PrePostProcessor::HistoryReturn(DownloadQueue* pDownloadQueue, HistoryList:
 		}
 		pNZBInfo->SetDeleteStatus(NZBInfo::dsNone);
 		pNZBInfo->SetDeletePaused(false);
+		pNZBInfo->SetMarkStatus(NZBInfo::ksNone);
 		pNZBInfo->GetScriptStatuses()->Clear();
 		pNZBInfo->SetParkedFileCount(0);
 	}
@@ -1322,10 +1335,11 @@ void PrePostProcessor::HistoryReturn(DownloadQueue* pDownloadQueue, HistoryList:
 	}
 }
 
-void PrePostProcessor::HistoryRedownload(DownloadQueue* pDownloadQueue, HistoryInfo* pHistoryInfo)
+void PrePostProcessor::HistoryRedownload(DownloadQueue* pDownloadQueue, HistoryList::iterator itHistory,
+	HistoryInfo* pHistoryInfo, bool bRestorePauseState)
 {
 	NZBInfo* pNZBInfo = pHistoryInfo->GetNZBInfo();
-	bool bDeletePaused = pNZBInfo->GetDeletePaused();
+	bool bPaused = bRestorePauseState && pNZBInfo->GetDeletePaused();
 	int iGroupdID = -1;
 
 	if (!Util::FileExists(pNZBInfo->GetQueuedFilename()))
@@ -1349,18 +1363,55 @@ void PrePostProcessor::HistoryRedownload(DownloadQueue* pDownloadQueue, HistoryI
 	{
 		FileInfo* pFileInfo = *it;
 		pFileInfo->SetNZBInfo(pNZBInfo);
-		pFileInfo->SetPaused(bDeletePaused);
+		pFileInfo->SetPaused(bPaused);
 		iGroupdID = pFileInfo->GetID();
 	}
+
+	if (Util::DirectoryExists(pNZBInfo->GetDestDir()))
+	{
+		detail("Deleting %s", pNZBInfo->GetDestDir());
+		Util::DeleteDirectoryWithContent(pNZBInfo->GetDestDir());
+	}
+
+	pNZBInfo->BuildDestDirName();
+	if (Util::DirectoryExists(pNZBInfo->GetDestDir()))
+	{
+		detail("Deleting %s", pNZBInfo->GetDestDir());
+		Util::DeleteDirectoryWithContent(pNZBInfo->GetDestDir());
+	}
+
+	// reset status fields (which are not reset by "HistoryReturn")
+	pNZBInfo->SetMoveStatus(NZBInfo::msNone);
+	pNZBInfo->SetUnpackCleanedUpDisk(false);
+	pNZBInfo->SetParStatus(NZBInfo::psNone);
+	pNZBInfo->SetRenameStatus(NZBInfo::rsNone);
+	pNZBInfo->ClearCompletedFiles();
+	pNZBInfo->GetServerStats()->Clear();
+
+	// take file stats from newly read nzb-file
+	pNZBInfo->SetFileCount(pNZBFile->GetNZBInfo()->GetFileCount());
+	pNZBInfo->SetFullContentHash(pNZBFile->GetNZBInfo()->GetFullContentHash());
+	pNZBInfo->SetFilteredContentHash(pNZBFile->GetNZBInfo()->GetFilteredContentHash());
+	pNZBInfo->SetSize(pNZBFile->GetNZBInfo()->GetSize());
+	pNZBInfo->SetSuccessSize(pNZBFile->GetNZBInfo()->GetSuccessSize());
+	pNZBInfo->SetCurrentSuccessSize(pNZBFile->GetNZBInfo()->GetCurrentSuccessSize());
+	pNZBInfo->SetFailedSize(pNZBFile->GetNZBInfo()->GetFailedSize());
+	pNZBInfo->SetCurrentFailedSize(pNZBFile->GetNZBInfo()->GetCurrentFailedSize());
+	pNZBInfo->SetParSize(pNZBFile->GetNZBInfo()->GetParSize());
+	pNZBInfo->SetParSuccessSize(pNZBFile->GetNZBInfo()->GetParSuccessSize());
+	pNZBInfo->SetParCurrentSuccessSize(pNZBFile->GetNZBInfo()->GetParCurrentSuccessSize());
+	pNZBInfo->SetParFailedSize(pNZBFile->GetNZBInfo()->GetParFailedSize());
+	pNZBInfo->SetParCurrentFailedSize(pNZBFile->GetNZBInfo()->GetParCurrentFailedSize());
+	pNZBInfo->SetSuccessArticles(pNZBFile->GetNZBInfo()->GetSuccessArticles());
+	pNZBInfo->SetFailedArticles(pNZBFile->GetNZBInfo()->GetFailedArticles());
 
 	g_pQueueCoordinator->AddFileInfosToFileQueue(pNZBFile, pDownloadQueue->GetParkedFiles(), false);
 
 	delete pNZBFile;
 
-	HistoryList::iterator it = std::find(pDownloadQueue->GetHistoryList()->begin(), pDownloadQueue->GetHistoryList()->end(), pHistoryInfo);
-	HistoryReturn(pDownloadQueue, it, pHistoryInfo, false);
+	HistoryReturn(pDownloadQueue, itHistory, pHistoryInfo, false);
 
-	if (!bDeletePaused && g_pOptions->GetParCheck() != Options::pcForce)
+	if (!bPaused && g_pOptions->GetParCheck() != Options::pcForce)
 	{
 		g_pQueueCoordinator->GetQueueEditor()->LockedEditEntry(pDownloadQueue, iGroupdID, false, QueueEditor::eaGroupPauseExtraPars, 0, NULL);
 	}
