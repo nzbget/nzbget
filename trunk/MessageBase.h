@@ -27,7 +27,7 @@
 #ifndef MESSAGEBASE_H
 #define MESSAGEBASE_H
 
-static const int32_t NZBMESSAGE_SIGNATURE = 0x6E7A621A; // = "nzb-XX" (protocol version)
+static const int32_t NZBMESSAGE_SIGNATURE = 0x6E7A621B; // = "nzb-XX" (protocol version)
 static const int NZBREQUESTFILENAMESIZE = 512;
 static const int NZBREQUESTPASSWORDSIZE = 32;
 
@@ -97,14 +97,23 @@ enum eRemoteEditAction
 	eRemoteEditActionGroupMerge,			// merge group
 	eRemoteEditActionGroupSetParameter,		// set post-process parameter for group
 	eRemoteEditActionGroupSetName,			// set group name (rename group)
+	eRemoteEditActionGroupSetDupeKey,		// (reserved)
+	eRemoteEditActionGroupSetDupeScore,		// (reserved)
+	eRemoteEditActionGroupSetDupeMode,		// (reserved)
 	eRemoteEditActionPostMoveOffset = 51,	// move post-job to m_iOffset relative to the current position in post-queue
 	eRemoteEditActionPostMoveTop,			// move post-job to the top of post-queue
 	eRemoteEditActionPostMoveBottom,		// move post-job to the bottom of post-queue
 	eRemoteEditActionPostDelete,			// delete post-job
-	eRemoteEditActionHistoryDelete,			// delete history-item
+	eRemoteEditActionHistoryDelete,			// hide history-item
+	eRemoteEditActionHistoryFinalDelete,	// delete history-item
 	eRemoteEditActionHistoryReturn,			// move history-item back to download queue
 	eRemoteEditActionHistoryProcess,		// move history-item back to download queue and start postprocessing
+	eRemoteEditActionHistoryRedownload,		// move history-item back to download queue for redownload
 	eRemoteEditActionHistorySetParameter,	// set post-process parameter for history-item
+	eRemoteEditActionHistorySetDupeKey,		// (reserved)
+	eRemoteEditActionHistorySetDupeScore,	// (reserved)
+	eRemoteEditActionHistorySetDupeMode,	// (reserved)
+	eRemoteEditActionHistorySetDupeBackup,	// (reserved)
 	eRemoteEditActionHistoryMarkBad,		// mark history-item as bad (and download other duplicate)
 	eRemoteEditActionHistoryMarkGood		// mark history-item as good (and push it into dup-history)
 };

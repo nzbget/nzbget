@@ -33,6 +33,7 @@
 class QueueEditor
 {
 public:
+	// NOTE: changes to this enum must be synced with "eRemoteEditAction" in unit "MessageBase.h"
 	enum EEditAction
 	{
 		eaFileMoveOffset = 1,			// move to m_iOffset relative to the current position in queue

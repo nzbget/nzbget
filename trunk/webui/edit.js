@@ -1314,6 +1314,7 @@ var HistoryEditDialog = (new function()
 		$('#HistoryEdit_Delete').click(itemDelete);
 		$('#HistoryEdit_Return, #HistoryEdit_ReturnURL').click(itemReturn);
 		$('#HistoryEdit_Reprocess').click(itemReprocess);
+		$('#HistoryEdit_Redownload').click(itemRedownload);
 		$('#HistoryEdit_Param, #HistoryEdit_Dupe').click(tabClick);
 		$('#HistoryEdit_Back').click(backClick);
 		$('#HistoryEdit_MarkGood').click(itemGood);
@@ -1443,6 +1444,7 @@ var HistoryEditDialog = (new function()
 		
 		Util.show('#HistoryEdit_Return', hist.RemainingFileCount > 0);
 		Util.show('#HistoryEdit_ReturnURL', hist.Kind === 'URL');
+		Util.show('#HistoryEdit_Redownload', hist.Kind === 'NZB');
 		Util.show('#HistoryEdit_PathGroup, #HistoryEdit_StatisticsGroup, #HistoryEdit_Reprocess', hist.Kind === 'NZB');
 		Util.show('#HistoryEdit_CategoryGroup', hist.Kind !== 'DUP');
 		Util.show('#HistoryEdit_DupGroup', hist.Kind === 'DUP');
@@ -1541,6 +1543,26 @@ var HistoryEditDialog = (new function()
 		disableAllButtons();
 		notification = '#Notif_History_Returned';
 		RPC.call('editqueue', ['HistoryReturn', 0, '', [curHist.ID]], completed);
+	}
+
+	function itemRedownload(e)
+	{
+		e.preventDefault();
+		if (curHist.SuccessArticles > 0)
+		{
+			ConfirmDialog.showModal('HistoryEditRedownloadConfirmDialog', doItemRedownload);
+		}
+		else
+		{
+			doItemRedownload();
+		}
+	}
+	
+	function doItemRedownload()
+	{
+		disableAllButtons();
+		notification = '#Notif_History_Returned';
+		RPC.call('editqueue', ['HistoryRedownload', 0, '', [curHist.ID]], completed);
 	}
 
 	function itemReprocess(e)

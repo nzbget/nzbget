@@ -1855,6 +1855,7 @@ EditCommandEntry EditCommandNameMap[] = {
 	{ PrePostProcessor::eaHistoryFinalDelete, "HistoryFinalDelete" },
 	{ PrePostProcessor::eaHistoryReturn, "HistoryReturn" },
 	{ PrePostProcessor::eaHistoryProcess, "HistoryProcess" },		
+	{ PrePostProcessor::eaHistoryRedownload, "HistoryRedownload" },
 	{ PrePostProcessor::eaHistorySetParameter, "HistorySetParameter" },
 	{ PrePostProcessor::eaHistorySetDupeKey, "HistorySetDupeKey" },
 	{ PrePostProcessor::eaHistorySetDupeScore, "HistorySetDupeScore" },

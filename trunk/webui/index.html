@@ -1246,6 +1246,7 @@
 				<li><a href="#" id="HistoryEdit_Reprocess"><i class="icon-process"></i> Post-Process Again</a></li>
 				<li><a href="#" id="HistoryEdit_Return"><i class="icon-downloads"></i> Download Remaining Files</a></li>
 				<li><a href="#" id="HistoryEdit_ReturnURL"><i class="icon-downloads"></i> Download Again</a></li>
+				<li><a href="#" id="HistoryEdit_Redownload"><i class="icon-downloads"></i> Download Again</a></li>
 				<li><a href="#" id="HistoryEdit_MarkGood"><i class="icon-ok"></i> Mark as Good</a></li>
 				<li><a href="#" id="HistoryEdit_MarkBad"><i class="icon-remove"></i> Mark as Bad</a></li>
 				<li class="menu-header" id="HistoryEdit_DNZB_Section">Indexer Links</li>
@@ -1736,6 +1737,21 @@
 	<p>If you remove history record permanently the duplicate check may not be able to detect duplicates and
 	the same file or a duplicate may be queued later from RSS feed or other source.</p>
 	</div>
+</div>
+
+<!-- *** REDOWNLOAD CURRENT HISTORY RECORD CONFIRMATION DIALOG DATA ******************************** -->
+
+<div class="hide" id="HistoryEditRedownloadConfirmDialog">
+	<div id="HistoryEditRedownloadConfirmDialog_Title">History</div>
+	<div id="HistoryEditRedownloadConfirmDialog_Text">
+		<p>
+		Download this nzb again?
+		</p>
+		<p class="confirm-help-block">
+		All downloaded files will be deleted and the nzb-file will be downloaded again from scratch.
+		</p>
+	</div>
+	<div id="HistoryEditRedownloadConfirmDialog_OK">Download Again</div>
 </div>
 
 <!-- *** MARK AS GOOD CURRENT HISTORY RECORD CONFIRMATION DIALOG DATA ******************************** -->

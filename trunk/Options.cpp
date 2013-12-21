@@ -1403,6 +1403,10 @@ void Options::InitCommandLine(int argc, char* argv[])
 					{
 						m_iEditQueueAction = eRemoteEditActionHistoryProcess;
 					}
+					else if (!strcasecmp(optarg, "A"))
+					{
+						m_iEditQueueAction = eRemoteEditActionHistoryRedownload;
+					}
 					else if (!strcasecmp(optarg, "O"))
 					{
 						m_iEditQueueAction = eRemoteEditActionHistorySetParameter;
@@ -1720,7 +1724,8 @@ void Options::PrintUsage(char* com)
 		"    - for history (H):\n"
 		"       D                    Delete\n"
 		"       P                    Post-process again\n"
-		"       R                    Return back to download queue\n"
+		"       R                    Download remaining files\n"
+		"       A                    Download again\n"
 		"       O <name>=<value>     Set post-process parameter\n"
 		"       B                    Mark as bad\n"
 		"       G                    Mark as good\n"
