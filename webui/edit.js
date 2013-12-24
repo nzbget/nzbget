@@ -1689,12 +1689,12 @@ var HistoryEditDialog = (new function()
 			RPC.call('editqueue', ['HistorySetDupeMode', 0, value, [curHist.ID]], function()
 			{
 				notification = '#Notif_History_Saved';
-				saveDupeMode();
+				saveDupeBackup();
 			})
-			:saveDupeMode();
+			:saveDupeBackup();
 	}
 
-	function saveDupeMode()
+	function saveDupeBackup()
 	{
 		var canChange = curHist.DeleteStatus === 'DUPE' || curHist.DeleteStatus === 'MANUAL';
 		var oldValue = curHist.DeleteStatus === 'DUPE';
