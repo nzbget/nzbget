@@ -468,7 +468,7 @@ bool UnpackController::Cleanup()
 		PrintMessage(Message::mkInfo, "Deleting archive files");
 
 		RegEx regExRar(".*\\.rar$");
-		RegEx regExRarMultiSeq(".*\\.(r|s)[0-9][0-9]$");
+		RegEx regExRarMultiSeq(".*\\.[r-z][0-9][0-9]$");
 		RegEx regExSevenZip(".*\\.7z$|.*\\.7z\\.[0-9]+$");
 		RegEx regExNumExt(".*\\.[0-9]+$");
 
