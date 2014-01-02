@@ -308,6 +308,7 @@ void InstallSignalHandlers()
 	resetting = sender == factoryResetItem;
 	[self updateStatus];
 	[daemonController restartInRecoveryMode: sender == restartRecoveryItem withFactoryReset: sender == factoryResetItem];
+	daemonController.updateInterval = START_UPDATE_INTERVAL;
 
 	restartTimer = [NSTimer timerWithTimeInterval:10.000 target:self selector:@selector(restartFailed) userInfo:nil repeats:NO];
 	[[NSRunLoop currentRunLoop] addTimer:restartTimer forMode:NSRunLoopCommonModes];
@@ -371,6 +372,7 @@ void InstallSignalHandlers()
 	if (restarting) {
 		restarting = NO;
 		resetting = NO;
+		daemonController.updateInterval = NORMAL_UPDATE_INTERVAL;
 		[NSApp activateIgnoringOtherApps:TRUE];
 		NSAlert *alert = [[NSAlert alloc] init];
 		[alert setMessageText:NSLocalizedString(@"RestartNoConnection.MessageText", nil)];
