@@ -97,7 +97,7 @@ private:
 	bool				m_bDeleted;
 	bool				m_bFilenameConfirmed;
 	bool				m_bParFile;
-	int					m_iCompleted;
+	int					m_iCompletedArticles;
 	bool				m_bOutputInitialized;
 	char*				m_szOutputFilename;
 	Mutex*				m_pMutexOutputFile;
@@ -147,11 +147,11 @@ public:
 	time_t				GetTime() { return m_tTime; }
 	void				SetTime(time_t tTime) { m_tTime = tTime; }
 	bool				GetPaused() { return m_bPaused; }
-	void				SetPaused(bool Paused) { m_bPaused = Paused; }
+	void				SetPaused(bool bPaused);
 	bool				GetDeleted() { return m_bDeleted; }
 	void				SetDeleted(bool Deleted) { m_bDeleted = Deleted; }
-	int					GetCompleted() { return m_iCompleted; }
-	void				SetCompleted(int iCompleted) { m_iCompleted = iCompleted; }
+	int					GetCompletedArticles() { return m_iCompletedArticles; }
+	void				SetCompletedArticles(int iCompletedArticles) { m_iCompletedArticles = iCompletedArticles; }
 	bool				GetParFile() { return m_bParFile; }
 	void				SetParFile(bool bParFile) { m_bParFile = bParFile; }
 	void				ClearArticles();
@@ -355,6 +355,11 @@ private:
 	int		 			m_iFileCount;
 	int		 			m_iParkedFileCount;
 	long long 			m_lSize;
+	long long 			m_lRemainingSize;
+	int					m_iPausedFileCount;
+	long long 			m_lPausedSize;
+	int					m_iRemainingParCount;
+	int					m_iActiveDownloads;
 	long long			m_lSuccessSize;
 	long long			m_lFailedSize;
 	long long			m_lCurrentSuccessSize;
@@ -402,16 +407,10 @@ private:
 	// File statistics
 	int					m_iFirstID;
 	int					m_iLastID;
-	int		 			m_iRemainingFileCount;
-	int					m_iPausedFileCount;
-	long long 			m_lRemainingSize;
-	long long 			m_lPausedSize;
-	int					m_iRemainingParCount;
 	time_t				m_tMinTime;
 	time_t				m_tMaxTime;
 	int					m_iMinPriority;
 	int					m_iMaxPriority;
-	int					m_iActiveDownloads;
 
 	static int			m_iIDGen;
 	static int			m_iIDMax;
@@ -439,6 +438,16 @@ public:
 	void 				SetParkedFileCount(int iParkedFileCount) { m_iParkedFileCount = iParkedFileCount; }
 	long long 			GetSize() { return m_lSize; }
 	void 				SetSize(long long lSize) { m_lSize = lSize; }
+	long long 			GetRemainingSize() { return m_lRemainingSize; }
+	void	 			SetRemainingSize(long long lRemainingSize) { m_lRemainingSize = lRemainingSize; }
+	long long 			GetPausedSize() { return m_lPausedSize; }
+	void	 			SetPausedSize(long long lPausedSize) { m_lPausedSize = lPausedSize; }
+	int					GetPausedFileCount() { return m_iPausedFileCount; }
+	void 				SetPausedFileCount(int iPausedFileCount) { m_iPausedFileCount = iPausedFileCount; }
+	int					GetRemainingParCount() { return m_iRemainingParCount; }
+	void 				SetRemainingParCount(int iRemainingParCount) { m_iRemainingParCount = iRemainingParCount; }
+	int					GetActiveDownloads() { return m_iActiveDownloads; }
+	void				SetActiveDownloads(int iActiveDownloads) { m_iActiveDownloads = iActiveDownloads; }
 	long long			GetSuccessSize() { return m_lSuccessSize; }
 	void 				SetSuccessSize(long long lSuccessSize) { m_lSuccessSize = lSuccessSize; }
 	long long			GetFailedSize() { return m_lFailedSize; }
@@ -524,16 +533,10 @@ public:
 	void				CalcFileStats();
 	int					GetFirstID() { return m_iFirstID; }
 	int					GetLastID() { return m_iLastID; }
-	long long 			GetRemainingSize() { return m_lRemainingSize; }
-	long long 			GetPausedSize() { return m_lPausedSize; }
-	int					GetRemainingFileCount() { return m_iRemainingFileCount; }
-	int					GetPausedFileCount() { return m_iPausedFileCount; }
-	int					GetRemainingParCount() { return m_iRemainingParCount; }
 	time_t				GetMinTime() { return m_tMinTime; }
 	time_t				GetMaxTime() { return m_tMaxTime; }
 	int					GetMinPriority() { return m_iMinPriority; }
 	int					GetMaxPriority() { return m_iMaxPriority; }
-	int					GetActiveDownloads() { return m_iActiveDownloads; }
 
 	void				AppendMessage(Message::EKind eKind, time_t tTime, const char* szText);
 	Messages*			LockMessages();
@@ -789,8 +792,8 @@ class DownloadQueue
 protected:
 	NZBList				m_Queue;
 	HistoryList			m_History;
-	UrlQueue			m_UrlQueue;
-	PostQueue			m_PostQueue;
+	UrlQueue			m_UrlQueue;		//TODO: merge m_UrlQueue with m_Queue
+	PostQueue			m_PostQueue;	//TODO: merge m_PostQueue with m_Queue
 
 public:
 						DownloadQueue() : m_Queue(true) {}

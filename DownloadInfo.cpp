@@ -304,7 +304,6 @@ NZBInfo::NZBInfo(bool bPersistent) : m_FileList(true)
 	m_iFilteredContentHash = 0;
 	m_iFirstID = 0;
 	m_iLastID = 0;
-	m_iRemainingFileCount = 0;
 	m_iPausedFileCount = 0;
 	m_lRemainingSize = 0;
 	m_lPausedSize = 0;
@@ -549,16 +548,10 @@ void NZBInfo::CalcFileStats()
 {
 	m_iFirstID = 0;
 	m_iLastID = 0;
-	m_iRemainingFileCount = 0;
-	m_iPausedFileCount = 0;
-	m_lRemainingSize = 0;
-	m_lPausedSize = 0;
-	m_iRemainingParCount = 0;
 	m_tMinTime = 0;
 	m_tMaxTime = 0;
 	m_iMinPriority = 0;
 	m_iMaxPriority = 0;
-	m_iActiveDownloads = 0;
 
 	bool bFirst = true;
 	for (FileList::iterator it = m_FileList.begin(); it != m_FileList.end(); it++)
@@ -601,24 +594,6 @@ void NZBInfo::CalcFileStats()
 		{
 			m_iMaxPriority = pFileInfo->GetPriority();
 		}
-
-		m_iActiveDownloads += pFileInfo->GetActiveDownloads();
-		m_iRemainingFileCount++;
-		m_lRemainingSize += pFileInfo->GetRemainingSize();
-		if (pFileInfo->GetPaused())
-		{
-			m_lPausedSize += pFileInfo->GetRemainingSize();
-			m_iPausedFileCount++;
-		}
-
-		char szLoFileName[1024];
-		strncpy(szLoFileName, pFileInfo->GetFilename(), 1024);
-		szLoFileName[1024-1] = '\0';
-		for (char* p = szLoFileName; *p; p++) *p = tolower(*p); // convert string to lowercase
-		if (strstr(szLoFileName, ".par2"))
-		{
-			m_iRemainingParCount++;
-		}
 	}
 }
 
@@ -626,7 +601,7 @@ int NZBInfo::GetGroupID()
 {
 	if (!m_FileList.empty())
 	{
-		return m_FileList.front()->GetID();
+		return m_FileList.back()->GetID();
 	}
 	else
 	{
@@ -671,11 +646,16 @@ void NZBInfo::CopyFileList(NZBInfo* pSrcNZBInfo)
 
 	pSrcNZBInfo->GetFileList()->clear(); // only remove references
 
-	SetFileCount(pSrcNZBInfo->GetFileCount());
 	SetFullContentHash(pSrcNZBInfo->GetFullContentHash());
 	SetFilteredContentHash(pSrcNZBInfo->GetFilteredContentHash());
 
+	SetFileCount(pSrcNZBInfo->GetFileCount());
+	SetPausedFileCount(pSrcNZBInfo->GetPausedFileCount());
+	SetRemainingParCount(pSrcNZBInfo->GetRemainingParCount());
+
 	SetSize(pSrcNZBInfo->GetSize());
+	SetRemainingSize(pSrcNZBInfo->GetRemainingSize());
+	SetPausedSize(pSrcNZBInfo->GetPausedSize());
 	SetSuccessSize(pSrcNZBInfo->GetSuccessSize());
 	SetCurrentSuccessSize(pSrcNZBInfo->GetCurrentSuccessSize());
 	SetFailedSize(pSrcNZBInfo->GetFailedSize());
@@ -772,7 +752,7 @@ FileInfo::FileInfo()
 	m_tTime = 0;
 	m_bPaused = false;
 	m_bDeleted = false;
-	m_iCompleted = 0;
+	m_iCompletedArticles = 0;
 	m_bParFile = false;
 	m_bOutputInitialized = false;
 	m_pNZBInfo = NULL;
@@ -830,6 +810,16 @@ void FileInfo::ResetGenID(bool bMax)
 		m_iIDGen = 0;
 		m_iIDMax = 0;
 	}
+}
+
+void FileInfo::SetPaused(bool bPaused)
+{
+	if (m_bPaused != bPaused && m_pNZBInfo)
+	{
+		m_pNZBInfo->SetPausedFileCount(m_pNZBInfo->GetPausedFileCount() + (bPaused ? 1 : 0));
+		m_pNZBInfo->SetPausedSize(m_pNZBInfo->GetPausedSize() + (bPaused ? m_lRemainingSize : - m_lRemainingSize));
+	}
+	m_bPaused = bPaused;
 }
 
 void FileInfo::SetSubject(const char* szSubject)

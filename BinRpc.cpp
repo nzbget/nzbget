@@ -456,7 +456,6 @@ void ListBinCommand::Execute()
 		for (NZBList::iterator it = pDownloadQueue->GetQueue()->begin(); it != pDownloadQueue->GetQueue()->end(); it++)
 		{
 			NZBInfo* pNZBInfo = *it;
-			pNZBInfo->CalcFileStats();
 
 			SNZBListResponseNZBEntry* pListAnswer = (SNZBListResponseNZBEntry*) bufptr;
 			unsigned long iSizeHi, iSizeLo;
