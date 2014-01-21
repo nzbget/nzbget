@@ -247,6 +247,8 @@ bool QueueEditor::EditList(IDList* pIDList, NameList* pNameList, EMatchMode eMat
 bool QueueEditor::InternEditList(DownloadQueue* pDownloadQueue, ItemList* pItemList, 
 	IDList* pIDList, EEditAction eAction, int iOffset, const char* szText)
 {
+	std::set<NZBInfo*> uniqueNzbs;
+
 	ItemList itemList;
 	if (!pItemList)
 	{
@@ -296,6 +298,7 @@ bool QueueEditor::InternEditList(DownloadQueue* pDownloadQueue, ItemList* pItemL
 						break;
 
 					case eaFileSetPriority:
+						uniqueNzbs.insert(pItem->m_pFileInfo->GetNZBInfo());
 						SetPriorityEntry(pItem->m_pFileInfo, szText);
 						break;
 
@@ -344,6 +347,15 @@ bool QueueEditor::InternEditList(DownloadQueue* pDownloadQueue, ItemList* pItemL
 				}
 				delete pItem;
 			}
+	}
+
+	if (eAction == eaFileSetPriority)
+	{
+		for (std::set<NZBInfo*>::iterator it = uniqueNzbs.begin(); it != uniqueNzbs.end(); it++)
+		{
+			NZBInfo* pNZBInfo = *it;
+			pNZBInfo->CalcFileStats();
+		}
 	}
 
 	return pItemList->size() > 0;

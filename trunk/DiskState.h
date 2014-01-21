@@ -58,6 +58,7 @@ private:
 	bool				LoadFeedHistory(FeedHistory* pFeedHistory, FILE* infile, int iFormatVersion);
 	bool				SaveServerStats(Servers* pServers, FILE* outfile);
 	bool				LoadServerStats(Servers* pServers, FILE* infile, int iFormatVersion);
+	void				CalcFileStats(DownloadQueue* pDownloadQueue);
 
 	// backward compatibility functions (conversions from older formats)
 	bool				LoadOldPostQueue(DownloadQueue* pDownloadQueue, NZBList* pNZBList);

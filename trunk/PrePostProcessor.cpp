@@ -1337,6 +1337,8 @@ void PrePostProcessor::HistoryRedownload(DownloadQueue* pDownloadQueue, HistoryL
 	pNZBInfo->GetServerStats()->Clear();
 
 	pNZBInfo->CopyFileList(pNZBFile->GetNZBInfo());
+	pNZBInfo->CalcFileStats();
+
 	g_pQueueCoordinator->CheckDupeFileInfos(pNZBInfo);
 	delete pNZBFile;
 

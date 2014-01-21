@@ -438,6 +438,7 @@ void NZBFile::ProcessFiles()
 		m_pNZBInfo->SetFileCount(m_pNZBInfo->GetFileCount() + 1);
 		m_pNZBInfo->SetTotalArticles(m_pNZBInfo->GetTotalArticles() + pFileInfo->GetTotalArticles());
 		m_pNZBInfo->SetSize(m_pNZBInfo->GetSize() + pFileInfo->GetSize());
+		m_pNZBInfo->SetRemainingSize(m_pNZBInfo->GetRemainingSize() + pFileInfo->GetRemainingSize());
 		m_pNZBInfo->SetFailedSize(m_pNZBInfo->GetFailedSize() + pFileInfo->GetMissedSize());
 		m_pNZBInfo->SetCurrentFailedSize(m_pNZBInfo->GetFailedSize());
 
@@ -447,9 +448,11 @@ void NZBFile::ProcessFiles()
 			m_pNZBInfo->SetParSize(m_pNZBInfo->GetParSize() + pFileInfo->GetSize());
 			m_pNZBInfo->SetParFailedSize(m_pNZBInfo->GetParFailedSize() + pFileInfo->GetMissedSize());
 			m_pNZBInfo->SetParCurrentFailedSize(m_pNZBInfo->GetParFailedSize());
+			m_pNZBInfo->SetRemainingParCount(m_pNZBInfo->GetRemainingParCount() + 1);
 		}
 	}
 
+	m_pNZBInfo->CalcFileStats();
 	CalcHashes();
 
 	if (g_pOptions->GetSaveQueue() && g_pOptions->GetServerMode())

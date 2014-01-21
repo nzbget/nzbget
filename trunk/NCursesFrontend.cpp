@@ -947,7 +947,6 @@ void NCursesFrontend::PrintGroupQueue()
         for (NZBList::iterator it = pDownloadQueue->GetQueue()->begin(); it != pDownloadQueue->GetQueue()->end(); it++, i++)
         {
             NZBInfo* pNZBInfo = *it;
-			pNZBInfo->CalcFileStats();
 			if (i >= m_iQueueScrollOffset && i < m_iQueueScrollOffset + m_iQueueWinHeight -1)
 			{
 				PrintGroupname(pNZBInfo, iCalcLineNr++, false, true);
@@ -1051,7 +1050,7 @@ void NCursesFrontend::PrintGroupname(NZBInfo* pNZBInfo, int iRow, bool bSelected
 	if (bPrintFormatted)
 	{
 		char szFiles[20];
-		snprintf(szFiles, 20, "%i/%i", pNZBInfo->GetRemainingFileCount(), pNZBInfo->GetPausedFileCount());
+		snprintf(szFiles, 20, "%i/%i", (int)pNZBInfo->GetFileList()->size(), pNZBInfo->GetPausedFileCount());
 		szFiles[20-1] = '\0';
 		
 		char szTotal[20];
@@ -1126,8 +1125,7 @@ bool NCursesFrontend::EditQueue(QueueEditor::EEditAction eAction, int iOffset)
 		if (m_iSelectedQueueEntry >= 0 && m_iSelectedQueueEntry < (int)pDownloadQueue->GetQueue()->size())
 		{
 			NZBInfo* pNZBInfo = pDownloadQueue->GetQueue()->at(m_iSelectedQueueEntry);
-			pNZBInfo->CalcFileStats();
-			ID = pNZBInfo->GetLastID();
+			ID = pNZBInfo->GetGroupID();
 			if (eAction == QueueEditor::eaFilePause)
 			{
 				if (pNZBInfo->GetRemainingSize() == pNZBInfo->GetPausedSize())

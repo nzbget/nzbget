@@ -469,7 +469,6 @@ bool RemoteClient::RequestServerList(bool bFiles, bool bGroups, const char* szPa
 			{
 				NZBInfo* pNZBInfo = *it;
 
-				pNZBInfo->CalcFileStats();
 				iNrFileEntries += pNZBInfo->GetFileList()->size();
 
 				long long lUnpausedRemainingSize = pNZBInfo->GetRemainingSize() - pNZBInfo->GetPausedSize();
@@ -541,8 +540,8 @@ bool RemoteClient::RequestServerList(bool bFiles, bool bGroups, const char* szPa
 				if (!szPattern || ((MatchedNZBInfo*)pNZBInfo)->m_bMatch)
 				{
 					printf("[%i-%i] %s%s (%i file%s, %s%s%s)%s%s\n", pNZBInfo->GetFirstID(), pNZBInfo->GetLastID(), szPriority, 
-						pNZBInfo->GetName(), pNZBInfo->GetRemainingFileCount(),
-						pNZBInfo->GetRemainingFileCount() > 1 ? "s" : "", szRemaining, 
+						pNZBInfo->GetName(), (int)pNZBInfo->GetFileList()->size(),
+						pNZBInfo->GetFileList()->size() > 1 ? "s" : "", szRemaining, 
 						szPaused, szThreads, szCategory, szParameters);
 					iMatches++;
 				}

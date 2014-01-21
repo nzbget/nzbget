@@ -249,6 +249,8 @@ bool DiskState::LoadDownloadQueue(DownloadQueue* pDownloadQueue)
 		CompleteNZBList12(pDownloadQueue, &sortList, iFormatVersion);
 	}
 
+	CalcFileStats(pDownloadQueue);
+
 	bOK = true;
 
 error:
@@ -2006,6 +2008,42 @@ void DiskState::CalcCriticalHealth(NZBList* pNZBList)
 				}
 			}
 		}
+	}
+}
+
+void DiskState::CalcFileStats(DownloadQueue* pDownloadQueue)
+{
+	for (NZBList::iterator it = pDownloadQueue->GetQueue()->begin(); it != pDownloadQueue->GetQueue()->end(); it++)
+	{
+		NZBInfo* pNZBInfo = *it;
+
+		int iPausedFileCount = 0;
+		long long lRemainingSize = 0;
+		long long lPausedSize = 0;
+		int iRemainingParCount = 0;
+
+		for (FileList::iterator it2 = pNZBInfo->GetFileList()->begin(); it2 != pNZBInfo->GetFileList()->end(); it2++)
+		{
+			FileInfo* pFileInfo = *it2;
+
+			lRemainingSize += pFileInfo->GetRemainingSize();
+			if (pFileInfo->GetPaused())
+			{
+				lPausedSize += pFileInfo->GetRemainingSize();
+				iPausedFileCount++;
+			}
+			if (pFileInfo->GetParFile())
+			{
+				iRemainingParCount++;
+			}
+		}
+
+		pNZBInfo->SetRemainingSize(lRemainingSize);
+		pNZBInfo->SetPausedSize(lPausedSize);
+		pNZBInfo->SetPausedFileCount(iPausedFileCount);
+		pNZBInfo->SetRemainingParCount(iRemainingParCount);
+
+		pNZBInfo->CalcFileStats();
 	}
 }
 

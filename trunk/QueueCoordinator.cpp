@@ -635,6 +635,7 @@ void QueueCoordinator::StartArticleDownload(FileInfo* pFileInfo, ArticleInfo* pA
 
 	pArticleInfo->SetStatus(ArticleInfo::aiRunning);
 	pFileInfo->SetActiveDownloads(pFileInfo->GetActiveDownloads() + 1);
+	pFileInfo->GetNZBInfo()->SetActiveDownloads(pFileInfo->GetNZBInfo()->GetActiveDownloads() + 1);
 
 	m_ActiveDownloads.push_back(pArticleDownloader);
 	pArticleDownloader->Start();
@@ -669,8 +670,9 @@ void QueueCoordinator::ArticleCompleted(ArticleDownloader* pArticleDownloader)
 	debug("Article downloaded");
 
 	FileInfo* pFileInfo = pArticleDownloader->GetFileInfo();
+	NZBInfo* pNZBInfo = pFileInfo->GetNZBInfo();
 	ArticleInfo* pArticleInfo = pArticleDownloader->GetArticleInfo();
-	bool bPaused = false;
+	bool bRetry = false;
 	bool fileCompleted = false;
 
 	m_mutexDownloadQueue.Lock();
@@ -679,30 +681,35 @@ void QueueCoordinator::ArticleCompleted(ArticleDownloader* pArticleDownloader)
 	{
 		pArticleInfo->SetStatus(ArticleInfo::aiFinished);
 		pFileInfo->SetSuccessSize(pFileInfo->GetSuccessSize() + pArticleInfo->GetSize());
-		pFileInfo->GetNZBInfo()->SetCurrentSuccessSize(pFileInfo->GetNZBInfo()->GetCurrentSuccessSize() + pArticleInfo->GetSize());
-		pFileInfo->GetNZBInfo()->SetParCurrentSuccessSize(pFileInfo->GetNZBInfo()->GetParCurrentSuccessSize() + (pFileInfo->GetParFile() ? pArticleInfo->GetSize() : 0));
+		pNZBInfo->SetCurrentSuccessSize(pNZBInfo->GetCurrentSuccessSize() + pArticleInfo->GetSize());
+		pNZBInfo->SetParCurrentSuccessSize(pNZBInfo->GetParCurrentSuccessSize() + (pFileInfo->GetParFile() ? pArticleInfo->GetSize() : 0));
 		pFileInfo->SetSuccessArticles(pFileInfo->GetSuccessArticles() + 1);
 	}
 	else if (pArticleDownloader->GetStatus() == ArticleDownloader::adFailed)
 	{
 		pArticleInfo->SetStatus(ArticleInfo::aiFailed);
 		pFileInfo->SetFailedSize(pFileInfo->GetFailedSize() + pArticleInfo->GetSize());
-		pFileInfo->GetNZBInfo()->SetCurrentFailedSize(pFileInfo->GetNZBInfo()->GetCurrentFailedSize() + pArticleInfo->GetSize());
-		pFileInfo->GetNZBInfo()->SetParCurrentFailedSize(pFileInfo->GetNZBInfo()->GetParCurrentFailedSize() + (pFileInfo->GetParFile() ? pArticleInfo->GetSize() : 0));
+		pNZBInfo->SetCurrentFailedSize(pNZBInfo->GetCurrentFailedSize() + pArticleInfo->GetSize());
+		pNZBInfo->SetParCurrentFailedSize(pNZBInfo->GetParCurrentFailedSize() + (pFileInfo->GetParFile() ? pArticleInfo->GetSize() : 0));
 		pFileInfo->SetFailedArticles(pFileInfo->GetFailedArticles() + 1);
 	}
 	else if (pArticleDownloader->GetStatus() == ArticleDownloader::adRetry)
 	{
 		pArticleInfo->SetStatus(ArticleInfo::aiUndefined);
-		bPaused = true;
+		bRetry = true;
 	}
 
-	if (!bPaused)
+	if (!bRetry)
 	{
 		pFileInfo->SetRemainingSize(pFileInfo->GetRemainingSize() - pArticleInfo->GetSize());
-		pFileInfo->SetCompleted(pFileInfo->GetCompleted() + 1);
-		fileCompleted = (int)pFileInfo->GetArticles()->size() == pFileInfo->GetCompleted();
-		pFileInfo->GetNZBInfo()->GetServerStats()->Add(pArticleDownloader->GetServerStats());
+		pNZBInfo->SetRemainingSize(pNZBInfo->GetRemainingSize() - pArticleInfo->GetSize());
+		if (pFileInfo->GetPaused())
+		{
+			pNZBInfo->SetPausedSize(pNZBInfo->GetPausedSize() - pArticleInfo->GetSize());
+		}
+		pFileInfo->SetCompletedArticles(pFileInfo->GetCompletedArticles() + 1);
+		fileCompleted = (int)pFileInfo->GetArticles()->size() == pFileInfo->GetCompletedArticles();
+		pNZBInfo->GetServerStats()->Add(pArticleDownloader->GetServerStats());
 	}
 
 	if (!pFileInfo->GetFilenameConfirmed() &&
@@ -712,9 +719,9 @@ void QueueCoordinator::ArticleCompleted(ArticleDownloader* pArticleDownloader)
 		pFileInfo->SetFilename(pArticleDownloader->GetArticleFilename());
 		pFileInfo->SetFilenameConfirmed(true);
 		if (g_pOptions->GetDupeCheck() &&
-			pFileInfo->GetNZBInfo()->GetDupeMode() != dmForce &&
-			!pFileInfo->GetNZBInfo()->GetManyDupeFiles() &&
-			Util::FileExists(pFileInfo->GetNZBInfo()->GetDestDir(), pFileInfo->GetFilename()))
+			pNZBInfo->GetDupeMode() != dmForce &&
+			!pNZBInfo->GetManyDupeFiles() &&
+			Util::FileExists(pNZBInfo->GetDestDir(), pFileInfo->GetFilename()))
 		{
 			warn("File \"%s\" seems to be duplicate, cancelling download and deleting file from queue", pFileInfo->GetFilename());
 			fileCompleted = false;
@@ -752,11 +759,11 @@ void QueueCoordinator::ArticleCompleted(ArticleDownloader* pArticleDownloader)
 	m_ActiveDownloads.erase(std::find(m_ActiveDownloads.begin(), m_ActiveDownloads.end(), pArticleDownloader));
 
 	pFileInfo->SetActiveDownloads(pFileInfo->GetActiveDownloads() - 1);
+	pNZBInfo->SetActiveDownloads(pNZBInfo->GetActiveDownloads() - 1);
 
 	if (deleteFileObj)
 	{
 		DeleteFileInfo(pFileInfo, fileCompleted);
-
 		if (g_pOptions->GetSaveQueue() && g_pOptions->GetServerMode())
 		{
 			g_pDiskState->SaveDownloadQueue(&m_DownloadQueue);
@@ -797,7 +804,23 @@ void QueueCoordinator::StatFileInfo(FileInfo* pFileInfo, bool bCompleted)
 			pNZBInfo->SetParFailedSize(pNZBInfo->GetParFailedSize() - pFileInfo->GetMissedSize());
 			pNZBInfo->SetParCurrentFailedSize(pNZBInfo->GetParCurrentFailedSize() - pFileInfo->GetFailedSize() - pFileInfo->GetMissedSize());
 		}
+		pNZBInfo->SetRemainingSize(pNZBInfo->GetRemainingSize() - pFileInfo->GetRemainingSize());
+		if (pFileInfo->GetPaused())
+		{
+			pNZBInfo->SetPausedSize(pNZBInfo->GetPausedSize() - pFileInfo->GetRemainingSize());
+		}
 	}
+
+	if (pFileInfo->GetParFile())
+	{
+		pNZBInfo->SetRemainingParCount(pNZBInfo->GetRemainingParCount() - 1);
+	}
+	if (pFileInfo->GetPaused())
+	{
+		pNZBInfo->SetPausedFileCount(pNZBInfo->GetPausedFileCount() - 1);
+	}
+
+	pNZBInfo->CalcFileStats();
 }
 
 void QueueCoordinator::DeleteFileInfo(FileInfo* pFileInfo, bool bCompleted)
@@ -955,6 +978,7 @@ void QueueCoordinator::ResetHangingDownloads()
 			}
 			m_ActiveDownloads.erase(it);
 			pArticleDownloader->GetFileInfo()->SetActiveDownloads(pArticleDownloader->GetFileInfo()->GetActiveDownloads() - 1);
+			pArticleDownloader->GetFileInfo()->GetNZBInfo()->SetActiveDownloads(pArticleDownloader->GetFileInfo()->GetNZBInfo()->GetActiveDownloads() - 1);
 			// it's not safe to destroy pArticleDownloader, because the state of object is unknown
 			delete pArticleDownloader;
 			it = m_ActiveDownloads.begin();
@@ -1109,10 +1133,15 @@ bool QueueCoordinator::MergeQueueEntries(NZBInfo* pDestNZBInfo, NZBInfo* pSrcNZB
 	pSrcNZBInfo->GetFileList()->clear();
 
 	pDestNZBInfo->SetFileCount(pDestNZBInfo->GetFileCount() + pSrcNZBInfo->GetFileCount());
+	pDestNZBInfo->SetActiveDownloads(pDestNZBInfo->GetActiveDownloads() + pSrcNZBInfo->GetActiveDownloads());
 	pDestNZBInfo->SetFullContentHash(0);
 	pDestNZBInfo->SetFilteredContentHash(0);
 
 	pDestNZBInfo->SetSize(pDestNZBInfo->GetSize() + pSrcNZBInfo->GetSize());
+	pDestNZBInfo->SetRemainingSize(pDestNZBInfo->GetRemainingSize() + pSrcNZBInfo->GetRemainingSize());
+	pDestNZBInfo->SetPausedFileCount(pDestNZBInfo->GetPausedFileCount() + pSrcNZBInfo->GetPausedFileCount());
+	pDestNZBInfo->SetPausedSize(pDestNZBInfo->GetPausedSize() + pSrcNZBInfo->GetPausedSize());
+
 	pDestNZBInfo->SetSuccessSize(pDestNZBInfo->GetSuccessSize() + pSrcNZBInfo->GetSuccessSize());
 	pDestNZBInfo->SetCurrentSuccessSize(pDestNZBInfo->GetCurrentSuccessSize() + pSrcNZBInfo->GetCurrentSuccessSize());
 	pDestNZBInfo->SetFailedSize(pDestNZBInfo->GetFailedSize() + pSrcNZBInfo->GetFailedSize());
@@ -1123,6 +1152,9 @@ bool QueueCoordinator::MergeQueueEntries(NZBInfo* pDestNZBInfo, NZBInfo* pSrcNZB
 	pDestNZBInfo->SetParCurrentSuccessSize(pDestNZBInfo->GetParCurrentSuccessSize() + pSrcNZBInfo->GetParCurrentSuccessSize());
 	pDestNZBInfo->SetParFailedSize(pDestNZBInfo->GetParFailedSize() + pSrcNZBInfo->GetParFailedSize());
 	pDestNZBInfo->SetParCurrentFailedSize(pDestNZBInfo->GetParCurrentFailedSize() + pSrcNZBInfo->GetParCurrentFailedSize());
+	pDestNZBInfo->SetRemainingParCount(pDestNZBInfo->GetRemainingParCount() + pSrcNZBInfo->GetRemainingParCount());
+
+	pDestNZBInfo->CalcFileStats();
 
 	// reattach completed file items to new NZBInfo-object
 	for (NZBInfo::Files::iterator it = pSrcNZBInfo->GetCompletedFiles()->begin(); it != pSrcNZBInfo->GetCompletedFiles()->end(); it++)
@@ -1165,7 +1197,7 @@ bool QueueCoordinator::SplitQueueEntries(FileList* pFileList, const char* szName
 	for (FileList::iterator it = pFileList->begin(); it != pFileList->end(); it++)
 	{
 		FileInfo* pFileInfo = *it;
-		if (pFileInfo->GetActiveDownloads() > 0 || pFileInfo->GetCompleted() > 0)
+		if (pFileInfo->GetActiveDownloads() > 0 || pFileInfo->GetCompletedArticles() > 0)
 		{
 			error("Could not split %s. File is already (partially) downloaded", pFileInfo->GetFilename());
 			return false;
@@ -1209,6 +1241,8 @@ bool QueueCoordinator::SplitQueueEntries(FileList* pFileList, const char* szName
 
 		pSrcNZBInfo->SetFileCount(pSrcNZBInfo->GetFileCount() - 1);
 		pSrcNZBInfo->SetSize(pSrcNZBInfo->GetSize() - pFileInfo->GetSize());
+		pSrcNZBInfo->SetRemainingSize(pSrcNZBInfo->GetRemainingSize() - pFileInfo->GetRemainingSize());
+
 		pSrcNZBInfo->SetSuccessSize(pSrcNZBInfo->GetSuccessSize() - pFileInfo->GetSuccessSize());
 		pSrcNZBInfo->SetCurrentSuccessSize(pSrcNZBInfo->GetCurrentSuccessSize() - pFileInfo->GetSuccessSize());
 		pSrcNZBInfo->SetFailedSize(pSrcNZBInfo->GetFailedSize() - pFileInfo->GetFailedSize() - pFileInfo->GetMissedSize());
@@ -1216,6 +1250,7 @@ bool QueueCoordinator::SplitQueueEntries(FileList* pFileList, const char* szName
 
 		pNZBInfo->SetFileCount(pNZBInfo->GetFileCount() + 1);
 		pNZBInfo->SetSize(pNZBInfo->GetSize() + pFileInfo->GetSize());
+		pNZBInfo->SetRemainingSize(pNZBInfo->GetRemainingSize() + pFileInfo->GetRemainingSize());
 		pNZBInfo->SetSuccessSize(pNZBInfo->GetSuccessSize() + pFileInfo->GetSuccessSize());
 		pNZBInfo->SetCurrentSuccessSize(pNZBInfo->GetCurrentSuccessSize() + pFileInfo->GetSuccessSize());
 		pNZBInfo->SetFailedSize(pNZBInfo->GetFailedSize() + pFileInfo->GetFailedSize() + pFileInfo->GetMissedSize());
@@ -1228,14 +1263,28 @@ bool QueueCoordinator::SplitQueueEntries(FileList* pFileList, const char* szName
 			pSrcNZBInfo->SetParCurrentSuccessSize(pSrcNZBInfo->GetParCurrentSuccessSize() - pFileInfo->GetSuccessSize());
 			pSrcNZBInfo->SetParFailedSize(pSrcNZBInfo->GetParFailedSize() - pFileInfo->GetFailedSize() - pFileInfo->GetMissedSize());
 			pSrcNZBInfo->SetParCurrentFailedSize(pSrcNZBInfo->GetParCurrentFailedSize() - pFileInfo->GetFailedSize() - pFileInfo->GetMissedSize());
+			pSrcNZBInfo->SetRemainingParCount(pSrcNZBInfo->GetRemainingParCount() - 1);
 
 			pNZBInfo->SetParSize(pNZBInfo->GetParSize() + pFileInfo->GetSize());
 			pNZBInfo->SetParSuccessSize(pNZBInfo->GetParSuccessSize() + pFileInfo->GetSuccessSize());
 			pNZBInfo->SetParCurrentSuccessSize(pNZBInfo->GetParCurrentSuccessSize() + pFileInfo->GetSuccessSize());
 			pNZBInfo->SetParFailedSize(pNZBInfo->GetParFailedSize() + pFileInfo->GetFailedSize() + pFileInfo->GetMissedSize());
 			pNZBInfo->SetParCurrentFailedSize(pNZBInfo->GetParCurrentFailedSize() + pFileInfo->GetFailedSize() + pFileInfo->GetMissedSize());
+			pNZBInfo->SetRemainingParCount(pNZBInfo->GetRemainingParCount() + 1);
+		}
+
+		if (pFileInfo->GetPaused())
+		{
+			pSrcNZBInfo->SetPausedFileCount(pSrcNZBInfo->GetPausedFileCount() - 1);
+			pSrcNZBInfo->SetPausedSize(pSrcNZBInfo->GetPausedSize() - pFileInfo->GetRemainingSize());
+
+			pNZBInfo->SetPausedFileCount(pSrcNZBInfo->GetPausedFileCount() + 1);
+			pNZBInfo->SetPausedSize(pSrcNZBInfo->GetPausedSize() + pFileInfo->GetRemainingSize());
 		}
 	}
+
+	pNZBInfo->CalcFileStats();
+	pSrcNZBInfo->CalcFileStats();
 
 	if (pSrcNZBInfo->GetFileList()->empty())
 	{

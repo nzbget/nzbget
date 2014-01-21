@@ -1782,7 +1782,6 @@ void ListGroupsXmlCommand::Execute()
 	for (NZBList::iterator it = pDownloadQueue->GetQueue()->begin(); it != pDownloadQueue->GetQueue()->end(); it++)
 	{
 		NZBInfo* pNZBInfo = *it;
-		pNZBInfo->CalcFileStats();
 
 		unsigned long iRemainingSizeLo, iRemainingSizeHi, iRemainingSizeMB;
 		unsigned long iPausedSizeLo, iPausedSizeHi, iPausedSizeMB;
@@ -1793,7 +1792,7 @@ void ListGroupsXmlCommand::Execute()
 
 		snprintf(szItemBuf, iItemBufSize, IsJson() ? JSON_LIST_ITEM_START : XML_LIST_ITEM_START,
 			pNZBInfo->GetFirstID(), pNZBInfo->GetLastID(), iRemainingSizeLo, iRemainingSizeHi, iRemainingSizeMB,
-			iPausedSizeLo, iPausedSizeHi, iPausedSizeMB, pNZBInfo->GetRemainingFileCount(),
+			iPausedSizeLo, iPausedSizeHi, iPausedSizeMB, (int)pNZBInfo->GetFileList()->size(),
 			pNZBInfo->GetRemainingParCount(), pNZBInfo->GetMinTime(), pNZBInfo->GetMaxTime(),
 			pNZBInfo->GetMinPriority(), pNZBInfo->GetMaxPriority(), pNZBInfo->GetActiveDownloads());
 		szItemBuf[iItemBufSize-1] = '\0';
