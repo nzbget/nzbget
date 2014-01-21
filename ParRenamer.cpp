@@ -209,10 +209,10 @@ void ParRenamer::BuildDirList(const char* szDestDir)
 
 void ParRenamer::LoadParFiles(const char* szDestDir)
 {
-	ParCoordinator::FileList parFileList;
+	ParCoordinator::ParFileList parFileList;
 	ParCoordinator::FindMainPars(szDestDir, &parFileList);
 	
-	for (ParCoordinator::FileList::iterator it = parFileList.begin(); it != parFileList.end(); it++)
+	for (ParCoordinator::ParFileList::iterator it = parFileList.begin(); it != parFileList.end(); it++)
 	{
 		char* szParFilename = *it;
 		

@@ -120,11 +120,7 @@ void Frontend::FreeData()
 		}
 		m_RemoteMessages.clear();
 
-		for (FileQueue::iterator it = m_RemoteQueue.GetFileQueue()->begin(); it != m_RemoteQueue.GetFileQueue()->end(); it++)
-		{
-			delete *it;
-		}
-		m_RemoteQueue.GetFileQueue()->clear();
+		m_RemoteQueue.GetQueue()->Clear();
 	}
 }
 
@@ -225,7 +221,7 @@ bool Frontend::ServerEditQueue(QueueEditor::EEditAction eAction, int iOffset, in
 	}
 	else
 	{
-		return g_pQueueCoordinator->GetQueueEditor()->EditEntry(iID, true, eAction, iOffset, NULL);
+		return g_pQueueCoordinator->GetQueueEditor()->EditEntry(iID, eAction, iOffset, NULL);
 	}
 	return false;
 }
@@ -412,5 +408,5 @@ bool Frontend::RequestEditQueue(eRemoteEditAction iAction, int iOffset, int iID)
 {
 	RemoteClient client;
 	client.SetVerbose(false);
-	return client.RequestServerEditQueue(iAction, iOffset, NULL, &iID, 1, NULL, eRemoteMatchModeID, false);
+	return client.RequestServerEditQueue(iAction, iOffset, NULL, &iID, 1, NULL, eRemoteMatchModeID);
 }

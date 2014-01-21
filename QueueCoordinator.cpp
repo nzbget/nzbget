@@ -78,13 +78,6 @@ QueueCoordinator::~QueueCoordinator()
 	debug("Destroying QueueCoordinator");
 	// Cleanup
 
-	debug("Deleting DownloadQueue");
-	for (FileQueue::iterator it = m_DownloadQueue.GetFileQueue()->begin(); it != m_DownloadQueue.GetFileQueue()->end(); it++)
-	{
-		delete *it;
-	}
-	m_DownloadQueue.GetFileQueue()->clear();
-
 	debug("Deleting ArticleDownloaders");
 	for (ActiveDownloads::iterator it = m_ActiveDownloads.begin(); it != m_ActiveDownloads.end(); it++)
 	{
@@ -250,15 +243,19 @@ void QueueCoordinator::AddNZBFileToQueue(NZBFile* pNZBFile, bool bAddFirst)
 {
 	debug("Adding NZBFile to queue");
 
+	NZBInfo* pNZBInfo = pNZBFile->GetNZBInfo();
+
 	m_mutexDownloadQueue.Lock();
 
-	Aspect foundAspect = { eaNZBFileFound, &m_DownloadQueue, pNZBFile->GetNZBInfo(), NULL };
+	Aspect foundAspect = { eaNZBFileFound, &m_DownloadQueue, pNZBInfo, NULL };
 	Notify(&foundAspect);
 
-	if (pNZBFile->GetNZBInfo()->GetDeleteStatus() != NZBInfo::dsNone)
+	NZBInfo::EDeleteStatus eDeleteStatus = pNZBInfo->GetDeleteStatus();
+
+	if (eDeleteStatus != NZBInfo::dsNone)
 	{
-		bool bAllPaused = !pNZBFile->GetFileInfos()->empty();
-		for (NZBFile::FileInfos::iterator it = pNZBFile->GetFileInfos()->begin(); it != pNZBFile->GetFileInfos()->end(); it++)
+		bool bAllPaused = !pNZBInfo->GetFileList()->empty();
+		for (FileList::iterator it = pNZBInfo->GetFileList()->begin(); it != pNZBInfo->GetFileList()->end(); it++)
 		{
 			FileInfo* pFileInfo = *it;
 			bAllPaused &= pFileInfo->GetPaused();
@@ -267,26 +264,39 @@ void QueueCoordinator::AddNZBFileToQueue(NZBFile* pNZBFile, bool bAddFirst)
 				g_pDiskState->DiscardFile(pFileInfo);
 			}
 		}
-		pNZBFile->GetNZBInfo()->SetDeletePaused(bAllPaused);
+		pNZBInfo->SetDeletePaused(bAllPaused);
 	}
 
-	if (pNZBFile->GetNZBInfo()->GetDeleteStatus() == NZBInfo::dsManual)
+	if (eDeleteStatus == NZBInfo::dsManual)
 	{
 		m_mutexDownloadQueue.Unlock(); // UNLOCK
 		return;
 	}
 
-	m_DownloadQueue.GetNZBInfoList()->Add(pNZBFile->GetNZBInfo());
+	// at this point NZBInfo will be added either to queue or to history as duplicate
+	// and therefore can be detached from NZBFile.
+	pNZBFile->DetachNZBInfo();
 
-	if (pNZBFile->GetNZBInfo()->GetDeleteStatus() == NZBInfo::dsNone)
+	if (eDeleteStatus == NZBInfo::dsNone)
 	{
-		AddFileInfosToFileQueue(pNZBFile, m_DownloadQueue.GetFileQueue(), bAddFirst);
+		if (g_pOptions->GetDupeCheck() && pNZBInfo->GetDupeMode() != dmForce)
+		{
+			CheckDupeFileInfos(pNZBInfo);
+		}
+		if (bAddFirst)
+		{
+			m_DownloadQueue.GetQueue()->push_front(pNZBInfo);
+		}
+		else
+		{
+			m_DownloadQueue.GetQueue()->push_back(pNZBInfo);
+		}
 	}
 
 	char szNZBName[1024];
-	strncpy(szNZBName, pNZBFile->GetNZBInfo()->GetName(), sizeof(szNZBName)-1);
+	strncpy(szNZBName, pNZBInfo->GetName(), sizeof(szNZBName)-1);
 
-	Aspect aspect = { eaNZBFileAdded, &m_DownloadQueue, pNZBFile->GetNZBInfo(), NULL };
+	Aspect aspect = { eaNZBFileAdded, &m_DownloadQueue, pNZBInfo, NULL };
 	Notify(&aspect);
 	
 	if (g_pOptions->GetSaveQueue() && g_pOptions->GetServerMode())
@@ -296,84 +306,62 @@ void QueueCoordinator::AddNZBFileToQueue(NZBFile* pNZBFile, bool bAddFirst)
 
 	m_mutexDownloadQueue.Unlock();
 
-	if (pNZBFile->GetNZBInfo()->GetDeleteStatus() == NZBInfo::dsNone)
+	if (eDeleteStatus == NZBInfo::dsNone)
 	{
 		info("Collection %s added to queue", szNZBName);
 	}
 }
 
-void QueueCoordinator::AddFileInfosToFileQueue(NZBFile* pNZBFile, FileQueue* pFileQueue, bool bAddFirst)
+void QueueCoordinator::CheckDupeFileInfos(NZBInfo* pNZBInfo)
 {
-	debug("Adding NZBFile to queue");
+	debug("CheckDupeFileInfos");
 
-	FileQueue tmpFileQueue;
-	FileQueue DupeList;
+	if (!g_pOptions->GetDupeCheck() || pNZBInfo->GetDupeMode() == dmForce)
+	{
+		return;
+	}
+
+	FileList dupeList(true);
 
 	int index1 = 0;
-	for (NZBFile::FileInfos::iterator it = pNZBFile->GetFileInfos()->begin(); it != pNZBFile->GetFileInfos()->end(); it++)
+	for (FileList::iterator it = pNZBInfo->GetFileList()->begin(); it != pNZBInfo->GetFileList()->end(); it++)
 	{
 		index1++;
 		FileInfo* pFileInfo = *it;
 
-		if (g_pOptions->GetDupeCheck() && !pNZBFile->GetNZBInfo()->GetDupeMode())
+		bool dupe = false;
+		int index2 = 0;
+		for (FileList::iterator it2 =  pNZBInfo->GetFileList()->begin(); it2 !=  pNZBInfo->GetFileList()->end(); it2++)
 		{
-			bool dupe = false;
-			int index2 = 0;
-			for (NZBFile::FileInfos::iterator it2 = pNZBFile->GetFileInfos()->begin(); it2 != pNZBFile->GetFileInfos()->end(); it2++)
+			index2++;
+			FileInfo* pFileInfo2 = *it2;
+			if (pFileInfo != pFileInfo2 &&
+				!strcmp(pFileInfo->GetFilename(), pFileInfo2->GetFilename()) &&
+				(pFileInfo->GetSize() < pFileInfo2->GetSize() || 
+				 (pFileInfo->GetSize() == pFileInfo2->GetSize() && index2 < index1)))
 			{
-				index2++;
-				FileInfo* pFileInfo2 = *it2;
-				if (pFileInfo != pFileInfo2 &&
-					!strcmp(pFileInfo->GetFilename(), pFileInfo2->GetFilename()) &&
-					(pFileInfo->GetSize() < pFileInfo2->GetSize() || 
-					 (pFileInfo->GetSize() == pFileInfo2->GetSize() && index2 < index1)))
-				{
-					warn("File \"%s\" appears twice in collection, adding only the biggest file", pFileInfo->GetFilename());
-					dupe = true;
-					break;
-				}
-			}
-			if (dupe)
-			{
-				DupeList.push_back(pFileInfo);
-				StatFileInfo(pFileInfo, false);
-				continue;
+				warn("File \"%s\" appears twice in collection, adding only the biggest file", pFileInfo->GetFilename());
+				dupe = true;
+				break;
 			}
 		}
-
-		if (bAddFirst)
+		if (dupe)
 		{
-			tmpFileQueue.push_front(pFileInfo);
-		}
-		else
-		{
-			tmpFileQueue.push_back(pFileInfo);
+			dupeList.push_back(pFileInfo);
+			continue;
 		}
 	}
 
-	for (FileQueue::iterator it = tmpFileQueue.begin(); it != tmpFileQueue.end(); it++)
-	{
-		if (bAddFirst)
-		{
-			pFileQueue->push_front(*it);
-		}
-		else
-		{
-			pFileQueue->push_back(*it);
-		}
-	}
-
-	for (FileQueue::iterator it = DupeList.begin(); it != DupeList.end(); it++)
+	for (FileList::iterator it = dupeList.begin(); it != dupeList.end(); it++)
 	{
 		FileInfo* pFileInfo = *it;
+		StatFileInfo(pFileInfo, false);
+		pNZBInfo->GetFileList()->Remove(pFileInfo);
 		if (g_pOptions->GetSaveQueue() && g_pOptions->GetServerMode())
 		{
 			g_pDiskState->DiscardFile(pFileInfo);
 		}
-		delete pFileInfo;
 	}
-
-	pNZBFile->DetachFileInfos();
 }
 
 /*
@@ -479,12 +467,16 @@ long long QueueCoordinator::CalcRemainingSize()
 	long long lRemainingSize = 0;
 
 	m_mutexDownloadQueue.Lock();
-	for (FileQueue::iterator it = m_DownloadQueue.GetFileQueue()->begin(); it != m_DownloadQueue.GetFileQueue()->end(); it++)
+	for (NZBList::iterator it = m_DownloadQueue.GetQueue()->begin(); it != m_DownloadQueue.GetQueue()->end(); it++)
 	{
-		FileInfo* pFileInfo = *it;
-		if (!pFileInfo->GetPaused() && !pFileInfo->GetDeleted())
+		NZBInfo* pNZBInfo = *it;
+		for (FileList::iterator it2 = pNZBInfo->GetFileList()->begin(); it2 != pNZBInfo->GetFileList()->end(); it2++)
 		{
-			lRemainingSize += pFileInfo->GetRemainingSize();
+			FileInfo* pFileInfo = *it2;
+			if (!pFileInfo->GetPaused() && !pFileInfo->GetDeleted())
+			{
+				lRemainingSize += pFileInfo->GetRemainingSize();
+			}
 		}
 	}
 	m_mutexDownloadQueue.Unlock();
@@ -512,11 +504,6 @@ bool QueueCoordinator::DeleteQueueEntry(FileInfo* pFileInfo)
 	}
 	if (!hasDownloads)
 	{
-		StatFileInfo(pFileInfo, false);
-
-		Aspect aspect = { eaFileDeleted, &m_DownloadQueue, pFileInfo->GetNZBInfo(), pFileInfo };
-		Notify(&aspect);
-
 		DeleteFileInfo(pFileInfo, false);
 	}
 	return hasDownloads;
@@ -563,20 +550,24 @@ bool QueueCoordinator::GetNextArticle(FileInfo* &pFileInfo, ArticleInfo* &pArtic
 		int iNum = 0;
 		int iFileNum = 0;
 
-		for (FileQueue::iterator it = m_DownloadQueue.GetFileQueue()->begin(); it != m_DownloadQueue.GetFileQueue()->end(); it++)
+		for (NZBList::iterator it = m_DownloadQueue.GetQueue()->begin(); it != m_DownloadQueue.GetQueue()->end(); it++)
 		{
-			FileInfo* pFileInfo1 = *it;
-			if ((!pCheckedFiles || !pCheckedFiles[iNum]) && 
-				!pFileInfo1->GetPaused() && !pFileInfo1->GetDeleted() &&
-				(!pFileInfo ||
-				 (pFileInfo1->GetExtraPriority() == pFileInfo->GetExtraPriority() &&
-				  pFileInfo1->GetPriority() > pFileInfo->GetPriority()) ||
-				 (pFileInfo1->GetExtraPriority() > pFileInfo->GetExtraPriority())))
+			NZBInfo* pNZBInfo = *it;
+			for (FileList::iterator it2 = pNZBInfo->GetFileList()->begin(); it2 != pNZBInfo->GetFileList()->end(); it2++)
 			{
-				pFileInfo = pFileInfo1;
-				iFileNum = iNum;
+				FileInfo* pFileInfo1 = *it2;
+				if ((!pCheckedFiles || !pCheckedFiles[iNum]) && 
+					!pFileInfo1->GetPaused() && !pFileInfo1->GetDeleted() &&
+					(!pFileInfo ||
+					 (pFileInfo1->GetExtraPriority() == pFileInfo->GetExtraPriority() &&
+					  pFileInfo1->GetPriority() > pFileInfo->GetPriority()) ||
+					 (pFileInfo1->GetExtraPriority() > pFileInfo->GetExtraPriority())))
+				{
+					pFileInfo = pFileInfo1;
+					iFileNum = iNum;
+				}
+				iNum++;
 			}
-			iNum++;
 		}
 
 		if (!pFileInfo)
@@ -606,7 +597,14 @@ bool QueueCoordinator::GetNextArticle(FileInfo* &pFileInfo, ArticleInfo* &pArtic
 			// the file doesn't have any articles left for download, we mark the file as such
 			if (!pCheckedFiles)
 			{
-				int iArrSize = sizeof(bool) * m_DownloadQueue.GetFileQueue()->size();
+				int iTotalFileCount = 0;
+				for (NZBList::iterator it = m_DownloadQueue.GetQueue()->begin(); it != m_DownloadQueue.GetQueue()->end(); it++)
+				{
+					NZBInfo* pNZBInfo = *it;
+					iTotalFileCount += pNZBInfo->GetFileList()->size();
+				}
+
+				int iArrSize = sizeof(bool) * iTotalFileCount;
 				pCheckedFiles = (bool*)malloc(iArrSize);
 				memset(pCheckedFiles, false, iArrSize);
 			}
@@ -757,16 +755,8 @@ void QueueCoordinator::ArticleCompleted(ArticleDownloader* pArticleDownloader)
 
 	if (deleteFileObj)
 	{
-		bool fileDeleted = pFileInfo->GetDeleted();
-		// delete File from Queue
-		pFileInfo->SetDeleted(true);
-
-		StatFileInfo(pFileInfo, fileCompleted);
-
-		Aspect aspect = { fileCompleted && !fileDeleted ? eaFileCompleted : eaFileDeleted, &m_DownloadQueue, pFileInfo->GetNZBInfo(), pFileInfo };
-		Notify(&aspect);
-		
 		DeleteFileInfo(pFileInfo, fileCompleted);
+
 		if (g_pOptions->GetSaveQueue() && g_pOptions->GetServerMode())
 		{
 			g_pDiskState->SaveDownloadQueue(&m_DownloadQueue);
@@ -812,15 +802,10 @@ void QueueCoordinator::StatFileInfo(FileInfo* pFileInfo, bool bCompleted)
 
 void QueueCoordinator::DeleteFileInfo(FileInfo* pFileInfo, bool bCompleted)
 {
-	for (FileQueue::iterator it = m_DownloadQueue.GetFileQueue()->begin(); it != m_DownloadQueue.GetFileQueue()->end(); it++)
-	{
-		FileInfo* pa = *it;
-		if (pa == pFileInfo)
-		{
-			m_DownloadQueue.GetFileQueue()->erase(it);
-			break;
-		}
-	}
+	bool fileDeleted = pFileInfo->GetDeleted();
+	pFileInfo->SetDeleted(true);
+
+	StatFileInfo(pFileInfo, bCompleted);
 
 	if (g_pOptions->GetSaveQueue() && g_pOptions->GetServerMode())
 	{
@@ -832,7 +817,18 @@ void QueueCoordinator::DeleteFileInfo(FileInfo* pFileInfo, bool bCompleted)
 		DiscardDiskFile(pFileInfo);
 	}
 
-	delete pFileInfo;
+	NZBInfo* pNZBInfo = pFileInfo->GetNZBInfo();
+
+	Aspect aspect = { bCompleted && !fileDeleted ? eaFileCompleted : eaFileDeleted, &m_DownloadQueue, pNZBInfo, pFileInfo };
+	Notify(&aspect);
+
+	// nzb-file could be deleted from queue in "Notify", check if it is still in queue.
+	if (std::find(m_DownloadQueue.GetQueue()->begin(), m_DownloadQueue.GetQueue()->end(), pNZBInfo) !=
+		m_DownloadQueue.GetQueue()->end())
+	{
+		pNZBInfo->GetFileList()->Remove(pFileInfo);
+		delete pFileInfo;
+	}
 }
 
 void QueueCoordinator::DiscardDiskFile(FileInfo* pFileInfo)
@@ -872,14 +868,14 @@ void QueueCoordinator::CheckHealth(FileInfo* pFileInfo)
 		warn("Pausing %s due to health %.1f%% below critical %.1f%%", pFileInfo->GetNZBInfo()->GetName(),
 			pFileInfo->GetNZBInfo()->CalcHealth() / 10.0, pFileInfo->GetNZBInfo()->CalcCriticalHealth() / 10.0);
 		pFileInfo->GetNZBInfo()->SetHealthPaused(true);
-		m_QueueEditor.LockedEditEntry(&m_DownloadQueue, pFileInfo->GetID(), false, QueueEditor::eaGroupPause, 0, NULL);
+		m_QueueEditor.LockedEditEntry(&m_DownloadQueue, pFileInfo->GetID(), QueueEditor::eaGroupPause, 0, NULL);
 	}
 	else if (g_pOptions->GetHealthCheck() == Options::hcDelete)
 	{
 		warn("Cancelling download and deleting %s due to health %.1f%% below critical %.1f%%", pFileInfo->GetNZBInfo()->GetName(),
 			pFileInfo->GetNZBInfo()->CalcHealth() / 10.0, pFileInfo->GetNZBInfo()->CalcCriticalHealth() / 10.0);
 		pFileInfo->GetNZBInfo()->SetDeleteStatus(NZBInfo::dsHealth);
-		m_QueueEditor.LockedEditEntry(&m_DownloadQueue, pFileInfo->GetID(), false, QueueEditor::eaGroupDelete, 0, NULL);
+		m_QueueEditor.LockedEditEntry(&m_DownloadQueue, pFileInfo->GetID(), QueueEditor::eaGroupDelete, 0, NULL);
 	}
 }
 
@@ -1103,14 +1099,14 @@ bool QueueCoordinator::MergeQueueEntries(NZBInfo* pDestNZBInfo, NZBInfo* pSrcNZB
 	SetQueueEntryNZBCategory(pSrcNZBInfo, pDestNZBInfo->GetCategory());
 
 	// reattach file items to new NZBInfo-object
-	for (FileQueue::iterator it = m_DownloadQueue.GetFileQueue()->begin(); it != m_DownloadQueue.GetFileQueue()->end(); it++)
+	for (FileList::iterator it = pSrcNZBInfo->GetFileList()->begin(); it != pSrcNZBInfo->GetFileList()->end(); it++)
 	{
 		FileInfo* pFileInfo = *it;
-		if (pFileInfo->GetNZBInfo() == pSrcNZBInfo)
-		{
-			pFileInfo->SetNZBInfo(pDestNZBInfo);
-		}
+		pFileInfo->SetNZBInfo(pDestNZBInfo);
+		pDestNZBInfo->GetFileList()->push_back(pFileInfo);
 	}
+
+	pSrcNZBInfo->GetFileList()->clear();
 
 	pDestNZBInfo->SetFileCount(pDestNZBInfo->GetFileCount() + pSrcNZBInfo->GetFileCount());
 	pDestNZBInfo->SetFullContentHash(0);
@@ -1144,6 +1140,9 @@ bool QueueCoordinator::MergeQueueEntries(NZBInfo* pDestNZBInfo, NZBInfo* pSrcNZB
 	pDestNZBInfo->SetQueuedFilename(szQueuedFilename);
 	free(szQueuedFilename);
 
+	m_DownloadQueue.GetQueue()->Remove(pSrcNZBInfo);
+	delete pSrcNZBInfo;
+
 	return true;
 }
 
@@ -1154,7 +1153,7 @@ bool QueueCoordinator::MergeQueueEntries(NZBInfo* pDestNZBInfo, NZBInfo* pSrcNZB
  *
  * NOTE: DownloadQueue must be locked prior to call of this function
  */
-bool QueueCoordinator::SplitQueueEntries(FileQueue* pFileList, const char* szName, NZBInfo** pNewNZBInfo)
+bool QueueCoordinator::SplitQueueEntries(FileList* pFileList, const char* szName, NZBInfo** pNewNZBInfo)
 {
 	if (pFileList->empty())
 	{
@@ -1163,7 +1162,7 @@ bool QueueCoordinator::SplitQueueEntries(FileQueue* pFileList, const char* szNam
 
 	NZBInfo* pSrcNZBInfo = NULL;
 
-	for (FileQueue::iterator it = pFileList->begin(); it != pFileList->end(); it++)
+	for (FileList::iterator it = pFileList->begin(); it != pFileList->end(); it++)
 	{
 		FileInfo* pFileInfo = *it;
 		if (pFileInfo->GetActiveDownloads() > 0 || pFileInfo->GetCompleted() > 0)
@@ -1183,8 +1182,7 @@ bool QueueCoordinator::SplitQueueEntries(FileQueue* pFileList, const char* szNam
 	}
 
 	NZBInfo* pNZBInfo = new NZBInfo();
-	pNZBInfo->Retain();
-	m_DownloadQueue.GetNZBInfoList()->Add(pNZBInfo);
+	m_DownloadQueue.GetQueue()->push_back(pNZBInfo);
 
 	pNZBInfo->SetFilename(pSrcNZBInfo->GetFilename());
 	pNZBInfo->SetName(szName);
@@ -1198,7 +1196,7 @@ bool QueueCoordinator::SplitQueueEntries(FileQueue* pFileList, const char* szNam
 	pSrcNZBInfo->SetFullContentHash(0);
 	pSrcNZBInfo->SetFilteredContentHash(0);
 
-	for (FileQueue::iterator it = pFileList->begin(); it != pFileList->end(); it++)
+	for (FileList::iterator it = pFileList->begin(); it != pFileList->end(); it++)
 	{
 		FileInfo* pFileInfo = *it;
 
@@ -1206,6 +1204,8 @@ bool QueueCoordinator::SplitQueueEntries(FileQueue* pFileList, const char* szNam
 		Notify(&aspect);
 
 		pFileInfo->SetNZBInfo(pNZBInfo);
+		pNZBInfo->GetFileList()->push_back(pFileInfo);
+		pSrcNZBInfo->GetFileList()->Remove(pFileInfo);
 
 		pSrcNZBInfo->SetFileCount(pSrcNZBInfo->GetFileCount() - 1);
 		pSrcNZBInfo->SetSize(pSrcNZBInfo->GetSize() - pFileInfo->GetSize());
@@ -1237,7 +1237,11 @@ bool QueueCoordinator::SplitQueueEntries(FileQueue* pFileList, const char* szNam
 		}
 	}
 
-	pNZBInfo->Release();
+	if (pSrcNZBInfo->GetFileList()->empty())
+	{
+		m_DownloadQueue.GetQueue()->Remove(pSrcNZBInfo);
+		delete pSrcNZBInfo;
+	}
 
 	*pNewNZBInfo = pNZBInfo;
 	return true;

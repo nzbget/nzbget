@@ -116,7 +116,7 @@ public:
 	void				SetID(int iID);
 	static void			ResetGenID(bool bMax);
 	NZBInfo*			GetNZBInfo() { return m_pNZBInfo; }
-	void				SetNZBInfo(NZBInfo* pNZBInfo);
+	void				SetNZBInfo(NZBInfo* pNZBInfo) { m_pNZBInfo = pNZBInfo; }
 	Articles* 			GetArticles() { return &m_Articles; }
 	Groups* 			GetGroups() { return &m_Groups; }
 	const char*			GetSubject() { return m_szSubject; }
@@ -171,52 +171,17 @@ public:
 	void				SetAutoDeleted(bool bAutoDeleted) { m_bAutoDeleted = bAutoDeleted; }
 };
                               
-typedef std::deque<FileInfo*> FileQueue;
+typedef std::deque<FileInfo*> FileListBase;
 
-class GroupInfo
+class FileList : public FileListBase
 {
 private:
-	NZBInfo*			m_pNZBInfo;
-	int					m_iFirstID;
-	int					m_iLastID;
-	int		 			m_iRemainingFileCount;
-	int					m_iPausedFileCount;
-	long long 			m_lRemainingSize;
-	long long 			m_lPausedSize;
-	int					m_iRemainingParCount;
-	time_t				m_tMinTime;
-	time_t				m_tMaxTime;
-	int					m_iMinPriority;
-	int					m_iMaxPriority;
-	int					m_iActiveDownloads;
-
-	friend class DownloadQueue;
-
+	bool				m_bOwnObjects;
 public:
-						GroupInfo();
-						~GroupInfo();
-	NZBInfo*			GetNZBInfo() { return m_pNZBInfo; }
-	int					GetFirstID() { return m_iFirstID; }
-	int					GetLastID() { return m_iLastID; }
-	long long 			GetRemainingSize() { return m_lRemainingSize; }
-	long long 			GetPausedSize() { return m_lPausedSize; }
-	int					GetRemainingFileCount() { return m_iRemainingFileCount; }
-	int					GetPausedFileCount() { return m_iPausedFileCount; }
-	int					GetRemainingParCount() { return m_iRemainingParCount; }
-	time_t				GetMinTime() { return m_tMinTime; }
-	time_t				GetMaxTime() { return m_tMaxTime; }
-	int					GetMinPriority() { return m_iMinPriority; }
-	int					GetMaxPriority() { return m_iMaxPriority; }
-	int					GetActiveDownloads() { return m_iActiveDownloads; }
-};
-
-typedef std::deque<GroupInfo*> GroupQueueBase;
-
-class GroupQueue : public GroupQueueBase
-{
-public:
-						~GroupQueue();
+						FileList(bool bOwnObjects = false) { m_bOwnObjects = bOwnObjects; }
+						~FileList();
 	void				Clear();
+	void				Remove(FileInfo* pFileInfo);
 };
 
 
@@ -317,8 +282,6 @@ enum EDupeMode
 	dmForce
 };
 
-class NZBInfoList;
-
 class NZBInfo
 {
 public:
@@ -384,7 +347,6 @@ public:
 
 private:
 	int					m_iID;
-	int					m_iRefCount;
 	char* 				m_szFilename;
 	char*				m_szName;
 	char* 				m_szDestDir;
@@ -429,7 +391,7 @@ private:
 	EDupeMode			m_eDupeMode;
 	unsigned int		m_iFullContentHash;
 	unsigned int		m_iFilteredContentHash;
-	NZBInfoList*		m_Owner;
+	FileList			m_FileList;
 	NZBParameterList	m_ppParameters;
 	ScriptStatusList	m_scriptStatuses;
 	ServerStatList		m_ServerStats;
@@ -437,16 +399,26 @@ private:
 	Messages			m_Messages;
 	int					m_iIDMessageGen;
 
+	// File statistics
+	int					m_iFirstID;
+	int					m_iLastID;
+	int		 			m_iRemainingFileCount;
+	int					m_iPausedFileCount;
+	long long 			m_lRemainingSize;
+	long long 			m_lPausedSize;
+	int					m_iRemainingParCount;
+	time_t				m_tMinTime;
+	time_t				m_tMaxTime;
+	int					m_iMinPriority;
+	int					m_iMaxPriority;
+	int					m_iActiveDownloads;
+
 	static int			m_iIDGen;
 	static int			m_iIDMax;
-
-	friend class NZBInfoList;
 
 public:
 						NZBInfo(bool bPersistent = true);
 						~NZBInfo();
-	void				Retain();
-	void				Release();
 	int					GetID() { return m_iID; }
 	void				SetID(int iID);
 	static void			ResetGenID(bool bMax);
@@ -529,6 +501,7 @@ public:
 	void				SetCleanupDisk(bool bCleanupDisk) { m_bCleanupDisk = bCleanupDisk; }
 	bool				GetUnpackCleanedUpDisk() { return m_bUnpackCleanedUpDisk; }
 	void				SetUnpackCleanedUpDisk(bool bUnpackCleanedUpDisk) { m_bUnpackCleanedUpDisk = bUnpackCleanedUpDisk; }
+	FileList*			GetFileList() { return &m_FileList; }					// needs locking (for shared objects)
 	NZBParameterList*	GetParameters() { return &m_ppParameters; }				// needs locking (for shared objects)
 	ScriptStatusList*	GetScriptStatuses() { return &m_scriptStatuses; }        // needs locking (for shared objects)
 	ServerStatList*		GetServerStats() { return &m_ServerStats; }
@@ -544,19 +517,40 @@ public:
 	void				SetFullContentHash(unsigned int iFullContentHash) { m_iFullContentHash = iFullContentHash; }
 	unsigned int		GetFilteredContentHash() { return m_iFilteredContentHash; }
 	void				SetFilteredContentHash(unsigned int iFilteredContentHash) { m_iFilteredContentHash = iFilteredContentHash; }
+	int					GetGroupID();
+	void				CopyFileList(NZBInfo* pSrcNZBInfo);
+
+	// File statistics
+	void				CalcFileStats();
+	int					GetFirstID() { return m_iFirstID; }
+	int					GetLastID() { return m_iLastID; }
+	long long 			GetRemainingSize() { return m_lRemainingSize; }
+	long long 			GetPausedSize() { return m_lPausedSize; }
+	int					GetRemainingFileCount() { return m_iRemainingFileCount; }
+	int					GetPausedFileCount() { return m_iPausedFileCount; }
+	int					GetRemainingParCount() { return m_iRemainingParCount; }
+	time_t				GetMinTime() { return m_tMinTime; }
+	time_t				GetMaxTime() { return m_tMaxTime; }
+	int					GetMinPriority() { return m_iMinPriority; }
+	int					GetMaxPriority() { return m_iMaxPriority; }
+	int					GetActiveDownloads() { return m_iActiveDownloads; }
+
 	void				AppendMessage(Message::EKind eKind, time_t tTime, const char* szText);
 	Messages*			LockMessages();
 	void				UnlockMessages();
 };
 
-typedef std::deque<NZBInfo*> NZBInfoListBase;
+typedef std::deque<NZBInfo*> NZBQueueBase;
 
-class NZBInfoList : public NZBInfoListBase
+class NZBList : public NZBQueueBase
 {
+private:
+	bool				m_bOwnObjects;
 public:
-	void				Add(NZBInfo* pNZBInfo);
+						NZBList(bool bOwnObjects = false) { m_bOwnObjects = bOwnObjects; }
+						~NZBList();
+	void				Clear();
 	void				Remove(NZBInfo* pNZBInfo);
-	void				ReleaseAll();
 };
 
 class PostInfo
@@ -605,7 +599,7 @@ public:
 						~PostInfo();
 	int					GetID() { return m_iID; }
 	NZBInfo*			GetNZBInfo() { return m_pNZBInfo; }
-	void				SetNZBInfo(NZBInfo* pNZBInfo);
+	void				SetNZBInfo(NZBInfo* pNZBInfo) { m_pNZBInfo = pNZBInfo; }
 	const char*			GetInfoName() { return m_szInfoName; }
 	void				SetInfoName(const char* szInfoName);
 	EStage				GetStage() { return m_eStage; }
@@ -781,6 +775,7 @@ public:
 	NZBInfo*			GetNZBInfo() { return (NZBInfo*)m_pInfo; }
 	UrlInfo*			GetUrlInfo() { return (UrlInfo*)m_pInfo; }
 	DupInfo*			GetDupInfo() { return (DupInfo*)m_pInfo; }
+	void				DiscardNZBInfo() { m_pInfo = NULL; }
 	void				DiscardUrlInfo() { m_pInfo = NULL; }
 	time_t				GetTime() { return m_tTime; }
 	void				SetTime(time_t tTime) { m_tTime = tTime; }
@@ -792,21 +787,17 @@ typedef std::deque<HistoryInfo*> HistoryList;
 class DownloadQueue
 {
 protected:
-	NZBInfoList			m_NZBInfoList;
-	FileQueue			m_FileQueue;
-	PostQueue			m_PostQueue;
-	HistoryList			m_HistoryList;
-	FileQueue			m_ParkedFiles;
+	NZBList				m_Queue;
+	HistoryList			m_History;
 	UrlQueue			m_UrlQueue;
+	PostQueue			m_PostQueue;
 
 public:
-	NZBInfoList*		GetNZBInfoList() { return &m_NZBInfoList; }
-	FileQueue*			GetFileQueue() { return &m_FileQueue; }
-	PostQueue*			GetPostQueue() { return &m_PostQueue; }
-	HistoryList*		GetHistoryList() { return &m_HistoryList; }
-	FileQueue*			GetParkedFiles() { return &m_ParkedFiles; }
+						DownloadQueue() : m_Queue(true) {}
+	NZBList*			GetQueue() { return &m_Queue; }
+	HistoryList*		GetHistory() { return &m_History; }
 	UrlQueue*			GetUrlQueue() { return &m_UrlQueue; }
-	void				BuildGroups(GroupQueue* pGroupQueue);
+	PostQueue*			GetPostQueue() { return &m_PostQueue; }
 };
 
 class DownloadQueueHolder

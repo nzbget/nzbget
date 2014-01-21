@@ -27,7 +27,6 @@
 #ifndef NZBFILE_H
 #define NZBFILE_H
 
-#include <vector>
 #include <list>
 
 #include "DownloadInfo.h"
@@ -35,12 +34,10 @@
 class NZBFile
 {
 public:
-	typedef std::vector<FileInfo*>	FileInfos;
-	typedef std::list<FileInfo*>	FileInfoList;
+	typedef std::list<FileInfo*>	TempFileList;
 	typedef std::list<char*>		ExtList;
 
 private:
-	FileInfos			m_FileInfos;
 	NZBInfo*			m_pNZBInfo;
 	char*				m_szFileName;
 	char*				m_szPassword;
@@ -79,10 +76,9 @@ public:
 	virtual 			~NZBFile();
 	static NZBFile*		Create(const char* szFileName, const char* szCategory);
 	const char* 		GetFileName() const { return m_szFileName; }
-	FileInfos*			GetFileInfos() { return &m_FileInfos; }
 	NZBInfo*			GetNZBInfo() { return m_pNZBInfo; }
 	const char*			GetPassword() { return m_szPassword; }
-	void				DetachFileInfos();
+	void				DetachNZBInfo() { m_pNZBInfo = NULL; }
 
 	void				LogDebugInfo();
 };

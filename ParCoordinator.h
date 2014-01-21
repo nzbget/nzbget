@@ -106,12 +106,12 @@ protected:
 #endif
 
 public:
-	typedef std::deque<char*>		FileList;
+	typedef std::deque<char*>		ParFileList;
 
 public:
 						ParCoordinator();
 	virtual				~ParCoordinator();
-	static bool			FindMainPars(const char* szPath, FileList* pFileList);
+	static bool			FindMainPars(const char* szPath, ParFileList* pFileList);
 	static bool			ParseParFilename(const char* szParFilename, int* iBaseNameLen, int* iBlocks);
 	static bool			SameParCollection(const char* szFilename1, const char* szFilename2);
 	void				PausePars(DownloadQueue* pDownloadQueue, NZBInfo* pNZBInfo);

@@ -505,7 +505,7 @@ void ProcessClientRequest()
 		case Options::opClientRequestEditQueue:
 			Client->RequestServerEditQueue((eRemoteEditAction)g_pOptions->GetEditQueueAction(), g_pOptions->GetEditQueueOffset(),
 				g_pOptions->GetEditQueueText(), g_pOptions->GetEditQueueIDList(), g_pOptions->GetEditQueueIDCount(), 
-				g_pOptions->GetEditQueueNameList(), (eRemoteMatchMode)g_pOptions->GetMatchMode(), true);
+				g_pOptions->GetEditQueueNameList(), (eRemoteMatchMode)g_pOptions->GetMatchMode());
 			break;
 
 		case Options::opClientRequestLog:

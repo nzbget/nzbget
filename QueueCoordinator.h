@@ -121,14 +121,14 @@ public:
 	DownloadQueue*			LockQueue();
 	void					UnlockQueue() ;
 	void					AddNZBFileToQueue(NZBFile* pNZBFile, bool bAddFirst);
-	void					AddFileInfosToFileQueue(NZBFile* pNZBFile, FileQueue* pFileQueue, bool bAddFirst);
+	void					CheckDupeFileInfos(NZBInfo* pNZBInfo);
 	bool					HasMoreJobs() { return m_bHasMoreJobs; }
 	bool					GetStandBy() { return m_bStandBy; }
 	bool					DeleteQueueEntry(FileInfo* pFileInfo);
 	bool					SetQueueEntryNZBCategory(NZBInfo* pNZBInfo, const char* szCategory);
 	bool					SetQueueEntryNZBName(NZBInfo* pNZBInfo, const char* szName);
 	bool					MergeQueueEntries(NZBInfo* pDestNZBInfo, NZBInfo* pSrcNZBInfo);
-	bool					SplitQueueEntries(FileQueue* pFileList, const char* szName, NZBInfo** pNewNZBInfo);
+	bool					SplitQueueEntries(FileList* pFileList, const char* szName, NZBInfo** pNewNZBInfo);
 	void					DiscardDiskFile(FileInfo* pFileInfo);
 	QueueEditor*			GetQueueEditor() { return &m_QueueEditor; }
 

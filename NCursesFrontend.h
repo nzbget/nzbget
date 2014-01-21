@@ -62,7 +62,6 @@ private:
 	int					m_iLastEditEntry;
 	bool				m_bLastPausePars;
 	int					m_iQueueScrollOffset;
-	GroupQueue			m_groupQueue;
 	char*				m_szHint;
 	time_t				m_tStartHint;
 	int					m_iColWidthFiles;
@@ -99,10 +98,8 @@ private:
 	void			PrintFilename(FileInfo* pFileInfo, int iRow, bool bSelected);
 	void			PrintGroupQueue();
 	void			ResetColWidths();
-	void			PrintGroupname(GroupInfo * pGroupInfo, int iRow, bool bSelected, bool bCalcColWidth);
-	void			PrepareGroupQueue();
+	void			PrintGroupname(NZBInfo* pNZBInfo, int iRow, bool bSelected, bool bCalcColWidth);
 	void			PrintTopHeader(char* szHeader, int iLineNr, bool bUpTime);
-	void			ClearGroupQueue();
 	int				PrintMessage(Message* Msg, int iRow, int iMaxLines);
 	void			PrintKeyInputBar();
 	void 			PrintStatus();

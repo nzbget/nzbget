@@ -64,7 +64,6 @@ NZBFile::NZBFile(const char* szFileName, const char* szCategory)
     m_szFileName = strdup(szFileName);
 	m_szPassword = NULL;
 	m_pNZBInfo = new NZBInfo();
-	m_pNZBInfo->Retain();
 	m_pNZBInfo->SetFilename(szFileName);
 	m_pNZBInfo->SetCategory(szCategory);
 	m_pNZBInfo->BuildDestDirName();
@@ -76,8 +75,6 @@ NZBFile::NZBFile(const char* szFileName, const char* szCategory)
 	m_szTagContent = NULL;
 	m_iTagContentLen = 0;
 #endif
-
-    m_FileInfos.clear();
 }
 
 NZBFile::~NZBFile()
@@ -88,31 +85,17 @@ NZBFile::~NZBFile()
     free(m_szFileName);
     free(m_szPassword);
 
-    for (FileInfos::iterator it = m_FileInfos.begin(); it != m_FileInfos.end(); it++)
-    {
-        delete *it;
-    }
-    m_FileInfos.clear();
-
-	if (m_pNZBInfo)
-	{
-		m_pNZBInfo->Release();
-	}
-
 #ifndef WIN32
 	delete m_pFileInfo;
 	free(m_szTagContent);
 #endif
+
+	delete m_pNZBInfo;
 }
 
 void NZBFile::LogDebugInfo()
 {
     debug(" NZBFile %s", m_szFileName);
-}
-
-void NZBFile::DetachFileInfos()
-{
-    m_FileInfos.clear();
 }
 
 void NZBFile::AddArticle(FileInfo* pFileInfo, ArticleInfo* pArticleInfo)
@@ -178,7 +161,7 @@ void NZBFile::AddFileInfo(FileInfo* pFileInfo)
 
 	lMissedSize += iUncountedArticles * lOneSize;
 	lSize += lMissedSize;
-	m_FileInfos.push_back(pFileInfo);
+	m_pNZBInfo->GetFileList()->push_back(pFileInfo);
 	pFileInfo->SetNZBInfo(m_pNZBInfo);
 	pFileInfo->SetSize(lSize);
 	pFileInfo->SetRemainingSize(lSize - lMissedSize);
@@ -301,11 +284,11 @@ void NZBFile::ParseSubject(FileInfo* pFileInfo, bool TryQuotes)
 
 bool NZBFile::HasDuplicateFilenames()
 {
-	for (FileInfos::iterator it = m_FileInfos.begin(); it != m_FileInfos.end(); it++)
+	for (FileList::iterator it = m_pNZBInfo->GetFileList()->begin(); it != m_pNZBInfo->GetFileList()->end(); it++)
     {
         FileInfo* pFileInfo1 = *it;
 		int iDupe = 1;
-		for (FileInfos::iterator it2 = it + 1; it2 != m_FileInfos.end(); it2++)
+		for (FileList::iterator it2 = it + 1; it2 != m_pNZBInfo->GetFileList()->end(); it2++)
 		{
 			FileInfo* pFileInfo2 = *it2;
 			if (!strcmp(pFileInfo1->GetFilename(), pFileInfo2->GetFilename()) &&
@@ -321,7 +304,7 @@ bool NZBFile::HasDuplicateFilenames()
 		// false "duplicate files"-alarm.
 		// It's Ok for just two files to have the same filename, this is 
 		// an often case by posting-errors to repost bad files
-		if (iDupe > 2 || (iDupe == 2 && m_FileInfos.size() == 2))
+		if (iDupe > 2 || (iDupe == 2 && m_pNZBInfo->GetFileList()->size() == 2))
 		{
 			return true;
 		}
@@ -335,7 +318,7 @@ bool NZBFile::HasDuplicateFilenames()
  */
 void NZBFile::BuildFilenames()
 {
-	for (FileInfos::iterator it = m_FileInfos.begin(); it != m_FileInfos.end(); it++)
+	for (FileList::iterator it = m_pNZBInfo->GetFileList()->begin(); it != m_pNZBInfo->GetFileList()->end(); it++)
     {
         FileInfo* pFileInfo = *it;
 		ParseSubject(pFileInfo, true);
@@ -343,7 +326,7 @@ void NZBFile::BuildFilenames()
 
 	if (HasDuplicateFilenames())
     {
-		for (FileInfos::iterator it = m_FileInfos.begin(); it != m_FileInfos.end(); it++)
+		for (FileList::iterator it = m_pNZBInfo->GetFileList()->begin(); it != m_pNZBInfo->GetFileList()->end(); it++)
 		{
 			FileInfo* pFileInfo = *it;
 			ParseSubject(pFileInfo, false);
@@ -353,7 +336,7 @@ void NZBFile::BuildFilenames()
 	if (HasDuplicateFilenames())
     {
 		m_pNZBInfo->SetManyDupeFiles(true);
-		for (FileInfos::iterator it = m_FileInfos.begin(); it != m_FileInfos.end(); it++)
+		for (FileList::iterator it = m_pNZBInfo->GetFileList()->begin(); it != m_pNZBInfo->GetFileList()->end(); it++)
 		{
 			FileInfo* pFileInfo = *it;
 			pFileInfo->SetFilename(pFileInfo->GetSubject());
@@ -368,9 +351,9 @@ bool CompareFileInfo(FileInfo* pFirst, FileInfo* pSecond)
 
 void NZBFile::CalcHashes()
 {
-	FileInfoList fileList;
+	TempFileList fileList;
 
-	for (FileInfos::iterator it = m_FileInfos.begin(); it != m_FileInfos.end(); it++)
+	for (FileList::iterator it = m_pNZBInfo->GetFileList()->begin(); it != m_pNZBInfo->GetFileList()->end(); it++)
 	{
 		fileList.push_back(*it);
 	}
@@ -392,7 +375,7 @@ void NZBFile::CalcHashes()
 	unsigned int iFilteredContentHash = 0;
 	int iUseForFilteredCount = 0;
 
-	for (FileInfoList::iterator it = fileList.begin(); it != fileList.end(); it++)
+	for (TempFileList::iterator it = fileList.begin(); it != fileList.end(); it++)
 	{
 		FileInfo* pFileInfo = *it;
 
@@ -441,7 +424,7 @@ void NZBFile::ProcessFiles()
 {
 	BuildFilenames();
 
-	for (FileInfos::iterator it = m_FileInfos.begin(); it != m_FileInfos.end(); it++)
+	for (FileList::iterator it = m_pNZBInfo->GetFileList()->begin(); it != m_pNZBInfo->GetFileList()->end(); it++)
 	{
 		FileInfo* pFileInfo = *it;
 		pFileInfo->MakeValidFilename();
@@ -471,7 +454,7 @@ void NZBFile::ProcessFiles()
 
 	if (g_pOptions->GetSaveQueue() && g_pOptions->GetServerMode())
 	{
-		for (FileInfos::iterator it = m_FileInfos.begin(); it != m_FileInfos.end(); it++)
+		for (FileList::iterator it = m_pNZBInfo->GetFileList()->begin(); it != m_pNZBInfo->GetFileList()->end(); it++)
 		{
 			FileInfo* pFileInfo = *it;
 			g_pDiskState->SaveFile(pFileInfo);

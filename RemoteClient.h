@@ -66,7 +66,7 @@ public:
 	bool			RequestServerSetDownloadRate(int iRate);
 	bool			RequestServerDumpDebug();
 	bool 			RequestServerEditQueue(eRemoteEditAction iAction, int iOffset, const char* szText, 
-		int* pIDList, int iIDCount, NameList* pNameList, eRemoteMatchMode iMatchMode, bool bSmartOrder);
+						int* pIDList, int iIDCount, NameList* pNameList, eRemoteMatchMode iMatchMode);
 	bool			RequestServerLog(int iLines);
 	bool			RequestServerShutdown();
 	bool			RequestServerReload();
