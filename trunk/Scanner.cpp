@@ -513,7 +513,7 @@ bool Scanner::AddFileToQueue(const char* szFilename, const char* szNZBName, cons
 
 		pNZBFile->GetNZBInfo()->GetParameters()->CopyFrom(pParameters);
 
-		for (NZBFile::FileInfos::iterator it = pNZBFile->GetFileInfos()->begin(); it != pNZBFile->GetFileInfos()->end(); it++)
+		for (::FileList::iterator it = pNZBFile->GetNZBInfo()->GetFileList()->begin(); it != pNZBFile->GetNZBInfo()->GetFileList()->end(); it++)
 		{
 			FileInfo* pFileInfo = *it;
 			pFileInfo->SetPriority(iPriority);

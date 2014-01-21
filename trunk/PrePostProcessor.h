@@ -82,7 +82,7 @@ private:
 		PrePostProcessor*	m_pOwner;
 	protected:
 		virtual void		HistoryRedownload(DownloadQueue* pDownloadQueue, HistoryInfo* pHistoryInfo);
-		virtual void		DeleteQueuedFile(const char* szQueuedFile) { m_pOwner->DeleteQueuedFile(szQueuedFile); }
+		virtual void		DeleteQueuedFile(const char* szQueuedFile) {  m_pOwner->DeleteQueuedFile(szQueuedFile); }
 		friend class PrePostProcessor;
 	};
 
@@ -115,7 +115,6 @@ private:
 	void				NZBDeleted(DownloadQueue* pDownloadQueue, NZBInfo* pNZBInfo);
 	void				NZBCompleted(DownloadQueue* pDownloadQueue, NZBInfo* pNZBInfo, bool bSaveQueue);
 	void				DeleteQueuedFile(const char* szQueuedFile);
-	int					FindGroupID(DownloadQueue* pDownloadQueue, NZBInfo* pNZBInfo);
 	bool				PostQueueMove(IDList* pIDList, EEditAction eAction, int iOffset);
 	bool				PostQueueDelete(IDList* pIDList);
 	bool				HistoryEdit(IDList* pIDList, EEditAction eAction, int iOffset, const char* szText);
@@ -127,7 +126,6 @@ private:
 	void				HistoryTransformToDup(DownloadQueue* pDownloadQueue, HistoryInfo* pHistoryInfo, int rindex);
 	void				CheckHistory();
 	void				Cleanup();
-	FileInfo*			GetQueueGroup(DownloadQueue* pDownloadQueue, NZBInfo* pNZBInfo);
 	void				DeletePostThread(PostInfo* pPostInfo);
 
 public:

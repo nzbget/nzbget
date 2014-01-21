@@ -85,19 +85,13 @@ private:
 	};
 
 	typedef std::vector<EditItem*> ItemList;
-	typedef std::vector<FileInfo*> FileList;
 
 private:
 	FileInfo*				FindFileInfo(DownloadQueue* pDownloadQueue, int iID);
-	int						FindFileInfoEntry(DownloadQueue* pDownloadQueue, FileInfo* pFileInfo);
-	bool					InternEditList(DownloadQueue* pDownloadQueue, IDList* pIDList, bool bSmartOrder, EEditAction eAction, int iOffset, const char* szText);
-	void					PrepareList(DownloadQueue* pDownloadQueue, ItemList* pItemList, IDList* pIDList, bool bSmartOrder, EEditAction eAction, int iOffset);
+	bool					InternEditList(DownloadQueue* pDownloadQueue, ItemList* pItemList, IDList* pIDList, EEditAction eAction, int iOffset, const char* szText);
+	void					PrepareList(DownloadQueue* pDownloadQueue, ItemList* pItemList, IDList* pIDList, EEditAction eAction, int iOffset);
 	bool					BuildIDListFromNameList(DownloadQueue* pDownloadQueue, IDList* pIDList, NameList* pNameList, EMatchMode eMatchMode, EEditAction eAction);
 	bool					EditGroup(DownloadQueue* pDownloadQueue, FileInfo* pFileInfo, EEditAction eAction, int iOffset, const char* szText);
-	void					BuildGroupList(DownloadQueue* pDownloadQueue, FileList* pGroupList);
-	void					AlignAffectedGroups(DownloadQueue* pDownloadQueue, IDList* pIDList, bool bSmartOrder, int iOffset);
-	bool					ItemExists(FileList* pFileList, FileInfo* pFileInfo);
-	void					AlignGroup(DownloadQueue* pDownloadQueue, NZBInfo* pNZBInfo);
 	void					PauseParsInGroups(ItemList* pItemList, bool bExtraParsOnly);
 	void					PausePars(FileList* pFileList, bool bExtraParsOnly);
 	void					SetNZBCategory(NZBInfo* pNZBInfo, const char* szCategory);
@@ -108,21 +102,18 @@ private:
 	void					ReorderFiles(DownloadQueue* pDownloadQueue, ItemList* pItemList);
 	void					SetNZBParameter(NZBInfo* pNZBInfo, const char* szParamString);
 	void					SetNZBDupeParam(NZBInfo* pNZBInfo, EEditAction eAction, const char* szText);
-
 	void					PauseUnpauseEntry(FileInfo* pFileInfo, bool bPause);
 	void					DeleteEntry(FileInfo* pFileInfo);
 	void					MoveEntry(DownloadQueue* pDownloadQueue, FileInfo* pFileInfo, int iOffset);
+	void					MoveGroup(DownloadQueue* pDownloadQueue, NZBInfo* pNZBInfo, int iOffset);
 	void					SetPriorityEntry(FileInfo* pFileInfo, const char* szPriority);
 
 public:
 							QueueEditor();                
 							~QueueEditor();
-
-	bool					EditEntry(int ID, bool bSmartOrder, EEditAction eAction, int iOffset, const char* szText);
-	bool					EditList(IDList* pIDList, NameList* pNameList, EMatchMode eMatchMode, bool bSmartOrder, EEditAction eAction, int iOffset, const char* szText);
-
-	bool					LockedEditEntry(DownloadQueue* pDownloadQueue, int ID, bool bSmartOrder, EEditAction eAction, int iOffset, const char* szText);
-	bool					LockedEditList(DownloadQueue* pDownloadQueue, IDList* pIDList, bool bSmartOrder, EEditAction eAction, int iOffset, const char* szText);
+	bool					EditEntry(int ID, EEditAction eAction, int iOffset, const char* szText);
+	bool					EditList(IDList* pIDList, NameList* pNameList, EMatchMode eMatchMode, EEditAction eAction, int iOffset, const char* szText);
+	bool					LockedEditEntry(DownloadQueue* pDownloadQueue, int ID, EEditAction eAction, int iOffset, const char* szText);
 };
 
 #endif

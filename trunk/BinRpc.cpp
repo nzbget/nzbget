@@ -405,10 +405,10 @@ void ListBinCommand::Execute()
 		DownloadQueue* pDownloadQueue = g_pQueueCoordinator->LockQueue();
 
 		// calculate required buffer size for nzbs
-		int iNrNZBEntries = pDownloadQueue->GetNZBInfoList()->size();
+		int iNrNZBEntries = pDownloadQueue->GetQueue()->size();
 		int iNrPPPEntries = 0;
 		bufsize += iNrNZBEntries * sizeof(SNZBListResponseNZBEntry);
-		for (NZBInfoList::iterator it = pDownloadQueue->GetNZBInfoList()->begin(); it != pDownloadQueue->GetNZBInfoList()->end(); it++)
+		for (NZBList::iterator it = pDownloadQueue->GetQueue()->begin(); it != pDownloadQueue->GetQueue()->end(); it++)
 		{
 			NZBInfo* pNZBInfo = *it;
 			bufsize += strlen(pNZBInfo->GetFilename()) + 1;
@@ -433,26 +433,33 @@ void ListBinCommand::Execute()
 		}
 
 		// calculate required buffer size for files
-		int iNrFileEntries = pDownloadQueue->GetFileQueue()->size();
-		bufsize += iNrFileEntries * sizeof(SNZBListResponseFileEntry);
-		for (FileQueue::iterator it = pDownloadQueue->GetFileQueue()->begin(); it != pDownloadQueue->GetFileQueue()->end(); it++)
+		int iNrFileEntries = 0;
+		for (NZBList::iterator it = pDownloadQueue->GetQueue()->begin(); it != pDownloadQueue->GetQueue()->end(); it++)
 		{
-			FileInfo* pFileInfo = *it;
-			bufsize += strlen(pFileInfo->GetSubject()) + 1;
-			bufsize += strlen(pFileInfo->GetFilename()) + 1;
-			// align struct to 4-bytes, needed by ARM-processor (and may be others)
-			bufsize += bufsize % 4 > 0 ? 4 - bufsize % 4 : 0;
+			NZBInfo* pNZBInfo = *it;
+			for (FileList::iterator it2 = pNZBInfo->GetFileList()->begin(); it2 != pNZBInfo->GetFileList()->end(); it2++)
+			{
+				FileInfo* pFileInfo = *it2;
+				iNrFileEntries++;
+				bufsize += sizeof(SNZBListResponseFileEntry);
+				bufsize += strlen(pFileInfo->GetSubject()) + 1;
+				bufsize += strlen(pFileInfo->GetFilename()) + 1;
+				// align struct to 4-bytes, needed by ARM-processor (and may be others)
+				bufsize += bufsize % 4 > 0 ? 4 - bufsize % 4 : 0;
+			}
 		}
 
 		buf = (char*) malloc(bufsize);
 		char* bufptr = buf;
 
 		// write nzb entries
-		for (NZBInfoList::iterator it = pDownloadQueue->GetNZBInfoList()->begin(); it != pDownloadQueue->GetNZBInfoList()->end(); it++)
+		for (NZBList::iterator it = pDownloadQueue->GetQueue()->begin(); it != pDownloadQueue->GetQueue()->end(); it++)
 		{
-			unsigned long iSizeHi, iSizeLo;
 			NZBInfo* pNZBInfo = *it;
+			pNZBInfo->CalcFileStats();
+
 			SNZBListResponseNZBEntry* pListAnswer = (SNZBListResponseNZBEntry*) bufptr;
+			unsigned long iSizeHi, iSizeLo;
 			Util::SplitInt64(pNZBInfo->GetSize(), &iSizeHi, &iSizeLo);
 			pListAnswer->m_iSizeLo				= htonl(iSizeLo);
 			pListAnswer->m_iSizeHi				= htonl(iSizeHi);
@@ -484,7 +491,7 @@ void ListBinCommand::Execute()
 
 		// write ppp entries
 		int iNZBIndex = 1;
-		for (NZBInfoList::iterator it = pDownloadQueue->GetNZBInfoList()->begin(); it != pDownloadQueue->GetNZBInfoList()->end(); it++, iNZBIndex++)
+		for (NZBList::iterator it = pDownloadQueue->GetQueue()->begin(); it != pDownloadQueue->GetQueue()->end(); it++, iNZBIndex++)
 		{
 			NZBInfo* pNZBInfo = *it;
 			for (NZBParameterList::iterator it = pNZBInfo->GetParameters()->begin(); it != pNZBInfo->GetParameters()->end(); it++)
@@ -510,54 +517,59 @@ void ListBinCommand::Execute()
 		}
 
 		// write file entries
-		for (FileQueue::iterator it = pDownloadQueue->GetFileQueue()->begin(); it != pDownloadQueue->GetFileQueue()->end(); it++)
+		for (NZBList::iterator it = pDownloadQueue->GetQueue()->begin(); it != pDownloadQueue->GetQueue()->end(); it++)
 		{
-			unsigned long iSizeHi, iSizeLo;
-			FileInfo* pFileInfo = *it;
-			SNZBListResponseFileEntry* pListAnswer = (SNZBListResponseFileEntry*) bufptr;
-			pListAnswer->m_iID = htonl(pFileInfo->GetID());
-
-			int iNZBIndex = 0;
-			for (unsigned int i = 0; i < pDownloadQueue->GetNZBInfoList()->size(); i++)
+			NZBInfo* pNZBInfo = *it;
+			for (FileList::iterator it2 = pNZBInfo->GetFileList()->begin(); it2 != pNZBInfo->GetFileList()->end(); it2++)
 			{
-				iNZBIndex++;
-				if (pDownloadQueue->GetNZBInfoList()->at(i) == pFileInfo->GetNZBInfo())
+				FileInfo* pFileInfo = *it2;
+
+				unsigned long iSizeHi, iSizeLo;
+				SNZBListResponseFileEntry* pListAnswer = (SNZBListResponseFileEntry*) bufptr;
+				pListAnswer->m_iID = htonl(pFileInfo->GetID());
+
+				int iNZBIndex = 0;
+				for (unsigned int i = 0; i < pDownloadQueue->GetQueue()->size(); i++)
 				{
-					break;
+					iNZBIndex++;
+					if (pDownloadQueue->GetQueue()->at(i) == pFileInfo->GetNZBInfo())
+					{
+						break;
+					}
 				}
-			}
-			pListAnswer->m_iNZBIndex		= htonl(iNZBIndex);
+				pListAnswer->m_iNZBIndex		= htonl(iNZBIndex);
 
-			if (pRegEx && !bMatchGroup)
-			{
-				char szFilename[MAX_PATH];
-				snprintf(szFilename, sizeof(szFilename) - 1, "%s/%s", pFileInfo->GetNZBInfo()->GetName(), Util::BaseFileName(pFileInfo->GetFilename()));
-				pListAnswer->m_bMatch = htonl(pRegEx->Match(szFilename));
-			}
+				if (pRegEx && !bMatchGroup)
+				{
+					char szFilename[MAX_PATH];
+					snprintf(szFilename, sizeof(szFilename) - 1, "%s/%s", pFileInfo->GetNZBInfo()->GetName(), Util::BaseFileName(pFileInfo->GetFilename()));
+					pListAnswer->m_bMatch = htonl(pRegEx->Match(szFilename));
+				}
 
-			Util::SplitInt64(pFileInfo->GetSize(), &iSizeHi, &iSizeLo);
-			pListAnswer->m_iFileSizeLo		= htonl(iSizeLo);
-			pListAnswer->m_iFileSizeHi		= htonl(iSizeHi);
-			Util::SplitInt64(pFileInfo->GetRemainingSize(), &iSizeHi, &iSizeLo);
-			pListAnswer->m_iRemainingSizeLo	= htonl(iSizeLo);
-			pListAnswer->m_iRemainingSizeHi	= htonl(iSizeHi);
-			pListAnswer->m_bFilenameConfirmed = htonl(pFileInfo->GetFilenameConfirmed());
-			pListAnswer->m_bPaused			= htonl(pFileInfo->GetPaused());
-			pListAnswer->m_iActiveDownloads	= htonl(pFileInfo->GetActiveDownloads());
-			pListAnswer->m_iPriority		= htonl(pFileInfo->GetPriority());
-			pListAnswer->m_iSubjectLen		= htonl(strlen(pFileInfo->GetSubject()) + 1);
-			pListAnswer->m_iFilenameLen		= htonl(strlen(pFileInfo->GetFilename()) + 1);
-			bufptr += sizeof(SNZBListResponseFileEntry);
-			strcpy(bufptr, pFileInfo->GetSubject());
-			bufptr += ntohl(pListAnswer->m_iSubjectLen);
-			strcpy(bufptr, pFileInfo->GetFilename());
-			bufptr += ntohl(pListAnswer->m_iFilenameLen);
-			// align struct to 4-bytes, needed by ARM-processor (and may be others)
-			if ((size_t)bufptr % 4 > 0)
-			{
-				pListAnswer->m_iFilenameLen = htonl(ntohl(pListAnswer->m_iFilenameLen) + 4 - (size_t)bufptr % 4);
-				memset(bufptr, 0, 4 - (size_t)bufptr % 4); //suppress valgrind warning "uninitialized data"
-				bufptr += 4 - (size_t)bufptr % 4;
+				Util::SplitInt64(pFileInfo->GetSize(), &iSizeHi, &iSizeLo);
+				pListAnswer->m_iFileSizeLo		= htonl(iSizeLo);
+				pListAnswer->m_iFileSizeHi		= htonl(iSizeHi);
+				Util::SplitInt64(pFileInfo->GetRemainingSize(), &iSizeHi, &iSizeLo);
+				pListAnswer->m_iRemainingSizeLo	= htonl(iSizeLo);
+				pListAnswer->m_iRemainingSizeHi	= htonl(iSizeHi);
+				pListAnswer->m_bFilenameConfirmed = htonl(pFileInfo->GetFilenameConfirmed());
+				pListAnswer->m_bPaused			= htonl(pFileInfo->GetPaused());
+				pListAnswer->m_iActiveDownloads	= htonl(pFileInfo->GetActiveDownloads());
+				pListAnswer->m_iPriority		= htonl(pFileInfo->GetPriority());
+				pListAnswer->m_iSubjectLen		= htonl(strlen(pFileInfo->GetSubject()) + 1);
+				pListAnswer->m_iFilenameLen		= htonl(strlen(pFileInfo->GetFilename()) + 1);
+				bufptr += sizeof(SNZBListResponseFileEntry);
+				strcpy(bufptr, pFileInfo->GetSubject());
+				bufptr += ntohl(pListAnswer->m_iSubjectLen);
+				strcpy(bufptr, pFileInfo->GetFilename());
+				bufptr += ntohl(pListAnswer->m_iFilenameLen);
+				// align struct to 4-bytes, needed by ARM-processor (and may be others)
+				if ((size_t)bufptr % 4 > 0)
+				{
+					pListAnswer->m_iFilenameLen = htonl(ntohl(pListAnswer->m_iFilenameLen) + 4 - (size_t)bufptr % 4);
+					memset(bufptr, 0, 4 - (size_t)bufptr % 4); //suppress valgrind warning "uninitialized data"
+					bufptr += 4 - (size_t)bufptr % 4;
+				}
 			}
 		}
 
@@ -715,7 +727,6 @@ void EditQueueBinCommand::Execute()
 	int iMatchMode = ntohl(EditQueueRequest.m_iMatchMode);
 	int iOffset = ntohl(EditQueueRequest.m_iOffset);
 	int iTextLen = ntohl(EditQueueRequest.m_iTextLen);
-	bool bSmartOrder = ntohl(EditQueueRequest.m_bSmartOrder);
 	unsigned int iBufLength = ntohl(EditQueueRequest.m_iTrailingDataLength);
 
 	if (iNrIDEntries * sizeof(int32_t) + iTextLen + iNameEntriesLen != iBufLength)
@@ -772,7 +783,7 @@ void EditQueueBinCommand::Execute()
 		bOK = g_pQueueCoordinator->GetQueueEditor()->EditList(
 			iNrIDEntries > 0 ? &cIDList : NULL,
 			iNrNameEntries > 0 ? &cNameList : NULL,
-			(QueueEditor::EMatchMode)iMatchMode, bSmartOrder, (QueueEditor::EEditAction)iAction, iOffset, szText);
+			(QueueEditor::EMatchMode)iMatchMode, (QueueEditor::EEditAction)iAction, iOffset, szText);
 	}
 	else
 	{
@@ -964,9 +975,9 @@ void HistoryBinCommand::Execute()
 	DownloadQueue* pDownloadQueue = g_pQueueCoordinator->LockQueue();
 
 	// calculate required buffer size for nzbs
-	int iNrEntries = pDownloadQueue->GetHistoryList()->size();
+	int iNrEntries = pDownloadQueue->GetHistory()->size();
 	bufsize += iNrEntries * sizeof(SNZBHistoryResponseEntry);
-	for (HistoryList::iterator it = pDownloadQueue->GetHistoryList()->begin(); it != pDownloadQueue->GetHistoryList()->end(); it++)
+	for (HistoryList::iterator it = pDownloadQueue->GetHistory()->begin(); it != pDownloadQueue->GetHistory()->end(); it++)
 	{
 		HistoryInfo* pHistoryInfo = *it;
 		char szNicename[1024];
@@ -980,7 +991,7 @@ void HistoryBinCommand::Execute()
 	char* bufptr = buf;
 
 	// write nzb entries
-	for (HistoryList::iterator it = pDownloadQueue->GetHistoryList()->begin(); it != pDownloadQueue->GetHistoryList()->end(); it++)
+	for (HistoryList::iterator it = pDownloadQueue->GetHistory()->begin(); it != pDownloadQueue->GetHistory()->end(); it++)
 	{
 		HistoryInfo* pHistoryInfo = *it;
 		SNZBHistoryResponseEntry* pListAnswer = (SNZBHistoryResponseEntry*) bufptr;

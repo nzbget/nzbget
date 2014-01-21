@@ -1442,43 +1442,48 @@ void ListFilesXmlCommand::Execute()
 	char* szItemBuf = (char*)malloc(iItemBufSize);
 	int index = 0;
 
-	for (FileQueue::iterator it = pDownloadQueue->GetFileQueue()->begin(); it != pDownloadQueue->GetFileQueue()->end(); it++)
+	for (NZBList::iterator it = pDownloadQueue->GetQueue()->begin(); it != pDownloadQueue->GetQueue()->end(); it++)
 	{
-		FileInfo* pFileInfo = *it;
-		if ((iNZBID > 0 && iNZBID == pFileInfo->GetNZBInfo()->GetID()) ||
-			(iNZBID == 0 && (iIDStart == 0 || (iIDStart <= pFileInfo->GetID() && pFileInfo->GetID() <= iIDEnd))))
+		NZBInfo* pNZBInfo = *it;
+		for (FileList::iterator it2 = pNZBInfo->GetFileList()->begin(); it2 != pNZBInfo->GetFileList()->end(); it2++)
 		{
-			unsigned long iFileSizeHi, iFileSizeLo;
-			unsigned long iRemainingSizeLo, iRemainingSizeHi;
-			Util::SplitInt64(pFileInfo->GetSize(), &iFileSizeHi, &iFileSizeLo);
-			Util::SplitInt64(pFileInfo->GetRemainingSize(), &iRemainingSizeHi, &iRemainingSizeLo);
-			char* xmlNZBFilename = EncodeStr(pFileInfo->GetNZBInfo()->GetFilename());
-			char* xmlSubject = EncodeStr(pFileInfo->GetSubject());
-			char* xmlFilename = EncodeStr(pFileInfo->GetFilename());
-			char* xmlDestDir = EncodeStr(pFileInfo->GetNZBInfo()->GetDestDir());
-			char* xmlCategory = EncodeStr(pFileInfo->GetNZBInfo()->GetCategory());
-			char* xmlNZBNicename = EncodeStr(pFileInfo->GetNZBInfo()->GetName());
+			FileInfo* pFileInfo = *it2;
 
-			snprintf(szItemBuf, iItemBufSize, IsJson() ? JSON_LIST_ITEM : XML_LIST_ITEM,
-				pFileInfo->GetID(), iFileSizeLo, iFileSizeHi, iRemainingSizeLo, iRemainingSizeHi, 
-				pFileInfo->GetTime(), BoolToStr(pFileInfo->GetFilenameConfirmed()), 
-				BoolToStr(pFileInfo->GetPaused()), pFileInfo->GetNZBInfo()->GetID(), xmlNZBNicename,
-				xmlNZBNicename, xmlNZBFilename, xmlSubject, xmlFilename, xmlDestDir, xmlCategory,
-				pFileInfo->GetPriority(), pFileInfo->GetActiveDownloads());
-			szItemBuf[iItemBufSize-1] = '\0';
-
-			free(xmlNZBFilename);
-			free(xmlSubject);
-			free(xmlFilename);
-			free(xmlDestDir);
-			free(xmlCategory);
-			free(xmlNZBNicename);
-
-			if (IsJson() && index++ > 0)
+			if ((iNZBID > 0 && iNZBID == pFileInfo->GetNZBInfo()->GetID()) ||
+				(iNZBID == 0 && (iIDStart == 0 || (iIDStart <= pFileInfo->GetID() && pFileInfo->GetID() <= iIDEnd))))
 			{
-				AppendResponse(",\n");
+				unsigned long iFileSizeHi, iFileSizeLo;
+				unsigned long iRemainingSizeLo, iRemainingSizeHi;
+				Util::SplitInt64(pFileInfo->GetSize(), &iFileSizeHi, &iFileSizeLo);
+				Util::SplitInt64(pFileInfo->GetRemainingSize(), &iRemainingSizeHi, &iRemainingSizeLo);
+				char* xmlNZBFilename = EncodeStr(pFileInfo->GetNZBInfo()->GetFilename());
+				char* xmlSubject = EncodeStr(pFileInfo->GetSubject());
+				char* xmlFilename = EncodeStr(pFileInfo->GetFilename());
+				char* xmlDestDir = EncodeStr(pFileInfo->GetNZBInfo()->GetDestDir());
+				char* xmlCategory = EncodeStr(pFileInfo->GetNZBInfo()->GetCategory());
+				char* xmlNZBNicename = EncodeStr(pFileInfo->GetNZBInfo()->GetName());
+
+				snprintf(szItemBuf, iItemBufSize, IsJson() ? JSON_LIST_ITEM : XML_LIST_ITEM,
+					pFileInfo->GetID(), iFileSizeLo, iFileSizeHi, iRemainingSizeLo, iRemainingSizeHi, 
+					pFileInfo->GetTime(), BoolToStr(pFileInfo->GetFilenameConfirmed()), 
+					BoolToStr(pFileInfo->GetPaused()), pFileInfo->GetNZBInfo()->GetID(), xmlNZBNicename,
+					xmlNZBNicename, xmlNZBFilename, xmlSubject, xmlFilename, xmlDestDir, xmlCategory,
+					pFileInfo->GetPriority(), pFileInfo->GetActiveDownloads());
+				szItemBuf[iItemBufSize-1] = '\0';
+
+				free(xmlNZBFilename);
+				free(xmlSubject);
+				free(xmlFilename);
+				free(xmlDestDir);
+				free(xmlCategory);
+				free(xmlNZBNicename);
+
+				if (IsJson() && index++ > 0)
+				{
+					AppendResponse(",\n");
+				}
+				AppendResponse(szItemBuf);
 			}
-			AppendResponse(szItemBuf);
 		}
 	}
 	free(szItemBuf);
@@ -1768,32 +1773,29 @@ void ListGroupsXmlCommand::Execute()
 	const char* JSON_LIST_ITEM_END =
 		"}";
 
-	GroupQueue groupQueue;
-	groupQueue.clear();
-	DownloadQueue* pDownloadQueue = g_pQueueCoordinator->LockQueue();
-	pDownloadQueue->BuildGroups(&groupQueue);
-	g_pQueueCoordinator->UnlockQueue();
-
 	int iItemBufSize = 10240;
 	char* szItemBuf = (char*)malloc(iItemBufSize);
 	int index = 0;
 
-	for (GroupQueue::iterator it = groupQueue.begin(); it != groupQueue.end(); it++)
+	DownloadQueue* pDownloadQueue = g_pQueueCoordinator->LockQueue();
+
+	for (NZBList::iterator it = pDownloadQueue->GetQueue()->begin(); it != pDownloadQueue->GetQueue()->end(); it++)
 	{
-		GroupInfo* pGroupInfo = *it;
+		NZBInfo* pNZBInfo = *it;
+		pNZBInfo->CalcFileStats();
 
 		unsigned long iRemainingSizeLo, iRemainingSizeHi, iRemainingSizeMB;
 		unsigned long iPausedSizeLo, iPausedSizeHi, iPausedSizeMB;
-		Util::SplitInt64(pGroupInfo->GetRemainingSize(), &iRemainingSizeHi, &iRemainingSizeLo);
-		iRemainingSizeMB = (int)(pGroupInfo->GetRemainingSize() / 1024 / 1024);
-		Util::SplitInt64(pGroupInfo->GetPausedSize(), &iPausedSizeHi, &iPausedSizeLo);
-		iPausedSizeMB = (int)(pGroupInfo->GetPausedSize() / 1024 / 1024);
+		Util::SplitInt64(pNZBInfo->GetRemainingSize(), &iRemainingSizeHi, &iRemainingSizeLo);
+		iRemainingSizeMB = (int)(pNZBInfo->GetRemainingSize() / 1024 / 1024);
+		Util::SplitInt64(pNZBInfo->GetPausedSize(), &iPausedSizeHi, &iPausedSizeLo);
+		iPausedSizeMB = (int)(pNZBInfo->GetPausedSize() / 1024 / 1024);
 
 		snprintf(szItemBuf, iItemBufSize, IsJson() ? JSON_LIST_ITEM_START : XML_LIST_ITEM_START,
-			pGroupInfo->GetFirstID(), pGroupInfo->GetLastID(), iRemainingSizeLo, iRemainingSizeHi, iRemainingSizeMB,
-			iPausedSizeLo, iPausedSizeHi, iPausedSizeMB, pGroupInfo->GetRemainingFileCount(),
-			pGroupInfo->GetRemainingParCount(), pGroupInfo->GetMinTime(), pGroupInfo->GetMaxTime(),
-			pGroupInfo->GetMinPriority(), pGroupInfo->GetMaxPriority(), pGroupInfo->GetActiveDownloads());
+			pNZBInfo->GetFirstID(), pNZBInfo->GetLastID(), iRemainingSizeLo, iRemainingSizeHi, iRemainingSizeMB,
+			iPausedSizeLo, iPausedSizeHi, iPausedSizeMB, pNZBInfo->GetRemainingFileCount(),
+			pNZBInfo->GetRemainingParCount(), pNZBInfo->GetMinTime(), pNZBInfo->GetMaxTime(),
+			pNZBInfo->GetMinPriority(), pNZBInfo->GetMaxPriority(), pNZBInfo->GetActiveDownloads());
 		szItemBuf[iItemBufSize-1] = '\0';
 
 		if (IsJson() && index++ > 0)
@@ -1802,10 +1804,13 @@ void ListGroupsXmlCommand::Execute()
 		}
 		AppendResponse(szItemBuf);
 		
-		AppendNZBInfoFields(pGroupInfo->GetNZBInfo());
+		AppendNZBInfoFields(pNZBInfo);
 
 		AppendResponse(IsJson() ? JSON_LIST_ITEM_END : XML_LIST_ITEM_END);
 	}
+
+	g_pQueueCoordinator->UnlockQueue();
+
 	free(szItemBuf);
 
 	AppendResponse(IsJson() ? "\n]" : "</data></array>\n");
@@ -1925,7 +1930,7 @@ void EditQueueXmlCommand::Execute()
 
 	if (iAction < PrePostProcessor::eaPostMoveOffset)
 	{
-		bOK = g_pQueueCoordinator->GetQueueEditor()->EditList(&cIDList, NULL, QueueEditor::mmID, true, (QueueEditor::EEditAction)iAction, iOffset, szEditText);
+		bOK = g_pQueueCoordinator->GetQueueEditor()->EditList(&cIDList, NULL, QueueEditor::mmID, (QueueEditor::EEditAction)iAction, iOffset, szEditText);
 	}
 	else
 	{
@@ -2335,7 +2340,7 @@ void HistoryXmlCommand::Execute()
 	NZBInfo* pUrlNZBInfo = new NZBInfo(false); // fake NZB-Info for Urls
 	int index = 0;
 
-	for (HistoryList::iterator it = pDownloadQueue->GetHistoryList()->begin(); it != pDownloadQueue->GetHistoryList()->end(); it++)
+	for (HistoryList::iterator it = pDownloadQueue->GetHistory()->begin(); it != pDownloadQueue->GetHistory()->end(); it++)
 	{
 		HistoryInfo* pHistoryInfo = *it;
 

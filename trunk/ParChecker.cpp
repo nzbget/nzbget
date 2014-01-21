@@ -227,7 +227,7 @@ void ParChecker::SetInfoName(const char * szInfoName)
 
 void ParChecker::Run()
 {
-	ParCoordinator::FileList fileList;
+	ParCoordinator::ParFileList fileList;
 	if (!ParCoordinator::FindMainPars(m_szDestDir, &fileList))
 	{
 		PrintMessage(Message::mkError, "Could not start par-check for %s. Could not find any par-files", m_szNZBName);
@@ -239,7 +239,7 @@ void ParChecker::Run()
 	m_eStatus = psRepairNotNeeded;
 	m_bCancelled = false;
 
-	for (ParCoordinator::FileList::iterator it = fileList.begin(); it != fileList.end(); it++)
+	for (ParCoordinator::ParFileList::iterator it = fileList.begin(); it != fileList.end(); it++)
 	{
 		char* szParFilename = *it;
 		debug("Found par: %s", szParFilename);

@@ -244,8 +244,7 @@ void RemoteClient::BuildFileList(SNZBListResponse* pListResponse, const char* pT
 			pNZBInfo->SetQueuedFilename(m_szQueuedFilename);
 			pNZBInfo->m_bMatch = ntohl(pListAnswer->m_bMatch);
 
-			pNZBInfo->Retain();
-			pDownloadQueue->GetNZBInfoList()->Add(pNZBInfo);
+			pDownloadQueue->GetQueue()->push_back(pNZBInfo);
 
 			pBufPtr += sizeof(SNZBListResponseNZBEntry) + ntohl(pListAnswer->m_iFilenameLen) +
 				ntohl(pListAnswer->m_iNameLen) + ntohl(pListAnswer->m_iDestDirLen) + 
@@ -260,7 +259,7 @@ void RemoteClient::BuildFileList(SNZBListResponse* pListResponse, const char* pT
 			const char* szName = pBufPtr + sizeof(SNZBListResponsePPPEntry);
 			const char* szValue = pBufPtr + sizeof(SNZBListResponsePPPEntry) + ntohl(pListAnswer->m_iNameLen);
 
-			NZBInfo* pNZBInfo = pDownloadQueue->GetNZBInfoList()->at(ntohl(pListAnswer->m_iNZBIndex) - 1);
+			NZBInfo* pNZBInfo = pDownloadQueue->GetQueue()->at(ntohl(pListAnswer->m_iNZBIndex) - 1);
 			pNZBInfo->GetParameters()->SetParameter(szName, szValue);
 
 			pBufPtr += sizeof(SNZBListResponsePPPEntry) + ntohl(pListAnswer->m_iNameLen) +
@@ -287,18 +286,14 @@ void RemoteClient::BuildFileList(SNZBListResponse* pListResponse, const char* pT
 			pFileInfo->SetPriority(ntohl(pListAnswer->m_iPriority));
 			pFileInfo->m_bMatch = ntohl(pListAnswer->m_bMatch);
 
-			NZBInfo* pNZBInfo = pDownloadQueue->GetNZBInfoList()->at(ntohl(pListAnswer->m_iNZBIndex) - 1);
-
+			NZBInfo* pNZBInfo = pDownloadQueue->GetQueue()->at(ntohl(pListAnswer->m_iNZBIndex) - 1);
 			pFileInfo->SetNZBInfo(pNZBInfo);
-
-			pDownloadQueue->GetFileQueue()->push_back(pFileInfo);
+			pNZBInfo->GetFileList()->push_back(pFileInfo);
 
 			pBufPtr += sizeof(SNZBListResponseFileEntry) + ntohl(pListAnswer->m_iSubjectLen) + 
 				ntohl(pListAnswer->m_iFilenameLen);
 		}
 	}
-
-	pDownloadQueue->GetNZBInfoList()->ReleaseAll();
 }
 
 bool RemoteClient::RequestServerList(bool bFiles, bool bGroups, const char* szPattern)
@@ -373,54 +368,59 @@ bool RemoteClient::RequestServerList(bool bFiles, bool bGroups, const char* szPa
 			long long lRemaining = 0;
 			long long lPaused = 0;
 			int iMatches = 0;
+			int iNrFileEntries = 0;
 
-			for (FileQueue::iterator it = cRemoteQueue.GetFileQueue()->begin(); it != cRemoteQueue.GetFileQueue()->end(); it++)
+			for (NZBList::iterator it = cRemoteQueue.GetQueue()->begin(); it != cRemoteQueue.GetQueue()->end(); it++)
 			{
-				FileInfo* pFileInfo = *it;
-
-				char szPriority[100];
-				szPriority[0] = '\0';
-				if (pFileInfo->GetPriority() != 0)
+				NZBInfo* pNZBInfo = *it;
+				for (FileList::iterator it2 = pNZBInfo->GetFileList()->begin(); it2 != pNZBInfo->GetFileList()->end(); it2++)
 				{
-					sprintf(szPriority, "[%+i] ", pFileInfo->GetPriority());
-				}
+					FileInfo* pFileInfo = *it2;
 
-				char szCompleted[100];
-				szCompleted[0] = '\0';
-				if (pFileInfo->GetRemainingSize() < pFileInfo->GetSize())
-				{
-					sprintf(szCompleted, ", %i%s", (int)(100 - Util::Int64ToFloat(pFileInfo->GetRemainingSize()) * 100.0 / Util::Int64ToFloat(pFileInfo->GetSize())), "%");
-				}
+					iNrFileEntries++;
 
-				char szThreads[100];
-				szThreads[0] = '\0';
-				if (pFileInfo->GetActiveDownloads() > 0)
-				{
-					sprintf(szThreads, ", %i thread%s", pFileInfo->GetActiveDownloads(), (pFileInfo->GetActiveDownloads() > 1 ? "s" : ""));
-				}
+					char szPriority[100];
+					szPriority[0] = '\0';
+					if (pFileInfo->GetPriority() != 0)
+					{
+						sprintf(szPriority, "[%+i] ", pFileInfo->GetPriority());
+					}
 
-				char szStatus[100];
-				if (pFileInfo->GetPaused())
-				{
-					sprintf(szStatus, " (paused)");
-					lPaused += pFileInfo->GetRemainingSize();
-				}
-				else
-				{
-					szStatus[0] = '\0';
-					lRemaining += pFileInfo->GetRemainingSize();
-				}
+					char szCompleted[100];
+					szCompleted[0] = '\0';
+					if (pFileInfo->GetRemainingSize() < pFileInfo->GetSize())
+					{
+						sprintf(szCompleted, ", %i%s", (int)(100 - Util::Int64ToFloat(pFileInfo->GetRemainingSize()) * 100.0 / Util::Int64ToFloat(pFileInfo->GetSize())), "%");
+					}
 
-				if (!szPattern || ((MatchedFileInfo*)pFileInfo)->m_bMatch)
-				{
-					printf("[%i] %s%s/%s (%.2f MB%s%s)%s\n", pFileInfo->GetID(), szPriority, pFileInfo->GetNZBInfo()->GetName(),
-						pFileInfo->GetFilename(),
-						(float)(Util::Int64ToFloat(pFileInfo->GetSize()) / 1024.0 / 1024.0), 
-						szCompleted, szThreads, szStatus);
-					iMatches++;
-				}
+					char szThreads[100];
+					szThreads[0] = '\0';
+					if (pFileInfo->GetActiveDownloads() > 0)
+					{
+						sprintf(szThreads, ", %i thread%s", pFileInfo->GetActiveDownloads(), (pFileInfo->GetActiveDownloads() > 1 ? "s" : ""));
+					}
 
-				delete pFileInfo;
+					char szStatus[100];
+					if (pFileInfo->GetPaused())
+					{
+						sprintf(szStatus, " (paused)");
+						lPaused += pFileInfo->GetRemainingSize();
+					}
+					else
+					{
+						szStatus[0] = '\0';
+						lRemaining += pFileInfo->GetRemainingSize();
+					}
+
+					if (!szPattern || ((MatchedFileInfo*)pFileInfo)->m_bMatch)
+					{
+						printf("[%i] %s%s/%s (%.2f MB%s%s)%s\n", pFileInfo->GetID(), szPriority, pFileInfo->GetNZBInfo()->GetName(),
+							pFileInfo->GetFilename(),
+							(float)(Util::Int64ToFloat(pFileInfo->GetSize()) / 1024.0 / 1024.0), 
+							szCompleted, szThreads, szStatus);
+						iMatches++;
+					}
+				}
 			}
 
 			if (iMatches == 0)
@@ -429,7 +429,7 @@ bool RemoteClient::RequestServerList(bool bFiles, bool bGroups, const char* szPa
 			}
 
 			printf("-----------------------------------\n");
-			printf("Files: %i\n", cRemoteQueue.GetFileQueue()->size());
+			printf("Files: %i\n", iNrFileEntries);
 			if (szPattern)
 			{
 				printf("Matches: %i\n", iMatches);
@@ -460,18 +460,19 @@ bool RemoteClient::RequestServerList(bool bFiles, bool bGroups, const char* szPa
 			DownloadQueue cRemoteQueue;
 			BuildFileList(&ListResponse, pBuf, &cRemoteQueue);
 
-			GroupQueue cGroupQueue;
-			cRemoteQueue.BuildGroups(&cGroupQueue);
-
 			long long lRemaining = 0;
 			long long lPaused = 0;
 			int iMatches = 0;
+			int iNrFileEntries = 0;
 
-			for (GroupQueue::iterator it = cGroupQueue.begin(); it != cGroupQueue.end(); it++)
+			for (NZBList::iterator it = cRemoteQueue.GetQueue()->begin(); it != cRemoteQueue.GetQueue()->end(); it++)
 			{
-				GroupInfo* pGroupInfo = *it;
+				NZBInfo* pNZBInfo = *it;
 
-				long long lUnpausedRemainingSize = pGroupInfo->GetRemainingSize() - pGroupInfo->GetPausedSize();
+				pNZBInfo->CalcFileStats();
+				iNrFileEntries += pNZBInfo->GetFileList()->size();
+
+				long long lUnpausedRemainingSize = pNZBInfo->GetRemainingSize() - pNZBInfo->GetPausedSize();
 				lRemaining += lUnpausedRemainingSize;
 
 				char szRemaining[20];
@@ -479,45 +480,45 @@ bool RemoteClient::RequestServerList(bool bFiles, bool bGroups, const char* szPa
 
 				char szPriority[100];
 				szPriority[0] = '\0';
-				if (pGroupInfo->GetMinPriority() != 0 || pGroupInfo->GetMaxPriority() != 0)
+				if (pNZBInfo->GetMinPriority() != 0 || pNZBInfo->GetMaxPriority() != 0)
 				{
-					if (pGroupInfo->GetMinPriority() == pGroupInfo->GetMaxPriority())
+					if (pNZBInfo->GetMinPriority() == pNZBInfo->GetMaxPriority())
 					{
-						sprintf(szPriority, "[%+i] ", pGroupInfo->GetMinPriority());
+						sprintf(szPriority, "[%+i] ", pNZBInfo->GetMinPriority());
 					}
 					else
 					{
-						sprintf(szPriority, "[%+i..%+i] ", pGroupInfo->GetMinPriority(), pGroupInfo->GetMaxPriority());
+						sprintf(szPriority, "[%+i..%+i] ", pNZBInfo->GetMinPriority(), pNZBInfo->GetMaxPriority());
 					}
 				}
 
 				char szPaused[20];
 				szPaused[0] = '\0';
-				if (pGroupInfo->GetPausedSize() > 0)
+				if (pNZBInfo->GetPausedSize() > 0)
 				{
 					char szPausedSize[20];
-					Util::FormatFileSize(szPausedSize, sizeof(szPausedSize), pGroupInfo->GetPausedSize());
+					Util::FormatFileSize(szPausedSize, sizeof(szPausedSize), pNZBInfo->GetPausedSize());
 					sprintf(szPaused, " + %s paused", szPausedSize);
-					lPaused += pGroupInfo->GetPausedSize();
+					lPaused += pNZBInfo->GetPausedSize();
 				}
 
 				char szCategory[1024];
 				szCategory[0] = '\0';
-				if (pGroupInfo->GetNZBInfo()->GetCategory() && strlen(pGroupInfo->GetNZBInfo()->GetCategory()) > 0)
+				if (pNZBInfo->GetCategory() && strlen(pNZBInfo->GetCategory()) > 0)
 				{
-					sprintf(szCategory, " (%s)", pGroupInfo->GetNZBInfo()->GetCategory());
+					sprintf(szCategory, " (%s)", pNZBInfo->GetCategory());
 				}
 
 				char szThreads[100];
 				szThreads[0] = '\0';
-				if (pGroupInfo->GetActiveDownloads() > 0)
+				if (pNZBInfo->GetActiveDownloads() > 0)
 				{
-					sprintf(szThreads, ", %i thread%s", pGroupInfo->GetActiveDownloads(), (pGroupInfo->GetActiveDownloads() > 1 ? "s" : ""));
+					sprintf(szThreads, ", %i thread%s", pNZBInfo->GetActiveDownloads(), (pNZBInfo->GetActiveDownloads() > 1 ? "s" : ""));
 				}
 
 				char szParameters[1024];
 				szParameters[0] = '\0';
-				for (NZBParameterList::iterator it = pGroupInfo->GetNZBInfo()->GetParameters()->begin(); it != pGroupInfo->GetNZBInfo()->GetParameters()->end(); it++)
+				for (NZBParameterList::iterator it = pNZBInfo->GetParameters()->begin(); it != pNZBInfo->GetParameters()->end(); it++)
 				{
 					if (szParameters[0] == '\0')
 					{
@@ -537,19 +538,14 @@ bool RemoteClient::RequestServerList(bool bFiles, bool bGroups, const char* szPa
 					strncat(szParameters, ")", sizeof(szParameters) - strlen(szParameters) - 1);
 				}
 
-				if (!szPattern || ((MatchedNZBInfo*)pGroupInfo->GetNZBInfo())->m_bMatch)
+				if (!szPattern || ((MatchedNZBInfo*)pNZBInfo)->m_bMatch)
 				{
-					printf("[%i-%i] %s%s (%i file%s, %s%s%s)%s%s\n", pGroupInfo->GetFirstID(), pGroupInfo->GetLastID(), szPriority, 
-						pGroupInfo->GetNZBInfo()->GetName(), pGroupInfo->GetRemainingFileCount(),
-						pGroupInfo->GetRemainingFileCount() > 1 ? "s" : "", szRemaining, 
+					printf("[%i-%i] %s%s (%i file%s, %s%s%s)%s%s\n", pNZBInfo->GetFirstID(), pNZBInfo->GetLastID(), szPriority, 
+						pNZBInfo->GetName(), pNZBInfo->GetRemainingFileCount(),
+						pNZBInfo->GetRemainingFileCount() > 1 ? "s" : "", szRemaining, 
 						szPaused, szThreads, szCategory, szParameters);
 					iMatches++;
 				}
-			}
-
-			for (FileQueue::iterator it = cRemoteQueue.GetFileQueue()->begin(); it != cRemoteQueue.GetFileQueue()->end(); it++)
-			{
-				delete *it;
 			}
 
 			if (iMatches == 0)
@@ -558,12 +554,12 @@ bool RemoteClient::RequestServerList(bool bFiles, bool bGroups, const char* szPa
 			}
 
 			printf("-----------------------------------\n");
-			printf("Groups: %i\n", cGroupQueue.size());
+			printf("Groups: %i\n", cRemoteQueue.GetQueue()->size());
 			if (szPattern)
 			{
 				printf("Matches: %i\n", iMatches);
 			}
-			printf("Files: %i\n", cRemoteQueue.GetFileQueue()->size());
+			printf("Files: %i\n", iNrFileEntries);
 			if (lPaused > 0)
 			{
 				printf("Remaining size: %.2f MB (+%.2f MB paused)\n", (float)(Util::Int64ToFloat(lRemaining) / 1024.0 / 1024.0), 
@@ -817,7 +813,7 @@ bool RemoteClient::RequestServerDumpDebug()
 }
 
 bool RemoteClient::RequestServerEditQueue(eRemoteEditAction iAction, int iOffset, const char* szText, 
-	int* pIDList, int iIDCount, NameList* pNameList, eRemoteMatchMode iMatchMode, bool bSmartOrder)
+	int* pIDList, int iIDCount, NameList* pNameList, eRemoteMatchMode iMatchMode)
 {
 	if ((iIDCount <= 0 || pIDList == NULL) && (pNameList == NULL || pNameList->size() == 0))
 	{
@@ -854,7 +850,6 @@ bool RemoteClient::RequestServerEditQueue(eRemoteEditAction iAction, int iOffset
 	EditQueueRequest.m_iAction = htonl(iAction);
 	EditQueueRequest.m_iMatchMode = htonl(iMatchMode);
 	EditQueueRequest.m_iOffset = htonl((int)iOffset);
-	EditQueueRequest.m_bSmartOrder = htonl(bSmartOrder);
 	EditQueueRequest.m_iTextLen = htonl(iTextLen);
 	EditQueueRequest.m_iNrTrailingIDEntries = htonl(iIDCount);
 	EditQueueRequest.m_iNrTrailingNameEntries = htonl(iNameCount);

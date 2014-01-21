@@ -37,7 +37,7 @@
 #include <stdio.h>
 #include <ctype.h>
 #include <sys/stat.h>
-#include <map>
+#include <algorithm>
 
 #include "nzbget.h"
 #include "DownloadInfo.h"
@@ -256,7 +256,7 @@ void ServerStatList::Add(ServerStatList* pServerStats)
 }
 
 
-NZBInfo::NZBInfo(bool bPersistent)
+NZBInfo::NZBInfo(bool bPersistent) : m_FileList(true)
 {
 	debug("Creating NZBInfo");
 
@@ -280,7 +280,6 @@ NZBInfo::NZBInfo(bool bPersistent)
 	m_iTotalArticles = 0;
 	m_iSuccessArticles = 0;
 	m_iFailedArticles = 0;
-	m_iRefCount = 0;
 	m_bPostProcess = false;
 	m_eRenameStatus = rsNone;
 	m_eParStatus = psNone;
@@ -303,7 +302,18 @@ NZBInfo::NZBInfo(bool bPersistent)
 	m_eDupeMode = dmScore;
 	m_iFullContentHash = 0;
 	m_iFilteredContentHash = 0;
-	m_Owner = NULL;
+	m_iFirstID = 0;
+	m_iLastID = 0;
+	m_iRemainingFileCount = 0;
+	m_iPausedFileCount = 0;
+	m_lRemainingSize = 0;
+	m_lPausedSize = 0;
+	m_iRemainingParCount = 0;
+	m_tMinTime = 0;
+	m_tMaxTime = 0;
+	m_iMinPriority = 0;
+	m_iMaxPriority = 0;
+	m_iActiveDownloads = 0;
 	m_Messages.clear();
 	m_iIDMessageGen = 0;
 	m_iID = bPersistent ? ++m_iIDGen : 0;
@@ -329,24 +339,7 @@ NZBInfo::~NZBInfo()
 	}
 	m_Messages.clear();
 
-	if (m_Owner)
-	{
-		m_Owner->Remove(this);
-	}
-}
-
-void NZBInfo::Retain()
-{
-	m_iRefCount++;
-}
-
-void NZBInfo::Release()
-{
-	m_iRefCount--;
-	if (m_iRefCount <= 0)
-	{
-		delete this;
-	}
+	m_FileList.Clear();
 }
 
 void NZBInfo::SetID(int iID)
@@ -552,6 +545,95 @@ int NZBInfo::CalcCriticalHealth()
 	return iCriticalHealth;
 }
 
+void NZBInfo::CalcFileStats()
+{
+	m_iFirstID = 0;
+	m_iLastID = 0;
+	m_iRemainingFileCount = 0;
+	m_iPausedFileCount = 0;
+	m_lRemainingSize = 0;
+	m_lPausedSize = 0;
+	m_iRemainingParCount = 0;
+	m_tMinTime = 0;
+	m_tMaxTime = 0;
+	m_iMinPriority = 0;
+	m_iMaxPriority = 0;
+	m_iActiveDownloads = 0;
+
+	bool bFirst = true;
+	for (FileList::iterator it = m_FileList.begin(); it != m_FileList.end(); it++)
+    {
+        FileInfo* pFileInfo = *it;
+		if (bFirst)
+		{
+			m_iFirstID = pFileInfo->GetID();
+			m_iLastID = pFileInfo->GetID();
+			m_tMinTime = pFileInfo->GetTime();
+			m_tMaxTime = pFileInfo->GetTime();
+			m_iMinPriority = pFileInfo->GetPriority();
+			m_iMaxPriority = pFileInfo->GetPriority();
+			bFirst = false;
+		}
+		if (pFileInfo->GetID() < m_iFirstID)
+		{
+			m_iFirstID = pFileInfo->GetID();
+		}
+		if (pFileInfo->GetID() > m_iLastID)
+		{
+			m_iLastID = pFileInfo->GetID();
+		}
+		if (pFileInfo->GetTime() > 0)
+		{
+			if (pFileInfo->GetTime() < m_tMinTime)
+			{
+				m_tMinTime = pFileInfo->GetTime();
+			}
+			if (pFileInfo->GetTime() > m_tMaxTime)
+			{
+				m_tMaxTime = pFileInfo->GetTime();
+			}
+		}
+		if (pFileInfo->GetPriority() < m_iMinPriority)
+		{
+			m_iMinPriority = pFileInfo->GetPriority();
+		}
+		if (pFileInfo->GetPriority() > m_iMaxPriority)
+		{
+			m_iMaxPriority = pFileInfo->GetPriority();
+		}
+
+		m_iActiveDownloads += pFileInfo->GetActiveDownloads();
+		m_iRemainingFileCount++;
+		m_lRemainingSize += pFileInfo->GetRemainingSize();
+		if (pFileInfo->GetPaused())
+		{
+			m_lPausedSize += pFileInfo->GetRemainingSize();
+			m_iPausedFileCount++;
+		}
+
+		char szLoFileName[1024];
+		strncpy(szLoFileName, pFileInfo->GetFilename(), 1024);
+		szLoFileName[1024-1] = '\0';
+		for (char* p = szLoFileName; *p; p++) *p = tolower(*p); // convert string to lowercase
+		if (strstr(szLoFileName, ".par2"))
+		{
+			m_iRemainingParCount++;
+		}
+	}
+}
+
+int NZBInfo::GetGroupID()
+{
+	if (!m_FileList.empty())
+	{
+		return m_FileList.front()->GetID();
+	}
+	else
+	{
+		return 0;
+	}
+}
+
 NZBInfo::Messages* NZBInfo::LockMessages()
 {
 	m_mutexLog.Lock();
@@ -576,44 +658,66 @@ void NZBInfo::AppendMessage(Message::EKind eKind, time_t tTime, const char * szT
 	m_mutexLog.Unlock();
 }
 
-void NZBInfoList::Add(NZBInfo* pNZBInfo)
+void NZBInfo::CopyFileList(NZBInfo* pSrcNZBInfo)
 {
-	pNZBInfo->m_Owner = this;
-	push_back(pNZBInfo);
+	m_FileList.Clear();
+
+	for (FileList::iterator it = pSrcNZBInfo->GetFileList()->begin(); it != pSrcNZBInfo->GetFileList()->end(); it++)
+	{
+		FileInfo* pFileInfo = *it;
+		pFileInfo->SetNZBInfo(this);
+		m_FileList.push_back(pFileInfo);
+	}
+
+	pSrcNZBInfo->GetFileList()->clear(); // only remove references
+
+	SetFileCount(pSrcNZBInfo->GetFileCount());
+	SetFullContentHash(pSrcNZBInfo->GetFullContentHash());
+	SetFilteredContentHash(pSrcNZBInfo->GetFilteredContentHash());
+
+	SetSize(pSrcNZBInfo->GetSize());
+	SetSuccessSize(pSrcNZBInfo->GetSuccessSize());
+	SetCurrentSuccessSize(pSrcNZBInfo->GetCurrentSuccessSize());
+	SetFailedSize(pSrcNZBInfo->GetFailedSize());
+	SetCurrentFailedSize(pSrcNZBInfo->GetCurrentFailedSize());
+
+	SetParSize(pSrcNZBInfo->GetParSize());
+	SetParSuccessSize(pSrcNZBInfo->GetParSuccessSize());
+	SetParCurrentSuccessSize(pSrcNZBInfo->GetParCurrentSuccessSize());
+	SetParFailedSize(pSrcNZBInfo->GetParFailedSize());
+	SetParCurrentFailedSize(pSrcNZBInfo->GetParCurrentFailedSize());
+
+	SetSuccessArticles(pSrcNZBInfo->GetSuccessArticles());
+	SetFailedArticles(pSrcNZBInfo->GetFailedArticles());
 }
 
-void NZBInfoList::Remove(NZBInfo* pNZBInfo)
+
+NZBList::~NZBList()
+{
+	if (m_bOwnObjects)
+	{
+		Clear();
+	}
+}
+
+void NZBList::Clear()
 {
 	for (iterator it = begin(); it != end(); it++)
 	{
-		NZBInfo* pNZBInfo2 = *it;
-		if (pNZBInfo2 == pNZBInfo)
-		{
-			erase(it);
-			break;
-		}
+		delete *it;
+	}
+	clear();
+}
+
+void NZBList::Remove(NZBInfo* pNZBInfo)
+{
+	iterator it = std::find(begin(), end(), pNZBInfo);
+	if (it != end())
+	{
+		erase(it);
 	}
 }
 
-void NZBInfoList::ReleaseAll()
-{
-	int i = 0;
-	for (iterator it = begin(); it != end(); )
-	{
-		NZBInfo* pNZBInfo = *it;
-		bool bObjDeleted = pNZBInfo->m_iRefCount == 1;
-		pNZBInfo->Release();
-		if (bObjDeleted)
-		{
-			it = begin() + i;
-		}
-		else
-		{
-			it++;
-			i++;
-		}
-	}
-}
 
 ArticleInfo::ArticleInfo()
 {
@@ -695,11 +799,6 @@ FileInfo::~ FileInfo()
 	m_Groups.clear();
 
 	ClearArticles();
-
-	if (m_pNZBInfo)
-	{
-		m_pNZBInfo->Release();
-	}
 }
 
 void FileInfo::ClearArticles()
@@ -731,16 +830,6 @@ void FileInfo::ResetGenID(bool bMax)
 		m_iIDGen = 0;
 		m_iIDMax = 0;
 	}
-}
-
-void FileInfo::SetNZBInfo(NZBInfo* pNZBInfo)
-{
-	if (m_pNZBInfo)
-	{
-		m_pNZBInfo->Release();
-	}
-	m_pNZBInfo = pNZBInfo;
-	m_pNZBInfo->Retain();
 }
 
 void FileInfo::SetSubject(const char* szSubject)
@@ -791,43 +880,26 @@ void FileInfo::SetActiveDownloads(int iActiveDownloads)
 }
 
 
-GroupInfo::GroupInfo()
+FileList::~FileList()
 {
-	m_iFirstID = 0;
-	m_iLastID = 0;
-	m_iRemainingFileCount = 0;
-	m_iPausedFileCount = 0;
-	m_lRemainingSize = 0;
-	m_lPausedSize = 0;
-	m_iRemainingParCount = 0;
-	m_tMinTime = 0;
-	m_tMaxTime = 0;
-	m_iMinPriority = 0;
-	m_iMaxPriority = 0;
-	m_iActiveDownloads = 0;
-}
-
-GroupInfo::~GroupInfo()
-{
-	if (m_pNZBInfo)
+	if (m_bOwnObjects)
 	{
-		m_pNZBInfo->Release();
+		Clear();
 	}
 }
 
-
-GroupQueue::~GroupQueue()
-{
-	Clear();
-}
-
-void GroupQueue::Clear()
+void FileList::Clear()
 {
 	for (iterator it = begin(); it != end(); it++)
 	{
 		delete *it;
 	}
 	clear();
+}
+
+void FileList::Remove(FileInfo* pFileInfo)
+{
+	erase(std::find(begin(), end(), pFileInfo));
 }
 
 
@@ -864,22 +936,8 @@ PostInfo::~ PostInfo()
 		delete *it;
 	}
 	m_Messages.clear();
-
-	if (m_pNZBInfo)
-	{
-		m_pNZBInfo->Release();
-	}
 }
 
-void PostInfo::SetNZBInfo(NZBInfo* pNZBInfo)
-{
-	if (m_pNZBInfo)
-	{
-		m_pNZBInfo->Release();
-	}
-	m_pNZBInfo = pNZBInfo;
-	m_pNZBInfo->Retain();
-}
 
 void PostInfo::SetInfoName(const char* szInfoName)
 {
@@ -916,76 +974,6 @@ void PostInfo::AppendMessage(Message::EKind eKind, const char * szText)
 		m_Messages.pop_front();
 	}
 	m_mutexLog.Unlock();
-}
-
-
-void DownloadQueue::BuildGroups(GroupQueue* pGroupQueue)
-{
-	std::map<int, GroupInfo*> groupMap;
-
-	for (FileQueue::iterator it = GetFileQueue()->begin(); it != GetFileQueue()->end(); it++)
-    {
-        FileInfo* pFileInfo = *it;
-		GroupInfo *&pGroupInfo = groupMap[pFileInfo->GetNZBInfo()->GetID()];
-		if (!pGroupInfo)
-		{
-			pGroupInfo = new GroupInfo();
-			pGroupInfo->m_pNZBInfo = pFileInfo->GetNZBInfo();
-			pGroupInfo->m_pNZBInfo->Retain();
-			pGroupInfo->m_iFirstID = pFileInfo->GetID();
-			pGroupInfo->m_iLastID = pFileInfo->GetID();
-			pGroupInfo->m_tMinTime = pFileInfo->GetTime();
-			pGroupInfo->m_tMaxTime = pFileInfo->GetTime();
-			pGroupInfo->m_iMinPriority = pFileInfo->GetPriority();
-			pGroupInfo->m_iMaxPriority = pFileInfo->GetPriority();
-			pGroupQueue->push_back(pGroupInfo);
-		}
-		if (pFileInfo->GetID() < pGroupInfo->GetFirstID())
-		{
-			pGroupInfo->m_iFirstID = pFileInfo->GetID();
-		}
-		if (pFileInfo->GetID() > pGroupInfo->GetLastID())
-		{
-			pGroupInfo->m_iLastID = pFileInfo->GetID();
-		}
-		if (pFileInfo->GetTime() > 0)
-		{
-			if (pFileInfo->GetTime() < pGroupInfo->GetMinTime())
-			{
-				pGroupInfo->m_tMinTime = pFileInfo->GetTime();
-			}
-			if (pFileInfo->GetTime() > pGroupInfo->GetMaxTime())
-			{
-				pGroupInfo->m_tMaxTime = pFileInfo->GetTime();
-			}
-		}
-		if (pFileInfo->GetPriority() < pGroupInfo->GetMinPriority())
-		{
-			pGroupInfo->m_iMinPriority = pFileInfo->GetPriority();
-		}
-		if (pFileInfo->GetPriority() > pGroupInfo->GetMaxPriority())
-		{
-			pGroupInfo->m_iMaxPriority = pFileInfo->GetPriority();
-		}
-
-		pGroupInfo->m_iActiveDownloads += pFileInfo->GetActiveDownloads();
-		pGroupInfo->m_iRemainingFileCount++;
-		pGroupInfo->m_lRemainingSize += pFileInfo->GetRemainingSize();
-		if (pFileInfo->GetPaused())
-		{
-			pGroupInfo->m_lPausedSize += pFileInfo->GetRemainingSize();
-			pGroupInfo->m_iPausedFileCount++;
-		}
-
-		char szLoFileName[1024];
-		strncpy(szLoFileName, pFileInfo->GetFilename(), 1024);
-		szLoFileName[1024-1] = '\0';
-		for (char* p = szLoFileName; *p; p++) *p = tolower(*p); // convert string to lowercase
-		if (strstr(szLoFileName, ".par2"))
-		{
-			pGroupInfo->m_iRemainingParCount++;
-		}
-	}
 }
 
 
@@ -1119,7 +1107,6 @@ HistoryInfo::HistoryInfo(NZBInfo* pNZBInfo)
 {
 	m_eKind = hkNZBInfo;
 	m_pInfo = pNZBInfo;
-	pNZBInfo->Retain();
 	m_tTime = 0;
 	m_iID = ++m_iIDGen;
 }
@@ -1144,7 +1131,7 @@ HistoryInfo::~HistoryInfo()
 {
 	if (m_eKind == hkNZBInfo && m_pInfo)
 	{
-		((NZBInfo*)m_pInfo)->Release();
+		delete (NZBInfo*)m_pInfo;
 	}
 	else if (m_eKind == hkUrlInfo && m_pInfo)
 	{

@@ -139,20 +139,12 @@ void ParCoordinator::Stop()
 void ParCoordinator::PausePars(DownloadQueue* pDownloadQueue, NZBInfo* pNZBInfo)
 {
 	debug("ParCoordinator: Pausing pars");
-	
-	for (FileQueue::iterator it = pDownloadQueue->GetFileQueue()->begin(); it != pDownloadQueue->GetFileQueue()->end(); it++)
-	{
-		FileInfo* pFileInfo = *it;
-		if (pFileInfo->GetNZBInfo() == pNZBInfo)
-		{
-			g_pQueueCoordinator->GetQueueEditor()->LockedEditEntry(pDownloadQueue, pFileInfo->GetID(), false, 
-				QueueEditor::eaGroupPauseExtraPars, 0, NULL);
-			break;
-		}
-	}
+
+	g_pQueueCoordinator->GetQueueEditor()->LockedEditEntry(pDownloadQueue, pNZBInfo->GetGroupID(), 
+		QueueEditor::eaGroupPauseExtraPars, 0, NULL);
 }
 
-bool ParCoordinator::FindMainPars(const char* szPath, FileList* pFileList)
+bool ParCoordinator::FindMainPars(const char* szPath, ParFileList* pFileList)
 {
 	if (pFileList)
 	{
@@ -172,7 +164,7 @@ bool ParCoordinator::FindMainPars(const char* szPath, FileList* pFileList)
 
 			// check if the base file already added to list
 			bool exists = false;
-			for (FileList::iterator it = pFileList->begin(); it != pFileList->end(); it++)
+			for (ParFileList::iterator it = pFileList->begin(); it != pFileList->end(); it++)
 			{
 				const char* filename2 = *it;
 				exists = SameParCollection(filename, filename2);
@@ -509,12 +501,11 @@ void ParCoordinator::FindPars(DownloadQueue* pDownloadQueue, NZBInfo* pNZBInfo, 
 	szMainBaseFilename[maxlen] = '\0';
 	for (char* p = szMainBaseFilename; *p; p++) *p = tolower(*p); // convert string to lowercase
 
-	for (FileQueue::iterator it = pDownloadQueue->GetFileQueue()->begin(); it != pDownloadQueue->GetFileQueue()->end(); it++)
+	for (FileList::iterator it = pNZBInfo->GetFileList()->begin(); it != pNZBInfo->GetFileList()->end(); it++)
 	{
 		FileInfo* pFileInfo = *it;
 		int iBlocks = 0;
-		if (pFileInfo->GetNZBInfo() == pNZBInfo &&
-			ParseParFilename(pFileInfo->GetFilename(), NULL, &iBlocks) &&
+		if (ParseParFilename(pFileInfo->GetFilename(), NULL, &iBlocks) &&
 			iBlocks > 0)
 		{
 			bool bUseFile = true;

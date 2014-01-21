@@ -27,7 +27,7 @@
 #ifndef MESSAGEBASE_H
 #define MESSAGEBASE_H
 
-static const int32_t NZBMESSAGE_SIGNATURE = 0x6E7A621B; // = "nzb-XX" (protocol version)
+static const int32_t NZBMESSAGE_SIGNATURE = 0x6E7A621C; // = "nzb-XX" (protocol version)
 static const int NZBREQUESTFILENAMESIZE = 512;
 static const int NZBREQUESTPASSWORDSIZE = 32;
 
@@ -330,8 +330,6 @@ struct SNZBEditQueueRequest
 	SNZBRequestBase			m_MessageBase;			// Must be the first in the struct
 	int32_t					m_iAction;				// Action to be executed, see enum eRemoteEditAction
 	int32_t					m_iOffset;				// Offset to move (for m_iAction = 0)
-	int32_t					m_bSmartOrder;			// For Move-Actions: 0 - execute action for each ID in order they are placed in array;
-													// 1 - smart execute to ensure that the relative order of all affected IDs are not changed.
 	int32_t					m_iMatchMode;				// File/Group match mode, see enum eRemoteMatchMode
 	int32_t					m_iNrTrailingIDEntries;		// Number of ID-entries, following to this structure
 	int32_t					m_iNrTrailingNameEntries;	// Number of Name-entries, following to this structure

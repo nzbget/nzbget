@@ -435,7 +435,7 @@ void UrlCoordinator::UrlCompleted(UrlDownloader* pUrlDownloader)
 		{
 			HistoryInfo* pHistoryInfo = new HistoryInfo(pUrlInfo);
 			pHistoryInfo->SetTime(time(NULL));
-			pDownloadQueue->GetHistoryList()->push_front(pHistoryInfo);
+			pDownloadQueue->GetHistory()->push_front(pHistoryInfo);
 			bDeleteObj = false;
 		}
 			

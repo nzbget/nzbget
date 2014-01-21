@@ -269,7 +269,6 @@ void NCursesFrontend::Run()
     }
 
     FreeData();
-	ClearGroupQueue();
 	
     debug("Exiting NCursesFrontend-loop");
 }
@@ -288,13 +287,11 @@ void NCursesFrontend::Update(int iKey)
     if (m_iDataUpdatePos <= 0)
     {
         FreeData();
-		ClearGroupQueue();
 		m_iNeededLogEntries = m_iMessagesWinClientHeight;
         if (!PrepareData())
         {
             return;
         }
-		PrepareGroupQueue();
 
 		// recalculate frame sizes
 		CalcWindowSizes();
@@ -387,17 +384,22 @@ void NCursesFrontend::CalcWindowSizes()
 
 int NCursesFrontend::CalcQueueSize()
 {
+	int iQueueSize = 0;
+	DownloadQueue* pDownloadQueue = LockQueue();
 	if (m_bGroupFiles)
 	{
-		return m_groupQueue.size();
+		iQueueSize = pDownloadQueue->GetQueue()->size();
 	}
 	else
 	{
-		DownloadQueue* pDownloadQueue = LockQueue();
-		int iQueueSize = pDownloadQueue->GetFileQueue()->size();
-		UnlockQueue();
-		return iQueueSize;
+		for (NZBList::iterator it = pDownloadQueue->GetQueue()->begin(); it != pDownloadQueue->GetQueue()->end(); it++)
+		{
+			NZBInfo* pNZBInfo = *it;
+			iQueueSize += pNZBInfo->GetFileList()->size();
+		}
 	}
+	UnlockQueue();
+	return iQueueSize;
 }
 
 void NCursesFrontend::PlotLine(const char * szString, int iRow, int iPos, int iColorPair)
@@ -743,31 +745,24 @@ void NCursesFrontend::PrintQueue()
 
 void NCursesFrontend::PrintFileQueue()
 {
-	int iLineNr = m_iQueueWinTop;
-			
     DownloadQueue* pDownloadQueue = LockQueue();
-	if (pDownloadQueue->GetFileQueue()->empty())
-    {
-		char szBuffer[MAX_SCREEN_WIDTH];
-		snprintf(szBuffer, sizeof(szBuffer), "%s Files for downloading", m_bUseColor ? "" : "*** ");
-		szBuffer[MAX_SCREEN_WIDTH - 1] = '\0';
-		PrintTopHeader(szBuffer, iLineNr++, true);
-        PlotLine("Ready to receive nzb-job", iLineNr++, 0, NCURSES_COLORPAIR_TEXT);
-    }
-    else
-    {
-		iLineNr++;
-		long long lRemaining = 0;
-		long long lPaused = 0;
-		int iPausedFiles = 0;
-		int i = 0;
-        for (FileQueue::iterator it = pDownloadQueue->GetFileQueue()->begin(); it != pDownloadQueue->GetFileQueue()->end(); it++, i++)
-        {
-            FileInfo* pFileInfo = *it;
 
-			if (i >= m_iQueueScrollOffset && i < m_iQueueScrollOffset + m_iQueueWinHeight -1)
+	int iLineNr = m_iQueueWinTop + 1;
+	long long lRemaining = 0;
+	long long lPaused = 0;
+	int iPausedFiles = 0;
+	int iFileNum = 0;
+
+	for (NZBList::iterator it = pDownloadQueue->GetQueue()->begin(); it != pDownloadQueue->GetQueue()->end(); it++)
+	{
+		NZBInfo* pNZBInfo = *it;
+		for (FileList::iterator it2 = pNZBInfo->GetFileList()->begin(); it2 != pNZBInfo->GetFileList()->end(); it2++, iFileNum++)
+		{
+			FileInfo* pFileInfo = *it2;
+
+			if (iFileNum >= m_iQueueScrollOffset && iFileNum < m_iQueueScrollOffset + m_iQueueWinHeight -1)
 			{
-				PrintFilename(pFileInfo, iLineNr++, i == m_iSelectedQueueEntry);
+				PrintFilename(pFileInfo, iLineNr++, iFileNum == m_iSelectedQueueEntry);
 			}
 
 			if (pFileInfo->GetPaused())
@@ -776,8 +771,11 @@ void NCursesFrontend::PrintFileQueue()
 				lPaused += pFileInfo->GetRemainingSize();
 			}
 			lRemaining += pFileInfo->GetRemainingSize();
-        }
-		
+		}
+	}
+
+	if (iFileNum > 0)
+	{
 		char szRemaining[20];
 		Util::FormatFileSize(szRemaining, sizeof(szRemaining), lRemaining);
 
@@ -786,11 +784,21 @@ void NCursesFrontend::PrintFileQueue()
 		
 		char szBuffer[MAX_SCREEN_WIDTH];
 		snprintf(szBuffer, sizeof(szBuffer), " %sFiles for downloading - %i / %i files in queue - %s / %s", 
-			m_bUseColor ? "" : "*** ", (int)pDownloadQueue->GetFileQueue()->size(),
-			(int)pDownloadQueue->GetFileQueue()->size() - iPausedFiles, szRemaining, szUnpaused);
+			m_bUseColor ? "" : "*** ", iFileNum,
+			iFileNum - iPausedFiles, szRemaining, szUnpaused);
 		szBuffer[MAX_SCREEN_WIDTH - 1] = '\0';
 		PrintTopHeader(szBuffer, m_iQueueWinTop, true);
     }
+	else
+	{
+		iLineNr--;
+		char szBuffer[MAX_SCREEN_WIDTH];
+		snprintf(szBuffer, sizeof(szBuffer), "%s Files for downloading", m_bUseColor ? "" : "*** ");
+		szBuffer[MAX_SCREEN_WIDTH - 1] = '\0';
+		PrintTopHeader(szBuffer, iLineNr++, true);
+        PlotLine("Ready to receive nzb-job", iLineNr++, 0, NCURSES_COLORPAIR_TEXT);
+	}
+
     UnlockQueue();
 }
 
@@ -920,9 +928,8 @@ void NCursesFrontend::PrintGroupQueue()
 {
 	int iLineNr = m_iQueueWinTop;
 
-    LockQueue();
-	GroupQueue* pGroupQueue = &m_groupQueue;
-	if (pGroupQueue->empty())
+    DownloadQueue* pDownloadQueue = LockQueue();
+	if (pDownloadQueue->GetQueue()->empty())
     {
 		char szBuffer[MAX_SCREEN_WIDTH];
 		snprintf(szBuffer, sizeof(szBuffer), "%s NZBs for downloading", m_bUseColor ? "" : "*** ");
@@ -937,30 +944,28 @@ void NCursesFrontend::PrintGroupQueue()
 		ResetColWidths();
 		int iCalcLineNr = iLineNr;
 		int i = 0;
-        for (GroupQueue::iterator it = pGroupQueue->begin(); it != pGroupQueue->end(); it++, i++)
+        for (NZBList::iterator it = pDownloadQueue->GetQueue()->begin(); it != pDownloadQueue->GetQueue()->end(); it++, i++)
         {
-            GroupInfo* pGroupInfo = *it;
-
+            NZBInfo* pNZBInfo = *it;
+			pNZBInfo->CalcFileStats();
 			if (i >= m_iQueueScrollOffset && i < m_iQueueScrollOffset + m_iQueueWinHeight -1)
 			{
-				PrintGroupname(pGroupInfo, iCalcLineNr++, false, true);
+				PrintGroupname(pNZBInfo, iCalcLineNr++, false, true);
 			}
         }
 
 		long long lRemaining = 0;
 		long long lPaused = 0;
 		i = 0;
-        for (GroupQueue::iterator it = pGroupQueue->begin(); it != pGroupQueue->end(); it++, i++)
+        for (NZBList::iterator it = pDownloadQueue->GetQueue()->begin(); it != pDownloadQueue->GetQueue()->end(); it++, i++)
         {
-            GroupInfo* pGroupInfo = *it;
-
+            NZBInfo* pNZBInfo = *it;
 			if (i >= m_iQueueScrollOffset && i < m_iQueueScrollOffset + m_iQueueWinHeight -1)
 			{
-				PrintGroupname(pGroupInfo, iLineNr++, i == m_iSelectedQueueEntry, false);
+				PrintGroupname(pNZBInfo, iLineNr++, i == m_iSelectedQueueEntry, false);
 			}
-
-			lRemaining += pGroupInfo->GetRemainingSize();
-			lPaused += pGroupInfo->GetPausedSize();
+			lRemaining += pNZBInfo->GetRemainingSize();
+			lPaused += pNZBInfo->GetPausedSize();
         }
 		
 		char szRemaining[20];
@@ -971,7 +976,7 @@ void NCursesFrontend::PrintGroupQueue()
 		
 		char szBuffer[MAX_SCREEN_WIDTH];
 		snprintf(szBuffer, sizeof(szBuffer), " %sNZBs for downloading - %i NZBs in queue - %s / %s", 
-			m_bUseColor ? "" : "*** ", (int)pGroupQueue->size(), szRemaining, szUnpaused);
+			m_bUseColor ? "" : "*** ", (int)pDownloadQueue->GetQueue()->size(), szRemaining, szUnpaused);
 		szBuffer[MAX_SCREEN_WIDTH - 1] = '\0';
 		PrintTopHeader(szBuffer, m_iQueueWinTop, false);
     }
@@ -985,7 +990,7 @@ void NCursesFrontend::ResetColWidths()
 	m_iColWidthLeft = 0;
 }
 
-void NCursesFrontend::PrintGroupname(GroupInfo * pGroupInfo, int iRow, bool bSelected, bool bCalcColWidth)
+void NCursesFrontend::PrintGroupname(NZBInfo* pNZBInfo, int iRow, bool bSelected, bool bCalcColWidth)
 {
 	int color = NCURSES_COLORPAIR_TEXT;
 	char chBrace1 = '[';
@@ -1001,27 +1006,27 @@ void NCursesFrontend::PrintGroupname(GroupInfo * pGroupInfo, int iRow, bool bSel
 	}
 
 	const char* szDownloading = "";
-	if (pGroupInfo->GetActiveDownloads() > 0)
+	if (pNZBInfo->GetActiveDownloads() > 0)
 	{
 		szDownloading = " *";
 	}
 
-	long long lUnpausedRemainingSize = pGroupInfo->GetRemainingSize() - pGroupInfo->GetPausedSize();
+	long long lUnpausedRemainingSize = pNZBInfo->GetRemainingSize() - pNZBInfo->GetPausedSize();
 
 	char szRemaining[20];
 	Util::FormatFileSize(szRemaining, sizeof(szRemaining), lUnpausedRemainingSize);
 
 	char szPriority[100];
 	szPriority[0] = '\0';
-	if (pGroupInfo->GetMinPriority() != 0 || pGroupInfo->GetMaxPriority() != 0)
+	if (pNZBInfo->GetMinPriority() != 0 || pNZBInfo->GetMaxPriority() != 0)
 	{
-		if (pGroupInfo->GetMinPriority() == pGroupInfo->GetMaxPriority())
+		if (pNZBInfo->GetMinPriority() == pNZBInfo->GetMaxPriority())
 		{
-			sprintf(szPriority, " [%+i]", pGroupInfo->GetMinPriority());
+			sprintf(szPriority, " [%+i]", pNZBInfo->GetMinPriority());
 		}
 		else
 		{
-			sprintf(szPriority, " [%+i..%+i]", pGroupInfo->GetMinPriority(), pGroupInfo->GetMaxPriority());
+			sprintf(szPriority, " [%+i..%+i]", pNZBInfo->GetMinPriority(), pNZBInfo->GetMaxPriority());
 		}
 	}
 
@@ -1046,24 +1051,24 @@ void NCursesFrontend::PrintGroupname(GroupInfo * pGroupInfo, int iRow, bool bSel
 	if (bPrintFormatted)
 	{
 		char szFiles[20];
-		snprintf(szFiles, 20, "%i/%i", pGroupInfo->GetRemainingFileCount(), pGroupInfo->GetPausedFileCount());
+		snprintf(szFiles, 20, "%i/%i", pNZBInfo->GetRemainingFileCount(), pNZBInfo->GetPausedFileCount());
 		szFiles[20-1] = '\0';
 		
 		char szTotal[20];
-		Util::FormatFileSize(szTotal, sizeof(szTotal), pGroupInfo->GetNZBInfo()->GetSize());
+		Util::FormatFileSize(szTotal, sizeof(szTotal), pNZBInfo->GetSize());
 
 		char szNameWithIds[1024];
-		snprintf(szNameWithIds, 1024, "%c%i-%i%c%s%s %s", chBrace1, pGroupInfo->GetFirstID(), pGroupInfo->GetLastID(), chBrace2, 
-			szPriority, szDownloading, pGroupInfo->GetNZBInfo()->GetName());
+		snprintf(szNameWithIds, 1024, "%c%i-%i%c%s%s %s", chBrace1, pNZBInfo->GetFirstID(), pNZBInfo->GetLastID(), chBrace2, 
+			szPriority, szDownloading, pNZBInfo->GetName());
 		szNameWithIds[iNameLen] = '\0';
 
 		char szTime[100];
 		szTime[0] = '\0';
 		int iCurrentDownloadSpeed = m_bStandBy ? 0 : m_iCurrentDownloadSpeed;
-		if (pGroupInfo->GetPausedSize() > 0 && lUnpausedRemainingSize == 0)
+		if (pNZBInfo->GetPausedSize() > 0 && lUnpausedRemainingSize == 0)
 		{
 			snprintf(szTime, 100, "[paused]");
-			Util::FormatFileSize(szRemaining, sizeof(szRemaining), pGroupInfo->GetRemainingSize());
+			Util::FormatFileSize(szRemaining, sizeof(szRemaining), pNZBInfo->GetRemainingSize());
 		}
 		else if (iCurrentDownloadSpeed > 0 && !(m_bPauseDownload || m_bPauseDownload2))
 		{
@@ -1099,8 +1104,8 @@ void NCursesFrontend::PrintGroupname(GroupInfo * pGroupInfo, int iRow, bool bSel
 	}
 	else
 	{
-		snprintf(szBuffer, MAX_SCREEN_WIDTH, "%c%i-%i%c%s %s", chBrace1, pGroupInfo->GetFirstID(), 
-			pGroupInfo->GetLastID(), chBrace2, szDownloading, pGroupInfo->GetNZBInfo()->GetName());
+		snprintf(szBuffer, MAX_SCREEN_WIDTH, "%c%i-%i%c%s %s", chBrace1, pNZBInfo->GetFirstID(), 
+			pNZBInfo->GetLastID(), chBrace2, szDownloading, pNZBInfo->GetName());
 	}
 
 	szBuffer[MAX_SCREEN_WIDTH - 1] = '\0';
@@ -1111,37 +1116,25 @@ void NCursesFrontend::PrintGroupname(GroupInfo * pGroupInfo, int iRow, bool bSel
 	}
 }
 
-void NCursesFrontend::PrepareGroupQueue()
-{
-	m_groupQueue.clear();
-
-    DownloadQueue* pDownloadQueue = LockQueue();
-	pDownloadQueue->BuildGroups(&m_groupQueue);
-	UnlockQueue();
-}
-
-void NCursesFrontend::ClearGroupQueue()
-{
-	m_groupQueue.Clear();
-}
-
 bool NCursesFrontend::EditQueue(QueueEditor::EEditAction eAction, int iOffset)
 {
 	int ID = 0;
 
 	if (m_bGroupFiles)
 	{
-		if (m_iSelectedQueueEntry >= 0 && m_iSelectedQueueEntry < (int)m_groupQueue.size())
+		DownloadQueue* pDownloadQueue = LockQueue();
+		if (m_iSelectedQueueEntry >= 0 && m_iSelectedQueueEntry < (int)pDownloadQueue->GetQueue()->size())
 		{
-			GroupInfo* pGroupInfo = m_groupQueue[m_iSelectedQueueEntry];
-			ID = pGroupInfo->GetLastID();
+			NZBInfo* pNZBInfo = pDownloadQueue->GetQueue()->at(m_iSelectedQueueEntry);
+			pNZBInfo->CalcFileStats();
+			ID = pNZBInfo->GetLastID();
 			if (eAction == QueueEditor::eaFilePause)
 			{
-				if (pGroupInfo->GetRemainingSize() == pGroupInfo->GetPausedSize())
+				if (pNZBInfo->GetRemainingSize() == pNZBInfo->GetPausedSize())
 				{
 					eAction = QueueEditor::eaFileResume;
 				}
-				else if (pGroupInfo->GetPausedSize() == 0 && (pGroupInfo->GetRemainingParCount() > 0) &&
+				else if (pNZBInfo->GetPausedSize() == 0 && (pNZBInfo->GetRemainingParCount() > 0) &&
 					!(m_bLastPausePars && m_iLastEditEntry == m_iSelectedQueueEntry))
 				{
 					eAction = QueueEditor::eaFilePauseExtraPars;
@@ -1154,6 +1147,7 @@ bool NCursesFrontend::EditQueue(QueueEditor::EEditAction eAction, int iOffset)
 				}
 			}
 		}
+		UnlockQueue();
 
 		// map file-edit-actions to group-edit-actions
 		QueueEditor::EEditAction FileToGroupMap[] = {
@@ -1171,15 +1165,25 @@ bool NCursesFrontend::EditQueue(QueueEditor::EEditAction eAction, int iOffset)
 	else
 	{
 		DownloadQueue* pDownloadQueue = LockQueue();
-		if (m_iSelectedQueueEntry >= 0 && m_iSelectedQueueEntry < (int)pDownloadQueue->GetFileQueue()->size())
+
+		int iFileNum = 0;
+		for (NZBList::iterator it = pDownloadQueue->GetQueue()->begin(); it != pDownloadQueue->GetQueue()->end(); it++)
 		{
-			FileInfo* pFileInfo = pDownloadQueue->GetFileQueue()->at(m_iSelectedQueueEntry);
-			ID = pFileInfo->GetID();
-			if (eAction == QueueEditor::eaFilePause)
+			NZBInfo* pNZBInfo = *it;
+			for (FileList::iterator it2 = pNZBInfo->GetFileList()->begin(); it2 != pNZBInfo->GetFileList()->end(); it2++, iFileNum++)
 			{
-				eAction = !pFileInfo->GetPaused() ? QueueEditor::eaFilePause : QueueEditor::eaFileResume;
+				if (m_iSelectedQueueEntry == iFileNum)
+				{
+					FileInfo* pFileInfo = *it2;
+					ID = pFileInfo->GetID();
+					if (eAction == QueueEditor::eaFilePause)
+					{
+						eAction = !pFileInfo->GetPaused() ? QueueEditor::eaFilePause : QueueEditor::eaFileResume;
+					}
+				}
 			}
 		}
+
 		UnlockQueue();
 	}
 

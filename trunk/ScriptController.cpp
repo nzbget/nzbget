@@ -1160,24 +1160,9 @@ void NZBAddedScriptController::StartScript(DownloadQueue* pDownloadQueue, NZBInf
 	pScriptController->SetEnvVar("NZBNA_FILENAME", pNZBInfo->GetFilename());
 	pScriptController->SetEnvVar("NZBNA_CATEGORY", pNZBInfo->GetCategory());
 
-	int iLastID = 0;
-	int iMaxPriority = 0;
-
-	for (FileQueue::iterator it = pDownloadQueue->GetFileQueue()->begin(); it != pDownloadQueue->GetFileQueue()->end(); it++)
-    {
-        FileInfo* pFileInfo = *it;
-		if (pFileInfo->GetNZBInfo() == pNZBInfo && ( pFileInfo->GetPriority() > iMaxPriority || iLastID == 0))
-		{
-			iMaxPriority = pFileInfo->GetPriority();
-		}
-		if (pFileInfo->GetNZBInfo() == pNZBInfo && pFileInfo->GetID() > iLastID)
-		{
-			iLastID = pFileInfo->GetID();
-		}
-	}
-
-	pScriptController->SetIntEnvVar("NZBNA_LASTID", iLastID);
-	pScriptController->SetIntEnvVar("NZBNA_PRIORITY", iMaxPriority);
+	pNZBInfo->CalcFileStats();
+	pScriptController->SetIntEnvVar("NZBNA_LASTID", pNZBInfo->GetLastID());
+	pScriptController->SetIntEnvVar("NZBNA_PRIORITY", pNZBInfo->GetMaxPriority());
 
 	pScriptController->PrepareEnvParameters(pNZBInfo, NULL);
 
