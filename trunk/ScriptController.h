@@ -124,7 +124,6 @@ public:
 	virtual void		Run();
 	virtual void		Stop();
 	static void			StartJob(PostInfo* pPostInfo);
-	static void			InitParamsForNewNZB(NZBInfo* pNZBInfo);
 };
 
 class NZBScriptController : public ScriptController
