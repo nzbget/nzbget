@@ -127,72 +127,75 @@ void Scheduler::CheckTasks()
 
 	time_t tCurrent = time(NULL);
 
-	if (m_bDetectClockChanges)
+	if (!m_TaskList.empty())
 	{
-		// Detect large step changes of system time 
-		time_t tDiff = tCurrent - m_tLastCheck;
-		if (tDiff > 60*90 || tDiff < -60*90)
+		if (m_bDetectClockChanges)
 		{
-			debug("Reset scheduled tasks (detected clock adjustment greater than 90 minutes)");
-			m_bExecuteProcess = false;
-			m_tLastCheck = tCurrent;
+			// Detect large step changes of system time 
+			time_t tDiff = tCurrent - m_tLastCheck;
+			if (tDiff > 60*90 || tDiff < -60*90)
+			{
+				debug("Reset scheduled tasks (detected clock adjustment greater than 90 minutes)");
+				m_bExecuteProcess = false;
+				m_tLastCheck = tCurrent;
 
+				for (TaskList::iterator it = m_TaskList.begin(); it != m_TaskList.end(); it++)
+				{
+					Task* pTask = *it;
+					pTask->m_tLastExecuted = 0;
+				}
+			}
+		}
+
+		tm tmCurrent;
+		localtime_r(&tCurrent, &tmCurrent);
+		tm tmLastCheck;
+		localtime_r(&m_tLastCheck, &tmLastCheck);
+
+		tm tmLoop;
+		memcpy(&tmLoop, &tmLastCheck, sizeof(tmLastCheck));
+		tmLoop.tm_hour = tmCurrent.tm_hour;
+		tmLoop.tm_min = tmCurrent.tm_min;
+		tmLoop.tm_sec = tmCurrent.tm_sec;
+		time_t tLoop = mktime(&tmLoop);
+
+		while (tLoop <= tCurrent)
+		{
 			for (TaskList::iterator it = m_TaskList.begin(); it != m_TaskList.end(); it++)
 			{
 				Task* pTask = *it;
-				pTask->m_tLastExecuted = 0;
-			}
-		}
-	}
-
-	tm tmCurrent;
-	localtime_r(&tCurrent, &tmCurrent);
-	tm tmLastCheck;
-	localtime_r(&m_tLastCheck, &tmLastCheck);
-
-	tm tmLoop;
-	memcpy(&tmLoop, &tmLastCheck, sizeof(tmLastCheck));
-	tmLoop.tm_hour = tmCurrent.tm_hour;
-	tmLoop.tm_min = tmCurrent.tm_min;
-	tmLoop.tm_sec = tmCurrent.tm_sec;
-	time_t tLoop = mktime(&tmLoop);
-
-	while (tLoop <= tCurrent)
-	{
-		for (TaskList::iterator it = m_TaskList.begin(); it != m_TaskList.end(); it++)
-		{
-			Task* pTask = *it;
-			if (pTask->m_tLastExecuted != tLoop)
-			{
-				tm tmAppoint;
-				memcpy(&tmAppoint, &tmLoop, sizeof(tmLoop));
-				tmAppoint.tm_hour = pTask->m_iHours;
-				tmAppoint.tm_min = pTask->m_iMinutes;
-				tmAppoint.tm_sec = 0;
-
-				time_t tAppoint = mktime(&tmAppoint);
-				tAppoint -= g_pOptions->GetTimeCorrection();
-
-				int iWeekDay = tmAppoint.tm_wday;
-				if (iWeekDay == 0)
+				if (pTask->m_tLastExecuted != tLoop)
 				{
-					iWeekDay = 7;
-				}
+					tm tmAppoint;
+					memcpy(&tmAppoint, &tmLoop, sizeof(tmLoop));
+					tmAppoint.tm_hour = pTask->m_iHours;
+					tmAppoint.tm_min = pTask->m_iMinutes;
+					tmAppoint.tm_sec = 0;
 
-				bool bWeekDayOK = pTask->m_iWeekDaysBits == 0 || (pTask->m_iWeekDaysBits & (1 << (iWeekDay - 1)));
-				bool bDoTask = bWeekDayOK && m_tLastCheck < tAppoint && tAppoint <= tCurrent;
+					time_t tAppoint = mktime(&tmAppoint);
+					tAppoint -= g_pOptions->GetTimeCorrection();
 
-				//debug("TEMP: 1) m_tLastCheck=%i, tCurrent=%i, tLoop=%i, tAppoint=%i, bWeekDayOK=%i, bDoTask=%i", m_tLastCheck, tCurrent, tLoop, tAppoint, (int)bWeekDayOK, (int)bDoTask);
+					int iWeekDay = tmAppoint.tm_wday;
+					if (iWeekDay == 0)
+					{
+						iWeekDay = 7;
+					}
 
-				if (bDoTask)
-				{
-					ExecuteTask(pTask);
-					pTask->m_tLastExecuted = tLoop;
+					bool bWeekDayOK = pTask->m_iWeekDaysBits == 0 || (pTask->m_iWeekDaysBits & (1 << (iWeekDay - 1)));
+					bool bDoTask = bWeekDayOK && m_tLastCheck < tAppoint && tAppoint <= tCurrent;
+
+					//debug("TEMP: 1) m_tLastCheck=%i, tCurrent=%i, tLoop=%i, tAppoint=%i, bWeekDayOK=%i, bDoTask=%i", m_tLastCheck, tCurrent, tLoop, tAppoint, (int)bWeekDayOK, (int)bDoTask);
+
+					if (bDoTask)
+					{
+						ExecuteTask(pTask);
+						pTask->m_tLastExecuted = tLoop;
+					}
 				}
 			}
+			tLoop += 60*60*24; // inc day
+			localtime_r(&tLoop, &tmLoop);
 		}
-		tLoop += 60*60*24; // inc day
-		localtime_r(&tLoop, &tmLoop);
 	}
 
 	m_tLastCheck = tCurrent;
