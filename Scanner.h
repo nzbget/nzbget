@@ -112,7 +112,6 @@ private:
 	void				ProcessIncomingFile(const char* szDirectory, const char* szBaseFilename,
 							const char* szFullFilename, const char* szCategory);
 	bool				CanProcessFile(const char* szFullFilename, bool bCheckStat);
-	void				InitPPParameters(const char* szCategory, NZBParameterList* pParameters);
 	void				DropOldFiles();
 	void				ClearQueueList();
 
@@ -125,6 +124,7 @@ public:
 							const char* szDupeKey, int iDupeScore, EDupeMode eDupeMode,
 							NZBParameterList* pParameters, bool bAddTop, bool bAddPaused,
 							const char* szFileName, const char* szBuffer, int iBufSize);
+	void				InitPPParameters(const char* szCategory, NZBParameterList* pParameters);
 };
 
 #endif

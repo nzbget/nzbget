@@ -346,12 +346,14 @@ void Run(bool bReload)
 		// Standalone-mode
 		if (!g_pOptions->GetServerMode())
 		{
-			NZBFile* pNZBFile = NZBFile::Create(g_pOptions->GetArgFilename(), g_pOptions->GetAddCategory() ? g_pOptions->GetAddCategory() : "");
+			const char* szCategory = g_pOptions->GetAddCategory() ? g_pOptions->GetAddCategory() : "";
+			NZBFile* pNZBFile = NZBFile::Create(g_pOptions->GetArgFilename(), szCategory);
 			if (!pNZBFile)
 			{
 				abort("FATAL ERROR: Parsing NZB-document %s failed\n\n", g_pOptions->GetArgFilename() ? g_pOptions->GetArgFilename() : "N/A");
 				return;
 			}
+			g_pScanner->InitPPParameters(szCategory, pNZBFile->GetNZBInfo()->GetParameters());
 			g_pQueueCoordinator->AddNZBFileToQueue(pNZBFile, false);
 			delete pNZBFile;
 		}
