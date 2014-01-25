@@ -519,6 +519,7 @@ bool Scanner::AddFileToQueue(const char* szFilename, const char* szNZBName, cons
 			pFileInfo->SetPriority(iPriority);
 			pFileInfo->SetPaused(bAddPaused);
 		}
+		pNZBFile->GetNZBInfo()->CalcFileStats(); // update priority
 
 		g_pQueueCoordinator->AddNZBFileToQueue(pNZBFile, bAddTop);
 	}
