@@ -302,8 +302,6 @@ NZBInfo::NZBInfo(bool bPersistent) : m_FileList(true)
 	m_eDupeMode = dmScore;
 	m_iFullContentHash = 0;
 	m_iFilteredContentHash = 0;
-	m_iFirstID = 0;
-	m_iLastID = 0;
 	m_iPausedFileCount = 0;
 	m_lRemainingSize = 0;
 	m_lPausedSize = 0;
@@ -546,8 +544,6 @@ int NZBInfo::CalcCriticalHealth()
 
 void NZBInfo::CalcFileStats()
 {
-	m_iFirstID = 0;
-	m_iLastID = 0;
 	m_tMinTime = 0;
 	m_tMaxTime = 0;
 	m_iMinPriority = 0;
@@ -559,21 +555,11 @@ void NZBInfo::CalcFileStats()
         FileInfo* pFileInfo = *it;
 		if (bFirst)
 		{
-			m_iFirstID = pFileInfo->GetID();
-			m_iLastID = pFileInfo->GetID();
 			m_tMinTime = pFileInfo->GetTime();
 			m_tMaxTime = pFileInfo->GetTime();
 			m_iMinPriority = pFileInfo->GetPriority();
 			m_iMaxPriority = pFileInfo->GetPriority();
 			bFirst = false;
-		}
-		if (pFileInfo->GetID() < m_iFirstID)
-		{
-			m_iFirstID = pFileInfo->GetID();
-		}
-		if (pFileInfo->GetID() > m_iLastID)
-		{
-			m_iLastID = pFileInfo->GetID();
 		}
 		if (pFileInfo->GetTime() > 0)
 		{

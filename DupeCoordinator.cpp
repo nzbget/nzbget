@@ -303,9 +303,8 @@ void DupeCoordinator::NZBFound(DownloadQueue* pDownloadQueue, NZBInfo* pNZBInfo)
 					// the existing queue item is moved to history as dupe-backup
 					info("Moving collection %s with lower duplicate score to history", pQueuedNZBInfo->GetName());
 					pQueuedNZBInfo->SetDeleteStatus(NZBInfo::dsDupe);
-					pQueuedNZBInfo->CalcFileStats();	// needed to access GetLastID()
 					g_pQueueCoordinator->GetQueueEditor()->LockedEditEntry(pDownloadQueue,
-						pQueuedNZBInfo->GetLastID(), QueueEditor::eaGroupDelete, 0, NULL);
+						pQueuedNZBInfo->GetGroupID(), QueueEditor::eaGroupDelete, 0, NULL);
 					it = pDownloadQueue->GetQueue()->begin() + index;
 				}
 			}
