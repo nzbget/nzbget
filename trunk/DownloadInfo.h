@@ -405,8 +405,6 @@ private:
 	int					m_iIDMessageGen;
 
 	// File statistics
-	int					m_iFirstID;
-	int					m_iLastID;
 	time_t				m_tMinTime;
 	time_t				m_tMaxTime;
 	int					m_iMinPriority;
@@ -531,8 +529,6 @@ public:
 
 	// File statistics
 	void				CalcFileStats();
-	int					GetFirstID() { return m_iFirstID; }
-	int					GetLastID() { return m_iLastID; }
 	time_t				GetMinTime() { return m_tMinTime; }
 	time_t				GetMaxTime() { return m_tMaxTime; }
 	int					GetMinPriority() { return m_iMinPriority; }

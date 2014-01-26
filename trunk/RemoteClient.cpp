@@ -539,7 +539,7 @@ bool RemoteClient::RequestServerList(bool bFiles, bool bGroups, const char* szPa
 
 				if (!szPattern || ((MatchedNZBInfo*)pNZBInfo)->m_bMatch)
 				{
-					printf("[%i-%i] %s%s (%i file%s, %s%s%s)%s%s\n", pNZBInfo->GetFirstID(), pNZBInfo->GetLastID(), szPriority, 
+					printf("[%i] %s%s (%i file%s, %s%s%s)%s%s\n", pNZBInfo->GetGroupID(), szPriority, 
 						pNZBInfo->GetName(), (int)pNZBInfo->GetFileList()->size(),
 						pNZBInfo->GetFileList()->size() > 1 ? "s" : "", szRemaining, 
 						szPaused, szThreads, szCategory, szParameters);

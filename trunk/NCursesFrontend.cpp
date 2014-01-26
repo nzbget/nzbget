@@ -1057,7 +1057,7 @@ void NCursesFrontend::PrintGroupname(NZBInfo* pNZBInfo, int iRow, bool bSelected
 		Util::FormatFileSize(szTotal, sizeof(szTotal), pNZBInfo->GetSize());
 
 		char szNameWithIds[1024];
-		snprintf(szNameWithIds, 1024, "%c%i-%i%c%s%s %s", chBrace1, pNZBInfo->GetFirstID(), pNZBInfo->GetLastID(), chBrace2, 
+		snprintf(szNameWithIds, 1024, "%c%i%c%s%s %s", chBrace1, pNZBInfo->GetGroupID(), chBrace2, 
 			szPriority, szDownloading, pNZBInfo->GetName());
 		szNameWithIds[iNameLen] = '\0';
 
@@ -1103,8 +1103,8 @@ void NCursesFrontend::PrintGroupname(NZBInfo* pNZBInfo, int iRow, bool bSelected
 	}
 	else
 	{
-		snprintf(szBuffer, MAX_SCREEN_WIDTH, "%c%i-%i%c%s %s", chBrace1, pNZBInfo->GetFirstID(), 
-			pNZBInfo->GetLastID(), chBrace2, szDownloading, pNZBInfo->GetName());
+		snprintf(szBuffer, MAX_SCREEN_WIDTH, "%c%i%c%s %s", chBrace1, pNZBInfo->GetGroupID(), 
+			chBrace2, szDownloading, pNZBInfo->GetName());
 	}
 
 	szBuffer[MAX_SCREEN_WIDTH - 1] = '\0';

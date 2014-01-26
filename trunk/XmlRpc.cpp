@@ -1791,7 +1791,7 @@ void ListGroupsXmlCommand::Execute()
 		iPausedSizeMB = (int)(pNZBInfo->GetPausedSize() / 1024 / 1024);
 
 		snprintf(szItemBuf, iItemBufSize, IsJson() ? JSON_LIST_ITEM_START : XML_LIST_ITEM_START,
-			pNZBInfo->GetFirstID(), pNZBInfo->GetLastID(), iRemainingSizeLo, iRemainingSizeHi, iRemainingSizeMB,
+			pNZBInfo->GetGroupID(), pNZBInfo->GetGroupID(), iRemainingSizeLo, iRemainingSizeHi, iRemainingSizeMB,
 			iPausedSizeLo, iPausedSizeHi, iPausedSizeMB, (int)pNZBInfo->GetFileList()->size(),
 			pNZBInfo->GetRemainingParCount(), pNZBInfo->GetMinTime(), pNZBInfo->GetMaxTime(),
 			pNZBInfo->GetMinPriority(), pNZBInfo->GetMaxPriority(), pNZBInfo->GetActiveDownloads());
