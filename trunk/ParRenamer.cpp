@@ -1,7 +1,7 @@
 /*
  *  This file is part of nzbget
  *
- *  Copyright (C) 2013 Andrey Prygunkov <hugbug@users.sourceforge.net>
+ *  Copyright (C) 2013-2014 Andrey Prygunkov <hugbug@users.sourceforge.net>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -77,7 +77,7 @@ ParRenamer::FileHash::~FileHash()
 
 ParRenamer::ParRenamer()
 {
-    debug("Creating ParRenamer");
+	debug("Creating ParRenamer");
 
 	m_eStatus = psFailed;
 	m_szDestDir = NULL;
@@ -89,7 +89,7 @@ ParRenamer::ParRenamer()
 
 ParRenamer::~ParRenamer()
 {
-    debug("Destroying ParRenamer");
+	debug("Destroying ParRenamer");
 
 	free(m_szDestDir);
 	free(m_szInfoName);
@@ -157,7 +157,16 @@ void ParRenamer::Run()
 		debug("Checking %s", szDestDir);
 		ClearHashList();
 		LoadParFiles(szDestDir);
-		CheckFiles(szDestDir);
+
+		if (m_FileHashList.empty())
+		{
+			int iSavedCurFile = m_iCurFile;
+			CheckFiles(szDestDir, true);
+			m_iCurFile = iSavedCurFile; // restore progress indicator
+			LoadParFiles(szDestDir);
+		}
+
+		CheckFiles(szDestDir, false);
 	}
 	
 	if (m_bCancelled)
@@ -211,7 +220,7 @@ void ParRenamer::LoadParFiles(const char* szDestDir)
 {
 	ParCoordinator::ParFileList parFileList;
 	ParCoordinator::FindMainPars(szDestDir, &parFileList);
-	
+
 	for (ParCoordinator::ParFileList::iterator it = parFileList.begin(); it != parFileList.end(); it++)
 	{
 		char* szParFilename = *it;
@@ -252,7 +261,7 @@ void ParRenamer::LoadParFile(const char* szParFilename)
 	delete pRepairer;
 }
 
-void ParRenamer::CheckFiles(const char* szDestDir)
+void ParRenamer::CheckFiles(const char* szDestDir, bool bRenamePars)
 {
 	DirBrowser dir(szDestDir);
 	while (const char* filename = dir.Next())
@@ -271,30 +280,37 @@ void ParRenamer::CheckFiles(const char* szDestDir)
 				UpdateProgress();
 				m_iCurFile++;
 				
-				CheckFile(szDestDir, szFullFilename);
+				if (bRenamePars)
+				{
+					CheckParFile(szDestDir, szFullFilename);
+				}
+				else
+				{
+					CheckRegularFile(szDestDir, szFullFilename);
+				}
 			}
 		}
 	}
 }
 
-void ParRenamer::CheckFile(const char* szDestDir, const char* szFilename)
+void ParRenamer::CheckRegularFile(const char* szDestDir, const char* szFilename)
 {
 	debug("Computing hash for %s", szFilename);
 
 	const int iBlockSize = 16*1024;
 	
-    FILE* pFile = fopen(szFilename, "rb");
-    if (!pFile)
-    {
+	FILE* pFile = fopen(szFilename, "rb");
+	if (!pFile)
+	{
 		PrintMessage(Message::mkError, "Could not open file %s", szFilename);
-        return;
-    }
+		return;
+	}
 
 	// load first 16K of the file into buffer
 	
 	void* pBuffer = malloc(iBlockSize);
 	
-    int iReadBytes = fread(pBuffer, 1, iBlockSize, pFile);
+	int iReadBytes = fread(pBuffer, 1, iBlockSize, pFile);
 	int iError = ferror(pFile);
 	if (iReadBytes != iBlockSize && iError)
 	{
@@ -302,7 +318,7 @@ void ParRenamer::CheckFile(const char* szDestDir, const char* szFilename)
 		return;
 	}
 	
-    fclose(pFile);
+	fclose(pFile);
 	
 	MD5Hash hash16k;
 	MD5Context context;
@@ -339,6 +355,79 @@ void ParRenamer::CheckFile(const char* szDestDir, const char* szFilename)
 			
 			break;
 		}
+	}
+}
+
+/*
+* For files not having par2-extensions: checks if the file is a par2-file and renames
+* it according to its set-id.
+*/
+void ParRenamer::CheckParFile(const char* szDestDir, const char* szFilename)
+{
+	debug("Checking par2-header for %s", szFilename);
+
+	const char* szBasename = Util::BaseFileName(szFilename);
+	const char* szExtension = strrchr(szBasename, '.');
+	if (szExtension && !strcasecmp(szExtension, ".par2"))
+	{
+		// do not process files already having par2-extension
+		return;
+	}
+
+	FILE* pFile = fopen(szFilename, "rb");
+	if (!pFile)
+	{
+		PrintMessage(Message::mkError, "Could not open file %s", szFilename);
+		return;
+	}
+
+	// load par2-header
+	PACKET_HEADER header;
+
+	int iReadBytes = fread(&header, 1, sizeof(header), pFile);
+	int iError = ferror(pFile);
+	if (iReadBytes != sizeof(header) && iError)
+	{
+		PrintMessage(Message::mkError, "Could not read file %s", szFilename);
+		return;
+	}
+
+	fclose(pFile);
+
+	// Check the packet header
+	if (packet_magic != header.magic ||          // not par2-file
+		sizeof(PACKET_HEADER) > header.length || // packet length is too small
+		0 != (header.length & 3) ||              // packet length is not a multiple of 4
+		Util::FileSize(szFilename) < (int)header.length)       // packet would extend beyond the end of the file
+	{
+		// not par2-file or damaged header, ignoring the file
+		return;
+	}
+
+	char szSetId[33];
+	strncpy(szSetId, header.setid.print().c_str(), sizeof(szSetId));
+	szSetId[33-1] = '\0';
+	for (char* p = szSetId; *p; p++) *p = tolower(*p); // convert string to lowercase
+
+	debug("Renaming: %s; setid: %s", Util::BaseFileName(szFilename), szSetId);
+
+	char szDestFileName[1024];
+	int iNum = 1;
+	while (iNum == 1 || Util::FileExists(szDestFileName))
+	{
+		snprintf(szDestFileName, 1024, "%s%c%s.vol%03i+01.PAR2", szDestDir, PATH_SEPARATOR, szSetId, iNum);
+		szDestFileName[1024-1] = '\0';
+		iNum++;
+	}
+
+	PrintMessage(Message::mkInfo, "Renaming %s to %s", Util::BaseFileName(szFilename), Util::BaseFileName(szDestFileName));
+	if (Util::MoveFile(szFilename, szDestFileName))
+	{
+		m_iRenamedCount++;
+	}
+	else
+	{
+		PrintMessage(Message::mkError, "Could not rename %s to %s", szFilename, szDestFileName);
 	}
 }
 

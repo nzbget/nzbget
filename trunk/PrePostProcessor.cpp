@@ -1,7 +1,7 @@
 /*
  *  This file is part of nzbget
  *
- *  Copyright (C) 2007-2013 Andrey Prygunkov <hugbug@users.sourceforge.net>
+ *  Copyright (C) 2007-2014 Andrey Prygunkov <hugbug@users.sourceforge.net>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -1239,11 +1239,11 @@ void PrePostProcessor::HistoryReturn(DownloadQueue* pDownloadQueue, HistoryList:
 		{
 			pNZBInfo->SetUnpackStatus(NZBInfo::usNone);
 			pNZBInfo->SetCleanupStatus(NZBInfo::csNone);
+			pNZBInfo->SetRenameStatus(NZBInfo::rsNone);
 
 			if (m_ParCoordinator.FindMainPars(pNZBInfo->GetDestDir(), NULL))
 			{
 				pNZBInfo->SetParStatus(NZBInfo::psNone);
-				pNZBInfo->SetRenameStatus(NZBInfo::rsNone);
 			}
 		}
 		pNZBInfo->SetDeleteStatus(NZBInfo::dsNone);
