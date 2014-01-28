@@ -1,7 +1,7 @@
 /*
  *  This file is part of nzbget
  *
- *  Copyright (C) 2013 Andrey Prygunkov <hugbug@users.sourceforge.net>
+ *  Copyright (C) 2013-2014 Andrey Prygunkov <hugbug@users.sourceforge.net>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -78,8 +78,9 @@ private:
 	void				CheckDir(const char* szDestDir);
 	void				LoadParFiles(const char* szDestDir);
 	void				LoadParFile(const char* szParFilename);
-	void				CheckFiles(const char* szDestDir);
-	void				CheckFile(const char* szDestDir, const char* szFilename);
+	void				CheckFiles(const char* szDestDir, bool bRenamePars);
+	void				CheckRegularFile(const char* szDestDir, const char* szFilename);
+	void				CheckParFile(const char* szDestDir, const char* szFilename);
 
 protected:
 	virtual void		UpdateProgress() {}
