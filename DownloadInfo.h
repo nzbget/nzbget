@@ -2,7 +2,7 @@
  *  This file is part of nzbget
  *
  *  Copyright (C) 2004 Sven Henkel <sidddy@users.sourceforge.net>
- *  Copyright (C) 2007-2013 Andrey Prygunkov <hugbug@users.sourceforge.net>
+ *  Copyright (C) 2007-2014 Andrey Prygunkov <hugbug@users.sourceforge.net>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -513,7 +513,7 @@ public:
 	ScriptStatusList*	GetScriptStatuses() { return &m_scriptStatuses; }        // needs locking (for shared objects)
 	ServerStatList*		GetServerStats() { return &m_ServerStats; }
 	int					CalcHealth();
-	int					CalcCriticalHealth();
+	int					CalcCriticalHealth(bool bAllowEstimation);
 	const char*			GetDupeKey() { return m_szDupeKey; }					// needs locking (for shared objects)
 	void				SetDupeKey(const char* szDupeKey);						// needs locking (for shared objects)
 	int					GetDupeScore() { return m_iDupeScore; }

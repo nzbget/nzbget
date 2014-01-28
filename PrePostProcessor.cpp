@@ -678,11 +678,12 @@ void PrePostProcessor::StartJob(DownloadQueue* pDownloadQueue, PostInfo* pPostIn
 		return;
 	}
 	else if (pPostInfo->GetNZBInfo()->GetParStatus() == NZBInfo::psSkipped &&
-		pPostInfo->GetNZBInfo()->CalcHealth() < pPostInfo->GetNZBInfo()->CalcCriticalHealth() &&
+		pPostInfo->GetNZBInfo()->CalcHealth() < pPostInfo->GetNZBInfo()->CalcCriticalHealth(false) &&
+		pPostInfo->GetNZBInfo()->CalcCriticalHealth(false) < 1000 &&
 		m_ParCoordinator.FindMainPars(pPostInfo->GetNZBInfo()->GetDestDir(), NULL))
 	{
 		warn("Skipping par-check for %s due to health %.1f%% below critical %.1f%%", pPostInfo->GetInfoName(),
-			pPostInfo->GetNZBInfo()->CalcHealth() / 10.0, pPostInfo->GetNZBInfo()->CalcCriticalHealth() / 10.0);
+			pPostInfo->GetNZBInfo()->CalcHealth() / 10.0, pPostInfo->GetNZBInfo()->CalcCriticalHealth(false) / 10.0);
 		pPostInfo->GetNZBInfo()->SetParStatus(NZBInfo::psFailure);
 		return;
 	}

@@ -2,7 +2,7 @@
  *  This file is part of nzbget
  *
  *  Copyright (C) 2005 Bo Cordes Petersen <placebodk@users.sourceforge.net>
- *  Copyright (C) 2007-2013 Andrey Prygunkov <hugbug@users.sourceforge.net>
+ *  Copyright (C) 2007-2014 Andrey Prygunkov <hugbug@users.sourceforge.net>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -881,7 +881,7 @@ void QueueCoordinator::CheckHealth(FileInfo* pFileInfo)
 	if (g_pOptions->GetHealthCheck() == Options::hcNone ||
 		pFileInfo->GetNZBInfo()->GetHealthPaused() ||
 		pFileInfo->GetNZBInfo()->GetDeleteStatus() == NZBInfo::dsHealth ||
-		pFileInfo->GetNZBInfo()->CalcHealth() >= pFileInfo->GetNZBInfo()->CalcCriticalHealth())
+		pFileInfo->GetNZBInfo()->CalcHealth() >= pFileInfo->GetNZBInfo()->CalcCriticalHealth(true))
 	{
 		return;
 	}
@@ -889,14 +889,14 @@ void QueueCoordinator::CheckHealth(FileInfo* pFileInfo)
 	if (g_pOptions->GetHealthCheck() == Options::hcPause)
 	{
 		warn("Pausing %s due to health %.1f%% below critical %.1f%%", pFileInfo->GetNZBInfo()->GetName(),
-			pFileInfo->GetNZBInfo()->CalcHealth() / 10.0, pFileInfo->GetNZBInfo()->CalcCriticalHealth() / 10.0);
+			pFileInfo->GetNZBInfo()->CalcHealth() / 10.0, pFileInfo->GetNZBInfo()->CalcCriticalHealth(true) / 10.0);
 		pFileInfo->GetNZBInfo()->SetHealthPaused(true);
 		m_QueueEditor.LockedEditEntry(&m_DownloadQueue, pFileInfo->GetID(), QueueEditor::eaGroupPause, 0, NULL);
 	}
 	else if (g_pOptions->GetHealthCheck() == Options::hcDelete)
 	{
 		warn("Cancelling download and deleting %s due to health %.1f%% below critical %.1f%%", pFileInfo->GetNZBInfo()->GetName(),
-			pFileInfo->GetNZBInfo()->CalcHealth() / 10.0, pFileInfo->GetNZBInfo()->CalcCriticalHealth() / 10.0);
+			pFileInfo->GetNZBInfo()->CalcHealth() / 10.0, pFileInfo->GetNZBInfo()->CalcCriticalHealth(true) / 10.0);
 		pFileInfo->GetNZBInfo()->SetDeleteStatus(NZBInfo::dsHealth);
 		m_QueueEditor.LockedEditEntry(&m_DownloadQueue, pFileInfo->GetID(), QueueEditor::eaGroupDelete, 0, NULL);
 	}
