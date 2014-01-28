@@ -2,7 +2,7 @@
  *  This file is part of nzbget
  *
  *  Copyright (C) 2004 Sven Henkel <sidddy@users.sourceforge.net>
- *  Copyright (C) 2007-2013 Andrey Prygunkov <hugbug@users.sourceforge.net>
+ *  Copyright (C) 2007-2014 Andrey Prygunkov <hugbug@users.sourceforge.net>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -524,7 +524,7 @@ int NZBInfo::CalcHealth()
 	return iHealth;
 }
 
-int NZBInfo::CalcCriticalHealth()
+int NZBInfo::CalcCriticalHealth(bool bAllowEstimation)
 {
 	long long lGoodParSize = m_lParSize - m_lParCurrentFailedSize;
 	int iCriticalHealth = (int)(Util::Int64ToFloat(m_lSize - lGoodParSize*2) * 1000.0 /
@@ -538,6 +538,12 @@ int NZBInfo::CalcCriticalHealth()
 	{
 		iCriticalHealth = 999;
 	}
+
+	if (iCriticalHealth == 1000 && bAllowEstimation)
+	{
+		// using empirical critical health 85%, to avoid false alarms for downloads with renamed par-files
+		iCriticalHealth = 850;
+	}		
 
 	return iCriticalHealth;
 }

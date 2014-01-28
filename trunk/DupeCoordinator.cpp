@@ -1,7 +1,7 @@
 /*
  *  This file is part of nzbget
  *
- *  Copyright (C) 2007-2013 Andrey Prygunkov <hugbug@users.sourceforge.net>
+ *  Copyright (C) 2007-2014 Andrey Prygunkov <hugbug@users.sourceforge.net>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -65,7 +65,7 @@ bool DupeCoordinator::IsDupeSuccess(NZBInfo* pNZBInfo)
 		pNZBInfo->GetUnpackStatus() == NZBInfo::usPassword ||
 		(pNZBInfo->GetParStatus() == NZBInfo::psSkipped &&
 		 pNZBInfo->GetUnpackStatus() == NZBInfo::usSkipped &&
-		 pNZBInfo->CalcHealth() < pNZBInfo->CalcCriticalHealth());
+		 pNZBInfo->CalcHealth() < pNZBInfo->CalcCriticalHealth(true));
 	return !bFailure;
 }
 
@@ -434,7 +434,7 @@ void DupeCoordinator::ReturnBestDupe(DownloadQueue* pDownloadQueue, NZBInfo* pNZ
 		if (pHistoryInfo->GetKind() == HistoryInfo::hkNZBInfo &&
 			pHistoryInfo->GetNZBInfo()->GetDupeMode() != dmForce &&
 			pHistoryInfo->GetNZBInfo()->GetDeleteStatus() == NZBInfo::dsDupe &&
-			pHistoryInfo->GetNZBInfo()->CalcHealth() >= pHistoryInfo->GetNZBInfo()->CalcCriticalHealth() &&
+			pHistoryInfo->GetNZBInfo()->CalcHealth() >= pHistoryInfo->GetNZBInfo()->CalcCriticalHealth(true) &&
 			pHistoryInfo->GetNZBInfo()->GetMarkStatus() != NZBInfo::ksBad &&
 			(!bHistoryDupe || pHistoryInfo->GetNZBInfo()->GetDupeScore() > iHistoryScore) &&
 			(!bPostDupe || pHistoryInfo->GetNZBInfo()->GetDupeScore() > iPostScore) &&
