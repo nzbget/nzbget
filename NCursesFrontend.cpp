@@ -829,9 +829,9 @@ void NCursesFrontend::PrintFilename(FileInfo * pFileInfo, int iRow, bool bSelect
 
 	char szPriority[100];
 	szPriority[0] = '\0';
-	if (pFileInfo->GetPriority() != 0)
+	if (pFileInfo->GetNZBInfo()->GetPriority() != 0)
 	{
-		sprintf(szPriority, " [%+i]", pFileInfo->GetPriority());
+		sprintf(szPriority, " [%+i]", pFileInfo->GetNZBInfo()->GetPriority());
 	}
 
 	char szCompleted[20];
@@ -1017,16 +1017,9 @@ void NCursesFrontend::PrintGroupname(NZBInfo* pNZBInfo, int iRow, bool bSelected
 
 	char szPriority[100];
 	szPriority[0] = '\0';
-	if (pNZBInfo->GetMinPriority() != 0 || pNZBInfo->GetMaxPriority() != 0)
+	if (pNZBInfo->GetPriority() != 0)
 	{
-		if (pNZBInfo->GetMinPriority() == pNZBInfo->GetMaxPriority())
-		{
-			sprintf(szPriority, " [%+i]", pNZBInfo->GetMinPriority());
-		}
-		else
-		{
-			sprintf(szPriority, " [%+i..%+i]", pNZBInfo->GetMinPriority(), pNZBInfo->GetMaxPriority());
-		}
+		sprintf(szPriority, " [%+i]", pNZBInfo->GetPriority());
 	}
 
 	char szBuffer[MAX_SCREEN_WIDTH];

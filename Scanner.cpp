@@ -505,6 +505,7 @@ bool Scanner::AddFileToQueue(const char* szFilename, const char* szNZBName, cons
 		pNZBFile->GetNZBInfo()->SetDupeKey(szDupeKey);
 		pNZBFile->GetNZBInfo()->SetDupeScore(iDupeScore);
 		pNZBFile->GetNZBInfo()->SetDupeMode(eDupeMode);
+		pNZBFile->GetNZBInfo()->SetPriority(iPriority);
 
 		if (pNZBFile->GetPassword())
 		{
@@ -516,10 +517,8 @@ bool Scanner::AddFileToQueue(const char* szFilename, const char* szNZBName, cons
 		for (::FileList::iterator it = pNZBFile->GetNZBInfo()->GetFileList()->begin(); it != pNZBFile->GetNZBInfo()->GetFileList()->end(); it++)
 		{
 			FileInfo* pFileInfo = *it;
-			pFileInfo->SetPriority(iPriority);
 			pFileInfo->SetPaused(bAddPaused);
 		}
-		pNZBFile->GetNZBInfo()->CalcFileStats(); // update priority
 
 		g_pQueueCoordinator->AddNZBFileToQueue(pNZBFile, bAddTop);
 	}

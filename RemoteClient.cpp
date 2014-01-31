@@ -2,7 +2,7 @@
  *  This file is part of nzbget
  *
  *  Copyright (C) 2005 Bo Cordes Petersen <placebodk@sourceforge.net>
- *  Copyright (C) 2007-2013 Andrey Prygunkov <hugbug@users.sourceforge.net>
+ *  Copyright (C) 2007-2014 Andrey Prygunkov <hugbug@users.sourceforge.net>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -242,6 +242,7 @@ void RemoteClient::BuildFileList(SNZBListResponse* pListResponse, const char* pT
 			pNZBInfo->SetDestDir(szDestDir);
 			pNZBInfo->SetCategory(szCategory);
 			pNZBInfo->SetQueuedFilename(m_szQueuedFilename);
+			pNZBInfo->SetPriority(ntohl(pListAnswer->m_iPriority));
 			pNZBInfo->m_bMatch = ntohl(pListAnswer->m_bMatch);
 
 			pDownloadQueue->GetQueue()->push_back(pNZBInfo);
@@ -283,7 +284,6 @@ void RemoteClient::BuildFileList(SNZBListResponse* pListResponse, const char* pT
 			pFileInfo->SetFilename(szFileName);
 			pFileInfo->SetFilenameConfirmed(ntohl(pListAnswer->m_bFilenameConfirmed));
 			pFileInfo->SetActiveDownloads(ntohl(pListAnswer->m_iActiveDownloads));
-			pFileInfo->SetPriority(ntohl(pListAnswer->m_iPriority));
 			pFileInfo->m_bMatch = ntohl(pListAnswer->m_bMatch);
 
 			NZBInfo* pNZBInfo = pDownloadQueue->GetQueue()->at(ntohl(pListAnswer->m_iNZBIndex) - 1);
@@ -379,13 +379,6 @@ bool RemoteClient::RequestServerList(bool bFiles, bool bGroups, const char* szPa
 
 					iNrFileEntries++;
 
-					char szPriority[100];
-					szPriority[0] = '\0';
-					if (pFileInfo->GetPriority() != 0)
-					{
-						sprintf(szPriority, "[%+i] ", pFileInfo->GetPriority());
-					}
-
 					char szCompleted[100];
 					szCompleted[0] = '\0';
 					if (pFileInfo->GetRemainingSize() < pFileInfo->GetSize())
@@ -414,7 +407,7 @@ bool RemoteClient::RequestServerList(bool bFiles, bool bGroups, const char* szPa
 
 					if (!szPattern || ((MatchedFileInfo*)pFileInfo)->m_bMatch)
 					{
-						printf("[%i] %s%s/%s (%.2f MB%s%s)%s\n", pFileInfo->GetID(), szPriority, pFileInfo->GetNZBInfo()->GetName(),
+						printf("[%i] %s/%s (%.2f MB%s%s)%s\n", pFileInfo->GetID(), pFileInfo->GetNZBInfo()->GetName(),
 							pFileInfo->GetFilename(),
 							(float)(Util::Int64ToFloat(pFileInfo->GetSize()) / 1024.0 / 1024.0), 
 							szCompleted, szThreads, szStatus);
@@ -479,16 +472,9 @@ bool RemoteClient::RequestServerList(bool bFiles, bool bGroups, const char* szPa
 
 				char szPriority[100];
 				szPriority[0] = '\0';
-				if (pNZBInfo->GetMinPriority() != 0 || pNZBInfo->GetMaxPriority() != 0)
+				if (pNZBInfo->GetPriority() != 0)
 				{
-					if (pNZBInfo->GetMinPriority() == pNZBInfo->GetMaxPriority())
-					{
-						sprintf(szPriority, "[%+i] ", pNZBInfo->GetMinPriority());
-					}
-					else
-					{
-						sprintf(szPriority, "[%+i..%+i] ", pNZBInfo->GetMinPriority(), pNZBInfo->GetMaxPriority());
-					}
+					sprintf(szPriority, "[%+i] ", pNZBInfo->GetPriority());
 				}
 
 				char szPaused[20];

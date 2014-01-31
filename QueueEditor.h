@@ -1,7 +1,7 @@
 /*
  *  This file is part of nzbget
  *
- *  Copyright (C) 2007-2013 Andrey Prygunkov <hugbug@users.sourceforge.net>
+ *  Copyright (C) 2007-2014 Andrey Prygunkov <hugbug@users.sourceforge.net>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -44,7 +44,6 @@ public:
 		eaFileDelete,
 		eaFilePauseAllPars,
 		eaFilePauseExtraPars,
-		eaFileSetPriority,
 		eaFileReorder,
 		eaFileSplit,
 		eaGroupMoveOffset,				// move to m_iOffset relative to the current position in queue
@@ -94,6 +93,7 @@ private:
 	bool					EditGroup(DownloadQueue* pDownloadQueue, FileInfo* pFileInfo, EEditAction eAction, int iOffset, const char* szText);
 	void					PauseParsInGroups(ItemList* pItemList, bool bExtraParsOnly);
 	void					PausePars(FileList* pFileList, bool bExtraParsOnly);
+	void					SetNZBPriority(NZBInfo* pNZBInfo, const char* szPriority);
 	void					SetNZBCategory(NZBInfo* pNZBInfo, const char* szCategory);
 	void					SetNZBName(NZBInfo* pNZBInfo, const char* szName);
 	bool					CanCleanupDisk(DownloadQueue* pDownloadQueue, NZBInfo* pNZBInfo);
@@ -106,7 +106,6 @@ private:
 	void					DeleteEntry(FileInfo* pFileInfo);
 	void					MoveEntry(DownloadQueue* pDownloadQueue, FileInfo* pFileInfo, int iOffset);
 	void					MoveGroup(DownloadQueue* pDownloadQueue, NZBInfo* pNZBInfo, int iOffset);
-	void					SetPriorityEntry(FileInfo* pFileInfo, const char* szPriority);
 
 public:
 							QueueEditor();                

@@ -2,7 +2,7 @@
  *  This file is part of nzbget
  *
  *  Copyright (C) 2004 Sven Henkel <sidddy@users.sourceforge.net>
- *  Copyright (C) 2007-2013 Andrey Prygunkov <hugbug@users.sourceforge.net>
+ *  Copyright (C) 2007-2014 Andrey Prygunkov <hugbug@users.sourceforge.net>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -1539,7 +1539,11 @@ void Options::InitCommandLine(int argc, char* argv[])
 					}
 					else if (!strcasecmp(optarg, "I"))
 					{
-						m_iEditQueueAction = bGroup ? eRemoteEditActionGroupSetPriority : eRemoteEditActionFileSetPriority;
+						if (!bGroup)
+						{
+							abort("FATAL ERROR: Priority can be set only for groups\n");
+						}
+						m_iEditQueueAction = eRemoteEditActionGroupSetPriority;
 
 						optind++;
 						if (optind > argc)
@@ -1712,10 +1716,10 @@ void Options::PrintUsage(char* com)
 		"    - for files (F) and groups (G):\n"
 		"       P                    Pause\n"
 		"       U                    Resume (unpause)\n"
-		"       I <priority>         Set priority (signed integer)\n"
 		"    - for groups (G):\n"
 		"       A                    Pause all pars\n"
 		"       R                    Pause extra pars\n"
+		"       I <priority>         Set priority (signed integer)\n"
 		"       C <name>             Set category\n"
 		"       N <name>             Rename\n"
 		"       M                    Merge\n"
