@@ -2,7 +2,7 @@
  *  This file is part of nzbget
  *
  *  Copyright (C) 2005 Bo Cordes Petersen <placebodk@users.sourceforge.net>
- *  Copyright (C) 2007-2013 Andrey Prygunkov <hugbug@users.sourceforge.net>
+ *  Copyright (C) 2007-2014 Andrey Prygunkov <hugbug@users.sourceforge.net>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -27,7 +27,7 @@
 #ifndef MESSAGEBASE_H
 #define MESSAGEBASE_H
 
-static const int32_t NZBMESSAGE_SIGNATURE = 0x6E7A621C; // = "nzb-XX" (protocol version)
+static const int32_t NZBMESSAGE_SIGNATURE = 0x6E7A621D; // = "nzb-XX" (protocol version)
 static const int NZBREQUESTFILENAMESIZE = 512;
 static const int NZBREQUESTPASSWORDSIZE = 32;
 
@@ -79,7 +79,6 @@ enum eRemoteEditAction
 	eRemoteEditActionFileDelete,			// delete files
 	eRemoteEditActionFilePauseAllPars,		// pause only (all) pars (does not affect other files)
 	eRemoteEditActionFilePauseExtraPars,	// pause only (almost all) pars, except main par-file (does not affect other files)
-	eRemoteEditActionFileSetPriority,		// set priority for files
 	eRemoteEditActionFileReorder,			// (not supported)
 	eRemoteEditActionFileSplit,				// split - create new group from selected files
 	eRemoteEditActionGroupMoveOffset,		// move group to m_iOffset relative to the current position in download-queue
@@ -220,6 +219,7 @@ struct SNZBListResponseNZBEntry
 {
 	int32_t					m_iSizeLo;				// Size of all files in bytes, Low 32-bits of 64-bit value
 	int32_t					m_iSizeHi;				// Size of all files in bytes, High 32-bits of 64-bit value
+	int32_t					m_iPriority;			// Download priority
 	int32_t					m_bMatch;				// 1 - group matches the pattern (only when Request has eRemoteMatchModeRegEx)
 	int32_t					m_iFilenameLen;			// Length of Filename-string (m_szFilename), following to this record
 	int32_t					m_iNameLen;				// Length of Name-string (m_szName), following to this record
@@ -254,7 +254,6 @@ struct SNZBListResponseFileEntry
 	int32_t					m_iRemainingSizeHi;		// Remaining size in bytes, High 32-bits of 64-bit value
 	int32_t					m_bPaused;				// 1 - file is paused
 	int32_t					m_bFilenameConfirmed;	// 1 - Filename confirmed (read from article body), 0 - Filename parsed from subject (can be changed after reading of article)
-	int32_t					m_iPriority;			// Download priority
 	int32_t					m_iActiveDownloads;		// Number of active downloads for this file
 	int32_t					m_bMatch;				// 1 - file matches the pattern (only when Request has eRemoteMatchModeRegEx)
 	int32_t					m_iSubjectLen;			// Length of Subject-string (m_szSubject), following to this record

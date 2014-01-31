@@ -138,7 +138,7 @@ bool DiskState::SaveDownloadQueue(DownloadQueue* pDownloadQueue)
 		return false;
 	}
 
-	fprintf(outfile, "%s%i\n", FORMATVERSION_SIGNATURE, 43);
+	fprintf(outfile, "%s%i\n", FORMATVERSION_SIGNATURE, 44);
 
 	// save nzb-infos
 	SaveNZBQueue(pDownloadQueue, outfile);
@@ -186,7 +186,7 @@ bool DiskState::LoadDownloadQueue(DownloadQueue* pDownloadQueue)
 	char FileSignatur[128];
 	fgets(FileSignatur, sizeof(FileSignatur), infile);
 	int iFormatVersion = ParseFormatVersion(FileSignatur);
-	if (iFormatVersion < 3 || iFormatVersion > 43)
+	if (iFormatVersion < 3 || iFormatVersion > 44)
 	{
 		error("Could not load diskstate due to file version mismatch");
 		fclose(infile);
@@ -249,7 +249,7 @@ bool DiskState::LoadDownloadQueue(DownloadQueue* pDownloadQueue)
 		CompleteNZBList12(pDownloadQueue, &sortList, iFormatVersion);
 	}
 
-	CalcFileStats(pDownloadQueue);
+	CalcFileStats(pDownloadQueue, iFormatVersion);
 
 	bOK = true;
 
@@ -345,13 +345,14 @@ void DiskState::SaveNZBInfo(NZBInfo* pNZBInfo, FILE* outfile)
 	fprintf(outfile, "%s\n", pNZBInfo->GetQueuedFilename());
 	fprintf(outfile, "%s\n", pNZBInfo->GetName());
 	fprintf(outfile, "%s\n", pNZBInfo->GetCategory());
-	fprintf(outfile, "%i,%i,%i\n", (int)pNZBInfo->GetPostProcess(), (int)pNZBInfo->GetDeletePaused(),
-		(int)pNZBInfo->GetManyDupeFiles());
+	fprintf(outfile, "%i,%i,%i,%i\n", (int)pNZBInfo->GetPriority(), (int)pNZBInfo->GetPostProcess(),
+		(int)pNZBInfo->GetDeletePaused(), (int)pNZBInfo->GetManyDupeFiles());
 	fprintf(outfile, "%i,%i,%i,%i,%i,%i\n", (int)pNZBInfo->GetParStatus(), (int)pNZBInfo->GetUnpackStatus(),
 		(int)pNZBInfo->GetMoveStatus(), (int)pNZBInfo->GetRenameStatus(), (int)pNZBInfo->GetDeleteStatus(),
 		(int)pNZBInfo->GetMarkStatus());
 	fprintf(outfile, "%i,%i\n", (int)pNZBInfo->GetUnpackCleanedUpDisk(), (int)pNZBInfo->GetHealthPaused());
 	fprintf(outfile, "%i,%i\n", pNZBInfo->GetFileCount(), pNZBInfo->GetParkedFileCount());
+	fprintf(outfile, "%i,%i\n", (int)pNZBInfo->GetMinTime(), (int)pNZBInfo->GetMaxTime());
 
 	fprintf(outfile, "%u,%u\n", pNZBInfo->GetFullContentHash(), pNZBInfo->GetFilteredContentHash());
 
@@ -436,8 +437,8 @@ void DiskState::SaveNZBInfo(NZBInfo* pNZBInfo, FILE* outfile)
 		FileInfo* pFileInfo = *it;
 		if (!pFileInfo->GetDeleted())
 		{
-			fprintf(outfile, "%i,%i,%i,%i,%i\n", pFileInfo->GetID(), (int)pFileInfo->GetPaused(), 
-				(int)pFileInfo->GetTime(), pFileInfo->GetPriority(), (int)pFileInfo->GetExtraPriority());
+			fprintf(outfile, "%i,%i,%i,%i\n", pFileInfo->GetID(), (int)pFileInfo->GetPaused(), 
+				(int)pFileInfo->GetTime(), (int)pFileInfo->GetExtraPriority());
 		}
 	}
 }
@@ -494,8 +495,12 @@ bool DiskState::LoadNZBInfo(NZBInfo* pNZBInfo, FILE* infile, int iFormatVersion)
 
 	if (true) // clang requires a block for goto to work
 	{
-		int iPostProcess = 0, iDeletePaused = 0, iManyDupeFiles = 0;
-		if (iFormatVersion >= 41)
+		int iPriority = 0, iPostProcess = 0, iDeletePaused = 0, iManyDupeFiles = 0;
+		if (iFormatVersion >= 44)
+		{
+			if (fscanf(infile, "%i,%i,%i,%i\n", &iPriority, &iPostProcess, &iDeletePaused, &iManyDupeFiles) != 4) goto error;
+		}
+		else if (iFormatVersion >= 41)
 		{
 			if (fscanf(infile, "%i,%i,%i\n", &iPostProcess, &iDeletePaused, &iManyDupeFiles) != 3) goto error;
 		}
@@ -507,6 +512,7 @@ bool DiskState::LoadNZBInfo(NZBInfo* pNZBInfo, FILE* infile, int iFormatVersion)
 		{
 			if (fscanf(infile, "%i\n", &iPostProcess) != 1) goto error;
 		}
+		pNZBInfo->SetPriority(iPriority);
 		pNZBInfo->SetPostProcess((bool)iPostProcess);
 		pNZBInfo->SetDeletePaused((bool)iDeletePaused);
 		pNZBInfo->SetManyDupeFiles((bool)iManyDupeFiles);
@@ -608,6 +614,14 @@ bool DiskState::LoadNZBInfo(NZBInfo* pNZBInfo, FILE* infile, int iFormatVersion)
 			if (fscanf(infile, "%i\n", &iFileCount) != 1) goto error;
 			pNZBInfo->SetParkedFileCount(iFileCount);
 		}
+	}
+
+	if (iFormatVersion >= 44)
+	{
+		int iMinTime, iMaxTime;
+		if (fscanf(infile, "%i,%i\n", &iMinTime, &iMaxTime) != 2) goto error;
+		pNZBInfo->SetMinTime((time_t)iMinTime);
+		pNZBInfo->SetMaxTime((time_t)iMaxTime);
 	}
 
 	if (true) // clang requires a block for goto to work
@@ -791,7 +805,16 @@ bool DiskState::LoadNZBInfo(NZBInfo* pNZBInfo, FILE* infile, int iFormatVersion)
 		{
 			unsigned int id, paused, iTime = 0;
 			int iPriority = 0, iExtraPriority = 0;
-			if (fscanf(infile, "%i,%i,%i,%i,%i\n", &id, &paused, &iTime, &iPriority, &iExtraPriority) != 5) goto error;
+
+			if (iFormatVersion >= 44)
+			{
+				if (fscanf(infile, "%i,%i,%i,%i\n", &id, &paused, &iTime, &iExtraPriority) != 4) goto error;
+			}
+			else
+			{
+				if (fscanf(infile, "%i,%i,%i,%i,%i\n", &id, &paused, &iTime, &iPriority, &iExtraPriority) != 5) goto error;
+				pNZBInfo->SetPriority(iPriority);
+			}
 
 			char fileName[1024];
 			snprintf(fileName, 1024, "%s%i", g_pOptions->GetQueueDir(), id);
@@ -803,7 +826,6 @@ bool DiskState::LoadNZBInfo(NZBInfo* pNZBInfo, FILE* infile, int iFormatVersion)
 				pFileInfo->SetID(id);
 				pFileInfo->SetPaused(paused);
 				pFileInfo->SetTime(iTime);
-				pFileInfo->SetPriority(iPriority);
 				pFileInfo->SetExtraPriority(iExtraPriority != 0);
 				pFileInfo->SetNZBInfo(pNZBInfo);
 				if (iFormatVersion < 30)
@@ -863,10 +885,10 @@ bool DiskState::LoadFileQueue12(NZBList* pNZBList, NZBList* pSortList, FILE* inf
 		if (res)
 		{
 			NZBInfo* pNZBInfo = pNZBList->at(iNZBIndex - 1);
+			pNZBInfo->SetPriority(iPriority);
 			pFileInfo->SetID(id);
 			pFileInfo->SetPaused(paused);
 			pFileInfo->SetTime(iTime);
-			pFileInfo->SetPriority(iPriority);
 			pFileInfo->SetExtraPriority(iExtraPriority != 0);
 			pFileInfo->SetNZBInfo(pNZBInfo);
 			if (iFormatVersion < 30)
@@ -2011,7 +2033,7 @@ void DiskState::CalcCriticalHealth(NZBList* pNZBList)
 	}
 }
 
-void DiskState::CalcFileStats(DownloadQueue* pDownloadQueue)
+void DiskState::CalcFileStats(DownloadQueue* pDownloadQueue, int iFormatVersion)
 {
 	for (NZBList::iterator it = pDownloadQueue->GetQueue()->begin(); it != pDownloadQueue->GetQueue()->end(); it++)
 	{
@@ -2043,7 +2065,10 @@ void DiskState::CalcFileStats(DownloadQueue* pDownloadQueue)
 		pNZBInfo->SetPausedFileCount(iPausedFileCount);
 		pNZBInfo->SetRemainingParCount(iRemainingParCount);
 
-		pNZBInfo->CalcFileStats();
+		if (iFormatVersion < 44)
+		{
+			pNZBInfo->UpdateMinMaxTime();
+		}
 	}
 }
 

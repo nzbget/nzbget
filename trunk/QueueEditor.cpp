@@ -189,17 +189,6 @@ void QueueEditor::MoveGroup(DownloadQueue* pDownloadQueue, NZBInfo* pNZBInfo, in
 	}
 }
 
-/*
- * Set priority for entry
- * returns true if successful, false if operation is not possible
- */
-void QueueEditor::SetPriorityEntry(FileInfo* pFileInfo, const char* szPriority)
-{
-	debug("Setting priority %s for file %s", szPriority, pFileInfo->GetFilename());
-	int iPriority = atoi(szPriority);
-	pFileInfo->SetPriority(iPriority);
-}
-
 bool QueueEditor::EditEntry(int ID, EEditAction eAction, int iOffset, const char* szText)
 {
 	IDList cIDList;
@@ -297,9 +286,8 @@ bool QueueEditor::InternEditList(DownloadQueue* pDownloadQueue, ItemList* pItemL
 						DeleteEntry(pItem->m_pFileInfo);
 						break;
 
-					case eaFileSetPriority:
-						uniqueNzbs.insert(pItem->m_pFileInfo->GetNZBInfo());
-						SetPriorityEntry(pItem->m_pFileInfo, szText);
+					case eaGroupSetPriority:
+						SetNZBPriority(pItem->m_pFileInfo->GetNZBInfo(), szText);
 						break;
 
 					case eaGroupSetCategory:
@@ -333,7 +321,6 @@ bool QueueEditor::InternEditList(DownloadQueue* pDownloadQueue, ItemList* pItemL
 					case eaGroupFinalDelete:
 					case eaGroupPauseAllPars:
 					case eaGroupPauseExtraPars:
-					case eaGroupSetPriority:
 						EditGroup(pDownloadQueue, pItem->m_pFileInfo, eAction, iOffset, szText);
 						break;
 
@@ -347,15 +334,6 @@ bool QueueEditor::InternEditList(DownloadQueue* pDownloadQueue, ItemList* pItemL
 				}
 				delete pItem;
 			}
-	}
-
-	if (eAction == eaFileSetPriority)
-	{
-		for (std::set<NZBInfo*>::iterator it = uniqueNzbs.begin(); it != uniqueNzbs.end(); it++)
-		{
-			NZBInfo* pNZBInfo = *it;
-			pNZBInfo->CalcFileStats();
-		}
 	}
 
 	return pItemList->size() > 0;
@@ -629,10 +607,9 @@ bool QueueEditor::EditGroup(DownloadQueue* pDownloadQueue, FileInfo* pFileInfo, 
 	}
 
 	EEditAction GroupToFileMap[] = { (EEditAction)0, eaFileMoveOffset, eaFileMoveTop, eaFileMoveBottom, eaFilePause,
-		eaFileResume, eaFileDelete, eaFilePauseAllPars, eaFilePauseExtraPars, eaFileSetPriority, eaFileReorder, eaFileSplit,
+		eaFileResume, eaFileDelete, eaFilePauseAllPars, eaFilePauseExtraPars, eaFileReorder, eaFileSplit,
 		eaFileMoveOffset, eaFileMoveTop, eaFileMoveBottom, eaFilePause, eaFileResume, eaFileDelete, eaFileDelete, eaFileDelete,
-		eaFilePauseAllPars, eaFilePauseExtraPars, eaFileSetPriority,
-		(EEditAction)0, (EEditAction)0, (EEditAction)0 };
+		eaFilePauseAllPars, eaFilePauseExtraPars, (EEditAction)0, (EEditAction)0, (EEditAction)0, (EEditAction)0 };
 
 	return InternEditList(pDownloadQueue, &itemList, NULL, GroupToFileMap[eAction], iOffset, szText);
 }
@@ -751,16 +728,24 @@ void QueueEditor::PausePars(FileList* pFileList, bool bExtraParsOnly)
 	}
 }
 
+void QueueEditor::SetNZBPriority(NZBInfo* pNZBInfo, const char* szPriority)
+{
+	debug("Setting priority %s for %s", szPriority, pNZBInfo->GetName());
+
+	int iPriority = atoi(szPriority);
+	pNZBInfo->SetPriority(iPriority);
+}
+
 void QueueEditor::SetNZBCategory(NZBInfo* pNZBInfo, const char* szCategory)
 {
-	debug("QueueEditor: setting category '%s' for '%s'", szCategory, Util::BaseFileName(pNZBInfo->GetFilename()));
+	debug("QueueEditor: setting category '%s' for '%s'", szCategory, pNZBInfo->GetName());
 
 	g_pQueueCoordinator->SetQueueEntryNZBCategory(pNZBInfo, szCategory);
 }
 
 void QueueEditor::SetNZBName(NZBInfo* pNZBInfo, const char* szName)
 {
-	debug("QueueEditor: renaming '%s' to '%s'", Util::BaseFileName(pNZBInfo->GetFilename()), szName);
+	debug("QueueEditor: renaming '%s' to '%s'", pNZBInfo->GetName(), szName);
 
 	g_pQueueCoordinator->SetQueueEntryNZBName(pNZBInfo, szName);
 }

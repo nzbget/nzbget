@@ -1412,7 +1412,7 @@ void ListFilesXmlCommand::Execute()
 		"<member><name>Filename</name><value><string>%s</string></value></member>\n"
 		"<member><name>DestDir</name><value><string>%s</string></value></member>\n"
 		"<member><name>Category</name><value><string>%s</string></value></member>\n"
-		"<member><name>Priority</name><value><i4>%i</i4></value></member>\n"
+		"<member><name>Priority</name><value><i4>%i</i4></value></member>\n"			// deprecated, use "Priority" of group instead
 		"<member><name>ActiveDownloads</name><value><i4>%i</i4></value></member>\n"
 		"</struct></value>\n";
 
@@ -1434,7 +1434,7 @@ void ListFilesXmlCommand::Execute()
 		"\"Filename\" : \"%s\",\n"
 		"\"DestDir\" : \"%s\",\n"
 		"\"Category\" : \"%s\",\n"
-		"\"Priority\" : %i,\n"
+		"\"Priority\" : %i,\n"				// deprecated, use "Priority" of group instead
 		"\"ActiveDownloads\" : %i\n"
 		"}";
 
@@ -1468,7 +1468,7 @@ void ListFilesXmlCommand::Execute()
 					pFileInfo->GetTime(), BoolToStr(pFileInfo->GetFilenameConfirmed()), 
 					BoolToStr(pFileInfo->GetPaused()), pFileInfo->GetNZBInfo()->GetID(), xmlNZBNicename,
 					xmlNZBNicename, xmlNZBFilename, xmlSubject, xmlFilename, xmlDestDir, xmlCategory,
-					pFileInfo->GetPriority(), pFileInfo->GetActiveDownloads());
+					pFileInfo->GetNZBInfo()->GetPriority(), pFileInfo->GetActiveDownloads());
 				szItemBuf[iItemBufSize-1] = '\0';
 
 				free(xmlNZBFilename);
@@ -1794,7 +1794,7 @@ void ListGroupsXmlCommand::Execute()
 			pNZBInfo->GetGroupID(), pNZBInfo->GetGroupID(), iRemainingSizeLo, iRemainingSizeHi, iRemainingSizeMB,
 			iPausedSizeLo, iPausedSizeHi, iPausedSizeMB, (int)pNZBInfo->GetFileList()->size(),
 			pNZBInfo->GetRemainingParCount(), pNZBInfo->GetMinTime(), pNZBInfo->GetMaxTime(),
-			pNZBInfo->GetMinPriority(), pNZBInfo->GetMaxPriority(), pNZBInfo->GetActiveDownloads());
+			pNZBInfo->GetPriority(), pNZBInfo->GetPriority(), pNZBInfo->GetActiveDownloads());
 		szItemBuf[iItemBufSize-1] = '\0';
 
 		if (IsJson() && index++ > 0)
@@ -1830,7 +1830,6 @@ EditCommandEntry EditCommandNameMap[] = {
 	{ QueueEditor::eaFileDelete, "FileDelete" },
 	{ QueueEditor::eaFilePauseAllPars, "FilePauseAllPars" },
 	{ QueueEditor::eaFilePauseExtraPars, "FilePauseExtraPars" },
-	{ QueueEditor::eaFileSetPriority, "FileSetPriority" },
 	{ QueueEditor::eaFileReorder, "FileReorder" },
 	{ QueueEditor::eaFileSplit, "FileSplit" },
 	{ QueueEditor::eaGroupMoveOffset, "GroupMoveOffset" },

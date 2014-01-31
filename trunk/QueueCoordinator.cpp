@@ -560,7 +560,7 @@ bool QueueCoordinator::GetNextArticle(FileInfo* &pFileInfo, ArticleInfo* &pArtic
 					!pFileInfo1->GetPaused() && !pFileInfo1->GetDeleted() &&
 					(!pFileInfo ||
 					 (pFileInfo1->GetExtraPriority() == pFileInfo->GetExtraPriority() &&
-					  pFileInfo1->GetPriority() > pFileInfo->GetPriority()) ||
+					  pFileInfo1->GetNZBInfo()->GetPriority() > pFileInfo->GetNZBInfo()->GetPriority()) ||
 					 (pFileInfo1->GetExtraPriority() > pFileInfo->GetExtraPriority())))
 				{
 					pFileInfo = pFileInfo1;
@@ -819,8 +819,6 @@ void QueueCoordinator::StatFileInfo(FileInfo* pFileInfo, bool bCompleted)
 	{
 		pNZBInfo->SetPausedFileCount(pNZBInfo->GetPausedFileCount() - 1);
 	}
-
-	pNZBInfo->CalcFileStats();
 }
 
 void QueueCoordinator::DeleteFileInfo(FileInfo* pFileInfo, bool bCompleted)
@@ -1154,7 +1152,8 @@ bool QueueCoordinator::MergeQueueEntries(NZBInfo* pDestNZBInfo, NZBInfo* pSrcNZB
 	pDestNZBInfo->SetParCurrentFailedSize(pDestNZBInfo->GetParCurrentFailedSize() + pSrcNZBInfo->GetParCurrentFailedSize());
 	pDestNZBInfo->SetRemainingParCount(pDestNZBInfo->GetRemainingParCount() + pSrcNZBInfo->GetRemainingParCount());
 
-	pDestNZBInfo->CalcFileStats();
+	pDestNZBInfo->SetMinTime(pSrcNZBInfo->GetMinTime() < pDestNZBInfo->GetMinTime() ? pSrcNZBInfo->GetMinTime() : pDestNZBInfo->GetMinTime());
+	pDestNZBInfo->SetMaxTime(pSrcNZBInfo->GetMaxTime() > pDestNZBInfo->GetMaxTime() ? pSrcNZBInfo->GetMaxTime() : pDestNZBInfo->GetMaxTime());
 
 	// reattach completed file items to new NZBInfo-object
 	for (NZBInfo::Files::iterator it = pSrcNZBInfo->GetCompletedFiles()->begin(); it != pSrcNZBInfo->GetCompletedFiles()->end(); it++)
@@ -1221,6 +1220,7 @@ bool QueueCoordinator::SplitQueueEntries(FileList* pFileList, const char* szName
 	pNZBInfo->SetCategory(pSrcNZBInfo->GetCategory());
 	pNZBInfo->SetFullContentHash(0);
 	pNZBInfo->SetFilteredContentHash(0);
+	pNZBInfo->SetPriority(pSrcNZBInfo->GetPriority());
 	pNZBInfo->BuildDestDirName();
 	pNZBInfo->SetQueuedFilename(pSrcNZBInfo->GetQueuedFilename());
 	pNZBInfo->GetParameters()->CopyFrom(pSrcNZBInfo->GetParameters());
@@ -1283,8 +1283,11 @@ bool QueueCoordinator::SplitQueueEntries(FileList* pFileList, const char* szName
 		}
 	}
 
-	pNZBInfo->CalcFileStats();
-	pSrcNZBInfo->CalcFileStats();
+	pNZBInfo->UpdateMinMaxTime();
+	if (pSrcNZBInfo->GetCompletedFiles()->empty())
+	{
+		pSrcNZBInfo->UpdateMinMaxTime();
+	}
 
 	if (pSrcNZBInfo->GetFileList()->empty())
 	{

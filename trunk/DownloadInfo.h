@@ -101,7 +101,6 @@ private:
 	bool				m_bOutputInitialized;
 	char*				m_szOutputFilename;
 	Mutex*				m_pMutexOutputFile;
-	int					m_iPriority;
 	bool				m_bExtraPriority;
 	int					m_iActiveDownloads;
 	bool				m_bAutoDeleted;
@@ -161,8 +160,6 @@ public:
 	void 				SetOutputFilename(const char* szOutputFilename);
 	bool				GetOutputInitialized() { return m_bOutputInitialized; }
 	void				SetOutputInitialized(bool bOutputInitialized) { m_bOutputInitialized = bOutputInitialized; }
-	int					GetPriority() { return m_iPriority; }
-	void				SetPriority(int iPriority) { m_iPriority = iPriority; }
 	bool				GetExtraPriority() { return m_bExtraPriority; }
 	void				SetExtraPriority(bool bExtraPriority) { m_bExtraPriority = bExtraPriority; };
 	int					GetActiveDownloads() { return m_iActiveDownloads; }
@@ -372,6 +369,9 @@ private:
 	int					m_iTotalArticles;
 	int					m_iSuccessArticles;
 	int					m_iFailedArticles;
+	time_t				m_tMinTime;
+	time_t				m_tMaxTime;
+	int					m_iPriority;
 	Files				m_completedFiles;
 	bool				m_bPostProcess;
 	ERenameStatus		m_eRenameStatus;
@@ -403,12 +403,6 @@ private:
 	Mutex				m_mutexLog;
 	Messages			m_Messages;
 	int					m_iIDMessageGen;
-
-	// File statistics
-	time_t				m_tMinTime;
-	time_t				m_tMaxTime;
-	int					m_iMinPriority;
-	int					m_iMaxPriority;
 
 	static int			m_iIDGen;
 	static int			m_iIDMax;
@@ -470,6 +464,12 @@ public:
 	void 				SetSuccessArticles(int iSuccessArticles) { m_iSuccessArticles = iSuccessArticles; }
 	int					GetFailedArticles() { return m_iFailedArticles; }
 	void 				SetFailedArticles(int iFailedArticles) { m_iFailedArticles = iFailedArticles; }
+	int					GetPriority() { return m_iPriority; }
+	void				SetPriority(int iPriority) { m_iPriority = iPriority; }
+	time_t				GetMinTime() { return m_tMinTime; }
+	void				SetMinTime(time_t tMinTime) { m_tMinTime = tMinTime; }
+	time_t				GetMaxTime() { return m_tMaxTime; }
+	void				SetMaxTime(time_t tMaxTime) { m_tMaxTime = tMaxTime; }
 	void				BuildDestDirName();
 	void				BuildFinalDirName(char* szFinalDirBuf, int iBufSize);
 	Files*				GetCompletedFiles() { return &m_completedFiles; }		// needs locking (for shared objects)
@@ -526,13 +526,7 @@ public:
 	void				SetFilteredContentHash(unsigned int iFilteredContentHash) { m_iFilteredContentHash = iFilteredContentHash; }
 	int					GetGroupID();
 	void				CopyFileList(NZBInfo* pSrcNZBInfo);
-
-	// File statistics
-	void				CalcFileStats();
-	time_t				GetMinTime() { return m_tMinTime; }
-	time_t				GetMaxTime() { return m_tMaxTime; }
-	int					GetMinPriority() { return m_iMinPriority; }
-	int					GetMaxPriority() { return m_iMaxPriority; }
+	void				UpdateMinMaxTime();
 
 	void				AppendMessage(Message::EKind eKind, time_t tTime, const char* szText);
 	Messages*			LockMessages();
@@ -788,8 +782,8 @@ class DownloadQueue
 protected:
 	NZBList				m_Queue;
 	HistoryList			m_History;
-	UrlQueue			m_UrlQueue;		//TODO: merge m_UrlQueue with m_Queue
-	PostQueue			m_PostQueue;	//TODO: merge m_PostQueue with m_Queue
+	UrlQueue			m_UrlQueue;
+	PostQueue			m_PostQueue;
 
 public:
 						DownloadQueue() : m_Queue(true) {}

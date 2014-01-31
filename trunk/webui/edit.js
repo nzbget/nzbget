@@ -623,24 +623,18 @@ var DownloadsEditDialog = (new function($)
 				default: status = '<span class="label label-status label-important">internal error(' + file.status + ')</span>';
 			}
 			
-			var priority = '';
-			if (file.Priority != curGroup.MaxPriority)
-			{
-				priority = DownloadsUI.buildPriority(file.Priority);
-			}
-
 			var name = Util.textToHtml(file.Filename);
 			var fields;
 
 			if (!UISettings.miniTheme)
 			{
-				var info = name + ' ' + priority;
+				var info = name;
 				fields = ['<div class="check img-check"></div>', status, info, age, size];
 			}
 			else
 			{
 				var info = '<div class="check img-check"></div><span class="row-title">' + name + '</span>' +
-					' ' + (file.status === 'queued' ? '' : status) + ' ' + priority;
+					' ' + (file.status === 'queued' ? '' : status);
 				fields = [info];
 			}
 			
@@ -649,7 +643,7 @@ var DownloadsEditDialog = (new function($)
 				id: file.ID,
 				file: file,
 				fields: fields,
-				search: file.status + ' ' + file.Filename + ' ' + priority + ' ' + age + ' ' + size
+				search: file.status + ' ' + file.Filename + ' ' + age + ' ' + size
 			};
 
 			data.push(item);

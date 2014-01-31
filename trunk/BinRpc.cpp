@@ -2,7 +2,7 @@
  *  This file is part of nzbget
  *
  *  Copyright (C) 2005 Bo Cordes Petersen <placebodk@sourceforge.net>
- *  Copyright (C) 2007-2013 Andrey Prygunkov <hugbug@users.sourceforge.net>
+ *  Copyright (C) 2007-2014 Andrey Prygunkov <hugbug@users.sourceforge.net>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -462,6 +462,7 @@ void ListBinCommand::Execute()
 			Util::SplitInt64(pNZBInfo->GetSize(), &iSizeHi, &iSizeLo);
 			pListAnswer->m_iSizeLo				= htonl(iSizeLo);
 			pListAnswer->m_iSizeHi				= htonl(iSizeHi);
+			pListAnswer->m_iPriority			= htonl(pNZBInfo->GetPriority());
 			pListAnswer->m_bMatch				= htonl(bMatchGroup && (!pRegEx || pRegEx->Match(pNZBInfo->GetName())));
 			pListAnswer->m_iFilenameLen			= htonl(strlen(pNZBInfo->GetFilename()) + 1);
 			pListAnswer->m_iNameLen				= htonl(strlen(pNZBInfo->GetName()) + 1);
@@ -554,7 +555,6 @@ void ListBinCommand::Execute()
 				pListAnswer->m_bFilenameConfirmed = htonl(pFileInfo->GetFilenameConfirmed());
 				pListAnswer->m_bPaused			= htonl(pFileInfo->GetPaused());
 				pListAnswer->m_iActiveDownloads	= htonl(pFileInfo->GetActiveDownloads());
-				pListAnswer->m_iPriority		= htonl(pFileInfo->GetPriority());
 				pListAnswer->m_iSubjectLen		= htonl(strlen(pFileInfo->GetSubject()) + 1);
 				pListAnswer->m_iFilenameLen		= htonl(strlen(pFileInfo->GetFilename()) + 1);
 				bufptr += sizeof(SNZBListResponseFileEntry);

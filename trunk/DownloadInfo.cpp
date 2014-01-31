@@ -308,8 +308,7 @@ NZBInfo::NZBInfo(bool bPersistent) : m_FileList(true)
 	m_iRemainingParCount = 0;
 	m_tMinTime = 0;
 	m_tMaxTime = 0;
-	m_iMinPriority = 0;
-	m_iMaxPriority = 0;
+	m_iPriority = 0;
 	m_iActiveDownloads = 0;
 	m_Messages.clear();
 	m_iIDMessageGen = 0;
@@ -548,12 +547,10 @@ int NZBInfo::CalcCriticalHealth(bool bAllowEstimation)
 	return iCriticalHealth;
 }
 
-void NZBInfo::CalcFileStats()
+void NZBInfo::UpdateMinMaxTime()
 {
 	m_tMinTime = 0;
 	m_tMaxTime = 0;
-	m_iMinPriority = 0;
-	m_iMaxPriority = 0;
 
 	bool bFirst = true;
 	for (FileList::iterator it = m_FileList.begin(); it != m_FileList.end(); it++)
@@ -563,8 +560,6 @@ void NZBInfo::CalcFileStats()
 		{
 			m_tMinTime = pFileInfo->GetTime();
 			m_tMaxTime = pFileInfo->GetTime();
-			m_iMinPriority = pFileInfo->GetPriority();
-			m_iMaxPriority = pFileInfo->GetPriority();
 			bFirst = false;
 		}
 		if (pFileInfo->GetTime() > 0)
@@ -577,14 +572,6 @@ void NZBInfo::CalcFileStats()
 			{
 				m_tMaxTime = pFileInfo->GetTime();
 			}
-		}
-		if (pFileInfo->GetPriority() < m_iMinPriority)
-		{
-			m_iMinPriority = pFileInfo->GetPriority();
-		}
-		if (pFileInfo->GetPriority() > m_iMaxPriority)
-		{
-			m_iMaxPriority = pFileInfo->GetPriority();
 		}
 	}
 }
@@ -661,6 +648,9 @@ void NZBInfo::CopyFileList(NZBInfo* pSrcNZBInfo)
 
 	SetSuccessArticles(pSrcNZBInfo->GetSuccessArticles());
 	SetFailedArticles(pSrcNZBInfo->GetFailedArticles());
+
+	SetMinTime(pSrcNZBInfo->GetMinTime());
+	SetMaxTime(pSrcNZBInfo->GetMaxTime());
 }
 
 
@@ -748,7 +738,6 @@ FileInfo::FileInfo()
 	m_bParFile = false;
 	m_bOutputInitialized = false;
 	m_pNZBInfo = NULL;
-	m_iPriority = 0;
 	m_bExtraPriority = false;
 	m_iActiveDownloads = 0;
 	m_bAutoDeleted = false;

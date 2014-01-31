@@ -452,7 +452,8 @@ void NZBFile::ProcessFiles()
 		}
 	}
 
-	m_pNZBInfo->CalcFileStats();
+	m_pNZBInfo->UpdateMinMaxTime();
+
 	CalcHashes();
 
 	if (g_pOptions->GetSaveQueue() && g_pOptions->GetServerMode())
