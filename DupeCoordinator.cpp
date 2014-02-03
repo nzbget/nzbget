@@ -124,35 +124,6 @@ void DupeCoordinator::NZBFound(DownloadQueue* pDownloadQueue, NZBInfo* pNZBInfo)
 		}
 	}
 
-	// find duplicates in post queue with exactly same content
-	for (PostQueue::iterator it = pDownloadQueue->GetPostQueue()->begin(); it != pDownloadQueue->GetPostQueue()->end(); it++)
-	{
-		PostInfo* pPostInfo = *it;
-		bool bSameContent = (pNZBInfo->GetFullContentHash() > 0 &&
-			pNZBInfo->GetFullContentHash() == pPostInfo->GetNZBInfo()->GetFullContentHash()) ||
-			(pNZBInfo->GetFilteredContentHash() > 0 &&
-			 pNZBInfo->GetFilteredContentHash() == pPostInfo->GetNZBInfo()->GetFilteredContentHash());
-
-		// if there is a duplicate with exactly same content (via hash-check) 
-		// in queue - the new item is skipped;
-		if (bSameContent)
-		{
-			if (!strcmp(pNZBInfo->GetName(), pPostInfo->GetNZBInfo()->GetName()))
-			{
-				warn("Skipping duplicate %s, already queued", pNZBInfo->GetName());
-			}
-			else
-			{
-				warn("Skipping duplicate %s, already queued as %s",
-					pNZBInfo->GetName(), pPostInfo->GetNZBInfo()->GetName());
-			}
-			// Flag saying QueueCoordinator to skip nzb-file
-			pNZBInfo->SetDeleteStatus(NZBInfo::dsManual);
-			DeleteQueuedFile(pNZBInfo->GetQueuedFilename());
-			return;
-		}
-	}
-
 	// find duplicates in history
 
 	bool bSkip = false;
@@ -286,19 +257,8 @@ void DupeCoordinator::NZBFound(DownloadQueue* pDownloadQueue, NZBInfo* pNZBInfo)
 
 				// if queue has a duplicate with lower score - the existing item is moved
 				// to history as dupe-backup (unless it is in post-processing stage) and
-				// the new item is added to queue,
-				// unless it is in post-processing stage
-				bool bPostProcess = false;
-				for (PostQueue::iterator it2 = pDownloadQueue->GetPostQueue()->begin(); it2 != pDownloadQueue->GetPostQueue()->end(); it2++)
-				{
-					PostInfo* pPostInfo = *it2;
-					if (pPostInfo->GetNZBInfo() == pQueuedNZBInfo)
-					{
-						bPostProcess = true;
-						break;
-					}
-				}
-				if (!bPostProcess)
+				// the new item is added to queue (unless it is in post-processing stage)
+				if (!pQueuedNZBInfo->GetPostProcess())
 				{
 					// the existing queue item is moved to history as dupe-backup
 					info("Moving collection %s with lower duplicate score to history", pQueuedNZBInfo->GetName());
@@ -307,24 +267,6 @@ void DupeCoordinator::NZBFound(DownloadQueue* pDownloadQueue, NZBInfo* pNZBInfo)
 						pQueuedNZBInfo->GetGroupID(), QueueEditor::eaGroupDelete, 0, NULL);
 					it = pDownloadQueue->GetQueue()->begin() + index;
 				}
-			}
-		}
-
-		// find duplicates in post queue
-		for (PostQueue::iterator it = pDownloadQueue->GetPostQueue()->begin(); it != pDownloadQueue->GetPostQueue()->end(); it++)
-		{
-			PostInfo* pPostInfo = *it;
-			// if queue has a duplicate with the same or higher score - the new item
-			// is moved to history as dupe-backup;
-			if (pPostInfo->GetNZBInfo()->GetDupeMode() != dmForce &&
-				pNZBInfo->GetDupeScore() <= pPostInfo->GetNZBInfo()->GetDupeScore() &&
-				SameNameOrKey(pPostInfo->GetNZBInfo()->GetName(), pPostInfo->GetNZBInfo()->GetDupeKey(),
-					pNZBInfo->GetName(), pNZBInfo->GetDupeKey()))
-			{
-				// Flag saying QueueCoordinator to skip nzb-file
-				pNZBInfo->SetDeleteStatus(NZBInfo::dsDupe);
-				info("Collection %s is duplicate to %s", pNZBInfo->GetName(), pPostInfo->GetNZBInfo()->GetName());
-				return;
 			}
 		}
 	}
@@ -393,22 +335,6 @@ void DupeCoordinator::ReturnBestDupe(DownloadQueue* pDownloadQueue, NZBInfo* pNZ
 		}
 	}
 
-	// check if duplicates exist in post-processing queue
-	bool bPostDupe = false;
-	int iPostScore = 0;
-	for (PostQueue::iterator it = pDownloadQueue->GetPostQueue()->begin(); it != pDownloadQueue->GetPostQueue()->end(); it++)
-	{
-		PostInfo* pPostInfo = *it;
-		if (pPostInfo->GetNZBInfo() != pNZBInfo &&
-			pPostInfo->GetNZBInfo()->GetDupeMode() != dmForce &&
-			SameNameOrKey(pPostInfo->GetNZBInfo()->GetName(), pPostInfo->GetNZBInfo()->GetDupeKey(), szNZBName, szDupeKey) &&
-			(!bPostDupe || pPostInfo->GetNZBInfo()->GetDupeScore() > iPostScore))
-		{
-			iPostScore = pPostInfo->GetNZBInfo()->GetDupeScore();
-			bPostDupe = true;
-		}
-	}
-
 	// check if duplicates exist in download queue
 	bool bQueueDupe = false;
 	int iQueueScore = 0;
@@ -437,7 +363,6 @@ void DupeCoordinator::ReturnBestDupe(DownloadQueue* pDownloadQueue, NZBInfo* pNZ
 			pHistoryInfo->GetNZBInfo()->CalcHealth() >= pHistoryInfo->GetNZBInfo()->CalcCriticalHealth(true) &&
 			pHistoryInfo->GetNZBInfo()->GetMarkStatus() != NZBInfo::ksBad &&
 			(!bHistoryDupe || pHistoryInfo->GetNZBInfo()->GetDupeScore() > iHistoryScore) &&
-			(!bPostDupe || pHistoryInfo->GetNZBInfo()->GetDupeScore() > iPostScore) &&
 			(!bQueueDupe || pHistoryInfo->GetNZBInfo()->GetDupeScore() > iQueueScore) &&
 			(!pHistoryDupe || pHistoryInfo->GetNZBInfo()->GetDupeScore() > pHistoryDupe->GetNZBInfo()->GetDupeScore()) &&
 			SameNameOrKey(pHistoryInfo->GetNZBInfo()->GetName(), pHistoryInfo->GetNZBInfo()->GetDupeKey(), szNZBName, szDupeKey))
