@@ -841,13 +841,13 @@ void PostScriptController::Run()
 
 void PostScriptController::ExecuteScript(const char* szScriptName, const char* szDisplayName, const char* szLocation)
 {
-	PrintMessage(Message::mkInfo, "Executing post-process-script %s for %s", szScriptName, m_pPostInfo->GetInfoName());
+	PrintMessage(Message::mkInfo, "Executing post-process-script %s for %s", szScriptName, m_pPostInfo->GetNZBInfo()->GetName());
 
 	SetScript(szLocation);
 	SetArgs(NULL, false);
 
 	char szInfoName[1024];
-	snprintf(szInfoName, 1024, "post-process-script %s for %s", szScriptName, m_pPostInfo->GetInfoName());
+	snprintf(szInfoName, 1024, "post-process-script %s for %s", szScriptName, m_pPostInfo->GetNZBInfo()->GetName());
 	szInfoName[1024-1] = '\0';
 	SetInfoName(szInfoName);
 

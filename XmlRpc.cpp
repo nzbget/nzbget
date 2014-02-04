@@ -1226,7 +1226,7 @@ void StatusXmlCommand::Execute()
 	bool bScanPaused = g_pOptions->GetPauseScan();
 	int iThreadCount = Thread::GetThreadCount() - 1; // not counting itself
 	DownloadQueue *pDownloadQueue = g_pQueueCoordinator->LockQueue();
-	int iPostJobCount = pDownloadQueue->GetPostQueue()->size();
+	int iPostJobCount = g_pPrePostProcessor->GetJobCount();
 	int iUrlCount = pDownloadQueue->GetUrlQueue()->size();
 	g_pQueueCoordinator->UnlockQueue();
 	unsigned long iDownloadedSizeHi, iDownloadedSizeLo;
@@ -1850,9 +1850,6 @@ EditCommandEntry EditCommandNameMap[] = {
 	{ QueueEditor::eaGroupSetDupeKey, "GroupSetDupeKey" },
 	{ QueueEditor::eaGroupSetDupeScore, "GroupSetDupeScore" },
 	{ QueueEditor::eaGroupSetDupeMode, "GroupSetDupeMode" },
-	{ PrePostProcessor::eaPostMoveOffset, "PostMoveOffset" },
-	{ PrePostProcessor::eaPostMoveTop, "PostMoveTop" },
-	{ PrePostProcessor::eaPostMoveBottom, "PostMoveBottom" },
 	{ PrePostProcessor::eaPostDelete, "PostDelete" },
 	{ PrePostProcessor::eaHistoryDelete, "HistoryDelete" },
 	{ PrePostProcessor::eaHistoryFinalDelete, "HistoryFinalDelete" },
@@ -1926,7 +1923,7 @@ void EditQueueXmlCommand::Execute()
 
 	bool bOK = false;
 
-	if (iAction < PrePostProcessor::eaPostMoveOffset)
+	if (iAction < PrePostProcessor::eaPostDelete)
 	{
 		bOK = g_pQueueCoordinator->GetQueueEditor()->EditList(&cIDList, NULL, QueueEditor::mmID, (QueueEditor::EEditAction)iAction, iOffset, szEditText);
 	}
@@ -2092,24 +2089,29 @@ void PostQueueXmlCommand::Execute()
 	
 	const char* szMessageType[] = { "INFO", "WARNING", "ERROR", "DEBUG", "DETAIL"};
 
-	PostQueue* pPostQueue = g_pQueueCoordinator->LockQueue()->GetPostQueue();
+	NZBList* pNZBList = g_pQueueCoordinator->LockQueue()->GetQueue();
 
 	time_t tCurTime = time(NULL);
 	int iItemBufSize = 10240;
 	char* szItemBuf = (char*)malloc(iItemBufSize);
 	int index = 0;
 
-	for (PostQueue::iterator it = pPostQueue->begin(); it != pPostQueue->end(); it++)
+	for (NZBList::iterator it = pNZBList->begin(); it != pNZBList->end(); it++)
 	{
-		PostInfo* pPostInfo = *it;
+		NZBInfo* pNZBInfo = *it;
+		PostInfo* pPostInfo = pNZBInfo->GetPostInfo();
+		if (!pPostInfo)
+		{
+			continue;
+		}
 
 	    const char* szPostStageName[] = { "QUEUED", "LOADING_PARS", "VERIFYING_SOURCES", "REPAIRING", "VERIFYING_REPAIRED", "RENAMING", "UNPACKING", "MOVING", "EXECUTING_SCRIPT", "FINISHED" };
 
-		char* xmlInfoName = EncodeStr(pPostInfo->GetInfoName());
+		char* xmlInfoName = EncodeStr(pPostInfo->GetNZBInfo()->GetName());
 		char* xmlProgressLabel = EncodeStr(pPostInfo->GetProgressLabel());
 
 		snprintf(szItemBuf, iItemBufSize, IsJson() ? JSON_POSTQUEUE_ITEM_START : XML_POSTQUEUE_ITEM_START,
-			pPostInfo->GetID(), xmlInfoName, szPostStageName[pPostInfo->GetStage()], xmlProgressLabel,
+			pNZBInfo->GetID(), xmlInfoName, szPostStageName[pPostInfo->GetStage()], xmlProgressLabel,
 			pPostInfo->GetFileProgress(), pPostInfo->GetStageProgress(),
 			pPostInfo->GetStartTime() ? tCurTime - pPostInfo->GetStartTime() : 0,
 			pPostInfo->GetStageTime() ? tCurTime - pPostInfo->GetStageTime() : 0);

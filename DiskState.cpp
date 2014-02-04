@@ -123,7 +123,6 @@ bool DiskState::SaveDownloadQueue(DownloadQueue* pDownloadQueue)
 
 	if (pDownloadQueue->GetQueue()->empty() && 
 		pDownloadQueue->GetUrlQueue()->empty() &&
-		pDownloadQueue->GetPostQueue()->empty() &&
 		pDownloadQueue->GetHistory()->empty())
 	{
 		remove(destFilename);
@@ -138,13 +137,10 @@ bool DiskState::SaveDownloadQueue(DownloadQueue* pDownloadQueue)
 		return false;
 	}
 
-	fprintf(outfile, "%s%i\n", FORMATVERSION_SIGNATURE, 44);
+	fprintf(outfile, "%s%i\n", FORMATVERSION_SIGNATURE, 45);
 
 	// save nzb-infos
 	SaveNZBQueue(pDownloadQueue, outfile);
-
-	// save post-queue
-	SavePostQueue(pDownloadQueue, outfile);
 
 	// save url-queue
 	SaveUrlQueue(pDownloadQueue, outfile);
@@ -186,7 +182,7 @@ bool DiskState::LoadDownloadQueue(DownloadQueue* pDownloadQueue)
 	char FileSignatur[128];
 	fgets(FileSignatur, sizeof(FileSignatur), infile);
 	int iFormatVersion = ParseFormatVersion(FileSignatur);
-	if (iFormatVersion < 3 || iFormatVersion > 44)
+	if (iFormatVersion < 3 || iFormatVersion > 45)
 	{
 		error("Could not load diskstate due to file version mismatch");
 		fclose(infile);
@@ -209,15 +205,15 @@ bool DiskState::LoadDownloadQueue(DownloadQueue* pDownloadQueue)
 		if (!LoadNZBList(pDownloadQueue->GetQueue(), infile, iFormatVersion)) goto error;
 	}
 
-	if (iFormatVersion >= 7)
+	if (iFormatVersion >= 7 && iFormatVersion < 45)
 	{
-		// load post-queue
-		if (!LoadPostQueue(pDownloadQueue, &nzbList, infile, iFormatVersion)) goto error;
+		// load post-queue from v12
+		if (!LoadPostQueue12(pDownloadQueue, &nzbList, infile, iFormatVersion)) goto error;
 	}
 	else if (iFormatVersion < 7 && g_pOptions->GetReloadPostQueue())
 	{
-		// load post-queue created with older version of program
-		LoadOldPostQueue(pDownloadQueue, &nzbList);
+		// load post-queue from v5
+		LoadPostQueue5(pDownloadQueue, &nzbList);
 	}
 
 	if (iFormatVersion >= 15)
@@ -278,16 +274,6 @@ void DiskState::CompleteNZBList12(DownloadQueue* pDownloadQueue, NZBList* pNZBLi
 		pDownloadQueue->GetQueue()->push_back(pNZBInfo);
 	}
 
-	// put NZBs referenced from post-jobs into pDownloadQueue->GetQueue()
-	for (PostQueue::iterator it2 = pDownloadQueue->GetPostQueue()->begin(); it2 != pDownloadQueue->GetPostQueue()->end(); it2++)
-	{
-		PostInfo* pPostInfo = *it2;
-		if (std::find(pDownloadQueue->GetQueue()->begin(), pDownloadQueue->GetQueue()->end(), pPostInfo->GetNZBInfo()) == pDownloadQueue->GetQueue()->end())
-		{
-			pDownloadQueue->GetQueue()->push_back(pPostInfo->GetNZBInfo());
-		}
-	}
-
 	if (31 <= iFormatVersion && iFormatVersion < 42)
 	{
 		// due to a bug in r811 (v12-testing) new NZBIDs were generated on each refresh of web-ui
@@ -345,7 +331,8 @@ void DiskState::SaveNZBInfo(NZBInfo* pNZBInfo, FILE* outfile)
 	fprintf(outfile, "%s\n", pNZBInfo->GetQueuedFilename());
 	fprintf(outfile, "%s\n", pNZBInfo->GetName());
 	fprintf(outfile, "%s\n", pNZBInfo->GetCategory());
-	fprintf(outfile, "%i,%i,%i,%i\n", (int)pNZBInfo->GetPriority(), (int)pNZBInfo->GetPostProcess(),
+	fprintf(outfile, "%i,%i,%i,%i\n", (int)pNZBInfo->GetPriority(), 
+		pNZBInfo->GetPostInfo() ? (int)pNZBInfo->GetPostInfo()->GetStage() + 1 : 0,
 		(int)pNZBInfo->GetDeletePaused(), (int)pNZBInfo->GetManyDupeFiles());
 	fprintf(outfile, "%i,%i,%i,%i,%i,%i\n", (int)pNZBInfo->GetParStatus(), (int)pNZBInfo->GetUnpackStatus(),
 		(int)pNZBInfo->GetMoveStatus(), (int)pNZBInfo->GetRenameStatus(), (int)pNZBInfo->GetDeleteStatus(),
@@ -495,8 +482,12 @@ bool DiskState::LoadNZBInfo(NZBInfo* pNZBInfo, FILE* infile, int iFormatVersion)
 
 	if (true) // clang requires a block for goto to work
 	{
-		int iPriority = 0, iPostProcess = 0, iDeletePaused = 0, iManyDupeFiles = 0;
-		if (iFormatVersion >= 44)
+		int iPriority = 0, iPostProcess = 0, iPostStage = 0, iDeletePaused = 0, iManyDupeFiles = 0;
+		if (iFormatVersion >= 45)
+		{
+			if (fscanf(infile, "%i,%i,%i,%i\n", &iPriority, &iPostStage, &iDeletePaused, &iManyDupeFiles) != 4) goto error;
+		}
+		else if (iFormatVersion >= 44)
 		{
 			if (fscanf(infile, "%i,%i,%i,%i\n", &iPriority, &iPostProcess, &iDeletePaused, &iManyDupeFiles) != 4) goto error;
 		}
@@ -513,9 +504,13 @@ bool DiskState::LoadNZBInfo(NZBInfo* pNZBInfo, FILE* infile, int iFormatVersion)
 			if (fscanf(infile, "%i\n", &iPostProcess) != 1) goto error;
 		}
 		pNZBInfo->SetPriority(iPriority);
-		pNZBInfo->SetPostProcess((bool)iPostProcess);
 		pNZBInfo->SetDeletePaused((bool)iDeletePaused);
 		pNZBInfo->SetManyDupeFiles((bool)iManyDupeFiles);
+		if (iPostStage > 0 && g_pOptions->GetReloadPostQueue())
+		{
+			pNZBInfo->EnterPostProcess();
+			pNZBInfo->GetPostInfo()->SetStage((PostInfo::EStage)iPostStage);
+		}
 	}
 
 	if (iFormatVersion >= 8 && iFormatVersion < 18)
@@ -1092,20 +1087,7 @@ error:
 	return false;
 }
 
-void DiskState::SavePostQueue(DownloadQueue* pDownloadQueue, FILE* outfile)
-{
-	debug("Saving post-queue to disk");
-
-	fprintf(outfile, "%i\n", (int)pDownloadQueue->GetPostQueue()->size());
-	for (PostQueue::iterator it = pDownloadQueue->GetPostQueue()->begin(); it != pDownloadQueue->GetPostQueue()->end(); it++)
-	{
-		PostInfo* pPostInfo = *it;
-		fprintf(outfile, "%i,%i\n", pPostInfo->GetNZBInfo()->GetID(), (int)pPostInfo->GetStage());
-		fprintf(outfile, "%s\n", pPostInfo->GetInfoName());
-	}
-}
-
-bool DiskState::LoadPostQueue(DownloadQueue* pDownloadQueue, NZBList* pNZBList, FILE* infile, int iFormatVersion)
+bool DiskState::LoadPostQueue12(DownloadQueue* pDownloadQueue, NZBList* pNZBList, FILE* infile, int iFormatVersion)
 {
 	debug("Loading post-queue from disk");
 
@@ -1142,32 +1124,32 @@ bool DiskState::LoadPostQueue(DownloadQueue* pDownloadQueue, NZBList* pNZBList, 
 
 		if (!bSkipPostQueue)
 		{
-			pPostInfo = new PostInfo();
+			NZBInfo* pNZBInfo = NULL;
+
 			if (iFormatVersion < 43)
 			{
-				pPostInfo->SetNZBInfo(pNZBList->at(iNZBIndex - 1));
+				pNZBInfo = pNZBList->at(iNZBIndex - 1);
+				if (!pNZBInfo) goto error;
 			}
 			else
 			{
-				pPostInfo->SetNZBInfo(FindNZBInfo(pDownloadQueue, iNZBID));
-				if (!pPostInfo->GetNZBInfo()) goto error;
+				pNZBInfo = FindNZBInfo(pDownloadQueue, iNZBID);
+				if (!pNZBInfo) goto error;
 			}
+
+			pNZBInfo->EnterPostProcess();
+			pPostInfo = pNZBInfo->GetPostInfo();
+
 			pPostInfo->SetStage((PostInfo::EStage)iStage);
 		}
 
+		// InfoName, ignore
 		if (!fgets(buf, sizeof(buf), infile)) goto error;
-		if (buf[0] != 0) buf[strlen(buf)-1] = 0; // remove traling '\n'
-		if (!bSkipPostQueue) pPostInfo->SetInfoName(buf);
 
 		if (iFormatVersion < 22)
 		{
 			// ParFilename, ignore
 			if (!fgets(buf, sizeof(buf), infile)) goto error;
-		}
-
-		if (!bSkipPostQueue)
-		{
-			pDownloadQueue->GetPostQueue()->push_back(pPostInfo);
 		}
 	}
 
@@ -1182,7 +1164,7 @@ error:
  * Loads post-queue created with older versions of nzbget.
  * Returns true if successful, false if not
  */
-bool DiskState::LoadOldPostQueue(DownloadQueue* pDownloadQueue, NZBList* pNZBList)
+bool DiskState::LoadPostQueue5(DownloadQueue* pDownloadQueue, NZBList* pNZBList)
 {
 	debug("Loading post-queue from disk");
 
@@ -1221,8 +1203,6 @@ bool DiskState::LoadOldPostQueue(DownloadQueue* pDownloadQueue, NZBList* pNZBLis
 	if (fscanf(infile, "%i\n", &size) != 1) goto error;
 	for (int i = 0; i < size; i++)
 	{
-		PostInfo* pPostInfo = new PostInfo();
-
 		if (!fgets(buf, sizeof(buf), infile)) goto error;
 		if (buf[0] != 0) buf[strlen(buf)-1] = 0; // remove traling '\n'
 
@@ -1246,7 +1226,8 @@ bool DiskState::LoadOldPostQueue(DownloadQueue* pDownloadQueue, NZBList* pNZBLis
 			pNZBInfo->SetFilename(buf);
 		}
 
-		pPostInfo->SetNZBInfo(pNZBInfo);
+		pNZBInfo->EnterPostProcess();
+		PostInfo* pPostInfo = pNZBInfo->GetPostInfo();
 
 		if (!fgets(buf, sizeof(buf), infile)) goto error;
 		if (buf[0] != 0) buf[strlen(buf)-1] = 0; // remove traling '\n'
@@ -1258,9 +1239,8 @@ bool DiskState::LoadOldPostQueue(DownloadQueue* pDownloadQueue, NZBList* pNZBLis
 		// ParFilename, ignore
 		if (!fgets(buf, sizeof(buf), infile)) goto error;
 
+		// InfoName, ignore
 		if (!fgets(buf, sizeof(buf), infile)) goto error;
-		if (buf[0] != 0) buf[strlen(buf)-1] = 0; // remove traling '\n'
-		pPostInfo->SetInfoName(buf);
 
 		if (iFormatVersion >= 4)
 		{
@@ -1332,8 +1312,6 @@ bool DiskState::LoadOldPostQueue(DownloadQueue* pDownloadQueue, NZBList* pNZBLis
 				}
 			}
 		}
-
-		pDownloadQueue->GetPostQueue()->push_back(pPostInfo);
 	}
 
 	fclose(infile);

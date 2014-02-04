@@ -48,10 +48,12 @@
 #include "Connection.h"
 #include "MessageBase.h"
 #include "QueueCoordinator.h"
+#include "PrePostProcessor.h"
 #include "RemoteClient.h"
 #include "Util.h"
 
 extern QueueCoordinator* g_pQueueCoordinator;
+extern PrePostProcessor* g_pPrePostProcessor;
 extern Options* g_pOptions;
 
 Frontend::Frontend()
@@ -101,8 +103,7 @@ bool Frontend::PrepareData()
 			m_bPauseDownload2 = g_pOptions->GetPauseDownload2();
 			m_iDownloadLimit = g_pOptions->GetDownloadRate();
 			m_iThreadCount = Thread::GetThreadCount();
-			PostQueue* pPostQueue = g_pQueueCoordinator->LockQueue()->GetPostQueue();
-			m_iPostJobCount = pPostQueue->size();
+			m_iPostJobCount = g_pPrePostProcessor->GetJobCount();
 			g_pQueueCoordinator->UnlockQueue();
 			g_pQueueCoordinator->CalcStat(&m_iUpTimeSec, &m_iDnTimeSec, &m_iAllBytes, &m_bStandBy);
 		}

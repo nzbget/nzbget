@@ -368,7 +368,7 @@ var Downloads = (new function($)
 
 	/*** CHECKMARKS ******************************************************/
 
-	function checkBuildEditIDList(UseLastID)
+	function checkBuildEditIDList(UseLastID, allowPostProcess)
 	{
 		var checkedRows = $DownloadsTable.fasttable('checkedRows');
 
@@ -379,7 +379,7 @@ var Downloads = (new function($)
 			var group = groups[i];
 			if (checkedRows.indexOf(group.NZBID) > -1)
 			{
-				if (group.postprocess)
+				if (group.postprocess && !allowPostProcess)
 				{
 					Notification.show('#Notif_Downloads_CheckPostProcess');
 					return null;
@@ -402,7 +402,7 @@ var Downloads = (new function($)
 
 	this.editClick = function()
 	{
-		var checkedEditIDs = checkBuildEditIDList(false);
+		var checkedEditIDs = checkBuildEditIDList(false, false);
 		if (!checkedEditIDs)
 		{
 			return;
@@ -420,7 +420,7 @@ var Downloads = (new function($)
 
 	this.mergeClick = function()
 	{
-		var checkedEditIDs = checkBuildEditIDList(false);
+		var checkedEditIDs = checkBuildEditIDList(false, false);
 		if (!checkedEditIDs)
 		{
 			return;
@@ -437,7 +437,7 @@ var Downloads = (new function($)
 
 	this.pauseClick = function()
 	{
-		var checkedEditIDs = checkBuildEditIDList(true);
+		var checkedEditIDs = checkBuildEditIDList(true, false);
 		if (!checkedEditIDs)
 		{
 			return;
@@ -448,7 +448,7 @@ var Downloads = (new function($)
 
 	this.resumeClick = function()
 	{
-		var checkedEditIDs = checkBuildEditIDList(true);
+		var checkedEditIDs = checkBuildEditIDList(true, false);
 		if (!checkedEditIDs)
 		{
 			return;
@@ -525,7 +525,7 @@ var Downloads = (new function($)
 
 	this.moveClick = function(action)
 	{
-		var checkedEditIDs = checkBuildEditIDList(true);
+		var checkedEditIDs = checkBuildEditIDList(true, true);
 		if (!checkedEditIDs)
 		{
 			return;

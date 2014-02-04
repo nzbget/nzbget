@@ -595,9 +595,7 @@ void ListBinCommand::Execute()
 		ListResponse.m_bPostPaused = htonl(g_pOptions->GetPausePostProcess());
 		ListResponse.m_bScanPaused = htonl(g_pOptions->GetPauseScan());
 		ListResponse.m_iThreadCount = htonl(Thread::GetThreadCount() - 1); // not counting itself
-		PostQueue* pPostQueue = g_pQueueCoordinator->LockQueue()->GetPostQueue();
-		ListResponse.m_iPostJobCount = htonl(pPostQueue->size());
-		g_pQueueCoordinator->UnlockQueue();
+		ListResponse.m_iPostJobCount = htonl(g_pPrePostProcessor->GetJobCount());
 
 		int iUpTimeSec, iDnTimeSec;
 		long long iAllBytes;
@@ -777,7 +775,7 @@ void EditQueueBinCommand::Execute()
 
 	bool bOK = false;
 	
-	if (iAction < eRemoteEditActionPostMoveOffset)
+	if (iAction < eRemoteEditActionPostDelete)
 	{
 		bOK = g_pQueueCoordinator->GetQueueEditor()->EditList(
 			iNrIDEntries > 0 ? &cIDList : NULL,
@@ -826,17 +824,23 @@ void PostQueueBinCommand::Execute()
 	int bufsize = 0;
 
 	// Make a data structure and copy all the elements of the list into it
-	PostQueue* pPostQueue = g_pQueueCoordinator->LockQueue()->GetPostQueue();
-
-	int NrEntries = pPostQueue->size();
+	NZBList* pNZBList = g_pQueueCoordinator->LockQueue()->GetQueue();
 
 	// calculate required buffer size
-	bufsize = NrEntries * sizeof(SNZBPostQueueResponseEntry);
-	for (PostQueue::iterator it = pPostQueue->begin(); it != pPostQueue->end(); it++)
+	int NrEntries = 0;
+	for (NZBList::iterator it = pNZBList->begin(); it != pNZBList->end(); it++)
 	{
-		PostInfo* pPostInfo = *it;
+		NZBInfo* pNZBInfo = *it;
+		PostInfo* pPostInfo = pNZBInfo->GetPostInfo();
+		if (!pPostInfo)
+		{
+			continue;
+		}
+
+		NrEntries++;
+		bufsize += sizeof(SNZBPostQueueResponseEntry);
 		bufsize += strlen(pPostInfo->GetNZBInfo()->GetFilename()) + 1;
-		bufsize += strlen(pPostInfo->GetInfoName()) + 1;
+		bufsize += strlen(pPostInfo->GetNZBInfo()->GetName()) + 1;
 		bufsize += strlen(pPostInfo->GetNZBInfo()->GetDestDir()) + 1;
 		bufsize += strlen(pPostInfo->GetProgressLabel()) + 1;
 		// align struct to 4-bytes, needed by ARM-processor (and may be others)
@@ -847,24 +851,30 @@ void PostQueueBinCommand::Execute()
 	buf = (char*) malloc(bufsize);
 	char* bufptr = buf;
 
-	for (PostQueue::iterator it = pPostQueue->begin(); it != pPostQueue->end(); it++)
+	for (NZBList::iterator it = pNZBList->begin(); it != pNZBList->end(); it++)
 	{
-		PostInfo* pPostInfo = *it;
+		NZBInfo* pNZBInfo = *it;
+		PostInfo* pPostInfo = pNZBInfo->GetPostInfo();
+		if (!pPostInfo)
+		{
+			continue;
+		}
+
 		SNZBPostQueueResponseEntry* pPostQueueAnswer = (SNZBPostQueueResponseEntry*) bufptr;
-		pPostQueueAnswer->m_iID				= htonl(pPostInfo->GetID());
+		pPostQueueAnswer->m_iID				= htonl(pNZBInfo->GetID());
 		pPostQueueAnswer->m_iStage			= htonl(pPostInfo->GetStage());
 		pPostQueueAnswer->m_iStageProgress	= htonl(pPostInfo->GetStageProgress());
 		pPostQueueAnswer->m_iFileProgress	= htonl(pPostInfo->GetFileProgress());
 		pPostQueueAnswer->m_iTotalTimeSec	= htonl((int)(pPostInfo->GetStartTime() ? tCurTime - pPostInfo->GetStartTime() : 0));
 		pPostQueueAnswer->m_iStageTimeSec	= htonl((int)(pPostInfo->GetStageTime() ? tCurTime - pPostInfo->GetStageTime() : 0));
 		pPostQueueAnswer->m_iNZBFilenameLen		= htonl(strlen(pPostInfo->GetNZBInfo()->GetFilename()) + 1);
-		pPostQueueAnswer->m_iInfoNameLen		= htonl(strlen(pPostInfo->GetInfoName()) + 1);
+		pPostQueueAnswer->m_iInfoNameLen		= htonl(strlen(pPostInfo->GetNZBInfo()->GetName()) + 1);
 		pPostQueueAnswer->m_iDestDirLen			= htonl(strlen(pPostInfo->GetNZBInfo()->GetDestDir()) + 1);
 		pPostQueueAnswer->m_iProgressLabelLen	= htonl(strlen(pPostInfo->GetProgressLabel()) + 1);
 		bufptr += sizeof(SNZBPostQueueResponseEntry);
 		strcpy(bufptr, pPostInfo->GetNZBInfo()->GetFilename());
 		bufptr += ntohl(pPostQueueAnswer->m_iNZBFilenameLen);
-		strcpy(bufptr, pPostInfo->GetInfoName());
+		strcpy(bufptr, pPostInfo->GetNZBInfo()->GetName());
 		bufptr += ntohl(pPostQueueAnswer->m_iInfoNameLen);
 		strcpy(bufptr, pPostInfo->GetNZBInfo()->GetDestDir());
 		bufptr += ntohl(pPostQueueAnswer->m_iDestDirLen);
