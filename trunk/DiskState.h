@@ -1,7 +1,7 @@
 /*
  *  This file is part of nzbget
  *
- *  Copyright (C) 2007-2013 Andrey Prygunkov <hugbug@users.sourceforge.net>
+ *  Copyright (C) 2007-2014 Andrey Prygunkov <hugbug@users.sourceforge.net>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -42,7 +42,6 @@ private:
 	void				SaveNZBInfo(NZBInfo* pNZBInfo, FILE* outfile);
 	bool				LoadNZBInfo(NZBInfo* pNZBInfo, FILE* infile, int iFormatVersion);
 	void				SavePostQueue(DownloadQueue* pDownloadQueue, FILE* outfile);
-	bool				LoadPostQueue(DownloadQueue* pDownloadQueue, NZBList* pNZBList, FILE* infile, int iFormatVersion);
 	void				SaveUrlQueue(DownloadQueue* pDownloadQueue, FILE* outfile);
 	bool				LoadUrlQueue(DownloadQueue* pDownloadQueue, FILE* infile, int iFormatVersion);
 	void				SaveUrlInfo(UrlInfo* pUrlInfo, FILE* outfile);
@@ -61,7 +60,8 @@ private:
 	void				CalcFileStats(DownloadQueue* pDownloadQueue, int iFormatVersion);
 
 	// backward compatibility functions (conversions from older formats)
-	bool				LoadOldPostQueue(DownloadQueue* pDownloadQueue, NZBList* pNZBList);
+	bool				LoadPostQueue12(DownloadQueue* pDownloadQueue, NZBList* pNZBList, FILE* infile, int iFormatVersion);
+	bool				LoadPostQueue5(DownloadQueue* pDownloadQueue, NZBList* pNZBList);
 	int					FindNZBInfoIndex(NZBList* pNZBList, NZBInfo* pNZBInfo);
 	void				ConvertDupeKey(char* buf, int bufsize);
 	bool				LoadFileQueue12(NZBList* pNZBList, NZBList* pSortList, FILE* infile, int iFormatVersion);

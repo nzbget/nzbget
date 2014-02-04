@@ -50,8 +50,6 @@ int FileInfo::m_iIDGen = 0;
 int FileInfo::m_iIDMax = 0;
 int NZBInfo::m_iIDGen = 0;
 int NZBInfo::m_iIDMax = 0;
-int PostInfo::m_iIDGen = 0;
-int PostInfo::m_iIDMax = 0;
 int UrlInfo::m_iIDGen = 0;
 int UrlInfo::m_iIDMax = 0;
 int HistoryInfo::m_iIDGen = 0;
@@ -280,7 +278,6 @@ NZBInfo::NZBInfo(bool bPersistent) : m_FileList(true)
 	m_iTotalArticles = 0;
 	m_iSuccessArticles = 0;
 	m_iFailedArticles = 0;
-	m_bPostProcess = false;
 	m_eRenameStatus = rsNone;
 	m_eParStatus = psNone;
 	m_eUnpackStatus = usNone;
@@ -311,6 +308,7 @@ NZBInfo::NZBInfo(bool bPersistent) : m_FileList(true)
 	m_iPriority = 0;
 	m_iActiveDownloads = 0;
 	m_Messages.clear();
+	m_pPostInfo = NULL;
 	m_iIDMessageGen = 0;
 	m_iID = bPersistent ? ++m_iIDGen : 0;
 }
@@ -326,6 +324,7 @@ NZBInfo::~NZBInfo()
 	free(m_szName);
 	free(m_szQueuedFilename);
 	free(m_szDupeKey);
+	delete m_pPostInfo;
 
 	ClearCompletedFiles();
 
@@ -653,6 +652,18 @@ void NZBInfo::CopyFileList(NZBInfo* pSrcNZBInfo)
 	SetMaxTime(pSrcNZBInfo->GetMaxTime());
 }
 
+void NZBInfo::EnterPostProcess()
+{
+	m_pPostInfo = new PostInfo();
+	m_pPostInfo->SetNZBInfo(this);
+}
+
+void NZBInfo::LeavePostProcess()
+{
+	delete m_pPostInfo;
+	m_pPostInfo = NULL;
+}
+
 
 NZBList::~NZBList()
 {
@@ -879,7 +890,6 @@ PostInfo::PostInfo()
 	debug("Creating PostInfo");
 
 	m_pNZBInfo = NULL;
-	m_szInfoName = NULL;
 	m_bWorking = false;
 	m_bDeleted = false;
 	m_bRequestParCheck = false;
@@ -892,14 +902,12 @@ PostInfo::PostInfo()
 	m_pPostThread = NULL;
 	m_Messages.clear();
 	m_iIDMessageGen = 0;
-	m_iID = ++m_iIDGen;
 }
 
 PostInfo::~ PostInfo()
 {
 	debug("Destroying PostInfo");
 
-	free(m_szInfoName);
 	free(m_szProgressLabel);
 
 	for (Messages::iterator it = m_Messages.begin(); it != m_Messages.end(); it++)
@@ -909,11 +917,6 @@ PostInfo::~ PostInfo()
 	m_Messages.clear();
 }
 
-
-void PostInfo::SetInfoName(const char* szInfoName)
-{
-	m_szInfoName = strdup(szInfoName);
-}
 
 void PostInfo::SetProgressLabel(const char* szProgressLabel)
 {

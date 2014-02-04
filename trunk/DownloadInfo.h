@@ -36,6 +36,7 @@
 
 class NZBInfo;
 class DownloadQueue;
+class PostInfo;
 
 class ArticleInfo
 {
@@ -373,7 +374,6 @@ private:
 	time_t				m_tMaxTime;
 	int					m_iPriority;
 	Files				m_completedFiles;
-	bool				m_bPostProcess;
 	ERenameStatus		m_eRenameStatus;
 	EParStatus			m_eParStatus;
 	EUnpackStatus		m_eUnpackStatus;
@@ -403,6 +403,7 @@ private:
 	Mutex				m_mutexLog;
 	Messages			m_Messages;
 	int					m_iIDMessageGen;
+	PostInfo*			m_pPostInfo;
 
 	static int			m_iIDGen;
 	static int			m_iIDMax;
@@ -474,8 +475,6 @@ public:
 	void				BuildFinalDirName(char* szFinalDirBuf, int iBufSize);
 	Files*				GetCompletedFiles() { return &m_completedFiles; }		// needs locking (for shared objects)
 	void				ClearCompletedFiles();
-	bool				GetPostProcess() { return m_bPostProcess; }
-	void				SetPostProcess(bool bPostProcess) { m_bPostProcess = bPostProcess; }
 	ERenameStatus		GetRenameStatus() { return m_eRenameStatus; }
 	void				SetRenameStatus(ERenameStatus eRenameStatus) { m_eRenameStatus = eRenameStatus; }
 	EParStatus			GetParStatus() { return m_eParStatus; }
@@ -527,6 +526,9 @@ public:
 	int					GetGroupID();
 	void				CopyFileList(NZBInfo* pSrcNZBInfo);
 	void				UpdateMinMaxTime();
+	PostInfo*			GetPostInfo() { return m_pPostInfo; }
+	void				EnterPostProcess();
+	void				LeavePostProcess();
 
 	void				AppendMessage(Message::EKind eKind, time_t tTime, const char* szText);
 	Messages*			LockMessages();
@@ -566,9 +568,7 @@ public:
 	typedef std::deque<Message*>	Messages;
 
 private:
-	int					m_iID;
 	NZBInfo*			m_pNZBInfo;
-	char*				m_szInfoName;
 	bool				m_bWorking;
 	bool				m_bDeleted;
 	bool				m_bRequestParCheck;
@@ -584,17 +584,11 @@ private:
 	Messages			m_Messages;
 	int					m_iIDMessageGen;
 
-	static int			m_iIDGen;
-	static int			m_iIDMax;
-
 public:
 						PostInfo();
 						~PostInfo();
-	int					GetID() { return m_iID; }
 	NZBInfo*			GetNZBInfo() { return m_pNZBInfo; }
 	void				SetNZBInfo(NZBInfo* pNZBInfo) { m_pNZBInfo = pNZBInfo; }
-	const char*			GetInfoName() { return m_szInfoName; }
-	void				SetInfoName(const char* szInfoName);
 	EStage				GetStage() { return m_eStage; }
 	void				SetStage(EStage eStage) { m_eStage = eStage; }
 	void				SetProgressLabel(const char* szProgressLabel);
@@ -613,14 +607,12 @@ public:
 	void				SetDeleted(bool bDeleted) { m_bDeleted = bDeleted; }
 	bool				GetRequestParCheck() { return m_bRequestParCheck; }
 	void				SetRequestParCheck(bool bRequestParCheck) { m_bRequestParCheck = bRequestParCheck; }
-	void				AppendMessage(Message::EKind eKind, const char* szText);
 	Thread*				GetPostThread() { return m_pPostThread; }
 	void				SetPostThread(Thread* pPostThread) { m_pPostThread = pPostThread; }
+	void				AppendMessage(Message::EKind eKind, const char* szText);
 	Messages*			LockMessages();
 	void				UnlockMessages();
 };
-
-typedef std::deque<PostInfo*> PostQueue;
 
 typedef std::vector<int> IDList;
 
@@ -783,14 +775,12 @@ protected:
 	NZBList				m_Queue;
 	HistoryList			m_History;
 	UrlQueue			m_UrlQueue;
-	PostQueue			m_PostQueue;
 
 public:
 						DownloadQueue() : m_Queue(true) {}
 	NZBList*			GetQueue() { return &m_Queue; }
 	HistoryList*		GetHistory() { return &m_History; }
 	UrlQueue*			GetUrlQueue() { return &m_UrlQueue; }
-	PostQueue*			GetPostQueue() { return &m_PostQueue; }
 };
 
 class DownloadQueueHolder

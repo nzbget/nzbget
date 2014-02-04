@@ -1366,26 +1366,13 @@ void Options::InitCommandLine(int argc, char* argv[])
 				if (bPost)
 				{
 					// edit-commands for post-processor-queue
-					if (!strcasecmp(optarg, "T"))
-					{
-						m_iEditQueueAction = eRemoteEditActionPostMoveTop;
-					}
-					else if (!strcasecmp(optarg, "B"))
-					{
-						m_iEditQueueAction = eRemoteEditActionPostMoveBottom;
-					}
-					else if (!strcasecmp(optarg, "D"))
+					if (!strcasecmp(optarg, "D"))
 					{
 						m_iEditQueueAction = eRemoteEditActionPostDelete;
 					}
 					else
 					{
-						m_iEditQueueOffset = atoi(optarg);
-						if (m_iEditQueueOffset == 0)
-						{
-							abort("FATAL ERROR: Could not parse value of option 'E'\n");
-						}
-						m_iEditQueueAction = eRemoteEditActionPostMoveOffset;
+						abort("FATAL ERROR: Could not parse value of option 'E'\n");
 					}
 				}
 				else if (bHistory)
@@ -1707,7 +1694,7 @@ void Options::PrintUsage(char* com)
 		"              O             Edit post-processor-queue\n"
 		"              H             Edit history\n"
 		"    <action> is one of:\n"
-		"    - for files (F), groups (G) and post-jobs (O):\n"
+		"    - for files (F) and groups (G):\n"
 		"       <+offset|-offset>    Move in queue relative to current position,\n"
 		"                            offset is an integer value\n"
 		"       T                    Move to top of queue\n"
@@ -1725,6 +1712,8 @@ void Options::PrintUsage(char* com)
 		"       M                    Merge\n"
 		"       S <name>             Split - create new group from selected files\n"
 		"       O <name>=<value>     Set post-process parameter\n"
+		"    - for post-jobs (O):\n"
+		"       D                    Delete (cancel post-processing)\n"
 		"    - for history (H):\n"
 		"       D                    Delete\n"
 		"       P                    Post-process again\n"

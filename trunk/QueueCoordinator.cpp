@@ -1056,7 +1056,7 @@ void QueueCoordinator::AdjustStartTime()
 
 bool QueueCoordinator::SetQueueEntryNZBCategory(NZBInfo* pNZBInfo, const char* szCategory)
 {
-	if (pNZBInfo->GetPostProcess())
+	if (pNZBInfo->GetPostInfo())
 	{
 		error("Could not change category for %s. File in post-process-stage", pNZBInfo->GetName());
 		return false;
@@ -1077,7 +1077,7 @@ bool QueueCoordinator::SetQueueEntryNZBCategory(NZBInfo* pNZBInfo, const char* s
 
 bool QueueCoordinator::SetQueueEntryNZBName(NZBInfo* pNZBInfo, const char* szName)
 {
-	if (pNZBInfo->GetPostProcess())
+	if (pNZBInfo->GetPostInfo())
 	{
 		error("Could not rename %s. File in post-process-stage", pNZBInfo->GetName());
 		return false;
@@ -1110,7 +1110,7 @@ bool QueueCoordinator::SetQueueEntryNZBName(NZBInfo* pNZBInfo, const char* szNam
  */
 bool QueueCoordinator::MergeQueueEntries(NZBInfo* pDestNZBInfo, NZBInfo* pSrcNZBInfo)
 {
-	if (pDestNZBInfo->GetPostProcess() || pSrcNZBInfo->GetPostProcess())
+	if (pDestNZBInfo->GetPostInfo() || pSrcNZBInfo->GetPostInfo())
 	{
 		error("Could not merge %s and %s. File in post-process-stage", pDestNZBInfo->GetName(), pSrcNZBInfo->GetName());
 		return false;
@@ -1201,7 +1201,7 @@ bool QueueCoordinator::SplitQueueEntries(FileList* pFileList, const char* szName
 			error("Could not split %s. File is already (partially) downloaded", pFileInfo->GetFilename());
 			return false;
 		}
-		if (pFileInfo->GetNZBInfo()->GetPostProcess())
+		if (pFileInfo->GetNZBInfo()->GetPostInfo())
 		{
 			error("Could not split %s. File in post-process-stage", pFileInfo->GetFilename());
 			return false;

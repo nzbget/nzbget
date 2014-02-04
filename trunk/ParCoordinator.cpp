@@ -260,7 +260,7 @@ void ParCoordinator::StartParCheckJob(PostInfo* pPostInfo)
 	m_ParChecker.SetPostInfo(pPostInfo);
 	m_ParChecker.SetDestDir(pPostInfo->GetNZBInfo()->GetDestDir());
 	m_ParChecker.SetNZBName(pPostInfo->GetNZBInfo()->GetName());
-	m_ParChecker.PrintMessage(Message::mkInfo, "Checking pars for %s", pPostInfo->GetInfoName());
+	m_ParChecker.PrintMessage(Message::mkInfo, "Checking pars for %s", pPostInfo->GetNZBInfo()->GetName());
 	pPostInfo->SetWorking(true);
 	m_ParChecker.Start();
 }

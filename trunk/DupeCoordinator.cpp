@@ -258,7 +258,7 @@ void DupeCoordinator::NZBFound(DownloadQueue* pDownloadQueue, NZBInfo* pNZBInfo)
 				// if queue has a duplicate with lower score - the existing item is moved
 				// to history as dupe-backup (unless it is in post-processing stage) and
 				// the new item is added to queue (unless it is in post-processing stage)
-				if (!pQueuedNZBInfo->GetPostProcess())
+				if (!pQueuedNZBInfo->GetPostInfo())
 				{
 					// the existing queue item is moved to history as dupe-backup
 					info("Moving collection %s with lower duplicate score to history", pQueuedNZBInfo->GetName());
