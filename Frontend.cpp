@@ -104,7 +104,6 @@ bool Frontend::PrepareData()
 			m_iDownloadLimit = g_pOptions->GetDownloadRate();
 			m_iThreadCount = Thread::GetThreadCount();
 			m_iPostJobCount = g_pPrePostProcessor->GetJobCount();
-			g_pQueueCoordinator->UnlockQueue();
 			g_pQueueCoordinator->CalcStat(&m_iUpTimeSec, &m_iDnTimeSec, &m_iAllBytes, &m_bStandBy);
 		}
 	}
