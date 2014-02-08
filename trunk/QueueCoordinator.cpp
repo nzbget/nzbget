@@ -63,6 +63,7 @@ QueueCoordinator::QueueCoordinator()
 	m_bHasMoreJobs = true;
 	ResetSpeedStat();
 
+	m_bInitilized = false;
 	m_iAllBytes = 0;
 	m_tStartServer = 0;
 	m_tStartDownload = 0;
@@ -118,6 +119,8 @@ void QueueCoordinator::Run()
 	g_pDiskState->CleanupTempDir(&m_DownloadQueue);
 
 	m_mutexDownloadQueue.Unlock();
+
+	m_bInitilized = true;
 
 	AdjustDownloadsLimit();
 	m_tStartServer = time(NULL);

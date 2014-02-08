@@ -108,6 +108,11 @@ void PrePostProcessor::Run()
 {
 	debug("Entering PrePostProcessor-loop");
 
+	while (!g_pQueueCoordinator->IsInitialized() && !IsStopped())
+	{
+		usleep(5 * 1000);
+	}
+
 	if (g_pOptions->GetServerMode() && g_pOptions->GetSaveQueue() &&
 		g_pOptions->GetReloadQueue() && g_pOptions->GetReloadPostQueue())
 	{
