@@ -214,6 +214,8 @@ void Run(bool bReload)
 	g_pQueueCoordinator = new QueueCoordinator();
 	g_pDownloadSpeedMeter = g_pQueueCoordinator;
 	g_pDownloadQueueHolder = g_pQueueCoordinator;
+	g_pScanner = new Scanner();
+	g_pPrePostProcessor = new PrePostProcessor();
 	g_pUrlCoordinator = new UrlCoordinator();
 	g_pFeedCoordinator = new FeedCoordinator();
 	g_pMaintenance = new Maintenance();
@@ -236,6 +238,7 @@ void Run(bool bReload)
 	}
 
 	g_pLog->InitOptions();
+	g_pScanner->InitOptions();
 
 	if (g_pOptions->GetDaemonMode())
 	{
@@ -306,13 +309,6 @@ void Run(bool bReload)
 			g_pRemoteSecureServer = new RemoteServer(true);
 			g_pRemoteSecureServer->Start();
 		}
-	}
-
-	// Creating PrePostProcessor
-	if (!g_pOptions->GetRemoteClientMode())
-	{
-		g_pScanner = new Scanner();
-		g_pPrePostProcessor = new PrePostProcessor();
 	}
 
 	// Create the frontend

@@ -68,6 +68,7 @@ private:
 	bool					m_bHasMoreJobs;
 	int						m_iDownloadsLimit;
 	int						m_iServerConfigGeneration;
+	bool					m_bInitilized;
 
 	// statistics
 	static const int		SPEEDMETER_SLOTS = 30;    
@@ -110,6 +111,7 @@ public:
 	virtual void			Run();
 	virtual void 			Stop();
 	void					Update(Subject* Caller, void* Aspect);
+	bool					IsInitialized() { return m_bInitilized; }
 
 	// statistics
 	long long 				CalcRemainingSize();

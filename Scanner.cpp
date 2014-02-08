@@ -111,11 +111,9 @@ Scanner::Scanner()
 
 	m_bRequestedNZBDirScan = false;
 	m_bScanning = false;
-	m_iNZBDirInterval = g_pOptions->GetNzbDirInterval() * 1000;
+	m_iNZBDirInterval = 0;
 	m_iPass = 0;
-
-	const char* szNZBScript = g_pOptions->GetNZBProcess();
-	m_bNZBScript = szNZBScript && strlen(szNZBScript) > 0;
+	m_bNZBScript = false;
 }
 
 Scanner::~Scanner()
@@ -129,6 +127,13 @@ Scanner::~Scanner()
 	m_FileList.clear();
 
 	ClearQueueList();
+}
+
+void Scanner::InitOptions()
+{
+	m_iNZBDirInterval = g_pOptions->GetNzbDirInterval() * 1000;
+	const char* szNZBScript = g_pOptions->GetNZBProcess();
+	m_bNZBScript = szNZBScript && strlen(szNZBScript) > 0;
 }
 
 void Scanner::ClearQueueList()

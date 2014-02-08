@@ -118,6 +118,7 @@ private:
 public:
 						Scanner();
 						~Scanner();
+	void				InitOptions();
 	void				ScanNZBDir(bool bSyncMode);
 	void				Check();
 	EAddStatus			AddExternalFile(const char* szNZBName, const char* szCategory, int iPriority,
