@@ -1282,7 +1282,7 @@ bool QueueCoordinator::SplitQueueEntries(FileList* pFileList, const char* szName
 			pSrcNZBInfo->SetPausedSize(pSrcNZBInfo->GetPausedSize() - pFileInfo->GetRemainingSize());
 
 			pNZBInfo->SetPausedFileCount(pSrcNZBInfo->GetPausedFileCount() + 1);
-			pNZBInfo->SetPausedSize(pSrcNZBInfo->GetPausedSize() + pFileInfo->GetRemainingSize());
+			pNZBInfo->SetPausedSize(pNZBInfo->GetPausedSize() + pFileInfo->GetRemainingSize());
 		}
 	}
 
