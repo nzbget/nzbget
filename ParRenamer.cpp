@@ -254,6 +254,11 @@ void ParRenamer::LoadParFile(const char* szParFilename)
 		}
 		
 		Par2RepairerSourceFile* sourceFile = (*it).second;
+		if (!sourceFile || !sourceFile->GetDescriptionPacket())
+		{
+			warn("Damaged par2-file detected: %s", szParFilename);
+			continue;
+		}
 		m_FileHashList.push_back(new FileHash(sourceFile->GetDescriptionPacket()->FileName().c_str(),
 			sourceFile->GetDescriptionPacket()->Hash16k().print().c_str()));
 	}
