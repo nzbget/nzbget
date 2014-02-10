@@ -801,42 +801,38 @@ void PrePostProcessor::StartJob(DownloadQueue* pDownloadQueue, PostInfo* pPostIn
 
 void PrePostProcessor::JobCompleted(DownloadQueue* pDownloadQueue, PostInfo* pPostInfo)
 {
-	pPostInfo->SetWorking(false);
-	pPostInfo->SetProgressLabel("");
-	pPostInfo->SetStage(PostInfo::ptFinished);
-
+	NZBInfo* pNZBInfo = pPostInfo->GetNZBInfo();
 	DeletePostThread(pPostInfo);
+	pNZBInfo->LeavePostProcess();
 
-	if (IsNZBFileCompleted(pDownloadQueue, pPostInfo->GetNZBInfo(), true, false))
+	if (IsNZBFileCompleted(pDownloadQueue, pNZBInfo, true, false))
 	{
 		// Cleaning up queue if par-check was successful or unpack was successful or
 		// script was successful (if unpack was not performed)
-		bool bCanCleanupQueue = pPostInfo->GetNZBInfo()->GetParStatus() == NZBInfo::psSuccess ||
-			 pPostInfo->GetNZBInfo()->GetParStatus() == NZBInfo::psRepairPossible ||
-			 pPostInfo->GetNZBInfo()->GetUnpackStatus() == NZBInfo::usSuccess ||
-			 (pPostInfo->GetNZBInfo()->GetUnpackStatus() == NZBInfo::usNone &&
-			  pPostInfo->GetNZBInfo()->GetScriptStatuses()->CalcTotalStatus() == ScriptStatus::srSuccess);
+		bool bCanCleanupQueue = pNZBInfo->GetParStatus() == NZBInfo::psSuccess ||
+			 pNZBInfo->GetParStatus() == NZBInfo::psRepairPossible ||
+			 pNZBInfo->GetUnpackStatus() == NZBInfo::usSuccess ||
+			 (pNZBInfo->GetUnpackStatus() == NZBInfo::usNone &&
+			  pNZBInfo->GetScriptStatuses()->CalcTotalStatus() == ScriptStatus::srSuccess);
 		if (g_pOptions->GetParCleanupQueue() && bCanCleanupQueue)
 		{
-			if (!pPostInfo->GetNZBInfo()->GetFileList()->empty())
+			if (!pNZBInfo->GetFileList()->empty())
 			{
-				info("Cleaning up download queue for %s", pPostInfo->GetNZBInfo()->GetName());
-				pPostInfo->GetNZBInfo()->ClearCompletedFiles();
-				pPostInfo->GetNZBInfo()->SetParCleanup(true);
-				g_pQueueCoordinator->GetQueueEditor()->LockedEditEntry(pDownloadQueue, pPostInfo->GetNZBInfo()->GetGroupID(),
+				info("Cleaning up download queue for %s", pNZBInfo->GetName());
+				pNZBInfo->ClearCompletedFiles();
+				pNZBInfo->SetParCleanup(true);
+				g_pQueueCoordinator->GetQueueEditor()->LockedEditEntry(pDownloadQueue, pNZBInfo->GetGroupID(),
 					QueueEditor::eaGroupDelete, 0, NULL);
 			}
 		}
 
-		NZBCompleted(pDownloadQueue, pPostInfo->GetNZBInfo(), false);
+		NZBCompleted(pDownloadQueue, pNZBInfo, false);
 	}
 
-	if (pPostInfo->GetNZBInfo() == m_pCurJob)
+	if (pNZBInfo == m_pCurJob)
 	{
 		m_pCurJob = NULL;
 	}
-
-	pPostInfo->GetNZBInfo()->LeavePostProcess();
 	m_iJobCount--;
 
 	SaveQueue(pDownloadQueue);
