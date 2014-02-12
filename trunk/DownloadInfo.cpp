@@ -575,18 +575,6 @@ void NZBInfo::UpdateMinMaxTime()
 	}
 }
 
-int NZBInfo::GetGroupID()
-{
-	if (!m_FileList.empty())
-	{
-		return m_FileList.back()->GetID();
-	}
-	else
-	{
-		return 0;
-	}
-}
-
 NZBInfo::Messages* NZBInfo::LockMessages()
 {
 	m_mutexLog.Lock();

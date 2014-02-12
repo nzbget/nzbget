@@ -387,9 +387,18 @@ It prints something like:
 
   [1] nzbname\filename1.rar (50.00 MB)
   [2] nzbname\filename1.r01 (50.00 MB)
+  [3] another-nzb\filename3.r01 (100.00 MB)
+  [4] another-nzb\filename3.r02 (100.00 MB)
 
-The numbers in square braces are ID's of files in queue. They can be used
-in edit-command. For example to move file with ID 2 to the top of queue:
+This is the list of individual files listed within nzb-file. To print
+the list of nzb-files (without content) add G-modifier to the list command:
+
+  [1] nzbname (4.56 GB)
+  [2] another-nzb (4.20 GB)
+
+The numbers in square braces are ID's of files or groups in queue.
+They can be used in edit-command. For example to move file with
+ID 2 to the top of queue:
 
   nzbget -E T 2
   
@@ -402,8 +411,8 @@ or to delete files from queue:
   nzbget -E D 3 10-15 20-21 16
 
 The edit-command has also a group-mode which affects all files from the
-same nzb-request. You need to pass one ID of any file in the group. For
-example to delete all files from the first nzb-request:
+same nzb-file. You need to pass an ID of the group. For example to delete
+the whole group 1:
 
   nzbget -E G D 1
 
@@ -469,13 +478,14 @@ and port defined in NZBGet configuration file in options "ControlIP" and
 
   http://localhost:6789/
 
-For login credentials type username "nzbget" (predefined and not changeable)
-and the password from the option "ControlPassword" (default is tegbzn6789).
+For login credentials type username and the password defined by
+options "ControlUsername" (default "nzbget") and "ControlPassword"
+(default "tegbzn6789").
 
 In a case your browser forget credentials, to prevent typing them each
 time, there is a workaround - use URL in the form:
 
-  http://localhost:6789/nzbget:password/
+  http://localhost:6789/username:password/
 
 Please note, that in this case the password is saved in a bookmark or in
 browser history in plain text and is easy to find by persons having

@@ -1050,7 +1050,7 @@ void NCursesFrontend::PrintGroupname(NZBInfo* pNZBInfo, int iRow, bool bSelected
 		Util::FormatFileSize(szTotal, sizeof(szTotal), pNZBInfo->GetSize());
 
 		char szNameWithIds[1024];
-		snprintf(szNameWithIds, 1024, "%c%i%c%s%s %s", chBrace1, pNZBInfo->GetGroupID(), chBrace2, 
+		snprintf(szNameWithIds, 1024, "%c%i%c%s%s %s", chBrace1, pNZBInfo->GetID(), chBrace2, 
 			szPriority, szDownloading, pNZBInfo->GetName());
 		szNameWithIds[iNameLen] = '\0';
 
@@ -1096,7 +1096,7 @@ void NCursesFrontend::PrintGroupname(NZBInfo* pNZBInfo, int iRow, bool bSelected
 	}
 	else
 	{
-		snprintf(szBuffer, MAX_SCREEN_WIDTH, "%c%i%c%s %s", chBrace1, pNZBInfo->GetGroupID(), 
+		snprintf(szBuffer, MAX_SCREEN_WIDTH, "%c%i%c%s %s", chBrace1, pNZBInfo->GetID(), 
 			chBrace2, szDownloading, pNZBInfo->GetName());
 	}
 
@@ -1118,7 +1118,7 @@ bool NCursesFrontend::EditQueue(QueueEditor::EEditAction eAction, int iOffset)
 		if (m_iSelectedQueueEntry >= 0 && m_iSelectedQueueEntry < (int)pDownloadQueue->GetQueue()->size())
 		{
 			NZBInfo* pNZBInfo = pDownloadQueue->GetQueue()->at(m_iSelectedQueueEntry);
-			ID = pNZBInfo->GetGroupID();
+			ID = pNZBInfo->GetID();
 			if (eAction == QueueEditor::eaFilePause)
 			{
 				if (pNZBInfo->GetRemainingSize() == pNZBInfo->GetPausedSize())

@@ -140,7 +140,7 @@ void ParCoordinator::PausePars(DownloadQueue* pDownloadQueue, NZBInfo* pNZBInfo)
 {
 	debug("ParCoordinator: Pausing pars");
 
-	g_pQueueCoordinator->GetQueueEditor()->LockedEditEntry(pDownloadQueue, pNZBInfo->GetGroupID(), 
+	g_pQueueCoordinator->GetQueueEditor()->LockedEditEntry(pDownloadQueue, pNZBInfo->GetID(), 
 		QueueEditor::eaGroupPauseExtraPars, 0, NULL);
 }
 

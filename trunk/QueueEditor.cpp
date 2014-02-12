@@ -1,7 +1,7 @@
 /*
  *  This file is part of nzbget
  *
- *  Copyright (C) 2007-2013 Andrey Prygunkov <hugbug@users.sourceforge.net>
+ *  Copyright (C) 2007-2014 Andrey Prygunkov <hugbug@users.sourceforge.net>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -58,9 +58,10 @@ extern DiskState* g_pDiskState;
 
 const int MAX_ID = 1000000000;
 
-QueueEditor::EditItem::EditItem(FileInfo* pFileInfo, int iOffset)
+QueueEditor::EditItem::EditItem(FileInfo* pFileInfo, NZBInfo* pNZBInfo, int iOffset)
 {
 	m_pFileInfo = pFileInfo;
+	m_pNZBInfo = pNZBInfo;
 	m_iOffset = iOffset;
 }
 
@@ -93,7 +94,6 @@ FileInfo* QueueEditor::FindFileInfo(DownloadQueue* pDownloadQueue, int iID)
 
 /*
  * Set the pause flag of the specific entry in the queue
- * returns true if successful, false if operation is not possible
  */
 void QueueEditor::PauseUnpauseEntry(FileInfo* pFileInfo, bool bPause)
 {
@@ -102,7 +102,6 @@ void QueueEditor::PauseUnpauseEntry(FileInfo* pFileInfo, bool bPause)
 
 /*
  * Removes entry
- * returns true if successful, false if operation is not possible
  */
 void QueueEditor::DeleteEntry(FileInfo* pFileInfo)
 {
@@ -119,7 +118,6 @@ void QueueEditor::DeleteEntry(FileInfo* pFileInfo)
 
 /*
  * Moves entry in the queue
- * returns true if successful, false if operation is not possible
  */
 void QueueEditor::MoveEntry(DownloadQueue* pDownloadQueue, FileInfo* pFileInfo, int iOffset)
 {
@@ -155,7 +153,6 @@ void QueueEditor::MoveEntry(DownloadQueue* pDownloadQueue, FileInfo* pFileInfo, 
 
 /*
  * Moves group in the queue
- * returns true if successful, false if operation is not possible
  */
 void QueueEditor::MoveGroup(DownloadQueue* pDownloadQueue, NZBInfo* pNZBInfo, int iOffset)
 {
@@ -287,31 +284,31 @@ bool QueueEditor::InternEditList(DownloadQueue* pDownloadQueue, ItemList* pItemL
 						break;
 
 					case eaGroupSetPriority:
-						SetNZBPriority(pItem->m_pFileInfo->GetNZBInfo(), szText);
+						SetNZBPriority(pItem->m_pNZBInfo, szText);
 						break;
 
 					case eaGroupSetCategory:
-						SetNZBCategory(pItem->m_pFileInfo->GetNZBInfo(), szText);
+						SetNZBCategory(pItem->m_pNZBInfo, szText);
 						break;
 
 					case eaGroupSetName:
-						SetNZBName(pItem->m_pFileInfo->GetNZBInfo(), szText);
+						SetNZBName(pItem->m_pNZBInfo, szText);
 						break;
 
 					case eaGroupSetDupeKey:
 					case eaGroupSetDupeScore:
 					case eaGroupSetDupeMode:
-						SetNZBDupeParam(pItem->m_pFileInfo->GetNZBInfo(), eAction, szText);
+						SetNZBDupeParam(pItem->m_pNZBInfo, eAction, szText);
 						break;
 
 					case eaGroupSetParameter:
-						SetNZBParameter(pItem->m_pFileInfo->GetNZBInfo(), szText);
+						SetNZBParameter(pItem->m_pNZBInfo, szText);
 						break;
 
 					case eaGroupMoveTop:
 					case eaGroupMoveBottom:
 					case eaGroupMoveOffset:
-						MoveGroup(pDownloadQueue, pItem->m_pFileInfo->GetNZBInfo(), pItem->m_iOffset);
+						MoveGroup(pDownloadQueue, pItem->m_pNZBInfo, pItem->m_iOffset);
 						break;
 
 					case eaGroupPause:
@@ -321,7 +318,7 @@ bool QueueEditor::InternEditList(DownloadQueue* pDownloadQueue, ItemList* pItemL
 					case eaGroupFinalDelete:
 					case eaGroupPauseAllPars:
 					case eaGroupPauseExtraPars:
-						EditGroup(pDownloadQueue, pItem->m_pFileInfo, eAction, iOffset, szText);
+						EditGroup(pDownloadQueue, pItem->m_pNZBInfo, eAction, iOffset, szText);
 						break;
 
 					case eaFilePauseAllPars:
@@ -405,7 +402,7 @@ void QueueEditor::PrepareList(DownloadQueue* pDownloadQueue, ItemList* pItemList
 						}
 					}
 					iLastDestPos = iIndex + iWorkOffset;
-					pItemList->push_back(new EditItem(pFileInfo, iWorkOffset));
+					pItemList->push_back(new EditItem(pFileInfo, NULL, iWorkOffset));
 				}
 			}
 		}
@@ -433,43 +430,39 @@ void QueueEditor::PrepareList(DownloadQueue* pDownloadQueue, ItemList* pItemList
 		for (int iIndex = iStart; iIndex != iEnd; iIndex += iStep)
 		{
 			NZBInfo* pNZBInfo = pDownloadQueue->GetQueue()->at(iIndex);
-			for (FileList::iterator it = pNZBInfo->GetFileList()->begin(); it != pNZBInfo->GetFileList()->end(); it++)
+			IDList::iterator it2 = std::find(pIDList->begin(), pIDList->end(), pNZBInfo->GetID());
+			if (it2 != pIDList->end())
 			{
-				FileInfo* pFileInfo = *it;
-				IDList::iterator it2 = std::find(pIDList->begin(), pIDList->end(), pFileInfo->GetID());
-				if (it2 != pIDList->end())
+				int iWorkOffset = iOffset;
+				int iDestPos = iIndex + iWorkOffset;
+				if (iLastDestPos == -1)
 				{
-					int iWorkOffset = iOffset;
-					int iDestPos = iIndex + iWorkOffset;
-					if (iLastDestPos == -1)
+					if (iDestPos < 0)
 					{
-						if (iDestPos < 0)
-						{
-							iWorkOffset = -iIndex;
-						}
-						else if (iDestPos > iNrEntries - 1)
-						{
-							iWorkOffset = iNrEntries - 1 - iIndex;
-						}
+						iWorkOffset = -iIndex;
 					}
-					else
+					else if (iDestPos > iNrEntries - 1)
 					{
-						if (iWorkOffset < 0 && iDestPos <= iLastDestPos)
-						{
-							iWorkOffset = iLastDestPos - iIndex + 1;
-						}
-						else if (iWorkOffset > 0 && iDestPos >= iLastDestPos)
-						{
-							iWorkOffset = iLastDestPos - iIndex - 1;
-						}
+						iWorkOffset = iNrEntries - 1 - iIndex;
 					}
-					iLastDestPos = iIndex + iWorkOffset;
-					pItemList->push_back(new EditItem(pFileInfo, iWorkOffset));
 				}
+				else
+				{
+					if (iWorkOffset < 0 && iDestPos <= iLastDestPos)
+					{
+						iWorkOffset = iLastDestPos - iIndex + 1;
+					}
+					else if (iWorkOffset > 0 && iDestPos >= iLastDestPos)
+					{
+						iWorkOffset = iLastDestPos - iIndex - 1;
+					}
+				}
+				iLastDestPos = iIndex + iWorkOffset;
+				pItemList->push_back(new EditItem(NULL, pNZBInfo, iWorkOffset));
 			}
 		}
 	}
-	else
+	else if (eAction < eaGroupMoveOffset)
 	{
 		// check ID range
 		int iMaxID = 0;
@@ -501,7 +494,43 @@ void QueueEditor::PrepareList(DownloadQueue* pDownloadQueue, ItemList* pItemList
 				FileInfo* pFileInfo = FindFileInfo(pDownloadQueue, iID);
 				if (pFileInfo)
 				{
-					pItemList->push_back(new EditItem(pFileInfo, iOffset));
+					pItemList->push_back(new EditItem(pFileInfo, NULL, iOffset));
+				}
+			}
+		}
+	}
+	else 
+	{
+		// check ID range
+		int iMaxID = 0;
+		int iMinID = MAX_ID;
+		for (NZBList::iterator it = pDownloadQueue->GetQueue()->begin(); it != pDownloadQueue->GetQueue()->end(); it++)
+		{
+			NZBInfo* pNZBInfo = *it;
+			int ID = pNZBInfo->GetID();
+			if (ID > iMaxID)
+			{
+				iMaxID = ID;
+			}
+			if (ID < iMinID)
+			{
+				iMinID = ID;
+			}
+		}
+
+		//add IDs to list in order they were transmitted in command
+		for (IDList::iterator it = pIDList->begin(); it != pIDList->end(); it++)
+		{
+			int iID = *it;
+			if (iMinID <= iID && iID <= iMaxID)
+			{
+				for (NZBList::iterator it2 = pDownloadQueue->GetQueue()->begin(); it2 != pDownloadQueue->GetQueue()->end(); it2++)
+				{
+					NZBInfo* pNZBInfo = *it2;
+					if (iID == pNZBInfo->GetID())
+					{
+						pItemList->push_back(new EditItem(NULL, pNZBInfo, iOffset));
+					}
 				}
 			}
 		}
@@ -539,6 +568,7 @@ bool QueueEditor::BuildIDListFromNameList(DownloadQueue* pDownloadQueue, IDList*
 		for (NZBList::iterator it3 = pDownloadQueue->GetQueue()->begin(); it3 != pDownloadQueue->GetQueue()->end(); it3++)
 		{
 			NZBInfo* pNZBInfo = *it3;
+
 			for (FileList::iterator it2 = pNZBInfo->GetFileList()->begin(); it2 != pNZBInfo->GetFileList()->end(); it2++)
 			{
 				FileInfo* pFileInfo = *it2;
@@ -555,17 +585,18 @@ bool QueueEditor::BuildIDListFromNameList(DownloadQueue* pDownloadQueue, IDList*
 						bFound = true;
 					}
 				}
-				else
+			}
+
+			if (eAction >= eaGroupMoveOffset)
+			{
+				// group action
+				const char *szFilename = pNZBInfo->GetName();
+				if (((!pRegEx && !strcmp(szFilename, szName)) || (pRegEx && pRegEx->Match(szFilename))) &&
+					(uniqueIDs.find(pNZBInfo->GetID()) == uniqueIDs.end()))
 				{
-					// group action
-					const char *szFilename = pFileInfo->GetNZBInfo()->GetName();
-					if (((!pRegEx && !strcmp(szFilename, szName)) || (pRegEx && pRegEx->Match(szFilename))) &&
-						(uniqueIDs.find(pFileInfo->GetNZBInfo()->GetID()) == uniqueIDs.end()))
-					{
-						uniqueIDs.insert(pFileInfo->GetNZBInfo()->GetID());
-						pIDList->push_back(pFileInfo->GetID());
-						bFound = true;
-					}
+					uniqueIDs.insert(pNZBInfo->GetID());
+					pIDList->push_back(pNZBInfo->GetID());
+					bFound = true;
 				}
 			}
 		}
@@ -581,29 +612,29 @@ bool QueueEditor::BuildIDListFromNameList(DownloadQueue* pDownloadQueue, IDList*
 	return true;
 }
 
-bool QueueEditor::EditGroup(DownloadQueue* pDownloadQueue, FileInfo* pFileInfo, EEditAction eAction, int iOffset, const char* szText)
+bool QueueEditor::EditGroup(DownloadQueue* pDownloadQueue, NZBInfo* pNZBInfo, EEditAction eAction, int iOffset, const char* szText)
 {
 	ItemList itemList;
 	bool bAllPaused = true;
 
 	// collecting files belonging to group
-	for (FileList::iterator it = pFileInfo->GetNZBInfo()->GetFileList()->begin(); it != pFileInfo->GetNZBInfo()->GetFileList()->end(); it++)
+	for (FileList::iterator it = pNZBInfo->GetFileList()->begin(); it != pNZBInfo->GetFileList()->end(); it++)
 	{
-		FileInfo* pFileInfo2 = *it;
-		itemList.push_back(new EditItem(pFileInfo2, 0));
-		bAllPaused &= pFileInfo2->GetPaused();
+		FileInfo* pFileInfo = *it;
+		itemList.push_back(new EditItem(pFileInfo, NULL, 0));
+		bAllPaused &= pFileInfo->GetPaused();
 	}
 
 	if (eAction == eaGroupDelete || eAction == eaGroupDupeDelete || eAction == eaGroupFinalDelete)
 	{
-		pFileInfo->GetNZBInfo()->SetDeleting(true);
-		pFileInfo->GetNZBInfo()->SetAvoidHistory(eAction == eaGroupFinalDelete);
-		pFileInfo->GetNZBInfo()->SetDeletePaused(bAllPaused);
+		pNZBInfo->SetDeleting(true);
+		pNZBInfo->SetAvoidHistory(eAction == eaGroupFinalDelete);
+		pNZBInfo->SetDeletePaused(bAllPaused);
 		if (eAction == eaGroupDupeDelete)
 		{
-			pFileInfo->GetNZBInfo()->SetDeleteStatus(NZBInfo::dsDupe);
+			pNZBInfo->SetDeleteStatus(NZBInfo::dsDupe);
 		}
-		pFileInfo->GetNZBInfo()->SetCleanupDisk(CanCleanupDisk(pDownloadQueue, pFileInfo->GetNZBInfo()));
+		pNZBInfo->SetCleanupDisk(CanCleanupDisk(pDownloadQueue, pNZBInfo));
 	}
 
 	EEditAction GroupToFileMap[] = { (EEditAction)0, eaFileMoveOffset, eaFileMoveTop, eaFileMoveBottom, eaFilePause,
@@ -789,10 +820,10 @@ bool QueueEditor::MergeGroups(DownloadQueue* pDownloadQueue, ItemList* pItemList
 	for (ItemList::iterator it = pItemList->begin() + 1; it != pItemList->end(); it++)
 	{
 		EditItem* pItem = *it;
-		if (pItem->m_pFileInfo->GetNZBInfo() != pDestItem->m_pFileInfo->GetNZBInfo())
+		if (pItem->m_pNZBInfo != pDestItem->m_pNZBInfo)
 		{
-			debug("merge %s to %s", pItem->m_pFileInfo->GetNZBInfo()->GetFilename(), pDestItem->m_pFileInfo->GetNZBInfo()->GetFilename());
-			if (g_pQueueCoordinator->MergeQueueEntries(pDestItem->m_pFileInfo->GetNZBInfo(), pItem->m_pFileInfo->GetNZBInfo()))
+			debug("merge %s to %s", pItem->m_pNZBInfo->GetFilename(), pDestItem->m_pNZBInfo->GetFilename());
+			if (g_pQueueCoordinator->MergeQueueEntries(pDestItem->m_pNZBInfo, pItem->m_pNZBInfo))
 			{
 				bOK = false;
 			}

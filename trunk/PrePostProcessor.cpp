@@ -583,7 +583,7 @@ void PrePostProcessor::CheckPostQueue()
 				{
 					info("Downloading all remaining files for manual par-check for %s", pPostInfo->GetNZBInfo()->GetName());
 					g_pQueueCoordinator->GetQueueEditor()->LockedEditEntry(pDownloadQueue,
-						pPostInfo->GetNZBInfo()->GetGroupID(), QueueEditor::eaGroupResume, 0, NULL);
+						pPostInfo->GetNZBInfo()->GetID(), QueueEditor::eaGroupResume, 0, NULL);
 					pPostInfo->SetStage(PostInfo::ptFinished);
 				}
 				else
@@ -821,7 +821,7 @@ void PrePostProcessor::JobCompleted(DownloadQueue* pDownloadQueue, PostInfo* pPo
 				info("Cleaning up download queue for %s", pNZBInfo->GetName());
 				pNZBInfo->ClearCompletedFiles();
 				pNZBInfo->SetParCleanup(true);
-				g_pQueueCoordinator->GetQueueEditor()->LockedEditEntry(pDownloadQueue, pNZBInfo->GetGroupID(),
+				g_pQueueCoordinator->GetQueueEditor()->LockedEditEntry(pDownloadQueue, pNZBInfo->GetID(),
 					QueueEditor::eaGroupDelete, 0, NULL);
 			}
 		}
@@ -1285,7 +1285,7 @@ void PrePostProcessor::HistoryRedownload(DownloadQueue* pDownloadQueue, HistoryL
 
 	if (!bPaused && g_pOptions->GetParCheck() != Options::pcForce)
 	{
-		g_pQueueCoordinator->GetQueueEditor()->LockedEditEntry(pDownloadQueue, pNZBInfo->GetGroupID(), 
+		g_pQueueCoordinator->GetQueueEditor()->LockedEditEntry(pDownloadQueue, pNZBInfo->GetID(), 
 			QueueEditor::eaGroupPauseExtraPars, 0, NULL);
 	}
 }
