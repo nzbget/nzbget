@@ -1733,8 +1733,8 @@ void ListGroupsXmlCommand::Execute()
 
 	const char* XML_LIST_ITEM_START = 
 		"<value><struct>\n"
-		"<member><name>FirstID</name><value><i4>%i</i4></value></member>\n"
-		"<member><name>LastID</name><value><i4>%i</i4></value></member>\n"
+		"<member><name>FirstID</name><value><i4>%i</i4></value></member>\n"				// deprecated, use "NZBID" instead
+		"<member><name>LastID</name><value><i4>%i</i4></value></member>\n"				// deprecated, use "NZBID" instead
 		"<member><name>RemainingSizeLo</name><value><i4>%u</i4></value></member>\n"
 		"<member><name>RemainingSizeHi</name><value><i4>%u</i4></value></member>\n"
 		"<member><name>RemainingSizeMB</name><value><i4>%i</i4></value></member>\n"
@@ -1754,8 +1754,8 @@ void ListGroupsXmlCommand::Execute()
 
 	const char* JSON_LIST_ITEM_START = 
 		"{\n"
-		"\"FirstID\" : %i,\n"
-		"\"LastID\" : %i,\n"
+		"\"FirstID\" : %i,\n"					// deprecated, use "NZBID" instead
+		"\"LastID\" : %i,\n"					// deprecated, use "NZBID" instead
 		"\"RemainingSizeLo\" : %u,\n"
 		"\"RemainingSizeHi\" : %u,\n"
 		"\"RemainingSizeMB\" : %i,\n"
@@ -1791,7 +1791,7 @@ void ListGroupsXmlCommand::Execute()
 		iPausedSizeMB = (int)(pNZBInfo->GetPausedSize() / 1024 / 1024);
 
 		snprintf(szItemBuf, iItemBufSize, IsJson() ? JSON_LIST_ITEM_START : XML_LIST_ITEM_START,
-			pNZBInfo->GetGroupID(), pNZBInfo->GetGroupID(), iRemainingSizeLo, iRemainingSizeHi, iRemainingSizeMB,
+			pNZBInfo->GetID(), pNZBInfo->GetID(), iRemainingSizeLo, iRemainingSizeHi, iRemainingSizeMB,
 			iPausedSizeLo, iPausedSizeHi, iPausedSizeMB, (int)pNZBInfo->GetFileList()->size(),
 			pNZBInfo->GetRemainingParCount(), pNZBInfo->GetMinTime(), pNZBInfo->GetMaxTime(),
 			pNZBInfo->GetPriority(), pNZBInfo->GetPriority(), pNZBInfo->GetActiveDownloads());

@@ -460,6 +460,7 @@ void ListBinCommand::Execute()
 			SNZBListResponseNZBEntry* pListAnswer = (SNZBListResponseNZBEntry*) bufptr;
 			unsigned long iSizeHi, iSizeLo;
 			Util::SplitInt64(pNZBInfo->GetSize(), &iSizeHi, &iSizeLo);
+			pListAnswer->m_iID					= htonl(pNZBInfo->GetID());
 			pListAnswer->m_iSizeLo				= htonl(iSizeLo);
 			pListAnswer->m_iSizeHi				= htonl(iSizeHi);
 			pListAnswer->m_iPriority			= htonl(pNZBInfo->GetPriority());

@@ -79,8 +79,9 @@ private:
 	public:
 		int			m_iOffset;
 		FileInfo*	m_pFileInfo;
+		NZBInfo*	m_pNZBInfo;
 
-		EditItem(FileInfo* pFileInfo, int iOffset);
+		EditItem(FileInfo* pFileInfo, NZBInfo* pNZBInfo, int iOffset);
 	};
 
 	typedef std::vector<EditItem*> ItemList;
@@ -90,7 +91,7 @@ private:
 	bool					InternEditList(DownloadQueue* pDownloadQueue, ItemList* pItemList, IDList* pIDList, EEditAction eAction, int iOffset, const char* szText);
 	void					PrepareList(DownloadQueue* pDownloadQueue, ItemList* pItemList, IDList* pIDList, EEditAction eAction, int iOffset);
 	bool					BuildIDListFromNameList(DownloadQueue* pDownloadQueue, IDList* pIDList, NameList* pNameList, EMatchMode eMatchMode, EEditAction eAction);
-	bool					EditGroup(DownloadQueue* pDownloadQueue, FileInfo* pFileInfo, EEditAction eAction, int iOffset, const char* szText);
+	bool					EditGroup(DownloadQueue* pDownloadQueue, NZBInfo* pNZBInfo, EEditAction eAction, int iOffset, const char* szText);
 	void					PauseParsInGroups(ItemList* pItemList, bool bExtraParsOnly);
 	void					PausePars(FileList* pFileList, bool bExtraParsOnly);
 	void					SetNZBPriority(NZBInfo* pNZBInfo, const char* szPriority);

@@ -523,7 +523,6 @@ public:
 	void				SetFullContentHash(unsigned int iFullContentHash) { m_iFullContentHash = iFullContentHash; }
 	unsigned int		GetFilteredContentHash() { return m_iFilteredContentHash; }
 	void				SetFilteredContentHash(unsigned int iFilteredContentHash) { m_iFilteredContentHash = iFilteredContentHash; }
-	int					GetGroupID();
 	void				CopyFileList(NZBInfo* pSrcNZBInfo);
 	void				UpdateMinMaxTime();
 	PostInfo*			GetPostInfo() { return m_pPostInfo; }

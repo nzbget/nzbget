@@ -129,47 +129,17 @@ var Downloads = (new function($)
 		for (var i=0, il=posts.length; i < il; i++)
 		{
 			var post = posts[i];
-			var found = false;
 			for (var j=0, jl=groups.length; j < jl; j++)
 			{
 				var group = groups[j];
 				if (group.NZBID === post.NZBID)
 				{
-					found = true;
 					if (!group.post)
 					{
 						group.post = post;
 					}
 					lastPPItemIndex = j;
 					break;
-				}
-			}
-
-			if (!found)
-			{
-				// create a virtual group-item:
-				// post-item has most of fields the group-item has,
-				// we use post-item as basis and then add missing fields.
-				group = $.extend({}, post);
-				group.post = post;
-				group.MaxPriority = 0;
-				group.LastID = 0;
-				group.MinPostTime = 0;
-				group.RemainingSizeMB = 0;
-				group.RemainingSizeLo = 0;
-				group.PausedSizeMB = 0;
-				group.PausedSizeLo = 0;
-				group.RemainingFileCount = 0;
-				group.RemainingParCount = 0;
-
-				// insert it after the last pp-item
-				if (lastPPItemIndex > -1)
-				{
-					groups.splice(lastPPItemIndex + 1, 0, group);
-				}
-				else
-				{
-					groups.unshift(group);
 				}
 			}
 		}
@@ -368,7 +338,7 @@ var Downloads = (new function($)
 
 	/*** CHECKMARKS ******************************************************/
 
-	function checkBuildEditIDList(UseLastID, allowPostProcess)
+	function checkBuildEditIDList(allowPostProcess)
 	{
 		var checkedRows = $DownloadsTable.fasttable('checkedRows');
 
@@ -385,7 +355,7 @@ var Downloads = (new function($)
 					return null;
 				}
 
-				checkedEditIDs.push(UseLastID ? group.LastID : group.NZBID);
+				checkedEditIDs.push(group.NZBID);
 			}
 		}
 
@@ -402,7 +372,7 @@ var Downloads = (new function($)
 
 	this.editClick = function()
 	{
-		var checkedEditIDs = checkBuildEditIDList(false, false);
+		var checkedEditIDs = checkBuildEditIDList(false);
 		if (!checkedEditIDs)
 		{
 			return;
@@ -420,7 +390,7 @@ var Downloads = (new function($)
 
 	this.mergeClick = function()
 	{
-		var checkedEditIDs = checkBuildEditIDList(false, false);
+		var checkedEditIDs = checkBuildEditIDList(false);
 		if (!checkedEditIDs)
 		{
 			return;
@@ -437,7 +407,7 @@ var Downloads = (new function($)
 
 	this.pauseClick = function()
 	{
-		var checkedEditIDs = checkBuildEditIDList(true, false);
+		var checkedEditIDs = checkBuildEditIDList(false);
 		if (!checkedEditIDs)
 		{
 			return;
@@ -448,7 +418,7 @@ var Downloads = (new function($)
 
 	this.resumeClick = function()
 	{
-		var checkedEditIDs = checkBuildEditIDList(true, false);
+		var checkedEditIDs = checkBuildEditIDList(false);
 		if (!checkedEditIDs)
 		{
 			return;
@@ -479,12 +449,9 @@ var Downloads = (new function($)
 			{
 				if (group.postprocess)
 				{
-					postprocessIDs.push(group.post.ID);
+					postprocessIDs.push(group.NZBID);
 				}
-				if (group.LastID > 0)
-				{
-					downloadIDs.push(group.LastID);
-				}
+				downloadIDs.push(group.NZBID);
 			}
 		}
 
@@ -525,7 +492,7 @@ var Downloads = (new function($)
 
 	this.moveClick = function(action)
 	{
-		var checkedEditIDs = checkBuildEditIDList(true, true);
+		var checkedEditIDs = checkBuildEditIDList(true);
 		if (!checkedEditIDs)
 		{
 			return;

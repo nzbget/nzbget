@@ -1,7 +1,7 @@
 /*
  * This file is part of nzbget
  *
- * Copyright (C) 2012-2013 Andrey Prygunkov <hugbug@users.sourceforge.net>
+ * Copyright (C) 2012-2014 Andrey Prygunkov <hugbug@users.sourceforge.net>
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -367,7 +367,7 @@ var DownloadsEditDialog = (new function($)
 	{
 		var name = $('#DownloadsEdit_NZBName').val();
 		name !== curGroup.NZBName && !curGroup.postprocess ?
-			RPC.call('editqueue', ['GroupSetName', 0, name, [curGroup.LastID]], function()
+			RPC.call('editqueue', ['GroupSetName', 0, name, [curGroup.NZBID]], function()
 			{
 				notification = '#Notif_Downloads_Saved';
 				savePriority();
@@ -378,8 +378,8 @@ var DownloadsEditDialog = (new function($)
 	function savePriority()
 	{
 		var priority = parseInt($('#DownloadsEdit_Priority').val());
-		priority !== curGroup.MaxPriority && curGroup.LastID > 0 ?
-			RPC.call('editqueue', ['GroupSetPriority', 0, ''+priority, [curGroup.LastID]], function()
+		priority !== curGroup.MaxPriority ?
+			RPC.call('editqueue', ['GroupSetPriority', 0, ''+priority, [curGroup.NZBID]], function()
 			{
 				notification = '#Notif_Downloads_Saved';
 				saveCategory();
@@ -390,8 +390,8 @@ var DownloadsEditDialog = (new function($)
 	function saveCategory()
 	{
 		var category = $('#DownloadsEdit_Category').val();
-		category !== curGroup.Category && curGroup.LastID > 0	?
-			RPC.call('editqueue', ['GroupSetCategory', 0, category, [curGroup.LastID]], function()
+		category !== curGroup.Category ?
+			RPC.call('editqueue', ['GroupSetCategory', 0, category, [curGroup.NZBID]], function()
 			{
 				notification = '#Notif_Downloads_Saved';
 				saveDupeKey();
@@ -404,7 +404,7 @@ var DownloadsEditDialog = (new function($)
 		e.preventDefault();
 		disableAllButtons();
 		notification = '#Notif_Downloads_Paused';
-		RPC.call('editqueue', ['GroupPause', 0, '', [curGroup.LastID]], completed);
+		RPC.call('editqueue', ['GroupPause', 0, '', [curGroup.NZBID]], completed);
 	}
 
 	function itemResume(e)
@@ -412,7 +412,7 @@ var DownloadsEditDialog = (new function($)
 		e.preventDefault();
 		disableAllButtons();
 		notification = '#Notif_Downloads_Resumed';
-		RPC.call('editqueue', ['GroupResume', 0, '', [curGroup.LastID]], function()
+		RPC.call('editqueue', ['GroupResume', 0, '', [curGroup.NZBID]], function()
 		{
 			if (Options.option('ParCheck') === 'force')
 			{
@@ -420,7 +420,7 @@ var DownloadsEditDialog = (new function($)
 			}
 			else
 			{
-				RPC.call('editqueue', ['GroupPauseExtraPars', 0, '', [curGroup.LastID]], completed);
+				RPC.call('editqueue', ['GroupPauseExtraPars', 0, '', [curGroup.NZBID]], completed);
 			}
 		});
 	}
@@ -435,7 +435,7 @@ var DownloadsEditDialog = (new function($)
 	{
 		disableAllButtons();
 		notification = '#Notif_Downloads_Deleted';
-		RPC.call('editqueue', [command, 0, '', [curGroup.LastID]], completed);
+		RPC.call('editqueue', [command, 0, '', [curGroup.NZBID]], completed);
 	}
 
 	function itemCancelPP(e)
@@ -446,12 +446,12 @@ var DownloadsEditDialog = (new function($)
 
 		var postDelete = function()
 		{
-			RPC.call('editqueue', ['PostDelete', 0, '', [curGroup.post.ID]], completed);
+			RPC.call('editqueue', ['PostDelete', 0, '', [curGroup.NZBID]], completed);
 		};
 
-		if (curGroup.LastID > 0)
+		if (curGroup.NZBID > 0)
 		{
-			RPC.call('editqueue', ['GroupDelete', 0, '', [curGroup.LastID]], postDelete);
+			RPC.call('editqueue', ['GroupDelete', 0, '', [curGroup.NZBID]], postDelete);
 		}
 		else
 		{
@@ -471,7 +471,7 @@ var DownloadsEditDialog = (new function($)
 	{
 		if (paramList.length > 0)
 		{
-			RPC.call('editqueue', ['GroupSetParameter', 0, paramList[0], [curGroup.LastID]], function()
+			RPC.call('editqueue', ['GroupSetParameter', 0, paramList[0], [curGroup.NZBID]], function()
 			{
 				notification = '#Notif_Downloads_Saved';
 				paramList.shift();
@@ -490,7 +490,7 @@ var DownloadsEditDialog = (new function($)
 	{
 		var value = $('#DownloadsEdit_DupeKey').val();
 		value !== curGroup.DupeKey ?
-			RPC.call('editqueue', ['GroupSetDupeKey', 0, value, [curGroup.LastID]], function()
+			RPC.call('editqueue', ['GroupSetDupeKey', 0, value, [curGroup.NZBID]], function()
 			{
 				notification = '#Notif_Downloads_Saved';
 				saveDupeScore();
@@ -502,7 +502,7 @@ var DownloadsEditDialog = (new function($)
 	{
 		var value = $('#DownloadsEdit_DupeScore').val();
 		value != curGroup.DupeScore ?
-			RPC.call('editqueue', ['GroupSetDupeScore', 0, value, [curGroup.LastID]], function()
+			RPC.call('editqueue', ['GroupSetDupeScore', 0, value, [curGroup.NZBID]], function()
 			{
 				notification = '#Notif_Downloads_Saved';
 				saveDupeMode();
@@ -514,7 +514,7 @@ var DownloadsEditDialog = (new function($)
 	{
 		var value = $('#DownloadsEdit_DupeMode').val();
 		value !== curGroup.DupeMode ?
-			RPC.call('editqueue', ['GroupSetDupeMode', 0, value, [curGroup.LastID]], function()
+			RPC.call('editqueue', ['GroupSetDupeMode', 0, value, [curGroup.NZBID]], function()
 			{
 				notification = '#Notif_Downloads_Saved';
 				saveParam();
@@ -1007,7 +1007,7 @@ var DownloadsMultiDialog = (new function($)
 			if (nzbIdList.indexOf(gr.NZBID) > -1)
 			{
 				groups.push(gr);
-				multiIDList.push(gr.LastID);
+				multiIDList.push(gr.NZBID);
 			}
 		}
 		if (groups.length == 0)
@@ -1199,7 +1199,7 @@ var DownloadsMergeDialog = (new function($)
 			var group = allGroups[i];
 			if (nzbIdList.indexOf(group.NZBID) > -1)
 			{
-				mergeEditIDList.push(group.LastID);
+				mergeEditIDList.push(group.NZBID);
 				var html = '<table><tr><td width="18px" valign="top"><i class="icon-file" style="vertical-align:top;margin-top:2px;"></i></td><td>' +
 					Util.formatNZBName(group.NZBName) + '</td></tr></table>';
 				$('#DownloadsMerge_Files').append(html);

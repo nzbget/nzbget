@@ -236,6 +236,7 @@ void RemoteClient::BuildFileList(SNZBListResponse* pListResponse, const char* pT
 				ntohl(pListAnswer->m_iNameLen) + ntohl(pListAnswer->m_iDestDirLen) + ntohl(pListAnswer->m_iCategoryLen);
 			
 			MatchedNZBInfo* pNZBInfo = new MatchedNZBInfo();
+			pNZBInfo->SetID(ntohl(pListAnswer->m_iID));
 			pNZBInfo->SetSize(Util::JoinInt64(ntohl(pListAnswer->m_iSizeHi), ntohl(pListAnswer->m_iSizeLo)));
 			pNZBInfo->SetFilename(szFileName);
 			pNZBInfo->SetName(szName);
@@ -525,7 +526,7 @@ bool RemoteClient::RequestServerList(bool bFiles, bool bGroups, const char* szPa
 
 				if (!szPattern || ((MatchedNZBInfo*)pNZBInfo)->m_bMatch)
 				{
-					printf("[%i] %s%s (%i file%s, %s%s%s)%s%s\n", pNZBInfo->GetGroupID(), szPriority, 
+					printf("[%i] %s%s (%i file%s, %s%s%s)%s%s\n", pNZBInfo->GetID(), szPriority, 
 						pNZBInfo->GetName(), (int)pNZBInfo->GetFileList()->size(),
 						pNZBInfo->GetFileList()->size() > 1 ? "s" : "", szRemaining, 
 						szPaused, szThreads, szCategory, szParameters);
