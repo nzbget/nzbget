@@ -219,12 +219,12 @@ void PrePostProcessor::QueueCoordinatorUpdate(Subject * Caller, void * Aspect)
 #ifndef DISABLE_PARCHECK
 			!m_ParCoordinator.AddPar(pAspect->pFileInfo, pAspect->eAction == QueueCoordinator::eaFileDeleted) &&
 #endif
-			IsNZBFileCompleted(pAspect->pDownloadQueue, pAspect->pNZBInfo, true, false) &&
-			(!pAspect->pFileInfo->GetPaused() || IsNZBFileCompleted(pAspect->pDownloadQueue, pAspect->pNZBInfo, false, false)))
+			IsNZBFileCompleted(pAspect->pNZBInfo, true, false) &&
+			(!pAspect->pFileInfo->GetPaused() || IsNZBFileCompleted(pAspect->pNZBInfo, false, false)))
 		{
 			if ((pAspect->eAction == QueueCoordinator::eaFileCompleted ||
 				(pAspect->pFileInfo->GetAutoDeleted() &&
-				 IsNZBFileCompleted(pAspect->pDownloadQueue, pAspect->pNZBInfo, false, true))) &&
+				 IsNZBFileCompleted(pAspect->pNZBInfo, false, true))) &&
 				 pAspect->pFileInfo->GetNZBInfo()->GetDeleteStatus() != NZBInfo::dsHealth)
 			{
 				info("Collection %s completely downloaded", pAspect->pNZBInfo->GetName());
@@ -234,7 +234,7 @@ void PrePostProcessor::QueueCoordinatorUpdate(Subject * Caller, void * Aspect)
 				(pAspect->eAction == QueueCoordinator::eaFileCompleted &&
 				 pAspect->pFileInfo->GetNZBInfo()->GetDeleteStatus() > NZBInfo::dsNone)) &&
 				!pAspect->pNZBInfo->GetParCleanup() && !pAspect->pNZBInfo->GetPostInfo() &&
-				IsNZBFileCompleted(pAspect->pDownloadQueue, pAspect->pNZBInfo, false, true))
+				IsNZBFileCompleted(pAspect->pNZBInfo, false, true))
 			{
 				info("Collection %s deleted from queue", pAspect->pNZBInfo->GetName());
 				NZBDeleted(pAspect->pDownloadQueue, pAspect->pNZBInfo);
@@ -805,7 +805,7 @@ void PrePostProcessor::JobCompleted(DownloadQueue* pDownloadQueue, PostInfo* pPo
 	DeletePostThread(pPostInfo);
 	pNZBInfo->LeavePostProcess();
 
-	if (IsNZBFileCompleted(pDownloadQueue, pNZBInfo, true, false))
+	if (IsNZBFileCompleted(pNZBInfo, true, false))
 	{
 		// Cleaning up queue if par-check was successful or unpack was successful or
 		// script was successful (if unpack was not performed)
@@ -838,8 +838,7 @@ void PrePostProcessor::JobCompleted(DownloadQueue* pDownloadQueue, PostInfo* pPo
 	SaveQueue(pDownloadQueue);
 }
 
-bool PrePostProcessor::IsNZBFileCompleted(DownloadQueue* pDownloadQueue, NZBInfo* pNZBInfo,
-	bool bIgnorePausedPars, bool bAllowOnlyOneDeleted)
+bool PrePostProcessor::IsNZBFileCompleted(NZBInfo* pNZBInfo, bool bIgnorePausedPars, bool bAllowOnlyOneDeleted)
 {
 	bool bNZBFileCompleted = true;
 	int iDeleted = 0;

@@ -94,8 +94,7 @@ private:
 	int					m_iJobCount;
 	NZBInfo*			m_pCurJob;
 
-	bool				IsNZBFileCompleted(DownloadQueue* pDownloadQueue, NZBInfo* pNZBInfo, 
-							bool bIgnorePausedPars, bool bAllowOnlyOneDeleted);
+	bool				IsNZBFileCompleted(NZBInfo* pNZBInfo, bool bIgnorePausedPars, bool bAllowOnlyOneDeleted);
 	void				CheckPostQueue();
 	void				JobCompleted(DownloadQueue* pDownloadQueue, PostInfo* pPostInfo);
 	void				StartJob(DownloadQueue* pDownloadQueue, PostInfo* pPostInfo);
