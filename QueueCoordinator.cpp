@@ -892,14 +892,14 @@ void QueueCoordinator::CheckHealth(FileInfo* pFileInfo)
 		warn("Pausing %s due to health %.1f%% below critical %.1f%%", pFileInfo->GetNZBInfo()->GetName(),
 			pFileInfo->GetNZBInfo()->CalcHealth() / 10.0, pFileInfo->GetNZBInfo()->CalcCriticalHealth(true) / 10.0);
 		pFileInfo->GetNZBInfo()->SetHealthPaused(true);
-		m_QueueEditor.LockedEditEntry(&m_DownloadQueue, pFileInfo->GetID(), QueueEditor::eaGroupPause, 0, NULL);
+		m_QueueEditor.LockedEditEntry(&m_DownloadQueue, pFileInfo->GetNZBInfo()->GetID(), QueueEditor::eaGroupPause, 0, NULL);
 	}
 	else if (g_pOptions->GetHealthCheck() == Options::hcDelete)
 	{
 		warn("Cancelling download and deleting %s due to health %.1f%% below critical %.1f%%", pFileInfo->GetNZBInfo()->GetName(),
 			pFileInfo->GetNZBInfo()->CalcHealth() / 10.0, pFileInfo->GetNZBInfo()->CalcCriticalHealth(true) / 10.0);
 		pFileInfo->GetNZBInfo()->SetDeleteStatus(NZBInfo::dsHealth);
-		m_QueueEditor.LockedEditEntry(&m_DownloadQueue, pFileInfo->GetID(), QueueEditor::eaGroupDelete, 0, NULL);
+		m_QueueEditor.LockedEditEntry(&m_DownloadQueue, pFileInfo->GetNZBInfo()->GetID(), QueueEditor::eaGroupDelete, 0, NULL);
 	}
 }
 
