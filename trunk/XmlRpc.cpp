@@ -53,11 +53,13 @@
 #include "Util.h"
 #include "WebDownloader.h"
 #include "Maintenance.h"
+#include "HistoryCoordinator.h"
 
 extern Options* g_pOptions;
 extern QueueCoordinator* g_pQueueCoordinator;
 extern UrlCoordinator* g_pUrlCoordinator;
 extern PrePostProcessor* g_pPrePostProcessor;
+extern HistoryCoordinator* g_pHistoryCoordinator;
 extern Scanner* g_pScanner;
 extern FeedCoordinator* g_pFeedCoordinator;
 extern ServerPool* g_pServerPool;
@@ -1851,18 +1853,18 @@ EditCommandEntry EditCommandNameMap[] = {
 	{ QueueEditor::eaGroupSetDupeScore, "GroupSetDupeScore" },
 	{ QueueEditor::eaGroupSetDupeMode, "GroupSetDupeMode" },
 	{ PrePostProcessor::eaPostDelete, "PostDelete" },
-	{ PrePostProcessor::eaHistoryDelete, "HistoryDelete" },
-	{ PrePostProcessor::eaHistoryFinalDelete, "HistoryFinalDelete" },
-	{ PrePostProcessor::eaHistoryReturn, "HistoryReturn" },
-	{ PrePostProcessor::eaHistoryProcess, "HistoryProcess" },		
-	{ PrePostProcessor::eaHistoryRedownload, "HistoryRedownload" },
-	{ PrePostProcessor::eaHistorySetParameter, "HistorySetParameter" },
-	{ PrePostProcessor::eaHistorySetDupeKey, "HistorySetDupeKey" },
-	{ PrePostProcessor::eaHistorySetDupeScore, "HistorySetDupeScore" },
-	{ PrePostProcessor::eaHistorySetDupeMode, "HistorySetDupeMode" },
-	{ PrePostProcessor::eaHistorySetDupeBackup, "HistorySetDupeBackup" },
-	{ PrePostProcessor::eaHistoryMarkBad, "HistoryMarkBad" },
-	{ PrePostProcessor::eaHistoryMarkGood, "HistoryMarkGood" },
+	{ HistoryCoordinator::eaHistoryDelete, "HistoryDelete" },
+	{ HistoryCoordinator::eaHistoryFinalDelete, "HistoryFinalDelete" },
+	{ HistoryCoordinator::eaHistoryReturn, "HistoryReturn" },
+	{ HistoryCoordinator::eaHistoryProcess, "HistoryProcess" },		
+	{ HistoryCoordinator::eaHistoryRedownload, "HistoryRedownload" },
+	{ HistoryCoordinator::eaHistorySetParameter, "HistorySetParameter" },
+	{ HistoryCoordinator::eaHistorySetDupeKey, "HistorySetDupeKey" },
+	{ HistoryCoordinator::eaHistorySetDupeScore, "HistorySetDupeScore" },
+	{ HistoryCoordinator::eaHistorySetDupeMode, "HistorySetDupeMode" },
+	{ HistoryCoordinator::eaHistorySetDupeBackup, "HistorySetDupeBackup" },
+	{ HistoryCoordinator::eaHistoryMarkBad, "HistoryMarkBad" },
+	{ HistoryCoordinator::eaHistoryMarkGood, "HistoryMarkGood" },
 	{ 0, NULL }
 };
 
@@ -1927,9 +1929,13 @@ void EditQueueXmlCommand::Execute()
 	{
 		bOK = g_pQueueCoordinator->GetQueueEditor()->EditList(&cIDList, NULL, QueueEditor::mmID, (QueueEditor::EEditAction)iAction, iOffset, szEditText);
 	}
+	else if (iAction < HistoryCoordinator::eaHistoryDelete)
+	{
+		bOK = g_pPrePostProcessor->EditList(&cIDList, (PrePostProcessor::EEditAction)iAction, iOffset, szEditText);
+	}
 	else
 	{
-		bOK = g_pPrePostProcessor->QueueEditList(&cIDList, (PrePostProcessor::EEditAction)iAction, iOffset, szEditText);
+		bOK = g_pHistoryCoordinator->EditList(&cIDList, (HistoryCoordinator::EEditAction)iAction, iOffset, szEditText);
 	}
 
 	BuildBoolResponse(bOK);

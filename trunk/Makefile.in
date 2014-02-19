@@ -90,8 +90,9 @@ am_nzbget_OBJECTS = ArticleDownloader.$(OBJEXT) BinRpc.$(OBJEXT) \
 	FeedFilter.$(OBJEXT) FeedInfo.$(OBJEXT) Log.$(OBJEXT) \
 	LoggableFrontend.$(OBJEXT) Maintenance.$(OBJEXT) \
 	NCursesFrontend.$(OBJEXT) NNTPConnection.$(OBJEXT) \
-	NZBFile.$(OBJEXT) NewsServer.$(OBJEXT) Observer.$(OBJEXT) \
-	Options.$(OBJEXT) ParChecker.$(OBJEXT) ParRenamer.$(OBJEXT) \
+	HistoryCoordinator.$(OBJEXT) NZBFile.$(OBJEXT) \
+	NewsServer.$(OBJEXT) Observer.$(OBJEXT) Options.$(OBJEXT) \
+	ParChecker.$(OBJEXT) ParRenamer.$(OBJEXT) \
 	ParCoordinator.$(OBJEXT) PrePostProcessor.$(OBJEXT) \
 	QueueCoordinator.$(OBJEXT) QueueEditor.$(OBJEXT) \
 	RemoteClient.$(OBJEXT) RemoteServer.$(OBJEXT) \
@@ -249,7 +250,7 @@ nzbget_SOURCES = \
 	Frontend.cpp Frontend.h FeedCoordinator.cpp FeedCoordinator.h FeedFile.cpp FeedFile.h \
 	FeedFilter.cpp FeedFilter.h FeedInfo.cpp FeedInfo.h Log.cpp Log.h LoggableFrontend.cpp \
 	LoggableFrontend.h Maintenance.cpp Maintenance.h MessageBase.h NCursesFrontend.cpp \
-	NCursesFrontend.h NNTPConnection.cpp \
+	NCursesFrontend.h NNTPConnection.cpp HistoryCoordinator.cpp HistoryCoordinator.h \
 	NNTPConnection.h NZBFile.cpp NZBFile.h NewsServer.cpp NewsServer.h Observer.cpp \
 	Observer.h Options.cpp Options.h ParChecker.cpp ParChecker.h ParRenamer.cpp ParRenamer.h \
 	ParCoordinator.cpp ParCoordinator.h PrePostProcessor.cpp PrePostProcessor.h QueueCoordinator.cpp \
@@ -466,6 +467,7 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/FeedFilter.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/FeedInfo.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/Frontend.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/HistoryCoordinator.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/Log.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/LoggableFrontend.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/Maintenance.Po@am__quote@

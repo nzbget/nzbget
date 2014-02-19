@@ -72,6 +72,8 @@
 #include "MessageBase.h"
 #include "DiskState.h"
 #include "PrePostProcessor.h"
+#include "HistoryCoordinator.h"
+#include "DupeCoordinator.h"
 #include "ParChecker.h"
 #include "Scheduler.h"
 #include "Scanner.h"
@@ -114,6 +116,8 @@ DownloadSpeedMeter* g_pDownloadSpeedMeter = NULL;
 DownloadQueueHolder* g_pDownloadQueueHolder = NULL;
 Log* g_pLog = NULL;
 PrePostProcessor* g_pPrePostProcessor = NULL;
+HistoryCoordinator* g_pHistoryCoordinator = NULL;
+DupeCoordinator* g_pDupeCoordinator = NULL;
 DiskState* g_pDiskState = NULL;
 Scheduler* g_pScheduler = NULL;
 Scanner* g_pScanner = NULL;
@@ -216,6 +220,8 @@ void Run(bool bReload)
 	g_pDownloadQueueHolder = g_pQueueCoordinator;
 	g_pScanner = new Scanner();
 	g_pPrePostProcessor = new PrePostProcessor();
+	g_pHistoryCoordinator = new HistoryCoordinator();
+	g_pDupeCoordinator = new DupeCoordinator();
 	g_pUrlCoordinator = new UrlCoordinator();
 	g_pFeedCoordinator = new FeedCoordinator();
 	g_pMaintenance = new Maintenance();
@@ -744,6 +750,16 @@ void Cleanup()
 	delete g_pScanner;
 	g_pScanner = NULL;
 	debug("PrePostProcessor deleted");
+
+	debug("Deleting HistoryCoordinator");
+	delete g_pHistoryCoordinator;
+	g_pHistoryCoordinator = NULL;
+	debug("HistoryCoordinator deleted");
+
+	debug("Deleting DupeCoordinator");
+	delete g_pDupeCoordinator;
+	g_pDupeCoordinator = NULL;
+	debug("DupeCoordinator deleted");
 
 	debug("Deleting Frontend");
 	delete g_pFrontend;

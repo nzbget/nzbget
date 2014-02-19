@@ -50,6 +50,7 @@
 #include "UrlCoordinator.h"
 #include "QueueEditor.h"
 #include "PrePostProcessor.h"
+#include "HistoryCoordinator.h"
 #include "Util.h"
 #include "DownloadInfo.h"
 #include "Scanner.h"
@@ -58,6 +59,7 @@ extern Options* g_pOptions;
 extern QueueCoordinator* g_pQueueCoordinator;
 extern UrlCoordinator* g_pUrlCoordinator;
 extern PrePostProcessor* g_pPrePostProcessor;
+extern HistoryCoordinator* g_pHistoryCoordinator;
 extern Scanner* g_pScanner;
 extern void ExitProc();
 extern void Reload();
@@ -783,9 +785,13 @@ void EditQueueBinCommand::Execute()
 			iNrNameEntries > 0 ? &cNameList : NULL,
 			(QueueEditor::EMatchMode)iMatchMode, (QueueEditor::EEditAction)iAction, iOffset, szText);
 	}
+	else if (iAction < eRemoteEditActionHistoryDelete)
+	{
+		bOK = g_pPrePostProcessor->EditList(&cIDList, (PrePostProcessor::EEditAction)iAction, iOffset, szText);
+	}
 	else
 	{
-		bOK = g_pPrePostProcessor->QueueEditList(&cIDList, (PrePostProcessor::EEditAction)iAction, iOffset, szText);
+		bOK = g_pHistoryCoordinator->EditList(&cIDList, (HistoryCoordinator::EEditAction)iAction, iOffset, szText);
 	}
 
 	free(pBuf);

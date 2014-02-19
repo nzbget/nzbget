@@ -652,6 +652,19 @@ void NZBInfo::LeavePostProcess()
 	m_pPostInfo = NULL;
 }
 
+bool NZBInfo::IsDupeSuccess()
+{
+	bool bFailure =
+		m_eDeleteStatus != NZBInfo::dsNone ||
+		m_eMarkStatus == NZBInfo::ksBad ||
+		m_eParStatus == NZBInfo::psFailure ||
+		m_eUnpackStatus == NZBInfo::usFailure ||
+		m_eUnpackStatus == NZBInfo::usPassword ||
+		(m_eParStatus == NZBInfo::psSkipped &&
+		 m_eUnpackStatus == NZBInfo::usSkipped &&
+		 CalcHealth() < CalcCriticalHealth(true));
+	return !bFailure;
+}
 
 NZBList::~NZBList()
 {
