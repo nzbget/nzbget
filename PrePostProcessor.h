@@ -32,7 +32,6 @@
 #include "Observer.h"
 #include "DownloadInfo.h"
 #include "ParCoordinator.h"
-#include "DupeCoordinator.h"
 
 class PrePostProcessor : public Thread
 {
@@ -40,19 +39,7 @@ public:
 	// NOTE: changes to this enum must be synced with "eRemoteEditAction" in unit "MessageBase.h"
 	enum EEditAction
 	{
-		eaPostDelete = 51,
-		eaHistoryDelete,
-		eaHistoryFinalDelete,
-		eaHistoryReturn,
-		eaHistoryProcess,
-		eaHistoryRedownload,
-		eaHistorySetParameter,
-		eaHistorySetDupeKey,
-		eaHistorySetDupeScore,
-		eaHistorySetDupeMode,
-		eaHistorySetDupeBackup,
-		eaHistoryMarkBad,
-		eaHistoryMarkGood
+		eaPostDelete = 51
 	};
 
 private:
@@ -73,19 +60,8 @@ private:
 		friend class PrePostProcessor;
 	};
 
-	class PostDupeCoordinator: public DupeCoordinator
-	{
-	private:
-		PrePostProcessor*	m_pOwner;
-	protected:
-		virtual void		HistoryRedownload(DownloadQueue* pDownloadQueue, HistoryInfo* pHistoryInfo);
-		virtual void		DeleteQueuedFile(const char* szQueuedFile) {  m_pOwner->DeleteQueuedFile(szQueuedFile); }
-		friend class PrePostProcessor;
-	};
-
 private:
 	PostParCoordinator	m_ParCoordinator;
-	PostDupeCoordinator	m_DupeCoordinator;
 	QueueCoordinatorObserver	m_QueueCoordinatorObserver;
 	bool				m_bSchedulerPauseChanged;
 	bool				m_bSchedulerPause;
@@ -108,19 +84,9 @@ private:
 	bool				UnpauseDownload();
 	void				NZBFound(DownloadQueue* pDownloadQueue, NZBInfo* pNZBInfo);
 	void				NZBAdded(DownloadQueue* pDownloadQueue, NZBInfo* pNZBInfo);
-	void				NZBDownloaded(DownloadQueue* pDownloadQueue, NZBInfo* pNZBInfo);
 	void				NZBDeleted(DownloadQueue* pDownloadQueue, NZBInfo* pNZBInfo);
 	void				NZBCompleted(DownloadQueue* pDownloadQueue, NZBInfo* pNZBInfo, bool bSaveQueue);
-	void				DeleteQueuedFile(const char* szQueuedFile);
 	bool				PostQueueDelete(IDList* pIDList);
-	bool				HistoryEdit(IDList* pIDList, EEditAction eAction, int iOffset, const char* szText);
-	void				HistoryDelete(DownloadQueue* pDownloadQueue, HistoryList::iterator itHistory, HistoryInfo* pHistoryInfo, bool bFinal);
-	void				HistoryReturn(DownloadQueue* pDownloadQueue, HistoryList::iterator itHistory, HistoryInfo* pHistoryInfo, bool bReprocess);
-	void				HistoryRedownload(DownloadQueue* pDownloadQueue, HistoryList::iterator itHistory, HistoryInfo* pHistoryInfo, bool bRestorePauseState);
-	void				HistorySetParameter(HistoryInfo* pHistoryInfo, const char* szText);
-	void				HistorySetDupeParam(HistoryInfo* pHistoryInfo, EEditAction eAction, const char* szText);
-	void				HistoryTransformToDup(DownloadQueue* pDownloadQueue, HistoryInfo* pHistoryInfo, int rindex);
-	void				CheckHistory();
 	void				Cleanup();
 	void				DeletePostThread(PostInfo* pPostInfo);
 	NZBInfo*			GetNextJob(DownloadQueue* pDownloadQueue);
@@ -133,7 +99,8 @@ public:
 	void				QueueCoordinatorUpdate(Subject* Caller, void* Aspect);
 	bool				HasMoreJobs() { return m_iJobCount > 0; }
 	int					GetJobCount() { return m_iJobCount; }
-	bool				QueueEditList(IDList* pIDList, EEditAction eAction, int iOffset, const char* szText);
+	bool				EditList(IDList* pIDList, EEditAction eAction, int iOffset, const char* szText);
+	void				NZBDownloaded(DownloadQueue* pDownloadQueue, NZBInfo* pNZBInfo);
 };
 
 #endif

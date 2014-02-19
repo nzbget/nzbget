@@ -49,25 +49,13 @@
 #include "DiskState.h"
 #include "NZBFile.h"
 #include "QueueCoordinator.h"
+#include "HistoryCoordinator.h"
 #include "DupeCoordinator.h"
 
 extern QueueCoordinator* g_pQueueCoordinator;
+extern HistoryCoordinator* g_pHistoryCoordinator;
 extern Options* g_pOptions;
 extern DiskState* g_pDiskState;
-
-bool DupeCoordinator::IsDupeSuccess(NZBInfo* pNZBInfo)
-{
-	bool bFailure =
-		pNZBInfo->GetDeleteStatus() != NZBInfo::dsNone ||
-		pNZBInfo->GetMarkStatus() == NZBInfo::ksBad ||
-		pNZBInfo->GetParStatus() == NZBInfo::psFailure ||
-		pNZBInfo->GetUnpackStatus() == NZBInfo::usFailure ||
-		pNZBInfo->GetUnpackStatus() == NZBInfo::usPassword ||
-		(pNZBInfo->GetParStatus() == NZBInfo::psSkipped &&
-		 pNZBInfo->GetUnpackStatus() == NZBInfo::usSkipped &&
-		 pNZBInfo->CalcHealth() < pNZBInfo->CalcCriticalHealth(true));
-	return !bFailure;
-}
 
 bool DupeCoordinator::SameNameOrKey(const char* szName1, const char* szDupeKey1,
 	const char* szName2, const char* szDupeKey2)
@@ -119,7 +107,7 @@ void DupeCoordinator::NZBFound(DownloadQueue* pDownloadQueue, NZBInfo* pNZBInfo)
 			}
 			// Flag saying QueueCoordinator to skip nzb-file
 			pNZBInfo->SetDeleteStatus(NZBInfo::dsManual);
-			DeleteQueuedFile(pNZBInfo->GetQueuedFilename());
+			g_pHistoryCoordinator->DeleteQueuedFile(pNZBInfo->GetQueuedFilename());
 			return;
 		}
 	}
@@ -201,7 +189,7 @@ void DupeCoordinator::NZBFound(DownloadQueue* pDownloadQueue, NZBInfo* pNZBInfo)
 				SameNameOrKey(pHistoryInfo->GetNZBInfo()->GetName(), pHistoryInfo->GetNZBInfo()->GetDupeKey(),
 					pNZBInfo->GetName(), pNZBInfo->GetDupeKey()) &&
 				pNZBInfo->GetDupeScore() <= pHistoryInfo->GetNZBInfo()->GetDupeScore() &&
-				IsDupeSuccess(pHistoryInfo->GetNZBInfo()))
+				pHistoryInfo->GetNZBInfo()->IsDupeSuccess())
 			{
 				// Flag saying QueueCoordinator to skip nzb-file
 				pNZBInfo->SetDeleteStatus(NZBInfo::dsDupe);
@@ -227,7 +215,7 @@ void DupeCoordinator::NZBFound(DownloadQueue* pDownloadQueue, NZBInfo* pNZBInfo)
 
 		// Flag saying QueueCoordinator to skip nzb-file
 		pNZBInfo->SetDeleteStatus(NZBInfo::dsManual);
-		DeleteQueuedFile(pNZBInfo->GetQueuedFilename());
+		g_pHistoryCoordinator->DeleteQueuedFile(pNZBInfo->GetQueuedFilename());
 		return;
 	}
 
@@ -274,14 +262,14 @@ void DupeCoordinator::NZBFound(DownloadQueue* pDownloadQueue, NZBInfo* pNZBInfo)
 
 /**
   - if download of an item fails and there are duplicates in history -
-    return the best duplicate from historyto queue for download;
+    return the best duplicate from history to queue for download;
   - if download of an item completes successfully - nothing extra needs to be done;
 */
 void DupeCoordinator::NZBCompleted(DownloadQueue* pDownloadQueue, NZBInfo* pNZBInfo)
 {
 	debug("Processing duplicates for %s", pNZBInfo->GetName());
 
-	if (pNZBInfo->GetDupeMode() == dmScore && !IsDupeSuccess(pNZBInfo))
+	if (pNZBInfo->GetDupeMode() == dmScore && !pNZBInfo->IsDupeSuccess())
 	{
 		ReturnBestDupe(pDownloadQueue, pNZBInfo, pNZBInfo->GetName(), pNZBInfo->GetDupeKey());
 	}
@@ -302,7 +290,7 @@ void DupeCoordinator::ReturnBestDupe(DownloadQueue* pDownloadQueue, NZBInfo* pNZ
 
 		if (pHistoryInfo->GetKind() == HistoryInfo::hkNZBInfo &&
 			pHistoryInfo->GetNZBInfo()->GetDupeMode() != dmForce &&
-			(IsDupeSuccess(pHistoryInfo->GetNZBInfo()) ||
+			(pHistoryInfo->GetNZBInfo()->IsDupeSuccess() ||
 			 pHistoryInfo->GetNZBInfo()->GetMarkStatus() == NZBInfo::ksGood) &&
 			SameNameOrKey(pHistoryInfo->GetNZBInfo()->GetName(), pHistoryInfo->GetNZBInfo()->GetDupeKey(), szNZBName, szDupeKey))
 		{
@@ -375,7 +363,7 @@ void DupeCoordinator::ReturnBestDupe(DownloadQueue* pDownloadQueue, NZBInfo* pNZ
 	if (pHistoryDupe)
 	{
 		info("Found duplicate %s for %s", pHistoryDupe->GetNZBInfo()->GetName(), szNZBName);
-		HistoryRedownload(pDownloadQueue, pHistoryDupe);
+		g_pHistoryCoordinator->Redownload(pDownloadQueue, pHistoryDupe);
 	}
 }
 
@@ -448,7 +436,7 @@ void DupeCoordinator::HistoryCleanup(DownloadQueue* pDownloadQueue, HistoryInfo*
 			pHistoryInfo != pMarkHistoryInfo &&
 			SameNameOrKey(pHistoryInfo->GetNZBInfo()->GetName(), pHistoryInfo->GetNZBInfo()->GetDupeKey(), szNZBName, szDupeKey))
 		{
-			HistoryTransformToDup(pDownloadQueue, pHistoryInfo, index);
+			g_pHistoryCoordinator->HistoryHide(pDownloadQueue, pHistoryInfo, index);
 			index++;
 			it = pDownloadQueue->GetHistory()->rbegin() + index;
 			bChanged = true;
@@ -464,37 +452,4 @@ void DupeCoordinator::HistoryCleanup(DownloadQueue* pDownloadQueue, HistoryInfo*
 	{
 		g_pDiskState->SaveDownloadQueue(pDownloadQueue);
 	}
-}
-
-void DupeCoordinator::HistoryTransformToDup(DownloadQueue* pDownloadQueue, HistoryInfo* pHistoryInfo, int rindex)
-{
-	char szNiceName[1024];
-	pHistoryInfo->GetName(szNiceName, 1024);
-
-	// replace history element
-	DupInfo* pDupInfo = new DupInfo();
-	pDupInfo->SetName(pHistoryInfo->GetNZBInfo()->GetName());
-	pDupInfo->SetDupeKey(pHistoryInfo->GetNZBInfo()->GetDupeKey());
-	pDupInfo->SetDupeScore(pHistoryInfo->GetNZBInfo()->GetDupeScore());
-	pDupInfo->SetDupeMode(pHistoryInfo->GetNZBInfo()->GetDupeMode());
-	pDupInfo->SetSize(pHistoryInfo->GetNZBInfo()->GetSize());
-	pDupInfo->SetFullContentHash(pHistoryInfo->GetNZBInfo()->GetFullContentHash());
-	pDupInfo->SetFilteredContentHash(pHistoryInfo->GetNZBInfo()->GetFilteredContentHash());
-
-	pDupInfo->SetStatus(
-		pHistoryInfo->GetNZBInfo()->GetMarkStatus() == NZBInfo::ksGood ? DupInfo::dsGood :
-		pHistoryInfo->GetNZBInfo()->GetMarkStatus() == NZBInfo::ksBad ? DupInfo::dsBad :
-		pHistoryInfo->GetNZBInfo()->GetDeleteStatus() == NZBInfo::dsDupe ? DupInfo::dsDupe :
-		pHistoryInfo->GetNZBInfo()->GetDeleteStatus() == NZBInfo::dsManual ? DupInfo::dsDeleted :
-		IsDupeSuccess(pHistoryInfo->GetNZBInfo()) ? DupInfo::dsSuccess :
-		DupInfo::dsFailed);
-
-	HistoryInfo* pNewHistoryInfo = new HistoryInfo(pDupInfo);
-	pNewHistoryInfo->SetTime(pHistoryInfo->GetTime());
-	(*pDownloadQueue->GetHistory())[pDownloadQueue->GetHistory()->size() - 1 - rindex] = pNewHistoryInfo;
-
-	DeleteQueuedFile(pHistoryInfo->GetNZBInfo()->GetQueuedFilename());
-
-	delete pHistoryInfo;
-	info("Collection %s removed from history", szNiceName);
 }

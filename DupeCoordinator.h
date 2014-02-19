@@ -1,7 +1,7 @@
 /*
  *  This file is part of nzbget
  *
- *  Copyright (C) 2007-2013 Andrey Prygunkov <hugbug@users.sourceforge.net>
+ *  Copyright (C) 2007-2014 Andrey Prygunkov <hugbug@users.sourceforge.net>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -26,28 +26,19 @@
 #ifndef DUPECOORDINATOR_H
 #define DUPECOORDINATOR_H
 
-#include <deque>
-
 #include "DownloadInfo.h"
 
 class DupeCoordinator
 {
 private:
-	bool				IsDupeSuccess(NZBInfo* pNZBInfo);
 	void				ReturnBestDupe(DownloadQueue* pDownloadQueue, NZBInfo* pNZBInfo, const char* szNZBName, const char* szDupeKey);
-	void				HistoryReturnDupe(DownloadQueue* pDownloadQueue, HistoryInfo* pHistoryInfo);
 	void				HistoryCleanup(DownloadQueue* pDownloadQueue, HistoryInfo* pMarkHistoryInfo);
 	bool				SameNameOrKey(const char* szName1, const char* szDupeKey1, const char* szName2, const char* szDupeKey2);
-
-protected:
-	virtual void		HistoryRedownload(DownloadQueue* pDownloadQueue, HistoryInfo* pHistoryInfo) = 0;
-	virtual void		DeleteQueuedFile(const char* szQueuedFile) = 0;
 
 public:
 	void				NZBCompleted(DownloadQueue* pDownloadQueue, NZBInfo* pNZBInfo);
 	void				NZBFound(DownloadQueue* pDownloadQueue, NZBInfo* pNZBInfo);
 	void				HistoryMark(DownloadQueue* pDownloadQueue, HistoryInfo* pHistoryInfo, bool bGood);
-	void				HistoryTransformToDup(DownloadQueue* pDownloadQueue, HistoryInfo* pHistoryInfo, int rindex);
 };
 
 #endif

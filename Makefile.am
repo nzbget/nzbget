@@ -28,7 +28,7 @@ nzbget_SOURCES = \
 	Frontend.cpp Frontend.h FeedCoordinator.cpp FeedCoordinator.h FeedFile.cpp FeedFile.h \
 	FeedFilter.cpp FeedFilter.h FeedInfo.cpp FeedInfo.h Log.cpp Log.h LoggableFrontend.cpp \
 	LoggableFrontend.h Maintenance.cpp Maintenance.h MessageBase.h NCursesFrontend.cpp \
-	NCursesFrontend.h NNTPConnection.cpp \
+	NCursesFrontend.h NNTPConnection.cpp HistoryCoordinator.cpp HistoryCoordinator.h \
 	NNTPConnection.h NZBFile.cpp NZBFile.h NewsServer.cpp NewsServer.h Observer.cpp \
 	Observer.h Options.cpp Options.h ParChecker.cpp ParChecker.h ParRenamer.cpp ParRenamer.h \
 	ParCoordinator.cpp ParCoordinator.h PrePostProcessor.cpp PrePostProcessor.h QueueCoordinator.cpp \

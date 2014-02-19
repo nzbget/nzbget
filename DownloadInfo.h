@@ -528,6 +528,7 @@ public:
 	PostInfo*			GetPostInfo() { return m_pPostInfo; }
 	void				EnterPostProcess();
 	void				LeavePostProcess();
+	bool				IsDupeSuccess();
 
 	void				AppendMessage(Message::EKind eKind, time_t tTime, const char* szText);
 	Messages*			LockMessages();
