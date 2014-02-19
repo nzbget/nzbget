@@ -42,10 +42,8 @@ var Status = (new function($)
 	var $CHPauseDownload;
 	var $CHPausePostProcess;
 	var $CHPauseScan;
-	var $CHSoftPauseDownload;
 	var $StatusPausing;
 	var $StatusPaused;
-	var $StatusSoftPaused;
 	var $StatusLeft;
 	var $StatusSpeed;
 	var $StatusSpeedIcon;
@@ -65,7 +63,6 @@ var Status = (new function($)
 	var lastPlayState = 0;
 	var lastAnimState = 0;
 	var playInitialized = false;
-	var lastSoftPauseState = 0;
 	var modalShown = false;
 
 	this.init = function()
@@ -73,14 +70,12 @@ var Status = (new function($)
 		$CHPauseDownload = $('#CHPauseDownload');
 		$CHPausePostProcess = $('#CHPausePostProcess');
 		$CHPauseScan = $('#CHPauseScan');
-		$CHSoftPauseDownload = $('#CHSoftPauseDownload');
 		$PlayBlock = $('#PlayBlock');
 		$PlayButton = $('#PlayButton');
 		$PauseButton = $('#PauseButton');
 		$PlayAnimation = $('#PlayAnimation');
 		$StatusPausing = $('#StatusPausing');
 		$StatusPaused = $('#StatusPaused');
-		$StatusSoftPaused = $('#StatusSoftPaused');
 		$StatusLeft = $('#StatusLeft');
 		$StatusSpeed = $('#StatusSpeed');
 		$StatusSpeedIcon = $('#StatusSpeedIcon');
@@ -145,19 +140,13 @@ var Status = (new function($)
 		$('#StatisticsTable tbody').html(content);
 
 		content = '';
-		content += '<tr><td>Download</td><td class="text-right">';
-		if (status.DownloadPaused || status.Download2Paused)
-		{
-			content += status.Download2Paused ? '<span class="label label-status label-warning">paused</span>' : '';
-			content += status.Download2Paused && status.DownloadPaused ? ' + ' : '';
-			content += status.DownloadPaused ? '<span class="label label-status label-warning">soft-paused</span>' : '';
-		}
-		else
-		{
-			content += '<span class="label label-status label-success">active</span>';
-		}
-		content += '</td></tr>';
 
+		content += '<tr><td>Download</td><td class="text-right">' + 
+			(status.DownloadPaused ?
+			'<span class="label label-status label-warning">paused</span>' :
+			'<span class="label label-status label-success">active</span>') +
+			'</td></tr>';
+		
 		content += '<tr><td>Post-processing</td><td class="text-right">' + (Options.option('PostProcess') === '' ?
 			'<span class="label label-status">disabled</span>' :
 			(status.PostPaused ?
@@ -185,10 +174,9 @@ var Status = (new function($)
 
 	function redrawInfo()
 	{
-		Util.show($CHPauseDownload, status.Download2Paused);
+		Util.show($CHPauseDownload, status.DownloadPaused);
 		Util.show($CHPausePostProcess, status.PostPaused);
 		Util.show($CHPauseScan, status.ScanPaused);
-		Util.show($CHSoftPauseDownload, status.DownloadPaused);
 
 		updatePlayAnim();
 		updatePlayButton();
@@ -251,17 +239,7 @@ var Status = (new function($)
 
 	function updatePlayButton()
 	{
-		var SoftPause = status.DownloadPaused && (!lastAnimState || !UISettings.activityAnimation);
-		if (SoftPause !== lastSoftPauseState)
-		{
-			lastSoftPauseState = SoftPause;
-			$PauseButton.removeClass('img-download-green').removeClass('img-download-green-orange').
-				addClass(SoftPause ? 'img-download-green-orange' : 'img-download-green');
-			$PlayButton.removeClass('img-download-orange').removeClass('img-download-orange-orange').
-				addClass(SoftPause ? 'img-download-orange-orange' : 'img-download-orange');
-		}
-
-		var Play = !status.Download2Paused;
+		var Play = !status.DownloadPaused;
 		if (Play === lastPlayState)
 		{
 			return;
@@ -304,7 +282,7 @@ var Status = (new function($)
 		// Animate if either any downloads or post-processing is in progress
 		var Anim = (!status.ServerStandBy || status.FeedActive ||
 			(status.PostJobCount > 0 && !status.PostPaused) ||
-			(status.UrlCount > 0 && ((!status.DownloadPaused && !status.Download2Paused) || Options.option('UrlForce') === 'yes'))) &&
+			(status.UrlCount > 0 && (!status.DownloadPaused || Options.option('UrlForce') === 'yes'))) &&
 			(UISettings.refreshInterval !== 0) && !UISettings.connectionError;
 		if (Anim === lastAnimState)
 		{
@@ -333,14 +311,14 @@ var Status = (new function($)
 		if (lastPlayState)
 		{
 			// pause all activities
-			RPC.call('pausedownload2', [],
+			RPC.call('pausedownload', [],
 				function(){RPC.call('pausepost', [],
 				function(){RPC.call('pausescan', [], Refresher.update)})});
 		}
 		else
 		{
 			// resume all activities
-			RPC.call('resumedownload2', [],
+			RPC.call('resumedownload', [],
 				function(){RPC.call('resumepost', [],
 				function(){RPC.call('resumescan', [], Refresher.update)})});
 		}
@@ -350,17 +328,14 @@ var Status = (new function($)
 	{
 		switch (data)
 		{
-			case 'download2':
-				var method = status.Download2Paused ? 'resumedownload2' : 'pausedownload2';
+			case 'download':
+				var method = status.DownloadPaused ? 'resumedownload' : 'pausedownload';
 				break;
 			case 'post':
 				var method = status.PostPaused ? 'resumepost' : 'pausepost';
 				break;
 			case 'scan':
 				var method = status.ScanPaused ? 'resumescan' : 'pausescan';
-				break;
-			case 'download':
-				var method = status.DownloadPaused ? 'resumedownload' : 'pausedownload';
 				break;
 		}
 		RPC.call(method, [], Refresher.update);
@@ -373,7 +348,7 @@ var Status = (new function($)
 
 	this.scheduledPauseClick = function(seconds)
 	{
-		RPC.call('pausedownload2', [],
+		RPC.call('pausedownload', [],
 			function(){RPC.call('pausepost', [],
 			function(){RPC.call('pausescan', [],
 			function(){RPC.call('scheduleresume', [seconds], Refresher.update)})})});

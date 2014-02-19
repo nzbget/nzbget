@@ -85,7 +85,6 @@ public:
 	enum EPauseAction
 	{
 		paDownload,
-		paDownload2,
 		paPostProcess,
 		paScan
 	};
@@ -526,21 +525,15 @@ XmlCommand* XmlRpcProcessor::CreateCommand(const char* szMethodName)
 {
 	XmlCommand* command = NULL;
 
-	if (!strcasecmp(szMethodName, "pause") || !strcasecmp(szMethodName, "pausedownload"))
+	if (!strcasecmp(szMethodName, "pause") || !strcasecmp(szMethodName, "pausedownload") ||
+		!strcasecmp(szMethodName, "pausedownload2"))
 	{
 		command = new PauseUnpauseXmlCommand(true, PauseUnpauseXmlCommand::paDownload);
 	}
-	else if (!strcasecmp(szMethodName, "resume") || !strcasecmp(szMethodName, "resumedownload"))
+	else if (!strcasecmp(szMethodName, "resume") || !strcasecmp(szMethodName, "resumedownload") ||
+		!strcasecmp(szMethodName, "resumedownload2"))
 	{
 		command = new PauseUnpauseXmlCommand(false, PauseUnpauseXmlCommand::paDownload);
-	}
-	else if (!strcasecmp(szMethodName, "pausedownload2"))
-	{
-		command = new PauseUnpauseXmlCommand(true, PauseUnpauseXmlCommand::paDownload2);
-	}
-	else if (!strcasecmp(szMethodName, "resumedownload2"))
-	{
-		command = new PauseUnpauseXmlCommand(false, PauseUnpauseXmlCommand::paDownload2);
 	}
 	else if (!strcasecmp(szMethodName, "shutdown"))
 	{
@@ -1031,10 +1024,6 @@ void PauseUnpauseXmlCommand::Execute()
 			g_pOptions->SetPauseDownload(m_bPause);
 			break;
 
-		case paDownload2:
-			g_pOptions->SetPauseDownload2(m_bPause);
-			break;
-
 		case paPostProcess:
 			g_pOptions->SetPausePostProcess(m_bPause);
 			break;
@@ -1153,7 +1142,7 @@ void StatusXmlCommand::Execute()
 		"<member><name>DownloadTimeSec</name><value><i4>%i</i4></value></member>\n"
 		"<member><name>ServerPaused</name><value><boolean>%s</boolean></value></member>\n"		// deprecated (renamed to DownloadPaused)
 		"<member><name>DownloadPaused</name><value><boolean>%s</boolean></value></member>\n"
-		"<member><name>Download2Paused</name><value><boolean>%s</boolean></value></member>\n"
+		"<member><name>Download2Paused</name><value><boolean>%s</boolean></value></member>\n"	// deprecated (same as DownloadPaused)
 		"<member><name>ServerStandBy</name><value><boolean>%s</boolean></value></member>\n"
 		"<member><name>PostPaused</name><value><boolean>%s</boolean></value></member>\n"
 		"<member><name>ScanPaused</name><value><boolean>%s</boolean></value></member>\n"
@@ -1188,7 +1177,7 @@ void StatusXmlCommand::Execute()
 		"\"DownloadTimeSec\" : %i,\n"
 		"\"ServerPaused\" : %s,\n"			// deprecated (renamed to DownloadPaused)
 		"\"DownloadPaused\" : %s,\n"
-		"\"Download2Paused\" : %s,\n"
+		"\"Download2Paused\" : %s,\n"		// deprecated (same as DownloadPaused)
 		"\"ServerStandBy\" : %s,\n"
 		"\"PostPaused\" : %s,\n"
 		"\"ScanPaused\" : %s,\n"
@@ -1223,7 +1212,6 @@ void StatusXmlCommand::Execute()
 	int iRemainingMBytes = (int)(iRemainingSize / 1024 / 1024);
 	int iDownloadLimit = (int)(g_pOptions->GetDownloadRate());
 	bool bDownloadPaused = g_pOptions->GetPauseDownload();
-	bool bDownload2Paused = g_pOptions->GetPauseDownload2();
 	bool bPostPaused = g_pOptions->GetPausePostProcess();
 	bool bScanPaused = g_pOptions->GetPauseScan();
 	int iThreadCount = Thread::GetThreadCount() - 1; // not counting itself
@@ -1252,7 +1240,7 @@ void StatusXmlCommand::Execute()
 		iRemainingSizeLo, iRemainingSizeHi,	iRemainingMBytes, iDownloadedSizeLo, iDownloadedSizeHi, 
 		iDownloadedMBytes, iDownloadRate, iAverageDownloadRate, iDownloadLimit,	iThreadCount, 
 		iPostJobCount, iPostJobCount, iUrlCount, iUpTimeSec, iDownloadTimeSec, 
-		BoolToStr(bDownloadPaused), BoolToStr(bDownloadPaused), BoolToStr(bDownload2Paused), 
+		BoolToStr(bDownloadPaused), BoolToStr(bDownloadPaused), BoolToStr(bDownloadPaused), 
 		BoolToStr(bServerStandBy), BoolToStr(bPostPaused), BoolToStr(bScanPaused),
 		iFreeDiskSpaceLo, iFreeDiskSpaceHi,	iFreeDiskSpaceMB, iServerTime, iResumeTime,
 		BoolToStr(bFeedActive));

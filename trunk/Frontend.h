@@ -53,7 +53,6 @@ protected:
 	int					m_iCurrentDownloadSpeed;
 	long long 			m_lRemainingSize;
 	bool				m_bPauseDownload;
-	bool				m_bPauseDownload2;
 	int					m_iDownloadLimit;
 	int					m_iThreadCount;
 	int					m_iPostJobCount;
@@ -70,8 +69,8 @@ protected:
 	void				UnlockQueue();
 	bool				IsRemoteMode();
 	void				InitMessageBase(SNZBRequestBase* pMessageBase, int iRequest, int iSize);
-	void				ServerPauseUnpause(bool bPause, bool bSecondRegister);
-	bool				RequestPauseUnpause(bool bPause, bool bSecondRegister);
+	void				ServerPauseUnpause(bool bPause);
+	bool				RequestPauseUnpause(bool bPause);
 	void				ServerSetDownloadRate(int iRate);
 	bool				RequestSetDownloadRate(int iRate);
 	void				ServerDumpDebug();

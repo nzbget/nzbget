@@ -145,7 +145,7 @@ void UrlCoordinator::Run()
 
 	while (!IsStopped())
 	{
-		if (!(g_pOptions->GetPauseDownload() || g_pOptions->GetPauseDownload2()) || m_bForce || g_pOptions->GetUrlForce())
+		if (!g_pOptions->GetPauseDownload() || m_bForce || g_pOptions->GetUrlForce())
 		{
 			// start download for next URL
 			DownloadQueue* pDownloadQueue = g_pQueueCoordinator->LockQueue();
@@ -291,7 +291,7 @@ void UrlCoordinator::AddUrlToQueue(UrlInfo* pUrlInfo, bool AddFirst)
  */
 bool UrlCoordinator::GetNextUrl(DownloadQueue* pDownloadQueue, UrlInfo* &pUrlInfo)
 {
-	bool bPauseDownload = g_pOptions->GetPauseDownload() || g_pOptions->GetPauseDownload2();
+	bool bPauseDownload = g_pOptions->GetPauseDownload();
 
 	for (UrlQueue::iterator at = pDownloadQueue->GetUrlQueue()->begin(); at != pDownloadQueue->GetUrlQueue()->end(); at++)
 	{

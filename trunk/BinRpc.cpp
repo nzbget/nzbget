@@ -261,10 +261,6 @@ void PauseUnpauseBinCommand::Execute()
 			g_pOptions->SetPauseDownload(ntohl(PauseUnpauseRequest.m_bPause));
 			break;
 
-		case eRemotePauseUnpauseActionDownload2:
-			g_pOptions->SetPauseDownload2(ntohl(PauseUnpauseRequest.m_bPause));
-			break;
-
 		case eRemotePauseUnpauseActionPostProcess:
 			g_pOptions->SetPausePostProcess(ntohl(PauseUnpauseRequest.m_bPause));
 			break;
@@ -594,7 +590,6 @@ void ListBinCommand::Execute()
 		ListResponse.m_iRemainingSizeLo = htonl(iSizeLo);
 		ListResponse.m_iDownloadLimit = htonl(g_pOptions->GetDownloadRate());
 		ListResponse.m_bDownloadPaused = htonl(g_pOptions->GetPauseDownload());
-		ListResponse.m_bDownload2Paused = htonl(g_pOptions->GetPauseDownload2());
 		ListResponse.m_bPostPaused = htonl(g_pOptions->GetPausePostProcess());
 		ListResponse.m_bScanPaused = htonl(g_pOptions->GetPauseScan());
 		ListResponse.m_iThreadCount = htonl(Thread::GetThreadCount() - 1); // not counting itself

@@ -117,6 +117,7 @@ void Scheduler::IntervalCheck()
 	m_bDetectClockChanges = true;
 	m_bExecuteProcess = true;
 	CheckTasks();
+	CheckScheduledResume();
 }
 
 void Scheduler::CheckTasks()
@@ -223,7 +224,7 @@ void Scheduler::ExecuteTask(Task* pTask)
 
 		case scPauseDownload:
 		case scUnpauseDownload:
-			m_bPauseDownload = pTask->m_eCommand == scPauseDownload;
+			g_pOptions->SetPauseDownload(pTask->m_eCommand == scPauseDownload);
 			m_bPauseDownloadChanged = true;
 			break;
 
@@ -267,6 +268,10 @@ void Scheduler::PrintLog()
 	if (m_bDownloadRateChanged)
 	{
 		info("Scheduler: setting download rate to %i KB/s", g_pOptions->GetDownloadRate() / 1024);
+	}
+	if (m_bPauseDownloadChanged)
+	{
+		info("Scheduler: %s download", g_pOptions->GetPauseDownload() ? "pausing" : "unpausing");
 	}
 	if (m_bPauseScanChanged)
 	{
@@ -352,4 +357,18 @@ void Scheduler::FetchFeed(const char* szFeedList)
 		szFeed = strtok_r(NULL, ",;", &saveptr);
 	}
 	free(szFeedList2);
+}
+
+void Scheduler::CheckScheduledResume()
+{
+	time_t tResumeTime = g_pOptions->GetResumeTime();
+	time_t tCurrentTime = time(NULL);
+	if (tResumeTime > 0 && tCurrentTime >= tResumeTime)
+	{
+		info("Autoresume");
+		g_pOptions->SetResumeTime(0);
+		g_pOptions->SetPauseDownload(false);
+		g_pOptions->SetPausePostProcess(false);
+		g_pOptions->SetPauseScan(false);
+	}
 }

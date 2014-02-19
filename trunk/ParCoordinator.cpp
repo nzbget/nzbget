@@ -330,11 +330,6 @@ bool ParCoordinator::AddPar(FileInfo* pFileInfo, bool bDeleted)
 		snprintf(szFullFilename, 1024, "%s%c%s", pFileInfo->GetNZBInfo()->GetDestDir(), (int)PATH_SEPARATOR, pFileInfo->GetFilename());
 		szFullFilename[1024-1] = '\0';
 		m_ParChecker.AddParFile(szFullFilename);
-
-		if (g_pOptions->GetParPauseQueue())
-		{
-			PauseDownload();
-		}
 	}
 	else
 	{
@@ -472,11 +467,6 @@ bool ParCoordinator::RequestMorePars(NZBInfo* pNZBInfo, const char* szParFilenam
 	blocks.clear();
 
 	bool bOK = iBlockNeeded <= 0;
-
-	if (bOK && g_pOptions->GetParPauseQueue())
-	{
-		UnpauseDownload();
-	}
 
 	return bOK;
 }

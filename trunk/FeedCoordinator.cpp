@@ -142,7 +142,7 @@ void FeedCoordinator::Run()
 		{
 			// this code should not be called too often, once per second is OK
 
-			if (!(g_pOptions->GetPauseDownload() || g_pOptions->GetPauseDownload2()) || m_bForce || g_pOptions->GetUrlForce())
+			if (!g_pOptions->GetPauseDownload() || m_bForce || g_pOptions->GetUrlForce())
 			{
 				m_mutexDownloads.Lock();
 				time_t tCurrent = time(NULL);

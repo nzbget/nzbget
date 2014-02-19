@@ -50,25 +50,12 @@ private:
 		virtual void	Update(Subject* Caller, void* Aspect) { m_pOwner->QueueCoordinatorUpdate(Caller, Aspect); }
 	};
 
-	class PostParCoordinator: public ParCoordinator
-	{
-	private:
-		PrePostProcessor*	m_pOwner;
-	protected:
-		virtual bool		PauseDownload() { return m_pOwner->PauseDownload(); }
-		virtual bool		UnpauseDownload() { return m_pOwner->UnpauseDownload(); }
-		friend class PrePostProcessor;
-	};
-
 private:
-	PostParCoordinator	m_ParCoordinator;
+	ParCoordinator		m_ParCoordinator;
 	QueueCoordinatorObserver	m_QueueCoordinatorObserver;
-	bool				m_bSchedulerPauseChanged;
-	bool				m_bSchedulerPause;
-	bool				m_bPostPause;
-	const char*			m_szPauseReason;
 	int					m_iJobCount;
 	NZBInfo*			m_pCurJob;
+	const char*			m_szPauseReason;
 
 	bool				IsNZBFileCompleted(NZBInfo* pNZBInfo, bool bIgnorePausedPars, bool bAllowOnlyOneDeleted);
 	void				CheckPostQueue();
@@ -77,11 +64,7 @@ private:
 	void				SaveQueue(DownloadQueue* pDownloadQueue);
 	void				SanitisePostQueue(DownloadQueue* pDownloadQueue);
 	void				CheckDiskSpace();
-	void				ApplySchedulerState();
-	void				CheckScheduledResume();
 	void				UpdatePauseState(bool bNeedPause, const char* szReason);
-	bool				PauseDownload();
-	bool				UnpauseDownload();
 	void				NZBFound(DownloadQueue* pDownloadQueue, NZBInfo* pNZBInfo);
 	void				NZBAdded(DownloadQueue* pDownloadQueue, NZBInfo* pNZBInfo);
 	void				NZBDeleted(DownloadQueue* pDownloadQueue, NZBInfo* pNZBInfo);

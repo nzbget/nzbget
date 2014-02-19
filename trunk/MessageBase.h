@@ -27,7 +27,7 @@
 #ifndef MESSAGEBASE_H
 #define MESSAGEBASE_H
 
-static const int32_t NZBMESSAGE_SIGNATURE = 0x6E7A621F; // = "nzb-XX" (protocol version)
+static const int32_t NZBMESSAGE_SIGNATURE = 0x6E7A6220; // = "nzb-XX" (protocol version)
 static const int NZBREQUESTFILENAMESIZE = 512;
 static const int NZBREQUESTPASSWORDSIZE = 32;
 
@@ -118,7 +118,6 @@ enum eRemoteEditAction
 enum eRemotePauseUnpauseAction
 {
 	eRemotePauseUnpauseActionDownload = 1,	// pause/unpause download queue
-	eRemotePauseUnpauseActionDownload2,		// pause/unpause download queue (second pause-register)
 	eRemotePauseUnpauseActionPostProcess,	// pause/unpause post-processor queue
 	eRemotePauseUnpauseActionScan			// pause/unpause scan of incoming nzb-directory
 };
