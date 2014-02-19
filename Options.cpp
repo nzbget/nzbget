@@ -436,9 +436,9 @@ Options::Options(int argc, char* argv[])
 	m_eDetailTarget			= mtScreen;
 	m_bDecode				= true;
 	m_bPauseDownload		= false;
-	m_bPauseDownload2		= false;
 	m_bPausePostProcess		= false;
 	m_bPauseScan			= false;
+	m_bTempPauseDownload	= false;
 	m_bCreateBrokenLog		= false;
 	m_bResetLog				= false;
 	m_iDownloadRate			= 0;
@@ -603,7 +603,6 @@ Options::Options(int argc, char* argv[])
 	{
 		info("Pausing all activities due to errors in configuration");
 		m_bPauseDownload = true;
-		m_bPauseDownload2= true;
 		m_bPausePostProcess = true;
 		m_bPauseScan = true;
 	}
@@ -1285,10 +1284,6 @@ void Options::InitCommandLine(int argc, char* argv[])
 				{
 					m_eClientOperation = c == 'P' ? opClientRequestDownloadPause : opClientRequestDownloadUnpause;
 				}
-				else if (!strcasecmp(optarg, "D2"))
-				{
-					m_eClientOperation = c == 'P' ? opClientRequestDownload2Pause : opClientRequestDownload2Unpause;
-				}
 				else if (!strcasecmp(optarg, "O"))
 				{
 					m_eClientOperation = c == 'P' ? opClientRequestPostPause : opClientRequestPostUnpause;
@@ -1615,11 +1610,9 @@ void Options::InitCommandLine(int argc, char* argv[])
 		}
 	}
 
-	if (m_bServerMode && (m_eClientOperation == opClientRequestDownloadPause ||
-		m_eClientOperation == opClientRequestDownload2Pause))
+	if (m_bServerMode && m_eClientOperation == opClientRequestDownloadPause)
 	{
-		m_bPauseDownload = m_eClientOperation == opClientRequestDownloadPause;
-		m_bPauseDownload2 = m_eClientOperation == opClientRequestDownload2Pause;
+		m_bPauseDownload = true;
 		m_eClientOperation = opClientNoOperation;
 	}
 
@@ -1667,14 +1660,12 @@ void Options::PrintUsage(char* com)
 		"                 S          Print only server status\n"
 		"    <RegEx>                 Regular expression (only with options \"FR\", \"GR\")\n"
 		"                            using POSIX Extended Regular Expression Syntax\n"
-		"  -P, --pause   [D|D2|O|S]  Pause server\n"
+		"  -P, --pause   [D|O|S]  Pause server\n"
 		"                 D          Pause download queue (default)\n"
-		"                 D2         Pause download queue via second pause-register\n"
 		"                 O          Pause post-processor queue\n"
 		"                 S          Pause scan of incoming nzb-directory\n"
-		"  -U, --unpause [D|D2|O|S]  Unpause server\n"
+		"  -U, --unpause [D|O|S]  Unpause server\n"
 		"                 D          Unpause download queue (default)\n"
-		"                 D2         Unpause download queue via second pause-register\n"
 		"                 O          Unpause post-processor queue\n"
 		"                 S          Unpause scan of incoming nzb-directory\n"
 		"  -R, --rate <speed>        Set download rate on server, in KB/s\n"

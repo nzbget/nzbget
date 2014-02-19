@@ -76,7 +76,7 @@ void ColoredFrontend::PrintStatus()
 	timeString[0] = '\0';
 	int iCurrentDownloadSpeed = m_bStandBy ? 0 : m_iCurrentDownloadSpeed;
 
-	if (iCurrentDownloadSpeed > 0 && !(m_bPauseDownload || m_bPauseDownload2))
+	if (iCurrentDownloadSpeed > 0 && !m_bPauseDownload)
 	{
 		long long remain_sec = (long long)(m_lRemainingSize / iCurrentDownloadSpeed);
 		int h = (int)(remain_sec / 3600);
@@ -115,7 +115,7 @@ void ColoredFrontend::PrintStatus()
 	snprintf(tmp, 1024, " %d threads, %.*f KB/s, %.2f MB remaining%s%s%s%s%s\n", 
 		m_iThreadCount, (iCurrentDownloadSpeed >= 10*1024 ? 0 : 1), (float)iCurrentDownloadSpeed / 1024.0, 
 		(float)(Util::Int64ToFloat(m_lRemainingSize) / 1024.0 / 1024.0), timeString, szPostStatus, 
-		m_bPauseDownload || m_bPauseDownload2 ? (m_bStandBy ? ", Paused" : ", Pausing") : "",
+		m_bPauseDownload ? (m_bStandBy ? ", Paused" : ", Pausing") : "",
 		szDownloadLimit, szControlSeq);
 	tmp[1024-1] = '\0';
 	printf("%s", tmp);

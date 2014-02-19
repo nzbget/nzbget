@@ -132,7 +132,7 @@ void QueueCoordinator::Run()
 	while (!IsStopped())
 	{
 		bool bDownloadsChecked = false;
-		if (!(g_pOptions->GetPauseDownload() || g_pOptions->GetPauseDownload2()))
+		if (!g_pOptions->GetPauseDownload())
 		{
 			NNTPConnection* pConnection = g_pServerPool->GetConnection(0, NULL, NULL);
 			if (pConnection)
@@ -147,7 +147,8 @@ void QueueCoordinator::Run()
 				bArticeDownloadsRunning = !m_ActiveDownloads.empty();
 				bDownloadsChecked = true;
 				m_bHasMoreJobs = bHasMoreArticles || bArticeDownloadsRunning;
-				if (bHasMoreArticles && !IsStopped() && (int)m_ActiveDownloads.size() < m_iDownloadsLimit)
+				if (bHasMoreArticles && !IsStopped() && (int)m_ActiveDownloads.size() < m_iDownloadsLimit &&
+					(!g_pOptions->GetTempPauseDownload() || pFileInfo->GetExtraPriority()))
 				{
 					StartArticleDownload(pFileInfo, pArticleInfo, pConnection);
 					bArticeDownloadsRunning = true;
@@ -173,7 +174,7 @@ void QueueCoordinator::Run()
 		}
 
 		bool bStandBy = !bArticeDownloadsRunning;
-		if (bStandBy ^ bWasStandBy)
+		if (bStandBy != bWasStandBy)
 		{
 			EnterLeaveStandBy(bStandBy);
 			bWasStandBy = bStandBy;

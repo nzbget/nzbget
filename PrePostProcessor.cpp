@@ -69,15 +69,12 @@ PrePostProcessor::PrePostProcessor()
 {
 	debug("Creating PrePostProcessor");
 
-	m_bPostPause = false;
 	m_iJobCount = 0;
 	m_pCurJob = NULL;
+	m_szPauseReason = NULL;
 
 	m_QueueCoordinatorObserver.m_pOwner = this;
 	g_pQueueCoordinator->Attach(&m_QueueCoordinatorObserver);
-#ifndef DISABLE_PARCHECK
-	m_ParCoordinator.m_pOwner = this;
-#endif
 }
 
 PrePostProcessor::~PrePostProcessor()
@@ -118,7 +115,6 @@ void PrePostProcessor::Run()
 	}
 
 	g_pScheduler->FirstCheck();
-	ApplySchedulerState();
 
 	int iDiskSpaceInterval = 1000;
 	int iSchedulerInterval = 1000;
@@ -130,7 +126,7 @@ void PrePostProcessor::Run()
 		// check incoming nzb directory
 		g_pScanner->Check();
 
-		if (!(g_pOptions->GetPauseDownload() || g_pOptions->GetPauseDownload2()) && 
+		if (!g_pOptions->GetPauseDownload() && 
 			g_pOptions->GetDiskSpace() > 0 && !g_pQueueCoordinator->GetStandBy() && 
 			iDiskSpaceInterval >= 1000)
 		{
@@ -147,9 +143,7 @@ void PrePostProcessor::Run()
 		{
 			// check scheduler tasks every 1 second
 			g_pScheduler->IntervalCheck();
-			ApplySchedulerState();
 			iSchedulerInterval = 0;
-			CheckScheduledResume();
 		}
 		iSchedulerInterval += iStepMSec;
 
@@ -726,81 +720,18 @@ bool PrePostProcessor::IsNZBFileCompleted(NZBInfo* pNZBInfo, bool bIgnorePausedP
 	return bNZBFileCompleted;
 }
 
-void PrePostProcessor::ApplySchedulerState()
-{
-	if (g_pScheduler->GetPauseDownloadChanged())
-	{
-		info("Scheduler: %s download queue", g_pScheduler->GetPauseDownload() ? "pausing" : "unpausing");
-		m_bSchedulerPauseChanged = true;
-		m_bSchedulerPause = g_pScheduler->GetPauseDownload();
-		if (!m_bPostPause)
-		{
-			g_pOptions->SetPauseDownload(m_bSchedulerPause);
-		}
-	}
-}
-
 void PrePostProcessor::UpdatePauseState(bool bNeedPause, const char* szReason)
 {
-	if (bNeedPause)
+	if (bNeedPause && !g_pOptions->GetTempPauseDownload())
 	{
-		if (PauseDownload())
-		{
-			info("Pausing queue before %s", szReason);
-		}
+		info("Pausing download before %s", szReason);
 	}
-	else if (m_bPostPause)
+	else if (!bNeedPause && g_pOptions->GetTempPauseDownload())
 	{
-		if (UnpauseDownload())
-		{
-			info("Unpausing queue after %s", m_szPauseReason);
-		}
+		info("Unpausing download after %s", m_szPauseReason);
 	}
-
+	g_pOptions->SetTempPauseDownload(bNeedPause);
 	m_szPauseReason = szReason;
-}
-
-bool PrePostProcessor::PauseDownload()
-{
-	debug("PrePostProcessor::PauseDownload()");
-
-	if (m_bPostPause && g_pOptions->GetPauseDownload())
-	{
-		return false;
-	}
-
-	m_bPostPause = !g_pOptions->GetPauseDownload();
-	m_bSchedulerPauseChanged = false;
-	g_pOptions->SetPauseDownload(true);
-	return m_bPostPause;
-}
-
-bool PrePostProcessor::UnpauseDownload()
-{
-	debug("PrePostProcessor::UnpauseDownload()");
-
-	bool bPause = true;
-	if (m_bPostPause)
-	{
-		m_bPostPause = false;
-		bPause = m_bSchedulerPauseChanged && m_bSchedulerPause;
-		g_pOptions->SetPauseDownload(bPause);
-	}
-	return !bPause;
-}
-
-void PrePostProcessor::CheckScheduledResume()
-{
-	time_t tResumeTime = g_pOptions->GetResumeTime();
-	time_t tCurrentTime = time(NULL);
-	if (tResumeTime > 0 && tCurrentTime >= tResumeTime)
-	{
-		info("Autoresume");
-		g_pOptions->SetResumeTime(0);
-		g_pOptions->SetPauseDownload2(false);
-		g_pOptions->SetPausePostProcess(false);
-		g_pOptions->SetPauseScan(false);
-	}
 }
 
 bool PrePostProcessor::EditList(IDList* pIDList, EEditAction eAction, int iOffset, const char* szText)

@@ -166,7 +166,8 @@ void ArticleDownloader::Run()
 		SetLastUpdateTimeNow();
 		SetStatus(adRunning);
 
-		if (IsStopped() || g_pOptions->GetPauseDownload() || g_pOptions->GetPauseDownload2() ||
+		if (IsStopped() || g_pOptions->GetPauseDownload() ||
+			(g_pOptions->GetTempPauseDownload() && !m_pFileInfo->GetExtraPriority()) ||
 			iServerConfigGeneration != g_pServerPool->GetGeneration())
 		{
 			Status = adRetry;
@@ -230,14 +231,16 @@ void ArticleDownloader::Run()
 		}
 
 		if (pWantServer && 
-			!(IsStopped() || g_pOptions->GetPauseDownload() || g_pOptions->GetPauseDownload2() ||
-			 iServerConfigGeneration != g_pServerPool->GetGeneration()))
+			!(IsStopped() || g_pOptions->GetPauseDownload() ||
+			  (g_pOptions->GetTempPauseDownload() && !m_pFileInfo->GetExtraPriority()) ||
+			  iServerConfigGeneration != g_pServerPool->GetGeneration()))
 		{
 			detail("Waiting %i sec to retry", g_pOptions->GetRetryInterval());
 			SetStatus(adWaiting);
 			int msec = 0;
-			while (!(IsStopped() || g_pOptions->GetPauseDownload() || g_pOptions->GetPauseDownload2() ||
-				  iServerConfigGeneration != g_pServerPool->GetGeneration()) &&
+			while (!(IsStopped() || g_pOptions->GetPauseDownload() ||
+					 (g_pOptions->GetTempPauseDownload() && !m_pFileInfo->GetExtraPriority()) ||
+					 iServerConfigGeneration != g_pServerPool->GetGeneration()) &&
 				  msec < g_pOptions->GetRetryInterval() * 1000)
 			{
 				usleep(100 * 1000);
@@ -247,7 +250,8 @@ void ArticleDownloader::Run()
 			SetStatus(adRunning);
 		}
 
-		if (IsStopped() || g_pOptions->GetPauseDownload() || g_pOptions->GetPauseDownload2() ||
+		if (IsStopped() || g_pOptions->GetPauseDownload() ||
+			(g_pOptions->GetTempPauseDownload() && !m_pFileInfo->GetExtraPriority()) ||
 			iServerConfigGeneration != g_pServerPool->GetGeneration())
 		{
 			Status = adRetry;

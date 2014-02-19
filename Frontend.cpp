@@ -67,7 +67,6 @@ Frontend::Frontend()
 	m_iCurrentDownloadSpeed = 0;
 	m_lRemainingSize = 0;
 	m_bPauseDownload = false;
-	m_bPauseDownload2 = false;
 	m_iDownloadLimit = 0;
 	m_iThreadCount = 0;
 	m_iPostJobCount = 0;
@@ -100,7 +99,6 @@ bool Frontend::PrepareData()
 			m_iCurrentDownloadSpeed = g_pQueueCoordinator->CalcCurrentDownloadSpeed();
 			m_lRemainingSize = g_pQueueCoordinator->CalcRemainingSize();
 			m_bPauseDownload = g_pOptions->GetPauseDownload();
-			m_bPauseDownload2 = g_pOptions->GetPauseDownload2();
 			m_iDownloadLimit = g_pOptions->GetDownloadRate();
 			m_iThreadCount = Thread::GetThreadCount();
 			m_iPostJobCount = g_pPrePostProcessor->GetJobCount();
@@ -169,23 +167,16 @@ bool Frontend::IsRemoteMode()
 	return g_pOptions->GetRemoteClientMode();
 }
 
-void Frontend::ServerPauseUnpause(bool bPause, bool bSecondRegister)
+void Frontend::ServerPauseUnpause(bool bPause)
 {
 	if (IsRemoteMode())
 	{
-		RequestPauseUnpause(bPause, bSecondRegister);
+		RequestPauseUnpause(bPause);
 	}
 	else
 	{
 		g_pOptions->SetResumeTime(0);
-		if (bSecondRegister)
-		{
-			g_pOptions->SetPauseDownload2(bPause);
-		}
-		else
-		{
-			g_pOptions->SetPauseDownload(bPause);
-		}
+		g_pOptions->SetPauseDownload(bPause);
 	}
 }
 
@@ -356,7 +347,6 @@ bool Frontend::RequestFileList()
 	if (m_bSummary)
 	{
 		m_bPauseDownload = ntohl(ListResponse.m_bDownloadPaused);
-		m_bPauseDownload2 = ntohl(ListResponse.m_bDownload2Paused);
 		m_lRemainingSize = Util::JoinInt64(ntohl(ListResponse.m_iRemainingSizeHi), ntohl(ListResponse.m_iRemainingSizeLo));
 		m_iCurrentDownloadSpeed = ntohl(ListResponse.m_iDownloadRate);
 		m_iDownloadLimit = ntohl(ListResponse.m_iDownloadLimit);
@@ -383,11 +373,11 @@ bool Frontend::RequestFileList()
 	return true;
 }
 
-bool Frontend::RequestPauseUnpause(bool bPause, bool bSecondRegister)
+bool Frontend::RequestPauseUnpause(bool bPause)
 {
 	RemoteClient client;
 	client.SetVerbose(false);
-	return client.RequestServerPauseUnpause(bPause, bSecondRegister ? eRemotePauseUnpauseActionDownload2 : eRemotePauseUnpauseActionDownload);
+	return client.RequestServerPauseUnpause(bPause, eRemotePauseUnpauseActionDownload);
 }
 
 bool Frontend::RequestSetDownloadRate(int iRate)

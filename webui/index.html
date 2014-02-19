@@ -96,11 +96,9 @@
 					<button id="PlayCaretButton" class="dropdown-toggle" data-toggle="dropdown"><span id="PlayCaret" class="caret"></span></button>
 					<ul class="dropdown-menu menu-check" id="PlayMenu">
 						<li class="menu-header">Pause activities</li>
-						<li><a href="#" onclick="Status.pauseClick('download2')"><table><tr><td><i class="icon-ok" id="CHPauseDownload"></td><td>Pause Download</td></tr></table></a></li>
+						<li><a href="#" onclick="Status.pauseClick('download')"><table><tr><td><i class="icon-ok" id="CHPauseDownload"></td><td>Pause Download</td></tr></table></a></li>
 						<li><a href="#" onclick="Status.pauseClick('post')"><table><tr><td><i class="icon-ok" id="CHPausePostProcess"></td><td>Pause Post-Processing</td></tr></table></a></li>
 						<li><a href="#" onclick="Status.pauseClick('scan')"><table><tr><td><i class="icon-ok" id="CHPauseScan"></td><td>Pause NZB Scan</td></tr></table></a></li>
-						<li class="divider"></li>
-						<li><a href="#" onclick="Status.pauseClick('download')"><table><tr><td><i class="icon-ok" id="CHSoftPauseDownload"></td><td>Soft-Pause Download</td></tr></table></a></li>
 						<li class="divider"></li>
 						<li class="menu-header">Pause for</li>
 						<li><a href="#" onclick="Status.scheduledPauseClick(30*60)"><table><tr><td></td><td>30 Minutes</td></tr></table></a></li>
@@ -765,13 +763,8 @@
 	</div>
 	<div class="modal-body">
 	<p>With command <strong>Pause download</strong> you can manually pause the download queue.</p>
-	<p>In addition to manual <em>Pause</em> there is also <em>Soft-Pause</em>, which is maintained by the program: scheduler and post-processing can
-	pause and resume download (see config options <em>PostPauseQueue</em> or <em>ParPauseQueue</em>).
-	In order to keep the scheduler in-sync it's better not to manually change the state of Soft-Pause.
-	However if you control NZBGet using a third-party software, which doesn't distinguigh between manual <em>Pause</em> and <em>Soft-Pause</em>, you may need to control the <em>Soft-Pause</em> manually as well.</p>
-	<p>The download is paused if either manual <em>Pause</em> or <em>Soft-Pause</em> is active.</p>
 	<p>The pausing of <strong>post-processing</strong> depends on how the post-processing-script handles screen output and may not always work.</p>
-	<p>The <strong>Pause/Resume Button</strong> (the round one) pauses or resumes all three activities: download, post-processing and nzb directory scan. The state of <em>Soft-Pause</em> remains unchanged.</p>
+	<p>The <strong>Pause/Resume Button</strong> (the round one) pauses or resumes all three activities: download, post-processing and nzb directory scan.</p>
 	</div>
 </div>
 

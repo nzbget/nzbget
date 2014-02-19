@@ -77,7 +77,6 @@ private:
 	bool				m_bDownloadRateChanged;
 	bool				m_bExecuteProcess;
 	bool				m_bPauseDownloadChanged;
-	bool				m_bPauseDownload;
 	bool				m_bPauseScanChanged;
 	bool				m_bServerChanged;
 	ServerStatusList	m_ServerStatusList;
@@ -88,6 +87,7 @@ private:
 	void				PrintLog();
 	void				EditServer(bool bActive, const char* szServerList);
 	void				FetchFeed(const char* szFeedList);
+	void				CheckScheduledResume();
 
 public:
 						Scheduler();
@@ -95,8 +95,6 @@ public:
 	void				AddTask(Task* pTask);
 	void				FirstCheck();
 	void				IntervalCheck();
-	bool				GetPauseDownloadChanged() { return m_bPauseDownloadChanged; }
-	bool				GetPauseDownload() { return m_bPauseDownload; }
 };
 
 #endif

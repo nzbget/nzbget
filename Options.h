@@ -57,8 +57,6 @@ public:
 		opClientRequestScanAsync,
 		opClientRequestDownloadPause,
 		opClientRequestDownloadUnpause,
-		opClientRequestDownload2Pause,
-		opClientRequestDownload2Unpause,
 		opClientRequestPostPause,
 		opClientRequestPostUnpause,
 		opClientRequestScanPause,
@@ -347,9 +345,9 @@ private:
 
 	// Current state
 	bool				m_bPauseDownload;
-	bool				m_bPauseDownload2;
 	bool				m_bPausePostProcess;
 	bool				m_bPauseScan;
+	bool				m_bTempPauseDownload;
 	int					m_iDownloadRate;
 	EClientOperation	m_eClientOperation;
 	time_t				m_tResumeTime;
@@ -514,12 +512,12 @@ public:
 	// Current state
 	void				SetPauseDownload(bool bPauseDownload) { m_bPauseDownload = bPauseDownload; }
 	bool				GetPauseDownload() const { return m_bPauseDownload; }
-	void				SetPauseDownload2(bool bPauseDownload2) { m_bPauseDownload2 = bPauseDownload2; }
-	bool				GetPauseDownload2() const { return m_bPauseDownload2; }
 	void				SetPausePostProcess(bool bPausePostProcess) { m_bPausePostProcess = bPausePostProcess; }
 	bool				GetPausePostProcess() const { return m_bPausePostProcess; }
 	void				SetPauseScan(bool bPauseScan) { m_bPauseScan = bPauseScan; }
 	bool				GetPauseScan() const { return m_bPauseScan; }
+	void				SetTempPauseDownload(bool bTempPauseDownload) { m_bTempPauseDownload = bTempPauseDownload; }
+	bool				GetTempPauseDownload() const { return m_bTempPauseDownload; }
 	void				SetDownloadRate(int iRate) { m_iDownloadRate = iRate; }
 	int					GetDownloadRate() const { return m_iDownloadRate; }
 	void				SetResumeTime(time_t tResumeTime) { m_tResumeTime = tResumeTime; }

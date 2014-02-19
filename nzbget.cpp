@@ -490,14 +490,6 @@ void ProcessClientRequest()
 			Client->RequestServerPauseUnpause(false, eRemotePauseUnpauseActionDownload);
 			break;
 
-		case Options::opClientRequestDownload2Pause:
-			Client->RequestServerPauseUnpause(true, eRemotePauseUnpauseActionDownload2);
-			break;
-
-		case Options::opClientRequestDownload2Unpause:
-			Client->RequestServerPauseUnpause(false, eRemotePauseUnpauseActionDownload2);
-			break;
-
 		case Options::opClientRequestSetRate:
 			Client->RequestServerSetDownloadRate(g_pOptions->GetSetRate());
 			break;

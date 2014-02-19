@@ -613,7 +613,7 @@ void NCursesFrontend::PrintStatus()
     timeString[0] = '\0';
 
 	int iCurrentDownloadSpeed = m_bStandBy ? 0 : m_iCurrentDownloadSpeed;
-    if (iCurrentDownloadSpeed > 0 && !(m_bPauseDownload || m_bPauseDownload2))
+    if (iCurrentDownloadSpeed > 0 && !m_bPauseDownload)
     {
         long long remain_sec = (long long)(m_lRemainingSize / iCurrentDownloadSpeed);
 		int h = (int)(remain_sec / 3600);
@@ -644,12 +644,10 @@ void NCursesFrontend::PrintStatus()
 
 	float fAverageSpeed = (float)(Util::Int64ToFloat(m_iDnTimeSec > 0 ? m_iAllBytes / m_iDnTimeSec : 0) / 1024.0);
 
-	snprintf(tmp, MAX_SCREEN_WIDTH, " %d threads, %.*f KB/s, %.2f MB remaining%s%s%s%s%s, Avg. %.*f KB/s", 
+	snprintf(tmp, MAX_SCREEN_WIDTH, " %d threads, %.*f KB/s, %.2f MB remaining%s%s%s%s, Avg. %.*f KB/s", 
 		m_iThreadCount, (iCurrentDownloadSpeed >= 10*1024 ? 0 : 1), (float)iCurrentDownloadSpeed / 1024.0, 
 		(float)(Util::Int64ToFloat(m_lRemainingSize) / 1024.0 / 1024.0), timeString, szPostStatus, 
-		m_bPauseDownload || m_bPauseDownload2 ? (m_bStandBy ? ", Paused" : ", Pausing") : "",
-		m_bPauseDownload || m_bPauseDownload2 ? 
-			(m_bPauseDownload && m_bPauseDownload2 ? " (+2)" : m_bPauseDownload2 ? " (2)" : "") : "",
+		m_bPauseDownload ? (m_bStandBy ? ", Paused" : ", Pausing") : "",
 		szDownloadLimit, (fAverageSpeed >= 10 ? 0 : 1), fAverageSpeed);
 	tmp[MAX_SCREEN_WIDTH - 1] = '\0';
     PlotLine(tmp, iStatusRow, 0, NCURSES_COLORPAIR_STATUS);
@@ -1062,7 +1060,7 @@ void NCursesFrontend::PrintGroupname(NZBInfo* pNZBInfo, int iRow, bool bSelected
 			snprintf(szTime, 100, "[paused]");
 			Util::FormatFileSize(szRemaining, sizeof(szRemaining), pNZBInfo->GetRemainingSize());
 		}
-		else if (iCurrentDownloadSpeed > 0 && !(m_bPauseDownload || m_bPauseDownload2))
+		else if (iCurrentDownloadSpeed > 0 && !m_bPauseDownload)
 		{
 			long long remain_sec = (long long)(lUnpausedRemainingSize / iCurrentDownloadSpeed);
 			int h = (int)(remain_sec / 3600);
@@ -1291,9 +1289,9 @@ void NCursesFrontend::UpdateInput(int initialKey)
 				// Key 'p' for pause
 				if (!IsRemoteMode())
 				{
-					info(m_bPauseDownload || m_bPauseDownload2 ? "Unpausing download" : "Pausing download");
+					info(m_bPauseDownload ? "Unpausing download" : "Pausing download");
 				}
-				ServerPauseUnpause(!(m_bPauseDownload || m_bPauseDownload2), m_bPauseDownload2 && !m_bPauseDownload);
+				ServerPauseUnpause(!m_bPauseDownload);
 				break;
 			case '\'':
 				ServerDumpDebug();
