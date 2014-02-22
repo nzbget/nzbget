@@ -363,15 +363,15 @@ bool RemoteClient::RequestServerList(bool bFiles, bool bGroups, const char* szPa
 			printf("Queue List\n");
 			printf("-----------------------------------\n");
 
-			DownloadQueue cRemoteQueue;
-			BuildFileList(&ListResponse, pBuf, &cRemoteQueue);
+			DownloadQueue* pDownloadQueue = DownloadQueue::Lock();
+			BuildFileList(&ListResponse, pBuf, pDownloadQueue);
 
 			long long lRemaining = 0;
 			long long lPaused = 0;
 			int iMatches = 0;
 			int iNrFileEntries = 0;
 
-			for (NZBList::iterator it = cRemoteQueue.GetQueue()->begin(); it != cRemoteQueue.GetQueue()->end(); it++)
+			for (NZBList::iterator it = pDownloadQueue->GetQueue()->begin(); it != pDownloadQueue->GetQueue()->end(); it++)
 			{
 				NZBInfo* pNZBInfo = *it;
 				for (FileList::iterator it2 = pNZBInfo->GetFileList()->begin(); it2 != pNZBInfo->GetFileList()->end(); it2++)
@@ -417,6 +417,8 @@ bool RemoteClient::RequestServerList(bool bFiles, bool bGroups, const char* szPa
 				}
 			}
 
+			DownloadQueue::Unlock();
+
 			if (iMatches == 0)
 			{
 				printf("No matches founds\n");
@@ -451,15 +453,15 @@ bool RemoteClient::RequestServerList(bool bFiles, bool bGroups, const char* szPa
 			printf("Queue List\n");
 			printf("-----------------------------------\n");
 
-			DownloadQueue cRemoteQueue;
-			BuildFileList(&ListResponse, pBuf, &cRemoteQueue);
+			DownloadQueue* pDownloadQueue = DownloadQueue::Lock();
+			BuildFileList(&ListResponse, pBuf, pDownloadQueue);
 
 			long long lRemaining = 0;
 			long long lPaused = 0;
 			int iMatches = 0;
 			int iNrFileEntries = 0;
 
-			for (NZBList::iterator it = cRemoteQueue.GetQueue()->begin(); it != cRemoteQueue.GetQueue()->end(); it++)
+			for (NZBList::iterator it = pDownloadQueue->GetQueue()->begin(); it != pDownloadQueue->GetQueue()->end(); it++)
 			{
 				NZBInfo* pNZBInfo = *it;
 
@@ -540,7 +542,7 @@ bool RemoteClient::RequestServerList(bool bFiles, bool bGroups, const char* szPa
 			}
 
 			printf("-----------------------------------\n");
-			printf("Groups: %i\n", cRemoteQueue.GetQueue()->size());
+			printf("Groups: %i\n", pDownloadQueue->GetQueue()->size());
 			if (szPattern)
 			{
 				printf("Matches: %i\n", iMatches);
@@ -555,6 +557,8 @@ bool RemoteClient::RequestServerList(bool bFiles, bool bGroups, const char* szPa
 			{
 				printf("Remaining size: %.2f MB\n", (float)(Util::Int64ToFloat(lRemaining) / 1024.0 / 1024.0));
 			}
+
+			DownloadQueue::Unlock();
 		}
 	}
 
@@ -798,7 +802,7 @@ bool RemoteClient::RequestServerDumpDebug()
 	return OK;
 }
 
-bool RemoteClient::RequestServerEditQueue(eRemoteEditAction iAction, int iOffset, const char* szText, 
+bool RemoteClient::RequestServerEditQueue(DownloadQueue::EEditAction eAction, int iOffset, const char* szText,
 	int* pIDList, int iIDCount, NameList* pNameList, eRemoteMatchMode iMatchMode)
 {
 	if ((iIDCount <= 0 || pIDList == NULL) && (pNameList == NULL || pNameList->size() == 0))
@@ -833,7 +837,7 @@ bool RemoteClient::RequestServerEditQueue(eRemoteEditAction iAction, int iOffset
 
 	SNZBEditQueueRequest EditQueueRequest;
 	InitMessageBase(&EditQueueRequest.m_MessageBase, eRemoteRequestEditQueue, sizeof(EditQueueRequest));
-	EditQueueRequest.m_iAction = htonl(iAction);
+	EditQueueRequest.m_iAction = htonl(eAction);
 	EditQueueRequest.m_iMatchMode = htonl(iMatchMode);
 	EditQueueRequest.m_iOffset = htonl((int)iOffset);
 	EditQueueRequest.m_iTextLen = htonl(iTextLen);

@@ -50,7 +50,6 @@
 #include "UrlCoordinator.h"
 #include "QueueEditor.h"
 #include "PrePostProcessor.h"
-#include "HistoryCoordinator.h"
 #include "Util.h"
 #include "DownloadInfo.h"
 #include "Scanner.h"
@@ -59,7 +58,6 @@ extern Options* g_pOptions;
 extern QueueCoordinator* g_pQueueCoordinator;
 extern UrlCoordinator* g_pUrlCoordinator;
 extern PrePostProcessor* g_pPrePostProcessor;
-extern HistoryCoordinator* g_pHistoryCoordinator;
 extern Scanner* g_pScanner;
 extern void ExitProc();
 extern void Reload();
@@ -400,7 +398,7 @@ void ListBinCommand::Execute()
 		}
 
 		// Make a data structure and copy all the elements of the list into it
-		DownloadQueue* pDownloadQueue = g_pQueueCoordinator->LockQueue();
+		DownloadQueue* pDownloadQueue = DownloadQueue::Lock();
 
 		// calculate required buffer size for nzbs
 		int iNrNZBEntries = pDownloadQueue->GetQueue()->size();
@@ -571,7 +569,7 @@ void ListBinCommand::Execute()
 			}
 		}
 
-		g_pQueueCoordinator->UnlockQueue();
+		DownloadQueue::Unlock();
 
 		delete pRegEx;
 
@@ -771,23 +769,12 @@ void EditQueueBinCommand::Execute()
 		}
 	}
 
-	bool bOK = false;
-	
-	if (iAction < eRemoteEditActionPostDelete)
-	{
-		bOK = g_pQueueCoordinator->GetQueueEditor()->EditList(
-			iNrIDEntries > 0 ? &cIDList : NULL,
-			iNrNameEntries > 0 ? &cNameList : NULL,
-			(QueueEditor::EMatchMode)iMatchMode, (QueueEditor::EEditAction)iAction, iOffset, szText);
-	}
-	else if (iAction < eRemoteEditActionHistoryDelete)
-	{
-		bOK = g_pPrePostProcessor->EditList(&cIDList, (PrePostProcessor::EEditAction)iAction, iOffset, szText);
-	}
-	else
-	{
-		bOK = g_pHistoryCoordinator->EditList(&cIDList, (HistoryCoordinator::EEditAction)iAction, iOffset, szText);
-	}
+	DownloadQueue* pDownloadQueue = DownloadQueue::Lock();
+	bool bOK = pDownloadQueue->EditList(
+		iNrIDEntries > 0 ? &cIDList : NULL,
+		iNrNameEntries > 0 ? &cNameList : NULL,
+		(DownloadQueue::EMatchMode)iMatchMode, (DownloadQueue::EEditAction)iAction, iOffset, szText);
+	DownloadQueue::Unlock();
 
 	free(pBuf);
 
@@ -826,7 +813,7 @@ void PostQueueBinCommand::Execute()
 	int bufsize = 0;
 
 	// Make a data structure and copy all the elements of the list into it
-	NZBList* pNZBList = g_pQueueCoordinator->LockQueue()->GetQueue();
+	NZBList* pNZBList = DownloadQueue::Lock()->GetQueue();
 
 	// calculate required buffer size
 	int NrEntries = 0;
@@ -891,7 +878,7 @@ void PostQueueBinCommand::Execute()
 		}
 	}
 
-	g_pQueueCoordinator->UnlockQueue();
+	DownloadQueue::Unlock();
 
 	PostQueueResponse.m_iNrTrailingEntries = htonl(NrEntries);
 	PostQueueResponse.m_iTrailingDataLength = htonl(bufsize);
@@ -983,7 +970,7 @@ void HistoryBinCommand::Execute()
 	int bufsize = 0;
 
 	// Make a data structure and copy all the elements of the list into it
-	DownloadQueue* pDownloadQueue = g_pQueueCoordinator->LockQueue();
+	DownloadQueue* pDownloadQueue = DownloadQueue::Lock();
 
 	// calculate required buffer size for nzbs
 	int iNrEntries = pDownloadQueue->GetHistory()->size();
@@ -1043,7 +1030,7 @@ void HistoryBinCommand::Execute()
 		}
 	}
 
-	g_pQueueCoordinator->UnlockQueue();
+	DownloadQueue::Unlock();
 
 	HistoryResponse.m_iNrTrailingEntries = htonl(iNrEntries);
 	HistoryResponse.m_iTrailingDataLength = htonl(bufsize);
@@ -1114,7 +1101,7 @@ void UrlQueueBinCommand::Execute()
 	int bufsize = 0;
 
 	// Make a data structure and copy all the elements of the list into it
-	UrlQueue* pUrlQueue = g_pQueueCoordinator->LockQueue()->GetUrlQueue();
+	UrlQueue* pUrlQueue = DownloadQueue::Lock()->GetUrlQueue();
 
 	int NrEntries = pUrlQueue->size();
 
@@ -1153,7 +1140,7 @@ void UrlQueueBinCommand::Execute()
 		}
 	}
 
-	g_pQueueCoordinator->UnlockQueue();
+	DownloadQueue::Unlock();
 
 	UrlQueueResponse.m_iNrTrailingEntries = htonl(NrEntries);
 	UrlQueueResponse.m_iTrailingDataLength = htonl(bufsize);

@@ -2,7 +2,7 @@
  *  This file is part of nzbget
  *
  *  Copyright (C) 2004 Sven Henkel <sidddy@users.sourceforge.net>
- *  Copyright (C) 2007-2010 Andrey Prygunkov <hugbug@users.sourceforge.net>
+ *  Copyright (C) 2007-2014 Andrey Prygunkov <hugbug@users.sourceforge.net>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -37,7 +37,6 @@ class Frontend : public Thread
 {
 private:
 	Log::Messages		m_RemoteMessages;
-	DownloadQueue		m_RemoteQueue;
 
 	bool				RequestMessages();
 	bool				RequestFileList();
@@ -73,10 +72,8 @@ protected:
 	bool				RequestPauseUnpause(bool bPause);
 	void				ServerSetDownloadRate(int iRate);
 	bool				RequestSetDownloadRate(int iRate);
-	void				ServerDumpDebug();
-	bool				RequestDumpDebug();
-	bool 				ServerEditQueue(QueueEditor::EEditAction eAction, int iOffset, int iEntry);
-	bool 				RequestEditQueue(eRemoteEditAction iAction, int iOffset, int iID);
+	bool 				ServerEditQueue(DownloadQueue::EEditAction eAction, int iOffset, int iEntry);
+	bool 				RequestEditQueue(DownloadQueue::EEditAction eAction, int iOffset, int iID);
 
 public:
 						Frontend();

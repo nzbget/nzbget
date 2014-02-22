@@ -2,7 +2,7 @@
  *  This file is part of nzbget
  *
  *  Copyright (C) 2004 Sven Henkel <sidddy@users.sourceforge.net>
- *  Copyright (C) 2007-2013 Andrey Prygunkov <hugbug@users.sourceforge.net>
+ *  Copyright (C) 2007-2014 Andrey Prygunkov <hugbug@users.sourceforge.net>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -113,7 +113,6 @@ UrlCoordinator* g_pUrlCoordinator = NULL;
 RemoteServer* g_pRemoteServer = NULL;
 RemoteServer* g_pRemoteSecureServer = NULL;
 DownloadSpeedMeter* g_pDownloadSpeedMeter = NULL;
-DownloadQueueHolder* g_pDownloadQueueHolder = NULL;
 Log* g_pLog = NULL;
 PrePostProcessor* g_pPrePostProcessor = NULL;
 HistoryCoordinator* g_pHistoryCoordinator = NULL;
@@ -217,7 +216,6 @@ void Run(bool bReload)
 	g_pScheduler = new Scheduler();
 	g_pQueueCoordinator = new QueueCoordinator();
 	g_pDownloadSpeedMeter = g_pQueueCoordinator;
-	g_pDownloadQueueHolder = g_pQueueCoordinator;
 	g_pScanner = new Scanner();
 	g_pPrePostProcessor = new PrePostProcessor();
 	g_pHistoryCoordinator = new HistoryCoordinator();
@@ -499,8 +497,9 @@ void ProcessClientRequest()
 			break;
 
 		case Options::opClientRequestEditQueue:
-			Client->RequestServerEditQueue((eRemoteEditAction)g_pOptions->GetEditQueueAction(), g_pOptions->GetEditQueueOffset(),
-				g_pOptions->GetEditQueueText(), g_pOptions->GetEditQueueIDList(), g_pOptions->GetEditQueueIDCount(), 
+			Client->RequestServerEditQueue((DownloadQueue::EEditAction)g_pOptions->GetEditQueueAction(),
+				g_pOptions->GetEditQueueOffset(), g_pOptions->GetEditQueueText(),
+				g_pOptions->GetEditQueueIDList(), g_pOptions->GetEditQueueIDCount(),
 				g_pOptions->GetEditQueueNameList(), (eRemoteMatchMode)g_pOptions->GetMatchMode());
 			break;
 

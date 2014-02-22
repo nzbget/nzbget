@@ -1,7 +1,7 @@
 /*
  *  This file is part of nzbget
  *
- *  Copyright (C) 2007-2013 Andrey Prygunkov <hugbug@users.sourceforge.net>
+ *  Copyright (C) 2007-2014 Andrey Prygunkov <hugbug@users.sourceforge.net>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -35,13 +35,6 @@
 
 class PrePostProcessor : public Thread
 {
-public:
-	// NOTE: changes to this enum must be synced with "eRemoteEditAction" in unit "MessageBase.h"
-	enum EEditAction
-	{
-		eaPostDelete = 51
-	};
-
 private:
 	class QueueCoordinatorObserver: public Observer
 	{
@@ -69,8 +62,7 @@ private:
 	void				NZBAdded(DownloadQueue* pDownloadQueue, NZBInfo* pNZBInfo);
 	void				NZBDeleted(DownloadQueue* pDownloadQueue, NZBInfo* pNZBInfo);
 	void				NZBCompleted(DownloadQueue* pDownloadQueue, NZBInfo* pNZBInfo, bool bSaveQueue);
-	bool				PostQueueDelete(IDList* pIDList);
-	void				Cleanup();
+	bool				PostQueueDelete(DownloadQueue* pDownloadQueue, IDList* pIDList);
 	void				DeletePostThread(PostInfo* pPostInfo);
 	NZBInfo*			GetNextJob(DownloadQueue* pDownloadQueue);
 
@@ -82,7 +74,7 @@ public:
 	void				QueueCoordinatorUpdate(Subject* Caller, void* Aspect);
 	bool				HasMoreJobs() { return m_iJobCount > 0; }
 	int					GetJobCount() { return m_iJobCount; }
-	bool				EditList(IDList* pIDList, EEditAction eAction, int iOffset, const char* szText);
+	bool				EditList(DownloadQueue* pDownloadQueue, IDList* pIDList, DownloadQueue::EEditAction eAction, int iOffset, const char* szText);
 	void				NZBDownloaded(DownloadQueue* pDownloadQueue, NZBInfo* pNZBInfo);
 };
 

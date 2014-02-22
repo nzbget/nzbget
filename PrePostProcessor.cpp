@@ -50,7 +50,6 @@
 #include "HistoryCoordinator.h"
 #include "DupeCoordinator.h"
 #include "ScriptController.h"
-#include "DiskState.h"
 #include "Util.h"
 #include "Scheduler.h"
 #include "Scanner.h"
@@ -61,7 +60,6 @@ extern QueueCoordinator* g_pQueueCoordinator;
 extern HistoryCoordinator* g_pHistoryCoordinator;
 extern DupeCoordinator* g_pDupeCoordinator;
 extern Options* g_pOptions;
-extern DiskState* g_pDiskState;
 extern Scheduler* g_pScheduler;
 extern Scanner* g_pScanner;
 
@@ -82,26 +80,11 @@ PrePostProcessor::~PrePostProcessor()
 	debug("Destroying PrePostProcessor");
 }
 
-void PrePostProcessor::Cleanup()
-{
-	debug("Cleaning up PrePostProcessor");
-
-	DownloadQueue* pDownloadQueue = g_pQueueCoordinator->LockQueue();
-
-	for (HistoryList::iterator it = pDownloadQueue->GetHistory()->begin(); it != pDownloadQueue->GetHistory()->end(); it++)
-	{
-		delete *it;
-	}
-	pDownloadQueue->GetHistory()->clear();
-
-	g_pQueueCoordinator->UnlockQueue();
-}
-
 void PrePostProcessor::Run()
 {
 	debug("Entering PrePostProcessor-loop");
 
-	while (!g_pQueueCoordinator->IsInitialized() && !IsStopped())
+	while (!DownloadQueue::IsLoaded())
 	{
 		usleep(5 * 1000);
 	}
@@ -109,9 +92,9 @@ void PrePostProcessor::Run()
 	if (g_pOptions->GetServerMode() && g_pOptions->GetSaveQueue() &&
 		g_pOptions->GetReloadQueue() && g_pOptions->GetReloadPostQueue())
 	{
-		DownloadQueue* pDownloadQueue = g_pQueueCoordinator->LockQueue();
+		DownloadQueue* pDownloadQueue = DownloadQueue::Lock();
 		SanitisePostQueue(pDownloadQueue);
-		g_pQueueCoordinator->UnlockQueue();
+		DownloadQueue::Unlock();
 	}
 
 	g_pScheduler->FirstCheck();
@@ -158,7 +141,6 @@ void PrePostProcessor::Run()
 		usleep(iStepMSec * 1000);
 	}
 
-	Cleanup();
 	g_pHistoryCoordinator->Cleanup();
 
 	debug("Exiting PrePostProcessor-loop");
@@ -167,7 +149,7 @@ void PrePostProcessor::Run()
 void PrePostProcessor::Stop()
 {
 	Thread::Stop();
-	g_pQueueCoordinator->LockQueue();
+	DownloadQueue::Lock();
 
 #ifndef DISABLE_PARCHECK
 	m_ParCoordinator.Stop();
@@ -184,7 +166,7 @@ void PrePostProcessor::Stop()
 		pPostThread->Stop();
 	}
 
-	g_pQueueCoordinator->UnlockQueue();
+	DownloadQueue::Unlock();
 }
 
 void PrePostProcessor::QueueCoordinatorUpdate(Subject * Caller, void * Aspect)
@@ -287,7 +269,7 @@ void PrePostProcessor::NZBDownloaded(DownloadQueue* pDownloadQueue, NZBInfo* pNZ
 			pNZBInfo->SetMoveStatus(NZBInfo::msFailure);
 		}
 
-		SaveQueue(pDownloadQueue);
+		pDownloadQueue->Save();
 	}
 	else
 	{
@@ -377,7 +359,7 @@ void PrePostProcessor::NZBCompleted(DownloadQueue* pDownloadQueue, NZBInfo* pNZB
 
 	if (bSaveQueue && bNeedSave)
 	{
-		SaveQueue(pDownloadQueue);
+		pDownloadQueue->Save();
 	}
 }
 
@@ -403,7 +385,7 @@ void PrePostProcessor::CheckDiskSpace()
 
 void PrePostProcessor::CheckPostQueue()
 {
-	DownloadQueue* pDownloadQueue = g_pQueueCoordinator->LockQueue();
+	DownloadQueue* pDownloadQueue = DownloadQueue::Lock();
 
 	if (!m_pCurJob && m_iJobCount > 0 && !g_pOptions->GetPausePostProcess())
 	{
@@ -440,8 +422,7 @@ void PrePostProcessor::CheckPostQueue()
 				if (!pPostInfo->GetNZBInfo()->GetFileList()->empty())
 				{
 					info("Downloading all remaining files for manual par-check for %s", pPostInfo->GetNZBInfo()->GetName());
-					g_pQueueCoordinator->GetQueueEditor()->LockedEditEntry(pDownloadQueue,
-						pPostInfo->GetNZBInfo()->GetID(), QueueEditor::eaGroupResume, 0, NULL);
+					pDownloadQueue->EditEntry(pPostInfo->GetNZBInfo()->GetID(), DownloadQueue::eaGroupResume, 0, NULL);
 					pPostInfo->SetStage(PostInfo::ptFinished);
 				}
 				else
@@ -475,7 +456,7 @@ void PrePostProcessor::CheckPostQueue()
 		}
 	}
 	
-	g_pQueueCoordinator->UnlockQueue();
+	DownloadQueue::Unlock();
 }
 
 NZBInfo* PrePostProcessor::GetNextJob(DownloadQueue* pDownloadQueue)
@@ -492,14 +473,6 @@ NZBInfo* PrePostProcessor::GetNextJob(DownloadQueue* pDownloadQueue)
 	}
 
 	return pNZBInfo;
-}
-
-void PrePostProcessor::SaveQueue(DownloadQueue* pDownloadQueue)
-{
-	if (g_pOptions->GetSaveQueue() && g_pOptions->GetServerMode())
-	{
-		g_pDiskState->SaveDownloadQueue(pDownloadQueue);
-	}
 }
 
 /**
@@ -627,7 +600,8 @@ void PrePostProcessor::StartJob(DownloadQueue* pDownloadQueue, PostInfo* pPostIn
 	pPostInfo->SetStage(bUnpack ? PostInfo::ptUnpacking : bMoveInter ? PostInfo::ptMoving : PostInfo::ptExecutingScript);
 	pPostInfo->SetFileProgress(0);
 	pPostInfo->SetStageProgress(0);
-	SaveQueue(pDownloadQueue);
+
+	pDownloadQueue->Save();
 
 	if (!pPostInfo->GetStartTime())
 	{
@@ -679,8 +653,7 @@ void PrePostProcessor::JobCompleted(DownloadQueue* pDownloadQueue, PostInfo* pPo
 				info("Cleaning up download queue for %s", pNZBInfo->GetName());
 				pNZBInfo->ClearCompletedFiles();
 				pNZBInfo->SetParCleanup(true);
-				g_pQueueCoordinator->GetQueueEditor()->LockedEditEntry(pDownloadQueue, pNZBInfo->GetID(),
-					QueueEditor::eaGroupDelete, 0, NULL);
+				pDownloadQueue->EditEntry(pNZBInfo->GetID(), DownloadQueue::eaGroupDelete, 0, NULL);
 			}
 		}
 
@@ -693,7 +666,7 @@ void PrePostProcessor::JobCompleted(DownloadQueue* pDownloadQueue, PostInfo* pPo
 	}
 	m_iJobCount--;
 
-	SaveQueue(pDownloadQueue);
+	pDownloadQueue->Save();
 }
 
 bool PrePostProcessor::IsNZBFileCompleted(NZBInfo* pNZBInfo, bool bIgnorePausedPars, bool bAllowOnlyOneDeleted)
@@ -734,24 +707,22 @@ void PrePostProcessor::UpdatePauseState(bool bNeedPause, const char* szReason)
 	m_szPauseReason = szReason;
 }
 
-bool PrePostProcessor::EditList(IDList* pIDList, EEditAction eAction, int iOffset, const char* szText)
+bool PrePostProcessor::EditList(DownloadQueue* pDownloadQueue, IDList* pIDList, DownloadQueue::EEditAction eAction, int iOffset, const char* szText)
 {
 	debug("Edit-command for post-processor received");
 	switch (eAction)
 	{
-		case eaPostDelete:
-			return PostQueueDelete(pIDList);
+		case DownloadQueue::eaPostDelete:
+			return PostQueueDelete(pDownloadQueue, pIDList);
 
 		default:
 			return false;
 	}
 }
 
-bool PrePostProcessor::PostQueueDelete(IDList* pIDList)
+bool PrePostProcessor::PostQueueDelete(DownloadQueue* pDownloadQueue, IDList* pIDList)
 {
 	bool bOK = false;
-
-	DownloadQueue* pDownloadQueue = g_pQueueCoordinator->LockQueue();
 
 	for (IDList::iterator itID = pIDList->begin(); itID != pIDList->end(); itID++)
 	{
@@ -798,8 +769,6 @@ bool PrePostProcessor::PostQueueDelete(IDList* pIDList)
 			}
 		}
 	}
-
-	g_pQueueCoordinator->UnlockQueue();
 
 	return bOK;
 }

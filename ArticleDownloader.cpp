@@ -2,7 +2,7 @@
  *  This file is part of nzbget
  *
  *  Copyright (C) 2004 Sven Henkel <sidddy@users.sourceforge.net>
- *  Copyright (C) 2007-2013 Andrey Prygunkov <hugbug@users.sourceforge.net>
+ *  Copyright (C) 2007-2014 Andrey Prygunkov <hugbug@users.sourceforge.net>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -53,7 +53,6 @@
 #include "Util.h"
 
 extern DownloadSpeedMeter* g_pDownloadSpeedMeter;
-extern DownloadQueueHolder* g_pDownloadQueueHolder;
 extern Options* g_pOptions;
 extern ServerPool* g_pServerPool;
 
@@ -930,10 +929,10 @@ void ArticleDownloader::CompleteFileParts()
 	char szNZBName[1024];
 	char szNZBDestDir[1024];
 	// the locking is needed for accessing the memebers of NZBInfo
-	g_pDownloadQueueHolder->LockQueue();
+	DownloadQueue::Lock();
 	strncpy(szNZBName, m_pFileInfo->GetNZBInfo()->GetName(), 1024);
 	strncpy(szNZBDestDir, m_pFileInfo->GetNZBInfo()->GetDestDir(), 1024);
-	g_pDownloadQueueHolder->UnlockQueue();
+	DownloadQueue::Unlock();
 	szNZBName[1024-1] = '\0';
 	szNZBDestDir[1024-1] = '\0';
 	
@@ -1128,14 +1127,14 @@ void ArticleDownloader::CompleteFileParts()
 	}
 
 	// the locking is needed for accessing the members of NZBInfo
-	g_pDownloadQueueHolder->LockQueue();
+	DownloadQueue::Lock();
 	m_pFileInfo->GetNZBInfo()->GetCompletedFiles()->push_back(strdup(ofn));
 	if (strcmp(m_pFileInfo->GetNZBInfo()->GetDestDir(), szNZBDestDir))
 	{
 		// destination directory was changed during completion, need to move the file
 		MoveCompletedFiles(m_pFileInfo->GetNZBInfo(), szNZBDestDir);
 	}
-	g_pDownloadQueueHolder->UnlockQueue();
+	DownloadQueue::Unlock();
 
 	SetStatus(adJoined);
 }

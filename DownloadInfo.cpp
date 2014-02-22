@@ -54,6 +54,8 @@ int UrlInfo::m_iIDGen = 0;
 int UrlInfo::m_iIDMax = 0;
 int HistoryInfo::m_iIDGen = 0;
 int HistoryInfo::m_iIDMax = 0;
+DownloadQueue* DownloadQueue::g_pDownloadQueue = NULL;
+bool DownloadQueue::g_bLoaded = false;
 
 
 NZBParameter::NZBParameter(const char* szName)
@@ -1160,4 +1162,15 @@ void HistoryInfo::GetName(char* szBuffer, int iSize)
 	{
 		strncpy(szBuffer, "<unknown>", iSize);
 	}
+}
+
+DownloadQueue* DownloadQueue::Lock()
+{
+	g_pDownloadQueue->m_LockMutex.Lock();
+	return g_pDownloadQueue;
+}
+
+void DownloadQueue::Unlock()
+{
+	g_pDownloadQueue->m_LockMutex.Unlock();
 }

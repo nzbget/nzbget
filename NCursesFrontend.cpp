@@ -2,7 +2,7 @@
  *  This file is part of nzbget
  *
  *  Copyright (C) 2004 Sven Henkel <sidddy@users.sourceforge.net>
- *  Copyright (C) 2007-2011 Andrey Prygunkov <hugbug@users.sourceforge.net>
+ *  Copyright (C) 2007-2014 Andrey Prygunkov <hugbug@users.sourceforge.net>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -1106,7 +1106,7 @@ void NCursesFrontend::PrintGroupname(NZBInfo* pNZBInfo, int iRow, bool bSelected
 	}
 }
 
-bool NCursesFrontend::EditQueue(QueueEditor::EEditAction eAction, int iOffset)
+bool NCursesFrontend::EditQueue(DownloadQueue::EEditAction eAction, int iOffset)
 {
 	int ID = 0;
 
@@ -1117,21 +1117,21 @@ bool NCursesFrontend::EditQueue(QueueEditor::EEditAction eAction, int iOffset)
 		{
 			NZBInfo* pNZBInfo = pDownloadQueue->GetQueue()->at(m_iSelectedQueueEntry);
 			ID = pNZBInfo->GetID();
-			if (eAction == QueueEditor::eaFilePause)
+			if (eAction == DownloadQueue::eaFilePause)
 			{
 				if (pNZBInfo->GetRemainingSize() == pNZBInfo->GetPausedSize())
 				{
-					eAction = QueueEditor::eaFileResume;
+					eAction = DownloadQueue::eaFileResume;
 				}
 				else if (pNZBInfo->GetPausedSize() == 0 && (pNZBInfo->GetRemainingParCount() > 0) &&
 					!(m_bLastPausePars && m_iLastEditEntry == m_iSelectedQueueEntry))
 				{
-					eAction = QueueEditor::eaFilePauseExtraPars;
+					eAction = DownloadQueue::eaFilePauseExtraPars;
 					m_bLastPausePars = true;
 				}
 				else
 				{
-					eAction = QueueEditor::eaFilePause;
+					eAction = DownloadQueue::eaFilePause;
 					m_bLastPausePars = false;
 				}
 			}
@@ -1139,16 +1139,16 @@ bool NCursesFrontend::EditQueue(QueueEditor::EEditAction eAction, int iOffset)
 		UnlockQueue();
 
 		// map file-edit-actions to group-edit-actions
-		QueueEditor::EEditAction FileToGroupMap[] = {
-			(QueueEditor::EEditAction)0,
-			QueueEditor::eaGroupMoveOffset, 
-			QueueEditor::eaGroupMoveTop, 
-			QueueEditor::eaGroupMoveBottom, 
-			QueueEditor::eaGroupPause, 
-			QueueEditor::eaGroupResume, 
-			QueueEditor::eaGroupDelete,
-			QueueEditor::eaGroupPauseAllPars,
-			QueueEditor::eaGroupPauseExtraPars };
+		 DownloadQueue::EEditAction FileToGroupMap[] = {
+			(DownloadQueue::EEditAction)0,
+			DownloadQueue::eaGroupMoveOffset, 
+			DownloadQueue::eaGroupMoveTop, 
+			DownloadQueue::eaGroupMoveBottom, 
+			DownloadQueue::eaGroupPause, 
+			DownloadQueue::eaGroupResume, 
+			DownloadQueue::eaGroupDelete,
+			DownloadQueue::eaGroupPauseAllPars,
+			DownloadQueue::eaGroupPauseExtraPars };
 		eAction = FileToGroupMap[eAction];
 	}
 	else
@@ -1165,9 +1165,9 @@ bool NCursesFrontend::EditQueue(QueueEditor::EEditAction eAction, int iOffset)
 				{
 					FileInfo* pFileInfo = *it2;
 					ID = pFileInfo->GetID();
-					if (eAction == QueueEditor::eaFilePause)
+					if (eAction == DownloadQueue::eaFilePause)
 					{
-						eAction = !pFileInfo->GetPaused() ? QueueEditor::eaFilePause : QueueEditor::eaFileResume;
+						eAction = !pFileInfo->GetPaused() ? DownloadQueue::eaFilePause : DownloadQueue::eaFileResume;
 					}
 				}
 			}
@@ -1293,9 +1293,6 @@ void NCursesFrontend::UpdateInput(int initialKey)
 				}
 				ServerPauseUnpause(!m_bPauseDownload);
 				break;
-			case '\'':
-				ServerDumpDebug();
-				break;
 			case 'e':
 			case 10: // return
 			case 13: // enter
@@ -1380,38 +1377,38 @@ void NCursesFrontend::UpdateInput(int initialKey)
 				break;
 			case 'p':
 				// Key 'p' for pause
-				EditQueue(QueueEditor::eaFilePause, 0);
+				EditQueue(DownloadQueue::eaFilePause, 0);
 				break;
 			case 'd':
 				SetHint(" Use Uppercase \"D\" for delete");
 				break;
 			case 'D':
 				// Delete entry
-				if (EditQueue(QueueEditor::eaFileDelete, 0))
+				if (EditQueue(DownloadQueue::eaFileDelete, 0))
 				{
 					SetCurrentQueueEntry(m_iSelectedQueueEntry);
 				}
 				break;
 			case 'u':
-				if (EditQueue(QueueEditor::eaFileMoveOffset, -1))
+				if (EditQueue(DownloadQueue::eaFileMoveOffset, -1))
 				{
 					SetCurrentQueueEntry(m_iSelectedQueueEntry - 1);
 				}
 				break;
 			case 'n':
-				if (EditQueue(QueueEditor::eaFileMoveOffset, +1))
+				if (EditQueue(DownloadQueue::eaFileMoveOffset, +1))
 				{
 					SetCurrentQueueEntry(m_iSelectedQueueEntry + 1);
 				}
 				break;
 			case 't':
-				if (EditQueue(QueueEditor::eaFileMoveTop, 0))
+				if (EditQueue(DownloadQueue::eaFileMoveTop, 0))
 				{
 					SetCurrentQueueEntry(0);
 				}
 				break;
 			case 'b':
-				if (EditQueue(QueueEditor::eaFileMoveBottom, 0))
+				if (EditQueue(DownloadQueue::eaFileMoveBottom, 0))
 				{
 					SetCurrentQueueEntry(iQueueSize > 0 ? iQueueSize - 1 : 0);
 				}

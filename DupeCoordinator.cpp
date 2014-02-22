@@ -46,16 +46,12 @@
 #include "Options.h"
 #include "Log.h"
 #include "Util.h"
-#include "DiskState.h"
 #include "NZBFile.h"
-#include "QueueCoordinator.h"
 #include "HistoryCoordinator.h"
 #include "DupeCoordinator.h"
 
-extern QueueCoordinator* g_pQueueCoordinator;
 extern HistoryCoordinator* g_pHistoryCoordinator;
 extern Options* g_pOptions;
-extern DiskState* g_pDiskState;
 
 bool DupeCoordinator::SameNameOrKey(const char* szName1, const char* szDupeKey1,
 	const char* szName2, const char* szDupeKey2)
@@ -251,8 +247,8 @@ void DupeCoordinator::NZBFound(DownloadQueue* pDownloadQueue, NZBInfo* pNZBInfo)
 					// the existing queue item is moved to history as dupe-backup
 					info("Moving collection %s with lower duplicate score to history", pQueuedNZBInfo->GetName());
 					pQueuedNZBInfo->SetDeleteStatus(NZBInfo::dsDupe);
-					g_pQueueCoordinator->GetQueueEditor()->LockedEditEntry(pDownloadQueue,
-						pQueuedNZBInfo->GetID(), QueueEditor::eaGroupDelete, 0, NULL);
+					pDownloadQueue->EditEntry(pQueuedNZBInfo->GetID(),
+						DownloadQueue::eaGroupDelete, 0, NULL);
 					it = pDownloadQueue->GetQueue()->begin() + index;
 				}
 			}
@@ -448,8 +444,8 @@ void DupeCoordinator::HistoryCleanup(DownloadQueue* pDownloadQueue, HistoryInfo*
 		}
 	}
 
-	if (bChanged && g_pOptions->GetSaveQueue() && g_pOptions->GetServerMode())
+	if (bChanged)
 	{
-		g_pDiskState->SaveDownloadQueue(pDownloadQueue);
+		pDownloadQueue->Save();
 	}
 }

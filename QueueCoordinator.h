@@ -2,7 +2,7 @@
  *  This file is part of nzbget
  *
  *  Copyright (C) 2004 Sven Henkel <sidddy@users.sourceforge.net>
- *  Copyright (C) 2007-2013 Andrey Prygunkov <hugbug@users.sourceforge.net>
+ *  Copyright (C) 2007-2014 Andrey Prygunkov <hugbug@users.sourceforge.net>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -39,7 +39,7 @@
 #include "QueueEditor.h"
 #include "NNTPConnection.h"
                                             
-class QueueCoordinator : public Thread, public Observer, public Subject, public DownloadSpeedMeter, public DownloadQueueHolder
+class QueueCoordinator : public Thread, public Observer, public Subject, public DownloadSpeedMeter
 {
 public:
 	typedef std::list<ArticleDownloader*>	ActiveDownloads;
@@ -61,14 +61,24 @@ public:
 	};
 
 private:
-	DownloadQueue			m_DownloadQueue;
-	ActiveDownloads			m_ActiveDownloads;
-	QueueEditor				m_QueueEditor;
-	Mutex			 		m_mutexDownloadQueue;
-	bool					m_bHasMoreJobs;
-	int						m_iDownloadsLimit;
-	int						m_iServerConfigGeneration;
-	bool					m_bInitilized;
+	class CoordinatorDownloadQueue : public DownloadQueue
+	{
+	private:
+		QueueCoordinator*	m_pOwner;
+		friend class QueueCoordinator;
+	public:
+		virtual bool		EditEntry(int ID, EEditAction eAction, int iOffset, const char* szText);
+		virtual bool		EditList(IDList* pIDList, NameList* pNameList, EMatchMode eMatchMode, EEditAction eAction, int iOffset, const char* szText);
+		virtual void			Save();
+	};
+
+private:
+	CoordinatorDownloadQueue	m_DownloadQueue;
+	ActiveDownloads				m_ActiveDownloads;
+	QueueEditor					m_QueueEditor;
+	bool						m_bHasMoreJobs;
+	int							m_iDownloadsLimit;
+	int							m_iServerConfigGeneration;
 
 	// statistics
 	static const int		SPEEDMETER_SLOTS = 30;    
@@ -93,12 +103,12 @@ private:
 	bool					m_bStandBy;
 	Mutex					m_mutexStat;
 
-	bool					GetNextArticle(FileInfo* &pFileInfo, ArticleInfo* &pArticleInfo);
+	bool					GetNextArticle(DownloadQueue* pDownloadQueue, FileInfo* &pFileInfo, ArticleInfo* &pArticleInfo);
 	void					StartArticleDownload(FileInfo* pFileInfo, ArticleInfo* pArticleInfo, NNTPConnection* pConnection);
 	void					ArticleCompleted(ArticleDownloader* pArticleDownloader);
-	void					DeleteFileInfo(FileInfo* pFileInfo, bool bCompleted);
+	void					DeleteFileInfo(DownloadQueue* pDownloadQueue, FileInfo* pFileInfo, bool bCompleted);
 	void					StatFileInfo(FileInfo* pFileInfo, bool bCompleted);
-	void					CheckHealth(FileInfo* pFileInfo);
+	void					CheckHealth(DownloadQueue* pDownloadQueue, FileInfo* pFileInfo);
 	void					ResetHangingDownloads();
 	void					ResetSpeedStat();
 	void					EnterLeaveStandBy(bool bEnter);
@@ -111,30 +121,25 @@ public:
 	virtual void			Run();
 	virtual void 			Stop();
 	void					Update(Subject* Caller, void* Aspect);
-	bool					IsInitialized() { return m_bInitilized; }
 
 	// statistics
 	long long 				CalcRemainingSize();
 	virtual int				CalcCurrentDownloadSpeed();
 	virtual void			AddSpeedReading(int iBytes);
 	void					CalcStat(int* iUpTimeSec, int* iDnTimeSec, long long* iAllBytes, bool* bStandBy);
+	void					LogDebugInfo();
 
-	// Editing the queue
-	DownloadQueue*			LockQueue();
-	void					UnlockQueue() ;
+	// editing queue
 	void					AddNZBFileToQueue(NZBFile* pNZBFile, bool bAddFirst);
 	void					CheckDupeFileInfos(NZBInfo* pNZBInfo);
 	bool					HasMoreJobs() { return m_bHasMoreJobs; }
 	bool					GetStandBy() { return m_bStandBy; }
-	bool					DeleteQueueEntry(FileInfo* pFileInfo);
-	bool					SetQueueEntryNZBCategory(NZBInfo* pNZBInfo, const char* szCategory);
-	bool					SetQueueEntryNZBName(NZBInfo* pNZBInfo, const char* szName);
-	bool					MergeQueueEntries(NZBInfo* pDestNZBInfo, NZBInfo* pSrcNZBInfo);
-	bool					SplitQueueEntries(FileList* pFileList, const char* szName, NZBInfo** pNewNZBInfo);
 	void					DiscardDiskFile(FileInfo* pFileInfo);
-	QueueEditor*			GetQueueEditor() { return &m_QueueEditor; }
-
-	void					LogDebugInfo();
+	bool					DeleteQueueEntry(DownloadQueue* pDownloadQueue, FileInfo* pFileInfo);
+	bool					SetQueueEntryCategory(DownloadQueue* pDownloadQueue, NZBInfo* pNZBInfo, const char* szCategory);
+	bool					SetQueueEntryName(DownloadQueue* pDownloadQueue, NZBInfo* pNZBInfo, const char* szName);
+	bool					MergeQueueEntries(DownloadQueue* pDownloadQueue, NZBInfo* pDestNZBInfo, NZBInfo* pSrcNZBInfo);
+	bool					SplitQueueEntries(DownloadQueue* pDownloadQueue, FileList* pFileList, const char* szName, NZBInfo** pNewNZBInfo);
 };
 
 #endif

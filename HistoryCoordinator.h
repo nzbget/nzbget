@@ -30,30 +30,12 @@
 
 class HistoryCoordinator
 {
-public:
-	// NOTE: changes to this enum must be synced with "eRemoteEditAction" in unit "MessageBase.h"
-	enum EEditAction
-	{
-		eaHistoryDelete = 52,
-		eaHistoryFinalDelete,
-		eaHistoryReturn,
-		eaHistoryProcess,
-		eaHistoryRedownload,
-		eaHistorySetParameter,
-		eaHistorySetDupeKey,
-		eaHistorySetDupeScore,
-		eaHistorySetDupeMode,
-		eaHistorySetDupeBackup,
-		eaHistoryMarkBad,
-		eaHistoryMarkGood
-	};
-
 private:
 	void				HistoryDelete(DownloadQueue* pDownloadQueue, HistoryList::iterator itHistory, HistoryInfo* pHistoryInfo, bool bFinal);
 	void				HistoryReturn(DownloadQueue* pDownloadQueue, HistoryList::iterator itHistory, HistoryInfo* pHistoryInfo, bool bReprocess);
 	void				HistoryRedownload(DownloadQueue* pDownloadQueue, HistoryList::iterator itHistory, HistoryInfo* pHistoryInfo, bool bRestorePauseState);
 	void				HistorySetParameter(HistoryInfo* pHistoryInfo, const char* szText);
-	void				HistorySetDupeParam(HistoryInfo* pHistoryInfo, EEditAction eAction, const char* szText);
+	void				HistorySetDupeParam(HistoryInfo* pHistoryInfo, DownloadQueue::EEditAction eAction, const char* szText);
 	void				HistoryTransformToDup(DownloadQueue* pDownloadQueue, HistoryInfo* pHistoryInfo, int rindex);
 	void				SaveQueue(DownloadQueue* pDownloadQueue);
 
@@ -61,7 +43,7 @@ public:
 						HistoryCoordinator();
 	virtual				~HistoryCoordinator();
 	void				AddToHistory(DownloadQueue* pDownloadQueue, NZBInfo* pNZBInfo);
-	bool				EditList(IDList* pIDList, EEditAction eAction, int iOffset, const char* szText);
+	bool				EditList(DownloadQueue* pDownloadQueue, IDList* pIDList, DownloadQueue::EEditAction eAction, int iOffset, const char* szText);
 	void				DeleteQueuedFile(const char* szQueuedFile);
 	void				HistoryHide(DownloadQueue* pDownloadQueue, HistoryInfo* pHistoryInfo, int rindex);
 	void				Redownload(DownloadQueue* pDownloadQueue, HistoryInfo* pHistoryInfo);

@@ -1,7 +1,7 @@
 /*
  *  This file is part of nzbget
  *
- *  Copyright (C) 2013 Andrey Prygunkov <hugbug@users.sourceforge.net>
+ *  Copyright (C) 2013-2014 Andrey Prygunkov <hugbug@users.sourceforge.net>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -47,7 +47,6 @@
 #include "ParCoordinator.h"
 
 extern Options* g_pOptions;
-extern DownloadQueueHolder* g_pDownloadQueueHolder;
 
 void UnpackController::FileList::Clear()
 {
@@ -86,7 +85,7 @@ void UnpackController::StartJob(PostInfo* pPostInfo)
 void UnpackController::Run()
 {
 	// the locking is needed for accessing the members of NZBInfo
-	g_pDownloadQueueHolder->LockQueue();
+	DownloadQueue::Lock();
 
 	strncpy(m_szDestDir, m_pPostInfo->GetNZBInfo()->GetDestDir(), 1024);
 	m_szDestDir[1024-1] = '\0';
@@ -109,7 +108,7 @@ void UnpackController::Run()
 		m_szPassword[1024-1] = '\0';
 	}
 	
-	g_pDownloadQueueHolder->UnlockQueue();
+	DownloadQueue::Unlock();
 
 	snprintf(m_szInfoName, 1024, "unpack for %s", m_szName);
 	m_szInfoName[1024-1] = '\0';
@@ -620,9 +619,9 @@ void UnpackController::Stop()
 
 void UnpackController::SetProgressLabel(const char* szProgressLabel)
 {
-	g_pDownloadQueueHolder->LockQueue();
+	DownloadQueue::Lock();
 	m_pPostInfo->SetProgressLabel(szProgressLabel);
-	g_pDownloadQueueHolder->UnlockQueue();
+	DownloadQueue::Unlock();
 }
 
 
@@ -640,7 +639,7 @@ void MoveController::StartJob(PostInfo* pPostInfo)
 void MoveController::Run()
 {
 	// the locking is needed for accessing the members of NZBInfo
-	g_pDownloadQueueHolder->LockQueue();
+	DownloadQueue::Lock();
 
 	char szNZBName[1024];
 	strncpy(szNZBName, m_pPostInfo->GetNZBInfo()->GetName(), 1024);
@@ -657,7 +656,7 @@ void MoveController::Run()
 	m_pPostInfo->GetNZBInfo()->BuildFinalDirName(m_szDestDir, 1024);
 	m_szDestDir[1024-1] = '\0';
 
-	g_pDownloadQueueHolder->UnlockQueue();
+	DownloadQueue::Unlock();
 
 	info("Moving completed files for %s", szNZBName);
 
@@ -669,10 +668,10 @@ void MoveController::Run()
 	{
 		info("%s successful", szInfoName);
 		// save new dest dir
-		g_pDownloadQueueHolder->LockQueue();
+		DownloadQueue::Lock();
 		m_pPostInfo->GetNZBInfo()->SetDestDir(m_szDestDir);
 		m_pPostInfo->GetNZBInfo()->SetMoveStatus(NZBInfo::msSuccess);
-		g_pDownloadQueueHolder->UnlockQueue();
+		DownloadQueue::Unlock();
 	}
 	else
 	{
@@ -739,7 +738,7 @@ void CleanupController::StartJob(PostInfo* pPostInfo)
 void CleanupController::Run()
 {
 	// the locking is needed for accessing the members of NZBInfo
-	g_pDownloadQueueHolder->LockQueue();
+	DownloadQueue::Lock();
 
 	char szNZBName[1024];
 	strncpy(szNZBName, m_pPostInfo->GetNZBInfo()->GetName(), 1024);
@@ -765,7 +764,7 @@ void CleanupController::Run()
 		m_szFinalDir[0] = '\0';
 	}
 
-	g_pDownloadQueueHolder->UnlockQueue();
+	DownloadQueue::Unlock();
 
 	info("Cleaning up %s", szNZBName);
 

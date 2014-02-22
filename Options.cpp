@@ -52,6 +52,7 @@
 #include "ServerPool.h"
 #include "NewsServer.h"
 #include "MessageBase.h"
+#include "DownloadInfo.h"
 #include "Scheduler.h"
 #include "FeedCoordinator.h"
 
@@ -1363,7 +1364,7 @@ void Options::InitCommandLine(int argc, char* argv[])
 					// edit-commands for post-processor-queue
 					if (!strcasecmp(optarg, "D"))
 					{
-						m_iEditQueueAction = eRemoteEditActionPostDelete;
+						m_iEditQueueAction = DownloadQueue::eaPostDelete;
 					}
 					else
 					{
@@ -1375,23 +1376,23 @@ void Options::InitCommandLine(int argc, char* argv[])
 					// edit-commands for history
 					if (!strcasecmp(optarg, "D"))
 					{
-						m_iEditQueueAction = eRemoteEditActionHistoryDelete;
+						m_iEditQueueAction = DownloadQueue::eaHistoryDelete;
 					}
 					else if (!strcasecmp(optarg, "R"))
 					{
-						m_iEditQueueAction = eRemoteEditActionHistoryReturn;
+						m_iEditQueueAction = DownloadQueue::eaHistoryReturn;
 					}
 					else if (!strcasecmp(optarg, "P"))
 					{
-						m_iEditQueueAction = eRemoteEditActionHistoryProcess;
+						m_iEditQueueAction = DownloadQueue::eaHistoryProcess;
 					}
 					else if (!strcasecmp(optarg, "A"))
 					{
-						m_iEditQueueAction = eRemoteEditActionHistoryRedownload;
+						m_iEditQueueAction = DownloadQueue::eaHistoryRedownload;
 					}
 					else if (!strcasecmp(optarg, "O"))
 					{
-						m_iEditQueueAction = eRemoteEditActionHistorySetParameter;
+						m_iEditQueueAction = DownloadQueue::eaHistorySetParameter;
 						
 						optind++;
 						if (optind > argc)
@@ -1407,11 +1408,11 @@ void Options::InitCommandLine(int argc, char* argv[])
 					}
 					else if (!strcasecmp(optarg, "B"))
 					{
-						m_iEditQueueAction = eRemoteEditActionHistoryMarkBad;
+						m_iEditQueueAction = DownloadQueue::eaHistoryMarkBad;
 					}
 					else if (!strcasecmp(optarg, "G"))
 					{
-						m_iEditQueueAction = eRemoteEditActionHistoryMarkGood;
+						m_iEditQueueAction = DownloadQueue::eaHistoryMarkGood;
 					}
 					else
 					{
@@ -1423,31 +1424,31 @@ void Options::InitCommandLine(int argc, char* argv[])
 					// edit-commands for download-queue
 					if (!strcasecmp(optarg, "T"))
 					{
-						m_iEditQueueAction = bGroup ? eRemoteEditActionGroupMoveTop : eRemoteEditActionFileMoveTop;
+						m_iEditQueueAction = bGroup ? DownloadQueue::eaGroupMoveTop : DownloadQueue::eaFileMoveTop;
 					}
 					else if (!strcasecmp(optarg, "B"))
 					{
-						m_iEditQueueAction = bGroup ? eRemoteEditActionGroupMoveBottom : eRemoteEditActionFileMoveBottom;
+						m_iEditQueueAction = bGroup ? DownloadQueue::eaGroupMoveBottom : DownloadQueue::eaFileMoveBottom;
 					}
 					else if (!strcasecmp(optarg, "P"))
 					{
-						m_iEditQueueAction = bGroup ? eRemoteEditActionGroupPause : eRemoteEditActionFilePause;
+						m_iEditQueueAction = bGroup ? DownloadQueue::eaGroupPause : DownloadQueue::eaFilePause;
 					}
 					else if (!strcasecmp(optarg, "A"))
 					{
-						m_iEditQueueAction = bGroup ? eRemoteEditActionGroupPauseAllPars : eRemoteEditActionFilePauseAllPars;
+						m_iEditQueueAction = bGroup ? DownloadQueue::eaGroupPauseAllPars : DownloadQueue::eaFilePauseAllPars;
 					}
 					else if (!strcasecmp(optarg, "R"))
 					{
-						m_iEditQueueAction = bGroup ? eRemoteEditActionGroupPauseExtraPars : eRemoteEditActionFilePauseExtraPars;
+						m_iEditQueueAction = bGroup ? DownloadQueue::eaGroupPauseExtraPars : DownloadQueue::eaFilePauseExtraPars;
 					}
 					else if (!strcasecmp(optarg, "U"))
 					{
-						m_iEditQueueAction = bGroup ? eRemoteEditActionGroupResume : eRemoteEditActionFileResume;
+						m_iEditQueueAction = bGroup ? DownloadQueue::eaGroupResume : DownloadQueue::eaFileResume;
 					}
 					else if (!strcasecmp(optarg, "D"))
 					{
-						m_iEditQueueAction = bGroup ? eRemoteEditActionGroupDelete : eRemoteEditActionFileDelete;
+						m_iEditQueueAction = bGroup ? DownloadQueue::eaGroupDelete : DownloadQueue::eaFileDelete;
 					}
 					else if (!strcasecmp(optarg, "C") || !strcasecmp(optarg, "K"))
 					{
@@ -1456,7 +1457,7 @@ void Options::InitCommandLine(int argc, char* argv[])
 						{
 							abort("FATAL ERROR: Category can be set only for groups\n");
 						}
-						m_iEditQueueAction = eRemoteEditActionGroupSetCategory;
+						m_iEditQueueAction = DownloadQueue::eaGroupSetCategory;
 
 						optind++;
 						if (optind > argc)
@@ -1471,7 +1472,7 @@ void Options::InitCommandLine(int argc, char* argv[])
 						{
 							abort("FATAL ERROR: Only groups can be renamed\n");
 						}
-						m_iEditQueueAction = eRemoteEditActionGroupSetName;
+						m_iEditQueueAction = DownloadQueue::eaGroupSetName;
 
 						optind++;
 						if (optind > argc)
@@ -1486,11 +1487,11 @@ void Options::InitCommandLine(int argc, char* argv[])
 						{
 							abort("FATAL ERROR: Only groups can be merged\n");
 						}
-						m_iEditQueueAction = eRemoteEditActionGroupMerge;
+						m_iEditQueueAction = DownloadQueue::eaGroupMerge;
 					}
 					else if (!strcasecmp(optarg, "S"))
 					{
-						m_iEditQueueAction = eRemoteEditActionFileSplit;
+						m_iEditQueueAction = DownloadQueue::eaFileSplit;
 
 						optind++;
 						if (optind > argc)
@@ -1505,7 +1506,7 @@ void Options::InitCommandLine(int argc, char* argv[])
 						{
 							abort("FATAL ERROR: Post-process parameter can be set only for groups\n");
 						}
-						m_iEditQueueAction = eRemoteEditActionGroupSetParameter;
+						m_iEditQueueAction = DownloadQueue::eaGroupSetParameter;
 
 						optind++;
 						if (optind > argc)
@@ -1525,7 +1526,7 @@ void Options::InitCommandLine(int argc, char* argv[])
 						{
 							abort("FATAL ERROR: Priority can be set only for groups\n");
 						}
-						m_iEditQueueAction = eRemoteEditActionGroupSetPriority;
+						m_iEditQueueAction = DownloadQueue::eaGroupSetPriority;
 
 						optind++;
 						if (optind > argc)
@@ -1546,7 +1547,7 @@ void Options::InitCommandLine(int argc, char* argv[])
 						{
 							abort("FATAL ERROR: Could not parse value of option 'E'\n");
 						}
-						m_iEditQueueAction = bGroup ? eRemoteEditActionGroupMoveOffset : eRemoteEditActionFileMoveOffset;
+						m_iEditQueueAction = bGroup ? DownloadQueue::eaGroupMoveOffset : DownloadQueue::eaFileMoveOffset;
 					}
 				}
 				break;

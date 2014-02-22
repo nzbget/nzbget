@@ -53,13 +53,11 @@
 #include "Util.h"
 #include "WebDownloader.h"
 #include "Maintenance.h"
-#include "HistoryCoordinator.h"
 
 extern Options* g_pOptions;
 extern QueueCoordinator* g_pQueueCoordinator;
 extern UrlCoordinator* g_pUrlCoordinator;
 extern PrePostProcessor* g_pPrePostProcessor;
-extern HistoryCoordinator* g_pHistoryCoordinator;
 extern Scanner* g_pScanner;
 extern FeedCoordinator* g_pFeedCoordinator;
 extern ServerPool* g_pServerPool;
@@ -1215,10 +1213,10 @@ void StatusXmlCommand::Execute()
 	bool bPostPaused = g_pOptions->GetPausePostProcess();
 	bool bScanPaused = g_pOptions->GetPauseScan();
 	int iThreadCount = Thread::GetThreadCount() - 1; // not counting itself
-	DownloadQueue *pDownloadQueue = g_pQueueCoordinator->LockQueue();
+	DownloadQueue *pDownloadQueue = DownloadQueue::Lock();
 	int iPostJobCount = g_pPrePostProcessor->GetJobCount();
 	int iUrlCount = pDownloadQueue->GetUrlQueue()->size();
-	g_pQueueCoordinator->UnlockQueue();
+	DownloadQueue::Unlock();
 	unsigned long iDownloadedSizeHi, iDownloadedSizeLo;
 	int iUpTimeSec, iDownloadTimeSec;
 	long long iAllBytes;
@@ -1382,7 +1380,7 @@ void ListFilesXmlCommand::Execute()
 	debug("iIDEnd=%i", iIDEnd);
 
 	AppendResponse(IsJson() ? "[\n" : "<array><data>\n");
-	DownloadQueue* pDownloadQueue = g_pQueueCoordinator->LockQueue();
+	DownloadQueue* pDownloadQueue = DownloadQueue::Lock();
 
 	const char* XML_LIST_ITEM = 
 		"<value><struct>\n"
@@ -1478,7 +1476,7 @@ void ListFilesXmlCommand::Execute()
 	}
 	free(szItemBuf);
 
-	g_pQueueCoordinator->UnlockQueue();
+	DownloadQueue::Unlock();
 	AppendResponse(IsJson() ? "\n]" : "</data></array>\n");
 }
 
@@ -1767,7 +1765,7 @@ void ListGroupsXmlCommand::Execute()
 	char* szItemBuf = (char*)malloc(iItemBufSize);
 	int index = 0;
 
-	DownloadQueue* pDownloadQueue = g_pQueueCoordinator->LockQueue();
+	DownloadQueue* pDownloadQueue = DownloadQueue::Lock();
 
 	for (NZBList::iterator it = pDownloadQueue->GetQueue()->begin(); it != pDownloadQueue->GetQueue()->end(); it++)
 	{
@@ -1798,7 +1796,7 @@ void ListGroupsXmlCommand::Execute()
 		AppendResponse(IsJson() ? JSON_LIST_ITEM_END : XML_LIST_ITEM_END);
 	}
 
-	g_pQueueCoordinator->UnlockQueue();
+	DownloadQueue::Unlock();
 
 	free(szItemBuf);
 
@@ -1812,47 +1810,47 @@ typedef struct
 } EditCommandEntry;
 
 EditCommandEntry EditCommandNameMap[] = { 
-	{ QueueEditor::eaFileMoveOffset, "FileMoveOffset" },
-	{ QueueEditor::eaFileMoveTop, "FileMoveTop" },
-	{ QueueEditor::eaFileMoveBottom, "FileMoveBottom" },
-	{ QueueEditor::eaFilePause, "FilePause" },
-	{ QueueEditor::eaFileResume, "FileResume" },
-	{ QueueEditor::eaFileDelete, "FileDelete" },
-	{ QueueEditor::eaFilePauseAllPars, "FilePauseAllPars" },
-	{ QueueEditor::eaFilePauseExtraPars, "FilePauseExtraPars" },
-	{ QueueEditor::eaFileReorder, "FileReorder" },
-	{ QueueEditor::eaFileSplit, "FileSplit" },
-	{ QueueEditor::eaGroupMoveOffset, "GroupMoveOffset" },
-	{ QueueEditor::eaGroupMoveTop, "GroupMoveTop" },
-	{ QueueEditor::eaGroupMoveBottom, "GroupMoveBottom" },
-	{ QueueEditor::eaGroupPause, "GroupPause" },
-	{ QueueEditor::eaGroupResume, "GroupResume" },
-	{ QueueEditor::eaGroupDelete, "GroupDelete" },
-	{ QueueEditor::eaGroupDupeDelete, "GroupDupeDelete" },
-	{ QueueEditor::eaGroupFinalDelete, "GroupFinalDelete" },
-	{ QueueEditor::eaGroupPauseAllPars, "GroupPauseAllPars" },
-	{ QueueEditor::eaGroupPauseExtraPars, "GroupPauseExtraPars" },
-	{ QueueEditor::eaGroupSetPriority, "GroupSetPriority" },
-	{ QueueEditor::eaGroupSetCategory, "GroupSetCategory" },
-	{ QueueEditor::eaGroupMerge, "GroupMerge" },
-	{ QueueEditor::eaGroupSetParameter, "GroupSetParameter" },
-	{ QueueEditor::eaGroupSetName, "GroupSetName" },
-	{ QueueEditor::eaGroupSetDupeKey, "GroupSetDupeKey" },
-	{ QueueEditor::eaGroupSetDupeScore, "GroupSetDupeScore" },
-	{ QueueEditor::eaGroupSetDupeMode, "GroupSetDupeMode" },
-	{ PrePostProcessor::eaPostDelete, "PostDelete" },
-	{ HistoryCoordinator::eaHistoryDelete, "HistoryDelete" },
-	{ HistoryCoordinator::eaHistoryFinalDelete, "HistoryFinalDelete" },
-	{ HistoryCoordinator::eaHistoryReturn, "HistoryReturn" },
-	{ HistoryCoordinator::eaHistoryProcess, "HistoryProcess" },		
-	{ HistoryCoordinator::eaHistoryRedownload, "HistoryRedownload" },
-	{ HistoryCoordinator::eaHistorySetParameter, "HistorySetParameter" },
-	{ HistoryCoordinator::eaHistorySetDupeKey, "HistorySetDupeKey" },
-	{ HistoryCoordinator::eaHistorySetDupeScore, "HistorySetDupeScore" },
-	{ HistoryCoordinator::eaHistorySetDupeMode, "HistorySetDupeMode" },
-	{ HistoryCoordinator::eaHistorySetDupeBackup, "HistorySetDupeBackup" },
-	{ HistoryCoordinator::eaHistoryMarkBad, "HistoryMarkBad" },
-	{ HistoryCoordinator::eaHistoryMarkGood, "HistoryMarkGood" },
+	{ DownloadQueue::eaFileMoveOffset, "FileMoveOffset" },
+	{ DownloadQueue::eaFileMoveTop, "FileMoveTop" },
+	{ DownloadQueue::eaFileMoveBottom, "FileMoveBottom" },
+	{ DownloadQueue::eaFilePause, "FilePause" },
+	{ DownloadQueue::eaFileResume, "FileResume" },
+	{ DownloadQueue::eaFileDelete, "FileDelete" },
+	{ DownloadQueue::eaFilePauseAllPars, "FilePauseAllPars" },
+	{ DownloadQueue::eaFilePauseExtraPars, "FilePauseExtraPars" },
+	{ DownloadQueue::eaFileReorder, "FileReorder" },
+	{ DownloadQueue::eaFileSplit, "FileSplit" },
+	{ DownloadQueue::eaGroupMoveOffset, "GroupMoveOffset" },
+	{ DownloadQueue::eaGroupMoveTop, "GroupMoveTop" },
+	{ DownloadQueue::eaGroupMoveBottom, "GroupMoveBottom" },
+	{ DownloadQueue::eaGroupPause, "GroupPause" },
+	{ DownloadQueue::eaGroupResume, "GroupResume" },
+	{ DownloadQueue::eaGroupDelete, "GroupDelete" },
+	{ DownloadQueue::eaGroupDupeDelete, "GroupDupeDelete" },
+	{ DownloadQueue::eaGroupFinalDelete, "GroupFinalDelete" },
+	{ DownloadQueue::eaGroupPauseAllPars, "GroupPauseAllPars" },
+	{ DownloadQueue::eaGroupPauseExtraPars, "GroupPauseExtraPars" },
+	{ DownloadQueue::eaGroupSetPriority, "GroupSetPriority" },
+	{ DownloadQueue::eaGroupSetCategory, "GroupSetCategory" },
+	{ DownloadQueue::eaGroupMerge, "GroupMerge" },
+	{ DownloadQueue::eaGroupSetParameter, "GroupSetParameter" },
+	{ DownloadQueue::eaGroupSetName, "GroupSetName" },
+	{ DownloadQueue::eaGroupSetDupeKey, "GroupSetDupeKey" },
+	{ DownloadQueue::eaGroupSetDupeScore, "GroupSetDupeScore" },
+	{ DownloadQueue::eaGroupSetDupeMode, "GroupSetDupeMode" },
+	{ DownloadQueue::eaPostDelete, "PostDelete" },
+	{ DownloadQueue::eaHistoryDelete, "HistoryDelete" },
+	{ DownloadQueue::eaHistoryFinalDelete, "HistoryFinalDelete" },
+	{ DownloadQueue::eaHistoryReturn, "HistoryReturn" },
+	{ DownloadQueue::eaHistoryProcess, "HistoryProcess" },		
+	{ DownloadQueue::eaHistoryRedownload, "HistoryRedownload" },
+	{ DownloadQueue::eaHistorySetParameter, "HistorySetParameter" },
+	{ DownloadQueue::eaHistorySetDupeKey, "HistorySetDupeKey" },
+	{ DownloadQueue::eaHistorySetDupeScore, "HistorySetDupeScore" },
+	{ DownloadQueue::eaHistorySetDupeMode, "HistorySetDupeMode" },
+	{ DownloadQueue::eaHistorySetDupeBackup, "HistorySetDupeBackup" },
+	{ DownloadQueue::eaHistoryMarkBad, "HistoryMarkBad" },
+	{ DownloadQueue::eaHistoryMarkGood, "HistoryMarkGood" },
 	{ 0, NULL }
 };
 
@@ -1911,20 +1909,9 @@ void EditQueueXmlCommand::Execute()
 		cIDList.push_back(iID);
 	}
 
-	bool bOK = false;
-
-	if (iAction < PrePostProcessor::eaPostDelete)
-	{
-		bOK = g_pQueueCoordinator->GetQueueEditor()->EditList(&cIDList, NULL, QueueEditor::mmID, (QueueEditor::EEditAction)iAction, iOffset, szEditText);
-	}
-	else if (iAction < HistoryCoordinator::eaHistoryDelete)
-	{
-		bOK = g_pPrePostProcessor->EditList(&cIDList, (PrePostProcessor::EEditAction)iAction, iOffset, szEditText);
-	}
-	else
-	{
-		bOK = g_pHistoryCoordinator->EditList(&cIDList, (HistoryCoordinator::EEditAction)iAction, iOffset, szEditText);
-	}
+	DownloadQueue* pDownloadQueue = DownloadQueue::Lock();
+	bool bOK = pDownloadQueue->EditList(&cIDList, NULL, DownloadQueue::mmID, (DownloadQueue::EEditAction)iAction, iOffset, szEditText);
+	DownloadQueue::Unlock();
 
 	BuildBoolResponse(bOK);
 }
@@ -2083,7 +2070,7 @@ void PostQueueXmlCommand::Execute()
 	
 	const char* szMessageType[] = { "INFO", "WARNING", "ERROR", "DEBUG", "DETAIL"};
 
-	NZBList* pNZBList = g_pQueueCoordinator->LockQueue()->GetQueue();
+	NZBList* pNZBList = DownloadQueue::Lock()->GetQueue();
 
 	time_t tCurTime = time(NULL);
 	int iItemBufSize = 10240;
@@ -2159,7 +2146,7 @@ void PostQueueXmlCommand::Execute()
 	}
 	free(szItemBuf);
 
-	g_pQueueCoordinator->UnlockQueue();
+	DownloadQueue::Unlock();
 
 	AppendResponse(IsJson() ? "\n]" : "</data></array>\n");
 }
@@ -2327,7 +2314,7 @@ void HistoryXmlCommand::Execute()
 	bool bDup = false;
 	NextParamAsBool(&bDup);
 
-	DownloadQueue* pDownloadQueue = g_pQueueCoordinator->LockQueue();
+	DownloadQueue* pDownloadQueue = DownloadQueue::Lock();
 
 	int iItemBufSize = 10240;
 	char* szItemBuf = (char*)malloc(iItemBufSize);
@@ -2445,7 +2432,7 @@ void HistoryXmlCommand::Execute()
 
 	AppendResponse(IsJson() ? "\n]" : "</data></array>\n");
 
-	g_pQueueCoordinator->UnlockQueue();
+	DownloadQueue::Unlock();
 }
 
 // bool appendurl(string NZBFilename, string Category, int Priority, bool AddToTop, string URL, bool AddPaused, string DupeKey, int DupeScore, string DupeMode)
@@ -2573,7 +2560,7 @@ void UrlQueueXmlCommand::Execute()
 		"\"Priority\" : %i\n"
 		"}";
 
-	UrlQueue* pUrlQueue = g_pQueueCoordinator->LockQueue()->GetUrlQueue();
+	UrlQueue* pUrlQueue = DownloadQueue::Lock()->GetUrlQueue();
 
 	int iItemBufSize = 10240;
 	char* szItemBuf = (char*)malloc(iItemBufSize);
@@ -2607,7 +2594,7 @@ void UrlQueueXmlCommand::Execute()
 	}
 	free(szItemBuf);
 
-	g_pQueueCoordinator->UnlockQueue();
+	DownloadQueue::Unlock();
 
 	AppendResponse(IsJson() ? "\n]" : "</data></array>\n");
 }

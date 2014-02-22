@@ -55,7 +55,6 @@ extern char** environ;
 
 extern Options* g_pOptions;
 extern char* (*g_szEnvironmentVariables)[];
-extern DownloadQueueHolder* g_pDownloadQueueHolder;
 
 static const int POSTPROCESS_PARCHECK = 92;
 static const int POSTPROCESS_SUCCESS = 93;
@@ -797,7 +796,7 @@ void PostScriptController::Run()
 	FileList activeList;
 
 	// the locking is needed for accessing the members of NZBInfo
-	g_pDownloadQueueHolder->LockQueue();
+	DownloadQueue::Lock();
 	for (NZBParameterList::iterator it = m_pPostInfo->GetNZBInfo()->GetParameters()->begin(); it != m_pPostInfo->GetNZBInfo()->GetParameters()->end(); it++)
 	{
 		NZBParameter* pParameter = *it;
@@ -811,7 +810,7 @@ void PostScriptController::Run()
 		}
 	}
 	m_pPostInfo->GetNZBInfo()->GetScriptStatuses()->Clear();
-	g_pDownloadQueueHolder->UnlockQueue();
+	DownloadQueue::Unlock();
 
 	Options::ScriptList scriptList;
 	g_pOptions->LoadScriptList(&scriptList);
@@ -863,15 +862,15 @@ void PostScriptController::ExecuteScript(const char* szScriptName, const char* s
 	ScriptStatus::EStatus eStatus = AnalyseExitCode(iExitCode);
 	
 	// the locking is needed for accessing the members of NZBInfo
-	g_pDownloadQueueHolder->LockQueue();
+	DownloadQueue::Lock();
 	m_pPostInfo->GetNZBInfo()->GetScriptStatuses()->Add(szScriptName, eStatus);
-	g_pDownloadQueueHolder->UnlockQueue();
+	DownloadQueue::Unlock();
 }
 
 void PostScriptController::PrepareParams(const char* szScriptName)
 {
 	// the locking is needed for accessing the members of NZBInfo
-	g_pDownloadQueueHolder->LockQueue();
+	DownloadQueue::Lock();
 
 	// Reset
 	ResetEnv();
@@ -919,7 +918,7 @@ void PostScriptController::PrepareParams(const char* szScriptName)
 	PrepareEnvParameters(m_pPostInfo->GetNZBInfo(), szParamPrefix);
 	PrepareEnvOptions(szParamPrefix);
 	
-	g_pDownloadQueueHolder->UnlockQueue();
+	DownloadQueue::Unlock();
 }
 
 ScriptStatus::EStatus PostScriptController::AnalyseExitCode(int iExitCode)
@@ -973,9 +972,9 @@ void PostScriptController::AddMessage(Message::EKind eKind, const char* szText)
 		debug("Command %s detected", szMsgText + 6);
 		if (!strncmp(szMsgText + 6, "FINALDIR=", 9))
 		{
-			g_pDownloadQueueHolder->LockQueue();
+			DownloadQueue::Lock();
 			m_pPostInfo->GetNZBInfo()->SetFinalDir(szMsgText + 6 + 9);
-			g_pDownloadQueueHolder->UnlockQueue();
+			DownloadQueue::Unlock();
 		}
 		else if (!strncmp(szMsgText + 6, "NZBPR_", 6))
 		{
@@ -984,9 +983,9 @@ void PostScriptController::AddMessage(Message::EKind eKind, const char* szText)
 			if (szValue)
 			{
 				*szValue = '\0';
-				g_pDownloadQueueHolder->LockQueue();
+				DownloadQueue::Lock();
 				m_pPostInfo->GetNZBInfo()->GetParameters()->SetParameter(szParam, szValue + 1);
-				g_pDownloadQueueHolder->UnlockQueue();
+				DownloadQueue::Unlock();
 			}
 			else
 			{
