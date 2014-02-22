@@ -318,8 +318,7 @@ bool ParCoordinator::Cancel()
 bool ParCoordinator::AddPar(FileInfo* pFileInfo, bool bDeleted)
 {
 	bool bSameCollection = m_ParChecker.IsRunning() &&
-		pFileInfo->GetNZBInfo() == m_ParChecker.GetPostInfo()->GetNZBInfo() &&
-		SameParCollection(pFileInfo->GetFilename(), Util::BaseFileName(m_ParChecker.GetParFilename()));
+		pFileInfo->GetNZBInfo() == m_ParChecker.GetPostInfo()->GetNZBInfo();
 	if (bSameCollection && !bDeleted)
 	{
 		char szFullFilename[1024];
