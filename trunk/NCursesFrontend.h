@@ -2,7 +2,7 @@
  *  This file is part of nzbget
  *
  *  Copyright (C) 2004 Sven Henkel <sidddy@users.sourceforge.net>
- *  Copyright (C) 2007-2009 Andrey Prygunkov <hugbug@users.sourceforge.net>
+ *  Copyright (C) 2007-2014 Andrey Prygunkov <hugbug@users.sourceforge.net>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -111,7 +111,7 @@ private:
 	int				ReadConsoleKey();
 	int				CalcQueueSize();
 	void			NeedUpdateData();
-	bool			EditQueue(QueueEditor::EEditAction eAction, int iOffset);
+	bool			EditQueue(DownloadQueue::EEditAction eAction, int iOffset);
 	void			SetHint(const char* szHint);
 
 protected:

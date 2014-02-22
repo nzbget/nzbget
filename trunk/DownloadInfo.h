@@ -771,24 +771,84 @@ typedef std::deque<HistoryInfo*> HistoryList;
 
 class DownloadQueue
 {
+public:
+	enum EEditAction
+	{
+		eaFileMoveOffset = 1,	// move files to m_iOffset relative to the current position in download-queue
+		eaFileMoveTop,			// move files to the top of download-queue
+		eaFileMoveBottom,		// move files to the bottom of download-queue
+		eaFilePause,			// pause files
+		eaFileResume,			// resume (unpause) files
+		eaFileDelete,			// delete files
+		eaFilePauseAllPars,		// pause only (all) pars (does not affect other files)
+		eaFilePauseExtraPars,	// pause only (almost all) pars, except main par-file (does not affect other files)
+		eaFileReorder,			// set file order
+		eaFileSplit,			// split - create new group from selected files
+		eaGroupMoveOffset,		// move group to m_iOffset relative to the current position in download-queue
+		eaGroupMoveTop,			// move group to the top of download-queue
+		eaGroupMoveBottom,		// move group to the bottom of download-queue
+		eaGroupPause,			// pause group
+		eaGroupResume,			// resume (unpause) group
+		eaGroupDelete,			// delete group and put to history
+		eaGroupDupeDelete,		// delete group, put to history and mark as duplicate
+		eaGroupFinalDelete,		// delete group without adding to history
+		eaGroupPauseAllPars,	// pause only (all) pars (does not affect other files) in group
+		eaGroupPauseExtraPars,	// pause only (almost all) pars in group, except main par-file (does not affect other files)
+		eaGroupSetPriority,		// set priority for groups
+		eaGroupSetCategory,		// set or change category for a group
+		eaGroupMerge,			// merge groups
+		eaGroupSetParameter,	// set post-process parameter for group
+		eaGroupSetName,			// set group name (rename group)
+		eaGroupSetDupeKey,		// set duplicate key
+		eaGroupSetDupeScore,	// set duplicate score
+		eaGroupSetDupeMode,		// set duplicate mode
+		eaPostDelete,			// cancel post-processing
+		eaHistoryDelete,		// hide history-item
+		eaHistoryFinalDelete,	// delete history-item
+		eaHistoryReturn,		// move history-item back to download queue
+		eaHistoryProcess,		// move history-item back to download queue and start postprocessing
+		eaHistoryRedownload,	// move history-item back to download queue for redownload
+		eaHistorySetParameter,	// set post-process parameter for history-item
+		eaHistorySetDupeKey,	// set duplicate key
+		eaHistorySetDupeScore,	// set duplicate score
+		eaHistorySetDupeMode,	// set duplicate mode
+		eaHistorySetDupeBackup,	// set duplicate backup flag
+		eaHistoryMarkBad,		// mark history-item as bad (and download other duplicate)
+		eaHistoryMarkGood		// mark history-item as good (and push it into dup-history)
+	};
+
+	enum EMatchMode
+	{
+		mmID = 1,
+		mmName,
+		mmRegEx
+	};
+
+private:
+	NZBList					m_Queue;
+	HistoryList				m_History;
+	UrlQueue				m_UrlQueue;
+	Mutex	 				m_LockMutex;
+
+	static DownloadQueue*	g_pDownloadQueue;
+	static bool				g_bLoaded;
+
 protected:
-	NZBList				m_Queue;
-	HistoryList			m_History;
-	UrlQueue			m_UrlQueue;
+							DownloadQueue() : m_Queue(true) {}
+	static void				Init(DownloadQueue* pGlobalInstance) { g_pDownloadQueue = pGlobalInstance; }
+	static void				Final() { g_pDownloadQueue = NULL; }
+	static void				Loaded() { g_bLoaded = true; }
 
 public:
-						DownloadQueue() : m_Queue(true) {}
-	NZBList*			GetQueue() { return &m_Queue; }
-	HistoryList*		GetHistory() { return &m_History; }
-	UrlQueue*			GetUrlQueue() { return &m_UrlQueue; }
-};
-
-class DownloadQueueHolder
-{
-public:
-	virtual					~DownloadQueueHolder() {};
-	virtual DownloadQueue*	LockQueue() = 0;
-	virtual void			UnlockQueue() = 0;
+	static bool				IsLoaded() { return g_bLoaded; }
+	static DownloadQueue*	Lock();
+	static void				Unlock();
+	NZBList*				GetQueue() { return &m_Queue; }
+	HistoryList*			GetHistory() { return &m_History; }
+	UrlQueue*				GetUrlQueue() { return &m_UrlQueue; }
+	virtual bool			EditEntry(int ID, EEditAction eAction, int iOffset, const char* szText) = 0;
+	virtual bool			EditList(IDList* pIDList, NameList* pNameList, EMatchMode eMatchMode, EEditAction eAction, int iOffset, const char* szText) = 0;
+	virtual void			Save() = 0;
 };
 
 #endif

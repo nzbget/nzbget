@@ -27,7 +27,7 @@
 #ifndef MESSAGEBASE_H
 #define MESSAGEBASE_H
 
-static const int32_t NZBMESSAGE_SIGNATURE = 0x6E7A6220; // = "nzb-XX" (protocol version)
+static const int32_t NZBMESSAGE_SIGNATURE = 0x6E7A6221; // = "nzb-XX" (protocol version)
 static const int NZBREQUESTFILENAMESIZE = 512;
 static const int NZBREQUESTPASSWORDSIZE = 32;
 
@@ -64,54 +64,6 @@ enum eRemoteRequest
 	eRemoteRequestHistory,
 	eRemoteRequestDownloadUrl,
 	eRemoteRequestUrlQueue
-};
-
-// Possible values for field "m_iAction" of struct "SNZBEditQueueRequest":
-// File-Actions affect one file, Group-Actions affect all files in group.
-// Group is a list of files, added to queue from one NZB-File.
-enum eRemoteEditAction
-{
-	eRemoteEditActionFileMoveOffset = 1,	// move files to m_iOffset relative to the current position in download-queue
-	eRemoteEditActionFileMoveTop,			// move files to the top of download-queue
-	eRemoteEditActionFileMoveBottom,		// move files to the bottom of download-queue
-	eRemoteEditActionFilePause,				// pause files
-	eRemoteEditActionFileResume,			// resume (unpause) files
-	eRemoteEditActionFileDelete,			// delete files
-	eRemoteEditActionFilePauseAllPars,		// pause only (all) pars (does not affect other files)
-	eRemoteEditActionFilePauseExtraPars,	// pause only (almost all) pars, except main par-file (does not affect other files)
-	eRemoteEditActionFileReorder,			// (not supported)
-	eRemoteEditActionFileSplit,				// split - create new group from selected files
-	eRemoteEditActionGroupMoveOffset,		// move group to m_iOffset relative to the current position in download-queue
-	eRemoteEditActionGroupMoveTop,			// move group to the top of download-queue
-	eRemoteEditActionGroupMoveBottom,		// move group to the bottom of download-queue
-	eRemoteEditActionGroupPause,			// pause group
-	eRemoteEditActionGroupResume,			// resume (unpause) group
-	eRemoteEditActionGroupDelete,			// delete group
-	eRemoteEditActionGroupDupeDelete,		// delete group
-	eRemoteEditActionGroupFinalDelete,		// delete group
-	eRemoteEditActionGroupPauseAllPars,		// pause only (all) pars (does not affect other files) in group
-	eRemoteEditActionGroupPauseExtraPars,	// pause only (almost all) pars in group, except main par-file (does not affect other files)
-	eRemoteEditActionGroupSetPriority,		// set priority for groups
-	eRemoteEditActionGroupSetCategory,		// set or change category for a group
-	eRemoteEditActionGroupMerge,			// merge group
-	eRemoteEditActionGroupSetParameter,		// set post-process parameter for group
-	eRemoteEditActionGroupSetName,			// set group name (rename group)
-	eRemoteEditActionGroupSetDupeKey,		// (reserved)
-	eRemoteEditActionGroupSetDupeScore,		// (reserved)
-	eRemoteEditActionGroupSetDupeMode,		// (reserved)
-	eRemoteEditActionPostDelete = 51,		// cancel post-processing
-	eRemoteEditActionHistoryDelete,			// hide history-item
-	eRemoteEditActionHistoryFinalDelete,	// delete history-item
-	eRemoteEditActionHistoryReturn,			// move history-item back to download queue
-	eRemoteEditActionHistoryProcess,		// move history-item back to download queue and start postprocessing
-	eRemoteEditActionHistoryRedownload,		// move history-item back to download queue for redownload
-	eRemoteEditActionHistorySetParameter,	// set post-process parameter for history-item
-	eRemoteEditActionHistorySetDupeKey,		// (reserved)
-	eRemoteEditActionHistorySetDupeScore,	// (reserved)
-	eRemoteEditActionHistorySetDupeMode,	// (reserved)
-	eRemoteEditActionHistorySetDupeBackup,	// (reserved)
-	eRemoteEditActionHistoryMarkBad,		// mark history-item as bad (and download other duplicate)
-	eRemoteEditActionHistoryMarkGood		// mark history-item as good (and push it into dup-history)
 };
 
 // Possible values for field "m_iAction" of struct "SNZBPauseUnpauseRequest":
@@ -324,7 +276,7 @@ struct SNZBSetDownloadRateResponse
 struct SNZBEditQueueRequest
 {
 	SNZBRequestBase			m_MessageBase;			// Must be the first in the struct
-	int32_t					m_iAction;				// Action to be executed, see enum eRemoteEditAction
+	int32_t					m_iAction;				// Action to be executed, see enum DownloadQueue::EEditAction
 	int32_t					m_iOffset;				// Offset to move (for m_iAction = 0)
 	int32_t					m_iMatchMode;				// File/Group match mode, see enum eRemoteMatchMode
 	int32_t					m_iNrTrailingIDEntries;		// Number of ID-entries, following to this structure

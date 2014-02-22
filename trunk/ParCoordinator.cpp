@@ -1,7 +1,7 @@
 /*
  *  This file is part of nzbget
  *
- *  Copyright (C) 2007-2013 Andrey Prygunkov <hugbug@users.sourceforge.net>
+ *  Copyright (C) 2007-2014 Andrey Prygunkov <hugbug@users.sourceforge.net>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -47,12 +47,8 @@
 #include "Options.h"
 #include "Log.h"
 #include "Util.h"
-#include "QueueCoordinator.h"
-#include "DiskState.h"
 
-extern QueueCoordinator* g_pQueueCoordinator;
 extern Options* g_pOptions;
-extern DiskState* g_pDiskState;
 
 #ifndef DISABLE_PARCHECK
 bool ParCoordinator::PostParChecker::RequestMorePars(int iBlockNeeded, int* pBlockFound)
@@ -140,8 +136,8 @@ void ParCoordinator::PausePars(DownloadQueue* pDownloadQueue, NZBInfo* pNZBInfo)
 {
 	debug("ParCoordinator: Pausing pars");
 
-	g_pQueueCoordinator->GetQueueEditor()->LockedEditEntry(pDownloadQueue, pNZBInfo->GetID(), 
-		QueueEditor::eaGroupPauseExtraPars, 0, NULL);
+	pDownloadQueue->EditEntry(pNZBInfo->GetID(), 
+		DownloadQueue::eaGroupPauseExtraPars, 0, NULL);
 }
 
 bool ParCoordinator::FindMainPars(const char* szPath, ParFileList* pFileList)
@@ -340,7 +336,7 @@ bool ParCoordinator::AddPar(FileInfo* pFileInfo, bool bDeleted)
 
 void ParCoordinator::ParCheckCompleted()
 {
-	DownloadQueue* pDownloadQueue = g_pQueueCoordinator->LockQueue();
+	DownloadQueue* pDownloadQueue = DownloadQueue::Lock();
 
 	PostInfo* pPostInfo = m_ParChecker.GetPostInfo();
 
@@ -364,12 +360,9 @@ void ParCoordinator::ParCheckCompleted()
 	pPostInfo->SetWorking(false);
 	pPostInfo->SetStage(PostInfo::ptQueued);
 
-	if (g_pOptions->GetSaveQueue() && g_pOptions->GetServerMode())
-	{
-		g_pDiskState->SaveDownloadQueue(pDownloadQueue);
-	}
+	pDownloadQueue->Save();
 
-	g_pQueueCoordinator->UnlockQueue();
+	DownloadQueue::Unlock();
 }
 
 /**
@@ -379,7 +372,7 @@ void ParCoordinator::ParCheckCompleted()
 */
 bool ParCoordinator::RequestMorePars(NZBInfo* pNZBInfo, const char* szParFilename, int iBlockNeeded, int* pBlockFound)
 {
-	DownloadQueue* pDownloadQueue = g_pQueueCoordinator->LockQueue();
+	DownloadQueue* pDownloadQueue = DownloadQueue::Lock();
 	
 	Blocks blocks;
 	blocks.clear();
@@ -453,7 +446,7 @@ bool ParCoordinator::RequestMorePars(NZBInfo* pNZBInfo, const char* szParFilenam
 		}
 	}
 
-	g_pQueueCoordinator->UnlockQueue();
+	DownloadQueue::Unlock();
 
 	if (pBlockFound)
 	{
@@ -557,7 +550,7 @@ void ParCoordinator::FindPars(DownloadQueue* pDownloadQueue, NZBInfo* pNZBInfo, 
 
 void ParCoordinator::UpdateParCheckProgress()
 {
-	g_pQueueCoordinator->LockQueue();
+	DownloadQueue::Lock();
 
 	PostInfo* pPostInfo = m_ParChecker.GetPostInfo();
 	if (m_ParChecker.GetFileProgress() == 0)
@@ -608,7 +601,7 @@ void ParCoordinator::UpdateParCheckProgress()
 		m_ParChecker.Cancel();
 	}
 
-	g_pQueueCoordinator->UnlockQueue();
+	DownloadQueue::Unlock();
 	
 	CheckPauseState(pPostInfo);
 }
@@ -645,24 +638,21 @@ void ParCoordinator::CheckPauseState(PostInfo* pPostInfo)
 
 void ParCoordinator::ParRenameCompleted()
 {
-	DownloadQueue* pDownloadQueue = g_pQueueCoordinator->LockQueue();
+	DownloadQueue* pDownloadQueue = DownloadQueue::Lock();
 	
 	PostInfo* pPostInfo = m_ParRenamer.GetPostInfo();
 	pPostInfo->GetNZBInfo()->SetRenameStatus(m_ParRenamer.GetStatus() == ParRenamer::psSuccess ? NZBInfo::rsSuccess : NZBInfo::rsFailure);
 	pPostInfo->SetWorking(false);
 	pPostInfo->SetStage(PostInfo::ptQueued);
 	
-	if (g_pOptions->GetSaveQueue() && g_pOptions->GetServerMode())
-	{
-		g_pDiskState->SaveDownloadQueue(pDownloadQueue);
-	}
-	
-	g_pQueueCoordinator->UnlockQueue();
+	pDownloadQueue->Save();
+
+	DownloadQueue::Unlock();
 }
 
 void ParCoordinator::UpdateParRenameProgress()
 {
-	g_pQueueCoordinator->LockQueue();
+	DownloadQueue::Lock();
 	
 	PostInfo* pPostInfo = m_ParRenamer.GetPostInfo();
 	pPostInfo->SetProgressLabel(m_ParRenamer.GetProgressLabel());
@@ -680,7 +670,7 @@ void ParCoordinator::UpdateParRenameProgress()
 		pPostInfo->SetStageTime(tCurrent);
 	}
 	
-	g_pQueueCoordinator->UnlockQueue();
+	DownloadQueue::Unlock();
 	
 	CheckPauseState(pPostInfo);
 }

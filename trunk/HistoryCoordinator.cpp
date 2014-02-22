@@ -75,7 +75,7 @@ void HistoryCoordinator::Cleanup()
 {
 	debug("Cleaning up HistoryCoordinator");
 
-	DownloadQueue* pDownloadQueue = g_pQueueCoordinator->LockQueue();
+	DownloadQueue* pDownloadQueue = DownloadQueue::Lock();
 
 	for (HistoryList::iterator it = pDownloadQueue->GetHistory()->begin(); it != pDownloadQueue->GetHistory()->end(); it++)
 	{
@@ -83,7 +83,7 @@ void HistoryCoordinator::Cleanup()
 	}
 	pDownloadQueue->GetHistory()->clear();
 
-	g_pQueueCoordinator->UnlockQueue();
+	DownloadQueue::Unlock();
 }
 
 /**
@@ -91,7 +91,7 @@ void HistoryCoordinator::Cleanup()
  */
 void HistoryCoordinator::IntervalCheck()
 {
-	DownloadQueue* pDownloadQueue = g_pQueueCoordinator->LockQueue();
+	DownloadQueue* pDownloadQueue = DownloadQueue::Lock();
 
 	time_t tMinTime = time(NULL) - g_pOptions->GetKeepHistory() * 60*60*24;
 	bool bChanged = false;
@@ -137,10 +137,10 @@ void HistoryCoordinator::IntervalCheck()
 
 	if (bChanged)
 	{
-		SaveQueue(pDownloadQueue);
+		pDownloadQueue->Save();
 	}
 
-	g_pQueueCoordinator->UnlockQueue();
+	DownloadQueue::Unlock();
 }
 
 void HistoryCoordinator::DeleteQueuedFile(const char* szQueuedFile)
@@ -169,14 +169,6 @@ void HistoryCoordinator::DeleteQueuedFile(const char* szQueuedFile)
 	}
 
 	free(szFilename);
-}
-
-void HistoryCoordinator::SaveQueue(DownloadQueue* pDownloadQueue)
-{
-	if (g_pOptions->GetSaveQueue() && g_pOptions->GetServerMode())
-	{
-		g_pDiskState->SaveDownloadQueue(pDownloadQueue);
-	}
 }
 
 void HistoryCoordinator::AddToHistory(DownloadQueue* pDownloadQueue, NZBInfo* pNZBInfo)
@@ -263,11 +255,9 @@ void HistoryCoordinator::HistoryHide(DownloadQueue* pDownloadQueue, HistoryInfo*
 	info("Collection %s removed from history", szNiceName);
 }
 
-bool HistoryCoordinator::EditList(IDList* pIDList, EEditAction eAction, int iOffset, const char* szText)
+bool HistoryCoordinator::EditList(DownloadQueue* pDownloadQueue, IDList* pIDList, DownloadQueue::EEditAction eAction, int iOffset, const char* szText)
 {
 	bool bOK = false;
-
-	DownloadQueue* pDownloadQueue = g_pQueueCoordinator->LockQueue();
 
 	for (IDList::iterator itID = pIDList->begin(); itID != pIDList->end(); itID++)
 	{
@@ -279,34 +269,34 @@ bool HistoryCoordinator::EditList(IDList* pIDList, EEditAction eAction, int iOff
 			{
 				switch (eAction)
 				{
-					case eaHistoryDelete:
-					case eaHistoryFinalDelete:
-						HistoryDelete(pDownloadQueue, itHistory, pHistoryInfo, eAction == eaHistoryFinalDelete);
+					case DownloadQueue::eaHistoryDelete:
+					case DownloadQueue::eaHistoryFinalDelete:
+						HistoryDelete(pDownloadQueue, itHistory, pHistoryInfo, eAction == DownloadQueue::eaHistoryFinalDelete);
 						break;
 
-					case eaHistoryReturn:
-					case eaHistoryProcess:
-						HistoryReturn(pDownloadQueue, itHistory, pHistoryInfo, eAction == eaHistoryProcess);
+					case DownloadQueue::eaHistoryReturn:
+					case DownloadQueue::eaHistoryProcess:
+						HistoryReturn(pDownloadQueue, itHistory, pHistoryInfo, eAction == DownloadQueue::eaHistoryProcess);
 						break;
 
-					case eaHistoryRedownload:
+					case DownloadQueue::eaHistoryRedownload:
 						HistoryRedownload(pDownloadQueue, itHistory, pHistoryInfo, false);
 						break;
 
- 					case eaHistorySetParameter:
+ 					case DownloadQueue::eaHistorySetParameter:
 						HistorySetParameter(pHistoryInfo, szText);
 						break;
 
-					case eaHistorySetDupeKey:
-					case eaHistorySetDupeScore:
-					case eaHistorySetDupeMode:
-					case eaHistorySetDupeBackup:
+					case DownloadQueue::eaHistorySetDupeKey:
+					case DownloadQueue::eaHistorySetDupeScore:
+					case DownloadQueue::eaHistorySetDupeMode:
+					case DownloadQueue::eaHistorySetDupeBackup:
 						HistorySetDupeParam(pHistoryInfo, eAction, szText);
 						break;
 
-					case eaHistoryMarkBad:
-					case eaHistoryMarkGood:
-						g_pDupeCoordinator->HistoryMark(pDownloadQueue, pHistoryInfo, eAction == eaHistoryMarkGood);
+					case DownloadQueue::eaHistoryMarkBad:
+					case DownloadQueue::eaHistoryMarkGood:
+						g_pDupeCoordinator->HistoryMark(pDownloadQueue, pHistoryInfo, eAction == DownloadQueue::eaHistoryMarkGood);
 						break;
 
 					default:
@@ -322,10 +312,8 @@ bool HistoryCoordinator::EditList(IDList* pIDList, EEditAction eAction, int iOff
 
 	if (bOK)
 	{
-		SaveQueue(pDownloadQueue);
+		pDownloadQueue->Save();
 	}
-
-	g_pQueueCoordinator->UnlockQueue();
 
 	return bOK;
 }
@@ -524,8 +512,8 @@ void HistoryCoordinator::HistoryRedownload(DownloadQueue* pDownloadQueue, Histor
 
 	if (!bPaused && g_pOptions->GetParCheck() != Options::pcForce)
 	{
-		g_pQueueCoordinator->GetQueueEditor()->LockedEditEntry(pDownloadQueue, pNZBInfo->GetID(), 
-			QueueEditor::eaGroupPauseExtraPars, 0, NULL);
+		pDownloadQueue->EditEntry(pNZBInfo->GetID(), 
+			DownloadQueue::eaGroupPauseExtraPars, 0, NULL);
 	}
 }
 
@@ -558,7 +546,7 @@ void HistoryCoordinator::HistorySetParameter(HistoryInfo* pHistoryInfo, const ch
 	free(szStr);
 }
 
-void HistoryCoordinator::HistorySetDupeParam(HistoryInfo* pHistoryInfo, EEditAction eAction, const char* szText)
+void HistoryCoordinator::HistorySetDupeParam(HistoryInfo* pHistoryInfo, DownloadQueue::EEditAction eAction, const char* szText)
 {
 	char szNiceName[1024];
 	pHistoryInfo->GetName(szNiceName, 1024);
@@ -572,7 +560,7 @@ void HistoryCoordinator::HistorySetDupeParam(HistoryInfo* pHistoryInfo, EEditAct
 	}
 
 	EDupeMode eMode = dmScore;
-	if (eAction == eaHistorySetDupeMode)
+	if (eAction == DownloadQueue::eaHistorySetDupeMode)
 	{
 		if (!strcasecmp(szText, "SCORE"))
 		{
@@ -597,19 +585,19 @@ void HistoryCoordinator::HistorySetDupeParam(HistoryInfo* pHistoryInfo, EEditAct
 	{
 		switch (eAction) 
 		{
-			case eaHistorySetDupeKey:
+			case DownloadQueue::eaHistorySetDupeKey:
 				pHistoryInfo->GetNZBInfo()->SetDupeKey(szText);
 				break;
 
-			case eaHistorySetDupeScore:
+			case DownloadQueue::eaHistorySetDupeScore:
 				pHistoryInfo->GetNZBInfo()->SetDupeScore(atoi(szText));
 				break;
 
-			case eaHistorySetDupeMode:
+			case DownloadQueue::eaHistorySetDupeMode:
 				pHistoryInfo->GetNZBInfo()->SetDupeMode(eMode);
 				break;
 
-			case eaHistorySetDupeBackup:
+			case DownloadQueue::eaHistorySetDupeBackup:
 				if (pHistoryInfo->GetNZBInfo()->GetDeleteStatus() != NZBInfo::dsDupe &&
 					pHistoryInfo->GetNZBInfo()->GetDeleteStatus() != NZBInfo::dsManual)
 				{
@@ -629,19 +617,19 @@ void HistoryCoordinator::HistorySetDupeParam(HistoryInfo* pHistoryInfo, EEditAct
 	{
 		switch (eAction) 
 		{
-			case eaHistorySetDupeKey:
+			case DownloadQueue::eaHistorySetDupeKey:
 				pHistoryInfo->GetDupInfo()->SetDupeKey(szText);
 				break;
 
-			case eaHistorySetDupeScore:
+			case DownloadQueue::eaHistorySetDupeScore:
 				pHistoryInfo->GetDupInfo()->SetDupeScore(atoi(szText));
 				break;
 
-			case eaHistorySetDupeMode:
+			case DownloadQueue::eaHistorySetDupeMode:
 				pHistoryInfo->GetDupInfo()->SetDupeMode(eMode);
 				break;
 
-			case eaHistorySetDupeBackup:
+			case DownloadQueue::eaHistorySetDupeBackup:
 				error("Could not set duplicate parameter for %s: history item has wrong type", szNiceName);
 				return;
 

@@ -1,7 +1,7 @@
 /*
  *  This file is part of nzbget
  *
- *  Copyright (C) 2007-2013 Andrey Prygunkov <hugbug@users.sourceforge.net>
+ *  Copyright (C) 2007-2014 Andrey Prygunkov <hugbug@users.sourceforge.net>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -47,12 +47,10 @@
 #include "Log.h"
 #include "QueueCoordinator.h"
 #include "ScriptController.h"
-#include "DiskState.h"
 #include "Util.h"
 
 extern QueueCoordinator* g_pQueueCoordinator;
 extern Options* g_pOptions;
-extern DiskState* g_pDiskState;
 
 Scanner::FileData::FileData(const char* szFilename)
 {

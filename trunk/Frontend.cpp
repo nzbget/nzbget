@@ -2,7 +2,7 @@
  *  This file is part of nzbget
  *
  *  Copyright (C) 2004 Sven Henkel <sidddy@users.sourceforge.net>
- *  Copyright (C) 2007-2013 Andrey Prygunkov <hugbug@users.sourceforge.net>
+ *  Copyright (C) 2007-2014 Andrey Prygunkov <hugbug@users.sourceforge.net>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -118,11 +118,13 @@ void Frontend::FreeData()
 		}
 		m_RemoteMessages.clear();
 
-		m_RemoteQueue.GetQueue()->Clear();
+		DownloadQueue* pDownloadQueue = DownloadQueue::Lock();
+		pDownloadQueue->GetQueue()->Clear();
+		DownloadQueue::Unlock();
 	}
 }
 
-Log::Messages * Frontend::LockMessages()
+Log::Messages* Frontend::LockMessages()
 {
 	if (IsRemoteMode())
 	{
@@ -144,22 +146,12 @@ void Frontend::UnlockMessages()
 
 DownloadQueue* Frontend::LockQueue()
 {
-	if (IsRemoteMode())
-	{
-		return &m_RemoteQueue;
-	}
-	else
-	{
-		return g_pQueueCoordinator->LockQueue();
-	}
+	return DownloadQueue::Lock();
 }
 
 void Frontend::UnlockQueue()
 {
-	if (!IsRemoteMode())
-	{
-		g_pQueueCoordinator->UnlockQueue();
-	}
+	DownloadQueue::Unlock();
 }
 
 bool Frontend::IsRemoteMode()
@@ -192,27 +184,18 @@ void Frontend::ServerSetDownloadRate(int iRate)
 	}
 }
 
-void Frontend::ServerDumpDebug()
+bool Frontend::ServerEditQueue(DownloadQueue::EEditAction eAction, int iOffset, int iID)
 {
 	if (IsRemoteMode())
 	{
-		RequestDumpDebug();
+		return RequestEditQueue(eAction, iOffset, iID);
 	}
 	else
 	{
-		g_pQueueCoordinator->LogDebugInfo();
-	}
-}
-
-bool Frontend::ServerEditQueue(QueueEditor::EEditAction eAction, int iOffset, int iID)
-{
-	if (IsRemoteMode())
-	{
-		return RequestEditQueue((eRemoteEditAction)eAction, iOffset, iID);
-	}
-	else
-	{
-		return g_pQueueCoordinator->GetQueueEditor()->EditEntry(iID, eAction, iOffset, NULL);
+		DownloadQueue* pDownloadQueue = LockQueue();
+		bool bOK = pDownloadQueue->EditEntry(iID, eAction, iOffset, NULL);
+		UnlockQueue();
+		return bOK;
 	}
 	return false;
 }
@@ -362,7 +345,10 @@ bool Frontend::RequestFileList()
 	{
 		RemoteClient client;
 		client.SetVerbose(false);
-		client.BuildFileList(&ListResponse, pBuf, &m_RemoteQueue);
+		
+		DownloadQueue* pDownloadQueue = LockQueue();
+		client.BuildFileList(&ListResponse, pBuf, pDownloadQueue);
+		UnlockQueue();
 	}
 
 	if (pBuf)
@@ -387,16 +373,9 @@ bool Frontend::RequestSetDownloadRate(int iRate)
 	return client.RequestServerSetDownloadRate(iRate);
 }
 
-bool Frontend::RequestDumpDebug()
+bool Frontend::RequestEditQueue(DownloadQueue::EEditAction eAction, int iOffset, int iID)
 {
 	RemoteClient client;
 	client.SetVerbose(false);
-	return client.RequestServerDumpDebug();
-}
-
-bool Frontend::RequestEditQueue(eRemoteEditAction iAction, int iOffset, int iID)
-{
-	RemoteClient client;
-	client.SetVerbose(false);
-	return client.RequestServerEditQueue(iAction, iOffset, NULL, &iID, 1, NULL, eRemoteMatchModeID);
+	return client.RequestServerEditQueue(eAction, iOffset, NULL, &iID, 1, NULL, eRemoteMatchModeID);
 }

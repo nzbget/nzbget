@@ -1,7 +1,7 @@
 /*
  *  This file is part of nzbget
  *
- *  Copyright (C) 2012-2013 Andrey Prygunkov <hugbug@users.sourceforge.net>
+ *  Copyright (C) 2012-2014 Andrey Prygunkov <hugbug@users.sourceforge.net>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -44,18 +44,13 @@
 #include "UrlCoordinator.h"
 #include "Options.h"
 #include "WebDownloader.h"
-#include "DiskState.h"
 #include "Log.h"
 #include "Util.h"
 #include "NZBFile.h"
-#include "QueueCoordinator.h"
 #include "Scanner.h"
 
 extern Options* g_pOptions;
-extern DiskState* g_pDiskState;
-extern QueueCoordinator* g_pQueueCoordinator;
 extern Scanner* g_pScanner;
-
 
 UrlDownloader::UrlDownloader() : WebDownloader()
 {
@@ -126,13 +121,13 @@ UrlCoordinator::~UrlCoordinator()
 	}
 	m_ActiveDownloads.clear();
 
-	DownloadQueue* pDownloadQueue = g_pQueueCoordinator->LockQueue();
+	DownloadQueue* pDownloadQueue = DownloadQueue::Lock();
 	for (UrlQueue::iterator it = pDownloadQueue->GetUrlQueue()->begin(); it != pDownloadQueue->GetUrlQueue()->end(); it++)
 	{
 		delete *it;
 	}
 	pDownloadQueue->GetUrlQueue()->clear();
-	g_pQueueCoordinator->UnlockQueue();
+	DownloadQueue::Unlock();
 
 	debug("UrlCoordinator destroyed");
 }
@@ -148,7 +143,7 @@ void UrlCoordinator::Run()
 		if (!g_pOptions->GetPauseDownload() || m_bForce || g_pOptions->GetUrlForce())
 		{
 			// start download for next URL
-			DownloadQueue* pDownloadQueue = g_pQueueCoordinator->LockQueue();
+			DownloadQueue* pDownloadQueue = DownloadQueue::Lock();
 
 			if ((int)m_ActiveDownloads.size() < g_pOptions->GetUrlConnections())
 			{
@@ -165,7 +160,7 @@ void UrlCoordinator::Run()
 					m_bForce = false;
 				}
 			}
-			g_pQueueCoordinator->UnlockQueue();
+			DownloadQueue::Unlock();
 		}
 
 		int iSleepInterval = 100;
@@ -185,9 +180,9 @@ void UrlCoordinator::Run()
 	bool completed = false;
 	while (!completed)
 	{
-		g_pQueueCoordinator->LockQueue();
+		DownloadQueue::Lock();
 		completed = m_ActiveDownloads.size() == 0;
-		g_pQueueCoordinator->UnlockQueue();
+		DownloadQueue::Unlock();
 		usleep(100 * 1000);
 		ResetHangingDownloads();
 	}
@@ -201,12 +196,12 @@ void UrlCoordinator::Stop()
 	Thread::Stop();
 
 	debug("Stopping UrlDownloads");
-	g_pQueueCoordinator->LockQueue();
+	DownloadQueue::Lock();
 	for (ActiveDownloads::iterator it = m_ActiveDownloads.begin(); it != m_ActiveDownloads.end(); it++)
 	{
 		(*it)->Stop();
 	}
-	g_pQueueCoordinator->UnlockQueue();
+	DownloadQueue::Unlock();
 	debug("UrlDownloads are notified");
 }
 
@@ -218,7 +213,7 @@ void UrlCoordinator::ResetHangingDownloads()
 		return;
 	}
 
-	g_pQueueCoordinator->LockQueue();
+	DownloadQueue::Lock();
 	time_t tm = ::time(NULL);
 
 	for (ActiveDownloads::iterator it = m_ActiveDownloads.begin(); it != m_ActiveDownloads.end();)
@@ -247,7 +242,7 @@ void UrlCoordinator::ResetHangingDownloads()
 		it++;
 	}                                              
 
-	g_pQueueCoordinator->UnlockQueue();
+	DownloadQueue::Unlock();
 }
 
 void UrlCoordinator::LogDebugInfo()
@@ -255,35 +250,32 @@ void UrlCoordinator::LogDebugInfo()
 	debug("   UrlCoordinator");
 	debug("   ----------------");
 
-	g_pQueueCoordinator->LockQueue();
+	DownloadQueue::Lock();
 	debug("    Active Downloads: %i", m_ActiveDownloads.size());
 	for (ActiveDownloads::iterator it = m_ActiveDownloads.begin(); it != m_ActiveDownloads.end(); it++)
 	{
 		UrlDownloader* pUrlDownloader = *it;
 		pUrlDownloader->LogDebugInfo();
 	}
-	g_pQueueCoordinator->UnlockQueue();
+	DownloadQueue::Unlock();
 }
 
 void UrlCoordinator::AddUrlToQueue(UrlInfo* pUrlInfo, bool AddFirst)
 {
 	debug("Adding NZB-URL to queue");
 
-	DownloadQueue* pDownloadQueue = g_pQueueCoordinator->LockQueue();
+	DownloadQueue* pDownloadQueue = DownloadQueue::Lock();
 
 	pDownloadQueue->GetUrlQueue()->push_back(pUrlInfo);
 
-	if (g_pOptions->GetSaveQueue() && g_pOptions->GetServerMode())
-	{
-		g_pDiskState->SaveDownloadQueue(pDownloadQueue);
-	}
+	pDownloadQueue->Save();
 
 	if (pUrlInfo->GetForce())
 	{
 		m_bForce = true;
 	}
 
-	g_pQueueCoordinator->UnlockQueue();
+	DownloadQueue::Unlock();
 }
 
 /*
@@ -383,7 +375,7 @@ void UrlCoordinator::UrlCompleted(UrlDownloader* pUrlDownloader)
 	debug("Filename: [%s]", filename);
 
 	// delete Download from active jobs
-	g_pQueueCoordinator->LockQueue();
+	DownloadQueue::Lock();
 	for (ActiveDownloads::iterator it = m_ActiveDownloads.begin(); it != m_ActiveDownloads.end(); it++)
 	{
 		UrlDownloader* pa = *it;
@@ -393,7 +385,7 @@ void UrlCoordinator::UrlCompleted(UrlDownloader* pUrlDownloader)
 			break;
 		}
 	}
-	g_pQueueCoordinator->UnlockQueue();
+	DownloadQueue::Unlock();
 
 	Aspect aspect = { eaUrlCompleted, pUrlInfo };
 	Notify(&aspect);
@@ -417,7 +409,7 @@ void UrlCoordinator::UrlCompleted(UrlDownloader* pUrlDownloader)
 	// delete Download from Url Queue
 	if (pUrlInfo->GetStatus() != UrlInfo::aiRetry)
 	{
-		DownloadQueue* pDownloadQueue = g_pQueueCoordinator->LockQueue();
+		DownloadQueue* pDownloadQueue = DownloadQueue::Lock();
 
 		for (UrlQueue::iterator it = pDownloadQueue->GetUrlQueue()->begin(); it != pDownloadQueue->GetUrlQueue()->end(); it++)
 		{
@@ -439,12 +431,9 @@ void UrlCoordinator::UrlCompleted(UrlDownloader* pUrlDownloader)
 			bDeleteObj = false;
 		}
 			
-		if (g_pOptions->GetSaveQueue() && g_pOptions->GetServerMode())
-		{
-			g_pDiskState->SaveDownloadQueue(pDownloadQueue);
-		}
+		pDownloadQueue->Save();
 
-		g_pQueueCoordinator->UnlockQueue();
+		DownloadQueue::Unlock();
 
 		if (bDeleteObj)
 		{
