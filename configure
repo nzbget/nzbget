@@ -578,7 +578,7 @@ PACKAGE_VERSION='13.0-testing'
 PACKAGE_STRING='nzbget 13.0-testing'
 PACKAGE_BUGREPORT='hugbug@users.sourceforge.net'
 
-ac_unique_file="nzbget.cpp"
+ac_unique_file="daemon/main/nzbget.cpp"
 # Factoring default headers for most tests.
 ac_includes_default="\
 #include <stdio.h>

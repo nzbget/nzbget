@@ -17,7 +17,7 @@
 #
 #  This file if part of nzbget
 #
-# Copyright (C) 2008-2013 Andrey Prygunkov <hugbug@users.sourceforge.net>
+# Copyright (C) 2008-2014 Andrey Prygunkov <hugbug@users.sourceforge.net>
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -82,26 +82,27 @@ am__installdirs = "$(DESTDIR)$(bindir)" "$(DESTDIR)$(ppscriptsdir)" \
 	"$(DESTDIR)$(exampleconfdir)" "$(DESTDIR)$(webuidir)"
 binPROGRAMS_INSTALL = $(INSTALL_PROGRAM)
 PROGRAMS = $(bin_PROGRAMS)
-am_nzbget_OBJECTS = ArticleDownloader.$(OBJEXT) BinRpc.$(OBJEXT) \
-	ColoredFrontend.$(OBJEXT) Connection.$(OBJEXT) \
-	Decoder.$(OBJEXT) DiskState.$(OBJEXT) DownloadInfo.$(OBJEXT) \
-	DupeCoordinator.$(OBJEXT) Frontend.$(OBJEXT) \
-	FeedCoordinator.$(OBJEXT) FeedFile.$(OBJEXT) \
-	FeedFilter.$(OBJEXT) FeedInfo.$(OBJEXT) Log.$(OBJEXT) \
-	LoggableFrontend.$(OBJEXT) Maintenance.$(OBJEXT) \
-	NCursesFrontend.$(OBJEXT) NNTPConnection.$(OBJEXT) \
-	HistoryCoordinator.$(OBJEXT) NZBFile.$(OBJEXT) \
-	NewsServer.$(OBJEXT) Observer.$(OBJEXT) Options.$(OBJEXT) \
-	ParChecker.$(OBJEXT) ParRenamer.$(OBJEXT) \
-	ParCoordinator.$(OBJEXT) PrePostProcessor.$(OBJEXT) \
-	QueueCoordinator.$(OBJEXT) QueueEditor.$(OBJEXT) \
+am_nzbget_OBJECTS = Connection.$(OBJEXT) TLS.$(OBJEXT) \
+	WebDownloader.$(OBJEXT) FeedCoordinator.$(OBJEXT) \
+	FeedFile.$(OBJEXT) FeedFilter.$(OBJEXT) FeedInfo.$(OBJEXT) \
+	ColoredFrontend.$(OBJEXT) Frontend.$(OBJEXT) \
+	LoggableFrontend.$(OBJEXT) NCursesFrontend.$(OBJEXT) \
+	Maintenance.$(OBJEXT) nzbget.$(OBJEXT) Options.$(OBJEXT) \
+	Scheduler.$(OBJEXT) ArticleDownloader.$(OBJEXT) \
+	Decoder.$(OBJEXT) NewsServer.$(OBJEXT) \
+	NNTPConnection.$(OBJEXT) ServerPool.$(OBJEXT) \
+	ParChecker.$(OBJEXT) ParCoordinator.$(OBJEXT) \
+	ParRenamer.$(OBJEXT) PrePostProcessor.$(OBJEXT) \
+	ScriptController.$(OBJEXT) Unpack.$(OBJEXT) \
+	DiskState.$(OBJEXT) DownloadInfo.$(OBJEXT) \
+	DupeCoordinator.$(OBJEXT) HistoryCoordinator.$(OBJEXT) \
+	NZBFile.$(OBJEXT) QueueCoordinator.$(OBJEXT) \
+	QueueEditor.$(OBJEXT) Scanner.$(OBJEXT) \
+	UrlCoordinator.$(OBJEXT) BinRpc.$(OBJEXT) \
 	RemoteClient.$(OBJEXT) RemoteServer.$(OBJEXT) \
-	Scanner.$(OBJEXT) Scheduler.$(OBJEXT) \
-	ScriptController.$(OBJEXT) ServerPool.$(OBJEXT) \
-	svn_version.$(OBJEXT) TLS.$(OBJEXT) Thread.$(OBJEXT) \
-	Util.$(OBJEXT) XmlRpc.$(OBJEXT) WebDownloader.$(OBJEXT) \
-	WebServer.$(OBJEXT) UrlCoordinator.$(OBJEXT) Unpack.$(OBJEXT) \
-	nzbget.$(OBJEXT)
+	WebServer.$(OBJEXT) XmlRpc.$(OBJEXT) Log.$(OBJEXT) \
+	Observer.$(OBJEXT) Thread.$(OBJEXT) Util.$(OBJEXT) \
+	svn_version.$(OBJEXT)
 nzbget_OBJECTS = $(am_nzbget_OBJECTS)
 nzbget_LDADD = $(LDADD)
 am__vpath_adj_setup = srcdirstrip=`echo "$(srcdir)" | sed 's|.|.|g'`;
@@ -244,67 +245,201 @@ target_cpu = @target_cpu@
 target_os = @target_os@
 target_vendor = @target_vendor@
 nzbget_SOURCES = \
-	ArticleDownloader.cpp ArticleDownloader.h BinRpc.cpp BinRpc.h \
-	ColoredFrontend.cpp ColoredFrontend.h Connection.cpp Connection.h Decoder.cpp Decoder.h \
-	DiskState.cpp DiskState.h DownloadInfo.cpp DownloadInfo.h DupeCoordinator.cpp DupeCoordinator.h \
-	Frontend.cpp Frontend.h FeedCoordinator.cpp FeedCoordinator.h FeedFile.cpp FeedFile.h \
-	FeedFilter.cpp FeedFilter.h FeedInfo.cpp FeedInfo.h Log.cpp Log.h LoggableFrontend.cpp \
-	LoggableFrontend.h Maintenance.cpp Maintenance.h MessageBase.h NCursesFrontend.cpp \
-	NCursesFrontend.h NNTPConnection.cpp HistoryCoordinator.cpp HistoryCoordinator.h \
-	NNTPConnection.h NZBFile.cpp NZBFile.h NewsServer.cpp NewsServer.h Observer.cpp \
-	Observer.h Options.cpp Options.h ParChecker.cpp ParChecker.h ParRenamer.cpp ParRenamer.h \
-	ParCoordinator.cpp ParCoordinator.h PrePostProcessor.cpp PrePostProcessor.h QueueCoordinator.cpp \
-	QueueCoordinator.h QueueEditor.cpp QueueEditor.h RemoteClient.cpp RemoteClient.h \
-	RemoteServer.cpp RemoteServer.h Scanner.cpp Scanner.h Scheduler.cpp Scheduler.h ScriptController.cpp \
-	ScriptController.h ServerPool.cpp ServerPool.h svn_version.cpp TLS.cpp TLS.h Thread.cpp Thread.h \
-	Util.cpp Util.h XmlRpc.cpp XmlRpc.h WebDownloader.cpp WebDownloader.h WebServer.cpp WebServer.h \
-	UrlCoordinator.cpp UrlCoordinator.h Unpack.cpp Unpack.h nzbget.cpp nzbget.h
+	daemon/connect/Connection.cpp \
+	daemon/connect/Connection.h \
+	daemon/connect/TLS.cpp \
+	daemon/connect/TLS.h \
+	daemon/connect/WebDownloader.cpp \
+	daemon/connect/WebDownloader.h \
+	daemon/feed/FeedCoordinator.cpp \
+	daemon/feed/FeedCoordinator.h \
+	daemon/feed/FeedFile.cpp \
+	daemon/feed/FeedFile.h \
+	daemon/feed/FeedFilter.cpp \
+	daemon/feed/FeedFilter.h \
+	daemon/feed/FeedInfo.cpp \
+	daemon/feed/FeedInfo.h \
+	daemon/frontend/ColoredFrontend.cpp \
+	daemon/frontend/ColoredFrontend.h \
+	daemon/frontend/Frontend.cpp \
+	daemon/frontend/Frontend.h \
+	daemon/frontend/LoggableFrontend.cpp \
+	daemon/frontend/LoggableFrontend.h \
+	daemon/frontend/NCursesFrontend.cpp \
+	daemon/frontend/NCursesFrontend.h \
+	daemon/main/Maintenance.cpp \
+	daemon/main/Maintenance.h \
+	daemon/main/nzbget.cpp \
+	daemon/main/nzbget.h \
+	daemon/main/Options.cpp \
+	daemon/main/Options.h \
+	daemon/main/Scheduler.cpp \
+	daemon/main/Scheduler.h \
+	daemon/nntp/ArticleDownloader.cpp \
+	daemon/nntp/ArticleDownloader.h \
+	daemon/nntp/Decoder.cpp \
+	daemon/nntp/Decoder.h \
+	daemon/nntp/NewsServer.cpp \
+	daemon/nntp/NewsServer.h \
+	daemon/nntp/NNTPConnection.cpp \
+	daemon/nntp/NNTPConnection.h \
+	daemon/nntp/ServerPool.cpp \
+	daemon/nntp/ServerPool.h \
+	daemon/postprocess/ParChecker.cpp \
+	daemon/postprocess/ParChecker.h \
+	daemon/postprocess/ParCoordinator.cpp \
+	daemon/postprocess/ParCoordinator.h \
+	daemon/postprocess/ParRenamer.cpp \
+	daemon/postprocess/ParRenamer.h \
+	daemon/postprocess/PrePostProcessor.cpp \
+	daemon/postprocess/PrePostProcessor.h \
+	daemon/postprocess/ScriptController.cpp \
+	daemon/postprocess/ScriptController.h \
+	daemon/postprocess/Unpack.cpp \
+	daemon/postprocess/Unpack.h \
+	daemon/queue/DiskState.cpp \
+	daemon/queue/DiskState.h \
+	daemon/queue/DownloadInfo.cpp \
+	daemon/queue/DownloadInfo.h \
+	daemon/queue/DupeCoordinator.cpp \
+	daemon/queue/DupeCoordinator.h \
+	daemon/queue/HistoryCoordinator.cpp \
+	daemon/queue/HistoryCoordinator.h \
+	daemon/queue/NZBFile.cpp \
+	daemon/queue/NZBFile.h \
+	daemon/queue/QueueCoordinator.cpp \
+	daemon/queue/QueueCoordinator.h \
+	daemon/queue/QueueEditor.cpp \
+	daemon/queue/QueueEditor.h \
+	daemon/queue/Scanner.cpp \
+	daemon/queue/Scanner.h \
+	daemon/queue/UrlCoordinator.cpp \
+	daemon/queue/UrlCoordinator.h \
+	daemon/remote/BinRpc.cpp \
+	daemon/remote/BinRpc.h \
+	daemon/remote/MessageBase.h \
+	daemon/remote/RemoteClient.cpp \
+	daemon/remote/RemoteClient.h \
+	daemon/remote/RemoteServer.cpp \
+	daemon/remote/RemoteServer.h \
+	daemon/remote/WebServer.cpp \
+	daemon/remote/WebServer.h \
+	daemon/remote/XmlRpc.cpp \
+	daemon/remote/XmlRpc.h \
+	daemon/util/Log.cpp \
+	daemon/util/Log.h \
+	daemon/util/Observer.cpp \
+	daemon/util/Observer.h \
+	daemon/util/Thread.cpp \
+	daemon/util/Thread.h \
+	daemon/util/Util.cpp \
+	daemon/util/Util.h \
+	svn_version.cpp
+
+AM_CPPFLAGS = \
+	-I$(srcdir)/daemon/connect \
+	-I$(srcdir)/daemon/feed \
+	-I$(srcdir)/daemon/frontend \
+	-I$(srcdir)/daemon/main \
+	-I$(srcdir)/daemon/nntp \
+	-I$(srcdir)/daemon/postprocess \
+	-I$(srcdir)/daemon/queue \
+	-I$(srcdir)/daemon/remote \
+	-I$(srcdir)/daemon/util
 
 EXTRA_DIST = \
-	Makefile.cvs nzbgetd \
-	$(patches_FILES) $(windows_FILES) $(osx_FILES)
+	Makefile.cvs \
+	nzbgetd \
+	$(patches_FILES) \
+	$(windows_FILES) \
+	$(osx_FILES)
 
 patches_FILES = \
-	libpar2-0.2-bugfixes.patch libpar2-0.2-cancel.patch \
-	libpar2-0.2-MSVC8.patch libsigc++-2.0.18-MSVC8.patch
+	patches/libpar2-0.2-bugfixes.patch \
+	patches/libpar2-0.2-cancel.patch \
+	patches/libpar2-0.2-MSVC8.patch \
+	patches/libsigc++-2.0.18-MSVC8.patch
 
 windows_FILES = \
-	win32.h NTService.cpp NTService.h nzbget.sln nzbget.vcproj nzbget-shell.bat
+	daemon/windows/NTService.cpp \
+	daemon/windows/NTService.h \
+	daemon/windows/win32.h \
+	nzbget.sln \
+	nzbget.vcproj \
+	nzbget-shell.bat
 
 osx_FILES = \
-	osx/App_Prefix.pch osx/NZBGet-Info.plist \
-	osx/DaemonController.h osx/DaemonController.m \
-	osx/MainApp.h osx/MainApp.m osx/MainApp.xib \
-	osx/PFMoveApplication.h osx/PFMoveApplication.m \
-	osx/PreferencesDialog.h osx/PreferencesDialog.m osx/PreferencesDialog.xib \
-	osx/RPC.h osx/RPC.m osx/WebClient.h osx/WebClient.m \
-	osx/WelcomeDialog.h osx/WelcomeDialog.m osx/WelcomeDialog.xib \
+	osx/App_Prefix.pch \
+	osx/NZBGet-Info.plist \
+	osx/DaemonController.h \
+	osx/DaemonController.m \
+	osx/MainApp.h \
+	osx/MainApp.m \
+	osx/MainApp.xib \
+	osx/PFMoveApplication.h \
+	osx/PFMoveApplication.m \
+	osx/PreferencesDialog.h \
+	osx/PreferencesDialog.m \
+	osx/PreferencesDialog.xib \
+	osx/RPC.h \
+	osx/RPC.m \
+	osx/WebClient.h \
+	osx/WebClient.m \
+	osx/WelcomeDialog.h \
+	osx/WelcomeDialog.m \
+	osx/WelcomeDialog.xib \
 	osx/NZBGet.xcodeproj/project.pbxproj \
-	osx/Resources/Images/mainicon.icns osx/Resources/Images/statusicon.png \
-	osx/Resources/Images/statusicon@2x.png osx/Resources/Images/statusicon-inv.png \
-	osx/Resources/Images/statusicon-inv@2x.png osx/Resources/licenses/license-bootstrap.txt \
-	osx/Resources/licenses/license-jquery-GPL.txt osx/Resources/licenses/license-jquery-MIT.txt \
-	osx/Resources/Credits.rtf osx/Resources/Localizable.strings osx/Resources/Welcome.rtf
+	osx/Resources/Images/mainicon.icns \
+	osx/Resources/Images/statusicon.png \
+	osx/Resources/Images/statusicon@2x.png \
+	osx/Resources/Images/statusicon-inv.png \
+	osx/Resources/Images/statusicon-inv@2x.png \
+	osx/Resources/licenses/license-bootstrap.txt \
+	osx/Resources/licenses/license-jquery-GPL.txt \
+	osx/Resources/licenses/license-jquery-MIT.txt \
+	osx/Resources/Credits.rtf \
+	osx/Resources/Localizable.strings \
+	osx/Resources/Welcome.rtf
 
 doc_FILES = \
-	README ChangeLog COPYING
+	README \
+	ChangeLog \
+	COPYING
 
 exampleconf_FILES = \
 	nzbget.conf
 
 webui_FILES = \
-	webui/index.html webui/index.js webui/downloads.js webui/edit.js webui/fasttable.js \
-	webui/history.js webui/messages.js webui/status.js webui/style.css webui/upload.js \
-	webui/util.js webui/config.js webui/feed.js \
-	webui/lib/bootstrap.js webui/lib/bootstrap.min.js webui/lib/bootstrap.css  \
-	webui/lib/jquery.js webui/lib/jquery.min.js \
-	webui/img/icons.png webui/img/icons-2x.png \
-	webui/img/transmit.gif webui/img/transmit-file.gif webui/img/favicon.ico \
-	webui/img/download-anim-green-2x.png webui/img/download-anim-orange-2x.png \
+	webui/index.html \
+	webui/index.js \
+	webui/downloads.js \
+	webui/edit.js \
+	webui/fasttable.js \
+	webui/history.js \
+	webui/messages.js \
+	webui/status.js \
+	webui/style.css \
+	webui/upload.js \
+	webui/util.js \
+	webui/config.js \
+	webui/feed.js \
+	webui/lib/bootstrap.js \
+	webui/lib/bootstrap.min.js \
+	webui/lib/bootstrap.css  \
+	webui/lib/jquery.js \
+	webui/lib/jquery.min.js \
+	webui/img/icons.png \
+	webui/img/icons-2x.png \
+	webui/img/transmit.gif \
+	webui/img/transmit-file.gif \
+	webui/img/favicon.ico \
+	webui/img/download-anim-green-2x.png \
+	webui/img/download-anim-orange-2x.png \
 	webui/img/transmit-reload-2x.gif
 
 ppscripts_FILES = \
-	ppscripts/EMail.py ppscripts/Logger.py
+	ppscripts/EMail.py \
+	ppscripts/Logger.py
 
 
 # Install
@@ -513,6 +648,622 @@ distclean-compile:
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$<' object='$@' libtool=no @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCXX_FALSE@	$(CXXCOMPILE) -c -o $@ `$(CYGPATH_W) '$<'`
+
+Connection.o: daemon/connect/Connection.cpp
+@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT Connection.o -MD -MP -MF "$(DEPDIR)/Connection.Tpo" -c -o Connection.o `test -f 'daemon/connect/Connection.cpp' || echo '$(srcdir)/'`daemon/connect/Connection.cpp; \
+@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/Connection.Tpo" "$(DEPDIR)/Connection.Po"; else rm -f "$(DEPDIR)/Connection.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='daemon/connect/Connection.cpp' object='Connection.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o Connection.o `test -f 'daemon/connect/Connection.cpp' || echo '$(srcdir)/'`daemon/connect/Connection.cpp
+
+Connection.obj: daemon/connect/Connection.cpp
+@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT Connection.obj -MD -MP -MF "$(DEPDIR)/Connection.Tpo" -c -o Connection.obj `if test -f 'daemon/connect/Connection.cpp'; then $(CYGPATH_W) 'daemon/connect/Connection.cpp'; else $(CYGPATH_W) '$(srcdir)/daemon/connect/Connection.cpp'; fi`; \
+@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/Connection.Tpo" "$(DEPDIR)/Connection.Po"; else rm -f "$(DEPDIR)/Connection.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='daemon/connect/Connection.cpp' object='Connection.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o Connection.obj `if test -f 'daemon/connect/Connection.cpp'; then $(CYGPATH_W) 'daemon/connect/Connection.cpp'; else $(CYGPATH_W) '$(srcdir)/daemon/connect/Connection.cpp'; fi`
+
+TLS.o: daemon/connect/TLS.cpp
+@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT TLS.o -MD -MP -MF "$(DEPDIR)/TLS.Tpo" -c -o TLS.o `test -f 'daemon/connect/TLS.cpp' || echo '$(srcdir)/'`daemon/connect/TLS.cpp; \
+@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/TLS.Tpo" "$(DEPDIR)/TLS.Po"; else rm -f "$(DEPDIR)/TLS.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='daemon/connect/TLS.cpp' object='TLS.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o TLS.o `test -f 'daemon/connect/TLS.cpp' || echo '$(srcdir)/'`daemon/connect/TLS.cpp
+
+TLS.obj: daemon/connect/TLS.cpp
+@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT TLS.obj -MD -MP -MF "$(DEPDIR)/TLS.Tpo" -c -o TLS.obj `if test -f 'daemon/connect/TLS.cpp'; then $(CYGPATH_W) 'daemon/connect/TLS.cpp'; else $(CYGPATH_W) '$(srcdir)/daemon/connect/TLS.cpp'; fi`; \
+@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/TLS.Tpo" "$(DEPDIR)/TLS.Po"; else rm -f "$(DEPDIR)/TLS.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='daemon/connect/TLS.cpp' object='TLS.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o TLS.obj `if test -f 'daemon/connect/TLS.cpp'; then $(CYGPATH_W) 'daemon/connect/TLS.cpp'; else $(CYGPATH_W) '$(srcdir)/daemon/connect/TLS.cpp'; fi`
+
+WebDownloader.o: daemon/connect/WebDownloader.cpp
+@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT WebDownloader.o -MD -MP -MF "$(DEPDIR)/WebDownloader.Tpo" -c -o WebDownloader.o `test -f 'daemon/connect/WebDownloader.cpp' || echo '$(srcdir)/'`daemon/connect/WebDownloader.cpp; \
+@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/WebDownloader.Tpo" "$(DEPDIR)/WebDownloader.Po"; else rm -f "$(DEPDIR)/WebDownloader.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='daemon/connect/WebDownloader.cpp' object='WebDownloader.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o WebDownloader.o `test -f 'daemon/connect/WebDownloader.cpp' || echo '$(srcdir)/'`daemon/connect/WebDownloader.cpp
+
+WebDownloader.obj: daemon/connect/WebDownloader.cpp
+@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT WebDownloader.obj -MD -MP -MF "$(DEPDIR)/WebDownloader.Tpo" -c -o WebDownloader.obj `if test -f 'daemon/connect/WebDownloader.cpp'; then $(CYGPATH_W) 'daemon/connect/WebDownloader.cpp'; else $(CYGPATH_W) '$(srcdir)/daemon/connect/WebDownloader.cpp'; fi`; \
+@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/WebDownloader.Tpo" "$(DEPDIR)/WebDownloader.Po"; else rm -f "$(DEPDIR)/WebDownloader.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='daemon/connect/WebDownloader.cpp' object='WebDownloader.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o WebDownloader.obj `if test -f 'daemon/connect/WebDownloader.cpp'; then $(CYGPATH_W) 'daemon/connect/WebDownloader.cpp'; else $(CYGPATH_W) '$(srcdir)/daemon/connect/WebDownloader.cpp'; fi`
+
+FeedCoordinator.o: daemon/feed/FeedCoordinator.cpp
+@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT FeedCoordinator.o -MD -MP -MF "$(DEPDIR)/FeedCoordinator.Tpo" -c -o FeedCoordinator.o `test -f 'daemon/feed/FeedCoordinator.cpp' || echo '$(srcdir)/'`daemon/feed/FeedCoordinator.cpp; \
+@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/FeedCoordinator.Tpo" "$(DEPDIR)/FeedCoordinator.Po"; else rm -f "$(DEPDIR)/FeedCoordinator.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='daemon/feed/FeedCoordinator.cpp' object='FeedCoordinator.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o FeedCoordinator.o `test -f 'daemon/feed/FeedCoordinator.cpp' || echo '$(srcdir)/'`daemon/feed/FeedCoordinator.cpp
+
+FeedCoordinator.obj: daemon/feed/FeedCoordinator.cpp
+@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT FeedCoordinator.obj -MD -MP -MF "$(DEPDIR)/FeedCoordinator.Tpo" -c -o FeedCoordinator.obj `if test -f 'daemon/feed/FeedCoordinator.cpp'; then $(CYGPATH_W) 'daemon/feed/FeedCoordinator.cpp'; else $(CYGPATH_W) '$(srcdir)/daemon/feed/FeedCoordinator.cpp'; fi`; \
+@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/FeedCoordinator.Tpo" "$(DEPDIR)/FeedCoordinator.Po"; else rm -f "$(DEPDIR)/FeedCoordinator.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='daemon/feed/FeedCoordinator.cpp' object='FeedCoordinator.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o FeedCoordinator.obj `if test -f 'daemon/feed/FeedCoordinator.cpp'; then $(CYGPATH_W) 'daemon/feed/FeedCoordinator.cpp'; else $(CYGPATH_W) '$(srcdir)/daemon/feed/FeedCoordinator.cpp'; fi`
+
+FeedFile.o: daemon/feed/FeedFile.cpp
+@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT FeedFile.o -MD -MP -MF "$(DEPDIR)/FeedFile.Tpo" -c -o FeedFile.o `test -f 'daemon/feed/FeedFile.cpp' || echo '$(srcdir)/'`daemon/feed/FeedFile.cpp; \
+@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/FeedFile.Tpo" "$(DEPDIR)/FeedFile.Po"; else rm -f "$(DEPDIR)/FeedFile.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='daemon/feed/FeedFile.cpp' object='FeedFile.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o FeedFile.o `test -f 'daemon/feed/FeedFile.cpp' || echo '$(srcdir)/'`daemon/feed/FeedFile.cpp
+
+FeedFile.obj: daemon/feed/FeedFile.cpp
+@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT FeedFile.obj -MD -MP -MF "$(DEPDIR)/FeedFile.Tpo" -c -o FeedFile.obj `if test -f 'daemon/feed/FeedFile.cpp'; then $(CYGPATH_W) 'daemon/feed/FeedFile.cpp'; else $(CYGPATH_W) '$(srcdir)/daemon/feed/FeedFile.cpp'; fi`; \
+@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/FeedFile.Tpo" "$(DEPDIR)/FeedFile.Po"; else rm -f "$(DEPDIR)/FeedFile.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='daemon/feed/FeedFile.cpp' object='FeedFile.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o FeedFile.obj `if test -f 'daemon/feed/FeedFile.cpp'; then $(CYGPATH_W) 'daemon/feed/FeedFile.cpp'; else $(CYGPATH_W) '$(srcdir)/daemon/feed/FeedFile.cpp'; fi`
+
+FeedFilter.o: daemon/feed/FeedFilter.cpp
+@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT FeedFilter.o -MD -MP -MF "$(DEPDIR)/FeedFilter.Tpo" -c -o FeedFilter.o `test -f 'daemon/feed/FeedFilter.cpp' || echo '$(srcdir)/'`daemon/feed/FeedFilter.cpp; \
+@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/FeedFilter.Tpo" "$(DEPDIR)/FeedFilter.Po"; else rm -f "$(DEPDIR)/FeedFilter.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='daemon/feed/FeedFilter.cpp' object='FeedFilter.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o FeedFilter.o `test -f 'daemon/feed/FeedFilter.cpp' || echo '$(srcdir)/'`daemon/feed/FeedFilter.cpp
+
+FeedFilter.obj: daemon/feed/FeedFilter.cpp
+@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT FeedFilter.obj -MD -MP -MF "$(DEPDIR)/FeedFilter.Tpo" -c -o FeedFilter.obj `if test -f 'daemon/feed/FeedFilter.cpp'; then $(CYGPATH_W) 'daemon/feed/FeedFilter.cpp'; else $(CYGPATH_W) '$(srcdir)/daemon/feed/FeedFilter.cpp'; fi`; \
+@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/FeedFilter.Tpo" "$(DEPDIR)/FeedFilter.Po"; else rm -f "$(DEPDIR)/FeedFilter.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='daemon/feed/FeedFilter.cpp' object='FeedFilter.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o FeedFilter.obj `if test -f 'daemon/feed/FeedFilter.cpp'; then $(CYGPATH_W) 'daemon/feed/FeedFilter.cpp'; else $(CYGPATH_W) '$(srcdir)/daemon/feed/FeedFilter.cpp'; fi`
+
+FeedInfo.o: daemon/feed/FeedInfo.cpp
+@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT FeedInfo.o -MD -MP -MF "$(DEPDIR)/FeedInfo.Tpo" -c -o FeedInfo.o `test -f 'daemon/feed/FeedInfo.cpp' || echo '$(srcdir)/'`daemon/feed/FeedInfo.cpp; \
+@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/FeedInfo.Tpo" "$(DEPDIR)/FeedInfo.Po"; else rm -f "$(DEPDIR)/FeedInfo.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='daemon/feed/FeedInfo.cpp' object='FeedInfo.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o FeedInfo.o `test -f 'daemon/feed/FeedInfo.cpp' || echo '$(srcdir)/'`daemon/feed/FeedInfo.cpp
+
+FeedInfo.obj: daemon/feed/FeedInfo.cpp
+@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT FeedInfo.obj -MD -MP -MF "$(DEPDIR)/FeedInfo.Tpo" -c -o FeedInfo.obj `if test -f 'daemon/feed/FeedInfo.cpp'; then $(CYGPATH_W) 'daemon/feed/FeedInfo.cpp'; else $(CYGPATH_W) '$(srcdir)/daemon/feed/FeedInfo.cpp'; fi`; \
+@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/FeedInfo.Tpo" "$(DEPDIR)/FeedInfo.Po"; else rm -f "$(DEPDIR)/FeedInfo.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='daemon/feed/FeedInfo.cpp' object='FeedInfo.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o FeedInfo.obj `if test -f 'daemon/feed/FeedInfo.cpp'; then $(CYGPATH_W) 'daemon/feed/FeedInfo.cpp'; else $(CYGPATH_W) '$(srcdir)/daemon/feed/FeedInfo.cpp'; fi`
+
+ColoredFrontend.o: daemon/frontend/ColoredFrontend.cpp
+@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT ColoredFrontend.o -MD -MP -MF "$(DEPDIR)/ColoredFrontend.Tpo" -c -o ColoredFrontend.o `test -f 'daemon/frontend/ColoredFrontend.cpp' || echo '$(srcdir)/'`daemon/frontend/ColoredFrontend.cpp; \
+@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/ColoredFrontend.Tpo" "$(DEPDIR)/ColoredFrontend.Po"; else rm -f "$(DEPDIR)/ColoredFrontend.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='daemon/frontend/ColoredFrontend.cpp' object='ColoredFrontend.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o ColoredFrontend.o `test -f 'daemon/frontend/ColoredFrontend.cpp' || echo '$(srcdir)/'`daemon/frontend/ColoredFrontend.cpp
+
+ColoredFrontend.obj: daemon/frontend/ColoredFrontend.cpp
+@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT ColoredFrontend.obj -MD -MP -MF "$(DEPDIR)/ColoredFrontend.Tpo" -c -o ColoredFrontend.obj `if test -f 'daemon/frontend/ColoredFrontend.cpp'; then $(CYGPATH_W) 'daemon/frontend/ColoredFrontend.cpp'; else $(CYGPATH_W) '$(srcdir)/daemon/frontend/ColoredFrontend.cpp'; fi`; \
+@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/ColoredFrontend.Tpo" "$(DEPDIR)/ColoredFrontend.Po"; else rm -f "$(DEPDIR)/ColoredFrontend.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='daemon/frontend/ColoredFrontend.cpp' object='ColoredFrontend.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o ColoredFrontend.obj `if test -f 'daemon/frontend/ColoredFrontend.cpp'; then $(CYGPATH_W) 'daemon/frontend/ColoredFrontend.cpp'; else $(CYGPATH_W) '$(srcdir)/daemon/frontend/ColoredFrontend.cpp'; fi`
+
+Frontend.o: daemon/frontend/Frontend.cpp
+@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT Frontend.o -MD -MP -MF "$(DEPDIR)/Frontend.Tpo" -c -o Frontend.o `test -f 'daemon/frontend/Frontend.cpp' || echo '$(srcdir)/'`daemon/frontend/Frontend.cpp; \
+@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/Frontend.Tpo" "$(DEPDIR)/Frontend.Po"; else rm -f "$(DEPDIR)/Frontend.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='daemon/frontend/Frontend.cpp' object='Frontend.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o Frontend.o `test -f 'daemon/frontend/Frontend.cpp' || echo '$(srcdir)/'`daemon/frontend/Frontend.cpp
+
+Frontend.obj: daemon/frontend/Frontend.cpp
+@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT Frontend.obj -MD -MP -MF "$(DEPDIR)/Frontend.Tpo" -c -o Frontend.obj `if test -f 'daemon/frontend/Frontend.cpp'; then $(CYGPATH_W) 'daemon/frontend/Frontend.cpp'; else $(CYGPATH_W) '$(srcdir)/daemon/frontend/Frontend.cpp'; fi`; \
+@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/Frontend.Tpo" "$(DEPDIR)/Frontend.Po"; else rm -f "$(DEPDIR)/Frontend.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='daemon/frontend/Frontend.cpp' object='Frontend.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o Frontend.obj `if test -f 'daemon/frontend/Frontend.cpp'; then $(CYGPATH_W) 'daemon/frontend/Frontend.cpp'; else $(CYGPATH_W) '$(srcdir)/daemon/frontend/Frontend.cpp'; fi`
+
+LoggableFrontend.o: daemon/frontend/LoggableFrontend.cpp
+@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT LoggableFrontend.o -MD -MP -MF "$(DEPDIR)/LoggableFrontend.Tpo" -c -o LoggableFrontend.o `test -f 'daemon/frontend/LoggableFrontend.cpp' || echo '$(srcdir)/'`daemon/frontend/LoggableFrontend.cpp; \
+@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/LoggableFrontend.Tpo" "$(DEPDIR)/LoggableFrontend.Po"; else rm -f "$(DEPDIR)/LoggableFrontend.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='daemon/frontend/LoggableFrontend.cpp' object='LoggableFrontend.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o LoggableFrontend.o `test -f 'daemon/frontend/LoggableFrontend.cpp' || echo '$(srcdir)/'`daemon/frontend/LoggableFrontend.cpp
+
+LoggableFrontend.obj: daemon/frontend/LoggableFrontend.cpp
+@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT LoggableFrontend.obj -MD -MP -MF "$(DEPDIR)/LoggableFrontend.Tpo" -c -o LoggableFrontend.obj `if test -f 'daemon/frontend/LoggableFrontend.cpp'; then $(CYGPATH_W) 'daemon/frontend/LoggableFrontend.cpp'; else $(CYGPATH_W) '$(srcdir)/daemon/frontend/LoggableFrontend.cpp'; fi`; \
+@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/LoggableFrontend.Tpo" "$(DEPDIR)/LoggableFrontend.Po"; else rm -f "$(DEPDIR)/LoggableFrontend.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='daemon/frontend/LoggableFrontend.cpp' object='LoggableFrontend.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o LoggableFrontend.obj `if test -f 'daemon/frontend/LoggableFrontend.cpp'; then $(CYGPATH_W) 'daemon/frontend/LoggableFrontend.cpp'; else $(CYGPATH_W) '$(srcdir)/daemon/frontend/LoggableFrontend.cpp'; fi`
+
+NCursesFrontend.o: daemon/frontend/NCursesFrontend.cpp
+@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT NCursesFrontend.o -MD -MP -MF "$(DEPDIR)/NCursesFrontend.Tpo" -c -o NCursesFrontend.o `test -f 'daemon/frontend/NCursesFrontend.cpp' || echo '$(srcdir)/'`daemon/frontend/NCursesFrontend.cpp; \
+@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/NCursesFrontend.Tpo" "$(DEPDIR)/NCursesFrontend.Po"; else rm -f "$(DEPDIR)/NCursesFrontend.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='daemon/frontend/NCursesFrontend.cpp' object='NCursesFrontend.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o NCursesFrontend.o `test -f 'daemon/frontend/NCursesFrontend.cpp' || echo '$(srcdir)/'`daemon/frontend/NCursesFrontend.cpp
+
+NCursesFrontend.obj: daemon/frontend/NCursesFrontend.cpp
+@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT NCursesFrontend.obj -MD -MP -MF "$(DEPDIR)/NCursesFrontend.Tpo" -c -o NCursesFrontend.obj `if test -f 'daemon/frontend/NCursesFrontend.cpp'; then $(CYGPATH_W) 'daemon/frontend/NCursesFrontend.cpp'; else $(CYGPATH_W) '$(srcdir)/daemon/frontend/NCursesFrontend.cpp'; fi`; \
+@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/NCursesFrontend.Tpo" "$(DEPDIR)/NCursesFrontend.Po"; else rm -f "$(DEPDIR)/NCursesFrontend.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='daemon/frontend/NCursesFrontend.cpp' object='NCursesFrontend.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o NCursesFrontend.obj `if test -f 'daemon/frontend/NCursesFrontend.cpp'; then $(CYGPATH_W) 'daemon/frontend/NCursesFrontend.cpp'; else $(CYGPATH_W) '$(srcdir)/daemon/frontend/NCursesFrontend.cpp'; fi`
+
+Maintenance.o: daemon/main/Maintenance.cpp
+@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT Maintenance.o -MD -MP -MF "$(DEPDIR)/Maintenance.Tpo" -c -o Maintenance.o `test -f 'daemon/main/Maintenance.cpp' || echo '$(srcdir)/'`daemon/main/Maintenance.cpp; \
+@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/Maintenance.Tpo" "$(DEPDIR)/Maintenance.Po"; else rm -f "$(DEPDIR)/Maintenance.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='daemon/main/Maintenance.cpp' object='Maintenance.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o Maintenance.o `test -f 'daemon/main/Maintenance.cpp' || echo '$(srcdir)/'`daemon/main/Maintenance.cpp
+
+Maintenance.obj: daemon/main/Maintenance.cpp
+@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT Maintenance.obj -MD -MP -MF "$(DEPDIR)/Maintenance.Tpo" -c -o Maintenance.obj `if test -f 'daemon/main/Maintenance.cpp'; then $(CYGPATH_W) 'daemon/main/Maintenance.cpp'; else $(CYGPATH_W) '$(srcdir)/daemon/main/Maintenance.cpp'; fi`; \
+@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/Maintenance.Tpo" "$(DEPDIR)/Maintenance.Po"; else rm -f "$(DEPDIR)/Maintenance.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='daemon/main/Maintenance.cpp' object='Maintenance.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o Maintenance.obj `if test -f 'daemon/main/Maintenance.cpp'; then $(CYGPATH_W) 'daemon/main/Maintenance.cpp'; else $(CYGPATH_W) '$(srcdir)/daemon/main/Maintenance.cpp'; fi`
+
+nzbget.o: daemon/main/nzbget.cpp
+@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT nzbget.o -MD -MP -MF "$(DEPDIR)/nzbget.Tpo" -c -o nzbget.o `test -f 'daemon/main/nzbget.cpp' || echo '$(srcdir)/'`daemon/main/nzbget.cpp; \
+@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/nzbget.Tpo" "$(DEPDIR)/nzbget.Po"; else rm -f "$(DEPDIR)/nzbget.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='daemon/main/nzbget.cpp' object='nzbget.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o nzbget.o `test -f 'daemon/main/nzbget.cpp' || echo '$(srcdir)/'`daemon/main/nzbget.cpp
+
+nzbget.obj: daemon/main/nzbget.cpp
+@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT nzbget.obj -MD -MP -MF "$(DEPDIR)/nzbget.Tpo" -c -o nzbget.obj `if test -f 'daemon/main/nzbget.cpp'; then $(CYGPATH_W) 'daemon/main/nzbget.cpp'; else $(CYGPATH_W) '$(srcdir)/daemon/main/nzbget.cpp'; fi`; \
+@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/nzbget.Tpo" "$(DEPDIR)/nzbget.Po"; else rm -f "$(DEPDIR)/nzbget.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='daemon/main/nzbget.cpp' object='nzbget.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o nzbget.obj `if test -f 'daemon/main/nzbget.cpp'; then $(CYGPATH_W) 'daemon/main/nzbget.cpp'; else $(CYGPATH_W) '$(srcdir)/daemon/main/nzbget.cpp'; fi`
+
+Options.o: daemon/main/Options.cpp
+@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT Options.o -MD -MP -MF "$(DEPDIR)/Options.Tpo" -c -o Options.o `test -f 'daemon/main/Options.cpp' || echo '$(srcdir)/'`daemon/main/Options.cpp; \
+@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/Options.Tpo" "$(DEPDIR)/Options.Po"; else rm -f "$(DEPDIR)/Options.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='daemon/main/Options.cpp' object='Options.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o Options.o `test -f 'daemon/main/Options.cpp' || echo '$(srcdir)/'`daemon/main/Options.cpp
+
+Options.obj: daemon/main/Options.cpp
+@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT Options.obj -MD -MP -MF "$(DEPDIR)/Options.Tpo" -c -o Options.obj `if test -f 'daemon/main/Options.cpp'; then $(CYGPATH_W) 'daemon/main/Options.cpp'; else $(CYGPATH_W) '$(srcdir)/daemon/main/Options.cpp'; fi`; \
+@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/Options.Tpo" "$(DEPDIR)/Options.Po"; else rm -f "$(DEPDIR)/Options.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='daemon/main/Options.cpp' object='Options.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o Options.obj `if test -f 'daemon/main/Options.cpp'; then $(CYGPATH_W) 'daemon/main/Options.cpp'; else $(CYGPATH_W) '$(srcdir)/daemon/main/Options.cpp'; fi`
+
+Scheduler.o: daemon/main/Scheduler.cpp
+@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT Scheduler.o -MD -MP -MF "$(DEPDIR)/Scheduler.Tpo" -c -o Scheduler.o `test -f 'daemon/main/Scheduler.cpp' || echo '$(srcdir)/'`daemon/main/Scheduler.cpp; \
+@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/Scheduler.Tpo" "$(DEPDIR)/Scheduler.Po"; else rm -f "$(DEPDIR)/Scheduler.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='daemon/main/Scheduler.cpp' object='Scheduler.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o Scheduler.o `test -f 'daemon/main/Scheduler.cpp' || echo '$(srcdir)/'`daemon/main/Scheduler.cpp
+
+Scheduler.obj: daemon/main/Scheduler.cpp
+@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT Scheduler.obj -MD -MP -MF "$(DEPDIR)/Scheduler.Tpo" -c -o Scheduler.obj `if test -f 'daemon/main/Scheduler.cpp'; then $(CYGPATH_W) 'daemon/main/Scheduler.cpp'; else $(CYGPATH_W) '$(srcdir)/daemon/main/Scheduler.cpp'; fi`; \
+@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/Scheduler.Tpo" "$(DEPDIR)/Scheduler.Po"; else rm -f "$(DEPDIR)/Scheduler.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='daemon/main/Scheduler.cpp' object='Scheduler.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o Scheduler.obj `if test -f 'daemon/main/Scheduler.cpp'; then $(CYGPATH_W) 'daemon/main/Scheduler.cpp'; else $(CYGPATH_W) '$(srcdir)/daemon/main/Scheduler.cpp'; fi`
+
+ArticleDownloader.o: daemon/nntp/ArticleDownloader.cpp
+@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT ArticleDownloader.o -MD -MP -MF "$(DEPDIR)/ArticleDownloader.Tpo" -c -o ArticleDownloader.o `test -f 'daemon/nntp/ArticleDownloader.cpp' || echo '$(srcdir)/'`daemon/nntp/ArticleDownloader.cpp; \
+@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/ArticleDownloader.Tpo" "$(DEPDIR)/ArticleDownloader.Po"; else rm -f "$(DEPDIR)/ArticleDownloader.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='daemon/nntp/ArticleDownloader.cpp' object='ArticleDownloader.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o ArticleDownloader.o `test -f 'daemon/nntp/ArticleDownloader.cpp' || echo '$(srcdir)/'`daemon/nntp/ArticleDownloader.cpp
+
+ArticleDownloader.obj: daemon/nntp/ArticleDownloader.cpp
+@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT ArticleDownloader.obj -MD -MP -MF "$(DEPDIR)/ArticleDownloader.Tpo" -c -o ArticleDownloader.obj `if test -f 'daemon/nntp/ArticleDownloader.cpp'; then $(CYGPATH_W) 'daemon/nntp/ArticleDownloader.cpp'; else $(CYGPATH_W) '$(srcdir)/daemon/nntp/ArticleDownloader.cpp'; fi`; \
+@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/ArticleDownloader.Tpo" "$(DEPDIR)/ArticleDownloader.Po"; else rm -f "$(DEPDIR)/ArticleDownloader.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='daemon/nntp/ArticleDownloader.cpp' object='ArticleDownloader.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o ArticleDownloader.obj `if test -f 'daemon/nntp/ArticleDownloader.cpp'; then $(CYGPATH_W) 'daemon/nntp/ArticleDownloader.cpp'; else $(CYGPATH_W) '$(srcdir)/daemon/nntp/ArticleDownloader.cpp'; fi`
+
+Decoder.o: daemon/nntp/Decoder.cpp
+@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT Decoder.o -MD -MP -MF "$(DEPDIR)/Decoder.Tpo" -c -o Decoder.o `test -f 'daemon/nntp/Decoder.cpp' || echo '$(srcdir)/'`daemon/nntp/Decoder.cpp; \
+@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/Decoder.Tpo" "$(DEPDIR)/Decoder.Po"; else rm -f "$(DEPDIR)/Decoder.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='daemon/nntp/Decoder.cpp' object='Decoder.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o Decoder.o `test -f 'daemon/nntp/Decoder.cpp' || echo '$(srcdir)/'`daemon/nntp/Decoder.cpp
+
+Decoder.obj: daemon/nntp/Decoder.cpp
+@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT Decoder.obj -MD -MP -MF "$(DEPDIR)/Decoder.Tpo" -c -o Decoder.obj `if test -f 'daemon/nntp/Decoder.cpp'; then $(CYGPATH_W) 'daemon/nntp/Decoder.cpp'; else $(CYGPATH_W) '$(srcdir)/daemon/nntp/Decoder.cpp'; fi`; \
+@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/Decoder.Tpo" "$(DEPDIR)/Decoder.Po"; else rm -f "$(DEPDIR)/Decoder.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='daemon/nntp/Decoder.cpp' object='Decoder.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o Decoder.obj `if test -f 'daemon/nntp/Decoder.cpp'; then $(CYGPATH_W) 'daemon/nntp/Decoder.cpp'; else $(CYGPATH_W) '$(srcdir)/daemon/nntp/Decoder.cpp'; fi`
+
+NewsServer.o: daemon/nntp/NewsServer.cpp
+@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT NewsServer.o -MD -MP -MF "$(DEPDIR)/NewsServer.Tpo" -c -o NewsServer.o `test -f 'daemon/nntp/NewsServer.cpp' || echo '$(srcdir)/'`daemon/nntp/NewsServer.cpp; \
+@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/NewsServer.Tpo" "$(DEPDIR)/NewsServer.Po"; else rm -f "$(DEPDIR)/NewsServer.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='daemon/nntp/NewsServer.cpp' object='NewsServer.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o NewsServer.o `test -f 'daemon/nntp/NewsServer.cpp' || echo '$(srcdir)/'`daemon/nntp/NewsServer.cpp
+
+NewsServer.obj: daemon/nntp/NewsServer.cpp
+@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT NewsServer.obj -MD -MP -MF "$(DEPDIR)/NewsServer.Tpo" -c -o NewsServer.obj `if test -f 'daemon/nntp/NewsServer.cpp'; then $(CYGPATH_W) 'daemon/nntp/NewsServer.cpp'; else $(CYGPATH_W) '$(srcdir)/daemon/nntp/NewsServer.cpp'; fi`; \
+@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/NewsServer.Tpo" "$(DEPDIR)/NewsServer.Po"; else rm -f "$(DEPDIR)/NewsServer.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='daemon/nntp/NewsServer.cpp' object='NewsServer.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o NewsServer.obj `if test -f 'daemon/nntp/NewsServer.cpp'; then $(CYGPATH_W) 'daemon/nntp/NewsServer.cpp'; else $(CYGPATH_W) '$(srcdir)/daemon/nntp/NewsServer.cpp'; fi`
+
+NNTPConnection.o: daemon/nntp/NNTPConnection.cpp
+@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT NNTPConnection.o -MD -MP -MF "$(DEPDIR)/NNTPConnection.Tpo" -c -o NNTPConnection.o `test -f 'daemon/nntp/NNTPConnection.cpp' || echo '$(srcdir)/'`daemon/nntp/NNTPConnection.cpp; \
+@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/NNTPConnection.Tpo" "$(DEPDIR)/NNTPConnection.Po"; else rm -f "$(DEPDIR)/NNTPConnection.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='daemon/nntp/NNTPConnection.cpp' object='NNTPConnection.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o NNTPConnection.o `test -f 'daemon/nntp/NNTPConnection.cpp' || echo '$(srcdir)/'`daemon/nntp/NNTPConnection.cpp
+
+NNTPConnection.obj: daemon/nntp/NNTPConnection.cpp
+@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT NNTPConnection.obj -MD -MP -MF "$(DEPDIR)/NNTPConnection.Tpo" -c -o NNTPConnection.obj `if test -f 'daemon/nntp/NNTPConnection.cpp'; then $(CYGPATH_W) 'daemon/nntp/NNTPConnection.cpp'; else $(CYGPATH_W) '$(srcdir)/daemon/nntp/NNTPConnection.cpp'; fi`; \
+@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/NNTPConnection.Tpo" "$(DEPDIR)/NNTPConnection.Po"; else rm -f "$(DEPDIR)/NNTPConnection.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='daemon/nntp/NNTPConnection.cpp' object='NNTPConnection.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o NNTPConnection.obj `if test -f 'daemon/nntp/NNTPConnection.cpp'; then $(CYGPATH_W) 'daemon/nntp/NNTPConnection.cpp'; else $(CYGPATH_W) '$(srcdir)/daemon/nntp/NNTPConnection.cpp'; fi`
+
+ServerPool.o: daemon/nntp/ServerPool.cpp
+@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT ServerPool.o -MD -MP -MF "$(DEPDIR)/ServerPool.Tpo" -c -o ServerPool.o `test -f 'daemon/nntp/ServerPool.cpp' || echo '$(srcdir)/'`daemon/nntp/ServerPool.cpp; \
+@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/ServerPool.Tpo" "$(DEPDIR)/ServerPool.Po"; else rm -f "$(DEPDIR)/ServerPool.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='daemon/nntp/ServerPool.cpp' object='ServerPool.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o ServerPool.o `test -f 'daemon/nntp/ServerPool.cpp' || echo '$(srcdir)/'`daemon/nntp/ServerPool.cpp
+
+ServerPool.obj: daemon/nntp/ServerPool.cpp
+@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT ServerPool.obj -MD -MP -MF "$(DEPDIR)/ServerPool.Tpo" -c -o ServerPool.obj `if test -f 'daemon/nntp/ServerPool.cpp'; then $(CYGPATH_W) 'daemon/nntp/ServerPool.cpp'; else $(CYGPATH_W) '$(srcdir)/daemon/nntp/ServerPool.cpp'; fi`; \
+@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/ServerPool.Tpo" "$(DEPDIR)/ServerPool.Po"; else rm -f "$(DEPDIR)/ServerPool.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='daemon/nntp/ServerPool.cpp' object='ServerPool.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o ServerPool.obj `if test -f 'daemon/nntp/ServerPool.cpp'; then $(CYGPATH_W) 'daemon/nntp/ServerPool.cpp'; else $(CYGPATH_W) '$(srcdir)/daemon/nntp/ServerPool.cpp'; fi`
+
+ParChecker.o: daemon/postprocess/ParChecker.cpp
+@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT ParChecker.o -MD -MP -MF "$(DEPDIR)/ParChecker.Tpo" -c -o ParChecker.o `test -f 'daemon/postprocess/ParChecker.cpp' || echo '$(srcdir)/'`daemon/postprocess/ParChecker.cpp; \
+@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/ParChecker.Tpo" "$(DEPDIR)/ParChecker.Po"; else rm -f "$(DEPDIR)/ParChecker.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='daemon/postprocess/ParChecker.cpp' object='ParChecker.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o ParChecker.o `test -f 'daemon/postprocess/ParChecker.cpp' || echo '$(srcdir)/'`daemon/postprocess/ParChecker.cpp
+
+ParChecker.obj: daemon/postprocess/ParChecker.cpp
+@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT ParChecker.obj -MD -MP -MF "$(DEPDIR)/ParChecker.Tpo" -c -o ParChecker.obj `if test -f 'daemon/postprocess/ParChecker.cpp'; then $(CYGPATH_W) 'daemon/postprocess/ParChecker.cpp'; else $(CYGPATH_W) '$(srcdir)/daemon/postprocess/ParChecker.cpp'; fi`; \
+@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/ParChecker.Tpo" "$(DEPDIR)/ParChecker.Po"; else rm -f "$(DEPDIR)/ParChecker.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='daemon/postprocess/ParChecker.cpp' object='ParChecker.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o ParChecker.obj `if test -f 'daemon/postprocess/ParChecker.cpp'; then $(CYGPATH_W) 'daemon/postprocess/ParChecker.cpp'; else $(CYGPATH_W) '$(srcdir)/daemon/postprocess/ParChecker.cpp'; fi`
+
+ParCoordinator.o: daemon/postprocess/ParCoordinator.cpp
+@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT ParCoordinator.o -MD -MP -MF "$(DEPDIR)/ParCoordinator.Tpo" -c -o ParCoordinator.o `test -f 'daemon/postprocess/ParCoordinator.cpp' || echo '$(srcdir)/'`daemon/postprocess/ParCoordinator.cpp; \
+@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/ParCoordinator.Tpo" "$(DEPDIR)/ParCoordinator.Po"; else rm -f "$(DEPDIR)/ParCoordinator.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='daemon/postprocess/ParCoordinator.cpp' object='ParCoordinator.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o ParCoordinator.o `test -f 'daemon/postprocess/ParCoordinator.cpp' || echo '$(srcdir)/'`daemon/postprocess/ParCoordinator.cpp
+
+ParCoordinator.obj: daemon/postprocess/ParCoordinator.cpp
+@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT ParCoordinator.obj -MD -MP -MF "$(DEPDIR)/ParCoordinator.Tpo" -c -o ParCoordinator.obj `if test -f 'daemon/postprocess/ParCoordinator.cpp'; then $(CYGPATH_W) 'daemon/postprocess/ParCoordinator.cpp'; else $(CYGPATH_W) '$(srcdir)/daemon/postprocess/ParCoordinator.cpp'; fi`; \
+@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/ParCoordinator.Tpo" "$(DEPDIR)/ParCoordinator.Po"; else rm -f "$(DEPDIR)/ParCoordinator.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='daemon/postprocess/ParCoordinator.cpp' object='ParCoordinator.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o ParCoordinator.obj `if test -f 'daemon/postprocess/ParCoordinator.cpp'; then $(CYGPATH_W) 'daemon/postprocess/ParCoordinator.cpp'; else $(CYGPATH_W) '$(srcdir)/daemon/postprocess/ParCoordinator.cpp'; fi`
+
+ParRenamer.o: daemon/postprocess/ParRenamer.cpp
+@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT ParRenamer.o -MD -MP -MF "$(DEPDIR)/ParRenamer.Tpo" -c -o ParRenamer.o `test -f 'daemon/postprocess/ParRenamer.cpp' || echo '$(srcdir)/'`daemon/postprocess/ParRenamer.cpp; \
+@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/ParRenamer.Tpo" "$(DEPDIR)/ParRenamer.Po"; else rm -f "$(DEPDIR)/ParRenamer.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='daemon/postprocess/ParRenamer.cpp' object='ParRenamer.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o ParRenamer.o `test -f 'daemon/postprocess/ParRenamer.cpp' || echo '$(srcdir)/'`daemon/postprocess/ParRenamer.cpp
+
+ParRenamer.obj: daemon/postprocess/ParRenamer.cpp
+@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT ParRenamer.obj -MD -MP -MF "$(DEPDIR)/ParRenamer.Tpo" -c -o ParRenamer.obj `if test -f 'daemon/postprocess/ParRenamer.cpp'; then $(CYGPATH_W) 'daemon/postprocess/ParRenamer.cpp'; else $(CYGPATH_W) '$(srcdir)/daemon/postprocess/ParRenamer.cpp'; fi`; \
+@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/ParRenamer.Tpo" "$(DEPDIR)/ParRenamer.Po"; else rm -f "$(DEPDIR)/ParRenamer.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='daemon/postprocess/ParRenamer.cpp' object='ParRenamer.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o ParRenamer.obj `if test -f 'daemon/postprocess/ParRenamer.cpp'; then $(CYGPATH_W) 'daemon/postprocess/ParRenamer.cpp'; else $(CYGPATH_W) '$(srcdir)/daemon/postprocess/ParRenamer.cpp'; fi`
+
+PrePostProcessor.o: daemon/postprocess/PrePostProcessor.cpp
+@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT PrePostProcessor.o -MD -MP -MF "$(DEPDIR)/PrePostProcessor.Tpo" -c -o PrePostProcessor.o `test -f 'daemon/postprocess/PrePostProcessor.cpp' || echo '$(srcdir)/'`daemon/postprocess/PrePostProcessor.cpp; \
+@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/PrePostProcessor.Tpo" "$(DEPDIR)/PrePostProcessor.Po"; else rm -f "$(DEPDIR)/PrePostProcessor.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='daemon/postprocess/PrePostProcessor.cpp' object='PrePostProcessor.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o PrePostProcessor.o `test -f 'daemon/postprocess/PrePostProcessor.cpp' || echo '$(srcdir)/'`daemon/postprocess/PrePostProcessor.cpp
+
+PrePostProcessor.obj: daemon/postprocess/PrePostProcessor.cpp
+@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT PrePostProcessor.obj -MD -MP -MF "$(DEPDIR)/PrePostProcessor.Tpo" -c -o PrePostProcessor.obj `if test -f 'daemon/postprocess/PrePostProcessor.cpp'; then $(CYGPATH_W) 'daemon/postprocess/PrePostProcessor.cpp'; else $(CYGPATH_W) '$(srcdir)/daemon/postprocess/PrePostProcessor.cpp'; fi`; \
+@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/PrePostProcessor.Tpo" "$(DEPDIR)/PrePostProcessor.Po"; else rm -f "$(DEPDIR)/PrePostProcessor.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='daemon/postprocess/PrePostProcessor.cpp' object='PrePostProcessor.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o PrePostProcessor.obj `if test -f 'daemon/postprocess/PrePostProcessor.cpp'; then $(CYGPATH_W) 'daemon/postprocess/PrePostProcessor.cpp'; else $(CYGPATH_W) '$(srcdir)/daemon/postprocess/PrePostProcessor.cpp'; fi`
+
+ScriptController.o: daemon/postprocess/ScriptController.cpp
+@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT ScriptController.o -MD -MP -MF "$(DEPDIR)/ScriptController.Tpo" -c -o ScriptController.o `test -f 'daemon/postprocess/ScriptController.cpp' || echo '$(srcdir)/'`daemon/postprocess/ScriptController.cpp; \
+@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/ScriptController.Tpo" "$(DEPDIR)/ScriptController.Po"; else rm -f "$(DEPDIR)/ScriptController.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='daemon/postprocess/ScriptController.cpp' object='ScriptController.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o ScriptController.o `test -f 'daemon/postprocess/ScriptController.cpp' || echo '$(srcdir)/'`daemon/postprocess/ScriptController.cpp
+
+ScriptController.obj: daemon/postprocess/ScriptController.cpp
+@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT ScriptController.obj -MD -MP -MF "$(DEPDIR)/ScriptController.Tpo" -c -o ScriptController.obj `if test -f 'daemon/postprocess/ScriptController.cpp'; then $(CYGPATH_W) 'daemon/postprocess/ScriptController.cpp'; else $(CYGPATH_W) '$(srcdir)/daemon/postprocess/ScriptController.cpp'; fi`; \
+@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/ScriptController.Tpo" "$(DEPDIR)/ScriptController.Po"; else rm -f "$(DEPDIR)/ScriptController.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='daemon/postprocess/ScriptController.cpp' object='ScriptController.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o ScriptController.obj `if test -f 'daemon/postprocess/ScriptController.cpp'; then $(CYGPATH_W) 'daemon/postprocess/ScriptController.cpp'; else $(CYGPATH_W) '$(srcdir)/daemon/postprocess/ScriptController.cpp'; fi`
+
+Unpack.o: daemon/postprocess/Unpack.cpp
+@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT Unpack.o -MD -MP -MF "$(DEPDIR)/Unpack.Tpo" -c -o Unpack.o `test -f 'daemon/postprocess/Unpack.cpp' || echo '$(srcdir)/'`daemon/postprocess/Unpack.cpp; \
+@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/Unpack.Tpo" "$(DEPDIR)/Unpack.Po"; else rm -f "$(DEPDIR)/Unpack.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='daemon/postprocess/Unpack.cpp' object='Unpack.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o Unpack.o `test -f 'daemon/postprocess/Unpack.cpp' || echo '$(srcdir)/'`daemon/postprocess/Unpack.cpp
+
+Unpack.obj: daemon/postprocess/Unpack.cpp
+@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT Unpack.obj -MD -MP -MF "$(DEPDIR)/Unpack.Tpo" -c -o Unpack.obj `if test -f 'daemon/postprocess/Unpack.cpp'; then $(CYGPATH_W) 'daemon/postprocess/Unpack.cpp'; else $(CYGPATH_W) '$(srcdir)/daemon/postprocess/Unpack.cpp'; fi`; \
+@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/Unpack.Tpo" "$(DEPDIR)/Unpack.Po"; else rm -f "$(DEPDIR)/Unpack.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='daemon/postprocess/Unpack.cpp' object='Unpack.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o Unpack.obj `if test -f 'daemon/postprocess/Unpack.cpp'; then $(CYGPATH_W) 'daemon/postprocess/Unpack.cpp'; else $(CYGPATH_W) '$(srcdir)/daemon/postprocess/Unpack.cpp'; fi`
+
+DiskState.o: daemon/queue/DiskState.cpp
+@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT DiskState.o -MD -MP -MF "$(DEPDIR)/DiskState.Tpo" -c -o DiskState.o `test -f 'daemon/queue/DiskState.cpp' || echo '$(srcdir)/'`daemon/queue/DiskState.cpp; \
+@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/DiskState.Tpo" "$(DEPDIR)/DiskState.Po"; else rm -f "$(DEPDIR)/DiskState.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='daemon/queue/DiskState.cpp' object='DiskState.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o DiskState.o `test -f 'daemon/queue/DiskState.cpp' || echo '$(srcdir)/'`daemon/queue/DiskState.cpp
+
+DiskState.obj: daemon/queue/DiskState.cpp
+@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT DiskState.obj -MD -MP -MF "$(DEPDIR)/DiskState.Tpo" -c -o DiskState.obj `if test -f 'daemon/queue/DiskState.cpp'; then $(CYGPATH_W) 'daemon/queue/DiskState.cpp'; else $(CYGPATH_W) '$(srcdir)/daemon/queue/DiskState.cpp'; fi`; \
+@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/DiskState.Tpo" "$(DEPDIR)/DiskState.Po"; else rm -f "$(DEPDIR)/DiskState.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='daemon/queue/DiskState.cpp' object='DiskState.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o DiskState.obj `if test -f 'daemon/queue/DiskState.cpp'; then $(CYGPATH_W) 'daemon/queue/DiskState.cpp'; else $(CYGPATH_W) '$(srcdir)/daemon/queue/DiskState.cpp'; fi`
+
+DownloadInfo.o: daemon/queue/DownloadInfo.cpp
+@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT DownloadInfo.o -MD -MP -MF "$(DEPDIR)/DownloadInfo.Tpo" -c -o DownloadInfo.o `test -f 'daemon/queue/DownloadInfo.cpp' || echo '$(srcdir)/'`daemon/queue/DownloadInfo.cpp; \
+@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/DownloadInfo.Tpo" "$(DEPDIR)/DownloadInfo.Po"; else rm -f "$(DEPDIR)/DownloadInfo.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='daemon/queue/DownloadInfo.cpp' object='DownloadInfo.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o DownloadInfo.o `test -f 'daemon/queue/DownloadInfo.cpp' || echo '$(srcdir)/'`daemon/queue/DownloadInfo.cpp
+
+DownloadInfo.obj: daemon/queue/DownloadInfo.cpp
+@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT DownloadInfo.obj -MD -MP -MF "$(DEPDIR)/DownloadInfo.Tpo" -c -o DownloadInfo.obj `if test -f 'daemon/queue/DownloadInfo.cpp'; then $(CYGPATH_W) 'daemon/queue/DownloadInfo.cpp'; else $(CYGPATH_W) '$(srcdir)/daemon/queue/DownloadInfo.cpp'; fi`; \
+@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/DownloadInfo.Tpo" "$(DEPDIR)/DownloadInfo.Po"; else rm -f "$(DEPDIR)/DownloadInfo.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='daemon/queue/DownloadInfo.cpp' object='DownloadInfo.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o DownloadInfo.obj `if test -f 'daemon/queue/DownloadInfo.cpp'; then $(CYGPATH_W) 'daemon/queue/DownloadInfo.cpp'; else $(CYGPATH_W) '$(srcdir)/daemon/queue/DownloadInfo.cpp'; fi`
+
+DupeCoordinator.o: daemon/queue/DupeCoordinator.cpp
+@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT DupeCoordinator.o -MD -MP -MF "$(DEPDIR)/DupeCoordinator.Tpo" -c -o DupeCoordinator.o `test -f 'daemon/queue/DupeCoordinator.cpp' || echo '$(srcdir)/'`daemon/queue/DupeCoordinator.cpp; \
+@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/DupeCoordinator.Tpo" "$(DEPDIR)/DupeCoordinator.Po"; else rm -f "$(DEPDIR)/DupeCoordinator.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='daemon/queue/DupeCoordinator.cpp' object='DupeCoordinator.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o DupeCoordinator.o `test -f 'daemon/queue/DupeCoordinator.cpp' || echo '$(srcdir)/'`daemon/queue/DupeCoordinator.cpp
+
+DupeCoordinator.obj: daemon/queue/DupeCoordinator.cpp
+@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT DupeCoordinator.obj -MD -MP -MF "$(DEPDIR)/DupeCoordinator.Tpo" -c -o DupeCoordinator.obj `if test -f 'daemon/queue/DupeCoordinator.cpp'; then $(CYGPATH_W) 'daemon/queue/DupeCoordinator.cpp'; else $(CYGPATH_W) '$(srcdir)/daemon/queue/DupeCoordinator.cpp'; fi`; \
+@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/DupeCoordinator.Tpo" "$(DEPDIR)/DupeCoordinator.Po"; else rm -f "$(DEPDIR)/DupeCoordinator.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='daemon/queue/DupeCoordinator.cpp' object='DupeCoordinator.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o DupeCoordinator.obj `if test -f 'daemon/queue/DupeCoordinator.cpp'; then $(CYGPATH_W) 'daemon/queue/DupeCoordinator.cpp'; else $(CYGPATH_W) '$(srcdir)/daemon/queue/DupeCoordinator.cpp'; fi`
+
+HistoryCoordinator.o: daemon/queue/HistoryCoordinator.cpp
+@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT HistoryCoordinator.o -MD -MP -MF "$(DEPDIR)/HistoryCoordinator.Tpo" -c -o HistoryCoordinator.o `test -f 'daemon/queue/HistoryCoordinator.cpp' || echo '$(srcdir)/'`daemon/queue/HistoryCoordinator.cpp; \
+@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/HistoryCoordinator.Tpo" "$(DEPDIR)/HistoryCoordinator.Po"; else rm -f "$(DEPDIR)/HistoryCoordinator.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='daemon/queue/HistoryCoordinator.cpp' object='HistoryCoordinator.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o HistoryCoordinator.o `test -f 'daemon/queue/HistoryCoordinator.cpp' || echo '$(srcdir)/'`daemon/queue/HistoryCoordinator.cpp
+
+HistoryCoordinator.obj: daemon/queue/HistoryCoordinator.cpp
+@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT HistoryCoordinator.obj -MD -MP -MF "$(DEPDIR)/HistoryCoordinator.Tpo" -c -o HistoryCoordinator.obj `if test -f 'daemon/queue/HistoryCoordinator.cpp'; then $(CYGPATH_W) 'daemon/queue/HistoryCoordinator.cpp'; else $(CYGPATH_W) '$(srcdir)/daemon/queue/HistoryCoordinator.cpp'; fi`; \
+@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/HistoryCoordinator.Tpo" "$(DEPDIR)/HistoryCoordinator.Po"; else rm -f "$(DEPDIR)/HistoryCoordinator.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='daemon/queue/HistoryCoordinator.cpp' object='HistoryCoordinator.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o HistoryCoordinator.obj `if test -f 'daemon/queue/HistoryCoordinator.cpp'; then $(CYGPATH_W) 'daemon/queue/HistoryCoordinator.cpp'; else $(CYGPATH_W) '$(srcdir)/daemon/queue/HistoryCoordinator.cpp'; fi`
+
+NZBFile.o: daemon/queue/NZBFile.cpp
+@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT NZBFile.o -MD -MP -MF "$(DEPDIR)/NZBFile.Tpo" -c -o NZBFile.o `test -f 'daemon/queue/NZBFile.cpp' || echo '$(srcdir)/'`daemon/queue/NZBFile.cpp; \
+@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/NZBFile.Tpo" "$(DEPDIR)/NZBFile.Po"; else rm -f "$(DEPDIR)/NZBFile.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='daemon/queue/NZBFile.cpp' object='NZBFile.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o NZBFile.o `test -f 'daemon/queue/NZBFile.cpp' || echo '$(srcdir)/'`daemon/queue/NZBFile.cpp
+
+NZBFile.obj: daemon/queue/NZBFile.cpp
+@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT NZBFile.obj -MD -MP -MF "$(DEPDIR)/NZBFile.Tpo" -c -o NZBFile.obj `if test -f 'daemon/queue/NZBFile.cpp'; then $(CYGPATH_W) 'daemon/queue/NZBFile.cpp'; else $(CYGPATH_W) '$(srcdir)/daemon/queue/NZBFile.cpp'; fi`; \
+@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/NZBFile.Tpo" "$(DEPDIR)/NZBFile.Po"; else rm -f "$(DEPDIR)/NZBFile.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='daemon/queue/NZBFile.cpp' object='NZBFile.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o NZBFile.obj `if test -f 'daemon/queue/NZBFile.cpp'; then $(CYGPATH_W) 'daemon/queue/NZBFile.cpp'; else $(CYGPATH_W) '$(srcdir)/daemon/queue/NZBFile.cpp'; fi`
+
+QueueCoordinator.o: daemon/queue/QueueCoordinator.cpp
+@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT QueueCoordinator.o -MD -MP -MF "$(DEPDIR)/QueueCoordinator.Tpo" -c -o QueueCoordinator.o `test -f 'daemon/queue/QueueCoordinator.cpp' || echo '$(srcdir)/'`daemon/queue/QueueCoordinator.cpp; \
+@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/QueueCoordinator.Tpo" "$(DEPDIR)/QueueCoordinator.Po"; else rm -f "$(DEPDIR)/QueueCoordinator.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='daemon/queue/QueueCoordinator.cpp' object='QueueCoordinator.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o QueueCoordinator.o `test -f 'daemon/queue/QueueCoordinator.cpp' || echo '$(srcdir)/'`daemon/queue/QueueCoordinator.cpp
+
+QueueCoordinator.obj: daemon/queue/QueueCoordinator.cpp
+@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT QueueCoordinator.obj -MD -MP -MF "$(DEPDIR)/QueueCoordinator.Tpo" -c -o QueueCoordinator.obj `if test -f 'daemon/queue/QueueCoordinator.cpp'; then $(CYGPATH_W) 'daemon/queue/QueueCoordinator.cpp'; else $(CYGPATH_W) '$(srcdir)/daemon/queue/QueueCoordinator.cpp'; fi`; \
+@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/QueueCoordinator.Tpo" "$(DEPDIR)/QueueCoordinator.Po"; else rm -f "$(DEPDIR)/QueueCoordinator.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='daemon/queue/QueueCoordinator.cpp' object='QueueCoordinator.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o QueueCoordinator.obj `if test -f 'daemon/queue/QueueCoordinator.cpp'; then $(CYGPATH_W) 'daemon/queue/QueueCoordinator.cpp'; else $(CYGPATH_W) '$(srcdir)/daemon/queue/QueueCoordinator.cpp'; fi`
+
+QueueEditor.o: daemon/queue/QueueEditor.cpp
+@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT QueueEditor.o -MD -MP -MF "$(DEPDIR)/QueueEditor.Tpo" -c -o QueueEditor.o `test -f 'daemon/queue/QueueEditor.cpp' || echo '$(srcdir)/'`daemon/queue/QueueEditor.cpp; \
+@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/QueueEditor.Tpo" "$(DEPDIR)/QueueEditor.Po"; else rm -f "$(DEPDIR)/QueueEditor.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='daemon/queue/QueueEditor.cpp' object='QueueEditor.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o QueueEditor.o `test -f 'daemon/queue/QueueEditor.cpp' || echo '$(srcdir)/'`daemon/queue/QueueEditor.cpp
+
+QueueEditor.obj: daemon/queue/QueueEditor.cpp
+@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT QueueEditor.obj -MD -MP -MF "$(DEPDIR)/QueueEditor.Tpo" -c -o QueueEditor.obj `if test -f 'daemon/queue/QueueEditor.cpp'; then $(CYGPATH_W) 'daemon/queue/QueueEditor.cpp'; else $(CYGPATH_W) '$(srcdir)/daemon/queue/QueueEditor.cpp'; fi`; \
+@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/QueueEditor.Tpo" "$(DEPDIR)/QueueEditor.Po"; else rm -f "$(DEPDIR)/QueueEditor.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='daemon/queue/QueueEditor.cpp' object='QueueEditor.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o QueueEditor.obj `if test -f 'daemon/queue/QueueEditor.cpp'; then $(CYGPATH_W) 'daemon/queue/QueueEditor.cpp'; else $(CYGPATH_W) '$(srcdir)/daemon/queue/QueueEditor.cpp'; fi`
+
+Scanner.o: daemon/queue/Scanner.cpp
+@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT Scanner.o -MD -MP -MF "$(DEPDIR)/Scanner.Tpo" -c -o Scanner.o `test -f 'daemon/queue/Scanner.cpp' || echo '$(srcdir)/'`daemon/queue/Scanner.cpp; \
+@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/Scanner.Tpo" "$(DEPDIR)/Scanner.Po"; else rm -f "$(DEPDIR)/Scanner.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='daemon/queue/Scanner.cpp' object='Scanner.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o Scanner.o `test -f 'daemon/queue/Scanner.cpp' || echo '$(srcdir)/'`daemon/queue/Scanner.cpp
+
+Scanner.obj: daemon/queue/Scanner.cpp
+@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT Scanner.obj -MD -MP -MF "$(DEPDIR)/Scanner.Tpo" -c -o Scanner.obj `if test -f 'daemon/queue/Scanner.cpp'; then $(CYGPATH_W) 'daemon/queue/Scanner.cpp'; else $(CYGPATH_W) '$(srcdir)/daemon/queue/Scanner.cpp'; fi`; \
+@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/Scanner.Tpo" "$(DEPDIR)/Scanner.Po"; else rm -f "$(DEPDIR)/Scanner.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='daemon/queue/Scanner.cpp' object='Scanner.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o Scanner.obj `if test -f 'daemon/queue/Scanner.cpp'; then $(CYGPATH_W) 'daemon/queue/Scanner.cpp'; else $(CYGPATH_W) '$(srcdir)/daemon/queue/Scanner.cpp'; fi`
+
+UrlCoordinator.o: daemon/queue/UrlCoordinator.cpp
+@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT UrlCoordinator.o -MD -MP -MF "$(DEPDIR)/UrlCoordinator.Tpo" -c -o UrlCoordinator.o `test -f 'daemon/queue/UrlCoordinator.cpp' || echo '$(srcdir)/'`daemon/queue/UrlCoordinator.cpp; \
+@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/UrlCoordinator.Tpo" "$(DEPDIR)/UrlCoordinator.Po"; else rm -f "$(DEPDIR)/UrlCoordinator.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='daemon/queue/UrlCoordinator.cpp' object='UrlCoordinator.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o UrlCoordinator.o `test -f 'daemon/queue/UrlCoordinator.cpp' || echo '$(srcdir)/'`daemon/queue/UrlCoordinator.cpp
+
+UrlCoordinator.obj: daemon/queue/UrlCoordinator.cpp
+@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT UrlCoordinator.obj -MD -MP -MF "$(DEPDIR)/UrlCoordinator.Tpo" -c -o UrlCoordinator.obj `if test -f 'daemon/queue/UrlCoordinator.cpp'; then $(CYGPATH_W) 'daemon/queue/UrlCoordinator.cpp'; else $(CYGPATH_W) '$(srcdir)/daemon/queue/UrlCoordinator.cpp'; fi`; \
+@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/UrlCoordinator.Tpo" "$(DEPDIR)/UrlCoordinator.Po"; else rm -f "$(DEPDIR)/UrlCoordinator.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='daemon/queue/UrlCoordinator.cpp' object='UrlCoordinator.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o UrlCoordinator.obj `if test -f 'daemon/queue/UrlCoordinator.cpp'; then $(CYGPATH_W) 'daemon/queue/UrlCoordinator.cpp'; else $(CYGPATH_W) '$(srcdir)/daemon/queue/UrlCoordinator.cpp'; fi`
+
+BinRpc.o: daemon/remote/BinRpc.cpp
+@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT BinRpc.o -MD -MP -MF "$(DEPDIR)/BinRpc.Tpo" -c -o BinRpc.o `test -f 'daemon/remote/BinRpc.cpp' || echo '$(srcdir)/'`daemon/remote/BinRpc.cpp; \
+@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/BinRpc.Tpo" "$(DEPDIR)/BinRpc.Po"; else rm -f "$(DEPDIR)/BinRpc.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='daemon/remote/BinRpc.cpp' object='BinRpc.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o BinRpc.o `test -f 'daemon/remote/BinRpc.cpp' || echo '$(srcdir)/'`daemon/remote/BinRpc.cpp
+
+BinRpc.obj: daemon/remote/BinRpc.cpp
+@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT BinRpc.obj -MD -MP -MF "$(DEPDIR)/BinRpc.Tpo" -c -o BinRpc.obj `if test -f 'daemon/remote/BinRpc.cpp'; then $(CYGPATH_W) 'daemon/remote/BinRpc.cpp'; else $(CYGPATH_W) '$(srcdir)/daemon/remote/BinRpc.cpp'; fi`; \
+@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/BinRpc.Tpo" "$(DEPDIR)/BinRpc.Po"; else rm -f "$(DEPDIR)/BinRpc.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='daemon/remote/BinRpc.cpp' object='BinRpc.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o BinRpc.obj `if test -f 'daemon/remote/BinRpc.cpp'; then $(CYGPATH_W) 'daemon/remote/BinRpc.cpp'; else $(CYGPATH_W) '$(srcdir)/daemon/remote/BinRpc.cpp'; fi`
+
+RemoteClient.o: daemon/remote/RemoteClient.cpp
+@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT RemoteClient.o -MD -MP -MF "$(DEPDIR)/RemoteClient.Tpo" -c -o RemoteClient.o `test -f 'daemon/remote/RemoteClient.cpp' || echo '$(srcdir)/'`daemon/remote/RemoteClient.cpp; \
+@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/RemoteClient.Tpo" "$(DEPDIR)/RemoteClient.Po"; else rm -f "$(DEPDIR)/RemoteClient.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='daemon/remote/RemoteClient.cpp' object='RemoteClient.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o RemoteClient.o `test -f 'daemon/remote/RemoteClient.cpp' || echo '$(srcdir)/'`daemon/remote/RemoteClient.cpp
+
+RemoteClient.obj: daemon/remote/RemoteClient.cpp
+@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT RemoteClient.obj -MD -MP -MF "$(DEPDIR)/RemoteClient.Tpo" -c -o RemoteClient.obj `if test -f 'daemon/remote/RemoteClient.cpp'; then $(CYGPATH_W) 'daemon/remote/RemoteClient.cpp'; else $(CYGPATH_W) '$(srcdir)/daemon/remote/RemoteClient.cpp'; fi`; \
+@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/RemoteClient.Tpo" "$(DEPDIR)/RemoteClient.Po"; else rm -f "$(DEPDIR)/RemoteClient.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='daemon/remote/RemoteClient.cpp' object='RemoteClient.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o RemoteClient.obj `if test -f 'daemon/remote/RemoteClient.cpp'; then $(CYGPATH_W) 'daemon/remote/RemoteClient.cpp'; else $(CYGPATH_W) '$(srcdir)/daemon/remote/RemoteClient.cpp'; fi`
+
+RemoteServer.o: daemon/remote/RemoteServer.cpp
+@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT RemoteServer.o -MD -MP -MF "$(DEPDIR)/RemoteServer.Tpo" -c -o RemoteServer.o `test -f 'daemon/remote/RemoteServer.cpp' || echo '$(srcdir)/'`daemon/remote/RemoteServer.cpp; \
+@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/RemoteServer.Tpo" "$(DEPDIR)/RemoteServer.Po"; else rm -f "$(DEPDIR)/RemoteServer.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='daemon/remote/RemoteServer.cpp' object='RemoteServer.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o RemoteServer.o `test -f 'daemon/remote/RemoteServer.cpp' || echo '$(srcdir)/'`daemon/remote/RemoteServer.cpp
+
+RemoteServer.obj: daemon/remote/RemoteServer.cpp
+@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT RemoteServer.obj -MD -MP -MF "$(DEPDIR)/RemoteServer.Tpo" -c -o RemoteServer.obj `if test -f 'daemon/remote/RemoteServer.cpp'; then $(CYGPATH_W) 'daemon/remote/RemoteServer.cpp'; else $(CYGPATH_W) '$(srcdir)/daemon/remote/RemoteServer.cpp'; fi`; \
+@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/RemoteServer.Tpo" "$(DEPDIR)/RemoteServer.Po"; else rm -f "$(DEPDIR)/RemoteServer.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='daemon/remote/RemoteServer.cpp' object='RemoteServer.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o RemoteServer.obj `if test -f 'daemon/remote/RemoteServer.cpp'; then $(CYGPATH_W) 'daemon/remote/RemoteServer.cpp'; else $(CYGPATH_W) '$(srcdir)/daemon/remote/RemoteServer.cpp'; fi`
+
+WebServer.o: daemon/remote/WebServer.cpp
+@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT WebServer.o -MD -MP -MF "$(DEPDIR)/WebServer.Tpo" -c -o WebServer.o `test -f 'daemon/remote/WebServer.cpp' || echo '$(srcdir)/'`daemon/remote/WebServer.cpp; \
+@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/WebServer.Tpo" "$(DEPDIR)/WebServer.Po"; else rm -f "$(DEPDIR)/WebServer.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='daemon/remote/WebServer.cpp' object='WebServer.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o WebServer.o `test -f 'daemon/remote/WebServer.cpp' || echo '$(srcdir)/'`daemon/remote/WebServer.cpp
+
+WebServer.obj: daemon/remote/WebServer.cpp
+@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT WebServer.obj -MD -MP -MF "$(DEPDIR)/WebServer.Tpo" -c -o WebServer.obj `if test -f 'daemon/remote/WebServer.cpp'; then $(CYGPATH_W) 'daemon/remote/WebServer.cpp'; else $(CYGPATH_W) '$(srcdir)/daemon/remote/WebServer.cpp'; fi`; \
+@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/WebServer.Tpo" "$(DEPDIR)/WebServer.Po"; else rm -f "$(DEPDIR)/WebServer.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='daemon/remote/WebServer.cpp' object='WebServer.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o WebServer.obj `if test -f 'daemon/remote/WebServer.cpp'; then $(CYGPATH_W) 'daemon/remote/WebServer.cpp'; else $(CYGPATH_W) '$(srcdir)/daemon/remote/WebServer.cpp'; fi`
+
+XmlRpc.o: daemon/remote/XmlRpc.cpp
+@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT XmlRpc.o -MD -MP -MF "$(DEPDIR)/XmlRpc.Tpo" -c -o XmlRpc.o `test -f 'daemon/remote/XmlRpc.cpp' || echo '$(srcdir)/'`daemon/remote/XmlRpc.cpp; \
+@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/XmlRpc.Tpo" "$(DEPDIR)/XmlRpc.Po"; else rm -f "$(DEPDIR)/XmlRpc.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='daemon/remote/XmlRpc.cpp' object='XmlRpc.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o XmlRpc.o `test -f 'daemon/remote/XmlRpc.cpp' || echo '$(srcdir)/'`daemon/remote/XmlRpc.cpp
+
+XmlRpc.obj: daemon/remote/XmlRpc.cpp
+@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT XmlRpc.obj -MD -MP -MF "$(DEPDIR)/XmlRpc.Tpo" -c -o XmlRpc.obj `if test -f 'daemon/remote/XmlRpc.cpp'; then $(CYGPATH_W) 'daemon/remote/XmlRpc.cpp'; else $(CYGPATH_W) '$(srcdir)/daemon/remote/XmlRpc.cpp'; fi`; \
+@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/XmlRpc.Tpo" "$(DEPDIR)/XmlRpc.Po"; else rm -f "$(DEPDIR)/XmlRpc.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='daemon/remote/XmlRpc.cpp' object='XmlRpc.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o XmlRpc.obj `if test -f 'daemon/remote/XmlRpc.cpp'; then $(CYGPATH_W) 'daemon/remote/XmlRpc.cpp'; else $(CYGPATH_W) '$(srcdir)/daemon/remote/XmlRpc.cpp'; fi`
+
+Log.o: daemon/util/Log.cpp
+@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT Log.o -MD -MP -MF "$(DEPDIR)/Log.Tpo" -c -o Log.o `test -f 'daemon/util/Log.cpp' || echo '$(srcdir)/'`daemon/util/Log.cpp; \
+@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/Log.Tpo" "$(DEPDIR)/Log.Po"; else rm -f "$(DEPDIR)/Log.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='daemon/util/Log.cpp' object='Log.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o Log.o `test -f 'daemon/util/Log.cpp' || echo '$(srcdir)/'`daemon/util/Log.cpp
+
+Log.obj: daemon/util/Log.cpp
+@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT Log.obj -MD -MP -MF "$(DEPDIR)/Log.Tpo" -c -o Log.obj `if test -f 'daemon/util/Log.cpp'; then $(CYGPATH_W) 'daemon/util/Log.cpp'; else $(CYGPATH_W) '$(srcdir)/daemon/util/Log.cpp'; fi`; \
+@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/Log.Tpo" "$(DEPDIR)/Log.Po"; else rm -f "$(DEPDIR)/Log.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='daemon/util/Log.cpp' object='Log.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o Log.obj `if test -f 'daemon/util/Log.cpp'; then $(CYGPATH_W) 'daemon/util/Log.cpp'; else $(CYGPATH_W) '$(srcdir)/daemon/util/Log.cpp'; fi`
+
+Observer.o: daemon/util/Observer.cpp
+@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT Observer.o -MD -MP -MF "$(DEPDIR)/Observer.Tpo" -c -o Observer.o `test -f 'daemon/util/Observer.cpp' || echo '$(srcdir)/'`daemon/util/Observer.cpp; \
+@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/Observer.Tpo" "$(DEPDIR)/Observer.Po"; else rm -f "$(DEPDIR)/Observer.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='daemon/util/Observer.cpp' object='Observer.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o Observer.o `test -f 'daemon/util/Observer.cpp' || echo '$(srcdir)/'`daemon/util/Observer.cpp
+
+Observer.obj: daemon/util/Observer.cpp
+@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT Observer.obj -MD -MP -MF "$(DEPDIR)/Observer.Tpo" -c -o Observer.obj `if test -f 'daemon/util/Observer.cpp'; then $(CYGPATH_W) 'daemon/util/Observer.cpp'; else $(CYGPATH_W) '$(srcdir)/daemon/util/Observer.cpp'; fi`; \
+@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/Observer.Tpo" "$(DEPDIR)/Observer.Po"; else rm -f "$(DEPDIR)/Observer.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='daemon/util/Observer.cpp' object='Observer.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o Observer.obj `if test -f 'daemon/util/Observer.cpp'; then $(CYGPATH_W) 'daemon/util/Observer.cpp'; else $(CYGPATH_W) '$(srcdir)/daemon/util/Observer.cpp'; fi`
+
+Thread.o: daemon/util/Thread.cpp
+@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT Thread.o -MD -MP -MF "$(DEPDIR)/Thread.Tpo" -c -o Thread.o `test -f 'daemon/util/Thread.cpp' || echo '$(srcdir)/'`daemon/util/Thread.cpp; \
+@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/Thread.Tpo" "$(DEPDIR)/Thread.Po"; else rm -f "$(DEPDIR)/Thread.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='daemon/util/Thread.cpp' object='Thread.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o Thread.o `test -f 'daemon/util/Thread.cpp' || echo '$(srcdir)/'`daemon/util/Thread.cpp
+
+Thread.obj: daemon/util/Thread.cpp
+@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT Thread.obj -MD -MP -MF "$(DEPDIR)/Thread.Tpo" -c -o Thread.obj `if test -f 'daemon/util/Thread.cpp'; then $(CYGPATH_W) 'daemon/util/Thread.cpp'; else $(CYGPATH_W) '$(srcdir)/daemon/util/Thread.cpp'; fi`; \
+@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/Thread.Tpo" "$(DEPDIR)/Thread.Po"; else rm -f "$(DEPDIR)/Thread.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='daemon/util/Thread.cpp' object='Thread.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o Thread.obj `if test -f 'daemon/util/Thread.cpp'; then $(CYGPATH_W) 'daemon/util/Thread.cpp'; else $(CYGPATH_W) '$(srcdir)/daemon/util/Thread.cpp'; fi`
+
+Util.o: daemon/util/Util.cpp
+@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT Util.o -MD -MP -MF "$(DEPDIR)/Util.Tpo" -c -o Util.o `test -f 'daemon/util/Util.cpp' || echo '$(srcdir)/'`daemon/util/Util.cpp; \
+@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/Util.Tpo" "$(DEPDIR)/Util.Po"; else rm -f "$(DEPDIR)/Util.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='daemon/util/Util.cpp' object='Util.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o Util.o `test -f 'daemon/util/Util.cpp' || echo '$(srcdir)/'`daemon/util/Util.cpp
+
+Util.obj: daemon/util/Util.cpp
+@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT Util.obj -MD -MP -MF "$(DEPDIR)/Util.Tpo" -c -o Util.obj `if test -f 'daemon/util/Util.cpp'; then $(CYGPATH_W) 'daemon/util/Util.cpp'; else $(CYGPATH_W) '$(srcdir)/daemon/util/Util.cpp'; fi`; \
+@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/Util.Tpo" "$(DEPDIR)/Util.Po"; else rm -f "$(DEPDIR)/Util.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='daemon/util/Util.cpp' object='Util.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o Util.obj `if test -f 'daemon/util/Util.cpp'; then $(CYGPATH_W) 'daemon/util/Util.cpp'; else $(CYGPATH_W) '$(srcdir)/daemon/util/Util.cpp'; fi`
 uninstall-info-am:
 install-dist_docDATA: $(dist_doc_DATA)
 	@$(NORMAL_INSTALL)
@@ -619,7 +1370,7 @@ distclean-tags:
 distdir: $(DISTFILES)
 	$(am__remove_distdir)
 	mkdir $(distdir)
-	$(mkdir_p) $(distdir)/osx $(distdir)/osx/NZBGet.xcodeproj $(distdir)/osx/Resources $(distdir)/osx/Resources/Images $(distdir)/osx/Resources/licenses $(distdir)/ppscripts $(distdir)/webui $(distdir)/webui/img $(distdir)/webui/lib
+	$(mkdir_p) $(distdir)/daemon/windows $(distdir)/osx $(distdir)/osx/NZBGet.xcodeproj $(distdir)/osx/Resources $(distdir)/osx/Resources/Images $(distdir)/osx/Resources/licenses $(distdir)/patches $(distdir)/ppscripts $(distdir)/webui $(distdir)/webui/img $(distdir)/webui/lib
 	@srcdirstrip=`echo "$(srcdir)" | sed 's|.|.|g'`; \
 	topsrcdirstrip=`echo "$(top_srcdir)" | sed 's|.|.|g'`; \
 	list='$(DISTFILES)'; for file in $$list; do \
@@ -938,7 +1689,7 @@ clean-bak: rm *~
 
 # Fix premissions
 dist-hook:
-	chmod -x $(distdir)/*.cpp $(distdir)/*.h
+	find $(distdir)/daemon -type f -print -exec chmod -x {} \;
 	find $(distdir)/webui -type f -print -exec chmod -x {} \;
 # Tell versions [3.59,3.63) of GNU make to not export all variables.
 # Otherwise a system limit (for SysV at least) may be exceeded.

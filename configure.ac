@@ -5,7 +5,7 @@ AC_PREREQ(2.59)
 AC_INIT(nzbget, 13.0-testing, hugbug@users.sourceforge.net)
 AC_CANONICAL_SYSTEM
 AM_INIT_AUTOMAKE(nzbget, 13.0-testing)
-AC_CONFIG_SRCDIR([nzbget.cpp])
+AC_CONFIG_SRCDIR([daemon/main/nzbget.cpp])
 AC_CONFIG_HEADERS([config.h])
 
 
