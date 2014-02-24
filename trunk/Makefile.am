@@ -1,7 +1,7 @@
 #
 #  This file if part of nzbget
 #
-# Copyright (C) 2008-2013 Andrey Prygunkov <hugbug@users.sourceforge.net>
+# Copyright (C) 2008-2014 Andrey Prygunkov <hugbug@users.sourceforge.net>
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -22,67 +22,201 @@
 bin_PROGRAMS = nzbget
 
 nzbget_SOURCES = \
-	ArticleDownloader.cpp ArticleDownloader.h BinRpc.cpp BinRpc.h \
-	ColoredFrontend.cpp ColoredFrontend.h Connection.cpp Connection.h Decoder.cpp Decoder.h \
-	DiskState.cpp DiskState.h DownloadInfo.cpp DownloadInfo.h DupeCoordinator.cpp DupeCoordinator.h \
-	Frontend.cpp Frontend.h FeedCoordinator.cpp FeedCoordinator.h FeedFile.cpp FeedFile.h \
-	FeedFilter.cpp FeedFilter.h FeedInfo.cpp FeedInfo.h Log.cpp Log.h LoggableFrontend.cpp \
-	LoggableFrontend.h Maintenance.cpp Maintenance.h MessageBase.h NCursesFrontend.cpp \
-	NCursesFrontend.h NNTPConnection.cpp HistoryCoordinator.cpp HistoryCoordinator.h \
-	NNTPConnection.h NZBFile.cpp NZBFile.h NewsServer.cpp NewsServer.h Observer.cpp \
-	Observer.h Options.cpp Options.h ParChecker.cpp ParChecker.h ParRenamer.cpp ParRenamer.h \
-	ParCoordinator.cpp ParCoordinator.h PrePostProcessor.cpp PrePostProcessor.h QueueCoordinator.cpp \
-	QueueCoordinator.h QueueEditor.cpp QueueEditor.h RemoteClient.cpp RemoteClient.h \
-	RemoteServer.cpp RemoteServer.h Scanner.cpp Scanner.h Scheduler.cpp Scheduler.h ScriptController.cpp \
-	ScriptController.h ServerPool.cpp ServerPool.h svn_version.cpp TLS.cpp TLS.h Thread.cpp Thread.h \
-	Util.cpp Util.h XmlRpc.cpp XmlRpc.h WebDownloader.cpp WebDownloader.h WebServer.cpp WebServer.h \
-	UrlCoordinator.cpp UrlCoordinator.h Unpack.cpp Unpack.h nzbget.cpp nzbget.h
+	daemon/connect/Connection.cpp \
+	daemon/connect/Connection.h \
+	daemon/connect/TLS.cpp \
+	daemon/connect/TLS.h \
+	daemon/connect/WebDownloader.cpp \
+	daemon/connect/WebDownloader.h \
+	daemon/feed/FeedCoordinator.cpp \
+	daemon/feed/FeedCoordinator.h \
+	daemon/feed/FeedFile.cpp \
+	daemon/feed/FeedFile.h \
+	daemon/feed/FeedFilter.cpp \
+	daemon/feed/FeedFilter.h \
+	daemon/feed/FeedInfo.cpp \
+	daemon/feed/FeedInfo.h \
+	daemon/frontend/ColoredFrontend.cpp \
+	daemon/frontend/ColoredFrontend.h \
+	daemon/frontend/Frontend.cpp \
+	daemon/frontend/Frontend.h \
+	daemon/frontend/LoggableFrontend.cpp \
+	daemon/frontend/LoggableFrontend.h \
+	daemon/frontend/NCursesFrontend.cpp \
+	daemon/frontend/NCursesFrontend.h \
+	daemon/main/Maintenance.cpp \
+	daemon/main/Maintenance.h \
+	daemon/main/nzbget.cpp \
+	daemon/main/nzbget.h \
+	daemon/main/Options.cpp \
+	daemon/main/Options.h \
+	daemon/main/Scheduler.cpp \
+	daemon/main/Scheduler.h \
+	daemon/nntp/ArticleDownloader.cpp \
+	daemon/nntp/ArticleDownloader.h \
+	daemon/nntp/Decoder.cpp \
+	daemon/nntp/Decoder.h \
+	daemon/nntp/NewsServer.cpp \
+	daemon/nntp/NewsServer.h \
+	daemon/nntp/NNTPConnection.cpp \
+	daemon/nntp/NNTPConnection.h \
+	daemon/nntp/ServerPool.cpp \
+	daemon/nntp/ServerPool.h \
+	daemon/postprocess/ParChecker.cpp \
+	daemon/postprocess/ParChecker.h \
+	daemon/postprocess/ParCoordinator.cpp \
+	daemon/postprocess/ParCoordinator.h \
+	daemon/postprocess/ParRenamer.cpp \
+	daemon/postprocess/ParRenamer.h \
+	daemon/postprocess/PrePostProcessor.cpp \
+	daemon/postprocess/PrePostProcessor.h \
+	daemon/postprocess/ScriptController.cpp \
+	daemon/postprocess/ScriptController.h \
+	daemon/postprocess/Unpack.cpp \
+	daemon/postprocess/Unpack.h \
+	daemon/queue/DiskState.cpp \
+	daemon/queue/DiskState.h \
+	daemon/queue/DownloadInfo.cpp \
+	daemon/queue/DownloadInfo.h \
+	daemon/queue/DupeCoordinator.cpp \
+	daemon/queue/DupeCoordinator.h \
+	daemon/queue/HistoryCoordinator.cpp \
+	daemon/queue/HistoryCoordinator.h \
+	daemon/queue/NZBFile.cpp \
+	daemon/queue/NZBFile.h \
+	daemon/queue/QueueCoordinator.cpp \
+	daemon/queue/QueueCoordinator.h \
+	daemon/queue/QueueEditor.cpp \
+	daemon/queue/QueueEditor.h \
+	daemon/queue/Scanner.cpp \
+	daemon/queue/Scanner.h \
+	daemon/queue/UrlCoordinator.cpp \
+	daemon/queue/UrlCoordinator.h \
+	daemon/remote/BinRpc.cpp \
+	daemon/remote/BinRpc.h \
+	daemon/remote/MessageBase.h \
+	daemon/remote/RemoteClient.cpp \
+	daemon/remote/RemoteClient.h \
+	daemon/remote/RemoteServer.cpp \
+	daemon/remote/RemoteServer.h \
+	daemon/remote/WebServer.cpp \
+	daemon/remote/WebServer.h \
+	daemon/remote/XmlRpc.cpp \
+	daemon/remote/XmlRpc.h \
+	daemon/util/Log.cpp \
+	daemon/util/Log.h \
+	daemon/util/Observer.cpp \
+	daemon/util/Observer.h \
+	daemon/util/Thread.cpp \
+	daemon/util/Thread.h \
+	daemon/util/Util.cpp \
+	daemon/util/Util.h \
+	svn_version.cpp
+
+AM_CPPFLAGS = \
+	-I$(srcdir)/daemon/connect \
+	-I$(srcdir)/daemon/feed \
+	-I$(srcdir)/daemon/frontend \
+	-I$(srcdir)/daemon/main \
+	-I$(srcdir)/daemon/nntp \
+	-I$(srcdir)/daemon/postprocess \
+	-I$(srcdir)/daemon/queue \
+	-I$(srcdir)/daemon/remote \
+	-I$(srcdir)/daemon/util
 
 EXTRA_DIST = \
-	Makefile.cvs nzbgetd \
-	$(patches_FILES) $(windows_FILES) $(osx_FILES)
+	Makefile.cvs \
+	nzbgetd \
+	$(patches_FILES) \
+	$(windows_FILES) \
+	$(osx_FILES)
 
 patches_FILES = \
-	libpar2-0.2-bugfixes.patch libpar2-0.2-cancel.patch \
-	libpar2-0.2-MSVC8.patch libsigc++-2.0.18-MSVC8.patch
+	patches/libpar2-0.2-bugfixes.patch \
+	patches/libpar2-0.2-cancel.patch \
+	patches/libpar2-0.2-MSVC8.patch \
+	patches/libsigc++-2.0.18-MSVC8.patch
 
 windows_FILES = \
-	win32.h NTService.cpp NTService.h nzbget.sln nzbget.vcproj nzbget-shell.bat
+	daemon/windows/NTService.cpp \
+	daemon/windows/NTService.h \
+	daemon/windows/win32.h \
+	nzbget.sln \
+	nzbget.vcproj \
+	nzbget-shell.bat
 
 osx_FILES = \
-	osx/App_Prefix.pch osx/NZBGet-Info.plist \
-	osx/DaemonController.h osx/DaemonController.m \
-	osx/MainApp.h osx/MainApp.m osx/MainApp.xib \
-	osx/PFMoveApplication.h osx/PFMoveApplication.m \
-	osx/PreferencesDialog.h osx/PreferencesDialog.m osx/PreferencesDialog.xib \
-	osx/RPC.h osx/RPC.m osx/WebClient.h osx/WebClient.m \
-	osx/WelcomeDialog.h osx/WelcomeDialog.m osx/WelcomeDialog.xib \
+	osx/App_Prefix.pch \
+	osx/NZBGet-Info.plist \
+	osx/DaemonController.h \
+	osx/DaemonController.m \
+	osx/MainApp.h \
+	osx/MainApp.m \
+	osx/MainApp.xib \
+	osx/PFMoveApplication.h \
+	osx/PFMoveApplication.m \
+	osx/PreferencesDialog.h \
+	osx/PreferencesDialog.m \
+	osx/PreferencesDialog.xib \
+	osx/RPC.h \
+	osx/RPC.m \
+	osx/WebClient.h \
+	osx/WebClient.m \
+	osx/WelcomeDialog.h \
+	osx/WelcomeDialog.m \
+	osx/WelcomeDialog.xib \
 	osx/NZBGet.xcodeproj/project.pbxproj \
-	osx/Resources/Images/mainicon.icns osx/Resources/Images/statusicon.png \
-	osx/Resources/Images/statusicon@2x.png osx/Resources/Images/statusicon-inv.png \
-	osx/Resources/Images/statusicon-inv@2x.png osx/Resources/licenses/license-bootstrap.txt \
-	osx/Resources/licenses/license-jquery-GPL.txt osx/Resources/licenses/license-jquery-MIT.txt \
-	osx/Resources/Credits.rtf osx/Resources/Localizable.strings osx/Resources/Welcome.rtf
+	osx/Resources/Images/mainicon.icns \
+	osx/Resources/Images/statusicon.png \
+	osx/Resources/Images/statusicon@2x.png \
+	osx/Resources/Images/statusicon-inv.png \
+	osx/Resources/Images/statusicon-inv@2x.png \
+	osx/Resources/licenses/license-bootstrap.txt \
+	osx/Resources/licenses/license-jquery-GPL.txt \
+	osx/Resources/licenses/license-jquery-MIT.txt \
+	osx/Resources/Credits.rtf \
+	osx/Resources/Localizable.strings \
+	osx/Resources/Welcome.rtf
 
 doc_FILES = \
-	README ChangeLog COPYING
+	README \
+	ChangeLog \
+	COPYING
 
 exampleconf_FILES = \
 	nzbget.conf
 
 webui_FILES = \
-	webui/index.html webui/index.js webui/downloads.js webui/edit.js webui/fasttable.js \
-	webui/history.js webui/messages.js webui/status.js webui/style.css webui/upload.js \
-	webui/util.js webui/config.js webui/feed.js \
-	webui/lib/bootstrap.js webui/lib/bootstrap.min.js webui/lib/bootstrap.css  \
-	webui/lib/jquery.js webui/lib/jquery.min.js \
-	webui/img/icons.png webui/img/icons-2x.png \
-	webui/img/transmit.gif webui/img/transmit-file.gif webui/img/favicon.ico \
-	webui/img/download-anim-green-2x.png webui/img/download-anim-orange-2x.png \
+	webui/index.html \
+	webui/index.js \
+	webui/downloads.js \
+	webui/edit.js \
+	webui/fasttable.js \
+	webui/history.js \
+	webui/messages.js \
+	webui/status.js \
+	webui/style.css \
+	webui/upload.js \
+	webui/util.js \
+	webui/config.js \
+	webui/feed.js \
+	webui/lib/bootstrap.js \
+	webui/lib/bootstrap.min.js \
+	webui/lib/bootstrap.css  \
+	webui/lib/jquery.js \
+	webui/lib/jquery.min.js \
+	webui/img/icons.png \
+	webui/img/icons-2x.png \
+	webui/img/transmit.gif \
+	webui/img/transmit-file.gif \
+	webui/img/favicon.ico \
+	webui/img/download-anim-green-2x.png \
+	webui/img/download-anim-orange-2x.png \
 	webui/img/transmit-reload-2x.gif
 
 ppscripts_FILES = \
-	ppscripts/EMail.py ppscripts/Logger.py
+	ppscripts/EMail.py \
+	ppscripts/Logger.py
 
 # Install
 sbin_SCRIPTS = nzbgetd
@@ -178,6 +312,6 @@ clean-bak: rm *~
 
 # Fix premissions
 dist-hook:
-	chmod -x $(distdir)/*.cpp $(distdir)/*.h
+	find $(distdir)/daemon -type f -print -exec chmod -x {} \;
 	find $(distdir)/webui -type f -print -exec chmod -x {} \;
 
