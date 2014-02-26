@@ -38,6 +38,7 @@
 #include <unistd.h>
 #endif
 #include <sys/stat.h>
+#include <stdio.h>
 
 #include "nzbget.h"
 #include "QueueScript.h"
