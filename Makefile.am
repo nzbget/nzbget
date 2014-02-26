@@ -68,10 +68,10 @@ nzbget_SOURCES = \
 	daemon/postprocess/ParCoordinator.h \
 	daemon/postprocess/ParRenamer.cpp \
 	daemon/postprocess/ParRenamer.h \
+	daemon/postprocess/PostScript.cpp \
+	daemon/postprocess/PostScript.h \
 	daemon/postprocess/PrePostProcessor.cpp \
 	daemon/postprocess/PrePostProcessor.h \
-	daemon/postprocess/ScriptController.cpp \
-	daemon/postprocess/ScriptController.h \
 	daemon/postprocess/Unpack.cpp \
 	daemon/postprocess/Unpack.h \
 	daemon/queue/DiskState.cpp \
@@ -88,6 +88,8 @@ nzbget_SOURCES = \
 	daemon/queue/QueueCoordinator.h \
 	daemon/queue/QueueEditor.cpp \
 	daemon/queue/QueueEditor.h \
+	daemon/queue/QueueScript.cpp \
+	daemon/queue/QueueScript.h \
 	daemon/queue/Scanner.cpp \
 	daemon/queue/Scanner.h \
 	daemon/queue/UrlCoordinator.cpp \
@@ -107,6 +109,8 @@ nzbget_SOURCES = \
 	daemon/util/Log.h \
 	daemon/util/Observer.cpp \
 	daemon/util/Observer.h \
+	daemon/util/Script.cpp \
+	daemon/util/Script.h \
 	daemon/util/Thread.cpp \
 	daemon/util/Thread.h \
 	daemon/util/Util.cpp \

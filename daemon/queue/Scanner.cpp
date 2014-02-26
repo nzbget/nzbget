@@ -46,7 +46,7 @@
 #include "Options.h"
 #include "Log.h"
 #include "QueueCoordinator.h"
-#include "ScriptController.h"
+#include "QueueScript.h"
 #include "Util.h"
 
 extern QueueCoordinator* g_pQueueCoordinator;

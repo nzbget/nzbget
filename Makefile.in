@@ -92,17 +92,17 @@ am_nzbget_OBJECTS = Connection.$(OBJEXT) TLS.$(OBJEXT) \
 	Decoder.$(OBJEXT) NewsServer.$(OBJEXT) \
 	NNTPConnection.$(OBJEXT) ServerPool.$(OBJEXT) \
 	ParChecker.$(OBJEXT) ParCoordinator.$(OBJEXT) \
-	ParRenamer.$(OBJEXT) PrePostProcessor.$(OBJEXT) \
-	ScriptController.$(OBJEXT) Unpack.$(OBJEXT) \
+	ParRenamer.$(OBJEXT) PostScript.$(OBJEXT) \
+	PrePostProcessor.$(OBJEXT) Unpack.$(OBJEXT) \
 	DiskState.$(OBJEXT) DownloadInfo.$(OBJEXT) \
 	DupeCoordinator.$(OBJEXT) HistoryCoordinator.$(OBJEXT) \
 	NZBFile.$(OBJEXT) QueueCoordinator.$(OBJEXT) \
-	QueueEditor.$(OBJEXT) Scanner.$(OBJEXT) \
+	QueueEditor.$(OBJEXT) QueueScript.$(OBJEXT) Scanner.$(OBJEXT) \
 	UrlCoordinator.$(OBJEXT) BinRpc.$(OBJEXT) \
 	RemoteClient.$(OBJEXT) RemoteServer.$(OBJEXT) \
 	WebServer.$(OBJEXT) XmlRpc.$(OBJEXT) Log.$(OBJEXT) \
-	Observer.$(OBJEXT) Thread.$(OBJEXT) Util.$(OBJEXT) \
-	svn_version.$(OBJEXT)
+	Observer.$(OBJEXT) Script.$(OBJEXT) Thread.$(OBJEXT) \
+	Util.$(OBJEXT) svn_version.$(OBJEXT)
 nzbget_OBJECTS = $(am_nzbget_OBJECTS)
 nzbget_LDADD = $(LDADD)
 am__vpath_adj_setup = srcdirstrip=`echo "$(srcdir)" | sed 's|.|.|g'`;
@@ -291,10 +291,10 @@ nzbget_SOURCES = \
 	daemon/postprocess/ParCoordinator.h \
 	daemon/postprocess/ParRenamer.cpp \
 	daemon/postprocess/ParRenamer.h \
+	daemon/postprocess/PostScript.cpp \
+	daemon/postprocess/PostScript.h \
 	daemon/postprocess/PrePostProcessor.cpp \
 	daemon/postprocess/PrePostProcessor.h \
-	daemon/postprocess/ScriptController.cpp \
-	daemon/postprocess/ScriptController.h \
 	daemon/postprocess/Unpack.cpp \
 	daemon/postprocess/Unpack.h \
 	daemon/queue/DiskState.cpp \
@@ -311,6 +311,8 @@ nzbget_SOURCES = \
 	daemon/queue/QueueCoordinator.h \
 	daemon/queue/QueueEditor.cpp \
 	daemon/queue/QueueEditor.h \
+	daemon/queue/QueueScript.cpp \
+	daemon/queue/QueueScript.h \
 	daemon/queue/Scanner.cpp \
 	daemon/queue/Scanner.h \
 	daemon/queue/UrlCoordinator.cpp \
@@ -330,6 +332,8 @@ nzbget_SOURCES = \
 	daemon/util/Log.h \
 	daemon/util/Observer.cpp \
 	daemon/util/Observer.h \
+	daemon/util/Script.cpp \
+	daemon/util/Script.h \
 	daemon/util/Thread.cpp \
 	daemon/util/Thread.h \
 	daemon/util/Util.cpp \
@@ -615,14 +619,16 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/ParChecker.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/ParCoordinator.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/ParRenamer.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/PostScript.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/PrePostProcessor.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/QueueCoordinator.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/QueueEditor.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/QueueScript.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/RemoteClient.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/RemoteServer.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/Scanner.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/Scheduler.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/ScriptController.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/Script.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/ServerPool.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/TLS.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/Thread.Po@am__quote@
@@ -971,6 +977,20 @@ ParRenamer.obj: daemon/postprocess/ParRenamer.cpp
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o ParRenamer.obj `if test -f 'daemon/postprocess/ParRenamer.cpp'; then $(CYGPATH_W) 'daemon/postprocess/ParRenamer.cpp'; else $(CYGPATH_W) '$(srcdir)/daemon/postprocess/ParRenamer.cpp'; fi`
 
+PostScript.o: daemon/postprocess/PostScript.cpp
+@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT PostScript.o -MD -MP -MF "$(DEPDIR)/PostScript.Tpo" -c -o PostScript.o `test -f 'daemon/postprocess/PostScript.cpp' || echo '$(srcdir)/'`daemon/postprocess/PostScript.cpp; \
+@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/PostScript.Tpo" "$(DEPDIR)/PostScript.Po"; else rm -f "$(DEPDIR)/PostScript.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='daemon/postprocess/PostScript.cpp' object='PostScript.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o PostScript.o `test -f 'daemon/postprocess/PostScript.cpp' || echo '$(srcdir)/'`daemon/postprocess/PostScript.cpp
+
+PostScript.obj: daemon/postprocess/PostScript.cpp
+@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT PostScript.obj -MD -MP -MF "$(DEPDIR)/PostScript.Tpo" -c -o PostScript.obj `if test -f 'daemon/postprocess/PostScript.cpp'; then $(CYGPATH_W) 'daemon/postprocess/PostScript.cpp'; else $(CYGPATH_W) '$(srcdir)/daemon/postprocess/PostScript.cpp'; fi`; \
+@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/PostScript.Tpo" "$(DEPDIR)/PostScript.Po"; else rm -f "$(DEPDIR)/PostScript.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='daemon/postprocess/PostScript.cpp' object='PostScript.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o PostScript.obj `if test -f 'daemon/postprocess/PostScript.cpp'; then $(CYGPATH_W) 'daemon/postprocess/PostScript.cpp'; else $(CYGPATH_W) '$(srcdir)/daemon/postprocess/PostScript.cpp'; fi`
+
 PrePostProcessor.o: daemon/postprocess/PrePostProcessor.cpp
 @am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT PrePostProcessor.o -MD -MP -MF "$(DEPDIR)/PrePostProcessor.Tpo" -c -o PrePostProcessor.o `test -f 'daemon/postprocess/PrePostProcessor.cpp' || echo '$(srcdir)/'`daemon/postprocess/PrePostProcessor.cpp; \
 @am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/PrePostProcessor.Tpo" "$(DEPDIR)/PrePostProcessor.Po"; else rm -f "$(DEPDIR)/PrePostProcessor.Tpo"; exit 1; fi
@@ -984,20 +1004,6 @@ PrePostProcessor.obj: daemon/postprocess/PrePostProcessor.cpp
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='daemon/postprocess/PrePostProcessor.cpp' object='PrePostProcessor.obj' libtool=no @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o PrePostProcessor.obj `if test -f 'daemon/postprocess/PrePostProcessor.cpp'; then $(CYGPATH_W) 'daemon/postprocess/PrePostProcessor.cpp'; else $(CYGPATH_W) '$(srcdir)/daemon/postprocess/PrePostProcessor.cpp'; fi`
-
-ScriptController.o: daemon/postprocess/ScriptController.cpp
-@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT ScriptController.o -MD -MP -MF "$(DEPDIR)/ScriptController.Tpo" -c -o ScriptController.o `test -f 'daemon/postprocess/ScriptController.cpp' || echo '$(srcdir)/'`daemon/postprocess/ScriptController.cpp; \
-@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/ScriptController.Tpo" "$(DEPDIR)/ScriptController.Po"; else rm -f "$(DEPDIR)/ScriptController.Tpo"; exit 1; fi
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='daemon/postprocess/ScriptController.cpp' object='ScriptController.o' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o ScriptController.o `test -f 'daemon/postprocess/ScriptController.cpp' || echo '$(srcdir)/'`daemon/postprocess/ScriptController.cpp
-
-ScriptController.obj: daemon/postprocess/ScriptController.cpp
-@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT ScriptController.obj -MD -MP -MF "$(DEPDIR)/ScriptController.Tpo" -c -o ScriptController.obj `if test -f 'daemon/postprocess/ScriptController.cpp'; then $(CYGPATH_W) 'daemon/postprocess/ScriptController.cpp'; else $(CYGPATH_W) '$(srcdir)/daemon/postprocess/ScriptController.cpp'; fi`; \
-@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/ScriptController.Tpo" "$(DEPDIR)/ScriptController.Po"; else rm -f "$(DEPDIR)/ScriptController.Tpo"; exit 1; fi
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='daemon/postprocess/ScriptController.cpp' object='ScriptController.obj' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o ScriptController.obj `if test -f 'daemon/postprocess/ScriptController.cpp'; then $(CYGPATH_W) 'daemon/postprocess/ScriptController.cpp'; else $(CYGPATH_W) '$(srcdir)/daemon/postprocess/ScriptController.cpp'; fi`
 
 Unpack.o: daemon/postprocess/Unpack.cpp
 @am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT Unpack.o -MD -MP -MF "$(DEPDIR)/Unpack.Tpo" -c -o Unpack.o `test -f 'daemon/postprocess/Unpack.cpp' || echo '$(srcdir)/'`daemon/postprocess/Unpack.cpp; \
@@ -1110,6 +1116,20 @@ QueueEditor.obj: daemon/queue/QueueEditor.cpp
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='daemon/queue/QueueEditor.cpp' object='QueueEditor.obj' libtool=no @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o QueueEditor.obj `if test -f 'daemon/queue/QueueEditor.cpp'; then $(CYGPATH_W) 'daemon/queue/QueueEditor.cpp'; else $(CYGPATH_W) '$(srcdir)/daemon/queue/QueueEditor.cpp'; fi`
+
+QueueScript.o: daemon/queue/QueueScript.cpp
+@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT QueueScript.o -MD -MP -MF "$(DEPDIR)/QueueScript.Tpo" -c -o QueueScript.o `test -f 'daemon/queue/QueueScript.cpp' || echo '$(srcdir)/'`daemon/queue/QueueScript.cpp; \
+@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/QueueScript.Tpo" "$(DEPDIR)/QueueScript.Po"; else rm -f "$(DEPDIR)/QueueScript.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='daemon/queue/QueueScript.cpp' object='QueueScript.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o QueueScript.o `test -f 'daemon/queue/QueueScript.cpp' || echo '$(srcdir)/'`daemon/queue/QueueScript.cpp
+
+QueueScript.obj: daemon/queue/QueueScript.cpp
+@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT QueueScript.obj -MD -MP -MF "$(DEPDIR)/QueueScript.Tpo" -c -o QueueScript.obj `if test -f 'daemon/queue/QueueScript.cpp'; then $(CYGPATH_W) 'daemon/queue/QueueScript.cpp'; else $(CYGPATH_W) '$(srcdir)/daemon/queue/QueueScript.cpp'; fi`; \
+@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/QueueScript.Tpo" "$(DEPDIR)/QueueScript.Po"; else rm -f "$(DEPDIR)/QueueScript.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='daemon/queue/QueueScript.cpp' object='QueueScript.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o QueueScript.obj `if test -f 'daemon/queue/QueueScript.cpp'; then $(CYGPATH_W) 'daemon/queue/QueueScript.cpp'; else $(CYGPATH_W) '$(srcdir)/daemon/queue/QueueScript.cpp'; fi`
 
 Scanner.o: daemon/queue/Scanner.cpp
 @am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT Scanner.o -MD -MP -MF "$(DEPDIR)/Scanner.Tpo" -c -o Scanner.o `test -f 'daemon/queue/Scanner.cpp' || echo '$(srcdir)/'`daemon/queue/Scanner.cpp; \
@@ -1236,6 +1256,20 @@ Observer.obj: daemon/util/Observer.cpp
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='daemon/util/Observer.cpp' object='Observer.obj' libtool=no @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o Observer.obj `if test -f 'daemon/util/Observer.cpp'; then $(CYGPATH_W) 'daemon/util/Observer.cpp'; else $(CYGPATH_W) '$(srcdir)/daemon/util/Observer.cpp'; fi`
+
+Script.o: daemon/util/Script.cpp
+@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT Script.o -MD -MP -MF "$(DEPDIR)/Script.Tpo" -c -o Script.o `test -f 'daemon/util/Script.cpp' || echo '$(srcdir)/'`daemon/util/Script.cpp; \
+@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/Script.Tpo" "$(DEPDIR)/Script.Po"; else rm -f "$(DEPDIR)/Script.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='daemon/util/Script.cpp' object='Script.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o Script.o `test -f 'daemon/util/Script.cpp' || echo '$(srcdir)/'`daemon/util/Script.cpp
+
+Script.obj: daemon/util/Script.cpp
+@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT Script.obj -MD -MP -MF "$(DEPDIR)/Script.Tpo" -c -o Script.obj `if test -f 'daemon/util/Script.cpp'; then $(CYGPATH_W) 'daemon/util/Script.cpp'; else $(CYGPATH_W) '$(srcdir)/daemon/util/Script.cpp'; fi`; \
+@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/Script.Tpo" "$(DEPDIR)/Script.Po"; else rm -f "$(DEPDIR)/Script.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='daemon/util/Script.cpp' object='Script.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o Script.obj `if test -f 'daemon/util/Script.cpp'; then $(CYGPATH_W) 'daemon/util/Script.cpp'; else $(CYGPATH_W) '$(srcdir)/daemon/util/Script.cpp'; fi`
 
 Thread.o: daemon/util/Thread.cpp
 @am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT Thread.o -MD -MP -MF "$(DEPDIR)/Thread.Tpo" -c -o Thread.o `test -f 'daemon/util/Thread.cpp' || echo '$(srcdir)/'`daemon/util/Thread.cpp; \

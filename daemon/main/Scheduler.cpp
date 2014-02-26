@@ -39,17 +39,24 @@
 
 #include "nzbget.h"
 #include "Scheduler.h"
-#include "ScriptController.h"
 #include "Options.h"
 #include "Log.h"
 #include "NewsServer.h"
 #include "ServerPool.h"
 #include "FeedInfo.h"
 #include "FeedCoordinator.h"
+#include "Script.h"
 
 extern Options* g_pOptions;
 extern ServerPool* g_pServerPool;
 extern FeedCoordinator* g_pFeedCoordinator;
+
+class SchedulerScriptController : public Thread, public ScriptController
+{
+public:
+	virtual void		Run();
+	static void			StartScript(const char* szCommandLine);
+};
 
 Scheduler::Task::Task(int iHours, int iMinutes, int iWeekDaysBits, ECommand eCommand, const char* szParam)
 {
@@ -371,4 +378,40 @@ void Scheduler::CheckScheduledResume()
 		g_pOptions->SetPausePostProcess(false);
 		g_pOptions->SetPauseScan(false);
 	}
+}
+
+
+void SchedulerScriptController::StartScript(const char* szCommandLine)
+{
+	char** argv = NULL;
+	if (!Util::SplitCommandLine(szCommandLine, &argv))
+	{
+		error("Could not execute scheduled process-script, failed to parse command line: %s", szCommandLine);
+		return;
+	}
+
+	info("Executing scheduled process-script %s", Util::BaseFileName(argv[0]));
+
+	SchedulerScriptController* pScriptController = new SchedulerScriptController();
+	pScriptController->SetScript(argv[0]);
+	pScriptController->SetArgs((const char**)argv, true);
+	pScriptController->SetAutoDestroy(true);
+
+	pScriptController->Start();
+}
+
+void SchedulerScriptController::Run()
+{
+	char szInfoName[1024];
+	snprintf(szInfoName, 1024, "scheduled process-script %s", Util::BaseFileName(GetScript()));
+	szInfoName[1024-1] = '\0';
+	SetInfoName(szInfoName);
+
+	char szLogPrefix[1024];
+	strncpy(szLogPrefix, Util::BaseFileName(GetScript()), 1024);
+	szLogPrefix[1024-1] = '\0';
+	if (char* ext = strrchr(szLogPrefix, '.')) *ext = '\0'; // strip file extension
+	SetLogPrefix(szLogPrefix);
+
+	Execute();
 }

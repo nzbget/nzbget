@@ -31,7 +31,7 @@
 #include "Log.h"
 #include "Thread.h"
 #include "DownloadInfo.h"
-#include "ScriptController.h"
+#include "Script.h"
 
 class UnpackController : public Thread, public ScriptController
 {
