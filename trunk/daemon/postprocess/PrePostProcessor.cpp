@@ -49,7 +49,7 @@
 #include "QueueCoordinator.h"
 #include "HistoryCoordinator.h"
 #include "DupeCoordinator.h"
-#include "ScriptController.h"
+#include "PostScript.h"
 #include "Util.h"
 #include "Scheduler.h"
 #include "Scanner.h"

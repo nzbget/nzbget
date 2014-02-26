@@ -45,6 +45,7 @@
 #include "Log.h"
 #include "Util.h"
 #include "ParCoordinator.h"
+#include "Options.h"
 
 extern Options* g_pOptions;
 

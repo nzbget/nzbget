@@ -1,7 +1,7 @@
 /*
  *  This file is part of nzbget
  *
- *  Copyright (C) 2007-2013 Andrey Prygunkov <hugbug@users.sourceforge.net>
+ *  Copyright (C) 2007-2014 Andrey Prygunkov <hugbug@users.sourceforge.net>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -23,15 +23,12 @@
  */
 
 
-#ifndef SCRIPTCONTROLLER_H
-#define SCRIPTCONTROLLER_H
+#ifndef SCRIPT_H
+#define SCRIPT_H
 
-#include <list>
+#include <vector>
 
 #include "Log.h"
-#include "Thread.h"
-#include "DownloadInfo.h"
-#include "Options.h"
 
 class EnvironmentStrings
 {
@@ -82,7 +79,6 @@ protected:
 	bool				GetTerminated() { return m_bTerminated; }
 	void				ResetEnv();
 	void				PrepareEnvOptions(const char* szStripPrefix);
-	void				PrepareEnvParameters(NZBInfo* pNZBInfo, const char* szStripPrefix);
 	void				PrepareArgs();
 
 public:
@@ -102,65 +98,6 @@ public:
 	void				SetEnvVar(const char* szName, const char* szValue);
 	void				SetEnvVarSpecial(const char* szPrefix, const char* szName, const char* szValue);
 	void				SetIntEnvVar(const char* szName, int iValue);
-};
-
-class PostScriptController : public Thread, public ScriptController
-{
-private:
-	PostInfo*			m_pPostInfo;
-	char				m_szNZBName[1024];
- 	int					m_iPrefixLen;
-
-	void				ExecuteScript(const char* szScriptName, const char* szDisplayName, const char* szLocation);
-	void				PrepareParams(const char* szScriptName);
-	ScriptStatus::EStatus	AnalyseExitCode(int iExitCode);
-
-	typedef std::deque<char*>		FileList;
-
-protected:
-	virtual void		AddMessage(Message::EKind eKind, const char* szText);
-
-public:
-	virtual void		Run();
-	virtual void		Stop();
-	static void			StartJob(PostInfo* pPostInfo);
-};
-
-class NZBScriptController : public ScriptController
-{
-private:
-	char**				m_pNZBName;
-	char**				m_pCategory;
-	int*				m_iPriority;
-	NZBParameterList*	m_pParameters;
-	bool*				m_bAddTop;
-	bool*				m_bAddPaused;
-	int					m_iPrefixLen;
-
-protected:
-	virtual void		AddMessage(Message::EKind eKind, const char* szText);
-
-public:
-	static void			ExecuteScript(const char* szScript, const char* szNZBFilename, const char* szDirectory,
-							char** pNZBName, char** pCategory, int* iPriority, NZBParameterList* pParameters,
-							bool* bAddTop, bool* bAddPaused);
-};
-
-class NZBAddedScriptController : public Thread, public ScriptController
-{
-private:
-	char*				m_szNZBName;
-
-public:
-	virtual void		Run();
-	static void			StartScript(DownloadQueue* pDownloadQueue, NZBInfo *pNZBInfo, const char* szScript);
-};
-
-class SchedulerScriptController : public Thread, public ScriptController
-{
-public:
-	virtual void		Run();
-	static void			StartScript(const char* szCommandLine);
 };
 
 #endif
