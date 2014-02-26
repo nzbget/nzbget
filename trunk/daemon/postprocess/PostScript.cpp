@@ -37,6 +37,7 @@
 #ifndef WIN32
 #include <unistd.h>
 #endif
+#include <stdio.h>
 
 #include "nzbget.h"
 #include "PostScript.h"
