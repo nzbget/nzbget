@@ -354,7 +354,9 @@ void ParRenamer::CheckRegularFile(const char* szDestDir, const char* szFilename)
 				}
 				else
 				{
-					PrintMessage(Message::mkError, "Could not rename %s to %s", szFilename, szDstFilename);
+					char szErrBuf[256];
+					PrintMessage(Message::mkError, "Could not rename %s to %s: %s", szFilename, szDstFilename,
+						Util::GetLastErrorMessage(szErrBuf, sizeof(szErrBuf)));
 				}
 			}
 			
@@ -432,7 +434,9 @@ void ParRenamer::CheckParFile(const char* szDestDir, const char* szFilename)
 	}
 	else
 	{
-		PrintMessage(Message::mkError, "Could not rename %s to %s", szFilename, szDestFileName);
+		char szErrBuf[256];
+		PrintMessage(Message::mkError, "Could not rename %s to %s: %s", szFilename, szDestFileName,
+			Util::GetLastErrorMessage(szErrBuf, sizeof(szErrBuf)));
 	}
 }
 
