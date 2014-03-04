@@ -444,7 +444,8 @@ bool UnpackController::Cleanup()
 
 				if (!Util::MoveFile(szSrcFile, szDstFile))
 				{
-					PrintMessage(Message::mkError, "Could not move file %s to %s", szSrcFile, szDstFile);
+					char szErrBuf[256];
+					PrintMessage(Message::mkError, "Could not move file %s to %s: %s", szSrcFile, szDstFile, Util::GetLastErrorMessage(szErrBuf, sizeof(szErrBuf)));
 					bOK = false;
 				}
 
@@ -710,7 +711,7 @@ bool MoveController::MoveFiles()
 			PrintMessage(Message::mkInfo, "Moving file %s to %s", Util::BaseFileName(szSrcFile), m_szDestDir);
 			if (!Util::MoveFile(szSrcFile, szDstFile))
 			{
-				PrintMessage(Message::mkError, "Could not move file %s to %s! Errcode: %i", szSrcFile, szDstFile, errno);
+				PrintMessage(Message::mkError, "Could not move file %s to %s: %s", szSrcFile, szDstFile, Util::GetLastErrorMessage(szErrBuf, sizeof(szErrBuf)));
 				bOK = false;
 			}
 		}
