@@ -566,6 +566,7 @@ public:
 	};
 
 	typedef std::deque<Message*>	Messages;
+	typedef std::vector<char*>		ParredFiles;
 
 private:
 	NZBInfo*			m_pNZBInfo;
@@ -583,6 +584,7 @@ private:
 	Mutex				m_mutexLog;
 	Messages			m_Messages;
 	int					m_iIDMessageGen;
+	ParredFiles			m_ParredFiles;
 
 public:
 						PostInfo();
@@ -612,6 +614,7 @@ public:
 	void				AppendMessage(Message::EKind eKind, const char* szText);
 	Messages*			LockMessages();
 	void				UnlockMessages();
+	ParredFiles*		GetParredFiles() { return &m_ParredFiles; }
 };
 
 typedef std::vector<int> IDList;

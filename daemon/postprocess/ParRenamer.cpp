@@ -261,6 +261,7 @@ void ParRenamer::LoadParFile(const char* szParFilename)
 		}
 		m_FileHashList.push_back(new FileHash(sourceFile->GetDescriptionPacket()->FileName().c_str(),
 			sourceFile->GetDescriptionPacket()->Hash16k().print().c_str()));
+		RegisterParredFile(sourceFile->GetDescriptionPacket()->FileName().c_str());
 	}
 
 	delete pRepairer;
@@ -340,7 +341,7 @@ void ParRenamer::CheckRegularFile(const char* szDestDir, const char* szFilename)
 		if (!strcmp(pFileHash->GetHash(), hash16k.print().c_str()))
 		{
 			debug("Found correct filename: %s", pFileHash->GetFilename());
-			
+
 			char szDstFilename[1024];
 			snprintf(szDstFilename, 1024, "%s%c%s", szDestDir, PATH_SEPARATOR, pFileHash->GetFilename());
 			szDstFilename[1024-1] = '\0';

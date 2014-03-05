@@ -732,7 +732,7 @@ bool ParChecker::AddMissingFiles()
 				}
 			}
 
-			if (!bAlreadyScanned)
+			if (!bAlreadyScanned && !IsParredFile(filename))
 			{
 				char fullfilename[1024];
 				snprintf(fullfilename, 1024, "%s%c%s", szDirectory, PATH_SEPARATOR, filename);
@@ -768,7 +768,16 @@ bool ParChecker::AddMissingFiles()
 			extrafiles1.clear();
 			extrafiles1.push_back(*pExtraFile);
 
-			bFilesAdded = ((Repairer*)m_pRepairer)->VerifyExtraFiles(extrafiles1) || bFilesAdded;
+			int iWasMissing = ((Repairer*)m_pRepairer)->missingfilecount;
+			((Repairer*)m_pRepairer)->VerifyExtraFiles(extrafiles1);
+			bool bAdded = iWasMissing > ((Repairer*)m_pRepairer)->missingfilecount;
+			if (bAdded)
+			{
+				info("Found missing file %s", Util::BaseFileName(pExtraFile->FileName().c_str()));
+				RegisterParredFile(Util::BaseFileName(pExtraFile->FileName().c_str()));
+			}
+
+			bFilesAdded |= bAdded;
 			((Repairer*)m_pRepairer)->UpdateVerificationResults();
 
 			delete pExtraFile;
