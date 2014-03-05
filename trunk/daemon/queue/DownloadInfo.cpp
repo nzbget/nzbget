@@ -903,7 +903,6 @@ PostInfo::PostInfo()
 	m_tStageTime = 0;
 	m_eStage = ptQueued;
 	m_pPostThread = NULL;
-	m_Messages.clear();
 	m_iIDMessageGen = 0;
 }
 
@@ -917,9 +916,12 @@ PostInfo::~ PostInfo()
 	{
 		delete *it;
 	}
-	m_Messages.clear();
-}
 
+	for (ParredFiles::iterator it = m_ParredFiles.begin(); it != m_ParredFiles.end(); it++)
+	{
+		free(*it);
+	}
+}
 
 void PostInfo::SetProgressLabel(const char* szProgressLabel)
 {

@@ -73,6 +73,24 @@ void ParCoordinator::PostParChecker::PrintMessage(Message::EKind eKind, const ch
 	m_pOwner->PrintMessage(m_pPostInfo, eKind, "%s", szText);
 }
 
+void ParCoordinator::PostParChecker::RegisterParredFile(const char* szFilename)
+{
+	m_pPostInfo->GetParredFiles()->push_back(strdup(szFilename));
+}
+
+bool ParCoordinator::PostParChecker::IsParredFile(const char* szFilename)
+{
+	for (PostInfo::ParredFiles::iterator it = m_pPostInfo->GetParredFiles()->begin(); it != m_pPostInfo->GetParredFiles()->end(); it++)
+	{
+		const char* szParredFile = *it;
+		if (!strcasecmp(szParredFile, szFilename))
+		{
+			return true;
+		}
+	}
+	return false;
+}
+
 void ParCoordinator::PostParRenamer::UpdateProgress()
 {
 	m_pOwner->UpdateParRenameProgress();
@@ -89,6 +107,12 @@ void ParCoordinator::PostParRenamer::PrintMessage(Message::EKind eKind, const ch
 	
 	m_pOwner->PrintMessage(m_pPostInfo, eKind, "%s", szText);
 }
+
+void ParCoordinator::PostParRenamer::RegisterParredFile(const char* szFilename)
+{
+	m_pPostInfo->GetParredFiles()->push_back(strdup(szFilename));
+}
+
 #endif
 
 ParCoordinator::ParCoordinator()

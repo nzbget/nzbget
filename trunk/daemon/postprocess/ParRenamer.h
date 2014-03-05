@@ -86,6 +86,7 @@ protected:
 	virtual void		UpdateProgress() {}
 	virtual void		Completed() {}
 	virtual void		PrintMessage(Message::EKind eKind, const char* szFormat, ...) {}
+	virtual void		RegisterParredFile(const char* szFilename) {}
 	const char*			GetProgressLabel() { return m_szProgressLabel; }
 	int					GetStageProgress() { return m_iStageProgress; }
 

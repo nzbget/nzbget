@@ -105,6 +105,8 @@ protected:
 	virtual void		UpdateProgress() {}
 	virtual void		Completed() {}
 	virtual void		PrintMessage(Message::EKind eKind, const char* szFormat, ...) {}
+	virtual void		RegisterParredFile(const char* szFilename) {}
+	virtual bool		IsParredFile(const char* szFilename) { return false; }
 	EStage				GetStage() { return m_eStage; }
 	const char*			GetProgressLabel() { return m_szProgressLabel; }
 	int					GetFileProgress() { return m_iFileProgress; }
