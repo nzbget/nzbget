@@ -193,6 +193,7 @@ void PrePostProcessor::QueueCoordinatorUpdate(Subject * Caller, void * Aspect)
 			!m_ParCoordinator.AddPar(pAspect->pFileInfo, pAspect->eAction == QueueCoordinator::eaFileDeleted) &&
 #endif
 			IsNZBFileCompleted(pAspect->pNZBInfo, true, false) &&
+			!pAspect->pNZBInfo->GetPostInfo() &&
 			(!pAspect->pFileInfo->GetPaused() || IsNZBFileCompleted(pAspect->pNZBInfo, false, false)))
 		{
 			if ((pAspect->eAction == QueueCoordinator::eaFileCompleted ||
@@ -206,7 +207,7 @@ void PrePostProcessor::QueueCoordinatorUpdate(Subject * Caller, void * Aspect)
 			else if ((pAspect->eAction == QueueCoordinator::eaFileDeleted ||
 				(pAspect->eAction == QueueCoordinator::eaFileCompleted &&
 				 pAspect->pFileInfo->GetNZBInfo()->GetDeleteStatus() > NZBInfo::dsNone)) &&
-				!pAspect->pNZBInfo->GetParCleanup() && !pAspect->pNZBInfo->GetPostInfo() &&
+				!pAspect->pNZBInfo->GetParCleanup() &&
 				IsNZBFileCompleted(pAspect->pNZBInfo, false, true))
 			{
 				info("Collection %s deleted from queue", pAspect->pNZBInfo->GetName());
@@ -400,7 +401,7 @@ void PrePostProcessor::CheckPostQueue()
 	if (m_pCurJob)
 	{
 		PostInfo* pPostInfo = m_pCurJob->GetPostInfo();
-		if (!pPostInfo->GetWorking())
+		if (!pPostInfo->GetWorking() && !IsNZBFileDownloading(m_pCurJob))
 		{
 #ifndef DISABLE_PARCHECK
 			if (pPostInfo->GetRequestParCheck() && pPostInfo->GetNZBInfo()->GetParStatus() <= NZBInfo::psSkipped &&
@@ -671,7 +672,6 @@ void PrePostProcessor::JobCompleted(DownloadQueue* pDownloadQueue, PostInfo* pPo
 
 bool PrePostProcessor::IsNZBFileCompleted(NZBInfo* pNZBInfo, bool bIgnorePausedPars, bool bAllowOnlyOneDeleted)
 {
-	bool bNZBFileCompleted = true;
 	int iDeleted = 0;
 
 	for (FileList::iterator it = pNZBInfo->GetFileList()->begin(); it != pNZBInfo->GetFileList()->end(); it++)
@@ -685,12 +685,30 @@ bool PrePostProcessor::IsNZBFileCompleted(NZBInfo* pNZBInfo, bool bIgnorePausedP
 			!pFileInfo->GetDeleted()) ||
 			(bAllowOnlyOneDeleted && iDeleted > 1))
 		{
-			bNZBFileCompleted = false;
-			break;
+			return false;
 		}
 	}
 
-	return bNZBFileCompleted;
+	return true;
+}
+
+bool PrePostProcessor::IsNZBFileDownloading(NZBInfo* pNZBInfo)
+{
+	if (pNZBInfo->GetActiveDownloads())
+	{
+		return true;
+	}
+
+	for (FileList::iterator it = pNZBInfo->GetFileList()->begin(); it != pNZBInfo->GetFileList()->end(); it++)
+	{
+		FileInfo* pFileInfo = *it;
+		if (!pFileInfo->GetPaused())
+		{
+			return true;
+		}
+	}
+
+	return false;
 }
 
 void PrePostProcessor::UpdatePauseState(bool bNeedPause, const char* szReason)

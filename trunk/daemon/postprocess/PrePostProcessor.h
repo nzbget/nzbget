@@ -51,6 +51,7 @@ private:
 	const char*			m_szPauseReason;
 
 	bool				IsNZBFileCompleted(NZBInfo* pNZBInfo, bool bIgnorePausedPars, bool bAllowOnlyOneDeleted);
+	bool				IsNZBFileDownloading(NZBInfo* pNZBInfo);
 	void				CheckPostQueue();
 	void				JobCompleted(DownloadQueue* pDownloadQueue, PostInfo* pPostInfo);
 	void				StartJob(DownloadQueue* pDownloadQueue, PostInfo* pPostInfo);
