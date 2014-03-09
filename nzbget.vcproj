@@ -332,6 +332,14 @@
 			<File
 				RelativePath=".\daemon\feed\FeedFile.cpp"
 				>
+				<FileConfiguration
+					Name="Debug|Win32"
+					>
+					<Tool
+						Name="VCCLCompilerTool"
+						AdditionalOptions="/MP1"
+					/>
+				</FileConfiguration>
 			</File>
 			<File
 				RelativePath=".\daemon\feed\FeedFile.h"
@@ -454,19 +462,19 @@
 				>
 			</File>
 			<File
+				RelativePath=".\daemon\postprocess\PostScript.cpp"
+				>
+			</File>
+			<File
+				RelativePath=".\daemon\postprocess\PostScript.h"
+				>
+			</File>
+			<File
 				RelativePath=".\daemon\postprocess\PrePostProcessor.cpp"
 				>
 			</File>
 			<File
 				RelativePath=".\daemon\postprocess\PrePostProcessor.h"
-				>
-			</File>
-			<File
-				RelativePath=".\daemon\postprocess\ScriptController.cpp"
-				>
-			</File>
-			<File
-				RelativePath=".\daemon\postprocess\ScriptController.h"
 				>
 			</File>
 			<File
@@ -516,6 +524,14 @@
 			<File
 				RelativePath=".\daemon\queue\NZBFile.cpp"
 				>
+				<FileConfiguration
+					Name="Debug|Win32"
+					>
+					<Tool
+						Name="VCCLCompilerTool"
+						AdditionalOptions="/MP1"
+					/>
+				</FileConfiguration>
 			</File>
 			<File
 				RelativePath=".\daemon\queue\NZBFile.h"
@@ -535,6 +551,14 @@
 			</File>
 			<File
 				RelativePath=".\daemon\queue\QueueEditor.h"
+				>
+			</File>
+			<File
+				RelativePath=".\daemon\queue\QueueScript.cpp"
+				>
+			</File>
+			<File
+				RelativePath=".\daemon\queue\QueueScript.h"
 				>
 			</File>
 			<File
@@ -619,6 +643,14 @@
 			</File>
 			<File
 				RelativePath=".\daemon\util\Observer.h"
+				>
+			</File>
+			<File
+				RelativePath=".\daemon\util\Script.cpp"
+				>
+			</File>
+			<File
+				RelativePath=".\daemon\util\Script.h"
 				>
 			</File>
 			<File
