@@ -536,11 +536,10 @@ bool QueueCoordinator::GetNextArticle(DownloadQueue* pDownloadQueue, FileInfo* &
 
 	// pCheckedFiles stores
 	bool* pCheckedFiles = NULL;
+	time_t tCurDate = time(NULL);
 
 	while (!bOK) 
 	{
-		//debug("QueueCoordinator::GetNextArticle() - in loop");
-
 		pFileInfo = NULL;
 		int iNum = 0;
 		int iFileNum = 0;
@@ -553,6 +552,8 @@ bool QueueCoordinator::GetNextArticle(DownloadQueue* pDownloadQueue, FileInfo* &
 				FileInfo* pFileInfo1 = *it2;
 				if ((!pCheckedFiles || !pCheckedFiles[iNum]) && 
 					!pFileInfo1->GetPaused() && !pFileInfo1->GetDeleted() &&
+					(g_pOptions->GetPropagationDelay() == 0 ||
+					 (int)pFileInfo1->GetTime() < (int)tCurDate - g_pOptions->GetPropagationDelay()) &&
 					(!pFileInfo ||
 					 (pFileInfo1->GetExtraPriority() == pFileInfo->GetExtraPriority() &&
 					  pFileInfo1->GetNZBInfo()->GetPriority() > pFileInfo->GetNZBInfo()->GetPriority()) ||
