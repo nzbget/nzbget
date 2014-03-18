@@ -122,7 +122,6 @@ bool DiskState::SaveDownloadQueue(DownloadQueue* pDownloadQueue)
 	tempFilename[1024-1] = '\0';
 
 	if (pDownloadQueue->GetQueue()->empty() && 
-		pDownloadQueue->GetUrlQueue()->empty() &&
 		pDownloadQueue->GetHistory()->empty())
 	{
 		remove(destFilename);
@@ -137,13 +136,10 @@ bool DiskState::SaveDownloadQueue(DownloadQueue* pDownloadQueue)
 		return false;
 	}
 
-	fprintf(outfile, "%s%i\n", FORMATVERSION_SIGNATURE, 45);
+	fprintf(outfile, "%s%i\n", FORMATVERSION_SIGNATURE, 46);
 
 	// save nzb-infos
 	SaveNZBQueue(pDownloadQueue, outfile);
-
-	// save url-queue
-	SaveUrlQueue(pDownloadQueue, outfile);
 
 	// save history
 	SaveHistory(pDownloadQueue, outfile);
@@ -182,7 +178,7 @@ bool DiskState::LoadDownloadQueue(DownloadQueue* pDownloadQueue)
 	char FileSignatur[128];
 	fgets(FileSignatur, sizeof(FileSignatur), infile);
 	int iFormatVersion = ParseFormatVersion(FileSignatur);
-	if (iFormatVersion < 3 || iFormatVersion > 45)
+	if (iFormatVersion < 3 || iFormatVersion > 46)
 	{
 		error("Could not load diskstate due to file version mismatch");
 		fclose(infile);
@@ -210,16 +206,16 @@ bool DiskState::LoadDownloadQueue(DownloadQueue* pDownloadQueue)
 		// load post-queue from v12
 		if (!LoadPostQueue12(pDownloadQueue, &nzbList, infile, iFormatVersion)) goto error;
 	}
-	else if (iFormatVersion < 7 && g_pOptions->GetReloadPostQueue())
+	else if (iFormatVersion < 7)
 	{
 		// load post-queue from v5
 		LoadPostQueue5(pDownloadQueue, &nzbList);
 	}
 
-	if (iFormatVersion >= 15)
+	if (iFormatVersion >= 15 && iFormatVersion < 46)
 	{
 		// load url-queue
-		if (!LoadUrlQueue(pDownloadQueue, infile, iFormatVersion)) goto error;
+		if (!LoadUrlQueue12(pDownloadQueue, infile, iFormatVersion)) goto error;
 	}
 
 	if (iFormatVersion >= 9)
@@ -259,7 +255,6 @@ error:
 
 	NZBInfo::ResetGenID(true);
 	FileInfo::ResetGenID(true);
-	UrlInfo::ResetGenID(true);
 	HistoryInfo::ResetGenID(true);
 
 	return bOK;
@@ -325,6 +320,8 @@ error:
 void DiskState::SaveNZBInfo(NZBInfo* pNZBInfo, FILE* outfile)
 {
 	fprintf(outfile, "%i\n", pNZBInfo->GetID());
+	fprintf(outfile, "%i\n", (int)pNZBInfo->GetKind());
+	fprintf(outfile, "%s\n", pNZBInfo->GetURL());
 	fprintf(outfile, "%s\n", pNZBInfo->GetFilename());
 	fprintf(outfile, "%s\n", pNZBInfo->GetDestDir());
 	fprintf(outfile, "%s\n", pNZBInfo->GetFinalDir());
@@ -334,10 +331,11 @@ void DiskState::SaveNZBInfo(NZBInfo* pNZBInfo, FILE* outfile)
 	fprintf(outfile, "%i,%i,%i,%i\n", (int)pNZBInfo->GetPriority(), 
 		pNZBInfo->GetPostInfo() ? (int)pNZBInfo->GetPostInfo()->GetStage() + 1 : 0,
 		(int)pNZBInfo->GetDeletePaused(), (int)pNZBInfo->GetManyDupeFiles());
-	fprintf(outfile, "%i,%i,%i,%i,%i,%i\n", (int)pNZBInfo->GetParStatus(), (int)pNZBInfo->GetUnpackStatus(),
+	fprintf(outfile, "%i,%i,%i,%i,%i,%i,%i\n", (int)pNZBInfo->GetParStatus(), (int)pNZBInfo->GetUnpackStatus(),
 		(int)pNZBInfo->GetMoveStatus(), (int)pNZBInfo->GetRenameStatus(), (int)pNZBInfo->GetDeleteStatus(),
-		(int)pNZBInfo->GetMarkStatus());
-	fprintf(outfile, "%i,%i\n", (int)pNZBInfo->GetUnpackCleanedUpDisk(), (int)pNZBInfo->GetHealthPaused());
+		(int)pNZBInfo->GetMarkStatus(), (int)pNZBInfo->GetUrlStatus());
+	fprintf(outfile, "%i,%i,%i\n", (int)pNZBInfo->GetUnpackCleanedUpDisk(), (int)pNZBInfo->GetHealthPaused(),
+		(int)pNZBInfo->GetAddUrlPaused());
 	fprintf(outfile, "%i,%i\n", pNZBInfo->GetFileCount(), pNZBInfo->GetParkedFileCount());
 	fprintf(outfile, "%i,%i\n", (int)pNZBInfo->GetMinTime(), (int)pNZBInfo->GetMaxTime());
 
@@ -441,6 +439,17 @@ bool DiskState::LoadNZBInfo(NZBInfo* pNZBInfo, FILE* infile, int iFormatVersion)
 		pNZBInfo->SetID(iID);
 	}
 
+	if (iFormatVersion >= 46)
+	{
+		int iKind;
+		if (fscanf(infile, "%i\n", &iKind) != 1) goto error;
+		pNZBInfo->SetKind((NZBInfo::EKind)iKind);
+
+		if (!fgets(buf, sizeof(buf), infile)) goto error;
+		if (buf[0] != 0) buf[strlen(buf)-1] = 0; // remove traling '\n'
+		pNZBInfo->SetURL(buf);
+	}
+
 	if (!fgets(buf, sizeof(buf), infile)) goto error;
 	if (buf[0] != 0) buf[strlen(buf)-1] = 0; // remove traling '\n'
 	pNZBInfo->SetFilename(buf);
@@ -506,7 +515,7 @@ bool DiskState::LoadNZBInfo(NZBInfo* pNZBInfo, FILE* infile, int iFormatVersion)
 		pNZBInfo->SetPriority(iPriority);
 		pNZBInfo->SetDeletePaused((bool)iDeletePaused);
 		pNZBInfo->SetManyDupeFiles((bool)iManyDupeFiles);
-		if (iPostStage > 0 && g_pOptions->GetReloadPostQueue())
+		if (iPostStage > 0)
 		{
 			pNZBInfo->EnterPostProcess();
 			pNZBInfo->GetPostInfo()->SetStage((PostInfo::EStage)iPostStage);
@@ -530,26 +539,37 @@ bool DiskState::LoadNZBInfo(NZBInfo* pNZBInfo, FILE* infile, int iFormatVersion)
 
 	if (iFormatVersion >= 18)
 	{
-		int iParStatus, iUnpackStatus, iScriptStatus, iMoveStatus = 0, iRenameStatus = 0, iDeleteStatus = 0, iMarkStatus = 0;
-		if (iFormatVersion >= 37)
+		int iParStatus, iUnpackStatus, iScriptStatus, iMoveStatus = 0,
+			iRenameStatus = 0, iDeleteStatus = 0, iMarkStatus = 0, iUrlStatus = 0;
+		if (iFormatVersion >= 46)
 		{
-			if (fscanf(infile, "%i,%i,%i,%i,%i,%i\n", &iParStatus, &iUnpackStatus, &iMoveStatus, &iRenameStatus, &iDeleteStatus, &iMarkStatus) != 6) goto error;
+			if (fscanf(infile, "%i,%i,%i,%i,%i,%i,%i\n", &iParStatus, &iUnpackStatus, &iMoveStatus,
+				&iRenameStatus, &iDeleteStatus, &iMarkStatus, &iUrlStatus) != 7) goto error;
+		}
+		else if (iFormatVersion >= 37)
+		{
+			if (fscanf(infile, "%i,%i,%i,%i,%i,%i\n", &iParStatus, &iUnpackStatus,
+				&iMoveStatus, &iRenameStatus, &iDeleteStatus, &iMarkStatus) != 6) goto error;
 		}
 		else if (iFormatVersion >= 35)
 		{
-			if (fscanf(infile, "%i,%i,%i,%i,%i\n", &iParStatus, &iUnpackStatus, &iMoveStatus, &iRenameStatus, &iDeleteStatus) != 5) goto error;
+			if (fscanf(infile, "%i,%i,%i,%i,%i\n", &iParStatus, &iUnpackStatus,
+				&iMoveStatus, &iRenameStatus, &iDeleteStatus) != 5) goto error;
 		}
 		else if (iFormatVersion >= 23)
 		{
-			if (fscanf(infile, "%i,%i,%i,%i\n", &iParStatus, &iUnpackStatus, &iMoveStatus, &iRenameStatus) != 4) goto error;
+			if (fscanf(infile, "%i,%i,%i,%i\n", &iParStatus, &iUnpackStatus,
+				&iMoveStatus, &iRenameStatus) != 4) goto error;
 		}
 		else if (iFormatVersion >= 21)
 		{
-			if (fscanf(infile, "%i,%i,%i,%i,%i\n", &iParStatus, &iUnpackStatus, &iScriptStatus, &iMoveStatus, &iRenameStatus) != 5) goto error;
+			if (fscanf(infile, "%i,%i,%i,%i,%i\n", &iParStatus, &iUnpackStatus,
+				&iScriptStatus, &iMoveStatus, &iRenameStatus) != 5) goto error;
 		}
 		else if (iFormatVersion >= 20)
 		{
-			if (fscanf(infile, "%i,%i,%i,%i\n", &iParStatus, &iUnpackStatus, &iScriptStatus, &iMoveStatus) != 4) goto error;
+			if (fscanf(infile, "%i,%i,%i,%i\n", &iParStatus, &iUnpackStatus,
+				&iScriptStatus, &iMoveStatus) != 4) goto error;
 		}
 		else
 		{
@@ -561,6 +581,10 @@ bool DiskState::LoadNZBInfo(NZBInfo* pNZBInfo, FILE* infile, int iFormatVersion)
 		pNZBInfo->SetRenameStatus((NZBInfo::ERenameStatus)iRenameStatus);
 		pNZBInfo->SetDeleteStatus((NZBInfo::EDeleteStatus)iDeleteStatus);
 		pNZBInfo->SetMarkStatus((NZBInfo::EMarkStatus)iMarkStatus);
+		if (pNZBInfo->GetKind() == NZBInfo::nkNzb)
+		{
+			pNZBInfo->SetUrlStatus((NZBInfo::EUrlStatus)iUrlStatus);
+		}
 		if (iFormatVersion < 23)
 		{
 			if (iScriptStatus > 1) iScriptStatus--;
@@ -570,10 +594,18 @@ bool DiskState::LoadNZBInfo(NZBInfo* pNZBInfo, FILE* infile, int iFormatVersion)
 
 	if (iFormatVersion >= 35)
 	{
-		int iUnpackCleanedUpDisk, bHealthPaused;
-		if (fscanf(infile, "%i,%i\n", &iUnpackCleanedUpDisk, &bHealthPaused) != 2) goto error;
+		int iUnpackCleanedUpDisk, iHealthPaused, iAddUrlPaused = 0;
+		if (iFormatVersion >= 46)
+		{
+			if (fscanf(infile, "%i,%i,%i\n", &iUnpackCleanedUpDisk, &iHealthPaused, &iAddUrlPaused) != 3) goto error;
+		}
+		else
+		{
+			if (fscanf(infile, "%i,%i\n", &iUnpackCleanedUpDisk, &iHealthPaused) != 2) goto error;
+		}
 		pNZBInfo->SetUnpackCleanedUpDisk((bool)iUnpackCleanedUpDisk);
-		pNZBInfo->SetHealthPaused((bool)bHealthPaused);
+		pNZBInfo->SetHealthPaused((bool)iHealthPaused);
+		pNZBInfo->SetAddUrlPaused((bool)iAddUrlPaused);
 	}
 	else if (iFormatVersion >= 28)
 	{
@@ -1091,7 +1123,6 @@ bool DiskState::LoadPostQueue12(DownloadQueue* pDownloadQueue, NZBList* pNZBList
 {
 	debug("Loading post-queue from disk");
 
-	bool bSkipPostQueue = !g_pOptions->GetReloadPostQueue();
 	int size;
 	char buf[10240];
 
@@ -1122,26 +1153,23 @@ bool DiskState::LoadPostQueue12(DownloadQueue* pDownloadQueue, NZBList* pNZBList
 		if (iFormatVersion < 21 && iStage > (int)PostInfo::ptVerifyingRepaired) iStage++;
 		if (iFormatVersion < 20 && iStage > (int)PostInfo::ptUnpacking) iStage++;
 
-		if (!bSkipPostQueue)
+		NZBInfo* pNZBInfo = NULL;
+
+		if (iFormatVersion < 43)
 		{
-			NZBInfo* pNZBInfo = NULL;
-
-			if (iFormatVersion < 43)
-			{
-				pNZBInfo = pNZBList->at(iNZBIndex - 1);
-				if (!pNZBInfo) goto error;
-			}
-			else
-			{
-				pNZBInfo = FindNZBInfo(pDownloadQueue, iNZBID);
-				if (!pNZBInfo) goto error;
-			}
-
-			pNZBInfo->EnterPostProcess();
-			pPostInfo = pNZBInfo->GetPostInfo();
-
-			pPostInfo->SetStage((PostInfo::EStage)iStage);
+			pNZBInfo = pNZBList->at(iNZBIndex - 1);
+			if (!pNZBInfo) goto error;
 		}
+		else
+		{
+			pNZBInfo = FindNZBInfo(pDownloadQueue, iNZBID);
+			if (!pNZBInfo) goto error;
+		}
+
+		pNZBInfo->EnterPostProcess();
+		pPostInfo = pNZBInfo->GetPostInfo();
+
+		pPostInfo->SetStage((PostInfo::EStage)iStage);
 
 		// InfoName, ignore
 		if (!fgets(buf, sizeof(buf), infile)) goto error;
@@ -1323,41 +1351,19 @@ error:
 	return false;
 }
 
-void DiskState::SaveUrlQueue(DownloadQueue* pDownloadQueue, FILE* outfile)
-{
-	debug("Saving url-queue to disk");
-
-	fprintf(outfile, "%i\n", (int)pDownloadQueue->GetUrlQueue()->size());
-	for (UrlQueue::iterator it = pDownloadQueue->GetUrlQueue()->begin(); it != pDownloadQueue->GetUrlQueue()->end(); it++)
-	{
-		UrlInfo* pUrlInfo = *it;
-		SaveUrlInfo(pUrlInfo, outfile);
-	}
-}
-
-bool DiskState::LoadUrlQueue(DownloadQueue* pDownloadQueue, FILE* infile, int iFormatVersion)
+bool DiskState::LoadUrlQueue12(DownloadQueue* pDownloadQueue, FILE* infile, int iFormatVersion)
 {
 	debug("Loading url-queue from disk");
-
-	bool bSkipUrlQueue = !g_pOptions->GetReloadUrlQueue();
 	int size;
 
 	// load url-infos
 	if (fscanf(infile, "%i\n", &size) != 1) goto error;
+
 	for (int i = 0; i < size; i++)
 	{
-		UrlInfo* pUrlInfo = new UrlInfo();
-
-		if (!LoadUrlInfo(pUrlInfo, infile, iFormatVersion)) goto error;
-
-		if (!bSkipUrlQueue)
-		{
-			pDownloadQueue->GetUrlQueue()->push_back(pUrlInfo);
-		}
-		else
-		{
-			delete pUrlInfo;
-		}
+		NZBInfo* pNZBInfo = new NZBInfo();
+		if (!LoadUrlInfo12(pNZBInfo, infile, iFormatVersion)) goto error;
+		pDownloadQueue->GetQueue()->push_back(pNZBInfo);
 	}
 
 	return true;
@@ -1367,19 +1373,7 @@ error:
 	return false;
 }
 
-void DiskState::SaveUrlInfo(UrlInfo* pUrlInfo, FILE* outfile)
-{
-	fprintf(outfile, "%i\n", pUrlInfo->GetID());
-	fprintf(outfile, "%i,%i\n", (int)pUrlInfo->GetStatus(), pUrlInfo->GetPriority());
-	fprintf(outfile, "%i,%i\n", (int)pUrlInfo->GetAddTop(), pUrlInfo->GetAddPaused());
-	fprintf(outfile, "%s\n", pUrlInfo->GetURL());
-	fprintf(outfile, "%s\n", pUrlInfo->GetNZBFilename());
-	fprintf(outfile, "%s\n", pUrlInfo->GetCategory());
-	fprintf(outfile, "%s\n", pUrlInfo->GetDupeKey());
-	fprintf(outfile, "%i,%i\n", (int)pUrlInfo->GetDupeMode(), pUrlInfo->GetDupeScore());
-}
-
-bool DiskState::LoadUrlInfo(UrlInfo* pUrlInfo, FILE* infile, int iFormatVersion)
+bool DiskState::LoadUrlInfo12(NZBInfo* pNZBInfo, FILE* infile, int iFormatVersion)
 {
 	char buf[10240];
 
@@ -1387,45 +1381,43 @@ bool DiskState::LoadUrlInfo(UrlInfo* pUrlInfo, FILE* infile, int iFormatVersion)
 	{
 		int iID;
 		if (fscanf(infile, "%i\n", &iID) != 1) goto error;
-		pUrlInfo->SetID(iID);
+		pNZBInfo->SetID(iID);
 	}
 
-	int iStatus, iPriority;
-	if (fscanf(infile, "%i,%i\n", &iStatus, &iPriority) != 2) goto error;
-	pUrlInfo->SetStatus((UrlInfo::EStatus)iStatus);
-	pUrlInfo->SetPriority(iPriority);
+	int iStatusDummy, iPriority;
+	if (fscanf(infile, "%i,%i\n", &iStatusDummy, &iPriority) != 2) goto error;
+	pNZBInfo->SetPriority(iPriority);
 
 	if (iFormatVersion >= 16)
 	{
-		int iAddTop, iAddPaused;
-		if (fscanf(infile, "%i,%i\n", &iAddTop, &iAddPaused) != 2) goto error;
-		pUrlInfo->SetAddTop(iAddTop);
-		pUrlInfo->SetAddPaused(iAddPaused);
+		int iAddTopDummy, iAddPaused;
+		if (fscanf(infile, "%i,%i\n", &iAddTopDummy, &iAddPaused) != 2) goto error;
+		pNZBInfo->SetAddUrlPaused(iAddPaused);
 	}
 
 	if (!fgets(buf, sizeof(buf), infile)) goto error;
 	if (buf[0] != 0) buf[strlen(buf)-1] = 0; // remove traling '\n'
-	pUrlInfo->SetURL(buf);
+	pNZBInfo->SetURL(buf);
 
 	if (!fgets(buf, sizeof(buf), infile)) goto error;
 	if (buf[0] != 0) buf[strlen(buf)-1] = 0; // remove traling '\n'
-	pUrlInfo->SetNZBFilename(buf);
+	pNZBInfo->SetFilename(buf);
 
 	if (!fgets(buf, sizeof(buf), infile)) goto error;
 	if (buf[0] != 0) buf[strlen(buf)-1] = 0; // remove traling '\n'
-	pUrlInfo->SetCategory(buf);
+	pNZBInfo->SetCategory(buf);
 
 	if (iFormatVersion >= 31)
 	{
 		if (!fgets(buf, sizeof(buf), infile)) goto error;
 		if (buf[0] != 0) buf[strlen(buf)-1] = 0; // remove traling '\n'
 		if (iFormatVersion < 36) ConvertDupeKey(buf, sizeof(buf));
-		pUrlInfo->SetDupeKey(buf);
+		pNZBInfo->SetDupeKey(buf);
 
 		int iDupeMode, iDupeScore;
 		if (fscanf(infile, "%i,%i\n", &iDupeMode, &iDupeScore) != 2) goto error;
-		pUrlInfo->SetDupeMode((EDupeMode)iDupeMode);
-		pUrlInfo->SetDupeScore(iDupeScore);
+		pNZBInfo->SetDupeMode((EDupeMode)iDupeMode);
+		pNZBInfo->SetDupeScore(iDupeScore);
 	}
 
 	return true;
@@ -1508,15 +1500,11 @@ void DiskState::SaveHistory(DownloadQueue* pDownloadQueue, FILE* outfile)
 
 		fprintf(outfile, "%i,%i,%i\n", pHistoryInfo->GetID(), (int)pHistoryInfo->GetKind(), (int)pHistoryInfo->GetTime());
 
-		if (pHistoryInfo->GetKind() == HistoryInfo::hkNZBInfo)
+		if (pHistoryInfo->GetKind() == HistoryInfo::hkNzb || pHistoryInfo->GetKind() == HistoryInfo::hkUrl)
 		{
 			SaveNZBInfo(pHistoryInfo->GetNZBInfo(), outfile);
 		}
-		else if (pHistoryInfo->GetKind() == HistoryInfo::hkUrlInfo)
-		{
-			SaveUrlInfo(pHistoryInfo->GetUrlInfo(), outfile);
-		}
-		else if (pHistoryInfo->GetKind() == HistoryInfo::hkDupInfo)
+		else if (pHistoryInfo->GetKind() == HistoryInfo::hkDup)
 		{
 			SaveDupInfo(pHistoryInfo->GetDupInfo(), outfile);
 		}
@@ -1532,7 +1520,7 @@ bool DiskState::LoadHistory(DownloadQueue* pDownloadQueue, NZBList* pNZBList, FI
 	for (int i = 0; i < size; i++)
 	{
 		HistoryInfo* pHistoryInfo = NULL;
-		HistoryInfo::EKind eKind = HistoryInfo::hkNZBInfo;
+		HistoryInfo::EKind eKind = HistoryInfo::hkNzb;
 		int iID = 0;
 		int iTime;
 	
@@ -1557,7 +1545,7 @@ bool DiskState::LoadHistory(DownloadQueue* pDownloadQueue, NZBList* pNZBList, FI
 			}
 		}
 
-		if (eKind == HistoryInfo::hkNZBInfo)
+		if (eKind == HistoryInfo::hkNzb)
 		{
 			NZBInfo* pNZBInfo = NULL;
 
@@ -1581,13 +1569,20 @@ bool DiskState::LoadHistory(DownloadQueue* pDownloadQueue, NZBList* pNZBList, FI
 				pNZBInfo->SetDeleteStatus(NZBInfo::dsManual);
 			}
 		}
-		else if (eKind == HistoryInfo::hkUrlInfo)
+		else if (eKind == HistoryInfo::hkUrl)
 		{
-			UrlInfo* pUrlInfo = new UrlInfo();
-			if (!LoadUrlInfo(pUrlInfo, infile, iFormatVersion)) goto error;
-			pHistoryInfo = new HistoryInfo(pUrlInfo);
+			NZBInfo* pNZBInfo = new NZBInfo();
+			if (iFormatVersion >= 46)
+			{
+				if (!LoadNZBInfo(pNZBInfo, infile, iFormatVersion)) goto error;
+			}
+			else
+			{
+				if (!LoadUrlInfo12(pNZBInfo, infile, iFormatVersion)) goto error;
+			}
+			pHistoryInfo = new HistoryInfo(pNZBInfo);
 		}
-		else if (eKind == HistoryInfo::hkDupInfo)
+		else if (eKind == HistoryInfo::hkDup)
 		{
 			DupInfo* pDupInfo = new DupInfo();
 			if (!LoadDupInfo(pDupInfo, infile, iFormatVersion)) goto error;

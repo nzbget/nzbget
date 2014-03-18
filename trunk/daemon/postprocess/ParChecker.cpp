@@ -770,7 +770,7 @@ bool ParChecker::AddMissingFiles()
 
 			int iWasMissing = ((Repairer*)m_pRepairer)->missingfilecount;
 			((Repairer*)m_pRepairer)->VerifyExtraFiles(extrafiles1);
-			bool bAdded = iWasMissing > ((Repairer*)m_pRepairer)->missingfilecount;
+			bool bAdded = iWasMissing > (int)((Repairer*)m_pRepairer)->missingfilecount;
 			if (bAdded)
 			{
 				info("Found missing file %s", Util::BaseFileName(pExtraFile->FileName().c_str()));

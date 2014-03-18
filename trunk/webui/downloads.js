@@ -210,6 +210,12 @@ var Downloads = (new function($)
 		var dupe = DownloadsUI.buildDupe(group.DupeKey, group.DupeScore, group.DupeMode);
 
 		var name = '<a href="#" nzbid="' + group.NZBID + '">' + Util.textToHtml(Util.formatNZBName(group.NZBName)) + '</a>';
+
+		var url = '';
+		if (group.Kind === 'URL')
+		{
+			url = '<span class="label label-info">URL</span> ';
+		}
 		
 		var health = '';
 		if (group.Health < 1000 && (!group.postprocess ||
@@ -224,12 +230,12 @@ var Downloads = (new function($)
 
 		if (!UISettings.miniTheme)
 		{
-			var info = name + ' ' + priority + dupe + health + progresslabel;
+			var info = name + ' ' + url + priority + dupe + health + progresslabel;
 			item.fields = ['<div class="check img-check"></div>', status, info, category, item.data.age, progress, item.data.estimated];
 		}
 		else
 		{
-			var info = '<div class="check img-check"></div><span class="row-title">' + name + '</span>' +
+			var info = '<div class="check img-check"></div><span class="row-title">' + name + '</span>' + url +
 				' ' + (group.status === 'queued' ? '' : status) + ' ' + priority + dupe + health;
 			if (category)
 			{
@@ -275,7 +281,7 @@ var Downloads = (new function($)
 		}
 		else if (group.ActiveDownloads > 0)
 		{
-			group.status = 'downloading';
+			group.status = group.Kind == 'URL' ? 'fetching' : 'downloading';
 		}
 		else if (group.paused)
 		{
@@ -338,7 +344,7 @@ var Downloads = (new function($)
 
 	/*** CHECKMARKS ******************************************************/
 
-	function checkBuildEditIDList(allowPostProcess)
+	function checkBuildEditIDList(allowPostProcess, allowUrl)
 	{
 		var checkedRows = $DownloadsTable.fasttable('checkedRows');
 
@@ -352,6 +358,11 @@ var Downloads = (new function($)
 				if (group.postprocess && !allowPostProcess)
 				{
 					Notification.show('#Notif_Downloads_CheckPostProcess');
+					return null;
+				}
+				if (group.Kind === 'URL' && !allowUrl)
+				{
+					Notification.show('#Notif_Downloads_CheckURL');
 					return null;
 				}
 
@@ -372,7 +383,7 @@ var Downloads = (new function($)
 
 	this.editClick = function()
 	{
-		var checkedEditIDs = checkBuildEditIDList(false);
+		var checkedEditIDs = checkBuildEditIDList(false, true);
 		if (!checkedEditIDs)
 		{
 			return;
@@ -390,7 +401,7 @@ var Downloads = (new function($)
 
 	this.mergeClick = function()
 	{
-		var checkedEditIDs = checkBuildEditIDList(false);
+		var checkedEditIDs = checkBuildEditIDList(false, false);
 		if (!checkedEditIDs)
 		{
 			return;
@@ -407,7 +418,7 @@ var Downloads = (new function($)
 
 	this.pauseClick = function()
 	{
-		var checkedEditIDs = checkBuildEditIDList(false);
+		var checkedEditIDs = checkBuildEditIDList(false, false);
 		if (!checkedEditIDs)
 		{
 			return;
@@ -418,7 +429,7 @@ var Downloads = (new function($)
 
 	this.resumeClick = function()
 	{
-		var checkedEditIDs = checkBuildEditIDList(false);
+		var checkedEditIDs = checkBuildEditIDList(false, false);
 		if (!checkedEditIDs)
 		{
 			return;
@@ -442,6 +453,8 @@ var Downloads = (new function($)
 		var checkedRows = $DownloadsTable.fasttable('checkedRows');
 		var downloadIDs = [];
 		var postprocessIDs = [];
+		var hasNzb = false;
+		var hasUrl = false;
 		for (var i = 0; i < groups.length; i++)
 		{
 			var group = groups[i];
@@ -452,6 +465,8 @@ var Downloads = (new function($)
 					postprocessIDs.push(group.NZBID);
 				}
 				downloadIDs.push(group.NZBID);
+				hasNzb = hasNzb || group.Kind === 'NZB';
+				hasUrl = hasUrl || group.Kind === 'URL';
 			}
 		}
 
@@ -487,12 +502,12 @@ var Downloads = (new function($)
 			}
 		};
 
-		DownloadsUI.deleteConfirm(deleteGroups, true);
+		DownloadsUI.deleteConfirm(deleteGroups, true, hasNzb, hasUrl);
 	}
 
 	this.moveClick = function(action)
 	{
-		var checkedEditIDs = checkBuildEditIDList(true);
+		var checkedEditIDs = checkBuildEditIDList(true, true);
 		if (!checkedEditIDs)
 		{
 			return;
@@ -576,6 +591,7 @@ var DownloadsUI = (new function($)
 			case 'downloading': return '<span class="label label-status label-success">downloading</span>';
 			case 'paused': return '<span class="label label-status label-warning">paused</span>';
 			case 'queued': return '<span class="label label-status">queued</span>';
+			case 'fetching': return '<span class="label label-status label-success">fetching</span>';
 			default: return '<span class="label label-status label-important">internal error(' + group.status + ')</span>';
 		}
 	}
@@ -605,6 +621,12 @@ var DownloadsUI = (new function($)
 			totalsize = '';
 			remaining = '';
 			percent = Math.round(group.post.StageProgress / 10);
+		}
+		
+		if (group.Kind === 'URL')
+		{
+			totalsize = '';
+			remaining = '';
 		}
 
 		if (!UISettings.miniTheme)
@@ -802,7 +824,7 @@ var DownloadsUI = (new function($)
 		return categoryColumnWidth;
 	}
 
-	this.deleteConfirm = function(actionCallback, multi)
+	this.deleteConfirm = function(actionCallback, multi, hasNzb, hasUrl)
 	{
 		var dupeCheck = Options.option('DupeCheck') === 'yes';
 		var cleanupDisk = Options.option('DeleteCleanupDisk') === 'yes';
@@ -826,10 +848,10 @@ var DownloadsUI = (new function($)
 			$('#DownloadsDeleteConfirmDialog_DeleteFinal', dialog).prop('checked', false);
 			Util.show($('#DownloadsDeleteConfirmDialog_Options', dialog), history);
 			Util.show($('#DownloadsDeleteConfirmDialog_Simple', dialog), !history);
-			Util.show($('#DownloadsDeleteConfirmDialog_DeleteDupe,#DownloadsDeleteConfirmDialog_DeleteDupeLabel', dialog), dupeCheck);
-			Util.show($('#DownloadsDeleteConfirmDialog_Remain', dialog), !cleanupDisk);
-			Util.show($('#DownloadsDeleteConfirmDialog_Cleanup', dialog), cleanupDisk);
-			Util.show('#ConfirmDialog_Help', history && dupeCheck);
+			Util.show($('#DownloadsDeleteConfirmDialog_DeleteDupe,#DownloadsDeleteConfirmDialog_DeleteDupeLabel', dialog), dupeCheck && hasNzb);
+			Util.show($('#DownloadsDeleteConfirmDialog_Remain', dialog), !cleanupDisk && hasNzb);
+			Util.show($('#DownloadsDeleteConfirmDialog_Cleanup', dialog), cleanupDisk && hasNzb);
+			Util.show('#ConfirmDialog_Help', history && dupeCheck && hasNzb);
 		};
 
 		function action()

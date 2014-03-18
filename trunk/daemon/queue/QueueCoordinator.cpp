@@ -261,7 +261,7 @@ void QueueCoordinator::AdjustDownloadsLimit()
 	m_iDownloadsLimit = iDownloadsLimit;
 }
 
-void QueueCoordinator::AddNZBFileToQueue(NZBFile* pNZBFile, bool bAddFirst)
+void QueueCoordinator::AddNZBFileToQueue(NZBFile* pNZBFile, NZBInfo* pUrlInfo, bool bAddFirst)
 {
 	debug("Adding NZBFile to queue");
 
@@ -269,8 +269,8 @@ void QueueCoordinator::AddNZBFileToQueue(NZBFile* pNZBFile, bool bAddFirst)
 
 	DownloadQueue* pDownloadQueue = DownloadQueue::Lock();
 
-	Aspect foundAspect = { eaNZBFileFound, pDownloadQueue, pNZBInfo, NULL };
-	Notify(&foundAspect);
+	DownloadQueue::Aspect foundAspect = { DownloadQueue::eaNzbFound, pDownloadQueue, pNZBInfo, NULL };
+	pDownloadQueue->Notify(&foundAspect);
 
 	NZBInfo::EDeleteStatus eDeleteStatus = pNZBInfo->GetDeleteStatus();
 
@@ -289,15 +289,12 @@ void QueueCoordinator::AddNZBFileToQueue(NZBFile* pNZBFile, bool bAddFirst)
 		pNZBInfo->SetDeletePaused(bAllPaused);
 	}
 
-	if (eDeleteStatus == NZBInfo::dsManual)
+	if (eDeleteStatus != NZBInfo::dsManual)
 	{
-		DownloadQueue::Unlock(); // UNLOCK
-		return;
+		// NZBInfo will be added either to queue or to history as duplicate
+		// and therefore can be detached from NZBFile.
+		pNZBFile->DetachNZBInfo();
 	}
-
-	// at this point NZBInfo will be added either to queue or to history as duplicate
-	// and therefore can be detached from NZBFile.
-	pNZBFile->DetachNZBInfo();
 
 	if (eDeleteStatus == NZBInfo::dsNone)
 	{
@@ -305,7 +302,21 @@ void QueueCoordinator::AddNZBFileToQueue(NZBFile* pNZBFile, bool bAddFirst)
 		{
 			CheckDupeFileInfos(pNZBInfo);
 		}
-		if (bAddFirst)
+
+		if (pUrlInfo)
+		{
+			// insert at the URL position
+			for (NZBList::iterator it = pDownloadQueue->GetQueue()->begin(); it != pDownloadQueue->GetQueue()->end(); it++)
+			{
+				NZBInfo* pPosNzbInfo = *it;
+				if (pPosNzbInfo == pUrlInfo)
+				{
+					pDownloadQueue->GetQueue()->insert(it, pNZBInfo);
+					break;
+				}
+			}
+		}
+		else if (bAddFirst)
 		{
 			pDownloadQueue->GetQueue()->push_front(pNZBInfo);
 		}
@@ -315,12 +326,21 @@ void QueueCoordinator::AddNZBFileToQueue(NZBFile* pNZBFile, bool bAddFirst)
 		}
 	}
 
+	if (pUrlInfo)
+	{
+		pDownloadQueue->GetQueue()->Remove(pUrlInfo);
+		delete pUrlInfo;
+	}
+
 	char szNZBName[1024];
 	strncpy(szNZBName, pNZBInfo->GetName(), sizeof(szNZBName)-1);
 
-	Aspect aspect = { eaNZBFileAdded, pDownloadQueue, pNZBInfo, NULL };
-	Notify(&aspect);
-	
+	if (eDeleteStatus != NZBInfo::dsManual)
+	{
+		DownloadQueue::Aspect addedAspect = { DownloadQueue::eaNzbAdded, pDownloadQueue, pNZBInfo, NULL };
+		pDownloadQueue->Notify(&addedAspect);
+	}
+		
 	pDownloadQueue->Save();
 
 	DownloadQueue::Unlock();
@@ -481,7 +501,7 @@ void QueueCoordinator::ResetSpeedStat()
 	m_tSpeedCorrection = tCurTime;
 }
 
-//TODO: refactor: move to DownloadQueue (QueueCoordinator::CalcRemainingSize())
+// TODO: refactor: move to DownloadQueue (QueueCoordinator::CalcRemainingSize())
 long long QueueCoordinator::CalcRemainingSize()
 {
 	long long lRemainingSize = 0;
@@ -822,8 +842,10 @@ void QueueCoordinator::DeleteFileInfo(DownloadQueue* pDownloadQueue, FileInfo* p
 
 	NZBInfo* pNZBInfo = pFileInfo->GetNZBInfo();
 
-	Aspect aspect = { bCompleted && !fileDeleted ? eaFileCompleted : eaFileDeleted, pDownloadQueue, pNZBInfo, pFileInfo };
-	Notify(&aspect);
+	DownloadQueue::Aspect aspect = { bCompleted && !fileDeleted ? 
+		DownloadQueue::eaFileCompleted : DownloadQueue::eaFileDeleted,
+		pDownloadQueue, pNZBInfo, pFileInfo };
+	pDownloadQueue->Notify(&aspect);
 
 	// nzb-file could be deleted from queue in "Notify", check if it is still in queue.
 	if (std::find(pDownloadQueue->GetQueue()->begin(), pDownloadQueue->GetQueue()->end(), pNZBInfo) !=
@@ -1089,19 +1111,28 @@ bool QueueCoordinator::SetQueueEntryName(DownloadQueue* pDownloadQueue, NZBInfo*
 		return false;
 	}
 
-	if (strlen(szName) == 0)
+	if (Util::EmptyStr(szName))
 	{
 		error("Could not rename %s. The new name cannot be empty", pNZBInfo->GetName());
 		return false;
 	}
 
-	char szOldDestDir[1024];
-	strncpy(szOldDestDir, pNZBInfo->GetDestDir(), 1024);
-	szOldDestDir[1024-1] = '\0';
-
 	char szNZBNicename[1024];
 	NZBInfo::MakeNiceNZBName(szName, szNZBNicename, sizeof(szNZBNicename), false);
 	pNZBInfo->SetName(szNZBNicename);
+
+	if (pNZBInfo->GetKind() == NZBInfo::nkUrl)
+	{
+		char szFilename[1024];
+		snprintf(szFilename, 1024, "%s.nzb", szNZBNicename);
+		szFilename[1024-1] = '\0';
+		pNZBInfo->SetFilename(szFilename);
+		return true;
+	}
+
+	char szOldDestDir[1024];
+	strncpy(szOldDestDir, pNZBInfo->GetDestDir(), 1024);
+	szOldDestDir[1024-1] = '\0';
 
 	pNZBInfo->BuildDestDirName();
 
@@ -1116,6 +1147,12 @@ bool QueueCoordinator::MergeQueueEntries(DownloadQueue* pDownloadQueue, NZBInfo*
 	if (pDestNZBInfo->GetPostInfo() || pSrcNZBInfo->GetPostInfo())
 	{
 		error("Could not merge %s and %s. File in post-process-stage", pDestNZBInfo->GetName(), pSrcNZBInfo->GetName());
+		return false;
+	}
+
+	if (pDestNZBInfo->GetKind() == NZBInfo::nkUrl || pSrcNZBInfo->GetKind() == NZBInfo::nkUrl)
+	{
+		error("Could not merge %s and %s. URLs cannot be merged", pDestNZBInfo->GetName(), pSrcNZBInfo->GetName());
 		return false;
 	}
 
@@ -1233,8 +1270,8 @@ bool QueueCoordinator::SplitQueueEntries(DownloadQueue* pDownloadQueue, FileList
 	{
 		FileInfo* pFileInfo = *it;
 
-		Aspect aspect = { eaFileDeleted, pDownloadQueue, pFileInfo->GetNZBInfo(), pFileInfo };
-		Notify(&aspect);
+		DownloadQueue::Aspect aspect = { DownloadQueue::eaFileDeleted, pDownloadQueue, pFileInfo->GetNZBInfo(), pFileInfo };
+		pDownloadQueue->Notify(&aspect);
 
 		pFileInfo->SetNZBInfo(pNZBInfo);
 		pNZBInfo->GetFileList()->push_back(pFileInfo);

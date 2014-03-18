@@ -1,7 +1,7 @@
 /*
  *  This file is part of nzbget
  *
- *  Copyright (C) 2013 Andrey Prygunkov <hugbug@users.sourceforge.net>
+ *  Copyright (C) 2013-2014 Andrey Prygunkov <hugbug@users.sourceforge.net>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -41,15 +41,12 @@ class FeedDownloader;
 
 class FeedCoordinator : public Thread, public Observer, public Subject
 {
-public:
-	typedef std::list<FeedDownloader*>	ActiveDownloads;
-
 private:
-	class UrlCoordinatorObserver: public Observer
+	class DownloadQueueObserver: public Observer
 	{
 	public:
 		FeedCoordinator*	m_pOwner;
-		virtual void		Update(Subject* pCaller, void* pAspect) { m_pOwner->UrlCoordinatorUpdate(pCaller, pAspect); }
+		virtual void		Update(Subject* pCaller, void* pAspect) { m_pOwner->DownloadQueueUpdate(pCaller, pAspect); }
 	};
 
 	class FeedCacheItem
@@ -74,13 +71,14 @@ private:
 	};
 
 	typedef std::deque<FeedCacheItem*>	FeedCache;
+	typedef std::list<FeedDownloader*>	ActiveDownloads;
 
 private:
 	Feeds					m_Feeds;
 	ActiveDownloads			m_ActiveDownloads;
 	FeedHistory				m_FeedHistory;
 	Mutex					m_mutexDownloads;
-	UrlCoordinatorObserver	m_UrlCoordinatorObserver;
+	DownloadQueueObserver	m_DownloadQueueObserver;
 	bool					m_bForce;
 	bool					m_bSave;
 	FeedCache				m_FeedCache;
@@ -91,7 +89,7 @@ private:
 	void					ProcessFeed(FeedInfo* pFeedInfo, FeedItemInfos* pFeedItemInfos);
 	void					DownloadItem(FeedInfo* pFeedInfo, FeedItemInfo* pFeedItemInfo);
 	void					ResetHangingDownloads();
-	void					UrlCoordinatorUpdate(Subject* pCaller, void* pAspect);
+	void					DownloadQueueUpdate(Subject* pCaller, void* pAspect);
 	void					CleanupHistory();
 	void					CleanupCache();
 	void					CheckSaveFeeds();

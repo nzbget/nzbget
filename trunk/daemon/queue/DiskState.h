@@ -42,10 +42,6 @@ private:
 	void				SaveNZBInfo(NZBInfo* pNZBInfo, FILE* outfile);
 	bool				LoadNZBInfo(NZBInfo* pNZBInfo, FILE* infile, int iFormatVersion);
 	void				SavePostQueue(DownloadQueue* pDownloadQueue, FILE* outfile);
-	void				SaveUrlQueue(DownloadQueue* pDownloadQueue, FILE* outfile);
-	bool				LoadUrlQueue(DownloadQueue* pDownloadQueue, FILE* infile, int iFormatVersion);
-	void				SaveUrlInfo(UrlInfo* pUrlInfo, FILE* outfile);
-	bool				LoadUrlInfo(UrlInfo* pUrlInfo, FILE* infile, int iFormatVersion);
 	void				SaveDupInfo(DupInfo* pDupInfo, FILE* outfile);
 	bool				LoadDupInfo(DupInfo* pDupInfo, FILE* infile, int iFormatVersion);
 	void				SaveHistory(DownloadQueue* pDownloadQueue, FILE* outfile);
@@ -62,6 +58,8 @@ private:
 	// backward compatibility functions (conversions from older formats)
 	bool				LoadPostQueue12(DownloadQueue* pDownloadQueue, NZBList* pNZBList, FILE* infile, int iFormatVersion);
 	bool				LoadPostQueue5(DownloadQueue* pDownloadQueue, NZBList* pNZBList);
+	bool				LoadUrlQueue12(DownloadQueue* pDownloadQueue, FILE* infile, int iFormatVersion);
+	bool				LoadUrlInfo12(NZBInfo* pNZBInfo, FILE* infile, int iFormatVersion);
 	int					FindNZBInfoIndex(NZBList* pNZBList, NZBInfo* pNZBInfo);
 	void				ConvertDupeKey(char* buf, int bufsize);
 	bool				LoadFileQueue12(NZBList* pNZBList, NZBList* pSortList, FILE* infile, int iFormatVersion);

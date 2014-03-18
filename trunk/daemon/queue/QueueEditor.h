@@ -61,6 +61,7 @@ private:
 	bool					CanCleanupDisk(NZBInfo* pNZBInfo);
 	bool					MergeGroups(ItemList* pItemList);
 	bool					SplitGroup(ItemList* pItemList, const char* szName);
+	bool					DeleteUrl(NZBInfo* pNZBInfo, DownloadQueue::EEditAction eAction);
 	void					ReorderFiles(ItemList* pItemList);
 	void					SetNZBParameter(NZBInfo* pNZBInfo, const char* szParamString);
 	void					SetNZBDupeParam(NZBInfo* pNZBInfo, DownloadQueue::EEditAction eAction, const char* szText);

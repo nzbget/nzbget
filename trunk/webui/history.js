@@ -184,13 +184,20 @@ var History = (new function($)
 		}
 		else if (hist.Kind === 'URL')
 		{
-			switch (hist.UrlStatus)
+			if (hist.DeleteStatus !== '')
 			{
-				case 'SUCCESS': hist.status = 'success'; hist.FilterKind = 'SUCCESS'; break;
-				case 'FAILURE': hist.status = 'failure'; hist.FilterKind = 'FAILURE'; break;
-				case 'UNKNOWN': hist.status = 'unknown'; hist.FilterKind = 'FAILURE'; break;
-				case 'SCAN_FAILURE': hist.status = 'failure'; hist.FilterKind = 'FAILURE'; break;
-				case 'SCAN_SKIPPED': hist.status = 'skipped'; hist.FilterKind = 'FAILURE'; break;
+				hist.status = 'deleted-manual'; hist.FilterKind = 'DELETED';
+			}
+			else
+			{
+				switch (hist.UrlStatus)
+				{
+					case 'SUCCESS': hist.status = 'success'; hist.FilterKind = 'SUCCESS'; break;
+					case 'FAILURE': hist.status = 'failure'; hist.FilterKind = 'FAILURE'; break;
+					case 'UNKNOWN': hist.status = 'unknown'; hist.FilterKind = 'FAILURE'; break;
+					case 'SCAN_FAILURE': hist.status = 'failure'; hist.FilterKind = 'FAILURE'; break;
+					case 'SCAN_SKIPPED': hist.status = 'skipped'; hist.FilterKind = 'FAILURE'; break;
+				}
 			}
 		}
 		else if (hist.Kind === 'DUP')

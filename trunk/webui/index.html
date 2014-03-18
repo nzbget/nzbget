@@ -793,6 +793,13 @@
 							</div>
 						</div>
 
+						<div class="control-group" id="DownloadsEdit_URLGroup">
+							<label class="control-label" for="DownloadsEdit_URL">Link</label>
+							<div class="controls">
+								<input type="text" class="input-xlarge" id="DownloadsEdit_URL" readonly="true" />
+							</div>
+						</div>
+
 						<div class="control-group">
 							<label class="control-label" for="DownloadsEdit_Priority">Priority</label>
 							<div class="controls">
@@ -801,7 +808,7 @@
 							</div>
 						</div>
 
-						<div class="control-group">
+						<div class="control-group" id="DownloadsEdit_CategoryGroup">
 							<label class="control-label" for="DownloadsEdit_Category">Category</label>
 							<div class="controls">
 								<select id="DownloadsEdit_Category">
@@ -1122,6 +1129,13 @@
 							<label class="control-label" for="HistoryEdit_Status">Status</label>
 							<div class="controls" style="margin-top: 4px;">
 								<span id="HistoryEdit_Status"></span>
+							</div>
+						</div>
+
+						<div class="control-group" id="HistoryEdit_URLGroup">
+							<label class="control-label" for="HistoryEdit_URL">Link</label>
+							<div class="controls">
+								<input type="text" class="input-xlarge" id="HistoryEdit_URL" readonly="true" />
 							</div>
 						</div>
 
@@ -2247,6 +2261,10 @@
 
 <div id="Notif_Downloads_CheckPostProcess" data-duration="2000" class="alert alert-error alert-center alert-center-medium hide">
     <strong>Post-processing-downloads cannot be edited</strong>
+</div>
+
+<div id="Notif_Downloads_CheckURL" data-duration="2000" class="alert alert-error alert-center alert-center-medium hide">
+    <strong>URLs cannot be merged or paused</strong>
 </div>
 
 <div id="Notif_Edit_Select" data-duration="2000" class="alert alert-error alert-center alert-center-small hide">

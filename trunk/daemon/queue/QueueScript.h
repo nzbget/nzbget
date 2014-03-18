@@ -51,9 +51,9 @@ protected:
 	virtual void		AddMessage(Message::EKind eKind, const char* szText);
 
 public:
-	static void			ExecuteScript(const char* szScript, const char* szNZBFilename, const char* szDirectory,
-							char** pNZBName, char** pCategory, int* iPriority, NZBParameterList* pParameters,
-							bool* bAddTop, bool* bAddPaused);
+	static void			ExecuteScript(const char* szScript, const char* szNZBFilename, const char* szUrl, 
+							const char* szDirectory, char** pNZBName, char** pCategory, int* iPriority,
+							NZBParameterList* pParameters, bool* bAddTop, bool* bAddPaused);
 };
 
 class NZBAddedScriptController : public Thread, public QueueScriptController

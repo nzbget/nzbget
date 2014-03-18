@@ -76,7 +76,6 @@ public:
 	bool			RequestScan(bool bSyncMode);
 	bool			RequestHistory();
 	bool 			RequestServerDownloadUrl(const char* szURL, const char* szNZBFilename, const char* szCategory, bool bAddFirst, bool bAddPaused, int iPriority);
-	bool			RequestUrlQueue();
 	void			BuildFileList(SNZBListResponse* pListResponse, const char* pTrailingData, DownloadQueue* pDownloadQueue);
 };
 

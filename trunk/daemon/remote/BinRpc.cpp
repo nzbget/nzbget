@@ -65,7 +65,7 @@ extern void Reload();
 const char* g_szMessageRequestNames[] =
     { "N/A", "Download", "Pause/Unpause", "List", "Set download rate", "Dump debug", 
 		"Edit queue", "Log", "Quit", "Reload", "Version", "Post-queue", "Write log", "Scan", 
-		"Pause/Unpause postprocessor", "History", "Download URL", "URL-queue" };
+		"Pause/Unpause postprocessor", "History", "Download URL" };
 
 const unsigned int g_iMessageRequestSizes[] =
     { 0,
@@ -83,8 +83,7 @@ const unsigned int g_iMessageRequestSizes[] =
 		sizeof(SNZBWriteLogRequest),
 		sizeof(SNZBScanRequest),
 		sizeof(SNZBHistoryRequest),
-		sizeof(SNZBDownloadUrlRequest),
-		sizeof(SNZBUrlQueueRequest)
+		sizeof(SNZBDownloadUrlRequest)
     };
 
 //*****************************************************************
@@ -189,10 +188,6 @@ void BinRpcProcessor::Dispatch()
 
 		case eRemoteRequestDownloadUrl:
 			command = new DownloadUrlBinCommand();
-			break;
-
-		case eRemoteRequestUrlQueue:
-			command = new UrlQueueBinCommand();
 			break;
 
 		default:
@@ -354,7 +349,7 @@ void DownloadBinCommand::Execute()
 	bool bAddTop = ntohl(DownloadRequest.m_bAddFirst);
 
 	bool bOK = g_pScanner->AddExternalFile(DownloadRequest.m_szFilename, DownloadRequest.m_szCategory,
-		iPriority, NULL, 0, dmScore, NULL, bAddTop, bAddPaused, NULL, pRecvBuffer, iBufLen) != Scanner::asFailed;
+		iPriority, NULL, 0, dmScore, NULL, bAddTop, bAddPaused, NULL, NULL, pRecvBuffer, iBufLen) != Scanner::asFailed;
 
 	char tmp[1024];
 	snprintf(tmp, 1024, bOK ? "Collection %s added to queue" : "Download Request failed for %s",
@@ -457,6 +452,7 @@ void ListBinCommand::Execute()
 			unsigned long iSizeHi, iSizeLo;
 			Util::SplitInt64(pNZBInfo->GetSize(), &iSizeHi, &iSizeLo);
 			pListAnswer->m_iID					= htonl(pNZBInfo->GetID());
+			pListAnswer->m_iKind				= htonl(pNZBInfo->GetKind());
 			pListAnswer->m_iSizeLo				= htonl(iSizeLo);
 			pListAnswer->m_iSizeHi				= htonl(iSizeHi);
 			pListAnswer->m_iPriority			= htonl(pNZBInfo->GetPriority());
@@ -1001,7 +997,7 @@ void HistoryBinCommand::Execute()
 		pHistoryInfo->GetName(szNicename, sizeof(szNicename));
 		pListAnswer->m_iNicenameLen			= htonl(strlen(szNicename) + 1);
 
-		if (pHistoryInfo->GetKind() == HistoryInfo::hkNZBInfo)
+		if (pHistoryInfo->GetKind() == HistoryInfo::hkNzb)
 		{
 			NZBInfo* pNZBInfo = pHistoryInfo->GetNZBInfo();
 			unsigned long iSizeHi, iSizeLo;
@@ -1012,10 +1008,10 @@ void HistoryBinCommand::Execute()
 			pListAnswer->m_iParStatus			= htonl(pNZBInfo->GetParStatus());
 			pListAnswer->m_iScriptStatus		= htonl(pNZBInfo->GetScriptStatuses()->CalcTotalStatus());
 		}
-		else if (pHistoryInfo->GetKind() == HistoryInfo::hkUrlInfo)
+		else if (pHistoryInfo->GetKind() == HistoryInfo::hkUrl)
 		{
-			UrlInfo* pUrlInfo = pHistoryInfo->GetUrlInfo();
-			pListAnswer->m_iUrlStatus			= htonl(pUrlInfo->GetStatus());
+			NZBInfo* pNZBInfo = pHistoryInfo->GetNZBInfo();
+			pListAnswer->m_iUrlStatus			= htonl(pNZBInfo->GetUrlStatus());
 		}
 
 		bufptr += sizeof(SNZBHistoryResponseEntry);
@@ -1065,15 +1061,15 @@ void DownloadUrlBinCommand::Execute()
 		return;
 	}
 
-	UrlInfo* pUrlInfo = new UrlInfo();
-	pUrlInfo->SetURL(DownloadUrlRequest.m_szURL);
-	pUrlInfo->SetNZBFilename(DownloadUrlRequest.m_szNZBFilename);
-	pUrlInfo->SetCategory(DownloadUrlRequest.m_szCategory);
-	pUrlInfo->SetPriority(ntohl(DownloadUrlRequest.m_iPriority));
-	pUrlInfo->SetAddTop(ntohl(DownloadUrlRequest.m_bAddFirst));
-	pUrlInfo->SetAddPaused(ntohl(DownloadUrlRequest.m_bAddPaused));
+	NZBInfo* pNZBInfo = new NZBInfo();
+	pNZBInfo->SetKind(NZBInfo::nkUrl);
+	pNZBInfo->SetURL(DownloadUrlRequest.m_szURL);
+	pNZBInfo->SetFilename(DownloadUrlRequest.m_szNZBFilename);
+	pNZBInfo->SetCategory(DownloadUrlRequest.m_szCategory);
+	pNZBInfo->SetPriority(ntohl(DownloadUrlRequest.m_iPriority));
+	pNZBInfo->SetAddUrlPaused(ntohl(DownloadUrlRequest.m_bAddPaused));
 
-	g_pUrlCoordinator->AddUrlToQueue(pUrlInfo, ntohl(DownloadUrlRequest.m_bAddFirst));
+	g_pUrlCoordinator->AddUrlToQueue(pNZBInfo, ntohl(DownloadUrlRequest.m_bAddFirst));
 
 	info("Request: Queue url %s", DownloadUrlRequest.m_szURL);
 
@@ -1081,78 +1077,4 @@ void DownloadUrlBinCommand::Execute()
 	snprintf(tmp, 1024, "Url %s added to queue", DownloadUrlRequest.m_szURL);
 	tmp[1024-1] = '\0';
 	SendBoolResponse(true, tmp);
-}
-
-void UrlQueueBinCommand::Execute()
-{
-	SNZBUrlQueueRequest UrlQueueRequest;
-	if (!ReceiveRequest(&UrlQueueRequest, sizeof(UrlQueueRequest)))
-	{
-		return;
-	}
-
-	SNZBUrlQueueResponse UrlQueueResponse;
-	memset(&UrlQueueResponse, 0, sizeof(UrlQueueResponse));
-	UrlQueueResponse.m_MessageBase.m_iSignature = htonl(NZBMESSAGE_SIGNATURE);
-	UrlQueueResponse.m_MessageBase.m_iStructSize = htonl(sizeof(UrlQueueResponse));
-	UrlQueueResponse.m_iEntrySize = htonl(sizeof(SNZBUrlQueueResponseEntry));
-
-	char* buf = NULL;
-	int bufsize = 0;
-
-	// Make a data structure and copy all the elements of the list into it
-	UrlQueue* pUrlQueue = DownloadQueue::Lock()->GetUrlQueue();
-
-	int NrEntries = pUrlQueue->size();
-
-	// calculate required buffer size
-	bufsize = NrEntries * sizeof(SNZBUrlQueueResponseEntry);
-	for (UrlQueue::iterator it = pUrlQueue->begin(); it != pUrlQueue->end(); it++)
-	{
-		UrlInfo* pUrlInfo = *it;
-		bufsize += strlen(pUrlInfo->GetURL()) + 1;
-		bufsize += strlen(pUrlInfo->GetNZBFilename()) + 1;
-		// align struct to 4-bytes, needed by ARM-processor (and may be others)
-		bufsize += bufsize % 4 > 0 ? 4 - bufsize % 4 : 0;
-	}
-
-	buf = (char*) malloc(bufsize);
-	char* bufptr = buf;
-
-	for (UrlQueue::iterator it = pUrlQueue->begin(); it != pUrlQueue->end(); it++)
-	{
-		UrlInfo* pUrlInfo = *it;
-		SNZBUrlQueueResponseEntry* pUrlQueueAnswer = (SNZBUrlQueueResponseEntry*) bufptr;
-		pUrlQueueAnswer->m_iID				= htonl(pUrlInfo->GetID());
-		pUrlQueueAnswer->m_iURLLen			= htonl(strlen(pUrlInfo->GetURL()) + 1);
-		pUrlQueueAnswer->m_iNZBFilenameLen		= htonl(strlen(pUrlInfo->GetNZBFilename()) + 1);
-		bufptr += sizeof(SNZBUrlQueueResponseEntry);
-		strcpy(bufptr, pUrlInfo->GetURL());
-		bufptr += ntohl(pUrlQueueAnswer->m_iURLLen);
-		strcpy(bufptr, pUrlInfo->GetNZBFilename());
-		bufptr += ntohl(pUrlQueueAnswer->m_iNZBFilenameLen);
-		// align struct to 4-bytes, needed by ARM-processor (and may be others)
-		if ((size_t)bufptr % 4 > 0)
-		{
-			pUrlQueueAnswer->m_iNZBFilenameLen = htonl(ntohl(pUrlQueueAnswer->m_iNZBFilenameLen) + 4 - (size_t)bufptr % 4);
-			memset(bufptr, 0, 4 - (size_t)bufptr % 4); //suppress valgrind warning "uninitialized data"
-			bufptr += 4 - (size_t)bufptr % 4;
-		}
-	}
-
-	DownloadQueue::Unlock();
-
-	UrlQueueResponse.m_iNrTrailingEntries = htonl(NrEntries);
-	UrlQueueResponse.m_iTrailingDataLength = htonl(bufsize);
-
-	// Send the request answer
-	m_pConnection->Send((char*) &UrlQueueResponse, sizeof(UrlQueueResponse));
-
-	// Send the data
-	if (bufsize > 0)
-	{
-		m_pConnection->Send(buf, bufsize);
-	}
-
-	free(buf);
 }

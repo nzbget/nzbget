@@ -31,6 +31,7 @@
 #include <deque>
 #include <time.h>
 
+#include "Observer.h"
 #include "Log.h"
 #include "Thread.h"
 
@@ -340,11 +341,30 @@ public:
 		ksGood
 	};
 
+	enum EUrlStatus
+	{
+		lsNone,
+		lsRunning,
+		lsFinished,
+		lsFailed,
+		lsRetry,
+		lsScanSkipped,
+		lsScanFailed
+	};
+
+	enum EKind
+	{
+		nkNzb,
+		nkUrl
+	};
+
 	typedef std::vector<char*>			Files;
 	typedef std::deque<Message*>		Messages;
 
 private:
 	int					m_iID;
+	EKind				m_eKind;
+	char*				m_szURL;
 	char* 				m_szFilename;
 	char*				m_szName;
 	char* 				m_szDestDir;
@@ -381,6 +401,8 @@ private:
 	EMoveStatus			m_eMoveStatus;
 	EDeleteStatus		m_eDeleteStatus;
 	EMarkStatus			m_eMarkStatus;
+	EUrlStatus			m_eUrlStatus;
+	bool				m_bAddUrlPaused;
 	bool				m_bDeletePaused;
 	bool				m_bManyDupeFiles;
 	char*				m_szQueuedFilename;
@@ -409,14 +431,19 @@ private:
 	static int			m_iIDMax;
 
 public:
-						NZBInfo(bool bPersistent = true);
+						NZBInfo();
 						~NZBInfo();
 	int					GetID() { return m_iID; }
 	void				SetID(int iID);
 	static void			ResetGenID(bool bMax);
+	EKind				GetKind() { return m_eKind; }
+	void				SetKind(EKind eKind) { m_eKind = eKind; }
+	const char*			GetURL() { return m_szURL; }			// needs locking (for shared objects)
+	void				SetURL(const char* szURL);				// needs locking (for shared objects)
 	const char*			GetFilename() { return m_szFilename; }
 	void				SetFilename(const char* szFilename);
 	static void			MakeNiceNZBName(const char* szNZBFilename, char* szBuffer, int iSize, bool bRemoveExt);
+	static void			MakeNiceUrlName(const char* szURL, const char* szNZBFilename, char* szBuffer, int iSize);
 	const char*			GetDestDir() { return m_szDestDir; }   // needs locking (for shared objects)
 	void				SetDestDir(const char* szDestDir);     // needs locking (for shared objects)
 	const char*			GetFinalDir() { return m_szFinalDir; }   // needs locking (for shared objects)
@@ -489,6 +516,8 @@ public:
 	void				SetDeleteStatus(EDeleteStatus eDeleteStatus) { m_eDeleteStatus = eDeleteStatus; }
 	EMarkStatus			GetMarkStatus() { return m_eMarkStatus; }
 	void				SetMarkStatus(EMarkStatus eMarkStatus) { m_eMarkStatus = eMarkStatus; }
+	EUrlStatus			GetUrlStatus() { return m_eUrlStatus; }
+	void				SetUrlStatus(EUrlStatus eUrlStatus) { m_eUrlStatus = eUrlStatus; }
 	const char*			GetQueuedFilename() { return m_szQueuedFilename; }
 	void				SetQueuedFilename(const char* szQueuedFilename);
 	bool				GetDeleting() { return m_bDeleting; }
@@ -507,6 +536,8 @@ public:
 	void				SetCleanupDisk(bool bCleanupDisk) { m_bCleanupDisk = bCleanupDisk; }
 	bool				GetUnpackCleanedUpDisk() { return m_bUnpackCleanedUpDisk; }
 	void				SetUnpackCleanedUpDisk(bool bUnpackCleanedUpDisk) { m_bUnpackCleanedUpDisk = bUnpackCleanedUpDisk; }
+	bool				GetAddUrlPaused() { return m_bAddUrlPaused; }
+	void				SetAddUrlPaused(bool bAddUrlPaused) { m_bAddUrlPaused = bAddUrlPaused; }
 	FileList*			GetFileList() { return &m_FileList; }					// needs locking (for shared objects)
 	NZBParameterList*	GetParameters() { return &m_ppParameters; }				// needs locking (for shared objects)
 	ScriptStatusList*	GetScriptStatuses() { return &m_scriptStatuses; }        // needs locking (for shared objects)
@@ -621,71 +652,6 @@ typedef std::vector<int> IDList;
 
 typedef std::vector<char*> NameList;
 
-class UrlInfo
-{
-public:
-	enum EStatus
-	{
-		aiUndefined,
-		aiRunning,
-		aiFinished,
-		aiFailed,
-		aiRetry,
-		aiScanSkipped,
-		aiScanFailed
-	};
-
-private:
-	int					m_iID;
-	char*				m_szURL;
-	char*				m_szNZBFilename;
-	char* 				m_szCategory;
-	int					m_iPriority;
-	char*				m_szDupeKey;
-	int					m_iDupeScore;
-	EDupeMode			m_eDupeMode;
-	bool				m_bAddTop;
-	bool				m_bAddPaused;
-	bool				m_bForce;
-	EStatus				m_eStatus;
-
-	static int			m_iIDGen;
-	static int			m_iIDMax;
-
-public:
-						UrlInfo();
-						~UrlInfo();
-	int					GetID() { return m_iID; }
-	void				SetID(int iID);
-	static void			ResetGenID(bool bMax);
-	const char*			GetURL() { return m_szURL; }			// needs locking (for shared objects)
-	void				SetURL(const char* szURL);				// needs locking (for shared objects)
-	const char*			GetNZBFilename() { return m_szNZBFilename; }		// needs locking (for shared objects)
-	void				SetNZBFilename(const char* szNZBFilename);			// needs locking (for shared objects)
-	const char*			GetCategory() { return m_szCategory; }	// needs locking (for shared objects)
-	void				SetCategory(const char* szCategory);	// needs locking (for shared objects)
-	int					GetPriority() { return m_iPriority; }
-	void				SetPriority(int iPriority) { m_iPriority = iPriority; }
-	const char*			GetDupeKey() { return m_szDupeKey; }
-	void				SetDupeKey(const char* szDupeKey);
-	int					GetDupeScore() { return m_iDupeScore; }
-	void				SetDupeScore(int iDupeScore) { m_iDupeScore = iDupeScore; }
-	EDupeMode			GetDupeMode() { return m_eDupeMode; }
-	void				SetDupeMode(EDupeMode eDupeMode) { m_eDupeMode = eDupeMode; }
-	bool				GetAddTop() { return m_bAddTop; }
-	void				SetAddTop(bool bAddTop) { m_bAddTop = bAddTop; }
-	bool				GetAddPaused() { return m_bAddPaused; }
-	void				SetAddPaused(bool bAddPaused) { m_bAddPaused = bAddPaused; }
-	void				GetName(char* szBuffer, int iSize);		// needs locking (for shared objects)
-	static void			MakeNiceName(const char* szURL, const char* szNZBFilename, char* szBuffer, int iSize);
-	bool				GetForce() { return m_bForce; }
-	void				SetForce(bool bForce) { m_bForce = bForce; }
-	EStatus				GetStatus() { return m_eStatus; }
-	void				SetStatus(EStatus Status) { m_eStatus = Status; }
-};
-
-typedef std::deque<UrlInfo*> UrlQueue;
-
 class DupInfo
 {
 public:
@@ -737,9 +703,9 @@ public:
 	enum EKind
 	{
 		hkUnknown,
-		hkNZBInfo,
-		hkUrlInfo,
-		hkDupInfo
+		hkNzb,
+		hkUrl,
+		hkDup
 	};
 
 private:
@@ -753,7 +719,6 @@ private:
 
 public:
 						HistoryInfo(NZBInfo* pNZBInfo);
-						HistoryInfo(UrlInfo* pUrlInfo);
 						HistoryInfo(DupInfo* pDupInfo);
 						~HistoryInfo();
 	int					GetID() { return m_iID; }
@@ -761,10 +726,8 @@ public:
 	static void			ResetGenID(bool bMax);
 	EKind				GetKind() { return m_eKind; }
 	NZBInfo*			GetNZBInfo() { return (NZBInfo*)m_pInfo; }
-	UrlInfo*			GetUrlInfo() { return (UrlInfo*)m_pInfo; }
 	DupInfo*			GetDupInfo() { return (DupInfo*)m_pInfo; }
 	void				DiscardNZBInfo() { m_pInfo = NULL; }
-	void				DiscardUrlInfo() { m_pInfo = NULL; }
 	time_t				GetTime() { return m_tTime; }
 	void				SetTime(time_t tTime) { m_tTime = tTime; }
 	void				GetName(char* szBuffer, int iSize);		// needs locking (for shared objects)
@@ -772,9 +735,26 @@ public:
 
 typedef std::deque<HistoryInfo*> HistoryList;
 
-class DownloadQueue
+class DownloadQueue : public Subject
 {
 public:
+	enum EAspectAction
+	{
+		eaNzbFound,
+		eaNzbAdded,
+		eaFileCompleted,
+		eaFileDeleted,
+		eaUrlCompleted
+	};
+
+	struct Aspect
+	{
+		EAspectAction eAction;
+		DownloadQueue* pDownloadQueue;
+		NZBInfo* pNZBInfo;
+		FileInfo* pFileInfo;
+	};
+
 	enum EEditAction
 	{
 		eaFileMoveOffset = 1,	// move files to m_iOffset relative to the current position in download-queue
@@ -830,7 +810,6 @@ public:
 private:
 	NZBList					m_Queue;
 	HistoryList				m_History;
-	UrlQueue				m_UrlQueue;
 	Mutex	 				m_LockMutex;
 
 	static DownloadQueue*	g_pDownloadQueue;
@@ -848,7 +827,6 @@ public:
 	static void				Unlock();
 	NZBList*				GetQueue() { return &m_Queue; }
 	HistoryList*			GetHistory() { return &m_History; }
-	UrlQueue*				GetUrlQueue() { return &m_UrlQueue; }
 	virtual bool			EditEntry(int ID, EEditAction eAction, int iOffset, const char* szText) = 0;
 	virtual bool			EditList(IDList* pIDList, NameList* pNameList, EMatchMode eMatchMode, EEditAction eAction, int iOffset, const char* szText) = 0;
 	virtual void			Save() = 0;

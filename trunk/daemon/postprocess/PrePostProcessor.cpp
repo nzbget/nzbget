@@ -71,8 +71,10 @@ PrePostProcessor::PrePostProcessor()
 	m_pCurJob = NULL;
 	m_szPauseReason = NULL;
 
-	m_QueueCoordinatorObserver.m_pOwner = this;
-	g_pQueueCoordinator->Attach(&m_QueueCoordinatorObserver);
+	m_DownloadQueueObserver.m_pOwner = this;
+	DownloadQueue* pDownloadQueue = DownloadQueue::Lock();
+	pDownloadQueue->Attach(&m_DownloadQueueObserver);
+	DownloadQueue::Unlock();
 }
 
 PrePostProcessor::~PrePostProcessor()
@@ -90,7 +92,7 @@ void PrePostProcessor::Run()
 	}
 
 	if (g_pOptions->GetServerMode() && g_pOptions->GetSaveQueue() &&
-		g_pOptions->GetReloadQueue() && g_pOptions->GetReloadPostQueue())
+		g_pOptions->GetReloadQueue())
 	{
 		DownloadQueue* pDownloadQueue = DownloadQueue::Lock();
 		SanitisePostQueue(pDownloadQueue);
@@ -109,6 +111,7 @@ void PrePostProcessor::Run()
 		// check incoming nzb directory
 		g_pScanner->Check();
 
+		// TODO: refactor: remove dependency from g_pQueueCoordinator (GetStandBy())
 		if (!g_pOptions->GetPauseDownload() && 
 			g_pOptions->GetDiskSpace() > 0 && !g_pQueueCoordinator->GetStandBy() && 
 			iDiskSpaceInterval >= 1000)
@@ -169,49 +172,49 @@ void PrePostProcessor::Stop()
 	DownloadQueue::Unlock();
 }
 
-void PrePostProcessor::QueueCoordinatorUpdate(Subject * Caller, void * Aspect)
+void PrePostProcessor::DownloadQueueUpdate(Subject* Caller, void* Aspect)
 {
 	if (IsStopped())
 	{
 		return;
 	}
 
-	QueueCoordinator::Aspect* pAspect = (QueueCoordinator::Aspect*)Aspect;
-	if (pAspect->eAction == QueueCoordinator::eaNZBFileFound)
+	DownloadQueue::Aspect* pQueueAspect = (DownloadQueue::Aspect*)Aspect;
+	if (pQueueAspect->eAction == DownloadQueue::eaNzbFound)
 	{
-		NZBFound(pAspect->pDownloadQueue, pAspect->pNZBInfo);
+		NZBFound(pQueueAspect->pDownloadQueue, pQueueAspect->pNZBInfo);
 	}
-	else if (pAspect->eAction == QueueCoordinator::eaNZBFileAdded)
+	else if (pQueueAspect->eAction == DownloadQueue::eaNzbAdded)
 	{
-		NZBAdded(pAspect->pDownloadQueue, pAspect->pNZBInfo);
+		NZBAdded(pQueueAspect->pDownloadQueue, pQueueAspect->pNZBInfo);
 	}
-	else if ((pAspect->eAction == QueueCoordinator::eaFileCompleted ||
-		pAspect->eAction == QueueCoordinator::eaFileDeleted))
+	else if ((pQueueAspect->eAction == DownloadQueue::eaFileCompleted ||
+		pQueueAspect->eAction == DownloadQueue::eaFileDeleted))
 	{
 		if (
 #ifndef DISABLE_PARCHECK
-			!m_ParCoordinator.AddPar(pAspect->pFileInfo, pAspect->eAction == QueueCoordinator::eaFileDeleted) &&
+			!m_ParCoordinator.AddPar(pQueueAspect->pFileInfo, pQueueAspect->eAction == DownloadQueue::eaFileDeleted) &&
 #endif
-			IsNZBFileCompleted(pAspect->pNZBInfo, true, false) &&
-			!pAspect->pNZBInfo->GetPostInfo() &&
-			(!pAspect->pFileInfo->GetPaused() || IsNZBFileCompleted(pAspect->pNZBInfo, false, false)))
+			IsNZBFileCompleted(pQueueAspect->pNZBInfo, true, false) &&
+			!pQueueAspect->pNZBInfo->GetPostInfo() &&
+			(!pQueueAspect->pFileInfo->GetPaused() || IsNZBFileCompleted(pQueueAspect->pNZBInfo, false, false)))
 		{
-			if ((pAspect->eAction == QueueCoordinator::eaFileCompleted ||
-				(pAspect->pFileInfo->GetAutoDeleted() &&
-				 IsNZBFileCompleted(pAspect->pNZBInfo, false, true))) &&
-				 pAspect->pFileInfo->GetNZBInfo()->GetDeleteStatus() != NZBInfo::dsHealth)
+			if ((pQueueAspect->eAction == DownloadQueue::eaFileCompleted ||
+				(pQueueAspect->pFileInfo->GetAutoDeleted() &&
+				 IsNZBFileCompleted(pQueueAspect->pNZBInfo, false, true))) &&
+				 pQueueAspect->pFileInfo->GetNZBInfo()->GetDeleteStatus() != NZBInfo::dsHealth)
 			{
-				info("Collection %s completely downloaded", pAspect->pNZBInfo->GetName());
-				NZBDownloaded(pAspect->pDownloadQueue, pAspect->pNZBInfo);
+				info("Collection %s completely downloaded", pQueueAspect->pNZBInfo->GetName());
+				NZBDownloaded(pQueueAspect->pDownloadQueue, pQueueAspect->pNZBInfo);
 			}
-			else if ((pAspect->eAction == QueueCoordinator::eaFileDeleted ||
-				(pAspect->eAction == QueueCoordinator::eaFileCompleted &&
-				 pAspect->pFileInfo->GetNZBInfo()->GetDeleteStatus() > NZBInfo::dsNone)) &&
-				!pAspect->pNZBInfo->GetParCleanup() &&
-				IsNZBFileCompleted(pAspect->pNZBInfo, false, true))
+			else if ((pQueueAspect->eAction == DownloadQueue::eaFileDeleted ||
+				(pQueueAspect->eAction == DownloadQueue::eaFileCompleted &&
+				 pQueueAspect->pFileInfo->GetNZBInfo()->GetDeleteStatus() > NZBInfo::dsNone)) &&
+				!pQueueAspect->pNZBInfo->GetParCleanup() &&
+				IsNZBFileCompleted(pQueueAspect->pNZBInfo, false, true))
 			{
-				info("Collection %s deleted from queue", pAspect->pNZBInfo->GetName());
-				NZBDeleted(pAspect->pDownloadQueue, pAspect->pNZBInfo);
+				info("Collection %s deleted from queue", pQueueAspect->pNZBInfo->GetName());
+				NZBDeleted(pQueueAspect->pDownloadQueue, pQueueAspect->pNZBInfo);
 			}
 		}
 	}

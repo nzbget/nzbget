@@ -81,8 +81,9 @@ void QueueScriptController::PrepareEnvParameters(NZBParameterList* pParameters, 
 }
 
 
-void NZBScriptController::ExecuteScript(const char* szScript, const char* szNZBFilename, const char* szDirectory,
-	char** pNZBName, char** pCategory, int* iPriority, NZBParameterList* pParameters, bool* bAddTop, bool* bAddPaused)
+void NZBScriptController::ExecuteScript(const char* szScript, const char* szNZBFilename,
+	const char* szUrl, const char* szDirectory, char** pNZBName, char** pCategory,
+	int* iPriority, NZBParameterList* pParameters, bool* bAddTop, bool* bAddPaused)
 {
 	info("Executing nzb-process-script for %s", Util::BaseFileName(szNZBFilename));
 
@@ -101,6 +102,7 @@ void NZBScriptController::ExecuteScript(const char* szScript, const char* szNZBF
 	pScriptController->SetInfoName(szInfoName);
 
 	pScriptController->SetEnvVar("NZBNP_FILENAME", szNZBFilename);
+	pScriptController->SetEnvVar("NZBNP_URL", szUrl);
 	pScriptController->SetEnvVar("NZBNP_NZBNAME", strlen(*pNZBName) > 0 ? *pNZBName : Util::BaseFileName(szNZBFilename));
 	pScriptController->SetEnvVar("NZBNP_CATEGORY", *pCategory);
 	pScriptController->SetIntEnvVar("NZBNP_PRIORITY", *iPriority);
@@ -198,6 +200,7 @@ void NZBAddedScriptController::StartScript(DownloadQueue* pDownloadQueue, NZBInf
 	pScriptController->SetEnvVar("NZBNA_NAME", pNZBInfo->GetName());
 	pScriptController->SetIntEnvVar("NZBPP_NZBID", pNZBInfo->GetID());
 	pScriptController->SetEnvVar("NZBNA_FILENAME", pNZBInfo->GetFilename());
+	pScriptController->SetEnvVar("NZBNA_URL", pNZBInfo->GetURL());
 	pScriptController->SetEnvVar("NZBNA_CATEGORY", pNZBInfo->GetCategory());
 	pScriptController->SetIntEnvVar("NZBNA_LASTID", pNZBInfo->GetID());
 	pScriptController->SetIntEnvVar("NZBNA_PRIORITY", pNZBInfo->GetPriority());

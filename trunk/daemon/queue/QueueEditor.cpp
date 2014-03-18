@@ -52,9 +52,11 @@
 #include "QueueCoordinator.h"
 #include "PrePostProcessor.h"
 #include "HistoryCoordinator.h"
+#include "UrlCoordinator.h"
 
 extern QueueCoordinator* g_pQueueCoordinator;
 extern HistoryCoordinator* g_pHistoryCoordinator;
+extern UrlCoordinator* g_pUrlCoordinator;
 extern PrePostProcessor* g_pPrePostProcessor;
 extern Options* g_pOptions;
 
@@ -312,13 +314,23 @@ bool QueueEditor::InternEditList(ItemList* pItemList,
 
 					case DownloadQueue::eaGroupPause:
 					case DownloadQueue::eaGroupResume:
-					case DownloadQueue::eaGroupDelete:
-					case DownloadQueue::eaGroupDupeDelete:
-					case DownloadQueue::eaGroupFinalDelete:
 					case DownloadQueue::eaGroupPauseAllPars:
 					case DownloadQueue::eaGroupPauseExtraPars:
 						EditGroup(pItem->m_pNZBInfo, eAction, iOffset, szText);
 						break;
+
+					case DownloadQueue::eaGroupDelete:
+					case DownloadQueue::eaGroupDupeDelete:
+					case DownloadQueue::eaGroupFinalDelete:
+						if (pItem->m_pNZBInfo->GetKind() == NZBInfo::nkUrl)
+						{
+							DeleteUrl(pItem->m_pNZBInfo, eAction);
+						}
+						else
+						{
+							EditGroup(pItem->m_pNZBInfo, eAction, iOffset, szText);
+						}
+
 
 					default:
 						// suppress compiler warning "enumeration not handled in switch"
@@ -967,4 +979,9 @@ void QueueEditor::SetNZBDupeParam(NZBInfo* pNZBInfo, DownloadQueue::EEditAction 
 			// suppress compiler warning
 			break;
 	}
+}
+
+bool QueueEditor::DeleteUrl(NZBInfo* pNZBInfo, DownloadQueue::EEditAction eAction)
+{
+	return g_pUrlCoordinator->DeleteQueueEntry(m_pDownloadQueue, pNZBInfo, eAction == DownloadQueue::eaGroupFinalDelete);
 }

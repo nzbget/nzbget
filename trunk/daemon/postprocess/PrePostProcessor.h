@@ -36,16 +36,16 @@
 class PrePostProcessor : public Thread
 {
 private:
-	class QueueCoordinatorObserver: public Observer
+	class DownloadQueueObserver: public Observer
 	{
 	public:
 		PrePostProcessor* m_pOwner;
-		virtual void	Update(Subject* Caller, void* Aspect) { m_pOwner->QueueCoordinatorUpdate(Caller, Aspect); }
+		virtual void	Update(Subject* Caller, void* Aspect) { m_pOwner->DownloadQueueUpdate(Caller, Aspect); }
 	};
 
 private:
 	ParCoordinator		m_ParCoordinator;
-	QueueCoordinatorObserver	m_QueueCoordinatorObserver;
+	DownloadQueueObserver	m_DownloadQueueObserver;
 	int					m_iJobCount;
 	NZBInfo*			m_pCurJob;
 	const char*			m_szPauseReason;
@@ -66,13 +66,13 @@ private:
 	bool				PostQueueDelete(DownloadQueue* pDownloadQueue, IDList* pIDList);
 	void				DeletePostThread(PostInfo* pPostInfo);
 	NZBInfo*			GetNextJob(DownloadQueue* pDownloadQueue);
+	void				DownloadQueueUpdate(Subject* Caller, void* Aspect);
 
 public:
 						PrePostProcessor();
 	virtual				~PrePostProcessor();
 	virtual void		Run();
 	virtual void		Stop();
-	void				QueueCoordinatorUpdate(Subject* Caller, void* Aspect);
 	bool				HasMoreJobs() { return m_iJobCount > 0; }
 	int					GetJobCount() { return m_iJobCount; }
 	bool				EditList(DownloadQueue* pDownloadQueue, IDList* pIDList, DownloadQueue::EEditAction eAction, int iOffset, const char* szText);

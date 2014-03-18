@@ -127,8 +127,6 @@ static const char* OPTION_AUTHORIZEDIP			= "AuthorizedIP";
 static const char* OPTION_CONNECTIONTIMEOUT		= "ConnectionTimeout";
 static const char* OPTION_SAVEQUEUE				= "SaveQueue";
 static const char* OPTION_RELOADQUEUE			= "ReloadQueue";
-static const char* OPTION_RELOADURLQUEUE		= "ReloadUrlQueue";
-static const char* OPTION_RELOADPOSTQUEUE		= "ReloadPostQueue";
 static const char* OPTION_CREATEBROKENLOG		= "CreateBrokenLog";
 static const char* OPTION_RESETLOG				= "ResetLog";
 static const char* OPTION_DECODE				= "Decode";
@@ -196,6 +194,8 @@ static const char* OPTION_APPENDNZBDIR			= "AppendNzbDir";
 static const char* OPTION_RENAMEBROKEN			= "RenameBroken";
 static const char* OPTION_MERGENZB				= "MergeNzb";
 static const char* OPTION_STRICTPARNAME			= "StrictParName";
+static const char* OPTION_RELOADURLQUEUE		= "ReloadUrlQueue";
+static const char* OPTION_RELOADPOSTQUEUE		= "ReloadPostQueue";
 
 const char* BoolNames[] = { "yes", "no", "true", "false", "1", "0", "on", "off", "enable", "disable", "enabled", "disabled" };
 const int BoolValues[] = { 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0 };
@@ -481,8 +481,6 @@ Options::Options(int argc, char* argv[])
 	m_szDaemonUsername		= NULL;
 	m_eOutputMode			= omLoggable;
 	m_bReloadQueue			= false;
-	m_bReloadUrlQueue		= false;
-	m_bReloadPostQueue		= false;
 	m_iUrlConnections		= 0;
 	m_iLogBufferSize		= 0;
 	m_iLogLines				= 0;
@@ -738,8 +736,6 @@ void Options::InitDefault()
 	SetOption(OPTION_CONNECTIONTIMEOUT, "60");
 	SetOption(OPTION_SAVEQUEUE, "yes");
 	SetOption(OPTION_RELOADQUEUE, "yes");
-	SetOption(OPTION_RELOADURLQUEUE, "yes");
-	SetOption(OPTION_RELOADPOSTQUEUE, "yes");
 	SetOption(OPTION_CREATEBROKENLOG, "yes");
 	SetOption(OPTION_RESETLOG, "no");
 	SetOption(OPTION_DECODE, "yes");
@@ -975,8 +971,6 @@ void Options::InitOptions()
 	m_bParRepair			= (bool)ParseEnumValue(OPTION_PARREPAIR, BoolCount, BoolNames, BoolValues);
 	m_bParRename			= (bool)ParseEnumValue(OPTION_PARRENAME, BoolCount, BoolNames, BoolValues);
 	m_bReloadQueue			= (bool)ParseEnumValue(OPTION_RELOADQUEUE, BoolCount, BoolNames, BoolValues);
-	m_bReloadUrlQueue		= (bool)ParseEnumValue(OPTION_RELOADURLQUEUE, BoolCount, BoolNames, BoolValues);
-	m_bReloadPostQueue		= (bool)ParseEnumValue(OPTION_RELOADPOSTQUEUE, BoolCount, BoolNames, BoolValues);
 	m_bCursesNZBName		= (bool)ParseEnumValue(OPTION_CURSESNZBNAME, BoolCount, BoolNames, BoolValues);
 	m_bCursesTime			= (bool)ParseEnumValue(OPTION_CURSESTIME, BoolCount, BoolNames, BoolValues);
 	m_bCursesGroup			= (bool)ParseEnumValue(OPTION_CURSESGROUP, BoolCount, BoolNames, BoolValues);
@@ -1254,10 +1248,6 @@ void Options::InitCommandLine(int argc, char* argv[])
 				else if (!strcasecmp(optarg, "H"))
 				{
 					m_eClientOperation = opClientRequestHistory;
-				}
-				else if (!strcasecmp(optarg, "U"))
-				{
-					m_eClientOperation = opClientRequestUrlQueue;
 				}
 				else
 				{
@@ -1654,13 +1644,12 @@ void Options::PrintUsage(char* com)
 		"       N <name>             Use this name as nzb-filename (only for URLs)\n"
 		"       I <priority>         Set priority (signed integer)\n"
 		"  -C, --connect             Attach client to server\n"
-		"  -L, --list    [F|FR|G|GR|O|U|H|S] [RegEx] Request list of items from server\n"
+		"  -L, --list    [F|FR|G|GR|O|H|S] [RegEx] Request list of items from server\n"
 		"                 F          List individual files and server status (default)\n"
 		"                 FR         Like \"F\" but apply regular expression filter\n"
 		"                 G          List groups (nzb-files) and server status\n"
 		"                 GR         Like \"G\" but apply regular expression filter\n"
 		"                 O          List post-processor-queue\n"
-		"                 U          List url-queue\n"
 		"                 H          List history\n"
 		"                 S          Print only server status\n"
 		"    <RegEx>                 Regular expression (only with options \"FR\", \"GR\")\n"
@@ -2578,7 +2567,9 @@ bool Options::ValidateOptionName(const char * optname)
 		!strcasecmp(optname, OPTION_APPENDNZBDIR) ||
 		!strcasecmp(optname, OPTION_RENAMEBROKEN) ||
 		!strcasecmp(optname, OPTION_MERGENZB) ||
-		!strcasecmp(optname, OPTION_STRICTPARNAME))
+		!strcasecmp(optname, OPTION_STRICTPARNAME) ||
+		!strcasecmp(optname, OPTION_RELOADURLQUEUE) ||
+		!strcasecmp(optname, OPTION_RELOADPOSTQUEUE))
 	{
 		ConfigWarn("Option \"%s\" is obsolete, ignored", optname);
 		return true;

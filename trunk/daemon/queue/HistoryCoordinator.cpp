@@ -102,9 +102,9 @@ void HistoryCoordinator::IntervalCheck()
 	for (HistoryList::reverse_iterator it = pDownloadQueue->GetHistory()->rbegin(); it != pDownloadQueue->GetHistory()->rend(); )
 	{
 		HistoryInfo* pHistoryInfo = *it;
-		if (pHistoryInfo->GetKind() != HistoryInfo::hkDupInfo && pHistoryInfo->GetTime() < tMinTime)
+		if (pHistoryInfo->GetKind() != HistoryInfo::hkDup && pHistoryInfo->GetTime() < tMinTime)
 		{
-			if (g_pOptions->GetDupeCheck() && pHistoryInfo->GetKind() == HistoryInfo::hkNZBInfo)
+			if (g_pOptions->GetDupeCheck() && pHistoryInfo->GetKind() == HistoryInfo::hkNzb)
 			{
 				// replace history element
 				HistoryHide(pDownloadQueue, pHistoryInfo, index);
@@ -118,7 +118,7 @@ void HistoryCoordinator::IntervalCheck()
 				pDownloadQueue->GetHistory()->erase(pDownloadQueue->GetHistory()->end() - 1 - index);
 				delete pHistoryInfo;
 				
-				if (pHistoryInfo->GetKind() == HistoryInfo::hkNZBInfo)
+				if (pHistoryInfo->GetKind() == HistoryInfo::hkNzb)
 				{
 					DeleteQueuedFile(pHistoryInfo->GetNZBInfo()->GetQueuedFilename());
 				}
@@ -325,7 +325,7 @@ void HistoryCoordinator::HistoryDelete(DownloadQueue* pDownloadQueue, HistoryLis
 	pHistoryInfo->GetName(szNiceName, 1024);
 	info("Deleting %s from history", szNiceName);
 
-	if (pHistoryInfo->GetKind() == HistoryInfo::hkNZBInfo)
+	if (pHistoryInfo->GetKind() == HistoryInfo::hkNzb)
 	{
 		NZBInfo* pNZBInfo = pHistoryInfo->GetNZBInfo();
 
@@ -343,7 +343,7 @@ void HistoryCoordinator::HistoryDelete(DownloadQueue* pDownloadQueue, HistoryLis
 		DeleteQueuedFile(pNZBInfo->GetQueuedFilename());
 	}
 
-	if (pHistoryInfo->GetKind() == HistoryInfo::hkNZBInfo &&
+	if (pHistoryInfo->GetKind() == HistoryInfo::hkNzb &&
 		g_pOptions->GetDeleteCleanupDisk() &&
 		(pHistoryInfo->GetNZBInfo()->GetDeleteStatus() != NZBInfo::dsNone ||
 		pHistoryInfo->GetNZBInfo()->GetParStatus() == NZBInfo::psFailure ||
@@ -355,14 +355,14 @@ void HistoryCoordinator::HistoryDelete(DownloadQueue* pDownloadQueue, HistoryLis
 		Util::DeleteDirectoryWithContent(pHistoryInfo->GetNZBInfo()->GetDestDir());
 	}
 
-	if (bFinal || !g_pOptions->GetDupeCheck() || pHistoryInfo->GetKind() == HistoryInfo::hkUrlInfo)
+	if (bFinal || !g_pOptions->GetDupeCheck() || pHistoryInfo->GetKind() == HistoryInfo::hkUrl)
 	{
 		pDownloadQueue->GetHistory()->erase(itHistory);
 		delete pHistoryInfo;
 	}
 	else
 	{
-		if (pHistoryInfo->GetKind() == HistoryInfo::hkNZBInfo)
+		if (pHistoryInfo->GetKind() == HistoryInfo::hkNzb)
 		{
 			// replace history element
 			int rindex = pDownloadQueue->GetHistory()->size() - 1 - (itHistory - pDownloadQueue->GetHistory()->begin());
@@ -379,13 +379,13 @@ void HistoryCoordinator::HistoryReturn(DownloadQueue* pDownloadQueue, HistoryLis
 	bool bUnparked = false;
 	NZBInfo* pNZBInfo = NULL;
 
-	if (bReprocess && pHistoryInfo->GetKind() != HistoryInfo::hkNZBInfo)
+	if (bReprocess && pHistoryInfo->GetKind() != HistoryInfo::hkNzb)
 	{
 		error("Could not restart postprocessing for %s: history item has wrong type", szNiceName);
 		return;
 	}
 
-	if (pHistoryInfo->GetKind() == HistoryInfo::hkNZBInfo)
+	if (pHistoryInfo->GetKind() == HistoryInfo::hkNzb)
 	{
 		pNZBInfo = pHistoryInfo->GetNZBInfo();
 
@@ -420,12 +420,13 @@ void HistoryCoordinator::HistoryReturn(DownloadQueue* pDownloadQueue, HistoryLis
 		pNZBInfo->SetParkedFileCount(0);
 	}
 
-	if (pHistoryInfo->GetKind() == HistoryInfo::hkUrlInfo)
+	if (pHistoryInfo->GetKind() == HistoryInfo::hkUrl)
 	{
-		UrlInfo* pUrlInfo = pHistoryInfo->GetUrlInfo();
-		pHistoryInfo->DiscardUrlInfo();
-		pUrlInfo->SetStatus(UrlInfo::aiUndefined);
-		pDownloadQueue->GetUrlQueue()->push_back(pUrlInfo);
+		NZBInfo* pNZBInfo = pHistoryInfo->GetNZBInfo();
+		pHistoryInfo->DiscardNZBInfo();
+		pNZBInfo->SetUrlStatus(NZBInfo::lsNone);
+		pNZBInfo->SetDeleteStatus(NZBInfo::dsNone);
+		pDownloadQueue->GetQueue()->push_front(pNZBInfo);
 		bUnparked = true;
 	}
 
@@ -523,7 +524,7 @@ void HistoryCoordinator::HistorySetParameter(HistoryInfo* pHistoryInfo, const ch
 	pHistoryInfo->GetName(szNiceName, 1024);
 	debug("Setting post-process-parameter '%s' for '%s'", szText, szNiceName);
 
-	if (pHistoryInfo->GetKind() != HistoryInfo::hkNZBInfo)
+	if (!(pHistoryInfo->GetKind() == HistoryInfo::hkNzb || pHistoryInfo->GetKind() == HistoryInfo::hkUrl))
 	{
 		error("Could not set post-process-parameter for %s: history item has wrong type", szNiceName);
 		return;
@@ -552,13 +553,6 @@ void HistoryCoordinator::HistorySetDupeParam(HistoryInfo* pHistoryInfo, Download
 	pHistoryInfo->GetName(szNiceName, 1024);
 	debug("Setting dupe-parameter '%i'='%s' for '%s'", (int)eAction, szText, szNiceName);
 
-	if (!(pHistoryInfo->GetKind() == HistoryInfo::hkNZBInfo || 
-		pHistoryInfo->GetKind() == HistoryInfo::hkDupInfo))
-	{
-		error("Could not set duplicate parameter for %s: history item has wrong type", szNiceName);
-		return;
-	}
-
 	EDupeMode eMode = dmScore;
 	if (eAction == DownloadQueue::eaHistorySetDupeMode)
 	{
@@ -581,7 +575,7 @@ void HistoryCoordinator::HistorySetDupeParam(HistoryInfo* pHistoryInfo, Download
 		}
 	}
 
-	if (pHistoryInfo->GetKind() == HistoryInfo::hkNZBInfo)
+	if (pHistoryInfo->GetKind() == HistoryInfo::hkNzb || pHistoryInfo->GetKind() == HistoryInfo::hkUrl)
 	{
 		switch (eAction) 
 		{
@@ -598,7 +592,12 @@ void HistoryCoordinator::HistorySetDupeParam(HistoryInfo* pHistoryInfo, Download
 				break;
 
 			case DownloadQueue::eaHistorySetDupeBackup:
-				if (pHistoryInfo->GetNZBInfo()->GetDeleteStatus() != NZBInfo::dsDupe &&
+				if (pHistoryInfo->GetKind() == HistoryInfo::hkUrl)
+				{
+					error("Could not set duplicate parameter for %s: history item has wrong type", szNiceName);
+					return;
+				}
+				else if (pHistoryInfo->GetNZBInfo()->GetDeleteStatus() != NZBInfo::dsDupe &&
 					pHistoryInfo->GetNZBInfo()->GetDeleteStatus() != NZBInfo::dsManual)
 				{
 					error("Could not set duplicate parameter for %s: history item has wrong delete status", szNiceName);
@@ -613,7 +612,7 @@ void HistoryCoordinator::HistorySetDupeParam(HistoryInfo* pHistoryInfo, Download
 				break;
 		}
 	}
-	else if (pHistoryInfo->GetKind() == HistoryInfo::hkDupInfo)
+	else if (pHistoryInfo->GetKind() == HistoryInfo::hkDup)
 	{
 		switch (eAction) 
 		{
