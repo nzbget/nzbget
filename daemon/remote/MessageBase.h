@@ -27,7 +27,7 @@
 #ifndef MESSAGEBASE_H
 #define MESSAGEBASE_H
 
-static const int32_t NZBMESSAGE_SIGNATURE = 0x6E7A6221; // = "nzb-XX" (protocol version)
+static const int32_t NZBMESSAGE_SIGNATURE = 0x6E7A6222; // = "nzb-XX" (protocol version)
 static const int NZBREQUESTFILENAMESIZE = 512;
 static const int NZBREQUESTPASSWORDSIZE = 32;
 
@@ -62,8 +62,7 @@ enum eRemoteRequest
 	eRemoteRequestWriteLog,
 	eRemoteRequestScan,
 	eRemoteRequestHistory,
-	eRemoteRequestDownloadUrl,
-	eRemoteRequestUrlQueue
+	eRemoteRequestDownloadUrl
 };
 
 // Possible values for field "m_iAction" of struct "SNZBPauseUnpauseRequest":
@@ -166,6 +165,7 @@ struct SNZBListResponse
 struct SNZBListResponseNZBEntry
 {
 	int32_t					m_iID;					// NZB-ID
+	int32_t					m_iKind;				// Item Kind (see NZBInfo::Kind)
 	int32_t					m_iSizeLo;				// Size of all files in bytes, Low 32-bits of 64-bit value
 	int32_t					m_iSizeHi;				// Size of all files in bytes, High 32-bits of 64-bit value
 	int32_t					m_iPriority;			// Download priority
@@ -457,7 +457,7 @@ struct SNZBHistoryResponseEntry
 	int32_t					m_iParStatus;			// See NZBInfo::EParStatus
 	int32_t					m_iScriptStatus;		// See NZBInfo::EScriptStatus
 	// for URL items (m_iKind = 2)
-	int32_t					m_iUrlStatus;			// See UrlInfo::EStatus
+	int32_t					m_iUrlStatus;			// See NZBInfo::EUrlStatus
 	// trailing data
 	//char					m_szNicename[m_iNicenameLen];				// variable sized
 };
@@ -481,32 +481,6 @@ struct SNZBDownloadUrlResponse
 	int32_t					m_bSuccess;				// 0 - command failed, 1 - command executed successfully
 	int32_t					m_iTrailingDataLength;	// Length of Text-string (m_szText), following to this record
 	//char					m_szText[m_iTrailingDataLength];	// variable sized
-};
-
-// UrlQueue request
-struct SNZBUrlQueueRequest
-{
-	SNZBRequestBase			m_MessageBase;			// Must be the first in the struct
-};
-
-// UrlQueue response
-struct SNZBUrlQueueResponse
-{
-	SNZBResponseBase		m_MessageBase;			// Must be the first in the struct
-	int32_t					m_iEntrySize;			// Size of the SNZBUrlQueueResponseEntry-struct
-	int32_t					m_iNrTrailingEntries;	// Number of UrlQueue-entries, following to this structure
-	int32_t					m_iTrailingDataLength;	// Length of all UrlQueue-entries, following to this structure
-	// SNZBUrlQueueResponseEntry m_Entries[m_iNrTrailingEntries]		// variable sized
-};
-
-// UrlQueue response entry
-struct SNZBUrlQueueResponseEntry
-{
-	int32_t					m_iID;					// ID of Url-entry
-	int32_t					m_iURLLen;				// Length of URL-string (m_szURL), following to this record
-	int32_t					m_iNZBFilenameLen;		// Length of NZBFilename-string (m_szNZBFilename), following to this record
-	//char					m_szURL[m_iURLLen];					// variable sized
-	//char					m_szNZBFilename[m_iNZBFilenameLen];	// variable sized
 };
 
 #endif

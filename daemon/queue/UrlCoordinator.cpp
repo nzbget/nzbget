@@ -94,7 +94,7 @@ void UrlDownloader::ProcessHeader(const char* szLine)
 			szParamName[100-1] = '\0';
 
 			char* szVal = WebUtil::Latin1ToUtf8(szValue);
-			m_ppParameters.SetParameter(szParamName, szVal);
+			m_pNZBInfo->GetParameters()->SetParameter(szParamName, szVal);
 			free(szVal);
 		}
 		free(szModLine);
@@ -106,7 +106,6 @@ UrlCoordinator::UrlCoordinator()
 	debug("Creating UrlCoordinator");
 
 	m_bHasMoreJobs = true;
-	m_bForce = false;
 }
 
 UrlCoordinator::~UrlCoordinator()
@@ -121,14 +120,6 @@ UrlCoordinator::~UrlCoordinator()
 	}
 	m_ActiveDownloads.clear();
 
-	DownloadQueue* pDownloadQueue = DownloadQueue::Lock();
-	for (UrlQueue::iterator it = pDownloadQueue->GetUrlQueue()->begin(); it != pDownloadQueue->GetUrlQueue()->end(); it++)
-	{
-		delete *it;
-	}
-	pDownloadQueue->GetUrlQueue()->clear();
-	DownloadQueue::Unlock();
-
 	debug("UrlCoordinator destroyed");
 }
 
@@ -140,24 +131,20 @@ void UrlCoordinator::Run()
 
 	while (!IsStopped())
 	{
-		if (!g_pOptions->GetPauseDownload() || m_bForce || g_pOptions->GetUrlForce())
+		if (!g_pOptions->GetPauseDownload() || g_pOptions->GetUrlForce())
 		{
 			// start download for next URL
 			DownloadQueue* pDownloadQueue = DownloadQueue::Lock();
 
 			if ((int)m_ActiveDownloads.size() < g_pOptions->GetUrlConnections())
 			{
-				UrlInfo* pUrlInfo;
-				bool bHasMoreUrls = GetNextUrl(pDownloadQueue, pUrlInfo);
+				NZBInfo* pNZBInfo = GetNextUrl(pDownloadQueue);
+				bool bHasMoreUrls = pNZBInfo != NULL;
 				bool bUrlDownloadsRunning = !m_ActiveDownloads.empty();
 				m_bHasMoreJobs = bHasMoreUrls || bUrlDownloadsRunning;
 				if (bHasMoreUrls && !IsStopped())
 				{
-					StartUrlDownload(pUrlInfo);
-				}
-				if (!bHasMoreUrls)
-				{
-					m_bForce = false;
+					StartUrlDownload(pNZBInfo);
 				}
 			}
 			DownloadQueue::Unlock();
@@ -222,12 +209,12 @@ void UrlCoordinator::ResetHangingDownloads()
 		if (tm - pUrlDownloader->GetLastUpdateTime() > TimeOut &&
 		   pUrlDownloader->GetStatus() == UrlDownloader::adRunning)
 		{
-			UrlInfo* pUrlInfo = pUrlDownloader->GetUrlInfo();
+			NZBInfo* pNZBInfo = pUrlDownloader->GetNZBInfo();
 			debug("Terminating hanging download %s", pUrlDownloader->GetInfoName());
 			if (pUrlDownloader->Terminate())
 			{
 				error("Terminated hanging download %s", pUrlDownloader->GetInfoName());
-				pUrlInfo->SetStatus(UrlInfo::aiUndefined);
+				pNZBInfo->SetUrlStatus(NZBInfo::lsNone);
 			}
 			else
 			{
@@ -260,65 +247,70 @@ void UrlCoordinator::LogDebugInfo()
 	DownloadQueue::Unlock();
 }
 
-void UrlCoordinator::AddUrlToQueue(UrlInfo* pUrlInfo, bool AddFirst)
+void UrlCoordinator::AddUrlToQueue(NZBInfo* pNZBInfo, bool bAddTop)
 {
 	debug("Adding NZB-URL to queue");
 
 	DownloadQueue* pDownloadQueue = DownloadQueue::Lock();
-
-	pDownloadQueue->GetUrlQueue()->push_back(pUrlInfo);
-
-	pDownloadQueue->Save();
-
-	if (pUrlInfo->GetForce())
+	if (bAddTop)
 	{
-		m_bForce = true;
+		pDownloadQueue->GetQueue()->push_front(pNZBInfo);
 	}
-
+	else
+	{
+		pDownloadQueue->GetQueue()->push_back(pNZBInfo);
+	}
+	pDownloadQueue->Save();
 	DownloadQueue::Unlock();
 }
 
 /*
  * Returns next URL for download.
  */
-bool UrlCoordinator::GetNextUrl(DownloadQueue* pDownloadQueue, UrlInfo* &pUrlInfo)
+NZBInfo* UrlCoordinator::GetNextUrl(DownloadQueue* pDownloadQueue)
 {
 	bool bPauseDownload = g_pOptions->GetPauseDownload();
 
-	for (UrlQueue::iterator at = pDownloadQueue->GetUrlQueue()->begin(); at != pDownloadQueue->GetUrlQueue()->end(); at++)
+	NZBInfo* pNZBInfo = NULL;
+
+	for (NZBList::iterator it = pDownloadQueue->GetQueue()->begin(); it != pDownloadQueue->GetQueue()->end(); it++)
 	{
-		pUrlInfo = *at;
-		if (pUrlInfo->GetStatus() == 0 && (!bPauseDownload || pUrlInfo->GetForce() || g_pOptions->GetUrlForce()))
+		NZBInfo* pNZBInfo1 = *it;
+		if (pNZBInfo1->GetKind() == NZBInfo::nkUrl &&
+			pNZBInfo1->GetUrlStatus() == NZBInfo::lsNone &&
+			pNZBInfo1->GetDeleteStatus() == NZBInfo::dsNone &&
+			(!bPauseDownload || g_pOptions->GetUrlForce()) &&
+			(!pNZBInfo || pNZBInfo1->GetPriority() > pNZBInfo->GetPriority()))
 		{
-			return true;
-			break;
+			pNZBInfo = pNZBInfo1;
 		}
 	}
 
-	return false;
+	return pNZBInfo;
 }
 
-void UrlCoordinator::StartUrlDownload(UrlInfo* pUrlInfo)
+void UrlCoordinator::StartUrlDownload(NZBInfo* pNZBInfo)
 {
 	debug("Starting new UrlDownloader");
 
 	UrlDownloader* pUrlDownloader = new UrlDownloader();
 	pUrlDownloader->SetAutoDestroy(true);
 	pUrlDownloader->Attach(this);
-	pUrlDownloader->SetUrlInfo(pUrlInfo);
-	pUrlDownloader->SetURL(pUrlInfo->GetURL());
-	pUrlDownloader->SetForce(pUrlInfo->GetForce() || g_pOptions->GetUrlForce());
+	pUrlDownloader->SetNZBInfo(pNZBInfo);
+	pUrlDownloader->SetURL(pNZBInfo->GetURL());
+	pUrlDownloader->SetForce(g_pOptions->GetUrlForce());
+	pNZBInfo->SetActiveDownloads(1);
 
 	char tmp[1024];
 
-	pUrlInfo->GetName(tmp, 1024);
+	pNZBInfo->MakeNiceUrlName(pNZBInfo->GetURL(), pNZBInfo->GetFilename(), tmp, 1024);
 	pUrlDownloader->SetInfoName(tmp);
 
-	snprintf(tmp, 1024, "%surl-%i.tmp", g_pOptions->GetTempDir(), pUrlInfo->GetID());
+	snprintf(tmp, 1024, "%surl-%i.tmp", g_pOptions->GetTempDir(), pNZBInfo->GetID());
 	tmp[1024-1] = '\0';
 	pUrlDownloader->SetOutputFilename(tmp);
 
-	pUrlInfo->SetStatus(UrlInfo::aiRunning);
+	pNZBInfo->SetUrlStatus(NZBInfo::lsRunning);
 
 	m_ActiveDownloads.push_back(pUrlDownloader);
 	pUrlDownloader->Start();
@@ -341,19 +333,25 @@ void UrlCoordinator::UrlCompleted(UrlDownloader* pUrlDownloader)
 {
 	debug("URL downloaded");
 
-	UrlInfo* pUrlInfo = pUrlDownloader->GetUrlInfo();
+	NZBInfo* pNZBInfo = pUrlDownloader->GetNZBInfo();
 
-	if (pUrlDownloader->GetStatus() == WebDownloader::adFinished)
+	if (pNZBInfo->GetDeleting())
 	{
-		pUrlInfo->SetStatus(UrlInfo::aiFinished);
+		pNZBInfo->SetUrlStatus(NZBInfo::lsNone);
+		pNZBInfo->SetDeleteStatus(NZBInfo::dsManual);
+		pNZBInfo->SetDeleting(false);
+	}
+	else if (pUrlDownloader->GetStatus() == WebDownloader::adFinished)
+	{
+		pNZBInfo->SetUrlStatus(NZBInfo::lsFinished);
 	}
 	else if (pUrlDownloader->GetStatus() == WebDownloader::adFailed)
 	{
-		pUrlInfo->SetStatus(UrlInfo::aiFailed);
+		pNZBInfo->SetUrlStatus(NZBInfo::lsFailed);
 	}
 	else if (pUrlDownloader->GetStatus() == WebDownloader::adRetry)
 	{
-		pUrlInfo->SetStatus(UrlInfo::aiUndefined);
+		pNZBInfo->SetUrlStatus(NZBInfo::lsNone);
 	}
 
 	char filename[1024];
@@ -364,7 +362,7 @@ void UrlCoordinator::UrlCompleted(UrlDownloader* pUrlDownloader)
 	}
 	else
 	{
-		strncpy(filename, Util::BaseFileName(pUrlInfo->GetURL()), 1024);
+		strncpy(filename, Util::BaseFileName(pNZBInfo->GetURL()), 1024);
 		filename[1024-1] = '\0';
 
 		// TODO: decode URL escaping
@@ -375,7 +373,7 @@ void UrlCoordinator::UrlCompleted(UrlDownloader* pUrlDownloader)
 	debug("Filename: [%s]", filename);
 
 	// delete Download from active jobs
-	DownloadQueue::Lock();
+	DownloadQueue* pDownloadQueue = DownloadQueue::Lock();
 	for (ActiveDownloads::iterator it = m_ActiveDownloads.begin(); it != m_ActiveDownloads.end(); it++)
 	{
 		UrlDownloader* pa = *it;
@@ -385,47 +383,44 @@ void UrlCoordinator::UrlCompleted(UrlDownloader* pUrlDownloader)
 			break;
 		}
 	}
+	pNZBInfo->SetActiveDownloads(0);
+
+	DownloadQueue::Aspect aspect = { DownloadQueue::eaUrlCompleted, pDownloadQueue, pNZBInfo, NULL };
+	pDownloadQueue->Notify(&aspect);
+
 	DownloadQueue::Unlock();
 
-	Aspect aspect = { eaUrlCompleted, pUrlInfo };
-	Notify(&aspect);
-
-	if (pUrlInfo->GetStatus() == UrlInfo::aiFinished)
+	if (pNZBInfo->GetUrlStatus() == NZBInfo::lsFinished)
 	{
 		// add nzb-file to download queue
 		Scanner::EAddStatus eAddStatus = g_pScanner->AddExternalFile(
-			pUrlInfo->GetNZBFilename() && strlen(pUrlInfo->GetNZBFilename()) > 0 ? pUrlInfo->GetNZBFilename() : filename,
-			strlen(pUrlInfo->GetCategory()) > 0 ? pUrlInfo->GetCategory() : pUrlDownloader->GetCategory(),
-			pUrlInfo->GetPriority(), pUrlInfo->GetDupeKey(), pUrlInfo->GetDupeScore(), pUrlInfo->GetDupeMode(),
-			pUrlDownloader->GetParameters(), pUrlInfo->GetAddTop(), pUrlInfo->GetAddPaused(),
+			pNZBInfo->GetFilename() && strlen(pNZBInfo->GetFilename()) > 0 ? pNZBInfo->GetFilename() : filename,
+			strlen(pNZBInfo->GetCategory()) > 0 ? pNZBInfo->GetCategory() : pUrlDownloader->GetCategory(),
+			pNZBInfo->GetPriority(), pNZBInfo->GetDupeKey(), pNZBInfo->GetDupeScore(), pNZBInfo->GetDupeMode(),
+			pNZBInfo->GetParameters(), false, pNZBInfo->GetAddUrlPaused(), pNZBInfo,
 			pUrlDownloader->GetOutputFilename(), NULL, 0);
 
-		if (eAddStatus != Scanner::asSuccess)
+		if (eAddStatus == Scanner::asSuccess)
 		{
-			pUrlInfo->SetStatus(eAddStatus == Scanner::asFailed ? UrlInfo::aiScanFailed : UrlInfo::aiScanSkipped);
+			// if scanner has successfully added nzb-file to queue, our pNZBInfo is already destroyed
+			return;
 		}
+
+		pNZBInfo->SetUrlStatus(eAddStatus == Scanner::asFailed ? NZBInfo::lsScanFailed : NZBInfo::lsScanSkipped);
 	}
 
 	// delete Download from Url Queue
-	if (pUrlInfo->GetStatus() != UrlInfo::aiRetry)
+	if (pNZBInfo->GetUrlStatus() != NZBInfo::lsRetry)
 	{
 		DownloadQueue* pDownloadQueue = DownloadQueue::Lock();
-
-		for (UrlQueue::iterator it = pDownloadQueue->GetUrlQueue()->begin(); it != pDownloadQueue->GetUrlQueue()->end(); it++)
-		{
-			UrlInfo* pa = *it;
-			if (pa == pUrlInfo)
-			{
-				pDownloadQueue->GetUrlQueue()->erase(it);
-				break;
-			}
-		}
-
+		pDownloadQueue->GetQueue()->Remove(pNZBInfo);
 		bool bDeleteObj = true;
 
-		if (g_pOptions->GetKeepHistory() > 0 && pUrlInfo->GetStatus() != UrlInfo::aiFinished)
+		if (g_pOptions->GetKeepHistory() > 0 &&
+			pNZBInfo->GetUrlStatus() != NZBInfo::lsFinished &&
+			!pNZBInfo->GetAvoidHistory())
 		{
-			HistoryInfo* pHistoryInfo = new HistoryInfo(pUrlInfo);
+			HistoryInfo* pHistoryInfo = new HistoryInfo(pNZBInfo);
 			pHistoryInfo->SetTime(time(NULL));
 			pDownloadQueue->GetHistory()->push_front(pHistoryInfo);
 			bDeleteObj = false;
@@ -437,7 +432,46 @@ void UrlCoordinator::UrlCompleted(UrlDownloader* pUrlDownloader)
 
 		if (bDeleteObj)
 		{
-			delete pUrlInfo;
+			delete pNZBInfo;
 		}
 	}
+}
+
+bool UrlCoordinator::DeleteQueueEntry(DownloadQueue* pDownloadQueue, NZBInfo* pNZBInfo, bool bAvoidHistory)
+{
+	if (pNZBInfo->GetActiveDownloads() > 0)
+	{
+		info("Deleting active URL %s", pNZBInfo->GetName());
+		pNZBInfo->SetDeleting(true);
+		pNZBInfo->SetAvoidHistory(bAvoidHistory);
+
+		for (ActiveDownloads::iterator it = m_ActiveDownloads.begin(); it != m_ActiveDownloads.end(); it++)
+		{
+			UrlDownloader* pUrlDownloader = *it;
+			if (pUrlDownloader->GetNZBInfo() == pNZBInfo)
+			{
+				pUrlDownloader->Stop();
+				return true;
+			}
+		}                                              
+	}
+
+	info("Deleting URL %s", pNZBInfo->GetName());
+
+	pNZBInfo->SetDeleteStatus(NZBInfo::dsManual);
+	pNZBInfo->SetUrlStatus(NZBInfo::lsNone);
+
+	pDownloadQueue->GetQueue()->Remove(pNZBInfo);
+	if (g_pOptions->GetKeepHistory() > 0 && !bAvoidHistory)
+	{
+		HistoryInfo* pHistoryInfo = new HistoryInfo(pNZBInfo);
+		pHistoryInfo->SetTime(time(NULL));
+		pDownloadQueue->GetHistory()->push_front(pHistoryInfo);
+	}
+	else
+	{
+		delete pNZBInfo;
+	}
+
+	return true;
 }

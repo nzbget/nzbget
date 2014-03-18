@@ -46,7 +46,6 @@
 #include "QueueCoordinator.h"
 #include "UrlCoordinator.h"
 #include "QueueEditor.h"
-#include "PrePostProcessor.h"
 #include "Scanner.h"
 #include "FeedCoordinator.h"
 #include "ServerPool.h"
@@ -57,7 +56,6 @@
 extern Options* g_pOptions;
 extern QueueCoordinator* g_pQueueCoordinator;
 extern UrlCoordinator* g_pUrlCoordinator;
-extern PrePostProcessor* g_pPrePostProcessor;
 extern Scanner* g_pScanner;
 extern FeedCoordinator* g_pFeedCoordinator;
 extern ServerPool* g_pServerPool;
@@ -1213,10 +1211,18 @@ void StatusXmlCommand::Execute()
 	bool bPostPaused = g_pOptions->GetPausePostProcess();
 	bool bScanPaused = g_pOptions->GetPauseScan();
 	int iThreadCount = Thread::GetThreadCount() - 1; // not counting itself
+
 	DownloadQueue *pDownloadQueue = DownloadQueue::Lock();
-	int iPostJobCount = g_pPrePostProcessor->GetJobCount();
-	int iUrlCount = pDownloadQueue->GetUrlQueue()->size();
+	int iPostJobCount = 0;
+	int iUrlCount = 0;
+	for (NZBList::iterator it = pDownloadQueue->GetQueue()->begin(); it != pDownloadQueue->GetQueue()->end(); it++)
+	{
+		NZBInfo* pNZBInfo = *it;
+		iPostJobCount += pNZBInfo->GetPostInfo() ? 1 : 0;
+		iUrlCount += pNZBInfo->GetKind() == NZBInfo::nkUrl ? 1 : 0;
+	}
 	DownloadQueue::Unlock();
+
 	unsigned long iDownloadedSizeHi, iDownloadedSizeLo;
 	int iUpTimeSec, iDownloadTimeSec;
 	long long iAllBytes;
@@ -1486,6 +1492,8 @@ void NzbInfoXmlCommand::AppendNZBInfoFields(NZBInfo* pNZBInfo)
 	"<member><name>NZBID</name><value><i4>%i</i4></value></member>\n"
 	"<member><name>NZBName</name><value><string>%s</string></value></member>\n"
 	"<member><name>NZBNicename</name><value><string>%s</string></value></member>\n"	// deprecated, use "NZBName" instead
+	"<member><name>Kind</name><value><string>%s</string></value></member>\n"
+	"<member><name>URL</name><value><string>%s</string></value></member>\n"
 	"<member><name>NZBFilename</name><value><string>%s</string></value></member>\n"
 	"<member><name>DestDir</name><value><string>%s</string></value></member>\n"
 	"<member><name>FinalDir</name><value><string>%s</string></value></member>\n"
@@ -1496,6 +1504,7 @@ void NzbInfoXmlCommand::AppendNZBInfoFields(NZBInfo* pNZBInfo)
 	"<member><name>ScriptStatus</name><value><string>%s</string></value></member>\n"
 	"<member><name>DeleteStatus</name><value><string>%s</string></value></member>\n"
 	"<member><name>MarkStatus</name><value><string>%s</string></value></member>\n"
+	"<member><name>UrlStatus</name><value><string>%s</string></value></member>\n"
 	"<member><name>FileSizeLo</name><value><i4>%u</i4></value></member>\n"
 	"<member><name>FileSizeHi</name><value><i4>%u</i4></value></member>\n"
 	"<member><name>FileSizeMB</name><value><i4>%i</i4></value></member>\n"
@@ -1526,6 +1535,8 @@ void NzbInfoXmlCommand::AppendNZBInfoFields(NZBInfo* pNZBInfo)
 	"\"NZBID\" : %i,\n"
 	"\"NZBName\" : \"%s\",\n"
 	"\"NZBNicename\" : \"%s\",\n"		// deprecated, use NZBName instead
+	"\"Kind\" : \"%s\",\n"
+	"\"URL\" : \"%s\",\n"
 	"\"NZBFilename\" : \"%s\",\n"
 	"\"DestDir\" : \"%s\",\n"
 	"\"FinalDir\" : \"%s\",\n"
@@ -1536,6 +1547,7 @@ void NzbInfoXmlCommand::AppendNZBInfoFields(NZBInfo* pNZBInfo)
 	"\"ScriptStatus\" : \"%s\",\n"
 	"\"DeleteStatus\" : \"%s\",\n"
 	"\"MarkStatus\" : \"%s\",\n"
+	"\"UrlStatus\" : \"%s\",\n"
 	"\"FileSizeLo\" : %u,\n"
 	"\"FileSizeHi\" : %u,\n"
 	"\"FileSizeMB\" : %i,\n"
@@ -1600,12 +1612,14 @@ void NzbInfoXmlCommand::AppendNZBInfoFields(NZBInfo* pNZBInfo)
 	"\"FailedArticles\" : %i\n"
 	"}";
 	
+    const char* szKindName[] = { "NZB", "URL" };
     const char* szParStatusName[] = { "NONE", "NONE", "FAILURE", "SUCCESS", "REPAIR_POSSIBLE", "MANUAL" };
     const char* szUnpackStatusName[] = { "NONE", "NONE", "FAILURE", "SUCCESS", "SPACE", "PASSWORD" };
     const char* szMoveStatusName[] = { "NONE", "FAILURE", "SUCCESS" };
     const char* szScriptStatusName[] = { "NONE", "FAILURE", "SUCCESS" };
     const char* szDeleteStatusName[] = { "NONE", "MANUAL", "HEALTH", "DUPE" };
     const char* szMarkStatusName[] = { "NONE", "BAD", "GOOD" };
+	const char* szUrlStatusName[] = { "UNKNOWN", "UNKNOWN", "SUCCESS", "FAILURE", "UNKNOWN", "SCAN_SKIPPED", "SCAN_FAILURE" };
     const char* szDupeModeName[] = { "SCORE", "ALL", "FORCE" };
 	
 	int iItemBufSize = 10240;
@@ -1615,6 +1629,7 @@ void NzbInfoXmlCommand::AppendNZBInfoFields(NZBInfo* pNZBInfo)
 	Util::SplitInt64(pNZBInfo->GetSize(), &iFileSizeHi, &iFileSizeLo);
 	iFileSizeMB = (int)(pNZBInfo->GetSize() / 1024 / 1024);
 	
+	char* xmlURL = EncodeStr(pNZBInfo->GetURL());
 	char* xmlNZBFilename = EncodeStr(pNZBInfo->GetFilename());
 	char* xmlNZBNicename = EncodeStr(pNZBInfo->GetName());
 	char* xmlDestDir = EncodeStr(pNZBInfo->GetDestDir());
@@ -1623,17 +1638,20 @@ void NzbInfoXmlCommand::AppendNZBInfoFields(NZBInfo* pNZBInfo)
 	char* xmlDupeKey = EncodeStr(pNZBInfo->GetDupeKey());
 	
 	snprintf(szItemBuf, iItemBufSize, IsJson() ? JSON_HISTORY_ITEM_START : XML_HISTORY_ITEM_START,
-			 pNZBInfo->GetID(), xmlNZBNicename, xmlNZBNicename, xmlNZBFilename,
-			 xmlDestDir, xmlFinalDir, xmlCategory, szParStatusName[pNZBInfo->GetParStatus()],
-			 szUnpackStatusName[pNZBInfo->GetUnpackStatus()], szMoveStatusName[pNZBInfo->GetMoveStatus()],
+			 pNZBInfo->GetID(), xmlNZBNicename, xmlNZBNicename, szKindName[pNZBInfo->GetKind()],
+			 xmlURL, xmlNZBFilename, xmlDestDir, xmlFinalDir, xmlCategory,
+			 szParStatusName[pNZBInfo->GetParStatus()], szUnpackStatusName[pNZBInfo->GetUnpackStatus()],
+			 szMoveStatusName[pNZBInfo->GetMoveStatus()],
 			 szScriptStatusName[pNZBInfo->GetScriptStatuses()->CalcTotalStatus()],
 			 szDeleteStatusName[pNZBInfo->GetDeleteStatus()], szMarkStatusName[pNZBInfo->GetMarkStatus()],
+			 szUrlStatusName[pNZBInfo->GetUrlStatus()],
 			 iFileSizeLo, iFileSizeHi, iFileSizeMB, pNZBInfo->GetFileCount(),
 			 pNZBInfo->GetTotalArticles(), pNZBInfo->GetSuccessArticles(), pNZBInfo->GetFailedArticles(),
 			 pNZBInfo->CalcHealth(), pNZBInfo->CalcCriticalHealth(false),
 			 xmlDupeKey, pNZBInfo->GetDupeScore(), szDupeModeName[pNZBInfo->GetDupeMode()],
 			 BoolToStr(pNZBInfo->GetDeleteStatus() != NZBInfo::dsNone));
 	
+	free(xmlURL);
 	free(xmlNZBNicename);
 	free(xmlNZBFilename);
 	free(xmlCategory);
@@ -2001,7 +2019,8 @@ void DownloadXmlCommand::Execute()
 	//debug("FileContent=%s", szFileContent);
 
 	bool bOK = g_pScanner->AddExternalFile(szFileName, szCategory, iPriority,
-		szDupeKey, iDupeScore, eDupeMode, NULL, bAddTop, bAddPaused, NULL, szFileContent, iLen) != Scanner::asFailed;
+		szDupeKey, iDupeScore, eDupeMode, NULL, bAddTop, bAddPaused, NULL,
+		NULL, szFileContent, iLen) != Scanner::asFailed;
 
 	BuildBoolResponse(bOK);
 }
@@ -2230,7 +2249,6 @@ void HistoryXmlCommand::Execute()
 	const char* XML_HISTORY_ITEM_START =
 		"<value><struct>\n"
 		"<member><name>ID</name><value><i4>%i</i4></value></member>\n"
-		"<member><name>Kind</name><value><string>%s</string></value></member>\n"
 		"<member><name>Name</name><value><string>%s</string></value></member>\n"
 		"<member><name>RemainingFileCount</name><value><i4>%i</i4></value></member>\n"
 		"<member><name>HistoryTime</name><value><i4>%i</i4></value></member>\n"
@@ -2247,7 +2265,6 @@ void HistoryXmlCommand::Execute()
 	const char* JSON_HISTORY_ITEM_START =
 		"{\n"
 		"\"ID\" : %i,\n"
-		"\"Kind\" : \"%s\",\n"
 		"\"Name\" : \"%s\",\n"
 		"\"RemainingFileCount\" : %i,\n"
 		"\"HistoryTime\" : %i,\n"
@@ -2306,7 +2323,6 @@ void HistoryXmlCommand::Execute()
 		"\"DupeMode\" : \"%s\",\n"
 		"\"DupStatus\" : \"%s\",\n";
 
-	const char* szUrlStatusName[] = { "UNKNOWN", "UNKNOWN", "SUCCESS", "FAILURE", "UNKNOWN", "SCAN_SKIPPED", "SCAN_FAILURE" };
 	const char* szDupStatusName[] = { "UNKNOWN", "SUCCESS", "FAILURE", "DELETED", "DUPE", "BAD", "GOOD" };
 	const char* szMessageType[] = { "INFO", "WARNING", "ERROR", "DEBUG", "DETAIL"};
     const char* szDupeModeName[] = { "SCORE", "ALL", "FORCE" };
@@ -2318,14 +2334,13 @@ void HistoryXmlCommand::Execute()
 
 	int iItemBufSize = 10240;
 	char* szItemBuf = (char*)malloc(iItemBufSize);
-	NZBInfo* pUrlNZBInfo = new NZBInfo(false); // fake NZB-Info for Urls
 	int index = 0;
 
 	for (HistoryList::iterator it = pDownloadQueue->GetHistory()->begin(); it != pDownloadQueue->GetHistory()->end(); it++)
 	{
 		HistoryInfo* pHistoryInfo = *it;
 
-		if (pHistoryInfo->GetKind() == HistoryInfo::hkDupInfo && !bDup)
+		if (pHistoryInfo->GetKind() == HistoryInfo::hkDup && !bDup)
 		{
 			continue;
 		}
@@ -2336,31 +2351,16 @@ void HistoryXmlCommand::Execute()
 
 		char *xmlNicename = EncodeStr(szNicename);
 
-		if (pHistoryInfo->GetKind() == HistoryInfo::hkNZBInfo)
+		if (pHistoryInfo->GetKind() == HistoryInfo::hkNzb ||
+			pHistoryInfo->GetKind() == HistoryInfo::hkUrl)
 		{
 			pNZBInfo = pHistoryInfo->GetNZBInfo();
 
 			snprintf(szItemBuf, iItemBufSize, IsJson() ? JSON_HISTORY_ITEM_START : XML_HISTORY_ITEM_START,
-				pHistoryInfo->GetID(), "NZB", xmlNicename, pNZBInfo->GetParkedFileCount(),
+				pHistoryInfo->GetID(), xmlNicename, pNZBInfo->GetParkedFileCount(),
 				pHistoryInfo->GetTime(), "", "");
 		}
-		else if (pHistoryInfo->GetKind() == HistoryInfo::hkUrlInfo)
-		{
-			UrlInfo* pUrlInfo = pHistoryInfo->GetUrlInfo();
-
-			char* xmlURL = EncodeStr(pUrlInfo->GetURL());
-
-			snprintf(szItemBuf, iItemBufSize, IsJson() ? JSON_HISTORY_ITEM_START : XML_HISTORY_ITEM_START,
-				pHistoryInfo->GetID(), "URL", xmlNicename, 0, pHistoryInfo->GetTime(), xmlURL,
-				szUrlStatusName[pUrlInfo->GetStatus()]);
-
-			free(xmlURL);
-
-			pUrlNZBInfo->SetCategory(pUrlInfo->GetCategory());
-			pUrlNZBInfo->SetFilename(pUrlInfo->GetNZBFilename());
-			pNZBInfo = pUrlNZBInfo;
-		}
-		else if (pHistoryInfo->GetKind() == HistoryInfo::hkDupInfo)
+		else if (pHistoryInfo->GetKind() == HistoryInfo::hkDup)
 		{
 			DupInfo* pDupInfo = pHistoryInfo->GetDupInfo();
 
@@ -2428,7 +2428,6 @@ void HistoryXmlCommand::Execute()
 		AppendResponse(IsJson() ? JSON_HISTORY_ITEM_END : XML_HISTORY_ITEM_END);
 	}
 	free(szItemBuf);
-	delete pUrlNZBInfo;
 
 	AppendResponse(IsJson() ? "\n]" : "</data></array>\n");
 
@@ -2516,26 +2515,27 @@ void DownloadUrlXmlCommand::Execute()
 
 	debug("URL=%s", szURL);
 
-	UrlInfo* pUrlInfo = new UrlInfo();
-	pUrlInfo->SetURL(szURL);
-	pUrlInfo->SetNZBFilename(szNZBFileName);
-	pUrlInfo->SetCategory(szCategory);
-	pUrlInfo->SetPriority(iPriority);
-	pUrlInfo->SetAddTop(bAddTop);
-	pUrlInfo->SetAddPaused(bAddPaused);
-	pUrlInfo->SetDupeKey(szDupeKey ? szDupeKey : "");
-	pUrlInfo->SetDupeScore(iDupeScore);
-	pUrlInfo->SetDupeMode(eDupeMode);
+	NZBInfo* pNZBInfo = new NZBInfo();
+	pNZBInfo->SetKind(NZBInfo::nkUrl);
+	pNZBInfo->SetURL(szURL);
+	pNZBInfo->SetFilename(szNZBFileName);
+	pNZBInfo->SetCategory(szCategory);
+	pNZBInfo->SetPriority(iPriority);
+	pNZBInfo->SetAddUrlPaused(bAddPaused);
+	pNZBInfo->SetDupeKey(szDupeKey ? szDupeKey : "");
+	pNZBInfo->SetDupeScore(iDupeScore);
+	pNZBInfo->SetDupeMode(eDupeMode);
 
 	char szNicename[1024];
-	pUrlInfo->GetName(szNicename, sizeof(szNicename));
+	pNZBInfo->MakeNiceUrlName(szURL, szNZBFileName, szNicename, sizeof(szNicename));
 	info("Queue %s", szNicename);
 
-	g_pUrlCoordinator->AddUrlToQueue(pUrlInfo, bAddTop);
+	g_pUrlCoordinator->AddUrlToQueue(pNZBInfo, bAddTop);
 
 	BuildBoolResponse(true);
 }
 
+// Deprecated in v13
 void UrlQueueXmlCommand::Execute()
 {
 	AppendResponse(IsJson() ? "[\n" : "<array><data>\n");
@@ -2560,37 +2560,38 @@ void UrlQueueXmlCommand::Execute()
 		"\"Priority\" : %i\n"
 		"}";
 
-	UrlQueue* pUrlQueue = DownloadQueue::Lock()->GetUrlQueue();
+	DownloadQueue* pDownloadQueue = DownloadQueue::Lock();
 
 	int iItemBufSize = 10240;
 	char* szItemBuf = (char*)malloc(iItemBufSize);
 	int index = 0;
 
-	for (UrlQueue::iterator it = pUrlQueue->begin(); it != pUrlQueue->end(); it++)
+	for (NZBList::iterator it = pDownloadQueue->GetQueue()->begin(); it != pDownloadQueue->GetQueue()->end(); it++)
 	{
-		UrlInfo* pUrlInfo = *it;
-		char szNicename[1024];
-		pUrlInfo->GetName(szNicename, sizeof(szNicename));
+		NZBInfo* pNZBInfo = *it;
 
-		char* xmlNicename = EncodeStr(szNicename);
-		char* xmlNZBFilename = EncodeStr(pUrlInfo->GetNZBFilename());
-		char* xmlURL = EncodeStr(pUrlInfo->GetURL());
-		char* xmlCategory = EncodeStr(pUrlInfo->GetCategory());
-
-		snprintf(szItemBuf, iItemBufSize, IsJson() ? JSON_URLQUEUE_ITEM : XML_URLQUEUE_ITEM,
-			pUrlInfo->GetID(), xmlNZBFilename, xmlURL, xmlNicename, xmlCategory, pUrlInfo->GetPriority());
-		szItemBuf[iItemBufSize-1] = '\0';
-
-		free(xmlNicename);
-		free(xmlNZBFilename);
-		free(xmlURL);
-		free(xmlCategory);
-
-		if (IsJson() && index++ > 0)
+		if (pNZBInfo->GetKind() == NZBInfo::nkUrl)
 		{
-			AppendResponse(",\n");
+			char* xmlNicename = EncodeStr(pNZBInfo->GetName());
+			char* xmlNZBFilename = EncodeStr(pNZBInfo->GetFilename());
+			char* xmlURL = EncodeStr(pNZBInfo->GetURL());
+			char* xmlCategory = EncodeStr(pNZBInfo->GetCategory());
+
+			snprintf(szItemBuf, iItemBufSize, IsJson() ? JSON_URLQUEUE_ITEM : XML_URLQUEUE_ITEM,
+				pNZBInfo->GetID(), xmlNZBFilename, xmlURL, xmlNicename, xmlCategory, pNZBInfo->GetPriority());
+			szItemBuf[iItemBufSize-1] = '\0';
+
+			free(xmlNicename);
+			free(xmlNZBFilename);
+			free(xmlURL);
+			free(xmlCategory);
+
+			if (IsJson() && index++ > 0)
+			{
+				AppendResponse(",\n");
+			}
+			AppendResponse(szItemBuf);
 		}
-		AppendResponse(szItemBuf);
 	}
 	free(szItemBuf);
 

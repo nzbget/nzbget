@@ -354,7 +354,7 @@ void Run(bool bReload)
 				return;
 			}
 			g_pScanner->InitPPParameters(szCategory, pNZBFile->GetNZBInfo()->GetParameters());
-			g_pQueueCoordinator->AddNZBFileToQueue(pNZBFile, false);
+			g_pQueueCoordinator->AddNZBFileToQueue(pNZBFile, NULL, false);
 			delete pNZBFile;
 		}
 
@@ -561,10 +561,6 @@ void ProcessClientRequest()
 
 		case Options::opClientRequestDownloadUrl:
 			Client->RequestServerDownloadUrl(g_pOptions->GetLastArg(), g_pOptions->GetAddNZBFilename(), g_pOptions->GetAddCategory(), g_pOptions->GetAddTop(), g_pOptions->GetAddPaused(), g_pOptions->GetAddPriority());
-			break;
-
-		case Options::opClientRequestUrlQueue:
-			Client->RequestUrlQueue();
 			break;
 
 		case Options::opClientNoOperation:

@@ -1,7 +1,7 @@
 /*
  *  This file is part of nzbget
  *
- *  Copyright (C) 2013 Andrey Prygunkov <hugbug@users.sourceforge.net>
+ *  Copyright (C) 2013-2014 Andrey Prygunkov <hugbug@users.sourceforge.net>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -48,13 +48,12 @@
 #include "Util.h"
 #include "FeedFile.h"
 #include "FeedFilter.h"
-#include "UrlCoordinator.h"
 #include "DiskState.h"
+#include "UrlCoordinator.h"
 
 extern Options* g_pOptions;
-extern UrlCoordinator* g_pUrlCoordinator;
 extern DiskState* g_pDiskState;
-
+extern UrlCoordinator* g_pUrlCoordinator;
 
 FeedCoordinator::FeedCacheItem::FeedCacheItem(const char* szUrl, int iCacheTimeSec,const char* szCacheId,
 	time_t tLastUsage, FeedItemInfos* pFeedItemInfos)
@@ -80,8 +79,10 @@ FeedCoordinator::FeedCoordinator()
 	m_bForce = false;
 	m_bSave = false;
 
-	m_UrlCoordinatorObserver.m_pOwner = this;
-	g_pUrlCoordinator->Attach(&m_UrlCoordinatorObserver);
+	m_DownloadQueueObserver.m_pOwner = this;
+	DownloadQueue* pDownloadQueue = DownloadQueue::Lock();
+	pDownloadQueue->Attach(&m_DownloadQueueObserver);
+	DownloadQueue::Unlock();
 }
 
 FeedCoordinator::~FeedCoordinator()
@@ -287,7 +288,7 @@ void FeedCoordinator::StartFeedDownload(FeedInfo* pFeedInfo, bool bForce)
 	else
 	{
 		char szUrlName[1024];
-		UrlInfo::MakeNiceName(pFeedInfo->GetUrl(), "", szUrlName, sizeof(szUrlName));
+		NZBInfo::MakeNiceUrlName(pFeedInfo->GetUrl(), "", szUrlName, sizeof(szUrlName));
 		pFeedDownloader->SetInfoName(szUrlName);
 	}
 	pFeedDownloader->SetForce(bForce || g_pOptions->GetUrlForce());
@@ -462,8 +463,9 @@ void FeedCoordinator::DownloadItem(FeedInfo* pFeedInfo, FeedItemInfo* pFeedItemI
 {
 	debug("Download %s from %s", pFeedItemInfo->GetUrl(), pFeedInfo->GetName());
 
-	UrlInfo* pUrlInfo = new UrlInfo();
-	pUrlInfo->SetURL(pFeedItemInfo->GetUrl());
+	NZBInfo* pNZBInfo = new NZBInfo();
+	pNZBInfo->SetKind(NZBInfo::nkUrl);
+	pNZBInfo->SetURL(pFeedItemInfo->GetUrl());
 
 	// add .nzb-extension if not present
 	char szNZBName[1024];
@@ -479,17 +481,17 @@ void FeedCoordinator::DownloadItem(FeedInfo* pFeedInfo, FeedItemInfo* pFeedItemI
 	Util::MakeValidFilename(szNZBName2, '_', false);
 	if (strlen(szNZBName) > 0)
 	{
-		pUrlInfo->SetNZBFilename(szNZBName2);
+		pNZBInfo->SetFilename(szNZBName2);
 	}
 
-	pUrlInfo->SetCategory(pFeedItemInfo->GetAddCategory());
-	pUrlInfo->SetPriority(pFeedItemInfo->GetPriority());
-	pUrlInfo->SetAddPaused(pFeedItemInfo->GetPauseNzb());
-	pUrlInfo->SetDupeKey(pFeedItemInfo->GetDupeKey());
-	pUrlInfo->SetDupeScore(pFeedItemInfo->GetDupeScore());
-	pUrlInfo->SetDupeMode(pFeedItemInfo->GetDupeMode());
-	pUrlInfo->SetForce(pFeedInfo->GetForce() || g_pOptions->GetUrlForce());
-	g_pUrlCoordinator->AddUrlToQueue(pUrlInfo, false);
+	pNZBInfo->SetCategory(pFeedItemInfo->GetAddCategory());
+	pNZBInfo->SetPriority(pFeedItemInfo->GetPriority());
+	pNZBInfo->SetAddUrlPaused(pFeedItemInfo->GetPauseNzb());
+	pNZBInfo->SetDupeKey(pFeedItemInfo->GetDupeKey());
+	pNZBInfo->SetDupeScore(pFeedItemInfo->GetDupeScore());
+	pNZBInfo->SetDupeMode(pFeedItemInfo->GetDupeMode());
+
+	g_pUrlCoordinator->AddUrlToQueue(pNZBInfo, false);
 }
 
 bool FeedCoordinator::ViewFeed(int iID, FeedItemInfos** ppFeedItemInfos)
@@ -627,22 +629,22 @@ void FeedCoordinator::FetchFeed(int iID)
 	m_mutexDownloads.Unlock();
 }
 
-void FeedCoordinator::UrlCoordinatorUpdate(Subject* pCaller, void* pAspect)
+void FeedCoordinator::DownloadQueueUpdate(Subject* pCaller, void* pAspect)
 {
 	debug("Notification from URL-Coordinator received");
 
-	UrlCoordinator::Aspect* pUrlAspect = (UrlCoordinator::Aspect*)pAspect;
-	if (pUrlAspect->eAction == UrlCoordinator::eaUrlCompleted)
+	DownloadQueue::Aspect* pQueueAspect = (DownloadQueue::Aspect*)pAspect;
+	if (pQueueAspect->eAction == DownloadQueue::eaUrlCompleted)
 	{
 		m_mutexDownloads.Lock();
-		FeedHistoryInfo* pFeedHistoryInfo = m_FeedHistory.Find(pUrlAspect->pUrlInfo->GetURL());
+		FeedHistoryInfo* pFeedHistoryInfo = m_FeedHistory.Find(pQueueAspect->pNZBInfo->GetURL());
 		if (pFeedHistoryInfo)
 		{
 			pFeedHistoryInfo->SetStatus(FeedHistoryInfo::hsFetched);
 		}
 		else
 		{
-			m_FeedHistory.Add(pUrlAspect->pUrlInfo->GetURL(), FeedHistoryInfo::hsFetched, time(NULL));
+			m_FeedHistory.Add(pQueueAspect->pNZBInfo->GetURL(), FeedHistoryInfo::hsFetched, time(NULL));
 		}
 		m_bSave = true;
 		m_mutexDownloads.Unlock();

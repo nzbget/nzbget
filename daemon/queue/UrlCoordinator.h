@@ -37,28 +37,18 @@
 
 class UrlDownloader;
 
-class UrlCoordinator : public Thread, public Observer, public Subject
+class UrlCoordinator : public Thread, public Observer
 {
-public:
+private:
 	typedef std::list<UrlDownloader*>	ActiveDownloads;
-	enum EAspectAction
-	{
-		eaUrlAdded,
-		eaUrlCompleted
-	};
-	struct Aspect
-	{
-		EAspectAction eAction;
-		UrlInfo* pUrlInfo;
-	};
 
 private:
 	ActiveDownloads			m_ActiveDownloads;
 	bool					m_bHasMoreJobs;
 	bool					m_bForce;
 
-	bool					GetNextUrl(DownloadQueue* pDownloadQueue, UrlInfo* &pUrlInfo);
-	void					StartUrlDownload(UrlInfo* pUrlInfo);
+	NZBInfo*				GetNextUrl(DownloadQueue* pDownloadQueue);
+	void					StartUrlDownload(NZBInfo* pNZBInfo);
 	void					UrlCompleted(UrlDownloader* pUrlDownloader);
 	void					ResetHangingDownloads();
 
@@ -70,8 +60,9 @@ public:
 	void					Update(Subject* pCaller, void* pAspect);
 
 	// Editing the queue
-	void					AddUrlToQueue(UrlInfo* pUrlInfo, bool AddFirst);
+	void					AddUrlToQueue(NZBInfo* pNZBInfo, bool bAddTop);
 	bool					HasMoreJobs() { return m_bHasMoreJobs; }
+	bool					DeleteQueueEntry(DownloadQueue* pDownloadQueue, NZBInfo* pNZBInfo, bool bAvoidHistory);
 
 	void					LogDebugInfo();
 };
@@ -79,9 +70,8 @@ public:
 class UrlDownloader : public WebDownloader
 {
 private:
-	UrlInfo*				m_pUrlInfo;
+	NZBInfo*				m_pNZBInfo;
 	char*					m_szCategory;
-	NZBParameterList		m_ppParameters;
 
 protected:
 	virtual void			ProcessHeader(const char* szLine);
@@ -89,10 +79,9 @@ protected:
 public:
 							UrlDownloader();
 							~UrlDownloader();
-	void					SetUrlInfo(UrlInfo* pUrlInfo) { m_pUrlInfo = pUrlInfo; }
-	UrlInfo*				GetUrlInfo() { return m_pUrlInfo; }
+	void					SetNZBInfo(NZBInfo* pNZBInfo) { m_pNZBInfo = pNZBInfo; }
+	NZBInfo*				GetNZBInfo() { return m_pNZBInfo; }
 	const char*				GetCategory() { return m_szCategory; }
-	NZBParameterList*		GetParameters() { return &m_ppParameters; }
 };
 
 #endif

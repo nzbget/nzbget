@@ -50,8 +50,6 @@ int FileInfo::m_iIDGen = 0;
 int FileInfo::m_iIDMax = 0;
 int NZBInfo::m_iIDGen = 0;
 int NZBInfo::m_iIDMax = 0;
-int UrlInfo::m_iIDGen = 0;
-int UrlInfo::m_iIDMax = 0;
 int HistoryInfo::m_iIDGen = 0;
 int HistoryInfo::m_iIDMax = 0;
 DownloadQueue* DownloadQueue::g_pDownloadQueue = NULL;
@@ -256,12 +254,14 @@ void ServerStatList::Add(ServerStatList* pServerStats)
 }
 
 
-NZBInfo::NZBInfo(bool bPersistent) : m_FileList(true)
+NZBInfo::NZBInfo() : m_FileList(true)
 {
 	debug("Creating NZBInfo");
 
-	m_szFilename = NULL;
-	m_szDestDir = NULL;
+	m_eKind = nkNzb;
+	m_szURL = strdup("");
+	m_szFilename = strdup("");
+	m_szDestDir = strdup("");
 	m_szFinalDir = strdup("");
 	m_szCategory = strdup("");
 	m_szName = NULL;
@@ -287,6 +287,8 @@ NZBInfo::NZBInfo(bool bPersistent) : m_FileList(true)
 	m_eMoveStatus = msNone;
 	m_eDeleteStatus = dsNone;
 	m_eMarkStatus = ksNone;
+	m_eUrlStatus = lsNone;
+	m_bAddUrlPaused = false;
 	m_bDeleting = false;
 	m_bDeletePaused = false;
 	m_bManyDupeFiles = false;
@@ -312,13 +314,14 @@ NZBInfo::NZBInfo(bool bPersistent) : m_FileList(true)
 	m_Messages.clear();
 	m_pPostInfo = NULL;
 	m_iIDMessageGen = 0;
-	m_iID = bPersistent ? ++m_iIDGen : 0;
+	m_iID = ++m_iIDGen;
 }
 
 NZBInfo::~NZBInfo()
 {
 	debug("Destroying NZBInfo");
 
+	free(m_szURL);
 	free(m_szFilename);
 	free(m_szDestDir);
 	free(m_szFinalDir);
@@ -382,12 +385,31 @@ void NZBInfo::SetFinalDir(const char* szFinalDir)
 	m_szFinalDir = strdup(szFinalDir);
 }
 
-void NZBInfo::SetFilename(const char * szFilename)
+void NZBInfo::SetURL(const char* szURL)
 {
+	free(m_szURL);
+	m_szURL = strdup(szURL);
+
+	if (!m_szName)
+	{
+		char szNZBNicename[1024];
+		MakeNiceUrlName(szURL, m_szFilename, szNZBNicename, sizeof(szNZBNicename));
+		szNZBNicename[1024-1] = '\0';
+#ifdef WIN32
+		WebUtil::AnsiToUtf8(szNZBNicename, 1024);
+#endif
+		SetName(szNZBNicename);
+	}
+}
+
+void NZBInfo::SetFilename(const char* szFilename)
+{
+	bool bHadFilename = !Util::EmptyStr(m_szFilename);
+
 	free(m_szFilename);
 	m_szFilename = strdup(szFilename);
 
-	if (!m_szName)
+	if ((!m_szName || !bHadFilename) && !Util::EmptyStr(szFilename))
 	{
 		char szNZBNicename[1024];
 		MakeNiceNZBName(m_szFilename, szNZBNicename, sizeof(szNZBNicename), true);
@@ -441,6 +463,28 @@ void NZBInfo::MakeNiceNZBName(const char * szNZBFilename, char * szBuffer, int i
 	Util::MakeValidFilename(postname, '_', false);
 
 	strncpy(szBuffer, postname, iSize);
+	szBuffer[iSize-1] = '\0';
+}
+
+void NZBInfo::MakeNiceUrlName(const char* szURL, const char* szNZBFilename, char* szBuffer, int iSize)
+{
+	URL url(szURL);
+
+	if (!Util::EmptyStr(szNZBFilename))
+	{
+		char szNZBNicename[1024];
+		MakeNiceNZBName(szNZBFilename, szNZBNicename, sizeof(szNZBNicename), true);
+		snprintf(szBuffer, iSize, "%s @ %s", szNZBNicename, url.GetHost());
+	}
+	else if (url.IsValid())
+	{
+		snprintf(szBuffer, iSize, "%s%s", url.GetHost(), url.GetResource());
+	}
+	else
+	{
+		snprintf(szBuffer, iSize, "%s", szURL);
+	}
+
 	szBuffer[iSize-1] = '\0';
 }
 
@@ -526,6 +570,11 @@ int NZBInfo::CalcHealth()
 
 int NZBInfo::CalcCriticalHealth(bool bAllowEstimation)
 {
+	if (m_lSize == 0)
+	{
+		return 1000;
+	}
+
 	long long lGoodParSize = m_lParSize - m_lParCurrentFailedSize;
 	int iCriticalHealth = (int)(Util::Int64ToFloat(m_lSize - lGoodParSize*2) * 1000.0 /
 		Util::Int64ToFloat(m_lSize - lGoodParSize));
@@ -956,101 +1005,6 @@ void PostInfo::AppendMessage(Message::EKind eKind, const char * szText)
 }
 
 
-UrlInfo::UrlInfo()
-{
-	//debug("Creating UrlInfo");
-	m_szURL = NULL;
-	m_szNZBFilename = strdup("");
-	m_szCategory = strdup("");
-	m_iPriority = 0;
-	m_iDupeScore = 0;
-	m_szDupeKey = strdup("");
-	m_eDupeMode = dmScore;
-	m_bAddTop = false;
-	m_bAddPaused = false;
-	m_bForce = false;
-	m_eStatus = aiUndefined;
-	m_iID = ++m_iIDGen;
-}
-
-UrlInfo::~ UrlInfo()
-{
-	free(m_szURL);
-	free(m_szNZBFilename);
-	free(m_szCategory);
-	free(m_szDupeKey);
-}
-
-void UrlInfo::SetURL(const char* szURL)
-{
-	free(m_szURL);
-	m_szURL = strdup(szURL);
-}
-
-void UrlInfo::SetID(int iID)
-{
-	m_iID = iID;
-	if (m_iIDMax < m_iID)
-	{
-		m_iIDMax = m_iID;
-	}
-}
-
-void UrlInfo::ResetGenID(bool bMax)
-{
-	if (bMax)
-	{
-		m_iIDGen = m_iIDMax;
-	}
-	else
-	{
-		m_iIDGen = 0;
-		m_iIDMax = 0;
-	}
-}
-
-void UrlInfo::SetNZBFilename(const char* szNZBFilename)
-{
-	free(m_szNZBFilename);
-	m_szNZBFilename = strdup(szNZBFilename);
-}
-
-void UrlInfo::SetCategory(const char* szCategory)
-{
-	free(m_szCategory);
-	m_szCategory = strdup(szCategory);
-}
-
-void UrlInfo::SetDupeKey(const char* szDupeKey)
-{
-	free(m_szDupeKey);
-	m_szDupeKey = strdup(szDupeKey);
-}
-
-void UrlInfo::GetName(char* szBuffer, int iSize)
-{
-	MakeNiceName(m_szURL, m_szNZBFilename, szBuffer, iSize);
-}
-
-void UrlInfo::MakeNiceName(const char* szURL, const char* szNZBFilename, char* szBuffer, int iSize)
-{
-	URL url(szURL);
-
-	if (strlen(szNZBFilename) > 0)
-	{
-		char szNZBNicename[1024];
-		NZBInfo::MakeNiceNZBName(szNZBFilename, szNZBNicename, sizeof(szNZBNicename), true);
-		snprintf(szBuffer, iSize, "%s @ %s", szNZBNicename, url.GetHost());
-	}
-	else
-	{
-		snprintf(szBuffer, iSize, "%s%s", url.GetHost(), url.GetResource());
-	}
-
-	szBuffer[iSize-1] = '\0';
-}
-
-
 DupInfo::DupInfo()
 {
 	m_szName = NULL;
@@ -1084,23 +1038,15 @@ void DupInfo::SetDupeKey(const char* szDupeKey)
 
 HistoryInfo::HistoryInfo(NZBInfo* pNZBInfo)
 {
-	m_eKind = hkNZBInfo;
+	m_eKind = pNZBInfo->GetKind() == NZBInfo::nkNzb ? hkNzb : hkUrl;
 	m_pInfo = pNZBInfo;
-	m_tTime = 0;
-	m_iID = ++m_iIDGen;
-}
-
-HistoryInfo::HistoryInfo(UrlInfo* pUrlInfo)
-{
-	m_eKind = hkUrlInfo;
-	m_pInfo = pUrlInfo;
 	m_tTime = 0;
 	m_iID = ++m_iIDGen;
 }
 
 HistoryInfo::HistoryInfo(DupInfo* pDupInfo)
 {
-	m_eKind = hkDupInfo;
+	m_eKind = hkDup;
 	m_pInfo = pDupInfo;
 	m_tTime = 0;
 	m_iID = ++m_iIDGen;
@@ -1108,15 +1054,11 @@ HistoryInfo::HistoryInfo(DupInfo* pDupInfo)
 
 HistoryInfo::~HistoryInfo()
 {
-	if (m_eKind == hkNZBInfo && m_pInfo)
+	if ((m_eKind == hkNzb || m_eKind == hkUrl) && m_pInfo)
 	{
 		delete (NZBInfo*)m_pInfo;
 	}
-	else if (m_eKind == hkUrlInfo && m_pInfo)
-	{
-		delete (UrlInfo*)m_pInfo;
-	}
-	else if (m_eKind == hkDupInfo && m_pInfo)
+	else if (m_eKind == hkDup && m_pInfo)
 	{
 		delete (DupInfo*)m_pInfo;
 	}
@@ -1146,16 +1088,12 @@ void HistoryInfo::ResetGenID(bool bMax)
 
 void HistoryInfo::GetName(char* szBuffer, int iSize)
 {
-	if (m_eKind == hkNZBInfo)
+	if (m_eKind == hkNzb || m_eKind == hkUrl)
 	{
 		strncpy(szBuffer, GetNZBInfo()->GetName(), iSize);
 		szBuffer[iSize-1] = '\0';
 	}
-	else if (m_eKind == hkUrlInfo)
-	{
-		GetUrlInfo()->GetName(szBuffer, iSize);
-	}
-	else if (m_eKind == hkDupInfo)
+	else if (m_eKind == hkDup)
 	{
 		strncpy(szBuffer, GetDupInfo()->GetName(), iSize);
 		szBuffer[iSize-1] = '\0';

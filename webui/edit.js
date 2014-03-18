@@ -162,11 +162,12 @@ var DownloadsEditDialog = (new function($)
 			group.RemainingFileCount + ' / ' + group.RemainingParCount + '</td></tr>';
 		$('#DownloadsEdit_Statistics').html(table);
 
-		$('#DownloadsEdit_Title').text(Util.formatNZBName(group.NZBName));
-		$('DownloadsEdit_Title').html($('#DownloadsEdit_Title').html() + '&nbsp;' + status);
+		$('#DownloadsEdit_Title').html(Util.formatNZBName(group.NZBName) + 
+		    (group.Kind === 'URL' ? '&nbsp;<span class="label label-info">URL</span>' : ''));
 
 		$('#DownloadsEdit_NZBName').attr('value', group.NZBName);
 		$('#DownloadsEdit_NZBName').attr('readonly', group.postprocess);
+		$('#DownloadsEdit_URL').attr('value', group.URL);
 
 		// Priority
 		var v = $('#DownloadsEdit_Priority');
@@ -200,12 +201,16 @@ var DownloadsEditDialog = (new function($)
 		Util.show('#DownloadsEdit_NZBNameReadonly', group.postprocess);
 		Util.show('#DownloadsEdit_CancelPP', group.postprocess);
 		Util.show('#DownloadsEdit_Delete', !group.postprocess);
-		Util.show('#DownloadsEdit_Pause', !group.postprocess);
+		Util.show('#DownloadsEdit_Pause', group.Kind === 'NZB' && !group.postprocess);
 		Util.show('#DownloadsEdit_Resume', false);
 		Util.show('#DownloadsEdit_Save', !group.postprocess);
+		Util.show('#DownloadsEdit_StatisticsGroup', group.Kind === 'NZB');
+		Util.show('#DownloadsEdit_File', group.Kind === 'NZB');
+		Util.show('#DownloadsEdit_URLGroup', group.Kind === 'URL');
+		$('#DownloadsEdit_CategoryGroup').toggleClass('control-group-last', group.Kind === 'URL');
 		var dupeCheck = Options.option('DupeCheck') === 'yes';
 		Util.show('#DownloadsEdit_Dupe', dupeCheck);
-		var postParam = postParamConfig[0].options.length > 0;
+		var postParam = postParamConfig[0].options.length > 0 && group.Kind === 'NZB';
 		var postLog = group.postprocess && group.post.Log.length > 0;
 		Util.show('#DownloadsEdit_Param', postParam);
 		Util.show('#DownloadsEdit_Log', postLog);
@@ -226,7 +231,8 @@ var DownloadsEditDialog = (new function($)
 			$('#DownloadsEdit_Close').removeClass('btn-primary');
 			$('#DownloadsEdit_Close').text('Cancel');
 
-			if (group.RemainingSizeHi == group.PausedSizeHi && group.RemainingSizeLo == group.PausedSizeLo)
+			if (group.RemainingSizeHi == group.PausedSizeHi && group.RemainingSizeLo == group.PausedSizeLo &&
+			    group.Kind === 'NZB')
 			{
 				$('#DownloadsEdit_Resume').show();
 				$('#DownloadsEdit_Pause').hide();
@@ -428,7 +434,7 @@ var DownloadsEditDialog = (new function($)
 	function itemDelete(e)
 	{
 		e.preventDefault();
-		DownloadsUI.deleteConfirm(doItemDelete, false);
+		DownloadsUI.deleteConfirm(doItemDelete, false, curGroup.Kind === 'NZB', curGroup.Kind === 'URL');
 	}
 
 	function doItemDelete(command)
@@ -463,6 +469,12 @@ var DownloadsEditDialog = (new function($)
 
 	function saveParam()
 	{
+		if (curGroup.Kind === 'URL')
+		{
+			completed();
+			return;
+		}
+		
 		var paramList = ParamTab.prepareParamRequest(postParams);
 		saveNextParam(paramList);
 	}
@@ -1372,7 +1384,11 @@ var HistoryEditDialog = (new function()
 		}
 		else if (hist.Kind === 'URL')
 		{
-			if (hist.UrlStatus == 'SCAN_SKIPPED')
+			if (hist.DeleteStatus !== 'NONE')
+			{
+				status = HistoryUI.buildStatus('edit-deleted-' + hist.DeleteStatus, 'Delete: ');
+			}
+			else if (hist.UrlStatus == 'SCAN_SKIPPED')
 			{
 				status = HistoryUI.buildStatus('SUCCESS', 'Download: ') + ' ' +
 					HistoryUI.buildStatus('SCAN_SKIPPED', 'Scan: ');
@@ -1425,14 +1441,11 @@ var HistoryEditDialog = (new function()
 			fillServStats();
 		}
 
-		if (hist.Kind !== 'URL')
-		{
-			$('#HistoryEdit_DupeKey').val(hist.DupeKey);
-			$('#HistoryEdit_DupeScore').val(hist.DupeScore);
-			$('#HistoryEdit_DupeMode').val(hist.DupeMode);
-			$('#HistoryEdit_DupeBackup').prop('checked', hist.DeleteStatus === 'DUPE');
-			$('#HistoryEdit_DupeBackup').prop('disabled', !(hist.DeleteStatus === 'DUPE' || hist.DeleteStatus === 'MANUAL'));
-		}
+		$('#HistoryEdit_DupeKey').val(hist.DupeKey);
+		$('#HistoryEdit_DupeScore').val(hist.DupeScore);
+		$('#HistoryEdit_DupeMode').val(hist.DupeMode);
+		$('#HistoryEdit_DupeBackup').prop('checked', hist.DeleteStatus === 'DUPE');
+		$('#HistoryEdit_DupeBackup').prop('disabled', !(hist.DeleteStatus === 'DUPE' || hist.DeleteStatus === 'MANUAL'));
 		Util.show($('#HistoryEdit_DupeBackup').closest('.control-group'), hist.Kind === 'NZB');
 		$('#HistoryEdit_DupeMode').closest('.control-group').toggleClass('last-group', hist.Kind !== 'NZB');
 		
@@ -1445,9 +1458,12 @@ var HistoryEditDialog = (new function()
 		var dupeCheck = Options.option('DupeCheck') === 'yes';
 		Util.show('#HistoryEdit_MarkGood', dupeCheck && ((hist.Kind === 'NZB' && hist.MarkStatus !== 'GOOD') || (hist.Kind === 'DUP' && hist.DupStatus !== 'GOOD')));
 		Util.show('#HistoryEdit_MarkBad', dupeCheck && hist.Kind !== 'URL');
-		Util.show('#HistoryEdit_Dupe', dupeCheck && hist.Kind !== 'URL');
+		Util.show('#HistoryEdit_Dupe', dupeCheck);
 		$('#HistoryEdit_CategoryGroup').toggleClass('control-group-last', hist.Kind === 'URL');
 
+		Util.show('#HistoryEdit_URLGroup', hist.Kind === 'URL');
+		$('#HistoryEdit_URL').attr('value', hist.URL);
+		
 		var postParamConfig = ParamTab.createPostParamConfig();
 		var postParam = hist.Kind === 'NZB' && postParamConfig[0].options.length > 0;
 		Util.show('#HistoryEdit_Param', postParam);
@@ -1623,7 +1639,7 @@ var HistoryEditDialog = (new function()
 
 	function saveParam()
 	{
-		if (curHist.Kind === 'DUP')
+		if (curHist.Kind !== 'NZB')
 		{
 			saveCompleted();
 			return;

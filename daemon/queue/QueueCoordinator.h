@@ -39,26 +39,10 @@
 #include "QueueEditor.h"
 #include "NNTPConnection.h"
                                             
-class QueueCoordinator : public Thread, public Observer, public Subject, public DownloadSpeedMeter
+class QueueCoordinator : public Thread, public Observer, public DownloadSpeedMeter
 {
 public:
 	typedef std::list<ArticleDownloader*>	ActiveDownloads;
-
-	enum EAspectAction
-	{
-		eaNZBFileFound,
-		eaNZBFileAdded,
-		eaFileCompleted,
-		eaFileDeleted
-	};
-
-	struct Aspect
-	{
-		EAspectAction eAction;
-		DownloadQueue* pDownloadQueue;
-		NZBInfo* pNZBInfo;
-		FileInfo* pFileInfo;
-	};
 
 private:
 	class CoordinatorDownloadQueue : public DownloadQueue
@@ -130,7 +114,7 @@ public:
 	void					LogDebugInfo();
 
 	// editing queue
-	void					AddNZBFileToQueue(NZBFile* pNZBFile, bool bAddFirst);
+	void					AddNZBFileToQueue(NZBFile* pNZBFile, NZBInfo* pUrlInfo, bool bAddFirst);
 	void					CheckDupeFileInfos(NZBInfo* pNZBInfo);
 	bool					HasMoreJobs() { return m_bHasMoreJobs; }
 	bool					GetStandBy() { return m_bStandBy; }

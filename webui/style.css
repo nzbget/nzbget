@@ -993,6 +993,16 @@ table.table-hidecheck tbody > tr > td:first-child {
 }
 /* END: Progress bars */
 
+input[disabled],
+select[disabled],
+textarea[disabled],
+input[readonly],
+select[readonly],
+textarea[readonly],
+.uneditable-input {
+  cursor: inherit;
+}
+
 .input-prepend .add-on-small,
 .input-append .add-on-small {
 	font-size: 11px;
