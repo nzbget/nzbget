@@ -30,6 +30,7 @@
 #include <list>
 #include <time.h>
 
+#include "Log.h"
 #include "Thread.h"
 #include "WebDownloader.h"
 #include "DownloadInfo.h"
@@ -39,7 +40,7 @@
 
 class FeedDownloader;
 
-class FeedCoordinator : public Thread, public Observer, public Subject
+class FeedCoordinator : public Thread, public Observer, public Subject, public Debuggable
 {
 private:
 	class DownloadQueueObserver: public Observer
@@ -94,6 +95,9 @@ private:
 	void					CleanupCache();
 	void					CheckSaveFeeds();
 
+protected:
+	virtual void			LogDebugInfo();
+
 public:
 							FeedCoordinator();                
 	virtual					~FeedCoordinator();
@@ -108,8 +112,6 @@ public:
 	void					FetchFeed(int iID);
 	bool					HasActiveDownloads();
 	Feeds*					GetFeeds() { return &m_Feeds; }
-
-	void					LogDebugInfo();
 };
 
 class FeedDownloader : public WebDownloader

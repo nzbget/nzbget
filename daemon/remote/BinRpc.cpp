@@ -47,17 +47,13 @@
 #include "Log.h"
 #include "Options.h"
 #include "QueueCoordinator.h"
-#include "UrlCoordinator.h"
 #include "QueueEditor.h"
-#include "PrePostProcessor.h"
 #include "Util.h"
 #include "DownloadInfo.h"
 #include "Scanner.h"
 
 extern Options* g_pOptions;
 extern QueueCoordinator* g_pQueueCoordinator;
-extern UrlCoordinator* g_pUrlCoordinator;
-extern PrePostProcessor* g_pPrePostProcessor;
 extern Scanner* g_pScanner;
 extern void ExitProc();
 extern void Reload();
@@ -286,8 +282,7 @@ void DumpDebugBinCommand::Execute()
 		return;
 	}
 
-	g_pQueueCoordinator->LogDebugInfo();
-	g_pUrlCoordinator->LogDebugInfo();
+	g_pLog->LogDebugInfo();
 	SendBoolResponse(true, "Debug-Command completed successfully");
 }
 
@@ -587,7 +582,17 @@ void ListBinCommand::Execute()
 		ListResponse.m_bPostPaused = htonl(g_pOptions->GetPausePostProcess());
 		ListResponse.m_bScanPaused = htonl(g_pOptions->GetPauseScan());
 		ListResponse.m_iThreadCount = htonl(Thread::GetThreadCount() - 1); // not counting itself
-		ListResponse.m_iPostJobCount = htonl(g_pPrePostProcessor->GetJobCount());
+
+		DownloadQueue *pDownloadQueue = DownloadQueue::Lock();
+		int iPostJobCount = 0;
+		for (NZBList::iterator it = pDownloadQueue->GetQueue()->begin(); it != pDownloadQueue->GetQueue()->end(); it++)
+		{
+			NZBInfo* pNZBInfo = *it;
+			iPostJobCount += pNZBInfo->GetPostInfo() ? 1 : 0;
+		}
+		DownloadQueue::Unlock();
+
+		ListResponse.m_iPostJobCount = htonl(iPostJobCount);
 
 		int iUpTimeSec, iDnTimeSec;
 		long long iAllBytes;
@@ -1069,7 +1074,10 @@ void DownloadUrlBinCommand::Execute()
 	pNZBInfo->SetPriority(ntohl(DownloadUrlRequest.m_iPriority));
 	pNZBInfo->SetAddUrlPaused(ntohl(DownloadUrlRequest.m_bAddPaused));
 
-	g_pUrlCoordinator->AddUrlToQueue(pNZBInfo, ntohl(DownloadUrlRequest.m_bAddFirst));
+	DownloadQueue* pDownloadQueue = DownloadQueue::Lock();
+	pDownloadQueue->GetQueue()->Add(pNZBInfo, ntohl(DownloadUrlRequest.m_bAddFirst));
+	pDownloadQueue->Save();
+	DownloadQueue::Unlock();
 
 	info("Request: Queue url %s", DownloadUrlRequest.m_szURL);
 

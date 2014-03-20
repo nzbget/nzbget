@@ -63,6 +63,23 @@ Log::~Log()
 	free(m_szLogFilename);
 }
 
+void Log::LogDebugInfo()
+{
+	debug("--------------------------------------------");
+	debug("Dumping debug debug to log");
+	debug("--------------------------------------------");
+	
+	m_mutexDebug.Lock();
+	for (Debuggables::iterator it = m_Debuggables.begin(); it != m_Debuggables.end(); it++)
+	{
+        Debuggable* pDebuggable = *it;
+		pDebuggable->LogDebugInfo();
+	}
+	m_mutexDebug.Unlock();
+
+	debug("");
+}
+
 void Log::Filelog(const char* msg, ...)
 {
 	if (m_szLogFilename)
@@ -411,4 +428,18 @@ void Log::InitOptions()
 			i++;
 		}
 	}
+}
+
+void Log::RegisterDebuggable(Debuggable* pDebuggable)
+{
+	m_mutexDebug.Lock();
+	m_Debuggables.push_back(pDebuggable);
+	m_mutexDebug.Unlock();
+}
+
+void Log::UnregisterDebuggable(Debuggable* pDebuggable)
+{
+	m_mutexDebug.Lock();
+	m_Debuggables.remove(pDebuggable);
+	m_mutexDebug.Unlock();
 }

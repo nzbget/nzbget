@@ -42,7 +42,6 @@
 
 #include "nzbget.h"
 #include "ServerPool.h"
-#include "Log.h"
 
 static const int CONNECTION_HOLD_SECODNS = 5;
 
@@ -59,11 +58,15 @@ ServerPool::ServerPool()
 	m_iMaxNormLevel = 0;
 	m_iTimeout = 60;
 	m_iGeneration = 0;
+
+	g_pLog->RegisterDebuggable(this);
 }
 
 ServerPool::~ ServerPool()
 {
 	debug("Destroying ServerPool");
+
+	g_pLog->UnregisterDebuggable(this);
 
 	m_Levels.clear();
 

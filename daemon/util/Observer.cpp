@@ -2,7 +2,7 @@
  *  This file if part of nzbget
  *
  *  Copyright (C) 2004  Sven Henkel <sidddy@users.sourceforge.net>
- *  Copyright (C) 2007  Andrey Prygunkov <hugbug@users.sourceforge.net>
+ *  Copyright (C) 2007-2014  Andrey Prygunkov <hugbug@users.sourceforge.net>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -40,23 +40,23 @@ Subject::Subject()
 	m_Observers.clear();
 }
 
-void Subject::Attach(Observer* Observer)
+void Subject::Attach(Observer* pObserver)
 {
-	m_Observers.push_back(Observer);
+	m_Observers.push_back(pObserver);
 }
 
-void Subject::Detach(Observer* Observer)
+void Subject::Detach(Observer* pObserver)
 {
-	m_Observers.remove(Observer);
+	m_Observers.remove(pObserver);
 }
 
-void Subject::Notify(void* Aspect)
+void Subject::Notify(void* pAspect)
 {
 	debug("Notifying observers");
 	
 	for (std::list<Observer*>::iterator it = m_Observers.begin(); it != m_Observers.end(); it++)
 	{
         Observer* Observer = *it;
-		Observer->Update(this, Aspect);
+		Observer->Update(this, pAspect);
 	}
 }

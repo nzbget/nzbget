@@ -2,7 +2,7 @@
  *  This file is part of nzbget
  *
  *  Copyright (C) 2004 Sven Henkel <sidddy@users.sourceforge.net>
- *  Copyright (C) 2007-2009 Andrey Prygunkov <hugbug@users.sourceforge.net>
+ *  Copyright (C) 2007-2014 Andrey Prygunkov <hugbug@users.sourceforge.net>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -28,6 +28,7 @@
 #define LOG_H
 
 #include <deque>
+#include <list>
 #include <time.h>
 
 #include "Thread.h"
@@ -75,14 +76,24 @@ public:
 	const char*			GetText() { return m_szText; }
 };
 
+class Debuggable
+{
+protected:
+	virtual void		LogDebugInfo() = 0;
+	friend class Log;
+};
+
 class Log
 {
 public:
 	typedef std::deque<Message*>	Messages;
+	typedef std::list<Debuggable*>	Debuggables;
 
 private:
 	Mutex				m_mutexLog;
 	Messages			m_Messages;
+	Debuggables			m_Debuggables;
+	Mutex				m_mutexDebug;
 	char*				m_szLogFilename;
 	unsigned int		m_iIDGen;
 #ifdef DEBUG
@@ -113,6 +124,9 @@ public:
 	void				Clear();
 	void				ResetLog();
 	void				InitOptions();
+	void				RegisterDebuggable(Debuggable* pDebuggable);
+	void				UnregisterDebuggable(Debuggable* pDebuggable);
+	void				LogDebugInfo();
 };
 
 #ifdef DEBUG

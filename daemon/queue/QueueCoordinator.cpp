@@ -48,7 +48,6 @@
 #include "ServerPool.h"
 #include "ArticleDownloader.h"
 #include "DiskState.h"
-#include "Log.h"
 #include "Util.h"
 #include "Decoder.h"
 
@@ -90,6 +89,8 @@ QueueCoordinator::QueueCoordinator()
 	m_bStandBy = true;
 	m_iServerConfigGeneration = 0;
 
+	g_pLog->RegisterDebuggable(this);
+
 	m_DownloadQueue.m_pOwner = this;
 	CoordinatorDownloadQueue::Init(&m_DownloadQueue);
 	YDecoder::Init();
@@ -99,6 +100,8 @@ QueueCoordinator::~QueueCoordinator()
 {
 	debug("Destroying QueueCoordinator");
 	// Cleanup
+
+	g_pLog->UnregisterDebuggable(this);
 
 	debug("Deleting ArticleDownloaders");
 	for (ActiveDownloads::iterator it = m_ActiveDownloads.begin(); it != m_ActiveDownloads.end(); it++)
@@ -906,10 +909,6 @@ void QueueCoordinator::CheckHealth(DownloadQueue* pDownloadQueue, FileInfo* pFil
 
 void QueueCoordinator::LogDebugInfo()
 {
-	debug("--------------------------------------------");
-	debug("Dumping debug debug to log");
-	debug("--------------------------------------------");
-
 	debug("   SpeedMeter");
 	debug("   ----------");
 	float fSpeed = (float)(CalcCurrentDownloadSpeed() / 1024.0);
@@ -939,8 +938,6 @@ void QueueCoordinator::LogDebugInfo()
 	DownloadQueue::Unlock();
 
 	debug("");
-
-	g_pServerPool->LogDebugInfo();
 }
 
 void QueueCoordinator::ResetHangingDownloads()

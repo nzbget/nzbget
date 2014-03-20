@@ -30,11 +30,12 @@
 #include <vector>
 #include <time.h>
 
+#include "Log.h"
 #include "Thread.h"
 #include "NewsServer.h"
 #include "NNTPConnection.h"
 
-class ServerPool
+class ServerPool : public Debuggable
 {
 private:
 	class PooledConnection : public NNTPConnection
@@ -65,6 +66,9 @@ private:
 	void				NormalizeLevels();
 	static bool			CompareServers(NewsServer* pServer1, NewsServer* pServer2);
 
+protected:
+	virtual void			LogDebugInfo();
+
 public:
 						ServerPool();
 						~ServerPool();
@@ -78,8 +82,6 @@ public:
 	void				CloseUnusedConnections();
 	void				Changed();
 	int					GetGeneration() { return m_iGeneration; }
-
-	void				LogDebugInfo();
 };
 
 #endif

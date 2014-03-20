@@ -2,7 +2,7 @@
  *  This file is part of nzbget
  *
  *  Copyright (C) 2004 Sven Henkel <sidddy@users.sourceforge.net>
- *  Copyright (C) 2007-2013 Andrey Prygunkov <hugbug@users.sourceforge.net>
+ *  Copyright (C) 2007-2014 Andrey Prygunkov <hugbug@users.sourceforge.net>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -89,7 +89,7 @@ private:
 
 public:
 						ArticleDownloader();
-						~ArticleDownloader();
+	virtual				~ArticleDownloader();
 	void				SetFileInfo(FileInfo* pFileInfo) { m_pFileInfo = pFileInfo; }
 	FileInfo*			GetFileInfo() { return m_pFileInfo; }
 	void				SetArticleInfo(ArticleInfo* pArticleInfo) { m_pArticleInfo = pArticleInfo; }

@@ -1,7 +1,7 @@
 /*
  *  This file is part of nzbget
  *
- *  Copyright (C) 2012-2013 Andrey Prygunkov <hugbug@users.sourceforge.net>
+ *  Copyright (C) 2012-2014 Andrey Prygunkov <hugbug@users.sourceforge.net>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -30,6 +30,7 @@
 #include <list>
 #include <time.h>
 
+#include "Log.h"
 #include "Thread.h"
 #include "WebDownloader.h"
 #include "DownloadInfo.h"
@@ -37,7 +38,7 @@
 
 class UrlDownloader;
 
-class UrlCoordinator : public Thread, public Observer
+class UrlCoordinator : public Thread, public Observer, public Debuggable
 {
 private:
 	typedef std::list<UrlDownloader*>	ActiveDownloads;
@@ -52,6 +53,9 @@ private:
 	void					UrlCompleted(UrlDownloader* pUrlDownloader);
 	void					ResetHangingDownloads();
 
+protected:
+	virtual void			LogDebugInfo();
+
 public:
 							UrlCoordinator();                
 	virtual					~UrlCoordinator();
@@ -63,8 +67,6 @@ public:
 	void					AddUrlToQueue(NZBInfo* pNZBInfo, bool bAddTop);
 	bool					HasMoreJobs() { return m_bHasMoreJobs; }
 	bool					DeleteQueueEntry(DownloadQueue* pDownloadQueue, NZBInfo* pNZBInfo, bool bAvoidHistory);
-
-	void					LogDebugInfo();
 };
 
 class UrlDownloader : public WebDownloader
