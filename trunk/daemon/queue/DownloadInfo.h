@@ -576,6 +576,7 @@ public:
 						NZBList(bool bOwnObjects = false) { m_bOwnObjects = bOwnObjects; }
 						~NZBList();
 	void				Clear();
+	void				Add(NZBInfo* pNZBInfo, bool bAddTop);
 	void				Remove(NZBInfo* pNZBInfo);
 };
 
@@ -822,6 +823,7 @@ protected:
 	static void				Loaded() { g_bLoaded = true; }
 
 public:
+	virtual					~DownloadQueue() {};
 	static bool				IsLoaded() { return g_bLoaded; }
 	static DownloadQueue*	Lock();
 	static void				Unlock();

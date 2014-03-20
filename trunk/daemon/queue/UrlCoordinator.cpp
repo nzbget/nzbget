@@ -44,7 +44,6 @@
 #include "UrlCoordinator.h"
 #include "Options.h"
 #include "WebDownloader.h"
-#include "Log.h"
 #include "Util.h"
 #include "NZBFile.h"
 #include "Scanner.h"
@@ -106,12 +105,16 @@ UrlCoordinator::UrlCoordinator()
 	debug("Creating UrlCoordinator");
 
 	m_bHasMoreJobs = true;
+
+	g_pLog->RegisterDebuggable(this);
 }
 
 UrlCoordinator::~UrlCoordinator()
 {
 	debug("Destroying UrlCoordinator");
 	// Cleanup
+
+	g_pLog->UnregisterDebuggable(this);
 
 	debug("Deleting UrlDownloaders");
 	for (ActiveDownloads::iterator it = m_ActiveDownloads.begin(); it != m_ActiveDownloads.end(); it++)

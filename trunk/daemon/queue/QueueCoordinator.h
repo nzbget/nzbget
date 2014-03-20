@@ -31,6 +31,7 @@
 #include <list>
 #include <time.h>
 
+#include "Log.h"
 #include "Thread.h"
 #include "NZBFile.h"
 #include "ArticleDownloader.h"
@@ -39,7 +40,7 @@
 #include "QueueEditor.h"
 #include "NNTPConnection.h"
                                             
-class QueueCoordinator : public Thread, public Observer, public DownloadSpeedMeter
+class QueueCoordinator : public Thread, public Observer, public DownloadSpeedMeter, public Debuggable
 {
 public:
 	typedef std::list<ArticleDownloader*>	ActiveDownloads;
@@ -53,7 +54,7 @@ private:
 	public:
 		virtual bool		EditEntry(int ID, EEditAction eAction, int iOffset, const char* szText);
 		virtual bool		EditList(IDList* pIDList, NameList* pNameList, EMatchMode eMatchMode, EEditAction eAction, int iOffset, const char* szText);
-		virtual void			Save();
+		virtual void		Save();
 	};
 
 private:
@@ -99,6 +100,9 @@ private:
 	void					AdjustStartTime();
 	void					AdjustDownloadsLimit();
 
+protected:
+	virtual void			LogDebugInfo();
+
 public:
 							QueueCoordinator();                
 	virtual					~QueueCoordinator();
@@ -111,7 +115,6 @@ public:
 	virtual int				CalcCurrentDownloadSpeed();
 	virtual void			AddSpeedReading(int iBytes);
 	void					CalcStat(int* iUpTimeSec, int* iDnTimeSec, long long* iAllBytes, bool* bStandBy);
-	void					LogDebugInfo();
 
 	// editing queue
 	void					AddNZBFileToQueue(NZBFile* pNZBFile, NZBInfo* pUrlInfo, bool bAddFirst);

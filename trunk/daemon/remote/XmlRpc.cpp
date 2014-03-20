@@ -44,7 +44,6 @@
 #include "Log.h"
 #include "Options.h"
 #include "QueueCoordinator.h"
-#include "UrlCoordinator.h"
 #include "QueueEditor.h"
 #include "Scanner.h"
 #include "FeedCoordinator.h"
@@ -55,14 +54,12 @@
 
 extern Options* g_pOptions;
 extern QueueCoordinator* g_pQueueCoordinator;
-extern UrlCoordinator* g_pUrlCoordinator;
 extern Scanner* g_pScanner;
 extern FeedCoordinator* g_pFeedCoordinator;
 extern ServerPool* g_pServerPool;
 extern Maintenance* g_pMaintenance;
 extern void ExitProc();
 extern void Reload();
-
 
 class ErrorXmlCommand: public XmlCommand
 {
@@ -1093,9 +1090,7 @@ void VersionXmlCommand::Execute()
 
 void DumpDebugXmlCommand::Execute()
 {
-	g_pQueueCoordinator->LogDebugInfo();
-	g_pUrlCoordinator->LogDebugInfo();
-	g_pFeedCoordinator->LogDebugInfo();
+	g_pLog->LogDebugInfo();
 	BuildBoolResponse(true);
 }
 
@@ -2530,7 +2525,10 @@ void DownloadUrlXmlCommand::Execute()
 	pNZBInfo->MakeNiceUrlName(szURL, szNZBFileName, szNicename, sizeof(szNicename));
 	info("Queue %s", szNicename);
 
-	g_pUrlCoordinator->AddUrlToQueue(pNZBInfo, bAddTop);
+	DownloadQueue* pDownloadQueue = DownloadQueue::Lock();
+	pDownloadQueue->GetQueue()->Add(pNZBInfo, bAddTop);
+	pDownloadQueue->Save();
+	DownloadQueue::Unlock();
 
 	BuildBoolResponse(true);
 }

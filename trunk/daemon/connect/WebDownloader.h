@@ -88,7 +88,7 @@ protected:
 
 public:
 						WebDownloader();
-						~WebDownloader();
+	virtual				~WebDownloader();
 	EStatus				GetStatus() { return m_eStatus; }
 	virtual void		Run();
 	virtual void		Stop();

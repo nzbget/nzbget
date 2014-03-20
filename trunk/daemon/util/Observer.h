@@ -2,7 +2,7 @@
  *  This file if part of nzbget
  *
  *  Copyright (C) 2004  Sven Henkel <sidddy@users.sourceforge.net>
- *  Copyright (C) 2007  Andrey Prygunkov <hugbug@users.sourceforge.net>
+ *  Copyright (C) 2007-2014  Andrey Prygunkov <hugbug@users.sourceforge.net>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -38,16 +38,16 @@ private:
 
 public:
 					Subject();
-	void 			Attach(Observer* Observer);
-	void 			Detach(Observer* Observer);
-	void 			Notify(void* Aspect);
+	void 			Attach(Observer* pObserver);
+	void 			Detach(Observer* pObserver);
+	void 			Notify(void* pAspect);
 };
 
 class Observer
 {
-public:
-	virtual			~Observer() {};
-	virtual void	Update(Subject* Caller, void* Aspect) = 0;
+protected:
+	virtual void	Update(Subject* pCaller, void* pAspect) = 0;
+	friend class Subject;
 };
 
 #endif

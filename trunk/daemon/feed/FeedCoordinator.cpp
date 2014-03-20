@@ -44,16 +44,13 @@
 #include "FeedCoordinator.h"
 #include "Options.h"
 #include "WebDownloader.h"
-#include "Log.h"
 #include "Util.h"
 #include "FeedFile.h"
 #include "FeedFilter.h"
 #include "DiskState.h"
-#include "UrlCoordinator.h"
 
 extern Options* g_pOptions;
 extern DiskState* g_pDiskState;
-extern UrlCoordinator* g_pUrlCoordinator;
 
 FeedCoordinator::FeedCacheItem::FeedCacheItem(const char* szUrl, int iCacheTimeSec,const char* szCacheId,
 	time_t tLastUsage, FeedItemInfos* pFeedItemInfos)
@@ -79,6 +76,8 @@ FeedCoordinator::FeedCoordinator()
 	m_bForce = false;
 	m_bSave = false;
 
+	g_pLog->RegisterDebuggable(this);
+
 	m_DownloadQueueObserver.m_pOwner = this;
 	DownloadQueue* pDownloadQueue = DownloadQueue::Lock();
 	pDownloadQueue->Attach(&m_DownloadQueueObserver);
@@ -89,6 +88,8 @@ FeedCoordinator::~FeedCoordinator()
 {
 	debug("Destroying FeedCoordinator");
 	// Cleanup
+
+	g_pLog->UnregisterDebuggable(this);
 
 	debug("Deleting FeedDownloaders");
 	for (ActiveDownloads::iterator it = m_ActiveDownloads.begin(); it != m_ActiveDownloads.end(); it++)
@@ -491,7 +492,10 @@ void FeedCoordinator::DownloadItem(FeedInfo* pFeedInfo, FeedItemInfo* pFeedItemI
 	pNZBInfo->SetDupeScore(pFeedItemInfo->GetDupeScore());
 	pNZBInfo->SetDupeMode(pFeedItemInfo->GetDupeMode());
 
-	g_pUrlCoordinator->AddUrlToQueue(pNZBInfo, false);
+	DownloadQueue* pDownloadQueue = DownloadQueue::Lock();
+	pDownloadQueue->GetQueue()->Add(pNZBInfo, false);
+	pDownloadQueue->Save();
+	DownloadQueue::Unlock();
 }
 
 bool FeedCoordinator::ViewFeed(int iID, FeedItemInfos** ppFeedItemInfos)

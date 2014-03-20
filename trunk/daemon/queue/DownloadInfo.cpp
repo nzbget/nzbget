@@ -734,6 +734,18 @@ void NZBList::Clear()
 	clear();
 }
 
+void NZBList::Add(NZBInfo* pNZBInfo, bool bAddTop)
+{
+	if (bAddTop)
+	{
+		push_front(pNZBInfo);
+	}
+	else
+	{
+		push_back(pNZBInfo);
+	}
+}
+
 void NZBList::Remove(NZBInfo* pNZBInfo)
 {
 	iterator it = std::find(begin(), end(), pNZBInfo);

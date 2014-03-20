@@ -48,12 +48,10 @@
 #include "Connection.h"
 #include "MessageBase.h"
 #include "QueueCoordinator.h"
-#include "PrePostProcessor.h"
 #include "RemoteClient.h"
 #include "Util.h"
 
 extern QueueCoordinator* g_pQueueCoordinator;
-extern PrePostProcessor* g_pPrePostProcessor;
 extern Options* g_pOptions;
 
 Frontend::Frontend()
@@ -101,8 +99,17 @@ bool Frontend::PrepareData()
 			m_bPauseDownload = g_pOptions->GetPauseDownload();
 			m_iDownloadLimit = g_pOptions->GetDownloadRate();
 			m_iThreadCount = Thread::GetThreadCount();
-			m_iPostJobCount = g_pPrePostProcessor->GetJobCount();
 			g_pQueueCoordinator->CalcStat(&m_iUpTimeSec, &m_iDnTimeSec, &m_iAllBytes, &m_bStandBy);
+
+			DownloadQueue *pDownloadQueue = DownloadQueue::Lock();
+			m_iPostJobCount = 0;
+			for (NZBList::iterator it = pDownloadQueue->GetQueue()->begin(); it != pDownloadQueue->GetQueue()->end(); it++)
+			{
+				NZBInfo* pNZBInfo = *it;
+				m_iPostJobCount += pNZBInfo->GetPostInfo() ? 1 : 0;
+			}
+			DownloadQueue::Unlock();
+
 		}
 	}
 	return true;
