@@ -43,7 +43,6 @@
 #include "XmlRpc.h"
 #include "Log.h"
 #include "Options.h"
-#include "QueueCoordinator.h"
 #include "QueueEditor.h"
 #include "Scanner.h"
 #include "FeedCoordinator.h"
@@ -51,13 +50,14 @@
 #include "Util.h"
 #include "WebDownloader.h"
 #include "Maintenance.h"
+#include "StatMeter.h"
 
 extern Options* g_pOptions;
-extern QueueCoordinator* g_pQueueCoordinator;
 extern Scanner* g_pScanner;
 extern FeedCoordinator* g_pFeedCoordinator;
 extern ServerPool* g_pServerPool;
 extern Maintenance* g_pMaintenance;
+extern StatMeter* g_pStatMeter;
 extern void ExitProc();
 extern void Reload();
 
@@ -1196,17 +1196,6 @@ void StatusXmlCommand::Execute()
 		"\"Active\" : %s\n"
 		"}";
 
-	unsigned long iRemainingSizeHi, iRemainingSizeLo;
-	int iDownloadRate = (int)(g_pQueueCoordinator->CalcCurrentDownloadSpeed());
-	long long iRemainingSize = g_pQueueCoordinator->CalcRemainingSize();
-	Util::SplitInt64(iRemainingSize, &iRemainingSizeHi, &iRemainingSizeLo);
-	int iRemainingMBytes = (int)(iRemainingSize / 1024 / 1024);
-	int iDownloadLimit = (int)(g_pOptions->GetDownloadRate());
-	bool bDownloadPaused = g_pOptions->GetPauseDownload();
-	bool bPostPaused = g_pOptions->GetPausePostProcess();
-	bool bScanPaused = g_pOptions->GetPauseScan();
-	int iThreadCount = Thread::GetThreadCount() - 1; // not counting itself
-
 	DownloadQueue *pDownloadQueue = DownloadQueue::Lock();
 	int iPostJobCount = 0;
 	int iUrlCount = 0;
@@ -1216,13 +1205,23 @@ void StatusXmlCommand::Execute()
 		iPostJobCount += pNZBInfo->GetPostInfo() ? 1 : 0;
 		iUrlCount += pNZBInfo->GetKind() == NZBInfo::nkUrl ? 1 : 0;
 	}
+	long long iRemainingSize = pDownloadQueue->CalcRemainingSize();
 	DownloadQueue::Unlock();
 
+	unsigned long iRemainingSizeHi, iRemainingSizeLo;
+	int iDownloadRate = (int)(g_pStatMeter->CalcCurrentDownloadSpeed());
+	Util::SplitInt64(iRemainingSize, &iRemainingSizeHi, &iRemainingSizeLo);
+	int iRemainingMBytes = (int)(iRemainingSize / 1024 / 1024);
+	int iDownloadLimit = (int)(g_pOptions->GetDownloadRate());
+	bool bDownloadPaused = g_pOptions->GetPauseDownload();
+	bool bPostPaused = g_pOptions->GetPausePostProcess();
+	bool bScanPaused = g_pOptions->GetPauseScan();
+	int iThreadCount = Thread::GetThreadCount() - 1; // not counting itself
 	unsigned long iDownloadedSizeHi, iDownloadedSizeLo;
 	int iUpTimeSec, iDownloadTimeSec;
 	long long iAllBytes;
 	bool bServerStandBy;
-	g_pQueueCoordinator->CalcStat(&iUpTimeSec, &iDownloadTimeSec, &iAllBytes, &bServerStandBy);
+	g_pStatMeter->CalcTotalStat(&iUpTimeSec, &iDownloadTimeSec, &iAllBytes, &bServerStandBy);
 	int iDownloadedMBytes = (int)(iAllBytes / 1024 / 1024);
 	Util::SplitInt64(iAllBytes, &iDownloadedSizeHi, &iDownloadedSizeLo);
 	int iAverageDownloadRate = (int)(iDownloadTimeSec > 0 ? iAllBytes / iDownloadTimeSec : 0);

@@ -91,10 +91,10 @@ am_nzbget_OBJECTS = Connection.$(OBJEXT) TLS.$(OBJEXT) \
 	Scheduler.$(OBJEXT) ArticleDownloader.$(OBJEXT) \
 	Decoder.$(OBJEXT) NewsServer.$(OBJEXT) \
 	NNTPConnection.$(OBJEXT) ServerPool.$(OBJEXT) \
-	ParChecker.$(OBJEXT) ParCoordinator.$(OBJEXT) \
-	ParRenamer.$(OBJEXT) PostScript.$(OBJEXT) \
-	PrePostProcessor.$(OBJEXT) Unpack.$(OBJEXT) \
-	DiskState.$(OBJEXT) DownloadInfo.$(OBJEXT) \
+	StatMeter.$(OBJEXT) ParChecker.$(OBJEXT) \
+	ParCoordinator.$(OBJEXT) ParRenamer.$(OBJEXT) \
+	PostScript.$(OBJEXT) PrePostProcessor.$(OBJEXT) \
+	Unpack.$(OBJEXT) DiskState.$(OBJEXT) DownloadInfo.$(OBJEXT) \
 	DupeCoordinator.$(OBJEXT) HistoryCoordinator.$(OBJEXT) \
 	NZBFile.$(OBJEXT) QueueCoordinator.$(OBJEXT) \
 	QueueEditor.$(OBJEXT) QueueScript.$(OBJEXT) Scanner.$(OBJEXT) \
@@ -285,6 +285,8 @@ nzbget_SOURCES = \
 	daemon/nntp/NNTPConnection.h \
 	daemon/nntp/ServerPool.cpp \
 	daemon/nntp/ServerPool.h \
+	daemon/nntp/StatMeter.cpp \
+	daemon/nntp/StatMeter.h \
 	daemon/postprocess/ParChecker.cpp \
 	daemon/postprocess/ParChecker.h \
 	daemon/postprocess/ParCoordinator.cpp \
@@ -630,6 +632,7 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/Scheduler.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/Script.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/ServerPool.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/StatMeter.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/TLS.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/Thread.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/Unpack.Po@am__quote@
@@ -934,6 +937,20 @@ ServerPool.obj: daemon/nntp/ServerPool.cpp
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='daemon/nntp/ServerPool.cpp' object='ServerPool.obj' libtool=no @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o ServerPool.obj `if test -f 'daemon/nntp/ServerPool.cpp'; then $(CYGPATH_W) 'daemon/nntp/ServerPool.cpp'; else $(CYGPATH_W) '$(srcdir)/daemon/nntp/ServerPool.cpp'; fi`
+
+StatMeter.o: daemon/nntp/StatMeter.cpp
+@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT StatMeter.o -MD -MP -MF "$(DEPDIR)/StatMeter.Tpo" -c -o StatMeter.o `test -f 'daemon/nntp/StatMeter.cpp' || echo '$(srcdir)/'`daemon/nntp/StatMeter.cpp; \
+@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/StatMeter.Tpo" "$(DEPDIR)/StatMeter.Po"; else rm -f "$(DEPDIR)/StatMeter.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='daemon/nntp/StatMeter.cpp' object='StatMeter.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o StatMeter.o `test -f 'daemon/nntp/StatMeter.cpp' || echo '$(srcdir)/'`daemon/nntp/StatMeter.cpp
+
+StatMeter.obj: daemon/nntp/StatMeter.cpp
+@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT StatMeter.obj -MD -MP -MF "$(DEPDIR)/StatMeter.Tpo" -c -o StatMeter.obj `if test -f 'daemon/nntp/StatMeter.cpp'; then $(CYGPATH_W) 'daemon/nntp/StatMeter.cpp'; else $(CYGPATH_W) '$(srcdir)/daemon/nntp/StatMeter.cpp'; fi`; \
+@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/StatMeter.Tpo" "$(DEPDIR)/StatMeter.Po"; else rm -f "$(DEPDIR)/StatMeter.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='daemon/nntp/StatMeter.cpp' object='StatMeter.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o StatMeter.obj `if test -f 'daemon/nntp/StatMeter.cpp'; then $(CYGPATH_W) 'daemon/nntp/StatMeter.cpp'; else $(CYGPATH_W) '$(srcdir)/daemon/nntp/StatMeter.cpp'; fi`
 
 ParChecker.o: daemon/postprocess/ParChecker.cpp
 @am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT ParChecker.o -MD -MP -MF "$(DEPDIR)/ParChecker.Tpo" -c -o ParChecker.o `test -f 'daemon/postprocess/ParChecker.cpp' || echo '$(srcdir)/'`daemon/postprocess/ParChecker.cpp; \

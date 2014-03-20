@@ -832,6 +832,7 @@ public:
 	virtual bool			EditEntry(int ID, EEditAction eAction, int iOffset, const char* szText) = 0;
 	virtual bool			EditList(IDList* pIDList, NameList* pNameList, EMatchMode eMatchMode, EEditAction eAction, int iOffset, const char* szText) = 0;
 	virtual void			Save() = 0;
+	long long 				CalcRemainingSize();
 };
 
 #endif

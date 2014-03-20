@@ -79,6 +79,7 @@
 #include "Scanner.h"
 #include "FeedCoordinator.h"
 #include "Maintenance.h"
+#include "StatMeter.h"
 #include "Util.h"
 #ifdef WIN32
 #include "NTService.h"
@@ -112,7 +113,7 @@ QueueCoordinator* g_pQueueCoordinator = NULL;
 UrlCoordinator* g_pUrlCoordinator = NULL;
 RemoteServer* g_pRemoteServer = NULL;
 RemoteServer* g_pRemoteSecureServer = NULL;
-DownloadSpeedMeter* g_pDownloadSpeedMeter = NULL;
+StatMeter* g_pStatMeter = NULL;
 Log* g_pLog = NULL;
 PrePostProcessor* g_pPrePostProcessor = NULL;
 HistoryCoordinator* g_pHistoryCoordinator = NULL;
@@ -215,7 +216,7 @@ void Run(bool bReload)
 	g_pServerPool = new ServerPool();
 	g_pScheduler = new Scheduler();
 	g_pQueueCoordinator = new QueueCoordinator();
-	g_pDownloadSpeedMeter = g_pQueueCoordinator;
+	g_pStatMeter = new StatMeter();
 	g_pScanner = new Scanner();
 	g_pPrePostProcessor = new PrePostProcessor();
 	g_pHistoryCoordinator = new HistoryCoordinator();
@@ -795,6 +796,11 @@ void Cleanup()
 	delete g_pMaintenance;
 	g_pMaintenance = NULL;
 	debug("Maintenance deleted");
+
+	debug("Deleting StatMeter");
+	delete g_pStatMeter;
+	g_pStatMeter = NULL;
+	debug("StatMeter deleted");
 
 	if (!g_bReloading)
 	{

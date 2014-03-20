@@ -29,7 +29,6 @@
 
 #include <deque>
 #include <list>
-#include <time.h>
 
 #include "Log.h"
 #include "Thread.h"
@@ -40,7 +39,7 @@
 #include "QueueEditor.h"
 #include "NNTPConnection.h"
                                             
-class QueueCoordinator : public Thread, public Observer, public DownloadSpeedMeter, public Debuggable
+class QueueCoordinator : public Thread, public Observer, public Debuggable
 {
 public:
 	typedef std::list<ArticleDownloader*>	ActiveDownloads;
@@ -65,29 +64,6 @@ private:
 	int							m_iDownloadsLimit;
 	int							m_iServerConfigGeneration;
 
-	// statistics
-	static const int		SPEEDMETER_SLOTS = 30;    
-	static const int		SPEEDMETER_SLOTSIZE = 1;  //Split elapsed time into this number of secs.
-    int						m_iSpeedBytes[SPEEDMETER_SLOTS];
-    int                     m_iSpeedTotalBytes;
-    int 					m_iSpeedTime[SPEEDMETER_SLOTS];
-    int                     m_iSpeedStartTime; 
-	time_t					m_tSpeedCorrection;
-#ifdef HAVE_SPINLOCK
-	SpinLock				m_spinlockSpeed;
-#else
-	Mutex					m_mutexSpeed;
-#endif
-
-    int						m_iSpeedBytesIndex;
-	long long				m_iAllBytes;
-	time_t					m_tStartServer;
-	time_t					m_tLastCheck;
-	time_t					m_tStartDownload;
-	time_t					m_tPausedFrom;
-	bool					m_bStandBy;
-	Mutex					m_mutexStat;
-
 	bool					GetNextArticle(DownloadQueue* pDownloadQueue, FileInfo* &pFileInfo, ArticleInfo* &pArticleInfo);
 	void					StartArticleDownload(FileInfo* pFileInfo, ArticleInfo* pArticleInfo, NNTPConnection* pConnection);
 	void					ArticleCompleted(ArticleDownloader* pArticleDownloader);
@@ -95,9 +71,6 @@ private:
 	void					StatFileInfo(FileInfo* pFileInfo, bool bCompleted);
 	void					CheckHealth(DownloadQueue* pDownloadQueue, FileInfo* pFileInfo);
 	void					ResetHangingDownloads();
-	void					ResetSpeedStat();
-	void					EnterLeaveStandBy(bool bEnter);
-	void					AdjustStartTime();
 	void					AdjustDownloadsLimit();
 
 protected:
@@ -110,17 +83,10 @@ public:
 	virtual void 			Stop();
 	void					Update(Subject* Caller, void* Aspect);
 
-	// statistics
-	long long 				CalcRemainingSize();
-	virtual int				CalcCurrentDownloadSpeed();
-	virtual void			AddSpeedReading(int iBytes);
-	void					CalcStat(int* iUpTimeSec, int* iDnTimeSec, long long* iAllBytes, bool* bStandBy);
-
 	// editing queue
 	void					AddNZBFileToQueue(NZBFile* pNZBFile, NZBInfo* pUrlInfo, bool bAddFirst);
 	void					CheckDupeFileInfos(NZBInfo* pNZBInfo);
 	bool					HasMoreJobs() { return m_bHasMoreJobs; }
-	bool					GetStandBy() { return m_bStandBy; }
 	void					DiscardDiskFile(FileInfo* pFileInfo);
 	bool					DeleteQueueEntry(DownloadQueue* pDownloadQueue, FileInfo* pFileInfo);
 	bool					SetQueueEntryCategory(DownloadQueue* pDownloadQueue, NZBInfo* pNZBInfo, const char* szCategory);

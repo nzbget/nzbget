@@ -62,6 +62,8 @@ nzbget_SOURCES = \
 	daemon/nntp/NNTPConnection.h \
 	daemon/nntp/ServerPool.cpp \
 	daemon/nntp/ServerPool.h \
+	daemon/nntp/StatMeter.cpp \
+	daemon/nntp/StatMeter.h \
 	daemon/postprocess/ParChecker.cpp \
 	daemon/postprocess/ParChecker.h \
 	daemon/postprocess/ParCoordinator.cpp \

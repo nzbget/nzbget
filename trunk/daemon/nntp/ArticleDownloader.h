@@ -111,12 +111,4 @@ public:
 	void				LogDebugInfo();
 };
 
-class DownloadSpeedMeter
-{
-public:
-	virtual				~DownloadSpeedMeter() {};
-	virtual int			CalcCurrentDownloadSpeed() = 0;
-	virtual void		AddSpeedReading(int iBytes) = 0;
-};
-
 #endif

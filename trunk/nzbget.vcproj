@@ -289,6 +289,14 @@
 				RelativePath=".\daemon\nntp\ServerPool.h"
 				>
 			</File>
+			<File
+				RelativePath=".\daemon\nntp\StatMeter.cpp"
+				>
+			</File>
+			<File
+				RelativePath=".\daemon\nntp\StatMeter.h"
+				>
+			</File>
 		</Filter>
 		<Filter
 			Name="connect"
