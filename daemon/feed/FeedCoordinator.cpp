@@ -260,11 +260,10 @@ void FeedCoordinator::ResetHangingDownloads()
 
 void FeedCoordinator::LogDebugInfo()
 {
-	debug("   FeedCoordinator");
-	debug("   ----------------");
+	info("   ---------- FeedCoordinator");
 
 	m_mutexDownloads.Lock();
-	debug("    Active Downloads: %i", m_ActiveDownloads.size());
+	info("    Active Downloads: %i", m_ActiveDownloads.size());
 	for (ActiveDownloads::iterator it = m_ActiveDownloads.begin(); it != m_ActiveDownloads.end(); it++)
 	{
 		FeedDownloader* pFeedDownloader = *it;

@@ -1,7 +1,7 @@
 /*
  *  This file is part of nzbget
  *
- *  Copyright (C) 2013 Andrey Prygunkov <hugbug@users.sourceforge.net>
+ *  Copyright (C) 2013-2014 Andrey Prygunkov <hugbug@users.sourceforge.net>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -84,7 +84,7 @@ FeedFile::~FeedFile()
 
 void FeedFile::LogDebugInfo()
 {
-    debug(" FeedFile %s", m_szFileName);
+    info(" FeedFile %s", m_szFileName);
 }
 
 void FeedFile::AddItem(FeedItemInfo* pFeedItemInfo)

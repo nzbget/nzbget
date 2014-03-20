@@ -237,11 +237,10 @@ void UrlCoordinator::ResetHangingDownloads()
 
 void UrlCoordinator::LogDebugInfo()
 {
-	debug("   UrlCoordinator");
-	debug("   ----------------");
+	info("   ---------- UrlCoordinator");
 
 	DownloadQueue::Lock();
-	debug("    Active Downloads: %i", m_ActiveDownloads.size());
+	info("    Active Downloads: %i", m_ActiveDownloads.size());
 	for (ActiveDownloads::iterator it = m_ActiveDownloads.begin(); it != m_ActiveDownloads.end(); it++)
 	{
 		UrlDownloader* pUrlDownloader = *it;
