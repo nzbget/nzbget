@@ -46,15 +46,15 @@
 #include "BinRpc.h"
 #include "Log.h"
 #include "Options.h"
-#include "QueueCoordinator.h"
 #include "QueueEditor.h"
 #include "Util.h"
 #include "DownloadInfo.h"
 #include "Scanner.h"
+#include "StatMeter.h"
 
 extern Options* g_pOptions;
-extern QueueCoordinator* g_pQueueCoordinator;
 extern Scanner* g_pScanner;
+extern StatMeter* g_pStatMeter;
 extern void ExitProc();
 extern void Reload();
 
@@ -572,17 +572,6 @@ void ListBinCommand::Execute()
 
 	if (htonl(ListRequest.m_bServerState))
 	{
-		unsigned long iSizeHi, iSizeLo;
-		ListResponse.m_iDownloadRate = htonl(g_pQueueCoordinator->CalcCurrentDownloadSpeed());
-		Util::SplitInt64(g_pQueueCoordinator->CalcRemainingSize(), &iSizeHi, &iSizeLo);
-		ListResponse.m_iRemainingSizeHi = htonl(iSizeHi);
-		ListResponse.m_iRemainingSizeLo = htonl(iSizeLo);
-		ListResponse.m_iDownloadLimit = htonl(g_pOptions->GetDownloadRate());
-		ListResponse.m_bDownloadPaused = htonl(g_pOptions->GetPauseDownload());
-		ListResponse.m_bPostPaused = htonl(g_pOptions->GetPausePostProcess());
-		ListResponse.m_bScanPaused = htonl(g_pOptions->GetPauseScan());
-		ListResponse.m_iThreadCount = htonl(Thread::GetThreadCount() - 1); // not counting itself
-
 		DownloadQueue *pDownloadQueue = DownloadQueue::Lock();
 		int iPostJobCount = 0;
 		for (NZBList::iterator it = pDownloadQueue->GetQueue()->begin(); it != pDownloadQueue->GetQueue()->end(); it++)
@@ -590,14 +579,25 @@ void ListBinCommand::Execute()
 			NZBInfo* pNZBInfo = *it;
 			iPostJobCount += pNZBInfo->GetPostInfo() ? 1 : 0;
 		}
+		long long lRemainingSize = pDownloadQueue->CalcRemainingSize();
 		DownloadQueue::Unlock();
 
+		unsigned long iSizeHi, iSizeLo;
+		ListResponse.m_iDownloadRate = htonl(g_pStatMeter->CalcCurrentDownloadSpeed());
+		Util::SplitInt64(lRemainingSize, &iSizeHi, &iSizeLo);
+		ListResponse.m_iRemainingSizeHi = htonl(iSizeHi);
+		ListResponse.m_iRemainingSizeLo = htonl(iSizeLo);
+		ListResponse.m_iDownloadLimit = htonl(g_pOptions->GetDownloadRate());
+		ListResponse.m_bDownloadPaused = htonl(g_pOptions->GetPauseDownload());
+		ListResponse.m_bPostPaused = htonl(g_pOptions->GetPausePostProcess());
+		ListResponse.m_bScanPaused = htonl(g_pOptions->GetPauseScan());
+		ListResponse.m_iThreadCount = htonl(Thread::GetThreadCount() - 1); // not counting itself
 		ListResponse.m_iPostJobCount = htonl(iPostJobCount);
 
 		int iUpTimeSec, iDnTimeSec;
 		long long iAllBytes;
 		bool bStandBy;
-		g_pQueueCoordinator->CalcStat(&iUpTimeSec, &iDnTimeSec, &iAllBytes, &bStandBy);
+		g_pStatMeter->CalcTotalStat(&iUpTimeSec, &iDnTimeSec, &iAllBytes, &bStandBy);
 		ListResponse.m_iUpTimeSec = htonl(iUpTimeSec);
 		ListResponse.m_iDownloadTimeSec = htonl(iDnTimeSec);
 		ListResponse.m_bDownloadStandBy = htonl(bStandBy);

@@ -51,10 +51,11 @@
 #include "Options.h"
 #include "ServerPool.h"
 #include "Util.h"
+#include "StatMeter.h"
 
-extern DownloadSpeedMeter* g_pDownloadSpeedMeter;
 extern Options* g_pOptions;
 extern ServerPool* g_pServerPool;
+extern StatMeter* g_pStatMeter;
 
 ArticleDownloader::ArticleDownloader()
 {
@@ -409,7 +410,7 @@ ArticleDownloader::EStatus ArticleDownloader::Download()
 
 		// Throttle the bandwidth
 		while (!IsStopped() && (g_pOptions->GetDownloadRate() > 0.0f) &&
-		        (g_pDownloadSpeedMeter->CalcCurrentDownloadSpeed() > g_pOptions->GetDownloadRate()))
+		        (g_pStatMeter->CalcCurrentDownloadSpeed() > g_pOptions->GetDownloadRate()))
 		{
 			SetLastUpdateTimeNow();
 			usleep(10 * 1000);
@@ -417,7 +418,7 @@ ArticleDownloader::EStatus ArticleDownloader::Download()
 
 		int iLen = 0;
 		char* line = m_pConnection->ReadLine(szLineBuf, LineBufSize, &iLen);
-		g_pDownloadSpeedMeter->AddSpeedReading(iLen);
+		g_pStatMeter->AddSpeedReading(iLen);
 
 		// Have we encountered a timeout?
 		if (!line)

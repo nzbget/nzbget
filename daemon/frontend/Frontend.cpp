@@ -47,12 +47,12 @@
 #include "Log.h"
 #include "Connection.h"
 #include "MessageBase.h"
-#include "QueueCoordinator.h"
 #include "RemoteClient.h"
 #include "Util.h"
+#include "StatMeter.h"
 
-extern QueueCoordinator* g_pQueueCoordinator;
 extern Options* g_pOptions;
+extern StatMeter* g_pStatMeter;
 
 Frontend::Frontend()
 {
@@ -94,12 +94,11 @@ bool Frontend::PrepareData()
 	{
 		if (m_bSummary)
 		{
-			m_iCurrentDownloadSpeed = g_pQueueCoordinator->CalcCurrentDownloadSpeed();
-			m_lRemainingSize = g_pQueueCoordinator->CalcRemainingSize();
+			m_iCurrentDownloadSpeed = g_pStatMeter->CalcCurrentDownloadSpeed();
 			m_bPauseDownload = g_pOptions->GetPauseDownload();
 			m_iDownloadLimit = g_pOptions->GetDownloadRate();
 			m_iThreadCount = Thread::GetThreadCount();
-			g_pQueueCoordinator->CalcStat(&m_iUpTimeSec, &m_iDnTimeSec, &m_iAllBytes, &m_bStandBy);
+			g_pStatMeter->CalcTotalStat(&m_iUpTimeSec, &m_iDnTimeSec, &m_iAllBytes, &m_bStandBy);
 
 			DownloadQueue *pDownloadQueue = DownloadQueue::Lock();
 			m_iPostJobCount = 0;
@@ -108,6 +107,7 @@ bool Frontend::PrepareData()
 				NZBInfo* pNZBInfo = *it;
 				m_iPostJobCount += pNZBInfo->GetPostInfo() ? 1 : 0;
 			}
+			m_lRemainingSize = pDownloadQueue->CalcRemainingSize();
 			DownloadQueue::Unlock();
 
 		}

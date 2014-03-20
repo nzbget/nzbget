@@ -1126,3 +1126,23 @@ void DownloadQueue::Unlock()
 {
 	g_pDownloadQueue->m_LockMutex.Unlock();
 }
+
+long long DownloadQueue::CalcRemainingSize()
+{
+	long long lRemainingSize = 0;
+
+	for (NZBList::iterator it = m_Queue.begin(); it != m_Queue.end(); it++)
+	{
+		NZBInfo* pNZBInfo = *it;
+		for (FileList::iterator it2 = pNZBInfo->GetFileList()->begin(); it2 != pNZBInfo->GetFileList()->end(); it2++)
+		{
+			FileInfo* pFileInfo = *it2;
+			if (!pFileInfo->GetPaused() && !pFileInfo->GetDeleted())
+			{
+				lRemainingSize += pFileInfo->GetRemainingSize();
+			}
+		}
+	}
+
+	return lRemainingSize;
+}

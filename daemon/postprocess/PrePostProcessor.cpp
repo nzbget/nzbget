@@ -46,7 +46,6 @@
 #include "PrePostProcessor.h"
 #include "Options.h"
 #include "Log.h"
-#include "QueueCoordinator.h"
 #include "HistoryCoordinator.h"
 #include "DupeCoordinator.h"
 #include "PostScript.h"
@@ -55,13 +54,14 @@
 #include "Scanner.h"
 #include "Unpack.h"
 #include "NZBFile.h"
+#include "StatMeter.h"
 
-extern QueueCoordinator* g_pQueueCoordinator;
 extern HistoryCoordinator* g_pHistoryCoordinator;
 extern DupeCoordinator* g_pDupeCoordinator;
 extern Options* g_pOptions;
 extern Scheduler* g_pScheduler;
 extern Scanner* g_pScanner;
+extern StatMeter* g_pStatMeter;
 
 PrePostProcessor::PrePostProcessor()
 {
@@ -111,9 +111,8 @@ void PrePostProcessor::Run()
 		// check incoming nzb directory
 		g_pScanner->Check();
 
-		// TODO: refactor: remove dependency from g_pQueueCoordinator (GetStandBy())
 		if (!g_pOptions->GetPauseDownload() && 
-			g_pOptions->GetDiskSpace() > 0 && !g_pQueueCoordinator->GetStandBy() && 
+			g_pOptions->GetDiskSpace() > 0 && !g_pStatMeter->GetStandBy() && 
 			iDiskSpaceInterval >= 1000)
 		{
 			// check free disk space every 1 second
