@@ -2,7 +2,7 @@
  *  This file is part of nzbget
  *
  *  Copyright (C) 2004 Sven Henkel <sidddy@users.sourceforge.net>
- *  Copyright (C) 2007-2013 Andrey Prygunkov <hugbug@users.sourceforge.net>
+ *  Copyright (C) 2007-2014 Andrey Prygunkov <hugbug@users.sourceforge.net>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -330,34 +330,33 @@ void ServerPool::Changed()
 
 void ServerPool::LogDebugInfo()
 {
-	debug("   ServerPool");
-	debug("   ----------------");
+	info("   ---------- ServerPool");
 
-	debug("    Max-Level: %i", m_iMaxNormLevel);
+	info("    Max-Level: %i", m_iMaxNormLevel);
 
 	m_mutexConnections.Lock();
 
-	debug("    Servers: %i", m_Servers.size());
+	info("    Servers: %i", m_Servers.size());
 	for (Servers::iterator it = m_Servers.begin(); it != m_Servers.end(); it++)
 	{
 		NewsServer*  pNewsServer = *it;
-		debug("      %i) %s (%s): Level=%i, NormLevel=%i", pNewsServer->GetID(), pNewsServer->GetName(),
+		info("      %i) %s (%s): Level=%i, NormLevel=%i", pNewsServer->GetID(), pNewsServer->GetName(),
 			pNewsServer->GetHost(), pNewsServer->GetLevel(), pNewsServer->GetNormLevel());
 	}
 
-	debug("    Levels: %i", m_Levels.size());
+	info("    Levels: %i", m_Levels.size());
 	int index = 0;
 	for (Levels::iterator it = m_Levels.begin(); it != m_Levels.end(); it++, index++)
 	{
 		int  iSize = *it;
-		debug("      %i: Size=%i", index, iSize);
+		info("      %i: Size=%i", index, iSize);
 	}
 
-	debug("    Connections: %i", m_Connections.size());
+	info("    Connections: %i", m_Connections.size());
 	for (Connections::iterator it = m_Connections.begin(); it != m_Connections.end(); it++)
 	{
 		PooledConnection*  pConnection = *it;
-		debug("      %i) %s (%s): Level=%i, NormLevel=%i, InUse:%i", pConnection->GetNewsServer()->GetID(),
+		info("      %i) %s (%s): Level=%i, NormLevel=%i, InUse:%i", pConnection->GetNewsServer()->GetID(),
 			pConnection->GetNewsServer()->GetName(), pConnection->GetNewsServer()->GetHost(),
 			pConnection->GetNewsServer()->GetLevel(), pConnection->GetNewsServer()->GetNormLevel(),
 			(int)pConnection->GetInUse());

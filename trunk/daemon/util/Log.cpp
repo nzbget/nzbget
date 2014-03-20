@@ -65,9 +65,9 @@ Log::~Log()
 
 void Log::LogDebugInfo()
 {
-	debug("--------------------------------------------");
-	debug("Dumping debug debug to log");
-	debug("--------------------------------------------");
+	info("--------------------------------------------");
+	info("Dumping debug info to log");
+	info("--------------------------------------------");
 	
 	m_mutexDebug.Lock();
 	for (Debuggables::iterator it = m_Debuggables.begin(); it != m_Debuggables.end(); it++)
@@ -77,7 +77,7 @@ void Log::LogDebugInfo()
 	}
 	m_mutexDebug.Unlock();
 
-	debug("");
+	info("--------------------------------------------");
 }
 
 void Log::Filelog(const char* msg, ...)

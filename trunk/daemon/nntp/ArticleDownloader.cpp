@@ -869,7 +869,7 @@ void ArticleDownloader::LogDebugInfo()
 		ctime_r(&m_tLastUpdateTime, szTime);
 #endif
 
-	debug("      Download: status=%i, LastUpdateTime=%s, filename=%s", m_eStatus, szTime, Util::BaseFileName(GetTempFilename()));
+	info("      Download: status=%i, LastUpdateTime=%s, filename=%s", m_eStatus, szTime, Util::BaseFileName(GetTempFilename()));
 }
 
 void ArticleDownloader::Stop()

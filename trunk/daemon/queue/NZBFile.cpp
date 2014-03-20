@@ -2,7 +2,7 @@
  *  This file is part of nzbget
  *
  *  Copyright (C) 2004 Sven Henkel <sidddy@users.sourceforge.net>
- *  Copyright (C) 2007-2013 Andrey Prygunkov <hugbug@users.sourceforge.net>
+ *  Copyright (C) 2007-2014 Andrey Prygunkov <hugbug@users.sourceforge.net>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -95,7 +95,7 @@ NZBFile::~NZBFile()
 
 void NZBFile::LogDebugInfo()
 {
-    debug(" NZBFile %s", m_szFileName);
+    info(" NZBFile %s", m_szFileName);
 }
 
 void NZBFile::AddArticle(FileInfo* pFileInfo, ArticleInfo* pArticleInfo)

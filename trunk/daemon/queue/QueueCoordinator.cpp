@@ -909,35 +909,31 @@ void QueueCoordinator::CheckHealth(DownloadQueue* pDownloadQueue, FileInfo* pFil
 
 void QueueCoordinator::LogDebugInfo()
 {
-	debug("   SpeedMeter");
-	debug("   ----------");
+	info("   ---------- SpeedMeter");
 	float fSpeed = (float)(CalcCurrentDownloadSpeed() / 1024.0);
 	int iTimeDiff = (int)time(NULL) - m_iSpeedStartTime * SPEEDMETER_SLOTSIZE;
-	debug("      Speed: %f", fSpeed);
-	debug("      SpeedStartTime: %i", m_iSpeedStartTime);
-	debug("      SpeedTotalBytes: %i", m_iSpeedTotalBytes);
-	debug("      SpeedBytesIndex: %i", m_iSpeedBytesIndex);
-	debug("      AllBytes: %i", m_iAllBytes);
-	debug("      Time: %i", (int)time(NULL));
-	debug("      TimeDiff: %i", iTimeDiff);
+	info("      Speed: %f", fSpeed);
+	info("      SpeedStartTime: %i", m_iSpeedStartTime);
+	info("      SpeedTotalBytes: %i", m_iSpeedTotalBytes);
+	info("      SpeedBytesIndex: %i", m_iSpeedBytesIndex);
+	info("      AllBytes: %i", m_iAllBytes);
+	info("      Time: %i", (int)time(NULL));
+	info("      TimeDiff: %i", iTimeDiff);
 	for (int i=0; i < SPEEDMETER_SLOTS; i++)
 	{
-		debug("      Bytes[%i]: %i, Time[%i]: %i", i, m_iSpeedBytes[i], i, m_iSpeedTime[i]);
+		info("      Bytes[%i]: %i, Time[%i]: %i", i, m_iSpeedBytes[i], i, m_iSpeedTime[i]);
 	}
 
-	debug("   QueueCoordinator");
-	debug("   ----------------");
+	info("   ---------- QueueCoordinator");
 
 	DownloadQueue::Lock();
-	debug("    Active Downloads: %i", m_ActiveDownloads.size());
+	info("    Active Downloads: %i", m_ActiveDownloads.size());
 	for (ActiveDownloads::iterator it = m_ActiveDownloads.begin(); it != m_ActiveDownloads.end(); it++)
 	{
 		ArticleDownloader* pArticleDownloader = *it;
 		pArticleDownloader->LogDebugInfo();
 	}
 	DownloadQueue::Unlock();
-
-	debug("");
 }
 
 void QueueCoordinator::ResetHangingDownloads()
