@@ -1,5 +1,5 @@
 /*
- *  This file if part of nzbget
+ *  This file is part of nzbget
  *
  *  Copyright (C) 2014 Andrey Prygunkov <hugbug@users.sourceforge.net>
  *
@@ -31,6 +31,7 @@
 #include "win32.h"
 #endif
 
+#include "nzbget.h"
 #include "StatMeter.h"
 #include "Options.h"
 
@@ -46,9 +47,8 @@ StatMeter::StatMeter()
 	m_tStartDownload = 0;
 	m_tPausedFrom = 0;
 	m_bStandBy = true;
-
-	m_tStartServer = time(NULL);
-	m_tLastCheck = m_tStartServer;
+	m_tStartServer = 0;
+	m_tLastCheck = 0;
 
 	g_pLog->RegisterDebuggable(this);
 }
@@ -63,11 +63,30 @@ StatMeter::~StatMeter()
 	debug("StatMeter destroyed");
 }
 
+void StatMeter::AdjustTimeOffset()
+{
+	time_t tUtcTime = time(NULL);
+	tm tmSplittedTime;
+	gmtime_r(&tUtcTime, &tmSplittedTime);
+	time_t tLocTime = mktime(&tmSplittedTime);
+	time_t tLocalTimeDelta = tUtcTime - tLocTime;
+	g_pOptions->SetLocalTimeOffset((int)tLocalTimeDelta + g_pOptions->GetTimeCorrection());
+
+	debug("UTC delta: %i (%i+%i)", g_pOptions->GetLocalTimeOffset(), (int)tLocalTimeDelta, g_pOptions->GetTimeCorrection());
+}
+
 /*
  * Detects large step changes of system time and adjust statistics.
  */
-void StatMeter::AdjustStartTime()
+void StatMeter::CheckTime()
 {
+	if (!m_tLastCheck)
+	{
+		m_tStartServer = time(NULL);
+		m_tLastCheck = m_tStartServer;
+		AdjustTimeOffset();
+	}
+
 	time_t m_tCurTime = time(NULL);
 	time_t tDiff = m_tCurTime - m_tLastCheck;
 	if (tDiff > 60 || tDiff < 0)
@@ -77,6 +96,7 @@ void StatMeter::AdjustStartTime()
 		{
 			m_tStartDownload += tDiff + 1;
 		}
+		AdjustTimeOffset();
 	}		
 	m_tLastCheck = m_tCurTime;
 }

@@ -1,5 +1,5 @@
 /*
- *  This file if part of nzbget
+ *  This file is part of nzbget
  *
  *  Copyright (C) 2014 Andrey Prygunkov <hugbug@users.sourceforge.net>
  *
@@ -35,42 +35,46 @@
 class StatMeter : public Debuggable
 {
 private:
-	static const int		SPEEDMETER_SLOTS = 30;    
-	static const int		SPEEDMETER_SLOTSIZE = 1;  //Split elapsed time into this number of secs.
-    int						m_iSpeedBytes[SPEEDMETER_SLOTS];
-    int                     m_iSpeedTotalBytes;
-    int 					m_iSpeedTime[SPEEDMETER_SLOTS];
-    int                     m_iSpeedStartTime; 
-	time_t					m_tSpeedCorrection;
+	// general
+	Mutex				m_mutexStat;
+
+	// speed meter
+	static const int	SPEEDMETER_SLOTS = 30;	  
+	static const int	SPEEDMETER_SLOTSIZE = 1;  //Split elapsed time into this number of secs.
+	int					m_iSpeedBytes[SPEEDMETER_SLOTS];
+	int					m_iSpeedTotalBytes;
+	int					m_iSpeedTime[SPEEDMETER_SLOTS];
+	int					m_iSpeedStartTime; 
+	time_t				m_tSpeedCorrection;
 #ifdef HAVE_SPINLOCK
-	SpinLock				m_spinlockSpeed;
+	SpinLock			m_spinlockSpeed;
 #else
-	Mutex					m_mutexSpeed;
+	Mutex				m_mutexSpeed;
 #endif
 
-    int						m_iSpeedBytesIndex;
-	long long				m_iAllBytes;
-	time_t					m_tStartServer;
-	time_t					m_tLastCheck;
-	time_t					m_tStartDownload;
-	time_t					m_tPausedFrom;
-	bool					m_bStandBy;
-	Mutex					m_mutexStat;
+	int					m_iSpeedBytesIndex;
+	long long			m_iAllBytes;
+	time_t				m_tStartServer;
+	time_t				m_tLastCheck;
+	time_t				m_tStartDownload;
+	time_t				m_tPausedFrom;
+	bool				m_bStandBy;
 
-	void					ResetSpeedStat();
+	void				ResetSpeedStat();
+	void				AdjustTimeOffset();
 
 protected:
-	virtual void			LogDebugInfo();
+	virtual void		LogDebugInfo();
 
 public:
-							StatMeter();
-							~StatMeter();
-	int						CalcCurrentDownloadSpeed();
-	void					AddSpeedReading(int iBytes);
-	void					CalcTotalStat(int* iUpTimeSec, int* iDnTimeSec, long long* iAllBytes, bool* bStandBy);
-	bool					GetStandBy() { return m_bStandBy; }
-	void					AdjustStartTime();
-	void					EnterLeaveStandBy(bool bEnter);
+						StatMeter();
+						~StatMeter();
+	int					CalcCurrentDownloadSpeed();
+	void				AddSpeedReading(int iBytes);
+	void				CalcTotalStat(int* iUpTimeSec, int* iDnTimeSec, long long* iAllBytes, bool* bStandBy);
+	bool				GetStandBy() { return m_bStandBy; }
+	void				CheckTime();
+	void				EnterLeaveStandBy(bool bEnter);
 };
 
 #endif

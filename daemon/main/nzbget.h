@@ -36,7 +36,7 @@
 #endif
 #define fdopen _fdopen
 #define ctime_r(timep, buf, bufsize) ctime_s(buf, bufsize, timep)
-#define localtime_r(time, tm) localtime_s(tm, time)
+#define gmtime_r(time, tm) gmtime_s(tm, time)
 #define strtok_r(str, delim, saveptr) strtok_s(str, delim, saveptr)
 #define strerror_r(errnum, buffer, size) strerror_s(buffer, size, errnum)
 #define int32_t __int32

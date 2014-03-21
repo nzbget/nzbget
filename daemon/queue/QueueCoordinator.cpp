@@ -142,6 +142,7 @@ void QueueCoordinator::Run()
 	bool bWasStandBy = true;
 	bool bArticeDownloadsRunning = false;
 	int iResetCounter = 0;
+	g_pStatMeter->CheckTime();
 
 	while (!IsStopped())
 	{
@@ -210,7 +211,7 @@ void QueueCoordinator::Run()
 			g_pServerPool->CloseUnusedConnections();
 			ResetHangingDownloads();
 			iResetCounter = 0;
-			g_pStatMeter->AdjustStartTime();
+			g_pStatMeter->CheckTime();
 			AdjustDownloadsLimit();
 		}
 	}

@@ -340,6 +340,7 @@ private:
 	int					m_iDownloadRate;
 	EClientOperation	m_eClientOperation;
 	time_t				m_tResumeTime;
+	int					m_iLocalTimeOffset;
 
 	void				InitDefault();
 	void				InitOptFile();
@@ -510,6 +511,8 @@ public:
 	int					GetDownloadRate() const { return m_iDownloadRate; }
 	void				SetResumeTime(time_t tResumeTime) { m_tResumeTime = tResumeTime; }
 	time_t				GetResumeTime() const { return m_tResumeTime; }
+	void				SetLocalTimeOffset(int iLocalTimeOffset) { m_iLocalTimeOffset = iLocalTimeOffset; }
+	int					GetLocalTimeOffset() { return m_iLocalTimeOffset; }
 };
 
 #endif
