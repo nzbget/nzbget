@@ -33,6 +33,8 @@
 #include <dirent.h>
 #endif
 
+#include <time.h>
+
 #ifdef WIN32
 extern int optind, opterr;
 extern char *optarg;
@@ -142,6 +144,9 @@ public:
 #ifdef WIN32
 	static bool RegReadStr(HKEY hKey, const char* szKeyName, const char* szValueName, char* szBuffer, int* iBufLen);
 #endif
+
+	/* cross platform version of GNU timegm, which is similar to mktime but takes an UTC time as parameter */
+	static time_t Timegm(tm const *t);
 
 	/*
 	 * Returns program version and revision number as string formatted like "0.7.0-r295".

@@ -530,6 +530,7 @@ Options::Options(int argc, char* argv[])
 	m_iFeedHistory			= 0;
 	m_bUrlForce				= false;
 	m_iTimeCorrection		= 0;
+	m_iLocalTimeOffset		= 0;
 	m_iPropagationDelay		= 0;
 
 	// Option "ConfigFile" will be initialized later, but we want

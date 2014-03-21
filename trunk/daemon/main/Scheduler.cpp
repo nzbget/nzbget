@@ -155,19 +155,22 @@ void Scheduler::CheckTasks()
 			}
 		}
 
+		time_t tLocalCurrent = tCurrent + g_pOptions->GetLocalTimeOffset();
+		time_t tLocalLastCheck = m_tLastCheck + g_pOptions->GetLocalTimeOffset();
+
 		tm tmCurrent;
-		localtime_r(&tCurrent, &tmCurrent);
+		gmtime_r(&tLocalCurrent, &tmCurrent);
 		tm tmLastCheck;
-		localtime_r(&m_tLastCheck, &tmLastCheck);
+		gmtime_r(&tLocalLastCheck, &tmLastCheck);
 
 		tm tmLoop;
 		memcpy(&tmLoop, &tmLastCheck, sizeof(tmLastCheck));
 		tmLoop.tm_hour = tmCurrent.tm_hour;
 		tmLoop.tm_min = tmCurrent.tm_min;
 		tmLoop.tm_sec = tmCurrent.tm_sec;
-		time_t tLoop = mktime(&tmLoop);
+		time_t tLoop = Util::Timegm(&tmLoop);
 
-		while (tLoop <= tCurrent)
+		while (tLoop <= tLocalCurrent)
 		{
 			for (TaskList::iterator it = m_TaskList.begin(); it != m_TaskList.end(); it++)
 			{
@@ -180,8 +183,7 @@ void Scheduler::CheckTasks()
 					tmAppoint.tm_min = pTask->m_iMinutes;
 					tmAppoint.tm_sec = 0;
 
-					time_t tAppoint = mktime(&tmAppoint);
-					tAppoint -= g_pOptions->GetTimeCorrection();
+					time_t tAppoint = Util::Timegm(&tmAppoint);
 
 					int iWeekDay = tmAppoint.tm_wday;
 					if (iWeekDay == 0)
@@ -190,9 +192,9 @@ void Scheduler::CheckTasks()
 					}
 
 					bool bWeekDayOK = pTask->m_iWeekDaysBits == 0 || (pTask->m_iWeekDaysBits & (1 << (iWeekDay - 1)));
-					bool bDoTask = bWeekDayOK && m_tLastCheck < tAppoint && tAppoint <= tCurrent;
+					bool bDoTask = bWeekDayOK && tLocalLastCheck < tAppoint && tAppoint <= tLocalCurrent;
 
-					//debug("TEMP: 1) m_tLastCheck=%i, tCurrent=%i, tLoop=%i, tAppoint=%i, bWeekDayOK=%i, bDoTask=%i", m_tLastCheck, tCurrent, tLoop, tAppoint, (int)bWeekDayOK, (int)bDoTask);
+					//debug("TEMP: 1) m_tLastCheck=%i, tLocalCurrent=%i, tLoop=%i, tAppoint=%i, bWeekDayOK=%i, bDoTask=%i", m_tLastCheck, tLocalCurrent, tLoop, tAppoint, (int)bWeekDayOK, (int)bDoTask);
 
 					if (bDoTask)
 					{
@@ -202,7 +204,7 @@ void Scheduler::CheckTasks()
 				}
 			}
 			tLoop += 60*60*24; // inc day
-			localtime_r(&tLoop, &tmLoop);
+			gmtime_r(&tLoop, &tmLoop);
 		}
 	}
 
