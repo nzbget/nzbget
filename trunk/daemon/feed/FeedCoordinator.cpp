@@ -694,7 +694,7 @@ void FeedCoordinator::CleanupHistory()
 		}
 	}
 
-	time_t tBorderDate = tOldestUpdate - g_pOptions->GetFeedHistory();
+	time_t tBorderDate = tOldestUpdate - g_pOptions->GetFeedHistory() * 60*60*24;
 	int i = 0;
 	for (FeedHistory::iterator it = m_FeedHistory.begin(); it != m_FeedHistory.end(); )
 	{
