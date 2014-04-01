@@ -99,9 +99,9 @@ var Util = (new function($)
 
 	this.formatSizeMB = function(sizeMB, sizeLo)
 	{
-		if (sizeLo !== undefined && sizeMB < 100)
+		if (sizeLo !== undefined && sizeMB < 1024)
 		{
-			sizeMB = sizeLo / 1024 / 1024;
+			sizeMB = sizeLo / 1024.0 / 1024.0;
 		}
 
 		if (sizeMB > 10240)
@@ -286,6 +286,7 @@ var TabDialog = (new function($)
 		var bodyPadding = 15;
 		var dialogMargin = options.mini ? 0 : 15;
 		var dialogBorder = 2;
+		var toggleClass = options.toggleClass ? options.toggleClass : '';
 
 		var body = $('.modal-body', dialog);
 		var footer = $('.modal-footer', dialog);
@@ -310,6 +311,7 @@ var TabDialog = (new function($)
 
 		fromTab.hide();
 		toTab.show();
+		dialog.toggleClass(toggleClass);
 
 		// CONTROL POINT: at this point the destination dialog size is active
 		// store destination positions and sizes
@@ -339,6 +341,7 @@ var TabDialog = (new function($)
 		toTab.css({position: 'absolute', width: newTabWidth, height: oldBodyHeight, 
 			left: sign * ((options.back ? newTabWidth : oldTabWidth) + bodyPadding*2)});
 		fromTab.show();
+		dialog.toggleClass(toggleClass);
 
 		// animate dialog to destination position and sizes
 
@@ -376,6 +379,7 @@ var TabDialog = (new function($)
 		else
 		{
 			body.animate({height: newBodyHeight}, duration);
+			dialog.animate({width: newDialogWidth, 'margin-left': newDialogMarginLeft}, duration);
 		}
 
 		fromTab.animate({left: sign * -((options.back ? newTabWidth : oldTabWidth) + bodyPadding*2), 
@@ -385,7 +389,8 @@ var TabDialog = (new function($)
 				fromTab.hide();
 				fromTab.css({position: '', width: '', height: '', left: ''});
 				toTab.css({position: '', width: '', height: '', left: ''});
-				dialog.css({overflow: '', width: (fullscreen ? 'auto' : ''), height: (fullscreen ? 'auto' : '')});
+				dialog.css({overflow: '', width: (fullscreen ? 'auto' : ''), height: (fullscreen ? 'auto' : ''), 'margin-left': (fullscreen ? 'auto' : '')});
+				dialog.toggleClass(toggleClass);
 				if (fullscreen)
 				{
 					body.css({position: 'absolute', height: '', left: 0, right: 0, 

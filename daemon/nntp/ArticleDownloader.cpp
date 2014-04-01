@@ -50,8 +50,8 @@
 #include "Log.h"
 #include "Options.h"
 #include "ServerPool.h"
-#include "Util.h"
 #include "StatMeter.h"
+#include "Util.h"
 
 extern Options* g_pOptions;
 extern ServerPool* g_pServerPool;
@@ -61,15 +61,15 @@ ArticleDownloader::ArticleDownloader()
 {
 	debug("Creating ArticleDownloader");
 
-	m_szResultFilename	= NULL;
-	m_szTempFilename	= NULL;
-	m_szArticleFilename	= NULL;
-	m_szInfoName		= NULL;
-	m_szOutputFilename	= NULL;
-	m_pConnection		= NULL;
-	m_eStatus			= adUndefined;
-	m_bDuplicate		= false;
-	m_eFormat			= Decoder::efUnknown;
+	m_szResultFilename = NULL;
+	m_szTempFilename = NULL;
+	m_szArticleFilename = NULL;
+	m_szInfoName = NULL;
+	m_szOutputFilename = NULL;
+	m_pConnection = NULL;
+	m_eStatus = adUndefined;
+	m_bDuplicate = false;
+	m_eFormat = Decoder::efUnknown;
 	SetLastUpdateTimeNow();
 }
 
@@ -211,6 +211,11 @@ void ArticleDownloader::Run()
 				// same connect-error).
 				FreeConnection(Status == adFinished || Status == adNotFound);
 			}
+		}
+
+		if (m_pConnection)
+		{
+			g_pStatMeter->AddServerData(m_pConnection->FetchTotalBytesRead(), m_pConnection->GetNewsServer()->GetID());
 		}
 
 		if (Status == adFinished || Status == adFatalError)
@@ -406,7 +411,12 @@ ArticleDownloader::EStatus ArticleDownloader::Download()
 
 	while (!IsStopped())
 	{
+		time_t tOldTime = m_tLastUpdateTime;
 		SetLastUpdateTimeNow();
+		if (tOldTime != m_tLastUpdateTime)
+		{
+			g_pStatMeter->AddServerData(m_pConnection->FetchTotalBytesRead(), m_pConnection->GetNewsServer()->GetID());
+		}
 
 		// Throttle the bandwidth
 		while (!IsStopped() && (g_pOptions->GetDownloadRate() > 0.0f) &&
@@ -418,7 +428,12 @@ ArticleDownloader::EStatus ArticleDownloader::Download()
 
 		int iLen = 0;
 		char* line = m_pConnection->ReadLine(szLineBuf, LineBufSize, &iLen);
+
 		g_pStatMeter->AddSpeedReading(iLen);
+		if (g_pOptions->GetAccurateRate())
+		{
+			g_pStatMeter->AddServerData(m_pConnection->FetchTotalBytesRead(), m_pConnection->GetNewsServer()->GetID());
+		}
 
 		// Have we encountered a timeout?
 		if (!line)
@@ -897,6 +912,7 @@ bool ArticleDownloader::Terminate()
 		pConnection->SetSuppressErrors(true);
 		pConnection->Cancel();
 		pConnection->Disconnect();
+		g_pStatMeter->AddServerData(pConnection->FetchTotalBytesRead(), pConnection->GetNewsServer()->GetID());
 		g_pServerPool->FreeConnection(pConnection, true);
 	}
 	return terminated;
@@ -912,6 +928,7 @@ void ArticleDownloader::FreeConnection(bool bKeepConnected)
 		{
 			m_pConnection->Disconnect();
 		}
+		g_pStatMeter->AddServerData(m_pConnection->FetchTotalBytesRead(), m_pConnection->GetNewsServer()->GetID());
 		g_pServerPool->FreeConnection(m_pConnection, true);
 		m_pConnection = NULL;
 		m_mutexConnection.Unlock();

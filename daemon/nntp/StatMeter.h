@@ -32,12 +32,52 @@
 #include "Log.h"
 #include "Thread.h"
 
+class ServerVolume
+{
+public:
+	typedef std::vector<long long>	VolumeArray;
+
+private:
+	VolumeArray			m_BytesPerSeconds;
+	VolumeArray			m_BytesPerMinutes;
+	VolumeArray			m_BytesPerHours;
+	VolumeArray			m_BytesPerDays;
+	int					m_iFirstDay;
+	long long			m_lTotalBytes;
+	time_t				m_tDataTime;
+	int					m_iSecSlot;
+	int					m_iMinSlot;
+	int					m_iHourSlot;
+	int					m_iDaySlot;
+
+public:
+						ServerVolume();
+	VolumeArray*		BytesPerSeconds() { return &m_BytesPerSeconds; }
+	VolumeArray*		BytesPerMinutes() { return &m_BytesPerMinutes; }
+	VolumeArray*		BytesPerHours() { return &m_BytesPerHours; }
+	VolumeArray*		BytesPerDays() { return &m_BytesPerDays; }
+	void				SetFirstDay(int iFirstDay) { m_iFirstDay = iFirstDay; }
+	int					GetFirstDay() { return m_iFirstDay; }
+	void				SetTotalBytes(long long lTotalBytes) { m_lTotalBytes = lTotalBytes; }
+	long long			GetTotalBytes() { return m_lTotalBytes; }
+	int					GetSecSlot() { return m_iSecSlot; }
+	int					GetMinSlot() { return m_iMinSlot; }
+	int					GetHourSlot() { return m_iHourSlot; }
+	int					GetDaySlot() { return m_iDaySlot; }
+	void				CalcSlots(time_t tLocCurTime);
+
+	time_t				GetDataTime() { return m_tDataTime; }
+	void				SetDataTime(time_t tDataTime) { m_tDataTime = tDataTime; }
+
+	void				AddData(int iBytes);
+	void				LogDebugInfo();
+};
+
+typedef std::vector<ServerVolume*>	ServerVolumes;
+
 class StatMeter : public Debuggable
 {
 private:
-	// general
-	Mutex				m_mutexStat;
-
 	// speed meter
 	static const int	SPEEDMETER_SLOTS = 30;	  
 	static const int	SPEEDMETER_SLOTSIZE = 1;  //Split elapsed time into this number of secs.
@@ -46,19 +86,26 @@ private:
 	int					m_iSpeedTime[SPEEDMETER_SLOTS];
 	int					m_iSpeedStartTime; 
 	time_t				m_tSpeedCorrection;
+	int					m_iSpeedBytesIndex;
 #ifdef HAVE_SPINLOCK
 	SpinLock			m_spinlockSpeed;
 #else
 	Mutex				m_mutexSpeed;
 #endif
 
-	int					m_iSpeedBytesIndex;
+	// time
 	long long			m_iAllBytes;
 	time_t				m_tStartServer;
 	time_t				m_tLastCheck;
 	time_t				m_tStartDownload;
 	time_t				m_tPausedFrom;
 	bool				m_bStandBy;
+	Mutex				m_mutexStat;
+
+	// data volume
+	bool				m_bStatChanged;
+	ServerVolumes		m_ServerVolumes;
+	Mutex				m_mutexVolume;
 
 	void				ResetSpeedStat();
 	void				AdjustTimeOffset();
@@ -69,12 +116,18 @@ protected:
 public:
 						StatMeter();
 						~StatMeter();
+	void				InitVolumes();
 	int					CalcCurrentDownloadSpeed();
 	void				AddSpeedReading(int iBytes);
+	void				AddServerData(int iBytes, int iServerID);
 	void				CalcTotalStat(int* iUpTimeSec, int* iDnTimeSec, long long* iAllBytes, bool* bStandBy);
 	bool				GetStandBy() { return m_bStandBy; }
-	void				CheckTime();
+	void				IntervalCheck();
 	void				EnterLeaveStandBy(bool bEnter);
+	ServerVolumes*		LockServerVolumes();
+	void				UnlockServerVolumes();
+	void				Save();
+	void				Load();
 };
 
 #endif

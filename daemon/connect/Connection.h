@@ -2,7 +2,7 @@
  *  This file is part of nzbget
  *
  *  Copyright (C) 2004 Sven Henkel <sidddy@users.sourceforge.net>
- *  Copyright (C) 2007-2013 Andrey Prygunkov <hugbug@users.sourceforge.net>
+ *  Copyright (C) 2007-2014 Andrey Prygunkov <hugbug@users.sourceforge.net>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -60,6 +60,7 @@ protected:
 	int					m_iTimeout;
 	bool				m_bSuppressErrors;
 	char				m_szRemoteAddr[20];
+	int					m_iTotalBytesRead;
 #ifndef DISABLE_TLS
 	TLSSocket*			m_pTLSSocket;
 	bool				m_bTLSError;
@@ -112,6 +113,7 @@ public:
 #ifndef DISABLE_TLS
 	bool				StartTLS(bool bIsClient, const char* szCertFile, const char* szKeyFile);
 #endif
+	int					FetchTotalBytesRead();
 };
 
 #endif

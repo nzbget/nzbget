@@ -115,12 +115,9 @@ void QueueCoordinator::Run()
 {
 	debug("Entering QueueCoordinator-loop");
 
-	if (g_pOptions->GetServerMode())
-	{
-		g_pDiskState->LoadStats(g_pServerPool->GetServers());
-		// currently there are no any stats but we need to save current server list into diskstate
-		g_pDiskState->SaveStats(g_pServerPool->GetServers());
-	}
+	g_pStatMeter->Load();
+	// we need to re-save current server list into diskstate
+	g_pStatMeter->Save();
 
 	if (g_pOptions->GetServerMode() && g_pOptions->GetSaveQueue() && g_pDiskState->DownloadQueueExists())
 	{
@@ -142,7 +139,7 @@ void QueueCoordinator::Run()
 	bool bWasStandBy = true;
 	bool bArticeDownloadsRunning = false;
 	int iResetCounter = 0;
-	g_pStatMeter->CheckTime();
+	g_pStatMeter->IntervalCheck();
 
 	while (!IsStopped())
 	{
@@ -211,7 +208,7 @@ void QueueCoordinator::Run()
 			g_pServerPool->CloseUnusedConnections();
 			ResetHangingDownloads();
 			iResetCounter = 0;
-			g_pStatMeter->CheckTime();
+			g_pStatMeter->IntervalCheck();
 			AdjustDownloadsLimit();
 		}
 	}

@@ -29,6 +29,7 @@
 #include "DownloadInfo.h"
 #include "FeedInfo.h"
 #include "NewsServer.h"
+#include "StatMeter.h"
 
 class DiskState
 {
@@ -51,8 +52,10 @@ private:
 	bool				LoadFeedStatus(Feeds* pFeeds, FILE* infile, int iFormatVersion);
 	bool				SaveFeedHistory(FeedHistory* pFeedHistory, FILE* outfile);
 	bool				LoadFeedHistory(FeedHistory* pFeedHistory, FILE* infile, int iFormatVersion);
-	bool				SaveServerStats(Servers* pServers, FILE* outfile);
-	bool				LoadServerStats(Servers* pServers, FILE* infile, int iFormatVersion);
+	bool				SaveServerInfo(Servers* pServers, FILE* outfile);
+	bool				LoadServerInfo(Servers* pServers, FILE* infile, int iFormatVersion);
+	bool				SaveVolumeStat(ServerVolumes* pServerVolumes, FILE* outfile);
+	bool				LoadVolumeStat(Servers* pServers, ServerVolumes* pServerVolumes, FILE* infile, int iFormatVersion);
 	void				CalcFileStats(DownloadQueue* pDownloadQueue, int iFormatVersion);
 
 	// backward compatibility functions (conversions from older formats)
@@ -76,8 +79,8 @@ public:
 	bool				DiscardFile(FileInfo* pFileInfo);
 	bool				SaveFeeds(Feeds* pFeeds, FeedHistory* pFeedHistory);
 	bool				LoadFeeds(Feeds* pFeeds, FeedHistory* pFeedHistory);
-	bool				SaveStats(Servers* pServers);
-	bool				LoadStats(Servers* pServers);
+	bool				SaveStats(Servers* pServers, ServerVolumes* pServerVolumes);
+	bool				LoadStats(Servers* pServers, ServerVolumes* pServerVolumes);
 	void				CleanupTempDir(DownloadQueue* pDownloadQueue);
 };
 

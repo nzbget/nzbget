@@ -285,6 +285,12 @@ protected:
 	virtual void			UnlockMessages();
 };
 
+class ServerVolumesXmlCommand: public XmlCommand
+{
+public:
+	virtual void		Execute();
+};
+
 
 //*****************************************************************
 // XmlRpcProcessor
@@ -668,7 +674,11 @@ XmlCommand* XmlRpcProcessor::CreateCommand(const char* szMethodName)
 	{
 		command = new LogUpdateXmlCommand();
 	}
-	else 
+	else if (!strcasecmp(szMethodName, "servervolumes"))
+	{
+		command = new ServerVolumesXmlCommand();
+	}
+	else
 	{
 		command = new ErrorXmlCommand(1, "Invalid procedure");
 	}
@@ -3169,4 +3179,139 @@ Log::Messages* LogUpdateXmlCommand::LockMessages()
 void LogUpdateXmlCommand::UnlockMessages()
 {
 	g_pMaintenance->UnlockMessages();
+}
+
+// struct[] servervolumes()
+void ServerVolumesXmlCommand::Execute()
+{
+	const char* XML_VOLUME_ITEM_START =
+	"<value><struct>\n"
+	"<member><name>ServerID</name><value><i4>%i</i4></value></member>\n"
+	"<member><name>DataTime</name><value><i4>%i</i4></value></member>\n"
+	"<member><name>FirstDay</name><value><i4>%i</i4></value></member>\n"
+	"<member><name>TotalSizeLo</name><value><i4>%u</i4></value></member>\n"
+	"<member><name>TotalSizeHi</name><value><i4>%u</i4></value></member>\n"
+	"<member><name>TotalSizeMB</name><value><i4>%i</i4></value></member>\n"
+	"<member><name>SecSlot</name><value><i4>%i</i4></value></member>\n"
+	"<member><name>MinSlot</name><value><i4>%i</i4></value></member>\n"
+	"<member><name>HourSlot</name><value><i4>%i</i4></value></member>\n"
+	"<member><name>DaySlot</name><value><i4>%i</i4></value></member>\n";
+
+	const char* XML_BYTES_ARRAY_START =
+	"<member><name>%s</name><value><array><data>\n";
+
+	const char* XML_BYTES_ARRAY_ITEM =
+	"<value><struct>\n"
+	"<member><name>SizeLo</name><value><i4>%u</i4></value></member>\n"
+	"<member><name>SizeHi</name><value><i4>%u</i4></value></member>\n"
+	"<member><name>SizeMB</name><value><i4>%i</i4></value></member>\n"
+	"</struct></value>\n";
+
+	const char* XML_BYTES_ARRAY_END =
+	"</data></array></value></member>\n";
+
+	const char* XML_VOLUME_ITEM_END =
+	"</struct></value>\n";
+
+	const char* JSON_VOLUME_ITEM_START =
+	"{\n"
+	"\"ServerID\" : %i,\n"
+	"\"DataTime\" : %i,\n"
+	"\"FirstDay\" : %i,\n"
+	"\"TotalSizeLo\" : %i,\n"
+	"\"TotalSizeHi\" : %i,\n"
+	"\"TotalSizeMB\" : %i,\n"
+	"\"SecSlot\" : %i,\n"
+	"\"MinSlot\" : %i,\n"
+	"\"HourSlot\" : %i,\n"
+	"\"DaySlot\" : %i,\n";
+
+	const char* JSON_BYTES_ARRAY_START =
+	"\"%s\" : [\n";
+
+	const char* JSON_BYTES_ARRAY_ITEM =
+	"{\n"
+	"\"SizeLo\" : %u,\n"
+	"\"SizeHi\" : %u,\n"
+	"\"SizeMB\" : %i\n"
+	"}";
+
+	const char* JSON_BYTES_ARRAY_END =
+	"]\n";
+
+	const char* JSON_VOLUME_ITEM_END =
+	"}\n";
+
+	AppendResponse(IsJson() ? "[\n" : "<array><data>\n");
+
+	ServerVolumes* pServerVolumes = g_pStatMeter->LockServerVolumes();
+
+	const int iItemBufSize = 1024;
+	char szItemBuf[iItemBufSize];
+	int index = 0;
+
+	for (ServerVolumes::iterator it = pServerVolumes->begin(); it != pServerVolumes->end(); it++, index++)
+	{
+		ServerVolume* pServerVolume = *it;
+
+		if (IsJson() && index > 0)
+		{
+			AppendResponse(",\n");
+		}
+
+		unsigned long iSizeHi, iSizeLo, iSizeMB;
+		Util::SplitInt64(pServerVolume->GetTotalBytes(), &iSizeHi, &iSizeLo);
+		iSizeMB = (int)(pServerVolume->GetTotalBytes() / 1024 / 1024);
+
+		snprintf(szItemBuf, iItemBufSize, IsJson() ? JSON_VOLUME_ITEM_START : XML_VOLUME_ITEM_START,
+				 index, (int)pServerVolume->GetDataTime(), pServerVolume->GetFirstDay(),
+				 iSizeLo, iSizeHi, iSizeMB, pServerVolume->GetSecSlot(),
+				 pServerVolume->GetMinSlot(), pServerVolume->GetHourSlot(), pServerVolume->GetDaySlot());
+		szItemBuf[iItemBufSize-1] = '\0';
+		AppendResponse(szItemBuf);
+
+		ServerVolume::VolumeArray* VolumeArrays[] = { pServerVolume->BytesPerSeconds(),
+			pServerVolume->BytesPerMinutes(), pServerVolume->BytesPerHours(), pServerVolume->BytesPerDays() };
+		const char* VolumeNames[] = { "BytesPerSeconds", "BytesPerMinutes", "BytesPerHours", "BytesPerDays" };
+
+		for (int i=0; i<4; i++)
+		{
+			ServerVolume::VolumeArray* pVolumeArray = VolumeArrays[i];
+			const char* szArrayName = VolumeNames[i];
+
+			snprintf(szItemBuf, iItemBufSize, IsJson() ? JSON_BYTES_ARRAY_START : XML_BYTES_ARRAY_START, szArrayName);
+			szItemBuf[iItemBufSize-1] = '\0';
+			AppendResponse(szItemBuf);
+
+			int index2 = 0;
+			for (ServerVolume::VolumeArray::iterator it2 = pVolumeArray->begin(); it2 != pVolumeArray->end(); it2++)
+			{
+				long long lBytes = *it2;
+				unsigned long iSizeHi, iSizeLo, iSizeMB;
+				Util::SplitInt64(lBytes, &iSizeHi, &iSizeLo);
+				iSizeMB = (int)(lBytes / 1024 / 1024);
+
+				snprintf(szItemBuf, iItemBufSize, IsJson() ? JSON_BYTES_ARRAY_ITEM : XML_BYTES_ARRAY_ITEM,
+						 iSizeLo, iSizeHi, iSizeMB);
+				szItemBuf[iItemBufSize-1] = '\0';
+
+				if (IsJson() && index2++ > 0)
+				{
+					AppendResponse(",\n");
+				}
+				AppendResponse(szItemBuf);
+			}
+
+			AppendResponse(IsJson() ? JSON_BYTES_ARRAY_END : XML_BYTES_ARRAY_END);
+			if (IsJson() && i < 3)
+			{
+				AppendResponse(",\n");
+			}
+		}
+		AppendResponse(IsJson() ? JSON_VOLUME_ITEM_END : XML_VOLUME_ITEM_END);
+	}
+
+	g_pStatMeter->UnlockServerVolumes();
+
+	AppendResponse(IsJson() ? "\n]" : "</data></array>\n");
 }
