@@ -2,7 +2,7 @@
  *  This file is part of nzbget
  *
  *  Copyright (C) 2004 Sven Henkel <sidddy@users.sourceforge.net>
- *  Copyright (C) 2007-2013 Andrey Prygunkov <hugbug@users.sourceforge.net>
+ *  Copyright (C) 2007-2014 Andrey Prygunkov <hugbug@users.sourceforge.net>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -117,19 +117,20 @@ Connection::Connection(const char* szHost, int iPort, bool bTLS)
 {
 	debug("Creating Connection");
 
-	m_szHost			= NULL;
-	m_iPort				= iPort;
-	m_bTLS				= bTLS;
-	m_szCipher			= NULL;
-	m_eStatus			= csDisconnected;
-	m_iSocket			= INVALID_SOCKET;
-	m_iBufAvail			= 0;
-	m_iTimeout			= 60;
-	m_bSuppressErrors	= true;
-	m_szReadBuf			= (char*)malloc(CONNECTION_READBUFFER_SIZE + 1);
+	m_szHost = NULL;
+	m_iPort = iPort;
+	m_bTLS = bTLS;
+	m_szCipher = NULL;
+	m_eStatus = csDisconnected;
+	m_iSocket = INVALID_SOCKET;
+	m_iBufAvail = 0;
+	m_iTimeout = 60;
+	m_bSuppressErrors = true;
+	m_szReadBuf = (char*)malloc(CONNECTION_READBUFFER_SIZE + 1);
+	m_iTotalBytesRead = 0;
 #ifndef DISABLE_TLS
-	m_pTLSSocket		= NULL;
-	m_bTLSError			= false;
+	m_pTLSSocket = NULL;
+	m_bTLSError = false;
 #endif
 
 	if (szHost)
@@ -438,7 +439,9 @@ char* Connection::ReadLine(char* pBuffer, int iSize, int* pBytesRead)
 	{
 		*pBytesRead = iBytesRead;
 	}
-	
+
+	m_iTotalBytesRead += iBytesRead;
+
 	if (pBufPtr == pBuffer)
 	{
 		return NULL;
@@ -857,4 +860,11 @@ const char* Connection::GetRemoteAddr()
 	m_szRemoteAddr[sizeof(m_szRemoteAddr)-1] = '\0';
 	
 	return m_szRemoteAddr;
+}
+
+int Connection::FetchTotalBytesRead()
+{
+	int iTotal = m_iTotalBytesRead;
+	m_iTotalBytesRead = 0;
+	return iTotal;
 }

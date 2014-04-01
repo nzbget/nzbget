@@ -211,6 +211,10 @@ webui_FILES = \
 	webui/lib/bootstrap.css  \
 	webui/lib/jquery.js \
 	webui/lib/jquery.min.js \
+	webui/lib/raphael.js \
+	webui/lib/raphael.min.js \
+	webui/lib/elycharts.js \
+	webui/lib/elycharts.min.js \
 	webui/img/icons.png \
 	webui/img/icons-2x.png \
 	webui/img/transmit.gif \

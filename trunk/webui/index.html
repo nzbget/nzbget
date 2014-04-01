@@ -2,7 +2,7 @@
 <!--
  * This file is part of nzbget
  *
- * Copyright (C) 2012-2013 Andrey Prygunkov <hugbug@users.sourceforge.net>
+ * Copyright (C) 2012-2014 Andrey Prygunkov <hugbug@users.sourceforge.net>
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -38,6 +38,8 @@
 	<!-- Libraries -->
 	<script language="javascript" type="text/javascript" src="lib/jquery.min.js"></script>
 	<script language="javascript" type="text/javascript" src="lib/bootstrap.min.js"></script>
+	<script language="javascript" type="text/javascript" src="lib/raphael.min.js"></script>
+	<script language="javascript" type="text/javascript" src="lib/elycharts.min.js"></script>
 
 	<!-- NZBGet -->
 	<script language="javascript" type="text/javascript" src="fasttable.js"></script>
@@ -659,6 +661,14 @@
 		<p>NZBGet web-interface uses <a href="http://twitter.github.com/bootstrap/">Twitter Bootstrap</a>. Designed and built with all the love in the world @twitter by @mdo and @fat.</p>
 		<p>Bootstrap code is licensed under the <a href="http://www.apache.org/licenses/LICENSE-2.0">Apache License v2.0</a>.</p>
 
+		<h2>Raphaël</h2>
+		<p>NZBGet web-interface makes use of <a href="http://raphaeljs.com">Raphaël</a> built by Dmitry Baranovskiy.</p>
+		<p>Raphaël code is licensed under the <a href="http://raphaeljs.com/license.html">MIT license</a>.</p>
+
+		<h2>Elycharts</h2>
+		<p>For charts NZBGet relies on <a href="http://elycharts.com">Elycharts</a> by Void Labs s.n.c.</p>
+		<p>Elycharts code is licensed under the <a href="http://creativecommons.org/licenses/MIT/">MIT license</a>.</p>
+
 		<h2>iconSweets</h2>
 		<p>NZBGet web-interface includes selected icons from collections <a href="http://www.iconsweets.com/">iconSweets</a> and <a href="http://www.iconsweets2.com/">iconSweets2</a> by <a href="http://yummygum.com">Yummygum</a>.</p>
 		<p>The icons are generally licensed under a custom license but used in NZBGet with author's permission.</p>
@@ -668,19 +678,112 @@
 
 <!-- *** STATISTICS ************************************************************ -->
 
-<div class="modal modal-mini modal-padded no-footer hide" id="StatDialog">
+<div class="modal modal-mini no-footer hide" id="StatDialog">
 	<div class="modal-header">
-	<a class="close" href='#' data-dismiss="modal"><i class="icon-close"></i></a>
-	<h3>Statistics and Status</h3>
+		<a class="close" href='#' data-dismiss="modal"><i class="icon-close"></i></a>
+		<a class="back" id="StatDialog_Back" href="#" title="Back"><i class="icon-back"></i></a>
+		<a class="back back-hidden" id="StatDialog_BackSpace"><i class="icon-hidden"></i></a>
+		<h3 id="StatDialog_Title">Statistics and Status</h3>
 	</div>
 	<div class="modal-body">
-		<table class="table table-striped table-bordered datatable" id="StatisticsTable">
-			<tbody></tbody>
-		</table>
-		<br>
-		<table class="table table-striped table-bordered datatable" id="StatusTable">
-			<tbody></tbody>
-		</table>
+		<div>
+			<div class="modal-tab" id="StatDialog_GeneralTab">
+				<div class="modal-tab-padded-small">
+					<table class="table table-striped table-bordered datatable" id="StatisticsTable">
+						<tbody>
+							<tr><td>NZBGet version</td><td class="text-right" id="StatDialog_DataVersion"></td></tr>
+							<tr><td>Uptime</td><td class="text-right" id="StatDialog_DataUptime"></td></tr>
+							<tr><td>Download time</td><td class="text-right" id="StatDialog_DataDownloadTime"></td></tr>
+							<tr><td><a href="#" id="StatDialog_Volumes" data-tab="StatDialog_VolumesTab" data-fullscreen1="true"
+								title="Data volume statistics">Total downloaded <i class="icon-forward" style="opacity:0.6;"/></a></td>
+								<td class="text-right" id="StatDialog_DataTotalDownloaded"></td></tr>
+							<tr><td>Remaining</td><td class="text-right" id="StatDialog_DataRemaining"></td></tr>
+							<tr><td>Free disk space</td><td class="text-right" id="StatDialog_DataFree"></td></tr>
+							<tr><td>Average download speed</td><td class="text-right" id="StatDialog_DataAverageSpeed"></td></tr>
+							<tr><td>Current download speed</td><td class="text-right" id="StatDialog_DataCurrentSpeed"></td></tr>
+							<tr><td>Current speed limit</td><td class="text-right" id="StatDialog_DataSpeedLimit"></td></tr>
+						</tbody>
+					</table>
+					<br>
+					<table class="table table-striped table-bordered datatable" id="StatusTable">
+						<tbody></tbody>
+					</table>
+				</div>
+			</div>
+
+			<div class="modal-tab" id="StatDialog_VolumesTab">
+				<div class="btn-toolbar form-inline section-toolbar" id="StatDialog_Toolbar">
+
+					<!-- VOLUME RANGE BUTTONS -->
+					<div class="btn-group phone-hide" id="StatDialog_MonthBlockTop">
+						<button class="btn volume-range btn-inverse" id="StatDialog_Volume_MIN" onclick="StatDialog.chooseRange('MIN')" title="Show last 60 seconds">60 seconds</button>
+						<button class="btn volume-range" id="StatDialog_Volume_HOUR" onclick="StatDialog.chooseRange('HOUR')" title="Show last 60 minutes">60 minutes</button>
+						<button class="btn volume-range" id="StatDialog_Volume_DAY" onclick="StatDialog.chooseRange('DAY')" title="Show last 24 hours">24 hours</button>
+						<button class="btn volume-range" id="StatDialog_Volume_MONTH" onclick="StatDialog.chooseRange('MONTH')" title="Show a month or a whole year">January 2014</button>
+						<button class="btn volume-range dropdown-toggle" id="StatDialog_Volume_MONTH3" data-toggle="dropdown"><span class="caret"></span></button>
+						<ul class="dropdown-menu menu-check pull-right" id="StatDialog_MonthMenu">
+							<li class="menu-header">Months</li>
+							<li class="volume-month-template hide"><a href="#">March 2014</a></li>
+							<li class="menu-header" id="StatDialog_MonthMenuYears">Years</li>
+							<li class="divider" id="StatDialog_MonthMenuDivider"></li>
+							<li><a href="#" onclick="StatDialog.chooseOtherMonth()"><i class="icon-empty"></i>Older Periods...</a></li>
+							<li class="volume-menu-template hide"><a href="#"></a></li>
+						</ul>
+					</div>
+					
+					<div class="btn-group phone-only inline"><button class="btn volume-range btn-inverse" id="StatDialog_Volume_MIN2" onclick="StatDialog.chooseRange('MIN')" title="Show last 60 seconds">60 s</button></div>
+					<div class="btn-group phone-only inline"><button class="btn volume-range" id="StatDialog_Volume_HOUR2" onclick="StatDialog.chooseRange('HOUR')" title="Show last 60 minutes">60 m</button></div>
+					<div class="btn-group phone-only inline"><button class="btn volume-range" id="StatDialog_Volume_DAY2" onclick="StatDialog.chooseRange('DAY')" title="Show last 24 hours">24 h</button></div>
+					<div class="btn-group phone-only inline"><button class="btn volume-range" id="StatDialog_Volume_MONTH2" onclick="StatDialog.chooseRange('MONTH')" title="Show one month">Jan 2014</button></div>
+					<!-- MONTH MENU IN MINI-THEME -->
+					<div class="btn-group phone-only inline" id="StatDialog_MonthBlockPhone">
+					<button class="btn volume-range dropdown-toggle" id="StatDialog_Volume_MONTH4" data-toggle="dropdown"><span class="caret"></span></button>
+					</div>
+					
+					<div class="btn-group">
+						<button class="btn dropdown-toggle" id="StatDialog_Server" data-toggle="dropdown" title="News server"> <span id="StatDialog_ServerCap">All news servers</span>&nbsp;<span class="caret"></span></button>
+						<ul class="dropdown-menu menu-check" id="StatDialog_ServerMenu">
+							<li class="menu-header">News servers</li>
+							<li class="volume-server-template hide"><a href="#">1. server.com</a></li>
+							<li class="divider" id="StatDialog_ServerMenuDivider"></li>
+							<li><a href="#" data-id="0" id="StatDialog_ServerMenuAll"><i class="icon-empty"></i>All news servers</a></li>
+						</ul>
+					</div>
+				</div>
+				
+				<div id="StatDialog_Tooltip">Total</div>
+				<div id="StatDialog_ChartBlock"></div>
+				<div id="StatDialog_ChartFix">&nbsp;</div>
+			</div>
+		</div>
+	</div>
+</div>
+
+<!-- *** CHART RANGE DIALOG ***************************************************** -->
+
+<div class="modal modal-mini modal-padded modal-center hide" id="StatRangeDialog">
+	<div class="modal-header">
+	<a class="close" href='#' data-dismiss="modal"><i class="icon-close"></i></a>
+	<h3>Choose period</h3>
+	</div>
+	<div class="modal-body">
+		<div class="form-horizontal">
+			<fieldset>
+				<div class="control-group">
+					<label class="control-label" for="StatRangeDialog_PeriodGroup">Period</label>
+					<div class="controls" id="StatRangeDialog_PeriodGroup">
+						<input class="input-mini" id="StatRangeDialog_PeriodInput" size="16" type="text">
+					</div>
+				</div>
+
+				<p class="help-block" ">Type period as <strong>year</strong> or <strong>year-month</strong>, for example:
+				2014 or 2014-12.</p>
+			</fieldset>
+		</div>
+	</div>
+	<div class="modal-footer">
+		<a href="#" class="btn" data-dismiss="modal">Cancel</a>
+		<a href="#" class="btn btn-primary" onclick="StatDialog.setPeriod()">Set Period</a>
 	</div>
 </div>
 
@@ -2342,6 +2445,10 @@
 
 <div id="Notif_Debug" data-duration="400" class="alert alert-inverse alert-center alert-center-small hide">
     <strong>Debug</strong>
+</div>
+
+<div id="Notif_StatRangeError" data-duration="500" class="alert alert-error alert-center alert-center-small hide">
+    <strong>Incorrect period.</strong>
 </div>
 
 </body>

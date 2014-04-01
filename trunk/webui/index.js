@@ -1,7 +1,7 @@
 /*
  * This file is part of nzbget
  *
- * Copyright (C) 2012-2013 Andrey Prygunkov <hugbug@users.sourceforge.net>
+ * Copyright (C) 2012-2014 Andrey Prygunkov <hugbug@users.sourceforge.net>
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -337,9 +337,10 @@ var Frontend = (new function($)
 
 		resizeNavbar();
 
-		alignPopupMenu('#PlayMenu', UISettings.miniTheme);
-		alignPopupMenu('#RefreshMenu', UISettings.miniTheme);
-		alignPopupMenu('#RssMenu', UISettings.miniTheme);
+		alignPopupMenu('#PlayMenu');
+		alignPopupMenu('#RefreshMenu');
+		alignPopupMenu('#RssMenu');
+		alignPopupMenu('#StatDialog_MonthMenu', true);
 
 		alignCenterDialogs();
 		
@@ -349,8 +350,9 @@ var Frontend = (new function($)
 		}
 	}
 
-	function alignPopupMenu(menu, center)
+	function alignPopupMenu(menu, right)
 	{
+		var center = UISettings.miniTheme;
 		var $elem = $(menu);
 		if (center)
 		{
@@ -380,9 +382,14 @@ var Frontend = (new function($)
 				var left = $(window).width() - $elem.outerWidth() - off.left;
 				$elem.css({ left: left });
 			}
+			if (right)
+			{
+				$elem.addClass('pull-right');
+			}
 		}
 	}
-
+	this.alignPopupMenu = alignPopupMenu;
+	
 	function alignCenterDialogs()
 	{
 		$.each($('.modal-center'), function(index, element) {
@@ -461,9 +468,10 @@ var Frontend = (new function($)
 		$('#DownloadsTable').toggleClass('table-check', !UISettings.miniTheme || UISettings.showEditButtons);
 		$('#HistoryTable').toggleClass('table-check', !UISettings.miniTheme || UISettings.showEditButtons);
 
-		alignPopupMenu('#PlayMenu', UISettings.miniTheme);
-		alignPopupMenu('#RefreshMenu', UISettings.miniTheme);
-		alignPopupMenu('#RssMenu', UISettings.miniTheme);
+		alignPopupMenu('#PlayMenu');
+		alignPopupMenu('#RefreshMenu');
+		alignPopupMenu('#RssMenu');
+		alignPopupMenu('#StatDialog_MonthMenu', true);
 
 		if (UISettings.miniTheme)
 		{
@@ -471,6 +479,7 @@ var Frontend = (new function($)
 			$('#DownloadsRecordsPerPageBlock').appendTo($('#DownloadsRecordsPerPageBlockPhone'));
 			$('#HistoryRecordsPerPageBlock').appendTo($('#HistoryRecordsPerPageBlockPhone'));
 			$('#MessagesRecordsPerPageBlock').appendTo($('#MessagesRecordsPerPageBlockPhone'));
+			$('#StatDialog_MonthMenu').appendTo($('#StatDialog_MonthBlockPhone'));
 		}
 		else
 		{
@@ -478,6 +487,7 @@ var Frontend = (new function($)
 			$('#DownloadsRecordsPerPageBlock').appendTo($('#DownloadsTableTopBlock'));
 			$('#HistoryRecordsPerPageBlock').appendTo($('#HistoryTableTopBlock'));
 			$('#MessagesRecordsPerPageBlock').appendTo($('#MessagesTableTopBlock'));
+			$('#StatDialog_MonthMenu').appendTo($('#StatDialog_MonthBlockTop'));
 		}
 
 		if (initialized)

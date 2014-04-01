@@ -2045,7 +2045,34 @@ void DiskState::CalcFileStats(DownloadQueue* pDownloadQueue, int iFormatVersion)
 	}
 }
 
-bool DiskState::SaveStats(Servers* pServers)
+void DiskState::ConvertDupeKey(char* buf, int bufsize)
+{
+	if (strncmp(buf, "rageid=", 7))
+	{
+		return;
+	}
+
+	int iRageId = atoi(buf + 7);
+	int iSeason = 0;
+	int iEpisode = 0;
+	char* p = strchr(buf + 7, ',');
+	if (p)
+	{
+		iSeason = atoi(p + 1);
+		p = strchr(p + 1, ',');
+		if (p)
+		{
+			iEpisode = atoi(p + 1);
+		}
+	}
+
+	if (iRageId != 0 && iSeason != 0 && iEpisode != 0)
+	{
+		snprintf(buf, bufsize, "rageid=%i-S%02i-E%02i", iRageId, iSeason, iEpisode);
+	}
+}
+
+bool DiskState::SaveStats(Servers* pServers, ServerVolumes* pServerVolumes)
 {
 	debug("Saving stats to disk");
 
@@ -2071,10 +2098,13 @@ bool DiskState::SaveStats(Servers* pServers)
 		return false;
 	}
 
-	fprintf(outfile, "%s%i\n", FORMATVERSION_SIGNATURE, 1);
+	fprintf(outfile, "%s%i\n", FORMATVERSION_SIGNATURE, 2);
 
-	// save status
-	SaveServerStats(pServers, outfile);
+	// save server names
+	SaveServerInfo(pServers, outfile);
+
+	// save stat
+	SaveVolumeStat(pServerVolumes, outfile);
 
 	fclose(outfile);
 
@@ -2089,7 +2119,7 @@ bool DiskState::SaveStats(Servers* pServers)
 	return true;
 }
 
-bool DiskState::LoadStats(Servers* pServers)
+bool DiskState::LoadStats(Servers* pServers, ServerVolumes* pServerVolumes)
 {
 	debug("Loading stats from disk");
 
@@ -2115,14 +2145,19 @@ bool DiskState::LoadStats(Servers* pServers)
 	char FileSignatur[128];
 	fgets(FileSignatur, sizeof(FileSignatur), infile);
 	int iFormatVersion = ParseFormatVersion(FileSignatur);
-	if (iFormatVersion > 1)
+	if (iFormatVersion > 2)
 	{
 		error("Could not load diskstate due to file version mismatch");
 		fclose(infile);
 		return false;
 	}
 
-	if (!LoadServerStats(pServers, infile, iFormatVersion)) goto error;
+	if (!LoadServerInfo(pServers, infile, iFormatVersion)) goto error;
+
+	if (iFormatVersion >=2)
+	{
+		if (!LoadVolumeStat(pServers, pServerVolumes, infile, iFormatVersion)) goto error;
+	}
 
 	bOK = true;
 
@@ -2137,9 +2172,9 @@ error:
 	return bOK;
 }
 
-bool DiskState::SaveServerStats(Servers* pServers, FILE* outfile)
+bool DiskState::SaveServerInfo(Servers* pServers, FILE* outfile)
 {
-	debug("Saving server stats to disk");
+	debug("Saving server info to disk");
 
 	fprintf(outfile, "%i\n", (int)pServers->size());
 	for (Servers::iterator it = pServers->begin(); it != pServers->end(); it++)
@@ -2154,7 +2189,6 @@ bool DiskState::SaveServerStats(Servers* pServers, FILE* outfile)
 
 	return true;
 }
-
 
 /*
  ***************************************************************************************
@@ -2262,7 +2296,7 @@ void MatchServers(Servers* pServers, ServerRefList* pServerRefs)
 		}
 	}
 
-	// Step 2: matching host, port, username ans server-name
+	// Step 2: matching host, port, username and server-name
 	for (Servers::iterator it = pServers->begin(); it != pServers->end(); it++)
 	{
 		NewsServer* pNewsServer = *it;
@@ -2303,9 +2337,9 @@ void MatchServers(Servers* pServers, ServerRefList* pServerRefs)
  ***************************************************************************************
  */
 
-bool DiskState::LoadServerStats(Servers* pServers, FILE* infile, int iFormatVersion)
+bool DiskState::LoadServerInfo(Servers* pServers, FILE* infile, int iFormatVersion)
 {
-	debug("Loading server stats from disk");
+	debug("Loading server info from disk");
 
 	ServerRefList serverRefs;
 
@@ -2357,7 +2391,7 @@ bool DiskState::LoadServerStats(Servers* pServers, FILE* infile, int iFormatVers
 	return true;
 
 error:
-	error("Error reading server stats from disk");
+	error("Error reading server info from disk");
 
 	for (ServerRefList::iterator it = serverRefs.begin(); it != serverRefs.end(); it++)
 	{
@@ -2367,29 +2401,99 @@ error:
 	return false;
 }
 
-void DiskState::ConvertDupeKey(char* buf, int bufsize)
+bool DiskState::SaveVolumeStat(ServerVolumes* pServerVolumes, FILE* outfile)
 {
-	if (strncmp(buf, "rageid=", 7))
-	{
-		return;
-	}
+	debug("Saving volume stats to disk");
 
-	int iRageId = atoi(buf + 7);
-	int iSeason = 0;
-	int iEpisode = 0;
-	char* p = strchr(buf + 7, ',');
-	if (p)
+	fprintf(outfile, "%i\n", (int)pServerVolumes->size());
+	for (ServerVolumes::iterator it = pServerVolumes->begin(); it != pServerVolumes->end(); it++)
 	{
-		iSeason = atoi(p + 1);
-		p = strchr(p + 1, ',');
-		if (p)
+		ServerVolume* pServerVolume = *it;
+
+		fprintf(outfile, "%i,%i\n", pServerVolume->GetFirstDay(), (int)pServerVolume->GetDataTime());
+
+		unsigned long High1, Low1;
+		Util::SplitInt64(pServerVolume->GetTotalBytes(), &High1, &Low1);
+		fprintf(outfile, "%lu,%lu\n", High1, Low1);
+
+		ServerVolume::VolumeArray* VolumeArrays[] = { pServerVolume->BytesPerSeconds(),
+			pServerVolume->BytesPerMinutes(), pServerVolume->BytesPerHours(), pServerVolume->BytesPerDays() };
+		for (int i=0; i < 4; i++)
 		{
-			iEpisode = atoi(p + 1);
+			ServerVolume::VolumeArray* pVolumeArray = VolumeArrays[i];
+
+			fprintf(outfile, "%i\n", (int)pVolumeArray->size());
+			for (ServerVolume::VolumeArray::iterator it2 = pVolumeArray->begin(); it2 != pVolumeArray->end(); it2++)
+			{
+				long long lBytes = *it2;
+				Util::SplitInt64(lBytes, &High1, &Low1);
+				fprintf(outfile, "%lu,%lu\n", High1, Low1);
+			}
 		}
 	}
 
-	if (iRageId != 0 && iSeason != 0 && iEpisode != 0)
+	return true;
+}
+
+bool DiskState::LoadVolumeStat(Servers* pServers, ServerVolumes* pServerVolumes, FILE* infile, int iFormatVersion)
+{
+	debug("Loading volume stats from disk");
+
+	int size;
+	if (fscanf(infile, "%i\n", &size) != 1) goto error;
+	for (int i = 0; i < size; i++)
 	{
-		snprintf(buf, bufsize, "rageid=%i-S%02i-E%02i", iRageId, iSeason, iEpisode);
+		ServerVolume* pServerVolume = NULL;
+
+		if (i == 0)
+		{
+			pServerVolume = pServerVolumes->at(0);
+		}
+		else
+		{
+			for (Servers::iterator it = pServers->begin(); it != pServers->end(); it++)
+			{
+				NewsServer* pNewsServer = *it;
+				if (pNewsServer->GetStateID() == i)
+				{
+					pServerVolume = pServerVolumes->at(pNewsServer->GetStateID());
+				}
+			}
+		}
+
+		int iFirstDay, iDataTime;
+		if (fscanf(infile, "%i,%i\n", &iFirstDay, &iDataTime) != 2) goto error;
+		if (pServerVolume) pServerVolume->SetFirstDay(iFirstDay);
+		if (pServerVolume) pServerVolume->SetDataTime((time_t)iDataTime);
+
+		unsigned long High1, Low1;
+		if (fscanf(infile, "%lu,%lu\n", &High1, &Low1) != 2) goto error;
+		if (pServerVolume) pServerVolume->SetTotalBytes(Util::JoinInt64(High1, Low1));
+
+		ServerVolume::VolumeArray* VolumeArrays[] = { pServerVolume ? pServerVolume->BytesPerSeconds() : NULL,
+			pServerVolume ? pServerVolume->BytesPerMinutes() : NULL,
+			pServerVolume ? pServerVolume->BytesPerHours() : NULL,
+			pServerVolume ? pServerVolume->BytesPerDays() : NULL };
+		for (int k=0; k < 4; k++)
+		{
+			ServerVolume::VolumeArray* pVolumeArray = VolumeArrays[k];
+
+			int iArrSize;
+			if (fscanf(infile, "%i\n", &iArrSize) != 1) goto error;
+			if (pVolumeArray) pVolumeArray->resize(iArrSize);
+
+			for (int j = 0; j < iArrSize; j++)
+			{
+				if (fscanf(infile, "%lu,%lu\n", &High1, &Low1) != 2) goto error;
+				if (pVolumeArray) (*pVolumeArray)[j] = Util::JoinInt64(High1, Low1);
+			}
+		}
 	}
+
+	return true;
+
+error:
+	error("Error reading volume stats from disk");
+
+	return false;
 }

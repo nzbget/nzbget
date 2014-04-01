@@ -1,7 +1,7 @@
 /*
  * This file is part of nzbget
  *
- * Copyright (C) 2012-2013 Andrey Prygunkov <hugbug@users.sourceforge.net>
+ * Copyright (C) 2012-2014 Andrey Prygunkov <hugbug@users.sourceforge.net>
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -30,14 +30,14 @@
  */
 
 /*** STATUS INFOS ON MAIN PAGE AND STATISTICS DIALOG ****************************************/
- 
+
 var Status = (new function($)
 {
 	'use strict';
 
 	// Properties (public)
 	this.status;
-	
+
 	// Controls
 	var $CHPauseDownload;
 	var $CHPausePostProcess;
@@ -82,16 +82,11 @@ var Status = (new function($)
 		$StatusTimeIcon = $('#StatusTimeIcon');
 		$StatusTime = $('#StatusTime');
 		$StatusURLs = $('#StatusURLs');
-		$StatDialog = $('#StatDialog');
 		$ScheduledPauseDialog = $('#ScheduledPauseDialog')
 		$PauseForInput = $('#PauseForInput');
-		
+
 		if (UISettings.setFocus)
 		{
-			$LimitDialog.on('shown', function()
-			{
-				$('#SpeedLimitInput').focus();
-			});
 			$ScheduledPauseDialog.on('shown', function()
 			{
 				$('#PauseForInput').focus();
@@ -99,77 +94,30 @@ var Status = (new function($)
 		}
 
 		$PlayAnimation.hover(function() { $PlayBlock.addClass('hover'); }, function() { $PlayBlock.removeClass('hover'); });
-		
+
 		// temporary pause the play animation if any modal is shown (to avoid artifacts in safari)
 		$('body >.modal').on('show', modalShow);
 		$('body > .modal').on('hide', modalHide);
+
+		StatDialog.init();
 	}
 
 	this.update = function()
 	{
 		var _this = this;
-		RPC.call('status', [], 
+		RPC.call('status', [],
 			function(curStatus)
 			{
 				status = curStatus;
 				_this.status = status;
-				RPC.next();
+				StatDialog.update();
 			});
 	}
 
 	this.redraw = function()
 	{
-		redrawStatistics();
-		redrawInfo()
-	}
-	
-	function redrawStatistics()
-	{
-		var content = '';
-
-		content += '<tr><td>NZBGet version</td><td class="text-right">' + Options.option('Version') + '</td></tr>';
-		content += '<tr><td>Uptime</td><td class="text-right">' + Util.formatTimeHMS(status.UpTimeSec) + '</td></tr>';
-		content += '<tr><td>Download time</td><td class="text-right">' + Util.formatTimeHMS(status.DownloadTimeSec) + '</td></tr>';
-		content += '<tr><td>Total downloaded</td><td class="text-right">' + Util.formatSizeMB(status.DownloadedSizeMB) + '</td></tr>';
-		content += '<tr><td>Remaining</td><td class="text-right">' + Util.formatSizeMB(status.RemainingSizeMB) + '</td></tr>';
-		content += '<tr><td>Free disk space</td><td class="text-right">' + Util.formatSizeMB(status.FreeDiskSpaceMB) + '</td></tr>';
-		content += '<tr><td>Average download speed</td><td class="text-right">' + Util.round0(status.AverageDownloadRate / 1024) + ' KB/s</td></tr>';
-		content += '<tr><td>Current download speed</td><td class="text-right">' + Util.round0(status.DownloadRate / 1024) + ' KB/s</td></tr>';
-		content += '<tr><td>Current speed limit</td><td class="text-right">' + Util.round0(status.DownloadLimit / 1024) + ' KB/s</td></tr>';
-
-		$('#StatisticsTable tbody').html(content);
-
-		content = '';
-
-		content += '<tr><td>Download</td><td class="text-right">' + 
-			(status.DownloadPaused ?
-			'<span class="label label-status label-warning">paused</span>' :
-			'<span class="label label-status label-success">active</span>') +
-			'</td></tr>';
-		
-		content += '<tr><td>Post-processing</td><td class="text-right">' + (Options.option('PostProcess') === '' ?
-			'<span class="label label-status">disabled</span>' :
-			(status.PostPaused ?
-			'<span class="label label-status label-warning">paused</span>' :
-			'<span class="label label-status label-success">active</span>')) +
-			'</td></tr>';
-
-		content += '<tr><td>NZB-Directory scan</td><td class="text-right">' + (Options.option('NzbDirInterval') === '0' ?
-			'<span class="label label-status">disabled</span>' :
-			(status.ScanPaused ?
-			'<span class="label label-status label-warning">paused</span>' :
-			'<span class="label label-status label-success">active</span>')) +
-			'</td></tr>';
-
-		if (status.ResumeTime > 0)
-		{
-			content += '<tr><td>Autoresume</td><td class="text-right">' + Util.formatTimeHMS(status.ResumeTime - status.ServerTime) + '</td></tr>';
-		}
-			
-		content += '</tbody>';
-		content += '</table>';
-
-		$('#StatusTable tbody').html(content);
+		redrawInfo();
+		StatDialog.redraw();
 	}
 
 	function redrawInfo()
@@ -229,7 +177,7 @@ var Status = (new function($)
 				}
 			}
 		}
-		
+
 		$StatusSpeedIcon.toggleClass('icon-plane', !limit);
 		$StatusSpeedIcon.toggleClass('icon-truck', limit);
 		$StatusTime.toggleClass('scheduled-resume', status.ServerStandBy && status.ResumeTime > 0);
@@ -343,7 +291,7 @@ var Status = (new function($)
 
 	this.statDialogClick = function()
 	{
-		$StatDialog.modal();
+		StatDialog.showModal();
 	}
 
 	this.scheduledPauseClick = function(seconds)
@@ -369,7 +317,7 @@ var Status = (new function($)
 		{
 			return;
 		}
-		
+
 		$ScheduledPauseDialog.modal('hide');
 		this.scheduledPauseClick(minutes * 60);
 	}
@@ -390,6 +338,818 @@ var Status = (new function($)
 			$PlayAnimation.show();
 		}
 		modalShown = false;
+	}
+
+
+	this.serverName = function(server)
+	{
+		var name = Options.option('Server' + server.ID + '.Name');
+		if (name === null || name === '')
+		{
+			var host = Options.option('Server' + server.ID + '.Host');
+			var port = Options.option('Server' + server.ID + '.Port');
+			name = (host === null ? '' : host) + ':' + (port === null ? '119' : port);
+		}
+		return name;
+	}
+
+}(jQuery));
+
+
+/*** STATISTICS DIALOG *******************************************************/
+
+var StatDialog = (new function($)
+{
+	'use strict';
+
+	// Controls
+	var $StatDialog;
+	var $StatDialog_DataVersion;
+	var $StatDialog_DataUptime;
+	var $StatDialog_DataDownloadTime;
+	var $StatDialog_DataTotalDownloaded;
+	var $StatDialog_DataRemaining;
+	var $StatDialog_DataFree;
+	var $StatDialog_DataAverageSpeed;
+	var $StatDialog_DataCurrentSpeed;
+	var $StatDialog_DataSpeedLimit;
+	var $StatDialog_ChartBlock;
+	var $StatDialog_Server;
+	var $StatRangeDialog;
+	var $StatRangeDialog_PeriodInput;
+
+	// State
+	var visible = false;
+	var lastPage;
+	var lastTab = null;
+	var lastFullscreen;
+	var servervolumes = null;
+	var prevServervolumes = null;
+	var curRange = 'MIN';
+	var redrawLock = 0;
+	var needChartUpdate = false;
+	var curServer = 0;
+	var monthListInitialized = false;
+	var curMonth = null;
+	var monYear = false;
+	var monStartIndex = 0;
+	var monEndIndex = 0;
+	var monStartDate;
+	var chartData = null;
+	var mouseOverIndex = -1;
+
+	var monthNames = ['January', 'February', 'March', 'April', 'May', 'Juny', 'July', 'August', 'September', 'October', 'November', 'December'];
+
+	this.init = function()
+	{
+		$StatDialog = $('#StatDialog');
+		$StatDialog_DataVersion = $('#StatDialog_DataVersion');
+		$StatDialog_DataUptime = $('#StatDialog_DataUptime');
+		$StatDialog_DataDownloadTime = $('#StatDialog_DataDownloadTime');
+		$StatDialog_DataTotalDownloaded = $('#StatDialog_DataTotalDownloaded');
+		$StatDialog_DataRemaining = $('#StatDialog_DataRemaining');
+		$StatDialog_DataFree = $('#StatDialog_DataFree');
+		$StatDialog_DataAverageSpeed = $('#StatDialog_DataAverageSpeed');
+		$StatDialog_DataCurrentSpeed = $('#StatDialog_DataCurrentSpeed');
+		$StatDialog_DataSpeedLimit = $('#StatDialog_DataSpeedLimit');
+		$StatDialog_ChartBlock = $('#StatDialog_ChartBlock');
+		$StatDialog_Server = $('#StatDialog_Server');
+		$StatRangeDialog = $('#StatRangeDialog');
+		$StatRangeDialog_PeriodInput = $('#StatRangeDialog_PeriodInput');
+
+		$('#StatDialog_ServerMenuAll').click(chooseServer);
+		$('#StatDialog_Volumes').click(tabClick);
+		$('#StatDialog_Back').click(backClick);
+
+		$StatDialog.on('hidden', function()
+		{
+			// cleanup
+			lastTab = null;
+			servervolumes = null;
+			prevServervolumes = null;
+			$StatDialog_ChartBlock.empty();
+			visible = false;
+		});
+
+		if (UISettings.setFocus)
+		{
+			$StatRangeDialog.on('shown', function()
+			{
+				$StatRangeDialog_PeriodInput.focus();
+			});
+		}
+
+		$StatRangeDialog.on('hidden', StatRangeDialogHidden);
+
+		TabDialog.extend($StatDialog);
+	}
+
+	this.update = function()
+	{
+		if (visible)
+		{
+			RPC.call('servervolumes', [], servervolumes_loaded);
+		}
+		else
+		{
+			RPC.next();
+		}
+	}
+
+	function servervolumes_loaded(volumes)
+	{
+		prevServervolumes = servervolumes;
+		servervolumes = volumes;
+		RPC.next();
+	}
+
+	function firstLoadStatisticsData()
+	{
+		RPC.call('servervolumes', [], function (volumes)
+			{
+				prevServervolumes = servervolumes;
+				servervolumes = volumes;
+				updateMonthList();
+				StatDialog.redraw();
+			});
+	}
+
+	this.showModal = function()
+	{
+		$('#StatDialog_GeneralTab').show();
+		$('#StatDialog_VolumesTab').hide();
+		$('#StatDialog_Back').hide();
+		$('#StatDialog_BackSpace').show();
+		$('#StatDialog_Title').text('Statistics and Status');
+		$StatDialog.removeClass('modal-large').addClass('modal-mini');
+		monthListInitialized = false;
+		updateServerList();
+		lastTab = null;
+		$StatDialog.restoreTab();
+		visible = true;
+		redrawStatistics();
+		$StatDialog.modal();
+		firstLoadStatisticsData();
+	}
+
+	this.redraw = function()
+	{
+		if (visible)
+		{
+			redrawStatistics();
+			if (servervolumes !== null && lastTab === '#StatDialog_VolumesTab')
+			{
+				if (redrawLock > 0)
+				{
+					needChartUpdate = true;
+				}
+				else
+				{
+					if (!monthListInitialized)
+					{
+						updateMonthList();
+					}
+					redrawChart();
+				}
+			}
+		}
+	}
+
+	function redrawStatistics()
+	{
+		var status = Status.status;
+
+		$StatDialog_DataVersion.text(Options.option('Version'));
+		$StatDialog_DataUptime.text(Util.formatTimeHMS(status.UpTimeSec));
+		$StatDialog_DataDownloadTime.text(Util.formatTimeHMS(status.DownloadTimeSec));
+		$StatDialog_DataTotalDownloaded.html(Util.formatSizeMB(status.DownloadedSizeMB));
+		$StatDialog_DataRemaining.html(Util.formatSizeMB(status.RemainingSizeMB));
+		$StatDialog_DataFree.html(Util.formatSizeMB(status.FreeDiskSpaceMB));
+		$StatDialog_DataAverageSpeed.text(Util.round0(status.AverageDownloadRate / 1024) + ' KB/s');
+		$StatDialog_DataCurrentSpeed.text(Util.round0(status.DownloadRate / 1024) + ' KB/s');
+		$StatDialog_DataSpeedLimit.text(Util.round0(status.DownloadLimit / 1024) + ' KB/s');
+
+		var content = '';
+		content += '<tr><td>Download</td><td class="text-right">' +
+			(status.DownloadPaused ?
+			'<span class="label label-status label-warning">paused</span>' :
+			'<span class="label label-status label-success">active</span>') +
+			'</td></tr>';
+
+		content += '<tr><td>Post-processing</td><td class="text-right">' + (Options.option('PostProcess') === '' ?
+			'<span class="label label-status">disabled</span>' :
+			(status.PostPaused ?
+			'<span class="label label-status label-warning">paused</span>' :
+			'<span class="label label-status label-success">active</span>')) +
+			'</td></tr>';
+
+		content += '<tr><td>NZB-Directory scan</td><td class="text-right">' + (Options.option('NzbDirInterval') === '0' ?
+			'<span class="label label-status">disabled</span>' :
+			(status.ScanPaused ?
+			'<span class="label label-status label-warning">paused</span>' :
+			'<span class="label label-status label-success">active</span>')) +
+			'</td></tr>';
+
+		if (status.ResumeTime > 0)
+		{
+			content += '<tr><td>Autoresume</td><td class="text-right">' + Util.formatTimeHMS(status.ResumeTime - status.ServerTime) + '<i class="icon-empty"/></td></tr>';
+		}
+
+		$('#StatusTable tbody').html(content);
+	}
+
+	function tabClick(e)
+	{
+		e.preventDefault();
+
+		$('#StatDialog_Back').fadeIn(500);
+		$('#StatDialog_BackSpace').hide();
+		lastTab = '#' + $(this).attr('data-tab');
+		lastPage = $(lastTab);
+		lastFullscreen = ($(this).attr('data-fullscreen') === 'true') && !UISettings.miniTheme;
+		redrawLock++;
+		$StatDialog.switchTab($('#StatDialog_GeneralTab'), lastPage,
+			e.shiftKey || !UISettings.slideAnimation ? 0 : 500,
+			{ fullscreen: lastFullscreen,
+			  toggleClass: 'modal-mini modal-large',
+			  mini: UISettings.miniTheme,
+			  complete: tabSwitchCompleted});
+		if (lastTab === '#StatDialog_VolumesTab')
+		{
+			redrawChart();
+			$('#StatDialog_Title').text('Downloaded volumes');
+		}
+	}
+
+	function backClick(e)
+	{
+		e.preventDefault();
+		$('#StatDialog_Back').fadeOut(500, function()
+		{
+			$('#StatDialog_BackSpace').show();
+		});
+
+		$StatDialog.switchTab(lastPage, $('#StatDialog_GeneralTab'),
+			e.shiftKey || !UISettings.slideAnimation ? 0 : 500,
+			{ fullscreen: lastFullscreen,
+			  toggleClass: 'modal-mini modal-large',
+			  mini: UISettings.miniTheme,
+			  back: true});
+		lastTab = null;
+
+		$('#StatDialog_Title').text('Statistics and Status');
+	}
+
+	function tabSwitchCompleted()
+	{
+		redrawLock--;
+		if (needChartUpdate)
+		{
+			needChartUpdate = false;
+			if (!monthListInitialized)
+			{
+				updateMonthList();
+			}
+			redrawChart();
+		}
+		Frontend.alignPopupMenu('#StatDialog_MonthMenu', true);
+	}
+
+	function size64(size)
+	{
+		return size.SizeMB < 2000 ? size.SizeLo / 1024.0 / 1024.0 : size.SizeMB;
+	}
+
+	function redrawChart()
+	{
+		var serverNo = curServer;
+		var lineLabels = [];
+		var dataLabels = [];
+		var chartDataTB = [];
+		var chartDataGB = [];
+		var chartDataMB = [];
+		var chartDataKB = [];
+		var chartDataB = [];
+		var curPoint = null;
+		var sumMB = 0;
+		var sumLo = 0;
+		var maxSizeMB = 0;
+		var maxSizeLo = 0;
+
+		function addData(bytes, dataLab, lineLab)
+		{
+			dataLabels.push(dataLab);
+			lineLabels.push(lineLab);
+
+			if (bytes === null)
+			{
+				chartDataTB.push(null);
+				chartDataGB.push(null);
+				chartDataMB.push(null);
+				chartDataKB.push(null);
+				chartDataB.push(null);
+				return;
+			}
+			chartDataTB.push(bytes.SizeMB / 1024.0 / 1024.0);
+			chartDataGB.push(bytes.SizeMB / 1024.0);
+			chartDataMB.push(size64(bytes));
+			chartDataKB.push(bytes.SizeLo / 1024.0);
+			chartDataB.push(bytes.SizeLo);
+			if (bytes.SizeMB > maxSizeMB)
+			{
+				maxSizeMB = bytes.SizeMB;
+			}
+			if (bytes.SizeLo > maxSizeLo)
+			{
+				maxSizeLo = bytes.SizeLo;
+			}
+			sumMB += bytes.SizeMB;
+			sumLo += bytes.SizeLo;
+		}
+
+		function drawMinuteGraph()
+		{
+			// the current slot may be not fully filled yet,
+			// to make the chart smoother for current slot we use the data from the previous reading
+			// and we show the previous slot as current.
+			curPoint = servervolumes[serverNo].SecSlot;
+			for (var i = 0; i < 60; i++)
+			{
+				addData((i == curPoint && prevServervolumes !== null ? prevServervolumes : servervolumes)[serverNo].BytesPerSeconds[i],
+					i + 's', i % 10 == 0 || i == 59 ? i : '');
+			}
+			if (prevServervolumes !== null)
+			{
+				curPoint = curPoint > 0 ? curPoint-1 : 59;
+			}
+		}
+
+		function drawHourGraph()
+		{
+			for (var i = 0; i < 60; i++)
+			{
+				addData(servervolumes[serverNo].BytesPerMinutes[i],
+					i + 'm', i % 10 == 0 || i == 59 ? i : '');
+			}
+			curPoint = servervolumes[serverNo].MinSlot;
+		}
+
+		function drawDayGraph()
+		{
+			for (var i = 0; i < 24; i++)
+			{
+				addData(servervolumes[serverNo].BytesPerHours[i],
+					i + 'h', i % 3 == 0 || i == 23 ? i : '');
+			}
+			curPoint = servervolumes[serverNo].HourSlot;
+		}
+
+		function drawMonthGraph()
+		{
+			var len = servervolumes[serverNo].BytesPerDays.length;
+			var daySlot = servervolumes[serverNo].DaySlot;
+			var slotDelta = servervolumes[0].FirstDay - servervolumes[serverNo].FirstDay;
+			var dt = new Date(monStartDate.getTime());
+			var day = 1;
+			for (var i = monStartIndex; i <= monEndIndex; i++, day++)
+			{
+				dt.setDate(day);
+				var slot = i + slotDelta;
+				addData((slot >= 0 && slot < len ? servervolumes[serverNo].BytesPerDays[slot] : null),
+					dt.toDateString(), (day == 1 || day % 5 == 0 || (day < 30 && i === monEndIndex) ? day : ''));
+				if (slot === daySlot)
+				{
+					curPoint = day-1;
+				}
+			}
+			// ensure the line has always the same length (looks nicer)
+			for (; day < 32; day++)
+			{
+				addData(null, null, null);
+			}
+		}
+
+		function drawYearGraph()
+		{
+			var firstMon = -1;
+			var lastMon = -1;
+			var monDataMB = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0];
+			var monDataLo = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0];
+
+			// aggregate daily volumes into months
+			var len = servervolumes[serverNo].BytesPerDays.length;
+			var daySlot = servervolumes[serverNo].DaySlot;
+			var slotDelta = servervolumes[0].FirstDay - servervolumes[serverNo].FirstDay;
+			var startDate = new Date(monStartDate.getTime());
+			var day = 0;
+			for (var i = monStartIndex; i <= monEndIndex; i++, day++)
+			{
+				var dt = new Date(monStartDate.getTime() + day*24*60*60*1000);
+				var slot = i + slotDelta;
+				var bytes = servervolumes[serverNo].BytesPerDays[slot];
+				if (bytes)
+				{
+					var mon = dt.getMonth();
+					monDataMB[mon] += bytes.SizeMB;
+					monDataLo[mon] += bytes.SizeLo;
+					if (firstMon === -1)
+					{
+						firstMon = mon;
+					}
+					if (mon > lastMon)
+					{
+						lastMon = mon;
+					}
+					if (slot === daySlot)
+					{
+						curPoint = mon;
+					}
+				}
+			}
+
+			for (var i = 0; i < 12; i++)
+			{
+				addData(firstMon > -1 && i >= firstMon && i <= lastMon ? {SizeMB: monDataMB[i], SizeLo: monDataLo[i]} : null,
+					monthNames[i] + ' ' + curMonth, monthNames[i].substr(0, 3));
+			}
+		}
+
+		if (curRange === 'MIN')
+		{
+			drawMinuteGraph();
+		}
+		else if (curRange === 'HOUR')
+		{
+			drawHourGraph();
+		}
+		else if (curRange === 'DAY')
+		{
+			drawDayGraph();
+		}
+		else if (curRange === 'MONTH' && !monYear)
+		{
+			drawMonthGraph();
+		}
+		else if (curRange === 'MONTH' && monYear)
+		{
+			drawYearGraph();
+		}
+
+		var serieData = maxSizeMB > 1024*1024 ? chartDataTB :
+					maxSizeMB > 1024 ? chartDataGB :
+					maxSizeMB > 1 || maxSizeLo == 0 ? chartDataMB :
+					maxSizeLo > 1024 ? chartDataKB : chartDataB;
+
+		var units = maxSizeMB > 1024*1024 ? ' TB' :
+				maxSizeMB > 1024 ? ' GB' :
+				maxSizeMB > 1 || maxSizeLo == 0 ? ' MB' :
+				maxSizeLo > 1024 ? ' KB' : ' B';
+
+		var curPointData = [];
+		for (var i = 0; i < serieData.length; i++)
+		{
+			curPointData.push(i===curPoint ? serieData[i] : null);
+		}
+
+		chartData = {
+			serieData: serieData,
+			serieDataMB: chartDataMB,
+			serieDataLo: chartDataB,
+			sumMB: sumMB,
+			sumLo: sumLo,
+			dataLabels: dataLabels
+		};
+
+		$StatDialog_ChartBlock.empty();
+		Util.show('#StatDialog_ChartFix', true); // needed to avoid a temporary activation of scrollbar
+		$StatDialog_ChartBlock.html('<div id="StatDialog_Chart"></div>');
+		$('#StatDialog_Chart').chart({
+			values: { serie1 : serieData, serie2: curPointData },
+			labels: lineLabels,
+			type: 'line',
+			margins: [10, 15, 20, 60],
+			defaultSeries: {
+				rounded: 0.5,
+				fill: true,
+				plotProps: {
+					'stroke-width': 3.0
+				},
+				dot: true,
+				dotProps: {
+					stroke: '#FFF',
+					size: 3.0,
+					'stroke-width': 1.0,
+					fill: '#5AF'
+				},
+				highlight: {
+					scaleSpeed: 0,
+					scaleEasing: '>',
+					scale: 2.0
+				},
+				tooltip: {
+					active: false,
+				},
+	            color: '#5AF'
+	        },
+			series: {
+				serie2: {
+					dotProps: {
+						stroke: '#F21860',
+						fill: '#F21860',
+						size: 3.5,
+						'stroke-width': 2.5
+					},
+					highlight: {
+						scale: 1.5
+					},
+				}
+			},
+			defaultAxis: {
+				labels: true,
+				labelsProps: {
+					'font-size': 13
+				},
+				labelsDistance: 12
+			},
+			axis: {
+				l: {
+					labels: true,
+					suffix: units
+				}
+			},
+			features: {
+				grid: {
+					draw: [true, false],
+					forceBorder: true,
+					props: {
+						stroke: '#e0e0e0',
+						'stroke-width': 1
+					},
+					ticks: {
+						active: [true, false, false],
+						size: [6, 0],
+						props: {
+							stroke: '#e0e0e0'
+						}
+					}
+            	},
+				mousearea: {
+					type: 'axis',
+			        onMouseOver: chartMouseOver,
+					onMouseExit: chartMouseExit,
+					onMouseOut: chartMouseExit
+				},
+			}
+		});
+		Util.show('#StatDialog_ChartFix', false);
+
+		simulateMouseEvent();
+	}
+
+	function chartMouseOver(env, serie, index, mouseAreaData)
+	{
+		if (mouseOverIndex > -1)
+		{
+			var env = $('#StatDialog_Chart').data('elycharts_env');
+			$.elycharts.mousemanager.onMouseOutArea(env, false, mouseOverIndex, env.mouseAreas[mouseOverIndex]);
+		}
+		mouseOverIndex = index;
+		$('#StatDialog_Tooltip').html(chartData.dataLabels[index] + ': <span id="StatDialog_TooltipSize">' +
+			Util.formatSizeMB(chartData.serieDataMB[index], chartData.serieDataLo[index]) + '</span>');
+	}
+
+	function chartMouseExit(env, serie, index, mouseAreaData)
+	{
+		mouseOverIndex = -1
+		$('#StatDialog_Tooltip').html('Sum: <span id="StatDialog_TooltipSum">' + Util.formatSizeMB(chartData.sumMB, chartData.sumLo) + '</span>');
+	}
+
+	function simulateMouseEvent()
+	{
+		if (mouseOverIndex > -1)
+		{
+			var env = $('#StatDialog_Chart').data('elycharts_env');
+			$.elycharts.mousemanager.onMouseOverArea(env, false, mouseOverIndex, env.mouseAreas[mouseOverIndex]);
+		}
+		else
+		{
+			chartMouseExit()
+		}
+	}
+
+	this.chooseRange = function(range)
+	{
+		curRange = range;
+		updateRangeButtons();
+		mouseOverIndex = -1;
+		redrawChart();
+	}
+
+	function updateRangeButtons()
+	{
+		$('#StatDialog_Toolbar .volume-range').removeClass('btn-inverse');
+		$('#StatDialog_Volume_' + curRange + ',#StatDialog_Volume_' + curRange + '2,#StatDialog_Volume_' + curRange + '3').addClass('btn-inverse');
+	}
+
+	function updateServerList()
+	{
+		var menu = $('#StatDialog_ServerMenu');
+		var menuItemTemplate = $('.volume-server-template', menu);
+		var insertPos = $('#StatDialog_ServerMenuDivider', menu);
+
+		$('.volume-server', menu).remove();
+		for (var i=0; i < Status.status.NewsServers.length; i++)
+		{
+			var server = Status.status.NewsServers[i];
+			var name = server.ID + '. ' + Status.serverName(server);
+			var item = menuItemTemplate.clone().removeClass('volume-server-template hide').addClass('volume-server');
+			var a = $('a', item);
+			a.html('<i class="' + (i === curServer-1 ? 'icon-ok' : 'icon-empty') + '"></i>' + Util.textToHtml(name));
+			a.attr('data-id', server.ID);
+			a.click(chooseServer);
+			insertPos.before(item);
+		}
+
+		$('#StatDialog_ServerCap').text(curServer > 0 ? Status.serverName(Status.status.NewsServers[curServer-1]) : 'All news servers');
+		$('#StatDialog_ServerMenuAll i').toggleClass('icon-ok', curServer === 0).toggleClass('icon-empty', curServer !== 0);
+	}
+
+	function chooseServer(server)
+	{
+		curServer = parseInt($(this).attr('data-id'));
+		updateServerList();
+		redrawChart();
+	}
+
+	function updateMonthList()
+	{
+		monthListInitialized = true;
+
+		var firstDay = servervolumes[0].FirstDay;
+		var lastDay = firstDay + servervolumes[0].BytesPerDays.length - 1;
+		var curDay = Math.floor(Status.status.ServerTime / (24*60*60));
+		var firstDt = new Date(firstDay * 24*60*60 * 1000);
+		var lastDt = new Date(lastDay * 24*60*60 * 1000);
+		var curDt = new Date(curDay * 24*60*60 * 1000);
+
+		var menu = $('#StatDialog_MonthMenu');
+		var menuItemTemplate = $('.volume-month-template', menu);
+		var insertPos = $('#StatDialog_MonthMenuYears', menu);
+
+		$('.volume-month', menu).remove();
+
+		if (firstDay === 0)
+		{
+			// computer running NZBGet has incorrect date (before 1-Jan-2014)
+			return;
+		}
+
+		// show last three months in the menu
+		firstDt.setDate(1);
+		var monDt = new Date(curDt.getTime());
+		monDt.setDate(1);
+		for (var i=0; i<3; i++)
+		{
+			if (monDt < firstDt)
+			{
+				break;
+			}
+
+			var name = monthNames[monDt.getMonth()] + ' ' + monDt.getFullYear();
+			var monId = '' + monDt.getFullYear() + '-' + monDt.getMonth();
+
+			if (curMonth === null)
+			{
+				curMonth = monId;
+			}
+
+			var item = menuItemTemplate.clone().removeClass('volume-month-template hide').addClass('volume-month');
+			var a = $('a', item);
+			a.html('<i class="' + (monId === curMonth ? 'icon-ok' : 'icon-empty') + '"></i>' + name);
+			a.attr('data-id', monId);
+			a.click(chooseMonth);
+			insertPos.before(item);
+
+			monDt.setMonth(monDt.getMonth() - 1);
+		}
+
+		// show last two years in the menu
+		var insertPos = $('#StatDialog_MonthMenuDivider', menu);
+		firstDt.setMonth(0);
+		monDt = new Date(curDt.getTime());
+		monDt.setDate(1);
+		monDt.setMonth(0);
+		for (var i=0; i<2; i++)
+		{
+			if (monDt < firstDt)
+			{
+				break;
+			}
+
+			var name = monDt.getFullYear();
+			var monId = '' + monDt.getFullYear();
+
+			var item = menuItemTemplate.clone().removeClass('volume-month-template hide').addClass('volume-month');
+			var a = $('a', item);
+			a.html('<i class="' + (monId === curMonth  ? 'icon-ok' : 'icon-empty') + '"></i>' + name);
+			a.attr('data-id', monId);
+			a.click(chooseMonth);
+			insertPos.before(item);
+
+			monDt.setFullYear(monDt.getFullYear() - 1);
+		}
+
+		updatePeriod();
+	}
+
+	function updatePeriod()
+	{
+		var cap;
+		var monStart;
+		var monEnd;
+
+		monYear = curMonth.indexOf('-') === -1;
+		if (monYear)
+		{
+			cap = curMonth;
+			var year = parseInt(curMonth);
+			monStart = new Date(year, 0);
+			monEnd = new Date(year, 11, 31);
+		}
+		else
+		{
+			var month = parseInt(curMonth.substr(5, 2));
+			var year = parseInt(curMonth.substring(0, 4));
+			cap = monthNames[month] + ' ' + year;
+			monStart = new Date(year, month);
+			monEnd = new Date(year, month + 1);
+			monEnd.setDate(0);
+		}
+
+		$('#StatDialog_Volume_MONTH, #StatDialog_Volume_MONTH2').text(cap);
+
+		monStartDate = monStart;
+		var firstDay = servervolumes[0].FirstDay;
+		monStart = Math.ceil(monStart.getTime() / (1000*24*60*60));
+		monEnd = Math.ceil(monEnd.getTime() / (1000*24*60*60));
+		monStartIndex = monStart - firstDay;
+		monEndIndex = monEnd - firstDay;
+	}
+
+	function chooseMonth()
+	{
+		setMonth($(this).attr('data-id'));
+	}
+
+	function setMonth(month)
+	{
+		curRange = 'MONTH';
+		curMonth = month;
+		updateRangeButtons();
+		updateMonthList();
+		redrawChart();
+	}
+
+	this.chooseOtherMonth = function()
+	{
+		$StatRangeDialog_PeriodInput.val('');
+		redrawLock++;
+		$StatRangeDialog.modal({backdrop: false});
+	}
+
+	function StatRangeDialogHidden()
+	{
+		redrawLock--;
+		StatDialog.redraw();
+	}
+
+	this.setPeriod = function()
+	{
+		var period = $StatRangeDialog_PeriodInput.val();
+		if (period.indexOf('-') === -1)
+		{
+			var year = parseInt(period);
+			if (year < 2013 || year > 2050)
+			{
+				Notification.show('#Notif_StatRangeError');
+				return;
+			}
+			period = '' + year;
+		}
+		else
+		{
+			var month = parseInt(period.substr(5, 2));
+			var year = parseInt(period.substring(0, 4));
+			if (year < 2013 || year > 2050 || month < 1 || month > 12)
+			{
+				Notification.show('#Notif_StatRangeError');
+				return;
+			}
+			period = year + '-' + (month-1);
+		}
+
+		$StatRangeDialog.modal('hide');
+		setMonth(period);
 	}
 }(jQuery));
 
@@ -429,6 +1189,14 @@ var LimitDialog = (new function($)
 			function() { $ServerTable.fasttable('titleCheckClick') });
 		$ServerTable.on('mousedown', Util.disableShiftMouseDown);
 
+		if (UISettings.setFocus)
+		{
+			$LimitDialog.on('shown', function()
+			{
+				$('#LimitDialog_SpeedInput').focus();
+			});
+		}
+
 		$LimitDialog.on('hidden', function()
 		{
 			// cleanup
@@ -451,13 +1219,7 @@ var LimitDialog = (new function($)
 		for (var i=0; i < Status.status.NewsServers.length; i++)
 		{
 			var server = Status.status.NewsServers[i];
-			var name = Options.option('Server' + server.ID + '.Name');
-			if (name === null || name === '')
-			{
-				var host = Options.option('Server' + server.ID + '.Host');
-				var port = Options.option('Server' + server.ID + '.Port');
-				name = (host === null ? '' : host) + ':' + (port === null ? '119' : port);
-			}
+			var name = Status.serverName(server);
 			var fields = ['<div class="check img-check"></div>', server.ID + '. ' + name];
 			var item =
 			{
@@ -466,7 +1228,7 @@ var LimitDialog = (new function($)
 				search: ''
 			};
 			data.push(item);
-			
+
 			$ServerTable.fasttable('checkRow', server.ID, server.Active);
 		}
 		$ServerTable.fasttable('update', data);
@@ -489,9 +1251,9 @@ var LimitDialog = (new function($)
 				return;
 			}
 		}
-		
+
 		var oldRate = Util.round0(Status.status.DownloadLimit / 1024);
-		
+
 		if (rate != oldRate)
 		{
 			changed = true;
@@ -505,12 +1267,12 @@ var LimitDialog = (new function($)
 			saveServers();
 		}
 	}
-	
+
 	function saveServers()
 	{
 		var checkedRows = $ServerTable.fasttable('checkedRows');
 		var command = [];
-		
+
 		for (var i=0; i < Status.status.NewsServers.length; i++)
 		{
 			var server = Status.status.NewsServers[i];
@@ -521,7 +1283,7 @@ var LimitDialog = (new function($)
 				changed = true;
 			}
 		}
-		
+
 		if (command.length > 0)
 		{
 			RPC.call('editserver', command, function()
@@ -534,7 +1296,7 @@ var LimitDialog = (new function($)
 			completed();
 		}
 	}
-	
+
 	function completed()
 	{
 		$LimitDialog.modal('hide');
