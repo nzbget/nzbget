@@ -108,7 +108,7 @@ void ServerVolume::AddData(int iBytes)
 		int iTotalDelta = (int)(tLocCurTime - tLocDataTime);
 
 		int iSecDelta = iTotalDelta;
-		if (iSecDelta >= 60) iSecDelta = 60;
+		if (iSecDelta >= 60 || iTotalDelta < 0) iSecDelta = 60;
 		for (int i=0; i<iSecDelta; i++)
 		{
 			int iNulSlot = m_iSecSlot - i;
@@ -117,7 +117,7 @@ void ServerVolume::AddData(int iBytes)
 		}
 
 		int iMinDelta = iTotalDelta / 60;
-		if (iMinDelta >= 60) iMinDelta = 60;
+		if (iMinDelta >= 60 || iTotalDelta < 0) iMinDelta = 60;
 		if (iMinDelta == 0 && m_iMinSlot != iLastMinSlot) iMinDelta = 1;
 		for (int i=0; i<iMinDelta; i++)
 		{
@@ -127,7 +127,7 @@ void ServerVolume::AddData(int iBytes)
 		}
 
 		int iHourDelta = iTotalDelta / (60 * 60);
-		if (iHourDelta >= 24) iHourDelta = 24;
+		if (iHourDelta >= 24 || iTotalDelta < 0) iHourDelta = 24;
 		if (iHourDelta == 0 && m_iHourSlot != iLastHourSlot) iHourDelta = 1;
 		for (int i=0; i<iHourDelta; i++)
 		{
