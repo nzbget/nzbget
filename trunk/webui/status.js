@@ -397,6 +397,7 @@ var StatDialog = (new function($)
 	var monStartDate;
 	var chartData = null;
 	var mouseOverIndex = -1;
+	var clockOK = false;
 
 	var monthNames = ['January', 'February', 'March', 'April', 'May', 'Juny', 'July', 'August', 'September', 'October', 'November', 'December'];
 
@@ -998,9 +999,12 @@ var StatDialog = (new function($)
 
 		$('.volume-month', menu).remove();
 
-		if (firstDay === 0)
+		// does computer running NZBGet has correct date (after 1-Jan-2013)?
+		clockOK = firstDay > 0 && servervolumes[0].DaySlot > -1;
+
+		if (!clockOK)
 		{
-			// computer running NZBGet has incorrect date (before 1-Jan-2014)
+			updatePeriod();
 			return;
 		}
 
@@ -1064,6 +1068,14 @@ var StatDialog = (new function($)
 
 	function updatePeriod()
 	{
+		if (!clockOK)
+		{
+			monStartDate = new Date(2000, 1);
+			monStartIndex = -1;
+			monEndIndex = -1;
+			return;
+		}
+
 		var cap;
 		var monStart;
 		var monEnd;
