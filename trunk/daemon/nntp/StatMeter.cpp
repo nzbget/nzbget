@@ -95,7 +95,6 @@ void ServerVolume::AddData(int iBytes)
 	time_t tLocCurTime = tCurTime + g_pOptions->GetLocalTimeOffset();
 	time_t tLocDataTime = m_tDataTime + g_pOptions->GetLocalTimeOffset();
 
-	int iLastSecSlot = m_iSecSlot;
 	int iLastMinSlot = m_iMinSlot;
 	int iLastHourSlot = m_iHourSlot;
 
@@ -104,35 +103,44 @@ void ServerVolume::AddData(int iBytes)
 	if (tLocCurTime != tLocDataTime)
 	{
 		// clear seconds/minutes/hours slots if necessary
+		// also handle the backwards changes of system clock
 
 		int iTotalDelta = (int)(tLocCurTime - tLocDataTime);
+		int iDeltaSign = iTotalDelta >= 0 ? 1 : -1;
+		iTotalDelta = abs(iTotalDelta);
 
 		int iSecDelta = iTotalDelta;
-		if (iSecDelta >= 60 || iTotalDelta < 0) iSecDelta = 60;
-		for (int i=0; i<iSecDelta; i++)
+		if (iDeltaSign < 0) iSecDelta++;
+		if (iSecDelta >= 60) iSecDelta = 60;
+		for (int i = 0; i < iSecDelta; i++)
 		{
-			int iNulSlot = m_iSecSlot - i;
+			int iNulSlot = m_iSecSlot - i * iDeltaSign;
 			if (iNulSlot < 0) iNulSlot += 60;
+			if (iNulSlot >= 60) iNulSlot -= 60;
 			m_BytesPerSeconds[iNulSlot] = 0;
 		}
 
 		int iMinDelta = iTotalDelta / 60;
-		if (iMinDelta >= 60 || iTotalDelta < 0) iMinDelta = 60;
+		if (iDeltaSign < 0) iMinDelta++;
+		if (abs(iMinDelta) >= 60) iMinDelta = 60;
 		if (iMinDelta == 0 && m_iMinSlot != iLastMinSlot) iMinDelta = 1;
-		for (int i=0; i<iMinDelta; i++)
+		for (int i = 0; i < iMinDelta; i++)
 		{
-			int iNulSlot = m_iMinSlot - i;
+			int iNulSlot = m_iMinSlot - i * iDeltaSign;
 			if (iNulSlot < 0) iNulSlot += 60;
+			if (iNulSlot >= 60) iNulSlot -= 60;
 			m_BytesPerMinutes[iNulSlot] = 0;
 		}
 
 		int iHourDelta = iTotalDelta / (60 * 60);
-		if (iHourDelta >= 24 || iTotalDelta < 0) iHourDelta = 24;
+		if (iDeltaSign < 0) iHourDelta++;
+		if (iHourDelta >= 24) iHourDelta = 24;
 		if (iHourDelta == 0 && m_iHourSlot != iLastHourSlot) iHourDelta = 1;
-		for (int i=0; i<iHourDelta; i++)
+		for (int i = 0; i < iHourDelta; i++)
 		{
-			int iNulSlot = m_iHourSlot - i;
+			int iNulSlot = m_iHourSlot - i * iDeltaSign;
 			if (iNulSlot < 0) iNulSlot += 24;
+			if (iNulSlot >= 24) iNulSlot -= 24;
 			m_BytesPerHours[iNulSlot] = 0;
 		}
 	}
