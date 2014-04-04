@@ -753,7 +753,16 @@
 				
 				<div id="StatDialog_Tooltip">Total</div>
 				<div id="StatDialog_ChartBlock"></div>
-				<div id="StatDialog_ChartFix">&nbsp;</div>
+				
+				<hr>
+				<div id="StatDialog_CountersBlock">
+				<div class="row-fluid" id="StatDialog_Counters">
+					<div class="span3" id="StatDialog_Today">Today: <span id="StatDialog_TodaySize" class="stat-size">1.5 GB</span></div>
+					<div class="span3" id="StatDialog_Month">This month: <span id="StatDialog_MonthSize" class="stat-size">200 GB</span></div>
+					<div class="span3" id="StatDialog_AllTime">All-time: <span id="StatDialog_AllTimeSize" class="stat-size">20.3 TB</span></div>
+					<div class="span3" id="StatDialog_Custom" title="reset on Fri Apr 04 2014 09:32:24">Custom: <span id="StatDialog_CustomSize" class="stat-size">10.3 TB</span>, <a onclick="StatDialog.resetCounter()">reset</a></div>
+				</div>
+				</div>
 			</div>
 		</div>
 	</div>
@@ -1924,6 +1933,21 @@
 	<div id="ConfigDeleteConfirmDialog_OK">Delete</div>
 </div>
 
+<!-- *** RESET CUSTOM VOLUME COUNTER CONFIRMATION DIALOG DATA ******************************** -->
+
+<div class="hide" id="StatDialogResetConfirmDialog">
+	<div id="StatDialogResetConfirmDialog_Title">Reset</div>
+	<div id="StatDialogResetConfirmDialog_Text">
+		<p>
+		Reset custom counter for <span id="StatDialogResetConfirmDialog_Server">all news servers</span>?
+		</p>
+		<p class="confirm-help-block">
+		Last reset on <span id="StatDialogResetConfirmDialog_Time">Fri Apr 04 2014 09:32:24</span>.
+		</p>
+	</div>
+	<div id="StatDialogResetConfirmDialog_OK">Reset</div>
+</div>
+
 <!-- *** ADD FILES DIALOG ************************************************************ -->
 
 <div class="modal hide" id="AddDialog">
@@ -2448,7 +2472,11 @@
 </div>
 
 <div id="Notif_StatRangeError" data-duration="500" class="alert alert-error alert-center alert-center-small hide">
-    <strong>Incorrect period.</strong>
+    <strong>Incorrect period</strong>
+</div>
+
+<div id="Notif_StatReset" data-duration="1000" class="alert alert-inverse alert-center alert-center-small hide">
+    <strong>Volume reset</strong>
 </div>
 
 </body>

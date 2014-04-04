@@ -57,6 +57,8 @@ ServerVolume::ServerVolume()
 	m_iFirstDay = 0;
 	m_tDataTime = 0;
 	m_lTotalBytes = 0;
+	m_lCustomBytes = 0;
+	m_tCustomTime = time(NULL);
 	m_iSecSlot = 0;
 	m_iMinSlot = 0;
 	m_iHourSlot = 0;
@@ -154,8 +156,15 @@ void ServerVolume::AddData(int iBytes)
 		m_BytesPerDays[m_iDaySlot] += iBytes;
 	}
 	m_lTotalBytes += iBytes;
+	m_lCustomBytes += iBytes;
 
 	m_tDataTime = tCurTime;
+}
+
+void ServerVolume::ResetCustom()
+{
+	m_lCustomBytes = 0;
+	m_tCustomTime = time(NULL);
 }
 
 void ServerVolume::LogDebugInfo()

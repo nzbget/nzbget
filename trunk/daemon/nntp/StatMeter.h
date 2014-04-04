@@ -44,7 +44,9 @@ private:
 	VolumeArray			m_BytesPerDays;
 	int					m_iFirstDay;
 	long long			m_lTotalBytes;
+	long long			m_lCustomBytes;
 	time_t				m_tDataTime;
+	time_t				m_tCustomTime;
 	int					m_iSecSlot;
 	int					m_iMinSlot;
 	int					m_iHourSlot;
@@ -60,16 +62,20 @@ public:
 	int					GetFirstDay() { return m_iFirstDay; }
 	void				SetTotalBytes(long long lTotalBytes) { m_lTotalBytes = lTotalBytes; }
 	long long			GetTotalBytes() { return m_lTotalBytes; }
+	void				SetCustomBytes(long long lCustomBytes) { m_lCustomBytes = lCustomBytes; }
+	long long			GetCustomBytes() { return m_lCustomBytes; }
 	int					GetSecSlot() { return m_iSecSlot; }
 	int					GetMinSlot() { return m_iMinSlot; }
 	int					GetHourSlot() { return m_iHourSlot; }
 	int					GetDaySlot() { return m_iDaySlot; }
-	void				CalcSlots(time_t tLocCurTime);
-
 	time_t				GetDataTime() { return m_tDataTime; }
 	void				SetDataTime(time_t tDataTime) { m_tDataTime = tDataTime; }
+	time_t				GetCustomTime() { return m_tCustomTime; }
+	void				SetCustomTime(time_t tCustomTime) { m_tCustomTime = tCustomTime; }
 
 	void				AddData(int iBytes);
+	void				CalcSlots(time_t tLocCurTime);
+	void				ResetCustom();
 	void				LogDebugInfo();
 };
 

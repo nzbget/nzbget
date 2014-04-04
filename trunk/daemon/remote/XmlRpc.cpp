@@ -291,6 +291,12 @@ public:
 	virtual void		Execute();
 };
 
+class ResetServerVolumeXmlCommand: public XmlCommand
+{
+public:
+	virtual void		Execute();
+};
+
 
 //*****************************************************************
 // XmlRpcProcessor
@@ -677,6 +683,10 @@ XmlCommand* XmlRpcProcessor::CreateCommand(const char* szMethodName)
 	else if (!strcasecmp(szMethodName, "servervolumes"))
 	{
 		command = new ServerVolumesXmlCommand();
+	}
+	else if (!strcasecmp(szMethodName, "resetservervolume"))
+	{
+		command = new ResetServerVolumeXmlCommand();
 	}
 	else
 	{
@@ -3192,6 +3202,10 @@ void ServerVolumesXmlCommand::Execute()
 	"<member><name>TotalSizeLo</name><value><i4>%u</i4></value></member>\n"
 	"<member><name>TotalSizeHi</name><value><i4>%u</i4></value></member>\n"
 	"<member><name>TotalSizeMB</name><value><i4>%i</i4></value></member>\n"
+	"<member><name>CustomSizeLo</name><value><i4>%u</i4></value></member>\n"
+	"<member><name>CustomSizeHi</name><value><i4>%u</i4></value></member>\n"
+	"<member><name>CustomSizeMB</name><value><i4>%i</i4></value></member>\n"
+	"<member><name>CustomTime</name><value><i4>%i</i4></value></member>\n"
 	"<member><name>SecSlot</name><value><i4>%i</i4></value></member>\n"
 	"<member><name>MinSlot</name><value><i4>%i</i4></value></member>\n"
 	"<member><name>HourSlot</name><value><i4>%i</i4></value></member>\n"
@@ -3221,6 +3235,10 @@ void ServerVolumesXmlCommand::Execute()
 	"\"TotalSizeLo\" : %i,\n"
 	"\"TotalSizeHi\" : %i,\n"
 	"\"TotalSizeMB\" : %i,\n"
+	"\"CustomSizeLo\" : %i,\n"
+	"\"CustomSizeHi\" : %i,\n"
+	"\"CustomSizeMB\" : %i,\n"
+	"\"CustomTime\" : %i,\n"
 	"\"SecSlot\" : %i,\n"
 	"\"MinSlot\" : %i,\n"
 	"\"HourSlot\" : %i,\n"
@@ -3259,13 +3277,18 @@ void ServerVolumesXmlCommand::Execute()
 			AppendResponse(",\n");
 		}
 
-		unsigned long iSizeHi, iSizeLo, iSizeMB;
-		Util::SplitInt64(pServerVolume->GetTotalBytes(), &iSizeHi, &iSizeLo);
-		iSizeMB = (int)(pServerVolume->GetTotalBytes() / 1024 / 1024);
+		unsigned long iTotalSizeHi, iTotalSizeLo, iTotalSizeMB;
+		Util::SplitInt64(pServerVolume->GetTotalBytes(), &iTotalSizeHi, &iTotalSizeLo);
+		iTotalSizeMB = (int)(pServerVolume->GetTotalBytes() / 1024 / 1024);
+
+		unsigned long iCustomSizeHi, iCustomSizeLo, iCustomSizeMB;
+		Util::SplitInt64(pServerVolume->GetCustomBytes(), &iCustomSizeHi, &iCustomSizeLo);
+		iCustomSizeMB = (int)(pServerVolume->GetCustomBytes() / 1024 / 1024);
 
 		snprintf(szItemBuf, iItemBufSize, IsJson() ? JSON_VOLUME_ITEM_START : XML_VOLUME_ITEM_START,
 				 index, (int)pServerVolume->GetDataTime(), pServerVolume->GetFirstDay(),
-				 iSizeLo, iSizeHi, iSizeMB, pServerVolume->GetSecSlot(),
+				 iTotalSizeLo, iTotalSizeHi, iTotalSizeMB, iCustomSizeLo, iCustomSizeHi, iCustomSizeMB, 
+				 (int)pServerVolume->GetCustomTime(), pServerVolume->GetSecSlot(),
 				 pServerVolume->GetMinSlot(), pServerVolume->GetHourSlot(), pServerVolume->GetDaySlot());
 		szItemBuf[iItemBufSize-1] = '\0';
 		AppendResponse(szItemBuf);
@@ -3314,4 +3337,43 @@ void ServerVolumesXmlCommand::Execute()
 	g_pStatMeter->UnlockServerVolumes();
 
 	AppendResponse(IsJson() ? "\n]" : "</data></array>\n");
+}
+
+// bool resetservervolume(int serverid, string counter);
+void ResetServerVolumeXmlCommand::Execute()
+{
+	if (!CheckSafeMethod())
+	{
+		return;
+	}
+
+	int iServerId;
+	char* szCounter;
+	if (!NextParamAsInt(&iServerId) || !NextParamAsStr(&szCounter))
+	{
+		BuildErrorResponse(2, "Invalid parameter");
+		return;
+	}
+
+	if (strcmp(szCounter, "CUSTOM"))
+	{
+		BuildErrorResponse(3, "Invalid Counter");
+		return;
+	}
+
+	bool bOK = false;
+	ServerVolumes* pServerVolumes = g_pStatMeter->LockServerVolumes();
+	int index = 0;
+	for (ServerVolumes::iterator it = pServerVolumes->begin(); it != pServerVolumes->end(); it++, index++)
+	{
+		ServerVolume* pServerVolume = *it;
+		if (index == iServerId || iServerId == -1)
+		{
+			pServerVolume->ResetCustom();
+			bOK = true;
+		}
+	}
+	g_pStatMeter->UnlockServerVolumes();
+
+	BuildBoolResponse(bOK);
 }

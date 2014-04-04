@@ -1263,6 +1263,31 @@ ul.help > li {
 	margin-top: 20px;
 }
 
+.confirm-menu {
+	text-align: left;
+	min-width: 10px;
+	right: 0;
+	left: auto;
+}
+
+.footer-button-menu {
+	text-align: left;
+}
+
+.data-statistics-full {
+	width: 364px;
+}
+
+.data-statistics {
+	width: 290px;
+}
+
+.modal-center {
+	margin-top: 0;
+}
+
+/*** STATISTICS DIALOG */
+
 #StatisticsTab table {
 	width: 350px;
 }
@@ -1292,12 +1317,7 @@ ul.help > li {
 	font-style: italic;
 }
 
-.phone #StatDialog_Tooltip {
-	margin-top: 3px;
-	margin-bottom: 3px;
-}
-
-#StatDialog_TooltipSize {
+.stat-size {
 	font-weight: bold;
 }
 
@@ -1305,29 +1325,28 @@ ul.help > li {
 	font-weight: bold;
 }
 
-.confirm-menu {
-	text-align: left;
-	min-width: 10px;
-	right: 0;
-	left: auto;
+#StatDialog_CountersBlock {
+	padding-right: 20px;
 }
 
-.footer-button-menu {
-	text-align: left;
+#StatDialog_Counters {
+	margin-top: 8px;
+	text-align: center;
 }
 
-.data-statistics-full {
-	width: 364px;
+#StatDialog_Counters .span3 {
+	min-height: 0;
 }
 
-.data-statistics {
-	width: 290px;
+#StatDialog hr {
+	margin: 5px 10px;
 }
 
-.modal-center {
-	margin-top: 0;
+#StatDialog_Custom a,
+#StatDialog_Custom a:hover {
+	color: #000000;
+	cursor: pointer;
 }
-
 
 /*** CONFIG PAGE */
 #ConfigNav.nav-list a {
@@ -2302,6 +2321,17 @@ body.phone,
 
 .phone .config-settitle {
 	font-size: 18px;
+}
+
+/*** STATISTICS DIALOG */
+
+.phone #StatDialog_Tooltip {
+	margin-top: 3px;
+	margin-bottom: 3px;
+}
+
+.phone #StatDialog hr {
+	margin-top: 30px;
 }
 
 /* MEDIA SMALL SCREENS */
