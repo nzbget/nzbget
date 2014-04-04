@@ -17,7 +17,7 @@
 	<key>CFBundlePackageType</key>
 	<string>APPL</string>
 	<key>CFBundleShortVersionString</key>
-	<string>12.0-testing-r831M</string>
+	<string>13.0-testing-r977M</string>
 	<key>LSApplicationCategoryType</key>
 	<string>public.app-category.utilities</string>
 	<key>LSMinimumSystemVersion</key>
@@ -25,7 +25,7 @@
 	<key>LSUIElement</key>
 	<true/>
 	<key>NSHumanReadableCopyright</key>
-	<string>Copyright © 2007-2013 Andrey Prygunkov</string>
+	<string>Copyright © 2007-2014 Andrey Prygunkov</string>
 	<key>NSMainNibFile</key>
 	<string>MainApp</string>
 	<key>NSPrincipalClass</key>

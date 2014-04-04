@@ -40,9 +40,9 @@
 "Left.Minutes.Seconds"="%im %02is";
 "Left.Seconds"="%is";
 
-"Menu.LinkHomePage"="http://nzbget.sourceforge.net";
-"Menu.LinkDownloads"="http://nzbget.sourceforge.net/Download";
-"Menu.LinkForum"="http://nzbget.sourceforge.net/forum";
+"Menu.LinkHomePage"="http://nzbget.net";
+"Menu.LinkDownloads"="http://nzbget.net/download";
+"Menu.LinkForum"="http://nzbget.net/forum";
 
 "ShowWebUINoConnection.MessageText"="Could not establish connection to downloader (background process).";
 "ShowWebUINoConnection.InformativeText"="Try to restart the program via Troubleshooting-menu.";
