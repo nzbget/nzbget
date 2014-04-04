@@ -2098,7 +2098,7 @@ bool DiskState::SaveStats(Servers* pServers, ServerVolumes* pServerVolumes)
 		return false;
 	}
 
-	fprintf(outfile, "%s%i\n", FORMATVERSION_SIGNATURE, 2);
+	fprintf(outfile, "%s%i\n", FORMATVERSION_SIGNATURE, 3);
 
 	// save server names
 	SaveServerInfo(pServers, outfile);
@@ -2145,7 +2145,7 @@ bool DiskState::LoadStats(Servers* pServers, ServerVolumes* pServerVolumes)
 	char FileSignatur[128];
 	fgets(FileSignatur, sizeof(FileSignatur), infile);
 	int iFormatVersion = ParseFormatVersion(FileSignatur);
-	if (iFormatVersion > 2)
+	if (iFormatVersion > 3)
 	{
 		error("Could not load diskstate due to file version mismatch");
 		fclose(infile);
@@ -2410,11 +2410,12 @@ bool DiskState::SaveVolumeStat(ServerVolumes* pServerVolumes, FILE* outfile)
 	{
 		ServerVolume* pServerVolume = *it;
 
-		fprintf(outfile, "%i,%i\n", pServerVolume->GetFirstDay(), (int)pServerVolume->GetDataTime());
+		fprintf(outfile, "%i,%i,%i\n", pServerVolume->GetFirstDay(), (int)pServerVolume->GetDataTime(), (int)pServerVolume->GetCustomTime());
 
-		unsigned long High1, Low1;
+		unsigned long High1, Low1, High2, Low2;
 		Util::SplitInt64(pServerVolume->GetTotalBytes(), &High1, &Low1);
-		fprintf(outfile, "%lu,%lu\n", High1, Low1);
+		Util::SplitInt64(pServerVolume->GetCustomBytes(), &High2, &Low2);
+		fprintf(outfile, "%lu,%lu,%lu,%lu\n", High1, Low1, High2, Low2);
 
 		ServerVolume::VolumeArray* VolumeArrays[] = { pServerVolume->BytesPerSeconds(),
 			pServerVolume->BytesPerMinutes(), pServerVolume->BytesPerHours(), pServerVolume->BytesPerDays() };
@@ -2461,14 +2462,23 @@ bool DiskState::LoadVolumeStat(Servers* pServers, ServerVolumes* pServerVolumes,
 			}
 		}
 
-		int iFirstDay, iDataTime;
-		if (fscanf(infile, "%i,%i\n", &iFirstDay, &iDataTime) != 2) goto error;
+		int iFirstDay, iDataTime, iCustomTime;
+		unsigned long High1, Low1, High2 = 0, Low2 = 0;
+		if (iFormatVersion >= 3)
+		{
+			if (fscanf(infile, "%i,%i,%i\n", &iFirstDay, &iDataTime,&iCustomTime) != 3) goto error;
+			if (fscanf(infile, "%lu,%lu,%lu,%lu\n", &High1, &Low1, &High2, &Low2) != 4) goto error;
+			if (pServerVolume) pServerVolume->SetCustomTime((time_t)iCustomTime);
+		}
+		else
+		{
+			if (fscanf(infile, "%i,%i\n", &iFirstDay, &iDataTime) != 2) goto error;
+			if (fscanf(infile, "%lu,%lu\n", &High1, &Low1) != 2) goto error;
+		}
 		if (pServerVolume) pServerVolume->SetFirstDay(iFirstDay);
 		if (pServerVolume) pServerVolume->SetDataTime((time_t)iDataTime);
-
-		unsigned long High1, Low1;
-		if (fscanf(infile, "%lu,%lu\n", &High1, &Low1) != 2) goto error;
 		if (pServerVolume) pServerVolume->SetTotalBytes(Util::JoinInt64(High1, Low1));
+		if (pServerVolume) pServerVolume->SetCustomBytes(Util::JoinInt64(High2, Low2));
 
 		ServerVolume::VolumeArray* VolumeArrays[] = { pServerVolume ? pServerVolume->BytesPerSeconds() : NULL,
 			pServerVolume ? pServerVolume->BytesPerMinutes() : NULL,

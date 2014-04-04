@@ -377,6 +377,12 @@ var StatDialog = (new function($)
 	var $StatDialog_Server;
 	var $StatRangeDialog;
 	var $StatRangeDialog_PeriodInput;
+	var $StatDialog_Tooltip;
+	var $StatDialog_TodaySize;
+	var $StatDialog_MonthSize;
+	var $StatDialog_AllTimeSize;
+	var $StatDialog_CustomSize;
+	var $StatDialog_Custom;
 
 	// State
 	var visible = false;
@@ -417,6 +423,12 @@ var StatDialog = (new function($)
 		$StatDialog_Server = $('#StatDialog_Server');
 		$StatRangeDialog = $('#StatRangeDialog');
 		$StatRangeDialog_PeriodInput = $('#StatRangeDialog_PeriodInput');
+		$StatDialog_Tooltip = $('#StatDialog_Tooltip');
+		$StatDialog_TodaySize = $('#StatDialog_TodaySize');
+		$StatDialog_MonthSize = $('#StatDialog_MonthSize');
+		$StatDialog_AllTimeSize = $('#StatDialog_AllTimeSize');
+		$StatDialog_CustomSize = $('#StatDialog_CustomSize');
+		$StatDialog_Custom = $('#StatDialog_Custom');
 
 		$('#StatDialog_ServerMenuAll').click(chooseServer);
 		$('#StatDialog_Volumes').click(tabClick);
@@ -822,7 +834,6 @@ var StatDialog = (new function($)
 		};
 
 		$StatDialog_ChartBlock.empty();
-		Util.show('#StatDialog_ChartFix', true); // needed to avoid a temporary activation of scrollbar
 		$StatDialog_ChartBlock.html('<div id="StatDialog_Chart"></div>');
 		$('#StatDialog_Chart').chart({
 			values: { serie1 : serieData, serie2: curPointData },
@@ -902,9 +913,10 @@ var StatDialog = (new function($)
 				},
 			}
 		});
-		Util.show('#StatDialog_ChartFix', false);
 
 		simulateMouseEvent();
+
+		updateCounters();
 	}
 
 	function chartMouseOver(env, serie, index, mouseAreaData)
@@ -915,14 +927,19 @@ var StatDialog = (new function($)
 			$.elycharts.mousemanager.onMouseOutArea(env, false, mouseOverIndex, env.mouseAreas[mouseOverIndex]);
 		}
 		mouseOverIndex = index;
-		$('#StatDialog_Tooltip').html(chartData.dataLabels[index] + ': <span id="StatDialog_TooltipSize">' +
+		$StatDialog_Tooltip.html(chartData.dataLabels[index] + ': <span class="stat-size">' +
 			Util.formatSizeMB(chartData.serieDataMB[index], chartData.serieDataLo[index]) + '</span>');
 	}
 
 	function chartMouseExit(env, serie, index, mouseAreaData)
 	{
-		mouseOverIndex = -1
-		$('#StatDialog_Tooltip').html('Sum: <span id="StatDialog_TooltipSum">' + Util.formatSizeMB(chartData.sumMB, chartData.sumLo) + '</span>');
+		mouseOverIndex = -1;
+		var title = curRange === 'MIN' ? '60 seconds' : 
+			curRange === 'HOUR' ? '60 minutes' : 
+			curRange === 'DAY' ? '24 hours' : 
+			curRange === 'MONTH' ? $('#StatDialog_Volume_MONTH').text() : 'Sum';
+		
+		$StatDialog_Tooltip.html(title + ': <span class="stat-size">' + Util.formatSizeMB(chartData.sumMB, chartData.sumLo) + '</span>');
 	}
 
 	function simulateMouseEvent()
@@ -1108,6 +1125,51 @@ var StatDialog = (new function($)
 		monEndIndex = monEnd - firstDay;
 	}
 
+	function updateCounters()
+	{
+		if (servervolumes[curServer].DaySlot > -1)
+		{
+			var bytes = servervolumes[curServer].BytesPerDays[servervolumes[curServer].DaySlot];
+			$StatDialog_TodaySize.html(Util.formatSizeMB(bytes.SizeMB, bytes.SizeLo));
+		}
+
+		$StatDialog_AllTimeSize.html(Util.formatSizeMB(servervolumes[curServer].TotalSizeMB, servervolumes[curServer].TotalSizeLo));
+		$StatDialog_CustomSize.html(Util.formatSizeMB(servervolumes[curServer].CustomSizeMB, servervolumes[curServer].CustomSizeLo));
+		$StatDialog_Custom.attr('title', 'reset on ' + Util.formatDateTime(servervolumes[curServer].CustomTime));
+
+		// calculate volume for current month
+		
+		var sizeMB = 0;
+		var sizeLo = 0;
+
+		if (clockOK)
+		{
+			var firstDay = servervolumes[0].FirstDay;
+			var monStart = new Date((firstDay + servervolumes[0].DaySlot) * 24*60*60 * 1000);
+			monStart.setDate(1);
+			var monEnd = new Date(monStart.getFullYear(), monStart.getMonth() + 1);
+			monEnd.setDate(0);
+			
+			monStart = Math.ceil(monStart.getTime() / (1000*24*60*60));
+			monEnd = Math.ceil(monEnd.getTime() / (1000*24*60*60));
+			var monStartIndex = monStart - firstDay;
+			var monEndIndex = monEnd - firstDay;
+			var slotDelta = servervolumes[0].FirstDay - servervolumes[curServer].FirstDay;
+			for (var i = monStartIndex; i <= monEndIndex; i++)
+			{
+				var slot = i + slotDelta;
+				var bytes = servervolumes[curServer].BytesPerDays[slot];
+				if (bytes)
+				{
+					sizeMB += bytes.SizeMB;
+					sizeLo += bytes.SizeLo;
+				}
+			}
+		}
+
+		$StatDialog_MonthSize.html(Util.formatSizeMB(sizeMB, sizeLo));
+	}
+
 	function chooseMonth()
 	{
 		setMonth($(this).attr('data-id'));
@@ -1162,6 +1224,22 @@ var StatDialog = (new function($)
 
 		$StatRangeDialog.modal('hide');
 		setMonth(period);
+	}
+
+	this.resetCounter = function()
+	{
+		$('#StatDialogResetConfirmDialog_Server').text(curServer === 0 ? 'all news servers' : $('#StatDialog_ServerCap').text());
+		$('#StatDialogResetConfirmDialog_Time').text(Util.formatDateTime(servervolumes[curServer].CustomTime));
+		ConfirmDialog.showModal('StatDialogResetConfirmDialog', doResetCounter);
+	}
+
+	function doResetCounter()
+	{
+		RPC.call('resetservervolume', [curServer === 0 ? -1 : curServer, 'CUSTOM'], function()
+		{
+			Notification.show('#Notif_StatReset');
+			Refresher.update();
+		});
 	}
 }(jQuery));
 
