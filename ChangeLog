@@ -105,7 +105,7 @@ nzbget-12.0:
         - duplicate properties (dupekey, dupescore and dupemode) can now
           be viewed and changed in download-edit-dialog and
           history-edit-dialog via new button "Dupe";
-        - for full documentation see http://nzbget.sourceforge.net/RSS#Duplicates;
+        - for full documentation see http://nzbget.net/RSS#Duplicates;
   - created NZBGet.app - NZBGet is now a user friendly Mac OSX application
           with easy installation and seamless integration into OS UI:
           works in background, is controlled from a web-browser, few
@@ -141,7 +141,7 @@ nzbget-12.0:
           for platform;
         - the script is then called by NZBGet when user clicks on install-button;
         - the script must download and install new version;
-        - for more info visit http://nzbget.sourceforge.net/Packaging;
+        - for more info visit http://nzbget.net/Packaging;
   - news servers can now be temporarily disabled via speed limit dialog
     without reloading of the program:
         - new option "ServerX.Active" to disable servers via settings;

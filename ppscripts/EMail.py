@@ -163,7 +163,7 @@ if os.environ['NZBPO_POSTPROCESSLOG'] == 'Always' or \
 	# and call method "postqueue", which returns the list of post-processing job.
 	# The first item in the list is current job. This item has a field 'Log',
 	# containing an array of log-entries.
-	# For more info visit http://nzbget.sourceforge.net/RPC_API_reference
+	# For more info visit http://nzbget.net/RPC_API_reference
 	
 	# First we need to know connection info: host, port and password of NZBGet server.
 	# NZBGet passes all configuration options to post-processing script as
