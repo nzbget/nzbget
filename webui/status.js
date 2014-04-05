@@ -999,16 +999,29 @@ var StatDialog = (new function($)
 		redrawChart();
 	}
 
+	function dayToDate(epochDay)
+	{
+		var dt = new Date(epochDay * 24*60*60 * 1000);
+		dt = new Date(dt.getTime() + dt.getTimezoneOffset() * 60*1000);
+		return dt;
+	}
+
+	function dateToDay(date)
+	{
+		var epochDay = Math.ceil((date.getTime() - date.getTimezoneOffset() * 60*1000) / (1000*24*60*60));
+		return epochDay;
+	}
+	
 	function updateMonthList()
 	{
 		monthListInitialized = true;
 
 		var firstDay = servervolumes[0].FirstDay;
 		var lastDay = firstDay + servervolumes[0].BytesPerDays.length - 1;
-		var curDay = Math.floor(Status.status.ServerTime / (24*60*60));
-		var firstDt = new Date(firstDay * 24*60*60 * 1000);
-		var lastDt = new Date(lastDay * 24*60*60 * 1000);
-		var curDt = new Date(curDay * 24*60*60 * 1000);
+		var curDay = firstDay + servervolumes[0].DaySlot;
+		var firstDt = dayToDate(firstDay);
+		var lastDt = dayToDate(lastDay);
+		var curDt = dayToDate(curDay);
 
 		var menu = $('#StatDialog_MonthMenu');
 		var menuItemTemplate = $('.volume-month-template', menu);
@@ -1119,8 +1132,8 @@ var StatDialog = (new function($)
 
 		monStartDate = monStart;
 		var firstDay = servervolumes[0].FirstDay;
-		monStart = Math.ceil(monStart.getTime() / (1000*24*60*60));
-		monEnd = Math.ceil(monEnd.getTime() / (1000*24*60*60));
+		monStart = dateToDay(monStart);
+		monEnd = dateToDay(monEnd);
 		monStartIndex = monStart - firstDay;
 		monEndIndex = monEnd - firstDay;
 	}
@@ -1145,13 +1158,13 @@ var StatDialog = (new function($)
 		if (clockOK)
 		{
 			var firstDay = servervolumes[0].FirstDay;
-			var monStart = new Date((firstDay + servervolumes[0].DaySlot) * 24*60*60 * 1000);
+			var monStart = dayToDate(firstDay + servervolumes[0].DaySlot);
 			monStart.setDate(1);
 			var monEnd = new Date(monStart.getFullYear(), monStart.getMonth() + 1);
 			monEnd.setDate(0);
 			
-			monStart = Math.ceil(monStart.getTime() / (1000*24*60*60));
-			monEnd = Math.ceil(monEnd.getTime() / (1000*24*60*60));
+			monStart = dateToDay(monStart);
+			monEnd = dateToDay(monEnd);
 			var monStartIndex = monStart - firstDay;
 			var monEndIndex = monEnd - firstDay;
 			var slotDelta = servervolumes[0].FirstDay - servervolumes[curServer].FirstDay;
