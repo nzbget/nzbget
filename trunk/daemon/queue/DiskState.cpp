@@ -2457,7 +2457,7 @@ bool DiskState::LoadVolumeStat(Servers* pServers, ServerVolumes* pServerVolumes,
 				NewsServer* pNewsServer = *it;
 				if (pNewsServer->GetStateID() == i)
 				{
-					pServerVolume = pServerVolumes->at(pNewsServer->GetStateID());
+					pServerVolume = pServerVolumes->at(pNewsServer->GetID());
 				}
 			}
 		}
