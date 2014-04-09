@@ -122,7 +122,7 @@ protected:
 public:
 						StatMeter();
 						~StatMeter();
-	void				InitVolumes();
+	void				Init();
 	int					CalcCurrentDownloadSpeed();
 	void				AddSpeedReading(int iBytes);
 	void				AddServerData(int iBytes, int iServerID);

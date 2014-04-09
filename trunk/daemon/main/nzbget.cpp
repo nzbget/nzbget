@@ -274,7 +274,7 @@ void Run(bool bReload)
 	if (!g_pOptions->GetRemoteClientMode())
 	{
 		g_pServerPool->InitConnections();
-		g_pStatMeter->InitVolumes();
+		g_pStatMeter->Init();
 	}
 
 #ifndef WIN32

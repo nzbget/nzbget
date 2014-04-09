@@ -242,6 +242,21 @@ StatMeter::~StatMeter()
 	debug("StatMeter destroyed");
 }
 
+void StatMeter::Init()
+{
+	m_tStartServer = time(NULL);
+	m_tLastCheck = m_tStartServer;
+	AdjustTimeOffset();
+
+	m_ServerVolumes.resize(1 + g_pServerPool->GetServers()->size());
+	m_ServerVolumes[0] = new ServerVolume();
+	for (Servers::iterator it = g_pServerPool->GetServers()->begin(); it != g_pServerPool->GetServers()->end(); it++)
+	{
+		NewsServer* pServer = *it;
+		m_ServerVolumes[pServer->GetID()] = new ServerVolume();
+	}
+}
+
 void StatMeter::AdjustTimeOffset()
 {
 	time_t tUtcTime = time(NULL);
@@ -262,13 +277,6 @@ void StatMeter::AdjustTimeOffset()
  */
 void StatMeter::IntervalCheck()
 {
-	if (!m_tLastCheck)
-	{
-		m_tStartServer = time(NULL);
-		m_tLastCheck = m_tStartServer;
-		AdjustTimeOffset();
-	}
-
 	time_t m_tCurTime = time(NULL);
 	time_t tDiff = m_tCurTime - m_tLastCheck;
 	if (tDiff > 60 || tDiff < 0)
@@ -460,17 +468,6 @@ void StatMeter::LogDebugInfo()
 		pServerVolume->LogDebugInfo();
 	}
 	m_mutexVolume.Unlock();
-}
-
-void StatMeter::InitVolumes()
-{
-	m_ServerVolumes.resize(1 + g_pServerPool->GetServers()->size());
-	m_ServerVolumes[0] = new ServerVolume();
-	for (Servers::iterator it = g_pServerPool->GetServers()->begin(); it != g_pServerPool->GetServers()->end(); it++)
-	{
-		NewsServer* pServer = *it;
-		m_ServerVolumes[pServer->GetID()] = new ServerVolume();
-	}
 }
 
 void StatMeter::AddServerData(int iBytes, int iServerID)
