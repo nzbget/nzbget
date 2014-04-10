@@ -48,6 +48,7 @@ var Downloads = (new function($)
 	var groups;
 	var urls;
 	var nameColumnWidth = null;
+	var minLevel = null;
 
 	this.init = function(options)
 	{
@@ -209,7 +210,7 @@ var Downloads = (new function($)
 		var progress = DownloadsUI.buildProgress(group, item.data.size, item.data.remaining, item.data.estimated);
 		var dupe = DownloadsUI.buildDupe(group.DupeKey, group.DupeScore, group.DupeMode);
 
-		var name = '<a href="#" nzbid="' + group.NZBID + '">' + Util.textToHtml(Util.formatNZBName(group.NZBName)) + '</a>';
+		var name = '<a href="#" data-nzbid="' + group.NZBID + '">' + Util.textToHtml(Util.formatNZBName(group.NZBName)) + '</a>';
 
 		var url = '';
 		if (group.Kind === 'URL')
@@ -225,18 +226,26 @@ var Downloads = (new function($)
 				(group.Health >= group.CriticalHealth ? 'label-warning' : 'label-important') +
 				'">health: ' + Math.floor(group.Health / 10) + '%</span> ';
 		}
+
+		var backup = '';
+		var backupPercent = calcBackupPercent(group);
+		if (backupPercent > 0)
+		{
+			backup = ' <a href="#" data-nzbid="' + group.NZBID + '" data-area="backup" class="badge-link"><span class="label label-warning" title="using backup news servers">backup: ' + 
+				(backupPercent < 10 ? Util.round1(backupPercent) : Util.round0(backupPercent)) + '%</span> ';
+		}
 		
 		var category = Util.textToHtml(group.Category);
 
 		if (!UISettings.miniTheme)
 		{
-			var info = name + ' ' + url + priority + dupe + health + progresslabel;
+			var info = name + ' ' + url + priority + dupe + health + backup + progresslabel;
 			item.fields = ['<div class="check img-check"></div>', status, info, category, item.data.age, progress, item.data.estimated];
 		}
 		else
 		{
 			var info = '<div class="check img-check"></div><span class="row-title">' + name + '</span>' + url +
-				' ' + (group.status === 'queued' ? '' : status) + ' ' + priority + dupe + health;
+				' ' + (group.status === 'queued' ? '' : status) + ' ' + priority + dupe + health + backup;
 			if (category)
 			{
 				info += ' <span class="label label-status">' + category + '</span>';
@@ -292,6 +301,46 @@ var Downloads = (new function($)
 			group.status = 'queued';
 		}
 	}
+	
+	function calcBackupPercent(group)
+	{
+		var downloadedArticles = group.SuccessArticles + group.FailedArticles;
+		if (downloadedArticles === 0)
+		{
+			return 0;
+		}
+		
+		if (minLevel === null)
+		{
+			for (var i=0; i < Status.status.NewsServers.length; i++)
+			{
+				var server = Status.status.NewsServers[i];
+				var level = parseInt(Options.option('Server' + server.ID + '.Level'));
+				if (minLevel === null || minLevel > level)
+				{
+					minLevel = level;
+				}
+			}	
+		}
+		
+		var backupArticles = 0;
+		for (var j=0; j < group.ServerStats.length; j++)
+		{
+			var stat = group.ServerStats[j];
+			var level = parseInt(Options.option('Server' + stat.ServerID + '.Level'));
+			if (level > minLevel && stat.SuccessArticles > 0)
+			{
+				backupArticles += stat.SuccessArticles;
+			}
+		}
+
+		var backupPercent = 0;
+		if (backupArticles > 0)
+		{
+			backupPercent = backupArticles * 100.0 / downloadedArticles;
+		}
+		return backupPercent;
+	}
 
 	this.recordsPerPageChange = function()
 	{
@@ -327,9 +376,10 @@ var Downloads = (new function($)
 	function itemClick(e)
 	{
 		e.preventDefault();
-		var nzbid = $(this).attr('nzbid');
+		var nzbid = $(this).attr('data-nzbid');
+		var area = $(this).attr('data-area');
 		$(this).blur();
-		DownloadsEditDialog.showModal(nzbid, groups);
+		DownloadsEditDialog.showModal(nzbid, groups, area);
 	}
 
 	function editCompleted()

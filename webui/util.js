@@ -389,7 +389,7 @@ var TabDialog = (new function($)
 				fromTab.hide();
 				fromTab.css({position: '', width: '', height: '', left: ''});
 				toTab.css({position: '', width: '', height: '', left: ''});
-				dialog.css({overflow: '', width: (fullscreen ? 'auto' : ''), height: (fullscreen ? 'auto' : ''), 'margin-left': (fullscreen ? 'auto' : '')});
+				dialog.css({overflow: '', width: (fullscreen ? 'auto' : ''), height: (fullscreen ? 'auto' : ''), 'margin-left': (fullscreen ? dialogMargin : '')});
 				dialog.toggleClass(toggleClass);
 				if (fullscreen)
 				{
