@@ -72,6 +72,7 @@ private:
 	void					CheckHealth(DownloadQueue* pDownloadQueue, FileInfo* pFileInfo);
 	void					ResetHangingDownloads();
 	void					AdjustDownloadsLimit();
+	void					Load();
 
 protected:
 	virtual void			LogDebugInfo();

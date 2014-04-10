@@ -39,6 +39,41 @@ class NZBInfo;
 class DownloadQueue;
 class PostInfo;
 
+class ServerStat
+{
+private:
+	int					m_iServerID;
+	int					m_iSuccessArticles;
+	int					m_iFailedArticles;
+
+public:
+						ServerStat(int iServerID);
+	int					GetServerID() { return m_iServerID; }
+	int					GetSuccessArticles() { return m_iSuccessArticles; }
+	void				SetSuccessArticles(int iSuccessArticles) { m_iSuccessArticles = iSuccessArticles; }
+	int					GetFailedArticles() { return m_iFailedArticles; }
+	void				SetFailedArticles(int iFailedArticles) { m_iFailedArticles = iFailedArticles; }
+};
+
+typedef std::vector<ServerStat*>	ServerStatListBase;
+
+class ServerStatList : public ServerStatListBase
+{
+public:
+	enum EStatOperation
+	{
+		soSet,
+		soAdd,
+		soSubtract
+	};
+	
+public:
+						~ServerStatList();
+	void				StatOp(int iServerID, int iSuccessArticles, int iFailedArticles, EStatOperation eStatOperation);
+	void				ListOp(ServerStatList* pServerStats, EStatOperation eStatOperation);
+	void				Clear();
+};
+
 class ArticleInfo
 {
 public:
@@ -83,6 +118,7 @@ private:
 	NZBInfo*			m_pNZBInfo;
 	Articles			m_Articles;
 	Groups				m_Groups;
+	ServerStatList		m_ServerStats;
 	char* 				m_szSubject;
 	char*				m_szFilename;
 	long long 			m_lSize;
@@ -168,6 +204,7 @@ public:
 	void				SetActiveDownloads(int iActiveDownloads);
 	bool				GetAutoDeleted() { return m_bAutoDeleted; }
 	void				SetAutoDeleted(bool bAutoDeleted) { m_bAutoDeleted = bAutoDeleted; }
+	ServerStatList*		GetServerStats() { return &m_ServerStats; }
 };
                               
 typedef std::deque<FileInfo*> FileListBase;
@@ -245,33 +282,6 @@ public:
 	void				Add(const char* szScriptName, ScriptStatus::EStatus eStatus);
 	void				Clear();
 	ScriptStatus::EStatus	CalcTotalStatus();
-};
-
-class ServerStat
-{
-private:
-	int					m_iServerID;
-	int					m_iSuccessArticles;
-	int					m_iFailedArticles;
-
-public:
-						ServerStat(int iServerID);
-	int					GetServerID() { return m_iServerID; }
-	int					GetSuccessArticles() { return m_iSuccessArticles; }
-	void				SetSuccessArticles(int iSuccessArticles) { m_iSuccessArticles = iSuccessArticles; }
-	int					GetFailedArticles() { return m_iFailedArticles; }
-	void				SetFailedArticles(int iFailedArticles) { m_iFailedArticles = iFailedArticles; }
-};
-
-typedef std::vector<ServerStat*>	ServerStatListBase;
-
-class ServerStatList : public ServerStatListBase
-{
-public:
-						~ServerStatList();
-	void				SetStat(int iServerID, int iSuccessArticles, int iFailedArticles, bool bAdd);
-	void				Add(ServerStatList* pServerStats);
-	void				Clear();
 };
 
 enum EDupeMode
@@ -390,6 +400,8 @@ private:
 	int					m_iTotalArticles;
 	int					m_iSuccessArticles;
 	int					m_iFailedArticles;
+	int					m_iCurrentSuccessArticles;
+	int					m_iCurrentFailedArticles;
 	time_t				m_tMinTime;
 	time_t				m_tMaxTime;
 	int					m_iPriority;
@@ -422,6 +434,7 @@ private:
 	NZBParameterList	m_ppParameters;
 	ScriptStatusList	m_scriptStatuses;
 	ServerStatList		m_ServerStats;
+	ServerStatList		m_CurrentServerStats;
 	Mutex				m_mutexLog;
 	Messages			m_Messages;
 	int					m_iIDMessageGen;
@@ -492,6 +505,10 @@ public:
 	void 				SetSuccessArticles(int iSuccessArticles) { m_iSuccessArticles = iSuccessArticles; }
 	int					GetFailedArticles() { return m_iFailedArticles; }
 	void 				SetFailedArticles(int iFailedArticles) { m_iFailedArticles = iFailedArticles; }
+	int					GetCurrentSuccessArticles() { return m_iCurrentSuccessArticles; }
+	void 				SetCurrentSuccessArticles(int iCurrentSuccessArticles) { m_iCurrentSuccessArticles = iCurrentSuccessArticles; }
+	int					GetCurrentFailedArticles() { return m_iCurrentFailedArticles; }
+	void 				SetCurrentFailedArticles(int iCurrentFailedArticles) { m_iCurrentFailedArticles = iCurrentFailedArticles; }
 	int					GetPriority() { return m_iPriority; }
 	void				SetPriority(int iPriority) { m_iPriority = iPriority; }
 	time_t				GetMinTime() { return m_tMinTime; }
@@ -542,6 +559,7 @@ public:
 	NZBParameterList*	GetParameters() { return &m_ppParameters; }				// needs locking (for shared objects)
 	ScriptStatusList*	GetScriptStatuses() { return &m_scriptStatuses; }        // needs locking (for shared objects)
 	ServerStatList*		GetServerStats() { return &m_ServerStats; }
+	ServerStatList*		GetCurrentServerStats() { return &m_CurrentServerStats; }
 	int					CalcHealth();
 	int					CalcCriticalHealth(bool bAllowEstimation);
 	const char*			GetDupeKey() { return m_szDupeKey; }					// needs locking (for shared objects)

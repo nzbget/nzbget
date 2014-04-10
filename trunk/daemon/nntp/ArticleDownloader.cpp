@@ -128,22 +128,7 @@ void ArticleDownloader::Run()
 	BuildOutputFilename();
 
 	m_szResultFilename = m_pArticleInfo->GetResultFilename();
-
-	if (g_pOptions->GetContinuePartial())
-	{
-		if (Util::FileExists(m_szResultFilename))
-		{
-			// file exists from previous program's start
-			detail("Article %s already downloaded, skipping", m_szInfoName);
-			FreeConnection(true);
-			SetStatus(adFinished);
-			Notify(NULL);
-			return;
-		}
-	}
-
 	EStatus Status = adFailed;
-
 	int iRetries = g_pOptions->GetRetries() > 0 ? g_pOptions->GetRetries() : 1;
 	int iRemainedRetries = iRetries;
 	Servers failedServers;
@@ -189,7 +174,7 @@ void ArticleDownloader::Run()
 
 			if (Status == adFinished || Status == adFailed || Status == adNotFound || Status == adCrcError)
 			{
-				m_ServerStats.SetStat(pNewsServer->GetID(), Status == adFinished ? 1 : 0, Status == adFinished ? 0 : 1, false);
+				m_ServerStats.StatOp(pNewsServer->GetID(), Status == adFinished ? 1 : 0, Status == adFinished ? 0 : 1, ServerStatList::soSet);
 			}
 		}
 
@@ -816,19 +801,6 @@ ArticleDownloader::EStatus ArticleDownloader::DecodeCheck()
 		if (bOK)
 		{
 			detail("Successfully downloaded %s", m_szInfoName);
-
-			if (bDirectWrite && g_pOptions->GetContinuePartial())
-			{
-				// create empty flag-file to indicate that the artcile was downloaded
-				FILE* flagfile = fopen(m_szResultFilename, "wb");
-				if (!flagfile)
-				{
-					error("Could not create file %s", m_szResultFilename);
-					// this error can be ignored
-				}
-				fclose(flagfile);
-			}
-
 			return adFinished;
 		}
 		else
@@ -1112,7 +1084,7 @@ void ArticleDownloader::CompleteFileParts()
 		}
 	}
 
-	if (!bDirectWrite || g_pOptions->GetContinuePartial())
+	if (!bDirectWrite)
 	{
 		for (FileInfo::Articles::iterator it = m_pFileInfo->GetArticles()->begin(); it != m_pFileInfo->GetArticles()->end(); it++)
 		{

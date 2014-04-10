@@ -516,15 +516,11 @@ void StatMeter::Save()
 	m_mutexVolume.Unlock();
 }
 
-void StatMeter::Load()
+bool StatMeter::Load(bool* pPerfectServerMatch)
 {
-	if (!g_pOptions->GetServerMode())
-	{
-		return;
-	}
-
 	m_mutexVolume.Lock();
-	g_pDiskState->LoadStats(g_pServerPool->GetServers(), &m_ServerVolumes);
+
+	bool bOK = g_pDiskState->LoadStats(g_pServerPool->GetServers(), &m_ServerVolumes, pPerfectServerMatch);
 
 	for (ServerVolumes::iterator it = m_ServerVolumes.begin(); it != m_ServerVolumes.end(); it++)
 	{
@@ -533,4 +529,6 @@ void StatMeter::Load()
 	}
 
 	m_mutexVolume.Unlock();
+
+	return bOK;
 }

@@ -221,7 +221,7 @@ void ServerStatList::Clear()
 	clear();
 }
 
-void ServerStatList::SetStat(int iServerID, int iSuccessArticles, int iFailedArticles, bool bAdd)
+void ServerStatList::StatOp(int iServerID, int iSuccessArticles, int iFailedArticles, EStatOperation eStatOperation)
 {
 	ServerStat* pServerStat = NULL;
 	for (iterator it = begin(); it != end(); it++)
@@ -240,16 +240,31 @@ void ServerStatList::SetStat(int iServerID, int iSuccessArticles, int iFailedArt
 		push_back(pServerStat);
 	}
 
-	pServerStat->SetSuccessArticles((bAdd ? pServerStat->GetSuccessArticles() : 0) + iSuccessArticles);
-	pServerStat->SetFailedArticles((bAdd ? pServerStat->GetFailedArticles() : 0) + iFailedArticles);
+	switch (eStatOperation)
+	{
+		case soSet:
+			pServerStat->SetSuccessArticles(iSuccessArticles);
+			pServerStat->SetFailedArticles(iFailedArticles);
+			break;
+
+		case soAdd:
+			pServerStat->SetSuccessArticles(pServerStat->GetSuccessArticles() + iSuccessArticles);
+			pServerStat->SetFailedArticles(pServerStat->GetFailedArticles() + iFailedArticles);
+			break;
+
+		case soSubtract:
+			pServerStat->SetSuccessArticles(pServerStat->GetSuccessArticles() - iSuccessArticles);
+			pServerStat->SetFailedArticles(pServerStat->GetFailedArticles() - iFailedArticles);
+			break;
+	}
 }
 
-void ServerStatList::Add(ServerStatList* pServerStats)
+void ServerStatList::ListOp(ServerStatList* pServerStats, EStatOperation eStatOperation)
 {
 	for (iterator it = pServerStats->begin(); it != pServerStats->end(); it++)
 	{
 		ServerStat* pServerStat = *it;
-		SetStat(pServerStat->GetServerID(), pServerStat->GetSuccessArticles(), pServerStat->GetFailedArticles(), true);
+		StatOp(pServerStat->GetServerID(), pServerStat->GetSuccessArticles(), pServerStat->GetFailedArticles(), eStatOperation);
 	}
 }
 
@@ -280,6 +295,8 @@ NZBInfo::NZBInfo() : m_FileList(true)
 	m_iTotalArticles = 0;
 	m_iSuccessArticles = 0;
 	m_iFailedArticles = 0;
+	m_iCurrentSuccessArticles = 0;
+	m_iCurrentFailedArticles = 0;
 	m_eRenameStatus = rsNone;
 	m_eParStatus = psNone;
 	m_eUnpackStatus = usNone;
@@ -686,6 +703,8 @@ void NZBInfo::CopyFileList(NZBInfo* pSrcNZBInfo)
 
 	SetSuccessArticles(pSrcNZBInfo->GetSuccessArticles());
 	SetFailedArticles(pSrcNZBInfo->GetFailedArticles());
+	SetCurrentSuccessArticles(pSrcNZBInfo->GetSuccessArticles());
+	SetCurrentFailedArticles(pSrcNZBInfo->GetFailedArticles());
 
 	SetMinTime(pSrcNZBInfo->GetMinTime());
 	SetMaxTime(pSrcNZBInfo->GetMaxTime());

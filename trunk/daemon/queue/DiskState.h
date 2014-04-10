@@ -39,24 +39,28 @@ private:
 	bool				SaveFileInfo(FileInfo* pFileInfo, const char* szFilename);
 	bool				LoadFileInfo(FileInfo* pFileInfo, const char* szFilename, bool bFileSummary, bool bArticles);
 	void				SaveNZBQueue(DownloadQueue* pDownloadQueue, FILE* outfile);
-	bool				LoadNZBList(NZBList* pNZBList, FILE* infile, int iFormatVersion);
+	bool				LoadNZBList(NZBList* pNZBList, Servers* pServers, FILE* infile, int iFormatVersion);
 	void				SaveNZBInfo(NZBInfo* pNZBInfo, FILE* outfile);
-	bool				LoadNZBInfo(NZBInfo* pNZBInfo, FILE* infile, int iFormatVersion);
+	bool				LoadNZBInfo(NZBInfo* pNZBInfo, Servers* pServers, FILE* infile, int iFormatVersion);
 	void				SavePostQueue(DownloadQueue* pDownloadQueue, FILE* outfile);
 	void				SaveDupInfo(DupInfo* pDupInfo, FILE* outfile);
 	bool				LoadDupInfo(DupInfo* pDupInfo, FILE* infile, int iFormatVersion);
 	void				SaveHistory(DownloadQueue* pDownloadQueue, FILE* outfile);
-	bool				LoadHistory(DownloadQueue* pDownloadQueue, NZBList* pNZBList, FILE* infile, int iFormatVersion);
+	bool				LoadHistory(DownloadQueue* pDownloadQueue, NZBList* pNZBList, Servers* pServers, FILE* infile, int iFormatVersion);
 	NZBInfo*			FindNZBInfo(DownloadQueue* pDownloadQueue, int iID);
 	bool				SaveFeedStatus(Feeds* pFeeds, FILE* outfile);
 	bool				LoadFeedStatus(Feeds* pFeeds, FILE* infile, int iFormatVersion);
 	bool				SaveFeedHistory(FeedHistory* pFeedHistory, FILE* outfile);
 	bool				LoadFeedHistory(FeedHistory* pFeedHistory, FILE* infile, int iFormatVersion);
 	bool				SaveServerInfo(Servers* pServers, FILE* outfile);
-	bool				LoadServerInfo(Servers* pServers, FILE* infile, int iFormatVersion);
+	bool				LoadServerInfo(Servers* pServers, FILE* infile, int iFormatVersion, bool* pPerfectMatch);
 	bool				SaveVolumeStat(ServerVolumes* pServerVolumes, FILE* outfile);
 	bool				LoadVolumeStat(Servers* pServers, ServerVolumes* pServerVolumes, FILE* infile, int iFormatVersion);
 	void				CalcFileStats(DownloadQueue* pDownloadQueue, int iFormatVersion);
+	bool				LoadFileState(FileInfo* pFileInfo, Servers* pServers);
+	bool				LoadAllFileStates(DownloadQueue* pDownloadQueue, Servers* pServers);
+	void				SaveServerStats(ServerStatList* pServerStatList, FILE* outfile);
+	bool				LoadServerStats(ServerStatList* pServerStatList, Servers* pServers, FILE* infile);
 
 	// backward compatibility functions (conversions from older formats)
 	bool				LoadPostQueue12(DownloadQueue* pDownloadQueue, NZBList* pNZBList, FILE* infile, int iFormatVersion);
@@ -72,15 +76,16 @@ private:
 public:
 	bool				DownloadQueueExists();
 	bool				SaveDownloadQueue(DownloadQueue* pDownloadQueue);
-	bool				LoadDownloadQueue(DownloadQueue* pDownloadQueue);
+	bool				LoadDownloadQueue(DownloadQueue* pDownloadQueue, Servers* pServers);
 	bool				SaveFile(FileInfo* pFileInfo);
+	bool				SaveFileState(FileInfo* pFileInfo);
 	bool				LoadArticles(FileInfo* pFileInfo);
 	void				DiscardDownloadQueue();
 	bool				DiscardFile(FileInfo* pFileInfo);
 	bool				SaveFeeds(Feeds* pFeeds, FeedHistory* pFeedHistory);
 	bool				LoadFeeds(Feeds* pFeeds, FeedHistory* pFeedHistory);
 	bool				SaveStats(Servers* pServers, ServerVolumes* pServerVolumes);
-	bool				LoadStats(Servers* pServers, ServerVolumes* pServerVolumes);
+	bool				LoadStats(Servers* pServers, ServerVolumes* pServerVolumes, bool* pPerfectMatch);
 	void				CleanupTempDir(DownloadQueue* pDownloadQueue);
 };
 

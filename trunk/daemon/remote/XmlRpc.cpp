@@ -1660,7 +1660,7 @@ void NzbInfoXmlCommand::AppendNZBInfoFields(NZBInfo* pNZBInfo)
 			 szDeleteStatusName[pNZBInfo->GetDeleteStatus()], szMarkStatusName[pNZBInfo->GetMarkStatus()],
 			 szUrlStatusName[pNZBInfo->GetUrlStatus()],
 			 iFileSizeLo, iFileSizeHi, iFileSizeMB, pNZBInfo->GetFileCount(),
-			 pNZBInfo->GetTotalArticles(), pNZBInfo->GetSuccessArticles(), pNZBInfo->GetFailedArticles(),
+			 pNZBInfo->GetTotalArticles(), pNZBInfo->GetCurrentSuccessArticles(), pNZBInfo->GetCurrentFailedArticles(),
 			 pNZBInfo->CalcHealth(), pNZBInfo->CalcCriticalHealth(false),
 			 xmlDupeKey, pNZBInfo->GetDupeScore(), szDupeModeName[pNZBInfo->GetDupeMode()],
 			 BoolToStr(pNZBInfo->GetDeleteStatus() != NZBInfo::dsNone));
@@ -1727,7 +1727,7 @@ void NzbInfoXmlCommand::AppendNZBInfoFields(NZBInfo* pNZBInfo)
 	
 	// Server stats
 	int iStatIndex = 0;
-	for (ServerStatList::iterator it = pNZBInfo->GetServerStats()->begin(); it != pNZBInfo->GetServerStats()->end(); it++)
+	for (ServerStatList::iterator it = pNZBInfo->GetCurrentServerStats()->begin(); it != pNZBInfo->GetCurrentServerStats()->end(); it++)
 	{
 		ServerStat* pServerStat = *it;
 		
