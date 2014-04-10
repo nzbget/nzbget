@@ -108,42 +108,8 @@ var Downloads = (new function($)
 	function groups_loaded(_groups)
 	{
 		groups = _groups;
-		RPC.call('postqueue', [100], posts_loaded);
-	}
-
-	function posts_loaded(posts)
-	{
-		mergequeues(posts);
 		prepare();
-		RPC.call('urlqueue', [], urls_loaded);
-	}
-
-	function urls_loaded(_urls)
-	{
-		urls = _urls;
 		RPC.next();
-	}
-
-	function mergequeues(posts)
-	{
-		var lastPPItemIndex = -1;
-		for (var i=0, il=posts.length; i < il; i++)
-		{
-			var post = posts[i];
-			for (var j=0, jl=groups.length; j < jl; j++)
-			{
-				var group = groups[j];
-				if (group.NZBID === post.NZBID)
-				{
-					if (!group.post)
-					{
-						group.post = post;
-					}
-					lastPPItemIndex = j;
-					break;
-				}
-			}
-		}
 	}
 
 	function prepare()
@@ -220,7 +186,7 @@ var Downloads = (new function($)
 		
 		var health = '';
 		if (group.Health < 1000 && (!group.postprocess ||
-			(group.status === 'pp-queued' && group.post.TotalTimeSec === 0)))
+			(group.status === 'pp-queued' && group.PostTimeSec === 0)))
 		{
 			health = ' <span class="label ' + 
 				(group.Health >= group.CriticalHealth ? 'label-warning' : 'label-important') +
@@ -270,10 +236,10 @@ var Downloads = (new function($)
 	function detectStatus(group)
 	{
 		group.paused = (group.PausedSizeLo != 0) && (group.RemainingSizeLo == group.PausedSizeLo);
-		group.postprocess = group.post !== undefined;
+		group.postprocess = group.PostStatus !== "NONE";
 		if (group.postprocess)
 		{
-			switch (group.post.Stage)
+			switch (group.PostStatus)
 			{
 				case 'QUEUED': group.status = 'pp-queued'; break;
 				case 'LOADING_PARS': group.status = 'checking'; break;
@@ -285,7 +251,7 @@ var Downloads = (new function($)
 				case 'UNPACKING': group.status = 'unpacking'; break;
 				case 'EXECUTING_SCRIPT': group.status = 'processing'; break;
 				case 'FINISHED': group.status = 'finished'; break;
-				default: group.status = 'error: ' + group.post.Stage; break;
+				default: group.status = 'error: ' + group.PostStatus; break;
 			}
 		}
 		else if (group.ActiveDownloads > 0)
@@ -670,7 +636,7 @@ var DownloadsUI = (new function($)
 		{
 			totalsize = '';
 			remaining = '';
-			percent = Math.round(group.post.StageProgress / 10);
+			percent = Math.round(group.StageProgress / 10);
 		}
 		
 		if (group.Kind === 'URL')
@@ -710,9 +676,9 @@ var DownloadsUI = (new function($)
 	{
 		if (group.postprocess)
 		{
-			if (group.post.StageProgress > 0)
+			if (group.StageProgress > 0)
 			{
-				return Util.formatTimeLeft(group.post.StageTimeSec / group.post.StageProgress * (1000 - group.post.StageProgress));
+				return Util.formatTimeLeft(group.StageTimeSec / group.StageProgress * (1000 - group.StageProgress));
 			}
 		}
 		else if (!group.paused && Status.status.DownloadRate > 0)
@@ -728,7 +694,7 @@ var DownloadsUI = (new function($)
 		var text = '';
 		if (group.postprocess && !Status.status.PostPaused)
 		{
-			switch (group.post.Stage)
+			switch (group.PostStatus)
 			{
 				case "REPAIRING":
 					break;
@@ -737,18 +703,18 @@ var DownloadsUI = (new function($)
 				case "VERIFYING_REPAIRED":
 				case "UNPACKING":
 				case "RENAMING":
-					text = group.post.ProgressLabel;
+					text = group.ProgressLabel;
 					break;
 				case "EXECUTING_SCRIPT":
-					if (group.post.Log && group.post.Log.length > 0)
+					if (group.Log && group.Log.length > 0)
 					{
-						text = group.post.Log[group.post.Log.length-1].Text;
+						text = group.Log[group.Log.length-1].Text;
 						// remove "for <nzb-name>" from label text
 						text = text.replace(' for ' + group.NZBName, ' ');
 					}
 					else
 					{
-						text = group.post.ProgressLabel;
+						text = group.ProgressLabel;
 					}
 					break;
 			}
