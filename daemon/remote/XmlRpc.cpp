@@ -146,6 +146,7 @@ class NzbInfoXmlCommand: public XmlCommand
 {
 protected:
 	void				AppendNZBInfoFields(NZBInfo* pNZBInfo);
+	void				AppendPostInfoFields(PostInfo* pPostInfo, int iLogEntries, bool bPostQueue);
 };
 
 class ListFilesXmlCommand: public XmlCommand
@@ -1502,7 +1503,7 @@ void ListFilesXmlCommand::Execute()
 
 void NzbInfoXmlCommand::AppendNZBInfoFields(NZBInfo* pNZBInfo)
 {
-	const char* XML_HISTORY_ITEM_START =
+	const char* XML_NZB_ITEM_START =
 	"<member><name>NZBID</name><value><i4>%i</i4></value></member>\n"
 	"<member><name>NZBName</name><value><string>%s</string></value></member>\n"
 	"<member><name>NZBNicename</name><value><string>%s</string></value></member>\n"	// deprecated, use "NZBName" instead
@@ -1530,22 +1531,22 @@ void NzbInfoXmlCommand::AppendNZBInfoFields(NZBInfo* pNZBInfo)
 	"<member><name>CriticalHealth</name><value><i4>%i</i4></value></member>\n"
 	"<member><name>DupeKey</name><value><string>%s</string></value></member>\n"
 	"<member><name>DupeScore</name><value><i4>%i</i4></value></member>\n"
-	"<member><name>DupeMode</name><value><i4>%i</i4></value></member>\n"
+	"<member><name>DupeMode</name><value><string>%s</string></value></member>\n"
 	"<member><name>Deleted</name><value><boolean>%s</boolean></value></member>\n"	 // deprecated, use "DeleteStatus" instead
 	"<member><name>Parameters</name><value><array><data>\n";
 	
-	const char* XML_HISTORY_ITEM_SCRIPT_START =
+	const char* XML_NZB_ITEM_SCRIPT_START =
 	"</data></array></value></member>\n"
 	"<member><name>ScriptStatuses</name><value><array><data>\n";
 	
-	const char* XML_HISTORY_ITEM_STATS_START =
+	const char* XML_NZB_ITEM_STATS_START =
 	"</data></array></value></member>\n"
 	"<member><name>ServerStats</name><value><array><data>\n";
 	
-	const char* XML_HISTORY_ITEM_END =
+	const char* XML_NZB_ITEM_END =
 	"</data></array></value></member>\n";
 	
-	const char* JSON_HISTORY_ITEM_START =
+	const char* JSON_NZB_ITEM_START =
 	"\"NZBID\" : %i,\n"
 	"\"NZBName\" : \"%s\",\n"
 	"\"NZBNicename\" : \"%s\",\n"		// deprecated, use NZBName instead
@@ -1577,16 +1578,16 @@ void NzbInfoXmlCommand::AppendNZBInfoFields(NZBInfo* pNZBInfo)
 	"\"Deleted\" : %s,\n"			  // deprecated, use "DeleteStatus" instead
 	"\"Parameters\" : [\n";
 	
-	const char* JSON_HISTORY_ITEM_SCRIPT_START =
+	const char* JSON_NZB_ITEM_SCRIPT_START =
 	"],\n"
 	"\"ScriptStatuses\" : [\n";
 	
-	const char* JSON_HISTORY_ITEM_STATS_START =
+	const char* JSON_NZB_ITEM_STATS_START =
 	"],\n"
 	"\"ServerStats\" : [\n";
 	
-	const char* JSON_HISTORY_ITEM_END =
-	"]\n";
+	const char* JSON_NZB_ITEM_END =
+	"],\n";
 	
 	const char* XML_PARAMETER_ITEM =
 	"<value><struct>\n"
@@ -1651,7 +1652,7 @@ void NzbInfoXmlCommand::AppendNZBInfoFields(NZBInfo* pNZBInfo)
 	char* xmlCategory = EncodeStr(pNZBInfo->GetCategory());
 	char* xmlDupeKey = EncodeStr(pNZBInfo->GetDupeKey());
 	
-	snprintf(szItemBuf, iItemBufSize, IsJson() ? JSON_HISTORY_ITEM_START : XML_HISTORY_ITEM_START,
+	snprintf(szItemBuf, iItemBufSize, IsJson() ? JSON_NZB_ITEM_START : XML_NZB_ITEM_START,
 			 pNZBInfo->GetID(), xmlNZBNicename, xmlNZBNicename, szKindName[pNZBInfo->GetKind()],
 			 xmlURL, xmlNZBFilename, xmlDestDir, xmlFinalDir, xmlCategory,
 			 szParStatusName[pNZBInfo->GetParStatus()], szUnpackStatusName[pNZBInfo->GetUnpackStatus()],
@@ -1699,7 +1700,7 @@ void NzbInfoXmlCommand::AppendNZBInfoFields(NZBInfo* pNZBInfo)
 		AppendResponse(szItemBuf);
 	}
 	
-	AppendResponse(IsJson() ? JSON_HISTORY_ITEM_SCRIPT_START : XML_HISTORY_ITEM_SCRIPT_START);
+	AppendResponse(IsJson() ? JSON_NZB_ITEM_SCRIPT_START : XML_NZB_ITEM_SCRIPT_START);
 	
 	// Script statuses
 	int iScriptIndex = 0;
@@ -1723,7 +1724,7 @@ void NzbInfoXmlCommand::AppendNZBInfoFields(NZBInfo* pNZBInfo)
 		AppendResponse(szItemBuf);
 	}
 	
-	AppendResponse(IsJson() ? JSON_HISTORY_ITEM_STATS_START : XML_HISTORY_ITEM_STATS_START);
+	AppendResponse(IsJson() ? JSON_NZB_ITEM_STATS_START : XML_NZB_ITEM_STATS_START);
 	
 	// Server stats
 	int iStatIndex = 0;
@@ -1742,13 +1743,153 @@ void NzbInfoXmlCommand::AppendNZBInfoFields(NZBInfo* pNZBInfo)
 		AppendResponse(szItemBuf);
 	}
 	
-	AppendResponse(IsJson() ? JSON_HISTORY_ITEM_END : XML_HISTORY_ITEM_END);
+	AppendResponse(IsJson() ? JSON_NZB_ITEM_END : XML_NZB_ITEM_END);
 
 	free(szItemBuf);
 }
 
+void NzbInfoXmlCommand::AppendPostInfoFields(PostInfo* pPostInfo, int iLogEntries, bool bPostQueue)
+{
+	const char* XML_GROUPQUEUE_ITEM_START = 
+		"<member><name>PostStatus</name><value><string>%s</string></value></member>\n"
+		"<member><name>ProgressLabel</name><value><string>%s</string></value></member>\n"
+		"<member><name>FileProgress</name><value><i4>%i</i4></value></member>\n"
+		"<member><name>StageProgress</name><value><i4>%i</i4></value></member>\n"
+		"<member><name>PostTimeSec</name><value><i4>%i</i4></value></member>\n"
+		"<member><name>StageTimeSec</name><value><i4>%i</i4></value></member>\n";
+
+	const char* XML_POSTQUEUE_ITEM_START = 
+		"<member><name>Stage</name><value><string>%s</string></value></member>\n"
+		"<member><name>ProgressLabel</name><value><string>%s</string></value></member>\n"
+		"<member><name>FileProgress</name><value><i4>%i</i4></value></member>\n"
+		"<member><name>StageProgress</name><value><i4>%i</i4></value></member>\n"
+		"<member><name>TotalTimeSec</name><value><i4>%i</i4></value></member>\n"
+		"<member><name>StageTimeSec</name><value><i4>%i</i4></value></member>\n";
+
+	const char* XML_LOG_START =
+		"<member><name>Log</name><value><array><data>\n";
+
+	const char* XML_POSTQUEUE_ITEM_END =
+		"</data></array></value></member>\n";
+		
+	const char* JSON_GROUPQUEUE_ITEM_START =
+		"\"PostStatus\" : \"%s\",\n"
+		"\"ProgressLabel\" : \"%s\",\n"
+		"\"FileProgress\" : %i,\n"
+		"\"StageProgress\" : %i,\n"
+		"\"PostTimeSec\" : %i,\n"
+		"\"StageTimeSec\" : %i,\n";
+
+	const char* JSON_POSTQUEUE_ITEM_START =
+		"\"Stage\" : \"%s\",\n"
+		"\"ProgressLabel\" : \"%s\",\n"
+		"\"FileProgress\" : %i,\n"
+		"\"StageProgress\" : %i,\n"
+		"\"TotalTimeSec\" : %i,\n"
+		"\"StageTimeSec\" : %i,\n";
+
+	const char* JSON_LOG_START =
+		"\"Log\" : [\n";
+	
+	const char* JSON_POSTQUEUE_ITEM_END =
+		"]\n";
+
+	const char* XML_LOG_ITEM =
+		"<value><struct>\n"
+		"<member><name>ID</name><value><i4>%i</i4></value></member>\n"
+		"<member><name>Kind</name><value><string>%s</string></value></member>\n"
+		"<member><name>Time</name><value><i4>%i</i4></value></member>\n"
+		"<member><name>Text</name><value><string>%s</string></value></member>\n"
+		"</struct></value>\n";
+
+	const char* JSON_LOG_ITEM =
+		"{\n"
+		"\"ID\" : %i,\n"
+		"\"Kind\" : \"%s\",\n"
+		"\"Time\" : %i,\n"
+		"\"Text\" : \"%s\"\n"
+		"}";
+	
+	const char* szMessageType[] = { "INFO", "WARNING", "ERROR", "DEBUG", "DETAIL"};
+    const char* szPostStageName[] = { "QUEUED", "LOADING_PARS", "VERIFYING_SOURCES", "REPAIRING", "VERIFYING_REPAIRED", "RENAMING", "UNPACKING", "MOVING", "EXECUTING_SCRIPT", "FINISHED" };
+
+	time_t tCurTime = time(NULL);
+	int iItemBufSize = 10240;
+	char* szItemBuf = (char*)malloc(iItemBufSize);
+	int index = 0;
+
+	const char* szItemStart = bPostQueue ? IsJson() ? JSON_POSTQUEUE_ITEM_START : XML_POSTQUEUE_ITEM_START :
+		IsJson() ? JSON_GROUPQUEUE_ITEM_START : XML_GROUPQUEUE_ITEM_START;
+
+	if (pPostInfo)
+	{
+		char* xmlProgressLabel = EncodeStr(pPostInfo->GetProgressLabel());
+
+		snprintf(szItemBuf, iItemBufSize,  szItemStart,
+			szPostStageName[pPostInfo->GetStage()], xmlProgressLabel,
+			pPostInfo->GetFileProgress(), pPostInfo->GetStageProgress(),
+			pPostInfo->GetStartTime() ? tCurTime - pPostInfo->GetStartTime() : 0,
+			pPostInfo->GetStageTime() ? tCurTime - pPostInfo->GetStageTime() : 0);
+
+		free(xmlProgressLabel);
+	}
+	else
+	{
+		snprintf(szItemBuf, iItemBufSize,  szItemStart, "NONE", "", 0, 0, 0, 0);
+	}
+
+	szItemBuf[iItemBufSize-1] = '\0';
+
+	if (IsJson() && index++ > 0)
+	{
+		AppendResponse(",\n");
+	}
+	AppendResponse(szItemBuf);
+	
+	AppendResponse(IsJson() ? JSON_LOG_START : XML_LOG_START);
+
+	if (iLogEntries > 0)
+	{
+		PostInfo::Messages* pMessages = pPostInfo->LockMessages();
+		if (!pMessages->empty())
+		{
+			if (iLogEntries > (int)pMessages->size())
+			{
+				iLogEntries = pMessages->size();
+			}
+			int iStart = pMessages->size() - iLogEntries;
+
+			int index = 0;
+			for (unsigned int i = (unsigned int)iStart; i < pMessages->size(); i++)
+			{
+				Message* pMessage = (*pMessages)[i];
+				char* xmltext = EncodeStr(pMessage->GetText());
+				snprintf(szItemBuf, iItemBufSize, IsJson() ? JSON_LOG_ITEM : XML_LOG_ITEM,
+					pMessage->GetID(), szMessageType[pMessage->GetKind()], pMessage->GetTime(), xmltext);
+				szItemBuf[iItemBufSize-1] = '\0';
+				free(xmltext);
+
+				if (IsJson() && index++ > 0)
+				{
+					AppendResponse(",\n");
+				}
+				AppendResponse(szItemBuf);
+			}
+		}
+		pPostInfo->UnlockMessages();
+	}
+
+	AppendResponse(IsJson() ? JSON_POSTQUEUE_ITEM_END : XML_POSTQUEUE_ITEM_END);
+
+	free(szItemBuf);
+}
+
+// struct[] listgroups(int NumberOfLogEntries)
 void ListGroupsXmlCommand::Execute()
 {
+	int iNrEntries = 0;
+	NextParamAsInt(&iNrEntries);
+
 	AppendResponse(IsJson() ? "[\n" : "<array><data>\n");
 
 	const char* XML_LIST_ITEM_START = 
@@ -1824,6 +1965,7 @@ void ListGroupsXmlCommand::Execute()
 		AppendResponse(szItemBuf);
 		
 		AppendNZBInfoFields(pNZBInfo);
+		AppendPostInfoFields(pNZBInfo->GetPostInfo(), iNrEntries, false);
 
 		AppendResponse(IsJson() ? JSON_LIST_ITEM_END : XML_LIST_ITEM_END);
 	}
@@ -2039,6 +2181,7 @@ void DownloadXmlCommand::Execute()
 	BuildBoolResponse(bOK);
 }
 
+// deprecated
 void PostQueueXmlCommand::Execute()
 {
 	int iNrEntries = 0;
@@ -2050,62 +2193,22 @@ void PostQueueXmlCommand::Execute()
 		"<value><struct>\n"
 		"<member><name>ID</name><value><i4>%i</i4></value></member>\n"
 		"<member><name>InfoName</name><value><string>%s</string></value></member>\n"
-		"<member><name>ParFilename</name><value><string></string></value></member>\n"		// deprecated, always empty
-		"<member><name>Stage</name><value><string>%s</string></value></member>\n"
-		"<member><name>ProgressLabel</name><value><string>%s</string></value></member>\n"
-		"<member><name>FileProgress</name><value><i4>%i</i4></value></member>\n"
-		"<member><name>StageProgress</name><value><i4>%i</i4></value></member>\n"
-		"<member><name>TotalTimeSec</name><value><i4>%i</i4></value></member>\n"
-		"<member><name>StageTimeSec</name><value><i4>%i</i4></value></member>\n";
-
-	const char* XML_LOG_START =
-		"<member><name>Log</name><value><array><data>\n";
+		"<member><name>ParFilename</name><value><string></string></value></member>\n";		// deprecated, always empty
 
 	const char* XML_POSTQUEUE_ITEM_END =
-		"</data></array></value></member>\n"
 		"</struct></value>\n";
 		
 	const char* JSON_POSTQUEUE_ITEM_START =
 		"{\n"
 		"\"ID\" : %i,\n"
 		"\"InfoName\" : \"%s\",\n"
-		"\"ParFilename\" : \"\",\n"	// deprecated, always empty
-		"\"Stage\" : \"%s\",\n"
-		"\"ProgressLabel\" : \"%s\",\n"
-		"\"FileProgress\" : %i,\n"
-		"\"StageProgress\" : %i,\n"
-		"\"TotalTimeSec\" : %i,\n"
-		"\"StageTimeSec\" : %i,\n";
+		"\"ParFilename\" : \"\",\n";	// deprecated, always empty
 
-	const char* JSON_LOG_START =
-		",\n"
-		"\"Log\" : [\n";
-	
 	const char* JSON_POSTQUEUE_ITEM_END =
-		"]\n"
 		"}";
-
-	const char* XML_LOG_ITEM =
-		"<value><struct>\n"
-		"<member><name>ID</name><value><i4>%i</i4></value></member>\n"
-		"<member><name>Kind</name><value><string>%s</string></value></member>\n"
-		"<member><name>Time</name><value><i4>%i</i4></value></member>\n"
-		"<member><name>Text</name><value><string>%s</string></value></member>\n"
-		"</struct></value>\n";
-
-	const char* JSON_LOG_ITEM =
-		"{\n"
-		"\"ID\" : %i,\n"
-		"\"Kind\" : \"%s\",\n"
-		"\"Time\" : %i,\n"
-		"\"Text\" : \"%s\"\n"
-		"}";
-	
-	const char* szMessageType[] = { "INFO", "WARNING", "ERROR", "DEBUG", "DETAIL"};
 
 	NZBList* pNZBList = DownloadQueue::Lock()->GetQueue();
 
-	time_t tCurTime = time(NULL);
 	int iItemBufSize = 10240;
 	char* szItemBuf = (char*)malloc(iItemBufSize);
 	int index = 0;
@@ -2119,61 +2222,22 @@ void PostQueueXmlCommand::Execute()
 			continue;
 		}
 
-	    const char* szPostStageName[] = { "QUEUED", "LOADING_PARS", "VERIFYING_SOURCES", "REPAIRING", "VERIFYING_REPAIRED", "RENAMING", "UNPACKING", "MOVING", "EXECUTING_SCRIPT", "FINISHED" };
-
 		char* xmlInfoName = EncodeStr(pPostInfo->GetNZBInfo()->GetName());
-		char* xmlProgressLabel = EncodeStr(pPostInfo->GetProgressLabel());
 
 		snprintf(szItemBuf, iItemBufSize, IsJson() ? JSON_POSTQUEUE_ITEM_START : XML_POSTQUEUE_ITEM_START,
-			pNZBInfo->GetID(), xmlInfoName, szPostStageName[pPostInfo->GetStage()], xmlProgressLabel,
-			pPostInfo->GetFileProgress(), pPostInfo->GetStageProgress(),
-			pPostInfo->GetStartTime() ? tCurTime - pPostInfo->GetStartTime() : 0,
-			pPostInfo->GetStageTime() ? tCurTime - pPostInfo->GetStageTime() : 0);
+			pNZBInfo->GetID(), xmlInfoName);
 		szItemBuf[iItemBufSize-1] = '\0';
 
 		free(xmlInfoName);
-		free(xmlProgressLabel);
 
 		if (IsJson() && index++ > 0)
 		{
 			AppendResponse(",\n");
 		}
 		AppendResponse(szItemBuf);
-		
+
 		AppendNZBInfoFields(pPostInfo->GetNZBInfo());
-
-		AppendResponse(IsJson() ? JSON_LOG_START : XML_LOG_START);
-
-		if (iNrEntries > 0)
-		{
-			PostInfo::Messages* pMessages = pPostInfo->LockMessages();
-			if (!pMessages->empty())
-			{
-				if (iNrEntries > (int)pMessages->size())
-				{
-					iNrEntries = pMessages->size();
-				}
-				int iStart = pMessages->size() - iNrEntries;
-
-				int index = 0;
-				for (unsigned int i = (unsigned int)iStart; i < pMessages->size(); i++)
-				{
-					Message* pMessage = (*pMessages)[i];
-					char* xmltext = EncodeStr(pMessage->GetText());
-					snprintf(szItemBuf, iItemBufSize, IsJson() ? JSON_LOG_ITEM : XML_LOG_ITEM,
-						pMessage->GetID(), szMessageType[pMessage->GetKind()], pMessage->GetTime(), xmltext);
-					szItemBuf[iItemBufSize-1] = '\0';
-					free(xmltext);
-
-					if (IsJson() && index++ > 0)
-					{
-						AppendResponse(",\n");
-					}
-					AppendResponse(szItemBuf);
-				}
-			}
-			pPostInfo->UnlockMessages();
-		}
+		AppendPostInfoFields(pPostInfo, iNrEntries, true);
 
 		AppendResponse(IsJson() ? JSON_POSTQUEUE_ITEM_END : XML_POSTQUEUE_ITEM_END);
 	}
@@ -2405,10 +2469,6 @@ void HistoryXmlCommand::Execute()
 		if (pNZBInfo)
 		{
 			AppendNZBInfoFields(pNZBInfo);
-			if (IsJson())
-			{
-				AppendResponse(",\n");
-			}
 		}
 		
 		AppendResponse(IsJson() ? JSON_HISTORY_ITEM_LOG_START : XML_HISTORY_ITEM_LOG_START);

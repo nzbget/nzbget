@@ -237,7 +237,7 @@ var DownloadsEditDialog = (new function($)
 		var dupeCheck = Options.option('DupeCheck') === 'yes';
 		Util.show('#DownloadsEdit_Dupe', dupeCheck);
 		var postParam = postParamConfig[0].options.length > 0 && group.Kind === 'NZB';
-		var postLog = group.postprocess && group.post.Log.length > 0;
+		var postLog = group.postprocess && group.Log.length > 0;
 		Util.show('#DownloadsEdit_Param', postParam);
 		Util.show('#DownloadsEdit_Log', postLog);
 
