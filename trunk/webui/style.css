@@ -665,6 +665,10 @@ ul.dropdown-menu > li > a > i {
 	color: #000000;
 }
 
+.table a.badge-link:hover {
+	text-decoration: none;
+}
+
 table.datatable > tbody > tr > td {
 	word-wrap: break-word;
 }
@@ -1274,12 +1278,16 @@ ul.help > li {
 	text-align: left;
 }
 
-.data-statistics-full {
-	width: 364px;
+.data-statistics {
+	width: 260px;
 }
 
-.data-statistics {
-	width: 290px;
+.data-statistics-wide {
+	width: 300px;
+}
+
+.data-statistics-full {
+	width: 364px;
 }
 
 .modal-center {
@@ -2291,7 +2299,9 @@ body.phone,
 	padding-right: 0;
 }
 
-.phone .data-statistics {
+.phone .data-statistics,
+.phone .data-statistics-wide,
+.phone .data-statistics-full {
 	width: 100%;
 }
 
