@@ -133,7 +133,7 @@ public:
 	ServerVolumes*		LockServerVolumes();
 	void				UnlockServerVolumes();
 	void				Save();
-	void				Load();
+	bool				Load(bool* pPerfectServerMatch);
 };
 
 #endif

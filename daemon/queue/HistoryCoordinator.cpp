@@ -503,6 +503,7 @@ void HistoryCoordinator::HistoryRedownload(DownloadQueue* pDownloadQueue, Histor
 	pNZBInfo->SetRenameStatus(NZBInfo::rsNone);
 	pNZBInfo->ClearCompletedFiles();
 	pNZBInfo->GetServerStats()->Clear();
+	pNZBInfo->GetCurrentServerStats()->Clear();
 
 	pNZBInfo->CopyFileList(pNZBFile->GetNZBInfo());
 
