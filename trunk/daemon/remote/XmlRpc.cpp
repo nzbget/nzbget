@@ -157,6 +157,8 @@ public:
 
 class ListGroupsXmlCommand: public NzbInfoXmlCommand
 {
+private:
+	const char*			DetectStatus(NZBInfo* pNZBInfo);
 public:
 	virtual void		Execute();
 };
@@ -1751,17 +1753,13 @@ void NzbInfoXmlCommand::AppendNZBInfoFields(NZBInfo* pNZBInfo)
 void NzbInfoXmlCommand::AppendPostInfoFields(PostInfo* pPostInfo, int iLogEntries, bool bPostQueue)
 {
 	const char* XML_GROUPQUEUE_ITEM_START = 
-		"<member><name>PostStatus</name><value><string>%s</string></value></member>\n"
-		"<member><name>ProgressLabel</name><value><string>%s</string></value></member>\n"
-		"<member><name>FileProgress</name><value><i4>%i</i4></value></member>\n"
-		"<member><name>StageProgress</name><value><i4>%i</i4></value></member>\n"
-		"<member><name>PostTimeSec</name><value><i4>%i</i4></value></member>\n"
-		"<member><name>StageTimeSec</name><value><i4>%i</i4></value></member>\n";
+		"<member><name>PostInfoText</name><value><string>%s</string></value></member>\n"
+		"<member><name>PostStageProgress</name><value><i4>%i</i4></value></member>\n"
+		"<member><name>PostTotalTimeSec</name><value><i4>%i</i4></value></member>\n"
+		"<member><name>PostStageTimeSec</name><value><i4>%i</i4></value></member>\n";
 
 	const char* XML_POSTQUEUE_ITEM_START = 
-		"<member><name>Stage</name><value><string>%s</string></value></member>\n"
 		"<member><name>ProgressLabel</name><value><string>%s</string></value></member>\n"
-		"<member><name>FileProgress</name><value><i4>%i</i4></value></member>\n"
 		"<member><name>StageProgress</name><value><i4>%i</i4></value></member>\n"
 		"<member><name>TotalTimeSec</name><value><i4>%i</i4></value></member>\n"
 		"<member><name>StageTimeSec</name><value><i4>%i</i4></value></member>\n";
@@ -1773,17 +1771,13 @@ void NzbInfoXmlCommand::AppendPostInfoFields(PostInfo* pPostInfo, int iLogEntrie
 		"</data></array></value></member>\n";
 		
 	const char* JSON_GROUPQUEUE_ITEM_START =
-		"\"PostStatus\" : \"%s\",\n"
-		"\"ProgressLabel\" : \"%s\",\n"
-		"\"FileProgress\" : %i,\n"
-		"\"StageProgress\" : %i,\n"
-		"\"PostTimeSec\" : %i,\n"
-		"\"StageTimeSec\" : %i,\n";
+		"\"PostInfoText\" : \"%s\",\n"
+		"\"PostStageProgress\" : %i,\n"
+		"\"PostTotalTimeSec\" : %i,\n"
+		"\"PostStageTimeSec\" : %i,\n";
 
 	const char* JSON_POSTQUEUE_ITEM_START =
-		"\"Stage\" : \"%s\",\n"
 		"\"ProgressLabel\" : \"%s\",\n"
-		"\"FileProgress\" : %i,\n"
 		"\"StageProgress\" : %i,\n"
 		"\"TotalTimeSec\" : %i,\n"
 		"\"StageTimeSec\" : %i,\n";
@@ -1811,7 +1805,6 @@ void NzbInfoXmlCommand::AppendPostInfoFields(PostInfo* pPostInfo, int iLogEntrie
 		"}";
 	
 	const char* szMessageType[] = { "INFO", "WARNING", "ERROR", "DEBUG", "DETAIL"};
-    const char* szPostStageName[] = { "QUEUED", "LOADING_PARS", "VERIFYING_SOURCES", "REPAIRING", "VERIFYING_REPAIRED", "RENAMING", "UNPACKING", "MOVING", "EXECUTING_SCRIPT", "FINISHED" };
 
 	time_t tCurTime = time(NULL);
 	int iItemBufSize = 10240;
@@ -1825,9 +1818,7 @@ void NzbInfoXmlCommand::AppendPostInfoFields(PostInfo* pPostInfo, int iLogEntrie
 	{
 		char* xmlProgressLabel = EncodeStr(pPostInfo->GetProgressLabel());
 
-		snprintf(szItemBuf, iItemBufSize,  szItemStart,
-			szPostStageName[pPostInfo->GetStage()], xmlProgressLabel,
-			pPostInfo->GetFileProgress(), pPostInfo->GetStageProgress(),
+		snprintf(szItemBuf, iItemBufSize,  szItemStart, xmlProgressLabel, pPostInfo->GetStageProgress(),
 			pPostInfo->GetStartTime() ? tCurTime - pPostInfo->GetStartTime() : 0,
 			pPostInfo->GetStageTime() ? tCurTime - pPostInfo->GetStageTime() : 0);
 
@@ -1848,7 +1839,7 @@ void NzbInfoXmlCommand::AppendPostInfoFields(PostInfo* pPostInfo, int iLogEntrie
 	
 	AppendResponse(IsJson() ? JSON_LOG_START : XML_LOG_START);
 
-	if (iLogEntries > 0)
+	if (iLogEntries > 0 && pPostInfo)
 	{
 		PostInfo::Messages* pMessages = pPostInfo->LockMessages();
 		if (!pMessages->empty())
@@ -1908,7 +1899,8 @@ void ListGroupsXmlCommand::Execute()
 		"<member><name>MaxPostTime</name><value><i4>%i</i4></value></member>\n"
 		"<member><name>MinPriority</name><value><i4>%i</i4></value></member>\n"
 		"<member><name>MaxPriority</name><value><i4>%i</i4></value></member>\n"
-		"<member><name>ActiveDownloads</name><value><i4>%i</i4></value></member>\n";
+		"<member><name>ActiveDownloads</name><value><i4>%i</i4></value></member>\n"
+		"<member><name>Status</name><value><string>%s</string></value></member>\n";
 
 	const char* XML_LIST_ITEM_END = 
 		"</struct></value>\n";
@@ -1929,7 +1921,8 @@ void ListGroupsXmlCommand::Execute()
 		"\"MaxPostTime\" : %i,\n"
 		"\"MinPriority\" : %i,\n"
 		"\"MaxPriority\" : %i,\n"
-		"\"ActiveDownloads\" : %i,\n";
+		"\"ActiveDownloads\" : %i,\n"
+		"\"Status\" : \"%s\",\n";
 	
 	const char* JSON_LIST_ITEM_END =
 		"}";
@@ -1950,12 +1943,13 @@ void ListGroupsXmlCommand::Execute()
 		iRemainingSizeMB = (int)(pNZBInfo->GetRemainingSize() / 1024 / 1024);
 		Util::SplitInt64(pNZBInfo->GetPausedSize(), &iPausedSizeHi, &iPausedSizeLo);
 		iPausedSizeMB = (int)(pNZBInfo->GetPausedSize() / 1024 / 1024);
+		const char* szStatus = DetectStatus(pNZBInfo);
 
 		snprintf(szItemBuf, iItemBufSize, IsJson() ? JSON_LIST_ITEM_START : XML_LIST_ITEM_START,
 			pNZBInfo->GetID(), pNZBInfo->GetID(), iRemainingSizeLo, iRemainingSizeHi, iRemainingSizeMB,
 			iPausedSizeLo, iPausedSizeHi, iPausedSizeMB, (int)pNZBInfo->GetFileList()->size(),
 			pNZBInfo->GetRemainingParCount(), pNZBInfo->GetMinTime(), pNZBInfo->GetMaxTime(),
-			pNZBInfo->GetPriority(), pNZBInfo->GetPriority(), pNZBInfo->GetActiveDownloads());
+			pNZBInfo->GetPriority(), pNZBInfo->GetPriority(), pNZBInfo->GetActiveDownloads(), szStatus);
 		szItemBuf[iItemBufSize-1] = '\0';
 
 		if (IsJson() && index++ > 0)
@@ -1975,6 +1969,32 @@ void ListGroupsXmlCommand::Execute()
 	free(szItemBuf);
 
 	AppendResponse(IsJson() ? "\n]" : "</data></array>\n");
+}
+
+const char* ListGroupsXmlCommand::DetectStatus(NZBInfo* pNZBInfo)
+{
+    const char* szPostStageName[] = { "PP_QUEUED", "LOADING_PARS", "VERIFYING_SOURCES", "REPAIRING", "VERIFYING_REPAIRED", "RENAMING", "UNPACKING", "MOVING", "EXECUTING_SCRIPT", "PP_FINISHED" };
+
+	const char* szStatus = NULL;
+
+	if (pNZBInfo->GetPostInfo())
+	{
+		szStatus = szPostStageName[pNZBInfo->GetPostInfo()->GetStage()];
+	}
+	else if (pNZBInfo->GetActiveDownloads() > 0)
+	{
+		szStatus = pNZBInfo->GetKind() == NZBInfo::nkUrl ? "FETCHING" : "DOWNLOADING";
+	}
+	else if ((pNZBInfo->GetPausedSize() > 0) && (pNZBInfo->GetRemainingSize() == pNZBInfo->GetPausedSize()))
+	{
+		szStatus = "PAUSED";
+	}
+	else
+	{
+		szStatus = "QUEUED";
+	}
+
+	return szStatus;
 }
 
 typedef struct 
@@ -2193,7 +2213,9 @@ void PostQueueXmlCommand::Execute()
 		"<value><struct>\n"
 		"<member><name>ID</name><value><i4>%i</i4></value></member>\n"
 		"<member><name>InfoName</name><value><string>%s</string></value></member>\n"
-		"<member><name>ParFilename</name><value><string></string></value></member>\n";		// deprecated, always empty
+		"<member><name>ParFilename</name><value><string></string></value></member>\n"		// deprecated, always empty
+		"<member><name>Stage</name><value><string>%s</string></value></member>\n"
+		"<member><name>FileProgress</name><value><i4>%i</i4></value></member>\n";
 
 	const char* XML_POSTQUEUE_ITEM_END =
 		"</struct></value>\n";
@@ -2202,10 +2224,14 @@ void PostQueueXmlCommand::Execute()
 		"{\n"
 		"\"ID\" : %i,\n"
 		"\"InfoName\" : \"%s\",\n"
-		"\"ParFilename\" : \"\",\n";	// deprecated, always empty
+		"\"ParFilename\" : \"\",\n"		// deprecated, always empty
+		"\"Stage\" : \"%s\",\n"
+		"\"FileProgress\" : %i,\n";
 
 	const char* JSON_POSTQUEUE_ITEM_END =
 		"}";
+
+    const char* szPostStageName[] = { "QUEUED", "LOADING_PARS", "VERIFYING_SOURCES", "REPAIRING", "VERIFYING_REPAIRED", "RENAMING", "UNPACKING", "MOVING", "EXECUTING_SCRIPT", "FINISHED" };
 
 	NZBList* pNZBList = DownloadQueue::Lock()->GetQueue();
 
@@ -2225,7 +2251,7 @@ void PostQueueXmlCommand::Execute()
 		char* xmlInfoName = EncodeStr(pPostInfo->GetNZBInfo()->GetName());
 
 		snprintf(szItemBuf, iItemBufSize, IsJson() ? JSON_POSTQUEUE_ITEM_START : XML_POSTQUEUE_ITEM_START,
-			pNZBInfo->GetID(), xmlInfoName);
+			pNZBInfo->GetID(), xmlInfoName, szPostStageName[pPostInfo->GetStage()], pPostInfo->GetFileProgress());
 		szItemBuf[iItemBufSize-1] = '\0';
 
 		free(xmlInfoName);

@@ -50,6 +50,24 @@ var Downloads = (new function($)
 	var nameColumnWidth = null;
 	var minLevel = null;
 
+	var statusData = {
+		'QUEUED': { Text: 'QUEUED', PostProcess: false },
+		'FETCHING': { Text: 'FETCHING', PostProcess: false },
+		'DOWNLOADING': { Text: 'DOWNLOADING', PostProcess: false },
+		'PP_QUEUED': { Text: 'PP-QUEUED', PostProcess: true },
+		'PAUSED': { Text: 'PAUSED', PostProcess: false },
+		'LOADING_PARS': { Text: 'CHECKING', PostProcess: true },
+		'VERIFYING_SOURCES': { Text: 'CHECKING', PostProcess: true },
+		'REPAIRING': { Text: 'REPAIRING', PostProcess: true },
+		'VERIFYING_REPAIRED': { Text: 'VERIFYING', PostProcess: true },
+		'RENAMING': { Text: 'RENAMING', PostProcess: true },
+		'MOVING': { Text: 'MOVING', PostProcess: true },
+		'UNPACKING': { Text: 'UNPACKING', PostProcess: true },
+		'EXECUTING_SCRIPT': { Text: 'PROCESSING', PostProcess: true },
+		'PP_FINISHED': { Text: 'FINISHED', PostProcess: false }
+		};
+	this.statusData = statusData;
+
 	this.init = function(options)
 	{
 		updateTabInfo = options.updateTabInfo;
@@ -102,7 +120,7 @@ var Downloads = (new function($)
 			$('#DownloadsTable_Category').css('width', DownloadsUI.calcCategoryColumnWidth());
 		}
 		
-		RPC.call('listgroups', [], groups_loaded);
+		RPC.call('listgroups', [100], groups_loaded);
 	}
 
 	function groups_loaded(_groups)
@@ -116,7 +134,8 @@ var Downloads = (new function($)
 	{
 		for (var j=0, jl=groups.length; j < jl; j++)
 		{
-			detectStatus(groups[j]);
+			var group = groups[j];
+			group.postprocess = statusData[group.Status].PostProcess;
 		}
 	}
 
@@ -145,6 +164,7 @@ var Downloads = (new function($)
 			var group = groups[i];
 
 			var nametext = group.NZBName;
+			var statustext = DownloadsUI.buildStatusText(group);
 			var priority = DownloadsUI.buildPriorityText(group.MaxPriority);
 			var estimated = DownloadsUI.buildEstimated(group);
 			var age = Util.formatAge(group.MinPostTime + UISettings.timeZoneCorrection*60*60);
@@ -157,7 +177,7 @@ var Downloads = (new function($)
 				id: group.NZBID,
 				group: group,
 				data: { age: age, estimated: estimated, size: size, remaining: remaining },
-				search: group.status + ' ' + nametext + ' ' + priority + ' ' + dupe + ' ' + group.Category + ' ' + age + ' ' + size + ' ' + remaining + ' ' + estimated
+				search: statustext + ' ' + nametext + ' ' + priority + ' ' + dupe + ' ' + group.Category + ' ' + age + ' ' + size + ' ' + remaining + ' ' + estimated
 			};
 
 			data.push(item);
@@ -186,7 +206,7 @@ var Downloads = (new function($)
 		
 		var health = '';
 		if (group.Health < 1000 && (!group.postprocess ||
-			(group.status === 'pp-queued' && group.PostTimeSec === 0)))
+			(group.Status === 'PP-QUEUED' && group.PostTotalTimeSec === 0)))
 		{
 			health = ' <span class="label ' + 
 				(group.Health >= group.CriticalHealth ? 'label-warning' : 'label-important') +
@@ -211,7 +231,7 @@ var Downloads = (new function($)
 		else
 		{
 			var info = '<div class="check img-check"></div><span class="row-title">' + name + '</span>' + url +
-				' ' + (group.status === 'queued' ? '' : status) + ' ' + priority + dupe + health + backup;
+				' ' + (group.Status === 'QUEUED' ? '' : status) + ' ' + priority + dupe + health + backup;
 			if (category)
 			{
 				info += ' <span class="label label-status">' + category + '</span>';
@@ -230,41 +250,6 @@ var Downloads = (new function($)
 		if (4 <= index && index <= 7)
 		{
 			cell.className = 'text-right';
-		}
-	}
-
-	function detectStatus(group)
-	{
-		group.paused = (group.PausedSizeLo != 0) && (group.RemainingSizeLo == group.PausedSizeLo);
-		group.postprocess = group.PostStatus !== "NONE";
-		if (group.postprocess)
-		{
-			switch (group.PostStatus)
-			{
-				case 'QUEUED': group.status = 'pp-queued'; break;
-				case 'LOADING_PARS': group.status = 'checking'; break;
-				case 'VERIFYING_SOURCES': group.status = 'checking'; break;
-				case 'REPAIRING': group.status = 'repairing'; break;
-				case 'VERIFYING_REPAIRED': group.status = 'verifying'; break;
-				case 'RENAMING': group.status = 'renaming'; break;
-				case 'MOVING': group.status = 'moving'; break;
-				case 'UNPACKING': group.status = 'unpacking'; break;
-				case 'EXECUTING_SCRIPT': group.status = 'processing'; break;
-				case 'FINISHED': group.status = 'finished'; break;
-				default: group.status = 'error: ' + group.PostStatus; break;
-			}
-		}
-		else if (group.ActiveDownloads > 0)
-		{
-			group.status = group.Kind == 'URL' ? 'fetching' : 'downloading';
-		}
-		else if (group.paused)
-		{
-			group.status = 'paused';
-		}
-		else
-		{
-			group.status = 'queued';
 		}
 	}
 	
@@ -588,37 +573,49 @@ var DownloadsUI = (new function($)
 		}
 	}
 
+	this.buildStatusText = function(group)
+	{
+		var statusText = Downloads.statusData[group.Status].Text;
+		if (statusText === undefined)
+		{
+			statusText = 'Internal error(' + group.Status + ')';
+		}
+		return statusText;
+	}
+		
 	this.buildStatus = function(group)
 	{
-		if (group.postprocess && group.status !== 'pp-queued')
+		var statusText = Downloads.statusData[group.Status].Text;
+		var badgeClass = '';
+		
+		if (group.postprocess && group.Status !== 'PP-QUEUED')
 		{
-			if (Status.status.PostPaused)
-			{
-				return '<span class="label label-status label-warning">' + group.status + '</span>';
-			}
-			else
-			{
-				return '<span class="label label-status label-success">' + group.status + '</span>';
-			}
+			badgeClass = Status.status.PostPaused ? 'label-warning' : 'label-success';
 		}
-		switch (group.status)
+		else if (group.Status === 'DOWNLOADING' || group.Status === 'FETCHING')
 		{
-			case 'pp-queued': return '<span class="label label-status">pp-queued</span>';
-			case 'downloading': return '<span class="label label-status label-success">downloading</span>';
-			case 'paused': return '<span class="label label-status label-warning">paused</span>';
-			case 'queued': return '<span class="label label-status">queued</span>';
-			case 'fetching': return '<span class="label label-status label-success">fetching</span>';
-			default: return '<span class="label label-status label-important">internal error(' + group.status + ')</span>';
+			badgeClass = 'label-success';
 		}
+		else if (group.Status === 'PAUSED')
+		{
+			badgeClass = 'label-warning';
+		}
+		else if (statusText === undefined)
+		{
+			statusText = 'Internal error (' + group.Status + ')';
+			badgeClass = 'label-important';
+		}
+		
+		return '<span class="label label-status ' + badgeClass + '">' + statusText + '</span>';
 	}
 
 	this.buildProgress = function(group, totalsize, remaining, estimated)
 	{
-		if (group.status === 'downloading' || (group.postprocess && !Status.status.PostPaused))
+		if (group.Status === 'DOWNLOADING' || (group.postprocess && !Status.status.PostPaused))
 		{
 			var kind = 'progress-success';
 		}
-		else if (group.status === 'paused' || (group.postprocess && Status.status.PostPaused))
+		else if (group.Status === 'PAUSED' || (group.postprocess && Status.status.PostPaused))
 		{
 			var kind = 'progress-warning';
 		}
@@ -636,7 +633,7 @@ var DownloadsUI = (new function($)
 		{
 			totalsize = '';
 			remaining = '';
-			percent = Math.round(group.StageProgress / 10);
+			percent = Math.round(group.PostStageProgress / 10);
 		}
 		
 		if (group.Kind === 'URL')
@@ -676,12 +673,12 @@ var DownloadsUI = (new function($)
 	{
 		if (group.postprocess)
 		{
-			if (group.StageProgress > 0)
+			if (group.PostStageProgress > 0)
 			{
-				return Util.formatTimeLeft(group.StageTimeSec / group.StageProgress * (1000 - group.StageProgress));
+				return Util.formatTimeLeft(group.PostStageTimeSec / group.PostStageProgress * (1000 - group.PostStageProgress));
 			}
 		}
-		else if (!group.paused && Status.status.DownloadRate > 0)
+		else if (!group.Status === 'PAUSED' && Status.status.DownloadRate > 0)
 		{
 			return Util.formatTimeLeft((group.RemainingSizeMB-group.PausedSizeMB)*1024/(Status.status.DownloadRate/1024));
 		}
@@ -694,7 +691,7 @@ var DownloadsUI = (new function($)
 		var text = '';
 		if (group.postprocess && !Status.status.PostPaused)
 		{
-			switch (group.PostStatus)
+			switch (group.Status)
 			{
 				case "REPAIRING":
 					break;
@@ -703,7 +700,7 @@ var DownloadsUI = (new function($)
 				case "VERIFYING_REPAIRED":
 				case "UNPACKING":
 				case "RENAMING":
-					text = group.ProgressLabel;
+					text = group.PostInfoText;
 					break;
 				case "EXECUTING_SCRIPT":
 					if (group.Log && group.Log.length > 0)
@@ -714,7 +711,7 @@ var DownloadsUI = (new function($)
 					}
 					else
 					{
-						text = group.ProgressLabel;
+						text = group.PostInfoText;
 					}
 					break;
 			}
