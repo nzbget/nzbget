@@ -162,7 +162,7 @@ var DownloadsEditDialog = (new function($)
 		var size = Util.formatSizeMB(group.FileSizeMB, group.FileSizeLo);
 		var remaining = Util.formatSizeMB(group.RemainingSizeMB-group.PausedSizeMB, group.RemainingSizeLo-group.PausedSizeLo);
 		var pausedSize = Util.formatSizeMB(group.PausedSizeMB, group.PausedSizeLo);
-		var estimated = group.paused ? '' : (Status.status.DownloadRate > 0 ? Util.formatTimeHMS((group.RemainingSizeMB-group.PausedSizeMB)*1024/(Status.status.DownloadRate/1024)) : '');
+		var estimated = group.Status === 'PAUSED' ? '' : (Status.status.DownloadRate > 0 ? Util.formatTimeHMS((group.RemainingSizeMB-group.PausedSizeMB)*1024/(Status.status.DownloadRate/1024)) : '');
 		var completion = group.SuccessArticles + group.FailedArticles > 0 ? Util.round0(group.SuccessArticles * 100.0 / (group.SuccessArticles +  group.FailedArticles)) + '%' : '--';
 
 		var table = '';
@@ -227,7 +227,7 @@ var DownloadsEditDialog = (new function($)
 		Util.show('#DownloadsEdit_NZBNameReadonly', group.postprocess);
 		Util.show('#DownloadsEdit_CancelPP', group.postprocess);
 		Util.show('#DownloadsEdit_Delete', !group.postprocess);
-		Util.show('#DownloadsEdit_Pause', group.Kind === 'NZB' && !group.postprocess);
+		Util.show('#DownloadsEdit_Pause', group.Kind === 'NZB' && group.postprocess);
 		Util.show('#DownloadsEdit_Resume', false);
 		Util.show('#DownloadsEdit_Save', !group.postprocess);
 		Util.show('#DownloadsEdit_StatisticsGroup', group.Kind === 'NZB');
@@ -352,8 +352,8 @@ var DownloadsEditDialog = (new function($)
 					}
 				}});
 
-		if (tab === '#DownloadsEdit_LogTab' && !logFilled && curGroup.post &&
-			curGroup.post.Log && curGroup.post.Log.length > 0)
+		if (tab === '#DownloadsEdit_LogTab' && !logFilled && curGroup.postprocess &&
+			curGroup.Log && curGroup.Log.length > 0)
 		{
 			fillLog();
 		}
@@ -582,9 +582,9 @@ var DownloadsEditDialog = (new function($)
 		logFilled = true;
 		var data = [];
 
-		for (var i=0; i < curGroup.post.Log.length; i++)
+		for (var i=0; i < curGroup.Log.length; i++)
 		{
-			var message = curGroup.post.Log[i];
+			var message = curGroup.Log[i];
 
 			var kind;
 			switch (message.Kind)
@@ -1171,7 +1171,7 @@ var DownloadsMultiDialog = (new function($)
 			FileCount += group.FileCount;
 			RemainingFileCount += group.RemainingFileCount;
 			RemainingParCount += group.RemainingParCount;
-			paused = paused && group.paused;
+			paused = paused && group.Status === 'PAUSED';
 			PriorityDiff = PriorityDiff || (Priority !== group.MaxPriority);
 			CategoryDiff = CategoryDiff || (Category !== group.Category);
 		}
