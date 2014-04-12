@@ -1233,14 +1233,32 @@ bool DiskState::LoadFileState(FileInfo* pFileInfo, Servers* pServers)
 
 	if (!LoadServerStats(pFileInfo->GetServerStats(), pServers, infile)) goto error;
 
+	int iCompletedArticles;
+	iCompletedArticles = 0; //clang requires initialization in a separate line (due to goto statements)
+
 	int size;
 	if (fscanf(infile, "%i\n", &size) != 1) goto error;
 	for (int i = 0; i < size; i++)
 	{
 		int iStatus;
 		if (fscanf(infile, "%i\n", &iStatus) != 1) goto error;
-		pFileInfo->GetArticles()->at(i)->SetStatus((ArticleInfo::EStatus)iStatus);
+		ArticleInfo::EStatus eStatus = (ArticleInfo::EStatus)iStatus;
+
+		// don't allow all articles be completed or the file will stuck.
+		// such states should never be saved on disk but just in case.
+		if (iCompletedArticles == size - 1)
+		{
+			eStatus = ArticleInfo::aiUndefined;
+		}
+		if (eStatus != ArticleInfo::aiUndefined)
+		{
+			iCompletedArticles++;
+		}
+
+		pFileInfo->GetArticles()->at(i)->SetStatus(eStatus);
 	}
+
+	pFileInfo->SetCompletedArticles(iCompletedArticles);
 
 	fclose(infile);
 	return true;
