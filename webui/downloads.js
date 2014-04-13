@@ -678,7 +678,7 @@ var DownloadsUI = (new function($)
 				return Util.formatTimeLeft(group.PostStageTimeSec / group.PostStageProgress * (1000 - group.PostStageProgress));
 			}
 		}
-		else if (!group.Status === 'PAUSED' && Status.status.DownloadRate > 0)
+		else if (group.Status !== 'PAUSED' && Status.status.DownloadRate > 0)
 		{
 			return Util.formatTimeLeft((group.RemainingSizeMB-group.PausedSizeMB)*1024/(Status.status.DownloadRate/1024));
 		}
