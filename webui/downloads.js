@@ -206,7 +206,7 @@ var Downloads = (new function($)
 		
 		var health = '';
 		if (group.Health < 1000 && (!group.postprocess ||
-			(group.Status === 'PP-QUEUED' && group.PostTotalTimeSec === 0)))
+			(group.Status === 'PP_QUEUED' && group.PostTotalTimeSec === 0)))
 		{
 			health = ' <span class="label ' + 
 				(group.Health >= group.CriticalHealth ? 'label-warning' : 'label-important') +
@@ -588,7 +588,7 @@ var DownloadsUI = (new function($)
 		var statusText = Downloads.statusData[group.Status].Text;
 		var badgeClass = '';
 		
-		if (group.postprocess && group.Status !== 'PP-QUEUED')
+		if (group.postprocess && group.Status !== 'PP_QUEUED')
 		{
 			badgeClass = Status.status.PostPaused ? 'label-warning' : 'label-success';
 		}
