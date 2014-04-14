@@ -602,7 +602,7 @@ var DownloadsUI = (new function($)
 		}
 		else if (statusText === undefined)
 		{
-			statusText = 'Internal error (' + group.Status + ')';
+			statusText = 'INTERNAL_ERROR (' + group.Status + ')';
 			badgeClass = 'label-important';
 		}
 		

@@ -736,6 +736,123 @@ bool NZBInfo::IsDupeSuccess()
 	return !bFailure;
 }
 
+const char* NZBInfo::MakeTextStatus()
+{
+	const char* szStatus = "FAILURE/INTERNAL_ERROR";
+
+	if (m_eKind == NZBInfo::nkNzb)
+	{
+		int iHealth = CalcHealth();
+		int iCriticalHealth = CalcCriticalHealth(false);
+		ScriptStatus::EStatus eScriptStatus = m_scriptStatuses.CalcTotalStatus();
+
+		if (m_eMarkStatus == NZBInfo::ksBad)
+		{
+			szStatus = "FAILURE/BAD";
+		}
+		else if (m_eMarkStatus == NZBInfo::ksGood)
+		{
+			szStatus = "SUCCESS/GOOD";
+		}
+		else if (m_eDeleteStatus == NZBInfo::dsHealth)
+		{
+			szStatus = "FAILURE/HEALTH";
+		}
+		else if (m_eDeleteStatus == NZBInfo::dsManual)
+		{
+			szStatus = "DELETED/MANUAL";
+		}
+		else if (m_eDeleteStatus == NZBInfo::dsDupe)
+		{
+			szStatus = "DELETED/DUPE";
+		}
+		else if (m_eParStatus == NZBInfo::psFailure)
+		{
+			szStatus = "FAILURE/PAR";
+		}
+		else if (m_eUnpackStatus == NZBInfo::usFailure)
+		{
+			szStatus = "FAILURE/UNPACK";
+		}
+		else if (m_eMoveStatus == NZBInfo::msFailure)
+		{
+			szStatus = "FAILURE/MOVE";
+		}
+		else if (m_eParStatus == NZBInfo::psManual)
+		{
+			szStatus = "WARNING/DAMAGED";
+		}
+		else if (m_eParStatus == NZBInfo::psRepairPossible)
+		{
+			szStatus = "WARNING/REPAIRABLE";
+		}
+		else if ((m_eParStatus == NZBInfo::psNone || m_eParStatus == NZBInfo::psSkipped) &&
+				 (m_eUnpackStatus == NZBInfo::usNone || m_eUnpackStatus == NZBInfo::usSkipped) &&
+				 iHealth < iCriticalHealth)
+		{
+			szStatus = "FAILURE/HEALTH";
+		}
+		else if ((m_eParStatus == NZBInfo::psNone || m_eParStatus == NZBInfo::psSkipped) &&
+				 (m_eUnpackStatus == NZBInfo::usNone || m_eUnpackStatus == NZBInfo::usSkipped) &&
+				 iHealth < 1000 && iHealth >= iCriticalHealth)
+		{
+			szStatus = "WARNING/HEALTH";
+		}
+		else if ((m_eParStatus == NZBInfo::psNone || m_eParStatus == NZBInfo::psSkipped) &&
+				 (m_eUnpackStatus == NZBInfo::usNone || m_eUnpackStatus == NZBInfo::usSkipped) &&
+				 eScriptStatus != ScriptStatus::srFailure && iHealth == 1000)
+		{
+			szStatus = "SUCCESS/HEALTH";
+		}
+		else if (m_eUnpackStatus == NZBInfo::usSpace)
+		{
+			szStatus = "WARNING/SPACE";
+		}
+		else if (m_eUnpackStatus == NZBInfo::usPassword)
+		{
+			szStatus = "WARNING/PASSWORD";
+		}
+		else if ((m_eUnpackStatus == NZBInfo::usSuccess ||
+				  (m_eUnpackStatus == NZBInfo::usNone && m_eParStatus == NZBInfo::psSuccess)) &&
+				 eScriptStatus == ScriptStatus::srSuccess)
+		{
+			szStatus = "SUCCESS/ALL";
+		}
+		else if (m_eUnpackStatus == NZBInfo::usSuccess && eScriptStatus == ScriptStatus::srNone)
+		{
+			szStatus = "SUCCESS/UNPACK";
+		}
+		else if (m_eParStatus == NZBInfo::psSuccess && eScriptStatus == ScriptStatus::srNone)
+		{
+			szStatus = "SUCCESS/PAR";
+		}
+		else if (eScriptStatus == ScriptStatus::srFailure)
+		{
+			szStatus = "WARNING/SCRIPT";
+		}
+	}
+	else if (m_eKind == NZBInfo::nkUrl)
+	{
+		if (m_eDeleteStatus == NZBInfo::dsManual)
+		{
+			szStatus = "DELETED/MANUAL";
+		}
+		else if (m_eDeleteStatus == NZBInfo::dsDupe)
+		{
+			szStatus = "DELETED/DUPE";
+		}
+		else
+		{
+			const char* szUrlStatusName[] = { "FAILURE/INTERNAL_ERROR", "FAILURE/INTERNAL_ERROR", "FAILURE/INTERNAL_ERROR",
+				"FAILURE/FETCH", "FAILURE/INTERNAL_ERROR", "WARNING/SKIPPED", "FAILURE/SCAN" };
+			szStatus = szUrlStatusName[m_eUrlStatus];
+		}
+	}
+
+	return szStatus;
+}
+
+
 NZBList::~NZBList()
 {
 	if (m_bOwnObjects)
@@ -1134,6 +1251,7 @@ void HistoryInfo::GetName(char* szBuffer, int iSize)
 		strncpy(szBuffer, "<unknown>", iSize);
 	}
 }
+
 
 DownloadQueue* DownloadQueue::Lock()
 {
