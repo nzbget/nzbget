@@ -1483,50 +1483,50 @@ var HistoryEditDialog = (new function()
 
 			if (hist.MarkStatus !== 'NONE')
 			{
-				status += ' ' + HistoryUI.buildStatus(hist.MarkStatus, 'Mark: ');
+				status += ' ' + buildStatus(hist.MarkStatus, 'Mark: ');
 			}
 
 			if (hist.DeleteStatus === 'NONE')
 			{
-				status += ' ' + HistoryUI.buildStatus(hist.ParStatus, 'Par: ') +
-					' ' + (Options.option('Unpack') == 'yes' || hist.UnpackStatus != 'NONE' ? HistoryUI.buildStatus(hist.UnpackStatus, 'Unpack: ') : '')  +
-					' ' + (hist.MoveStatus === "FAILURE" ? HistoryUI.buildStatus(hist.MoveStatus, 'Move: ') : '');
+				status += ' ' + buildStatus(hist.ParStatus, 'Par: ') +
+					' ' + (Options.option('Unpack') == 'yes' || hist.UnpackStatus != 'NONE' ? buildStatus(hist.UnpackStatus, 'Unpack: ') : '')  +
+					' ' + (hist.MoveStatus === "FAILURE" ? buildStatus(hist.MoveStatus, 'Move: ') : '');
 			}
 			else
 			{
-				status += ' ' + HistoryUI.buildStatus('edit-deleted-' + hist.DeleteStatus, 'Delete: ');
+				status += ' ' + buildStatus('DELETED-' + hist.DeleteStatus, 'Delete: ');
 			}
 
 			for (var i=0; i<hist.ScriptStatuses.length; i++)
 			{
 				var scriptStatus = hist.ScriptStatuses[i];
-				status += ' ' + HistoryUI.buildStatus(scriptStatus.Status, Options.shortScriptName(scriptStatus.Name) + ': ') + ' ';
+				status += ' ' + buildStatus(scriptStatus.Status, Options.shortScriptName(scriptStatus.Name) + ': ') + ' ';
 			}
 		}
 		else if (hist.Kind === 'URL')
 		{
 			if (hist.DeleteStatus !== 'NONE')
 			{
-				status = HistoryUI.buildStatus('edit-deleted-' + hist.DeleteStatus, 'Delete: ');
+				status = buildStatus('DELETED-' + hist.DeleteStatus, 'Delete: ');
 			}
 			else if (hist.UrlStatus == 'SCAN_SKIPPED')
 			{
-				status = HistoryUI.buildStatus('SUCCESS', 'Download: ') + ' ' +
-					HistoryUI.buildStatus('SCAN_SKIPPED', 'Scan: ');
+				status = buildStatus('SUCCESS', 'Fetch: ') + ' ' +
+					buildStatus('SCAN_SKIPPED', 'Scan: ');
 			}
 			else if (hist.UrlStatus == 'SCAN_FAILURE')
 			{
-				status = HistoryUI.buildStatus('SUCCESS', 'Download: ') + ' ' +
-					HistoryUI.buildStatus('FAILURE', 'Scan: ');
+				status = buildStatus('SUCCESS', 'Fetch: ') + ' ' +
+					buildStatus('FAILURE', 'Scan: ');
 			}
 			else
 			{
-				status = HistoryUI.buildStatus(hist.status, 'Download: ');
+				status = buildStatus(hist.UrlStatus, 'Fetch: ');
 			}
 		}
 		else if (hist.Kind === 'DUP')
 		{
-			status = HistoryUI.buildStatus(hist.status, '');
+			status = buildStatus(hist.DupStatus, '');
 		}
 		$('#HistoryEdit_Status').html(status);
 
@@ -1612,6 +1612,38 @@ var HistoryEditDialog = (new function()
 		$HistoryEditDialog.modal({backdrop: 'static'});
 	}
 
+	function buildStatus(status, prefix)
+	{
+		switch (status)
+		{
+			case 'SUCCESS':
+			case 'GOOD':
+				return '<span class="label label-status label-success">' + prefix + status + '</span>';
+			case 'FAILURE':
+				return '<span class="label label-status label-important">' + prefix + 'failure</span>';
+			case 'BAD':
+				return '<span class="label label-status label-important">' + prefix + status + '</span>';
+			case 'REPAIR_POSSIBLE':
+				return '<span class="label label-status label-warning">' + prefix + 'repairable</span>';
+			case 'MANUAL': // PAR-MANUAL
+			case 'SPACE':
+			case 'PASSWORD':
+				return '<span class="label label-status label-warning">' + prefix + status + '</span>';
+			case 'DELETED-DUPE':
+				return '<span class="label label-status">' + prefix + 'dupe</span>';
+			case 'DELETED-MANUAL':
+				return '<span class="label label-status">' + prefix + 'manual</span>';
+			case 'DELETED-HEALTH':
+				return '<span class="label label-status label-important">' + prefix + 'health</span>';
+			case 'SCAN_SKIPPED':
+				return '<span class="label label-status label-warning"">' + prefix + 'skipped</span>';
+			case 'NONE':
+				return '<span class="label label-status">' + prefix + 'none</span>';
+			default:
+				return '<span class="label label-status">' + prefix + status + '</span>';
+		}
+	}
+	
 	function tabClick(e)
 	{
 		e.preventDefault();

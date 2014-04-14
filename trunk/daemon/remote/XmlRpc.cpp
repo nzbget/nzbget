@@ -43,12 +43,10 @@
 #include "XmlRpc.h"
 #include "Log.h"
 #include "Options.h"
-#include "QueueEditor.h"
 #include "Scanner.h"
 #include "FeedCoordinator.h"
 #include "ServerPool.h"
 #include "Util.h"
-#include "WebDownloader.h"
 #include "Maintenance.h"
 #include "StatMeter.h"
 
@@ -201,6 +199,8 @@ public:
 
 class HistoryXmlCommand: public NzbInfoXmlCommand
 {
+private:
+	const char*			DetectStatus(HistoryInfo* pHistoryInfo);
 public:
 	virtual void		Execute();
 };
@@ -1636,7 +1636,7 @@ void NzbInfoXmlCommand::AppendNZBInfoFields(NZBInfo* pNZBInfo)
     const char* szScriptStatusName[] = { "NONE", "FAILURE", "SUCCESS" };
     const char* szDeleteStatusName[] = { "NONE", "MANUAL", "HEALTH", "DUPE" };
     const char* szMarkStatusName[] = { "NONE", "BAD", "GOOD" };
-	const char* szUrlStatusName[] = { "UNKNOWN", "UNKNOWN", "SUCCESS", "FAILURE", "UNKNOWN", "SCAN_SKIPPED", "SCAN_FAILURE" };
+	const char* szUrlStatusName[] = { "NONE", "UNKNOWN", "SUCCESS", "FAILURE", "UNKNOWN", "SCAN_SKIPPED", "SCAN_FAILURE" };
     const char* szDupeModeName[] = { "SCORE", "ALL", "FORCE" };
 	
 	int iItemBufSize = 10240;
@@ -2293,19 +2293,24 @@ void WriteLogXmlCommand::Execute()
 
 	debug("Kind=%s, Text=%s", szKind, szText);
 
-	if (!strcmp(szKind, "INFO")) {
+	if (!strcmp(szKind, "INFO"))
+	{
 		info(szText);
 	}
-	else if (!strcmp(szKind, "WARNING")) {
+	else if (!strcmp(szKind, "WARNING"))
+	{
 		warn(szText);
 	}
-	else if (!strcmp(szKind, "ERROR")) {
+	else if (!strcmp(szKind, "ERROR"))
+	{
 		error(szText);
 	}
-	else if (!strcmp(szKind, "DETAIL")) {
+	else if (!strcmp(szKind, "DETAIL"))
+	{
 		detail(szText);
 	}
-	else if (!strcmp(szKind, "DEBUG")) {
+	else if (!strcmp(szKind, "DEBUG"))
+	{
 		debug(szText);
 	} 
 	else
@@ -2344,8 +2349,8 @@ void ScanXmlCommand::Execute()
 	BuildBoolResponse(true);
 }
 
-// struct[] history(bool Dup)
-// Parameter "Dup" is optional (new in v12)
+// struct[] history(bool hidden)
+// Parameter "hidden" is optional (new in v12)
 void HistoryXmlCommand::Execute()
 {
 	AppendResponse(IsJson() ? "[\n" : "<array><data>\n");
@@ -2356,8 +2361,7 @@ void HistoryXmlCommand::Execute()
 		"<member><name>Name</name><value><string>%s</string></value></member>\n"
 		"<member><name>RemainingFileCount</name><value><i4>%i</i4></value></member>\n"
 		"<member><name>HistoryTime</name><value><i4>%i</i4></value></member>\n"
-		"<member><name>URL</name><value><string>%s</string></value></member>\n"
-		"<member><name>UrlStatus</name><value><string>%s</string></value></member>\n";
+		"<member><name>Status</name><value><string>%s</string></value></member>\n";
 
 	const char* XML_HISTORY_ITEM_LOG_START =
 		"<member><name>Log</name><value><array><data>\n";
@@ -2372,8 +2376,7 @@ void HistoryXmlCommand::Execute()
 		"\"Name\" : \"%s\",\n"
 		"\"RemainingFileCount\" : %i,\n"
 		"\"HistoryTime\" : %i,\n"
-		"\"URL\" : \"%s\",\n"
-		"\"UrlStatus\" : \"%s\",\n";
+		"\"Status\" : \"%s\",\n";
 	
 	const char* JSON_HISTORY_ITEM_LOG_START =
 		"\"Log\" : [\n";
@@ -2411,6 +2414,7 @@ void HistoryXmlCommand::Execute()
 		"<member><name>DupeScore</name><value><i4>%i</i4></value></member>\n"
 		"<member><name>DupeMode</name><value><string>%s</string></value></member>\n"
 		"<member><name>DupStatus</name><value><string>%s</string></value></member>\n"
+		"<member><name>Status</name><value><string>%s</string></value></member>\n"
 		"</struct></value>\n";
 
 	const char* JSON_HISTORY_DUP_ITEM =
@@ -2425,7 +2429,8 @@ void HistoryXmlCommand::Execute()
 		"\"DupeKey\" : \"%s\",\n"
 		"\"DupeScore\" : %i,\n"
 		"\"DupeMode\" : \"%s\",\n"
-		"\"DupStatus\" : \"%s\",\n";
+		"\"DupStatus\" : \"%s\",\n"
+		"\"Status\" : \"%s\",\n";
 
 	const char* szDupStatusName[] = { "UNKNOWN", "SUCCESS", "FAILURE", "DELETED", "DUPE", "BAD", "GOOD" };
 	const char* szMessageType[] = { "INFO", "WARNING", "ERROR", "DEBUG", "DETAIL"};
@@ -2454,6 +2459,7 @@ void HistoryXmlCommand::Execute()
 		pHistoryInfo->GetName(szNicename, sizeof(szNicename));
 
 		char *xmlNicename = EncodeStr(szNicename);
+		const char* szStatus = DetectStatus(pHistoryInfo);
 
 		if (pHistoryInfo->GetKind() == HistoryInfo::hkNzb ||
 			pHistoryInfo->GetKind() == HistoryInfo::hkUrl)
@@ -2462,7 +2468,7 @@ void HistoryXmlCommand::Execute()
 
 			snprintf(szItemBuf, iItemBufSize, IsJson() ? JSON_HISTORY_ITEM_START : XML_HISTORY_ITEM_START,
 				pHistoryInfo->GetID(), xmlNicename, pNZBInfo->GetParkedFileCount(),
-				pHistoryInfo->GetTime(), "", "");
+				pHistoryInfo->GetTime(), szStatus);
 		}
 		else if (pHistoryInfo->GetKind() == HistoryInfo::hkDup)
 		{
@@ -2477,7 +2483,8 @@ void HistoryXmlCommand::Execute()
 			snprintf(szItemBuf, iItemBufSize, IsJson() ? JSON_HISTORY_DUP_ITEM : XML_HISTORY_DUP_ITEM,
 				pHistoryInfo->GetID(), "DUP", xmlNicename, pHistoryInfo->GetTime(),
 				iFileSizeLo, iFileSizeHi, iFileSizeMB, xmlDupeKey, pDupInfo->GetDupeScore(),
-				szDupeModeName[pDupInfo->GetDupeMode()], szDupStatusName[pDupInfo->GetStatus()]);
+				szDupeModeName[pDupInfo->GetDupeMode()], szDupStatusName[pDupInfo->GetStatus()],
+				szStatus);
 
 			free(xmlDupeKey);
 		}
@@ -2532,6 +2539,26 @@ void HistoryXmlCommand::Execute()
 	AppendResponse(IsJson() ? "\n]" : "</data></array>\n");
 
 	DownloadQueue::Unlock();
+}
+
+const char* HistoryXmlCommand::DetectStatus(HistoryInfo* pHistoryInfo)
+{
+	const char* szStatus = "FAILURE/INTERNAL_ERROR";
+
+	if (pHistoryInfo->GetKind() == HistoryInfo::hkNzb || pHistoryInfo->GetKind() == HistoryInfo::hkUrl)
+	{
+		NZBInfo* pNZBInfo = pHistoryInfo->GetNZBInfo();
+		szStatus = pNZBInfo->MakeTextStatus();
+	}
+	else if (pHistoryInfo->GetKind() == HistoryInfo::hkDup)
+	{
+		DupInfo* pDupInfo = pHistoryInfo->GetDupInfo();
+		const char* szDupStatusName[] = { "FAILURE/INTERNAL_ERROR", "SUCCESS/HIDDEN", "FAILURE/HIDDEN",
+			"DELETED/MANUAL", "DELETED/DUPE", "FAILURE/BAD", "SUCCESS/GOOD" };
+		szStatus = szDupStatusName[pDupInfo->GetStatus()];
+	}
+
+	return szStatus;
 }
 
 // bool appendurl(string NZBFilename, string Category, int Priority, bool AddToTop, string URL, bool AddPaused, string DupeKey, int DupeScore, string DupeMode)

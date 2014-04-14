@@ -1,7 +1,7 @@
 /*
  * This file is part of nzbget
  *
- * Copyright (C) 2012-2013 Andrey Prygunkov <hugbug@users.sourceforge.net>
+ * Copyright (C) 2012-2014 Andrey Prygunkov <hugbug@users.sourceforge.net>
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -124,93 +124,22 @@ var History = (new function($)
 	{
 		for (var j=0, jl=history.length; j < jl; j++)
 		{
-			detectStatus(history[j]);
-		}
-	}
-
-	function detectStatus(hist)
-	{
-		if (hist.Kind === 'NZB')
-		{
-			if (hist.MarkStatus === 'BAD')
+			var hist = history[j];
+			if (hist.Status === 'DELETED/MANUAL')
 			{
-				hist.status = 'failure'; hist.FilterKind = 'FAILURE';
+				hist.FilterKind = 'DELETED';
 			}
-			else if (hist.DeleteStatus !== 'NONE')
+			else if (hist.Status === 'DELETED/DUPE')
 			{
-				switch (hist.DeleteStatus)
-				{
-					case 'HEALTH': hist.status = 'deleted-health'; hist.FilterKind = 'FAILURE'; break;
-					case 'MANUAL': hist.status = 'deleted-manual'; hist.FilterKind = 'DELETED'; break;
-					case 'DUPE': hist.status = 'deleted-dupe'; hist.FilterKind = 'DUPE'; break;
-				}
+				hist.FilterKind = 'DUPE';
 			}
-			else if (hist.ParStatus == 'FAILURE' || hist.UnpackStatus == 'FAILURE' || hist.MoveStatus == 'FAILURE')
+			else if (hist.Status.substring(0, 7) === 'SUCCESS')
 			{
-				hist.status = 'failure'; hist.FilterKind = 'FAILURE';
-			}
-			else if (hist.ParStatus == 'MANUAL')
-			{
-				hist.status = 'damaged'; hist.FilterKind = 'FAILURE';
-			}
-			else if (hist.ParStatus == 'REPAIR_POSSIBLE')
-			{
-				hist.status = 'repairable'; hist.FilterKind = 'FAILURE';
-			}
-			else if (hist.ParStatus == 'NONE' && hist.UnpackStatus == 'NONE' &&
-				(hist.ScriptStatus !== 'FAILURE' || hist.Health < 1000))
-			{
-				hist.status = hist.Health === 1000 ? 'success' :
-					hist.Health >= hist.CriticalHealth ? 'damaged' : 'failure';
-				hist.FilterKind = hist.status === 'success' ? 'SUCCESS' : 'FAILURE';
+				hist.FilterKind = 'SUCCESS';
 			}
 			else
 			{
-				switch (hist.UnpackStatus)
-				{
-					case 'SPACE': hist.status = 'space'; hist.FilterKind = 'FAILURE'; break;
-					case 'PASSWORD': hist.status = 'password'; hist.FilterKind = 'FAILURE'; break;
-					case 'SUCCESS':
-					case 'NONE':
-						switch (hist.ScriptStatus)
-						{
-							case 'SUCCESS': hist.status = 'success'; hist.FilterKind = 'SUCCESS'; break;
-							case 'FAILURE': hist.status = 'pp-failure'; hist.FilterKind = 'FAILURE'; break;
-							case 'UNKNOWN': hist.status = 'unknown'; hist.FilterKind = 'FAILURE'; break;
-							case 'NONE': hist.status = 'success'; hist.FilterKind = 'SUCCESS'; break;
-						}
-				}
-			}
-		}
-		else if (hist.Kind === 'URL')
-		{
-			if (hist.DeleteStatus !== '')
-			{
-				hist.status = 'deleted-manual'; hist.FilterKind = 'DELETED';
-			}
-			else
-			{
-				switch (hist.UrlStatus)
-				{
-					case 'SUCCESS': hist.status = 'success'; hist.FilterKind = 'SUCCESS'; break;
-					case 'FAILURE': hist.status = 'failure'; hist.FilterKind = 'FAILURE'; break;
-					case 'UNKNOWN': hist.status = 'unknown'; hist.FilterKind = 'FAILURE'; break;
-					case 'SCAN_FAILURE': hist.status = 'failure'; hist.FilterKind = 'FAILURE'; break;
-					case 'SCAN_SKIPPED': hist.status = 'skipped'; hist.FilterKind = 'FAILURE'; break;
-				}
-			}
-		}
-		else if (hist.Kind === 'DUP')
-		{
-			switch (hist.DupStatus)
-			{
-				case 'SUCCESS': hist.status = 'success'; hist.FilterKind = 'SUCCESS'; break;
-				case 'FAILURE': hist.status = 'failure'; hist.FilterKind = 'FAILURE'; break;
-				case 'DELETED': hist.status = 'deleted-manual'; hist.FilterKind = 'DELETED'; break;
-				case 'DUPE': hist.status = 'deleted-dupe'; hist.FilterKind = 'DUPE'; break;
-				case 'GOOD': hist.status = 'GOOD'; hist.FilterKind = 'SUCCESS'; break;
-				case 'BAD': hist.status = 'failure'; hist.FilterKind = 'FAILURE'; break;
-				case 'UNKNOWN': hist.status = 'unknown'; hist.FilterKind = 'FAILURE'; break;
+				hist.FilterKind = 'FAILURE';
 			}
 		}
 	}
@@ -224,7 +153,7 @@ var History = (new function($)
 			var hist = history[i];
 
 			var kind = hist.Kind;
-			var statustext = hist.status === 'none' ? 'unknown' : hist.status;
+			var statustext = HistoryUI.buildStatusText(hist);
 			var size = kind === 'URL' ? '' : Util.formatSizeMB(hist.FileSizeMB);
 			var time = Util.formatDateTime(hist.HistoryTime + UISettings.timeZoneCorrection*60*60);
 			var dupe = DownloadsUI.buildDupeText(hist.DupeKey, hist.DupeScore, hist.DupeMode);
@@ -266,7 +195,7 @@ var History = (new function($)
 	{
 		var hist = item.hist;
 
-		var status = HistoryUI.buildStatus(hist.status, '');
+		var status = HistoryUI.buildStatus(hist);
 
 		var name = '<a href="#" histid="' + hist.ID + '">' + Util.textToHtml(Util.formatNZBName(hist.Name)) + '</a>';
 		var dupe = DownloadsUI.buildDupe(hist.DupeKey, hist.DupeScore, hist.DupeMode);
@@ -475,54 +404,43 @@ var HistoryUI = (new function($)
 {
 	'use strict';
 
-	this.buildStatus = function(status, prefix)
+	this.buildStatusText = function(hist)
 	{
-		switch (status)
+		var status = hist.Status;
+		var total = status.substring(0, 7);
+		var detail = status.substring(8, 100);
+		switch (total)
 		{
-			case 'success':
 			case 'SUCCESS':
-			case 'GOOD':
-				return '<span class="label label-status label-success">' + prefix + status + '</span>';
-			case 'failure':
+				return detail === 'GOOD' ? 'GOOD' : 'SUCCESS';
 			case 'FAILURE':
-			case 'deleted-health':
-				return '<span class="label label-status label-important">' + prefix + 'failure</span>';
-			case 'BAD':
-				return '<span class="label label-status label-important">' + prefix + status + '</span>';
-			case 'unknown':
-			case 'UNKNOWN':
-				return '<span class="label label-status label-info">' + prefix + 'unknown</span>';
-			case 'repairable':
-			case 'REPAIR_POSSIBLE':
-				return '<span class="label label-status label-warning">' + prefix + 'repairable</span>';
-			case 'manual':
-			case 'MANUAL':
-			case 'damaged':
-			case 'pp-failure':
-			case 'space':
-			case 'password':
-			case 'SPACE':
-			case 'PASSWORD':
-				return '<span class="label label-status label-warning">' + prefix + status + '</span>';
-			case 'deleted-manual':
-				return '<span class="label label-status">' + prefix + 'deleted</span>';
-			case 'deleted-dupe':
-			case 'edit-deleted-DUPE':
-				return '<span class="label label-status">' + prefix + 'dupe</span>';
-			case 'edit-deleted-MANUAL':
-				return '<span class="label label-status">' + prefix + 'manual</span>';
-			case 'edit-deleted-HEALTH':
-				return '<span class="label label-status label-important">' + prefix + 'health</span>';
-			case 'SCAN_SKIPPED':
-				return '<span class="label label-status">' + prefix + 'skipped</span>';
-			case 'none':
-			case 'NONE':
-				return '<span class="label label-status">' + prefix + 'none</span>';
+				return detail === 'BAD' ? 'BAD' : (status === 'FAILURE/INTERNAL_ERROR' ? 'INTERNAL_ERROR' : 'FAILURE');
+			case 'WARNING':
+				return detail === 'SCRIPT' ? 'PP-FAILURE' : detail;
+			case 'DELETED':
+				return detail === 'MANUAL' ? 'DELETED' : detail;
 			default:
-				return '<span class="label label-status">' + prefix + status + '</span>';
+				return 'INTERNAL_ERROR (' + status + ')';
 		}
 	}
 
+	this.buildStatus = function(hist)
+	{
+		var total = hist.Status.substring(0, 7);
+		var statusText = HistoryUI.buildStatusText(hist);
+		var badgeClass = '';
+		switch (total)
+		{
+			case 'SUCCESS':
+				badgeClass = 'label-success'; break;
+			case 'FAILURE':
+				badgeClass = 'label-important'; break;
+			case 'WARNING':
+				badgeClass = 'label-warning'; break;
+		}
+		return '<span class="label label-status ' + badgeClass + '">' + statusText + '</span>';
+	}
+	
 	this.deleteConfirm = function(actionCallback, hasNzb, hasDup, hasFailed, multi)
 	{
 		var dupeCheck = Options.option('DupeCheck') === 'yes';

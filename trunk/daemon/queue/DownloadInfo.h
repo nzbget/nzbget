@@ -578,6 +578,7 @@ public:
 	void				EnterPostProcess();
 	void				LeavePostProcess();
 	bool				IsDupeSuccess();
+	const char*			MakeTextStatus();
 
 	void				AppendMessage(Message::EKind eKind, time_t tTime, const char* szText);
 	Messages*			LockMessages();
