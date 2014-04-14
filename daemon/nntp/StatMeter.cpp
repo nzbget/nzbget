@@ -360,7 +360,7 @@ int StatMeter::CalcCurrentDownloadSpeed()
 		return 0;
 	}
 
-	return m_iSpeedTotalBytes / iTimeDiff;
+	return (int)(m_iSpeedTotalBytes / iTimeDiff);
 }
 
 void StatMeter::AddSpeedReading(int iBytes)
@@ -386,7 +386,7 @@ void StatMeter::AddSpeedReading(int iBytes)
 			m_iSpeedBytesIndex = 0;
 		}
 		//Adjust counters with outgoing information.
-		m_iSpeedTotalBytes -= m_iSpeedBytes[m_iSpeedBytesIndex];
+		m_iSpeedTotalBytes = m_iSpeedTotalBytes - (long long)m_iSpeedBytes[m_iSpeedBytesIndex];
 
 		//Note we should really use the start time of the next slot
 		//but its easier to just use the outgoing slot time. This

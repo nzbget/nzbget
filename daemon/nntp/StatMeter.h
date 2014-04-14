@@ -88,7 +88,7 @@ private:
 	static const int	SPEEDMETER_SLOTS = 30;	  
 	static const int	SPEEDMETER_SLOTSIZE = 1;  //Split elapsed time into this number of secs.
 	int					m_iSpeedBytes[SPEEDMETER_SLOTS];
-	int					m_iSpeedTotalBytes;
+	long long			m_iSpeedTotalBytes;
 	int					m_iSpeedTime[SPEEDMETER_SLOTS];
 	int					m_iSpeedStartTime; 
 	time_t				m_tSpeedCorrection;
