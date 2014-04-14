@@ -578,7 +578,8 @@ bool DiskState::LoadNZBInfo(NZBInfo* pNZBInfo, Servers* pServers, FILE* infile, 
 		pNZBInfo->SetRenameStatus((NZBInfo::ERenameStatus)iRenameStatus);
 		pNZBInfo->SetDeleteStatus((NZBInfo::EDeleteStatus)iDeleteStatus);
 		pNZBInfo->SetMarkStatus((NZBInfo::EMarkStatus)iMarkStatus);
-		if (pNZBInfo->GetKind() == NZBInfo::nkNzb)
+		if (pNZBInfo->GetKind() == NZBInfo::nkNzb ||
+			(NZBInfo::EUrlStatus)iUrlStatus >= NZBInfo::lsScanSkipped)
 		{
 			pNZBInfo->SetUrlStatus((NZBInfo::EUrlStatus)iUrlStatus);
 		}
