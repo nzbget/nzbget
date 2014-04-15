@@ -227,7 +227,7 @@ var DownloadsEditDialog = (new function($)
 		Util.show('#DownloadsEdit_NZBNameReadonly', group.postprocess);
 		Util.show('#DownloadsEdit_CancelPP', group.postprocess);
 		Util.show('#DownloadsEdit_Delete', !group.postprocess);
-		Util.show('#DownloadsEdit_Pause', group.Kind === 'NZB' && group.postprocess);
+		Util.show('#DownloadsEdit_Pause', group.Kind === 'NZB' && !group.postprocess);
 		Util.show('#DownloadsEdit_Resume', false);
 		Util.show('#DownloadsEdit_Save', !group.postprocess);
 		Util.show('#DownloadsEdit_StatisticsGroup', group.Kind === 'NZB');
