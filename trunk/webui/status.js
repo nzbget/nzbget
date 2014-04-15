@@ -154,7 +154,7 @@ var Status = (new function($)
 		}
 		else
 		{
-			$StatusSpeed.html(Util.round0(status.DownloadRate / 1024) + ' KB/s');
+			$StatusSpeed.html(Util.formatSpeed(status.DownloadRate));
 			if (status.DownloadRate > 0)
 			{
 				$StatusTime.html(Util.formatTimeLeft(status.RemainingSizeMB*1024/(status.DownloadRate/1024)));
@@ -538,9 +538,9 @@ var StatDialog = (new function($)
 		$StatDialog_DataTotalDownloaded.html(Util.formatSizeMB(status.DownloadedSizeMB));
 		$StatDialog_DataRemaining.html(Util.formatSizeMB(status.RemainingSizeMB));
 		$StatDialog_DataFree.html(Util.formatSizeMB(status.FreeDiskSpaceMB));
-		$StatDialog_DataAverageSpeed.text(Util.round0(status.AverageDownloadRate / 1024) + ' KB/s');
-		$StatDialog_DataCurrentSpeed.text(Util.round0(status.DownloadRate / 1024) + ' KB/s');
-		$StatDialog_DataSpeedLimit.text(Util.round0(status.DownloadLimit / 1024) + ' KB/s');
+		$StatDialog_DataAverageSpeed.html(Util.formatSpeed(status.AverageDownloadRate));
+		$StatDialog_DataCurrentSpeed.html(Util.formatSpeed(status.DownloadRate));
+		$StatDialog_DataSpeedLimit.html(Util.formatSpeed(status.DownloadLimit));
 
 		var content = '';
 		content += '<tr><td>Download</td><td class="text-right">' +
