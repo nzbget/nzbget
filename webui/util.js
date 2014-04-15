@@ -126,6 +126,26 @@ var Util = (new function($)
 		}
 	}
 
+	this.formatSpeed = function(bytesPerSec)
+	{
+		if (bytesPerSec > 100 * 1024 * 1024 - 1)
+		{
+			return Util.round0(bytesPerSec / (1024 * 1024)) + '&nbsp;MB/s';
+		}
+		else if (bytesPerSec > 10 * 1024 * 1024 - 1)
+		{
+			return Util.round1(bytesPerSec / (1024 * 1024)) + '&nbsp;MB/s';
+		}
+		else if (bytesPerSec > 1024 * 1024 - 1)
+		{
+			return Util.round2(bytesPerSec / (1024 * 1024)) + '&nbsp;MB/s';
+		}
+		else
+		{
+			return Util.round0(bytesPerSec / 1024) + '&nbsp;KB/s';
+		}
+	}
+	
 	this.formatAge = function(time)
 	{
 		if (time == 0)
