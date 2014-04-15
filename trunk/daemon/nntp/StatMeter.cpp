@@ -401,7 +401,7 @@ void StatMeter::AddSpeedReading(int iBytes)
 	// Once per second recalculate summary field "m_iSpeedTotalBytes" to recover from possible synchronisation errors
 	if (tCurTime > m_tSpeedCorrection)
 	{
-		int iSpeedTotalBytes = 0;
+		long long iSpeedTotalBytes = 0;
 		for (int i = 0; i < SPEEDMETER_SLOTS; i++)
 		{
 			iSpeedTotalBytes += m_iSpeedBytes[i];
