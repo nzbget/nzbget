@@ -813,7 +813,8 @@ const char* NZBInfo::MakeTextStatus()
 			szStatus = "WARNING/PASSWORD";
 		}
 		else if ((m_eUnpackStatus == NZBInfo::usSuccess ||
-				  (m_eUnpackStatus == NZBInfo::usNone && m_eParStatus == NZBInfo::psSuccess)) &&
+				  ((m_eUnpackStatus == NZBInfo::usNone || m_eUnpackStatus == NZBInfo::usSkipped) &&
+				   m_eParStatus == NZBInfo::psSuccess)) &&
 				 eScriptStatus == ScriptStatus::srSuccess)
 		{
 			szStatus = "SUCCESS/ALL";
