@@ -523,6 +523,11 @@ int ParChecker::ProcessMorePars()
 	while (!IsStopped() && res == eRepairNotPossible)
 	{
 		int missingblockcount = pRepairer->missingblockcount - pRepairer->recoverypacketmap.size();
+		if (missingblockcount <= 0)
+		{
+			return eRepairPossible;
+		}
+
 		if (bMoreFilesLoaded)
 		{
 			PrintMessage(Message::mkInfo, "Need more %i par-block(s) for %s", missingblockcount, m_szInfoName);
