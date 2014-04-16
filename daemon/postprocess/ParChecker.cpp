@@ -501,7 +501,7 @@ bool ParChecker::LoadMainParBak()
 		{
 			// wait until new files are added by "AddParFile" or a change is signaled by "QueueChanged"
 			bool bQueuedParFilesChanged = false;
-			while (!bQueuedParFilesChanged && !IsStopped())
+			while (!bQueuedParFilesChanged && !IsStopped() && !m_bCancelled)
 			{
 				m_mutexQueuedParFiles.Lock();
 				bQueuedParFilesChanged = m_bQueuedParFilesChanged;
@@ -561,7 +561,7 @@ int ParChecker::ProcessMorePars()
 			{
 				// wait until new files are added by "AddParFile" or a change is signaled by "QueueChanged"
 				bool bQueuedParFilesChanged = false;
-				while (!bQueuedParFilesChanged && !IsStopped())
+				while (!bQueuedParFilesChanged && !IsStopped() && !m_bCancelled)
 				{
 					m_mutexQueuedParFiles.Lock();
 					bQueuedParFilesChanged = m_bQueuedParFilesChanged;
@@ -571,7 +571,7 @@ int ParChecker::ProcessMorePars()
 			}
 		}
 
-		if (IsStopped())
+		if (IsStopped() || m_bCancelled)
 		{
 			break;
 		}
@@ -903,6 +903,7 @@ void ParChecker::Cancel()
 #ifdef HAVE_PAR2_CANCEL
 	((Repairer*)m_pRepairer)->cancelled = true;
 	m_bCancelled = true;
+	QueueChanged();
 #else
 	PrintMessage(Message::mkError, "Could not cancel par-repair. The program was compiled using version of libpar2 which doesn't support cancelling of par-repair. Please apply libpar2-patches supplied with NZBGet and recompile libpar2 and NZBGet (see README for details).");
 #endif
