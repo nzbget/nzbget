@@ -71,6 +71,7 @@ private:
 	int					m_iFileCount;
 	int					m_iCurFile;
 	int					m_iRenamedCount;
+	bool				m_bHasSplittedFragments;
 
 	void				Cleanup();
 	void				ClearHashList();
@@ -81,6 +82,7 @@ private:
 	void				CheckFiles(const char* szDestDir, bool bRenamePars);
 	void				CheckRegularFile(const char* szDestDir, const char* szFilename);
 	void				CheckParFile(const char* szDestDir, const char* szFilename);
+	bool				IsSplittedFragment(const char* szFilename, const char* szCorrectName);
 
 protected:
 	virtual void		UpdateProgress() {}
@@ -101,6 +103,7 @@ public:
 	EStatus				GetStatus() { return m_eStatus; }
 	void				Cancel();
 	bool				GetCancelled() { return m_bCancelled; }
+	bool				HasSplittedFragments() { return m_bHasSplittedFragments; }
 };
 
 #endif

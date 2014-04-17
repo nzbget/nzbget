@@ -85,9 +85,9 @@ private:
 	bool				LoadMainParBak();
 	int					ProcessMorePars();
 	bool				LoadMorePars();
-	bool				CheckSplittedFragments();
-	bool				AddSplittedFragments(const char* szFilename);
+	bool				AddSplittedFragments();
 	bool				AddMissingFiles();
+	bool				IsProcessedFile(const char* szFilename);
 	void				WriteBrokenLog(EStatus eStatus);
 	void				SaveSourceList();
 	void				DeleteLeftovers();
