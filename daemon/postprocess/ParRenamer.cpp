@@ -85,6 +85,7 @@ ParRenamer::ParRenamer()
 	m_szProgressLabel = (char*)malloc(1024);
 	m_iStageProgress = 0;
 	m_bCancelled = false;
+	m_bHasSplittedFragments = false;
 }
 
 ParRenamer::~ParRenamer()
@@ -142,6 +143,7 @@ void ParRenamer::Run()
 	m_iFileCount = 0;
 	m_iCurFile = 0;
 	m_iRenamedCount = 0;
+	m_bHasSplittedFragments = false;
 	m_eStatus = psFailed;
 
 	snprintf(m_szProgressLabel, 1024, "Checking renamed files for %s", m_szInfoName);
@@ -299,6 +301,28 @@ void ParRenamer::CheckFiles(const char* szDestDir, bool bRenamePars)
 	}
 }
 
+bool ParRenamer::IsSplittedFragment(const char* szFilename, const char* szCorrectName)
+{
+	bool bSplittedFragement = false;
+	const char* szDiskBasename = Util::BaseFileName(szFilename);
+	const char* szExtension = strrchr(szDiskBasename, '.');
+	int iBaseLen = strlen(szCorrectName);
+	if (szExtension && !strncasecmp(szDiskBasename, szCorrectName, iBaseLen))
+	{
+		const char* p = szDiskBasename + iBaseLen;
+		if (*p == '.')
+		{
+			for (p++; *p && strchr("0123456789", *p); p++) ;
+			bSplittedFragement = !*p;
+			bSplittedFragement = bSplittedFragement && atoi(szDiskBasename + iBaseLen + 1) == 1;
+		}
+	}
+
+	m_bHasSplittedFragments = m_bHasSplittedFragments || bSplittedFragement;
+
+	return bSplittedFragement;
+}
+
 void ParRenamer::CheckRegularFile(const char* szDestDir, const char* szFilename)
 {
 	debug("Computing hash for %s", szFilename);
@@ -345,8 +369,8 @@ void ParRenamer::CheckRegularFile(const char* szDestDir, const char* szFilename)
 			char szDstFilename[1024];
 			snprintf(szDstFilename, 1024, "%s%c%s", szDestDir, PATH_SEPARATOR, pFileHash->GetFilename());
 			szDstFilename[1024-1] = '\0';
-			
-			if (!Util::FileExists(szDstFilename))
+
+			if (!Util::FileExists(szDstFilename) && !IsSplittedFragment(szFilename, pFileHash->GetFilename()))
 			{
 				PrintMessage(Message::mkInfo, "Renaming %s to %s", Util::BaseFileName(szFilename), pFileHash->GetFilename());
 				if (Util::MoveFile(szFilename, szDstFilename))

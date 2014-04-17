@@ -315,17 +315,26 @@ ParChecker::EStatus ParChecker::RunParCheck(const char* szParFilename)
 	res = pRepairer->Process(false);
     debug("ParChecker: Process-result=%i", res);
 
-	if (!IsStopped() && pRepairer->missingfilecount > 0 && g_pOptions->GetParScan() == Options::psAuto && AddMissingFiles())
+	bool bAddedSplittedFragments = false;
+	if (!IsStopped() && res == eRepairNotPossible)
 	{
-		res = pRepairer->Process(false);
-		debug("ParChecker: Process-result=%i", res);
+		bAddedSplittedFragments = AddSplittedFragments();
+		if (bAddedSplittedFragments)
+		{
+			res = pRepairer->Process(false);
+			debug("ParChecker: Process-result=%i", res);
+		}
 	}
 
-	if (!IsStopped() && res == eRepairNotPossible && CheckSplittedFragments())
+	if (!IsStopped() && pRepairer->missingfilecount > 0 && 
+		!(bAddedSplittedFragments && res == eRepairPossible) &&
+		g_pOptions->GetParScan() == Options::psAuto)
 	{
-		pRepairer->UpdateVerificationResults();
-		res = pRepairer->Process(false);
-		debug("ParChecker: Process-result=%i", res);
+		if (AddMissingFiles())
+		{
+			res = pRepairer->Process(false);
+			debug("ParChecker: Process-result=%i", res);
+		}
 	}
 
 	if (!IsStopped() && res == eRepairNotPossible)
@@ -634,27 +643,10 @@ void ParChecker::QueueChanged()
 	m_mutexQueuedParFiles.Unlock();
 }
 
-bool ParChecker::CheckSplittedFragments()
-{
-	bool bFragmentsAdded = false;
-
-	for (std::vector<Par2RepairerSourceFile*>::iterator it = ((Repairer*)m_pRepairer)->sourcefiles.begin();
-		it != ((Repairer*)m_pRepairer)->sourcefiles.end(); it++)
-	{
-		Par2RepairerSourceFile *sourcefile = *it;
-		if (AddSplittedFragments(sourcefile->TargetFileName().c_str()))
-		{
-			bFragmentsAdded = true;
-		}
-	}
-
-	return bFragmentsAdded;
-}
-
-bool ParChecker::AddSplittedFragments(const char* szFilename)
+bool ParChecker::AddSplittedFragments()
 {
 	char szDirectory[1024];
-	strncpy(szDirectory, szFilename, 1024);
+	strncpy(szDirectory, m_szParFilename, 1024);
 	szDirectory[1024-1] = '\0';
 
 	char* szBasename = Util::BaseFileName(szDirectory);
@@ -663,29 +655,43 @@ bool ParChecker::AddSplittedFragments(const char* szFilename)
 		return false;
 	}
 	szBasename[-1] = '\0';
-	int iBaseLen = strlen(szBasename);
 
 	std::list<CommandLine::ExtraFile> extrafiles;
 
 	DirBrowser dir(szDirectory);
 	while (const char* filename = dir.Next())
 	{
-		if (!strncasecmp(filename, szBasename, iBaseLen))
+		if (strcmp(filename, ".") && strcmp(filename, "..") && strcmp(filename, "_brokenlog.txt") &&
+			!IsParredFile(filename) && !IsProcessedFile(filename))
 		{
-			const char* p = filename + iBaseLen;
-			if (*p == '.')
+			for (std::vector<Par2RepairerSourceFile*>::iterator it = ((Repairer*)m_pRepairer)->sourcefiles.begin();
+				it != ((Repairer*)m_pRepairer)->sourcefiles.end(); it++)
 			{
-				for (p++; *p && strchr("0123456789", *p); p++) ;
-				if (!*p)
+				Par2RepairerSourceFile *sourcefile = *it;
+
+				std::string target = sourcefile->TargetFileName();
+				const char* szFilename2 = target.c_str();
+				const char* szBasename2 = Util::BaseFileName(szFilename2);
+				int iBaseLen = strlen(szBasename2);
+
+				if (!strncasecmp(filename, szBasename2, iBaseLen))
 				{
-					debug("Found splitted fragment %s", filename);
+					const char* p = filename + iBaseLen;
+					if (*p == '.')
+					{
+						for (p++; *p && strchr("0123456789", *p); p++) ;
+						if (!*p)
+						{
+							debug("Found splitted fragment %s", filename);
 
-					char fullfilename[1024];
-					snprintf(fullfilename, 1024, "%s%c%s", szDirectory, PATH_SEPARATOR, filename);
-					fullfilename[1024-1] = '\0';
+							char fullfilename[1024];
+							snprintf(fullfilename, 1024, "%s%c%s", szDirectory, PATH_SEPARATOR, filename);
+							fullfilename[1024-1] = '\0';
 
-					CommandLine::ExtraFile extrafile(fullfilename, Util::FileSize(fullfilename));
-					extrafiles.push_back(extrafile);
+							CommandLine::ExtraFile extrafile(fullfilename, Util::FileSize(fullfilename));
+							extrafiles.push_back(extrafile);
+						}
+					}
 				}
 			}
 		}
@@ -697,7 +703,9 @@ bool ParChecker::AddSplittedFragments(const char* szFilename)
 	{
 		m_iExtraFiles += extrafiles.size();
 		m_bVerifyingExtraFiles = true;
+		info("Found %i splitted fragments for %s", (int)extrafiles.size(), m_szInfoName);
 		bFragmentsAdded = ((Repairer*)m_pRepairer)->VerifyExtraFiles(extrafiles);
+		((Repairer*)m_pRepairer)->UpdateVerificationResults();
 		m_bVerifyingExtraFiles = false;
 	}
 
@@ -724,27 +732,14 @@ bool ParChecker::AddMissingFiles()
 	DirBrowser dir(szDirectory);
 	while (const char* filename = dir.Next())
 	{
-		if (strcmp(filename, ".") && strcmp(filename, "..") && strcmp(filename, "_brokenlog.txt"))
+		if (strcmp(filename, ".") && strcmp(filename, "..") && strcmp(filename, "_brokenlog.txt") &&
+			!IsParredFile(filename) && !IsProcessedFile(filename))
 		{
-			bool bAlreadyScanned = false;
-			for (FileList::iterator it = m_ProcessedFiles.begin(); it != m_ProcessedFiles.end(); it++)
-			{
-				const char* szProcessedFilename = *it;
-				if (!strcasecmp(Util::BaseFileName(szProcessedFilename), filename))
-				{
-					bAlreadyScanned = true;
-					break;
-				}
-			}
+			char fullfilename[1024];
+			snprintf(fullfilename, 1024, "%s%c%s", szDirectory, PATH_SEPARATOR, filename);
+			fullfilename[1024-1] = '\0';
 
-			if (!bAlreadyScanned && !IsParredFile(filename))
-			{
-				char fullfilename[1024];
-				snprintf(fullfilename, 1024, "%s%c%s", szDirectory, PATH_SEPARATOR, filename);
-				fullfilename[1024-1] = '\0';
-
-				extrafiles.push_back(new CommandLine::ExtraFile(fullfilename, Util::FileSize(fullfilename)));
-			}
+			extrafiles.push_back(new CommandLine::ExtraFile(fullfilename, Util::FileSize(fullfilename)));
 		}
 	}
 
@@ -798,6 +793,20 @@ bool ParChecker::AddMissingFiles()
 	}
 
 	return bFilesAdded;
+}
+
+bool ParChecker::IsProcessedFile(const char* szFilename)
+{
+	for (FileList::iterator it = m_ProcessedFiles.begin(); it != m_ProcessedFiles.end(); it++)
+	{
+		const char* szProcessedFilename = *it;
+		if (!strcasecmp(Util::BaseFileName(szProcessedFilename), szFilename))
+		{
+			return true;
+		}
+	}
+
+	return false;
 }
 
 void ParChecker::signal_filename(std::string str)
