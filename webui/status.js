@@ -131,7 +131,7 @@ var Status = (new function($)
 
 		if (status.ServerStandBy)
 		{
-			$StatusSpeed.html('--- KB/s');
+			$StatusSpeed.html('--- MB/s');
 			if (status.ResumeTime > 0)
 			{
 				$StatusTime.html(Util.formatTimeLeft(status.ResumeTime - status.ServerTime));
@@ -157,7 +157,8 @@ var Status = (new function($)
 			$StatusSpeed.html(Util.formatSpeed(status.DownloadRate));
 			if (status.DownloadRate > 0)
 			{
-				$StatusTime.html(Util.formatTimeLeft(status.RemainingSizeMB*1024/(status.DownloadRate/1024)));
+				$StatusTime.html(Util.formatTimeLeft(
+					(status.DownloadPaused ? status.ForcedSizeMB : status.RemainingSizeMB) *1024/(status.DownloadRate/1024)));
 			}
 			else
 			{

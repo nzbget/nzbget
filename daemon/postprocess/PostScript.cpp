@@ -283,14 +283,14 @@ void PostScriptController::AddMessage(Message::EKind eKind, const char* szText)
 		m_pPostInfo->AppendMessage(eKind, szText);
 	}
 
-	if (g_pOptions->GetPausePostProcess())
+	if (g_pOptions->GetPausePostProcess() && !m_pPostInfo->GetNZBInfo()->GetForcePriority())
 	{
 		time_t tStageTime = m_pPostInfo->GetStageTime();
 		time_t tStartTime = m_pPostInfo->GetStartTime();
 		time_t tWaitTime = time(NULL);
 
 		// wait until Post-processor is unpaused
-		while (g_pOptions->GetPausePostProcess() && !IsStopped())
+		while (g_pOptions->GetPausePostProcess() && !m_pPostInfo->GetNZBInfo()->GetForcePriority() && !IsStopped())
 		{
 			usleep(100 * 1000);
 

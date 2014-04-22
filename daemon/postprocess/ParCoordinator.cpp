@@ -631,14 +631,14 @@ void ParCoordinator::UpdateParCheckProgress()
 
 void ParCoordinator::CheckPauseState(PostInfo* pPostInfo)
 {
-	if (g_pOptions->GetPausePostProcess())
+	if (g_pOptions->GetPausePostProcess() && !pPostInfo->GetNZBInfo()->GetForcePriority())
 	{
 		time_t tStageTime = pPostInfo->GetStageTime();
 		time_t tStartTime = pPostInfo->GetStartTime();
 		time_t tWaitTime = time(NULL);
 		
 		// wait until Post-processor is unpaused
-		while (g_pOptions->GetPausePostProcess() && !m_bStopped)
+		while (g_pOptions->GetPausePostProcess() && !pPostInfo->GetNZBInfo()->GetForcePriority() && !m_bStopped)
 		{
 			usleep(100 * 1000);
 			

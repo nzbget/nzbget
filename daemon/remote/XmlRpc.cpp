@@ -1142,6 +1142,9 @@ void StatusXmlCommand::Execute()
 		"<member><name>RemainingSizeLo</name><value><i4>%u</i4></value></member>\n"
 		"<member><name>RemainingSizeHi</name><value><i4>%u</i4></value></member>\n"
 		"<member><name>RemainingSizeMB</name><value><i4>%i</i4></value></member>\n"
+		"<member><name>ForcedSizeLo</name><value><i4>%u</i4></value></member>\n"
+		"<member><name>ForcedSizeHi</name><value><i4>%u</i4></value></member>\n"
+		"<member><name>ForcedSizeMB</name><value><i4>%i</i4></value></member>\n"
 		"<member><name>DownloadedSizeLo</name><value><i4>%u</i4></value></member>\n"
 		"<member><name>DownloadedSizeHi</name><value><i4>%u</i4></value></member>\n"
 		"<member><name>DownloadedSizeMB</name><value><i4>%i</i4></value></member>\n"
@@ -1177,6 +1180,9 @@ void StatusXmlCommand::Execute()
 		"\"RemainingSizeLo\" : %u,\n"
 		"\"RemainingSizeHi\" : %u,\n"
 		"\"RemainingSizeMB\" : %i,\n"
+		"\"ForcedSizeLo\" : %u,\n"
+		"\"ForcedSizeHi\" : %u,\n"
+		"\"ForcedSizeMB\" : %i,\n"
 		"\"DownloadedSizeLo\" : %u,\n"
 		"\"DownloadedSizeHi\" : %u,\n"
 		"\"DownloadedSizeMB\" : %i,\n"
@@ -1228,18 +1234,25 @@ void StatusXmlCommand::Execute()
 		iPostJobCount += pNZBInfo->GetPostInfo() ? 1 : 0;
 		iUrlCount += pNZBInfo->GetKind() == NZBInfo::nkUrl ? 1 : 0;
 	}
-	long long iRemainingSize = pDownloadQueue->CalcRemainingSize();
+	long long iRemainingSize, iForcedSize;
+	pDownloadQueue->CalcRemainingSize(&iRemainingSize, &iForcedSize);
 	DownloadQueue::Unlock();
 
 	unsigned long iRemainingSizeHi, iRemainingSizeLo;
-	int iDownloadRate = (int)(g_pStatMeter->CalcCurrentDownloadSpeed());
 	Util::SplitInt64(iRemainingSize, &iRemainingSizeHi, &iRemainingSizeLo);
 	int iRemainingMBytes = (int)(iRemainingSize / 1024 / 1024);
+
+	unsigned long iForcedSizeHi, iForcedSizeLo;
+	Util::SplitInt64(iForcedSize, &iForcedSizeHi, &iForcedSizeLo);
+	int iForcedMBytes = (int)(iForcedSize / 1024 / 1024);
+
+	int iDownloadRate = (int)(g_pStatMeter->CalcCurrentDownloadSpeed());
 	int iDownloadLimit = (int)(g_pOptions->GetDownloadRate());
 	bool bDownloadPaused = g_pOptions->GetPauseDownload();
 	bool bPostPaused = g_pOptions->GetPausePostProcess();
 	bool bScanPaused = g_pOptions->GetPauseScan();
 	int iThreadCount = Thread::GetThreadCount() - 1; // not counting itself
+
 	unsigned long iDownloadedSizeHi, iDownloadedSizeLo;
 	int iUpTimeSec, iDownloadTimeSec;
 	long long iAllBytes;
@@ -1258,7 +1271,8 @@ void StatusXmlCommand::Execute()
 	
 	char szContent[3072];
 	snprintf(szContent, 3072, IsJson() ? JSON_STATUS_START : XML_STATUS_START, 
-		iRemainingSizeLo, iRemainingSizeHi,	iRemainingMBytes, iDownloadedSizeLo, iDownloadedSizeHi, 
+		iRemainingSizeLo, iRemainingSizeHi, iRemainingMBytes, iForcedSizeLo,
+		iForcedSizeHi, iForcedMBytes, iDownloadedSizeLo, iDownloadedSizeHi,
 		iDownloadedMBytes, iDownloadRate, iAverageDownloadRate, iDownloadLimit,	iThreadCount, 
 		iPostJobCount, iPostJobCount, iUrlCount, iUpTimeSec, iDownloadTimeSec, 
 		BoolToStr(bDownloadPaused), BoolToStr(bDownloadPaused), BoolToStr(bDownloadPaused), 
