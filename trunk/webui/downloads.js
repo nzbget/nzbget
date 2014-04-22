@@ -555,6 +555,7 @@ var DownloadsUI = (new function($)
 	this.fillPriorityCombo = function(combo)
 	{
 		combo.empty();
+		combo.append('<option value="900">force</option>');
 		combo.append('<option value="100">very high</option>');
 		combo.append('<option value="50">high</option>');
 		combo.append('<option value="0">normal</option>');
@@ -726,6 +727,7 @@ var DownloadsUI = (new function($)
 		switch (priority)
 		{
 			case 0: return '';
+			case 900: return 'force priority';
 			case 100: return 'very high priority';
 			case 50: return 'high priority';
 			case -50: return 'low priority';
@@ -739,6 +741,7 @@ var DownloadsUI = (new function($)
 		switch (priority)
 		{
 			case 0: return '';
+			case 900: return ' <span class="label label-priority label-important">force priority</span>';
 			case 100: return ' <span class="label label-priority label-important">very high priority</span>';
 			case 50: return ' <span class="label label-priority label-important">high priority</span>';
 			case -50: return ' <span class="label label-priority label-info">low priority</span>';

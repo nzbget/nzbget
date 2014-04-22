@@ -579,7 +579,8 @@ void ListBinCommand::Execute()
 			NZBInfo* pNZBInfo = *it;
 			iPostJobCount += pNZBInfo->GetPostInfo() ? 1 : 0;
 		}
-		long long lRemainingSize = pDownloadQueue->CalcRemainingSize();
+		long long lRemainingSize;
+		pDownloadQueue->CalcRemainingSize(&lRemainingSize, NULL);
 		DownloadQueue::Unlock();
 
 		unsigned long iSizeHi, iSizeLo;

@@ -1265,9 +1265,10 @@ void DownloadQueue::Unlock()
 	g_pDownloadQueue->m_LockMutex.Unlock();
 }
 
-long long DownloadQueue::CalcRemainingSize()
+void DownloadQueue::CalcRemainingSize(long long* pRemaining, long long* pRemainingForced)
 {
 	long long lRemainingSize = 0;
+	long long lRemainingForced = 0;
 
 	for (NZBList::iterator it = m_Queue.begin(); it != m_Queue.end(); it++)
 	{
@@ -1278,9 +1279,18 @@ long long DownloadQueue::CalcRemainingSize()
 			if (!pFileInfo->GetPaused() && !pFileInfo->GetDeleted())
 			{
 				lRemainingSize += pFileInfo->GetRemainingSize();
+				if (pNZBInfo->GetForcePriority())
+				{
+					lRemainingForced += pFileInfo->GetRemainingSize();
+				}
 			}
 		}
 	}
 
-	return lRemainingSize;
+	*pRemaining = lRemainingSize;
+
+	if (pRemainingForced)
+	{
+		*pRemainingForced = lRemainingForced;
+	}
 }

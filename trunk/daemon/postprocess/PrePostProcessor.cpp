@@ -390,10 +390,10 @@ void PrePostProcessor::CheckPostQueue()
 {
 	DownloadQueue* pDownloadQueue = DownloadQueue::Lock();
 
-	if (!m_pCurJob && m_iJobCount > 0 && !g_pOptions->GetPausePostProcess())
+	if (!m_pCurJob && m_iJobCount > 0)
 	{
 		m_pCurJob = GetNextJob(pDownloadQueue);
-		if (!m_pCurJob)
+		if (!m_pCurJob && !g_pOptions->GetPausePostProcess())
 		{
 			error("Internal error: no jobs found in queue");
 			m_iJobCount = 0;
@@ -441,7 +441,8 @@ void PrePostProcessor::CheckPostQueue()
 				pPostInfo->SetStage(PostInfo::ptFinished);
 			}
 
-			if (pPostInfo->GetStage() == PostInfo::ptQueued && !g_pOptions->GetPausePostProcess())
+			if (pPostInfo->GetStage() == PostInfo::ptQueued &&
+				(!g_pOptions->GetPausePostProcess() || pPostInfo->GetNZBInfo()->GetForcePriority()))
 			{
 				DeletePostThread(pPostInfo);
 				StartJob(pDownloadQueue, pPostInfo);
@@ -469,7 +470,8 @@ NZBInfo* PrePostProcessor::GetNextJob(DownloadQueue* pDownloadQueue)
 	for (NZBList::iterator it = pDownloadQueue->GetQueue()->begin(); it != pDownloadQueue->GetQueue()->end(); it++)
 	{
 		NZBInfo* pNZBInfo1 = *it;
-		if (pNZBInfo1->GetPostInfo() && (!pNZBInfo || pNZBInfo1->GetPriority() > pNZBInfo->GetPriority()))
+		if (pNZBInfo1->GetPostInfo() && (!pNZBInfo || pNZBInfo1->GetPriority() > pNZBInfo->GetPriority()) &&
+			(!g_pOptions->GetPausePostProcess() || pNZBInfo1->GetForcePriority()))
 		{
 			pNZBInfo = pNZBInfo1;
 		}

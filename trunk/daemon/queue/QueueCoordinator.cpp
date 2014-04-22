@@ -181,37 +181,34 @@ void QueueCoordinator::Run()
 	while (!IsStopped())
 	{
 		bool bDownloadsChecked = false;
-		if (!g_pOptions->GetPauseDownload())
+		NNTPConnection* pConnection = g_pServerPool->GetConnection(0, NULL, NULL);
+		if (pConnection)
 		{
-			NNTPConnection* pConnection = g_pServerPool->GetConnection(0, NULL, NULL);
-			if (pConnection)
+			// start download for next article
+			FileInfo* pFileInfo;
+			ArticleInfo* pArticleInfo;
+			bool bFreeConnection = false;
+			
+			DownloadQueue* pDownloadQueue = DownloadQueue::Lock();
+			bool bHasMoreArticles = GetNextArticle(pDownloadQueue, pFileInfo, pArticleInfo);
+			bArticeDownloadsRunning = !m_ActiveDownloads.empty();
+			bDownloadsChecked = true;
+			m_bHasMoreJobs = bHasMoreArticles || bArticeDownloadsRunning;
+			if (bHasMoreArticles && !IsStopped() && (int)m_ActiveDownloads.size() < m_iDownloadsLimit &&
+				(!g_pOptions->GetTempPauseDownload() || pFileInfo->GetExtraPriority()))
 			{
-				// start download for next article
-				FileInfo* pFileInfo;
-				ArticleInfo* pArticleInfo;
-				bool bFreeConnection = false;
-				
-				DownloadQueue* pDownloadQueue = DownloadQueue::Lock();
-				bool bHasMoreArticles = GetNextArticle(pDownloadQueue, pFileInfo, pArticleInfo);
-				bArticeDownloadsRunning = !m_ActiveDownloads.empty();
-				bDownloadsChecked = true;
-				m_bHasMoreJobs = bHasMoreArticles || bArticeDownloadsRunning;
-				if (bHasMoreArticles && !IsStopped() && (int)m_ActiveDownloads.size() < m_iDownloadsLimit &&
-					(!g_pOptions->GetTempPauseDownload() || pFileInfo->GetExtraPriority()))
-				{
-					StartArticleDownload(pFileInfo, pArticleInfo, pConnection);
-					bArticeDownloadsRunning = true;
-				}
-				else
-				{
-					bFreeConnection = true;
-				}
-				DownloadQueue::Unlock();
-				
-				if (bFreeConnection)
-				{
-					g_pServerPool->FreeConnection(pConnection, false);
-				}
+				StartArticleDownload(pFileInfo, pArticleInfo, pConnection);
+				bArticeDownloadsRunning = true;
+			}
+			else
+			{
+				bFreeConnection = true;
+			}
+			DownloadQueue::Unlock();
+			
+			if (bFreeConnection)
+			{
+				g_pServerPool->FreeConnection(pConnection, false);
 			}
 		}
 
@@ -484,6 +481,7 @@ bool QueueCoordinator::GetNextArticle(DownloadQueue* pDownloadQueue, FileInfo* &
 					!pFileInfo1->GetPaused() && !pFileInfo1->GetDeleted() &&
 					(g_pOptions->GetPropagationDelay() == 0 ||
 					 (int)pFileInfo1->GetTime() < (int)tCurDate - g_pOptions->GetPropagationDelay()) &&
+					(!g_pOptions->GetPauseDownload() || pNZBInfo->GetForcePriority()) &&
 					(!pFileInfo ||
 					 (pFileInfo1->GetExtraPriority() == pFileInfo->GetExtraPriority() &&
 					  pFileInfo1->GetNZBInfo()->GetPriority() > pFileInfo->GetNZBInfo()->GetPriority()) ||

@@ -371,6 +371,8 @@ public:
 	typedef std::vector<char*>			Files;
 	typedef std::deque<Message*>		Messages;
 
+	static const int FORCE_PRIORITY = 900;
+
 private:
 	int					m_iID;
 	EKind				m_eKind;
@@ -511,6 +513,7 @@ public:
 	void 				SetCurrentFailedArticles(int iCurrentFailedArticles) { m_iCurrentFailedArticles = iCurrentFailedArticles; }
 	int					GetPriority() { return m_iPriority; }
 	void				SetPriority(int iPriority) { m_iPriority = iPriority; }
+	bool				GetForcePriority() { return m_iPriority >= FORCE_PRIORITY; }
 	time_t				GetMinTime() { return m_tMinTime; }
 	void				SetMinTime(time_t tMinTime) { m_tMinTime = tMinTime; }
 	time_t				GetMaxTime() { return m_tMaxTime; }
@@ -851,7 +854,7 @@ public:
 	virtual bool			EditEntry(int ID, EEditAction eAction, int iOffset, const char* szText) = 0;
 	virtual bool			EditList(IDList* pIDList, NameList* pNameList, EMatchMode eMatchMode, EEditAction eAction, int iOffset, const char* szText) = 0;
 	virtual void			Save() = 0;
-	long long 				CalcRemainingSize();
+	void					CalcRemainingSize(long long* pRemaining, long long* pRemainingForced);
 };
 
 #endif

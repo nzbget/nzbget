@@ -107,7 +107,7 @@ bool Frontend::PrepareData()
 				NZBInfo* pNZBInfo = *it;
 				m_iPostJobCount += pNZBInfo->GetPostInfo() ? 1 : 0;
 			}
-			m_lRemainingSize = pDownloadQueue->CalcRemainingSize();
+			pDownloadQueue->CalcRemainingSize(&m_lRemainingSize, NULL);
 			DownloadQueue::Unlock();
 
 		}
