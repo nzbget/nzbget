@@ -113,6 +113,8 @@ QueueCoordinator::~QueueCoordinator()
 
 void QueueCoordinator::Load()
 {
+	DownloadQueue* pDownloadQueue = DownloadQueue::Lock();
+
 	bool bStatLoaded = true;
 	bool bPerfectServerMatch = true;
 	bool bQueueLoaded = false;
@@ -123,7 +125,7 @@ void QueueCoordinator::Load()
 
 		if (g_pOptions->GetReloadQueue() && g_pDiskState->DownloadQueueExists())
 		{
-			bQueueLoaded = g_pDiskState->LoadDownloadQueue(&m_DownloadQueue, g_pServerPool->GetServers());
+			bQueueLoaded = g_pDiskState->LoadDownloadQueue(pDownloadQueue, g_pServerPool->GetServers());
 		}
 		else
 		{
@@ -133,7 +135,7 @@ void QueueCoordinator::Load()
 
 	if (bQueueLoaded && bStatLoaded)
 	{
-		g_pDiskState->CleanupTempDir(&m_DownloadQueue);
+		g_pDiskState->CleanupTempDir(pDownloadQueue);
 	}
 
 	if (bQueueLoaded && bStatLoaded && !bPerfectServerMatch)
@@ -144,12 +146,12 @@ void QueueCoordinator::Load()
 		g_pStatMeter->Save();
 
 		// re-save queue into diskstate to update server ids
-		m_DownloadQueue.Save();
+		pDownloadQueue->Save();
 
 		// re-save file states into diskstate to update server ids
 		if (g_pOptions->GetServerMode() && g_pOptions->GetSaveQueue() && g_pOptions->GetContinuePartial())
 		{
-			for (NZBList::iterator it = m_DownloadQueue.GetQueue()->begin(); it != m_DownloadQueue.GetQueue()->end(); it++)
+			for (NZBList::iterator it = pDownloadQueue->GetQueue()->begin(); it != pDownloadQueue->GetQueue()->end(); it++)
 			{
 				NZBInfo* pNZBInfo = *it;
 				for (FileList::iterator it2 = pNZBInfo->GetFileList()->begin(); it2 != pNZBInfo->GetFileList()->end(); it2++)
@@ -165,6 +167,7 @@ void QueueCoordinator::Load()
 	}
 
 	CoordinatorDownloadQueue::Loaded();
+	DownloadQueue::Unlock();
 }
 
 void QueueCoordinator::Run()
