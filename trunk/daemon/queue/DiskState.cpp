@@ -162,6 +162,7 @@ bool DiskState::LoadDownloadQueue(DownloadQueue* pDownloadQueue, Servers* pServe
 	debug("Loading queue from disk");
 
 	bool bOK = false;
+	int iFormatVersion = 0;
 
 	char fileName[1024];
 	snprintf(fileName, 1024, "%s%s", g_pOptions->GetQueueDir(), "queue");
@@ -177,7 +178,7 @@ bool DiskState::LoadDownloadQueue(DownloadQueue* pDownloadQueue, Servers* pServe
 
 	char FileSignatur[128];
 	fgets(FileSignatur, sizeof(FileSignatur), infile);
-	int iFormatVersion = ParseFormatVersion(FileSignatur);
+	iFormatVersion = ParseFormatVersion(FileSignatur);
 	if (iFormatVersion < 3 || iFormatVersion > 46)
 	{
 		error("Could not load diskstate due to file version mismatch");
@@ -243,8 +244,6 @@ bool DiskState::LoadDownloadQueue(DownloadQueue* pDownloadQueue, Servers* pServe
 
 	if (!LoadAllFileStates(pDownloadQueue, pServers)) goto error;
 
-	CalcFileStats(pDownloadQueue, iFormatVersion);
-
 	bOK = true;
 
 error:
@@ -258,6 +257,11 @@ error:
 	NZBInfo::ResetGenID(true);
 	FileInfo::ResetGenID(true);
 	HistoryInfo::ResetGenID(true);
+
+	if (iFormatVersion > 0)
+	{
+		CalcFileStats(pDownloadQueue, iFormatVersion);
+	}
 
 	return bOK;
 }
