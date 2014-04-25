@@ -707,6 +707,12 @@ void NZBFile::Parse_StartElement(const char *name, const char **atts)
 		m_pFileInfo = new FileInfo();
 		m_pFileInfo->SetFilename(m_szFileName);
 
+		if (!atts)
+		{
+			warn("Malformed nzb-file, tag <%s> must have attributes", name);
+			return;
+		}
+
     	for (int i = 0; atts[i]; i += 2)
     	{
     		const char* attrname = atts[i];
@@ -725,10 +731,16 @@ void NZBFile::Parse_StartElement(const char *name, const char **atts)
 	{
 		if (!m_pFileInfo)
 		{
-			// error: bad nzb-file
+			warn("Malformed nzb-file, tag <segment> without tag <file>");
 			return;
 		}
-	
+
+		if (!atts)
+		{
+			warn("Malformed nzb-file, tag <%s> must have attributes", name);
+			return;
+		}
+
 		long long lsize = -1;
 		int partNumber = -1;
 
@@ -757,6 +769,11 @@ void NZBFile::Parse_StartElement(const char *name, const char **atts)
 	}
 	else if (!strcmp("meta", name))
 	{
+		if (!atts)
+		{
+			warn("Malformed nzb-file, tag <%s> must have attributes", name);
+			return;
+		}
 		m_bPassword = atts[0] && atts[1] && !strcmp("type", atts[0]) && !strcmp("password", atts[1]);
 	}
 }
