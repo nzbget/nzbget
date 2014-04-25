@@ -130,6 +130,11 @@ void UrlCoordinator::Run()
 {
 	debug("Entering UrlCoordinator-loop");
 
+	while (!DownloadQueue::IsLoaded())
+	{
+		usleep(5 * 1000);
+	}
+
 	int iResetCounter = 0;
 
 	while (!IsStopped())

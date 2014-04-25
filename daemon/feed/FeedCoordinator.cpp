@@ -124,12 +124,17 @@ void FeedCoordinator::Run()
 {
 	debug("Entering FeedCoordinator-loop");
 
-	m_mutexDownloads.Lock();
+	while (!DownloadQueue::IsLoaded())
+	{
+		usleep(5 * 1000);
+	}
+
 	if (g_pOptions->GetServerMode() && g_pOptions->GetSaveQueue() && g_pOptions->GetReloadQueue())
 	{
+		m_mutexDownloads.Lock();
 		g_pDiskState->LoadFeeds(&m_Feeds, &m_FeedHistory);
+		m_mutexDownloads.Unlock();
 	}
-	m_mutexDownloads.Unlock();
 
 	int iSleepInterval = 100;
 	int iUpdateCounter = 0;
