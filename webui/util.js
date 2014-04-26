@@ -104,11 +104,27 @@ var Util = (new function($)
 			sizeMB = sizeLo / 1024.0 / 1024.0;
 		}
 
-		if (sizeMB > 10240)
+		if (sizeMB > 1024 * 1024 * 100)
+		{
+			return this.round0(sizeMB / 1024.0 / 1024.0) + '&nbsp;TB';
+		}
+		else if (sizeMB > 1024 * 1024 * 10)
+		{
+			return this.round1(sizeMB / 1024.0 / 1024.0) + '&nbsp;TB';
+		}
+		else if (sizeMB > 1024 * 1000)
+		{
+			return this.round2(sizeMB / 1024.0 / 1024.0) + '&nbsp;TB';
+		}
+		else if (sizeMB > 1024 * 100)
+		{
+			return this.round0(sizeMB / 1024.0) + '&nbsp;GB';
+		}
+		else if (sizeMB > 1024 * 10)
 		{
 			return this.round1(sizeMB / 1024.0) + '&nbsp;GB';
 		}
-		else if (sizeMB > 1024)
+		else if (sizeMB > 1000)
 		{
 			return this.round2(sizeMB / 1024.0) + '&nbsp;GB';
 		}
