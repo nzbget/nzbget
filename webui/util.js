@@ -144,21 +144,21 @@ var Util = (new function($)
 
 	this.formatSpeed = function(bytesPerSec)
 	{
-		if (bytesPerSec > 100 * 1024 * 1024 - 1)
+		if (bytesPerSec >= 100 * 1024 * 1024)
 		{
-			return Util.round0(bytesPerSec / (1024 * 1024)) + '&nbsp;MB/s';
+			return Util.round0(bytesPerSec / 1024.0 / 1024.0) + '&nbsp;MB/s';
 		}
-		else if (bytesPerSec > 10 * 1024 * 1024 - 1)
+		else if (bytesPerSec >= 10 * 1024 * 1024)
 		{
-			return Util.round1(bytesPerSec / (1024 * 1024)) + '&nbsp;MB/s';
+			return Util.round1(bytesPerSec / 1024.0 / 1024.0) + '&nbsp;MB/s';
 		}
-		else if (bytesPerSec > 1024 * 1024 - 1)
+		else if (bytesPerSec >= 1024 * 1000)
 		{
-			return Util.round2(bytesPerSec / (1024 * 1024)) + '&nbsp;MB/s';
+			return Util.round2(bytesPerSec / 1024.0 / 1024.0) + '&nbsp;MB/s';
 		}
 		else
 		{
-			return Util.round0(bytesPerSec / 1024) + '&nbsp;KB/s';
+			return Util.round0(bytesPerSec / 1024.0) + '&nbsp;KB/s';
 		}
 	}
 	
