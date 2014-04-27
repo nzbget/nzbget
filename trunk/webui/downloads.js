@@ -591,7 +591,7 @@ var DownloadsUI = (new function($)
 		
 		if (group.postprocess && group.Status !== 'PP_QUEUED')
 		{
-			badgeClass = Status.status.PostPaused ? 'label-warning' : 'label-success';
+			badgeClass = Status.status.PostPaused && group.MinPriority < 900 ? 'label-warning' : 'label-success';
 		}
 		else if (group.Status === 'DOWNLOADING' || group.Status === 'FETCHING')
 		{
@@ -612,11 +612,13 @@ var DownloadsUI = (new function($)
 
 	this.buildProgress = function(group, totalsize, remaining, estimated)
 	{
-		if (group.Status === 'DOWNLOADING' || (group.postprocess && !Status.status.PostPaused))
+		if (group.Status === 'DOWNLOADING' ||
+			(group.postprocess && !(Status.status.PostPaused && group.MinPriority < 900)))
 		{
 			var kind = 'progress-success';
 		}
-		else if (group.Status === 'PAUSED' || (group.postprocess && Status.status.PostPaused))
+		else if (group.Status === 'PAUSED' ||
+			(group.postprocess && !(Status.status.PostPaused && group.MinPriority < 900)))
 		{
 			var kind = 'progress-warning';
 		}
@@ -690,7 +692,7 @@ var DownloadsUI = (new function($)
 	this.buildProgressLabel = function(group, maxWidth)
 	{
 		var text = '';
-		if (group.postprocess && !Status.status.PostPaused)
+		if (group.postprocess && !(Status.status.PostPaused && group.MinPriority < 900))
 		{
 			switch (group.Status)
 			{
