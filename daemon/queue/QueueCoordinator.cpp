@@ -828,9 +828,19 @@ void QueueCoordinator::CheckHealth(DownloadQueue* pDownloadQueue, FileInfo* pFil
 
 void QueueCoordinator::LogDebugInfo()
 {
+	DownloadQueue* pDownloadQueue = DownloadQueue::Lock();
+
+	info("   ---------- Queue");
+	long long lRemaining, lRemainingForced;
+	pDownloadQueue->CalcRemainingSize(&lRemaining, &lRemainingForced);
+	info("     Remaining: %.1f MB, Forced: %.1f MB", lRemaining / 1024.0 / 1024.0, lRemainingForced / 1024.0 / 1024.0);
+	info("     Download: %s, Post-process: %s, Scan: %s",
+		 (g_pOptions->GetPauseDownload() ? "paused" : g_pOptions->GetTempPauseDownload() ? "temp-paused" : "active"),
+		 (g_pOptions->GetPausePostProcess() ? "paused" : "active"),
+		 (g_pOptions->GetPauseScan() ? "paused" : "active"));
+
 	info("   ---------- QueueCoordinator");
-	DownloadQueue::Lock();
-	info("    Active Downloads: %i", m_ActiveDownloads.size());
+	info("    Active Downloads: %i, Limit: %i", m_ActiveDownloads.size(), m_iDownloadsLimit);
 	for (ActiveDownloads::iterator it = m_ActiveDownloads.begin(); it != m_ActiveDownloads.end(); it++)
 	{
 		ArticleDownloader* pArticleDownloader = *it;
