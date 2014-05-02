@@ -349,7 +349,7 @@ void ServerPool::LogDebugInfo()
 	for (Levels::iterator it = m_Levels.begin(); it != m_Levels.end(); it++, index++)
 	{
 		int  iSize = *it;
-		info("      %i: Size=%i", index, iSize);
+		info("      %i: Free connections=%i", index, iSize);
 	}
 
 	info("    Connections: %i", m_Connections.size());
