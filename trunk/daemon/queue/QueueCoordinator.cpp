@@ -184,6 +184,7 @@ void QueueCoordinator::Run()
 	while (!IsStopped())
 	{
 		bool bDownloadsChecked = false;
+		bool bDownloadStarted = false;
 		NNTPConnection* pConnection = g_pServerPool->GetConnection(0, NULL, NULL);
 		if (pConnection)
 		{
@@ -202,6 +203,7 @@ void QueueCoordinator::Run()
 			{
 				StartArticleDownload(pFileInfo, pArticleInfo, pConnection);
 				bArticeDownloadsRunning = true;
+				bDownloadStarted = true;
 			}
 			else
 			{
@@ -230,7 +232,7 @@ void QueueCoordinator::Run()
 		}
 
 		// sleep longer in StandBy
-		int iSleepInterval = bStandBy ? 100 : 5;
+		int iSleepInterval = bDownloadStarted ? 0 : bStandBy ? 100 : 5;
 		usleep(iSleepInterval * 1000);
 
 		if (!bStandBy)
