@@ -126,7 +126,7 @@ void FeedCoordinator::Run()
 
 	while (!DownloadQueue::IsLoaded())
 	{
-		usleep(5 * 1000);
+		usleep(20 * 1000);
 	}
 
 	if (g_pOptions->GetServerMode() && g_pOptions->GetSaveQueue() && g_pOptions->GetReloadQueue())

@@ -557,7 +557,7 @@ int ScriptController::Execute()
 	}
 	while (pWatchDog->IsRunning())
 	{
-		usleep(1 * 1000);
+		usleep(5 * 1000);
 	}
 	delete pWatchDog;
 #endif
