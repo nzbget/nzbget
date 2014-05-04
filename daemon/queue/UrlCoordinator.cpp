@@ -132,13 +132,14 @@ void UrlCoordinator::Run()
 
 	while (!DownloadQueue::IsLoaded())
 	{
-		usleep(5 * 1000);
+		usleep(20 * 1000);
 	}
 
 	int iResetCounter = 0;
 
 	while (!IsStopped())
 	{
+		bool bDownloadStarted = false;
 		if (!g_pOptions->GetPauseDownload() || g_pOptions->GetUrlForce())
 		{
 			// start download for next URL
@@ -153,12 +154,13 @@ void UrlCoordinator::Run()
 				if (bHasMoreUrls && !IsStopped())
 				{
 					StartUrlDownload(pNZBInfo);
+					bDownloadStarted = true;
 				}
 			}
 			DownloadQueue::Unlock();
 		}
 
-		int iSleepInterval = 100;
+		int iSleepInterval = bDownloadStarted ? 0 : 100;
 		usleep(iSleepInterval * 1000);
 
 		iResetCounter += iSleepInterval;
