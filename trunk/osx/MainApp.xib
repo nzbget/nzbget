@@ -137,7 +137,7 @@
 								</object>
 								<object class="NSMenuItem" id="942754376">
 									<reference key="NSMenu" ref="309075451"/>
-									<string key="NSTitle">Post-Processing Scripts</string>
+									<string key="NSTitle">Scripts</string>
 									<string key="NSKeyEquiv"/>
 									<int key="NSMnemonicLoc">2147483647</int>
 									<reference key="NSOnImage" ref="723905397"/>

@@ -30,7 +30,7 @@
 NSString* MAIN_DIR = @"${AppSupDir}";
 NSString* LOCK_FILE = @"${AppSupDir}/nzbget.lock";
 NSString* CONFIG_FILE = @"${AppSupDir}/nzbget.conf";
-NSString* PPSCRIPTS_DIR = @"${AppSupDir}/ppscripts";
+NSString* SCRIPTS_DIR = @"${AppSupDir}/scripts";
 NSString* NZB_DIR = @"${AppSupDir}/nzb";
 NSString* QUEUE_DIR = @"${AppSupDir}/queue";
 NSString* TMP_DIR = @"${AppSupDir}/tmp";
@@ -80,10 +80,10 @@ NSString* TMP_DIR = @"${AppSupDir}/tmp";
 		[[NSFileManager defaultManager] copyItemAtPath:configTemplate toPath:_configFilePath error:nil];
 	}
 
-	NSString* ppscriptsDir = [self resolveAppSupDir:PPSCRIPTS_DIR];
-	if (![[NSFileManager defaultManager] fileExistsAtPath:ppscriptsDir]) {
-		NSString* ppscriptsTemplate = [NSString stringWithFormat:@"%@/usr/local/share/nzbget/ppscripts", bundlePath];
-		[[NSFileManager defaultManager] copyItemAtPath:ppscriptsTemplate toPath:ppscriptsDir error:nil];
+	NSString* scriptsDir = [self resolveAppSupDir:SCRIPTS_DIR];
+	if (![[NSFileManager defaultManager] fileExistsAtPath:scriptsDir]) {
+		NSString* scriptsTemplate = [NSString stringWithFormat:@"%@/usr/local/share/nzbget/scripts", bundlePath];
+		[[NSFileManager defaultManager] copyItemAtPath:scriptsTemplate toPath:scriptsDir error:nil];
 	}
 }
 
@@ -203,7 +203,7 @@ NSString* TMP_DIR = @"${AppSupDir}/tmp";
 	DLog(@"DaemonController->resetToFactoryDefaults");
 	[[NSFileManager defaultManager] removeItemAtPath:_configFilePath error:nil];
 	[[NSFileManager defaultManager] removeItemAtPath:[self resolveAppSupDir:QUEUE_DIR] error:nil];
-	[[NSFileManager defaultManager] removeItemAtPath:[self resolveAppSupDir:PPSCRIPTS_DIR] error:nil];
+	[[NSFileManager defaultManager] removeItemAtPath:[self resolveAppSupDir:SCRIPTS_DIR] error:nil];
 	[[NSFileManager defaultManager] removeItemAtPath:[self resolveAppSupDir:NZB_DIR] error:nil];
 	[[NSFileManager defaultManager] removeItemAtPath:[self resolveAppSupDir:TMP_DIR] error:nil];
 }

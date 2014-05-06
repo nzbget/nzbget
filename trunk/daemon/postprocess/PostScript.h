@@ -30,21 +30,20 @@
 #include "Log.h"
 #include "QueueScript.h"
 #include "DownloadInfo.h"
+#include "Options.h"
 
-class PostScriptController : public Thread, public QueueScriptController
+class PostScriptController : public Thread, public NZBScriptController
 {
 private:
 	PostInfo*			m_pPostInfo;
 	char				m_szNZBName[1024];
  	int					m_iPrefixLen;
 
-	void				ExecuteScript(const char* szScriptName, const char* szDisplayName, const char* szLocation);
 	void				PrepareParams(const char* szScriptName);
 	ScriptStatus::EStatus	AnalyseExitCode(int iExitCode);
 
-	typedef std::deque<char*>		FileList;
-
 protected:
+	virtual void		ExecuteScript(Options::Script* pScript);
 	virtual void		AddMessage(Message::EKind eKind, const char* szText);
 
 public:

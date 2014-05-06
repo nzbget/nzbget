@@ -91,8 +91,7 @@ void PrePostProcessor::Run()
 		usleep(20 * 1000);
 	}
 
-	if (g_pOptions->GetServerMode() && g_pOptions->GetSaveQueue() &&
-		g_pOptions->GetReloadQueue())
+	if (g_pOptions->GetServerMode() && g_pOptions->GetSaveQueue() && g_pOptions->GetReloadQueue())
 	{
 		DownloadQueue* pDownloadQueue = DownloadQueue::Lock();
 		SanitisePostQueue(pDownloadQueue);
@@ -239,9 +238,9 @@ void PrePostProcessor::NZBAdded(DownloadQueue* pDownloadQueue, NZBInfo* pNZBInfo
 	{
 		NZBCompleted(pDownloadQueue, pNZBInfo, false);
 	}
-	else if (!Util::EmptyStr(g_pOptions->GetNZBAddedProcess()))
+	else if (!Util::EmptyStr(g_pOptions->GetQueueScript()))
 	{
-		NZBAddedScriptController::StartScript(pDownloadQueue, pNZBInfo, g_pOptions->GetNZBAddedProcess());
+		QueueScriptController::StartScripts(pDownloadQueue, pNZBInfo);
 	}
 }
 

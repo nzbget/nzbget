@@ -365,8 +365,10 @@ void QueueCoordinator::AddNZBFileToQueue(NZBFile* pNZBFile, NZBInfo* pUrlInfo, b
 		delete pUrlInfo;
 	}
 
-	char szNZBName[1024];
-	strncpy(szNZBName, pNZBInfo->GetName(), sizeof(szNZBName)-1);
+	if (eDeleteStatus == NZBInfo::dsNone)
+	{
+		info("Collection %s added to queue", pNZBInfo->GetName());
+	}
 
 	if (eDeleteStatus != NZBInfo::dsManual)
 	{
@@ -377,11 +379,6 @@ void QueueCoordinator::AddNZBFileToQueue(NZBFile* pNZBFile, NZBInfo* pUrlInfo, b
 	pDownloadQueue->Save();
 
 	DownloadQueue::Unlock();
-
-	if (eDeleteStatus == NZBInfo::dsNone)
-	{
-		info("Collection %s added to queue", szNZBName);
-	}
 }
 
 void QueueCoordinator::CheckDupeFileInfos(NZBInfo* pNZBInfo)

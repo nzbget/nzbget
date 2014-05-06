@@ -1,7 +1,7 @@
 /*
  *  This file is part of nzbget
  *
- *  Copyright (C) 2008-2013 Andrey Prygunkov <hugbug@users.sourceforge.net>
+ *  Copyright (C) 2008-2014 Andrey Prygunkov <hugbug@users.sourceforge.net>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -40,6 +40,7 @@ public:
 		scPauseDownload,
 		scUnpauseDownload,
 		scDownloadRate,
+		scScript,
 		scProcess,
 		scPauseScan,
 		scUnpauseScan,
@@ -51,6 +52,7 @@ public:
 	class Task
 	{
 	private:
+		int				m_iID;
 		int				m_iHours;
 		int				m_iMinutes;
 		int				m_iWeekDaysBits;
@@ -59,7 +61,7 @@ public:
 		time_t			m_tLastExecuted;
 
 	public:
-						Task(int iHours, int iMinutes, int iWeekDaysBits, ECommand eCommand, 
+						Task(int iID, int iHours, int iMinutes, int iWeekDaysBits, ECommand eCommand, 
 							const char* szParam);
 						~Task();
 		friend class	Scheduler;

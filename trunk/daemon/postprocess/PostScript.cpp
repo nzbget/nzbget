@@ -67,7 +67,7 @@ void PostScriptController::StartJob(PostInfo* pPostInfo)
 
 void PostScriptController::Run()
 {
-	FileList activeList;
+	StringBuilder scriptCommaList;
 
 	// the locking is needed for accessing the members of NZBInfo
 	DownloadQueue::Lock();
@@ -80,53 +80,40 @@ void PostScriptController::Run()
 		{
 			char* szScriptName = strdup(szVarname);
 			szScriptName[strlen(szScriptName)-1] = '\0'; // remove trailing ':'
-			activeList.push_back(szScriptName);
+			scriptCommaList.Append(szScriptName);
+			scriptCommaList.Append(",");
 		}
 	}
 	m_pPostInfo->GetNZBInfo()->GetScriptStatuses()->Clear();
 	DownloadQueue::Unlock();
 
-	Options::ScriptList scriptList;
-	g_pOptions->LoadScriptList(&scriptList);
-
-	for (Options::ScriptList::iterator it = scriptList.begin(); it != scriptList.end(); it++)
-	{
-		Options::Script* pScript = *it;
-		for (FileList::iterator it2 = activeList.begin(); it2 != activeList.end(); it2++)
-		{
-			char* szActiveName = *it2;
-			// if any script has requested par-check, do not execute other scripts
-			if (Util::SameFilename(pScript->GetName(), szActiveName) && !m_pPostInfo->GetRequestParCheck())
-			{
-				ExecuteScript(pScript->GetName(), pScript->GetDisplayName(), pScript->GetLocation());
-			}
-		}
-	}
-	
-	for (FileList::iterator it = activeList.begin(); it != activeList.end(); it++)
-	{
-		free(*it);
-	}
+	ExecuteScriptList(scriptCommaList.GetBuffer());
 
 	m_pPostInfo->SetStage(PostInfo::ptFinished);
 	m_pPostInfo->SetWorking(false);
 }
 
-void PostScriptController::ExecuteScript(const char* szScriptName, const char* szDisplayName, const char* szLocation)
+void PostScriptController::ExecuteScript(Options::Script* pScript)
 {
-	PrintMessage(Message::mkInfo, "Executing post-process-script %s for %s", szScriptName, m_pPostInfo->GetNZBInfo()->GetName());
+	// if any script has requested par-check, do not execute other scripts
+	if (!pScript->GetPostScript() || m_pPostInfo->GetRequestParCheck())
+	{
+		return;
+	}
 
-	SetScript(szLocation);
+	PrintMessage(Message::mkInfo, "Executing post-process-script %s for %s", pScript->GetName(), m_pPostInfo->GetNZBInfo()->GetName());
+
+	SetScript(pScript->GetLocation());
 	SetArgs(NULL, false);
 
 	char szInfoName[1024];
-	snprintf(szInfoName, 1024, "post-process-script %s for %s", szScriptName, m_pPostInfo->GetNZBInfo()->GetName());
+	snprintf(szInfoName, 1024, "post-process-script %s for %s", pScript->GetName(), m_pPostInfo->GetNZBInfo()->GetName());
 	szInfoName[1024-1] = '\0';
 	SetInfoName(szInfoName);
 
-	SetLogPrefix(szDisplayName);
-	m_iPrefixLen = strlen(szDisplayName) + 2; // 2 = strlen(": ");
-	PrepareParams(szScriptName);
+	SetLogPrefix(pScript->GetDisplayName());
+	m_iPrefixLen = strlen(pScript->GetDisplayName()) + 2; // 2 = strlen(": ");
+	PrepareParams(pScript->GetName());
 
 	int iExitCode = Execute();
 
@@ -137,7 +124,7 @@ void PostScriptController::ExecuteScript(const char* szScriptName, const char* s
 	
 	// the locking is needed for accessing the members of NZBInfo
 	DownloadQueue::Lock();
-	m_pPostInfo->GetNZBInfo()->GetScriptStatuses()->Add(szScriptName, eStatus);
+	m_pPostInfo->GetNZBInfo()->GetScriptStatuses()->Add(pScript->GetName(), eStatus);
 	DownloadQueue::Unlock();
 }
 
@@ -146,7 +133,6 @@ void PostScriptController::PrepareParams(const char* szScriptName)
 	// the locking is needed for accessing the members of NZBInfo
 	DownloadQueue::Lock();
 
-	// Reset
 	ResetEnv();
 
 	SetEnvVar("NZBPP_NZBNAME", m_pPostInfo->GetNZBInfo()->GetName());
@@ -185,13 +171,7 @@ void PostScriptController::PrepareParams(const char* szScriptName)
 		SetIntEnvVar(szName, pServerStat->GetFailedArticles());
 	}
 
-	PrepareEnvParameters(m_pPostInfo->GetNZBInfo()->GetParameters(), NULL);
-
-	char szParamPrefix[1024];
-	snprintf(szParamPrefix, 1024, "%s:", szScriptName);
-	szParamPrefix[1024-1] = '\0';
-	PrepareEnvParameters(m_pPostInfo->GetNZBInfo()->GetParameters(), szParamPrefix);
-	PrepareEnvOptions(szParamPrefix);
+	PrepareEnvScript(m_pPostInfo->GetNZBInfo()->GetParameters(), szScriptName);
 	
 	DownloadQueue::Unlock();
 }

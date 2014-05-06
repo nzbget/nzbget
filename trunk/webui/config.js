@@ -1,7 +1,7 @@
 /*
  * This file is part of nzbget
  *
- * Copyright (C) 2012-2013 Andrey Prygunkov <hugbug@users.sourceforge.net>
+ * Copyright (C) 2012-2014 Andrey Prygunkov <hugbug@users.sourceforge.net>
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -152,6 +152,10 @@ var Options = (new function($)
 			scriptConfig.name = scriptConfig.name.replace(/\\/, ' \\ ').replace(/\//, ' / ');
 			scriptConfig.shortName = shortScriptName(scriptName);
 			scriptConfig.shortName = scriptConfig.shortName.replace(/\\/, ' \\ ').replace(/\//, ' / ');
+			scriptConfig.post = serverTemplateData[i].PostScript;
+			scriptConfig.scan = serverTemplateData[i].ScanScript;
+			scriptConfig.queue = serverTemplateData[i].QueueScript;
+			scriptConfig.scheduler = serverTemplateData[i].SchedulerScript;
 			mergeValues(scriptConfig.sections, serverValues);
 			config.push(scriptConfig);
 		}
@@ -416,32 +420,35 @@ var Options = (new function($)
 
 		for (var i=1; i < data.length; i++)
 		{
-			var scriptName = data[i].Name;
-			var sectionId = (scriptName + ':').replace(/ |\/|[\.|$|\:|\*]/g, '_');
-			var option = {};
-			option.name = scriptName + ':';
-			option.caption = shortScriptName(scriptName);
-			option.caption = option.caption.replace(/\\/, ' \\ ').replace(/\//, ' / ');
-
-			option.defvalue = 'no';
-			option.description = (data[i].Template.trim().split('\n')[0].substr(1, 1000).trim() || 'Post-processing script ' + scriptName + '.');
-			option.value = null;
-			option.sectionId = sectionId;
-			option.select = ['yes', 'no'];
-			section.options.push(option);
-
-			var templateData = data[i].Template;
-			var postConfig = readConfigTemplate(templateData, POSTPARAM_SECTIONS, undefined, scriptName + ':');
-			for (var j=0; j < postConfig.sections.length; j++)
+			if (data[i].PostScript)
 			{
-				var sec = postConfig.sections[j];
-				if (!sec.hidden)
+				var scriptName = data[i].Name;
+				var sectionId = (scriptName + ':').replace(/ |\/|[\.|$|\:|\*]/g, '_');
+				var option = {};
+				option.name = scriptName + ':';
+				option.caption = shortScriptName(scriptName);
+				option.caption = option.caption.replace(/\\/, ' \\ ').replace(/\//, ' / ');
+
+				option.defvalue = 'no';
+				option.description = (data[i].Template.trim().split('\n')[0].substr(1, 1000).trim() || 'Post-processing script ' + scriptName + '.');
+				option.value = null;
+				option.sectionId = sectionId;
+				option.select = ['yes', 'no'];
+				section.options.push(option);
+
+				var templateData = data[i].Template;
+				var postConfig = readConfigTemplate(templateData, POSTPARAM_SECTIONS, undefined, scriptName + ':');
+				for (var j=0; j < postConfig.sections.length; j++)
 				{
-					for (var n=0; n < sec.options.length; n++)
+					var sec = postConfig.sections[j];
+					if (!sec.hidden)
 					{
-						var option = sec.options[n];
-						option.sectionId = sectionId;
-						section.options.push(option);
+						for (var n=0; n < sec.options.length; n++)
+						{
+							var option = sec.options[n];
+							option.sectionId = sectionId;
+							section.options.push(option);
+						}
 					}
 				}
 			}
@@ -785,7 +792,7 @@ var Config = (new function($)
 			html += '<table class="editor"><tr><td>';
 			html += '<input type="text" id="' + option.formId + '" value="' + Util.textToAttr(value) + '">';
 			html += '</td><td>';
-			html += '<button class="btn" onclick="' + option.editor.click + '($(\'input\', $(this).closest(\'table\')).attr(\'id\'))">' + option.editor.caption + '</button>';
+			html += '<button id="' + option.formId + '_Editor" class="btn" onclick="' + option.editor.click + '($(\'input\', $(this).closest(\'table\')).attr(\'id\'))">' + option.editor.caption + '</button>';
 			html += '</td></tr></table>';
 		}
 		else
@@ -921,6 +928,8 @@ var Config = (new function($)
 				$ConfigNav.append(html);
 			}
 		}
+		
+		notifyChanges();
 
 		$ConfigNav.append('<li class="divider hide ConfigSearch"></li>');
 		$ConfigNav.append('<li class="hide ConfigSearch"><a href="#Search">SEARCH RESULTS</a></li>');
@@ -989,13 +998,12 @@ var Config = (new function($)
 			option.sectionId = firstVisibleSection.id;
 			option.select = [];
 			var description = conf.description;
-			option.description = description !== '' ? description : 'No description available.\n\nNOTE: The script doesn\'t have a description section. '+
-				'It\'s either not NZBGet script or a script created for an older NZBGet version and might not work properly.';
+			option.description = description !== '' ? description : 'No description available.';
 			option.nocontent = true;
 			firstVisibleSection.options.unshift(option);
 		}
 
-		// register editors for options "DefScript", "ScriptOrder" and FeedX.Filter
+		// register editors for certain options
 		var conf = config[0];
 		for (var j=0; j < conf.sections.length; j++)
 		{
@@ -1008,9 +1016,25 @@ var Config = (new function($)
 				{
 					option.editor = { caption: 'Reorder', click: 'Config.editScriptOrder' };
 				}
-				if (optname.indexOf('defscript') > -1)
+				if (optname.indexOf('postscript') > -1)
 				{
-					option.editor = { caption: 'Choose', click: 'Config.editDefScript' };
+					option.editor = { caption: 'Choose', click: 'Config.editPostScript' };
+				}
+				if (optname.indexOf('scanscript') > -1)
+				{
+					option.editor = { caption: 'Choose', click: 'Config.editScanScript' };
+				}
+				if (optname.indexOf('queuescript') > -1)
+				{
+					option.editor = { caption: 'Choose', click: 'Config.editQueueScript' };
+				}
+				if (optname.indexOf('task') > -1 && optname.indexOf('.param') > -1)
+				{
+					option.editor = { caption: 'Choose', click: 'Config.editSchedulerScript' };
+				}
+				if (optname.indexOf('task') > -1 && optname.indexOf('.command') > -1)
+				{
+					option.onchange = Config.schedulerCommandChanged;
 				}
 				if (optname.indexOf('.filter') > -1)
 				{
@@ -1020,6 +1044,26 @@ var Config = (new function($)
 		}
 	}
 
+	function notifyChanges()
+	{
+		for (var k=0; k < config.length; k++)
+		{
+			var sections = config[k].sections;
+			for (var i=0; i < sections.length; i++)
+			{
+				var section = sections[i];
+				for (var j=0; j < section.options.length; j++)
+				{
+					var option = section.options[j];
+					if (option.onchange && !option.template)
+					{
+						option.onchange(option);
+					}
+				}
+			}
+		}
+	}
+	
 	function scrollOptionIntoView(optFormId)
 	{
 		var option = findOptionById(optFormId);
@@ -1043,6 +1087,17 @@ var Config = (new function($)
 		var state = $(control).val().toLowerCase();
 		$('.btn', $(control).parent()).removeClass('btn-primary');
 		$(control).addClass('btn-primary');
+
+		// not for page Postprocess in download details
+		if (config)
+		{
+			var optFormId = $(control).parent().attr('id');
+			var option = findOptionById(optFormId);
+			if (option.onchange)
+			{
+				option.onchange(option);
+			}
+		}
 	}
 
 	function switchGetValue(control)
@@ -1179,6 +1234,9 @@ var Config = (new function($)
 				option.formId = option.formId.replace(new RegExp(option.multiid), newMultiId);
 				$('#' + oldFormId).attr('id', option.formId);
 
+				// update editor id
+				$('#' + oldFormId + '_Editor').attr('id', option.formId + '_Editor');
+
 				// update name
 				option.name = option.name.replace(new RegExp(option.multiid), newMultiId);
 
@@ -1209,6 +1267,7 @@ var Config = (new function($)
 		multiid++;
 
 		// create new multi set
+		var addedOptions = [];
 		for (var j=0; j < section.options.length; j++)
 		{
 			var option = section.options[j];
@@ -1222,6 +1281,7 @@ var Config = (new function($)
 				newoption.template = false;
 				newoption.multiid = multiid;
 				section.options.push(newoption);
+				addedOptions.push(newoption);
 			}
 		}
 
@@ -1238,6 +1298,15 @@ var Config = (new function($)
 		div.hide();
 		addButton.parent().before(div);
 
+		for (var j=0; j < addedOptions.length; j++)
+		{
+			var option = addedOptions[j];
+			if (option.onchange)
+			{
+				option.onchange(option);
+			}
+		}
+		
 		div.slideDown('normal', function()
 		{
 			var opts = div.children();
@@ -1265,15 +1334,46 @@ var Config = (new function($)
 	this.editScriptOrder = function(optFormId)
 	{
 		var option = findOptionById(optFormId);
-		ScriptListDialog.showModal(option, config);
+		ScriptListDialog.showModal(option, config, null);
 	}
 
-	this.editDefScript = function(optFormId)
+	this.editPostScript = function(optFormId)
 	{
 		var option = findOptionById(optFormId);
-		ScriptListDialog.showModal(option, config);
+		ScriptListDialog.showModal(option, config, 'post');
 	}
 
+	this.editScanScript = function(optFormId)
+	{
+		var option = findOptionById(optFormId);
+		ScriptListDialog.showModal(option, config, 'scan');
+	}
+
+	this.editQueueScript = function(optFormId)
+	{
+		var option = findOptionById(optFormId);
+		ScriptListDialog.showModal(option, config, 'queue');
+	}
+
+	this.editSchedulerScript = function(optFormId)
+	{
+		var option = findOptionById(optFormId);
+		var command = getOptionValue(findOptionById(optFormId.replace(/Param/, 'Command')));
+		if (command !== 'Script')
+		{
+			alert('This button is to choose scheduler scripts when option TaskX.Command is set to "Script".');
+			return;
+		}
+		ScriptListDialog.showModal(option, config, 'scheduler');
+	}
+
+	this.schedulerCommandChanged = function(option)
+	{
+		var command = getOptionValue(option);
+		var btnId = option.formId.replace(/Command/, 'Param_Editor');
+		Util.show('#' + btnId, command === 'Script');
+	}
+	
 	/*** RSS FEEDS ********************************************************************/
 
 	this.editFilter = function(optFormId)
@@ -1719,7 +1819,9 @@ var ScriptListDialog = (new function($)
 	var $ScriptTable;
 	var option;
 	var config;
+	var kind;
 	var scriptList;
+	var allScripts;
 	var orderChanged;
 	var orderMode;
 
@@ -1751,10 +1853,11 @@ var ScriptListDialog = (new function($)
 		});
 	}
 
-	this.showModal = function(_option, _config)
+	this.showModal = function(_option, _config, _kind)
 	{
 		option = _option;
 		config = _config;
+		kind = _kind;
 		orderChanged = false;
 		orderMode = option.name === 'ScriptOrder';
 
@@ -1827,13 +1930,20 @@ var ScriptListDialog = (new function($)
 		var orderList = parseCommaList(Config.getOptionValue(Config.findOptionByName('ScriptOrder')));
 
 		var availableScripts = [];
+		var availableAllScripts = [];
 		for (var i=1; i < config.length; i++)
 		{
-			availableScripts.push(config[i].scriptName);
+			availableAllScripts.push(config[i].scriptName);
+			if (!kind || config[i][kind])
+			{
+				availableScripts.push(config[i].scriptName);
+			}
 		}
 		availableScripts.sort();
+		availableAllScripts.sort();
 
 		scriptList = [];
+		allScripts = [];
 
 		// first add all scripts from orderList
 		for (var i=0; i < orderList.length; i++)
@@ -1843,15 +1953,29 @@ var ScriptListDialog = (new function($)
 			{
 				scriptList.push(scriptName);
 			}
+			if (availableAllScripts.indexOf(scriptName) > -1)
+			{
+				allScripts.push(scriptName);
+			}
 		}
 
-		// second add all other scripts from script list
+		// add all other scripts of this kind from script list
 		for (var i=0; i < availableScripts.length; i++)
 		{
 			var scriptName = availableScripts[i];
-			if (scriptList.indexOf(scriptName) == -1)
+			if (scriptList.indexOf(scriptName) === -1)
 			{
 				scriptList.push(scriptName);
+			}
+		}
+
+		// add all other scripts of other kinds from script list
+		for (var i=0; i < availableAllScripts.length; i++)
+		{
+			var scriptName = availableAllScripts[i];
+			if (allScripts.indexOf(scriptName) === -1)
+			{
+				allScripts.push(scriptName);
 			}
 		}
 
@@ -1884,7 +2008,26 @@ var ScriptListDialog = (new function($)
 		{
 			var scriptOrderOption = Config.findOptionByName('ScriptOrder');
 			var control = $('#' + scriptOrderOption.formId);
-			control.val(scriptList.join(', '));
+
+			// preserving order of scripts of other kinds which were not visible in the dialog
+			var orderList = [];
+			for (var i=0; i < allScripts.length; i++)
+			{
+				var scriptName = allScripts[i];
+				if (orderList.indexOf(scriptName) === -1)
+				{
+					if (scriptList.indexOf(scriptName) > -1)
+					{
+						orderList = orderList.concat(scriptList);
+					}
+					else
+					{
+						orderList.push(scriptName);
+					}
+				}
+			}
+			
+			control.val(orderList.join(', '));
 		}
 
 		$ScriptListDialog.modal('hide');
