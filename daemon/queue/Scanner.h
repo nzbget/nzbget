@@ -1,7 +1,7 @@
 /*
  *  This file is part of nzbget
  *
- *  Copyright (C) 2007-2013 Andrey Prygunkov <hugbug@users.sourceforge.net>
+ *  Copyright (C) 2007-2014 Andrey Prygunkov <hugbug@users.sourceforge.net>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -101,7 +101,7 @@ private:
 
 	bool				m_bRequestedNZBDirScan;
 	int					m_iNZBDirInterval;
-	bool				m_bNZBScript;
+	bool				m_bScanScript;
 	int					m_iPass;
 	FileList			m_FileList;
 	QueueList			m_QueueList;

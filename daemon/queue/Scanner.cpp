@@ -112,7 +112,7 @@ Scanner::Scanner()
 	m_bScanning = false;
 	m_iNZBDirInterval = 0;
 	m_iPass = 0;
-	m_bNZBScript = false;
+	m_bScanScript = false;
 }
 
 Scanner::~Scanner()
@@ -131,8 +131,8 @@ Scanner::~Scanner()
 void Scanner::InitOptions()
 {
 	m_iNZBDirInterval = g_pOptions->GetNzbDirInterval() * 1000;
-	const char* szNZBScript = g_pOptions->GetNZBProcess();
-	m_bNZBScript = szNZBScript && strlen(szNZBScript) > 0;
+	const char* szScanScript = g_pOptions->GetScanScript();
+	m_bScanScript = szScanScript && strlen(szScanScript) > 0;
 }
 
 void Scanner::ClearQueueList()
@@ -157,7 +157,7 @@ void Scanner::Check()
 		m_bRequestedNZBDirScan = false;
 		m_bScanning = true;
 		CheckIncomingNZBs(g_pOptions->GetNzbDir(), "", bCheckStat);
-		if (!bCheckStat && m_bNZBScript)
+		if (!bCheckStat && m_bScanScript)
 		{
 			// if immediate scan requested, we need second scan to process files extracted by NzbProcess-script
 			CheckIncomingNZBs(g_pOptions->GetNzbDir(), "", bCheckStat);
@@ -172,7 +172,7 @@ void Scanner::Check()
 		//   - third scan is needed to check sizes of extracted files.
 		if (g_pOptions->GetNzbDirInterval() > 0 && g_pOptions->GetNzbDirFileAge() < g_pOptions->GetNzbDirInterval())
 		{
-			int iMaxPass = m_bNZBScript ? 3 : 1;
+			int iMaxPass = m_bScanScript ? 3 : 1;
 			if (m_iPass < iMaxPass)
 			{
 				// scheduling another scan of incoming directory in NzbDirFileAge seconds.
@@ -375,9 +375,9 @@ void Scanner::ProcessIncomingFile(const char* szDirectory, const char* szBaseFil
 
 	bool bExists = true;
 
-	if (m_bNZBScript && strcasecmp(szExtension, ".nzb_processed"))
+	if (m_bScanScript && strcasecmp(szExtension, ".nzb_processed"))
 	{
-		NZBScriptController::ExecuteScript(g_pOptions->GetNZBProcess(), szFullFilename, 
+		ScanScriptController::ExecuteScripts(szFullFilename, 
 			pUrlInfo ? pUrlInfo->GetURL() : "", szDirectory,
 			&szNZBName, &szNZBCategory, &iPriority, pParameters, &bAddTop, &bAddPaused); 
 		bExists = Util::FileExists(szFullFilename);
@@ -429,7 +429,7 @@ void Scanner::ProcessIncomingFile(const char* szDirectory, const char* szBaseFil
 void Scanner::InitPPParameters(const char* szCategory, NZBParameterList* pParameters)
 {
 	bool bUnpack = g_pOptions->GetUnpack();
-	const char* szDefScript = g_pOptions->GetDefScript();
+	const char* szPostScript = g_pOptions->GetPostScript();
 	
 	if (szCategory && *szCategory)
 	{
@@ -437,21 +437,21 @@ void Scanner::InitPPParameters(const char* szCategory, NZBParameterList* pParame
 		if (pCategory)
 		{
 			bUnpack = pCategory->GetUnpack();
-			if (pCategory->GetDefScript() && *pCategory->GetDefScript())
+			if (pCategory->GetPostScript() && *pCategory->GetPostScript())
 			{
-				szDefScript = pCategory->GetDefScript();
+				szPostScript = pCategory->GetPostScript();
 			}
 		}
 	}
 	
 	pParameters->SetParameter("*Unpack:", bUnpack ? "yes" : "no");
 	
-	if (szDefScript && *szDefScript)
+	if (szPostScript && *szPostScript)
 	{
-		// split szDefScript into tokens and create pp-parameter for each token
-		char* szDefScript2 = strdup(szDefScript);
+		// split szPostScript into tokens and create pp-parameter for each token
+		char* szPostScript2 = strdup(szPostScript);
 		char* saveptr;
-		char* szScriptName = strtok_r(szDefScript2, ",;", &saveptr);
+		char* szScriptName = strtok_r(szPostScript2, ",;", &saveptr);
 		while (szScriptName)
 		{
 			szScriptName = Util::Trim(szScriptName);
@@ -464,7 +464,7 @@ void Scanner::InitPPParameters(const char* szCategory, NZBParameterList* pParame
 			}
 			szScriptName = strtok_r(NULL, ",;", &saveptr);
 		}
-		free(szDefScript2);
+		free(szPostScript2);
 	}
 }
 
@@ -474,7 +474,7 @@ bool Scanner::AddFileToQueue(const char* szFilename, const char* szNZBName, cons
 {
 	const char* szBasename = Util::BaseFileName(szFilename);
 
-	info("Collection %s found", szBasename);
+	info("Adding collection %s to queue", szBasename);
 
 	NZBFile* pNZBFile = NZBFile::Create(szFilename, szCategory);
 	bool bOK = pNZBFile != NULL;

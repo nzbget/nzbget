@@ -2896,6 +2896,10 @@ void ConfigTemplatesXmlCommand::Execute()
 		"<value><struct>\n"
 		"<member><name>Name</name><value><string>%s</string></value></member>\n"
 		"<member><name>DisplayName</name><value><string>%s</string></value></member>\n"
+		"<member><name>PostScript</name><value><boolean>%s</boolean></value></member>\n"
+		"<member><name>ScanScript</name><value><boolean>%s</boolean></value></member>\n"
+		"<member><name>QueueScript</name><value><boolean>%s</boolean></value></member>\n"
+		"<member><name>SchedulerScript</name><value><boolean>%s</boolean></value></member>\n"
 		"<member><name>Template</name><value><string>%s</string></value></member>\n"
 		"</struct></value>\n";
 
@@ -2903,6 +2907,10 @@ void ConfigTemplatesXmlCommand::Execute()
 		"{\n"
 		"\"Name\" : \"%s\",\n"
 		"\"DisplayName\" : \"%s\",\n"
+		"\"PostScript\" : %s,\n"
+		"\"ScanScript\" : %s,\n"
+		"\"QueueScript\" : %s,\n"
+		"\"SchedulerScript\" : %s,\n"
 		"\"Template\" : \"%s\"\n"
 		"}";
 
@@ -2923,14 +2931,20 @@ void ConfigTemplatesXmlCommand::Execute()
 	{
 		Options::ConfigTemplate* pConfigTemplate = *it;
 
-		char* xmlName = EncodeStr(pConfigTemplate->GetName());
-		char* xmlDisplayName = EncodeStr(pConfigTemplate->GetDisplayName());
+		char* xmlName = EncodeStr(pConfigTemplate->GetScript() ? pConfigTemplate->GetScript()->GetName() : "");
+		char* xmlDisplayName = EncodeStr(pConfigTemplate->GetScript() ? pConfigTemplate->GetScript()->GetDisplayName() : "");
 		char* xmlTemplate = EncodeStr(pConfigTemplate->GetTemplate());
 
 		int iItemBufSize = strlen(xmlName) + strlen(xmlTemplate) + 1024;
 		char* szItemBuf = (char*)malloc(iItemBufSize);
 
-		snprintf(szItemBuf, iItemBufSize, IsJson() ? JSON_CONFIG_ITEM : XML_CONFIG_ITEM, xmlName, xmlDisplayName, xmlTemplate);
+		snprintf(szItemBuf, iItemBufSize, IsJson() ? JSON_CONFIG_ITEM : XML_CONFIG_ITEM,
+			xmlName, xmlDisplayName,
+			BoolToStr(pConfigTemplate->GetScript() && pConfigTemplate->GetScript()->GetPostScript()),
+			BoolToStr(pConfigTemplate->GetScript() && pConfigTemplate->GetScript()->GetScanScript()),
+			BoolToStr(pConfigTemplate->GetScript() && pConfigTemplate->GetScript()->GetQueueScript()),
+			BoolToStr(pConfigTemplate->GetScript() && pConfigTemplate->GetScript()->GetSchedulerScript()),
+			xmlTemplate);
 		szItemBuf[iItemBufSize-1] = '\0';
 
 		free(xmlName);

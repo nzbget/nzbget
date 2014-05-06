@@ -146,8 +146,8 @@ static const char* OPTION_PARREPAIR				= "ParRepair";
 static const char* OPTION_PARSCAN				= "ParScan";
 static const char* OPTION_PARRENAME				= "ParRename";
 static const char* OPTION_HEALTHCHECK			= "HealthCheck";
-static const char* OPTION_NZBPROCESS			= "NZBProcess";
-static const char* OPTION_NZBADDEDPROCESS		= "NZBAddedProcess";
+static const char* OPTION_SCANSCRIPT			= "ScanScript";
+static const char* OPTION_QUEUESCRIPT			= "QueueScript";
 static const char* OPTION_UMASK					= "UMask";
 static const char* OPTION_UPDATEINTERVAL		= "UpdateInterval";
 static const char* OPTION_CURSESNZBNAME			= "CursesNzbName";
@@ -174,7 +174,7 @@ static const char* OPTION_UNRARCMD				= "UnrarCmd";
 static const char* OPTION_SEVENZIPCMD			= "SevenZipCmd";
 static const char* OPTION_UNPACKPAUSEQUEUE		= "UnpackPauseQueue";
 static const char* OPTION_SCRIPTORDER			= "ScriptOrder";
-static const char* OPTION_DEFSCRIPT				= "DefScript";
+static const char* OPTION_POSTSCRIPT			= "PostScript";
 static const char* OPTION_EXTCLEANUPDISK		= "ExtCleanupDisk";
 static const char* OPTION_FEEDHISTORY			= "FeedHistory";
 static const char* OPTION_URLFORCE				= "UrlForce";
@@ -196,12 +196,19 @@ static const char* OPTION_MERGENZB				= "MergeNzb";
 static const char* OPTION_STRICTPARNAME			= "StrictParName";
 static const char* OPTION_RELOADURLQUEUE		= "ReloadUrlQueue";
 static const char* OPTION_RELOADPOSTQUEUE		= "ReloadPostQueue";
+static const char* OPTION_NZBPROCESS			= "NZBProcess";
+static const char* OPTION_NZBADDEDPROCESS		= "NZBAddedProcess";
 
 const char* BoolNames[] = { "yes", "no", "true", "false", "1", "0", "on", "off", "enable", "disable", "enabled", "disabled" };
 const int BoolValues[] = { 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0 };
 const int BoolCount = 12;
 
-static const char* PPSCRIPT_SIGNATURE = "### NZBGET POST-PROCESSING SCRIPT";
+static const char* BEGIN_SCRIPT_SIGNATURE = "### NZBGET ";
+static const char* POST_SCRIPT_SIGNATURE = "POST-PROCESSING";
+static const char* SCAN_SCRIPT_SIGNATURE = "SCAN";
+static const char* QUEUE_SCRIPT_SIGNATURE = "QUEUE";
+static const char* SCHEDULER_SCRIPT_SIGNATURE = "SCHEDULER";
+static const char* END_SCRIPT_SIGNATURE = " SCRIPT";
 
 #ifndef WIN32
 const char* PossibleConfigLocations[] =
@@ -283,17 +290,15 @@ Options::OptEntry* Options::OptEntries::FindOption(const char* szName)
 }
 
 
-Options::ConfigTemplate::ConfigTemplate(const char* szName, const char* szDisplayName, const char* szTemplate)
+Options::ConfigTemplate::ConfigTemplate(Script* pScript, const char* szTemplate)
 {
-	m_szName = strdup(szName);
-	m_szDisplayName = strdup(szDisplayName);
+	m_pScript = pScript;
 	m_szTemplate = strdup(szTemplate ? szTemplate : "");
 }
 
 Options::ConfigTemplate::~ConfigTemplate()
 {
-	free(m_szName);
-	free(m_szDisplayName);
+	delete m_pScript;
 	free(m_szTemplate);
 }
 
@@ -306,19 +311,19 @@ Options::ConfigTemplates::~ConfigTemplates()
 }
 
 
-Options::Category::Category(const char* szName, const char* szDestDir, bool bUnpack, const char* szDefScript)
+Options::Category::Category(const char* szName, const char* szDestDir, bool bUnpack, const char* szPostScript)
 {
 	m_szName = strdup(szName);
 	m_szDestDir = szDestDir ? strdup(szDestDir) : NULL;
 	m_bUnpack = bUnpack;
-	m_szDefScript = szDefScript ? strdup(szDefScript) : NULL;
+	m_szPostScript = szPostScript ? strdup(szPostScript) : NULL;
 }
 
 Options::Category::~Category()
 {
 	free(m_szName);
 	free(m_szDestDir);
-	free(m_szDefScript);
+	free(m_szPostScript);
 
 	for (NameList::iterator it = m_Aliases.begin(); it != m_Aliases.end(); it++)
 	{
@@ -376,6 +381,10 @@ Options::Script::Script(const char* szName, const char* szLocation)
 	m_szName = strdup(szName);
 	m_szLocation = strdup(szLocation);
 	m_szDisplayName = strdup(szName);
+	m_bPostScript = false;
+	m_bScanScript = false;
+	m_bQueueScript = false;
+	m_bSchedulerScript = false;
 }
 
 Options::Script::~Script()
@@ -493,9 +502,9 @@ Options::Options(int argc, char* argv[])
 	m_bParRename			= false;
 	m_eHealthCheck			= hcNone;
 	m_szScriptOrder			= NULL;
-	m_szDefScript			= NULL;
-	m_szNZBProcess			= NULL;
-	m_szNZBAddedProcess		= NULL;
+	m_szPostScript			= NULL;
+	m_szScanScript			= NULL;
+	m_szQueueScript			= NULL;
 	m_bNoConfig				= false;
 	m_iUMask				= 0;
 	m_iUpdateInterval		= 0;
@@ -635,9 +644,9 @@ Options::~Options()
 	free(m_szLockFile);
 	free(m_szDaemonUsername);
 	free(m_szScriptOrder);
-	free(m_szDefScript);
-	free(m_szNZBProcess);
-	free(m_szNZBAddedProcess);
+	free(m_szPostScript);
+	free(m_szScanScript);
+	free(m_szQueueScript);
 	free(m_pEditQueueIDList);
 	free(m_szAddNZBFilename);
 	free(m_szUnrarCmd);
@@ -719,7 +728,7 @@ void Options::InitDefault()
 	SetOption(OPTION_LOGFILE, "${DestDir}/nzbget.log");
 	SetOption(OPTION_WEBDIR, "");
 	SetOption(OPTION_CONFIGTEMPLATE, "");
-	SetOption(OPTION_SCRIPTDIR, "${MainDir}/ppscripts");
+	SetOption(OPTION_SCRIPTDIR, "${MainDir}/scripts");
 	SetOption(OPTION_CREATELOG, "yes");
 	SetOption(OPTION_APPENDCATEGORYDIR, "yes");
 	SetOption(OPTION_OUTPUTMODE, "curses");
@@ -757,9 +766,9 @@ void Options::InitDefault()
 	SetOption(OPTION_PARRENAME, "yes");
 	SetOption(OPTION_HEALTHCHECK, "none");
 	SetOption(OPTION_SCRIPTORDER, "");
-	SetOption(OPTION_DEFSCRIPT, "");
-	SetOption(OPTION_NZBPROCESS, "");
-	SetOption(OPTION_NZBADDEDPROCESS, "");
+	SetOption(OPTION_POSTSCRIPT, "");
+	SetOption(OPTION_SCANSCRIPT, "");
+	SetOption(OPTION_QUEUESCRIPT, "");
 	SetOption(OPTION_DAEMONUSERNAME, "root");
 	SetOption(OPTION_UMASK, "1000");
 	SetOption(OPTION_UPDATEINTERVAL, "200");
@@ -918,9 +927,9 @@ void Options::InitOptions()
 
 	m_szConfigTemplate		= strdup(GetOption(OPTION_CONFIGTEMPLATE));
 	m_szScriptOrder			= strdup(GetOption(OPTION_SCRIPTORDER));
-	m_szDefScript			= strdup(GetOption(OPTION_DEFSCRIPT));
-	m_szNZBProcess			= strdup(GetOption(OPTION_NZBPROCESS));
-	m_szNZBAddedProcess		= strdup(GetOption(OPTION_NZBADDEDPROCESS));
+	m_szPostScript			= strdup(GetOption(OPTION_POSTSCRIPT));
+	m_szScanScript			= strdup(GetOption(OPTION_SCANSCRIPT));
+	m_szQueueScript			= strdup(GetOption(OPTION_QUEUESCRIPT));
 	m_szControlIP			= strdup(GetOption(OPTION_CONTROLIP));
 	m_szControlUsername		= strdup(GetOption(OPTION_CONTROLUSERNAME));
 	m_szControlPassword		= strdup(GetOption(OPTION_CONTROLPASSWORD));
@@ -1816,7 +1825,6 @@ void Options::SetOption(const char* optname, const char* value)
 	}
 
 	pOptEntry->SetLineNo(m_iConfigLine);
-	bool bOK = true;
 
 	// expand variables
 	while (char* dollar = strstr(curvalue, "${"))
@@ -1842,13 +1850,11 @@ void Options::SetOption(const char* optname, const char* value)
 			}
 			else
 			{
-				bOK = false;
 				break;
 			}
 		}
 		else
 		{
-			bOK = false;
 			break;
 		}
 	}
@@ -2002,13 +2008,13 @@ void Options::InitCategories()
 			bUnpack = (bool)ParseEnumValue(optname, BoolCount, BoolNames, BoolValues);
 		}
 
-		sprintf(optname, "Category%i.DefScript", n);
-		const char* ndefscript = GetOption(optname);
+		sprintf(optname, "Category%i.PostScript", n);
+		const char* npostscript = GetOption(optname);
 
 		sprintf(optname, "Category%i.Aliases", n);
 		const char* naliases = GetOption(optname);
 
-		bool definition = nname || ndestdir || nunpack || ndefscript || naliases;
+		bool definition = nname || ndestdir || nunpack || npostscript || naliases;
 		bool completed = nname && strlen(nname) > 0;
 
 		if (!definition)
@@ -2024,7 +2030,7 @@ void Options::InitCategories()
 				CheckDir(&szDestDir, destdiroptname, false, false);
 			}
 
-			Category* pCategory = new Category(nname, szDestDir, bUnpack, ndefscript);
+			Category* pCategory = new Category(nname, szDestDir, bUnpack, npostscript);
 			m_Categories.push_back(pCategory);
 
 			free(szDestDir);
@@ -2170,7 +2176,7 @@ void Options::InitScheduler()
 			"activateserver", "activateservers", "deactivateserver", "deactivateservers", "fetchfeed", "fetchfeeds" };
 		const int CommandValues[] = { Scheduler::scPauseDownload, Scheduler::scPauseDownload, Scheduler::scUnpauseDownload,
 			Scheduler::scUnpauseDownload, Scheduler::scUnpauseDownload, Scheduler::scUnpauseDownload, Scheduler::scDownloadRate,
-			Scheduler::scDownloadRate, Scheduler::scDownloadRate, Scheduler::scDownloadRate, Scheduler::scProcess,
+			Scheduler::scDownloadRate, Scheduler::scDownloadRate, Scheduler::scDownloadRate, Scheduler::scScript,
 			Scheduler::scProcess, Scheduler::scPauseScan, Scheduler::scUnpauseScan, Scheduler::scUnpauseScan,
 			Scheduler::scActivateServer, Scheduler::scActivateServer, Scheduler::scDeactivateServer,
 			Scheduler::scDeactivateServer, Scheduler::scFetchFeed, Scheduler::scFetchFeed };
@@ -2210,7 +2216,8 @@ void Options::InitScheduler()
 			}
 		}
 
-		if ((eCommand == Scheduler::scProcess || 
+		if ((eCommand == Scheduler::scScript || 
+			 eCommand == Scheduler::scProcess || 
 			 eCommand == Scheduler::scActivateServer ||
 			 eCommand == Scheduler::scDeactivateServer ||
 			 eCommand == Scheduler::scFetchFeed) && 
@@ -2236,13 +2243,13 @@ void Options::InitScheduler()
 				{
 					for (int iEveryHour = 0; iEveryHour < 24; iEveryHour++)
 					{
-						Scheduler::Task* pTask = new Scheduler::Task(iEveryHour, iMinutes, iWeekDays, eCommand, szParam);
+						Scheduler::Task* pTask = new Scheduler::Task(n, iEveryHour, iMinutes, iWeekDays, eCommand, szParam);
 						g_pScheduler->AddTask(pTask);
 					}
 				}
 				else
 				{
-					Scheduler::Task* pTask = new Scheduler::Task(iHours, iMinutes, iWeekDays, eCommand, szParam);
+					Scheduler::Task* pTask = new Scheduler::Task(n, iHours, iMinutes, iWeekDays, eCommand, szParam);
 					g_pScheduler->AddTask(pTask);
 				}
 			}
@@ -2424,7 +2431,7 @@ bool Options::SetOptionString(const char* option)
 		return false;
 	}
 
-	bool bOK = ValidateOptionName(optname);
+	bool bOK = ValidateOptionName(optname, optvalue);
 	if (bOK)
 	{
 		SetOption(optname, optvalue);
@@ -2484,7 +2491,7 @@ bool Options::SplitOptionString(const char* option, char** pOptName, char** pOpt
 	return true;
 }
 
-bool Options::ValidateOptionName(const char * optname)
+bool Options::ValidateOptionName(const char* optname, const char* optvalue)
 {
 	if (!strcasecmp(optname, OPTION_CONFIGFILE) || !strcasecmp(optname, OPTION_APPBIN) ||
 		!strcasecmp(optname, OPTION_APPDIR) || !strcasecmp(optname, OPTION_VERSION))
@@ -2532,7 +2539,7 @@ bool Options::ValidateOptionName(const char * optname)
 	{
 		char* p = (char*)optname + 8;
 		while (*p >= '0' && *p <= '9') p++;
-		if (p && (!strcasecmp(p, ".name") || !strcasecmp(p, ".destdir") || !strcasecmp(p, ".defscript") ||
+		if (p && (!strcasecmp(p, ".name") || !strcasecmp(p, ".destdir") || !strcasecmp(p, ".postscript") ||
 			!strcasecmp(p, ".unpack") || !strcasecmp(p, ".aliases")))
 		{
 			return true;
@@ -2551,7 +2558,7 @@ bool Options::ValidateOptionName(const char * optname)
 		}
 	}
 
-	// post-processing scripts options
+	// scripts options
 	if (strchr(optname, ':'))
 	{
 		return true;
@@ -2575,9 +2582,18 @@ bool Options::ValidateOptionName(const char * optname)
 		ConfigWarn("Option \"%s\" is obsolete, ignored", optname);
 		return true;
 	}
-	if (!strcasecmp(optname, OPTION_POSTPROCESS))
+	if (!strcasecmp(optname, OPTION_POSTPROCESS) ||
+		!strcasecmp(optname, OPTION_NZBPROCESS) ||
+		!strcasecmp(optname, OPTION_NZBADDEDPROCESS))
 	{
-		ConfigError("Option \"%s\" is obsolete, ignored, use \"%s\" and \"%s\" instead", optname, OPTION_SCRIPTDIR, OPTION_DEFSCRIPT);
+		if (optvalue && strlen(optvalue) > 0)
+		{
+			ConfigError("Option \"%s\" is obsolete, ignored, use \"%s\" and \"%s\" instead", optname, OPTION_SCRIPTDIR,
+				!strcasecmp(optname, OPTION_POSTPROCESS) ? OPTION_POSTSCRIPT :
+				!strcasecmp(optname, OPTION_NZBPROCESS) ? OPTION_SCANSCRIPT :
+				!strcasecmp(optname, OPTION_NZBADDEDPROCESS) ? OPTION_QUEUESCRIPT :
+				"ERROR");
+		}
 		return true;
 	}
 
@@ -2621,6 +2637,18 @@ void Options::ConvertOldOption(char *szOption, int iOptionBufLen, char *szValue,
 	if (!strcasecmp(szOption, "ParCheck") && !strcasecmp(szValue, "no"))
 	{
 		strncpy(szValue, "auto", iValueBufLen);
+	}
+
+	if (!strcasecmp(szOption, "DefScript"))
+	{
+		strncpy(szOption, "PostScript", iOptionBufLen);
+	}
+
+	int iNameLen = strlen(szOption);
+	if (!strncasecmp(szOption, "Category", 8) && iNameLen > 10 &&
+		!strcasecmp(szOption + iNameLen - 10, ".DefScript"))
+	{
+		strncpy(szOption + iNameLen - 10, ".PostScript", iOptionBufLen - 9 /* strlen("Category.") */);
 	}
 
 	szOption[iOptionBufLen-1] = '\0';
@@ -2915,7 +2943,7 @@ bool Options::LoadConfigTemplates(ConfigTemplates* pConfigTemplates)
 	{
 		return false;
 	}
-	ConfigTemplate* pConfigTemplate = new ConfigTemplate("", "", szBuffer);
+	ConfigTemplate* pConfigTemplate = new ConfigTemplate(NULL, szBuffer);
 	pConfigTemplates->push_back(pConfigTemplate);
 	free(szBuffer);
 
@@ -2927,6 +2955,8 @@ bool Options::LoadConfigTemplates(ConfigTemplates* pConfigTemplates)
 	ScriptList scriptList;
 	LoadScriptList(&scriptList);
 
+	const int iBeginSignatureLen = strlen(BEGIN_SCRIPT_SIGNATURE);
+
 	for (ScriptList::iterator it = scriptList.begin(); it != scriptList.end(); it++)
 	{
 		Script* pScript = *it;
@@ -2934,19 +2964,23 @@ bool Options::LoadConfigTemplates(ConfigTemplates* pConfigTemplates)
 		FILE* infile = fopen(pScript->GetLocation(), "rb");
 		if (!infile)
 		{
-			ConfigTemplate* pConfigTemplate = new ConfigTemplate(pScript->GetName(), pScript->GetDisplayName(), "");
+			ConfigTemplate* pConfigTemplate = new ConfigTemplate(pScript, "");
 			pConfigTemplates->push_back(pConfigTemplate);
 			continue;
 		}
 
-		const int iConfigSignatureLen = strlen(PPSCRIPT_SIGNATURE);
 		StringBuilder stringBuilder;
 		char buf[1024];
 		bool bInConfig = false;
 
 		while (fgets(buf, sizeof(buf) - 1, infile))
 		{
-			if (!strncmp(buf, PPSCRIPT_SIGNATURE, iConfigSignatureLen))
+			if (!strncmp(buf, BEGIN_SCRIPT_SIGNATURE, iBeginSignatureLen) &&
+				strstr(buf, END_SCRIPT_SIGNATURE) &&
+				(strstr(buf, POST_SCRIPT_SIGNATURE) ||
+				 strstr(buf, SCAN_SCRIPT_SIGNATURE) ||
+				 strstr(buf, QUEUE_SCRIPT_SIGNATURE) ||
+				 strstr(buf, SCHEDULER_SCRIPT_SIGNATURE)))
 			{
 				if (bInConfig)
 				{
@@ -2964,9 +2998,12 @@ bool Options::LoadConfigTemplates(ConfigTemplates* pConfigTemplates)
 
 		fclose(infile);
 
-		ConfigTemplate* pConfigTemplate = new ConfigTemplate(pScript->GetName(), pScript->GetDisplayName(), stringBuilder.GetBuffer());
+		ConfigTemplate* pConfigTemplate = new ConfigTemplate(pScript, stringBuilder.GetBuffer());
 		pConfigTemplates->push_back(pConfigTemplate);
 	}
+
+	// clearing the list without deleting of objects, which are in pConfigTemplates now 
+	scriptList.clear();
 
 	return true;
 }
@@ -2989,12 +3026,13 @@ void Options::LoadScriptList(ScriptList* pScriptList)
 	while (szScriptName)
 	{
 		szScriptName = Util::Trim(szScriptName);
-		if (szScriptName[0] != '\0')
+		if (*szScriptName)
 		{
 			Script* pScript = tmpScriptList.Find(szScriptName);
 			if (pScript)
 			{
-				pScriptList->push_back(new Script(pScript->GetName(), pScript->GetLocation()));
+				tmpScriptList.remove(pScript);
+				pScriptList->push_back(pScript);
 			}
 		}
 		szScriptName = strtok_r(NULL, ",;", &saveptr);
@@ -3007,9 +3045,11 @@ void Options::LoadScriptList(ScriptList* pScriptList)
 		Script* pScript = *it;
 		if (!pScriptList->Find(pScript->GetName()))
 		{
-			pScriptList->push_back(new Script(pScript->GetName(), pScript->GetLocation()));
+			pScriptList->push_back(pScript);
 		}
 	}
+
+	tmpScriptList.clear();
 
 	BuildScriptDisplayNames(pScriptList);
 }
@@ -3018,6 +3058,8 @@ void Options::LoadScriptDir(ScriptList* pScriptList, const char* szDirectory, bo
 {
 	int iBufSize = 1024*10;
 	char* szBuffer = (char*)malloc(iBufSize+1);
+
+	const int iBeginSignatureLen = strlen(BEGIN_SCRIPT_SIGNATURE);
 
 	DirBrowser dir(szDirectory);
 	while (const char* szFilename = dir.Next())
@@ -3038,31 +3080,53 @@ void Options::LoadScriptDir(ScriptList* pScriptList, const char* szDirectory, bo
 					int iReadBytes = fread(szBuffer, 1, iBufSize, infile);
 					fclose(infile);
 					szBuffer[iReadBytes] = 0;
-					if (strstr(szBuffer, PPSCRIPT_SIGNATURE))
+
+					// split buffer into lines
+					char* saveptr;
+					char* szLine = strtok_r(szBuffer, "\n\r", &saveptr);
+					while (szLine)
 					{
-						char szScriptName[1024];
-						if (bIsSubDir)
+						if (!strncmp(szLine, BEGIN_SCRIPT_SIGNATURE, iBeginSignatureLen) &&
+							strstr(szLine, END_SCRIPT_SIGNATURE))
 						{
-							char szDirectory2[1024];
-							snprintf(szDirectory2, 1024, "%s", szDirectory);
-							szDirectory2[1024-1] = '\0';
-							int iLen = strlen(szDirectory2);
-							if (szDirectory2[iLen-1] == PATH_SEPARATOR || szDirectory2[iLen-1] == ALT_PATH_SEPARATOR)
+							bool bPostScript = strstr(szLine, POST_SCRIPT_SIGNATURE);
+							bool bScanScript = strstr(szLine, SCAN_SCRIPT_SIGNATURE);
+							bool bQueueScript = strstr(szLine, QUEUE_SCRIPT_SIGNATURE);
+							bool bSchedulerScript = strstr(szLine, SCHEDULER_SCRIPT_SIGNATURE);
+							if (bPostScript || bScanScript || bQueueScript || bSchedulerScript)
 							{
-								// trim last path-separator
-								szDirectory2[iLen-1] = '\0';
+								char szScriptName[1024];
+								if (bIsSubDir)
+								{
+									char szDirectory2[1024];
+									snprintf(szDirectory2, 1024, "%s", szDirectory);
+									szDirectory2[1024-1] = '\0';
+									int iLen = strlen(szDirectory2);
+									if (szDirectory2[iLen-1] == PATH_SEPARATOR || szDirectory2[iLen-1] == ALT_PATH_SEPARATOR)
+									{
+										// trim last path-separator
+										szDirectory2[iLen-1] = '\0';
+									}
+
+									snprintf(szScriptName, 1024, "%s%c%s", Util::BaseFileName(szDirectory2), PATH_SEPARATOR, szFilename);
+								}
+								else
+								{
+									snprintf(szScriptName, 1024, "%s", szFilename);
+								}
+								szScriptName[1024-1] = '\0';
+
+								Script* pScript = new Script(szScriptName, szFullFilename);
+								pScript->SetPostScript(bPostScript);
+								pScript->SetScanScript(bScanScript);
+								pScript->SetQueueScript(bQueueScript);
+								pScript->SetSchedulerScript(bSchedulerScript);
+								pScriptList->push_back(pScript);
+								break;
 							}
-
-							snprintf(szScriptName, 1024, "%s%c%s", Util::BaseFileName(szDirectory2), PATH_SEPARATOR, szFilename);
 						}
-						else
-						{
-							snprintf(szScriptName, 1024, "%s", szFilename);
-						}
-						szScriptName[1024-1] = '\0';
 
-						Script* pScript = new Script(szScriptName, szFullFilename);
-						pScriptList->push_back(pScript);
+						szLine = strtok_r(NULL, "\n\r", &saveptr);
 					}
 				}
 			}

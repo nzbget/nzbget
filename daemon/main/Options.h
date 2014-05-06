@@ -135,31 +135,6 @@ public:
 		OptEntry*		FindOption(const char* szName);
 	};
 
-	class ConfigTemplate
-	{
-	private:
-		char*			m_szName;
-		char*			m_szDisplayName;
-		char*			m_szTemplate;
-
-		friend class Options;
-
-	public:
-						ConfigTemplate(const char* szName, const char* szDisplayName, const char* szTemplate);
-						~ConfigTemplate();
-		const char*		GetName() { return m_szName; }
-		const char*		GetDisplayName() { return m_szDisplayName; }
-		const char*		GetTemplate() { return m_szTemplate; }
-	};
-	
-	typedef std::vector<ConfigTemplate*>  ConfigTemplatesBase;
-
-	class ConfigTemplates: public ConfigTemplatesBase
-	{
-	public:
-						~ConfigTemplates();
-	};
-
 	typedef std::vector<char*>  NameList;
 
 	class Category
@@ -168,16 +143,16 @@ public:
 		char*			m_szName;
 		char*			m_szDestDir;
 		bool			m_bUnpack;
-		char*			m_szDefScript;
+		char*			m_szPostScript;
 		NameList		m_Aliases;
 
 	public:
-						Category(const char* szName, const char* szDestDir, bool bUnpack, const char* szDefScript);
+						Category(const char* szName, const char* szDestDir, bool bUnpack, const char* szPostScript);
 						~Category();
 		const char*		GetName() { return m_szName; }
 		const char*		GetDestDir() { return m_szDestDir; }
 		bool			GetUnpack() { return m_bUnpack; }
-		const char*		GetDefScript() { return m_szDefScript; }
+		const char*		GetPostScript() { return m_szPostScript; }
 		NameList*		GetAliases() { return &m_Aliases; }
 	};
 	
@@ -196,6 +171,10 @@ public:
 		char*			m_szName;
 		char*			m_szLocation;
 		char*			m_szDisplayName;
+		bool			m_bPostScript;
+		bool			m_bScanScript;
+		bool			m_bQueueScript;
+		bool			m_bSchedulerScript;
 
 	public:
 						Script(const char* szName, const char* szLocation);
@@ -204,6 +183,14 @@ public:
 		const char*		GetLocation() { return m_szLocation; }
 		void			SetDisplayName(const char* szDisplayName);
 		const char*		GetDisplayName() { return m_szDisplayName; }
+		bool			GetPostScript() { return m_bPostScript; }
+		void			SetPostScript(bool bPostScript) { m_bPostScript = bPostScript; }
+		bool			GetScanScript() { return m_bScanScript; }
+		void			SetScanScript(bool bScanScript) { m_bScanScript = bScanScript; }
+		bool			GetQueueScript() { return m_bQueueScript; }
+		void			SetQueueScript(bool bQueueScript) { m_bQueueScript = bQueueScript; }
+		bool			GetSchedulerScript() { return m_bSchedulerScript; }
+		void			SetSchedulerScript(bool bSchedulerScript) { m_bSchedulerScript = bSchedulerScript; }
 	};
 
 	typedef std::list<Script*>  ScriptListBase;
@@ -213,6 +200,29 @@ public:
 	public:
 						~ScriptList();
 		Script*			Find(const char* szName);	
+	};
+
+	class ConfigTemplate
+	{
+	private:
+		Script*			m_pScript;
+		char*			m_szTemplate;
+
+		friend class Options;
+
+	public:
+						ConfigTemplate(Script* pScript, const char* szTemplate);
+						~ConfigTemplate();
+		Script*			GetScript() { return m_pScript; }
+		const char*		GetTemplate() { return m_szTemplate; }
+	};
+	
+	typedef std::vector<ConfigTemplate*>  ConfigTemplatesBase;
+
+	class ConfigTemplates: public ConfigTemplatesBase
+	{
+	public:
+						~ConfigTemplates();
 	};
 
 private:
@@ -271,10 +281,10 @@ private:
 	EParScan			m_eParScan;
 	bool				m_bParRename;
 	EHealthCheck		m_eHealthCheck;
-	char*				m_szDefScript;
+	char*				m_szPostScript;
 	char*				m_szScriptOrder;
-	char*				m_szNZBProcess;
-	char*				m_szNZBAddedProcess;
+	char*				m_szScanScript;
+	char*				m_szQueueScript;
 	bool				m_bNoConfig;
 	int					m_iUMask;
 	int					m_iUpdateInterval;
@@ -362,7 +372,7 @@ private:
 	void				SetOption(const char* optname, const char* value);
 	bool				SetOptionString(const char* option);
 	bool				SplitOptionString(const char* option, char** pOptName, char** pOptValue);
-	bool				ValidateOptionName(const char* optname);
+	bool				ValidateOptionName(const char* optname, const char* optvalue);
 	void				LoadConfigFile();
 	void				CheckDir(char** dir, const char* szOptionName, bool bAllowEmpty, bool bCreate);
 	void				ParseFileIDList(int argc, char* argv[], int optind);
@@ -437,9 +447,9 @@ public:
 	bool				GetParRename() { return m_bParRename; }
 	EHealthCheck		GetHealthCheck() { return m_eHealthCheck; }
 	const char*			GetScriptOrder() { return m_szScriptOrder; }
-	const char*			GetDefScript() { return m_szDefScript; }
-	const char*			GetNZBProcess() { return m_szNZBProcess; }
-	const char*			GetNZBAddedProcess() { return m_szNZBAddedProcess; }
+	const char*			GetPostScript() { return m_szPostScript; }
+	const char*			GetScanScript() { return m_szScanScript; }
+	const char*			GetQueueScript() { return m_szQueueScript; }
 	int					GetUMask() { return m_iUMask; }
 	int					GetUpdateInterval() {return m_iUpdateInterval; }
 	bool				GetCursesNZBName() { return m_bCursesNZBName; }

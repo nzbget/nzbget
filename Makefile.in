@@ -62,7 +62,7 @@ host_triplet = @host@
 target_triplet = @target@
 bin_PROGRAMS = nzbget$(EXEEXT)
 DIST_COMMON = README $(am__configure_deps) $(dist_doc_DATA) \
-	$(dist_exampleconf_DATA) $(nobase_dist_ppscripts_SCRIPTS) \
+	$(dist_exampleconf_DATA) $(nobase_dist_scripts_SCRIPTS) \
 	$(nobase_dist_webui_DATA) $(srcdir)/Makefile.am \
 	$(srcdir)/Makefile.in $(srcdir)/config.h.in \
 	$(top_srcdir)/configure AUTHORS COPYING ChangeLog INSTALL NEWS \
@@ -77,7 +77,7 @@ am__CONFIG_DISTCLEAN_FILES = config.status config.cache config.log \
 mkinstalldirs = $(install_sh) -d
 CONFIG_HEADER = config.h
 CONFIG_CLEAN_FILES =
-am__installdirs = "$(DESTDIR)$(bindir)" "$(DESTDIR)$(ppscriptsdir)" \
+am__installdirs = "$(DESTDIR)$(bindir)" "$(DESTDIR)$(scriptsdir)" \
 	"$(DESTDIR)$(sbindir)" "$(DESTDIR)$(docdir)" \
 	"$(DESTDIR)$(exampleconfdir)" "$(DESTDIR)$(webuidir)"
 binPROGRAMS_INSTALL = $(INSTALL_PROGRAM)
@@ -111,9 +111,9 @@ am__vpath_adj = case $$p in \
     *) f=$$p;; \
   esac;
 am__strip_dir = `echo $$p | sed -e 's|^.*/||'`;
-nobase_dist_ppscriptsSCRIPT_INSTALL = $(install_sh_SCRIPT)
+nobase_dist_scriptsSCRIPT_INSTALL = $(install_sh_SCRIPT)
 sbinSCRIPT_INSTALL = $(INSTALL_SCRIPT)
-SCRIPTS = $(nobase_dist_ppscripts_SCRIPTS) $(sbin_SCRIPTS)
+SCRIPTS = $(nobase_dist_scripts_SCRIPTS) $(sbin_SCRIPTS)
 DEFAULT_INCLUDES = -I. -I$(srcdir) -I.
 depcomp = $(SHELL) $(top_srcdir)/depcomp
 am__depfiles_maybe = depfiles
@@ -447,9 +447,9 @@ webui_FILES = \
 	webui/img/download-anim-orange-2x.png \
 	webui/img/transmit-reload-2x.gif
 
-ppscripts_FILES = \
-	ppscripts/EMail.py \
-	ppscripts/Logger.py
+scripts_FILES = \
+	scripts/EMail.py \
+	scripts/Logger.py
 
 
 # Install
@@ -459,8 +459,8 @@ exampleconfdir = $(datadir)/nzbget
 dist_exampleconf_DATA = $(exampleconf_FILES)
 webuidir = $(datadir)/nzbget
 nobase_dist_webui_DATA = $(webui_FILES)
-ppscriptsdir = $(datadir)/nzbget
-nobase_dist_ppscripts_SCRIPTS = $(ppscripts_FILES)
+scriptsdir = $(datadir)/nzbget
+nobase_dist_scripts_SCRIPTS = $(scripts_FILES)
 
 # Ignore "svn_version.cpp" in distcleancheck
 distcleancheck_listfiles = \
@@ -548,30 +548,30 @@ clean-binPROGRAMS:
 nzbget$(EXEEXT): $(nzbget_OBJECTS) $(nzbget_DEPENDENCIES) 
 	@rm -f nzbget$(EXEEXT)
 	$(CXXLINK) $(nzbget_LDFLAGS) $(nzbget_OBJECTS) $(nzbget_LDADD) $(LIBS)
-install-nobase_dist_ppscriptsSCRIPTS: $(nobase_dist_ppscripts_SCRIPTS)
+install-nobase_dist_scriptsSCRIPTS: $(nobase_dist_scripts_SCRIPTS)
 	@$(NORMAL_INSTALL)
-	test -z "$(ppscriptsdir)" || $(mkdir_p) "$(DESTDIR)$(ppscriptsdir)"
+	test -z "$(scriptsdir)" || $(mkdir_p) "$(DESTDIR)$(scriptsdir)"
 	@$(am__vpath_adj_setup) \
-	list='$(nobase_dist_ppscripts_SCRIPTS)'; for p in $$list; do \
+	list='$(nobase_dist_scripts_SCRIPTS)'; for p in $$list; do \
 	  $(am__vpath_adj) p=$$f; \
 	  if test -f "$$p"; then d=; else d="$(srcdir)/"; fi; \
 	  if test -f $$d$$p; then \
 	    f=`echo "$$p" | sed 's|^.*/||;$(transform)'`; \
 	    f=`echo "$$p" | sed 's|[^/]*$$||'`"$$f"; \
-	    echo " $(nobase_dist_ppscriptsSCRIPT_INSTALL) '$$d$$p' '$(DESTDIR)$(ppscriptsdir)/$$f'"; \
-	    $(nobase_dist_ppscriptsSCRIPT_INSTALL) "$$d$$p" "$(DESTDIR)$(ppscriptsdir)/$$f"; \
+	    echo " $(nobase_dist_scriptsSCRIPT_INSTALL) '$$d$$p' '$(DESTDIR)$(scriptsdir)/$$f'"; \
+	    $(nobase_dist_scriptsSCRIPT_INSTALL) "$$d$$p" "$(DESTDIR)$(scriptsdir)/$$f"; \
 	  else :; fi; \
 	done
 
-uninstall-nobase_dist_ppscriptsSCRIPTS:
+uninstall-nobase_dist_scriptsSCRIPTS:
 	@$(NORMAL_UNINSTALL)
 	@$(am__vpath_adj_setup) \
-	list='$(nobase_dist_ppscripts_SCRIPTS)'; for p in $$list; do \
+	list='$(nobase_dist_scripts_SCRIPTS)'; for p in $$list; do \
 	  $(am__vpath_adj) p=$$f; \
 	  f=`echo "$$p" | sed 's|^.*/||;$(transform)'`; \
 	  f=`echo "$$p" | sed 's|[^/]*$$||'`"$$f"; \
-	  echo " rm -f '$(DESTDIR)$(ppscriptsdir)/$$f'"; \
-	  rm -f "$(DESTDIR)$(ppscriptsdir)/$$f"; \
+	  echo " rm -f '$(DESTDIR)$(scriptsdir)/$$f'"; \
+	  rm -f "$(DESTDIR)$(scriptsdir)/$$f"; \
 	done
 install-sbinSCRIPTS: $(sbin_SCRIPTS)
 	@$(NORMAL_INSTALL)
@@ -1425,7 +1425,7 @@ distclean-tags:
 distdir: $(DISTFILES)
 	$(am__remove_distdir)
 	mkdir $(distdir)
-	$(mkdir_p) $(distdir)/daemon/windows $(distdir)/osx $(distdir)/osx/NZBGet.xcodeproj $(distdir)/osx/Resources $(distdir)/osx/Resources/Images $(distdir)/osx/Resources/licenses $(distdir)/patches $(distdir)/ppscripts $(distdir)/webui $(distdir)/webui/img $(distdir)/webui/lib
+	$(mkdir_p) $(distdir)/daemon/windows $(distdir)/osx $(distdir)/osx/NZBGet.xcodeproj $(distdir)/osx/Resources $(distdir)/osx/Resources/Images $(distdir)/osx/Resources/licenses $(distdir)/patches $(distdir)/scripts $(distdir)/webui $(distdir)/webui/img $(distdir)/webui/lib
 	@srcdirstrip=`echo "$(srcdir)" | sed 's|.|.|g'`; \
 	topsrcdirstrip=`echo "$(top_srcdir)" | sed 's|.|.|g'`; \
 	list='$(DISTFILES)'; for file in $$list; do \
@@ -1556,7 +1556,7 @@ check-am: all-am
 check: check-am
 all-am: Makefile $(PROGRAMS) $(SCRIPTS) $(DATA) config.h
 installdirs:
-	for dir in "$(DESTDIR)$(bindir)" "$(DESTDIR)$(ppscriptsdir)" "$(DESTDIR)$(sbindir)" "$(DESTDIR)$(docdir)" "$(DESTDIR)$(exampleconfdir)" "$(DESTDIR)$(webuidir)"; do \
+	for dir in "$(DESTDIR)$(bindir)" "$(DESTDIR)$(scriptsdir)" "$(DESTDIR)$(sbindir)" "$(DESTDIR)$(docdir)" "$(DESTDIR)$(exampleconfdir)" "$(DESTDIR)$(webuidir)"; do \
 	  test -z "$$dir" || $(mkdir_p) "$$dir"; \
 	done
 install: install-am
@@ -1605,7 +1605,7 @@ info: info-am
 info-am:
 
 install-data-am: install-dist_docDATA install-dist_exampleconfDATA \
-	install-nobase_dist_ppscriptsSCRIPTS \
+	install-nobase_dist_scriptsSCRIPTS \
 	install-nobase_dist_webuiDATA
 	@$(NORMAL_INSTALL)
 	$(MAKE) $(AM_MAKEFLAGS) install-data-hook
@@ -1641,7 +1641,7 @@ ps-am:
 
 uninstall-am: uninstall-binPROGRAMS uninstall-dist_docDATA \
 	uninstall-dist_exampleconfDATA uninstall-info-am \
-	uninstall-nobase_dist_ppscriptsSCRIPTS \
+	uninstall-nobase_dist_scriptsSCRIPTS \
 	uninstall-nobase_dist_webuiDATA uninstall-sbinSCRIPTS
 
 .PHONY: CTAGS GTAGS all all-am am--refresh check check-am clean \
@@ -1654,14 +1654,14 @@ uninstall-am: uninstall-binPROGRAMS uninstall-dist_docDATA \
 	install-data-hook install-dist_docDATA \
 	install-dist_exampleconfDATA install-exec install-exec-am \
 	install-exec-hook install-info install-info-am install-man \
-	install-nobase_dist_ppscriptsSCRIPTS \
+	install-nobase_dist_scriptsSCRIPTS \
 	install-nobase_dist_webuiDATA install-sbinSCRIPTS \
 	install-strip installcheck installcheck-am installdirs \
 	maintainer-clean maintainer-clean-generic mostlyclean \
 	mostlyclean-compile mostlyclean-generic pdf pdf-am ps ps-am \
 	tags uninstall uninstall-am uninstall-binPROGRAMS \
 	uninstall-dist_docDATA uninstall-dist_exampleconfDATA \
-	uninstall-info-am uninstall-nobase_dist_ppscriptsSCRIPTS \
+	uninstall-info-am uninstall-nobase_dist_scriptsSCRIPTS \
 	uninstall-nobase_dist_webuiDATA uninstall-sbinSCRIPTS
 
 
@@ -1689,7 +1689,7 @@ install-data-hook:
 	sed 's:configuration file (typically installed:configuration file (installed:' < "$(DESTDIR)$(exampleconfdir)/nzbget.conf" > "$(DESTDIR)$(exampleconfdir)/nzbget.conf.temp"
 	sed 's:/usr/local/share/nzbget/nzbget.conf):$(exampleconfdir)/nzbget.conf):' < "$(DESTDIR)$(exampleconfdir)/nzbget.conf.temp" > "$(DESTDIR)$(exampleconfdir)/nzbget.conf"
 	sed 's:^WebDir=:WebDir=$(webuidir)/webui:' < "$(DESTDIR)$(exampleconfdir)/nzbget.conf" > "$(DESTDIR)$(exampleconfdir)/nzbget.conf.temp"
-	sed 's:typically installed to /usr/local/share/nzbget/ppscripts:installed to $(ppscriptsdir)/ppscripts:' < "$(DESTDIR)$(exampleconfdir)/nzbget.conf.temp" > "$(DESTDIR)$(exampleconfdir)/nzbget.conf"
+	sed 's:typically installed to /usr/local/share/nzbget/scripts:installed to $(scriptsdir)/scripts:' < "$(DESTDIR)$(exampleconfdir)/nzbget.conf.temp" > "$(DESTDIR)$(exampleconfdir)/nzbget.conf"
 	rm "$(DESTDIR)$(exampleconfdir)/nzbget.conf.temp"
 
 # Install configuration files into /etc

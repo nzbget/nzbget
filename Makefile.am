@@ -224,9 +224,9 @@ webui_FILES = \
 	webui/img/download-anim-orange-2x.png \
 	webui/img/transmit-reload-2x.gif
 
-ppscripts_FILES = \
-	ppscripts/EMail.py \
-	ppscripts/Logger.py
+scripts_FILES = \
+	scripts/EMail.py \
+	scripts/Logger.py
 
 # Install
 sbin_SCRIPTS = nzbgetd
@@ -235,8 +235,8 @@ exampleconfdir = $(datadir)/nzbget
 dist_exampleconf_DATA = $(exampleconf_FILES)
 webuidir = $(datadir)/nzbget
 nobase_dist_webui_DATA = $(webui_FILES)
-ppscriptsdir = $(datadir)/nzbget
-nobase_dist_ppscripts_SCRIPTS = $(ppscripts_FILES)
+scriptsdir = $(datadir)/nzbget
+nobase_dist_scripts_SCRIPTS = $(scripts_FILES)
 
 # Note about "sed": 
 # We need to make some changes in installed files.
@@ -262,7 +262,7 @@ install-data-hook:
 	sed 's:configuration file (typically installed:configuration file (installed:' < "$(DESTDIR)$(exampleconfdir)/nzbget.conf" > "$(DESTDIR)$(exampleconfdir)/nzbget.conf.temp"
 	sed 's:/usr/local/share/nzbget/nzbget.conf):$(exampleconfdir)/nzbget.conf):' < "$(DESTDIR)$(exampleconfdir)/nzbget.conf.temp" > "$(DESTDIR)$(exampleconfdir)/nzbget.conf"
 	sed 's:^WebDir=:WebDir=$(webuidir)/webui:' < "$(DESTDIR)$(exampleconfdir)/nzbget.conf" > "$(DESTDIR)$(exampleconfdir)/nzbget.conf.temp"
-	sed 's:typically installed to /usr/local/share/nzbget/ppscripts:installed to $(ppscriptsdir)/ppscripts:' < "$(DESTDIR)$(exampleconfdir)/nzbget.conf.temp" > "$(DESTDIR)$(exampleconfdir)/nzbget.conf"
+	sed 's:typically installed to /usr/local/share/nzbget/scripts:installed to $(scriptsdir)/scripts:' < "$(DESTDIR)$(exampleconfdir)/nzbget.conf.temp" > "$(DESTDIR)$(exampleconfdir)/nzbget.conf"
 	rm "$(DESTDIR)$(exampleconfdir)/nzbget.conf.temp"
 
 # Install configuration files into /etc

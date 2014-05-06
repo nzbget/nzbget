@@ -29,16 +29,23 @@
 #include "Script.h"
 #include "Thread.h"
 #include "DownloadInfo.h"
+#include "Options.h"
 
-class QueueScriptController : public ScriptController
+class NZBScriptController : public ScriptController
 {
 protected:
 	void				PrepareEnvParameters(NZBParameterList* pParameters, const char* szStripPrefix);
+	void				PrepareEnvScript(NZBParameterList* pParameters, const char* szScriptName);
+	void				ExecuteScriptList(const char* szScriptList);
+	virtual void		ExecuteScript(Options::Script* pScript) = 0;
 };
 
-class NZBScriptController : public QueueScriptController
+class ScanScriptController : public NZBScriptController
 {
 private:
+	const char*			m_szNZBFilename;
+	const char*			m_szUrl;
+	const char*			m_szDirectory;
 	char**				m_pNZBName;
 	char**				m_pCategory;
 	int*				m_iPriority;
@@ -47,23 +54,38 @@ private:
 	bool*				m_bAddPaused;
 	int					m_iPrefixLen;
 
+	void				PrepareParams(const char* szScriptName);
+
 protected:
+	virtual void		ExecuteScript(Options::Script* pScript);
 	virtual void		AddMessage(Message::EKind eKind, const char* szText);
 
 public:
-	static void			ExecuteScript(const char* szScript, const char* szNZBFilename, const char* szUrl, 
+	static void			ExecuteScripts(const char* szNZBFilename, const char* szUrl,
 							const char* szDirectory, char** pNZBName, char** pCategory, int* iPriority,
 							NZBParameterList* pParameters, bool* bAddTop, bool* bAddPaused);
 };
 
-class NZBAddedScriptController : public Thread, public QueueScriptController
+class QueueScriptController : public Thread, public NZBScriptController
 {
 private:
 	char*				m_szNZBName;
+	char*				m_szNZBFilename;
+	char*				m_szUrl;
+	char*				m_szCategory;
+	int					m_iID;
+	int					m_iPriority;
+	NZBParameterList	m_Parameters;
+
+	void				PrepareParams(const char* szScriptName);
+
+protected:
+	virtual void		ExecuteScript(Options::Script* pScript);
 
 public:
+	virtual				~QueueScriptController();
 	virtual void		Run();
-	static void			StartScript(DownloadQueue* pDownloadQueue, NZBInfo *pNZBInfo, const char* szScript);
+	static void			StartScripts(DownloadQueue* pDownloadQueue, NZBInfo *pNZBInfo);
 };
 
 #endif
