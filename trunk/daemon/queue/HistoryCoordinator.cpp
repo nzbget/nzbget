@@ -418,6 +418,10 @@ void HistoryCoordinator::HistoryReturn(DownloadQueue* pDownloadQueue, HistoryLis
 		pNZBInfo->SetMarkStatus(NZBInfo::ksNone);
 		pNZBInfo->GetScriptStatuses()->Clear();
 		pNZBInfo->SetParkedFileCount(0);
+		if (pNZBInfo->GetMoveStatus() == NZBInfo::msFailure)
+		{
+			pNZBInfo->SetMoveStatus(NZBInfo::msNone);
+		}
 	}
 
 	if (pHistoryInfo->GetKind() == HistoryInfo::hkUrl)
