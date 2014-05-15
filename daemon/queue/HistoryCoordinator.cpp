@@ -116,13 +116,14 @@ void HistoryCoordinator::IntervalCheck()
 				pHistoryInfo->GetName(szNiceName, 1024);
 
 				pDownloadQueue->GetHistory()->erase(pDownloadQueue->GetHistory()->end() - 1 - index);
-				delete pHistoryInfo;
 				
 				if (pHistoryInfo->GetKind() == HistoryInfo::hkNzb)
 				{
 					DeleteQueuedFile(pHistoryInfo->GetNZBInfo()->GetQueuedFilename());
 				}
 				info("Collection %s removed from history", szNiceName);
+
+				delete pHistoryInfo;
 			}
 
 			it = pDownloadQueue->GetHistory()->rbegin() + index;
