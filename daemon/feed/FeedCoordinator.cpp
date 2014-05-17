@@ -364,19 +364,27 @@ void FeedCoordinator::FeedCompleted(FeedDownloader* pFeedDownloader)
 			FeedFile* pFeedFile = FeedFile::Create(pFeedInfo->GetOutputFilename());
 			remove(pFeedInfo->GetOutputFilename());
 
-			m_mutexDownloads.Lock();
+			NZBList addedNZBs;
 
+			m_mutexDownloads.Lock();
 			if (pFeedFile)
 			{
-				ProcessFeed(pFeedInfo, pFeedFile->GetFeedItemInfos());
+				ProcessFeed(pFeedInfo, pFeedFile->GetFeedItemInfos(), &addedNZBs);
 				delete pFeedFile;
 			}
-
 			pFeedInfo->SetLastUpdate(time(NULL));
 			pFeedInfo->SetForce(false);
-
 			m_bSave = true;
 			m_mutexDownloads.Unlock();
+
+			DownloadQueue* pDownloadQueue = DownloadQueue::Lock();
+			for (NZBList::iterator it = addedNZBs.begin(); it != addedNZBs.end(); it++)
+			{
+				NZBInfo* pNZBInfo = *it;
+				pDownloadQueue->GetQueue()->Add(pNZBInfo, false);
+			}
+			pDownloadQueue->Save();
+			DownloadQueue::Unlock();
 		}
 		pFeedInfo->SetStatus(FeedInfo::fsFinished);
 	}
@@ -416,7 +424,7 @@ void FeedCoordinator::FilterFeed(FeedInfo* pFeedInfo, FeedItemInfos* pFeedItemIn
 	delete pFeedFilter;
 }
 
-void FeedCoordinator::ProcessFeed(FeedInfo* pFeedInfo, FeedItemInfos* pFeedItemInfos)
+void FeedCoordinator::ProcessFeed(FeedInfo* pFeedInfo, FeedItemInfos* pFeedItemInfos, NZBList* pAddedNZBs)
 {
 	debug("Process feed %s", pFeedInfo->GetName());
 
@@ -438,7 +446,8 @@ void FeedCoordinator::ProcessFeed(FeedInfo* pFeedInfo, FeedItemInfos* pFeedItemI
 			}
 			else if (!pFeedHistoryInfo)
 			{
-				DownloadItem(pFeedInfo, pFeedItemInfo);
+				NZBInfo* pNZBInfo = CreateNZBInfo(pFeedInfo, pFeedItemInfo);
+				pAddedNZBs->Add(pNZBInfo, false);
 				eStatus = FeedHistoryInfo::hsFetched;
 				iAdded++;
 			}
@@ -464,7 +473,7 @@ void FeedCoordinator::ProcessFeed(FeedInfo* pFeedInfo, FeedItemInfos* pFeedItemI
 	}
 }
 
-void FeedCoordinator::DownloadItem(FeedInfo* pFeedInfo, FeedItemInfo* pFeedItemInfo)
+NZBInfo* FeedCoordinator::CreateNZBInfo(FeedInfo* pFeedInfo, FeedItemInfo* pFeedItemInfo)
 {
 	debug("Download %s from %s", pFeedItemInfo->GetUrl(), pFeedInfo->GetName());
 
@@ -496,10 +505,7 @@ void FeedCoordinator::DownloadItem(FeedInfo* pFeedInfo, FeedItemInfo* pFeedItemI
 	pNZBInfo->SetDupeScore(pFeedItemInfo->GetDupeScore());
 	pNZBInfo->SetDupeMode(pFeedItemInfo->GetDupeMode());
 
-	DownloadQueue* pDownloadQueue = DownloadQueue::Lock();
-	pDownloadQueue->GetQueue()->Add(pNZBInfo, false);
-	pDownloadQueue->Save();
-	DownloadQueue::Unlock();
+	return pNZBInfo;
 }
 
 bool FeedCoordinator::ViewFeed(int iID, FeedItemInfos** ppFeedItemInfos)
