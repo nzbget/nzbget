@@ -87,8 +87,8 @@ private:
 	void					StartFeedDownload(FeedInfo* pFeedInfo, bool bForce);
 	void					FeedCompleted(FeedDownloader* pFeedDownloader);
 	void					FilterFeed(FeedInfo* pFeedInfo, FeedItemInfos* pFeedItemInfos);
-	void					ProcessFeed(FeedInfo* pFeedInfo, FeedItemInfos* pFeedItemInfos);
-	void					DownloadItem(FeedInfo* pFeedInfo, FeedItemInfo* pFeedItemInfo);
+	void					ProcessFeed(FeedInfo* pFeedInfo, FeedItemInfos* pFeedItemInfos, NZBList* pAddedNZBs);
+	NZBInfo*				CreateNZBInfo(FeedInfo* pFeedInfo, FeedItemInfo* pFeedItemInfo);
 	void					ResetHangingDownloads();
 	void					DownloadQueueUpdate(Subject* pCaller, void* pAspect);
 	void					CleanupHistory();
