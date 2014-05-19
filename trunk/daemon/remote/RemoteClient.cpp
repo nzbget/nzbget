@@ -239,6 +239,9 @@ void RemoteClient::BuildFileList(SNZBListResponse* pListResponse, const char* pT
 			pNZBInfo->SetID(ntohl(pListAnswer->m_iID));
 			pNZBInfo->SetKind((NZBInfo::EKind)ntohl(pListAnswer->m_iKind));
 			pNZBInfo->SetSize(Util::JoinInt64(ntohl(pListAnswer->m_iSizeHi), ntohl(pListAnswer->m_iSizeLo)));
+			pNZBInfo->SetRemainingSize(Util::JoinInt64(ntohl(pListAnswer->m_iRemainingSizeHi), ntohl(pListAnswer->m_iRemainingSizeLo)));
+			pNZBInfo->SetPausedSize(Util::JoinInt64(ntohl(pListAnswer->m_iPausedSizeHi), ntohl(pListAnswer->m_iPausedSizeLo)));
+			pNZBInfo->SetPausedFileCount(ntohl(pListAnswer->m_iPausedCount));
 			pNZBInfo->SetFilename(szFileName);
 			pNZBInfo->SetName(szName);
 			pNZBInfo->SetDestDir(szDestDir);
