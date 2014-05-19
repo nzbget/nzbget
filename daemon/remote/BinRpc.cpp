@@ -444,12 +444,21 @@ void ListBinCommand::Execute()
 			NZBInfo* pNZBInfo = *it;
 
 			SNZBListResponseNZBEntry* pListAnswer = (SNZBListResponseNZBEntry*) bufptr;
-			unsigned long iSizeHi, iSizeLo;
+
+			unsigned long iSizeHi, iSizeLo, iRemainingSizeHi, iRemainingSizeLo, iPausedSizeHi, iPausedSizeLo;
 			Util::SplitInt64(pNZBInfo->GetSize(), &iSizeHi, &iSizeLo);
+			Util::SplitInt64(pNZBInfo->GetRemainingSize(), &iRemainingSizeHi, &iRemainingSizeLo);
+			Util::SplitInt64(pNZBInfo->GetPausedSize(), &iPausedSizeHi, &iPausedSizeLo);
+
 			pListAnswer->m_iID					= htonl(pNZBInfo->GetID());
 			pListAnswer->m_iKind				= htonl(pNZBInfo->GetKind());
 			pListAnswer->m_iSizeLo				= htonl(iSizeLo);
 			pListAnswer->m_iSizeHi				= htonl(iSizeHi);
+			pListAnswer->m_iRemainingSizeLo		= htonl(iRemainingSizeLo);
+			pListAnswer->m_iRemainingSizeHi		= htonl(iRemainingSizeHi);
+			pListAnswer->m_iPausedSizeLo		= htonl(iPausedSizeLo);
+			pListAnswer->m_iPausedSizeHi		= htonl(iPausedSizeHi);
+			pListAnswer->m_iPausedCount			= htonl(pNZBInfo->GetPausedFileCount());
 			pListAnswer->m_iPriority			= htonl(pNZBInfo->GetPriority());
 			pListAnswer->m_bMatch				= htonl(bMatchGroup && (!pRegEx || pRegEx->Match(pNZBInfo->GetName())));
 			pListAnswer->m_iFilenameLen			= htonl(strlen(pNZBInfo->GetFilename()) + 1);
