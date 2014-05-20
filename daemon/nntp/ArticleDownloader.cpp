@@ -788,7 +788,8 @@ ArticleDownloader::EStatus ArticleDownloader::DecodeCheck()
 		{
 			if (!Util::MoveFile(m_szTempFilename, m_szResultFilename))
 			{
-				error("Could not rename file %s to %s! Errcode: %i", m_szTempFilename, m_szResultFilename, errno);
+				char szErrBuf[256];
+				error("Could not rename file %s to %s: %s", m_szTempFilename, m_szResultFilename, Util::GetLastErrorMessage(szErrBuf, sizeof(szErrBuf)));
 			}
 		}
 
@@ -843,7 +844,8 @@ ArticleDownloader::EStatus ArticleDownloader::DecodeCheck()
 		}
 		else
 		{
-			error("Could not move file %s to %s! Errcode: %i", m_szTempFilename, m_szResultFilename, errno);
+			char szErrBuf[256];
+			error("Could not move file %s to %s: %s", m_szTempFilename, m_szResultFilename, Util::GetLastErrorMessage(szErrBuf, sizeof(szErrBuf)));
 		}
 		return adFinished;
 	}
@@ -1043,7 +1045,8 @@ void ArticleDownloader::CompleteFileParts()
 			dstFileName[1024-1] = '\0';
 			if (!Util::MoveFile(fn, dstFileName))
 			{
-				error("Could not move file %s to %s! Errcode: %i", fn, dstFileName, errno);
+				char szErrBuf[256];
+				error("Could not move file %s to %s: %s", fn, dstFileName, Util::GetLastErrorMessage(szErrBuf, sizeof(szErrBuf)));
 			}
 		}
 	}
@@ -1055,7 +1058,8 @@ void ArticleDownloader::CompleteFileParts()
 		fclose(outfile);
 		if (!Util::MoveFile(tmpdestfile, ofn))
 		{
-			error("Could not move file %s to %s! Errcode: %i", tmpdestfile, ofn, errno);
+			char szErrBuf[256];
+			error("Could not move file %s to %s: %s", tmpdestfile, ofn, Util::GetLastErrorMessage(szErrBuf, sizeof(szErrBuf)));
 		}
 	}
 
@@ -1063,7 +1067,8 @@ void ArticleDownloader::CompleteFileParts()
 	{
 		if (!Util::MoveFile(m_szOutputFilename, ofn))
 		{
-			error("Could not move file %s to %s! Errcode: %i", m_szOutputFilename, ofn, errno);
+			char szErrBuf[256];
+			error("Could not move file %s to %s: %s", m_szOutputFilename, ofn, Util::GetLastErrorMessage(szErrBuf, sizeof(szErrBuf)));
 		}
 
 		// if destination directory was changed delete the old directory (if empty)
@@ -1167,7 +1172,8 @@ bool ArticleDownloader::MoveCompletedFiles(NZBInfo* pNZBInfo, const char* szOldD
 			}
 			else
 			{
-				error("Could not move file %s to %s! Errcode: %i", szFileName, szNewFileName, errno);
+				char szErrBuf[256];
+				error("Could not move file %s to %s: %s", szFileName, szNewFileName, Util::GetLastErrorMessage(szErrBuf, sizeof(szErrBuf)));
 			}
 		}
     }
@@ -1224,7 +1230,8 @@ bool ArticleDownloader::MoveCompletedFiles(NZBInfo* pNZBInfo, const char* szOldD
 				// move to new destination
 				if (!Util::MoveFile(szOldBrokenLogName, szBrokenLogName))
 				{
-					error("Could not move file %s to %s! Errcode: %i", szOldBrokenLogName, szBrokenLogName, errno);
+					char szErrBuf[256];
+					error("Could not move file %s to %s: %s", szOldBrokenLogName, szBrokenLogName, Util::GetLastErrorMessage(szErrBuf, sizeof(szErrBuf)));
 				}
 			}
 		}
