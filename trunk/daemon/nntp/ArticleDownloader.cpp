@@ -485,7 +485,13 @@ ArticleDownloader::EStatus ArticleDownloader::Download()
 
 	if (m_pOutFile)
 	{
-		fclose(m_pOutFile);
+		if (fclose(m_pOutFile) != 0)
+		{
+			bool bDirectWrite = g_pOptions->GetDirectWrite() && m_eFormat == Decoder::efYenc;
+			char szErrBuf[256];
+			error("Could not close file %s: %s", (bDirectWrite ? m_szOutputFilename : m_szTempFilename),
+				Util::GetLastErrorMessage(szErrBuf, sizeof(szErrBuf)));
+		}
 	}
 
 	if (!bEnd && Status == adRunning && !IsStopped())
