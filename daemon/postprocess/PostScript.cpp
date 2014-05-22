@@ -82,6 +82,7 @@ void PostScriptController::Run()
 			szScriptName[strlen(szScriptName)-1] = '\0'; // remove trailing ':'
 			scriptCommaList.Append(szScriptName);
 			scriptCommaList.Append(",");
+			free(szScriptName);
 		}
 	}
 	m_pPostInfo->GetNZBInfo()->GetScriptStatuses()->Clear();
