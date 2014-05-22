@@ -386,7 +386,7 @@ bool Util::DirEmpty(const char* szDirFilename)
 
 bool Util::LoadFileIntoBuffer(const char* szFileName, char** pBuffer, int* pBufferLength)
 {
-    FILE* pFile = fopen(szFileName, "rb");
+    FILE* pFile = fopen(szFileName, FOPEN_RB);
     if (!pFile)
     {
         return false;
@@ -418,7 +418,7 @@ bool Util::LoadFileIntoBuffer(const char* szFileName, char** pBuffer, int* pBuff
 
 bool Util::SaveBufferIntoFile(const char* szFileName, const char* szBuffer, int iBufLen)
 {
-    FILE* pFile = fopen(szFileName, "wb");
+    FILE* pFile = fopen(szFileName, FOPEN_WB);
     if (!pFile)
     {
         return false;
@@ -449,7 +449,7 @@ bool Util::CreateSparseFile(const char* szFilename, int iSize)
 	}
 #else
 	// create file
-	FILE* pFile = fopen(szFilename, "ab");
+	FILE* pFile = fopen(szFilename, FOPEN_AB);
 	if (pFile)
 	{
 		fclose(pFile);
@@ -459,7 +459,7 @@ bool Util::CreateSparseFile(const char* szFilename, int iSize)
 	// 1) set file size using function "truncate" (it is fast, if works)
 	truncate(szFilename, iSize);
 	// check if it worked
-	pFile = fopen(szFilename, "ab");
+	pFile = fopen(szFilename, FOPEN_AB);
 	if (pFile)
 	{
 		fseek(pFile, 0, SEEK_END);
@@ -469,7 +469,7 @@ bool Util::CreateSparseFile(const char* szFilename, int iSize)
 			// 2) truncate did not work, expanding the file by writing in it (it is slow)
 			fclose(pFile);
 			truncate(szFilename, 0);
-			pFile = fopen(szFilename, "ab");
+			pFile = fopen(szFilename, FOPEN_AB);
 			char c = '0';
 			fwrite(&c, 1, iSize, pFile);
 			bOK = ftell(pFile) == iSize;
@@ -484,7 +484,7 @@ bool Util::TruncateFile(const char* szFilename, int iSize)
 {
 	bool bOK = false;
 #ifdef WIN32
-	FILE *file = fopen(szFilename, "r+b");
+	FILE *file = fopen(szFilename, FOPEN_RBP);
 	fseek(file, iSize, SEEK_SET);
 	bOK = SetEndOfFile((HANDLE)_get_osfhandle(_fileno(file))) != 0;
 	fclose(file);
@@ -663,13 +663,13 @@ bool Util::MoveFile(const char* szSrcFilename, const char* szDstFilename)
 #ifndef WIN32
 	if (!bOK && errno == EXDEV)
 	{
-		FILE* infile = fopen(szSrcFilename, "rb");
+		FILE* infile = fopen(szSrcFilename, FOPEN_RB);
 		if (!infile)
 		{
 			return false;
 		}
 
-		FILE* outfile = fopen(szDstFilename, "wb+");
+		FILE* outfile = fopen(szDstFilename, FOPEN_WBP);
 		if (!outfile)
 		{
 			fclose(infile);

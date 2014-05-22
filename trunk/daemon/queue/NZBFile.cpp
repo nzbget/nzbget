@@ -478,7 +478,7 @@ void NZBFile::ProcessFiles()
  */
 void NZBFile::ReadPassword()
 {
-    FILE* pFile = fopen(m_szFileName, "rb");
+    FILE* pFile = fopen(m_szFileName, FOPEN_RB);
     if (!pFile)
     {
         return;

@@ -62,6 +62,12 @@
 #ifndef FSCTL_SET_SPARSE
 #define FSCTL_SET_SPARSE 590020
 #endif
+#define FOPEN_RB "rbN"
+#define FOPEN_RBP "rb+N"
+#define FOPEN_WB "wbN"
+#define FOPEN_WBP "wb+N"
+#define FOPEN_AB "abN"
+#define FOPEN_ABP "ab+N"
 
 #pragma warning(disable:4800) // 'type' : forcing value to bool 'true' or 'false' (performance warning)
 #pragma warning(disable:4267) // 'var' : conversion from 'size_t' to 'type', possible loss of data
@@ -78,6 +84,12 @@
 #define MAX_PATH 1024
 #define S_DIRMODE (S_IRWXU | S_IRWXG | S_IRWXO)
 #define LINE_ENDING "\n"
+#define FOPEN_RB "rb"
+#define FOPEN_RBP "rb+"
+#define FOPEN_WB "wb"
+#define FOPEN_WBP "wb+"
+#define FOPEN_AB "ab"
+#define FOPEN_ABP "ab+"
 
 #endif
 

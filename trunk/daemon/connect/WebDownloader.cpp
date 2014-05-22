@@ -650,7 +650,7 @@ bool WebDownloader::PrepareFile()
 	// prepare file for writing
 
 	const char* szFilename = m_szOutputFilename;
-	m_pOutFile = fopen(szFilename, "wb");
+	m_pOutFile = fopen(szFilename, FOPEN_WB);
 	if (!m_pOutFile)
 	{
 		error("Could not %s file %s", "create", szFilename);

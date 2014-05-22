@@ -128,7 +128,7 @@ bool DiskState::SaveDownloadQueue(DownloadQueue* pDownloadQueue)
 		return true;
 	}
 
-	FILE* outfile = fopen(tempFilename, "wb");
+	FILE* outfile = fopen(tempFilename, FOPEN_WB);
 
 	if (!outfile)
 	{
@@ -168,7 +168,7 @@ bool DiskState::LoadDownloadQueue(DownloadQueue* pDownloadQueue, Servers* pServe
 	snprintf(fileName, 1024, "%s%s", g_pOptions->GetQueueDir(), "queue");
 	fileName[1024-1] = '\0';
 
-	FILE* infile = fopen(fileName, "rb");
+	FILE* infile = fopen(fileName, FOPEN_RB);
 
 	if (!infile)
 	{
@@ -989,7 +989,7 @@ bool DiskState::SaveFileInfo(FileInfo* pFileInfo, const char* szFilename)
 {
 	debug("Saving FileInfo to disk");
 
-	FILE* outfile = fopen(szFilename, "wb");
+	FILE* outfile = fopen(szFilename, FOPEN_WB);
 
 	if (!outfile)
 	{
@@ -1042,7 +1042,7 @@ bool DiskState::LoadFileInfo(FileInfo* pFileInfo, const char * szFilename, bool 
 {
 	debug("Loading FileInfo from disk");
 
-	FILE* infile = fopen(szFilename, "rb");
+	FILE* infile = fopen(szFilename, FOPEN_RB);
 
 	if (!infile)
 	{
@@ -1162,7 +1162,7 @@ bool DiskState::SaveFileState(FileInfo* pFileInfo)
 	snprintf(szFilename, 1024, "%s%is", g_pOptions->GetQueueDir(), pFileInfo->GetID());
 	szFilename[1024-1] = '\0';
 
-	FILE* outfile = fopen(szFilename, "wb");
+	FILE* outfile = fopen(szFilename, FOPEN_WB);
 
 	if (!outfile)
 	{
@@ -1199,7 +1199,7 @@ bool DiskState::LoadFileState(FileInfo* pFileInfo, Servers* pServers)
 	snprintf(szFilename, 1024, "%s%is", g_pOptions->GetQueueDir(), pFileInfo->GetID());
 	szFilename[1024-1] = '\0';
 
-	FILE* infile = fopen(szFilename, "rb");
+	FILE* infile = fopen(szFilename, FOPEN_RB);
 
 	if (!infile)
 	{
@@ -1360,7 +1360,7 @@ bool DiskState::LoadPostQueue5(DownloadQueue* pDownloadQueue, NZBList* pNZBList)
 		return true;
 	}
 
-	FILE* infile = fopen(fileName, "rb");
+	FILE* infile = fopen(fileName, FOPEN_RB);
 
 	if (!infile)
 	{
@@ -1902,7 +1902,7 @@ bool DiskState::SaveFeeds(Feeds* pFeeds, FeedHistory* pFeedHistory)
 		return true;
 	}
 
-	FILE* outfile = fopen(tempFilename, "wb");
+	FILE* outfile = fopen(tempFilename, FOPEN_WB);
 
 	if (!outfile)
 	{
@@ -1946,7 +1946,7 @@ bool DiskState::LoadFeeds(Feeds* pFeeds, FeedHistory* pFeedHistory)
 		return true;
 	}
 
-	FILE* infile = fopen(fileName, "rb");
+	FILE* infile = fopen(fileName, FOPEN_RB);
 
 	if (!infile)
 	{
@@ -2270,7 +2270,7 @@ bool DiskState::SaveStats(Servers* pServers, ServerVolumes* pServerVolumes)
 		return true;
 	}
 
-	FILE* outfile = fopen(tempFilename, "wb");
+	FILE* outfile = fopen(tempFilename, FOPEN_WB);
 
 	if (!outfile)
 	{
@@ -2314,7 +2314,7 @@ bool DiskState::LoadStats(Servers* pServers, ServerVolumes* pServerVolumes, bool
 		return true;
 	}
 
-	FILE* infile = fopen(fileName, "rb");
+	FILE* infile = fopen(fileName, FOPEN_RB);
 
 	if (!infile)
 	{

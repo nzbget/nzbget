@@ -671,7 +671,7 @@ bool ArticleDownloader::PrepareFile(char* szLine)
 	{
 		bool bDirectWrite = g_pOptions->GetDirectWrite() && m_eFormat == Decoder::efYenc;
 		const char* szFilename = bDirectWrite ? m_szOutputFilename : m_szTempFilename;
-		m_pOutFile = fopen(szFilename, bDirectWrite ? "rb+" : "wb");
+		m_pOutFile = fopen(szFilename, bDirectWrite ? FOPEN_RBP : FOPEN_WB);
 		if (!m_pOutFile)
 		{
 			char szSysErrStr[256];
@@ -972,7 +972,7 @@ void ArticleDownloader::CompleteFileParts()
 	if (g_pOptions->GetDecode() && !bDirectWrite)
 	{
 		remove(tmpdestfile);
-		outfile = fopen(tmpdestfile, "wb+");
+		outfile = fopen(tmpdestfile, FOPEN_WBP);
 		if (!outfile)
 		{
 			error("Could not create file %s!", tmpdestfile);
@@ -1022,7 +1022,7 @@ void ArticleDownloader::CompleteFileParts()
 			FILE* infile;
 			const char* fn = pa->GetResultFilename();
 
-			infile = fopen(fn, "rb");
+			infile = fopen(fn, FOPEN_RB);
 			if (infile)
 			{
 				int cnt = BUFFER_SIZE;
@@ -1120,7 +1120,7 @@ void ArticleDownloader::CompleteFileParts()
 			char szBrokenLogName[1024];
 			snprintf(szBrokenLogName, 1024, "%s%c_brokenlog.txt", szNZBDestDir, (int)PATH_SEPARATOR);
 			szBrokenLogName[1024-1] = '\0';
-			FILE* file = fopen(szBrokenLogName, "ab");
+			FILE* file = fopen(szBrokenLogName, FOPEN_AB);
 			fprintf(file, "%s (%i/%i)%s", m_pFileInfo->GetFilename(),
 				m_pFileInfo->GetTotalArticles() - iBrokenCount - m_pFileInfo->GetMissedArticles(),
 				m_pFileInfo->GetTotalArticles(), LINE_ENDING);
@@ -1201,11 +1201,11 @@ bool ArticleDownloader::MoveCompletedFiles(NZBInfo* pNZBInfo, const char* szOldD
 			{
 				// copy content to existing new file, then delete old file
 				FILE* outfile;
-				outfile = fopen(szBrokenLogName, "ab");
+				outfile = fopen(szBrokenLogName, FOPEN_AB);
 				if (outfile)
 				{
 					FILE* infile;
-					infile = fopen(szOldBrokenLogName, "rb");
+					infile = fopen(szOldBrokenLogName, FOPEN_RB);
 					if (infile)
 					{
 						static const int BUFFER_SIZE = 1024 * 50;

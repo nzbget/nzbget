@@ -206,7 +206,7 @@ void UnpackController::ExecuteUnrar()
 
 	m_bAllOKMessageReceived = false;
 	m_eUnpacker = upUnrar;
-	
+
 	SetProgressLabel("");
 	int iExitCode = Execute();
 	SetLogPrefix(NULL);
@@ -397,7 +397,7 @@ bool UnpackController::FileHasRarSignature(const char* szFilename)
 
 	int cnt = 0;
 	FILE* infile;
-	infile = fopen(szFilename, "rb");
+	infile = fopen(szFilename, FOPEN_RB);
 	if (infile)
 	{
 		cnt = (int)fread(fileSignature, 1, sizeof(fileSignature), infile);

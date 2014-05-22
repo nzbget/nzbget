@@ -105,7 +105,7 @@ void Log::Filelog(const char* msg, ...)
 		szTime[50-1] = '\0';
 		szTime[strlen(szTime) - 1] = '\0'; // trim LF
 
-		FILE* file = fopen(m_szLogFilename, "ab+");
+		FILE* file = fopen(m_szLogFilename, FOPEN_ABP);
 		if (file)
 		{
 #ifdef WIN32
