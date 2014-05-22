@@ -653,13 +653,6 @@ bool Util::MoveFile(const char* szSrcFilename, const char* szDstFilename)
 {
 	bool bOK = rename(szSrcFilename, szDstFilename) == 0;
 
-	// if rename fails with permission denied error, we try again for one second
-	for (int attempts = 0; !bOK && errno == EACCES && attempts < 20; attempts++)
-	{
-		usleep(50 * 1000);
-		bOK = rename(szSrcFilename, szDstFilename) == 0;
-	}
-
 #ifndef WIN32
 	if (!bOK && errno == EXDEV)
 	{
