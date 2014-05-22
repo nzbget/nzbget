@@ -2381,7 +2381,7 @@ bool Options::ParseWeekDays(const char* szWeekDays, int* pWeekDaysBits)
 
 void Options::LoadConfigFile()
 {
-	FILE* infile = fopen(m_szConfigFilename, "rb");
+	FILE* infile = fopen(m_szConfigFilename, FOPEN_RB);
 
 	if (!infile)
 	{
@@ -2811,7 +2811,7 @@ void Options::UnlockOptEntries()
 bool Options::LoadConfig(OptEntries* pOptEntries)
 {
 	// read config file
-	FILE* infile = fopen(m_szConfigFilename, "rb");
+	FILE* infile = fopen(m_szConfigFilename, FOPEN_RB);
 
 	if (!infile)
 	{
@@ -2855,7 +2855,7 @@ bool Options::LoadConfig(OptEntries* pOptEntries)
 bool Options::SaveConfig(OptEntries* pOptEntries)
 {
 	// save to config file
-	FILE* infile = fopen(m_szConfigFilename, "r+b");
+	FILE* infile = fopen(m_szConfigFilename, FOPEN_RBP);
 
 	if (!infile)
 	{
@@ -2961,7 +2961,7 @@ bool Options::LoadConfigTemplates(ConfigTemplates* pConfigTemplates)
 	{
 		Script* pScript = *it;
 
-		FILE* infile = fopen(pScript->GetLocation(), "rb");
+		FILE* infile = fopen(pScript->GetLocation(), FOPEN_RB);
 		if (!infile)
 		{
 			ConfigTemplate* pConfigTemplate = new ConfigTemplate(pScript, "");
@@ -3073,7 +3073,7 @@ void Options::LoadScriptDir(ScriptList* pScriptList, const char* szDirectory, bo
 			if (!Util::DirectoryExists(szFullFilename))
 			{
 				// check if the file contains pp-script-signature
-				FILE* infile = fopen(szFullFilename, "rb");
+				FILE* infile = fopen(szFullFilename, FOPEN_RB);
 				if (infile)
 				{
 					// read first 10KB of the file and look for signature

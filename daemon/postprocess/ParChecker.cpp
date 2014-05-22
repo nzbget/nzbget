@@ -931,7 +931,7 @@ void ParChecker::WriteBrokenLog(EStatus eStatus)
 	
 	if (eStatus != psRepairNotNeeded || Util::FileExists(szBrokenLogName))
 	{
-		FILE* file = fopen(szBrokenLogName, "ab");
+		FILE* file = fopen(szBrokenLogName, FOPEN_AB);
 		if (file)
 		{
 			if (eStatus == psFailed)

@@ -329,7 +329,7 @@ void ParRenamer::CheckRegularFile(const char* szDestDir, const char* szFilename)
 
 	const int iBlockSize = 16*1024;
 	
-	FILE* pFile = fopen(szFilename, "rb");
+	FILE* pFile = fopen(szFilename, FOPEN_RB);
 	if (!pFile)
 	{
 		PrintMessage(Message::mkError, "Could not open file %s", szFilename);
@@ -406,7 +406,7 @@ void ParRenamer::CheckParFile(const char* szDestDir, const char* szFilename)
 		return;
 	}
 
-	FILE* pFile = fopen(szFilename, "rb");
+	FILE* pFile = fopen(szFilename, FOPEN_RB);
 	if (!pFile)
 	{
 		PrintMessage(Message::mkError, "Could not open file %s", szFilename);
