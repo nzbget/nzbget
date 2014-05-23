@@ -1351,16 +1351,16 @@ Optional Packages:
                           libpar2 include directory
   --with-libpar2-libraries=DIR
                           libpar2 library directory
-  --with-tlslib=(GnuTLS, OpenSSL)
+  --with-tlslib=(OpenSSL, GnuTLS)
                           TLS/SSL library to use
-  --with-libgnutls-includes=DIR
-                          GnuTLS include directory
-  --with-libgnutls-libraries=DIR
-                          GnuTLS library directory
   --with-openssl-includes=DIR
                           OpenSSL include directory
   --with-openssl-libraries=DIR
                           OpenSSL library directory
+  --with-libgnutls-includes=DIR
+                          GnuTLS include directory
+  --with-libgnutls-libraries=DIR
+                          GnuTLS library directory
   --with-zlib-includes=DIR
                           zlib include directory
   --with-zlib-libraries=DIR
@@ -3830,7 +3830,7 @@ if (eval "$ac_cpp conftest.$ac_ext") 2>&5 |
 else
   ac_cv_header_stdc=no
 fi
-rm -f conftest*
+rm -f -r conftest*
 
 fi
 
@@ -3851,7 +3851,7 @@ if (eval "$ac_cpp conftest.$ac_ext") 2>&5 |
 else
   ac_cv_header_stdc=no
 fi
-rm -f conftest*
+rm -f -r conftest*
 
 fi
 
@@ -4947,7 +4947,7 @@ cat >>confdefs.h <<_ACEOF
 _ACEOF
 ;;
 esac
-rm -f conftest*
+rm -f -r conftest*
   if test $ac_cv_sys_file_offset_bits = unknown; then
     { echo "$as_me:$LINENO: checking for _LARGE_FILES value needed for large files" >&5
 echo $ECHO_N "checking for _LARGE_FILES value needed for large files... $ECHO_C" >&6; }
@@ -5068,7 +5068,7 @@ cat >>confdefs.h <<_ACEOF
 _ACEOF
 ;;
 esac
-rm -f conftest*
+rm -f -r conftest*
   fi
 fi
 
@@ -7728,6 +7728,431 @@ echo "$as_me: error: Invalid argument for option --with-tlslib" >&2;}
    { (exit 1); exit 1; }; }
 	fi
 
+	if test "$TLSLIB" = "OpenSSL" -o "$TLSLIB" = ""; then
+
+# Check whether --with-openssl_includes was given.
+if test "${with_openssl_includes+set}" = set; then
+  withval=$with_openssl_includes; CPPFLAGS="${CPPFLAGS} -I${withval}"
+			INCVAL="yes"
+else
+  INCVAL="no"
+fi
+
+
+# Check whether --with-openssl_libraries was given.
+if test "${with_openssl_libraries+set}" = set; then
+  withval=$with_openssl_libraries; LDFLAGS="${LDFLAGS} -L${withval}"
+			LIBVAL="yes"
+else
+  LIBVAL="no"
+fi
+
+		if test "$INCVAL" = "no" -o "$LIBVAL" = "no"; then
+
+pkg_failed=no
+{ echo "$as_me:$LINENO: checking for openssl" >&5
+echo $ECHO_N "checking for openssl... $ECHO_C" >&6; }
+
+if test -n "$PKG_CONFIG"; then
+    if test -n "$openssl_CFLAGS"; then
+        pkg_cv_openssl_CFLAGS="$openssl_CFLAGS"
+    else
+        if test -n "$PKG_CONFIG" && \
+    { (echo "$as_me:$LINENO: \$PKG_CONFIG --exists --print-errors \"openssl\"") >&5
+  ($PKG_CONFIG --exists --print-errors "openssl") 2>&5
+  ac_status=$?
+  echo "$as_me:$LINENO: \$? = $ac_status" >&5
+  (exit $ac_status); }; then
+  pkg_cv_openssl_CFLAGS=`$PKG_CONFIG --cflags "openssl" 2>/dev/null`
+else
+  pkg_failed=yes
+fi
+    fi
+else
+	pkg_failed=untried
+fi
+if test -n "$PKG_CONFIG"; then
+    if test -n "$openssl_LIBS"; then
+        pkg_cv_openssl_LIBS="$openssl_LIBS"
+    else
+        if test -n "$PKG_CONFIG" && \
+    { (echo "$as_me:$LINENO: \$PKG_CONFIG --exists --print-errors \"openssl\"") >&5
+  ($PKG_CONFIG --exists --print-errors "openssl") 2>&5
+  ac_status=$?
+  echo "$as_me:$LINENO: \$? = $ac_status" >&5
+  (exit $ac_status); }; then
+  pkg_cv_openssl_LIBS=`$PKG_CONFIG --libs "openssl" 2>/dev/null`
+else
+  pkg_failed=yes
+fi
+    fi
+else
+	pkg_failed=untried
+fi
+
+
+
+if test $pkg_failed = yes; then
+
+if $PKG_CONFIG --atleast-pkgconfig-version 0.20; then
+        _pkg_short_errors_supported=yes
+else
+        _pkg_short_errors_supported=no
+fi
+        if test $_pkg_short_errors_supported = yes; then
+	        openssl_PKG_ERRORS=`$PKG_CONFIG --short-errors --errors-to-stdout --print-errors "openssl"`
+        else
+	        openssl_PKG_ERRORS=`$PKG_CONFIG --errors-to-stdout --print-errors "openssl"`
+        fi
+	# Put the nasty error message in config.log where it belongs
+	echo "$openssl_PKG_ERRORS" >&5
+
+	{ echo "$as_me:$LINENO: result: no" >&5
+echo "${ECHO_T}no" >&6; }
+                FOUND=yes
+				FOUND=no
+elif test $pkg_failed = untried; then
+	FOUND=yes
+				FOUND=no
+else
+	openssl_CFLAGS=$pkg_cv_openssl_CFLAGS
+	openssl_LIBS=$pkg_cv_openssl_LIBS
+        { echo "$as_me:$LINENO: result: yes" >&5
+echo "${ECHO_T}yes" >&6; }
+	LIBS="${LIBS} $openssl_LIBS"
+				CPPFLAGS="${CPPFLAGS} $openssl_CFLAGS"
+fi
+		fi
+
+		if test "${ac_cv_header_openssl_ssl_h+set}" = set; then
+  { echo "$as_me:$LINENO: checking for openssl/ssl.h" >&5
+echo $ECHO_N "checking for openssl/ssl.h... $ECHO_C" >&6; }
+if test "${ac_cv_header_openssl_ssl_h+set}" = set; then
+  echo $ECHO_N "(cached) $ECHO_C" >&6
+fi
+{ echo "$as_me:$LINENO: result: $ac_cv_header_openssl_ssl_h" >&5
+echo "${ECHO_T}$ac_cv_header_openssl_ssl_h" >&6; }
+else
+  # Is the header compilable?
+{ echo "$as_me:$LINENO: checking openssl/ssl.h usability" >&5
+echo $ECHO_N "checking openssl/ssl.h usability... $ECHO_C" >&6; }
+cat >conftest.$ac_ext <<_ACEOF
+/* confdefs.h.  */
+_ACEOF
+cat confdefs.h >>conftest.$ac_ext
+cat >>conftest.$ac_ext <<_ACEOF
+/* end confdefs.h.  */
+$ac_includes_default
+#include <openssl/ssl.h>
+_ACEOF
+rm -f conftest.$ac_objext
+if { (ac_try="$ac_compile"
+case "(($ac_try" in
+  *\"* | *\`* | *\\*) ac_try_echo=\$ac_try;;
+  *) ac_try_echo=$ac_try;;
+esac
+eval "echo \"\$as_me:$LINENO: $ac_try_echo\"") >&5
+  (eval "$ac_compile") 2>conftest.er1
+  ac_status=$?
+  grep -v '^ *+' conftest.er1 >conftest.err
+  rm -f conftest.er1
+  cat conftest.err >&5
+  echo "$as_me:$LINENO: \$? = $ac_status" >&5
+  (exit $ac_status); } && {
+	 test -z "$ac_cxx_werror_flag" ||
+	 test ! -s conftest.err
+       } && test -s conftest.$ac_objext; then
+  ac_header_compiler=yes
+else
+  echo "$as_me: failed program was:" >&5
+sed 's/^/| /' conftest.$ac_ext >&5
+
+	ac_header_compiler=no
+fi
+
+rm -f core conftest.err conftest.$ac_objext conftest.$ac_ext
+{ echo "$as_me:$LINENO: result: $ac_header_compiler" >&5
+echo "${ECHO_T}$ac_header_compiler" >&6; }
+
+# Is the header present?
+{ echo "$as_me:$LINENO: checking openssl/ssl.h presence" >&5
+echo $ECHO_N "checking openssl/ssl.h presence... $ECHO_C" >&6; }
+cat >conftest.$ac_ext <<_ACEOF
+/* confdefs.h.  */
+_ACEOF
+cat confdefs.h >>conftest.$ac_ext
+cat >>conftest.$ac_ext <<_ACEOF
+/* end confdefs.h.  */
+#include <openssl/ssl.h>
+_ACEOF
+if { (ac_try="$ac_cpp conftest.$ac_ext"
+case "(($ac_try" in
+  *\"* | *\`* | *\\*) ac_try_echo=\$ac_try;;
+  *) ac_try_echo=$ac_try;;
+esac
+eval "echo \"\$as_me:$LINENO: $ac_try_echo\"") >&5
+  (eval "$ac_cpp conftest.$ac_ext") 2>conftest.er1
+  ac_status=$?
+  grep -v '^ *+' conftest.er1 >conftest.err
+  rm -f conftest.er1
+  cat conftest.err >&5
+  echo "$as_me:$LINENO: \$? = $ac_status" >&5
+  (exit $ac_status); } >/dev/null && {
+	 test -z "$ac_cxx_preproc_warn_flag$ac_cxx_werror_flag" ||
+	 test ! -s conftest.err
+       }; then
+  ac_header_preproc=yes
+else
+  echo "$as_me: failed program was:" >&5
+sed 's/^/| /' conftest.$ac_ext >&5
+
+  ac_header_preproc=no
+fi
+
+rm -f conftest.err conftest.$ac_ext
+{ echo "$as_me:$LINENO: result: $ac_header_preproc" >&5
+echo "${ECHO_T}$ac_header_preproc" >&6; }
+
+# So?  What about this header?
+case $ac_header_compiler:$ac_header_preproc:$ac_cxx_preproc_warn_flag in
+  yes:no: )
+    { echo "$as_me:$LINENO: WARNING: openssl/ssl.h: accepted by the compiler, rejected by the preprocessor!" >&5
+echo "$as_me: WARNING: openssl/ssl.h: accepted by the compiler, rejected by the preprocessor!" >&2;}
+    { echo "$as_me:$LINENO: WARNING: openssl/ssl.h: proceeding with the compiler's result" >&5
+echo "$as_me: WARNING: openssl/ssl.h: proceeding with the compiler's result" >&2;}
+    ac_header_preproc=yes
+    ;;
+  no:yes:* )
+    { echo "$as_me:$LINENO: WARNING: openssl/ssl.h: present but cannot be compiled" >&5
+echo "$as_me: WARNING: openssl/ssl.h: present but cannot be compiled" >&2;}
+    { echo "$as_me:$LINENO: WARNING: openssl/ssl.h:     check for missing prerequisite headers?" >&5
+echo "$as_me: WARNING: openssl/ssl.h:     check for missing prerequisite headers?" >&2;}
+    { echo "$as_me:$LINENO: WARNING: openssl/ssl.h: see the Autoconf documentation" >&5
+echo "$as_me: WARNING: openssl/ssl.h: see the Autoconf documentation" >&2;}
+    { echo "$as_me:$LINENO: WARNING: openssl/ssl.h:     section \"Present But Cannot Be Compiled\"" >&5
+echo "$as_me: WARNING: openssl/ssl.h:     section \"Present But Cannot Be Compiled\"" >&2;}
+    { echo "$as_me:$LINENO: WARNING: openssl/ssl.h: proceeding with the preprocessor's result" >&5
+echo "$as_me: WARNING: openssl/ssl.h: proceeding with the preprocessor's result" >&2;}
+    { echo "$as_me:$LINENO: WARNING: openssl/ssl.h: in the future, the compiler will take precedence" >&5
+echo "$as_me: WARNING: openssl/ssl.h: in the future, the compiler will take precedence" >&2;}
+    ( cat <<\_ASBOX
+## ------------------------------------------- ##
+## Report this to hugbug@users.sourceforge.net ##
+## ------------------------------------------- ##
+_ASBOX
+     ) | sed "s/^/$as_me: WARNING:     /" >&2
+    ;;
+esac
+{ echo "$as_me:$LINENO: checking for openssl/ssl.h" >&5
+echo $ECHO_N "checking for openssl/ssl.h... $ECHO_C" >&6; }
+if test "${ac_cv_header_openssl_ssl_h+set}" = set; then
+  echo $ECHO_N "(cached) $ECHO_C" >&6
+else
+  ac_cv_header_openssl_ssl_h=$ac_header_preproc
+fi
+{ echo "$as_me:$LINENO: result: $ac_cv_header_openssl_ssl_h" >&5
+echo "${ECHO_T}$ac_cv_header_openssl_ssl_h" >&6; }
+
+fi
+if test $ac_cv_header_openssl_ssl_h = yes; then
+  FOUND=yes
+			TLSHEADERS=yes
+else
+  FOUND=no
+fi
+
+
+		if test "$FOUND" = "no" -a "$TLSLIB" = "OpenSSL"; then
+			{ { echo "$as_me:$LINENO: error: Couldn't find OpenSSL headers (ssl.h)" >&5
+echo "$as_me: error: Couldn't find OpenSSL headers (ssl.h)" >&2;}
+   { (exit 1); exit 1; }; }
+		fi
+		if test "$FOUND" = "yes"; then
+			{ echo "$as_me:$LINENO: checking for library containing CRYPTO_set_locking_callback" >&5
+echo $ECHO_N "checking for library containing CRYPTO_set_locking_callback... $ECHO_C" >&6; }
+if test "${ac_cv_search_CRYPTO_set_locking_callback+set}" = set; then
+  echo $ECHO_N "(cached) $ECHO_C" >&6
+else
+  ac_func_search_save_LIBS=$LIBS
+cat >conftest.$ac_ext <<_ACEOF
+/* confdefs.h.  */
+_ACEOF
+cat confdefs.h >>conftest.$ac_ext
+cat >>conftest.$ac_ext <<_ACEOF
+/* end confdefs.h.  */
+
+/* Override any GCC internal prototype to avoid an error.
+   Use char because int might match the return type of a GCC
+   builtin and then its argument prototype would still apply.  */
+#ifdef __cplusplus
+extern "C"
+#endif
+char CRYPTO_set_locking_callback ();
+int
+main ()
+{
+return CRYPTO_set_locking_callback ();
+  ;
+  return 0;
+}
+_ACEOF
+for ac_lib in '' crypto; do
+  if test -z "$ac_lib"; then
+    ac_res="none required"
+  else
+    ac_res=-l$ac_lib
+    LIBS="-l$ac_lib  $ac_func_search_save_LIBS"
+  fi
+  rm -f conftest.$ac_objext conftest$ac_exeext
+if { (ac_try="$ac_link"
+case "(($ac_try" in
+  *\"* | *\`* | *\\*) ac_try_echo=\$ac_try;;
+  *) ac_try_echo=$ac_try;;
+esac
+eval "echo \"\$as_me:$LINENO: $ac_try_echo\"") >&5
+  (eval "$ac_link") 2>conftest.er1
+  ac_status=$?
+  grep -v '^ *+' conftest.er1 >conftest.err
+  rm -f conftest.er1
+  cat conftest.err >&5
+  echo "$as_me:$LINENO: \$? = $ac_status" >&5
+  (exit $ac_status); } && {
+	 test -z "$ac_cxx_werror_flag" ||
+	 test ! -s conftest.err
+       } && test -s conftest$ac_exeext &&
+       $as_test_x conftest$ac_exeext; then
+  ac_cv_search_CRYPTO_set_locking_callback=$ac_res
+else
+  echo "$as_me: failed program was:" >&5
+sed 's/^/| /' conftest.$ac_ext >&5
+
+
+fi
+
+rm -f core conftest.err conftest.$ac_objext conftest_ipa8_conftest.oo \
+      conftest$ac_exeext
+  if test "${ac_cv_search_CRYPTO_set_locking_callback+set}" = set; then
+  break
+fi
+done
+if test "${ac_cv_search_CRYPTO_set_locking_callback+set}" = set; then
+  :
+else
+  ac_cv_search_CRYPTO_set_locking_callback=no
+fi
+rm conftest.$ac_ext
+LIBS=$ac_func_search_save_LIBS
+fi
+{ echo "$as_me:$LINENO: result: $ac_cv_search_CRYPTO_set_locking_callback" >&5
+echo "${ECHO_T}$ac_cv_search_CRYPTO_set_locking_callback" >&6; }
+ac_res=$ac_cv_search_CRYPTO_set_locking_callback
+if test "$ac_res" != no; then
+  test "$ac_res" = "none required" || LIBS="$ac_res $LIBS"
+  { echo "$as_me:$LINENO: checking for library containing SSL_library_init" >&5
+echo $ECHO_N "checking for library containing SSL_library_init... $ECHO_C" >&6; }
+if test "${ac_cv_search_SSL_library_init+set}" = set; then
+  echo $ECHO_N "(cached) $ECHO_C" >&6
+else
+  ac_func_search_save_LIBS=$LIBS
+cat >conftest.$ac_ext <<_ACEOF
+/* confdefs.h.  */
+_ACEOF
+cat confdefs.h >>conftest.$ac_ext
+cat >>conftest.$ac_ext <<_ACEOF
+/* end confdefs.h.  */
+
+/* Override any GCC internal prototype to avoid an error.
+   Use char because int might match the return type of a GCC
+   builtin and then its argument prototype would still apply.  */
+#ifdef __cplusplus
+extern "C"
+#endif
+char SSL_library_init ();
+int
+main ()
+{
+return SSL_library_init ();
+  ;
+  return 0;
+}
+_ACEOF
+for ac_lib in '' ssl; do
+  if test -z "$ac_lib"; then
+    ac_res="none required"
+  else
+    ac_res=-l$ac_lib
+    LIBS="-l$ac_lib  $ac_func_search_save_LIBS"
+  fi
+  rm -f conftest.$ac_objext conftest$ac_exeext
+if { (ac_try="$ac_link"
+case "(($ac_try" in
+  *\"* | *\`* | *\\*) ac_try_echo=\$ac_try;;
+  *) ac_try_echo=$ac_try;;
+esac
+eval "echo \"\$as_me:$LINENO: $ac_try_echo\"") >&5
+  (eval "$ac_link") 2>conftest.er1
+  ac_status=$?
+  grep -v '^ *+' conftest.er1 >conftest.err
+  rm -f conftest.er1
+  cat conftest.err >&5
+  echo "$as_me:$LINENO: \$? = $ac_status" >&5
+  (exit $ac_status); } && {
+	 test -z "$ac_cxx_werror_flag" ||
+	 test ! -s conftest.err
+       } && test -s conftest$ac_exeext &&
+       $as_test_x conftest$ac_exeext; then
+  ac_cv_search_SSL_library_init=$ac_res
+else
+  echo "$as_me: failed program was:" >&5
+sed 's/^/| /' conftest.$ac_ext >&5
+
+
+fi
+
+rm -f core conftest.err conftest.$ac_objext conftest_ipa8_conftest.oo \
+      conftest$ac_exeext
+  if test "${ac_cv_search_SSL_library_init+set}" = set; then
+  break
+fi
+done
+if test "${ac_cv_search_SSL_library_init+set}" = set; then
+  :
+else
+  ac_cv_search_SSL_library_init=no
+fi
+rm conftest.$ac_ext
+LIBS=$ac_func_search_save_LIBS
+fi
+{ echo "$as_me:$LINENO: result: $ac_cv_search_SSL_library_init" >&5
+echo "${ECHO_T}$ac_cv_search_SSL_library_init" >&6; }
+ac_res=$ac_cv_search_SSL_library_init
+if test "$ac_res" != no; then
+  test "$ac_res" = "none required" || LIBS="$ac_res $LIBS"
+  FOUND=yes
+else
+  FOUND=no
+fi
+
+else
+  FOUND=no
+fi
+
+			if test "$FOUND" = "no" -a "$TLSLIB" = "OpenSSL"; then
+				{ { echo "$as_me:$LINENO: error: Couldn't find OpenSSL library" >&5
+echo "$as_me: error: Couldn't find OpenSSL library" >&2;}
+   { (exit 1); exit 1; }; }
+			fi
+			if test "$FOUND" = "yes"; then
+				TLSLIB="OpenSSL"
+
+cat >>confdefs.h <<\_ACEOF
+#define HAVE_OPENSSL 1
+_ACEOF
+
+			fi
+		fi
+	fi
+
 	if test "$TLSLIB" = "GnuTLS" -o "$TLSLIB" = ""; then
 		INCVAL="${LIBPREF}/include"
 		LIBVAL="${LIBPREF}/lib"
@@ -8075,477 +8500,14 @@ _ACEOF
 		fi
 	fi
 
-	if test "$TLSLIB" = "OpenSSL" -o "$TLSLIB" = ""; then
-
-# Check whether --with-openssl_includes was given.
-if test "${with_openssl_includes+set}" = set; then
-  withval=$with_openssl_includes; CPPFLAGS="${CPPFLAGS} -I${withval}"
-			INCVAL="yes"
-else
-  INCVAL="no"
-fi
-
-
-# Check whether --with-openssl_libraries was given.
-if test "${with_openssl_libraries+set}" = set; then
-  withval=$with_openssl_libraries; LDFLAGS="${LDFLAGS} -L${withval}"
-			LIBVAL="yes"
-else
-  LIBVAL="no"
-fi
-
-		if test "$INCVAL" = "no" -o "$LIBVAL" = "no"; then
-
-pkg_failed=no
-{ echo "$as_me:$LINENO: checking for openssl" >&5
-echo $ECHO_N "checking for openssl... $ECHO_C" >&6; }
-
-if test -n "$PKG_CONFIG"; then
-    if test -n "$openssl_CFLAGS"; then
-        pkg_cv_openssl_CFLAGS="$openssl_CFLAGS"
-    else
-        if test -n "$PKG_CONFIG" && \
-    { (echo "$as_me:$LINENO: \$PKG_CONFIG --exists --print-errors \"openssl\"") >&5
-  ($PKG_CONFIG --exists --print-errors "openssl") 2>&5
-  ac_status=$?
-  echo "$as_me:$LINENO: \$? = $ac_status" >&5
-  (exit $ac_status); }; then
-  pkg_cv_openssl_CFLAGS=`$PKG_CONFIG --cflags "openssl" 2>/dev/null`
-else
-  pkg_failed=yes
-fi
-    fi
-else
-	pkg_failed=untried
-fi
-if test -n "$PKG_CONFIG"; then
-    if test -n "$openssl_LIBS"; then
-        pkg_cv_openssl_LIBS="$openssl_LIBS"
-    else
-        if test -n "$PKG_CONFIG" && \
-    { (echo "$as_me:$LINENO: \$PKG_CONFIG --exists --print-errors \"openssl\"") >&5
-  ($PKG_CONFIG --exists --print-errors "openssl") 2>&5
-  ac_status=$?
-  echo "$as_me:$LINENO: \$? = $ac_status" >&5
-  (exit $ac_status); }; then
-  pkg_cv_openssl_LIBS=`$PKG_CONFIG --libs "openssl" 2>/dev/null`
-else
-  pkg_failed=yes
-fi
-    fi
-else
-	pkg_failed=untried
-fi
-
-
-
-if test $pkg_failed = yes; then
-
-if $PKG_CONFIG --atleast-pkgconfig-version 0.20; then
-        _pkg_short_errors_supported=yes
-else
-        _pkg_short_errors_supported=no
-fi
-        if test $_pkg_short_errors_supported = yes; then
-	        openssl_PKG_ERRORS=`$PKG_CONFIG --short-errors --errors-to-stdout --print-errors "openssl"`
-        else
-	        openssl_PKG_ERRORS=`$PKG_CONFIG --errors-to-stdout --print-errors "openssl"`
-        fi
-	# Put the nasty error message in config.log where it belongs
-	echo "$openssl_PKG_ERRORS" >&5
-
-	{ { echo "$as_me:$LINENO: error: Package requirements (openssl) were not met:
-
-$openssl_PKG_ERRORS
-
-Consider adjusting the PKG_CONFIG_PATH environment variable if you
-installed software in a non-standard prefix.
-
-Alternatively, you may set the environment variables openssl_CFLAGS
-and openssl_LIBS to avoid the need to call pkg-config.
-See the pkg-config man page for more details.
-" >&5
-echo "$as_me: error: Package requirements (openssl) were not met:
-
-$openssl_PKG_ERRORS
-
-Consider adjusting the PKG_CONFIG_PATH environment variable if you
-installed software in a non-standard prefix.
-
-Alternatively, you may set the environment variables openssl_CFLAGS
-and openssl_LIBS to avoid the need to call pkg-config.
-See the pkg-config man page for more details.
-" >&2;}
-   { (exit 1); exit 1; }; }
-elif test $pkg_failed = untried; then
-	{ { echo "$as_me:$LINENO: error: The pkg-config script could not be found or is too old.  Make sure it
-is in your PATH or set the PKG_CONFIG environment variable to the full
-path to pkg-config.
-
-Alternatively, you may set the environment variables openssl_CFLAGS
-and openssl_LIBS to avoid the need to call pkg-config.
-See the pkg-config man page for more details.
-
-To get pkg-config, see <http://pkg-config.freedesktop.org/>.
-See \`config.log' for more details." >&5
-echo "$as_me: error: The pkg-config script could not be found or is too old.  Make sure it
-is in your PATH or set the PKG_CONFIG environment variable to the full
-path to pkg-config.
-
-Alternatively, you may set the environment variables openssl_CFLAGS
-and openssl_LIBS to avoid the need to call pkg-config.
-See the pkg-config man page for more details.
-
-To get pkg-config, see <http://pkg-config.freedesktop.org/>.
-See \`config.log' for more details." >&2;}
-   { (exit 1); exit 1; }; }
-else
-	openssl_CFLAGS=$pkg_cv_openssl_CFLAGS
-	openssl_LIBS=$pkg_cv_openssl_LIBS
-        { echo "$as_me:$LINENO: result: yes" >&5
-echo "${ECHO_T}yes" >&6; }
-	LIBS="${LIBS} $openssl_LIBS"
-				CPPFLAGS="${CPPFLAGS} $openssl_CFLAGS"
-fi
-		fi
-
-		if test "${ac_cv_header_openssl_ssl_h+set}" = set; then
-  { echo "$as_me:$LINENO: checking for openssl/ssl.h" >&5
-echo $ECHO_N "checking for openssl/ssl.h... $ECHO_C" >&6; }
-if test "${ac_cv_header_openssl_ssl_h+set}" = set; then
-  echo $ECHO_N "(cached) $ECHO_C" >&6
-fi
-{ echo "$as_me:$LINENO: result: $ac_cv_header_openssl_ssl_h" >&5
-echo "${ECHO_T}$ac_cv_header_openssl_ssl_h" >&6; }
-else
-  # Is the header compilable?
-{ echo "$as_me:$LINENO: checking openssl/ssl.h usability" >&5
-echo $ECHO_N "checking openssl/ssl.h usability... $ECHO_C" >&6; }
-cat >conftest.$ac_ext <<_ACEOF
-/* confdefs.h.  */
-_ACEOF
-cat confdefs.h >>conftest.$ac_ext
-cat >>conftest.$ac_ext <<_ACEOF
-/* end confdefs.h.  */
-$ac_includes_default
-#include <openssl/ssl.h>
-_ACEOF
-rm -f conftest.$ac_objext
-if { (ac_try="$ac_compile"
-case "(($ac_try" in
-  *\"* | *\`* | *\\*) ac_try_echo=\$ac_try;;
-  *) ac_try_echo=$ac_try;;
-esac
-eval "echo \"\$as_me:$LINENO: $ac_try_echo\"") >&5
-  (eval "$ac_compile") 2>conftest.er1
-  ac_status=$?
-  grep -v '^ *+' conftest.er1 >conftest.err
-  rm -f conftest.er1
-  cat conftest.err >&5
-  echo "$as_me:$LINENO: \$? = $ac_status" >&5
-  (exit $ac_status); } && {
-	 test -z "$ac_cxx_werror_flag" ||
-	 test ! -s conftest.err
-       } && test -s conftest.$ac_objext; then
-  ac_header_compiler=yes
-else
-  echo "$as_me: failed program was:" >&5
-sed 's/^/| /' conftest.$ac_ext >&5
-
-	ac_header_compiler=no
-fi
-
-rm -f core conftest.err conftest.$ac_objext conftest.$ac_ext
-{ echo "$as_me:$LINENO: result: $ac_header_compiler" >&5
-echo "${ECHO_T}$ac_header_compiler" >&6; }
-
-# Is the header present?
-{ echo "$as_me:$LINENO: checking openssl/ssl.h presence" >&5
-echo $ECHO_N "checking openssl/ssl.h presence... $ECHO_C" >&6; }
-cat >conftest.$ac_ext <<_ACEOF
-/* confdefs.h.  */
-_ACEOF
-cat confdefs.h >>conftest.$ac_ext
-cat >>conftest.$ac_ext <<_ACEOF
-/* end confdefs.h.  */
-#include <openssl/ssl.h>
-_ACEOF
-if { (ac_try="$ac_cpp conftest.$ac_ext"
-case "(($ac_try" in
-  *\"* | *\`* | *\\*) ac_try_echo=\$ac_try;;
-  *) ac_try_echo=$ac_try;;
-esac
-eval "echo \"\$as_me:$LINENO: $ac_try_echo\"") >&5
-  (eval "$ac_cpp conftest.$ac_ext") 2>conftest.er1
-  ac_status=$?
-  grep -v '^ *+' conftest.er1 >conftest.err
-  rm -f conftest.er1
-  cat conftest.err >&5
-  echo "$as_me:$LINENO: \$? = $ac_status" >&5
-  (exit $ac_status); } >/dev/null && {
-	 test -z "$ac_cxx_preproc_warn_flag$ac_cxx_werror_flag" ||
-	 test ! -s conftest.err
-       }; then
-  ac_header_preproc=yes
-else
-  echo "$as_me: failed program was:" >&5
-sed 's/^/| /' conftest.$ac_ext >&5
-
-  ac_header_preproc=no
-fi
-
-rm -f conftest.err conftest.$ac_ext
-{ echo "$as_me:$LINENO: result: $ac_header_preproc" >&5
-echo "${ECHO_T}$ac_header_preproc" >&6; }
-
-# So?  What about this header?
-case $ac_header_compiler:$ac_header_preproc:$ac_cxx_preproc_warn_flag in
-  yes:no: )
-    { echo "$as_me:$LINENO: WARNING: openssl/ssl.h: accepted by the compiler, rejected by the preprocessor!" >&5
-echo "$as_me: WARNING: openssl/ssl.h: accepted by the compiler, rejected by the preprocessor!" >&2;}
-    { echo "$as_me:$LINENO: WARNING: openssl/ssl.h: proceeding with the compiler's result" >&5
-echo "$as_me: WARNING: openssl/ssl.h: proceeding with the compiler's result" >&2;}
-    ac_header_preproc=yes
-    ;;
-  no:yes:* )
-    { echo "$as_me:$LINENO: WARNING: openssl/ssl.h: present but cannot be compiled" >&5
-echo "$as_me: WARNING: openssl/ssl.h: present but cannot be compiled" >&2;}
-    { echo "$as_me:$LINENO: WARNING: openssl/ssl.h:     check for missing prerequisite headers?" >&5
-echo "$as_me: WARNING: openssl/ssl.h:     check for missing prerequisite headers?" >&2;}
-    { echo "$as_me:$LINENO: WARNING: openssl/ssl.h: see the Autoconf documentation" >&5
-echo "$as_me: WARNING: openssl/ssl.h: see the Autoconf documentation" >&2;}
-    { echo "$as_me:$LINENO: WARNING: openssl/ssl.h:     section \"Present But Cannot Be Compiled\"" >&5
-echo "$as_me: WARNING: openssl/ssl.h:     section \"Present But Cannot Be Compiled\"" >&2;}
-    { echo "$as_me:$LINENO: WARNING: openssl/ssl.h: proceeding with the preprocessor's result" >&5
-echo "$as_me: WARNING: openssl/ssl.h: proceeding with the preprocessor's result" >&2;}
-    { echo "$as_me:$LINENO: WARNING: openssl/ssl.h: in the future, the compiler will take precedence" >&5
-echo "$as_me: WARNING: openssl/ssl.h: in the future, the compiler will take precedence" >&2;}
-    ( cat <<\_ASBOX
-## ------------------------------------------- ##
-## Report this to hugbug@users.sourceforge.net ##
-## ------------------------------------------- ##
-_ASBOX
-     ) | sed "s/^/$as_me: WARNING:     /" >&2
-    ;;
-esac
-{ echo "$as_me:$LINENO: checking for openssl/ssl.h" >&5
-echo $ECHO_N "checking for openssl/ssl.h... $ECHO_C" >&6; }
-if test "${ac_cv_header_openssl_ssl_h+set}" = set; then
-  echo $ECHO_N "(cached) $ECHO_C" >&6
-else
-  ac_cv_header_openssl_ssl_h=$ac_header_preproc
-fi
-{ echo "$as_me:$LINENO: result: $ac_cv_header_openssl_ssl_h" >&5
-echo "${ECHO_T}$ac_cv_header_openssl_ssl_h" >&6; }
-
-fi
-if test $ac_cv_header_openssl_ssl_h = yes; then
-  FOUND=yes
-			TLSHEADERS=yes
-else
-  FOUND=no
-fi
-
-
-		if test "$FOUND" = "no" -a "$TLSLIB" = "OpenSSL"; then
-			{ { echo "$as_me:$LINENO: error: Couldn't find OpenSSL headers (ssl.h)" >&5
-echo "$as_me: error: Couldn't find OpenSSL headers (ssl.h)" >&2;}
-   { (exit 1); exit 1; }; }
-		fi
-		if test "$FOUND" = "yes"; then
-			{ echo "$as_me:$LINENO: checking for library containing CRYPTO_set_locking_callback" >&5
-echo $ECHO_N "checking for library containing CRYPTO_set_locking_callback... $ECHO_C" >&6; }
-if test "${ac_cv_search_CRYPTO_set_locking_callback+set}" = set; then
-  echo $ECHO_N "(cached) $ECHO_C" >&6
-else
-  ac_func_search_save_LIBS=$LIBS
-cat >conftest.$ac_ext <<_ACEOF
-/* confdefs.h.  */
-_ACEOF
-cat confdefs.h >>conftest.$ac_ext
-cat >>conftest.$ac_ext <<_ACEOF
-/* end confdefs.h.  */
-
-/* Override any GCC internal prototype to avoid an error.
-   Use char because int might match the return type of a GCC
-   builtin and then its argument prototype would still apply.  */
-#ifdef __cplusplus
-extern "C"
-#endif
-char CRYPTO_set_locking_callback ();
-int
-main ()
-{
-return CRYPTO_set_locking_callback ();
-  ;
-  return 0;
-}
-_ACEOF
-for ac_lib in '' crypto; do
-  if test -z "$ac_lib"; then
-    ac_res="none required"
-  else
-    ac_res=-l$ac_lib
-    LIBS="-l$ac_lib  $ac_func_search_save_LIBS"
-  fi
-  rm -f conftest.$ac_objext conftest$ac_exeext
-if { (ac_try="$ac_link"
-case "(($ac_try" in
-  *\"* | *\`* | *\\*) ac_try_echo=\$ac_try;;
-  *) ac_try_echo=$ac_try;;
-esac
-eval "echo \"\$as_me:$LINENO: $ac_try_echo\"") >&5
-  (eval "$ac_link") 2>conftest.er1
-  ac_status=$?
-  grep -v '^ *+' conftest.er1 >conftest.err
-  rm -f conftest.er1
-  cat conftest.err >&5
-  echo "$as_me:$LINENO: \$? = $ac_status" >&5
-  (exit $ac_status); } && {
-	 test -z "$ac_cxx_werror_flag" ||
-	 test ! -s conftest.err
-       } && test -s conftest$ac_exeext &&
-       $as_test_x conftest$ac_exeext; then
-  ac_cv_search_CRYPTO_set_locking_callback=$ac_res
-else
-  echo "$as_me: failed program was:" >&5
-sed 's/^/| /' conftest.$ac_ext >&5
-
-
-fi
-
-rm -f core conftest.err conftest.$ac_objext conftest_ipa8_conftest.oo \
-      conftest$ac_exeext
-  if test "${ac_cv_search_CRYPTO_set_locking_callback+set}" = set; then
-  break
-fi
-done
-if test "${ac_cv_search_CRYPTO_set_locking_callback+set}" = set; then
-  :
-else
-  ac_cv_search_CRYPTO_set_locking_callback=no
-fi
-rm conftest.$ac_ext
-LIBS=$ac_func_search_save_LIBS
-fi
-{ echo "$as_me:$LINENO: result: $ac_cv_search_CRYPTO_set_locking_callback" >&5
-echo "${ECHO_T}$ac_cv_search_CRYPTO_set_locking_callback" >&6; }
-ac_res=$ac_cv_search_CRYPTO_set_locking_callback
-if test "$ac_res" != no; then
-  test "$ac_res" = "none required" || LIBS="$ac_res $LIBS"
-  { echo "$as_me:$LINENO: checking for library containing SSL_library_init" >&5
-echo $ECHO_N "checking for library containing SSL_library_init... $ECHO_C" >&6; }
-if test "${ac_cv_search_SSL_library_init+set}" = set; then
-  echo $ECHO_N "(cached) $ECHO_C" >&6
-else
-  ac_func_search_save_LIBS=$LIBS
-cat >conftest.$ac_ext <<_ACEOF
-/* confdefs.h.  */
-_ACEOF
-cat confdefs.h >>conftest.$ac_ext
-cat >>conftest.$ac_ext <<_ACEOF
-/* end confdefs.h.  */
-
-/* Override any GCC internal prototype to avoid an error.
-   Use char because int might match the return type of a GCC
-   builtin and then its argument prototype would still apply.  */
-#ifdef __cplusplus
-extern "C"
-#endif
-char SSL_library_init ();
-int
-main ()
-{
-return SSL_library_init ();
-  ;
-  return 0;
-}
-_ACEOF
-for ac_lib in '' ssl; do
-  if test -z "$ac_lib"; then
-    ac_res="none required"
-  else
-    ac_res=-l$ac_lib
-    LIBS="-l$ac_lib  $ac_func_search_save_LIBS"
-  fi
-  rm -f conftest.$ac_objext conftest$ac_exeext
-if { (ac_try="$ac_link"
-case "(($ac_try" in
-  *\"* | *\`* | *\\*) ac_try_echo=\$ac_try;;
-  *) ac_try_echo=$ac_try;;
-esac
-eval "echo \"\$as_me:$LINENO: $ac_try_echo\"") >&5
-  (eval "$ac_link") 2>conftest.er1
-  ac_status=$?
-  grep -v '^ *+' conftest.er1 >conftest.err
-  rm -f conftest.er1
-  cat conftest.err >&5
-  echo "$as_me:$LINENO: \$? = $ac_status" >&5
-  (exit $ac_status); } && {
-	 test -z "$ac_cxx_werror_flag" ||
-	 test ! -s conftest.err
-       } && test -s conftest$ac_exeext &&
-       $as_test_x conftest$ac_exeext; then
-  ac_cv_search_SSL_library_init=$ac_res
-else
-  echo "$as_me: failed program was:" >&5
-sed 's/^/| /' conftest.$ac_ext >&5
-
-
-fi
-
-rm -f core conftest.err conftest.$ac_objext conftest_ipa8_conftest.oo \
-      conftest$ac_exeext
-  if test "${ac_cv_search_SSL_library_init+set}" = set; then
-  break
-fi
-done
-if test "${ac_cv_search_SSL_library_init+set}" = set; then
-  :
-else
-  ac_cv_search_SSL_library_init=no
-fi
-rm conftest.$ac_ext
-LIBS=$ac_func_search_save_LIBS
-fi
-{ echo "$as_me:$LINENO: result: $ac_cv_search_SSL_library_init" >&5
-echo "${ECHO_T}$ac_cv_search_SSL_library_init" >&6; }
-ac_res=$ac_cv_search_SSL_library_init
-if test "$ac_res" != no; then
-  test "$ac_res" = "none required" || LIBS="$ac_res $LIBS"
-  FOUND=yes
-else
-  FOUND=no
-fi
-
-else
-  FOUND=no
-fi
-
-			if test "$FOUND" = "no" -a "$TLSLIB" = "OpenSSL"; then
-				{ { echo "$as_me:$LINENO: error: Couldn't find OpenSSL library" >&5
-echo "$as_me: error: Couldn't find OpenSSL library" >&2;}
-   { (exit 1); exit 1; }; }
-			fi
-			if test "$FOUND" = "yes"; then
-				TLSLIB="OpenSSL"
-
-cat >>confdefs.h <<\_ACEOF
-#define HAVE_OPENSSL 1
-_ACEOF
-
-			fi
-		fi
-	fi
-
 	if test "$TLSLIB" = ""; then
 		if test "$TLSHEADERS" = ""; then
-			{ { echo "$as_me:$LINENO: error: Couldn't find neither GnuTLS nor OpenSSL headers (gnutls.h or ssl.h)" >&5
-echo "$as_me: error: Couldn't find neither GnuTLS nor OpenSSL headers (gnutls.h or ssl.h)" >&2;}
+			{ { echo "$as_me:$LINENO: error: Couldn't find neither OpenSSL nor GnuTLS headers (ssl.h or gnutls.h)" >&5
+echo "$as_me: error: Couldn't find neither OpenSSL nor GnuTLS headers (ssl.h or gnutls.h)" >&2;}
    { (exit 1); exit 1; }; }
 		else
-			{ { echo "$as_me:$LINENO: error: Couldn't find neither GnuTLS nor OpenSSL library" >&5
-echo "$as_me: error: Couldn't find neither GnuTLS nor OpenSSL library" >&2;}
+			{ { echo "$as_me:$LINENO: error: Couldn't find neither OpenSSL nor GnuTLS library" >&5
+echo "$as_me: error: Couldn't find neither OpenSSL nor GnuTLS library" >&2;}
    { (exit 1); exit 1; }; }
 		fi
 	fi
@@ -10272,7 +10234,7 @@ do
     cat >>$CONFIG_STATUS <<_ACEOF
     # First, check the format of the line:
     cat >"\$tmp/defines.sed" <<\\CEOF
-/^[	 ]*#[	 ]*undef[	 ][	 ]*$ac_word_re[	 ]*\$/b def
+/^[	 ]*#[	 ]*undef[	 ][	 ]*$ac_word_re[	 ]*/b def
 /^[	 ]*#[	 ]*define[	 ][	 ]*$ac_word_re[(	 ]/b def
 b
 :def
