@@ -91,9 +91,9 @@ And the following libraries are optional:
    - libsigc++   (http://libsigc.sourceforge.net)
  
  - for encrypted connections (TLS/SSL):
-   - GnuTLS      (http://www.gnu.org/software/gnutls)
-     or
    - OpenSSL     (http://www.openssl.org)
+     or
+   - GnuTLS      (http://www.gnu.org/software/gnutls)
 
  - for gzip support in web-server and web-client (enabled by default):
    - zlib     (http://www.zlib.net)
@@ -153,11 +153,11 @@ You may run configure with additional arguments:
   --disable-parcheck - to make without parcheck-support. Use this option
     if you can not use libpar2 or libsigc++.
 
-  --with-tlslib=(GnuTLS, OpenSSL) - to select which TLS/SSL library
+  --with-tlslib=(OpenSSL, GnuTLS) - to select which TLS/SSL library
     should be used for encrypted server connections.
       
   --disable-tls - to make without TLS/SSL support. Use this option if
-    you can not neither GnuTLS nor OpenSSL.
+    you can not neither OpenSSL nor GnuTLS.
 
   --disable-gzip - to make without gzip support. Use this option
     if you can not use zlib.
@@ -219,14 +219,14 @@ make the program without support for curses using option "--disable-curses":
 Optional package: TLS
 -------------------------
 To enable encrypted server connections (TLS/SSL) you need to build the program
-with TLS/SSL support. NZBGet can use two libraries: GnuTLS or OpenSSL.
+with TLS/SSL support. NZBGet can use two libraries: OpenSSL or GnuTLS.
 Configure-script checks which library is installed and use it. If both are
-avialable it gives the precedence to GnuTLS. You may override that with
-the option --with-tlslib=(GnuTLS, OpenSSL). For example to build whith OpenSSL:
+available it gives the precedence to OpenSSL. You may override that with
+the option --with-tlslib=(OpenSSL, GnuTLS). For example to build with GnuTLS:
 
-  ./configure --with-tlslib=OpenSSL
+  ./configure --with-tlslib= GnuTLS
   
-Following configure-parameters may be usefull:
+Following configure-parameters may be useful:
 
   --with-libtls-includes
   --with-libtls-libraries
@@ -516,14 +516,6 @@ the Free Software Foundation; either version 2 of the License, or
 The complete content of license is provided in file COPYING.
 
 Additional exemption: compiling, linking, and/or using OpenSSL is allowed.
-
-Binary distribution for Windows contains code from the following libraries:
-
-   - libpar2     (http://parchive.sourceforge.net)
-   - libsigc++   (http://libsigc.sourceforge.net)
-   - GnuTLS      (http://www.gnu.org/software/gnutls)
-
-libpar2 is distributed under GPL; libsigc++ and GnuTLS - under LGPL.
 
 =====================================
 10. Contact

@@ -376,12 +376,54 @@ AC_ARG_ENABLE(tls,
 AC_MSG_RESULT($USETLS)
 if test "$USETLS" = "yes"; then
 	AC_ARG_WITH(tlslib,
-		[AS_HELP_STRING([--with-tlslib=(GnuTLS, OpenSSL)], [TLS/SSL library to use])],
+		[AS_HELP_STRING([--with-tlslib=(OpenSSL, GnuTLS)], [TLS/SSL library to use])],
 		[TLSLIB="$withval"])
 	if test "$TLSLIB" != "GnuTLS" -a "$TLSLIB" != "OpenSSL" -a "$TLSLIB" != ""; then
 		AC_MSG_ERROR([Invalid argument for option --with-tlslib])
 	fi
-	
+
+	if test "$TLSLIB" = "OpenSSL" -o "$TLSLIB" = ""; then
+		AC_ARG_WITH(openssl_includes,
+			[AS_HELP_STRING([--with-openssl-includes=DIR], [OpenSSL include directory])],
+			[CPPFLAGS="${CPPFLAGS} -I${withval}"]
+			[INCVAL="yes"],
+			[INCVAL="no"])
+		AC_ARG_WITH(openssl_libraries,
+			[AS_HELP_STRING([--with-openssl-libraries=DIR], [OpenSSL library directory])],
+			[LDFLAGS="${LDFLAGS} -L${withval}"]
+			[LIBVAL="yes"],
+			[LIBVAL="no"])
+		if test "$INCVAL" = "no" -o "$LIBVAL" = "no"; then
+			PKG_CHECK_MODULES(openssl, openssl,
+				[LIBS="${LIBS} $openssl_LIBS"]
+				[CPPFLAGS="${CPPFLAGS} $openssl_CFLAGS"],
+				FOUND=yes
+				FOUND=no)
+		fi
+
+		AC_CHECK_HEADER(openssl/ssl.h,
+			FOUND=yes
+			TLSHEADERS=yes,
+			FOUND=no)
+		if test "$FOUND" = "no" -a "$TLSLIB" = "OpenSSL"; then
+			AC_MSG_ERROR([Couldn't find OpenSSL headers (ssl.h)])
+		fi
+		if test "$FOUND" = "yes"; then
+			AC_SEARCH_LIBS([CRYPTO_set_locking_callback], [crypto],
+				AC_SEARCH_LIBS([SSL_library_init], [ssl],
+					FOUND=yes,
+					FOUND=no),
+				FOUND=no)
+			if test "$FOUND" = "no" -a "$TLSLIB" = "OpenSSL"; then
+				AC_MSG_ERROR([Couldn't find OpenSSL library])
+			fi
+			if test "$FOUND" = "yes"; then
+				TLSLIB="OpenSSL"
+				AC_DEFINE([HAVE_OPENSSL],1,[Define to 1 to use OpenSSL library for TLS/SSL-support.])
+			fi
+		fi
+	fi
+
 	if test "$TLSLIB" = "GnuTLS" -o "$TLSLIB" = ""; then
 		INCVAL="${LIBPREF}/include"
 		LIBVAL="${LIBPREF}/lib"
@@ -416,52 +458,12 @@ if test "$USETLS" = "yes"; then
 			fi
 		fi
 	fi
-	
-	if test "$TLSLIB" = "OpenSSL" -o "$TLSLIB" = ""; then
-		AC_ARG_WITH(openssl_includes,
-			[AS_HELP_STRING([--with-openssl-includes=DIR], [OpenSSL include directory])],
-			[CPPFLAGS="${CPPFLAGS} -I${withval}"]
-			[INCVAL="yes"],
-			[INCVAL="no"])
-		AC_ARG_WITH(openssl_libraries,
-			[AS_HELP_STRING([--with-openssl-libraries=DIR], [OpenSSL library directory])],
-			[LDFLAGS="${LDFLAGS} -L${withval}"]
-			[LIBVAL="yes"],
-			[LIBVAL="no"])
-		if test "$INCVAL" = "no" -o "$LIBVAL" = "no"; then
-			PKG_CHECK_MODULES(openssl, openssl,
-				[LIBS="${LIBS} $openssl_LIBS"]
-				[CPPFLAGS="${CPPFLAGS} $openssl_CFLAGS"])
-		fi
 
-		AC_CHECK_HEADER(openssl/ssl.h,
-			FOUND=yes
-			TLSHEADERS=yes,
-			FOUND=no)
-		if test "$FOUND" = "no" -a "$TLSLIB" = "OpenSSL"; then
-			AC_MSG_ERROR([Couldn't find OpenSSL headers (ssl.h)])
-		fi
-		if test "$FOUND" = "yes"; then
-			AC_SEARCH_LIBS([CRYPTO_set_locking_callback], [crypto],
-				AC_SEARCH_LIBS([SSL_library_init], [ssl],
-					FOUND=yes,
-					FOUND=no),
-				FOUND=no)
-			if test "$FOUND" = "no" -a "$TLSLIB" = "OpenSSL"; then
-				AC_MSG_ERROR([Couldn't find OpenSSL library])
-			fi
-			if test "$FOUND" = "yes"; then
-				TLSLIB="OpenSSL"
-				AC_DEFINE([HAVE_OPENSSL],1,[Define to 1 to use OpenSSL library for TLS/SSL-support.])
-			fi
-		fi
-	fi
-	
 	if test "$TLSLIB" = ""; then
 		if test "$TLSHEADERS" = ""; then
-			AC_MSG_ERROR([Couldn't find neither GnuTLS nor OpenSSL headers (gnutls.h or ssl.h)])
+			AC_MSG_ERROR([Couldn't find neither OpenSSL nor GnuTLS headers (ssl.h or gnutls.h)])
 		else
-			AC_MSG_ERROR([Couldn't find neither GnuTLS nor OpenSSL library])
+			AC_MSG_ERROR([Couldn't find neither OpenSSL nor GnuTLS library])
 		fi
 	fi
 else
