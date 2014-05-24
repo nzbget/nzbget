@@ -1009,7 +1009,7 @@ void FileInfo::SetPaused(bool bPaused)
 {
 	if (m_bPaused != bPaused && m_pNZBInfo)
 	{
-		m_pNZBInfo->SetPausedFileCount(m_pNZBInfo->GetPausedFileCount() + (bPaused ? 1 : 0));
+		m_pNZBInfo->SetPausedFileCount(m_pNZBInfo->GetPausedFileCount() + (bPaused ? 1 : -1));
 		m_pNZBInfo->SetPausedSize(m_pNZBInfo->GetPausedSize() + (bPaused ? m_lRemainingSize : - m_lRemainingSize));
 	}
 	m_bPaused = bPaused;
