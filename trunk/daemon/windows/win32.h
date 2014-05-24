@@ -34,10 +34,10 @@
 //#define DISABLE_TLS
 
 #ifndef DISABLE_TLS
-/* Define to 1 to use GnuTLS library for TLS/SSL-support */
-#define HAVE_LIBGNUTLS
 /* Define to 1 to use OpenSSL library for TLS/SSL-support */
-//#define HAVE_OPENSSL
+#define HAVE_OPENSSL
+/* Define to 1 to use GnuTLS library for TLS/SSL-support */
+//#define HAVE_LIBGNUTLS
 #endif
 
 /* Define to the name of macro which returns the name of function being
