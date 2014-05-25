@@ -353,7 +353,11 @@ void HistoryCoordinator::HistoryDelete(DownloadQueue* pDownloadQueue, HistoryLis
 		Util::DirectoryExists(pHistoryInfo->GetNZBInfo()->GetDestDir()))
 	{
 		info("Deleting %s", pHistoryInfo->GetNZBInfo()->GetDestDir());
-		Util::DeleteDirectoryWithContent(pHistoryInfo->GetNZBInfo()->GetDestDir());
+		char szErrBuf[256];
+		if (!Util::DeleteDirectoryWithContent(pHistoryInfo->GetNZBInfo()->GetDestDir(), szErrBuf, sizeof(szErrBuf)))
+		{
+			error("Could not delete directory %s: %s", pHistoryInfo->GetNZBInfo()->GetDestDir(), szErrBuf);
+		}
 	}
 
 	if (bFinal || !g_pOptions->GetDupeCheck() || pHistoryInfo->GetKind() == HistoryInfo::hkUrl)
@@ -491,14 +495,22 @@ void HistoryCoordinator::HistoryRedownload(DownloadQueue* pDownloadQueue, Histor
 	if (Util::DirectoryExists(pNZBInfo->GetDestDir()))
 	{
 		detail("Deleting %s", pNZBInfo->GetDestDir());
-		Util::DeleteDirectoryWithContent(pNZBInfo->GetDestDir());
+		char szErrBuf[256];
+		if (!Util::DeleteDirectoryWithContent(pNZBInfo->GetDestDir(), szErrBuf, sizeof(szErrBuf)))
+		{
+			error("Could not delete directory %s: %s", pNZBInfo->GetDestDir(), szErrBuf);
+		}
 	}
 
 	pNZBInfo->BuildDestDirName();
 	if (Util::DirectoryExists(pNZBInfo->GetDestDir()))
 	{
 		detail("Deleting %s", pNZBInfo->GetDestDir());
-		Util::DeleteDirectoryWithContent(pNZBInfo->GetDestDir());
+		char szErrBuf[256];
+		if (!Util::DeleteDirectoryWithContent(pNZBInfo->GetDestDir(), szErrBuf, sizeof(szErrBuf)))
+		{
+			error("Could not delete directory %s: %s", pNZBInfo->GetDestDir(), szErrBuf);
+		}
 	}
 
 	// reset status fields (which are not reset by "HistoryReturn")

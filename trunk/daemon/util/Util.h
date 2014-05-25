@@ -1,7 +1,7 @@
 /*
  *  This file is part of nzbget
  *
- *  Copyright (C) 2007-2013 Andrey Prygunkov <hugbug@users.sourceforge.net>
+ *  Copyright (C) 2007-2014 Andrey Prygunkov <hugbug@users.sourceforge.net>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -90,7 +90,7 @@ public:
 	static bool DirectoryExists(const char* szDirFilename);
 	static bool CreateDirectory(const char* szDirFilename);
 	static bool RemoveDirectory(const char* szDirFilename);
-	static bool DeleteDirectoryWithContent(const char* szDirFilename);
+	static bool DeleteDirectoryWithContent(const char* szDirFilename, char* szErrBuf, int iBufSize);
 	static bool ForceDirectories(const char* szPath, char* szErrBuf, int iBufSize);
 	static bool GetCurrentDirectory(char* szBuffer, int iBufSize);
 	static bool SetCurrentDirectory(const char* szDirFilename);

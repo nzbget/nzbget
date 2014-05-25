@@ -454,9 +454,10 @@ bool UnpackController::Cleanup()
 		}
 	}
 
-	if (bOK && !Util::DeleteDirectoryWithContent(m_szUnpackDir))
+	char szErrBuf[256];
+	if (bOK && !Util::DeleteDirectoryWithContent(m_szUnpackDir, szErrBuf, sizeof(szErrBuf)))
 	{
-		PrintMessage(Message::mkError, "Could not remove temporary directory %s", m_szUnpackDir);
+		PrintMessage(Message::mkError, "Could not delete temporary directory %s: %s", m_szUnpackDir, szErrBuf);
 	}
 
 	if (!m_bUnpackOK && m_bFinalDirCreated)
@@ -491,7 +492,8 @@ bool UnpackController::Cleanup()
 
 				if (remove(szFullFilename) != 0)
 				{
-					PrintMessage(Message::mkError, "Could not delete file %s", szFullFilename);
+					char szErrBuf[256];
+					PrintMessage(Message::mkError, "Could not delete file %s: %s", szFullFilename, Util::GetLastErrorMessage(szErrBuf, sizeof(szErrBuf)));
 				}
 			}
 		}
@@ -717,9 +719,9 @@ bool MoveController::MoveFiles()
 		}
 	}
 
-	if (bOK && !Util::DeleteDirectoryWithContent(m_szInterDir))
+	if (bOK && !Util::DeleteDirectoryWithContent(m_szInterDir, szErrBuf, sizeof(szErrBuf)))
 	{
-		PrintMessage(Message::mkError, "Could not remove intermediate directory %s", m_szInterDir);
+		PrintMessage(Message::mkError, "Could not delete intermediate directory %s: %s", m_szInterDir, szErrBuf);
 	}
 
 	return bOK;
@@ -847,7 +849,8 @@ bool CleanupController::Cleanup(const char* szDestDir, bool *bDeleted)
 			PrintMessage(Message::mkInfo, "Deleting file %s", filename);
 			if (remove(szFullFilename) != 0)
 			{
-				PrintMessage(Message::mkError, "Could not delete file %s! Errcode: %i", szFullFilename, errno);
+				char szErrBuf[256];
+				PrintMessage(Message::mkError, "Could not delete file %s: %s", szFullFilename, Util::GetLastErrorMessage(szErrBuf, sizeof(szErrBuf)));
 				bOK = false;
 			}
 
