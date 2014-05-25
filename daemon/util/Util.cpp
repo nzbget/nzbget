@@ -1,7 +1,7 @@
 /*
  *  This file is part of nzbget
  *
- *  Copyright (C) 2007-2013 Andrey Prygunkov <hugbug@users.sourceforge.net>
+ *  Copyright (C) 2007-2014 Andrey Prygunkov <hugbug@users.sourceforge.net>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -722,14 +722,18 @@ bool Util::CreateDirectory(const char* szDirFilename)
 bool Util::RemoveDirectory(const char* szDirFilename)
 {
 #ifdef WIN32
-	return ::RemoveDirectory(szDirFilename);
+	return _rmdir(szDirFilename) == 0;
 #else
 	return remove(szDirFilename) == 0;
 #endif
 }
 
-bool Util::DeleteDirectoryWithContent(const char* szDirFilename)
+bool Util::DeleteDirectoryWithContent(const char* szDirFilename, char* szErrBuf, int iBufSize)
 {
+	*szErrBuf = '\0';
+	char szSysErrStr[256];
+
+	bool bDel = false;
 	bool bOK = true;
 
 	DirBrowser dir(szDirFilename);
@@ -743,16 +747,27 @@ bool Util::DeleteDirectoryWithContent(const char* szDirFilename)
 		{
 			if (Util::DirectoryExists(szFullFilename))
 			{
-				bOK &= DeleteDirectoryWithContent(szFullFilename);
+				bDel = DeleteDirectoryWithContent(szFullFilename, szSysErrStr, sizeof(szSysErrStr));
 			}
 			else
 			{
-				bOK &= remove(szFullFilename) == 0;
+				bDel = remove(szFullFilename) == 0;
+			}
+			bOK &= bDel;
+			if (!bDel && !*szErrBuf)
+			{
+				snprintf(szErrBuf, iBufSize, "could not delete %s: %s", szFullFilename, GetLastErrorMessage(szSysErrStr, sizeof(szSysErrStr)));
 			}
 		}
 	}
 
-	return bOK && RemoveDirectory(szDirFilename);
+	bDel = RemoveDirectory(szDirFilename);
+	bOK &= bDel;
+	if (!bDel && !*szErrBuf)
+	{
+		GetLastErrorMessage(szErrBuf, iBufSize);
+	}
+	return bOK;
 }
 
 long long Util::FileSize(const char* szFilename)
