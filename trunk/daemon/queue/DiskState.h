@@ -57,6 +57,7 @@ private:
 	bool				SaveVolumeStat(ServerVolumes* pServerVolumes, FILE* outfile);
 	bool				LoadVolumeStat(Servers* pServers, ServerVolumes* pServerVolumes, FILE* infile, int iFormatVersion);
 	void				CalcFileStats(DownloadQueue* pDownloadQueue, int iFormatVersion);
+	void				CalcNZBFileStats(NZBInfo* pNZBInfo, int iFormatVersion);
 	bool				LoadFileState(FileInfo* pFileInfo, Servers* pServers);
 	bool				LoadAllFileStates(DownloadQueue* pDownloadQueue, Servers* pServers);
 	void				SaveServerStats(ServerStatList* pServerStatList, FILE* outfile);
