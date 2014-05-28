@@ -2128,59 +2128,72 @@ void DiskState::CalcFileStats(DownloadQueue* pDownloadQueue, int iFormatVersion)
 	for (NZBList::iterator it = pDownloadQueue->GetQueue()->begin(); it != pDownloadQueue->GetQueue()->end(); it++)
 	{
 		NZBInfo* pNZBInfo = *it;
+		CalcNZBFileStats(pNZBInfo, iFormatVersion);
+	}
 
-		int iPausedFileCount = 0;
-		int iRemainingParCount = 0;
-		int iSuccessArticles = 0;
-		int iFailedArticles = 0;
-		long long lRemainingSize = 0;
-		long long lPausedSize = 0;
-		long long lSuccessSize = 0;
-		long long lFailedSize = 0;
-		long long lParSuccessSize = 0;
-		long long lParFailedSize = 0;
-
-		for (FileList::iterator it2 = pNZBInfo->GetFileList()->begin(); it2 != pNZBInfo->GetFileList()->end(); it2++)
+	for (HistoryList::iterator it = pDownloadQueue->GetHistory()->begin(); it != pDownloadQueue->GetHistory()->end(); it++)
+	{
+		HistoryInfo* pHistoryInfo = *it;
+		if (pHistoryInfo->GetKind() == HistoryInfo::hkNzb)
 		{
-			FileInfo* pFileInfo = *it2;
+			CalcNZBFileStats(pHistoryInfo->GetNZBInfo(), iFormatVersion);
+		}
+	}
+}
 
-			lRemainingSize += pFileInfo->GetRemainingSize();
-			iSuccessArticles += pFileInfo->GetSuccessArticles();
-			iFailedArticles += pFileInfo->GetFailedArticles();
-			lSuccessSize += pFileInfo->GetSuccessSize();
-			lFailedSize += pFileInfo->GetFailedSize();
+void DiskState::CalcNZBFileStats(NZBInfo* pNZBInfo, int iFormatVersion)
+{
+	int iPausedFileCount = 0;
+	int iRemainingParCount = 0;
+	int iSuccessArticles = 0;
+	int iFailedArticles = 0;
+	long long lRemainingSize = 0;
+	long long lPausedSize = 0;
+	long long lSuccessSize = 0;
+	long long lFailedSize = 0;
+	long long lParSuccessSize = 0;
+	long long lParFailedSize = 0;
 
-			if (pFileInfo->GetPaused())
-			{
-				lPausedSize += pFileInfo->GetRemainingSize();
-				iPausedFileCount++;
-			}
-			if (pFileInfo->GetParFile())
-			{
-				iRemainingParCount++;
-				lParSuccessSize += pFileInfo->GetSuccessSize();
-				lParFailedSize += pFileInfo->GetFailedSize();
-			}
+	for (FileList::iterator it2 = pNZBInfo->GetFileList()->begin(); it2 != pNZBInfo->GetFileList()->end(); it2++)
+	{
+		FileInfo* pFileInfo = *it2;
 
-			pNZBInfo->GetCurrentServerStats()->ListOp(pFileInfo->GetServerStats(), ServerStatList::soAdd);
+		lRemainingSize += pFileInfo->GetRemainingSize();
+		iSuccessArticles += pFileInfo->GetSuccessArticles();
+		iFailedArticles += pFileInfo->GetFailedArticles();
+		lSuccessSize += pFileInfo->GetSuccessSize();
+		lFailedSize += pFileInfo->GetFailedSize();
+
+		if (pFileInfo->GetPaused())
+		{
+			lPausedSize += pFileInfo->GetRemainingSize();
+			iPausedFileCount++;
+		}
+		if (pFileInfo->GetParFile())
+		{
+			iRemainingParCount++;
+			lParSuccessSize += pFileInfo->GetSuccessSize();
+			lParFailedSize += pFileInfo->GetFailedSize();
 		}
 
-		pNZBInfo->SetRemainingSize(lRemainingSize);
-		pNZBInfo->SetPausedSize(lPausedSize);
-		pNZBInfo->SetPausedFileCount(iPausedFileCount);
-		pNZBInfo->SetRemainingParCount(iRemainingParCount);
+		pNZBInfo->GetCurrentServerStats()->ListOp(pFileInfo->GetServerStats(), ServerStatList::soAdd);
+	}
 
-		pNZBInfo->SetCurrentSuccessArticles(pNZBInfo->GetSuccessArticles() + iSuccessArticles);
-		pNZBInfo->SetCurrentFailedArticles(pNZBInfo->GetFailedArticles() + iFailedArticles);
-		pNZBInfo->SetCurrentSuccessSize(pNZBInfo->GetSuccessSize() + lSuccessSize);
-		pNZBInfo->SetCurrentFailedSize(pNZBInfo->GetFailedSize() + lFailedSize);
-		pNZBInfo->SetParCurrentSuccessSize(pNZBInfo->GetParSuccessSize() + lParSuccessSize);
-		pNZBInfo->SetParCurrentFailedSize(pNZBInfo->GetParFailedSize() + lParFailedSize);
+	pNZBInfo->SetRemainingSize(lRemainingSize);
+	pNZBInfo->SetPausedSize(lPausedSize);
+	pNZBInfo->SetPausedFileCount(iPausedFileCount);
+	pNZBInfo->SetRemainingParCount(iRemainingParCount);
 
-		if (iFormatVersion < 44)
-		{
-			pNZBInfo->UpdateMinMaxTime();
-		}
+	pNZBInfo->SetCurrentSuccessArticles(pNZBInfo->GetSuccessArticles() + iSuccessArticles);
+	pNZBInfo->SetCurrentFailedArticles(pNZBInfo->GetFailedArticles() + iFailedArticles);
+	pNZBInfo->SetCurrentSuccessSize(pNZBInfo->GetSuccessSize() + lSuccessSize);
+	pNZBInfo->SetCurrentFailedSize(pNZBInfo->GetFailedSize() + lFailedSize);
+	pNZBInfo->SetParCurrentSuccessSize(pNZBInfo->GetParSuccessSize() + lParSuccessSize);
+	pNZBInfo->SetParCurrentFailedSize(pNZBInfo->GetParFailedSize() + lParFailedSize);
+
+	if (iFormatVersion < 44)
+	{
+		pNZBInfo->UpdateMinMaxTime();
 	}
 }
 
