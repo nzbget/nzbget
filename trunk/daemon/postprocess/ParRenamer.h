@@ -71,6 +71,8 @@ private:
 	int					m_iFileCount;
 	int					m_iCurFile;
 	int					m_iRenamedCount;
+	int					m_iMissedCount;
+	int					m_iFoundCount;
 	bool				m_bHasSplittedFragments;
 
 	void				Cleanup();
@@ -104,6 +106,7 @@ public:
 	void				Cancel();
 	bool				GetCancelled() { return m_bCancelled; }
 	bool				HasSplittedFragments() { return m_bHasSplittedFragments; }
+	bool				HasMissedFiles() { return m_iMissedCount > 0; }
 };
 
 #endif

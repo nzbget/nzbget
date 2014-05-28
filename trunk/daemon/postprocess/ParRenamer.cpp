@@ -86,6 +86,7 @@ ParRenamer::ParRenamer()
 	m_iStageProgress = 0;
 	m_bCancelled = false;
 	m_bHasSplittedFragments = false;
+	m_iMissedCount = 0;
 }
 
 ParRenamer::~ParRenamer()
@@ -143,6 +144,7 @@ void ParRenamer::Run()
 	m_iFileCount = 0;
 	m_iCurFile = 0;
 	m_iRenamedCount = 0;
+	m_iMissedCount = 0;
 	m_bHasSplittedFragments = false;
 	m_eStatus = psFailed;
 
@@ -159,6 +161,7 @@ void ParRenamer::Run()
 		debug("Checking %s", szDestDir);
 		ClearHashList();
 		LoadParFiles(szDestDir);
+		m_iFoundCount = 0;
 
 		if (m_FileHashList.empty())
 		{
@@ -169,8 +172,10 @@ void ParRenamer::Run()
 		}
 
 		CheckFiles(szDestDir, false);
+
+		m_iMissedCount += m_FileHashList.size() - m_iFoundCount;
 	}
-	
+
 	if (m_bCancelled)
 	{
 		PrintMessage(Message::mkWarning, "Renaming cancelled for %s", m_szInfoName);
@@ -183,6 +188,11 @@ void ParRenamer::Run()
 	else
 	{
 		PrintMessage(Message::mkInfo, "No renamed files found for %s", m_szInfoName);
+	}
+
+	if (m_iMissedCount > 0)
+	{
+		PrintMessage(Message::mkWarning, "Detected %i missing or damaged file(s) for %s", m_iMissedCount, m_szInfoName);
 	}
 
 	Cleanup();
@@ -365,6 +375,7 @@ void ParRenamer::CheckRegularFile(const char* szDestDir, const char* szFilename)
 		if (!strcmp(pFileHash->GetHash(), hash16k.print().c_str()))
 		{
 			debug("Found correct filename: %s", pFileHash->GetFilename());
+			m_iFoundCount++;
 
 			char szDstFilename[1024];
 			snprintf(szDstFilename, 1024, "%s%c%s", szDestDir, PATH_SEPARATOR, pFileHash->GetFilename());
