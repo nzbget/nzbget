@@ -136,6 +136,7 @@ void PostScriptController::PrepareParams(const char* szScriptName)
 
 	ResetEnv();
 
+	SetIntEnvVar("NZBPP_NZBID", m_pPostInfo->GetNZBInfo()->GetID());
 	SetEnvVar("NZBPP_NZBNAME", m_pPostInfo->GetNZBInfo()->GetName());
 	SetEnvVar("NZBPP_DIRECTORY", m_pPostInfo->GetNZBInfo()->GetDestDir());
 	SetEnvVar("NZBPP_NZBFILENAME", m_pPostInfo->GetNZBInfo()->GetFilename());
@@ -145,14 +146,29 @@ void PostScriptController::PrepareParams(const char* szScriptName)
 	SetIntEnvVar("NZBPP_HEALTH", m_pPostInfo->GetNZBInfo()->CalcHealth());
 	SetIntEnvVar("NZBPP_CRITICALHEALTH", m_pPostInfo->GetNZBInfo()->CalcCriticalHealth(false));
 
+	char szStatus[256];
+	strncpy(szStatus, m_pPostInfo->GetNZBInfo()->MakeTextStatus(true), sizeof(szStatus));
+	szStatus[256-1] = '\0';
+	SetEnvVar("NZBPP_STATUS", szStatus);
+
+	char* szDetail = strchr(szStatus, '/');
+	if (szDetail) *szDetail = '\0';
+	SetEnvVar("NZBPP_TOTALSTATUS", szStatus);
+
+    const char* szScriptStatusName[] = { "NONE", "FAILURE", "SUCCESS" };
+	SetEnvVar("NZBPP_SCRIPTSTATUS", szScriptStatusName[m_pPostInfo->GetNZBInfo()->GetScriptStatuses()->CalcTotalStatus()]);
+
+	// deprecated
 	int iParStatus[] = { 0, 0, 1, 2, 3, 4 };
 	SetIntEnvVar("NZBPP_PARSTATUS", iParStatus[m_pPostInfo->GetNZBInfo()->GetParStatus()]);
 
+	// deprecated
 	int iUnpackStatus[] = { 0, 0, 1, 2, 3, 4 };
 	SetIntEnvVar("NZBPP_UNPACKSTATUS", iUnpackStatus[m_pPostInfo->GetNZBInfo()->GetUnpackStatus()]);
 
-	SetIntEnvVar("NZBPP_NZBID", m_pPostInfo->GetNZBInfo()->GetID());
+	// deprecated
 	SetIntEnvVar("NZBPP_HEALTHDELETED", (int)m_pPostInfo->GetNZBInfo()->GetDeleteStatus() == NZBInfo::dsHealth);
+
 	SetIntEnvVar("NZBPP_TOTALARTICLES", (int)m_pPostInfo->GetNZBInfo()->GetTotalArticles());
 	SetIntEnvVar("NZBPP_SUCCESSARTICLES", (int)m_pPostInfo->GetNZBInfo()->GetSuccessArticles());
 	SetIntEnvVar("NZBPP_FAILEDARTICLES", (int)m_pPostInfo->GetNZBInfo()->GetFailedArticles());

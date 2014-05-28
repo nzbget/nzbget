@@ -2562,7 +2562,7 @@ const char* HistoryXmlCommand::DetectStatus(HistoryInfo* pHistoryInfo)
 	if (pHistoryInfo->GetKind() == HistoryInfo::hkNzb || pHistoryInfo->GetKind() == HistoryInfo::hkUrl)
 	{
 		NZBInfo* pNZBInfo = pHistoryInfo->GetNZBInfo();
-		szStatus = pNZBInfo->MakeTextStatus();
+		szStatus = pNZBInfo->MakeTextStatus(false);
 	}
 	else if (pHistoryInfo->GetKind() == HistoryInfo::hkDup)
 	{

@@ -736,7 +736,7 @@ bool NZBInfo::IsDupeSuccess()
 	return !bFailure;
 }
 
-const char* NZBInfo::MakeTextStatus()
+const char* NZBInfo::MakeTextStatus(bool bIgnoreScriptStatus)
 {
 	const char* szStatus = "FAILURE/INTERNAL_ERROR";
 
@@ -744,7 +744,7 @@ const char* NZBInfo::MakeTextStatus()
 	{
 		int iHealth = CalcHealth();
 		int iCriticalHealth = CalcCriticalHealth(false);
-		ScriptStatus::EStatus eScriptStatus = m_scriptStatuses.CalcTotalStatus();
+		ScriptStatus::EStatus eScriptStatus = bIgnoreScriptStatus ? ScriptStatus::srSuccess : m_scriptStatuses.CalcTotalStatus();
 
 		if (m_eMarkStatus == NZBInfo::ksBad)
 		{
