@@ -932,6 +932,23 @@ bool Util::SameFilename(const char* szFilename1, const char* szFilename2)
 #endif
 }
 
+bool Util::MatchFileExt(const char* szFilename, const char* szExtensionList, const char* szListSeparator)
+{
+	int iFilenameLen = strlen(szFilename);
+
+	Tokenizer tok(szExtensionList, szListSeparator);
+	while (const char* szExt = tok.Next())
+	{
+		int iExtLen = strlen(szExt);
+		if (iFilenameLen >= iExtLen && !strcasecmp(szExt, szFilename + iFilenameLen - iExtLen))
+		{
+			return true;
+		}
+	}
+
+	return false;
+}
+
 #ifndef WIN32
 void Util::FixExecPermission(const char* szFilename)
 {
@@ -2316,6 +2333,61 @@ GUnzipStream::EStatus GUnzipStream::Read(const void **pOutputBuffer, int *iOutpu
 	}
 
 	return zlError;
+}
+
+Tokenizer::Tokenizer(const char* szDataString, const char* szSeparators)
+{
+	// an optimization to avoid memory allocation for short data string (shorten than 1024 chars)
+	int iLen = strlen(szDataString);
+	if (iLen < sizeof(m_szDefaultBuf) - 1)
+	{
+		strncpy(m_szDefaultBuf, szDataString, sizeof(m_szDefaultBuf));
+		m_szDefaultBuf[1024- 1] = '\0';
+		m_szDataString = m_szDefaultBuf;
+		m_bInplaceBuf = true;
+	}
+	else
+	{
+		m_szDataString = strdup(szDataString);
+		m_bInplaceBuf = false;
+	}
+
+	m_szSeparators = szSeparators;
+	m_szSavePtr = NULL;
+	m_bWorking = false;
+}
+
+Tokenizer::Tokenizer(char* szDataString, const char* szSeparators, bool bInplaceBuf)
+{
+	m_szDataString = bInplaceBuf ? szDataString : strdup(szDataString);
+	m_szSeparators = szSeparators;
+	m_szSavePtr = NULL;
+	m_bWorking = false;
+	m_bInplaceBuf = bInplaceBuf;
+}
+
+Tokenizer::~Tokenizer()
+{
+	if (!m_bInplaceBuf)
+	{
+		free(m_szDataString);
+	}
+}
+
+char* Tokenizer::Next()
+{
+	char* szToken = NULL;
+	while (!szToken || !*szToken)
+	{
+		szToken = strtok_r(m_bWorking ? NULL : m_szDataString, m_szSeparators, &m_szSavePtr);
+		m_bWorking = true;
+		if (!szToken)
+		{
+			return NULL;
+		}
+		szToken = Util::Trim(szToken);
+	}
+	return szToken;
 }
 
 #endif

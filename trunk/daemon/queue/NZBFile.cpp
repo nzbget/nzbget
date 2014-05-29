@@ -360,17 +360,6 @@ void NZBFile::CalcHashes()
 
 	fileList.sort(CompareFileInfo);
 
-	// split ExtCleanupDisk into tokens and create a list
-	ExtList extList;
-	char* szExtCleanupDisk = strdup(g_pOptions->GetExtCleanupDisk());
-	char* saveptr;
-	char* szExt = strtok_r(szExtCleanupDisk, ",; ", &saveptr);
-	while (szExt)
-	{
-		extList.push_back(szExt);
-		szExt = strtok_r(NULL, ",; ", &saveptr);
-	}
-
 	unsigned int iFullContentHash = 0;
 	unsigned int iFilteredContentHash = 0;
 	int iUseForFilteredCount = 0;
@@ -380,20 +369,8 @@ void NZBFile::CalcHashes()
 		FileInfo* pFileInfo = *it;
 
 		// check file extension
-		int iFilenameLen = strlen(pFileInfo->GetFilename());
-		bool bSkip = false;
-		for (ExtList::iterator it = extList.begin(); it != extList.end(); it++)
-		{
-			const char* szExt = *it;
-			int iExtLen = strlen(szExt);
-			if (iFilenameLen >= iExtLen && !strcasecmp(szExt, pFileInfo->GetFilename() + iFilenameLen - iExtLen))
-			{
-				bSkip = true;
-				break;
-			}
-		}
-
-		bSkip = bSkip && !pFileInfo->GetParFile();
+		bool bSkip = !pFileInfo->GetParFile() &&
+			Util::MatchFileExt(pFileInfo->GetFilename(), g_pOptions->GetExtCleanupDisk(), ",;");
 
 		for (FileInfo::Articles::iterator it = pFileInfo->GetArticles()->begin(); it != pFileInfo->GetArticles()->end(); it++)
 		{
@@ -407,8 +384,6 @@ void NZBFile::CalcHashes()
 			}
 		}
 	}
-
-	free(szExtCleanupDisk);
 
 	// if filtered hash is based on less than a half of files - do not use filtered hash at all
 	if (iUseForFilteredCount < (int)fileList.size() / 2)

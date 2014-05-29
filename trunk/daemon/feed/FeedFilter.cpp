@@ -153,22 +153,17 @@ bool FeedFilter::Term::MatchText(const char* szStrValue)
 		// Word-search
 
 		// split szStrValue into tokens
-		char* szStrValue2 = strdup(szStrValue);
-		char* saveptr;
-		char* szWord = strtok_r(szStrValue2, WORD_SEPARATORS, &saveptr);
-		while (szWord)
+		Tokenizer tok(szStrValue, WORD_SEPARATORS);
+		while (const char* szWord = tok.Next())
 		{
-			szWord = Util::Trim(szWord);
 			WildMask mask(m_szParam, m_pRefValues != NULL);
-			bMatch = *szWord && mask.Match(szWord);
+			bMatch = mask.Match(szWord);
 			if (bMatch)
 			{
 				FillWildMaskRefValues(szWord, &mask, 0);
 				break;
 			}
-			szWord = strtok_r(NULL, WORD_SEPARATORS, &saveptr);
 		}
-		free(szStrValue2);
 	}
 	else
 	{
@@ -732,146 +727,139 @@ char* FeedFilter::Rule::CompileOptions(char* szRule)
 
 	// split command into tokens
 	*p = '\0';
-	char* saveptr;
-	char* szToken = strtok_r(szRule, ",", &saveptr);
-	while (szToken)
+	Tokenizer tok(szRule, ",", true);
+	while (char* szOption = tok.Next())
 	{
-		szToken = Util::Trim(szToken);
-		if (*szToken)
+		const char* szValue = "";
+		char* szColon = strchr(szOption, ':');
+		if (szColon)
 		{
-			char* szOption = szToken;
-			const char* szValue = "";
-			char* szColon = strchr(szToken, ':');
-			if (szColon)
-			{
-				*szColon = '\0';
-				szValue = Util::Trim(szColon + 1);
-			}
+			*szColon = '\0';
+			szValue = Util::Trim(szColon + 1);
+		}
 
-			if (!strcasecmp(szOption, "category") || !strcasecmp(szOption, "cat") || !strcasecmp(szOption, "c"))
+		if (!strcasecmp(szOption, "category") || !strcasecmp(szOption, "cat") || !strcasecmp(szOption, "c"))
+		{
+			m_bHasCategory = true;
+			free(m_szCategory);
+			m_szCategory = strdup(szValue);
+			m_bPatCategory = strstr(szValue, "${");
+		}
+		else if (!strcasecmp(szOption, "pause") || !strcasecmp(szOption, "p"))
+		{
+			m_bHasPause = true;
+			m_bPause = !*szValue || !strcasecmp(szValue, "yes") || !strcasecmp(szValue, "y");
+			if (!m_bPause && !(!strcasecmp(szValue, "no") || !strcasecmp(szValue, "n")))
 			{
-				m_bHasCategory = true;
-				free(m_szCategory);
-				m_szCategory = strdup(szValue);
-				m_bPatCategory = strstr(szValue, "${");
+				// error
+				return NULL;
 			}
-			else if (!strcasecmp(szOption, "pause") || !strcasecmp(szOption, "p"))
+		}
+		else if (!strcasecmp(szOption, "priority") || !strcasecmp(szOption, "pr") || !strcasecmp(szOption, "r"))
+		{
+			if (!strchr("0123456789-+", *szValue))
 			{
-				m_bHasPause = true;
-				m_bPause = !*szValue || !strcasecmp(szValue, "yes") || !strcasecmp(szValue, "y");
-				if (!m_bPause && !(!strcasecmp(szValue, "no") || !strcasecmp(szValue, "n")))
-				{
-					// error
-					return NULL;
-				}
+				// error
+				return NULL;
 			}
-			else if (!strcasecmp(szOption, "priority") || !strcasecmp(szOption, "pr") || !strcasecmp(szOption, "r"))
+			m_bHasPriority = true;
+			m_iPriority = atoi(szValue);
+		}
+		else if (!strcasecmp(szOption, "priority+") || !strcasecmp(szOption, "pr+") || !strcasecmp(szOption, "r+"))
+		{
+			if (!strchr("0123456789-+", *szValue))
 			{
-				if (!strchr("0123456789-+", *szValue))
-				{
-					// error
-					return NULL;
-				}
-				m_bHasPriority = true;
-				m_iPriority = atoi(szValue);
+				// error
+				return NULL;
 			}
-			else if (!strcasecmp(szOption, "priority+") || !strcasecmp(szOption, "pr+") || !strcasecmp(szOption, "r+"))
+			m_bHasAddPriority = true;
+			m_iAddPriority = atoi(szValue);
+		}
+		else if (!strcasecmp(szOption, "dupescore") || !strcasecmp(szOption, "ds") || !strcasecmp(szOption, "s"))
+		{
+			if (!strchr("0123456789-+", *szValue))
 			{
-				if (!strchr("0123456789-+", *szValue))
-				{
-					// error
-					return NULL;
-				}
-				m_bHasAddPriority = true;
-				m_iAddPriority = atoi(szValue);
+				// error
+				return NULL;
 			}
-			else if (!strcasecmp(szOption, "dupescore") || !strcasecmp(szOption, "ds") || !strcasecmp(szOption, "s"))
+			m_bHasDupeScore = true;
+			m_iDupeScore = atoi(szValue);
+		}
+		else if (!strcasecmp(szOption, "dupescore+") || !strcasecmp(szOption, "ds+") || !strcasecmp(szOption, "s+"))
+		{
+			if (!strchr("0123456789-+", *szValue))
 			{
-				if (!strchr("0123456789-+", *szValue))
-				{
-					// error
-					return NULL;
-				}
-				m_bHasDupeScore = true;
-				m_iDupeScore = atoi(szValue);
+				// error
+				return NULL;
 			}
-			else if (!strcasecmp(szOption, "dupescore+") || !strcasecmp(szOption, "ds+") || !strcasecmp(szOption, "s+"))
+			m_bHasAddDupeScore = true;
+			m_iAddDupeScore = atoi(szValue);
+		}
+		else if (!strcasecmp(szOption, "dupekey") || !strcasecmp(szOption, "dk") || !strcasecmp(szOption, "k"))
+		{
+			m_bHasDupeKey = true;
+			free(m_szDupeKey);
+			m_szDupeKey = strdup(szValue);
+			m_bPatDupeKey = strstr(szValue, "${");
+		}
+		else if (!strcasecmp(szOption, "dupekey+") || !strcasecmp(szOption, "dk+") || !strcasecmp(szOption, "k+"))
+		{
+			m_bHasAddDupeKey = true;
+			free(m_szAddDupeKey);
+			m_szAddDupeKey = strdup(szValue);
+			m_bPatAddDupeKey = strstr(szValue, "${");
+		}
+		else if (!strcasecmp(szOption, "dupemode") || !strcasecmp(szOption, "dm") || !strcasecmp(szOption, "m"))
+		{
+			m_bHasDupeMode = true;
+			if (!strcasecmp(szValue, "score") || !strcasecmp(szValue, "s"))
 			{
-				if (!strchr("0123456789-+", *szValue))
-				{
-					// error
-					return NULL;
-				}
-				m_bHasAddDupeScore = true;
-				m_iAddDupeScore = atoi(szValue);
+				m_eDupeMode = dmScore;
 			}
-			else if (!strcasecmp(szOption, "dupekey") || !strcasecmp(szOption, "dk") || !strcasecmp(szOption, "k"))
+			else if (!strcasecmp(szValue, "all") || !strcasecmp(szValue, "a"))
 			{
-				m_bHasDupeKey = true;
-				free(m_szDupeKey);
-				m_szDupeKey = strdup(szValue);
-				m_bPatDupeKey = strstr(szValue, "${");
+				m_eDupeMode = dmAll;
 			}
-			else if (!strcasecmp(szOption, "dupekey+") || !strcasecmp(szOption, "dk+") || !strcasecmp(szOption, "k+"))
+			else if (!strcasecmp(szValue, "force") || !strcasecmp(szValue, "f"))
 			{
-				m_bHasAddDupeKey = true;
-				free(m_szAddDupeKey);
-				m_szAddDupeKey = strdup(szValue);
-				m_bPatAddDupeKey = strstr(szValue, "${");
-			}
-			else if (!strcasecmp(szOption, "dupemode") || !strcasecmp(szOption, "dm") || !strcasecmp(szOption, "m"))
-			{
-				m_bHasDupeMode = true;
-				if (!strcasecmp(szValue, "score") || !strcasecmp(szValue, "s"))
-				{
-					m_eDupeMode = dmScore;
-				}
-				else if (!strcasecmp(szValue, "all") || !strcasecmp(szValue, "a"))
-				{
-					m_eDupeMode = dmAll;
-				}
-				else if (!strcasecmp(szValue, "force") || !strcasecmp(szValue, "f"))
-				{
-					m_eDupeMode = dmForce;
-				}
-				else
-				{
-					// error
-					return NULL;
-				}
-			}
-			else if (!strcasecmp(szOption, "rageid"))
-			{
-				m_bHasRageId = true;
-				free(m_szRageId);
-				m_szRageId = strdup(szValue);
-			}
-			else if (!strcasecmp(szOption, "series"))
-			{
-				m_bHasSeries = true;
-				free(m_szSeries);
-				m_szSeries = strdup(szValue);
-			}
-
-			// for compatibility with older version we support old commands too
-			else if (!strcasecmp(szOption, "paused") || !strcasecmp(szOption, "unpaused"))
-			{
-				m_bHasPause = true;
-				m_bPause = !strcasecmp(szOption, "paused");
-			}
-			else if (strchr("0123456789-+", *szOption))
-			{
-				m_bHasPriority = true;
-				m_iPriority = atoi(szOption);
+				m_eDupeMode = dmForce;
 			}
 			else
 			{
-				m_bHasCategory = true;
-				free(m_szCategory);
-				m_szCategory = strdup(szOption);
+				// error
+				return NULL;
 			}
 		}
-		szToken = strtok_r(NULL, ",", &saveptr);
+		else if (!strcasecmp(szOption, "rageid"))
+		{
+			m_bHasRageId = true;
+			free(m_szRageId);
+			m_szRageId = strdup(szValue);
+		}
+		else if (!strcasecmp(szOption, "series"))
+		{
+			m_bHasSeries = true;
+			free(m_szSeries);
+			m_szSeries = strdup(szValue);
+		}
+
+		// for compatibility with older version we support old commands too
+		else if (!strcasecmp(szOption, "paused") || !strcasecmp(szOption, "unpaused"))
+		{
+			m_bHasPause = true;
+			m_bPause = !strcasecmp(szOption, "paused");
+		}
+		else if (strchr("0123456789-+", *szOption))
+		{
+			m_bHasPriority = true;
+			m_iPriority = atoi(szOption);
+		}
+		else
+		{
+			m_bHasCategory = true;
+			free(m_szCategory);
+			m_szCategory = strdup(szOption);
+		}
 	}
 
 	szRule = p + 1;

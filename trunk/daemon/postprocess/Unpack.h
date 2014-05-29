@@ -119,8 +119,6 @@ private:
 
 	bool				Cleanup(const char* szDestDir, bool *bDeleted);
 
-	typedef std::deque<char*>	ExtList;
-
 public:
 	virtual void		Run();
 	static void			StartJob(PostInfo* pPostInfo);

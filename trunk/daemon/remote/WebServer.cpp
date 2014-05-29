@@ -223,20 +223,15 @@ bool WebProcessor::IsAuthorizedIP(const char* szRemoteAddr)
 
 	// split option AuthorizedIP into tokens and check each token
 	bool bAuthorized = false;
-	char* szAuthorizedIP = strdup(g_pOptions->GetAuthorizedIP());
-	char* saveptr;
-	char* szIP = strtok_r(szAuthorizedIP, ",;", &saveptr);
-	while (szIP)
+	Tokenizer tok(g_pOptions->GetAuthorizedIP(), ",;");
+	while (const char* szIP = tok.Next())
 	{
-		szIP = Util::Trim(szIP);
-		if (szIP[0] != '\0' && !strcmp(szIP, szRemoteIP))
+		if (!strcmp(szIP, szRemoteIP))
 		{
 			bAuthorized = true;
 			break;
 		}
-		szIP = strtok_r(NULL, ",;", &saveptr);
 	}
-	free(szAuthorizedIP);
 	
 	return bAuthorized;
 }

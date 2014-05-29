@@ -809,36 +809,11 @@ bool CleanupController::Cleanup(const char* szDestDir, bool *bDeleted)
 	*bDeleted = false;
 	bool bOK = true;
 
-	ExtList extList;
-	
-	// split ExtCleanupDisk into tokens and create a list
-	char* szExtCleanupDisk = strdup(g_pOptions->GetExtCleanupDisk());
-	
-	char* saveptr;
-	char* szExt = strtok_r(szExtCleanupDisk, ",; ", &saveptr);
-	while (szExt)
-	{
-		extList.push_back(szExt);
-		szExt = strtok_r(NULL, ",; ", &saveptr);
-	}
-	
 	DirBrowser dir(szDestDir);
 	while (const char* filename = dir.Next())
 	{
 		// check file extension
-		
-		int iFilenameLen = strlen(filename);
-		bool bDeleteIt = false;
-		for (ExtList::iterator it = extList.begin(); it != extList.end(); it++)
-		{
-			const char* szExt = *it;
-			int iExtLen = strlen(szExt);
-			if (iFilenameLen >= iExtLen && !strcasecmp(szExt, filename + iFilenameLen - iExtLen))
-			{
-				bDeleteIt = true;
-				break;
-			}
-		}
+		bool bDeleteIt = Util::MatchFileExt(filename, g_pOptions->GetExtCleanupDisk(), ",;");
 
 		if (bDeleteIt)
 		{
@@ -857,8 +832,6 @@ bool CleanupController::Cleanup(const char* szDestDir, bool *bDeleted)
 			*bDeleted = true;
 		}
 	}
-
-	free(szExtCleanupDisk);
 
 	return bOK;
 }

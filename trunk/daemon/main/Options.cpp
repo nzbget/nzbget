@@ -2038,19 +2038,11 @@ void Options::InitCategories()
 			// split Aliases into tokens and create items for each token
 			if (naliases)
 			{
-				char* szAliases = strdup(naliases);
-				char* saveptr;
-				char* szAliasName = strtok_r(szAliases, ",;", &saveptr);
-				while (szAliasName)
+				Tokenizer tok(naliases, ",;");
+				while (const char* szAliasName = tok.Next())
 				{
-					szAliasName = Util::Trim(szAliasName);
-					if (szAliasName[0] != '\0')
-					{
-						pCategory->GetAliases()->push_back(strdup(szAliasName));
-					}
-					szAliasName = strtok_r(NULL, ",;", &saveptr);
+					pCategory->GetAliases()->push_back(strdup(szAliasName));
 				}
-				free(szAliases);
 			}
 		}
 		else
@@ -3020,24 +3012,16 @@ void Options::LoadScriptList(ScriptList* pScriptList)
 	tmpScriptList.sort(CompareScripts);
 
 	// first add all scripts from m_szScriptOrder
-	char* szScriptOrder = strdup(m_szScriptOrder);
-	char* saveptr;
-	char* szScriptName = strtok_r(szScriptOrder, ",;", &saveptr);
-	while (szScriptName)
+	Tokenizer tok(m_szScriptOrder, ",;");
+	while (const char* szScriptName = tok.Next())
 	{
-		szScriptName = Util::Trim(szScriptName);
-		if (*szScriptName)
+		Script* pScript = tmpScriptList.Find(szScriptName);
+		if (pScript)
 		{
-			Script* pScript = tmpScriptList.Find(szScriptName);
-			if (pScript)
-			{
-				tmpScriptList.remove(pScript);
-				pScriptList->push_back(pScript);
-			}
+			tmpScriptList.remove(pScript);
+			pScriptList->push_back(pScript);
 		}
-		szScriptName = strtok_r(NULL, ",;", &saveptr);
 	}
-	free(szScriptOrder);
 
 	// second add all other scripts from scripts directory
 	for (ScriptList::iterator it = tmpScriptList.begin(); it != tmpScriptList.end(); it++)
@@ -3082,9 +3066,8 @@ void Options::LoadScriptDir(ScriptList* pScriptList, const char* szDirectory, bo
 					szBuffer[iReadBytes] = 0;
 
 					// split buffer into lines
-					char* saveptr;
-					char* szLine = strtok_r(szBuffer, "\n\r", &saveptr);
-					while (szLine)
+					Tokenizer tok(szBuffer, "\n\r", true);
+					while (char* szLine = tok.Next())
 					{
 						if (!strncmp(szLine, BEGIN_SCRIPT_SIGNATURE, iBeginSignatureLen) &&
 							strstr(szLine, END_SCRIPT_SIGNATURE))
@@ -3125,8 +3108,6 @@ void Options::LoadScriptDir(ScriptList* pScriptList, const char* szDirectory, bo
 								break;
 							}
 						}
-
-						szLine = strtok_r(NULL, "\n\r", &saveptr);
 					}
 				}
 			}

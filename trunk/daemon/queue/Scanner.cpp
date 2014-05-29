@@ -449,22 +449,14 @@ void Scanner::InitPPParameters(const char* szCategory, NZBParameterList* pParame
 	if (szPostScript && *szPostScript)
 	{
 		// split szPostScript into tokens and create pp-parameter for each token
-		char* szPostScript2 = strdup(szPostScript);
-		char* saveptr;
-		char* szScriptName = strtok_r(szPostScript2, ",;", &saveptr);
-		while (szScriptName)
+		Tokenizer tok(szPostScript, ",;");
+		while (const char* szScriptName = tok.Next())
 		{
-			szScriptName = Util::Trim(szScriptName);
-			if (szScriptName[0] != '\0')
-			{
-				char szParam[1024];
-				snprintf(szParam, 1024, "%s:", szScriptName);
-				szParam[1024-1] = '\0';
-				pParameters->SetParameter(szParam, "yes");
-			}
-			szScriptName = strtok_r(NULL, ",;", &saveptr);
+			char szParam[1024];
+			snprintf(szParam, 1024, "%s:", szScriptName);
+			szParam[1024-1] = '\0';
+			pParameters->SetParameter(szParam, "yes");
 		}
-		free(szPostScript2);
 	}
 }
 
