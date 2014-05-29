@@ -114,20 +114,15 @@ void NZBScriptController::ExecuteScriptList(const char* szScriptList)
 		if (szScriptList && *szScriptList)
 		{
 			// split szScriptList into tokens
-			char* szScriptList2 = strdup(szScriptList);
-			char* saveptr;
-			char* szScriptName = strtok_r(szScriptList2, ",;", &saveptr);
-			while (szScriptName)
+			Tokenizer tok(szScriptList, ",;");
+			while (const char* szScriptName = tok.Next())
 			{
-				szScriptName = Util::Trim(szScriptName);
-				if (*szScriptName && Util::SameFilename(szScriptName, pScript->GetName()))
+				if (Util::SameFilename(szScriptName, pScript->GetName()))
 				{
 					ExecuteScript(pScript);
 					break;
 				}
-				szScriptName = strtok_r(NULL, ",;", &saveptr);
 			}
-			free(szScriptList2);
 		}
 	}
 }

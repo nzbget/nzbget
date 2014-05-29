@@ -72,7 +72,7 @@ public:
 	const char*			GetBuffer() { return m_szBuffer; }
 };
 
-class Util 
+class Util
 {
 public:
 
@@ -105,6 +105,7 @@ public:
 	static void ExpandFileName(const char* szFilename, char* szBuffer, int iBufSize);
 	static void FormatFileSize(char* szBuffer, int iBufLen, long long lFileSize);
 	static bool SameFilename(const char* szFilename1, const char* szFilename2);
+	static bool MatchFileExt(const char* szFilename, const char* szExtensionList, const char* szListSeparator);
 	static char* GetLastErrorMessage(char* szBuffer, int iBufLen);
 
 	/*
@@ -349,5 +350,22 @@ public:
 	EStatus				Read(const void **pOutputBuffer, int *iOutputBufferLength);
 };
 #endif
+
+class Tokenizer
+{
+private:
+	char				m_szDefaultBuf[2014];
+	char*				m_szDataString;
+	bool				m_bInplaceBuf;
+	const char*			m_szSeparators;
+	char*				m_szSavePtr;
+	bool				m_bWorking;
+
+public:
+						Tokenizer(const char* szDataString, const char* szSeparators);
+						Tokenizer(char* szDataString, const char* szSeparators, bool bInplaceBuf);
+						~Tokenizer();
+	char*				Next();
+};
 
 #endif

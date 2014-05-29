@@ -35,7 +35,6 @@ class NZBFile
 {
 public:
 	typedef std::list<FileInfo*>	TempFileList;
-	typedef std::list<char*>		ExtList;
 
 private:
 	NZBInfo*			m_pNZBInfo;

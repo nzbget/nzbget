@@ -317,69 +317,53 @@ void Scheduler::PrintLog()
 
 void Scheduler::EditServer(bool bActive, const char* szServerList)
 {
-	char* szServerList2 = strdup(szServerList);
-	char* saveptr;
-	char* szServer = strtok_r(szServerList2, ",;", &saveptr);
-	while (szServer)
+	Tokenizer tok(szServerList, ",;");
+	while (const char* szServer = tok.Next())
 	{
-		szServer = Util::Trim(szServer);
-		if (!Util::EmptyStr(szServer))
+		int iID = atoi(szServer);
+		for (Servers::iterator it = g_pServerPool->GetServers()->begin(); it != g_pServerPool->GetServers()->end(); it++)
 		{
-			int iID = atoi(szServer);
-			for (Servers::iterator it = g_pServerPool->GetServers()->begin(); it != g_pServerPool->GetServers()->end(); it++)
+			NewsServer* pServer = *it;
+			if ((iID > 0 && pServer->GetID() == iID) ||
+				!strcasecmp(pServer->GetName(), szServer))
 			{
-				NewsServer* pServer = *it;
-				if ((iID > 0 && pServer->GetID() == iID) ||
-					!strcasecmp(pServer->GetName(), szServer))
+				if (!m_bServerChanged)
 				{
-					if (!m_bServerChanged)
+					// store old server status for logging
+					m_ServerStatusList.clear();
+					m_ServerStatusList.reserve(g_pServerPool->GetServers()->size());
+					for (Servers::iterator it2 = g_pServerPool->GetServers()->begin(); it2 != g_pServerPool->GetServers()->end(); it2++)
 					{
-						// store old server status for logging
-						m_ServerStatusList.clear();
-						m_ServerStatusList.reserve(g_pServerPool->GetServers()->size());
-						for (Servers::iterator it2 = g_pServerPool->GetServers()->begin(); it2 != g_pServerPool->GetServers()->end(); it2++)
-						{
-							NewsServer* pServer2 = *it2;
-							m_ServerStatusList.push_back(pServer2->GetActive());
-						}
+						NewsServer* pServer2 = *it2;
+						m_ServerStatusList.push_back(pServer2->GetActive());
 					}
-					m_bServerChanged = true;
-					pServer->SetActive(bActive);
-					break;
 				}
+				m_bServerChanged = true;
+				pServer->SetActive(bActive);
+				break;
 			}
 		}
-		szServer = strtok_r(NULL, ",;", &saveptr);
 	}
-	free(szServerList2);
 }
 
 void Scheduler::FetchFeed(const char* szFeedList)
 {
-	char* szFeedList2 = strdup(szFeedList);
-	char* saveptr;
-	char* szFeed = strtok_r(szFeedList2, ",;", &saveptr);
-	while (szFeed)
+	Tokenizer tok(szFeedList, ",;");
+	while (const char* szFeed = tok.Next())
 	{
-		szFeed = Util::Trim(szFeed);
-		if (!Util::EmptyStr(szFeed))
+		int iID = atoi(szFeed);
+		for (Feeds::iterator it = g_pFeedCoordinator->GetFeeds()->begin(); it != g_pFeedCoordinator->GetFeeds()->end(); it++)
 		{
-			int iID = atoi(szFeed);
-			for (Feeds::iterator it = g_pFeedCoordinator->GetFeeds()->begin(); it != g_pFeedCoordinator->GetFeeds()->end(); it++)
+			FeedInfo* pFeed = *it;
+			if (pFeed->GetID() == iID ||
+				!strcasecmp(pFeed->GetName(), szFeed) ||
+				!strcasecmp("0", szFeed))
 			{
-				FeedInfo* pFeed = *it;
-				if (pFeed->GetID() == iID ||
-					!strcasecmp(pFeed->GetName(), szFeed) ||
-					!strcasecmp("0", szFeed))
-				{
-					g_pFeedCoordinator->FetchFeed(pFeed->GetID());
-					break;
-				}
+				g_pFeedCoordinator->FetchFeed(pFeed->GetID());
+				break;
 			}
 		}
-		szFeed = strtok_r(NULL, ",;", &saveptr);
 	}
-	free(szFeedList2);
 }
 
 void Scheduler::CheckScheduledResume()
