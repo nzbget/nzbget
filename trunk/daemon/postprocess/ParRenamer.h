@@ -47,12 +47,15 @@ public:
 	private:
 		char*			m_szFilename;
 		char*			m_szHash;
+		bool			m_bFileExists;
 
 	public:
 						FileHash(const char* szFilename, const char* szHash);
 						~FileHash();
 		const char*		GetFilename() { return m_szFilename; }
 		const char*		GetHash() { return m_szHash; }
+		bool			GetFileExists() { return m_bFileExists; }
+		void			SetFileExists(bool bFileExists) { m_bFileExists = bFileExists; }
 	};
 
 	typedef std::deque<FileHash*>		FileHashList;
@@ -71,9 +74,8 @@ private:
 	int					m_iFileCount;
 	int					m_iCurFile;
 	int					m_iRenamedCount;
-	int					m_iMissedCount;
-	int					m_iFoundCount;
 	bool				m_bHasSplittedFragments;
+	bool				m_bHasMissedFiles;
 
 	void				Cleanup();
 	void				ClearHashList();
@@ -85,6 +87,7 @@ private:
 	void				CheckRegularFile(const char* szDestDir, const char* szFilename);
 	void				CheckParFile(const char* szDestDir, const char* szFilename);
 	bool				IsSplittedFragment(const char* szFilename, const char* szCorrectName);
+	void				CheckMissing();
 
 protected:
 	virtual void		UpdateProgress() {}
@@ -106,7 +109,7 @@ public:
 	void				Cancel();
 	bool				GetCancelled() { return m_bCancelled; }
 	bool				HasSplittedFragments() { return m_bHasSplittedFragments; }
-	bool				HasMissedFiles() { return m_iMissedCount > 0; }
+	bool				HasMissedFiles() { return m_bHasMissedFiles; }
 };
 
 #endif
