@@ -248,6 +248,12 @@ void PostScriptController::AddMessage(Message::EKind eKind, const char* szText)
 			m_pPostInfo->GetNZBInfo()->SetFinalDir(szMsgText + 6 + 9);
 			DownloadQueue::Unlock();
 		}
+		else if (!strncmp(szMsgText + 6, "DIRECTORY=", 10))
+		{
+			DownloadQueue::Lock();
+			m_pPostInfo->GetNZBInfo()->SetDestDir(szMsgText + 6 + 10);
+			DownloadQueue::Unlock();
+		}
 		else if (!strncmp(szMsgText + 6, "NZBPR_", 6))
 		{
 			char* szParam = strdup(szMsgText + 6 + 6);
