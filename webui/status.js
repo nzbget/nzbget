@@ -406,7 +406,7 @@ var StatDialog = (new function($)
 	var mouseOverIndex = -1;
 	var clockOK = false;
 
-	var monthNames = ['January', 'February', 'March', 'April', 'May', 'Juny', 'July', 'August', 'September', 'October', 'November', 'December'];
+	var monthNames = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
 
 	this.init = function()
 	{
