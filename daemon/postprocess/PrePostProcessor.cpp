@@ -253,7 +253,9 @@ void PrePostProcessor::NZBDownloaded(DownloadQueue* pDownloadQueue, NZBInfo* pNZ
 		pNZBInfo->EnterPostProcess();
 		m_iJobCount++;
 
-		if (pNZBInfo->GetParStatus() == NZBInfo::psNone && g_pOptions->GetParCheck() != Options::pcForce)
+		if (pNZBInfo->GetParStatus() == NZBInfo::psNone &&
+			g_pOptions->GetParCheck() != Options::pcAlways &&
+			g_pOptions->GetParCheck() != Options::pcForce)
 		{
 			pNZBInfo->SetParStatus(NZBInfo::psSkipped);
 		}
