@@ -1005,9 +1005,9 @@ void Options::InitOptions()
 	const int OutputModeCount = 7;
 	m_eOutputMode = (EOutputMode)ParseEnumValue(OPTION_OUTPUTMODE, OutputModeCount, OutputModeNames, OutputModeValues);
 
-	const char* ParCheckNames[] = { "auto", "force", "manual", "yes", "no" }; // yes/no for compatibility with older versions
-	const int ParCheckValues[] = { pcAuto, pcForce, pcManual, pcForce, pcAuto };
-	const int ParCheckCount = 5;
+	const char* ParCheckNames[] = { "auto", "always", "force", "manual", "yes", "no" }; // yes/no for compatibility with older versions
+	const int ParCheckValues[] = { pcAuto, pcAlways, pcForce, pcManual, pcAlways, pcAuto };
+	const int ParCheckCount = 6;
 	m_eParCheck = (EParCheck)ParseEnumValue(OPTION_PARCHECK, ParCheckCount, ParCheckNames, ParCheckValues);
 
 	const char* ParScanNames[] = { "limited", "full", "auto" };
@@ -2623,7 +2623,7 @@ void Options::ConvertOldOption(char *szOption, int iOptionBufLen, char *szValue,
 
 	if (!strcasecmp(szOption, "ParCheck") && !strcasecmp(szValue, "yes"))
 	{
-		strncpy(szValue, "force", iValueBufLen);
+		strncpy(szValue, "always", iValueBufLen);
 	}
 
 	if (!strcasecmp(szOption, "ParCheck") && !strcasecmp(szValue, "no"))

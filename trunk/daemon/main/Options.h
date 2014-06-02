@@ -80,6 +80,7 @@ public:
 	enum EParCheck
 	{
 		pcAuto,
+		pcAlways,
 		pcForce,
 		pcManual
 	};
