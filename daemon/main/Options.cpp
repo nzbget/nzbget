@@ -176,6 +176,7 @@ static const char* OPTION_UNPACKPAUSEQUEUE		= "UnpackPauseQueue";
 static const char* OPTION_SCRIPTORDER			= "ScriptOrder";
 static const char* OPTION_POSTSCRIPT			= "PostScript";
 static const char* OPTION_EXTCLEANUPDISK		= "ExtCleanupDisk";
+static const char* OPTION_PARIGNOREEXT			= "ParIgnoreExt";
 static const char* OPTION_FEEDHISTORY			= "FeedHistory";
 static const char* OPTION_URLFORCE				= "UrlForce";
 static const char* OPTION_TIMECORRECTION		= "TimeCorrection";
@@ -536,6 +537,7 @@ Options::Options(int argc, char* argv[])
 	m_szSevenZipCmd			= NULL;
 	m_bUnpackPauseQueue		= false;
 	m_szExtCleanupDisk		= NULL;
+	m_szParIgnoreExt		= NULL;
 	m_iFeedHistory			= 0;
 	m_bUrlForce				= false;
 	m_iTimeCorrection		= 0;
@@ -652,6 +654,7 @@ Options::~Options()
 	free(m_szUnrarCmd);
 	free(m_szSevenZipCmd);
 	free(m_szExtCleanupDisk);
+	free(m_szParIgnoreExt);
 
 	for (NameList::iterator it = m_EditQueueNameList.begin(); it != m_EditQueueNameList.end(); it++)
 	{
@@ -801,6 +804,7 @@ void Options::InitDefault()
 #endif
 	SetOption(OPTION_UNPACKPAUSEQUEUE, "no");
 	SetOption(OPTION_EXTCLEANUPDISK, "");
+	SetOption(OPTION_PARIGNOREEXT, "");
 	SetOption(OPTION_FEEDHISTORY, "7");
 	SetOption(OPTION_URLFORCE, "yes");
 	SetOption(OPTION_TIMECORRECTION, "0");
@@ -942,6 +946,7 @@ void Options::InitOptions()
 	m_szUnrarCmd			= strdup(GetOption(OPTION_UNRARCMD));
 	m_szSevenZipCmd			= strdup(GetOption(OPTION_SEVENZIPCMD));
 	m_szExtCleanupDisk		= strdup(GetOption(OPTION_EXTCLEANUPDISK));
+	m_szParIgnoreExt		= strdup(GetOption(OPTION_PARIGNOREEXT));
 
 	m_iDownloadRate			= (int)(ParseFloatValue(OPTION_DOWNLOADRATE) * 1024);
 	m_iConnectionTimeout	= ParseIntValue(OPTION_CONNECTIONTIMEOUT, 10);
