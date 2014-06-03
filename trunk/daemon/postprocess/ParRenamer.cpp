@@ -312,7 +312,8 @@ void ParRenamer::CheckMissing()
 		FileHash* pFileHash = *it;
 		if (!pFileHash->GetFileExists())
 		{
-			if (Util::MatchFileExt(pFileHash->GetFilename(), g_pOptions->GetExtCleanupDisk(), ",;"))
+			if (Util::MatchFileExt(pFileHash->GetFilename(), g_pOptions->GetParIgnoreExt(), ",;") ||
+				Util::MatchFileExt(pFileHash->GetFilename(), g_pOptions->GetExtCleanupDisk(), ",;"))
 			{
 				info("File %s is missing, ignoring", pFileHash->GetFilename());
 			}

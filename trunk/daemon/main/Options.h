@@ -2,7 +2,7 @@
  *  This file is part of nzbget
  *
  *  Copyright (C) 2004 Sven Henkel <sidddy@users.sourceforge.net>
- *  Copyright (C) 2007-2013 Andrey Prygunkov <hugbug@users.sourceforge.net>
+ *  Copyright (C) 2007-2014 Andrey Prygunkov <hugbug@users.sourceforge.net>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -314,6 +314,7 @@ private:
 	char*				m_szSevenZipCmd;
 	bool				m_bUnpackPauseQueue;
 	char*				m_szExtCleanupDisk;
+	char*				m_szParIgnoreExt;
 	int					m_iFeedHistory;
 	bool				m_bUrlForce;
 	int					m_iTimeCorrection;
@@ -478,6 +479,7 @@ public:
 	const char*			GetSevenZipCmd() { return m_szSevenZipCmd; }
 	bool				GetUnpackPauseQueue() { return m_bUnpackPauseQueue; }
 	const char*			GetExtCleanupDisk() { return m_szExtCleanupDisk; }
+	const char*			GetParIgnoreExt() { return m_szParIgnoreExt; }
 	int					GetFeedHistory() { return m_iFeedHistory; }
 	bool				GetUrlForce() { return m_bUrlForce; }
 	int					GetTimeCorrection() { return m_iTimeCorrection; }
