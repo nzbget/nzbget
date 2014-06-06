@@ -88,6 +88,7 @@ ParRenamer::ParRenamer()
 	m_bCancelled = false;
 	m_bHasSplittedFragments = false;
 	m_bHasMissedFiles = false;
+	m_bDetectMissing = false;
 }
 
 ParRenamer::~ParRenamer()
@@ -172,7 +173,11 @@ void ParRenamer::Run()
 		}
 
 		CheckFiles(szDestDir, false);
-		CheckMissing();
+
+		if (m_bDetectMissing)
+		{
+			CheckMissing();
+		}
 	}
 
 	if (m_bCancelled)

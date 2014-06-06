@@ -76,6 +76,7 @@ private:
 	int					m_iRenamedCount;
 	bool				m_bHasSplittedFragments;
 	bool				m_bHasMissedFiles;
+	bool				m_bDetectMissing;
 
 	void				Cleanup();
 	void				ClearHashList();
@@ -110,6 +111,7 @@ public:
 	bool				GetCancelled() { return m_bCancelled; }
 	bool				HasSplittedFragments() { return m_bHasSplittedFragments; }
 	bool				HasMissedFiles() { return m_bHasMissedFiles; }
+	void				SetDetectMissing(bool bDetectMissing) { m_bDetectMissing = bDetectMissing; }
 };
 
 #endif

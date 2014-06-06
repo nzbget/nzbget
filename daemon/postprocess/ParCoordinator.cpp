@@ -304,6 +304,7 @@ void ParCoordinator::StartParRenameJob(PostInfo* pPostInfo)
 	m_ParRenamer.SetPostInfo(pPostInfo);
 	m_ParRenamer.SetDestDir(szDestDir);
 	m_ParRenamer.SetInfoName(pPostInfo->GetNZBInfo()->GetName());
+	m_ParRenamer.SetDetectMissing(pPostInfo->GetNZBInfo()->GetUnpackStatus() == NZBInfo::usNone);
 	m_ParRenamer.PrintMessage(Message::mkInfo, "Checking renamed files for %s", pPostInfo->GetNZBInfo()->GetName());
 	pPostInfo->SetWorking(true);
 	m_ParRenamer.Start();
