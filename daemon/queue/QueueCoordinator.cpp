@@ -240,6 +240,8 @@ void QueueCoordinator::Run()
 			g_pStatMeter->AddSpeedReading(0);
 		}
 
+		Util::SetStandByMode(bStandBy);
+
 		iResetCounter += iSleepInterval;
 		if (iResetCounter >= 1000)
 		{

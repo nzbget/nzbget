@@ -139,6 +139,8 @@ void PrePostProcessor::Run()
 		}
 		iHistoryInterval += iStepMSec;
 
+		Util::SetStandByMode(!m_pCurJob);
+
 		usleep(iStepMSec * 1000);
 	}
 
