@@ -1248,6 +1248,14 @@ inline time_t internal_timegm(tm const *t)
   return result;
 }
 
+// prevent PC from going to sleep
+void Util::SetStandByMode(bool bStandBy)
+{
+#ifdef WIN32
+	SetThreadExecutionState((bStandBy ? 0 : ES_SYSTEM_REQUIRED) | ES_CONTINUOUS);
+#endif
+}
+
 time_t Util::Timegm(tm const *t)
 {
 	return internal_timegm(t);

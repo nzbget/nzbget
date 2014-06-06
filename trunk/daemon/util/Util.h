@@ -146,6 +146,8 @@ public:
 	static bool RegReadStr(HKEY hKey, const char* szKeyName, const char* szValueName, char* szBuffer, int* iBufLen);
 #endif
 
+	static void SetStandByMode(bool bStandBy);
+
 	/* cross platform version of GNU timegm, which is similar to mktime but takes an UTC time as parameter */
 	static time_t Timegm(tm const *t);
 
