@@ -45,8 +45,8 @@ class DirBrowser
 {
 private:
 #ifdef WIN32
-	struct _finddata_t	m_FindData;
-	intptr_t			m_hFile;
+	WIN32_FIND_DATA		m_FindData;
+	HANDLE				m_hFile;
 	bool				m_bFirst;
 #else
 	DIR*				m_pDir;
