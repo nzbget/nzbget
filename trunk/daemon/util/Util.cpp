@@ -144,15 +144,15 @@ DirBrowser::DirBrowser(const char* szPath)
 	char szMask[MAX_PATH + 1];
 	snprintf(szMask, MAX_PATH + 1, "%s%c*.*", szPath, (int)PATH_SEPARATOR);
 	szMask[MAX_PATH] = '\0';
-	m_hFile = _findfirst(szMask, &m_FindData);
+	m_hFile = FindFirstFile(szMask, &m_FindData);
 	m_bFirst = true;
 }
 
 DirBrowser::~DirBrowser()
 {
-	if (m_hFile != -1L)
+	if (m_hFile != INVALID_HANDLE_VALUE)
 	{
-		_findclose(m_hFile);
+		FindClose(m_hFile);
 	}
 }
 
@@ -161,16 +161,16 @@ const char* DirBrowser::Next()
 	bool bOK = false;
 	if (m_bFirst)
 	{
-		bOK = m_hFile != -1L;
+		bOK = m_hFile != INVALID_HANDLE_VALUE;
 		m_bFirst = false;
 	}
 	else
 	{
-		bOK = _findnext(m_hFile, &m_FindData) == 0;
+		bOK = FindNextFile(m_hFile, &m_FindData) != 0;
 	}
 	if (bOK)
 	{
-		return m_FindData.name;
+		return m_FindData.cFileName;
 	}
 	return NULL;
 }
@@ -692,9 +692,22 @@ bool Util::MoveFile(const char* szSrcFilename, const char* szDstFilename)
 
 bool Util::FileExists(const char* szFilename)
 {
+#ifdef WIN32
+	// we use a native windows call because c-lib function "stat" fails on windows if file date is invalid
+	WIN32_FIND_DATA findData;
+	HANDLE handle = FindFirstFile(szFilename, &findData);
+	if (handle != INVALID_HANDLE_VALUE)
+	{
+		bool bExists = findData.dwFileAttributes != FILE_ATTRIBUTE_DIRECTORY;
+		FindClose(handle);
+		return bExists;
+	}
+	return false;
+#else
 	struct stat buffer;
 	bool bExists = !stat(szFilename, &buffer) && S_ISREG(buffer.st_mode);
 	return bExists;
+#endif
 }
 
 bool Util::FileExists(const char* szPath, const char* szFilenameWithoutPath)
@@ -708,9 +721,22 @@ bool Util::FileExists(const char* szPath, const char* szFilenameWithoutPath)
 
 bool Util::DirectoryExists(const char* szDirFilename)
 {
+#ifdef WIN32
+	// we use a native windows call because c-lib function "stat" fails on windows if file date is invalid
+	WIN32_FIND_DATA findData;
+	HANDLE handle = FindFirstFile(szDirFilename, &findData);
+	if (handle != INVALID_HANDLE_VALUE)
+	{
+		bool bExists = findData.dwFileAttributes == FILE_ATTRIBUTE_DIRECTORY;
+		FindClose(handle);
+		return bExists;
+	}
+	return false;
+#else
 	struct stat buffer;
 	bool bExists = !stat(szDirFilename, &buffer) && S_ISDIR(buffer.st_mode);
 	return bExists;
+#endif
 }
 
 bool Util::CreateDirectory(const char* szDirFilename)

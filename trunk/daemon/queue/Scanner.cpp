@@ -202,31 +202,28 @@ void Scanner::CheckIncomingNZBs(const char* szDirectory, const char* szCategory,
 	DirBrowser dir(szDirectory);
 	while (const char* filename = dir.Next())
 	{
-		struct stat buffer;
 		char fullfilename[1023 + 1]; // one char reserved for the trailing slash (if needed)
 		snprintf(fullfilename, 1023, "%s%s", szDirectory, filename);
 		fullfilename[1023 - 1] = '\0';
-		if (!stat(fullfilename, &buffer))
+		bool bIsDirectory = Util::DirectoryExists(fullfilename);
+		// check subfolders
+		if (bIsDirectory && strcmp(filename, ".") && strcmp(filename, ".."))
 		{
-			// check subfolders
-			if ((buffer.st_mode & S_IFDIR) != 0 && strcmp(filename, ".") && strcmp(filename, ".."))
+			fullfilename[strlen(fullfilename) + 1] = '\0';
+			fullfilename[strlen(fullfilename)] = PATH_SEPARATOR;
+			const char* szUseCategory = filename;
+			char szSubCategory[1024];
+			if (strlen(szCategory) > 0)
 			{
-				fullfilename[strlen(fullfilename) + 1] = '\0';
-				fullfilename[strlen(fullfilename)] = PATH_SEPARATOR;
-				const char* szUseCategory = filename;
-				char szSubCategory[1024];
-				if (strlen(szCategory) > 0)
-				{
-					snprintf(szSubCategory, 1023, "%s%c%s", szCategory, PATH_SEPARATOR, filename);
-					szSubCategory[1024 - 1] = '\0';
-					szUseCategory = szSubCategory;
-				}
-				CheckIncomingNZBs(fullfilename, szUseCategory, bCheckStat);
+				snprintf(szSubCategory, 1023, "%s%c%s", szCategory, PATH_SEPARATOR, filename);
+				szSubCategory[1024 - 1] = '\0';
+				szUseCategory = szSubCategory;
 			}
-			else if ((buffer.st_mode & S_IFDIR) == 0 && CanProcessFile(fullfilename, bCheckStat))
-			{
-				ProcessIncomingFile(szDirectory, filename, fullfilename, szCategory);
-			}
+			CheckIncomingNZBs(fullfilename, szUseCategory, bCheckStat);
+		}
+		else if (!bIsDirectory && CanProcessFile(fullfilename, bCheckStat))
+		{
+			ProcessIncomingFile(szDirectory, filename, fullfilename, szCategory);
 		}
 	}
 }
