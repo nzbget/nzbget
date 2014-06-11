@@ -497,7 +497,7 @@ bool Util::TruncateFile(const char* szFilename, int iSize)
 //replace bad chars in filename
 void Util::MakeValidFilename(char* szFilename, char cReplaceChar, bool bAllowSlashes)
 {
-	const char* szReplaceChars = bAllowSlashes ? ":*?\"><'\n\r\t" : "\\/:*?\"><'\n\r\t";
+	const char* szReplaceChars = bAllowSlashes ? ":*?\"><\n\r\t" : "\\/:*?\"><\n\r\t";
 	char* p = szFilename;
 	while (*p)
 	{
