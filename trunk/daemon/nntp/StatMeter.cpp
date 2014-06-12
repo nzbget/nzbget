@@ -222,6 +222,7 @@ StatMeter::StatMeter()
 	m_bStandBy = true;
 	m_tStartServer = 0;
 	m_tLastCheck = 0;
+	m_tLastTimeOffset = 0;
 	m_bStatChanged = false;
 
 	g_pLog->RegisterDebuggable(this);
@@ -266,6 +267,7 @@ void StatMeter::AdjustTimeOffset()
 	time_t tLocTime = mktime(&tmSplittedTime);
 	time_t tLocalTimeDelta = tUtcTime - tLocTime;
 	g_pOptions->SetLocalTimeOffset((int)tLocalTimeDelta + g_pOptions->GetTimeCorrection());
+	m_tLastTimeOffset = tUtcTime;
 
 	debug("UTC delta: %i (%i+%i)", g_pOptions->GetLocalTimeOffset(), (int)tLocalTimeDelta, g_pOptions->GetTimeCorrection());
 }
@@ -287,7 +289,17 @@ void StatMeter::IntervalCheck()
 			m_tStartDownload += tDiff + 1;
 		}
 		AdjustTimeOffset();
-	}		
+	}
+	else if (m_tLastTimeOffset > m_tCurTime ||
+		m_tCurTime - m_tLastTimeOffset > 60 * 60 * 3 ||
+		(m_tCurTime - m_tLastTimeOffset > 60 && !m_bStandBy))
+	{
+		// checking time zone settings may prevent the device from entering sleep/hibernate mode
+		// check every minute if not in standby
+		// check at least every 3 hours even in standby
+		AdjustTimeOffset();
+	}
+
 	m_tLastCheck = m_tCurTime;
 
 	if (m_bStatChanged)
