@@ -54,6 +54,7 @@ var DownloadsEditDialog = (new function($)
 	var files;
 	var refreshTimer = 0;
 	var showing;
+	var oldCategory;
 
 	this.init = function()
 	{
@@ -67,6 +68,7 @@ var DownloadsEditDialog = (new function($)
 		$('#DownloadsEdit_CancelPP').click(itemCancelPP);
 		$('#DownloadsEdit_Param, #DownloadsEdit_Log, #DownloadsEdit_File, #DownloadsEdit_Dupe').click(tabClick);
 		$('#DownloadsEdit_Back').click(backClick);
+		$('#DownloadsEdit_Category').change(categoryChange);
 
 		$DownloadsLogTable = $('#DownloadsEdit_LogTable');
 		$DownloadsLogTable.fasttable(
@@ -206,7 +208,7 @@ var DownloadsEditDialog = (new function($)
 		v.attr('disabled', 'disabled');
 
 		// Category
-		var v = $('#DownloadsEdit_Category');
+		v = $('#DownloadsEdit_Category');
 		DownloadsUI.fillCategoryCombo(v);
 		v.val(group.Category);
 		if (v.val() != group.Category)
@@ -291,6 +293,7 @@ var DownloadsEditDialog = (new function($)
 		files = null;
 		logFilled = false;
 		notification = null;
+		oldCategory = curGroup.Category;
 
 		if (area === 'backup')
 		{
@@ -506,6 +509,13 @@ var DownloadsEditDialog = (new function($)
 		}
 	}
 
+	function categoryChange()
+	{
+		var category = $('#DownloadsEdit_Category').val();
+		ParamTab.reassignParams(postParams, oldCategory, category);
+		oldCategory = category;
+	}
+	
 	/*** TAB: POST-PROCESSING PARAMETERS **************************************************/
 
 	function saveParam()
@@ -1088,6 +1098,65 @@ var ParamTab = (new function($)
 		}
 		return request;
 	}
+
+	function buildCategoryScriptList(category)
+	{
+		var scriptList = [];
+
+		for (var i=0; i < Options.categories.length; i++)
+		{
+			if (category === Options.categories[i])
+			{
+				scriptList = Util.parseCommaList(Options.option('Category' + (i + 1) + '.PostScript'));
+				if (scriptList.length === 0)
+				{
+					scriptList = Util.parseCommaList(Options.option('PostScript'));
+				}
+				if (Options.option('Category' + (i + 1) + '.Unpack') === 'yes')
+				{
+					scriptList.push('*Unpack');
+				}
+				return scriptList;
+			}
+		}
+		
+		// empty category or category not found
+		scriptList = Util.parseCommaList(Options.option('PostScript'));
+		if (Options.option('Unpack') === 'yes')
+		{
+			scriptList.push('*Unpack');
+		}
+		return scriptList;
+	}
+	
+	this.reassignParams = function(postParams, oldCategory, newCategory)
+	{
+		var oldScriptList = buildCategoryScriptList(oldCategory);
+		var newScriptList = buildCategoryScriptList(newCategory);
+
+		for (var i=0; i < postParams.length; i++)
+		{
+			var section = postParams[i];
+			for (var j=0; j < section.options.length; j++)
+			{
+				var option = section.options[j];
+				if (!option.template && !section.hidden && option.name.substr(option.name.length - 1, 1) === ':')
+				{
+					console.log(option.name);
+					var scriptName = option.name.substr(0, option.name.length-1);
+					if (oldScriptList.indexOf(scriptName) > -1 && newScriptList.indexOf(scriptName) === -1)
+					{
+						Config.setOptionValue(option, 'no');
+					}
+					else if (oldScriptList.indexOf(scriptName) === -1 && newScriptList.indexOf(scriptName) > -1)
+					{
+						Config.setOptionValue(option, 'yes');
+					}
+				}
+			}
+		}
+	}
+
 }(jQuery));
 
 
@@ -1269,7 +1338,7 @@ var DownloadsMultiDialog = (new function($)
 	{
 		var category = $('#DownloadsMulti_Category').val();
 		(category !== oldCategory && category !== '<multiple values>') ?
-			RPC.call('editqueue', ['GroupSetCategory', 0, category, multiIDList], function()
+			RPC.call('editqueue', ['GroupApplyCategory', 0, category, multiIDList], function()
 			{
 				notification = '#Notif_Downloads_Saved';
 				completed();

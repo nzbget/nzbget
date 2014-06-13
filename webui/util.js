@@ -270,7 +270,22 @@ var Util = (new function($)
 			$elem.css({ top: '' });
 		}
 	}
-	
+
+	this.parseCommaList = function(commaList)
+	{
+		var valueList = commaList.split(/[,;]+/);
+		for (var i=0; i < valueList.length; i++)
+		{
+			valueList[i] = valueList[i].trim();
+			if (valueList[i] === '')
+			{
+				valueList.splice(i, 1);
+				i--;
+			}
+		}
+		return valueList;
+	}
+
 }(jQuery));
 
 
