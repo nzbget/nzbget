@@ -56,7 +56,7 @@ private:
 	void					PauseParsInGroups(ItemList* pItemList, bool bExtraParsOnly);
 	void					PausePars(FileList* pFileList, bool bExtraParsOnly);
 	void					SetNZBPriority(NZBInfo* pNZBInfo, const char* szPriority);
-	void					SetNZBCategory(NZBInfo* pNZBInfo, const char* szCategory);
+	void					SetNZBCategory(NZBInfo* pNZBInfo, const char* szCategory, bool bApplyParams);
 	void					SetNZBName(NZBInfo* pNZBInfo, const char* szName);
 	bool					CanCleanupDisk(NZBInfo* pNZBInfo);
 	bool					MergeGroups(ItemList* pItemList);

@@ -289,7 +289,8 @@ bool QueueEditor::InternEditList(ItemList* pItemList,
 						break;
 
 					case DownloadQueue::eaGroupSetCategory:
-						SetNZBCategory(pItem->m_pNZBInfo, szText);
+					case DownloadQueue::eaGroupApplyCategory:
+						SetNZBCategory(pItem->m_pNZBInfo, szText, eAction == DownloadQueue::eaGroupApplyCategory);
 						break;
 
 					case DownloadQueue::eaGroupSetName:
@@ -796,11 +797,94 @@ void QueueEditor::SetNZBPriority(NZBInfo* pNZBInfo, const char* szPriority)
 	pNZBInfo->SetPriority(iPriority);
 }
 
-void QueueEditor::SetNZBCategory(NZBInfo* pNZBInfo, const char* szCategory)
+void QueueEditor::SetNZBCategory(NZBInfo* pNZBInfo, const char* szCategory, bool bApplyParams)
 {
 	debug("QueueEditor: setting category '%s' for '%s'", szCategory, pNZBInfo->GetName());
 
+	bool bOldUnpack = g_pOptions->GetUnpack();
+	const char* szOldPostScript = g_pOptions->GetPostScript();
+	if (bApplyParams && !Util::EmptyStr(pNZBInfo->GetCategory()))
+	{
+		Options::Category* pCategory = g_pOptions->FindCategory(pNZBInfo->GetCategory(), false);
+		if (pCategory)
+		{
+			bOldUnpack = pCategory->GetUnpack();
+			if (!Util::EmptyStr(pCategory->GetPostScript()))
+			{
+				szOldPostScript = pCategory->GetPostScript();
+			}
+		}
+	}
+
 	g_pQueueCoordinator->SetQueueEntryCategory(m_pDownloadQueue, pNZBInfo, szCategory);
+
+	if (!bApplyParams)
+	{
+		return;
+	}
+
+	bool bNewUnpack = g_pOptions->GetUnpack();
+	const char* szNewPostScript = g_pOptions->GetPostScript();
+	if (!Util::EmptyStr(pNZBInfo->GetCategory()))
+	{
+		Options::Category* pCategory = g_pOptions->FindCategory(pNZBInfo->GetCategory(), false);
+		if (pCategory)
+		{
+			bNewUnpack = pCategory->GetUnpack();
+			if (!Util::EmptyStr(pCategory->GetPostScript()))
+			{
+				szNewPostScript = pCategory->GetPostScript();
+			}
+		}
+	}
+
+	if (bOldUnpack != bNewUnpack)
+	{
+		pNZBInfo->GetParameters()->SetParameter("*Unpack:", bNewUnpack ? "yes" : "no");
+	}
+	
+	if (strcasecmp(szOldPostScript, szNewPostScript))
+	{
+		// add new params not existed in old category
+		Tokenizer tokNew(szNewPostScript, ",;");
+		while (const char* szNewScriptName = tokNew.Next())
+		{
+			bool bFound = false;
+			const char* szOldScriptName;
+			Tokenizer tokOld(szOldPostScript, ",;");
+			while ((szOldScriptName = tokOld.Next()) && !bFound)
+			{
+				bFound = !strcasecmp(szNewScriptName, szOldScriptName);
+			}
+			if (!bFound)
+			{
+				char szParam[1024];
+				snprintf(szParam, 1024, "%s:", szNewScriptName);
+				szParam[1024-1] = '\0';
+				pNZBInfo->GetParameters()->SetParameter(szParam, "yes");
+			}
+		}
+
+		// remove old params not existed in new category
+		Tokenizer tokOld(szOldPostScript, ",;");
+		while (const char* szOldScriptName = tokOld.Next())
+		{
+			bool bFound = false;
+			const char* szNewScriptName;
+			Tokenizer tokNew(szNewPostScript, ",;");
+			while ((szNewScriptName = tokNew.Next()) && !bFound)
+			{
+				bFound = !strcasecmp(szNewScriptName, szOldScriptName);
+			}
+			if (!bFound)
+			{
+				char szParam[1024];
+				snprintf(szParam, 1024, "%s:", szOldScriptName);
+				szParam[1024-1] = '\0';
+				pNZBInfo->GetParameters()->SetParameter(szParam, "no");
+			}
+		}
+	}
 }
 
 void QueueEditor::SetNZBName(NZBInfo* pNZBInfo, const char* szName)

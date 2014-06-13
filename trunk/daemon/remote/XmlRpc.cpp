@@ -2040,6 +2040,7 @@ EditCommandEntry EditCommandNameMap[] = {
 	{ DownloadQueue::eaGroupPauseExtraPars, "GroupPauseExtraPars" },
 	{ DownloadQueue::eaGroupSetPriority, "GroupSetPriority" },
 	{ DownloadQueue::eaGroupSetCategory, "GroupSetCategory" },
+	{ DownloadQueue::eaGroupApplyCategory, "GroupApplyCategory" },
 	{ DownloadQueue::eaGroupMerge, "GroupMerge" },
 	{ DownloadQueue::eaGroupSetParameter, "GroupSetParameter" },
 	{ DownloadQueue::eaGroupSetName, "GroupSetName" },

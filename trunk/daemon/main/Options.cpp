@@ -1459,14 +1459,14 @@ void Options::InitCommandLine(int argc, char* argv[])
 					{
 						m_iEditQueueAction = bGroup ? DownloadQueue::eaGroupDelete : DownloadQueue::eaFileDelete;
 					}
-					else if (!strcasecmp(optarg, "C") || !strcasecmp(optarg, "K"))
+					else if (!strcasecmp(optarg, "C") || !strcasecmp(optarg, "K") || !strcasecmp(optarg, "CP"))
 					{
 						// switch "K" is provided for compatibility with v. 0.8.0 and can be removed in future versions
 						if (!bGroup)
 						{
 							abort("FATAL ERROR: Category can be set only for groups\n");
 						}
-						m_iEditQueueAction = DownloadQueue::eaGroupSetCategory;
+						m_iEditQueueAction = !strcasecmp(optarg, "CP") ? DownloadQueue::eaGroupApplyCategory : DownloadQueue::eaGroupSetCategory;
 
 						optind++;
 						if (optind > argc)
@@ -1708,6 +1708,7 @@ void Options::PrintUsage(char* com)
 		"       R                    Pause extra pars\n"
 		"       I <priority>         Set priority (signed integer)\n"
 		"       C <name>             Set category\n"
+		"       CP <name>            Set category and apply post-process parameters\n"
 		"       N <name>             Rename\n"
 		"       M                    Merge\n"
 		"       S <name>             Split - create new group from selected files\n"

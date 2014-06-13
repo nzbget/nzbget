@@ -802,6 +802,7 @@ public:
 		eaGroupPauseExtraPars,	// pause only (almost all) pars in group, except main par-file (does not affect other files)
 		eaGroupSetPriority,		// set priority for groups
 		eaGroupSetCategory,		// set or change category for a group
+		eaGroupApplyCategory,	// set or change category for a group and reassign pp-params according to category settings
 		eaGroupMerge,			// merge groups
 		eaGroupSetParameter,	// set post-process parameter for group
 		eaGroupSetName,			// set group name (rename group)
