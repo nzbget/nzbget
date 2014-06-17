@@ -279,7 +279,7 @@ void FeedCoordinator::LogDebugInfo()
 
 void FeedCoordinator::StartFeedDownload(FeedInfo* pFeedInfo, bool bForce)
 {
-	debug("Starting new FeedDownloader for %", pFeedInfo->GetName());
+	debug("Starting new FeedDownloader for %s", pFeedInfo->GetName());
 
 	FeedDownloader* pFeedDownloader = new FeedDownloader();
 	pFeedDownloader->SetAutoDestroy(true);
