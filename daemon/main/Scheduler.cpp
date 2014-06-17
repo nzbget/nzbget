@@ -230,8 +230,8 @@ void Scheduler::CheckTasks()
 
 void Scheduler::ExecuteTask(Task* pTask)
 {
-	const char* szCommandName[] = { "Pause", "Unpause", "Set download rate", "Execute program", "Pause Scan", "Unpause Scan",
-		"Enable Server", "Disable Server", "Fetch Feed" };
+	const char* szCommandName[] = { "Pause", "Unpause", "Set download rate", "Execute process", "Execute script",
+		"Pause Scan", "Unpause Scan", "Enable Server", "Disable Server", "Fetch Feed" };
 	debug("Executing scheduled command: %s", szCommandName[pTask->m_eCommand]);
 
 	switch (pTask->m_eCommand)
@@ -359,7 +359,7 @@ void Scheduler::FetchFeed(const char* szFeedList)
 				!strcasecmp(pFeed->GetName(), szFeed) ||
 				!strcasecmp("0", szFeed))
 			{
-				g_pFeedCoordinator->FetchFeed(pFeed->GetID());
+				g_pFeedCoordinator->FetchFeed(!strcasecmp("0", szFeed) ? 0 : pFeed->GetID());
 				break;
 			}
 		}
