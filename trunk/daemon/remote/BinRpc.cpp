@@ -344,7 +344,7 @@ void DownloadBinCommand::Execute()
 	bool bAddTop = ntohl(DownloadRequest.m_bAddFirst);
 
 	bool bOK = g_pScanner->AddExternalFile(DownloadRequest.m_szFilename, DownloadRequest.m_szCategory,
-		iPriority, NULL, 0, dmScore, NULL, bAddTop, bAddPaused, NULL, NULL, pRecvBuffer, iBufLen) != Scanner::asFailed;
+		iPriority, NULL, 0, dmScore, NULL, bAddTop, bAddPaused, NULL, NULL, pRecvBuffer, iBufLen, NULL) != Scanner::asFailed;
 
 	char tmp[1024];
 	snprintf(tmp, 1024, bOK ? "Collection %s added to queue" : "Download Request failed for %s",

@@ -363,6 +363,7 @@ void QueueCoordinator::AddNZBFileToQueue(NZBFile* pNZBFile, NZBInfo* pUrlInfo, b
 
 	if (pUrlInfo)
 	{
+		pNZBInfo->SetID(pUrlInfo->GetID());
 		pDownloadQueue->GetQueue()->Remove(pUrlInfo);
 		delete pUrlInfo;
 	}

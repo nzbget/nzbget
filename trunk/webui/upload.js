@@ -335,7 +335,7 @@ var Upload = (new function($)
 			var filename = file.name.replace(/\.queued$/g, '');
 			var addPaused = $('#AddDialog_Paused').is(':checked');
 			var dupeMode = $('#AddDialog_DupeForce').is(':checked') ? "FORCE" : "SCORE";
-			RPC.call('append', [filename, category, priority, false, base64str, addPaused, '', 0, dupeMode], fileCompleted, fileFailure);
+			RPC.call('append', [filename, base64str, category, priority, false, addPaused, '', 0, dupeMode], fileCompleted, fileFailure);
 		};
 
 		if (reader.readAsBinaryString)
@@ -379,7 +379,7 @@ var Upload = (new function($)
 		var addPaused = $('#AddDialog_Paused').is(':checked');
 		var dupeMode = $('#AddDialog_DupeForce').is(':checked') ? "FORCE" : "SCORE";
 
-		RPC.call('appendurl', ['', category, priority, false, url, addPaused, '', 0, dupeMode], urlCompleted, urlFailure);
+		RPC.call('append', ['', url, category, priority, false, addPaused, '', 0, dupeMode], urlCompleted, urlFailure);
 	}
 
 	function urlCompleted(result)

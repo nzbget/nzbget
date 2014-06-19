@@ -416,7 +416,7 @@ void UrlCoordinator::UrlCompleted(UrlDownloader* pUrlDownloader)
 			!Util::EmptyStr(pNZBInfo->GetCategory()) ? pNZBInfo->GetCategory() : pUrlDownloader->GetCategory(),
 			pNZBInfo->GetPriority(), pNZBInfo->GetDupeKey(), pNZBInfo->GetDupeScore(), pNZBInfo->GetDupeMode(),
 			pNZBInfo->GetParameters(), false, pNZBInfo->GetAddUrlPaused(), pNZBInfo,
-			pUrlDownloader->GetOutputFilename(), NULL, 0);
+			pUrlDownloader->GetOutputFilename(), NULL, 0, NULL);
 
 		if (eAddStatus == Scanner::asSuccess)
 		{
