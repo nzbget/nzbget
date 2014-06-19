@@ -76,12 +76,13 @@ private:
 		bool				m_bAddPaused;
 		NZBInfo*			m_pUrlInfo;
 		EAddStatus*			m_pAddStatus;
+		int*				m_pNZBID;
 
 	public:
 							QueueData(const char* szFilename, const char* szNZBName, const char* szCategory,
 								int iPriority, const char* szDupeKey, int iDupeScore, EDupeMode eDupeMode,
 								NZBParameterList* pParameters, bool bAddTop, bool bAddPaused, NZBInfo* pUrlInfo, 
-								EAddStatus* pAddStatus);
+								EAddStatus* pAddStatus, int* pNZBID);
 							~QueueData();
 		const char*			GetFilename() { return m_szFilename; }
 		const char*			GetNZBName() { return m_szNZBName; }
@@ -95,6 +96,7 @@ private:
 		bool				GetAddPaused() { return m_bAddPaused; }
 		NZBInfo*			GetUrlInfo() { return m_pUrlInfo; }
 		void				SetAddStatus(EAddStatus eAddStatus);
+		void				SetNZBID(int iNZBID);
 	};
 
 	typedef std::deque<QueueData*>		QueueList;
@@ -111,7 +113,7 @@ private:
 	void				CheckIncomingNZBs(const char* szDirectory, const char* szCategory, bool bCheckStat);
 	bool				AddFileToQueue(const char* szFilename, const char* szNZBName, const char* szCategory,
 							int iPriority, const char* szDupeKey, int iDupeScore, EDupeMode eDupeMode,
-							NZBParameterList* pParameters, bool bAddTop, bool bAddPaused, NZBInfo* pUrlInfo);
+							NZBParameterList* pParameters, bool bAddTop, bool bAddPaused, NZBInfo* pUrlInfo, int* pNZBID);
 	void				ProcessIncomingFile(const char* szDirectory, const char* szBaseFilename,
 							const char* szFullFilename, const char* szCategory);
 	bool				CanProcessFile(const char* szFullFilename, bool bCheckStat);
@@ -126,8 +128,8 @@ public:
 	void				Check();
 	EAddStatus			AddExternalFile(const char* szNZBName, const char* szCategory, int iPriority,
 							const char* szDupeKey, int iDupeScore, EDupeMode eDupeMode,
-							NZBParameterList* pParameters, bool bAddTop, bool bAddPaused,
-							NZBInfo* pUrlInfo, const char* szFileName, const char* szBuffer, int iBufSize);
+							NZBParameterList* pParameters, bool bAddTop, bool bAddPaused, NZBInfo* pUrlInfo,
+							const char* szFileName, const char* szBuffer, int iBufSize, int* pNZBID);
 	void				InitPPParameters(const char* szCategory, NZBParameterList* pParameters);
 };
 

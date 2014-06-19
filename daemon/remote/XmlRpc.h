@@ -1,7 +1,7 @@
 /*
  *  This file is part of nzbget
  *
- *  Copyright (C) 2007-2013 Andrey Prygunkov <hugbug@users.sourceforge.net>
+ *  Copyright (C) 2007-2014 Andrey Prygunkov <hugbug@users.sourceforge.net>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -86,12 +86,14 @@ protected:
 
 	void				BuildErrorResponse(int iErrCode, const char* szErrText, ...);
 	void				BuildBoolResponse(bool bOK);
+	void				BuildIntResponse(int iValue);
 	void				AppendResponse(const char* szPart);
 	bool				IsJson();
 	bool				CheckSafeMethod();
 	bool				NextParamAsInt(int* iValue);
 	bool				NextParamAsBool(bool* bValue);
 	bool				NextParamAsStr(char** szValueBuf);
+	char*				XmlNextValue(char* szXml, const char* szTag, int* pValueLength);
 	const char*			BoolToStr(bool bValue);
 	char*				EncodeStr(const char* szStr);
 	void				DecodeStr(char* szStr);

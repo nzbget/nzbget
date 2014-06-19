@@ -205,12 +205,6 @@ public:
 	virtual void		Execute();
 };
 
-class DownloadUrlXmlCommand: public XmlCommand
-{
-public:
-	virtual void		Execute();
-};
-
 class UrlQueueXmlCommand: public XmlCommand
 {
 public:
@@ -583,7 +577,7 @@ XmlCommand* XmlRpcProcessor::CreateCommand(const char* szMethodName)
 	{
 		command = new EditQueueXmlCommand();
 	}
-	else if (!strcasecmp(szMethodName, "append"))
+	else if (!strcasecmp(szMethodName, "append") || !strcasecmp(szMethodName, "appendurl"))
 	{
 		command = new DownloadXmlCommand();
 	}
@@ -626,10 +620,6 @@ XmlCommand* XmlRpcProcessor::CreateCommand(const char* szMethodName)
 	else if (!strcasecmp(szMethodName, "history"))
 	{
 		command = new HistoryXmlCommand();
-	}
-	else if (!strcasecmp(szMethodName, "appendurl"))
-	{
-		command = new DownloadUrlXmlCommand();
 	}
 	else if (!strcasecmp(szMethodName, "urlqueue"))
 	{
@@ -771,6 +761,18 @@ void XmlCommand::BuildBoolResponse(bool bOK)
 	AppendResponse(szContent);
 }
 
+void XmlCommand::BuildIntResponse(int iValue)
+{
+	const char* XML_RESPONSE_INT_BODY = "<i4>%i</i4>";
+	const char* JSON_RESPONSE_INT_BODY = "%i";
+
+	char szContent[1024];
+	snprintf(szContent, 1024, IsJson() ? JSON_RESPONSE_INT_BODY : XML_RESPONSE_INT_BODY, iValue);
+	szContent[1024-1] = '\0';
+
+	AppendResponse(szContent);
+}
+
 void XmlCommand::PrepareParams()
 {
 	if (IsJson() && m_eHttpMethod == XmlRpcProcessor::hmPost)
@@ -788,6 +790,21 @@ void XmlCommand::PrepareParams()
 	{
 		NextParamAsStr(&m_szCallbackFunc);
 	}
+}
+
+char* XmlCommand::XmlNextValue(char* szXml, const char* szTag, int* pValueLength)
+{
+	int iValueLen;
+	const char* szValue = WebUtil::XmlFindTag(szXml, "value", &iValueLen);
+	if (szValue)
+	{
+		char* szTagContent = (char*)WebUtil::XmlFindTag(szValue, szTag, pValueLength);
+		if (szTagContent <= szValue + iValueLen)
+		{
+			return szTagContent;
+		}
+	}
+	return NULL;
 }
 
 bool XmlCommand::NextParamAsInt(int* iValue)
@@ -819,10 +836,10 @@ bool XmlCommand::NextParamAsInt(int* iValue)
 	{
 		int iLen = 0;
 		int iTagLen = 4; //strlen("<i4>");
-		char* szParam = (char*)WebUtil::XmlFindTag(m_szRequestPtr, "i4", &iLen);
+		char* szParam = XmlNextValue(m_szRequestPtr, "i4", &iLen);
 		if (!szParam)
 		{
-			szParam = (char*)WebUtil::XmlFindTag(m_szRequestPtr, "int", &iLen);
+			szParam = XmlNextValue(m_szRequestPtr, "int", &iLen);
 			iTagLen = 5; //strlen("<int>");
 		}
 		if (!szParam || !strchr("-+0123456789", *szParam))
@@ -893,7 +910,7 @@ bool XmlCommand::NextParamAsBool(bool* bValue)
 	else
 	{
 		int iLen = 0;
-		char* szParam = (char*)WebUtil::XmlFindTag(m_szRequestPtr, "boolean", &iLen);
+		char* szParam = XmlNextValue(m_szRequestPtr, "boolean", &iLen);
 		if (!szParam)
 		{
 			return false;
@@ -946,7 +963,7 @@ bool XmlCommand::NextParamAsStr(char** szValue)
 	else
 	{
 		int iLen = 0;
-		char* szParam = (char*)WebUtil::XmlFindTag(m_szRequestPtr, "string", &iLen);
+		char* szParam = XmlNextValue(m_szRequestPtr, "string", &iLen);
 		if (!szParam)
 		{
 			return false;
@@ -2125,9 +2142,10 @@ void EditQueueXmlCommand::Execute()
 	BuildBoolResponse(bOK);
 }
 
-// bool append(string NZBFilename, string Category, int Priority, bool AddToTop, string Content, bool AddPaused, string DupeKey, int DupeScore, string DupeMode)
-// For backward compatibility with 0.8 parameter "Priority" is optional
-// Parameters starting from "AddPaused" are optional (added in v12)
+// v13 (new param order and new result type):
+//   int append(string NZBFilename, string NZBContent, string Category, int Priority, bool AddToTop, bool AddPaused, string DupeKey, int DupeScore, string DupeMode)
+// v12 (backward compatible, some params are optional):
+//   bool append(string NZBFilename, string Category, int Priority, bool AddToTop, string Content, bool AddPaused, string DupeKey, int DupeScore, string DupeMode)
 void DownloadXmlCommand::Execute()
 {
 	if (!CheckSafeMethod())
@@ -2135,24 +2153,33 @@ void DownloadXmlCommand::Execute()
 		return;
 	}
 
-	char* szFileName;
-	if (!NextParamAsStr(&szFileName))
+	bool bV13 = true;
+
+	char* szNZBFilename;
+	if (!NextParamAsStr(&szNZBFilename))
 	{
-		BuildErrorResponse(2, "Invalid parameter (FileName)");
+		BuildErrorResponse(2, "Invalid parameter (NZBFileName)");
+		return;
+	}
+
+	char* szNZBContent;
+	if (!NextParamAsStr(&szNZBContent))
+	{
+		BuildErrorResponse(2, "Invalid parameter (NZBContent)");
 		return;
 	}
 
 	char* szCategory;
 	if (!NextParamAsStr(&szCategory))
 	{
-		BuildErrorResponse(2, "Invalid parameter (Category)");
-		return;
+		bV13 = false;
+		szCategory = szNZBContent;
 	}
 
-	DecodeStr(szFileName);
+	DecodeStr(szNZBFilename);
 	DecodeStr(szCategory);
 
-	debug("FileName=%s", szFileName);
+	debug("FileName=%s", szNZBFilename);
 
 	// For backward compatibility with 0.8 parameter "Priority" is optional (error checking omitted)
 	int iPriority = 0;
@@ -2165,12 +2192,12 @@ void DownloadXmlCommand::Execute()
 		return;
 	}
 
-	char* szFileContent;
-	if (!NextParamAsStr(&szFileContent))
+	if (!bV13 && !NextParamAsStr(&szNZBContent))
 	{
 		BuildErrorResponse(2, "Invalid parameter (FileContent)");
 		return;
 	}
+	DecodeStr(szNZBContent);
 
 	bool bAddPaused = false;
 	char* szDupeKey = NULL;
@@ -2183,6 +2210,7 @@ void DownloadXmlCommand::Execute()
 			BuildErrorResponse(2, "Invalid parameter (DupeKey)");
 			return;
 		}
+		DecodeStr(szDupeKey);
 		if (!NextParamAsInt(&iDupeScore))
 		{
 			BuildErrorResponse(2, "Invalid parameter (DupeScore)");
@@ -2198,22 +2226,66 @@ void DownloadXmlCommand::Execute()
 		eDupeMode = !strcasecmp(szDupeMode, "all") ? dmAll :
 			!strcasecmp(szDupeMode, "force") ? dmForce : dmScore;
 	}
-
-	if (IsJson())
+	else if (bV13)
 	{
-		// JSON-string may contain '/'-character used in Base64, which must be escaped in JSON
-		WebUtil::JsonDecode(szFileContent);
+		BuildErrorResponse(2, "Invalid parameter (AddPaused)");
+		return;
 	}
 
-	int iLen = WebUtil::DecodeBase64(szFileContent, 0, szFileContent);
-	szFileContent[iLen] = '\0';
-	//debug("FileContent=%s", szFileContent);
+	if (!strncasecmp(szNZBContent, "http://", 6) || !strncasecmp(szNZBContent, "https://", 7))
+	{
+		// add url
+		NZBInfo* pNZBInfo = new NZBInfo();
+		pNZBInfo->SetKind(NZBInfo::nkUrl);
+		pNZBInfo->SetURL(szNZBContent);
+		pNZBInfo->SetFilename(szNZBFilename);
+		pNZBInfo->SetCategory(szCategory);
+		pNZBInfo->SetPriority(iPriority);
+		pNZBInfo->SetAddUrlPaused(bAddPaused);
+		pNZBInfo->SetDupeKey(szDupeKey ? szDupeKey : "");
+		pNZBInfo->SetDupeScore(iDupeScore);
+		pNZBInfo->SetDupeMode(eDupeMode);
+		int iNZBID = pNZBInfo->GetID();
 
-	bool bOK = g_pScanner->AddExternalFile(szFileName, szCategory, iPriority,
-		szDupeKey, iDupeScore, eDupeMode, NULL, bAddTop, bAddPaused, NULL,
-		NULL, szFileContent, iLen) != Scanner::asFailed;
+		char szNicename[1024];
+		pNZBInfo->MakeNiceUrlName(szNZBContent, szNZBFilename, szNicename, sizeof(szNicename));
+		info("Queue %s", szNicename);
 
-	BuildBoolResponse(bOK);
+		DownloadQueue* pDownloadQueue = DownloadQueue::Lock();
+		pDownloadQueue->GetQueue()->Add(pNZBInfo, bAddTop);
+		pDownloadQueue->Save();
+		DownloadQueue::Unlock();
+
+		if (bV13)
+		{
+			BuildIntResponse(iNZBID);
+		}
+		else
+		{
+			BuildBoolResponse(true);
+		}
+	}
+	else
+	{
+		// add file content
+		int iLen = WebUtil::DecodeBase64(szNZBContent, 0, szNZBContent);
+		szNZBContent[iLen] = '\0';
+		//debug("FileContent=%s", szFileContent);
+
+		int iNZBID = 0;
+		bool bOK = g_pScanner->AddExternalFile(szNZBFilename, szCategory, iPriority,
+			szDupeKey, iDupeScore, eDupeMode, NULL, bAddTop, bAddPaused, NULL,
+			NULL, szNZBContent, iLen, &iNZBID) != Scanner::asFailed;
+
+		if (bV13)
+		{
+			BuildIntResponse(bOK ? iNZBID : 0);
+		}
+		else
+		{
+			BuildBoolResponse(bOK);
+		}
+	}
 }
 
 // deprecated
@@ -2574,110 +2646,6 @@ const char* HistoryXmlCommand::DetectStatus(HistoryInfo* pHistoryInfo)
 	}
 
 	return szStatus;
-}
-
-// bool appendurl(string NZBFilename, string Category, int Priority, bool AddToTop, string URL, bool AddPaused, string DupeKey, int DupeScore, string DupeMode)
-// Parameters starting from "AddPaused" are optional (added in v12)
-void DownloadUrlXmlCommand::Execute()
-{
-	if (!CheckSafeMethod())
-	{
-		return;
-	}
-
-	char* szNZBFileName;
-	if (!NextParamAsStr(&szNZBFileName))
-	{
-		BuildErrorResponse(2, "Invalid parameter (NZBFilename)");
-		return;
-	}
-
-	char* szCategory;
-	if (!NextParamAsStr(&szCategory))
-	{
-		BuildErrorResponse(2, "Invalid parameter (Category)");
-		return;
-	}
-
-	int iPriority = 0;
-	if (!NextParamAsInt(&iPriority))
-	{
-		BuildErrorResponse(2, "Invalid parameter (Priority)");
-		return;
-	}
-
-	bool bAddTop;
-	if (!NextParamAsBool(&bAddTop))
-	{
-		BuildErrorResponse(2, "Invalid parameter (AddTop)");
-		return;
-	}
-
-	char* szURL;
-	if (!NextParamAsStr(&szURL))
-	{
-		BuildErrorResponse(2, "Invalid parameter (URL)");
-		return;
-	}
-
-	bool bAddPaused = false;
-	char* szDupeKey = NULL;
-	int iDupeScore = 0;
-	EDupeMode eDupeMode = dmScore;
-	if (NextParamAsBool(&bAddPaused))
-	{
-		if (!NextParamAsStr(&szDupeKey))
-		{
-			BuildErrorResponse(2, "Invalid parameter (DupeKey)");
-			return;
-		}
-		if (!NextParamAsInt(&iDupeScore))
-		{
-			BuildErrorResponse(2, "Invalid parameter (DupeScore)");
-			return;
-		}
-		char* szDupeMode = NULL;
-		if (!NextParamAsStr(&szDupeMode) ||
-			(strcasecmp(szDupeMode, "score") && strcasecmp(szDupeMode, "all") && strcasecmp(szDupeMode, "force")))
-		{
-			BuildErrorResponse(2, "Invalid parameter (DupeMode)");
-			return;
-		}
-		eDupeMode = !strcasecmp(szDupeMode, "all") ? dmAll :
-			!strcasecmp(szDupeMode, "force") ? dmForce : dmScore;
-	}
-
-	DecodeStr(szNZBFileName);
-	DecodeStr(szCategory);
-	DecodeStr(szURL);
-	if (szDupeKey)
-	{
-		DecodeStr(szDupeKey);
-	}
-
-	debug("URL=%s", szURL);
-
-	NZBInfo* pNZBInfo = new NZBInfo();
-	pNZBInfo->SetKind(NZBInfo::nkUrl);
-	pNZBInfo->SetURL(szURL);
-	pNZBInfo->SetFilename(szNZBFileName);
-	pNZBInfo->SetCategory(szCategory);
-	pNZBInfo->SetPriority(iPriority);
-	pNZBInfo->SetAddUrlPaused(bAddPaused);
-	pNZBInfo->SetDupeKey(szDupeKey ? szDupeKey : "");
-	pNZBInfo->SetDupeScore(iDupeScore);
-	pNZBInfo->SetDupeMode(eDupeMode);
-
-	char szNicename[1024];
-	pNZBInfo->MakeNiceUrlName(szURL, szNZBFileName, szNicename, sizeof(szNicename));
-	info("Queue %s", szNicename);
-
-	DownloadQueue* pDownloadQueue = DownloadQueue::Lock();
-	pDownloadQueue->GetQueue()->Add(pNZBInfo, bAddTop);
-	pDownloadQueue->Save();
-	DownloadQueue::Unlock();
-
-	BuildBoolResponse(true);
 }
 
 // Deprecated in v13

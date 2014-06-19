@@ -67,7 +67,8 @@ Scanner::FileData::~FileData()
 
 Scanner::QueueData::QueueData(const char* szFilename, const char* szNZBName, const char* szCategory,
 	int iPriority, const char* szDupeKey, int iDupeScore, EDupeMode eDupeMode,
-	NZBParameterList* pParameters, bool bAddTop, bool bAddPaused, NZBInfo* pUrlInfo, EAddStatus* pAddStatus)
+	NZBParameterList* pParameters, bool bAddTop, bool bAddPaused, NZBInfo* pUrlInfo,
+	EAddStatus* pAddStatus, int* pNZBID)
 {
 	m_szFilename = strdup(szFilename);
 	m_szNZBName = strdup(szNZBName);
@@ -78,8 +79,9 @@ Scanner::QueueData::QueueData(const char* szFilename, const char* szNZBName, con
 	m_eDupeMode = eDupeMode;
 	m_bAddTop = bAddTop;
 	m_bAddPaused = bAddPaused;
-	m_pAddStatus = pAddStatus;
 	m_pUrlInfo = pUrlInfo;
+	m_pAddStatus = pAddStatus;
+	m_pNZBID = pNZBID;
 
 	if (pParameters)
 	{
@@ -100,6 +102,14 @@ void Scanner::QueueData::SetAddStatus(EAddStatus eAddStatus)
 	if (m_pAddStatus)
 	{
 		*m_pAddStatus = eAddStatus;
+	}
+}
+
+void Scanner::QueueData::SetNZBID(int iNZBID)
+{
+	if (m_pNZBID)
+	{
+		*m_pNZBID = iNZBID;
 	}
 }
 
@@ -346,6 +356,7 @@ void Scanner::ProcessIncomingFile(const char* szDirectory, const char* szBaseFil
 	bool bAdded = false;
 	QueueData* pQueueData = NULL;
 	NZBInfo* pUrlInfo = NULL;
+	int iNZBID = 0;
 
 	for (QueueList::iterator it = m_QueueList.begin(); it != m_QueueList.end(); it++)
     {
@@ -397,7 +408,7 @@ void Scanner::ProcessIncomingFile(const char* szDirectory, const char* szBaseFil
 		if (bRenameOK)
 		{
 			bAdded = AddFileToQueue(szRenamedName, szNZBName, szNZBCategory, iPriority,
-				szDupeKey, iDupeScore, eDupeMode, pParameters, bAddTop, bAddPaused, pUrlInfo);
+				szDupeKey, iDupeScore, eDupeMode, pParameters, bAddTop, bAddPaused, pUrlInfo, &iNZBID);
 		}
 		else
 		{
@@ -409,7 +420,7 @@ void Scanner::ProcessIncomingFile(const char* szDirectory, const char* szBaseFil
 	else if (bExists && !strcasecmp(szExtension, ".nzb"))
 	{
 		bAdded = AddFileToQueue(szFullFilename, szNZBName, szNZBCategory, iPriority,
-			szDupeKey, iDupeScore, eDupeMode, pParameters, bAddTop, bAddPaused, pUrlInfo);
+			szDupeKey, iDupeScore, eDupeMode, pParameters, bAddTop, bAddPaused, pUrlInfo, &iNZBID);
 	}
 
 	delete pParameters;
@@ -420,6 +431,7 @@ void Scanner::ProcessIncomingFile(const char* szDirectory, const char* szBaseFil
 	if (pQueueData)
 	{
 		pQueueData->SetAddStatus(eAddStatus == asFailed ? asFailed : bAdded ? asSuccess : asSkipped);
+		pQueueData->SetNZBID(iNZBID);
 	}
 }
 
@@ -459,7 +471,7 @@ void Scanner::InitPPParameters(const char* szCategory, NZBParameterList* pParame
 
 bool Scanner::AddFileToQueue(const char* szFilename, const char* szNZBName, const char* szCategory,
 	int iPriority, const char* szDupeKey, int iDupeScore, EDupeMode eDupeMode,
-	NZBParameterList* pParameters, bool bAddTop, bool bAddPaused, NZBInfo* pUrlInfo)
+	NZBParameterList* pParameters, bool bAddTop, bool bAddPaused, NZBInfo* pUrlInfo, int* pNZBID)
 {
 	const char* szBasename = Util::BaseFileName(szFilename);
 
@@ -482,46 +494,52 @@ bool Scanner::AddFileToQueue(const char* szFilename, const char* szNZBName, cons
 
 	if (bOK)
 	{
-		pNZBFile->GetNZBInfo()->SetQueuedFilename(bakname2);
+		NZBInfo* pNZBInfo = pNZBFile->GetNZBInfo();
+		pNZBInfo->SetQueuedFilename(bakname2);
 
 		if (szNZBName && strlen(szNZBName) > 0)
 		{
-			pNZBFile->GetNZBInfo()->SetName(NULL);
+			pNZBInfo->SetName(NULL);
 #ifdef WIN32
 			char* szAnsiFilename = strdup(szNZBName);
 			WebUtil::Utf8ToAnsi(szAnsiFilename, strlen(szAnsiFilename) + 1);
-			pNZBFile->GetNZBInfo()->SetFilename(szAnsiFilename);
+			pNZBInfo->SetFilename(szAnsiFilename);
 			free(szAnsiFilename);
 #else
-			pNZBFile->GetNZBInfo()->SetFilename(szNZBName);
+			pNZBInfo->SetFilename(szNZBName);
 #endif
-			pNZBFile->GetNZBInfo()->BuildDestDirName();
+			pNZBInfo->BuildDestDirName();
 		}
 
-		pNZBFile->GetNZBInfo()->SetDupeKey(szDupeKey);
-		pNZBFile->GetNZBInfo()->SetDupeScore(iDupeScore);
-		pNZBFile->GetNZBInfo()->SetDupeMode(eDupeMode);
-		pNZBFile->GetNZBInfo()->SetPriority(iPriority);
+		pNZBInfo->SetDupeKey(szDupeKey);
+		pNZBInfo->SetDupeScore(iDupeScore);
+		pNZBInfo->SetDupeMode(eDupeMode);
+		pNZBInfo->SetPriority(iPriority);
 		if (pUrlInfo)
 		{
-			pNZBFile->GetNZBInfo()->SetURL(pUrlInfo->GetURL());
-			pNZBFile->GetNZBInfo()->SetUrlStatus(pUrlInfo->GetUrlStatus());
+			pNZBInfo->SetURL(pUrlInfo->GetURL());
+			pNZBInfo->SetUrlStatus(pUrlInfo->GetUrlStatus());
 		}
 
 		if (pNZBFile->GetPassword())
 		{
-			pNZBFile->GetNZBInfo()->GetParameters()->SetParameter("*Unpack:Password", pNZBFile->GetPassword());
+			pNZBInfo->GetParameters()->SetParameter("*Unpack:Password", pNZBFile->GetPassword());
 		}
 
-		pNZBFile->GetNZBInfo()->GetParameters()->CopyFrom(pParameters);
+		pNZBInfo->GetParameters()->CopyFrom(pParameters);
 
-		for (::FileList::iterator it = pNZBFile->GetNZBInfo()->GetFileList()->begin(); it != pNZBFile->GetNZBInfo()->GetFileList()->end(); it++)
+		for (::FileList::iterator it = pNZBInfo->GetFileList()->begin(); it != pNZBInfo->GetFileList()->end(); it++)
 		{
 			FileInfo* pFileInfo = *it;
 			pFileInfo->SetPaused(bAddPaused);
 		}
 
 		g_pQueueCoordinator->AddNZBFileToQueue(pNZBFile, pUrlInfo, bAddTop);
+
+		if (pNZBID)
+		{
+			*pNZBID = pNZBInfo->GetID();
+		}
 	}
 
 	delete pNZBFile;
@@ -545,7 +563,7 @@ void Scanner::ScanNZBDir(bool bSyncMode)
 Scanner::EAddStatus Scanner::AddExternalFile(const char* szNZBName, const char* szCategory,
 	int iPriority, const char* szDupeKey, int iDupeScore,  EDupeMode eDupeMode,
 	NZBParameterList* pParameters, bool bAddTop, bool bAddPaused, NZBInfo* pUrlInfo,
-	const char* szFileName, const char* szBuffer, int iBufSize)
+	const char* szFileName, const char* szBuffer, int iBufSize, int* pNZBID)
 {
 	bool bNZB = false;
 	char szTempFileName[1024];
@@ -640,7 +658,8 @@ Scanner::EAddStatus Scanner::AddExternalFile(const char* szNZBName, const char* 
 
 	EAddStatus eAddStatus = asSkipped;
 	QueueData* pQueueData = new QueueData(szScanFileName, szNZBName, szUseCategory, iPriority,
-		szDupeKey, iDupeScore, eDupeMode, pParameters, bAddTop, bAddPaused, pUrlInfo, &eAddStatus);
+		szDupeKey, iDupeScore, eDupeMode, pParameters, bAddTop, bAddPaused, pUrlInfo,
+		&eAddStatus, pNZBID);
 	free(szUseCategory);
 	m_QueueList.push_back(pQueueData);
 
