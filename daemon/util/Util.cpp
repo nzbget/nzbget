@@ -698,7 +698,7 @@ bool Util::FileExists(const char* szFilename)
 	HANDLE handle = FindFirstFile(szFilename, &findData);
 	if (handle != INVALID_HANDLE_VALUE)
 	{
-		bool bExists = findData.dwFileAttributes != FILE_ATTRIBUTE_DIRECTORY;
+		bool bExists = (findData.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY) == 0;
 		FindClose(handle);
 		return bExists;
 	}
@@ -727,7 +727,7 @@ bool Util::DirectoryExists(const char* szDirFilename)
 	HANDLE handle = FindFirstFile(szDirFilename, &findData);
 	if (handle != INVALID_HANDLE_VALUE)
 	{
-		bool bExists = findData.dwFileAttributes == FILE_ATTRIBUTE_DIRECTORY;
+		bool bExists = (findData.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY) != 0;
 		FindClose(handle);
 		return bExists;
 	}
