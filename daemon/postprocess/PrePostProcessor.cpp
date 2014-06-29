@@ -359,6 +359,7 @@ void PrePostProcessor::NZBCompleted(DownloadQueue* pDownloadQueue, NZBInfo* pNZB
 
 	if (!bAddToHistory)
 	{
+		g_pHistoryCoordinator->DeleteQueuedFile(pNZBInfo->GetQueuedFilename());
 		pDownloadQueue->GetQueue()->Remove(pNZBInfo);
 		delete pNZBInfo;
 	}
