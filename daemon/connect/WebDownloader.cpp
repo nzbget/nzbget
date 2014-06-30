@@ -298,7 +298,15 @@ void WebDownloader::SendHeaders(URL *pUrl)
 	tmp[1024-1] = '\0';
 	m_pConnection->WriteLine(tmp);
 
-	snprintf(tmp, 1024, "Host: %s\r\n", pUrl->GetHost());
+	if ((!strcasecmp(pUrl->GetProtocol(), "http") && (pUrl->GetPort() == 80 || pUrl->GetPort() == 0)) ||
+		(!strcasecmp(pUrl->GetProtocol(), "https") && (pUrl->GetPort() == 443 || pUrl->GetPort() == 0)))
+	{
+		snprintf(tmp, 1024, "Host: %s\r\n", pUrl->GetHost());
+	}
+	else
+	{
+		snprintf(tmp, 1024, "Host: %s:%i\r\n", pUrl->GetHost(), pUrl->GetPort());
+	}
 	tmp[1024-1] = '\0';
 	m_pConnection->WriteLine(tmp);
 
