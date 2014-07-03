@@ -1249,6 +1249,11 @@ bool DiskState::LoadFileState(FileInfo* pFileInfo, Servers* pServers)
 		if (fscanf(infile, "%i\n", &iStatus) != 1) goto error;
 		ArticleInfo::EStatus eStatus = (ArticleInfo::EStatus)iStatus;
 
+		if (eStatus == ArticleInfo::aiRunning)
+		{
+			eStatus = ArticleInfo::aiUndefined;
+		}
+
 		// don't allow all articles be completed or the file will stuck.
 		// such states should never be saved on disk but just in case.
 		if (iCompletedArticles == size - 1)
