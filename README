@@ -87,7 +87,8 @@ And the following libraries are optional:
    - libncurses  (http://invisible-island.net/ncurses)
    
  - for par-check and -repair (enabled by default):
-   - libpar2     (http://parchive.sourceforge.net)
+   - libpar2     (http://launchpad.net/libpar2,
+                  http://parchive.sourceforge.net)
    - libsigc++   (http://libsigc.sourceforge.net)
  
  - for encrypted connections (TLS/SSL):
@@ -182,20 +183,17 @@ Following configure-parameters may be usefull:
   
 The library libsigc++ must be installed first, since libpar2 requires it.
 
-If you use nzbget on a very slow computer like NAS-device, it may be good to
-limit the time allowed for par-repair (option "ParTimeLimit" in nzbget 
-configuration file). This feature requires a patched version of libpar2.
-To compile that version download the original source code of libpar2
-(version 0.2) and apply patches "libpar2-0.2-bugfixes.patch" and 
-"libpar2-0.2-cancel.patch", provided with nzbget:
+Official project libpar2 (http://parchive.sourceforge.net) has not been
+updated for many years. The last official version of libpar 0.2 contains
+known bugs which may crash the program during par-check. These bugs
+have been fixed in the semi-official fork maintained by Debian/Ubuntu
+team (http://launchpad.net/libpar2). It is highly recommended to use this
+version of libpar2 (version 0.4 or newer) instead of the last official
+version 0.2. Recent releases of Debian/Ubuntu include this libpar2 version.
 
-  cd libpar2-0.2
-  cp ~/nzbget/libpar2-0.2-*.patch .
-  patch < libpar2-0.2-bugfixes.patch
-  patch < libpar2-0.2-cancel.patch
-  ./configure
-  make
-  make install
+NZBGets configure script checks the installed version of libpar2 and prints
+an error if it is older than 0.4. The check can be suppressed if the update
+of libpar2 is not possible.
 
 If you are not able to use libpar2 or libsigc++ or do not want them you can
 make nzbget without support for par-check using option "--disable-parcheck":
@@ -251,7 +249,8 @@ To compile the program with par-check-support you also need the following
 libraries:
 
    - libsigc++   (http://libsigc.sourceforge.net)
-   - libpar2     (http://parchive.sourceforge.net)
+   - libpar2     (http://launchpad.net/libpar2,
+                  http://parchive.sourceforge.net)
 
 Download these libaries, then use patch-files provided with NZBGet to create
 preconfigured project files and solutions for each library. 
@@ -260,15 +259,9 @@ to use patch-files, if you do not familiar with this technique.
 
 To compile the program with TLS/SSL support you also need the library:
 
+   - OpenSSL  (http://www.openssl.org)
+   or
    - GnuTLS   (http://www.gnu.org/software/gnutls)
-
-Download a precompiled version of GnuTLS from http://josefsson.org/gnutls4win
-and create lib-file as described there in section "Using the GnuTLS DLL from 
-your Visual Studio program".
-
-After libsigc++ and libpar2 are compiled in static libraries (.lib), the 
-library for GnuTLS is created and include- and libraries-paths are configured 
-in MS Visual C++ 2005 you should be able to compile NZBGet.   
 
 =====================================
 6. Configuration

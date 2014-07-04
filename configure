@@ -1321,8 +1321,7 @@ Optional Features:
   --disable-parcheck      do not include par-check/-repair-support (removes
                           dependency from libpar2- and libsigc-libraries)
   --disable-libpar2-bugfixes-check
-                          do not check if libpar2 has recent bugfixes-patch
-                          applied
+                          do not check libpar2 version
   --disable-tls           do not use TLS/SSL (removes dependency from
                           TLS/SSL-libraries)
   --disable-gzip          disable gzip-compression/decompression (removes
@@ -3830,7 +3829,7 @@ if (eval "$ac_cpp conftest.$ac_ext") 2>&5 |
 else
   ac_cv_header_stdc=no
 fi
-rm -f -r conftest*
+rm -f conftest*
 
 fi
 
@@ -3851,7 +3850,7 @@ if (eval "$ac_cpp conftest.$ac_ext") 2>&5 |
 else
   ac_cv_header_stdc=no
 fi
-rm -f -r conftest*
+rm -f conftest*
 
 fi
 
@@ -4947,7 +4946,7 @@ cat >>confdefs.h <<_ACEOF
 _ACEOF
 ;;
 esac
-rm -f -r conftest*
+rm -f conftest*
   if test $ac_cv_sys_file_offset_bits = unknown; then
     { echo "$as_me:$LINENO: checking for _LARGE_FILES value needed for large files" >&5
 echo $ECHO_N "checking for _LARGE_FILES value needed for large files... $ECHO_C" >&6; }
@@ -5068,7 +5067,7 @@ cat >>confdefs.h <<_ACEOF
 _ACEOF
 ;;
 esac
-rm -f -r conftest*
+rm -f conftest*
   fi
 fi
 
@@ -7625,8 +7624,8 @@ fi
 
 rm -f core conftest.err conftest.$ac_objext conftest.$ac_ext
 
-				{ echo "$as_me:$LINENO: checking whether libpar2 has recent bugfixes-patch (version 2)" >&5
-echo $ECHO_N "checking whether libpar2 has recent bugfixes-patch (version 2)... $ECHO_C" >&6; }
+				{ echo "$as_me:$LINENO: checking whether libpar2 has recent bugfixes" >&5
+echo $ECHO_N "checking whether libpar2 has recent bugfixes... $ECHO_C" >&6; }
 	cat >conftest.$ac_ext <<_ACEOF
 /* confdefs.h.  */
 _ACEOF
@@ -7689,8 +7688,8 @@ else
 fi
 
 		if test "$PAR2PATCHCHECK" = "yes"; then
-			{ { echo "$as_me:$LINENO: error: Your version of libpar2 doesn't include the recent bugfixes-patch (version 2, updated Dec 3, 2012). Please patch libpar2 with the patches supplied with NZBGet (see README for details). If you cannot patch libpar2, you can use configure parameter --disable-libpar2-bugfixes-check to suppress the check. Please note however that in this case the program may crash during par-check/repair. The patch is highly recommended!" >&5
-echo "$as_me: error: Your version of libpar2 doesn't include the recent bugfixes-patch (version 2, updated Dec 3, 2012). Please patch libpar2 with the patches supplied with NZBGet (see README for details). If you cannot patch libpar2, you can use configure parameter --disable-libpar2-bugfixes-check to suppress the check. Please note however that in this case the program may crash during par-check/repair. The patch is highly recommended!" >&2;}
+			{ { echo "$as_me:$LINENO: error: Your version of libpar2 doesn't include the recent bugfixes. Please update libpar2 to version 0.4 or newer (http://launchpad.net/libpar2). If you cannot install a newer version of libpar2, you can use configure parameter --disable-libpar2-bugfixes-check to suppress the check. Please note however that in this case the program may crash during par-check/repair. The update is highly recommended!" >&5
+echo "$as_me: error: Your version of libpar2 doesn't include the recent bugfixes. Please update libpar2 to version 0.4 or newer (http://launchpad.net/libpar2). If you cannot install a newer version of libpar2, you can use configure parameter --disable-libpar2-bugfixes-check to suppress the check. Please note however that in this case the program may crash during par-check/repair. The update is highly recommended!" >&2;}
    { (exit 1); exit 1; }; }
 		fi
 	fi
@@ -10234,7 +10233,7 @@ do
     cat >>$CONFIG_STATUS <<_ACEOF
     # First, check the format of the line:
     cat >"\$tmp/defines.sed" <<\\CEOF
-/^[	 ]*#[	 ]*undef[	 ][	 ]*$ac_word_re[	 ]*/b def
+/^[	 ]*#[	 ]*undef[	 ][	 ]*$ac_word_re[	 ]*\$/b def
 /^[	 ]*#[	 ]*define[	 ][	 ]*$ac_word_re[(	 ]/b def
 b
 :def
