@@ -92,9 +92,9 @@ POSTPROCESS_SUCCESS=93
 POSTPROCESS_ERROR=94
 
 # Check if the script is called from nzbget 11.0 or later
-if not 'NZBOP_SCRIPTDIR' in os.environ:
+if not 'NZBPP_TOTALSTATUS' in os.environ:
 	print('*** NZBGet post-processing script ***')
-	print('This script is supposed to be called from nzbget (11.0 or later).')
+	print('This script is supposed to be called from nzbget (13.0 or later).')
 	sys.exit(POSTPROCESS_ERROR)
 
 print('[DETAIL] Script successfully started')
@@ -106,8 +106,20 @@ for	optname in required_options:
 	if (not optname in os.environ):
 		print('[ERROR] Option %s is missing in configuration file. Please check script settings' % optname[6:])
 		sys.exit(POSTPROCESS_ERROR)
+
+status = os.environ['NZBPP_STATUS']
+total_status = os.environ['NZBPP_TOTALSTATUS']
+
+# If any script fails the status of the item in the history is "WARNING/SCRIPT".
+# This status however is not passed to pp-scripts in the env var "NZBPP_STATUS"
+# because most scripts are independent of each other and should work even
+# if a previous script has failed. But not in the case of E-Mail script,
+# which should take the status of the previous scripts into account as well.
+if total_status == 'SUCCESS' and os.environ['NZBPP_SCRIPTSTATUS'] == 'FAILURE':
+	total_status = 'WARNING'
+	status = 'WARNING/SCRIPT'
 		
-success = os.environ['NZBPP_TOTALSTATUS'] == 'SUCCESS'
+success = total_status == 'SUCCESS'
 if success:
 	subject = 'Success for "%s"' % (os.environ['NZBPP_NZBNAME'])
 	text = 'Download of "%s" has successfully completed.' % (os.environ['NZBPP_NZBNAME'])
@@ -115,7 +127,7 @@ else:
 	subject = 'Failure for "%s"' % (os.environ['NZBPP_NZBNAME'])
 	text = 'Download of "%s" has failed.' % (os.environ['NZBPP_NZBNAME'])
 
-text += '\nStatus: %s' % os.environ['NZBPP_STATUS']
+text += '\nStatus: %s' % status
 
 # add list of downloaded files
 if os.environ['NZBPO_FILELIST'] == 'yes':
