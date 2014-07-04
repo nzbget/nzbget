@@ -338,7 +338,7 @@ if test "$ENABLEPARCHECK" = "yes"; then
 	dnl
 	dnl check if libpar2 has recent bugfixes-patch
 	dnl
-	AC_MSG_CHECKING(whether libpar2 has recent bugfixes-patch (version 2))
+	AC_MSG_CHECKING(whether libpar2 has recent bugfixes)
 	AC_TRY_COMPILE(
 		[#include <libpar2/par2cmdline.h>]
 		[#include <libpar2/par2repairer.h>]
@@ -352,11 +352,11 @@ if test "$ENABLEPARCHECK" = "yes"; then
 
 	if test "$PAR2PATCHV2" = "no" ; then
 		AC_ARG_ENABLE(libpar2-bugfixes-check,
-			[AS_HELP_STRING([--disable-libpar2-bugfixes-check], [do not check if libpar2 has recent bugfixes-patch applied])],
+			[AS_HELP_STRING([--disable-libpar2-bugfixes-check], [do not check libpar2 version])],
 			[ PAR2PATCHCHECK=$enableval ],
 			[ PAR2PATCHCHECK=yes] )
 		if test "$PAR2PATCHCHECK" = "yes"; then
-			AC_ERROR([Your version of libpar2 doesn't include the recent bugfixes-patch (version 2, updated Dec 3, 2012). Please patch libpar2 with the patches supplied with NZBGet (see README for details). If you cannot patch libpar2, you can use configure parameter --disable-libpar2-bugfixes-check to suppress the check. Please note however that in this case the program may crash during par-check/repair. The patch is highly recommended!])
+			AC_ERROR([Your version of libpar2 doesn't include the recent bugfixes. Please update libpar2 to version 0.4 or newer (http://launchpad.net/libpar2). If you cannot install a newer version of libpar2, you can use configure parameter --disable-libpar2-bugfixes-check to suppress the check. Please note however that in this case the program may crash during par-check/repair. The update is highly recommended!])
 		fi
 	fi
 

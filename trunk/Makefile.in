@@ -356,15 +356,8 @@ AM_CPPFLAGS = \
 EXTRA_DIST = \
 	Makefile.cvs \
 	nzbgetd \
-	$(patches_FILES) \
 	$(windows_FILES) \
 	$(osx_FILES)
-
-patches_FILES = \
-	patches/libpar2-0.2-bugfixes.patch \
-	patches/libpar2-0.2-cancel.patch \
-	patches/libpar2-0.2-MSVC8.patch \
-	patches/libsigc++-2.0.18-MSVC8.patch
 
 windows_FILES = \
 	daemon/windows/NTService.cpp \
@@ -1425,7 +1418,7 @@ distclean-tags:
 distdir: $(DISTFILES)
 	$(am__remove_distdir)
 	mkdir $(distdir)
-	$(mkdir_p) $(distdir)/daemon/windows $(distdir)/osx $(distdir)/osx/NZBGet.xcodeproj $(distdir)/osx/Resources $(distdir)/osx/Resources/Images $(distdir)/osx/Resources/licenses $(distdir)/patches $(distdir)/scripts $(distdir)/webui $(distdir)/webui/img $(distdir)/webui/lib
+	$(mkdir_p) $(distdir)/daemon/windows $(distdir)/osx $(distdir)/osx/NZBGet.xcodeproj $(distdir)/osx/Resources $(distdir)/osx/Resources/Images $(distdir)/osx/Resources/licenses $(distdir)/scripts $(distdir)/webui $(distdir)/webui/img $(distdir)/webui/lib
 	@srcdirstrip=`echo "$(srcdir)" | sed 's|.|.|g'`; \
 	topsrcdirstrip=`echo "$(top_srcdir)" | sed 's|.|.|g'`; \
 	list='$(DISTFILES)'; for file in $$list; do \

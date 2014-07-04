@@ -133,15 +133,8 @@ AM_CPPFLAGS = \
 EXTRA_DIST = \
 	Makefile.cvs \
 	nzbgetd \
-	$(patches_FILES) \
 	$(windows_FILES) \
 	$(osx_FILES)
-
-patches_FILES = \
-	patches/libpar2-0.2-bugfixes.patch \
-	patches/libpar2-0.2-cancel.patch \
-	patches/libpar2-0.2-MSVC8.patch \
-	patches/libsigc++-2.0.18-MSVC8.patch
 
 windows_FILES = \
 	daemon/windows/NTService.cpp \
