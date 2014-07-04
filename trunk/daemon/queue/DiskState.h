@@ -72,6 +72,7 @@ private:
 	void				ConvertDupeKey(char* buf, int bufsize);
 	bool				LoadFileQueue12(NZBList* pNZBList, NZBList* pSortList, FILE* infile, int iFormatVersion);
 	void				CompleteNZBList12(DownloadQueue* pDownloadQueue, NZBList* pNZBList, int iFormatVersion);
+	void				CompleteDupList12(DownloadQueue* pDownloadQueue, int iFormatVersion);
 	void				CalcCriticalHealth(NZBList* pNZBList);
 
 public:

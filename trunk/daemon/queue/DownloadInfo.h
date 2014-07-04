@@ -373,6 +373,8 @@ public:
 
 	static const int FORCE_PRIORITY = 900;
 
+	friend class DupInfo;
+
 private:
 	int					m_iID;
 	EKind				m_eKind;
@@ -451,6 +453,7 @@ public:
 	int					GetID() { return m_iID; }
 	void				SetID(int iID);
 	static void			ResetGenID(bool bMax);
+	static int			GenerateID();
 	EKind				GetKind() { return m_eKind; }
 	void				SetKind(EKind eKind) { m_eKind = eKind; }
 	const char*			GetURL() { return m_szURL; }			// needs locking (for shared objects)
@@ -690,6 +693,7 @@ public:
 	};
 
 private:
+	int					m_iID;
 	char*				m_szName;
 	char*				m_szDupeKey;
 	int					m_iDupeScore;
@@ -702,6 +706,8 @@ private:
 public:
 						DupInfo();
 						~DupInfo();
+	int					GetID() { return m_iID; }
+	void				SetID(int iID);
 	const char*			GetName() { return m_szName; }			// needs locking (for shared objects)
 	void				SetName(const char* szName);			// needs locking (for shared objects)
 	const char*			GetDupeKey() { return m_szDupeKey; }	// needs locking (for shared objects)
@@ -732,22 +738,16 @@ public:
 	};
 
 private:
-	int					m_iID;
 	EKind				m_eKind;
 	void*				m_pInfo;
 	time_t				m_tTime;
-
-	static int			m_iIDGen;
-	static int			m_iIDMax;
 
 public:
 						HistoryInfo(NZBInfo* pNZBInfo);
 						HistoryInfo(DupInfo* pDupInfo);
 						~HistoryInfo();
-	int					GetID() { return m_iID; }
-	void				SetID(int iID);
-	static void			ResetGenID(bool bMax);
 	EKind				GetKind() { return m_eKind; }
+	int					GetID();
 	NZBInfo*			GetNZBInfo() { return (NZBInfo*)m_pInfo; }
 	DupInfo*			GetDupInfo() { return (DupInfo*)m_pInfo; }
 	void				DiscardNZBInfo() { m_pInfo = NULL; }

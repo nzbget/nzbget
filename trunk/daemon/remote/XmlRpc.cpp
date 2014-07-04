@@ -2444,7 +2444,7 @@ void HistoryXmlCommand::Execute()
 
 	const char* XML_HISTORY_ITEM_START =
 		"<value><struct>\n"
-		"<member><name>ID</name><value><i4>%i</i4></value></member>\n"
+		"<member><name>ID</name><value><i4>%i</i4></value></member>\n"					// Deprecated, use "NZBID" instead
 		"<member><name>Name</name><value><string>%s</string></value></member>\n"
 		"<member><name>RemainingFileCount</name><value><i4>%i</i4></value></member>\n"
 		"<member><name>HistoryTime</name><value><i4>%i</i4></value></member>\n"
@@ -2459,7 +2459,7 @@ void HistoryXmlCommand::Execute()
 
 	const char* JSON_HISTORY_ITEM_START =
 		"{\n"
-		"\"ID\" : %i,\n"
+		"\"ID\" : %i,\n"							   // Deprecated, use "NZBID" instead
 		"\"Name\" : \"%s\",\n"
 		"\"RemainingFileCount\" : %i,\n"
 		"\"HistoryTime\" : %i,\n"
@@ -2490,7 +2490,8 @@ void HistoryXmlCommand::Execute()
 
 	const char* XML_HISTORY_DUP_ITEM =
 		"<value><struct>\n"
-		"<member><name>ID</name><value><i4>%i</i4></value></member>\n"
+		"<member><name>ID</name><value><i4>%i</i4></value></member>\n"				// Deprecated, use "NZBID" instead
+		"<member><name>NZBID</name><value><i4>%i</i4></value></member>\n"
 		"<member><name>Kind</name><value><string>%s</string></value></member>\n"
 		"<member><name>Name</name><value><string>%s</string></value></member>\n"
 		"<member><name>HistoryTime</name><value><i4>%i</i4></value></member>\n"
@@ -2506,7 +2507,8 @@ void HistoryXmlCommand::Execute()
 
 	const char* JSON_HISTORY_DUP_ITEM =
 		"{\n"
-		"\"ID\" : %i,\n"
+		"\"ID\" : %i,\n"							// Deprecated, use "NZBID" instead
+		"\"NZBID\" : %i,\n"
 		"\"Kind\" : \"%s\",\n"
 		"\"Name\" : \"%s\",\n"
 		"\"HistoryTime\" : %i,\n"
@@ -2568,7 +2570,7 @@ void HistoryXmlCommand::Execute()
 			char* xmlDupeKey = EncodeStr(pDupInfo->GetDupeKey());
 
 			snprintf(szItemBuf, iItemBufSize, IsJson() ? JSON_HISTORY_DUP_ITEM : XML_HISTORY_DUP_ITEM,
-				pHistoryInfo->GetID(), "DUP", xmlNicename, pHistoryInfo->GetTime(),
+				pHistoryInfo->GetID(), pHistoryInfo->GetID(), "DUP", xmlNicename, pHistoryInfo->GetTime(),
 				iFileSizeLo, iFileSizeHi, iFileSizeMB, xmlDupeKey, pDupInfo->GetDupeScore(),
 				szDupeModeName[pDupInfo->GetDupeMode()], szDupStatusName[pDupInfo->GetStatus()],
 				szStatus);

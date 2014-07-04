@@ -50,8 +50,6 @@ int FileInfo::m_iIDGen = 0;
 int FileInfo::m_iIDMax = 0;
 int NZBInfo::m_iIDGen = 0;
 int NZBInfo::m_iIDMax = 0;
-int HistoryInfo::m_iIDGen = 0;
-int HistoryInfo::m_iIDMax = 0;
 DownloadQueue* DownloadQueue::g_pDownloadQueue = NULL;
 bool DownloadQueue::g_bLoaded = false;
 
@@ -379,6 +377,11 @@ void NZBInfo::ResetGenID(bool bMax)
 		m_iIDGen = 0;
 		m_iIDMax = 0;
 	}
+}
+
+int NZBInfo::GenerateID()
+{
+	return ++m_iIDGen;
 }
 
 void NZBInfo::ClearCompletedFiles()
@@ -1156,6 +1159,7 @@ void PostInfo::AppendMessage(Message::EKind eKind, const char * szText)
 
 DupInfo::DupInfo()
 {
+	m_iID = 0;
 	m_szName = NULL;
 	m_szDupeKey = NULL;
 	m_iDupeScore = 0;
@@ -1170,6 +1174,15 @@ DupInfo::~DupInfo()
 {
 	free(m_szName);
 	free(m_szDupeKey);
+}
+
+void DupInfo::SetID(int iID)
+{
+	m_iID = iID;
+	if (NZBInfo::m_iIDMax < m_iID)
+	{
+		NZBInfo::m_iIDMax = m_iID;
+	}
 }
 
 void DupInfo::SetName(const char* szName)
@@ -1190,7 +1203,6 @@ HistoryInfo::HistoryInfo(NZBInfo* pNZBInfo)
 	m_eKind = pNZBInfo->GetKind() == NZBInfo::nkNzb ? hkNzb : hkUrl;
 	m_pInfo = pNZBInfo;
 	m_tTime = 0;
-	m_iID = ++m_iIDGen;
 }
 
 HistoryInfo::HistoryInfo(DupInfo* pDupInfo)
@@ -1198,7 +1210,6 @@ HistoryInfo::HistoryInfo(DupInfo* pDupInfo)
 	m_eKind = hkDup;
 	m_pInfo = pDupInfo;
 	m_tTime = 0;
-	m_iID = ++m_iIDGen;
 }
 
 HistoryInfo::~HistoryInfo()
@@ -1213,25 +1224,15 @@ HistoryInfo::~HistoryInfo()
 	}
 }
 
-void HistoryInfo::SetID(int iID)
+int HistoryInfo::GetID()
 {
-	m_iID = iID;
-	if (m_iIDMax < m_iID)
+	if ((m_eKind == hkNzb || m_eKind == hkUrl))
 	{
-		m_iIDMax = m_iID;
+		return ((NZBInfo*)m_pInfo)->GetID();
 	}
-}
-
-void HistoryInfo::ResetGenID(bool bMax)
-{
-	if (bMax)
+	else // if (m_eKind == hkDup)
 	{
-		m_iIDGen = m_iIDMax;
-	}
-	else
-	{
-		m_iIDGen = 0;
-		m_iIDMax = 0;
+		return ((DupInfo*)m_pInfo)->GetID();
 	}
 }
 

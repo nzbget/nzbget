@@ -136,7 +136,7 @@ bool DiskState::SaveDownloadQueue(DownloadQueue* pDownloadQueue)
 		return false;
 	}
 
-	fprintf(outfile, "%s%i\n", FORMATVERSION_SIGNATURE, 46);
+	fprintf(outfile, "%s%i\n", FORMATVERSION_SIGNATURE, 47);
 
 	// save nzb-infos
 	SaveNZBQueue(pDownloadQueue, outfile);
@@ -179,7 +179,7 @@ bool DiskState::LoadDownloadQueue(DownloadQueue* pDownloadQueue, Servers* pServe
 	char FileSignatur[128];
 	fgets(FileSignatur, sizeof(FileSignatur), infile);
 	iFormatVersion = ParseFormatVersion(FileSignatur);
-	if (iFormatVersion < 3 || iFormatVersion > 46)
+	if (iFormatVersion < 3 || iFormatVersion > 47)
 	{
 		error("Could not load diskstate due to file version mismatch");
 		fclose(infile);
@@ -242,6 +242,11 @@ bool DiskState::LoadDownloadQueue(DownloadQueue* pDownloadQueue, Servers* pServe
 		CompleteNZBList12(pDownloadQueue, &sortList, iFormatVersion);
 	}
 
+	if (iFormatVersion < 47)
+	{
+		CompleteDupList12(pDownloadQueue, iFormatVersion);
+	}
+
 	if (!LoadAllFileStates(pDownloadQueue, pServers)) goto error;
 
 	bOK = true;
@@ -256,7 +261,6 @@ error:
 
 	NZBInfo::ResetGenID(true);
 	FileInfo::ResetGenID(true);
-	HistoryInfo::ResetGenID(true);
 
 	if (iFormatVersion > 0)
 	{
@@ -286,6 +290,21 @@ void DiskState::CompleteNZBList12(DownloadQueue* pDownloadQueue, NZBList* pNZBLi
 		{
 			NZBInfo* pNZBInfo = *it;
 			pNZBInfo->SetID(iID++);
+		}
+	}
+}
+
+void DiskState::CompleteDupList12(DownloadQueue* pDownloadQueue, int iFormatVersion)
+{
+	NZBInfo::ResetGenID(true);
+
+	for (HistoryList::iterator it = pDownloadQueue->GetHistory()->begin(); it != pDownloadQueue->GetHistory()->end(); it++)
+	{
+		HistoryInfo* pHistoryInfo = *it;
+
+		if (pHistoryInfo->GetKind() == HistoryInfo::hkDup)
+		{
+			pHistoryInfo->GetDupInfo()->SetID(NZBInfo::GenerateID());
 		}
 	}
 }
@@ -1746,12 +1765,11 @@ bool DiskState::LoadHistory(DownloadQueue* pDownloadQueue, NZBList* pNZBList, Se
 		{
 			DupInfo* pDupInfo = new DupInfo();
 			if (!LoadDupInfo(pDupInfo, infile, iFormatVersion)) goto error;
+			if (iFormatVersion >= 47)
+			{
+				pDupInfo->SetID(iID);
+			}
 			pHistoryInfo = new HistoryInfo(pDupInfo);
-		}
-
-		if (iFormatVersion >= 24)
-		{
-			pHistoryInfo->SetID(iID);
 		}
 
 		if (iFormatVersion < 33)
