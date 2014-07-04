@@ -230,6 +230,7 @@ void HistoryCoordinator::HistoryHide(DownloadQueue* pDownloadQueue, HistoryInfo*
 
 	// replace history element
 	DupInfo* pDupInfo = new DupInfo();
+	pDupInfo->SetID(pHistoryInfo->GetNZBInfo()->GetID());
 	pDupInfo->SetName(pHistoryInfo->GetNZBInfo()->GetName());
 	pDupInfo->SetDupeKey(pHistoryInfo->GetNZBInfo()->GetDupeKey());
 	pDupInfo->SetDupeScore(pHistoryInfo->GetNZBInfo()->GetDupeScore());
