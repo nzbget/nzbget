@@ -1,7 +1,7 @@
 /*
  *  This file is part of nzbget
  *
- *  Copyright (C) 2007-2013 Andrey Prygunkov <hugbug@users.sourceforge.net>
+ *  Copyright (C) 2007-2014 Andrey Prygunkov <hugbug@users.sourceforge.net>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -74,7 +74,7 @@
 /* Define to 1 if spinlocks are supported */
 #define HAVE_SPINLOCK
 
-#define VERSION "13.0-testing"
+#define VERSION "13.0"
 
 /* Suppress warnings */
 #define _CRT_SECURE_NO_DEPRECATE
