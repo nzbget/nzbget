@@ -1052,7 +1052,6 @@ int Options::ParseEnumValue(const char* OptName, int argc, const char * argn[], 
 	{
 		ConfigError("Undefined value for option \"%s\"", OptName);
 		return argv[0];
-		//abort("FATAL ERROR: Undefined value for option \"%s\"\n", OptName);
 	}
 
 	int iDefNum = 0;
