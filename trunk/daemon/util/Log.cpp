@@ -2,7 +2,7 @@
  *  This file is part of nzbget
  *
  *  Copyright (C) 2004 Sven Henkel <sidddy@users.sourceforge.net>
- *  Copyright (C) 2007-2013 Andrey Prygunkov <hugbug@users.sourceforge.net>
+ *  Copyright (C) 2007-2014 Andrey Prygunkov <hugbug@users.sourceforge.net>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -32,6 +32,7 @@
 #include "win32.h"
 #else
 #include <pthread.h>
+#include <unistd.h>
 #endif
 
 #include <stdlib.h>
@@ -52,6 +53,7 @@ Log::Log()
 	m_Messages.clear();
 	m_iIDGen = 0;
 	m_szLogFilename = NULL;
+	m_tLastWritten = 0;
 #ifdef DEBUG
 	m_bExtraDebug = Util::FileExists("extradebug");
 #endif
@@ -82,48 +84,57 @@ void Log::LogDebugInfo()
 
 void Log::Filelog(const char* msg, ...)
 {
-	if (m_szLogFilename)
+	if (!m_szLogFilename)
 	{
-		char tmp2[1024];
+		return;
+	}
 
-		va_list ap;
-		va_start(ap, msg);
-		vsnprintf(tmp2, 1024, msg, ap);
-		tmp2[1024-1] = '\0';
-		va_end(ap);
+	char tmp2[1024];
 
-		time_t rawtime;
-		time(&rawtime);
-		rawtime += g_pOptions->GetTimeCorrection();
-		
-		char szTime[50];
+	va_list ap;
+	va_start(ap, msg);
+	vsnprintf(tmp2, 1024, msg, ap);
+	tmp2[1024-1] = '\0';
+	va_end(ap);
+
+	time_t rawtime = time(NULL) + g_pOptions->GetTimeCorrection();
+	
+	char szTime[50];
 #ifdef HAVE_CTIME_R_3
-		ctime_r(&rawtime, szTime, 50);
+	ctime_r(&rawtime, szTime, 50);
 #else
-		ctime_r(&rawtime, szTime);
+	ctime_r(&rawtime, szTime);
 #endif
-		szTime[50-1] = '\0';
-		szTime[strlen(szTime) - 1] = '\0'; // trim LF
+	szTime[50-1] = '\0';
+	szTime[strlen(szTime) - 1] = '\0'; // trim LF
 
-		FILE* file = fopen(m_szLogFilename, FOPEN_ABP);
-		if (file)
-		{
+	if ((int)rawtime/86400 != (int)m_tLastWritten/86400 && g_pOptions->GetWriteLog() == Options::wlRotate)
+	{
+		RotateLog();
+	}
+
+	m_tLastWritten = rawtime;
+
+	FILE* file = fopen(m_szLogFilename, FOPEN_ABP);
+	if (file)
+	{
 #ifdef WIN32
-			unsigned long iThreadId = GetCurrentThreadId();
+		unsigned long iProcessId = GetCurrentProcessId();
+		unsigned long iThreadId = GetCurrentThreadId();
 #else
-			unsigned long iThreadId = (unsigned long)pthread_self();
+		unsigned long iProcessId = (unsigned long)getpid();
+		unsigned long iThreadId = (unsigned long)pthread_self();
 #endif
 #ifdef DEBUG
-			fprintf(file, "%s\t%lu\t%s%s", szTime, iThreadId, tmp2, LINE_ENDING);
+		fprintf(file, "%s\t%lu\t%lu\t%s%s", szTime, iProcessId, iThreadId, tmp2, LINE_ENDING);
 #else
-			fprintf(file, "%s\t%s%s", szTime, tmp2, LINE_ENDING);
+		fprintf(file, "%s\t%s%s", szTime, tmp2, LINE_ENDING);
 #endif
-			fclose(file);
-		}
-		else
-		{
-			perror(m_szLogFilename);
-		}
+		fclose(file);
+	}
+	else
+	{
+		perror(m_szLogFilename);
 	}
 }
 
@@ -166,13 +177,13 @@ void debug(const char* msg, ...)
 	}
 
 	Options::EMessageTarget eMessageTarget = g_pOptions ? g_pOptions->GetDebugTarget() : Options::mtScreen;
-	if (eMessageTarget == Options::mtLog || eMessageTarget == Options::mtBoth)
-	{
-		g_pLog->Filelog("DEBUG\t%s", tmp2);
-	}
 	if (eMessageTarget == Options::mtScreen || eMessageTarget == Options::mtBoth)
 	{
 		g_pLog->AppendMessage(Message::mkDebug, tmp2);
+	}
+	if (eMessageTarget == Options::mtLog || eMessageTarget == Options::mtBoth)
+	{
+		g_pLog->Filelog("DEBUG\t%s", tmp2);
 	}
 
 	g_pLog->m_mutexLog.Unlock();
@@ -192,13 +203,13 @@ void error(const char* msg, ...)
 	g_pLog->m_mutexLog.Lock();
 
 	Options::EMessageTarget eMessageTarget = g_pOptions ? g_pOptions->GetErrorTarget() : Options::mtBoth;
-	if (eMessageTarget == Options::mtLog || eMessageTarget == Options::mtBoth)
-	{
-		g_pLog->Filelog("ERROR\t%s", tmp2);
-	}
 	if (eMessageTarget == Options::mtScreen || eMessageTarget == Options::mtBoth)
 	{
 		g_pLog->AppendMessage(Message::mkError, tmp2);
+	}
+	if (eMessageTarget == Options::mtLog || eMessageTarget == Options::mtBoth)
+	{
+		g_pLog->Filelog("ERROR\t%s", tmp2);
 	}
 
 	g_pLog->m_mutexLog.Unlock();
@@ -217,13 +228,13 @@ void warn(const char* msg, ...)
 	g_pLog->m_mutexLog.Lock();
 
 	Options::EMessageTarget eMessageTarget = g_pOptions ? g_pOptions->GetWarningTarget() : Options::mtScreen;
-	if (eMessageTarget == Options::mtLog || eMessageTarget == Options::mtBoth)
-	{
-		g_pLog->Filelog("WARNING\t%s", tmp2);
-	}
 	if (eMessageTarget == Options::mtScreen || eMessageTarget == Options::mtBoth)
 	{
 		g_pLog->AppendMessage(Message::mkWarning, tmp2);
+	}
+	if (eMessageTarget == Options::mtLog || eMessageTarget == Options::mtBoth)
+	{
+		g_pLog->Filelog("WARNING\t%s", tmp2);
 	}
 
 	g_pLog->m_mutexLog.Unlock();
@@ -242,13 +253,13 @@ void info(const char* msg, ...)
 	g_pLog->m_mutexLog.Lock();
 
 	Options::EMessageTarget eMessageTarget = g_pOptions ? g_pOptions->GetInfoTarget() : Options::mtScreen;
-	if (eMessageTarget == Options::mtLog || eMessageTarget == Options::mtBoth)
-	{
-		g_pLog->Filelog("INFO\t%s", tmp2);
-	}
 	if (eMessageTarget == Options::mtScreen || eMessageTarget == Options::mtBoth)
 	{
 		g_pLog->AppendMessage(Message::mkInfo, tmp2);
+	}
+	if (eMessageTarget == Options::mtLog || eMessageTarget == Options::mtBoth)
+	{
+		g_pLog->Filelog("INFO\t%s", tmp2);
 	}
 
 	g_pLog->m_mutexLog.Unlock();
@@ -267,13 +278,13 @@ void detail(const char* msg, ...)
 	g_pLog->m_mutexLog.Lock();
 
 	Options::EMessageTarget eMessageTarget = g_pOptions ? g_pOptions->GetDetailTarget() : Options::mtScreen;
-	if (eMessageTarget == Options::mtLog || eMessageTarget == Options::mtBoth)
-	{
-		g_pLog->Filelog("DETAIL\t%s", tmp2);
-	}
 	if (eMessageTarget == Options::mtScreen || eMessageTarget == Options::mtBoth)
 	{
 		g_pLog->AppendMessage(Message::mkDetail, tmp2);
+	}
+	if (eMessageTarget == Options::mtLog || eMessageTarget == Options::mtBoth)
+	{
+		g_pLog->Filelog("DETAIL\t%s", tmp2);
 	}
 
 	g_pLog->m_mutexLog.Unlock();
@@ -366,6 +377,82 @@ void Log::ResetLog()
 	remove(g_pOptions->GetLogFile());
 }
 
+void Log::RotateLog()
+{
+	char szDirectory[1024];
+	strncpy(szDirectory, g_pOptions->GetLogFile(), 1024);
+	szDirectory[1024-1] = '\0';
+
+	// split the full filename into path, basename and extension
+	char* szBaseName = Util::BaseFileName(szDirectory);
+	if (szBaseName > szDirectory)
+	{
+		szBaseName[-1] = '\0';
+	}
+
+	char szBaseExt[250];
+	char* szExt = strrchr(szBaseName, '.');
+	if (szExt && szExt > szBaseName)
+	{
+		strncpy(szBaseExt, szExt, 250);
+		szBaseExt[250-1] = '\0';
+		szExt[0] = '\0';
+	}
+	else
+	{
+		szBaseExt[0] = '\0';
+	}
+
+	char szFileMask[1024];
+	snprintf(szFileMask, 1024, "%s-####-##-##%s", szBaseName, szBaseExt);
+	szFileMask[1024-1] = '\0';
+
+	time_t tCurTime = time(NULL);
+	int iCurDay = (int)tCurTime / 86400;
+	char szFullFilename[1024];
+
+	WildMask mask(szFileMask, true);
+	DirBrowser dir(szDirectory);
+	while (const char* filename = dir.Next())
+	{
+		if (mask.Match(filename))
+		{
+			snprintf(szFullFilename, 1024, "%s%c%s", szDirectory, PATH_SEPARATOR, filename);
+			szFullFilename[1024-1] = '\0';
+
+			struct tm tm;
+			memset(&tm, 0, sizeof(tm));
+			tm.tm_year = atoi(filename + mask.GetMatchStart(0)) - 1900;
+			tm.tm_mon = atoi(filename + mask.GetMatchStart(1)) - 1;
+			tm.tm_mday = atoi(filename + mask.GetMatchStart(2));
+			time_t tFileTime = Util::Timegm(&tm);
+			int iFileDay = (int)tFileTime / 86400;
+
+			if (iFileDay <= iCurDay - g_pOptions->GetRotateLog())
+			{
+				char szMessage[1024];
+				snprintf(szMessage, 1024, "Deleting old log-file %s\n", filename);
+				szMessage[1024-1] = '\0';
+				g_pLog->AppendMessage(Message::mkInfo, szMessage);
+
+				remove(szFullFilename);
+			}
+		}
+	}
+
+	struct tm tm;
+	gmtime_r(&tCurTime, &tm);
+	snprintf(szFullFilename, 1024, "%s%c%s-%i-%.2i-%.2i%s", szDirectory, PATH_SEPARATOR,
+		szBaseName, tm.tm_year + 1900, tm.tm_mon + 1, tm.tm_mday, szBaseExt);
+	szFullFilename[1024-1] = '\0';
+
+	free(m_szLogFilename);
+	m_szLogFilename = strdup(szFullFilename);
+#ifdef WIN32
+	WebUtil::Utf8ToAnsi(m_szLogFilename, strlen(m_szLogFilename) + 1);
+#endif
+}
+
 /*
 * During intializing stage (when options were not read yet) all messages
 * are saved in screen log, even if they shouldn't (according to options).
@@ -379,12 +466,17 @@ void Log::InitOptions()
 {
 	const char* szMessageType[] = { "INFO", "WARNING", "ERROR", "DEBUG", "DETAIL"};
 
-	if (g_pOptions->GetCreateLog() && g_pOptions->GetLogFile())
+	if (g_pOptions->GetWriteLog() != Options::wlNone && g_pOptions->GetLogFile())
 	{
 		m_szLogFilename = strdup(g_pOptions->GetLogFile());
 #ifdef WIN32
 		WebUtil::Utf8ToAnsi(m_szLogFilename, strlen(m_szLogFilename) + 1);
 #endif
+
+		if (g_pOptions->GetServerMode() && g_pOptions->GetWriteLog() == Options::wlReset)
+		{
+			g_pLog->ResetLog();
+		}
 	}
 
 	m_iIDGen = 0;

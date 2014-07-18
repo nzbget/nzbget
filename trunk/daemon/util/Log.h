@@ -96,12 +96,14 @@ private:
 	Mutex				m_mutexDebug;
 	char*				m_szLogFilename;
 	unsigned int		m_iIDGen;
+	time_t				m_tLastWritten;
 #ifdef DEBUG
 	bool				m_bExtraDebug;
 #endif
 
 	void				Filelog(const char* msg, ...);
 	void				AppendMessage(Message::EKind eKind, const char* szText);
+	void				RotateLog();
 
 	friend void error(const char* msg, ...);
 	friend void warn(const char* msg, ...);

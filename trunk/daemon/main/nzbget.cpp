@@ -239,12 +239,6 @@ void Run(bool bReload)
 	}
 #endif
 	
-	if (g_pOptions->GetServerMode() && g_pOptions->GetCreateLog() && g_pOptions->GetResetLog())
-	{
-		debug("Deleting old log-file");
-		g_pLog->ResetLog();
-	}
-
 	g_pLog->InitOptions();
 	g_pScanner->InitOptions();
 
