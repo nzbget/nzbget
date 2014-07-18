@@ -294,7 +294,7 @@ private:
 	bool				m_bCursesGroup;
 	bool				m_bCrcCheck;
 	bool				m_bDirectWrite;
-	int					m_iWriteBufferSize;
+	int					m_iWriteBuffer;
 	int					m_iNzbDirInterval;
 	int					m_iNzbDirFileAge;
 	bool				m_bParCleanupQueue;
@@ -460,7 +460,7 @@ public:
 	bool				GetCursesGroup() { return m_bCursesGroup; }
 	bool				GetCrcCheck() { return m_bCrcCheck; }
 	bool				GetDirectWrite() { return m_bDirectWrite; }
-	int					GetWriteBufferSize() { return m_iWriteBufferSize; }
+	int					GetWriteBuffer() { return m_iWriteBuffer; }
 	int					GetNzbDirInterval() { return m_iNzbDirInterval; }
 	int					GetNzbDirFileAge() { return m_iNzbDirFileAge; }
 	bool				GetParCleanupQueue() { return m_bParCleanupQueue; }
