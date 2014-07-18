@@ -1,8 +1,7 @@
 /*
  *  This file is part of nzbget
  *
- *  Copyright (C) 2004  Sven Henkel <sidddy@users.sourceforge.net>
- *  Copyright (C) 2007  Andrey Prygunkov <hugbug@users.sourceforge.net>
+ *  Copyright (C) 2007-2014 Andrey Prygunkov <hugbug@users.sourceforge.net>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -34,7 +33,6 @@
 
 #include <stdlib.h>
 #include <string.h>
-#include <stdio.h>
 #ifndef WIN32
 #include <unistd.h>
 #endif
@@ -51,8 +49,6 @@ Decoder::Decoder()
 {
 	debug("Creating Decoder");
 
-	m_szSrcFilename		= NULL;
-	m_szDestFilename	= NULL;
 	m_szArticleFilename	= NULL;
 }
 
@@ -135,11 +131,9 @@ void YDecoder::Clear()
 	m_lExpectedCRC = 0;
 	m_lCalculatedCRC = 0xFFFFFFFF;
 	m_iBegin = 0;
-	m_iEnd = 0xFFFFFFFF;
+	m_iEnd = 0;
 	m_iSize = 0;
 	m_iEndSize = 0;
-	m_bAutoSeek = false;
-	m_bNeedSetPos = false;
 	m_bCrcCheck = false;
 }
 
@@ -197,7 +191,7 @@ unsigned long YDecoder::crc32m(unsigned long startCrc, unsigned char *block, uns
 	return crc;
 }
 
-unsigned int YDecoder::DecodeBuffer(char* buffer)
+int YDecoder::DecodeBuffer(char* buffer, int len)
 {
 	if (m_bBody && !m_bEnd)
 	{
@@ -249,7 +243,7 @@ BreakLoop:
 		{
 			m_lCalculatedCRC = crc32m(m_lCalculatedCRC, (unsigned char *)buffer, (unsigned int)(optr - buffer));
 		}
-		return (unsigned int)(optr - buffer);
+		return optr - buffer;
 	}
 	else 
 	{
@@ -301,28 +295,6 @@ BreakLoop:
 	}
 
 	return 0;
-}
-
-bool YDecoder::Write(char* buffer, int len, FILE* outfile)
-{
-	unsigned int wcnt = DecodeBuffer(buffer);
-	if (wcnt > 0)
-	{
-		if (m_bNeedSetPos)
-		{
-			if (m_iBegin == 0 || m_iEnd == 0xFFFFFFFF || !outfile)
-			{
-				return false;
-			}
-			if (fseek(outfile, m_iBegin - 1, SEEK_SET))
-			{
-				return false;
-			}
-			m_bNeedSetPos = false;
-		}
-		fwrite(buffer, 1, wcnt, outfile);
-	}
-	return true;
 }
 
 Decoder::EStatus YDecoder::Check()
@@ -379,7 +351,7 @@ void UDecoder::Clear()
 
 #define UU_DECODE_CHAR(c) (c == '`' ? 0 : (((c) - ' ') & 077))
 
-unsigned int UDecoder::DecodeBuffer(char* buffer, int len)
+int UDecoder::DecodeBuffer(char* buffer, int len)
 {
 	if (!m_bBody)
 	{
@@ -446,20 +418,10 @@ unsigned int UDecoder::DecodeBuffer(char* buffer, int len)
 			}
 		}
 
-		return (unsigned int)(optr - buffer);
+		return optr - buffer;
 	}
 
 	return 0;
-}
-
-bool UDecoder::Write(char* buffer, int len, FILE* outfile)
-{
-	unsigned int wcnt = DecodeBuffer(buffer, len);
-	if (wcnt > 0)
-	{
-		fwrite(buffer, 1, wcnt, outfile);
-	}
-	return true;
 }
 
 Decoder::EStatus UDecoder::Check()

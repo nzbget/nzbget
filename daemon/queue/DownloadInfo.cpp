@@ -41,10 +41,12 @@
 
 #include "nzbget.h"
 #include "DownloadInfo.h"
+#include "ArticleWriter.h"
 #include "Options.h"
 #include "Util.h"
 
 extern Options* g_pOptions;
+extern ArticleCache* g_pArticleCache;
 
 int FileInfo::m_iIDGen = 0;
 int FileInfo::m_iIDMax = 0;
@@ -899,16 +901,19 @@ void NZBList::Remove(NZBInfo* pNZBInfo)
 ArticleInfo::ArticleInfo()
 {
 	//debug("Creating ArticleInfo");
-	m_szMessageID		= NULL;
-	m_iSize 			= 0;
-	m_eStatus			= aiUndefined;
-	m_szResultFilename	= NULL;
+	m_szMessageID = NULL;
+	m_iSize = 0;
+	m_pSegmentContent = NULL;
+	m_iSegmentOffset = 0;
+	m_iSegmentSize = 0;
+	m_eStatus = aiUndefined;
+	m_szResultFilename = NULL;
 }
 
 ArticleInfo::~ ArticleInfo()
 {
 	//debug("Destroying ArticleInfo");
-
+	DiscardSegment();
 	free(m_szMessageID);
 	free(m_szResultFilename);
 }
@@ -923,6 +928,24 @@ void ArticleInfo::SetResultFilename(const char * v)
 {
 	free(m_szResultFilename);
 	m_szResultFilename = strdup(v);
+}
+
+void ArticleInfo::AttachSegment(char* pContent, long long iOffset, int iSize)
+{
+	DiscardSegment();
+	m_pSegmentContent = pContent;
+	m_iSegmentOffset = iOffset;
+	m_iSegmentSize = iSize;
+}
+
+void ArticleInfo::DiscardSegment()
+{
+	if (m_pSegmentContent)
+	{
+		free(m_pSegmentContent);
+		m_pSegmentContent = NULL;
+		g_pArticleCache->Free(m_iSegmentSize);
+	}
 }
 
 
@@ -956,6 +979,7 @@ FileInfo::FileInfo()
 	m_bExtraPriority = false;
 	m_iActiveDownloads = 0;
 	m_bAutoDeleted = false;
+	m_iCachedArticles = 0;
 	m_iID = ++m_iIDGen;
 }
 

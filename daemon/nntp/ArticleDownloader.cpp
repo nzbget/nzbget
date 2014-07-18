@@ -46,6 +46,7 @@
 
 #include "nzbget.h"
 #include "ArticleDownloader.h"
+#include "ArticleWriter.h"
 #include "Decoder.h"
 #include "Log.h"
 #include "Options.h"
@@ -61,15 +62,12 @@ ArticleDownloader::ArticleDownloader()
 {
 	debug("Creating ArticleDownloader");
 
-	m_szResultFilename = NULL;
-	m_szTempFilename = NULL;
-	m_szArticleFilename = NULL;
 	m_szInfoName = NULL;
-	m_szOutputFilename = NULL;
 	m_pConnection = NULL;
 	m_eStatus = adUndefined;
-	m_bDuplicate = false;
 	m_eFormat = Decoder::efUnknown;
+	m_szArticleFilename = NULL;
+	m_ArticleWriter.SetOwner(this);
 	SetLastUpdateTimeNow();
 }
 
@@ -77,25 +75,14 @@ ArticleDownloader::~ArticleDownloader()
 {
 	debug("Destroying ArticleDownloader");
 
-	free(m_szTempFilename);
-	free(m_szArticleFilename);
 	free(m_szInfoName);
-	free(m_szOutputFilename);
+	free(m_szArticleFilename);
 }
 
-void ArticleDownloader::SetTempFilename(const char* v)
+void ArticleDownloader::SetInfoName(const char* szInfoName)
 {
-	m_szTempFilename = strdup(v);
-}
-
-void ArticleDownloader::SetOutputFilename(const char* v)
-{
-	m_szOutputFilename = strdup(v);
-}
-
-void ArticleDownloader::SetInfoName(const char * v)
-{
-	m_szInfoName = strdup(v);
+	m_szInfoName = strdup(szInfoName);
+	m_ArticleWriter.SetInfoName(m_szInfoName);
 }
 
 /*
@@ -125,9 +112,9 @@ void ArticleDownloader::Run()
 
 	SetStatus(adRunning);
 
-	BuildOutputFilename();
+	m_ArticleWriter.SetFileInfo(m_pFileInfo);
+	m_ArticleWriter.SetArticleInfo(m_pArticleInfo);
 
-	m_szResultFilename = m_pArticleInfo->GetResultFilename();
 	EStatus Status = adFailed;
 	int iRetries = g_pOptions->GetRetries() > 0 ? g_pOptions->GetRetries() : 1;
 	int iRemainedRetries = iRetries;
@@ -306,7 +293,7 @@ void ArticleDownloader::Run()
 
 	FreeConnection(Status == adFinished);
 
-	if (m_bDuplicate)
+	if (m_ArticleWriter.GetDuplicate())
 	{
 		Status = adFinished;
 	}
@@ -337,6 +324,7 @@ ArticleDownloader::EStatus ArticleDownloader::Download()
 {
 	const char* szResponse = NULL;
 	EStatus Status = adRunning;
+	m_bWritingStarted = false;
 
 	if (m_pConnection->GetNewsServer()->GetJoinGroup())
 	{
@@ -377,18 +365,13 @@ ArticleDownloader::EStatus ArticleDownloader::Download()
 		return Status;
 	}
 
-	// positive answer!
-
 	if (g_pOptions->GetDecode())
 	{
 		m_YDecoder.Clear();
-		m_YDecoder.SetAutoSeek(g_pOptions->GetDirectWrite());
 		m_YDecoder.SetCrcCheck(g_pOptions->GetCrcCheck());
-
 		m_UDecoder.Clear();
 	}
 
-	m_pOutFile = NULL;
 	bool bBody = false;
 	bool bEnd = false;
 	const int LineBufSize = 1024*10;
@@ -483,17 +466,6 @@ ArticleDownloader::EStatus ArticleDownloader::Download()
 
 	free(szLineBuf);
 
-	if (m_pOutFile)
-	{
-		if (fclose(m_pOutFile) != 0)
-		{
-			bool bDirectWrite = g_pOptions->GetDirectWrite() && m_eFormat == Decoder::efYenc;
-			char szErrBuf[256];
-			error("Could not close file %s: %s", (bDirectWrite ? m_szOutputFilename : m_szTempFilename),
-				Util::GetLastErrorMessage(szErrBuf, sizeof(szErrBuf)));
-		}
-	}
-
 	if (!bEnd && Status == adRunning && !IsStopped())
 	{
 		detail("Article %s @ %s (%s) failed: article incomplete", m_szInfoName,
@@ -509,13 +481,17 @@ ArticleDownloader::EStatus ArticleDownloader::Download()
 	if (Status == adRunning)
 	{
 		FreeConnection(true);
-		return DecodeCheck();
+		Status = DecodeCheck();
 	}
-	else
+
+	m_ArticleWriter.Finish(Status == adFinished);
+
+	if (Status == adFinished)
 	{
-		remove(m_szTempFilename);
-		return Status;
+		detail("Successfully downloaded %s", m_szInfoName);
 	}
+
+	return Status;
 }
 
 ArticleDownloader::EStatus ArticleDownloader::CheckResponse(const char* szResponse, const char* szComment)
@@ -557,222 +533,60 @@ ArticleDownloader::EStatus ArticleDownloader::CheckResponse(const char* szRespon
 
 bool ArticleDownloader::Write(char* szLine, int iLen)
 {
-	if (!m_pOutFile && !PrepareFile(szLine))
-	{
-		return false;
-	}
+	const char* szArticleFilename = NULL;
+	int iArticleFileSize = 0;
+	int iArticleOffset = 0;
+	int iArticleSize = 0;
 
 	if (g_pOptions->GetDecode())
 	{
-		bool bOK = false;
 		if (m_eFormat == Decoder::efYenc)
 		{
-			bOK = m_YDecoder.Write(szLine, iLen, m_pOutFile);
+			iLen = m_YDecoder.DecodeBuffer(szLine, iLen);
+			szArticleFilename = m_YDecoder.GetArticleFilename();
+			iArticleFileSize = m_YDecoder.GetSize();
 		}
 		else if (m_eFormat == Decoder::efUx)
 		{
-			bOK = m_UDecoder.Write(szLine, iLen, m_pOutFile);
+			iLen = m_UDecoder.DecodeBuffer(szLine, iLen);
+			szArticleFilename = m_UDecoder.GetArticleFilename();
 		}
 		else
 		{
 			detail("Decoding %s failed: unsupported encoding", m_szInfoName);
 			return false;
 		}
-		if (!bOK)
+
+		if (iLen > 0 && m_eFormat == Decoder::efYenc)
 		{
-			debug("Failed line: %s", szLine);
-			detail("Decoding %s failed", m_szInfoName);
-		}
-		return bOK;
-	}
-	else
-	{
-		return fwrite(szLine, 1, iLen, m_pOutFile) > 0;
-	}
-}
-
-bool ArticleDownloader::PrepareFile(char* szLine)
-{
-	bool bOpen = false;
-
-	// prepare file for writing
-	if (m_eFormat == Decoder::efYenc)
-	{
-		if (!strncmp(szLine, "=ybegin ", 8))
-		{
-			if (g_pOptions->GetDupeCheck() &&
-				m_pFileInfo->GetNZBInfo()->GetDupeMode() != dmForce &&
-				!m_pFileInfo->GetNZBInfo()->GetManyDupeFiles())
+			if (m_YDecoder.GetBegin() == 0 || m_YDecoder.GetEnd() == 0)
 			{
-				m_pFileInfo->LockOutputFile();
-				bool bOutputInitialized = m_pFileInfo->GetOutputInitialized();
-				if (!bOutputInitialized)
-				{
-					char* pb = strstr(szLine, " name=");
-					if (pb)
-					{
-						pb += 6; //=strlen(" name=")
-						char* pe;
-						for (pe = pb; *pe != '\0' && *pe != '\n' && *pe != '\r'; pe++) ;
-						if (!m_szArticleFilename)
-						{
-							m_szArticleFilename = (char*)malloc(pe - pb + 1);
-							strncpy(m_szArticleFilename, pb, pe - pb);
-							m_szArticleFilename[pe - pb] = '\0';
-						}
-					}
-				}
-				if (!g_pOptions->GetDirectWrite())
-				{
-					m_pFileInfo->SetOutputInitialized(true);
-				}
-				m_pFileInfo->UnlockOutputFile();
-				if (!bOutputInitialized && m_szArticleFilename &&
-					Util::FileExists(m_pFileInfo->GetNZBInfo()->GetDestDir(), m_szArticleFilename))
-				{
-					m_bDuplicate = true;
-					return false;
-				}
+				return false;
 			}
-
-			if (g_pOptions->GetDirectWrite())
-			{
-				char* pb = strstr(szLine, " size=");
-				if (pb) 
-				{
-					m_pFileInfo->LockOutputFile();
-					if (!m_pFileInfo->GetOutputInitialized())
-					{
-						pb += 6; //=strlen(" size=")
-						long iArticleFilesize = atol(pb);
-						if (!CreateOutputFile(iArticleFilesize))
-						{
-							m_pFileInfo->UnlockOutputFile();
-							return false;
-						}
-						m_pFileInfo->SetOutputInitialized(true);
-					}
-					m_pFileInfo->UnlockOutputFile();
-					bOpen = true;
-				}
-			}
-			else
-			{
-				bOpen = true;
-			}
+			iArticleOffset = m_YDecoder.GetBegin() - 1;
+			iArticleSize = m_YDecoder.GetEnd() - m_YDecoder.GetBegin() + 1;
 		}
 	}
-	else
-	{
-		bOpen = true;
-	}
 
-	if (bOpen)
+	if (!m_bWritingStarted && iLen > 0)
 	{
-		bool bDirectWrite = g_pOptions->GetDirectWrite() && m_eFormat == Decoder::efYenc;
-		const char* szFilename = bDirectWrite ? m_szOutputFilename : m_szTempFilename;
-		m_pOutFile = fopen(szFilename, bDirectWrite ? FOPEN_RBP : FOPEN_WB);
-		if (!m_pOutFile)
+		if (!m_ArticleWriter.Start(m_eFormat, szArticleFilename, iArticleFileSize, iArticleOffset, iArticleSize))
 		{
-			char szSysErrStr[256];
-			error("Could not %s file %s! Errcode: %i, %s", bDirectWrite ? "open" : "create", szFilename,
-				errno, Util::GetLastErrorMessage(szSysErrStr, sizeof(szSysErrStr)));
 			return false;
 		}
-		if (g_pOptions->GetWriteBufferSize() == -1)
-		{
-			setvbuf(m_pOutFile, (char *)NULL, _IOFBF, m_pArticleInfo->GetSize());
-		}
-		else if (g_pOptions->GetWriteBufferSize() > 0)
-		{
-			setvbuf(m_pOutFile, (char *)NULL, _IOFBF, g_pOptions->GetWriteBufferSize());
-		}
+		m_bWritingStarted = true;
 	}
 
-	return true;
-}
+	bool bOK = iLen == 0 || m_ArticleWriter.Write(szLine, iLen);
 
-/* creates output file and subdirectores */
-bool ArticleDownloader::CreateOutputFile(int iSize)
-{
-	if (g_pOptions->GetDirectWrite() && Util::FileExists(m_szOutputFilename) &&
-		Util::FileSize(m_szOutputFilename) == iSize)
-	{
-		// keep existing old file from previous program session
-		return true;
-	}
-		
-	// delete eventually existing old file from previous program session
-	remove(m_szOutputFilename);
-
-	// ensure the directory exist
-	char szDestDir[1024];
-	int iMaxlen = Util::BaseFileName(m_szOutputFilename) - m_szOutputFilename;
-	if (iMaxlen > 1024-1) iMaxlen = 1024-1;
-	strncpy(szDestDir, m_szOutputFilename, iMaxlen);
-	szDestDir[iMaxlen] = '\0';
-	char szErrBuf[1024];
-
-	if (!Util::ForceDirectories(szDestDir, szErrBuf, sizeof(szErrBuf)))
-	{
-		error("Could not create directory %s: %s", szDestDir, szErrBuf);
-		return false;
-	}
-
-	if (!Util::CreateSparseFile(m_szOutputFilename, iSize))
-	{
-		error("Could not create file %s", m_szOutputFilename);
-		return false;
-	}
-
-	return true;
-}
-
-void ArticleDownloader::BuildOutputFilename()
-{
-	char szFilename[1024];
-
-	snprintf(szFilename, 1024, "%s%i.%03i", g_pOptions->GetTempDir(), m_pFileInfo->GetID(), m_pArticleInfo->GetPartNumber());
-	szFilename[1024-1] = '\0';
-	m_pArticleInfo->SetResultFilename(szFilename);
-
-	char tmpname[1024];
-	snprintf(tmpname, 1024, "%s.tmp", szFilename);
-	tmpname[1024-1] = '\0';
-	SetTempFilename(tmpname);
-
-	if (g_pOptions->GetDirectWrite())
-	{
-		m_pFileInfo->LockOutputFile();
-
-		if (m_pFileInfo->GetOutputFilename())
-		{
-			strncpy(szFilename, m_pFileInfo->GetOutputFilename(), 1024);
-			szFilename[1024-1] = '\0';
-		}
-		else
-		{
-			snprintf(szFilename, 1024, "%s%c%i.out.tmp", m_pFileInfo->GetNZBInfo()->GetDestDir(), (int)PATH_SEPARATOR, m_pFileInfo->GetID());
-			szFilename[1024-1] = '\0';
-			m_pFileInfo->SetOutputFilename(szFilename);
-		}
-
-		m_pFileInfo->UnlockOutputFile();
-
-		SetOutputFilename(szFilename);
-	}
+	return bOK;
 }
 
 ArticleDownloader::EStatus ArticleDownloader::DecodeCheck()
 {
-	bool bDirectWrite = g_pOptions->GetDirectWrite() && m_eFormat == Decoder::efYenc;
-
 	if (g_pOptions->GetDecode())
 	{
-		SetStatus(adDecoding);
-
 		Decoder* pDecoder = NULL;
-
 		if (m_eFormat == Decoder::efYenc)
 		{
 			pDecoder = &m_YDecoder;
@@ -788,71 +602,44 @@ ArticleDownloader::EStatus ArticleDownloader::DecodeCheck()
 		}
 
 		Decoder::EStatus eStatus = pDecoder->Check();
-		bool bOK = eStatus == Decoder::eFinished;
 
-		if (!bDirectWrite && bOK)
+		if (eStatus == Decoder::eFinished)
 		{
-			if (!Util::MoveFile(m_szTempFilename, m_szResultFilename))
+			if (pDecoder->GetArticleFilename())
 			{
-				char szErrBuf[256];
-				error("Could not rename file %s to %s: %s", m_szTempFilename, m_szResultFilename, Util::GetLastErrorMessage(szErrBuf, sizeof(szErrBuf)));
+				free(m_szArticleFilename);
+				m_szArticleFilename = strdup(pDecoder->GetArticleFilename());
 			}
-		}
-
-		if (!m_szArticleFilename && pDecoder->GetArticleFilename())
-		{
-			m_szArticleFilename = strdup(pDecoder->GetArticleFilename());
-		}
-
-		remove(m_szTempFilename);
-
-		if (bOK)
-		{
-			detail("Successfully downloaded %s", m_szInfoName);
 			return adFinished;
+		}
+		else if (eStatus == Decoder::eCrcError)
+		{
+			detail("Decoding %s failed: CRC-Error", m_szInfoName);
+			return adCrcError;
+		}
+		else if (eStatus == Decoder::eArticleIncomplete)
+		{
+			detail("Decoding %s failed: article incomplete", m_szInfoName);
+			return adFailed;
+		}
+		else if (eStatus == Decoder::eInvalidSize)
+		{
+			detail("Decoding %s failed: size mismatch", m_szInfoName);
+			return adFailed;
+		}
+		else if (eStatus == Decoder::eNoBinaryData)
+		{
+			detail("Decoding %s failed: no binary data found", m_szInfoName);
+			return adFailed;
 		}
 		else
 		{
-			remove(m_szResultFilename);
-			if (eStatus == Decoder::eCrcError)
-			{
-				detail("Decoding %s failed: CRC-Error", m_szInfoName);
-				return adCrcError;
-			}
-			else if (eStatus == Decoder::eArticleIncomplete)
-			{
-				detail("Decoding %s failed: article incomplete", m_szInfoName);
-				return adFailed;
-			}
-			else if (eStatus == Decoder::eInvalidSize)
-			{
-				detail("Decoding %s failed: size mismatch", m_szInfoName);
-				return adFailed;
-			}
-			else if (eStatus == Decoder::eNoBinaryData)
-			{
-				detail("Decoding %s failed: no binary data found", m_szInfoName);
-				return adFailed;
-			}
-			else
-			{
-				detail("Decoding %s failed", m_szInfoName);
-				return adFailed;
-			}
+			detail("Decoding %s failed", m_szInfoName);
+			return adFailed;
 		}
 	}
 	else 
 	{
-		// rawmode
-		if (Util::MoveFile(m_szTempFilename, m_szResultFilename))
-		{
-			detail("Article %s successfully downloaded", m_szInfoName);
-		}
-		else
-		{
-			char szErrBuf[256];
-			error("Could not move file %s to %s: %s", m_szTempFilename, m_szResultFilename, Util::GetLastErrorMessage(szErrBuf, sizeof(szErrBuf)));
-		}
 		return adFinished;
 	}
 }
@@ -865,8 +652,7 @@ void ArticleDownloader::LogDebugInfo()
 #else
 		ctime_r(&m_tLastUpdateTime, szTime);
 #endif
-
-	info("      Download: status=%i, LastUpdateTime=%s, filename=%s", m_eStatus, szTime, Util::BaseFileName(GetTempFilename()));
+	info("      Download: Status=%i, LastUpdateTime=%s, InfoName=%s", m_eStatus, szTime, m_szInfoName);
 }
 
 void ArticleDownloader::Stop()
@@ -914,340 +700,4 @@ void ArticleDownloader::FreeConnection(bool bKeepConnected)
 		m_pConnection = NULL;
 		m_mutexConnection.Unlock();
 	}
-}
-
-void ArticleDownloader::CompleteFileParts()
-{
-	debug("Completing file parts");
-	debug("ArticleFilename: %s", m_pFileInfo->GetFilename());
-
-	SetStatus(adJoining);
-
-	bool bDirectWrite = g_pOptions->GetDirectWrite() && m_pFileInfo->GetOutputInitialized();
-
-	char szNZBName[1024];
-	char szNZBDestDir[1024];
-	// the locking is needed for accessing the memebers of NZBInfo
-	DownloadQueue::Lock();
-	strncpy(szNZBName, m_pFileInfo->GetNZBInfo()->GetName(), 1024);
-	strncpy(szNZBDestDir, m_pFileInfo->GetNZBInfo()->GetDestDir(), 1024);
-	DownloadQueue::Unlock();
-	szNZBName[1024-1] = '\0';
-	szNZBDestDir[1024-1] = '\0';
-	
-	char InfoFilename[1024];
-	snprintf(InfoFilename, 1024, "%s%c%s", szNZBName, (int)PATH_SEPARATOR, m_pFileInfo->GetFilename());
-	InfoFilename[1024-1] = '\0';
-
-	if (!g_pOptions->GetDecode())
-	{
-		detail("Moving articles for %s", InfoFilename);
-	}
-	else if (bDirectWrite)
-	{
-		detail("Checking articles for %s", InfoFilename);
-	}
-	else
-	{
-		detail("Joining articles for %s", InfoFilename);
-	}
-
-	// Ensure the DstDir is created
-	char szErrBuf[1024];
-	if (!Util::ForceDirectories(szNZBDestDir, szErrBuf, sizeof(szErrBuf)))
-	{
-		error("Could not create directory %s: %s", szNZBDestDir, szErrBuf);
-		SetStatus(adJoined);
-		return;
-	}
-
-	char ofn[1024];
-	Util::MakeUniqueFilename(ofn, 1024, szNZBDestDir, m_pFileInfo->GetFilename());
-
-	FILE* outfile = NULL;
-	char tmpdestfile[1024];
-	snprintf(tmpdestfile, 1024, "%s.tmp", ofn);
-	tmpdestfile[1024-1] = '\0';
-
-	if (g_pOptions->GetDecode() && !bDirectWrite)
-	{
-		remove(tmpdestfile);
-		outfile = fopen(tmpdestfile, FOPEN_WBP);
-		if (!outfile)
-		{
-			error("Could not create file %s!", tmpdestfile);
-			SetStatus(adJoined);
-			return;
-		}
-		if (g_pOptions->GetWriteBufferSize() == -1 && (*m_pFileInfo->GetArticles())[0])
-		{
-			setvbuf(outfile, (char *)NULL, _IOFBF, (*m_pFileInfo->GetArticles())[0]->GetSize());
-		}
-		else if (g_pOptions->GetWriteBufferSize() > 0)
-		{
-			setvbuf(outfile, (char *)NULL, _IOFBF, g_pOptions->GetWriteBufferSize());
-		}
-	}
-	else if (!g_pOptions->GetDecode())
-	{
-		remove(tmpdestfile);
-		if (!Util::CreateDirectory(ofn))
-		{
-			error("Could not create directory %s! Errcode: %i", ofn, errno);
-			SetStatus(adJoined);
-			return;
-		}
-	}
-
-	bool complete = true;
-	int iBrokenCount = 0;
-	static const int BUFFER_SIZE = 1024 * 50;
-	char* buffer = NULL;
-
-	if (g_pOptions->GetDecode() && !bDirectWrite)
-	{
-		buffer = (char*)malloc(BUFFER_SIZE);
-	}
-
-	for (FileInfo::Articles::iterator it = m_pFileInfo->GetArticles()->begin(); it != m_pFileInfo->GetArticles()->end(); it++)
-	{
-		ArticleInfo* pa = *it;
-		if (pa->GetStatus() != ArticleInfo::aiFinished)
-		{
-			iBrokenCount++;
-			complete = false;
-		}
-		else if (g_pOptions->GetDecode() && !bDirectWrite)
-		{
-			FILE* infile;
-			const char* fn = pa->GetResultFilename();
-
-			infile = fopen(fn, FOPEN_RB);
-			if (infile)
-			{
-				int cnt = BUFFER_SIZE;
-
-				while (cnt == BUFFER_SIZE)
-				{
-					cnt = (int)fread(buffer, 1, BUFFER_SIZE, infile);
-					fwrite(buffer, 1, cnt, outfile);
-					SetLastUpdateTimeNow();
-				}
-
-				fclose(infile);
-			}
-			else
-			{
-				complete = false;
-				iBrokenCount++;
-				detail("Could not find file %s. Status is broken", fn);
-			}
-		}
-		else if (!g_pOptions->GetDecode())
-		{
-			const char* fn = pa->GetResultFilename();
-			char dstFileName[1024];
-			snprintf(dstFileName, 1024, "%s%c%03i", ofn, (int)PATH_SEPARATOR, pa->GetPartNumber());
-			dstFileName[1024-1] = '\0';
-			if (!Util::MoveFile(fn, dstFileName))
-			{
-				char szErrBuf[256];
-				error("Could not move file %s to %s: %s", fn, dstFileName, Util::GetLastErrorMessage(szErrBuf, sizeof(szErrBuf)));
-			}
-		}
-	}
-
-	free(buffer);
-
-	if (outfile)
-	{
-		fclose(outfile);
-		if (!Util::MoveFile(tmpdestfile, ofn))
-		{
-			char szErrBuf[256];
-			error("Could not move file %s to %s: %s", tmpdestfile, ofn, Util::GetLastErrorMessage(szErrBuf, sizeof(szErrBuf)));
-		}
-	}
-
-	if (bDirectWrite)
-	{
-		if (!Util::MoveFile(m_szOutputFilename, ofn))
-		{
-			char szErrBuf[256];
-			error("Could not move file %s to %s: %s", m_szOutputFilename, ofn, Util::GetLastErrorMessage(szErrBuf, sizeof(szErrBuf)));
-		}
-
-		// if destination directory was changed delete the old directory (if empty)
-		int iLen = strlen(szNZBDestDir);
-		if (!(!strncmp(szNZBDestDir, m_szOutputFilename, iLen) && 
-			(m_szOutputFilename[iLen] == PATH_SEPARATOR || m_szOutputFilename[iLen] == ALT_PATH_SEPARATOR)))
-		{
-			debug("Checking old dir for: %s", m_szOutputFilename);
-			char szOldDestDir[1024];
-			int iMaxlen = Util::BaseFileName(m_szOutputFilename) - m_szOutputFilename;
-			if (iMaxlen > 1024-1) iMaxlen = 1024-1;
-			strncpy(szOldDestDir, m_szOutputFilename, iMaxlen);
-			szOldDestDir[iMaxlen] = '\0';
-			if (Util::DirEmpty(szOldDestDir))
-			{
-				debug("Deleting old dir: %s", szOldDestDir);
-				rmdir(szOldDestDir);
-			}
-		}
-	}
-
-	if (!bDirectWrite)
-	{
-		for (FileInfo::Articles::iterator it = m_pFileInfo->GetArticles()->begin(); it != m_pFileInfo->GetArticles()->end(); it++)
-		{
-			ArticleInfo* pa = *it;
-			remove(pa->GetResultFilename());
-		}
-	}
-
-	if (complete)
-	{
-		info("Successfully downloaded %s", InfoFilename);
-	}
-	else
-	{
-		warn("%i of %i article downloads failed for \"%s\"",
-			iBrokenCount + m_pFileInfo->GetMissedArticles(),
-			m_pFileInfo->GetTotalArticles(), InfoFilename);
-
-		if (g_pOptions->GetCreateBrokenLog())
-		{
-			char szBrokenLogName[1024];
-			snprintf(szBrokenLogName, 1024, "%s%c_brokenlog.txt", szNZBDestDir, (int)PATH_SEPARATOR);
-			szBrokenLogName[1024-1] = '\0';
-			FILE* file = fopen(szBrokenLogName, FOPEN_AB);
-			fprintf(file, "%s (%i/%i)%s", m_pFileInfo->GetFilename(),
-				m_pFileInfo->GetTotalArticles() - iBrokenCount - m_pFileInfo->GetMissedArticles(),
-				m_pFileInfo->GetTotalArticles(), LINE_ENDING);
-			fclose(file);
-		}
-	}
-
-	// the locking is needed for accessing the members of NZBInfo
-	DownloadQueue::Lock();
-	m_pFileInfo->GetNZBInfo()->GetCompletedFiles()->push_back(strdup(ofn));
-	if (strcmp(m_pFileInfo->GetNZBInfo()->GetDestDir(), szNZBDestDir))
-	{
-		// destination directory was changed during completion, need to move the file
-		MoveCompletedFiles(m_pFileInfo->GetNZBInfo(), szNZBDestDir);
-	}
-	DownloadQueue::Unlock();
-
-	SetStatus(adJoined);
-}
-
-bool ArticleDownloader::MoveCompletedFiles(NZBInfo* pNZBInfo, const char* szOldDestDir)
-{
-	if (pNZBInfo->GetCompletedFiles()->empty())
-	{
-		return true;
-	}
-
-	// Ensure the DstDir is created
-	char szErrBuf[1024];
-	if (!Util::ForceDirectories(pNZBInfo->GetDestDir(), szErrBuf, sizeof(szErrBuf)))
-	{
-		error("Could not create directory %s: %s", pNZBInfo->GetDestDir(), szErrBuf);
-		return false;
-	}
-
-	// move already downloaded files to new destination
-	for (NZBInfo::Files::iterator it = pNZBInfo->GetCompletedFiles()->begin(); it != pNZBInfo->GetCompletedFiles()->end(); it++)
-    {
-		char* szFileName = *it;
-		char szNewFileName[1024];
-		snprintf(szNewFileName, 1024, "%s%c%s", pNZBInfo->GetDestDir(), (int)PATH_SEPARATOR, Util::BaseFileName(szFileName));
-		szNewFileName[1024-1] = '\0';
-
-		// check if file was not moved already
-		if (strcmp(szFileName, szNewFileName))
-		{
-			// prevent overwriting of existing files
-			Util::MakeUniqueFilename(szNewFileName, 1024, pNZBInfo->GetDestDir(), Util::BaseFileName(szFileName));
-
-			detail("Moving file %s to %s", szFileName, szNewFileName);
-			if (Util::MoveFile(szFileName, szNewFileName))
-			{
-				free(szFileName);
-				*it = strdup(szNewFileName);
-			}
-			else
-			{
-				char szErrBuf[256];
-				error("Could not move file %s to %s: %s", szFileName, szNewFileName, Util::GetLastErrorMessage(szErrBuf, sizeof(szErrBuf)));
-			}
-		}
-    }
-
-	// move brokenlog.txt
-	if (g_pOptions->GetCreateBrokenLog())
-	{
-		char szOldBrokenLogName[1024];
-		snprintf(szOldBrokenLogName, 1024, "%s%c_brokenlog.txt", szOldDestDir, (int)PATH_SEPARATOR);
-		szOldBrokenLogName[1024-1] = '\0';
-		if (Util::FileExists(szOldBrokenLogName))
-		{
-			char szBrokenLogName[1024];
-			snprintf(szBrokenLogName, 1024, "%s%c_brokenlog.txt", pNZBInfo->GetDestDir(), (int)PATH_SEPARATOR);
-			szBrokenLogName[1024-1] = '\0';
-
-			detail("Moving file %s to %s", szOldBrokenLogName, szBrokenLogName);
-			if (Util::FileExists(szBrokenLogName))
-			{
-				// copy content to existing new file, then delete old file
-				FILE* outfile;
-				outfile = fopen(szBrokenLogName, FOPEN_AB);
-				if (outfile)
-				{
-					FILE* infile;
-					infile = fopen(szOldBrokenLogName, FOPEN_RB);
-					if (infile)
-					{
-						static const int BUFFER_SIZE = 1024 * 50;
-						int cnt = BUFFER_SIZE;
-						char* buffer = (char*)malloc(BUFFER_SIZE);
-						while (cnt == BUFFER_SIZE)
-						{
-							cnt = (int)fread(buffer, 1, BUFFER_SIZE, infile);
-							fwrite(buffer, 1, cnt, outfile);
-						}
-						fclose(infile);
-						free(buffer);
-						remove(szOldBrokenLogName);
-					}
-					else
-					{
-						error("Could not open file %s", szOldBrokenLogName);
-					}
-					fclose(outfile);
-				}
-				else
-				{
-					error("Could not open file %s", szBrokenLogName);
-				}
-			}
-			else 
-			{
-				// move to new destination
-				if (!Util::MoveFile(szOldBrokenLogName, szBrokenLogName))
-				{
-					char szErrBuf[256];
-					error("Could not move file %s to %s: %s", szOldBrokenLogName, szBrokenLogName, Util::GetLastErrorMessage(szErrBuf, sizeof(szErrBuf)));
-				}
-			}
-		}
-	}
-
-	// delete old directory (if empty)
-	if (Util::DirEmpty(szOldDestDir))
-	{
-		rmdir(szOldDestDir);
-	}
-
-	return true;
 }

@@ -181,6 +181,7 @@ static const char* OPTION_FEEDHISTORY			= "FeedHistory";
 static const char* OPTION_URLFORCE				= "UrlForce";
 static const char* OPTION_TIMECORRECTION		= "TimeCorrection";
 static const char* OPTION_PROPAGATIONDELAY		= "PropagationDelay";
+static const char* OPTION_ARTICLECACHE			= "ArticleCache";
 
 // obsolete options
 static const char* OPTION_POSTLOGKIND			= "PostLogKind";
@@ -543,6 +544,7 @@ Options::Options(int argc, char* argv[])
 	m_iTimeCorrection		= 0;
 	m_iLocalTimeOffset		= 0;
 	m_iPropagationDelay		= 0;
+	m_iArticleCache			= 0;
 
 	// Option "ConfigFile" will be initialized later, but we want
 	// to see it at the top of option list, so we add it first
@@ -809,6 +811,7 @@ void Options::InitDefault()
 	SetOption(OPTION_URLFORCE, "yes");
 	SetOption(OPTION_TIMECORRECTION, "0");
 	SetOption(OPTION_PROPAGATIONDELAY, "0");
+	SetOption(OPTION_ARTICLECACHE, "0");
 }
 
 void Options::InitOptFile()
@@ -973,6 +976,7 @@ void Options::InitOptions()
 	}
 	m_iTimeCorrection *= 60;
 	m_iPropagationDelay		= ParseIntValue(OPTION_PROPAGATIONDELAY, 10) * 60;
+	m_iArticleCache			= ParseIntValue(OPTION_ARTICLECACHE, 10);
 
 	CheckDir(&m_szNzbDir, OPTION_NZBDIR, m_iNzbDirInterval == 0, true);
 
@@ -2703,6 +2707,16 @@ void Options::CheckOptions()
 			free(m_szConfigTemplate);
 			m_szConfigTemplate = strdup("");
 		}
+	}
+
+	if (m_iArticleCache < 0)
+	{
+		m_iArticleCache = 0;
+	}
+	else if (sizeof(void*) == 4 && m_iArticleCache > 1900 * 1024 * 1024)
+	{
+		ConfigError("Invalid value for option \"ArticleCache\": %i. Changed to %i", m_iArticleCache, 1900 * 1024 * 1024);
+		m_iArticleCache = 1900 * 1024 * 1024;
 	}
 }
 

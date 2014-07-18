@@ -258,6 +258,14 @@
 				>
 			</File>
 			<File
+				RelativePath=".\daemon\nntp\ArticleWriter.cpp"
+				>
+			</File>
+			<File
+				RelativePath=".\daemon\nntp\ArticleWriter.h"
+				>
+			</File>
+			<File
 				RelativePath=".\daemon\nntp\Decoder.cpp"
 				>
 			</File>

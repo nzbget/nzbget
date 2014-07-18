@@ -47,6 +47,7 @@
 #include "Options.h"
 #include "ServerPool.h"
 #include "ArticleDownloader.h"
+#include "ArticleWriter.h"
 #include "DiskState.h"
 #include "Util.h"
 #include "Decoder.h"
@@ -56,6 +57,7 @@ extern Options* g_pOptions;
 extern ServerPool* g_pServerPool;
 extern DiskState* g_pDiskState;
 extern StatMeter* g_pStatMeter;
+extern ArticleCache* g_pArticleCache;
 
 bool QueueCoordinator::CoordinatorDownloadQueue::EditEntry(
 	int ID, EEditAction eAction, int iOffset, const char* szText)
@@ -574,7 +576,7 @@ void QueueCoordinator::Update(Subject* Caller, void* Aspect)
 {
 	debug("Notification from ArticleDownloader received");
 
-	ArticleDownloader* pArticleDownloader = (ArticleDownloader*) Caller;
+	ArticleDownloader* pArticleDownloader = (ArticleDownloader*)Caller;
 	if ((pArticleDownloader->GetStatus() == ArticleDownloader::adFinished) ||
 		(pArticleDownloader->GetStatus() == ArticleDownloader::adFailed) ||
 		(pArticleDownloader->GetStatus() == ArticleDownloader::adRetry))
@@ -907,21 +909,27 @@ void QueueCoordinator::ResetHangingDownloads()
 bool QueueCoordinator::DeleteQueueEntry(DownloadQueue* pDownloadQueue, FileInfo* pFileInfo)
 {
 	pFileInfo->SetDeleted(true);
-	bool hasDownloads = false;
+	bool bDownloading = false;
 	for (ActiveDownloads::iterator it = m_ActiveDownloads.begin(); it != m_ActiveDownloads.end(); it++)
 	{
 		ArticleDownloader* pArticleDownloader = *it;
 		if (pArticleDownloader->GetFileInfo() == pFileInfo)
 		{
-			hasDownloads = true;
+			bDownloading = true;
 			pArticleDownloader->Stop();
 		}
 	}
-	if (!hasDownloads)
+
+	while (g_pArticleCache->FileBusy(pFileInfo))
+	{
+		usleep(20*1000);
+	}
+
+	if (!bDownloading)
 	{
 		DeleteFileInfo(pDownloadQueue, pFileInfo, false);
 	}
-	return hasDownloads;
+	return bDownloading;
 }
 
 bool QueueCoordinator::SetQueueEntryCategory(DownloadQueue* pDownloadQueue, NZBInfo* pNZBInfo, const char* szCategory)
@@ -940,7 +948,7 @@ bool QueueCoordinator::SetQueueEntryCategory(DownloadQueue* pDownloadQueue, NZBI
 	pNZBInfo->BuildDestDirName();
 
 	bool bDirUnchanged = !strcmp(pNZBInfo->GetDestDir(), szOldDestDir);
-	bool bOK = bDirUnchanged || ArticleDownloader::MoveCompletedFiles(pNZBInfo, szOldDestDir);
+	bool bOK = bDirUnchanged || ArticleWriter::MoveCompletedFiles(pNZBInfo, szOldDestDir);
 
 	return bOK;
 }
@@ -979,7 +987,7 @@ bool QueueCoordinator::SetQueueEntryName(DownloadQueue* pDownloadQueue, NZBInfo*
 	pNZBInfo->BuildDestDirName();
 
 	bool bDirUnchanged = !strcmp(pNZBInfo->GetDestDir(), szOldDestDir);
-	bool bOK = bDirUnchanged || ArticleDownloader::MoveCompletedFiles(pNZBInfo, szOldDestDir);
+	bool bOK = bDirUnchanged || ArticleWriter::MoveCompletedFiles(pNZBInfo, szOldDestDir);
 
 	return bOK;
 }

@@ -79,6 +79,7 @@
 #include "Scanner.h"
 #include "FeedCoordinator.h"
 #include "Maintenance.h"
+#include "ArticleWriter.h"
 #include "StatMeter.h"
 #include "Util.h"
 #ifdef WIN32
@@ -123,6 +124,7 @@ Scheduler* g_pScheduler = NULL;
 Scanner* g_pScanner = NULL;
 FeedCoordinator* g_pFeedCoordinator = NULL;
 Maintenance* g_pMaintenance = NULL;
+ArticleCache* g_pArticleCache = NULL;
 int g_iArgumentCount;
 char* (*g_szEnvironmentVariables)[] = NULL;
 char* (*g_szArguments)[] = NULL;
@@ -223,6 +225,7 @@ void Run(bool bReload)
 	g_pDupeCoordinator = new DupeCoordinator();
 	g_pUrlCoordinator = new UrlCoordinator();
 	g_pFeedCoordinator = new FeedCoordinator();
+	g_pArticleCache = new ArticleCache();
 	g_pMaintenance = new Maintenance();
 
 	debug("Reading options");
@@ -369,12 +372,17 @@ void Run(bool bReload)
 		g_pUrlCoordinator->Start();
 		g_pPrePostProcessor->Start();
 		g_pFeedCoordinator->Start();
+		if (g_pOptions->GetArticleCache() > 0)
+		{
+			g_pArticleCache->Start();
+		}
 
 		// enter main program-loop
 		while (g_pQueueCoordinator->IsRunning() || 
 			g_pUrlCoordinator->IsRunning() || 
 			g_pPrePostProcessor->IsRunning() ||
-			g_pFeedCoordinator->IsRunning())
+			g_pFeedCoordinator->IsRunning() ||
+			g_pArticleCache->IsRunning())
 		{
 			if (!g_pOptions->GetServerMode() && 
 				!g_pQueueCoordinator->HasMoreJobs() && 
@@ -398,6 +406,10 @@ void Run(bool bReload)
 				{
 					g_pFeedCoordinator->Stop();
 				}
+				if (!g_pArticleCache->IsStopped())
+				{
+					g_pArticleCache->Stop();
+				}
 			}
 			usleep(100 * 1000);
 		}
@@ -407,6 +419,7 @@ void Run(bool bReload)
 		debug("UrlCoordinator stopped");
 		debug("PrePostProcessor stopped");
 		debug("FeedCoordinator stopped");
+		debug("ArticleCache stopped");
 	}
 
 	// Stop network-server
@@ -595,6 +608,7 @@ void ExitProc()
 			g_pUrlCoordinator->Stop();
 			g_pPrePostProcessor->Stop();
 			g_pFeedCoordinator->Stop();
+			g_pArticleCache->Stop();
 		}
 	}
 }
@@ -792,6 +806,11 @@ void Cleanup()
 	delete g_pFeedCoordinator;
 	g_pFeedCoordinator = NULL;
 	debug("FeedCoordinator deleted");
+
+	debug("Deleting ArticleCache");
+	delete g_pArticleCache;
+	g_pArticleCache = NULL;
+	debug("ArticleCache deleted");
 
 	debug("Deleting Maintenance");
 	delete g_pMaintenance;
