@@ -672,11 +672,6 @@ void ParCoordinator::ParRenameCompleted()
 		PrintMessage(pPostInfo, Message::mkInfo, "Requesting par-check/repair for %s to restore missing files ", m_ParRenamer.GetInfoName());
 		pPostInfo->SetRequestParCheck(true);
 	}
-	else if (m_ParRenamer.HasSplittedFragments() && pPostInfo->GetNZBInfo()->GetParStatus() <= NZBInfo::psSkipped)
-	{
-		PrintMessage(pPostInfo, Message::mkInfo, "Requesting par-check/repair for %s to join splitted fragments", m_ParRenamer.GetInfoName());
-		pPostInfo->SetRequestParCheck(true);
-	}
 
 	pPostInfo->SetWorking(false);
 	pPostInfo->SetStage(PostInfo::ptQueued);
