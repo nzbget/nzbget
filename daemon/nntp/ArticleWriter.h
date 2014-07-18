@@ -52,6 +52,7 @@ private:
 	bool				CreateOutputFile(int iSize);
 	void				BuildOutputFilename();
 	bool				IsFileCached();
+	void				SetWriteBuffer(FILE* pOutFile, int iRecSize);
 
 protected:
 	virtual void		SetLastUpdateTimeNow() {}

@@ -664,9 +664,9 @@ bool WebDownloader::PrepareFile()
 		error("Could not %s file %s", "create", szFilename);
 		return false;
 	}
-	if (g_pOptions->GetWriteBufferSize() > 0)
+	if (g_pOptions->GetWriteBuffer() > 0)
 	{
-		setvbuf(m_pOutFile, (char *)NULL, _IOFBF, g_pOptions->GetWriteBufferSize());
+		setvbuf(m_pOutFile, NULL, _IOFBF, g_pOptions->GetWriteBuffer() * 1024);
 	}
 
 	return true;

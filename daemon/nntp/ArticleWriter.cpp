@@ -95,6 +95,16 @@ void ArticleWriter::SetInfoName(const char* szInfoName)
 	m_szInfoName = strdup(szInfoName);
 }
 
+void ArticleWriter::SetWriteBuffer(FILE* pOutFile, int iRecSize)
+{
+	if (g_pOptions->GetWriteBuffer() > 0)
+	{
+		setvbuf(pOutFile, NULL, _IOFBF,
+			iRecSize > 0 && iRecSize < g_pOptions->GetWriteBuffer() * 1024 ?
+			iRecSize : g_pOptions->GetWriteBuffer() * 1024);
+	}
+}
+
 bool ArticleWriter::Start(Decoder::EFormat eFormat, const char* szFilename, int iFileSize,
 	int iArticleOffset, int iArticleSize)
 {
@@ -184,14 +194,7 @@ bool ArticleWriter::Start(Decoder::EFormat eFormat, const char* szFilename, int 
 			error("Could not %s file %s: %s", bDirectWrite ? "open" : "create", szFilename, Util::GetLastErrorMessage(szErrBuf, sizeof(szErrBuf)));
 			return false;
 		}
-		if (g_pOptions->GetWriteBufferSize() == -1)
-		{
-			setvbuf(m_pOutFile, (char*)NULL, _IOFBF, m_pArticleInfo->GetSize());
-		}
-		else if (g_pOptions->GetWriteBufferSize() > 0)
-		{
-			setvbuf(m_pOutFile, (char*)NULL, _IOFBF, g_pOptions->GetWriteBufferSize());
-		}
+		SetWriteBuffer(m_pOutFile, m_pArticleInfo->GetSize());
 
 		if (g_pOptions->GetDirectWrite() && m_eFormat == Decoder::efYenc)
 		{
@@ -433,14 +436,7 @@ void ArticleWriter::CompleteFileParts()
 
 	if (outfile)
 	{
-		if (g_pOptions->GetWriteBufferSize() == -1 && (*m_pFileInfo->GetArticles())[0])
-		{
-			setvbuf(outfile, (char *)NULL, _IOFBF, (*m_pFileInfo->GetArticles())[0]->GetSize());
-		}
-		else if (g_pOptions->GetWriteBufferSize() > 0)
-		{
-			setvbuf(outfile, (char *)NULL, _IOFBF, g_pOptions->GetWriteBufferSize());
-		}
+		SetWriteBuffer(outfile, 0);
 	}
 
 	if (bCached)
@@ -680,14 +676,7 @@ void ArticleWriter::FlushCache()
 
 		if (outfile && bNeedBufFile)
 		{
-			if (g_pOptions->GetWriteBufferSize() == -1 && (*m_pFileInfo->GetArticles())[0])
-			{
-				setvbuf(outfile, (char *)NULL, _IOFBF, (*m_pFileInfo->GetArticles())[0]->GetSize());
-			}
-			else if (g_pOptions->GetWriteBufferSize() > 0)
-			{
-				setvbuf(outfile, (char *)NULL, _IOFBF, g_pOptions->GetWriteBufferSize());
-			}
+			SetWriteBuffer(outfile, 0);
 			bNeedBufFile = false;
 		}
 

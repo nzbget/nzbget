@@ -25,7 +25,7 @@
 
 
 #ifdef HAVE_CONFIG_H
-#include "config.h"
+#include "config.h"					  
 #endif
 
 #ifdef WIN32
@@ -155,7 +155,7 @@ static const char* OPTION_CURSESTIME			= "CursesTime";
 static const char* OPTION_CURSESGROUP			= "CursesGroup";
 static const char* OPTION_CRCCHECK				= "CrcCheck";
 static const char* OPTION_DIRECTWRITE			= "DirectWrite";
-static const char* OPTION_WRITEBUFFERSIZE		= "WriteBufferSize";
+static const char* OPTION_WRITEBUFFER			= "WriteBuffer";
 static const char* OPTION_NZBDIRINTERVAL		= "NzbDirInterval";
 static const char* OPTION_NZBDIRFILEAGE			= "NzbDirFileAge";
 static const char* OPTION_PARCLEANUPQUEUE		= "ParCleanupQueue";
@@ -515,7 +515,7 @@ Options::Options(int argc, char* argv[])
 	m_bCursesGroup			= false;
 	m_bCrcCheck				= false;
 	m_bDirectWrite			= false;
-	m_iWriteBufferSize		= 0;
+	m_iWriteBuffer			= 0;
 	m_iNzbDirInterval		= 0;
 	m_iNzbDirFileAge		= 0;
 	m_bParCleanupQueue		= false;
@@ -782,7 +782,7 @@ void Options::InitDefault()
 	SetOption(OPTION_CURSESGROUP, "no");
 	SetOption(OPTION_CRCCHECK, "yes");
 	SetOption(OPTION_DIRECTWRITE, "yes");
-	SetOption(OPTION_WRITEBUFFERSIZE, "0");
+	SetOption(OPTION_WRITEBUFFER, "0");
 	SetOption(OPTION_NZBDIRINTERVAL, "5");
 	SetOption(OPTION_NZBDIRFILEAGE, "60");
 	SetOption(OPTION_PARCLEANUPQUEUE, "yes");
@@ -962,7 +962,7 @@ void Options::InitOptions()
 	m_iLogBufferSize		= ParseIntValue(OPTION_LOGBUFFERSIZE, 10);
 	m_iUMask				= ParseIntValue(OPTION_UMASK, 8);
 	m_iUpdateInterval		= ParseIntValue(OPTION_UPDATEINTERVAL, 10);
-	m_iWriteBufferSize		= ParseIntValue(OPTION_WRITEBUFFERSIZE, 10);
+	m_iWriteBuffer			= ParseIntValue(OPTION_WRITEBUFFER, 10);
 	m_iNzbDirInterval		= ParseIntValue(OPTION_NZBDIRINTERVAL, 10);
 	m_iNzbDirFileAge		= ParseIntValue(OPTION_NZBDIRFILEAGE, 10);
 	m_iDiskSpace			= ParseIntValue(OPTION_DISKSPACE, 10);
@@ -2652,6 +2652,14 @@ void Options::ConvertOldOption(char *szOption, int iOptionBufLen, char *szValue,
 	{
 		strncpy(szOption + iNameLen - 10, ".PostScript", iOptionBufLen - 9 /* strlen("Category.") */);
 	}
+
+	if (!strcasecmp(szOption, "WriteBufferSize"))
+	{
+		strncpy(szOption, "WriteBuffer", iOptionBufLen);
+		int val = strtol(szValue, NULL, 10);
+		val = val == -1 ? 1024 : val / 1024;
+		snprintf(szValue, iValueBufLen, "%i", val);
+	}	
 
 	szOption[iOptionBufLen-1] = '\0';
 	szOption[iValueBufLen-1] = '\0';
