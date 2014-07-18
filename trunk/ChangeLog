@@ -1,3 +1,7 @@
+nzbget-14.0-testing:
+  - please see subversion log at
+    http://sourceforge.net/p/nzbget/code/HEAD/log/
+
 nzbget-13.0:
   - reworked download queue:
         - new dialog to build filters in web-interface with instant preview;
