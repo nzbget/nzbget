@@ -319,6 +319,7 @@ private:
 	bool				m_bUrlForce;
 	int					m_iTimeCorrection;
 	int					m_iPropagationDelay;
+	int					m_iArticleCache;
 
 	// Parsed command-line parameters
 	bool				m_bServerMode;
@@ -484,6 +485,7 @@ public:
 	bool				GetUrlForce() { return m_bUrlForce; }
 	int					GetTimeCorrection() { return m_iTimeCorrection; }
 	int					GetPropagationDelay() { return m_iPropagationDelay; }
+	int					GetArticleCache() { return m_iArticleCache; }
 
 	Category*			FindCategory(const char* szName, bool bSearchAliases) { return m_Categories.FindCategory(szName, bSearchAliases); }
 

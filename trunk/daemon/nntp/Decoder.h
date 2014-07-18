@@ -1,8 +1,7 @@
 /*
  *  This file is part of nzbget
  *
- *  Copyright (C) 2004 Sven Henkel <sidddy@users.sourceforge.net>
- *  Copyright (C) 2007-2008 Andrey Prygunkov <hugbug@users.sourceforge.net>
+ *  Copyright (C) 2007-2014 Andrey Prygunkov <hugbug@users.sourceforge.net>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -50,8 +49,6 @@ public:
 	static const char* FormatNames[];
 
 protected:
-	const char*				m_szSrcFilename;
-	const char*				m_szDestFilename;
 	char*					m_szArticleFilename;
 
 public:
@@ -59,9 +56,7 @@ public:
 	virtual					~Decoder();
 	virtual EStatus			Check() = 0;
 	virtual void			Clear();
-	virtual bool			Write(char* buffer, int len, FILE* outfile) = 0;
-	void					SetSrcFilename(const char* szSrcFilename) { m_szSrcFilename = szSrcFilename; }
-	void					SetDestFilename(const char* szDestFilename) { m_szDestFilename = szDestFilename; }
+	virtual int				DecodeBuffer(char* buffer, int len) = 0;
 	const char*				GetArticleFilename() { return m_szArticleFilename; }
 	static EFormat			DetectFormat(const char* buffer, int len);
 };
@@ -81,11 +76,8 @@ protected:
 	unsigned long			m_iEnd;
 	unsigned long			m_iSize;
 	unsigned long			m_iEndSize;
-	bool					m_bAutoSeek;
-	bool					m_bNeedSetPos;
 	bool					m_bCrcCheck;
 
-	unsigned int			DecodeBuffer(char* buffer);
 	static void				crc32gentab();
 	unsigned long			crc32m(unsigned long startCrc, unsigned char *block, unsigned int length);
 
@@ -93,9 +85,11 @@ public:
 							YDecoder();
 	virtual EStatus			Check();
 	virtual void			Clear();
-	virtual bool			Write(char* buffer, int len, FILE* outfile);
-	void					SetAutoSeek(bool bAutoSeek) { m_bAutoSeek = m_bNeedSetPos = bAutoSeek; }
+	virtual int				DecodeBuffer(char* buffer, int len);
 	void					SetCrcCheck(bool bCrcCheck) { m_bCrcCheck = bCrcCheck; }
+	unsigned long			GetBegin() { return m_iBegin; }
+	unsigned long			GetEnd() { return m_iEnd; }
+	unsigned long			GetSize() { return m_iSize; }
 
 	static void				Init();
 	static void				Final();
@@ -107,13 +101,11 @@ private:
 	bool					m_bBody;
 	bool					m_bEnd;
 
-	unsigned int			DecodeBuffer(char* buffer, int len);
-
 public:
 							UDecoder();
 	virtual EStatus			Check();
 	virtual void			Clear();
-	virtual bool			Write(char* buffer, int len, FILE* outfile);
+	virtual int				DecodeBuffer(char* buffer, int len);
 };
 
 #endif

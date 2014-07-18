@@ -89,6 +89,8 @@ public:
 	bool				SaveStats(Servers* pServers, ServerVolumes* pServerVolumes);
 	bool				LoadStats(Servers* pServers, ServerVolumes* pServerVolumes, bool* pPerfectMatch);
 	void				CleanupTempDir(DownloadQueue* pDownloadQueue);
+	void				WriteCacheFlag();
+	void				DeleteCacheFlag();
 };
 
 #endif

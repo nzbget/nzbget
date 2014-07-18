@@ -2222,6 +2222,12 @@ void DiskState::CalcNZBFileStats(NZBInfo* pNZBInfo, int iFormatVersion)
 
 bool DiskState::LoadAllFileStates(DownloadQueue* pDownloadQueue, Servers* pServers)
 {
+	char szCacheFlagFilename[1024];
+	snprintf(szCacheFlagFilename, 1024, "%s%s", g_pOptions->GetQueueDir(), "acache");
+	szCacheFlagFilename[1024-1] = '\0';
+
+	bool bCacheWasActive = Util::FileExists(szCacheFlagFilename);
+
 	DirBrowser dir(g_pOptions->GetQueueDir());
 	while (const char* filename = dir.Next())
 	{
@@ -2229,7 +2235,7 @@ bool DiskState::LoadAllFileStates(DownloadQueue* pDownloadQueue, Servers* pServe
 		char suffix;
 		if (sscanf(filename, "%i%c", &id, &suffix) == 2 && suffix == 's')
 		{
-			if (g_pOptions->GetContinuePartial())
+			if (g_pOptions->GetContinuePartial() && !bCacheWasActive)
 			{
 				for (NZBList::iterator it = pDownloadQueue->GetQueue()->begin(); it != pDownloadQueue->GetQueue()->end(); it++)
 				{
@@ -2733,4 +2739,29 @@ error:
 	error("Error reading volume stats from disk");
 
 	return false;
+}
+
+void DiskState::WriteCacheFlag()
+{
+	char szFlagFilename[1024];
+	snprintf(szFlagFilename, 1024, "%s%s", g_pOptions->GetQueueDir(), "acache");
+	szFlagFilename[1024-1] = '\0';
+
+	FILE* outfile = fopen(szFlagFilename, FOPEN_WB);
+	if (!outfile)
+	{
+		error("Error saving diskstate: Could not create file %s", szFlagFilename);
+		return;
+	}
+
+	fclose(outfile);
+}
+
+void DiskState::DeleteCacheFlag()
+{
+	char szFlagFilename[1024];
+	snprintf(szFlagFilename, 1024, "%s%s", g_pOptions->GetQueueDir(), "acache");
+	szFlagFilename[1024-1] = '\0';
+
+	remove(szFlagFilename);
 }

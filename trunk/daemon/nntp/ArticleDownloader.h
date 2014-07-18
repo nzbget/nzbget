@@ -34,6 +34,7 @@
 #include "Thread.h"
 #include "NNTPConnection.h"
 #include "Decoder.h"
+#include "ArticleWriter.h"
 
 class ArticleDownloader : public Thread, public Subject
 {
@@ -47,12 +48,19 @@ public:
 		adFailed,
 		adRetry,
 		adCrcError,
-		adDecoding,
-		adJoining,
-		adJoined,
 		adNotFound,
 		adConnectError,
 		adFatalError
+	};
+
+	class ArticleWriterImpl : public ArticleWriter
+	{
+	private:
+		 ArticleDownloader*		m_pOwner;
+	protected:
+		virtual void	SetLastUpdateTimeNow() { m_pOwner->SetLastUpdateTimeNow(); } 
+	public:
+		void			SetOwner(ArticleDownloader* pOwner) { m_pOwner = pOwner; }
 	};
 			
 private:
@@ -61,31 +69,22 @@ private:
 	NNTPConnection* 	m_pConnection;
 	EStatus				m_eStatus;
 	Mutex			 	m_mutexConnection;
-	const char*			m_szResultFilename;
-	char*				m_szTempFilename;
-	char*				m_szArticleFilename;
 	char*				m_szInfoName;
-	char*				m_szOutputFilename;
+	char*				m_szArticleFilename;
 	time_t				m_tLastUpdateTime;
 	Decoder::EFormat	m_eFormat;
 	YDecoder			m_YDecoder;
 	UDecoder			m_UDecoder;
-	FILE*				m_pOutFile;
-	bool				m_bDuplicate;
+	ArticleWriterImpl	m_ArticleWriter;
 	ServerStatList		m_ServerStats;
+	bool				m_bWritingStarted;
 
 	EStatus				Download();
-	bool				Write(char* szLine, int iLen);
-	bool				PrepareFile(char* szLine);
-	bool				CreateOutputFile(int iSize);
-	void				BuildOutputFilename();
 	EStatus				DecodeCheck();
 	void				FreeConnection(bool bKeepConnected);
 	EStatus				CheckResponse(const char* szResponse, const char* szComment);
 	void				SetStatus(EStatus eStatus) { m_eStatus = eStatus; }
-	const char* 		GetTempFilename() { return m_szTempFilename; }
-	void 				SetTempFilename(const char* v);
-	void 				SetOutputFilename(const char* v);
+	bool				Write(char* szLine, int iLen);
 
 public:
 						ArticleDownloader();
@@ -102,11 +101,10 @@ public:
 	time_t				GetLastUpdateTime() { return m_tLastUpdateTime; }
 	void				SetLastUpdateTimeNow() { m_tLastUpdateTime = ::time(NULL); }
 	const char* 		GetArticleFilename() { return m_szArticleFilename; }
-	void				SetInfoName(const char* v);
+	void				SetInfoName(const char* szInfoName);
 	const char*			GetInfoName() { return m_szInfoName; }
-	void				CompleteFileParts();
-	static bool			MoveCompletedFiles(NZBInfo* pNZBInfo, const char* szOldDestDir);
 	void				SetConnection(NNTPConnection* pConnection) { m_pConnection = pConnection; }
+	void				CompleteFileParts() { m_ArticleWriter.CompleteFileParts(); }
 
 	void				LogDebugInfo();
 };

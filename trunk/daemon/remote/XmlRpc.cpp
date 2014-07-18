@@ -49,6 +49,7 @@
 #include "Util.h"
 #include "Maintenance.h"
 #include "StatMeter.h"
+#include "ArticleWriter.h"
 
 extern Options* g_pOptions;
 extern Scanner* g_pScanner;
@@ -56,6 +57,7 @@ extern FeedCoordinator* g_pFeedCoordinator;
 extern ServerPool* g_pServerPool;
 extern Maintenance* g_pMaintenance;
 extern StatMeter* g_pStatMeter;
+extern ArticleCache* g_pArticleCache;
 extern void ExitProc();
 extern void Reload();
 
@@ -1165,6 +1167,9 @@ void StatusXmlCommand::Execute()
 		"<member><name>DownloadedSizeLo</name><value><i4>%u</i4></value></member>\n"
 		"<member><name>DownloadedSizeHi</name><value><i4>%u</i4></value></member>\n"
 		"<member><name>DownloadedSizeMB</name><value><i4>%i</i4></value></member>\n"
+		"<member><name>ArticleCacheLo</name><value><i4>%u</i4></value></member>\n"
+		"<member><name>ArticleCacheHi</name><value><i4>%u</i4></value></member>\n"
+		"<member><name>ArticleCacheMB</name><value><i4>%i</i4></value></member>\n"
 		"<member><name>DownloadRate</name><value><i4>%i</i4></value></member>\n"
 		"<member><name>AverageDownloadRate</name><value><i4>%i</i4></value></member>\n"
 		"<member><name>DownloadLimit</name><value><i4>%i</i4></value></member>\n"
@@ -1203,6 +1208,9 @@ void StatusXmlCommand::Execute()
 		"\"DownloadedSizeLo\" : %u,\n"
 		"\"DownloadedSizeHi\" : %u,\n"
 		"\"DownloadedSizeMB\" : %i,\n"
+		"\"ArticleCacheLo\" : %u,\n"
+		"\"ArticleCacheHi\" : %u,\n"
+		"\"ArticleCacheMB\" : %i,\n"
 		"\"DownloadRate\" : %i,\n"
 		"\"AverageDownloadRate\" : %i,\n"
 		"\"DownloadLimit\" : %i,\n"
@@ -1263,6 +1271,11 @@ void StatusXmlCommand::Execute()
 	Util::SplitInt64(iForcedSize, &iForcedSizeHi, &iForcedSizeLo);
 	int iForcedMBytes = (int)(iForcedSize / 1024 / 1024);
 
+	long long iArticleCache = g_pArticleCache->GetAllocated();
+	unsigned long iArticleCacheHi, iArticleCacheLo;
+	Util::SplitInt64(iArticleCache, &iArticleCacheHi, &iArticleCacheLo);
+	int iArticleCacheMBytes = (int)(iArticleCache / 1024 / 1024);
+
 	int iDownloadRate = (int)(g_pStatMeter->CalcCurrentDownloadSpeed());
 	int iDownloadLimit = (int)(g_pOptions->GetDownloadRate());
 	bool bDownloadPaused = g_pOptions->GetPauseDownload();
@@ -1290,7 +1303,8 @@ void StatusXmlCommand::Execute()
 	snprintf(szContent, 3072, IsJson() ? JSON_STATUS_START : XML_STATUS_START, 
 		iRemainingSizeLo, iRemainingSizeHi, iRemainingMBytes, iForcedSizeLo,
 		iForcedSizeHi, iForcedMBytes, iDownloadedSizeLo, iDownloadedSizeHi,
-		iDownloadedMBytes, iDownloadRate, iAverageDownloadRate, iDownloadLimit,	iThreadCount, 
+		iDownloadedMBytes, iArticleCacheLo, iArticleCacheHi, iArticleCacheMBytes,
+		iDownloadRate, iAverageDownloadRate, iDownloadLimit, iThreadCount, 
 		iPostJobCount, iPostJobCount, iUrlCount, iUpTimeSec, iDownloadTimeSec, 
 		BoolToStr(bDownloadPaused), BoolToStr(bDownloadPaused), BoolToStr(bDownloadPaused), 
 		BoolToStr(bServerStandBy), BoolToStr(bPostPaused), BoolToStr(bScanPaused),

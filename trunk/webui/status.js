@@ -374,6 +374,7 @@ var StatDialog = (new function($)
 	var $StatDialog_DataAverageSpeed;
 	var $StatDialog_DataCurrentSpeed;
 	var $StatDialog_DataSpeedLimit;
+	var $StatDialog_ArticleCache;
 	var $StatDialog_ChartBlock;
 	var $StatDialog_Server;
 	var $StatRangeDialog;
@@ -420,6 +421,7 @@ var StatDialog = (new function($)
 		$StatDialog_DataAverageSpeed = $('#StatDialog_DataAverageSpeed');
 		$StatDialog_DataCurrentSpeed = $('#StatDialog_DataCurrentSpeed');
 		$StatDialog_DataSpeedLimit = $('#StatDialog_DataSpeedLimit');
+		$StatDialog_ArticleCache = $('#StatDialog_ArticleCache');		
 		$StatDialog_ChartBlock = $('#StatDialog_ChartBlock');
 		$StatDialog_Server = $('#StatDialog_Server');
 		$StatRangeDialog = $('#StatRangeDialog');
@@ -495,6 +497,7 @@ var StatDialog = (new function($)
 		$('#StatDialog_Back').hide();
 		$('#StatDialog_BackSpace').show();
 		$('#StatDialog_Title').text('Statistics and Status');
+		Util.show('#StatDialog_ArticleCache_Row', Options.option('ArticleCache') !== '0');
 		$StatDialog.removeClass('modal-large').addClass('modal-mini');
 		monthListInitialized = false;
 		updateServerList();
@@ -542,6 +545,7 @@ var StatDialog = (new function($)
 		$StatDialog_DataAverageSpeed.html(Util.formatSpeed(status.AverageDownloadRate));
 		$StatDialog_DataCurrentSpeed.html(Util.formatSpeed(status.DownloadRate));
 		$StatDialog_DataSpeedLimit.html(Util.formatSpeed(status.DownloadLimit));
+		$StatDialog_ArticleCache.html(Util.formatSizeMB(status.ArticleCacheMB, status.ArticleCacheLo));
 
 		var content = '';
 		content += '<tr><td>Download</td><td class="text-right">' +

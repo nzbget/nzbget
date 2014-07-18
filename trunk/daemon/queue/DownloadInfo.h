@@ -89,6 +89,9 @@ private:
 	int					m_iPartNumber;
 	char*				m_szMessageID;
 	int					m_iSize;
+	char*				m_pSegmentContent;
+	long long			m_iSegmentOffset;
+	int					m_iSegmentSize;
 	EStatus				m_eStatus;
 	char*				m_szResultFilename;
 
@@ -99,8 +102,13 @@ public:
 	int 				GetPartNumber() { return m_iPartNumber; }
 	const char* 		GetMessageID() { return m_szMessageID; }
 	void 				SetMessageID(const char* szMessageID);
-	void 				SetSize(int s) { m_iSize = s; }
+	void 				SetSize(int iSize) { m_iSize = iSize; }
 	int 				GetSize() { return m_iSize; }
+	void				AttachSegment(char* pContent, long long iOffset, int iSize);
+	void				DiscardSegment();
+	const char* 		GetSegmentContent() { return m_pSegmentContent; }
+	long long			GetSegmentOffset() { return m_iSegmentOffset; }
+	int 				GetSegmentSize() { return m_iSegmentSize; }
 	EStatus				GetStatus() { return m_eStatus; }
 	void				SetStatus(EStatus Status) { m_eStatus = Status; }
 	const char*			GetResultFilename() { return m_szResultFilename; }
@@ -142,6 +150,7 @@ private:
 	bool				m_bExtraPriority;
 	int					m_iActiveDownloads;
 	bool				m_bAutoDeleted;
+	int					m_iCachedArticles;
 
 	static int			m_iIDGen;
 	static int			m_iIDMax;
@@ -204,6 +213,8 @@ public:
 	void				SetActiveDownloads(int iActiveDownloads);
 	bool				GetAutoDeleted() { return m_bAutoDeleted; }
 	void				SetAutoDeleted(bool bAutoDeleted) { m_bAutoDeleted = bAutoDeleted; }
+	int					GetCachedArticles() { return m_iCachedArticles; }
+	void				SetCachedArticles(int iCachedArticles) { m_iCachedArticles = iCachedArticles; };
 	ServerStatList*		GetServerStats() { return &m_ServerStats; }
 };
                               

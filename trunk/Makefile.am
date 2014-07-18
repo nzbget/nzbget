@@ -54,6 +54,8 @@ nzbget_SOURCES = \
 	daemon/main/Scheduler.h \
 	daemon/nntp/ArticleDownloader.cpp \
 	daemon/nntp/ArticleDownloader.h \
+	daemon/nntp/ArticleWriter.cpp \
+	daemon/nntp/ArticleWriter.h \
 	daemon/nntp/Decoder.cpp \
 	daemon/nntp/Decoder.h \
 	daemon/nntp/NewsServer.cpp \
