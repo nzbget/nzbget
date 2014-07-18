@@ -86,7 +86,6 @@ ParRenamer::ParRenamer()
 	m_szProgressLabel = (char*)malloc(1024);
 	m_iStageProgress = 0;
 	m_bCancelled = false;
-	m_bHasSplittedFragments = false;
 	m_bHasMissedFiles = false;
 	m_bDetectMissing = false;
 }
@@ -146,7 +145,6 @@ void ParRenamer::Run()
 	m_iFileCount = 0;
 	m_iCurFile = 0;
 	m_iRenamedCount = 0;
-	m_bHasSplittedFragments = false;
 	m_bHasMissedFiles = false;
 	m_eStatus = psFailed;
 
@@ -347,8 +345,6 @@ bool ParRenamer::IsSplittedFragment(const char* szFilename, const char* szCorrec
 			bSplittedFragement = bSplittedFragement && atoi(szDiskBasename + iBaseLen + 1) == 1;
 		}
 	}
-
-	m_bHasSplittedFragments = m_bHasSplittedFragments || bSplittedFragement;
 
 	return bSplittedFragement;
 }

@@ -74,7 +74,6 @@ private:
 	int					m_iFileCount;
 	int					m_iCurFile;
 	int					m_iRenamedCount;
-	bool				m_bHasSplittedFragments;
 	bool				m_bHasMissedFiles;
 	bool				m_bDetectMissing;
 
@@ -109,7 +108,6 @@ public:
 	EStatus				GetStatus() { return m_eStatus; }
 	void				Cancel();
 	bool				GetCancelled() { return m_bCancelled; }
-	bool				HasSplittedFragments() { return m_bHasSplittedFragments; }
 	bool				HasMissedFiles() { return m_bHasMissedFiles; }
 	void				SetDetectMissing(bool bDetectMissing) { m_bDetectMissing = bDetectMissing; }
 };

@@ -127,7 +127,7 @@ void UnpackController::Run()
 		CheckArchiveFiles(bScanNonStdFiles);
 	}
 
-	if (bUnpack && (m_bHasRarFiles || m_bHasNonStdRarFiles || m_bHasSevenZipFiles || m_bHasSevenZipMultiFiles))
+	if (bUnpack && (m_bHasRarFiles || m_bHasNonStdRarFiles || m_bHasSevenZipFiles || m_bHasSevenZipMultiFiles || m_bHasSplittedFiles))
 	{
 		SetInfoName(m_szInfoName);
 		SetWorkingDir(m_szDestDir);
@@ -156,7 +156,14 @@ void UnpackController::Run()
 			ExecuteSevenZip(true);
 		}
 
+		if (m_bHasSplittedFiles && m_bUnpackOK)
+		{
+			JoinSplittedFiles();
+		}
+
 		Completed();
+
+		m_JoinedFiles.Clear();
 	}
 	else
 	{
@@ -272,6 +279,175 @@ void UnpackController::ExecuteSevenZip(bool bMultiVolumes)
 	}
 }
 
+void UnpackController::JoinSplittedFiles()
+{
+	SetLogPrefix("Join");
+	SetProgressLabel("");
+	m_pPostInfo->SetStageProgress(0);
+
+	// determine groups
+
+	FileList groups;
+	RegEx regExSplitExt(".*\\.[a-z,0-9]{3}\\.001$");
+
+	DirBrowser dir(m_szDestDir);
+	while (const char* filename = dir.Next())
+	{
+		char szFullFilename[1024];
+		snprintf(szFullFilename, 1024, "%s%c%s", m_szDestDir, PATH_SEPARATOR, filename);
+		szFullFilename[1024-1] = '\0';
+
+		if (strcmp(filename, ".") && strcmp(filename, "..") && !Util::DirectoryExists(szFullFilename))
+		{
+			if (regExSplitExt.Match(filename) && !FileHasRarSignature(szFullFilename))
+			{
+				if (!JoinFile(filename))
+				{
+					m_bUnpackOK = false;
+					break;
+				}
+			}
+		}
+	}
+
+	SetLogPrefix(NULL);
+	SetProgressLabel("");
+}
+
+bool UnpackController::JoinFile(const char* szFragBaseName)
+{
+	char szDestBaseName[1024];
+	strncpy(szDestBaseName, szFragBaseName, 1024);
+	szDestBaseName[1024-1] = '\0';
+
+	// trim extension
+	char* szExtension = strrchr(szDestBaseName, '.');
+	*szExtension = '\0';
+
+	char szFullFilename[1024];
+	snprintf(szFullFilename, 1024, "%s%c%s", m_szDestDir, PATH_SEPARATOR, szFragBaseName);
+	szFullFilename[1024-1] = '\0';
+	long long lFirstSegmentSize = Util::FileSize(szFullFilename);
+	long long lDifSegmentSize = 0;
+
+	// Validate joinable file:
+	//  - fragments have continuous numbers (no holes);
+	//  - fragments have the same size (except of the last fragment);
+	//  - the last fragment must be smaller than other fragments,
+	//  if it has the same size it is probably not the last and there are missing fragments.
+
+	RegEx regExSplitExt(".*\\.[a-z,0-9]{3}\\.[0-9]{3}$");
+	int iCount = 0;
+	int iMax = 0;
+	int iDifSizeCount = 0;
+	int iDifSizeMin = 999999;
+	DirBrowser dir(m_szDestDir);
+	while (const char* filename = dir.Next())
+	{
+		snprintf(szFullFilename, 1024, "%s%c%s", m_szDestDir, PATH_SEPARATOR, filename);
+		szFullFilename[1024-1] = '\0';
+
+		if (strcmp(filename, ".") && strcmp(filename, "..") && !Util::DirectoryExists(szFullFilename) &&
+			regExSplitExt.Match(filename))
+		{
+			const char* szSegExt = strrchr(filename, '.');
+			int iSegNum = atoi(szSegExt + 1);
+			iCount++;
+			iMax = iSegNum > iMax ? iSegNum : iMax;
+			
+			long long lSegmentSize = Util::FileSize(szFullFilename);
+			if (lSegmentSize != lFirstSegmentSize)
+			{
+				iDifSizeCount++;
+				iDifSizeMin = iSegNum < iDifSizeMin ? iSegNum : iDifSizeMin;
+				lDifSegmentSize = lSegmentSize;
+			}
+		}
+	}
+
+	if (iCount != iMax || ((iDifSizeMin != iCount || iDifSizeMin > iMax) &&
+		m_pPostInfo->GetNZBInfo()->GetParStatus() != NZBInfo::psSuccess))
+	{
+		PrintMessage(Message::mkWarning, "Could not join splitted file %s: missing fragments detected", szDestBaseName);
+		return false;
+	}
+
+	// Now can join
+	PrintMessage(Message::mkInfo, "Joining splitted file %s", szDestBaseName);
+	m_pPostInfo->SetStageProgress(0);
+
+	char szErrBuf[256];
+	char szDestFilename[1024];
+	snprintf(szDestFilename, 1024, "%s%c%s", m_szUnpackDir, PATH_SEPARATOR, szDestBaseName);
+	szDestFilename[1024-1] = '\0';
+
+	FILE* pOutFile = fopen(szDestFilename, FOPEN_WBP);
+	if (!pOutFile)
+	{
+		error("Could not create file %s: %s", szDestFilename, Util::GetLastErrorMessage(szErrBuf, sizeof(szErrBuf)));
+		return false;
+	}
+	if (g_pOptions->GetWriteBuffer() > 0)
+	{
+		setvbuf(pOutFile, NULL, _IOFBF, g_pOptions->GetWriteBuffer() * 1024);
+	}
+
+	long long lTotalSize = lFirstSegmentSize * (iCount - 1) + lDifSegmentSize;
+	long long lWritten = 0;
+
+	static const int BUFFER_SIZE = 1024 * 50;
+	char* buffer = (char*)malloc(BUFFER_SIZE);
+
+	bool bOK = true;
+	for (int i = 1; ; i++)
+	{
+		PrintMessage(Message::mkInfo, "Joining from %s.%.3i", szDestBaseName, i);
+
+		char szMessage[1024];
+		snprintf(szMessage, 1024, "Joining from %s.%.3i", szDestBaseName, i);
+		szMessage[1024-1] = '\0';
+		SetProgressLabel(szMessage);
+
+		char szFragFilename[1024];
+		snprintf(szFragFilename, 1024, "%s%c%s.%.3i", m_szDestDir, PATH_SEPARATOR, szDestBaseName, i);
+		szFragFilename[1024-1] = '\0';
+		if (!Util::FileExists(szFragFilename))
+		{
+			break;
+		}
+
+		FILE* pInFile = fopen(szFragFilename, FOPEN_RB);
+		if (pInFile)
+		{
+			int cnt = BUFFER_SIZE;
+			while (cnt == BUFFER_SIZE)
+			{
+				cnt = (int)fread(buffer, 1, BUFFER_SIZE, pInFile);
+				fwrite(buffer, 1, cnt, pOutFile);
+				lWritten += cnt;
+				m_pPostInfo->SetStageProgress(int(lWritten * 1000 / lTotalSize));
+			}
+			fclose(pInFile);
+
+			char szFragFilename[1024];
+			snprintf(szFragFilename, 1024, "%s.%.3i", szDestBaseName, i);
+			szFragFilename[1024-1] = '\0';
+			m_JoinedFiles.push_back(strdup(szFragFilename));
+		}
+		else
+		{
+			error("Could not open file %s", szFragFilename);
+			bOK = false;
+			break;
+		}
+	}
+
+	fclose(pOutFile);
+	free(buffer);
+
+	return bOK;
+}
+
 void UnpackController::Completed()
 {
 	bool bCleanupSuccess = Cleanup();
@@ -350,12 +526,14 @@ void UnpackController::CheckArchiveFiles(bool bScanNonStdFiles)
 	m_bHasNonStdRarFiles = false;
 	m_bHasSevenZipFiles = false;
 	m_bHasSevenZipMultiFiles = false;
+	m_bHasSplittedFiles = false;
 
 	RegEx regExRar(".*\\.rar$");
 	RegEx regExRarMultiSeq(".*\\.(r|s)[0-9][0-9]$");
 	RegEx regExSevenZip(".*\\.7z$");
 	RegEx regExSevenZipMulti(".*\\.7z\\.[0-9]+$");
 	RegEx regExNumExt(".*\\.[0-9]+$");
+	RegEx regExSplitExt(".*\\.[a-z,0-9]{3}\\.[0-9]{3}$");
 
 	DirBrowser dir(m_szDestDir);
 	while (const char* filename = dir.Next())
@@ -383,6 +561,10 @@ void UnpackController::CheckArchiveFiles(bool bScanNonStdFiles)
 				FileHasRarSignature(szFullFilename))
 			{
 				m_bHasNonStdRarFiles = true;
+			}
+			else if (regExSplitExt.Match(filename))
+			{
+				m_bHasSplittedFiles = true;
 			}
 		}
 	}
@@ -473,6 +655,7 @@ bool UnpackController::Cleanup()
 		RegEx regExRarMultiSeq(".*\\.[r-z][0-9][0-9]$");
 		RegEx regExSevenZip(".*\\.7z$|.*\\.7z\\.[0-9]+$");
 		RegEx regExNumExt(".*\\.[0-9]+$");
+		RegEx regExSplitExt(".*\\.[a-z,0-9]{3}\\.[0-9]{3}$");
 
 		DirBrowser dir(m_szDestDir);
 		while (const char* filename = dir.Next())
@@ -485,8 +668,9 @@ bool UnpackController::Cleanup()
 				!Util::DirectoryExists(szFullFilename) &&
 				(m_bInterDir || !extractedFiles.Exists(filename)) &&
 				(regExRar.Match(filename) || regExSevenZip.Match(filename) ||
-				(regExRarMultiSeq.Match(filename) && FileHasRarSignature(szFullFilename)) ||
-				(m_bHasNonStdRarFiles && regExNumExt.Match(filename) && FileHasRarSignature(szFullFilename))))
+				 (regExRarMultiSeq.Match(filename) && FileHasRarSignature(szFullFilename)) ||
+				 (m_bHasNonStdRarFiles && regExNumExt.Match(filename) && FileHasRarSignature(szFullFilename)) ||
+				 (m_bHasSplittedFiles && regExSplitExt.Match(filename) && m_JoinedFiles.Exists(filename))))
 			{
 				PrintMessage(Message::mkInfo, "Deleting file %s", filename);
 
