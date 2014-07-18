@@ -64,6 +64,13 @@ public:
 		opClientRequestHistory,
 		opClientRequestDownloadUrl
 	};
+	enum EWriteLog
+	{
+		wlNone,
+		wlAppend,
+		wlReset,
+		wlRotate
+	};
 	enum EMessageTarget
 	{
 		mtNone,
@@ -251,7 +258,6 @@ private:
 	EMessageTarget		m_eDetailTarget;
 	bool				m_bDecode;
 	bool				m_bCreateBrokenLog;
-	bool				m_bResetLog;
 	int					m_iConnectionTimeout;
 	int					m_iTerminateTimeout;
 	bool				m_bAppendCategoryDir;
@@ -275,7 +281,8 @@ private:
 	bool				m_bReloadQueue;
 	int					m_iUrlConnections;
 	int					m_iLogBufferSize;
-	bool				m_bCreateLog;
+	EWriteLog			m_eWriteLog;
+	int					m_iRotateLog;
 	char*				m_szLogFile;
 	EParCheck			m_eParCheck;
 	bool				m_bParRepair;
@@ -412,7 +419,6 @@ public:
 	const char*			GetConfigTemplate() { return m_szConfigTemplate; }
 	const char*			GetScriptDir() { return m_szScriptDir; }
 	bool				GetCreateBrokenLog() const { return m_bCreateBrokenLog; }
-	bool				GetResetLog() const { return m_bResetLog; }
 	EMessageTarget		GetInfoTarget() const { return m_eInfoTarget; }
 	EMessageTarget		GetWarningTarget() const { return m_eWarningTarget; }
 	EMessageTarget		GetErrorTarget() const { return m_eErrorTarget; }
@@ -442,8 +448,9 @@ public:
 	bool				GetReloadQueue() { return m_bReloadQueue; }
 	int					GetUrlConnections() { return m_iUrlConnections; }
 	int					GetLogBufferSize() { return m_iLogBufferSize; }
-	bool				GetCreateLog() { return m_bCreateLog; }
+	EWriteLog			GetWriteLog() { return m_eWriteLog; }
 	const char*			GetLogFile() { return m_szLogFile; }
+	int					GetRotateLog() { return m_iRotateLog; }
 	EParCheck			GetParCheck() { return m_eParCheck; }
 	bool				GetParRepair() { return m_bParRepair; }
 	EParScan			GetParScan() { return m_eParScan; }

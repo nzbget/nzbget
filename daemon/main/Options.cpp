@@ -107,8 +107,9 @@ static const char* OPTION_NZBDIR				= "NzbDir";
 static const char* OPTION_WEBDIR				= "WebDir";
 static const char* OPTION_CONFIGTEMPLATE		= "ConfigTemplate";
 static const char* OPTION_SCRIPTDIR				= "ScriptDir";
-static const char* OPTION_CREATELOG				= "CreateLog";
 static const char* OPTION_LOGFILE				= "LogFile";
+static const char* OPTION_WRITELOG				= "WriteLog";
+static const char* OPTION_ROTATELOG				= "RotateLog";
 static const char* OPTION_APPENDCATEGORYDIR		= "AppendCategoryDir";
 static const char* OPTION_LOCKFILE				= "LockFile";
 static const char* OPTION_DAEMONUSERNAME		= "DaemonUsername";
@@ -128,7 +129,6 @@ static const char* OPTION_CONNECTIONTIMEOUT		= "ConnectionTimeout";
 static const char* OPTION_SAVEQUEUE				= "SaveQueue";
 static const char* OPTION_RELOADQUEUE			= "ReloadQueue";
 static const char* OPTION_CREATEBROKENLOG		= "CreateBrokenLog";
-static const char* OPTION_RESETLOG				= "ResetLog";
 static const char* OPTION_DECODE				= "Decode";
 static const char* OPTION_RETRIES				= "Retries";
 static const char* OPTION_RETRYINTERVAL			= "RetryInterval";
@@ -200,6 +200,8 @@ static const char* OPTION_RELOADURLQUEUE		= "ReloadUrlQueue";
 static const char* OPTION_RELOADPOSTQUEUE		= "ReloadPostQueue";
 static const char* OPTION_NZBPROCESS			= "NZBProcess";
 static const char* OPTION_NZBADDEDPROCESS		= "NZBAddedProcess";
+static const char* OPTION_CREATELOG				= "CreateLog";
+static const char* OPTION_RESETLOG				= "ResetLog";
 
 const char* BoolNames[] = { "yes", "no", "true", "false", "1", "0", "on", "off", "enable", "disable", "enabled", "disabled" };
 const int BoolValues[] = { 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0 };
@@ -453,7 +455,6 @@ Options::Options(int argc, char* argv[])
 	m_bPauseScan			= false;
 	m_bTempPauseDownload	= false;
 	m_bCreateBrokenLog		= false;
-	m_bResetLog				= false;
 	m_iDownloadRate			= 0;
 	m_iEditQueueAction		= 0;
 	m_pEditQueueIDList		= NULL;
@@ -496,7 +497,8 @@ Options::Options(int argc, char* argv[])
 	m_iLogBufferSize		= 0;
 	m_iLogLines				= 0;
 	m_iWriteLogKind			= 0;
-	m_bCreateLog			= false;
+	m_eWriteLog				= wlAppend;
+	m_iRotateLog			= 0;
 	m_szLogFile				= NULL;
 	m_eParCheck				= pcManual;
 	m_bParRepair			= false;
@@ -734,7 +736,8 @@ void Options::InitDefault()
 	SetOption(OPTION_WEBDIR, "");
 	SetOption(OPTION_CONFIGTEMPLATE, "");
 	SetOption(OPTION_SCRIPTDIR, "${MainDir}/scripts");
-	SetOption(OPTION_CREATELOG, "yes");
+	SetOption(OPTION_WRITELOG, "append");
+	SetOption(OPTION_ROTATELOG, "3");
 	SetOption(OPTION_APPENDCATEGORYDIR, "yes");
 	SetOption(OPTION_OUTPUTMODE, "curses");
 	SetOption(OPTION_DUPECHECK, "yes");
@@ -752,7 +755,6 @@ void Options::InitDefault()
 	SetOption(OPTION_SAVEQUEUE, "yes");
 	SetOption(OPTION_RELOADQUEUE, "yes");
 	SetOption(OPTION_CREATEBROKENLOG, "yes");
-	SetOption(OPTION_RESETLOG, "no");
 	SetOption(OPTION_DECODE, "yes");
 	SetOption(OPTION_RETRIES, "3");
 	SetOption(OPTION_RETRYINTERVAL, "10");
@@ -960,6 +962,7 @@ void Options::InitOptions()
 	m_iSecurePort			= ParseIntValue(OPTION_SECUREPORT, 10);
 	m_iUrlConnections		= ParseIntValue(OPTION_URLCONNECTIONS, 10);
 	m_iLogBufferSize		= ParseIntValue(OPTION_LOGBUFFERSIZE, 10);
+	m_iRotateLog			= ParseIntValue(OPTION_ROTATELOG, 10);
 	m_iUMask				= ParseIntValue(OPTION_UMASK, 8);
 	m_iUpdateInterval		= ParseIntValue(OPTION_UPDATEINTERVAL, 10);
 	m_iWriteBuffer			= ParseIntValue(OPTION_WRITEBUFFER, 10);
@@ -981,12 +984,10 @@ void Options::InitOptions()
 	CheckDir(&m_szNzbDir, OPTION_NZBDIR, m_iNzbDirInterval == 0, true);
 
 	m_bCreateBrokenLog		= (bool)ParseEnumValue(OPTION_CREATEBROKENLOG, BoolCount, BoolNames, BoolValues);
-	m_bResetLog				= (bool)ParseEnumValue(OPTION_RESETLOG, BoolCount, BoolNames, BoolValues);
 	m_bAppendCategoryDir	= (bool)ParseEnumValue(OPTION_APPENDCATEGORYDIR, BoolCount, BoolNames, BoolValues);
 	m_bContinuePartial		= (bool)ParseEnumValue(OPTION_CONTINUEPARTIAL, BoolCount, BoolNames, BoolValues);
 	m_bSaveQueue			= (bool)ParseEnumValue(OPTION_SAVEQUEUE, BoolCount, BoolNames, BoolValues);
 	m_bDupeCheck			= (bool)ParseEnumValue(OPTION_DUPECHECK, BoolCount, BoolNames, BoolValues);
-	m_bCreateLog			= (bool)ParseEnumValue(OPTION_CREATELOG, BoolCount, BoolNames, BoolValues);
 	m_bParRepair			= (bool)ParseEnumValue(OPTION_PARREPAIR, BoolCount, BoolNames, BoolValues);
 	m_bParRename			= (bool)ParseEnumValue(OPTION_PARRENAME, BoolCount, BoolNames, BoolValues);
 	m_bReloadQueue			= (bool)ParseEnumValue(OPTION_RELOADQUEUE, BoolCount, BoolNames, BoolValues);
@@ -1037,6 +1038,11 @@ void Options::InitOptions()
 	m_eErrorTarget = (EMessageTarget)ParseEnumValue(OPTION_ERRORTARGET, TargetCount, TargetNames, TargetValues);
 	m_eDebugTarget = (EMessageTarget)ParseEnumValue(OPTION_DEBUGTARGET, TargetCount, TargetNames, TargetValues);
 	m_eDetailTarget = (EMessageTarget)ParseEnumValue(OPTION_DETAILTARGET, TargetCount, TargetNames, TargetValues);
+
+	const char* WriteLogNames[] = { "none", "append", "reset", "rotate" };
+	const int WriteLogValues[] = { wlNone, wlAppend, wlReset, wlRotate };
+	const int WriteLogCount = 4;
+	m_eWriteLog = (EWriteLog)ParseEnumValue(OPTION_WRITELOG, WriteLogCount, WriteLogNames, WriteLogValues);
 }
 
 int Options::ParseEnumValue(const char* OptName, int argc, const char * argn[], const int argv[])
@@ -2596,6 +2602,12 @@ bool Options::ValidateOptionName(const char* optname, const char* optvalue)
 				!strcasecmp(optname, OPTION_NZBADDEDPROCESS) ? OPTION_QUEUESCRIPT :
 				"ERROR");
 		}
+		return true;
+	}
+
+	if (!strcasecmp(optname, OPTION_CREATELOG) || !strcasecmp(optname, OPTION_RESETLOG))
+	{
+		ConfigWarn("Option \"%s\" is obsolete, ignored, use \"%s\" instead", optname, OPTION_WRITELOG);
 		return true;
 	}
 
