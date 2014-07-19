@@ -78,6 +78,7 @@ private:
 	ArticleWriterImpl	m_ArticleWriter;
 	ServerStatList		m_ServerStats;
 	bool				m_bWritingStarted;
+	int					m_iDownloadedSize;
 
 	EStatus				Download();
 	EStatus				DecodeCheck();
@@ -85,6 +86,7 @@ private:
 	EStatus				CheckResponse(const char* szResponse, const char* szComment);
 	void				SetStatus(EStatus eStatus) { m_eStatus = eStatus; }
 	bool				Write(char* szLine, int iLen);
+	void				AddServerData();
 
 public:
 						ArticleDownloader();
@@ -105,6 +107,7 @@ public:
 	const char*			GetInfoName() { return m_szInfoName; }
 	void				SetConnection(NNTPConnection* pConnection) { m_pConnection = pConnection; }
 	void				CompleteFileParts() { m_ArticleWriter.CompleteFileParts(); }
+	int					GetDownloadedSize() { return m_iDownloadedSize; }
 
 	void				LogDebugInfo();
 };

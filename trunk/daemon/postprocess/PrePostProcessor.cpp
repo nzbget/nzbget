@@ -519,6 +519,11 @@ void PrePostProcessor::DeletePostThread(PostInfo* pPostInfo)
 
 void PrePostProcessor::StartJob(DownloadQueue* pDownloadQueue, PostInfo* pPostInfo)
 {
+	if (!pPostInfo->GetStartTime())
+	{
+		pPostInfo->SetStartTime(time(NULL));
+	}
+
 #ifndef DISABLE_PARCHECK
 	if (pPostInfo->GetNZBInfo()->GetRenameStatus() == NZBInfo::rsNone)
 	{
@@ -612,10 +617,6 @@ void PrePostProcessor::StartJob(DownloadQueue* pDownloadQueue, PostInfo* pPostIn
 
 	pDownloadQueue->Save();
 
-	if (!pPostInfo->GetStartTime())
-	{
-		pPostInfo->SetStartTime(time(NULL));
-	}
 	pPostInfo->SetStageTime(time(NULL));
 
 	if (bUnpack)
@@ -643,6 +644,13 @@ void PrePostProcessor::StartJob(DownloadQueue* pDownloadQueue, PostInfo* pPostIn
 void PrePostProcessor::JobCompleted(DownloadQueue* pDownloadQueue, PostInfo* pPostInfo)
 {
 	NZBInfo* pNZBInfo = pPostInfo->GetNZBInfo();
+
+	if (pPostInfo->GetStartTime() > 0)
+	{
+		pNZBInfo->SetPostTotalSec((int)(time(NULL) - pPostInfo->GetStartTime()));
+		pPostInfo->SetStartTime(0);
+	}
+
 	DeletePostThread(pPostInfo);
 	pNZBInfo->LeavePostProcess();
 

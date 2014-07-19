@@ -280,6 +280,8 @@ void ParCoordinator::StartParCheckJob(PostInfo* pPostInfo)
 	m_ParChecker.SetPostInfo(pPostInfo);
 	m_ParChecker.SetDestDir(pPostInfo->GetNZBInfo()->GetDestDir());
 	m_ParChecker.SetNZBName(pPostInfo->GetNZBInfo()->GetName());
+	m_ParChecker.SetParTime(time(NULL));
+	m_ParChecker.SetDownloadSec(pPostInfo->GetNZBInfo()->GetDownloadSec());
 	m_ParChecker.PrintMessage(Message::mkInfo, "Checking pars for %s", pPostInfo->GetNZBInfo()->GetName());
 	pPostInfo->SetWorking(true);
 	m_ParChecker.Start();
@@ -380,6 +382,15 @@ void ParCoordinator::ParCheckCompleted()
 	{
 		pPostInfo->GetNZBInfo()->SetParStatus(NZBInfo::psFailure);
 	}
+
+	int iWaitTime = pPostInfo->GetNZBInfo()->GetDownloadSec() - m_ParChecker.GetDownloadSec();
+	info("iWaitTime: %i", iWaitTime);
+	info("StartTime: %i", pPostInfo->GetStartTime());
+	pPostInfo->SetStartTime(pPostInfo->GetStartTime() + (time_t)iWaitTime);
+	info("StartTime after: %i", pPostInfo->GetStartTime());
+	int iParSec = (int)(time(NULL) - m_ParChecker.GetParTime()) - iWaitTime;
+	info("iParSec: %i, time(NULL): %i, ParTime: %i, GetParSec: %i", iParSec, time(NULL), m_ParChecker.GetParTime(), pPostInfo->GetNZBInfo()->GetParSec());
+	pPostInfo->GetNZBInfo()->SetParSec(pPostInfo->GetNZBInfo()->GetParSec() + iParSec);
 
 	pPostInfo->SetWorking(false);
 	pPostInfo->SetStage(PostInfo::ptQueued);
@@ -587,15 +598,19 @@ void ParCoordinator::UpdateParCheckProgress()
 	PostInfo::EStage eStage = StageKind[m_ParChecker.GetStage()];
 	time_t tCurrent = time(NULL);
 
-	if (!pPostInfo->GetStartTime())
-	{
-		pPostInfo->SetStartTime(tCurrent);
-	}
-
 	if (pPostInfo->GetStage() != eStage)
 	{
 		pPostInfo->SetStage(eStage);
 		pPostInfo->SetStageTime(tCurrent);
+		if (pPostInfo->GetStage() == PostInfo::ptRepairing)
+		{
+			m_ParChecker.SetRepairTime(tCurrent);
+		}
+		else if (pPostInfo->GetStage() == PostInfo::ptVerifyingRepaired)
+		{
+			int iRepairSec = (int)(tCurrent - m_ParChecker.GetRepairTime());
+			pPostInfo->GetNZBInfo()->SetRepairSec(pPostInfo->GetNZBInfo()->GetRepairSec() + iRepairSec);
+		}
 	}
 
 	bool bParCancel = false;
@@ -636,12 +651,14 @@ void ParCoordinator::CheckPauseState(PostInfo* pPostInfo)
 	{
 		time_t tStageTime = pPostInfo->GetStageTime();
 		time_t tStartTime = pPostInfo->GetStartTime();
+		time_t tParTime = m_ParChecker.GetParTime();
+		time_t tRepairTime = m_ParChecker.GetRepairTime();
 		time_t tWaitTime = time(NULL);
 		
 		// wait until Post-processor is unpaused
 		while (g_pOptions->GetPausePostProcess() && !pPostInfo->GetNZBInfo()->GetForcePriority() && !m_bStopped)
 		{
-			usleep(100 * 1000);
+			usleep(50 * 1000);
 			
 			// update time stamps
 			
@@ -651,10 +668,17 @@ void ParCoordinator::CheckPauseState(PostInfo* pPostInfo)
 			{
 				pPostInfo->SetStageTime(tStageTime + tDelta);
 			}
-			
 			if (tStartTime > 0)
 			{
 				pPostInfo->SetStartTime(tStartTime + tDelta);
+			}
+			if (tParTime > 0)
+			{
+				m_ParChecker.SetParTime(tParTime + tDelta);
+			}
+			if (tRepairTime > 0)
+			{
+				m_ParChecker.SetRepairTime(tRepairTime + tDelta);
 			}
 		}
 	}
@@ -689,11 +713,6 @@ void ParCoordinator::UpdateParRenameProgress()
 	pPostInfo->SetProgressLabel(m_ParRenamer.GetProgressLabel());
 	pPostInfo->SetStageProgress(m_ParRenamer.GetStageProgress());
 	time_t tCurrent = time(NULL);
-	
-	if (!pPostInfo->GetStartTime())
-	{
-		pPostInfo->SetStartTime(tCurrent);
-	}
 	
 	if (pPostInfo->GetStage() != PostInfo::ptRenaming)
 	{

@@ -1580,8 +1580,16 @@ void NzbInfoXmlCommand::AppendNZBInfoFields(NZBInfo* pNZBInfo)
 	"<member><name>DupeScore</name><value><i4>%i</i4></value></member>\n"
 	"<member><name>DupeMode</name><value><string>%s</string></value></member>\n"
 	"<member><name>Deleted</name><value><boolean>%s</boolean></value></member>\n"	 // deprecated, use "DeleteStatus" instead
+	"<member><name>DownloadedSizeLo</name><value><i4>%u</i4></value></member>\n"
+	"<member><name>DownloadedSizeHi</name><value><i4>%u</i4></value></member>\n"
+	"<member><name>DownloadedSizeMB</name><value><i4>%i</i4></value></member>\n"
+	"<member><name>DownloadTimeSec</name><value><i4>%i</i4></value></member>\n"
+	"<member><name>PostTotalTimeSec</name><value><i4>%i</i4></value></member>\n"
+	"<member><name>ParTimeSec</name><value><i4>%i</i4></value></member>\n"
+	"<member><name>RepairTimeSec</name><value><i4>%i</i4></value></member>\n"
+	"<member><name>UnpackTimeSec</name><value><i4>%i</i4></value></member>\n"
 	"<member><name>Parameters</name><value><array><data>\n";
-	
+
 	const char* XML_NZB_ITEM_SCRIPT_START =
 	"</data></array></value></member>\n"
 	"<member><name>ScriptStatuses</name><value><array><data>\n";
@@ -1623,8 +1631,16 @@ void NzbInfoXmlCommand::AppendNZBInfoFields(NZBInfo* pNZBInfo)
 	"\"DupeScore\" : %i,\n"
 	"\"DupeMode\" : \"%s\",\n"
 	"\"Deleted\" : %s,\n"			  // deprecated, use "DeleteStatus" instead
+	"\"DownloadedSizeLo\" : %u,\n"
+	"\"DownloadedSizeHi\" : %u,\n"
+	"\"DownloadedSizeMB\" : %i,\n"
+	"\"DownloadTimeSec\" : %i,\n"
+	"\"PostTotalTimeSec\" : %i,\n"
+	"\"ParTimeSec\" : %i,\n"
+	"\"RepairTimeSec\" : %i,\n"
+	"\"UnpackTimeSec\" : %i,\n"
 	"\"Parameters\" : [\n";
-	
+
 	const char* JSON_NZB_ITEM_SCRIPT_START =
 	"],\n"
 	"\"ScriptStatuses\" : [\n";
@@ -1690,7 +1706,11 @@ void NzbInfoXmlCommand::AppendNZBInfoFields(NZBInfo* pNZBInfo)
 	unsigned long iFileSizeHi, iFileSizeLo, iFileSizeMB;
 	Util::SplitInt64(pNZBInfo->GetSize(), &iFileSizeHi, &iFileSizeLo);
 	iFileSizeMB = (int)(pNZBInfo->GetSize() / 1024 / 1024);
-	
+
+	unsigned long iDownloadedSizeHi, iDownloadedSizeLo, iDownloadedSizeMB;
+	Util::SplitInt64(pNZBInfo->GetDownloadedSize(), &iDownloadedSizeHi, &iDownloadedSizeLo);
+	iDownloadedSizeMB = (int)(pNZBInfo->GetDownloadedSize() / 1024 / 1024);
+
 	char* xmlURL = EncodeStr(pNZBInfo->GetURL());
 	char* xmlNZBFilename = EncodeStr(pNZBInfo->GetFilename());
 	char* xmlNZBNicename = EncodeStr(pNZBInfo->GetName());
@@ -1711,8 +1731,11 @@ void NzbInfoXmlCommand::AppendNZBInfoFields(NZBInfo* pNZBInfo)
 			 pNZBInfo->GetTotalArticles(), pNZBInfo->GetCurrentSuccessArticles(), pNZBInfo->GetCurrentFailedArticles(),
 			 pNZBInfo->CalcHealth(), pNZBInfo->CalcCriticalHealth(false),
 			 xmlDupeKey, pNZBInfo->GetDupeScore(), szDupeModeName[pNZBInfo->GetDupeMode()],
-			 BoolToStr(pNZBInfo->GetDeleteStatus() != NZBInfo::dsNone));
-	
+			 BoolToStr(pNZBInfo->GetDeleteStatus() != NZBInfo::dsNone),
+			 iDownloadedSizeLo, iDownloadedSizeHi, iDownloadedSizeMB, pNZBInfo->GetDownloadSec(), 
+			 pNZBInfo->GetPostInfo() && pNZBInfo->GetPostInfo()->GetStartTime() ? time(NULL) - pNZBInfo->GetPostInfo()->GetStartTime() : pNZBInfo->GetPostTotalSec(),
+			 pNZBInfo->GetParSec(), pNZBInfo->GetRepairSec(), pNZBInfo->GetUnpackSec());
+
 	free(xmlURL);
 	free(xmlNZBNicename);
 	free(xmlNZBFilename);
@@ -1800,14 +1823,14 @@ void NzbInfoXmlCommand::AppendPostInfoFields(PostInfo* pPostInfo, int iLogEntrie
 	const char* XML_GROUPQUEUE_ITEM_START = 
 		"<member><name>PostInfoText</name><value><string>%s</string></value></member>\n"
 		"<member><name>PostStageProgress</name><value><i4>%i</i4></value></member>\n"
-		"<member><name>PostTotalTimeSec</name><value><i4>%i</i4></value></member>\n"
 		"<member><name>PostStageTimeSec</name><value><i4>%i</i4></value></member>\n";
+		// PostTotalTimeSec is printed by method "AppendNZBInfoFields"
 
 	const char* XML_POSTQUEUE_ITEM_START = 
 		"<member><name>ProgressLabel</name><value><string>%s</string></value></member>\n"
 		"<member><name>StageProgress</name><value><i4>%i</i4></value></member>\n"
-		"<member><name>TotalTimeSec</name><value><i4>%i</i4></value></member>\n"
-		"<member><name>StageTimeSec</name><value><i4>%i</i4></value></member>\n";
+		"<member><name>StageTimeSec</name><value><i4>%i</i4></value></member>\n"
+		"<member><name>TotalTimeSec</name><value><i4>%i</i4></value></member>\n";
 
 	const char* XML_LOG_START =
 		"<member><name>Log</name><value><array><data>\n";
@@ -1818,14 +1841,13 @@ void NzbInfoXmlCommand::AppendPostInfoFields(PostInfo* pPostInfo, int iLogEntrie
 	const char* JSON_GROUPQUEUE_ITEM_START =
 		"\"PostInfoText\" : \"%s\",\n"
 		"\"PostStageProgress\" : %i,\n"
-		"\"PostTotalTimeSec\" : %i,\n"
 		"\"PostStageTimeSec\" : %i,\n";
 
 	const char* JSON_POSTQUEUE_ITEM_START =
 		"\"ProgressLabel\" : \"%s\",\n"
 		"\"StageProgress\" : %i,\n"
-		"\"TotalTimeSec\" : %i,\n"
-		"\"StageTimeSec\" : %i,\n";
+		"\"StageTimeSec\" : %i,\n"
+		"\"TotalTimeSec\" : %i,\n";
 
 	const char* JSON_LOG_START =
 		"\"Log\" : [\n";
@@ -1864,8 +1886,8 @@ void NzbInfoXmlCommand::AppendPostInfoFields(PostInfo* pPostInfo, int iLogEntrie
 		char* xmlProgressLabel = EncodeStr(pPostInfo->GetProgressLabel());
 
 		snprintf(szItemBuf, iItemBufSize,  szItemStart, xmlProgressLabel, pPostInfo->GetStageProgress(),
-			pPostInfo->GetStartTime() ? tCurTime - pPostInfo->GetStartTime() : 0,
-			pPostInfo->GetStageTime() ? tCurTime - pPostInfo->GetStageTime() : 0);
+			pPostInfo->GetStageTime() ? tCurTime - pPostInfo->GetStageTime() : 0,
+			pPostInfo->GetStartTime() ? tCurTime - pPostInfo->GetStartTime() : 0);
 
 		free(xmlProgressLabel);
 	}

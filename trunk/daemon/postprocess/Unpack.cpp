@@ -85,6 +85,8 @@ void UnpackController::StartJob(PostInfo* pPostInfo)
 
 void UnpackController::Run()
 {
+	time_t tStart = time(NULL);
+
 	// the locking is needed for accessing the members of NZBInfo
 	DownloadQueue::Lock();
 
@@ -182,6 +184,9 @@ void UnpackController::Run()
 			m_pPostInfo->SetStage(PostInfo::ptQueued);
 		}
 	}
+
+	int iUnpackSec = (int)(time(NULL) - tStart);
+	m_pPostInfo->GetNZBInfo()->SetUnpackSec(m_pPostInfo->GetNZBInfo()->GetUnpackSec() + iUnpackSec);
 
 	m_pPostInfo->SetWorking(false);
 }
