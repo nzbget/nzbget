@@ -115,6 +115,7 @@ void ArticleDownloader::Run()
 
 	m_ArticleWriter.SetFileInfo(m_pFileInfo);
 	m_ArticleWriter.SetArticleInfo(m_pArticleInfo);
+	m_ArticleWriter.Prepare();
 
 	EStatus Status = adFailed;
 	int iRetries = g_pOptions->GetRetries() > 0 ? g_pOptions->GetRetries() : 1;

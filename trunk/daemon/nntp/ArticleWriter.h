@@ -46,7 +46,6 @@ private:
 	bool				m_bFlushing;
 	bool				m_bDuplicate;
 	char*				m_szInfoName;
-	bool				m_bNeedFilename;
 
 	bool				PrepareFile(char* szLine);
 	bool				CreateOutputFile(int iSize);
@@ -63,6 +62,7 @@ public:
 	void				SetInfoName(const char* szInfoName);
 	void				SetFileInfo(FileInfo* pFileInfo) { m_pFileInfo = pFileInfo; }
 	void				SetArticleInfo(ArticleInfo* pArticleInfo) { m_pArticleInfo = pArticleInfo; }
+	void				Prepare();
 	bool				Start(Decoder::EFormat eFormat, const char* szFilename, int iFileSize, int iArticleOffset, int iArticleSize);
 	bool				Write(char* szBufffer, int iLen);
 	void				Finish(bool bSuccess);
