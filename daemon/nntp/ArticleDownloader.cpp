@@ -67,6 +67,7 @@ ArticleDownloader::ArticleDownloader()
 	m_eStatus = adUndefined;
 	m_eFormat = Decoder::efUnknown;
 	m_szArticleFilename = NULL;
+	m_iDownloadedSize = 0;
 	m_ArticleWriter.SetOwner(this);
 	SetLastUpdateTimeNow();
 }
@@ -188,7 +189,7 @@ void ArticleDownloader::Run()
 
 		if (m_pConnection)
 		{
-			g_pStatMeter->AddServerData(m_pConnection->FetchTotalBytesRead(), m_pConnection->GetNewsServer()->GetID());
+			AddServerData();
 		}
 
 		if (Status == adFinished || Status == adFatalError)
@@ -384,7 +385,7 @@ ArticleDownloader::EStatus ArticleDownloader::Download()
 		SetLastUpdateTimeNow();
 		if (tOldTime != m_tLastUpdateTime)
 		{
-			g_pStatMeter->AddServerData(m_pConnection->FetchTotalBytesRead(), m_pConnection->GetNewsServer()->GetID());
+			AddServerData();
 		}
 
 		// Throttle the bandwidth
@@ -401,7 +402,7 @@ ArticleDownloader::EStatus ArticleDownloader::Download()
 		g_pStatMeter->AddSpeedReading(iLen);
 		if (g_pOptions->GetAccurateRate())
 		{
-			g_pStatMeter->AddServerData(m_pConnection->FetchTotalBytesRead(), m_pConnection->GetNewsServer()->GetID());
+			AddServerData();
 		}
 
 		// Have we encountered a timeout?
@@ -695,9 +696,16 @@ void ArticleDownloader::FreeConnection(bool bKeepConnected)
 		{
 			m_pConnection->Disconnect();
 		}
-		g_pStatMeter->AddServerData(m_pConnection->FetchTotalBytesRead(), m_pConnection->GetNewsServer()->GetID());
+		AddServerData();
 		g_pServerPool->FreeConnection(m_pConnection, true);
 		m_pConnection = NULL;
 		m_mutexConnection.Unlock();
 	}
+}
+
+void ArticleDownloader::AddServerData()
+{
+	int iBytesRead = m_pConnection->FetchTotalBytesRead();
+	g_pStatMeter->AddServerData(iBytesRead, m_pConnection->GetNewsServer()->GetID());
+	m_iDownloadedSize += iBytesRead;
 }

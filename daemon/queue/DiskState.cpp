@@ -136,7 +136,7 @@ bool DiskState::SaveDownloadQueue(DownloadQueue* pDownloadQueue)
 		return false;
 	}
 
-	fprintf(outfile, "%s%i\n", FORMATVERSION_SIGNATURE, 47);
+	fprintf(outfile, "%s%i\n", FORMATVERSION_SIGNATURE, 48);
 
 	// save nzb-infos
 	SaveNZBQueue(pDownloadQueue, outfile);
@@ -179,7 +179,7 @@ bool DiskState::LoadDownloadQueue(DownloadQueue* pDownloadQueue, Servers* pServe
 	char FileSignatur[128];
 	fgets(FileSignatur, sizeof(FileSignatur), infile);
 	iFormatVersion = ParseFormatVersion(FileSignatur);
-	if (iFormatVersion < 3 || iFormatVersion > 47)
+	if (iFormatVersion < 3 || iFormatVersion > 48)
 	{
 		error("Could not load diskstate due to file version mismatch");
 		fclose(infile);
@@ -381,6 +381,10 @@ void DiskState::SaveNZBInfo(NZBInfo* pNZBInfo, FILE* outfile)
 
 	fprintf(outfile, "%s\n", pNZBInfo->GetDupeKey());
 	fprintf(outfile, "%i,%i\n", (int)pNZBInfo->GetDupeMode(), pNZBInfo->GetDupeScore());
+
+	Util::SplitInt64(pNZBInfo->GetDownloadedSize(), &High1, &Low1);
+	fprintf(outfile, "%lu,%lu,%i,%i,%i,%i,%i\n", High1, Low1, pNZBInfo->GetDownloadSec(), pNZBInfo->GetPostTotalSec(),
+		pNZBInfo->GetParSec(), pNZBInfo->GetRepairSec(), pNZBInfo->GetUnpackSec());
 
 	char DestDirSlash[1024];
 	snprintf(DestDirSlash, 1023, "%s%c", pNZBInfo->GetDestDir(), PATH_SEPARATOR);
@@ -744,6 +748,18 @@ bool DiskState::LoadNZBInfo(NZBInfo* pNZBInfo, Servers* pServers, FILE* infile, 
 		}
 		pNZBInfo->SetDupeMode((EDupeMode)iDupeMode);
 		pNZBInfo->SetDupeScore(iDupeScore);
+	}
+
+	if (iFormatVersion >= 48)
+	{
+		unsigned long High1, Low1, iDownloadSec, iPostTotalSec, iParSec, iRepairSec, iUnpackSec;
+		if (fscanf(infile, "%lu,%lu,%i,%i,%i,%i,%i\n", &High1, &Low1, &iDownloadSec, &iPostTotalSec, &iParSec, &iRepairSec, &iUnpackSec) != 7) goto error;
+		pNZBInfo->SetDownloadedSize(Util::JoinInt64(High1, Low1));
+		pNZBInfo->SetDownloadSec(iDownloadSec);
+		pNZBInfo->SetPostTotalSec(iPostTotalSec);
+		pNZBInfo->SetParSec(iParSec);
+		pNZBInfo->SetRepairSec(iRepairSec);
+		pNZBInfo->SetUnpackSec(iUnpackSec);
 	}
 
 	if (iFormatVersion >= 4)

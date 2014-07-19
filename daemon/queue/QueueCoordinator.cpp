@@ -657,6 +657,8 @@ void QueueCoordinator::ArticleCompleted(ArticleDownloader* pArticleDownloader)
 		}
 	}
 
+	pNZBInfo->SetDownloadedSize(pNZBInfo->GetDownloadedSize() + pArticleDownloader->GetDownloadedSize());
+
 	bool deleteFileObj = false;
 
 	if (fileCompleted && !pFileInfo->GetDeleted())
@@ -889,8 +891,11 @@ void QueueCoordinator::ResetHangingDownloads()
 				error("Could not terminate hanging download %s", Util::BaseFileName(pArticleInfo->GetResultFilename()));
 			}
 			m_ActiveDownloads.erase(it);
+
 			pArticleDownloader->GetFileInfo()->SetActiveDownloads(pArticleDownloader->GetFileInfo()->GetActiveDownloads() - 1);
 			pArticleDownloader->GetFileInfo()->GetNZBInfo()->SetActiveDownloads(pArticleDownloader->GetFileInfo()->GetNZBInfo()->GetActiveDownloads() - 1);
+			pArticleDownloader->GetFileInfo()->GetNZBInfo()->SetDownloadedSize(pArticleDownloader->GetFileInfo()->GetNZBInfo()->GetDownloadedSize() + pArticleDownloader->GetDownloadedSize());
+
 			// it's not safe to destroy pArticleDownloader, because the state of object is unknown
 			delete pArticleDownloader;
 			it = m_ActiveDownloads.begin();
@@ -1052,6 +1057,12 @@ bool QueueCoordinator::MergeQueueEntries(DownloadQueue* pDownloadQueue, NZBInfo*
 
 	pDestNZBInfo->SetMinTime(pSrcNZBInfo->GetMinTime() < pDestNZBInfo->GetMinTime() ? pSrcNZBInfo->GetMinTime() : pDestNZBInfo->GetMinTime());
 	pDestNZBInfo->SetMaxTime(pSrcNZBInfo->GetMaxTime() > pDestNZBInfo->GetMaxTime() ? pSrcNZBInfo->GetMaxTime() : pDestNZBInfo->GetMaxTime());
+
+	pDestNZBInfo->SetDownloadedSize(pDestNZBInfo->GetDownloadedSize() + pSrcNZBInfo->GetDownloadedSize());
+	pDestNZBInfo->SetDownloadSec(pDestNZBInfo->GetDownloadSec() + pSrcNZBInfo->GetDownloadSec());
+	pDestNZBInfo->SetDownloadStartTime((pDestNZBInfo->GetDownloadStartTime() > 0 &&
+		pDestNZBInfo->GetDownloadStartTime() < pSrcNZBInfo->GetDownloadStartTime()) || pSrcNZBInfo->GetDownloadStartTime() == 0 ?
+		pDestNZBInfo->GetDownloadStartTime() : pSrcNZBInfo->GetDownloadStartTime());
 
 	// reattach completed file items to new NZBInfo-object
 	for (NZBInfo::Files::iterator it = pSrcNZBInfo->GetCompletedFiles()->begin(); it != pSrcNZBInfo->GetCompletedFiles()->end(); it++)

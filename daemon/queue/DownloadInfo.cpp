@@ -332,6 +332,13 @@ NZBInfo::NZBInfo() : m_FileList(true)
 	m_pPostInfo = NULL;
 	m_iIDMessageGen = 0;
 	m_iID = ++m_iIDGen;
+	m_lDownloadedSize = 0;
+	m_iDownloadSec = 0;
+	m_iPostTotalSec = 0;
+	m_iParSec = 0;
+	m_iRepairSec = 0;
+	m_iUnpackSec = 0;
+	m_tDownloadStartTime = 0;
 }
 
 NZBInfo::~NZBInfo()
@@ -725,6 +732,25 @@ void NZBInfo::LeavePostProcess()
 {
 	delete m_pPostInfo;
 	m_pPostInfo = NULL;
+}
+
+void NZBInfo::SetActiveDownloads(int iActiveDownloads)
+{
+	if (((m_iActiveDownloads == 0 && iActiveDownloads > 0) ||
+		 (m_iActiveDownloads > 0 && iActiveDownloads == 0)) &&
+		m_eKind == NZBInfo::nkNzb)
+	{
+		if (iActiveDownloads > 0)
+		{
+			m_tDownloadStartTime = time(NULL);
+		}
+		else
+		{
+			m_iDownloadSec += time(NULL) - m_tDownloadStartTime;
+			m_tDownloadStartTime = 0;
+		}
+	}
+	m_iActiveDownloads = iActiveDownloads;
 }
 
 bool NZBInfo::IsDupeSuccess()

@@ -1020,6 +1020,7 @@ var EditUI = (new function($)
 			cell.className = 'text-right';
 		}
 	}
+
 }(jQuery));
 
 
@@ -1617,19 +1618,26 @@ var HistoryEditDialog = (new function()
 
 			var size = Util.formatSizeMB(hist.FileSizeMB, hist.FileSizeLo);
 			var completion = hist.SuccessArticles + hist.FailedArticles > 0 ? Util.round0(hist.SuccessArticles * 100.0 / (hist.SuccessArticles +  hist.FailedArticles)) + '%' : '--';
-
+			var time = Util.formatTimeHMS(hist.DownloadTimeSec + hist.PostTotalTimeSec);
+			
 			var table = '';
-			table += '<tr><td>Total</td><td class="text-right">' + size + '</td></tr>';
-			table += '<tr><td>Files (total/parked)</td><td class="text-center">' + hist.FileCount + ' / ' + hist.RemainingFileCount + '</td></tr>';
+			table += '<tr><td><a href="#" id="HistoryEdit_TimeStats" data-tab="HistoryEdit_TimeStatsTab" title="Size and time statistics">Total '+
+				'<i class="icon-forward" style="opacity:0.6;"></i></a>' +
+				'</td><td class="text-center">' + size + '</td></tr>';
+			table += '<tr><td>Files (total/remaining)</td><td class="text-center">' + hist.FileCount + ' / ' + hist.RemainingFileCount + '</td></tr>';
 			table += '<tr><td>' +
 				(hist.ServerStats.length > 0 ? '<a href="#" id="HistoryEdit_ServStats" data-tab="HistoryEdit_ServStatsTab" title="Per-server statistics">' : '') +
 				'Articles (total/completion)' +
 				(hist.ServerStats.length > 0 ? ' <i class="icon-forward" style="opacity:0.6;"></i></a>' : '') +
 				'</td><td class="text-center">' + hist.TotalArticles + ' / ' + completion + '</td></tr>';
 			$('#HistoryEdit_Statistics').html(table);
+
 			$('#HistoryEdit_ServStats').click(tabClick);
 			EditUI.fillServStats($ServStatsTable, hist);
 			$ServStatsTable.fasttable('setCurPage', 1);
+
+			$('#HistoryEdit_TimeStats').click(tabClick);
+			fillTimeStats();
 		}
 
 		$('#HistoryEdit_DupeKey').val(hist.DupeKey);
@@ -1671,6 +1679,7 @@ var HistoryEditDialog = (new function()
 		$('#HistoryEdit_GeneralTab').show();
 		$('#HistoryEdit_ParamTab').hide();
 		$('#HistoryEdit_ServStatsTab').hide();
+		$('#HistoryEdit_TimeStatsTab').hide();
 		$('#HistoryEdit_DupeTab').hide();
 		$('#HistoryEdit_Back').hide();
 		$('#HistoryEdit_BackSpace').show();
@@ -1711,6 +1720,23 @@ var HistoryEditDialog = (new function()
 			default:
 				return '<span class="label label-status">' + prefix + status + '</span>';
 		}
+	}
+	
+	function fillTimeStats()
+	{
+		var hist = curHist;
+		var downloaded = Util.formatSizeMB(hist.DownloadedSizeMB, hist.DownloadedSizeLo);
+		var speed = hist.DownloadTimeSec > 0 ? Util.formatSpeed((hist.DownloadedSizeMB > 1024 ? hist.DownloadedSizeMB * 1024.0 * 1024.0 : hist.DownloadedSizeLo) / hist.DownloadTimeSec) : '--';
+		var table = '';
+		table += '<tr><td>Downloaded size</td><td class="text-center">' + downloaded + '</td></tr>';
+		table += '<tr><td>Download speed</td><td class="text-center">' + speed + '</td></tr>';
+		table += '<tr><td>Total time</td><td class="text-center">' + Util.formatTimeHMS(hist.DownloadTimeSec + hist.PostTotalTimeSec) + '</td></tr>';
+		table += '<tr><td>Download time</td><td class="text-center">' + Util.formatTimeHMS(hist.DownloadTimeSec) + '</td></tr>';
+		table += '<tr><td>Verify time </td><td class="text-center">' + Util.formatTimeHMS(hist.ParTimeSec - hist.RepairTimeSec) + '</td></tr>';
+		table += '<tr><td>Repair time</td><td class="text-center">' + Util.formatTimeHMS(hist.RepairTimeSec) + '</td></tr>';
+		table += '<tr><td>Unpack time</td><td class="text-center">' + Util.formatTimeHMS(hist.UnpackTimeSec) + '</td></tr>';
+
+		$('#HistoryEdit_TimeStatsTable tbody').html(table);
 	}
 	
 	function tabClick(e)

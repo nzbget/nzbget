@@ -413,10 +413,15 @@ void HistoryCoordinator::HistoryReturn(DownloadQueue* pDownloadQueue, HistoryLis
 			pNZBInfo->SetUnpackStatus(NZBInfo::usNone);
 			pNZBInfo->SetCleanupStatus(NZBInfo::csNone);
 			pNZBInfo->SetRenameStatus(NZBInfo::rsNone);
+			pNZBInfo->SetPostTotalSec(pNZBInfo->GetPostTotalSec() - pNZBInfo->GetUnpackSec());
+			pNZBInfo->SetUnpackSec(0);
 
 			if (ParCoordinator::FindMainPars(pNZBInfo->GetDestDir(), NULL))
 			{
 				pNZBInfo->SetParStatus(NZBInfo::psNone);
+				pNZBInfo->SetPostTotalSec(pNZBInfo->GetPostTotalSec() - pNZBInfo->GetParSec() - pNZBInfo->GetRepairSec());
+				pNZBInfo->SetParSec(0);
+				pNZBInfo->SetRepairSec(0);
 			}
 		}
 		pNZBInfo->SetDeleteStatus(NZBInfo::dsNone);
@@ -519,6 +524,8 @@ void HistoryCoordinator::HistoryRedownload(DownloadQueue* pDownloadQueue, Histor
 	pNZBInfo->SetUnpackCleanedUpDisk(false);
 	pNZBInfo->SetParStatus(NZBInfo::psNone);
 	pNZBInfo->SetRenameStatus(NZBInfo::rsNone);
+	pNZBInfo->SetDownloadedSize(0);
+	pNZBInfo->SetDownloadSec(0);
 	pNZBInfo->ClearCompletedFiles();
 	pNZBInfo->GetServerStats()->Clear();
 	pNZBInfo->GetCurrentServerStats()->Clear();

@@ -454,6 +454,13 @@ private:
 	Messages			m_Messages;
 	int					m_iIDMessageGen;
 	PostInfo*			m_pPostInfo;
+	long long 			m_lDownloadedSize;
+	time_t				m_tDownloadStartTime;
+	int					m_iDownloadSec;
+	int					m_iPostTotalSec;
+	int					m_iParSec;
+	int					m_iRepairSec;
+	int					m_iUnpackSec;
 
 	static int			m_iIDGen;
 	static int			m_iIDMax;
@@ -496,7 +503,7 @@ public:
 	int					GetRemainingParCount() { return m_iRemainingParCount; }
 	void 				SetRemainingParCount(int iRemainingParCount) { m_iRemainingParCount = iRemainingParCount; }
 	int					GetActiveDownloads() { return m_iActiveDownloads; }
-	void				SetActiveDownloads(int iActiveDownloads) { m_iActiveDownloads = iActiveDownloads; }
+	void				SetActiveDownloads(int iActiveDownloads);
 	long long			GetSuccessSize() { return m_lSuccessSize; }
 	void 				SetSuccessSize(long long lSuccessSize) { m_lSuccessSize = lSuccessSize; }
 	long long			GetFailedSize() { return m_lFailedSize; }
@@ -589,6 +596,21 @@ public:
 	void				SetFullContentHash(unsigned int iFullContentHash) { m_iFullContentHash = iFullContentHash; }
 	unsigned int		GetFilteredContentHash() { return m_iFilteredContentHash; }
 	void				SetFilteredContentHash(unsigned int iFilteredContentHash) { m_iFilteredContentHash = iFilteredContentHash; }
+	long long 			GetDownloadedSize() { return m_lDownloadedSize; }
+	void 				SetDownloadedSize(long long lDownloadedSize) { m_lDownloadedSize = lDownloadedSize; }
+	int					GetDownloadSec() { return m_iDownloadSec; }
+	void 				SetDownloadSec(int iDownloadSec) { m_iDownloadSec = iDownloadSec; }
+	int					GetPostTotalSec() { return m_iPostTotalSec; }
+	void 				SetPostTotalSec(int iPostTotalSec) { m_iPostTotalSec = iPostTotalSec; }
+	int					GetParSec() { return m_iParSec; }
+	void 				SetParSec(int iParSec) { m_iParSec = iParSec; }
+	int					GetRepairSec() { return m_iRepairSec; }
+	void 				SetRepairSec(int iRepairSec) { m_iRepairSec = iRepairSec; }
+	int					GetUnpackSec() { return m_iUnpackSec; }
+	void 				SetUnpackSec(int iUnpackSec) { m_iUnpackSec = iUnpackSec; }
+	time_t				GetDownloadStartTime() { return m_tDownloadStartTime; }
+	void 				SetDownloadStartTime(time_t tDownloadStartTime) { m_tDownloadStartTime = tDownloadStartTime; }
+
 	void				CopyFileList(NZBInfo* pSrcNZBInfo);
 	void				UpdateMinMaxTime();
 	PostInfo*			GetPostInfo() { return m_pPostInfo; }

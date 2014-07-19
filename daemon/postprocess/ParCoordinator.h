@@ -45,6 +45,9 @@ private:
 	private:
 		ParCoordinator*	m_pOwner;
 		PostInfo*		m_pPostInfo;
+		time_t			m_tParTime;
+		time_t			m_tRepairTime;
+		int				m_iDownloadSec;
 	protected:
 		virtual bool	RequestMorePars(int iBlockNeeded, int* pBlockFound);
 		virtual void	UpdateProgress();
@@ -55,6 +58,12 @@ private:
 	public:
 		PostInfo*		GetPostInfo() { return m_pPostInfo; }
 		void			SetPostInfo(PostInfo* pPostInfo) { m_pPostInfo = pPostInfo; }
+		time_t			GetParTime() { return m_tParTime; }
+		void			SetParTime(time_t tParTime) { m_tParTime = tParTime; }
+		time_t			GetRepairTime() { return m_tRepairTime; }
+		void			SetRepairTime(time_t tRepairTime) { m_tRepairTime = tRepairTime; }
+		int				GetDownloadSec() { return m_iDownloadSec; }
+		void			SetDownloadSec(int iDownloadSec) { m_iDownloadSec = iDownloadSec; }
 
 		friend class ParCoordinator;
 	};
