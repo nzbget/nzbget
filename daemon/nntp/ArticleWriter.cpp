@@ -67,7 +67,6 @@ ArticleWriter::ArticleWriter()
 	m_pArticleData = NULL;
 	m_bDuplicate = false;
 	m_bFlushing = false;
-	m_bNeedFilename = true;
 }
 
 ArticleWriter::~ArticleWriter()
@@ -105,6 +104,12 @@ void ArticleWriter::SetWriteBuffer(FILE* pOutFile, int iRecSize)
 	}
 }
 
+void ArticleWriter::Prepare()
+{
+	BuildOutputFilename();
+	m_szResultFilename = m_pArticleInfo->GetResultFilename();
+}
+
 bool ArticleWriter::Start(Decoder::EFormat eFormat, const char* szFilename, int iFileSize,
 	int iArticleOffset, int iArticleSize)
 {
@@ -113,13 +118,6 @@ bool ArticleWriter::Start(Decoder::EFormat eFormat, const char* szFilename, int 
 	m_eFormat = eFormat;
 	m_iArticleOffset = iArticleOffset;
 	m_iArticleSize = iArticleSize ? iArticleSize : m_pArticleInfo->GetSize();
-
-	if (m_bNeedFilename)
-	{
-		BuildOutputFilename();
-		m_bNeedFilename = false;
-	}
-	m_szResultFilename = m_pArticleInfo->GetResultFilename();
 
 	// prepare file for writing
 	if (m_eFormat == Decoder::efYenc)
