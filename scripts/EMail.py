@@ -184,6 +184,8 @@ msg = MIMEText(text)
 msg['Subject'] = subject
 msg['From'] = os.environ['NZBPO_FROM']
 msg['To'] = os.environ['NZBPO_TO']
+msg['Date'] = datetime.datetime.utcnow().strftime("%a, %d %b %Y %H:%M:%S +0000")
+msg['X-Application'] = 'NZBGet'
 
 # Send message
 print('[DETAIL] Sending E-Mail')
