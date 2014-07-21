@@ -166,6 +166,10 @@ var DownloadsEditDialog = (new function($)
 		var pausedSize = Util.formatSizeMB(group.PausedSizeMB, group.PausedSizeLo);
 		var estimated = group.Status === 'PAUSED' ? '' : (Status.status.DownloadRate > 0 ? Util.formatTimeHMS((group.RemainingSizeMB-group.PausedSizeMB)*1024/(Status.status.DownloadRate/1024)) : '');
 		var completion = group.SuccessArticles + group.FailedArticles > 0 ? Util.round0(group.SuccessArticles * 100.0 / (group.SuccessArticles +  group.FailedArticles)) + '%' : '--';
+		if (group.FailedArticles > 0 && completion === '100%')
+		{
+			completion = '99.9%';
+		}
 
 		var table = '';
 		//table += '<tr><td>Age</td><td class="text-right">' + age + '</td></tr>';
@@ -997,6 +1001,11 @@ var EditUI = (new function($)
 					artquota = Util.round0(articles * 100.0 / (editItem.SuccessArticles + editItem.FailedArticles)) + '%';
 					success = Util.round0(stat.SuccessArticles * 100.0 / articles) + '%';
 					failures = Util.round0(stat.FailedArticles * 100.0 / articles) + '%';
+					if (stat.FailedArticles > 0 && failures === '0%')
+					{
+						success = '99.9%';
+						failures = '0.1%';
+					}
 					break;
 				}
 			}
@@ -1618,6 +1627,10 @@ var HistoryEditDialog = (new function()
 
 			var size = Util.formatSizeMB(hist.FileSizeMB, hist.FileSizeLo);
 			var completion = hist.SuccessArticles + hist.FailedArticles > 0 ? Util.round0(hist.SuccessArticles * 100.0 / (hist.SuccessArticles +  hist.FailedArticles)) + '%' : '--';
+			if (hist.FailedArticles > 0 && completion === '100%')
+			{
+				completion = '99.9%';
+			}
 			var time = Util.formatTimeHMS(hist.DownloadTimeSec + hist.PostTotalTimeSec);
 			
 			var table = '';
