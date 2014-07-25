@@ -419,7 +419,7 @@ void HistoryCoordinator::HistoryReturn(DownloadQueue* pDownloadQueue, HistoryLis
 			if (ParCoordinator::FindMainPars(pNZBInfo->GetDestDir(), NULL))
 			{
 				pNZBInfo->SetParStatus(NZBInfo::psNone);
-				pNZBInfo->SetPostTotalSec(pNZBInfo->GetPostTotalSec() - pNZBInfo->GetParSec() - pNZBInfo->GetRepairSec());
+				pNZBInfo->SetPostTotalSec(pNZBInfo->GetPostTotalSec() - pNZBInfo->GetParSec());
 				pNZBInfo->SetParSec(0);
 				pNZBInfo->SetRepairSec(0);
 			}
