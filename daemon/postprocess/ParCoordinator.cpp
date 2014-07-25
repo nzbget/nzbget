@@ -384,12 +384,8 @@ void ParCoordinator::ParCheckCompleted()
 	}
 
 	int iWaitTime = pPostInfo->GetNZBInfo()->GetDownloadSec() - m_ParChecker.GetDownloadSec();
-	info("iWaitTime: %i", iWaitTime);
-	info("StartTime: %i", pPostInfo->GetStartTime());
 	pPostInfo->SetStartTime(pPostInfo->GetStartTime() + (time_t)iWaitTime);
-	info("StartTime after: %i", pPostInfo->GetStartTime());
 	int iParSec = (int)(time(NULL) - m_ParChecker.GetParTime()) - iWaitTime;
-	info("iParSec: %i, time(NULL): %i, ParTime: %i, GetParSec: %i", iParSec, time(NULL), m_ParChecker.GetParTime(), pPostInfo->GetNZBInfo()->GetParSec());
 	pPostInfo->GetNZBInfo()->SetParSec(pPostInfo->GetNZBInfo()->GetParSec() + iParSec);
 
 	pPostInfo->SetWorking(false);
