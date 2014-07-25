@@ -208,7 +208,7 @@ bool ArticleWriter::Write(char* szBufffer, int iLen)
 {
 	if (g_pOptions->GetDecode() && m_pArticleData)
 	{
-		if (m_iArticlePtr + iLen >= m_pArticleInfo->GetSize())
+		if (m_iArticlePtr + iLen > m_iArticleSize)
 		{
 			detail("Decoding %s failed: article size mismatch", m_szInfoName);
 			return false;
