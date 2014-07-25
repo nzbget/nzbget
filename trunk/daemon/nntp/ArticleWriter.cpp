@@ -42,6 +42,7 @@
 #endif
 #include <sys/stat.h>
 #include <errno.h>
+#include <algorithm>
 
 #include "nzbget.h"
 #include "ArticleWriter.h"
@@ -466,8 +467,9 @@ void ArticleWriter::CompleteFileParts()
 		if (g_pOptions->GetDecode() && !bDirectWrite && pa->GetSegmentOffset() > -1 &&
 			pa->GetSegmentOffset() > ftell(outfile) && ftell(outfile) > -1)
 		{
-			char n = 0;
-			fwrite(&n, 1, ftell(outfile) - (size_t)pa->GetSegmentOffset(), outfile);
+			memset(buffer, 0, BUFFER_SIZE);
+			while (pa->GetSegmentOffset() > ftell(outfile) && ftell(outfile) > -1 &&
+				   fwrite(buffer, 1, std::min((int)(pa->GetSegmentOffset() - ftell(outfile)), BUFFER_SIZE), outfile)) ;
 		}
 
 		if (pa->GetSegmentContent())
