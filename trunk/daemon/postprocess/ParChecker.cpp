@@ -1,7 +1,7 @@
 /*
  *  This file is part of nzbget
  *
- *  Copyright (C) 2007-2013 Andrey Prygunkov <hugbug@users.sourceforge.net>
+ *  Copyright (C) 2007-2014 Andrey Prygunkov <hugbug@users.sourceforge.net>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -71,8 +71,14 @@ class Repairer : public Par2Repairer
 {
 private:
     CommandLine	commandLine;
+	ParChecker*	m_pOwner;
+
+protected:
+	virtual bool ScanDataFile(DiskFile *diskfile, Par2RepairerSourceFile* &sourcefile,
+		MatchType &matchtype, MD5Hash &hashfull, MD5Hash &hash16k, u32 &count);
 
 public:
+				Repairer(ParChecker* pOwner) { m_pOwner = pOwner; }
 	Result		PreProcess(const char *szParFilename);
 	Result		Process(bool dorepair);
 
@@ -81,11 +87,6 @@ public:
 
 Result Repairer::PreProcess(const char *szParFilename)
 {
-#ifdef HAVE_PAR2_BUGFIXES_V2
-	// Ensure linking against the patched version of libpar2
-	BugfixesPatchVersion2();
-#endif
-
 	if (g_pOptions->GetParScan() == Options::psFull)
 	{
 		char szWildcardParam[1024];
@@ -119,6 +120,31 @@ Result Repairer::PreProcess(const char *szParFilename)
 Result Repairer::Process(bool dorepair)
 {
 	return Par2Repairer::Process(commandLine, dorepair);
+}
+
+
+bool Repairer::ScanDataFile(DiskFile *diskfile, Par2RepairerSourceFile* &sourcefile,
+	MatchType &matchtype, MD5Hash &hashfull, MD5Hash &hash16k, u32 &count)
+{
+	if (g_pOptions->GetParQuick())
+	{
+		string path;
+		string name;
+		DiskFile::SplitFilename(diskfile->FileName(), path, name);
+
+		sig_filename.emit(name);
+
+		ParChecker::EFileStatus eFileStatus = m_pOwner->VerifyDataFile(diskfile, sourcefile);
+		if (eFileStatus == ParChecker::fsSuccess || eFileStatus == ParChecker::fsFailure)
+		{
+			sig_done.emit(name, eFileStatus == ParChecker::fsSuccess ? sourcefile->BlockCount() : 0, sourcefile->BlockCount());
+			sig_progress.emit(1000.0);
+			matchtype = eFileStatus == ParChecker::fsSuccess ? eFullMatch : eNoMatch;
+			return true;
+		}
+	}
+
+	return Par2Repairer::ScanDataFile(diskfile, sourcefile, matchtype, hashfull, hash16k, count);
 }
 
 
@@ -422,11 +448,15 @@ int ParChecker::PreProcessPar()
 	{
 		Cleanup();
 
-		Repairer* pRepairer = new Repairer();
+		Repairer* pRepairer = new Repairer(this);
 		m_pRepairer = pRepairer;
 		pRepairer->sig_filename.connect(sigc::mem_fun(*this, &ParChecker::signal_filename));
 		pRepairer->sig_progress.connect(sigc::mem_fun(*this, &ParChecker::signal_progress));
 		pRepairer->sig_done.connect(sigc::mem_fun(*this, &ParChecker::signal_done));
+
+#ifdef HAVE_PAR2_BLOCKSCAN
+		pRepairer->blockscan = true;
+#endif
 
 		res = pRepairer->PreProcess(m_szParFilename);
 		debug("ParChecker: PreProcess-result=%i", res);
@@ -811,7 +841,14 @@ bool ParChecker::IsProcessedFile(const char* szFilename)
 
 void ParChecker::signal_filename(std::string str)
 {
-    const char* szStageMessage[] = { "Loading file", "Verifying file", "Repairing file", "Verifying repaired file" };
+	if (!m_lastFilename.compare(str))
+	{
+		return;
+	}
+
+	m_lastFilename = str;
+
+	const char* szStageMessage[] = { "Loading file", "Verifying file", "Repairing file", "Verifying repaired file" };
 
 	if (m_eStage == ptRepairing)
 	{
@@ -1016,6 +1053,105 @@ void ParChecker::DeleteLeftovers()
 			remove(pSourceFile->FileName().c_str());
 		}
 	}
+}
+
+/**
+ * The time consuming full verification of files downloaded without errors can be skipped.
+ * This function compares CRC of a file computed during download with CRC stored in PAR2-file.
+ * If they match no full verification is needed. If the file is known to be completely failed
+ * (not a single successful artice) no full verification is needed as well.
+ * Limitation:
+ * This function requires every block in the file to have an unique CRC (across all blocks
+ * of the par-set). Otherwise the full verification is performed.
+ * The limitation can be avoided by using something more smart than "verificationhashtable.Lookup"
+ * but in the real life all blocks have unique CRCs and the simple "Lookup" works good enough.
+ */
+ParChecker::EFileStatus ParChecker::VerifyDataFile(void* pDiskfile, void* pSourcefile)
+{
+	if (m_eStage != ptVerifyingSources)
+	{
+		// do full verification for repaired files
+		return fsUnknown;
+	}
+
+	DiskFile* pDiskFile = (DiskFile*)pDiskfile;
+	Par2RepairerSourceFile* pSourceFile = (Par2RepairerSourceFile*)pSourcefile;
+	if (!pSourcefile || !pSourceFile->GetTargetExists())
+	{
+		return fsUnknown;
+	}
+
+	u64 blocksize = ((Repairer*)m_pRepairer)->mainpacket->BlockSize();
+	VerificationPacket* packet = pSourceFile->GetVerificationPacket();
+	if (!packet)
+	{
+		return fsUnknown;
+	}
+
+	// compute file CRC using CRCs of blocks
+	unsigned long lParCrc = 0;
+	for (unsigned int i = 0; i < packet->BlockCount(); i++)
+	{
+		const FILEVERIFICATIONENTRY* entry = packet->VerificationEntry(i);
+		u32 blockCrc = entry->crc;
+		lParCrc = i == 0 ? blockCrc : Util::Crc32Combine(lParCrc, blockCrc, (unsigned long)blocksize);
+	}
+	debug("Block-CRC: %x, filename: %s", lParCrc, Util::BaseFileName(pSourceFile->GetTargetFile()->FileName().c_str()));
+
+	// compare with CRC computed during download
+	unsigned long lDownloadCrc;
+	EFileStatus	eFileStatus = FindFileCrc(Util::BaseFileName(pSourceFile->GetTargetFile()->FileName().c_str()), &lDownloadCrc);
+	if (eFileStatus == fsFailure)
+	{
+		debug("Reporting failure status for %s", Util::BaseFileName(pSourceFile->GetTargetFile()->FileName().c_str()));
+		return fsFailure;
+	}
+	else if (eFileStatus != fsSuccess)
+	{
+		// we don't support fsPartial status yet
+		return fsUnknown;
+	}
+
+	// extend lDownloadCrc to block size
+	lDownloadCrc = CRCUpdateBlock(lDownloadCrc ^ 0xFFFFFFFF,
+		(size_t)(blocksize * packet->BlockCount() - pSourceFile->GetTargetFile()->FileSize())) ^ 0xFFFFFFFF;
+	debug("Download-CRC: %.8x", lDownloadCrc);
+
+	// if CRCs don't match let libpar2 do the full verification of the file
+	if (lParCrc != lDownloadCrc)
+	{
+		return fsUnknown;
+	}
+
+	// that's our file and it's not damaged
+
+	// attach verification blocks to the file
+	std::deque<const VerificationHashEntry*> undoList;
+	for (unsigned int i = 0; i < packet->BlockCount(); i++)
+	{
+		const FILEVERIFICATIONENTRY* entry = packet->VerificationEntry(i);
+		u32 blockCrc = entry->crc;
+
+	    // Look for a match
+		const VerificationHashEntry* pHashEntry = ((Repairer*)m_pRepairer)->verificationhashtable.Lookup(blockCrc);
+		if (!pHashEntry || pHashEntry->SourceFile() != pSourceFile || pHashEntry->IsSet())
+		{
+			// no match found, revert back the changes made by "pHashEntry->SetBlock"
+			for (std::deque<const VerificationHashEntry*>::iterator it = undoList.begin(); it != undoList.end(); it++)
+			{
+				const VerificationHashEntry* pUndoEntry = *it;
+				pUndoEntry->SetBlock(NULL, 0);
+			}
+			return fsUnknown;
+		}
+
+		undoList.push_back(pHashEntry);
+		pHashEntry->SetBlock(pDiskFile, i*blocksize);
+	}
+
+	PrintMessage(Message::mkDetail, "Quickly verified good file %s", Util::BaseFileName(pSourceFile->GetTargetFile()->FileName().c_str()));
+
+	return fsSuccess;
 }
 
 #endif

@@ -399,17 +399,7 @@ void ParRenamer::CheckRegularFile(const char* szDestDir, const char* szFilename)
 
 			if (!Util::FileExists(szDstFilename) && !IsSplittedFragment(szFilename, pFileHash->GetFilename()))
 			{
-				PrintMessage(Message::mkInfo, "Renaming %s to %s", Util::BaseFileName(szFilename), pFileHash->GetFilename());
-				if (Util::MoveFile(szFilename, szDstFilename))
-				{
-					m_iRenamedCount++;
-				}
-				else
-				{
-					char szErrBuf[256];
-					PrintMessage(Message::mkError, "Could not rename %s to %s: %s", szFilename, szDstFilename,
-						Util::GetLastErrorMessage(szErrBuf, sizeof(szErrBuf)));
-				}
+				RenameFile(szFilename, szDstFilename);
 			}
 			
 			break;
@@ -479,17 +469,24 @@ void ParRenamer::CheckParFile(const char* szDestDir, const char* szFilename)
 		iNum++;
 	}
 
-	PrintMessage(Message::mkInfo, "Renaming %s to %s", Util::BaseFileName(szFilename), Util::BaseFileName(szDestFileName));
-	if (Util::MoveFile(szFilename, szDestFileName))
-	{
-		m_iRenamedCount++;
-	}
-	else
+	RenameFile(szFilename, szDestFileName);
+}
+
+void ParRenamer::RenameFile(const char* szSrcFilename, const char* szDestFileName)
+{
+	PrintMessage(Message::mkInfo, "Renaming %s to %s", Util::BaseFileName(szSrcFilename), Util::BaseFileName(szDestFileName));
+	if (!Util::MoveFile(szSrcFilename, szDestFileName))
 	{
 		char szErrBuf[256];
-		PrintMessage(Message::mkError, "Could not rename %s to %s: %s", szFilename, szDestFileName,
+		PrintMessage(Message::mkError, "Could not rename %s to %s: %s", szSrcFilename, szDestFileName,
 			Util::GetLastErrorMessage(szErrBuf, sizeof(szErrBuf)));
+		return;
 	}
+
+	m_iRenamedCount++;
+
+	// notify about new file name
+	RegisterRenamedFile(Util::BaseFileName(szSrcFilename), Util::BaseFileName(szDestFileName));
 }
 
 #endif

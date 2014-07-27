@@ -287,6 +287,7 @@ private:
 	EParCheck			m_eParCheck;
 	bool				m_bParRepair;
 	EParScan			m_eParScan;
+	bool				m_bParQuick;
 	bool				m_bParRename;
 	EHealthCheck		m_eHealthCheck;
 	char*				m_szPostScript;
@@ -454,6 +455,7 @@ public:
 	EParCheck			GetParCheck() { return m_eParCheck; }
 	bool				GetParRepair() { return m_bParRepair; }
 	EParScan			GetParScan() { return m_eParScan; }
+	bool				GetParQuick() { return m_bParQuick; }
 	bool				GetParRename() { return m_bParRename; }
 	EHealthCheck		GetHealthCheck() { return m_eHealthCheck; }
 	const char*			GetScriptOrder() { return m_szScriptOrder; }

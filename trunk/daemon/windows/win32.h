@@ -59,8 +59,8 @@
 /* Define to 1 if libpar2 supports cancelling (needs a special patch) */
 #define HAVE_PAR2_CANCEL
 
-/* Define to 1 if libpar2 has bugfixes applied (needs a special patch) */
-#define HAVE_PAR2_BUGFIXES_V2
+/* Define to 1 if libpar2 supports block-scan (needs a special patch) */
+#define HAVE_PAR2_BLOCKSCAN
 
 /* Define to 1 if function GetAddrInfo is supported */
 #define HAVE_GETADDRINFO

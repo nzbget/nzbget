@@ -91,6 +91,34 @@ bool ParCoordinator::PostParChecker::IsParredFile(const char* szFilename)
 	return false;
 }
 
+ParChecker::EFileStatus ParCoordinator::PostParChecker::FindFileCrc(const char* szFilename, unsigned long* lCrc)
+{
+	CompletedFile* pCompletedFile = NULL;
+
+	for (NZBInfo::CompletedFiles::iterator it = m_pPostInfo->GetNZBInfo()->GetCompletedFiles()->begin(); it != m_pPostInfo->GetNZBInfo()->GetCompletedFiles()->end(); it++)
+	{
+		CompletedFile* pCompletedFile2 = *it;
+		if (!strcasecmp(pCompletedFile2->GetFileName(), szFilename))
+		{
+			pCompletedFile = pCompletedFile2;
+			break;
+		}
+	}
+	if (!pCompletedFile)
+	{
+		return ParChecker::fsUnknown;
+	}
+
+	debug("Found completed file: %s, CRC: %.8x, Status: %i", Util::BaseFileName(pCompletedFile->GetFileName()), pCompletedFile->GetCrc(), (int)pCompletedFile->GetStatus());
+
+	*lCrc = pCompletedFile->GetCrc();
+
+	return pCompletedFile->GetStatus() == CompletedFile::cfSuccess ? ParChecker::fsSuccess :
+		pCompletedFile->GetStatus() == CompletedFile::cfFailure ? ParChecker::fsFailure :
+		pCompletedFile->GetStatus() == CompletedFile::cfPartial ? ParChecker::fsPartial :
+		ParChecker::fsUnknown;
+}
+
 void ParCoordinator::PostParRenamer::UpdateProgress()
 {
 	m_pOwner->UpdateParRenameProgress();
@@ -111,6 +139,22 @@ void ParCoordinator::PostParRenamer::PrintMessage(Message::EKind eKind, const ch
 void ParCoordinator::PostParRenamer::RegisterParredFile(const char* szFilename)
 {
 	m_pPostInfo->GetParredFiles()->push_back(strdup(szFilename));
+}
+
+/**
+ *  Update file name in the CompletedFiles-list of NZBInfo
+ */
+void ParCoordinator::PostParRenamer::RegisterRenamedFile(const char* szOldFilename, const char* szNewFileName)
+{
+	for (NZBInfo::CompletedFiles::iterator it = m_pPostInfo->GetNZBInfo()->GetCompletedFiles()->begin(); it != m_pPostInfo->GetNZBInfo()->GetCompletedFiles()->end(); it++)
+	{
+		CompletedFile* pCompletedFile = *it;
+		if (!strcasecmp(pCompletedFile->GetFileName(), szOldFilename))
+		{
+			pCompletedFile->SetFileName(szNewFileName);
+			break;
+		}
+	}
 }
 
 #endif

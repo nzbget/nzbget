@@ -136,7 +136,7 @@ bool DiskState::SaveDownloadQueue(DownloadQueue* pDownloadQueue)
 		return false;
 	}
 
-	fprintf(outfile, "%s%i\n", FORMATVERSION_SIGNATURE, 48);
+	fprintf(outfile, "%s%i\n", FORMATVERSION_SIGNATURE, 49);
 
 	// save nzb-infos
 	SaveNZBQueue(pDownloadQueue, outfile);
@@ -179,7 +179,7 @@ bool DiskState::LoadDownloadQueue(DownloadQueue* pDownloadQueue, Servers* pServe
 	char FileSignatur[128];
 	fgets(FileSignatur, sizeof(FileSignatur), infile);
 	iFormatVersion = ParseFormatVersion(FileSignatur);
-	if (iFormatVersion < 3 || iFormatVersion > 48)
+	if (iFormatVersion < 3 || iFormatVersion > 49)
 	{
 		error("Could not load diskstate due to file version mismatch");
 		fclose(infile);
@@ -388,21 +388,12 @@ void DiskState::SaveNZBInfo(NZBInfo* pNZBInfo, FILE* outfile)
 
 	char DestDirSlash[1024];
 	snprintf(DestDirSlash, 1023, "%s%c", pNZBInfo->GetDestDir(), PATH_SEPARATOR);
-	int iDestDirLen = strlen(DestDirSlash);
 
 	fprintf(outfile, "%i\n", (int)pNZBInfo->GetCompletedFiles()->size());
-	for (NZBInfo::Files::iterator it = pNZBInfo->GetCompletedFiles()->begin(); it != pNZBInfo->GetCompletedFiles()->end(); it++)
+	for (NZBInfo::CompletedFiles::iterator it = pNZBInfo->GetCompletedFiles()->begin(); it != pNZBInfo->GetCompletedFiles()->end(); it++)
 	{
-		char* szFilename = *it;
-		// do not save full path to reduce the size of queue-file
-		if (!strncmp(DestDirSlash, szFilename, iDestDirLen))
-		{
-			fprintf(outfile, "%s\n", szFilename + iDestDirLen);
-		}
-		else
-		{
-			fprintf(outfile, "%s\n", szFilename);
-		}
+		CompletedFile* pCompletedFile = *it;
+		fprintf(outfile, "%i,%lu,%s\n", (int)pCompletedFile->GetStatus(), pCompletedFile->GetCrc(), pCompletedFile->GetFileName());
 	}
 
 	fprintf(outfile, "%i\n", (int)pNZBInfo->GetParameters()->size());
@@ -771,16 +762,21 @@ bool DiskState::LoadNZBInfo(NZBInfo* pNZBInfo, Servers* pServers, FILE* infile, 
 			if (!fgets(buf, sizeof(buf), infile)) goto error;
 			if (buf[0] != 0) buf[strlen(buf)-1] = 0; // remove traling '\n'
 
-			// restore full file name.
 			char* szFileName = buf;
-			char FullFileName[1024];
-			if (!strchr(buf, PATH_SEPARATOR))
+			int iStatus = 0;
+			unsigned long lCrc = 0;
+
+			if (iFormatVersion >= 49)
 			{
-				snprintf(FullFileName, 1023, "%s%c%s", pNZBInfo->GetDestDir(), PATH_SEPARATOR, buf);
-				szFileName = FullFileName;
+				sscanf(buf, "%i,%lu", &iStatus, &lCrc);
+				szFileName = strchr(buf + 2, ',');
+				if (szFileName)
+				{
+					szFileName++;
+				}
 			}
 
-			pNZBInfo->GetCompletedFiles()->push_back(strdup(szFileName));
+			pNZBInfo->GetCompletedFiles()->push_back(new CompletedFile(szFileName, (CompletedFile::EStatus)iStatus, lCrc));
 		}
 	}
 
@@ -841,7 +837,8 @@ bool DiskState::LoadNZBInfo(NZBInfo* pNZBInfo, Servers* pServers, FILE* infile, 
 			int iKind, iTime;
 			sscanf(buf, "%i,%i", &iKind, &iTime);
 			char* szText = strchr(buf + 2, ',');
-			if (szText) {
+			if (szText)
+			{
 				szText++;
 			}
 			pNZBInfo->AppendMessage((Message::EKind)iKind, (time_t)iTime, szText);
@@ -1205,7 +1202,7 @@ bool DiskState::SaveFileState(FileInfo* pFileInfo)
 		return false;
 	}
 
-	fprintf(outfile, "%s%i\n", FORMATVERSION_SIGNATURE, 1);
+	fprintf(outfile, "%s%i\n", FORMATVERSION_SIGNATURE, 2);
 
 	fprintf(outfile, "%i,%i\n", pFileInfo->GetSuccessArticles(), pFileInfo->GetFailedArticles());
 
@@ -1221,7 +1218,8 @@ bool DiskState::SaveFileState(FileInfo* pFileInfo)
 	for (FileInfo::Articles::iterator it = pFileInfo->GetArticles()->begin(); it != pFileInfo->GetArticles()->end(); it++)
 	{
 		ArticleInfo* pArticleInfo = *it;
-		fprintf(outfile, "%i\n", (int)pArticleInfo->GetStatus());
+		fprintf(outfile, "%i,%lu,%i,%lu\n", (int)pArticleInfo->GetStatus(), (unsigned long)pArticleInfo->GetSegmentOffset(),
+			pArticleInfo->GetSegmentSize(), (unsigned long)pArticleInfo->GetCrc());
 	}
 
 	fclose(outfile);
@@ -1249,7 +1247,7 @@ bool DiskState::LoadFileState(FileInfo* pFileInfo, Servers* pServers)
 	{
 		if (buf[0] != 0) buf[strlen(buf)-1] = 0; // remove traling '\n'
 		iFormatVersion = ParseFormatVersion(buf);
-		if (iFormatVersion > 1)
+		if (iFormatVersion > 2)
 		{
 			error("Could not load diskstate due to file version mismatch");
 			goto error;
@@ -1280,8 +1278,24 @@ bool DiskState::LoadFileState(FileInfo* pFileInfo, Servers* pServers)
 	if (fscanf(infile, "%i\n", &size) != 1) goto error;
 	for (int i = 0; i < size; i++)
 	{
+		ArticleInfo* pa = pFileInfo->GetArticles()->at(i);
+
 		int iStatus;
-		if (fscanf(infile, "%i\n", &iStatus) != 1) goto error;
+
+		if (iFormatVersion >= 2)
+		{
+			unsigned long iSegmentOffset, iCrc;
+			int iSegmentSize;
+			if (fscanf(infile, "%i,%lu,%i,%lu\n", &iStatus, &iSegmentOffset, &iSegmentSize, &iCrc) != 4) goto error;
+			pa->SetSegmentOffset(iSegmentOffset);
+			pa->SetSegmentSize(iSegmentSize);
+			pa->SetCrc(iCrc);
+		}
+		else
+		{
+			if (fscanf(infile, "%i\n", &iStatus) != 1) goto error;
+		}
+
 		ArticleInfo::EStatus eStatus = (ArticleInfo::EStatus)iStatus;
 
 		if (eStatus == ArticleInfo::aiRunning)
@@ -1300,7 +1314,7 @@ bool DiskState::LoadFileState(FileInfo* pFileInfo, Servers* pServers)
 			iCompletedArticles++;
 		}
 
-		pFileInfo->GetArticles()->at(i)->SetStatus(eStatus);
+		pa->SetStatus(eStatus);
 	}
 
 	pFileInfo->SetCompletedArticles(iCompletedArticles);

@@ -336,27 +336,42 @@ if test "$ENABLEPARCHECK" = "yes"; then
 		AC_MSG_RESULT([[no]]))
 
 	dnl
-	dnl check if libpar2 has recent bugfixes-patch
+	dnl check if libpar2 has support for block-scan
 	dnl
-	AC_MSG_CHECKING(whether libpar2 has recent bugfixes)
+	AC_MSG_CHECKING(whether libpar2 supports block-scan)
 	AC_TRY_COMPILE(
 		[#include <libpar2/par2cmdline.h>]
 		[#include <libpar2/par2repairer.h>]
-		[ class Repairer : public Par2Repairer { void test() { BugfixesPatchVersion2(); } }; ],
+		[ class Repairer : public Par2Repairer { void test() { blockscan = true; } }; ],
 		[],
 		AC_MSG_RESULT([[yes]])
-		PAR2PATCHV2=yes
-		AC_DEFINE([HAVE_PAR2_BUGFIXES_V2], 1, [Define to 1 if libpar2 has recent bugfixes-patch (version 2)]),
-		AC_MSG_RESULT([[no]])
-		PAR2PATCHV2=no)
+		AC_DEFINE([HAVE_PAR2_BLOCKSCAN], 1, [Define to 1 if libpar2 supports block-scan (needs a special patch)]),
+		AC_MSG_RESULT([[no]]))
 
-	if test "$PAR2PATCHV2" = "no" ; then
-		AC_ARG_ENABLE(libpar2-bugfixes-check,
-			[AS_HELP_STRING([--disable-libpar2-bugfixes-check], [do not check libpar2 version])],
+	dnl
+	dnl check if libpar2 has external-verify-patch
+	dnl
+	AC_MSG_CHECKING(whether libpar2 supports external verification)
+	AC_TRY_COMPILE(
+		[#include <libpar2/par2cmdline.h>]
+		[#include <libpar2/par2repairer.h>]
+		[ class Repairer : public Par2Repairer { protected:
+	virtual int ScanDataFile(DiskFile *diskfile, Par2RepairerSourceFile* &sourcefile,
+		MatchType &matchtype, MD5Hash &hashfull, MD5Hash &hash16k, u32 &count) { return true; } }; ],
+		[],
+		AC_MSG_RESULT([[no]])
+		PAR2CRCPATCH=no
+		AC_DEFINE([HAVE_PAR2_CRCPATCH], 1, [Define to 1 if libpar2 supports external verification]),
+		AC_MSG_RESULT([[yes]])
+		PAR2CRCPATCH=yes)
+
+	if test "$PAR2CRCPATCH" = "no" ; then
+		AC_ARG_ENABLE(libpar2-version-check,
+			[AS_HELP_STRING([--disable-libpar2-version-check], [do not check libpar2 version])],
 			[ PAR2PATCHCHECK=$enableval ],
 			[ PAR2PATCHCHECK=yes] )
 		if test "$PAR2PATCHCHECK" = "yes"; then
-			AC_ERROR([Your version of libpar2 doesn't include the recent bugfixes. Please update libpar2 to version 0.4 or newer (http://launchpad.net/libpar2). If you cannot install a newer version of libpar2, you can use configure parameter --disable-libpar2-bugfixes-check to suppress the check. Please note however that in this case the program may crash during par-check/repair. The update is highly recommended!])
+			AC_ERROR([Your version of libpar2 doesn't support external verification, which drastically improves verification time in nzbget. Please update your libpar2 as explained on http://nzbget.net/libpar2. If you cannot update libpar2, you can use configure parameter --disable-libpar2-version-check to suppress the check.])
 		fi
 	fi
 

@@ -90,7 +90,6 @@ QueueCoordinator::QueueCoordinator()
 
 	m_DownloadQueue.m_pOwner = this;
 	CoordinatorDownloadQueue::Init(&m_DownloadQueue);
-	YDecoder::Init();
 }
 
 QueueCoordinator::~QueueCoordinator()
@@ -108,7 +107,6 @@ QueueCoordinator::~QueueCoordinator()
 	m_ActiveDownloads.clear();
 
 	CoordinatorDownloadQueue::Final();
-	YDecoder::Final();
 
 	debug("QueueCoordinator destroyed");
 }
@@ -1065,10 +1063,10 @@ bool QueueCoordinator::MergeQueueEntries(DownloadQueue* pDownloadQueue, NZBInfo*
 		pDestNZBInfo->GetDownloadStartTime() : pSrcNZBInfo->GetDownloadStartTime());
 
 	// reattach completed file items to new NZBInfo-object
-	for (NZBInfo::Files::iterator it = pSrcNZBInfo->GetCompletedFiles()->begin(); it != pSrcNZBInfo->GetCompletedFiles()->end(); it++)
+	for (NZBInfo::CompletedFiles::iterator it = pSrcNZBInfo->GetCompletedFiles()->begin(); it != pSrcNZBInfo->GetCompletedFiles()->end(); it++)
     {
-		char* szFileName = *it;
-		pDestNZBInfo->GetCompletedFiles()->push_back(szFileName);
+		CompletedFile* pCompletedFile = *it;
+		pDestNZBInfo->GetCompletedFiles()->push_back(pCompletedFile);
 	}
 	pSrcNZBInfo->GetCompletedFiles()->clear();
 

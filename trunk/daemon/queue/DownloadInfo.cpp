@@ -395,9 +395,9 @@ int NZBInfo::GenerateID()
 
 void NZBInfo::ClearCompletedFiles()
 {
-	for (Files::iterator it = m_completedFiles.begin(); it != m_completedFiles.end(); it++)
+	for (CompletedFiles::iterator it = m_completedFiles.begin(); it != m_completedFiles.end(); it++)
 	{
-		free(*it);
+		delete *it;
 	}
 	m_completedFiles.clear();
 }
@@ -934,6 +934,7 @@ ArticleInfo::ArticleInfo()
 	m_iSegmentSize = 0;
 	m_eStatus = aiUndefined;
 	m_szResultFilename = NULL;
+	m_lCrc = 0;
 }
 
 ArticleInfo::~ ArticleInfo()
@@ -1138,6 +1139,23 @@ void FileList::Remove(FileInfo* pFileInfo)
 	erase(std::find(begin(), end(), pFileInfo));
 }
 
+CompletedFile::CompletedFile(const char* szFileName, EStatus eStatus, unsigned long lCrc)
+{
+	m_szFileName = strdup(szFileName);
+	m_eStatus = eStatus;
+	m_lCrc = lCrc;
+}
+
+void CompletedFile::SetFileName(const char* szFileName)
+{
+	free(m_szFileName);
+	m_szFileName = strdup(szFileName);
+}
+
+CompletedFile::~CompletedFile()
+{
+	free(m_szFileName);
+}
 
 PostInfo::PostInfo()
 {

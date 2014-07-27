@@ -1320,7 +1320,7 @@ Optional Features:
                           curses-library)
   --disable-parcheck      do not include par-check/-repair-support (removes
                           dependency from libpar2- and libsigc-libraries)
-  --disable-libpar2-bugfixes-check
+  --disable-libpar2-version-check
                           do not check libpar2 version
   --disable-tls           do not use TLS/SSL (removes dependency from
                           TLS/SSL-libraries)
@@ -7624,8 +7624,8 @@ fi
 
 rm -f core conftest.err conftest.$ac_objext conftest.$ac_ext
 
-				{ echo "$as_me:$LINENO: checking whether libpar2 has recent bugfixes" >&5
-echo $ECHO_N "checking whether libpar2 has recent bugfixes... $ECHO_C" >&6; }
+				{ echo "$as_me:$LINENO: checking whether libpar2 supports block-scan" >&5
+echo $ECHO_N "checking whether libpar2 supports block-scan... $ECHO_C" >&6; }
 	cat >conftest.$ac_ext <<_ACEOF
 /* confdefs.h.  */
 _ACEOF
@@ -7634,7 +7634,7 @@ cat >>conftest.$ac_ext <<_ACEOF
 /* end confdefs.h.  */
 #include <libpar2/par2cmdline.h>
 		#include <libpar2/par2repairer.h>
-		 class Repairer : public Par2Repairer { void test() { BugfixesPatchVersion2(); } };
+		 class Repairer : public Par2Repairer { void test() { blockscan = true; } };
 int
 main ()
 {
@@ -7662,10 +7662,9 @@ eval "echo \"\$as_me:$LINENO: $ac_try_echo\"") >&5
        } && test -s conftest.$ac_objext; then
   { echo "$as_me:$LINENO: result: yes" >&5
 echo "${ECHO_T}yes" >&6; }
-		PAR2PATCHV2=yes
 
 cat >>confdefs.h <<\_ACEOF
-#define HAVE_PAR2_BUGFIXES_V2 1
+#define HAVE_PAR2_BLOCKSCAN 1
 _ACEOF
 
 else
@@ -7674,22 +7673,78 @@ sed 's/^/| /' conftest.$ac_ext >&5
 
 	{ echo "$as_me:$LINENO: result: no" >&5
 echo "${ECHO_T}no" >&6; }
-		PAR2PATCHV2=no
 fi
 
 rm -f core conftest.err conftest.$ac_objext conftest.$ac_ext
 
-	if test "$PAR2PATCHV2" = "no" ; then
-		# Check whether --enable-libpar2-bugfixes-check was given.
-if test "${enable_libpar2_bugfixes_check+set}" = set; then
-  enableval=$enable_libpar2_bugfixes_check;  PAR2PATCHCHECK=$enableval
+				{ echo "$as_me:$LINENO: checking whether libpar2 supports external verification" >&5
+echo $ECHO_N "checking whether libpar2 supports external verification... $ECHO_C" >&6; }
+	cat >conftest.$ac_ext <<_ACEOF
+/* confdefs.h.  */
+_ACEOF
+cat confdefs.h >>conftest.$ac_ext
+cat >>conftest.$ac_ext <<_ACEOF
+/* end confdefs.h.  */
+#include <libpar2/par2cmdline.h>
+		#include <libpar2/par2repairer.h>
+		 class Repairer : public Par2Repairer { protected:
+	virtual int ScanDataFile(DiskFile *diskfile, Par2RepairerSourceFile* &sourcefile,
+		MatchType &matchtype, MD5Hash &hashfull, MD5Hash &hash16k, u32 &count) { return true; } };
+int
+main ()
+{
+
+  ;
+  return 0;
+}
+_ACEOF
+rm -f conftest.$ac_objext
+if { (ac_try="$ac_compile"
+case "(($ac_try" in
+  *\"* | *\`* | *\\*) ac_try_echo=\$ac_try;;
+  *) ac_try_echo=$ac_try;;
+esac
+eval "echo \"\$as_me:$LINENO: $ac_try_echo\"") >&5
+  (eval "$ac_compile") 2>conftest.er1
+  ac_status=$?
+  grep -v '^ *+' conftest.er1 >conftest.err
+  rm -f conftest.er1
+  cat conftest.err >&5
+  echo "$as_me:$LINENO: \$? = $ac_status" >&5
+  (exit $ac_status); } && {
+	 test -z "$ac_cxx_werror_flag" ||
+	 test ! -s conftest.err
+       } && test -s conftest.$ac_objext; then
+  { echo "$as_me:$LINENO: result: no" >&5
+echo "${ECHO_T}no" >&6; }
+		PAR2CRCPATCH=no
+
+cat >>confdefs.h <<\_ACEOF
+#define HAVE_PAR2_CRCPATCH 1
+_ACEOF
+
+else
+  echo "$as_me: failed program was:" >&5
+sed 's/^/| /' conftest.$ac_ext >&5
+
+	{ echo "$as_me:$LINENO: result: yes" >&5
+echo "${ECHO_T}yes" >&6; }
+		PAR2CRCPATCH=yes
+fi
+
+rm -f core conftest.err conftest.$ac_objext conftest.$ac_ext
+
+	if test "$PAR2CRCPATCH" = "no" ; then
+		# Check whether --enable-libpar2-version-check was given.
+if test "${enable_libpar2_version_check+set}" = set; then
+  enableval=$enable_libpar2_version_check;  PAR2PATCHCHECK=$enableval
 else
    PAR2PATCHCHECK=yes
 fi
 
 		if test "$PAR2PATCHCHECK" = "yes"; then
-			{ { echo "$as_me:$LINENO: error: Your version of libpar2 doesn't include the recent bugfixes. Please update libpar2 to version 0.4 or newer (http://launchpad.net/libpar2). If you cannot install a newer version of libpar2, you can use configure parameter --disable-libpar2-bugfixes-check to suppress the check. Please note however that in this case the program may crash during par-check/repair. The update is highly recommended!" >&5
-echo "$as_me: error: Your version of libpar2 doesn't include the recent bugfixes. Please update libpar2 to version 0.4 or newer (http://launchpad.net/libpar2). If you cannot install a newer version of libpar2, you can use configure parameter --disable-libpar2-bugfixes-check to suppress the check. Please note however that in this case the program may crash during par-check/repair. The update is highly recommended!" >&2;}
+			{ { echo "$as_me:$LINENO: error: Your version of libpar2 doesn't support external verification, which drastically improves verification time in nzbget. Please update your libpar2 as explained on http://nzbget.net/libpar2. If you cannot update libpar2, you can use configure parameter --disable-libpar2-version-check to suppress the check." >&5
+echo "$as_me: error: Your version of libpar2 doesn't support external verification, which drastically improves verification time in nzbget. Please update your libpar2 as explained on http://nzbget.net/libpar2. If you cannot update libpar2, you can use configure parameter --disable-libpar2-version-check to suppress the check." >&2;}
    { (exit 1); exit 1; }; }
 		fi
 	fi

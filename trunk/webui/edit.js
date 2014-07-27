@@ -1745,7 +1745,7 @@ var HistoryEditDialog = (new function()
 		table += '<tr><td>Download speed</td><td class="text-center">' + speed + '</td></tr>';
 		table += '<tr><td>Total time</td><td class="text-center">' + Util.formatTimeHMS(hist.DownloadTimeSec + hist.PostTotalTimeSec) + '</td></tr>';
 		table += '<tr><td>Download time</td><td class="text-center">' + Util.formatTimeHMS(hist.DownloadTimeSec) + '</td></tr>';
-		table += '<tr><td>Verify time </td><td class="text-center">' + Util.formatTimeHMS(hist.ParTimeSec - hist.RepairTimeSec) + '</td></tr>';
+		table += '<tr><td>Verification time </td><td class="text-center">' + Util.formatTimeHMS(hist.ParTimeSec - hist.RepairTimeSec) + '</td></tr>';
 		table += '<tr><td>Repair time</td><td class="text-center">' + Util.formatTimeHMS(hist.RepairTimeSec) + '</td></tr>';
 		table += '<tr><td>Unpack time</td><td class="text-center">' + Util.formatTimeHMS(hist.UnpackTimeSec) + '</td></tr>';
 
