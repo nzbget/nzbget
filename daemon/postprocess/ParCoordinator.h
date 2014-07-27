@@ -55,6 +55,7 @@ private:
 		virtual void	PrintMessage(Message::EKind eKind, const char* szFormat, ...);
 		virtual void	RegisterParredFile(const char* szFilename);
 		virtual bool	IsParredFile(const char* szFilename);
+		virtual EFileStatus	FindFileCrc(const char* szFilename, unsigned long* lCrc);
 	public:
 		PostInfo*		GetPostInfo() { return m_pPostInfo; }
 		void			SetPostInfo(PostInfo* pPostInfo) { m_pPostInfo = pPostInfo; }
@@ -78,6 +79,7 @@ private:
 		virtual void	Completed() { m_pOwner->ParRenameCompleted(); }
 		virtual void	PrintMessage(Message::EKind eKind, const char* szFormat, ...);
 		virtual void	RegisterParredFile(const char* szFilename);
+		virtual void	RegisterRenamedFile(const char* szOldFilename, const char* szNewFileName);
 	public:
 		PostInfo*		GetPostInfo() { return m_pPostInfo; }
 		void			SetPostInfo(PostInfo* pPostInfo) { m_pPostInfo = pPostInfo; }

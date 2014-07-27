@@ -119,6 +119,7 @@ bool ArticleWriter::Start(Decoder::EFormat eFormat, const char* szFilename, int 
 	m_eFormat = eFormat;
 	m_iArticleOffset = iArticleOffset;
 	m_iArticleSize = iArticleSize ? iArticleSize : m_pArticleInfo->GetSize();
+	m_iArticlePtr = 0;
 
 	// prepare file for writing
 	if (m_eFormat == Decoder::efYenc)
@@ -168,7 +169,6 @@ bool ArticleWriter::Start(Decoder::EFormat eFormat, const char* szFilename, int 
 			g_pArticleCache->Free(m_iArticleSize);
 		}
 
-		m_iArticlePtr = 0;
 		m_pArticleData = (char*)g_pArticleCache->Alloc(m_iArticleSize);
 
 		while (!m_pArticleData && g_pArticleCache->GetFlushing())
@@ -206,15 +206,19 @@ bool ArticleWriter::Start(Decoder::EFormat eFormat, const char* szFilename, int 
 
 bool ArticleWriter::Write(char* szBufffer, int iLen)
 {
+	if (g_pOptions->GetDecode())
+	{
+		m_iArticlePtr += iLen;
+	}
+
 	if (g_pOptions->GetDecode() && m_pArticleData)
 	{
-		if (m_iArticlePtr + iLen > m_iArticleSize)
+		if (m_iArticlePtr > m_iArticleSize)
 		{
 			detail("Decoding %s failed: article size mismatch", m_szInfoName);
 			return false;
 		}
-		memcpy(m_pArticleData + m_iArticlePtr, szBufffer, iLen);
-		m_iArticlePtr += iLen;
+		memcpy(m_pArticleData + m_iArticlePtr - iLen, szBufffer, iLen);
 		return true;
 	}
 
@@ -263,6 +267,11 @@ void ArticleWriter::Finish(bool bSuccess)
 			m_pFileInfo->SetCachedArticles(m_pFileInfo->GetCachedArticles() + 1);
 			g_pArticleCache->UnlockContent();
 			m_pArticleData = NULL;
+		}
+		else
+		{
+			m_pArticleInfo->SetSegmentOffset(m_iArticleOffset);
+			m_pArticleInfo->SetSegmentSize(m_iArticlePtr);
 		}
 	}
 	else 
@@ -364,27 +373,27 @@ void ArticleWriter::CompleteFileParts()
 	szNZBName[1024-1] = '\0';
 	szNZBDestDir[1024-1] = '\0';
 	
-	char InfoFilename[1024];
-	snprintf(InfoFilename, 1024, "%s%c%s", szNZBName, (int)PATH_SEPARATOR, m_pFileInfo->GetFilename());
-	InfoFilename[1024-1] = '\0';
+	char szInfoFilename[1024];
+	snprintf(szInfoFilename, 1024, "%s%c%s", szNZBName, (int)PATH_SEPARATOR, m_pFileInfo->GetFilename());
+	szInfoFilename[1024-1] = '\0';
 
 	bool bCached = m_pFileInfo->GetCachedArticles() > 0;
 
 	if (!g_pOptions->GetDecode())
 	{
-		detail("Moving articles for %s", InfoFilename);
+		detail("Moving articles for %s", szInfoFilename);
 	}
 	else if (bDirectWrite && bCached)
 	{
-		detail("Writing articles for %s", InfoFilename);
+		detail("Writing articles for %s", szInfoFilename);
 	}
 	else if (bDirectWrite)
 	{
-		detail("Checking articles for %s", InfoFilename);
+		detail("Checking articles for %s", szInfoFilename);
 	}
 	else
 	{
-		detail("Joining articles for %s", InfoFilename);
+		detail("Joining articles for %s", szInfoFilename);
 	}
 
 	// Ensure the DstDir is created
@@ -444,10 +453,10 @@ void ArticleWriter::CompleteFileParts()
 		m_bFlushing = true;
 	}
 
-	bool complete = true;
-	int iBrokenCount = 0;
-	static const int BUFFER_SIZE = 1024 * 50;
+	static const int BUFFER_SIZE = 1024 * 64;
 	char* buffer = NULL;
+	bool bFirstArticle = true;
+	unsigned long lCrc = 0;
 
 	if (g_pOptions->GetDecode() && !bDirectWrite)
 	{
@@ -459,8 +468,6 @@ void ArticleWriter::CompleteFileParts()
 		ArticleInfo* pa = *it;
 		if (pa->GetStatus() != ArticleInfo::aiFinished)
 		{
-			iBrokenCount++;
-			complete = false;
 			continue;
 		}
 
@@ -469,7 +476,7 @@ void ArticleWriter::CompleteFileParts()
 		{
 			memset(buffer, 0, BUFFER_SIZE);
 			while (pa->GetSegmentOffset() > ftell(outfile) && ftell(outfile) > -1 &&
-				   fwrite(buffer, 1, std::min((int)(pa->GetSegmentOffset() - ftell(outfile)), BUFFER_SIZE), outfile)) ;
+				fwrite(buffer, 1, (std::min)((int)(pa->GetSegmentOffset() - ftell(outfile)), BUFFER_SIZE), outfile)) ;
 		}
 
 		if (pa->GetSegmentContent())
@@ -481,40 +488,40 @@ void ArticleWriter::CompleteFileParts()
 		}
 		else if (g_pOptions->GetDecode() && !bDirectWrite)
 		{
-			FILE* infile;
-			const char* fn = pa->GetResultFilename();
-
-			infile = fopen(fn, FOPEN_RB);
+			FILE* infile = fopen(pa->GetResultFilename(), FOPEN_RB);
 			if (infile)
 			{
 				int cnt = BUFFER_SIZE;
-
 				while (cnt == BUFFER_SIZE)
 				{
 					cnt = (int)fread(buffer, 1, BUFFER_SIZE, infile);
 					fwrite(buffer, 1, cnt, outfile);
 					SetLastUpdateTimeNow();
 				}
-
 				fclose(infile);
 			}
 			else
 			{
-				complete = false;
-				iBrokenCount++;
-				detail("Could not find file %s. Status is broken", fn);
+				m_pFileInfo->SetFailedArticles(m_pFileInfo->GetFailedArticles() + 1);
+				m_pFileInfo->SetSuccessArticles(m_pFileInfo->GetSuccessArticles() - 1);
+				detail("Could not find file %s. Status is broken", pa->GetResultFilename());
 			}
 		}
 		else if (!g_pOptions->GetDecode())
 		{
-			const char* fn = pa->GetResultFilename();
 			char dstFileName[1024];
 			snprintf(dstFileName, 1024, "%s%c%03i", ofn, (int)PATH_SEPARATOR, pa->GetPartNumber());
 			dstFileName[1024-1] = '\0';
-			if (!Util::MoveFile(fn, dstFileName))
+			if (!Util::MoveFile(pa->GetResultFilename(), dstFileName))
 			{
-				error("Could not move file %s to %s: %s", fn, dstFileName, Util::GetLastErrorMessage(szErrBuf, sizeof(szErrBuf)));
+				error("Could not move file %s to %s: %s", pa->GetResultFilename(), dstFileName, Util::GetLastErrorMessage(szErrBuf, sizeof(szErrBuf)));
 			}
+		}
+
+		if (m_eFormat == Decoder::efYenc)
+		{
+			lCrc = bFirstArticle ? pa->GetCrc() : Util::Crc32Combine(lCrc, pa->GetCrc(), pa->GetSegmentSize());
+			bFirstArticle = false;
 		}
 	}
 
@@ -570,15 +577,14 @@ void ArticleWriter::CompleteFileParts()
 		}
 	}
 
-	if (complete)
+	if (m_pFileInfo->GetMissedArticles() == 0 && m_pFileInfo->GetFailedArticles() == 0)
 	{
-		info("Successfully downloaded %s", InfoFilename);
+		info("Successfully downloaded %s", szInfoFilename);
 	}
 	else
 	{
-		warn("%i of %i article downloads failed for \"%s\"",
-			iBrokenCount + m_pFileInfo->GetMissedArticles(),
-			m_pFileInfo->GetTotalArticles(), InfoFilename);
+		warn("%i of %i article downloads failed for \"%s\"", m_pFileInfo->GetMissedArticles() + m_pFileInfo->GetFailedArticles(),
+			m_pFileInfo->GetTotalArticles(), szInfoFilename);
 
 		if (g_pOptions->GetCreateBrokenLog())
 		{
@@ -586,16 +592,22 @@ void ArticleWriter::CompleteFileParts()
 			snprintf(szBrokenLogName, 1024, "%s%c_brokenlog.txt", szNZBDestDir, (int)PATH_SEPARATOR);
 			szBrokenLogName[1024-1] = '\0';
 			FILE* file = fopen(szBrokenLogName, FOPEN_AB);
-			fprintf(file, "%s (%i/%i)%s", m_pFileInfo->GetFilename(),
-				m_pFileInfo->GetTotalArticles() - iBrokenCount - m_pFileInfo->GetMissedArticles(),
+			fprintf(file, "%s (%i/%i)%s", m_pFileInfo->GetFilename(), m_pFileInfo->GetSuccessArticles(),
 				m_pFileInfo->GetTotalArticles(), LINE_ENDING);
 			fclose(file);
 		}
+
+		lCrc = 0;
 	}
+
+	CompletedFile::EStatus eFileStatus = m_pFileInfo->GetMissedArticles() == 0 &&
+		m_pFileInfo->GetFailedArticles() == 0 ? CompletedFile::cfSuccess :
+		m_pFileInfo->GetSuccessArticles() > 0 ? CompletedFile::cfPartial :
+		CompletedFile::cfFailure;
 
 	// the locking is needed for accessing the members of NZBInfo
 	DownloadQueue::Lock();
-	m_pFileInfo->GetNZBInfo()->GetCompletedFiles()->push_back(strdup(ofn));
+	m_pFileInfo->GetNZBInfo()->GetCompletedFiles()->push_back(new CompletedFile(Util::BaseFileName(ofn), eFileStatus, lCrc));
 	if (strcmp(m_pFileInfo->GetNZBInfo()->GetDestDir(), szNZBDestDir))
 	{
 		// destination directory was changed during completion, need to move the file
@@ -606,14 +618,14 @@ void ArticleWriter::CompleteFileParts()
 
 void ArticleWriter::FlushCache()
 {
-	char InfoFilename[1024];
+	char szInfoFilename[1024];
 	// the locking is needed for accessing the members of NZBInfo
 	DownloadQueue::Lock();
-	snprintf(InfoFilename, 1024, "%s%c%s", m_pFileInfo->GetNZBInfo()->GetName(), (int)PATH_SEPARATOR, m_pFileInfo->GetFilename());
-	InfoFilename[1024-1] = '\0';
+	snprintf(szInfoFilename, 1024, "%s%c%s", m_pFileInfo->GetNZBInfo()->GetName(), (int)PATH_SEPARATOR, m_pFileInfo->GetFilename());
+	szInfoFilename[1024-1] = '\0';
 	DownloadQueue::Unlock();
 
-	detail("Flushing cache for %s", InfoFilename);
+	detail("Flushing cache for %s", szInfoFilename);
 
 	bool bDirectWrite = g_pOptions->GetDirectWrite() && m_pFileInfo->GetOutputInitialized();
 	FILE* outfile = NULL;
@@ -715,7 +727,7 @@ void ArticleWriter::FlushCache()
 
 	g_pArticleCache->UnlockFlush();
 
-	detail("Saved %i articles (%.2f MB) from cache into disk for %s", iFlushedArticles, (float)(iFlushedSize / 1024.0 / 1024.0), InfoFilename);
+	detail("Saved %i articles (%.2f MB) from cache into disk for %s", iFlushedArticles, (float)(iFlushedSize / 1024.0 / 1024.0), szInfoFilename);
 }
 
 bool ArticleWriter::MoveCompletedFiles(NZBInfo* pNZBInfo, const char* szOldDestDir)
@@ -734,29 +746,29 @@ bool ArticleWriter::MoveCompletedFiles(NZBInfo* pNZBInfo, const char* szOldDestD
 	}
 
 	// move already downloaded files to new destination
-	for (NZBInfo::Files::iterator it = pNZBInfo->GetCompletedFiles()->begin(); it != pNZBInfo->GetCompletedFiles()->end(); it++)
+	for (NZBInfo::CompletedFiles::iterator it = pNZBInfo->GetCompletedFiles()->begin(); it != pNZBInfo->GetCompletedFiles()->end(); it++)
     {
-		char* szFileName = *it;
+		CompletedFile* pCompletedFile = *it;
+
+		char szOldFileName[1024];
+		snprintf(szOldFileName, 1024, "%s%c%s", szOldDestDir, (int)PATH_SEPARATOR, pCompletedFile->GetFileName());
+		szOldFileName[1024-1] = '\0';
+
 		char szNewFileName[1024];
-		snprintf(szNewFileName, 1024, "%s%c%s", pNZBInfo->GetDestDir(), (int)PATH_SEPARATOR, Util::BaseFileName(szFileName));
+		snprintf(szNewFileName, 1024, "%s%c%s", pNZBInfo->GetDestDir(), (int)PATH_SEPARATOR, pCompletedFile->GetFileName());
 		szNewFileName[1024-1] = '\0';
 
 		// check if file was not moved already
-		if (strcmp(szFileName, szNewFileName))
+		if (strcmp(szOldDestDir, szNewFileName))
 		{
 			// prevent overwriting of existing files
-			Util::MakeUniqueFilename(szNewFileName, 1024, pNZBInfo->GetDestDir(), Util::BaseFileName(szFileName));
+			Util::MakeUniqueFilename(szNewFileName, 1024, pNZBInfo->GetDestDir(), pCompletedFile->GetFileName());
 
-			detail("Moving file %s to %s", szFileName, szNewFileName);
-			if (Util::MoveFile(szFileName, szNewFileName))
-			{
-				free(szFileName);
-				*it = strdup(szNewFileName);
-			}
-			else
+			detail("Moving file %s to %s", szOldDestDir, szNewFileName);
+			if (!Util::MoveFile(szOldDestDir, szNewFileName))
 			{
 				char szErrBuf[256];
-				error("Could not move file %s to %s: %s", szFileName, szNewFileName, Util::GetLastErrorMessage(szErrBuf, sizeof(szErrBuf)));
+				error("Could not move file %s to %s: %s", szOldDestDir, szNewFileName, Util::GetLastErrorMessage(szErrBuf, sizeof(szErrBuf)));
 			}
 		}
     }

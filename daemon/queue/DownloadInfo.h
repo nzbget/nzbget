@@ -94,6 +94,7 @@ private:
 	int					m_iSegmentSize;
 	EStatus				m_eStatus;
 	char*				m_szResultFilename;
+	unsigned long		m_lCrc;
 
 public:
 						ArticleInfo();
@@ -107,12 +108,16 @@ public:
 	void				AttachSegment(char* pContent, long long iOffset, int iSize);
 	void				DiscardSegment();
 	const char* 		GetSegmentContent() { return m_pSegmentContent; }
+	void				SetSegmentOffset(long long iSegmentOffset) { m_iSegmentOffset = iSegmentOffset; }
 	long long			GetSegmentOffset() { return m_iSegmentOffset; }
+	void 				SetSegmentSize(int iSegmentSize) { m_iSegmentSize = iSegmentSize; }
 	int 				GetSegmentSize() { return m_iSegmentSize; }
 	EStatus				GetStatus() { return m_eStatus; }
 	void				SetStatus(EStatus Status) { m_eStatus = Status; }
 	const char*			GetResultFilename() { return m_szResultFilename; }
 	void 				SetResultFilename(const char* v);
+	unsigned long		GetCrc() { return m_lCrc; }
+	void				SetCrc(unsigned long lCrc) { m_lCrc = lCrc; }
 };
 
 class FileInfo
@@ -231,6 +236,30 @@ public:
 	void				Remove(FileInfo* pFileInfo);
 };
 
+class CompletedFile
+{
+public:
+	enum EStatus
+	{
+		cfUnknown,
+		cfSuccess,
+		cfPartial,
+		cfFailure
+	};
+
+private:
+	char*				m_szFileName;
+	EStatus				m_eStatus;
+	unsigned long		m_lCrc;
+
+public:
+						CompletedFile(const char* szFileName, EStatus eStatus, unsigned long lCrc);
+						~CompletedFile();
+	void				SetFileName(const char* szFileName);
+	const char*			GetFileName() { return m_szFileName; }
+	EStatus				GetStatus() { return m_eStatus; }
+	unsigned long		GetCrc() { return m_lCrc; }
+};
 
 class NZBParameter
 {
@@ -379,7 +408,7 @@ public:
 		nkUrl
 	};
 
-	typedef std::vector<char*>			Files;
+	typedef std::vector<CompletedFile*>	CompletedFiles;
 	typedef std::deque<Message*>		Messages;
 
 	static const int FORCE_PRIORITY = 900;
@@ -420,7 +449,7 @@ private:
 	time_t				m_tMinTime;
 	time_t				m_tMaxTime;
 	int					m_iPriority;
-	Files				m_completedFiles;
+	CompletedFiles		m_completedFiles;
 	ERenameStatus		m_eRenameStatus;
 	EParStatus			m_eParStatus;
 	EUnpackStatus		m_eUnpackStatus;
@@ -541,7 +570,7 @@ public:
 	void				SetMaxTime(time_t tMaxTime) { m_tMaxTime = tMaxTime; }
 	void				BuildDestDirName();
 	void				BuildFinalDirName(char* szFinalDirBuf, int iBufSize);
-	Files*				GetCompletedFiles() { return &m_completedFiles; }		// needs locking (for shared objects)
+	CompletedFiles*		GetCompletedFiles() { return &m_completedFiles; }		// needs locking (for shared objects)
 	void				ClearCompletedFiles();
 	ERenameStatus		GetRenameStatus() { return m_eRenameStatus; }
 	void				SetRenameStatus(ERenameStatus eRenameStatus) { m_eRenameStatus = eRenameStatus; }

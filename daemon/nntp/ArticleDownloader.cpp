@@ -327,6 +327,7 @@ ArticleDownloader::EStatus ArticleDownloader::Download()
 	const char* szResponse = NULL;
 	EStatus Status = adRunning;
 	m_bWritingStarted = false;
+	m_pArticleInfo->SetCrc(0);
 
 	if (m_pConnection->GetNewsServer()->GetJoinGroup())
 	{
@@ -612,6 +613,12 @@ ArticleDownloader::EStatus ArticleDownloader::DecodeCheck()
 				free(m_szArticleFilename);
 				m_szArticleFilename = strdup(pDecoder->GetArticleFilename());
 			}
+
+			if (m_eFormat == Decoder::efYenc)
+			{
+				m_pArticleInfo->SetCrc(m_YDecoder.GetExpectedCrc());
+			}
+
 			return adFinished;
 		}
 		else if (eStatus == Decoder::eCrcError)

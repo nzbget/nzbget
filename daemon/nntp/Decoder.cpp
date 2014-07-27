@@ -43,7 +43,6 @@
 #include "Util.h"
 
 const char* Decoder::FormatNames[] = { "Unknown", "yEnc", "UU" };
-unsigned int YDecoder::crc_tab[256];
 
 Decoder::Decoder()
 {
@@ -103,17 +102,6 @@ Decoder::EFormat Decoder::DetectFormat(const char* buffer, int len)
   * YDecoder: fast implementation of yEnc-Decoder
   */
 
-void YDecoder::Init()
-{
-	debug("Initializing global decoder");
-	crc32gentab();
-}
-
-void YDecoder::Final()
-{
-	debug("Finalizing global Decoder");
-}
-
 YDecoder::YDecoder()
 {
 	Clear();
@@ -135,60 +123,6 @@ void YDecoder::Clear()
 	m_iSize = 0;
 	m_iEndSize = 0;
 	m_bCrcCheck = false;
-}
-
-/* from crc32.c (http://www.koders.com/c/fid699AFE0A656F0022C9D6B9D1743E697B69CE5815.aspx)
- *
- * (c) 1999,2000 Krzysztof Dabrowski
- * (c) 1999,2000 ElysiuM deeZine
- * Released under GPL (thanks)
- *
- * chksum_crc32gentab() --      to a global crc_tab[256], this one will
- *				calculate the crcTable for crc32-checksums.
- *				it is generated to the polynom [..]
- */
-void YDecoder::crc32gentab()
-{
-	unsigned long crc, poly;
-	int i, j;
-
-	poly = 0xEDB88320L;
-	for (i = 0; i < 256; i++)
-	{
-		crc = i;
-		for (j = 8; j > 0; j--)
-		{
-			if (crc & 1)
-			{
-				crc = (crc >> 1) ^ poly;
-			}
-			else
-			{
-				crc >>= 1;
-			}
-		}
-		crc_tab[i] = crc;
-	}
-}
-
-/* This is modified version of chksum_crc() from
- * crc32.c (http://www.koders.com/c/fid699AFE0A656F0022C9D6B9D1743E697B69CE5815.aspx)
- * (c) 1999,2000 Krzysztof Dabrowski
- * (c) 1999,2000 ElysiuM deeZine
- *
- * chksum_crc() -- to a given block, this one calculates the
- *				crc32-checksum until the length is
- *				reached. the crc32-checksum will be
- *				the result.
- */
-unsigned long YDecoder::crc32m(unsigned long startCrc, unsigned char *block, unsigned int length)
-{
-	register unsigned long crc = startCrc;
-	for (unsigned long i = 0; i < length; i++)
-	{
-		crc = ((crc >> 8) & 0x00FFFFFF) ^ crc_tab[(crc ^ *block++) & 0xFF];
-	}
-	return crc;
 }
 
 int YDecoder::DecodeBuffer(char* buffer, int len)
@@ -241,7 +175,7 @@ BreakLoop:
 
 		if (m_bCrcCheck)
 		{
-			m_lCalculatedCRC = crc32m(m_lCalculatedCRC, (unsigned char *)buffer, (unsigned int)(optr - buffer));
+			m_lCalculatedCRC = Util::Crc32m(m_lCalculatedCRC, (unsigned char *)buffer, (unsigned int)(optr - buffer));
 		}
 		return optr - buffer;
 	}

@@ -50,7 +50,6 @@
 #define	S_ISREG(mode)	 __S_ISTYPE((mode), _S_IFREG)
 #define	S_DIRMODE NULL
 #define usleep(usec) Sleep((usec) / 1000)
-#define gettimeofday(tm, ignore) _ftime(tm)
 #define socklen_t int
 #define SHUT_WR 0x01
 #define SHUT_RDWR 0x02

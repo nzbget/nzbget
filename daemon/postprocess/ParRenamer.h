@@ -59,7 +59,6 @@ public:
 	};
 
 	typedef std::deque<FileHash*>		FileHashList;
-
 	typedef std::deque<char*>			DirList;
 	
 private:
@@ -88,12 +87,14 @@ private:
 	void				CheckParFile(const char* szDestDir, const char* szFilename);
 	bool				IsSplittedFragment(const char* szFilename, const char* szCorrectName);
 	void				CheckMissing();
+	void				RenameFile(const char* szSrcFilename, const char* szDestFileName);
 
 protected:
 	virtual void		UpdateProgress() {}
 	virtual void		Completed() {}
 	virtual void		PrintMessage(Message::EKind eKind, const char* szFormat, ...) {}
 	virtual void		RegisterParredFile(const char* szFilename) {}
+	virtual void		RegisterRenamedFile(const char* szOldFilename, const char* szNewFileName) {}
 	const char*			GetProgressLabel() { return m_szProgressLabel; }
 	int					GetStageProgress() { return m_iStageProgress; }
 

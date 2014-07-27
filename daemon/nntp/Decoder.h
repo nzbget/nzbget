@@ -64,7 +64,6 @@ public:
 class YDecoder: public Decoder
 {
 protected:
-	static unsigned int		crc_tab[256];
 	bool					m_bBegin;
 	bool					m_bPart;
 	bool					m_bBody;
@@ -78,9 +77,6 @@ protected:
 	unsigned long			m_iEndSize;
 	bool					m_bCrcCheck;
 
-	static void				crc32gentab();
-	unsigned long			crc32m(unsigned long startCrc, unsigned char *block, unsigned int length);
-
 public:
 							YDecoder();
 	virtual EStatus			Check();
@@ -90,9 +86,7 @@ public:
 	unsigned long			GetBegin() { return m_iBegin; }
 	unsigned long			GetEnd() { return m_iEnd; }
 	unsigned long			GetSize() { return m_iSize; }
-
-	static void				Init();
-	static void				Final();
+	unsigned long			GetExpectedCrc() { return m_lExpectedCRC; }
 };
 
 class UDecoder: public Decoder

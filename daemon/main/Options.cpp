@@ -144,6 +144,7 @@ static const char* OPTION_DETAILTARGET			= "DetailTarget";
 static const char* OPTION_PARCHECK				= "ParCheck";
 static const char* OPTION_PARREPAIR				= "ParRepair";
 static const char* OPTION_PARSCAN				= "ParScan";
+static const char* OPTION_PARQUICK				= "ParQuick";
 static const char* OPTION_PARRENAME				= "ParRename";
 static const char* OPTION_HEALTHCHECK			= "HealthCheck";
 static const char* OPTION_SCANSCRIPT			= "ScanScript";
@@ -503,6 +504,7 @@ Options::Options(int argc, char* argv[])
 	m_eParCheck				= pcManual;
 	m_bParRepair			= false;
 	m_eParScan				= psLimited;
+	m_bParQuick				= true;
 	m_bParRename			= false;
 	m_eHealthCheck			= hcNone;
 	m_szScriptOrder			= NULL;
@@ -770,6 +772,7 @@ void Options::InitDefault()
 	SetOption(OPTION_PARCHECK, "auto");
 	SetOption(OPTION_PARREPAIR, "yes");
 	SetOption(OPTION_PARSCAN, "limited");
+	SetOption(OPTION_PARQUICK, "yes");
 	SetOption(OPTION_PARRENAME, "yes");
 	SetOption(OPTION_HEALTHCHECK, "none");
 	SetOption(OPTION_SCRIPTORDER, "");
@@ -989,6 +992,7 @@ void Options::InitOptions()
 	m_bSaveQueue			= (bool)ParseEnumValue(OPTION_SAVEQUEUE, BoolCount, BoolNames, BoolValues);
 	m_bDupeCheck			= (bool)ParseEnumValue(OPTION_DUPECHECK, BoolCount, BoolNames, BoolValues);
 	m_bParRepair			= (bool)ParseEnumValue(OPTION_PARREPAIR, BoolCount, BoolNames, BoolValues);
+	m_bParQuick				= (bool)ParseEnumValue(OPTION_PARQUICK, BoolCount, BoolNames, BoolValues);
 	m_bParRename			= (bool)ParseEnumValue(OPTION_PARRENAME, BoolCount, BoolNames, BoolValues);
 	m_bReloadQueue			= (bool)ParseEnumValue(OPTION_RELOADQUEUE, BoolCount, BoolNames, BoolValues);
 	m_bCursesNZBName		= (bool)ParseEnumValue(OPTION_CURSESNZBNAME, BoolCount, BoolNames, BoolValues);

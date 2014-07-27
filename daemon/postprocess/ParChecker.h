@@ -1,7 +1,7 @@
 /*
  *  This file is part of nzbget
  *
- *  Copyright (C) 2007-2013 Andrey Prygunkov <hugbug@users.sourceforge.net>
+ *  Copyright (C) 2007-2014 Andrey Prygunkov <hugbug@users.sourceforge.net>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -53,8 +53,18 @@ public:
 		ptVerifyingRepaired,
 	};
 
+	enum EFileStatus
+	{
+		fsUnknown,
+		fsSuccess,
+		fsPartial,
+		fsFailure
+	};
+
 	typedef std::deque<char*>		FileList;
 	typedef std::deque<void*>		SourceList;
+
+	friend class Repairer;
 	
 private:
 	char*				m_szInfoName;
@@ -63,7 +73,8 @@ private:
 	const char*			m_szParFilename;
 	EStatus				m_eStatus;
 	EStage				m_eStage;
-	void*				m_pRepairer;	// declared as void* to prevent the including of libpar2-headers into this header-file
+	// declared as void* to prevent the including of libpar2-headers into this header-file
+	void*				m_pRepairer;
 	char*				m_szErrMsg;
 	FileList			m_QueuedParFiles;
 	Mutex			 	m_mutexQueuedParFiles;
@@ -78,6 +89,7 @@ private:
 	int					m_iStageProgress;
 	bool				m_bCancelled;
 	SourceList			m_sourceFiles;
+	std::string			m_lastFilename;
 
 	void				Cleanup();
 	EStatus				RunParCheck(const char* szParFilename);
@@ -94,6 +106,9 @@ private:
 	void				signal_filename(std::string str);
 	void				signal_progress(double progress);
 	void				signal_done(std::string str, int available, int total);
+	// declared as void* to prevent the including of libpar2-headers into this header-file
+	// DiskFile* pDiskfile, Par2RepairerSourceFile* pSourcefile
+	EFileStatus			VerifyDataFile(void* pDiskfile, void* pSourcefile);
 
 protected:
 	/**
@@ -107,6 +122,7 @@ protected:
 	virtual void		PrintMessage(Message::EKind eKind, const char* szFormat, ...) {}
 	virtual void		RegisterParredFile(const char* szFilename) {}
 	virtual bool		IsParredFile(const char* szFilename) { return false; }
+	virtual EFileStatus	FindFileCrc(const char* szFilename, unsigned long* lCrc) { return fsUnknown; }
 	EStage				GetStage() { return m_eStage; }
 	const char*			GetProgressLabel() { return m_szProgressLabel; }
 	int					GetFileProgress() { return m_iFileProgress; }

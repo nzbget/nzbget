@@ -295,13 +295,18 @@ void PrePostProcessor::NZBDeleted(DownloadQueue* pDownloadQueue, NZBInfo* pNZBIn
 		pNZBInfo->GetDeleteStatus() == NZBInfo::dsDupe)
 	{
 		// download was cancelled, deleting already downloaded files from disk
-		for (NZBInfo::Files::reverse_iterator it = pNZBInfo->GetCompletedFiles()->rbegin(); it != pNZBInfo->GetCompletedFiles()->rend(); it++)
+		for (NZBInfo::CompletedFiles::reverse_iterator it = pNZBInfo->GetCompletedFiles()->rbegin(); it != pNZBInfo->GetCompletedFiles()->rend(); it++)
 		{
-			char* szFilename = *it;
-			if (Util::FileExists(szFilename))
+			CompletedFile* pCompletedFile = *it;
+
+			char szFullFileName[1024];
+			snprintf(szFullFileName, 1024, "%s%c%s", pNZBInfo->GetDestDir(), (int)PATH_SEPARATOR, pCompletedFile->GetFileName());
+			szFullFileName[1024-1] = '\0';
+
+			if (Util::FileExists(szFullFileName))
 			{
-				detail("Deleting file %s", Util::BaseFileName(szFilename));
-				remove(szFilename);
+				detail("Deleting file %s", pCompletedFile->GetFileName());
+				remove(szFullFileName);
 			}
 		}
 
@@ -668,10 +673,14 @@ void PrePostProcessor::JobCompleted(DownloadQueue* pDownloadQueue, PostInfo* pPo
 			if (!pNZBInfo->GetFileList()->empty())
 			{
 				info("Cleaning up download queue for %s", pNZBInfo->GetName());
-				pNZBInfo->ClearCompletedFiles();
 				pNZBInfo->SetParCleanup(true);
 				pDownloadQueue->EditEntry(pNZBInfo->GetID(), DownloadQueue::eaGroupDelete, 0, NULL);
 			}
+		}
+
+		if (pNZBInfo->GetUnpackCleanedUpDisk())
+		{
+			pNZBInfo->ClearCompletedFiles();
 		}
 
 		NZBCompleted(pDownloadQueue, pNZBInfo, false);
