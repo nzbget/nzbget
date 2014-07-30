@@ -90,6 +90,7 @@ private:
 	bool				m_bCancelled;
 	SourceList			m_sourceFiles;
 	std::string			m_lastFilename;
+	bool				m_bHasDamagedFiles;
 
 	void				Cleanup();
 	EStatus				RunParCheck(const char* szParFilename);
