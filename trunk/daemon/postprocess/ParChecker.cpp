@@ -317,6 +317,7 @@ ParChecker::EStatus ParChecker::RunParCheck(const char* szParFilename)
 	m_iProcessedFiles = 0;
 	m_iExtraFiles = 0;
 	m_bVerifyingExtraFiles = false;
+	m_bHasDamagedFiles = false;
 	EStatus eStatus = psFailed;
 
 	PrintMessage(Message::mkInfo, "Verifying %s", m_szInfoName);
@@ -342,7 +343,7 @@ ParChecker::EStatus ParChecker::RunParCheck(const char* szParFilename)
     debug("ParChecker: Process-result=%i", res);
 
 	bool bAddedSplittedFragments = false;
-	if (!IsStopped() && res == eRepairNotPossible)
+	if (m_bHasDamagedFiles && !IsStopped() && res == eRepairNotPossible)
 	{
 		bAddedSplittedFragments = AddSplittedFragments();
 		if (bAddedSplittedFragments)
@@ -352,7 +353,7 @@ ParChecker::EStatus ParChecker::RunParCheck(const char* szParFilename)
 		}
 	}
 
-	if (!IsStopped() && pRepairer->missingfilecount > 0 && 
+	if (m_bHasDamagedFiles && !IsStopped() && pRepairer->missingfilecount > 0 && 
 		!(bAddedSplittedFragments && res == eRepairPossible) &&
 		g_pOptions->GetParScan() == Options::psAuto)
 	{
@@ -363,7 +364,7 @@ ParChecker::EStatus ParChecker::RunParCheck(const char* szParFilename)
 		}
 	}
 
-	if (!IsStopped() && res == eRepairNotPossible)
+	if (m_bHasDamagedFiles && !IsStopped() && res == eRepairNotPossible)
 	{
 		res = (Result)ProcessMorePars();
 	}
@@ -376,7 +377,7 @@ ParChecker::EStatus ParChecker::RunParCheck(const char* szParFilename)
 	
 	eStatus = psFailed;
 	
-	if (res == eSuccess)
+	if (res == eSuccess || !m_bHasDamagedFiles)
 	{
     	PrintMessage(Message::mkInfo, "Repair not needed for %s", m_szInfoName);
 		eStatus = psRepairNotNeeded;
@@ -923,13 +924,14 @@ void ParChecker::signal_done(std::string str, int available, int total)
 	{
 		if (available < total && !m_bVerifyingExtraFiles)
 		{
-			bool bFileExists = true;
+			const char* szFilename = str.c_str();
 
+			bool bFileExists = true;
 			for (std::vector<Par2RepairerSourceFile*>::iterator it = ((Repairer*)m_pRepairer)->sourcefiles.begin();
 				it != ((Repairer*)m_pRepairer)->sourcefiles.end(); it++)
 			{
 				Par2RepairerSourceFile *sourcefile = *it;
-				if (sourcefile && !strcmp(str.c_str(), Util::BaseFileName(sourcefile->TargetFileName().c_str())) &&
+				if (sourcefile && !strcmp(szFilename, Util::BaseFileName(sourcefile->TargetFileName().c_str())) &&
 					!sourcefile->GetTargetExists())
 				{
 					bFileExists = false;
@@ -937,13 +939,19 @@ void ParChecker::signal_done(std::string str, int available, int total)
 				}
 			}
 
+			bool bIgnore = Util::MatchFileExt(szFilename, g_pOptions->GetParIgnoreExt(), ",;") ||
+				Util::MatchFileExt(szFilename, g_pOptions->GetExtCleanupDisk(), ",;");
+			m_bHasDamagedFiles |= !bIgnore;
+
 			if (bFileExists)
 			{
-				PrintMessage(Message::mkWarning, "File %s has %i bad block(s) of total %i block(s)", str.c_str(), total - available, total);
+				PrintMessage(Message::mkWarning, "File %s has %i bad block(s) of total %i block(s)%s",
+					szFilename, total - available, total, bIgnore ? ", ignoring" : "");
 			}
 			else
 			{
-				PrintMessage(Message::mkWarning, "File %s with %i block(s) is missing", str.c_str(), total);
+				PrintMessage(Message::mkWarning, "File %s with %i block(s) is missing%s",
+					szFilename, total, bIgnore ? ", ignoring" : "");
 			}
 		}
 	}
