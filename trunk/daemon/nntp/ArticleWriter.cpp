@@ -759,16 +759,16 @@ bool ArticleWriter::MoveCompletedFiles(NZBInfo* pNZBInfo, const char* szOldDestD
 		szNewFileName[1024-1] = '\0';
 
 		// check if file was not moved already
-		if (strcmp(szOldDestDir, szNewFileName))
+		if (strcmp(szOldFileName, szNewFileName))
 		{
 			// prevent overwriting of existing files
 			Util::MakeUniqueFilename(szNewFileName, 1024, pNZBInfo->GetDestDir(), pCompletedFile->GetFileName());
 
-			detail("Moving file %s to %s", szOldDestDir, szNewFileName);
-			if (!Util::MoveFile(szOldDestDir, szNewFileName))
+			detail("Moving file %s to %s", szOldFileName, szNewFileName);
+			if (!Util::MoveFile(szOldFileName, szNewFileName))
 			{
 				char szErrBuf[256];
-				error("Could not move file %s to %s: %s", szOldDestDir, szNewFileName, Util::GetLastErrorMessage(szErrBuf, sizeof(szErrBuf)));
+				error("Could not move file %s to %s: %s", szOldFileName, szNewFileName, Util::GetLastErrorMessage(szErrBuf, sizeof(szErrBuf)));
 			}
 		}
     }
@@ -835,6 +835,19 @@ bool ArticleWriter::MoveCompletedFiles(NZBInfo* pNZBInfo, const char* szOldDestD
 	// delete old directory (if empty)
 	if (Util::DirEmpty(szOldDestDir))
 	{
+		// check if there are pending writes into directory
+		for (FileList::iterator it = pNZBInfo->GetFileList()->begin(); it != pNZBInfo->GetFileList()->end(); it++)
+		{
+			FileInfo* pFileInfo = *it;
+			pFileInfo->LockOutputFile();
+			if (pFileInfo->GetOutputInitialized())
+			{
+				pFileInfo->UnlockOutputFile();
+				return true;
+			}
+			pFileInfo->UnlockOutputFile();
+		}
+
 		rmdir(szOldDestDir);
 	}
 
