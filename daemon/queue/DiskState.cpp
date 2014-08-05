@@ -136,7 +136,7 @@ bool DiskState::SaveDownloadQueue(DownloadQueue* pDownloadQueue)
 		return false;
 	}
 
-	fprintf(outfile, "%s%i\n", FORMATVERSION_SIGNATURE, 49);
+	fprintf(outfile, "%s%i\n", FORMATVERSION_SIGNATURE, 50);
 
 	// save nzb-infos
 	SaveNZBQueue(pDownloadQueue, outfile);
@@ -179,7 +179,7 @@ bool DiskState::LoadDownloadQueue(DownloadQueue* pDownloadQueue, Servers* pServe
 	char FileSignatur[128];
 	fgets(FileSignatur, sizeof(FileSignatur), infile);
 	iFormatVersion = ParseFormatVersion(FileSignatur);
-	if (iFormatVersion < 3 || iFormatVersion > 49)
+	if (iFormatVersion < 3 || iFormatVersion > 50)
 	{
 		error("Could not load diskstate due to file version mismatch");
 		fclose(infile);
@@ -390,10 +390,11 @@ void DiskState::SaveNZBInfo(NZBInfo* pNZBInfo, FILE* outfile)
 	snprintf(DestDirSlash, 1023, "%s%c", pNZBInfo->GetDestDir(), PATH_SEPARATOR);
 
 	fprintf(outfile, "%i\n", (int)pNZBInfo->GetCompletedFiles()->size());
-	for (NZBInfo::CompletedFiles::iterator it = pNZBInfo->GetCompletedFiles()->begin(); it != pNZBInfo->GetCompletedFiles()->end(); it++)
+	for (CompletedFiles::iterator it = pNZBInfo->GetCompletedFiles()->begin(); it != pNZBInfo->GetCompletedFiles()->end(); it++)
 	{
 		CompletedFile* pCompletedFile = *it;
-		fprintf(outfile, "%i,%lu,%s\n", (int)pCompletedFile->GetStatus(), pCompletedFile->GetCrc(), pCompletedFile->GetFileName());
+		fprintf(outfile, "%i,%i,%lu,%s\n", pCompletedFile->GetID(), (int)pCompletedFile->GetStatus(),
+			pCompletedFile->GetCrc(), pCompletedFile->GetFileName());
 	}
 
 	fprintf(outfile, "%i\n", (int)pNZBInfo->GetParameters()->size());
@@ -762,21 +763,32 @@ bool DiskState::LoadNZBInfo(NZBInfo* pNZBInfo, Servers* pServers, FILE* infile, 
 			if (!fgets(buf, sizeof(buf), infile)) goto error;
 			if (buf[0] != 0) buf[strlen(buf)-1] = 0; // remove traling '\n'
 
+			int iID = 0;
 			char* szFileName = buf;
 			int iStatus = 0;
 			unsigned long lCrc = 0;
 
 			if (iFormatVersion >= 49)
 			{
-				sscanf(buf, "%i,%lu", &iStatus, &lCrc);
-				szFileName = strchr(buf + 2, ',');
+				if (iFormatVersion >= 50)
+				{
+					if (sscanf(buf, "%i,%i,%lu", &iID, &iStatus, &lCrc) != 3) goto error;
+					szFileName = strchr(buf, ',');
+					if (szFileName) szFileName = strchr(szFileName+1, ',');
+					if (szFileName) szFileName = strchr(szFileName+1, ',');
+				}
+				else
+				{
+					if (sscanf(buf, "%i,%lu", &iStatus, &lCrc) != 2) goto error;
+					szFileName = strchr(buf + 2, ',');
+				}
 				if (szFileName)
 				{
 					szFileName++;
 				}
 			}
 
-			pNZBInfo->GetCompletedFiles()->push_back(new CompletedFile(szFileName, (CompletedFile::EStatus)iStatus, lCrc));
+			pNZBInfo->GetCompletedFiles()->push_back(new CompletedFile(iID, szFileName, (CompletedFile::EStatus)iStatus, lCrc));
 		}
 	}
 
@@ -991,13 +1003,16 @@ bool DiskState::LoadServerStats(ServerStatList* pServerStatList, Servers* pServe
 		int iServerID, iSuccessArticles, iFailedArticles;
 		if (fscanf(infile, "%i,%i,%i\n", &iServerID, &iSuccessArticles, &iFailedArticles) != 3) goto error;
 
-		// find server (id could change if config file was edited)
-		for (Servers::iterator it = pServers->begin(); it != pServers->end(); it++)
+		if (pServers)
 		{
-			NewsServer* pNewsServer = *it;
-			if (pNewsServer->GetStateID() == iServerID)
+			// find server (id could change if config file was edited)
+			for (Servers::iterator it = pServers->begin(); it != pServers->end(); it++)
 			{
-				pServerStatList->StatOp(pNewsServer->GetID(), iSuccessArticles, iFailedArticles, ServerStatList::soSet);
+				NewsServer* pNewsServer = *it;
+				if (pNewsServer->GetStateID() == iServerID)
+				{
+					pServerStatList->StatOp(pNewsServer->GetID(), iSuccessArticles, iFailedArticles, ServerStatList::soSet);
+				}
 			}
 		}
 	}
@@ -1186,12 +1201,12 @@ error:
 	return false;
 }
 
-bool DiskState::SaveFileState(FileInfo* pFileInfo)
+bool DiskState::SaveFileState(FileInfo* pFileInfo, bool bCompleted)
 {
 	debug("Saving FileState to disk");
 
 	char szFilename[1024];
-	snprintf(szFilename, 1024, "%s%is", g_pOptions->GetQueueDir(), pFileInfo->GetID());
+	snprintf(szFilename, 1024, "%s%i%s", g_pOptions->GetQueueDir(), pFileInfo->GetID(), bCompleted ? "c" : "s");
 	szFilename[1024-1] = '\0';
 
 	FILE* outfile = fopen(szFilename, FOPEN_WB);
@@ -1226,11 +1241,13 @@ bool DiskState::SaveFileState(FileInfo* pFileInfo)
 	return true;
 }
 
-bool DiskState::LoadFileState(FileInfo* pFileInfo, Servers* pServers)
+bool DiskState::LoadFileState(FileInfo* pFileInfo, Servers* pServers, bool bCompleted)
 {
 	char szFilename[1024];
-	snprintf(szFilename, 1024, "%s%is", g_pOptions->GetQueueDir(), pFileInfo->GetID());
+	snprintf(szFilename, 1024, "%s%i%s", g_pOptions->GetQueueDir(), pFileInfo->GetID(), bCompleted ? "c" : "s");
 	szFilename[1024-1] = '\0';
+
+	bool bHasArticles = !pFileInfo->GetArticles()->empty();
 
 	FILE* infile = fopen(szFilename, FOPEN_RB);
 
@@ -1278,6 +1295,10 @@ bool DiskState::LoadFileState(FileInfo* pFileInfo, Servers* pServers)
 	if (fscanf(infile, "%i\n", &size) != 1) goto error;
 	for (int i = 0; i < size; i++)
 	{
+		if (!bHasArticles)
+		{
+			pFileInfo->GetArticles()->push_back(new ArticleInfo());
+		}
 		ArticleInfo* pa = pFileInfo->GetArticles()->at(i);
 
 		int iStatus;
@@ -1305,7 +1326,7 @@ bool DiskState::LoadFileState(FileInfo* pFileInfo, Servers* pServers)
 
 		// don't allow all articles be completed or the file will stuck.
 		// such states should never be saved on disk but just in case.
-		if (iCompletedArticles == size - 1)
+		if (iCompletedArticles == size - 1 && !bCompleted)
 		{
 			eStatus = ArticleInfo::aiUndefined;
 		}
@@ -1326,6 +1347,35 @@ error:
 	fclose(infile);
 	error("Error reading diskstate for file %s", szFilename);
 	return false;
+}
+
+void DiskState::DiscardFiles(NZBInfo* pNZBInfo)
+{
+	for (FileList::iterator it = pNZBInfo->GetFileList()->begin(); it != pNZBInfo->GetFileList()->end(); it++)
+	{
+		FileInfo* pFileInfo = *it;
+		DiscardFile(pFileInfo, true, true, true);
+	}
+
+	for (CompletedFiles::iterator it = pNZBInfo->GetCompletedFiles()->begin(); it != pNZBInfo->GetCompletedFiles()->end(); it++)
+	{
+		CompletedFile* pCompletedFile = *it;
+		if (pCompletedFile->GetStatus() != CompletedFile::cfSuccess && pCompletedFile->GetID() > 0)
+		{
+			char szFilename[1024];
+			snprintf(szFilename, 1024, "%s%i", g_pOptions->GetQueueDir(), pCompletedFile->GetID());
+			szFilename[1024-1] = '\0';
+			remove(szFilename);
+
+			snprintf(szFilename, 1024, "%s%is", g_pOptions->GetQueueDir(), pCompletedFile->GetID());
+			szFilename[1024-1] = '\0';
+			remove(szFilename);
+
+			snprintf(szFilename, 1024, "%s%ic", g_pOptions->GetQueueDir(), pCompletedFile->GetID());
+			szFilename[1024-1] = '\0';
+			remove(szFilename);
+		}
+	}
 }
 
 bool DiskState::LoadPostQueue12(DownloadQueue* pDownloadQueue, NZBList* pNZBList, FILE* infile, int iFormatVersion)
@@ -1883,6 +1933,16 @@ void DiskState::DiscardDownloadQueue()
 			snprintf(szFullFilename, 1024, "%s%s", g_pOptions->GetQueueDir(), filename);
 			szFullFilename[1024-1] = '\0';
 			remove(szFullFilename);
+
+			// delete file state file
+			snprintf(szFullFilename, 1024, "%s%ss", g_pOptions->GetQueueDir(), filename);
+			szFullFilename[1024-1] = '\0';
+			remove(szFullFilename);
+
+			// delete failed info file
+			snprintf(szFullFilename, 1024, "%s%sc", g_pOptions->GetQueueDir(), filename);
+			szFullFilename[1024-1] = '\0';
+			remove(szFullFilename);
 		}
 	}
 }
@@ -1897,20 +1957,33 @@ bool DiskState::DownloadQueueExists()
 	return Util::FileExists(fileName);
 }
 
-bool DiskState::DiscardFile(FileInfo* pFileInfo)
+bool DiskState::DiscardFile(FileInfo* pFileInfo, bool bDeleteData, bool bDeletePartialState, bool bDeleteCompletedState)
 {
-	// delete diskstate-file for file-info
+	char fileName[1024];
 
 	// info and articles file
-	char fileName[1024];
-	snprintf(fileName, 1024, "%s%i", g_pOptions->GetQueueDir(), pFileInfo->GetID());
-	fileName[1024-1] = '\0';
-	remove(fileName);
+	if (bDeleteData)
+	{
+		snprintf(fileName, 1024, "%s%i", g_pOptions->GetQueueDir(), pFileInfo->GetID());
+		fileName[1024-1] = '\0';
+		remove(fileName);
+	}
 
-	// state file
-	snprintf(fileName, 1024, "%s%is", g_pOptions->GetQueueDir(), pFileInfo->GetID());
-	fileName[1024-1] = '\0';
-	remove(fileName);
+	// partial state file
+	if (bDeletePartialState)
+	{
+		snprintf(fileName, 1024, "%s%is", g_pOptions->GetQueueDir(), pFileInfo->GetID());
+		fileName[1024-1] = '\0';
+		remove(fileName);
+	}
+
+	// completed state file
+	if (bDeleteCompletedState)
+	{
+		snprintf(fileName, 1024, "%s%ic", g_pOptions->GetQueueDir(), pFileInfo->GetID());
+		fileName[1024-1] = '\0';
+		remove(fileName);
+	}
 
 	return true;
 }
@@ -2276,7 +2349,7 @@ bool DiskState::LoadAllFileStates(DownloadQueue* pDownloadQueue, Servers* pServe
 						if (pFileInfo->GetID() == id)
 						{
 							if (!LoadArticles(pFileInfo)) goto error;
-							if (!LoadFileState(pFileInfo, pServers)) goto error;
+							if (!LoadFileState(pFileInfo, pServers, false)) goto error;
 						}
 					}
 				}

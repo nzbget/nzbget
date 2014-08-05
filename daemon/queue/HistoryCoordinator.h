@@ -44,7 +44,7 @@ public:
 	virtual				~HistoryCoordinator();
 	void				AddToHistory(DownloadQueue* pDownloadQueue, NZBInfo* pNZBInfo);
 	bool				EditList(DownloadQueue* pDownloadQueue, IDList* pIDList, DownloadQueue::EEditAction eAction, int iOffset, const char* szText);
-	void				DeleteQueuedFile(const char* szQueuedFile);
+	void				DeleteDiskFiles(NZBInfo* pNZBInfo);
 	void				HistoryHide(DownloadQueue* pDownloadQueue, HistoryInfo* pHistoryInfo, int rindex);
 	void				Redownload(DownloadQueue* pDownloadQueue, HistoryInfo* pHistoryInfo);
 	void				IntervalCheck();

@@ -160,8 +160,10 @@ private:
 	static int			m_iIDGen;
 	static int			m_iIDMax;
 
+	friend class CompletedFile;
+
 public:
-						FileInfo();
+						FileInfo(int iID = 0);
 						~FileInfo();
 	int					GetID() { return m_iID; }
 	void				SetID(int iID);
@@ -248,18 +250,22 @@ public:
 	};
 
 private:
+	int					m_iID;
 	char*				m_szFileName;
 	EStatus				m_eStatus;
 	unsigned long		m_lCrc;
 
 public:
-						CompletedFile(const char* szFileName, EStatus eStatus, unsigned long lCrc);
+						CompletedFile(int iID, const char* szFileName, EStatus eStatus, unsigned long lCrc);
 						~CompletedFile();
+	int					GetID() { return m_iID; }
 	void				SetFileName(const char* szFileName);
 	const char*			GetFileName() { return m_szFileName; }
 	EStatus				GetStatus() { return m_eStatus; }
 	unsigned long		GetCrc() { return m_lCrc; }
 };
+
+typedef std::deque<CompletedFile*>	CompletedFiles;
 
 class NZBParameter
 {
@@ -303,7 +309,7 @@ public:
 private:
 	char* 				m_szName;
 	EStatus				m_eStatus;
-	
+
 	friend class ScriptStatusList;
 	
 public:
@@ -408,7 +414,6 @@ public:
 		nkUrl
 	};
 
-	typedef std::vector<CompletedFile*>	CompletedFiles;
 	typedef std::deque<Message*>		Messages;
 
 	static const int FORCE_PRIORITY = 900;

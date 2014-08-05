@@ -976,7 +976,7 @@ void ArticleInfo::DiscardSegment()
 }
 
 
-FileInfo::FileInfo()
+FileInfo::FileInfo(int iID)
 {
 	debug("Creating FileInfo");
 
@@ -1007,7 +1007,7 @@ FileInfo::FileInfo()
 	m_iActiveDownloads = 0;
 	m_bAutoDeleted = false;
 	m_iCachedArticles = 0;
-	m_iID = ++m_iIDGen;
+	m_iID = iID ? iID : ++m_iIDGen;
 }
 
 FileInfo::~ FileInfo()
@@ -1139,8 +1139,15 @@ void FileList::Remove(FileInfo* pFileInfo)
 	erase(std::find(begin(), end(), pFileInfo));
 }
 
-CompletedFile::CompletedFile(const char* szFileName, EStatus eStatus, unsigned long lCrc)
+CompletedFile::CompletedFile(int iID, const char* szFileName, EStatus eStatus, unsigned long lCrc)
 {
+	m_iID = iID;
+
+	if (FileInfo::m_iIDMax < m_iID)
+	{
+		FileInfo::m_iIDMax = m_iID;
+	}
+
 	m_szFileName = strdup(szFileName);
 	m_eStatus = eStatus;
 	m_lCrc = lCrc;
