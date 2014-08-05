@@ -149,17 +149,35 @@ void QueueCoordinator::Load()
 		pDownloadQueue->Save();
 
 		// re-save file states into diskstate to update server ids
-		if (g_pOptions->GetServerMode() && g_pOptions->GetSaveQueue() && g_pOptions->GetContinuePartial())
+		if (g_pOptions->GetServerMode() && g_pOptions->GetSaveQueue())
 		{
 			for (NZBList::iterator it = pDownloadQueue->GetQueue()->begin(); it != pDownloadQueue->GetQueue()->end(); it++)
 			{
 				NZBInfo* pNZBInfo = *it;
-				for (FileList::iterator it2 = pNZBInfo->GetFileList()->begin(); it2 != pNZBInfo->GetFileList()->end(); it2++)
+
+				if (g_pOptions->GetContinuePartial())
 				{
-					FileInfo* pFileInfo = *it2;
-					if (!pFileInfo->GetArticles()->empty())
+					for (FileList::iterator it2 = pNZBInfo->GetFileList()->begin(); it2 != pNZBInfo->GetFileList()->end(); it2++)
 					{
-						g_pDiskState->SaveFileState(pFileInfo);
+						FileInfo* pFileInfo = *it2;
+						if (!pFileInfo->GetArticles()->empty())
+						{
+							g_pDiskState->SaveFileState(pFileInfo, false);
+						}
+					}
+				}
+
+				for (CompletedFiles::iterator it2 = pNZBInfo->GetCompletedFiles()->begin(); it2 != pNZBInfo->GetCompletedFiles()->end(); it2++)
+				{
+					CompletedFile* pCompletedFile = *it2;
+					if (pCompletedFile->GetStatus() != CompletedFile::cfSuccess && pCompletedFile->GetID() > 0)
+					{
+						FileInfo* pFileInfo = new FileInfo(pCompletedFile->GetID());
+						if (g_pDiskState->LoadFileState(pFileInfo, g_pServerPool->GetServers(), false))
+						{
+							g_pDiskState->SaveFileState(pFileInfo, true);
+						}
+						delete pFileInfo;
 					}
 				}
 			}
@@ -318,7 +336,7 @@ void QueueCoordinator::AddNZBFileToQueue(NZBFile* pNZBFile, NZBInfo* pUrlInfo, b
 			bAllPaused &= pFileInfo->GetPaused();
 			if (g_pOptions->GetSaveQueue() && g_pOptions->GetServerMode())
 			{
-				g_pDiskState->DiscardFile(pFileInfo);
+				g_pDiskState->DiscardFile(pFileInfo, true, false, false);
 			}
 		}
 		pNZBInfo->SetDeletePaused(bAllPaused);
@@ -431,7 +449,7 @@ void QueueCoordinator::CheckDupeFileInfos(NZBInfo* pNZBInfo)
 		pNZBInfo->GetFileList()->Remove(pFileInfo);
 		if (g_pOptions->GetSaveQueue() && g_pOptions->GetServerMode())
 		{
-			g_pDiskState->DiscardFile(pFileInfo);
+			g_pDiskState->DiscardFile(pFileInfo, true, false, false);
 		}
 	}
 }
@@ -633,7 +651,7 @@ void QueueCoordinator::ArticleCompleted(ArticleDownloader* pArticleDownloader)
 		pNZBInfo->GetCurrentServerStats()->ListOp(pArticleDownloader->GetServerStats(), ServerStatList::soAdd);
 		if (g_pOptions->GetServerMode() && g_pOptions->GetSaveQueue() && g_pOptions->GetContinuePartial())
 		{
-			g_pDiskState->SaveFileState(pFileInfo);
+			g_pDiskState->SaveFileState(pFileInfo, false);
 		}
 	}
 
@@ -756,9 +774,10 @@ void QueueCoordinator::DeleteFileInfo(DownloadQueue* pDownloadQueue, FileInfo* p
 
 	StatFileInfo(pFileInfo, bCompleted);
 
-	if (g_pOptions->GetSaveQueue() && g_pOptions->GetServerMode())
+	if (g_pOptions->GetSaveQueue() && g_pOptions->GetServerMode() &&
+		(!bCompleted || (pFileInfo->GetMissedArticles() == 0 && pFileInfo->GetFailedArticles() == 0)))
 	{
-		g_pDiskState->DiscardFile(pFileInfo);
+		g_pDiskState->DiscardFile(pFileInfo, true, true, false);
 	}
 
 	if (!bCompleted)
@@ -1063,7 +1082,7 @@ bool QueueCoordinator::MergeQueueEntries(DownloadQueue* pDownloadQueue, NZBInfo*
 		pDestNZBInfo->GetDownloadStartTime() : pSrcNZBInfo->GetDownloadStartTime());
 
 	// reattach completed file items to new NZBInfo-object
-	for (NZBInfo::CompletedFiles::iterator it = pSrcNZBInfo->GetCompletedFiles()->begin(); it != pSrcNZBInfo->GetCompletedFiles()->end(); it++)
+	for (CompletedFiles::iterator it = pSrcNZBInfo->GetCompletedFiles()->begin(); it != pSrcNZBInfo->GetCompletedFiles()->end(); it++)
     {
 		CompletedFile* pCompletedFile = *it;
 		pDestNZBInfo->GetCompletedFiles()->push_back(pCompletedFile);

@@ -234,8 +234,6 @@ bool QueueEditor::EditList(DownloadQueue* pDownloadQueue, IDList* pIDList, NameL
 bool QueueEditor::InternEditList(ItemList* pItemList, 
 	IDList* pIDList, DownloadQueue::EEditAction eAction, int iOffset, const char* szText)
 {
-	std::set<NZBInfo*> uniqueNzbs;
-
 	ItemList itemList;
 	if (!pItemList)
 	{

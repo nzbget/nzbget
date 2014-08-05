@@ -295,7 +295,7 @@ void PrePostProcessor::NZBDeleted(DownloadQueue* pDownloadQueue, NZBInfo* pNZBIn
 		pNZBInfo->GetDeleteStatus() == NZBInfo::dsDupe)
 	{
 		// download was cancelled, deleting already downloaded files from disk
-		for (NZBInfo::CompletedFiles::reverse_iterator it = pNZBInfo->GetCompletedFiles()->rbegin(); it != pNZBInfo->GetCompletedFiles()->rend(); it++)
+		for (CompletedFiles::reverse_iterator it = pNZBInfo->GetCompletedFiles()->rbegin(); it != pNZBInfo->GetCompletedFiles()->rend(); it++)
 		{
 			CompletedFile* pCompletedFile = *it;
 
@@ -364,7 +364,7 @@ void PrePostProcessor::NZBCompleted(DownloadQueue* pDownloadQueue, NZBInfo* pNZB
 
 	if (!bAddToHistory)
 	{
-		g_pHistoryCoordinator->DeleteQueuedFile(pNZBInfo->GetQueuedFilename());
+		g_pHistoryCoordinator->DeleteDiskFiles(pNZBInfo);
 		pDownloadQueue->GetQueue()->Remove(pNZBInfo);
 		delete pNZBInfo;
 	}

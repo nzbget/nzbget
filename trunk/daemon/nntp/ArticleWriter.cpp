@@ -598,6 +598,12 @@ void ArticleWriter::CompleteFileParts()
 		}
 
 		lCrc = 0;
+
+		if (g_pOptions->GetSaveQueue() && g_pOptions->GetServerMode())
+		{
+			g_pDiskState->DiscardFile(m_pFileInfo, false, true, false);
+			g_pDiskState->SaveFileState(m_pFileInfo, true);
+		}
 	}
 
 	CompletedFile::EStatus eFileStatus = m_pFileInfo->GetMissedArticles() == 0 &&
@@ -607,7 +613,8 @@ void ArticleWriter::CompleteFileParts()
 
 	// the locking is needed for accessing the members of NZBInfo
 	DownloadQueue::Lock();
-	m_pFileInfo->GetNZBInfo()->GetCompletedFiles()->push_back(new CompletedFile(Util::BaseFileName(ofn), eFileStatus, lCrc));
+	m_pFileInfo->GetNZBInfo()->GetCompletedFiles()->push_back(new CompletedFile(
+		m_pFileInfo->GetID(), Util::BaseFileName(ofn), eFileStatus, lCrc));
 	if (strcmp(m_pFileInfo->GetNZBInfo()->GetDestDir(), szNZBDestDir))
 	{
 		// destination directory was changed during completion, need to move the file
@@ -746,7 +753,7 @@ bool ArticleWriter::MoveCompletedFiles(NZBInfo* pNZBInfo, const char* szOldDestD
 	}
 
 	// move already downloaded files to new destination
-	for (NZBInfo::CompletedFiles::iterator it = pNZBInfo->GetCompletedFiles()->begin(); it != pNZBInfo->GetCompletedFiles()->end(); it++)
+	for (CompletedFiles::iterator it = pNZBInfo->GetCompletedFiles()->begin(); it != pNZBInfo->GetCompletedFiles()->end(); it++)
     {
 		CompletedFile* pCompletedFile = *it;
 

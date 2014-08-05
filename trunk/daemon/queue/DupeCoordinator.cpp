@@ -103,7 +103,7 @@ void DupeCoordinator::NZBFound(DownloadQueue* pDownloadQueue, NZBInfo* pNZBInfo)
 			}
 			// Flag saying QueueCoordinator to skip nzb-file
 			pNZBInfo->SetDeleteStatus(NZBInfo::dsManual);
-			g_pHistoryCoordinator->DeleteQueuedFile(pNZBInfo->GetQueuedFilename());
+			g_pHistoryCoordinator->DeleteDiskFiles(pNZBInfo);
 			return;
 		}
 	}
@@ -211,7 +211,7 @@ void DupeCoordinator::NZBFound(DownloadQueue* pDownloadQueue, NZBInfo* pNZBInfo)
 
 		// Flag saying QueueCoordinator to skip nzb-file
 		pNZBInfo->SetDeleteStatus(NZBInfo::dsManual);
-		g_pHistoryCoordinator->DeleteQueuedFile(pNZBInfo->GetQueuedFilename());
+		g_pHistoryCoordinator->DeleteDiskFiles(pNZBInfo);
 		return;
 	}
 

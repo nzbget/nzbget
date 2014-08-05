@@ -95,7 +95,7 @@ ParChecker::EFileStatus ParCoordinator::PostParChecker::FindFileCrc(const char* 
 {
 	CompletedFile* pCompletedFile = NULL;
 
-	for (NZBInfo::CompletedFiles::iterator it = m_pPostInfo->GetNZBInfo()->GetCompletedFiles()->begin(); it != m_pPostInfo->GetNZBInfo()->GetCompletedFiles()->end(); it++)
+	for (CompletedFiles::iterator it = m_pPostInfo->GetNZBInfo()->GetCompletedFiles()->begin(); it != m_pPostInfo->GetNZBInfo()->GetCompletedFiles()->end(); it++)
 	{
 		CompletedFile* pCompletedFile2 = *it;
 		if (!strcasecmp(pCompletedFile2->GetFileName(), szFilename))
@@ -146,7 +146,7 @@ void ParCoordinator::PostParRenamer::RegisterParredFile(const char* szFilename)
  */
 void ParCoordinator::PostParRenamer::RegisterRenamedFile(const char* szOldFilename, const char* szNewFileName)
 {
-	for (NZBInfo::CompletedFiles::iterator it = m_pPostInfo->GetNZBInfo()->GetCompletedFiles()->begin(); it != m_pPostInfo->GetNZBInfo()->GetCompletedFiles()->end(); it++)
+	for (CompletedFiles::iterator it = m_pPostInfo->GetNZBInfo()->GetCompletedFiles()->begin(); it != m_pPostInfo->GetNZBInfo()->GetCompletedFiles()->end(); it++)
 	{
 		CompletedFile* pCompletedFile = *it;
 		if (!strcasecmp(pCompletedFile->GetFileName(), szOldFilename))

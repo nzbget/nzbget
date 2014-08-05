@@ -58,7 +58,6 @@ private:
 	bool				LoadVolumeStat(Servers* pServers, ServerVolumes* pServerVolumes, FILE* infile, int iFormatVersion);
 	void				CalcFileStats(DownloadQueue* pDownloadQueue, int iFormatVersion);
 	void				CalcNZBFileStats(NZBInfo* pNZBInfo, int iFormatVersion);
-	bool				LoadFileState(FileInfo* pFileInfo, Servers* pServers);
 	bool				LoadAllFileStates(DownloadQueue* pDownloadQueue, Servers* pServers);
 	void				SaveServerStats(ServerStatList* pServerStatList, FILE* outfile);
 	bool				LoadServerStats(ServerStatList* pServerStatList, Servers* pServers, FILE* infile);
@@ -80,10 +79,12 @@ public:
 	bool				SaveDownloadQueue(DownloadQueue* pDownloadQueue);
 	bool				LoadDownloadQueue(DownloadQueue* pDownloadQueue, Servers* pServers);
 	bool				SaveFile(FileInfo* pFileInfo);
-	bool				SaveFileState(FileInfo* pFileInfo);
+	bool				SaveFileState(FileInfo* pFileInfo, bool bCompleted);
+	bool				LoadFileState(FileInfo* pFileInfo, Servers* pServers, bool bCompleted);
 	bool				LoadArticles(FileInfo* pFileInfo);
 	void				DiscardDownloadQueue();
-	bool				DiscardFile(FileInfo* pFileInfo);
+	bool				DiscardFile(FileInfo* pFileInfo, bool bDeleteData, bool bDeletePartialState, bool bDeleteCompletedState);
+	void				DiscardFiles(NZBInfo* pNZBInfo);
 	bool				SaveFeeds(Feeds* pFeeds, FeedHistory* pFeedHistory);
 	bool				LoadFeeds(Feeds* pFeeds, FeedHistory* pFeedHistory);
 	bool				SaveStats(Servers* pServers, ServerVolumes* pServerVolumes);

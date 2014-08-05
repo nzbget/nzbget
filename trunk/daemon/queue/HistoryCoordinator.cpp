@@ -119,7 +119,7 @@ void HistoryCoordinator::IntervalCheck()
 				
 				if (pHistoryInfo->GetKind() == HistoryInfo::hkNzb)
 				{
-					DeleteQueuedFile(pHistoryInfo->GetNZBInfo()->GetQueuedFilename());
+					DeleteDiskFiles(pHistoryInfo->GetNZBInfo());
 				}
 				info("Collection %s removed from history", szNiceName);
 
@@ -144,16 +144,24 @@ void HistoryCoordinator::IntervalCheck()
 	DownloadQueue::Unlock();
 }
 
-void HistoryCoordinator::DeleteQueuedFile(const char* szQueuedFile)
+void HistoryCoordinator::DeleteDiskFiles(NZBInfo* pNZBInfo)
 {
+	if (g_pOptions->GetSaveQueue() && g_pOptions->GetServerMode())
+	{
+		// delete parked files
+		g_pDiskState->DiscardFiles(pNZBInfo);
+	}
+	pNZBInfo->GetFileList()->Clear();
+
+	// delete nzb-file
 	if (!g_pOptions->GetNzbCleanupDisk())
 	{
 		return;
 	}
 
-	// szQueuedFile may contain one filename or several filenames separated
+	// QueuedFile may contain one filename or several filenames separated
 	// with "|"-character (for merged groups)
-	char* szFilename = strdup(szQueuedFile);
+	char* szFilename = strdup(pNZBInfo->GetQueuedFilename());
 	char* szEnd = szFilename - 1;
 	
 	while (szEnd)
@@ -251,7 +259,7 @@ void HistoryCoordinator::HistoryHide(DownloadQueue* pDownloadQueue, HistoryInfo*
 	pNewHistoryInfo->SetTime(pHistoryInfo->GetTime());
 	(*pDownloadQueue->GetHistory())[pDownloadQueue->GetHistory()->size() - 1 - rindex] = pNewHistoryInfo;
 
-	DeleteQueuedFile(pHistoryInfo->GetNZBInfo()->GetQueuedFilename());
+	DeleteDiskFiles(pHistoryInfo->GetNZBInfo());
 
 	delete pHistoryInfo;
 	info("Collection %s removed from history", szNiceName);
@@ -329,20 +337,7 @@ void HistoryCoordinator::HistoryDelete(DownloadQueue* pDownloadQueue, HistoryLis
 
 	if (pHistoryInfo->GetKind() == HistoryInfo::hkNzb)
 	{
-		NZBInfo* pNZBInfo = pHistoryInfo->GetNZBInfo();
-
-		// delete parked files
-		if (g_pOptions->GetSaveQueue() && g_pOptions->GetServerMode())
-		{
-			for (FileList::iterator it = pNZBInfo->GetFileList()->begin(); it != pNZBInfo->GetFileList()->end(); it++)
-			{
-				FileInfo* pFileInfo = *it;
-				g_pDiskState->DiscardFile(pFileInfo);
-			}
-		}
-		pNZBInfo->GetFileList()->Clear();
-
-		DeleteQueuedFile(pNZBInfo->GetQueuedFilename());
+		DeleteDiskFiles(pHistoryInfo->GetNZBInfo());
 	}
 
 	if (pHistoryInfo->GetKind() == HistoryInfo::hkNzb &&
@@ -518,6 +513,8 @@ void HistoryCoordinator::HistoryRedownload(DownloadQueue* pDownloadQueue, Histor
 			error("Could not delete directory %s: %s", pNZBInfo->GetDestDir(), szErrBuf);
 		}
 	}
+
+	g_pDiskState->DiscardFiles(pNZBInfo);
 
 	// reset status fields (which are not reset by "HistoryReturn")
 	pNZBInfo->SetMoveStatus(NZBInfo::msNone);
