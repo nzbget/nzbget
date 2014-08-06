@@ -336,19 +336,6 @@ if test "$ENABLEPARCHECK" = "yes"; then
 		AC_MSG_RESULT([[no]]))
 
 	dnl
-	dnl check if libpar2 has support for block-scan
-	dnl
-	AC_MSG_CHECKING(whether libpar2 supports block-scan)
-	AC_TRY_COMPILE(
-		[#include <libpar2/par2cmdline.h>]
-		[#include <libpar2/par2repairer.h>]
-		[ class Repairer : public Par2Repairer { void test() { blockscan = true; } }; ],
-		[],
-		AC_MSG_RESULT([[yes]])
-		AC_DEFINE([HAVE_PAR2_BLOCKSCAN], 1, [Define to 1 if libpar2 supports block-scan (needs a special patch)]),
-		AC_MSG_RESULT([[no]]))
-
-	dnl
 	dnl check if libpar2 has external-verify-patch
 	dnl
 	AC_MSG_CHECKING(whether libpar2 supports external verification)
