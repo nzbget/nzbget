@@ -33,6 +33,9 @@
 #include <dirent.h>
 #endif
 
+#ifdef DIRBROWSER_SNAPSHOT
+#include <deque>
+#endif
 #include <time.h>
 
 #ifdef WIN32
@@ -53,8 +56,19 @@ private:
 	struct dirent*		m_pFindData;
 #endif
 
+#ifdef DIRBROWSER_SNAPSHOT
+	bool				m_bSnapshot;
+	typedef std::deque<char*>	FileList;
+	FileList			m_Snapshot;
+	FileList::iterator	m_itSnapshot;
+#endif
+
 public:
+#ifdef DIRBROWSER_SNAPSHOT
+						DirBrowser(const char* szPath, bool bSnapshot = true);
+#else
 						DirBrowser(const char* szPath);
+#endif
 						~DirBrowser();
 	const char*			Next();
 };

@@ -143,7 +143,7 @@ fi
 
 
 dnl
-dnl cCheck if spinlocks are available
+dnl Check if spinlocks are available
 dnl
 AC_CHECK_FUNC(pthread_spin_init,
 	[AC_DEFINE([HAVE_SPINLOCK], 1, [Define to 1 if spinlocks are supported])]
@@ -178,6 +178,18 @@ AC_TRY_COMPILE([
       AC_MSG_WARN(could not determine)
       SOCKLEN_T=int])])])
 AC_DEFINE_UNQUOTED(SOCKLEN_T, $SOCKLEN_T, [Determine what socket length (socklen_t) data type is])
+
+
+dnl
+dnl Dir-browser's snapshot
+dnl
+AC_MSG_CHECKING(whether dir-browser snapshot workaround is needed)
+if test "$target_vendor" == "apple"; then
+	AC_MSG_RESULT([[yes]])
+	AC_DEFINE([DIRBROWSER_SNAPSHOT], 1, [Define to 1 if deleting of files during reading of directory is not properly supported by OS])
+else
+	AC_MSG_RESULT([[no]])
+fi
 
 
 dnl 
