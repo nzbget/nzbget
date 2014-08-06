@@ -5942,6 +5942,22 @@ _ACEOF
 
 
 
+{ echo "$as_me:$LINENO: checking whether dir-browser snapshot workaround is needed" >&5
+echo $ECHO_N "checking whether dir-browser snapshot workaround is needed... $ECHO_C" >&6; }
+if test "$target_vendor" == "apple"; then
+	{ echo "$as_me:$LINENO: result: yes" >&5
+echo "${ECHO_T}yes" >&6; }
+
+cat >>confdefs.h <<\_ACEOF
+#define DIRBROWSER_SNAPSHOT 1
+_ACEOF
+
+else
+	{ echo "$as_me:$LINENO: result: no" >&5
+echo "${ECHO_T}no" >&6; }
+fi
+
+
 
 # Check whether --with-libxml2_includes was given.
 if test "${with_libxml2_includes+set}" = set; then

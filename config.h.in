@@ -3,6 +3,10 @@
 /* Define to 1 to include debug-code */
 #undef DEBUG
 
+/* Define to 1 if deleting of files during reading of directory is not
+   properly supported by OS */
+#undef DIRBROWSER_SNAPSHOT
+
 /* Define to 1 to not use curses */
 #undef DISABLE_CURSES
 

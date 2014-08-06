@@ -177,30 +177,70 @@ const char* DirBrowser::Next()
 
 #else
 
+#ifdef DIRBROWSER_SNAPSHOT
+DirBrowser::DirBrowser(const char* szPath, bool bSnapshot)
+#else
 DirBrowser::DirBrowser(const char* szPath)
+#endif
 {
-	m_pDir = opendir(szPath);
+#ifdef DIRBROWSER_SNAPSHOT
+	m_bSnapshot = bSnapshot;
+	if (m_bSnapshot)
+	{
+		DirBrowser dir(szPath, false);
+		while (const char* filename = dir.Next())
+		{
+			m_Snapshot.push_back(strdup(filename));
+		}
+		m_itSnapshot = m_Snapshot.begin();
+	}
+	else
+#endif
+	{
+		m_pDir = opendir(szPath);
+	}
 }
 
 DirBrowser::~DirBrowser()
 {
-	if (m_pDir)
+#ifdef DIRBROWSER_SNAPSHOT
+	if (m_bSnapshot)
 	{
-		closedir(m_pDir);
+		for (FileList::iterator it = m_Snapshot.begin(); it != m_Snapshot.end(); it++)
+		{
+			delete *it;
+		}
+	}
+	else
+#endif
+	{
+		if (m_pDir)
+		{
+			closedir(m_pDir);
+		}
 	}
 }
 
 const char* DirBrowser::Next()
 {
-	if (m_pDir)
+#ifdef DIRBROWSER_SNAPSHOT
+	if (m_bSnapshot)
 	{
-		m_pFindData = readdir(m_pDir);
-		if (m_pFindData)
-		{
-			return m_pFindData->d_name;
-		}
+		return m_itSnapshot == m_Snapshot.end() ? NULL : *m_itSnapshot++;
 	}
-	return NULL;
+	else
+#endif
+	{
+		if (m_pDir)
+		{
+			m_pFindData = readdir(m_pDir);
+			if (m_pFindData)
+			{
+				return m_pFindData->d_name;
+			}
+		}
+		return NULL;
+	}
 }
 
 #endif
