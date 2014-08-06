@@ -474,10 +474,6 @@ int ParChecker::PreProcessPar()
 		pRepairer->sig_progress.connect(sigc::mem_fun(*this, &ParChecker::signal_progress));
 		pRepairer->sig_done.connect(sigc::mem_fun(*this, &ParChecker::signal_done));
 
-#ifdef HAVE_PAR2_BLOCKSCAN
-		pRepairer->blockscan = true;
-#endif
-
 		res = pRepairer->PreProcess(m_szParFilename);
 		debug("ParChecker: PreProcess-result=%i", res);
 
