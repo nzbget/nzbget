@@ -1179,7 +1179,7 @@ bool ParChecker::VerifySuccessDataFile(void* pDiskfile, void* pSourcefile, unsig
 	// extend lDownloadCrc to block size
 	lDownloadCrc = CRCUpdateBlock(lDownloadCrc ^ 0xFFFFFFFF,
 		(size_t)(blocksize * packet->BlockCount() - pSourceFile->GetTargetFile()->FileSize())) ^ 0xFFFFFFFF;
-	info("Download-CRC: %.8x", lDownloadCrc);
+	debug("Download-CRC: %.8x", lDownloadCrc);
 
 	// compute file CRC using CRCs of blocks
 	unsigned long lParCrc = 0;
@@ -1189,7 +1189,7 @@ bool ParChecker::VerifySuccessDataFile(void* pDiskfile, void* pSourcefile, unsig
 		u32 blockCrc = entry->crc;
 		lParCrc = i == 0 ? blockCrc : Util::Crc32Combine(lParCrc, blockCrc, (unsigned long)blocksize);
 	}
-	info("Block-CRC: %x, filename: %s", lParCrc, Util::BaseFileName(pSourceFile->GetTargetFile()->FileName().c_str()));
+	debug("Block-CRC: %x, filename: %s", lParCrc, Util::BaseFileName(pSourceFile->GetTargetFile()->FileName().c_str()));
 
 	return lParCrc == lDownloadCrc;
 }
