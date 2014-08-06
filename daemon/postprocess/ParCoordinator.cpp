@@ -45,10 +45,12 @@
 #include "nzbget.h"
 #include "ParCoordinator.h"
 #include "Options.h"
+#include "DiskState.h"
 #include "Log.h"
 #include "Util.h"
 
 extern Options* g_pOptions;
+extern DiskState* g_pDiskState;
 
 #ifndef DISABLE_PARCHECK
 bool ParCoordinator::PostParChecker::RequestMorePars(int iBlockNeeded, int* pBlockFound)
@@ -91,7 +93,8 @@ bool ParCoordinator::PostParChecker::IsParredFile(const char* szFilename)
 	return false;
 }
 
-ParChecker::EFileStatus ParCoordinator::PostParChecker::FindFileCrc(const char* szFilename, unsigned long* lCrc)
+ParChecker::EFileStatus ParCoordinator::PostParChecker::FindFileCrc(const char* szFilename,
+	unsigned long* lCrc, SegmentList* pSegments)
 {
 	CompletedFile* pCompletedFile = NULL;
 
@@ -113,9 +116,33 @@ ParChecker::EFileStatus ParCoordinator::PostParChecker::FindFileCrc(const char* 
 
 	*lCrc = pCompletedFile->GetCrc();
 
+	if (pCompletedFile->GetStatus() == CompletedFile::cfPartial && pCompletedFile->GetID() > 0 &&
+		!m_pPostInfo->GetNZBInfo()->GetReprocess())
+	{
+		FileInfo* pTmpFileInfo = new FileInfo(pCompletedFile->GetID());
+
+		if (!g_pDiskState->LoadFileState(pTmpFileInfo, NULL, true))
+		{
+			delete pTmpFileInfo;
+			return ParChecker::fsUnknown;
+		}
+
+		for (FileInfo::Articles::iterator it = pTmpFileInfo->GetArticles()->begin(); it != pTmpFileInfo->GetArticles()->end(); it++)
+		{
+			ArticleInfo* pa = *it;
+			ParChecker::Segment* pSegment = new Segment(pa->GetStatus() == ArticleInfo::aiFinished,
+				pa->GetSegmentOffset(), pa->GetSegmentSize(), pa->GetCrc());
+			pSegments->push_back(pSegment);
+		}
+
+		delete pTmpFileInfo;
+	}
+
 	return pCompletedFile->GetStatus() == CompletedFile::cfSuccess ? ParChecker::fsSuccess :
-		pCompletedFile->GetStatus() == CompletedFile::cfFailure ? ParChecker::fsFailure :
-		pCompletedFile->GetStatus() == CompletedFile::cfPartial ? ParChecker::fsPartial :
+		pCompletedFile->GetStatus() == CompletedFile::cfFailure &&
+			!m_pPostInfo->GetNZBInfo()->GetReprocess() ? ParChecker::fsFailure :
+		pCompletedFile->GetStatus() == CompletedFile::cfPartial && pSegments->size() > 0 &&
+			!m_pPostInfo->GetNZBInfo()->GetReprocess()? ParChecker::fsPartial :
 		ParChecker::fsUnknown;
 }
 

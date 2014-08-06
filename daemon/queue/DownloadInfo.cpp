@@ -339,6 +339,7 @@ NZBInfo::NZBInfo() : m_FileList(true)
 	m_iRepairSec = 0;
 	m_iUnpackSec = 0;
 	m_tDownloadStartTime = 0;
+	m_bReprocess = false;
 }
 
 NZBInfo::~NZBInfo()

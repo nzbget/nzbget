@@ -126,7 +126,7 @@ Result Repairer::Process(bool dorepair)
 bool Repairer::ScanDataFile(DiskFile *diskfile, Par2RepairerSourceFile* &sourcefile,
 	MatchType &matchtype, MD5Hash &hashfull, MD5Hash &hash16k, u32 &count)
 {
-	if (g_pOptions->GetParQuick())
+	if (g_pOptions->GetParQuick() && sourcefile)
 	{
 		string path;
 		string name;
@@ -134,12 +134,13 @@ bool Repairer::ScanDataFile(DiskFile *diskfile, Par2RepairerSourceFile* &sourcef
 
 		sig_filename.emit(name);
 
-		ParChecker::EFileStatus eFileStatus = m_pOwner->VerifyDataFile(diskfile, sourcefile);
-		if (eFileStatus == ParChecker::fsSuccess || eFileStatus == ParChecker::fsFailure)
+		int iAvailableBlocks = sourcefile->BlockCount();
+		ParChecker::EFileStatus eFileStatus = m_pOwner->VerifyDataFile(diskfile, sourcefile, &iAvailableBlocks);
+		if (eFileStatus != ParChecker::fsUnknown)
 		{
-			sig_done.emit(name, eFileStatus == ParChecker::fsSuccess ? sourcefile->BlockCount() : 0, sourcefile->BlockCount());
+			sig_done.emit(name, iAvailableBlocks, sourcefile->BlockCount());
 			sig_progress.emit(1000.0);
-			matchtype = eFileStatus == ParChecker::fsSuccess ? eFullMatch : eNoMatch;
+			matchtype = eFileStatus == ParChecker::fsSuccess ? eFullMatch : ParChecker::fsPartial ? ePartialMatch : eNoMatch;
 			return true;
 		}
 	}
@@ -175,6 +176,24 @@ bool MissingFilesComparator::operator()(CommandLine::ExtraFile* pFile1, CommandL
 	if (char* ext = strrchr(name2, '.')) *ext = '\0'; // trim extension
 
 	return strcmp(name1, m_szBaseParFilename) == 0 && strcmp(name1, name2) != 0;
+}
+
+
+ParChecker::Segment::Segment(bool bSuccess, long long iOffset, int iSize, unsigned long lCrc)
+{
+	m_bSuccess = bSuccess;
+	m_iOffset = iOffset;
+	m_iSize = iSize;
+	m_lCrc = lCrc;
+}
+
+
+ParChecker::SegmentList::~SegmentList()
+{
+	for (iterator it = begin(); it != end(); it++)
+	{
+		delete *it;
+	}
 }
 
 
@@ -1064,17 +1083,21 @@ void ParChecker::DeleteLeftovers()
 }
 
 /**
- * The time consuming full verification of files downloaded without errors can be skipped.
- * This function compares CRC of a file computed during download with CRC stored in PAR2-file.
- * If they match no full verification is needed. If the file is known to be completely failed
- * (not a single successful artice) no full verification is needed as well.
- * Limitation:
+ * This function implements quick par verification replacing the standard verification routine
+ * from libpar2:
+ * - for successfully downloaded files the function compares CRC of the file computed during
+ *   download with CRC stored in PAR2-file;
+ * - for partially downloaded files the CRCs of articles are compared with block-CRCs stored
+ *   in PAR2-file;
+ * - for completely failed files (not a single successful artice) no verification is needed at all.
+ *
+ * Limitation of the function:
  * This function requires every block in the file to have an unique CRC (across all blocks
  * of the par-set). Otherwise the full verification is performed.
  * The limitation can be avoided by using something more smart than "verificationhashtable.Lookup"
  * but in the real life all blocks have unique CRCs and the simple "Lookup" works good enough.
  */
-ParChecker::EFileStatus ParChecker::VerifyDataFile(void* pDiskfile, void* pSourcefile)
+ParChecker::EFileStatus ParChecker::VerifyDataFile(void* pDiskfile, void* pSourcefile, int* pAvailableBlocks)
 {
 	if (m_eStage != ptVerifyingSources)
 	{
@@ -1089,12 +1112,78 @@ ParChecker::EFileStatus ParChecker::VerifyDataFile(void* pDiskfile, void* pSourc
 		return fsUnknown;
 	}
 
-	u64 blocksize = ((Repairer*)m_pRepairer)->mainpacket->BlockSize();
 	VerificationPacket* packet = pSourceFile->GetVerificationPacket();
 	if (!packet)
 	{
 		return fsUnknown;
 	}
+
+	const char* szFilename = pSourceFile->GetTargetFile()->FileName().c_str();
+
+	// find file status and CRC computed during download
+	unsigned long lDownloadCrc;
+	SegmentList segments;
+	EFileStatus	eFileStatus = FindFileCrc(Util::BaseFileName(szFilename), &lDownloadCrc, &segments);
+	ValidBlocks validBlocks;
+
+	if (eFileStatus == fsFailure || eFileStatus == fsUnknown)
+	{
+		return eFileStatus;
+	}
+	else if ((eFileStatus == fsSuccess && !VerifySuccessDataFile(pDiskfile, pSourcefile, lDownloadCrc)) ||
+		(eFileStatus == fsPartial && !VerifyPartialDataFile(pDiskfile, pSourcefile, &segments, &validBlocks)))
+	{
+		warn("Quick verification failed for %s file %s, performing full verification instead",
+			eFileStatus == fsSuccess ? "good" : "damaged", Util::BaseFileName(szFilename));
+		return fsUnknown; // let libpar2 do the full verification of the file
+	}
+
+	// attach verification blocks to the file
+	*pAvailableBlocks = 0;
+	u64 blocksize = ((Repairer*)m_pRepairer)->mainpacket->BlockSize();
+	std::deque<const VerificationHashEntry*> undoList;
+	for (unsigned int i = 0; i < packet->BlockCount(); i++)
+	{
+		if (eFileStatus == fsSuccess || validBlocks.at(i))
+		{
+			const FILEVERIFICATIONENTRY* entry = packet->VerificationEntry(i);
+			u32 blockCrc = entry->crc;
+
+			// Look for a match
+			const VerificationHashEntry* pHashEntry = ((Repairer*)m_pRepairer)->verificationhashtable.Lookup(blockCrc);
+			if (!pHashEntry || pHashEntry->SourceFile() != pSourceFile || pHashEntry->IsSet())
+			{
+				// no match found, revert back the changes made by "pHashEntry->SetBlock"
+				for (std::deque<const VerificationHashEntry*>::iterator it = undoList.begin(); it != undoList.end(); it++)
+				{
+					const VerificationHashEntry* pUndoEntry = *it;
+					pUndoEntry->SetBlock(NULL, 0);
+				}
+				return fsUnknown;
+			}
+
+			undoList.push_back(pHashEntry);
+			pHashEntry->SetBlock(pDiskFile, i*blocksize);
+			(*pAvailableBlocks)++;
+		}
+	}
+
+	PrintMessage(Message::mkDetail, "Quickly verified %s file %s",
+		eFileStatus == fsSuccess ? "good" : "damaged", Util::BaseFileName(szFilename));
+
+	return eFileStatus;
+}
+
+bool ParChecker::VerifySuccessDataFile(void* pDiskfile, void* pSourcefile, unsigned long lDownloadCrc)
+{
+	Par2RepairerSourceFile* pSourceFile = (Par2RepairerSourceFile*)pSourcefile;
+	u64 blocksize = ((Repairer*)m_pRepairer)->mainpacket->BlockSize();
+	VerificationPacket* packet = pSourceFile->GetVerificationPacket();
+
+	// extend lDownloadCrc to block size
+	lDownloadCrc = CRCUpdateBlock(lDownloadCrc ^ 0xFFFFFFFF,
+		(size_t)(blocksize * packet->BlockCount() - pSourceFile->GetTargetFile()->FileSize())) ^ 0xFFFFFFFF;
+	info("Download-CRC: %.8x", lDownloadCrc);
 
 	// compute file CRC using CRCs of blocks
 	unsigned long lParCrc = 0;
@@ -1104,62 +1193,201 @@ ParChecker::EFileStatus ParChecker::VerifyDataFile(void* pDiskfile, void* pSourc
 		u32 blockCrc = entry->crc;
 		lParCrc = i == 0 ? blockCrc : Util::Crc32Combine(lParCrc, blockCrc, (unsigned long)blocksize);
 	}
-	debug("Block-CRC: %x, filename: %s", lParCrc, Util::BaseFileName(pSourceFile->GetTargetFile()->FileName().c_str()));
+	info("Block-CRC: %x, filename: %s", lParCrc, Util::BaseFileName(pSourceFile->GetTargetFile()->FileName().c_str()));
 
-	// compare with CRC computed during download
-	unsigned long lDownloadCrc;
-	EFileStatus	eFileStatus = FindFileCrc(Util::BaseFileName(pSourceFile->GetTargetFile()->FileName().c_str()), &lDownloadCrc);
-	if (eFileStatus == fsFailure)
+	return lParCrc == lDownloadCrc;
+}
+
+bool ParChecker::VerifyPartialDataFile(void* pDiskfile, void* pSourcefile, SegmentList* pSegments, ValidBlocks* pValidBlocks)
+{
+	Par2RepairerSourceFile* pSourceFile = (Par2RepairerSourceFile*)pSourcefile;
+	u64 blocksize = ((Repairer*)m_pRepairer)->mainpacket->BlockSize();
+	VerificationPacket* packet = pSourceFile->GetVerificationPacket();
+	const char* szFilename = pSourceFile->GetTargetFile()->FileName().c_str();
+	u64 iFileSize = pSourceFile->GetTargetFile()->FileSize();
+
+	// determine presumably valid and bad blocks based on article download status
+	pValidBlocks->resize(packet->BlockCount(), false);
+	for (int i = 0; i < pValidBlocks->size(); i++)
 	{
-		debug("Reporting failure status for %s", Util::BaseFileName(pSourceFile->GetTargetFile()->FileName().c_str()));
-		return fsFailure;
-	}
-	else if (eFileStatus != fsSuccess)
-	{
-		// we don't support fsPartial status yet
-		return fsUnknown;
-	}
-
-	// extend lDownloadCrc to block size
-	lDownloadCrc = CRCUpdateBlock(lDownloadCrc ^ 0xFFFFFFFF,
-		(size_t)(blocksize * packet->BlockCount() - pSourceFile->GetTargetFile()->FileSize())) ^ 0xFFFFFFFF;
-	debug("Download-CRC: %.8x", lDownloadCrc);
-
-	// if CRCs don't match let libpar2 do the full verification of the file
-	if (lParCrc != lDownloadCrc)
-	{
-		return fsUnknown;
-	}
-
-	// that's our file and it's not damaged
-
-	// attach verification blocks to the file
-	std::deque<const VerificationHashEntry*> undoList;
-	for (unsigned int i = 0; i < packet->BlockCount(); i++)
-	{
-		const FILEVERIFICATIONENTRY* entry = packet->VerificationEntry(i);
-		u32 blockCrc = entry->crc;
-
-	    // Look for a match
-		const VerificationHashEntry* pHashEntry = ((Repairer*)m_pRepairer)->verificationhashtable.Lookup(blockCrc);
-		if (!pHashEntry || pHashEntry->SourceFile() != pSourceFile || pHashEntry->IsSet())
+		u64 blockStart = i * blocksize;
+		u64 blockEnd = blockStart + blocksize < iFileSize - 1 ? blockStart + blocksize : iFileSize - 1;
+		bool bBlockOK = false;
+		bool bBlockEnd = false;
+		u64 iCurOffset = 0;
+		for (SegmentList::iterator it = pSegments->begin(); it != pSegments->end(); it++)
 		{
-			// no match found, revert back the changes made by "pHashEntry->SetBlock"
-			for (std::deque<const VerificationHashEntry*>::iterator it = undoList.begin(); it != undoList.end(); it++)
+			Segment* pSegment = *it;
+			if (!bBlockOK && pSegment->GetSuccess() && pSegment->GetOffset() <= blockStart &&
+				pSegment->GetOffset() + pSegment->GetSize() >= blockStart)
 			{
-				const VerificationHashEntry* pUndoEntry = *it;
-				pUndoEntry->SetBlock(NULL, 0);
+				bBlockOK = true;
+				iCurOffset = pSegment->GetOffset();
 			}
-			return fsUnknown;
+			if (bBlockOK)
+			{
+				if (!(pSegment->GetSuccess() && pSegment->GetOffset() == iCurOffset))
+				{
+					bBlockOK = false;
+					break;
+				}
+				if (pSegment->GetOffset() + pSegment->GetSize() >= blockEnd)
+				{
+					bBlockEnd = true;
+					break;
+				}
+				iCurOffset = pSegment->GetOffset() + pSegment->GetSize();
+			}
+		}
+		pValidBlocks->at(i) = bBlockOK && bBlockEnd;
+	}
+
+	char szErrBuf[256];
+	FILE* infile = fopen(szFilename, FOPEN_RB);
+	if (!infile)
+	{
+		error("Could not open file %s: %s", szFilename, Util::GetLastErrorMessage(szErrBuf, sizeof(szErrBuf)));
+	}
+
+	// For each sequential range of presumably valid blocks:
+	// - compute par-CRC of the range of blocks using block CRCs;
+	// - compute download-CRC for the same byte range using CRCs of articles; if articles and block
+	//   overlap - read a little bit of data from the file and calculate its CRC;
+	// - compare two CRCs - they must match; if not - the file is more damaged than we thought -
+	//   let libpar2 do the full verification of the file in this case.
+	unsigned long lParCrc = 0;
+	int iBlockStart = -1;
+	pValidBlocks->push_back(false); // end marker
+	for (int i = 0; i < pValidBlocks->size(); i++)
+	{
+		bool bValidBlock = pValidBlocks->at(i);
+		if (bValidBlock)
+		{
+			if (iBlockStart == -1)
+			{
+				iBlockStart = i;
+			}
+			const FILEVERIFICATIONENTRY* entry = packet->VerificationEntry(i);
+			u32 blockCrc = entry->crc;
+			lParCrc = iBlockStart == i ? blockCrc : Util::Crc32Combine(lParCrc, blockCrc, (unsigned long)blocksize);
+		}
+		else
+		{
+			if (iBlockStart > -1)
+			{
+				int iBlockEnd = i - 1;
+				long long iBytesStart = iBlockStart * blocksize;
+				long long iBytesEnd = iBlockEnd * blocksize + blocksize - 1;
+				unsigned long lDownloadCrc = 0;
+				bool bOK = SmartCalcFileRangeCrc(infile, iBytesStart,
+					iBytesEnd < iFileSize - 1 ? iBytesEnd : iFileSize - 1, pSegments, &lDownloadCrc);
+				if (bOK && iBytesEnd > iFileSize - 1)
+				{
+					// for the last block: extend lDownloadCrc to block size
+					lDownloadCrc = CRCUpdateBlock(lDownloadCrc ^ 0xFFFFFFFF, iBytesEnd - (iFileSize - 1)) ^ 0xFFFFFFFF;
+				}
+
+				if (!bOK || lDownloadCrc != lParCrc)
+				{
+					fclose(infile);
+					return false;
+				}
+			}
+			iBlockStart = -1;
+		}
+	}
+
+	fclose(infile);
+
+	return true;
+}
+
+/*
+ * Compute CRC of bytes range of file using CRCs of segments and reading some data directly
+ * from file if necessary
+ */
+bool ParChecker::SmartCalcFileRangeCrc(FILE* pFile, long long lStart, long long lEnd, SegmentList* pSegments,
+	unsigned long* pDownloadCrc)
+{
+	unsigned long lDownloadCrc = 0;
+	bool bStarted = false;
+	for (SegmentList::iterator it = pSegments->begin(); it != pSegments->end(); it++)
+	{
+		Segment* pSegment = *it;
+
+		if (!bStarted && pSegment->GetOffset() > lStart)
+		{
+			// read start of range from file
+			if (!DumbCalcFileRangeCrc(pFile, lStart, pSegment->GetOffset() - 1, &lDownloadCrc))
+			{
+				return false;
+			}
+			if (pSegment->GetOffset() + pSegment->GetSize() >= lEnd)
+			{
+				break;
+			}
+			bStarted = true;
 		}
 
-		undoList.push_back(pHashEntry);
-		pHashEntry->SetBlock(pDiskFile, i*blocksize);
+		if (pSegment->GetOffset() >= lStart && pSegment->GetOffset() + pSegment->GetSize() <= lEnd)
+		{
+			lDownloadCrc = !bStarted ? pSegment->GetCrc() : Util::Crc32Combine(lDownloadCrc, pSegment->GetCrc(), (unsigned long)pSegment->GetSize());
+			bStarted = true;
+		}
+
+		if (pSegment->GetOffset() + pSegment->GetSize() == lEnd)
+		{
+			break;
+		}
+
+		if (pSegment->GetOffset() + pSegment->GetSize() > lEnd)
+		{
+			// read end of range from file
+			unsigned long lPartialCrc = 0;
+			if (!DumbCalcFileRangeCrc(pFile, pSegment->GetOffset(), lEnd, &lPartialCrc))
+			{
+				return false;
+			}
+
+			lDownloadCrc = Util::Crc32Combine(lDownloadCrc, lPartialCrc, lEnd - pSegment->GetOffset() + 1);
+
+			break;
+		}
 	}
 
-	PrintMessage(Message::mkDetail, "Quickly verified good file %s", Util::BaseFileName(pSourceFile->GetTargetFile()->FileName().c_str()));
+	*pDownloadCrc = lDownloadCrc;
+	return true;
+}
 
-	return fsSuccess;
+/*
+ * Compute CRC of bytes range of file reading the data directly from file
+ */
+bool ParChecker::DumbCalcFileRangeCrc(FILE* pFile, long long lStart, long long lEnd, unsigned long* pDownloadCrc)
+{
+	if (fseek(pFile, lStart, SEEK_SET))
+	{
+		return false;
+	}
+
+	static const int BUFFER_SIZE = 1024 * 64;
+	unsigned char* buffer = (unsigned char*)malloc(BUFFER_SIZE);
+	unsigned long lDownloadCrc = 0xFFFFFFFF;
+
+	int cnt = BUFFER_SIZE;
+	while (cnt == BUFFER_SIZE && lStart < lEnd)
+	{
+		int iNeedBytes = lEnd - lStart + 1 > BUFFER_SIZE ? BUFFER_SIZE : lEnd - lStart + 1;
+		cnt = (int)fread(buffer, 1, iNeedBytes, pFile);
+		lDownloadCrc = Util::Crc32m(lDownloadCrc, buffer, cnt);
+		lStart += cnt;
+	}
+
+	free(buffer);
+
+	lDownloadCrc ^= 0xFFFFFFFF;
+
+	*pDownloadCrc = lDownloadCrc;
+	return true;
 }
 
 #endif

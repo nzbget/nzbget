@@ -29,6 +29,7 @@
 #ifndef DISABLE_PARCHECK
 
 #include <deque>
+#include <vector>
 #include <string>
 
 #include "Thread.h"
@@ -61,8 +62,33 @@ public:
 		fsFailure
 	};
 
+	class Segment
+	{
+	private:
+		bool				m_bSuccess;
+		long long			m_iOffset;
+		int					m_iSize;
+		unsigned long		m_lCrc;
+
+	public:
+							Segment(bool bSuccess, long long iOffset, int iSize, unsigned long lCrc);
+		bool 				GetSuccess() { return m_bSuccess; }
+		long long			GetOffset() { return m_iOffset; }
+		int 				GetSize() { return m_iSize; }
+		unsigned long		GetCrc() { return m_lCrc; }
+	};
+
+	typedef std::deque<Segment*>	SegmentListBase;
+
+	class SegmentList : public SegmentListBase
+	{
+	public:
+							~SegmentList();
+	};
+
 	typedef std::deque<char*>		FileList;
 	typedef std::deque<void*>		SourceList;
+	typedef std::vector<bool>		ValidBlocks;
 
 	friend class Repairer;
 	
@@ -109,7 +135,12 @@ private:
 	void				signal_done(std::string str, int available, int total);
 	// declared as void* to prevent the including of libpar2-headers into this header-file
 	// DiskFile* pDiskfile, Par2RepairerSourceFile* pSourcefile
-	EFileStatus			VerifyDataFile(void* pDiskfile, void* pSourcefile);
+	EFileStatus			VerifyDataFile(void* pDiskfile, void* pSourcefile, int* pAvailableBlocks);
+	bool				VerifySuccessDataFile(void* pDiskfile, void* pSourcefile, unsigned long lDownloadCrc);
+	bool				VerifyPartialDataFile(void* pDiskfile, void* pSourcefile, SegmentList* pSegments, ValidBlocks* pValidBlocks);
+	bool				SmartCalcFileRangeCrc(FILE* pFile, long long lStart, long long lEnd, SegmentList* pSegments,
+							unsigned long* pDownloadCrc);
+	bool				DumbCalcFileRangeCrc(FILE* pFile, long long lStart, long long lEnd, unsigned long* pDownloadCrc);
 
 protected:
 	/**
@@ -123,7 +154,7 @@ protected:
 	virtual void		PrintMessage(Message::EKind eKind, const char* szFormat, ...) {}
 	virtual void		RegisterParredFile(const char* szFilename) {}
 	virtual bool		IsParredFile(const char* szFilename) { return false; }
-	virtual EFileStatus	FindFileCrc(const char* szFilename, unsigned long* lCrc) { return fsUnknown; }
+	virtual EFileStatus	FindFileCrc(const char* szFilename, unsigned long* lCrc, SegmentList* pSegments) { return fsUnknown; }
 	EStage				GetStage() { return m_eStage; }
 	const char*			GetProgressLabel() { return m_szProgressLabel; }
 	int					GetFileProgress() { return m_iFileProgress; }
