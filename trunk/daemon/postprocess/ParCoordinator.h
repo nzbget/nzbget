@@ -55,7 +55,7 @@ private:
 		virtual void	PrintMessage(Message::EKind eKind, const char* szFormat, ...);
 		virtual void	RegisterParredFile(const char* szFilename);
 		virtual bool	IsParredFile(const char* szFilename);
-		virtual EFileStatus	FindFileCrc(const char* szFilename, unsigned long* lCrc);
+		virtual EFileStatus	FindFileCrc(const char* szFilename, unsigned long* lCrc, SegmentList* pSegments);
 	public:
 		PostInfo*		GetPostInfo() { return m_pPostInfo; }
 		void			SetPostInfo(PostInfo* pPostInfo) { m_pPostInfo = pPostInfo; }

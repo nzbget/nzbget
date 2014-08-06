@@ -428,6 +428,7 @@ void HistoryCoordinator::HistoryReturn(DownloadQueue* pDownloadQueue, HistoryLis
 		{
 			pNZBInfo->SetMoveStatus(NZBInfo::msNone);
 		}
+		pNZBInfo->SetReprocess(bReprocess);
 	}
 
 	if (pHistoryInfo->GetKind() == HistoryInfo::hkUrl)

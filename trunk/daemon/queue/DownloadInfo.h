@@ -495,6 +495,7 @@ private:
 	int					m_iParSec;
 	int					m_iRepairSec;
 	int					m_iUnpackSec;
+	bool				m_bReprocess;
 
 	static int			m_iIDGen;
 	static int			m_iIDMax;
@@ -644,6 +645,8 @@ public:
 	void 				SetUnpackSec(int iUnpackSec) { m_iUnpackSec = iUnpackSec; }
 	time_t				GetDownloadStartTime() { return m_tDownloadStartTime; }
 	void 				SetDownloadStartTime(time_t tDownloadStartTime) { m_tDownloadStartTime = tDownloadStartTime; }
+	void				SetReprocess(bool bReprocess) { m_bReprocess = bReprocess; }
+	bool				GetReprocess() { return m_bReprocess; }
 
 	void				CopyFileList(NZBInfo* pSrcNZBInfo);
 	void				UpdateMinMaxTime();
