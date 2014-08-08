@@ -85,12 +85,7 @@ And the following libraries are optional:
    - libcurses   (usually part of commercial systems)
      or (better)
    - libncurses  (http://invisible-island.net/ncurses)
-   
- - for par-check and -repair (enabled by default):
-   - libpar2     (http://launchpad.net/libpar2,
-                  http://parchive.sourceforge.net)
-   - libsigc++   (http://libsigc.sourceforge.net)
- 
+    
  - for encrypted connections (TLS/SSL):
    - OpenSSL     (http://www.openssl.org)
      or
@@ -152,7 +147,7 @@ You may run configure with additional arguments:
     if you can not use curses/ncurses.
     
   --disable-parcheck - to make without parcheck-support. Use this option
-    if you can not use libpar2 or libsigc++.
+    if you have troubles when compiling par2-module.
 
   --with-tlslib=(OpenSSL, GnuTLS) - to select which TLS/SSL library
     should be used for encrypted server connections.
@@ -169,34 +164,13 @@ You may run configure with additional arguments:
 Optional package: par-check
 ---------------------------
 NZBGet can check and repair downloaded files for you. For this purpose
-it uses library par2 (libpar2), which needs sigc++ on its part.
+it uses library par2.
 
-The libpar2 and libsigc++ (version 2 or later) must be installed on your
-system. On most linux distributions these libraries are available as packages.
-If you do not have these packages you can compile them yourself. 
-Following configure-parameters may be usefull:
+For your convenience the source code of libpar2 is integrated into
+NZBGet’s source tree and is compiled automatically when you make NZBGet.
 
-  --with-libpar2-includes
-  --with-libpar2-libraries
-  --with-libsigc-includes
-  --with-libsigc-libraries
-  
-The library libsigc++ must be installed first, since libpar2 requires it.
-
-Official project libpar2 (http://parchive.sourceforge.net) has not been
-updated for many years. The last official version of libpar 0.2 contains
-known bugs which may crash the program during par-check. These bugs
-have been fixed in the semi-official fork maintained by Debian/Ubuntu
-team (http://launchpad.net/libpar2). It is highly recommended to use this
-version of libpar2 (version 0.4 or newer) instead of the last official
-version 0.2. Recent releases of Debian/Ubuntu include this libpar2 version.
-
-NZBGets configure script checks the installed version of libpar2 and prints
-an error if it is older than 0.4. The check can be suppressed if the update
-of libpar2 is not possible.
-
-If you are not able to use libpar2 or libsigc++ or do not want them you can
-make nzbget without support for par-check using option "--disable-parcheck":
+In a case errors occur during this process the inclusion of par2-module
+can be disabled using configure option "--disable-parcheck":
 
   ./configure --disable-parcheck
 
@@ -204,7 +178,7 @@ Optional package: curses
 -------------------------
 For curses-outputmode you need ncurses or curses on your system.
 If you do not have one of them you can download and compile ncurses yourself.
-Following configure-parameters may be usefull:
+Following configure-parameters may be useful:
 
   --with-libcurses-includes
   --with-libcurses-libraries
@@ -245,23 +219,14 @@ NZBGet is developed using MS Visual C++ 2005. The project file and solution
 are provided. If you use MS Visual C++ 2005 Express you need to download
 and install Platform SDK.
 
-To compile the program with par-check-support you also need the following 
-libraries:
-
-   - libsigc++   (http://libsigc.sourceforge.net)
-   - libpar2     (http://launchpad.net/libpar2,
-                  http://parchive.sourceforge.net)
-
-Download these libaries, then use patch-files provided with NZBGet to create
-preconfigured project files and solutions for each library. 
-Look at http://gnuwin32.sourceforge.net/packages/patch.htm for info on how
-to use patch-files, if you do not familiar with this technique.
-
-To compile the program with TLS/SSL support you also need the library:
-
+To compile the program with TLS/SSL support you need either OpenSSL or GnuTLS:
    - OpenSSL  (http://www.openssl.org)
    or
    - GnuTLS   (http://www.gnu.org/software/gnutls)
+
+Also required are:
+   - Regex (http://gnuwin32.sourceforge.net/packages/regex.htm)
+   - Zlib (http://gnuwin32.sourceforge.net/packages/zlib.htm)
 
 =====================================
 6. Configuration
@@ -496,6 +461,32 @@ The original project was initially created by Sven Henkel
 Bo Cordes Petersen (placebodk@users.sourceforge.net) until 2005.
 In 2007 the abandoned project was overtaken by Andrey Prygunkov.
 Since then the program has been completely rewritten.
+
+NZBGet distribution archive includes additional components
+written by other authors:
+
+PAR2:
+	Peter Brian Clements <peterbclements@users.sourceforge.net>
+
+PAR2 library API:
+	Francois Lesueur <flesueur@users.sourceforge.net>
+
+jQuery:
+	John Resig <http://jquery.com>
+	The Dojo Foundation <http://sizzlejs.com>
+
+Bootstrap:
+	Twitter, Inc <http://twitter.github.com/bootstrap>
+
+Raphaël:
+	Dmitry Baranovskiy <http://raphaeljs.com>
+	Sencha Labs <http://sencha.com>
+
+Elycharts:
+	Void Labs s.n.c. <http://void.it>
+
+iconSweets:
+	Yummygum <http://yummygum.com>
 
 =====================================
 9. Copyright

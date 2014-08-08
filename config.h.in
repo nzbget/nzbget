@@ -13,7 +13,7 @@
 /* Define to 1 to disable gzip-support */
 #undef DISABLE_GZIP
 
-/* Define to 1 to disable smart par-verification and restoration */
+/* Define to 1 to disable par-verification and repair */
 #undef DISABLE_PARCHECK
 
 /* Define to 1 to not use TLS/SSL */
@@ -35,6 +35,16 @@
 /* Define to 1 if you have the <curses.h> header file. */
 #undef HAVE_CURSES_H
 
+/* Define to 1 if you have the <dirent.h> header file, and it defines `DIR'.
+   */
+#undef HAVE_DIRENT_H
+
+/* Define to 1 if you have the <endian.h> header file. */
+#undef HAVE_ENDIAN_H
+
+/* Define to 1 if fseeko (and presumably ftello) exists and is declared. */
+#undef HAVE_FSEEKO
+
 /* Define to 1 if getaddrinfo is supported */
 #undef HAVE_GETADDRINFO
 
@@ -50,6 +60,12 @@
 /* Define to 1 if gethostbyname_r takes 6 arguments */
 #undef HAVE_GETHOSTBYNAME_R_6
 
+/* Define to 1 if you have the `getopt' function. */
+#undef HAVE_GETOPT
+
+/* Define to 1 if you have the <getopt.h> header file. */
+#undef HAVE_GETOPT_H
+
 /* Define to 1 if getopt_long is supported */
 #undef HAVE_GETOPT_LONG
 
@@ -58,6 +74,9 @@
 
 /* Define to 1 to use GnuTLS library for TLS/SSL-support. */
 #undef HAVE_LIBGNUTLS
+
+/* Define to 1 if you have the `memcpy' function. */
+#undef HAVE_MEMCPY
 
 /* Define to 1 if you have the <memory.h> header file. */
 #undef HAVE_MEMORY_H
@@ -68,14 +87,11 @@
 /* Define to 1 if you have the <ncurses/ncurses.h> header file. */
 #undef HAVE_NCURSES_NCURSES_H
 
+/* Define to 1 if you have the <ndir.h> header file, and it defines `DIR'. */
+#undef HAVE_NDIR_H
+
 /* Define to 1 to use OpenSSL library for TLS/SSL-support. */
 #undef HAVE_OPENSSL
-
-/* Define to 1 if libpar2 supports cancelling (needs a special patch) */
-#undef HAVE_PAR2_CANCEL
-
-/* Define to 1 if libpar2 supports external verification */
-#undef HAVE_PAR2_CRCPATCH
 
 /* Define to 1 if you have the <regex.h> header file. */
 #undef HAVE_REGEX_H
@@ -83,17 +99,40 @@
 /* Define to 1 if spinlocks are supported */
 #undef HAVE_SPINLOCK
 
+/* Define to 1 if stdbool.h conforms to C99. */
+#undef HAVE_STDBOOL_H
+
 /* Define to 1 if you have the <stdint.h> header file. */
 #undef HAVE_STDINT_H
 
+/* Define to 1 if you have the <stdio.h> header file. */
+#undef HAVE_STDIO_H
+
 /* Define to 1 if you have the <stdlib.h> header file. */
 #undef HAVE_STDLIB_H
+
+/* Define to 1 if you have the `strcasecmp' function. */
+#undef HAVE_STRCASECMP
+
+/* Define to 1 if you have the `strchr' function. */
+#undef HAVE_STRCHR
+
+/* Define to 1 if you have the `stricmp' function. */
+#undef HAVE_STRICMP
 
 /* Define to 1 if you have the <strings.h> header file. */
 #undef HAVE_STRINGS_H
 
 /* Define to 1 if you have the <string.h> header file. */
 #undef HAVE_STRING_H
+
+/* Define to 1 if you have the <sys/dir.h> header file, and it defines `DIR'.
+   */
+#undef HAVE_SYS_DIR_H
+
+/* Define to 1 if you have the <sys/ndir.h> header file, and it defines `DIR'.
+   */
+#undef HAVE_SYS_NDIR_H
 
 /* Define to 1 if you have the <sys/prctl.h> header file. */
 #undef HAVE_SYS_PRCTL_H
@@ -109,6 +148,9 @@
 
 /* Define to 1 if variadic macros are supported */
 #undef HAVE_VARIADIC_MACROS
+
+/* Define to 1 if the system has the type `_Bool'. */
+#undef HAVE__BOOL
 
 /* Name of package */
 #undef PACKAGE
@@ -140,8 +182,27 @@
 /* Version number of package */
 #undef VERSION
 
+/* Define to 1 if your processor stores words with the most significant byte
+   first (like Motorola and SPARC, unlike Intel and VAX). */
+#undef WORDS_BIGENDIAN
+
 /* Number of bits in a file offset, on hosts where this is settable. */
 #undef _FILE_OFFSET_BITS
 
+/* Define to 1 to make fseeko visible on some hosts (e.g. glibc 2.2). */
+#undef _LARGEFILE_SOURCE
+
 /* Define for large files, on AIX-style hosts. */
 #undef _LARGE_FILES
+
+/* Define to empty if `const' does not conform to ANSI C. */
+#undef const
+
+/* Define to `__inline__' or `__inline' if that's what the C compiler
+   calls it, or to nothing if 'inline' is not supported under any name.  */
+#ifndef __cplusplus
+#undef inline
+#endif
+
+/* Define to `unsigned int' if <sys/types.h> does not define. */
+#undef size_t

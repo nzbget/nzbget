@@ -37,15 +37,13 @@
 #include <string.h>
 #include <stdio.h>
 #include <ctype.h>
-#ifdef WIN32
-#include <par2cmdline.h>
-#include <par2repairer.h>
-#else
+#ifndef WIN32
 #include <unistd.h>
-#include <libpar2/par2cmdline.h>
-#include <libpar2/par2repairer.h>
 #endif
 #include <algorithm>
+
+#include "par2cmdline.h"
+#include "par2repairer.h"
 
 #include "nzbget.h"
 #include "ParChecker.h"
@@ -74,6 +72,10 @@ private:
 	ParChecker*	m_pOwner;
 
 protected:
+	virtual void sig_filename(std::string filename) { m_pOwner->signal_filename(filename); }
+	virtual void sig_progress(double progress) { m_pOwner->signal_progress(progress); }
+	virtual void sig_done(std::string filename, int available, int total) { m_pOwner->signal_done(filename, available, total); }
+
 	virtual bool ScanDataFile(DiskFile *diskfile, Par2RepairerSourceFile* &sourcefile,
 		MatchType &matchtype, MD5Hash &hashfull, MD5Hash &hash16k, u32 &count);
 
@@ -132,14 +134,14 @@ bool Repairer::ScanDataFile(DiskFile *diskfile, Par2RepairerSourceFile* &sourcef
 		string name;
 		DiskFile::SplitFilename(diskfile->FileName(), path, name);
 
-		sig_filename.emit(name);
+		sig_filename(name);
 
 		int iAvailableBlocks = sourcefile->BlockCount();
 		ParChecker::EFileStatus eFileStatus = m_pOwner->VerifyDataFile(diskfile, sourcefile, &iAvailableBlocks);
 		if (eFileStatus != ParChecker::fsUnknown)
 		{
-			sig_done.emit(name, iAvailableBlocks, sourcefile->BlockCount());
-			sig_progress.emit(1000.0);
+			sig_done(name, iAvailableBlocks, sourcefile->BlockCount());
+			sig_progress(1000.0);
 			matchtype = eFileStatus == ParChecker::fsSuccess ? eFullMatch : ParChecker::fsPartial ? ePartialMatch : eNoMatch;
 			return true;
 		}
@@ -470,9 +472,6 @@ int ParChecker::PreProcessPar()
 
 		Repairer* pRepairer = new Repairer(this);
 		m_pRepairer = pRepairer;
-		pRepairer->sig_filename.connect(sigc::mem_fun(*this, &ParChecker::signal_filename));
-		pRepairer->sig_progress.connect(sigc::mem_fun(*this, &ParChecker::signal_progress));
-		pRepairer->sig_done.connect(sigc::mem_fun(*this, &ParChecker::signal_done));
 
 		res = pRepairer->PreProcess(m_szParFilename);
 		debug("ParChecker: PreProcess-result=%i", res);
@@ -974,13 +973,9 @@ void ParChecker::signal_done(std::string str, int available, int total)
 
 void ParChecker::Cancel()
 {
-#ifdef HAVE_PAR2_CANCEL
 	((Repairer*)m_pRepairer)->cancelled = true;
 	m_bCancelled = true;
 	QueueChanged();
-#else
-	PrintMessage(Message::mkError, "Could not cancel par-repair. The program was compiled using version of libpar2 which doesn't support cancelling of par-repair. Please apply libpar2-patches supplied with NZBGet and recompile libpar2 and NZBGet (see README for details).");
-#endif
 }
 
 void ParChecker::WriteBrokenLog(EStatus eStatus)

@@ -15,7 +15,7 @@
 @SET_MAKE@
 
 #
-#  This file if part of nzbget
+#  This file is part of nzbget
 #
 # Copyright (C) 2008-2014 Andrey Prygunkov <hugbug@users.sourceforge.net>
 #
@@ -61,6 +61,50 @@ build_triplet = @build@
 host_triplet = @host@
 target_triplet = @target@
 bin_PROGRAMS = nzbget$(EXEEXT)
+@WITH_PAR2_TRUE@am__append_1 = \
+@WITH_PAR2_TRUE@	lib/par2/commandline.cpp \
+@WITH_PAR2_TRUE@	lib/par2/commandline.h \
+@WITH_PAR2_TRUE@	lib/par2/crc.cpp \
+@WITH_PAR2_TRUE@	lib/par2/crc.h \
+@WITH_PAR2_TRUE@	lib/par2/creatorpacket.cpp \
+@WITH_PAR2_TRUE@	lib/par2/creatorpacket.h \
+@WITH_PAR2_TRUE@	lib/par2/criticalpacket.cpp \
+@WITH_PAR2_TRUE@	lib/par2/criticalpacket.h \
+@WITH_PAR2_TRUE@	lib/par2/datablock.cpp \
+@WITH_PAR2_TRUE@	lib/par2/datablock.h \
+@WITH_PAR2_TRUE@	lib/par2/descriptionpacket.cpp \
+@WITH_PAR2_TRUE@	lib/par2/descriptionpacket.h \
+@WITH_PAR2_TRUE@	lib/par2/diskfile.cpp \
+@WITH_PAR2_TRUE@	lib/par2/diskfile.h \
+@WITH_PAR2_TRUE@	lib/par2/filechecksummer.cpp \
+@WITH_PAR2_TRUE@	lib/par2/filechecksummer.h \
+@WITH_PAR2_TRUE@	lib/par2/galois.cpp \
+@WITH_PAR2_TRUE@	lib/par2/galois.h \
+@WITH_PAR2_TRUE@	lib/par2/letype.h \
+@WITH_PAR2_TRUE@	lib/par2/mainpacket.cpp \
+@WITH_PAR2_TRUE@	lib/par2/mainpacket.h \
+@WITH_PAR2_TRUE@	lib/par2/md5.cpp \
+@WITH_PAR2_TRUE@	lib/par2/md5.h \
+@WITH_PAR2_TRUE@	lib/par2/par2cmdline.h \
+@WITH_PAR2_TRUE@	lib/par2/par2creatorsourcefile.cpp \
+@WITH_PAR2_TRUE@	lib/par2/par2creatorsourcefile.h \
+@WITH_PAR2_TRUE@	lib/par2/par2fileformat.cpp \
+@WITH_PAR2_TRUE@	lib/par2/par2fileformat.h \
+@WITH_PAR2_TRUE@	lib/par2/par2repairer.cpp \
+@WITH_PAR2_TRUE@	lib/par2/par2repairer.h \
+@WITH_PAR2_TRUE@	lib/par2/par2repairersourcefile.cpp \
+@WITH_PAR2_TRUE@	lib/par2/par2repairersourcefile.h \
+@WITH_PAR2_TRUE@	lib/par2/parheaders.cpp \
+@WITH_PAR2_TRUE@	lib/par2/parheaders.h \
+@WITH_PAR2_TRUE@	lib/par2/recoverypacket.cpp \
+@WITH_PAR2_TRUE@	lib/par2/recoverypacket.h \
+@WITH_PAR2_TRUE@	lib/par2/reedsolomon.cpp \
+@WITH_PAR2_TRUE@	lib/par2/reedsolomon.h \
+@WITH_PAR2_TRUE@	lib/par2/verificationhashtable.cpp \
+@WITH_PAR2_TRUE@	lib/par2/verificationhashtable.h \
+@WITH_PAR2_TRUE@	lib/par2/verificationpacket.cpp \
+@WITH_PAR2_TRUE@	lib/par2/verificationpacket.h
+
 DIST_COMMON = README $(am__configure_deps) $(dist_doc_DATA) \
 	$(dist_exampleconf_DATA) $(nobase_dist_scripts_SCRIPTS) \
 	$(nobase_dist_webui_DATA) $(srcdir)/Makefile.am \
@@ -82,6 +126,97 @@ am__installdirs = "$(DESTDIR)$(bindir)" "$(DESTDIR)$(scriptsdir)" \
 	"$(DESTDIR)$(exampleconfdir)" "$(DESTDIR)$(webuidir)"
 binPROGRAMS_INSTALL = $(INSTALL_PROGRAM)
 PROGRAMS = $(bin_PROGRAMS)
+am__nzbget_SOURCES_DIST = daemon/connect/Connection.cpp \
+	daemon/connect/Connection.h daemon/connect/TLS.cpp \
+	daemon/connect/TLS.h daemon/connect/WebDownloader.cpp \
+	daemon/connect/WebDownloader.h daemon/feed/FeedCoordinator.cpp \
+	daemon/feed/FeedCoordinator.h daemon/feed/FeedFile.cpp \
+	daemon/feed/FeedFile.h daemon/feed/FeedFilter.cpp \
+	daemon/feed/FeedFilter.h daemon/feed/FeedInfo.cpp \
+	daemon/feed/FeedInfo.h daemon/frontend/ColoredFrontend.cpp \
+	daemon/frontend/ColoredFrontend.h daemon/frontend/Frontend.cpp \
+	daemon/frontend/Frontend.h \
+	daemon/frontend/LoggableFrontend.cpp \
+	daemon/frontend/LoggableFrontend.h \
+	daemon/frontend/NCursesFrontend.cpp \
+	daemon/frontend/NCursesFrontend.h daemon/main/Maintenance.cpp \
+	daemon/main/Maintenance.h daemon/main/nzbget.cpp \
+	daemon/main/nzbget.h daemon/main/Options.cpp \
+	daemon/main/Options.h daemon/main/Scheduler.cpp \
+	daemon/main/Scheduler.h daemon/nntp/ArticleDownloader.cpp \
+	daemon/nntp/ArticleDownloader.h daemon/nntp/ArticleWriter.cpp \
+	daemon/nntp/ArticleWriter.h daemon/nntp/Decoder.cpp \
+	daemon/nntp/Decoder.h daemon/nntp/NewsServer.cpp \
+	daemon/nntp/NewsServer.h daemon/nntp/NNTPConnection.cpp \
+	daemon/nntp/NNTPConnection.h daemon/nntp/ServerPool.cpp \
+	daemon/nntp/ServerPool.h daemon/nntp/StatMeter.cpp \
+	daemon/nntp/StatMeter.h daemon/postprocess/ParChecker.cpp \
+	daemon/postprocess/ParChecker.h \
+	daemon/postprocess/ParCoordinator.cpp \
+	daemon/postprocess/ParCoordinator.h \
+	daemon/postprocess/ParRenamer.cpp \
+	daemon/postprocess/ParRenamer.h \
+	daemon/postprocess/PostScript.cpp \
+	daemon/postprocess/PostScript.h \
+	daemon/postprocess/PrePostProcessor.cpp \
+	daemon/postprocess/PrePostProcessor.h \
+	daemon/postprocess/Unpack.cpp daemon/postprocess/Unpack.h \
+	daemon/queue/DiskState.cpp daemon/queue/DiskState.h \
+	daemon/queue/DownloadInfo.cpp daemon/queue/DownloadInfo.h \
+	daemon/queue/DupeCoordinator.cpp \
+	daemon/queue/DupeCoordinator.h \
+	daemon/queue/HistoryCoordinator.cpp \
+	daemon/queue/HistoryCoordinator.h daemon/queue/NZBFile.cpp \
+	daemon/queue/NZBFile.h daemon/queue/QueueCoordinator.cpp \
+	daemon/queue/QueueCoordinator.h daemon/queue/QueueEditor.cpp \
+	daemon/queue/QueueEditor.h daemon/queue/QueueScript.cpp \
+	daemon/queue/QueueScript.h daemon/queue/Scanner.cpp \
+	daemon/queue/Scanner.h daemon/queue/UrlCoordinator.cpp \
+	daemon/queue/UrlCoordinator.h daemon/remote/BinRpc.cpp \
+	daemon/remote/BinRpc.h daemon/remote/MessageBase.h \
+	daemon/remote/RemoteClient.cpp daemon/remote/RemoteClient.h \
+	daemon/remote/RemoteServer.cpp daemon/remote/RemoteServer.h \
+	daemon/remote/WebServer.cpp daemon/remote/WebServer.h \
+	daemon/remote/XmlRpc.cpp daemon/remote/XmlRpc.h \
+	daemon/util/Log.cpp daemon/util/Log.h daemon/util/Observer.cpp \
+	daemon/util/Observer.h daemon/util/Script.cpp \
+	daemon/util/Script.h daemon/util/Thread.cpp \
+	daemon/util/Thread.h daemon/util/Util.cpp daemon/util/Util.h \
+	svn_version.cpp lib/par2/commandline.cpp \
+	lib/par2/commandline.h lib/par2/crc.cpp lib/par2/crc.h \
+	lib/par2/creatorpacket.cpp lib/par2/creatorpacket.h \
+	lib/par2/criticalpacket.cpp lib/par2/criticalpacket.h \
+	lib/par2/datablock.cpp lib/par2/datablock.h \
+	lib/par2/descriptionpacket.cpp lib/par2/descriptionpacket.h \
+	lib/par2/diskfile.cpp lib/par2/diskfile.h \
+	lib/par2/filechecksummer.cpp lib/par2/filechecksummer.h \
+	lib/par2/galois.cpp lib/par2/galois.h lib/par2/letype.h \
+	lib/par2/mainpacket.cpp lib/par2/mainpacket.h lib/par2/md5.cpp \
+	lib/par2/md5.h lib/par2/par2cmdline.h \
+	lib/par2/par2creatorsourcefile.cpp \
+	lib/par2/par2creatorsourcefile.h lib/par2/par2fileformat.cpp \
+	lib/par2/par2fileformat.h lib/par2/par2repairer.cpp \
+	lib/par2/par2repairer.h lib/par2/par2repairersourcefile.cpp \
+	lib/par2/par2repairersourcefile.h lib/par2/parheaders.cpp \
+	lib/par2/parheaders.h lib/par2/recoverypacket.cpp \
+	lib/par2/recoverypacket.h lib/par2/reedsolomon.cpp \
+	lib/par2/reedsolomon.h lib/par2/verificationhashtable.cpp \
+	lib/par2/verificationhashtable.h \
+	lib/par2/verificationpacket.cpp lib/par2/verificationpacket.h
+@WITH_PAR2_TRUE@am__objects_1 = commandline.$(OBJEXT) crc.$(OBJEXT) \
+@WITH_PAR2_TRUE@	creatorpacket.$(OBJEXT) \
+@WITH_PAR2_TRUE@	criticalpacket.$(OBJEXT) datablock.$(OBJEXT) \
+@WITH_PAR2_TRUE@	descriptionpacket.$(OBJEXT) diskfile.$(OBJEXT) \
+@WITH_PAR2_TRUE@	filechecksummer.$(OBJEXT) galois.$(OBJEXT) \
+@WITH_PAR2_TRUE@	mainpacket.$(OBJEXT) md5.$(OBJEXT) \
+@WITH_PAR2_TRUE@	par2creatorsourcefile.$(OBJEXT) \
+@WITH_PAR2_TRUE@	par2fileformat.$(OBJEXT) \
+@WITH_PAR2_TRUE@	par2repairer.$(OBJEXT) \
+@WITH_PAR2_TRUE@	par2repairersourcefile.$(OBJEXT) \
+@WITH_PAR2_TRUE@	parheaders.$(OBJEXT) recoverypacket.$(OBJEXT) \
+@WITH_PAR2_TRUE@	reedsolomon.$(OBJEXT) \
+@WITH_PAR2_TRUE@	verificationhashtable.$(OBJEXT) \
+@WITH_PAR2_TRUE@	verificationpacket.$(OBJEXT)
 am_nzbget_OBJECTS = Connection.$(OBJEXT) TLS.$(OBJEXT) \
 	WebDownloader.$(OBJEXT) FeedCoordinator.$(OBJEXT) \
 	FeedFile.$(OBJEXT) FeedFilter.$(OBJEXT) FeedInfo.$(OBJEXT) \
@@ -102,7 +237,7 @@ am_nzbget_OBJECTS = Connection.$(OBJEXT) TLS.$(OBJEXT) \
 	RemoteClient.$(OBJEXT) RemoteServer.$(OBJEXT) \
 	WebServer.$(OBJEXT) XmlRpc.$(OBJEXT) Log.$(OBJEXT) \
 	Observer.$(OBJEXT) Script.$(OBJEXT) Thread.$(OBJEXT) \
-	Util.$(OBJEXT) svn_version.$(OBJEXT)
+	Util.$(OBJEXT) svn_version.$(OBJEXT) $(am__objects_1)
 nzbget_OBJECTS = $(am_nzbget_OBJECTS)
 nzbget_LDADD = $(LDADD)
 am__vpath_adj_setup = srcdirstrip=`echo "$(srcdir)" | sed 's|.|.|g'`;
@@ -127,7 +262,7 @@ COMPILE = $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) \
 CCLD = $(CC)
 LINK = $(CCLD) $(AM_CFLAGS) $(CFLAGS) $(AM_LDFLAGS) $(LDFLAGS) -o $@
 SOURCES = $(nzbget_SOURCES)
-DIST_SOURCES = $(nzbget_SOURCES)
+DIST_SOURCES = $(am__nzbget_SOURCES_DIST)
 dist_docDATA_INSTALL = $(INSTALL_DATA)
 dist_exampleconfDATA_INSTALL = $(INSTALL_DATA)
 nobase_dist_webuiDATA_INSTALL = $(install_sh_DATA)
@@ -191,6 +326,8 @@ SHELL = @SHELL@
 STRIP = @STRIP@
 TAR = @TAR@
 VERSION = @VERSION@
+WITH_PAR2_FALSE = @WITH_PAR2_FALSE@
+WITH_PAR2_TRUE = @WITH_PAR2_TRUE@
 ac_ct_CXX = @ac_ct_CXX@
 am__fastdepCXX_FALSE = @am__fastdepCXX_FALSE@
 am__fastdepCXX_TRUE = @am__fastdepCXX_TRUE@
@@ -221,8 +358,6 @@ infodir = @infodir@
 install_sh = @install_sh@
 libdir = @libdir@
 libexecdir = @libexecdir@
-libsigc_CFLAGS = @libsigc_CFLAGS@
-libsigc_LIBS = @libsigc_LIBS@
 libxml2_CFLAGS = @libxml2_CFLAGS@
 libxml2_LIBS = @libxml2_LIBS@
 localedir = @localedir@
@@ -244,52 +379,31 @@ target_alias = @target_alias@
 target_cpu = @target_cpu@
 target_os = @target_os@
 target_vendor = @target_vendor@
-nzbget_SOURCES = \
-	daemon/connect/Connection.cpp \
-	daemon/connect/Connection.h \
-	daemon/connect/TLS.cpp \
-	daemon/connect/TLS.h \
-	daemon/connect/WebDownloader.cpp \
-	daemon/connect/WebDownloader.h \
-	daemon/feed/FeedCoordinator.cpp \
-	daemon/feed/FeedCoordinator.h \
-	daemon/feed/FeedFile.cpp \
-	daemon/feed/FeedFile.h \
-	daemon/feed/FeedFilter.cpp \
-	daemon/feed/FeedFilter.h \
-	daemon/feed/FeedInfo.cpp \
-	daemon/feed/FeedInfo.h \
-	daemon/frontend/ColoredFrontend.cpp \
-	daemon/frontend/ColoredFrontend.h \
-	daemon/frontend/Frontend.cpp \
+nzbget_SOURCES = daemon/connect/Connection.cpp \
+	daemon/connect/Connection.h daemon/connect/TLS.cpp \
+	daemon/connect/TLS.h daemon/connect/WebDownloader.cpp \
+	daemon/connect/WebDownloader.h daemon/feed/FeedCoordinator.cpp \
+	daemon/feed/FeedCoordinator.h daemon/feed/FeedFile.cpp \
+	daemon/feed/FeedFile.h daemon/feed/FeedFilter.cpp \
+	daemon/feed/FeedFilter.h daemon/feed/FeedInfo.cpp \
+	daemon/feed/FeedInfo.h daemon/frontend/ColoredFrontend.cpp \
+	daemon/frontend/ColoredFrontend.h daemon/frontend/Frontend.cpp \
 	daemon/frontend/Frontend.h \
 	daemon/frontend/LoggableFrontend.cpp \
 	daemon/frontend/LoggableFrontend.h \
 	daemon/frontend/NCursesFrontend.cpp \
-	daemon/frontend/NCursesFrontend.h \
-	daemon/main/Maintenance.cpp \
-	daemon/main/Maintenance.h \
-	daemon/main/nzbget.cpp \
-	daemon/main/nzbget.h \
-	daemon/main/Options.cpp \
-	daemon/main/Options.h \
-	daemon/main/Scheduler.cpp \
-	daemon/main/Scheduler.h \
-	daemon/nntp/ArticleDownloader.cpp \
-	daemon/nntp/ArticleDownloader.h \
-	daemon/nntp/ArticleWriter.cpp \
-	daemon/nntp/ArticleWriter.h \
-	daemon/nntp/Decoder.cpp \
-	daemon/nntp/Decoder.h \
-	daemon/nntp/NewsServer.cpp \
-	daemon/nntp/NewsServer.h \
-	daemon/nntp/NNTPConnection.cpp \
-	daemon/nntp/NNTPConnection.h \
-	daemon/nntp/ServerPool.cpp \
-	daemon/nntp/ServerPool.h \
-	daemon/nntp/StatMeter.cpp \
-	daemon/nntp/StatMeter.h \
-	daemon/postprocess/ParChecker.cpp \
+	daemon/frontend/NCursesFrontend.h daemon/main/Maintenance.cpp \
+	daemon/main/Maintenance.h daemon/main/nzbget.cpp \
+	daemon/main/nzbget.h daemon/main/Options.cpp \
+	daemon/main/Options.h daemon/main/Scheduler.cpp \
+	daemon/main/Scheduler.h daemon/nntp/ArticleDownloader.cpp \
+	daemon/nntp/ArticleDownloader.h daemon/nntp/ArticleWriter.cpp \
+	daemon/nntp/ArticleWriter.h daemon/nntp/Decoder.cpp \
+	daemon/nntp/Decoder.h daemon/nntp/NewsServer.cpp \
+	daemon/nntp/NewsServer.h daemon/nntp/NNTPConnection.cpp \
+	daemon/nntp/NNTPConnection.h daemon/nntp/ServerPool.cpp \
+	daemon/nntp/ServerPool.h daemon/nntp/StatMeter.cpp \
+	daemon/nntp/StatMeter.h daemon/postprocess/ParChecker.cpp \
 	daemon/postprocess/ParChecker.h \
 	daemon/postprocess/ParCoordinator.cpp \
 	daemon/postprocess/ParCoordinator.h \
@@ -299,51 +413,29 @@ nzbget_SOURCES = \
 	daemon/postprocess/PostScript.h \
 	daemon/postprocess/PrePostProcessor.cpp \
 	daemon/postprocess/PrePostProcessor.h \
-	daemon/postprocess/Unpack.cpp \
-	daemon/postprocess/Unpack.h \
-	daemon/queue/DiskState.cpp \
-	daemon/queue/DiskState.h \
-	daemon/queue/DownloadInfo.cpp \
-	daemon/queue/DownloadInfo.h \
+	daemon/postprocess/Unpack.cpp daemon/postprocess/Unpack.h \
+	daemon/queue/DiskState.cpp daemon/queue/DiskState.h \
+	daemon/queue/DownloadInfo.cpp daemon/queue/DownloadInfo.h \
 	daemon/queue/DupeCoordinator.cpp \
 	daemon/queue/DupeCoordinator.h \
 	daemon/queue/HistoryCoordinator.cpp \
-	daemon/queue/HistoryCoordinator.h \
-	daemon/queue/NZBFile.cpp \
-	daemon/queue/NZBFile.h \
-	daemon/queue/QueueCoordinator.cpp \
-	daemon/queue/QueueCoordinator.h \
-	daemon/queue/QueueEditor.cpp \
-	daemon/queue/QueueEditor.h \
-	daemon/queue/QueueScript.cpp \
-	daemon/queue/QueueScript.h \
-	daemon/queue/Scanner.cpp \
-	daemon/queue/Scanner.h \
-	daemon/queue/UrlCoordinator.cpp \
-	daemon/queue/UrlCoordinator.h \
-	daemon/remote/BinRpc.cpp \
-	daemon/remote/BinRpc.h \
-	daemon/remote/MessageBase.h \
-	daemon/remote/RemoteClient.cpp \
-	daemon/remote/RemoteClient.h \
-	daemon/remote/RemoteServer.cpp \
-	daemon/remote/RemoteServer.h \
-	daemon/remote/WebServer.cpp \
-	daemon/remote/WebServer.h \
-	daemon/remote/XmlRpc.cpp \
-	daemon/remote/XmlRpc.h \
-	daemon/util/Log.cpp \
-	daemon/util/Log.h \
-	daemon/util/Observer.cpp \
-	daemon/util/Observer.h \
-	daemon/util/Script.cpp \
-	daemon/util/Script.h \
-	daemon/util/Thread.cpp \
-	daemon/util/Thread.h \
-	daemon/util/Util.cpp \
-	daemon/util/Util.h \
-	svn_version.cpp
-
+	daemon/queue/HistoryCoordinator.h daemon/queue/NZBFile.cpp \
+	daemon/queue/NZBFile.h daemon/queue/QueueCoordinator.cpp \
+	daemon/queue/QueueCoordinator.h daemon/queue/QueueEditor.cpp \
+	daemon/queue/QueueEditor.h daemon/queue/QueueScript.cpp \
+	daemon/queue/QueueScript.h daemon/queue/Scanner.cpp \
+	daemon/queue/Scanner.h daemon/queue/UrlCoordinator.cpp \
+	daemon/queue/UrlCoordinator.h daemon/remote/BinRpc.cpp \
+	daemon/remote/BinRpc.h daemon/remote/MessageBase.h \
+	daemon/remote/RemoteClient.cpp daemon/remote/RemoteClient.h \
+	daemon/remote/RemoteServer.cpp daemon/remote/RemoteServer.h \
+	daemon/remote/WebServer.cpp daemon/remote/WebServer.h \
+	daemon/remote/XmlRpc.cpp daemon/remote/XmlRpc.h \
+	daemon/util/Log.cpp daemon/util/Log.h daemon/util/Observer.cpp \
+	daemon/util/Observer.h daemon/util/Script.cpp \
+	daemon/util/Script.h daemon/util/Thread.cpp \
+	daemon/util/Thread.h daemon/util/Util.cpp daemon/util/Util.h \
+	svn_version.cpp $(am__append_1)
 AM_CPPFLAGS = \
 	-I$(srcdir)/daemon/connect \
 	-I$(srcdir)/daemon/feed \
@@ -353,7 +445,8 @@ AM_CPPFLAGS = \
 	-I$(srcdir)/daemon/postprocess \
 	-I$(srcdir)/daemon/queue \
 	-I$(srcdir)/daemon/remote \
-	-I$(srcdir)/daemon/util
+	-I$(srcdir)/daemon/util \
+	-I$(srcdir)/lib/par2
 
 EXTRA_DIST = \
 	Makefile.cvs \
@@ -405,7 +498,9 @@ osx_FILES = \
 doc_FILES = \
 	README \
 	ChangeLog \
-	COPYING
+	COPYING \
+	lib/par2/AUTHORS \
+	lib/par2/README
 
 exampleconf_FILES = \
 	nzbget.conf
@@ -641,8 +736,28 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/WebDownloader.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/WebServer.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/XmlRpc.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/commandline.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/crc.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/creatorpacket.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/criticalpacket.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/datablock.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/descriptionpacket.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/diskfile.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/filechecksummer.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/galois.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/mainpacket.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/md5.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/nzbget.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/par2creatorsourcefile.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/par2fileformat.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/par2repairer.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/par2repairersourcefile.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/parheaders.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/recoverypacket.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/reedsolomon.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/svn_version.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/verificationhashtable.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/verificationpacket.Po@am__quote@
 
 .cpp.o:
 @am__fastdepCXX_TRUE@	if $(CXXCOMPILE) -MT $@ -MD -MP -MF "$(DEPDIR)/$*.Tpo" -c -o $@ $<; \
@@ -1329,6 +1444,286 @@ Util.obj: daemon/util/Util.cpp
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='daemon/util/Util.cpp' object='Util.obj' libtool=no @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o Util.obj `if test -f 'daemon/util/Util.cpp'; then $(CYGPATH_W) 'daemon/util/Util.cpp'; else $(CYGPATH_W) '$(srcdir)/daemon/util/Util.cpp'; fi`
+
+commandline.o: lib/par2/commandline.cpp
+@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT commandline.o -MD -MP -MF "$(DEPDIR)/commandline.Tpo" -c -o commandline.o `test -f 'lib/par2/commandline.cpp' || echo '$(srcdir)/'`lib/par2/commandline.cpp; \
+@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/commandline.Tpo" "$(DEPDIR)/commandline.Po"; else rm -f "$(DEPDIR)/commandline.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='lib/par2/commandline.cpp' object='commandline.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o commandline.o `test -f 'lib/par2/commandline.cpp' || echo '$(srcdir)/'`lib/par2/commandline.cpp
+
+commandline.obj: lib/par2/commandline.cpp
+@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT commandline.obj -MD -MP -MF "$(DEPDIR)/commandline.Tpo" -c -o commandline.obj `if test -f 'lib/par2/commandline.cpp'; then $(CYGPATH_W) 'lib/par2/commandline.cpp'; else $(CYGPATH_W) '$(srcdir)/lib/par2/commandline.cpp'; fi`; \
+@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/commandline.Tpo" "$(DEPDIR)/commandline.Po"; else rm -f "$(DEPDIR)/commandline.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='lib/par2/commandline.cpp' object='commandline.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o commandline.obj `if test -f 'lib/par2/commandline.cpp'; then $(CYGPATH_W) 'lib/par2/commandline.cpp'; else $(CYGPATH_W) '$(srcdir)/lib/par2/commandline.cpp'; fi`
+
+crc.o: lib/par2/crc.cpp
+@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT crc.o -MD -MP -MF "$(DEPDIR)/crc.Tpo" -c -o crc.o `test -f 'lib/par2/crc.cpp' || echo '$(srcdir)/'`lib/par2/crc.cpp; \
+@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/crc.Tpo" "$(DEPDIR)/crc.Po"; else rm -f "$(DEPDIR)/crc.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='lib/par2/crc.cpp' object='crc.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o crc.o `test -f 'lib/par2/crc.cpp' || echo '$(srcdir)/'`lib/par2/crc.cpp
+
+crc.obj: lib/par2/crc.cpp
+@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT crc.obj -MD -MP -MF "$(DEPDIR)/crc.Tpo" -c -o crc.obj `if test -f 'lib/par2/crc.cpp'; then $(CYGPATH_W) 'lib/par2/crc.cpp'; else $(CYGPATH_W) '$(srcdir)/lib/par2/crc.cpp'; fi`; \
+@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/crc.Tpo" "$(DEPDIR)/crc.Po"; else rm -f "$(DEPDIR)/crc.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='lib/par2/crc.cpp' object='crc.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o crc.obj `if test -f 'lib/par2/crc.cpp'; then $(CYGPATH_W) 'lib/par2/crc.cpp'; else $(CYGPATH_W) '$(srcdir)/lib/par2/crc.cpp'; fi`
+
+creatorpacket.o: lib/par2/creatorpacket.cpp
+@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT creatorpacket.o -MD -MP -MF "$(DEPDIR)/creatorpacket.Tpo" -c -o creatorpacket.o `test -f 'lib/par2/creatorpacket.cpp' || echo '$(srcdir)/'`lib/par2/creatorpacket.cpp; \
+@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/creatorpacket.Tpo" "$(DEPDIR)/creatorpacket.Po"; else rm -f "$(DEPDIR)/creatorpacket.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='lib/par2/creatorpacket.cpp' object='creatorpacket.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o creatorpacket.o `test -f 'lib/par2/creatorpacket.cpp' || echo '$(srcdir)/'`lib/par2/creatorpacket.cpp
+
+creatorpacket.obj: lib/par2/creatorpacket.cpp
+@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT creatorpacket.obj -MD -MP -MF "$(DEPDIR)/creatorpacket.Tpo" -c -o creatorpacket.obj `if test -f 'lib/par2/creatorpacket.cpp'; then $(CYGPATH_W) 'lib/par2/creatorpacket.cpp'; else $(CYGPATH_W) '$(srcdir)/lib/par2/creatorpacket.cpp'; fi`; \
+@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/creatorpacket.Tpo" "$(DEPDIR)/creatorpacket.Po"; else rm -f "$(DEPDIR)/creatorpacket.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='lib/par2/creatorpacket.cpp' object='creatorpacket.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o creatorpacket.obj `if test -f 'lib/par2/creatorpacket.cpp'; then $(CYGPATH_W) 'lib/par2/creatorpacket.cpp'; else $(CYGPATH_W) '$(srcdir)/lib/par2/creatorpacket.cpp'; fi`
+
+criticalpacket.o: lib/par2/criticalpacket.cpp
+@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT criticalpacket.o -MD -MP -MF "$(DEPDIR)/criticalpacket.Tpo" -c -o criticalpacket.o `test -f 'lib/par2/criticalpacket.cpp' || echo '$(srcdir)/'`lib/par2/criticalpacket.cpp; \
+@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/criticalpacket.Tpo" "$(DEPDIR)/criticalpacket.Po"; else rm -f "$(DEPDIR)/criticalpacket.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='lib/par2/criticalpacket.cpp' object='criticalpacket.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o criticalpacket.o `test -f 'lib/par2/criticalpacket.cpp' || echo '$(srcdir)/'`lib/par2/criticalpacket.cpp
+
+criticalpacket.obj: lib/par2/criticalpacket.cpp
+@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT criticalpacket.obj -MD -MP -MF "$(DEPDIR)/criticalpacket.Tpo" -c -o criticalpacket.obj `if test -f 'lib/par2/criticalpacket.cpp'; then $(CYGPATH_W) 'lib/par2/criticalpacket.cpp'; else $(CYGPATH_W) '$(srcdir)/lib/par2/criticalpacket.cpp'; fi`; \
+@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/criticalpacket.Tpo" "$(DEPDIR)/criticalpacket.Po"; else rm -f "$(DEPDIR)/criticalpacket.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='lib/par2/criticalpacket.cpp' object='criticalpacket.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o criticalpacket.obj `if test -f 'lib/par2/criticalpacket.cpp'; then $(CYGPATH_W) 'lib/par2/criticalpacket.cpp'; else $(CYGPATH_W) '$(srcdir)/lib/par2/criticalpacket.cpp'; fi`
+
+datablock.o: lib/par2/datablock.cpp
+@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT datablock.o -MD -MP -MF "$(DEPDIR)/datablock.Tpo" -c -o datablock.o `test -f 'lib/par2/datablock.cpp' || echo '$(srcdir)/'`lib/par2/datablock.cpp; \
+@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/datablock.Tpo" "$(DEPDIR)/datablock.Po"; else rm -f "$(DEPDIR)/datablock.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='lib/par2/datablock.cpp' object='datablock.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o datablock.o `test -f 'lib/par2/datablock.cpp' || echo '$(srcdir)/'`lib/par2/datablock.cpp
+
+datablock.obj: lib/par2/datablock.cpp
+@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT datablock.obj -MD -MP -MF "$(DEPDIR)/datablock.Tpo" -c -o datablock.obj `if test -f 'lib/par2/datablock.cpp'; then $(CYGPATH_W) 'lib/par2/datablock.cpp'; else $(CYGPATH_W) '$(srcdir)/lib/par2/datablock.cpp'; fi`; \
+@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/datablock.Tpo" "$(DEPDIR)/datablock.Po"; else rm -f "$(DEPDIR)/datablock.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='lib/par2/datablock.cpp' object='datablock.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o datablock.obj `if test -f 'lib/par2/datablock.cpp'; then $(CYGPATH_W) 'lib/par2/datablock.cpp'; else $(CYGPATH_W) '$(srcdir)/lib/par2/datablock.cpp'; fi`
+
+descriptionpacket.o: lib/par2/descriptionpacket.cpp
+@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT descriptionpacket.o -MD -MP -MF "$(DEPDIR)/descriptionpacket.Tpo" -c -o descriptionpacket.o `test -f 'lib/par2/descriptionpacket.cpp' || echo '$(srcdir)/'`lib/par2/descriptionpacket.cpp; \
+@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/descriptionpacket.Tpo" "$(DEPDIR)/descriptionpacket.Po"; else rm -f "$(DEPDIR)/descriptionpacket.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='lib/par2/descriptionpacket.cpp' object='descriptionpacket.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o descriptionpacket.o `test -f 'lib/par2/descriptionpacket.cpp' || echo '$(srcdir)/'`lib/par2/descriptionpacket.cpp
+
+descriptionpacket.obj: lib/par2/descriptionpacket.cpp
+@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT descriptionpacket.obj -MD -MP -MF "$(DEPDIR)/descriptionpacket.Tpo" -c -o descriptionpacket.obj `if test -f 'lib/par2/descriptionpacket.cpp'; then $(CYGPATH_W) 'lib/par2/descriptionpacket.cpp'; else $(CYGPATH_W) '$(srcdir)/lib/par2/descriptionpacket.cpp'; fi`; \
+@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/descriptionpacket.Tpo" "$(DEPDIR)/descriptionpacket.Po"; else rm -f "$(DEPDIR)/descriptionpacket.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='lib/par2/descriptionpacket.cpp' object='descriptionpacket.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o descriptionpacket.obj `if test -f 'lib/par2/descriptionpacket.cpp'; then $(CYGPATH_W) 'lib/par2/descriptionpacket.cpp'; else $(CYGPATH_W) '$(srcdir)/lib/par2/descriptionpacket.cpp'; fi`
+
+diskfile.o: lib/par2/diskfile.cpp
+@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT diskfile.o -MD -MP -MF "$(DEPDIR)/diskfile.Tpo" -c -o diskfile.o `test -f 'lib/par2/diskfile.cpp' || echo '$(srcdir)/'`lib/par2/diskfile.cpp; \
+@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/diskfile.Tpo" "$(DEPDIR)/diskfile.Po"; else rm -f "$(DEPDIR)/diskfile.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='lib/par2/diskfile.cpp' object='diskfile.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o diskfile.o `test -f 'lib/par2/diskfile.cpp' || echo '$(srcdir)/'`lib/par2/diskfile.cpp
+
+diskfile.obj: lib/par2/diskfile.cpp
+@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT diskfile.obj -MD -MP -MF "$(DEPDIR)/diskfile.Tpo" -c -o diskfile.obj `if test -f 'lib/par2/diskfile.cpp'; then $(CYGPATH_W) 'lib/par2/diskfile.cpp'; else $(CYGPATH_W) '$(srcdir)/lib/par2/diskfile.cpp'; fi`; \
+@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/diskfile.Tpo" "$(DEPDIR)/diskfile.Po"; else rm -f "$(DEPDIR)/diskfile.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='lib/par2/diskfile.cpp' object='diskfile.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o diskfile.obj `if test -f 'lib/par2/diskfile.cpp'; then $(CYGPATH_W) 'lib/par2/diskfile.cpp'; else $(CYGPATH_W) '$(srcdir)/lib/par2/diskfile.cpp'; fi`
+
+filechecksummer.o: lib/par2/filechecksummer.cpp
+@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT filechecksummer.o -MD -MP -MF "$(DEPDIR)/filechecksummer.Tpo" -c -o filechecksummer.o `test -f 'lib/par2/filechecksummer.cpp' || echo '$(srcdir)/'`lib/par2/filechecksummer.cpp; \
+@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/filechecksummer.Tpo" "$(DEPDIR)/filechecksummer.Po"; else rm -f "$(DEPDIR)/filechecksummer.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='lib/par2/filechecksummer.cpp' object='filechecksummer.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o filechecksummer.o `test -f 'lib/par2/filechecksummer.cpp' || echo '$(srcdir)/'`lib/par2/filechecksummer.cpp
+
+filechecksummer.obj: lib/par2/filechecksummer.cpp
+@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT filechecksummer.obj -MD -MP -MF "$(DEPDIR)/filechecksummer.Tpo" -c -o filechecksummer.obj `if test -f 'lib/par2/filechecksummer.cpp'; then $(CYGPATH_W) 'lib/par2/filechecksummer.cpp'; else $(CYGPATH_W) '$(srcdir)/lib/par2/filechecksummer.cpp'; fi`; \
+@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/filechecksummer.Tpo" "$(DEPDIR)/filechecksummer.Po"; else rm -f "$(DEPDIR)/filechecksummer.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='lib/par2/filechecksummer.cpp' object='filechecksummer.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o filechecksummer.obj `if test -f 'lib/par2/filechecksummer.cpp'; then $(CYGPATH_W) 'lib/par2/filechecksummer.cpp'; else $(CYGPATH_W) '$(srcdir)/lib/par2/filechecksummer.cpp'; fi`
+
+galois.o: lib/par2/galois.cpp
+@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT galois.o -MD -MP -MF "$(DEPDIR)/galois.Tpo" -c -o galois.o `test -f 'lib/par2/galois.cpp' || echo '$(srcdir)/'`lib/par2/galois.cpp; \
+@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/galois.Tpo" "$(DEPDIR)/galois.Po"; else rm -f "$(DEPDIR)/galois.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='lib/par2/galois.cpp' object='galois.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o galois.o `test -f 'lib/par2/galois.cpp' || echo '$(srcdir)/'`lib/par2/galois.cpp
+
+galois.obj: lib/par2/galois.cpp
+@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT galois.obj -MD -MP -MF "$(DEPDIR)/galois.Tpo" -c -o galois.obj `if test -f 'lib/par2/galois.cpp'; then $(CYGPATH_W) 'lib/par2/galois.cpp'; else $(CYGPATH_W) '$(srcdir)/lib/par2/galois.cpp'; fi`; \
+@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/galois.Tpo" "$(DEPDIR)/galois.Po"; else rm -f "$(DEPDIR)/galois.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='lib/par2/galois.cpp' object='galois.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o galois.obj `if test -f 'lib/par2/galois.cpp'; then $(CYGPATH_W) 'lib/par2/galois.cpp'; else $(CYGPATH_W) '$(srcdir)/lib/par2/galois.cpp'; fi`
+
+mainpacket.o: lib/par2/mainpacket.cpp
+@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT mainpacket.o -MD -MP -MF "$(DEPDIR)/mainpacket.Tpo" -c -o mainpacket.o `test -f 'lib/par2/mainpacket.cpp' || echo '$(srcdir)/'`lib/par2/mainpacket.cpp; \
+@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/mainpacket.Tpo" "$(DEPDIR)/mainpacket.Po"; else rm -f "$(DEPDIR)/mainpacket.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='lib/par2/mainpacket.cpp' object='mainpacket.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o mainpacket.o `test -f 'lib/par2/mainpacket.cpp' || echo '$(srcdir)/'`lib/par2/mainpacket.cpp
+
+mainpacket.obj: lib/par2/mainpacket.cpp
+@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT mainpacket.obj -MD -MP -MF "$(DEPDIR)/mainpacket.Tpo" -c -o mainpacket.obj `if test -f 'lib/par2/mainpacket.cpp'; then $(CYGPATH_W) 'lib/par2/mainpacket.cpp'; else $(CYGPATH_W) '$(srcdir)/lib/par2/mainpacket.cpp'; fi`; \
+@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/mainpacket.Tpo" "$(DEPDIR)/mainpacket.Po"; else rm -f "$(DEPDIR)/mainpacket.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='lib/par2/mainpacket.cpp' object='mainpacket.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o mainpacket.obj `if test -f 'lib/par2/mainpacket.cpp'; then $(CYGPATH_W) 'lib/par2/mainpacket.cpp'; else $(CYGPATH_W) '$(srcdir)/lib/par2/mainpacket.cpp'; fi`
+
+md5.o: lib/par2/md5.cpp
+@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT md5.o -MD -MP -MF "$(DEPDIR)/md5.Tpo" -c -o md5.o `test -f 'lib/par2/md5.cpp' || echo '$(srcdir)/'`lib/par2/md5.cpp; \
+@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/md5.Tpo" "$(DEPDIR)/md5.Po"; else rm -f "$(DEPDIR)/md5.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='lib/par2/md5.cpp' object='md5.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o md5.o `test -f 'lib/par2/md5.cpp' || echo '$(srcdir)/'`lib/par2/md5.cpp
+
+md5.obj: lib/par2/md5.cpp
+@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT md5.obj -MD -MP -MF "$(DEPDIR)/md5.Tpo" -c -o md5.obj `if test -f 'lib/par2/md5.cpp'; then $(CYGPATH_W) 'lib/par2/md5.cpp'; else $(CYGPATH_W) '$(srcdir)/lib/par2/md5.cpp'; fi`; \
+@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/md5.Tpo" "$(DEPDIR)/md5.Po"; else rm -f "$(DEPDIR)/md5.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='lib/par2/md5.cpp' object='md5.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o md5.obj `if test -f 'lib/par2/md5.cpp'; then $(CYGPATH_W) 'lib/par2/md5.cpp'; else $(CYGPATH_W) '$(srcdir)/lib/par2/md5.cpp'; fi`
+
+par2creatorsourcefile.o: lib/par2/par2creatorsourcefile.cpp
+@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT par2creatorsourcefile.o -MD -MP -MF "$(DEPDIR)/par2creatorsourcefile.Tpo" -c -o par2creatorsourcefile.o `test -f 'lib/par2/par2creatorsourcefile.cpp' || echo '$(srcdir)/'`lib/par2/par2creatorsourcefile.cpp; \
+@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/par2creatorsourcefile.Tpo" "$(DEPDIR)/par2creatorsourcefile.Po"; else rm -f "$(DEPDIR)/par2creatorsourcefile.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='lib/par2/par2creatorsourcefile.cpp' object='par2creatorsourcefile.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o par2creatorsourcefile.o `test -f 'lib/par2/par2creatorsourcefile.cpp' || echo '$(srcdir)/'`lib/par2/par2creatorsourcefile.cpp
+
+par2creatorsourcefile.obj: lib/par2/par2creatorsourcefile.cpp
+@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT par2creatorsourcefile.obj -MD -MP -MF "$(DEPDIR)/par2creatorsourcefile.Tpo" -c -o par2creatorsourcefile.obj `if test -f 'lib/par2/par2creatorsourcefile.cpp'; then $(CYGPATH_W) 'lib/par2/par2creatorsourcefile.cpp'; else $(CYGPATH_W) '$(srcdir)/lib/par2/par2creatorsourcefile.cpp'; fi`; \
+@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/par2creatorsourcefile.Tpo" "$(DEPDIR)/par2creatorsourcefile.Po"; else rm -f "$(DEPDIR)/par2creatorsourcefile.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='lib/par2/par2creatorsourcefile.cpp' object='par2creatorsourcefile.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o par2creatorsourcefile.obj `if test -f 'lib/par2/par2creatorsourcefile.cpp'; then $(CYGPATH_W) 'lib/par2/par2creatorsourcefile.cpp'; else $(CYGPATH_W) '$(srcdir)/lib/par2/par2creatorsourcefile.cpp'; fi`
+
+par2fileformat.o: lib/par2/par2fileformat.cpp
+@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT par2fileformat.o -MD -MP -MF "$(DEPDIR)/par2fileformat.Tpo" -c -o par2fileformat.o `test -f 'lib/par2/par2fileformat.cpp' || echo '$(srcdir)/'`lib/par2/par2fileformat.cpp; \
+@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/par2fileformat.Tpo" "$(DEPDIR)/par2fileformat.Po"; else rm -f "$(DEPDIR)/par2fileformat.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='lib/par2/par2fileformat.cpp' object='par2fileformat.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o par2fileformat.o `test -f 'lib/par2/par2fileformat.cpp' || echo '$(srcdir)/'`lib/par2/par2fileformat.cpp
+
+par2fileformat.obj: lib/par2/par2fileformat.cpp
+@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT par2fileformat.obj -MD -MP -MF "$(DEPDIR)/par2fileformat.Tpo" -c -o par2fileformat.obj `if test -f 'lib/par2/par2fileformat.cpp'; then $(CYGPATH_W) 'lib/par2/par2fileformat.cpp'; else $(CYGPATH_W) '$(srcdir)/lib/par2/par2fileformat.cpp'; fi`; \
+@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/par2fileformat.Tpo" "$(DEPDIR)/par2fileformat.Po"; else rm -f "$(DEPDIR)/par2fileformat.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='lib/par2/par2fileformat.cpp' object='par2fileformat.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o par2fileformat.obj `if test -f 'lib/par2/par2fileformat.cpp'; then $(CYGPATH_W) 'lib/par2/par2fileformat.cpp'; else $(CYGPATH_W) '$(srcdir)/lib/par2/par2fileformat.cpp'; fi`
+
+par2repairer.o: lib/par2/par2repairer.cpp
+@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT par2repairer.o -MD -MP -MF "$(DEPDIR)/par2repairer.Tpo" -c -o par2repairer.o `test -f 'lib/par2/par2repairer.cpp' || echo '$(srcdir)/'`lib/par2/par2repairer.cpp; \
+@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/par2repairer.Tpo" "$(DEPDIR)/par2repairer.Po"; else rm -f "$(DEPDIR)/par2repairer.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='lib/par2/par2repairer.cpp' object='par2repairer.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o par2repairer.o `test -f 'lib/par2/par2repairer.cpp' || echo '$(srcdir)/'`lib/par2/par2repairer.cpp
+
+par2repairer.obj: lib/par2/par2repairer.cpp
+@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT par2repairer.obj -MD -MP -MF "$(DEPDIR)/par2repairer.Tpo" -c -o par2repairer.obj `if test -f 'lib/par2/par2repairer.cpp'; then $(CYGPATH_W) 'lib/par2/par2repairer.cpp'; else $(CYGPATH_W) '$(srcdir)/lib/par2/par2repairer.cpp'; fi`; \
+@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/par2repairer.Tpo" "$(DEPDIR)/par2repairer.Po"; else rm -f "$(DEPDIR)/par2repairer.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='lib/par2/par2repairer.cpp' object='par2repairer.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o par2repairer.obj `if test -f 'lib/par2/par2repairer.cpp'; then $(CYGPATH_W) 'lib/par2/par2repairer.cpp'; else $(CYGPATH_W) '$(srcdir)/lib/par2/par2repairer.cpp'; fi`
+
+par2repairersourcefile.o: lib/par2/par2repairersourcefile.cpp
+@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT par2repairersourcefile.o -MD -MP -MF "$(DEPDIR)/par2repairersourcefile.Tpo" -c -o par2repairersourcefile.o `test -f 'lib/par2/par2repairersourcefile.cpp' || echo '$(srcdir)/'`lib/par2/par2repairersourcefile.cpp; \
+@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/par2repairersourcefile.Tpo" "$(DEPDIR)/par2repairersourcefile.Po"; else rm -f "$(DEPDIR)/par2repairersourcefile.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='lib/par2/par2repairersourcefile.cpp' object='par2repairersourcefile.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o par2repairersourcefile.o `test -f 'lib/par2/par2repairersourcefile.cpp' || echo '$(srcdir)/'`lib/par2/par2repairersourcefile.cpp
+
+par2repairersourcefile.obj: lib/par2/par2repairersourcefile.cpp
+@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT par2repairersourcefile.obj -MD -MP -MF "$(DEPDIR)/par2repairersourcefile.Tpo" -c -o par2repairersourcefile.obj `if test -f 'lib/par2/par2repairersourcefile.cpp'; then $(CYGPATH_W) 'lib/par2/par2repairersourcefile.cpp'; else $(CYGPATH_W) '$(srcdir)/lib/par2/par2repairersourcefile.cpp'; fi`; \
+@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/par2repairersourcefile.Tpo" "$(DEPDIR)/par2repairersourcefile.Po"; else rm -f "$(DEPDIR)/par2repairersourcefile.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='lib/par2/par2repairersourcefile.cpp' object='par2repairersourcefile.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o par2repairersourcefile.obj `if test -f 'lib/par2/par2repairersourcefile.cpp'; then $(CYGPATH_W) 'lib/par2/par2repairersourcefile.cpp'; else $(CYGPATH_W) '$(srcdir)/lib/par2/par2repairersourcefile.cpp'; fi`
+
+parheaders.o: lib/par2/parheaders.cpp
+@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT parheaders.o -MD -MP -MF "$(DEPDIR)/parheaders.Tpo" -c -o parheaders.o `test -f 'lib/par2/parheaders.cpp' || echo '$(srcdir)/'`lib/par2/parheaders.cpp; \
+@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/parheaders.Tpo" "$(DEPDIR)/parheaders.Po"; else rm -f "$(DEPDIR)/parheaders.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='lib/par2/parheaders.cpp' object='parheaders.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o parheaders.o `test -f 'lib/par2/parheaders.cpp' || echo '$(srcdir)/'`lib/par2/parheaders.cpp
+
+parheaders.obj: lib/par2/parheaders.cpp
+@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT parheaders.obj -MD -MP -MF "$(DEPDIR)/parheaders.Tpo" -c -o parheaders.obj `if test -f 'lib/par2/parheaders.cpp'; then $(CYGPATH_W) 'lib/par2/parheaders.cpp'; else $(CYGPATH_W) '$(srcdir)/lib/par2/parheaders.cpp'; fi`; \
+@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/parheaders.Tpo" "$(DEPDIR)/parheaders.Po"; else rm -f "$(DEPDIR)/parheaders.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='lib/par2/parheaders.cpp' object='parheaders.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o parheaders.obj `if test -f 'lib/par2/parheaders.cpp'; then $(CYGPATH_W) 'lib/par2/parheaders.cpp'; else $(CYGPATH_W) '$(srcdir)/lib/par2/parheaders.cpp'; fi`
+
+recoverypacket.o: lib/par2/recoverypacket.cpp
+@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT recoverypacket.o -MD -MP -MF "$(DEPDIR)/recoverypacket.Tpo" -c -o recoverypacket.o `test -f 'lib/par2/recoverypacket.cpp' || echo '$(srcdir)/'`lib/par2/recoverypacket.cpp; \
+@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/recoverypacket.Tpo" "$(DEPDIR)/recoverypacket.Po"; else rm -f "$(DEPDIR)/recoverypacket.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='lib/par2/recoverypacket.cpp' object='recoverypacket.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o recoverypacket.o `test -f 'lib/par2/recoverypacket.cpp' || echo '$(srcdir)/'`lib/par2/recoverypacket.cpp
+
+recoverypacket.obj: lib/par2/recoverypacket.cpp
+@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT recoverypacket.obj -MD -MP -MF "$(DEPDIR)/recoverypacket.Tpo" -c -o recoverypacket.obj `if test -f 'lib/par2/recoverypacket.cpp'; then $(CYGPATH_W) 'lib/par2/recoverypacket.cpp'; else $(CYGPATH_W) '$(srcdir)/lib/par2/recoverypacket.cpp'; fi`; \
+@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/recoverypacket.Tpo" "$(DEPDIR)/recoverypacket.Po"; else rm -f "$(DEPDIR)/recoverypacket.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='lib/par2/recoverypacket.cpp' object='recoverypacket.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o recoverypacket.obj `if test -f 'lib/par2/recoverypacket.cpp'; then $(CYGPATH_W) 'lib/par2/recoverypacket.cpp'; else $(CYGPATH_W) '$(srcdir)/lib/par2/recoverypacket.cpp'; fi`
+
+reedsolomon.o: lib/par2/reedsolomon.cpp
+@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT reedsolomon.o -MD -MP -MF "$(DEPDIR)/reedsolomon.Tpo" -c -o reedsolomon.o `test -f 'lib/par2/reedsolomon.cpp' || echo '$(srcdir)/'`lib/par2/reedsolomon.cpp; \
+@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/reedsolomon.Tpo" "$(DEPDIR)/reedsolomon.Po"; else rm -f "$(DEPDIR)/reedsolomon.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='lib/par2/reedsolomon.cpp' object='reedsolomon.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o reedsolomon.o `test -f 'lib/par2/reedsolomon.cpp' || echo '$(srcdir)/'`lib/par2/reedsolomon.cpp
+
+reedsolomon.obj: lib/par2/reedsolomon.cpp
+@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT reedsolomon.obj -MD -MP -MF "$(DEPDIR)/reedsolomon.Tpo" -c -o reedsolomon.obj `if test -f 'lib/par2/reedsolomon.cpp'; then $(CYGPATH_W) 'lib/par2/reedsolomon.cpp'; else $(CYGPATH_W) '$(srcdir)/lib/par2/reedsolomon.cpp'; fi`; \
+@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/reedsolomon.Tpo" "$(DEPDIR)/reedsolomon.Po"; else rm -f "$(DEPDIR)/reedsolomon.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='lib/par2/reedsolomon.cpp' object='reedsolomon.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o reedsolomon.obj `if test -f 'lib/par2/reedsolomon.cpp'; then $(CYGPATH_W) 'lib/par2/reedsolomon.cpp'; else $(CYGPATH_W) '$(srcdir)/lib/par2/reedsolomon.cpp'; fi`
+
+verificationhashtable.o: lib/par2/verificationhashtable.cpp
+@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT verificationhashtable.o -MD -MP -MF "$(DEPDIR)/verificationhashtable.Tpo" -c -o verificationhashtable.o `test -f 'lib/par2/verificationhashtable.cpp' || echo '$(srcdir)/'`lib/par2/verificationhashtable.cpp; \
+@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/verificationhashtable.Tpo" "$(DEPDIR)/verificationhashtable.Po"; else rm -f "$(DEPDIR)/verificationhashtable.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='lib/par2/verificationhashtable.cpp' object='verificationhashtable.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o verificationhashtable.o `test -f 'lib/par2/verificationhashtable.cpp' || echo '$(srcdir)/'`lib/par2/verificationhashtable.cpp
+
+verificationhashtable.obj: lib/par2/verificationhashtable.cpp
+@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT verificationhashtable.obj -MD -MP -MF "$(DEPDIR)/verificationhashtable.Tpo" -c -o verificationhashtable.obj `if test -f 'lib/par2/verificationhashtable.cpp'; then $(CYGPATH_W) 'lib/par2/verificationhashtable.cpp'; else $(CYGPATH_W) '$(srcdir)/lib/par2/verificationhashtable.cpp'; fi`; \
+@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/verificationhashtable.Tpo" "$(DEPDIR)/verificationhashtable.Po"; else rm -f "$(DEPDIR)/verificationhashtable.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='lib/par2/verificationhashtable.cpp' object='verificationhashtable.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o verificationhashtable.obj `if test -f 'lib/par2/verificationhashtable.cpp'; then $(CYGPATH_W) 'lib/par2/verificationhashtable.cpp'; else $(CYGPATH_W) '$(srcdir)/lib/par2/verificationhashtable.cpp'; fi`
+
+verificationpacket.o: lib/par2/verificationpacket.cpp
+@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT verificationpacket.o -MD -MP -MF "$(DEPDIR)/verificationpacket.Tpo" -c -o verificationpacket.o `test -f 'lib/par2/verificationpacket.cpp' || echo '$(srcdir)/'`lib/par2/verificationpacket.cpp; \
+@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/verificationpacket.Tpo" "$(DEPDIR)/verificationpacket.Po"; else rm -f "$(DEPDIR)/verificationpacket.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='lib/par2/verificationpacket.cpp' object='verificationpacket.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o verificationpacket.o `test -f 'lib/par2/verificationpacket.cpp' || echo '$(srcdir)/'`lib/par2/verificationpacket.cpp
+
+verificationpacket.obj: lib/par2/verificationpacket.cpp
+@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT verificationpacket.obj -MD -MP -MF "$(DEPDIR)/verificationpacket.Tpo" -c -o verificationpacket.obj `if test -f 'lib/par2/verificationpacket.cpp'; then $(CYGPATH_W) 'lib/par2/verificationpacket.cpp'; else $(CYGPATH_W) '$(srcdir)/lib/par2/verificationpacket.cpp'; fi`; \
+@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/verificationpacket.Tpo" "$(DEPDIR)/verificationpacket.Po"; else rm -f "$(DEPDIR)/verificationpacket.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='lib/par2/verificationpacket.cpp' object='verificationpacket.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o verificationpacket.obj `if test -f 'lib/par2/verificationpacket.cpp'; then $(CYGPATH_W) 'lib/par2/verificationpacket.cpp'; else $(CYGPATH_W) '$(srcdir)/lib/par2/verificationpacket.cpp'; fi`
 uninstall-info-am:
 install-dist_docDATA: $(dist_doc_DATA)
 	@$(NORMAL_INSTALL)
@@ -1435,7 +1830,7 @@ distclean-tags:
 distdir: $(DISTFILES)
 	$(am__remove_distdir)
 	mkdir $(distdir)
-	$(mkdir_p) $(distdir)/daemon/windows $(distdir)/osx $(distdir)/osx/NZBGet.xcodeproj $(distdir)/osx/Resources $(distdir)/osx/Resources/Images $(distdir)/osx/Resources/licenses $(distdir)/scripts $(distdir)/webui $(distdir)/webui/img $(distdir)/webui/lib
+	$(mkdir_p) $(distdir)/daemon/windows $(distdir)/lib/par2 $(distdir)/osx $(distdir)/osx/NZBGet.xcodeproj $(distdir)/osx/Resources $(distdir)/osx/Resources/Images $(distdir)/osx/Resources/licenses $(distdir)/scripts $(distdir)/webui $(distdir)/webui/img $(distdir)/webui/lib
 	@srcdirstrip=`echo "$(srcdir)" | sed 's|.|.|g'`; \
 	topsrcdirstrip=`echo "$(top_srcdir)" | sed 's|.|.|g'`; \
 	list='$(DISTFILES)'; for file in $$list; do \
@@ -1756,6 +2151,7 @@ clean-bak: rm *~
 dist-hook:
 	find $(distdir)/daemon -type f -print -exec chmod -x {} \;
 	find $(distdir)/webui -type f -print -exec chmod -x {} \;
+	find $(distdir)/lib -type f -print -exec chmod -x {} \;
 # Tell versions [3.59,3.63) of GNU make to not export all variables.
 # Otherwise a system limit (for SysV at least) may be exceeded.
 .NOEXPORT:

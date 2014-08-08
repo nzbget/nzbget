@@ -387,16 +387,12 @@ bool ParCoordinator::Cancel()
 {
 	if (m_eCurrentJob == jkParCheck)
 	{
-#ifdef HAVE_PAR2_CANCEL
 		if (!m_ParChecker.GetCancelled())
 		{
 			debug("Cancelling par-repair for %s", m_ParChecker.GetInfoName());
 			m_ParChecker.Cancel();
 			return true;
 		}
-#else
-		warn("Cannot cancel par-repair for %s, used version of libpar2 does not support cancelling", m_ParChecker.GetInfoName());
-#endif
 	}
 	else if (m_eCurrentJob == jkParRename)
 	{
@@ -681,7 +677,6 @@ void ParCoordinator::UpdateParCheckProgress()
 	}
 
 	bool bParCancel = false;
-#ifdef HAVE_PAR2_CANCEL
 	if (!m_ParChecker.GetCancelled())
 	{
 		if ((g_pOptions->GetParTimeLimit() > 0) &&
@@ -700,7 +695,6 @@ void ParCoordinator::UpdateParCheckProgress()
 			}
 		}
 	}
-#endif
 
 	if (bParCancel)
 	{
