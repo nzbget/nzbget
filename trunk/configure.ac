@@ -1,3 +1,24 @@
+#
+#  This file is part of nzbget
+#
+# Copyright (C) 2008-2014 Andrey Prygunkov <hugbug@users.sourceforge.net>
+#
+# This program is free software; you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation; either version 2 of the License, or
+# (at your option) any later version.
+#
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with this program; if not, write to the Free Software
+# Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
+#
+#
+
 #                                               -*- Autoconf -*-
 # Process this file with autoconf to produce a configure script.
 
@@ -264,118 +285,37 @@ fi
 
 
 dnl
-dnl Use libpar2 for par-checking. Deafult: no
+dnl Use par-checking. Deafult: yes.
 dnl
 AC_MSG_CHECKING(whether to include code for par-checking)
 AC_ARG_ENABLE(parcheck,
-	[AS_HELP_STRING([--disable-parcheck], [do not include par-check/-repair-support (removes dependency from libpar2- and libsigc-libraries)])],
+	[AS_HELP_STRING([--disable-parcheck], [do not include par-check/-repair-support])],
 	[ ENABLEPARCHECK=$enableval ],
 	[ ENABLEPARCHECK=yes] )
 AC_MSG_RESULT($ENABLEPARCHECK)
 if test "$ENABLEPARCHECK" = "yes"; then
-
+	dnl PAR2 checks. 
 	dnl 
-	dnl checks for libsigc++ includes and libraries (required for libpar2).
-	dnl
-
-	AC_ARG_WITH(libsigc_includes,
-		[AS_HELP_STRING([--with-libsigc-includes=DIR], [libsigc++-2.0 include directory])],
-		[CPPFLAGS="${CPPFLAGS} -I${withval}"]
-		[INCVAL="yes"],
-		[INCVAL="no"])
-	AC_ARG_WITH(libsigc_libraries,
-		[AS_HELP_STRING([--with-libsigc-libraries=DIR], [libsigc++-2.0 library directory])],
-		[LDFLAGS="${LDFLAGS} -L${withval}"]
-		[CPPFLAGS="${CPPFLAGS} -I${withval}/sigc++-2.0/include"]
-		[LIBVAL="yes"],
-		[LIBVAL="no"])
-	if test "$INCVAL" = "no" -o "$LIBVAL" = "no"; then
-		PKG_CHECK_MODULES(libsigc, sigc++-2.0,
-			[LIBS="${LIBS} $libsigc_LIBS"]
-			[CPPFLAGS="${CPPFLAGS} $libsigc_CFLAGS"])
-	fi
-	
-	AC_CHECK_HEADER(sigc++/type_traits.h,,
-		AC_MSG_ERROR("libsigc++-2.0 header files not found"))
-
-	dnl
-	dnl checks for libpar2 includes and libraries.
-	dnl
-	INCVAL="${LIBPREF}/include"
-	LIBVAL="${LIBPREF}/lib"
-	AC_ARG_WITH(libpar2_includes,
-		[AS_HELP_STRING([--with-libpar2-includes=DIR], [libpar2 include directory])],
-		[INCVAL="$withval"])
-
-	CPPFLAGS="${CPPFLAGS} -I${INCVAL}"
-	
-	AC_CHECK_HEADER(libpar2/libpar2.h,,
-		AC_MSG_ERROR("libpar2 header files not found"))
-
-	AC_ARG_WITH(libpar2_libraries,
-		[AS_HELP_STRING([--with-libpar2-libraries=DIR], [libpar2 library directory])],
-		[LIBVAL="$withval"])
-
-	LDFLAGS="${LDFLAGS} -L${LIBVAL}"
-
-	AC_SEARCH_LIBS([_ZN12Par2RepairerC1Ev], [par2], ,
-		AC_MSG_ERROR("libpar2 library not found"))
-
-	dnl
-	dnl check if libpar2 library is linkable
-	dnl
-	AC_MSG_CHECKING(for libpar2 linking)
-	AC_TRY_LINK(
-		[#include <libpar2/par2cmdline.h>]
-		[#include <libpar2/par2repairer.h>]
-		[ class Repairer : public Par2Repairer { }; ],
-		[ Repairer* p = new Repairer(); ],
-		AC_MSG_RESULT([[yes]]),
-		AC_MSG_RESULT([[no]])
-		AC_MSG_ERROR("libpar2 library not found"))
-
-	dnl
-	dnl check if libpar2 has support for cancelling
-	dnl
-	AC_MSG_CHECKING(whether libpar2 supports cancelling)
-	AC_TRY_COMPILE(
-		[#include <libpar2/par2cmdline.h>]
-		[#include <libpar2/par2repairer.h>]
-		[ class Repairer : public Par2Repairer { void test() { cancelled = true; } }; ],
-		[],
-		AC_MSG_RESULT([[yes]])
-		AC_DEFINE([HAVE_PAR2_CANCEL], 1, [Define to 1 if libpar2 supports cancelling (needs a special patch)]),
-		AC_MSG_RESULT([[no]]))
-
-	dnl
-	dnl check if libpar2 has external-verify-patch
-	dnl
-	AC_MSG_CHECKING(whether libpar2 supports external verification)
-	AC_TRY_COMPILE(
-		[#include <libpar2/par2cmdline.h>]
-		[#include <libpar2/par2repairer.h>]
-		[ class Repairer : public Par2Repairer { protected:
-	virtual int ScanDataFile(DiskFile *diskfile, Par2RepairerSourceFile* &sourcefile,
-		MatchType &matchtype, MD5Hash &hashfull, MD5Hash &hash16k, u32 &count) { return true; } }; ],
-		[],
-		AC_MSG_RESULT([[no]])
-		PAR2CRCPATCH=no
-		AC_DEFINE([HAVE_PAR2_CRCPATCH], 1, [Define to 1 if libpar2 supports external verification]),
-		AC_MSG_RESULT([[yes]])
-		PAR2CRCPATCH=yes)
-
-	if test "$PAR2CRCPATCH" = "no" ; then
-		AC_ARG_ENABLE(libpar2-version-check,
-			[AS_HELP_STRING([--disable-libpar2-version-check], [do not check libpar2 version])],
-			[ PAR2PATCHCHECK=$enableval ],
-			[ PAR2PATCHCHECK=yes] )
-		if test "$PAR2PATCHCHECK" = "yes"; then
-			AC_ERROR([Your version of libpar2 doesn't support external verification, which drastically improves verification time in nzbget. Please update your libpar2 as explained on http://nzbget.net/libpar2. If you cannot update libpar2, you can use configure parameter --disable-libpar2-version-check to suppress the check.])
-		fi
-	fi
-
+	dnl Checks for header files.
+	AC_HEADER_DIRENT
+	AC_HEADER_STDBOOL
+	AC_HEADER_STDC
+	AC_CHECK_HEADERS([stdio.h] [endian.h] [getopt.h])
+	dnl Checks for typedefs, structures, and compiler characteristics.
+	AC_TYPE_SIZE_T
+	AC_C_BIGENDIAN
+	AC_C_CONST
+	AC_C_INLINE
+	AC_FUNC_FSEEKO
+	dnl Checks for library functions.
+	AC_FUNC_MEMCMP
+	AC_CHECK_FUNCS([stricmp] [strcasecmp])
+	AC_CHECK_FUNCS([strchr] [memcpy])
+	AC_CHECK_FUNCS([getopt])
+	AM_CONDITIONAL(WITH_PAR2, true)
 else
-	AC_DEFINE([DISABLE_PARCHECK],1,[Define to 1 to disable smart par-verification and restoration])
+	AC_DEFINE([DISABLE_PARCHECK],1,[Define to 1 to disable par-verification and repair])
+	AM_CONDITIONAL(WITH_PAR2, false)
 fi
 
 

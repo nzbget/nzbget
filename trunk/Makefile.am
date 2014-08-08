@@ -1,5 +1,5 @@
 #
-#  This file if part of nzbget
+#  This file is part of nzbget
 #
 # Copyright (C) 2008-2014 Andrey Prygunkov <hugbug@users.sourceforge.net>
 #
@@ -121,6 +121,52 @@ nzbget_SOURCES = \
 	daemon/util/Util.h \
 	svn_version.cpp
 
+if WITH_PAR2
+nzbget_SOURCES += \
+	lib/par2/commandline.cpp \
+	lib/par2/commandline.h \
+	lib/par2/crc.cpp \
+	lib/par2/crc.h \
+	lib/par2/creatorpacket.cpp \
+	lib/par2/creatorpacket.h \
+	lib/par2/criticalpacket.cpp \
+	lib/par2/criticalpacket.h \
+	lib/par2/datablock.cpp \
+	lib/par2/datablock.h \
+	lib/par2/descriptionpacket.cpp \
+	lib/par2/descriptionpacket.h \
+	lib/par2/diskfile.cpp \
+	lib/par2/diskfile.h \
+	lib/par2/filechecksummer.cpp \
+	lib/par2/filechecksummer.h \
+	lib/par2/galois.cpp \
+	lib/par2/galois.h \
+	lib/par2/letype.h \
+	lib/par2/mainpacket.cpp \
+	lib/par2/mainpacket.h \
+	lib/par2/md5.cpp \
+	lib/par2/md5.h \
+	lib/par2/par2cmdline.h \
+	lib/par2/par2creatorsourcefile.cpp \
+	lib/par2/par2creatorsourcefile.h \
+	lib/par2/par2fileformat.cpp \
+	lib/par2/par2fileformat.h \
+	lib/par2/par2repairer.cpp \
+	lib/par2/par2repairer.h \
+	lib/par2/par2repairersourcefile.cpp \
+	lib/par2/par2repairersourcefile.h \
+	lib/par2/parheaders.cpp \
+	lib/par2/parheaders.h \
+	lib/par2/recoverypacket.cpp \
+	lib/par2/recoverypacket.h \
+	lib/par2/reedsolomon.cpp \
+	lib/par2/reedsolomon.h \
+	lib/par2/verificationhashtable.cpp \
+	lib/par2/verificationhashtable.h \
+	lib/par2/verificationpacket.cpp \
+	lib/par2/verificationpacket.h
+endif
+
 AM_CPPFLAGS = \
 	-I$(srcdir)/daemon/connect \
 	-I$(srcdir)/daemon/feed \
@@ -130,7 +176,8 @@ AM_CPPFLAGS = \
 	-I$(srcdir)/daemon/postprocess \
 	-I$(srcdir)/daemon/queue \
 	-I$(srcdir)/daemon/remote \
-	-I$(srcdir)/daemon/util
+	-I$(srcdir)/daemon/util \
+	-I$(srcdir)/lib/par2
 
 EXTRA_DIST = \
 	Makefile.cvs \
@@ -182,7 +229,9 @@ osx_FILES = \
 doc_FILES = \
 	README \
 	ChangeLog \
-	COPYING
+	COPYING \
+	lib/par2/AUTHORS \
+	lib/par2/README
 
 exampleconf_FILES = \
 	nzbget.conf
@@ -319,4 +368,5 @@ clean-bak: rm *~
 dist-hook:
 	find $(distdir)/daemon -type f -print -exec chmod -x {} \;
 	find $(distdir)/webui -type f -print -exec chmod -x {} \;
+	find $(distdir)/lib -type f -print -exec chmod -x {} \;
 

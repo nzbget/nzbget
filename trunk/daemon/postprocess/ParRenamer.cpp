@@ -37,16 +37,13 @@
 #include <string.h>
 #include <stdio.h>
 #include <ctype.h>
-#ifdef WIN32
-#include <par2cmdline.h>
-#include <par2repairer.h>
-#include <md5.h>
-#else
+#ifndef WIN32
 #include <unistd.h>
-#include <libpar2/par2cmdline.h>
-#include <libpar2/par2repairer.h>
-#include <libpar2/md5.h>
 #endif
+
+#include "par2cmdline.h"
+#include "par2repairer.h"
+#include "md5.h"
 
 #include "nzbget.h"
 #include "ParRenamer.h"
