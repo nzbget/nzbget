@@ -1303,7 +1303,7 @@ bool Par2Repairer::VerifySourceFiles(void)
         DiskFile::SplitFilename(filename, path, name);
 
         cout << "Target: \"" << name << "\" - missing." << endl;
-	sig_done(name, 0, sourcefile->GetVerificationPacket() ? sourcefile->GetVerificationPacket()->BlockCount() : 0);
+	sig_done(name, 0, sourcefile && sourcefile->GetVerificationPacket() ? sourcefile->GetVerificationPacket()->BlockCount() : 0);
       }
     }
 
@@ -1855,7 +1855,7 @@ bool Par2Repairer::ScanDataFile(DiskFile                *diskfile,    // [in]
       }
     }
   }
-  sig_done(name,count, count>0 && sourcefile->GetVerificationPacket() ? sourcefile->GetVerificationPacket()->BlockCount() : 0);
+  sig_done(name,count, sourcefile && sourcefile->GetVerificationPacket() ? sourcefile->GetVerificationPacket()->BlockCount() : 0);
   sig_progress(1000.0);
   return true;
 }
