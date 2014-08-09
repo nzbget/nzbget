@@ -1113,7 +1113,8 @@ ParChecker::EFileStatus ParChecker::VerifyDataFile(void* pDiskfile, void* pSourc
 		return fsUnknown;
 	}
 
-	const char* szFilename = pSourceFile->GetTargetFile()->FileName().c_str();
+	std::string filename = pSourceFile->GetTargetFile()->FileName();
+	const char* szFilename = filename.c_str();
 
 	// find file status and CRC computed during download
 	unsigned long lDownloadCrc;
@@ -1198,7 +1199,8 @@ bool ParChecker::VerifyPartialDataFile(void* pDiskfile, void* pSourcefile, Segme
 	Par2RepairerSourceFile* pSourceFile = (Par2RepairerSourceFile*)pSourcefile;
 	VerificationPacket* packet = pSourceFile->GetVerificationPacket();
 	long long blocksize = ((Repairer*)m_pRepairer)->mainpacket->BlockSize();
-	const char* szFilename = pSourceFile->GetTargetFile()->FileName().c_str();
+	std::string filename = pSourceFile->GetTargetFile()->FileName();
+	const char* szFilename = filename.c_str();
 	long long iFileSize = pSourceFile->GetTargetFile()->FileSize();
 
 	// determine presumably valid and bad blocks based on article download status
