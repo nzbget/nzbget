@@ -973,9 +973,13 @@ void ParChecker::signal_done(std::string str, int available, int total)
 
 void ParChecker::Cancel()
 {
+#ifdef HAVE_PAR2_CANCEL
 	((Repairer*)m_pRepairer)->cancelled = true;
 	m_bCancelled = true;
 	QueueChanged();
+#else
+	PrintMessage(Message::mkError, "Could not cancel par-repair. The program was compiled using version of libpar2 which doesn't support cancelling of par-repair. Please apply libpar2-patches supplied with NZBGet and recompile libpar2 and NZBGet (see README for details).");
+#endif
 }
 
 void ParChecker::WriteBrokenLog(EStatus eStatus)
@@ -1192,17 +1196,17 @@ bool ParChecker::VerifySuccessDataFile(void* pDiskfile, void* pSourcefile, unsig
 bool ParChecker::VerifyPartialDataFile(void* pDiskfile, void* pSourcefile, SegmentList* pSegments, ValidBlocks* pValidBlocks)
 {
 	Par2RepairerSourceFile* pSourceFile = (Par2RepairerSourceFile*)pSourcefile;
-	u64 blocksize = ((Repairer*)m_pRepairer)->mainpacket->BlockSize();
 	VerificationPacket* packet = pSourceFile->GetVerificationPacket();
+	long long blocksize = ((Repairer*)m_pRepairer)->mainpacket->BlockSize();
 	const char* szFilename = pSourceFile->GetTargetFile()->FileName().c_str();
-	u64 iFileSize = pSourceFile->GetTargetFile()->FileSize();
+	long long iFileSize = pSourceFile->GetTargetFile()->FileSize();
 
 	// determine presumably valid and bad blocks based on article download status
 	pValidBlocks->resize(packet->BlockCount(), false);
-	for (int i = 0; i < pValidBlocks->size(); i++)
+	for (int i = 0; i < (int)pValidBlocks->size(); i++)
 	{
-		u64 blockStart = i * blocksize;
-		u64 blockEnd = blockStart + blocksize < iFileSize - 1 ? blockStart + blocksize : iFileSize - 1;
+		long long blockStart = i * blocksize;
+		long long blockEnd = blockStart + blocksize < iFileSize - 1 ? blockStart + blocksize : iFileSize - 1;
 		bool bBlockOK = false;
 		bool bBlockEnd = false;
 		u64 iCurOffset = 0;
@@ -1249,7 +1253,7 @@ bool ParChecker::VerifyPartialDataFile(void* pDiskfile, void* pSourcefile, Segme
 	unsigned long lParCrc = 0;
 	int iBlockStart = -1;
 	pValidBlocks->push_back(false); // end marker
-	for (int i = 0; i < pValidBlocks->size(); i++)
+	for (int i = 0; i < (int)pValidBlocks->size(); i++)
 	{
 		bool bValidBlock = pValidBlocks->at(i);
 		if (bValidBlock)
@@ -1275,7 +1279,7 @@ bool ParChecker::VerifyPartialDataFile(void* pDiskfile, void* pSourcefile, Segme
 				if (bOK && iBytesEnd > iFileSize - 1)
 				{
 					// for the last block: extend lDownloadCrc to block size
-					lDownloadCrc = CRCUpdateBlock(lDownloadCrc ^ 0xFFFFFFFF, iBytesEnd - (iFileSize - 1)) ^ 0xFFFFFFFF;
+					lDownloadCrc = CRCUpdateBlock(lDownloadCrc ^ 0xFFFFFFFF, (size_t)(iBytesEnd - (iFileSize - 1))) ^ 0xFFFFFFFF;
 				}
 
 				if (!bOK || lDownloadCrc != lParCrc)
@@ -1340,7 +1344,7 @@ bool ParChecker::SmartCalcFileRangeCrc(FILE* pFile, long long lStart, long long 
 				return false;
 			}
 
-			lDownloadCrc = Util::Crc32Combine(lDownloadCrc, lPartialCrc, lEnd - pSegment->GetOffset() + 1);
+			lDownloadCrc = Util::Crc32Combine(lDownloadCrc, (unsigned long)lPartialCrc, (unsigned long)(lEnd - pSegment->GetOffset() + 1));
 
 			break;
 		}
@@ -1355,7 +1359,7 @@ bool ParChecker::SmartCalcFileRangeCrc(FILE* pFile, long long lStart, long long 
  */
 bool ParChecker::DumbCalcFileRangeCrc(FILE* pFile, long long lStart, long long lEnd, unsigned long* pDownloadCrc)
 {
-	if (fseek(pFile, lStart, SEEK_SET))
+	if (fseek(pFile, (long)lStart, SEEK_SET))
 	{
 		return false;
 	}
@@ -1367,7 +1371,7 @@ bool ParChecker::DumbCalcFileRangeCrc(FILE* pFile, long long lStart, long long l
 	int cnt = BUFFER_SIZE;
 	while (cnt == BUFFER_SIZE && lStart < lEnd)
 	{
-		int iNeedBytes = lEnd - lStart + 1 > BUFFER_SIZE ? BUFFER_SIZE : lEnd - lStart + 1;
+		int iNeedBytes = lEnd - lStart + 1 > BUFFER_SIZE ? BUFFER_SIZE : (int)(lEnd - lStart + 1);
 		cnt = (int)fread(buffer, 1, iNeedBytes, pFile);
 		lDownloadCrc = Util::Crc32m(lDownloadCrc, buffer, cnt);
 		lStart += cnt;
