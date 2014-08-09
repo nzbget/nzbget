@@ -407,7 +407,7 @@ void Log::RotateLog()
 	snprintf(szFileMask, 1024, "%s-####-##-##%s", szBaseName, szBaseExt);
 	szFileMask[1024-1] = '\0';
 
-	time_t tCurTime = time(NULL);
+	time_t tCurTime = time(NULL) + g_pOptions->GetTimeCorrection();
 	int iCurDay = (int)tCurTime / 86400;
 	char szFullFilename[1024];
 
