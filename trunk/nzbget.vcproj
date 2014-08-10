@@ -4,6 +4,7 @@
 	Version="8,00"
 	Name="nzbget"
 	ProjectGUID="{41BFB691-0127-4391-9629-F1BA6740DDFE}"
+	RootNamespace="nzbget"
 	Keyword="Win32Proj"
 	>
 	<Platforms>
@@ -120,8 +121,9 @@
 				RuntimeLibrary="0"
 				UsePrecompiledHeader="0"
 				WarningLevel="3"
-				Detect64BitPortabilityProblems="true"
+				Detect64BitPortabilityProblems="false"
 				DebugInformationFormat="3"
+				DisableSpecificWarnings="4996"
 			/>
 			<Tool
 				Name="VCManagedResourceCompilerTool"
@@ -196,8 +198,9 @@
 				RuntimeLibrary="0"
 				UsePrecompiledHeader="0"
 				WarningLevel="3"
-				Detect64BitPortabilityProblems="true"
+				Detect64BitPortabilityProblems="false"
 				DebugInformationFormat="3"
+				DisableSpecificWarnings="4996"
 			/>
 			<Tool
 				Name="VCManagedResourceCompilerTool"
