@@ -1,7 +1,7 @@
 /*
  *  This file is part of nzbget
  *
- *  Copyright (C) 2007-2013 Andrey Prygunkov <hugbug@users.sourceforge.net>
+ *  Copyright (C) 2013-2014 Andrey Prygunkov <hugbug@users.sourceforge.net>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -39,8 +39,10 @@
 
 #include "nzbget.h"
 #include "FeedInfo.h"
+#include "DupeCoordinator.h"
 #include "Util.h"
 
+extern DupeCoordinator* g_pDupeCoordinator;
 
 FeedInfo::FeedInfo(int iID, const char* szName, const char* szUrl, int iInterval,
 	const char* szFilter, bool bPauseNzb, const char* szCategory, int iPriority)
@@ -145,6 +147,7 @@ FeedItemInfo::FeedItemInfo()
 	m_szDupeKey = NULL;
 	m_iDupeScore = 0;
 	m_eDupeMode = dmScore;
+	m_szDupeStatus = NULL;
 }
 
 FeedItemInfo::~FeedItemInfo()
@@ -158,6 +161,7 @@ FeedItemInfo::~FeedItemInfo()
 	free(m_szEpisode);
 	free(m_szAddCategory);
 	free(m_szDupeKey);
+	free(m_szDupeStatus);
 }
 
 void FeedItemInfo::SetTitle(const char* szTitle)
@@ -317,6 +321,37 @@ void FeedItemInfo::ParseSeasonEpisode()
 		for (char* p = szValue; *p; p++) *p = toupper(*p); // convert string to uppercase e02 -> E02
 		SetEpisode(szValue);
 	}
+}
+
+const char* FeedItemInfo::GetDupeStatus()
+{
+	if (!m_szDupeStatus)
+	{
+		const char* szDupeStatusName[] = { "", "QUEUED", "DOWNLOADING", "3", "SUCCESS", "5", "6", "7", "WARNING",
+			"9", "10", "11", "12", "13", "14", "15", "FAILURE" };
+		char szStatuses[200];
+		szStatuses[0] = '\0';
+
+		DownloadQueue* pDownloadQueue = DownloadQueue::Lock();
+		DupeCoordinator::EDupeStatus eDupeStatus = g_pDupeCoordinator->GetDupeStatus(pDownloadQueue, m_szTitle, m_szDupeKey);
+		DownloadQueue::Unlock();
+
+		for (int i = 1; i <= (int)DupeCoordinator::dsFailure; i = i << 1)
+		{
+			if (eDupeStatus & i)
+			{
+				if (*szStatuses)
+				{
+					strcat(szStatuses, ",");
+				}
+				strcat(szStatuses, szDupeStatusName[i]);
+			}
+		}
+
+		m_szDupeStatus = strdup(szStatuses);
+	}
+
+	return m_szDupeStatus;
 }
 
 

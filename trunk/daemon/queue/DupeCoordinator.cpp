@@ -451,3 +451,67 @@ void DupeCoordinator::HistoryCleanup(DownloadQueue* pDownloadQueue, HistoryInfo*
 		pDownloadQueue->Save();
 	}
 }
+
+DupeCoordinator::EDupeStatus DupeCoordinator::GetDupeStatus(DownloadQueue* pDownloadQueue,
+	const char* szName, const char* szDupeKey)
+{
+	EDupeStatus eStatuses = dsNone;
+
+	// find duplicates in download queue
+	for (NZBList::iterator it = pDownloadQueue->GetQueue()->begin(); it != pDownloadQueue->GetQueue()->end(); it++)
+	{
+		NZBInfo* pNZBInfo = *it;
+		if (SameNameOrKey(szName, szDupeKey, pNZBInfo->GetName(), pNZBInfo->GetDupeKey()))
+		{
+			if (pNZBInfo->GetSuccessArticles() + pNZBInfo->GetFailedArticles() > 0)
+			{
+				eStatuses = (EDupeStatus)(eStatuses | dsDownloading);
+			}
+			else
+			{
+				eStatuses = (EDupeStatus)(eStatuses | dsQueued);
+			}
+		}
+	}
+
+	// find duplicates in history
+	for (HistoryList::iterator it = pDownloadQueue->GetHistory()->begin(); it != pDownloadQueue->GetHistory()->end(); it++)
+	{
+		HistoryInfo* pHistoryInfo = *it;
+
+		if (pHistoryInfo->GetKind() == HistoryInfo::hkNzb &&
+			SameNameOrKey(szName, szDupeKey, pHistoryInfo->GetNZBInfo()->GetName(), pHistoryInfo->GetNZBInfo()->GetDupeKey()))
+		{
+			const char* szTextStatus = pHistoryInfo->GetNZBInfo()->MakeTextStatus(true);
+			if (!strncasecmp(szTextStatus, "SUCCESS", 7))
+			{
+				eStatuses = (EDupeStatus)(eStatuses | dsSuccess);
+			}
+			else if (!strncasecmp(szTextStatus, "FAILURE", 7))
+			{
+				eStatuses = (EDupeStatus)(eStatuses | dsFailure);
+			}
+			else if (!strncasecmp(szTextStatus, "WARNING", 7))
+			{
+				eStatuses = (EDupeStatus)(eStatuses | dsWarning);
+			}
+		}
+
+		if (pHistoryInfo->GetKind() == HistoryInfo::hkDup &&
+			SameNameOrKey(szName, szDupeKey, pHistoryInfo->GetDupInfo()->GetName(), pHistoryInfo->GetDupInfo()->GetDupeKey()))
+		{
+			if (pHistoryInfo->GetDupInfo()->GetStatus() == DupInfo::dsSuccess ||
+				pHistoryInfo->GetDupInfo()->GetStatus() == DupInfo::dsGood)
+			{
+				eStatuses = (EDupeStatus)(eStatuses | dsSuccess);
+			}
+			else if (pHistoryInfo->GetDupInfo()->GetStatus() == DupInfo::dsFailed ||
+					 pHistoryInfo->GetDupInfo()->GetStatus() == DupInfo::dsBad)
+			{
+				eStatuses = (EDupeStatus)(eStatuses | dsFailure);
+			}
+		}
+	}
+
+	return eStatuses;
+}
