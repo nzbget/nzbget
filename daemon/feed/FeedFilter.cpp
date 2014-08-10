@@ -1,7 +1,7 @@
 /*
  *  This file is part of nzbget
  *
- *  Copyright (C) 2013 Andrey Prygunkov <hugbug@users.sourceforge.net>
+ *  Copyright (C) 2013-2014 Andrey Prygunkov <hugbug@users.sourceforge.net>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -330,7 +330,7 @@ bool FeedFilter::Term::Compile(char* szToken)
 }
 
 /*
- * If pFeedItemInfo is NULL, only field type info is returned
+ * If pFeedItemInfo is NULL, only field name is validated
  */
 bool FeedFilter::Term::GetFieldData(const char* szField, FeedItemInfo* pFeedItemInfo,
 	const char** StrValue, long long* IntValue)
@@ -406,6 +406,11 @@ bool FeedFilter::Term::GetFieldData(const char* szField, FeedItemInfo* pFeedItem
 	else if (!strcasecmp(szField, "dupescore"))
 	{
 		*IntValue = pFeedItemInfo ? pFeedItemInfo->GetDupeScore() : 0;
+		return true;
+	}
+	else if (!strcasecmp(szField, "dupestatus"))
+	{
+		*StrValue = pFeedItemInfo ? pFeedItemInfo->GetDupeStatus() : NULL;
 		return true;
 	}
 	else if (!strncasecmp(szField, "attr-", 5))

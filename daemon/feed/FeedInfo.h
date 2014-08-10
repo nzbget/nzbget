@@ -1,7 +1,7 @@
 /*
  *  This file is part of nzbget
  *
- *  Copyright (C) 2007-2013 Andrey Prygunkov <hugbug@users.sourceforge.net>
+ *  Copyright (C) 2013-2014 Andrey Prygunkov <hugbug@users.sourceforge.net>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -165,6 +165,7 @@ private:
 	char*				m_szDupeKey;
 	int					m_iDupeScore;
 	EDupeMode			m_eDupeMode;
+	char*				m_szDupeStatus;
 	SharedFeedData*		m_pSharedFeedData;
 	Attributes			m_Attributes;
 
@@ -219,6 +220,7 @@ public:
 	void				SetDupeScore(int iDupeScore) { m_iDupeScore = iDupeScore; }
 	EDupeMode			GetDupeMode() { return m_eDupeMode; }
 	void				SetDupeMode(EDupeMode eDupeMode) { m_eDupeMode = eDupeMode; }
+	const char*			GetDupeStatus();
 	Attributes*			GetAttributes() { return &m_Attributes; }
 };
 

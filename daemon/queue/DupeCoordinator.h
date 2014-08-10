@@ -30,6 +30,17 @@
 
 class DupeCoordinator
 {
+public:
+	enum EDupeStatus
+	{
+		dsNone = 0,
+		dsQueued = 1,
+		dsDownloading = 2,
+		dsSuccess = 4,
+		dsWarning = 8,
+		dsFailure = 16
+	};
+
 private:
 	void				ReturnBestDupe(DownloadQueue* pDownloadQueue, NZBInfo* pNZBInfo, const char* szNZBName, const char* szDupeKey);
 	void				HistoryCleanup(DownloadQueue* pDownloadQueue, HistoryInfo* pMarkHistoryInfo);
@@ -39,6 +50,7 @@ public:
 	void				NZBCompleted(DownloadQueue* pDownloadQueue, NZBInfo* pNZBInfo);
 	void				NZBFound(DownloadQueue* pDownloadQueue, NZBInfo* pNZBInfo);
 	void				HistoryMark(DownloadQueue* pDownloadQueue, HistoryInfo* pHistoryInfo, bool bGood);
+	EDupeStatus			GetDupeStatus(DownloadQueue* pDownloadQueue, const char* szName, const char* szDupeKey);
 };
 
 #endif
