@@ -487,7 +487,10 @@ ArticleDownloader::EStatus ArticleDownloader::Download()
 		Status = DecodeCheck();
 	}
 
-	m_ArticleWriter.Finish(Status == adFinished);
+	if (m_bWritingStarted)
+	{
+		m_ArticleWriter.Finish(Status == adFinished);
+	}
 
 	if (Status == adFinished)
 	{
