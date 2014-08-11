@@ -242,7 +242,7 @@ void PrePostProcessor::NZBAdded(DownloadQueue* pDownloadQueue, NZBInfo* pNZBInfo
 	}
 	else if (!Util::EmptyStr(g_pOptions->GetQueueScript()))
 	{
-		QueueScriptController::StartScripts(pDownloadQueue, pNZBInfo);
+		QueueScriptController::StartScripts(pNZBInfo, QueueScriptController::qeNzbAdded, false);
 	}
 }
 

@@ -68,24 +68,36 @@ public:
 
 class QueueScriptController : public Thread, public NZBScriptController
 {
+public:
+	enum EEvent
+	{
+		qeNzbAdded,
+		qeUnpack
+	};
+
 private:
 	char*				m_szNZBName;
 	char*				m_szNZBFilename;
 	char*				m_szUrl;
 	char*				m_szCategory;
+	char*				m_szDestDir;
 	int					m_iID;
 	int					m_iPriority;
+	EEvent				m_eEvent;
+	NZBInfo*			m_pNZBInfo;		// only in sync-mode
 	NZBParameterList	m_Parameters;
+	int					m_iPrefixLen;
 
 	void				PrepareParams(const char* szScriptName);
 
 protected:
 	virtual void		ExecuteScript(Options::Script* pScript);
+	virtual void		AddMessage(Message::EKind eKind, const char* szText);
 
 public:
 	virtual				~QueueScriptController();
 	virtual void		Run();
-	static void			StartScripts(DownloadQueue* pDownloadQueue, NZBInfo *pNZBInfo);
+	static void			StartScripts(NZBInfo *pNZBInfo, EEvent eEvent, bool bSyncMode);
 };
 
 #endif

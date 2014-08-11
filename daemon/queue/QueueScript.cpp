@@ -264,9 +264,10 @@ QueueScriptController::~QueueScriptController()
 	free(m_szNZBFilename);
 	free(m_szUrl);
 	free(m_szCategory);
+	free(m_szDestDir);
 }
 
-void QueueScriptController::StartScripts(DownloadQueue* pDownloadQueue, NZBInfo *pNZBInfo)
+void QueueScriptController::StartScripts(NZBInfo *pNZBInfo, EEvent eEvent, bool bSyncMode)
 {
 	QueueScriptController* pScriptController = new QueueScriptController();
 
@@ -274,13 +275,25 @@ void QueueScriptController::StartScripts(DownloadQueue* pDownloadQueue, NZBInfo 
 	pScriptController->m_szNZBFilename = strdup(pNZBInfo->GetFilename());
 	pScriptController->m_szUrl = strdup(pNZBInfo->GetURL());
 	pScriptController->m_szCategory = strdup(pNZBInfo->GetCategory());
+	pScriptController->m_szDestDir = strdup(pNZBInfo->GetDestDir());
 	pScriptController->m_iID = pNZBInfo->GetID();
 	pScriptController->m_iPriority = pNZBInfo->GetPriority();
 	pScriptController->m_Parameters.CopyFrom(pNZBInfo->GetParameters());
+	pScriptController->m_eEvent = eEvent;
+	pScriptController->m_iPrefixLen = 0;
 
-	pScriptController->SetAutoDestroy(true);
-
-	pScriptController->Start();
+	if (bSyncMode)
+	{
+		pScriptController->m_pNZBInfo = pNZBInfo;
+		pScriptController->Run();
+		delete pScriptController;
+	}
+	else
+	{
+		pScriptController->m_pNZBInfo = NULL;
+		pScriptController->SetAutoDestroy(true);
+		pScriptController->Start();
+	}
 }
 
 void QueueScriptController::Run()
@@ -306,6 +319,7 @@ void QueueScriptController::ExecuteScript(Options::Script* pScript)
 	SetInfoName(szInfoName);
 
 	SetLogPrefix(pScript->GetDisplayName());
+	m_iPrefixLen = strlen(pScript->GetDisplayName()) + 2; // 2 = strlen(": ");
 	PrepareParams(pScript->GetName());
 
 	Execute();
@@ -320,11 +334,40 @@ void QueueScriptController::PrepareParams(const char* szScriptName)
 	SetEnvVar("NZBNA_NZBNAME", m_szNZBName);
 	SetIntEnvVar("NZBNA_NZBID", m_iID);
 	SetEnvVar("NZBNA_FILENAME", m_szNZBFilename);
+	SetEnvVar("NZBNA_DIRECTORY", m_szDestDir);
 	SetEnvVar("NZBNA_URL", m_szUrl);
-	SetEnvVar("NZBNA_EVENT", "NZB_ADDED");
 	SetEnvVar("NZBNA_CATEGORY", m_szCategory);
 	SetIntEnvVar("NZBNA_PRIORITY", m_iPriority);
 	SetIntEnvVar("NZBNA_LASTID", m_iID);	// deprecated
 
+    const char* szEventName[] = { "NZB_ADDED", "UNPACK" };
+	SetEnvVar("NZBNA_EVENT", szEventName[m_eEvent]);
+
 	PrepareEnvScript(&m_Parameters, szScriptName);
+}
+
+void QueueScriptController::AddMessage(Message::EKind eKind, const char* szText)
+{
+	const char* szMsgText = szText + m_iPrefixLen;
+
+	if (!strncmp(szMsgText, "[NZB] ", 6))
+	{
+		debug("Command %s detected", szMsgText + 6);
+		if (!strncmp(szMsgText + 6, "MARK=BAD", 8))
+		{
+			if (m_pNZBInfo)
+			{
+				PrintMessage(Message::mkWarning, "Marking %s as bad", m_szNZBName);
+				m_pNZBInfo->SetMarkStatus(NZBInfo::ksBad);
+			}
+		}
+		else
+		{
+			error("Invalid command \"%s\" received from %s", szMsgText, GetInfoName());
+		}
+	}
+	else
+	{
+		ScriptController::AddMessage(eKind, szText);
+	}
 }
