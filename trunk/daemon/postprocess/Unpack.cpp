@@ -46,6 +46,7 @@
 #include "Util.h"
 #include "ParCoordinator.h"
 #include "Options.h"
+#include "QueueScript.h"
 
 extern Options* g_pOptions;
 
@@ -129,11 +130,27 @@ void UnpackController::Run()
 		CheckArchiveFiles(bScanNonStdFiles);
 	}
 
-	if (bUnpack && (m_bHasRarFiles || m_bHasNonStdRarFiles || m_bHasSevenZipFiles || m_bHasSevenZipMultiFiles || m_bHasSplittedFiles))
-	{
-		SetInfoName(m_szInfoName);
-		SetWorkingDir(m_szDestDir);
+	SetInfoName(m_szInfoName);
+	SetWorkingDir(m_szDestDir);
 
+	bool bHasFiles = m_bHasRarFiles || m_bHasNonStdRarFiles || m_bHasSevenZipFiles || m_bHasSevenZipMultiFiles || m_bHasSplittedFiles;
+
+	if (bUnpack && bHasFiles && !Util::EmptyStr(g_pOptions->GetQueueScript()))
+	{
+		time_t tScriptStart = time(NULL);
+		QueueScriptController::StartScripts(m_pPostInfo->GetNZBInfo(), QueueScriptController::qeUnpack, true);
+		// don't count time spent in queue script as unpack time
+		tStart += time(NULL) - tScriptStart;
+	}
+
+	if (m_pPostInfo->GetNZBInfo()->GetMarkStatus() == NZBInfo::ksBad)
+	{
+		PrintMessage(Message::mkWarning, "Unpack for %s skipped due to marked as bad", m_szName);
+		m_pPostInfo->GetNZBInfo()->SetUnpackStatus(NZBInfo::usSkipped);
+		m_pPostInfo->SetStage(PostInfo::ptQueued);
+	}
+	else if (bUnpack && bHasFiles)
+	{
 		PrintMessage(Message::mkInfo, "Unpacking %s", m_szName);
 
 		CreateUnpackDir();

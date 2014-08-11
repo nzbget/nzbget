@@ -36,7 +36,6 @@ class PostScriptController : public Thread, public NZBScriptController
 {
 private:
 	PostInfo*			m_pPostInfo;
-	char				m_szNZBName[1024];
  	int					m_iPrefixLen;
 
 	void				PrepareParams(const char* szScriptName);
