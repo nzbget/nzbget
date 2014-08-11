@@ -524,6 +524,10 @@ void HistoryCoordinator::HistoryRedownload(DownloadQueue* pDownloadQueue, Histor
 	pNZBInfo->SetRenameStatus(NZBInfo::rsNone);
 	pNZBInfo->SetDownloadedSize(0);
 	pNZBInfo->SetDownloadSec(0);
+	pNZBInfo->SetPostTotalSec(0);
+	pNZBInfo->SetParSec(0);
+	pNZBInfo->SetRepairSec(0);
+	pNZBInfo->SetUnpackSec(0);
 	pNZBInfo->ClearCompletedFiles();
 	pNZBInfo->GetServerStats()->Clear();
 	pNZBInfo->GetCurrentServerStats()->Clear();
