@@ -2562,6 +2562,8 @@ GUnzipStream::EStatus GUnzipStream::Read(const void **pOutputBuffer, int *iOutpu
 	return zlError;
 }
 
+#endif
+
 Tokenizer::Tokenizer(const char* szDataString, const char* szSeparators)
 {
 	// an optimization to avoid memory allocation for short data string (shorten than 1024 chars)
@@ -2616,5 +2618,3 @@ char* Tokenizer::Next()
 	}
 	return szToken;
 }
-
-#endif
