@@ -843,19 +843,26 @@ bool ArticleWriter::MoveCompletedFiles(NZBInfo* pNZBInfo, const char* szOldDestD
 	if (Util::DirEmpty(szOldDestDir))
 	{
 		// check if there are pending writes into directory
-		for (FileList::iterator it = pNZBInfo->GetFileList()->begin(); it != pNZBInfo->GetFileList()->end(); it++)
+		bool bPendingWrites = false;
+		for (FileList::iterator it = pNZBInfo->GetFileList()->begin(); it != pNZBInfo->GetFileList()->end() && !bPendingWrites; it++)
 		{
 			FileInfo* pFileInfo = *it;
-			pFileInfo->LockOutputFile();
-			if (pFileInfo->GetOutputInitialized())
+			if (pFileInfo->GetActiveDownloads() > 0)
 			{
+				pFileInfo->LockOutputFile();
+				bPendingWrites = pFileInfo->GetOutputInitialized();
 				pFileInfo->UnlockOutputFile();
-				return true;
 			}
-			pFileInfo->UnlockOutputFile();
+			else
+			{
+				bPendingWrites = pFileInfo->GetOutputInitialized();
+			}
 		}
 
-		rmdir(szOldDestDir);
+		if (!bPendingWrites)
+		{
+			rmdir(szOldDestDir);
+		}
 	}
 
 	return true;
