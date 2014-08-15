@@ -1726,6 +1726,8 @@ var HistoryEditDialog = (new function()
 				return '<span class="label label-status">' + prefix + 'manual</span>';
 			case 'DELETED-HEALTH':
 				return '<span class="label label-status label-important">' + prefix + 'health</span>';
+			case 'DELETED-BAD':
+				return '<span class="label label-status label-important">' + prefix + 'bad</span>';
 			case 'SCAN_SKIPPED':
 				return '<span class="label label-status label-warning"">' + prefix + 'skipped</span>';
 			case 'NONE':

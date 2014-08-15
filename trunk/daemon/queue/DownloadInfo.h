@@ -387,7 +387,8 @@ public:
 		dsNone,
 		dsManual,
 		dsHealth,
-		dsDupe
+		dsDupe,
+		dsBad
 	};
 
 	enum EMarkStatus
@@ -673,6 +674,7 @@ public:
 	void				Clear();
 	void				Add(NZBInfo* pNZBInfo, bool bAddTop);
 	void				Remove(NZBInfo* pNZBInfo);
+	NZBInfo*			Find(int iID);
 };
 
 class PostInfo
@@ -835,6 +837,7 @@ public:
 	{
 		eaNzbFound,
 		eaNzbAdded,
+		eaNzbDeleted,
 		eaFileCompleted,
 		eaFileDeleted,
 		eaUrlCompleted

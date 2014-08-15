@@ -798,6 +798,10 @@ const char* NZBInfo::MakeTextStatus(bool bIgnoreScriptStatus)
 		{
 			szStatus = "DELETED/DUPE";
 		}
+		else if (m_eDeleteStatus == NZBInfo::dsBad)
+		{
+			szStatus = "FAILURE/BAD";
+		}
 		else if (m_eParStatus == NZBInfo::psFailure)
 		{
 			szStatus = "FAILURE/PAR";
@@ -922,6 +926,20 @@ void NZBList::Remove(NZBInfo* pNZBInfo)
 	{
 		erase(it);
 	}
+}
+
+NZBInfo* NZBList::Find(int iID)
+{
+	for (iterator it = begin(); it != end(); it++)
+	{
+		NZBInfo* pNZBInfo = *it;
+		if (pNZBInfo->GetID() == iID)
+		{
+			return pNZBInfo;
+		}
+	}
+
+	return NULL;
 }
 
 

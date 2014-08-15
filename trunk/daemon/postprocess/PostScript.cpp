@@ -160,14 +160,19 @@ void PostScriptController::PrepareParams(const char* szScriptName)
 
 	// deprecated
 	int iParStatus[] = { 0, 0, 1, 2, 3, 4 };
+	NZBInfo::EParStatus eParStatus = m_pPostInfo->GetNZBInfo()->GetParStatus();
+	// for downloads marked as bad and for deleted downloads pass par status "Failure"
+	// for compatibility with older scripts which don't check "NZBPP_TOTALSTATUS"
+	if (m_pPostInfo->GetNZBInfo()->GetDeleteStatus() != NZBInfo::dsNone ||
+		m_pPostInfo->GetNZBInfo()->GetMarkStatus() == NZBInfo::ksBad)
+	{
+		eParStatus = NZBInfo::psFailure;
+	}
 	SetIntEnvVar("NZBPP_PARSTATUS", iParStatus[m_pPostInfo->GetNZBInfo()->GetParStatus()]);
 
 	// deprecated
 	int iUnpackStatus[] = { 0, 0, 1, 2, 3, 4 };
-	// for downloads marked as bad pass unpack status "Failure" for compatibility with older scripts which don't check "NZBPP_TOTALSTATUS"
-	SetIntEnvVar("NZBPP_UNPACKSTATUS", iUnpackStatus[
-		m_pPostInfo->GetNZBInfo()->GetMarkStatus() == NZBInfo::ksBad ? NZBInfo::usFailure :
-		m_pPostInfo->GetNZBInfo()->GetUnpackStatus()]);
+	SetIntEnvVar("NZBPP_UNPACKSTATUS", iUnpackStatus[m_pPostInfo->GetNZBInfo()->GetUnpackStatus()]);
 
 	// deprecated
 	SetIntEnvVar("NZBPP_HEALTHDELETED", (int)m_pPostInfo->GetNZBInfo()->GetDeleteStatus() == NZBInfo::dsHealth);
@@ -276,7 +281,9 @@ void PostScriptController::AddMessage(Message::EKind eKind, const char* szText)
 		}
 		else if (!strncmp(szMsgText + 6, "MARK=BAD", 8))
 		{
+			SetLogPrefix(NULL);
 			PrintMessage(Message::mkWarning, "Marking %s as bad", m_pPostInfo->GetNZBInfo()->GetName());
+			SetLogPrefix(m_pScript->GetDisplayName());
 			m_pPostInfo->GetNZBInfo()->SetMarkStatus(NZBInfo::ksBad);
 		}
 		else

@@ -1695,7 +1695,7 @@ void NzbInfoXmlCommand::AppendNZBInfoFields(NZBInfo* pNZBInfo)
     const char* szUnpackStatusName[] = { "NONE", "NONE", "FAILURE", "SUCCESS", "SPACE", "PASSWORD" };
     const char* szMoveStatusName[] = { "NONE", "FAILURE", "SUCCESS" };
     const char* szScriptStatusName[] = { "NONE", "FAILURE", "SUCCESS" };
-    const char* szDeleteStatusName[] = { "NONE", "MANUAL", "HEALTH", "DUPE" };
+    const char* szDeleteStatusName[] = { "NONE", "MANUAL", "HEALTH", "DUPE", "BAD" };
     const char* szMarkStatusName[] = { "NONE", "BAD", "GOOD" };
 	const char* szUrlStatusName[] = { "NONE", "UNKNOWN", "SUCCESS", "FAILURE", "UNKNOWN", "SCAN_SKIPPED", "SCAN_FAILURE" };
     const char* szDupeModeName[] = { "SCORE", "ALL", "FORCE" };
