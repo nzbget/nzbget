@@ -67,6 +67,7 @@ private:
 	void				DeletePostThread(PostInfo* pPostInfo);
 	NZBInfo*			GetNextJob(DownloadQueue* pDownloadQueue);
 	void				DownloadQueueUpdate(Subject* Caller, void* Aspect);
+	void				DeleteCleanup(NZBInfo* pNZBInfo);
 
 public:
 						PrePostProcessor();

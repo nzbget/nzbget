@@ -34,6 +34,7 @@
 class NZBScriptController : public ScriptController
 {
 protected:
+	Options::Script*	m_pScript;
 	void				PrepareEnvParameters(NZBParameterList* pParameters, const char* szStripPrefix);
 	void				PrepareEnvScript(NZBParameterList* pParameters, const char* szScriptName);
 	void				ExecuteScriptList(const char* szScriptList);
@@ -66,38 +67,33 @@ public:
 							NZBParameterList* pParameters, bool* bAddTop, bool* bAddPaused);
 };
 
-class QueueScriptController : public Thread, public NZBScriptController
+class QueueScriptCoordinator
 {
 public:
 	enum EEvent
 	{
+		qeNzbDownloaded,	// highest priority
 		qeNzbAdded,
-		qeUnpack
+		qeFileDownloaded,	// lowest priority
+		qeFirst = qeNzbDownloaded,
+		qeLast = qeFileDownloaded
 	};
 
 private:
-	char*				m_szNZBName;
-	char*				m_szNZBFilename;
-	char*				m_szUrl;
-	char*				m_szCategory;
-	char*				m_szDestDir;
-	int					m_iID;
-	int					m_iPriority;
-	EEvent				m_eEvent;
-	NZBInfo*			m_pNZBInfo;		// only in sync-mode
-	NZBParameterList	m_Parameters;
-	int					m_iPrefixLen;
+	typedef std::deque<int> IDList;
 
-	void				PrepareParams(const char* szScriptName);
+	IDList				m_Queues[qeLast - qeFirst + 1];
+	Mutex				m_mutexQueue;
+	int					m_iCurrentNZBID;
 
-protected:
-	virtual void		ExecuteScript(Options::Script* pScript);
-	virtual void		AddMessage(Message::EKind eKind, const char* szText);
+	void				Remove(IDList* pQueue, int iNZBID);
+	void				StartScript(NZBInfo* pNZBInfo, EEvent eEvent);
 
 public:
-	virtual				~QueueScriptController();
-	virtual void		Run();
-	static void			StartScripts(NZBInfo *pNZBInfo, EEvent eEvent, bool bSyncMode);
+						QueueScriptCoordinator();
+	void				EnqueueScript(NZBInfo* pNZBInfo, EEvent eEvent, bool bWaitDone);
+	void				CheckQueue();
+	bool				HasJob(int iNZBID);
 };
 
 #endif

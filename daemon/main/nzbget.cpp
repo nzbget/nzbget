@@ -81,6 +81,7 @@
 #include "Maintenance.h"
 #include "ArticleWriter.h"
 #include "StatMeter.h"
+#include "QueueScript.h"
 #include "Util.h"
 #ifdef WIN32
 #include "NTService.h"
@@ -125,6 +126,7 @@ Scanner* g_pScanner = NULL;
 FeedCoordinator* g_pFeedCoordinator = NULL;
 Maintenance* g_pMaintenance = NULL;
 ArticleCache* g_pArticleCache = NULL;
+QueueScriptCoordinator* g_pQueueScriptCoordinator = NULL;
 int g_iArgumentCount;
 char* (*g_szEnvironmentVariables)[] = NULL;
 char* (*g_szArguments)[] = NULL;
@@ -227,6 +229,7 @@ void Run(bool bReload)
 	g_pFeedCoordinator = new FeedCoordinator();
 	g_pArticleCache = new ArticleCache();
 	g_pMaintenance = new Maintenance();
+	g_pQueueScriptCoordinator = new QueueScriptCoordinator();
 
 	debug("Reading options");
 	g_pOptions = new Options(g_iArgumentCount, *g_szArguments);
@@ -805,6 +808,11 @@ void Cleanup()
 	delete g_pArticleCache;
 	g_pArticleCache = NULL;
 	debug("ArticleCache deleted");
+
+	debug("Deleting QueueScriptCoordinator");
+	delete g_pQueueScriptCoordinator;
+	g_pQueueScriptCoordinator = NULL;
+	debug("QueueScriptCoordinator deleted");
 
 	debug("Deleting Maintenance");
 	delete g_pMaintenance;

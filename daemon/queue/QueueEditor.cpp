@@ -622,6 +622,7 @@ bool QueueEditor::EditGroup(NZBInfo* pNZBInfo, DownloadQueue::EEditAction eActio
 {
 	ItemList itemList;
 	bool bAllPaused = true;
+	int iID = pNZBInfo->GetID();
 
 	// collecting files belonging to group
 	for (FileList::iterator it = pNZBInfo->GetFileList()->begin(); it != pNZBInfo->GetFileList()->end(); it++)
@@ -633,6 +634,15 @@ bool QueueEditor::EditGroup(NZBInfo* pNZBInfo, DownloadQueue::EEditAction eActio
 
 	if (eAction == DownloadQueue::eaGroupDelete || eAction == DownloadQueue::eaGroupDupeDelete || eAction == DownloadQueue::eaGroupFinalDelete)
 	{
+		if (pNZBInfo->GetFileList()->empty())
+		{
+			// special case: something wrong happen with the nzb - it doesn't have any files.
+			// just nuke it
+			m_pDownloadQueue->GetQueue()->Remove(pNZBInfo);
+			delete pNZBInfo;
+			return false;
+		}
+
 		pNZBInfo->SetDeleting(true);
 		pNZBInfo->SetAvoidHistory(eAction == DownloadQueue::eaGroupFinalDelete);
 		pNZBInfo->SetDeletePaused(bAllPaused);
@@ -670,7 +680,17 @@ bool QueueEditor::EditGroup(NZBInfo* pNZBInfo, DownloadQueue::EEditAction eActio
 		(DownloadQueue::EEditAction)0,
 		(DownloadQueue::EEditAction)0 };
 
-	return InternEditList(&itemList, NULL, GroupToFileMap[eAction], iOffset, szText);
+	bool bOK = InternEditList(&itemList, NULL, GroupToFileMap[eAction], iOffset, szText);
+
+	if ((eAction == DownloadQueue::eaGroupDelete || eAction == DownloadQueue::eaGroupDupeDelete || eAction == DownloadQueue::eaGroupFinalDelete) &&
+		// NZBInfo could have been destroyed already
+		m_pDownloadQueue->GetQueue()->Find(iID))
+	{
+		DownloadQueue::Aspect deleteAspect = { DownloadQueue::eaNzbDeleted, m_pDownloadQueue, pNZBInfo, NULL };
+		m_pDownloadQueue->Notify(&deleteAspect);
+	}
+
+	return bOK;
 }
 
 void QueueEditor::PauseParsInGroups(ItemList* pItemList, bool bExtraParsOnly)
@@ -899,6 +919,11 @@ void QueueEditor::SetNZBName(NZBInfo* pNZBInfo, const char* szName)
 */
 bool QueueEditor::CanCleanupDisk(NZBInfo* pNZBInfo)
 {
+	if (pNZBInfo->GetDeleteStatus() != NZBInfo::dsNone)
+	{
+		return true;
+	}
+
     for (FileList::iterator it = pNZBInfo->GetFileList()->begin(); it != pNZBInfo->GetFileList()->end(); it++)
     {
         FileInfo* pFileInfo = *it;
