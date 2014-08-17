@@ -244,6 +244,7 @@ void Run(bool bReload)
 	
 	g_pLog->InitOptions();
 	g_pScanner->InitOptions();
+	g_pQueueScriptCoordinator->InitOptions();
 
 	if (g_pOptions->GetDaemonMode())
 	{

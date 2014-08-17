@@ -207,6 +207,7 @@ public:
 	{
 	public:
 						~ScriptList();
+		void			Clear();
 		Script*			Find(const char* szName);	
 	};
 
