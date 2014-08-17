@@ -112,6 +112,7 @@ void PostScriptController::ExecuteScript(Options::Script* pScript)
 	szInfoName[1024-1] = '\0';
 	SetInfoName(szInfoName);
 
+	m_pScript = pScript;
 	SetLogPrefix(pScript->GetDisplayName());
 	m_iPrefixLen = strlen(pScript->GetDisplayName()) + 2; // 2 = strlen(": ");
 	PrepareParams(pScript->GetName());

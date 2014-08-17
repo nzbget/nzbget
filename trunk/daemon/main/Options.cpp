@@ -408,10 +408,16 @@ void Options::Script::SetDisplayName(const char* szDisplayName)
 
 Options::ScriptList::~ScriptList()
 {
+	Clear();
+}
+
+void Options::ScriptList::Clear()
+{
 	for (iterator it = begin(); it != end(); it++)
 	{
 		delete *it;
 	}
+	clear();
 }
 
 Options::Script* Options::ScriptList::Find(const char* szName)

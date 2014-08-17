@@ -201,7 +201,7 @@ void PrePostProcessor::DownloadQueueUpdate(Subject* Caller, void* Aspect)
 	{
 		if (pQueueAspect->eAction == DownloadQueue::eaFileCompleted && !pQueueAspect->pNZBInfo->GetPostInfo())
 		{
-			g_pQueueScriptCoordinator->EnqueueScript(pQueueAspect->pNZBInfo, QueueScriptCoordinator::qeFileDownloaded, false);
+			g_pQueueScriptCoordinator->EnqueueScript(pQueueAspect->pNZBInfo, QueueScriptCoordinator::qeFileDownloaded);
 		}
 
 		if (
@@ -218,7 +218,7 @@ void PrePostProcessor::DownloadQueueUpdate(Subject* Caller, void* Aspect)
 				 pQueueAspect->pFileInfo->GetNZBInfo()->GetDeleteStatus() != NZBInfo::dsHealth)
 			{
 				info("Collection %s completely downloaded", pQueueAspect->pNZBInfo->GetName());
-				g_pQueueScriptCoordinator->EnqueueScript(pQueueAspect->pNZBInfo, QueueScriptCoordinator::qeNzbDownloaded, false);
+				g_pQueueScriptCoordinator->EnqueueScript(pQueueAspect->pNZBInfo, QueueScriptCoordinator::qeNzbDownloaded);
 				NZBDownloaded(pQueueAspect->pDownloadQueue, pQueueAspect->pNZBInfo);
 			}
 			else if ((pQueueAspect->eAction == DownloadQueue::eaFileDeleted ||
@@ -256,7 +256,7 @@ void PrePostProcessor::NZBAdded(DownloadQueue* pDownloadQueue, NZBInfo* pNZBInfo
 	}
 	else
 	{
-		g_pQueueScriptCoordinator->EnqueueScript(pNZBInfo, QueueScriptCoordinator::qeNzbAdded, false);
+		g_pQueueScriptCoordinator->EnqueueScript(pNZBInfo, QueueScriptCoordinator::qeNzbAdded);
 	}
 }
 

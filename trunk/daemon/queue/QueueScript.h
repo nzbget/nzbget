@@ -26,6 +26,8 @@
 #ifndef QUEUESCRIPT_H
 #define QUEUESCRIPT_H
 
+#include <list>
+
 #include "Script.h"
 #include "Thread.h"
 #include "DownloadInfo.h"
@@ -34,7 +36,6 @@
 class NZBScriptController : public ScriptController
 {
 protected:
-	Options::Script*	m_pScript;
 	void				PrepareEnvParameters(NZBParameterList* pParameters, const char* szStripPrefix);
 	void				PrepareEnvScript(NZBParameterList* pParameters, const char* szScriptName);
 	void				ExecuteScriptList(const char* szScriptList);
@@ -72,26 +73,41 @@ class QueueScriptCoordinator
 public:
 	enum EEvent
 	{
-		qeNzbDownloaded,	// highest priority
-		qeNzbAdded,
 		qeFileDownloaded,	// lowest priority
-		qeFirst = qeNzbDownloaded,
-		qeLast = qeFileDownloaded
+		qeNzbAdded,
+		qeNzbDownloaded		// highest priority
 	};
 
 private:
-	typedef std::deque<int> IDList;
+	class QueueItem
+	{
+	private:
+		int					m_iNZBID;
+		Options::Script*	m_pScript;
+		EEvent				m_eEvent;
+	public:
+							QueueItem(int iNZBID, Options::Script* pScript, EEvent eEvent);
+		int					GetNZBID() { return m_iNZBID; }
+		Options::Script*	GetScript() { return m_pScript; }
+		EEvent				GetEvent() { return m_eEvent; }
+	};
 
-	IDList				m_Queues[qeLast - qeFirst + 1];
+	typedef std::list<QueueItem*> Queue;
+	
+	Queue				m_Queue;
 	Mutex				m_mutexQueue;
-	int					m_iCurrentNZBID;
+	QueueItem*			m_pCurItem;
+	bool				m_bHasQueueScripts;
+	Options::ScriptList	m_ScriptList;
 
-	void				Remove(IDList* pQueue, int iNZBID);
-	void				StartScript(NZBInfo* pNZBInfo, EEvent eEvent);
+	//void				Remove(IDList* pQueue, int iNZBID);
+	void				StartScript(NZBInfo* pNZBInfo, QueueItem* pQueueItem);
 
 public:
 						QueueScriptCoordinator();
-	void				EnqueueScript(NZBInfo* pNZBInfo, EEvent eEvent, bool bWaitDone);
+						~QueueScriptCoordinator();
+	void				InitOptions();
+	void				EnqueueScript(NZBInfo* pNZBInfo, EEvent eEvent);
 	void				CheckQueue();
 	bool				HasJob(int iNZBID);
 };
