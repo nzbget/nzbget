@@ -201,12 +201,12 @@ public:
 		void			SetSchedulerScript(bool bSchedulerScript) { m_bSchedulerScript = bSchedulerScript; }
 	};
 
-	typedef std::list<Script*>  ScriptListBase;
+	typedef std::list<Script*>  ScriptsBase;
 
-	class ScriptList: public ScriptListBase
+	class Scripts: public ScriptsBase
 	{
 	public:
-						~ScriptList();
+						~Scripts();
 		void			Clear();
 		Script*			Find(const char* szName);	
 	};
@@ -239,6 +239,8 @@ private:
 	bool				m_bConfigInitialized;
 	Mutex				m_mutexOptEntries;
 	Categories			m_Categories;
+	Scripts				m_Scripts;
+	ConfigTemplates		m_ConfigTemplates;
 
 	// Options
 	bool				m_bConfigErrors;
@@ -374,6 +376,8 @@ private:
 	void				InitCategories();
 	void				InitScheduler();
 	void				InitFeeds();
+	void				InitScripts();
+	void				InitConfigTemplates();
 	void				CheckOptions();
 	void				PrintUsage(char* com);
 	void				Dump();
@@ -397,8 +401,9 @@ private:
 	void				LocateOptionSrcPos(const char *szOptionName);
 	void				ConvertOldOption(char *szOption, int iOptionBufLen, char *szValue, int iValueBufLen);
 	static bool			CompareScripts(Script* pScript1, Script* pScript2);
-	void				LoadScriptDir(ScriptList* pScriptList, const char* szDirectory, bool bIsSubDir);
-	void				BuildScriptDisplayNames(ScriptList* pScriptList);
+	void				LoadScriptDir(Scripts* pScripts, const char* szDirectory, bool bIsSubDir);
+	void				BuildScriptDisplayNames(Scripts* pScripts);
+	void				LoadScripts(Scripts* pScripts);
 
 public:
 						Options(int argc, char* argv[]);
@@ -407,7 +412,8 @@ public:
 	bool				LoadConfig(OptEntries* pOptEntries);
 	bool				SaveConfig(OptEntries* pOptEntries);
 	bool				LoadConfigTemplates(ConfigTemplates* pConfigTemplates);
-	void				LoadScriptList(ScriptList* pScriptList);
+	Scripts*			GetScripts() { return &m_Scripts; }
+	ConfigTemplates*	GetConfigTemplates() { return &m_ConfigTemplates; }
 
 	// Options
 	OptEntries*			LockOptEntries();

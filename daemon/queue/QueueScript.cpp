@@ -135,10 +135,7 @@ void NZBScriptController::PrepareEnvScript(NZBParameterList* pParameters, const 
 
 void NZBScriptController::ExecuteScriptList(const char* szScriptList)
 {
-	Options::ScriptList scriptList;
-	g_pOptions->LoadScriptList(&scriptList);
-
-	for (Options::ScriptList::iterator it = scriptList.begin(); it != scriptList.end(); it++)
+	for (Options::Scripts::iterator it = g_pOptions->GetScripts()->begin(); it != g_pOptions->GetScripts()->end(); it++)
 	{
 		Options::Script* pScript = *it;
 
@@ -459,10 +456,8 @@ QueueScriptCoordinator::~QueueScriptCoordinator()
 
 void QueueScriptCoordinator::InitOptions()
 {
-	g_pOptions->LoadScriptList(&m_ScriptList);
-
 	m_bHasQueueScripts = false;
-	for (Options::ScriptList::iterator it = m_ScriptList.begin(); it != m_ScriptList.end(); it++)
+	for (Options::Scripts::iterator it = g_pOptions->GetScripts()->begin(); it != g_pOptions->GetScripts()->end(); it++)
 	{
 		Options::Script* pScript = *it;
 		if (pScript->GetQueueScript())
@@ -509,7 +504,7 @@ void QueueScriptCoordinator::EnqueueScript(NZBInfo* pNZBInfo, EEvent eEvent)
 		return;
 	}
 
-	for (Options::ScriptList::iterator it = m_ScriptList.begin(); it != m_ScriptList.end(); it++)
+	for (Options::Scripts::iterator it = g_pOptions->GetScripts()->begin(); it != g_pOptions->GetScripts()->end(); it++)
 	{
 		Options::Script* pScript = *it;
 

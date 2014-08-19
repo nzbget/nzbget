@@ -65,7 +65,7 @@ var Options = (new function($)
 
 			// loading config templates and build list of post-processing parameters
 			_this.postParamConfig = [];
-			RPC.call('configtemplates', [], function(data)
+			RPC.call('configtemplates', [false], function(data)
 				{
 					initPostParamConfig(data);
 					RPC.next();
@@ -116,7 +116,7 @@ var Options = (new function($)
 	function serverValuesLoaded(data)
 	{
 		serverValues = data;
-		RPC.call('configtemplates', [], serverTemplateLoaded, loadServerTemplateError);
+		RPC.call('configtemplates', [true], serverTemplateLoaded, loadServerTemplateError);
 	}
 
 	function serverTemplateLoaded(data)

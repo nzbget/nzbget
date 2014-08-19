@@ -98,9 +98,7 @@ private:
 	Mutex				m_mutexQueue;
 	QueueItem*			m_pCurItem;
 	bool				m_bHasQueueScripts;
-	Options::ScriptList	m_ScriptList;
 
-	//void				Remove(IDList* pQueue, int iNZBID);
 	void				StartScript(NZBInfo* pNZBInfo, QueueItem* pQueueItem);
 
 public:
