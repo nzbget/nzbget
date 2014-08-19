@@ -80,7 +80,7 @@ void UrlDownloader::ProcessHeader(const char* szLine)
 		char* szValue = strchr(szModLine, ':');
 		if (szValue)
 		{
-			*szValue = NULL;
+			*szValue = '\0';
 			szValue++;
 			while (*szValue == ' ') szValue++;
 			Util::Trim(szValue);
