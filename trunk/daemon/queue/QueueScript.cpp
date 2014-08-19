@@ -598,7 +598,6 @@ void QueueScriptCoordinator::CheckQueue()
 
 	delete m_pCurItem;
 
-	time_t tCurTime = time(NULL);
 	m_pCurItem = NULL;
 	NZBInfo* pCurNZBInfo = NULL;
 	Queue::iterator itCurItem = m_Queue.end();
