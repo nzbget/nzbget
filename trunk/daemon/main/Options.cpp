@@ -183,6 +183,7 @@ static const char* OPTION_URLFORCE				= "UrlForce";
 static const char* OPTION_TIMECORRECTION		= "TimeCorrection";
 static const char* OPTION_PROPAGATIONDELAY		= "PropagationDelay";
 static const char* OPTION_ARTICLECACHE			= "ArticleCache";
+static const char* OPTION_EVENTINTERVAL			= "EventInterval";
 
 // obsolete options
 static const char* OPTION_POSTLOGKIND			= "PostLogKind";
@@ -555,6 +556,7 @@ Options::Options(int argc, char* argv[])
 	m_iLocalTimeOffset		= 0;
 	m_iPropagationDelay		= 0;
 	m_iArticleCache			= 0;
+	m_iEventInterval		= 0;
 
 	// Option "ConfigFile" will be initialized later, but we want
 	// to see it at the top of option list, so we add it first
@@ -823,6 +825,7 @@ void Options::InitDefault()
 	SetOption(OPTION_TIMECORRECTION, "0");
 	SetOption(OPTION_PROPAGATIONDELAY, "0");
 	SetOption(OPTION_ARTICLECACHE, "0");
+	SetOption(OPTION_EVENTINTERVAL, "0");
 }
 
 void Options::InitOptFile()
@@ -989,6 +992,7 @@ void Options::InitOptions()
 	m_iTimeCorrection *= 60;
 	m_iPropagationDelay		= ParseIntValue(OPTION_PROPAGATIONDELAY, 10) * 60;
 	m_iArticleCache			= ParseIntValue(OPTION_ARTICLECACHE, 10);
+	m_iEventInterval		= ParseIntValue(OPTION_EVENTINTERVAL, 10);
 
 	CheckDir(&m_szNzbDir, OPTION_NZBDIR, m_iNzbDirInterval == 0, true);
 
