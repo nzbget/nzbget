@@ -407,12 +407,12 @@ void Options::Script::SetDisplayName(const char* szDisplayName)
 }
 
 
-Options::ScriptList::~ScriptList()
+Options::Scripts::~Scripts()
 {
 	Clear();
 }
 
-void Options::ScriptList::Clear()
+void Options::Scripts::Clear()
 {
 	for (iterator it = begin(); it != end(); it++)
 	{
@@ -421,7 +421,7 @@ void Options::ScriptList::Clear()
 	clear();
 }
 
-Options::Script* Options::ScriptList::Find(const char* szName)
+Options::Script* Options::Scripts::Find(const char* szName)
 {
 	for (iterator it = begin(); it != end(); it++)
 	{
@@ -619,6 +619,8 @@ Options::Options(int argc, char* argv[])
 	InitCategories();
 	InitScheduler();
 	InitFeeds();
+	InitScripts();
+	InitConfigTemplates();
 
 	if (m_bPrintOptions)
 	{
@@ -2997,12 +2999,12 @@ bool Options::LoadConfigTemplates(ConfigTemplates* pConfigTemplates)
 		return true;
 	}
 
-	ScriptList scriptList;
-	LoadScriptList(&scriptList);
+	Scripts scriptList;
+	LoadScripts(&scriptList);
 
 	const int iBeginSignatureLen = strlen(BEGIN_SCRIPT_SIGNATURE);
 
-	for (ScriptList::iterator it = scriptList.begin(); it != scriptList.end(); it++)
+	for (Scripts::iterator it = scriptList.begin(); it != scriptList.end(); it++)
 	{
 		Script* pScript = *it;
 
@@ -3053,45 +3055,58 @@ bool Options::LoadConfigTemplates(ConfigTemplates* pConfigTemplates)
 	return true;
 }
 
-void Options::LoadScriptList(ScriptList* pScriptList)
+void Options::InitConfigTemplates()
+{
+	if (!LoadConfigTemplates(&m_ConfigTemplates))
+	{
+		error("Could not read configuration templates");
+	}
+}
+
+void Options::InitScripts()
+{
+	LoadScripts(&m_Scripts);
+}
+
+void Options::LoadScripts(Scripts* pScripts)
 {
 	if (strlen(m_szScriptDir) == 0)
 	{
 		return;
 	}
 
-	ScriptList tmpScriptList;
-	LoadScriptDir(&tmpScriptList, m_szScriptDir, false);
-	tmpScriptList.sort(CompareScripts);
+	Scripts tmpScripts;
+	LoadScriptDir(&tmpScripts, m_szScriptDir, false);
+	tmpScripts.sort(CompareScripts);
 
 	// first add all scripts from m_szScriptOrder
 	Tokenizer tok(m_szScriptOrder, ",;");
 	while (const char* szScriptName = tok.Next())
 	{
-		Script* pScript = tmpScriptList.Find(szScriptName);
+		Script* pScript = tmpScripts.Find(szScriptName);
 		if (pScript)
 		{
-			tmpScriptList.remove(pScript);
-			pScriptList->push_back(pScript);
+			tmpScripts.remove(pScript);
+			pScripts->push_back(pScript);
 		}
 	}
 
 	// second add all other scripts from scripts directory
-	for (ScriptList::iterator it = tmpScriptList.begin(); it != tmpScriptList.end(); it++)
+	for (Scripts::iterator it = tmpScripts.begin(); it != tmpScripts.end(); it++)
 	{
 		Script* pScript = *it;
-		if (!pScriptList->Find(pScript->GetName()))
+		if (!pScripts->Find(pScript->GetName()))
 		{
-			pScriptList->push_back(pScript);
+			pScripts->push_back(pScript);
 		}
 	}
 
-	tmpScriptList.clear();
+	tmpScripts.clear();
 
-	BuildScriptDisplayNames(pScriptList);
+	BuildScriptDisplayNames(pScripts);
 }
 
-void Options::LoadScriptDir(ScriptList* pScriptList, const char* szDirectory, bool bIsSubDir)
+void Options::LoadScriptDir(Scripts* pScripts, const char* szDirectory, bool bIsSubDir)
 {
 	int iBufSize = 1024*10;
 	char* szBuffer = (char*)malloc(iBufSize+1);
@@ -3157,7 +3172,7 @@ void Options::LoadScriptDir(ScriptList* pScriptList, const char* szDirectory, bo
 								pScript->SetScanScript(bScanScript);
 								pScript->SetQueueScript(bQueueScript);
 								pScript->SetSchedulerScript(bSchedulerScript);
-								pScriptList->push_back(pScript);
+								pScripts->push_back(pScript);
 								break;
 							}
 						}
@@ -3169,7 +3184,7 @@ void Options::LoadScriptDir(ScriptList* pScriptList, const char* szDirectory, bo
 				snprintf(szFullFilename, 1024, "%s%s%c", szDirectory, szFilename, PATH_SEPARATOR);
 				szFullFilename[1024-1] = '\0';
 
-				LoadScriptDir(pScriptList, szFullFilename, true);
+				LoadScriptDir(pScripts, szFullFilename, true);
 			}
 		}
 	}
@@ -3182,12 +3197,12 @@ bool Options::CompareScripts(Script* pScript1, Script* pScript2)
 	return strcmp(pScript1->GetName(), pScript2->GetName()) < 0;
 }
 
-void Options::BuildScriptDisplayNames(ScriptList* pScriptList)
+void Options::BuildScriptDisplayNames(Scripts* pScripts)
 {
 	// trying to use short name without path and extension.
 	// if there are other scripts with the same short name - using a longer name instead (with ot without extension)
 
-	for (ScriptList::iterator it = pScriptList->begin(); it != pScriptList->end(); it++)
+	for (Scripts::iterator it = pScripts->begin(); it != pScripts->end(); it++)
 	{
 		Script* pScript = *it;
 
@@ -3198,7 +3213,7 @@ void Options::BuildScriptDisplayNames(ScriptList* pScriptList)
 
 		const char* szDisplayName = Util::BaseFileName(szShortName);
 
-		for (ScriptList::iterator it2 = pScriptList->begin(); it2 != pScriptList->end(); it2++)
+		for (Scripts::iterator it2 = pScripts->begin(); it2 != pScripts->end(); it2++)
 		{
 			Script* pScript2 = *it2;
 

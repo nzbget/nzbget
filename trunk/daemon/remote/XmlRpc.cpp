@@ -2896,7 +2896,8 @@ void SaveConfigXmlCommand::Execute()
 	BuildBoolResponse(bOK);
 }
 
-// struct[] configtemplates()
+// struct[] configtemplates(bool loadFromDisk)
+// parameter "loadFromDisk" is optional (new in v14)
 void ConfigTemplatesXmlCommand::Execute()
 {
 	const char* XML_CONFIG_ITEM = 
@@ -2921,13 +2922,20 @@ void ConfigTemplatesXmlCommand::Execute()
 		"\"Template\" : \"%s\"\n"
 		"}";
 
-	Options::ConfigTemplates* pConfigTemplates = new Options::ConfigTemplates();
+	bool bLoadFromDisk = false;
+	NextParamAsBool(&bLoadFromDisk);
 
-	if (!g_pOptions->LoadConfigTemplates(pConfigTemplates))
+	Options::ConfigTemplates* pConfigTemplates = g_pOptions->GetConfigTemplates();
+	
+	if (bLoadFromDisk)
 	{
-		BuildErrorResponse(3, "Could not read configuration templates");
-		delete pConfigTemplates;
-		return;
+		pConfigTemplates = new Options::ConfigTemplates();
+		if (!g_pOptions->LoadConfigTemplates(pConfigTemplates))
+		{
+			BuildErrorResponse(3, "Could not read configuration templates");
+			delete pConfigTemplates;
+			return;
+		}
 	}
 
 	AppendResponse(IsJson() ? "[\n" : "<array><data>\n");
@@ -2967,7 +2975,10 @@ void ConfigTemplatesXmlCommand::Execute()
 		free(szItemBuf);
 	}
 
-	delete pConfigTemplates;
+	if (bLoadFromDisk)
+	{
+		delete pConfigTemplates;
+	}
 
 	AppendResponse(IsJson() ? "\n]" : "</data></array>\n");
 }
