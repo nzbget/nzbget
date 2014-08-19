@@ -459,7 +459,6 @@ QueueScriptCoordinator::~QueueScriptCoordinator()
 
 void QueueScriptCoordinator::InitOptions()
 {
-	m_ScriptList.Clear();
 	g_pOptions->LoadScriptList(&m_ScriptList);
 
 	m_bHasQueueScripts = false;
@@ -476,19 +475,12 @@ void QueueScriptCoordinator::InitOptions()
 
 void QueueScriptCoordinator::EnqueueScript(NZBInfo* pNZBInfo, EEvent eEvent)
 {
-	m_mutexQueue.Lock();
-
-	if (eEvent == qeNzbAdded || eEvent == qeNzbDownloaded)
-	{
-		// reread script list on important events
-		InitOptions();
-	}
-
 	if (!m_bHasQueueScripts)
 	{
-		m_mutexQueue.Unlock();
 		return;
 	}
+
+	m_mutexQueue.Lock();
 
 	if (eEvent == qeNzbDownloaded)
 	{
