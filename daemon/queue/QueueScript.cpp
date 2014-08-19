@@ -506,6 +506,17 @@ void QueueScriptCoordinator::EnqueueScript(NZBInfo* pNZBInfo, EEvent eEvent)
 		}
 	}
 
+	// respect option "EventInterval"
+	time_t tCurTime = time(NULL);
+	if (eEvent == qeFileDownloaded &&
+		(g_pOptions->GetEventInterval() == -1 ||
+		 (g_pOptions->GetEventInterval() > 0 && tCurTime - pNZBInfo->GetQueueScriptTime() > 0 &&
+		 (int)(tCurTime - pNZBInfo->GetQueueScriptTime()) < g_pOptions->GetEventInterval())))
+	{
+		m_mutexQueue.Unlock();
+		return;
+	}
+
 	for (Options::ScriptList::iterator it = m_ScriptList.begin(); it != m_ScriptList.end(); it++)
 	{
 		Options::Script* pScript = *it;
@@ -585,6 +596,8 @@ void QueueScriptCoordinator::EnqueueScript(NZBInfo* pNZBInfo, EEvent eEvent)
 					StartScript(pNZBInfo, pQueueItem);
 				}
 			}
+
+			pNZBInfo->SetQueueScriptTime(time(NULL));
 		}
 	}
 
@@ -598,6 +611,7 @@ void QueueScriptCoordinator::CheckQueue()
 
 	delete m_pCurItem;
 
+	time_t tCurTime = time(NULL);
 	m_pCurItem = NULL;
 	NZBInfo* pCurNZBInfo = NULL;
 	Queue::iterator itCurItem = m_Queue.end();
@@ -608,8 +622,7 @@ void QueueScriptCoordinator::CheckQueue()
 
 		NZBInfo* pNZBInfo = pDownloadQueue->GetQueue()->Find(pQueueItem->GetNZBID());
 
-		// in a case this nzb must not be processed further -
-		// delete all scripts queued for the nzb from queue
+		// in a case this nzb must not be processed further - delete queue script from queue
 		if (!pNZBInfo || pNZBInfo->GetDeleteStatus() != NZBInfo::dsNone ||
 			pNZBInfo->GetMarkStatus() == NZBInfo::ksBad)
 		{

@@ -497,6 +497,7 @@ private:
 	int					m_iRepairSec;
 	int					m_iUnpackSec;
 	bool				m_bReprocess;
+	time_t				m_tQueueScriptTime;
 
 	static int			m_iIDGen;
 	static int			m_iIDMax;
@@ -648,6 +649,8 @@ public:
 	void 				SetDownloadStartTime(time_t tDownloadStartTime) { m_tDownloadStartTime = tDownloadStartTime; }
 	void				SetReprocess(bool bReprocess) { m_bReprocess = bReprocess; }
 	bool				GetReprocess() { return m_bReprocess; }
+	time_t				GetQueueScriptTime() { return m_tQueueScriptTime; }
+	void 				SetQueueScriptTime(time_t tQueueScriptTime) { m_tQueueScriptTime = tQueueScriptTime; }
 
 	void				CopyFileList(NZBInfo* pSrcNZBInfo);
 	void				UpdateMinMaxTime();

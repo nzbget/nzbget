@@ -329,6 +329,7 @@ private:
 	int					m_iTimeCorrection;
 	int					m_iPropagationDelay;
 	int					m_iArticleCache;
+	int					m_iEventInterval;
 
 	// Parsed command-line parameters
 	bool				m_bServerMode;
@@ -496,6 +497,7 @@ public:
 	int					GetTimeCorrection() { return m_iTimeCorrection; }
 	int					GetPropagationDelay() { return m_iPropagationDelay; }
 	int					GetArticleCache() { return m_iArticleCache; }
+	int					GetEventInterval() { return m_iEventInterval; }
 
 	Category*			FindCategory(const char* szName, bool bSearchAliases) { return m_Categories.FindCategory(szName, bSearchAliases); }
 

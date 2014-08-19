@@ -340,6 +340,7 @@ NZBInfo::NZBInfo() : m_FileList(true)
 	m_iUnpackSec = 0;
 	m_tDownloadStartTime = 0;
 	m_bReprocess = false;
+	m_tQueueScriptTime = 0;
 }
 
 NZBInfo::~NZBInfo()
