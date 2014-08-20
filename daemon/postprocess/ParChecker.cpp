@@ -1112,6 +1112,12 @@ ParChecker::EFileStatus ParChecker::VerifyDataFile(void* pDiskfile, void* pSourc
 	std::string filename = pSourceFile->GetTargetFile()->FileName();
 	const char* szFilename = filename.c_str();
 
+	if (Util::FileSize(szFilename) == 0 && pSourceFile->BlockCount() > 0)
+	{
+		*pAvailableBlocks = 0;
+		return fsFailure;
+	}
+
 	// find file status and CRC computed during download
 	unsigned long lDownloadCrc;
 	SegmentList segments;
