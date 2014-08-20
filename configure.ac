@@ -229,7 +229,8 @@ AC_ARG_WITH(libxml2_libraries,
 if test "$INCVAL" = "no" -o "$LIBVAL" = "no"; then
 	PKG_CHECK_MODULES(libxml2, libxml-2.0,
 		[LIBS="${LIBS} $libxml2_LIBS"]
-		[CPPFLAGS="${CPPFLAGS} $libxml2_CFLAGS"])
+		[CPPFLAGS="${CPPFLAGS} $libxml2_CFLAGS"],
+		AC_MSG_ERROR("libxml2 library not found"))
 fi
 AC_CHECK_HEADER(libxml/tree.h,,
 	AC_MSG_ERROR("libxml2 header files not found"))
@@ -348,10 +349,9 @@ if test "$USETLS" = "yes"; then
 			[LIBVAL="yes"],
 			[LIBVAL="no"])
 		if test "$INCVAL" = "no" -o "$LIBVAL" = "no"; then
-			PKG_CHECK_MODULES(openssl, openssl,
+			PKG_CHECK_MODULES([openssl], [openssl],
 				[LIBS="${LIBS} $openssl_LIBS"]
 				[CPPFLAGS="${CPPFLAGS} $openssl_CFLAGS"],
-				FOUND=yes
 				FOUND=no)
 		fi
 
@@ -399,10 +399,29 @@ if test "$USETLS" = "yes"; then
 		fi
 		if test "$FOUND" = "yes"; then
 			AC_SEARCH_LIBS([gnutls_global_init], [gnutls],
-				AC_SEARCH_LIBS([gcry_control], [gnutls gcrypt],
-					FOUND=yes,
-					FOUND=no),
+				FOUND=yes,
 				FOUND=no)
+			if test "$FOUND" = "yes"; then
+				dnl gcrypt is optional
+				AC_MSG_CHECKING([whether gcrypt is needed])
+				AC_TRY_COMPILE(
+					[#include <gnutls/gnutls.h>]
+					[#if GNUTLS_VERSION_NUMBER <= 0x020b00]
+					[compile error]
+					[#endif],
+					[int a;],
+					AC_MSG_RESULT([no])
+					GCRYPT=no,
+					AC_MSG_RESULT([yes])
+					GCRYPT=yes)
+				if test "$GCRYPT" = "yes"; then
+					AC_CHECK_HEADER([gcrypt.h],
+						AC_SEARCH_LIBS([gcry_control], [gnutls gcrypt],
+							FOUND=yes,
+							FOUND=no),
+						FOUND=yes)
+				fi
+			fi
 			if test "$FOUND" = "no" -a "$TLSLIB" = "GnuTLS"; then
 				AC_MSG_ERROR([Couldn't find GnuTLS library])
 			fi
