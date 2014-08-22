@@ -539,11 +539,7 @@ void HistoryCoordinator::HistoryRedownload(DownloadQueue* pDownloadQueue, Histor
 
 	HistoryReturn(pDownloadQueue, itHistory, pHistoryInfo, false);
 
-	if (!bPaused && g_pOptions->GetParCheck() != Options::pcForce)
-	{
-		pDownloadQueue->EditEntry(pNZBInfo->GetID(), 
-			DownloadQueue::eaGroupPauseExtraPars, 0, NULL);
-	}
+	g_pPrePostProcessor->NZBAdded(pDownloadQueue, pNZBInfo);
 }
 
 void HistoryCoordinator::HistorySetParameter(HistoryInfo* pHistoryInfo, const char* szText)
