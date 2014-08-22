@@ -870,7 +870,12 @@ void ParChecker::signal_filename(std::string str)
 		m_eStage = ptVerifyingRepaired;
 	}
 
-	PrintMessage(Message::mkInfo, "%s %s", szStageMessage[m_eStage], str.c_str());
+	// don't print progress messages when verifying repaired files in quick verification mode,
+	// because repaired files are not verified in this mode
+	if (!(m_eStage == ptVerifyingRepaired && g_pOptions->GetParQuick()))
+	{
+		PrintMessage(Message::mkInfo, "%s %s", szStageMessage[m_eStage], str.c_str());
+	}
 
 	if (m_eStage == ptLoadingPars || m_eStage == ptVerifyingSources)
 	{
@@ -1092,8 +1097,10 @@ ParChecker::EFileStatus ParChecker::VerifyDataFile(void* pDiskfile, void* pSourc
 {
 	if (m_eStage != ptVerifyingSources)
 	{
-		// do full verification for repaired files
-		return fsUnknown;
+		// skipping verification for repaired files, assuming the files were correctly repaired,
+		// the only reason for incorrect files after repair are hardware errors (memory, disk),
+		// but this isn't something NZBGet should care about.
+		return fsSuccess;
 	}
 
 	DiskFile* pDiskFile = (DiskFile*)pDiskfile;
