@@ -1131,7 +1131,7 @@ ParChecker::EFileStatus ParChecker::VerifyDataFile(void* pDiskfile, void* pSourc
 	else if ((eFileStatus == fsSuccess && !VerifySuccessDataFile(pDiskfile, pSourcefile, lDownloadCrc)) ||
 		(eFileStatus == fsPartial && !VerifyPartialDataFile(pDiskfile, pSourcefile, &segments, &validBlocks)))
 	{
-		warn("Quick verification failed for %s file %s, performing full verification instead",
+		PrintMessage(Message::mkWarning, "Quick verification failed for %s file %s, performing full verification instead",
 			eFileStatus == fsSuccess ? "good" : "damaged", Util::BaseFileName(szFilename));
 		return fsUnknown; // let libpar2 do the full verification of the file
 	}
