@@ -60,7 +60,6 @@ private:
 	void				CheckDiskSpace();
 	void				UpdatePauseState(bool bNeedPause, const char* szReason);
 	void				NZBFound(DownloadQueue* pDownloadQueue, NZBInfo* pNZBInfo);
-	void				NZBAdded(DownloadQueue* pDownloadQueue, NZBInfo* pNZBInfo);
 	void				NZBDeleted(DownloadQueue* pDownloadQueue, NZBInfo* pNZBInfo);
 	void				NZBCompleted(DownloadQueue* pDownloadQueue, NZBInfo* pNZBInfo, bool bSaveQueue);
 	bool				PostQueueDelete(DownloadQueue* pDownloadQueue, IDList* pIDList);
@@ -77,6 +76,7 @@ public:
 	bool				HasMoreJobs() { return m_iJobCount > 0; }
 	int					GetJobCount() { return m_iJobCount; }
 	bool				EditList(DownloadQueue* pDownloadQueue, IDList* pIDList, DownloadQueue::EEditAction eAction, int iOffset, const char* szText);
+	void				NZBAdded(DownloadQueue* pDownloadQueue, NZBInfo* pNZBInfo);
 	void				NZBDownloaded(DownloadQueue* pDownloadQueue, NZBInfo* pNZBInfo);
 };
 
