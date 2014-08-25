@@ -125,16 +125,11 @@ void Scheduler::FirstCheck()
 	m_mutexTaskList.Unlock();
 
 	// check all tasks for the last week
-	time_t tCurrent = time(NULL);
-	m_tLastCheck = tCurrent - 60*60*24*7;
-	m_bDetectClockChanges = false;
-	m_bExecuteProcess = false;
 	CheckTasks();
 }
 
 void Scheduler::IntervalCheck()
 {
-	m_bDetectClockChanges = true;
 	m_bExecuteProcess = true;
 	CheckTasks();
 	CheckScheduledResume();
@@ -150,21 +145,20 @@ void Scheduler::CheckTasks()
 
 	if (!m_TaskList.empty())
 	{
-		if (m_bDetectClockChanges)
+		// Detect large step changes of system time 
+		time_t tDiff = tCurrent - m_tLastCheck;
+		if (tDiff > 60*90 || tDiff < 0)
 		{
-			// Detect large step changes of system time 
-			time_t tDiff = tCurrent - m_tLastCheck;
-			if (tDiff > 60*90 || tDiff < -60*90)
-			{
-				debug("Reset scheduled tasks (detected clock adjustment greater than 90 minutes)");
-				m_bExecuteProcess = false;
-				m_tLastCheck = tCurrent;
+			debug("Reset scheduled tasks (detected clock change greater than 90 minutes or negative)");
 
-				for (TaskList::iterator it = m_TaskList.begin(); it != m_TaskList.end(); it++)
-				{
-					Task* pTask = *it;
-					pTask->m_tLastExecuted = 0;
-				}
+			// check all tasks for the last week
+			m_tLastCheck = tCurrent - 60*60*24*7;
+			m_bExecuteProcess = false;
+
+			for (TaskList::iterator it = m_TaskList.begin(); it != m_TaskList.end(); it++)
+			{
+				Task* pTask = *it;
+				pTask->m_tLastExecuted = 0;
 			}
 		}
 

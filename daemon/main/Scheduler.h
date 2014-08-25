@@ -75,7 +75,6 @@ private:
 	TaskList			m_TaskList;
 	Mutex				m_mutexTaskList;
 	time_t				m_tLastCheck;
-	bool				m_bDetectClockChanges;
 	bool				m_bDownloadRateChanged;
 	bool				m_bExecuteProcess;
 	bool				m_bPauseDownloadChanged;
