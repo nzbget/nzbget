@@ -2748,10 +2748,10 @@ void Options::CheckOptions()
 	{
 		m_iArticleCache = 0;
 	}
-	else if (sizeof(void*) == 4 && m_iArticleCache > 1900 * 1024 * 1024)
+	else if (sizeof(void*) == 4 && m_iArticleCache > 1900)
 	{
-		ConfigError("Invalid value for option \"ArticleCache\": %i. Changed to %i", m_iArticleCache, 1900 * 1024 * 1024);
-		m_iArticleCache = 1900 * 1024 * 1024;
+		ConfigError("Invalid value for option \"ArticleCache\": %i. Changed to %i", m_iArticleCache, 1900);
+		m_iArticleCache = 1900;
 	}
 }
 
