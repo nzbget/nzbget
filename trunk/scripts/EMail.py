@@ -56,6 +56,9 @@
 # SMTP server password, if required.
 #Password=mypass
 
+# Append statistics to the message (yes, no).
+#Statistics=yes
+
 # Append list of files to the message (yes, no).
 #
 # Add the list of downloaded files (the content of destination directory).
@@ -100,8 +103,7 @@ if not 'NZBPP_TOTALSTATUS' in os.environ:
 print('[DETAIL] Script successfully started')
 sys.stdout.flush()
 
-required_options = ('NZBPO_FROM', 'NZBPO_TO', 'NZBPO_SERVER', 'NZBPO_PORT', 'NZBPO_ENCRYPTION',
-	'NZBPO_USERNAME', 'NZBPO_PASSWORD', 'NZBPO_FILELIST', 'NZBPO_BROKENLOG', 'NZBPO_POSTPROCESSLOG')
+required_options = ('NZBPO_FROM', 'NZBPO_TO', 'NZBPO_SERVER', 'NZBPO_PORT', 'NZBPO_ENCRYPTION', 'NZBPO_USERNAME', 'NZBPO_PASSWORD')
 for	optname in required_options:
 	if (not optname in os.environ):
 		print('[ERROR] Option %s is missing in configuration file. Please check script settings' % optname[6:])
@@ -129,28 +131,11 @@ else:
 
 text += '\nStatus: %s' % status
 
-# add list of downloaded files
-if os.environ['NZBPO_FILELIST'] == 'yes':
-	text += '\n\nFiles:'
-	for dirname, dirnames, filenames in os.walk(os.environ['NZBPP_DIRECTORY']):
-		for filename in filenames:
-			text += '\n' + os.path.join(dirname, filename)[len(os.environ['NZBPP_DIRECTORY']) + 1:]
-
-# add _brokenlog.txt (if exists)
-if os.environ['NZBPO_BROKENLOG'] == 'yes':
-	brokenlog = '%s/_brokenlog.txt' % os.environ['NZBPP_DIRECTORY']
-	if os.path.exists(brokenlog):
-		text += '\n\nBrokenlog:\n' + open(brokenlog, 'r').read().strip()
-
-# add post-processing log
-if os.environ['NZBPO_POSTPROCESSLOG'] == 'Always' or \
-	(os.environ['NZBPO_POSTPROCESSLOG'] == 'OnFailure' and not success):
-	# To get the post-processing log we connect to NZBGet via XML-RPC
-	# and call method "postqueue", which returns the list of post-processing job.
-	# The first item in the list is current job. This item has a field 'Log',
-	# containing an array of log-entries.
+if os.environ.get('NZBPO_STATISTICS') == 'yes' or \
+	os.environ.get('NZBPO_POSTPROCESSLOG') == 'Always' or \
+	(os.environ.get('NZBPO_POSTPROCESSLOG') == 'OnFailure' and not success):
+	# To get statistics or the post-processing log we connect to NZBGet via XML-RPC.
 	# For more info visit http://nzbget.net/RPC_API_reference
-	
 	# First we need to know connection info: host, port and password of NZBGet server.
 	# NZBGet passes all configuration options to post-processing script as
 	# environment variables.
@@ -166,6 +151,73 @@ if os.environ['NZBPO_POSTPROCESSLOG'] == 'Always' or \
 	
 	# Create remote server object
 	server = ServerProxy(rpcUrl)
+
+if os.environ.get('NZBPO_STATISTICS') == 'yes':
+	# Find correct nzb in method listgroups 
+	groups = server.listgroups(0)
+	nzbID = int(os.environ['NZBPP_NZBID'])
+	for nzbGroup in groups:
+		if nzbGroup['NZBID'] == nzbID:
+			break
+
+	text += '\n\nStatistics:';
+
+	# add download size
+	DownloadedSize = float(nzbGroup['DownloadedSizeMB'])
+	unit = ' MB'
+	if DownloadedSize > 1024:
+		DownloadedSize = DownloadedSize / 1024 # GB
+		unit = ' GB'
+	text += '\nDownloaded size: %.2f' % (DownloadedSize) + unit
+
+	# add average download speed
+	DownloadedSizeMB = float(nzbGroup['DownloadedSizeMB'])
+	DownloadTimeSec = float(nzbGroup['DownloadTimeSec'])
+	if DownloadTimeSec > 0: # check x/0 errors
+		avespeed = (DownloadedSizeMB/DownloadTimeSec) # MB/s
+		unit = ' MB/s'
+		if avespeed < 1:
+			avespeed = avespeed * 1024 # KB/s
+			unit = ' KB/s'
+		text += '\nAverage download speed: %.2f' % (avespeed) + unit
+
+	def format_time_sec(sec):
+		Hour = sec/3600
+		Min = (sec - (sec/3600)*3600)/60
+		Sec = (sec - (sec/3600)*3600)%60
+		return '%d:%02d:%02d' % (Hour,Min,Sec)
+
+	# add times
+	text += '\nTotal time: ' + format_time_sec(int(nzbGroup['DownloadTimeSec']) + int(nzbGroup['PostTotalTimeSec']))
+	text += '\nDownload time: ' + format_time_sec(int(nzbGroup['DownloadTimeSec']))
+	text += '\nVerification time: ' + format_time_sec(int(nzbGroup['ParTimeSec']) - int(nzbGroup['RepairTimeSec']))
+	text += '\nRepair time: ' + format_time_sec(int(nzbGroup['RepairTimeSec']))
+	text += '\nUnpack time: ' + format_time_sec(int(nzbGroup['UnpackTimeSec']))
+
+# add list of downloaded files
+files = False
+if os.environ.get('NZBPO_FILELIST') == 'yes':
+	text += '\n\nFiles:'
+	for dirname, dirnames, filenames in os.walk(os.environ['NZBPP_DIRECTORY']):
+		for filename in filenames:
+			text += '\n' + os.path.join(dirname, filename)[len(os.environ['NZBPP_DIRECTORY']) + 1:]
+			files = True
+	if not files:
+		text += '\n<no files found>'
+
+# add _brokenlog.txt (if exists)
+if os.environ.get('NZBPO_BROKENLOG') == 'yes':
+	brokenlog = '%s/_brokenlog.txt' % os.environ['NZBPP_DIRECTORY']
+	if os.path.exists(brokenlog):
+		text += '\n\nBrokenlog:\n' + open(brokenlog, 'r').read().strip()
+
+# add post-processing log
+if os.environ.get('NZBPO_POSTPROCESSLOG') == 'Always' or \
+	(os.environ.get('NZBPO_POSTPROCESSLOG') == 'OnFailure' and not success):
+	# To get the post-processing log we call method "postqueue", which returns
+	# the list of post-processing job.
+	# The first item in the list is current job. This item has a field 'Log',
+	# containing an array of log-entries.
 	
 	# Call remote method 'postqueue'. The only parameter tells how many log-entries to return as maximum.
 	postqueue = server.postqueue(10000)
