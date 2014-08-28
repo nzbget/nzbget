@@ -27,7 +27,7 @@
 #ifndef MESSAGEBASE_H
 #define MESSAGEBASE_H
 
-static const int32_t NZBMESSAGE_SIGNATURE = 0x6E7A6224; // = "nzb-XX" (protocol version)
+static const int32_t NZBMESSAGE_SIGNATURE = 0x6E7A6225; // = "nzb-XX" (protocol version)
 static const int NZBREQUESTFILENAMESIZE = 512;
 static const int NZBREQUESTPASSWORDSIZE = 32;
 
@@ -173,6 +173,7 @@ struct SNZBListResponseNZBEntry
 	int32_t					m_iPausedSizeLo;		// Size of npaused files in bytes, Low 32-bits of 64-bit value
 	int32_t					m_iPausedSizeHi;		// Size of paused files in bytes, High 32-bits of 64-bit value
 	int32_t					m_iPausedCount;			// Number of paused files
+	int32_t					m_iRemainingParCount;	// Number of remaining par-files
 	int32_t					m_iPriority;			// Download priority
 	int32_t					m_bMatch;				// 1 - group matches the pattern (only when Request has eRemoteMatchModeRegEx)
 	int32_t					m_iFilenameLen;			// Length of Filename-string (m_szFilename), following to this record
