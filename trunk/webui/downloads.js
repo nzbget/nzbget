@@ -195,6 +195,13 @@ var Downloads = (new function($)
 		var progresslabel = DownloadsUI.buildProgressLabel(group, nameColumnWidth);
 		var progress = DownloadsUI.buildProgress(group, item.data.size, item.data.remaining, item.data.estimated);
 		var dupe = DownloadsUI.buildDupe(group.DupeKey, group.DupeScore, group.DupeMode);
+		
+		var age = new Date().getTime() / 1000 - (group.MinPostTime + UISettings.timeZoneCorrection*60*60);
+		var propagation = '';
+		if (group.ActiveDownloads == 0 && age < parseInt(Options.option('PropagationDelay')) * 60)
+		{
+			propagation = '<span class="label label-warning" title="Very recent post, temporary delayed (see option PropagationDelay)">delayed</span> ';
+		}
 
 		var name = '<a href="#" data-nzbid="' + group.NZBID + '">' + Util.textToHtml(Util.formatNZBName(group.NZBName)) + '</a>';
 
@@ -225,13 +232,13 @@ var Downloads = (new function($)
 
 		if (!UISettings.miniTheme)
 		{
-			var info = name + ' ' + url + priority + dupe + health + backup + progresslabel;
+			var info = name + ' ' + url + priority + dupe + health + backup + propagation + progresslabel;
 			item.fields = ['<div class="check img-check"></div>', status, info, category, item.data.age, progress, item.data.estimated];
 		}
 		else
 		{
 			var info = '<div class="check img-check"></div><span class="row-title">' + name + '</span>' + url +
-				' ' + (group.Status === 'QUEUED' ? '' : status) + ' ' + priority + dupe + health + backup;
+				' ' + (group.Status === 'QUEUED' ? '' : status) + ' ' + priority + dupe + health + backup + propagation;
 			if (category)
 			{
 				info += ' <span class="label label-status">' + category + '</span>';
