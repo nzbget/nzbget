@@ -261,7 +261,8 @@ private:
 	EMessageTarget		m_eDetailTarget;
 	bool				m_bDecode;
 	bool				m_bCreateBrokenLog;
-	int					m_iConnectionTimeout;
+	int					m_iArticleTimeout;
+	int					m_iUrlTimeout;
 	int					m_iTerminateTimeout;
 	bool				m_bAppendCategoryDir;
 	bool				m_bContinuePartial;
@@ -433,7 +434,8 @@ public:
 	EMessageTarget		GetErrorTarget() const { return m_eErrorTarget; }
 	EMessageTarget		GetDebugTarget() const { return m_eDebugTarget; }
 	EMessageTarget		GetDetailTarget() const { return m_eDetailTarget; }
-	int					GetConnectionTimeout() { return m_iConnectionTimeout; }
+	int					GetArticleTimeout() { return m_iArticleTimeout; }
+	int					GetUrlTimeout() { return m_iUrlTimeout; }
 	int					GetTerminateTimeout() { return m_iTerminateTimeout; }
 	bool				GetDecode() { return m_bDecode; };
 	bool				GetAppendCategoryDir() { return m_bAppendCategoryDir; }
