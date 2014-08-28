@@ -444,7 +444,7 @@ public:
 	int					GetRetryInterval() { return m_iRetryInterval; }
 	bool				GetSaveQueue() { return m_bSaveQueue; }
 	bool				GetDupeCheck() { return m_bDupeCheck; }
-	const char*			GetControlIP() { return m_szControlIP; }
+	const char*			GetControlIP();
 	const char*			GetControlUsername() { return m_szControlUsername; }
 	const char*			GetControlPassword() { return m_szControlPassword; }
 	int					GetControlPort() { return m_iControlPort; }

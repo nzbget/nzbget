@@ -1830,6 +1830,16 @@ void Options::InitFileArg(int argc, char* argv[])
 	}
 }
 
+const char* Options::GetControlIP()
+{
+	if ((m_bRemoteClientMode || m_eClientOperation != opClientNoOperation) &&
+		!strcmp(m_szControlIP, "0.0.0.0"))
+	{
+		return "127.0.0.1";
+	}
+	return m_szControlIP;
+}
+
 void Options::SetOption(const char* optname, const char* value)
 {
 	OptEntry* pOptEntry = FindOption(optname);
