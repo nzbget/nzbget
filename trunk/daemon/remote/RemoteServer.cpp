@@ -99,7 +99,7 @@ void RemoteServer::Run()
 			m_pConnection = new Connection(g_pOptions->GetControlIP(), 
 				m_bTLS ? g_pOptions->GetSecurePort() : g_pOptions->GetControlPort(),
 				m_bTLS);
-			m_pConnection->SetTimeout(g_pOptions->GetConnectionTimeout());
+			m_pConnection->SetTimeout(g_pOptions->GetUrlTimeout());
 			m_pConnection->SetSuppressErrors(false);
 			bBind = m_pConnection->Bind();
 		}

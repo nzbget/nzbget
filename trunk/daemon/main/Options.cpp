@@ -125,7 +125,8 @@ static const char* OPTION_SECUREPORT			= "SecurePort";
 static const char* OPTION_SECURECERT			= "SecureCert";
 static const char* OPTION_SECUREKEY				= "SecureKey";
 static const char* OPTION_AUTHORIZEDIP			= "AuthorizedIP";
-static const char* OPTION_CONNECTIONTIMEOUT		= "ConnectionTimeout";
+static const char* OPTION_ARTICLETIMEOUT		= "ArticleTimeout";
+static const char* OPTION_URLTIMEOUT			= "UrlTimeout";
 static const char* OPTION_SAVEQUEUE				= "SaveQueue";
 static const char* OPTION_RELOADQUEUE			= "ReloadQueue";
 static const char* OPTION_CREATEBROKENLOG		= "CreateBrokenLog";
@@ -475,7 +476,8 @@ Options::Options(int argc, char* argv[])
 	m_iAddPriority			= 0;
 	m_szAddNZBFilename		= NULL;
 	m_bAddPaused			= false;
-	m_iConnectionTimeout	= 0;
+	m_iArticleTimeout		= 0;
+	m_iUrlTimeout			= 0;
 	m_iTerminateTimeout		= 0;
 	m_bServerMode			= false;
 	m_bDaemonMode			= false;
@@ -763,7 +765,8 @@ void Options::InitDefault()
 	SetOption(OPTION_SECURECERT, "");
 	SetOption(OPTION_SECUREKEY, "");
 	SetOption(OPTION_AUTHORIZEDIP, "");
-	SetOption(OPTION_CONNECTIONTIMEOUT, "60");
+	SetOption(OPTION_ARTICLETIMEOUT, "60");
+	SetOption(OPTION_URLTIMEOUT, "60");
 	SetOption(OPTION_SAVEQUEUE, "yes");
 	SetOption(OPTION_RELOADQUEUE, "yes");
 	SetOption(OPTION_CREATEBROKENLOG, "yes");
@@ -968,7 +971,8 @@ void Options::InitOptions()
 	m_szParIgnoreExt		= strdup(GetOption(OPTION_PARIGNOREEXT));
 
 	m_iDownloadRate			= (int)(ParseFloatValue(OPTION_DOWNLOADRATE) * 1024);
-	m_iConnectionTimeout	= ParseIntValue(OPTION_CONNECTIONTIMEOUT, 10);
+	m_iArticleTimeout		= ParseIntValue(OPTION_ARTICLETIMEOUT, 10);
+	m_iUrlTimeout			= ParseIntValue(OPTION_URLTIMEOUT, 10);
 	m_iTerminateTimeout		= ParseIntValue(OPTION_TERMINATETIMEOUT, 10);
 	m_iRetries				= ParseIntValue(OPTION_RETRIES, 10);
 	m_iRetryInterval		= ParseIntValue(OPTION_RETRYINTERVAL, 10);
@@ -2014,7 +2018,7 @@ void Options::InitServers()
 		n++;
 	}
 
-	g_pServerPool->SetTimeout(GetConnectionTimeout());
+	g_pServerPool->SetTimeout(GetArticleTimeout());
 }
 
 void Options::InitCategories()
@@ -2687,6 +2691,11 @@ void Options::ConvertOldOption(char *szOption, int iOptionBufLen, char *szValue,
 		val = val == -1 ? 1024 : val / 1024;
 		snprintf(szValue, iValueBufLen, "%i", val);
 	}	
+
+	if (!strcasecmp(szOption, "ConnectionTimeout"))
+	{
+		strncpy(szOption, "ArticleTimeout", iOptionBufLen);
+	}
 
 	szOption[iOptionBufLen-1] = '\0';
 	szOption[iValueBufLen-1] = '\0';

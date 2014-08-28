@@ -207,6 +207,7 @@ WebDownloader::EStatus WebDownloader::Download()
 		return Status;
 	}
 
+	m_pConnection->SetTimeout(g_pOptions->GetUrlTimeout());
 	m_pConnection->SetSuppressErrors(false);
 
 	// connection
