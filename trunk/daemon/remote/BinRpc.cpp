@@ -459,6 +459,7 @@ void ListBinCommand::Execute()
 			pListAnswer->m_iPausedSizeLo		= htonl(iPausedSizeLo);
 			pListAnswer->m_iPausedSizeHi		= htonl(iPausedSizeHi);
 			pListAnswer->m_iPausedCount			= htonl(pNZBInfo->GetPausedFileCount());
+			pListAnswer->m_iRemainingParCount	= htonl(pNZBInfo->GetRemainingParCount());
 			pListAnswer->m_iPriority			= htonl(pNZBInfo->GetPriority());
 			pListAnswer->m_bMatch				= htonl(bMatchGroup && (!pRegEx || pRegEx->Match(pNZBInfo->GetName())));
 			pListAnswer->m_iFilenameLen			= htonl(strlen(pNZBInfo->GetFilename()) + 1);
