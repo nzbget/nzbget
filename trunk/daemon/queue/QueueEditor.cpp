@@ -634,15 +634,6 @@ bool QueueEditor::EditGroup(NZBInfo* pNZBInfo, DownloadQueue::EEditAction eActio
 
 	if (eAction == DownloadQueue::eaGroupDelete || eAction == DownloadQueue::eaGroupDupeDelete || eAction == DownloadQueue::eaGroupFinalDelete)
 	{
-		if (pNZBInfo->GetFileList()->empty())
-		{
-			// special case: something wrong happen with the nzb - it doesn't have any files.
-			// just nuke it
-			m_pDownloadQueue->GetQueue()->Remove(pNZBInfo);
-			delete pNZBInfo;
-			return false;
-		}
-
 		pNZBInfo->SetDeleting(true);
 		pNZBInfo->SetAvoidHistory(eAction == DownloadQueue::eaGroupFinalDelete);
 		pNZBInfo->SetDeletePaused(bAllPaused);

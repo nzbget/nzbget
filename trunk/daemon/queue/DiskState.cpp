@@ -1818,6 +1818,7 @@ bool DiskState::LoadHistory(DownloadQueue* pDownloadQueue, NZBList* pNZBList, Se
 			{
 				pNZBInfo = new NZBInfo();
 				if (!LoadNZBInfo(pNZBInfo, pServers, infile, iFormatVersion)) goto error;
+				pNZBInfo->LeavePostProcess();
 			}
 
 			pHistoryInfo = new HistoryInfo(pNZBInfo);

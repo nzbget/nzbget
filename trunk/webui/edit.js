@@ -497,20 +497,7 @@ var DownloadsEditDialog = (new function($)
 		e.preventDefault();
 		disableAllButtons();
 		notification = '#Notif_Downloads_PostCanceled';
-
-		var postDelete = function()
-		{
-			RPC.call('editqueue', ['PostDelete', 0, '', [curGroup.NZBID]], completed);
-		};
-
-		if (curGroup.NZBID > 0)
-		{
-			RPC.call('editqueue', ['GroupDelete', 0, '', [curGroup.NZBID]], postDelete);
-		}
-		else
-		{
-			postDelete();
-		}
+		RPC.call('editqueue', ['PostDelete', 0, '', [curGroup.NZBID]], completed);
 	}
 
 	function categoryChange()

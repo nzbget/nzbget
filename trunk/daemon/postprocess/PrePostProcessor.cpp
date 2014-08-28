@@ -190,11 +190,14 @@ void PrePostProcessor::DownloadQueueUpdate(Subject* Caller, void* Aspect)
 	{
 		NZBAdded(pQueueAspect->pDownloadQueue, pQueueAspect->pNZBInfo);
 	}
-	else if (pQueueAspect->eAction == DownloadQueue::eaNzbDeleted && pQueueAspect->pNZBInfo->GetCleanupDisk())
+	else if (pQueueAspect->eAction == DownloadQueue::eaNzbDeleted &&
+		pQueueAspect->pNZBInfo->GetDeleting() &&
+		!pQueueAspect->pNZBInfo->GetPostInfo())
 	{
 		// the deleting of nzbs is usually handled via eaFileDeleted-event, but when deleting nzb without
 		// any files left the eaFileDeleted-event is not fired and we need to process eaNzbDeleted-event instead
-		DeleteCleanup(pQueueAspect->pNZBInfo);
+		info("Collection %s deleted from queue", pQueueAspect->pNZBInfo->GetName());
+		NZBDeleted(pQueueAspect->pDownloadQueue, pQueueAspect->pNZBInfo);
 	}
 	else if ((pQueueAspect->eAction == DownloadQueue::eaFileCompleted ||
 		pQueueAspect->eAction == DownloadQueue::eaFileDeleted))
