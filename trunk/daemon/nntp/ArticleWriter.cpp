@@ -488,7 +488,7 @@ void ArticleWriter::CompleteFileParts()
 		}
 		else if (g_pOptions->GetDecode() && !bDirectWrite)
 		{
-			FILE* infile = fopen(pa->GetResultFilename(), FOPEN_RB);
+			FILE* infile = pa->GetResultFilename() ? fopen(pa->GetResultFilename(), FOPEN_RB) : NULL;
 			if (infile)
 			{
 				int cnt = BUFFER_SIZE;
@@ -504,7 +504,9 @@ void ArticleWriter::CompleteFileParts()
 			{
 				m_pFileInfo->SetFailedArticles(m_pFileInfo->GetFailedArticles() + 1);
 				m_pFileInfo->SetSuccessArticles(m_pFileInfo->GetSuccessArticles() - 1);
-				detail("Could not find file %s. Status is broken", pa->GetResultFilename());
+				error("Could not find file %s for %s%c%s [%i/%i]",
+					pa->GetResultFilename(), szNZBName, (int)PATH_SEPARATOR, m_pFileInfo->GetFilename(),
+					pa->GetPartNumber(), (int)m_pFileInfo->GetArticles()->size());
 			}
 		}
 		else if (!g_pOptions->GetDecode())
