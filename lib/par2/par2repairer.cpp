@@ -3,6 +3,9 @@
 //
 //  Copyright (c) 2003 Peter Brian Clements
 //
+//  Multithreading code (marked with #ifdef PAR2_MULTITHREAD):
+//  Copyright (C) 2014 Andrey Prygunkov <hugbug@users.sourceforge.net>
+//
 //  par2cmdline is free software; you can redistribute it and/or modify
 //  it under the terms of the GNU General Public License as published by
 //  the Free Software Foundation; either version 2 of the License, or
@@ -18,6 +21,13 @@
 //  Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA
 
 #include "par2cmdline.h"
+
+#ifdef PAR2_MULTITHREAD
+#ifdef WIN32
+#include "Mmsystem.h"
+#define usleep(usec) Sleep((usec) / 1000)
+#endif
+#endif
 
 #ifdef _MSC_VER
 #ifdef _DEBUG
@@ -54,6 +64,10 @@ Par2Repairer::Par2Repairer(void)
   alreadyloaded = false;
 
   cancelled = false;
+
+#ifdef PAR2_MULTITHREAD
+  maxthreads = 1;
+#endif
 }
 
 Par2Repairer::~Par2Repairer(void)
@@ -289,6 +303,11 @@ Result Par2Repairer::Process(const CommandLine &commandline, bool dorepair)
 	      progress = 0;
 	      totaldata = blocksize * sourceblockcount * (missingblockcount > 0 ? missingblockcount : 1);
 	      
+#ifdef PAR2_MULTITHREAD
+	      if (maxthreads > 1)
+		ParallelBegin();
+#endif
+
 	      // Start at an offset of 0 within a block.
 	      u64 blockoffset = 0;
 	      while (blockoffset < blocksize) // Continue until the end of the block.
@@ -309,6 +328,11 @@ Result Par2Repairer::Process(const CommandLine &commandline, bool dorepair)
 		  blockoffset += blocklength;
 		}
 	      
+#ifdef PAR2_MULTITHREAD
+	      if (maxthreads > 1)
+		ParallelEnd();
+#endif
+
 	      if (noiselevel > CommandLine::nlSilent)
 		cout << endl << "Verifying repaired files:" << endl << endl;
 	      
@@ -2320,6 +2344,12 @@ bool Par2Repairer::ProcessData(u64 blockoffset, size_t blocklength)
         ++copyblock;
       }
 
+#ifdef PAR2_MULTITHREAD
+      if (maxthreads > 1)
+	  ParallelRepair(inputindex, blocklength);
+      else
+      {
+#endif
       // For each output block
       for (u32 outputindex=0; outputindex<missingblockcount; outputindex++)
       {
@@ -2348,6 +2378,9 @@ bool Par2Repairer::ProcessData(u64 blockoffset, size_t blocklength)
           }
         }
       }
+#ifdef PAR2_MULTITHREAD
+      }
+#endif
 
       if (cancelled)
       {
@@ -2544,3 +2577,153 @@ bool Par2Repairer::DeleteIncompleteTargetFiles(void)
 
   return true;
 }
+
+#ifdef PAR2_MULTITHREAD
+
+// Sleep interval for synchronisation (microseconds)
+#ifdef WIN32
+// Windows doesn't allow sleep intervals less than one millisecond
+#define SYNC_SLEEP_INTERVAL 1000
+#else
+#define SYNC_SLEEP_INTERVAL 100
+#endif
+
+class RepairThread : public Thread
+{
+private:
+  Par2Repairer* repairer;
+  u32 inputindex;
+  u32 outputindex;
+  size_t blocklength;
+  volatile bool working;
+protected:
+  virtual void Run();
+public:
+  RepairThread(Par2Repairer* repairer) { this->repairer = repairer; working = false; }
+  void RepairBlock(u32 inputindex, u32 outputindex, size_t blocklength);
+  bool IsWorking() { return working; }
+};
+
+void RepairThread::Run()
+{
+  while (!IsStopped())
+  {
+    if (working)
+    {
+      repairer->RepairBlock(inputindex, outputindex, blocklength);
+      working = false;
+    }
+    else
+    {
+      usleep(SYNC_SLEEP_INTERVAL);
+    }
+  }
+}
+
+void RepairThread::RepairBlock(u32 inputindex, u32 outputindex, size_t blocklength)
+{
+  this->inputindex = inputindex;
+  this->outputindex = outputindex;
+  this->blocklength = blocklength;
+  working = true;
+}
+
+void Par2Repairer::ParallelBegin()
+{
+  for (int i = 0; i < maxthreads; i++)
+  {
+    RepairThread* thread = new RepairThread(this);
+    threads.push_back(thread);
+    thread->SetAutoDestroy(true);
+    thread->Start();
+  }
+
+#ifdef WIN32
+  timeBeginPeriod(1);
+#endif
+}
+
+void Par2Repairer::ParallelEnd()
+{
+  for (Threads::iterator it = threads.begin(); it != threads.end(); it++)
+  {
+    RepairThread* thread = (RepairThread*)*it;
+    thread->Stop();
+  }
+
+#ifdef WIN32
+  timeEndPeriod(1);
+#endif
+}
+
+void Par2Repairer::ParallelRepair(u32 inputindex, size_t blocklength)
+{
+  for (u32 outputindex = 0; outputindex < missingblockcount; )
+  {
+    bool jobadded = false;
+    for (Threads::iterator it = threads.begin(); it != threads.end(); it++)
+    {
+      RepairThread* thread = (RepairThread*)*it;
+      if (!thread->IsWorking())
+      {
+	thread->RepairBlock(inputindex, outputindex, blocklength);
+	outputindex++;
+	jobadded = true;
+	break;
+      }
+    }
+
+    if (cancelled)
+    {
+      break;
+    }
+
+    if (!jobadded)
+    {
+      usleep(SYNC_SLEEP_INTERVAL);
+    }
+  }
+
+  // Wait until all threads complete their jobs
+  bool working = true;
+  while (working)
+  {
+    working = false;
+    for (Threads::iterator it = threads.begin(); it != threads.end(); it++)
+    {
+      RepairThread* thread = (RepairThread*)*it;
+      if (thread->IsWorking())
+      {
+	working = true;
+	usleep(SYNC_SLEEP_INTERVAL);
+	break;
+      }
+    }
+  }
+}
+
+void Par2Repairer::RepairBlock(u32 inputindex, u32 outputindex, size_t blocklength)
+{
+  // Select the appropriate part of the output buffer
+  void *outbuf = &((u8*)outputbuffer)[chunksize * outputindex];
+
+  // Process the data
+  rs.Process(blocklength, inputindex, inputbuffer, outputindex, outbuf);
+
+  if (noiselevel > CommandLine::nlQuiet)
+  {
+    // Update a progress indicator
+    progresslock.Lock();
+    u32 oldfraction = (u32)(1000 * progress / totaldata);
+    progress += blocklength;
+    u32 newfraction = (u32)(1000 * progress / totaldata);
+    progresslock.Unlock();
+
+    if (oldfraction != newfraction)
+    {
+      sig_progress(newfraction);
+    }
+  }
+}
+
+#endif

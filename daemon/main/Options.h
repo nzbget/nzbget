@@ -293,6 +293,8 @@ private:
 	EParScan			m_eParScan;
 	bool				m_bParQuick;
 	bool				m_bParRename;
+	int					m_iParBuffer;
+	int					m_iParThreads;
 	EHealthCheck		m_eHealthCheck;
 	char*				m_szPostScript;
 	char*				m_szScriptOrder;
@@ -467,6 +469,8 @@ public:
 	EParScan			GetParScan() { return m_eParScan; }
 	bool				GetParQuick() { return m_bParQuick; }
 	bool				GetParRename() { return m_bParRename; }
+	int					GetParBuffer() { return m_iParBuffer; }
+	int					GetParThreads() { return m_iParThreads; }
 	EHealthCheck		GetHealthCheck() { return m_eHealthCheck; }
 	const char*			GetScriptOrder() { return m_szScriptOrder; }
 	const char*			GetPostScript() { return m_szPostScript; }

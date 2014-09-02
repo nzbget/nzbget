@@ -61,7 +61,7 @@
 			/>
 			<Tool
 				Name="VCLinkerTool"
-				AdditionalDependencies="WS2_32.lib ole32.lib OleAut32.Lib comsuppwd.lib Advapi32.lib ssleay32MTd.lib libeay32MTd.lib regex.lib zlib.lib $(NOINHERIT)"
+				AdditionalDependencies="WS2_32.lib ole32.lib OleAut32.Lib comsuppwd.lib Advapi32.lib Winmm.lib ssleay32MTd.lib libeay32MTd.lib regex.lib zlib.lib $(NOINHERIT)"
 				LinkIncremental="2"
 				GenerateDebugInformation="true"
 				SubSystem="1"
@@ -136,7 +136,7 @@
 			/>
 			<Tool
 				Name="VCLinkerTool"
-				AdditionalDependencies="WS2_32.lib ole32.lib OleAut32.Lib comsuppwd.lib Advapi32.lib ssleay32MT.lib libeay32MT.lib regex.lib zlib.lib $(NOINHERIT)"
+				AdditionalDependencies="WS2_32.lib ole32.lib OleAut32.Lib comsuppwd.lib Advapi32.lib Winmm.lib ssleay32MT.lib libeay32MT.lib regex.lib zlib.lib $(NOINHERIT)"
 				LinkIncremental="0"
 				GenerateDebugInformation="true"
 				SubSystem="1"
@@ -213,7 +213,7 @@
 			/>
 			<Tool
 				Name="VCLinkerTool"
-				AdditionalDependencies="WS2_32.lib ole32.lib OleAut32.Lib comsuppwd.lib Advapi32.lib regex.lib zlib.lib $(NOINHERIT)"
+				AdditionalDependencies="WS2_32.lib ole32.lib OleAut32.Lib comsuppwd.lib Advapi32.lib Winmm.lib regex.lib zlib.lib $(NOINHERIT)"
 				LinkIncremental="0"
 				GenerateDebugInformation="true"
 				SubSystem="1"
