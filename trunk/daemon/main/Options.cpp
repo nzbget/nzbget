@@ -147,6 +147,8 @@ static const char* OPTION_PARREPAIR				= "ParRepair";
 static const char* OPTION_PARSCAN				= "ParScan";
 static const char* OPTION_PARQUICK				= "ParQuick";
 static const char* OPTION_PARRENAME				= "ParRename";
+static const char* OPTION_PARBUFFER				= "ParBuffer";
+static const char* OPTION_PARTHREADS			= "ParThreads";
 static const char* OPTION_HEALTHCHECK			= "HealthCheck";
 static const char* OPTION_SCANSCRIPT			= "ScanScript";
 static const char* OPTION_QUEUESCRIPT			= "QueueScript";
@@ -515,6 +517,8 @@ Options::Options(int argc, char* argv[])
 	m_eParScan				= psLimited;
 	m_bParQuick				= true;
 	m_bParRename			= false;
+	m_iParBuffer			= 0;
+	m_iParThreads			= 0;
 	m_eHealthCheck			= hcNone;
 	m_szScriptOrder			= NULL;
 	m_szPostScript			= NULL;
@@ -787,6 +791,8 @@ void Options::InitDefault()
 	SetOption(OPTION_PARSCAN, "limited");
 	SetOption(OPTION_PARQUICK, "yes");
 	SetOption(OPTION_PARRENAME, "yes");
+	SetOption(OPTION_PARBUFFER, "16");
+	SetOption(OPTION_PARTHREADS, "1");
 	SetOption(OPTION_HEALTHCHECK, "none");
 	SetOption(OPTION_SCRIPTORDER, "");
 	SetOption(OPTION_POSTSCRIPT, "");
@@ -999,6 +1005,8 @@ void Options::InitOptions()
 	m_iPropagationDelay		= ParseIntValue(OPTION_PROPAGATIONDELAY, 10) * 60;
 	m_iArticleCache			= ParseIntValue(OPTION_ARTICLECACHE, 10);
 	m_iEventInterval		= ParseIntValue(OPTION_EVENTINTERVAL, 10);
+	m_iParBuffer			= ParseIntValue(OPTION_PARBUFFER, 10);
+	m_iParThreads			= ParseIntValue(OPTION_PARTHREADS, 10);
 
 	CheckDir(&m_szNzbDir, OPTION_NZBDIR, m_iNzbDirInterval == 0, true);
 

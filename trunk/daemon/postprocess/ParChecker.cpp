@@ -89,6 +89,12 @@ public:
 
 Result Repairer::PreProcess(const char *szParFilename)
 {
+	char szMemParam[20];
+	snprintf(szMemParam, 20, "-m%i", g_pOptions->GetParBuffer());
+	szMemParam[20-1] = '\0';
+
+	maxthreads = g_pOptions->GetParThreads();
+
 	if (g_pOptions->GetParScan() == Options::psFull)
 	{
 		char szWildcardParam[1024];
@@ -101,16 +107,16 @@ Result Repairer::PreProcess(const char *szParFilename)
 			szBasename[1] = '\0';
 		}
 
-		const char* argv[] = { "par2", "r", "-v", "-v", szParFilename, szWildcardParam };
-		if (!commandLine.Parse(6, (char**)argv))
+		const char* argv[] = { "par2", "r", "-v", "-v", szMemParam, szParFilename, szWildcardParam };
+		if (!commandLine.Parse(7, (char**)argv))
 		{
 			return eInvalidCommandLineArguments;
 		}
 	}
 	else
 	{
-		const char* argv[] = { "par2", "r", "-v", "-v", szParFilename };
-		if (!commandLine.Parse(5, (char**)argv))
+		const char* argv[] = { "par2", "r", "-v", "-v", szMemParam, szParFilename };
+		if (!commandLine.Parse(6, (char**)argv))
 		{
 			return eInvalidCommandLineArguments;
 		}
