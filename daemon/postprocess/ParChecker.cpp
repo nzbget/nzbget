@@ -202,7 +202,8 @@ bool Repairer::ScanDataFile(DiskFile *diskfile, Par2RepairerSourceFile* &sourcef
 
 void Repairer::BeginRepair()
 {
-	int iThreads = g_pOptions->GetParThreads() > 0 ? g_pOptions->GetParThreads() : 1;
+	int iThreads = g_pOptions->GetParThreads() > (int)missingblockcount ? (int)missingblockcount :
+		g_pOptions->GetParThreads() > 0 ? g_pOptions->GetParThreads() : 1;
 	m_bParallel = iThreads > 1;
 
 	if (m_bParallel)
