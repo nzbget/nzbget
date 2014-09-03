@@ -3,9 +3,6 @@
 //
 //  Copyright (c) 2003 Peter Brian Clements
 //
-//  Multithreading code (marked with #ifdef PAR2_MULTITHREAD):
-//  Copyright (C) 2014 Andrey Prygunkov <hugbug@users.sourceforge.net>
-//
 //  par2cmdline is free software; you can redistribute it and/or modify
 //  it under the terms of the GNU General Public License as published by
 //  the Free Software Foundation; either version 2 of the License, or
@@ -24,13 +21,6 @@
 #define __PAR2REPAIRER_H__
 
 #include "parheaders.h"
-
-#define PAR2_MULTITHREAD
-
-#ifdef PAR2_MULTITHREAD
-#include <vector>
-#include "Thread.h"
-#endif
 
 class Par2Repairer
 {
@@ -139,6 +129,15 @@ protected:
   virtual void sig_headers(ParHeaders* headers) {}
   virtual void sig_done(std::string filename, int available, int total) {}
 
+  // Repair started
+  virtual void BeginRepair() {}
+
+  // Repair ended
+  virtual void EndRepair() {}
+
+  // Repair chunk of data (returns "true" if repaired or "false" if default repair-routine should be used)
+  virtual bool RepairData(u32 inputindex, size_t blocklength) { return false; }
+
 protected:
   ParHeaders* headers;                                 // Headers
   bool alreadyloaded;                                // Already loaded ?
@@ -195,31 +194,6 @@ protected:
   u64                       totalsize;               // Total data size
 
   bool                      cancelled;               // repair cancelled
-
-#ifdef PAR2_MULTITHREAD
-  int                       maxthreads;              // How many threads to use for parallel repair
-  typedef vector<Thread*> Threads;
-  Threads                   threads;                 // Repair threads
-#ifdef HAVE_SPINLOCK
-  SpinLock                  progresslock;            // Lock for progress indicator
-#else
-  Mutex                     progresslock;            // Lock for progress indicator
-#endif
-
-  // Prepare worker threads for parallel reapair
-  void ParallelBegin();
-
-  // Destroy worker threads
-  void ParallelEnd();
-
-  // Repair all blocks parallel
-  void ParallelRepair(u32 inputindex, size_t blocklength);
-
-  // Repair a portion of block in a thread
-  void RepairBlock(u32 inputindex, u32 outputindex, size_t blocklength);
-
-  friend class RepairThread;
-#endif
 };
 
 #endif // __PAR2REPAIRER_H__
