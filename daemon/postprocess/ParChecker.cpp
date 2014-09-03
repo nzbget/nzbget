@@ -29,6 +29,7 @@
 
 #ifdef WIN32
 #include "win32.h"
+#include "Mmsystem.h"
 #endif
 
 #ifndef DISABLE_PARCHECK
@@ -40,12 +41,14 @@
 #ifndef WIN32
 #include <unistd.h>
 #endif
+#include <vector>
 #include <algorithm>
 
 #include "par2cmdline.h"
 #include "par2repairer.h"
 
 #include "nzbget.h"
+#include "Thread.h"
 #include "ParChecker.h"
 #include "ParCoordinator.h"
 #include "Log.h"
@@ -64,27 +67,70 @@ const char* Par2CmdLineErrStr[] = { "OK",
 	"internal error occurred",
 	"out of memory" };
 
+// Sleep interval for synchronisation (microseconds)
+#ifdef WIN32
+// Windows doesn't allow sleep intervals less than one millisecond
+#define SYNC_SLEEP_INTERVAL 1000
+#else
+#define SYNC_SLEEP_INTERVAL 100
+#endif
+
+class RepairThread;
 
 class Repairer : public Par2Repairer
 {
 private:
-    CommandLine	commandLine;
-	ParChecker*	m_pOwner;
+	typedef vector<Thread*> Threads;
+
+	CommandLine		commandLine;
+	ParChecker*		m_pOwner;
+	Threads			m_Threads;
+	bool			m_bParallel;
+
+#ifdef HAVE_SPINLOCK
+	SpinLock		progresslock;
+#else
+	Mutex			progresslock;
+#endif
+
+	virtual void	BeginRepair();
+	virtual void	EndRepair();
+	void			RepairBlock(u32 inputindex, u32 outputindex, size_t blocklength);
 
 protected:
-	virtual void sig_filename(std::string filename) { m_pOwner->signal_filename(filename); }
-	virtual void sig_progress(double progress) { m_pOwner->signal_progress(progress); }
-	virtual void sig_done(std::string filename, int available, int total) { m_pOwner->signal_done(filename, available, total); }
+	virtual void	sig_filename(std::string filename) { m_pOwner->signal_filename(filename); }
+	virtual void	sig_progress(double progress) { m_pOwner->signal_progress(progress); }
+	virtual void	sig_done(std::string filename, int available, int total) { m_pOwner->signal_done(filename, available, total); }
 
-	virtual bool ScanDataFile(DiskFile *diskfile, Par2RepairerSourceFile* &sourcefile,
+	virtual bool	ScanDataFile(DiskFile *diskfile, Par2RepairerSourceFile* &sourcefile,
 		MatchType &matchtype, MD5Hash &hashfull, MD5Hash &hash16k, u32 &count);
+	virtual bool	RepairData(u32 inputindex, size_t blocklength);
 
 public:
-				Repairer(ParChecker* pOwner) { m_pOwner = pOwner; }
-	Result		PreProcess(const char *szParFilename);
-	Result		Process(bool dorepair);
+					Repairer(ParChecker* pOwner) { m_pOwner = pOwner; }
+	Result			PreProcess(const char *szParFilename);
+	Result			Process(bool dorepair);
 
 	friend class ParChecker;
+	friend class RepairThread;
+};
+
+class RepairThread : public Thread
+{
+private:
+	Repairer*		m_pOwner;
+	u32				m_inputindex;
+	u32				m_outputindex;
+	size_t			m_blocklength;
+	volatile bool	m_bWorking;
+
+protected:
+	virtual void	Run();
+
+public:
+					RepairThread(Repairer* pOwner) { this->m_pOwner = pOwner; m_bWorking = false; }
+	void			RepairBlock(u32 inputindex, u32 outputindex, size_t blocklength);
+	bool			IsWorking() { return m_bWorking; }
 };
 
 Result Repairer::PreProcess(const char *szParFilename)
@@ -92,8 +138,6 @@ Result Repairer::PreProcess(const char *szParFilename)
 	char szMemParam[20];
 	snprintf(szMemParam, 20, "-m%i", g_pOptions->GetParBuffer());
 	szMemParam[20-1] = '\0';
-
-	maxthreads = g_pOptions->GetParThreads();
 
 	if (g_pOptions->GetParScan() == Options::psFull)
 	{
@@ -154,6 +198,144 @@ bool Repairer::ScanDataFile(DiskFile *diskfile, Par2RepairerSourceFile* &sourcef
 	}
 
 	return Par2Repairer::ScanDataFile(diskfile, sourcefile, matchtype, hashfull, hash16k, count);
+}
+
+void Repairer::BeginRepair()
+{
+	int iThreads = g_pOptions->GetParThreads() > 0 ? g_pOptions->GetParThreads() : 1;
+	m_bParallel = iThreads > 1;
+
+	if (m_bParallel)
+	{
+		for (int i = 0; i < iThreads; i++)
+		{
+			RepairThread* pRepairThread = new RepairThread(this);
+			m_Threads.push_back(pRepairThread);
+			pRepairThread->SetAutoDestroy(true);
+			pRepairThread->Start();
+		}
+
+#ifdef WIN32
+		timeBeginPeriod(1);
+#endif
+	}
+}
+
+void Repairer::EndRepair()
+{
+	if (m_bParallel)
+	{
+		for (Threads::iterator it = m_Threads.begin(); it != m_Threads.end(); it++)
+		{
+			RepairThread* pRepairThread = (RepairThread*)*it;
+			pRepairThread->Stop();
+		}
+
+#ifdef WIN32
+		timeEndPeriod(1);
+#endif
+	}
+}
+
+bool Repairer::RepairData(u32 inputindex, size_t blocklength)
+{
+	if (!m_bParallel)
+	{
+		return false;
+	}
+
+	for (u32 outputindex = 0; outputindex < missingblockcount; )
+	{
+		bool bJobAdded = false;
+		for (Threads::iterator it = m_Threads.begin(); it != m_Threads.end(); it++)
+		{
+			RepairThread* pRepairThread = (RepairThread*)*it;
+			if (!pRepairThread->IsWorking())
+			{
+				pRepairThread->RepairBlock(inputindex, outputindex, blocklength);
+				outputindex++;
+				bJobAdded = true;
+				break;
+			}
+		}
+
+		if (cancelled)
+		{
+			break;
+		}
+
+		if (!bJobAdded)
+		{
+			usleep(SYNC_SLEEP_INTERVAL);
+		}
+	}
+
+	// Wait until all m_Threads complete their jobs
+	bool bWorking = true;
+	while (bWorking)
+	{
+		bWorking = false;
+		for (Threads::iterator it = m_Threads.begin(); it != m_Threads.end(); it++)
+		{
+			RepairThread* pRepairThread = (RepairThread*)*it;
+			if (pRepairThread->IsWorking())
+			{
+				bWorking = true;
+				usleep(SYNC_SLEEP_INTERVAL);
+				break;
+			}
+		}
+	}
+
+	return true;
+}
+
+void Repairer::RepairBlock(u32 inputindex, u32 outputindex, size_t blocklength)
+{
+	// Select the appropriate part of the output buffer
+	void *outbuf = &((u8*)outputbuffer)[chunksize * outputindex];
+
+	// Process the data
+	rs.Process(blocklength, inputindex, inputbuffer, outputindex, outbuf);
+
+	if (noiselevel > CommandLine::nlQuiet)
+	{
+		// Update a progress indicator
+		progresslock.Lock();
+		u32 oldfraction = (u32)(1000 * progress / totaldata);
+		progress += blocklength;
+		u32 newfraction = (u32)(1000 * progress / totaldata);
+		progresslock.Unlock();
+
+		if (oldfraction != newfraction)
+		{
+			sig_progress(newfraction);
+		}
+	}
+}
+
+void RepairThread::Run()
+{
+	while (!IsStopped())
+	{
+		if (m_bWorking)
+		{
+			m_pOwner->RepairBlock(m_inputindex, m_outputindex, m_blocklength);
+			m_bWorking = false;
+		}
+		else
+		{
+			usleep(SYNC_SLEEP_INTERVAL);
+		}
+	}
+}
+
+void RepairThread::RepairBlock(u32 inputindex, u32 outputindex, size_t blocklength)
+{
+	m_inputindex = inputindex;
+	m_outputindex = outputindex;
+	m_blocklength = blocklength;
+	m_bWorking = true;
 }
 
 
