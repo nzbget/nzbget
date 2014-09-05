@@ -1,7 +1,7 @@
 /*
  * This file is part of nzbget
  *
- * Copyright (C) 2012-2013 Andrey Prygunkov <hugbug@users.sourceforge.net>
+ * Copyright (C) 2012-2014 Andrey Prygunkov <hugbug@users.sourceforge.net>
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -350,8 +350,9 @@ var Upload = (new function($)
 
 	function fileCompleted(result)
 	{
-		errors |= !result;
-		needRefresh |= result;
+		var failure = result < 0 || (result == 0 && Options.option('ScanScript') === '');
+		errors |= failure;
+		needRefresh |= !failure;
 		if (result)
 		{
 			filesSuccess.push(files[index]);
@@ -384,8 +385,9 @@ var Upload = (new function($)
 
 	function urlCompleted(result)
 	{
-		errors |= !result;
-		needRefresh |= result;
+		var failure = result <= 0;
+		errors |= failure;
+		needRefresh |= !failure;
 		if (result)
 		{
 			$('#AddDialog_URL').empty();

@@ -2315,7 +2315,7 @@ void DownloadXmlCommand::Execute()
 
 		if (bV13)
 		{
-			BuildIntResponse(bOK ? iNZBID : 0);
+			BuildIntResponse(bOK ? iNZBID : -1);
 		}
 		else
 		{
