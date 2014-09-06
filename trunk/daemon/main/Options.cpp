@@ -2777,8 +2777,20 @@ void Options::CheckOptions()
 	}
 	else if (sizeof(void*) == 4 && m_iArticleCache > 1900)
 	{
-		ConfigError("Invalid value for option \"ArticleCache\": %i. Changed to %i", m_iArticleCache, 1900);
+		ConfigError("Invalid value for option \"ArticleCache\": %i. Changed to 1900", m_iArticleCache);
 		m_iArticleCache = 1900;
+	}
+	else if (sizeof(void*) == 4 && m_iParBuffer > 1900)
+	{
+		ConfigError("Invalid value for option \"ParBuffer\": %i. Changed to 1900", m_iParBuffer);
+		m_iParBuffer = 1900;
+	}
+
+	if (sizeof(void*) == 4 && m_iParBuffer + m_iArticleCache > 1900)
+	{
+		ConfigError("Options \"ArticleCache\" and \"ParBuffer\" in total cannot use more than 1900MB of memory in 32-Bit mode. Changed to 1500 and 400");
+		m_iArticleCache = 1900;
+		m_iParBuffer = 400;
 	}
 }
 
