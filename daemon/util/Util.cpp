@@ -470,7 +470,7 @@ bool Util::SaveBufferIntoFile(const char* szFileName, const char* szBuffer, int 
 	return iWrittenBytes == iBufLen;
 }
 
-bool Util::CreateSparseFile(const char* szFilename, int iSize)
+bool Util::CreateSparseFile(const char* szFilename, long long iSize)
 {
 	bool bOK = false;
 #ifdef WIN32
@@ -496,7 +496,7 @@ bool Util::CreateSparseFile(const char* szFilename, int iSize)
 	}
 	// there are no reliable function to expand file on POSIX, so we must try different approaches,
 	// starting with the fastest one and hoping it will work
-	// 1) set file size using function "truncate" (it is fast, if works)
+	// 1) set file size using function "truncate" (it is fast, if it works)
 	truncate(szFilename, iSize);
 	// check if it worked
 	pFile = fopen(szFilename, FOPEN_AB);
