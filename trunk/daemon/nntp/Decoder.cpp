@@ -143,7 +143,7 @@ int YDecoder::DecodeBuffer(char* buffer, int len)
 			if (pb) 
 			{
 				pb += 6; //=strlen(" size=")
-				m_iEndSize = (int)atoi(pb);
+				m_iEndSize = (long long)atoll(pb);
 			}
 			return 0;
 		}
@@ -199,7 +199,7 @@ BreakLoop:
 			if (pb) 
 			{
 				pb += 6; //=strlen(" size=")
-				m_iSize = (int)atoi(pb);
+				m_iSize = (long long)atoll(pb);
 			}
 			m_bPart = strstr(buffer, " part=");
 			if (!m_bPart)
@@ -217,13 +217,13 @@ BreakLoop:
 			if (pb) 
 			{
 				pb += 7; //=strlen(" begin=")
-				m_iBegin = (int)atoi(pb);
+				m_iBegin = (long long)atoll(pb);
 			}
 			pb = strstr(buffer, " end=");
 			if (pb) 
 			{
 				pb += 5; //=strlen(" end=")
-				m_iEnd = (int)atoi(pb);
+				m_iEnd = (long long)atoll(pb);
 			}
 		}
 	}

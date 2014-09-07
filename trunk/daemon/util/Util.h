@@ -93,7 +93,7 @@ public:
 	static void NormalizePathSeparators(char* szPath);
 	static bool LoadFileIntoBuffer(const char* szFileName, char** pBuffer, int* pBufferLength);
 	static bool SaveBufferIntoFile(const char* szFileName, const char* szBuffer, int iBufLen);
-	static bool CreateSparseFile(const char* szFilename, int iSize);
+	static bool CreateSparseFile(const char* szFilename, long long iSize);
 	static bool TruncateFile(const char* szFilename, int iSize);
 	static void MakeValidFilename(char* szFilename, char cReplaceChar, bool bAllowSlashes);
 	static bool MakeUniqueFilename(char* szDestBufFilename, int iDestBufSize, const char* szDestDir, const char* szBasename);

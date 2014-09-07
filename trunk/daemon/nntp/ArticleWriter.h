@@ -40,15 +40,15 @@ private:
 	const char*			m_szResultFilename;
 	Decoder::EFormat	m_eFormat;
 	char*				m_pArticleData;
-	int					m_iArticleOffset;
+	long long			m_iArticleOffset;
 	int					m_iArticleSize;
-	int					m_iArticlePtr;
+	long long			m_iArticlePtr;
 	bool				m_bFlushing;
 	bool				m_bDuplicate;
 	char*				m_szInfoName;
 
 	bool				PrepareFile(char* szLine);
-	bool				CreateOutputFile(int iSize);
+	bool				CreateOutputFile(long long iSize);
 	void				BuildOutputFilename();
 	bool				IsFileCached();
 	void				SetWriteBuffer(FILE* pOutFile, int iRecSize);
@@ -63,7 +63,7 @@ public:
 	void				SetFileInfo(FileInfo* pFileInfo) { m_pFileInfo = pFileInfo; }
 	void				SetArticleInfo(ArticleInfo* pArticleInfo) { m_pArticleInfo = pArticleInfo; }
 	void				Prepare();
-	bool				Start(Decoder::EFormat eFormat, const char* szFilename, int iFileSize, int iArticleOffset, int iArticleSize);
+	bool				Start(Decoder::EFormat eFormat, const char* szFilename, long long iFileSize, long long iArticleOffset, int iArticleSize);
 	bool				Write(char* szBufffer, int iLen);
 	void				Finish(bool bSuccess);
 	bool				GetDuplicate() { return m_bDuplicate; }

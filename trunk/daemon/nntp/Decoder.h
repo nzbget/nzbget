@@ -71,10 +71,10 @@ protected:
 	bool					m_bCrc;
 	unsigned long			m_lExpectedCRC;
 	unsigned long			m_lCalculatedCRC;
-	unsigned long			m_iBegin;
-	unsigned long			m_iEnd;
-	unsigned long			m_iSize;
-	unsigned long			m_iEndSize;
+	long long				m_iBegin;
+	long long				m_iEnd;
+	long long				m_iSize;
+	long long				m_iEndSize;
 	bool					m_bCrcCheck;
 
 public:
@@ -83,9 +83,9 @@ public:
 	virtual void			Clear();
 	virtual int				DecodeBuffer(char* buffer, int len);
 	void					SetCrcCheck(bool bCrcCheck) { m_bCrcCheck = bCrcCheck; }
-	unsigned long			GetBegin() { return m_iBegin; }
-	unsigned long			GetEnd() { return m_iEnd; }
-	unsigned long			GetSize() { return m_iSize; }
+	long long				GetBegin() { return m_iBegin; }
+	long long				GetEnd() { return m_iEnd; }
+	long long				GetSize() { return m_iSize; }
 	unsigned long			GetExpectedCrc() { return m_lExpectedCRC; }
 };
 

@@ -111,8 +111,8 @@ void ArticleWriter::Prepare()
 	m_szResultFilename = m_pArticleInfo->GetResultFilename();
 }
 
-bool ArticleWriter::Start(Decoder::EFormat eFormat, const char* szFilename, int iFileSize,
-	int iArticleOffset, int iArticleSize)
+bool ArticleWriter::Start(Decoder::EFormat eFormat, const char* szFilename, long long iFileSize,
+	long long iArticleOffset, int iArticleSize)
 {
 	char szErrBuf[256];
 	m_pOutFile = NULL;
@@ -285,7 +285,7 @@ void ArticleWriter::Finish(bool bSuccess)
 }
 
 /* creates output file and subdirectores */
-bool ArticleWriter::CreateOutputFile(int iSize)
+bool ArticleWriter::CreateOutputFile(long long iSize)
 {
 	if (g_pOptions->GetDirectWrite() && Util::FileExists(m_szOutputFilename) &&
 		Util::FileSize(m_szOutputFilename) == iSize)
