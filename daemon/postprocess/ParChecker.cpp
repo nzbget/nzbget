@@ -1559,7 +1559,7 @@ bool ParChecker::SmartCalcFileRangeCrc(FILE* pFile, long long lStart, long long 
  */
 bool ParChecker::DumbCalcFileRangeCrc(FILE* pFile, long long lStart, long long lEnd, unsigned long* pDownloadCrc)
 {
-	if (fseek(pFile, (long)lStart, SEEK_SET))
+	if (fseek(pFile, lStart, SEEK_SET))
 	{
 		return false;
 	}

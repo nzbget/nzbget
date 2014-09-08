@@ -570,7 +570,7 @@ bool ArticleDownloader::Write(char* szLine, int iLen)
 				return false;
 			}
 			iArticleOffset = m_YDecoder.GetBegin() - 1;
-			iArticleSize = m_YDecoder.GetEnd() - m_YDecoder.GetBegin() + 1;
+			iArticleSize = (int)(m_YDecoder.GetEnd() - m_YDecoder.GetBegin() + 1);
 		}
 	}
 

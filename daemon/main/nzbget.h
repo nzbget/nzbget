@@ -58,6 +58,8 @@
 #define LINE_ENDING "\r\n"
 #define pid_t int
 #define atoll _atoi64
+#define fseek _fseeki64
+#define ftell _ftelli64
 #ifndef FSCTL_SET_SPARSE
 #define FSCTL_SET_SPARSE 590020
 #endif

@@ -461,7 +461,7 @@ void NZBFile::ReadPassword()
 
     // obtain file size.
     fseek(pFile , 0 , SEEK_END);
-    int iSize  = ftell(pFile);
+    int iSize  = (int)ftell(pFile);
     rewind(pFile);
 
 	// reading first 4KB of the file
