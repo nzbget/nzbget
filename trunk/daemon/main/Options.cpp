@@ -3013,7 +3013,7 @@ bool Options::SaveConfig(OptEntries* pOptEntries)
 	}
 
 	// close and truncate the file
-	int pos = ftell(infile);
+	int pos = (int)ftell(infile);
 	fclose(infile);
 
 	Util::TruncateFile(m_szConfigFilename, pos);

@@ -38,6 +38,8 @@
 #include <unistd.h>
 #include <sys/wait.h>
 #include <signal.h>
+#else
+#include <io.h>
 #endif
 #include <sys/stat.h>
 #include <errno.h>

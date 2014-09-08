@@ -34,6 +34,7 @@
 
 #include <stdlib.h>
 #include <string.h>
+#include <stdio.h>
 #ifndef WIN32
 #include <unistd.h>
 #include <sys/socket.h>

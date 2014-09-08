@@ -42,7 +42,7 @@ private:
 	char*				m_pArticleData;
 	long long			m_iArticleOffset;
 	int					m_iArticleSize;
-	long long			m_iArticlePtr;
+	int					m_iArticlePtr;
 	bool				m_bFlushing;
 	bool				m_bDuplicate;
 	char*				m_szInfoName;

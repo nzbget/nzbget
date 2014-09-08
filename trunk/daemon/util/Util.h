@@ -26,13 +26,6 @@
 #ifndef UTIL_H
 #define UTIL_H
 
-#ifdef WIN32
-#include <stdio.h>
-#include <io.h>
-#else
-#include <dirent.h>
-#endif
-
 #ifdef DIRBROWSER_SNAPSHOT
 #include <deque>
 #endif
@@ -52,7 +45,7 @@ private:
 	HANDLE				m_hFile;
 	bool				m_bFirst;
 #else
-	DIR*				m_pDir;
+	void*				m_pDir;    // DIR*, declared as void* to avoid including of <dirent>
 	struct dirent*		m_pFindData;
 #endif
 

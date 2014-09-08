@@ -481,7 +481,7 @@ void ArticleWriter::CompleteFileParts()
 
 		if (pa->GetSegmentContent())
 		{
-			fseek(outfile, (size_t)pa->GetSegmentOffset(), SEEK_SET);
+			fseek(outfile, pa->GetSegmentOffset(), SEEK_SET);
 			fwrite(pa->GetSegmentContent(), 1, pa->GetSegmentSize(), outfile);
 			pa->DiscardSegment();
 			SetLastUpdateTimeNow();
@@ -703,7 +703,7 @@ void ArticleWriter::FlushCache()
 
 		if (bDirectWrite)
 		{
-			fseek(outfile, (size_t)pa->GetSegmentOffset(), SEEK_SET);
+			fseek(outfile, pa->GetSegmentOffset(), SEEK_SET);
 		}
 
 		fwrite(pa->GetSegmentContent(), 1, pa->GetSegmentSize(), outfile);

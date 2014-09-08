@@ -38,12 +38,14 @@
 #include <errno.h>
 #include <ctype.h>
 #ifdef WIN32
+#include <io.h>
 #include <direct.h>
 #include <WinIoCtl.h>
 #else
 #include <unistd.h>
 #include <sys/statvfs.h>
 #include <pwd.h>
+#include <dirent.h>
 #endif
 #ifdef HAVE_REGEX_H
 #include <regex.h>
@@ -216,7 +218,7 @@ DirBrowser::~DirBrowser()
 	{
 		if (m_pDir)
 		{
-			closedir(m_pDir);
+			closedir((DIR*)m_pDir);
 		}
 	}
 }
@@ -233,7 +235,7 @@ const char* DirBrowser::Next()
 	{
 		if (m_pDir)
 		{
-			m_pFindData = readdir(m_pDir);
+			m_pFindData = readdir((DIR*)m_pDir);
 			if (m_pFindData)
 			{
 				return m_pFindData->d_name;
@@ -434,7 +436,7 @@ bool Util::LoadFileIntoBuffer(const char* szFileName, char** pBuffer, int* pBuff
 
     // obtain file size.
     fseek(pFile , 0 , SEEK_END);
-    int iSize  = ftell(pFile);
+    int iSize  = (int)ftell(pFile);
     rewind(pFile);
 
     // allocate memory to contain the whole file.
@@ -482,7 +484,9 @@ bool Util::CreateSparseFile(const char* szFilename, long long iSize)
 		DWORD dwBytesReturned;
 		DeviceIoControl(hFile, FSCTL_SET_SPARSE, NULL, 0, NULL, 0, &dwBytesReturned, NULL);
 
-		SetFilePointer(hFile, iSize, NULL, FILE_END);
+		LARGE_INTEGER iSize64;
+		iSize64.QuadPart = iSize;
+		SetFilePointerEx(hFile, iSize64, NULL, FILE_END);
 		SetEndOfFile(hFile);
 		CloseHandle(hFile);
 		bOK = true;
