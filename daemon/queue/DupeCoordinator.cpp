@@ -108,6 +108,53 @@ void DupeCoordinator::NZBFound(DownloadQueue* pDownloadQueue, NZBInfo* pNZBInfo)
 		}
 	}
 
+	// if download has empty dupekey and empty dupescore - check if download queue
+	// or history have an item with the same name and non empty dupekey or dupescore and
+	// take these properties from this item
+	if (Util::EmptyStr(pNZBInfo->GetDupeKey()) && pNZBInfo->GetDupeScore() == 0)
+	{
+		for (NZBList::iterator it = pDownloadQueue->GetQueue()->begin(); it != pDownloadQueue->GetQueue()->end(); it++)
+		{
+			NZBInfo* pQueuedNZBInfo = *it;
+			if (!strcmp(pQueuedNZBInfo->GetName(), pNZBInfo->GetName()) &&
+				(!Util::EmptyStr(pQueuedNZBInfo->GetDupeKey()) || pQueuedNZBInfo->GetDupeScore() != 0))
+			{
+				pNZBInfo->SetDupeKey(pQueuedNZBInfo->GetDupeKey());
+				pNZBInfo->SetDupeScore(pQueuedNZBInfo->GetDupeScore());
+				info("Assigning dupekey %s and dupescore %i to %s from existing queue item with the same name",
+					 pNZBInfo->GetDupeKey(), pNZBInfo->GetDupeScore(), pNZBInfo->GetName());
+				break;
+			}
+		}
+	}
+	if (Util::EmptyStr(pNZBInfo->GetDupeKey()) && pNZBInfo->GetDupeScore() == 0)
+	{
+		for (HistoryList::iterator it = pDownloadQueue->GetHistory()->begin(); it != pDownloadQueue->GetHistory()->end(); it++)
+		{
+			HistoryInfo* pHistoryInfo = *it;
+			if (pHistoryInfo->GetKind() == HistoryInfo::hkNzb &&
+				!strcmp(pHistoryInfo->GetNZBInfo()->GetName(), pNZBInfo->GetName()) &&
+				(!Util::EmptyStr(pHistoryInfo->GetNZBInfo()->GetDupeKey()) || pHistoryInfo->GetNZBInfo()->GetDupeScore() != 0))
+			{
+				pNZBInfo->SetDupeKey(pHistoryInfo->GetNZBInfo()->GetDupeKey());
+				pNZBInfo->SetDupeScore(pHistoryInfo->GetNZBInfo()->GetDupeScore());
+				info("Assigning dupekey %s and dupescore %i to %s from existing history item with the same name",
+					 pNZBInfo->GetDupeKey(), pNZBInfo->GetDupeScore(), pNZBInfo->GetName());
+				break;
+			}
+			if (pHistoryInfo->GetKind() == HistoryInfo::hkDup &&
+				!strcmp(pHistoryInfo->GetDupInfo()->GetName(), pNZBInfo->GetName()) &&
+				(!Util::EmptyStr(pHistoryInfo->GetDupInfo()->GetDupeKey()) || pHistoryInfo->GetDupInfo()->GetDupeScore() != 0))
+			{
+				pNZBInfo->SetDupeKey(pHistoryInfo->GetDupInfo()->GetDupeKey());
+				pNZBInfo->SetDupeScore(pHistoryInfo->GetDupInfo()->GetDupeScore());
+				info("Assigning dupekey %s and dupescore %i to %s from existing history item with the same name",
+					 pNZBInfo->GetDupeKey(), pNZBInfo->GetDupeScore(), pNZBInfo->GetName());
+				break;
+			}
+		}
+	}
+
 	// find duplicates in history
 
 	bool bSkip = false;
