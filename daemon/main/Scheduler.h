@@ -39,6 +39,8 @@ public:
 	{
 		scPauseDownload,
 		scUnpauseDownload,
+		scPausePostProcess,
+		scUnpausePostProcess,
 		scDownloadRate,
 		scScript,
 		scProcess,
@@ -78,6 +80,7 @@ private:
 	bool				m_bDownloadRateChanged;
 	bool				m_bExecuteProcess;
 	bool				m_bPauseDownloadChanged;
+	bool				m_bPausePostProcessChanged;
 	bool				m_bPauseScanChanged;
 	bool				m_bServerChanged;
 	ServerStatusList	m_ServerStatusList;

@@ -2217,15 +2217,18 @@ void Options::InitScheduler()
 		optname[sizeof(optname)-1] = '\0';
 
 		const char* CommandNames[] = { "pausedownload", "pause", "unpausedownload", "resumedownload", "unpause", "resume",
+			"pausepostprocess", "unpausepostprocess", "resumepostprocess", "pausepost", "unpausepost", "resumepost",
 			"downloadrate", "setdownloadrate", "rate", "speed", "script", "process", "pausescan", "unpausescan", "resumescan",
 			"activateserver", "activateservers", "deactivateserver", "deactivateservers", "fetchfeed", "fetchfeeds" };
 		const int CommandValues[] = { Scheduler::scPauseDownload, Scheduler::scPauseDownload, Scheduler::scUnpauseDownload,
-			Scheduler::scUnpauseDownload, Scheduler::scUnpauseDownload, Scheduler::scUnpauseDownload, Scheduler::scDownloadRate,
-			Scheduler::scDownloadRate, Scheduler::scDownloadRate, Scheduler::scDownloadRate, Scheduler::scScript,
-			Scheduler::scProcess, Scheduler::scPauseScan, Scheduler::scUnpauseScan, Scheduler::scUnpauseScan,
+			Scheduler::scUnpauseDownload, Scheduler::scUnpauseDownload, Scheduler::scUnpauseDownload,
+			Scheduler::scPausePostProcess, Scheduler::scUnpausePostProcess, Scheduler::scUnpausePostProcess,
+			Scheduler::scPausePostProcess, Scheduler::scUnpausePostProcess, Scheduler::scUnpausePostProcess,
+			Scheduler::scDownloadRate, Scheduler::scDownloadRate, Scheduler::scDownloadRate, Scheduler::scDownloadRate,
+			Scheduler::scScript, Scheduler::scProcess, Scheduler::scPauseScan, Scheduler::scUnpauseScan, Scheduler::scUnpauseScan,
 			Scheduler::scActivateServer, Scheduler::scActivateServer, Scheduler::scDeactivateServer,
 			Scheduler::scDeactivateServer, Scheduler::scFetchFeed, Scheduler::scFetchFeed };
-		const int CommandCount = 21;
+		const int CommandCount = 27;
 		Scheduler::ECommand eCommand = (Scheduler::ECommand)ParseEnumValue(optname, CommandCount, CommandNames, CommandValues);
 
 		if (szParam && strlen(szParam) > 0 && eCommand == Scheduler::scProcess &&

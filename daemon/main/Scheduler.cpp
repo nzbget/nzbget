@@ -224,7 +224,8 @@ void Scheduler::CheckTasks()
 
 void Scheduler::ExecuteTask(Task* pTask)
 {
-	const char* szCommandName[] = { "Pause", "Unpause", "Set download rate", "Execute process", "Execute script",
+	const char* szCommandName[] = { "Pause", "Unpause", "Pause Post-processing", "Unpause Post-processing",
+		"Set download rate", "Execute process", "Execute script",
 		"Pause Scan", "Unpause Scan", "Enable Server", "Disable Server", "Fetch Feed" };
 	debug("Executing scheduled command: %s", szCommandName[pTask->m_eCommand]);
 
@@ -244,18 +245,24 @@ void Scheduler::ExecuteTask(Task* pTask)
 			m_bPauseDownloadChanged = true;
 			break;
 
-		case scScript:
-		case scProcess:
-			if (m_bExecuteProcess)
-			{
-				SchedulerScriptController::StartScript(pTask->m_szParam, pTask->m_eCommand == scProcess, pTask->m_iID);
-			}
+		case scPausePostProcess:
+		case scUnpausePostProcess:
+			g_pOptions->SetPausePostProcess(pTask->m_eCommand == scPausePostProcess);
+			m_bPausePostProcessChanged = true;
 			break;
 
 		case scPauseScan:
 		case scUnpauseScan:
 			g_pOptions->SetPauseScan(pTask->m_eCommand == scPauseScan);
 			m_bPauseScanChanged = true;
+			break;
+
+		case scScript:
+		case scProcess:
+			if (m_bExecuteProcess)
+			{
+				SchedulerScriptController::StartScript(pTask->m_szParam, pTask->m_eCommand == scProcess, pTask->m_iID);
+			}
 			break;
 
 		case scActivateServer:
@@ -276,6 +283,7 @@ void Scheduler::PrepareLog()
 {
 	m_bDownloadRateChanged = false;
 	m_bPauseDownloadChanged = false;
+	m_bPausePostProcessChanged = false;
 	m_bPauseScanChanged = false;
 	m_bServerChanged = false;
 }
@@ -289,6 +297,10 @@ void Scheduler::PrintLog()
 	if (m_bPauseDownloadChanged)
 	{
 		info("Scheduler: %s download", g_pOptions->GetPauseDownload() ? "pausing" : "unpausing");
+	}
+	if (m_bPausePostProcessChanged)
+	{
+		info("Scheduler: %s post-processing", g_pOptions->GetPausePostProcess() ? "pausing" : "unpausing");
 	}
 	if (m_bPauseScanChanged)
 	{
