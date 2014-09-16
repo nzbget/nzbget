@@ -247,6 +247,10 @@ void QueueCoordinator::Run()
 		{
 			g_pStatMeter->EnterLeaveStandBy(bStandBy);
 			bWasStandBy = bStandBy;
+			if (bStandBy)
+			{
+				SavePartialState();
+			}
 		}
 
 		// sleep longer in StandBy
@@ -266,6 +270,10 @@ void QueueCoordinator::Run()
 			// this code should not be called too often, once per second is OK
 			g_pServerPool->CloseUnusedConnections();
 			ResetHangingDownloads();
+			if (!bStandBy)
+			{
+				SavePartialState();
+			}
 			iResetCounter = 0;
 			g_pStatMeter->IntervalCheck();
 			AdjustDownloadsLimit();
@@ -284,6 +292,8 @@ void QueueCoordinator::Run()
 		ResetHangingDownloads();
 	}
 	debug("QueueCoordinator: Downloads are completed");
+
+	SavePartialState();
 
 	debug("Exiting QueueCoordinator-loop");
 }
@@ -649,10 +659,7 @@ void QueueCoordinator::ArticleCompleted(ArticleDownloader* pArticleDownloader)
 		fileCompleted = (int)pFileInfo->GetArticles()->size() == pFileInfo->GetCompletedArticles();
 		pFileInfo->GetServerStats()->ListOp(pArticleDownloader->GetServerStats(), ServerStatList::soAdd);
 		pNZBInfo->GetCurrentServerStats()->ListOp(pArticleDownloader->GetServerStats(), ServerStatList::soAdd);
-		if (g_pOptions->GetServerMode() && g_pOptions->GetSaveQueue() && g_pOptions->GetContinuePartial())
-		{
-			g_pDiskState->SaveFileState(pFileInfo, false);
-		}
+		pFileInfo->SetPartialChanged(true);
 	}
 
 	if (!pFileInfo->GetFilenameConfirmed() &&
@@ -821,6 +828,33 @@ void QueueCoordinator::DiscardDiskFile(FileInfo* pFileInfo)
 	{
 		remove(pFileInfo->GetOutputFilename());
 	}
+}
+
+void QueueCoordinator::SavePartialState()
+{
+	if (!(g_pOptions->GetServerMode() && g_pOptions->GetSaveQueue() && g_pOptions->GetContinuePartial()))
+	{
+		return;
+	}
+
+	DownloadQueue* pDownloadQueue = DownloadQueue::Lock();
+
+	for (NZBList::iterator it = pDownloadQueue->GetQueue()->begin(); it != pDownloadQueue->GetQueue()->end(); it++)
+	{
+		NZBInfo* pNZBInfo = *it;
+		for (FileList::iterator it2 = pNZBInfo->GetFileList()->begin(); it2 != pNZBInfo->GetFileList()->end(); it2++)
+		{
+			FileInfo* pFileInfo = *it2;
+			if (pFileInfo->GetPartialChanged())
+			{
+				debug("Saving partial state for %s", pFileInfo->GetFilename());
+				g_pDiskState->SaveFileState(pFileInfo, false);
+				pFileInfo->SetPartialChanged(false);
+			}
+		}
+	}
+
+	DownloadQueue::Unlock();
 }
 
 void QueueCoordinator::CheckHealth(DownloadQueue* pDownloadQueue, FileInfo* pFileInfo)

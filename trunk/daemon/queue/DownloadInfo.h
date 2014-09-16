@@ -156,6 +156,7 @@ private:
 	int					m_iActiveDownloads;
 	bool				m_bAutoDeleted;
 	int					m_iCachedArticles;
+	bool				m_bPartialChanged;
 
 	static int			m_iIDGen;
 	static int			m_iIDMax;
@@ -215,13 +216,15 @@ public:
 	bool				GetOutputInitialized() { return m_bOutputInitialized; }
 	void				SetOutputInitialized(bool bOutputInitialized) { m_bOutputInitialized = bOutputInitialized; }
 	bool				GetExtraPriority() { return m_bExtraPriority; }
-	void				SetExtraPriority(bool bExtraPriority) { m_bExtraPriority = bExtraPriority; };
+	void				SetExtraPriority(bool bExtraPriority) { m_bExtraPriority = bExtraPriority; }
 	int					GetActiveDownloads() { return m_iActiveDownloads; }
 	void				SetActiveDownloads(int iActiveDownloads);
 	bool				GetAutoDeleted() { return m_bAutoDeleted; }
 	void				SetAutoDeleted(bool bAutoDeleted) { m_bAutoDeleted = bAutoDeleted; }
 	int					GetCachedArticles() { return m_iCachedArticles; }
-	void				SetCachedArticles(int iCachedArticles) { m_iCachedArticles = iCachedArticles; };
+	void				SetCachedArticles(int iCachedArticles) { m_iCachedArticles = iCachedArticles; }
+	bool				GetPartialChanged() { return m_bPartialChanged; }
+	void				SetPartialChanged(bool bPartialChanged) { m_bPartialChanged = bPartialChanged; }
 	ServerStatList*		GetServerStats() { return &m_ServerStats; }
 };
                               
@@ -922,7 +925,7 @@ protected:
 	static void				Loaded() { g_bLoaded = true; }
 
 public:
-	virtual					~DownloadQueue() {};
+	virtual					~DownloadQueue() {}
 	static bool				IsLoaded() { return g_bLoaded; }
 	static DownloadQueue*	Lock();
 	static void				Unlock();
