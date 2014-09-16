@@ -339,7 +339,7 @@ bool ParRenamer::IsSplittedFragment(const char* szFilename, const char* szCorrec
 		{
 			for (p++; *p && strchr("0123456789", *p); p++) ;
 			bSplittedFragement = !*p;
-			bSplittedFragement = bSplittedFragement && atoi(szDiskBasename + iBaseLen + 1) == 1;
+			bSplittedFragement = bSplittedFragement && atoi(szDiskBasename + iBaseLen + 1) <= 1; // .000 or .001
 		}
 	}
 

@@ -345,7 +345,8 @@ bool UnpackController::JoinFile(const char* szFragBaseName)
 
 	RegEx regExSplitExt(".*\\.[a-z,0-9]{3}\\.[0-9]{3}$");
 	int iCount = 0;
-	int iMax = 0;
+	int iMin = -1;
+	int iMax = -1;
 	int iDifSizeCount = 0;
 	int iDifSizeMin = 999999;
 	DirBrowser dir(m_szDestDir);
@@ -360,6 +361,7 @@ bool UnpackController::JoinFile(const char* szFragBaseName)
 			const char* szSegExt = strrchr(filename, '.');
 			int iSegNum = atoi(szSegExt + 1);
 			iCount++;
+			iMin = iSegNum < iMin || iMin == -1 ? iSegNum : iMin;
 			iMax = iSegNum > iMax ? iSegNum : iMax;
 			
 			long long lSegmentSize = Util::FileSize(szFullFilename);
@@ -372,8 +374,10 @@ bool UnpackController::JoinFile(const char* szFragBaseName)
 		}
 	}
 
-	if (iCount != iMax || ((iDifSizeMin != iCount || iDifSizeMin > iMax) &&
-		m_pPostInfo->GetNZBInfo()->GetParStatus() != NZBInfo::psSuccess))
+	int iCorrectedCount = iCount - (iMin == 0 ? 1 : 0);
+	if ((iMin > 1) || iCorrectedCount != iMax ||
+		((iDifSizeMin != iCorrectedCount || iDifSizeMin > iMax) &&
+		 m_pPostInfo->GetNZBInfo()->GetParStatus() != NZBInfo::psSuccess))
 	{
 		PrintMessage(Message::mkWarning, "Could not join splitted file %s: missing fragments detected", szDestBaseName);
 		return false;
@@ -406,7 +410,7 @@ bool UnpackController::JoinFile(const char* szFragBaseName)
 	char* buffer = (char*)malloc(BUFFER_SIZE);
 
 	bool bOK = true;
-	for (int i = 1; ; i++)
+	for (int i = iMin; i <= iMax; i++)
 	{
 		PrintMessage(Message::mkInfo, "Joining from %s.%.3i", szDestBaseName, i);
 
@@ -551,6 +555,9 @@ void UnpackController::CheckArchiveFiles(bool bScanNonStdFiles)
 
 		if (strcmp(filename, ".") && strcmp(filename, "..") && !Util::DirectoryExists(szFullFilename))
 		{
+			const char* szExt = strchr(filename, '.');
+			int iExtNum = szExt ? atoi(szExt + 1) : -1;
+
 			if (regExRar.Match(filename))
 			{
 				m_bHasRarFiles = true;
@@ -563,13 +570,13 @@ void UnpackController::CheckArchiveFiles(bool bScanNonStdFiles)
 			{
 				m_bHasSevenZipMultiFiles = true;
 			}
-			else if (bScanNonStdFiles && !m_bHasNonStdRarFiles &&
+			else if (bScanNonStdFiles && !m_bHasNonStdRarFiles && iExtNum > 1 &&
 				!regExRarMultiSeq.Match(filename) && regExNumExt.Match(filename) &&
 				FileHasRarSignature(szFullFilename))
 			{
 				m_bHasNonStdRarFiles = true;
 			}
-			else if (regExSplitExt.Match(filename))
+			else if (regExSplitExt.Match(filename) && (iExtNum == 0 || iExtNum == 1))
 			{
 				m_bHasSplittedFiles = true;
 			}
