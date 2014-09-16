@@ -1027,6 +1027,7 @@ FileInfo::FileInfo(int iID)
 	m_iActiveDownloads = 0;
 	m_bAutoDeleted = false;
 	m_iCachedArticles = 0;
+	m_bPartialChanged = false;
 	m_iID = iID ? iID : ++m_iIDGen;
 }
 

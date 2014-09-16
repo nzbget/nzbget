@@ -73,6 +73,7 @@ private:
 	void					ResetHangingDownloads();
 	void					AdjustDownloadsLimit();
 	void					Load();
+	void					SavePartialState();
 
 protected:
 	virtual void			LogDebugInfo();
