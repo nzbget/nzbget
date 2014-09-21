@@ -908,28 +908,13 @@ void Options::InitOptFile()
 	m_bConfigInitialized = true;
 }
 
-void Options::CheckDir(char** dir, const char* szOptionName, bool bAllowEmpty, bool bCreate)
+void Options::CheckDir(char** dir, const char* szOptionName,
+	const char* szParentDir, bool bAllowEmpty, bool bCreate)
 {
 	char* usedir = NULL;
 	const char* tempdir = GetOption(szOptionName);
-	if (tempdir && strlen(tempdir) > 0)
-	{
-		int len = strlen(tempdir);
-		usedir = (char*) malloc(len + 2);
-		strcpy(usedir, tempdir);
-		char ch = usedir[len-1];
-		if (ch == ALT_PATH_SEPARATOR)
-		{
-			usedir[len-1] = PATH_SEPARATOR;
-		}
-		else if (ch != PATH_SEPARATOR)
-		{
-			usedir[len] = PATH_SEPARATOR;
-			usedir[len + 1] = '\0';
-		}
-		Util::NormalizePathSeparators(usedir);
-	}
-	else
+
+	if (Util::EmptyStr(tempdir))
 	{
 		if (!bAllowEmpty)
 		{
@@ -937,6 +922,47 @@ void Options::CheckDir(char** dir, const char* szOptionName, bool bAllowEmpty, b
 		}
 		*dir = strdup("");
 		return;
+	}
+
+	int len = strlen(tempdir);
+	usedir = (char*)malloc(len + 2);
+	strcpy(usedir, tempdir);
+	char ch = usedir[len-1];
+	Util::NormalizePathSeparators(usedir);
+	if (ch != PATH_SEPARATOR)
+	{
+		usedir[len] = PATH_SEPARATOR;
+		usedir[len + 1] = '\0';
+	}
+
+	if (!(usedir[0] == PATH_SEPARATOR || usedir[0] == ALT_PATH_SEPARATOR
+#ifdef WIN32
+		|| (usedir[0] && usedir[1] == ':')
+#endif
+		  ) && !Util::EmptyStr(szParentDir))
+	{
+		// convert relative path to absolute path
+		int plen = strlen(szParentDir);
+		int len2 = len + plen + 4;
+		char* usedir2 = (char*)malloc(len2);
+		if (szParentDir[plen-1] == PATH_SEPARATOR || szParentDir[plen-1] == ALT_PATH_SEPARATOR)
+		{
+			snprintf(usedir2, len2, "%s%s", szParentDir, usedir);
+		}
+		else
+		{
+			snprintf(usedir2, len2, "%s%c%s", szParentDir, PATH_SEPARATOR, usedir);
+		}
+		usedir2[len2-1] = '\0';
+		free(usedir);
+
+		usedir = usedir2;
+		Util::NormalizePathSeparators(usedir);
+
+		int ulen = strlen(usedir);
+		usedir[ulen-1] = '\0';
+		SetOption(szOptionName, usedir);
+		usedir[ulen-1] = PATH_SEPARATOR;
 	}
 
 	// Ensure the dir is created
@@ -950,12 +976,14 @@ void Options::CheckDir(char** dir, const char* szOptionName, bool bAllowEmpty, b
 
 void Options::InitOptions()
 {
-	CheckDir(&m_szDestDir, OPTION_DESTDIR, false, false);
-	CheckDir(&m_szInterDir, OPTION_INTERDIR, true, true);
-	CheckDir(&m_szTempDir, OPTION_TEMPDIR, false, true);
-	CheckDir(&m_szQueueDir, OPTION_QUEUEDIR, false, true);
-	CheckDir(&m_szWebDir, OPTION_WEBDIR, true, false);
-	CheckDir(&m_szScriptDir, OPTION_SCRIPTDIR, true, false);
+	const char* szMainDir = GetOption(OPTION_MAINDIR);
+
+	CheckDir(&m_szDestDir, OPTION_DESTDIR, szMainDir, false, false);
+	CheckDir(&m_szInterDir, OPTION_INTERDIR, szMainDir, true, true);
+	CheckDir(&m_szTempDir, OPTION_TEMPDIR, szMainDir, false, true);
+	CheckDir(&m_szQueueDir, OPTION_QUEUEDIR, szMainDir, false, true);
+	CheckDir(&m_szWebDir, OPTION_WEBDIR, NULL, true, false);
+	CheckDir(&m_szScriptDir, OPTION_SCRIPTDIR, szMainDir, true, false);
 
 	m_szConfigTemplate		= strdup(GetOption(OPTION_CONFIGTEMPLATE));
 	m_szScriptOrder			= strdup(GetOption(OPTION_SCRIPTORDER));
@@ -1008,7 +1036,7 @@ void Options::InitOptions()
 	m_iParBuffer			= ParseIntValue(OPTION_PARBUFFER, 10);
 	m_iParThreads			= ParseIntValue(OPTION_PARTHREADS, 10);
 
-	CheckDir(&m_szNzbDir, OPTION_NZBDIR, m_iNzbDirInterval == 0, true);
+	CheckDir(&m_szNzbDir, OPTION_NZBDIR, szMainDir, m_iNzbDirInterval == 0, true);
 
 	m_bCreateBrokenLog		= (bool)ParseEnumValue(OPTION_CREATEBROKENLOG, BoolCount, BoolNames, BoolValues);
 	m_bAppendCategoryDir	= (bool)ParseEnumValue(OPTION_APPENDCATEGORYDIR, BoolCount, BoolNames, BoolValues);
@@ -2080,7 +2108,7 @@ void Options::InitCategories()
 			char* szDestDir = NULL;
 			if (ndestdir && ndestdir[0] != '\0')
 			{
-				CheckDir(&szDestDir, destdiroptname, false, false);
+				CheckDir(&szDestDir, destdiroptname, m_szDestDir, false, false);
 			}
 
 			Category* pCategory = new Category(nname, szDestDir, bUnpack, npostscript);

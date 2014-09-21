@@ -394,7 +394,8 @@ private:
 	bool				SplitOptionString(const char* option, char** pOptName, char** pOptValue);
 	bool				ValidateOptionName(const char* optname, const char* optvalue);
 	void				LoadConfigFile();
-	void				CheckDir(char** dir, const char* szOptionName, bool bAllowEmpty, bool bCreate);
+	void				CheckDir(char** dir, const char* szOptionName, const char* szParentDir,
+							bool bAllowEmpty, bool bCreate);
 	void				ParseFileIDList(int argc, char* argv[], int optind);
 	void				ParseFileNameList(int argc, char* argv[], int optind);
 	bool				ParseTime(const char** pTime, int* pHours, int* pMinutes);
