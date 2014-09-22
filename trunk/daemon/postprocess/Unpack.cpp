@@ -806,12 +806,15 @@ void UnpackController::AddMessage(Message::EKind eKind, const char* szText)
 	}
 
 	int iLen = strlen(szText);
-	if (m_eUnpacker == upUnrar && (strstr(szText, " : packed data CRC failed in volume") ||
-		((iLen > 13) && !strncmp(szText + iLen - 13, " - CRC failed", 13)) ||
+	if (m_eUnpacker == upUnrar && !IsStopped() &&
+		(strstr(szText, " : packed data CRC failed in volume") ||
+		strstr(szText, " : packed data checksum error in volume") ||
+		(iLen > 13 && !strncmp(szText + iLen - 13, " - CRC failed", 13)) ||
+		(iLen > 18 && !strncmp(szText + iLen - 18, " - checksum failed", 18)) ||
 		!strncmp(szText, "Unrar: WARNING: You need to start extraction from a previous volume", 67)))
 	{
 		char szMsgText[1024];
-		snprintf(szMsgText, 1024, "Cancelling %s due to errors in archive", m_szInfoName);
+		snprintf(szMsgText, 1024, "Cancelling %s due to errors", m_szInfoName);
 		szMsgText[1024-1] = '\0';
 		ScriptController::AddMessage(Message::mkWarning, szMsgText);
 		m_pPostInfo->AppendMessage(Message::mkWarning, szMsgText);
