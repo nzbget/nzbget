@@ -71,8 +71,10 @@ private:
 	bool				m_bUnpackOK;
 	bool				m_bUnpackStartError;
 	bool				m_bUnpackSpaceError;
-	bool				m_bUnpackPasswordError;
+	bool				m_bUnpackPasswordError4;
+	bool				m_bUnpackPasswordError5;
 	bool				m_bCleanedUpDisk;
+	bool				m_bAutoTerminated;
 	EUnpacker			m_eUnpacker;
 	bool				m_bFinalDirCreated;
 	FileList			m_JoinedFiles;

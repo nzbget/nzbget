@@ -614,6 +614,11 @@ void ScriptController::Terminate()
 
 #ifdef WIN32
 	BOOL bOK = TerminateProcess(m_hProcess, -1);
+	if (bOK)
+	{
+		// wait 60 seconds for process to terminate
+		WaitForSingleObject(m_hProcess, 60 * 1000);
+	}
 #else
 	pid_t hKillProcess = m_hProcess;
 	if (getpgid(hKillProcess) == hKillProcess)
