@@ -143,7 +143,9 @@ void UnpackController::Run()
 		m_bUnpackOK = true;
 		m_bUnpackStartError = false;
 		m_bUnpackSpaceError = false;
-		m_bUnpackPasswordError = false;
+		m_bUnpackPasswordError4 = false;
+		m_bUnpackPasswordError5 = false;
+		m_bAutoTerminated = false;
 
 		if (m_bHasRarFiles || m_bHasNonStdRarFiles)
 		{
@@ -229,7 +231,7 @@ void UnpackController::ExecuteUnrar()
 	m_bUnpackOK = iExitCode == 0 && m_bAllOKMessageReceived && !GetTerminated();
 	m_bUnpackStartError = iExitCode == -1;
 	m_bUnpackSpaceError = iExitCode == 5;
-	m_bUnpackPasswordError = iExitCode == 11; // only for rar5-archives
+	m_bUnpackPasswordError5 |= iExitCode == 11; // only for rar5-archives
 
 	if (!m_bUnpackOK && iExitCode > 0)
 	{
@@ -479,8 +481,9 @@ void UnpackController::Completed()
 	{
 #ifndef DISABLE_PARCHECK
 		if (!m_bUnpackOK && m_pPostInfo->GetNZBInfo()->GetParStatus() <= NZBInfo::psSkipped &&
-			!m_bUnpackStartError && !m_bUnpackSpaceError && !m_bUnpackPasswordError &&
-			!GetTerminated() && m_bHasParFiles)
+			!m_bUnpackStartError && !m_bUnpackSpaceError &&
+			(!m_bUnpackPasswordError5 || m_bUnpackPasswordError4) &&
+			(!GetTerminated() || m_bAutoTerminated) && m_bHasParFiles)
 		{
 			RequestParCheck();
 		}
@@ -490,7 +493,8 @@ void UnpackController::Completed()
 			PrintMessage(Message::mkError, "%s failed", m_szInfoNameUp);
 			m_pPostInfo->GetNZBInfo()->SetUnpackStatus(
 				m_bUnpackSpaceError ? NZBInfo::usSpace :
-				m_bUnpackPasswordError ? NZBInfo::usPassword :
+				m_bUnpackPasswordError5 || (m_bUnpackPasswordError4 && 
+					m_pPostInfo->GetNZBInfo()->GetParStatus() == NZBInfo::psSuccess) ? NZBInfo::usPassword :
 				NZBInfo::usFailure);
 			m_pPostInfo->SetStage(PostInfo::ptQueued);
 		}
@@ -805,9 +809,21 @@ void UnpackController::AddMessage(Message::EKind eKind, const char* szText)
 		SetProgressLabel(szText + 7);
 	}
 
+	if (m_eUnpacker == upUnrar &&
+		(!strncmp(szText, "Unrar: Checksum error in the encrypted file", 42) ||
+		 !strncmp(szText, "Unrar: CRC failed in the encrypted file", 39)))
+	{
+		m_bUnpackPasswordError4 = true;
+	}
+
+	if (m_eUnpacker == upUnrar && !strncmp(szText, "Unrar: The specified password is incorrect.'", 43))
+	{
+		m_bUnpackPasswordError5 = true;
+	}
+
 	int iLen = strlen(szText);
-	if (m_eUnpacker == upUnrar && !IsStopped() &&
-		(strstr(szText, " : packed data CRC failed in volume") ||
+	if (m_eUnpacker == upUnrar && !IsStopped() && (m_bUnpackPasswordError4 || m_bUnpackPasswordError5 ||
+		strstr(szText, " : packed data CRC failed in volume") ||
 		strstr(szText, " : packed data checksum error in volume") ||
 		(iLen > 13 && !strncmp(szText + iLen - 13, " - CRC failed", 13)) ||
 		(iLen > 18 && !strncmp(szText + iLen - 18, " - checksum failed", 18)) ||
@@ -818,6 +834,7 @@ void UnpackController::AddMessage(Message::EKind eKind, const char* szText)
 		szMsgText[1024-1] = '\0';
 		ScriptController::AddMessage(Message::mkWarning, szMsgText);
 		m_pPostInfo->AppendMessage(Message::mkWarning, szMsgText);
+		m_bAutoTerminated = true;
 		Stop();
 	}
 
