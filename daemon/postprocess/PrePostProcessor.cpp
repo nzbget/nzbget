@@ -600,10 +600,13 @@ void PrePostProcessor::StartJob(DownloadQueue* pDownloadQueue, PostInfo* pPostIn
 
 	bool bCleanup = !bUnpack &&
 		pPostInfo->GetNZBInfo()->GetCleanupStatus() == NZBInfo::csNone &&
-		(pPostInfo->GetNZBInfo()->GetParStatus() == NZBInfo::psSuccess ||
+		((pPostInfo->GetNZBInfo()->GetParStatus() == NZBInfo::psSuccess &&
+		  pPostInfo->GetNZBInfo()->GetUnpackStatus() != NZBInfo::usFailure &&
+		  pPostInfo->GetNZBInfo()->GetUnpackStatus() != NZBInfo::usSpace &&
+		  pPostInfo->GetNZBInfo()->GetUnpackStatus() != NZBInfo::usPassword) ||
 		 (pPostInfo->GetNZBInfo()->GetUnpackStatus() == NZBInfo::usSuccess &&
 		  pPostInfo->GetNZBInfo()->GetParStatus() != NZBInfo::psFailure)) &&
-		strlen(g_pOptions->GetExtCleanupDisk()) > 0;
+		!Util::EmptyStr(g_pOptions->GetExtCleanupDisk());
 
 	bool bMoveInter = !bUnpack &&
 		pPostInfo->GetNZBInfo()->GetMoveStatus() == NZBInfo::msNone &&
@@ -613,7 +616,7 @@ void PrePostProcessor::StartJob(DownloadQueue* pDownloadQueue, PostInfo* pPostIn
 		pPostInfo->GetNZBInfo()->GetParStatus() != NZBInfo::psFailure &&
 		pPostInfo->GetNZBInfo()->GetParStatus() != NZBInfo::psManual &&
 		pPostInfo->GetNZBInfo()->GetDeleteStatus() == NZBInfo::dsNone &&
-		strlen(g_pOptions->GetInterDir()) > 0 &&
+		!Util::EmptyStr(g_pOptions->GetInterDir()) &&
 		!strncmp(pPostInfo->GetNZBInfo()->GetDestDir(), g_pOptions->GetInterDir(), strlen(g_pOptions->GetInterDir()));
 
 	bool bPostScript = true;
@@ -680,20 +683,26 @@ void PrePostProcessor::JobCompleted(DownloadQueue* pDownloadQueue, PostInfo* pPo
 	if (IsNZBFileCompleted(pNZBInfo, true, false))
 	{
 		// Cleaning up queue if par-check was successful or unpack was successful or
-		// script was successful (if unpack was not performed)
-		bool bCanCleanupQueue = pNZBInfo->GetParStatus() == NZBInfo::psSuccess ||
-			 pNZBInfo->GetParStatus() == NZBInfo::psRepairPossible ||
-			 pNZBInfo->GetUnpackStatus() == NZBInfo::usSuccess ||
-			 (pNZBInfo->GetUnpackStatus() == NZBInfo::usNone &&
-			  pNZBInfo->GetScriptStatuses()->CalcTotalStatus() == ScriptStatus::srSuccess);
-		if (g_pOptions->GetParCleanupQueue() && bCanCleanupQueue)
+		// health is 100% (if unpack and par-check were not performed)
+		// or health is below critical health
+		bool bCanCleanupQueue =
+			((pNZBInfo->GetParStatus() == NZBInfo::psSuccess ||
+			  pNZBInfo->GetParStatus() == NZBInfo::psRepairPossible) &&
+			 pNZBInfo->GetUnpackStatus() != NZBInfo::usFailure &&
+			 pNZBInfo->GetUnpackStatus() != NZBInfo::usSpace &&
+			 pNZBInfo->GetUnpackStatus() != NZBInfo::usPassword) ||
+			(pNZBInfo->GetUnpackStatus() == NZBInfo::usSuccess &&
+			 pNZBInfo->GetParStatus() != NZBInfo::psFailure) ||
+			(pNZBInfo->GetUnpackStatus() <= NZBInfo::usSkipped &&
+			 pNZBInfo->GetParStatus() != NZBInfo::psFailure &&
+			 pNZBInfo->GetFailedSize() - pNZBInfo->GetParFailedSize() == 0) ||
+			(pNZBInfo->CalcHealth() < pNZBInfo->CalcCriticalHealth(false) &&
+			 pNZBInfo->CalcCriticalHealth(false) < 1000);
+		if (g_pOptions->GetParCleanupQueue() && bCanCleanupQueue && !pNZBInfo->GetFileList()->empty())
 		{
-			if (!pNZBInfo->GetFileList()->empty())
-			{
-				info("Cleaning up download queue for %s", pNZBInfo->GetName());
-				pNZBInfo->SetParCleanup(true);
-				pDownloadQueue->EditEntry(pNZBInfo->GetID(), DownloadQueue::eaGroupDelete, 0, NULL);
-			}
+			info("Cleaning up download queue for %s", pNZBInfo->GetName());
+			pNZBInfo->SetParCleanup(true);
+			pDownloadQueue->EditEntry(pNZBInfo->GetID(), DownloadQueue::eaGroupDelete, 0, NULL);
 		}
 
 		if (pNZBInfo->GetUnpackCleanedUpDisk())
