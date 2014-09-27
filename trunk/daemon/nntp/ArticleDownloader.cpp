@@ -619,7 +619,8 @@ ArticleDownloader::EStatus ArticleDownloader::DecodeCheck()
 
 			if (m_eFormat == Decoder::efYenc)
 			{
-				m_pArticleInfo->SetCrc(m_YDecoder.GetExpectedCrc());
+				m_pArticleInfo->SetCrc(g_pOptions->GetCrcCheck() ?
+					m_YDecoder.GetCalculatedCrc() : m_YDecoder.GetExpectedCrc());
 			}
 
 			return adFinished;
