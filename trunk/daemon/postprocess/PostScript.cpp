@@ -169,7 +169,7 @@ void PostScriptController::PrepareParams(const char* szScriptName)
 	{
 		eParStatus = NZBInfo::psFailure;
 	}
-	SetIntEnvVar("NZBPP_PARSTATUS", iParStatus[m_pPostInfo->GetNZBInfo()->GetParStatus()]);
+	SetIntEnvVar("NZBPP_PARSTATUS", iParStatus[eParStatus]);
 
 	// deprecated
 	int iUnpackStatus[] = { 0, 0, 1, 2, 3, 4 };
