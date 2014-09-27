@@ -87,6 +87,7 @@ public:
 	long long				GetEnd() { return m_iEnd; }
 	long long				GetSize() { return m_iSize; }
 	unsigned long			GetExpectedCrc() { return m_lExpectedCRC; }
+	unsigned long			GetCalculatedCrc() { return m_lCalculatedCRC; }
 };
 
 class UDecoder: public Decoder
