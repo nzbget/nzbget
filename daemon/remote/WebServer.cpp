@@ -189,7 +189,7 @@ void WebProcessor::Execute()
 		char* pw = strchr(szAuthInfo, ':');
 		if (pw) *pw++ = '\0';
 		if ((strlen(g_pOptions->GetControlUsername()) > 0 && strcmp(szAuthInfo, g_pOptions->GetControlUsername())) ||
-			strcmp(pw, g_pOptions->GetControlPassword()))
+			(pw && strcmp(pw, g_pOptions->GetControlPassword())))
 		{
 			warn("Request received on port %i from %s, but username or password invalid (%s:%s)",
 				g_pOptions->GetControlPort(), m_pConnection->GetRemoteAddr(), szAuthInfo, pw);

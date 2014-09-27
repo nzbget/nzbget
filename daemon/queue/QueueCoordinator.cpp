@@ -561,11 +561,17 @@ bool QueueCoordinator::GetNextArticle(DownloadQueue* pDownloadQueue, FileInfo* &
 					iTotalFileCount += pNZBInfo->GetFileList()->size();
 				}
 
-				int iArrSize = sizeof(bool) * iTotalFileCount;
-				pCheckedFiles = (bool*)malloc(iArrSize);
-				memset(pCheckedFiles, false, iArrSize);
+				if (iTotalFileCount > 0)
+				{
+					int iArrSize = sizeof(bool) * iTotalFileCount;
+					pCheckedFiles = (bool*)malloc(iArrSize);
+					memset(pCheckedFiles, false, iArrSize);
+				}
 			}
-			pCheckedFiles[iFileNum] = true;
+			if (pCheckedFiles)
+			{
+				pCheckedFiles[iFileNum] = true;
+			}
 		}
 	}
 
