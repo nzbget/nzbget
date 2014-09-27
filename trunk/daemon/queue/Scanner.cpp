@@ -648,8 +648,8 @@ Scanner::EAddStatus Scanner::AddExternalFile(const char* szNZBName, const char* 
 	}
 
 	char* szUseCategory = strdup(szCategory ? szCategory : "");
-	Options::Category *pCategory = g_pOptions->FindCategory(szCategory, true);
-	if (pCategory && strcmp(szCategory, pCategory->GetName()))
+	Options::Category *pCategory = g_pOptions->FindCategory(szUseCategory, true);
+	if (pCategory && strcmp(szUseCategory, pCategory->GetName()))
 	{
 		free(szUseCategory);
 		szUseCategory = strdup(pCategory->GetName());

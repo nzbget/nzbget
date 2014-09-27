@@ -51,7 +51,7 @@ FeedInfo::FeedInfo(int iID, const char* szName, const char* szUrl, int iInterval
 	m_szName = strdup(szName ? szName : "");
 	m_szUrl = strdup(szUrl ? szUrl : "");
 	m_szFilter = strdup(szFilter ? szFilter : "");
-	m_iFilterHash = Util::HashBJ96(szFilter, strlen(szFilter), 0);
+	m_iFilterHash = Util::HashBJ96(m_szFilter, strlen(m_szFilter), 0);
 	m_szCategory = strdup(szCategory ? szCategory : "");
 	m_iInterval = iInterval;
 	m_bPauseNzb = bPauseNzb;
