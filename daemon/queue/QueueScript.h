@@ -42,32 +42,6 @@ protected:
 	virtual void		ExecuteScript(Options::Script* pScript) = 0;
 };
 
-class ScanScriptController : public NZBScriptController
-{
-private:
-	const char*			m_szNZBFilename;
-	const char*			m_szUrl;
-	const char*			m_szDirectory;
-	char**				m_pNZBName;
-	char**				m_pCategory;
-	int*				m_iPriority;
-	NZBParameterList*	m_pParameters;
-	bool*				m_bAddTop;
-	bool*				m_bAddPaused;
-	int					m_iPrefixLen;
-
-	void				PrepareParams(const char* szScriptName);
-
-protected:
-	virtual void		ExecuteScript(Options::Script* pScript);
-	virtual void		AddMessage(Message::EKind eKind, const char* szText);
-
-public:
-	static void			ExecuteScripts(const char* szNZBFilename, const char* szUrl,
-							const char* szDirectory, char** pNZBName, char** pCategory, int* iPriority,
-							NZBParameterList* pParameters, bool* bAddTop, bool* bAddPaused);
-};
-
 class QueueScriptCoordinator
 {
 public:

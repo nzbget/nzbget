@@ -130,7 +130,7 @@ public:
 							const char* szDupeKey, int iDupeScore, EDupeMode eDupeMode,
 							NZBParameterList* pParameters, bool bAddTop, bool bAddPaused, NZBInfo* pUrlInfo,
 							const char* szFileName, const char* szBuffer, int iBufSize, int* pNZBID);
-	void				InitPPParameters(const char* szCategory, NZBParameterList* pParameters);
+	void				InitPPParameters(const char* szCategory, NZBParameterList* pParameters, bool bReset);
 };
 
 #endif

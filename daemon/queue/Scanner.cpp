@@ -51,6 +51,165 @@
 
 extern QueueCoordinator* g_pQueueCoordinator;
 extern Options* g_pOptions;
+extern Scanner* g_pScanner;
+
+class ScanScriptController : public NZBScriptController
+{
+private:
+	const char*			m_szNZBFilename;
+	const char*			m_szUrl;
+	const char*			m_szDirectory;
+	char**				m_pNZBName;
+	char**				m_pCategory;
+	int*				m_iPriority;
+	NZBParameterList*	m_pParameters;
+	bool*				m_bAddTop;
+	bool*				m_bAddPaused;
+	int					m_iPrefixLen;
+
+	void				PrepareParams(const char* szScriptName);
+
+protected:
+	virtual void		ExecuteScript(Options::Script* pScript);
+	virtual void		AddMessage(Message::EKind eKind, const char* szText);
+
+public:
+	static void			ExecuteScripts(const char* szNZBFilename, const char* szUrl,
+									   const char* szDirectory, char** pNZBName, char** pCategory, int* iPriority,
+									   NZBParameterList* pParameters, bool* bAddTop, bool* bAddPaused);
+};
+
+
+void ScanScriptController::ExecuteScripts(const char* szNZBFilename,
+										  const char* szUrl, const char* szDirectory, char** pNZBName, char** pCategory,
+										  int* iPriority, NZBParameterList* pParameters, bool* bAddTop, bool* bAddPaused)
+{
+	ScanScriptController* pScriptController = new ScanScriptController();
+
+	pScriptController->m_szNZBFilename = szNZBFilename;
+	pScriptController->m_szUrl = szUrl;
+	pScriptController->m_szDirectory = szDirectory;
+	pScriptController->m_pNZBName = pNZBName;
+	pScriptController->m_pCategory = pCategory;
+	pScriptController->m_pParameters = pParameters;
+	pScriptController->m_iPriority = iPriority;
+	pScriptController->m_bAddTop = bAddTop;
+	pScriptController->m_bAddPaused = bAddPaused;
+	pScriptController->m_iPrefixLen = 0;
+
+	pScriptController->ExecuteScriptList(g_pOptions->GetScanScript());
+
+	delete pScriptController;
+}
+
+void ScanScriptController::ExecuteScript(Options::Script* pScript)
+{
+	if (!pScript->GetScanScript() || !Util::FileExists(m_szNZBFilename))
+	{
+		return;
+	}
+
+	PrintMessage(Message::mkInfo, "Executing scan-script %s for %s", pScript->GetName(), Util::BaseFileName(m_szNZBFilename));
+
+	SetScript(pScript->GetLocation());
+	SetArgs(NULL, false);
+
+	char szInfoName[1024];
+	snprintf(szInfoName, 1024, "scan-script %s for %s", pScript->GetName(), Util::BaseFileName(m_szNZBFilename));
+	szInfoName[1024-1] = '\0';
+	SetInfoName(szInfoName);
+
+	SetLogPrefix(pScript->GetDisplayName());
+	m_iPrefixLen = strlen(pScript->GetDisplayName()) + 2; // 2 = strlen(": ");
+	PrepareParams(pScript->GetName());
+
+	Execute();
+
+	SetLogPrefix(NULL);
+}
+
+void ScanScriptController::PrepareParams(const char* szScriptName)
+{
+	ResetEnv();
+
+	SetEnvVar("NZBNP_FILENAME", m_szNZBFilename);
+	SetEnvVar("NZBNP_URL", m_szUrl);
+	SetEnvVar("NZBNP_NZBNAME", strlen(*m_pNZBName) > 0 ? *m_pNZBName : Util::BaseFileName(m_szNZBFilename));
+	SetEnvVar("NZBNP_CATEGORY", *m_pCategory);
+	SetIntEnvVar("NZBNP_PRIORITY", *m_iPriority);
+	SetIntEnvVar("NZBNP_TOP", *m_bAddTop ? 1 : 0);
+	SetIntEnvVar("NZBNP_PAUSED", *m_bAddPaused ? 1 : 0);
+
+	// remove trailing slash
+	char szDir[1024];
+	strncpy(szDir, m_szDirectory, 1024);
+	szDir[1024-1] = '\0';
+	int iLen = strlen(szDir);
+	if (szDir[iLen-1] == PATH_SEPARATOR)
+	{
+		szDir[iLen-1] = '\0';
+	}
+	SetEnvVar("NZBNP_DIRECTORY", szDir);
+
+	PrepareEnvScript(m_pParameters, szScriptName);
+}
+
+void ScanScriptController::AddMessage(Message::EKind eKind, const char* szText)
+{
+	const char* szMsgText = szText + m_iPrefixLen;
+
+	if (!strncmp(szMsgText, "[NZB] ", 6))
+	{
+		debug("Command %s detected", szMsgText + 6);
+		if (!strncmp(szMsgText + 6, "NZBNAME=", 8))
+		{
+			free(*m_pNZBName);
+			*m_pNZBName = strdup(szMsgText + 6 + 8);
+		}
+		else if (!strncmp(szMsgText + 6, "CATEGORY=", 9))
+		{
+			free(*m_pCategory);
+			*m_pCategory = strdup(szMsgText + 6 + 9);
+			g_pScanner->InitPPParameters(*m_pCategory, m_pParameters, true);
+		}
+		else if (!strncmp(szMsgText + 6, "NZBPR_", 6))
+		{
+			char* szParam = strdup(szMsgText + 6 + 6);
+			char* szValue = strchr(szParam, '=');
+			if (szValue)
+			{
+				*szValue = '\0';
+				m_pParameters->SetParameter(szParam, szValue + 1);
+			}
+			else
+			{
+				error("Invalid command \"%s\" received from %s", szMsgText, GetInfoName());
+			}
+			free(szParam);
+		}
+		else if (!strncmp(szMsgText + 6, "PRIORITY=", 9))
+		{
+			*m_iPriority = atoi(szMsgText + 6 + 9);
+		}
+		else if (!strncmp(szMsgText + 6, "TOP=", 4))
+		{
+			*m_bAddTop = atoi(szMsgText + 6 + 4) != 0;
+		}
+		else if (!strncmp(szMsgText + 6, "PAUSED=", 7))
+		{
+			*m_bAddPaused = atoi(szMsgText + 6 + 7) != 0;
+		}
+		else
+		{
+			error("Invalid command \"%s\" received from %s", szMsgText, GetInfoName());
+		}
+	}
+	else
+	{
+		ScriptController::AddMessage(eKind, szText);
+	}
+}
+
 
 Scanner::FileData::FileData(const char* szFilename)
 {
@@ -379,7 +538,7 @@ void Scanner::ProcessIncomingFile(const char* szDirectory, const char* szBaseFil
 		}
 	}
 
-	InitPPParameters(szNZBCategory, pParameters);
+	InitPPParameters(szNZBCategory, pParameters, false);
 
 	bool bExists = true;
 
@@ -435,27 +594,39 @@ void Scanner::ProcessIncomingFile(const char* szDirectory, const char* szBaseFil
 	}
 }
 
-void Scanner::InitPPParameters(const char* szCategory, NZBParameterList* pParameters)
+void Scanner::InitPPParameters(const char* szCategory, NZBParameterList* pParameters, bool bReset)
 {
 	bool bUnpack = g_pOptions->GetUnpack();
 	const char* szPostScript = g_pOptions->GetPostScript();
 	
-	if (szCategory && *szCategory)
+	if (!Util::EmptyStr(szCategory))
 	{
 		Options::Category* pCategory = g_pOptions->FindCategory(szCategory, false);
 		if (pCategory)
 		{
 			bUnpack = pCategory->GetUnpack();
-			if (pCategory->GetPostScript() && *pCategory->GetPostScript())
+			if (!Util::EmptyStr(pCategory->GetPostScript()))
 			{
 				szPostScript = pCategory->GetPostScript();
 			}
 		}
 	}
-	
+
+	if (bReset)
+	{
+		for (Options::Scripts::iterator it = g_pOptions->GetScripts()->begin(); it != g_pOptions->GetScripts()->end(); it++)
+		{
+			Options::Script* pScript = *it;
+			char szParam[1024];
+			snprintf(szParam, 1024, "%s:", pScript->GetName());
+			szParam[1024-1] = '\0';
+			pParameters->SetParameter(szParam, NULL);
+		}
+	}
+
 	pParameters->SetParameter("*Unpack:", bUnpack ? "yes" : "no");
 	
-	if (szPostScript && *szPostScript)
+	if (!Util::EmptyStr(szPostScript))
 	{
 		// split szPostScript into tokens and create pp-parameter for each token
 		Tokenizer tok(szPostScript, ",;");
