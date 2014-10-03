@@ -356,7 +356,7 @@ void Run(bool bReload)
 				abort("FATAL ERROR: Parsing NZB-document %s failed\n\n", g_pOptions->GetArgFilename() ? g_pOptions->GetArgFilename() : "N/A");
 				return;
 			}
-			g_pScanner->InitPPParameters(szCategory, pNZBFile->GetNZBInfo()->GetParameters());
+			g_pScanner->InitPPParameters(szCategory, pNZBFile->GetNZBInfo()->GetParameters(), false);
 			g_pQueueCoordinator->AddNZBFileToQueue(pNZBFile, NULL, false);
 			delete pNZBFile;
 		}
