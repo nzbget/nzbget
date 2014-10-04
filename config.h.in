@@ -96,6 +96,9 @@
 /* Define to 1 if you have the <regex.h> header file. */
 #undef HAVE_REGEX_H
 
+/* Define to 1 if _SC_NPROCESSORS_ONLN is present in unistd.h */
+#undef HAVE_SC_NPROCESSORS_ONLN
+
 /* Define to 1 if spinlocks are supported */
 #undef HAVE_SPINLOCK
 

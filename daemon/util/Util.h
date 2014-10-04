@@ -170,6 +170,11 @@ public:
 	static unsigned long Crc32(unsigned char *block, unsigned long length);
 	static unsigned long Crc32m(unsigned long startCrc, unsigned char *block, unsigned long length);
 	static unsigned long Crc32Combine(unsigned long crc1, unsigned long crc2, unsigned long len2);
+
+	/*
+	 * Returns number of available CPU cores or -1 if it could not be determined
+	 */
+	static int NumberOfCpuCores();
 };
 
 class WebUtil
