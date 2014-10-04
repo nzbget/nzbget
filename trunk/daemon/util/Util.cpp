@@ -1483,6 +1483,18 @@ unsigned long Util::Crc32Combine(unsigned long crc1, unsigned long crc2, unsigne
     return crc1;
 }
 
+int Util::NumberOfCpuCores()
+{
+#ifdef WIN32
+	SYSTEM_INFO sysinfo;
+	GetSystemInfo(&sysinfo);
+	return sysinfo.dwNumberOfProcessors;
+#elif HAVE_SC_NPROCESSORS_ONLN
+	return sysconf(_SC_NPROCESSORS_ONLN);
+#endif
+	return -1;
+}
+
 
 unsigned int WebUtil::DecodeBase64(char* szInputBuffer, int iInputBufferLength, char* szOutputBuffer)
 {

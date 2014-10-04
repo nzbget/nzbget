@@ -213,6 +213,19 @@ else
 fi
 
 
+dnl
+dnl check cpu cores via sysconf
+dnl
+AC_MSG_CHECKING(for cpu cores via sysconf)
+AC_TRY_COMPILE(
+	[#include <unistd.h>],
+	[ int a = _SC_NPROCESSORS_ONLN; ],
+	FOUND="yes"
+	AC_MSG_RESULT([[yes]])
+	AC_DEFINE([HAVE_SC_NPROCESSORS_ONLN], 1, [Define to 1 if _SC_NPROCESSORS_ONLN is present in unistd.h]),
+	FOUND="no")
+
+
 dnl 
 dnl checks for libxml2 includes and libraries.
 dnl

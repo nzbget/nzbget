@@ -202,8 +202,14 @@ bool Repairer::ScanDataFile(DiskFile *diskfile, Par2RepairerSourceFile* &sourcef
 
 void Repairer::BeginRepair()
 {
-	int iThreads = g_pOptions->GetParThreads() > (int)missingblockcount ? (int)missingblockcount :
-		g_pOptions->GetParThreads() > 0 ? g_pOptions->GetParThreads() : 1;
+	int iMaxThreads = g_pOptions->GetParThreads() > 0 ? g_pOptions->GetParThreads() : Util::NumberOfCpuCores();
+	iMaxThreads = iMaxThreads > 0 ? iMaxThreads : 1;
+
+	int iThreads = iMaxThreads > (int)missingblockcount ? (int)missingblockcount : iMaxThreads;
+
+	m_pOwner->PrintMessage(Message::mkInfo, "Using %i of max %i thread(s) to repair %i block(s) for %s",
+		iThreads, iMaxThreads, (int)missingblockcount, m_pOwner->m_szNZBName);
+
 	m_bParallel = iThreads > 1;
 
 	if (m_bParallel)
