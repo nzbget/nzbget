@@ -1793,7 +1793,7 @@ void Options::PrintUsage(char* com)
 		"    <Names>                 List of names (with options \"FN\" and \"GN\"),\n"
 		"                            e. g.: \"my nzb download%cmyfile.nfo\" \"another nzb\"\n"
 		"    <RegExs>                List of regular expressions (options \"FR\", \"GR\")\n"
-		"                            using POSIX Extended Regular Expression Syntax",
+		"                            using POSIX Extended Regular Expression Syntax\n",
 		Util::BaseFileName(com),
 		PATH_SEPARATOR);
 }
