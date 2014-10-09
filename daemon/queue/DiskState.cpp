@@ -136,7 +136,7 @@ bool DiskState::SaveDownloadQueue(DownloadQueue* pDownloadQueue)
 		return false;
 	}
 
-	fprintf(outfile, "%s%i\n", FORMATVERSION_SIGNATURE, 50);
+	fprintf(outfile, "%s%i\n", FORMATVERSION_SIGNATURE, 51);
 
 	// save nzb-infos
 	SaveNZBQueue(pDownloadQueue, outfile);
@@ -179,7 +179,7 @@ bool DiskState::LoadDownloadQueue(DownloadQueue* pDownloadQueue, Servers* pServe
 	char FileSignatur[128];
 	fgets(FileSignatur, sizeof(FileSignatur), infile);
 	iFormatVersion = ParseFormatVersion(FileSignatur);
-	if (iFormatVersion < 3 || iFormatVersion > 50)
+	if (iFormatVersion < 3 || iFormatVersion > 51)
 	{
 		error("Could not load diskstate due to file version mismatch");
 		fclose(infile);
@@ -363,6 +363,9 @@ void DiskState::SaveNZBInfo(NZBInfo* pNZBInfo, FILE* outfile)
 		(int)pNZBInfo->GetAddUrlPaused());
 	fprintf(outfile, "%i,%i\n", pNZBInfo->GetFileCount(), pNZBInfo->GetParkedFileCount());
 	fprintf(outfile, "%i,%i\n", (int)pNZBInfo->GetMinTime(), (int)pNZBInfo->GetMaxTime());
+	fprintf(outfile, "%i,%i,%i\n", (int)pNZBInfo->GetParFull(), 
+		pNZBInfo->GetPostInfo() ? (int)pNZBInfo->GetPostInfo()->GetForceParFull() : 0,
+		pNZBInfo->GetPostInfo() ? (int)pNZBInfo->GetPostInfo()->GetForceRepair() : 0);
 
 	fprintf(outfile, "%u,%u\n", pNZBInfo->GetFullContentHash(), pNZBInfo->GetFilteredContentHash());
 
@@ -666,6 +669,18 @@ bool DiskState::LoadNZBInfo(NZBInfo* pNZBInfo, Servers* pServers, FILE* infile, 
 		if (fscanf(infile, "%i,%i\n", &iMinTime, &iMaxTime) != 2) goto error;
 		pNZBInfo->SetMinTime((time_t)iMinTime);
 		pNZBInfo->SetMaxTime((time_t)iMaxTime);
+	}
+
+	if (iFormatVersion >= 51)
+	{
+		int iParFull, iForceParFull, iForceRepair;
+		if (fscanf(infile, "%i,%i,%i\n", &iParFull, &iForceParFull, &iForceRepair) != 3) goto error;
+		pNZBInfo->SetParFull((bool)iParFull);
+		if (pNZBInfo->GetPostInfo())
+		{
+			pNZBInfo->GetPostInfo()->SetForceParFull((bool)iForceParFull);
+			pNZBInfo->GetPostInfo()->SetForceRepair((bool)iForceRepair);
+		}
 	}
 
 	if (true) // clang requires a block for goto to work

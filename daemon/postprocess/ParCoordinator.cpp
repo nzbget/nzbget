@@ -353,6 +353,8 @@ void ParCoordinator::StartParCheckJob(PostInfo* pPostInfo)
 	m_ParChecker.SetNZBName(pPostInfo->GetNZBInfo()->GetName());
 	m_ParChecker.SetParTime(time(NULL));
 	m_ParChecker.SetDownloadSec(pPostInfo->GetNZBInfo()->GetDownloadSec());
+	m_ParChecker.SetParQuick(g_pOptions->GetParQuick() && !pPostInfo->GetForceParFull());
+	m_ParChecker.SetForceRepair(pPostInfo->GetForceRepair());
 	m_ParChecker.PrintMessage(Message::mkInfo, "Checking pars for %s", pPostInfo->GetNZBInfo()->GetName());
 	pPostInfo->SetWorking(true);
 	m_ParChecker.Start();
@@ -454,6 +456,8 @@ void ParCoordinator::ParCheckCompleted()
 	pPostInfo->SetStartTime(pPostInfo->GetStartTime() + (time_t)iWaitTime);
 	int iParSec = (int)(time(NULL) - m_ParChecker.GetParTime()) - iWaitTime;
 	pPostInfo->GetNZBInfo()->SetParSec(pPostInfo->GetNZBInfo()->GetParSec() + iParSec);
+
+	pPostInfo->GetNZBInfo()->SetParFull(!m_ParChecker.GetParQuick());
 
 	pPostInfo->SetWorking(false);
 	pPostInfo->SetStage(PostInfo::ptQueued);

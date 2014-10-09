@@ -92,7 +92,7 @@ protected:
 	void				CheckArchiveFiles(bool bScanNonStdFiles);
 	void				SetProgressLabel(const char* szProgressLabel);
 #ifndef DISABLE_PARCHECK
-	void				RequestParCheck();
+	void				RequestParCheck(bool bForceRepair);
 #endif
 	bool				FileHasRarSignature(const char* szFilename);
 

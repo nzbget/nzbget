@@ -179,7 +179,7 @@ void UnpackController::Run()
 		if (bUnpack && m_pPostInfo->GetNZBInfo()->GetParStatus() <= NZBInfo::psSkipped && 
 			m_pPostInfo->GetNZBInfo()->GetRenameStatus() <= NZBInfo::rsSkipped && m_bHasParFiles)
 		{
-			RequestParCheck();
+			RequestParCheck(false);
 		}
 		else
 #endif
@@ -480,12 +480,14 @@ void UnpackController::Completed()
 	else
 	{
 #ifndef DISABLE_PARCHECK
-		if (!m_bUnpackOK && m_pPostInfo->GetNZBInfo()->GetParStatus() <= NZBInfo::psSkipped &&
+		if (!m_bUnpackOK && 
+			(m_pPostInfo->GetNZBInfo()->GetParStatus() <= NZBInfo::psSkipped ||
+			 !m_pPostInfo->GetNZBInfo()->GetParFull()) &&
 			!m_bUnpackStartError && !m_bUnpackSpaceError &&
 			(!m_bUnpackPasswordError5 || m_bUnpackPasswordError4) &&
 			(!GetTerminated() || m_bAutoTerminated) && m_bHasParFiles)
 		{
-			RequestParCheck();
+			RequestParCheck(true);
 		}
 		else
 #endif
@@ -502,10 +504,11 @@ void UnpackController::Completed()
 }
 
 #ifndef DISABLE_PARCHECK
-void UnpackController::RequestParCheck()
+void UnpackController::RequestParCheck(bool bForceRepair)
 {
 	PrintMessage(Message::mkInfo, "%s requested par-check/repair", m_szInfoNameUp);
 	m_pPostInfo->SetRequestParCheck(true);
+	m_pPostInfo->SetForceRepair(bForceRepair);
 	m_pPostInfo->SetStage(PostInfo::ptFinished);
 }
 #endif

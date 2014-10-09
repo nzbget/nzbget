@@ -117,8 +117,11 @@ private:
 	SourceList			m_sourceFiles;
 	std::string			m_lastFilename;
 	bool				m_bHasDamagedFiles;
+	bool				m_bParQuick;
+	bool				m_bForceRepair;
 
 	void				Cleanup();
+	EStatus				RunParCheckAll();
 	EStatus				RunParCheck(const char* szParFilename);
 	int					PreProcessPar();
 	bool				LoadMainParBak();
@@ -169,6 +172,10 @@ public:
 	const char*			GetInfoName() { return m_szInfoName; }
 	void				SetInfoName(const char* szInfoName);
 	void				SetNZBName(const char* szNZBName);
+	void				SetParQuick(bool bParQuick) { m_bParQuick = bParQuick; }
+	bool				GetParQuick() { return m_bParQuick; }
+	void				SetForceRepair(bool bForceRepair) { m_bForceRepair = bForceRepair; }
+	bool				GetForceRepair() { return m_bForceRepair; }
 	EStatus				GetStatus() { return m_eStatus; }
 	void				AddParFile(const char* szParFilename);
 	void				QueueChanged();

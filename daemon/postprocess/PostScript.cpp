@@ -233,6 +233,7 @@ ScriptStatus::EStatus PostScriptController::AnalyseExitCode(int iExitCode)
 			{
 				PrintMessage(Message::mkInfo, "%s requested par-check/repair", GetInfoName());
 				m_pPostInfo->SetRequestParCheck(true);
+				m_pPostInfo->SetForceRepair(true);
 				return ScriptStatus::srSuccess;
 			}
 			break;
