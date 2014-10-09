@@ -428,9 +428,12 @@ void PrePostProcessor::CheckPostQueue()
 		if (!pPostInfo->GetWorking() && !IsNZBFileDownloading(m_pCurJob))
 		{
 #ifndef DISABLE_PARCHECK
-			if (pPostInfo->GetRequestParCheck() && pPostInfo->GetNZBInfo()->GetParStatus() <= NZBInfo::psSkipped &&
+			if (pPostInfo->GetRequestParCheck() &&
+				(pPostInfo->GetNZBInfo()->GetParStatus() <= NZBInfo::psSkipped ||
+				 (pPostInfo->GetForceRepair() && !pPostInfo->GetNZBInfo()->GetParFull())) &&
 				g_pOptions->GetParCheck() != Options::pcManual)
 			{
+				pPostInfo->SetForceParFull(pPostInfo->GetNZBInfo()->GetParStatus() > NZBInfo::psSkipped);
 				pPostInfo->GetNZBInfo()->SetParStatus(NZBInfo::psNone);
 				pPostInfo->SetRequestParCheck(false);
 				pPostInfo->SetStage(PostInfo::ptQueued);

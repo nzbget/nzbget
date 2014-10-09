@@ -417,6 +417,7 @@ void HistoryCoordinator::HistoryReturn(DownloadQueue* pDownloadQueue, HistoryLis
 				pNZBInfo->SetPostTotalSec(pNZBInfo->GetPostTotalSec() - pNZBInfo->GetParSec());
 				pNZBInfo->SetParSec(0);
 				pNZBInfo->SetRepairSec(0);
+				pNZBInfo->SetParFull(false);
 			}
 		}
 		pNZBInfo->SetDeleteStatus(NZBInfo::dsNone);

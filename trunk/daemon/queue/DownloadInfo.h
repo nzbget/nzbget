@@ -501,6 +501,7 @@ private:
 	int					m_iUnpackSec;
 	bool				m_bReprocess;
 	time_t				m_tQueueScriptTime;
+	bool				m_bParFull;
 
 	static int			m_iIDGen;
 	static int			m_iIDMax;
@@ -654,6 +655,8 @@ public:
 	bool				GetReprocess() { return m_bReprocess; }
 	time_t				GetQueueScriptTime() { return m_tQueueScriptTime; }
 	void 				SetQueueScriptTime(time_t tQueueScriptTime) { m_tQueueScriptTime = tQueueScriptTime; }
+	void				SetParFull(bool bParFull) { m_bParFull = bParFull; }
+	bool				GetParFull() { return m_bParFull; }
 
 	void				CopyFileList(NZBInfo* pSrcNZBInfo);
 	void				UpdateMinMaxTime();
@@ -708,6 +711,8 @@ private:
 	bool				m_bWorking;
 	bool				m_bDeleted;
 	bool				m_bRequestParCheck;
+	bool				m_bForceParFull;
+	bool				m_bForceRepair;
 	EStage				m_eStage;
 	char*				m_szProgressLabel;
 	int					m_iFileProgress;
@@ -744,6 +749,10 @@ public:
 	void				SetDeleted(bool bDeleted) { m_bDeleted = bDeleted; }
 	bool				GetRequestParCheck() { return m_bRequestParCheck; }
 	void				SetRequestParCheck(bool bRequestParCheck) { m_bRequestParCheck = bRequestParCheck; }
+	bool				GetForceParFull() { return m_bForceParFull; }
+	void				SetForceParFull(bool bForceParFull) { m_bForceParFull = bForceParFull; }
+	bool				GetForceRepair() { return m_bForceRepair; }
+	void				SetForceRepair(bool bForceRepair) { m_bForceRepair = bForceRepair; }
 	Thread*				GetPostThread() { return m_pPostThread; }
 	void				SetPostThread(Thread* pPostThread) { m_pPostThread = pPostThread; }
 	void				AppendMessage(Message::EKind eKind, const char* szText);

@@ -178,7 +178,7 @@ Result Repairer::Process(bool dorepair)
 bool Repairer::ScanDataFile(DiskFile *diskfile, Par2RepairerSourceFile* &sourcefile,
 	MatchType &matchtype, MD5Hash &hashfull, MD5Hash &hash16k, u32 &count)
 {
-	if (g_pOptions->GetParQuick() && sourcefile)
+	if (m_pOwner->GetParQuick() && sourcefile)
 	{
 		string path;
 		string name;
@@ -412,6 +412,8 @@ ParChecker::ParChecker()
 	m_bVerifyingExtraFiles = false;
 	m_bCancelled = false;
 	m_eStage = ptLoadingPars;
+	m_bParQuick = false;
+	m_bForceRepair = false;
 }
 
 ParChecker::~ParChecker()
@@ -469,16 +471,28 @@ void ParChecker::SetInfoName(const char * szInfoName)
 
 void ParChecker::Run()
 {
+	m_eStatus = RunParCheckAll();
+
+	if (m_eStatus == psRepairNotNeeded && m_bParQuick && m_bForceRepair && !m_bCancelled)
+	{
+		PrintMessage(Message::mkInfo, "Performing full par-check for %s", m_szNZBName);
+		m_bParQuick = false;
+		m_eStatus = RunParCheckAll();
+	}
+
+	Completed();
+}
+
+ParChecker::EStatus ParChecker::RunParCheckAll()
+{
 	ParCoordinator::ParFileList fileList;
 	if (!ParCoordinator::FindMainPars(m_szDestDir, &fileList))
 	{
 		PrintMessage(Message::mkError, "Could not start par-check for %s. Could not find any par-files", m_szNZBName);
-		m_eStatus = psFailed;
-		Completed();
-		return;
+		return psFailed;
 	}
 
-	m_eStatus = psRepairNotNeeded;
+	EStatus eAllStatus = psRepairNotNeeded;
 	m_bCancelled = false;
 
 	for (ParCoordinator::ParFileList::iterator it = fileList.begin(); it != fileList.end(); it++)
@@ -508,9 +522,9 @@ void ParChecker::Run()
 			EStatus eStatus = RunParCheck(szFullParFilename);
 
 			// accumulate total status, the worst status has priority
-			if (m_eStatus > eStatus)
+			if (eAllStatus > eStatus)
 			{
-				m_eStatus = eStatus;
+				eAllStatus = eStatus;
 			}
 
 			if (g_pOptions->GetCreateBrokenLog())
@@ -522,7 +536,7 @@ void ParChecker::Run()
 		free(szParFilename);
 	}
 
-	Completed();
+	return eAllStatus;
 }
 
 ParChecker::EStatus ParChecker::RunParCheck(const char* szParFilename)
@@ -1067,7 +1081,7 @@ void ParChecker::signal_filename(std::string str)
 
 	// don't print progress messages when verifying repaired files in quick verification mode,
 	// because repaired files are not verified in this mode
-	if (!(m_eStage == ptVerifyingRepaired && g_pOptions->GetParQuick()))
+	if (!(m_eStage == ptVerifyingRepaired && m_bParQuick))
 	{
 		PrintMessage(Message::mkInfo, "%s %s", szStageMessage[m_eStage], str.c_str());
 	}

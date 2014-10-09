@@ -341,6 +341,7 @@ NZBInfo::NZBInfo() : m_FileList(true)
 	m_tDownloadStartTime = 0;
 	m_bReprocess = false;
 	m_tQueueScriptTime = 0;
+	m_bParFull = false;
 }
 
 NZBInfo::~NZBInfo()
@@ -1193,6 +1194,8 @@ PostInfo::PostInfo()
 	m_bWorking = false;
 	m_bDeleted = false;
 	m_bRequestParCheck = false;
+	m_bForceParFull = false;
+	m_bForceRepair = false;
 	m_szProgressLabel = strdup("");
 	m_iFileProgress = 0;
 	m_iStageProgress = 0;
