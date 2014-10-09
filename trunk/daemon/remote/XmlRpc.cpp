@@ -2881,7 +2881,9 @@ void SaveConfigXmlCommand::Execute()
 	char* szName;
 	char* szValue;
 	char* szDummy;
-	while (NextParamAsStr(&szDummy) && NextParamAsStr(&szName) && NextParamAsStr(&szDummy) && NextParamAsStr(&szValue))
+	while ((IsJson() && NextParamAsStr(&szDummy) && NextParamAsStr(&szName) &&
+			NextParamAsStr(&szDummy) && NextParamAsStr(&szValue)) ||
+		   (!IsJson() && NextParamAsStr(&szName) && NextParamAsStr(&szValue)))
 	{
 		DecodeStr(szName);
 		DecodeStr(szValue);
