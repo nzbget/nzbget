@@ -63,6 +63,7 @@ ArticleDownloader::ArticleDownloader()
 	debug("Creating ArticleDownloader");
 
 	m_szInfoName = NULL;
+	m_szConnectionName[0] = '\0';
 	m_pConnection = NULL;
 	m_eStatus = adUndefined;
 	m_eFormat = Decoder::efUnknown;
@@ -153,12 +154,16 @@ void ArticleDownloader::Run()
 
 		m_pConnection->SetSuppressErrors(false);
 
+		snprintf(m_szConnectionName, sizeof(m_szConnectionName), "%s (%s)",
+			m_pConnection->GetNewsServer()->GetName(), m_pConnection->GetHost());
+		m_szConnectionName[sizeof(m_szConnectionName) - 1] = '\0';
+
 		// test connection
 		bool bConnected = m_pConnection && m_pConnection->Connect();
 		if (bConnected && !IsStopped())
 		{
 			NewsServer* pNewsServer = m_pConnection->GetNewsServer();
-			detail("Downloading %s @ %s (%s)", m_szInfoName, pNewsServer->GetName(), m_pConnection->GetHost());
+			detail("Downloading %s @ %s", m_szInfoName, m_szConnectionName);
 
 			Status = Download();
 
@@ -412,8 +417,7 @@ ArticleDownloader::EStatus ArticleDownloader::Download()
 		{
 			if (!IsStopped())
 			{
-				detail("Article %s @ %s (%s) failed: Unexpected end of article", m_szInfoName,
-					m_pConnection->GetNewsServer()->GetName(), m_pConnection->GetHost());
+				detail("Article %s @ %s failed: Unexpected end of article", m_szInfoName, m_szConnectionName);
 			}
 			Status = adFailed;
 			break;
@@ -447,8 +451,8 @@ ArticleDownloader::EStatus ArticleDownloader::Download()
 				if (strncmp(p, m_pArticleInfo->GetMessageID(), strlen(m_pArticleInfo->GetMessageID())))
 				{
 					if (char* e = strrchr(p, '\r')) *e = '\0'; // remove trailing CR-character
-					detail("Article %s @ %s (%s) failed: Wrong message-id, expected %s, returned %s", m_szInfoName,
-						m_pConnection->GetNewsServer()->GetName(), m_pConnection->GetHost(), m_pArticleInfo->GetMessageID(), p);
+					detail("Article %s @ %s failed: Wrong message-id, expected %s, returned %s", m_szInfoName,
+						m_szConnectionName, m_pArticleInfo->GetMessageID(), p);
 					Status = adFailed;
 					break;
 				}
@@ -471,8 +475,7 @@ ArticleDownloader::EStatus ArticleDownloader::Download()
 
 	if (!bEnd && Status == adRunning && !IsStopped())
 	{
-		detail("Article %s @ %s (%s) failed: article incomplete", m_szInfoName,
-			m_pConnection->GetNewsServer()->GetName(), m_pConnection->GetHost());
+		detail("Article %s @ %s failed: article incomplete", m_szInfoName, m_szConnectionName);
 		Status = adFailed;
 	}
 
@@ -506,21 +509,19 @@ ArticleDownloader::EStatus ArticleDownloader::CheckResponse(const char* szRespon
 	{
 		if (!IsStopped())
 		{
-			detail("Article %s @ %s (%s) failed, %s: Connection closed by remote host", m_szInfoName, 
-				m_pConnection->GetNewsServer()->GetName(), m_pConnection->GetHost(), szComment);
+			detail("Article %s @ %s failed, %s: Connection closed by remote host",
+				m_szInfoName, m_szConnectionName, szComment);
 		}
 		return adConnectError;
 	}
 	else if (m_pConnection->GetAuthError() || !strncmp(szResponse, "400", 3) || !strncmp(szResponse, "499", 3))
 	{
-		detail("Article %s @ %s (%s) failed, %s: %s", m_szInfoName,
-			 m_pConnection->GetNewsServer()->GetName(), m_pConnection->GetHost(), szComment, szResponse);
+		detail("Article %s @ %s failed, %s: %s", m_szInfoName, m_szConnectionName, szComment, szResponse);
 		return adConnectError;
 	}
 	else if (!strncmp(szResponse, "41", 2) || !strncmp(szResponse, "42", 2) || !strncmp(szResponse, "43", 2))
 	{
-		detail("Article %s @ %s (%s) failed, %s: %s", m_szInfoName,
-			 m_pConnection->GetNewsServer()->GetName(), m_pConnection->GetHost(), szComment, szResponse);
+		detail("Article %s @ %s failed, %s: %s", m_szInfoName, m_szConnectionName, szComment, szResponse);
 		return adNotFound;
 	}
 	else if (!strncmp(szResponse, "2", 1))
@@ -531,8 +532,7 @@ ArticleDownloader::EStatus ArticleDownloader::CheckResponse(const char* szRespon
 	else 
 	{
 		// unknown error, no special handling
-		detail("Article %s @ %s (%s) failed, %s: %s", m_szInfoName,
-			 m_pConnection->GetNewsServer()->GetName(), m_pConnection->GetHost(), szComment, szResponse);
+		detail("Article %s @ %s failed, %s: %s", m_szInfoName, m_szConnectionName, szComment, szResponse);
 		return adFailed;
 	}
 }

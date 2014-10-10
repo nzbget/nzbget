@@ -70,6 +70,7 @@ private:
 	EStatus				m_eStatus;
 	Mutex			 	m_mutexConnection;
 	char*				m_szInfoName;
+	char				m_szConnectionName[250];
 	char*				m_szArticleFilename;
 	time_t				m_tLastUpdateTime;
 	Decoder::EFormat	m_eFormat;
@@ -105,6 +106,7 @@ public:
 	const char* 		GetArticleFilename() { return m_szArticleFilename; }
 	void				SetInfoName(const char* szInfoName);
 	const char*			GetInfoName() { return m_szInfoName; }
+	const char*			GetConnectionName() { return m_szConnectionName; }
 	void				SetConnection(NNTPConnection* pConnection) { m_pConnection = pConnection; }
 	void				CompleteFileParts() { m_ArticleWriter.CompleteFileParts(); }
 	int					GetDownloadedSize() { return m_iDownloadedSize; }
