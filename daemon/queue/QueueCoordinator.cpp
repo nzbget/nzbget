@@ -929,7 +929,8 @@ void QueueCoordinator::ResetHangingDownloads()
 		if (tm - pArticleDownloader->GetLastUpdateTime() > g_pOptions->GetArticleTimeout() + 1 &&
 		   pArticleDownloader->GetStatus() == ArticleDownloader::adRunning)
 		{
-			error("Cancelling hanging download %s", pArticleDownloader->GetInfoName());
+			error("Cancelling hanging download %s @ %s", pArticleDownloader->GetInfoName(),
+				pArticleDownloader->GetConnectionName());
 			pArticleDownloader->Stop();
 		}
 		
@@ -940,12 +941,14 @@ void QueueCoordinator::ResetHangingDownloads()
 			debug("Terminating hanging download %s", pArticleDownloader->GetInfoName());
 			if (pArticleDownloader->Terminate())
 			{
-				error("Terminated hanging download %s", pArticleDownloader->GetInfoName());
+				error("Terminated hanging download %s @ %s", pArticleDownloader->GetInfoName(),
+					pArticleDownloader->GetConnectionName());
 				pArticleInfo->SetStatus(ArticleInfo::aiUndefined);
 			}
 			else
 			{
-				error("Could not terminate hanging download %s", Util::BaseFileName(pArticleInfo->GetResultFilename()));
+				error("Could not terminate hanging download %s @ %s", pArticleDownloader->GetInfoName(),
+					  pArticleDownloader->GetConnectionName());
 			}
 			m_ActiveDownloads.erase(it);
 
