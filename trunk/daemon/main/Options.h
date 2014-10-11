@@ -398,7 +398,7 @@ private:
 							bool bAllowEmpty, bool bCreate);
 	void				ParseFileIDList(int argc, char* argv[], int optind);
 	void				ParseFileNameList(int argc, char* argv[], int optind);
-	bool				ParseTime(const char** pTime, int* pHours, int* pMinutes);
+	bool				ParseTime(const char* szTime, int* pHours, int* pMinutes);
 	bool				ParseWeekDays(const char* szWeekDays, int* pWeekDaysBits);
 	void				ConfigError(const char* msg, ...);
 	void				ConfigWarn(const char* msg, ...);
