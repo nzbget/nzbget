@@ -2193,8 +2193,7 @@ void Options::InitFeeds()
 
 void Options::InitScheduler()
 {
-	int n = 1;
-	while (true)
+	for (int n = 1; ; n++)
 	{
 		char optname[128];
 
@@ -2233,12 +2232,10 @@ void Options::InitScheduler()
 			break;
 		}
 
-		bool bOK = true;
-
 		if (!completed)
 		{
 			ConfigError("Task definition not complete for \"Task%i\"", n);
-			bOK = false;
+			continue;
 		}
 
 		snprintf(optname, sizeof(optname), "Task%i.Command", n);
@@ -2263,14 +2260,14 @@ void Options::InitScheduler()
 			!Util::SplitCommandLine(szParam, NULL))
 		{
 			ConfigError("Invalid value for option \"Task%i.Param\"", n);
-			bOK = false;
+			continue;
 		}
 
 		int iWeekDays = 0;
 		if (szWeekDays && !ParseWeekDays(szWeekDays, &iWeekDays))
 		{
 			ConfigError("Invalid value for option \"Task%i.WeekDays\": \"%s\"", n, szWeekDays);
-			bOK = false;
+			continue;
 		}
 
 		if (eCommand == Scheduler::scDownloadRate)
@@ -2282,13 +2279,13 @@ void Options::InitScheduler()
 				if (!szErr || *szErr != '\0' || iDownloadRate < 0)
 				{
 					ConfigError("Invalid value for option \"Task%i.Param\": \"%s\"", n, szDownloadRate);
-					bOK = false;
+					continue;
 				}
 			}
 			else
 			{
 				ConfigError("Task definition not complete for \"Task%i\". Option \"Task%i.Param\" is missing", n, n);
-				bOK = false;
+				continue;
 			}
 		}
 
@@ -2300,52 +2297,41 @@ void Options::InitScheduler()
 			Util::EmptyStr(szParam))
 		{
 			ConfigError("Task definition not complete for \"Task%i\". Option \"Task%i.Param\" is missing", n, n);
-			bOK = false;
+			continue;
 		}
 
 		int iHours, iMinutes;
-		const char** pTime = &szTime;
-		while (*pTime)
+		Tokenizer tok(szTime, ";,");
+		while (const char* szOneTime = tok.Next())
 		{
-			if (!ParseTime(pTime, &iHours, &iMinutes))
+			if (!ParseTime(szOneTime, &iHours, &iMinutes))
 			{
-				ConfigError("Invalid value for option \"Task%i.Time\": \"%s\"", n, pTime);
+				ConfigError("Invalid value for option \"Task%i.Time\": \"%s\"", n, szOneTime);
 				break;
 			}
 
-			if (bOK)
+			if (iHours == -1)
 			{
-				if (iHours == -1)
+				for (int iEveryHour = 0; iEveryHour < 24; iEveryHour++)
 				{
-					for (int iEveryHour = 0; iEveryHour < 24; iEveryHour++)
-					{
-						Scheduler::Task* pTask = new Scheduler::Task(n, iEveryHour, iMinutes, iWeekDays, eCommand, szParam);
-						g_pScheduler->AddTask(pTask);
-					}
-				}
-				else
-				{
-					Scheduler::Task* pTask = new Scheduler::Task(n, iHours, iMinutes, iWeekDays, eCommand, szParam);
+					Scheduler::Task* pTask = new Scheduler::Task(n, iEveryHour, iMinutes, iWeekDays, eCommand, szParam);
 					g_pScheduler->AddTask(pTask);
 				}
 			}
+			else
+			{
+				Scheduler::Task* pTask = new Scheduler::Task(n, iHours, iMinutes, iWeekDays, eCommand, szParam);
+				g_pScheduler->AddTask(pTask);
+			}
 		}
-
-		n++;
 	}
 }
 
-/*
-* Parses Time string and moves current string pointer to the next time token.
-*/
-bool Options::ParseTime(const char** pTime, int* pHours, int* pMinutes)
+bool Options::ParseTime(const char* szTime, int* pHours, int* pMinutes)
 {
-	const char* szTime = *pTime;
-	const char* szComma = strchr(szTime, ',');
-
 	int iColons = 0;
 	const char* p = szTime;
-	while (*p && (!szComma || p != szComma))
+	while (*p)
 	{
 		if (!strchr("0123456789: *", *p))
 		{
@@ -2390,15 +2376,6 @@ bool Options::ParseTime(const char** pTime, int* pHours, int* pMinutes)
 	if (*pMinutes < 0 || *pMinutes > 59)
 	{
 		return false;
-	}
-
-	if (szComma)
-	{
-		*pTime = szComma + 1;
-	}
-	else
-	{
-		*pTime = NULL;
 	}
 
 	return true;
