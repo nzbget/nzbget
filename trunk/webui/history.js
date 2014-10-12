@@ -160,7 +160,13 @@ var History = (new function($)
 			var category = '';
 
 			var textname = hist.Name;
-			if (kind === 'URL')
+			var age = '';
+			if (kind === 'NZB')
+			{
+				age = Util.formatAge(hist.MinPostTime + UISettings.timeZoneCorrection*60*60);
+				textname += ' URL';
+			}
+			else if (kind === 'URL')
 			{
 				textname += ' URL';
 			}
@@ -178,8 +184,8 @@ var History = (new function($)
 			{
 				id: hist.ID,
 				hist: hist,
-				data: {time: time, size: size},
-				search: statustext + ' ' + time + ' ' + textname + ' ' + dupe + ' ' + category + ' ' + size
+				data: { time: time, age: age, size: size },
+				search: statustext + ' ' + time + ' ' + textname + ' ' + dupe + ' ' + category + ' ' +  age + ' ' + size
 			};
 
 			data.push(item);
@@ -217,7 +223,7 @@ var History = (new function($)
 
 		if (!UISettings.miniTheme)
 		{
-			item.fields = ['<div class="check img-check"></div>', status, item.data.time, name + dupe, category, item.data.size];
+			item.fields = ['<div class="check img-check"></div>', status, item.data.time, name + dupe, category, item.data.age, item.data.size];
 		}
 		else
 		{
@@ -241,7 +247,7 @@ var History = (new function($)
 		{
 			cell.className = 'text-center';
 		}
-		else if (index === 5)
+		else if (index === 5 || index === 6)
 		{
 			cell.className = 'text-right';
 		}

@@ -1571,6 +1571,8 @@ void NzbInfoXmlCommand::AppendNZBInfoFields(NZBInfo* pNZBInfo)
 	"<member><name>FileSizeHi</name><value><i4>%u</i4></value></member>\n"
 	"<member><name>FileSizeMB</name><value><i4>%i</i4></value></member>\n"
 	"<member><name>FileCount</name><value><i4>%i</i4></value></member>\n"
+	"<member><name>MinPostTime</name><value><i4>%i</i4></value></member>\n"
+	"<member><name>MaxPostTime</name><value><i4>%i</i4></value></member>\n"
 	"<member><name>TotalArticles</name><value><i4>%i</i4></value></member>\n"
 	"<member><name>SuccessArticles</name><value><i4>%i</i4></value></member>\n"
 	"<member><name>FailedArticles</name><value><i4>%i</i4></value></member>\n"
@@ -1622,6 +1624,8 @@ void NzbInfoXmlCommand::AppendNZBInfoFields(NZBInfo* pNZBInfo)
 	"\"FileSizeHi\" : %u,\n"
 	"\"FileSizeMB\" : %i,\n"
 	"\"FileCount\" : %i,\n"
+	"\"MinPostTime\" : %i,\n"
+	"\"MaxPostTime\" : %i,\n"
 	"\"TotalArticles\" : %i,\n"
 	"\"SuccessArticles\" : %i,\n"
 	"\"FailedArticles\" : %i,\n"
@@ -1728,6 +1732,7 @@ void NzbInfoXmlCommand::AppendNZBInfoFields(NZBInfo* pNZBInfo)
 			 szDeleteStatusName[pNZBInfo->GetDeleteStatus()], szMarkStatusName[pNZBInfo->GetMarkStatus()],
 			 szUrlStatusName[pNZBInfo->GetUrlStatus()],
 			 iFileSizeLo, iFileSizeHi, iFileSizeMB, pNZBInfo->GetFileCount(),
+			 pNZBInfo->GetMinTime(), pNZBInfo->GetMaxTime(),
 			 pNZBInfo->GetTotalArticles(), pNZBInfo->GetCurrentSuccessArticles(), pNZBInfo->GetCurrentFailedArticles(),
 			 pNZBInfo->CalcHealth(), pNZBInfo->CalcCriticalHealth(false),
 			 xmlDupeKey, pNZBInfo->GetDupeScore(), szDupeModeName[pNZBInfo->GetDupeMode()],
@@ -1962,8 +1967,6 @@ void ListGroupsXmlCommand::Execute()
 		"<member><name>PausedSizeMB</name><value><i4>%i</i4></value></member>\n"
 		"<member><name>RemainingFileCount</name><value><i4>%i</i4></value></member>\n"
 		"<member><name>RemainingParCount</name><value><i4>%i</i4></value></member>\n"
-		"<member><name>MinPostTime</name><value><i4>%i</i4></value></member>\n"
-		"<member><name>MaxPostTime</name><value><i4>%i</i4></value></member>\n"
 		"<member><name>MinPriority</name><value><i4>%i</i4></value></member>\n"
 		"<member><name>MaxPriority</name><value><i4>%i</i4></value></member>\n"
 		"<member><name>ActiveDownloads</name><value><i4>%i</i4></value></member>\n"
@@ -1984,8 +1987,6 @@ void ListGroupsXmlCommand::Execute()
 		"\"PausedSizeMB\" : %i,\n"
 		"\"RemainingFileCount\" : %i,\n"
 		"\"RemainingParCount\" : %i,\n"
-		"\"MinPostTime\" : %i,\n"
-		"\"MaxPostTime\" : %i,\n"
 		"\"MinPriority\" : %i,\n"
 		"\"MaxPriority\" : %i,\n"
 		"\"ActiveDownloads\" : %i,\n"
@@ -2015,8 +2016,8 @@ void ListGroupsXmlCommand::Execute()
 		snprintf(szItemBuf, iItemBufSize, IsJson() ? JSON_LIST_ITEM_START : XML_LIST_ITEM_START,
 			pNZBInfo->GetID(), pNZBInfo->GetID(), iRemainingSizeLo, iRemainingSizeHi, iRemainingSizeMB,
 			iPausedSizeLo, iPausedSizeHi, iPausedSizeMB, (int)pNZBInfo->GetFileList()->size(),
-			pNZBInfo->GetRemainingParCount(), pNZBInfo->GetMinTime(), pNZBInfo->GetMaxTime(),
-			pNZBInfo->GetPriority(), pNZBInfo->GetPriority(), pNZBInfo->GetActiveDownloads(), szStatus);
+			pNZBInfo->GetRemainingParCount(), pNZBInfo->GetPriority(), pNZBInfo->GetPriority(),
+			pNZBInfo->GetActiveDownloads(), szStatus);
 		szItemBuf[iItemBufSize-1] = '\0';
 
 		if (IsJson() && index++ > 0)
