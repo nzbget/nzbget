@@ -935,11 +935,9 @@ void Options::CheckDir(char** dir, const char* szOptionName,
 		usedir[len + 1] = '\0';
 	}
 
-	if (!(usedir[0] == PATH_SEPARATOR || usedir[0] == ALT_PATH_SEPARATOR
-#ifdef WIN32
-		|| (usedir[0] && usedir[1] == ':')
-#endif
-		  ) && !Util::EmptyStr(szParentDir))
+	if (!(usedir[0] == PATH_SEPARATOR || usedir[0] == ALT_PATH_SEPARATOR ||
+		(usedir[0] && usedir[1] == ':')) &&
+		!Util::EmptyStr(szParentDir))
 	{
 		// convert relative path to absolute path
 		int plen = strlen(szParentDir);
