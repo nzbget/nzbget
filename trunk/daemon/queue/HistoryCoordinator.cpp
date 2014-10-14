@@ -377,7 +377,6 @@ void HistoryCoordinator::HistoryReturn(DownloadQueue* pDownloadQueue, HistoryLis
 	char szNiceName[1024];
 	pHistoryInfo->GetName(szNiceName, 1024);
 	debug("Returning %s from history back to download queue", szNiceName);
-	bool bUnparked = false;
 	NZBInfo* pNZBInfo = NULL;
 
 	if (bReprocess && pHistoryInfo->GetKind() != HistoryInfo::hkNzb)
@@ -391,11 +390,18 @@ void HistoryCoordinator::HistoryReturn(DownloadQueue* pDownloadQueue, HistoryLis
 		pNZBInfo = pHistoryInfo->GetNZBInfo();
 
 		// unpark files
+		bool bUnparked = false;
 		for (FileList::iterator it = pNZBInfo->GetFileList()->begin(); it != pNZBInfo->GetFileList()->end(); it++)
 		{
 			FileInfo* pFileInfo = *it;
 			detail("Unpark file %s", pFileInfo->GetFilename());
 			bUnparked = true;
+		}
+
+		if (!(bUnparked || bReprocess))
+		{
+			warn("Could not return %s back from history to download queue: history item does not have any files left for download", szNiceName);
+			return;
 		}
 
 		pDownloadQueue->GetQueue()->push_front(pNZBInfo);
@@ -439,19 +445,11 @@ void HistoryCoordinator::HistoryReturn(DownloadQueue* pDownloadQueue, HistoryLis
 		pNZBInfo->SetUrlStatus(NZBInfo::lsNone);
 		pNZBInfo->SetDeleteStatus(NZBInfo::dsNone);
 		pDownloadQueue->GetQueue()->push_front(pNZBInfo);
-		bUnparked = true;
 	}
 
-	if (bUnparked || bReprocess)
-	{
-		pDownloadQueue->GetHistory()->erase(itHistory);
-		// the object "pHistoryInfo" is released few lines later, after the call to "NZBDownloaded"
-		info("%s returned from history back to download queue", szNiceName);
-	}
-	else
-	{
-		warn("Could not return %s back from history to download queue: history item does not have any files left for download", szNiceName);
-	}
+	pDownloadQueue->GetHistory()->erase(itHistory);
+	// the object "pHistoryInfo" is released few lines later, after the call to "NZBDownloaded"
+	info("%s returned from history back to download queue", szNiceName);
 
 	if (bReprocess)
 	{
@@ -460,10 +458,7 @@ void HistoryCoordinator::HistoryReturn(DownloadQueue* pDownloadQueue, HistoryLis
 		g_pPrePostProcessor->NZBDownloaded(pDownloadQueue, pNZBInfo);
 	}
 
-	if (bUnparked || bReprocess)
-	{
-		delete pHistoryInfo;
-	}
+	delete pHistoryInfo;
 }
 
 void HistoryCoordinator::HistoryRedownload(DownloadQueue* pDownloadQueue, HistoryList::iterator itHistory,
