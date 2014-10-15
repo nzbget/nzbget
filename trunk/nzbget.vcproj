@@ -61,7 +61,7 @@
 			/>
 			<Tool
 				Name="VCLinkerTool"
-				AdditionalDependencies="WS2_32.lib ole32.lib OleAut32.Lib comsuppwd.lib Advapi32.lib Winmm.lib ssleay32MTd.lib libeay32MTd.lib regex.lib zlib.lib $(NOINHERIT)"
+				AdditionalDependencies="WS2_32.lib ole32.lib OleAut32.Lib comsuppwd.lib Advapi32.lib Winmm.lib dbghelp.lib ssleay32MTd.lib libeay32MTd.lib regex.lib zlib.lib $(NOINHERIT)"
 				LinkIncremental="2"
 				GenerateDebugInformation="true"
 				SubSystem="1"
@@ -314,6 +314,14 @@
 				</File>
 				<File
 					RelativePath=".\daemon\main\Scheduler.h"
+					>
+				</File>
+				<File
+					RelativePath=".\daemon\main\StackTrace.cpp"
+					>
+				</File>
+				<File
+					RelativePath=".\daemon\main\StackTrace.h"
 					>
 				</File>
 			</Filter>

@@ -40,7 +40,6 @@
 #include <unistd.h>
 #include <pwd.h>
 #include <grp.h>
-#include <sys/resource.h>
 #ifdef HAVE_SYS_PRCTL_H
 #include <sys/prctl.h>
 #endif
@@ -52,9 +51,6 @@
 #include <fcntl.h>
 #ifndef DISABLE_PARCHECK
 #include <iostream>
-#endif
-#ifdef HAVE_BACKTRACE
-#include <execinfo.h>
 #endif
 
 #include "nzbget.h"
@@ -83,6 +79,7 @@
 #include "StatMeter.h"
 #include "QueueScript.h"
 #include "Util.h"
+#include "StackTrace.h"
 #ifdef WIN32
 #include "NTService.h"
 #endif
@@ -94,15 +91,7 @@ void Reload();
 void Cleanup();
 void ProcessClientRequest();
 #ifndef WIN32
-void InstallSignalHandlers();
 void Daemonize();
-void PrintBacktrace();
-#ifdef HAVE_SYS_PRCTL_H
-void EnableDumpCore();
-#endif
-#ifdef DEBUG
-void MakeSegFault();
-#endif
 #endif
 #ifndef DISABLE_PARCHECK
 void DisableCout();
@@ -278,23 +267,13 @@ void Run(bool bReload)
 		g_pStatMeter->Init();
 	}
 
-#ifndef WIN32
-#ifdef HAVE_SYS_PRCTL_H
-	if (g_pOptions->GetDumpCore())
-	{
-		EnableDumpCore();
-	}
-#endif
-#endif
+	InstallErrorHandler();
 
-#ifndef WIN32
-	InstallSignalHandlers();
 #ifdef DEBUG
 	if (g_pOptions->GetTestBacktrace())
 	{
-		MakeSegFault();
+		TestSegFault();
 	}
-#endif
 #endif
 
 	// client request
@@ -617,114 +596,6 @@ void Reload()
 	info("Reloading...");
 	ExitProc();
 }
-
-#ifndef WIN32
-#ifdef DEBUG
-typedef void(*sighandler)(int);
-std::vector<sighandler> SignalProcList;
-#endif
-
-/*
- * Signal handler
- */
-void SignalProc(int iSignal)
-{
-	switch (iSignal)
-	{
-		case SIGINT:
-			signal(SIGINT, SIG_DFL);   // Reset the signal handler
-			ExitProc();
-			break;
-
-		case SIGTERM:
-			signal(SIGTERM, SIG_DFL);   // Reset the signal handler
-			ExitProc();
-			break;
-
-		case SIGCHLD:
-			// ignoring
-			break;
-
-#ifdef DEBUG
-		case SIGSEGV:
-			signal(SIGSEGV, SIG_DFL);   // Reset the signal handler
-			PrintBacktrace();
-			break;
-#endif
-	}
-}
-
-void InstallSignalHandlers()
-{
-	signal(SIGINT, SignalProc);
-	signal(SIGTERM, SignalProc);
-	signal(SIGPIPE, SIG_IGN);
-#ifdef DEBUG
-	signal(SIGSEGV, SignalProc);
-#endif
-#ifdef SIGCHLD_HANDLER
-    // it could be necessary on some systems to activate a handler for SIGCHLD
-    // however it make troubles on other systems and is deactivated by default
-	signal(SIGCHLD, SignalProc);
-#endif
-}
-
-void PrintBacktrace()
-{
-#ifdef HAVE_BACKTRACE
-	printf("Segmentation fault, tracing...\n");
-	
-	void *array[100];
-	size_t size;
-	char **strings;
-	size_t i;
-
-	size = backtrace(array, 100);
-	strings = backtrace_symbols(array, size);
-
-	// first trace to screen
-	printf("Obtained %zd stack frames\n", size);
-	for (i = 0; i < size; i++)
-	{
-		printf("%s\n", strings[i]);
-	}
-
-	// then trace to log
-	error("Segmentation fault, tracing...");
-	error("Obtained %zd stack frames", size);
-	for (i = 0; i < size; i++)
-	{
-		error("%s", strings[i]);
-	}
-
-	free(strings);
-#else
-	error("Segmentation fault");
-#endif
-}
-
-#ifdef DEBUG
-void MakeSegFault()
-{
-	char* N = NULL;
-	strcpy(N, "");
-}
-#endif
-
-#ifdef HAVE_SYS_PRCTL_H
-/**
-* activates the creation of core-files
-*/
-void EnableDumpCore()
-{
-	rlimit rlim;
-	rlim.rlim_cur= RLIM_INFINITY;
-	rlim.rlim_max= RLIM_INFINITY;
-	setrlimit(RLIMIT_CORE, &rlim);
-	prctl(PR_SET_DUMPABLE, 1);
-}
-#endif
-#endif
 
 void Cleanup()
 {
