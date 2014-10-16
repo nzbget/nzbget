@@ -65,6 +65,9 @@ private:
 	NZBParameterList*	m_pParameters;
 	bool*				m_bAddTop;
 	bool*				m_bAddPaused;
+	char**				m_pDupeKey;
+	int*				m_iDupeScore;
+	EDupeMode*			m_eDupeMode;
 	int					m_iPrefixLen;
 
 	void				PrepareParams(const char* szScriptName);
@@ -75,14 +78,16 @@ protected:
 
 public:
 	static void			ExecuteScripts(const char* szNZBFilename, const char* szUrl,
-									   const char* szDirectory, char** pNZBName, char** pCategory, int* iPriority,
-									   NZBParameterList* pParameters, bool* bAddTop, bool* bAddPaused);
+							const char* szDirectory, char** pNZBName, char** pCategory, int* iPriority,
+							NZBParameterList* pParameters, bool* bAddTop, bool* bAddPaused,
+							char** pDupeKey, int* iDupeScore, EDupeMode* eDupeMode);
 };
 
 
 void ScanScriptController::ExecuteScripts(const char* szNZBFilename,
-										  const char* szUrl, const char* szDirectory, char** pNZBName, char** pCategory,
-										  int* iPriority, NZBParameterList* pParameters, bool* bAddTop, bool* bAddPaused)
+	const char* szUrl, const char* szDirectory, char** pNZBName, char** pCategory,
+	int* iPriority, NZBParameterList* pParameters, bool* bAddTop, bool* bAddPaused,
+	char** pDupeKey, int* iDupeScore, EDupeMode* eDupeMode)
 {
 	ScanScriptController* pScriptController = new ScanScriptController();
 
@@ -95,6 +100,9 @@ void ScanScriptController::ExecuteScripts(const char* szNZBFilename,
 	pScriptController->m_iPriority = iPriority;
 	pScriptController->m_bAddTop = bAddTop;
 	pScriptController->m_bAddPaused = bAddPaused;
+	pScriptController->m_pDupeKey = pDupeKey;
+	pScriptController->m_iDupeScore = iDupeScore;
+	pScriptController->m_eDupeMode = eDupeMode;
 	pScriptController->m_iPrefixLen = 0;
 
 	pScriptController->ExecuteScriptList(g_pOptions->GetScanScript());
@@ -139,6 +147,11 @@ void ScanScriptController::PrepareParams(const char* szScriptName)
 	SetIntEnvVar("NZBNP_PRIORITY", *m_iPriority);
 	SetIntEnvVar("NZBNP_TOP", *m_bAddTop ? 1 : 0);
 	SetIntEnvVar("NZBNP_PAUSED", *m_bAddPaused ? 1 : 0);
+	SetEnvVar("NZBNP_DUPEKEY", *m_pDupeKey);
+	SetIntEnvVar("NZBNP_DUPESCORE", *m_iDupeScore);
+
+	const char* szDupeModeName[] = { "SCORE", "ALL", "FORCE" };
+	SetEnvVar("NZBNP_DUPEMODE", szDupeModeName[*m_eDupeMode]);
 
 	// remove trailing slash
 	char szDir[1024];
@@ -198,6 +211,26 @@ void ScanScriptController::AddMessage(Message::EKind eKind, const char* szText)
 		else if (!strncmp(szMsgText + 6, "PAUSED=", 7))
 		{
 			*m_bAddPaused = atoi(szMsgText + 6 + 7) != 0;
+		}
+		else if (!strncmp(szMsgText + 6, "DUPEKEY=", 8))
+		{
+			free(*m_pDupeKey);
+			*m_pDupeKey = strdup(szMsgText + 6 + 8);
+		}
+		else if (!strncmp(szMsgText + 6, "DUPESCORE=", 10))
+		{
+			*m_iDupeScore = atoi(szMsgText + 6 + 10);
+		}
+		else if (!strncmp(szMsgText + 6, "DUPEMODE=", 9))
+		{
+			const char* szDupeMode = szMsgText + 6 + 9;
+			if (strcasecmp(szDupeMode, "score") && strcasecmp(szDupeMode, "all") && strcasecmp(szDupeMode, "force"))
+			{
+				error("Invalid value \"%s\" for command \"DUPEMODE\" received from %s", szDupeMode, GetInfoName());
+				return;
+			}
+			*m_eDupeMode = !strcasecmp(szDupeMode, "all") ? dmAll :
+				!strcasecmp(szDupeMode, "force") ? dmForce : dmScore;
 		}
 		else
 		{
@@ -508,7 +541,7 @@ void Scanner::ProcessIncomingFile(const char* szDirectory, const char* szBaseFil
 	int iPriority = 0;
 	bool bAddTop = false;
 	bool bAddPaused = false;
-	const char* szDupeKey = NULL;
+	char* szDupeKey = strdup("");
 	int iDupeScore = 0;
 	EDupeMode eDupeMode = dmScore;
 	EAddStatus eAddStatus = asSkipped;
@@ -528,7 +561,8 @@ void Scanner::ProcessIncomingFile(const char* szDirectory, const char* szBaseFil
 			free(szNZBCategory);
 			szNZBCategory = strdup(pQueueData->GetCategory());
 			iPriority = pQueueData->GetPriority();
-			szDupeKey = pQueueData->GetDupeKey();
+			free(szDupeKey);
+			szDupeKey = strdup(pQueueData->GetDupeKey());
 			iDupeScore = pQueueData->GetDupeScore();
 			eDupeMode = pQueueData->GetDupeMode();
 			bAddTop = pQueueData->GetAddTop();
@@ -546,7 +580,8 @@ void Scanner::ProcessIncomingFile(const char* szDirectory, const char* szBaseFil
 	{
 		ScanScriptController::ExecuteScripts(szFullFilename, 
 			pUrlInfo ? pUrlInfo->GetURL() : "", szDirectory,
-			&szNZBName, &szNZBCategory, &iPriority, pParameters, &bAddTop, &bAddPaused); 
+			&szNZBName, &szNZBCategory, &iPriority, pParameters, &bAddTop,
+			&bAddPaused, &szDupeKey, &iDupeScore, &eDupeMode);
 		bExists = Util::FileExists(szFullFilename);
 		if (bExists && strcasecmp(szExtension, ".nzb"))
 		{
@@ -586,6 +621,7 @@ void Scanner::ProcessIncomingFile(const char* szDirectory, const char* szBaseFil
 
 	free(szNZBName);
 	free(szNZBCategory);
+	free(szDupeKey);
 
 	if (pQueueData)
 	{
