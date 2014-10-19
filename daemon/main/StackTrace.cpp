@@ -38,11 +38,12 @@
 #ifdef WIN32
 #include <dbghelp.h>
 #else
-#ifdef HAVE_SYS_PRCTL_H
-#include <sys/prctl.h>
-#endif
+#include <unistd.h>
 #include <sys/resource.h>
 #include <signal.h>
+#endif
+#ifdef HAVE_SYS_PRCTL_H
+#include <sys/prctl.h>
 #endif
 #ifdef HAVE_BACKTRACE
 #include <execinfo.h>
