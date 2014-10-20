@@ -50,6 +50,8 @@
 extern Options* g_pOptions;
 extern QueueScriptCoordinator* g_pQueueScriptCoordinator;
 
+static const char* QUEUE_EVENT_NAMES[] = { "FILE_DOWNLOADED", "NZB_ADDED", "NZB_DOWNLOADED" };
+
 class QueueScriptController : public Thread, public NZBScriptController
 {
 private:
@@ -242,9 +244,7 @@ void QueueScriptController::PrepareParams(const char* szScriptName)
 	SetEnvVar("NZBNA_CATEGORY", m_szCategory);
 	SetIntEnvVar("NZBNA_PRIORITY", m_iPriority);
 	SetIntEnvVar("NZBNA_LASTID", m_iID);	// deprecated
-
-    const char* szEventName[] = { "FILE_DOWNLOADED", "NZB_ADDED", "NZB_DOWNLOADED" };
-	SetEnvVar("NZBNA_EVENT", szEventName[m_eEvent]);
+	SetEnvVar("NZBNA_EVENT", QUEUE_EVENT_NAMES[m_eEvent]);
 
 	PrepareEnvScript(&m_Parameters, szScriptName);
 }
@@ -409,7 +409,9 @@ void QueueScriptCoordinator::EnqueueScript(NZBInfo* pNZBInfo, EEvent eEvent)
 				NZBParameter* pParameter = *it;
 				const char* szVarname = pParameter->GetName();
 				if (strlen(szVarname) > 0 && szVarname[0] != '*' && szVarname[strlen(szVarname)-1] == ':' &&
-					(!strcasecmp(pParameter->GetValue(), "yes") || !strcasecmp(pParameter->GetValue(), "on") || !strcasecmp(pParameter->GetValue(), "1")))
+					(!strcasecmp(pParameter->GetValue(), "yes") ||
+					 !strcasecmp(pParameter->GetValue(), "on") ||
+					 !strcasecmp(pParameter->GetValue(), "1")))
 				{
 					char szScriptName[1024];
 					strncpy(szScriptName, szVarname, 1024);
@@ -423,6 +425,8 @@ void QueueScriptCoordinator::EnqueueScript(NZBInfo* pNZBInfo, EEvent eEvent)
 				}
 			}
 		}
+
+		bUseScript &= Util::EmptyStr(pScript->GetQueueEvents()) || strstr(pScript->GetQueueEvents(), QUEUE_EVENT_NAMES[eEvent]);
 
 		if (bUseScript)
 		{
