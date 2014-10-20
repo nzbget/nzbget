@@ -183,6 +183,7 @@ public:
 		bool			m_bScanScript;
 		bool			m_bQueueScript;
 		bool			m_bSchedulerScript;
+		char*			m_szQueueEvents;
 
 	public:
 						Script(const char* szName, const char* szLocation);
@@ -199,6 +200,8 @@ public:
 		void			SetQueueScript(bool bQueueScript) { m_bQueueScript = bQueueScript; }
 		bool			GetSchedulerScript() { return m_bSchedulerScript; }
 		void			SetSchedulerScript(bool bSchedulerScript) { m_bSchedulerScript = bSchedulerScript; }
+		void			SetQueueEvents(const char* szQueueEvents);
+		const char*		GetQueueEvents() { return m_szQueueEvents; }
 	};
 
 	typedef std::list<Script*>  ScriptsBase;

@@ -218,6 +218,7 @@ static const char* SCAN_SCRIPT_SIGNATURE = "SCAN";
 static const char* QUEUE_SCRIPT_SIGNATURE = "QUEUE";
 static const char* SCHEDULER_SCRIPT_SIGNATURE = "SCHEDULER";
 static const char* END_SCRIPT_SIGNATURE = " SCRIPT";
+static const char* QUEUE_EVENTS_SIGNATURE = "### QUEUE EVENTS:";
 
 #ifndef WIN32
 const char* PossibleConfigLocations[] =
@@ -394,6 +395,7 @@ Options::Script::Script(const char* szName, const char* szLocation)
 	m_bScanScript = false;
 	m_bQueueScript = false;
 	m_bSchedulerScript = false;
+	m_szQueueEvents = NULL;
 }
 
 Options::Script::~Script()
@@ -401,12 +403,19 @@ Options::Script::~Script()
 	free(m_szName);
 	free(m_szLocation);
 	free(m_szDisplayName);
+	free(m_szQueueEvents);
 }
 
 void Options::Script::SetDisplayName(const char* szDisplayName)
 {
 	free(m_szDisplayName);
 	m_szDisplayName = strdup(szDisplayName);
+}
+
+void Options::Script::SetQueueEvents(const char* szQueueEvents)
+{
+	free(m_szQueueEvents);
+	m_szQueueEvents = szQueueEvents ? strdup(szQueueEvents) : NULL;
 }
 
 
@@ -3157,6 +3166,7 @@ void Options::LoadScriptDir(Scripts* pScripts, const char* szDirectory, bool bIs
 	char* szBuffer = (char*)malloc(iBufSize+1);
 
 	const int iBeginSignatureLen = strlen(BEGIN_SCRIPT_SIGNATURE);
+	const int iQueueEventsSignatureLen = strlen(QUEUE_EVENTS_SIGNATURE);
 
 	DirBrowser dir(szDirectory);
 	while (const char* szFilename = dir.Next())
@@ -3212,11 +3222,25 @@ void Options::LoadScriptDir(Scripts* pScripts, const char* szDirectory, bool bIs
 								}
 								szScriptName[1024-1] = '\0';
 
+								char* szQueueEvents = NULL;
+								if (bQueueScript)
+								{
+									while (char* szLine = tok.Next())
+									{
+										if (!strncmp(szLine, QUEUE_EVENTS_SIGNATURE, iQueueEventsSignatureLen))
+										{
+											szQueueEvents = szLine + iQueueEventsSignatureLen;
+											break;
+										}
+									}
+								}
+
 								Script* pScript = new Script(szScriptName, szFullFilename);
 								pScript->SetPostScript(bPostScript);
 								pScript->SetScanScript(bScanScript);
 								pScript->SetQueueScript(bQueueScript);
 								pScript->SetSchedulerScript(bSchedulerScript);
+								pScript->SetQueueEvents(szQueueEvents);
 								pScripts->push_back(pScript);
 								break;
 							}
