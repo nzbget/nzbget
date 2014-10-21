@@ -399,6 +399,8 @@ void Run(bool bReload)
 		debug("ArticleCache stopped");
 	}
 
+	ScriptController::TerminateAll();
+
 	// Stop network-server
 	if (g_pRemoteServer)
 	{

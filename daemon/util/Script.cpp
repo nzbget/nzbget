@@ -46,6 +46,7 @@
 #include <fcntl.h>
 #include <stdio.h>
 #include <stdarg.h>
+#include <algorithm>
 
 #include "nzbget.h"
 #include "Script.h"
@@ -58,6 +59,9 @@ extern char** environ;
 
 extern Options* g_pOptions;
 extern char* (*g_szEnvironmentVariables)[];
+
+ScriptController::RunningScripts ScriptController::m_RunningScripts;
+Mutex ScriptController::m_mutexRunning;
 
 #ifndef WIN32
 #define CHILD_WATCHDOG 1
@@ -197,7 +201,12 @@ ScriptController::ScriptController()
 	m_szLogPrefix = NULL;
 	m_bTerminated = false;
 	m_bDetached = false;
+	m_hProcess = 0;
 	m_environmentStrings.InitFromCurrentProcess();
+
+	m_mutexRunning.Lock();
+	m_RunningScripts.push_back(this);
+	m_mutexRunning.Unlock();
 }
 
 ScriptController::~ScriptController()
@@ -210,6 +219,10 @@ ScriptController::~ScriptController()
 		}
 		free(m_szArgs);
 	}
+
+	m_mutexRunning.Lock();
+	m_RunningScripts.erase(std::find(m_RunningScripts.begin(), m_RunningScripts.end(), this));
+	m_mutexRunning.Unlock();
 }
 
 void ScriptController::ResetEnv()
@@ -639,6 +652,20 @@ void ScriptController::Terminate()
 	}
 
 	debug("Stopped %s", m_szInfoName);
+}
+
+void ScriptController::TerminateAll()
+{
+	m_mutexRunning.Lock();
+	for (RunningScripts::iterator it = m_RunningScripts.begin(); it != m_RunningScripts.end(); it++)
+	{
+		ScriptController* pScript = *it;
+		if (pScript->m_hProcess && !pScript->m_bDetached)
+		{
+			pScript->Terminate();
+		}
+	}
+	m_mutexRunning.Unlock();
 }
 
 void ScriptController::Detach()
