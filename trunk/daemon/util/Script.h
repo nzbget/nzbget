@@ -28,6 +28,7 @@
 
 #include <vector>
 
+#include "Thread.h"
 #include "Log.h"
 
 class EnvironmentStrings
@@ -71,6 +72,10 @@ private:
 	pid_t				m_hProcess;
 #endif
 
+	typedef std::vector<ScriptController*>	RunningScripts;
+	static RunningScripts	m_RunningScripts;
+	static Mutex			m_mutexRunning;
+
 protected:
 	void				ProcessOutput(char* szText);
 	virtual bool		ReadLine(char* szBuf, int iBufSize, FILE* pStream);
@@ -87,6 +92,7 @@ public:
 	int					Execute();
 	void				Terminate();
 	void				Detach();
+	static void			TerminateAll();
 
 	void				SetScript(const char* szScript) { m_szScript = szScript; }
 	const char*			GetScript() { return m_szScript; }
