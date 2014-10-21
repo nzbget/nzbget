@@ -181,7 +181,7 @@ void RequestProcessor::Run()
 	int iSignature = 0;
 	if (!m_pConnection->Recv((char*)&iSignature, 4))
 	{
-		debug("Could not read request signature, request received on port %i from %s", m_bTLS ? g_pOptions->GetSecurePort() : g_pOptions->GetControlPort(), m_pConnection->GetRemoteAddr());
+		debug("Could not read request signature");
 		return;
 	}
 
