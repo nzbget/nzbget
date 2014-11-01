@@ -3057,6 +3057,7 @@ bool Options::LoadConfigTemplates(ConfigTemplates* pConfigTemplates)
 	LoadScripts(&scriptList);
 
 	const int iBeginSignatureLen = strlen(BEGIN_SCRIPT_SIGNATURE);
+	const int iQueueEventsSignatureLen = strlen(QUEUE_EVENTS_SIGNATURE);
 
 	for (Scripts::iterator it = scriptList.begin(); it != scriptList.end(); it++)
 	{
@@ -3091,7 +3092,9 @@ bool Options::LoadConfigTemplates(ConfigTemplates* pConfigTemplates)
 				continue;
 			}
 
-			if (bInConfig)
+			bool bSkip = !strncmp(buf, QUEUE_EVENTS_SIGNATURE, iQueueEventsSignatureLen);
+
+			if (bInConfig && !bSkip)
 			{
 				stringBuilder.Append(buf);
 			}
