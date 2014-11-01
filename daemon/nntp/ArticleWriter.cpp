@@ -857,7 +857,7 @@ bool ArticleWriter::MoveCompletedFiles(NZBInfo* pNZBInfo, const char* szOldDestD
 			}
 			else
 			{
-				bPendingWrites = pFileInfo->GetOutputInitialized();
+				bPendingWrites = pFileInfo->GetOutputInitialized() && !Util::EmptyStr(pFileInfo->GetOutputFilename());
 			}
 		}
 
