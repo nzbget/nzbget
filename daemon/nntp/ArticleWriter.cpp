@@ -852,7 +852,7 @@ bool ArticleWriter::MoveCompletedFiles(NZBInfo* pNZBInfo, const char* szOldDestD
 			if (pFileInfo->GetActiveDownloads() > 0)
 			{
 				pFileInfo->LockOutputFile();
-				bPendingWrites = pFileInfo->GetOutputInitialized();
+				bPendingWrites = pFileInfo->GetOutputInitialized() && !Util::EmptyStr(pFileInfo->GetOutputFilename());
 				pFileInfo->UnlockOutputFile();
 			}
 			else
