@@ -1,3 +1,7 @@
+nzbget-15.0:
+  - please see subversion log at
+    http://sourceforge.net/p/nzbget/code/HEAD/log/?path=/trunk
+
 nzbget-14.0:
   - added article cache:
         - new option "ArticleCache" defines memory limit to use for cache;
