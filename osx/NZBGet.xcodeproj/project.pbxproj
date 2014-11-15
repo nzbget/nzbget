@@ -22,7 +22,6 @@
 		F29ABB2C17C00E190023A423 /* Foundation.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 29B97325FDCFA39411CA2CEA /* Foundation.framework */; };
 		F2A55D3717C4CA9000D6FFE1 /* daemon in Resources */ = {isa = PBXBuildFile; fileRef = F2A55D3617C4CA9000D6FFE1 /* daemon */; };
 		F2A55D3B17C4CAF800D6FFE1 /* tools in Resources */ = {isa = PBXBuildFile; fileRef = F2A55D3A17C4CAF800D6FFE1 /* tools */; };
-		F2A6E11017C8E42300D910CB /* statusicon-inv@2x.png in Resources */ = {isa = PBXBuildFile; fileRef = F2A6E10E17C8E42300D910CB /* statusicon-inv@2x.png */; };
 		F2A6E11117C8E42300D910CB /* statusicon@2x.png in Resources */ = {isa = PBXBuildFile; fileRef = F2A6E10F17C8E42300D910CB /* statusicon@2x.png */; };
 		F2BBD9C613E083160037473A /* Credits.rtf in Resources */ = {isa = PBXBuildFile; fileRef = F2FC0F8B13BF595700D834E3 /* Credits.rtf */; };
 		F2CD856817C282080019D2CA /* RPC.m in Sources */ = {isa = PBXBuildFile; fileRef = F2CD856517C254A90019D2CA /* RPC.m */; };
@@ -31,7 +30,6 @@
 		F2F9804A17C9081D004623D6 /* licenses in Resources */ = {isa = PBXBuildFile; fileRef = F2F9804917C9081D004623D6 /* licenses */; };
 		F2FCD73B13BB9CE900FC81F5 /* mainicon.icns in Resources */ = {isa = PBXBuildFile; fileRef = F2FCD73A13BB9CE900FC81F5 /* mainicon.icns */; };
 		F2FCD7D913BBDAED00FC81F5 /* statusicon.png in Resources */ = {isa = PBXBuildFile; fileRef = F2FCD7D813BBDAED00FC81F5 /* statusicon.png */; };
-		F2FCD84D13BCFD0900FC81F5 /* statusicon-inv.png in Resources */ = {isa = PBXBuildFile; fileRef = F2FCD84C13BCFD0900FC81F5 /* statusicon-inv.png */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -57,7 +55,6 @@
 		F29ABB2417BFC03D0023A423 /* DaemonController.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = DaemonController.m; sourceTree = "<group>"; };
 		F2A55D3617C4CA9000D6FFE1 /* daemon */ = {isa = PBXFileReference; lastKnownFileType = folder; name = daemon; path = Resources/daemon; sourceTree = "<group>"; };
 		F2A55D3A17C4CAF800D6FFE1 /* tools */ = {isa = PBXFileReference; lastKnownFileType = folder; name = tools; path = Resources/tools; sourceTree = "<group>"; };
-		F2A6E10E17C8E42300D910CB /* statusicon-inv@2x.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; name = "statusicon-inv@2x.png"; path = "Images/statusicon-inv@2x.png"; sourceTree = "<group>"; };
 		F2A6E10F17C8E42300D910CB /* statusicon@2x.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; name = "statusicon@2x.png"; path = "Images/statusicon@2x.png"; sourceTree = "<group>"; };
 		F2CD856417C254A90019D2CA /* RPC.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = RPC.h; sourceTree = "<group>"; };
 		F2CD856517C254A90019D2CA /* RPC.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = RPC.m; sourceTree = "<group>"; };
@@ -69,7 +66,6 @@
 		F2FC0F8B13BF595700D834E3 /* Credits.rtf */ = {isa = PBXFileReference; lastKnownFileType = text.rtf; name = Credits.rtf; path = Resources/Credits.rtf; sourceTree = "<group>"; };
 		F2FCD73A13BB9CE900FC81F5 /* mainicon.icns */ = {isa = PBXFileReference; lastKnownFileType = image.icns; name = mainicon.icns; path = Images/mainicon.icns; sourceTree = "<group>"; };
 		F2FCD7D813BBDAED00FC81F5 /* statusicon.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; name = statusicon.png; path = Images/statusicon.png; sourceTree = "<group>"; };
-		F2FCD84C13BCFD0900FC81F5 /* statusicon-inv.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; name = "statusicon-inv.png"; path = "Images/statusicon-inv.png"; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -108,7 +104,7 @@
 				29B97323FDCFA39411CA2CEA /* Frameworks */,
 				19C28FACFE9D520D11CA2CBB /* Products */,
 			);
-			name = "NZBGet";
+			name = NZBGet;
 			sourceTree = "<group>";
 		};
 		29B97315FDCFA39411CA2CEA /* Other Sources */ = {
@@ -201,9 +197,7 @@
 			isa = PBXGroup;
 			children = (
 				F2FCD73A13BB9CE900FC81F5 /* mainicon.icns */,
-				F2A6E10E17C8E42300D910CB /* statusicon-inv@2x.png */,
 				F2A6E10F17C8E42300D910CB /* statusicon@2x.png */,
-				F2FCD84C13BCFD0900FC81F5 /* statusicon-inv.png */,
 				F2FCD7D813BBDAED00FC81F5 /* statusicon.png */,
 			);
 			name = Images;
@@ -227,7 +221,7 @@
 			);
 			name = NZBGet;
 			productInstallPath = "$(HOME)/Applications";
-			productName = "NZBGet";
+			productName = NZBGet;
 			productReference = 8D1107320486CEB800E47090 /* NZBGet.app */;
 			productType = "com.apple.product-type.application";
 		};
@@ -269,7 +263,6 @@
 			files = (
 				F2FCD73B13BB9CE900FC81F5 /* mainicon.icns in Resources */,
 				F2FCD7D913BBDAED00FC81F5 /* statusicon.png in Resources */,
-				F2FCD84D13BCFD0900FC81F5 /* statusicon-inv.png in Resources */,
 				F2BBD9C613E083160037473A /* Credits.rtf in Resources */,
 				F26D959317C0E81800E58E5D /* Welcome.rtf in Resources */,
 				F26D959517C0E86300E58E5D /* MainApp.xib in Resources */,
@@ -278,7 +271,6 @@
 				F26D959B17C0E89D00E58E5D /* Localizable.strings in Resources */,
 				F2A55D3717C4CA9000D6FFE1 /* daemon in Resources */,
 				F2A55D3B17C4CAF800D6FFE1 /* tools in Resources */,
-				F2A6E11017C8E42300D910CB /* statusicon-inv@2x.png in Resources */,
 				F2A6E11117C8E42300D910CB /* statusicon@2x.png in Resources */,
 				F2F9804A17C9081D004623D6 /* licenses in Resources */,
 			);
