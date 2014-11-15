@@ -149,8 +149,9 @@ void InstallSignalHandlers()
 			statusItem = [[NSStatusBar systemStatusBar] statusItemWithLength:NSSquareStatusItemLength];
 			[statusItem setHighlightMode:YES];
 			[statusItem setMenu:statusMenu];
-			[statusItem setImage:[NSImage imageNamed:@"statusicon.png"]];
-			[statusItem setAlternateImage:[NSImage imageNamed:@"statusicon-inv.png"]];
+			NSImage* icon = [NSImage imageNamed:@"statusicon.png"];
+			[icon setTemplate:YES];
+			[statusItem setImage:icon];
 		}
 		else {
 			statusItem = nil;
