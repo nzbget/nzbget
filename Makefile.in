@@ -489,8 +489,6 @@ osx_FILES = \
 	osx/Resources/Images/mainicon.icns \
 	osx/Resources/Images/statusicon.png \
 	osx/Resources/Images/statusicon@2x.png \
-	osx/Resources/Images/statusicon-inv.png \
-	osx/Resources/Images/statusicon-inv@2x.png \
 	osx/Resources/licenses/license-bootstrap.txt \
 	osx/Resources/licenses/license-jquery-GPL.txt \
 	osx/Resources/licenses/license-jquery-MIT.txt \
