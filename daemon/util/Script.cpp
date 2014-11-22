@@ -639,7 +639,7 @@ void ScriptController::Terminate()
 		// if the child process has its own group (setsid() was successful), kill the whole group
 		hKillProcess = -hKillProcess;
 	}
-	bool bOK = kill(hKillProcess, SIGKILL) == 0;
+	bool bOK = hKillProcess && kill(hKillProcess, SIGKILL) == 0;
 #endif
 
 	if (bOK)
