@@ -24,6 +24,7 @@
 		F2A55D3B17C4CAF800D6FFE1 /* tools in Resources */ = {isa = PBXBuildFile; fileRef = F2A55D3A17C4CAF800D6FFE1 /* tools */; };
 		F2A6E11117C8E42300D910CB /* statusicon@2x.png in Resources */ = {isa = PBXBuildFile; fileRef = F2A6E10F17C8E42300D910CB /* statusicon@2x.png */; };
 		F2BBD9C613E083160037473A /* Credits.rtf in Resources */ = {isa = PBXBuildFile; fileRef = F2FC0F8B13BF595700D834E3 /* Credits.rtf */; };
+		F2C040481A18E946003EAB32 /* IOKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = F2C040471A18E946003EAB32 /* IOKit.framework */; };
 		F2CD856817C282080019D2CA /* RPC.m in Sources */ = {isa = PBXBuildFile; fileRef = F2CD856517C254A90019D2CA /* RPC.m */; };
 		F2CD856B17C282820019D2CA /* WebClient.m in Sources */ = {isa = PBXBuildFile; fileRef = F2CD856A17C282800019D2CA /* WebClient.m */; };
 		F2D2A2F113CBA680000824B4 /* WelcomeDialog.m in Sources */ = {isa = PBXBuildFile; fileRef = F2D2A2EF13CBA680000824B4 /* WelcomeDialog.m */; };
@@ -56,6 +57,7 @@
 		F2A55D3617C4CA9000D6FFE1 /* daemon */ = {isa = PBXFileReference; lastKnownFileType = folder; name = daemon; path = Resources/daemon; sourceTree = "<group>"; };
 		F2A55D3A17C4CAF800D6FFE1 /* tools */ = {isa = PBXFileReference; lastKnownFileType = folder; name = tools; path = Resources/tools; sourceTree = "<group>"; };
 		F2A6E10F17C8E42300D910CB /* statusicon@2x.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; name = "statusicon@2x.png"; path = "Images/statusicon@2x.png"; sourceTree = "<group>"; };
+		F2C040471A18E946003EAB32 /* IOKit.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = IOKit.framework; path = Platforms/MacOSX.platform/Developer/SDKs/MacOSX10.7.sdk/System/Library/Frameworks/IOKit.framework; sourceTree = DEVELOPER_DIR; };
 		F2CD856417C254A90019D2CA /* RPC.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = RPC.h; sourceTree = "<group>"; };
 		F2CD856517C254A90019D2CA /* RPC.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = RPC.m; sourceTree = "<group>"; };
 		F2CD856917C282800019D2CA /* WebClient.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = WebClient.h; sourceTree = "<group>"; };
@@ -73,6 +75,7 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				F2C040481A18E946003EAB32 /* IOKit.framework in Frameworks */,
 				F20FC6E417C6BC8D00C392AC /* Security.framework in Frameworks */,
 				8D11072F0486CEB800E47090 /* Cocoa.framework in Frameworks */,
 				F29ABB2B17C00E150023A423 /* AppKit.framework in Frameworks */,
@@ -133,6 +136,7 @@
 		29B97323FDCFA39411CA2CEA /* Frameworks */ = {
 			isa = PBXGroup;
 			children = (
+				F2C040471A18E946003EAB32 /* IOKit.framework */,
 				29B97324FDCFA39411CA2CEA /* AppKit.framework */,
 				1058C7A1FEA54F0111CA2CBB /* Cocoa.framework */,
 				29B97325FDCFA39411CA2CEA /* Foundation.framework */,
