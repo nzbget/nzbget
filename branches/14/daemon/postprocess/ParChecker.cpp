@@ -1396,7 +1396,9 @@ bool ParChecker::VerifySuccessDataFile(void* pDiskfile, void* pSourcefile, unsig
 
 	// extend lDownloadCrc to block size
 	lDownloadCrc = CRCUpdateBlock(lDownloadCrc ^ 0xFFFFFFFF,
-		(size_t)(blocksize * packet->BlockCount() - pSourceFile->GetTargetFile()->FileSize())) ^ 0xFFFFFFFF;
+		(size_t)(blocksize * packet->BlockCount() > pSourceFile->GetTargetFile()->FileSize() ?
+			blocksize * packet->BlockCount() - pSourceFile->GetTargetFile()->FileSize() : 0)
+		) ^ 0xFFFFFFFF;
 	debug("Download-CRC: %.8x", lDownloadCrc);
 
 	// compute file CRC using CRCs of blocks
