@@ -100,7 +100,7 @@ void UnpackController::Run()
 	m_szPassword[0] = '\0';
 	m_szFinalDir[0] = '\0';
 	m_bFinalDirCreated = false;
-	
+
 	NZBParameter* pParameter = m_pPostInfo->GetNZBInfo()->GetParameters()->Find("*Unpack:", false);
 	bool bUnpack = !(pParameter && !strcasecmp(pParameter->GetValue(), "no"));
 
@@ -136,16 +136,16 @@ void UnpackController::Run()
 
 	if (bUnpack && bHasFiles)
 	{
-		PrintMessage(Message::mkInfo, "Unpacking %s", m_szName);
-
-		CreateUnpackDir();
-
 		m_bUnpackOK = true;
 		m_bUnpackStartError = false;
 		m_bUnpackSpaceError = false;
 		m_bUnpackPasswordError4 = false;
 		m_bUnpackPasswordError5 = false;
 		m_bAutoTerminated = false;
+
+		PrintMessage(Message::mkInfo, "Unpacking %s", m_szName);
+
+		CreateUnpackDir();
 
 		if (m_bHasRarFiles || m_bHasNonStdRarFiles)
 		{
