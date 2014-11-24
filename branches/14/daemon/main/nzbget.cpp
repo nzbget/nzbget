@@ -130,7 +130,7 @@ int main(int argc, char *argv[], char *argp[])
 #ifdef _DEBUG
 	_CrtSetReportMode(_CRT_WARN, _CRTDBG_MODE_FILE | _CRTDBG_MODE_DEBUG);
 	_CrtSetReportFile(_CRT_WARN, _CRTDBG_FILE_STDERR);
-	_CrtSetDbgFlag(_CRTDBG_ALLOC_MEM_DF
+	_CrtSetDbgFlag(_CRTDBG_ALLOC_MEM_DF | _CRTDBG_LEAK_CHECK_DF
 #ifdef DEBUG_CRTMEMLEAKS
 		| _CRTDBG_CHECK_CRT_DF | _CRTDBG_CHECK_ALWAYS_DF
 #endif
@@ -166,12 +166,6 @@ int main(int argc, char *argv[], char *argp[])
 #endif
 
 	RunMain();
-
-#ifdef WIN32
-#ifdef _DEBUG
-	_CrtDumpMemoryLeaks();
-#endif
-#endif
 
 	return 0;
 }
