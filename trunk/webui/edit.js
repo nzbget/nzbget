@@ -1836,7 +1836,7 @@ var HistoryEditDialog = (new function()
 
 	function reprocess()
 	{
-		notification = '#Notif_History_Reproces';
+		notification = '#Notif_History_Reprocess';
 		RPC.call('editqueue', ['HistoryProcess', 0, '', [curHist.ID]], completed);
 	}
 

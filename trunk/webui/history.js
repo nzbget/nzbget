@@ -269,7 +269,7 @@ var History = (new function($)
 		}
 	}
 
-	this.deleteClick = function()
+	this.actionClick = function(action)
 	{
 		var checkedRows = $HistoryTable.fasttable('checkedRows');
 		if (checkedRows.length == 0)
@@ -279,6 +279,7 @@ var History = (new function($)
 		}
 
 		var hasNzb = false;
+		var hasUrl = false;
 		var hasDup = false;
 		var hasFailed = false;
 		for (var i = 0; i < history.length; i++)
@@ -287,23 +288,53 @@ var History = (new function($)
 			if (checkedRows.indexOf(hist.ID) > -1)
 			{
 				hasNzb |= hist.Kind === 'NZB';
+				hasUrl |= hist.Kind === 'URL';
 				hasDup |= hist.Kind === 'DUP';
 				hasFailed |= hist.ParStatus === 'FAILURE' || hist.UnpackStatus === 'FAILURE';
 			}
 		}
 
-		HistoryUI.deleteConfirm(historyDelete, hasNzb, hasDup, hasFailed, true);
+		switch (action)
+		{
+			case 'DELETE':
+				notification = '#Notif_History_Deleted';
+				HistoryUI.deleteConfirm(historyAction, hasNzb, hasDup, hasFailed, true);
+				break;
+
+			case 'REPROCESS':
+				if (hasUrl || hasDup)
+				{
+					Notification.show('#Notif_History_CantReprocess');
+					return;
+				}
+				notification = '#Notif_History_Reprocess';
+				historyAction('HistoryProcess');
+				break;
+
+			case 'REDOWNLOAD':
+				notification = '#Notif_History_Returned';
+				historyAction('HistoryRedownload');
+				break;
+
+			case 'MARKGOOD':
+			case 'MARKBAD':
+				if (hasUrl)
+				{
+					Notification.show('#Notif_History_CantMark');
+					return;
+				}
+				notification = '#Notif_History_Marked';
+				historyAction(action === 'MARKGOOD' ? 'HistoryMarkGood' : 'HistoryMarkBad');
+				break;
+		}
 	}
 
-	function historyDelete(command)
+	function historyAction(command)
 	{
 		Refresher.pause();
-
 		var IDs = $HistoryTable.fasttable('checkedRows');
-
 		RPC.call('editqueue', [command, 0, '', [IDs]], function()
 		{
-			notification = '#Notif_History_Deleted';
 			editCompleted();
 		});
 	}

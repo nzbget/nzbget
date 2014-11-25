@@ -316,9 +316,17 @@
 
 			<div class="btn-toolbar form-inline section-toolbar" id ="HistoryTab_Toolbar">
 				<div class="btn-group">
-					<button class="btn" onclick="History.deleteClick()" title="Delete selected records"><i class="icon-trash"></i><span class="btn-caption"> Delete</span></button>
+					<button class="btn" onclick="History.actionClick('DELETE')" title="Delete selected records"><i class="icon-trash"></i><span class="btn-caption"> Delete</span></button>
+					<button class="btn dropdown-toggle" data-toggle="dropdown" title="More actions"><span class="btn-caption"> More </span><span class="phone-only inline">&nbsp;</span><span class="caret"></span></button>
+					<ul class="dropdown-menu">
+						<li class="menu-header">Actions</li>
+						<li><a href="#" id="HistoryTab_Reprocess" onclick="History.actionClick('REPROCESS')"><i class="icon-process"></i> Post-Process Again</a></li>
+						<li><a href="#" id="HistoryTab_Redownload" onclick="History.actionClick('REDOWNLOAD')"><i class="icon-downloads"></i> Download Again</a></li>
+						<li><a href="#" id="HistoryTab_MarkGood" onclick="History.actionClick('MARKGOOD')"><i class="icon-ok"></i> Mark as Good</a></li>
+						<li><a href="#" id="HistoryTab_MarkBad" onclick="History.actionClick('MARKBAD')"><i class="icon-remove"></i> Mark as Bad</a></li>
+					</ul>
 				</div>
-
+				
 				<!-- STATUS FILTER BUTTONS -->
 				<div class="btn-group phone-hide">
 					<button class="btn history-filter btn-inverse" onclick="History.filter('ALL')" title="Show All">All &nbsp;<span class="badge badge-active" id="History_Badge_ALL">?</span></button>
@@ -2440,7 +2448,7 @@
     <strong>Returned to Queue</strong>
 </div>
 
-<div id="Notif_History_Reproces" data-duration="1000" class="alert alert-inverse alert-center alert-center-small hide">
+<div id="Notif_History_Reprocess" data-duration="1000" class="alert alert-inverse alert-center alert-center-small hide">
     <strong>Post-Processing</strong>
 </div>
 
@@ -2452,8 +2460,16 @@
     <strong>Please select records first</strong>
 </div>
 
+<div id="Notif_History_CantMark" data-duration="2000" class="alert alert-error alert-center alert-center-small hide">
+    <strong>Cannot mark URL-records</strong>
+</div>
+
 <div id="Notif_History_Marked" data-duration="1000" class="alert alert-inverse alert-center alert-center-small hide">
     <strong>Marked</strong>
+</div>
+
+<div id="Notif_History_CantReprocess" data-duration="2000" class="alert alert-error alert-center alert-center-medium hide">
+    <strong>Cannot post-process URL- or hidden records</strong>
 </div>
 
 <div id="Notif_Feeds_FetchAll" data-duration="1000" class="alert alert-inverse alert-center alert-center-small hide">
