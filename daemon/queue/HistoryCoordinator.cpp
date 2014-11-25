@@ -464,6 +464,12 @@ void HistoryCoordinator::HistoryReturn(DownloadQueue* pDownloadQueue, HistoryLis
 void HistoryCoordinator::HistoryRedownload(DownloadQueue* pDownloadQueue, HistoryList::iterator itHistory,
 	HistoryInfo* pHistoryInfo, bool bRestorePauseState)
 {
+	if (pHistoryInfo->GetKind() == HistoryInfo::hkUrl)
+	{
+		HistoryReturn(pDownloadQueue, itHistory, pHistoryInfo, false);
+		return;
+	}
+
 	NZBInfo* pNZBInfo = pHistoryInfo->GetNZBInfo();
 	bool bPaused = bRestorePauseState && pNZBInfo->GetDeletePaused();
 
