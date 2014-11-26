@@ -1,3 +1,15 @@
+nzbget-14.1:
+  - fixed: program could crash during unpack (Posix) or unpack failure
+    was reported (Windows);
+  - fixed: quick par-check could hang on certain nzb-files containing multiple
+    par-sets (occured only in 64 bit mode);
+  - fixed: menubar icon was not visible on OSX in dark mode;
+  - system sleep on idle state is now prevented during download and
+    post-processing (Mac OSX only);
+  - fixed: unrar may sometimes fail with message "no files to extract"
+    (certain Linux systems);
+  - fixed false memory leak warning when compiled in debug mode (Windows only);
+
 nzbget-14.0:
   - added article cache:
         - new option "ArticleCache" defines memory limit to use for cache;
