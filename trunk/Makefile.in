@@ -471,7 +471,10 @@ windows_FILES = \
 	windows/resources/resource.h \
 	windows/resources/trayicon_idle.ico \
 	windows/resources/trayicon_paused.ico \
-	windows/resources/trayicon_working.ico
+	windows/resources/trayicon_working.ico \
+	windows/setup/nzbget-setup.nsi \
+	windows/setup/install.bmp \
+	windows/setup/uninstall.bmp
 
 osx_FILES = \
 	osx/App_Prefix.pch \
@@ -1854,7 +1857,7 @@ distclean-tags:
 distdir: $(DISTFILES)
 	$(am__remove_distdir)
 	mkdir $(distdir)
-	$(mkdir_p) $(distdir)/daemon/windows $(distdir)/lib/par2 $(distdir)/osx $(distdir)/osx/NZBGet.xcodeproj $(distdir)/osx/Resources $(distdir)/osx/Resources/Images $(distdir)/osx/Resources/licenses $(distdir)/scripts $(distdir)/webui $(distdir)/webui/img $(distdir)/webui/lib $(distdir)/windows/resources
+	$(mkdir_p) $(distdir)/daemon/windows $(distdir)/lib/par2 $(distdir)/osx $(distdir)/osx/NZBGet.xcodeproj $(distdir)/osx/Resources $(distdir)/osx/Resources/Images $(distdir)/osx/Resources/licenses $(distdir)/scripts $(distdir)/webui $(distdir)/webui/img $(distdir)/webui/lib $(distdir)/windows/resources $(distdir)/windows/setup
 	@srcdirstrip=`echo "$(srcdir)" | sed 's|.|.|g'`; \
 	topsrcdirstrip=`echo "$(top_srcdir)" | sed 's|.|.|g'`; \
 	list='$(DISTFILES)'; for file in $$list; do \
