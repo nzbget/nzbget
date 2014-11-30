@@ -201,7 +201,10 @@ windows_FILES = \
 	windows/resources/resource.h \
 	windows/resources/trayicon_idle.ico \
 	windows/resources/trayicon_paused.ico \
-	windows/resources/trayicon_working.ico
+	windows/resources/trayicon_working.ico \
+	windows/setup/nzbget-setup.nsi \
+	windows/setup/install.bmp \
+	windows/setup/uninstall.bmp
 
 osx_FILES = \
 	osx/App_Prefix.pch \
