@@ -82,6 +82,7 @@
 #include "StackTrace.h"
 #ifdef WIN32
 #include "NTService.h"
+#include "WinConsole.h"
 #endif
 
 // Prototypes
@@ -120,6 +121,9 @@ int g_iArgumentCount;
 char* (*g_szEnvironmentVariables)[] = NULL;
 char* (*g_szArguments)[] = NULL;
 bool g_bReloading = true;
+#ifdef WIN32
+WinConsole* g_pWinConsole = NULL;
+#endif
 
 /*
  * Main loop
@@ -199,6 +203,11 @@ void Run(bool bReload)
 	{
 		Thread::Init();
 	}
+
+#ifdef WIN32
+	g_pWinConsole = new WinConsole();
+	g_pWinConsole->InitAppMode();
+#endif
 
 	g_pServerPool = new ServerPool();
 	g_pScheduler = new Scheduler();
@@ -339,6 +348,9 @@ void Run(bool bReload)
 			g_pDiskState = new DiskState();
 		}
 
+#ifdef WIN32
+		g_pWinConsole->Start();
+#endif
 		g_pQueueCoordinator->Start();
 		g_pUrlCoordinator->Start();
 		g_pPrePostProcessor->Start();
@@ -353,6 +365,9 @@ void Run(bool bReload)
 			g_pUrlCoordinator->IsRunning() || 
 			g_pPrePostProcessor->IsRunning() ||
 			g_pFeedCoordinator->IsRunning() ||
+#ifdef WIN32
+			g_pWinConsole->IsRunning() ||
+#endif
 			g_pArticleCache->IsRunning())
 		{
 			if (!g_pOptions->GetServerMode() && 
@@ -582,6 +597,9 @@ void ExitProc()
 			g_pPrePostProcessor->Stop();
 			g_pFeedCoordinator->Stop();
 			g_pArticleCache->Stop();
+#ifdef WIN32
+			g_pWinConsole->Stop();
+#endif
 		}
 	}
 }
@@ -697,6 +715,11 @@ void Cleanup()
 		Connection::Final();
 		Thread::Final();
 	}
+
+#ifdef WIN32
+	delete g_pWinConsole;
+	g_pWinConsole = NULL;
+#endif
 
 	debug("Global objects cleaned up");
 

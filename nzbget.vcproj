@@ -39,7 +39,7 @@
 			<Tool
 				Name="VCCLCompilerTool"
 				Optimization="0"
-				AdditionalIncludeDirectories=".\daemon\connect;.\daemon\feed;.\daemon\frontend;.\daemon\main;.\daemon\nntp;.\daemon\postprocess;.\daemon\queue;.\daemon\remote;.\daemon\util;.\daemon\windows;.\lib\par2"
+				AdditionalIncludeDirectories=".\daemon\connect;.\daemon\feed;.\daemon\frontend;.\daemon\main;.\daemon\nntp;.\daemon\postprocess;.\daemon\queue;.\daemon\remote;.\daemon\util;.\daemon\windows;.\lib\par2;.\windows\resources"
 				PreprocessorDefinitions="WIN32;_DEBUG;_CONSOLE;DEBUG;_WIN32_WINNT=0x0403"
 				MinimalRebuild="true"
 				BasicRuntimeChecks="3"
@@ -61,7 +61,7 @@
 			/>
 			<Tool
 				Name="VCLinkerTool"
-				AdditionalDependencies="WS2_32.lib ole32.lib OleAut32.Lib comsuppwd.lib Advapi32.lib Winmm.lib dbghelp.lib ssleay32MTd.lib libeay32MTd.lib regex.lib zlib.lib $(NOINHERIT)"
+				AdditionalDependencies="WS2_32.lib ole32.lib OleAut32.Lib comsuppwd.lib Advapi32.lib Winmm.lib gdi32.lib shell32.lib dbghelp.lib ssleay32MTd.lib libeay32MTd.lib regex.lib zlib.lib $(NOINHERIT)"
 				LinkIncremental="2"
 				GenerateDebugInformation="true"
 				SubSystem="1"
@@ -115,7 +115,7 @@
 			/>
 			<Tool
 				Name="VCCLCompilerTool"
-				AdditionalIncludeDirectories=".\daemon\connect;.\daemon\feed;.\daemon\frontend;.\daemon\main;.\daemon\nntp;.\daemon\postprocess;.\daemon\queue;.\daemon\remote;.\daemon\util;.\daemon\windows;.\lib\par2"
+				AdditionalIncludeDirectories=".\daemon\connect;.\daemon\feed;.\daemon\frontend;.\daemon\main;.\daemon\nntp;.\daemon\postprocess;.\daemon\queue;.\daemon\remote;.\daemon\util;.\daemon\windows;.\lib\par2;.\windows\resources"
 				PreprocessorDefinitions="WIN32;NDEBUG;_CONSOLE;_WIN32_WINNT=0x0403"
 				ExceptionHandling="1"
 				RuntimeLibrary="0"
@@ -136,7 +136,7 @@
 			/>
 			<Tool
 				Name="VCLinkerTool"
-				AdditionalDependencies="WS2_32.lib ole32.lib OleAut32.Lib comsuppwd.lib Advapi32.lib Winmm.lib ssleay32MT.lib libeay32MT.lib regex.lib zlib.lib $(NOINHERIT)"
+				AdditionalDependencies="WS2_32.lib ole32.lib OleAut32.Lib comsuppwd.lib Advapi32.lib gdi32.lib shell32.lib Winmm.lib ssleay32MT.lib libeay32MT.lib regex.lib zlib.lib $(NOINHERIT)"
 				LinkIncremental="0"
 				GenerateDebugInformation="true"
 				SubSystem="1"
@@ -478,6 +478,14 @@
 				</File>
 				<File
 					RelativePath=".\daemon\windows\win32.h"
+					>
+				</File>
+				<File
+					RelativePath=".\daemon\windows\WinConsole.cpp"
+					>
+				</File>
+				<File
+					RelativePath=".\daemon\windows\WinConsole.h"
 					>
 				</File>
 			</Filter>
@@ -917,6 +925,34 @@
 					>
 				</File>
 			</Filter>
+		</Filter>
+		<Filter
+			Name="resources"
+			>
+			<File
+				RelativePath=".\windows\resources\mainicon.ico"
+				>
+			</File>
+			<File
+				RelativePath=".\windows\resources\nzbget.rc"
+				>
+			</File>
+			<File
+				RelativePath=".\windows\resources\resource.h"
+				>
+			</File>
+			<File
+				RelativePath=".\windows\resources\trayicon_idle.ico"
+				>
+			</File>
+			<File
+				RelativePath=".\windows\resources\trayicon_paused.ico"
+				>
+			</File>
+			<File
+				RelativePath=".\windows\resources\trayicon_working.ico"
+				>
+			</File>
 		</Filter>
 	</Files>
 	<Globals>

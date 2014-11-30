@@ -515,6 +515,7 @@ public:
 	int					GetArticleCache() { return m_iArticleCache; }
 	int					GetEventInterval() { return m_iEventInterval; }
 
+	Categories*			GetCategories() { return &m_Categories; }
 	Category*			FindCategory(const char* szName, bool bSearchAliases) { return m_Categories.FindCategory(szName, bSearchAliases); }
 
 	// Parsed command-line parameters

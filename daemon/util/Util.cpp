@@ -1040,6 +1040,28 @@ char* Util::GetLastErrorMessage(char* szBuffer, int iBufLen)
 	return szBuffer;
 }
 
+void Util::FormatSpeed(int iBytesPerSecond, char* szBuffer, int iBufSize)
+{
+	if (iBytesPerSecond >= 100 * 1024 * 1024)
+	{
+		snprintf(szBuffer, iBufSize, "%i MB/s", iBytesPerSecond / 1024 / 1024);
+	}
+	else if (iBytesPerSecond >= 10 * 1024 * 1024)
+	{
+		snprintf(szBuffer, iBufSize, "%0.1f MB/s", (float)iBytesPerSecond / 1024.0 / 1024.0);
+	}
+	else if (iBytesPerSecond >= 1024 * 1000)
+	{
+		snprintf(szBuffer, iBufSize, "%0.2f MB/s", (float)iBytesPerSecond / 1024.0 / 1024.0);
+	}
+	else
+	{
+		snprintf(szBuffer, iBufSize, "%i KB/s", iBytesPerSecond / 1024);
+	}
+
+	szBuffer[iBufSize - 1] = '\0';
+}
+
 void Util::InitVersionRevision()
 {
 #ifndef WIN32

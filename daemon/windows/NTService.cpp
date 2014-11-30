@@ -201,3 +201,24 @@ void InstallUninstallServiceCheck(int argc, char *argv[])
 		exit(0);
 	}
 }
+
+bool IsServiceRunning()
+{
+	SC_HANDLE scm = OpenSCManager(0, 0, 0);
+	if (!scm)
+	{
+		return false;
+	}
+
+	SC_HANDLE hService = OpenService(scm, "NZBGet", SERVICE_QUERY_STATUS);
+	SERVICE_STATUS ServiceStatus;
+	bool bRunning = false;
+	if (hService && QueryServiceStatus(hService, &ServiceStatus))
+	{
+		bRunning = ServiceStatus.dwCurrentState != SERVICE_STOPPED;
+	}
+
+	CloseServiceHandle(scm);
+
+	return bRunning;
+}

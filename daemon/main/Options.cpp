@@ -40,6 +40,7 @@
 #include <set>
 #ifdef WIN32
 #include <direct.h>
+#include <Shlobj.h>
 #else
 #include <unistd.h>
 #include <getopt.h>
@@ -59,6 +60,10 @@
 extern ServerPool* g_pServerPool;
 extern Scheduler* g_pScheduler;
 extern FeedCoordinator* g_pFeedCoordinator;
+
+#ifdef WIN32
+extern void SetupFirstStart();
+#endif
 
 #ifdef HAVE_GETOPT_LONG
 static struct option long_options[] =
@@ -859,13 +864,26 @@ void Options::InitOptFile()
 	{
 		// search for config file in default locations
 #ifdef WIN32
-		char szFilename[MAX_PATH + 1];
+		char szFilename[MAX_PATH + 20];
 		GetModuleFileName(NULL, szFilename, MAX_PATH + 1);
 		szFilename[MAX_PATH] = '\0';
 		Util::NormalizePathSeparators(szFilename);
 		char* end = strrchr(szFilename, PATH_SEPARATOR);
 		if (end) end[1] = '\0';
 		strcat(szFilename, "nzbget.conf");
+
+		if (!Util::FileExists(szFilename))
+		{
+			char szAppDataPath[MAX_PATH];
+			SHGetFolderPath(NULL, CSIDL_COMMON_APPDATA, NULL, 0, szAppDataPath);
+			snprintf(szFilename, sizeof(szFilename), "%s\\NZBGet\\nzbget.conf", szAppDataPath);
+			szFilename[sizeof(szFilename)-1] = '\0';
+
+			if (!Util::FileExists(szFilename))
+			{
+				SetupFirstStart();
+			}
+		}
 
 		if (Util::FileExists(szFilename))
 		{
