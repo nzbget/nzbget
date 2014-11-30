@@ -1,0 +1,217 @@
+// Microsoft Visual C++ generated resource script.
+//
+#include "resource.h"
+
+#define APSTUDIO_READONLY_SYMBOLS
+/////////////////////////////////////////////////////////////////////////////
+//
+// Generated from the TEXTINCLUDE 2 resource.
+//
+#include "afxres.h"
+/////////////////////////////////////////////////////////////////////////////
+#undef APSTUDIO_READONLY_SYMBOLS
+
+/////////////////////////////////////////////////////////////////////////////
+// Neutral resources
+
+#if !defined(AFX_RESOURCE_DLL) || defined(AFX_TARG_NEU)
+#ifdef _WIN32
+LANGUAGE LANG_NEUTRAL, SUBLANG_NEUTRAL
+#pragma code_page(1252)
+#endif //_WIN32
+
+/////////////////////////////////////////////////////////////////////////////
+//
+// Menu
+//
+
+IDR_TRAYMENU MENU 
+BEGIN
+    POPUP "Menu"
+    BEGIN
+        MENUITEM "Show Web-Interface",          ID_SHOWWEBUI
+        POPUP "Show in Windows Explorer"
+        BEGIN
+            MENUITEM "Default Destination",         ID_SHOW_DESTDIR
+            MENUITEM SEPARATOR
+            MENUITEM SEPARATOR
+            MENUITEM "Intermediate Files",          ID_SHOW_INTERDIR
+            MENUITEM "Incoming NZBs",               ID_SHOW_NZBDIR
+            MENUITEM "Scripts",                     ID_SHOW_SCRIPTDIR
+            MENUITEM SEPARATOR
+            MENUITEM "Config-File",                 ID_SHOW_CONFIGFILE
+            MENUITEM "Log-File",                    ID_SHOW_LOGFILE
+        END
+        POPUP "Info-Links"
+        BEGIN
+            MENUITEM "Home Page",                   ID_INFO_HOMEPAGE
+            MENUITEM "Downloads",                   ID_INFO_DOWNLOADS
+            MENUITEM "Forum",                       ID_INFO_FORUM
+        END
+        POPUP "Troubleshooting"
+        BEGIN
+            MENUITEM "Restart",                     ID_TROUBLESHOOTING_RESTART
+            MENUITEM SEPARATOR
+            MENUITEM "Open Config-File in a Text Editor", ID_TROUBLESHOOTING_OPENCONFIG
+        END
+        MENUITEM SEPARATOR
+        MENUITEM "About...",                    ID_ABOUT
+        MENUITEM "Preferences...",              ID_PREFERENCES
+        MENUITEM SEPARATOR
+        MENUITEM "Exit",                        ID_EXIT
+    END
+END
+
+
+/////////////////////////////////////////////////////////////////////////////
+//
+// Icon
+//
+
+// Icon with lowest ID value placed first to ensure application icon
+// remains consistent on all systems.
+IDI_MAINICON            ICON                    "mainicon.ico"
+IDI_TRAYICON_IDLE       ICON                    "trayicon_idle.ico"
+IDI_TRAYICON_PAUSED     ICON                    "trayicon_paused.ico"
+IDI_TRAYICON_WORKING    ICON                    "trayicon_working.ico"
+
+/////////////////////////////////////////////////////////////////////////////
+//
+// Dialog
+//
+
+IDD_ABOUTBOX DIALOGEX 0, 0, 176, 194
+STYLE DS_SETFONT | DS_MODALFRAME | DS_CENTER | WS_POPUP | WS_VISIBLE | WS_CAPTION | WS_SYSMENU
+CAPTION "About NZBGet"
+FONT 8, "Tahoma", 400, 0, 0x0
+BEGIN
+    DEFPUSHBUTTON   "OK",IDOK,63,173,50,14
+    CTEXT           "Version 15.0-testing-r1200",IDC_ABOUT_VERSION,16,70,144,8
+    CTEXT           "Lightweight usenet downloader",IDC_STATIC,16,83,144,8
+    CTEXT           "http://nzbget.net",IDC_ABOUT_HOMEPAGE,55,144,64,9,SS_NOTIFY
+    CTEXT           "Copyright © 2007-2014 Andrey Prygunkov",IDC_STATIC,16,156,144,8
+    ICON            "",IDC_ABOUT_ICON,67,7,21,20
+    CTEXT           "NZBGet",IDC_ABOUT_NAME,16,51,144,16
+    CTEXT           "The package includes other software; see program's folder for licenses.",IDC_STATIC,16,121,144,20
+    CTEXT           "NZBGet is free software; use it under the terms of the                                             ",IDC_STATIC,16,99,144,20
+    CTEXT           "GNU General Public License",IDC_ABOUT_GPL,62,107,90,8,SS_NOTIFY
+    LTEXT           ".",IDC_STATIC,151,107,8,8,SS_NOTIFY
+END
+
+IDD_PREFDIALOG DIALOGEX 0, 0, 212, 137
+STYLE DS_SETFONT | DS_MODALFRAME | DS_CENTER | WS_POPUP | WS_CAPTION | WS_SYSMENU
+CAPTION "NZBGet Preferences"
+FONT 8, "Tahoma", 400, 0, 0x0
+BEGIN
+    DEFPUSHBUTTON   "OK",IDOK,100,116,50,14
+    PUSHBUTTON      "Cancel",IDCANCEL,155,116,50,14
+    LTEXT           "*",IDC_STATIC,13,70,8,9
+    CONTROL         "Start at login *",IDC_PREF_AUTOSTART,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,13,13,58,10
+    CONTROL         "Show console window",IDC_PREF_CONSOLE,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,13,37,86,10
+    CONTROL         "Show in tray (near clock)",IDC_PREF_TRAY,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,13,25,94,10
+    CONTROL         "Show Web-Interface on start",IDC_PREF_WEBUI,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,13,49,108,10
+    LTEXT           "Only Windows-specific options are located here. For all other options see Settings page in Web-Interface.",IDC_STATIC,21,90,175,17
+    LTEXT           "NZBGet can also run as Windows service. See README-WINDOWS.txt for details.",IDC_STATIC,21,68,172,17
+END
+
+IDD_RUNNINGDIALOG DIALOGEX 0, 0, 342, 69
+STYLE DS_SETFONT | DS_MODALFRAME | DS_CENTER | WS_POPUP | WS_CAPTION | WS_SYSMENU
+CAPTION "NZBGet"
+FONT 8, "Tahoma", 400, 0, 0x0
+BEGIN
+    DEFPUSHBUTTON   "Show Web-Interface",IDC_RUNNING_WEBUI,54,48,90,14
+    LTEXT           "NZBGet is already running.",IDC_RUNNING_TITLE,54,7,272,13
+    ICON            "",IDC_RUNNING_ICON,7,7,21,20
+    LTEXT           "Please use tray icon near clock to acces the program's menu.",IDC_RUNNING_TEXT,54,21,276,18
+    PUSHBUTTON      "Open Preferences...",IDC_RUNNING_PREFS,149,48,90,14
+    PUSHBUTTON      "Quit NZBGet",IDC_RUNNING_QUIT,245,48,90,14
+    PUSHBUTTON      "OK",IDC_RUNNING_OK,140,48,61,14,NOT WS_VISIBLE
+END
+
+
+/////////////////////////////////////////////////////////////////////////////
+//
+// DESIGNINFO
+//
+
+#ifdef APSTUDIO_INVOKED
+GUIDELINES DESIGNINFO 
+BEGIN
+    IDD_ABOUTBOX, DIALOG
+    BEGIN
+        LEFTMARGIN, 16
+        RIGHTMARGIN, 160
+        TOPMARGIN, 7
+        BOTTOMMARGIN, 187
+    END
+
+    IDD_PREFDIALOG, DIALOG
+    BEGIN
+        LEFTMARGIN, 7
+        RIGHTMARGIN, 205
+        VERTGUIDE, 13
+        TOPMARGIN, 7
+        BOTTOMMARGIN, 130
+    END
+
+    IDD_RUNNINGDIALOG, DIALOG
+    BEGIN
+        LEFTMARGIN, 7
+        RIGHTMARGIN, 335
+        VERTGUIDE, 54
+        TOPMARGIN, 7
+        BOTTOMMARGIN, 62
+    END
+END
+#endif    // APSTUDIO_INVOKED
+
+#endif    // Neutral resources
+/////////////////////////////////////////////////////////////////////////////
+
+
+/////////////////////////////////////////////////////////////////////////////
+// German (Germany) resources
+
+#if !defined(AFX_RESOURCE_DLL) || defined(AFX_TARG_DEU)
+#ifdef _WIN32
+LANGUAGE LANG_GERMAN, SUBLANG_GERMAN
+#pragma code_page(1252)
+#endif //_WIN32
+
+#ifdef APSTUDIO_INVOKED
+/////////////////////////////////////////////////////////////////////////////
+//
+// TEXTINCLUDE
+//
+
+1 TEXTINCLUDE 
+BEGIN
+    "resource.h\0"
+END
+
+3 TEXTINCLUDE 
+BEGIN
+    "\r\0"
+END
+
+2 TEXTINCLUDE 
+BEGIN
+    "#include ""afxres.h""\r\0"
+END
+
+#endif    // APSTUDIO_INVOKED
+
+#endif    // German (Germany) resources
+/////////////////////////////////////////////////////////////////////////////
+
+
+
+#ifndef APSTUDIO_INVOKED
+/////////////////////////////////////////////////////////////////////////////
+//
+// Generated from the TEXTINCLUDE 3 resource.
+//
+
+/////////////////////////////////////////////////////////////////////////////
+#endif    // not APSTUDIO_INVOKED
+

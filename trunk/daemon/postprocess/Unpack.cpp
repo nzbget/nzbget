@@ -96,6 +96,7 @@ void UnpackController::Run()
 	strncpy(m_szName, m_pPostInfo->GetNZBInfo()->GetName(), 1024);
 	m_szName[1024-1] = '\0';
 
+	m_bUnpackPasswordError4 = true;
 	m_bCleanedUpDisk = false;
 	m_szPassword[0] = '\0';
 	m_szFinalDir[0] = '\0';

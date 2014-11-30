@@ -81,6 +81,11 @@
 
 #define _USE_32BIT_TIME_T
 
+#if _WIN32_WINNT < 0x0501
+#undef _WIN32_WINNT
+#define _WIN32_WINNT   0x0501
+#endif
+
 #ifdef _DEBUG
 // detection of memory leaks
 #define _CRTDBG_MAP_ALLOC

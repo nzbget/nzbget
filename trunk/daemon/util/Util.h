@@ -113,6 +113,7 @@ public:
 	static bool SameFilename(const char* szFilename1, const char* szFilename2);
 	static bool MatchFileExt(const char* szFilename, const char* szExtensionList, const char* szListSeparator);
 	static char* GetLastErrorMessage(char* szBuffer, int iBufLen);
+	static void FormatSpeed(int iBytesPerSecond, char* szBuffer, int iBufSize);
 
 	/*
 	 * Split command line int arguments.
