@@ -1014,6 +1014,14 @@ bool Util::MatchFileExt(const char* szFilename, const char* szExtensionList, con
 		{
 			return true;
 		}
+		if (strchr(szExt, '*') || strchr(szExt, '?'))
+		{
+			WildMask mask(szExt);
+			if (mask.Match(szFilename))
+			{
+				return true;
+			}
+		}
 	}
 
 	return false;
