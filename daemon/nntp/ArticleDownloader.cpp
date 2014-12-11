@@ -158,6 +158,19 @@ void ArticleDownloader::Run()
 			m_pConnection->GetNewsServer()->GetName(), m_pConnection->GetHost());
 		m_szConnectionName[sizeof(m_szConnectionName) - 1] = '\0';
 
+		// check server retention
+		bool bRetentionFailure = m_pConnection->GetNewsServer()->GetRetention() > 0 &&
+			(time(NULL) - m_pFileInfo->GetTime()) / 86400 > m_pConnection->GetNewsServer()->GetRetention();
+		if (bRetentionFailure)
+		{
+			detail("Article %s @ %s failed: out of server retention (file age: %i, configured retention: %i)",
+				m_szInfoName, m_szConnectionName,
+				(time(NULL) - m_pFileInfo->GetTime()) / 86400,
+				m_pConnection->GetNewsServer()->GetRetention());
+			Status = adFailed;
+			FreeConnection(true);
+		}
+
 		// test connection
 		bool bConnected = m_pConnection && m_pConnection->Connect();
 		if (bConnected && !IsStopped())
@@ -210,7 +223,7 @@ void ArticleDownloader::Run()
 			iRemainedRetries--;
 		}
 
-		if (!bConnected || (Status == adFailed && iRemainedRetries > 0))
+		if ((!bConnected || (Status == adFailed && iRemainedRetries > 0)) && !bRetentionFailure)
 		{
 			pWantServer = pLastServer;
 		}

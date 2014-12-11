@@ -2,7 +2,7 @@
  *  This file if part of nzbget
  *
  *  Copyright (C) 2004 Sven Henkel <sidddy@users.sourceforge.net>
- *  Copyright (C) 2007-2013 Andrey Prygunkov <hugbug@users.sourceforge.net>
+ *  Copyright (C) 2007-2014 Andrey Prygunkov <hugbug@users.sourceforge.net>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -47,11 +47,13 @@ private:
 	bool			m_bJoinGroup;
 	bool			m_bTLS;
 	char*			m_szCipher;
+	int				m_iRetention;
 
 public:
 					NewsServer(int iID, bool bActive, const char* szName, const char* szHost, int iPort,
 						const char* szUser, const char* szPass, bool bJoinGroup,
-						bool bTLS, const char* szCipher, int iMaxConnections, int iLevel, int iGroup);
+						bool bTLS, const char* szCipher, int iMaxConnections, int iRetention,
+						int iLevel, int iGroup);
 					~NewsServer();
 	int				GetID() { return m_iID; }
 	int				GetStateID() { return m_iStateID; }
@@ -71,6 +73,7 @@ public:
 	int				GetJoinGroup() { return m_bJoinGroup; }
 	bool			GetTLS() { return m_bTLS; }
 	const char*		GetCipher() { return m_szCipher; }
+	int				GetRetention() { return m_iRetention; }
 };
 
 typedef std::vector<NewsServer*>		Servers;
