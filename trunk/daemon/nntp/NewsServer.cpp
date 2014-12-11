@@ -2,7 +2,7 @@
  *  This file if part of nzbget
  *
  *  Copyright (C) 2004 Sven Henkel <sidddy@users.sourceforge.net>
- *  Copyright (C) 2007-2013 Andrey Prygunkov <hugbug@users.sourceforge.net>
+ *  Copyright (C) 2007-2014 Andrey Prygunkov <hugbug@users.sourceforge.net>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -41,7 +41,7 @@
 
 NewsServer::NewsServer(int iID, bool bActive, const char* szName, const char* szHost, int iPort,
 	const char* szUser, const char* szPass, bool bJoinGroup, bool bTLS,
-	const char* szCipher, int iMaxConnections, int iLevel, int iGroup)
+	const char* szCipher, int iMaxConnections, int iRetention, int iLevel, int iGroup)
 {
 	m_iID = iID;
 	m_iStateID = 0;
@@ -57,6 +57,7 @@ NewsServer::NewsServer(int iID, bool bActive, const char* szName, const char* sz
 	m_szUser = strdup(szUser ? szUser : "");
 	m_szPassword = strdup(szPass ? szPass : "");
 	m_szCipher = strdup(szCipher ? szCipher : "");
+	m_iRetention = iRetention;
 
 	if (szName && strlen(szName) > 0)
 	{
