@@ -72,6 +72,28 @@ bool UnpackController::FileList::Exists(const char* szFilename)
 	return false;
 }
 
+UnpackController::ParamList::~ParamList()
+{
+	for (iterator it = begin(); it != end(); it++)
+	{
+		free(*it);
+	}
+}
+
+bool UnpackController::ParamList::Exists(const char* szParam)
+{
+	for (iterator it = begin(); it != end(); it++)
+	{
+		char* szParam1 = *it;
+		if (!strcmp(szParam1, szParam))
+		{
+			return true;
+		}
+	}
+
+	return false;
+}
+
 void UnpackController::StartJob(PostInfo* pPostInfo)
 {
 	UnpackController* pUnpackController = new UnpackController();
@@ -199,32 +221,48 @@ void UnpackController::Run()
 void UnpackController::ExecuteUnrar()
 {
 	// Format: 
-	//   unrar x -y -p- -o+ *.rar ./_unpack
+	//   unrar x -y -p- -o+ *.rar ./_unpack/
 
-	char szPasswordParam[1024];
-	const char* szArgs[8];
-	szArgs[0] = g_pOptions->GetUnrarCmd();
-	szArgs[1] = "x";
-	szArgs[2] = "-y";
-	szArgs[3] = "-p-";
+	ParamList params;
+	if (!PrepareCmdParams(g_pOptions->GetUnrarCmd(), &params, "unrar"))
+	{
+		return;
+	}
+
+	if (!params.Exists("x") && !params.Exists("e"))
+	{
+		params.push_back(strdup("x"));
+	}
+
+	params.push_back(strdup("-y"));
+
 	if (strlen(m_szPassword) > 0)
 	{
+		char szPasswordParam[1024];
 		snprintf(szPasswordParam, 1024, "-p%s", m_szPassword);
 		szPasswordParam[1024-1] = '\0';
-		szArgs[3] = szPasswordParam;
+		params.push_back(strdup(szPasswordParam));
 	}
-	szArgs[4] = "-o+";
-	szArgs[5] = m_bHasNonStdRarFiles ? "*.*" : "*.rar";
+	else
+	{
+		params.push_back(strdup("-p-"));
+	}
+
+	if (!params.Exists("-o+") && !params.Exists("-o-"))
+	{
+		params.push_back(strdup("-o+"));
+	}
+
+	params.push_back(strdup(m_bHasNonStdRarFiles ? "*.*" : "*.rar"));
 
 	char szUnpackDirParam[1024];
 	snprintf(szUnpackDirParam, 1024, "%s%c", m_szUnpackDir, PATH_SEPARATOR);
 	szUnpackDirParam[1024-1] = '\0';
-	szArgs[6] = szUnpackDirParam;
+	params.push_back(strdup(szUnpackDirParam));
 
-	szArgs[7] = NULL;
-	SetArgs(szArgs, false);
-
-	SetScript(g_pOptions->GetUnrarCmd());
+	params.push_back(NULL);
+	SetArgs((const char**)&params.front(), false);
+	SetScript(params.at(0));
 	SetLogPrefix("Unrar");
 
 	m_bAllOKMessageReceived = false;
@@ -253,30 +291,41 @@ void UnpackController::ExecuteSevenZip(bool bMultiVolumes)
 	// OR
 	//   7z x -y -p- -o./_unpack *.7z.001
 
-	char szPasswordParam[1024];
-	const char* szArgs[7];
-	szArgs[0] = g_pOptions->GetSevenZipCmd();
-	szArgs[1] = "x";
-	szArgs[2] = "-y";
+	ParamList params;
+	if (!PrepareCmdParams(g_pOptions->GetSevenZipCmd(), &params, "7-Zip"))
+	{
+		return;
+	}
 
-	szArgs[3] = "-p-";
+	if (!params.Exists("x") && !params.Exists("e"))
+	{
+		params.push_back(strdup("x"));
+	}
+
+	params.push_back(strdup("-y"));
+
 	if (strlen(m_szPassword) > 0)
 	{
+		char szPasswordParam[1024];
 		snprintf(szPasswordParam, 1024, "-p%s", m_szPassword);
 		szPasswordParam[1024-1] = '\0';
-		szArgs[3] = szPasswordParam;
+		params.push_back(strdup(szPasswordParam));
+	}
+	else
+	{
+		params.push_back(strdup("-p-"));
 	}
 
 	char szUnpackDirParam[1024];
 	snprintf(szUnpackDirParam, 1024, "-o%s", m_szUnpackDir);
 	szUnpackDirParam[1024-1] = '\0';
-	szArgs[4] = szUnpackDirParam;
+	params.push_back(strdup(szUnpackDirParam));
 
-	szArgs[5] = bMultiVolumes ? "*.7z.001" : "*.7z";
-	szArgs[6] = NULL;
-	SetArgs(szArgs, false);
+	params.push_back(strdup(bMultiVolumes ? "*.7z.001" : "*.7z"));
 
-	SetScript(g_pOptions->GetSevenZipCmd());
+	params.push_back(NULL);
+	SetArgs((const char**)&params.front(), false);
+	SetScript(params.at(0));
 
 	m_bAllOKMessageReceived = false;
 	m_eUnpacker = upSevenZip;
@@ -295,6 +344,32 @@ void UnpackController::ExecuteSevenZip(bool bMultiVolumes)
 	{
 		PrintMessage(Message::mkError, "7-Zip error code: %i", iExitCode);
 	}
+}
+
+bool UnpackController::PrepareCmdParams(const char* szCommand, ParamList* pParams, const char* szInfoName)
+{
+	if (Util::FileExists(szCommand))
+	{
+		pParams->push_back(strdup(szCommand));
+		return true;
+	}
+
+	char** pCmdArgs = NULL;
+	if (!Util::SplitCommandLine(szCommand, &pCmdArgs))
+	{
+		PrintMessage(Message::mkError, "Could not start %s, failed to parse command line: %s", szInfoName, szCommand);
+		m_bUnpackOK = false;
+		m_bUnpackStartError = true;
+		return false;
+	}
+
+	for (char** szArgPtr = pCmdArgs; *szArgPtr; szArgPtr++)
+	{
+		pParams->push_back(*szArgPtr);
+	}
+	free(pCmdArgs);
+
+	return true;
 }
 
 void UnpackController::JoinSplittedFiles()

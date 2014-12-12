@@ -27,6 +27,7 @@
 #define UNPACK_H
 
 #include <deque>
+#include <vector>
 
 #include "Log.h"
 #include "Thread.h"
@@ -48,6 +49,14 @@ private:
 	public:
 		void			Clear();
 		bool			Exists(const char* szFilename);
+	};
+
+	typedef std::vector<char*>		ParamListBase;
+	class ParamList : public ParamListBase
+	{
+	public:
+						~ParamList();
+		bool			Exists(const char* szParam);
 	};
 
 private:
@@ -95,6 +104,7 @@ protected:
 	void				RequestParCheck(bool bForceRepair);
 #endif
 	bool				FileHasRarSignature(const char* szFilename);
+	bool				PrepareCmdParams(const char* szCommand, ParamList* pParams, const char* szInfoName);
 
 public:
 	virtual void		Run();
