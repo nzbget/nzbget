@@ -521,7 +521,7 @@ bool FeedFilter::Term::ParseNumericParam(const char* szParam)
 	m_bFloat = strchr(szParam, '.');
 	
 	const char* p;
-	for (p = szParam; *p && ((*p >= '0' && *p <='9') || *p == '.') ; p++) ;
+	for (p = szParam; *p && ((*p >= '0' && *p <='9') || *p == '.' || *p == '-') ; p++) ;
 	if (*p)
 	{
 		return false;
