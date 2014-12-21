@@ -125,7 +125,7 @@ bool NNTPConnection::AuthInfoUser(int iRecur)
 	char* answer = ReadLine(m_szLineBuf, CONNECTION_LINEBUFFER_SIZE, NULL);
 	if (!answer)
 	{
-		ReportErrorAnswer("Authorization for server%i (%s) failed: Connection closed by remote host", NULL);
+		ReportErrorAnswer("Authorization for %s (%s) failed: Connection closed by remote host", NULL);
 		return false;
 	}
 
@@ -147,7 +147,7 @@ bool NNTPConnection::AuthInfoUser(int iRecur)
 
 	if (GetStatus() != csCancelled)
 	{
-		ReportErrorAnswer("Authorization for server%i (%s) failed (Answer: %s)", answer);
+		ReportErrorAnswer("Authorization for %s (%s) failed: %s", answer);
 	}
 	return false;
 }
@@ -168,7 +168,7 @@ bool NNTPConnection::AuthInfoPass(int iRecur)
 	char* answer = ReadLine(m_szLineBuf, CONNECTION_LINEBUFFER_SIZE, NULL);
 	if (!answer)
 	{
-		ReportErrorAnswer("Authorization for server%i (%s) failed: Connection closed by remote host", NULL);
+		ReportErrorAnswer("Authorization failed for %s (%s): Connection closed by remote host", NULL);
 		return false;
 	}
 	else if (!strncmp(answer, "2", 1))
@@ -185,7 +185,7 @@ bool NNTPConnection::AuthInfoPass(int iRecur)
 
 	if (GetStatus() != csCancelled)
 	{
-		ReportErrorAnswer("Authorization for server%i (%s) failed (Answer: %s)", answer);
+		ReportErrorAnswer("Authorization for %s (%s) failed: %s", answer);
 	}
 	return false;
 }
@@ -237,14 +237,14 @@ bool NNTPConnection::Connect()
 
 	if (!answer)
 	{
-		ReportErrorAnswer("Connection to server%i (%s) failed: Connection closed by remote host", NULL);
+		ReportErrorAnswer("Connection to %s (%s) failed: Connection closed by remote host", NULL);
 		Disconnect();
 		return false;
 	}
 
 	if (strncmp(answer, "2", 1))
 	{
-		ReportErrorAnswer("Connection to server%i (%s) failed (Answer: %s)", answer);
+		ReportErrorAnswer("Connection to %s (%s) failed: %s", answer);
 		Disconnect();
 		return false;
 	}
@@ -274,7 +274,7 @@ bool NNTPConnection::Disconnect()
 void NNTPConnection::ReportErrorAnswer(const char* szMsgPrefix, const char* szAnswer)
 {
 	char szErrStr[1024];
-	snprintf(szErrStr, 1024, szMsgPrefix, m_pNewsServer->GetID(), m_pNewsServer->GetHost(), szAnswer);
+	snprintf(szErrStr, 1024, szMsgPrefix, m_pNewsServer->GetName(), m_pNewsServer->GetHost(), szAnswer);
 	szErrStr[1024-1] = '\0';
 	
 	ReportError(szErrStr, NULL, false, 0);
