@@ -58,6 +58,7 @@ NewsServer::NewsServer(int iID, bool bActive, const char* szName, const char* sz
 	m_szPassword = strdup(szPass ? szPass : "");
 	m_szCipher = strdup(szCipher ? szCipher : "");
 	m_iRetention = iRetention;
+	m_tBlockTime = 0;
 
 	if (szName && strlen(szName) > 0)
 	{

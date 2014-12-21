@@ -2097,6 +2097,7 @@ void Options::InitServers()
 	}
 
 	g_pServerPool->SetTimeout(GetArticleTimeout());
+	g_pServerPool->SetRetryInterval(GetRetryInterval());
 }
 
 void Options::InitCategories()
