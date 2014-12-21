@@ -58,6 +58,7 @@ ServerPool::ServerPool()
 	m_iMaxNormLevel = 0;
 	m_iTimeout = 60;
 	m_iGeneration = 0;
+	m_iRetryInterval = 0;
 
 	g_pLog->RegisterDebuggable(this);
 }
@@ -157,6 +158,7 @@ void ServerPool::InitConnections()
 	for (Servers::iterator it = m_SortedServers.begin(); it != m_SortedServers.end(); it++)
 	{
 		NewsServer* pNewsServer = *it;
+		pNewsServer->SetBlockTime(0);
 		int iNormLevel = pNewsServer->GetNormLevel();
 		if (pNewsServer->GetNormLevel() > -1)
 		{
@@ -199,11 +201,15 @@ void ServerPool::InitConnections()
 NNTPConnection* ServerPool::GetConnection(int iLevel, NewsServer* pWantServer, Servers* pIgnoreServers)
 {
 	PooledConnection* pConnection = NULL;
-
 	m_mutexConnections.Lock();
+
+	time_t tCurTime = time(NULL);
 
 	if (iLevel < (int)m_Levels.size() && m_Levels[iLevel] > 0)
 	{
+		Connections candidates;
+		candidates.reserve(m_Connections.size());
+
 		for (Connections::iterator it = m_Connections.begin(); it != m_Connections.end(); it++)
 		{
 			PooledConnection* pCandidateConnection = *it;
@@ -211,7 +217,11 @@ NNTPConnection* ServerPool::GetConnection(int iLevel, NewsServer* pWantServer, S
 			if (!pCandidateConnection->GetInUse() && pCandidateServer->GetActive() &&
 				pCandidateServer->GetNormLevel() == iLevel && 
 				(!pWantServer || pCandidateServer == pWantServer ||
-				 (pWantServer->GetGroup() > 0 && pWantServer->GetGroup() == pCandidateServer->GetGroup())))
+				 (pWantServer->GetGroup() > 0 && pWantServer->GetGroup() == pCandidateServer->GetGroup())) &&
+				(pCandidateConnection->GetStatus() == Connection::csConnected ||
+				 !pCandidateServer->GetBlockTime() ||
+				 pCandidateServer->GetBlockTime() + m_iRetryInterval <= tCurTime ||
+				 pCandidateServer->GetBlockTime() > tCurTime))
 			{
 				// free connection found, check if it's not from the server which should be ignored
 				bool bUseConnection = true;
@@ -230,13 +240,23 @@ NNTPConnection* ServerPool::GetConnection(int iLevel, NewsServer* pWantServer, S
 					}
 				}
 
+				pCandidateServer->SetBlockTime(0);
+
 				if (bUseConnection)
 				{
-					pConnection = pCandidateConnection;
-					pConnection->SetInUse(true);
-					break;
+					candidates.push_back(pCandidateConnection);
 				}
 			}
+		}
+
+		if (!candidates.empty())
+		{
+			// Peeking a random free connection. This is better than taking the first
+			// available connection because provides better distribution across news servers,
+			// especially when one of servers becomes unavailable or doesn't have requested articles.
+			int iRandomIndex = rand() % candidates.size();
+			pConnection = candidates[iRandomIndex];
+			pConnection->SetInUse(true);
 		}
 
 		if (pConnection)
@@ -271,6 +291,20 @@ void ServerPool::FreeConnection(NNTPConnection* pConnection, bool bUsed)
 	}
 
 	m_mutexConnections.Unlock();
+}
+
+void ServerPool::BlockServer(NewsServer* pNewsServer)
+{
+	m_mutexConnections.Lock();
+	time_t tCurTime = time(NULL);
+	bool bNewBlock = pNewsServer->GetBlockTime() != tCurTime;
+	pNewsServer->SetBlockTime(tCurTime);
+	m_mutexConnections.Unlock();
+
+	if (bNewBlock && m_iRetryInterval > 0)
+	{
+		warn("Blocking %s (%s) for %i sec", pNewsServer->GetName(), pNewsServer->GetHost(), m_iRetryInterval);
+	}
 }
 
 void ServerPool::CloseUnusedConnections()
@@ -336,12 +370,16 @@ void ServerPool::LogDebugInfo()
 
 	m_mutexConnections.Lock();
 
+	time_t tCurTime = time(NULL);
+
 	info("    Servers: %i", m_Servers.size());
 	for (Servers::iterator it = m_Servers.begin(); it != m_Servers.end(); it++)
 	{
 		NewsServer*  pNewsServer = *it;
-		info("      %i) %s (%s): Level=%i, NormLevel=%i", pNewsServer->GetID(), pNewsServer->GetName(),
-			pNewsServer->GetHost(), pNewsServer->GetLevel(), pNewsServer->GetNormLevel());
+		info("      %i) %s (%s): Level=%i, NormLevel=%i, BlockSec=%i", pNewsServer->GetID(), pNewsServer->GetName(),
+			pNewsServer->GetHost(), pNewsServer->GetLevel(), pNewsServer->GetNormLevel(),
+			pNewsServer->GetBlockTime() && pNewsServer->GetBlockTime() + m_iRetryInterval > tCurTime ?
+				pNewsServer->GetBlockTime() + m_iRetryInterval - tCurTime : 0);
 	}
 
 	info("    Levels: %i", m_Levels.size());

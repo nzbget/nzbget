@@ -48,6 +48,7 @@ private:
 	bool			m_bTLS;
 	char*			m_szCipher;
 	int				m_iRetention;
+	time_t			m_tBlockTime;
 
 public:
 					NewsServer(int iID, bool bActive, const char* szName, const char* szHost, int iPort,
@@ -74,6 +75,8 @@ public:
 	bool			GetTLS() { return m_bTLS; }
 	const char*		GetCipher() { return m_szCipher; }
 	int				GetRetention() { return m_iRetention; }
+	time_t			GetBlockTime() { return m_tBlockTime; }
+	void			SetBlockTime(time_t tBlockTime) { m_tBlockTime = tBlockTime; }
 };
 
 typedef std::vector<NewsServer*>		Servers;
