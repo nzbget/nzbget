@@ -2,7 +2,7 @@
  *  This file is part of nzbget
  *
  *  Copyright (C) 2005 Bo Cordes Petersen <placebodk@users.sourceforge.net>
- *  Copyright (C) 2007-2014 Andrey Prygunkov <hugbug@users.sourceforge.net>
+ *  Copyright (C) 2007-2015 Andrey Prygunkov <hugbug@users.sourceforge.net>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -27,7 +27,7 @@
 #ifndef MESSAGEBASE_H
 #define MESSAGEBASE_H
 
-static const int32_t NZBMESSAGE_SIGNATURE = 0x6E7A6225; // = "nzb-XX" (protocol version)
+static const int32_t NZBMESSAGE_SIGNATURE = 0x6E7A6226; // = "nzb-XX" (protocol version)
 static const int NZBREQUESTFILENAMESIZE = 512;
 static const int NZBREQUESTPASSWORDSIZE = 32;
 
@@ -437,6 +437,7 @@ struct SNZBScanResponse
 struct SNZBHistoryRequest
 {
 	SNZBRequestBase			m_MessageBase;			// Must be the first in the struct
+	int32_t					m_bHidden;				// 0 - only return visible records, 1 - also return hidden records
 };
 
 // history response
@@ -453,12 +454,13 @@ struct SNZBHistoryResponse
 struct SNZBHistoryResponseEntry
 {
 	int32_t					m_iID;					// History-ID
-	int32_t					m_iKind;				// Kind of Item: 1 - Collection (NZB), 2 - URL
+	int32_t					m_iKind;				// Kind of Item: 1 - Collection (NZB), 2 - URL, 3 - DUP (hidden record)
 	int32_t					m_tTime;				// When the item was added to history. time since the Epoch (00:00:00 UTC, January 1, 1970), measured in seconds.
 	int32_t					m_iNicenameLen;			// Length of Nicename-string (m_szNicename), following to this record
-	// for Collection items (m_iKind = 1)
+	// for Collection and Dup items (m_iKind = 1 or 2)
 	int32_t					m_iSizeLo;				// Size of all files in bytes, Low 32-bits of 64-bit value
 	int32_t					m_iSizeHi;				// Size of all files in bytes, High 32-bits of 64-bit value
+	// for Collection items (m_iKind = 1)
 	int32_t					m_iFileCount;			// Initial number of files included in NZB-file
 	int32_t					m_iParStatus;			// See NZBInfo::EParStatus
 	int32_t					m_iScriptStatus;		// See NZBInfo::EScriptStatus

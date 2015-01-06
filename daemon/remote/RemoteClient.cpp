@@ -2,7 +2,7 @@
  *  This file is part of nzbget
  *
  *  Copyright (C) 2005 Bo Cordes Petersen <placebodk@sourceforge.net>
- *  Copyright (C) 2007-2014 Andrey Prygunkov <hugbug@users.sourceforge.net>
+ *  Copyright (C) 2007-2015 Andrey Prygunkov <hugbug@users.sourceforge.net>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -1087,12 +1087,13 @@ bool RemoteClient::RequestScan(bool bSyncMode)
 	return OK;
 }
 
-bool RemoteClient::RequestHistory()
+bool RemoteClient::RequestHistory(bool bWithHidden)
 {
 	if (!InitConnection()) return false;
 
 	SNZBHistoryRequest HistoryRequest;
 	InitMessageBase(&HistoryRequest.m_MessageBase, eRemoteRequestHistory, sizeof(HistoryRequest));
+	HistoryRequest.m_bHidden = htonl(bWithHidden);
 
 	if (!m_pConnection->Send((char*)(&HistoryRequest), sizeof(HistoryRequest)))
 	{
@@ -1143,8 +1144,12 @@ bool RemoteClient::RequestHistory()
 			HistoryInfo::EKind eKind = (HistoryInfo::EKind)ntohl(pListAnswer->m_iKind);
 			const char* szNicename = pBufPtr + sizeof(SNZBHistoryResponseEntry);
 
-			if (eKind == HistoryInfo::hkNzb)
+			if (eKind == HistoryInfo::hkNzb || eKind == HistoryInfo::hkDup)
 			{
+				char szFiles[20];
+				snprintf(szFiles, sizeof(szFiles), "%i files, ", ntohl(pListAnswer->m_iFileCount));
+				szFiles[20 - 1] = '\0';
+
 				long long lSize = Util::JoinInt64(ntohl(pListAnswer->m_iSizeHi), ntohl(pListAnswer->m_iSizeLo));
 
 				char szSize[20];
@@ -1153,8 +1158,9 @@ bool RemoteClient::RequestHistory()
 				const char* szParStatusText[] = { "", "", ", Par failed", ", Par successful", ", Repair possible", ", Repair needed" };
 				const char* szScriptStatusText[] = { "", ", Script status unknown", ", Script failed", ", Script successful" };
 
-				printf("[%i] %s (%i files, %s%s%s)\n", ntohl(pListAnswer->m_iID), szNicename, 
-					ntohl(pListAnswer->m_iFileCount), szSize, 
+				printf("[%i] %s (%s%s%s%s%s)\n", ntohl(pListAnswer->m_iID), szNicename, 
+					(eKind == HistoryInfo::hkDup ? "Hidden, " : ""),
+					(eKind == HistoryInfo::hkDup ? "" : szFiles), szSize, 
 					szParStatusText[ntohl(pListAnswer->m_iParStatus)], 
 					szScriptStatusText[ntohl(pListAnswer->m_iScriptStatus)]);
 			}

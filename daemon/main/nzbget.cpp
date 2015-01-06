@@ -2,7 +2,7 @@
  *  This file is part of nzbget
  *
  *  Copyright (C) 2004 Sven Henkel <sidddy@users.sourceforge.net>
- *  Copyright (C) 2007-2014 Andrey Prygunkov <hugbug@users.sourceforge.net>
+ *  Copyright (C) 2007-2015 Andrey Prygunkov <hugbug@users.sourceforge.net>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -558,8 +558,9 @@ void ProcessClientRequest()
 			Client->RequestServerPauseUnpause(false, eRemotePauseUnpauseActionScan);
 			break;
 
-		case Options::opClientRequestHistory:	 
-			Client->RequestHistory();	 
+		case Options::opClientRequestHistory:
+		case Options::opClientRequestHistoryAll:
+			Client->RequestHistory(g_pOptions->GetClientOperation() == Options::opClientRequestHistoryAll);
 			break;
 
 		case Options::opClientRequestDownloadUrl:

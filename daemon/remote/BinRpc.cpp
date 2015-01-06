@@ -2,7 +2,7 @@
  *  This file is part of nzbget
  *
  *  Copyright (C) 2005 Bo Cordes Petersen <placebodk@sourceforge.net>
- *  Copyright (C) 2007-2014 Andrey Prygunkov <hugbug@users.sourceforge.net>
+ *  Copyright (C) 2007-2015 Andrey Prygunkov <hugbug@users.sourceforge.net>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -972,6 +972,8 @@ void HistoryBinCommand::Execute()
 		return;
 	}
 
+	bool bShowHidden = ntohl(HistoryRequest.m_bHidden);
+
 	SNZBHistoryResponse HistoryResponse;
 	memset(&HistoryResponse, 0, sizeof(HistoryResponse));
 	HistoryResponse.m_MessageBase.m_iSignature = htonl(NZBMESSAGE_SIGNATURE);
@@ -985,16 +987,27 @@ void HistoryBinCommand::Execute()
 	DownloadQueue* pDownloadQueue = DownloadQueue::Lock();
 
 	// calculate required buffer size for nzbs
-	int iNrEntries = pDownloadQueue->GetHistory()->size();
+	int iNrEntries = 0;
+	for (HistoryList::iterator it = pDownloadQueue->GetHistory()->begin(); it != pDownloadQueue->GetHistory()->end(); it++)
+	{
+		HistoryInfo* pHistoryInfo = *it;
+		if (pHistoryInfo->GetKind() != HistoryInfo::hkDup || bShowHidden)
+		{
+			iNrEntries++;
+		}
+	}
 	bufsize += iNrEntries * sizeof(SNZBHistoryResponseEntry);
 	for (HistoryList::iterator it = pDownloadQueue->GetHistory()->begin(); it != pDownloadQueue->GetHistory()->end(); it++)
 	{
 		HistoryInfo* pHistoryInfo = *it;
-		char szNicename[1024];
-		pHistoryInfo->GetName(szNicename, sizeof(szNicename));
-		bufsize += strlen(szNicename) + 1;
-		// align struct to 4-bytes, needed by ARM-processor (and may be others)
-		bufsize += bufsize % 4 > 0 ? 4 - bufsize % 4 : 0;
+		if (pHistoryInfo->GetKind() != HistoryInfo::hkDup || bShowHidden)
+		{
+			char szNicename[1024];
+			pHistoryInfo->GetName(szNicename, sizeof(szNicename));
+			bufsize += strlen(szNicename) + 1;
+			// align struct to 4-bytes, needed by ARM-processor (and may be others)
+			bufsize += bufsize % 4 > 0 ? 4 - bufsize % 4 : 0;
+		}
 	}
 
 	buf = (char*) malloc(bufsize);
@@ -1004,41 +1017,52 @@ void HistoryBinCommand::Execute()
 	for (HistoryList::iterator it = pDownloadQueue->GetHistory()->begin(); it != pDownloadQueue->GetHistory()->end(); it++)
 	{
 		HistoryInfo* pHistoryInfo = *it;
-		SNZBHistoryResponseEntry* pListAnswer = (SNZBHistoryResponseEntry*) bufptr;
-		pListAnswer->m_iID					= htonl(pHistoryInfo->GetID());
-		pListAnswer->m_iKind				= htonl((int)pHistoryInfo->GetKind());
-		pListAnswer->m_tTime				= htonl((int)pHistoryInfo->GetTime());
-
-		char szNicename[1024];
-		pHistoryInfo->GetName(szNicename, sizeof(szNicename));
-		pListAnswer->m_iNicenameLen			= htonl(strlen(szNicename) + 1);
-
-		if (pHistoryInfo->GetKind() == HistoryInfo::hkNzb)
+		if (pHistoryInfo->GetKind() != HistoryInfo::hkDup || bShowHidden)
 		{
-			NZBInfo* pNZBInfo = pHistoryInfo->GetNZBInfo();
-			unsigned long iSizeHi, iSizeLo;
-			Util::SplitInt64(pNZBInfo->GetSize(), &iSizeHi, &iSizeLo);
-			pListAnswer->m_iSizeLo				= htonl(iSizeLo);
-			pListAnswer->m_iSizeHi				= htonl(iSizeHi);
-			pListAnswer->m_iFileCount			= htonl(pNZBInfo->GetFileCount());
-			pListAnswer->m_iParStatus			= htonl(pNZBInfo->GetParStatus());
-			pListAnswer->m_iScriptStatus		= htonl(pNZBInfo->GetScriptStatuses()->CalcTotalStatus());
-		}
-		else if (pHistoryInfo->GetKind() == HistoryInfo::hkUrl)
-		{
-			NZBInfo* pNZBInfo = pHistoryInfo->GetNZBInfo();
-			pListAnswer->m_iUrlStatus			= htonl(pNZBInfo->GetUrlStatus());
-		}
+			SNZBHistoryResponseEntry* pListAnswer = (SNZBHistoryResponseEntry*) bufptr;
+			pListAnswer->m_iID					= htonl(pHistoryInfo->GetID());
+			pListAnswer->m_iKind				= htonl((int)pHistoryInfo->GetKind());
+			pListAnswer->m_tTime				= htonl((int)pHistoryInfo->GetTime());
 
-		bufptr += sizeof(SNZBHistoryResponseEntry);
-		strcpy(bufptr, szNicename);
-		bufptr += ntohl(pListAnswer->m_iNicenameLen);
-		// align struct to 4-bytes, needed by ARM-processor (and may be others)
-		if ((size_t)bufptr % 4 > 0)
-		{
-			pListAnswer->m_iNicenameLen = htonl(ntohl(pListAnswer->m_iNicenameLen) + 4 - (size_t)bufptr % 4);
-			memset(bufptr, 0, 4 - (size_t)bufptr % 4); //suppress valgrind warning "uninitialized data"
-			bufptr += 4 - (size_t)bufptr % 4;
+			char szNicename[1024];
+			pHistoryInfo->GetName(szNicename, sizeof(szNicename));
+			pListAnswer->m_iNicenameLen			= htonl(strlen(szNicename) + 1);
+
+			if (pHistoryInfo->GetKind() == HistoryInfo::hkNzb)
+			{
+				NZBInfo* pNZBInfo = pHistoryInfo->GetNZBInfo();
+				unsigned long iSizeHi, iSizeLo;
+				Util::SplitInt64(pNZBInfo->GetSize(), &iSizeHi, &iSizeLo);
+				pListAnswer->m_iSizeLo				= htonl(iSizeLo);
+				pListAnswer->m_iSizeHi				= htonl(iSizeHi);
+				pListAnswer->m_iFileCount			= htonl(pNZBInfo->GetFileCount());
+				pListAnswer->m_iParStatus			= htonl(pNZBInfo->GetParStatus());
+				pListAnswer->m_iScriptStatus		= htonl(pNZBInfo->GetScriptStatuses()->CalcTotalStatus());
+			}
+			else if (pHistoryInfo->GetKind() == HistoryInfo::hkDup && bShowHidden)
+			{
+				DupInfo* pDupInfo = pHistoryInfo->GetDupInfo();
+				unsigned long iSizeHi, iSizeLo;
+				Util::SplitInt64(pDupInfo->GetSize(), &iSizeHi, &iSizeLo);
+				pListAnswer->m_iSizeLo				= htonl(iSizeLo);
+				pListAnswer->m_iSizeHi				= htonl(iSizeHi);
+			}
+			else if (pHistoryInfo->GetKind() == HistoryInfo::hkUrl)
+			{
+				NZBInfo* pNZBInfo = pHistoryInfo->GetNZBInfo();
+				pListAnswer->m_iUrlStatus			= htonl(pNZBInfo->GetUrlStatus());
+			}
+
+			bufptr += sizeof(SNZBHistoryResponseEntry);
+			strcpy(bufptr, szNicename);
+			bufptr += ntohl(pListAnswer->m_iNicenameLen);
+			// align struct to 4-bytes, needed by ARM-processor (and may be others)
+			if ((size_t)bufptr % 4 > 0)
+			{
+				pListAnswer->m_iNicenameLen = htonl(ntohl(pListAnswer->m_iNicenameLen) + 4 - (size_t)bufptr % 4);
+				memset(bufptr, 0, 4 - (size_t)bufptr % 4); //suppress valgrind warning "uninitialized data"
+				bufptr += 4 - (size_t)bufptr % 4;
+			}
 		}
 	}
 
