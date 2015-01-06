@@ -2,7 +2,7 @@
  *  This file is part of nzbget
  *
  *  Copyright (C) 2004 Sven Henkel <sidddy@users.sourceforge.net>
- *  Copyright (C) 2007-2014 Andrey Prygunkov <hugbug@users.sourceforge.net>
+ *  Copyright (C) 2007-2015 Andrey Prygunkov <hugbug@users.sourceforge.net>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -1354,6 +1354,10 @@ void Options::InitCommandLine(int argc, char* argv[])
 				{
 					m_eClientOperation = opClientRequestHistory;
 				}
+				else if (!strcasecmp(optarg, "HA"))
+				{
+					m_eClientOperation = opClientRequestHistoryAll;
+				}
 				else
 				{
 					abort("FATAL ERROR: Could not parse value of option 'L'\n");
@@ -1756,6 +1760,7 @@ void Options::PrintUsage(char* com)
 		"                 GR         Like \"G\" but apply regular expression filter\n"
 		"                 O          List post-processor-queue\n"
 		"                 H          List history\n"
+		"                 HA         List history, all records (incl. hidden)\n"
 		"                 S          Print only server status\n"
 		"    <RegEx>                 Regular expression (only with options \"FR\", \"GR\")\n"
 		"                            using POSIX Extended Regular Expression Syntax\n"
