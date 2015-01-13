@@ -1863,7 +1863,7 @@ var HistoryEditDialog = (new function()
 	function itemGood(e)
 	{
 		e.preventDefault();
-		ConfirmDialog.showModal('HistoryEditGoodConfirmDialog', doItemGood);
+		ConfirmDialog.showModal('HistoryEditGoodConfirmDialog', doItemGood, function () { HistoryUI.confirmMulti(false); });
 	}
 
 	function doItemGood()
@@ -1876,7 +1876,7 @@ var HistoryEditDialog = (new function()
 	function itemBad(e)
 	{
 		e.preventDefault();
-		ConfirmDialog.showModal('HistoryEditBadConfirmDialog', doItemBad);
+		ConfirmDialog.showModal('HistoryEditBadConfirmDialog', doItemBad, function () { HistoryUI.confirmMulti(false); });
 	}
 
 	function doItemBad()
