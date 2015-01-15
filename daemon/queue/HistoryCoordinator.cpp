@@ -1,7 +1,7 @@
 /*
  *  This file is part of nzbget
  *
- *  Copyright (C) 2007-2014 Andrey Prygunkov <hugbug@users.sourceforge.net>
+ *  Copyright (C) 2007-2015 Andrey Prygunkov <hugbug@users.sourceforge.net>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -277,6 +277,8 @@ bool HistoryCoordinator::EditList(DownloadQueue* pDownloadQueue, IDList* pIDList
 			HistoryInfo* pHistoryInfo = *itHistory;
 			if (pHistoryInfo->GetID() == iID)
 			{
+				bOK = true;
+
 				switch (eAction)
 				{
 					case DownloadQueue::eaHistoryDelete:
@@ -294,7 +296,15 @@ bool HistoryCoordinator::EditList(DownloadQueue* pDownloadQueue, IDList* pIDList
 						break;
 
  					case DownloadQueue::eaHistorySetParameter:
-						HistorySetParameter(pHistoryInfo, szText);
+						bOK = HistorySetParameter(pHistoryInfo, szText);
+						break;
+
+ 					case DownloadQueue::eaHistorySetCategory:
+						bOK = HistorySetCategory(pHistoryInfo, szText);
+						break;
+
+ 					case DownloadQueue::eaHistorySetName:
+						bOK = HistorySetName(pHistoryInfo, szText);
 						break;
 
 					case DownloadQueue::eaHistorySetDupeKey:
@@ -314,7 +324,6 @@ bool HistoryCoordinator::EditList(DownloadQueue* pDownloadQueue, IDList* pIDList
 						break;
 				}
 
-				bOK = true;
 				break;
 			}
 		}
@@ -544,7 +553,7 @@ void HistoryCoordinator::HistoryRedownload(DownloadQueue* pDownloadQueue, Histor
 	g_pPrePostProcessor->NZBAdded(pDownloadQueue, pNZBInfo);
 }
 
-void HistoryCoordinator::HistorySetParameter(HistoryInfo* pHistoryInfo, const char* szText)
+bool HistoryCoordinator::HistorySetParameter(HistoryInfo* pHistoryInfo, const char* szText)
 {
 	char szNiceName[1024];
 	pHistoryInfo->GetName(szNiceName, 1024);
@@ -553,7 +562,7 @@ void HistoryCoordinator::HistorySetParameter(HistoryInfo* pHistoryInfo, const ch
 	if (!(pHistoryInfo->GetKind() == HistoryInfo::hkNzb || pHistoryInfo->GetKind() == HistoryInfo::hkUrl))
 	{
 		error("Could not set post-process-parameter for %s: history item has wrong type", szNiceName);
-		return;
+		return false;
 	}
 
 	char* szStr = strdup(szText);
@@ -571,6 +580,48 @@ void HistoryCoordinator::HistorySetParameter(HistoryInfo* pHistoryInfo, const ch
 	}
 
 	free(szStr);
+
+	return true;
+}
+
+bool HistoryCoordinator::HistorySetCategory(HistoryInfo* pHistoryInfo, const char* szText)
+{
+	char szNiceName[1024];
+	pHistoryInfo->GetName(szNiceName, 1024);
+	debug("Setting category '%s' for '%s'", szText, szNiceName);
+
+	if (!(pHistoryInfo->GetKind() == HistoryInfo::hkNzb || pHistoryInfo->GetKind() == HistoryInfo::hkUrl))
+	{
+		error("Could not set category for %s: history item has wrong type", szNiceName);
+		return false;
+	}
+
+	pHistoryInfo->GetNZBInfo()->SetCategory(szText);
+
+	return true;
+}
+
+bool HistoryCoordinator::HistorySetName(HistoryInfo* pHistoryInfo, const char* szText)
+{
+	char szNiceName[1024];
+	pHistoryInfo->GetName(szNiceName, 1024);
+	debug("Setting name '%s' for '%s'", szText, szNiceName);
+
+	if (!(pHistoryInfo->GetKind() == HistoryInfo::hkNzb || pHistoryInfo->GetKind() == HistoryInfo::hkUrl))
+	{
+		error("Could not set name for %s: history item has wrong type", szNiceName);
+		return false;
+	}
+
+	if (Util::EmptyStr(szText))
+	{
+		error("Could not rename %s. The new name cannot be empty", pHistoryInfo->GetNZBInfo()->GetName());
+		return false;
+	}
+
+	pHistoryInfo->GetNZBInfo()->SetName(szText);
+
+	return true;
 }
 
 void HistoryCoordinator::HistorySetDupeParam(HistoryInfo* pHistoryInfo, DownloadQueue::EEditAction eAction, const char* szText)

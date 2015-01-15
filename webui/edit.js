@@ -1603,14 +1603,23 @@ var HistoryEditDialog = (new function()
 				(hist.Kind === 'DUP' ? 'hidden' : hist.Kind) + '</span>');
 		}
 
+		$('#HistoryEdit_NZBName').val(hist.Name);
+		
 		if (hist.Kind !== 'DUP')
 		{
-			$('#HistoryEdit_Category').text(hist.Category);
+			// Category
+			var v = $('#HistoryEdit_Category');
+			DownloadsUI.fillCategoryCombo(v);
+			v.val(hist.Category);
+			if (v.val() != hist.Category)
+			{
+				v.append($('<option selected="selected"></option>').text(hist.Category));
+			}
 		}
 
 		if (hist.Kind === 'NZB')
 		{
-			$('#HistoryEdit_Path').text(hist.FinalDir !== '' ? hist.FinalDir : hist.DestDir);
+			$('#HistoryEdit_Path').val(hist.FinalDir !== '' ? hist.FinalDir : hist.DestDir);
 
 			var size = Util.formatSizeMB(hist.FileSizeMB, hist.FileSizeLo);
 			var completion = hist.SuccessArticles + hist.FailedArticles > 0 ? Util.round0(hist.SuccessArticles * 100.0 / (hist.SuccessArticles +  hist.FailedArticles)) + '%' : '--';
@@ -1857,7 +1866,31 @@ var HistoryEditDialog = (new function()
 		disableAllButtons();
 		notification = null;
 		saveCompleted = completed;
-		saveDupeKey();
+		saveName();
+	}
+
+	function saveName()
+	{
+		var name = $('#HistoryEdit_NZBName').val();
+		name !== curHist.Name && !curHist.postprocess ?
+			RPC.call('editqueue', ['HistorySetName', 0, name, [curHist.ID]], function()
+			{
+				notification = '#Notif_History_Saved';
+				saveCategory();
+			})
+			:saveCategory();
+	}
+
+	function saveCategory()
+	{
+		var category = $('#HistoryEdit_Category').val();
+		category !== curHist.Category ?
+			RPC.call('editqueue', ['HistorySetCategory', 0, category, [curHist.ID]], function()
+			{
+				notification = '#Notif_History_Saved';
+				saveDupeKey();
+			})
+			: saveDupeKey();
 	}
 
 	function itemGood(e)
