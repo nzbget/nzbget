@@ -2,7 +2,7 @@
  *  This file is part of nzbget
  *
  *  Copyright (C) 2005 Bo Cordes Petersen <placebodk@sourceforge.net>
- *  Copyright (C) 2007-2009 Andrey Prygunkov <hugbug@users.sourceforge.net>
+ *  Copyright (C) 2007-2015 Andrey Prygunkov <hugbug@users.sourceforge.net>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -42,118 +42,6 @@ public:
 						BinRpcProcessor();
 	void				Execute();
 	void				SetConnection(Connection* pConnection) { m_pConnection = pConnection; }
-};
-
-class BinCommand
-{
-protected:
-	Connection*			m_pConnection;
-	SNZBRequestBase*	m_pMessageBase;
-
-	bool				ReceiveRequest(void* pBuffer, int iSize);
-	void				SendBoolResponse(bool bSuccess, const char* szText);
-
-public:
-	virtual				~BinCommand() {}
-	virtual void		Execute() = 0;
-	void				SetConnection(Connection* pConnection) { m_pConnection = pConnection; }
-	void				SetMessageBase(SNZBRequestBase*	pMessageBase) { m_pMessageBase = pMessageBase; }
-};
-
-class DownloadBinCommand: public BinCommand
-{
-public:
-	virtual void		Execute();
-};
-
-class ListBinCommand: public BinCommand
-{
-public:
-	virtual void		Execute();
-};
-
-class LogBinCommand: public BinCommand
-{
-public:
-	virtual void		Execute();
-};
-
-class PauseUnpauseBinCommand: public BinCommand
-{
-public:
-	virtual void		Execute();
-};
-
-class EditQueueBinCommand: public BinCommand
-{
-public:
-	virtual void		Execute();
-};
-
-class SetDownloadRateBinCommand: public BinCommand
-{
-public:
-	virtual void		Execute();
-};
-
-class DumpDebugBinCommand: public BinCommand
-{
-public:
-	virtual void		Execute();
-};
-
-class ShutdownBinCommand: public BinCommand
-{
-public:
-	virtual void		Execute();
-};
-
-class ReloadBinCommand: public BinCommand
-{
-public:
-	virtual void		Execute();
-};
-
-class VersionBinCommand: public BinCommand
-{
-public:
-	virtual void		Execute();
-};
-
-class PostQueueBinCommand: public BinCommand
-{
-public:
-	virtual void		Execute();
-};
-
-class WriteLogBinCommand: public BinCommand
-{
-public:
-	virtual void		Execute();
-};
-
-class ScanBinCommand: public BinCommand
-{
-public:
-	virtual void		Execute();
-};
-
-class HistoryBinCommand: public BinCommand
-{
-public:
-	virtual void		Execute();
-};
-
-class DownloadUrlBinCommand: public BinCommand
-{
-public:
-	virtual void		Execute();
-};
-
-class UrlQueueBinCommand: public BinCommand
-{
-public:
-	virtual void		Execute();
 };
 
 #endif

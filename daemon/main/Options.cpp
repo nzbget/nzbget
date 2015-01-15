@@ -500,6 +500,9 @@ Options::Options(int argc, char* argv[])
 	m_bRemoteClientMode		= false;
 	m_bPrintOptions			= false;
 	m_bAddTop				= false;
+	m_szAddDupeKey			= NULL;
+	m_iAddDupeScore			= 0;
+	m_iAddDupeMode			= 0;
 	m_bAppendCategoryDir	= false;
 	m_bContinuePartial		= false;
 	m_bSaveQueue			= false;
@@ -687,6 +690,7 @@ Options::~Options()
 	free(m_szQueueScript);
 	free(m_pEditQueueIDList);
 	free(m_szAddNZBFilename);
+	free(m_szAddDupeKey);
 	free(m_szUnrarCmd);
 	free(m_szSevenZipCmd);
 	free(m_szExtCleanupDisk);
@@ -1268,19 +1272,15 @@ void Options::InitCommandLine(int argc, char* argv[])
 				m_bDaemonMode = true;
 				break;
 			case 'A':
-				m_eClientOperation = opClientRequestDownload; // default
+				m_eClientOperation = opClientRequestDownload;
 
 				while (true)
 				{
 					optind++;
 					optarg = optind > argc ? NULL : argv[optind-1];
-					if (optarg && !strcasecmp(optarg, "F"))
+					if (optarg && (!strcasecmp(optarg, "F") || !strcasecmp(optarg, "U")))
 					{
-						m_eClientOperation = opClientRequestDownload;
-					}
-					else if (optarg && !strcasecmp(optarg, "U"))
-					{
-						m_eClientOperation = opClientRequestDownloadUrl;
+						// option ignored (but kept for compatibility)
 					}
 					else if (optarg && !strcasecmp(optarg, "T"))
 					{
@@ -1318,6 +1318,51 @@ void Options::InitCommandLine(int argc, char* argv[])
 						}
 						free(m_szAddNZBFilename);
 						m_szAddNZBFilename = strdup(argv[optind-1]);
+					}
+					else if (optarg && !strcasecmp(optarg, "DK"))
+					{
+						optind++;
+						if (optind > argc)
+						{
+							abort("FATAL ERROR: Could not parse value of option 'A'\n");
+						}
+						free(m_szAddDupeKey);
+						m_szAddDupeKey = strdup(argv[optind-1]);
+					}
+					else if (optarg && !strcasecmp(optarg, "DS"))
+					{
+						optind++;
+						if (optind > argc)
+						{
+							abort("FATAL ERROR: Could not parse value of option 'A'\n");
+						}
+						m_iAddDupeScore = atoi(argv[optind-1]);
+					}
+					else if (optarg && !strcasecmp(optarg, "DM"))
+					{
+						optind++;
+						if (optind > argc)
+						{
+							abort("FATAL ERROR: Could not parse value of option 'A'\n");
+						}
+
+						const char* szDupeMode = argv[optind-1];
+						if (!strcasecmp(szDupeMode, "score"))
+						{
+							m_iAddDupeMode = dmScore;
+						}
+						else if (!strcasecmp(szDupeMode, "all"))
+						{
+							m_iAddDupeMode = dmAll;
+						}
+						else if (!strcasecmp(szDupeMode, "force"))
+						{
+							m_iAddDupeMode = dmForce;
+						}
+						else
+						{
+							abort("FATAL ERROR: Could not parse value of option 'A'\n");
+						}
 					}
 					else
 					{
@@ -1742,16 +1787,17 @@ void Options::PrintUsage(char* com)
 	    "  -V, --serverversion       Print server's version and exit\n"
 		"  -Q, --quit                Shutdown server\n"
 		"  -O, --reload              Reload config and restart all services\n"
-		"  -A, --append  [F|U] [<options>] <nzb-file/url> Send file/url to server's\n"
+		"  -A, --append [<options>] <nzb-file/url> Send file/url to server's\n"
 		"                            download queue\n"
-		"                 F          Send file (default)\n"
-		"                 U          Send url\n"
 		"    <options> are (multiple options must be separated with space):\n"
 		"       T                    Add file to the top (beginning) of queue\n"
 		"       P                    Pause added files\n"
 		"       C <name>             Assign category to nzb-file\n"
-		"       N <name>             Use this name as nzb-filename (only for URLs)\n"
+		"       N <name>             Use this name as nzb-filename\n"
 		"       I <priority>         Set priority (signed integer)\n"
+		"       DK <dupekey>         Set duplicate key (string)\n"
+		"       DS <dupescore>       Set duplicate score (signed integer)\n"
+		"       DM (score|all|force) Set duplicate mode\n"
 		"  -C, --connect             Attach client to server\n"
 		"  -L, --list    [F|FR|G|GR|O|H|S] [RegEx] Request list of items from server\n"
 		"                 F          List individual files and server status (default)\n"
@@ -1844,7 +1890,7 @@ void Options::InitFileArg(int argc, char* argv[])
 			}
 			else
 			{
-				abort("FATAL ERROR: Nzb-file not specified\n");
+				abort("FATAL ERROR: Nzb-file or Url not specified\n");
 			}
 		}
 	}
@@ -1870,7 +1916,7 @@ void Options::InitFileArg(int argc, char* argv[])
 #ifdef WIN32
 			m_szArgFilename = strdup(szFileName);
 #else
-		if (szFileName[0] == '/')
+		if (szFileName[0] == '/' || !strncasecmp(szFileName, "http://", 6) || !strncasecmp(szFileName, "https://", 7))
 		{
 			m_szArgFilename = strdup(szFileName);
 		}
@@ -1888,7 +1934,6 @@ void Options::InitFileArg(int argc, char* argv[])
 		if (m_bServerMode || m_bRemoteClientMode ||
 		        !(m_eClientOperation == opClientNoOperation ||
 		          m_eClientOperation == opClientRequestDownload ||
-		          m_eClientOperation == opClientRequestDownloadUrl ||
 				  m_eClientOperation == opClientRequestWriteLog))
 		{
 			abort("FATAL ERROR: Too many arguments\n");

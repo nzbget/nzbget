@@ -62,8 +62,7 @@ public:
 		opClientRequestScanPause,
 		opClientRequestScanUnpause,
 		opClientRequestHistory,
-		opClientRequestHistoryAll,
-		opClientRequestDownloadUrl
+		opClientRequestHistoryAll
 	};
 	enum EWriteLog
 	{
@@ -359,6 +358,9 @@ private:
 	char*				m_szLastArg;
 	bool				m_bPrintOptions;
 	bool				m_bAddTop;
+	char*				m_szAddDupeKey;
+	int					m_iAddDupeScore;
+	int					m_iAddDupeMode;
 	int					m_iSetRate;
 	int					m_iLogLines;
 	int					m_iWriteLogKind;
@@ -538,6 +540,9 @@ public:
 	int					GetAddPriority() { return m_iAddPriority; }
 	char*				GetAddNZBFilename() { return m_szAddNZBFilename; }
 	bool				GetAddTop() { return m_bAddTop; }
+	const char*			GetAddDupeKey() { return m_szAddDupeKey; }
+	int					GetAddDupeScore() { return m_iAddDupeScore; }
+	int					GetAddDupeMode() { return m_iAddDupeMode; }
 	int					GetSetRate() { return m_iSetRate; }
 	int					GetLogLines() { return m_iLogLines; }
 	int					GetWriteLogKind() { return m_iWriteLogKind; }

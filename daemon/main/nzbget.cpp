@@ -519,7 +519,9 @@ void ProcessClientRequest()
 			break;
 
 		case Options::opClientRequestDownload:
-			Client->RequestServerDownload(g_pOptions->GetArgFilename(), g_pOptions->GetAddCategory(), g_pOptions->GetAddTop(), g_pOptions->GetAddPaused(), g_pOptions->GetAddPriority());
+			Client->RequestServerDownload(g_pOptions->GetAddNZBFilename(), g_pOptions->GetArgFilename(),
+				g_pOptions->GetAddCategory(), g_pOptions->GetAddTop(), g_pOptions->GetAddPaused(), g_pOptions->GetAddPriority(),
+				g_pOptions->GetAddDupeKey(), g_pOptions->GetAddDupeMode(), g_pOptions->GetAddDupeScore());
 			break;
 
 		case Options::opClientRequestVersion:
@@ -561,10 +563,6 @@ void ProcessClientRequest()
 		case Options::opClientRequestHistory:
 		case Options::opClientRequestHistoryAll:
 			Client->RequestHistory(g_pOptions->GetClientOperation() == Options::opClientRequestHistoryAll);
-			break;
-
-		case Options::opClientRequestDownloadUrl:
-			Client->RequestServerDownloadUrl(g_pOptions->GetLastArg(), g_pOptions->GetAddNZBFilename(), g_pOptions->GetAddCategory(), g_pOptions->GetAddTop(), g_pOptions->GetAddPaused(), g_pOptions->GetAddPriority());
 			break;
 
 		case Options::opClientNoOperation:
