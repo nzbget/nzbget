@@ -205,7 +205,7 @@ bool QueueEditor::EditList(DownloadQueue* pDownloadQueue, IDList* pIDList, NameL
 	{
 		return g_pPrePostProcessor->EditList(pDownloadQueue, pIDList, eAction, iOffset, szText);
 	}
-	else if (DownloadQueue::eaHistoryDelete <= eAction && eAction <= DownloadQueue::eaHistoryMarkGood)
+	else if (DownloadQueue::eaHistoryDelete <= eAction && eAction <= DownloadQueue::eaHistorySetName)
 	{
 		return g_pHistoryCoordinator->EditList(pDownloadQueue, pIDList, eAction, iOffset, szText);
 	}

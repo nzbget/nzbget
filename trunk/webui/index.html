@@ -1266,6 +1266,13 @@
 							</div>
 						</div>
 
+						<div class="control-group">
+							<label class="control-label" for="HistoryEdit_NZBNameGroup">Name</label>
+							<div class="controls" id="HistoryEdit_NZBNameGroup">
+								<input type="text" class="input-xlarge" id="HistoryEdit_NZBName" />
+							</div>
+						</div>
+
 						<div class="control-group" id="HistoryEdit_URLGroup">
 							<label class="control-label" for="HistoryEdit_URL">Link</label>
 							<div class="controls">
@@ -1276,14 +1283,15 @@
 						<div class="control-group" id="HistoryEdit_CategoryGroup">
 							<label class="control-label" for="HistoryEdit_Category">Category</label>
 							<div class="controls">
-								<span class="input-medium uneditable-input" id="HistoryEdit_Category"></span>
+								<select id="HistoryEdit_Category">
+								</select>
 							</div>
 						</div>
 
 						<div class="control-group" id="HistoryEdit_PathGroup">
 							<label class="control-label" for="HistoryEdit_Path">Destination</label>
 							<div class="controls">
-								<span class="uneditable-mulitline-input" id="HistoryEdit_Path"></span>
+								<input type="text" class="input-xlarge" id="HistoryEdit_Path" readonly="true" />
 							</div>
 						</div>
 
@@ -1299,8 +1307,7 @@
 
 						<div class="control-group control-group-last" id="HistoryEdit_DupGroup">
 							<div class="controls">
-								This hidden history record has no information other than status.
-								It remains in history for duplicate check.
+								This hidden history record has little information. It remains in history mostly for duplicate check.
 							</div>
 						</div>
 
