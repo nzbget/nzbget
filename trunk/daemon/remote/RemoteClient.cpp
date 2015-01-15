@@ -159,15 +159,26 @@ bool RemoteClient::ReceiveBoolResponse()
 /*
  * Sends a message to the running nzbget process.
  */
-bool RemoteClient::RequestServerDownload(const char* szFilename, const char* szCategory, bool bAddFirst, bool bAddPaused, int iPriority)
+bool RemoteClient::RequestServerDownload(const char* szNZBFilename, const char* szNZBContent,
+	const char* szCategory, bool bAddFirst, bool bAddPaused, int iPriority,
+	const char* szDupeKey, int iDupeMode, int iDupeScore)
 {
 	// Read the file into the buffer
-	char* szBuffer	= NULL;
-	int iLength		= 0;
-	if (!Util::LoadFileIntoBuffer(szFilename, &szBuffer, &iLength))
+	char* szBuffer = NULL;
+	int iLength = 0;
+	bool bIsUrl = !strncasecmp(szNZBContent, "http://", 6) || !strncasecmp(szNZBContent, "https://", 7);
+	if (bIsUrl)
 	{
-		printf("Could not load file %s\n", szFilename);
-		return false;
+		iLength = strlen(szNZBContent) + 1;
+	}
+	else
+	{
+		if (!Util::LoadFileIntoBuffer(szNZBContent, &szBuffer, &iLength))
+		{
+			printf("Could not load file %s\n", szNZBContent);
+			return false;
+		}
+		iLength--;
 	}
 
 	bool OK = InitConnection();
@@ -178,16 +189,34 @@ bool RemoteClient::RequestServerDownload(const char* szFilename, const char* szC
 		DownloadRequest.m_bAddFirst = htonl(bAddFirst);
 		DownloadRequest.m_bAddPaused = htonl(bAddPaused);
 		DownloadRequest.m_iPriority = htonl(iPriority);
-		DownloadRequest.m_iTrailingDataLength = htonl(iLength - 1);
+		DownloadRequest.m_iDupeMode = htonl(iDupeMode);
+		DownloadRequest.m_iDupeScore = htonl(iDupeScore);
+		DownloadRequest.m_iTrailingDataLength = htonl(iLength);
 
-		strncpy(DownloadRequest.m_szFilename, szFilename, NZBREQUESTFILENAMESIZE - 1);
-		DownloadRequest.m_szFilename[NZBREQUESTFILENAMESIZE-1] = '\0';
+		DownloadRequest.m_szNZBFilename[0] = '\0';
+		if (!Util::EmptyStr(szNZBFilename))
+		{
+			strncpy(DownloadRequest.m_szNZBFilename, szNZBFilename, NZBREQUESTFILENAMESIZE - 1);
+		}
+		else if (!bIsUrl)
+		{
+			strncpy(DownloadRequest.m_szNZBFilename, szNZBContent, NZBREQUESTFILENAMESIZE - 1);
+		}
+		DownloadRequest.m_szNZBFilename[NZBREQUESTFILENAMESIZE-1] = '\0';
+
 		DownloadRequest.m_szCategory[0] = '\0';
 		if (szCategory)
 		{
 			strncpy(DownloadRequest.m_szCategory, szCategory, NZBREQUESTFILENAMESIZE - 1);
 		}
 		DownloadRequest.m_szCategory[NZBREQUESTFILENAMESIZE-1] = '\0';
+
+		DownloadRequest.m_szDupeKey[0] = '\0';
+		if (!Util::EmptyStr(szDupeKey))
+		{
+			strncpy(DownloadRequest.m_szDupeKey, szDupeKey, NZBREQUESTFILENAMESIZE - 1);
+		}
+		DownloadRequest.m_szDupeKey[NZBREQUESTFILENAMESIZE-1] = '\0';
 
 		if (!m_pConnection->Send((char*)(&DownloadRequest), sizeof(DownloadRequest)))
 		{
@@ -196,7 +225,7 @@ bool RemoteClient::RequestServerDownload(const char* szFilename, const char* szC
 		}
 		else
 		{
-			m_pConnection->Send(szBuffer, iLength);
+			m_pConnection->Send(bIsUrl ? szNZBContent : szBuffer, iLength);
 			OK = ReceiveBoolResponse();
 			m_pConnection->Disconnect();
 		}
@@ -1182,45 +1211,4 @@ bool RemoteClient::RequestHistory(bool bWithHidden)
 	free(pBuf);
 
 	return true;
-}
-
-bool RemoteClient::RequestServerDownloadUrl(const char* szURL, const char* szNZBFilename, const char* szCategory, bool bAddFirst, bool bAddPaused, int iPriority)
-{
-	if (!InitConnection()) return false;
-
-	SNZBDownloadUrlRequest DownloadUrlRequest;
-	InitMessageBase(&DownloadUrlRequest.m_MessageBase, eRemoteRequestDownloadUrl, sizeof(DownloadUrlRequest));
-	DownloadUrlRequest.m_bAddFirst = htonl(bAddFirst);
-	DownloadUrlRequest.m_bAddPaused = htonl(bAddPaused);
-	DownloadUrlRequest.m_iPriority = htonl(iPriority);
-
-	strncpy(DownloadUrlRequest.m_szURL, szURL, NZBREQUESTFILENAMESIZE - 1);
-	DownloadUrlRequest.m_szURL[NZBREQUESTFILENAMESIZE-1] = '\0';
-
-	DownloadUrlRequest.m_szCategory[0] = '\0';
-	if (szCategory)
-	{
-		strncpy(DownloadUrlRequest.m_szCategory, szCategory, NZBREQUESTFILENAMESIZE - 1);
-	}
-	DownloadUrlRequest.m_szCategory[NZBREQUESTFILENAMESIZE-1] = '\0';
-
-	DownloadUrlRequest.m_szNZBFilename[0] = '\0';
-	if (szNZBFilename)
-	{
-		strncpy(DownloadUrlRequest.m_szNZBFilename, szNZBFilename, NZBREQUESTFILENAMESIZE - 1);
-	}
-	DownloadUrlRequest.m_szNZBFilename[NZBREQUESTFILENAMESIZE-1] = '\0';
-
-	bool OK = m_pConnection->Send((char*)(&DownloadUrlRequest), sizeof(DownloadUrlRequest));
-	if (OK)
-	{
-		OK = ReceiveBoolResponse();
-	}
-	else
-	{
-		perror("m_pConnection->Send");
-	}
-
-	m_pConnection->Disconnect();
-	return OK;
 }

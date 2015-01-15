@@ -61,7 +61,7 @@ extern void Reload();
 const char* g_szMessageRequestNames[] =
     { "N/A", "Download", "Pause/Unpause", "List", "Set download rate", "Dump debug", 
 		"Edit queue", "Log", "Quit", "Reload", "Version", "Post-queue", "Write log", "Scan", 
-		"Pause/Unpause postprocessor", "History", "Download URL" };
+		"Pause/Unpause postprocessor", "History" };
 
 const unsigned int g_iMessageRequestSizes[] =
     { 0,
@@ -78,9 +78,117 @@ const unsigned int g_iMessageRequestSizes[] =
 		sizeof(SNZBPostQueueRequest),
 		sizeof(SNZBWriteLogRequest),
 		sizeof(SNZBScanRequest),
-		sizeof(SNZBHistoryRequest),
-		sizeof(SNZBDownloadUrlRequest)
+		sizeof(SNZBHistoryRequest)
     };
+
+
+
+class BinCommand
+{
+protected:
+	Connection*			m_pConnection;
+	SNZBRequestBase*	m_pMessageBase;
+
+	bool				ReceiveRequest(void* pBuffer, int iSize);
+	void				SendBoolResponse(bool bSuccess, const char* szText);
+
+public:
+	virtual				~BinCommand() {}
+	virtual void		Execute() = 0;
+	void				SetConnection(Connection* pConnection) { m_pConnection = pConnection; }
+	void				SetMessageBase(SNZBRequestBase*	pMessageBase) { m_pMessageBase = pMessageBase; }
+};
+
+class DownloadBinCommand: public BinCommand
+{
+public:
+	virtual void		Execute();
+};
+
+class ListBinCommand: public BinCommand
+{
+public:
+	virtual void		Execute();
+};
+
+class LogBinCommand: public BinCommand
+{
+public:
+	virtual void		Execute();
+};
+
+class PauseUnpauseBinCommand: public BinCommand
+{
+public:
+	virtual void		Execute();
+};
+
+class EditQueueBinCommand: public BinCommand
+{
+public:
+	virtual void		Execute();
+};
+
+class SetDownloadRateBinCommand: public BinCommand
+{
+public:
+	virtual void		Execute();
+};
+
+class DumpDebugBinCommand: public BinCommand
+{
+public:
+	virtual void		Execute();
+};
+
+class ShutdownBinCommand: public BinCommand
+{
+public:
+	virtual void		Execute();
+};
+
+class ReloadBinCommand: public BinCommand
+{
+public:
+	virtual void		Execute();
+};
+
+class VersionBinCommand: public BinCommand
+{
+public:
+	virtual void		Execute();
+};
+
+class PostQueueBinCommand: public BinCommand
+{
+public:
+	virtual void		Execute();
+};
+
+class WriteLogBinCommand: public BinCommand
+{
+public:
+	virtual void		Execute();
+};
+
+class ScanBinCommand: public BinCommand
+{
+public:
+	virtual void		Execute();
+};
+
+class HistoryBinCommand: public BinCommand
+{
+public:
+	virtual void		Execute();
+};
+
+class UrlQueueBinCommand: public BinCommand
+{
+public:
+	virtual void		Execute();
+};
+
 
 //*****************************************************************
 // BinProcessor
@@ -180,10 +288,6 @@ void BinRpcProcessor::Dispatch()
 
 		case eRemoteRequestHistory:
 			command = new HistoryBinCommand();
-			break;
-
-		case eRemoteRequestDownloadUrl:
-			command = new DownloadUrlBinCommand();
 			break;
 
 		default:
@@ -330,30 +434,59 @@ void DownloadBinCommand::Execute()
 	}
 
 	int iBufLen = ntohl(DownloadRequest.m_iTrailingDataLength);
-	char* pRecvBuffer = (char*)malloc(iBufLen);
+	char* szNZBContent = (char*)malloc(iBufLen);
 
-	if (!m_pConnection->Recv(pRecvBuffer, iBufLen))
+	if (!m_pConnection->Recv(szNZBContent, iBufLen))
 	{
 		error("invalid request");
-		free(pRecvBuffer);
+		free(szNZBContent);
 		return;
 	}
 	
 	int iPriority = ntohl(DownloadRequest.m_iPriority);
 	bool bAddPaused = ntohl(DownloadRequest.m_bAddPaused);
 	bool bAddTop = ntohl(DownloadRequest.m_bAddFirst);
+	int iDupeMode = ntohl(DownloadRequest.m_iDupeMode);
+	int iDupeScore = ntohl(DownloadRequest.m_iDupeScore);
 
-	bool bOK = g_pScanner->AddExternalFile(DownloadRequest.m_szFilename, DownloadRequest.m_szCategory,
-		iPriority, NULL, 0, dmScore, NULL, bAddTop, bAddPaused, NULL, NULL, pRecvBuffer, iBufLen, NULL) != Scanner::asFailed;
+	bool bOK = false;
+
+	if (!strncasecmp(szNZBContent, "http://", 6) || !strncasecmp(szNZBContent, "https://", 7))
+	{
+		// add url
+		NZBInfo* pNZBInfo = new NZBInfo();
+		pNZBInfo->SetKind(NZBInfo::nkUrl);
+		pNZBInfo->SetURL(szNZBContent);
+		pNZBInfo->SetFilename(DownloadRequest.m_szNZBFilename);
+		pNZBInfo->SetCategory(DownloadRequest.m_szCategory);
+		pNZBInfo->SetPriority(iPriority);
+		pNZBInfo->SetAddUrlPaused(bAddPaused);
+		pNZBInfo->SetDupeKey(DownloadRequest.m_szDupeKey);
+		pNZBInfo->SetDupeScore(iDupeScore);
+		pNZBInfo->SetDupeMode((EDupeMode)iDupeMode);
+
+		DownloadQueue* pDownloadQueue = DownloadQueue::Lock();
+		pDownloadQueue->GetQueue()->Add(pNZBInfo, bAddTop);
+		pDownloadQueue->Save();
+		DownloadQueue::Unlock();
+
+		bOK = true;
+	}
+	else
+	{
+		bOK = g_pScanner->AddExternalFile(DownloadRequest.m_szNZBFilename, DownloadRequest.m_szCategory, iPriority,
+			DownloadRequest.m_szDupeKey, iDupeScore, (EDupeMode)iDupeMode, NULL, bAddTop, bAddPaused,
+			NULL, NULL, szNZBContent, iBufLen, NULL) != Scanner::asFailed;
+	}
 
 	char tmp[1024];
 	snprintf(tmp, 1024, bOK ? "Collection %s added to queue" : "Download Request failed for %s",
-		Util::BaseFileName(DownloadRequest.m_szFilename));
+		Util::BaseFileName(DownloadRequest.m_szNZBFilename));
 	tmp[1024-1] = '\0';
 
 	SendBoolResponse(bOK, tmp);
 
-	free(pRecvBuffer);
+	free(szNZBContent);
 }
 
 void ListBinCommand::Execute()
@@ -1081,43 +1214,4 @@ void HistoryBinCommand::Execute()
 	}
 
 	free(buf);
-}
-
-void DownloadUrlBinCommand::Execute()
-{
-	SNZBDownloadUrlRequest DownloadUrlRequest;
-	if (!ReceiveRequest(&DownloadUrlRequest, sizeof(DownloadUrlRequest)))
-	{
-		return;
-	}
-
-	URL url(DownloadUrlRequest.m_szURL);
-	if (!url.IsValid())
-	{
-		char tmp[1024];
-		snprintf(tmp, 1024, "Url %s is not valid", DownloadUrlRequest.m_szURL);
-		tmp[1024-1] = '\0';
-		SendBoolResponse(true, tmp);
-		return;
-	}
-
-	NZBInfo* pNZBInfo = new NZBInfo();
-	pNZBInfo->SetKind(NZBInfo::nkUrl);
-	pNZBInfo->SetURL(DownloadUrlRequest.m_szURL);
-	pNZBInfo->SetFilename(DownloadUrlRequest.m_szNZBFilename);
-	pNZBInfo->SetCategory(DownloadUrlRequest.m_szCategory);
-	pNZBInfo->SetPriority(ntohl(DownloadUrlRequest.m_iPriority));
-	pNZBInfo->SetAddUrlPaused(ntohl(DownloadUrlRequest.m_bAddPaused));
-
-	DownloadQueue* pDownloadQueue = DownloadQueue::Lock();
-	pDownloadQueue->GetQueue()->Add(pNZBInfo, ntohl(DownloadUrlRequest.m_bAddFirst));
-	pDownloadQueue->Save();
-	DownloadQueue::Unlock();
-
-	info("Request: Queue url %s", DownloadUrlRequest.m_szURL);
-
-	char tmp[1024];
-	snprintf(tmp, 1024, "Url %s added to queue", DownloadUrlRequest.m_szURL);
-	tmp[1024-1] = '\0';
-	SendBoolResponse(true, tmp);
 }
