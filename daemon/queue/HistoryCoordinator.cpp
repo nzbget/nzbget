@@ -607,19 +607,20 @@ bool HistoryCoordinator::HistorySetName(HistoryInfo* pHistoryInfo, const char* s
 	pHistoryInfo->GetName(szNiceName, 1024);
 	debug("Setting name '%s' for '%s'", szText, szNiceName);
 
-	if (!(pHistoryInfo->GetKind() == HistoryInfo::hkNzb || pHistoryInfo->GetKind() == HistoryInfo::hkUrl))
-	{
-		error("Could not set name for %s: history item has wrong type", szNiceName);
-		return false;
-	}
-
 	if (Util::EmptyStr(szText))
 	{
-		error("Could not rename %s. The new name cannot be empty", pHistoryInfo->GetNZBInfo()->GetName());
+		error("Could not rename %s. The new name cannot be empty", szNiceName);
 		return false;
 	}
 
-	pHistoryInfo->GetNZBInfo()->SetName(szText);
+	if (pHistoryInfo->GetKind() == HistoryInfo::hkNzb || pHistoryInfo->GetKind() == HistoryInfo::hkUrl)
+	{
+		pHistoryInfo->GetNZBInfo()->SetName(szText);
+	}
+	else if (pHistoryInfo->GetKind() == HistoryInfo::hkDup)
+	{
+		pHistoryInfo->GetDupInfo()->SetName(szText);
+	}
 
 	return true;
 }
