@@ -2,7 +2,7 @@
  *  This file is part of nzbget
  *
  *  Copyright (C) 2004 Sven Henkel <sidddy@users.sourceforge.net>
- *  Copyright (C) 2007-2014 Andrey Prygunkov <hugbug@users.sourceforge.net>
+ *  Copyright (C) 2007-2015 Andrey Prygunkov <hugbug@users.sourceforge.net>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -1196,6 +1196,10 @@ PostInfo::PostInfo()
 	m_bRequestParCheck = false;
 	m_bForceParFull = false;
 	m_bForceRepair = false;
+	m_bParRepaired = false;
+	m_bUnpackTried = false;
+	m_bPassListTried = false;
+	m_eLastUnpackStatus = 0;
 	m_szProgressLabel = strdup("");
 	m_iFileProgress = 0;
 	m_iStageProgress = 0;

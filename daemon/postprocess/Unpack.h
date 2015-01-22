@@ -1,7 +1,7 @@
 /*
  *  This file is part of nzbget
  *
- *  Copyright (C) 2013-2014 Andrey Prygunkov <hugbug@users.sourceforge.net>
+ *  Copyright (C) 2013-2015 Andrey Prygunkov <hugbug@users.sourceforge.net>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -80,19 +80,22 @@ private:
 	bool				m_bUnpackOK;
 	bool				m_bUnpackStartError;
 	bool				m_bUnpackSpaceError;
-	bool				m_bUnpackPasswordError4;
-	bool				m_bUnpackPasswordError5;
+	bool				m_bUnpackDecryptError;
+	bool				m_bUnpackPasswordError;
 	bool				m_bCleanedUpDisk;
 	bool				m_bAutoTerminated;
 	EUnpacker			m_eUnpacker;
 	bool				m_bFinalDirCreated;
 	FileList			m_JoinedFiles;
+	bool				m_bPassListTried;
 
 protected:
 	virtual bool		ReadLine(char* szBuf, int iBufSize, FILE* pStream);
 	virtual void		AddMessage(Message::EKind eKind, const char* szText);
-	void				ExecuteUnrar();
-	void				ExecuteSevenZip(bool bMultiVolumes);
+	void				ExecuteUnpack(EUnpacker eUnpacker, const char* szPassword, bool bMultiVolumes);
+	void				ExecuteUnrar(const char* szPassword);
+	void				ExecuteSevenZip(const char* szPassword, bool bMultiVolumes);
+	void				UnpackArchives(EUnpacker eUnpacker, bool bMultiVolumes);
 	void				JoinSplittedFiles();
 	bool				JoinFile(const char* szFragBaseName);
 	void				Completed();

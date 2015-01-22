@@ -1,7 +1,7 @@
 /*
  *  This file is part of nzbget
  *
- *  Copyright (C) 2007-2014 Andrey Prygunkov <hugbug@users.sourceforge.net>
+ *  Copyright (C) 2007-2015 Andrey Prygunkov <hugbug@users.sourceforge.net>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -441,6 +441,7 @@ void ParCoordinator::ParCheckCompleted()
 		pPostInfo->GetNZBInfo()->GetParStatus() <= NZBInfo::psSkipped)
 	{
 		pPostInfo->GetNZBInfo()->SetParStatus(NZBInfo::psSuccess);
+		pPostInfo->SetParRepaired(m_ParChecker.GetStatus() == ParChecker::psRepaired);
 	}
 	else if (m_ParChecker.GetStatus() == ParChecker::psRepairPossible &&
 		pPostInfo->GetNZBInfo()->GetParStatus() != NZBInfo::psFailure)
@@ -457,7 +458,7 @@ void ParCoordinator::ParCheckCompleted()
 	int iParSec = (int)(time(NULL) - m_ParChecker.GetParTime()) - iWaitTime;
 	pPostInfo->GetNZBInfo()->SetParSec(pPostInfo->GetNZBInfo()->GetParSec() + iParSec);
 
-	pPostInfo->GetNZBInfo()->SetParFull(!m_ParChecker.GetParQuick());
+	pPostInfo->GetNZBInfo()->SetParFull(m_ParChecker.GetParFull());
 
 	pPostInfo->SetWorking(false);
 	pPostInfo->SetStage(PostInfo::ptQueued);

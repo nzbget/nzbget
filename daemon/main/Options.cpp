@@ -181,6 +181,7 @@ static const char* OPTION_UNPACK				= "Unpack";
 static const char* OPTION_UNPACKCLEANUPDISK		= "UnpackCleanupDisk";
 static const char* OPTION_UNRARCMD				= "UnrarCmd";
 static const char* OPTION_SEVENZIPCMD			= "SevenZipCmd";
+static const char* OPTION_UNPACKPASSFILE		= "UnpackPassFile";
 static const char* OPTION_UNPACKPAUSEQUEUE		= "UnpackPauseQueue";
 static const char* OPTION_SCRIPTORDER			= "ScriptOrder";
 static const char* OPTION_POSTSCRIPT			= "PostScript";
@@ -570,6 +571,7 @@ Options::Options(int argc, char* argv[])
 	m_bUnpackCleanupDisk	= false;
 	m_szUnrarCmd			= NULL;
 	m_szSevenZipCmd			= NULL;
+	m_szUnpackPassFile		= NULL;
 	m_bUnpackPauseQueue		= false;
 	m_szExtCleanupDisk		= NULL;
 	m_szParIgnoreExt		= NULL;
@@ -693,6 +695,7 @@ Options::~Options()
 	free(m_szAddDupeKey);
 	free(m_szUnrarCmd);
 	free(m_szSevenZipCmd);
+	free(m_szUnpackPassFile);
 	free(m_szExtCleanupDisk);
 	free(m_szParIgnoreExt);
 
@@ -846,6 +849,7 @@ void Options::InitDefault()
 	SetOption(OPTION_UNRARCMD, "unrar");
 	SetOption(OPTION_SEVENZIPCMD, "7z");
 #endif
+	SetOption(OPTION_UNPACKPASSFILE, "");
 	SetOption(OPTION_UNPACKPAUSEQUEUE, "no");
 	SetOption(OPTION_EXTCLEANUPDISK, "");
 	SetOption(OPTION_PARIGNOREEXT, "");
@@ -1030,6 +1034,7 @@ void Options::InitOptions()
 	m_szLogFile				= strdup(GetOption(OPTION_LOGFILE));
 	m_szUnrarCmd			= strdup(GetOption(OPTION_UNRARCMD));
 	m_szSevenZipCmd			= strdup(GetOption(OPTION_SEVENZIPCMD));
+	m_szUnpackPassFile		= strdup(GetOption(OPTION_UNPACKPASSFILE));
 	m_szExtCleanupDisk		= strdup(GetOption(OPTION_EXTCLEANUPDISK));
 	m_szParIgnoreExt		= strdup(GetOption(OPTION_PARIGNOREEXT));
 
@@ -2883,6 +2888,11 @@ void Options::CheckOptions()
 		ConfigError("Options \"ArticleCache\" and \"ParBuffer\" in total cannot use more than 1900MB of memory in 32-Bit mode. Changed to 1500 and 400");
 		m_iArticleCache = 1900;
 		m_iParBuffer = 400;
+	}
+
+	if (!Util::EmptyStr(m_szUnpackPassFile) && !Util::FileExists(m_szUnpackPassFile))
+	{
+		ConfigError("Invalid value for option \"UnpackPassFile\": %s. File not found", m_szUnpackPassFile);
 	}
 }
 

@@ -1,7 +1,7 @@
 /*
  *  This file is part of nzbget
  *
- *  Copyright (C) 2013-2014 Andrey Prygunkov <hugbug@users.sourceforge.net>
+ *  Copyright (C) 2013-2015 Andrey Prygunkov <hugbug@users.sourceforge.net>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -118,11 +118,17 @@ void UnpackController::Run()
 	strncpy(m_szName, m_pPostInfo->GetNZBInfo()->GetName(), 1024);
 	m_szName[1024-1] = '\0';
 
-	m_bUnpackPasswordError4 = true;
 	m_bCleanedUpDisk = false;
 	m_szPassword[0] = '\0';
 	m_szFinalDir[0] = '\0';
 	m_bFinalDirCreated = false;
+	m_bUnpackOK = true;
+	m_bUnpackStartError = false;
+	m_bUnpackSpaceError = false;
+	m_bUnpackDecryptError = false;
+	m_bUnpackPasswordError = false;
+	m_bAutoTerminated = false;
+	m_bPassListTried = false;
 
 	NZBParameter* pParameter = m_pPostInfo->GetNZBInfo()->GetParameters()->Find("*Unpack:", false);
 	bool bUnpack = !(pParameter && !strcasecmp(pParameter->GetValue(), "no"));
@@ -157,32 +163,32 @@ void UnpackController::Run()
 
 	bool bHasFiles = m_bHasRarFiles || m_bHasNonStdRarFiles || m_bHasSevenZipFiles || m_bHasSevenZipMultiFiles || m_bHasSplittedFiles;
 
-	if (bUnpack && bHasFiles)
+	if (m_pPostInfo->GetUnpackTried() && !m_pPostInfo->GetParRepaired() &&
+		(!Util::EmptyStr(m_szPassword) || Util::EmptyStr(g_pOptions->GetUnpackPassFile()) || m_pPostInfo->GetPassListTried()))
 	{
-		m_bUnpackOK = true;
-		m_bUnpackStartError = false;
-		m_bUnpackSpaceError = false;
-		m_bUnpackPasswordError4 = false;
-		m_bUnpackPasswordError5 = false;
-		m_bAutoTerminated = false;
-
+		PrintMessage(Message::mkError, "%s failed: second unpack attempt skipped due to par-check not repaired anything", m_szInfoNameUp);
+		m_pPostInfo->GetNZBInfo()->SetUnpackStatus((NZBInfo::EUnpackStatus)m_pPostInfo->GetLastUnpackStatus());
+		m_pPostInfo->SetStage(PostInfo::ptQueued);
+	}
+	else if (bUnpack && bHasFiles)
+	{
 		PrintMessage(Message::mkInfo, "Unpacking %s", m_szName);
 
 		CreateUnpackDir();
 
 		if (m_bHasRarFiles || m_bHasNonStdRarFiles)
 		{
-			ExecuteUnrar();
+			UnpackArchives(upUnrar, false);
 		}
 
 		if (m_bHasSevenZipFiles && m_bUnpackOK)
 		{
-			ExecuteSevenZip(false);
+			UnpackArchives(upSevenZip, false);
 		}
 
 		if (m_bHasSevenZipMultiFiles && m_bUnpackOK)
 		{
-			ExecuteSevenZip(true);
+			UnpackArchives(upSevenZip, true);
 		}
 
 		if (m_bHasSplittedFiles && m_bUnpackOK)
@@ -218,7 +224,80 @@ void UnpackController::Run()
 	m_pPostInfo->SetWorking(false);
 }
 
-void UnpackController::ExecuteUnrar()
+void UnpackController::UnpackArchives(EUnpacker eUnpacker, bool bMultiVolumes)
+{
+	if (!m_pPostInfo->GetUnpackTried() || m_pPostInfo->GetParRepaired())
+	{
+		ExecuteUnpack(eUnpacker, m_szPassword, bMultiVolumes);
+		if (!m_bUnpackOK && m_bHasParFiles && !m_bUnpackPasswordError &&
+			m_pPostInfo->GetNZBInfo()->GetParStatus() <= NZBInfo::psSkipped)
+		{
+			// for rar4- or 7z-archives try par-check first, before trying password file
+			return;
+		}
+	}
+	else
+	{
+		m_bUnpackOK = false;
+		m_bUnpackDecryptError = m_pPostInfo->GetLastUnpackStatus() == (int)NZBInfo::usPassword;
+	}
+
+	if (!m_bUnpackOK && !m_bUnpackStartError && !m_bUnpackSpaceError &&
+		(m_bUnpackDecryptError || m_bUnpackPasswordError) &&
+		(!GetTerminated() || m_bAutoTerminated) &&
+		Util::EmptyStr(m_szPassword) && !Util::EmptyStr(g_pOptions->GetUnpackPassFile()))
+	{
+		FILE* infile = fopen(g_pOptions->GetUnpackPassFile(), FOPEN_RB);
+		if (!infile)
+		{
+			PrintMessage(Message::mkError, "Could not open file %s", g_pOptions->GetUnpackPassFile());
+			return;
+		}
+
+		char szPassword[512];
+		while (!m_bUnpackOK && !m_bUnpackStartError && !m_bUnpackSpaceError &&
+			(m_bUnpackDecryptError || m_bUnpackPasswordError) &&
+			fgets(szPassword, sizeof(szPassword) - 1, infile))
+		{
+			// trim trailing <CR> and <LF>
+			char* szEnd = szPassword + strlen(szPassword) - 1;
+			while (szEnd >= szPassword && (*szEnd == '\n' || *szEnd == '\r')) *szEnd-- = '\0';
+
+			if (!Util::EmptyStr(szPassword))
+			{
+				if (IsStopped() && m_bAutoTerminated)
+				{
+					ScriptController::Resume();
+					Thread::Resume();
+				}
+				m_bUnpackDecryptError = false;
+				m_bUnpackPasswordError = false;
+				m_bAutoTerminated = false;
+				PrintMessage(Message::mkInfo, "Trying password %s for %s", szPassword, m_szName);
+				ExecuteUnpack(eUnpacker, szPassword, bMultiVolumes);
+			}
+		}
+
+		fclose(infile);
+		m_bPassListTried = !IsStopped() || m_bAutoTerminated;
+	}
+}
+
+void UnpackController::ExecuteUnpack(EUnpacker eUnpacker, const char* szPassword, bool bMultiVolumes)
+{
+	switch (eUnpacker)
+	{
+		case upUnrar:
+			ExecuteUnrar(szPassword);
+			break;
+
+		case upSevenZip:
+			ExecuteSevenZip(szPassword, bMultiVolumes);
+			break;
+	}
+}
+
+void UnpackController::ExecuteUnrar(const char* szPassword)
 {
 	// Format: 
 	//   unrar x -y -p- -o+ *.rar ./_unpack/
@@ -236,10 +315,10 @@ void UnpackController::ExecuteUnrar()
 
 	params.push_back(strdup("-y"));
 
-	if (strlen(m_szPassword) > 0)
+	if (!Util::EmptyStr(szPassword))
 	{
 		char szPasswordParam[1024];
-		snprintf(szPasswordParam, 1024, "-p%s", m_szPassword);
+		snprintf(szPasswordParam, 1024, "-p%s", szPassword);
 		szPasswordParam[1024-1] = '\0';
 		params.push_back(strdup(szPasswordParam));
 	}
@@ -264,6 +343,7 @@ void UnpackController::ExecuteUnrar()
 	SetArgs((const char**)&params.front(), false);
 	SetScript(params.at(0));
 	SetLogPrefix("Unrar");
+	ResetEnv();
 
 	m_bAllOKMessageReceived = false;
 	m_eUnpacker = upUnrar;
@@ -276,7 +356,7 @@ void UnpackController::ExecuteUnrar()
 	m_bUnpackOK = iExitCode == 0 && m_bAllOKMessageReceived && !GetTerminated();
 	m_bUnpackStartError = iExitCode == -1;
 	m_bUnpackSpaceError = iExitCode == 5;
-	m_bUnpackPasswordError5 |= iExitCode == 11; // only for rar5-archives
+	m_bUnpackPasswordError |= iExitCode == 11; // only for rar5-archives
 
 	if (!m_bUnpackOK && iExitCode > 0)
 	{
@@ -284,7 +364,7 @@ void UnpackController::ExecuteUnrar()
 	}
 }
 
-void UnpackController::ExecuteSevenZip(bool bMultiVolumes)
+void UnpackController::ExecuteSevenZip(const char* szPassword, bool bMultiVolumes)
 {
 	// Format: 
 	//   7z x -y -p- -o./_unpack *.7z
@@ -304,10 +384,10 @@ void UnpackController::ExecuteSevenZip(bool bMultiVolumes)
 
 	params.push_back(strdup("-y"));
 
-	if (strlen(m_szPassword) > 0)
+	if (!Util::EmptyStr(szPassword))
 	{
 		char szPasswordParam[1024];
-		snprintf(szPasswordParam, 1024, "-p%s", m_szPassword);
+		snprintf(szPasswordParam, 1024, "-p%s", szPassword);
 		szPasswordParam[1024-1] = '\0';
 		params.push_back(strdup(szPasswordParam));
 	}
@@ -326,6 +406,7 @@ void UnpackController::ExecuteSevenZip(bool bMultiVolumes)
 	params.push_back(NULL);
 	SetArgs((const char**)&params.front(), false);
 	SetScript(params.at(0));
+	ResetEnv();
 
 	m_bAllOKMessageReceived = false;
 	m_eUnpacker = upSevenZip;
@@ -567,11 +648,13 @@ void UnpackController::Completed()
 		if (!m_bUnpackOK && 
 			(m_pPostInfo->GetNZBInfo()->GetParStatus() <= NZBInfo::psSkipped ||
 			 !m_pPostInfo->GetNZBInfo()->GetParFull()) &&
-			!m_bUnpackStartError && !m_bUnpackSpaceError &&
-			(!m_bUnpackPasswordError5 || m_bUnpackPasswordError4) &&
+			!m_bUnpackStartError && !m_bUnpackSpaceError && !m_bUnpackPasswordError &&
 			(!GetTerminated() || m_bAutoTerminated) && m_bHasParFiles)
 		{
-			RequestParCheck(true);
+			RequestParCheck(!Util::EmptyStr(m_szPassword) ||
+				Util::EmptyStr(g_pOptions->GetUnpackPassFile()) || m_bPassListTried ||
+				!(m_bUnpackDecryptError || m_bUnpackPasswordError) ||
+				m_pPostInfo->GetNZBInfo()->GetParStatus() > NZBInfo::psSkipped);
 		}
 		else
 #endif
@@ -579,8 +662,7 @@ void UnpackController::Completed()
 			PrintMessage(Message::mkError, "%s failed", m_szInfoNameUp);
 			m_pPostInfo->GetNZBInfo()->SetUnpackStatus(
 				m_bUnpackSpaceError ? NZBInfo::usSpace :
-				m_bUnpackPasswordError5 || (m_bUnpackPasswordError4 && 
-					m_pPostInfo->GetNZBInfo()->GetParStatus() == NZBInfo::psSuccess) ? NZBInfo::usPassword :
+				m_bUnpackPasswordError || m_bUnpackDecryptError ? NZBInfo::usPassword :
 				NZBInfo::usFailure);
 			m_pPostInfo->SetStage(PostInfo::ptQueued);
 		}
@@ -590,10 +672,15 @@ void UnpackController::Completed()
 #ifndef DISABLE_PARCHECK
 void UnpackController::RequestParCheck(bool bForceRepair)
 {
-	PrintMessage(Message::mkInfo, "%s requested par-check/repair", m_szInfoNameUp);
+	PrintMessage(Message::mkInfo, "%s requested %s", m_szInfoNameUp, bForceRepair ? "par-check with forced repair" : "par-check/repair");
 	m_pPostInfo->SetRequestParCheck(true);
 	m_pPostInfo->SetForceRepair(bForceRepair);
 	m_pPostInfo->SetStage(PostInfo::ptFinished);
+	m_pPostInfo->SetUnpackTried(true);
+	m_pPostInfo->SetPassListTried(m_bPassListTried);
+	m_pPostInfo->SetLastUnpackStatus((int)(m_bUnpackSpaceError ? NZBInfo::usSpace :
+		m_bUnpackPasswordError || m_bUnpackDecryptError ? NZBInfo::usPassword :
+		NZBInfo::usFailure));
 }
 #endif
 
@@ -863,6 +950,7 @@ void UnpackController::AddMessage(Message::EKind eKind, const char* szText)
 	char szMsgText[1024];
 	strncpy(szMsgText, szText, 1024);
 	szMsgText[1024-1] = '\0';
+	int iLen = strlen(szText);
 	
 	// Modify unrar messages for better readability:
 	// remove the destination path part from message "Extracting file.xxx"
@@ -900,16 +988,21 @@ void UnpackController::AddMessage(Message::EKind eKind, const char* szText)
 		(!strncmp(szText, "Unrar: Checksum error in the encrypted file", 42) ||
 		 !strncmp(szText, "Unrar: CRC failed in the encrypted file", 39)))
 	{
-		m_bUnpackPasswordError4 = true;
+		m_bUnpackDecryptError = true;
 	}
 
 	if (m_eUnpacker == upUnrar && !strncmp(szText, "Unrar: The specified password is incorrect.'", 43))
 	{
-		m_bUnpackPasswordError5 = true;
+		m_bUnpackPasswordError = true;
 	}
 
-	int iLen = strlen(szText);
-	if (m_eUnpacker == upUnrar && !IsStopped() && (m_bUnpackPasswordError4 || m_bUnpackPasswordError5 ||
+	if (m_eUnpacker == upSevenZip &&
+		(iLen > 18 && !strncmp(szText + iLen - 45, "Data Error in encrypted file. Wrong password?", 45)))
+	{
+		m_bUnpackDecryptError = true;
+	}
+
+	if (!IsStopped() && (m_bUnpackDecryptError || m_bUnpackPasswordError ||
 		strstr(szText, " : packed data CRC failed in volume") ||
 		strstr(szText, " : packed data checksum error in volume") ||
 		(iLen > 13 && !strncmp(szText + iLen - 13, " - CRC failed", 13)) ||

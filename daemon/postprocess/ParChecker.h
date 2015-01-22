@@ -1,7 +1,7 @@
 /*
  *  This file is part of nzbget
  *
- *  Copyright (C) 2007-2014 Andrey Prygunkov <hugbug@users.sourceforge.net>
+ *  Copyright (C) 2007-2015 Andrey Prygunkov <hugbug@users.sourceforge.net>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -119,6 +119,7 @@ private:
 	bool				m_bHasDamagedFiles;
 	bool				m_bParQuick;
 	bool				m_bForceRepair;
+	bool				m_bParFull;
 
 	void				Cleanup();
 	EStatus				RunParCheckAll();
@@ -176,6 +177,8 @@ public:
 	bool				GetParQuick() { return m_bParQuick; }
 	void				SetForceRepair(bool bForceRepair) { m_bForceRepair = bForceRepair; }
 	bool				GetForceRepair() { return m_bForceRepair; }
+	void				SetParFull(bool bParFull) { m_bParFull = bParFull; }
+	bool				GetParFull() { return m_bParFull; }
 	EStatus				GetStatus() { return m_eStatus; }
 	void				AddParFile(const char* szParFilename);
 	void				QueueChanged();

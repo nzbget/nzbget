@@ -1,7 +1,7 @@
 /*
  *  This file is part of nzbget
  *
- *  Copyright (C) 2007-2014 Andrey Prygunkov <hugbug@users.sourceforge.net>
+ *  Copyright (C) 2007-2015 Andrey Prygunkov <hugbug@users.sourceforge.net>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -632,6 +632,12 @@ void ScriptController::Terminate()
 		// wait 60 seconds for process to terminate
 		WaitForSingleObject(m_hProcess, 60 * 1000);
 	}
+	else
+	{
+		DWORD dExitCode = 0;
+		GetExitCodeProcess(m_hProcess, &dExitCode);
+		bOK = dExitCode != STILL_ACTIVE;
+	}
 #else
 	pid_t hKillProcess = m_hProcess;
 	if (getpgid(hKillProcess) == hKillProcess)
@@ -677,6 +683,12 @@ void ScriptController::Detach()
 	fclose(pReadpipe);
 }
 	
+void ScriptController::Resume()
+{
+	m_bTerminated = false;
+	m_bDetached = false;
+	m_hProcess = 0;
+}
 
 bool ScriptController::ReadLine(char* szBuf, int iBufSize, FILE* pStream)
 {
