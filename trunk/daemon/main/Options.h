@@ -329,6 +329,7 @@ private:
 	bool				m_bUnpackCleanupDisk;
 	char*				m_szUnrarCmd;
 	char*				m_szSevenZipCmd;
+	char*				m_szUnpackPassFile;
 	bool				m_bUnpackPauseQueue;
 	char*				m_szExtCleanupDisk;
 	char*				m_szParIgnoreExt;
@@ -508,6 +509,7 @@ public:
 	bool				GetUnpackCleanupDisk() { return m_bUnpackCleanupDisk; }
 	const char*			GetUnrarCmd() { return m_szUnrarCmd; }
 	const char*			GetSevenZipCmd() { return m_szSevenZipCmd; }
+	const char*			GetUnpackPassFile() { return m_szUnpackPassFile; }
 	bool				GetUnpackPauseQueue() { return m_bUnpackPauseQueue; }
 	const char*			GetExtCleanupDisk() { return m_szExtCleanupDisk; }
 	const char*			GetParIgnoreExt() { return m_szParIgnoreExt; }

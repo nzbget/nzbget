@@ -1,7 +1,7 @@
 /*
  *  This file is part of nzbget
  *
- *  Copyright (C) 2007-2014 Andrey Prygunkov <hugbug@users.sourceforge.net>
+ *  Copyright (C) 2007-2015 Andrey Prygunkov <hugbug@users.sourceforge.net>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -192,7 +192,9 @@ bool Repairer::ScanDataFile(DiskFile *diskfile, Par2RepairerSourceFile* &sourcef
 		{
 			sig_done(name, iAvailableBlocks, sourcefile->BlockCount());
 			sig_progress(1000.0);
-			matchtype = eFileStatus == ParChecker::fsSuccess ? eFullMatch : ParChecker::fsPartial ? ePartialMatch : eNoMatch;
+			matchtype = eFileStatus == ParChecker::fsSuccess ? eFullMatch :
+				eFileStatus == ParChecker::fsPartial ? ePartialMatch : eNoMatch;
+			m_pOwner->SetParFull(false);
 			return true;
 		}
 	}
@@ -414,6 +416,7 @@ ParChecker::ParChecker()
 	m_eStage = ptLoadingPars;
 	m_bParQuick = false;
 	m_bForceRepair = false;
+	m_bParFull = false;
 }
 
 ParChecker::~ParChecker()
@@ -494,6 +497,7 @@ ParChecker::EStatus ParChecker::RunParCheckAll()
 
 	EStatus eAllStatus = psRepairNotNeeded;
 	m_bCancelled = false;
+	m_bParFull = true;
 
 	for (ParCoordinator::ParFileList::iterator it = fileList.begin(); it != fileList.end(); it++)
 	{
@@ -1294,7 +1298,7 @@ void ParChecker::DeleteLeftovers()
  *   download with CRC stored in PAR2-file;
  * - for partially downloaded files the CRCs of articles are compared with block-CRCs stored
  *   in PAR2-file;
- * - for completely failed files (not a single successful artice) no verification is needed at all.
+ * - for completely failed files (not a single successful article) no verification is needed at all.
  *
  * Limitation of the function:
  * This function requires every block in the file to have an unique CRC (across all blocks
