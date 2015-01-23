@@ -479,12 +479,20 @@ void HistoryCoordinator::HistoryRedownload(DownloadQueue* pDownloadQueue, Histor
 		return;
 	}
 
+	if (pHistoryInfo->GetKind() != HistoryInfo::hkNzb)
+	{
+		char szNiceName[1024];
+		pHistoryInfo->GetName(szNiceName, 1024);
+		error("Could not return %s from history back to queue: history item has wrong type", szNiceName);
+		return;
+	}
+
 	NZBInfo* pNZBInfo = pHistoryInfo->GetNZBInfo();
 	bool bPaused = bRestorePauseState && pNZBInfo->GetDeletePaused();
 
 	if (!Util::FileExists(pNZBInfo->GetQueuedFilename()))
 	{
-		error("Could not return collection %s from history back to queue: could not find source nzb-file %s",
+		error("Could not return %s from history back to queue: could not find source nzb-file %s",
 			pNZBInfo->GetName(), pNZBInfo->GetQueuedFilename());
 		return;
 	}
@@ -492,12 +500,12 @@ void HistoryCoordinator::HistoryRedownload(DownloadQueue* pDownloadQueue, Histor
 	NZBFile* pNZBFile = NZBFile::Create(pNZBInfo->GetQueuedFilename(), "");
 	if (pNZBFile == NULL)
 	{
-		error("Could not return collection %s from history back to queue: could not parse nzb-file",
+		error("Could not return %s from history back to queue: could not parse nzb-file",
 			pNZBInfo->GetName());
 		return;
 	}
 
-	info("Returning collection %s from history back to queue", pNZBInfo->GetName());
+	info("Returning %s from history back to queue", pNZBInfo->GetName());
 
 	for (FileList::iterator it = pNZBFile->GetNZBInfo()->GetFileList()->begin(); it != pNZBFile->GetNZBInfo()->GetFileList()->end(); it++)
 	{
