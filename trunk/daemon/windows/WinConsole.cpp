@@ -1,7 +1,7 @@
 /*
  *  This file is part of nzbget
  *
- *  Copyright (C) 2014 Andrey Prygunkov <hugbug@users.sourceforge.net>
+ *  Copyright (C) 2014-2015 Andrey Prygunkov <hugbug@users.sourceforge.net>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -431,8 +431,15 @@ void WinConsole::ShowMenu()
 
 void WinConsole::ShowWebUI()
 {
+	const char* szIP = g_pOptions->GetControlIP();
+	if (!strcmp(g_pOptions->GetControlIP(), "localhost") ||
+		!strcmp(g_pOptions->GetControlIP(), "0.0.0.0"))
+	{
+		szIP = "127.0.0.1";
+	}
+
 	char szURL[1024];
-	snprintf(szURL, 1024, "http://127.0.0.1:%i", g_pOptions->GetControlPort());
+	snprintf(szURL, 1024, "http://%s:%i", szIP, g_pOptions->GetControlPort());
 	szURL[1024-1] = '\0';
 	ShellExecute(0, "open", szURL, NULL, NULL, SW_SHOWNORMAL);
 }
