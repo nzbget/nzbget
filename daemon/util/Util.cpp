@@ -1,7 +1,7 @@
 /*
  *  This file is part of nzbget
  *
- *  Copyright (C) 2007-2014 Andrey Prygunkov <hugbug@users.sourceforge.net>
+ *  Copyright (C) 2007-2015 Andrey Prygunkov <hugbug@users.sourceforge.net>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -258,6 +258,14 @@ StringBuilder::StringBuilder()
 StringBuilder::~StringBuilder()
 {
 	free(m_szBuffer);
+}
+
+void StringBuilder::Clear()
+{
+	free(m_szBuffer);
+	m_szBuffer = NULL;
+	m_iBufferSize = 0;
+	m_iUsedSize = 0;
 }
 
 void StringBuilder::Append(const char* szStr)
