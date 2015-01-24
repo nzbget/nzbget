@@ -89,7 +89,7 @@ BEGIN
     CTEXT           "Version 15.0-testing-r1200",IDC_ABOUT_VERSION,16,70,144,8
     CTEXT           "Lightweight usenet downloader",IDC_STATIC,16,83,144,8
     CTEXT           "http://nzbget.net",IDC_ABOUT_HOMEPAGE,55,144,64,9,SS_NOTIFY
-    CTEXT           "Copyright © 2007-2014 Andrey Prygunkov",IDC_STATIC,16,156,144,8
+    CTEXT           "Copyright © 2007-2015 Andrey Prygunkov",IDC_STATIC,16,156,144,8
     ICON            "",IDC_ABOUT_ICON,67,7,21,20
     CTEXT           "NZBGet",IDC_ABOUT_NAME,16,51,144,16
     CTEXT           "The package includes other software; see program's folder for licenses.",IDC_STATIC,16,121,144,20
