@@ -1186,12 +1186,14 @@ bool RemoteClient::RequestHistory(bool bWithHidden)
 
 				const char* szParStatusText[] = { "", "", ", Par failed", ", Par successful", ", Repair possible", ", Repair needed" };
 				const char* szScriptStatusText[] = { "", ", Script status unknown", ", Script failed", ", Script successful" };
+				int iParStatus = ntohl(pListAnswer->m_iParStatus);
+				int iScriptStatus = ntohl(pListAnswer->m_iScriptStatus);
 
 				printf("[%i] %s (%s%s%s%s%s)\n", ntohl(pListAnswer->m_iID), szNicename, 
 					(eKind == HistoryInfo::hkDup ? "Hidden, " : ""),
 					(eKind == HistoryInfo::hkDup ? "" : szFiles), szSize, 
-					szParStatusText[ntohl(pListAnswer->m_iParStatus)], 
-					szScriptStatusText[ntohl(pListAnswer->m_iScriptStatus)]);
+					(eKind == HistoryInfo::hkDup ? "" : szParStatusText[ntohl(pListAnswer->m_iParStatus)]),
+					(eKind == HistoryInfo::hkDup ? "" : szScriptStatusText[ntohl(pListAnswer->m_iScriptStatus)]));
 			}
 			else if (eKind == HistoryInfo::hkUrl)
 			{
