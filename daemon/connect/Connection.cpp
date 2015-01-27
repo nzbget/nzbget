@@ -2,7 +2,7 @@
  *  This file is part of nzbget
  *
  *  Copyright (C) 2004 Sven Henkel <sidddy@users.sourceforge.net>
- *  Copyright (C) 2007-2014 Andrey Prygunkov <hugbug@users.sourceforge.net>
+ *  Copyright (C) 2007-2015 Andrey Prygunkov <hugbug@users.sourceforge.net>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -49,6 +49,7 @@
 #include <sys/time.h>
 #include <arpa/inet.h>
 #include <netinet/in.h>
+#include <fcntl.h>
 #endif
 
 #include "nzbget.h"
@@ -554,8 +555,7 @@ bool Connection::DoConnect()
 		m_iSocket = socket(addr->ai_family, addr->ai_socktype, addr->ai_protocol);
 		if (m_iSocket != INVALID_SOCKET)
 		{
-			res = connect(m_iSocket , addr->ai_addr, addr->ai_addrlen);
-			if (res != -1) 
+			if (ConnectWithTimeout(addr->ai_addr, addr->ai_addrlen))
 			{
 				// Connection established
 				break;
@@ -600,8 +600,7 @@ bool Connection::DoConnect()
 		return false;
 	}
 
-	int res = connect(m_iSocket , (struct sockaddr *) & sSocketAddress, sizeof(sSocketAddress));
-	if (res == -1)
+	if (!ConnectWithTimeout(&sSocketAddress, sizeof(sSocketAddress)))
 	{
 		ReportError("Connection to %s failed", m_szHost, true, 0);
 		closesocket(m_iSocket);
@@ -610,22 +609,153 @@ bool Connection::DoConnect()
 	}
 #endif
 
-#ifdef WIN32
-	int MSecVal = m_iTimeout * 1000;
-	int err = setsockopt(m_iSocket, SOL_SOCKET, SO_RCVTIMEO, (char*)&MSecVal, sizeof(MSecVal));
-#else
-	struct timeval TimeVal;
-	TimeVal.tv_sec = m_iTimeout;
-	TimeVal.tv_usec = 0;
-	int err = setsockopt(m_iSocket, SOL_SOCKET, SO_RCVTIMEO, (char*)&TimeVal, sizeof(TimeVal));
-#endif
-	if (err != 0)
+	if (!InitSocketOpts())
 	{
-		ReportError("Socket initialization failed for %s", m_szHost, true, 0);
+		return false;
 	}
 
 #ifndef DISABLE_TLS
 	if (m_bTLS && !StartTLS(true, NULL, NULL))
+	{
+		return false;
+	}
+#endif
+
+	return true;
+}
+
+bool Connection::InitSocketOpts()
+{
+	char* optbuf = NULL;
+	int optsize = 0;
+#ifdef WIN32
+	int MSecVal = m_iTimeout * 1000;
+	optbuf = (char*)&MSecVal;
+	optsize = sizeof(MSecVal);
+#else
+	struct timeval TimeVal;
+	TimeVal.tv_sec = m_iTimeout;
+	TimeVal.tv_usec = 0;
+	optbuf = (char*)&TimeVal;
+	optsize = sizeof(TimeVal);
+#endif
+	int err = setsockopt(m_iSocket, SOL_SOCKET, SO_RCVTIMEO, optbuf, optsize);
+	if (err != 0)
+	{
+		ReportError("Socket initialization failed for %s", m_szHost, true, 0);
+		return false;
+	}
+	err = setsockopt(m_iSocket, SOL_SOCKET, SO_SNDTIMEO, optbuf, optsize);
+	if (err != 0)
+	{
+		ReportError("Socket initialization failed for %s", m_szHost, true, 0);
+		return false;
+	}
+	return true;
+}
+
+bool Connection::ConnectWithTimeout(void* address, int address_len)
+{
+	int flags = 0, error = 0, ret = 0;
+	fd_set rset, wset;
+	socklen_t len = sizeof(error);
+
+	struct timeval ts;
+	ts.tv_sec = m_iTimeout;
+	ts.tv_usec = 0;
+
+	//clear out descriptor sets for select
+	//add socket to the descriptor sets
+	FD_ZERO(&rset);
+	FD_SET(m_iSocket, &rset);
+	wset = rset;    //structure assignment ok
+
+	//set socket nonblocking flag
+#ifdef WIN32
+	u_long mode = 1;
+	if (ioctlsocket(m_iSocket, FIONBIO, &mode) != 0)
+	{
+		return false;
+	}
+#else
+	flags = fcntl(m_iSocket, F_GETFL, 0);
+	if (flags < 0)
+	{
+		return false;
+	}
+
+	if (fcntl(m_iSocket, F_SETFL, flags | O_NONBLOCK) < 0)
+	{
+		return false;
+	}
+#endif
+
+	//initiate non-blocking connect
+	ret = connect(m_iSocket, (struct sockaddr*)address, address_len);
+	if (ret < 0)
+	{
+#ifdef WIN32
+		int err = WSAGetLastError();
+		if (err != WSAEWOULDBLOCK)
+		{
+			return false;
+		}
+#else
+		if (errno != EINPROGRESS)
+		{
+			return false;
+		}
+#endif
+	}
+
+	//connect succeeded right away?
+	if (ret != 0)
+	{
+		ret = select(m_iSocket + 1, &rset, &wset, NULL, m_iTimeout ? &ts : NULL);
+		//we are waiting for connect to complete now
+		if (ret < 0)
+		{
+			return false;
+		}
+		if (ret == 0)
+		{
+			//we had a timeout
+#ifdef WIN32
+			WSASetLastError(WSAETIMEDOUT);
+#else
+			errno = ETIMEDOUT;
+#endif
+			return false;
+		}
+
+		if (!(FD_ISSET(m_iSocket, &rset) || FD_ISSET(m_iSocket, &wset)))
+		{
+			return false;
+		}
+		//we had a positivite return so a descriptor is ready
+
+		if (getsockopt(m_iSocket, SOL_SOCKET, SO_ERROR, (char*)&error, &len) < 0)
+		{
+			return false;
+		}
+
+		//check if we had a socket error
+		if (error)
+		{
+			errno = error;
+			return false;
+		}
+	}
+
+	//put socket back in blocking mode
+#ifdef WIN32
+	mode = 0;
+	if (ioctlsocket(m_iSocket, FIONBIO, &mode) != 0)
+	{
+		return false;
+	}
+#else
+	if (fcntl(m_iSocket, F_SETFL, flags) < 0)
 	{
 		return false;
 	}

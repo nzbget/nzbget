@@ -75,6 +75,8 @@ protected:
 	void				ReportError(const char* szMsgPrefix, const char* szMsgArg, bool PrintErrCode, int herrno);
 	bool				DoConnect();
 	bool				DoDisconnect();
+	bool				InitSocketOpts();
+	bool				ConnectWithTimeout(void* address, int address_len);
 #ifndef HAVE_GETADDRINFO
 	unsigned int		ResolveHostAddr(const char* szHost);
 #endif
