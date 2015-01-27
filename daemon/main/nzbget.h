@@ -70,6 +70,11 @@
 #define FOPEN_AB "abN"
 #define FOPEN_ABP "ab+N"
 
+#ifdef DEBUG
+// redefine "exit" to avoid printing memory leaks report when terminated because of wrong command line switches
+#define exit(code) ExitProcess(code)
+#endif
+
 #pragma warning(disable:4800) // 'type' : forcing value to bool 'true' or 'false' (performance warning)
 #pragma warning(disable:4267) // 'var' : conversion from 'size_t' to 'type', possible loss of data
 
