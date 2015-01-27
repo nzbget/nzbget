@@ -1,7 +1,7 @@
 /*
  *  This file is part of nzbget
  *
- *  Copyright (C) 2014 Andrey Prygunkov <hugbug@users.sourceforge.net>
+ *  Copyright (C) 2014-2015 Andrey Prygunkov <hugbug@users.sourceforge.net>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -28,6 +28,7 @@
 
 !include "MUI2.nsh"
 !include "FileFunc.nsh"
+!include "LogicLib.nsh"
 
 ; Also requires NSIS Simple Service Plugin:
 ; http://nsis.sourceforge.net/NSIS_Simple_Service_Plugin
@@ -91,6 +92,34 @@ RequestExecutionLevel admin
 Section "Main"
 
 SetOutPath "$INSTDIR"
+
+; Stop NZBGet (if running)
+ReadRegStr $R1 HKCU "Software\NZBGet" ""
+${If} $R1 != ""
+${AndIf} ${FileExists} "$R1\nzbget.exe"
+  Delete "$R1\nzbget.exe"
+  ExecWait '"$R1\nzbget.exe" -Q' $R2
+  DetailPrint "Stopping NZBGet..."
+
+  try_delete:
+  ; Wait up to 10 seconds until stopped
+  StrCpy $R2 20
+  ${While} ${FileExists} "$R1\nzbget.exe"
+    ${If} $R2 = 0
+      ${Break}
+    ${EndIf}
+    Sleep 500
+    IntOp $R2 $R2 - 1
+    Delete "$R1\nzbget.exe"
+  ${EndWhile}
+
+  ${If} ${FileExists} "$R1\nzbget.exe"
+    MessageBox MB_RETRYCANCEL "NZBGet seems to be running right now. Please stop NZBGet and try again." \
+      IDRETRY try_delete IDCANCEL cancel
+    cancel:
+      abort
+  ${EndIf}
+${EndIf}
 
 !ifndef DEBUG_UI
 File /r "..\NZBGet\*"
