@@ -1192,8 +1192,8 @@ bool RemoteClient::RequestHistory(bool bWithHidden)
 				printf("[%i] %s (%s%s%s%s%s)\n", ntohl(pListAnswer->m_iID), szNicename, 
 					(eKind == HistoryInfo::hkDup ? "Hidden, " : ""),
 					(eKind == HistoryInfo::hkDup ? "" : szFiles), szSize, 
-					(eKind == HistoryInfo::hkDup ? "" : szParStatusText[ntohl(pListAnswer->m_iParStatus)]),
-					(eKind == HistoryInfo::hkDup ? "" : szScriptStatusText[ntohl(pListAnswer->m_iScriptStatus)]));
+					(eKind == HistoryInfo::hkDup ? "" : szParStatusText[iParStatus]),
+					(eKind == HistoryInfo::hkDup ? "" : szScriptStatusText[iScriptStatus]));
 			}
 			else if (eKind == HistoryInfo::hkUrl)
 			{
