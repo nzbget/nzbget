@@ -2,7 +2,7 @@
  *  This file is part of nzbget
  *
  *  Copyright (C) 2004 Sven Henkel <sidddy@users.sourceforge.net>
- *  Copyright (C) 2007-2014 Andrey Prygunkov <hugbug@users.sourceforge.net>
+ *  Copyright (C) 2007-2015 Andrey Prygunkov <hugbug@users.sourceforge.net>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -313,6 +313,7 @@ void ServerPool::CloseUnusedConnections()
 
 	time_t curtime = ::time(NULL);
 
+	// close and free all connections of servers which were disabled since the last check
 	int i = 0;
 	for (Connections::iterator it = m_Connections.begin(); it != m_Connections.end(); )
 	{
@@ -334,20 +335,54 @@ void ServerPool::CloseUnusedConnections()
 			bDeleted = true;
 		}
 
-		if (!bDeleted && !pConnection->GetInUse() && pConnection->GetStatus() == Connection::csConnected)
-		{
-			int tdiff = (int)(curtime - pConnection->GetFreeTime());
-			if (tdiff > CONNECTION_HOLD_SECODNS)
-			{
-				debug("Closing (and keeping) unused connection to server%i", pConnection->GetNewsServer()->GetID());
-				pConnection->Disconnect();
-			}
-		}
-
 		if (!bDeleted)
 		{
 			it++;
 			i++;
+		}
+	}
+
+	// close all opened connections on levels not having any in-use connections
+	for (int iLevel = 0; iLevel <= m_iMaxNormLevel; iLevel++)
+	{
+		// check if we have in-use connections on the level
+		bool bHasInUseConnections = false;
+		int iInactiveTime = 0;
+		for (Connections::iterator it = m_Connections.begin(); it != m_Connections.end(); it++)
+		{
+			PooledConnection* pConnection = *it;
+			if (pConnection->GetNewsServer()->GetNormLevel() == iLevel)
+			{
+				if (pConnection->GetInUse())
+				{
+					bHasInUseConnections = true;
+					break;
+				}
+				else
+				{
+					int tdiff = (int)(curtime - pConnection->GetFreeTime());
+					if (tdiff > iInactiveTime)
+					{
+						iInactiveTime = tdiff;
+					}
+				}
+			}
+		}
+
+		// if there are no in-use connections on the level and the hold time out has
+		// expired - close all connections of the level.
+		if (!bHasInUseConnections && iInactiveTime > CONNECTION_HOLD_SECODNS)
+		{
+			for (Connections::iterator it = m_Connections.begin(); it != m_Connections.end(); it++)
+			{
+				PooledConnection* pConnection = *it;
+				if (pConnection->GetNewsServer()->GetNormLevel() == iLevel &&
+					pConnection->GetStatus() == Connection::csConnected)
+				{
+					debug("Closing (and keeping) unused connection to server%i", pConnection->GetNewsServer()->GetID());
+					pConnection->Disconnect();
+				}
+			}
 		}
 	}
 
