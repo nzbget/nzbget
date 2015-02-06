@@ -2541,8 +2541,7 @@ void HistoryXmlCommand::Execute()
 		"<member><name>DupeScore</name><value><i4>%i</i4></value></member>\n"
 		"<member><name>DupeMode</name><value><string>%s</string></value></member>\n"
 		"<member><name>DupStatus</name><value><string>%s</string></value></member>\n"
-		"<member><name>Status</name><value><string>%s</string></value></member>\n"
-		"</struct></value>\n";
+		"<member><name>Status</name><value><string>%s</string></value></member>\n";
 
 	const char* JSON_HISTORY_DUP_ITEM =
 		"{\n"
