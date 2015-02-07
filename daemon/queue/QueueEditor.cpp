@@ -148,11 +148,17 @@ bool GroupSorter::Execute(const char* szSort)
 
 	NZBList tempList = *m_pNZBList;
 
-	std::sort(m_pNZBList->begin(), m_pNZBList->end(), *this);
-
-	if (m_eSortOrder == soAuto && tempList == *m_pNZBList)
+	ESortOrder eOrigSortOrder = m_eSortOrder;
+	if (m_eSortOrder == soAuto && m_eSortCriteria == scPriority)
 	{
 		m_eSortOrder = soDescending;
+	}
+
+	std::sort(m_pNZBList->begin(), m_pNZBList->end(), *this);
+
+	if (eOrigSortOrder == soAuto && tempList == *m_pNZBList)
+	{
+		m_eSortOrder = m_eSortOrder == soDescending ? soAscending : soDescending;
 		std::sort(m_pNZBList->begin(), m_pNZBList->end(), *this);
 	}
 
