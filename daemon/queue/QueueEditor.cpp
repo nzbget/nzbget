@@ -1,7 +1,7 @@
 /*
  *  This file is part of nzbget
  *
- *  Copyright (C) 2007-2014 Andrey Prygunkov <hugbug@users.sourceforge.net>
+ *  Copyright (C) 2007-2015 Andrey Prygunkov <hugbug@users.sourceforge.net>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -61,6 +61,200 @@ extern PrePostProcessor* g_pPrePostProcessor;
 extern Options* g_pOptions;
 
 const int MAX_ID = 1000000000;
+
+
+class GroupSorter
+{
+public:
+	enum ESortCriteria
+	{
+		scName,
+		scSize,
+		scRemainingSize,
+		scAge,
+		scCategory,
+		scPriority
+	};
+
+	enum ESortOrder
+	{
+		soAscending,
+		soDescending,
+		soAuto
+	};
+
+private:
+	NZBList*				m_pNZBList;
+	QueueEditor::ItemList*	m_pSortItemList;
+	ESortCriteria			m_eSortCriteria;
+	ESortOrder				m_eSortOrder;
+
+	void					AlignSelectedGroups();
+
+public:
+							GroupSorter(NZBList* pNZBList, QueueEditor::ItemList* pSortItemList) :
+								m_pNZBList(pNZBList), m_pSortItemList(pSortItemList) {}
+	bool					Execute(const char* szSort);
+	bool					operator()(NZBInfo* pNZBInfo1, NZBInfo* pNZBInfo2) const;
+};
+
+bool GroupSorter::Execute(const char* szSort)
+{
+	if (!strcasecmp(szSort, "name") || !strcasecmp(szSort, "name+") || !strcasecmp(szSort, "name-"))
+	{
+		m_eSortCriteria = scName;
+	}
+	else if (!strcasecmp(szSort, "size") || !strcasecmp(szSort, "size+") || !strcasecmp(szSort, "size-"))
+	{
+		m_eSortCriteria = scSize;
+	}
+	else if (!strcasecmp(szSort, "left") || !strcasecmp(szSort, "left+") || !strcasecmp(szSort, "left-"))
+	{
+		m_eSortCriteria = scRemainingSize;
+	}
+	else if (!strcasecmp(szSort, "age") || !strcasecmp(szSort, "age+") || !strcasecmp(szSort, "age-"))
+	{
+		m_eSortCriteria = scAge;
+	}
+	else if (!strcasecmp(szSort, "category") || !strcasecmp(szSort, "category+") || !strcasecmp(szSort, "category-"))
+	{
+		m_eSortCriteria = scCategory;
+	}
+	else if (!strcasecmp(szSort, "priority") || !strcasecmp(szSort, "priority+") || !strcasecmp(szSort, "priority-"))
+	{
+		m_eSortCriteria = scPriority;
+	}
+	else
+	{
+		error("Could not sort groups: incorrect sort order (%s)", szSort);
+		return false;
+	}
+
+	char lastCh = szSort[strlen(szSort) - 1];
+	if (lastCh == '+')
+	{
+		m_eSortOrder = soAscending;
+	}
+	else if (lastCh == '-')
+	{
+		m_eSortOrder = soDescending;
+	}
+	else
+	{
+		m_eSortOrder = soAuto;
+	}
+
+	AlignSelectedGroups();
+
+	NZBList tempList = *m_pNZBList;
+
+	std::sort(m_pNZBList->begin(), m_pNZBList->end(), *this);
+
+	if (m_eSortOrder == soAuto && tempList == *m_pNZBList)
+	{
+		m_eSortOrder = soDescending;
+		std::sort(m_pNZBList->begin(), m_pNZBList->end(), *this);
+	}
+
+	tempList.clear(); // prevent destroying of elements
+
+	return true;
+}
+
+bool GroupSorter::operator()(NZBInfo* pNZBInfo1, NZBInfo* pNZBInfo2) const
+{
+	// if list of ID is empty - sort all items
+	bool bSortItem1 = m_pSortItemList->empty();
+	bool bSortItem2 = m_pSortItemList->empty();
+
+	for (QueueEditor::ItemList::iterator it = m_pSortItemList->begin(); it != m_pSortItemList->end(); it++)
+	{
+		QueueEditor::EditItem* pItem = *it;
+		bSortItem1 |= pItem->m_pNZBInfo == pNZBInfo1;
+		bSortItem2 |= pItem->m_pNZBInfo == pNZBInfo2;
+	}
+
+	if (!bSortItem1 || !bSortItem2)
+	{
+		return false;
+	}
+
+	bool ret = false;
+
+	if (m_eSortOrder == soDescending)
+	{
+		std::swap(pNZBInfo1, pNZBInfo2);
+	}
+
+	switch (m_eSortCriteria)
+	{
+		case scName:
+			ret = strcmp(pNZBInfo1->GetName(), pNZBInfo2->GetName()) < 0;
+			break;
+
+		case scSize:
+			ret = pNZBInfo1->GetSize() < pNZBInfo2->GetSize();
+			break;
+
+		case scRemainingSize:
+			ret = pNZBInfo1->GetRemainingSize() - pNZBInfo1->GetPausedSize() <
+				pNZBInfo2->GetRemainingSize() - pNZBInfo2->GetPausedSize();
+			break;
+
+		case scAge:
+			ret = pNZBInfo1->GetMinTime() > pNZBInfo2->GetMinTime();
+			break;
+
+		case scCategory:
+			ret = strcmp(pNZBInfo1->GetCategory(), pNZBInfo2->GetCategory()) < 0;
+			break;
+
+		case scPriority:
+			ret = pNZBInfo1->GetPriority() < pNZBInfo2->GetPriority();
+			break;
+	}
+
+	return ret;
+}
+
+void GroupSorter::AlignSelectedGroups()
+{
+	NZBInfo* pLastNZBInfo = NULL;
+	unsigned int iLastNum = 0;
+	unsigned int iNum = 0;
+	while (iNum < m_pNZBList->size())
+	{
+		NZBInfo* pNZBInfo = m_pNZBList->at(iNum);
+
+		bool bSelected = false;
+		for (QueueEditor::ItemList::iterator it = m_pSortItemList->begin(); it != m_pSortItemList->end(); it++)
+		{
+			QueueEditor::EditItem* pItem = *it;
+			if (pItem->m_pNZBInfo == pNZBInfo)
+			{
+				bSelected = true;
+				break;
+			}
+		}
+
+		if (bSelected)
+		{
+			if (pLastNZBInfo && iNum - iLastNum > 1)
+			{
+				m_pNZBList->erase(m_pNZBList->begin() + iNum);
+				m_pNZBList->insert(m_pNZBList->begin() + iLastNum + 1, pNZBInfo);
+				iLastNum++;
+			}
+			else
+			{
+				iLastNum = iNum;
+			}
+			pLastNZBInfo = pNZBInfo;
+		}
+		iNum++;
+	}
+}
+
 
 QueueEditor::EditItem::EditItem(FileInfo* pFileInfo, NZBInfo* pNZBInfo, int iOffset)
 {
@@ -250,6 +444,9 @@ bool QueueEditor::InternEditList(ItemList* pItemList,
 
 		case DownloadQueue::eaGroupMerge:
 			return MergeGroups(pItemList);
+
+		case DownloadQueue::eaGroupSort:
+			return SortGroups(pItemList, szText);
 
 		case DownloadQueue::eaFileSplit:
 			return SplitGroup(pItemList, szText);
@@ -982,6 +1179,12 @@ bool QueueEditor::SplitGroup(ItemList* pItemList, const char* szName)
 	bool bOK = g_pQueueCoordinator->SplitQueueEntries(m_pDownloadQueue, &fileList, szName, &pNewNZBInfo);
 
 	return bOK;
+}
+
+bool QueueEditor::SortGroups(ItemList* pItemList, const char* szSort)
+{
+	GroupSorter sorter(m_pDownloadQueue->GetQueue(), pItemList);
+	return sorter.Execute(szSort);
 }
 
 void QueueEditor::ReorderFiles(ItemList* pItemList)

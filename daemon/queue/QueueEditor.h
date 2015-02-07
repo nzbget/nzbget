@@ -1,7 +1,7 @@
 /*
  *  This file is part of nzbget
  *
- *  Copyright (C) 2007-2014 Andrey Prygunkov <hugbug@users.sourceforge.net>
+ *  Copyright (C) 2007-2015 Andrey Prygunkov <hugbug@users.sourceforge.net>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -32,7 +32,7 @@
 
 class QueueEditor
 {
-private:
+public:
 	class EditItem
 	{
 	public:
@@ -45,6 +45,7 @@ private:
 
 	typedef std::vector<EditItem*> ItemList;
 
+private:
 	DownloadQueue*			m_pDownloadQueue;
 
 private:
@@ -60,6 +61,7 @@ private:
 	void					SetNZBName(NZBInfo* pNZBInfo, const char* szName);
 	bool					CanCleanupDisk(NZBInfo* pNZBInfo);
 	bool					MergeGroups(ItemList* pItemList);
+	bool					SortGroups(ItemList* pItemList, const char* szSort);
 	bool					SplitGroup(ItemList* pItemList, const char* szName);
 	bool					DeleteUrl(NZBInfo* pNZBInfo, DownloadQueue::EEditAction eAction);
 	void					ReorderFiles(ItemList* pItemList);

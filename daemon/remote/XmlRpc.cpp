@@ -2101,6 +2101,7 @@ EditCommandEntry EditCommandNameMap[] = {
 	{ DownloadQueue::eaGroupSetDupeKey, "GroupSetDupeKey" },
 	{ DownloadQueue::eaGroupSetDupeScore, "GroupSetDupeScore" },
 	{ DownloadQueue::eaGroupSetDupeMode, "GroupSetDupeMode" },
+	{ DownloadQueue::eaGroupSort, "GroupSort" },
 	{ DownloadQueue::eaPostDelete, "PostDelete" },
 	{ DownloadQueue::eaHistoryDelete, "HistoryDelete" },
 	{ DownloadQueue::eaHistoryFinalDelete, "HistoryFinalDelete" },
