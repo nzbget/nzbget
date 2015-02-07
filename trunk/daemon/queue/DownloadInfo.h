@@ -909,6 +909,7 @@ public:
 		eaGroupSetDupeKey,		// set duplicate key
 		eaGroupSetDupeScore,	// set duplicate score
 		eaGroupSetDupeMode,		// set duplicate mode
+		eaGroupSort,			// sort groups
 		eaPostDelete,			// cancel post-processing
 		eaHistoryDelete,		// hide history-item
 		eaHistoryFinalDelete,	// delete history-item

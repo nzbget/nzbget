@@ -286,10 +286,10 @@
 					<tr>
 						<th><div class="check img-check"></div></th>
 						<th width="95px">Status</th>
-						<th id="DownloadsTable_Name">Name</th>
-						<th id="DownloadsTable_Category">Category</th>
-						<th width="30px" class="text-right">Age</th>
-						<th width="120px"><div style="float:left; position:relative; width:50%; text-align:left;">Size</div><div style="float:right; position:relative; width:50%; text-align:right;">Left</div></th>
+						<th id="DownloadsTable_Name"><a href="#" onclick="Downloads.sort('name')">Name</a></th>
+						<th id="DownloadsTable_Category"><a href="#" onclick="Downloads.sort('category')">Category</a></th>
+						<th width="30px" class="text-right"><a href="#" onclick="Downloads.sort('age')">Age</a></th>
+						<th width="120px"><div style="float:left; position:relative; width:50%; text-align:left;"><a href="#"onclick="Downloads.sort('size')">Size</a></div><div style="float:right; position:relative; width:50%; text-align:right;"><a href="#" onclick="Downloads.sort('left')">Left</a></div></th>
 						<th width="58px" class="text-right">Est. Time</th>
 					</tr>
 				</thead>
@@ -2433,6 +2433,10 @@
 
 <div id="Notif_Downloads_CheckURL" data-duration="2000" class="alert alert-error alert-center alert-center-medium hide">
     <strong>URLs cannot be merged or paused</strong>
+</div>
+
+<div id="Notif_Downloads_Sorted" data-duration="1000" class="alert alert-inverse alert-center alert-center-small hide">
+    <strong>Sorted</strong>
 </div>
 
 <div id="Notif_Edit_Select" data-duration="2000" class="alert alert-error alert-center alert-center-small hide">

@@ -1,7 +1,7 @@
 /*
  * This file is part of nzbget
  *
- * Copyright (C) 2012-2014 Andrey Prygunkov <hugbug@users.sourceforge.net>
+ * Copyright (C) 2012-2015 Andrey Prygunkov <hugbug@users.sourceforge.net>
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -352,7 +352,7 @@ var Downloads = (new function($)
 
 	/*** CHECKMARKS ******************************************************/
 
-	function checkBuildEditIDList(allowPostProcess, allowUrl)
+	function checkBuildEditIDList(allowPostProcess, allowUrl, allowEmpty)
 	{
 		var checkedRows = $DownloadsTable.fasttable('checkedRows');
 
@@ -378,7 +378,7 @@ var Downloads = (new function($)
 			}
 		}
 
-		if (checkedEditIDs.length === 0)
+		if (checkedEditIDs.length === 0 && !allowEmpty)
 		{
 			Notification.show('#Notif_Downloads_Select');
 			return null;
@@ -545,6 +545,13 @@ var Downloads = (new function($)
 
 		notification = '';
 		RPC.call('editqueue', [EditAction, EditOffset, '', checkedEditIDs], editCompleted);
+	}
+
+	this.sort = function(order)
+	{
+		var checkedEditIDs = checkBuildEditIDList(true, true, true);
+		notification = '#Notif_Downloads_Sorted';
+		RPC.call('editqueue', ['GroupSort', 0, order, checkedEditIDs], editCompleted);
 	}
 }(jQuery));
 
