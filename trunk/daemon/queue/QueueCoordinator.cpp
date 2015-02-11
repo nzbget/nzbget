@@ -782,6 +782,11 @@ void QueueCoordinator::StatFileInfo(FileInfo* pFileInfo, bool bCompleted)
 
 void QueueCoordinator::DeleteFileInfo(DownloadQueue* pDownloadQueue, FileInfo* pFileInfo, bool bCompleted)
 {
+	while (g_pArticleCache->FileBusy(pFileInfo))
+	{
+		usleep(5*1000);
+	}
+
 	bool fileDeleted = pFileInfo->GetDeleted();
 	pFileInfo->SetDeleted(true);
 
@@ -983,11 +988,6 @@ bool QueueCoordinator::DeleteQueueEntry(DownloadQueue* pDownloadQueue, FileInfo*
 			bDownloading = true;
 			pArticleDownloader->Stop();
 		}
-	}
-
-	while (g_pArticleCache->FileBusy(pFileInfo))
-	{
-		usleep(20*1000);
 	}
 
 	if (!bDownloading)
