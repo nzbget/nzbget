@@ -627,14 +627,7 @@ void ArticleWriter::CompleteFileParts()
 
 void ArticleWriter::FlushCache()
 {
-	char szInfoFilename[1024];
-	// the locking is needed for accessing the members of NZBInfo
-	DownloadQueue::Lock();
-	snprintf(szInfoFilename, 1024, "%s%c%s", m_pFileInfo->GetNZBInfo()->GetName(), (int)PATH_SEPARATOR, m_pFileInfo->GetFilename());
-	szInfoFilename[1024-1] = '\0';
-	DownloadQueue::Unlock();
-
-	detail("Flushing cache for %s", szInfoFilename);
+	detail("Flushing cache for %s", m_szInfoName);
 
 	bool bDirectWrite = g_pOptions->GetDirectWrite() && m_pFileInfo->GetOutputInitialized();
 	FILE* outfile = NULL;
@@ -736,7 +729,7 @@ void ArticleWriter::FlushCache()
 
 	g_pArticleCache->UnlockFlush();
 
-	detail("Saved %i articles (%.2f MB) from cache into disk for %s", iFlushedArticles, (float)(iFlushedSize / 1024.0 / 1024.0), szInfoFilename);
+	detail("Saved %i articles (%.2f MB) from cache into disk for %s", iFlushedArticles, (float)(iFlushedSize / 1024.0 / 1024.0), m_szInfoName);
 }
 
 bool ArticleWriter::MoveCompletedFiles(NZBInfo* pNZBInfo, const char* szOldDestDir)
@@ -969,6 +962,8 @@ bool ArticleCache::CheckFlush(bool bFlushEverything)
 {
 	debug("Checking cache, Allocated: %i, FlushEverything: %i", m_iAllocated, (int)bFlushEverything);
 
+	char szInfoName[1024];
+
 	DownloadQueue* pDownloadQueue = DownloadQueue::Lock();
 	for (NZBList::iterator it = pDownloadQueue->GetQueue()->begin(); it != pDownloadQueue->GetQueue()->end() && !m_pFileInfo; it++)
 	{
@@ -979,6 +974,8 @@ bool ArticleCache::CheckFlush(bool bFlushEverything)
 			if (pFileInfo->GetCachedArticles() > 0 && (pFileInfo->GetActiveDownloads() == 0 || bFlushEverything))
 			{
 				m_pFileInfo = pFileInfo;
+				snprintf(szInfoName, 1024, "%s%c%s", m_pFileInfo->GetNZBInfo()->GetName(), (int)PATH_SEPARATOR, m_pFileInfo->GetFilename());
+				szInfoName[1024-1] = '\0';
 				break;
 			}
 		}
@@ -989,6 +986,7 @@ bool ArticleCache::CheckFlush(bool bFlushEverything)
 	{
 		ArticleWriter* pArticleWriter = new ArticleWriter();
 		pArticleWriter->SetFileInfo(m_pFileInfo);
+		pArticleWriter->SetInfoName(szInfoName);
 		pArticleWriter->FlushCache();
 		delete pArticleWriter;
 		m_pFileInfo = NULL;
