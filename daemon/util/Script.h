@@ -85,6 +85,7 @@ protected:
 	void				ResetEnv();
 	void				PrepareEnvOptions(const char* szStripPrefix);
 	void				PrepareArgs();
+	void				UnregisterRunningScript();
 
 public:
 						ScriptController();

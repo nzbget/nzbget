@@ -1,7 +1,7 @@
 /*
  *  This file is part of nzbget
  *
- *  Copyright (C) 2013-2014 Andrey Prygunkov <hugbug@users.sourceforge.net>
+ *  Copyright (C) 2013-2015 Andrey Prygunkov <hugbug@users.sourceforge.net>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -229,6 +229,9 @@ bool Maintenance::ReadPackageInfoStr(const char* szKey, char** pValue)
 
 void UpdateScriptController::Run()
 {
+	// the update-script should not be automatically terminated when the program quits
+	UnregisterRunningScript();
+
 	m_iPrefixLen = 0;
 	PrintMessage(Message::mkInfo, "Executing update-script %s", GetScript());
 

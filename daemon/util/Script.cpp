@@ -220,6 +220,11 @@ ScriptController::~ScriptController()
 		free(m_szArgs);
 	}
 
+	UnregisterRunningScript();
+}
+
+void ScriptController::UnregisterRunningScript()
+{
 	m_mutexRunning.Lock();
 	m_RunningScripts.erase(std::find(m_RunningScripts.begin(), m_RunningScripts.end(), this));
 	m_mutexRunning.Unlock();
