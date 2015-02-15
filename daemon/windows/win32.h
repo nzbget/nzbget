@@ -71,7 +71,7 @@
 /* Define to 1 if spinlocks are supported */
 #define HAVE_SPINLOCK
 
-#define VERSION "15.0-testing"
+#define VERSION "14.1"
 
 /* Suppress warnings */
 #define _CRT_SECURE_NO_DEPRECATE
@@ -80,11 +80,6 @@
 #define _CRT_NONSTDC_NO_WARNINGS
 
 #define _USE_32BIT_TIME_T
-
-#if _WIN32_WINNT < 0x0501
-#undef _WIN32_WINNT
-#define _WIN32_WINNT   0x0501
-#endif
 
 #ifdef _DEBUG
 // detection of memory leaks

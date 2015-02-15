@@ -2,7 +2,7 @@
  *  This file is part of nzbget
  *
  *  Copyright (C) 2005 Bo Cordes Petersen <placebodk@sourceforge.net>
- *  Copyright (C) 2007-2015 Andrey Prygunkov <hugbug@users.sourceforge.net>
+ *  Copyright (C) 2007-2014 Andrey Prygunkov <hugbug@users.sourceforge.net>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -159,26 +159,15 @@ bool RemoteClient::ReceiveBoolResponse()
 /*
  * Sends a message to the running nzbget process.
  */
-bool RemoteClient::RequestServerDownload(const char* szNZBFilename, const char* szNZBContent,
-	const char* szCategory, bool bAddFirst, bool bAddPaused, int iPriority,
-	const char* szDupeKey, int iDupeMode, int iDupeScore)
+bool RemoteClient::RequestServerDownload(const char* szFilename, const char* szCategory, bool bAddFirst, bool bAddPaused, int iPriority)
 {
 	// Read the file into the buffer
-	char* szBuffer = NULL;
-	int iLength = 0;
-	bool bIsUrl = !strncasecmp(szNZBContent, "http://", 6) || !strncasecmp(szNZBContent, "https://", 7);
-	if (bIsUrl)
+	char* szBuffer	= NULL;
+	int iLength		= 0;
+	if (!Util::LoadFileIntoBuffer(szFilename, &szBuffer, &iLength))
 	{
-		iLength = strlen(szNZBContent) + 1;
-	}
-	else
-	{
-		if (!Util::LoadFileIntoBuffer(szNZBContent, &szBuffer, &iLength))
-		{
-			printf("Could not load file %s\n", szNZBContent);
-			return false;
-		}
-		iLength--;
+		printf("Could not load file %s\n", szFilename);
+		return false;
 	}
 
 	bool OK = InitConnection();
@@ -189,34 +178,16 @@ bool RemoteClient::RequestServerDownload(const char* szNZBFilename, const char* 
 		DownloadRequest.m_bAddFirst = htonl(bAddFirst);
 		DownloadRequest.m_bAddPaused = htonl(bAddPaused);
 		DownloadRequest.m_iPriority = htonl(iPriority);
-		DownloadRequest.m_iDupeMode = htonl(iDupeMode);
-		DownloadRequest.m_iDupeScore = htonl(iDupeScore);
-		DownloadRequest.m_iTrailingDataLength = htonl(iLength);
+		DownloadRequest.m_iTrailingDataLength = htonl(iLength - 1);
 
-		DownloadRequest.m_szNZBFilename[0] = '\0';
-		if (!Util::EmptyStr(szNZBFilename))
-		{
-			strncpy(DownloadRequest.m_szNZBFilename, szNZBFilename, NZBREQUESTFILENAMESIZE - 1);
-		}
-		else if (!bIsUrl)
-		{
-			strncpy(DownloadRequest.m_szNZBFilename, szNZBContent, NZBREQUESTFILENAMESIZE - 1);
-		}
-		DownloadRequest.m_szNZBFilename[NZBREQUESTFILENAMESIZE-1] = '\0';
-
+		strncpy(DownloadRequest.m_szFilename, szFilename, NZBREQUESTFILENAMESIZE - 1);
+		DownloadRequest.m_szFilename[NZBREQUESTFILENAMESIZE-1] = '\0';
 		DownloadRequest.m_szCategory[0] = '\0';
 		if (szCategory)
 		{
 			strncpy(DownloadRequest.m_szCategory, szCategory, NZBREQUESTFILENAMESIZE - 1);
 		}
 		DownloadRequest.m_szCategory[NZBREQUESTFILENAMESIZE-1] = '\0';
-
-		DownloadRequest.m_szDupeKey[0] = '\0';
-		if (!Util::EmptyStr(szDupeKey))
-		{
-			strncpy(DownloadRequest.m_szDupeKey, szDupeKey, NZBREQUESTFILENAMESIZE - 1);
-		}
-		DownloadRequest.m_szDupeKey[NZBREQUESTFILENAMESIZE-1] = '\0';
 
 		if (!m_pConnection->Send((char*)(&DownloadRequest), sizeof(DownloadRequest)))
 		{
@@ -225,7 +196,7 @@ bool RemoteClient::RequestServerDownload(const char* szNZBFilename, const char* 
 		}
 		else
 		{
-			m_pConnection->Send(bIsUrl ? szNZBContent : szBuffer, iLength);
+			m_pConnection->Send(szBuffer, iLength);
 			OK = ReceiveBoolResponse();
 			m_pConnection->Disconnect();
 		}
@@ -1116,13 +1087,12 @@ bool RemoteClient::RequestScan(bool bSyncMode)
 	return OK;
 }
 
-bool RemoteClient::RequestHistory(bool bWithHidden)
+bool RemoteClient::RequestHistory()
 {
 	if (!InitConnection()) return false;
 
 	SNZBHistoryRequest HistoryRequest;
 	InitMessageBase(&HistoryRequest.m_MessageBase, eRemoteRequestHistory, sizeof(HistoryRequest));
-	HistoryRequest.m_bHidden = htonl(bWithHidden);
 
 	if (!m_pConnection->Send((char*)(&HistoryRequest), sizeof(HistoryRequest)))
 	{
@@ -1173,12 +1143,8 @@ bool RemoteClient::RequestHistory(bool bWithHidden)
 			HistoryInfo::EKind eKind = (HistoryInfo::EKind)ntohl(pListAnswer->m_iKind);
 			const char* szNicename = pBufPtr + sizeof(SNZBHistoryResponseEntry);
 
-			if (eKind == HistoryInfo::hkNzb || eKind == HistoryInfo::hkDup)
+			if (eKind == HistoryInfo::hkNzb)
 			{
-				char szFiles[20];
-				snprintf(szFiles, sizeof(szFiles), "%i files, ", ntohl(pListAnswer->m_iFileCount));
-				szFiles[20 - 1] = '\0';
-
 				long long lSize = Util::JoinInt64(ntohl(pListAnswer->m_iSizeHi), ntohl(pListAnswer->m_iSizeLo));
 
 				char szSize[20];
@@ -1186,14 +1152,11 @@ bool RemoteClient::RequestHistory(bool bWithHidden)
 
 				const char* szParStatusText[] = { "", "", ", Par failed", ", Par successful", ", Repair possible", ", Repair needed" };
 				const char* szScriptStatusText[] = { "", ", Script status unknown", ", Script failed", ", Script successful" };
-				int iParStatus = ntohl(pListAnswer->m_iParStatus);
-				int iScriptStatus = ntohl(pListAnswer->m_iScriptStatus);
 
-				printf("[%i] %s (%s%s%s%s%s)\n", ntohl(pListAnswer->m_iID), szNicename, 
-					(eKind == HistoryInfo::hkDup ? "Hidden, " : ""),
-					(eKind == HistoryInfo::hkDup ? "" : szFiles), szSize, 
-					(eKind == HistoryInfo::hkDup ? "" : szParStatusText[iParStatus]),
-					(eKind == HistoryInfo::hkDup ? "" : szScriptStatusText[iScriptStatus]));
+				printf("[%i] %s (%i files, %s%s%s)\n", ntohl(pListAnswer->m_iID), szNicename, 
+					ntohl(pListAnswer->m_iFileCount), szSize, 
+					szParStatusText[ntohl(pListAnswer->m_iParStatus)], 
+					szScriptStatusText[ntohl(pListAnswer->m_iScriptStatus)]);
 			}
 			else if (eKind == HistoryInfo::hkUrl)
 			{
@@ -1213,4 +1176,45 @@ bool RemoteClient::RequestHistory(bool bWithHidden)
 	free(pBuf);
 
 	return true;
+}
+
+bool RemoteClient::RequestServerDownloadUrl(const char* szURL, const char* szNZBFilename, const char* szCategory, bool bAddFirst, bool bAddPaused, int iPriority)
+{
+	if (!InitConnection()) return false;
+
+	SNZBDownloadUrlRequest DownloadUrlRequest;
+	InitMessageBase(&DownloadUrlRequest.m_MessageBase, eRemoteRequestDownloadUrl, sizeof(DownloadUrlRequest));
+	DownloadUrlRequest.m_bAddFirst = htonl(bAddFirst);
+	DownloadUrlRequest.m_bAddPaused = htonl(bAddPaused);
+	DownloadUrlRequest.m_iPriority = htonl(iPriority);
+
+	strncpy(DownloadUrlRequest.m_szURL, szURL, NZBREQUESTFILENAMESIZE - 1);
+	DownloadUrlRequest.m_szURL[NZBREQUESTFILENAMESIZE-1] = '\0';
+
+	DownloadUrlRequest.m_szCategory[0] = '\0';
+	if (szCategory)
+	{
+		strncpy(DownloadUrlRequest.m_szCategory, szCategory, NZBREQUESTFILENAMESIZE - 1);
+	}
+	DownloadUrlRequest.m_szCategory[NZBREQUESTFILENAMESIZE-1] = '\0';
+
+	DownloadUrlRequest.m_szNZBFilename[0] = '\0';
+	if (szNZBFilename)
+	{
+		strncpy(DownloadUrlRequest.m_szNZBFilename, szNZBFilename, NZBREQUESTFILENAMESIZE - 1);
+	}
+	DownloadUrlRequest.m_szNZBFilename[NZBREQUESTFILENAMESIZE-1] = '\0';
+
+	bool OK = m_pConnection->Send((char*)(&DownloadUrlRequest), sizeof(DownloadUrlRequest));
+	if (OK)
+	{
+		OK = ReceiveBoolResponse();
+	}
+	else
+	{
+		perror("m_pConnection->Send");
+	}
+
+	m_pConnection->Disconnect();
+	return OK;
 }

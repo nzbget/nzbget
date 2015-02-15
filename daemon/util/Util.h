@@ -1,7 +1,7 @@
 /*
  *  This file is part of nzbget
  *
- *  Copyright (C) 2007-2015 Andrey Prygunkov <hugbug@users.sourceforge.net>
+ *  Copyright (C) 2007-2014 Andrey Prygunkov <hugbug@users.sourceforge.net>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -77,7 +77,6 @@ public:
 						~StringBuilder();
 	void				Append(const char* szStr);
 	const char*			GetBuffer() { return m_szBuffer; }
-	void				Clear();
 };
 
 class Util
@@ -114,7 +113,6 @@ public:
 	static bool SameFilename(const char* szFilename1, const char* szFilename2);
 	static bool MatchFileExt(const char* szFilename, const char* szExtensionList, const char* szListSeparator);
 	static char* GetLastErrorMessage(char* szBuffer, int iBufLen);
-	static void FormatSpeed(int iBytesPerSecond, char* szBuffer, int iBufSize);
 
 	/*
 	 * Split command line int arguments.

@@ -2,7 +2,7 @@
  *  This file is part of nzbget
  *
  *  Copyright (C) 2004 Sven Henkel <sidddy@users.sourceforge.net>
- *  Copyright (C) 2007-2015 Andrey Prygunkov <hugbug@users.sourceforge.net>
+ *  Copyright (C) 2007-2014 Andrey Prygunkov <hugbug@users.sourceforge.net>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -713,10 +713,6 @@ private:
 	bool				m_bRequestParCheck;
 	bool				m_bForceParFull;
 	bool				m_bForceRepair;
-	bool				m_bParRepaired;
-	bool				m_bUnpackTried;
-	bool				m_bPassListTried;
-	int					m_eLastUnpackStatus;
 	EStage				m_eStage;
 	char*				m_szProgressLabel;
 	int					m_iFileProgress;
@@ -757,14 +753,6 @@ public:
 	void				SetForceParFull(bool bForceParFull) { m_bForceParFull = bForceParFull; }
 	bool				GetForceRepair() { return m_bForceRepair; }
 	void				SetForceRepair(bool bForceRepair) { m_bForceRepair = bForceRepair; }
-	bool				GetParRepaired() { return m_bParRepaired; }
-	void				SetParRepaired(bool bParRepaired) { m_bParRepaired = bParRepaired; }
-	bool				GetUnpackTried() { return m_bUnpackTried; }
-	void				SetUnpackTried(bool bUnpackTried) { m_bUnpackTried = bUnpackTried; }
-	bool				GetPassListTried() { return m_bPassListTried; }
-	void				SetPassListTried(bool bPassListTried) { m_bPassListTried = bPassListTried; }
-	int					GetLastUnpackStatus() { return m_eLastUnpackStatus; }
-	void				SetLastUnpackStatus(int eUnpackStatus) { m_eLastUnpackStatus = eUnpackStatus; }
 	Thread*				GetPostThread() { return m_pPostThread; }
 	void				SetPostThread(Thread* pPostThread) { m_pPostThread = pPostThread; }
 	void				AppendMessage(Message::EKind eKind, const char* szText);
@@ -909,7 +897,6 @@ public:
 		eaGroupSetDupeKey,		// set duplicate key
 		eaGroupSetDupeScore,	// set duplicate score
 		eaGroupSetDupeMode,		// set duplicate mode
-		eaGroupSort,			// sort groups
 		eaPostDelete,			// cancel post-processing
 		eaHistoryDelete,		// hide history-item
 		eaHistoryFinalDelete,	// delete history-item
@@ -922,9 +909,7 @@ public:
 		eaHistorySetDupeMode,	// set duplicate mode
 		eaHistorySetDupeBackup,	// set duplicate backup flag
 		eaHistoryMarkBad,		// mark history-item as bad (and download other duplicate)
-		eaHistoryMarkGood,		// mark history-item as good (and push it into dup-history)
-		eaHistorySetCategory,	// set or change category for history-item
-		eaHistorySetName		// set history-item name (rename)
+		eaHistoryMarkGood		// mark history-item as good (and push it into dup-history)
 	};
 
 	enum EMatchMode

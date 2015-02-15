@@ -1,7 +1,7 @@
 /*
  * This file is part of nzbget
  *
- * Copyright (C) 2012-2015 Andrey Prygunkov <hugbug@users.sourceforge.net>
+ * Copyright (C) 2012-2014 Andrey Prygunkov <hugbug@users.sourceforge.net>
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -269,7 +269,7 @@ var History = (new function($)
 		}
 	}
 
-	this.actionClick = function(action)
+	this.deleteClick = function()
 	{
 		var checkedRows = $HistoryTable.fasttable('checkedRows');
 		if (checkedRows.length == 0)
@@ -279,7 +279,6 @@ var History = (new function($)
 		}
 
 		var hasNzb = false;
-		var hasUrl = false;
 		var hasDup = false;
 		var hasFailed = false;
 		for (var i = 0; i < history.length; i++)
@@ -288,69 +287,23 @@ var History = (new function($)
 			if (checkedRows.indexOf(hist.ID) > -1)
 			{
 				hasNzb |= hist.Kind === 'NZB';
-				hasUrl |= hist.Kind === 'URL';
 				hasDup |= hist.Kind === 'DUP';
 				hasFailed |= hist.ParStatus === 'FAILURE' || hist.UnpackStatus === 'FAILURE';
 			}
 		}
 
-		switch (action)
-		{
-			case 'DELETE':
-				notification = '#Notif_History_Deleted';
-				HistoryUI.deleteConfirm(historyAction, hasNzb, hasDup, hasFailed, true);
-				break;
-
-			case 'REPROCESS':
-				if (hasUrl || hasDup)
-				{
-					Notification.show('#Notif_History_CantReprocess');
-					return;
-				}
-				notification = '#Notif_History_Reprocess';
-				historyAction('HistoryProcess');
-				break;
-
-			case 'REDOWNLOAD':
-				if (hasDup)
-				{
-					Notification.show('#Notif_History_CantRedownload');
-					return;
-				}
-				notification = '#Notif_History_Returned';
-				historyAction('HistoryRedownload');
-				break;
-
-			case 'MARKGOOD':
-			case 'MARKBAD':
-				if (hasUrl)
-				{
-					Notification.show('#Notif_History_CantMark');
-					return;
-				}
-				notification = '#Notif_History_Marked';
-
-				ConfirmDialog.showModal(action === 'MARKGOOD' ?
-					'HistoryEditGoodConfirmDialog' : 'HistoryEditBadConfirmDialog',
-					function () // action
-					{
-						historyAction(action === 'MARKGOOD' ? 'HistoryMarkGood' : 'HistoryMarkBad');
-					},
-					function (_dialog) // init
-					{
-						HistoryUI.confirmMulti(checkedRows.length > 1);
-					}
-				);
-				break;
-		}
+		HistoryUI.deleteConfirm(historyDelete, hasNzb, hasDup, hasFailed, true);
 	}
 
-	function historyAction(command)
+	function historyDelete(command)
 	{
 		Refresher.pause();
+
 		var IDs = $HistoryTable.fasttable('checkedRows');
+
 		RPC.call('editqueue', [command, 0, '', [IDs]], function()
 		{
+			notification = '#Notif_History_Deleted';
 			editCompleted();
 		});
 	}
@@ -503,7 +456,14 @@ var HistoryUI = (new function($)
 		function init(_dialog)
 		{
 			dialog = _dialog;
-			HistoryUI.confirmMulti(multi);
+
+			if (!multi)
+			{
+				var html = $('#ConfirmDialog_Text').html();
+				html = html.replace(/records/g, 'record');
+				$('#ConfirmDialog_Text').html(html);
+			}
+
 			$('#HistoryDeleteConfirmDialog_Hide', dialog).prop('checked', true);
 			Util.show($('#HistoryDeleteConfirmDialog_Options', dialog), hasNzb && dupeCheck);
 			Util.show($('#HistoryDeleteConfirmDialog_Simple', dialog), !(hasNzb && dupeCheck));
@@ -523,14 +483,5 @@ var HistoryUI = (new function($)
 
 		ConfirmDialog.showModal('HistoryDeleteConfirmDialog', action, init);
 	}
-	
-	this.confirmMulti = function(multi)
-	{
-		if (multi === undefined || !multi)
-		{
-			var html = $('#ConfirmDialog_Text').html();
-			html = html.replace(/records/g, 'record');
-			$('#ConfirmDialog_Text').html(html);
-		}
-	}
+
 }(jQuery));

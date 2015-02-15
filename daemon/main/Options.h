@@ -2,7 +2,7 @@
  *  This file is part of nzbget
  *
  *  Copyright (C) 2004 Sven Henkel <sidddy@users.sourceforge.net>
- *  Copyright (C) 2007-2015 Andrey Prygunkov <hugbug@users.sourceforge.net>
+ *  Copyright (C) 2007-2014 Andrey Prygunkov <hugbug@users.sourceforge.net>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -62,7 +62,7 @@ public:
 		opClientRequestScanPause,
 		opClientRequestScanUnpause,
 		opClientRequestHistory,
-		opClientRequestHistoryAll
+		opClientRequestDownloadUrl
 	};
 	enum EWriteLog
 	{
@@ -329,7 +329,6 @@ private:
 	bool				m_bUnpackCleanupDisk;
 	char*				m_szUnrarCmd;
 	char*				m_szSevenZipCmd;
-	char*				m_szUnpackPassFile;
 	bool				m_bUnpackPauseQueue;
 	char*				m_szExtCleanupDisk;
 	char*				m_szParIgnoreExt;
@@ -359,9 +358,6 @@ private:
 	char*				m_szLastArg;
 	bool				m_bPrintOptions;
 	bool				m_bAddTop;
-	char*				m_szAddDupeKey;
-	int					m_iAddDupeScore;
-	int					m_iAddDupeMode;
 	int					m_iSetRate;
 	int					m_iLogLines;
 	int					m_iWriteLogKind;
@@ -509,7 +505,6 @@ public:
 	bool				GetUnpackCleanupDisk() { return m_bUnpackCleanupDisk; }
 	const char*			GetUnrarCmd() { return m_szUnrarCmd; }
 	const char*			GetSevenZipCmd() { return m_szSevenZipCmd; }
-	const char*			GetUnpackPassFile() { return m_szUnpackPassFile; }
 	bool				GetUnpackPauseQueue() { return m_bUnpackPauseQueue; }
 	const char*			GetExtCleanupDisk() { return m_szExtCleanupDisk; }
 	const char*			GetParIgnoreExt() { return m_szParIgnoreExt; }
@@ -520,7 +515,6 @@ public:
 	int					GetArticleCache() { return m_iArticleCache; }
 	int					GetEventInterval() { return m_iEventInterval; }
 
-	Categories*			GetCategories() { return &m_Categories; }
 	Category*			FindCategory(const char* szName, bool bSearchAliases) { return m_Categories.FindCategory(szName, bSearchAliases); }
 
 	// Parsed command-line parameters
@@ -542,9 +536,6 @@ public:
 	int					GetAddPriority() { return m_iAddPriority; }
 	char*				GetAddNZBFilename() { return m_szAddNZBFilename; }
 	bool				GetAddTop() { return m_bAddTop; }
-	const char*			GetAddDupeKey() { return m_szAddDupeKey; }
-	int					GetAddDupeScore() { return m_iAddDupeScore; }
-	int					GetAddDupeMode() { return m_iAddDupeMode; }
 	int					GetSetRate() { return m_iSetRate; }
 	int					GetLogLines() { return m_iLogLines; }
 	int					GetWriteLogKind() { return m_iWriteLogKind; }

@@ -1,7 +1,7 @@
 /*
  *  This file is part of nzbget
  *
- *  Copyright (C) 2007-2015 Andrey Prygunkov <hugbug@users.sourceforge.net>
+ *  Copyright (C) 2007-2014 Andrey Prygunkov <hugbug@users.sourceforge.net>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -258,14 +258,6 @@ StringBuilder::StringBuilder()
 StringBuilder::~StringBuilder()
 {
 	free(m_szBuffer);
-}
-
-void StringBuilder::Clear()
-{
-	free(m_szBuffer);
-	m_szBuffer = NULL;
-	m_iBufferSize = 0;
-	m_iUsedSize = 0;
 }
 
 void StringBuilder::Append(const char* szStr)
@@ -1022,14 +1014,6 @@ bool Util::MatchFileExt(const char* szFilename, const char* szExtensionList, con
 		{
 			return true;
 		}
-		if (strchr(szExt, '*') || strchr(szExt, '?'))
-		{
-			WildMask mask(szExt);
-			if (mask.Match(szFilename))
-			{
-				return true;
-			}
-		}
 	}
 
 	return false;
@@ -1054,28 +1038,6 @@ char* Util::GetLastErrorMessage(char* szBuffer, int iBufLen)
 	strerror_r(errno, szBuffer, iBufLen);
 	szBuffer[iBufLen-1] = '\0';
 	return szBuffer;
-}
-
-void Util::FormatSpeed(int iBytesPerSecond, char* szBuffer, int iBufSize)
-{
-	if (iBytesPerSecond >= 100 * 1024 * 1024)
-	{
-		snprintf(szBuffer, iBufSize, "%i MB/s", iBytesPerSecond / 1024 / 1024);
-	}
-	else if (iBytesPerSecond >= 10 * 1024 * 1024)
-	{
-		snprintf(szBuffer, iBufSize, "%0.1f MB/s", (float)iBytesPerSecond / 1024.0 / 1024.0);
-	}
-	else if (iBytesPerSecond >= 1024 * 1000)
-	{
-		snprintf(szBuffer, iBufSize, "%0.2f MB/s", (float)iBytesPerSecond / 1024.0 / 1024.0);
-	}
-	else
-	{
-		snprintf(szBuffer, iBufSize, "%i KB/s", iBytesPerSecond / 1024);
-	}
-
-	szBuffer[iBufSize - 1] = '\0';
 }
 
 void Util::InitVersionRevision()

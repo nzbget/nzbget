@@ -2,7 +2,7 @@
  *  This file is part of nzbget
  *
  *  Copyright (C) 2005 Bo Cordes Petersen <placebodk@sourceforge.net>
- *  Copyright (C) 2007-2015 Andrey Prygunkov <hugbug@users.sourceforge.net>
+ *  Copyright (C) 2007-2014 Andrey Prygunkov <hugbug@users.sourceforge.net>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -61,7 +61,7 @@ extern void Reload();
 const char* g_szMessageRequestNames[] =
     { "N/A", "Download", "Pause/Unpause", "List", "Set download rate", "Dump debug", 
 		"Edit queue", "Log", "Quit", "Reload", "Version", "Post-queue", "Write log", "Scan", 
-		"Pause/Unpause postprocessor", "History" };
+		"Pause/Unpause postprocessor", "History", "Download URL" };
 
 const unsigned int g_iMessageRequestSizes[] =
     { 0,
@@ -78,117 +78,9 @@ const unsigned int g_iMessageRequestSizes[] =
 		sizeof(SNZBPostQueueRequest),
 		sizeof(SNZBWriteLogRequest),
 		sizeof(SNZBScanRequest),
-		sizeof(SNZBHistoryRequest)
+		sizeof(SNZBHistoryRequest),
+		sizeof(SNZBDownloadUrlRequest)
     };
-
-
-
-class BinCommand
-{
-protected:
-	Connection*			m_pConnection;
-	SNZBRequestBase*	m_pMessageBase;
-
-	bool				ReceiveRequest(void* pBuffer, int iSize);
-	void				SendBoolResponse(bool bSuccess, const char* szText);
-
-public:
-	virtual				~BinCommand() {}
-	virtual void		Execute() = 0;
-	void				SetConnection(Connection* pConnection) { m_pConnection = pConnection; }
-	void				SetMessageBase(SNZBRequestBase*	pMessageBase) { m_pMessageBase = pMessageBase; }
-};
-
-class DownloadBinCommand: public BinCommand
-{
-public:
-	virtual void		Execute();
-};
-
-class ListBinCommand: public BinCommand
-{
-public:
-	virtual void		Execute();
-};
-
-class LogBinCommand: public BinCommand
-{
-public:
-	virtual void		Execute();
-};
-
-class PauseUnpauseBinCommand: public BinCommand
-{
-public:
-	virtual void		Execute();
-};
-
-class EditQueueBinCommand: public BinCommand
-{
-public:
-	virtual void		Execute();
-};
-
-class SetDownloadRateBinCommand: public BinCommand
-{
-public:
-	virtual void		Execute();
-};
-
-class DumpDebugBinCommand: public BinCommand
-{
-public:
-	virtual void		Execute();
-};
-
-class ShutdownBinCommand: public BinCommand
-{
-public:
-	virtual void		Execute();
-};
-
-class ReloadBinCommand: public BinCommand
-{
-public:
-	virtual void		Execute();
-};
-
-class VersionBinCommand: public BinCommand
-{
-public:
-	virtual void		Execute();
-};
-
-class PostQueueBinCommand: public BinCommand
-{
-public:
-	virtual void		Execute();
-};
-
-class WriteLogBinCommand: public BinCommand
-{
-public:
-	virtual void		Execute();
-};
-
-class ScanBinCommand: public BinCommand
-{
-public:
-	virtual void		Execute();
-};
-
-class HistoryBinCommand: public BinCommand
-{
-public:
-	virtual void		Execute();
-};
-
-class UrlQueueBinCommand: public BinCommand
-{
-public:
-	virtual void		Execute();
-};
-
 
 //*****************************************************************
 // BinProcessor
@@ -288,6 +180,10 @@ void BinRpcProcessor::Dispatch()
 
 		case eRemoteRequestHistory:
 			command = new HistoryBinCommand();
+			break;
+
+		case eRemoteRequestDownloadUrl:
+			command = new DownloadUrlBinCommand();
 			break;
 
 		default:
@@ -434,59 +330,30 @@ void DownloadBinCommand::Execute()
 	}
 
 	int iBufLen = ntohl(DownloadRequest.m_iTrailingDataLength);
-	char* szNZBContent = (char*)malloc(iBufLen);
+	char* pRecvBuffer = (char*)malloc(iBufLen);
 
-	if (!m_pConnection->Recv(szNZBContent, iBufLen))
+	if (!m_pConnection->Recv(pRecvBuffer, iBufLen))
 	{
 		error("invalid request");
-		free(szNZBContent);
+		free(pRecvBuffer);
 		return;
 	}
 	
 	int iPriority = ntohl(DownloadRequest.m_iPriority);
 	bool bAddPaused = ntohl(DownloadRequest.m_bAddPaused);
 	bool bAddTop = ntohl(DownloadRequest.m_bAddFirst);
-	int iDupeMode = ntohl(DownloadRequest.m_iDupeMode);
-	int iDupeScore = ntohl(DownloadRequest.m_iDupeScore);
 
-	bool bOK = false;
-
-	if (!strncasecmp(szNZBContent, "http://", 6) || !strncasecmp(szNZBContent, "https://", 7))
-	{
-		// add url
-		NZBInfo* pNZBInfo = new NZBInfo();
-		pNZBInfo->SetKind(NZBInfo::nkUrl);
-		pNZBInfo->SetURL(szNZBContent);
-		pNZBInfo->SetFilename(DownloadRequest.m_szNZBFilename);
-		pNZBInfo->SetCategory(DownloadRequest.m_szCategory);
-		pNZBInfo->SetPriority(iPriority);
-		pNZBInfo->SetAddUrlPaused(bAddPaused);
-		pNZBInfo->SetDupeKey(DownloadRequest.m_szDupeKey);
-		pNZBInfo->SetDupeScore(iDupeScore);
-		pNZBInfo->SetDupeMode((EDupeMode)iDupeMode);
-
-		DownloadQueue* pDownloadQueue = DownloadQueue::Lock();
-		pDownloadQueue->GetQueue()->Add(pNZBInfo, bAddTop);
-		pDownloadQueue->Save();
-		DownloadQueue::Unlock();
-
-		bOK = true;
-	}
-	else
-	{
-		bOK = g_pScanner->AddExternalFile(DownloadRequest.m_szNZBFilename, DownloadRequest.m_szCategory, iPriority,
-			DownloadRequest.m_szDupeKey, iDupeScore, (EDupeMode)iDupeMode, NULL, bAddTop, bAddPaused,
-			NULL, NULL, szNZBContent, iBufLen, NULL) != Scanner::asFailed;
-	}
+	bool bOK = g_pScanner->AddExternalFile(DownloadRequest.m_szFilename, DownloadRequest.m_szCategory,
+		iPriority, NULL, 0, dmScore, NULL, bAddTop, bAddPaused, NULL, NULL, pRecvBuffer, iBufLen, NULL) != Scanner::asFailed;
 
 	char tmp[1024];
 	snprintf(tmp, 1024, bOK ? "Collection %s added to queue" : "Download Request failed for %s",
-		Util::BaseFileName(DownloadRequest.m_szNZBFilename));
+		Util::BaseFileName(DownloadRequest.m_szFilename));
 	tmp[1024-1] = '\0';
 
 	SendBoolResponse(bOK, tmp);
 
-	free(szNZBContent);
+	free(pRecvBuffer);
 }
 
 void ListBinCommand::Execute()
@@ -1105,8 +972,6 @@ void HistoryBinCommand::Execute()
 		return;
 	}
 
-	bool bShowHidden = ntohl(HistoryRequest.m_bHidden);
-
 	SNZBHistoryResponse HistoryResponse;
 	memset(&HistoryResponse, 0, sizeof(HistoryResponse));
 	HistoryResponse.m_MessageBase.m_iSignature = htonl(NZBMESSAGE_SIGNATURE);
@@ -1120,27 +985,16 @@ void HistoryBinCommand::Execute()
 	DownloadQueue* pDownloadQueue = DownloadQueue::Lock();
 
 	// calculate required buffer size for nzbs
-	int iNrEntries = 0;
-	for (HistoryList::iterator it = pDownloadQueue->GetHistory()->begin(); it != pDownloadQueue->GetHistory()->end(); it++)
-	{
-		HistoryInfo* pHistoryInfo = *it;
-		if (pHistoryInfo->GetKind() != HistoryInfo::hkDup || bShowHidden)
-		{
-			iNrEntries++;
-		}
-	}
+	int iNrEntries = pDownloadQueue->GetHistory()->size();
 	bufsize += iNrEntries * sizeof(SNZBHistoryResponseEntry);
 	for (HistoryList::iterator it = pDownloadQueue->GetHistory()->begin(); it != pDownloadQueue->GetHistory()->end(); it++)
 	{
 		HistoryInfo* pHistoryInfo = *it;
-		if (pHistoryInfo->GetKind() != HistoryInfo::hkDup || bShowHidden)
-		{
-			char szNicename[1024];
-			pHistoryInfo->GetName(szNicename, sizeof(szNicename));
-			bufsize += strlen(szNicename) + 1;
-			// align struct to 4-bytes, needed by ARM-processor (and may be others)
-			bufsize += bufsize % 4 > 0 ? 4 - bufsize % 4 : 0;
-		}
+		char szNicename[1024];
+		pHistoryInfo->GetName(szNicename, sizeof(szNicename));
+		bufsize += strlen(szNicename) + 1;
+		// align struct to 4-bytes, needed by ARM-processor (and may be others)
+		bufsize += bufsize % 4 > 0 ? 4 - bufsize % 4 : 0;
 	}
 
 	buf = (char*) malloc(bufsize);
@@ -1150,52 +1004,41 @@ void HistoryBinCommand::Execute()
 	for (HistoryList::iterator it = pDownloadQueue->GetHistory()->begin(); it != pDownloadQueue->GetHistory()->end(); it++)
 	{
 		HistoryInfo* pHistoryInfo = *it;
-		if (pHistoryInfo->GetKind() != HistoryInfo::hkDup || bShowHidden)
+		SNZBHistoryResponseEntry* pListAnswer = (SNZBHistoryResponseEntry*) bufptr;
+		pListAnswer->m_iID					= htonl(pHistoryInfo->GetID());
+		pListAnswer->m_iKind				= htonl((int)pHistoryInfo->GetKind());
+		pListAnswer->m_tTime				= htonl((int)pHistoryInfo->GetTime());
+
+		char szNicename[1024];
+		pHistoryInfo->GetName(szNicename, sizeof(szNicename));
+		pListAnswer->m_iNicenameLen			= htonl(strlen(szNicename) + 1);
+
+		if (pHistoryInfo->GetKind() == HistoryInfo::hkNzb)
 		{
-			SNZBHistoryResponseEntry* pListAnswer = (SNZBHistoryResponseEntry*) bufptr;
-			pListAnswer->m_iID					= htonl(pHistoryInfo->GetID());
-			pListAnswer->m_iKind				= htonl((int)pHistoryInfo->GetKind());
-			pListAnswer->m_tTime				= htonl((int)pHistoryInfo->GetTime());
+			NZBInfo* pNZBInfo = pHistoryInfo->GetNZBInfo();
+			unsigned long iSizeHi, iSizeLo;
+			Util::SplitInt64(pNZBInfo->GetSize(), &iSizeHi, &iSizeLo);
+			pListAnswer->m_iSizeLo				= htonl(iSizeLo);
+			pListAnswer->m_iSizeHi				= htonl(iSizeHi);
+			pListAnswer->m_iFileCount			= htonl(pNZBInfo->GetFileCount());
+			pListAnswer->m_iParStatus			= htonl(pNZBInfo->GetParStatus());
+			pListAnswer->m_iScriptStatus		= htonl(pNZBInfo->GetScriptStatuses()->CalcTotalStatus());
+		}
+		else if (pHistoryInfo->GetKind() == HistoryInfo::hkUrl)
+		{
+			NZBInfo* pNZBInfo = pHistoryInfo->GetNZBInfo();
+			pListAnswer->m_iUrlStatus			= htonl(pNZBInfo->GetUrlStatus());
+		}
 
-			char szNicename[1024];
-			pHistoryInfo->GetName(szNicename, sizeof(szNicename));
-			pListAnswer->m_iNicenameLen			= htonl(strlen(szNicename) + 1);
-
-			if (pHistoryInfo->GetKind() == HistoryInfo::hkNzb)
-			{
-				NZBInfo* pNZBInfo = pHistoryInfo->GetNZBInfo();
-				unsigned long iSizeHi, iSizeLo;
-				Util::SplitInt64(pNZBInfo->GetSize(), &iSizeHi, &iSizeLo);
-				pListAnswer->m_iSizeLo				= htonl(iSizeLo);
-				pListAnswer->m_iSizeHi				= htonl(iSizeHi);
-				pListAnswer->m_iFileCount			= htonl(pNZBInfo->GetFileCount());
-				pListAnswer->m_iParStatus			= htonl(pNZBInfo->GetParStatus());
-				pListAnswer->m_iScriptStatus		= htonl(pNZBInfo->GetScriptStatuses()->CalcTotalStatus());
-			}
-			else if (pHistoryInfo->GetKind() == HistoryInfo::hkDup && bShowHidden)
-			{
-				DupInfo* pDupInfo = pHistoryInfo->GetDupInfo();
-				unsigned long iSizeHi, iSizeLo;
-				Util::SplitInt64(pDupInfo->GetSize(), &iSizeHi, &iSizeLo);
-				pListAnswer->m_iSizeLo				= htonl(iSizeLo);
-				pListAnswer->m_iSizeHi				= htonl(iSizeHi);
-			}
-			else if (pHistoryInfo->GetKind() == HistoryInfo::hkUrl)
-			{
-				NZBInfo* pNZBInfo = pHistoryInfo->GetNZBInfo();
-				pListAnswer->m_iUrlStatus			= htonl(pNZBInfo->GetUrlStatus());
-			}
-
-			bufptr += sizeof(SNZBHistoryResponseEntry);
-			strcpy(bufptr, szNicename);
-			bufptr += ntohl(pListAnswer->m_iNicenameLen);
-			// align struct to 4-bytes, needed by ARM-processor (and may be others)
-			if ((size_t)bufptr % 4 > 0)
-			{
-				pListAnswer->m_iNicenameLen = htonl(ntohl(pListAnswer->m_iNicenameLen) + 4 - (size_t)bufptr % 4);
-				memset(bufptr, 0, 4 - (size_t)bufptr % 4); //suppress valgrind warning "uninitialized data"
-				bufptr += 4 - (size_t)bufptr % 4;
-			}
+		bufptr += sizeof(SNZBHistoryResponseEntry);
+		strcpy(bufptr, szNicename);
+		bufptr += ntohl(pListAnswer->m_iNicenameLen);
+		// align struct to 4-bytes, needed by ARM-processor (and may be others)
+		if ((size_t)bufptr % 4 > 0)
+		{
+			pListAnswer->m_iNicenameLen = htonl(ntohl(pListAnswer->m_iNicenameLen) + 4 - (size_t)bufptr % 4);
+			memset(bufptr, 0, 4 - (size_t)bufptr % 4); //suppress valgrind warning "uninitialized data"
+			bufptr += 4 - (size_t)bufptr % 4;
 		}
 	}
 
@@ -1214,4 +1057,43 @@ void HistoryBinCommand::Execute()
 	}
 
 	free(buf);
+}
+
+void DownloadUrlBinCommand::Execute()
+{
+	SNZBDownloadUrlRequest DownloadUrlRequest;
+	if (!ReceiveRequest(&DownloadUrlRequest, sizeof(DownloadUrlRequest)))
+	{
+		return;
+	}
+
+	URL url(DownloadUrlRequest.m_szURL);
+	if (!url.IsValid())
+	{
+		char tmp[1024];
+		snprintf(tmp, 1024, "Url %s is not valid", DownloadUrlRequest.m_szURL);
+		tmp[1024-1] = '\0';
+		SendBoolResponse(true, tmp);
+		return;
+	}
+
+	NZBInfo* pNZBInfo = new NZBInfo();
+	pNZBInfo->SetKind(NZBInfo::nkUrl);
+	pNZBInfo->SetURL(DownloadUrlRequest.m_szURL);
+	pNZBInfo->SetFilename(DownloadUrlRequest.m_szNZBFilename);
+	pNZBInfo->SetCategory(DownloadUrlRequest.m_szCategory);
+	pNZBInfo->SetPriority(ntohl(DownloadUrlRequest.m_iPriority));
+	pNZBInfo->SetAddUrlPaused(ntohl(DownloadUrlRequest.m_bAddPaused));
+
+	DownloadQueue* pDownloadQueue = DownloadQueue::Lock();
+	pDownloadQueue->GetQueue()->Add(pNZBInfo, ntohl(DownloadUrlRequest.m_bAddFirst));
+	pDownloadQueue->Save();
+	DownloadQueue::Unlock();
+
+	info("Request: Queue url %s", DownloadUrlRequest.m_szURL);
+
+	char tmp[1024];
+	snprintf(tmp, 1024, "Url %s added to queue", DownloadUrlRequest.m_szURL);
+	tmp[1024-1] = '\0';
+	SendBoolResponse(true, tmp);
 }

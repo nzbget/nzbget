@@ -158,31 +158,13 @@ void ArticleDownloader::Run()
 			m_pConnection->GetNewsServer()->GetName(), m_pConnection->GetHost());
 		m_szConnectionName[sizeof(m_szConnectionName) - 1] = '\0';
 
-		// check server retention
-		bool bRetentionFailure = m_pConnection->GetNewsServer()->GetRetention() > 0 &&
-			(time(NULL) - m_pFileInfo->GetTime()) / 86400 > m_pConnection->GetNewsServer()->GetRetention();
-		if (bRetentionFailure)
-		{
-			detail("Article %s @ %s failed: out of server retention (file age: %i, configured retention: %i)",
-				m_szInfoName, m_szConnectionName,
-				(time(NULL) - m_pFileInfo->GetTime()) / 86400,
-				m_pConnection->GetNewsServer()->GetRetention());
-			Status = adFailed;
-			FreeConnection(true);
-		}
-
-		if (m_pConnection && !IsStopped())
-		{
-			detail("Downloading %s @ %s", m_szInfoName, m_szConnectionName);
-		}
-
 		// test connection
 		bool bConnected = m_pConnection && m_pConnection->Connect();
 		if (bConnected && !IsStopped())
 		{
 			NewsServer* pNewsServer = m_pConnection->GetNewsServer();
+			detail("Downloading %s @ %s", m_szInfoName, m_szConnectionName);
 
-			// Download article
 			Status = Download();
 
 			if (Status == adFinished || Status == adFailed || Status == adNotFound || Status == adCrcError)
@@ -191,45 +173,66 @@ void ArticleDownloader::Run()
 			}
 		}
 
+		if (bConnected)
+		{
+			if (Status == adConnectError)
+			{
+				m_pConnection->Disconnect();
+				bConnected = false;
+				Status = adFailed;
+			}
+			else
+			{
+				// freeing connection allows other threads to start.
+				// we doing this only if the problem was with article or group.
+				// if the problem occurs by connecting or authorization we do not
+				// free the connection, to prevent starting of thousands of threads 
+				// (cause each of them will also free it's connection after the 
+				// same connect-error).
+				FreeConnection(Status == adFinished || Status == adNotFound);
+			}
+		}
+
 		if (m_pConnection)
 		{
 			AddServerData();
 		}
 
-		if (!bConnected && m_pConnection)
+		if (Status == adFinished || Status == adFatalError)
 		{
-			detail("Article %s @ %s failed: could not establish connection", m_szInfoName, m_szConnectionName);
+			break;
 		}
 
-		if (Status == adConnectError)
-		{
-			bConnected = false;
-			Status = adFailed;
-		}
+		pWantServer = NULL;
 
 		if (bConnected && Status == adFailed)
 		{
 			iRemainedRetries--;
 		}
 
-		if (!bConnected && m_pConnection)
-		{
-			g_pServerPool->BlockServer(pLastServer);
-		}
-
-		pWantServer = NULL;
-		if (bConnected && Status == adFailed && iRemainedRetries > 0 && !bRetentionFailure)
+		if (!bConnected || (Status == adFailed && iRemainedRetries > 0))
 		{
 			pWantServer = pLastServer;
 		}
-		else
-		{
-			FreeConnection(Status == adFinished || Status == adNotFound);
-		}
 
-		if (Status == adFinished || Status == adFatalError)
+		if (pWantServer && 
+			!(IsStopped() || (g_pOptions->GetPauseDownload() && !bForce) ||
+			  (g_pOptions->GetTempPauseDownload() && !m_pFileInfo->GetExtraPriority()) ||
+			  iServerConfigGeneration != g_pServerPool->GetGeneration()))
 		{
-			break;
+			detail("Waiting %i sec to retry", g_pOptions->GetRetryInterval());
+			SetStatus(adWaiting);
+			int msec = 0;
+			while (!(IsStopped() || (g_pOptions->GetPauseDownload() && !bForce) ||
+					 (g_pOptions->GetTempPauseDownload() && !m_pFileInfo->GetExtraPriority()) ||
+					 iServerConfigGeneration != g_pServerPool->GetGeneration()) &&
+				  msec < g_pOptions->GetRetryInterval() * 1000)
+			{
+				usleep(100 * 1000);
+				msec += 100;
+			}
+			SetLastUpdateTimeNow();
+			SetStatus(adRunning);
 		}
 
 		if (IsStopped() || (g_pOptions->GetPauseDownload() && !bForce) ||
@@ -240,7 +243,7 @@ void ArticleDownloader::Run()
 			break;
 		}
 
-		if (!pWantServer && (bConnected || bRetentionFailure))
+		if (!pWantServer)
 		{
 			failedServers.push_back(pLastServer);
 

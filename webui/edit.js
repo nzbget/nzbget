@@ -1,7 +1,7 @@
 /*
  * This file is part of nzbget
  *
- * Copyright (C) 2012-2015 Andrey Prygunkov <hugbug@users.sourceforge.net>
+ * Copyright (C) 2012-2014 Andrey Prygunkov <hugbug@users.sourceforge.net>
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -1603,23 +1603,14 @@ var HistoryEditDialog = (new function()
 				(hist.Kind === 'DUP' ? 'hidden' : hist.Kind) + '</span>');
 		}
 
-		$('#HistoryEdit_NZBName').val(hist.Name);
-		
 		if (hist.Kind !== 'DUP')
 		{
-			// Category
-			var v = $('#HistoryEdit_Category');
-			DownloadsUI.fillCategoryCombo(v);
-			v.val(hist.Category);
-			if (v.val() != hist.Category)
-			{
-				v.append($('<option selected="selected"></option>').text(hist.Category));
-			}
+			$('#HistoryEdit_Category').text(hist.Category);
 		}
 
 		if (hist.Kind === 'NZB')
 		{
-			$('#HistoryEdit_Path').val(hist.FinalDir !== '' ? hist.FinalDir : hist.DestDir);
+			$('#HistoryEdit_Path').text(hist.FinalDir !== '' ? hist.FinalDir : hist.DestDir);
 
 			var size = Util.formatSizeMB(hist.FileSizeMB, hist.FileSizeLo);
 			var completion = hist.SuccessArticles + hist.FailedArticles > 0 ? Util.round0(hist.SuccessArticles * 100.0 / (hist.SuccessArticles +  hist.FailedArticles)) + '%' : '--';
@@ -1845,7 +1836,7 @@ var HistoryEditDialog = (new function()
 
 	function reprocess()
 	{
-		notification = '#Notif_History_Reprocess';
+		notification = '#Notif_History_Reproces';
 		RPC.call('editqueue', ['HistoryProcess', 0, '', [curHist.ID]], completed);
 	}
 
@@ -1866,37 +1857,13 @@ var HistoryEditDialog = (new function()
 		disableAllButtons();
 		notification = null;
 		saveCompleted = completed;
-		saveName();
-	}
-
-	function saveName()
-	{
-		var name = $('#HistoryEdit_NZBName').val();
-		name !== curHist.Name && !curHist.postprocess ?
-			RPC.call('editqueue', ['HistorySetName', 0, name, [curHist.ID]], function()
-			{
-				notification = '#Notif_History_Saved';
-				saveCategory();
-			})
-			:saveCategory();
-	}
-
-	function saveCategory()
-	{
-		var category = $('#HistoryEdit_Category').val();
-		category !== curHist.Category && curHist.Kind !== 'DUP' ?
-			RPC.call('editqueue', ['HistorySetCategory', 0, category, [curHist.ID]], function()
-			{
-				notification = '#Notif_History_Saved';
-				saveDupeKey();
-			})
-			: saveDupeKey();
+		saveDupeKey();
 	}
 
 	function itemGood(e)
 	{
 		e.preventDefault();
-		ConfirmDialog.showModal('HistoryEditGoodConfirmDialog', doItemGood, function () { HistoryUI.confirmMulti(false); });
+		ConfirmDialog.showModal('HistoryEditGoodConfirmDialog', doItemGood);
 	}
 
 	function doItemGood()
@@ -1909,7 +1876,7 @@ var HistoryEditDialog = (new function()
 	function itemBad(e)
 	{
 		e.preventDefault();
-		ConfirmDialog.showModal('HistoryEditBadConfirmDialog', doItemBad, function () { HistoryUI.confirmMulti(false); });
+		ConfirmDialog.showModal('HistoryEditBadConfirmDialog', doItemBad);
 	}
 
 	function doItemBad()
