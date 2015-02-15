@@ -2,7 +2,7 @@
 <!--
  * This file is part of nzbget
  *
- * Copyright (C) 2012-2015 Andrey Prygunkov <hugbug@users.sourceforge.net>
+ * Copyright (C) 2012-2014 Andrey Prygunkov <hugbug@users.sourceforge.net>
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -286,10 +286,10 @@
 					<tr>
 						<th><div class="check img-check"></div></th>
 						<th width="95px">Status</th>
-						<th id="DownloadsTable_Name"><a href="#" onclick="Downloads.sort('name')">Name</a></th>
-						<th id="DownloadsTable_Category"><a href="#" onclick="Downloads.sort('category')">Category</a></th>
-						<th width="30px" class="text-right"><a href="#" onclick="Downloads.sort('age')">Age</a></th>
-						<th width="120px"><div style="float:left; position:relative; width:50%; text-align:left;"><a href="#"onclick="Downloads.sort('size')">Size</a></div><div style="float:right; position:relative; width:50%; text-align:right;"><a href="#" onclick="Downloads.sort('left')">Left</a></div></th>
+						<th id="DownloadsTable_Name">Name</th>
+						<th id="DownloadsTable_Category">Category</th>
+						<th width="30px" class="text-right">Age</th>
+						<th width="120px"><div style="float:left; position:relative; width:50%; text-align:left;">Size</div><div style="float:right; position:relative; width:50%; text-align:right;">Left</div></th>
 						<th width="58px" class="text-right">Est. Time</th>
 					</tr>
 				</thead>
@@ -316,17 +316,9 @@
 
 			<div class="btn-toolbar form-inline section-toolbar" id ="HistoryTab_Toolbar">
 				<div class="btn-group">
-					<button class="btn" onclick="History.actionClick('DELETE')" title="Delete selected records"><i class="icon-trash"></i><span class="btn-caption"> Delete</span></button>
-					<button class="btn dropdown-toggle" data-toggle="dropdown" title="More actions"><span class="btn-caption"> More </span><span class="phone-only inline">&nbsp;</span><span class="caret"></span></button>
-					<ul class="dropdown-menu">
-						<li class="menu-header">Actions</li>
-						<li><a href="#" id="HistoryTab_Reprocess" onclick="History.actionClick('REPROCESS')"><i class="icon-process"></i> Post-Process Again</a></li>
-						<li><a href="#" id="HistoryTab_Redownload" onclick="History.actionClick('REDOWNLOAD')"><i class="icon-downloads"></i> Download Again</a></li>
-						<li><a href="#" id="HistoryTab_MarkGood" onclick="History.actionClick('MARKGOOD')"><i class="icon-ok"></i> Mark as Good</a></li>
-						<li><a href="#" id="HistoryTab_MarkBad" onclick="History.actionClick('MARKBAD')"><i class="icon-remove"></i> Mark as Bad</a></li>
-					</ul>
+					<button class="btn" onclick="History.deleteClick()" title="Delete selected records"><i class="icon-trash"></i><span class="btn-caption"> Delete</span></button>
 				</div>
-				
+
 				<!-- STATUS FILTER BUTTONS -->
 				<div class="btn-group phone-hide">
 					<button class="btn history-filter btn-inverse" onclick="History.filter('ALL')" title="Show All">All &nbsp;<span class="badge badge-active" id="History_Badge_ALL">?</span></button>
@@ -1266,13 +1258,6 @@
 							</div>
 						</div>
 
-						<div class="control-group">
-							<label class="control-label" for="HistoryEdit_NZBNameGroup">Name</label>
-							<div class="controls" id="HistoryEdit_NZBNameGroup">
-								<input type="text" class="input-xlarge" id="HistoryEdit_NZBName" />
-							</div>
-						</div>
-
 						<div class="control-group" id="HistoryEdit_URLGroup">
 							<label class="control-label" for="HistoryEdit_URL">Link</label>
 							<div class="controls">
@@ -1283,15 +1268,14 @@
 						<div class="control-group" id="HistoryEdit_CategoryGroup">
 							<label class="control-label" for="HistoryEdit_Category">Category</label>
 							<div class="controls">
-								<select id="HistoryEdit_Category">
-								</select>
+								<span class="input-medium uneditable-input" id="HistoryEdit_Category"></span>
 							</div>
 						</div>
 
 						<div class="control-group" id="HistoryEdit_PathGroup">
 							<label class="control-label" for="HistoryEdit_Path">Destination</label>
 							<div class="controls">
-								<input type="text" class="input-xlarge" id="HistoryEdit_Path" readonly="true" />
+								<span class="uneditable-mulitline-input" id="HistoryEdit_Path"></span>
 							</div>
 						</div>
 
@@ -1307,7 +1291,8 @@
 
 						<div class="control-group control-group-last" id="HistoryEdit_DupGroup">
 							<div class="controls">
-								This hidden history record has little information. It remains in history mostly for duplicate check.
+								This hidden history record has no information other than status.
+								It remains in history for duplicate check.
 							</div>
 						</div>
 
@@ -1920,7 +1905,7 @@
 	<div id="HistoryEditGoodConfirmDialog_Title">History</div>
 	<div id="HistoryEditGoodConfirmDialog_Text">
 		<p>
-		Mark selected history records as good?
+		Mark this history record as good?
 		</p>
 		<p class="confirm-help-block">
 		Marking has an effect on duplicate handling and RSS.<br>For titles marked as good no more duplicates
@@ -1936,7 +1921,7 @@
 	<div id="HistoryEditBadConfirmDialog_Title">History</div>
 	<div id="HistoryEditBadConfirmDialog_Text">
 		<p>
-		Mark selected history records as Bad?
+		Mark this history record as Bad?
 		</p>
 		<p class="confirm-help-block">
 		Marking has an effect on duplicate handling and RSS.<br>If dupe-backups exist in the history
@@ -2435,10 +2420,6 @@
     <strong>URLs cannot be merged or paused</strong>
 </div>
 
-<div id="Notif_Downloads_Sorted" data-duration="1000" class="alert alert-inverse alert-center alert-center-small hide">
-    <strong>Sorted</strong>
-</div>
-
 <div id="Notif_Edit_Select" data-duration="2000" class="alert alert-error alert-center alert-center-small hide">
     <strong>Please select records first</strong>
 </div>
@@ -2459,7 +2440,7 @@
     <strong>Returned to Queue</strong>
 </div>
 
-<div id="Notif_History_Reprocess" data-duration="1000" class="alert alert-inverse alert-center alert-center-small hide">
+<div id="Notif_History_Reproces" data-duration="1000" class="alert alert-inverse alert-center alert-center-small hide">
     <strong>Post-Processing</strong>
 </div>
 
@@ -2471,20 +2452,8 @@
     <strong>Please select records first</strong>
 </div>
 
-<div id="Notif_History_CantMark" data-duration="2000" class="alert alert-error alert-center alert-center-small hide">
-    <strong>Cannot mark URL-records</strong>
-</div>
-
 <div id="Notif_History_Marked" data-duration="1000" class="alert alert-inverse alert-center alert-center-small hide">
     <strong>Marked</strong>
-</div>
-
-<div id="Notif_History_CantReprocess" data-duration="2000" class="alert alert-error alert-center alert-center-medium hide">
-    <strong>Cannot post-process URL- or hidden records</strong>
-</div>
-
-<div id="Notif_History_CantRedownload" data-duration="2000" class="alert alert-error alert-center alert-center-medium hide">
-    <strong>Cannot redownload hidden records</strong>
 </div>
 
 <div id="Notif_Feeds_FetchAll" data-duration="1000" class="alert alert-inverse alert-center alert-center-small hide">

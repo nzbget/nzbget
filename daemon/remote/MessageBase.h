@@ -2,7 +2,7 @@
  *  This file is part of nzbget
  *
  *  Copyright (C) 2005 Bo Cordes Petersen <placebodk@users.sourceforge.net>
- *  Copyright (C) 2007-2015 Andrey Prygunkov <hugbug@users.sourceforge.net>
+ *  Copyright (C) 2007-2014 Andrey Prygunkov <hugbug@users.sourceforge.net>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -27,7 +27,7 @@
 #ifndef MESSAGEBASE_H
 #define MESSAGEBASE_H
 
-static const int32_t NZBMESSAGE_SIGNATURE = 0x6E7A6227; // = "nzb-XX" (protocol version)
+static const int32_t NZBMESSAGE_SIGNATURE = 0x6E7A6225; // = "nzb-XX" (protocol version)
 static const int NZBREQUESTFILENAMESIZE = 512;
 static const int NZBREQUESTPASSWORDSIZE = 32;
 
@@ -61,7 +61,8 @@ enum eRemoteRequest
 	eRemoteRequestPostQueue,
 	eRemoteRequestWriteLog,
 	eRemoteRequestScan,
-	eRemoteRequestHistory
+	eRemoteRequestHistory,
+	eRemoteRequestDownloadUrl
 };
 
 // Possible values for field "m_iAction" of struct "SNZBPauseUnpauseRequest":
@@ -101,14 +102,11 @@ struct SNZBResponseBase
 struct SNZBDownloadRequest
 {
 	SNZBRequestBase			m_MessageBase;			// Must be the first in the struct
-	char					m_szNZBFilename[NZBREQUESTFILENAMESIZE];// Name of nzb-file. For URLs can be empty, then the filename is read from URL download response
+	char					m_szFilename[NZBREQUESTFILENAMESIZE];	// Name of nzb-file, may contain full path (local path on client) or only filename
 	char					m_szCategory[NZBREQUESTFILENAMESIZE];	// Category, can be empty
 	int32_t					m_bAddFirst;			// 1 - add file to the top of download queue
 	int32_t					m_bAddPaused;			// 1 - pause added files
 	int32_t					m_iPriority;			// Priority for files (0 - default)
-	int32_t					m_iDupeScore;			// Duplicate score
-	int32_t					m_iDupeMode;			// Duplicate mode (EDupeMode)
-	char					m_szDupeKey[NZBREQUESTFILENAMESIZE];	// Duplicate key
 	int32_t					m_iTrailingDataLength;	// Length of nzb-file in bytes
 	//char					m_szContent[m_iTrailingDataLength];	// variable sized
 };
@@ -439,7 +437,6 @@ struct SNZBScanResponse
 struct SNZBHistoryRequest
 {
 	SNZBRequestBase			m_MessageBase;			// Must be the first in the struct
-	int32_t					m_bHidden;				// 0 - only return visible records, 1 - also return hidden records
 };
 
 // history response
@@ -456,13 +453,12 @@ struct SNZBHistoryResponse
 struct SNZBHistoryResponseEntry
 {
 	int32_t					m_iID;					// History-ID
-	int32_t					m_iKind;				// Kind of Item: 1 - Collection (NZB), 2 - URL, 3 - DUP (hidden record)
+	int32_t					m_iKind;				// Kind of Item: 1 - Collection (NZB), 2 - URL
 	int32_t					m_tTime;				// When the item was added to history. time since the Epoch (00:00:00 UTC, January 1, 1970), measured in seconds.
 	int32_t					m_iNicenameLen;			// Length of Nicename-string (m_szNicename), following to this record
-	// for Collection and Dup items (m_iKind = 1 or 2)
+	// for Collection items (m_iKind = 1)
 	int32_t					m_iSizeLo;				// Size of all files in bytes, Low 32-bits of 64-bit value
 	int32_t					m_iSizeHi;				// Size of all files in bytes, High 32-bits of 64-bit value
-	// for Collection items (m_iKind = 1)
 	int32_t					m_iFileCount;			// Initial number of files included in NZB-file
 	int32_t					m_iParStatus;			// See NZBInfo::EParStatus
 	int32_t					m_iScriptStatus;		// See NZBInfo::EScriptStatus
@@ -470,6 +466,27 @@ struct SNZBHistoryResponseEntry
 	int32_t					m_iUrlStatus;			// See NZBInfo::EUrlStatus
 	// trailing data
 	//char					m_szNicename[m_iNicenameLen];				// variable sized
+};
+
+// download url request
+struct SNZBDownloadUrlRequest
+{
+	SNZBRequestBase			m_MessageBase;			// Must be the first in the struct
+	char					m_szURL[NZBREQUESTFILENAMESIZE];		// url to nzb-file
+	char					m_szNZBFilename[NZBREQUESTFILENAMESIZE];// Name of nzb-file. Can be empty, then the filename is read from URL download response
+	char					m_szCategory[NZBREQUESTFILENAMESIZE];	// Category, can be empty
+	int32_t					m_bAddFirst;							// 1 - add url to the top of download queue
+	int32_t					m_bAddPaused;							// 1 - pause added files
+	int32_t					m_iPriority;							// Priority for files (0 - default)
+};
+
+// download url response
+struct SNZBDownloadUrlResponse
+{
+	SNZBResponseBase		m_MessageBase;			// Must be the first in the struct
+	int32_t					m_bSuccess;				// 0 - command failed, 1 - command executed successfully
+	int32_t					m_iTrailingDataLength;	// Length of Text-string (m_szText), following to this record
+	//char					m_szText[m_iTrailingDataLength];	// variable sized
 };
 
 #endif

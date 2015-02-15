@@ -2,7 +2,7 @@
  *  This file is part of nzbget
  *
  *  Copyright (C) 2004 Sven Henkel <sidddy@users.sourceforge.net>
- *  Copyright (C) 2007-2015 Andrey Prygunkov <hugbug@users.sourceforge.net>
+ *  Copyright (C) 2007-2014 Andrey Prygunkov <hugbug@users.sourceforge.net>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -40,7 +40,6 @@
 #include <set>
 #ifdef WIN32
 #include <direct.h>
-#include <Shlobj.h>
 #else
 #include <unistd.h>
 #include <getopt.h>
@@ -60,10 +59,6 @@
 extern ServerPool* g_pServerPool;
 extern Scheduler* g_pScheduler;
 extern FeedCoordinator* g_pFeedCoordinator;
-
-#ifdef WIN32
-extern void SetupFirstStart();
-#endif
 
 #ifdef HAVE_GETOPT_LONG
 static struct option long_options[] =
@@ -181,7 +176,6 @@ static const char* OPTION_UNPACK				= "Unpack";
 static const char* OPTION_UNPACKCLEANUPDISK		= "UnpackCleanupDisk";
 static const char* OPTION_UNRARCMD				= "UnrarCmd";
 static const char* OPTION_SEVENZIPCMD			= "SevenZipCmd";
-static const char* OPTION_UNPACKPASSFILE		= "UnpackPassFile";
 static const char* OPTION_UNPACKPAUSEQUEUE		= "UnpackPauseQueue";
 static const char* OPTION_SCRIPTORDER			= "ScriptOrder";
 static const char* OPTION_POSTSCRIPT			= "PostScript";
@@ -501,9 +495,6 @@ Options::Options(int argc, char* argv[])
 	m_bRemoteClientMode		= false;
 	m_bPrintOptions			= false;
 	m_bAddTop				= false;
-	m_szAddDupeKey			= NULL;
-	m_iAddDupeScore			= 0;
-	m_iAddDupeMode			= 0;
 	m_bAppendCategoryDir	= false;
 	m_bContinuePartial		= false;
 	m_bSaveQueue			= false;
@@ -571,7 +562,6 @@ Options::Options(int argc, char* argv[])
 	m_bUnpackCleanupDisk	= false;
 	m_szUnrarCmd			= NULL;
 	m_szSevenZipCmd			= NULL;
-	m_szUnpackPassFile		= NULL;
 	m_bUnpackPauseQueue		= false;
 	m_szExtCleanupDisk		= NULL;
 	m_szParIgnoreExt		= NULL;
@@ -692,10 +682,8 @@ Options::~Options()
 	free(m_szQueueScript);
 	free(m_pEditQueueIDList);
 	free(m_szAddNZBFilename);
-	free(m_szAddDupeKey);
 	free(m_szUnrarCmd);
 	free(m_szSevenZipCmd);
-	free(m_szUnpackPassFile);
 	free(m_szExtCleanupDisk);
 	free(m_szParIgnoreExt);
 
@@ -849,7 +837,6 @@ void Options::InitDefault()
 	SetOption(OPTION_UNRARCMD, "unrar");
 	SetOption(OPTION_SEVENZIPCMD, "7z");
 #endif
-	SetOption(OPTION_UNPACKPASSFILE, "");
 	SetOption(OPTION_UNPACKPAUSEQUEUE, "no");
 	SetOption(OPTION_EXTCLEANUPDISK, "");
 	SetOption(OPTION_PARIGNOREEXT, "");
@@ -872,26 +859,13 @@ void Options::InitOptFile()
 	{
 		// search for config file in default locations
 #ifdef WIN32
-		char szFilename[MAX_PATH + 20];
+		char szFilename[MAX_PATH + 1];
 		GetModuleFileName(NULL, szFilename, MAX_PATH + 1);
 		szFilename[MAX_PATH] = '\0';
 		Util::NormalizePathSeparators(szFilename);
 		char* end = strrchr(szFilename, PATH_SEPARATOR);
 		if (end) end[1] = '\0';
 		strcat(szFilename, "nzbget.conf");
-
-		if (!Util::FileExists(szFilename))
-		{
-			char szAppDataPath[MAX_PATH];
-			SHGetFolderPath(NULL, CSIDL_COMMON_APPDATA, NULL, 0, szAppDataPath);
-			snprintf(szFilename, sizeof(szFilename), "%s\\NZBGet\\nzbget.conf", szAppDataPath);
-			szFilename[sizeof(szFilename)-1] = '\0';
-
-			if (!Util::FileExists(szFilename))
-			{
-				SetupFirstStart();
-			}
-		}
 
 		if (Util::FileExists(szFilename))
 		{
@@ -1034,7 +1008,6 @@ void Options::InitOptions()
 	m_szLogFile				= strdup(GetOption(OPTION_LOGFILE));
 	m_szUnrarCmd			= strdup(GetOption(OPTION_UNRARCMD));
 	m_szSevenZipCmd			= strdup(GetOption(OPTION_SEVENZIPCMD));
-	m_szUnpackPassFile		= strdup(GetOption(OPTION_UNPACKPASSFILE));
 	m_szExtCleanupDisk		= strdup(GetOption(OPTION_EXTCLEANUPDISK));
 	m_szParIgnoreExt		= strdup(GetOption(OPTION_PARIGNOREEXT));
 
@@ -1277,15 +1250,19 @@ void Options::InitCommandLine(int argc, char* argv[])
 				m_bDaemonMode = true;
 				break;
 			case 'A':
-				m_eClientOperation = opClientRequestDownload;
+				m_eClientOperation = opClientRequestDownload; // default
 
 				while (true)
 				{
 					optind++;
 					optarg = optind > argc ? NULL : argv[optind-1];
-					if (optarg && (!strcasecmp(optarg, "F") || !strcasecmp(optarg, "U")))
+					if (optarg && !strcasecmp(optarg, "F"))
 					{
-						// option ignored (but kept for compatibility)
+						m_eClientOperation = opClientRequestDownload;
+					}
+					else if (optarg && !strcasecmp(optarg, "U"))
+					{
+						m_eClientOperation = opClientRequestDownloadUrl;
 					}
 					else if (optarg && !strcasecmp(optarg, "T"))
 					{
@@ -1324,51 +1301,6 @@ void Options::InitCommandLine(int argc, char* argv[])
 						free(m_szAddNZBFilename);
 						m_szAddNZBFilename = strdup(argv[optind-1]);
 					}
-					else if (optarg && !strcasecmp(optarg, "DK"))
-					{
-						optind++;
-						if (optind > argc)
-						{
-							abort("FATAL ERROR: Could not parse value of option 'A'\n");
-						}
-						free(m_szAddDupeKey);
-						m_szAddDupeKey = strdup(argv[optind-1]);
-					}
-					else if (optarg && !strcasecmp(optarg, "DS"))
-					{
-						optind++;
-						if (optind > argc)
-						{
-							abort("FATAL ERROR: Could not parse value of option 'A'\n");
-						}
-						m_iAddDupeScore = atoi(argv[optind-1]);
-					}
-					else if (optarg && !strcasecmp(optarg, "DM"))
-					{
-						optind++;
-						if (optind > argc)
-						{
-							abort("FATAL ERROR: Could not parse value of option 'A'\n");
-						}
-
-						const char* szDupeMode = argv[optind-1];
-						if (!strcasecmp(szDupeMode, "score"))
-						{
-							m_iAddDupeMode = dmScore;
-						}
-						else if (!strcasecmp(szDupeMode, "all"))
-						{
-							m_iAddDupeMode = dmAll;
-						}
-						else if (!strcasecmp(szDupeMode, "force"))
-						{
-							m_iAddDupeMode = dmForce;
-						}
-						else
-						{
-							abort("FATAL ERROR: Could not parse value of option 'A'\n");
-						}
-					}
 					else
 					{
 						optind--;
@@ -1403,10 +1335,6 @@ void Options::InitCommandLine(int argc, char* argv[])
 				else if (!strcasecmp(optarg, "H"))
 				{
 					m_eClientOperation = opClientRequestHistory;
-				}
-				else if (!strcasecmp(optarg, "HA"))
-				{
-					m_eClientOperation = opClientRequestHistoryAll;
 				}
 				else
 				{
@@ -1792,17 +1720,16 @@ void Options::PrintUsage(char* com)
 	    "  -V, --serverversion       Print server's version and exit\n"
 		"  -Q, --quit                Shutdown server\n"
 		"  -O, --reload              Reload config and restart all services\n"
-		"  -A, --append [<options>] <nzb-file/url> Send file/url to server's\n"
+		"  -A, --append  [F|U] [<options>] <nzb-file/url> Send file/url to server's\n"
 		"                            download queue\n"
+		"                 F          Send file (default)\n"
+		"                 U          Send url\n"
 		"    <options> are (multiple options must be separated with space):\n"
 		"       T                    Add file to the top (beginning) of queue\n"
 		"       P                    Pause added files\n"
 		"       C <name>             Assign category to nzb-file\n"
-		"       N <name>             Use this name as nzb-filename\n"
+		"       N <name>             Use this name as nzb-filename (only for URLs)\n"
 		"       I <priority>         Set priority (signed integer)\n"
-		"       DK <dupekey>         Set duplicate key (string)\n"
-		"       DS <dupescore>       Set duplicate score (signed integer)\n"
-		"       DM (score|all|force) Set duplicate mode\n"
 		"  -C, --connect             Attach client to server\n"
 		"  -L, --list    [F|FR|G|GR|O|H|S] [RegEx] Request list of items from server\n"
 		"                 F          List individual files and server status (default)\n"
@@ -1811,7 +1738,6 @@ void Options::PrintUsage(char* com)
 		"                 GR         Like \"G\" but apply regular expression filter\n"
 		"                 O          List post-processor-queue\n"
 		"                 H          List history\n"
-		"                 HA         List history, all records (incl. hidden)\n"
 		"                 S          Print only server status\n"
 		"    <RegEx>                 Regular expression (only with options \"FR\", \"GR\")\n"
 		"                            using POSIX Extended Regular Expression Syntax\n"
@@ -1895,7 +1821,7 @@ void Options::InitFileArg(int argc, char* argv[])
 			}
 			else
 			{
-				abort("FATAL ERROR: Nzb-file or Url not specified\n");
+				abort("FATAL ERROR: Nzb-file not specified\n");
 			}
 		}
 	}
@@ -1921,7 +1847,7 @@ void Options::InitFileArg(int argc, char* argv[])
 #ifdef WIN32
 			m_szArgFilename = strdup(szFileName);
 #else
-		if (szFileName[0] == '/' || !strncasecmp(szFileName, "http://", 6) || !strncasecmp(szFileName, "https://", 7))
+		if (szFileName[0] == '/')
 		{
 			m_szArgFilename = strdup(szFileName);
 		}
@@ -1939,6 +1865,7 @@ void Options::InitFileArg(int argc, char* argv[])
 		if (m_bServerMode || m_bRemoteClientMode ||
 		        !(m_eClientOperation == opClientNoOperation ||
 		          m_eClientOperation == opClientRequestDownload ||
+		          m_eClientOperation == opClientRequestDownloadUrl ||
 				  m_eClientOperation == opClientRequestWriteLog))
 		{
 			abort("FATAL ERROR: Too many arguments\n");
@@ -2118,11 +2045,8 @@ void Options::InitServers()
 		sprintf(optname, "Server%i.Connections", n);
 		const char* nconnections = GetOption(optname);
 
-		sprintf(optname, "Server%i.Retention", n);
-		const char* nretention = GetOption(optname);
-
 		bool definition = nactive || nname || nlevel || ngroup || nhost || nport ||
-			nusername || npassword || nconnections || njoingroup || ntls || ncipher || nretention;
+			nusername || npassword || nconnections || njoingroup || ntls || ncipher;
 		bool completed = nhost && nport && nconnections;
 
 		if (!definition)
@@ -2133,14 +2057,10 @@ void Options::InitServers()
 		if (completed)
 		{
 			NewsServer* pNewsServer = new NewsServer(n, bActive, nname,
-				nhost,
-				nport ? atoi(nport) : 119,
-				nusername, npassword,
-				bJoinGroup, bTLS, ncipher,
-				nconnections ? atoi(nconnections) : 1,
-				nretention ? atoi(nretention) : 0,
-				nlevel ? atoi(nlevel) : 0,
-				ngroup ? atoi(ngroup) : 0);
+				nhost, atoi(nport), nusername, npassword,
+				bJoinGroup, bTLS, ncipher, atoi((char*)nconnections),
+				nlevel ? atoi((char*)nlevel) : 0,
+				ngroup ? atoi((char*)ngroup) : 0);
 			g_pServerPool->AddServer(pNewsServer);
 		}
 		else
@@ -2152,7 +2072,6 @@ void Options::InitServers()
 	}
 
 	g_pServerPool->SetTimeout(GetArticleTimeout());
-	g_pServerPool->SetRetryInterval(GetRetryInterval());
 }
 
 void Options::InitCategories()
@@ -2658,8 +2577,7 @@ bool Options::ValidateOptionName(const char* optname, const char* optvalue)
 			!strcasecmp(p, ".port") || !strcasecmp(p, ".username") ||
 			!strcasecmp(p, ".password") || !strcasecmp(p, ".joingroup") ||
 			!strcasecmp(p, ".encryption") || !strcasecmp(p, ".connections") ||
-			!strcasecmp(p, ".cipher") || !strcasecmp(p, ".group") ||
-			!strcasecmp(p, ".retention")))
+			!strcasecmp(p, ".cipher") || !strcasecmp(p, ".group")))
 		{
 			return true;
 		}
@@ -2888,11 +2806,6 @@ void Options::CheckOptions()
 		ConfigError("Options \"ArticleCache\" and \"ParBuffer\" in total cannot use more than 1900MB of memory in 32-Bit mode. Changed to 1500 and 400");
 		m_iArticleCache = 1900;
 		m_iParBuffer = 400;
-	}
-
-	if (!Util::EmptyStr(m_szUnpackPassFile) && !Util::FileExists(m_szUnpackPassFile))
-	{
-		ConfigError("Invalid value for option \"UnpackPassFile\": %s. File not found", m_szUnpackPassFile);
 	}
 }
 

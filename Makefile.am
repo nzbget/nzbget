@@ -191,20 +191,9 @@ windows_FILES = \
 	daemon/windows/NTService.cpp \
 	daemon/windows/NTService.h \
 	daemon/windows/win32.h \
-	daemon/windows/WinConsole.cpp \
-	daemon/windows/WinConsole.h \
 	nzbget.sln \
 	nzbget.vcproj \
-	nzbget-shell.bat  \
-	windows/resources/mainicon.ico \
-	windows/resources/nzbget.rc \
-	windows/resources/resource.h \
-	windows/resources/trayicon_idle.ico \
-	windows/resources/trayicon_paused.ico \
-	windows/resources/trayicon_working.ico \
-	windows/setup/nzbget-setup.nsi \
-	windows/setup/install.bmp \
-	windows/setup/uninstall.bmp
+	nzbget-shell.bat
 
 osx_FILES = \
 	osx/App_Prefix.pch \

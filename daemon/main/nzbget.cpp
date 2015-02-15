@@ -2,7 +2,7 @@
  *  This file is part of nzbget
  *
  *  Copyright (C) 2004 Sven Henkel <sidddy@users.sourceforge.net>
- *  Copyright (C) 2007-2015 Andrey Prygunkov <hugbug@users.sourceforge.net>
+ *  Copyright (C) 2007-2014 Andrey Prygunkov <hugbug@users.sourceforge.net>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -82,7 +82,6 @@
 #include "StackTrace.h"
 #ifdef WIN32
 #include "NTService.h"
-#include "WinConsole.h"
 #endif
 
 // Prototypes
@@ -121,9 +120,6 @@ int g_iArgumentCount;
 char* (*g_szEnvironmentVariables)[] = NULL;
 char* (*g_szArguments)[] = NULL;
 bool g_bReloading = true;
-#ifdef WIN32
-WinConsole* g_pWinConsole = NULL;
-#endif
 
 /*
  * Main loop
@@ -203,11 +199,6 @@ void Run(bool bReload)
 	{
 		Thread::Init();
 	}
-
-#ifdef WIN32
-	g_pWinConsole = new WinConsole();
-	g_pWinConsole->InitAppMode();
-#endif
 
 	g_pServerPool = new ServerPool();
 	g_pScheduler = new Scheduler();
@@ -348,9 +339,6 @@ void Run(bool bReload)
 			g_pDiskState = new DiskState();
 		}
 
-#ifdef WIN32
-		g_pWinConsole->Start();
-#endif
 		g_pQueueCoordinator->Start();
 		g_pUrlCoordinator->Start();
 		g_pPrePostProcessor->Start();
@@ -365,9 +353,6 @@ void Run(bool bReload)
 			g_pUrlCoordinator->IsRunning() || 
 			g_pPrePostProcessor->IsRunning() ||
 			g_pFeedCoordinator->IsRunning() ||
-#ifdef WIN32
-			g_pWinConsole->IsRunning() ||
-#endif
 			g_pArticleCache->IsRunning())
 		{
 			if (!g_pOptions->GetServerMode() && 
@@ -519,9 +504,7 @@ void ProcessClientRequest()
 			break;
 
 		case Options::opClientRequestDownload:
-			Client->RequestServerDownload(g_pOptions->GetAddNZBFilename(), g_pOptions->GetArgFilename(),
-				g_pOptions->GetAddCategory(), g_pOptions->GetAddTop(), g_pOptions->GetAddPaused(), g_pOptions->GetAddPriority(),
-				g_pOptions->GetAddDupeKey(), g_pOptions->GetAddDupeMode(), g_pOptions->GetAddDupeScore());
+			Client->RequestServerDownload(g_pOptions->GetArgFilename(), g_pOptions->GetAddCategory(), g_pOptions->GetAddTop(), g_pOptions->GetAddPaused(), g_pOptions->GetAddPriority());
 			break;
 
 		case Options::opClientRequestVersion:
@@ -560,9 +543,12 @@ void ProcessClientRequest()
 			Client->RequestServerPauseUnpause(false, eRemotePauseUnpauseActionScan);
 			break;
 
-		case Options::opClientRequestHistory:
-		case Options::opClientRequestHistoryAll:
-			Client->RequestHistory(g_pOptions->GetClientOperation() == Options::opClientRequestHistoryAll);
+		case Options::opClientRequestHistory:	 
+			Client->RequestHistory();	 
+			break;
+
+		case Options::opClientRequestDownloadUrl:
+			Client->RequestServerDownloadUrl(g_pOptions->GetLastArg(), g_pOptions->GetAddNZBFilename(), g_pOptions->GetAddCategory(), g_pOptions->GetAddTop(), g_pOptions->GetAddPaused(), g_pOptions->GetAddPriority());
 			break;
 
 		case Options::opClientNoOperation:
@@ -596,9 +582,6 @@ void ExitProc()
 			g_pPrePostProcessor->Stop();
 			g_pFeedCoordinator->Stop();
 			g_pArticleCache->Stop();
-#ifdef WIN32
-			g_pWinConsole->Stop();
-#endif
 		}
 	}
 }
@@ -714,11 +697,6 @@ void Cleanup()
 		Connection::Final();
 		Thread::Final();
 	}
-
-#ifdef WIN32
-	delete g_pWinConsole;
-	g_pWinConsole = NULL;
-#endif
 
 	debug("Global objects cleaned up");
 

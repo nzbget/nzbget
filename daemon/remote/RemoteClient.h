@@ -2,7 +2,7 @@
  *  This file is part of nzbget
  *
  *  Copyright (C) 2005 Bo Cordes Petersen <placebodk@users.sourceforge.net>
- *  Copyright (C) 2007-2015 Andrey Prygunkov <hugbug@users.sourceforge.net>
+ *  Copyright (C) 2007-2014 Andrey Prygunkov <hugbug@users.sourceforge.net>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -60,9 +60,7 @@ public:
 					RemoteClient();
 					~RemoteClient();
 	void			SetVerbose(bool bVerbose) { m_bVerbose = bVerbose; };
-	bool 			RequestServerDownload(const char* szNZBFilename, const char* szNZBContent, const char* szCategory,
-						bool bAddFirst, bool bAddPaused, int iPriority,
-						const char* szDupeKey, int iDupeMode, int iDupeScore);
+	bool 			RequestServerDownload(const char* szFilename, const char* szCategory, bool bAddFirst, bool bAddPaused, int iPriority);
 	bool			RequestServerList(bool bFiles, bool bGroups, const char* szPattern);
 	bool			RequestServerPauseUnpause(bool bPause, eRemotePauseUnpauseAction iAction);
 	bool			RequestServerSetDownloadRate(int iRate);
@@ -76,7 +74,8 @@ public:
 	bool			RequestPostQueue();
 	bool 			RequestWriteLog(int iKind, const char* szText);
 	bool			RequestScan(bool bSyncMode);
-	bool			RequestHistory(bool bWithHidden);
+	bool			RequestHistory();
+	bool 			RequestServerDownloadUrl(const char* szURL, const char* szNZBFilename, const char* szCategory, bool bAddFirst, bool bAddPaused, int iPriority);
 	void			BuildFileList(SNZBListResponse* pListResponse, const char* pTrailingData, DownloadQueue* pDownloadQueue);
 };
 

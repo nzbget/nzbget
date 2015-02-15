@@ -40,7 +40,6 @@
 #include "Options.h"
 #include "ServerPool.h"
 #include "DiskState.h"
-#include "Util.h"
 
 extern ServerPool* g_pServerPool;
 extern Options* g_pOptions;
@@ -172,42 +171,43 @@ void ServerVolume::LogDebugInfo()
 {
 	info("   ---------- ServerVolume");
 
-	StringBuilder msg;
+	char szSec[4000];
 
+	szSec[0] = '\0';
 	for (int i = 0; i < 60; i++)
 	{
-		char szNum[30];
-		snprintf(szNum, 30, "[%i]=%lli ", i, m_BytesPerSeconds[i]);
-		msg.Append(szNum);
+		char szNum[20];
+		snprintf(szNum, 20, "[%i]=%lli ", i, m_BytesPerSeconds[i]);
+		strncat(szSec, szNum, 4000);
 	}
-	info("Secs: %s", msg.GetBuffer());
+	info("Secs: %s", szSec);
 
-	msg.Clear();
+	szSec[0] = '\0';
 	for (int i = 0; i < 60; i++)
 	{
-		char szNum[30];
-		snprintf(szNum, 30, "[%i]=%lli ", i, m_BytesPerMinutes[i]);
-		msg.Append(szNum);
+		char szNum[20];
+		snprintf(szNum, 20, "[%i]=%lli ", i, m_BytesPerMinutes[i]);
+		strncat(szSec, szNum, 4000);
 	}
-	info("Mins: %s", msg.GetBuffer());
+	info("Mins: %s", szSec);
 
-	msg.Clear();
+	szSec[0] = '\0';
 	for (int i = 0; i < 24; i++)
 	{
-		char szNum[30];
-		snprintf(szNum, 30, "[%i]=%lli ", i, m_BytesPerHours[i]);
-		msg.Append(szNum);
+		char szNum[20];
+		snprintf(szNum, 20, "[%i]=%lli ", i, m_BytesPerHours[i]);
+		strncat(szSec, szNum, 4000);
 	}
-	info("Hours: %s", msg.GetBuffer());
+	info("Hours: %s", szSec);
 
-	msg.Clear();
+	szSec[0] = '\0';
 	for (int i = 0; i < (int)m_BytesPerDays.size(); i++)
 	{
-		char szNum[30];
-		snprintf(szNum, 30, "[%i]=%lli ", m_iFirstDay + i, m_BytesPerDays[i]);
-		msg.Append(szNum);
+		char szNum[20];
+		snprintf(szNum, 20, "[%i]=%lli ", m_iFirstDay + i, m_BytesPerDays[i]);
+		strncat(szSec, szNum, 4000);
 	}
-	info("Days: %s", msg.GetBuffer());
+	info("Days: %s", szSec);
 }
 
 StatMeter::StatMeter()

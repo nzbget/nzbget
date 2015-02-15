@@ -1,7 +1,7 @@
 /*
  *  This file is part of nzbget
  *
- *  Copyright (C) 2007-2015 Andrey Prygunkov <hugbug@users.sourceforge.net>
+ *  Copyright (C) 2007-2014 Andrey Prygunkov <hugbug@users.sourceforge.net>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -2101,7 +2101,6 @@ EditCommandEntry EditCommandNameMap[] = {
 	{ DownloadQueue::eaGroupSetDupeKey, "GroupSetDupeKey" },
 	{ DownloadQueue::eaGroupSetDupeScore, "GroupSetDupeScore" },
 	{ DownloadQueue::eaGroupSetDupeMode, "GroupSetDupeMode" },
-	{ DownloadQueue::eaGroupSort, "GroupSort" },
 	{ DownloadQueue::eaPostDelete, "PostDelete" },
 	{ DownloadQueue::eaHistoryDelete, "HistoryDelete" },
 	{ DownloadQueue::eaHistoryFinalDelete, "HistoryFinalDelete" },
@@ -2115,8 +2114,6 @@ EditCommandEntry EditCommandNameMap[] = {
 	{ DownloadQueue::eaHistorySetDupeBackup, "HistorySetDupeBackup" },
 	{ DownloadQueue::eaHistoryMarkBad, "HistoryMarkBad" },
 	{ DownloadQueue::eaHistoryMarkGood, "HistoryMarkGood" },
-	{ DownloadQueue::eaHistorySetCategory, "HistorySetCategory" },
-	{ DownloadQueue::eaHistorySetName, "HistorySetName" },
 	{ 0, NULL }
 };
 
