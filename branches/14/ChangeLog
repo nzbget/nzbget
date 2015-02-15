@@ -1,3 +1,11 @@
+nzbget-14.2:
+  - fixed: the program could crash during download when article cache was
+    active (more likely on very high download speeds);
+  - fixed: unlike to all other scripts the update-script should not be
+    automatically terminated when the program quits;
+  - fixed: XML-RPC method "history" returned invalid xml when used with
+    parameter "hidden=true" (JSON-RPC was fine).
+
 nzbget-14.1:
   - fixed: program could crash during unpack (Posix) or unpack failure
     was reported (Windows);
