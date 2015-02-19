@@ -2,7 +2,7 @@
  *  This file is part of nzbget
  *
  *  Copyright (C) 2004 Sven Henkel <sidddy@users.sourceforge.net>
- *  Copyright (C) 2007-2014 Andrey Prygunkov <hugbug@users.sourceforge.net>
+ *  Copyright (C) 2007-2015 Andrey Prygunkov <hugbug@users.sourceforge.net>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -526,20 +526,26 @@ NZBFile* NZBFile::Create(const char* szFileName, const char* szCategory)
 	{
 		_bstr_t r(doc->GetparseError()->reason);
 		const char* szErrMsg = r;
-		error("Error parsing nzb-file: %s", szErrMsg);
+		error("Error parsing nzb-file %s: %s", Util::BaseFileName(szFileName), szErrMsg);
 		return NULL;
 	}
 
     NZBFile* pFile = new NZBFile(szFileName, szCategory);
-    if (pFile->ParseNZB(doc))
-	{
-		pFile->ProcessFiles();
-	}
-	else
+
+    if (!pFile->ParseNZB(doc))
 	{
 		delete pFile;
-		pFile = NULL;
+		return NULL;
 	}
+
+	if (pFile->GetNZBInfo()->GetFileList()->empty())
+	{
+		error("Error parsing nzb-file %s: file has no content", Util::BaseFileName(szFileName));
+		delete pFile;
+		return NULL;
+	}
+
+	pFile->ProcessFiles();
 
     return pFile;
 }
@@ -654,17 +660,22 @@ NZBFile* NZBFile::Create(const char* szFileName, const char* szCategory)
 
 	int ret = xmlSAXUserParseFile(&SAX_handler, pFile, szFileName);
     
-    if (ret == 0)
+    if (ret != 0)
 	{
-		pFile->ProcessFiles();
-	}
-	else
-	{
-        error("Failed to parse nzb-file");
+		error("Error parsing nzb-file %s", Util::BaseFileName(szFileName));
 		delete pFile;
-		pFile = NULL;
+		return NULL;
 	}
-	
+
+	if (pFile->GetNZBInfo()->GetFileList()->empty())
+	{
+		error("Error parsing nzb-file %s: file has no content", Util::BaseFileName(szFileName));
+		delete pFile;
+		return NULL;
+	}
+
+	pFile->ProcessFiles();
+
 	return pFile;
 }
 
