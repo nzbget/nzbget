@@ -1,7 +1,7 @@
 /*
  *  This file is part of nzbget
  *
- *  Copyright (C) 2012-2013 Andrey Prygunkov <hugbug@users.sourceforge.net>
+ *  Copyright (C) 2012-2015 Andrey Prygunkov <hugbug@users.sourceforge.net>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -81,6 +81,7 @@ void WebProcessor::Execute()
 	m_bGZip =false;
 	char szAuthInfo[1024];
 	szAuthInfo[0] = '\0';
+	m_eUserAccess = uaControl;
 
 	// reading http header
 	char szBuffer[1024];
@@ -176,10 +177,10 @@ void WebProcessor::Execute()
 
 	debug("Final URL=%s", m_szUrl);
 
-	if (strlen(g_pOptions->GetControlPassword()) > 0 &&
-		!(strlen(g_pOptions->GetAuthorizedIP()) > 0 && IsAuthorizedIP(m_pConnection->GetRemoteAddr())))
+	if (!Util::EmptyStr(g_pOptions->GetControlPassword()) &&
+		!(!Util::EmptyStr(g_pOptions->GetAuthorizedIP()) && IsAuthorizedIP(m_pConnection->GetRemoteAddr())))
 	{
-		if (strlen(szAuthInfo) == 0)
+		if (Util::EmptyStr(szAuthInfo))
 		{
 			SendAuthResponse();
 			return;
@@ -188,8 +189,26 @@ void WebProcessor::Execute()
 		// Authorization
 		char* pw = strchr(szAuthInfo, ':');
 		if (pw) *pw++ = '\0';
-		if ((strlen(g_pOptions->GetControlUsername()) > 0 && strcmp(szAuthInfo, g_pOptions->GetControlUsername())) ||
-			(pw && strcmp(pw, g_pOptions->GetControlPassword())))
+
+		if ((Util::EmptyStr(g_pOptions->GetControlUsername()) ||
+			 !strcmp(szAuthInfo, g_pOptions->GetControlUsername())) &&
+			pw && !strcmp(pw, g_pOptions->GetControlPassword()))
+		{
+			m_eUserAccess = uaControl;
+		}
+		else if (!Util::EmptyStr(g_pOptions->GetRestrictedUsername()) &&
+			!strcmp(szAuthInfo, g_pOptions->GetRestrictedUsername()) &&
+			pw && !strcmp(pw, g_pOptions->GetRestrictedPassword()))
+		{
+			m_eUserAccess = uaRestricted;
+		}
+		else if (!Util::EmptyStr(g_pOptions->GetAddUsername()) &&
+			!strcmp(szAuthInfo, g_pOptions->GetAddUsername()) &&
+			pw && !strcmp(pw, g_pOptions->GetAddPassword()))
+		{
+			m_eUserAccess = uaAdd;
+		}
+		else
 		{
 			warn("Request received on port %i from %s, but username or password invalid (%s:%s)",
 				g_pOptions->GetControlPort(), m_pConnection->GetRemoteAddr(), szAuthInfo, pw);
@@ -249,13 +268,14 @@ void WebProcessor::Dispatch()
 		XmlRpcProcessor processor;
 		processor.SetRequest(m_szRequest);
 		processor.SetHttpMethod(m_eHttpMethod == hmGet ? XmlRpcProcessor::hmGet : XmlRpcProcessor::hmPost);
+		processor.SetUserAccess((XmlRpcProcessor::EUserAccess)m_eUserAccess);
 		processor.SetUrl(m_szUrl);
 		processor.Execute();
 		SendBodyResponse(processor.GetResponse(), strlen(processor.GetResponse()), processor.GetContentType()); 
 		return;
 	}
 
-	if (!g_pOptions->GetWebDir() || strlen(g_pOptions->GetWebDir()) == 0)
+	if (Util::EmptyStr(g_pOptions->GetWebDir()))
 	{
 		SendErrorResponse(ERR_HTTP_SERVICE_UNAVAILABLE);
 		return;

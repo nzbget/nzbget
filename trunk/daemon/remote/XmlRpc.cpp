@@ -405,6 +405,7 @@ void XmlRpcProcessor::Dispatch()
 		command->SetRequest(szRequest);
 		command->SetProtocol(m_eProtocol);
 		command->SetHttpMethod(m_eHttpMethod);
+		command->SetUserAccess(m_eUserAccess);
 		command->PrepareParams();
 		command->Execute();
 		BuildResponse(command->GetResponse(), command->GetCallbackFunc(), command->GetFault());
@@ -529,7 +530,19 @@ XmlCommand* XmlRpcProcessor::CreateCommand(const char* szMethodName)
 {
 	XmlCommand* command = NULL;
 
-	if (!strcasecmp(szMethodName, "pause") || !strcasecmp(szMethodName, "pausedownload") ||
+	if (m_eUserAccess == uaAdd && 
+		!(!strcasecmp(szMethodName, "append") || !strcasecmp(szMethodName, "appendurl") ||
+		 !strcasecmp(szMethodName, "version")))
+	{
+		command = new ErrorXmlCommand(401, "Access denied");
+		warn("Received request \"%s\" from add-user, access denied", szMethodName);
+	}
+	else if (m_eUserAccess == uaRestricted && !strcasecmp(szMethodName, "saveconfig"))
+	{
+		command = new ErrorXmlCommand(401, "Access denied");
+		warn("Received request \"%s\" from restricted user, access denied", szMethodName);
+	}
+	else if (!strcasecmp(szMethodName, "pause") || !strcasecmp(szMethodName, "pausedownload") ||
 		!strcasecmp(szMethodName, "pausedownload2"))
 	{
 		command = new PauseUnpauseXmlCommand(true, PauseUnpauseXmlCommand::paDownload);
@@ -1032,7 +1045,6 @@ ErrorXmlCommand::ErrorXmlCommand(int iErrCode, const char* szErrText)
 
 void ErrorXmlCommand::Execute()
 {
-	error("Received unsupported request: %s", m_szErrText);
 	BuildErrorResponse(m_iErrCode, m_szErrText);
 }
 
@@ -2782,7 +2794,8 @@ void ConfigXmlCommand::Execute()
 		Options::OptEntry* pOptEntry = *it;
 
 		char* xmlName = EncodeStr(pOptEntry->GetName());
-		char* xmlValue = EncodeStr(pOptEntry->GetValue());
+		char* xmlValue = EncodeStr(m_eUserAccess == XmlRpcProcessor::uaRestricted &&
+			pOptEntry->Restricted() ? "***" : pOptEntry->GetValue());
 
 		// option values can sometimes have unlimited length
 		int iValLen = strlen(xmlValue);
@@ -2846,7 +2859,8 @@ void LoadConfigXmlCommand::Execute()
 		Options::OptEntry* pOptEntry = *it;
 
 		char* xmlName = EncodeStr(pOptEntry->GetName());
-		char* xmlValue = EncodeStr(pOptEntry->GetValue());
+		char* xmlValue = EncodeStr(m_eUserAccess == XmlRpcProcessor::uaRestricted &&
+			pOptEntry->Restricted() ? "***" : pOptEntry->GetValue());
 
 		// option values can sometimes have unlimited length
 		int iValLen = strlen(xmlValue);

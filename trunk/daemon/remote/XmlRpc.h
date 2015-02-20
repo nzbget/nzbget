@@ -48,11 +48,19 @@ public:
 		hmGet
 	};
 
+	enum EUserAccess
+	{
+		uaControl,
+		uaRestricted,
+		uaAdd
+	};
+
 private:
 	char*				m_szRequest;
 	const char*			m_szContentType;
 	ERpcProtocol		m_eProtocol;
 	EHttpMethod			m_eHttpMethod;
+	EUserAccess			m_eUserAccess;
 	char*				m_szUrl;
 	StringBuilder		m_cResponse;
 
@@ -66,6 +74,7 @@ public:
 						~XmlRpcProcessor();
 	void				Execute();
 	void				SetHttpMethod(EHttpMethod eHttpMethod) { m_eHttpMethod = eHttpMethod; }
+	void				SetUserAccess(EUserAccess eUserAccess) { m_eUserAccess = eUserAccess; }
 	void				SetUrl(const char* szUrl);
 	void				SetRequest(char* szRequest) { m_szRequest = szRequest; }
 	const char*			GetResponse() { return m_cResponse.GetBuffer(); }
@@ -83,6 +92,7 @@ protected:
 	bool				m_bFault;
 	XmlRpcProcessor::ERpcProtocol	m_eProtocol;
 	XmlRpcProcessor::EHttpMethod	m_eHttpMethod;
+	XmlRpcProcessor::EUserAccess	m_eUserAccess;
 
 	void				BuildErrorResponse(int iErrCode, const char* szErrText, ...);
 	void				BuildBoolResponse(bool bOK);
@@ -106,6 +116,7 @@ public:
 	void				SetRequest(char* szRequest) { m_szRequest = szRequest; m_szRequestPtr = m_szRequest; }
 	void				SetProtocol(XmlRpcProcessor::ERpcProtocol eProtocol) { m_eProtocol = eProtocol; }
 	void				SetHttpMethod(XmlRpcProcessor::EHttpMethod eHttpMethod) { m_eHttpMethod = eHttpMethod; }
+	void				SetUserAccess(XmlRpcProcessor::EUserAccess eUserAccess) { m_eUserAccess = eUserAccess; }
 	const char*			GetResponse() { return m_StringBuilder.GetBuffer(); }
 	const char*			GetCallbackFunc() { return m_szCallbackFunc; }
 	bool				GetFault() { return m_bFault; }

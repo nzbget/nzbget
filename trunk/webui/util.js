@@ -525,7 +525,11 @@ var RPC = (new function($)
 								}
 								else
 								{
-									res = result.error.message + '<br><br>Request: ' + request;
+									res = result.error.message;
+									if (result.error.message != 'Access denied')
+									{
+										res = res + '<br><br>Request: ' + request;
+									}
 								}
 							}
 						}
