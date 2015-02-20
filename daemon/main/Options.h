@@ -132,6 +132,7 @@ public:
 		const char*		GetValue() { return m_szValue; }
 		const char*		GetDefValue() { return m_szDefValue; }
 		int				GetLineNo() { return m_iLineNo; }
+		bool			Restricted();
 	};
 	
 	typedef std::vector<OptEntry*>  OptEntriesBase;
@@ -276,6 +277,10 @@ private:
 	char*				m_szControlIP;
 	char*				m_szControlUsername;
 	char*				m_szControlPassword;
+	char*				m_szRestrictedUsername;
+	char*				m_szRestrictedPassword;
+	char*				m_szAddUsername;
+	char*				m_szAddPassword;
 	int					m_iControlPort;
 	bool				m_bSecureControl;
 	int					m_iSecurePort;
@@ -457,6 +462,10 @@ public:
 	const char*			GetControlIP();
 	const char*			GetControlUsername() { return m_szControlUsername; }
 	const char*			GetControlPassword() { return m_szControlPassword; }
+	const char*			GetRestrictedUsername() { return m_szRestrictedUsername; }
+	const char*			GetRestrictedPassword() { return m_szRestrictedPassword; }
+	const char*			GetAddUsername() { return m_szAddUsername; }
+	const char*			GetAddPassword() { return m_szAddPassword; }
 	int					GetControlPort() { return m_iControlPort; }
 	bool				GetSecureControl() { return m_bSecureControl; }
 	int					GetSecurePort() { return m_iSecurePort; }

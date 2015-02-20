@@ -35,6 +35,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <stdio.h>
+#include <ctype.h>
 #include <stdarg.h>
 #include <sys/stat.h>
 #include <set>
@@ -125,6 +126,10 @@ static const char* OPTION_CONTROLIP				= "ControlIp";
 static const char* OPTION_CONTROLPORT			= "ControlPort";
 static const char* OPTION_CONTROLUSERNAME		= "ControlUsername";
 static const char* OPTION_CONTROLPASSWORD		= "ControlPassword";
+static const char* OPTION_RESTRICTEDUSERNAME	= "RestrictedUsername";
+static const char* OPTION_RESTRICTEDPASSWORD	= "RestrictedPassword";
+static const char* OPTION_ADDUSERNAME			= "AddUsername";
+static const char* OPTION_ADDPASSWORD			= "AddPassword";
 static const char* OPTION_SECURECONTROL			= "SecureControl";
 static const char* OPTION_SECUREPORT			= "SecurePort";
 static const char* OPTION_SECURECERT			= "SecureCert";
@@ -276,6 +281,30 @@ void Options::OptEntry::SetValue(const char* szValue)
 	{
 		m_szDefValue = strdup(szValue);
 	}
+}
+
+bool Options::OptEntry::Restricted()
+{
+	char szLoName[256];
+	strncpy(szLoName, m_szName, sizeof(szLoName));
+	szLoName[256-1] = '\0';
+	for (char* p = szLoName; *p; p++) *p = tolower(*p); // convert string to lowercase
+
+	bool bRestricted = !strcasecmp(m_szName, OPTION_CONTROLIP) ||
+		!strcasecmp(m_szName, OPTION_CONTROLPORT) ||
+		!strcasecmp(m_szName, OPTION_SECURECONTROL) ||
+		!strcasecmp(m_szName, OPTION_SECUREPORT) ||
+		!strcasecmp(m_szName, OPTION_SECURECERT) ||
+		!strcasecmp(m_szName, OPTION_SECUREKEY) ||
+		!strcasecmp(m_szName, OPTION_AUTHORIZEDIP) ||
+		!strcasecmp(m_szName, OPTION_DAEMONUSERNAME) ||
+		!strcasecmp(m_szName, OPTION_UMASK) ||
+		strchr(m_szName, ':') ||			// All extension script options
+		strstr(szLoName, "username") ||		// ServerX.Username, ControlUsername, etc.
+		strstr(szLoName, "password") ||		// ServerX.Password, ControlPassword, etc.
+		strstr(szLoName, ".url");			// FeedX.URL
+
+	return bRestricted;
 }
 
 Options::OptEntries::~OptEntries()
@@ -514,6 +543,10 @@ Options::Options(int argc, char* argv[])
 	m_szControlIP			= NULL;
 	m_szControlUsername		= NULL;
 	m_szControlPassword		= NULL;
+	m_szRestrictedUsername	= NULL;
+	m_szRestrictedPassword	= NULL;
+	m_szAddUsername			= NULL;
+	m_szAddPassword			= NULL;
 	m_bSecureControl		= false;
 	m_iSecurePort			= 0;
 	m_szSecureCert			= NULL;
@@ -680,6 +713,10 @@ Options::~Options()
 	free(m_szControlIP);
 	free(m_szControlUsername);
 	free(m_szControlPassword);
+	free(m_szRestrictedUsername);
+	free(m_szRestrictedPassword);
+	free(m_szAddUsername);
+	free(m_szAddPassword);
 	free(m_szSecureCert);
 	free(m_szSecureKey);
 	free(m_szAuthorizedIP);
@@ -784,6 +821,10 @@ void Options::InitDefault()
 	SetOption(OPTION_CONTROLIP, "0.0.0.0");
 	SetOption(OPTION_CONTROLUSERNAME, "nzbget");
 	SetOption(OPTION_CONTROLPASSWORD, "tegbzn6789");
+	SetOption(OPTION_RESTRICTEDUSERNAME, "");
+	SetOption(OPTION_RESTRICTEDPASSWORD, "");
+	SetOption(OPTION_ADDUSERNAME, "");
+	SetOption(OPTION_ADDPASSWORD, "");
 	SetOption(OPTION_CONTROLPORT, "6789");
 	SetOption(OPTION_SECURECONTROL, "no");
 	SetOption(OPTION_SECUREPORT, "6791");
@@ -1026,6 +1067,10 @@ void Options::InitOptions()
 	m_szControlIP			= strdup(GetOption(OPTION_CONTROLIP));
 	m_szControlUsername		= strdup(GetOption(OPTION_CONTROLUSERNAME));
 	m_szControlPassword		= strdup(GetOption(OPTION_CONTROLPASSWORD));
+	m_szRestrictedUsername	= strdup(GetOption(OPTION_RESTRICTEDUSERNAME));
+	m_szRestrictedPassword	= strdup(GetOption(OPTION_RESTRICTEDPASSWORD));
+	m_szAddUsername			= strdup(GetOption(OPTION_ADDUSERNAME));
+	m_szAddPassword			= strdup(GetOption(OPTION_ADDPASSWORD));
 	m_szSecureCert			= strdup(GetOption(OPTION_SECURECERT));
 	m_szSecureKey			= strdup(GetOption(OPTION_SECUREKEY));
 	m_szAuthorizedIP		= strdup(GetOption(OPTION_AUTHORIZEDIP));

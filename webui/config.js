@@ -1,7 +1,7 @@
 /*
  * This file is part of nzbget
  *
- * Copyright (C) 2012-2014 Andrey Prygunkov <hugbug@users.sourceforge.net>
+ * Copyright (C) 2012-2015 Andrey Prygunkov <hugbug@users.sourceforge.net>
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -39,6 +39,7 @@ var Options = (new function($)
 	this.options;
 	this.postParamConfig;
 	this.categories = [];
+	this.restricted = false;
 
 	// State
 	var _this = this;
@@ -62,6 +63,7 @@ var Options = (new function($)
 		RPC.call('config', [], function(_options) {
 			_this.options = _options;
 			initCategories();
+			_this.restricted = _this.option('ControlPort') === '***';
 
 			// loading config templates and build list of post-processing parameters
 			_this.postParamConfig = [];
@@ -643,7 +645,7 @@ var Config = (new function($)
 
 	/*** GENERATE HTML PAGE *****************************************************************/
 
-	function buildOptionsContent(section)
+	function buildOptionsContent(section, extensionsec)
 	{
 		var html = '';
 
@@ -653,6 +655,13 @@ var Config = (new function($)
 
 		for (var i=0, op=0; i < section.options.length; i++)
 		{
+			if (i > 0 && extensionsec && Options.restricted)
+			{
+				// in restricted mode don't show any options for extension scripts,
+				// option's content is hidden content anyway (***)
+				break;
+			}
+			
 			var option = section.options[i];
 			if (!option.template)
 			{
@@ -917,7 +926,7 @@ var Config = (new function($)
 				{
 					var html = $('<li><a href="#' + section.id + '">' + section.name + '</a></li>');
 					$ConfigNav.append(html);
-					var content = buildOptionsContent(section);
+					var content = buildOptionsContent(section, k > 0);
 					$ConfigData.append(content);
 					added = true;
 				}
