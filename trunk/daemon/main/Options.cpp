@@ -301,8 +301,7 @@ bool Options::OptEntry::Restricted()
 		!strcasecmp(m_szName, OPTION_UMASK) ||
 		strchr(m_szName, ':') ||			// All extension script options
 		strstr(szLoName, "username") ||		// ServerX.Username, ControlUsername, etc.
-		strstr(szLoName, "password") ||		// ServerX.Password, ControlPassword, etc.
-		strstr(szLoName, ".url");			// FeedX.URL
+		strstr(szLoName, "password");		// ServerX.Password, ControlPassword, etc.
 
 	return bRestricted;
 }
