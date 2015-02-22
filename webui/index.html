@@ -252,7 +252,7 @@
 					<button class="btn dropdown-toggle" data-toggle="dropdown" title="RSS Feeds"><i class="icon-rss"></i><span class="btn-caption"> Feeds </span><span class="phone-only inline">&nbsp;</span><span class="caret"></span></button>
 					<ul class="dropdown-menu" id="RssMenu">
 						<li class="menu-header">RSS Feeds</li>
-						<li class="feed-menu-template hide"><a href="#">Feed1</a></li>
+						<li class="feed-menu-template hide"><a href="#" title="Show feed"><table><tr><td><span></span></td><td><button class="btn btn-primary" title="Fetch feed">Fetch</button></td></tr></table></a></li>
 						<li class="divider" id="RssMenu_Divider"></li>
 						<li><a href="#" onclick="Feeds.fetchAll()">Fetch All Feeds</a></li>
 					</ul>
@@ -2487,7 +2487,7 @@
     <strong>Cannot redownload hidden records</strong>
 </div>
 
-<div id="Notif_Feeds_FetchAll" data-duration="1000" class="alert alert-inverse alert-center alert-center-small hide">
+<div id="Notif_Feeds_Fetch" data-duration="1000" class="alert alert-inverse alert-center alert-center-small hide">
     <strong>Fetching new items</strong>
 </div>
 

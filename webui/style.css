@@ -1,7 +1,7 @@
 /*!
  * This file is part of nzbget
  *
- * Copyright (C) 2012-2014 Andrey Prygunkov <hugbug@users.sourceforge.net>
+ * Copyright (C) 2012-2015 Andrey Prygunkov <hugbug@users.sourceforge.net>
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -398,9 +398,42 @@ body.navfixed.scrolled .navbar-fixed-top .navbar-inner {
 	overflow: hidden;
 }
 
+#RssMenu table {
+	width: 100%;
+}
+
+#RssMenu table td:nth-child(2) {
+	text-align: right;
+	padding-left: 10px;
+	padding-top: 0;
+	padding-bottom: 0;
+}
+
+#RssMenu a .btn {
+	visibility: hidden;
+	height: 22px;
+	line-height: 12px;
+	font-size: 8pt;
+	padding: 2px 7px;
+	margin-top: -2px;
+	margin-bottom: -1px;
+}
+
+#RssMenu a:hover .btn {
+	visibility: visible;
+}
+
 #DownloadsEdit_ActionsMenu,
 #HistoryEdit_ActionsMenu {
 	min-width: 120px;
+}
+
+ul.dropdown-menu > li > a {
+	line-height: 20px;
+}
+
+ul.dropdown-menu > li > a.has-table {
+	line-height: 18px;
 }
 
 ul.dropdown-menu > li > a > i {
