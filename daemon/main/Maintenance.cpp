@@ -69,7 +69,7 @@ Maintenance::~Maintenance()
 		}
 	}
 
-	ClearMessages();
+	m_Messages.Clear();
 
 	free(m_szUpdateScript);
 }
@@ -81,16 +81,7 @@ void Maintenance::ResetUpdateController()
 	m_mutexController.Unlock();
 }
 
-void Maintenance::ClearMessages()
-{
-	for (Log::Messages::iterator it = m_Messages.begin(); it != m_Messages.end(); it++)
-	{
-		delete *it;
-	}
-	m_Messages.clear();
-}
-
-Log::Messages* Maintenance::LockMessages()
+MessageList* Maintenance::LockMessages()
 {
 	m_mutexLog.Lock();
 	return &m_Messages;
@@ -101,7 +92,7 @@ void Maintenance::UnlockMessages()
 	m_mutexLog.Unlock();
 }
 
-void Maintenance::AppendMessage(Message::EKind eKind, time_t tTime, const char * szText)
+void Maintenance::AddMessage(Message::EKind eKind, time_t tTime, const char * szText)
 {
 	if (tTime == 0)
 	{
@@ -137,7 +128,7 @@ bool Maintenance::StartUpdate(EBranch eBranch)
 		return false;
 	}
 
-	ClearMessages();
+	m_Messages.Clear();
 
 	m_UpdateScriptController = new UpdateScriptController();
 	m_UpdateScriptController->SetScript(m_szUpdateScript);
@@ -269,7 +260,7 @@ void UpdateScriptController::AddMessage(Message::EKind eKind, const char* szText
 {
 	szText = szText + m_iPrefixLen;
 
-	g_pMaintenance->AppendMessage(eKind, time(NULL), szText);
+	g_pMaintenance->AddMessage(eKind, time(NULL), szText);
 	ScriptController::AddMessage(eKind, szText);
 }
 

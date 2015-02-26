@@ -228,7 +228,7 @@ void HistoryCoordinator::AddToHistory(DownloadQueue* pDownloadQueue, NZBInfo* pN
 		pNZBInfo->GetFileList()->Clear();
 	}
 
-	info("Collection %s added to history", pNZBInfo->GetName());
+	pNZBInfo->PrintMessage(Message::mkInfo, "Collection %s added to history", pNZBInfo->GetName());
 }
 
 void HistoryCoordinator::HistoryHide(DownloadQueue* pDownloadQueue, HistoryInfo* pHistoryInfo, int rindex)
@@ -449,7 +449,7 @@ void HistoryCoordinator::HistoryReturn(DownloadQueue* pDownloadQueue, HistoryLis
 
 	if (pHistoryInfo->GetKind() == HistoryInfo::hkUrl)
 	{
-		NZBInfo* pNZBInfo = pHistoryInfo->GetNZBInfo();
+		pNZBInfo = pHistoryInfo->GetNZBInfo();
 		pHistoryInfo->DiscardNZBInfo();
 		pNZBInfo->SetUrlStatus(NZBInfo::lsNone);
 		pNZBInfo->SetDeleteStatus(NZBInfo::dsNone);
@@ -458,7 +458,7 @@ void HistoryCoordinator::HistoryReturn(DownloadQueue* pDownloadQueue, HistoryLis
 
 	pDownloadQueue->GetHistory()->erase(itHistory);
 	// the object "pHistoryInfo" is released few lines later, after the call to "NZBDownloaded"
-	info("%s returned from history back to download queue", szNiceName);
+	pNZBInfo->PrintMessage(Message::mkInfo, "%s returned from history back to download queue", szNiceName);
 
 	if (bReprocess)
 	{

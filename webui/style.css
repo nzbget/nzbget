@@ -783,9 +783,27 @@ form {
 }
 
 #DownloadsEdit_FileTable_filter,
-#DownloadsEdit_LogTable_filter,
+#DownloadsEdit_LogTable_filter
+#HistoryEdit_LogTable_filter,
 #FeedDialog_ItemTable_filter {
 	width: 180px;
+}
+
+#DownloadsLogRecordsPerPageBlock,
+#HistoryLogRecordsPerPageBlock {
+	margin-bottom: 12px;
+}
+
+#DownloadsEdit_LogTable_filterBlock,
+#HistoryEdit_LogTable_filterBlock {
+	float: left;
+	margin-left: 20px;
+	margin-right: 20px;
+	margin-bottom: 12px;
+}
+
+.phone .modal-toolbox {
+	margin-bottom: 20px;
 }
 
 .loading-block {

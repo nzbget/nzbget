@@ -1,7 +1,7 @@
 /*
  *  This file is part of nzbget
  *
- *  Copyright (C) 2007-2014 Andrey Prygunkov <hugbug@users.sourceforge.net>
+ *  Copyright (C) 2007-2015 Andrey Prygunkov <hugbug@users.sourceforge.net>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -114,7 +114,6 @@ protected:
 	void				ParRenameCompleted();
 	void				CheckPauseState(PostInfo* pPostInfo);
 	bool				RequestMorePars(NZBInfo* pNZBInfo, const char* szParFilename, int iBlockNeeded, int* pBlockFound);
-	void				PrintMessage(PostInfo* pPostInfo, Message::EKind eKind, const char* szFormat, ...);
 #endif
 
 public:

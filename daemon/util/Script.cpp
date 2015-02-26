@@ -422,15 +422,15 @@ int ScriptController::Execute()
 		szErrMsg[255-1] = '\0';
 		if (FormatMessage(FORMAT_MESSAGE_FROM_SYSTEM, NULL, dwErrCode, 0, szErrMsg, 255, NULL))
 		{
-			error("Could not start %s: %s", m_szInfoName, szErrMsg);
+			PrintMessage(Message::mkError, "Could not start %s: %s", m_szInfoName, szErrMsg);
 		}
 		else
 		{
-			error("Could not start %s: error %i", m_szInfoName, dwErrCode);
+			PrintMessage(Message::mkError, "Could not start %s: error %i", m_szInfoName, dwErrCode);
 		}
 		if (!Util::FileExists(m_szScript))
 		{
-			error("Could not find file %s", m_szScript);
+			PrintMessage(Message::mkError, "Could not find file %s", m_szScript);
 		}
 		free(szEnvironmentStrings);
 		return -1;
@@ -455,7 +455,7 @@ int ScriptController::Execute()
 	// create the pipe
 	if (pipe(p))
 	{
-		error("Could not open pipe: errno %i", errno);
+		PrintMessage(Message::mkError, "Could not open pipe: errno %i", errno);
 		return -1;
 	}
 
@@ -469,7 +469,7 @@ int ScriptController::Execute()
 
 	if (pid == -1)
 	{
-		error("Could not start %s: errno %i", m_szInfoName, errno);
+		PrintMessage(Message::mkError, "Could not start %s: errno %i", m_szInfoName, errno);
 		free(pEnvironmentStrings);
 		return -1;
 	}
@@ -529,7 +529,7 @@ int ScriptController::Execute()
 	m_pReadpipe = fdopen(pipein, "r");
 	if (!m_pReadpipe)
 	{
-		error("Could not open pipe to %s", m_szInfoName);
+		PrintMessage(Message::mkError, "Could not open pipe to %s", m_szInfoName);
 		return -1;
 	}
 	

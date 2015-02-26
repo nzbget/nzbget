@@ -1,7 +1,7 @@
 /*
  *  This file is part of nzbget
  *
- *  Copyright (C) 2012-2014 Andrey Prygunkov <hugbug@users.sourceforge.net>
+ *  Copyright (C) 2012-2015 Andrey Prygunkov <hugbug@users.sourceforge.net>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -47,9 +47,11 @@
 #include "Util.h"
 #include "NZBFile.h"
 #include "Scanner.h"
+#include "DiskState.h"
 
 extern Options* g_pOptions;
 extern Scanner* g_pScanner;
+extern DiskState* g_pDiskState;
 
 UrlDownloader::UrlDownloader() : WebDownloader()
 {
@@ -453,6 +455,7 @@ void UrlCoordinator::UrlCompleted(UrlDownloader* pUrlDownloader)
 
 	if (bDeleteObj)
 	{
+		g_pDiskState->DiscardFiles(pNZBInfo);
 		delete pNZBInfo;
 	}
 }
@@ -490,6 +493,7 @@ bool UrlCoordinator::DeleteQueueEntry(DownloadQueue* pDownloadQueue, NZBInfo* pN
 	}
 	else
 	{
+		g_pDiskState->DiscardFiles(pNZBInfo);
 		delete pNZBInfo;
 	}
 

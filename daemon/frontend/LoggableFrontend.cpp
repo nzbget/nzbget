@@ -2,7 +2,7 @@
  *  This file if part of nzbget
  *
  *  Copyright (C) 2004  Sven Henkel <sidddy@users.sourceforge.net>
- *  Copyright (C) 2007  Andrey Prygunkov <hugbug@users.sourceforge.net>
+ *  Copyright (C) 2007-2015  Andrey Prygunkov <hugbug@users.sourceforge.net>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -79,7 +79,7 @@ void LoggableFrontend::Update()
 
 	BeforePrint();
 
-	Log::Messages* pMessages = LockMessages();
+	MessageList* pMessages = LockMessages();
 	if (!pMessages->empty())
 	{
 		Message* pFirstMessage = pMessages->front();

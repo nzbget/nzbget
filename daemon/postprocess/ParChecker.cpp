@@ -961,7 +961,7 @@ bool ParChecker::AddSplittedFragments()
 	{
 		m_iExtraFiles += extrafiles.size();
 		m_bVerifyingExtraFiles = true;
-		info("Found %i splitted fragments for %s", (int)extrafiles.size(), m_szInfoName);
+		PrintMessage(Message::mkInfo, "Found %i splitted fragments for %s", (int)extrafiles.size(), m_szInfoName);
 		bFragmentsAdded = ((Repairer*)m_pRepairer)->VerifyExtraFiles(extrafiles);
 		((Repairer*)m_pRepairer)->UpdateVerificationResults();
 		m_bVerifyingExtraFiles = false;
@@ -1031,7 +1031,7 @@ bool ParChecker::AddMissingFiles()
 			bool bAdded = iWasMissing > (int)((Repairer*)m_pRepairer)->missingfilecount;
 			if (bAdded)
 			{
-				info("Found missing file %s", Util::BaseFileName(pExtraFile->FileName().c_str()));
+				PrintMessage(Message::mkInfo, "Found missing file %s", Util::BaseFileName(pExtraFile->FileName().c_str()));
 				RegisterParredFile(Util::BaseFileName(pExtraFile->FileName().c_str()));
 			}
 
@@ -1467,7 +1467,8 @@ bool ParChecker::VerifyPartialDataFile(void* pDiskfile, void* pSourcefile, Segme
 	FILE* infile = fopen(szFilename, FOPEN_RB);
 	if (!infile)
 	{
-		error("Could not open file %s: %s", szFilename, Util::GetLastErrorMessage(szErrBuf, sizeof(szErrBuf)));
+		PrintMessage(Message::mkError, "Could not open file %s: %s",
+			szFilename, Util::GetLastErrorMessage(szErrBuf, sizeof(szErrBuf)));
 	}
 
 	// For each sequential range of presumably valid blocks:

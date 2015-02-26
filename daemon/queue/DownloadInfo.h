@@ -418,8 +418,6 @@ public:
 		nkUrl
 	};
 
-	typedef std::deque<Message*>		Messages;
-
 	static const int FORCE_PRIORITY = 900;
 
 	friend class DupInfo;
@@ -489,7 +487,7 @@ private:
 	ServerStatList		m_ServerStats;
 	ServerStatList		m_CurrentServerStats;
 	Mutex				m_mutexLog;
-	Messages			m_Messages;
+	MessageList			m_Messages;
 	int					m_iIDMessageGen;
 	PostInfo*			m_pPostInfo;
 	long long 			m_lDownloadedSize;
@@ -502,9 +500,13 @@ private:
 	bool				m_bReprocess;
 	time_t				m_tQueueScriptTime;
 	bool				m_bParFull;
+	int					m_iMessageCount;
+	int					m_iCachedMessageCount;
 
 	static int			m_iIDGen;
 	static int			m_iIDMax;
+
+	void				ClearMessages();
 
 public:
 						NZBInfo();
@@ -666,9 +668,13 @@ public:
 	bool				IsDupeSuccess();
 	const char*			MakeTextStatus(bool bIgnoreScriptStatus);
 
-	void				AppendMessage(Message::EKind eKind, time_t tTime, const char* szText);
-	Messages*			LockMessages();
-	void				UnlockMessages();
+	void				AddMessage(Message::EKind eKind, const char* szText);
+	void				PrintMessage(Message::EKind eKind, const char* szFormat, ...);
+	int					GetMessageCount() { return m_iMessageCount; }
+	void				SetMessageCount(int iMessageCount) { m_iMessageCount = iMessageCount; }
+	int					GetCachedMessageCount() { return m_iCachedMessageCount; }
+	MessageList*		LockCachedMessages();
+	void				UnlockCachedMessages();
 };
 
 typedef std::deque<NZBInfo*> NZBQueueBase;
@@ -703,7 +709,6 @@ public:
 		ptFinished
 	};
 
-	typedef std::deque<Message*>	Messages;
 	typedef std::vector<char*>		ParredFiles;
 
 private:
@@ -725,9 +730,6 @@ private:
 	time_t				m_tStageTime;
 	Thread*				m_pPostThread;
 	
-	Mutex				m_mutexLog;
-	Messages			m_Messages;
-	int					m_iIDMessageGen;
 	ParredFiles			m_ParredFiles;
 
 public:
@@ -767,9 +769,6 @@ public:
 	void				SetLastUnpackStatus(int eUnpackStatus) { m_eLastUnpackStatus = eUnpackStatus; }
 	Thread*				GetPostThread() { return m_pPostThread; }
 	void				SetPostThread(Thread* pPostThread) { m_pPostThread = pPostThread; }
-	void				AppendMessage(Message::EKind eKind, const char* szText);
-	Messages*			LockMessages();
-	void				UnlockMessages();
 	ParredFiles*		GetParredFiles() { return &m_ParredFiles; }
 };
 

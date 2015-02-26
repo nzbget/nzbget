@@ -1,7 +1,7 @@
 /*
  *  This file is part of nzbget
  *
- *  Copyright (C) 2007-2014 Andrey Prygunkov <hugbug@users.sourceforge.net>
+ *  Copyright (C) 2007-2015 Andrey Prygunkov <hugbug@users.sourceforge.net>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -30,6 +30,7 @@
 #include "FeedInfo.h"
 #include "NewsServer.h"
 #include "StatMeter.h"
+#include "Log.h"
 
 class DiskState
 {
@@ -83,7 +84,7 @@ public:
 	bool				LoadFileState(FileInfo* pFileInfo, Servers* pServers, bool bCompleted);
 	bool				LoadArticles(FileInfo* pFileInfo);
 	void				DiscardDownloadQueue();
-	bool				DiscardFile(FileInfo* pFileInfo, bool bDeleteData, bool bDeletePartialState, bool bDeleteCompletedState);
+	void				DiscardFile(FileInfo* pFileInfo, bool bDeleteData, bool bDeletePartialState, bool bDeleteCompletedState);
 	void				DiscardFiles(NZBInfo* pNZBInfo);
 	bool				SaveFeeds(Feeds* pFeeds, FeedHistory* pFeedHistory);
 	bool				LoadFeeds(Feeds* pFeeds, FeedHistory* pFeedHistory);
@@ -92,6 +93,8 @@ public:
 	void				CleanupTempDir(DownloadQueue* pDownloadQueue);
 	void				WriteCacheFlag();
 	void				DeleteCacheFlag();
+	void				AppendNZBMessage(int iNZBID, Message::EKind eKind, const char* szText);
+	void				LoadNZBMessages(int iNZBID, MessageList* pMessages);
 };
 
 #endif

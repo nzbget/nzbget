@@ -265,6 +265,7 @@ private:
 	EMessageTarget		m_eDetailTarget;
 	bool				m_bDecode;
 	bool				m_bCreateBrokenLog;
+	bool				m_bNzbLog;
 	int					m_iArticleTimeout;
 	int					m_iUrlTimeout;
 	int					m_iTerminateTimeout;
@@ -444,6 +445,7 @@ public:
 	const char*			GetConfigTemplate() { return m_szConfigTemplate; }
 	const char*			GetScriptDir() { return m_szScriptDir; }
 	bool				GetCreateBrokenLog() const { return m_bCreateBrokenLog; }
+	bool				GetNzbLog() const { return m_bNzbLog; }
 	EMessageTarget		GetInfoTarget() const { return m_eInfoTarget; }
 	EMessageTarget		GetWarningTarget() const { return m_eWarningTarget; }
 	EMessageTarget		GetErrorTarget() const { return m_eErrorTarget; }
