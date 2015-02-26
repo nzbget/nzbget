@@ -124,6 +124,9 @@ private:
 
 	bool				MoveFiles();
 
+protected:
+	virtual void		AddMessage(Message::EKind eKind, const char* szText);
+
 public:
 	virtual void		Run();
 	static void			StartJob(PostInfo* pPostInfo);
@@ -137,6 +140,9 @@ private:
 	char				m_szFinalDir[1024];
 
 	bool				Cleanup(const char* szDestDir, bool *bDeleted);
+
+protected:
+	virtual void		AddMessage(Message::EKind eKind, const char* szText);
 
 public:
 	virtual void		Run();

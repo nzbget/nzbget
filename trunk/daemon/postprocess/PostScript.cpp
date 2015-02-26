@@ -1,7 +1,7 @@
 /*
  *  This file is part of nzbget
  *
- *  Copyright (C) 2007-2014 Andrey Prygunkov <hugbug@users.sourceforge.net>
+ *  Copyright (C) 2007-2015 Andrey Prygunkov <hugbug@users.sourceforge.net>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -103,6 +103,14 @@ void PostScriptController::ExecuteScript(Options::Script* pScript)
 	}
 
 	PrintMessage(Message::mkInfo, "Executing post-process-script %s for %s", pScript->GetName(), m_pPostInfo->GetNZBInfo()->GetName());
+
+	char szProgressLabel[1024];
+	snprintf(szProgressLabel, 1024, "Executing post-process-script %s", pScript->GetName());
+	szProgressLabel[1024-1] = '\0';
+
+	DownloadQueue::Lock();
+	m_pPostInfo->SetProgressLabel(szProgressLabel);
+	DownloadQueue::Unlock();
 
 	SetScript(pScript->GetLocation());
 	SetArgs(NULL, false);
@@ -277,7 +285,8 @@ void PostScriptController::AddMessage(Message::EKind eKind, const char* szText)
 			}
 			else
 			{
-				error("Invalid command \"%s\" received from %s", szMsgText, GetInfoName());
+				m_pPostInfo->GetNZBInfo()->PrintMessage(Message::mkError,
+					"Invalid command \"%s\" received from %s", szMsgText, GetInfoName());
 			}
 			free(szParam);
 		}
@@ -290,17 +299,16 @@ void PostScriptController::AddMessage(Message::EKind eKind, const char* szText)
 		}
 		else
 		{
-			error("Invalid command \"%s\" received from %s", szMsgText, GetInfoName());
+			m_pPostInfo->GetNZBInfo()->PrintMessage(Message::mkError,
+				"Invalid command \"%s\" received from %s", szMsgText, GetInfoName());
 		}
-	}
-	else if (!strncmp(szMsgText, "[HISTORY] ", 10))
-	{
-		m_pPostInfo->GetNZBInfo()->AppendMessage(eKind, 0, szMsgText);
 	}
 	else
 	{
-		ScriptController::AddMessage(eKind, szText);
-		m_pPostInfo->AppendMessage(eKind, szText);
+		m_pPostInfo->GetNZBInfo()->AddMessage(eKind, szText);
+		DownloadQueue::Lock();
+		m_pPostInfo->SetProgressLabel(szText);
+		DownloadQueue::Unlock();
 	}
 
 	if (g_pOptions->GetPausePostProcess() && !m_pPostInfo->GetNZBInfo()->GetForcePriority())

@@ -2,7 +2,7 @@
  *  This file is part of nzbget
  *
  *  Copyright (C) 2004 Sven Henkel <sidddy@users.sourceforge.net>
- *  Copyright (C) 2007-2014 Andrey Prygunkov <hugbug@users.sourceforge.net>
+ *  Copyright (C) 2007-2015 Andrey Prygunkov <hugbug@users.sourceforge.net>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -119,11 +119,7 @@ void Frontend::FreeData()
 {
 	if (IsRemoteMode())
 	{
-		for (Log::Messages::iterator it = m_RemoteMessages.begin(); it != m_RemoteMessages.end(); it++)
-		{
-			delete *it;
-		}
-		m_RemoteMessages.clear();
+		m_RemoteMessages.Clear();
 
 		DownloadQueue* pDownloadQueue = DownloadQueue::Lock();
 		pDownloadQueue->GetQueue()->Clear();
@@ -131,7 +127,7 @@ void Frontend::FreeData()
 	}
 }
 
-Log::Messages* Frontend::LockMessages()
+MessageList* Frontend::LockMessages()
 {
 	if (IsRemoteMode())
 	{

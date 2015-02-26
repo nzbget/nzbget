@@ -2,7 +2,7 @@
  *  This file is part of nzbget
  *
  *  Copyright (C) 2005 Bo Cordes Petersen <placebodk@users.sourceforge.net>
- *  Copyright (C) 2007-2014 Andrey Prygunkov <hugbug@users.sourceforge.net>
+ *  Copyright (C) 2007-2015 Andrey Prygunkov <hugbug@users.sourceforge.net>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -398,7 +398,7 @@ void QueueCoordinator::AddNZBFileToQueue(NZBFile* pNZBFile, NZBInfo* pUrlInfo, b
 
 	if (eDeleteStatus == NZBInfo::dsNone)
 	{
-		info("Collection %s added to queue", pNZBInfo->GetName());
+		pNZBInfo->PrintMessage(Message::mkInfo, "Collection %s added to queue", pNZBInfo->GetName());
 	}
 
 	if (eDeleteStatus != NZBInfo::dsManual)
@@ -887,8 +887,10 @@ void QueueCoordinator::CheckHealth(DownloadQueue* pDownloadQueue, FileInfo* pFil
 	}
 	else if (g_pOptions->GetHealthCheck() == Options::hcDelete)
 	{
-		warn("Cancelling download and deleting %s due to health %.1f%% below critical %.1f%%", pFileInfo->GetNZBInfo()->GetName(),
-			pFileInfo->GetNZBInfo()->CalcHealth() / 10.0, pFileInfo->GetNZBInfo()->CalcCriticalHealth(true) / 10.0);
+		pFileInfo->GetNZBInfo()->PrintMessage(Message::mkWarning,
+			"Cancelling download and deleting %s due to health %.1f%% below critical %.1f%%",
+			pFileInfo->GetNZBInfo()->GetName(), pFileInfo->GetNZBInfo()->CalcHealth() / 10.0,
+			pFileInfo->GetNZBInfo()->CalcCriticalHealth(true) / 10.0);
 		pFileInfo->GetNZBInfo()->SetDeleteStatus(NZBInfo::dsHealth);
 		pDownloadQueue->EditEntry(pFileInfo->GetNZBInfo()->GetID(), DownloadQueue::eaGroupDelete, 0, NULL);
 	}
@@ -1141,6 +1143,7 @@ bool QueueCoordinator::MergeQueueEntries(DownloadQueue* pDownloadQueue, NZBInfo*
 	free(szQueuedFilename);
 
 	pDownloadQueue->GetQueue()->Remove(pSrcNZBInfo);
+	g_pDiskState->DiscardFiles(pSrcNZBInfo);
 	delete pSrcNZBInfo;
 
 	return true;
@@ -1258,6 +1261,7 @@ bool QueueCoordinator::SplitQueueEntries(DownloadQueue* pDownloadQueue, FileList
 	if (pSrcNZBInfo->GetFileList()->empty())
 	{
 		pDownloadQueue->GetQueue()->Remove(pSrcNZBInfo);
+		g_pDiskState->DiscardFiles(pSrcNZBInfo);
 		delete pSrcNZBInfo;
 	}
 

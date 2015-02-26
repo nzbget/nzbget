@@ -2,7 +2,7 @@
  *  This file is part of nzbget
  *
  *  Copyright (C) 2004 Sven Henkel <sidddy@users.sourceforge.net>
- *  Copyright (C) 2007-2014 Andrey Prygunkov <hugbug@users.sourceforge.net>
+ *  Copyright (C) 2007-2015 Andrey Prygunkov <hugbug@users.sourceforge.net>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -76,6 +76,15 @@ public:
 	const char*			GetText() { return m_szText; }
 };
 
+typedef std::deque<Message*> MessageListBase;
+
+class MessageList: public MessageListBase
+{
+public:
+						~MessageList();
+	void				Clear();
+};
+
 class Debuggable
 {
 protected:
@@ -86,12 +95,11 @@ protected:
 class Log
 {
 public:
-	typedef std::deque<Message*>	Messages;
 	typedef std::list<Debuggable*>	Debuggables;
 
 private:
 	Mutex				m_mutexLog;
-	Messages			m_Messages;
+	MessageList			m_Messages;
 	Debuggables			m_Debuggables;
 	Mutex				m_mutexDebug;
 	char*				m_szLogFilename;
@@ -102,7 +110,7 @@ private:
 #endif
 
 	void				Filelog(const char* msg, ...);
-	void				AppendMessage(Message::EKind eKind, const char* szText);
+	void				AddMessage(Message::EKind eKind, const char* szText);
 	void				RotateLog();
 
 	friend void error(const char* msg, ...);
@@ -121,7 +129,7 @@ private:
 public:
 						Log();
 						~Log();
-	Messages*			LockMessages();
+	MessageList*		LockMessages();
 	void				UnlockMessages();
 	void				Clear();
 	void				ResetLog();

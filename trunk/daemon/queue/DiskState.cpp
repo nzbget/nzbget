@@ -1,7 +1,7 @@
 /*
  *  This file is part of nzbget
  *
- *  Copyright (C) 2007-2014 Andrey Prygunkov <hugbug@users.sourceforge.net>
+ *  Copyright (C) 2007-2015 Andrey Prygunkov <hugbug@users.sourceforge.net>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -29,6 +29,9 @@
 
 #ifdef WIN32
 #include "win32.h"
+#else
+#include <pthread.h>
+#include <unistd.h>
 #endif
 
 #include <stdlib.h>
@@ -136,7 +139,7 @@ bool DiskState::SaveDownloadQueue(DownloadQueue* pDownloadQueue)
 		return false;
 	}
 
-	fprintf(outfile, "%s%i\n", FORMATVERSION_SIGNATURE, 51);
+	fprintf(outfile, "%s%i\n", FORMATVERSION_SIGNATURE, 52);
 
 	// save nzb-infos
 	SaveNZBQueue(pDownloadQueue, outfile);
@@ -179,7 +182,7 @@ bool DiskState::LoadDownloadQueue(DownloadQueue* pDownloadQueue, Servers* pServe
 	char FileSignatur[128];
 	fgets(FileSignatur, sizeof(FileSignatur), infile);
 	iFormatVersion = ParseFormatVersion(FileSignatur);
-	if (iFormatVersion < 3 || iFormatVersion > 51)
+	if (iFormatVersion < 3 || iFormatVersion > 52)
 	{
 		error("Could not load diskstate due to file version mismatch");
 		fclose(infile);
@@ -361,7 +364,7 @@ void DiskState::SaveNZBInfo(NZBInfo* pNZBInfo, FILE* outfile)
 		(int)pNZBInfo->GetMarkStatus(), (int)pNZBInfo->GetUrlStatus());
 	fprintf(outfile, "%i,%i,%i\n", (int)pNZBInfo->GetUnpackCleanedUpDisk(), (int)pNZBInfo->GetHealthPaused(),
 		(int)pNZBInfo->GetAddUrlPaused());
-	fprintf(outfile, "%i,%i\n", pNZBInfo->GetFileCount(), pNZBInfo->GetParkedFileCount());
+	fprintf(outfile, "%i,%i,%i\n", pNZBInfo->GetFileCount(), pNZBInfo->GetParkedFileCount(), pNZBInfo->GetMessageCount());
 	fprintf(outfile, "%i,%i\n", (int)pNZBInfo->GetMinTime(), (int)pNZBInfo->GetMaxTime());
 	fprintf(outfile, "%i,%i,%i\n", (int)pNZBInfo->GetParFull(), 
 		pNZBInfo->GetPostInfo() ? (int)pNZBInfo->GetPostInfo()->GetForceParFull() : 0,
@@ -389,9 +392,6 @@ void DiskState::SaveNZBInfo(NZBInfo* pNZBInfo, FILE* outfile)
 	fprintf(outfile, "%lu,%lu,%i,%i,%i,%i,%i\n", High1, Low1, pNZBInfo->GetDownloadSec(), pNZBInfo->GetPostTotalSec(),
 		pNZBInfo->GetParSec(), pNZBInfo->GetRepairSec(), pNZBInfo->GetUnpackSec());
 
-	char DestDirSlash[1024];
-	snprintf(DestDirSlash, 1023, "%s%c", pNZBInfo->GetDestDir(), PATH_SEPARATOR);
-
 	fprintf(outfile, "%i\n", (int)pNZBInfo->GetCompletedFiles()->size());
 	for (CompletedFiles::iterator it = pNZBInfo->GetCompletedFiles()->begin(); it != pNZBInfo->GetCompletedFiles()->end(); it++)
 	{
@@ -415,15 +415,6 @@ void DiskState::SaveNZBInfo(NZBInfo* pNZBInfo, FILE* outfile)
 	}
 
 	SaveServerStats(pNZBInfo->GetServerStats(), outfile);
-
-	NZBInfo::Messages* pMessages = pNZBInfo->LockMessages();
-	fprintf(outfile, "%i\n", (int)pMessages->size());
-	for (NZBInfo::Messages::iterator it = pMessages->begin(); it != pMessages->end(); it++)
-	{
-		Message* pMessage = *it;
-		fprintf(outfile, "%i,%i,%s\n", pMessage->GetKind(), (int)pMessage->GetTime(), pMessage->GetText());
-	}
-	pNZBInfo->UnlockMessages();
 
 	// save file-infos
 	int iSize = 0;
@@ -638,10 +629,19 @@ bool DiskState::LoadNZBInfo(NZBInfo* pNZBInfo, Servers* pServers, FILE* infile, 
 
 	if (iFormatVersion >= 28)
 	{
-		int iFileCount, iParkedFileCount;
-		if (fscanf(infile, "%i,%i\n", &iFileCount, &iParkedFileCount) != 2) goto error;
+		int iFileCount, iParkedFileCount, iMessageCount = 0;
+		if (iFormatVersion >= 52)
+		{
+			if (fscanf(infile, "%i,%i,%i\n", &iFileCount, &iParkedFileCount, &iMessageCount) != 3) goto error;
+		}
+		else
+		{
+			if (fscanf(infile, "%i,%i\n", &iFileCount, &iParkedFileCount) != 2) goto error;
+		}
+
 		pNZBInfo->SetFileCount(iFileCount);
 		pNZBInfo->SetParkedFileCount(iParkedFileCount);
+		pNZBInfo->SetMessageCount(iMessageCount);
 	}
 	else
 	{
@@ -852,23 +852,13 @@ bool DiskState::LoadNZBInfo(NZBInfo* pNZBInfo, Servers* pServers, FILE* infile, 
 		pNZBInfo->GetCurrentServerStats()->ListOp(pNZBInfo->GetServerStats(), ServerStatList::soSet);
 	}
 
-	if (iFormatVersion >= 11)
+	if (iFormatVersion >= 11 && iFormatVersion < 52)
 	{
 		int iLogCount;
 		if (fscanf(infile, "%i\n", &iLogCount) != 1) goto error;
 		for (int i = 0; i < iLogCount; i++)
 		{
 			if (!fgets(buf, sizeof(buf), infile)) goto error;
-			if (buf[0] != 0) buf[strlen(buf)-1] = 0; // remove traling '\n'
-
-			int iKind, iTime;
-			sscanf(buf, "%i,%i", &iKind, &iTime);
-			char* szText = strchr(buf + 2, ',');
-			if (szText)
-			{
-				szText++;
-			}
-			pNZBInfo->AppendMessage((Message::EKind)iKind, (time_t)iTime, szText);
 		}
 	}
 	
@@ -1372,12 +1362,13 @@ void DiskState::DiscardFiles(NZBInfo* pNZBInfo)
 		DiscardFile(pFileInfo, true, true, true);
 	}
 
+	char szFilename[1024];
+
 	for (CompletedFiles::iterator it = pNZBInfo->GetCompletedFiles()->begin(); it != pNZBInfo->GetCompletedFiles()->end(); it++)
 	{
 		CompletedFile* pCompletedFile = *it;
 		if (pCompletedFile->GetStatus() != CompletedFile::cfSuccess && pCompletedFile->GetID() > 0)
 		{
-			char szFilename[1024];
 			snprintf(szFilename, 1024, "%s%i", g_pOptions->GetQueueDir(), pCompletedFile->GetID());
 			szFilename[1024-1] = '\0';
 			remove(szFilename);
@@ -1391,6 +1382,10 @@ void DiskState::DiscardFiles(NZBInfo* pNZBInfo)
 			remove(szFilename);
 		}
 	}
+
+	snprintf(szFilename, 1024, "%sn%i.log", g_pOptions->GetQueueDir(), pNZBInfo->GetID());
+	szFilename[1024-1] = '\0';
+	remove(szFilename);
 }
 
 bool DiskState::LoadPostQueue12(DownloadQueue* pDownloadQueue, NZBList* pNZBList, FILE* infile, int iFormatVersion)
@@ -1973,7 +1968,7 @@ bool DiskState::DownloadQueueExists()
 	return Util::FileExists(fileName);
 }
 
-bool DiskState::DiscardFile(FileInfo* pFileInfo, bool bDeleteData, bool bDeletePartialState, bool bDeleteCompletedState)
+void DiskState::DiscardFile(FileInfo* pFileInfo, bool bDeleteData, bool bDeletePartialState, bool bDeleteCompletedState)
 {
 	char fileName[1024];
 
@@ -2000,8 +1995,6 @@ bool DiskState::DiscardFile(FileInfo* pFileInfo, bool bDeleteData, bool bDeleteP
 		fileName[1024-1] = '\0';
 		remove(fileName);
 	}
-
-	return true;
 }
 
 void DiskState::CleanupTempDir(DownloadQueue* pDownloadQueue)
@@ -2883,4 +2876,124 @@ void DiskState::DeleteCacheFlag()
 	szFlagFilename[1024-1] = '\0';
 
 	remove(szFlagFilename);
+}
+
+void DiskState::AppendNZBMessage(int iNZBID, Message::EKind eKind, const char* szText)
+{
+	char szLogFilename[1024];
+	snprintf(szLogFilename, 1024, "%sn%i.log", g_pOptions->GetQueueDir(), iNZBID);
+	szLogFilename[1024-1] = '\0';
+
+	FILE* outfile = fopen(szLogFilename, FOPEN_ABP);
+	if (!outfile)
+	{
+		error("Error saving log: Could not create file %s", szLogFilename);
+		return;
+	}
+
+	const char* szMessageType[] = { "INFO", "WARNING", "ERROR", "DEBUG", "DETAIL"};
+
+	char tmp2[1024];
+	strncpy(tmp2, szText, 1024);
+	tmp2[1024-1] = '\0';
+
+	// replace bad chars
+	for (char* p = tmp2; *p; p++)
+	{
+		char ch = *p;
+		if (ch == '\n' || ch == '\r' || ch == '\t')
+		{
+			*p = ' ';
+		}
+	}
+
+	time_t tm = time(NULL);
+	time_t rawtime = tm + g_pOptions->GetTimeCorrection();
+	
+	char szTime[50];
+#ifdef HAVE_CTIME_R_3
+	ctime_r(&rawtime, szTime, 50);
+#else
+	ctime_r(&rawtime, szTime);
+#endif
+	szTime[50-1] = '\0';
+	szTime[strlen(szTime) - 1] = '\0'; // trim LF
+
+	fprintf(outfile, "%s\t%u\t%s\t%s%s", szTime, (int)tm, szMessageType[eKind], tmp2, LINE_ENDING);
+
+	fclose(outfile);
+}
+
+void DiskState::LoadNZBMessages(int iNZBID, MessageList* pMessages)
+{
+	// Important:
+	//   - Other threads may be writing into the log-file at any time;
+	//   - The log-file may also be deleted from another thread;
+
+	char szLogFilename[1024];
+	snprintf(szLogFilename, 1024, "%sn%i.log", g_pOptions->GetQueueDir(), iNZBID);
+	szLogFilename[1024-1] = '\0';
+
+	if (!Util::FileExists(szLogFilename))
+	{
+		return;
+	}
+
+	FILE* infile = fopen(szLogFilename, FOPEN_RB);
+	if (!infile)
+	{
+		error("Error reading log: could not open file %s", szLogFilename);
+		return;
+	}
+
+	int iID = 0;
+	char szLine[1024];
+	while (fgets(szLine, sizeof(szLine), infile))
+	{
+		Util::TrimRight(szLine);
+
+		// time (skip formatted time first)
+		char* p = strchr(szLine, '\t');
+		if (!p) goto exit;
+		int iTime = atoi(p + 1);
+
+		// kind
+		p = strchr(p + 1, '\t');
+		if (!p) goto exit;
+		char* szKind = p + 1;
+
+		Message::EKind eKind = Message::mkError;
+		if (!strncmp(szKind, "INFO", 4))
+		{
+			eKind = Message::mkInfo;
+		}
+		else if (!strncmp(szKind, "WARNING", 7))
+		{
+			eKind = Message::mkWarning;
+		}
+		else if (!strncmp(szKind, "ERROR", 5))
+		{
+			eKind = Message::mkError;
+		}
+		else if (!strncmp(szKind, "DETAIL", 6))
+		{
+			eKind = Message::mkDetail;
+		}
+		else if (!strncmp(szKind, "DEBUG", 5))
+		{
+			eKind = Message::mkDebug;
+		} 
+
+		// text
+		p = strchr(p + 1, '\t');
+		if (!p) goto exit;
+		char* szText = p + 1;
+
+		Message* pMessage = new Message(++iID, eKind, (time_t)iTime, szText);
+		pMessages->push_back(pMessage);
+	}
+
+exit:
+	fclose(infile);
+	return;
 }

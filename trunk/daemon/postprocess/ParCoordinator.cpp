@@ -72,7 +72,7 @@ void ParCoordinator::PostParChecker::PrintMessage(Message::EKind eKind, const ch
 	va_end(args);
 	szText[1024-1] = '\0';
 
-	m_pOwner->PrintMessage(m_pPostInfo, eKind, "%s", szText);
+	m_pPostInfo->GetNZBInfo()->AddMessage(eKind, szText);
 }
 
 void ParCoordinator::PostParChecker::RegisterParredFile(const char* szFilename)
@@ -160,7 +160,7 @@ void ParCoordinator::PostParRenamer::PrintMessage(Message::EKind eKind, const ch
 	va_end(args);
 	szText[1024-1] = '\0';
 	
-	m_pOwner->PrintMessage(m_pPostInfo, eKind, "%s", szText);
+	m_pPostInfo->GetNZBInfo()->AddMessage(eKind, szText);
 }
 
 void ParCoordinator::PostParRenamer::RegisterParredFile(const char* szFilename)
@@ -579,7 +579,7 @@ void ParCoordinator::FindPars(DownloadQueue* pDownloadQueue, NZBInfo* pNZBInfo, 
 	if (!ParseParFilename(szBaseParFilename, &iMainBaseLen, NULL))
 	{
 		// should not happen
-        error("Internal error: could not parse filename %s", szBaseParFilename);
+        pNZBInfo->PrintMessage(Message::mkError, "Internal error: could not parse filename %s", szBaseParFilename);
 		return;
 	}
 	int maxlen = iMainBaseLen < 1024 ? iMainBaseLen : 1024 - 1;
@@ -759,7 +759,7 @@ void ParCoordinator::ParRenameCompleted()
 
 	if (m_ParRenamer.HasMissedFiles() && pPostInfo->GetNZBInfo()->GetParStatus() <= NZBInfo::psSkipped)
 	{
-		PrintMessage(pPostInfo, Message::mkInfo, "Requesting par-check/repair for %s to restore missing files ", m_ParRenamer.GetInfoName());
+		m_ParRenamer.PrintMessage(Message::mkInfo, "Requesting par-check/repair for %s to restore missing files ", m_ParRenamer.GetInfoName());
 		pPostInfo->SetRequestParCheck(true);
 	}
 
@@ -789,41 +789,6 @@ void ParCoordinator::UpdateParRenameProgress()
 	DownloadQueue::Unlock();
 	
 	CheckPauseState(pPostInfo);
-}
-
-void ParCoordinator::PrintMessage(PostInfo* pPostInfo, Message::EKind eKind, const char* szFormat, ...)
-{
-	char szText[1024];
-	va_list args;
-	va_start(args, szFormat);
-	vsnprintf(szText, 1024, szFormat, args);
-	va_end(args);
-	szText[1024-1] = '\0';
-
-	pPostInfo->AppendMessage(eKind, szText);
-
-	switch (eKind)
-	{
-		case Message::mkDetail:
-			detail("%s", szText);
-			break;
-
-		case Message::mkInfo:
-			info("%s", szText);
-			break;
-
-		case Message::mkWarning:
-			warn("%s", szText);
-			break;
-
-		case Message::mkError:
-			error("%s", szText);
-			break;
-
-		case Message::mkDebug:
-			debug("%s", szText);
-			break;
-	}
 }
 
 #endif

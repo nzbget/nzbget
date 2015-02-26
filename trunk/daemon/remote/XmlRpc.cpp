@@ -50,6 +50,7 @@
 #include "Maintenance.h"
 #include "StatMeter.h"
 #include "ArticleWriter.h"
+#include "DiskState.h"
 
 extern Options* g_pOptions;
 extern Scanner* g_pScanner;
@@ -58,6 +59,7 @@ extern ServerPool* g_pServerPool;
 extern Maintenance* g_pMaintenance;
 extern StatMeter* g_pStatMeter;
 extern ArticleCache* g_pArticleCache;
+extern DiskState* g_pDiskState;
 extern void ExitProc();
 extern void Reload();
 
@@ -136,10 +138,12 @@ public:
 class LogXmlCommand: public XmlCommand
 {
 protected:
-	virtual Log::Messages*	LockMessages();
+	int						m_iIDFrom;
+	int						m_iNrEntries;
+	virtual MessageList*	LockMessages();
 	virtual void			UnlockMessages();
 public:
-	virtual void		Execute();
+	virtual void			Execute();
 };
 
 class NzbInfoXmlCommand: public XmlCommand
@@ -280,7 +284,7 @@ public:
 class LogUpdateXmlCommand: public LogXmlCommand
 {
 protected:
-	virtual Log::Messages*	LockMessages();
+	virtual MessageList*	LockMessages();
 	virtual void			UnlockMessages();
 };
 
@@ -294,6 +298,18 @@ class ResetServerVolumeXmlCommand: public XmlCommand
 {
 public:
 	virtual void		Execute();
+};
+
+class LoadLogXmlCommand: public LogXmlCommand
+{
+private:
+	MessageList				m_messages;
+	int						m_iNZBID;
+	NZBInfo*				m_pNZBInfo;
+protected:
+	virtual void			Execute();
+	virtual MessageList*	LockMessages();
+	virtual void			UnlockMessages();
 };
 
 
@@ -607,6 +623,10 @@ XmlCommand* XmlRpcProcessor::CreateCommand(const char* szMethodName)
 	else if (!strcasecmp(szMethodName, "clearlog"))
 	{
 		command = new ClearLogXmlCommand();
+	}
+	else if (!strcasecmp(szMethodName, "loadlog"))
+	{
+		command = new LoadLogXmlCommand();
 	}
 	else if (!strcasecmp(szMethodName, "scan"))
 	{
@@ -1347,33 +1367,33 @@ void StatusXmlCommand::Execute()
 // struct[] log(idfrom, entries)
 void LogXmlCommand::Execute()
 {
-	int iIDFrom = 0;
-	int iNrEntries = 0;
-	if (!NextParamAsInt(&iIDFrom) || !NextParamAsInt(&iNrEntries) || (iNrEntries > 0 && iIDFrom > 0))
+	m_iIDFrom = 0;
+	m_iNrEntries = 0;
+	if (!NextParamAsInt(&m_iIDFrom) || !NextParamAsInt(&m_iNrEntries) || (m_iNrEntries > 0 && m_iIDFrom > 0))
 	{
 		BuildErrorResponse(2, "Invalid parameter");
 		return;
 	}
 
-	debug("iIDFrom=%i", iIDFrom);
-	debug("iNrEntries=%i", iNrEntries);
+	debug("iIDFrom=%i", m_iIDFrom);
+	debug("iNrEntries=%i", m_iNrEntries);
 
 	AppendResponse(IsJson() ? "[\n" : "<array><data>\n");
-	Log::Messages* pMessages = LockMessages();
+	MessageList* pMessages = LockMessages();
 
 	int iStart = pMessages->size();
-	if (iNrEntries > 0)
+	if (m_iNrEntries > 0)
 	{
-		if (iNrEntries > (int)pMessages->size())
+		if (m_iNrEntries > (int)pMessages->size())
 		{
-			iNrEntries = pMessages->size();
+			m_iNrEntries = pMessages->size();
 		}
-		iStart = pMessages->size() - iNrEntries;
+		iStart = pMessages->size() - m_iNrEntries;
 	}
-	if (iIDFrom > 0 && !pMessages->empty())
+	if (m_iIDFrom > 0 && !pMessages->empty())
 	{
-		iNrEntries = pMessages->size();
-		iStart = iIDFrom - pMessages->front()->GetID();
+		m_iNrEntries = pMessages->size();
+		iStart = m_iIDFrom - pMessages->front()->GetID();
 		if (iStart < 0)
 		{
 			iStart = 0;
@@ -1424,7 +1444,7 @@ void LogXmlCommand::Execute()
 	AppendResponse(IsJson() ? "\n]" : "</data></array>\n");
 }
 
-Log::Messages* LogXmlCommand::LockMessages()
+MessageList* LogXmlCommand::LockMessages()
 {
 	return g_pLog->LockMessages();
 }
@@ -1563,148 +1583,150 @@ void ListFilesXmlCommand::Execute()
 void NzbInfoXmlCommand::AppendNZBInfoFields(NZBInfo* pNZBInfo)
 {
 	const char* XML_NZB_ITEM_START =
-	"<member><name>NZBID</name><value><i4>%i</i4></value></member>\n"
-	"<member><name>NZBName</name><value><string>%s</string></value></member>\n"
-	"<member><name>NZBNicename</name><value><string>%s</string></value></member>\n"	// deprecated, use "NZBName" instead
-	"<member><name>Kind</name><value><string>%s</string></value></member>\n"
-	"<member><name>URL</name><value><string>%s</string></value></member>\n"
-	"<member><name>NZBFilename</name><value><string>%s</string></value></member>\n"
-	"<member><name>DestDir</name><value><string>%s</string></value></member>\n"
-	"<member><name>FinalDir</name><value><string>%s</string></value></member>\n"
-	"<member><name>Category</name><value><string>%s</string></value></member>\n"
-	"<member><name>ParStatus</name><value><string>%s</string></value></member>\n"
-	"<member><name>UnpackStatus</name><value><string>%s</string></value></member>\n"
-	"<member><name>MoveStatus</name><value><string>%s</string></value></member>\n"
-	"<member><name>ScriptStatus</name><value><string>%s</string></value></member>\n"
-	"<member><name>DeleteStatus</name><value><string>%s</string></value></member>\n"
-	"<member><name>MarkStatus</name><value><string>%s</string></value></member>\n"
-	"<member><name>UrlStatus</name><value><string>%s</string></value></member>\n"
-	"<member><name>FileSizeLo</name><value><i4>%u</i4></value></member>\n"
-	"<member><name>FileSizeHi</name><value><i4>%u</i4></value></member>\n"
-	"<member><name>FileSizeMB</name><value><i4>%i</i4></value></member>\n"
-	"<member><name>FileCount</name><value><i4>%i</i4></value></member>\n"
-	"<member><name>MinPostTime</name><value><i4>%i</i4></value></member>\n"
-	"<member><name>MaxPostTime</name><value><i4>%i</i4></value></member>\n"
-	"<member><name>TotalArticles</name><value><i4>%i</i4></value></member>\n"
-	"<member><name>SuccessArticles</name><value><i4>%i</i4></value></member>\n"
-	"<member><name>FailedArticles</name><value><i4>%i</i4></value></member>\n"
-	"<member><name>Health</name><value><i4>%i</i4></value></member>\n"
-	"<member><name>CriticalHealth</name><value><i4>%i</i4></value></member>\n"
-	"<member><name>DupeKey</name><value><string>%s</string></value></member>\n"
-	"<member><name>DupeScore</name><value><i4>%i</i4></value></member>\n"
-	"<member><name>DupeMode</name><value><string>%s</string></value></member>\n"
-	"<member><name>Deleted</name><value><boolean>%s</boolean></value></member>\n"	 // deprecated, use "DeleteStatus" instead
-	"<member><name>DownloadedSizeLo</name><value><i4>%u</i4></value></member>\n"
-	"<member><name>DownloadedSizeHi</name><value><i4>%u</i4></value></member>\n"
-	"<member><name>DownloadedSizeMB</name><value><i4>%i</i4></value></member>\n"
-	"<member><name>DownloadTimeSec</name><value><i4>%i</i4></value></member>\n"
-	"<member><name>PostTotalTimeSec</name><value><i4>%i</i4></value></member>\n"
-	"<member><name>ParTimeSec</name><value><i4>%i</i4></value></member>\n"
-	"<member><name>RepairTimeSec</name><value><i4>%i</i4></value></member>\n"
-	"<member><name>UnpackTimeSec</name><value><i4>%i</i4></value></member>\n"
-	"<member><name>Parameters</name><value><array><data>\n";
+		"<member><name>NZBID</name><value><i4>%i</i4></value></member>\n"
+		"<member><name>NZBName</name><value><string>%s</string></value></member>\n"
+		"<member><name>NZBNicename</name><value><string>%s</string></value></member>\n"	// deprecated, use "NZBName" instead
+		"<member><name>Kind</name><value><string>%s</string></value></member>\n"
+		"<member><name>URL</name><value><string>%s</string></value></member>\n"
+		"<member><name>NZBFilename</name><value><string>%s</string></value></member>\n"
+		"<member><name>DestDir</name><value><string>%s</string></value></member>\n"
+		"<member><name>FinalDir</name><value><string>%s</string></value></member>\n"
+		"<member><name>Category</name><value><string>%s</string></value></member>\n"
+		"<member><name>ParStatus</name><value><string>%s</string></value></member>\n"
+		"<member><name>UnpackStatus</name><value><string>%s</string></value></member>\n"
+		"<member><name>MoveStatus</name><value><string>%s</string></value></member>\n"
+		"<member><name>ScriptStatus</name><value><string>%s</string></value></member>\n"
+		"<member><name>DeleteStatus</name><value><string>%s</string></value></member>\n"
+		"<member><name>MarkStatus</name><value><string>%s</string></value></member>\n"
+		"<member><name>UrlStatus</name><value><string>%s</string></value></member>\n"
+		"<member><name>FileSizeLo</name><value><i4>%u</i4></value></member>\n"
+		"<member><name>FileSizeHi</name><value><i4>%u</i4></value></member>\n"
+		"<member><name>FileSizeMB</name><value><i4>%i</i4></value></member>\n"
+		"<member><name>FileCount</name><value><i4>%i</i4></value></member>\n"
+		"<member><name>MinPostTime</name><value><i4>%i</i4></value></member>\n"
+		"<member><name>MaxPostTime</name><value><i4>%i</i4></value></member>\n"
+		"<member><name>TotalArticles</name><value><i4>%i</i4></value></member>\n"
+		"<member><name>SuccessArticles</name><value><i4>%i</i4></value></member>\n"
+		"<member><name>FailedArticles</name><value><i4>%i</i4></value></member>\n"
+		"<member><name>Health</name><value><i4>%i</i4></value></member>\n"
+		"<member><name>CriticalHealth</name><value><i4>%i</i4></value></member>\n"
+		"<member><name>DupeKey</name><value><string>%s</string></value></member>\n"
+		"<member><name>DupeScore</name><value><i4>%i</i4></value></member>\n"
+		"<member><name>DupeMode</name><value><string>%s</string></value></member>\n"
+		"<member><name>Deleted</name><value><boolean>%s</boolean></value></member>\n"	 // deprecated, use "DeleteStatus" instead
+		"<member><name>DownloadedSizeLo</name><value><i4>%u</i4></value></member>\n"
+		"<member><name>DownloadedSizeHi</name><value><i4>%u</i4></value></member>\n"
+		"<member><name>DownloadedSizeMB</name><value><i4>%i</i4></value></member>\n"
+		"<member><name>DownloadTimeSec</name><value><i4>%i</i4></value></member>\n"
+		"<member><name>PostTotalTimeSec</name><value><i4>%i</i4></value></member>\n"
+		"<member><name>ParTimeSec</name><value><i4>%i</i4></value></member>\n"
+		"<member><name>RepairTimeSec</name><value><i4>%i</i4></value></member>\n"
+		"<member><name>UnpackTimeSec</name><value><i4>%i</i4></value></member>\n"
+		"<member><name>MessageCount</name><value><i4>%i</i4></value></member>\n"
+		"<member><name>Parameters</name><value><array><data>\n";
 
 	const char* XML_NZB_ITEM_SCRIPT_START =
-	"</data></array></value></member>\n"
-	"<member><name>ScriptStatuses</name><value><array><data>\n";
+		"</data></array></value></member>\n"
+		"<member><name>ScriptStatuses</name><value><array><data>\n";
 	
 	const char* XML_NZB_ITEM_STATS_START =
-	"</data></array></value></member>\n"
-	"<member><name>ServerStats</name><value><array><data>\n";
+		"</data></array></value></member>\n"
+		"<member><name>ServerStats</name><value><array><data>\n";
 	
 	const char* XML_NZB_ITEM_END =
-	"</data></array></value></member>\n";
+		"</data></array></value></member>\n";
 	
 	const char* JSON_NZB_ITEM_START =
-	"\"NZBID\" : %i,\n"
-	"\"NZBName\" : \"%s\",\n"
-	"\"NZBNicename\" : \"%s\",\n"		// deprecated, use NZBName instead
-	"\"Kind\" : \"%s\",\n"
-	"\"URL\" : \"%s\",\n"
-	"\"NZBFilename\" : \"%s\",\n"
-	"\"DestDir\" : \"%s\",\n"
-	"\"FinalDir\" : \"%s\",\n"
-	"\"Category\" : \"%s\",\n"
-	"\"ParStatus\" : \"%s\",\n"
-	"\"UnpackStatus\" : \"%s\",\n"
-	"\"MoveStatus\" : \"%s\",\n"
-	"\"ScriptStatus\" : \"%s\",\n"
-	"\"DeleteStatus\" : \"%s\",\n"
-	"\"MarkStatus\" : \"%s\",\n"
-	"\"UrlStatus\" : \"%s\",\n"
-	"\"FileSizeLo\" : %u,\n"
-	"\"FileSizeHi\" : %u,\n"
-	"\"FileSizeMB\" : %i,\n"
-	"\"FileCount\" : %i,\n"
-	"\"MinPostTime\" : %i,\n"
-	"\"MaxPostTime\" : %i,\n"
-	"\"TotalArticles\" : %i,\n"
-	"\"SuccessArticles\" : %i,\n"
-	"\"FailedArticles\" : %i,\n"
-	"\"Health\" : %i,\n"
-	"\"CriticalHealth\" : %i,\n"
-	"\"DupeKey\" : \"%s\",\n"
-	"\"DupeScore\" : %i,\n"
-	"\"DupeMode\" : \"%s\",\n"
-	"\"Deleted\" : %s,\n"			  // deprecated, use "DeleteStatus" instead
-	"\"DownloadedSizeLo\" : %u,\n"
-	"\"DownloadedSizeHi\" : %u,\n"
-	"\"DownloadedSizeMB\" : %i,\n"
-	"\"DownloadTimeSec\" : %i,\n"
-	"\"PostTotalTimeSec\" : %i,\n"
-	"\"ParTimeSec\" : %i,\n"
-	"\"RepairTimeSec\" : %i,\n"
-	"\"UnpackTimeSec\" : %i,\n"
-	"\"Parameters\" : [\n";
+		"\"NZBID\" : %i,\n"
+		"\"NZBName\" : \"%s\",\n"
+		"\"NZBNicename\" : \"%s\",\n"		// deprecated, use NZBName instead
+		"\"Kind\" : \"%s\",\n"
+		"\"URL\" : \"%s\",\n"
+		"\"NZBFilename\" : \"%s\",\n"
+		"\"DestDir\" : \"%s\",\n"
+		"\"FinalDir\" : \"%s\",\n"
+		"\"Category\" : \"%s\",\n"
+		"\"ParStatus\" : \"%s\",\n"
+		"\"UnpackStatus\" : \"%s\",\n"
+		"\"MoveStatus\" : \"%s\",\n"
+		"\"ScriptStatus\" : \"%s\",\n"
+		"\"DeleteStatus\" : \"%s\",\n"
+		"\"MarkStatus\" : \"%s\",\n"
+		"\"UrlStatus\" : \"%s\",\n"
+		"\"FileSizeLo\" : %u,\n"
+		"\"FileSizeHi\" : %u,\n"
+		"\"FileSizeMB\" : %i,\n"
+		"\"FileCount\" : %i,\n"
+		"\"MinPostTime\" : %i,\n"
+		"\"MaxPostTime\" : %i,\n"
+		"\"TotalArticles\" : %i,\n"
+		"\"SuccessArticles\" : %i,\n"
+		"\"FailedArticles\" : %i,\n"
+		"\"Health\" : %i,\n"
+		"\"CriticalHealth\" : %i,\n"
+		"\"DupeKey\" : \"%s\",\n"
+		"\"DupeScore\" : %i,\n"
+		"\"DupeMode\" : \"%s\",\n"
+		"\"Deleted\" : %s,\n"			  // deprecated, use "DeleteStatus" instead
+		"\"DownloadedSizeLo\" : %u,\n"
+		"\"DownloadedSizeHi\" : %u,\n"
+		"\"DownloadedSizeMB\" : %i,\n"
+		"\"DownloadTimeSec\" : %i,\n"
+		"\"PostTotalTimeSec\" : %i,\n"
+		"\"ParTimeSec\" : %i,\n"
+		"\"RepairTimeSec\" : %i,\n"
+		"\"UnpackTimeSec\" : %i,\n"
+		"\"MessageCount\" : %i,\n"
+		"\"Parameters\" : [\n";
 
 	const char* JSON_NZB_ITEM_SCRIPT_START =
-	"],\n"
-	"\"ScriptStatuses\" : [\n";
+		"],\n"
+		"\"ScriptStatuses\" : [\n";
 	
 	const char* JSON_NZB_ITEM_STATS_START =
-	"],\n"
-	"\"ServerStats\" : [\n";
+		"],\n"
+		"\"ServerStats\" : [\n";
 	
 	const char* JSON_NZB_ITEM_END =
-	"],\n";
+		"]\n";
 	
 	const char* XML_PARAMETER_ITEM =
-	"<value><struct>\n"
-	"<member><name>Name</name><value><string>%s</string></value></member>\n"
-	"<member><name>Value</name><value><string>%s</string></value></member>\n"
-	"</struct></value>\n";
+		"<value><struct>\n"
+		"<member><name>Name</name><value><string>%s</string></value></member>\n"
+		"<member><name>Value</name><value><string>%s</string></value></member>\n"
+		"</struct></value>\n";
 	
 	const char* JSON_PARAMETER_ITEM =
-	"{\n"
-	"\"Name\" : \"%s\",\n"
-	"\"Value\" : \"%s\"\n"
-	"}";
+		"{\n"
+		"\"Name\" : \"%s\",\n"
+		"\"Value\" : \"%s\"\n"
+		"}";
 	
 	const char* XML_SCRIPT_ITEM =
-	"<value><struct>\n"
-	"<member><name>Name</name><value><string>%s</string></value></member>\n"
-	"<member><name>Status</name><value><string>%s</string></value></member>\n"
-	"</struct></value>\n";
+		"<value><struct>\n"
+		"<member><name>Name</name><value><string>%s</string></value></member>\n"
+		"<member><name>Status</name><value><string>%s</string></value></member>\n"
+		"</struct></value>\n";
 	
 	const char* JSON_SCRIPT_ITEM =
-	"{\n"
-	"\"Name\" : \"%s\",\n"
-	"\"Status\" : \"%s\"\n"
-	"}";
+		"{\n"
+		"\"Name\" : \"%s\",\n"
+		"\"Status\" : \"%s\"\n"
+		"}";
 	
 	const char* XML_STAT_ITEM =
-	"<value><struct>\n"
-	"<member><name>ServerID</name><value><i4>%i</i4></value></member>\n"
-	"<member><name>SuccessArticles</name><value><i4>%i</i4></value></member>\n"
-	"<member><name>FailedArticles</name><value><i4>%i</i4></value></member>\n"
-	"</struct></value>\n";
+		"<value><struct>\n"
+		"<member><name>ServerID</name><value><i4>%i</i4></value></member>\n"
+		"<member><name>SuccessArticles</name><value><i4>%i</i4></value></member>\n"
+		"<member><name>FailedArticles</name><value><i4>%i</i4></value></member>\n"
+		"</struct></value>\n";
 	
 	const char* JSON_STAT_ITEM =
-	"{\n"
-	"\"ServerID\" : %i,\n"
-	"\"SuccessArticles\" : %i,\n"
-	"\"FailedArticles\" : %i\n"
-	"}";
+		"{\n"
+		"\"ServerID\" : %i,\n"
+		"\"SuccessArticles\" : %i,\n"
+		"\"FailedArticles\" : %i\n"
+		"}";
 	
     const char* szKindName[] = { "NZB", "URL" };
     const char* szParStatusName[] = { "NONE", "NONE", "FAILURE", "SUCCESS", "REPAIR_POSSIBLE", "MANUAL" };
@@ -1726,6 +1748,8 @@ void NzbInfoXmlCommand::AppendNZBInfoFields(NZBInfo* pNZBInfo)
 	unsigned long iDownloadedSizeHi, iDownloadedSizeLo, iDownloadedSizeMB;
 	Util::SplitInt64(pNZBInfo->GetDownloadedSize(), &iDownloadedSizeHi, &iDownloadedSizeLo);
 	iDownloadedSizeMB = (int)(pNZBInfo->GetDownloadedSize() / 1024 / 1024);
+
+	int iMessageCount = pNZBInfo->GetMessageCount() > 0 ? pNZBInfo->GetMessageCount() : pNZBInfo->GetCachedMessageCount();
 
 	char* xmlURL = EncodeStr(pNZBInfo->GetURL());
 	char* xmlNZBFilename = EncodeStr(pNZBInfo->GetFilename());
@@ -1751,7 +1775,7 @@ void NzbInfoXmlCommand::AppendNZBInfoFields(NZBInfo* pNZBInfo)
 			 BoolToStr(pNZBInfo->GetDeleteStatus() != NZBInfo::dsNone),
 			 iDownloadedSizeLo, iDownloadedSizeHi, iDownloadedSizeMB, pNZBInfo->GetDownloadSec(), 
 			 pNZBInfo->GetPostInfo() && pNZBInfo->GetPostInfo()->GetStartTime() ? time(NULL) - pNZBInfo->GetPostInfo()->GetStartTime() : pNZBInfo->GetPostTotalSec(),
-			 pNZBInfo->GetParSec(), pNZBInfo->GetRepairSec(), pNZBInfo->GetUnpackSec());
+			 pNZBInfo->GetParSec(), pNZBInfo->GetRepairSec(), pNZBInfo->GetUnpackSec(), iMessageCount);
 
 	free(xmlURL);
 	free(xmlNZBNicename);
@@ -1925,7 +1949,7 @@ void NzbInfoXmlCommand::AppendPostInfoFields(PostInfo* pPostInfo, int iLogEntrie
 
 	if (iLogEntries > 0 && pPostInfo)
 	{
-		PostInfo::Messages* pMessages = pPostInfo->LockMessages();
+		MessageList* pMessages = pPostInfo->GetNZBInfo()->LockCachedMessages();
 		if (!pMessages->empty())
 		{
 			if (iLogEntries > (int)pMessages->size())
@@ -1951,7 +1975,7 @@ void NzbInfoXmlCommand::AppendPostInfoFields(PostInfo* pPostInfo, int iLogEntrie
 				AppendResponse(szItemBuf);
 			}
 		}
-		pPostInfo->UnlockMessages();
+		pPostInfo->GetNZBInfo()->UnlockCachedMessages();
 	}
 
 	AppendResponse(IsJson() ? JSON_POSTQUEUE_ITEM_END : XML_POSTQUEUE_ITEM_END);
@@ -2039,6 +2063,10 @@ void ListGroupsXmlCommand::Execute()
 		AppendResponse(szItemBuf);
 		
 		AppendNZBInfoFields(pNZBInfo);
+		if (IsJson())
+		{
+			AppendResponse(",\n");
+		}
 		AppendPostInfoFields(pNZBInfo->GetPostInfo(), iNrEntries, false);
 
 		AppendResponse(IsJson() ? JSON_LIST_ITEM_END : XML_LIST_ITEM_END);
@@ -2402,6 +2430,10 @@ void PostQueueXmlCommand::Execute()
 		AppendResponse(szItemBuf);
 
 		AppendNZBInfoFields(pPostInfo->GetNZBInfo());
+		if (IsJson())
+		{
+			AppendResponse(",\n");
+		}
 		AppendPostInfoFields(pPostInfo, iNrEntries, true);
 
 		AppendResponse(IsJson() ? JSON_POSTQUEUE_ITEM_END : XML_POSTQUEUE_ITEM_END);
@@ -2500,44 +2532,22 @@ void HistoryXmlCommand::Execute()
 		"<member><name>Name</name><value><string>%s</string></value></member>\n"
 		"<member><name>RemainingFileCount</name><value><i4>%i</i4></value></member>\n"
 		"<member><name>HistoryTime</name><value><i4>%i</i4></value></member>\n"
-		"<member><name>Status</name><value><string>%s</string></value></member>\n";
-
-	const char* XML_HISTORY_ITEM_LOG_START =
-		"<member><name>Log</name><value><array><data>\n";
-
-	const char* XML_HISTORY_ITEM_END =
-		"</data></array></value></member>\n"
-		"</struct></value>\n";
+		"<member><name>Status</name><value><string>%s</string></value></member>\n"
+		"<member><name>Log</name><value><array><data></data></array></value></member>\n";	// Deprected, always empty
 
 	const char* JSON_HISTORY_ITEM_START =
 		"{\n"
-		"\"ID\" : %i,\n"							   // Deprecated, use "NZBID" instead
+		"\"ID\" : %i,\n"								// Deprecated, use "NZBID" instead
 		"\"Name\" : \"%s\",\n"
 		"\"RemainingFileCount\" : %i,\n"
 		"\"HistoryTime\" : %i,\n"
-		"\"Status\" : \"%s\",\n";
+		"\"Status\" : \"%s\",\n"
+		"\"Log\" : [],\n";								// Deprected, always empty
 	
-	const char* JSON_HISTORY_ITEM_LOG_START =
-		"\"Log\" : [\n";
+	const char* XML_HISTORY_ITEM_END =
+		"</struct></value>";
 
 	const char* JSON_HISTORY_ITEM_END = 
-		"]\n"
-		"}";
-
-	const char* XML_LOG_ITEM =
-		"<value><struct>\n"
-		"<member><name>ID</name><value><i4>%i</i4></value></member>\n"
-		"<member><name>Kind</name><value><string>%s</string></value></member>\n"
-		"<member><name>Time</name><value><i4>%i</i4></value></member>\n"
-		"<member><name>Text</name><value><string>%s</string></value></member>\n"
-		"</struct></value>\n";
-
-	const char* JSON_LOG_ITEM = 
-		"{\n"
-		"\"ID\" : %i,\n"
-		"\"Kind\" : \"%s\",\n"
-		"\"Time\" : %i,\n"
-		"\"Text\" : \"%s\"\n"
 		"}";
 
 	const char* XML_HISTORY_DUP_ITEM =
@@ -2570,10 +2580,9 @@ void HistoryXmlCommand::Execute()
 		"\"DupeScore\" : %i,\n"
 		"\"DupeMode\" : \"%s\",\n"
 		"\"DupStatus\" : \"%s\",\n"
-		"\"Status\" : \"%s\",\n";
+		"\"Status\" : \"%s\"\n";
 
 	const char* szDupStatusName[] = { "UNKNOWN", "SUCCESS", "FAILURE", "DELETED", "DUPE", "BAD", "GOOD" };
-	const char* szMessageType[] = { "INFO", "WARNING", "ERROR", "DEBUG", "DETAIL"};
     const char* szDupeModeName[] = { "SCORE", "ALL", "FORCE" };
 
 	bool bDup = false;
@@ -2644,34 +2653,6 @@ void HistoryXmlCommand::Execute()
 			AppendNZBInfoFields(pNZBInfo);
 		}
 		
-		AppendResponse(IsJson() ? JSON_HISTORY_ITEM_LOG_START : XML_HISTORY_ITEM_LOG_START);
-
-		if (pNZBInfo)
-		{
-			// Log-Messages
-			NZBInfo::Messages* pMessages = pNZBInfo->LockMessages();
-			if (!pMessages->empty())
-			{
-				int iLogIndex = 0;
-				for (NZBInfo::Messages::iterator it = pMessages->begin(); it != pMessages->end(); it++)
-				{
-					Message* pMessage = *it;
-					char* xmltext = EncodeStr(pMessage->GetText());
-					snprintf(szItemBuf, iItemBufSize, IsJson() ? JSON_LOG_ITEM : XML_LOG_ITEM,
-						pMessage->GetID(), szMessageType[pMessage->GetKind()], pMessage->GetTime(), xmltext);
-					szItemBuf[iItemBufSize-1] = '\0';
-					free(xmltext);
-
-					if (IsJson() && iLogIndex++ > 0)
-					{
-						AppendResponse(",\n");
-					}
-					AppendResponse(szItemBuf);
-				}
-			}
-			pNZBInfo->UnlockMessages();
-		}
-
 		AppendResponse(IsJson() ? JSON_HISTORY_ITEM_END : XML_HISTORY_ITEM_END);
 	}
 	free(szItemBuf);
@@ -3359,7 +3340,7 @@ void StartUpdateXmlCommand::Execute()
 }
 
 // struct[] logupdate(idfrom, entries)
-Log::Messages* LogUpdateXmlCommand::LockMessages()
+MessageList* LogUpdateXmlCommand::LockMessages()
 {
 	return g_pMaintenance->LockMessages();
 }
@@ -3554,4 +3535,49 @@ void ResetServerVolumeXmlCommand::Execute()
 	g_pStatMeter->UnlockServerVolumes();
 
 	BuildBoolResponse(bOK);
+}
+
+// struct[] loadlog(nzbid, logidfrom, logentries)
+void LoadLogXmlCommand::Execute()
+{
+	m_pNZBInfo = NULL;
+	m_iNZBID = 0;
+	if (!NextParamAsInt(&m_iNZBID))
+	{
+		BuildErrorResponse(2, "Invalid parameter");
+		return;
+	}
+
+	LogXmlCommand::Execute();
+}
+
+MessageList* LoadLogXmlCommand::LockMessages()
+{
+	// TODO: optimize for m_iIDFrom and m_iNrEntries
+	g_pDiskState->LoadNZBMessages(m_iNZBID, &m_messages);
+
+	if (m_messages.empty())
+	{
+		DownloadQueue* pDownloadQueue = DownloadQueue::Lock();
+		m_pNZBInfo = pDownloadQueue->GetQueue()->Find(m_iNZBID);
+		if (m_pNZBInfo)
+		{
+			return m_pNZBInfo->LockCachedMessages();
+		}
+		else
+		{
+			DownloadQueue::Unlock();
+		}
+	}
+
+	return &m_messages;
+}
+
+void LoadLogXmlCommand::UnlockMessages()
+{
+	if (m_pNZBInfo)
+	{
+		m_pNZBInfo->UnlockCachedMessages();
+		DownloadQueue::Unlock();
+	}
 }

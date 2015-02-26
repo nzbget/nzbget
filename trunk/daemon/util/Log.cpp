@@ -2,7 +2,7 @@
  *  This file is part of nzbget
  *
  *  Copyright (C) 2004 Sven Henkel <sidddy@users.sourceforge.net>
- *  Copyright (C) 2007-2014 Andrey Prygunkov <hugbug@users.sourceforge.net>
+ *  Copyright (C) 2007-2015 Andrey Prygunkov <hugbug@users.sourceforge.net>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -179,7 +179,7 @@ void debug(const char* msg, ...)
 	Options::EMessageTarget eMessageTarget = g_pOptions ? g_pOptions->GetDebugTarget() : Options::mtScreen;
 	if (eMessageTarget == Options::mtScreen || eMessageTarget == Options::mtBoth)
 	{
-		g_pLog->AppendMessage(Message::mkDebug, tmp2);
+		g_pLog->AddMessage(Message::mkDebug, tmp2);
 	}
 	if (eMessageTarget == Options::mtLog || eMessageTarget == Options::mtBoth)
 	{
@@ -205,7 +205,7 @@ void error(const char* msg, ...)
 	Options::EMessageTarget eMessageTarget = g_pOptions ? g_pOptions->GetErrorTarget() : Options::mtBoth;
 	if (eMessageTarget == Options::mtScreen || eMessageTarget == Options::mtBoth)
 	{
-		g_pLog->AppendMessage(Message::mkError, tmp2);
+		g_pLog->AddMessage(Message::mkError, tmp2);
 	}
 	if (eMessageTarget == Options::mtLog || eMessageTarget == Options::mtBoth)
 	{
@@ -230,7 +230,7 @@ void warn(const char* msg, ...)
 	Options::EMessageTarget eMessageTarget = g_pOptions ? g_pOptions->GetWarningTarget() : Options::mtScreen;
 	if (eMessageTarget == Options::mtScreen || eMessageTarget == Options::mtBoth)
 	{
-		g_pLog->AppendMessage(Message::mkWarning, tmp2);
+		g_pLog->AddMessage(Message::mkWarning, tmp2);
 	}
 	if (eMessageTarget == Options::mtLog || eMessageTarget == Options::mtBoth)
 	{
@@ -255,7 +255,7 @@ void info(const char* msg, ...)
 	Options::EMessageTarget eMessageTarget = g_pOptions ? g_pOptions->GetInfoTarget() : Options::mtScreen;
 	if (eMessageTarget == Options::mtScreen || eMessageTarget == Options::mtBoth)
 	{
-		g_pLog->AppendMessage(Message::mkInfo, tmp2);
+		g_pLog->AddMessage(Message::mkInfo, tmp2);
 	}
 	if (eMessageTarget == Options::mtLog || eMessageTarget == Options::mtBoth)
 	{
@@ -280,7 +280,7 @@ void detail(const char* msg, ...)
 	Options::EMessageTarget eMessageTarget = g_pOptions ? g_pOptions->GetDetailTarget() : Options::mtScreen;
 	if (eMessageTarget == Options::mtScreen || eMessageTarget == Options::mtBoth)
 	{
-		g_pLog->AppendMessage(Message::mkDetail, tmp2);
+		g_pLog->AddMessage(Message::mkDetail, tmp2);
 	}
 	if (eMessageTarget == Options::mtLog || eMessageTarget == Options::mtBoth)
 	{
@@ -334,18 +334,28 @@ Message::~ Message()
 	free(m_szText);
 }
 
-void Log::Clear()
+MessageList::~MessageList()
 {
-	m_mutexLog.Lock();
-	for (Messages::iterator it = m_Messages.begin(); it != m_Messages.end(); it++)
+	Clear();
+}
+
+void MessageList::Clear()
+{
+	for (iterator it = begin(); it != end(); it++)
 	{
 		delete *it;
 	}
-	m_Messages.clear();
+	clear();
+}
+
+void Log::Clear()
+{
+	m_mutexLog.Lock();
+	m_Messages.Clear();
 	m_mutexLog.Unlock();
 }
 
-void Log::AppendMessage(Message::EKind eKind, const char * szText)
+void Log::AddMessage(Message::EKind eKind, const char * szText)
 {
 	Message* pMessage = new Message(++m_iIDGen, eKind, time(NULL), szText);
 	m_Messages.push_back(pMessage);
@@ -361,7 +371,7 @@ void Log::AppendMessage(Message::EKind eKind, const char * szText)
 	}
 }
 
-Log::Messages* Log::LockMessages()
+MessageList* Log::LockMessages()
 {
 	m_mutexLog.Lock();
 	return &m_Messages;
@@ -433,7 +443,7 @@ void Log::RotateLog()
 				char szMessage[1024];
 				snprintf(szMessage, 1024, "Deleting old log-file %s\n", filename);
 				szMessage[1024-1] = '\0';
-				g_pLog->AppendMessage(Message::mkInfo, szMessage);
+				g_pLog->AddMessage(Message::mkInfo, szMessage);
 
 				remove(szFullFilename);
 			}

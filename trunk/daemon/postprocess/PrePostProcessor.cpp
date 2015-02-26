@@ -1,7 +1,7 @@
 /*
  *  This file is part of nzbget
  *
- *  Copyright (C) 2007-2014 Andrey Prygunkov <hugbug@users.sourceforge.net>
+ *  Copyright (C) 2007-2015 Andrey Prygunkov <hugbug@users.sourceforge.net>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -198,7 +198,8 @@ void PrePostProcessor::DownloadQueueUpdate(Subject* Caller, void* Aspect)
 	{
 		// the deleting of nzbs is usually handled via eaFileDeleted-event, but when deleting nzb without
 		// any files left the eaFileDeleted-event is not fired and we need to process eaNzbDeleted-event instead
-		info("Collection %s deleted from queue", pQueueAspect->pNZBInfo->GetName());
+		pQueueAspect->pNZBInfo->PrintMessage(Message::mkInfo,
+			"Collection %s deleted from queue", pQueueAspect->pNZBInfo->GetName());
 		NZBDeleted(pQueueAspect->pDownloadQueue, pQueueAspect->pNZBInfo);
 	}
 	else if ((pQueueAspect->eAction == DownloadQueue::eaFileCompleted ||
@@ -222,7 +223,8 @@ void PrePostProcessor::DownloadQueueUpdate(Subject* Caller, void* Aspect)
 				 IsNZBFileCompleted(pQueueAspect->pNZBInfo, false, true))) &&
 				 pQueueAspect->pFileInfo->GetNZBInfo()->GetDeleteStatus() != NZBInfo::dsHealth)
 			{
-				info("Collection %s completely downloaded", pQueueAspect->pNZBInfo->GetName());
+				pQueueAspect->pNZBInfo->PrintMessage(Message::mkInfo,
+					"Collection %s completely downloaded", pQueueAspect->pNZBInfo->GetName());
 				g_pQueueScriptCoordinator->EnqueueScript(pQueueAspect->pNZBInfo, QueueScriptCoordinator::qeNzbDownloaded);
 				NZBDownloaded(pQueueAspect->pDownloadQueue, pQueueAspect->pNZBInfo);
 			}
@@ -232,7 +234,8 @@ void PrePostProcessor::DownloadQueueUpdate(Subject* Caller, void* Aspect)
 				!pQueueAspect->pNZBInfo->GetParCleanup() &&
 				IsNZBFileCompleted(pQueueAspect->pNZBInfo, false, true))
 			{
-				info("Collection %s deleted from queue", pQueueAspect->pNZBInfo->GetName());
+				pQueueAspect->pNZBInfo->PrintMessage(Message::mkInfo,
+					"Collection %s deleted from queue", pQueueAspect->pNZBInfo->GetName());
 				NZBDeleted(pQueueAspect->pDownloadQueue, pQueueAspect->pNZBInfo);
 			}
 		}
@@ -269,7 +272,7 @@ void PrePostProcessor::NZBDownloaded(DownloadQueue* pDownloadQueue, NZBInfo* pNZ
 {
 	if (!pNZBInfo->GetPostInfo() && g_pOptions->GetDecode())
 	{
-		info("Queueing %s for post-processing", pNZBInfo->GetName());
+		pNZBInfo->PrintMessage(Message::mkInfo, "Queueing %s for post-processing", pNZBInfo->GetName());
 
 		pNZBInfo->EnterPostProcess();
 		m_iJobCount++;
@@ -449,13 +452,15 @@ void PrePostProcessor::CheckPostQueue()
 
 				if (!pPostInfo->GetNZBInfo()->GetFileList()->empty())
 				{
-					info("Downloading all remaining files for manual par-check for %s", pPostInfo->GetNZBInfo()->GetName());
+					pPostInfo->GetNZBInfo()->PrintMessage(Message::mkInfo,
+						"Downloading all remaining files for manual par-check for %s", pPostInfo->GetNZBInfo()->GetName());
 					pDownloadQueue->EditEntry(pPostInfo->GetNZBInfo()->GetID(), DownloadQueue::eaGroupResume, 0, NULL);
 					pPostInfo->SetStage(PostInfo::ptFinished);
 				}
 				else
 				{
-					info("There are no par-files remain for download for %s", pPostInfo->GetNZBInfo()->GetName());
+					pPostInfo->GetNZBInfo()->PrintMessage(Message::mkInfo,
+						"There are no par-files remain for download for %s", pPostInfo->GetNZBInfo()->GetName());
 					pPostInfo->SetStage(PostInfo::ptQueued);
 				}
 			}
@@ -564,7 +569,8 @@ void PrePostProcessor::StartJob(DownloadQueue* pDownloadQueue, PostInfo* pPostIn
 		}
 		else
 		{
-			info("Nothing to par-check for %s", pPostInfo->GetNZBInfo()->GetName());
+			pPostInfo->GetNZBInfo()->PrintMessage(Message::mkInfo,
+				"Nothing to par-check for %s", pPostInfo->GetNZBInfo()->GetName());
 			pPostInfo->GetNZBInfo()->SetParStatus(NZBInfo::psSkipped);
 			pPostInfo->SetWorking(false);
 			pPostInfo->SetStage(PostInfo::ptQueued);
@@ -576,7 +582,8 @@ void PrePostProcessor::StartJob(DownloadQueue* pDownloadQueue, PostInfo* pPostIn
 		pPostInfo->GetNZBInfo()->CalcCriticalHealth(false) < 1000 &&
 		m_ParCoordinator.FindMainPars(pPostInfo->GetNZBInfo()->GetDestDir(), NULL))
 	{
-		warn("Skipping par-check for %s due to health %.1f%% below critical %.1f%%", pPostInfo->GetNZBInfo()->GetName(),
+		pPostInfo->GetNZBInfo()->PrintMessage(Message::mkWarning,
+			"Skipping par-check for %s due to health %.1f%% below critical %.1f%%", pPostInfo->GetNZBInfo()->GetName(),
 			pPostInfo->GetNZBInfo()->CalcHealth() / 10.0, pPostInfo->GetNZBInfo()->CalcCriticalHealth(false) / 10.0);
 		pPostInfo->GetNZBInfo()->SetParStatus(NZBInfo::psFailure);
 		return;
@@ -585,7 +592,8 @@ void PrePostProcessor::StartJob(DownloadQueue* pDownloadQueue, PostInfo* pPostIn
 		pPostInfo->GetNZBInfo()->GetFailedSize() - pPostInfo->GetNZBInfo()->GetParFailedSize() > 0 &&
 		m_ParCoordinator.FindMainPars(pPostInfo->GetNZBInfo()->GetDestDir(), NULL))
 	{
-		info("Collection %s with health %.1f%% needs par-check",
+		pPostInfo->GetNZBInfo()->PrintMessage(Message::mkInfo,
+			"Collection %s with health %.1f%% needs par-check",
 			pPostInfo->GetNZBInfo()->GetName(), pPostInfo->GetNZBInfo()->CalcHealth() / 10.0);
 		pPostInfo->SetRequestParCheck(true);
 		return;
@@ -626,7 +634,8 @@ void PrePostProcessor::StartJob(DownloadQueue* pDownloadQueue, PostInfo* pPostIn
 
 	if (bUnpack && bParFailed)
 	{
-		warn("Skipping unpack for %s due to %s", pPostInfo->GetNZBInfo()->GetName(),
+		pPostInfo->GetNZBInfo()->PrintMessage(Message::mkWarning,
+			"Skipping unpack for %s due to %s", pPostInfo->GetNZBInfo()->GetName(),
 			pPostInfo->GetNZBInfo()->GetParStatus() == NZBInfo::psManual ? "required par-repair" : "par-failure");
 		pPostInfo->GetNZBInfo()->SetUnpackStatus(NZBInfo::usSkipped);
 		bUnpack = false;
@@ -703,7 +712,7 @@ void PrePostProcessor::JobCompleted(DownloadQueue* pDownloadQueue, PostInfo* pPo
 			 pNZBInfo->CalcCriticalHealth(false) < 1000);
 		if (g_pOptions->GetParCleanupQueue() && bCanCleanupQueue && !pNZBInfo->GetFileList()->empty())
 		{
-			info("Cleaning up download queue for %s", pNZBInfo->GetName());
+			pNZBInfo->PrintMessage(Message::mkInfo, "Cleaning up download queue for %s", pNZBInfo->GetName());
 			pNZBInfo->SetParCleanup(true);
 			pDownloadQueue->EditEntry(pNZBInfo->GetID(), DownloadQueue::eaGroupDelete, 0, NULL);
 		}
@@ -809,7 +818,8 @@ bool PrePostProcessor::PostQueueDelete(DownloadQueue* pDownloadQueue, IDList* pI
 			{
 				if (pPostInfo->GetWorking())
 				{
-					info("Deleting active post-job %s", pPostInfo->GetNZBInfo()->GetName());
+					pPostInfo->GetNZBInfo()->PrintMessage(Message::mkInfo,
+						"Deleting active post-job %s", pPostInfo->GetNZBInfo()->GetName());
 					pPostInfo->SetDeleted(true);
 #ifndef DISABLE_PARCHECK
 					if (PostInfo::ptLoadingPars <= pPostInfo->GetStage() && pPostInfo->GetStage() <= PostInfo::ptRenaming)
@@ -834,7 +844,8 @@ bool PrePostProcessor::PostQueueDelete(DownloadQueue* pDownloadQueue, IDList* pI
 				}
 				else
 				{
-					info("Deleting queued post-job %s", pPostInfo->GetNZBInfo()->GetName());
+					pPostInfo->GetNZBInfo()->PrintMessage(Message::mkInfo,
+						"Deleting queued post-job %s", pPostInfo->GetNZBInfo()->GetName());
 					JobCompleted(pDownloadQueue, pPostInfo);
 					bOK = true;
 				}

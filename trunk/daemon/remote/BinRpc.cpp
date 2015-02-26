@@ -770,7 +770,7 @@ void LogBinCommand::Execute()
 		return;
 	}
 
-	Log::Messages* pMessages = g_pLog->LockMessages();
+	MessageList* pMessages = g_pLog->LockMessages();
 
 	int iNrEntries = ntohl(LogRequest.m_iLines);
 	unsigned int iIDFrom = ntohl(LogRequest.m_iIDFrom);

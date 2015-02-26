@@ -309,14 +309,9 @@ void QueueEditor::PauseUnpauseEntry(FileInfo* pFileInfo, bool bPause)
  */
 void QueueEditor::DeleteEntry(FileInfo* pFileInfo)
 {
-	if (pFileInfo->GetNZBInfo()->GetDeleting())
-	{
-		detail("Deleting file %s from download queue", pFileInfo->GetFilename());
-	}
-	else
-	{
-		info("Deleting file %s from download queue", pFileInfo->GetFilename());
-	}
+	pFileInfo->GetNZBInfo()->PrintMessage(
+		pFileInfo->GetNZBInfo()->GetDeleting() ? Message::mkDetail : Message::mkInfo,
+		"Deleting file %s from download queue", pFileInfo->GetFilename());
 	g_pQueueCoordinator->DeleteQueueEntry(m_pDownloadQueue, pFileInfo);
 }
 

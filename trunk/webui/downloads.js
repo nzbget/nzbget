@@ -79,7 +79,7 @@ var Downloads = (new function($)
 		$DownloadsRecordsPerPage = $('#DownloadsRecordsPerPage');
 		$DownloadsTable_Name = $('#DownloadsTable_Name');
 
-		var recordsPerPage = UISettings.read('$DownloadsRecordsPerPage', 10);
+		var recordsPerPage = UISettings.read('DownloadsRecordsPerPage', 10);
 		$DownloadsRecordsPerPage.val(recordsPerPage);
 
 		$DownloadsTable.fasttable(
@@ -109,7 +109,7 @@ var Downloads = (new function($)
 
 	this.applyTheme = function()
 	{
-		$DownloadsTable.fasttable('setPageSize', UISettings.read('$DownloadsRecordsPerPage', 10),
+		$DownloadsTable.fasttable('setPageSize', UISettings.read('DownloadsRecordsPerPage', 10),
 			UISettings.miniTheme ? 1 : 5, !UISettings.miniTheme);
 	}
 
@@ -120,7 +120,7 @@ var Downloads = (new function($)
 			$('#DownloadsTable_Category').css('width', DownloadsUI.calcCategoryColumnWidth());
 		}
 		
-		RPC.call('listgroups', [100], groups_loaded);
+		RPC.call('listgroups', [], groups_loaded);
 	}
 
 	function groups_loaded(_groups)
@@ -303,7 +303,7 @@ var Downloads = (new function($)
 	this.recordsPerPageChange = function()
 	{
 		var val = $DownloadsRecordsPerPage.val();
-		UISettings.write('$DownloadsRecordsPerPage', val);
+		UISettings.write('DownloadsRecordsPerPage', val);
 		$DownloadsTable.fasttable('setPageSize', val);
 	}
 
@@ -710,26 +710,13 @@ var DownloadsUI = (new function($)
 		{
 			switch (group.Status)
 			{
-				case "REPAIRING":
-					break;
 				case "LOADING_PARS":
 				case "VERIFYING_SOURCES":
 				case "VERIFYING_REPAIRED":
 				case "UNPACKING":
 				case "RENAMING":
-					text = group.PostInfoText;
-					break;
 				case "EXECUTING_SCRIPT":
-					if (group.Log && group.Log.length > 0)
-					{
-						text = group.Log[group.Log.length-1].Text;
-						// remove "for <nzb-name>" from label text
-						text = text.replace(' for ' + group.NZBName, ' ');
-					}
-					else
-					{
-						text = group.PostInfoText;
-					}
+					text = group.PostInfoText;
 					break;
 			}
 		}
