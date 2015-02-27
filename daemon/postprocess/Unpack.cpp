@@ -803,7 +803,8 @@ bool UnpackController::Cleanup()
 		while (const char* filename = dir.Next())
 		{
 			if (strcmp(filename, ".") && strcmp(filename, "..") &&
-				strcmp(filename, ".AppleDouble") && strcmp(filename, ".DS_Store"))
+				strcmp(filename, ".AppleDouble") && strcmp(filename, ".DS_Store") &&
+				strncmp(filename, ".nfs", 4))
 			{
 				char szSrcFile[1024];
 				snprintf(szSrcFile, 1024, "%s%c%s", m_szUnpackDir, PATH_SEPARATOR, filename);
@@ -1110,7 +1111,8 @@ bool MoveController::MoveFiles()
 	while (const char* filename = dir.Next())
 	{
 		if (strcmp(filename, ".") && strcmp(filename, "..") &&
-			strcmp(filename, ".AppleDouble") && strcmp(filename, ".DS_Store"))
+			strcmp(filename, ".AppleDouble") && strcmp(filename, ".DS_Store") &&
+			strncmp(filename, ".nfs", 4))
 		{
 			char szSrcFile[1024];
 			snprintf(szSrcFile, 1024, "%s%c%s", m_szInterDir, PATH_SEPARATOR, filename);
