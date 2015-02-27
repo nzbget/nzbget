@@ -2,7 +2,7 @@
 #
 # Logger post-processing script for NZBGet
 #
-# Copyright (C) 2013 Andrey Prygunkov <hugbug@users.sourceforge.net>
+# Copyright (C) 2013-2015 Andrey Prygunkov <hugbug@users.sourceforge.net>
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -26,10 +26,10 @@
 ##############################################################################
 ### NZBGET POST-PROCESSING SCRIPT                                          ###
 
-# Save post-processing log into a file.
+# Save nzb log into a file.
 #
-# This script saves post-processing log of nzb-file into file
-# _postprocesslog.txt in the destination directory.
+# This script saves the download and post-processing log of nzb-file
+# into file _nzblog.txt in the destination directory.
 #
 # NOTE: This script requires Python to be installed on your system.
 
@@ -50,20 +50,18 @@ POSTPROCESS_SUCCESS=93
 POSTPROCESS_NONE=95
 POSTPROCESS_ERROR=94
 
-# Check if the script is called from nzbget 11.0 or later
-if not 'NZBOP_SCRIPTDIR' in os.environ:
+# Check if the script is called from nzbget 15.0 or later
+if not 'NZBOP_NZBLOG' in os.environ:
 	print('*** NZBGet post-processing script ***')
-	print('This script is supposed to be called from nzbget (11.0 or later).')
+	print('This script is supposed to be called from nzbget (15.0 or later).')
 	sys.exit(POSTPROCESS_ERROR)
 
 if not os.path.exists(os.environ['NZBPP_DIRECTORY']):
 	print('Destination directory doesn\'t exist, exiting')
 	sys.exit(POSTPROCESS_NONE)
 
-# To get the post-processing log we connect to NZBGet via XML-RPC
-# and call method "postqueue", which returns the list of post-processing job.
-# The first item in the list is current job. This item has a field 'Log',
-# containing an array of log-entries.
+# To get the item log we connect to NZBGet via XML-RPC and call
+# method "loadlog", which returns the log for a given nzb item.
 # For more info visit http://nzbget.net/RPC_API_reference
 
 # First we need to know connection info: host, port and password of NZBGet server.
@@ -82,15 +80,13 @@ rpcUrl = 'http://%s:%s@%s:%s/xmlrpc' % (username, password, host, port);
 # Create remote server object
 server = ServerProxy(rpcUrl)
 
-# Call remote method 'postqueue'. The only parameter tells how many log-entries to return as maximum.
-postqueue = server.postqueue(10000)
-
-# Get field 'Log' from the first post-processing job
-log = postqueue[0]['Log']
+# Call remote method 'loadlog'
+nzbid = int(os.environ['NZBPP_NZBID'])
+log = server.loadlog(nzbid, 0, 10000)
 
 # Now iterate through entries and save them to the output file
 if len(log) > 0:
-	f = open('%s/_postprocesslog.txt' % os.environ['NZBPP_DIRECTORY'], 'wb')
+	f = open('%s/_nzblog.txt' % os.environ['NZBPP_DIRECTORY'], 'wb')
 	for entry in log:
 		f.write((u'%s\t%s\t%s\n' % (entry['Kind'], datetime.datetime.fromtimestamp(int(entry['Time'])), entry['Text'])).encode('utf8'))
 	f.close()
