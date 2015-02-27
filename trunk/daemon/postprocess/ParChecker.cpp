@@ -531,7 +531,7 @@ ParChecker::EStatus ParChecker::RunParCheckAll()
 				eAllStatus = eStatus;
 			}
 
-			if (g_pOptions->GetCreateBrokenLog())
+			if (g_pOptions->GetBrokenLog())
 			{
 				WriteBrokenLog(eStatus);
 			}

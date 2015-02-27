@@ -139,7 +139,7 @@ static const char* OPTION_ARTICLETIMEOUT		= "ArticleTimeout";
 static const char* OPTION_URLTIMEOUT			= "UrlTimeout";
 static const char* OPTION_SAVEQUEUE				= "SaveQueue";
 static const char* OPTION_RELOADQUEUE			= "ReloadQueue";
-static const char* OPTION_CREATEBROKENLOG		= "CreateBrokenLog";
+static const char* OPTION_BROKENLOG				= "BrokenLog";
 static const char* OPTION_NZBLOG				= "NzbLog";
 static const char* OPTION_DECODE				= "Decode";
 static const char* OPTION_RETRIES				= "Retries";
@@ -509,7 +509,7 @@ Options::Options(int argc, char* argv[])
 	m_bPausePostProcess		= false;
 	m_bPauseScan			= false;
 	m_bTempPauseDownload	= false;
-	m_bCreateBrokenLog		= false;
+	m_bBrokenLog			= false;
 	m_bNzbLog				= false;
 	m_iDownloadRate			= 0;
 	m_iEditQueueAction		= 0;
@@ -836,7 +836,7 @@ void Options::InitDefault()
 	SetOption(OPTION_URLTIMEOUT, "60");
 	SetOption(OPTION_SAVEQUEUE, "yes");
 	SetOption(OPTION_RELOADQUEUE, "yes");
-	SetOption(OPTION_CREATEBROKENLOG, "yes");
+	SetOption(OPTION_BROKENLOG, "yes");
 	SetOption(OPTION_NZBLOG, "yes");
 	SetOption(OPTION_DECODE, "yes");
 	SetOption(OPTION_RETRIES, "3");
@@ -1119,7 +1119,7 @@ void Options::InitOptions()
 
 	CheckDir(&m_szNzbDir, OPTION_NZBDIR, szMainDir, m_iNzbDirInterval == 0, true);
 
-	m_bCreateBrokenLog		= (bool)ParseEnumValue(OPTION_CREATEBROKENLOG, BoolCount, BoolNames, BoolValues);
+	m_bBrokenLog			= (bool)ParseEnumValue(OPTION_BROKENLOG, BoolCount, BoolNames, BoolValues);
 	m_bNzbLog				= (bool)ParseEnumValue(OPTION_NZBLOG, BoolCount, BoolNames, BoolValues);
 	m_bAppendCategoryDir	= (bool)ParseEnumValue(OPTION_APPENDCATEGORYDIR, BoolCount, BoolNames, BoolValues);
 	m_bContinuePartial		= (bool)ParseEnumValue(OPTION_CONTINUEPARTIAL, BoolCount, BoolNames, BoolValues);
@@ -2858,6 +2858,11 @@ void Options::ConvertOldOption(char *szOption, int iOptionBufLen, char *szValue,
 	if (!strcasecmp(szOption, "ConnectionTimeout"))
 	{
 		strncpy(szOption, "ArticleTimeout", iOptionBufLen);
+	}
+
+	if (!strcasecmp(szOption, "CreateBrokenLog"))
+	{
+		strncpy(szOption, "BrokenLog", iOptionBufLen);
 	}
 
 	szOption[iOptionBufLen-1] = '\0';
