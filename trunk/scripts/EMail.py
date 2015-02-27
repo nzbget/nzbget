@@ -2,7 +2,7 @@
 #
 # E-Mail post-processing script for NZBGet
 #
-# Copyright (C) 2013-2014 Andrey Prygunkov <hugbug@users.sourceforge.net>
+# Copyright (C) 2013-2015 Andrey Prygunkov <hugbug@users.sourceforge.net>
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -34,6 +34,9 @@
 
 ##############################################################################
 ### OPTIONS                                                       ###
+
+# When to send the message (Always, OnFailure).
+#SendMail=Always
 
 # Email address you want this email to be sent from. 
 #From="NZBGet" <myaccount@gmail.com>
@@ -71,10 +74,10 @@
 # is usually deleted by cleanup-script and therefore is not sent.
 #BrokenLog=yes
 
-# Append post-processing log to the message (Always, Never, OnFailure).
+# Append nzb log to the message (Always, Never, OnFailure).
 #
-# Add the post-processing log of active job.
-#PostProcessLog=OnFailure
+# Add the download and post-processing log of active job.
+#NzbLog=OnFailure
 
 ### NZBGET POST-PROCESSING SCRIPT                                          ###
 ##############################################################################
@@ -93,11 +96,12 @@ except ImportError:
 # Exit codes used by NZBGet
 POSTPROCESS_SUCCESS=93
 POSTPROCESS_ERROR=94
+POSTPROCESS_NONE=95
 
-# Check if the script is called from nzbget 11.0 or later
-if not 'NZBPP_TOTALSTATUS' in os.environ:
+# Check if the script is called from nzbget 15.0 or later
+if not 'NZBOP_NZBLOG' in os.environ:
 	print('*** NZBGet post-processing script ***')
-	print('This script is supposed to be called from nzbget (13.0 or later).')
+	print('This script is supposed to be called from nzbget (15.0 or later).')
 	sys.exit(POSTPROCESS_ERROR)
 
 print('[DETAIL] Script successfully started')
@@ -122,6 +126,11 @@ if total_status == 'SUCCESS' and os.environ['NZBPP_SCRIPTSTATUS'] == 'FAILURE':
 	status = 'WARNING/SCRIPT'
 		
 success = total_status == 'SUCCESS'
+
+if success and os.environ.get('NZBPO_SENDMAIL') == 'OnFailure':
+	print('[INFO] Skipping sending of message for successful download')
+	sys.exit(POSTPROCESS_NONE)
+
 if success:
 	subject = 'Success for "%s"' % (os.environ['NZBPP_NZBNAME'])
 	text = 'Download of "%s" has successfully completed.' % (os.environ['NZBPP_NZBNAME'])
@@ -132,8 +141,8 @@ else:
 text += '\nStatus: %s' % status
 
 if os.environ.get('NZBPO_STATISTICS') == 'yes' or \
-	os.environ.get('NZBPO_POSTPROCESSLOG') == 'Always' or \
-	(os.environ.get('NZBPO_POSTPROCESSLOG') == 'OnFailure' and not success):
+	os.environ.get('NZBPO_NZBLOG') == 'Always' or \
+	(os.environ.get('NZBPO_NZBLOG') == 'OnFailure' and not success):
 	# To get statistics or the post-processing log we connect to NZBGet via XML-RPC.
 	# For more info visit http://nzbget.net/RPC_API_reference
 	# First we need to know connection info: host, port and password of NZBGet server.
@@ -203,7 +212,7 @@ if os.environ.get('NZBPO_FILELIST') == 'yes':
 			text += '\n' + os.path.join(dirname, filename)[len(os.environ['NZBPP_DIRECTORY']) + 1:]
 			files = True
 	if not files:
-		text += '\n<no files found>'
+		text += '\n<no files found in the destination directory (were they moved by anoher script?)>'
 
 # add _brokenlog.txt (if exists)
 if os.environ.get('NZBPO_BROKENLOG') == 'yes':
@@ -212,22 +221,20 @@ if os.environ.get('NZBPO_BROKENLOG') == 'yes':
 		text += '\n\nBrokenlog:\n' + open(brokenlog, 'r').read().strip()
 
 # add post-processing log
-if os.environ.get('NZBPO_POSTPROCESSLOG') == 'Always' or \
-	(os.environ.get('NZBPO_POSTPROCESSLOG') == 'OnFailure' and not success):
-	# To get the post-processing log we call method "postqueue", which returns
-	# the list of post-processing job.
-	# The first item in the list is current job. This item has a field 'Log',
-	# containing an array of log-entries.
+if os.environ.get('NZBPO_NZBLOG') == 'Always' or \
+	(os.environ.get('NZBPO_NZBLOG') == 'OnFailure' and not success):
+
+	# To get the item log we connect to NZBGet via XML-RPC and call
+	# method "loadlog", which returns the log for a given nzb item.
+	# For more info visit http://nzbget.net/RPC_API_reference
 	
-	# Call remote method 'postqueue'. The only parameter tells how many log-entries to return as maximum.
-	postqueue = server.postqueue(10000)
-	
-	# Get field 'Log' from the first post-processing job
-	log = postqueue[0]['Log']
+	# Call remote method 'loadlog'
+	nzbid = int(os.environ['NZBPP_NZBID'])
+	log = server.loadlog(nzbid, 0, 10000)
 	
 	# Now iterate through entries and save them to message text
 	if len(log) > 0:
-		text += '\n\nPost-processing log:';
+		text += '\n\nNzb-log:';
 		for entry in log:
 			text += '\n%s\t%s\t%s' % (entry['Kind'], datetime.datetime.fromtimestamp(int(entry['Time'])), entry['Text'])
 
