@@ -609,7 +609,7 @@ void ArticleWriter::CompleteFileParts()
 			m_pFileInfo->GetMissedArticles() + m_pFileInfo->GetFailedArticles(),
 			m_pFileInfo->GetTotalArticles(), szInfoFilename);
 
-		if (g_pOptions->GetCreateBrokenLog())
+		if (g_pOptions->GetBrokenLog())
 		{
 			char szBrokenLogName[1024];
 			snprintf(szBrokenLogName, 1024, "%s%c_brokenlog.txt", szNZBDestDir, (int)PATH_SEPARATOR);
@@ -804,7 +804,7 @@ bool ArticleWriter::MoveCompletedFiles(NZBInfo* pNZBInfo, const char* szOldDestD
     }
 
 	// move brokenlog.txt
-	if (g_pOptions->GetCreateBrokenLog())
+	if (g_pOptions->GetBrokenLog())
 	{
 		char szOldBrokenLogName[1024];
 		snprintf(szOldBrokenLogName, 1024, "%s%c_brokenlog.txt", szOldDestDir, (int)PATH_SEPARATOR);
