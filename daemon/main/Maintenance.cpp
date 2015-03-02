@@ -48,6 +48,7 @@
 
 extern Options* g_pOptions;
 extern Maintenance* g_pMaintenance;
+extern void ExitProc();
 
 Maintenance::Maintenance()
 {
@@ -260,8 +261,24 @@ void UpdateScriptController::AddMessage(Message::EKind eKind, const char* szText
 {
 	szText = szText + m_iPrefixLen;
 
-	g_pMaintenance->AddMessage(eKind, time(NULL), szText);
-	ScriptController::AddMessage(eKind, szText);
+	if (!strncmp(szText, "[NZB] ", 6))
+	{
+		debug("Command %s detected", szText + 6);
+		if (!strcmp(szText + 6, "QUIT"))
+		{
+			Detach();
+			ExitProc();
+		}
+		else
+		{
+			error("Invalid command \"%s\" received", szText);
+		}
+	}
+	else
+	{
+		g_pMaintenance->AddMessage(eKind, time(NULL), szText);
+		ScriptController::AddMessage(eKind, szText);
+	}
 }
 
 void UpdateInfoScriptController::ExecuteScript(const char* szScript, char** pUpdateInfo)

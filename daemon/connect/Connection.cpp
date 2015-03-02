@@ -263,6 +263,9 @@ bool Connection::Bind()
 	for (addr = addr_list; addr != NULL; addr = addr->ai_next)
 	{
 		m_iSocket = socket(addr->ai_family, addr->ai_socktype, addr->ai_protocol);
+#ifdef WIN32
+		SetHandleInformation((HANDLE)m_iSocket, HANDLE_FLAG_INHERIT, 0);
+#endif
 		if (m_iSocket != INVALID_SOCKET)
 		{
 			int opt = 1;
@@ -553,6 +556,9 @@ bool Connection::DoConnect()
 	{
 		bool bLastAddr = !addr->ai_next;
 		m_iSocket = socket(addr->ai_family, addr->ai_socktype, addr->ai_protocol);
+#ifdef WIN32
+		SetHandleInformation((HANDLE)m_iSocket, HANDLE_FLAG_INHERIT, 0);
+#endif
 		if (m_iSocket != INVALID_SOCKET)
 		{
 			if (ConnectWithTimeout(addr->ai_addr, addr->ai_addrlen))

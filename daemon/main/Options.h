@@ -372,6 +372,8 @@ private:
 	int					m_iLogLines;
 	int					m_iWriteLogKind;
 	bool				m_bTestBacktrace;
+	bool				m_bWebGet;
+	char*				m_szWebGetFilename;
 
 	// Current state
 	bool				m_bPauseDownload;
@@ -560,6 +562,8 @@ public:
 	int					GetLogLines() { return m_iLogLines; }
 	int					GetWriteLogKind() { return m_iWriteLogKind; }
 	bool				GetTestBacktrace() { return m_bTestBacktrace; }
+	bool				GetWebGet() { return m_bWebGet; }
+	const char*			GetWebGetFilename() { return m_szWebGetFilename; }
 
 	// Current state
 	void				SetPauseDownload(bool bPauseDownload) { m_bPauseDownload = bPauseDownload; }

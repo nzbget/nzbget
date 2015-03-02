@@ -83,6 +83,7 @@
 #ifdef WIN32
 #include "NTService.h"
 #include "WinConsole.h"
+#include "WebDownloader.h"
 #endif
 
 // Prototypes
@@ -91,6 +92,7 @@ void Run(bool bReload);
 void Reload();
 void Cleanup();
 void ProcessClientRequest();
+void ProcessWebGet();
 #ifndef WIN32
 void Daemonize();
 #endif
@@ -278,6 +280,12 @@ void Run(bool bReload)
 		TestSegFault();
 	}
 #endif
+
+	if (g_pOptions->GetWebGet())
+	{
+		ProcessWebGet();
+		return;
+	}
 
 	// client request
 	if (g_pOptions->GetClientOperation() != Options::opClientNoOperation)
@@ -570,6 +578,27 @@ void ProcessClientRequest()
 	}
 
 	delete Client;
+}
+
+void ProcessWebGet()
+{
+	WebDownloader downloader;
+	downloader.SetURL(g_pOptions->GetLastArg());
+	downloader.SetForce(true);
+	downloader.SetRetry(false);
+	downloader.SetOutputFilename(g_pOptions->GetWebGetFilename());
+	downloader.SetInfoName("WebGet");
+
+	int iRedirects = 0;
+	WebDownloader::EStatus eStatus = WebDownloader::adRedirect;
+	while (eStatus == WebDownloader::adRedirect && iRedirects < 5)
+	{
+		iRedirects++;
+		eStatus = downloader.Download();
+	}
+	bool bOK = eStatus == WebDownloader::adFinished;
+
+	exit(bOK ? 0 : 1);
 }
 
 void ExitProc()

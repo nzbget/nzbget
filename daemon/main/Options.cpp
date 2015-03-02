@@ -83,7 +83,7 @@ static struct option long_options[] =
 	    {"pause", no_argument, 0, 'P'},
 	    {"unpause", no_argument, 0, 'U'},
 	    {"rate", required_argument, 0, 'R'},
-	    {"debug", no_argument, 0, 'B'},
+	    {"system", no_argument, 0, 'B'},
 	    {"log", required_argument, 0, 'G'},
 	    {"top", no_argument, 0, 'T'},
 	    {"edit", required_argument, 0, 'E'},
@@ -590,6 +590,8 @@ Options::Options(int argc, char* argv[])
 	m_bParCleanupQueue		= false;
 	m_iDiskSpace			= 0;
 	m_bTestBacktrace		= false;
+	m_bWebGet				= false;
+	m_szWebGetFilename		= NULL;
 	m_bTLS					= false;
 	m_bDumpCore				= false;
 	m_bParPauseQueue		= false;
@@ -736,6 +738,7 @@ Options::~Options()
 	free(m_szUnpackPassFile);
 	free(m_szExtCleanupDisk);
 	free(m_szParIgnoreExt);
+	free(m_szWebGetFilename);
 
 	for (NameList::iterator it = m_EditQueueNameList.begin(); it != m_EditQueueNameList.end(); it++)
 	{
@@ -1511,6 +1514,17 @@ void Options::InitCommandLine(int argc, char* argv[])
 				else if (!strcasecmp(optarg, "trace"))
 				{
 					m_bTestBacktrace = true;
+				}
+				else if (!strcasecmp(optarg, "webget"))
+				{
+					m_bWebGet = true;
+					optind++;
+					if (optind > argc)
+					{
+						abort("FATAL ERROR: Could not parse value of option 'E'\n");
+					}
+					optarg = argv[optind-1];
+					m_szWebGetFilename = strdup(optarg);
 				}
 				else
 				{
