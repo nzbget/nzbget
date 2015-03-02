@@ -132,7 +132,14 @@ void EnvironmentStrings::InitFromCurrentProcess()
 	for (int i = 0; (*g_szEnvironmentVariables)[i]; i++)
 	{
 		char* szVar = (*g_szEnvironmentVariables)[i];
-		Append(strdup(szVar));
+		// Ignore all env vars set by NZBGet.
+		// This is to avoid the passing of env vars after program update (when NZBGet is
+		// started from a script which was started by a previous instance of NZBGet).
+		// Format: NZBXX_YYYY (XX are any two characters, YYYY are any number of any characters).
+		if (!(!strncmp(szVar, "NZB", 3) && strlen(szVar) > 5 && szVar[5] == '_'))
+		{
+			Append(strdup(szVar));
+		}
 	}
 }
 
@@ -202,7 +209,7 @@ ScriptController::ScriptController()
 	m_bTerminated = false;
 	m_bDetached = false;
 	m_hProcess = 0;
-	m_environmentStrings.InitFromCurrentProcess();
+	ResetEnv();
 
 	m_mutexRunning.Lock();
 	m_RunningScripts.push_back(this);
@@ -225,9 +232,13 @@ ScriptController::~ScriptController()
 
 void ScriptController::UnregisterRunningScript()
 {
-	m_mutexRunning.Lock();
-	m_RunningScripts.erase(std::find(m_RunningScripts.begin(), m_RunningScripts.end(), this));
-	m_mutexRunning.Unlock();
+    m_mutexRunning.Lock();
+    RunningScripts::iterator it = std::find(m_RunningScripts.begin(), m_RunningScripts.end(), this);
+    if (it != m_RunningScripts.end())
+    {
+        m_RunningScripts.erase(it);
+    }
+    m_mutexRunning.Unlock();
 }
 
 void ScriptController::ResetEnv()
@@ -400,6 +411,8 @@ int ScriptController::Execute()
 	SecurityAttributes.bInheritHandle = TRUE;
 
 	CreatePipe(&hReadPipe, &hWritePipe, &SecurityAttributes, 0);
+
+	SetHandleInformation(hReadPipe, HANDLE_FLAG_INHERIT, 0);
 
 	STARTUPINFO StartupInfo;
 	memset(&StartupInfo, 0, sizeof(StartupInfo));

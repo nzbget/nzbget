@@ -195,7 +195,10 @@ windows_FILES = \
 	daemon/windows/WinConsole.h \
 	nzbget.sln \
 	nzbget.vcproj \
-	nzbget-shell.bat  \
+	windows/nzbget-command-shell.bat  \
+	windows/install-update.bat  \
+	windows/README-WINDOWS.txt  \
+	windows/package-info.json  \
 	windows/resources/mainicon.ico \
 	windows/resources/nzbget.rc \
 	windows/resources/resource.h \

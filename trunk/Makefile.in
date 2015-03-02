@@ -465,7 +465,10 @@ windows_FILES = \
 	daemon/windows/WinConsole.h \
 	nzbget.sln \
 	nzbget.vcproj \
-	nzbget-shell.bat  \
+	windows/nzbget-command-shell.bat  \
+	windows/install-update.bat  \
+	windows/README-WINDOWS.txt  \
+	windows/package-info.json  \
 	windows/resources/mainicon.ico \
 	windows/resources/nzbget.rc \
 	windows/resources/resource.h \
@@ -1857,7 +1860,7 @@ distclean-tags:
 distdir: $(DISTFILES)
 	$(am__remove_distdir)
 	mkdir $(distdir)
-	$(mkdir_p) $(distdir)/daemon/windows $(distdir)/lib/par2 $(distdir)/osx $(distdir)/osx/NZBGet.xcodeproj $(distdir)/osx/Resources $(distdir)/osx/Resources/Images $(distdir)/osx/Resources/licenses $(distdir)/scripts $(distdir)/webui $(distdir)/webui/img $(distdir)/webui/lib $(distdir)/windows/resources $(distdir)/windows/setup
+	$(mkdir_p) $(distdir)/daemon/windows $(distdir)/lib/par2 $(distdir)/osx $(distdir)/osx/NZBGet.xcodeproj $(distdir)/osx/Resources $(distdir)/osx/Resources/Images $(distdir)/osx/Resources/licenses $(distdir)/scripts $(distdir)/webui $(distdir)/webui/img $(distdir)/webui/lib $(distdir)/windows $(distdir)/windows/resources $(distdir)/windows/setup
 	@srcdirstrip=`echo "$(srcdir)" | sed 's|.|.|g'`; \
 	topsrcdirstrip=`echo "$(top_srcdir)" | sed 's|.|.|g'`; \
 	list='$(DISTFILES)'; for file in $$list; do \
