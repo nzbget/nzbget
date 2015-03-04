@@ -1227,15 +1227,22 @@ bool CleanupController::Cleanup(const char* szDestDir, bool *bDeleted)
 	DirBrowser dir(szDestDir);
 	while (const char* filename = dir.Next())
 	{
+		char szFullFilename[1024];
+		snprintf(szFullFilename, 1024, "%s%c%s", szDestDir, PATH_SEPARATOR, filename);
+		szFullFilename[1024-1] = '\0';
+
+		bool bIsDir = Util::DirectoryExists(szFullFilename);
+
+		if (strcmp(filename, ".") && strcmp(filename, "..") && bIsDir)
+		{
+			bOK &= Cleanup(szFullFilename, bDeleted);
+		}
+
 		// check file extension
-		bool bDeleteIt = Util::MatchFileExt(filename, g_pOptions->GetExtCleanupDisk(), ",;");
+		bool bDeleteIt = Util::MatchFileExt(filename, g_pOptions->GetExtCleanupDisk(), ",;") && !bIsDir;
 
 		if (bDeleteIt)
 		{
-			char szFullFilename[1024];
-			snprintf(szFullFilename, 1024, "%s%c%s", szDestDir, PATH_SEPARATOR, filename);
-			szFullFilename[1024-1] = '\0';
-
 			PrintMessage(Message::mkInfo, "Deleting file %s", filename);
 			if (remove(szFullFilename) != 0)
 			{
