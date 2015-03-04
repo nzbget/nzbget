@@ -611,13 +611,18 @@ void PrePostProcessor::StartJob(DownloadQueue* pDownloadQueue, PostInfo* pPostIn
 
 	bool bCleanup = !bUnpack &&
 		pPostInfo->GetNZBInfo()->GetCleanupStatus() == NZBInfo::csNone &&
+		!Util::EmptyStr(g_pOptions->GetExtCleanupDisk()) &&
 		((pPostInfo->GetNZBInfo()->GetParStatus() == NZBInfo::psSuccess &&
 		  pPostInfo->GetNZBInfo()->GetUnpackStatus() != NZBInfo::usFailure &&
 		  pPostInfo->GetNZBInfo()->GetUnpackStatus() != NZBInfo::usSpace &&
 		  pPostInfo->GetNZBInfo()->GetUnpackStatus() != NZBInfo::usPassword) ||
 		 (pPostInfo->GetNZBInfo()->GetUnpackStatus() == NZBInfo::usSuccess &&
-		  pPostInfo->GetNZBInfo()->GetParStatus() != NZBInfo::psFailure)) &&
-		!Util::EmptyStr(g_pOptions->GetExtCleanupDisk());
+		  pPostInfo->GetNZBInfo()->GetParStatus() != NZBInfo::psFailure) ||
+		 ((pPostInfo->GetNZBInfo()->GetUnpackStatus() == NZBInfo::usNone || 
+		   pPostInfo->GetNZBInfo()->GetUnpackStatus() == NZBInfo::usSkipped) &&
+		  (pPostInfo->GetNZBInfo()->GetParStatus() == NZBInfo::psNone ||
+		   pPostInfo->GetNZBInfo()->GetParStatus() == NZBInfo::psSkipped) &&
+		  pPostInfo->GetNZBInfo()->CalcHealth() == 1000));
 
 	bool bMoveInter = !bUnpack &&
 		pPostInfo->GetNZBInfo()->GetMoveStatus() == NZBInfo::msNone &&
