@@ -576,6 +576,11 @@ ParChecker::EStatus ParChecker::RunParCheck(const char* szParFilename)
 	res = pRepairer->Process(false);
     debug("ParChecker: Process-result=%i", res);
 
+	if (!m_bParQuick)
+	{
+		CheckEmptyFiles();
+	}
+
 	bool bAddedSplittedFragments = false;
 	if (m_bHasDamagedFiles && !IsStopped() && res == eRepairNotPossible)
 	{
@@ -1185,6 +1190,39 @@ void ParChecker::signal_done(std::string str, int available, int total)
 				PrintMessage(Message::mkWarning, "File %s with %i block(s) is missing%s",
 					szFilename, total, bIgnore ? ", ignoring" : "");
 			}
+		}
+	}
+}
+
+/*
+ * Only if ParQuick isn't enabled:
+ * For empty damaged files the callback-function "signal_done" isn't called and the flag "m_bHasDamagedFiles"
+ * therefore isn't set. In this function we expicitly check such files.
+ */
+void ParChecker::CheckEmptyFiles()
+{
+	for (std::vector<Par2RepairerSourceFile*>::iterator it = ((Repairer*)m_pRepairer)->sourcefiles.begin();
+		 it != ((Repairer*)m_pRepairer)->sourcefiles.end(); it++)
+	{
+		Par2RepairerSourceFile *sourcefile = *it;
+
+		if (sourcefile && sourcefile->GetDescriptionPacket())
+		{
+			const char* szFilename = sourcefile->GetDescriptionPacket()->FileName().c_str();
+			if (!IsProcessedFile(szFilename))
+			{
+				bool bIgnore = Util::MatchFileExt(szFilename, g_pOptions->GetParIgnoreExt(), ",;") ||
+					Util::MatchFileExt(szFilename, g_pOptions->GetExtCleanupDisk(), ",;");
+				m_bHasDamagedFiles |= !bIgnore;
+
+				int total = sourcefile->GetVerificationPacket() ? sourcefile->GetVerificationPacket()->BlockCount() : 0;
+				PrintMessage(Message::mkWarning, "File %s has %i bad block(s) of total %i block(s)%s",
+					szFilename, total, total, bIgnore ? ", ignoring" : "");
+			}
+		}
+		else
+		{
+			m_bHasDamagedFiles = true;
 		}
 	}
 }
