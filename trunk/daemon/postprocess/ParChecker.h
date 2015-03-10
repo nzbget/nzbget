@@ -145,6 +145,7 @@ private:
 	bool				SmartCalcFileRangeCrc(FILE* pFile, long long lStart, long long lEnd, SegmentList* pSegments,
 							unsigned long* pDownloadCrc);
 	bool				DumbCalcFileRangeCrc(FILE* pFile, long long lStart, long long lEnd, unsigned long* pDownloadCrc);
+	void				CheckEmptyFiles();
 
 protected:
 	/**
