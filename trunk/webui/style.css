@@ -1635,7 +1635,8 @@ div.control-group.last-group {
 	color: #005580;
 }
 
-.config-previewfeed {
+.config-previewfeed,
+.config-move {
 	margin-left: 15px;
 }
 

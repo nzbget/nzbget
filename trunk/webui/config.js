@@ -877,11 +877,15 @@ var Config = (new function($)
 		if (hasoptions)
 		{
 			html += '<div class="' + section.id + ' multiid' + multiid + ' multiset">';
-			html += '<button type="button" class="btn config-delete" data-multiid="' + multiid + ' multiset" ' +
+			html += '<button type="button" class="btn config-delete" data-multiid="' + multiid + '" ' +
 				'onclick="Config.deleteSet(this, \'' + setname + '\',\'' + section.id + '\')">Delete ' + setname + multiid + '</button>';
+			html += ' <button type="button" class="btn config-move" data-multiid="' + multiid + '" ' +
+				'onclick="Config.moveSet(this, \'' + setname + '\',\'' + section.id + '\', \'up\')">Move Up</button>';
+			html += ' <button type="button" class="btn config-move" data-multiid="' + multiid + '" ' +
+				'onclick="Config.moveSet(this, \'' + setname + '\',\'' + section.id + '\', \'down\')">Move Down</button>';
 			if (setname.toLowerCase() === 'feed')
 			{
-				html += ' <button type="button" class="btn config-previewfeed config-feed" data-multiid="' + multiid + ' multiset" ' +
+				html += ' <button type="button" class="btn config-previewfeed config-feed" data-multiid="' + multiid + '" ' +
 					'onclick="Config.previewFeed(this, \'' + setname + '\',\'' + section.id + '\')">Preview Feed</button>';
 			}
 			html += '<hr>';
@@ -1218,36 +1222,55 @@ var Config = (new function($)
 
 	function reformatSection(section, setname)
 	{
-		var oldMultiId = -1;
-		var newMultiId = 0;
+		var hasOptions = false;
+		var lastMultiId = 0;
 		for (var j=0; j < section.options.length; j++)
 		{
 			var option = section.options[j];
 			if (!option.template)
 			{
-				if (option.multiid !== oldMultiId)
+				if (option.multiid !== lastMultiId && option.multiid !== lastMultiId + 1)
 				{
-					oldMultiId = option.multiid;
-					newMultiId++;
-
-					// reformat multiid
-					var div = $('#' + setname + oldMultiId);
-					div.attr('id', setname + newMultiId);
-
-					// update captions
-					$('.config-settitle.' + section.id + '.multiid' + oldMultiId, $ConfigData).text(setname + newMultiId);
-					$('.' + section.id + '.multiid' + oldMultiId + ' .config-multicaption', $ConfigData).text(setname + newMultiId + '.');
-					$('.' + section.id + '.multiid' + oldMultiId + ' .config-delete', $ConfigData).text('Delete ' + setname + newMultiId).attr('data-multiid', newMultiId);
-					$('.' + section.id + '.multiid' + oldMultiId + ' .config-feed', $ConfigData).attr('data-multiid', newMultiId);
-
-					//update class
-					$('.' + section.id + '.multiid' + oldMultiId, $ConfigData).removeClass('multiid' + oldMultiId).addClass('multiid' + newMultiId);
+					reformatSet(section, setname, option.multiid, lastMultiId + 1);
 				}
+				lastMultiId = option.multiid;
+				hasOptions = true;
+			}
+		}
+
+		// update add-button
+		var addButton = $('.config-add.' + section.id, $ConfigData);
+		addButton.text('Add ' + (hasOptions ? 'another ' : '') + setname);
+	}
+
+	function reformatSet(section, setname, oldMultiId, newMultiId)
+	{
+		for (var j=0; j < section.options.length; j++)
+		{
+			var option = section.options[j];
+			if (!option.template && option.multiid == oldMultiId)
+			{
+				// reformat multiid
+				var div = $('#' + setname + oldMultiId);
+				div.attr('id', setname + newMultiId);
+
+				// update captions
+				$('.config-settitle.' + section.id + '.multiid' + oldMultiId, $ConfigData).text(setname + newMultiId);
+				$('.' + section.id + '.multiid' + oldMultiId + ' .config-multicaption', $ConfigData).text(setname + newMultiId + '.');
+				$('.' + section.id + '.multiid' + oldMultiId + ' .config-delete', $ConfigData).text('Delete ' + setname + newMultiId).attr('data-multiid', newMultiId);
+				$('.' + section.id + '.multiid' + oldMultiId + ' .config-feed', $ConfigData).attr('data-multiid', newMultiId);
+				$('.' + section.id + '.multiid' + oldMultiId + ' .config-move', $ConfigData).attr('data-multiid', newMultiId);
+
+				//update class
+				$('.' + section.id + '.multiid' + oldMultiId, $ConfigData).removeClass('multiid' + oldMultiId).addClass('multiid' + newMultiId);
 
 				// update input id
 				var oldFormId = option.formId;
 				option.formId = option.formId.replace(new RegExp(option.multiid), newMultiId);
 				$('#' + oldFormId).attr('id', option.formId);
+
+				// update label data-optid
+				$('a[data-optid=' + oldFormId + ']').attr('data-optid', option.formId);
 
 				// update editor id
 				$('#' + oldFormId + '_Editor').attr('id', option.formId + '_Editor');
@@ -1258,12 +1281,8 @@ var Config = (new function($)
 				option.multiid = newMultiId;
 			}
 		}
-
-		// update add-button
-		var addButton = $('.config-add.' + section.id, $ConfigData);
-		addButton.text('Add ' + (newMultiId > 0 ? 'another ' : '') + setname);
 	}
-
+	
 	this.addSet = function(setname, sectionId)
 	{
 		// find section
@@ -1329,6 +1348,31 @@ var Config = (new function($)
 			div.after(opts);
 			div.remove();
 		});
+	}
+
+	this.moveSet = function(control, setname, sectionId, direction)
+	{
+		var id1 = parseInt($(control).attr('data-multiid'));
+		var id2 = direction === 'down' ? id1 + 1 : id1 - 1;
+
+		// swap options in two sets
+		var opts1 = $('.' + sectionId + '.multiid' + (direction === 'down' ? id1 : id2), $ConfigData);
+		var opts2 = $('.' + sectionId + '.multiid' + (direction === 'down' ? id2 : id1), $ConfigData);
+		
+		if (opts1.length === 0 || opts2.length === 0)
+		{
+			return;
+		}
+		
+		opts1.first().before(opts2);
+
+		// reformat remaining sets (captions, input IDs, etc.)
+		var section = findSectionById(sectionId);
+		reformatSet(section, setname, id2, 10000 + id2);
+		reformatSet(section, setname, id1, id2);
+		reformatSet(section, setname, 10000 + id2, id1);
+
+		section.modified = true;
 	}
 
 	this.viewMode = function()
