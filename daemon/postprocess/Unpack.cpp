@@ -802,9 +802,7 @@ bool UnpackController::Cleanup()
 		DirBrowser dir(m_szUnpackDir);
 		while (const char* filename = dir.Next())
 		{
-			if (strcmp(filename, ".") && strcmp(filename, "..") &&
-				strcmp(filename, ".AppleDouble") && strcmp(filename, ".DS_Store") &&
-				strncmp(filename, ".nfs", 4))
+			if (strcmp(filename, ".") && strcmp(filename, ".."))
 			{
 				char szSrcFile[1024];
 				snprintf(szSrcFile, 1024, "%s%c%s", m_szUnpackDir, PATH_SEPARATOR, filename);
@@ -817,10 +815,13 @@ bool UnpackController::Cleanup()
 				// silently overwrite existing files
 				remove(szDstFile);
 
-				if (!Util::MoveFile(szSrcFile, szDstFile))
+				bool bHiddenFile = filename[0] == '.';
+
+				if (!Util::MoveFile(szSrcFile, szDstFile) && !bHiddenFile)
 				{
 					char szErrBuf[256];
-					PrintMessage(Message::mkError, "Could not move file %s to %s: %s", szSrcFile, szDstFile, Util::GetLastErrorMessage(szErrBuf, sizeof(szErrBuf)));
+					PrintMessage(Message::mkError, "Could not move file %s to %s: %s", szSrcFile, szDstFile,
+						Util::GetLastErrorMessage(szErrBuf, sizeof(szErrBuf)));
 					bOK = false;
 				}
 
@@ -1110,9 +1111,7 @@ bool MoveController::MoveFiles()
 	DirBrowser dir(m_szInterDir);
 	while (const char* filename = dir.Next())
 	{
-		if (strcmp(filename, ".") && strcmp(filename, "..") &&
-			strcmp(filename, ".AppleDouble") && strcmp(filename, ".DS_Store") &&
-			strncmp(filename, ".nfs", 4))
+		if (strcmp(filename, ".") && strcmp(filename, ".."))
 		{
 			char szSrcFile[1024];
 			snprintf(szSrcFile, 1024, "%s%c%s", m_szInterDir, PATH_SEPARATOR, filename);
@@ -1121,10 +1120,18 @@ bool MoveController::MoveFiles()
 			char szDstFile[1024];
 			Util::MakeUniqueFilename(szDstFile, 1024, m_szDestDir, filename);
 
-			PrintMessage(Message::mkInfo, "Moving file %s to %s", Util::BaseFileName(szSrcFile), m_szDestDir);
-			if (!Util::MoveFile(szSrcFile, szDstFile))
+			bool bHiddenFile = filename[0] == '.';
+
+			if (!bHiddenFile)
 			{
-				PrintMessage(Message::mkError, "Could not move file %s to %s: %s", szSrcFile, szDstFile, Util::GetLastErrorMessage(szErrBuf, sizeof(szErrBuf)));
+				PrintMessage(Message::mkInfo, "Moving file %s to %s", Util::BaseFileName(szSrcFile), m_szDestDir);
+			}
+
+			if (!Util::MoveFile(szSrcFile, szDstFile) && !bHiddenFile)
+			{
+				char szErrBuf[256];
+				PrintMessage(Message::mkError, "Could not move file %s to %s: %s", szSrcFile, szDstFile,
+					Util::GetLastErrorMessage(szErrBuf, sizeof(szErrBuf)));
 				bOK = false;
 			}
 		}
@@ -1132,7 +1139,7 @@ bool MoveController::MoveFiles()
 
 	if (bOK && !Util::DeleteDirectoryWithContent(m_szInterDir, szErrBuf, sizeof(szErrBuf)))
 	{
-		PrintMessage(Message::mkError, "Could not delete intermediate directory %s: %s", m_szInterDir, szErrBuf);
+		PrintMessage(Message::mkWarning, "Could not delete intermediate directory %s: %s", m_szInterDir, szErrBuf);
 	}
 
 	return bOK;
