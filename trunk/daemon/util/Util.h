@@ -237,6 +237,12 @@ public:
 	 */
 	static void HttpUnquote(char* raw);
 
+	/*
+	 * Decodes URL-string.
+	 * The string is decoded on the place overwriting the content of raw-data.
+	 */
+	static void URLDecode(char* raw);
+
 #ifdef WIN32
 	static bool Utf8ToAnsi(char* szBuffer, int iBufLen);
 	static bool AnsiToUtf8(char* szBuffer, int iBufLen);

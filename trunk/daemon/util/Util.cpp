@@ -2068,6 +2068,36 @@ BreakLoop:
 	*output = '\0';
 }
 
+void WebUtil::URLDecode(char* raw)
+{
+	char* output = raw;
+	for (char* p = raw;;)
+	{
+		switch (*p)
+		{
+			case '\0':
+				goto BreakLoop;
+			case '%':
+				{
+					p++;
+					unsigned char c1 = *p++;
+					unsigned char c2 = *p++;
+					c1 = '0' <= c1 && c1 <= '9' ? c1 - '0' : 'A' <= c1 && c1 <= 'F' ? c1 - 'A' + 10 : 0;
+					c2 = '0' <= c2 && c2 <= '9' ? c2 - '0' : 'A' <= c2 && c2 <= 'F' ? c2 - 'A' + 10 : 0;
+					unsigned char ch = (c1 << 4) + c2;
+					*output++ = (char)ch;
+                    break;
+				}
+			default:
+				*output++ = *p++;
+				break;
+		}
+	}
+BreakLoop:
+
+	*output = '\0';
+}
+
 #ifdef WIN32
 bool WebUtil::Utf8ToAnsi(char* szBuffer, int iBufLen)
 {
