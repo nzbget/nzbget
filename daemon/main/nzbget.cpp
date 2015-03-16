@@ -758,42 +758,77 @@ void Cleanup()
 #ifndef WIN32
 void Daemonize()
 {
-	int i, lfp;
-	char str[10];
-	if (getppid() == 1) return; /* already a daemon */
-	i = fork();
-	if (i < 0) exit(1); /* fork error */
-	if (i > 0) exit(0); /* parent exits */
+	int f = fork();
+	if (f < 0) exit(1); /* fork error */
+	if (f > 0) exit(0); /* parent exits */
+
 	/* child (daemon) continues */
-	setsid(); /* obtain a new process group */
-	for (i = getdtablesize();i >= 0;--i) close(i); /* close all descriptors */
-	i = open("/dev/null", O_RDWR); dup(i); dup(i); /* handle standart I/O */
-	chdir(g_pOptions->GetDestDir()); /* change running directory */
-	lfp = open(g_pOptions->GetLockFile(), O_RDWR | O_CREAT, 0640);
-	if (lfp < 0) exit(1); /* can not open */
-	if (lockf(lfp, F_TLOCK, 0) < 0) exit(0); /* can not lock */
+
+	// obtain a new process group
+	setsid();
+
+	// close all descriptors
+	for (int i = getdtablesize(); i >= 0; --i)
+	{
+		close(i);
+	}
+
+	// handle standart I/O
+	int d = open("/dev/null", O_RDWR);
+	dup(d);
+	dup(d);
+
+	// change running directory
+	chdir(g_pOptions->GetDestDir());
+
+	// set up lock-file
+	int lfp = -1;
+	if (!Util::EmptyStr(g_pOptions->GetLockFile()))
+	{
+		lfp = open(g_pOptions->GetLockFile(), O_RDWR | O_CREAT, 0640);
+		if (lfp < 0)
+		{
+			error("Could not create lock-file %s", g_pOptions->GetLockFile());
+			lfp = -1;
+		}
+		else if (lockf(lfp, F_TLOCK, 0) < 0)
+		{
+			error("Could not set lock on lock-file %s", g_pOptions->GetLockFile());
+			close(lfp);
+			lfp = -1;
+		}
+	}
 
 	/* Drop user if there is one, and we were run as root */
-	if ( getuid() == 0 || geteuid() == 0 )
+	if (getuid() == 0 || geteuid() == 0)
 	{
 		struct passwd *pw = getpwnam(g_pOptions->GetDaemonUsername());
 		if (pw)
 		{
-			fchown(lfp, pw->pw_uid, pw->pw_gid); /* change owner of lock file  */
-			setgroups( 0, (const gid_t*) 0 ); /* Set aux groups to null. */
-			setgid(pw->pw_gid); /* Set primary group. */
-			/* Try setting aux groups correctly - not critical if this fails. */
-			initgroups( g_pOptions->GetDaemonUsername(),pw->pw_gid); 
-			/* Finally, set uid. */
+			// Change owner of lock file
+			fchown(lfp, pw->pw_uid, pw->pw_gid);
+			// Set aux groups to null.
+			setgroups(0, (const gid_t*)0);
+			// Set primary group.
+			setgid(pw->pw_gid);
+			// Try setting aux groups correctly - not critical if this fails.
+			initgroups(g_pOptions->GetDaemonUsername(), pw->pw_gid);
+			// Finally, set uid.
 			setuid(pw->pw_uid);
 		}
 	}
 
-	/* first instance continues */
-	sprintf(str, "%d\n", getpid());
-	write(lfp, str, strlen(str)); /* record pid to lockfile */
-	signal(SIGCHLD, SIG_IGN); /* ignore child */
-	signal(SIGTSTP, SIG_IGN); /* ignore tty signals */
+	// record pid to lockfile
+	if (lfp > -1)
+	{
+		char str[10];
+		sprintf(str, "%d\n", getpid());
+		write(lfp, str, strlen(str));
+	}
+
+	// ignore unwanted signals
+	signal(SIGCHLD, SIG_IGN);
+	signal(SIGTSTP, SIG_IGN);
 	signal(SIGTTOU, SIG_IGN);
 	signal(SIGTTIN, SIG_IGN);
 }
