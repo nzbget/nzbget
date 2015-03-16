@@ -333,6 +333,7 @@ XmlRpcProcessor::~XmlRpcProcessor()
 void XmlRpcProcessor::SetUrl(const char* szUrl)
 {
 	m_szUrl = strdup(szUrl);
+	WebUtil::URLDecode(m_szUrl);
 }
 
 
@@ -853,6 +854,10 @@ bool XmlCommand::NextParamAsInt(int* iValue)
 		}
 		*iValue = atoi(szParam + 1);
 		m_szRequestPtr = szParam + 1;
+		while (strchr("-+0123456789&", *m_szRequestPtr))
+		{
+			m_szRequestPtr++;
+		}
 		return true;
 	}
 	else if (IsJson())
@@ -899,12 +904,12 @@ bool XmlCommand::NextParamAsBool(bool* bValue)
 
 		if (IsJson())
 		{
-			if (!strcmp(szParam, "true"))
+			if (!strncmp(szParam, "true", 4))
 			{
 				*bValue = true;
 				return true;
 			}
-			else if (!strcmp(szParam, "false"))
+			else if (!strncmp(szParam, "false", 5))
 			{
 				*bValue = false;
 				return true;
@@ -967,7 +972,7 @@ bool XmlCommand::NextParamAsStr(char** szValue)
 		}
 		szParam++; // skip '='
 		int iLen = 0;
-		char* szParamEnd = strchr(m_szRequestPtr, '&');
+		char* szParamEnd = strchr(szParam, '&');
 		if (szParamEnd)
 		{
 			iLen = (int)(szParamEnd - szParam);
