@@ -371,8 +371,12 @@ void XmlRpcProcessor::Execute()
 void XmlRpcProcessor::Dispatch()
 {
 	char* szRequest = m_szRequest;
+
 	char szMethodName[100];
 	szMethodName[0] = '\0';
+
+	char szRequestId[100];
+	szRequestId[0] = '\0';
 
 	if (m_eHttpMethod == hmGet)
 	{
@@ -384,6 +388,7 @@ void XmlRpcProcessor::Dispatch()
 			if (pend) 
 			{
 				int iLen = (int)(pend - pstart - 1 < (int)sizeof(szMethodName) - 1 ? pend - pstart - 1 : (int)sizeof(szMethodName) - 1);
+				iLen = iLen >= sizeof(szMethodName) ? sizeof(szMethodName) - 1 : iLen;
 				strncpy(szMethodName, pstart + 1, iLen);
 				szMethodName[iLen] = '\0';
 				szRequest = pend + 1;
@@ -405,8 +410,15 @@ void XmlRpcProcessor::Dispatch()
 		int iValueLen = 0;
 		if (const char* szMethodPtr = WebUtil::JsonFindField(m_szRequest, "method", &iValueLen))
 		{
+			iValueLen = iValueLen >= sizeof(szMethodName) ? sizeof(szMethodName) - 1 : iValueLen;
 			strncpy(szMethodName, szMethodPtr + 1, iValueLen - 2);
 			szMethodName[iValueLen - 2] = '\0';
+		}
+		if (const char* szRequestIdPtr = WebUtil::JsonFindField(m_szRequest, "id", &iValueLen))
+		{
+			iValueLen = iValueLen >= sizeof(szRequestId) ? sizeof(szRequestId) - 1 : iValueLen;
+			strncpy(szRequestId, szRequestIdPtr, iValueLen);
+			szRequestId[iValueLen] = '\0';
 		}
 	}
 
@@ -425,7 +437,7 @@ void XmlRpcProcessor::Dispatch()
 		command->SetUserAccess(m_eUserAccess);
 		command->PrepareParams();
 		command->Execute();
-		BuildResponse(command->GetResponse(), command->GetCallbackFunc(), command->GetFault());
+		BuildResponse(command->GetResponse(), command->GetCallbackFunc(), command->GetFault(), szRequestId);
 		delete command;
 	}
 }
@@ -488,17 +500,18 @@ void XmlRpcProcessor::MutliCall()
 		command->SetProtocol(rpXmlRpc);
 		command->PrepareParams();
 		command->Execute();
-		BuildResponse(command->GetResponse(), "", command->GetFault());
+		BuildResponse(command->GetResponse(), "", command->GetFault(), NULL);
 		delete command;
 	}
 	else
 	{
 		cStringBuilder.Append("</data></array>");
-		BuildResponse(cStringBuilder.GetBuffer(), "", false);
+		BuildResponse(cStringBuilder.GetBuffer(), "", false, NULL);
 	}
 }
 
-void XmlRpcProcessor::BuildResponse(const char* szResponse, const char* szCallbackFunc, bool bFault)
+void XmlRpcProcessor::BuildResponse(const char* szResponse, const char* szCallbackFunc,
+	bool bFault, const char* szRequestId)
 {
 	const char XML_HEADER[] = "<?xml version=\"1.0\"?>\n<methodResponse>\n";
 	const char XML_FOOTER[] = "</methodResponse>";
@@ -508,6 +521,8 @@ void XmlRpcProcessor::BuildResponse(const char* szResponse, const char* szCallba
 	const char XML_FAULT_CLOSE[] = "</value></fault>\n";
 
 	const char JSON_HEADER[] = "{\n\"version\" : \"1.1\",\n";
+	const char JSON_ID_OPEN[] = "\"id\" : ";
+	const char JSON_ID_CLOSE[] = ",\n";
 	const char JSON_FOOTER[] = "\n}";
 	const char JSON_OK_OPEN[] = "\"result\" : ";
 	const char JSON_OK_CLOSE[] = "";
@@ -534,6 +549,12 @@ void XmlRpcProcessor::BuildResponse(const char* szResponse, const char* szCallba
 	}
 	m_cResponse.Append(szCallbackHeader);
 	m_cResponse.Append(szHeader);
+	if (!bXmlRpc && szRequestId && *szRequestId)
+	{
+		m_cResponse.Append(JSON_ID_OPEN);
+		m_cResponse.Append(szRequestId);
+		m_cResponse.Append(JSON_ID_CLOSE);
+	}
 	m_cResponse.Append(szOpenTag);
 	m_cResponse.Append(szResponse);
 	m_cResponse.Append(szCloseTag);
