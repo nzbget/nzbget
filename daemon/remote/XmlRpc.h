@@ -67,7 +67,7 @@ private:
 	void				Dispatch();
 	XmlCommand*			CreateCommand(const char* szMethodName);
 	void				MutliCall();
-	void				BuildResponse(const char* szResponse, const char* szCallbackFunc, bool bFault);
+	void				BuildResponse(const char* szResponse, const char* szCallbackFunc, bool bFault, const char* szRequestId);
 
 public:
 						XmlRpcProcessor();
