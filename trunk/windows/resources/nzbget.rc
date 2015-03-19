@@ -51,8 +51,9 @@ BEGIN
         POPUP "Troubleshooting"
         BEGIN
             MENUITEM "Restart",                     ID_TROUBLESHOOTING_RESTART
-            MENUITEM SEPARATOR
             MENUITEM "Open Config-File in a Text Editor", ID_TROUBLESHOOTING_OPENCONFIG
+            MENUITEM SEPARATOR
+            MENUITEM "Reset to Factory Defaults",   ID_TROUBLESHOOTING_FACTORYRESET
         END
         MENUITEM SEPARATOR
         MENUITEM "About...",                    ID_ABOUT
@@ -114,6 +115,18 @@ BEGIN
     LTEXT           "NZBGet can also run as Windows service. See README-WINDOWS.txt for details.",IDC_STATIC,21,68,172,17
 END
 
+IDD_FACTORYRESETDIALOG DIALOGEX 0, 0, 297, 76
+STYLE DS_SETFONT | DS_MODALFRAME | DS_CENTER | WS_POPUP | WS_CAPTION | WS_SYSMENU
+CAPTION "NZBGet"
+FONT 8, "Tahoma", 400, 0, 0x0
+BEGIN
+    PUSHBUTTON      "Erase and Reset",IDC_FACTORYRESET_RESET,131,55,90,14
+    LTEXT           "Reset to factory defaults?",IDC_FACTORYRESET_TITLE,54,7,236,13
+    ICON            "",IDC_FACTORYRESET_ICON,7,7,20,20
+    LTEXT           "All settings will be reset to defaults. The download queue, history, statistics, log-file, default incoming nzb-directory and default scripts-directory will be erased.",IDC_FACTORYRESET_TEXT,54,21,236,27
+    DEFPUSHBUTTON   "Cancel",IDC_FACTORYRESET_CANCEL,227,55,63,14
+END
+
 IDD_RUNNINGDIALOG DIALOGEX 0, 0, 342, 69
 STYLE DS_SETFONT | DS_MODALFRAME | DS_CENTER | WS_POPUP | WS_CAPTION | WS_SYSMENU
 CAPTION "NZBGet"
@@ -154,13 +167,13 @@ BEGIN
         BOTTOMMARGIN, 130
     END
 
-    IDD_RUNNINGDIALOG, DIALOG
+    IDD_FACTORYRESETDIALOG, DIALOG
     BEGIN
         LEFTMARGIN, 7
-        RIGHTMARGIN, 335
+        RIGHTMARGIN, 290
         VERTGUIDE, 54
         TOPMARGIN, 7
-        BOTTOMMARGIN, 62
+        BOTTOMMARGIN, 69
     END
 END
 #endif    // APSTUDIO_INVOKED

@@ -1,7 +1,7 @@
 /*
  *  This file is part of nzbget
  *
- *  Copyright (C) 2014 Andrey Prygunkov <hugbug@users.sourceforge.net>
+ *  Copyright (C) 2014-2015 Andrey Prygunkov <hugbug@users.sourceforge.net>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -76,6 +76,8 @@ private:
 	void					ShowCategoryDir(int iCatIndex);
 	void					SetupConfigFile();
 	void					SetupScripts();
+	void					ShowFactoryResetDialog();
+	void					ResetFactoryDefaults();
 
 	static BOOL WINAPI		ConsoleCtrlHandler(DWORD dwCtrlType);
 	static LRESULT CALLBACK	TrayWndProcStat(HWND hwndWin, UINT uMsg, WPARAM wParam, LPARAM lParam);
@@ -86,6 +88,8 @@ private:
 	BOOL					PrefsDialogProc(HWND hwndDlg, UINT uMsg, WPARAM wParam, LPARAM lParam);
 	static BOOL CALLBACK	RunningDialogProcStat(HWND hwndDlg, UINT uMsg, WPARAM wParam, LPARAM lParam);
 	BOOL					RunningDialogProc(HWND hwndDlg, UINT uMsg, WPARAM wParam, LPARAM lParam);
+	static BOOL CALLBACK	FactoryResetDialogProcStat(HWND hwndDlg, UINT uMsg, WPARAM wParam, LPARAM lParam);
+	BOOL					FactoryResetDialogProc(HWND hwndDlg, UINT uMsg, WPARAM wParam, LPARAM lParam);
 
 protected:
 	virtual void			Run();
