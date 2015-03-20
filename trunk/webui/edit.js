@@ -94,8 +94,8 @@ var DownloadsEditDialog = (new function($)
 				renderCellCallback: EditUI.servStatsTableRenderCellCallback
 			});
 
-		$DownloadsFileTable.on('click', 'tbody div.check',
-			function(event) { $DownloadsFileTable.fasttable('itemCheckClick', this.parentNode.parentNode, event); });
+		$DownloadsFileTable.on('click', UISettings.rowSelect ? 'tbody tr' : 'tbody div.check',
+			function(event) { $DownloadsFileTable.fasttable('itemCheckClick', UISettings.rowSelect ? this : this.parentNode.parentNode, event); });
 		$DownloadsFileTable.on('click', 'thead div.check',
 			function() { $DownloadsFileTable.fasttable('titleCheckClick') });
 		$DownloadsFileTable.on('mousedown', Util.disableShiftMouseDown);

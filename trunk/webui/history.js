@@ -78,8 +78,8 @@ var History = (new function($)
 			});
 
 		$HistoryTable.on('click', 'a', editClick);
-		$HistoryTable.on('click', 'tbody div.check',
-			function(event) { $HistoryTable.fasttable('itemCheckClick', this.parentNode.parentNode, event); });
+		$HistoryTable.on('click', UISettings.rowSelect ? 'tbody tr' : 'tbody div.check',
+			function(event) { $HistoryTable.fasttable('itemCheckClick', UISettings.rowSelect ? this : this.parentNode.parentNode, event); });
 		$HistoryTable.on('click', 'thead div.check',
 			function() { $HistoryTable.fasttable('titleCheckClick') });
 		$HistoryTable.on('mousedown', Util.disableShiftMouseDown);
@@ -368,6 +368,7 @@ var History = (new function($)
 	function editClick(e)
 	{
 		e.preventDefault();
+		e.stopPropagation();
 
 		var histid = $(this).attr('histid');
 		$(this).blur();

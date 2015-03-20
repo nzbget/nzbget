@@ -58,6 +58,9 @@ var UISettings = (new function($)
 
 	// Show badges with duplicate info (downloads and history).
 	this.dupeBadges = false;
+	
+	// Select records by clicking on any part of the row, not just on the check mark.
+	this.rowSelect = false;
 
 	// Time zone correction in hours.
 	// You shouldn't require this unless you can't set the time zone on your computer/device properly.
