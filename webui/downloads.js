@@ -100,8 +100,8 @@ var Downloads = (new function($)
 			});
 
 		$DownloadsTable.on('click', 'a', itemClick);
-		$DownloadsTable.on('click', 'tbody div.check',
-			function(event) { $DownloadsTable.fasttable('itemCheckClick', this.parentNode.parentNode, event); });
+		$DownloadsTable.on('click', UISettings.rowSelect ? 'tbody tr' : 'tbody div.check',
+			function(event) { $DownloadsTable.fasttable('itemCheckClick', UISettings.rowSelect ? this : this.parentNode.parentNode, event); });
 		$DownloadsTable.on('click', 'thead div.check',
 			function() { $DownloadsTable.fasttable('titleCheckClick') });
 		$DownloadsTable.on('mousedown', Util.disableShiftMouseDown);
@@ -334,6 +334,7 @@ var Downloads = (new function($)
 	function itemClick(e)
 	{
 		e.preventDefault();
+		e.stopPropagation();
 		var nzbid = $(this).attr('data-nzbid');
 		var area = $(this).attr('data-area');
 		$(this).blur();
