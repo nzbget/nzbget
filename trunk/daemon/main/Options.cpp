@@ -803,8 +803,12 @@ void Options::InitDefault()
 {
 #ifdef WIN32
 	SetOption(OPTION_MAINDIR, "${AppDir}");
+	SetOption(OPTION_WEBDIR, "${AppDir}\\webui");
+	SetOption(OPTION_CONFIGTEMPLATE, "${AppDir}\\nzbget.conf.template");
 #else
 	SetOption(OPTION_MAINDIR, "~/downloads");
+	SetOption(OPTION_WEBDIR, "");
+	SetOption(OPTION_CONFIGTEMPLATE, "");
 #endif
 	SetOption(OPTION_TEMPDIR, "${MainDir}/tmp");
 	SetOption(OPTION_DESTDIR, "${MainDir}/dst");
@@ -813,8 +817,6 @@ void Options::InitDefault()
 	SetOption(OPTION_NZBDIR, "${MainDir}/nzb");
 	SetOption(OPTION_LOCKFILE, "${MainDir}/nzbget.lock");
 	SetOption(OPTION_LOGFILE, "${DestDir}/nzbget.log");
-	SetOption(OPTION_WEBDIR, "");
-	SetOption(OPTION_CONFIGTEMPLATE, "");
 	SetOption(OPTION_SCRIPTDIR, "${MainDir}/scripts");
 	SetOption(OPTION_WRITELOG, "append");
 	SetOption(OPTION_ROTATELOG, "3");
