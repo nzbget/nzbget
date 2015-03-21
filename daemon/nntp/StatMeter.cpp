@@ -1,7 +1,7 @@
 /*
  *  This file is part of nzbget
  *
- *  Copyright (C) 2014 Andrey Prygunkov <hugbug@users.sourceforge.net>
+ *  Copyright (C) 2014-2015 Andrey Prygunkov <hugbug@users.sourceforge.net>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -356,9 +356,7 @@ void StatMeter::CalcTotalStat(int* iUpTimeSec, int* iDnTimeSec, long long* iAllB
 	m_mutexStat.Unlock();
 }
 
-/*
- * NOTE: see note to "AddSpeedReading"
- */
+// Average speed in last 30 seconds
 int StatMeter::CalcCurrentDownloadSpeed()
 {
 	if (m_bStandBy)
@@ -375,6 +373,14 @@ int StatMeter::CalcCurrentDownloadSpeed()
 	return (int)(m_iSpeedTotalBytes / iTimeDiff);
 }
 
+// Amount of data downloaded in current second
+int StatMeter::CalcMomentaryDownloadSpeed()
+{
+	time_t tCurTime = time(NULL);
+	int iSpeed = tCurTime == m_tCurSecTime ? m_iCurSecBytes : 0;
+	return iSpeed;
+}
+
 void StatMeter::AddSpeedReading(int iBytes)
 {
 	time_t tCurTime = time(NULL);
@@ -388,6 +394,13 @@ void StatMeter::AddSpeedReading(int iBytes)
 		m_mutexSpeed.Lock();
 #endif
 	}
+
+	if (tCurTime != m_tCurSecTime)
+	{
+		m_tCurSecTime =	tCurTime;
+		m_iCurSecBytes = 0;
+	}
+	m_iCurSecBytes += iBytes;
 
 	while (iNowSlot > m_iSpeedTime[m_iSpeedBytesIndex])
 	{
@@ -452,6 +465,8 @@ void StatMeter::ResetSpeedStat()
 	m_iSpeedBytesIndex = 0;
 	m_iSpeedTotalBytes = 0;
 	m_tSpeedCorrection = tCurTime;
+	m_tCurSecTime =	0;
+	m_iCurSecBytes = 0;
 }
 
 void StatMeter::LogDebugInfo()
