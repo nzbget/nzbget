@@ -93,6 +93,8 @@ private:
 	int					m_iSpeedStartTime; 
 	time_t				m_tSpeedCorrection;
 	int					m_iSpeedBytesIndex;
+	int					m_iCurSecBytes;
+	time_t				m_tCurSecTime;
 #ifdef HAVE_SPINLOCK
 	SpinLock			m_spinlockSpeed;
 #else
@@ -125,6 +127,7 @@ public:
 						~StatMeter();
 	void				Init();
 	int					CalcCurrentDownloadSpeed();
+	int					CalcMomentaryDownloadSpeed();
 	void				AddSpeedReading(int iBytes);
 	void				AddServerData(int iBytes, int iServerID);
 	void				CalcTotalStat(int* iUpTimeSec, int* iDnTimeSec, long long* iAllBytes, bool* bStandBy);

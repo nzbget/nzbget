@@ -394,7 +394,8 @@ ArticleDownloader::EStatus ArticleDownloader::Download()
 
 		// Throttle the bandwidth
 		while (!IsStopped() && (g_pOptions->GetDownloadRate() > 0.0f) &&
-		        (g_pStatMeter->CalcCurrentDownloadSpeed() > g_pOptions->GetDownloadRate()))
+			(g_pStatMeter->CalcCurrentDownloadSpeed() > g_pOptions->GetDownloadRate() ||
+			g_pStatMeter->CalcMomentaryDownloadSpeed() > g_pOptions->GetDownloadRate()))
 		{
 			SetLastUpdateTimeNow();
 			usleep(10 * 1000);
