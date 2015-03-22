@@ -1062,6 +1062,7 @@ void WinConsole::ResetFactoryDefaults()
 {
 	char szPath[MAX_PATH + 100];
 	char szMessage[1024];
+	char szErrBuf[200];
 
 	g_pOptions->SetPauseDownload(true);
 	g_pOptions->SetPausePostProcess(true);
@@ -1077,7 +1078,6 @@ void WinConsole::ResetFactoryDefaults()
 		szPath[sizeof(szPath)-1] = '\0';
 
 		// try to delete the directory
-		char szErrBuf[200];
 		int iRetry = 10;
 		while (iRetry > 0 && Util::DirectoryExists(szPath) &&
 			!Util::DeleteDirectoryWithContent(szPath, szErrBuf, sizeof(szErrBuf)))
@@ -1088,7 +1088,7 @@ void WinConsole::ResetFactoryDefaults()
 
 		if (Util::DirectoryExists(szPath))
 		{
-			snprintf(szMessage, 1024, "Could not delete directory %s.\nPlease delete the directory manually and try again.", szPath);
+			snprintf(szMessage, 1024, "Could not delete directory %s:\n%s.\nPlease delete the directory manually and try again.", szPath, szErrBuf);
 			szMessage[1024-1] = '\0';
 			MessageBox(m_hTrayWindow, szMessage, "NZBGet", MB_ICONERROR);
 			return;
@@ -1104,10 +1104,12 @@ void WinConsole::ResetFactoryDefaults()
 	strcat(szPath, "nzbget.conf");
 
 	remove(szPath);
+	Util::GetLastErrorMessage(szErrBuf, sizeof(szErrBuf));
+
 
 	if (Util::FileExists(szPath))
 	{
-		snprintf(szMessage, 1024, "Could not delete file %s.\nPlease delete the file manually and try again.", szPath);
+		snprintf(szMessage, 1024, "Could not delete file %s:\n%s.\nPlease delete the file manually and try again.", szPath, szErrBuf);
 		szMessage[1024-1] = '\0';
 		MessageBox(m_hTrayWindow, szMessage, "NZBGet", MB_ICONERROR);
 		return;
@@ -1118,10 +1120,12 @@ void WinConsole::ResetFactoryDefaults()
 	szPath[sizeof(szPath)-1] = '\0';
 
 	remove(szPath);
+	Util::GetLastErrorMessage(szErrBuf, sizeof(szErrBuf));
+
 
 	if (Util::FileExists(szPath))
 	{
-		snprintf(szMessage, 1024, "Could not delete file %s.\nPlease delete the file manually and try again.", szPath);
+		snprintf(szMessage, 1024, "Could not delete file %s:\n%s.\nPlease delete the file manually and try again.", szPath, szErrBuf);
 		szMessage[1024-1] = '\0';
 		MessageBox(m_hTrayWindow, szMessage, "NZBGet", MB_ICONERROR);
 		return;
