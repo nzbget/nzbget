@@ -37,7 +37,7 @@ if x%NZBUP_BRANCH%==x (
 
 rem extracting link to update-info-URL from "webui\package-info.json"
 set UPDATE_INFO_LINK=
-for /f "delims=" %%a in (%NZBOP_WEBDIR%\package-info.json) do (
+for /f "delims=" %%a in ('type "%NZBOP_WEBDIR%\package-info.json"') do (
 	set line=%%a
 	set line=!line:update-info-link=!
 	if not %%a==!line! (
@@ -57,6 +57,14 @@ set NZBGET_DIR=%~dp0
 cd %NZBGET_DIR%
 
 if "%1"=="/step2" goto STEP2
+
+rem Determine if NZBGet is running as a service
+set NZBGET_SERVICE=no
+for /F "tokens=3 delims=: " %%H in ('sc query "NZBGet" ^| findstr "        STATE"') do (
+	if /I "%%H" EQU "RUNNING" (
+		set NZBGET_SERVICE=yes
+	)
+)
 
 echo Downloading version information...
 rem using special command "-B webget" NZBGet works like a simple wget
@@ -102,7 +110,7 @@ rem In that case the command interpreter will go grazy because it doesn't like t
 rem batch files being replaced during execution.
 copy install-update.bat "%TEMP%\nzbget-update.bat" > nul
 if errorlevel 1 goto COPYSCRIPT_FAILURE
-start "Updating NZBGet" /I /MIN CALL "%TEMP%\nzbget-update.bat" /step2 "%NZBGET_DIR%" %SETUP_EXE%
+start "Updating NZBGet" /I /MIN CALL "%TEMP%\nzbget-update.bat" /step2 "%NZBGET_DIR%" %SETUP_EXE% %NZBGET_SERVICE%
 
 echo [NZB] QUIT
 
@@ -114,6 +122,7 @@ rem init from command line params
 set NZBGET_DIR=%2
 cd %NZBGET_DIR%
 set SETUP_EXE=%3
+set NZBGET_SERVICE=%4
 
 rem check if nzbget.exe is running
 echo Stopping NZBGet...
@@ -148,7 +157,12 @@ echo.
 del %TEMP%\%SETUP_EXE%
 
 echo Starting NZBGet...
-start /MIN nzbget.exe -app -auto -s
+
+if "%NZBGET_SERVICE%"=="yes" (
+	net start NZBGet
+) else (
+	start /MIN nzbget.exe -app -auto -s
+)
 if errorlevel 1 goto START_FAILURE
 ping 127.0.0.1 -n 2 -w 1000 > nul
 exit
