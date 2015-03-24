@@ -129,6 +129,17 @@ bool Maintenance::StartUpdate(EBranch eBranch)
 		return false;
 	}
 
+#ifdef WIN32
+	// make absolute path
+	if (!(strlen(m_szUpdateScript) > 2 && m_szUpdateScript[1] == ':') && m_szUpdateScript[0] != '\\')
+	{
+		char szFilename[MAX_PATH + 100];
+		snprintf(szFilename, sizeof(szFilename), "%s\\%s", g_pOptions->GetAppDir(), m_szUpdateScript);
+		free(m_szUpdateScript);
+		m_szUpdateScript = strdup(szFilename);
+	}
+#endif
+
 	m_Messages.Clear();
 
 	m_UpdateScriptController = new UpdateScriptController();

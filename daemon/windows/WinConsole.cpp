@@ -920,13 +920,6 @@ void WinConsole::SetupConfigFile()
 {
 	// create new config-file from config template
 
-	char szAppDir[MAX_PATH + 30];
-	GetModuleFileName(NULL, szAppDir, MAX_PATH + 1);
-	szAppDir[MAX_PATH] = '\0';
-	Util::NormalizePathSeparators(szAppDir);
-	char* end = strrchr(szAppDir, PATH_SEPARATOR);
-	if (end) *end = '\0';
-
 	char szFilename[MAX_PATH + 30];
 
 	char szCommonAppDataPath[MAX_PATH];
@@ -941,7 +934,7 @@ void WinConsole::SetupConfigFile()
 	Util::CreateDirectory(szAppDataPath);
 
 	char szConfTemplateFilename[MAX_PATH + 30];
-	snprintf(szConfTemplateFilename, sizeof(szConfTemplateFilename), "%s\\nzbget.conf.template", szAppDir);
+	snprintf(szConfTemplateFilename, sizeof(szConfTemplateFilename), "%s\\nzbget.conf.template", g_pOptions->GetAppDir());
 	szConfTemplateFilename[sizeof(szConfTemplateFilename)-1] = '\0';
 
 	CopyFile(szConfTemplateFilename, szFilename, FALSE);
@@ -982,20 +975,13 @@ void WinConsole::SetupScripts()
 	char szAppDataPath[MAX_PATH];
 	SHGetFolderPath(NULL, CSIDL_COMMON_APPDATA, NULL, 0, szAppDataPath);
 
-	char szAppDir[MAX_PATH + 30];
-	GetModuleFileName(NULL, szAppDir, MAX_PATH + 1);
-	szAppDir[MAX_PATH] = '\0';
-	Util::NormalizePathSeparators(szAppDir);
-	char* end = strrchr(szAppDir, PATH_SEPARATOR);
-	if (end) *end = '\0';
-
 	char szDestDir[MAX_PATH + 1];
 	snprintf(szDestDir, sizeof(szDestDir), "%s\\NZBGet\\scripts", szAppDataPath);
 	szDestDir[sizeof(szDestDir)-1] = '\0';
 	Util::CreateDirectory(szDestDir);
 
 	char szSrcDir[MAX_PATH + 30];
-	snprintf(szSrcDir, sizeof(szSrcDir), "%s\\scripts", szAppDir);
+	snprintf(szSrcDir, sizeof(szSrcDir), "%s\\scripts", g_pOptions->GetAppDir());
 	szSrcDir[sizeof(szSrcDir)-1] = '\0';
 
 	DirBrowser dir(szSrcDir);
@@ -1096,16 +1082,10 @@ void WinConsole::ResetFactoryDefaults()
 	}
 
 	// delete old config file in the program's directory
-	GetModuleFileName(NULL, szPath, MAX_PATH + 1);
-	szPath[MAX_PATH] = '\0';
-	Util::NormalizePathSeparators(szPath);
-	char* end = strrchr(szPath, PATH_SEPARATOR);
-	if (end) end[1] = '\0';
-	strcat(szPath, "nzbget.conf");
+	snprintf(szPath, sizeof(szPath), "%s\\nzbget.conf", g_pOptions->GetAppDir());
 
 	remove(szPath);
 	Util::GetLastErrorMessage(szErrBuf, sizeof(szErrBuf));
-
 
 	if (Util::FileExists(szPath))
 	{

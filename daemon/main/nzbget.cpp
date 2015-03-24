@@ -226,7 +226,8 @@ void Run(bool bReload)
 	g_pQueueScriptCoordinator = new QueueScriptCoordinator();
 
 	debug("Reading options");
-	g_pOptions = new Options(g_iArgumentCount, *g_szArguments);
+	g_pOptions = new Options();
+	g_pOptions->Init(g_iArgumentCount, *g_szArguments);
 
 #ifndef WIN32
 	if (g_pOptions->GetUMask() < 01000)
