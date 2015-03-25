@@ -789,14 +789,13 @@ void Daemonize()
 		lfp = open(g_pOptions->GetLockFile(), O_RDWR | O_CREAT, 0640);
 		if (lfp < 0)
 		{
-			error("Could not create lock-file %s", g_pOptions->GetLockFile());
-			lfp = -1;
+			error("Starting daemon failed: could not create lock-file %s", g_pOptions->GetLockFile());
+			exit(1);
 		}
-		else if (lockf(lfp, F_TLOCK, 0) < 0)
+		if (lockf(lfp, F_TLOCK, 0) < 0)
 		{
-			error("Could not set lock on lock-file %s", g_pOptions->GetLockFile());
-			close(lfp);
-			lfp = -1;
+			error("Starting daemon failed: could not acquire lock on lock-file %s", g_pOptions->GetLockFile());
+			exit(1);
 		}
 	}
 
