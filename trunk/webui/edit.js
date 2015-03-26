@@ -735,7 +735,7 @@ var DownloadsEditDialog = (new function($)
 						}
 						break;
 					case 'split':
-						if (file.ActiveDownloads > 0 || file.FileSizeLo !== file.RemainingSizeLo)
+						if (file.ActiveDownloads > 0 || file.Progress > 0)
 						{
 							splitError = true;
 						}

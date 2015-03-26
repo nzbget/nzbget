@@ -1528,6 +1528,7 @@ void ListFilesXmlCommand::Execute()
 		"<member><name>Category</name><value><string>%s</string></value></member>\n"
 		"<member><name>Priority</name><value><i4>%i</i4></value></member>\n"			// deprecated, use "Priority" of group instead
 		"<member><name>ActiveDownloads</name><value><i4>%i</i4></value></member>\n"
+		"<member><name>Progress</name><value><i4>%u</i4></value></member>\n"
 		"</struct></value>\n";
 
 	const char* JSON_LIST_ITEM = 
@@ -1549,7 +1550,8 @@ void ListFilesXmlCommand::Execute()
 		"\"DestDir\" : \"%s\",\n"
 		"\"Category\" : \"%s\",\n"
 		"\"Priority\" : %i,\n"				// deprecated, use "Priority" of group instead
-		"\"ActiveDownloads\" : %i\n"
+		"\"ActiveDownloads\" : %i,\n"
+		"\"Progress\" : %i\n"
 		"}";
 
 	int iItemBufSize = 10240;
@@ -1577,12 +1579,15 @@ void ListFilesXmlCommand::Execute()
 				char* xmlCategory = EncodeStr(pFileInfo->GetNZBInfo()->GetCategory());
 				char* xmlNZBNicename = EncodeStr(pFileInfo->GetNZBInfo()->GetName());
 
+				int iProgress = pFileInfo->GetFailedSize() == 0 && pFileInfo->GetSuccessSize() == 0 ? 0 :
+					(int)(1000 - pFileInfo->GetRemainingSize() * 1000 / (pFileInfo->GetSize() - pFileInfo->GetMissedSize()));
+
 				snprintf(szItemBuf, iItemBufSize, IsJson() ? JSON_LIST_ITEM : XML_LIST_ITEM,
 					pFileInfo->GetID(), iFileSizeLo, iFileSizeHi, iRemainingSizeLo, iRemainingSizeHi, 
 					pFileInfo->GetTime(), BoolToStr(pFileInfo->GetFilenameConfirmed()), 
 					BoolToStr(pFileInfo->GetPaused()), pFileInfo->GetNZBInfo()->GetID(), xmlNZBNicename,
 					xmlNZBNicename, xmlNZBFilename, xmlSubject, xmlFilename, xmlDestDir, xmlCategory,
-					pFileInfo->GetNZBInfo()->GetPriority(), pFileInfo->GetActiveDownloads());
+					pFileInfo->GetNZBInfo()->GetPriority(), pFileInfo->GetActiveDownloads(), iProgress);
 				szItemBuf[iItemBufSize-1] = '\0';
 
 				free(xmlNZBFilename);
