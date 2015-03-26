@@ -236,7 +236,7 @@ void DupeCoordinator::NZBFound(DownloadQueue* pDownloadQueue, NZBInfo* pNZBInfo)
 			{
 				// Flag saying QueueCoordinator to skip nzb-file
 				pNZBInfo->SetDeleteStatus(NZBInfo::dsDupe);
-				info("Collection %s is duplicate to %s", pNZBInfo->GetName(), pHistoryInfo->GetNZBInfo()->GetName());
+				info("Collection %s is a duplicate to %s", pNZBInfo->GetName(), pHistoryInfo->GetNZBInfo()->GetName());
 				return;
 			}
 		}
@@ -283,7 +283,7 @@ void DupeCoordinator::NZBFound(DownloadQueue* pDownloadQueue, NZBInfo* pNZBInfo)
 				{
 					// Flag saying QueueCoordinator to skip nzb-file
 					pNZBInfo->SetDeleteStatus(NZBInfo::dsDupe);
-					info("Collection %s is duplicate to %s", pNZBInfo->GetName(), pQueuedNZBInfo->GetName());
+					info("Collection %s is a duplicate to %s", pNZBInfo->GetName(), pQueuedNZBInfo->GetName());
 					return;
 				}
 
@@ -334,8 +334,7 @@ void DupeCoordinator::ReturnBestDupe(DownloadQueue* pDownloadQueue, NZBInfo* pNZ
 
 		if (pHistoryInfo->GetKind() == HistoryInfo::hkNzb &&
 			pHistoryInfo->GetNZBInfo()->GetDupeMode() != dmForce &&
-			(pHistoryInfo->GetNZBInfo()->IsDupeSuccess() ||
-			 pHistoryInfo->GetNZBInfo()->GetMarkStatus() == NZBInfo::ksGood) &&
+			pHistoryInfo->GetNZBInfo()->IsDupeSuccess() &&
 			SameNameOrKey(pHistoryInfo->GetNZBInfo()->GetName(), pHistoryInfo->GetNZBInfo()->GetDupeKey(), szNZBName, szDupeKey))
 		{
 			if (!bHistoryDupe || pHistoryInfo->GetNZBInfo()->GetDupeScore() > iHistoryScore)
@@ -412,20 +411,25 @@ void DupeCoordinator::ReturnBestDupe(DownloadQueue* pDownloadQueue, NZBInfo* pNZ
 	}
 }
 
-void DupeCoordinator::HistoryMark(DownloadQueue* pDownloadQueue, HistoryInfo* pHistoryInfo, bool bGood)
+void DupeCoordinator::HistoryMark(DownloadQueue* pDownloadQueue, HistoryInfo* pHistoryInfo, NZBInfo::EMarkStatus eMarkStatus)
 {
 	char szNZBName[1024];
 	pHistoryInfo->GetName(szNZBName, 1024);
 
-	info("Marking %s as %s", szNZBName, (bGood ? "good" : "bad"));
+    const char* szMarkStatusName[] = { "NONE", "bad", "good", "success" };
+
+	info("Marking %s as %s", szNZBName, szMarkStatusName[eMarkStatus]);
 
 	if (pHistoryInfo->GetKind() == HistoryInfo::hkNzb)
 	{
-		pHistoryInfo->GetNZBInfo()->SetMarkStatus(bGood ? NZBInfo::ksGood : NZBInfo::ksBad);
+		pHistoryInfo->GetNZBInfo()->SetMarkStatus(eMarkStatus);
 	}
 	else if (pHistoryInfo->GetKind() == HistoryInfo::hkDup)
 	{
-		pHistoryInfo->GetDupInfo()->SetStatus(bGood ? DupInfo::dsGood : DupInfo::dsBad);
+		pHistoryInfo->GetDupInfo()->SetStatus(
+			eMarkStatus == NZBInfo::ksGood ? DupInfo::dsGood :
+			eMarkStatus == NZBInfo::ksSuccess ? DupInfo::dsSuccess :
+			DupInfo::dsBad);
 	}
 	else
 	{
@@ -442,13 +446,13 @@ void DupeCoordinator::HistoryMark(DownloadQueue* pDownloadQueue, HistoryInfo* pH
 		return;
 	}
 
-	if (bGood)
+	if (eMarkStatus == NZBInfo::ksGood)
 	{
 		// mark as good
 		// moving all duplicates from history to dup-history
 		HistoryCleanup(pDownloadQueue, pHistoryInfo);
 	}
-	else
+	else if (eMarkStatus == NZBInfo::ksBad)
 	{
 		// mark as bad
 		const char* szDupeKey = pHistoryInfo->GetKind() == HistoryInfo::hkNzb ? pHistoryInfo->GetNZBInfo()->GetDupeKey() :

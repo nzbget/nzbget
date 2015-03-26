@@ -398,7 +398,8 @@ public:
 	{
 		ksNone,
 		ksBad,
-		ksGood
+		ksGood,
+		ksSuccess
 	};
 
 	enum EUrlStatus
@@ -922,6 +923,7 @@ public:
 		eaHistorySetDupeBackup,	// set duplicate backup flag
 		eaHistoryMarkBad,		// mark history-item as bad (and download other duplicate)
 		eaHistoryMarkGood,		// mark history-item as good (and push it into dup-history)
+		eaHistoryMarkSuccess,	// mark history-item as success (and do nothing more)
 		eaHistorySetCategory,	// set or change category for history-item
 		eaHistorySetName		// set history-item name (rename)
 	};

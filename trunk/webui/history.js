@@ -321,6 +321,7 @@ var History = (new function($)
 				historyAction('HistoryRedownload');
 				break;
 
+			case 'MARKSUCCESS':
 			case 'MARKGOOD':
 			case 'MARKBAD':
 				if (hasUrl)
@@ -330,11 +331,12 @@ var History = (new function($)
 				}
 				notification = '#Notif_History_Marked';
 
-				ConfirmDialog.showModal(action === 'MARKGOOD' ?
-					'HistoryEditGoodConfirmDialog' : 'HistoryEditBadConfirmDialog',
+				ConfirmDialog.showModal(action === 'MARKSUCCESS' ? 'HistoryEditSuccessConfirmDialog' : 
+					action === 'MARKGOOD' ? 'HistoryEditGoodConfirmDialog' : 'HistoryEditBadConfirmDialog',
 					function () // action
 					{
-						historyAction(action === 'MARKGOOD' ? 'HistoryMarkGood' : 'HistoryMarkBad');
+						historyAction(action === 'MARKSUCCESS' ? 'HistoryMarkSuccess' :
+							action === 'MARKGOOD' ? 'HistoryMarkGood' :'HistoryMarkBad');
 					},
 					function (_dialog) // init
 					{

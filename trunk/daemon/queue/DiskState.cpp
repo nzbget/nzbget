@@ -139,7 +139,7 @@ bool DiskState::SaveDownloadQueue(DownloadQueue* pDownloadQueue)
 		return false;
 	}
 
-	fprintf(outfile, "%s%i\n", FORMATVERSION_SIGNATURE, 52);
+	fprintf(outfile, "%s%i\n", FORMATVERSION_SIGNATURE, 53);
 
 	// save nzb-infos
 	SaveNZBQueue(pDownloadQueue, outfile);
@@ -182,7 +182,7 @@ bool DiskState::LoadDownloadQueue(DownloadQueue* pDownloadQueue, Servers* pServe
 	char FileSignatur[128];
 	fgets(FileSignatur, sizeof(FileSignatur), infile);
 	iFormatVersion = ParseFormatVersion(FileSignatur);
-	if (iFormatVersion < 3 || iFormatVersion > 52)
+	if (iFormatVersion < 3 || iFormatVersion > 53)
 	{
 		error("Could not load diskstate due to file version mismatch");
 		fclose(infile);

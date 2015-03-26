@@ -1632,6 +1632,10 @@ void Options::InitCommandLine(int argc, char* argv[])
 					{
 						m_iEditQueueAction = DownloadQueue::eaHistoryMarkGood;
 					}
+					else if (!strcasecmp(optarg, "S"))
+					{
+						m_iEditQueueAction = DownloadQueue::eaHistoryMarkSuccess;
+					}
 					else
 					{
 						abort("FATAL ERROR: Could not parse value of option 'E'\n");
@@ -1934,6 +1938,7 @@ void Options::PrintUsage(char* com)
 		"       O <name>=<value>     Set post-process parameter\n"
 		"       B                    Mark as bad\n"
 		"       G                    Mark as good\n"
+		"       S                    Mark as success\n"
 		"    <IDs>                   Comma-separated list of file- or group- ids or\n"
 		"                            ranges of file-ids, e. g.: 1-5,3,10-22\n"
 		"    <Names>                 List of names (with options \"FN\" and \"GN\"),\n"

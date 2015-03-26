@@ -322,8 +322,9 @@
 						<li class="menu-header">Actions</li>
 						<li><a href="#" id="HistoryTab_Reprocess" onclick="History.actionClick('REPROCESS')"><i class="icon-process"></i> Post-Process Again</a></li>
 						<li><a href="#" id="HistoryTab_Redownload" onclick="History.actionClick('REDOWNLOAD')"><i class="icon-downloads"></i> Download Again</a></li>
-						<li><a href="#" id="HistoryTab_MarkGood" onclick="History.actionClick('MARKGOOD')"><i class="icon-ok"></i> Mark as Good</a></li>
-						<li><a href="#" id="HistoryTab_MarkBad" onclick="History.actionClick('MARKBAD')"><i class="icon-remove"></i> Mark as Bad</a></li>
+						<li><a href="#" id="HistoryTab_MarkSuccess" onclick="History.actionClick('MARKSUCCESS')"><i class="icon-ok"></i> Mark as Success</a></li>
+						<li><a href="#" id="HistoryTab_MarkGood" onclick="History.actionClick('MARKGOOD')"><i class="icon-plus"></i> Mark as Good</a></li>
+						<li><a href="#" id="HistoryTab_MarkBad" onclick="History.actionClick('MARKBAD')"><i class="icon-minus"></i> Mark as Bad</a></li>
 					</ul>
 				</div>
 				
@@ -1460,8 +1461,9 @@
 				<li><a href="#" id="HistoryEdit_Return"><i class="icon-downloads"></i> Download Remaining Files</a></li>
 				<li><a href="#" id="HistoryEdit_ReturnURL"><i class="icon-downloads"></i> Download Again</a></li>
 				<li><a href="#" id="HistoryEdit_Redownload"><i class="icon-downloads"></i> Download Again</a></li>
-				<li><a href="#" id="HistoryEdit_MarkGood"><i class="icon-ok"></i> Mark as Good</a></li>
-				<li><a href="#" id="HistoryEdit_MarkBad"><i class="icon-remove"></i> Mark as Bad</a></li>
+				<li><a href="#" id="HistoryEdit_MarkSuccess"><i class="icon-ok"></i> Mark as Success</a></li>
+				<li><a href="#" id="HistoryEdit_MarkGood"><i class="icon-plus"></i> Mark as Good</a></li>
+				<li><a href="#" id="HistoryEdit_MarkBad"><i class="icon-minus"></i> Mark as Bad</a></li>
 				<li class="menu-header" id="HistoryEdit_DNZB_Section">Indexer Links</li>
 				<li><a href="#" target="_blank" class="HistoryEdit_DNZB" id="HistoryEdit_DNZB_Details"><i class="icon-postcard"></i> Details</a></li>
 				<li><a href="#" target="_blank" class="HistoryEdit_DNZB" id="HistoryEdit_DNZB_MoreInfo"><i class="icon-link"></i> More Info</a></li>
@@ -1965,6 +1967,24 @@
 		</p>
 	</div>
 	<div id="HistoryEditRedownloadConfirmDialog_OK">Download Again</div>
+</div>
+
+<!-- *** MARK AS SUCCESS CURRENT HISTORY RECORD CONFIRMATION DIALOG DATA ******************************** -->
+
+<div class="hide" id="HistoryEditSuccessConfirmDialog">
+	<div id="HistoryEditSuccessConfirmDialog_Title">History</div>
+	<div id="HistoryEditSuccessConfirmDialog_Text">
+		<p>
+		Mark selected history records as success?
+		</p>
+		<p class="confirm-help-block">
+		Marking has an effect on duplicate handling and RSS.<br>Records marked as success
+		considered successfully downloaded and processed. This is useful for downloads repaired
+		or processed outside of NZBGet. Duplicates with higher duplicate scores may be downloaded
+		in the future.
+		</p>
+	</div>
+	<div id="HistoryEditSuccessConfirmDialog_OK">Mark Success</div>
 </div>
 
 <!-- *** MARK AS GOOD CURRENT HISTORY RECORD CONFIRMATION DIALOG DATA ******************************** -->
