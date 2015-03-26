@@ -2498,6 +2498,7 @@ var UpdateDialog = (new function($)
 	var UpdateInfo;
 	var lastUpTimeSec;
 	var installing = false;
+	var logReceived = false;
 
 	this.init = function()
 	{
@@ -2704,7 +2705,7 @@ var UpdateDialog = (new function($)
 		
 		if (!script)
 		{
-			alert('Something is wrong with a package configuration file "package-info.json".');
+			alert('Something is wrong with the package configuration file "package-info.json".');
 			return;
 		}
 
@@ -2740,16 +2741,24 @@ var UpdateDialog = (new function($)
 	{
 		RPC.call('logupdate', [0, 100], function(data)
 			{
-				updateLogTable(data);
-				setTimeout(updateLog, 500);
-			},
-			function()
-			{
-				// rpc-failure: the program has been terminated. Waiting for new instance.
-				setLogContentAndScroll($UpdateProgressDialog_Log.html() + '\n' + 'NZBGet has been terminated. Waiting for restart...');
-				setTimeout(checkStatus, 500);
-			},
-			1000);
+				logReceived = logReceived || data.length > 0;
+				if (logReceived && data.length === 0)
+				{
+					terminated();
+				}
+				else
+				{
+					updateLogTable(data);
+					setTimeout(updateLog, 500);
+				}
+			}, terminated);
+	}
+
+	function terminated()
+	{
+		// rpc-failure: the program has been terminated. Waiting for new instance.
+		setLogContentAndScroll($UpdateProgressDialog_Log.html() + '\n' + 'NZBGet has been terminated. Waiting for restart...');
+		setTimeout(checkStatus, 500);
 	}
 
 	function setLogContentAndScroll(html)
@@ -2787,7 +2796,10 @@ var UpdateDialog = (new function($)
 				{
 					// the old instance is not restarted yet
 					// waiting 0.5 sec. and retrying
-					setTimeout(checkStatus, 500);
+					if ($('#UpdateProgressDialog').is(':visible'))
+					{
+						setTimeout(checkStatus, 500);
+					}
 				}
 				else
 				{
@@ -2802,9 +2814,11 @@ var UpdateDialog = (new function($)
 			function()
 			{
 				// Failure, waiting 0.5 sec. and retrying
-				setTimeout(checkStatus, 500);
-			},
-			1000);
+				if ($('#UpdateProgressDialog').is(':visible'))
+				{
+					setTimeout(checkStatus, 500);
+				}
+			});
 	}
 	
 }(jQuery));
