@@ -250,6 +250,7 @@ void HistoryCoordinator::HistoryHide(DownloadQueue* pDownloadQueue, HistoryInfo*
 	pDupInfo->SetStatus(
 		pHistoryInfo->GetNZBInfo()->GetMarkStatus() == NZBInfo::ksGood ? DupInfo::dsGood :
 		pHistoryInfo->GetNZBInfo()->GetMarkStatus() == NZBInfo::ksBad ? DupInfo::dsBad :
+		pHistoryInfo->GetNZBInfo()->GetMarkStatus() == NZBInfo::ksSuccess ? DupInfo::dsSuccess :
 		pHistoryInfo->GetNZBInfo()->GetDeleteStatus() == NZBInfo::dsDupe ? DupInfo::dsDupe :
 		pHistoryInfo->GetNZBInfo()->GetDeleteStatus() == NZBInfo::dsManual ? DupInfo::dsDeleted :
 		pHistoryInfo->GetNZBInfo()->IsDupeSuccess() ? DupInfo::dsSuccess :
@@ -315,8 +316,15 @@ bool HistoryCoordinator::EditList(DownloadQueue* pDownloadQueue, IDList* pIDList
 						break;
 
 					case DownloadQueue::eaHistoryMarkBad:
+						g_pDupeCoordinator->HistoryMark(pDownloadQueue, pHistoryInfo, NZBInfo::ksBad);
+						break;
+
 					case DownloadQueue::eaHistoryMarkGood:
-						g_pDupeCoordinator->HistoryMark(pDownloadQueue, pHistoryInfo, eAction == DownloadQueue::eaHistoryMarkGood);
+						g_pDupeCoordinator->HistoryMark(pDownloadQueue, pHistoryInfo, NZBInfo::ksGood);
+						break;
+
+					case DownloadQueue::eaHistoryMarkSuccess:
+						g_pDupeCoordinator->HistoryMark(pDownloadQueue, pHistoryInfo, NZBInfo::ksSuccess);
 						break;
 
 					default:

@@ -1760,7 +1760,7 @@ void NzbInfoXmlCommand::AppendNZBInfoFields(NZBInfo* pNZBInfo)
     const char* szMoveStatusName[] = { "NONE", "FAILURE", "SUCCESS" };
     const char* szScriptStatusName[] = { "NONE", "FAILURE", "SUCCESS" };
     const char* szDeleteStatusName[] = { "NONE", "MANUAL", "HEALTH", "DUPE", "BAD" };
-    const char* szMarkStatusName[] = { "NONE", "BAD", "GOOD" };
+    const char* szMarkStatusName[] = { "NONE", "BAD", "GOOD", "SUCCESS" };
 	const char* szUrlStatusName[] = { "NONE", "UNKNOWN", "SUCCESS", "FAILURE", "UNKNOWN", "SCAN_SKIPPED", "SCAN_FAILURE" };
     const char* szDupeModeName[] = { "SCORE", "ALL", "FORCE" };
 	
@@ -2181,6 +2181,7 @@ EditCommandEntry EditCommandNameMap[] = {
 	{ DownloadQueue::eaHistorySetDupeBackup, "HistorySetDupeBackup" },
 	{ DownloadQueue::eaHistoryMarkBad, "HistoryMarkBad" },
 	{ DownloadQueue::eaHistoryMarkGood, "HistoryMarkGood" },
+	{ DownloadQueue::eaHistoryMarkSuccess, "HistoryMarkSuccess" },
 	{ DownloadQueue::eaHistorySetCategory, "HistorySetCategory" },
 	{ DownloadQueue::eaHistorySetName, "HistorySetName" },
 	{ 0, NULL }

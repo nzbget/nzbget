@@ -49,7 +49,7 @@ private:
 public:
 	void				NZBCompleted(DownloadQueue* pDownloadQueue, NZBInfo* pNZBInfo);
 	void				NZBFound(DownloadQueue* pDownloadQueue, NZBInfo* pNZBInfo);
-	void				HistoryMark(DownloadQueue* pDownloadQueue, HistoryInfo* pHistoryInfo, bool bGood);
+	void				HistoryMark(DownloadQueue* pDownloadQueue, HistoryInfo* pHistoryInfo, NZBInfo::EMarkStatus eMarkStatus);
 	EDupeStatus			GetDupeStatus(DownloadQueue* pDownloadQueue, const char* szName, const char* szDupeKey);
 };
 
