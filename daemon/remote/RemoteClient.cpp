@@ -1197,9 +1197,9 @@ bool RemoteClient::RequestHistory(bool bWithHidden)
 			}
 			else if (eKind == HistoryInfo::hkUrl)
 			{
-				const char* szUrlStatusText[] = { "", "", "Url download successful", "Url download failed", "" };
+				const char* szUrlStatusText[] = { "", "", "Url download successful", "Url download failed", "", "Nzb scan skipped", "Nzb scan failed" };
 
-				printf("[%i] %s (%s)\n", ntohl(pListAnswer->m_iID), szNicename, 
+				printf("[%i] %s (URL, %s)\n", ntohl(pListAnswer->m_iID), szNicename, 
 					szUrlStatusText[ntohl(pListAnswer->m_iUrlStatus)]);
 			}
 
