@@ -212,7 +212,7 @@ if os.environ.get('NZBPO_FILELIST') == 'yes':
 			text += '\n' + os.path.join(dirname, filename)[len(os.environ['NZBPP_DIRECTORY']) + 1:]
 			files = True
 	if not files:
-		text += '\n<no files found in the destination directory (were they moved by anoher script?)>'
+		text += '\n<no files found in the destination directory (moved by a script?)>'
 
 # add _brokenlog.txt (if exists)
 if os.environ.get('NZBPO_BROKENLOG') == 'yes':
