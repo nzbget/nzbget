@@ -122,8 +122,8 @@ mkinstalldirs = $(install_sh) -d
 CONFIG_HEADER = config.h
 CONFIG_CLEAN_FILES =
 am__installdirs = "$(DESTDIR)$(bindir)" "$(DESTDIR)$(scriptsdir)" \
-	"$(DESTDIR)$(sbindir)" "$(DESTDIR)$(docdir)" \
-	"$(DESTDIR)$(exampleconfdir)" "$(DESTDIR)$(webuidir)"
+	"$(DESTDIR)$(docdir)" "$(DESTDIR)$(exampleconfdir)" \
+	"$(DESTDIR)$(webuidir)"
 binPROGRAMS_INSTALL = $(INSTALL_PROGRAM)
 PROGRAMS = $(bin_PROGRAMS)
 am__nzbget_SOURCES_DIST = daemon/connect/Connection.cpp \
@@ -249,8 +249,7 @@ am__vpath_adj = case $$p in \
   esac;
 am__strip_dir = `echo $$p | sed -e 's|^.*/||'`;
 nobase_dist_scriptsSCRIPT_INSTALL = $(install_sh_SCRIPT)
-sbinSCRIPT_INSTALL = $(INSTALL_SCRIPT)
-SCRIPTS = $(nobase_dist_scripts_SCRIPTS) $(sbin_SCRIPTS)
+SCRIPTS = $(nobase_dist_scripts_SCRIPTS)
 DEFAULT_INCLUDES = -I. -I$(srcdir) -I.
 depcomp = $(SHELL) $(top_srcdir)/depcomp
 am__depfiles_maybe = depfiles
@@ -453,7 +452,6 @@ AM_CPPFLAGS = \
 
 EXTRA_DIST = \
 	Makefile.cvs \
-	nzbgetd \
 	$(windows_FILES) \
 	$(osx_FILES)
 
@@ -558,7 +556,6 @@ scripts_FILES = \
 
 
 # Install
-sbin_SCRIPTS = nzbgetd
 dist_doc_DATA = $(doc_FILES)
 exampleconfdir = $(datadir)/nzbget
 dist_exampleconf_DATA = $(exampleconf_FILES)
@@ -677,25 +674,6 @@ uninstall-nobase_dist_scriptsSCRIPTS:
 	  f=`echo "$$p" | sed 's|[^/]*$$||'`"$$f"; \
 	  echo " rm -f '$(DESTDIR)$(scriptsdir)/$$f'"; \
 	  rm -f "$(DESTDIR)$(scriptsdir)/$$f"; \
-	done
-install-sbinSCRIPTS: $(sbin_SCRIPTS)
-	@$(NORMAL_INSTALL)
-	test -z "$(sbindir)" || $(mkdir_p) "$(DESTDIR)$(sbindir)"
-	@list='$(sbin_SCRIPTS)'; for p in $$list; do \
-	  if test -f "$$p"; then d=; else d="$(srcdir)/"; fi; \
-	  if test -f $$d$$p; then \
-	    f=`echo "$$p" | sed 's|^.*/||;$(transform)'`; \
-	    echo " $(sbinSCRIPT_INSTALL) '$$d$$p' '$(DESTDIR)$(sbindir)/$$f'"; \
-	    $(sbinSCRIPT_INSTALL) "$$d$$p" "$(DESTDIR)$(sbindir)/$$f"; \
-	  else :; fi; \
-	done
-
-uninstall-sbinSCRIPTS:
-	@$(NORMAL_UNINSTALL)
-	@list='$(sbin_SCRIPTS)'; for p in $$list; do \
-	  f=`echo "$$p" | sed 's|^.*/||;$(transform)'`; \
-	  echo " rm -f '$(DESTDIR)$(sbindir)/$$f'"; \
-	  rm -f "$(DESTDIR)$(sbindir)/$$f"; \
 	done
 
 mostlyclean-compile:
@@ -1991,7 +1969,7 @@ check-am: all-am
 check: check-am
 all-am: Makefile $(PROGRAMS) $(SCRIPTS) $(DATA) config.h
 installdirs:
-	for dir in "$(DESTDIR)$(bindir)" "$(DESTDIR)$(scriptsdir)" "$(DESTDIR)$(sbindir)" "$(DESTDIR)$(docdir)" "$(DESTDIR)$(exampleconfdir)" "$(DESTDIR)$(webuidir)"; do \
+	for dir in "$(DESTDIR)$(bindir)" "$(DESTDIR)$(scriptsdir)" "$(DESTDIR)$(docdir)" "$(DESTDIR)$(exampleconfdir)" "$(DESTDIR)$(webuidir)"; do \
 	  test -z "$$dir" || $(mkdir_p) "$$dir"; \
 	done
 install: install-am
@@ -2045,9 +2023,7 @@ install-data-am: install-dist_docDATA install-dist_exampleconfDATA \
 	@$(NORMAL_INSTALL)
 	$(MAKE) $(AM_MAKEFLAGS) install-data-hook
 
-install-exec-am: install-binPROGRAMS install-sbinSCRIPTS
-	@$(NORMAL_INSTALL)
-	$(MAKE) $(AM_MAKEFLAGS) install-exec-hook
+install-exec-am: install-binPROGRAMS
 
 install-info: install-info-am
 
@@ -2077,7 +2053,7 @@ ps-am:
 uninstall-am: uninstall-binPROGRAMS uninstall-dist_docDATA \
 	uninstall-dist_exampleconfDATA uninstall-info-am \
 	uninstall-nobase_dist_scriptsSCRIPTS \
-	uninstall-nobase_dist_webuiDATA uninstall-sbinSCRIPTS
+	uninstall-nobase_dist_webuiDATA
 
 .PHONY: CTAGS GTAGS all all-am am--refresh check check-am clean \
 	clean-binPROGRAMS clean-generic ctags dist dist-all dist-bzip2 \
@@ -2088,16 +2064,16 @@ uninstall-am: uninstall-binPROGRAMS uninstall-dist_docDATA \
 	install-binPROGRAMS install-data install-data-am \
 	install-data-hook install-dist_docDATA \
 	install-dist_exampleconfDATA install-exec install-exec-am \
-	install-exec-hook install-info install-info-am install-man \
+	install-info install-info-am install-man \
 	install-nobase_dist_scriptsSCRIPTS \
-	install-nobase_dist_webuiDATA install-sbinSCRIPTS \
-	install-strip installcheck installcheck-am installdirs \
-	maintainer-clean maintainer-clean-generic mostlyclean \
-	mostlyclean-compile mostlyclean-generic pdf pdf-am ps ps-am \
-	tags uninstall uninstall-am uninstall-binPROGRAMS \
-	uninstall-dist_docDATA uninstall-dist_exampleconfDATA \
-	uninstall-info-am uninstall-nobase_dist_scriptsSCRIPTS \
-	uninstall-nobase_dist_webuiDATA uninstall-sbinSCRIPTS
+	install-nobase_dist_webuiDATA install-strip installcheck \
+	installcheck-am installdirs maintainer-clean \
+	maintainer-clean-generic mostlyclean mostlyclean-compile \
+	mostlyclean-generic pdf pdf-am ps ps-am tags uninstall \
+	uninstall-am uninstall-binPROGRAMS uninstall-dist_docDATA \
+	uninstall-dist_exampleconfDATA uninstall-info-am \
+	uninstall-nobase_dist_scriptsSCRIPTS \
+	uninstall-nobase_dist_webuiDATA
 
 
 # Note about "sed": 
@@ -2108,13 +2084,6 @@ uninstall-am: uninstall-binPROGRAMS uninstall-dist_docDATA \
 # 2) sed < original.temp > original
 # 3) delete original.temp
 # These steps ensure that the output file has the same permissions as the original file.
-
-# Configure installed script
-install-exec-hook:
-	rm -f "$(DESTDIR)$(sbindir)/nzbgetd.temp"
-	cp "$(DESTDIR)$(sbindir)/nzbgetd" "$(DESTDIR)$(sbindir)/nzbgetd.temp"
-	sed 's?/usr/local/bin?$(bindir)?' < "$(DESTDIR)$(sbindir)/nzbgetd.temp" > "$(DESTDIR)$(sbindir)/nzbgetd"
-	rm "$(DESTDIR)$(sbindir)/nzbgetd.temp"
 
 # Prepare example configuration file
 install-data-hook:

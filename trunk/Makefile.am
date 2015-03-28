@@ -183,7 +183,6 @@ AM_CPPFLAGS = \
 
 EXTRA_DIST = \
 	Makefile.cvs \
-	nzbgetd \
 	$(windows_FILES) \
 	$(osx_FILES)
 
@@ -287,7 +286,6 @@ scripts_FILES = \
 	scripts/Logger.py
 
 # Install
-sbin_SCRIPTS = nzbgetd
 dist_doc_DATA = $(doc_FILES)
 exampleconfdir = $(datadir)/nzbget
 dist_exampleconf_DATA = $(exampleconf_FILES)
@@ -304,13 +302,6 @@ nobase_dist_scripts_SCRIPTS = $(scripts_FILES)
 # 2) sed < original.temp > original
 # 3) delete original.temp
 # These steps ensure that the output file has the same permissions as the original file.
-
-# Configure installed script
-install-exec-hook:
-	rm -f "$(DESTDIR)$(sbindir)/nzbgetd.temp"
-	cp "$(DESTDIR)$(sbindir)/nzbgetd" "$(DESTDIR)$(sbindir)/nzbgetd.temp"
-	sed 's?/usr/local/bin?$(bindir)?' < "$(DESTDIR)$(sbindir)/nzbgetd.temp" > "$(DESTDIR)$(sbindir)/nzbgetd"
-	rm "$(DESTDIR)$(sbindir)/nzbgetd.temp"
 
 # Prepare example configuration file
 install-data-hook:
