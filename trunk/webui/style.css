@@ -1635,9 +1635,8 @@ div.control-group.last-group {
 	color: #005580;
 }
 
-.config-previewfeed,
-.config-move {
-	margin-left: 15px;
+div.multiset-toolbar button {
+	margin-right: 15px;
 }
 
 #ScriptListDialog_ScriptTable td:nth-child(2) {

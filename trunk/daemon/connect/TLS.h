@@ -1,7 +1,7 @@
 /*
  *  This file is part of nzbget
  *
- *  Copyright (C) 2008-2013 Andrey Prygunkov <hugbug@users.sourceforge.net>
+ *  Copyright (C) 2008-2015 Andrey Prygunkov <hugbug@users.sourceforge.net>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -46,9 +46,12 @@ private:
 
 	void				ReportError(const char* szErrMsg);
 
+protected:
+	virtual void		PrintError(const char* szErrMsg);
+
 public:
 						TLSSocket(SOCKET iSocket, bool bIsClient, const char* szCertFile, const char* szKeyFile, const char* szCipher);
-						~TLSSocket();
+	virtual				~TLSSocket();
 	static void			Init();
 	static void			Final();
 	bool				Start();

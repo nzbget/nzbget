@@ -1,7 +1,7 @@
 /*
  *  This file is part of nzbget
  *
- *  Copyright (C) 2008-2013 Andrey Prygunkov <hugbug@users.sourceforge.net>
+ *  Copyright (C) 2008-2015 Andrey Prygunkov <hugbug@users.sourceforge.net>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -283,6 +283,8 @@ TLSSocket::~TLSSocket()
 
 void TLSSocket::ReportError(const char* szErrMsg)
 {
+	char szMessage[1024];
+
 #ifdef HAVE_LIBGNUTLS
 	const char* errstr = gnutls_strerror(m_iRetCode);
 	if (m_bSuppressErrors)
@@ -291,7 +293,9 @@ void TLSSocket::ReportError(const char* szErrMsg)
 	}
 	else
 	{
-		error("%s: %s", szErrMsg, errstr);
+		snprintf(szMessage, sizeof(szMessage), "%s: %s", szErrMsg, errstr);
+		szMessage[sizeof(szMessage) - 1] = '\0';
+		PrintError(szMessage);
 	}
 #endif /* HAVE_LIBGNUTLS */
 
@@ -311,14 +315,21 @@ void TLSSocket::ReportError(const char* szErrMsg)
 		}
 		else if (errcode != 0)
 		{
-			error("%s: %s", szErrMsg, errstr);
+			snprintf(szMessage, sizeof(szMessage), "%s: %s", szErrMsg, errstr);
+			szMessage[sizeof(szMessage) - 1] = '\0';
+			PrintError(szMessage);
 		}
 		else
 		{
-			error("%s", szErrMsg);
+			PrintError(szErrMsg);
 		}
 	} while (errcode);
 #endif /* HAVE_OPENSSL */
+}
+
+void TLSSocket::PrintError(const char* szErrMsg)
+{
+	error("%s", szErrMsg);
 }
 
 bool TLSSocket::Start()

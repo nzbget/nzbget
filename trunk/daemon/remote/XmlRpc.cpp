@@ -312,6 +312,26 @@ protected:
 	virtual void			UnlockMessages();
 };
 
+class TestServerXmlCommand: public XmlCommand
+{
+private:
+	char*				m_szErrText;
+
+	class TestConnection : public NNTPConnection
+	{
+	protected:
+		TestServerXmlCommand* m_pOwner;
+		virtual void	PrintError(const char* szErrMsg) { m_pOwner->PrintError(szErrMsg); }
+	public:
+						TestConnection(NewsServer* pNewsServer, TestServerXmlCommand* pOwner):
+							NNTPConnection(pNewsServer), m_pOwner(pOwner) {}
+	};
+
+	void				PrintError(const char* szErrMsg);
+public:
+	virtual void		Execute();
+};
+
 
 //*****************************************************************
 // XmlRpcProcessor
@@ -737,6 +757,10 @@ XmlCommand* XmlRpcProcessor::CreateCommand(const char* szMethodName)
 	else if (!strcasecmp(szMethodName, "resetservervolume"))
 	{
 		command = new ResetServerVolumeXmlCommand();
+	}
+	else if (!strcasecmp(szMethodName, "testserver"))
+	{
+		command = new TestServerXmlCommand();
 	}
 	else
 	{
@@ -3611,5 +3635,58 @@ void LoadLogXmlCommand::UnlockMessages()
 	{
 		m_pNZBInfo->UnlockCachedMessages();
 		DownloadQueue::Unlock();
+	}
+}
+
+// string testserver(string host, int port, string username, string password, bool encryption, string cipher, int timeout);
+void TestServerXmlCommand::Execute()
+{
+	const char* XML_RESPONSE_STR_BODY = "<string>%s</string>";
+	const char* JSON_RESPONSE_STR_BODY = "\"%s\"";
+
+	if (!CheckSafeMethod())
+	{
+		return;
+	}
+
+	char* szHost;
+	int iPort;
+	char* szUsername;
+	char* szPassword;
+	bool bEncryption;
+	char* szCipher;
+	int iTimeout;
+
+	if (!NextParamAsStr(&szHost) || !NextParamAsInt(&iPort) || !NextParamAsStr(&szUsername) ||
+		!NextParamAsStr(&szPassword) || !NextParamAsBool(&bEncryption) ||
+		!NextParamAsStr(&szCipher) || !NextParamAsInt(&iTimeout))
+	{
+		BuildErrorResponse(2, "Invalid parameter");
+		return;
+	}
+
+	NewsServer server(0, true, "test server", szHost, iPort, szUsername, szPassword, false, bEncryption, szCipher, 1, 0, 0, 0);
+	TestConnection* pConnection = new TestConnection(&server, this);
+	pConnection->SetTimeout(iTimeout == 0 ? g_pOptions->GetArticleTimeout() : iTimeout);
+	pConnection->SetSuppressErrors(false);
+	m_szErrText = NULL;
+
+	bool bOK = pConnection->Connect();
+
+	char szContent[1024];
+	snprintf(szContent, 1024, IsJson() ? JSON_RESPONSE_STR_BODY : XML_RESPONSE_STR_BODY,
+		bOK ? "" : Util::EmptyStr(m_szErrText) ? "Unknown error" : m_szErrText);
+	szContent[1024-1] = '\0';
+
+	AppendResponse(szContent);
+
+	delete pConnection;
+}
+
+void TestServerXmlCommand::PrintError(const char* szErrMsg)
+{
+	if (!m_szErrText)
+	{
+		m_szErrText = EncodeStr(szErrMsg);
 	}
 }

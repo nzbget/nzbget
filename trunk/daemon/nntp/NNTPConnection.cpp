@@ -2,7 +2,7 @@
  *  This file is part of nzbget
  *
  *  Copyright (C) 2004 Sven Henkel <sidddy@users.sourceforge.net>
- *  Copyright (C) 2007-2013 Andrey Prygunkov <hugbug@users.sourceforge.net>
+ *  Copyright (C) 2007-2015 Andrey Prygunkov <hugbug@users.sourceforge.net>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -99,8 +99,8 @@ bool NNTPConnection::Authenticate()
 {
 	if (strlen(m_pNewsServer->GetUser()) == 0 || strlen(m_pNewsServer->GetPassword()) == 0)
 	{
-		error("%c%s (%s) requested authorization but username/password are not set in settings", 
-			toupper(m_pNewsServer->GetName()[0]), m_pNewsServer->GetName() + 1, m_pNewsServer->GetHost());
+		ReportError("Could not connect to %s: server requested authorization but username/password are not set in settings",
+			m_pNewsServer->GetHost(), false, 0);
 		m_bAuthError = true;
 		return false;
 	}
@@ -264,7 +264,10 @@ bool NNTPConnection::Disconnect()
 {
 	if (m_eStatus == csConnected)
 	{
-		Request("quit\r\n");
+		if (!m_bBroken)
+		{
+			Request("quit\r\n");
+		}
 		free(m_szActiveGroup);
 		m_szActiveGroup = NULL;
 	}
