@@ -366,10 +366,6 @@ WebDownloader::EStatus WebDownloader::DownloadHeaders()
 		// detect body of response
 		if (*line == '\r' || *line == '\n')
 		{
-			if (m_iContentLen == -1 && !m_bGZip)
-			{
-				warn("URL %s: Content-Length is not submitted by server, cannot verify whether the file is complete", m_szInfoName);
-			}
 			break;
 		}
 
@@ -420,10 +416,10 @@ WebDownloader::EStatus WebDownloader::DownloadBody()
 			szBuffer = szLineBuf;
 		}
 
-		// Have we encountered a timeout?
+		// Connection closed or timeout?
 		if (iLen <= 0)
 		{
-			if (m_iContentLen == -1 && iWrittenLen > 0)
+			if (iLen == 0 && m_iContentLen == -1 && iWrittenLen > 0)
 			{
 				bEnd = true;
 				break;
