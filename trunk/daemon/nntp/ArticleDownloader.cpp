@@ -212,7 +212,7 @@ void ArticleDownloader::Run()
 			iRemainedRetries--;
 		}
 
-		if (!bConnected && m_pConnection)
+		if (!bConnected && m_pConnection && !IsStopped())
 		{
 			g_pServerPool->BlockServer(pLastServer);
 		}
