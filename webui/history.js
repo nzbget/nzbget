@@ -318,7 +318,9 @@ var History = (new function($)
 					return;
 				}
 				notification = '#Notif_History_Returned';
-				historyAction('HistoryRedownload');
+				ConfirmDialog.showModal('HistoryEditRedownloadConfirmDialog',
+					function () { historyAction('HistoryRedownload') },
+					function () { HistoryUI.confirmMulti(checkedRows.length > 1); });
 				break;
 
 			case 'MARKSUCCESS':
@@ -533,6 +535,7 @@ var HistoryUI = (new function($)
 		{
 			var html = $('#ConfirmDialog_Text').html();
 			html = html.replace(/records/g, 'record');
+			html = html.replace(/nzbs/g, 'nzb');
 			$('#ConfirmDialog_Text').html(html);
 		}
 	}
