@@ -1,6 +1,227 @@
 nzbget-15.0:
-  - please see subversion log at
-    http://sourceforge.net/p/nzbget/code/HEAD/log/?path=/trunk
+  - improved application for Windows:
+        - added tray icon (near clock);
+        - left click on icon pauses/resumes download;
+        - right click opens menu with important functions;
+        - console window can be shown/hidden via preferences (is hidden by
+          default);
+        - new preference to automatically start the program after login;
+        - new preference to show browser on start;
+        - new preference to hide tray icon;
+        - menu commands to show important folders in windows explorer
+          (destination, etc.);
+        - on first start the config file is now placed into subdirectory
+          "NZBGet" inside standard AppData-directory;
+        - default destination and other directories are now placed in the
+          AppData\NZBGet-directory instead of programs directory; this allows
+          to install the program into "program files"-directory since the
+          program does not write into the programs directory anymore;
+        - the program exe has an icon now;
+        - if the exe is started from windows explorer the program starts in
+          application mode; if the exe is called from command prompt the program
+          works in console mode;
+        - added built-in update feature to windows package; accessible via
+          web-interface -> settings -> system -> check for updates;
+  - created installer for windows:
+        - the program is installed into "program files" by default;
+        - the working directory with all subdirectories is now placed into
+          "AppData" directory;
+        - the batch files nzbget-start.bat and nzbget-recovery-mode.bat are not
+          needed and not installed anymore;
+  - added support for password list file:
+        - new option "UnpackPassFile" to set the location of the file;
+        - during unpack the passwords are tried from the file until unpack
+          succeeds or all passwords were tried;
+        - implemented different strategies for rar4 and rar5-archives taking
+          into account the features of formats;
+        - for rar5-archives a wrong password is reported by unrar unambiguously
+          and the program can immediately try other passwords from the password
+          list;
+        - for rar4-archives and for 7z-archives it is not possible to
+          differentiate between damaged archive and wrong password; for those
+          archives if the first unpack attempt (without password) fails the
+          program executes par-check (preferably quick par-check if enabled via
+          option "ParQuick) before trying the passwords from the list;
+        - another optimization is that the password list is tried only when the
+          first unpack attempt (without password) reports a password error or
+          decryption errors; this saves unnecessary unpack attempts for damaged
+          unencrypted archives;
+  - options "UnrarCmd" and "SevenZipCmd" can include extra switches to pass to
+    unrar/7-zip:
+        - this allows for easy passing of additional parameters without creating
+          of proxy shell scripts;
+  - improved news server connections handling:
+        - if a download of an article fails due to connection error the news
+          server becomes temporary disabled (blocked) for several seconds
+          (defined by option "RetryInterval");
+        - the download is then retried on another news server (of the same
+          level) if available;
+        - if no other news servers (of the same level) exist the program will
+          retry the same news server after its block interval expires;
+        - this increases failure tolerance when multiple news servers are used;
+  - added on-demand queue sorting:
+        - one click on column title in web interface sorts the selected or all
+          items;
+        - if the items were already sorted in that order they are sorted
+          backwards; in other words the second click sorts in descending order;
+        - when sorting selected items they are also grouped together in a case
+          there were holes between selected items;
+        - RPC-method "editqueue" has new command "GroupSort", parameter "Text"
+          must be one of: "name", "priority", "category", "size", "left"; add
+          character "+" or "-" to explicitly define ascending or descending
+          order (for example "name-"); if none of these characters
+          is used the auto-mode is active: the items are sorted in ascending
+          order first, if nothing changed - they are sorted again in descending
+          order;
+  - added restricted user and add-user:
+        - restricted user has access to most program functions but cannot see
+          security related options (including usernames and passwords) and
+          cannot save configuration;
+        - restricted user can be used with other programs and web-sites;
+        - add-user can only add new downloads via RPC-API and can be used with
+          other programs or web-sites;
+  - added per-nzb logging:
+        - each nzb now has its own individual log;
+        - messages printed during download or post-processing are saved;
+        - the messages can be retrieved later at any time;
+        - new button "Log" in the history details dialog;
+        - button "Log" in the download details dialog is now active during
+          download too (not only during post-processing);
+        - the log contains all nzb-related messages except detail-messages and
+          errors printed during retrieving of articles (they would produce way
+          too many messages and are not that useful anyway);
+        - new option "NzbLog" to deactivate per-nzb logging if necessary;
+        - per-nzb logs are saved in the queue-directory (option "QueueDir");
+        - new RPC-method "loadlog" returns the previously saved messages for a
+          given nzb-file;
+        - new field "MessageCount" is returned by RPC-methods "listgroups" and
+          "history" and indicates if there are any messages saved for the item;
+        - parameter "NumberOfLogEntries" of RPC-method "listgroups" and the
+          field "Log" returned by the method are now deprecated, use method
+          "loadlog" instead;
+        - field "PostInfoText" returned by RPC-method "listgroups" is now
+          automatically filled with the latest message printed by a pp-script
+          eliminating the need to access deprecated field "Log"';
+  - actions for history items can now be performed for multiple (selected) records:
+        - post-process again, download again, mark as good, mark as bad;
+        - extended RPC-API method "editqueue": for history-records of type
+          "URL" the action "HistoryRedownload" can now be used as synonym to
+          "HistoryReturn" (makes it easier to redownload multiple items of
+          different types (URL and NZB) with one API call).
+  - options "ParIgnoreExt" and "ExtCleanupDisk" can now contain wildcard
+    characters * and ?;
+  - added new option "ServerX.Retention" to define server retention time (days);
+    files older than configured server retention time are not even tried on this
+    server;
+  - added support for negative numeric values in rss filter (useful for fields
+    "dupescore" and "priority");
+  - added subcommand "HA" to remote command "--list/-L" to list the whole
+    history including hidden records;
+  - added optional parameters to remote command "--append/-A" allowing to pass
+    duplicate key, duplicate mode and duplicate score; removed parameters "F"
+    and "U" of command "--append/-A", which were used to set mode (file or URL),
+    which is now detected automatically; the parameters are still supported for
+    compatibility;
+  - name and category of history items can now be changed in web-interface;
+    RPC-API method "editqueue" extended with new actions "HistorySetName" and
+    "HistorySetCategory";
+  - improved timeout handling during establishing of connections;
+  - updated pp-script "EMail.py":
+        - using the new nzb-log feature;
+        - new option "SendMail" allows to choose if the e-mail should be send
+          always or on failure only;
+  - updated pp-script "Logger.py" to use the new nzb-log feature;
+  - improved cleanup (option ExtCleanupDisk):
+        - if download was successful with health 100% the cleanup is now
+          performed even if par-check and unpack were not made; previously a
+          successful par-check or unpack were required for cleanup;
+        - now the files are deleted in subdirectories too (recursively);
+  - added a small button near feed name in the feed menu on downloads-page; a
+    click on the button fetches the feed, whereas a click on the feed title
+    shows feed's content (as before);
+  - improved detection of malformed nzb-files: nzbs which are valid
+    xml-documents but without nzb content are now rejected with an appropriate
+    error message;
+  - new action "Mark as success" on history page and in history details dialog:
+        - items marked as success are considered successfully downloaded and
+          processed, which is important for duplicate check;
+        - use this command if the download was repaired outside of NZBGet;
+        - new action "HistoryMarkSuccess" in RPC-method "editqueue";
+        - new subcommand "S" of command "-E H" (command line interface);
+        - new status "SUCCESS/MARK" can be returned by RPC-method "history";
+  - added button "Test Connection" to make a news server connection test from
+    web-interface;
+  - renamed option "CreateBrokenLog" to "BrokenLog"; the old option name is
+    recognized and automatically converted when the configuration is saved in
+    web-interface;
+  - improved the quality of speed throttling when a speed limit is active;
+  - added hidden webui setting "rowSelect" to select records by clicking on any
+    part of the row, not just on the check mark; to activate it change the
+    setting "rowSelect" in webui/index.js;
+  - when moving files to final destination the hidden files (with names starting
+    with dot) are considered unimportant and no errors are printed if they
+    cannot be moved; such files (.AppleDouble, .DS_Store, etc.) are usually
+    used by services to hold metadata and can be safely ignored;
+  - option sets (such as news-servers, categories, etc.) can now be reordered
+    using news buttons "move up" and "move down";
+  - updated info in about dialogs (Windows and Mac OS X);
+  - updated description of few options;
+  - changed defaults for few logging options;
+  - improved timeout handling when connecting to news servers which have
+    multiple addresses;
+  - improved error handling when communicating with secure servers (do not
+    trying to send quit-command if connection could not be established or was
+    interrupted; this avoids unnecessary timeout);
+  - improved connection handling when fetching nzb-files and rss feeds; do not
+    print warning "Content-Length is not submitted by server..." anymore;
+  - download speed in context menu of menubar icon is now shown in MB/s instead
+    of KB/s (for speeds from 1 MB/s) (Mac OS X only);  
+  - removed shell script "nzbgetd" which were used to control nzbget as a
+    service; modern systems manage services in a diffreent way and do not
+    require that old script anymore;
+  - fixed: parsing of RPC-parameters passed via URL were sometimes incorrect;
+  - fixed: in JSON-RPC the request-id was not transfered back in the response as
+    required by JSON-RPC specification;
+  - fixed: par-check in full verification mode (not in quick mode) could not
+    detect damaged files if they were completely empty (0 bytes), which is
+    possible when option "DirectWrite" was not active and all articles of the
+    file were missing;
+  - fixed possible crash when using remote command "-B dump" to print debug
+    info;
+  - fixed: remote command "-L HA" (which prints the history including hidden
+    records) could crash;
+  - suppress printing of memory leaks reports when the program terminates
+    because of wrong command line switches (Windows debug mode only);
+  - fixed: command "nzbget -L H" may crash if the history contained URL-items
+    with certain status;
+  - fixed: action "Split" may not work for bad nzb-files with missing segments;
+    new Field "Progress" returned by RPC-method "listfiles" shows the download
+    progress of the file taking missing articles into account;
+  - if the lock-file cannot be created or the lock could not be acquired an
+    error message is printed to the log-file;
+  - fixed: update log shown during automatic update via web-interface may show
+    duplicate messages or messages may clear out.
+
+nzbget-14.2:
+  - fixed: the program could crash during download when article cache was active
+    (more likely on very high download speeds);
+  - fixed: unlike to all other scripts the update-script should not be
+    automatically terminated when the program quits;
+  - fixed: XML-RPC method "history" returned invalid xml when used with
+    parameter "hidden=true" (JSON-RPC was fine).
+
+nzbget-14.1:
+  - fixed: program could crash during unpack (Posix) or unpack failure was
+    reported (Windows);
+  - fixed: quick par-check could hang on certain nzb-files containing multiple
+    par-sets (occured only in 64 bit mode);
+  - fixed: menubar icon was not visible on Mac OS X in dark mode; system sleep
+    on idle state is now prevented during download and post-processing
+    (Mac OS X only);
+  - fixed: unrar may sometimes fail with message "no files to extract" (certain
+    Linux systems);
+  - fixed false memory leak warning when compiled in debug mode (Windows only);
+  - fixed: Mac OS X app didn't work on OS X 10.7 Lion.
 
 nzbget-14.0:
   - added article cache:
@@ -207,7 +428,7 @@ nzbget-14.0:
   - fixed: splitted .cbr-files were not properly joined;
   - fixed: inner files (files listed in nzb) bigger than 2GB could not be
     downloaded;
-  - fixed: cleanup may leave some files undeleted (Mac OSX only);
+  - fixed: cleanup may leave some files undeleted (Mac OS X only);
   - fixed: compiler error if configured using parameter "--disable-gzip";
   - fixed: one log-message was printed only to global log but not to nzb-item
     pp-log;
@@ -661,7 +882,7 @@ nzbget-12.0:
           be viewed and changed in download-edit-dialog and
           history-edit-dialog via new button "Dupe";
         - for full documentation see http://nzbget.net/RSS#Duplicates;
-  - created NZBGet.app - NZBGet is now a user friendly Mac OSX application
+  - created NZBGet.app - NZBGet is now a user friendly Mac OS X application
           with easy installation and seamless integration into OS UI:
           works in background, is controlled from a web-browser, few
           important functions are accessible via menubar icon;
@@ -795,7 +1016,7 @@ nzbget-12.0:
     DestDir is mounted to a network drive which is not available on program start;
   - added special handling for files ".AppleDouble" and ".DS_Store" during
     unpack to avoid problems on NAS having support for AFP protocol (used
-    on Mac OSX);
+    on Mac OS X);
   - history records with failed script status are now shown as "PP-FAILURE"
     in history list (instead of just "FAILURE");
   - option "DiskSpace" now checks space on "InterDir" in addition to
