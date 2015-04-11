@@ -1878,7 +1878,8 @@ var HistoryEditDialog = (new function()
 		e.preventDefault();
 		if (curHist.SuccessArticles > 0)
 		{
-			ConfirmDialog.showModal('HistoryEditRedownloadConfirmDialog', doItemRedownload);
+			ConfirmDialog.showModal('HistoryEditRedownloadConfirmDialog', doItemRedownload,
+				function () { HistoryUI.confirmMulti(false); });
 		}
 		else
 		{
