@@ -478,7 +478,15 @@ void InstallSignalHandlers()
 		}
 	} else {
 		int speed = [(NSNumber*)[status objectForKey:@"DownloadRate"] integerValue];
-		info1 = [NSString stringWithFormat:NSLocalizedString(@"Status.Downloading", nil), speed / 1024];
+		if (speed >= 1024 * 1024 * 10) {
+			info1 = [NSString stringWithFormat:NSLocalizedString(@"Status.DownloadingMB10", nil), speed / 1024 / 1024];
+		}
+		else if (speed >= 1024 * 1024) {
+			info1 = [NSString stringWithFormat:NSLocalizedString(@"Status.DownloadingMB", nil), (float)speed / 1024.0 / 1024.0];
+		}
+		else {
+			info1 = [NSString stringWithFormat:NSLocalizedString(@"Status.DownloadingKB", nil), speed / 1024];
+		}
 		preventSleep = YES;
 
 		if (speed > 0) {
