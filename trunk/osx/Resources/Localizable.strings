@@ -22,7 +22,9 @@
  *
  */
 
-"Status.Downloading"="Downloading at %i KB/s";
+"Status.DownloadingKB"="Downloading at %i KB/s";
+"Status.DownloadingMB"="Downloading at %1.1f MB/s";
+"Status.DownloadingMB10"="Downloading at %i MB/s";
 "Status.Post-Processing"="Post-Processing";
 "Status.Fetching NZBs"="Fetching NZBs";
 "Status.Fetching Feeds"="Fetching Feeds";
