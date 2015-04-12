@@ -22,6 +22,13 @@
  *
  */
 
+; This is setup script for NZBGet for Windows. To compile the script you need
+; NSIS (http://nsis.sourceforge.net). Moreover a special build of NSIS must be
+; installed over standard NSIS installation. This special build provides
+; extra logging used in this script: http://nsis.sourceforge.net/Special%5FBuilds.
+; Also requires NSIS Simple Service Plugin:
+; http://nsis.sourceforge.net/NSIS_Simple_Service_Plugin
+
 
 ;--------------------------------
 ;Includes
@@ -29,9 +36,6 @@
 !include "MUI2.nsh"
 !include "FileFunc.nsh"
 !include "LogicLib.nsh"
-
-; Also requires NSIS Simple Service Plugin:
-; http://nsis.sourceforge.net/NSIS_Simple_Service_Plugin
 
 ;--------------------------------
 ;General
@@ -90,6 +94,12 @@ RequestExecutionLevel admin
 ;Installer Sections
 
 Section "Main"
+
+Delete "$INSTDIR\install.log"
+
+; Command "LogSet" requires a special build of NSIS supporting extended logging:
+; http://nsis.sourceforge.net/Special%5FBuilds
+LogSet on
 
 SetOutPath "$INSTDIR"
 

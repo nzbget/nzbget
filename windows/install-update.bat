@@ -47,7 +47,7 @@ for /f "delims=" %%a in ('type "%NZBOP_WEBDIR%\package-info.json"') do (
 		set UPDATE_INFO_LINK=!UPDATE_INFO_LINK: =!
 		set UPDATE_INFO_LINK=!UPDATE_INFO_LINK:"=!
 		set UPDATE_INFO_LINK=!UPDATE_INFO_LINK:,=!
-		rem deleteing the leading colon
+		rem deleting the leading colon
 		set UPDATE_INFO_LINK=!UPDATE_INFO_LINK:~1%!
 	)
 )
@@ -57,6 +57,7 @@ set NZBGET_DIR=%~dp0
 cd %NZBGET_DIR%
 
 if "%1"=="/step2" goto STEP2
+if "%1"=="/step3" goto STEP2
 
 rem Determine if NZBGet is running as a service
 set NZBGET_SERVICE=no
@@ -123,6 +124,13 @@ set NZBGET_DIR=%2
 cd %NZBGET_DIR%
 set SETUP_EXE=%3
 set NZBGET_SERVICE=%4
+
+rem in service mode redirecting the output into install-update.log
+if "%1"=="/step2" (
+	if "%NZBGET_SERVICE%"=="yes" (
+		"%TEMP%\nzbget-update.bat" /step3 "%NZBGET_DIR%" %SETUP_EXE% %NZBGET_SERVICE% > "%NZBGET_DIR%\install-update.log" 2>&1
+	)
+)
 
 rem check if nzbget.exe is running
 echo Stopping NZBGet...
