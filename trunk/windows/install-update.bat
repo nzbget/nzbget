@@ -121,6 +121,7 @@ exit
 :STEP2
 rem init from command line params
 set NZBGET_DIR=%2
+set NZBGET_DIR=%NZBGET_DIR:"=%
 cd %NZBGET_DIR%
 set SETUP_EXE=%3
 set NZBGET_SERVICE=%4
