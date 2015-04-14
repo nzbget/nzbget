@@ -582,8 +582,8 @@ bool Connection::DoConnect()
 #endif
 		if (m_iSocket == INVALID_SOCKET)
 		{
-			ReportError("Socket creation failed for %s", m_szHost, true, 0);
-			break;
+			// try another addr/family/protocol
+			continue;
 		}
 
 		if (ConnectWithTimeout(addr->ai_addr, addr->ai_addrlen))
@@ -592,6 +592,11 @@ bool Connection::DoConnect()
 			bConnected = true;
 			break;
 		}
+	}
+
+	if (m_iSocket == INVALID_SOCKET && addr_list)
+	{
+		ReportError("Socket creation failed for %s", m_szHost, true, 0);
 	}
 
 	freeaddrinfo(addr_list);
