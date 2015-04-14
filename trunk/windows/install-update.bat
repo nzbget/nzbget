@@ -22,6 +22,9 @@ rem
 
 title Updating NZBGet
 
+if "%1"=="/step2" goto STEP2
+if "%1"=="/step3" goto STEP3
+   
 set BASE_URL=http://sourceforge.net/projects/nzbget/files
 
 if x%NZBUP_BRANCH%==x (
@@ -56,9 +59,6 @@ rem "%~dp0" means the location of the current batch file
 set NZBGET_DIR=%~dp0
 cd %NZBGET_DIR%
 
-if "%1"=="/step2" goto STEP2
-if "%1"=="/step3" goto STEP2
-
 rem Determine if NZBGet is running as a service
 set NZBGET_SERVICE=no
 for /F "tokens=3 delims=: " %%H in ('sc query "NZBGet" ^| findstr "        STATE"') do (
@@ -76,7 +76,7 @@ if errorlevel 1 goto DOWNLOAD_FAILURE
 if %NZBUP_BRANCH%==TESTING set VER_FIELD=testing-version
 if %NZBUP_BRANCH%==STABLE set VER_FIELD=stable-version
 set VER=0
-for /f "delims=" %%a in (%TEMP%\NZBGET_UPDATE.txt) do (
+for /f "delims=" %%a in ('type "%TEMP%\NZBGET_UPDATE.txt"') do (
 	set line=%%a
 	set line=!line:%VER_FIELD%=!
 	if not %%a==!line! (
@@ -118,11 +118,18 @@ echo [NZB] QUIT
 exit
 
 
+:STEP3
+echo Third stage
+goto UPDATE
+
 :STEP2
+echo Second stage
+
+:UPDATE
 rem init from command line params
 set NZBGET_DIR=%2
 set NZBGET_DIR=%NZBGET_DIR:"=%
-cd %NZBGET_DIR%
+cd "%NZBGET_DIR%"
 set SETUP_EXE=%3
 set NZBGET_SERVICE=%4
 
@@ -161,9 +168,9 @@ ping 127.0.0.1 -n 31 -w 1000 > nul
 
 echo Installing new version...
 echo.
-%TEMP%\%SETUP_EXE% /S
+"%TEMP%\%SETUP_EXE%" /S
 
-del %TEMP%\%SETUP_EXE%
+del "%TEMP%\%SETUP_EXE%"
 
 echo Starting NZBGet...
 
