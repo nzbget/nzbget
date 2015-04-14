@@ -47,7 +47,7 @@ OutFile "..\nzbget-setup.exe"
 InstallDir "$PROGRAMFILES\NZBGet"
 
 ;Get installation folder from registry if available
-InstallDirRegKey HKCU "Software\NZBGet" ""
+InstallDirRegKey HKLM "Software\NZBGet" ""
 
 !ifndef DEBUG_UI
 ;Request application privileges for Windows Vista
@@ -104,7 +104,7 @@ LogSet on
 SetOutPath "$INSTDIR"
 
 ; Stop NZBGet (if running)
-ReadRegStr $R1 HKCU "Software\NZBGet" ""
+ReadRegStr $R1 HKLM "Software\NZBGet" ""
 ${If} $R1 != ""
 ${AndIf} ${FileExists} "$R1\nzbget.exe"
   Delete "$R1\nzbget.exe"
@@ -141,7 +141,7 @@ CreateShortCut "$SMPROGRAMS\NZBGet\NZBGet.lnk" "$INSTDIR\nzbget.exe"
 CreateShortCut "$SMPROGRAMS\NZBGet\Uninstall.lnk" "$INSTDIR\Uninstall.exe"
 
 ; Store installation folder
-WriteRegStr HKCU "Software\NZBGet" "" $INSTDIR
+WriteRegStr HKLM "Software\NZBGet" "" $INSTDIR
 
 ; Add control panel entry for Uninstall
 WriteRegStr HKLM "Software\Microsoft\Windows\CurrentVersion\Uninstall\NZBGet" "DisplayName" "NZBGet"
@@ -196,7 +196,7 @@ RMDir /r "$INSTDIR"
 RMDir /r "$SMPROGRAMS\NZBGet"
 Delete "$DESKTOP\NZBGet.lnk"
 
-DeleteRegKey HKCU "Software\NZBGet"
+DeleteRegKey HKLM "Software\NZBGet"
 DeleteRegKey HKLM "Software\Microsoft\Windows\CurrentVersion\Uninstall\NZBGet"
 
 ; Refresh desktop window
