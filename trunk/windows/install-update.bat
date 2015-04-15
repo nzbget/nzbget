@@ -22,6 +22,9 @@ rem
 
 title Updating NZBGet
 
+rem make sure the commands "tasklist", "find" and "ping" use default system programs
+set PATH=%SystemRoot%\system32;%PATH%
+
 if "%1"=="/step2" goto STEP2
 if "%1"=="/step3" goto STEP3
    
@@ -150,7 +153,7 @@ if errorlevel 1 goto WINXPHOME
 set WAIT_SECONDS=30
 :CHECK_RUNNING
 if "%WAIT_SECONDS%"=="0" goto QUIT_FAILURE
-tasklist /FI "IMAGENAME eq nzbget.exe" 2> nul | find /I /N "nzbget.exe" > nul
+tasklist 2> nul | find /I /N "nzbget.exe" > nul
 if "%ERRORLEVEL%"=="0" (
 	ping 127.0.0.1 -n 2 -w 1000 > nul
 	set /a "WAIT_SECONDS=%WAIT_SECONDS%-1"
