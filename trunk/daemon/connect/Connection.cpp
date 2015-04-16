@@ -599,14 +599,14 @@ bool Connection::DoConnect()
 		ReportError("Socket creation failed for %s", m_szHost, true, 0);
 	}
 
-	freeaddrinfo(addr_list);
-
 	if (!bConnected && m_iSocket != INVALID_SOCKET)
 	{
 		ReportError("Connection to %s failed", m_szHost, true, 0);
 		closesocket(m_iSocket);
 		m_iSocket = INVALID_SOCKET;
 	}
+
+	freeaddrinfo(addr_list);
 
 	if (m_iSocket == INVALID_SOCKET)
 	{
@@ -733,7 +733,7 @@ bool Connection::ConnectWithTimeout(void* address, int address_len)
 			return false;
 		}
 #else
-		if (errno != EINPROGRESS)
+		if (errno && errno != EINPROGRESS)
 		{
 			return false;
 		}
