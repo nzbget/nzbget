@@ -733,7 +733,7 @@ bool Connection::ConnectWithTimeout(void* address, int address_len)
 			return false;
 		}
 #else
-		if (errno && errno != EINPROGRESS)
+		if (errno != EINPROGRESS)
 		{
 			return false;
 		}
