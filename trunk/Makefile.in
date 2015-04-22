@@ -509,11 +509,12 @@ osx_FILES = \
 	osx/Resources/Welcome.rtf
 
 doc_FILES = \
+	lib/par2/AUTHORS \
+	lib/par2/README \
+	AUTHORS \
 	README \
 	ChangeLog \
-	COPYING \
-	lib/par2/AUTHORS \
-	lib/par2/README
+	COPYING
 
 exampleconf_FILES = \
 	nzbget.conf
