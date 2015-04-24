@@ -10070,13 +10070,6 @@ _ACEOF
 
 
 
-if test "$CC" = "gcc"; then
-	CXXFLAGS="-g -Wall"
-else
-	CXXFLAGS=""
-fi
-
-
 { echo "$as_me:$LINENO: checking for macro returning current function name" >&5
 echo $ECHO_N "checking for macro returning current function name... $ECHO_C" >&6; }
 cat >conftest.$ac_ext <<_ACEOF

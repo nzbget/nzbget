@@ -525,16 +525,6 @@ AC_DEFINE([DEBUG],1,Define to 1 to include debug-code)
 
 
 dnl
-dnl Set debug flags for gcc (if gcc is used)
-dnl
-if test "$CC" = "gcc"; then
-	CXXFLAGS="-g -Wall"
-else
-	CXXFLAGS=""
-fi
-
-
-dnl
 dnl check for __FUNCTION__ or __func__ macro
 dnl
 AC_MSG_CHECKING(for macro returning current function name)
