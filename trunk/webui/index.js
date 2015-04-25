@@ -495,7 +495,7 @@ var Frontend = (new function($)
 			$('#StatDialog_MonthMenu').appendTo($('#StatDialog_MonthBlockTop'));
 		}
 
-		if (initialized)
+		if (initialized && !firstLoad)
 		{
 			Downloads.redraw();
 			History.redraw();
