@@ -179,6 +179,10 @@ nzbget-15.0:
   - removed shell script "nzbgetd" which were used to control nzbget as a
     service; modern systems manage services in a diffreent way and do not
     require that old script anymore;
+  - disabled changing of compiler options during configuring in debug mode
+    (--enable-debug); it conflicted with cross-compiling and did not allow to
+    pass extra options via CXXFLAGS; required debug options must be passed via
+    CXXFLAGS now (for example for gcc: CXXFLAGS=-g ./configure --enable-debug);
   - fixed: parsing of RPC-parameters passed via URL were sometimes incorrect;
   - fixed: in JSON-RPC the request-id was not transfered back in the response as
     required by JSON-RPC specification;
@@ -200,7 +204,10 @@ nzbget-15.0:
   - if the lock-file cannot be created or the lock could not be acquired an
     error message is printed to the log-file;
   - fixed: update log shown during automatic update via web-interface may show
-    duplicate messages or messages may clear out.
+    duplicate messages or messages may clear out;
+  - fixed: web-interface may fail to load on Firefox mobile;
+  - fixed: command "make install" installed README from par2-subdirectory
+    instead of main README.
 
 nzbget-14.2:
   - fixed: the program could crash during download when article cache was active
