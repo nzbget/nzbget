@@ -587,6 +587,8 @@ AC_MSG_CHECKING(for rdynamic linker flag)
 dnl
 dnl End of debugging code
 dnl
+else
+AC_DEFINE([NDEBUG],1,Define to 1 to exclude debug-code)
 fi
 
 
