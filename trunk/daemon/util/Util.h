@@ -110,6 +110,7 @@ public:
 	static void FixExecPermission(const char* szFilename);
 #endif
 	static void ExpandFileName(const char* szFilename, char* szBuffer, int iBufSize);
+	static void GetExeFileName(const char* argv0, char* szBuffer, int iBufSize);
 	static void FormatFileSize(char* szBuffer, int iBufLen, long long lFileSize);
 	static bool SameFilename(const char* szFilename1, const char* szFilename2);
 	static bool MatchFileExt(const char* szFilename, const char* szExtensionList, const char* szListSeparator);
