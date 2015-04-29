@@ -678,13 +678,10 @@ void Options::Init(int argc, char* argv[])
 	SetOption(OPTION_CONFIGFILE, "");
 
 	char szFilename[MAX_PATH + 1];
-#ifdef WIN32
-	GetModuleFileName(NULL, szFilename, sizeof(szFilename));
-#else
-	Util::ExpandFileName(argv[0], szFilename, sizeof(szFilename));
-#endif
+	Util::GetExeFileName(argv[0], szFilename, sizeof(szFilename));
 	Util::NormalizePathSeparators(szFilename);
 	SetOption(OPTION_APPBIN, szFilename);
+
 	char* end = strrchr(szFilename, PATH_SEPARATOR);
 	if (end) *end = '\0';
 	SetOption(OPTION_APPDIR, szFilename);
@@ -947,20 +944,32 @@ void Options::InitOptFile()
 			m_szConfigFilename = strdup(szFilename);
 		}
 #else
-		int p = 0;
-		while (const char* szFilename = PossibleConfigLocations[p++])
-		{
-			// substitute HOME-variable
-			char szExpandedFilename[1024];
-			if (Util::ExpandHomePath(szFilename, szExpandedFilename, sizeof(szExpandedFilename)))
-			{
-				szFilename = szExpandedFilename;
-			}
+		// look in the exe-directory first
+		char szFilename[1024];
+		snprintf(szFilename, sizeof(szFilename), "%s/nzbget.conf", m_szAppDir);
+		szFilename[1024-1] = '\0';
 
-			if (Util::FileExists(szFilename))
+		if (Util::FileExists(szFilename))
+		{
+			m_szConfigFilename = strdup(szFilename);
+		}
+		else
+		{
+			int p = 0;
+			while (const char* szFilename = PossibleConfigLocations[p++])
 			{
-				m_szConfigFilename = strdup(szFilename);
-				break;
+				// substitute HOME-variable
+				char szExpandedFilename[1024];
+				if (Util::ExpandHomePath(szFilename, szExpandedFilename, sizeof(szExpandedFilename)))
+				{
+					szFilename = szExpandedFilename;
+				}
+
+				if (Util::FileExists(szFilename))
+				{
+					m_szConfigFilename = strdup(szFilename);
+					break;
+				}
 			}
 		}
 #endif

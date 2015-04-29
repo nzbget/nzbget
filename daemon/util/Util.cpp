@@ -980,6 +980,28 @@ void Util::ExpandFileName(const char* szFilename, char* szBuffer, int iBufSize)
 #endif
 }
 
+void Util::GetExeFileName(const char* argv0, char* szBuffer, int iBufSize)
+{
+#ifdef WIN32
+	GetModuleFileName(NULL, szBuffer, iBufSize);
+#else
+	// Linux
+	int r = readlink("/proc/self/exe", szBuffer, iBufSize-1);
+	if (r > 0)
+	{
+		return;
+	}
+	// FreeBSD
+	r = readlink("/proc/curproc/file", szBuffer, iBufSize-1);
+	if (r > 0)
+	{
+		return;
+	}
+
+	ExpandFileName(argv0, szBuffer, iBufSize);
+#endif
+}
+
 void Util::FormatFileSize(char * szBuffer, int iBufLen, long long lFileSize)
 {
 	if (lFileSize > 1024 * 1024 * 1000)
