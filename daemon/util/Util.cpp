@@ -989,12 +989,14 @@ void Util::GetExeFileName(const char* argv0, char* szBuffer, int iBufSize)
 	int r = readlink("/proc/self/exe", szBuffer, iBufSize-1);
 	if (r > 0)
 	{
+		szBuffer[r] = '\0';
 		return;
 	}
 	// FreeBSD
 	r = readlink("/proc/curproc/file", szBuffer, iBufSize-1);
 	if (r > 0)
 	{
+		szBuffer[r] = '\0';
 		return;
 	}
 
