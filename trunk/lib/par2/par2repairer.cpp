@@ -586,7 +586,7 @@ bool Par2Repairer::LoadPacketsFromFile(string filename)
 
     // Remember that the file was processed
     bool success = diskFileMap.Insert(diskfile);
-    assert(success);
+    assert(success); (void)success;
   }
   else
   {
@@ -1285,7 +1285,7 @@ bool Par2Repairer::VerifySourceFiles(void)
 
       // Remember that we have processed this file
       bool success = diskFileMap.Insert(diskfile);
-      assert(success);
+      assert(success); (void)success;
       // Do the actual verification
       if (!VerifyDataFile(diskfile, sourcefile))
         finalresult = false;
@@ -1347,7 +1347,7 @@ bool Par2Repairer::VerifyExtraFiles(const list<CommandLine::ExtraFile> &extrafil
 
         // Remember that we have processed this file
         bool success = diskFileMap.Insert(diskfile);
-        assert(success);
+        assert(success); (void)success;
 
         // Do the actual verification
         VerifyDataFile(diskfile, 0);
@@ -2031,7 +2031,7 @@ bool Par2Repairer::RenameTargetFiles(void)
         return false;
 
       bool success = diskFileMap.Insert(targetfile);
-      assert(success);
+      assert(success); (void)success;
 
       // We no longer have a target file
       sourcefile->SetTargetExists(false);
@@ -2063,7 +2063,7 @@ bool Par2Repairer::RenameTargetFiles(void)
         return false;
 
       bool success = diskFileMap.Insert(targetfile);
-      assert(success);
+      assert(success); (void)success;
 
       // This file is now the target file
       sourcefile->SetTargetExists(true);
@@ -2112,7 +2112,7 @@ bool Par2Repairer::CreateTargetFiles(void)
 
       // Remember this file
       bool success = diskFileMap.Insert(targetfile);
-      assert(success);
+      assert(success); (void)success;
 
       u64 offset = 0;
       vector<DataBlock>::iterator tb = sourcefile->TargetBlocks();
