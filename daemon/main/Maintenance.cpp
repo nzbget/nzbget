@@ -49,6 +49,8 @@
 extern Options* g_pOptions;
 extern Maintenance* g_pMaintenance;
 extern void ExitProc();
+extern int g_iArgumentCount;
+extern char* (*g_szArguments)[];
 
 Maintenance::Maintenance()
 {
@@ -129,16 +131,18 @@ bool Maintenance::StartUpdate(EBranch eBranch)
 		return false;
 	}
 
-#ifdef WIN32
 	// make absolute path
-	if (!(strlen(m_szUpdateScript) > 2 && m_szUpdateScript[1] == ':') && m_szUpdateScript[0] != '\\')
+	if (m_szUpdateScript[0] != PATH_SEPARATOR
+#ifdef WIN32
+		&& !(strlen(m_szUpdateScript) > 2 && m_szUpdateScript[1] == ':')
+#endif
+		)
 	{
 		char szFilename[MAX_PATH + 100];
-		snprintf(szFilename, sizeof(szFilename), "%s\\%s", g_pOptions->GetAppDir(), m_szUpdateScript);
+		snprintf(szFilename, sizeof(szFilename), "%s%c%s", g_pOptions->GetAppDir(), PATH_SEPARATOR, m_szUpdateScript);
 		free(m_szUpdateScript);
 		m_szUpdateScript = strdup(szFilename);
 	}
-#endif
 
 	m_Messages.Clear();
 
@@ -246,11 +250,21 @@ void UpdateScriptController::Run()
     const char* szBranchName[] = { "STABLE", "TESTING", "DEVEL" };
 	SetEnvVar("NZBUP_BRANCH", szBranchName[m_eBranch]);
 
+	SetEnvVar("NZBUP_RUNMODE", g_pOptions->GetDaemonMode() ? "DAEMON" : "SERVER");
+
+	for (int i = 0; i < g_iArgumentCount; i++)
+	{
+		char szEnvName[40];
+		snprintf(szEnvName, 40, "NZBUP_CMDLINE%i", i);
+		szInfoName[40-1] = '\0';
+		SetEnvVar(szEnvName, (*g_szArguments)[i]);
+	}
+
 	char szProcessID[20];
 #ifdef WIN32
 	int pid = (int)GetCurrentProcessId();
 #else
-	int pid = (int)getppid();
+	int pid = (int)getpid();
 #endif
 	snprintf(szProcessID, 20, "%i", pid);
 	szProcessID[20-1] = '\0';
