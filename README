@@ -44,25 +44,16 @@ depends on command-line parameters passed to the program.
 2. Supported OS
 =====================================
 
-NZBGet is written in C++ and was initialy developed on Linux.
-It was ported to Windows later and tested for compatibility with
-several POSIX-OS'es.
-
-It should run at least on:
-  - Linux Debian 5.0 on x86;
-  - Linux with uClibc on MIPSEL and ARM;
-  - OpenBSD 5.0 on x86;
-  - Mac OS X 10.7 Lion on x64;
-  - Windows XP SP3 on x86 and Windows 7 on x64.
+NZBGet is written in C++ and works on Windows, OS X, Linux and
+most POSIX-conform OS'es.
 
 Clients and servers running on different OS'es may communicate with
 each other. For example, you can use NZBGet as client on Windows to 
 control your NZBGet-server running on Linux.
 
 The download-section of NZBGet web-site provides binary files
-for Windows. The binary packages for many routers and NAS devices are 
-also available in OPTWARE repository (http://www.nslu2-linux.org), 
-but for most POSIX-systems you need to compile the program yourself. 
+for Windows, OS X and Linux. For most POSIX-systems you need to compile
+the program yourself. 
 
 If you have downloaded binaries you can just jump to section 
 "Configuration".
@@ -71,8 +62,8 @@ If you have downloaded binaries you can just jump to section
 3. Prerequisites on POSIX
 =====================================
 
-NZBGet is developed on a linux-system, but it should run on other
-POSIX platforms (see the list of tested platforms above).
+NZBGet is developed on a linux-system, but it runs on other
+POSIX platforms.
 
 NZBGet absolutely needs the following libraries:
 
@@ -94,7 +85,7 @@ And the following libraries are optional:
  - for gzip support in web-server and web-client (enabled by default):
    - zlib     (http://www.zlib.net)
 
-All these libraries are included in modern Linux distributions and
+All these libraries are included in modern POSIX distributions and
 should be available as installable packages. Please note that you also 
 need the developer packages for these libraries too, they package names 
 have often suffix "dev" or "devel". On other systems you may need to 
@@ -180,8 +171,8 @@ For curses-outputmode you need ncurses or curses on your system.
 If you do not have one of them you can download and compile ncurses yourself.
 Following configure-parameters may be useful:
 
-  --with-libcurses-includes
-  --with-libcurses-libraries
+  --with-libcurses-includes=/path/to/curses/includes
+  --with-libcurses-libraries=/path/to/curses/libraries
 
 If you are not able to use curses or ncurses or do not want them you can
 make the program without support for curses using option "--disable-curses":
@@ -200,11 +191,11 @@ the option --with-tlslib=(OpenSSL, GnuTLS). For example to build with GnuTLS:
   
 Following configure-parameters may be useful:
 
-  --with-libtls-includes
-  --with-libtls-libraries
+  --with-libtls-includess=/path/to/gnutls/includes
+  --with-libtls-libraries=/path/to/gnutls/libraries
 
-  --with-openssl-includes
-  --with-openssl-libraries
+  --with-openssl-includess=/path/to/openssl/includes
+  --with-openssl-libraries=/path/to/openssl/libraries
 
 If none of these libraries is available you can make the program without 
 TLS/SSL support using option "--disable-tls":
@@ -253,6 +244,7 @@ The program looks for configuration file in following standard
 locations (in this order):
 
 On POSIX systems:
+  <EXE-DIR>/nzbget.conf
   ~/.nzbget
   /etc/nzbget.conf
   /usr/etc/nzbget.conf
