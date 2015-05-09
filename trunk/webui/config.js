@@ -2597,7 +2597,7 @@ var UpdateDialog = (new function($)
 
 		$UpdateDialog.modal({backdrop: 'static'});
 
-		RPC.call('readurl', ['http://nzbget.net/info/nzbget-version.php?nocache=' + new Date().getTime(), 'version info'], loadedUpstreamInfo, error);
+		RPC.call('readurl', ['http://nzbget.net/info/nzbget-version.json?nocache=' + new Date().getTime(), 'version info'], loadedUpstreamInfo, error);
 	}
 	
 	function error(e)
