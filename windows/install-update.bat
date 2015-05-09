@@ -28,7 +28,7 @@ set PATH=%SystemRoot%\system32;%PATH%
 if "%1"=="/step2" goto STEP2
 if "%1"=="/step3" goto STEP3
    
-set BASE_URL=http://sourceforge.net/projects/nzbget/files
+set BASE_URL=http://nzbget.net/download
 
 if x%NZBUP_BRANCH%==x (
 	echo This script is executed by NZBGet during update and is not supposed to be started manually by user.
