@@ -1,0 +1,122 @@
+About
+-----
+"build-nzbget" is a bash script which is used to build universal installer
+for Linux. The script compiles NZBGet for each supported CPU-architecture
+and then packs alls produced files into an installer package.
+
+Prerequisites
+-------------
+To use the script you need a Linux (virtual) machine.
+
+Building
+--------
+This script was written to work with toolchain from uClibc's Buildroot-project.
+
+1. Create directory where you want to keep your files to compile NZBGet. Choose
+   the path wisely because it cannot be changed later without rebuilding all
+   toolchains again;
+
+2. Put the build script 'build-nzbget' into that directory;
+
+3. Create subdirectories:
+    toolchain - for toolchains;
+    nzbget    - for source code of NZBGet;
+    output    - to store the results of build script;
+    setup     - for extra files required for installer;
+
+4. Build toolchain for one CPU-architecture (see below);
+	4.1. Download Buildroot distribution archive from http://buildroot.uclibc.org/download.html
+	     (tested with version "buildroot-2015.02");
+	4.2. Unpack the tarball into 'toolchain'-directory;
+	4.3. Rename the buildroot-directory according to the target CPU-architecture name;
+	     Be careful here, after the toolchain is built the directory cannot be renamed
+	     or moved, you will have to rebuild the toolchain if you want another name;
+	4.4. Run 'make nconfig';
+	4.5. Configure toolchain:
+         - Target architecture:
+             - choose your target architecture;
+         - Build options:
+             - libraries (both static and shared);
+         - Toolchain:
+             - Kernel Headers (Manually specified Linux version);
+             - (2.6.30) linux version;
+             - Custom kernel headers series (2.6.x);
+             - Enable large file (files > 2 GB) support;
+             - Enable IPv6 support;
+             - Enable toolchain locale/i18n support;
+             - GCC compiler Version (gcc 4.9.x);
+             - Enable C++ support;
+             - Build cross gdb for the host;
+         - Target packages:
+              - Libraries:
+                  - Compression and decompression: zlib;
+                  - Crypto: openssl;
+                  - JSON/XML: libxml2;
+                  - Text and terminal handling: ncurses;
+         - Save configuration and exit;
+	4.6. Open file .config in the buildroot directory and activate define to
+	     build 'ubacktrace' (there are no UI option for it in nconfig);
+    4.7. Open file 'packages/ncurses/ncurses.mk' in a text editor and add
+         extra configure parameters to option 'NCURSES_CONF_OPTS‘:
+         "--with-fallbacks=xterm xterm-color xterm-256color xterm-16color linux vt100 vt200";
+	4.8. Run 'make' to build the toolchain. It may take an hour or so depending
+	     on your hardware;
+
+5. Now you should have a working toolchain for one CPU-architecture, let's
+   test it.
+    5.1. Change to the ROOTBUILD-directory and run the build script:
+
+         ./nzbget-build release bin <CPU-Architecture>
+
+    5.2. The script creates subdirectory 'nzbget/trunk' and checkouts the source
+         code of NZBGet from subversion repository;
+    5.3. Then the source code is compiled for chosen CPU-architecture;
+    5.4. After the compiling a distribution binary archive for the chosen
+         CPU-architecture is put into output-directory;
+
+6. Build unrar and 7za for the CPU-architecture:
+    6.1. Download source of unrar; Compile for target, either manually or
+         using script 'build-unpack';
+    6.2. Put the compiled binaries of unrar and 7za into setup-directory, add
+         suffix '-arch' to unrar and 7za names, for example 'unrar-armel';
+    6.3. Copy license-files from unrar and 7-Zip projects using names
+         'license-unrar.txt' and 'license-7zip.txt';
+
+7. Now you can build installer for that one CPU-architecture:
+    7.1. If you build for CPU-architecture which is not supported by NZBGet's
+         universal installer you have to edit the script 'build-nzbget' and
+         add the architecture name into variable 'ALLTARGETS';
+    7.2. Run the build script with:
+
+         ./nzbget-build release installer <CPU-Architecture>
+
+    7.3. The created installer supports only one CPU-Architecture;
+    7.8. Run the installer on the target machine (with target CPU-Architecture);
+
+8. Repeat step for each CPU-Architecture you intend to build the installer for;
+
+9. To build installer for all CPU-Architectures listed in variable 'ALLTARGETS'
+   of the script run the script without choosing CPU-Architecture:
+
+       ./nzbget-build release installer
+
+10. When the script is run without any parameters:
+   10.1. NZBGet is compiled twice for each CPU-Architecture listed in
+         'ALLTARGETS': once in release mode and once in debug mode;
+   10.2. Two installers are built: one for release and another for debug.
+
+Special functions
+-----------------
+By default the script builds from trunk/HEAD. To specify another tag or branch
+pass it to the script, for example to build a tagged version 14.2:
+
+       ./nzbget-build release bin tags/14.2
+
+Installers can built only for version 15.0 (starting from revision r1279).
+Distribution archives can be built for older versions too.
+
+To build certain revision pass it to the script, for example
+
+       ./nzbget-build release bin r1279
+
+To cleanup the output directory before building pass parameter 'cleanup'.

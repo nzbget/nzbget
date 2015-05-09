@@ -512,7 +512,10 @@ osx_FILES = \
 linux_FILES = \
 	linux/installer.sh \
 	linux/install-update.sh \
-	linux/package-info.json
+	linux/package-info.json \
+	linux/build-info.txt \
+	linux/build-nzbget \
+	linux/build-unpack
 
 doc_FILES = \
 	lib/par2/AUTHORS \

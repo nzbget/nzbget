@@ -1,0 +1,344 @@
+#!/bin/bash
+#
+#  This file is part of nzbget
+#
+#  Copyright (C) 2015 Andrey Prygunkov <hugbug@users.sourceforge.net>
+#
+#  This program is free software; you can redistribute it and/or modify
+#  it under the terms of the GNU General Public License as published by
+#  the Free Software Foundation; either version 2 of the License, or
+#  (at your option) any later version.
+#
+#  This program is distributed in the hope that it will be useful,
+#  but WITHOUT ANY WARRANTY; without even the implied warranty of
+#  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+#  GNU General Public License for more details.
+#
+#  You should have received a copy of the GNU General Public License
+#  along with this program; if not, write to the Free Software
+#  Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
+#
+# $Revision$
+# $Date$
+#
+
+# Setup strict bash error handling
+set -o nounset
+set -o errexit
+
+# Uncomment next line for debuging
+#set -x
+
+ALLTARGETS="dist i686 armel armhf mipsel mipseb ppc6xx ppc500"
+ROOT=`pwd`
+ROOTPATH=$PATH
+OUTPUTDIR=$ROOT/output
+
+echo "Usage:"
+echo "  $(basename $0) [targets] [output] [revision] [reppath] [configs] [cleanup]"
+echo "    targets   : all (default) $ALLTARGETS"
+echo "    output    : bin installer"
+echo "    revision  : head (default) rXXXX work"
+echo "    reppath   : trunk (default) tags/XXX branches/XXX"
+echo "    configs   : release debug (default) release-nostrip debug-strip"
+echo "    cleanup   : cleanup output directory before building"
+echo
+
+
+# Parsing command line
+
+BUILD=no
+TARGETS=""
+OUTPUTS=""
+REVISION=""
+REPPATH=""
+CONFIGS=""
+CLEAN=no
+
+for PARAM in "$@"
+do
+    case $PARAM in
+        release|release-nostrip|debug|debug-strip)
+            # using xargs to trim spaces
+            CONFIGS=`echo "$CONFIGS $PARAM" | xargs`
+            ;;
+        trunk|tags/*|branches/*)
+            REPPATH="$PARAM"
+            ;;
+        head|work|r[0-9]|r[0-9][0-9]|r[0-9][0-9][0-9]|r[0-9][0-9][0-9][0-9])
+            REVISION="$PARAM"
+            ;;
+        clean|cleanup)
+            CLEAN=yes
+            ;;
+        bin|installer)
+            # using xargs to trim spaces
+            OUTPUTS=`echo "$OUTPUTS $PARAM" | xargs`
+            ;;
+        *)
+            if [[ " $ALLTARGETS " == *" $PARAM "* ]]; then
+                # using xargs to trim spaces
+                TARGETS=`echo "$TARGETS $PARAM" | xargs`
+                if [ "$PARAM" == "all" ]; then
+                    PARAM=$ALLTARGETS
+                fi
+            elif [ -d toolchain/$PARAM ]; then
+                # non-standard target but the toolchain exist
+                # using xargs to trim spaces
+                TARGETS=`echo "$TARGETS $PARAM" | xargs`
+            else
+                echo "Invalid parameter: $PARAM"
+                exit 1
+            fi
+            ;;
+    esac
+
+done
+
+if [ "$TARGETS" == "" ]; then
+    TARGETS="$ALLTARGETS"
+fi
+
+if [ "$OUTPUTS" == "" ]; then
+    OUTPUTS="bin installer"
+fi
+
+if [ "$REVISION" == "" ]; then
+    REVISION="head"
+fi
+
+if [ "$REPPATH" == "" ]; then
+    REPPATH="trunk"
+fi
+
+if [ "$CONFIGS" == "" ]; then
+    CONFIGS="release debug"
+fi
+
+echo "Active configuration:"
+echo "  targets  : $TARGETS"
+echo "  outputs  : $OUTPUTS"
+echo "  revision : $REVISION"
+echo "  reppath  : $REPPATH"
+echo "  configs  : $CONFIGS"
+echo "  cleanup  : $CLEAN"
+echo 
+
+
+# Checkout and update from svn
+
+cd nzbget
+
+if [ ! -d $REPPATH ]; then
+    echo "Initial checkout for $REPPATH"
+    svn co https://svn.code.sf.net/p/nzbget/code/$REPPATH $REPPATH
+fi
+
+BUILDDIR=$ROOT/nzbget/$REPPATH
+
+cd $BUILDDIR
+
+if [ "$REVISION" != "work" ]; then
+    echo "Updating to $REVISION"
+    svn -r $REVISION up
+    touch Makefile.in configure config.h.in
+fi
+
+
+# File name format for output files
+
+VERSION=`grep "AM_INIT_AUTOMAKE(nzbget, " configure.ac`
+VERSION=`expr "$VERSION" : '.*, \(.*\))'`
+REVISION=`svnversion`
+
+BASENAME="nzbget-$VERSION"
+if [ `expr "$VERSION" : ".*-testing"` != 0 ]; then
+    BASENAME="$BASENAME-r$REVISION"
+fi
+
+
+# Building
+
+if [ "$CLEAN" == "yes" ]; then
+    rm -r -f $OUTPUTDIR/*
+fi
+
+for CONFIG in $CONFIGS; do
+
+    case $CONFIG in
+        release)
+            SUFFIX=""
+            ;;
+        debug)
+            SUFFIX="-debug"
+            ;;
+        debug-strip)
+            SUFFIX="-debug-strip"
+            ;;
+        release-nostrip)
+            SUFFIX="-nostrip"
+            ;;
+    esac
+
+    for OUTPUT in $OUTPUTS; do
+        if [ "$OUTPUT" == "bin" ]; then
+            for TARGET in $TARGETS; do
+
+                cd $BUILDDIR
+
+                echo "Building in `pwd` for $TARGET ($CONFIG)"
+
+                case $TARGET in
+                    mipsel|i?86|x86_64)
+                        ARCH=$TARGET
+                        ;;
+                    mipseb)
+                        ARCH=mips
+                        ;;
+                    arm*)
+                        ARCH=arm
+                        ;;
+                    ppc*)
+                        ARCH=powerpc
+                        ;;
+                esac
+
+                if [ "$TARGET" == "dist" ]; then
+                    if [ ! -f $OUTPUTDIR/$BASENAME.tar.gz ]; then
+                        ./configure
+                        make dist
+                        cp nzbget-$VERSION.tar.gz $OUTPUTDIR/$BASENAME.tar.gz
+                    fi
+                else
+                    PATH=:$ROOTPATH
+                    TOOLCHAIN_ROOT=$ROOT/toolchain/$TARGET
+                    PATH=$TOOLCHAIN_ROOT/output/host/usr/bin:$PATH
+
+                    STRIP=""
+                    if [ $CONFIG == "debug-strip" -o $CONFIG == "release" ]; then
+                        STRIP="-s"
+                    fi
+
+                    case $CONFIG in
+                        debug|debug-strip)
+                            LIBPREF="$TOOLCHAIN_ROOT/output/staging/usr" LDFLAGS="-static $STRIP" \
+                                LIBS="-lcrypto -ldl -lz -lubacktrace" CXXFLAGS="-g -fasynchronous-unwind-tables" \
+                                ./configure --host=$ARCH-linux --enable-debug
+                            ;;
+                        release|release-nostrip)
+                            LIBPREF="$TOOLCHAIN_ROOT/output/staging/usr" LDFLAGS="-static $STRIP" \
+                                LIBS="-lcrypto -ldl -lz" ./configure --host=$ARCH-linux
+                            ;;
+                    esac
+
+                    make clean && make
+
+                    rm -r -f $OUTPUTDIR/install
+                    make DESTDIR=$OUTPUTDIR/install install
+
+                    cd $OUTPUTDIR
+                    rm -r -f nzbget
+                    mkdir -p nzbget
+                    mv install/usr/local/bin/nzbget nzbget
+                    mv install/usr/local/share/doc/nzbget/* nzbget
+                    rm nzbget/AUTHORS
+                    mv install/usr/local/share/nzbget/webui nzbget
+                    mv install/usr/local/share/nzbget/scripts nzbget
+                    CONFTEMPLATE=nzbget/webui/nzbget.conf.template
+                    mv install/usr/local/share/nzbget/nzbget.conf $CONFTEMPLATE
+
+                    rm -r -f $OUTPUTDIR/install
+
+                    # adjusting nzbget.conf
+                    sed 's:^MainDir=~/downloads:MainDir=${AppDir}/downloads:' -i $CONFTEMPLATE
+                    sed 's:^WebDir=/usr/local/share/nzbget/webui:WebDir=${AppDir}/webui:' -i $CONFTEMPLATE
+                    sed 's:^ScriptDir=${MainDir}/scripts:ScriptDir=${AppDir}/scripts:' -i $CONFTEMPLATE
+                    sed 's:^LogFile=${DestDir}/nzbget.log:LogFile=${MainDir}/nzbget.log:' -i $CONFTEMPLATE
+                    sed 's:^ConfigTemplate=/usr/local/share/nzbget/nzbget.conf:ConfigTemplate=${AppDir}/webui/nzbget.conf.template:' -i $CONFTEMPLATE
+                    sed 's:^AuthorizedIP=:AuthorizedIP=127.0.0.1:' -i $CONFTEMPLATE
+
+                    tar -czf $BASENAME-bin-linux-$TARGET$SUFFIX.tar.gz nzbget
+
+                    rm -r -f nzbget
+
+                    echo "Completed build in `pwd` for $TARGET ($CONFIG)"
+                fi
+            done
+        elif [ "$OUTPUT" == "installer" ]; then
+            echo "Creating installer for $CONFIG..."
+
+            cd $OUTPUTDIR
+
+            # checking if all targets exists
+            for TARGET in $TARGETS
+            do
+                ALLEXISTS="yes"
+                if [ "$TARGET" != "dist" ]; then
+                    if [ ! -f $BASENAME-bin-linux-$TARGET$SUFFIX.tar.gz ]; then
+                        echo "Could not find $BASENAME-bin-linux-$TARGET$SUFFIX.tar.gz"
+                        ALLEXISTS="no"
+                    fi
+                fi
+            done
+
+            if [ "$ALLEXISTS" == "no" ]; then
+                exit 1;
+            fi
+
+            echo "Unpacking targets..."
+            rm -r -f nzbget
+            for TARGET in $TARGETS
+            do
+                ALLEXISTS="yes"
+                if [ "$TARGET" != "dist" ]; then
+                    tar -xzf $BASENAME-bin-linux-$TARGET$SUFFIX.tar.gz
+                    mv nzbget/nzbget nzbget/nzbget-$TARGET
+                    cp ../setup/unrar-$TARGET nzbget
+                    cp ../setup/7za-$TARGET nzbget
+                fi
+            done
+
+            # adjusting nzbget.conf
+            sed 's:^UnrarCmd=unrar:UnrarCmd=${AppDir}/unrar:' -i nzbget/webui/nzbget.conf.template
+            sed 's:^SevenZipCmd=7z:SevenZipCmd=${AppDir}/7za:' -i nzbget/webui/nzbget.conf.template
+
+            INSTFILE=$BASENAME-bin-linux$SUFFIX.run
+            
+            echo "Building installer package..."
+            cp $BUILDDIR/linux/installer.sh $INSTFILE
+            cp $BUILDDIR/linux/package-info.json nzbget/webui
+            cp $BUILDDIR/linux/install-update.sh nzbget
+            cp ../setup/license-unrar.txt nzbget
+            cp ../setup/license-7zip.txt nzbget
+
+            # creating payload
+            cd nzbget
+            tar czf - * > ../$INSTFILE.data
+            cd ..
+
+            # creating installer script
+            sed "s:^TITLE=$:TITLE=\"$BASENAME$SUFFIX\":" -i $INSTFILE
+            DISTTARGETS="${TARGETS/dist/}"
+            DISTTARGETS=`echo "$DISTTARGETS" | xargs`
+            sed "s:^DISTARCHS=$:DISTARCHS=\"$DISTTARGETS\":" -i $INSTFILE
+
+            PAYLOAD=`stat -c%s "$INSTFILE.data"`
+            sed "s:^PAYLOAD=$:PAYLOAD=$PAYLOAD:" -i $INSTFILE
+            
+            MD5=`md5sum "$INSTFILE.data" | cut -b-32`
+            sed "s:^MD5=$:MD5=\"$MD5\":" -i $INSTFILE
+
+            HEADER=`stat -c%s "$INSTFILE"`
+            LEN=${#HEADER}
+            HEADER=`expr $HEADER + $LEN`
+            sed "s:^HEADER=$:HEADER=$HEADER:" -i $INSTFILE
+            
+            # attaching payload
+            cat $INSTFILE.data >> $INSTFILE
+            rm $INSTFILE.data
+
+            rm -r nzbget    
+        fi
+    done
+done
+
