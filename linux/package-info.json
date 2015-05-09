@@ -1,0 +1,4 @@
+{
+	"update-info-link": "http://nzbget.net/info/nzbget-version-linux.json",
+	"install-script": "install-update.sh"
+}
