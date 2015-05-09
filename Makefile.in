@@ -453,7 +453,8 @@ AM_CPPFLAGS = \
 EXTRA_DIST = \
 	Makefile.cvs \
 	$(windows_FILES) \
-	$(osx_FILES)
+	$(osx_FILES) \
+	$(linux_FILES)
 
 windows_FILES = \
 	daemon/windows/NTService.cpp \
@@ -507,6 +508,11 @@ osx_FILES = \
 	osx/Resources/Credits.rtf \
 	osx/Resources/Localizable.strings \
 	osx/Resources/Welcome.rtf
+
+linux_FILES = \
+	linux/installer.sh \
+	linux/install-update.sh \
+	linux/package-info.json
 
 doc_FILES = \
 	lib/par2/AUTHORS \
@@ -1839,7 +1845,7 @@ distclean-tags:
 distdir: $(DISTFILES)
 	$(am__remove_distdir)
 	mkdir $(distdir)
-	$(mkdir_p) $(distdir)/daemon/windows $(distdir)/lib/par2 $(distdir)/osx $(distdir)/osx/NZBGet.xcodeproj $(distdir)/osx/Resources $(distdir)/osx/Resources/Images $(distdir)/osx/Resources/licenses $(distdir)/scripts $(distdir)/webui $(distdir)/webui/img $(distdir)/webui/lib $(distdir)/windows $(distdir)/windows/resources $(distdir)/windows/setup
+	$(mkdir_p) $(distdir)/daemon/windows $(distdir)/lib/par2 $(distdir)/linux $(distdir)/osx $(distdir)/osx/NZBGet.xcodeproj $(distdir)/osx/Resources $(distdir)/osx/Resources/Images $(distdir)/osx/Resources/licenses $(distdir)/scripts $(distdir)/webui $(distdir)/webui/img $(distdir)/webui/lib $(distdir)/windows $(distdir)/windows/resources $(distdir)/windows/setup
 	@srcdirstrip=`echo "$(srcdir)" | sed 's|.|.|g'`; \
 	topsrcdirstrip=`echo "$(top_srcdir)" | sed 's|.|.|g'`; \
 	list='$(DISTFILES)'; for file in $$list; do \

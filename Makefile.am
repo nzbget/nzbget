@@ -184,7 +184,8 @@ AM_CPPFLAGS = \
 EXTRA_DIST = \
 	Makefile.cvs \
 	$(windows_FILES) \
-	$(osx_FILES)
+	$(osx_FILES) \
+	$(linux_FILES)
 
 windows_FILES = \
 	daemon/windows/NTService.cpp \
@@ -238,6 +239,11 @@ osx_FILES = \
 	osx/Resources/Credits.rtf \
 	osx/Resources/Localizable.strings \
 	osx/Resources/Welcome.rtf
+
+linux_FILES = \
+	linux/installer.sh \
+	linux/install-update.sh \
+	linux/package-info.json
 
 doc_FILES = \
 	lib/par2/AUTHORS \
