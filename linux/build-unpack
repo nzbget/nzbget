@@ -1,0 +1,144 @@
+#!/bin/bash
+#
+#  This file is part of nzbget
+#
+#  Copyright (C) 2015 Andrey Prygunkov <hugbug@users.sourceforge.net>
+#
+#  This program is free software; you can redistribute it and/or modify
+#  it under the terms of the GNU General Public License as published by
+#  the Free Software Foundation; either version 2 of the License, or
+#  (at your option) any later version.
+#
+#  This program is distributed in the hope that it will be useful,
+#  but WITHOUT ANY WARRANTY; without even the implied warranty of
+#  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+#  GNU General Public License for more details.
+#
+#  You should have received a copy of the GNU General Public License
+#  along with this program; if not, write to the Free Software
+#  Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
+#
+# $Revision$
+# $Date$
+#
+
+# Setup strict bash error handling
+set -o nounset
+set -o errexit
+
+# Uncomment next line for debuging
+#set -x
+
+ALLTARGETS="i686 armel armhf mipsel mipseb ppc6xx ppc500"
+ROOT=`pwd`
+OUTPUTDIR=$ROOT/setup
+
+echo "Usage:"
+echo "  $(basename $0) [targets] [clean] [unpacker]"
+echo "     unpacker  - unrar, 7zip."
+echo
+
+
+# Parsing command line
+
+TARGETS=""
+CLEAN=no
+UNPACKERS=""
+
+for PARAM in "$@"
+do
+    case $PARAM in
+        clean|cleanup)
+            CLEAN=yes
+            ;;
+        unrar|7zip)
+            # using xargs to trim spaces
+            UNPACKERS=`echo "$UNPACKERS $PARAM" | xargs`
+            ;;
+        *)
+            if [ -d toolchain/$PARAM ]; then
+                TARGETS=`echo "$TARGETS $PARAM" | xargs`
+            else
+                echo "Invalid parameter: $PARAM"
+                exit 1
+            fi
+            ;;
+    esac
+
+done
+
+if [ "$TARGETS" == "" ]; then
+    TARGETS="$ALLTARGETS"
+fi
+
+if [ "$UNPACKERS" == "" ]; then
+    UNPACKERS="unrar 7zip"
+fi
+
+echo "Active configuration:"
+echo "  targets   : $TARGETS"
+echo "  unpackers : $UNPACKERS"
+echo "  cleanup   : $CLEAN"
+echo 
+
+
+# Building
+
+for UNPACKER in $UNPACKERS; do
+
+case $UNPACKER in
+    unrar)
+        EXENAME=unrar
+        EXEDIR=
+        LICENSE=license.txt
+        BUILDTARGET=
+        ;;
+    7zip)
+        EXENAME=7za
+        EXEDIR=bin/
+        LICENSE=DOC/License.txt
+        BUILDTARGET=$EXENAME
+        ;;
+esac
+
+if [ "$CLEAN" == "yes" ]; then
+    rm -r -f $OUTPUTDIR/$EXENAME-*
+fi
+
+cd $ROOT/temp/$UNPACKER
+
+for TARGET in $TARGETS; do
+
+    case $TARGET in
+        mipsel|i?86|x86_64)
+            ARCH=$TARGET
+            ;;
+        mipseb)
+            ARCH=mips
+            ;;
+        arm*)
+            ARCH=arm
+            ;;
+        ppc*)
+            ARCH=powerpc
+            ;;
+    esac
+
+    TOOLCHAIN_ROOT=$ROOT/toolchain/$TARGET
+
+    make clean
+
+    CXX=$TOOLCHAIN_ROOT/output/host/usr/bin/$ARCH-linux-g++ \
+        CC=$TOOLCHAIN_ROOT/output/host/usr/bin/$ARCH-linux-gcc \
+        STRIP=$TOOLCHAIN_ROOT/output/host/usr/bin/$ARCH-linux-strip \
+        LDFLAGS=-static \
+        make $BUILDTARGET
+    
+    cp $EXEDIR$EXENAME ../../setup/$EXENAME-$TARGET
+
+    cp $LICENSE ../../setup/license-$UNPACKER.txt
+
+    echo "Completed build for $TARGET ($UNPACKER)"
+done
+done
+

@@ -1,5 +1,5 @@
 #!/bin/sh
-
+#
 #  This file is part of nzbget
 #
 #  Copyright (C) 2015 Andrey Prygunkov <hugbug@users.sourceforge.net>
