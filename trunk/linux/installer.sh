@@ -104,13 +104,21 @@ Verify()
     REQSIZE=$((HEADER + PAYLOAD))
     ACTSIZE=`stat -c%s "$0" 2>/dev/null | cat`
     if test "$ACTSIZE" = ""; then
-        ACTSIZE=`ls -l "$0" 2>/dev/null | sed -n 's/.* .* .* \(.*\) .* .* .* .* .*/\1/p'`
+        NUM=1
+        for FIELD in `ls -l "$0" 2>/dev/null`
+        do
+            if test "$NUM" = 5; then
+                ACTSIZE="$FIELD"
+                break
+            fi
+            NUM=$((NUM + 1))
+        done
     fi
     if test "$REQSIZE" != "$ACTSIZE"; then
         Error "Corrupted installer package detected: file size mismatch."
     fi
     
-    ACTMD5=`dd "if=$0" bs=$HEADER skip=1 2>/dev/null | md5sum 2>/dev/null | cut -b-32`
+    ACTMD5=`dd "if=$0" bs=$HEADER skip=1 2>/dev/null | md5sum 2>/dev/null | cut -b-32 2>/dev/null | cat`
     LEN=${#ACTMD5}
     if test "$LEN" = "32" -a "$MD5" != "$ACTMD5"; then
         Error "Corrupted installer package detected: checksum mismatch."
