@@ -37,7 +37,7 @@ DISTARCHS=
 SILENT=no
 ALLARCHS="$DISTARCHS all"
 ARCH=""
-MANUALARCH=no
+SELECT=auto
 OUTDIR="nzbget"
 PRINTEDTITLE=no
 JUSTUNPACK=no
@@ -81,6 +81,7 @@ PrintHelp()
     fi
     Info "This installer supports Linux kernel 2.6 or newer and the following CPU architectures:"
     PrintArch "i686"     "    i686     - x86, 32 or 64 Bit"
+    PrintArch "x86_64"   "    x86_64   - x86, 64 Bit"
     PrintArch "armel"    "    armel    - ARMv5/v6 (ARM9 and ARM11 families)"
     PrintArch "armhf"    "    armhf    - ARMv7 (Cortex family)"
     PrintArch "mipsel"   "    mipsel   - MIPS (little endian)"
@@ -148,13 +149,17 @@ DetectArch()
 
     if test "$UPDATE" = "yes"; then
         ARCH=`cat "$OUTDIR/installer.cfg" 2>/dev/null | sed -n 's/^arch=\(.*\)$/\1/p'`
+        SELECT=`cat "$OUTDIR/installer.cfg" 2>/dev/null | sed -n 's/^select=\(.*\)$/\1/p'`
     fi
 
     if test "$ARCH" = ""; then
         CPU=`uname -m`
         case $CPU in
-            i386|i686|x86_64)
+            i386|i686)
                 ARCH=i686
+                ;;
+            x86_64)
+                ARCH=x86_64
                 ;;
             mips)
                 ARCH=mipsx
@@ -231,7 +236,7 @@ Unpack()
         rm -f /tmp/nzbget-installer.tmp
     fi
 
-    # Rename unpacked binaries files
+    # Rename unpacked binaries files and store arch selection
     if test "$JUSTUNPACK" = "no" -a "$ARCH" != "all"; then
         OLDDIR=`pwd`
         cd $OUTDIR;
@@ -241,6 +246,7 @@ Unpack()
         mv unrar-$ARCH unrar
         mv 7za-$ARCH 7za
         echo "arch=$ARCH" > "installer.cfg"
+        echo "select=$SELECT" >> "installer.cfg"
         cd $OLDDIR
     fi
 }
@@ -277,7 +283,7 @@ do
             ;;
         --arch)
             ARCH=${2:-}
-            MANUALARCH=yes
+            SELECT=manual
             if ! ValidArch $ARCH; then
                 PrintHelp
                 Info ""
@@ -344,7 +350,7 @@ fi
 if test "$JUSTUNPACK" = "no"; then
     Info "Checking system..."
     DetectArch
-    if test "$MANUALARCH" = "yes"; then
+    if test "$SELECT" = "manual"; then
         Info "CPU-Architecture: $ARCH (manually set)"
     else
         Info "CPU-Architecture: $ARCH"

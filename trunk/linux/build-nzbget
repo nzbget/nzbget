@@ -29,7 +29,7 @@ set -o errexit
 # Uncomment next line for debuging
 #set -x
 
-ALLTARGETS="dist i686 armel armhf mipsel mipseb ppc6xx ppc500"
+ALLTARGETS="dist i686 x86_64 armel armhf mipsel mipseb ppc6xx ppc500"
 ROOT=`pwd`
 ROOTPATH=$PATH
 OUTPUTDIR=$ROOT/output
