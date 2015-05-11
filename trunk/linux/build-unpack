@@ -29,9 +29,10 @@ set -o errexit
 # Uncomment next line for debuging
 #set -x
 
-ALLTARGETS="i686 armel armhf mipsel mipseb ppc6xx ppc500"
+ALLTARGETS="i686 x86_64 armel armhf mipsel mipseb ppc6xx ppc500"
 ROOT=`pwd`
 OUTPUTDIR=$ROOT/setup
+BUILDDIR=temp
 
 echo "Usage:"
 echo "  $(basename $0) [targets] [clean] [unpacker]"
@@ -89,15 +90,9 @@ for UNPACKER in $UNPACKERS; do
 case $UNPACKER in
     unrar)
         EXENAME=unrar
-        EXEDIR=
-        LICENSE=license.txt
-        BUILDTARGET=
         ;;
     7zip)
         EXENAME=7za
-        EXEDIR=bin/
-        LICENSE=DOC/License.txt
-        BUILDTARGET=$EXENAME
         ;;
 esac
 
@@ -105,37 +100,78 @@ if [ "$CLEAN" == "yes" ]; then
     rm -r -f $OUTPUTDIR/$EXENAME-*
 fi
 
-cd $ROOT/temp/$UNPACKER
 
 for TARGET in $TARGETS; do
 
     case $TARGET in
         mipsel|i?86|x86_64)
             ARCH=$TARGET
+            ENDIAN=little
             ;;
         mipseb)
             ARCH=mips
+            ENDIAN=big
             ;;
         arm*)
             ARCH=arm
+            ENDIAN=little
             ;;
         ppc*)
             ARCH=powerpc
+            ENDIAN=big
             ;;
     esac
 
     TOOLCHAIN_ROOT=$ROOT/toolchain/$TARGET
+    rm -rf "$ROOT/$BUILDDIR/$UNPACKER"
+    cd $ROOT/$BUILDDIR
+
+    case $UNPACKER in
+        unrar)
+            tar xzf unrarsrc-*.tar.gz
+            cd unrar
+            sed 's:^CXX=g++:#CXX=g++:' -i makefile
+            sed 's:^STRIP=strip:#STRIP=strip:' -i makefile
+            sed 's:^LDFLAGS=:LDFLAGS=-static :' -i makefile
+            sed 's:^CXXFLAGS=-O2:#CXXFLAGS=-O2:' -i makefile
+            if test "$ENDIAN" = "big"; then
+                sed 's:^DEFINES=:DEFINES=-DBIG_ENDIAN :' -i makefile
+            fi
+
+            EXEDIR=
+            LICENSE=license.txt
+            BUILDTARGET=
+            ;;
+        7zip)
+            tar xjf p7zip_*_src_all.tar.bz2
+            rm -rf 7zip
+            mkdir 7zip
+            mv p7zip_*/* 7zip
+            find p7zip_* -maxdepth 0 -type d -exec rm -r {} \;
+            cd 7zip
+            rm makefile.machine
+            cp makefile.linux_any_cpu_gcc_4.X makefile.machine
+            sed 's:^CXX=g++:#CXX=g++:' -i makefile.machine
+            sed 's:^CC=gcc:#CC=gcc:' -i makefile.machine
+
+            EXEDIR=bin/
+            LICENSE=DOC/License.txt
+            BUILDTARGET=$EXENAME
+            ;;
+    esac
+
+    cd $ROOT/$BUILDDIR/$UNPACKER
 
     make clean
 
     CXX=$TOOLCHAIN_ROOT/output/host/usr/bin/$ARCH-linux-g++ \
         CC=$TOOLCHAIN_ROOT/output/host/usr/bin/$ARCH-linux-gcc \
         STRIP=$TOOLCHAIN_ROOT/output/host/usr/bin/$ARCH-linux-strip \
+        CXXFLAGS=-g \
         LDFLAGS=-static \
         make $BUILDTARGET
     
     cp $EXEDIR$EXENAME ../../setup/$EXENAME-$TARGET
-
     cp $LICENSE ../../setup/license-$UNPACKER.txt
 
     echo "Completed build for $TARGET ($UNPACKER)"
