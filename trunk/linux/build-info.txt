@@ -2,7 +2,7 @@ About
 -----
 "build-nzbget" is a bash script which is used to build universal installer
 for Linux. The script compiles NZBGet for each supported CPU-architecture
-and then packs alls produced files into an installer package.
+and then packs all produced files into an installer package.
 
 Prerequisites
 -------------
@@ -54,12 +54,14 @@ This script was written to work with toolchain from uClibc's Buildroot-project.
                   - JSON/XML: libxml2;
                   - Text and terminal handling: ncurses;
          - Save configuration and exit;
-	4.6. Open file .config in the buildroot directory and activate define to
-	     build 'ubacktrace' (there are no UI option for it in nconfig);
-    4.7. Open file 'packages/ncurses/ncurses.mk' in a text editor and add
-         extra configure parameters to option 'NCURSES_CONF_OPTS‘:
-         "--with-fallbacks=xterm xterm-color xterm-256color xterm-16color linux vt100 vt200";
-	4.8. Run 'make' to build the toolchain. It may take an hour or so depending
+	4.6. Do few extra manual adjustments:
+         - in the file '.config' in the buildroot directory activate define to
+           build 'ubacktrace';
+         - in 'packages/ncurses/ncurses.mk' add extra configure parameters to
+           option 'NCURSES_CONF_OPTS‘ (without quotation marks):
+           "--with-fallbacks=xterm xterm-color xterm-256color xterm-16color linux vt100 vt200";
+         - in 'packages/openssl/openssl.mk' replace 'zlib-dynamic' with 'zlib';
+	4.7. Run 'make' to build the toolchain. It may take an hour or so depending
 	     on your hardware;
 
 5. Now you should have a working toolchain for one CPU-architecture, let's
