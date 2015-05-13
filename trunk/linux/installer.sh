@@ -264,6 +264,45 @@ Configure()
 
     if test ! -f nzbget.conf; then
         cp ./webui/nzbget.conf.template nzbget.conf
+
+        MEMFREE=`cat /proc/meminfo | sed -n 's/^MemFree: *\([0-9]*\).*/\1/p' 2>/dev/null | cat`
+        MEMCACHED=`cat /proc/meminfo | sed -n 's/^Cached: *\([0-9]*\).*/\1/p' 2>/dev/null | cat`
+        if test "$MEMFREE" != "" -a "$MEMCACHED" != ""; then
+            MEMFREE=$(((MEMFREE + MEMCACHED) / 1024))
+            Info "  Free memory detected: $MEMFREE MB"
+            if test $MEMFREE -gt 250; then
+                Info "  Activating article cache (ArticleCache=100)"
+                sed 's:^ArticleCache=.*:ArticleCache=100:' -i nzbget.conf
+                Info "  Increasing write buffer (WriteBuffer=1024)"
+                sed 's:^WriteBuffer=.*:WriteBuffer=1024:' -i nzbget.conf
+                Info "  Increasing par repair buffer (ParBuffer=100)"
+                sed 's:^ParBuffer=.*:ParBuffer=100:' -i nzbget.conf
+            elif test $MEMFREE -gt 25; then
+                Info "  Increasing write buffer (WriteBuffer=256)"
+                sed 's:^WriteBuffer=.*:WriteBuffer=256:' -i nzbget.conf
+            fi
+        fi
+
+        BOGOLIST=`cat /proc/cpuinfo | sed -n 's/^bogomips\s*:\s\([0-9]*\).*/\1/pI' 2>/dev/null | cat`
+        if test "$BOGOLIST" != ""; then
+            BOGOMIPS=0
+            for CPU1 in $BOGOLIST
+            do
+                BOGOMIPS=$((BOGOMIPS + CPU1))
+            done
+            Info "  CPU speed detected: $BOGOMIPS BogoMIPS"
+            if test $BOGOMIPS -lt 4000; then
+                Info "  Disabling download during par check/repair (ParPauseQueue=yes)"
+                sed 's:^ParPauseQueue=.*:ParPauseQueue=yes:' -i nzbget.conf
+                Info "  Disabling download during unpack (UnpackPauseQueue=yes)"
+                sed 's:^UnpackPauseQueue=.*:UnpackPauseQueue=yes:' -i nzbget.conf
+                Info "  Disabling download during post-processing (ScriptPauseQueue=yes)"
+                sed 's:^ScriptPauseQueue=.*:ScriptPauseQueue=yes:' -i nzbget.conf
+            else
+                Info "  Simultaneous download and post-processing is on"
+            fi
+        fi
+
         QUICKHELP=yes
     fi
 }
