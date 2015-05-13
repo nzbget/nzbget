@@ -159,6 +159,8 @@ fi
 
 # Building
 
+mkdir -p $OUTPUTDIR
+
 if [ "$CLEAN" == "yes" ]; then
     rm -r -f $OUTPUTDIR/*
 fi
@@ -250,12 +252,14 @@ for CONFIG in $CONFIGS; do
                     rm -r -f $OUTPUTDIR/install
 
                     # adjusting nzbget.conf
-                    sed 's:^MainDir=~/downloads:MainDir=${AppDir}/downloads:' -i $CONFTEMPLATE
-                    sed 's:^WebDir=/usr/local/share/nzbget/webui:WebDir=${AppDir}/webui:' -i $CONFTEMPLATE
-                    sed 's:^ScriptDir=${MainDir}/scripts:ScriptDir=${AppDir}/scripts:' -i $CONFTEMPLATE
-                    sed 's:^LogFile=${DestDir}/nzbget.log:LogFile=${MainDir}/nzbget.log:' -i $CONFTEMPLATE
-                    sed 's:^ConfigTemplate=/usr/local/share/nzbget/nzbget.conf:ConfigTemplate=${AppDir}/webui/nzbget.conf.template:' -i $CONFTEMPLATE
-                    sed 's:^AuthorizedIP=:AuthorizedIP=127.0.0.1:' -i $CONFTEMPLATE
+                    sed 's:^MainDir=.*:MainDir=${AppDir}/downloads:' -i $CONFTEMPLATE
+                    sed 's:^DestDir=.*:DestDir=${MainDir}/completed:' -i $CONFTEMPLATE
+                    sed 's:^InterDir=.*:InterDir=${MainDir}/intermediate:' -i $CONFTEMPLATE
+                    sed 's:^WebDir=.*:WebDir=${AppDir}/webui:' -i $CONFTEMPLATE
+                    sed 's:^ScriptDir=.*:ScriptDir=${AppDir}/scripts:' -i $CONFTEMPLATE
+                    sed 's:^LogFile=.*:LogFile=${MainDir}/nzbget.log:' -i $CONFTEMPLATE
+                    sed 's:^ConfigTemplate=.*:ConfigTemplate=${AppDir}/webui/nzbget.conf.template:' -i $CONFTEMPLATE
+                    sed 's:^AuthorizedIP=.*:AuthorizedIP=127.0.0.1:' -i $CONFTEMPLATE
 
                     tar -czf $BASENAME-bin-linux-$TARGET$SUFFIX.tar.gz nzbget
 
@@ -336,6 +340,7 @@ for CONFIG in $CONFIGS; do
             # attaching payload
             cat $INSTFILE.data >> $INSTFILE
             rm $INSTFILE.data
+            chmod +x $INSTFILE
 
             rm -r nzbget    
         fi
