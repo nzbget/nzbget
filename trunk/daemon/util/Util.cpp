@@ -1341,7 +1341,7 @@ inline int days_from_0(int year)
 }
 inline int days_from_1970(int year)
 {
-  static const int days_from_0_to_1970 = days_from_0(1970);
+  static const int days_from_0_to_1970 = 719162; // days_from_0(1970);
   return days_from_0(year) - days_from_0_to_1970;
 }
 inline int days_from_1jan(int year,int month,int day)
@@ -1380,17 +1380,17 @@ inline time_t internal_timegm(tm const *t)
   return result;
 }
 
+time_t Util::Timegm(tm const *t)
+{
+	return internal_timegm(t);
+}
+
 // prevent PC from going to sleep
 void Util::SetStandByMode(bool bStandBy)
 {
 #ifdef WIN32
 	SetThreadExecutionState((bStandBy ? 0 : ES_SYSTEM_REQUIRED) | ES_CONTINUOUS);
 #endif
-}
-
-time_t Util::Timegm(tm const *t)
-{
-	return internal_timegm(t);
 }
 
 static unsigned long crc32_tab[] = {
