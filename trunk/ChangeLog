@@ -28,6 +28,16 @@ nzbget-15.0:
           "AppData" directory;
         - the batch files nzbget-start.bat and nzbget-recovery-mode.bat are not
           needed and not installed anymore;
+  - created installer for Linux:
+        - included are precompiled binaries for the most common CPU architectures:
+          x86, ARM, MIPS and PowerPC;
+        - installer automatically detects CPU architecture of the system and
+          installs an appropriate executable;
+        - configuration file is automatically preconfigured for immediate use;
+        - installation on supported platforms has become as simple as:
+          download, run installer, start installed nzbget;
+        - installer supports automatic updates via web-interface -> settings
+          -> system - check for updates;
   - added support for password list file:
         - new option "UnpackPassFile" to set the location of the file;
         - during unpack the passwords are tried from the file until unpack
@@ -149,6 +159,16 @@ nzbget-15.0:
         - new action "HistoryMarkSuccess" in RPC-method "editqueue";
         - new subcommand "S" of command "-E H" (command line interface);
         - new status "SUCCESS/MARK" can be returned by RPC-method "history";
+  - improved support for update-scripts:
+        - all command line parameters used to launch nzbget are passed to the
+          script in env vars NZBUP_CMDLINEX, where X is a parameter number
+          starting with 0;
+        - if the path to update-script defined in package-info.json does not
+          start with slash the path is considered being relative to application
+          directory;
+        - new env var NZBUP_RUNMODE (DAEMON, SERVER) is passed to the script;
+        - fixed: env var NZBUP_PROCESSID had wrong value (ID of the parent
+          process instead of the nzbget process);
   - added button "Test Connection" to make a news server connection test from
     web-interface;
   - renamed option "CreateBrokenLog" to "BrokenLog"; the old option name is
@@ -175,7 +195,9 @@ nzbget-15.0:
   - improved connection handling when fetching nzb-files and rss feeds; do not
     print warning "Content-Length is not submitted by server..." anymore;
   - download speed in context menu of menubar icon is now shown in MB/s instead
-    of KB/s (for speeds from 1 MB/s) (Mac OS X only);  
+    of KB/s (for speeds from 1 MB/s) (Mac OS X only);
+  - configuration file nzbget.conf is now also searched in the app-directory on
+    all platforms (for easier installation);
   - removed shell script "nzbgetd" which were used to control nzbget as a
     service; modern systems manage services in a diffreent way and do not
     require that old script anymore;
@@ -183,7 +205,11 @@ nzbget-15.0:
     (--enable-debug); it conflicted with cross-compiling and did not allow to
     pass extra options via CXXFLAGS; required debug options must be passed via
     CXXFLAGS now (for example for gcc: CXXFLAGS=-g ./configure --enable-debug);
+  - disabled unnecessary assert-statements in par2-module when building in
+    release mode;
   - fixed: parsing of RPC-parameters passed via URL were sometimes incorrect;
+  - fixed: lowercase hex digits were not correctly parsed in URLs passed to
+    RPC-API method "append";
   - fixed: in JSON-RPC the request-id was not transfered back in the response as
     required by JSON-RPC specification;
   - fixed: par-check in full verification mode (not in quick mode) could not
