@@ -1,7 +1,7 @@
 #
 #  This file is part of nzbget
 #
-# Copyright (C) 2008-2014 Andrey Prygunkov <hugbug@users.sourceforge.net>
+# Copyright (C) 2008-2015 Andrey Prygunkov <hugbug@users.sourceforge.net>
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -25,7 +25,7 @@
 AC_PREREQ(2.59)
 AC_INIT(nzbget, 15.0, hugbug@users.sourceforge.net)
 AC_CANONICAL_SYSTEM
-AM_INIT_AUTOMAKE(nzbget, 15.0-testing)
+AM_INIT_AUTOMAKE(nzbget, 15.0)
 AC_CONFIG_SRCDIR([daemon/main/nzbget.cpp])
 AC_CONFIG_HEADERS([config.h])
 

@@ -2245,7 +2245,7 @@ fi
 
 # Define the identity of the package.
  PACKAGE=nzbget
- VERSION=15.0-testing
+ VERSION=15.0
 
 
 cat >>confdefs.h <<_ACEOF
