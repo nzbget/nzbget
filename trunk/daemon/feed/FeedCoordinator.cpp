@@ -48,9 +48,12 @@
 #include "FeedFile.h"
 #include "FeedFilter.h"
 #include "DiskState.h"
+#include "DupeCoordinator.h"
 
 extern Options* g_pOptions;
 extern DiskState* g_pDiskState;
+extern DupeCoordinator* g_pDupeCoordinator;
+
 
 FeedCoordinator::FeedCacheItem::FeedCacheItem(const char* szUrl, int iCacheTimeSec,const char* szCacheId,
 	time_t tLastUsage, FeedItemInfos* pFeedItemInfos)
@@ -68,6 +71,42 @@ FeedCoordinator::FeedCacheItem::~FeedCacheItem()
 	free(m_szUrl);
 	free(m_szCacheId);
 	m_pFeedItemInfos->Release();
+}
+
+FeedCoordinator::FilterHelper::FilterHelper()
+{
+	m_pSeasonEpisodeRegEx = NULL;
+}
+
+FeedCoordinator::FilterHelper::~FilterHelper()
+{
+	delete m_pSeasonEpisodeRegEx;
+}
+
+void FeedCoordinator::FilterHelper::CalcDupeStatus(const char* szTitle, const char* szDupeKey, char* szStatusBuf, int iBufLen)
+{
+	const char* szDupeStatusName[] = { "", "QUEUED", "DOWNLOADING", "3", "SUCCESS", "5", "6", "7", "WARNING",
+		"9", "10", "11", "12", "13", "14", "15", "FAILURE" };
+	char szStatuses[200];
+	szStatuses[0] = '\0';
+
+	DownloadQueue* pDownloadQueue = DownloadQueue::Lock();
+	DupeCoordinator::EDupeStatus eDupeStatus = g_pDupeCoordinator->GetDupeStatus(pDownloadQueue, szTitle, szDupeKey);
+	DownloadQueue::Unlock();
+
+	for (int i = 1; i <= (int)DupeCoordinator::dsFailure; i = i << 1)
+	{
+		if (eDupeStatus & i)
+		{
+			if (*szStatuses)
+			{
+				strcat(szStatuses, ",");
+			}
+			strcat(szStatuses, szDupeStatusName[i]);
+		}
+	}
+
+	strncpy(szStatusBuf, szStatuses, iBufLen);
 }
 
 FeedCoordinator::FeedCoordinator()
@@ -414,6 +453,7 @@ void FeedCoordinator::FilterFeed(FeedInfo* pFeedInfo, FeedItemInfos* pFeedItemIn
 		pFeedItemInfo->SetAddCategory(pFeedInfo->GetCategory());
 		pFeedItemInfo->SetDupeScore(0);
 		pFeedItemInfo->SetDupeMode(dmScore);
+		pFeedItemInfo->SetFeedFilterHelper(&m_FilterHelper);
 		pFeedItemInfo->BuildDupeKey(NULL, NULL);
 		if (pFeedFilter)
 		{
