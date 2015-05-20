@@ -1,3 +1,7 @@
+nzbget-16.0:
+  - please see subversion log at
+    http://sourceforge.net/p/nzbget/code/HEAD/log/?path=/trunk
+
 nzbget-15.0:
   - improved application for Windows:
         - added tray icon (near clock);
