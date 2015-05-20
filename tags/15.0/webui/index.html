@@ -1,0 +1,2621 @@
+<!DOCTYPE html>
+<!--
+ * This file is part of nzbget
+ *
+ * Copyright (C) 2012-2015 Andrey Prygunkov <hugbug@users.sourceforge.net>
+ *
+ * This program is free software; you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation; either version 2 of the License, or
+ * (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program; if not, write to the Free Software
+ * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
+ *
+ * $Revision$
+ * $Date$
+ *
+ -->
+
+<html lang="en">
+<head>
+	<meta charset="utf-8">
+	<title>NZBGet</title>
+	<meta name="description" content="NZBGet web-interface">
+	<meta name="author" content="Andrey Prygunkov (hugbug@users.sourceforge.net)">
+
+	<!-- Mobile settings -->
+	<meta name="viewport" content="initial-scale=1.0, user-scalable=yes" />
+	<meta name="apple-mobile-web-app-capable" content="yes" />
+	<meta name="apple-mobile-web-app-status-bar-style" content="black" />
+
+	<!-- Libraries -->
+	<script language="javascript" type="text/javascript" src="lib/jquery.min.js"></script>
+	<script language="javascript" type="text/javascript" src="lib/bootstrap.min.js"></script>
+	<script language="javascript" type="text/javascript" src="lib/raphael.min.js"></script>
+	<script language="javascript" type="text/javascript" src="lib/elycharts.min.js"></script>
+
+	<!-- NZBGet -->
+	<script language="javascript" type="text/javascript" src="fasttable.js"></script>
+	<script language="javascript" type="text/javascript" src="index.js"></script>
+	<script language="javascript" type="text/javascript" src="util.js"></script>
+	<script language="javascript" type="text/javascript" src="downloads.js"></script>
+	<script language="javascript" type="text/javascript" src="edit.js"></script>
+	<script language="javascript" type="text/javascript" src="status.js"></script>
+	<script language="javascript" type="text/javascript" src="messages.js"></script>
+	<script language="javascript" type="text/javascript" src="history.js"></script>
+	<script language="javascript" type="text/javascript" src="upload.js"></script>
+	<script language="javascript" type="text/javascript" src="config.js"></script>
+	<script language="javascript" type="text/javascript" src="feed.js"></script>
+
+	<style>.hide{display:none;}</style>
+	<link rel="stylesheet" type="text/css" href="lib/bootstrap.css" />
+	<link rel="stylesheet" type="text/css" href="style.css" />
+
+	<!-- fav and touch icons -->
+	<link rel="shortcut icon" href="img/favicon.ico">
+	<!--
+	<link rel="apple-touch-icon-precomposed" sizes="144x144" href="images/apple-touch-icon-144-precomposed.png">
+	<link rel="apple-touch-icon-precomposed" sizes="114x114" href="images/apple-touch-icon-114-precomposed.png">
+	<link rel="apple-touch-icon-precomposed" sizes="72x72" href="images/apple-touch-icon-72-precomposed.png">
+	<link rel="apple-touch-icon-precomposed" href="images/apple-touch-icon-57-precomposed.png">
+	-->
+</head>
+
+<body>
+
+<!-- *** NAVBAR ************************************************************ -->
+
+<div class="navbar navbar-fixed-top" id="Navbar" style="display:none;">
+	<div class="navbar-inner">
+
+		<div class="container-fluid navbar-container" id="NavbarContainer">
+
+			<!-- LOGO -->
+			<div id="Logo" data-toggle="modal" href="#InfoDialog"><i class="img-logo"></i></div>
+
+			<!-- PLAY/PAUSE-BUTTON -->
+			<div id="PlayBlock">
+				<div id="PlayPauseBg"><div class="img-download-bg"></div></div>
+				<div id="PlayButton" class="img-download-orange" style="display:none;">
+					<div class="PlayBlockInner" onclick="Status.playClick()" title="Download paused (click to resume)">
+						<div class="img-download-btn"></div>
+					</div>
+				</div>
+				<div id="PauseButton" class="img-download-green">
+					<div class="PlayBlockInner" onclick="Status.playClick()" title="Download active (click to pause)">
+						<div class="img-download-btn"></div>
+					</div>
+				</div>
+				<div id="PlayAnimation" style="display:none;" onclick="Status.playClick()"></div>
+				<div id="PlayCaretBlock">
+					<button id="PlayCaretButton" class="dropdown-toggle" data-toggle="dropdown"><span id="PlayCaret" class="caret"></span></button>
+					<ul class="dropdown-menu menu-check" id="PlayMenu">
+						<li class="menu-header">Pause activities</li>
+						<li><a href="#" onclick="Status.pauseClick('download')"><table><tr><td><i class="icon-ok" id="CHPauseDownload"></td><td>Pause Download</td></tr></table></a></li>
+						<li><a href="#" onclick="Status.pauseClick('post')"><table><tr><td><i class="icon-ok" id="CHPausePostProcess"></td><td>Pause Post-Processing</td></tr></table></a></li>
+						<li><a href="#" onclick="Status.pauseClick('scan')"><table><tr><td><i class="icon-ok" id="CHPauseScan"></td><td>Pause NZB Scan</td></tr></table></a></li>
+						<li class="divider"></li>
+						<li class="menu-header">Pause for</li>
+						<li><a href="#" onclick="Status.scheduledPauseClick(30*60)"><table><tr><td></td><td>30 Minutes</td></tr></table></a></li>
+						<li><a href="#" onclick="Status.scheduledPauseClick(3*60*60)"><table><tr><td></td><td>3 Hours</td></tr></table></a></li>
+						<li><a href="#" onclick="Status.scheduledPauseDialogClick()"><table><tr><td></td><td>Custom...</td></tr></table></a></li>
+						<li class="divider"></li>
+						<li><a data-toggle="modal" href="#PauseHelp"><table><tr><td></td><td>Quick Help</td></tr></table></a></li>
+					</ul>
+				</div>
+			</div>
+
+			<!-- SPEED/TIME -->
+			<div id="InfoBlock">
+				<div href="#" onclick="LimitDialog.showModal()" title="Current speed (click to set speed limit)"><i class="icon-plane" id="StatusSpeedIcon"></i> <span id="StatusSpeed">--- KB/s</span></div>
+				<div href="#" onclick="Status.statDialogClick()" title="Remaining time (click for more statistics)"><i class="icon-time" id="StatusTimeIcon"></i> <span id="StatusTime">--h --m</span></div>
+			</div>
+
+			<!-- REFRESH MENU -->
+			<div id="RefreshBlockDesktop" class="pull-right phone-hide">
+				<div class="btn-toolbar" id="RefreshBlock">
+					<div class="btn-group">
+						<button class="btn btn-inverse" id="RefreshButton"><i class="icon-refresh" id="RefreshAnimation"></i></button>
+						<button class="btn btn-inverse dropdown-toggle" data-toggle="dropdown"><span class="caret"></span></button>
+						<ul class="dropdown-menu menu-refresh" id="RefreshMenu">
+							<li class="menu-header">Automatic refresh</li>
+							<li data="0.1"><a href="#"><table><tr><td></td><td>0.1</td><td>Second</td></tr></table></a></li>
+							<li data="0.2"><a href="#"><table><tr><td></td><td>0.2</td><td>Second</td></tr></table></a></li>
+							<li data="0.5"><a href="#"><table><tr><td></td><td>0.5</td><td>Second</td></tr></table></a></li>
+							<li data="1"><a href="#"><table><tr><td></td><td>1</td><td>Second</td></tr></table></a></li>
+							<li data="5"><a href="#"><table><tr><td></td><td>5</td><td>Seconds</td></tr></table></a></li>
+							<li data="15"><a href="#"><table><tr><td></td><td>15</td><td>Seconds</td></tr></table></a></li>
+							<li data="30"><a href="#"><table><tr><td></td><td>30</td><td>Seconds</td></tr></table></a></li>
+							<li data="60"><a href="#"><table><tr><td></td><td>1</td><td>Minute</td></tr></table></a></li>
+							<li data="0"><a href="#"><table><tr><td></td><td style="width:0"></td><td>Off</td></tr></table></a></li>
+							<li data="mark" style="display: none;"><i class="icon-ok"></i></li>
+						</ul>
+					</div>
+				</div>
+			</div>
+
+			<!-- SEARCH -->
+			<div class="btn-toolbar pull-right" id="SearchBlock">
+				<div class="navbar-search" style="display: none;">
+					<input id="DownloadsTable_filter" class="search-query" type="text" placeholder="Search downloads">
+					<i id="DownloadsTable_clearfilter" class="icon-remove-white search-clear" title="Clear"></i>
+
+					<input id="HistoryTable_filter" class="search-query" type="text" placeholder="Search history">
+					<i id="HistoryTable_clearfilter" class="icon-remove-white search-clear" title="Clear"></i>
+
+					<input id="MessagesTable_filter" class="search-query" type="text" placeholder="Search messages">
+					<i id="MessagesTable_clearfilter" class="icon-remove-white search-clear" title="Clear"></i>
+
+					<input id="ConfigTable_filter" class="search-query" type="text" placeholder="Search settings">
+					<i id="ConfigTable_clearfilter" class="icon-remove-white search-clear" title="Clear"></i>
+				</div>
+			</div>
+
+			<!-- TABS -->
+			<div class="nav" id="NavLinks">
+				<ul class="nav">
+					<li class="active"><a data-toggle="tab" href="#DownloadsTab" id="DownloadsTabLink"><span class="phone-hide">Downloads </span><i class="icon-downloads-white phone-only inline"></i><br class="phone-only"><span class="badge" id="DownloadsTabBadge" style="display: none;"></span><span class="badge badge-empty" id="DownloadsTabBadgeEmpty">&nbsp;</span></a></li>
+					<li><a data-toggle="tab" href="#HistoryTab" id="HistoryTabLink"><span class="phone-hide">History </span><i class="icon-history-white phone-only inline"></i><br class="phone-only"><span class="badge" id="HistoryTabBadge" style="display: none;"></span><span class="badge badge-empty" id="HistoryTabBadgeEmpty">&nbsp;</span></a></li>
+					<li><a data-toggle="tab" href="#MessagesTab" id="MessagesTabLink"><span class="phone-hide">Messages </span><i class="icon-messages-white phone-only inline"></i><br class="phone-only"><span class="badge" id="MessagesTabBadge" style="display: none;"></span><span class="badge badge-empty" id="MessagesTabBadgeEmpty">&nbsp;</span></a></li>
+					<li><a data-toggle="tab" href="#ConfigTab" id="ConfigTabLink"><span class="phone-hide">Settings </span><i class="icon-settings-white phone-only inline"></i><br class="phone-only"><span class="badge" id="ConfigTabBadge" style="display: none;"></span><span class="phone-only"><span class="badge badge-empty" id="ConfigTabBadgeEmpty">&nbsp;</span></span></a></li>
+				</ul>
+			</div>
+
+			<!-- REFRESH MENU PLACE IN MINI-THEME -->
+			<div id="RefreshBlockPhone" class="pull-right phone-only">
+			</div>
+
+		</div>
+	</div>
+</div>
+
+<!-- *** ERROR BLOCK  ****************************************************************** -->
+<div class="alert alert-danger alert-block" style="display:none; margin-bottom:25px;" id="ErrorAlert">
+	<h4 class="alert-heading" id="ErrorAlert-title">Communication error!</h4>
+	<p id="ErrorAlert-text"></p>
+</div>
+
+<!-- *** ERROR BLOCK  ****************************************************************** -->
+<div id="RefreshError" data-duration="1000" style="display:none" class="alert alert-inverse alert-center alert-center-small hide">
+    <strong>Communication error, retrying...</strong>
+</div>
+
+<!-- *** INIT LOADING-ALERT ************************************************************ -->
+<div class="alert alert-info alert-block" id="FirstUpdateInfo">
+	<h4 class="alert-heading">Loading...</h4>
+	Please wait.
+</div>
+
+<!-- *** UNSUPPORTED BROWSER: IE < 9 *************************************************** -->
+<div class="alert alert-danger alert-block unsupported-browser" style="display:none;" id="UnsupportedBrowserIE8Alert">
+	<h4 class="alert-heading">Unsupported browser!</h4>
+	<p>Sorry but this application doesn't work with Internet Explorer versions below 9. Please
+	upgrade to at least IE 9 or use another browser.</p>
+	<p>If you believe you are getting this message by mistake, please check
+	whether the compatibility mode is active in IE and switch it off to activate
+	all browser functionality required for the application.</p>
+</div>
+
+<!-- *** CONTENT ************************************************************ -->
+
+<div class="container-fluid" id="MainContent">
+
+	<div class="tab-content" style="display:none;" id="MainTabContent">
+
+<!-- *** DOWNLOADS ************************************************************ -->
+
+		<div id="DownloadsTab" class="tab-pane fade in active">
+
+			<!-- *** DOWNLOADS: TOOLBAR -->
+
+			<div class="btn-toolbar form-inline section-toolbar" id="DownloadsToolbar">
+
+				<!-- ADD BUTTON -->
+				<div class="btn-group" id="TBAddButton">
+					<button class="btn" onclick="Upload.addClick()" title="Add nzb-files"><i class="icon-plus"></i><span class="btn-caption"> Add</span></button>
+				</div>
+
+				<!-- NZB-ACTIONS BUTTONS -->
+				<div class="btn-group phone-hide">
+					<button class="btn" onclick="Downloads.editClick()" title="Edit selected nzb-files"><i class="icon-edit"></i><span class="btn-caption"> Edit</span></button>
+					<button class="btn" onclick="Downloads.mergeClick()" title="Merge selected nzb-files"><i class="icon-merge"></i><span class="btn-caption"> Merge</span></button>
+					<button class="btn" onclick="Downloads.pauseClick()" title="Pause selected nzb-files"><i class="icon-pause"></i><span class="btn-caption"> Pause</span></button>
+					<button class="btn" onclick="Downloads.resumeClick()" title="Resume selected nzb-files"><i class="icon-play"></i><span class="btn-caption"> Resume</span></button>
+					<button class="btn" onclick="Downloads.deleteClick()" title="Delete selected nzb-files"><i class="icon-trash"></i><span class="btn-caption"> Delete</span></button>
+				</div>
+				<div class="btn-group phone-only inline"><button class="btn" onclick="Downloads.editClick()" title="Edit selected nzb-files"><i class="icon-edit"></i><span class="btn-caption"> Edit</span></button></div>
+				<div class="btn-group phone-only inline"><button class="btn" onclick="Downloads.mergeClick()" title="Merge selected nzb-files"><i class="icon-merge"></i><span class="btn-caption"> Merge</span></button></div>
+				<div class="btn-group phone-only inline"><button class="btn" onclick="Downloads.pauseClick()" title="Pause selected nzb-files"><i class="icon-pause"></i><span class="btn-caption"> Pause</span></button></div>
+				<div class="btn-group phone-only inline"><button class="btn" onclick="Downloads.resumeClick()" title="Resume selected nzb-files"><i class="icon-play"></i><span class="btn-caption"> Resume</span></button></div>
+				<div class="btn-group phone-only inline"><button class="btn" onclick="Downloads.deleteClick()" title="Delete selected nzb-files"><i class="icon-trash"></i><span class="btn-caption"> Delete</span></button></div>
+
+				<!-- MOVE BUTTONS -->
+				<div class="btn-group phone-hide">
+					<button class="btn" onclick="Downloads.moveClick('top')" title="Move selected nzb-files to the top"><i class="icon-top"></i></button>
+					<button class="btn" onclick="Downloads.moveClick('up')" title="Move selected nzb-files up"><i class="icon-up"></i></button>
+					<button class="btn" onclick="Downloads.moveClick('down')" title="Move selected nzb-files down"><i class="icon-down"></i></button>
+					<button class="btn" onclick="Downloads.moveClick('bottom')" title="Move selected nzb-files to the bottom"><i class="icon-bottom"></i></button>
+				</div>
+				<div class="btn-group phone-only inline"><button class="btn" onclick="Downloads.moveClick('top')" title="Move selected nzb-files to the top"><i class="icon-top"></i></button></div>
+				<div class="btn-group phone-only inline"><button class="btn" onclick="Downloads.moveClick('up')" title="Move selected nzb-files up"><i class="icon-up"></i></button></div>
+				<div class="btn-group phone-only inline"><button class="btn" onclick="Downloads.moveClick('down')" title="Move selected nzb-files down"><i class="icon-down"></i></button></div>
+				<div class="btn-group phone-only inline"><button class="btn" onclick="Downloads.moveClick('bottom')" title="Move selected nzb-files to the bottom"><i class="icon-bottom"></i></button></div>
+
+				<div class="btn-group" id="RssMenuBlock">
+					<button class="btn dropdown-toggle" data-toggle="dropdown" title="RSS Feeds"><i class="icon-rss"></i><span class="btn-caption"> Feeds </span><span class="phone-only inline">&nbsp;</span><span class="caret"></span></button>
+					<ul class="dropdown-menu" id="RssMenu">
+						<li class="menu-header">RSS Feeds</li>
+						<li class="feed-menu-template hide"><a href="#" title="Show feed"><table><tr><td><span></span></td><td><button class="btn btn-primary" title="Fetch feed">Fetch</button></td></tr></table></a></li>
+						<li class="divider" id="RssMenu_Divider"></li>
+						<li><a href="#" onclick="Feeds.fetchAll()">Fetch All Feeds</a></li>
+					</ul>
+				</div>
+
+				<div class="btn-group phone-only inline" id="DownloadsRecordsPerPageBlockPhone">
+				</div>
+
+			</div>
+
+<!-- *** DOWNLOADS: TABLE -->
+
+			<div class="form-inline toolbox-top clearfix" id="DownloadsTableTopBlock">
+				<div class="pull-left toolbox-length" id="DownloadsRecordsPerPageBlock">
+					<select size="1" id="DownloadsRecordsPerPage" onchange="Downloads.recordsPerPageChange()">
+						<option value="5">5</option>
+						<option selected="selected" value="10">10</option>
+						<option value="15">15</option>
+						<option value="20">20</option>
+						<option value="30">30</option>
+						<option value="50">50</option>
+						<option value="100">100</option>
+					</select><span class="records-label"> records per page</span>
+				</div>
+
+				<div class="pagination pull-right"><ul id="DownloadsTable_pager"></ul></div>
+			</div>
+
+			<table class="table table-striped table-bordered table-check table-cancheck datatable" id="DownloadsTable">
+				<thead>
+					<tr>
+						<th><div class="check img-check"></div></th>
+						<th width="95px">Status</th>
+						<th id="DownloadsTable_Name"><a href="#" onclick="Downloads.sort('name')">Name</a></th>
+						<th id="DownloadsTable_Category"><a href="#" onclick="Downloads.sort('category')">Category</a></th>
+						<th width="30px" class="text-right"><a href="#" onclick="Downloads.sort('age')">Age</a></th>
+						<th width="120px"><div style="float:left; position:relative; width:50%; text-align:left;"><a href="#"onclick="Downloads.sort('size')">Size</a></div><div style="float:right; position:relative; width:50%; text-align:right;"><a href="#" onclick="Downloads.sort('left')">Left</a></div></th>
+						<th width="58px" class="text-right">Est. Time</th>
+					</tr>
+				</thead>
+				<tbody></tbody>
+			</table>
+
+			<div class="toolbox-info clearfix">
+				<div id="DownloadsTable_info"></div>
+			</div>
+
+			<div class="alert alert-info alert-block hide" style="margin-top:-15px;" id="DownloadQueueEmpty">
+				<h4 class="alert-heading">Download queue is empty.</h4>
+				 To add downloads click Add button or put nzb-files into incoming nzb-directory (option <em>NzbDir</em>).
+			</div>
+
+			<br>
+		</div>
+
+<!-- *** HISTORY ************************************************************ -->
+
+		<div id="HistoryTab" class="tab-pane fade">
+
+<!-- *** HISTORY: TOOLBAR -->
+
+			<div class="btn-toolbar form-inline section-toolbar" id ="HistoryTab_Toolbar">
+				<div class="btn-group">
+					<button class="btn" onclick="History.actionClick('DELETE')" title="Delete selected records"><i class="icon-trash"></i><span class="btn-caption"> Delete</span></button>
+					<button class="btn dropdown-toggle" data-toggle="dropdown" title="More actions"><span class="btn-caption"> More </span><span class="phone-only inline">&nbsp;</span><span class="caret"></span></button>
+					<ul class="dropdown-menu">
+						<li class="menu-header">Actions</li>
+						<li><a href="#" id="HistoryTab_Reprocess" onclick="History.actionClick('REPROCESS')"><i class="icon-process"></i> Post-Process Again</a></li>
+						<li><a href="#" id="HistoryTab_Redownload" onclick="History.actionClick('REDOWNLOAD')"><i class="icon-downloads"></i> Download Again</a></li>
+						<li><a href="#" id="HistoryTab_MarkSuccess" onclick="History.actionClick('MARKSUCCESS')"><i class="icon-ok"></i> Mark as Success</a></li>
+						<li><a href="#" id="HistoryTab_MarkGood" onclick="History.actionClick('MARKGOOD')"><i class="icon-plus"></i> Mark as Good</a></li>
+						<li><a href="#" id="HistoryTab_MarkBad" onclick="History.actionClick('MARKBAD')"><i class="icon-minus"></i> Mark as Bad</a></li>
+					</ul>
+				</div>
+				
+				<!-- STATUS FILTER BUTTONS -->
+				<div class="btn-group phone-hide">
+					<button class="btn history-filter btn-inverse" onclick="History.filter('ALL')" title="Show All">All &nbsp;<span class="badge badge-active" id="History_Badge_ALL">?</span></button>
+					<button class="btn history-filter" onclick="History.filter('SUCCESS')" title="Show only Success">Success &nbsp;<span class="badge" id="History_Badge_SUCCESS">?</span></button>
+					<button class="btn history-filter" onclick="History.filter('FAILURE')" title="Show only Failure">Failure &nbsp;<span class="badge" id="History_Badge_FAILURE">?</span></button>
+					<button class="btn history-filter" onclick="History.filter('DELETED')" title="Show only Warning">Deleted &nbsp;<span class="badge" id="History_Badge_DELETED">?</span></button>
+					<button class="btn history-filter" onclick="History.filter('DUPE')" title="Show only Dupe">Dupe &nbsp;<span class="badge" id="History_Badge_DUPE">?</span></button>
+				</div>
+				<div class="btn-group phone-only inline"><button class="btn history-filter btn-inverse" onclick="History.filter('ALL')" title="Show All">A &nbsp;<span class="badge badge-active" id="History_Badge_ALL2">?</span></button></div>
+				<div class="btn-group phone-only inline"><button class="btn history-filter" onclick="History.filter('SUCCESS')" title="Show only Success">S &nbsp;<span class="badge" id="History_Badge_SUCCESS2">?</span></button></div>
+				<div class="btn-group phone-only inline"><button class="btn history-filter" onclick="History.filter('FAILURE')" title="Show only Failure">F &nbsp;<span class="badge" id="History_Badge_FAILURE2">?</span></button></div>
+				<div class="btn-group phone-only inline"><button class="btn history-filter" onclick="History.filter('DELETED')" title="Show only Warning">D &nbsp;<span class="badge" id="History_Badge_DELETED2">?</span></button></div>
+				<div class="btn-group phone-only inline"><button class="btn history-filter" onclick="History.filter('DUPE')" title="Show only Dupe">U &nbsp;<span class="badge" id="History_Badge_DUPE2">?</span></button></div>
+				
+				<div class="btn-group">
+					<button class="btn" id="History_Dup" onclick="History.dupClick()" title="Show hidden records kept for duplicate check"><i class="icon-mask" id="History_DupIcon"></i><span class="btn-caption"> Hidden</span></button>
+				</div>
+
+				<div class="btn-group phone-only inline" id="HistoryRecordsPerPageBlockPhone">
+				</div>
+
+			</div>
+
+<!-- *** HISTORY: TABLE -->
+
+			<div class="form-inline toolbox-top clearfix" id="HistoryTableTopBlock">
+				<div class="pull-left toolbox-length" id="HistoryRecordsPerPageBlock">
+					<select size="1" id="HistoryRecordsPerPage" onchange="History.recordsPerPageChange()">
+						<option value="5">5</option>
+						<option selected="selected" value="10">10</option>
+						<option value="15">15</option>
+						<option value="20">20</option>
+						<option value="30">30</option>
+						<option value="50">50</option>
+						<option value="100">100</option>
+					</select><span class="records-label"> records per page</span>
+				</div>
+
+				<div class="pagination pull-right"><ul id="HistoryTable_pager"></ul></div>
+			</div>
+
+			<table class="table table-striped table-bordered table-check table-cancheck datatable" id="HistoryTable">
+				<thead><tr>
+					<th><div class="check img-check"></div></th>
+					<th width="75px">Status</th>
+					<th width="170px" class="text-center">Time</th>
+					<th>Name</th>
+					<th id="HistoryTable_Category">Category</th>
+					<th width="30px" class="text-right">Age</th>
+					<th width="70px" class="text-right">Size</th>
+				</tr></thead>
+				<tbody></tbody>
+			</table>
+
+			<div class="toolbox-info clearfix">
+				<div id="HistoryTable_info"></div>
+			</div>
+
+			<br>
+		</div>
+
+<!-- *** MESSAGES ************************************************************ -->
+
+		<div id="MessagesTab" class="tab-pane fade">
+
+<!-- *** MESSAGES: TOOLBAR -->
+
+			<div class="btn-toolbar form-inline section-toolbar" id ="MessagesTab_Toolbar">
+
+				<!-- EDIT BUTTONS -->
+				<div class="btn-group">
+					<button class="btn" onclick="Messages.clearClick()" title="Delete all messages"><i class="icon-trash"></i> <span class="btn-caption">Clear</span></button>
+				</div>
+
+				<!-- KIND FILTER BUTTONS -->
+				<div class="btn-group phone-hide">
+					<button class="btn btn-inverse" onclick="Messages.filter('ALL')" title="Show All">All &nbsp;<span class="badge badge-active" id="Messages_Badge_ALL">?</span></button>
+					<button class="btn" onclick="Messages.filter('DETAIL')" title="Show only Detail">Detail &nbsp;<span class="badge" id="Messages_Badge_DETAIL">?</span></button>
+					<button class="btn" onclick="Messages.filter('INFO')" title="Show only Info">Info &nbsp;<span class="badge" id="Messages_Badge_INFO">?</span></button>
+					<button class="btn" onclick="Messages.filter('WARNING')" title="Show only Warning">Warning &nbsp;<span class="badge" id="Messages_Badge_WARNING">?</span></button>
+					<button class="btn" onclick="Messages.filter('ERROR')" title="Show only Error">Error &nbsp;<span class="badge" id="Messages_Badge_ERROR">?</span></button>
+				</div>
+				<div class="btn-group phone-only inline"><button class="btn btn-inverse" onclick="Messages.filter('ALL')" title="Show All">A &nbsp;<span class="badge badge-active" id="Messages_Badge_ALL2">?</span></button></div>
+				<div class="btn-group phone-only inline"><button class="btn" onclick="Messages.filter('DETAIL')" title="Show only Detail">D &nbsp;<span class="badge" id="Messages_Badge_DETAIL2">?</span></button></div>
+				<div class="btn-group phone-only inline"><button class="btn" onclick="Messages.filter('INFO')" title="Show only Info">I &nbsp;<span class="badge" id="Messages_Badge_INFO2">?</span></button></div>
+				<div class="btn-group phone-only inline"><button class="btn" onclick="Messages.filter('WARNING')" title="Show only Warning">W &nbsp;<span class="badge" id="Messages_Badge_WARNING2">?</span></button></div>
+				<div class="btn-group phone-only inline"><button class="btn" onclick="Messages.filter('ERROR')" title="Show only Error">E &nbsp;<span class="badge" id="Messages_Badge_ERROR2">?</span></button></div>
+
+				<div class="btn-group phone-only inline" id="MessagesRecordsPerPageBlockPhone">
+				</div>
+
+			</div>
+
+<!-- *** MESSAGES: TABLE -->
+
+			<div class="form-inline toolbox-top clearfix" id="MessagesTableTopBlock">
+				<div class="pull-left toolbox-length" id="MessagesRecordsPerPageBlock">
+					<select size="1" id="MessagesRecordsPerPage" onchange="Messages.recordsPerPageChange()">
+						<option value="5">5</option>
+						<option selected="selected" value="10">10</option>
+						<option value="15">15</option>
+						<option value="20">20</option>
+						<option value="30">30</option>
+						<option value="50">50</option>
+						<option value="100">100</option>
+						<option value="1000">1000</option>
+					</select><span class="records-label"> records per page</span>
+				</div>
+
+				<div class="pagination pull-right"><ul id="MessagesTable_pager"></ul></div>
+			</div>
+
+			<table class="table table-striped table-bordered datatable" id="MessagesTable">
+				<thead><tr>
+					<th width="60px">Kind</th>
+					<th width="170px" class="text-center">Time</th>
+					<th>Text</th>
+				</tr></thead>
+				<tbody></tbody>
+			</table>
+
+			<div class="toolbox-info clearfix">
+				<div id="MessagesTable_info"></div>
+			</div>
+
+			<br>
+		</div>
+
+<!-- *** CONFIG ************************************************************ -->
+
+		<div id="ConfigTab" class="tab-pane fade">
+
+			<div id="ConfigTabData">
+				<div class="alert alert-info alert-block" id="ConfigLoadInfo">
+					<h4 class="alert-heading">Loading configuration...</h4>
+					Please wait.
+				</div>
+				<div class="alert alert-error alert-block hide" id="ConfigLoadServerTemplateError">
+					<h4 class="alert-heading">Loading configuration failed</h4>
+					Could not load template configuration file <em>nzbget.conf</em>. The file contains descriptions of options
+					and is needed to display settings page. The file comes with NZBGet distribution archive and is usually
+					automaically installed into the right location. This seems not to be a case with your installation though.<br><br>
+
+					<span id="ConfigLoadServerTemplateErrorEmpty">Please put the template configuration file <em>nzbget.conf</em> into the
+					directory with web-interface files (<em><span id="ConfigLoadServerTemplateErrorWebDir"></span></em>).</span>
+
+					<span id="ConfigLoadServerTemplateErrorNotFound">Please edit your configuration file
+					(<em><span id="ConfigLoadServerTemplateErrorConfigFile"></span></em>) in a text editor
+					and set the option <em>ConfigTemplate</em> to point to the template configuration file <em>nzbget.conf</em>.</span>
+				</div>
+				<div class="alert alert-error alert-block hide" id="ConfigLoadError">
+					<h4 class="alert-heading">Loading configuration failed</h4>
+					<em id="ConfigLoadErrorText"></em>.
+				</div>
+				<div class="hide" id="ConfigSaved">
+					<div class="alert alert-success alert-block">
+						<h4 class="alert-heading">Configuration has been saved successfully</h4>
+						<p id="ConfigSaved_Reload">For changes to have effect NZBGet must be reloaded (soft-restart).<br><br>
+						TIP: You can reload anytime later in section <em><strong>SYSTEM</strong></em> on settings page.</p>
+					</div>
+					<button type="button" class="btn btn-primary" id="ConfigReload" onclick="Config.reload()">Reload NZBGet</button>
+				</div>
+
+				<div id="ConfigContent">
+
+					<div class="row-fluid">
+						<div class="span3">
+							<ul class="nav nav-list" id="ConfigNav">
+							<li class="config-static"><a href="#Config-Info">INFO</a></li>
+							<li class="config-static"><a href="#Config-System">SYSTEM</a></li>
+							</ul>
+						</div>
+
+						<div class="span9">
+							<div>
+
+								<div class="config-header clearfix">
+									<div class="pull-left" id="ConfigTitle">INFO: SETTINGS</div>
+									<div class="btn-group pull-right">
+										<a class="btn dropdown-toggle" id="Config_ViewButton" data-toggle="dropdown">View <span class="caret"></span></a>
+										<ul class="dropdown-menu footer-button-menu" id="Config_ViewMenu">
+											<li class="menu-header">View Options</li>
+											<li><a href="#" id="Config_ViewCompact" onclick="Config.viewMode()"><i class="icon-ok"></i> Compact Mode</a></li>
+										</ul>
+									</div>
+								</div>
+
+								<div id="ConfigInfo">
+									<p>
+									On this page you can review and change settings. When you done with changes click
+									<em><strong>Save all changes</strong></em>, which saves the changes made in all sections.
+									It's not necessary to save changes in each section individually.
+									</p>
+
+									<h4>NZBGet settings</h4>
+									<p>
+									When you configure NZBGet for the first time you need
+									to check at least the option <a class="option" href="#" data-category="S" onclick="Config.scrollToOption(event, this)">MainDir</a> and configure one news server.
+									</p>
+									<p>
+									There are many configuration options affecting performance. If you use
+									NZBGet on a computer with limited capabilities, such as NAS, media player,
+									router, etc. you should take your time to configure NZBGet for best
+									performance - see <a href="http://nzbget.net/Performance_tips">Performance tips</a>.
+									</p>
+
+									<h4>Extension scripts settings</h4>
+									<p>
+									When NZBGet finishes download of a nzb-file it can execute post-processing scripts for further processing (e-mail notification, etc.). 
+									To configure scripts use options in section <em><strong>EXTENSION SCRIPTS</strong></em>.
+									</p>
+									<p>
+									If your scripts define own options they are also shown here and can be configured like NZBGets built-in options.
+									</p>
+
+									<h4>Backup and restore settings</h4>
+									<p>
+									This can be done in section <em><strong>SYSTEM</strong></em>.
+									</p>
+								</div>
+
+								<div>
+									<div class="form-horizontal">
+										<fieldset id="ConfigData">
+
+											<!-- *** SYSTEM -->
+											<div class="control-group config-static config-system">
+												<label class="control-label nowrap">Reload NZBGet</label>
+												<div class="controls">
+													<button type="button" class="btn btn-danger" onclick="Config.reloadConfirm()">Reload</button>
+													<p class="help-block">
+													<span class="help-option-title">Reload configuration and reinitialize the program.</span><br><br>
+													If the configuration file was edited externaly (in a texteditor) or you have not reloaded NZBGet directly after saving the changes in web-interface you can do this here.
+													</p>
+												</div>
+											</div>
+
+											<div class="control-group config-static config-system">
+												<label class="control-label nowrap">Shutdown NZBGet</label>
+												<div class="controls">
+													<button type="button" class="btn btn-danger" onclick="Config.shutdownConfirm()">Shutdown</button>
+													<p class="help-block">
+													<span class="help-option-title">Stop the program.</span><br><br>
+													There is no way to start the program again from web-interface. Make sure you know how to do this.
+													</p>
+												</div>
+											</div>
+
+											<div class="control-group config-static config-system">
+												<label class="control-label nowrap">Backup Settings</label>
+												<div class="controls">
+													<button type="button" class="btn" onclick="ConfigBackupRestore.backupSettings()">Backup</button>
+													<p class="help-block">
+													<span class="help-option-title">Save settings to a local file.</span><br><br>
+													Export all settings for backup purpose.
+													<span id="ConfigBackupSafariNote"><br><br>
+													<span class="label label-warning">NOTE:</span>
+													This works with all major browsers except Safari (tested with 6.0.4; may work with newer versions).</span>
+													</p>
+												</div>
+											</div>
+
+											<div class="control-group config-static config-system">
+												<label class="control-label nowrap">Restore Settings</label>
+												<div class="controls">
+													<button type="button" class="btn" onclick="ConfigBackupRestore.restoreSettings()">Restore</button>
+													<input type="file" id="Config_RestoreInput" class="hidden-file-input">
+													<p class="help-block">
+													<span class="help-option-title">Load settings from a local file.</span><br><br>
+													Import settings from a previously created backup file. You can restore the whole configuration file or choose individual sections.
+													</p>
+												</div>
+											</div>
+
+											<div class="control-group config-static config-system">
+												<label class="control-label nowrap">Update NZBGet</label>
+												<div class="controls">
+													<button type="button" class="btn" onclick="Config.checkUpdates()">Check for Updates</button>
+													<p class="help-block">
+													<span class="help-option-title">Check if a new version of NZBGet is available.</span><br><br>
+													Should a new version be found you'll be asked to install it.
+													</p>
+												</div>
+											</div>
+
+										</fieldset>
+									</div>
+								</div>
+
+							</div>
+						</div>
+					</div>
+
+					<div class="ConfigFooter">
+						<hr>
+						<button type="button" class="btn btn-primary" id="Config_Save" onclick="Config.saveChanges()">Save all changes</button>
+					</div>
+				</div>
+			</div>
+		</div>
+
+	</div>
+</div>
+
+<!-- *** INFO ************************************************************ -->
+
+<div class="modal no-footer hide" id="InfoDialog">
+	<div class="modal-header">
+	<a class="close" href='#' data-dismiss="modal"><i class="icon-close"></i></a>
+	<h3>NZBGet <span id="version">version</h3>
+	</div>
+	<div class="modal-body">
+		<h1>Information about NZBGet</h1>
+		<h2>Authors</h2>
+		<p>NZBGet is developed and maintained by Andrey Prygunkov (<a href="mailto:hugbug@users.sourceforge.net">hugbug@users.sourceforge.net</a>).</p>
+
+		<p>The original project was initially created by Sven Henkel (sidddy@users.sourceforge.net) in 2004 and later developed by Bo Cordes Petersen (placebodk@users.sourceforge.net) until 2005. In 2007 the abandoned project was overtaken by Andrey Prygunkov. Since then the program has been completely rewritten.</p>
+
+		<h2>Copyright</h2>
+		<p>This program is free software; you can redistribute it and/or modify
+		it under the terms of the GNU General Public License as published by
+		the Free Software Foundation; either version 2 of the License, or
+		(at your option) any later version.</p>
+
+		<p>The complete content of license is provided in file COPYING within distribution and also available <a href="http://www.gnu.org/licenses/gpl-2.0.html">online</a>.</p>
+
+		<p>Additional exemption: compiling, linking, and/or using OpenSSL is allowed.</p>
+
+		<h2>Contact</h2>
+		<p>For more info please visit <a href="http://nzbget.net">NZBGet Home Page</a>. Among other things the developers of third-party apps find there complete docs about RPC interface.</p>
+		<p>Should you need help, have suggestions or want to share your improvements - <a href="http://nzbget.net/forum">NZBGet Forum</a> is a place to do that.</p>
+		<p>If you use NZBGet on a media player, router, NAS or other non-PC device the best place to get help is probably forums specialized on your device.</p>
+
+		<h1>Information about included libraries</h1>
+
+		<h2>jQuery</h2>
+		<p>NZBGet web-interface uses <a href="http://jquery.com">jQuery</a>. The jQuery Project is run by a distributed group of volunteers that all want to see jQuery become the best JavaScript tool possible.</p>
+		<p>jQuery is licensed under the <a href="http://github.com/jquery/jquery/blob/master/MIT-LICENSE.txt">MIT</a> and <a href="http://github.com/jquery/jquery/blob/master/GPL-LICENSE.txt">GPL</a> licenses.</p>
+
+		<h2>Bootstrap</h2>
+		<p>NZBGet web-interface uses <a href="http://twitter.github.com/bootstrap/">Twitter Bootstrap</a>. Designed and built with all the love in the world @twitter by @mdo and @fat.</p>
+		<p>Bootstrap code is licensed under the <a href="http://www.apache.org/licenses/LICENSE-2.0">Apache License v2.0</a>.</p>
+
+		<h2>Raphaël</h2>
+		<p>NZBGet web-interface makes use of <a href="http://raphaeljs.com">Raphaël</a> built by Dmitry Baranovskiy.</p>
+		<p>Raphaël code is licensed under the <a href="http://raphaeljs.com/license.html">MIT license</a>.</p>
+
+		<h2>Elycharts</h2>
+		<p>For charts NZBGet relies on <a href="http://elycharts.com">Elycharts</a> by Void Labs s.n.c.</p>
+		<p>Elycharts code is licensed under the <a href="http://creativecommons.org/licenses/MIT/">MIT license</a>.</p>
+
+		<h2>iconSweets</h2>
+		<p>NZBGet web-interface includes selected icons from collections <a href="http://www.iconsweets.com/">iconSweets</a> and <a href="http://www.iconsweets2.com/">iconSweets2</a> by <a href="http://yummygum.com">Yummygum</a>.</p>
+		<p>The icons are generally licensed under a custom license but used in NZBGet with author's permission.</p>
+
+	</div>
+</div>
+
+<!-- *** STATISTICS ************************************************************ -->
+
+<div class="modal modal-mini no-footer hide" id="StatDialog">
+	<div class="modal-header">
+		<a class="close" href='#' data-dismiss="modal"><i class="icon-close"></i></a>
+		<a class="back" id="StatDialog_Back" href="#" title="Back"><i class="icon-back"></i></a>
+		<a class="back back-hidden" id="StatDialog_BackSpace"><i class="icon-hidden"></i></a>
+		<h3 id="StatDialog_Title">Statistics and Status</h3>
+	</div>
+	<div class="modal-body">
+		<div>
+			<div class="modal-tab" id="StatDialog_GeneralTab">
+				<div class="modal-tab-padded-small">
+					<table class="table table-striped table-bordered datatable" id="StatisticsTable">
+						<tbody>
+							<tr><td>NZBGet version</td><td class="text-right" id="StatDialog_DataVersion"></td></tr>
+							<tr><td>Uptime</td><td class="text-right" id="StatDialog_DataUptime"></td></tr>
+							<tr><td>Download time</td><td class="text-right" id="StatDialog_DataDownloadTime"></td></tr>
+							<tr><td><a href="#" id="StatDialog_Volumes" data-tab="StatDialog_VolumesTab" data-fullscreen1="true"
+								title="Data volume statistics">Total downloaded <i class="icon-forward" style="opacity:0.6;"/></a></td>
+								<td class="text-right" id="StatDialog_DataTotalDownloaded"></td></tr>
+							<tr><td>Remaining</td><td class="text-right" id="StatDialog_DataRemaining"></td></tr>
+							<tr><td>Free disk space</td><td class="text-right" id="StatDialog_DataFree"></td></tr>
+							<tr><td>Average download speed</td><td class="text-right" id="StatDialog_DataAverageSpeed"></td></tr>
+							<tr><td>Current download speed</td><td class="text-right" id="StatDialog_DataCurrentSpeed"></td></tr>
+							<tr><td>Current speed limit</td><td class="text-right" id="StatDialog_DataSpeedLimit"></td></tr>
+							<tr id="StatDialog_ArticleCache_Row"><td>Article cache</td><td class="text-right" id="StatDialog_ArticleCache"></td></tr>
+						</tbody>
+					</table>
+					<br>
+					<table class="table table-striped table-bordered datatable" id="StatusTable">
+						<tbody></tbody>
+					</table>
+				</div>
+			</div>
+
+			<div class="modal-tab" id="StatDialog_VolumesTab">
+				<div class="btn-toolbar form-inline section-toolbar" id="StatDialog_Toolbar">
+
+					<!-- VOLUME RANGE BUTTONS -->
+					<div class="btn-group phone-hide" id="StatDialog_MonthBlockTop">
+						<button class="btn volume-range btn-inverse" id="StatDialog_Volume_MIN" onclick="StatDialog.chooseRange('MIN')" title="Show last 60 seconds">60 seconds</button>
+						<button class="btn volume-range" id="StatDialog_Volume_HOUR" onclick="StatDialog.chooseRange('HOUR')" title="Show last 60 minutes">60 minutes</button>
+						<button class="btn volume-range" id="StatDialog_Volume_DAY" onclick="StatDialog.chooseRange('DAY')" title="Show last 24 hours">24 hours</button>
+						<button class="btn volume-range" id="StatDialog_Volume_MONTH" onclick="StatDialog.chooseRange('MONTH')" title="Show a month or a whole year">January 2000</button>
+						<button class="btn volume-range dropdown-toggle" id="StatDialog_Volume_MONTH3" data-toggle="dropdown"><span class="caret"></span></button>
+						<ul class="dropdown-menu menu-check pull-right" id="StatDialog_MonthMenu">
+							<li class="menu-header">Months</li>
+							<li class="volume-month-template hide"><a href="#"></a></li>
+							<li class="menu-header" id="StatDialog_MonthMenuYears">Years</li>
+							<li class="divider" id="StatDialog_MonthMenuDivider"></li>
+							<li><a href="#" onclick="StatDialog.chooseOtherMonth()"><i class="icon-empty"></i>Older Periods...</a></li>
+							<li class="volume-menu-template hide"><a href="#"></a></li>
+						</ul>
+					</div>
+					
+					<div class="btn-group phone-only inline"><button class="btn volume-range btn-inverse" id="StatDialog_Volume_MIN2" onclick="StatDialog.chooseRange('MIN')" title="Show last 60 seconds">60 s</button></div>
+					<div class="btn-group phone-only inline"><button class="btn volume-range" id="StatDialog_Volume_HOUR2" onclick="StatDialog.chooseRange('HOUR')" title="Show last 60 minutes">60 m</button></div>
+					<div class="btn-group phone-only inline"><button class="btn volume-range" id="StatDialog_Volume_DAY2" onclick="StatDialog.chooseRange('DAY')" title="Show last 24 hours">24 h</button></div>
+					<div class="btn-group phone-only inline"><button class="btn volume-range" id="StatDialog_Volume_MONTH2" onclick="StatDialog.chooseRange('MONTH')" title="Show one month">Jan 2000</button></div>
+					<!-- MONTH MENU IN MINI-THEME -->
+					<div class="btn-group phone-only inline" id="StatDialog_MonthBlockPhone">
+					<button class="btn volume-range dropdown-toggle" id="StatDialog_Volume_MONTH4" data-toggle="dropdown"><span class="caret"></span></button>
+					</div>
+					
+					<div class="btn-group">
+						<button class="btn dropdown-toggle" id="StatDialog_Server" data-toggle="dropdown" title="News server"> <span id="StatDialog_ServerCap">All news servers</span>&nbsp;<span class="caret"></span></button>
+						<ul class="dropdown-menu menu-check" id="StatDialog_ServerMenu">
+							<li class="menu-header">News servers</li>
+							<li class="volume-server-template hide"><a href="#">1. server.com</a></li>
+							<li class="divider" id="StatDialog_ServerMenuDivider"></li>
+							<li><a href="#" data-id="0" id="StatDialog_ServerMenuAll"><i class="icon-empty"></i>All news servers</a></li>
+						</ul>
+					</div>
+				</div>
+				
+				<div id="StatDialog_Tooltip">Total</div>
+				<div id="StatDialog_ChartBlock"></div>
+				
+				<hr>
+				<div id="StatDialog_CountersBlock">
+				<div class="row-fluid" id="StatDialog_Counters">
+					<div class="span3" id="StatDialog_Today">Today: <span id="StatDialog_TodaySize" class="stat-size">1.5 GB</span></div>
+					<div class="span3" id="StatDialog_Month">This month: <span id="StatDialog_MonthSize" class="stat-size">200 GB</span></div>
+					<div class="span3" id="StatDialog_AllTime">All-time: <span id="StatDialog_AllTimeSize" class="stat-size">20.3 TB</span></div>
+					<div class="span3" id="StatDialog_Custom" title="reset on Fri Apr 04 2014 09:32:24">Custom: <span id="StatDialog_CustomSize" class="stat-size">10.3 TB</span>, <a onclick="StatDialog.resetCounter()">reset</a></div>
+				</div>
+				</div>
+			</div>
+		</div>
+	</div>
+</div>
+
+<!-- *** CHART RANGE DIALOG ***************************************************** -->
+
+<div class="modal modal-mini modal-padded modal-center hide" id="StatRangeDialog">
+	<div class="modal-header">
+	<a class="close" href='#' data-dismiss="modal"><i class="icon-close"></i></a>
+	<h3>Choose period</h3>
+	</div>
+	<div class="modal-body">
+		<div class="form-horizontal">
+			<fieldset>
+				<div class="control-group">
+					<label class="control-label" for="StatRangeDialog_PeriodGroup">Period</label>
+					<div class="controls" id="StatRangeDialog_PeriodGroup">
+						<input class="input-mini" id="StatRangeDialog_PeriodInput" size="16" type="text">
+					</div>
+				</div>
+
+				<p class="help-block" ">Type period as <strong>year</strong> or <strong>year-month</strong>, for example:
+				2014 or 2014-12.</p>
+			</fieldset>
+		</div>
+	</div>
+	<div class="modal-footer">
+		<a href="#" class="btn" data-dismiss="modal">Cancel</a>
+		<a href="#" class="btn btn-primary" onclick="StatDialog.setPeriod()">Set Period</a>
+	</div>
+</div>
+
+<!-- *** LIMIT DIALOG ************************************************************ -->
+
+<div class="modal modal-small modal-padded-small hide" id="LimitDialog">
+	<div class="modal-header">
+	<a class="close" href='#' data-dismiss="modal"><i class="icon-close"></i></a>
+	<h3>Speed Limit</h3>
+	</div>
+	<div class="modal-body">
+		<div class="form-horizontal">
+			<fieldset>
+				<div class="control-group">
+					<label class="control-label" for="LimitDialog_SpeedInputGroup">Speed limit</label>
+					<div class="controls" id="LimitDialog_SpeedInputGroup">
+						<div class="input-append">
+							<input class="input-mini" id="LimitDialog_SpeedInput" size="16" type="text" placeholder="none"><span class="add-on">KB/s</span>
+						</div>
+					</div>
+				</div>
+
+				<div class="control-group last-group" id="LimitDialog_ServerBlock">
+					<label class="control-label" for="LimitDialog_ServerGroup">Active news servers</label>
+					<div class="controls" id="LimitDialog_ServerGroup">
+						<div>
+							<table class="table table-striped table-bordered table-check table-cancheck check-simple datatable" id="LimitDialog_ServerTable">
+								<tbody></tbody>
+							</table>
+						</div>
+					</div>
+				</div>
+
+				<div class="hide" id="LimitDialog_ServerTable_pager"></div>
+
+			</fieldset>
+		</div>
+	</div>
+	<div class="modal-footer">
+		<div class="dialog-transmit hide" style="position:absolute;margin-left:260px;" id="LimitDialog_Transmit"><img src="img/transmit.gif"></div>
+		<a href="#" class="btn" data-dismiss="modal">Cancel</a>
+		<a href="#" class="btn btn-primary" id="LimitDialog_Save">Set limit</a>
+	</div>
+</div>
+
+<!-- *** PAUSE FOR X MINUTES ***************************************************** -->
+
+<div class="modal modal-mini modal-padded hide" id="ScheduledPauseDialog">
+	<div class="modal-header">
+	<a class="close" href='#' data-dismiss="modal"><i class="icon-close"></i></a>
+	<h3>Temporary Pause</h3>
+	</div>
+	<div class="modal-body">
+		<div class="form-horizontal">
+			<fieldset>
+				<div class="control-group">
+					<label class="control-label" for="PauseForInputGroup">Pause for</label>
+					<div class="controls" id="PauseForInputGroup">
+						<div class="input-append">
+							<input class="input-mini" id="PauseForInput" size="16" type="text"><span class="add-on">Minutes</span>
+						</div>
+					</div>
+				</div>
+			</fieldset>
+		</div>
+	</div>
+	<div class="modal-footer">
+		<div class="dialog-transmit hide" style="position:absolute;margin-left:260px;" id="ScheduledPause_Transmit"><img src="img/transmit.gif"></div>
+		<a href="#" class="btn" data-dismiss="modal">Cancel</a>
+		<a href="#" class="btn btn-primary" onclick="Status.pauseForClick()">Pause</a>
+	</div>
+</div>
+
+<!-- *** QUICK HELP: EXPLAINING PAUSE OPTIONS ************************************************************ -->
+
+<div class="modal no-footer hide" id="PauseHelp">
+	<div class="modal-header">
+	<a class="close" href='#' data-dismiss="modal"><i class="icon-close"></i></a>
+	<h3>Help: Explaining pause options</h3>
+	</div>
+	<div class="modal-body">
+	<p>With command <strong>Pause download</strong> you can manually pause the download queue.</p>
+	<p>The pausing of <strong>post-processing</strong> depends on how the post-processing-script handles screen output and may not always work.</p>
+	<p>The <strong>Pause/Resume Button</strong> (the round one) pauses or resumes all three activities: download, post-processing and nzb directory scan.</p>
+	</div>
+</div>
+
+<!-- *** EDIT DOWNLOAD DIALOG ************************************************************ -->
+
+<div class="modal hide" id="DownloadsEditDialog">
+	<div class="modal-header">
+		<a class="close" href='#' data-dismiss="modal"><i class="icon-close"></i></a>
+		<a class="back" id="DownloadsEdit_Back" href="#" title="Back"><i class="icon-back"></i></a>
+		<a class="back back-hidden" id="DownloadsEdit_BackSpace"><i class="icon-hidden"></i></a>
+		<h3 id ="DownloadsEdit_Title">Title</h3>
+	</div>
+
+	<div class="modal-body">
+
+		<div>
+			<div class="modal-tab" id="DownloadsEdit_GeneralTab">
+				<div class="form-horizontal">
+					<fieldset>
+
+						<div class="control-group">
+							<label class="control-label" for="DownloadsEdit_NZBNameGroup">Name</label>
+							<div class="controls" id="DownloadsEdit_NZBNameGroup">
+								<input type="text" class="input-xlarge" id="DownloadsEdit_NZBName" />
+								<p class="help-block help-block-uneditable" id="DownloadsEdit_NZBNameReadonly">Cannot be changed for post-processing-downloads.</p>
+							</div>
+						</div>
+
+						<div class="control-group" id="DownloadsEdit_URLGroup">
+							<label class="control-label" for="DownloadsEdit_URL">Link</label>
+							<div class="controls">
+								<input type="text" class="input-xlarge" id="DownloadsEdit_URL" readonly="true" />
+							</div>
+						</div>
+
+						<div class="control-group">
+							<label class="control-label" for="DownloadsEdit_Priority">Priority</label>
+							<div class="controls">
+								<select id="DownloadsEdit_Priority">
+								</select>
+							</div>
+						</div>
+
+						<div class="control-group" id="DownloadsEdit_CategoryGroup">
+							<label class="control-label" for="DownloadsEdit_Category">Category</label>
+							<div class="controls">
+								<select id="DownloadsEdit_Category">
+								</select>
+							</div>
+						</div>
+
+						<div class="control-group control-group-last" id="DownloadsEdit_StatisticsGroup">
+							<label class="control-label" for="DownloadsEdit_Statistics">Statistics</label>
+							<div class="controls">
+							<table class="table table-striped table-bordered data-statistics">
+								<tbody id="DownloadsEdit_Statistics">
+								</tbody>
+							</table>
+							</div>
+						</div>
+
+						<div class="control-group">
+							<div class="controls">
+								<div class="modal-bottom-toolbar">
+									<button class="btn" data-tab="DownloadsEdit_FileTab" data-fullscreen="true" id="DownloadsEdit_File" title="File list">Files <i class="icon-forward" style="opacity:0.6;"></i></button>
+									<button class="btn" data-tab="DownloadsEdit_ParamTab" id="DownloadsEdit_Param" title="Post-processing parameters">Postprocess <i class="icon-forward" style="opacity:0.6;"></i></button>
+									<button class="btn" data-tab="DownloadsEdit_DupeTab" id="DownloadsEdit_Dupe" title="Duplicate properties">Dupe <i class="icon-forward" style="opacity:0.6;"></i></button>
+									<button class="btn" data-tab="DownloadsEdit_LogTab" data-fullscreen="true" id="DownloadsEdit_Log" title="Post-processing messages">Log <i class="icon-forward" style="opacity:0.6;"></i></button>
+								</div>
+							</div>
+						</div>
+
+					</fieldset>
+				</div>
+			</div>
+
+			<div class="modal-tab hide" id="DownloadsEdit_FileTab">
+				<div class="loading-block">
+					<img src="img/transmit.gif"></img>
+				</div>
+				<div>
+					<div class="row-fluid">
+						<div class="pull-left btn-toolbar form-inline modal-toolbar">
+							<!-- EDIT BUTTONS -->
+							<div class="btn-group phone-hide">
+								<button class="btn" onclick="DownloadsEditDialog.editActionClick('pause')" title="Pause selected files"><i class="icon-pause"></i><span class="btn-caption"> Pause</span></button>
+								<button class="btn" onclick="DownloadsEditDialog.editActionClick('resume')" title="Resume selected files"><i class="icon-play"></i><span class="btn-caption"> Resume</span></button>
+								<button class="btn" onclick="DownloadsEditDialog.editActionClick('delete')" title="Delete selected files"><i class="icon-trash"></i><span class="btn-caption"> Delete</span></button>
+								<button class="btn" onclick="DownloadsEditDialog.editActionClick('split')" title="Split selected files into new download"><i class="icon-split"></i><span class="btn-caption"> Split</span></button>
+							</div>
+							<div class="btn-group phone-only inline"><button class="btn" onclick="DownloadsEditDialog.editActionClick('pause')" title="Pause selected files"><i class="icon-pause"></i><span class="btn-caption"> Pause</span></button></div>
+							<div class="btn-group phone-only inline"><button class="btn" onclick="DownloadsEditDialog.editActionClick('resume')" title="Resume selected files"><i class="icon-play"></i><span class="btn-caption"> Resume</span></button></div>
+							<div class="btn-group phone-only inline"><button class="btn" onclick="DownloadsEditDialog.editActionClick('delete')" title="Delete selected files"><i class="icon-trash"></i><span class="btn-caption"> Delete</span></button></div>
+							<div class="btn-group phone-only inline"><button class="btn" onclick="DownloadsEditDialog.editActionClick('split')" title="Split selected files into new download"><i class="icon-split"></i><span class="btn-caption"> Split</span></button></div>
+
+							<!-- MOVE BUTTONS -->
+							<div class="btn-group phone-hide">
+								<button class="btn" onclick="DownloadsEditDialog.editActionClick('top')" title="Move selected files to the top"><i class="icon-top"></i></button>
+								<button class="btn" onclick="DownloadsEditDialog.editActionClick('up')" title="Move selected files up"><i class="icon-up"></i></button>
+								<button class="btn" onclick="DownloadsEditDialog.editActionClick('down')" title="Move selected files down"><i class="icon-down"></i></button>
+								<button class="btn" onclick="DownloadsEditDialog.editActionClick('bottom')" title="Move selected files to the bottom"><i class="icon-bottom"></i></button>
+							</div>
+							<div class="btn-group phone-only inline"><button class="btn" onclick="DownloadsEditDialog.editActionClick('top')" title="Move selected files to the top"><i class="icon-top"></i></button></div>
+							<div class="btn-group phone-only inline"><button class="btn" onclick="DownloadsEditDialog.editActionClick('up')" title="Move selected files up"><i class="icon-up"></i></button></div>
+							<div class="btn-group phone-only inline"><button class="btn" onclick="DownloadsEditDialog.editActionClick('down')" title="Move selected files down"><i class="icon-down"></i></button></div>
+							<div class="btn-group phone-only inline"><button class="btn" onclick="DownloadsEditDialog.editActionClick('bottom')" title="Move selected files to the bottom"><i class="icon-bottom"></i></button></div>
+						</div>
+						<div class="pull-right" style="margin-bottom:10px;"><input id="DownloadsEdit_FileTable_filter" class="search-query" placeholder="Search" type="text"></div>
+					</div>
+
+					<div id="DownloadsEdit_FileBlock">
+						<table class="table table-striped table-bordered table-check table-cancheck datatable" id="DownloadsEdit_FileTable" style="margin-bottom:15px;">
+							<thead><tr><th><div class="check img-check"></div></th><th>Status</th><th>Name</th><th class="text-right">Age</th><th class="text-right">Size</th></tr></thead>
+							<tbody></tbody>
+						</table>
+					</div>
+					<div class="hide"><div class="pagination" id ="DownloadsEdit_FileTable_pager"></div></div>
+				</div>
+			</div>
+
+			<div class="modal-tab hide" id="DownloadsEdit_ParamTab">
+				<div class="form-horizontal">
+					<fieldset id="DownloadsEdit_ParamData">
+					</fieldset>
+				</div>
+			</div>
+
+			<div class="modal-tab padded-tab hide" id="DownloadsEdit_ServStatsTab">
+				<div>
+					<div id="DownloadsEdit_ServStatsBlock">
+						<table class="table table-striped table-bordered datatable" id="DownloadsEdit_ServStatsTable">
+							<thead><tr><th>Server</th><th class="text-right">Articles</th><th class="text-right">Art. %</th><th class="text-right">Success</th><th class="text-right">Failures</th></tr></thead>
+							<tbody></tbody>
+						</table>
+					</div>
+					<div class="pull-right hide" id="DownloadsEdit_ServStatsTable_pagerBlock"><div class="pagination" id ="DownloadsEdit_ServStatsTable_pager"></div></div>
+				</div>
+			</div>
+
+			<div class="modal-tab hide" id="DownloadsEdit_LogTab">
+				<div class="loading-block">
+					<img src="img/transmit.gif"></img>
+				</div>
+				<div>
+					<div class="form-inline clearfix modal-toolbox">
+						<div id="DownloadsLogRecordsPerPageBlock" class="pull-left toolbox-length">
+							<select size="1" id="DownloadsLogRecordsPerPage" onchange="LogTab.recordsPerPageChange('Downloads')">
+								<option value="5">5</option>
+								<option selected="selected" value="10">10</option>
+								<option value="15">15</option>
+								<option value="20">20</option>
+								<option value="30">30</option>
+								<option value="50">50</option>
+								<option value="100">100</option>
+								<option value="200">200</option>
+								<option value="500">500</option>
+								<option value="1000">1000</option>
+							</select><span class="records-label"> records per page</span>
+						</div>
+						<div id="DownloadsEdit_LogTable_filterBlock">
+							<input id="DownloadsEdit_LogTable_filter" class="search-query" placeholder="Search" type="text">
+						</div>
+						<div id ="DownloadsEdit_LogTable_pagerBlock" class="pull-right"><div class="pagination" id ="DownloadsEdit_LogTable_pager"></div></div>
+					</div>
+					<div id="DownloadsEdit_LogBlock">
+						<table class="table table-striped table-bordered datatable" id="DownloadsEdit_LogTable" style="margin-bottom:15px;">
+							<thead><tr><th width="65px">Kind</th><th width="170px" class="text-center">Time</th><th>Text</th></tr></thead>
+							<tbody></tbody>
+						</table>
+					</div>
+				</div>
+			</div>
+
+			<div class="modal-tab hide" id="DownloadsEdit_DupeTab">
+				<div class="form-horizontal">
+					<fieldset>
+						<div class="control-group">
+							<label class="control-label" for="DownloadsEdit_DupeKey">Duplicate key</label>
+							<div class="controls">
+								<input type="text" class="input-xlarge" id="DownloadsEdit_DupeKey" />
+							</div>
+						</div>
+
+						<div class="control-group">
+							<label class="control-label" for="DownloadsEdit_DupeScore">Duplicate score</label>
+							<div class="controls">
+								<input type="text" class="input-small" id="DownloadsEdit_DupeScore" />
+							</div>
+						</div>
+
+						<div class="control-group">
+							<label class="control-label" for="DownloadsEdit_DupeMode">Duplicate mode</label>
+							<div class="controls">
+								<select id="DownloadsEdit_DupeMode" class="input-small">
+									<option value="SCORE">Score</option>
+									<option value="ALL">All</option>
+									<option value="FORCE">Force</option>
+								</select>
+							</div>
+						</div>
+					</fieldset>
+				</div>
+			</div>
+
+		</div>
+
+	</div>
+
+	<div class="modal-footer">
+		<div class="btn-group dropup pull-left">
+			<a class="btn dropdown-toggle" data-toggle="dropdown">Actions <span class="caret"></span></a>
+			<ul class="dropdown-menu footer-button-menu" id="DownloadsEdit_ActionsMenu">
+				<li class="menu-header">Actions</li>
+				<li><a href="#" id="DownloadsEdit_Resume"><i class="icon-play"></i> Resume</a></li>
+				<li><a href="#" id="DownloadsEdit_Pause"><i class="icon-pause"></i> Pause</a></li>
+				<li><a href="#" id="DownloadsEdit_Delete"><i class="icon-trash"></i> Delete</a></li>
+				<li><a href="#" id="DownloadsEdit_CancelPP"><i class="icon-remove"></i> Cancel Post-Processing</a></li>
+				<li class="menu-header" id="DownloadsEdit_DNZB_Section">Indexer Links</li>
+				<li><a href="#" target="_blank" class="DownloadsEdit_DNZB" id="DownloadsEdit_DNZB_Details"><i class="icon-postcard"></i> Details</a></li>
+				<li><a href="#" target="_blank" class="DownloadsEdit_DNZB" id="DownloadsEdit_DNZB_MoreInfo"><i class="icon-link"></i> More Info</a></li>
+			</ul>
+		</div>
+
+		<div class="dialog-transmit hide" style="position:absolute;margin-left:260px;" id="DownloadsEdit_Transmit"><img src="img/transmit.gif"></div>
+		<a href="#" class="btn" data-dismiss="modal" id="DownloadsEdit_Close">Cancel</a>
+		<a href="#" class="btn btn-primary" id="DownloadsEdit_Save">Save</a>
+	</div>
+</div>
+
+<!-- *** MULTI EDIT DOWNLOAD DIALOG ************************************************************ -->
+
+<div class="modal hide" id="DownloadsMultiDialog">
+	<div class="modal-header">
+		<a class="close" href='#' data-dismiss="modal"><i class="icon-close"></i></a>
+		<h3 id ="DownloadsMulti_Title">Multiple records</h3>
+	</div>
+
+	<div class="modal-body">
+
+		<div class="tab-content">
+			<div class="tab-pane active" id="DownloadsMulti_GeneralTab">
+				<a class="hide" href="#DownloadsMulti_GeneralTab" id="DownloadsMulti_GeneralTabLink" data-toggle="tab"></a>
+				<div class="form-horizontal">
+					<fieldset>
+
+						<div class="control-group">
+							<label class="control-label" for="DownloadsMulti_Priority">Priority</label>
+							<div class="controls">
+								<select id="DownloadsMulti_Priority">
+								</select>
+							</div>
+						</div>
+
+						<div class="control-group">
+							<label class="control-label" for="DownloadsMulti_Category">Category</label>
+							<div class="controls">
+								<select id="DownloadsMulti_Category">
+								</select>
+							</div>
+						</div>
+
+						<div class="control-group">
+							<label class="control-label" for="DownloadsMulti_Statistics">Statistics</label>
+							<div class="controls">
+							<table class="table table-striped table-bordered data-statistics">
+								<tbody id="DownloadsMulti_Statistics">
+								</tbody>
+							</table>
+							</div>
+						</div>
+
+						<!--
+						<div class="control-group">
+							<label class="control-label" for="DownloadsMulti_PostProcessingLabel">Post-Processing</label>
+							<div class="controls">
+								<a class="btn" href="#DownloadsMulti_PostProcessingTab" data-toggle="tab">Parameters</a>
+							</div>
+						</div>
+						-->
+
+					</fieldset>
+				</div>
+			</div>
+
+			<div class="tab-pane" id="DownloadsMulti_PostProcessingTab">
+				<div class="form-horizontal">
+					<fieldset>
+
+						<div class="alert alert-info alert-block hide">
+							<h4 class="alert-heading">Parameters not available.</h4>
+							<p>The post-processing script you are currently using doesn't support post-processing parameters or the script configuration file is not properly set in NZBGet settings.</p>
+						</div>
+						<div class="alert alert-info alert-block">
+							<h4 class="alert-heading">Not yet implemented.</h4>
+							<p>This page is a placeholder. The editing of post-processing parameters is not supported in web-interface yet.</p>
+						</div>
+
+						<a class="btn" href="#DownloadsMulti_GeneralTab" data-toggle="tab">Go Back</a>
+
+					</fieldset>
+				</div>
+			</div>
+
+		</div>
+
+	</div>
+
+	<div class="modal-footer">
+		<div class="dialog-transmit hide" style="position:absolute;margin-left:260px;" id="DownloadsMulti_Transmit"><img src="img/transmit.gif"></div>
+		<a href="#" class="btn" data-dismiss="modal" id="DownloadsMulti_Close">Cancel</a>
+		<a href="#" class="btn btn-primary" id="DownloadsMulti_Save">Save</a>
+	</div>
+</div>
+
+<!-- *** MERGE DOWNLOADS DIALOG ************************************************************ -->
+
+<div class="modal modal-padded hide" id="DownloadsMergeDialog">
+	<div class="modal-header">
+		<a class="close" href='#' data-dismiss="modal"><i class="icon-close"></i></a>
+		<h3>Merge Downloads</h3>
+	</div>
+
+	<div class="modal-body">
+		<div class="form-horizontal">
+			<fieldset>
+				<p>Merge listed downloads?</p>
+				<div class="dialog-add-files" id="DownloadsMerge_Files"></div>
+				<p class="help-block" style="margin-top:10px;">The first item in the list is the target - the resulting download inherits
+				the properties such as destination directory, category, etc. from that item.</p>
+			</fieldset>
+		</div>
+	</div>
+
+	<div class="modal-footer">
+		<div class="dialog-transmit hide" style="position:absolute;margin-left:260px;" id="DownloadsMerge_Transmit"><img src="img/transmit.gif"></div>
+		<a href="#" class="btn" data-dismiss="modal">Cancel</a>
+		<a href="#" class="btn btn-primary" id="DownloadsMerge_Merge">Merge</a>
+	</div>
+</div>
+
+<!-- *** SPLIT DOWNLOAD DIALOG ************************************************************ -->
+
+<div class="modal modal-padded hide" id="DownloadsSplitDialog">
+	<div class="modal-header">
+		<a class="close" href='#' data-dismiss="modal"><i class="icon-close"></i></a>
+		<h3>Split Download</h3>
+	</div>
+
+	<div class="modal-body">
+		<div class="form-vertical">
+			<fieldset>
+				<p>New download will be created from selected files. Please choose the name for new download.</p>
+
+				<div class="control-group">
+					<div class="controls" id="DownloadsSplit_NZBNameGroup">
+						<input type="text" class="input-xxlarge" id="DownloadsSplit_NZBName" />
+					</div>
+				</div>
+
+				<p class="help-block" style="margin-top:10px;">The new download inherits
+				all properties such as category, priority, etc. from the source item.
+				This action closes the download-edit-dialog. Any changes made in the dialog will be discarded.</p>
+
+			</fieldset>
+		</div>
+	</div>
+
+	<div class="modal-footer">
+		<div class="dialog-transmit hide" style="position:absolute;margin-left:260px;" id="DownloadsSplit_Transmit"><img src="img/transmit.gif"></div>
+		<a href="#" class="btn" data-dismiss="modal">Cancel</a>
+		<a href="#" class="btn btn-primary" id="DownloadsSplit_Split">Split</a>
+	</div>
+</div>
+
+<!-- *** HISTORY EDIT DIALOG ************************************************************ -->
+
+<div class="modal hide" id="HistoryEditDialog">
+	<div class="modal-header">
+		<a class="close" href='#' data-dismiss="modal"><i class="icon-close"></i></a>
+		<a class="back" id="HistoryEdit_Back" href="#" title="Back"><i class="icon-back"></i></a>
+		<a class="back back-hidden" id="HistoryEdit_BackSpace"><i class="icon-hidden"></i></a>
+		<h3 id="HistoryEdit_Title"></h3>
+	</div>
+
+	<div class="modal-body">
+		<div>
+			<div class="modal-tab" id="HistoryEdit_GeneralTab">
+				<div class="form-horizontal">
+					<fieldset>
+
+						<div class="control-group">
+							<label class="control-label" for="HistoryEdit_Status">Status</label>
+							<div class="controls" style="margin-top: 4px;">
+								<span id="HistoryEdit_Status"></span>
+							</div>
+						</div>
+
+						<div class="control-group">
+							<label class="control-label" for="HistoryEdit_NZBNameGroup">Name</label>
+							<div class="controls" id="HistoryEdit_NZBNameGroup">
+								<input type="text" class="input-xlarge" id="HistoryEdit_NZBName" />
+							</div>
+						</div>
+
+						<div class="control-group" id="HistoryEdit_URLGroup">
+							<label class="control-label" for="HistoryEdit_URL">Link</label>
+							<div class="controls">
+								<input type="text" class="input-xlarge" id="HistoryEdit_URL" readonly="true" />
+							</div>
+						</div>
+
+						<div class="control-group" id="HistoryEdit_CategoryGroup">
+							<label class="control-label" for="HistoryEdit_Category">Category</label>
+							<div class="controls">
+								<select id="HistoryEdit_Category">
+								</select>
+							</div>
+						</div>
+
+						<div class="control-group" id="HistoryEdit_PathGroup">
+							<label class="control-label" for="HistoryEdit_Path">Destination</label>
+							<div class="controls">
+								<input type="text" class="input-xlarge" id="HistoryEdit_Path" readonly="true" />
+							</div>
+						</div>
+
+						<div class="control-group control-group-last" id="HistoryEdit_StatisticsGroup">
+							<label class="control-label" for="HistoryEdit_Statistics">Statistics</label>
+							<div class="controls">
+							<table class="table table-striped table-bordered data-statistics">
+								<tbody id="HistoryEdit_Statistics">
+								</tbody>
+							</table>
+							</div>
+						</div>
+
+						<div class="control-group control-group-last" id="HistoryEdit_DupGroup">
+							<div class="controls">
+								This hidden history record has little information. It remains in history mostly for duplicate check.
+							</div>
+						</div>
+
+						<div class="control-group">
+							<div class="controls">
+								<div class="modal-bottom-toolbar">
+									<button class="btn" data-tab="HistoryEdit_ParamTab" id="HistoryEdit_Param" title="Post-processing parameters">Postprocess <i class="icon-forward" style="opacity:0.6;"></i></button>
+									<button class="btn" data-tab="HistoryEdit_DupeTab" id="HistoryEdit_Dupe" title="Duplicate properties">Dupe <i class="icon-forward" style="opacity:0.6;"></i></button>
+									<button class="btn" data-tab="HistoryEdit_LogTab" data-fullscreen="true" id="HistoryEdit_Log" title="Post-processing messages">Log <i class="icon-forward" style="opacity:0.6;"></i></button>
+								</div>
+							</div>
+						</div>
+
+					</fieldset>
+				</div>
+			</div>
+
+			<div class="modal-tab hide" id="HistoryEdit_ParamTab">
+				<div class="form-horizontal">
+					<fieldset id="HistoryEdit_ParamData">
+					</fieldset>
+				</div>
+			</div>
+
+			<div class="modal-tab hide" id="HistoryEdit_LogTab">
+				<div class="loading-block">
+					<img src="img/transmit.gif"></img>
+				</div>
+				<div>
+					<div class="form-inline clearfix modal-toolbox">
+						<div id="HistoryLogRecordsPerPageBlock" class="pull-left toolbox-length">
+							<select size="1" id="HistoryLogRecordsPerPage" onchange="LogTab.recordsPerPageChange('History')">
+								<option value="5">5</option>
+								<option selected="selected" value="10">10</option>
+								<option value="15">15</option>
+								<option value="20">20</option>
+								<option value="30">30</option>
+								<option value="50">50</option>
+								<option value="100">100</option>
+								<option value="200">200</option>
+								<option value="500">500</option>
+								<option value="1000">1000</option>
+							</select><span class="records-label"> records per page</span>
+						</div>
+						<div id="HistoryEdit_LogTable_filterBlock">
+							<input id="HistoryEdit_LogTable_filter" class="search-query" placeholder="Search" type="text">
+						</div>
+						<div id ="HistoryEdit_LogTable_pagerBlock" class="pull-right"><div class="pagination" id ="HistoryEdit_LogTable_pager"></div></div>
+					</div>
+					<div id="HistoryEdit_LogBlock">
+						<table class="table table-striped table-bordered datatable" id="HistoryEdit_LogTable" style="margin-bottom:15px;">
+							<thead><tr><th width="65px">Kind</th><th width="170px" class="text-center">Time</th><th>Text</th></tr></thead>
+							<tbody></tbody>
+						</table>
+					</div>
+				</div>
+			</div>
+
+			<div class="modal-tab padded-tab hide" id="HistoryEdit_ServStatsTab">
+				<div>
+					<div id="HistoryEdit_ServStatsBlock">
+						<table class="table table-striped table-bordered datatable" id="HistoryEdit_ServStatsTable">
+							<thead><tr><th>Server</th><th class="text-right">Articles</th><th class="text-right">Art. %</th><th class="text-right">Success</th><th class="text-right">Failures</th></tr></thead>
+							<tbody></tbody>
+						</table>
+					</div>
+					<div class="pull-right hide" id="HistoryEdit_ServStatsTable_pagerBlock"><div class="pagination" id ="HistoryEdit_ServStatsTable_pager"></div></div>
+				</div>
+			</div>
+
+			<div class="modal-tab padded-tab hide" id="HistoryEdit_TimeStatsTab">
+				<div>
+					<div id="HistoryEdit_TimeStatsBlock">
+						<table class="table table-striped table-bordered datatable" id="HistoryEdit_TimeStatsTable">
+							<thead><tr><th>Statistic</th><th class="text-center">Data</th></tr></thead>
+							<tbody></tbody>
+						</table>
+					</div>
+					<div class="pull-right hide" id="HistoryEdit_TimeStatsTable_pagerBlock"><div class="pagination" id ="HistoryEdit_TimeStatsTable_pager"></div></div>
+				</div>
+			</div>
+
+			<div class="modal-tab hide" id="HistoryEdit_DupeTab">
+				<div class="form-horizontal">
+					<fieldset>
+						<div class="control-group">
+							<label class="control-label" for="HistoryEdit_DupeKey">Duplicate key</label>
+							<div class="controls">
+								<input type="text" class="input-xlarge" id="HistoryEdit_DupeKey" />
+							</div>
+						</div>
+
+						<div class="control-group">
+							<label class="control-label" for="HistoryEdit_DupeScore">Duplicate score</label>
+							<div class="controls">
+								<input type="text" class="input-small" id="HistoryEdit_DupeScore" />
+							</div>
+						</div>
+
+						<div class="control-group">
+							<label class="control-label" for="HistoryEdit_DupeMode">Duplicate mode</label>
+							<div class="controls">
+								<select id="HistoryEdit_DupeMode" class="input-small">
+									<option value="SCORE">Score</option>
+									<option value="ALL">All</option>
+									<option value="FORCE">Force</option>
+								</select>
+							</div>
+						</div>
+
+						<div class="control-group">
+							<label class="control-label" for="HistoryEdit_DupeBackup">Duplicate backup</label>
+							<div class="controls">
+								<label class="checkbox"><input type="checkbox" id="HistoryEdit_DupeBackup"> Use as duplicate backup</label>
+							</div>
+						</div>
+					</fieldset>
+				</div>
+			</div>
+
+		</div>
+	</div>
+
+	<div class="modal-footer">
+
+		<div class="btn-group dropup pull-left">
+			<a class="btn dropdown-toggle" data-toggle="dropdown">Actions <span class="caret"></span></a>
+			<ul class="dropdown-menu footer-button-menu" id="HistoryEdit_ActionsMenu">
+				<li class="menu-header">Actions</li>
+				<li><a href="#" id="HistoryEdit_Delete"><i class="icon-trash"></i> Delete</a></li>
+				<li><a href="#" id="HistoryEdit_Reprocess"><i class="icon-process"></i> Post-Process Again</a></li>
+				<li><a href="#" id="HistoryEdit_Return"><i class="icon-downloads"></i> Download Remaining Files</a></li>
+				<li><a href="#" id="HistoryEdit_ReturnURL"><i class="icon-downloads"></i> Download Again</a></li>
+				<li><a href="#" id="HistoryEdit_Redownload"><i class="icon-downloads"></i> Download Again</a></li>
+				<li><a href="#" id="HistoryEdit_MarkSuccess"><i class="icon-ok"></i> Mark as Success</a></li>
+				<li><a href="#" id="HistoryEdit_MarkGood"><i class="icon-plus"></i> Mark as Good</a></li>
+				<li><a href="#" id="HistoryEdit_MarkBad"><i class="icon-minus"></i> Mark as Bad</a></li>
+				<li class="menu-header" id="HistoryEdit_DNZB_Section">Indexer Links</li>
+				<li><a href="#" target="_blank" class="HistoryEdit_DNZB" id="HistoryEdit_DNZB_Details"><i class="icon-postcard"></i> Details</a></li>
+				<li><a href="#" target="_blank" class="HistoryEdit_DNZB" id="HistoryEdit_DNZB_MoreInfo"><i class="icon-link"></i> More Info</a></li>
+				<li><a href="#" target="_blank" class="HistoryEdit_DNZB" id="HistoryEdit_DNZB_Report"><i class="icon-alert"></i> Report This NZB</a></li>
+			</ul>
+		</div>
+
+		<div class="dialog-transmit" style="position:absolute;margin-left:320px;" id="HistoryEdit_Transmit"><img src="img/transmit.gif"></div>
+		<a href="#" class="btn" data-dismiss="modal" id="HistoryEdit_Close">Cancel</a>
+		<a href="#" class="btn btn-primary" id="HistoryEdit_Save">Save</a>
+	</div>
+</div>
+
+<!-- *** FEED VIEW DIALOG ************************************************************ -->
+
+<div class="modal hide modal-max" id="FeedDialog">
+	<div class="modal-header">
+		<a class="close" href='#' data-dismiss="modal"><i class="icon-close"></i></a>
+		<h3 id ="FeedDialog_Title">Title</h3>
+	</div>
+
+	<div class="modal-body">
+		<div>
+			<div class="modal-tab">
+				<div class="loading-block">
+					<img src="img/transmit.gif"></img>
+				</div>
+				<div>
+					<div class="row-fluid modal-scrollheader">
+						<div class="pull-left btn-toolbar form-inline modal-toolbar" id="FeedDialog_Toolbar">
+
+							<!-- STATUS FILTER BUTTONS -->
+							<div class="btn-group phone-hide">
+								<button class="btn btn-inverse" onclick="FeedDialog.filter('ALL')" title="Show All">All &nbsp;<span class="badge badge-active" id="FeedDialog_Badge_ALL">?</span></button>
+								<button class="btn" onclick="FeedDialog.filter('NEW')" title="Show only New">New &nbsp;<span class="badge" id="FeedDialog_Badge_NEW">?</span></button>
+								<button class="btn" onclick="FeedDialog.filter('FETCHED')" title="Show only Fetched">Fetched &nbsp;<span class="badge" id="FeedDialog_Badge_FETCHED">?</span></button>
+								<button class="btn" onclick="FeedDialog.filter('BACKLOG')" title="Show only Backlog">Backlog &nbsp;<span class="badge" id="FeedDialog_Badge_BACKLOG">?</span></button>
+							</div>
+							<div class="btn-group phone-only inline"><button class="btn btn-inverse" onclick="FeedDialog.filter('ALL')" title="Show All">All <span class="badge badge-active" id="FeedDialog_Badge_ALL2">?</span></button></div>
+							<div class="btn-group phone-only inline"><button class="btn" onclick="FeedDialog.filter('NEW')" title="Show only New">New <span class="badge" id="FeedDialog_Badge_NEW2">?</span></button></div>
+							<div class="btn-group phone-only inline"><button class="btn" onclick="FeedDialog.filter('FETCHED')" title="Show only Fetched">Fetched <span class="badge" id="FeedDialog_Badge_FETCHED2">?</span></button></div>
+							<div class="btn-group phone-only inline"><button class="btn" onclick="FeedDialog.filter('BACKLOG')" title="Show only Backlog">Backlog <span class="badge" id="FeedDialog_Badge_BACKLOG2">?</span></button></div>
+
+							<!-- TITLE/FILENAME BUTTONS -->
+							<div class="btn-group phone-hide">
+								<button class="btn btn-inverse FeedDialog-names" id="FeedDialog_Titles" onclick="FeedDialog.setFilenameMode(false)" title="Show Titles">Titles</button>
+								<button class="btn FeedDialog-names" id="FeedDialog_Filenames" onclick="FeedDialog.setFilenameMode(true)" title="Show Filenames">Filenames</button>
+							</div>
+							<div class="btn-group phone-only inline"><button class="btn FeedDialog-names btn-inverse" id="FeedDialog_Titles2" onclick="FeedDialog.setFilenameMode(false)" title="Show Titles">Titles</button></div>
+							<div class="btn-group phone-only inline"><button class="btn FeedDialog-names" id="FeedDialog_Filenames2" onclick="FeedDialog.setFilenameMode(true)" title="Show Filenames">Filenames</button></div>
+
+						</div>
+						<div class="pull-right" style="margin-bottom:10px;"><input id="FeedDialog_ItemTable_filter" class="search-query" placeholder="Search" type="text"></div>
+					</div>
+
+					<div class="modal-inner-scroll">
+						<table class="table table-striped table-bordered table-check table-cancheck datatable" id="FeedDialog_ItemTable" style="margin-bottom:15px;">
+							<thead><tr><th><div class="check img-check"></div></th><th>Status</th><th id="FeedDialog_ItemTable_Name">Title</th><th>Category</th><th class="text-right">Age</th><th class="text-right">Size</th></tr></thead>
+							<tbody></tbody>
+						</table>
+						<div class="pull-right" id ="FeedDialog_ItemTable_pagerBlock"><div class="pagination" id ="FeedDialog_ItemTable_pager"></div></div>
+					</div>
+				</div>
+			</div>
+		</div>
+
+	</div>
+
+	<div class="modal-footer">
+		<div class="dialog-transmit hide" style="position:absolute;right:220px;" id="FeedDialog_Transmit"><img src="img/transmit.gif"></div>
+		<a href="#" class="btn" data-dismiss="modal" id="FeedDialog_Close">Cancel</a>
+		<a href="#" class="btn btn-primary" id="FeedDialog_Save" onclick="FeedDialog.fetch()">Fetch selected</a>
+	</div>
+</div>
+
+<!-- *** FEED FILTER DIALOG ************************************************************ -->
+
+<div class="modal hide modal-max" id="FeedFilterDialog">
+	<div class="modal-header">
+		<a class="close" href='#' data-dismiss="modal"><i class="icon-close"></i></a>
+		<h3 id ="FeedFilterDialog_Title">Title</h3>
+	</div>
+
+	<div class="modal-body">
+		<div>
+			<div class="modal-tab">
+				<div class="row-fluid modal-scrollheader">
+					<div class="pull-left btn-toolbar form-inline modal-toolbar" id="FeedFilterDialog_Toolbar">
+
+						<!-- FILTER INPUT BUTTONS -->
+						<div class="btn-group">
+							<button class="btn" onclick="FeedFilterDialog.rematch()"><i class="icon-process" id="FeedFilterDialog_RematchIcon"></i> Rematch</button>
+							<button class="btn dropdown-toggle" data-toggle="dropdown"><span class="caret"></span></button>
+							<ul class="dropdown-menu menu-check">
+								<li><a href="#" onclick="FeedFilterDialog.autoRematch()"><table><tr><td><i class="icon-ok" id="FeedFilterDialog_CHAutoRematch"></td><td>Automatic</td></tr></table></a></li>
+							</ul>
+						</div>
+
+						<!-- STATUS FILTER BUTTONS -->
+						<div class="btn-group phone-hide FeedFilterDialog-filter">
+							<button class="btn btn-inverse" onclick="FeedFilterDialog.filter('ALL')" title="Show All">All &nbsp;<span class="badge badge-active" id="FeedFilterDialog_Badge_ALL">?</span></button>
+							<button class="btn" onclick="FeedFilterDialog.filter('ACCEPTED')" title="Show only Accepted">Accepted &nbsp;<span class="badge" id="FeedFilterDialog_Badge_ACCEPTED">?</span></button>
+							<button class="btn" onclick="FeedFilterDialog.filter('REJECTED')" title="Show only Rejected">Rejected &nbsp;<span class="badge" id="FeedFilterDialog_Badge_REJECTED">?</span></button>
+							<button class="btn" onclick="FeedFilterDialog.filter('IGNORED')" title="Show only Ignored">Ignored &nbsp;<span class="badge" id="FeedFilterDialog_Badge_IGNORED">?</span></button>
+						</div>
+						<div class="btn-group phone-only inline FeedFilterDialog-filter"><button class="btn btn-inverse" onclick="FeedFilterDialog.filter('ALL')" title="Show All">All <span class="badge badge-active" id="FeedFilterDialog_Badge_ALL2">?</span></button></div>
+						<div class="btn-group phone-only inline FeedFilterDialog-filter"><button class="btn" onclick="FeedFilterDialog.filter('ACCEPTED')" title="Show only Accepted">Accepted <span class="badge" id="FeedFilterDialog_Badge_ACCEPTED2">?</span></button></div>
+						<div class="btn-group phone-only inline FeedFilterDialog-filter"><button class="btn" onclick="FeedFilterDialog.filter('REJECTED')" title="Show only Rejected">Rejected <span class="badge" id="FeedFilterDialog_Badge_REJECTED2">?</span></button></div>
+						<div class="btn-group phone-only inline FeedFilterDialog-filter"><button class="btn" onclick="FeedFilterDialog.filter('IGNORED')" title="Show only Ignored">Rejected <span class="badge" id="FeedFilterDialog_Badge_IGNORED2">?</span></button></div>
+
+						<!-- TITLE/FILENAME BUTTONS -->
+						<div class="btn-group phone-hide FeedFilterDialog-filter">
+							<button class="btn btn-inverse FeedFilterDialog-names" id="FeedFilterDialog_Titles" onclick="FeedFilterDialog.setFilenameMode(false)" title="Show Titles">Titles</button>
+							<button class="btn FeedFilterDialog-names" id="FeedFilterDialog_Filenames" onclick="FeedFilterDialog.setFilenameMode(true)" title="Show Filenames">Filenames</button>
+						</div>
+						<div class="btn-group phone-only inline FeedFilterDialog-filter"><button class="btn FeedFilterDialog-names btn-inverse" id="FeedFilterDialog_Titles2" onclick="FeedFilterDialog.setFilenameMode(false)" title="Show Titles">Titles</button></div>
+						<div class="btn-group phone-only inline FeedFilterDialog-filter"><button class="btn FeedFilterDialog-names" id="FeedFilterDialog_Filenames2" onclick="FeedFilterDialog.setFilenameMode(true)" title="Show Filenames">Filenames</button></div>
+
+					</div>
+				</div>
+
+				<!-- FILTER EDIT -->
+				<div class="modal-inner-scroll" id="FeedFilterDialog_FilterBlock">
+					<div id="FeedFilterDialog_FilterHeader">Filter</div>
+					<div id="FeedFilterDialog_FilterLines" class="phone-hide">
+						<div id="FeedFilterDialog_FilterNumbers"></div>
+					</div>
+					<div id="FeedFilterDialog_FilterClient">
+						<textarea id="FeedFilterDialog_FilterInput" wrap="off" spellcheck="false" placeholder='Type your filter here'></textarea>
+					</div>
+				</div>
+
+				<!-- SPLITTER -->
+				<div class="modal-inner-scroll phone-hide" id="FeedFilterDialog_Splitter"></div>
+
+				<!-- PREVIEW TABLE -->
+				<div class="modal-inner-scroll" id="FeedFilterDialog_PreviewBlock">
+					<div class="loading-block hide">
+						<img src="img/transmit.gif"></img>
+					</div>
+
+					<table class="table table-striped table-bordered datatable" id="FeedFilterDialog_ItemTable" style="margin-bottom:15px;">
+						<thead><tr><th>Match</th><th>Rule</th><th id="FeedFilterDialog_ItemTable_Name">Title</th><th>Category</th><th class="text-right">Age</th><th class="text-right">Size</th></tr></thead>
+						<tbody></tbody>
+					</table>
+					<div class="pull-right" id ="FeedFilterDialog_ItemTable_pagerBlock"><div class="pagination" id ="FeedFilterDialog_ItemTable_pager"></div></div>
+				</div>
+
+			</div>
+		</div>
+
+	</div>
+
+	<div class="modal-footer">
+		<div class="btn-group pull-left">
+			<a data-toggle="modal" href="#FeedFilterDialogHelp" class="btn pull-left">Quick Help</a>
+		</div>
+
+		<div class="dialog-transmit hide" style="position:absolute;right:220px;" id="FeedFilterDialog_Transmit"><img src="img/transmit.gif"></div>
+		<a href="#" class="btn" data-dismiss="modal">Discard</a>
+		<a href="#" class="btn btn-primary" id="FeedFilterDialog_Save">Apply</a>
+	</div>
+</div>
+
+<!-- *** QUICK HELP: FEED FILTER ************************************************************ -->
+
+<div class="modal no-footer hide" id="FeedFilterDialogHelp">
+	<div class="modal-header">
+	<a class="close" href='#' data-dismiss="modal"><i class="icon-close"></i></a>
+	<h3>Help: Filter for RSS Feed</h3>
+	</div>
+	<div class="modal-body">
+
+		<p>
+		Feed filter consists of rules - one rule per line. Each rule defines a search string
+		and a command, which must be performed if the search string matches.
+		There are five kinds of rule-commands: Accept, Reject, Require, Options, Comment.
+		</p>
+
+		<p>
+		Definition of a rule:
+		</p>
+		<p><strong>
+		 [A:|A(options):|R:|Q:|O(options):|#] &lt;search string&gt;
+		</strong></p>
+
+		<p>
+		<table class="table table-bordered">
+		<tbody>
+		<tr><td>A</td>
+		<td>
+		declares Accept-rule. Rules are accept-rules by default, the "A:" can be omitted.
+		If the feed item matches to the rule the
+		item is considered good and no further rules are checked.
+		</td></tr>
+		<tr><td>R</td>
+		<td>
+		declares Reject-rule. If the feed item matches to the rule the
+		item is considered bad and no further rules are checked.
+		</td></tr>
+		<tr><td>Q</td>
+		<td>
+		declares Require-rule. If the feed item DOES NOT match to the rule the
+		item is considered bad and no further rules are checked.
+		</td></tr>
+		<tr><td>O</td>
+		<td>
+		declares Options-rule. If the feed item matches to the rule the
+		options declared in the rule are set for the item. The item is neither accepted
+		nor rejected via this rule but can be accepted later by one of Accept-rules.
+		In this case the item will have its options already set (unless the Accept-rule
+		overrides them).
+		</td></tr>
+		<tr><td>#</td>
+		<td>
+		lines starting with # are considered comments and are ignored. You can use comments to
+		explain complex rules or to temporary disable rules for debugging.
+		</td></tr>
+		</tbody>
+		</table>
+		</p>
+
+		<h4>Options</h4>
+		<p>
+		<em>Options</em> allow to set properties on nzb-file. It's a comma-separated list of property names with their values.
+		</p>
+		<p>
+		Definition of an option:
+		</p>
+		<p><strong>
+		name:value
+		</strong></p>
+
+		<p>
+		Options can be defined using long option names or short names:
+		<table class="table table-bordered">
+		<tbody>
+		<tr><td width="110px">category (cat, c)</td><td>set category name, value is a string;</td></tr>
+		<tr><td>pause (p)</td><td>add nzb in paused or unpaused state, possible values are: yes (y), no (n);</td></tr>
+		<tr><td>priority (pr, r)</td><td>set priority, value is a signed integer number;</td></tr>
+		<tr><td>priority+ (pr+, r+)</td><td>increase priority, value is a signed integer number;</td></tr>
+		<tr><td>dupescore (ds, s)</td><td>set duplicate score, value is a signed integer number;</td></tr>
+		<tr><td>dupescore+ (ds+, s+)</td><td>increase duplicate score, value is a signed integer number;</td></tr>
+		<tr><td>dupekey (dk, k)</td><td>set duplicate key, value is a string;</td></tr>
+		<tr><td>dupekey+ (dk+, k+)</td><td>add to duplicate key, value is a string;</td></tr>
+		<tr><td>dupemode (dm, m)</td><td>set duplicate check mode, possible values are: score (s), all (a), force (f).
+				<em>Score</em> - download duplicates with higher scores;
+				<em>All</em> - download all duplicates regardless of scores;
+				<em>Force</em> - treat item as unique, ignore all duplicate checks.
+				For <em>Score</em> and <em>All</em> item is skipped if a duplicate marked as "good" exists in history.</td></tr>
+		<tr><td>rageid</td><td>generate duplicate key using this rageid (integer number) and season/episode numbers;</td></tr>
+		<tr><td>series</td><td>generate duplicate key using series identifier (any unique string) and season/episode numbers.</td></tr>
+		</tbody>
+		</table>
+		</p>
+
+		<p>
+		Rule-options override values set in feed-options.
+		</p>
+
+		<h4>Search string</h4>
+		<p>
+		The <em>search string</em> is similar to used in search engines. It consists of
+		search terms separated with spaces. Every term is checked for a feed
+		item and if they all succeed the rule is considered matching.
+		</p>
+
+		<p>
+		Definition of a term:
+		</p>
+		<p><strong>
+		 [+|-][field:][command]param
+		</strong></p>
+
+		<p>
+		<table class="table table-bordered">
+		<tbody>
+		<tr><td>+</td>
+		<td>
+		declares a positive term. Terms are positive by default, the "+" can be omitted;
+		</td></tr>
+		<tr><td>-</td>
+		<td>
+		declares a negative term. If the term succeeds the rule does not match;
+		</td></tr>
+		<tr>
+		<td>field</td>
+		<td>
+		field to which apply the term. If not specified the default field "title" is used;
+		</td></tr>
+		<tr><td>command</td>
+		<td>
+		a special character defining how to interpret the parameter (followed after the command):
+			<table class="table-nonbordered">
+			<tbody>
+			<tr><td>@</td><td> - search for string "param". This is default command, the "@" can be omitted;</td></tr>
+			<tr><td>$</td><td> - "param" defines a regular expression (using POSIX Extended Regular Expressions syntax);</td></tr>
+			<tr><td>=</td><td>  - equal;</td></tr>
+			<tr><td>&lt;</td><td>  - less than;</td></tr>
+			<tr><td>&lt;=</td><td>  - equal or less than;</td></tr>
+			<tr><td>&gt;</td><td>  - greater than;</td></tr>
+			<tr><td>&gt;=</td><td>  - equal or greater than.</td></tr>
+			</tbody>
+			</table>
+		</td></tr>
+		<tr><td>param</td>
+		<td>
+		parameter for command.
+		</td></tr>
+		</tbody>
+		</table>
+		</p>
+
+		<ul>
+		<li>Commands @ and $ are for use with text fields (title, filename, category,
+		link, description, dupekey, dupestatus).</li>
+		<li>Commands =, &lt;, &lt;=, &gt; and &gt;= are for use with numeric fields (size, age,
+		imdbid, rageid, season, episode, priority, dupescore).</li>
+		<li>Any newznab attribute (encoded as "newznab:attr" in the RSS feed) can be used
+		as search field with prefix "attr-", for example "attr-genre".</li>
+		</ul>
+
+		<strong>More about text search (command @):</strong>
+		<ul>
+		<li>Text search supports wildcard characters * (matches any number of any characters), ? (matches any one character) and # (matches one digit).</li>
+		<li>Text search is by default performed against words (word-search mode): the field content
+		is separated into words and then each word is checked against pattern.</li>
+		<li>If the search pattern starts and ends with * (star) the search is performed against the
+		whole field content (substring-search mode).</li>
+		<li>If the search pattern contains word separator characters (except * and ?) the search
+		is performed on the whole field (the word-search would be obviously never successful in this case).</li>
+		<li>Word separators: !\"#$%&'()*+,-./:;&lt;=&gt;?@[\\]^_`{|}~</li>
+		</ul>
+
+		<strong>About numeric fields:</strong>
+		<ul>
+		<li>Field "size" can have suffixes "K" or "KB" for kilobytes, "M" or "MB" for megabytes and
+		"G" or "GB" for gigabytes.</li>
+		<li>Field "age" can have suffixes "m" for minutes, "h" for hours and "d" for days. If suffix
+		is not specified default is days.</li>
+		</ul>
+
+		<p><span class="label label-warning">NOTE:</span>
+		Only fields title, filename and age are always present. The availability of other fields
+		depend on rss feed provider.
+		</p>
+
+		<h4>Examples</h4>
+		<ul>
+		<li>A: s01* -category:anime</li>
+		<li>my show WEB-DL</li>
+		<li>*my?show* WEB-DL size:&lt;1.8GB age:&gt;2h</li>
+		<li>R: size:&gt;9GB</li>
+		<li>Q: HDTV</li>
+		<li>A(category:big movies, priority:50, pause:yes): size:&gt;8GB</>
+		</ul>
+
+		<p><span class="label label-warning">NOTE:</span>
+		This is a short documentation. For more info visit
+		<a href="http://nzbget.net/RSS">nzbget.net/RSS</a>.
+		</p>
+	</div>
+</div>
+
+<!-- *** CONFIRMATION DIALOG ************************************************************ -->
+
+<div class="modal modal-mini modal-padded modal-center hide" id="ConfirmDialog">
+	<div class="modal-header">
+		<a class="close" href='#' data-dismiss="modal"><i class="icon-close"></i></a>
+		<h3 id="ConfirmDialog_Title">Title</h3>
+	</div>
+
+	<div class="modal-body">
+		<div id="ConfirmDialog_Text">Text</div>
+	</div>
+
+	<div class="modal-footer">
+		<div class="btn-group pull-left">
+			<a data-toggle="modal" href="#" class="btn pull-left" id="ConfirmDialog_Help">Quick Help</a>
+		</div>
+		<a href="#" class="btn" data-dismiss="modal" id="ConfirmDialog_Close">Cancel</a>
+		<a href="#" class="btn btn-primary" id="ConfirmDialog_OK">Action</a>
+	</div>
+</div>
+
+<!-- *** DELETE DOWNLOADS CONFIRMATION DIALOG DATA ***************************************** -->
+
+<div class="hide" id="DownloadsDeleteConfirmDialog">
+	<div id="DownloadsDeleteConfirmDialog_Title">Downloads</div>
+	<div id="DownloadsDeleteConfirmDialog_Text">
+		<p id="DownloadsDeleteConfirmDialog_Simple" class="hide">
+			Delete selected downloads?
+		</p>
+
+		<div id="DownloadsDeleteConfirmDialog_Options">
+			<p>
+				How to delete selected downloads?
+			</p>
+			<div style="margin-left: 30px; margin-bottom: 10px;">
+				<label class="radio"><input type="radio" name ="DownloadsDeleteConfirmDialog_Delete" id="DownloadsDeleteConfirmDialog_Delete"> Move downloads to history (recommended)</label>
+				<label class="radio" id="DownloadsDeleteConfirmDialog_DeleteDupeLabel"><input type="radio" name ="DownloadsDeleteConfirmDialog_Delete" id="DownloadsDeleteConfirmDialog_DeleteDupe"> Move downloads to history as duplicates</label>
+				<label class="radio"><input type="radio" name ="DownloadsDeleteConfirmDialog_Delete" id="DownloadsDeleteConfirmDialog_DeleteFinal"> Delete downloads without history tracking</label>
+			</div>
+		</div>
+		
+		<p id="DownloadsDeleteConfirmDialog_Remain" class="confirm-help-block">
+			Selected downloads will be removed from queue. Already downloaded files remain on disk (this behavior can be changed via option
+			<strong><em>DeleteCleanupDisk</em></strong>).
+		</p>
+		<p id="DownloadsDeleteConfirmDialog_Cleanup" class="confirm-help-block">
+			Selected downloads will be removed from queue. Already downloaded files will be deleted from disk (this behavior can be changed via option
+			<strong><em>DeleteCleanupDisk</em></strong>).
+		</p>
+	</div>
+	<div id="DownloadsDeleteConfirmDialog_OK">Delete</div>
+	<div id="DownloadsDeleteConfirmDialog_Help">DownloadsDeleteHelp</div>
+</div>
+
+<!-- *** QUICK HELP: EXPLAINING DELETE DOWNLAODS OPTIONS ********************************* -->
+
+<div class="modal no-footer modal-small modal-center hide" id="DownloadsDeleteHelp">
+	<div class="modal-header">
+	<a class="close" href='#' data-dismiss="modal"><i class="icon-close"></i></a>
+	<h3>Help: Explaining delete options</h3>
+	</div>
+	<div class="modal-body">
+	<p>Duplicate check (option <em><strong>DupeCheck</strong></em>) requires information about downloaded and failed nzb-files.</p>
+	<p>If you delete download without creating history record the duplicate check may not be able to detect duplicates and
+	the same file or a duplicate may be queued later from RSS feed or other source.</p>
+	<p>History records marked as duplicate backups can be used by duplicate check if the main download fails.</p>
+	</div>
+</div>
+
+<!-- *** DELETE HISTORY RECORDS CONFIRMATION DIALOG DATA ******************************** -->
+
+<div class="hide" id="HistoryDeleteConfirmDialog">
+	<div id="HistoryDeleteConfirmDialog_Title">History</div>
+	<div id="HistoryDeleteConfirmDialog_Text">
+		<p id="HistoryDeleteConfirmDialog_Simple">
+			Delete selected history records?
+		</p>
+
+		<div id="HistoryDeleteConfirmDialog_Options">
+			<p>
+				How to delete selected history records?
+			</p>
+			<div style="margin-left: 30px; margin-bottom: 10px;">
+				<label class="radio"><input type="radio" name ="HistoryDeleteConfirmDialog_Delete" id="HistoryDeleteConfirmDialog_Hide"> Hide records from history (recommended)</label>
+				<label class="radio"><input type="radio" name ="HistoryDeleteConfirmDialog_Delete" id="HistoryDeleteConfirmDialog_Delete"> Remove records from history altogether</label>
+			</div>
+		</div>
+
+		<p id="HistoryDeleteConfirmDialog_DeleteNoCleanup" class="confirm-help-block">
+			Selected records will be deleted from history. All files remain on disk.
+		</p>
+
+		<p id="HistoryDeleteConfirmDialog_DeleteCanCleanup" class="confirm-help-block">
+			Selected records will be deleted from history. All files remain on disk (for failed downloads this
+			behavior can be changed via option <strong><em>DeleteCleanupDisk</em></strong>).
+		</p>
+
+		<p id="HistoryDeleteConfirmDialog_DeleteWillCleanup" class="confirm-help-block">
+			Selected records will be deleted from history. For failed downloads (par-failure or unpack-failure)
+			all downloaded files will be deleted (this behavior can be changed via option <strong><em>DeleteCleanupDisk</em></strong>).
+		</p>
+
+		<p id="HistoryDeleteConfirmDialog_DupAlert" class="alert alert-warning" style="margin-top: 10px;">
+			Permanent deleting of hidden records may have an impact on duplicate check and is not recommended.
+		</p>
+	</div>
+	<div id="HistoryDeleteConfirmDialog_OK">Delete</div>
+	<div id="HistoryDeleteConfirmDialog_Help">HistoryDeleteHelp</div>
+</div>
+
+<!-- *** QUICK HELP: EXPLAINING DELETE FROM HISTORY OPTIONS ********************************** -->
+
+<div class="modal no-footer modal-small modal-center hide" id="HistoryDeleteHelp">
+	<div class="modal-header">
+	<a class="close" href='#' data-dismiss="modal"><i class="icon-close"></i></a>
+	<h3>Help: Explaining delete options</h3>
+	</div>
+	<div class="modal-body">
+	<p>Duplicate check (option <em><strong>DupeCheck</strong></em>) requires information about downloaded and failed nzb-files.</p>
+	<p>If you don't want to see a nzb-file in the history you can hide it. For better performance almost all information
+	associated with the file will be removed, except for few fields required for duplicate check.</p>
+	<p>If you remove history record permanently the duplicate check may not be able to detect duplicates and
+	the same file or a duplicate may be queued later from RSS feed or other source.</p>
+	</div>
+</div>
+
+<!-- *** REDOWNLOAD CURRENT HISTORY RECORD CONFIRMATION DIALOG DATA ******************************** -->
+
+<div class="hide" id="HistoryEditRedownloadConfirmDialog">
+	<div id="HistoryEditRedownloadConfirmDialog_Title">History</div>
+	<div id="HistoryEditRedownloadConfirmDialog_Text">
+		<p>
+		Download selected nzbs again?
+		</p>
+		<p class="confirm-help-block">
+		All downloaded files will be deleted and the nzbs will be downloaded again from scratch.
+		</p>
+	</div>
+	<div id="HistoryEditRedownloadConfirmDialog_OK">Download Again</div>
+</div>
+
+<!-- *** MARK AS SUCCESS CURRENT HISTORY RECORD CONFIRMATION DIALOG DATA ******************************** -->
+
+<div class="hide" id="HistoryEditSuccessConfirmDialog">
+	<div id="HistoryEditSuccessConfirmDialog_Title">History</div>
+	<div id="HistoryEditSuccessConfirmDialog_Text">
+		<p>
+		Mark selected history records as success?
+		</p>
+		<p class="confirm-help-block">
+		Marking has an effect on duplicate handling and RSS.<br>Records marked as success
+		considered successfully downloaded and processed. This is useful for downloads repaired
+		or processed outside of NZBGet. Duplicates with higher duplicate scores may be downloaded
+		in the future.
+		</p>
+	</div>
+	<div id="HistoryEditSuccessConfirmDialog_OK">Mark Success</div>
+</div>
+
+<!-- *** MARK AS GOOD CURRENT HISTORY RECORD CONFIRMATION DIALOG DATA ******************************** -->
+
+<div class="hide" id="HistoryEditGoodConfirmDialog">
+	<div id="HistoryEditGoodConfirmDialog_Title">History</div>
+	<div id="HistoryEditGoodConfirmDialog_Text">
+		<p>
+		Mark selected history records as good?
+		</p>
+		<p class="confirm-help-block">
+		Marking has an effect on duplicate handling and RSS.<br>For titles marked as good no more duplicates
+		will be downloaded, even with higher duplicate score. Existing dupe-backups will be removed from history.
+		</p>
+	</div>
+	<div id="HistoryEditGoodConfirmDialog_OK">Mark Good</div>
+</div>
+
+<!-- *** MARK AS BAD CURRENT HISTORY RECORD CONFIRMATION DIALOG DATA ******************************** -->
+
+<div class="hide" id="HistoryEditBadConfirmDialog">
+	<div id="HistoryEditBadConfirmDialog_Title">History</div>
+	<div id="HistoryEditBadConfirmDialog_Text">
+		<p>
+		Mark selected history records as Bad?
+		</p>
+		<p class="confirm-help-block">
+		Marking has an effect on duplicate handling and RSS.<br>If dupe-backups exist in the history
+		the best of them will be moved to queue for download. Otherwise the title will be watched and downloaded
+		when it becomes available.
+		</p>
+	</div>
+	<div id="HistoryEditBadConfirmDialog_OK">Mark Bad</div>
+</div>
+
+<!-- *** CLEAR MESSAGES CONFIRMATION DIALOG DATA ***************************************** -->
+
+<div class="hide" id="MessagesClearConfirmDialog">
+	<div id="MessagesClearConfirmDialog_Title">Messages</div>
+	<div id="MessagesClearConfirmDialog_Text">
+		<p>
+		Clear Messages?
+		</p>
+		<p class="confirm-help-block">
+		All log records will be deleted from screen buffer. The log-file remains on disk unchanged.
+		</p>
+	</div>
+	<div id="MessagesClearConfirmDialog_OK">Clear</div>
+</div>
+
+<!-- *** DELETE CONFIG MULTI-OPTION CONFIRMATION DIALOG DATA ***************************************** -->
+
+<div class="hide" id="ConfigDeleteConfirmDialog">
+	<div id="ConfigDeleteConfirmDialog_Title">Configuration</div>
+	<div id="ConfigDeleteConfirmDialog_Text">
+		<p>
+		Delete <span id="ConfigDeleteConfirmDialog_Option"></span>?
+		</p>
+	</div>
+	<div id="ConfigDeleteConfirmDialog_OK">Delete</div>
+</div>
+
+<!-- *** RESET CUSTOM VOLUME COUNTER CONFIRMATION DIALOG DATA ******************************** -->
+
+<div class="hide" id="StatDialogResetConfirmDialog">
+	<div id="StatDialogResetConfirmDialog_Title">Reset</div>
+	<div id="StatDialogResetConfirmDialog_Text">
+		<p>
+		Reset custom counter for <span id="StatDialogResetConfirmDialog_Server">all news servers</span>?
+		</p>
+		<p class="confirm-help-block">
+		Last reset on <span id="StatDialogResetConfirmDialog_Time">Fri Apr 04 2014 09:32:24</span>.
+		</p>
+	</div>
+	<div id="StatDialogResetConfirmDialog_OK">Reset</div>
+</div>
+
+<!-- *** ADD FILES DIALOG ************************************************************ -->
+
+<div class="modal hide" id="AddDialog">
+	<div class="modal-header">
+		<a class="close" href='#' data-dismiss="modal"><i class="icon-close"></i></a>
+		<h3>Add NZB-Files to Download Queue</h3>
+	</div>
+
+	<div class="modal-body" id="AddDialog_Target">
+		<div class="form-horizontal">
+			<fieldset>
+
+				<div class="control-group">
+					<label class="control-label" for="AddDialog_URL" id="AddDialog_URLLabel"><i class="icon-remove"></i><img class="hide" src="img/transmit-file.gif" width="16px" height="16px"> Add from URL</label>
+					<div class="controls">
+						<input type="text" class="input-xlarge" id="AddDialog_URL" />
+					</div>
+				</div>
+
+				<div class="control-group">
+					<label class="control-label" for="AddDialog_Files">Add local files</label>
+					<div class="controls">
+						<div style="margin-top:6px; margin-bottom:10px;"><a href="#" class="btn" style="margin-top: -6px;" id="AddDialog_Select">Select files</a> or drop files here.</div>
+						<input multiple="multiple" type="file" id="AddDialog_Input" class="hidden-file-input">
+						<div class="dialog-add-files hide" id="AddDialog_Files"></div>
+					</div>
+				</div>
+
+				<div class="control-group">
+					<label class="control-label" for="AddDialog_Priority">Priority</label>
+					<div class="controls">
+						<select id="AddDialog_Priority">
+						</select>
+					</div>
+				</div>
+
+				<div class="control-group">
+					<label class="control-label" for="AddDialog_Category">Category</label>
+					<div class="controls">
+						<select id="AddDialog_Category">
+						</select>
+					</div>
+				</div>
+
+				<div class="control-group">
+					<label class="control-label" for="AddDialog_Paused">Options</label>
+					<div class="controls">
+						<label class="checkbox"><input type="checkbox" id="AddDialog_Paused"> Add paused</label>
+						<label class="checkbox"><input type="checkbox" id="AddDialog_DupeForce"> Disable duplicate check</label>
+					</div>
+				</div>
+
+				<div class="control-group">
+					<label class="control-label" for="AddDialog_Scan">Add from NzbDir</label>
+					<div class="controls">
+						<a href="#" class="btn" id="AddDialog_Scan">Scan incoming directory</a>
+					</div>
+				</div>
+
+			</fieldset>
+		</div>
+	</div>
+
+	<div class="modal-footer">
+		<div class="btn-group pull-left">
+			<a data-toggle="modal" href="#AddDialogHelp" class="btn pull-left">Quick Help</a>
+		</div>
+
+		<div class="dialog-transmit hide" style="position:absolute;margin-left:260px;" id="AddDialog_Transmit"><img src="img/transmit.gif"></div>
+		<a href="#" class="btn" data-dismiss="modal">Cancel</a>
+		<a href="#" class="btn btn-primary" id="AddDialog_Submit">Submit</a>
+	</div>
+</div>
+
+<!-- *** QUICK HELP: ADD FILES ************************************************************ -->
+
+<div class="modal no-footer hide" id="AddDialogHelp">
+	<div class="modal-header">
+	<a class="close" href='#' data-dismiss="modal"><i class="icon-close"></i></a>
+	<h3>Help: Tips for adding NZB-Files</h3>
+	</div>
+	<div class="modal-body">
+		<ul class="help">
+			<li>For adding of local files the web-interface uses FileReader API available in most modern browsers:
+			<table class="table table-condensed table-striped">
+			<thead>
+			<tr><th>Browser</th><th class="text-center">Minimum version</th><th class="text-center">Tested version</th></tr>
+			<tbody>
+			<tr><td>Firefox</th><td class="text-center">3.6</td><td class="text-center">13</td></tr>
+			<tr><td>Chrome</th><td class="text-center">6</td><td class="text-center">19</td></tr>
+			<tr><td>Opera</th><td class="text-center">11.1</td><td class="text-center">12</td></tr>
+			<tr><td>Safari</th><td class="text-center">6</td><td class="text-center">6.0</td></tr>
+			<tr><td>IE</th><td class="text-center">10</td><td class="text-center">10</td></tr>
+			</tbody>
+			</table>
+			</li>
+			<li>You can drag and drop files directly onto the downloads page without clicking on the <strong>Add</strong> button first.
+			The <strong>Add Dialog</strong> will show automatically.</li>
+			<li>Priority and category can be changed later in the edit dialog.</li>
+			<li>The categories can be configured in section <strong>CATEGORIES</strong> on settings page.</li>
+			<li>Use button <strong>Scan incoming directory</strong> if the automatic scanning of incoming nzb-directory is disabled (see options <em>NzbDir</em> and <em>NzbDirInterval</em>).</li>
+		</ul>
+	</div>
+</div>
+
+<!-- *** CHOOSE SCRIPT DIALOG ****************************************************** -->
+
+<div class="modal modal-padded hide" id="ScriptListDialog">
+	<div class="modal-header">
+		<a class="close" href='#' data-dismiss="modal"><i class="icon-close"></i></a>
+		<h3 id="ScriptListDialog_Title">Choose scripts</h3>
+	</div>
+
+	<div class="modal-body" style="padding-bottom:0px">
+		<div class="form-vertical">
+			<fieldset>
+
+				<p id="ScriptListDialog_Instruction">Select scripts for option <strong>PostScript</strong></p>
+
+				<div>
+					<table class="table table-striped table-bordered table-check table-cancheck order-mode datatable" id="ScriptListDialog_ScriptTable" style="margin-bottom:15px;">
+						<thead><tr><th><div class="check img-check"/></th><th>Name</th></tr></thead>
+						<tbody></tbody>
+					</table>
+				</div>
+
+				<p id="ScriptListDialog_OrderInfo" class="hide" style="margin-top:-5px; margin-bottom:10px;">The script execution order is saved globally in the option <em><strong>ScriptOrder</strong></em> and affects all
+				categories as well as the order of scripts in the edit download dialog.</p>
+
+				<div class="hide" id="ScriptListDialog_ScriptTable_pager"></div>
+
+			</fieldset>
+		</div>
+	</div>
+
+	<div class="modal-footer">
+		<a href="#" class="btn" data-dismiss="modal">Discard</a>
+		<a href="#" class="btn btn-primary" id="ScriptListDialog_Save">Apply</a>
+	</div>
+</div>
+
+<!-- *** RESTORE SETTINGS DIALOG ****************************************************** -->
+
+<div class="modal modal-padded hide" id="RestoreSettingsDialog">
+	<div class="modal-header">
+		<a class="close" href='#' data-dismiss="modal"><i class="icon-close"></i></a>
+		<h3>Restore Settings</h3>
+	</div>
+
+	<div class="modal-body" style="padding-bottom:0px">
+		<div class="form-vertical">
+			<fieldset>
+
+				<p id="RestoreSettingsDialog_Instruction">Select sections to restore. Tip: click on the checkbox of the table header to select all sections.</p>
+
+				<div>
+					<table class="table table-striped table-bordered table-check table-cancheck datatable" id="RestoreSettingsDialog_SectionTable" style="margin-bottom:15px;">
+						<thead><tr><th><div class="check img-check"/></th><th>Section</th></tr></thead>
+						<tbody></tbody>
+					</table>
+				</div>
+
+				<div class="hide" id="RestoreSettingsDialog_SectionTable_pager"></div>
+
+			</fieldset>
+		</div>
+	</div>
+
+	<div class="modal-footer">
+		<a href="#" class="btn" data-dismiss="modal">Cancel</a>
+		<a href="#" class="btn btn-primary" id="RestoreSettingsDialog_Restore">Restore</a>
+	</div>
+</div>
+
+<!-- *** SETTINGS RESTORED DIALOG ************************************************** -->
+
+<div class="modal modal-mini modal-padded modal-center hide" id="SettingsRestoredDialog">
+	<div class="modal-header">
+	<a class="close" href='#' data-dismiss="modal"><i class="icon-close"></i></a>
+	<h3>Settings restored</h3>
+	</div>
+	<div class="modal-body">
+	<p>Settings have been loaded from backup file.</p>
+	<p>You can review the loaded settings and then save them by clicking on <em><strong>Save all changes</strong></em>.</p>
+	</div>
+	<div class="modal-footer">
+	<a href="#" class="btn btn-primary" data-dismiss="modal">Close</a>
+	</div>
+</div>
+
+<!-- *** LEAVE CONFIG TAB CONFIRMATION DIALOG ************************************** -->
+
+<div class="modal modal-mini modal-padded modal-center hide" id="LeaveConfigDialog">
+	<div class="modal-header">
+		<a class="close" href='#' data-dismiss="modal"><i class="icon-close"></i></a>
+		<h3>Not saved changes</h3>
+	</div>
+
+	<div class="modal-body">
+		<div>
+		<p>
+		There are unsaved changes on setings page. If you leave the page now all changes will be discarded.
+		</p>
+		</div>
+	</div>
+
+	<div class="modal-footer">
+		<a href="#" class="btn btn-danger pull-left" onclick="Config.discardChanges()">Discard changes</a>
+		<a href="#" class="btn" data-dismiss="modal">Stop</a>
+		<a href="#" class="btn btn-primary" onclick="Config.saveChanges()">Save changes</a>
+	</div>
+</div>
+
+<!-- *** QUICK HELP: New Configuration Option ************************************************** -->
+
+<div class="modal modal-mini modal-padded modal-center hide" id="ConfigNewOptionHelp">
+	<div class="modal-header">
+	<a class="close" href='#' data-dismiss="modal"><i class="icon-close"></i></a>
+	<h3>Help: New configuration option</h3>
+	</div>
+	<div class="modal-body">
+	<p>This option doesn't exist in your configuration file yet.</p>
+	<p>The option was set to default value and will be written to your configuration file when you save it.</p>
+	</div>
+	<div class="modal-footer">
+	<a href="#" class="btn btn-primary" data-dismiss="modal">Close</a>
+	</div>
+</div>
+
+<!-- *** UPDATE DIALOG ************************************************** -->
+
+<div class="modal modal-padded-small modal-center hide" id="UpdateDialog">
+	<div class="modal-header">
+	<a class="close" href='#' data-dismiss="modal"><i class="icon-close"></i></a>
+	<h3>Update NZBGet</h3>
+	</div>
+	<div class="modal-body">
+	
+	<p id="UpdateDialog_InstalledInfo" style="margin-top:0px; margin-bottom:5px;">Currently installed: <span id="UpdateDialog_VerInstalled"></span></p>
+	<p id="UpdateDialog_CheckProgress" class="hide">Checking for updates <img style="margin-left:5px;vertical-align:top;margin-top:1px;" src="img/transmit.gif" width="16px" height="16px"></p>
+	<p id="UpdateDialog_CheckFailed" class="hide failure-message"><strong>Check failed. Please try again later.</strong></p>
+	<p id="UpdateDialog_UpdateAvail"><strong>An update is available for your platform!</strong></p>
+	<p id="UpdateDialog_UpdateNotAvail" class="hide"><strong>No updates are available for your platform.</strong></p>
+	
+	<div id="UpdateDialog_UpdateNoInfo" class="hide">
+	<p><strong>Automatic updates are not configured for your platform.</strong></p>
+	<p class="alert alert-info">
+	If you compiled the program yourself you know how to update.
+	If you installed a binary package ask maintainer to add support for automatic updates.
+	If you create a public package please read <a href="http://nzbget.net/Packaging" target="_blank">"About Packaging"</a>.
+	</p>
+	</div>
+	
+	<table id="UpdateDialog_Versions" class="table" style="margin-top:10px;">
+	<thead>
+		<tr>
+			<th></th>
+			<th class="text-center" width="110">Stable</th>
+			<th class="text-center" width="110">Testing</th>
+			<th class="text-center" width="110">Development</th>
+		</tr>
+	</thead>
+	<tbody>
+		<tr>
+			<td class="update-row-name">Official releases</td>
+			<td class="text-center"><span id="UpdateDialog_CurStable">11.0</span><br>
+			<a class="update-release-notes" id="UpdateDialog_CurNotesStable" href="#" target="_blank">release notes</a></td>
+			<td class="text-center"><span id="UpdateDialog_CurTesting">12.0-r870</span><br>
+			<a class="update-release-notes" id="UpdateDialog_CurNotesTesting" href="#" target="_blank">release notes</a></td>
+			<td class="text-center"><span id="UpdateDialog_CurDevel">12.0-r880</span><br>
+			<a class="update-release-notes" id="UpdateDialog_CurNotesDevel" href="#" target="_blank">code log</a></td>
+		</tr>
+		<tr id="UpdateDialog_AvailRow">
+			<td class="update-row-name">For your platform</td>
+			<td class="text-center"><span id="UpdateDialog_AvailStable"></span><br>
+			<span id="UpdateDialog_AvailNotesStableBlock"><a class="update-release-notes" id="UpdateDialog_AvailNotesStable" href="#" target="_blank">package info</a><br></span>
+			<a class="btn btn-success" id="UpdateDialog_InstallStable" data-kind="stable" href="#">Install</a></td>
+			<td class="text-center"><span id="UpdateDialog_AvailTesting"></span><br>
+			<span id="UpdateDialog_AvailNotesTestingBlock"><a class="update-release-notes" id="UpdateDialog_AvailNotesTesting" href="#" target="_blank">package info</a><br></span>
+			<a class="btn btn-success" id="UpdateDialog_InstallTesting" data-kind="testing" href="#">Install</a></td>
+			<td class="text-center"><span id="UpdateDialog_AvailDevel"></span><br>
+			<span id="UpdateDialog_AvailNotesDevelBlock"><a class="update-release-notes" id="UpdateDialog_AvailNotesDevel" href="#" target="_blank">package info</a><br></span>
+			<a class="btn btn-success" id="UpdateDialog_InstallDevel" data-kind="devel" href="#">Install</a></td>
+		</tr>
+	</tbody></table>
+
+	</div>
+	<div class="modal-footer">
+		<a href="#" class="btn btn-primary" data-dismiss="modal">Cancel</a>
+	</div>
+</div>
+
+<!-- *** INSTALL DIALOG ************************************************** -->
+
+<div class="modal modal-center hide" id="UpdateProgressDialog">
+	<div class="modal-header">
+	<a class="close" href='#' data-dismiss="modal"><i class="icon-close"></i></a>
+	<h3>Updating NZBGet</h3>
+	</div>
+	<div class="modal-body">
+		<pre id="UpdateProgressDialog_Log">
+		</pre>	
+	</div>
+</div>
+
+<!-- *** ERROR DIALOG ************************************************** -->
+
+<div class="modal modal-mini modal-padded modal-center hide" id="AlertDialog">
+	<div class="modal-header">
+	<a class="close" href='#' data-dismiss="modal"><i class="icon-close"></i></a>
+	<h3 id="AlertDialog_Title">Title</h3>
+	</div>
+	<div class="modal-body">
+	<p id="AlertDialog_Text"></p>
+	</div>
+	<div class="modal-footer">
+	<a href="#" class="btn btn-primary" data-dismiss="modal">Close</a>
+	</div>
+</div>
+
+<!-- ***  ALERT: NOT IMPLEMENTED***************************************************** -->
+
+<div id="Notif_NotImplemented" data-duration="1000" class="alert alert-error alert-center alert-center-small hide">
+    <strong>Not yet implemented</strong>
+</div>
+
+<!-- *** RELOAD DIALOG DATA ***************************************** -->
+
+<div class="hide" id="ReloadConfirmDialog">
+	<div id="ReloadConfirmDialog_Title">Reload (soft-restart)</div>
+	<div id="ReloadConfirmDialog_Text">
+		<p>
+		Reload NZBGet?
+		</p>
+		<p class="confirm-help-block">
+		The configuration will be reloaded and the program will be reinitialized.
+		</p>
+	</div>
+	<div id="ReloadConfirmDialog_OK">Reload</div>
+</div>
+
+<!-- ***  RELOAD INFO BLOCK ***************************************** -->
+
+<div id="ConfigReloadInfo" class="alert alert-success hide">
+	<h4 class="alert-heading" id="ConfigReloadTitle">Reloading NZBGet</h4>
+	<p>
+	<img style="vertical-align:top; margin-top:1px; width:16px; height:16px;" src="img/transmit-reload-2x.gif" id="ConfigReloadTransmit"> <span id="ConfigReloadAction">Stopping all activities and reloading...</span>
+	</p>
+	<div id="ConfigReloadInfoNotes" class="hide">
+	Should this take too long:
+	<ul>
+		<li>Try to refresh the page in browser manually.</li>
+		<li>If you changed remote control settings (IP, Port, Password) update the URL in browser accordingly.</li>
+	</ul>
+	</div>
+</div>
+
+<!-- *** SHUTDOWN DIALOG DATA ***************************************** -->
+
+<div class="hide" id="ShutdownConfirmDialog">
+	<div id="ShutdownConfirmDialog_Title">Shutdown</div>
+	<div id="ShutdownConfirmDialog_Text">
+		<p>
+		Shutdown NZBGet?
+		</p>
+		<p class="alert alert-danger">
+		The program will be stopped. You will no longer be able to access or start it via web-interface. Make sure you know how to start the program again.
+		</p>
+	</div>
+	<div id="ShutdownConfirmDialog_OK">Shutdown</div>
+</div>
+
+<!-- ***  NOTIFICATIONS ************************************************************ -->
+
+<div id="Notif_AddFiles" data-duration="1000" class="alert alert-inverse alert-center alert-center-small hide">
+    <strong>Files Submitted</strong>
+</div>
+
+<div id="Notif_Scan" data-duration="1000" class="alert alert-inverse alert-center alert-center-small hide">
+    <strong>Scan Completed</strong>
+</div>
+
+<div id="Notif_SetSpeedLimit" data-duration="1000" class="alert alert-inverse alert-center alert-center-small hide">
+    <strong>Speed Limit Changed</strong>
+</div>
+
+<div id="Notif_Downloads_Saved" data-duration="1000" class="alert alert-inverse alert-center alert-center-small hide">
+    <strong>Saved</strong>
+</div>
+
+<div id="Notif_Downloads_Pausing" data-duration="1000" class="alert alert-inverse alert-center alert-center-small hide">
+    <strong>Pausing</strong>
+</div>
+
+<div id="Notif_Downloads_Paused" data-duration="1000" class="alert alert-inverse alert-center alert-center-small hide">
+    <strong>Paused</strong>
+</div>
+
+<div id="Notif_Downloads_Resumed" data-duration="1000" class="alert alert-inverse alert-center alert-center-small hide">
+    <strong>Resumed</strong>
+</div>
+
+<div id="Notif_Downloads_Deleted" data-duration="1000" class="alert alert-inverse alert-center alert-center-small hide">
+    <strong>Deleted</strong>
+</div>
+
+<div id="Notif_Downloads_PostCanceled" data-duration="1000" class="alert alert-inverse alert-center alert-center-small hide">
+    <strong>Canceled</strong>
+</div>
+
+<div id="Notif_Downloads_Moved" data-duration="1000" class="alert alert-inverse alert-center alert-center-small hide">
+    <strong>Moved</strong>
+</div>
+
+<div id="Notif_Downloads_Merged" data-duration="1000" class="alert alert-inverse alert-center alert-center-small hide">
+    <strong>Merged</strong>
+</div>
+
+<div id="Notif_Downloads_Splitted" data-duration="1000" class="alert alert-inverse alert-center alert-center-small hide">
+    <strong>Splitted</strong>
+</div>
+
+<div id="Notif_Downloads_SplitError" data-duration="2000" class="alert alert-error alert-center alert-center-medium hide">
+    <strong>Could not split. Check messages for errors.</strong>
+</div>
+
+<div id="Notif_Downloads_SplitNotPossible" data-duration="4000" class="alert alert-error alert-center alert-center-medium hide">
+    <strong>Cannot split. Some of selected files are already (partially) downloaded.</strong>
+</div>
+
+<div id="Notif_Downloads_Select" data-duration="2000" class="alert alert-error alert-center alert-center-small hide">
+    <strong>Please select records first</strong>
+</div>
+
+<div id="Notif_Downloads_SelectMulti" data-duration="2000" class="alert alert-error alert-center alert-center-medium hide">
+    <strong>Please select at least two records</strong>
+</div>
+
+<div id="Notif_Downloads_CheckPostProcess" data-duration="2000" class="alert alert-error alert-center alert-center-medium hide">
+    <strong>Post-processing-downloads cannot be edited</strong>
+</div>
+
+<div id="Notif_Downloads_CheckURL" data-duration="2000" class="alert alert-error alert-center alert-center-medium hide">
+    <strong>URLs cannot be merged or paused</strong>
+</div>
+
+<div id="Notif_Downloads_Sorted" data-duration="1000" class="alert alert-inverse alert-center alert-center-small hide">
+    <strong>Sorted</strong>
+</div>
+
+<div id="Notif_Edit_Select" data-duration="2000" class="alert alert-error alert-center alert-center-small hide">
+    <strong>Please select records first</strong>
+</div>
+
+<div id="Notif_History_Deleted" data-duration="1000" class="alert alert-inverse alert-center alert-center-small hide">
+    <strong>Deleted</strong>
+</div>
+
+<div id="Notif_History_Cleared" data-duration="1000" class="alert alert-inverse alert-center alert-center-small hide">
+    <strong>Cleared</strong>
+</div>
+
+<div id="Notif_History_Deleted" data-duration="1000" class="alert alert-inverse alert-center alert-center-small hide">
+    <strong>Deleted</strong>
+</div>
+
+<div id="Notif_History_Returned" data-duration="1000" class="alert alert-inverse alert-center alert-center-small hide">
+    <strong>Returned to Queue</strong>
+</div>
+
+<div id="Notif_History_Reprocess" data-duration="1000" class="alert alert-inverse alert-center alert-center-small hide">
+    <strong>Post-Processing</strong>
+</div>
+
+<div id="Notif_History_Saved" data-duration="1000" class="alert alert-inverse alert-center alert-center-small hide">
+    <strong>Saved</strong>
+</div>
+
+<div id="Notif_History_Select" data-duration="2000" class="alert alert-error alert-center alert-center-small hide">
+    <strong>Please select records first</strong>
+</div>
+
+<div id="Notif_History_CantMark" data-duration="2000" class="alert alert-error alert-center alert-center-small hide">
+    <strong>Cannot mark URL-records</strong>
+</div>
+
+<div id="Notif_History_Marked" data-duration="1000" class="alert alert-inverse alert-center alert-center-small hide">
+    <strong>Marked</strong>
+</div>
+
+<div id="Notif_History_CantReprocess" data-duration="2000" class="alert alert-error alert-center alert-center-medium hide">
+    <strong>Cannot post-process URL- or hidden records</strong>
+</div>
+
+<div id="Notif_History_CantRedownload" data-duration="2000" class="alert alert-error alert-center alert-center-medium hide">
+    <strong>Cannot redownload hidden records</strong>
+</div>
+
+<div id="Notif_Feeds_Fetch" data-duration="1000" class="alert alert-inverse alert-center alert-center-small hide">
+    <strong>Fetching new items</strong>
+</div>
+
+<div id="Notif_FeedDialog_Select" data-duration="2000" class="alert alert-error alert-center alert-center-small hide">
+    <strong>No records selected</strong>
+</div>
+
+<div id="Notif_FeedDialog_Fetched" data-duration="1000" class="alert alert-inverse alert-center alert-center-small hide">
+    <strong>Fetching items</strong>
+</div>
+
+<div id="Notif_Config_Unchanged" data-duration="2000" class="alert alert-inverse alert-center alert-center-small hide">
+    <strong>Nothing to save</strong><br>No changes have been made
+</div>
+
+<div id="Notif_Config_Failed" data-duration="5000" class="alert alert-error alert-center alert-center-medium hide">
+    <strong>Could not save configuration in<br><span id="Notif_Config_Failed_Filename"></span></strong><br><br>Please check file permissions
+</div>
+
+<div id="Config_Reload" data-duration="100000000" class="alert alert-success alert-center alert-center-medium hide">
+	<h4 class="alert-heading">Reload command has been sent</h4>
+	Please wait few seconds, then refresh the page.
+</div>
+
+<div id="Notif_Config_RestoreSections" data-duration="2000" class="alert alert-error alert-center alert-center-medium hide">
+    <strong>Please select at least one section</strong>
+</div>
+
+<div id="Notif_Config_Restoring" class="alert alert-inverse alert-center alert-center-small hide">
+    <strong>Restoring settings...</strong>
+</div>
+
+<div id="Notif_StartUpdate_Failed" data-duration="2000" class="alert alert-error alert-center alert-center-small hide">
+    <strong>Could not start update script</strong>
+</div>
+
+<div id="Notif_Debug" data-duration="400" class="alert alert-inverse alert-center alert-center-small hide">
+    <strong>Debug</strong>
+</div>
+
+<div id="Notif_StatRangeError" data-duration="500" class="alert alert-error alert-center alert-center-small hide">
+    <strong>Incorrect period</strong>
+</div>
+
+<div id="Notif_StatReset" data-duration="1000" class="alert alert-inverse alert-center alert-center-small hide">
+    <strong>Volume reset</strong>
+</div>
+
+<div id="Notif_Config_TestConnectionProgress" data-duration="20000" class="alert alert-inverse alert-center alert-center-small hide">
+    <strong>Testing connection...</strong>
+</div>
+
+<div id="Notif_Config_TestConnectionOK" data-duration="1000" class="alert alert-success alert-center alert-center-small hide">
+    <strong>Connection successful</strong>
+</div>
+
+</body>
+</html>
