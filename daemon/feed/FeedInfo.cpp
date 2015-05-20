@@ -1,7 +1,7 @@
 /*
  *  This file is part of nzbget
  *
- *  Copyright (C) 2013-2014 Andrey Prygunkov <hugbug@users.sourceforge.net>
+ *  Copyright (C) 2013-2015 Andrey Prygunkov <hugbug@users.sourceforge.net>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -39,10 +39,7 @@
 
 #include "nzbget.h"
 #include "FeedInfo.h"
-#include "DupeCoordinator.h"
 #include "Util.h"
-
-extern DupeCoordinator* g_pDupeCoordinator;
 
 FeedInfo::FeedInfo(int iID, const char* szName, const char* szUrl, int iInterval,
 	const char* szFilter, bool bPauseNzb, const char* szCategory, int iPriority)
@@ -123,7 +120,7 @@ FeedItemInfo::Attr* FeedItemInfo::Attributes::Find(const char* szName)
 
 FeedItemInfo::FeedItemInfo()
 {
-	m_pSharedFeedData = NULL;
+	m_pFeedFilterHelper = NULL;
 	m_szTitle = NULL;
 	m_szFilename = NULL;
 	m_szUrl = NULL;
@@ -300,20 +297,24 @@ void FeedItemInfo::ParseSeasonEpisode()
 {
 	m_bSeasonEpisodeParsed = true;
 
-	RegEx* pRegEx = m_pSharedFeedData->GetSeasonEpisodeRegEx();
+	RegEx** ppRegEx = m_pFeedFilterHelper->GetSeasonEpisodeRegEx();
+	if (!*ppRegEx)
+	{
+		*ppRegEx = new RegEx("[^[:alnum:]]s?([0-9]+)[ex]([0-9]+(-?e[0-9]+)?)[^[:alnum:]]", 10);
+	}
 
-	if (pRegEx->Match(m_szTitle))
+	if ((*ppRegEx)->Match(m_szTitle))
 	{
 		char szRegValue[100];
 		char szValue[100];
 
-		snprintf(szValue, 100, "S%02d", atoi(m_szTitle + pRegEx->GetMatchStart(1)));
+		snprintf(szValue, 100, "S%02d", atoi(m_szTitle + (*ppRegEx)->GetMatchStart(1)));
 		szValue[100-1] = '\0';
 		SetSeason(szValue);
 
-		int iLen = pRegEx->GetMatchLen(2);
+		int iLen = (*ppRegEx)->GetMatchLen(2);
 		iLen = iLen < 99 ? iLen : 99;
-		strncpy(szRegValue, m_szTitle + pRegEx->GetMatchStart(2), pRegEx->GetMatchLen(2));
+		strncpy(szRegValue, m_szTitle + (*ppRegEx)->GetMatchStart(2), (*ppRegEx)->GetMatchLen(2));
 		szRegValue[iLen] = '\0';
 		snprintf(szValue, 100, "E%s", szRegValue);
 		szValue[100-1] = '\0';
@@ -327,27 +328,9 @@ const char* FeedItemInfo::GetDupeStatus()
 {
 	if (!m_szDupeStatus)
 	{
-		const char* szDupeStatusName[] = { "", "QUEUED", "DOWNLOADING", "3", "SUCCESS", "5", "6", "7", "WARNING",
-			"9", "10", "11", "12", "13", "14", "15", "FAILURE" };
 		char szStatuses[200];
 		szStatuses[0] = '\0';
-
-		DownloadQueue* pDownloadQueue = DownloadQueue::Lock();
-		DupeCoordinator::EDupeStatus eDupeStatus = g_pDupeCoordinator->GetDupeStatus(pDownloadQueue, m_szTitle, m_szDupeKey);
-		DownloadQueue::Unlock();
-
-		for (int i = 1; i <= (int)DupeCoordinator::dsFailure; i = i << 1)
-		{
-			if (eDupeStatus & i)
-			{
-				if (*szStatuses)
-				{
-					strcat(szStatuses, ",");
-				}
-				strcat(szStatuses, szDupeStatusName[i]);
-			}
-		}
-
+		m_pFeedFilterHelper->CalcDupeStatus(m_szTitle, m_szDupeKey, szStatuses, sizeof(szStatuses));
 		m_szDupeStatus = strdup(szStatuses);
 	}
 
@@ -450,26 +433,4 @@ void FeedItemInfos::Release()
 void FeedItemInfos::Add(FeedItemInfo* pFeedItemInfo)
 {
 	push_back(pFeedItemInfo);
-	pFeedItemInfo->SetSharedFeedData(&m_SharedFeedData);
-}
-
-
-SharedFeedData::SharedFeedData()
-{
-	m_pSeasonEpisodeRegEx = NULL;
-}
-
-SharedFeedData::~SharedFeedData()
-{
-	delete m_pSeasonEpisodeRegEx;
-}
-
-RegEx* SharedFeedData::GetSeasonEpisodeRegEx()
-{
-	if (!m_pSeasonEpisodeRegEx)
-	{
-		m_pSeasonEpisodeRegEx = new RegEx("[^[:alnum:]]s?([0-9]+)[ex]([0-9]+(-?e[0-9]+)?)[^[:alnum:]]", 10);
-	}
-
-	return m_pSeasonEpisodeRegEx;
 }

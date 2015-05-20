@@ -1,7 +1,7 @@
 /*
  *  This file is part of nzbget
  *
- *  Copyright (C) 2013-2014 Andrey Prygunkov <hugbug@users.sourceforge.net>
+ *  Copyright (C) 2013-2015 Andrey Prygunkov <hugbug@users.sourceforge.net>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -36,6 +36,7 @@
 #include "DownloadInfo.h"
 #include "FeedInfo.h"
 #include "Observer.h"
+#include "Util.h"
 
 
 class FeedDownloader;
@@ -71,6 +72,17 @@ private:
 		FeedItemInfos*		GetFeedItemInfos() { return m_pFeedItemInfos; }
 	};
 
+	class FilterHelper : public FeedFilterHelper
+	{
+	private:
+		RegEx*				m_pSeasonEpisodeRegEx;
+	public:
+							FilterHelper();
+							~FilterHelper();
+		virtual RegEx**		GetSeasonEpisodeRegEx() { return &m_pSeasonEpisodeRegEx; };
+		virtual void		CalcDupeStatus(const char* szTitle, const char* szDupeKey, char* szStatusBuf, int iBufLen);
+	};
+
 	typedef std::deque<FeedCacheItem*>	FeedCache;
 	typedef std::list<FeedDownloader*>	ActiveDownloads;
 
@@ -83,6 +95,7 @@ private:
 	bool					m_bForce;
 	bool					m_bSave;
 	FeedCache				m_FeedCache;
+	FilterHelper			m_FilterHelper;
 
 	void					StartFeedDownload(FeedInfo* pFeedInfo, bool bForce);
 	void					FeedCompleted(FeedDownloader* pFeedDownloader);

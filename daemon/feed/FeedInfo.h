@@ -1,7 +1,7 @@
 /*
  *  This file is part of nzbget
  *
- *  Copyright (C) 2013-2014 Andrey Prygunkov <hugbug@users.sourceforge.net>
+ *  Copyright (C) 2013-2015 Andrey Prygunkov <hugbug@users.sourceforge.net>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -90,15 +90,11 @@ public:
 
 typedef std::deque<FeedInfo*> Feeds;
 
-class SharedFeedData
+class FeedFilterHelper
 {
-private:
-	RegEx*				m_pSeasonEpisodeRegEx;
-
 public:
-						SharedFeedData();
-						~SharedFeedData();
-	RegEx*				GetSeasonEpisodeRegEx();
+	virtual RegEx**		GetSeasonEpisodeRegEx() = 0;
+	virtual void		CalcDupeStatus(const char* szTitle, const char* szDupeKey, char* szStatusBuf, int iBufLen) = 0;
 };
 
 class FeedItemInfo
@@ -166,7 +162,7 @@ private:
 	int					m_iDupeScore;
 	EDupeMode			m_eDupeMode;
 	char*				m_szDupeStatus;
-	SharedFeedData*		m_pSharedFeedData;
+	FeedFilterHelper*	m_pFeedFilterHelper;
 	Attributes			m_Attributes;
 
 	int					ParsePrefixedInt(const char *szValue);
@@ -175,7 +171,7 @@ private:
 public:
 						FeedItemInfo();
 						~FeedItemInfo();
-	void				SetSharedFeedData(SharedFeedData* pSharedFeedData) { m_pSharedFeedData = pSharedFeedData; }
+	void				SetFeedFilterHelper(FeedFilterHelper* pFeedFilterHelper) { m_pFeedFilterHelper = pFeedFilterHelper; }
 	const char*			GetTitle() { return m_szTitle; }
 	void				SetTitle(const char* szTitle);
 	const char*			GetFilename() { return m_szFilename; }
@@ -230,7 +226,6 @@ class FeedItemInfos : public FeedItemInfosBase
 {
 private:
 	int					m_iRefCount;
-	SharedFeedData		m_SharedFeedData;
 
 public:
 						FeedItemInfos();
