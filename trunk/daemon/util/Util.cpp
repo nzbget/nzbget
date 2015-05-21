@@ -708,38 +708,43 @@ bool Util::MoveFile(const char* szSrcFilename, const char* szDstFilename)
 #ifndef WIN32
 	if (!bOK && errno == EXDEV)
 	{
-		FILE* infile = fopen(szSrcFilename, FOPEN_RB);
-		if (!infile)
-		{
-			return false;
-		}
-
-		FILE* outfile = fopen(szDstFilename, FOPEN_WBP);
-		if (!outfile)
-		{
-			fclose(infile);
-			return false;
-		}
-
-		static const int BUFFER_SIZE = 1024 * 50;
-		char* buffer = (char*)malloc(BUFFER_SIZE);
-
-		int cnt = BUFFER_SIZE;
-		while (cnt == BUFFER_SIZE)
-		{
-			cnt = (int)fread(buffer, 1, BUFFER_SIZE, infile);
-			fwrite(buffer, 1, cnt, outfile);
-		}
-
-		fclose(infile);
-		fclose(outfile);
-		free(buffer);
-
-		bOK = remove(szSrcFilename) == 0;
+		bOK = CopyFile(szSrcFilename, szDstFilename) && remove(szSrcFilename) == 0;
 	}
 #endif
 
 	return bOK;
+}
+
+bool Util::CopyFile(const char* szSrcFilename, const char* szDstFilename)
+{
+	FILE* infile = fopen(szSrcFilename, FOPEN_RB);
+	if (!infile)
+	{
+		return false;
+	}
+
+	FILE* outfile = fopen(szDstFilename, FOPEN_WBP);
+	if (!outfile)
+	{
+		fclose(infile);
+		return false;
+	}
+
+	static const int BUFFER_SIZE = 1024 * 50;
+	char* buffer = (char*)malloc(BUFFER_SIZE);
+
+	int cnt = BUFFER_SIZE;
+	while (cnt == BUFFER_SIZE)
+	{
+		cnt = (int)fread(buffer, 1, BUFFER_SIZE, infile);
+		fwrite(buffer, 1, cnt, outfile);
+	}
+
+	fclose(infile);
+	fclose(outfile);
+	free(buffer);
+
+	return true;
 }
 
 bool Util::FileExists(const char* szFilename)
