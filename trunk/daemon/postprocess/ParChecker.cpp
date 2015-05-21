@@ -186,16 +186,19 @@ bool Repairer::ScanDataFile(DiskFile *diskfile, Par2RepairerSourceFile* &sourcef
 
 		sig_filename(name);
 
-		int iAvailableBlocks = sourcefile->BlockCount();
-		ParChecker::EFileStatus eFileStatus = m_pOwner->VerifyDataFile(diskfile, sourcefile, &iAvailableBlocks);
-		if (eFileStatus != ParChecker::fsUnknown)
+		if (!(m_pOwner->GetStage() == ParChecker::ptVerifyingRepaired && m_pOwner->GetParFull()))
 		{
-			sig_done(name, iAvailableBlocks, sourcefile->BlockCount());
-			sig_progress(1000.0);
-			matchtype = eFileStatus == ParChecker::fsSuccess ? eFullMatch :
-				eFileStatus == ParChecker::fsPartial ? ePartialMatch : eNoMatch;
-			m_pOwner->SetParFull(false);
-			return true;
+			int iAvailableBlocks = sourcefile->BlockCount();
+			ParChecker::EFileStatus eFileStatus = m_pOwner->VerifyDataFile(diskfile, sourcefile, &iAvailableBlocks);
+			if (eFileStatus != ParChecker::fsUnknown)
+			{
+				sig_done(name, iAvailableBlocks, sourcefile->BlockCount());
+				sig_progress(1000.0);
+				matchtype = eFileStatus == ParChecker::fsSuccess ? eFullMatch :
+					eFileStatus == ParChecker::fsPartial ? ePartialMatch : eNoMatch;
+				m_pOwner->SetParFull(false);
+				return true;
+			}
 		}
 	}
 
@@ -1209,7 +1212,7 @@ void ParChecker::CheckEmptyFiles()
 		if (sourcefile && sourcefile->GetDescriptionPacket())
 		{
 			const char* szFilename = sourcefile->GetDescriptionPacket()->FileName().c_str();
-			if (!IsProcessedFile(szFilename))
+			if (!Util::EmptyStr(szFilename) && !IsProcessedFile(szFilename))
 			{
 				bool bIgnore = Util::MatchFileExt(szFilename, g_pOptions->GetParIgnoreExt(), ",;") ||
 					Util::MatchFileExt(szFilename, g_pOptions->GetExtCleanupDisk(), ",;");
