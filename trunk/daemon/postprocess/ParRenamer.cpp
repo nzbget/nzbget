@@ -47,7 +47,7 @@
 
 #include "nzbget.h"
 #include "ParRenamer.h"
-#include "ParCoordinator.h"
+#include "ParParser.h"
 #include "Log.h"
 #include "Options.h"
 #include "Util.h"
@@ -224,10 +224,10 @@ void ParRenamer::BuildDirList(const char* szDestDir)
 
 void ParRenamer::LoadParFiles(const char* szDestDir)
 {
-	ParCoordinator::ParFileList parFileList;
-	ParCoordinator::FindMainPars(szDestDir, &parFileList);
+	ParParser::ParFileList parFileList;
+	ParParser::FindMainPars(szDestDir, &parFileList);
 
-	for (ParCoordinator::ParFileList::iterator it = parFileList.begin(); it != parFileList.end(); it++)
+	for (ParParser::ParFileList::iterator it = parFileList.begin(); it != parFileList.end(); it++)
 	{
 		char* szParFilename = *it;
 		

@@ -517,6 +517,14 @@
 					>
 				</File>
 				<File
+					RelativePath=".\daemon\postprocess\ParParser.cpp"
+					>
+				</File>
+				<File
+					RelativePath=".\daemon\postprocess\ParParser.h"
+					>
+				</File>
+				<File
 					RelativePath=".\daemon\postprocess\ParRenamer.cpp"
 					>
 				</File>

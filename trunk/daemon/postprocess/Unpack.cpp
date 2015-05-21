@@ -44,7 +44,7 @@
 #include "Unpack.h"
 #include "Log.h"
 #include "Util.h"
-#include "ParCoordinator.h"
+#include "ParParser.h"
 #include "Options.h"
 
 extern Options* g_pOptions;
@@ -148,7 +148,7 @@ void UnpackController::Run()
 	snprintf(m_szInfoNameUp, 1024, "Unpack for %s", m_szName); // first letter in upper case
 	m_szInfoNameUp[1024-1] = '\0';
 
-	m_bHasParFiles = ParCoordinator::FindMainPars(m_szDestDir, NULL);
+	m_bHasParFiles = ParParser::FindMainPars(m_szDestDir, NULL);
 
 	if (bUnpack)
 	{

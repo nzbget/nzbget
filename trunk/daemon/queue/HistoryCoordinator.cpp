@@ -51,7 +51,7 @@
 #include "Util.h"
 #include "NZBFile.h"
 #include "DupeCoordinator.h"
-#include "ParCoordinator.h"
+#include "ParParser.h"
 #include "PrePostProcessor.h"
 #include "DupeCoordinator.h"
 
@@ -434,7 +434,7 @@ void HistoryCoordinator::HistoryReturn(DownloadQueue* pDownloadQueue, HistoryLis
 			pNZBInfo->SetPostTotalSec(pNZBInfo->GetPostTotalSec() - pNZBInfo->GetUnpackSec());
 			pNZBInfo->SetUnpackSec(0);
 
-			if (ParCoordinator::FindMainPars(pNZBInfo->GetDestDir(), NULL))
+			if (ParParser::FindMainPars(pNZBInfo->GetDestDir(), NULL))
 			{
 				pNZBInfo->SetParStatus(NZBInfo::psNone);
 				pNZBInfo->SetPostTotalSec(pNZBInfo->GetPostTotalSec() - pNZBInfo->GetParSec());

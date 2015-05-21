@@ -50,7 +50,7 @@
 #include "nzbget.h"
 #include "Thread.h"
 #include "ParChecker.h"
-#include "ParCoordinator.h"
+#include "ParParser.h"
 #include "Log.h"
 #include "Options.h"
 #include "Util.h"
@@ -488,8 +488,8 @@ void ParChecker::Run()
 
 ParChecker::EStatus ParChecker::RunParCheckAll()
 {
-	ParCoordinator::ParFileList fileList;
-	if (!ParCoordinator::FindMainPars(m_szDestDir, &fileList))
+	ParParser::ParFileList fileList;
+	if (!ParParser::FindMainPars(m_szDestDir, &fileList))
 	{
 		PrintMessage(Message::mkError, "Could not start par-check for %s. Could not find any par-files", m_szNZBName);
 		return psFailed;
@@ -499,7 +499,7 @@ ParChecker::EStatus ParChecker::RunParCheckAll()
 	m_bCancelled = false;
 	m_bParFull = true;
 
-	for (ParCoordinator::ParFileList::iterator it = fileList.begin(); it != fileList.end(); it++)
+	for (ParParser::ParFileList::iterator it = fileList.begin(); it != fileList.end(); it++)
 	{
 		char* szParFilename = *it;
 		debug("Found par: %s", szParFilename);
@@ -512,7 +512,7 @@ ParChecker::EStatus ParChecker::RunParCheckAll()
 
 			char szInfoName[1024];
 			int iBaseLen = 0;
-			ParCoordinator::ParseParFilename(szParFilename, &iBaseLen, NULL);
+			ParParser::ParseParFilename(szParFilename, &iBaseLen, NULL);
 			int maxlen = iBaseLen < 1024 ? iBaseLen : 1024 - 1;
 			strncpy(szInfoName, szParFilename, maxlen);
 			szInfoName[maxlen] = '\0';
