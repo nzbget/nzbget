@@ -37,7 +37,6 @@ void error(const char* msg, ...);
 void warn(const char* msg, ...);
 void info(const char* msg, ...);
 void detail(const char* msg, ...);
-void abort(const char* msg, ...);
 
 #ifdef DEBUG
 #ifdef HAVE_VARIADIC_MACROS
@@ -109,6 +108,8 @@ private:
 	bool				m_bExtraDebug;
 #endif
 
+						Log();
+						~Log();
 	void				Filelog(const char* msg, ...);
 	void				AddMessage(Message::EKind eKind, const char* szText);
 	void				RotateLog();
@@ -116,7 +117,6 @@ private:
 	friend void error(const char* msg, ...);
 	friend void warn(const char* msg, ...);
 	friend void info(const char* msg, ...);
-	friend void abort(const char* msg, ...);
 	friend void detail(const char* msg, ...);
 #ifdef DEBUG
 #ifdef HAVE_VARIADIC_MACROS
@@ -127,8 +127,8 @@ private:
 #endif
 	
 public:
-						Log();
-						~Log();
+	static void			Init();
+	static void			Final();
 	MessageList*		LockMessages();
 	void				UnlockMessages();
 	void				Clear();

@@ -110,7 +110,6 @@ UrlCoordinator* g_pUrlCoordinator = NULL;
 RemoteServer* g_pRemoteServer = NULL;
 RemoteServer* g_pRemoteSecureServer = NULL;
 StatMeter* g_pStatMeter = NULL;
-Log* g_pLog = NULL;
 PrePostProcessor* g_pPrePostProcessor = NULL;
 HistoryCoordinator* g_pHistoryCoordinator = NULL;
 DupeCoordinator* g_pDupeCoordinator = NULL;
@@ -199,7 +198,7 @@ void RunMain()
 
 void Run(bool bReload)
 {
-	g_pLog = new Log();
+	Log::Init();
 
 	debug("nzbget %s", Util::VersionRevision());
 
@@ -831,8 +830,7 @@ void Cleanup()
 
 	debug("Global objects cleaned up");
 
-	delete g_pLog;
-	g_pLog = NULL;
+	Log::Final();
 }
 
 #ifndef WIN32
