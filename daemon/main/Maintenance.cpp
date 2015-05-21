@@ -45,8 +45,10 @@
 #include "Util.h"
 #include "Maintenance.h"
 #include "Options.h"
+#include "CommandLineParser.h"
 
 extern Options* g_pOptions;
+extern CommandLineParser* g_pCommandLineParser;
 extern Maintenance* g_pMaintenance;
 extern void ExitProc();
 extern int g_iArgumentCount;
@@ -250,7 +252,7 @@ void UpdateScriptController::Run()
     const char* szBranchName[] = { "STABLE", "TESTING", "DEVEL" };
 	SetEnvVar("NZBUP_BRANCH", szBranchName[m_eBranch]);
 
-	SetEnvVar("NZBUP_RUNMODE", g_pOptions->GetDaemonMode() ? "DAEMON" : "SERVER");
+	SetEnvVar("NZBUP_RUNMODE", g_pCommandLineParser->GetDaemonMode() ? "DAEMON" : "SERVER");
 
 	for (int i = 0; i < g_iArgumentCount; i++)
 	{

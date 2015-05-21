@@ -85,7 +85,8 @@ bool Frontend::PrepareData()
 		}
 		if (!RequestMessages() || ((m_bSummary || m_bFileList) && !RequestFileList()))
 		{
-			printf("\nUnable to send request to nzbget-server at %s (port %i)    \n", g_pOptions->GetControlIP(), g_pOptions->GetControlPort());
+			const char* szControlIP = !strcmp(g_pOptions->GetControlIP(), "0.0.0.0") ? "127.0.0.1" : g_pOptions->GetControlIP();
+			printf("\nUnable to send request to nzbget-server at %s (port %i)    \n", szControlIP, g_pOptions->GetControlPort());
 			Stop();
 			return false;
 		}
@@ -218,7 +219,8 @@ void Frontend::InitMessageBase(SNZBRequestBase* pMessageBase, int iRequest, int 
 
 bool Frontend::RequestMessages()
 {
-	Connection connection(g_pOptions->GetControlIP(), g_pOptions->GetControlPort(), false);
+	const char* szControlIP = !strcmp(g_pOptions->GetControlIP(), "0.0.0.0") ? "127.0.0.1" : g_pOptions->GetControlIP();
+	Connection connection(szControlIP, g_pOptions->GetControlPort(), false);
 
 	bool OK = connection.Connect();
 	if (!OK)
@@ -289,7 +291,8 @@ bool Frontend::RequestMessages()
 
 bool Frontend::RequestFileList()
 {
-	Connection connection(g_pOptions->GetControlIP(), g_pOptions->GetControlPort(), false);
+	const char* szControlIP = !strcmp(g_pOptions->GetControlIP(), "0.0.0.0") ? "127.0.0.1" : g_pOptions->GetControlIP();
+	Connection connection(szControlIP, g_pOptions->GetControlPort(), false);
 
 	bool OK = connection.Connect();
 	if (!OK)

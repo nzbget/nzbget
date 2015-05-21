@@ -37,33 +37,6 @@
 class Options
 {
 public:
-	enum EClientOperation
-	{
-		opClientNoOperation,
-		opClientRequestDownload,
-		opClientRequestListFiles,
-		opClientRequestListGroups,
-		opClientRequestListStatus,
-		opClientRequestSetRate,
-		opClientRequestDumpDebug,
-		opClientRequestEditQueue,
-		opClientRequestLog,
-		opClientRequestShutdown,
-		opClientRequestReload,
-		opClientRequestVersion,
-		opClientRequestPostQueue,
-		opClientRequestWriteLog,
-		opClientRequestScanSync,
-		opClientRequestScanAsync,
-		opClientRequestDownloadPause,
-		opClientRequestDownloadUnpause,
-		opClientRequestPostPause,
-		opClientRequestPostUnpause,
-		opClientRequestScanPause,
-		opClientRequestScanUnpause,
-		opClientRequestHistory,
-		opClientRequestHistoryAll
-	};
 	enum EWriteLog
 	{
 		wlNone,
@@ -103,11 +76,20 @@ public:
 		hcDelete,
 		hcNone
 	};
-	enum EMatchMode
+	enum ESchedulerCommand
 	{
-		mmID = 1,
-		mmName,
-		mmRegEx
+		scPauseDownload,
+		scUnpauseDownload,
+		scPausePostProcess,
+		scUnpausePostProcess,
+		scDownloadRate,
+		scScript,
+		scProcess,
+		scPauseScan,
+		scUnpauseScan,
+		scActivateServer,
+		scDeactivateServer,
+		scFetchFeed
 	};
 
 	class OptEntry
@@ -145,6 +127,7 @@ public:
 	};
 
 	typedef std::vector<char*>  NameList;
+	typedef std::vector<const char*>  CmdOptList;
 
 	class Category
 	{
@@ -238,13 +221,29 @@ public:
 						~ConfigTemplates();
 	};
 
+	class Extender
+	{
+	public:
+		virtual void	AddNewsServer(int iID, bool bActive, const char* szName, const char* szHost,
+							int iPort, const char* szUser, const char* szPass, bool bJoinGroup,
+							bool bTLS, const char* szCipher, int iMaxConnections, int iRetention,
+							int iLevel, int iGroup) = 0;
+		virtual void	AddFeed(int iID, const char* szName, const char* szUrl, int iInterval,
+							const char* szFilter, bool bPauseNzb, const char* szCategory, int iPriority) {}
+		virtual void	AddTask(int iID, int iHours, int iMinutes, int iWeekDaysBits, ESchedulerCommand eCommand,
+							const char* szParam) {}
+		virtual void	SetupFirstStart() {}
+	};
+
 private:
 	OptEntries			m_OptEntries;
-	bool				m_bConfigInitialized;
 	Mutex				m_mutexOptEntries;
 	Categories			m_Categories;
 	Scripts				m_Scripts;
 	ConfigTemplates		m_ConfigTemplates;
+	bool				m_bNoDiskAccess;
+	bool				m_bFatalError;
+	Extender*			m_pExtender;
 
 	// Options
 	bool				m_bConfigErrors;
@@ -347,58 +346,30 @@ private:
 	int					m_iArticleCache;
 	int					m_iEventInterval;
 
-	// Parsed command-line parameters
-	bool				m_bServerMode;
-	bool				m_bDaemonMode;
-	bool				m_bRemoteClientMode;
-	int					m_iEditQueueAction;
-	int					m_iEditQueueOffset;
-	int*				m_pEditQueueIDList;
-	int					m_iEditQueueIDCount;
-	NameList			m_EditQueueNameList;
-	EMatchMode			m_EMatchMode;
-	char*				m_szEditQueueText;
-	char*				m_szArgFilename;
-	char*				m_szAddCategory;
-	int					m_iAddPriority;
-	bool				m_bAddPaused;
-	char*				m_szAddNZBFilename;
-	char*				m_szLastArg;
-	bool				m_bPrintOptions;
-	bool				m_bAddTop;
-	char*				m_szAddDupeKey;
-	int					m_iAddDupeScore;
-	int					m_iAddDupeMode;
-	int					m_iSetRate;
-	int					m_iLogLines;
-	int					m_iWriteLogKind;
-	bool				m_bTestBacktrace;
-	bool				m_bWebGet;
-	char*				m_szWebGetFilename;
-
 	// Current state
+	bool				m_bServerMode;
+	bool				m_bRemoteClientMode;
 	bool				m_bPauseDownload;
 	bool				m_bPausePostProcess;
 	bool				m_bPauseScan;
 	bool				m_bTempPauseDownload;
 	int					m_iDownloadRate;
-	EClientOperation	m_eClientOperation;
 	time_t				m_tResumeTime;
 	int					m_iLocalTimeOffset;
 
-	void				InitDefault();
-	void				InitOptFile();
-	void				InitCommandLine(int argc, char* argv[]);
+	void				Init(const char* szExeName, const char* szConfigFilename, bool bNoConfig,
+							 CmdOptList* pCommandLineOptions, bool bNoDiskAccess, Extender* pExtender);
+	void				InitDefaults();
 	void				InitOptions();
-	void				InitFileArg(int argc, char* argv[]);
+	void				InitOptFile();
 	void				InitServers();
 	void				InitCategories();
 	void				InitScheduler();
 	void				InitFeeds();
 	void				InitScripts();
 	void				InitConfigTemplates();
+	void				InitCommandLineOptions(CmdOptList* pCommandLineOptions);
 	void				CheckOptions();
-	void				PrintUsage(char* com);
 	void				Dump();
 	int					ParseEnumValue(const char* OptName, int argc, const char* argn[], const int argv[]);
 	int					ParseIntValue(const char* OptName, int iBase);
@@ -412,8 +383,6 @@ private:
 	void				LoadConfigFile();
 	void				CheckDir(char** dir, const char* szOptionName, const char* szParentDir,
 							bool bAllowEmpty, bool bCreate);
-	void				ParseFileIDList(int argc, char* argv[], int optind);
-	void				ParseFileNameList(int argc, char* argv[], int optind);
 	bool				ParseTime(const char* szTime, int* pHours, int* pMinutes);
 	bool				ParseWeekDays(const char* szWeekDays, int* pWeekDaysBits);
 	void				ConfigError(const char* msg, ...);
@@ -426,20 +395,23 @@ private:
 	void				LoadScripts(Scripts* pScripts);
 
 public:
-						Options();
+						Options(const char* szExeName, const char* szConfigFilename, bool bNoConfig,
+							CmdOptList* pCommandLineOptions, Extender* pExtender);
+						Options(CmdOptList* pCommandLineOptions, Extender* pExtender);
 						~Options();
-	void				Init(int argc, char* argv[]);
 
 	bool				LoadConfig(OptEntries* pOptEntries);
 	bool				SaveConfig(OptEntries* pOptEntries);
 	bool				LoadConfigTemplates(ConfigTemplates* pConfigTemplates);
 	Scripts*			GetScripts() { return &m_Scripts; }
 	ConfigTemplates*	GetConfigTemplates() { return &m_ConfigTemplates; }
+	bool				GetFatalError() { return m_bFatalError; }
 
 	// Options
 	OptEntries*			LockOptEntries();
 	void				UnlockOptEntries();
 	const char*			GetConfigFilename() { return m_szConfigFilename; }
+	bool				GetConfigErrors() { return m_bConfigErrors; }
 	const char*			GetAppDir() { return m_szAppDir; }
 	const char*			GetDestDir() { return m_szDestDir; }
 	const char*			GetInterDir() { return m_szInterDir; }
@@ -466,7 +438,7 @@ public:
 	int					GetRetryInterval() { return m_iRetryInterval; }
 	bool				GetSaveQueue() { return m_bSaveQueue; }
 	bool				GetDupeCheck() { return m_bDupeCheck; }
-	const char*			GetControlIP();
+	const char*			GetControlIP() { return m_szControlIP; }
 	const char*			GetControlUsername() { return m_szControlUsername; }
 	const char*			GetControlPassword() { return m_szControlPassword; }
 	const char*			GetRestrictedUsername() { return m_szRestrictedUsername; }
@@ -539,36 +511,11 @@ public:
 	Categories*			GetCategories() { return &m_Categories; }
 	Category*			FindCategory(const char* szName, bool bSearchAliases) { return m_Categories.FindCategory(szName, bSearchAliases); }
 
-	// Parsed command-line parameters
-	bool				GetServerMode() { return m_bServerMode; }
-	bool				GetDaemonMode() { return m_bDaemonMode; }
-	bool				GetRemoteClientMode() { return m_bRemoteClientMode; }
-	EClientOperation	GetClientOperation() { return m_eClientOperation; }
-	int					GetEditQueueAction() { return m_iEditQueueAction; }
-	int					GetEditQueueOffset() { return m_iEditQueueOffset; }
-	int*				GetEditQueueIDList() { return m_pEditQueueIDList; }
-	int					GetEditQueueIDCount() { return m_iEditQueueIDCount; }
-	NameList*			GetEditQueueNameList() { return &m_EditQueueNameList; }
-	EMatchMode			GetMatchMode() { return m_EMatchMode; }
-	const char*			GetEditQueueText() { return m_szEditQueueText; }
-	const char*			GetArgFilename() { return m_szArgFilename; }
-	const char*			GetAddCategory() { return m_szAddCategory; }
-	bool				GetAddPaused() { return m_bAddPaused; }
-	const char*			GetLastArg() { return m_szLastArg; }
-	int					GetAddPriority() { return m_iAddPriority; }
-	char*				GetAddNZBFilename() { return m_szAddNZBFilename; }
-	bool				GetAddTop() { return m_bAddTop; }
-	const char*			GetAddDupeKey() { return m_szAddDupeKey; }
-	int					GetAddDupeScore() { return m_iAddDupeScore; }
-	int					GetAddDupeMode() { return m_iAddDupeMode; }
-	int					GetSetRate() { return m_iSetRate; }
-	int					GetLogLines() { return m_iLogLines; }
-	int					GetWriteLogKind() { return m_iWriteLogKind; }
-	bool				GetTestBacktrace() { return m_bTestBacktrace; }
-	bool				GetWebGet() { return m_bWebGet; }
-	const char*			GetWebGetFilename() { return m_szWebGetFilename; }
-
 	// Current state
+	void				SetServerMode(bool bServerMode) { m_bServerMode = bServerMode; }
+	bool				GetServerMode() { return m_bServerMode; }
+	void				SetRemoteClientMode(bool bRemoteClientMode) { m_bRemoteClientMode = bRemoteClientMode; }
+	bool				GetRemoteClientMode() { return m_bRemoteClientMode; }
 	void				SetPauseDownload(bool bPauseDownload) { m_bPauseDownload = bPauseDownload; }
 	bool				GetPauseDownload() const { return m_bPauseDownload; }
 	void				SetPausePostProcess(bool bPausePostProcess) { m_bPausePostProcess = bPausePostProcess; }
@@ -584,5 +531,7 @@ public:
 	void				SetLocalTimeOffset(int iLocalTimeOffset) { m_iLocalTimeOffset = iLocalTimeOffset; }
 	int					GetLocalTimeOffset() { return m_iLocalTimeOffset; }
 };
+
+extern Options* g_pOptions;
 
 #endif

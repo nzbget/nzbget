@@ -285,6 +285,14 @@
 				Name="main"
 				>
 				<File
+					RelativePath=".\daemon\main\CommandLineParser.cpp"
+					>
+				</File>
+				<File
+					RelativePath=".\daemon\main\CommandLineParser.h"
+					>
+				</File>
+				<File
 					RelativePath=".\daemon\main\Maintenance.cpp"
 					>
 				</File>

@@ -51,53 +51,8 @@
 #include "Util.h"
 #include "Options.h"
 #include "Log.h"
-#include "ServerPool.h"
-#include "NewsServer.h"
 #include "MessageBase.h"
 #include "DownloadInfo.h"
-#include "Scheduler.h"
-#include "FeedCoordinator.h"
-
-extern ServerPool* g_pServerPool;
-extern Scheduler* g_pScheduler;
-extern FeedCoordinator* g_pFeedCoordinator;
-
-#ifdef WIN32
-extern void SetupFirstStart();
-#endif
-
-#ifdef HAVE_GETOPT_LONG
-static struct option long_options[] =
-    {
-	    {"help", no_argument, 0, 'h'},
-	    {"configfile", required_argument, 0, 'c'},
-	    {"noconfigfile", no_argument, 0, 'n'},
-	    {"printconfig", no_argument, 0, 'p'},
-	    {"server", no_argument, 0, 's' },
-	    {"daemon", no_argument, 0, 'D' },
-	    {"version", no_argument, 0, 'v'},
-	    {"serverversion", no_argument, 0, 'V'},
-	    {"option", required_argument, 0, 'o'},
-	    {"append", no_argument, 0, 'A'},
-	    {"list", no_argument, 0, 'L'},
-	    {"pause", no_argument, 0, 'P'},
-	    {"unpause", no_argument, 0, 'U'},
-	    {"rate", required_argument, 0, 'R'},
-	    {"system", no_argument, 0, 'B'},
-	    {"log", required_argument, 0, 'G'},
-	    {"top", no_argument, 0, 'T'},
-	    {"edit", required_argument, 0, 'E'},
-	    {"connect", no_argument, 0, 'C'},
-	    {"quit", no_argument, 0, 'Q'},
-	    {"reload", no_argument, 0, 'O'},
-	    {"write", required_argument, 0, 'W'},
-	    {"category", required_argument, 0, 'K'},
-	    {"scan", no_argument, 0, 'S'},
-	    {0, 0, 0, 0}
-    };
-#endif
-
-static char short_options[] = "c:hno:psvAB:DCE:G:K:LPR:STUQOVW:";
 
 // Program options
 static const char* OPTION_CONFIGFILE			= "ConfigFile";
@@ -243,6 +198,8 @@ const char* PossibleConfigLocations[] =
 		NULL
 	};
 #endif
+
+Options* g_pOptions = NULL;
 
 Options::OptEntry::OptEntry()
 {
@@ -483,13 +440,31 @@ Options::Script* Options::Scripts::Find(const char* szName)
 }
 
 
-Options::Options()
+Options::Options(const char* szExeName, const char* szConfigFilename, bool bNoConfig,
+	CmdOptList* pCommandLineOptions, Extender* pExtender)
 {
+	Init(szExeName, szConfigFilename, bNoConfig, pCommandLineOptions, false, pExtender);
+}
+
+Options::Options(CmdOptList* pCommandLineOptions, Extender* pExtender)
+{
+	Init("nzbget/nzbget", NULL, true, pCommandLineOptions, true, pExtender);
+}
+
+void Options::Init(const char* szExeName, const char* szConfigFilename, bool bNoConfig,
+	CmdOptList* pCommandLineOptions, bool bNoDiskAccess, Extender* pExtender)
+{
+	g_pOptions = this;
+	m_pExtender = pExtender;
+	m_bNoDiskAccess = bNoDiskAccess;
+	m_bNoConfig = bNoConfig;
 	m_bConfigErrors = false;
 	m_iConfigLine = 0;
+	m_bServerMode = false;
+	m_bRemoteClientMode = false;
+	m_bFatalError = false;
 
 	// initialize options with default values
-	m_bConfigInitialized	= false;
 	m_szConfigFilename		= NULL;
 	m_szAppDir				= NULL;
 	m_szDestDir				= NULL;
@@ -513,28 +488,9 @@ Options::Options()
 	m_bBrokenLog			= false;
 	m_bNzbLog				= false;
 	m_iDownloadRate			= 0;
-	m_iEditQueueAction		= 0;
-	m_pEditQueueIDList		= NULL;
-	m_iEditQueueIDCount		= 0;
-	m_iEditQueueOffset		= 0;
-	m_szEditQueueText		= NULL;
-	m_szArgFilename			= NULL;
-	m_szLastArg				= NULL;
-	m_szAddCategory			= NULL;
-	m_iAddPriority			= 0;
-	m_szAddNZBFilename		= NULL;
-	m_bAddPaused			= false;
 	m_iArticleTimeout		= 0;
 	m_iUrlTimeout			= 0;
 	m_iTerminateTimeout		= 0;
-	m_bServerMode			= false;
-	m_bDaemonMode			= false;
-	m_bRemoteClientMode		= false;
-	m_bPrintOptions			= false;
-	m_bAddTop				= false;
-	m_szAddDupeKey			= NULL;
-	m_iAddDupeScore			= 0;
-	m_iAddDupeMode			= 0;
 	m_bAppendCategoryDir	= false;
 	m_bContinuePartial		= false;
 	m_bSaveQueue			= false;
@@ -560,8 +516,6 @@ Options::Options()
 	m_bReloadQueue			= false;
 	m_iUrlConnections		= 0;
 	m_iLogBufferSize		= 0;
-	m_iLogLines				= 0;
-	m_iWriteLogKind			= 0;
 	m_eWriteLog				= wlAppend;
 	m_iRotateLog			= 0;
 	m_szLogFile				= NULL;
@@ -577,7 +531,6 @@ Options::Options()
 	m_szPostScript			= NULL;
 	m_szScanScript			= NULL;
 	m_szQueueScript			= NULL;
-	m_bNoConfig				= false;
 	m_iUMask				= 0;
 	m_iUpdateInterval		= 0;
 	m_bCursesNZBName		= false;
@@ -590,9 +543,6 @@ Options::Options()
 	m_iNzbDirFileAge		= 0;
 	m_bParCleanupQueue		= false;
 	m_iDiskSpace			= 0;
-	m_bTestBacktrace		= false;
-	m_bWebGet				= false;
-	m_szWebGetFilename		= NULL;
 	m_bTLS					= false;
 	m_bDumpCore				= false;
 	m_bParPauseQueue		= false;
@@ -602,7 +552,6 @@ Options::Options()
 	m_iParTimeLimit			= 0;
 	m_iKeepHistory			= 0;
 	m_bAccurateRate			= false;
-	m_EMatchMode			= mmID;
 	m_tResumeTime			= 0;
 	m_bUnpack				= false;
 	m_bUnpackCleanupDisk	= false;
@@ -619,10 +568,79 @@ Options::Options()
 	m_iPropagationDelay		= 0;
 	m_iArticleCache			= 0;
 	m_iEventInterval		= 0;
+
+	m_bNoDiskAccess = bNoDiskAccess;
+
+	m_szConfigFilename = szConfigFilename ? strdup(szConfigFilename) : NULL;
+	SetOption(OPTION_CONFIGFILE, "");
+
+	char szFilename[MAX_PATH + 1];
+	if (m_bNoDiskAccess)
+	{
+		strncpy(szFilename, szExeName, sizeof(szFilename));
+		szFilename[sizeof(szFilename)-1] = '\0';
+	}
+	else
+	{
+		Util::GetExeFileName(szExeName, szFilename, sizeof(szFilename));
+	}
+	Util::NormalizePathSeparators(szFilename);
+	SetOption(OPTION_APPBIN, szFilename);
+	char* end = strrchr(szFilename, PATH_SEPARATOR);
+	if (end) *end = '\0';
+	SetOption(OPTION_APPDIR, szFilename);
+	m_szAppDir = strdup(szFilename);
+
+	SetOption(OPTION_VERSION, Util::VersionRevision());
+
+	InitDefaults();
+
+	InitOptFile();
+	if (m_bFatalError)
+	{
+		return;
+	}
+
+	if (pCommandLineOptions)
+	{
+		InitCommandLineOptions(pCommandLineOptions);
+	}
+
+	if (!m_szConfigFilename && !bNoConfig)
+	{
+		printf("No configuration-file found\n");
+#ifdef WIN32
+		printf("Please put configuration-file \"nzbget.conf\" into the directory with exe-file\n");
+#else
+		printf("Please use option \"-c\" or put configuration-file in one of the following locations:\n");
+		int p = 0;
+		while (const char* szFilename = PossibleConfigLocations[p++])
+		{
+			printf("%s\n", szFilename);
+		}
+#endif
+		m_bFatalError = true;
+		return;
+	}
+
+	InitOptions();
+	CheckOptions();
+
+	InitServers();
+	InitCategories();
+	InitScheduler();
+	InitFeeds();
+
+	if (!m_bNoDiskAccess)
+	{
+		InitScripts();
+		InitConfigTemplates();
+	}
 }
 
 Options::~Options()
 {
+	g_pOptions = NULL;
 	free(m_szConfigFilename);
 	free(m_szAppDir);
 	free(m_szDestDir);
@@ -633,10 +651,6 @@ Options::~Options()
 	free(m_szWebDir);
 	free(m_szConfigTemplate);
 	free(m_szScriptDir);
-	free(m_szArgFilename);
-	free(m_szAddCategory);
-	free(m_szEditQueueText);
-	free(m_szLastArg);
 	free(m_szControlIP);
 	free(m_szControlUsername);
 	free(m_szControlPassword);
@@ -654,100 +668,11 @@ Options::~Options()
 	free(m_szPostScript);
 	free(m_szScanScript);
 	free(m_szQueueScript);
-	free(m_pEditQueueIDList);
-	free(m_szAddNZBFilename);
-	free(m_szAddDupeKey);
 	free(m_szUnrarCmd);
 	free(m_szSevenZipCmd);
 	free(m_szUnpackPassFile);
 	free(m_szExtCleanupDisk);
 	free(m_szParIgnoreExt);
-	free(m_szWebGetFilename);
-
-	for (NameList::iterator it = m_EditQueueNameList.begin(); it != m_EditQueueNameList.end(); it++)
-	{
-		free(*it);
-	}
-	m_EditQueueNameList.clear();
-}
-
-void Options::Init(int argc, char* argv[])
-{
-	// Option "ConfigFile" will be initialized later, but we want
-	// to see it at the top of option list, so we add it first
-	SetOption(OPTION_CONFIGFILE, "");
-
-	char szFilename[MAX_PATH + 1];
-	Util::GetExeFileName(argv[0], szFilename, sizeof(szFilename));
-	Util::NormalizePathSeparators(szFilename);
-	SetOption(OPTION_APPBIN, szFilename);
-
-	char* end = strrchr(szFilename, PATH_SEPARATOR);
-	if (end) *end = '\0';
-	SetOption(OPTION_APPDIR, szFilename);
-	m_szAppDir = strdup(szFilename);
-
-	SetOption(OPTION_VERSION, Util::VersionRevision());
-
-	InitDefault();
-	InitCommandLine(argc, argv);
-
-	if (argc == 1)
-	{
-		PrintUsage(argv[0]);
-	}
-	if (!m_szConfigFilename && !m_bNoConfig)
-	{
-		if (argc == 1)
-		{
-			printf("\n");
-		}
-		printf("No configuration-file found\n");
-#ifdef WIN32
-		printf("Please put configuration-file \"nzbget.conf\" into the directory with exe-file\n");
-#else
-		printf("Please use option \"-c\" or put configuration-file in one of the following locations:\n");
-		int p = 0;
-		while (const char* szFilename = PossibleConfigLocations[p++])
-		{
-			printf("%s\n", szFilename);
-		}
-#endif
-		exit(-1);
-	}
-	if (argc == 1)
-	{
-		exit(-1);
-	}
-
-	InitOptions();
-	CheckOptions();
-
-	if (!m_bPrintOptions)
-	{
-		InitFileArg(argc, argv);
-	}
-
-	InitServers();
-	InitCategories();
-	InitScheduler();
-	InitFeeds();
-	InitScripts();
-	InitConfigTemplates();
-
-	if (m_bPrintOptions)
-	{
-		Dump();
-		exit(-1);
-	}
-
-	if (m_bConfigErrors && m_eClientOperation == opClientNoOperation)
-	{
-		info("Pausing all activities due to errors in configuration");
-		m_bPauseDownload = true;
-		m_bPausePostProcess = true;
-		m_bPauseScan = true;
-	}
 }
 
 void Options::Dump()
@@ -769,8 +694,8 @@ void Options::ConfigError(const char* msg, ...)
 	tmp2[1024-1] = '\0';
 	va_end(ap);
 
-	printf("%s(%i): %s\n", Util::BaseFileName(m_szConfigFilename), m_iConfigLine, tmp2);
-	error("%s(%i): %s", Util::BaseFileName(m_szConfigFilename), m_iConfigLine, tmp2);
+	printf("%s(%i): %s\n", m_szConfigFilename ? Util::BaseFileName(m_szConfigFilename) : "<noconfig>", m_iConfigLine, tmp2);
+	error("%s(%i): %s", m_szConfigFilename ? Util::BaseFileName(m_szConfigFilename) : "<noconfig>", m_iConfigLine, tmp2);
 
 	m_bConfigErrors = true;
 }
@@ -802,7 +727,7 @@ void Options::LocateOptionSrcPos(const char *szOptionName)
 	}
 }
 
-void Options::InitDefault()
+void Options::InitDefaults()
 {
 #ifdef WIN32
 	SetOption(OPTION_MAINDIR, "${AppDir}");
@@ -914,11 +839,6 @@ void Options::InitDefault()
 
 void Options::InitOptFile()
 {
-	if (m_bConfigInitialized)
-	{
-		return;
-	}
-
 	if (!m_szConfigFilename && !m_bNoConfig)
 	{
 		// search for config file in default locations
@@ -933,9 +853,9 @@ void Options::InitOptFile()
 			snprintf(szFilename, sizeof(szFilename), "%s\\NZBGet\\nzbget.conf", szAppDataPath);
 			szFilename[sizeof(szFilename)-1] = '\0';
 
-			if (!Util::FileExists(szFilename))
+			if (m_pExtender && !Util::FileExists(szFilename))
 			{
-				SetupFirstStart();
+				m_pExtender->SetupFirstStart();
 			}
 		}
 
@@ -990,15 +910,13 @@ void Options::InitOptFile()
 			strncpy(szFilename, szExpandedFilename, sizeof(szFilename));
 		}
 #endif
-		
+
 		free(m_szConfigFilename);
 		m_szConfigFilename = strdup(szFilename);
 
 		SetOption(OPTION_CONFIGFILE, m_szConfigFilename);
 		LoadConfigFile();
 	}
-
-	m_bConfigInitialized = true;
 }
 
 void Options::CheckDir(char** dir, const char* szOptionName,
@@ -1006,6 +924,12 @@ void Options::CheckDir(char** dir, const char* szOptionName,
 {
 	char* usedir = NULL;
 	const char* tempdir = GetOption(szOptionName);
+
+	if (m_bNoDiskAccess)
+	{
+		*dir = strdup(tempdir);
+		return;
+	}
 
 	if (Util::EmptyStr(tempdir))
 	{
@@ -1246,7 +1170,8 @@ int Options::ParseIntValue(const char* OptName, int iBase)
 	OptEntry* pOptEntry = FindOption(OptName);
 	if (!pOptEntry)
 	{
-		abort("FATAL ERROR: Undefined value for option \"%s\"\n", OptName);
+		ConfigError("Undefined value for option \"%s\"", OptName);
+		return 0;
 	}
 
 	char *endptr;
@@ -1268,7 +1193,8 @@ float Options::ParseFloatValue(const char* OptName)
 	OptEntry* pOptEntry = FindOption(OptName);
 	if (!pOptEntry)
 	{
-		abort("FATAL ERROR: Undefined value for option \"%s\"\n", OptName);
+		ConfigError("Undefined value for option \"%s\"\n", OptName);
+		return 0;
 	}
 
 	char *endptr;
@@ -1283,756 +1209,6 @@ float Options::ParseFloatValue(const char* OptName)
 	}
 
 	return val;
-}
-
-void Options::InitCommandLine(int argc, char* argv[])
-{
-	m_eClientOperation = opClientNoOperation; // default
-
-	// reset getopt
-	optind = 1;
-
-	while (true)
-	{
-		int c;
-
-#ifdef HAVE_GETOPT_LONG
-		int option_index  = 0;
-		c = getopt_long(argc, argv, short_options, long_options, &option_index);
-#else
-		c = getopt(argc, argv, short_options);
-#endif
-
-		if (c == -1) break;
-
-		switch (c)
-		{
-			case 'c':
-				m_szConfigFilename = strdup(optarg);
-				break;
-			case 'n':
-				m_szConfigFilename = NULL;
-				m_bNoConfig = true;
-				break;
-			case 'h':
-				PrintUsage(argv[0]);
-				exit(0);
-				break;
-			case 'v':
-				printf("nzbget version: %s\n", Util::VersionRevision());
-				exit(1);
-				break;
-			case 'p':
-				m_bPrintOptions = true;
-				break;
-			case 'o':
-				InitOptFile();
-				if (!SetOptionString(optarg))
-				{
-					abort("FATAL ERROR: error in option \"%s\"\n", optarg);
-				}
-				break;
-			case 's':
-				m_bServerMode = true;
-				break;
-			case 'D':
-				m_bServerMode = true;
-				m_bDaemonMode = true;
-				break;
-			case 'A':
-				m_eClientOperation = opClientRequestDownload;
-
-				while (true)
-				{
-					optind++;
-					optarg = optind > argc ? NULL : argv[optind-1];
-					if (optarg && (!strcasecmp(optarg, "F") || !strcasecmp(optarg, "U")))
-					{
-						// option ignored (but kept for compatibility)
-					}
-					else if (optarg && !strcasecmp(optarg, "T"))
-					{
-						m_bAddTop = true;
-					}
-					else if (optarg && !strcasecmp(optarg, "P"))
-					{
-						m_bAddPaused = true;
-					}
-					else if (optarg && !strcasecmp(optarg, "I"))
-					{
-						optind++;
-						if (optind > argc)
-						{
-							abort("FATAL ERROR: Could not parse value of option 'A'\n");
-						}
-						m_iAddPriority = atoi(argv[optind-1]);
-					}
-					else if (optarg && !strcasecmp(optarg, "C"))
-					{
-						optind++;
-						if (optind > argc)
-						{
-							abort("FATAL ERROR: Could not parse value of option 'A'\n");
-						}
-						free(m_szAddCategory);
-						m_szAddCategory = strdup(argv[optind-1]);
-					}
-					else if (optarg && !strcasecmp(optarg, "N"))
-					{
-						optind++;
-						if (optind > argc)
-						{
-							abort("FATAL ERROR: Could not parse value of option 'A'\n");
-						}
-						free(m_szAddNZBFilename);
-						m_szAddNZBFilename = strdup(argv[optind-1]);
-					}
-					else if (optarg && !strcasecmp(optarg, "DK"))
-					{
-						optind++;
-						if (optind > argc)
-						{
-							abort("FATAL ERROR: Could not parse value of option 'A'\n");
-						}
-						free(m_szAddDupeKey);
-						m_szAddDupeKey = strdup(argv[optind-1]);
-					}
-					else if (optarg && !strcasecmp(optarg, "DS"))
-					{
-						optind++;
-						if (optind > argc)
-						{
-							abort("FATAL ERROR: Could not parse value of option 'A'\n");
-						}
-						m_iAddDupeScore = atoi(argv[optind-1]);
-					}
-					else if (optarg && !strcasecmp(optarg, "DM"))
-					{
-						optind++;
-						if (optind > argc)
-						{
-							abort("FATAL ERROR: Could not parse value of option 'A'\n");
-						}
-
-						const char* szDupeMode = argv[optind-1];
-						if (!strcasecmp(szDupeMode, "score"))
-						{
-							m_iAddDupeMode = dmScore;
-						}
-						else if (!strcasecmp(szDupeMode, "all"))
-						{
-							m_iAddDupeMode = dmAll;
-						}
-						else if (!strcasecmp(szDupeMode, "force"))
-						{
-							m_iAddDupeMode = dmForce;
-						}
-						else
-						{
-							abort("FATAL ERROR: Could not parse value of option 'A'\n");
-						}
-					}
-					else
-					{
-						optind--;
-						break;
-					}
-				}
-				break;
-			case 'L':
-				optind++;
-				optarg = optind > argc ? NULL : argv[optind-1];
-				if (!optarg || !strncmp(optarg, "-", 1))
-				{
-					m_eClientOperation = opClientRequestListFiles;
-					optind--;
-				}
-				else if (!strcasecmp(optarg, "F") || !strcasecmp(optarg, "FR"))
-				{
-					m_eClientOperation = opClientRequestListFiles;
-				}
-				else if (!strcasecmp(optarg, "G") || !strcasecmp(optarg, "GR"))
-				{
-					m_eClientOperation = opClientRequestListGroups;
-				}
-				else if (!strcasecmp(optarg, "O"))
-				{
-					m_eClientOperation = opClientRequestPostQueue;
-				}
-				else if (!strcasecmp(optarg, "S"))
-				{
-					m_eClientOperation = opClientRequestListStatus;
-				}
-				else if (!strcasecmp(optarg, "H"))
-				{
-					m_eClientOperation = opClientRequestHistory;
-				}
-				else if (!strcasecmp(optarg, "HA"))
-				{
-					m_eClientOperation = opClientRequestHistoryAll;
-				}
-				else
-				{
-					abort("FATAL ERROR: Could not parse value of option 'L'\n");
-				}
-
-				if (optarg && (!strcasecmp(optarg, "FR") || !strcasecmp(optarg, "GR")))
-				{
-					m_EMatchMode = mmRegEx;
-
-					optind++;
-					if (optind > argc)
-					{
-						abort("FATAL ERROR: Could not parse value of option 'L'\n");
-					}
-					m_szEditQueueText = strdup(argv[optind-1]);
-				}
-				break;
-			case 'P':
-			case 'U':
-				optind++;
-				optarg = optind > argc ? NULL : argv[optind-1];
-				if (!optarg || !strncmp(optarg, "-", 1))
-				{
-					m_eClientOperation = c == 'P' ? opClientRequestDownloadPause : opClientRequestDownloadUnpause;
-					optind--;
-				}
-				else if (!strcasecmp(optarg, "D"))
-				{
-					m_eClientOperation = c == 'P' ? opClientRequestDownloadPause : opClientRequestDownloadUnpause;
-				}
-				else if (!strcasecmp(optarg, "O"))
-				{
-					m_eClientOperation = c == 'P' ? opClientRequestPostPause : opClientRequestPostUnpause;
-				}
-				else if (!strcasecmp(optarg, "S"))
-				{
-					m_eClientOperation = c == 'P' ? opClientRequestScanPause : opClientRequestScanUnpause;
-				}
-				else
-				{
-					abort("FATAL ERROR: Could not parse value of option '%c'\n", c);
-				}
-				break;
-			case 'R':
-				m_eClientOperation = opClientRequestSetRate;
-				m_iSetRate = (int)(atof(optarg)*1024);
-				break;
-			case 'B':
-				if (!strcasecmp(optarg, "dump"))
-				{
-					m_eClientOperation = opClientRequestDumpDebug;
-				}
-				else if (!strcasecmp(optarg, "trace"))
-				{
-					m_bTestBacktrace = true;
-				}
-				else if (!strcasecmp(optarg, "webget"))
-				{
-					m_bWebGet = true;
-					optind++;
-					if (optind > argc)
-					{
-						abort("FATAL ERROR: Could not parse value of option 'E'\n");
-					}
-					optarg = argv[optind-1];
-					m_szWebGetFilename = strdup(optarg);
-				}
-				else
-				{
-					abort("FATAL ERROR: Could not parse value of option 'B'\n");
-				}
-				break;
-			case 'G':
-				m_eClientOperation = opClientRequestLog;
-				m_iLogLines = atoi(optarg);
-				if (m_iLogLines == 0)
-				{
-					abort("FATAL ERROR: Could not parse value of option 'G'\n");
-				}
-				break;
-			case 'T':
-				m_bAddTop = true;
-				break;
-			case 'C':
-				m_bRemoteClientMode = true;
-				break;
-			case 'E':
-			{
-				m_eClientOperation = opClientRequestEditQueue;
-				bool bGroup = !strcasecmp(optarg, "G") || !strcasecmp(optarg, "GN") || !strcasecmp(optarg, "GR");
-				bool bFile = !strcasecmp(optarg, "F") || !strcasecmp(optarg, "FN") || !strcasecmp(optarg, "FR");
-				if (!strcasecmp(optarg, "GN") || !strcasecmp(optarg, "FN"))
-				{
-					m_EMatchMode = mmName;
-				}
-				else if (!strcasecmp(optarg, "GR") || !strcasecmp(optarg, "FR"))
-				{
-					m_EMatchMode = mmRegEx;
-				}
-				else
-				{
-					m_EMatchMode = mmID;
-				};
-				bool bPost = !strcasecmp(optarg, "O");
-				bool bHistory = !strcasecmp(optarg, "H");
-				if (bGroup || bFile || bPost || bHistory)
-				{
-					optind++;
-					if (optind > argc)
-					{
-						abort("FATAL ERROR: Could not parse value of option 'E'\n");
-					}
-					optarg = argv[optind-1];
-				}
-
-				if (bPost)
-				{
-					// edit-commands for post-processor-queue
-					if (!strcasecmp(optarg, "D"))
-					{
-						m_iEditQueueAction = DownloadQueue::eaPostDelete;
-					}
-					else
-					{
-						abort("FATAL ERROR: Could not parse value of option 'E'\n");
-					}
-				}
-				else if (bHistory)
-				{
-					// edit-commands for history
-					if (!strcasecmp(optarg, "D"))
-					{
-						m_iEditQueueAction = DownloadQueue::eaHistoryDelete;
-					}
-					else if (!strcasecmp(optarg, "R"))
-					{
-						m_iEditQueueAction = DownloadQueue::eaHistoryReturn;
-					}
-					else if (!strcasecmp(optarg, "P"))
-					{
-						m_iEditQueueAction = DownloadQueue::eaHistoryProcess;
-					}
-					else if (!strcasecmp(optarg, "A"))
-					{
-						m_iEditQueueAction = DownloadQueue::eaHistoryRedownload;
-					}
-					else if (!strcasecmp(optarg, "O"))
-					{
-						m_iEditQueueAction = DownloadQueue::eaHistorySetParameter;
-						
-						optind++;
-						if (optind > argc)
-						{
-							abort("FATAL ERROR: Could not parse value of option 'E'\n");
-						}
-						m_szEditQueueText = strdup(argv[optind-1]);
-						
-						if (!strchr(m_szEditQueueText, '='))
-						{
-							abort("FATAL ERROR: Could not parse value of option 'E'\n");
-						}
-					}
-					else if (!strcasecmp(optarg, "B"))
-					{
-						m_iEditQueueAction = DownloadQueue::eaHistoryMarkBad;
-					}
-					else if (!strcasecmp(optarg, "G"))
-					{
-						m_iEditQueueAction = DownloadQueue::eaHistoryMarkGood;
-					}
-					else if (!strcasecmp(optarg, "S"))
-					{
-						m_iEditQueueAction = DownloadQueue::eaHistoryMarkSuccess;
-					}
-					else
-					{
-						abort("FATAL ERROR: Could not parse value of option 'E'\n");
-					}
-				}
-				else
-				{
-					// edit-commands for download-queue
-					if (!strcasecmp(optarg, "T"))
-					{
-						m_iEditQueueAction = bGroup ? DownloadQueue::eaGroupMoveTop : DownloadQueue::eaFileMoveTop;
-					}
-					else if (!strcasecmp(optarg, "B"))
-					{
-						m_iEditQueueAction = bGroup ? DownloadQueue::eaGroupMoveBottom : DownloadQueue::eaFileMoveBottom;
-					}
-					else if (!strcasecmp(optarg, "P"))
-					{
-						m_iEditQueueAction = bGroup ? DownloadQueue::eaGroupPause : DownloadQueue::eaFilePause;
-					}
-					else if (!strcasecmp(optarg, "A"))
-					{
-						m_iEditQueueAction = bGroup ? DownloadQueue::eaGroupPauseAllPars : DownloadQueue::eaFilePauseAllPars;
-					}
-					else if (!strcasecmp(optarg, "R"))
-					{
-						m_iEditQueueAction = bGroup ? DownloadQueue::eaGroupPauseExtraPars : DownloadQueue::eaFilePauseExtraPars;
-					}
-					else if (!strcasecmp(optarg, "U"))
-					{
-						m_iEditQueueAction = bGroup ? DownloadQueue::eaGroupResume : DownloadQueue::eaFileResume;
-					}
-					else if (!strcasecmp(optarg, "D"))
-					{
-						m_iEditQueueAction = bGroup ? DownloadQueue::eaGroupDelete : DownloadQueue::eaFileDelete;
-					}
-					else if (!strcasecmp(optarg, "C") || !strcasecmp(optarg, "K") || !strcasecmp(optarg, "CP"))
-					{
-						// switch "K" is provided for compatibility with v. 0.8.0 and can be removed in future versions
-						if (!bGroup)
-						{
-							abort("FATAL ERROR: Category can be set only for groups\n");
-						}
-						m_iEditQueueAction = !strcasecmp(optarg, "CP") ? DownloadQueue::eaGroupApplyCategory : DownloadQueue::eaGroupSetCategory;
-
-						optind++;
-						if (optind > argc)
-						{
-							abort("FATAL ERROR: Could not parse value of option 'E'\n");
-						}
-						m_szEditQueueText = strdup(argv[optind-1]);
-					}
-					else if (!strcasecmp(optarg, "N"))
-					{
-						if (!bGroup)
-						{
-							abort("FATAL ERROR: Only groups can be renamed\n");
-						}
-						m_iEditQueueAction = DownloadQueue::eaGroupSetName;
-
-						optind++;
-						if (optind > argc)
-						{
-							abort("FATAL ERROR: Could not parse value of option 'E'\n");
-						}
-						m_szEditQueueText = strdup(argv[optind-1]);
-					}
-					else if (!strcasecmp(optarg, "M"))
-					{
-						if (!bGroup)
-						{
-							abort("FATAL ERROR: Only groups can be merged\n");
-						}
-						m_iEditQueueAction = DownloadQueue::eaGroupMerge;
-					}
-					else if (!strcasecmp(optarg, "S"))
-					{
-						m_iEditQueueAction = DownloadQueue::eaFileSplit;
-
-						optind++;
-						if (optind > argc)
-						{
-							abort("FATAL ERROR: Could not parse value of option 'E'\n");
-						}
-						m_szEditQueueText = strdup(argv[optind-1]);
-					}
-					else if (!strcasecmp(optarg, "O"))
-					{
-						if (!bGroup)
-						{
-							abort("FATAL ERROR: Post-process parameter can be set only for groups\n");
-						}
-						m_iEditQueueAction = DownloadQueue::eaGroupSetParameter;
-
-						optind++;
-						if (optind > argc)
-						{
-							abort("FATAL ERROR: Could not parse value of option 'E'\n");
-						}
-						m_szEditQueueText = strdup(argv[optind-1]);
-
-						if (!strchr(m_szEditQueueText, '='))
-						{
-							abort("FATAL ERROR: Could not parse value of option 'E'\n");
-						}
-					}
-					else if (!strcasecmp(optarg, "I"))
-					{
-						if (!bGroup)
-						{
-							abort("FATAL ERROR: Priority can be set only for groups\n");
-						}
-						m_iEditQueueAction = DownloadQueue::eaGroupSetPriority;
-
-						optind++;
-						if (optind > argc)
-						{
-							abort("FATAL ERROR: Could not parse value of option 'E'\n");
-						}
-						m_szEditQueueText = strdup(argv[optind-1]);
-
-						if (atoi(m_szEditQueueText) == 0 && strcmp("0", m_szEditQueueText))
-						{
-							abort("FATAL ERROR: Could not parse value of option 'E'\n");
-						}
-					}
-					else
-					{
-						m_iEditQueueOffset = atoi(optarg);
-						if (m_iEditQueueOffset == 0)
-						{
-							abort("FATAL ERROR: Could not parse value of option 'E'\n");
-						}
-						m_iEditQueueAction = bGroup ? DownloadQueue::eaGroupMoveOffset : DownloadQueue::eaFileMoveOffset;
-					}
-				}
-				break;
-			}
-			case 'Q':
-				m_eClientOperation = opClientRequestShutdown;
-				break;
-			case 'O':
-				m_eClientOperation = opClientRequestReload;
-				break;
-			case 'V':
-				m_eClientOperation = opClientRequestVersion;
-				break;
-			case 'W':
-				m_eClientOperation = opClientRequestWriteLog;
-				if (!strcasecmp(optarg, "I")) {
-					m_iWriteLogKind = (int)Message::mkInfo;
-				}
-				else if (!strcasecmp(optarg, "W")) {
-					m_iWriteLogKind = (int)Message::mkWarning;
-				}
-				else if (!strcasecmp(optarg, "E")) {
-					m_iWriteLogKind = (int)Message::mkError;
-				}
-				else if (!strcasecmp(optarg, "D")) {
-					m_iWriteLogKind = (int)Message::mkDetail;
-				}
-				else if (!strcasecmp(optarg, "G")) {
-					m_iWriteLogKind = (int)Message::mkDebug;
-				}
-				else
-				{
-					abort("FATAL ERROR: Could not parse value of option 'W'\n");
-				}
-				break;
-			case 'K':
-				// switch "K" is provided for compatibility with v. 0.8.0 and can be removed in future versions
-				free(m_szAddCategory);
-				m_szAddCategory = strdup(optarg);
-				break;
-			case 'S':
-				optind++;
-				optarg = optind > argc ? NULL : argv[optind-1];
-				if (!optarg || !strncmp(optarg, "-", 1))
-				{
-					m_eClientOperation = opClientRequestScanAsync;
-					optind--;
-				}
-				else if (!strcasecmp(optarg, "W"))
-				{
-					m_eClientOperation = opClientRequestScanSync;
-				}
-				else
-				{
-					abort("FATAL ERROR: Could not parse value of option '%c'\n", c);
-				}
-				break;
-			case '?':
-				exit(-1);
-				break;
-		}
-	}
-
-	if (m_bServerMode && m_eClientOperation == opClientRequestDownloadPause)
-	{
-		m_bPauseDownload = true;
-		m_eClientOperation = opClientNoOperation;
-	}
-
-	InitOptFile();
-}
-
-void Options::PrintUsage(char* com)
-{
-	printf("Usage:\n"
-		"  %s [switches]\n\n"
-		"Switches:\n"
-	    "  -h, --help                Print this help-message\n"
-	    "  -v, --version             Print version and exit\n"
-		"  -c, --configfile <file>   Filename of configuration-file\n"
-		"  -n, --noconfigfile        Prevent loading of configuration-file\n"
-		"                            (required options must be passed with --option)\n"
-		"  -p, --printconfig         Print configuration and exit\n"
-		"  -o, --option <name=value> Set or override option in configuration-file\n"
-		"  -s, --server              Start nzbget as a server in console-mode\n"
-#ifndef WIN32
-		"  -D, --daemon              Start nzbget as a server in daemon-mode\n"
-#endif
-	    "  -V, --serverversion       Print server's version and exit\n"
-		"  -Q, --quit                Shutdown server\n"
-		"  -O, --reload              Reload config and restart all services\n"
-		"  -A, --append [<options>] <nzb-file/url> Send file/url to server's\n"
-		"                            download queue\n"
-		"    <options> are (multiple options must be separated with space):\n"
-		"       T                    Add file to the top (beginning) of queue\n"
-		"       P                    Pause added files\n"
-		"       C <name>             Assign category to nzb-file\n"
-		"       N <name>             Use this name as nzb-filename\n"
-		"       I <priority>         Set priority (signed integer)\n"
-		"       DK <dupekey>         Set duplicate key (string)\n"
-		"       DS <dupescore>       Set duplicate score (signed integer)\n"
-		"       DM (score|all|force) Set duplicate mode\n"
-		"  -C, --connect             Attach client to server\n"
-		"  -L, --list    [F|FR|G|GR|O|H|S] [RegEx] Request list of items from server\n"
-		"                 F          List individual files and server status (default)\n"
-		"                 FR         Like \"F\" but apply regular expression filter\n"
-		"                 G          List groups (nzb-files) and server status\n"
-		"                 GR         Like \"G\" but apply regular expression filter\n"
-		"                 O          List post-processor-queue\n"
-		"                 H          List history\n"
-		"                 HA         List history, all records (incl. hidden)\n"
-		"                 S          Print only server status\n"
-		"    <RegEx>                 Regular expression (only with options \"FR\", \"GR\")\n"
-		"                            using POSIX Extended Regular Expression Syntax\n"
-		"  -P, --pause   [D|O|S]  Pause server\n"
-		"                 D          Pause download queue (default)\n"
-		"                 O          Pause post-processor queue\n"
-		"                 S          Pause scan of incoming nzb-directory\n"
-		"  -U, --unpause [D|O|S]  Unpause server\n"
-		"                 D          Unpause download queue (default)\n"
-		"                 O          Unpause post-processor queue\n"
-		"                 S          Unpause scan of incoming nzb-directory\n"
-		"  -R, --rate <speed>        Set download rate on server, in KB/s\n"
-		"  -G, --log <lines>         Request last <lines> lines from server's screen-log\n"
-		"  -W, --write <D|I|W|E|G> \"Text\" Send text to server's log\n"
-		"  -S, --scan    [W]         Scan incoming nzb-directory on server\n"
-		"                 W          Wait until scan completes (synchronous mode)\n"
-		"  -E, --edit [F|FN|FR|G|GN|GR|O|H] <action> <IDs/Names/RegExs> Edit items\n"
-		"                            on server\n"
-		"              F             Edit individual files (default)\n"
-		"              FN            Like \"F\" but uses names (as \"group/file\")\n"
-		"                            instead of IDs\n"
-		"              FR            Like \"FN\" but with regular expressions\n"
-		"              G             Edit all files in the group (same nzb-file)\n"
-		"              GN            Like \"G\" but uses group names instead of IDs\n"
-		"              GR            Like \"GN\" but with regular expressions\n"
-		"              O             Edit post-processor-queue\n"
-		"              H             Edit history\n"
-		"    <action> is one of:\n"
-		"    - for files (F) and groups (G):\n"
-		"       <+offset|-offset>    Move in queue relative to current position,\n"
-		"                            offset is an integer value\n"
-		"       T                    Move to top of queue\n"
-		"       B                    Move to bottom of queue\n"
-		"       D                    Delete\n"
-		"    - for files (F) and groups (G):\n"
-		"       P                    Pause\n"
-		"       U                    Resume (unpause)\n"
-		"    - for groups (G):\n"
-		"       A                    Pause all pars\n"
-		"       R                    Pause extra pars\n"
-		"       I <priority>         Set priority (signed integer)\n"
-		"       C <name>             Set category\n"
-		"       CP <name>            Set category and apply post-process parameters\n"
-		"       N <name>             Rename\n"
-		"       M                    Merge\n"
-		"       S <name>             Split - create new group from selected files\n"
-		"       O <name>=<value>     Set post-process parameter\n"
-		"    - for post-jobs (O):\n"
-		"       D                    Delete (cancel post-processing)\n"
-		"    - for history (H):\n"
-		"       D                    Delete\n"
-		"       P                    Post-process again\n"
-		"       R                    Download remaining files\n"
-		"       A                    Download again\n"
-		"       O <name>=<value>     Set post-process parameter\n"
-		"       B                    Mark as bad\n"
-		"       G                    Mark as good\n"
-		"       S                    Mark as success\n"
-		"    <IDs>                   Comma-separated list of file- or group- ids or\n"
-		"                            ranges of file-ids, e. g.: 1-5,3,10-22\n"
-		"    <Names>                 List of names (with options \"FN\" and \"GN\"),\n"
-		"                            e. g.: \"my nzb download%cmyfile.nfo\" \"another nzb\"\n"
-		"    <RegExs>                List of regular expressions (options \"FR\", \"GR\")\n"
-		"                            using POSIX Extended Regular Expression Syntax\n",
-		Util::BaseFileName(com),
-		PATH_SEPARATOR);
-}
-
-void Options::InitFileArg(int argc, char* argv[])
-{
-	if (optind >= argc)
-	{
-		// no nzb-file passed
-		if (!m_bServerMode && !m_bRemoteClientMode &&
-		        (m_eClientOperation == opClientNoOperation ||
-		         m_eClientOperation == opClientRequestDownload ||
-				 m_eClientOperation == opClientRequestWriteLog))
-		{
-			if (m_eClientOperation == opClientRequestWriteLog)
-			{
-				abort("FATAL ERROR: Log-text not specified\n");
-			}
-			else
-			{
-				abort("FATAL ERROR: Nzb-file or Url not specified\n");
-			}
-		}
-	}
-	else if (m_eClientOperation == opClientRequestEditQueue)
-	{
-		if (m_EMatchMode == mmID)
-		{
-			ParseFileIDList(argc, argv, optind);
-		}
-		else
-		{
-			ParseFileNameList(argc, argv, optind);
-		}
-	}
-	else
-	{
-		m_szLastArg = strdup(argv[optind]);
-
-		// Check if the file-name is a relative path or an absolute path
-		// If the path starts with '/' its an absolute, else relative
-		const char* szFileName = argv[optind];
-
-#ifdef WIN32
-			m_szArgFilename = strdup(szFileName);
-#else
-		if (szFileName[0] == '/' || !strncasecmp(szFileName, "http://", 6) || !strncasecmp(szFileName, "https://", 7))
-		{
-			m_szArgFilename = strdup(szFileName);
-		}
-		else
-		{
-			// TEST
-			char szFileNameWithPath[1024];
-			getcwd(szFileNameWithPath, 1024);
-			strcat(szFileNameWithPath, "/");
-			strcat(szFileNameWithPath, szFileName);
-			m_szArgFilename = strdup(szFileNameWithPath);
-		}
-#endif
-
-		if (m_bServerMode || m_bRemoteClientMode ||
-		        !(m_eClientOperation == opClientNoOperation ||
-		          m_eClientOperation == opClientRequestDownload ||
-				  m_eClientOperation == opClientRequestWriteLog))
-		{
-			abort("FATAL ERROR: Too many arguments\n");
-		}
-	}
-}
-
-const char* Options::GetControlIP()
-{
-	if ((m_bRemoteClientMode || m_eClientOperation != opClientNoOperation) &&
-		!strcmp(m_szControlIP, "0.0.0.0"))
-	{
-		return "127.0.0.1";
-	}
-	return m_szControlIP;
 }
 
 void Options::SetOption(const char* optname, const char* value)
@@ -2051,7 +1227,12 @@ void Options::SetOption(const char* optname, const char* value)
 	if (value && (value[0] == '~') && (value[1] == '/'))
 	{
 		char szExpandedPath[1024];
-		if (!Util::ExpandHomePath(value, szExpandedPath, sizeof(szExpandedPath)))
+		if (m_bNoDiskAccess)
+		{
+			strncpy(szExpandedPath, value, 1024);
+			szExpandedPath[1024-1] = '\0';
+		}
+		else if (!Util::ExpandHomePath(value, szExpandedPath, sizeof(szExpandedPath)))
 		{
 			ConfigError("Invalid value for option\"%s\": unable to determine home-directory", optname);
 			szExpandedPath[0] = '\0';
@@ -2211,16 +1392,18 @@ void Options::InitServers()
 
 		if (completed)
 		{
-			NewsServer* pNewsServer = new NewsServer(n, bActive, nname,
-				nhost,
-				nport ? atoi(nport) : 119,
-				nusername, npassword,
-				bJoinGroup, bTLS, ncipher,
-				nconnections ? atoi(nconnections) : 1,
-				nretention ? atoi(nretention) : 0,
-				nlevel ? atoi(nlevel) : 0,
-				ngroup ? atoi(ngroup) : 0);
-			g_pServerPool->AddServer(pNewsServer);
+			if (m_pExtender)
+			{
+				m_pExtender->AddNewsServer(n, bActive, nname,
+					nhost,
+					nport ? atoi(nport) : 119,
+					nusername, npassword,
+					bJoinGroup, bTLS, ncipher,
+					nconnections ? atoi(nconnections) : 1,
+					nretention ? atoi(nretention) : 0,
+					nlevel ? atoi(nlevel) : 0,
+					ngroup ? atoi(ngroup) : 0);
+			}
 		}
 		else
 		{
@@ -2229,9 +1412,6 @@ void Options::InitServers()
 
 		n++;
 	}
-
-	g_pServerPool->SetTimeout(GetArticleTimeout());
-	g_pServerPool->SetRetryInterval(GetRetryInterval());
 }
 
 void Options::InitCategories()
@@ -2345,9 +1525,11 @@ void Options::InitFeeds()
 
 		if (completed)
 		{
-			FeedInfo* pFeedInfo = new FeedInfo(n, nname, nurl, ninterval ? atoi(ninterval) : 0, nfilter, 
-				bPauseNzb, ncategory, npriority ? atoi(npriority) : 0);
-			g_pFeedCoordinator->AddFeed(pFeedInfo);
+			if (m_pExtender)
+			{
+				m_pExtender->AddFeed(n, nname, nurl, ninterval ? atoi(ninterval) : 0, nfilter,
+					bPauseNzb, ncategory, npriority ? atoi(npriority) : 0);
+			}
 		}
 		else
 		{
@@ -2412,18 +1594,18 @@ void Options::InitScheduler()
 			"pausepostprocess", "unpausepostprocess", "resumepostprocess", "pausepost", "unpausepost", "resumepost",
 			"downloadrate", "setdownloadrate", "rate", "speed", "script", "process", "pausescan", "unpausescan", "resumescan",
 			"activateserver", "activateservers", "deactivateserver", "deactivateservers", "fetchfeed", "fetchfeeds" };
-		const int CommandValues[] = { Scheduler::scPauseDownload, Scheduler::scPauseDownload, Scheduler::scUnpauseDownload,
-			Scheduler::scUnpauseDownload, Scheduler::scUnpauseDownload, Scheduler::scUnpauseDownload,
-			Scheduler::scPausePostProcess, Scheduler::scUnpausePostProcess, Scheduler::scUnpausePostProcess,
-			Scheduler::scPausePostProcess, Scheduler::scUnpausePostProcess, Scheduler::scUnpausePostProcess,
-			Scheduler::scDownloadRate, Scheduler::scDownloadRate, Scheduler::scDownloadRate, Scheduler::scDownloadRate,
-			Scheduler::scScript, Scheduler::scProcess, Scheduler::scPauseScan, Scheduler::scUnpauseScan, Scheduler::scUnpauseScan,
-			Scheduler::scActivateServer, Scheduler::scActivateServer, Scheduler::scDeactivateServer,
-			Scheduler::scDeactivateServer, Scheduler::scFetchFeed, Scheduler::scFetchFeed };
+		const int CommandValues[] = { scPauseDownload, scPauseDownload, scUnpauseDownload,
+			scUnpauseDownload, scUnpauseDownload, scUnpauseDownload,
+			scPausePostProcess, scUnpausePostProcess, scUnpausePostProcess,
+			scPausePostProcess, scUnpausePostProcess, scUnpausePostProcess,
+			scDownloadRate, scDownloadRate, scDownloadRate, scDownloadRate,
+			scScript, scProcess, scPauseScan, scUnpauseScan, scUnpauseScan,
+			scActivateServer, scActivateServer, scDeactivateServer,
+			scDeactivateServer, scFetchFeed, scFetchFeed };
 		const int CommandCount = 27;
-		Scheduler::ECommand eCommand = (Scheduler::ECommand)ParseEnumValue(optname, CommandCount, CommandNames, CommandValues);
+		ESchedulerCommand eCommand = (ESchedulerCommand)ParseEnumValue(optname, CommandCount, CommandNames, CommandValues);
 
-		if (szParam && strlen(szParam) > 0 && eCommand == Scheduler::scProcess &&
+		if (szParam && strlen(szParam) > 0 && eCommand == scProcess &&
 			!Util::SplitCommandLine(szParam, NULL))
 		{
 			ConfigError("Invalid value for option \"Task%i.Param\"", n);
@@ -2437,7 +1619,7 @@ void Options::InitScheduler()
 			continue;
 		}
 
-		if (eCommand == Scheduler::scDownloadRate)
+		if (eCommand == scDownloadRate)
 		{
 			if (szParam)
 			{
@@ -2456,11 +1638,11 @@ void Options::InitScheduler()
 			}
 		}
 
-		if ((eCommand == Scheduler::scScript || 
-			 eCommand == Scheduler::scProcess || 
-			 eCommand == Scheduler::scActivateServer ||
-			 eCommand == Scheduler::scDeactivateServer ||
-			 eCommand == Scheduler::scFetchFeed) && 
+		if ((eCommand == scScript || 
+			 eCommand == scProcess || 
+			 eCommand == scActivateServer ||
+			 eCommand == scDeactivateServer ||
+			 eCommand == scFetchFeed) && 
 			Util::EmptyStr(szParam))
 		{
 			ConfigError("Task definition not complete for \"Task%i\". Option \"Task%i.Param\" is missing", n, n);
@@ -2477,18 +1659,19 @@ void Options::InitScheduler()
 				break;
 			}
 
-			if (iHours == -1)
+			if (m_pExtender)
 			{
-				for (int iEveryHour = 0; iEveryHour < 24; iEveryHour++)
+				if (iHours == -1)
 				{
-					Scheduler::Task* pTask = new Scheduler::Task(n, iEveryHour, iMinutes, iWeekDays, eCommand, szParam);
-					g_pScheduler->AddTask(pTask);
+					for (int iEveryHour = 0; iEveryHour < 24; iEveryHour++)
+					{
+						m_pExtender->AddTask(n, iEveryHour, iMinutes, iWeekDays, eCommand, szParam);
+					}
 				}
-			}
-			else
-			{
-				Scheduler::Task* pTask = new Scheduler::Task(n, iHours, iMinutes, iWeekDays, eCommand, szParam);
-				g_pScheduler->AddTask(pTask);
+				else
+				{
+					m_pExtender->AddTask(n, iHours, iMinutes, iWeekDays, eCommand, szParam);
+				}
 			}
 		}
 	}
@@ -2601,11 +1784,15 @@ bool Options::ParseWeekDays(const char* szWeekDays, int* pWeekDaysBits)
 
 void Options::LoadConfigFile()
 {
+	SetOption(OPTION_CONFIGFILE, m_szConfigFilename);
+
 	FILE* infile = fopen(m_szConfigFilename, FOPEN_RB);
 
 	if (!infile)
 	{
-		abort("FATAL ERROR: Could not open file %s\n", m_szConfigFilename);
+		ConfigError("Could not open file %s", m_szConfigFilename);
+		m_bFatalError = true;
+		return;
 	}
 
 	m_iConfigLine = 0;
@@ -2638,6 +1825,15 @@ void Options::LoadConfigFile()
 	free(buf);
 
 	m_iConfigLine = 0;
+}
+
+void Options::InitCommandLineOptions(CmdOptList* pCommandLineOptions)
+{
+	for (CmdOptList::iterator it = pCommandLineOptions->begin(); it != pCommandLineOptions->end(); it++)
+	{
+		const char* option = *it;
+		SetOptionString(option);
+	}
 }
 
 bool Options::SetOptionString(const char* option)
@@ -2938,7 +2134,7 @@ void Options::CheckOptions()
 
 	// if option "ConfigTemplate" is not set, use "WebDir" as default location for template
 	// (for compatibility with versions 9 and 10).
-	if (!m_szConfigTemplate || m_szConfigTemplate[0] == '\0')
+	if (Util::EmptyStr(m_szConfigTemplate) && !m_bNoDiskAccess)
 	{
 		free(m_szConfigTemplate);
 		int iLen = strlen(m_szWebDir) + 15;
@@ -2977,95 +2173,6 @@ void Options::CheckOptions()
 	if (!Util::EmptyStr(m_szUnpackPassFile) && !Util::FileExists(m_szUnpackPassFile))
 	{
 		ConfigError("Invalid value for option \"UnpackPassFile\": %s. File not found", m_szUnpackPassFile);
-	}
-}
-
-void Options::ParseFileIDList(int argc, char* argv[], int optind)
-{
-	std::vector<int> IDs;
-	IDs.clear();
-
-	while (optind < argc)
-	{
-		char* szWritableFileIDList = strdup(argv[optind++]);
-
-		char* optarg = strtok(szWritableFileIDList, ", ");
-		while (optarg)
-		{
-			int iEditQueueIDFrom = 0;
-			int iEditQueueIDTo = 0;
-			const char* p = strchr(optarg, '-');
-			if (p)
-			{
-				char buf[101];
-				int maxlen = (int)(p - optarg < 100 ? p - optarg : 100);
-				strncpy(buf, optarg, maxlen);
-				buf[maxlen] = '\0';
-				iEditQueueIDFrom = atoi(buf);
-				iEditQueueIDTo = atoi(p + 1);
-				if (iEditQueueIDFrom <= 0 || iEditQueueIDTo <= 0)
-				{
-					abort("FATAL ERROR: invalid list of file IDs\n");
-				}
-			}
-			else
-			{
-				iEditQueueIDFrom = atoi(optarg);
-				if (iEditQueueIDFrom <= 0)
-				{
-					abort("FATAL ERROR: invalid list of file IDs\n");
-				}
-				iEditQueueIDTo = iEditQueueIDFrom;
-			}
-
-			int iEditQueueIDCount = 0;
-			if (iEditQueueIDTo != 0)
-			{
-				if (iEditQueueIDFrom < iEditQueueIDTo)
-				{
-					iEditQueueIDCount = iEditQueueIDTo - iEditQueueIDFrom + 1;
-				}
-				else
-				{
-					iEditQueueIDCount = iEditQueueIDFrom - iEditQueueIDTo + 1;
-				}
-			}
-			else
-			{
-				iEditQueueIDCount = 1;
-			}
-
-			for (int i = 0; i < iEditQueueIDCount; i++)
-			{
-				if (iEditQueueIDFrom < iEditQueueIDTo || iEditQueueIDTo == 0)
-				{
-					IDs.push_back(iEditQueueIDFrom + i);
-				}
-				else
-				{
-					IDs.push_back(iEditQueueIDFrom - i);
-				}
-			}
-
-			optarg = strtok(NULL, ", ");
-		}
-
-		free(szWritableFileIDList);
-	}
-
-	m_iEditQueueIDCount = IDs.size();
-	m_pEditQueueIDList = (int*)malloc(sizeof(int) * m_iEditQueueIDCount);
-	for (int i = 0; i < m_iEditQueueIDCount; i++)
-	{
-		m_pEditQueueIDList[i] = IDs[i];
-	}
-}
-
-void Options::ParseFileNameList(int argc, char* argv[], int optind)
-{
-	while (optind < argc)
-	{
-		m_EditQueueNameList.push_back(strdup(argv[optind++]));
 	}
 }
 
