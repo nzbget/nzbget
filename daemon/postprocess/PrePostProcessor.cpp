@@ -56,6 +56,7 @@
 #include "NZBFile.h"
 #include "StatMeter.h"
 #include "QueueScript.h"
+#include "ParParser.h"
 
 extern HistoryCoordinator* g_pHistoryCoordinator;
 extern DupeCoordinator* g_pDupeCoordinator;
@@ -562,7 +563,7 @@ void PrePostProcessor::StartJob(DownloadQueue* pDownloadQueue, PostInfo* pPostIn
 	else if (pPostInfo->GetNZBInfo()->GetParStatus() == NZBInfo::psNone &&
 		pPostInfo->GetNZBInfo()->GetDeleteStatus() == NZBInfo::dsNone)
 	{
-		if (m_ParCoordinator.FindMainPars(pPostInfo->GetNZBInfo()->GetDestDir(), NULL))
+		if (ParParser::FindMainPars(pPostInfo->GetNZBInfo()->GetDestDir(), NULL))
 		{
 			UpdatePauseState(g_pOptions->GetParPauseQueue(), "par-check");
 			m_ParCoordinator.StartParCheckJob(pPostInfo);
@@ -580,7 +581,7 @@ void PrePostProcessor::StartJob(DownloadQueue* pDownloadQueue, PostInfo* pPostIn
 	else if (pPostInfo->GetNZBInfo()->GetParStatus() == NZBInfo::psSkipped &&
 		pPostInfo->GetNZBInfo()->CalcHealth() < pPostInfo->GetNZBInfo()->CalcCriticalHealth(false) &&
 		pPostInfo->GetNZBInfo()->CalcCriticalHealth(false) < 1000 &&
-		m_ParCoordinator.FindMainPars(pPostInfo->GetNZBInfo()->GetDestDir(), NULL))
+		ParParser::FindMainPars(pPostInfo->GetNZBInfo()->GetDestDir(), NULL))
 	{
 		pPostInfo->GetNZBInfo()->PrintMessage(Message::mkWarning,
 			"Skipping par-check for %s due to health %.1f%% below critical %.1f%%", pPostInfo->GetNZBInfo()->GetName(),
@@ -590,7 +591,7 @@ void PrePostProcessor::StartJob(DownloadQueue* pDownloadQueue, PostInfo* pPostIn
 	}
 	else if (pPostInfo->GetNZBInfo()->GetParStatus() == NZBInfo::psSkipped &&
 		pPostInfo->GetNZBInfo()->GetFailedSize() - pPostInfo->GetNZBInfo()->GetParFailedSize() > 0 &&
-		m_ParCoordinator.FindMainPars(pPostInfo->GetNZBInfo()->GetDestDir(), NULL))
+		ParParser::FindMainPars(pPostInfo->GetNZBInfo()->GetDestDir(), NULL))
 	{
 		pPostInfo->GetNZBInfo()->PrintMessage(Message::mkInfo,
 			"Collection %s with health %.1f%% needs par-check",

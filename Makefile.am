@@ -74,6 +74,8 @@ nzbget_SOURCES = \
 	daemon/postprocess/ParChecker.h \
 	daemon/postprocess/ParCoordinator.cpp \
 	daemon/postprocess/ParCoordinator.h \
+	daemon/postprocess/ParParser.cpp \
+	daemon/postprocess/ParParser.h \
 	daemon/postprocess/ParRenamer.cpp \
 	daemon/postprocess/ParRenamer.h \
 	daemon/postprocess/PostScript.cpp \

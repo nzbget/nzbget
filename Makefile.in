@@ -157,6 +157,8 @@ am__nzbget_SOURCES_DIST = daemon/connect/Connection.cpp \
 	daemon/postprocess/ParChecker.h \
 	daemon/postprocess/ParCoordinator.cpp \
 	daemon/postprocess/ParCoordinator.h \
+	daemon/postprocess/ParParser.cpp \
+	daemon/postprocess/ParParser.h \
 	daemon/postprocess/ParRenamer.cpp \
 	daemon/postprocess/ParRenamer.h \
 	daemon/postprocess/PostScript.cpp \
@@ -231,9 +233,10 @@ am_nzbget_OBJECTS = Connection.$(OBJEXT) TLS.$(OBJEXT) \
 	ArticleWriter.$(OBJEXT) Decoder.$(OBJEXT) NewsServer.$(OBJEXT) \
 	NNTPConnection.$(OBJEXT) ServerPool.$(OBJEXT) \
 	StatMeter.$(OBJEXT) ParChecker.$(OBJEXT) \
-	ParCoordinator.$(OBJEXT) ParRenamer.$(OBJEXT) \
-	PostScript.$(OBJEXT) PrePostProcessor.$(OBJEXT) \
-	Unpack.$(OBJEXT) DiskState.$(OBJEXT) DownloadInfo.$(OBJEXT) \
+	ParCoordinator.$(OBJEXT) ParParser.$(OBJEXT) \
+	ParRenamer.$(OBJEXT) PostScript.$(OBJEXT) \
+	PrePostProcessor.$(OBJEXT) Unpack.$(OBJEXT) \
+	DiskState.$(OBJEXT) DownloadInfo.$(OBJEXT) \
 	DupeCoordinator.$(OBJEXT) HistoryCoordinator.$(OBJEXT) \
 	NZBFile.$(OBJEXT) QueueCoordinator.$(OBJEXT) \
 	QueueEditor.$(OBJEXT) QueueScript.$(OBJEXT) Scanner.$(OBJEXT) \
@@ -413,6 +416,8 @@ nzbget_SOURCES = daemon/connect/Connection.cpp \
 	daemon/postprocess/ParChecker.h \
 	daemon/postprocess/ParCoordinator.cpp \
 	daemon/postprocess/ParCoordinator.h \
+	daemon/postprocess/ParParser.cpp \
+	daemon/postprocess/ParParser.h \
 	daemon/postprocess/ParRenamer.cpp \
 	daemon/postprocess/ParRenamer.h \
 	daemon/postprocess/PostScript.cpp \
@@ -723,6 +728,7 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/Options.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/ParChecker.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/ParCoordinator.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/ParParser.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/ParRenamer.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/PostScript.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/PrePostProcessor.Po@am__quote@
@@ -1145,6 +1151,20 @@ ParCoordinator.obj: daemon/postprocess/ParCoordinator.cpp
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='daemon/postprocess/ParCoordinator.cpp' object='ParCoordinator.obj' libtool=no @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o ParCoordinator.obj `if test -f 'daemon/postprocess/ParCoordinator.cpp'; then $(CYGPATH_W) 'daemon/postprocess/ParCoordinator.cpp'; else $(CYGPATH_W) '$(srcdir)/daemon/postprocess/ParCoordinator.cpp'; fi`
+
+ParParser.o: daemon/postprocess/ParParser.cpp
+@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT ParParser.o -MD -MP -MF "$(DEPDIR)/ParParser.Tpo" -c -o ParParser.o `test -f 'daemon/postprocess/ParParser.cpp' || echo '$(srcdir)/'`daemon/postprocess/ParParser.cpp; \
+@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/ParParser.Tpo" "$(DEPDIR)/ParParser.Po"; else rm -f "$(DEPDIR)/ParParser.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='daemon/postprocess/ParParser.cpp' object='ParParser.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o ParParser.o `test -f 'daemon/postprocess/ParParser.cpp' || echo '$(srcdir)/'`daemon/postprocess/ParParser.cpp
+
+ParParser.obj: daemon/postprocess/ParParser.cpp
+@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT ParParser.obj -MD -MP -MF "$(DEPDIR)/ParParser.Tpo" -c -o ParParser.obj `if test -f 'daemon/postprocess/ParParser.cpp'; then $(CYGPATH_W) 'daemon/postprocess/ParParser.cpp'; else $(CYGPATH_W) '$(srcdir)/daemon/postprocess/ParParser.cpp'; fi`; \
+@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/ParParser.Tpo" "$(DEPDIR)/ParParser.Po"; else rm -f "$(DEPDIR)/ParParser.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='daemon/postprocess/ParParser.cpp' object='ParParser.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o ParParser.obj `if test -f 'daemon/postprocess/ParParser.cpp'; then $(CYGPATH_W) 'daemon/postprocess/ParParser.cpp'; else $(CYGPATH_W) '$(srcdir)/daemon/postprocess/ParParser.cpp'; fi`
 
 ParRenamer.o: daemon/postprocess/ParRenamer.cpp
 @am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT ParRenamer.o -MD -MP -MF "$(DEPDIR)/ParRenamer.Tpo" -c -o ParRenamer.o `test -f 'daemon/postprocess/ParRenamer.cpp' || echo '$(srcdir)/'`daemon/postprocess/ParRenamer.cpp; \
