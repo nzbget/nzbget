@@ -54,6 +54,8 @@ nzbget_SOURCES = \
 	daemon/main/Options.h \
 	daemon/main/Scheduler.cpp \
 	daemon/main/Scheduler.h \
+	daemon/main/ScriptConfig.cpp \
+	daemon/main/ScriptConfig.h \
 	daemon/main/StackTrace.cpp \
 	daemon/main/StackTrace.h \
 	daemon/nntp/ArticleDownloader.cpp \

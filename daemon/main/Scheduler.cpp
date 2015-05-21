@@ -62,7 +62,7 @@ private:
 	void				ExecuteExternalProcess();
 
 protected:
-	virtual void		ExecuteScript(Options::Script* pScript);
+	virtual void		ExecuteScript(ScriptConfig::Script* pScript);
 
 public:
 	virtual				~SchedulerScriptController();
@@ -430,7 +430,7 @@ void SchedulerScriptController::Run()
 	}
 }
 
-void SchedulerScriptController::ExecuteScript(Options::Script* pScript)
+void SchedulerScriptController::ExecuteScript(ScriptConfig::Script* pScript)
 {
 	if (!pScript->GetSchedulerScript())
 	{

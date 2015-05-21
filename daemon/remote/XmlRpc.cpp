@@ -51,6 +51,7 @@
 #include "StatMeter.h"
 #include "ArticleWriter.h"
 #include "DiskState.h"
+#include "ScriptConfig.h"
 
 extern Options* g_pOptions;
 extern Scanner* g_pScanner;
@@ -2878,7 +2879,7 @@ void LoadConfigXmlCommand::Execute()
 		"}";
 
 	Options::OptEntries* pOptEntries = new Options::OptEntries();
-	if (!g_pOptions->LoadConfig(pOptEntries))
+	if (!g_pScriptConfig->LoadConfig(pOptEntries))
 	{
 		BuildErrorResponse(3, "Could not read configuration file");
 		delete pOptEntries;
@@ -2945,7 +2946,7 @@ void SaveConfigXmlCommand::Execute()
 	}
 
 	// save to config file
-	bool bOK = g_pOptions->SaveConfig(pOptEntries);
+	bool bOK = g_pScriptConfig->SaveConfig(pOptEntries);
 
 	delete pOptEntries;
 
@@ -2981,12 +2982,12 @@ void ConfigTemplatesXmlCommand::Execute()
 	bool bLoadFromDisk = false;
 	NextParamAsBool(&bLoadFromDisk);
 
-	Options::ConfigTemplates* pConfigTemplates = g_pOptions->GetConfigTemplates();
+	ScriptConfig::ConfigTemplates* pConfigTemplates = g_pScriptConfig->GetConfigTemplates();
 	
 	if (bLoadFromDisk)
 	{
-		pConfigTemplates = new Options::ConfigTemplates();
-		if (!g_pOptions->LoadConfigTemplates(pConfigTemplates))
+		pConfigTemplates = new ScriptConfig::ConfigTemplates();
+		if (!g_pScriptConfig->LoadConfigTemplates(pConfigTemplates))
 		{
 			BuildErrorResponse(3, "Could not read configuration templates");
 			delete pConfigTemplates;
@@ -2998,9 +2999,9 @@ void ConfigTemplatesXmlCommand::Execute()
 
 	int index = 0;
 
-	for (Options::ConfigTemplates::iterator it = pConfigTemplates->begin(); it != pConfigTemplates->end(); it++)
+	for (ScriptConfig::ConfigTemplates::iterator it = pConfigTemplates->begin(); it != pConfigTemplates->end(); it++)
 	{
-		Options::ConfigTemplate* pConfigTemplate = *it;
+		ScriptConfig::ConfigTemplate* pConfigTemplate = *it;
 
 		char* xmlName = EncodeStr(pConfigTemplate->GetScript() ? pConfigTemplate->GetScript()->GetName() : "");
 		char* xmlDisplayName = EncodeStr(pConfigTemplate->GetScript() ? pConfigTemplate->GetScript()->GetDisplayName() : "");
