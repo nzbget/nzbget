@@ -46,7 +46,18 @@
 #include "Log.h"
 #include "Util.h"
 
-extern Options* g_pOptions;
+Log* g_pLog = NULL;
+
+void Log::Init()
+{
+	g_pLog = new Log();
+}
+
+void Log::Final()
+{
+	delete g_pLog;
+	g_pLog = NULL;
+}
 
 Log::Log()
 {
@@ -288,27 +299,6 @@ void detail(const char* msg, ...)
 	}
 
 	g_pLog->m_mutexLog.Unlock();
-}
-
-void abort(const char* msg, ...)
-{
-	char tmp2[1024];
-
-	va_list ap;
-	va_start(ap, msg);
-	vsnprintf(tmp2, 1024, msg, ap);
-	tmp2[1024-1] = '\0';
-	va_end(ap);
-
-	g_pLog->m_mutexLog.Lock();
-
-	printf("\n%s", tmp2);
-
-	g_pLog->Filelog(tmp2);
-
-	g_pLog->m_mutexLog.Unlock();
-
-	exit(-1);
 }
 
 //************************************************************
