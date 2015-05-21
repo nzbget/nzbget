@@ -139,7 +139,9 @@ am__nzbget_SOURCES_DIST = daemon/connect/Connection.cpp \
 	daemon/frontend/LoggableFrontend.cpp \
 	daemon/frontend/LoggableFrontend.h \
 	daemon/frontend/NCursesFrontend.cpp \
-	daemon/frontend/NCursesFrontend.h daemon/main/Maintenance.cpp \
+	daemon/frontend/NCursesFrontend.h \
+	daemon/main/CommandLineParser.cpp \
+	daemon/main/CommandLineParser.h daemon/main/Maintenance.cpp \
 	daemon/main/Maintenance.h daemon/main/nzbget.cpp \
 	daemon/main/nzbget.h daemon/main/Options.cpp \
 	daemon/main/Options.h daemon/main/Scheduler.cpp \
@@ -223,10 +225,10 @@ am_nzbget_OBJECTS = Connection.$(OBJEXT) TLS.$(OBJEXT) \
 	FeedFile.$(OBJEXT) FeedFilter.$(OBJEXT) FeedInfo.$(OBJEXT) \
 	ColoredFrontend.$(OBJEXT) Frontend.$(OBJEXT) \
 	LoggableFrontend.$(OBJEXT) NCursesFrontend.$(OBJEXT) \
-	Maintenance.$(OBJEXT) nzbget.$(OBJEXT) Options.$(OBJEXT) \
-	Scheduler.$(OBJEXT) StackTrace.$(OBJEXT) \
-	ArticleDownloader.$(OBJEXT) ArticleWriter.$(OBJEXT) \
-	Decoder.$(OBJEXT) NewsServer.$(OBJEXT) \
+	CommandLineParser.$(OBJEXT) Maintenance.$(OBJEXT) \
+	nzbget.$(OBJEXT) Options.$(OBJEXT) Scheduler.$(OBJEXT) \
+	StackTrace.$(OBJEXT) ArticleDownloader.$(OBJEXT) \
+	ArticleWriter.$(OBJEXT) Decoder.$(OBJEXT) NewsServer.$(OBJEXT) \
 	NNTPConnection.$(OBJEXT) ServerPool.$(OBJEXT) \
 	StatMeter.$(OBJEXT) ParChecker.$(OBJEXT) \
 	ParCoordinator.$(OBJEXT) ParRenamer.$(OBJEXT) \
@@ -393,7 +395,9 @@ nzbget_SOURCES = daemon/connect/Connection.cpp \
 	daemon/frontend/LoggableFrontend.cpp \
 	daemon/frontend/LoggableFrontend.h \
 	daemon/frontend/NCursesFrontend.cpp \
-	daemon/frontend/NCursesFrontend.h daemon/main/Maintenance.cpp \
+	daemon/frontend/NCursesFrontend.h \
+	daemon/main/CommandLineParser.cpp \
+	daemon/main/CommandLineParser.h daemon/main/Maintenance.cpp \
 	daemon/main/Maintenance.h daemon/main/nzbget.cpp \
 	daemon/main/nzbget.h daemon/main/Options.cpp \
 	daemon/main/Options.h daemon/main/Scheduler.cpp \
@@ -696,6 +700,7 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/ArticleWriter.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/BinRpc.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/ColoredFrontend.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/CommandLineParser.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/Connection.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/Decoder.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/DiskState.Po@am__quote@
@@ -930,6 +935,20 @@ NCursesFrontend.obj: daemon/frontend/NCursesFrontend.cpp
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='daemon/frontend/NCursesFrontend.cpp' object='NCursesFrontend.obj' libtool=no @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o NCursesFrontend.obj `if test -f 'daemon/frontend/NCursesFrontend.cpp'; then $(CYGPATH_W) 'daemon/frontend/NCursesFrontend.cpp'; else $(CYGPATH_W) '$(srcdir)/daemon/frontend/NCursesFrontend.cpp'; fi`
+
+CommandLineParser.o: daemon/main/CommandLineParser.cpp
+@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT CommandLineParser.o -MD -MP -MF "$(DEPDIR)/CommandLineParser.Tpo" -c -o CommandLineParser.o `test -f 'daemon/main/CommandLineParser.cpp' || echo '$(srcdir)/'`daemon/main/CommandLineParser.cpp; \
+@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/CommandLineParser.Tpo" "$(DEPDIR)/CommandLineParser.Po"; else rm -f "$(DEPDIR)/CommandLineParser.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='daemon/main/CommandLineParser.cpp' object='CommandLineParser.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o CommandLineParser.o `test -f 'daemon/main/CommandLineParser.cpp' || echo '$(srcdir)/'`daemon/main/CommandLineParser.cpp
+
+CommandLineParser.obj: daemon/main/CommandLineParser.cpp
+@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT CommandLineParser.obj -MD -MP -MF "$(DEPDIR)/CommandLineParser.Tpo" -c -o CommandLineParser.obj `if test -f 'daemon/main/CommandLineParser.cpp'; then $(CYGPATH_W) 'daemon/main/CommandLineParser.cpp'; else $(CYGPATH_W) '$(srcdir)/daemon/main/CommandLineParser.cpp'; fi`; \
+@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/CommandLineParser.Tpo" "$(DEPDIR)/CommandLineParser.Po"; else rm -f "$(DEPDIR)/CommandLineParser.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='daemon/main/CommandLineParser.cpp' object='CommandLineParser.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o CommandLineParser.obj `if test -f 'daemon/main/CommandLineParser.cpp'; then $(CYGPATH_W) 'daemon/main/CommandLineParser.cpp'; else $(CYGPATH_W) '$(srcdir)/daemon/main/CommandLineParser.cpp'; fi`
 
 Maintenance.o: daemon/main/Maintenance.cpp
 @am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT Maintenance.o -MD -MP -MF "$(DEPDIR)/Maintenance.Tpo" -c -o Maintenance.o `test -f 'daemon/main/Maintenance.cpp' || echo '$(srcdir)/'`daemon/main/Maintenance.cpp; \

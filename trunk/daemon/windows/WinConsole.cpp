@@ -70,11 +70,6 @@ extern StatMeter* g_pStatMeter;
 
 bool bMayStartBrowser = true;
 
-void SetupFirstStart()
-{
-	g_pWinConsole->SetupFirstStart();
-}
-
 BOOL WINAPI WinConsole::ConsoleCtrlHandler(DWORD dwCtrlType)
 {
 	switch (dwCtrlType)

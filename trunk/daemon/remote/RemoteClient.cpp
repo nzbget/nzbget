@@ -100,13 +100,15 @@ void RemoteClient::perror(const char * msg)
 
 bool RemoteClient::InitConnection()
 {
+	const char* szControlIP = !strcmp(g_pOptions->GetControlIP(), "0.0.0.0") ? "127.0.0.1" : g_pOptions->GetControlIP();
+
 	// Create a connection to the server
-	m_pConnection = new Connection(g_pOptions->GetControlIP(), g_pOptions->GetControlPort(), false);
+	m_pConnection = new Connection(szControlIP, g_pOptions->GetControlPort(), false);
 
 	bool OK = m_pConnection->Connect();
 	if (!OK)
 	{
-		printf("Unable to send request to nzbget-server at %s (port %i)\n", g_pOptions->GetControlIP(), g_pOptions->GetControlPort());
+		printf("Unable to send request to nzbget-server at %s (port %i)\n", szControlIP, g_pOptions->GetControlPort());
 	}
 	return OK;
 }

@@ -58,6 +58,7 @@
 #include "Log.h"
 #include "NZBFile.h"
 #include "Options.h"
+#include "CommandLineParser.h"
 #include "Thread.h"
 #include "ColoredFrontend.h"
 #include "NCursesFrontend.h"
@@ -99,9 +100,10 @@ void Daemonize();
 #ifndef DISABLE_PARCHECK
 void DisableCout();
 #endif
+void BootConfig();
 
 Thread* g_pFrontend = NULL;
-Options* g_pOptions = NULL;
+CommandLineParser* g_pCommandLineParser = NULL;
 ServerPool* g_pServerPool = NULL;
 QueueCoordinator* g_pQueueCoordinator = NULL;
 UrlCoordinator* g_pUrlCoordinator = NULL;
@@ -154,7 +156,7 @@ int main(int argc, char *argv[], char *argp[])
 	DisableCout();
 #endif
 
-	srand (time(NULL));
+	srand(time(NULL));
 
 	g_iArgumentCount = argc;
 	g_szArguments = (char*(*)[])argv;
@@ -225,9 +227,7 @@ void Run(bool bReload)
 	g_pMaintenance = new Maintenance();
 	g_pQueueScriptCoordinator = new QueueScriptCoordinator();
 
-	debug("Reading options");
-	g_pOptions = new Options();
-	g_pOptions->Init(g_iArgumentCount, *g_szArguments);
+	BootConfig();
 
 #ifndef WIN32
 	if (g_pOptions->GetUMask() < 01000)
@@ -241,7 +241,7 @@ void Run(bool bReload)
 	g_pScanner->InitOptions();
 	g_pQueueScriptCoordinator->InitOptions();
 
-	if (g_pOptions->GetDaemonMode())
+	if (g_pCommandLineParser->GetDaemonMode())
 	{
 #ifdef WIN32
 		info("nzbget %s service-mode", Util::VersionRevision());
@@ -257,7 +257,7 @@ void Run(bool bReload)
 	{
 		info("nzbget %s server-mode", Util::VersionRevision());
 	}
-	else if (g_pOptions->GetRemoteClientMode())
+	else if (g_pCommandLineParser->GetRemoteClientMode())
 	{
 		info("nzbget %s remote-mode", Util::VersionRevision());
 	}
@@ -267,7 +267,7 @@ void Run(bool bReload)
 		Connection::Init();
 	}
 
-	if (!g_pOptions->GetRemoteClientMode())
+	if (!g_pCommandLineParser->GetRemoteClientMode())
 	{
 		g_pServerPool->InitConnections();
 		g_pStatMeter->Init();
@@ -276,20 +276,20 @@ void Run(bool bReload)
 	InstallErrorHandler();
 
 #ifdef DEBUG
-	if (g_pOptions->GetTestBacktrace())
+	if (g_pCommandLineParser->GetTestBacktrace())
 	{
 		TestSegFault();
 	}
 #endif
 
-	if (g_pOptions->GetWebGet())
+	if (g_pCommandLineParser->GetWebGet())
 	{
 		ProcessWebGet();
 		return;
 	}
 
 	// client request
-	if (g_pOptions->GetClientOperation() != Options::opClientNoOperation)
+	if (g_pCommandLineParser->GetClientOperation() != CommandLineParser::opClientNoOperation)
 	{
 		ProcessClientRequest();
 		Cleanup();
@@ -310,7 +310,7 @@ void Run(bool bReload)
 	}
 
 	// Create the frontend
-	if (!g_pOptions->GetDaemonMode())
+	if (!g_pCommandLineParser->GetDaemonMode())
 	{
 		switch (g_pOptions->GetOutputMode())
 		{
@@ -335,16 +335,16 @@ void Run(bool bReload)
 	}
 
 	// Starting QueueCoordinator and PrePostProcessor
-	if (!g_pOptions->GetRemoteClientMode())
+	if (!g_pCommandLineParser->GetRemoteClientMode())
 	{
 		// Standalone-mode
-		if (!g_pOptions->GetServerMode())
+		if (!g_pCommandLineParser->GetServerMode())
 		{
-			const char* szCategory = g_pOptions->GetAddCategory() ? g_pOptions->GetAddCategory() : "";
-			NZBFile* pNZBFile = NZBFile::Create(g_pOptions->GetArgFilename(), szCategory);
+			const char* szCategory = g_pCommandLineParser->GetAddCategory() ? g_pCommandLineParser->GetAddCategory() : "";
+			NZBFile* pNZBFile = NZBFile::Create(g_pCommandLineParser->GetArgFilename(), szCategory);
 			if (!pNZBFile)
 			{
-				abort("FATAL ERROR: Parsing NZB-document %s failed\n\n", g_pOptions->GetArgFilename() ? g_pOptions->GetArgFilename() : "N/A");
+				printf("Parsing NZB-document %s failed\n\n", g_pCommandLineParser->GetArgFilename() ? g_pCommandLineParser->GetArgFilename() : "N/A");
 				return;
 			}
 			g_pScanner->InitPPParameters(szCategory, pNZBFile->GetNZBInfo()->GetParameters(), false);
@@ -459,7 +459,7 @@ void Run(bool bReload)
 	// Stop Frontend
 	if (g_pFrontend)
 	{
-		if (!g_pOptions->GetRemoteClientMode())
+		if (!g_pCommandLineParser->GetRemoteClientMode())
 		{
 			debug("Stopping Frontend");
 			g_pFrontend->Stop();
@@ -474,107 +474,179 @@ void Run(bool bReload)
 	Cleanup();
 }
 
+class OptionsExtender : public Options::Extender
+{
+protected:
+#ifdef WIN32
+	virtual void		SetupFirstStart()
+	{
+		g_pWinConsole->SetupFirstStart();
+	}
+#endif
+
+	virtual void		AddNewsServer(int iID, bool bActive, const char* szName, const char* szHost,
+							int iPort, const char* szUser, const char* szPass, bool bJoinGroup,
+							bool bTLS, const char* szCipher, int iMaxConnections, int iRetention,
+							int iLevel, int iGroup)
+	{
+		g_pServerPool->AddServer(new NewsServer(iID, bActive, szName, szHost, iPort, szUser, szPass, bJoinGroup,
+							bTLS, szCipher, iMaxConnections, iRetention, iLevel, iGroup));
+	}
+
+	virtual void		AddFeed(int iID, const char* szName, const char* szUrl, int iInterval,
+							const char* szFilter, bool bPauseNzb, const char* szCategory, int iPriority)
+	{
+		g_pFeedCoordinator->AddFeed(new FeedInfo(iID, szName, szUrl, iInterval, szFilter, bPauseNzb, szCategory, iPriority));
+	}
+
+	virtual void		AddTask(int iID, int iHours, int iMinutes, int iWeekDaysBits,
+							Options::ESchedulerCommand eCommand, const char* szParam)
+	{
+		g_pScheduler->AddTask(new Scheduler::Task(iID, iHours, iMinutes, iWeekDaysBits, (Scheduler::ECommand)eCommand, szParam));
+	}
+} g_OptionsExtender;
+
+void BootConfig()
+{
+	debug("Parsing command line");
+	g_pCommandLineParser = new CommandLineParser(g_iArgumentCount, (const char**)(*g_szArguments));
+	if (g_pCommandLineParser->GetPrintVersion())
+	{
+		printf("nzbget version: %s\n", Util::VersionRevision());
+		exit(0);
+	}
+	if (g_pCommandLineParser->GetPrintUsage() || g_pCommandLineParser->GetErrors() || g_iArgumentCount <= 1)
+	{
+		g_pCommandLineParser->PrintUsage(((const char**)(*g_szArguments))[0]);
+		exit(0);
+	}
+
+	debug("Reading options");
+	g_pOptions = new Options((*g_szArguments)[0], g_pCommandLineParser->GetConfigFilename(),
+							 g_pCommandLineParser->GetNoConfig(), (Options::CmdOptList*)g_pCommandLineParser->GetOptionList(),
+							 &g_OptionsExtender);
+	g_pOptions->SetRemoteClientMode(g_pCommandLineParser->GetRemoteClientMode());
+	g_pOptions->SetServerMode(g_pCommandLineParser->GetServerMode());
+	g_pOptions->SetPauseDownload(g_pCommandLineParser->GetPauseDownload());
+
+	if (g_pOptions->GetFatalError())
+	{
+		exit(1);
+	}
+	else if (g_pOptions->GetConfigErrors() &&
+			 g_pCommandLineParser->GetClientOperation() == CommandLineParser::opClientNoOperation)
+	{
+		info("Pausing all activities due to errors in configuration");
+		g_pOptions->SetPauseDownload(true);
+		g_pOptions->SetPausePostProcess(true);
+		g_pOptions->SetPauseScan(true);
+	}
+
+	g_pServerPool->SetTimeout(g_pOptions->GetArticleTimeout());
+	g_pServerPool->SetRetryInterval(g_pOptions->GetRetryInterval());
+}
+
 void ProcessClientRequest()
 {
 	RemoteClient* Client = new RemoteClient();
 
-	switch (g_pOptions->GetClientOperation())
+	switch (g_pCommandLineParser->GetClientOperation())
 	{
-		case Options::opClientRequestListFiles:
-			Client->RequestServerList(true, false, g_pOptions->GetMatchMode() == Options::mmRegEx ? g_pOptions->GetEditQueueText() : NULL);
+		case CommandLineParser::opClientRequestListFiles:
+			Client->RequestServerList(true, false, g_pCommandLineParser->GetMatchMode() == CommandLineParser::mmRegEx ? g_pCommandLineParser->GetEditQueueText() : NULL);
 			break;
 
-		case Options::opClientRequestListGroups:
-			Client->RequestServerList(false, true, g_pOptions->GetMatchMode() == Options::mmRegEx ? g_pOptions->GetEditQueueText() : NULL);
+		case CommandLineParser::opClientRequestListGroups:
+			Client->RequestServerList(false, true, g_pCommandLineParser->GetMatchMode() == CommandLineParser::mmRegEx ? g_pCommandLineParser->GetEditQueueText() : NULL);
 			break;
 
-		case Options::opClientRequestListStatus:
+		case CommandLineParser::opClientRequestListStatus:
 			Client->RequestServerList(false, false, NULL);
 			break;
 
-		case Options::opClientRequestDownloadPause:
+		case CommandLineParser::opClientRequestDownloadPause:
 			Client->RequestServerPauseUnpause(true, eRemotePauseUnpauseActionDownload);
 			break;
 
-		case Options::opClientRequestDownloadUnpause:
+		case CommandLineParser::opClientRequestDownloadUnpause:
 			Client->RequestServerPauseUnpause(false, eRemotePauseUnpauseActionDownload);
 			break;
 
-		case Options::opClientRequestSetRate:
-			Client->RequestServerSetDownloadRate(g_pOptions->GetSetRate());
+		case CommandLineParser::opClientRequestSetRate:
+			Client->RequestServerSetDownloadRate(g_pCommandLineParser->GetSetRate());
 			break;
 
-		case Options::opClientRequestDumpDebug:
+		case CommandLineParser::opClientRequestDumpDebug:
 			Client->RequestServerDumpDebug();
 			break;
 
-		case Options::opClientRequestEditQueue:
-			Client->RequestServerEditQueue((DownloadQueue::EEditAction)g_pOptions->GetEditQueueAction(),
-				g_pOptions->GetEditQueueOffset(), g_pOptions->GetEditQueueText(),
-				g_pOptions->GetEditQueueIDList(), g_pOptions->GetEditQueueIDCount(),
-				g_pOptions->GetEditQueueNameList(), (eRemoteMatchMode)g_pOptions->GetMatchMode());
+		case CommandLineParser::opClientRequestEditQueue:
+			Client->RequestServerEditQueue((DownloadQueue::EEditAction)g_pCommandLineParser->GetEditQueueAction(),
+				g_pCommandLineParser->GetEditQueueOffset(), g_pCommandLineParser->GetEditQueueText(),
+				g_pCommandLineParser->GetEditQueueIDList(), g_pCommandLineParser->GetEditQueueIDCount(),
+				g_pCommandLineParser->GetEditQueueNameList(), (eRemoteMatchMode)g_pCommandLineParser->GetMatchMode());
 			break;
 
-		case Options::opClientRequestLog:
-			Client->RequestServerLog(g_pOptions->GetLogLines());
+		case CommandLineParser::opClientRequestLog:
+			Client->RequestServerLog(g_pCommandLineParser->GetLogLines());
 			break;
 
-		case Options::opClientRequestShutdown:
+		case CommandLineParser::opClientRequestShutdown:
 			Client->RequestServerShutdown();
 			break;
 
-		case Options::opClientRequestReload:
+		case CommandLineParser::opClientRequestReload:
 			Client->RequestServerReload();
 			break;
 
-		case Options::opClientRequestDownload:
-			Client->RequestServerDownload(g_pOptions->GetAddNZBFilename(), g_pOptions->GetArgFilename(),
-				g_pOptions->GetAddCategory(), g_pOptions->GetAddTop(), g_pOptions->GetAddPaused(), g_pOptions->GetAddPriority(),
-				g_pOptions->GetAddDupeKey(), g_pOptions->GetAddDupeMode(), g_pOptions->GetAddDupeScore());
+		case CommandLineParser::opClientRequestDownload:
+			Client->RequestServerDownload(g_pCommandLineParser->GetAddNZBFilename(), g_pCommandLineParser->GetArgFilename(),
+				g_pCommandLineParser->GetAddCategory(), g_pCommandLineParser->GetAddTop(), g_pCommandLineParser->GetAddPaused(), g_pCommandLineParser->GetAddPriority(),
+				g_pCommandLineParser->GetAddDupeKey(), g_pCommandLineParser->GetAddDupeMode(), g_pCommandLineParser->GetAddDupeScore());
 			break;
 
-		case Options::opClientRequestVersion:
+		case CommandLineParser::opClientRequestVersion:
 			Client->RequestServerVersion();
 			break;
 
-		case Options::opClientRequestPostQueue:
+		case CommandLineParser::opClientRequestPostQueue:
 			Client->RequestPostQueue();
 			break;
 
-		case Options::opClientRequestWriteLog:
-			Client->RequestWriteLog(g_pOptions->GetWriteLogKind(), g_pOptions->GetLastArg());
+		case CommandLineParser::opClientRequestWriteLog:
+			Client->RequestWriteLog(g_pCommandLineParser->GetWriteLogKind(), g_pCommandLineParser->GetLastArg());
 			break;
 
-		case Options::opClientRequestScanAsync:
+		case CommandLineParser::opClientRequestScanAsync:
 			Client->RequestScan(false);
 			break;
 
-		case Options::opClientRequestScanSync:
+		case CommandLineParser::opClientRequestScanSync:
 			Client->RequestScan(true);
 			break;
 
-		case Options::opClientRequestPostPause:
+		case CommandLineParser::opClientRequestPostPause:
 			Client->RequestServerPauseUnpause(true, eRemotePauseUnpauseActionPostProcess);
 			break;
 
-		case Options::opClientRequestPostUnpause:
+		case CommandLineParser::opClientRequestPostUnpause:
 			Client->RequestServerPauseUnpause(false, eRemotePauseUnpauseActionPostProcess);
 			break;
 
-		case Options::opClientRequestScanPause:
+		case CommandLineParser::opClientRequestScanPause:
 			Client->RequestServerPauseUnpause(true, eRemotePauseUnpauseActionScan);
 			break;
 
-		case Options::opClientRequestScanUnpause:
+		case CommandLineParser::opClientRequestScanUnpause:
 			Client->RequestServerPauseUnpause(false, eRemotePauseUnpauseActionScan);
 			break;
 
-		case Options::opClientRequestHistory:
-		case Options::opClientRequestHistoryAll:
-			Client->RequestHistory(g_pOptions->GetClientOperation() == Options::opClientRequestHistoryAll);
+		case CommandLineParser::opClientRequestHistory:
+		case CommandLineParser::opClientRequestHistoryAll:
+			Client->RequestHistory(g_pCommandLineParser->GetClientOperation() == CommandLineParser::opClientRequestHistoryAll);
 			break;
 
-		case Options::opClientNoOperation:
+		case CommandLineParser::opClientNoOperation:
 			break;
 	}
 
@@ -584,10 +656,10 @@ void ProcessClientRequest()
 void ProcessWebGet()
 {
 	WebDownloader downloader;
-	downloader.SetURL(g_pOptions->GetLastArg());
+	downloader.SetURL(g_pCommandLineParser->GetLastArg());
 	downloader.SetForce(true);
 	downloader.SetRetry(false);
-	downloader.SetOutputFilename(g_pOptions->GetWebGetFilename());
+	downloader.SetOutputFilename(g_pCommandLineParser->GetWebGetFilename());
 	downloader.SetInfoName("WebGet");
 
 	int iRedirects = 0;
@@ -608,7 +680,7 @@ void ExitProc()
 	{
 		info("Stopping, please wait...");
 	}
-	if (g_pOptions->GetRemoteClientMode())
+	if (g_pCommandLineParser->GetRemoteClientMode())
 	{
 		if (g_pFrontend)
 		{
@@ -694,15 +766,22 @@ void Cleanup()
 	debug("Deleting Options");
 	if (g_pOptions)
 	{
-		if (g_pOptions->GetDaemonMode() && !g_bReloading)
+		if (g_pCommandLineParser->GetDaemonMode() && !g_bReloading)
 		{
 			info("Deleting lock file");
 			remove(g_pOptions->GetLockFile());
 		}
 		delete g_pOptions;
-		g_pOptions = NULL;
 	}
 	debug("Options deleted");
+
+	debug("Deleting CommandLineParser");
+	if (g_pCommandLineParser)
+	{
+		delete g_pCommandLineParser;
+		g_pCommandLineParser = NULL;
+	}
+	debug("CommandLineParser deleted");
 
 	debug("Deleting ServerPool");
 	delete g_pServerPool;

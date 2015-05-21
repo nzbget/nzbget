@@ -44,6 +44,8 @@ nzbget_SOURCES = \
 	daemon/frontend/LoggableFrontend.h \
 	daemon/frontend/NCursesFrontend.cpp \
 	daemon/frontend/NCursesFrontend.h \
+    daemon/main/CommandLineParser.cpp \
+    daemon/main/CommandLineParser.h \
 	daemon/main/Maintenance.cpp \
 	daemon/main/Maintenance.h \
 	daemon/main/nzbget.cpp \
