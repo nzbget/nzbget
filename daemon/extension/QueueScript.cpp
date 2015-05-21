@@ -1,7 +1,7 @@
 /*
  *  This file is part of nzbget
  *
- *  Copyright (C) 2007-2014 Andrey Prygunkov <hugbug@users.sourceforge.net>
+ *  Copyright (C) 2007-2015 Andrey Prygunkov <hugbug@users.sourceforge.net>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -39,14 +39,13 @@
 #endif
 #include <sys/stat.h>
 #include <stdio.h>
-#include <algorithm>
 
 #include "nzbget.h"
 #include "QueueScript.h"
+#include "NzbScript.h"
 #include "Options.h"
 #include "Log.h"
 #include "Util.h"
-#include "ScriptConfig.h"
 
 extern Options* g_pOptions;
 extern QueueScriptCoordinator* g_pQueueScriptCoordinator;
@@ -80,83 +79,6 @@ public:
 	virtual void		Run();
 	static void			StartScript(NZBInfo* pNZBInfo, ScriptConfig::Script* pScript, QueueScriptCoordinator::EEvent eEvent);
 };
-
-
-/**
- * If szStripPrefix is not NULL, only pp-parameters, whose names start with the prefix
- * are processed. The prefix is then stripped from the names.
- * If szStripPrefix is NULL, all pp-parameters are processed; without stripping.
- */
-void NZBScriptController::PrepareEnvParameters(NZBParameterList* pParameters, const char* szStripPrefix)
-{
-	int iPrefixLen = szStripPrefix ? strlen(szStripPrefix) : 0;
-
-	for (NZBParameterList::iterator it = pParameters->begin(); it != pParameters->end(); it++)
-	{
-		NZBParameter* pParameter = *it;
-		const char* szValue = pParameter->GetValue();
-		
-#ifdef WIN32
-		char* szAnsiValue = strdup(szValue);
-		WebUtil::Utf8ToAnsi(szAnsiValue, strlen(szAnsiValue) + 1);
-		szValue = szAnsiValue;
-#endif
-
-		if (szStripPrefix && !strncmp(pParameter->GetName(), szStripPrefix, iPrefixLen) && (int)strlen(pParameter->GetName()) > iPrefixLen)
-		{
-			SetEnvVarSpecial("NZBPR", pParameter->GetName() + iPrefixLen, szValue);
-		}
-		else if (!szStripPrefix)
-		{
-			SetEnvVarSpecial("NZBPR", pParameter->GetName(), szValue);
-		}
-
-#ifdef WIN32
-		free(szAnsiValue);
-#endif
-	}
-}
-
-void NZBScriptController::PrepareEnvScript(NZBParameterList* pParameters, const char* szScriptName)
-{
-	if (pParameters)
-	{
-		PrepareEnvParameters(pParameters, NULL);
-	}
-
-	char szParamPrefix[1024];
-	snprintf(szParamPrefix, 1024, "%s:", szScriptName);
-	szParamPrefix[1024-1] = '\0';
-
-	if (pParameters)
-	{
-		PrepareEnvParameters(pParameters, szParamPrefix);
-	}
-
-	PrepareEnvOptions(szParamPrefix);
-}
-
-void NZBScriptController::ExecuteScriptList(const char* szScriptList)
-{
-	for (ScriptConfig::Scripts::iterator it = g_pScriptConfig->GetScripts()->begin(); it != g_pScriptConfig->GetScripts()->end(); it++)
-	{
-		ScriptConfig::Script* pScript = *it;
-
-		if (szScriptList && *szScriptList)
-		{
-			// split szScriptList into tokens
-			Tokenizer tok(szScriptList, ",;");
-			while (const char* szScriptName = tok.Next())
-			{
-				if (Util::SameFilename(szScriptName, pScript->GetName()))
-				{
-					ExecuteScript(pScript);
-					break;
-				}
-			}
-		}
-	}
-}
 
 
 QueueScriptController::~QueueScriptController()

@@ -28,6 +28,18 @@ nzbget_SOURCES = \
 	daemon/connect/TLS.h \
 	daemon/connect/WebDownloader.cpp \
 	daemon/connect/WebDownloader.h \
+	daemon/extension/NzbScript.cpp \
+	daemon/extension/NzbScript.h \
+	daemon/extension/PostScript.cpp \
+	daemon/extension/PostScript.h \
+	daemon/extension/QueueScript.cpp \
+	daemon/extension/QueueScript.h \
+	daemon/extension/ScanScript.cpp \
+	daemon/extension/ScanScript.h \
+	daemon/extension/SchedulerScript.cpp \
+	daemon/extension/SchedulerScript.h \
+	daemon/extension/ScriptConfig.cpp \
+	daemon/extension/ScriptConfig.h \
 	daemon/feed/FeedCoordinator.cpp \
 	daemon/feed/FeedCoordinator.h \
 	daemon/feed/FeedFile.cpp \
@@ -54,8 +66,6 @@ nzbget_SOURCES = \
 	daemon/main/Options.h \
 	daemon/main/Scheduler.cpp \
 	daemon/main/Scheduler.h \
-	daemon/main/ScriptConfig.cpp \
-	daemon/main/ScriptConfig.h \
 	daemon/main/StackTrace.cpp \
 	daemon/main/StackTrace.h \
 	daemon/nntp/ArticleDownloader.cpp \
@@ -80,8 +90,6 @@ nzbget_SOURCES = \
 	daemon/postprocess/ParParser.h \
 	daemon/postprocess/ParRenamer.cpp \
 	daemon/postprocess/ParRenamer.h \
-	daemon/postprocess/PostScript.cpp \
-	daemon/postprocess/PostScript.h \
 	daemon/postprocess/PrePostProcessor.cpp \
 	daemon/postprocess/PrePostProcessor.h \
 	daemon/postprocess/Unpack.cpp \
@@ -100,8 +108,6 @@ nzbget_SOURCES = \
 	daemon/queue/QueueCoordinator.h \
 	daemon/queue/QueueEditor.cpp \
 	daemon/queue/QueueEditor.h \
-	daemon/queue/QueueScript.cpp \
-	daemon/queue/QueueScript.h \
 	daemon/queue/Scanner.cpp \
 	daemon/queue/Scanner.h \
 	daemon/queue/UrlCoordinator.cpp \
@@ -177,6 +183,7 @@ endif
 
 AM_CPPFLAGS = \
 	-I$(srcdir)/daemon/connect \
+	-I$(srcdir)/daemon/extension \
 	-I$(srcdir)/daemon/feed \
 	-I$(srcdir)/daemon/frontend \
 	-I$(srcdir)/daemon/main \

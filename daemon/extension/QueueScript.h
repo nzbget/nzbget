@@ -1,7 +1,7 @@
 /*
  *  This file is part of nzbget
  *
- *  Copyright (C) 2007-2014 Andrey Prygunkov <hugbug@users.sourceforge.net>
+ *  Copyright (C) 2007-2015 Andrey Prygunkov <hugbug@users.sourceforge.net>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -28,19 +28,8 @@
 
 #include <list>
 
-#include "Script.h"
-#include "Thread.h"
 #include "DownloadInfo.h"
 #include "ScriptConfig.h"
-
-class NZBScriptController : public ScriptController
-{
-protected:
-	void				PrepareEnvParameters(NZBParameterList* pParameters, const char* szStripPrefix);
-	void				PrepareEnvScript(NZBParameterList* pParameters, const char* szScriptName);
-	void				ExecuteScriptList(const char* szScriptList);
-	virtual void		ExecuteScript(ScriptConfig::Script* pScript) = 0;
-};
 
 class QueueScriptCoordinator
 {

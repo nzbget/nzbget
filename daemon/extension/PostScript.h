@@ -1,7 +1,7 @@
 /*
  *  This file is part of nzbget
  *
- *  Copyright (C) 2007-2014 Andrey Prygunkov <hugbug@users.sourceforge.net>
+ *  Copyright (C) 2007-2015 Andrey Prygunkov <hugbug@users.sourceforge.net>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -27,10 +27,7 @@
 #define POSTSCRIPT_H
 
 #include "Thread.h"
-#include "Log.h"
-#include "QueueScript.h"
-#include "DownloadInfo.h"
-#include "Options.h"
+#include "NzbScript.h"
 
 class PostScriptController : public Thread, public NZBScriptController
 {
