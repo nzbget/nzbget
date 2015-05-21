@@ -145,7 +145,8 @@ am__nzbget_SOURCES_DIST = daemon/connect/Connection.cpp \
 	daemon/main/Maintenance.h daemon/main/nzbget.cpp \
 	daemon/main/nzbget.h daemon/main/Options.cpp \
 	daemon/main/Options.h daemon/main/Scheduler.cpp \
-	daemon/main/Scheduler.h daemon/main/StackTrace.cpp \
+	daemon/main/Scheduler.h daemon/main/ScriptConfig.cpp \
+	daemon/main/ScriptConfig.h daemon/main/StackTrace.cpp \
 	daemon/main/StackTrace.h daemon/nntp/ArticleDownloader.cpp \
 	daemon/nntp/ArticleDownloader.h daemon/nntp/ArticleWriter.cpp \
 	daemon/nntp/ArticleWriter.h daemon/nntp/Decoder.cpp \
@@ -229,8 +230,9 @@ am_nzbget_OBJECTS = Connection.$(OBJEXT) TLS.$(OBJEXT) \
 	LoggableFrontend.$(OBJEXT) NCursesFrontend.$(OBJEXT) \
 	CommandLineParser.$(OBJEXT) Maintenance.$(OBJEXT) \
 	nzbget.$(OBJEXT) Options.$(OBJEXT) Scheduler.$(OBJEXT) \
-	StackTrace.$(OBJEXT) ArticleDownloader.$(OBJEXT) \
-	ArticleWriter.$(OBJEXT) Decoder.$(OBJEXT) NewsServer.$(OBJEXT) \
+	ScriptConfig.$(OBJEXT) StackTrace.$(OBJEXT) \
+	ArticleDownloader.$(OBJEXT) ArticleWriter.$(OBJEXT) \
+	Decoder.$(OBJEXT) NewsServer.$(OBJEXT) \
 	NNTPConnection.$(OBJEXT) ServerPool.$(OBJEXT) \
 	StatMeter.$(OBJEXT) ParChecker.$(OBJEXT) \
 	ParCoordinator.$(OBJEXT) ParParser.$(OBJEXT) \
@@ -404,7 +406,8 @@ nzbget_SOURCES = daemon/connect/Connection.cpp \
 	daemon/main/Maintenance.h daemon/main/nzbget.cpp \
 	daemon/main/nzbget.h daemon/main/Options.cpp \
 	daemon/main/Options.h daemon/main/Scheduler.cpp \
-	daemon/main/Scheduler.h daemon/main/StackTrace.cpp \
+	daemon/main/Scheduler.h daemon/main/ScriptConfig.cpp \
+	daemon/main/ScriptConfig.h daemon/main/StackTrace.cpp \
 	daemon/main/StackTrace.h daemon/nntp/ArticleDownloader.cpp \
 	daemon/nntp/ArticleDownloader.h daemon/nntp/ArticleWriter.cpp \
 	daemon/nntp/ArticleWriter.h daemon/nntp/Decoder.cpp \
@@ -740,6 +743,7 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/Scanner.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/Scheduler.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/Script.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/ScriptConfig.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/ServerPool.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/StackTrace.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/StatMeter.Po@am__quote@
@@ -1011,6 +1015,20 @@ Scheduler.obj: daemon/main/Scheduler.cpp
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='daemon/main/Scheduler.cpp' object='Scheduler.obj' libtool=no @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o Scheduler.obj `if test -f 'daemon/main/Scheduler.cpp'; then $(CYGPATH_W) 'daemon/main/Scheduler.cpp'; else $(CYGPATH_W) '$(srcdir)/daemon/main/Scheduler.cpp'; fi`
+
+ScriptConfig.o: daemon/main/ScriptConfig.cpp
+@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT ScriptConfig.o -MD -MP -MF "$(DEPDIR)/ScriptConfig.Tpo" -c -o ScriptConfig.o `test -f 'daemon/main/ScriptConfig.cpp' || echo '$(srcdir)/'`daemon/main/ScriptConfig.cpp; \
+@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/ScriptConfig.Tpo" "$(DEPDIR)/ScriptConfig.Po"; else rm -f "$(DEPDIR)/ScriptConfig.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='daemon/main/ScriptConfig.cpp' object='ScriptConfig.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o ScriptConfig.o `test -f 'daemon/main/ScriptConfig.cpp' || echo '$(srcdir)/'`daemon/main/ScriptConfig.cpp
+
+ScriptConfig.obj: daemon/main/ScriptConfig.cpp
+@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT ScriptConfig.obj -MD -MP -MF "$(DEPDIR)/ScriptConfig.Tpo" -c -o ScriptConfig.obj `if test -f 'daemon/main/ScriptConfig.cpp'; then $(CYGPATH_W) 'daemon/main/ScriptConfig.cpp'; else $(CYGPATH_W) '$(srcdir)/daemon/main/ScriptConfig.cpp'; fi`; \
+@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/ScriptConfig.Tpo" "$(DEPDIR)/ScriptConfig.Po"; else rm -f "$(DEPDIR)/ScriptConfig.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='daemon/main/ScriptConfig.cpp' object='ScriptConfig.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o ScriptConfig.obj `if test -f 'daemon/main/ScriptConfig.cpp'; then $(CYGPATH_W) 'daemon/main/ScriptConfig.cpp'; else $(CYGPATH_W) '$(srcdir)/daemon/main/ScriptConfig.cpp'; fi`
 
 StackTrace.o: daemon/main/StackTrace.cpp
 @am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT StackTrace.o -MD -MP -MF "$(DEPDIR)/StackTrace.Tpo" -c -o StackTrace.o `test -f 'daemon/main/StackTrace.cpp' || echo '$(srcdir)/'`daemon/main/StackTrace.cpp; \

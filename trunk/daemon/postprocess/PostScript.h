@@ -37,13 +37,13 @@ class PostScriptController : public Thread, public NZBScriptController
 private:
 	PostInfo*			m_pPostInfo;
  	int					m_iPrefixLen;
-	Options::Script*	m_pScript;
+	ScriptConfig::Script*	m_pScript;
 
 	void				PrepareParams(const char* szScriptName);
 	ScriptStatus::EStatus	AnalyseExitCode(int iExitCode);
 
 protected:
-	virtual void		ExecuteScript(Options::Script* pScript);
+	virtual void		ExecuteScript(ScriptConfig::Script* pScript);
 	virtual void		AddMessage(Message::EKind eKind, const char* szText);
 
 public:

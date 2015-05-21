@@ -325,6 +325,14 @@
 					>
 				</File>
 				<File
+					RelativePath=".\daemon\main\ScriptConfig.cpp"
+					>
+				</File>
+				<File
+					RelativePath=".\daemon\main\ScriptConfig.h"
+					>
+				</File>
+				<File
 					RelativePath=".\daemon\main\StackTrace.cpp"
 					>
 				</File>

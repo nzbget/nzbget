@@ -59,6 +59,7 @@
 #include "NZBFile.h"
 #include "Options.h"
 #include "CommandLineParser.h"
+#include "ScriptConfig.h"
 #include "Thread.h"
 #include "ColoredFrontend.h"
 #include "NCursesFrontend.h"
@@ -543,6 +544,8 @@ void BootConfig()
 
 	g_pServerPool->SetTimeout(g_pOptions->GetArticleTimeout());
 	g_pServerPool->SetRetryInterval(g_pOptions->GetRetryInterval());
+
+	g_pScriptConfig = new ScriptConfig();
 }
 
 void ProcessClientRequest()
@@ -781,6 +784,14 @@ void Cleanup()
 		g_pCommandLineParser = NULL;
 	}
 	debug("CommandLineParser deleted");
+
+	debug("Deleting ScriptConfig");
+	if (g_pScriptConfig)
+	{
+		delete g_pScriptConfig;
+		g_pScriptConfig = NULL;
+	}
+	debug("ScriptConfig deleted");
 
 	debug("Deleting ServerPool");
 	delete g_pServerPool;

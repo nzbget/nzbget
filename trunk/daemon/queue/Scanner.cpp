@@ -73,7 +73,7 @@ private:
 	void				PrepareParams(const char* szScriptName);
 
 protected:
-	virtual void		ExecuteScript(Options::Script* pScript);
+	virtual void		ExecuteScript(ScriptConfig::Script* pScript);
 	virtual void		AddMessage(Message::EKind eKind, const char* szText);
 
 public:
@@ -110,7 +110,7 @@ void ScanScriptController::ExecuteScripts(const char* szNZBFilename,
 	delete pScriptController;
 }
 
-void ScanScriptController::ExecuteScript(Options::Script* pScript)
+void ScanScriptController::ExecuteScript(ScriptConfig::Script* pScript)
 {
 	if (!pScript->GetScanScript() || !Util::FileExists(m_szNZBFilename))
 	{
@@ -650,9 +650,9 @@ void Scanner::InitPPParameters(const char* szCategory, NZBParameterList* pParame
 
 	if (bReset)
 	{
-		for (Options::Scripts::iterator it = g_pOptions->GetScripts()->begin(); it != g_pOptions->GetScripts()->end(); it++)
+		for (ScriptConfig::Scripts::iterator it = g_pScriptConfig->GetScripts()->begin(); it != g_pScriptConfig->GetScripts()->end(); it++)
 		{
-			Options::Script* pScript = *it;
+			ScriptConfig::Script* pScript = *it;
 			char szParam[1024];
 			snprintf(szParam, 1024, "%s:", pScript->GetName());
 			szParam[1024-1] = '\0';

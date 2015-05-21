@@ -46,6 +46,7 @@
 #include "Options.h"
 #include "Log.h"
 #include "Util.h"
+#include "ScriptConfig.h"
 
 extern Options* g_pOptions;
 extern QueueScriptCoordinator* g_pQueueScriptCoordinator;
@@ -64,20 +65,20 @@ private:
 	int					m_iPriority;
 	NZBParameterList	m_Parameters;
 	int					m_iPrefixLen;
-	Options::Script*	m_pScript;
+	ScriptConfig::Script*	m_pScript;
 	QueueScriptCoordinator::EEvent	m_eEvent;
 	bool				m_bMarkBad;
 
 	void				PrepareParams(const char* szScriptName);
 
 protected:
-	virtual void		ExecuteScript(Options::Script* pScript);
+	virtual void		ExecuteScript(ScriptConfig::Script* pScript);
 	virtual void		AddMessage(Message::EKind eKind, const char* szText);
 
 public:
 	virtual				~QueueScriptController();
 	virtual void		Run();
-	static void			StartScript(NZBInfo* pNZBInfo, Options::Script* pScript, QueueScriptCoordinator::EEvent eEvent);
+	static void			StartScript(NZBInfo* pNZBInfo, ScriptConfig::Script* pScript, QueueScriptCoordinator::EEvent eEvent);
 };
 
 
@@ -137,9 +138,9 @@ void NZBScriptController::PrepareEnvScript(NZBParameterList* pParameters, const 
 
 void NZBScriptController::ExecuteScriptList(const char* szScriptList)
 {
-	for (Options::Scripts::iterator it = g_pOptions->GetScripts()->begin(); it != g_pOptions->GetScripts()->end(); it++)
+	for (ScriptConfig::Scripts::iterator it = g_pScriptConfig->GetScripts()->begin(); it != g_pScriptConfig->GetScripts()->end(); it++)
 	{
-		Options::Script* pScript = *it;
+		ScriptConfig::Script* pScript = *it;
 
 		if (szScriptList && *szScriptList)
 		{
@@ -167,7 +168,7 @@ QueueScriptController::~QueueScriptController()
 	free(m_szDestDir);
 }
 
-void QueueScriptController::StartScript(NZBInfo* pNZBInfo, Options::Script* pScript, QueueScriptCoordinator::EEvent eEvent)
+void QueueScriptController::StartScript(NZBInfo* pNZBInfo, ScriptConfig::Script* pScript, QueueScriptCoordinator::EEvent eEvent)
 {
 	QueueScriptController* pScriptController = new QueueScriptController();
 
@@ -210,7 +211,7 @@ void QueueScriptController::Run()
 	g_pQueueScriptCoordinator->CheckQueue();
 }
 
-void QueueScriptController::ExecuteScript(Options::Script* pScript)
+void QueueScriptController::ExecuteScript(ScriptConfig::Script* pScript)
 {
 	PrintMessage(m_eEvent == QueueScriptCoordinator::qeFileDownloaded ? Message::mkDetail : Message::mkInfo,
 		"Executing queue-script %s for %s", pScript->GetName(), Util::BaseFileName(m_szNZBName));
@@ -303,7 +304,7 @@ void QueueScriptController::AddMessage(Message::EKind eKind, const char* szText)
 }
 
 
-QueueScriptCoordinator::QueueItem::QueueItem(int iNZBID, Options::Script* pScript, EEvent eEvent)
+QueueScriptCoordinator::QueueItem::QueueItem(int iNZBID, ScriptConfig::Script* pScript, EEvent eEvent)
 {
 	m_iNZBID = iNZBID;
 	m_pScript = pScript;
@@ -327,9 +328,9 @@ QueueScriptCoordinator::~QueueScriptCoordinator()
 void QueueScriptCoordinator::InitOptions()
 {
 	m_bHasQueueScripts = false;
-	for (Options::Scripts::iterator it = g_pOptions->GetScripts()->begin(); it != g_pOptions->GetScripts()->end(); it++)
+	for (ScriptConfig::Scripts::iterator it = g_pScriptConfig->GetScripts()->begin(); it != g_pScriptConfig->GetScripts()->end(); it++)
 	{
-		Options::Script* pScript = *it;
+		ScriptConfig::Script* pScript = *it;
 		if (pScript->GetQueueScript())
 		{
 			m_bHasQueueScripts = true;
@@ -374,9 +375,9 @@ void QueueScriptCoordinator::EnqueueScript(NZBInfo* pNZBInfo, EEvent eEvent)
 		return;
 	}
 
-	for (Options::Scripts::iterator it = g_pOptions->GetScripts()->begin(); it != g_pOptions->GetScripts()->end(); it++)
+	for (ScriptConfig::Scripts::iterator it = g_pScriptConfig->GetScripts()->begin(); it != g_pScriptConfig->GetScripts()->end(); it++)
 	{
-		Options::Script* pScript = *it;
+		ScriptConfig::Script* pScript = *it;
 
 		if (!pScript->GetQueueScript())
 		{

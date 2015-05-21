@@ -31,7 +31,7 @@
 #include "Script.h"
 #include "Thread.h"
 #include "DownloadInfo.h"
-#include "Options.h"
+#include "ScriptConfig.h"
 
 class NZBScriptController : public ScriptController
 {
@@ -39,7 +39,7 @@ protected:
 	void				PrepareEnvParameters(NZBParameterList* pParameters, const char* szStripPrefix);
 	void				PrepareEnvScript(NZBParameterList* pParameters, const char* szScriptName);
 	void				ExecuteScriptList(const char* szScriptList);
-	virtual void		ExecuteScript(Options::Script* pScript) = 0;
+	virtual void		ExecuteScript(ScriptConfig::Script* pScript) = 0;
 };
 
 class QueueScriptCoordinator
@@ -57,12 +57,12 @@ private:
 	{
 	private:
 		int					m_iNZBID;
-		Options::Script*	m_pScript;
+		ScriptConfig::Script*	m_pScript;
 		EEvent				m_eEvent;
 	public:
-							QueueItem(int iNZBID, Options::Script* pScript, EEvent eEvent);
+							QueueItem(int iNZBID, ScriptConfig::Script* pScript, EEvent eEvent);
 		int					GetNZBID() { return m_iNZBID; }
-		Options::Script*	GetScript() { return m_pScript; }
+		ScriptConfig::Script*	GetScript() { return m_pScript; }
 		EEvent				GetEvent() { return m_eEvent; }
 	};
 

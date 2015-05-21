@@ -94,7 +94,7 @@ void PostScriptController::Run()
 	m_pPostInfo->SetWorking(false);
 }
 
-void PostScriptController::ExecuteScript(Options::Script* pScript)
+void PostScriptController::ExecuteScript(ScriptConfig::Script* pScript)
 {
 	// if any script has requested par-check, do not execute other scripts
 	if (!pScript->GetPostScript() || m_pPostInfo->GetRequestParCheck())

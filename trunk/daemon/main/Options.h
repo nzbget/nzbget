@@ -100,8 +100,6 @@ public:
 		char*			m_szDefValue;
 		int				m_iLineNo;
 
-		void			SetName(const char* szName);
-		void			SetValue(const char* szValue);
 		void			SetLineNo(int iLineNo) { m_iLineNo = iLineNo; }
 
 		friend class Options;
@@ -110,7 +108,9 @@ public:
 						OptEntry();
 						OptEntry(const char* szName, const char* szValue);
 						~OptEntry();
+		void			SetName(const char* szName);
 		const char*		GetName() { return m_szName; }
+		void			SetValue(const char* szValue);
 		const char*		GetValue() { return m_szValue; }
 		const char*		GetDefValue() { return m_szDefValue; }
 		int				GetLineNo() { return m_iLineNo; }
@@ -157,70 +157,6 @@ public:
 		Category*		FindCategory(const char* szName, bool bSearchAliases);
 	};
 
-	class Script
-	{
-	private:
-		char*			m_szName;
-		char*			m_szLocation;
-		char*			m_szDisplayName;
-		bool			m_bPostScript;
-		bool			m_bScanScript;
-		bool			m_bQueueScript;
-		bool			m_bSchedulerScript;
-		char*			m_szQueueEvents;
-
-	public:
-						Script(const char* szName, const char* szLocation);
-						~Script();
-		const char*		GetName() { return m_szName; }
-		const char*		GetLocation() { return m_szLocation; }
-		void			SetDisplayName(const char* szDisplayName);
-		const char*		GetDisplayName() { return m_szDisplayName; }
-		bool			GetPostScript() { return m_bPostScript; }
-		void			SetPostScript(bool bPostScript) { m_bPostScript = bPostScript; }
-		bool			GetScanScript() { return m_bScanScript; }
-		void			SetScanScript(bool bScanScript) { m_bScanScript = bScanScript; }
-		bool			GetQueueScript() { return m_bQueueScript; }
-		void			SetQueueScript(bool bQueueScript) { m_bQueueScript = bQueueScript; }
-		bool			GetSchedulerScript() { return m_bSchedulerScript; }
-		void			SetSchedulerScript(bool bSchedulerScript) { m_bSchedulerScript = bSchedulerScript; }
-		void			SetQueueEvents(const char* szQueueEvents);
-		const char*		GetQueueEvents() { return m_szQueueEvents; }
-	};
-
-	typedef std::list<Script*>  ScriptsBase;
-
-	class Scripts: public ScriptsBase
-	{
-	public:
-						~Scripts();
-		void			Clear();
-		Script*			Find(const char* szName);	
-	};
-
-	class ConfigTemplate
-	{
-	private:
-		Script*			m_pScript;
-		char*			m_szTemplate;
-
-		friend class Options;
-
-	public:
-						ConfigTemplate(Script* pScript, const char* szTemplate);
-						~ConfigTemplate();
-		Script*			GetScript() { return m_pScript; }
-		const char*		GetTemplate() { return m_szTemplate; }
-	};
-	
-	typedef std::vector<ConfigTemplate*>  ConfigTemplatesBase;
-
-	class ConfigTemplates: public ConfigTemplatesBase
-	{
-	public:
-						~ConfigTemplates();
-	};
-
 	class Extender
 	{
 	public:
@@ -239,8 +175,6 @@ private:
 	OptEntries			m_OptEntries;
 	Mutex				m_mutexOptEntries;
 	Categories			m_Categories;
-	Scripts				m_Scripts;
-	ConfigTemplates		m_ConfigTemplates;
 	bool				m_bNoDiskAccess;
 	bool				m_bFatalError;
 	Extender*			m_pExtender;
@@ -366,8 +300,6 @@ private:
 	void				InitCategories();
 	void				InitScheduler();
 	void				InitFeeds();
-	void				InitScripts();
-	void				InitConfigTemplates();
 	void				InitCommandLineOptions(CmdOptList* pCommandLineOptions);
 	void				CheckOptions();
 	void				Dump();
@@ -378,7 +310,6 @@ private:
 	const char*			GetOption(const char* optname);
 	void				SetOption(const char* optname, const char* value);
 	bool				SetOptionString(const char* option);
-	bool				SplitOptionString(const char* option, char** pOptName, char** pOptValue);
 	bool				ValidateOptionName(const char* optname, const char* optvalue);
 	void				LoadConfigFile();
 	void				CheckDir(char** dir, const char* szOptionName, const char* szParentDir,
@@ -389,10 +320,6 @@ private:
 	void				ConfigWarn(const char* msg, ...);
 	void				LocateOptionSrcPos(const char *szOptionName);
 	void				ConvertOldOption(char *szOption, int iOptionBufLen, char *szValue, int iValueBufLen);
-	static bool			CompareScripts(Script* pScript1, Script* pScript2);
-	void				LoadScriptDir(Scripts* pScripts, const char* szDirectory, bool bIsSubDir);
-	void				BuildScriptDisplayNames(Scripts* pScripts);
-	void				LoadScripts(Scripts* pScripts);
 
 public:
 						Options(const char* szExeName, const char* szConfigFilename, bool bNoConfig,
@@ -400,16 +327,12 @@ public:
 						Options(CmdOptList* pCommandLineOptions, Extender* pExtender);
 						~Options();
 
-	bool				LoadConfig(OptEntries* pOptEntries);
-	bool				SaveConfig(OptEntries* pOptEntries);
-	bool				LoadConfigTemplates(ConfigTemplates* pConfigTemplates);
-	Scripts*			GetScripts() { return &m_Scripts; }
-	ConfigTemplates*	GetConfigTemplates() { return &m_ConfigTemplates; }
+	bool				SplitOptionString(const char* option, char** pOptName, char** pOptValue);
 	bool				GetFatalError() { return m_bFatalError; }
-
-	// Options
 	OptEntries*			LockOptEntries();
 	void				UnlockOptEntries();
+
+	// Options
 	const char*			GetConfigFilename() { return m_szConfigFilename; }
 	bool				GetConfigErrors() { return m_bConfigErrors; }
 	const char*			GetAppDir() { return m_szAppDir; }
