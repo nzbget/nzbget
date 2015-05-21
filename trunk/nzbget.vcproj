@@ -282,6 +282,58 @@
 				</File>
 			</Filter>
 			<Filter
+				Name="extension"
+				>
+				<File
+					RelativePath=".\daemon\extension\NzbScript.cpp"
+					>
+				</File>
+				<File
+					RelativePath=".\daemon\extension\NzbScript.h"
+					>
+				</File>
+				<File
+					RelativePath=".\daemon\extension\PostScript.cpp"
+					>
+				</File>
+				<File
+					RelativePath=".\daemon\extension\PostScript.h"
+					>
+				</File>
+				<File
+					RelativePath=".\daemon\extension\QueueScript.cpp"
+					>
+				</File>
+				<File
+					RelativePath=".\daemon\extension\QueueScript.h"
+					>
+				</File>
+				<File
+					RelativePath=".\daemon\extension\ScanScript.cpp"
+					>
+				</File>
+				<File
+					RelativePath=".\daemon\extension\ScanScript.h"
+					>
+				</File>
+				<File
+					RelativePath=".\daemon\extension\SchedulerScript.cpp"
+					>
+				</File>
+				<File
+					RelativePath=".\daemon\extension\SchedulerScript.h"
+					>
+				</File>
+				<File
+					RelativePath=".\daemon\extension\ScriptConfig.cpp"
+					>
+				</File>
+				<File
+					RelativePath=".\daemon\extension\ScriptConfig.h"
+					>
+				</File>
+			</Filter>
+			<Filter
 				Name="main"
 				>
 				<File
@@ -322,14 +374,6 @@
 				</File>
 				<File
 					RelativePath=".\daemon\main\Scheduler.h"
-					>
-				</File>
-				<File
-					RelativePath=".\daemon\main\ScriptConfig.cpp"
-					>
-				</File>
-				<File
-					RelativePath=".\daemon\main\ScriptConfig.h"
 					>
 				</File>
 				<File
@@ -541,14 +585,6 @@
 					>
 				</File>
 				<File
-					RelativePath=".\daemon\postprocess\PostScript.cpp"
-					>
-				</File>
-				<File
-					RelativePath=".\daemon\postprocess\PostScript.h"
-					>
-				</File>
-				<File
 					RelativePath=".\daemon\postprocess\PrePostProcessor.cpp"
 					>
 				</File>
@@ -630,14 +666,6 @@
 				</File>
 				<File
 					RelativePath=".\daemon\queue\QueueEditor.h"
-					>
-				</File>
-				<File
-					RelativePath=".\daemon\queue\QueueScript.cpp"
-					>
-				</File>
-				<File
-					RelativePath=".\daemon\queue\QueueScript.h"
 					>
 				</File>
 				<File

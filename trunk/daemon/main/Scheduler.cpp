@@ -45,30 +45,11 @@
 #include "ServerPool.h"
 #include "FeedInfo.h"
 #include "FeedCoordinator.h"
-#include "QueueScript.h"
+#include "SchedulerScript.h"
 
 extern Options* g_pOptions;
 extern ServerPool* g_pServerPool;
 extern FeedCoordinator* g_pFeedCoordinator;
-
-class SchedulerScriptController : public Thread, public NZBScriptController
-{
-private:
-	char*				m_szScript;
-	bool				m_bExternalProcess;
-	int					m_iTaskID;
-
-	void				PrepareParams(const char* szScriptName);
-	void				ExecuteExternalProcess();
-
-protected:
-	virtual void		ExecuteScript(ScriptConfig::Script* pScript);
-
-public:
-	virtual				~SchedulerScriptController();
-	virtual void		Run();
-	static void			StartScript(const char* szParam, bool bExternalProcess, int iTaskID);
-};
 
 Scheduler::Task::Task(int iID, int iHours, int iMinutes, int iWeekDaysBits, ECommand eCommand, const char* szParam)
 {
@@ -384,100 +365,4 @@ void Scheduler::CheckScheduledResume()
 		g_pOptions->SetPausePostProcess(false);
 		g_pOptions->SetPauseScan(false);
 	}
-}
-
-
-SchedulerScriptController::~SchedulerScriptController()
-{
-	free(m_szScript);
-}
-
-void SchedulerScriptController::StartScript(const char* szParam, bool bExternalProcess, int iTaskID)
-{
-	char** argv = NULL;
-	if (bExternalProcess && !Util::SplitCommandLine(szParam, &argv))
-	{
-		error("Could not execute scheduled process-script, failed to parse command line: %s", szParam);
-		return;
-	}
-
-	SchedulerScriptController* pScriptController = new SchedulerScriptController();
-
-	pScriptController->m_bExternalProcess = bExternalProcess;
-	pScriptController->m_szScript = strdup(szParam);
-	pScriptController->m_iTaskID = iTaskID;
-
-	if (bExternalProcess)
-	{
-		pScriptController->SetScript(argv[0]);
-		pScriptController->SetArgs((const char**)argv, true);
-	}
-
-	pScriptController->SetAutoDestroy(true);
-
-	pScriptController->Start();
-}
-
-void SchedulerScriptController::Run()
-{
-	if (m_bExternalProcess)
-	{
-		ExecuteExternalProcess();
-	}
-	else
-	{
-		ExecuteScriptList(m_szScript);
-	}
-}
-
-void SchedulerScriptController::ExecuteScript(ScriptConfig::Script* pScript)
-{
-	if (!pScript->GetSchedulerScript())
-	{
-		return;
-	}
-
-	PrintMessage(Message::mkInfo, "Executing scheduler-script %s for Task%i", pScript->GetName(), m_iTaskID);
-
-	SetScript(pScript->GetLocation());
-	SetArgs(NULL, false);
-
-	char szInfoName[1024];
-	snprintf(szInfoName, 1024, "scheduler-script %s for Task%i", pScript->GetName(), m_iTaskID);
-	szInfoName[1024-1] = '\0';
-	SetInfoName(szInfoName);
-
-	SetLogPrefix(pScript->GetDisplayName());
-	PrepareParams(pScript->GetName());
-
-	Execute();
-
-	SetLogPrefix(NULL);
-}
-
-void SchedulerScriptController::PrepareParams(const char* szScriptName)
-{
-	ResetEnv();
-
-	SetIntEnvVar("NZBSP_TASKID", m_iTaskID);
-
-	PrepareEnvScript(NULL, szScriptName);
-}
-
-void SchedulerScriptController::ExecuteExternalProcess()
-{
-	info("Executing scheduled process-script %s for Task%i", Util::BaseFileName(GetScript()), m_iTaskID);
-
-	char szInfoName[1024];
-	snprintf(szInfoName, 1024, "scheduled process-script %s for Task%i", Util::BaseFileName(GetScript()), m_iTaskID);
-	szInfoName[1024-1] = '\0';
-	SetInfoName(szInfoName);
-
-	char szLogPrefix[1024];
-	strncpy(szLogPrefix, Util::BaseFileName(GetScript()), 1024);
-	szLogPrefix[1024-1] = '\0';
-	if (char* ext = strrchr(szLogPrefix, '.')) *ext = '\0'; // strip file extension
-	SetLogPrefix(szLogPrefix);
-
-	Execute();
 }
