@@ -36,6 +36,7 @@
 #include <string.h>
 #include <stdio.h>
 #include <ctype.h>
+#include <stdarg.h>
 #include <sys/stat.h>
 #include <set>
 #ifdef WIN32
