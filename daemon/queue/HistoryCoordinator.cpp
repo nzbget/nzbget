@@ -55,12 +55,6 @@
 #include "PrePostProcessor.h"
 #include "DupeCoordinator.h"
 
-extern QueueCoordinator* g_pQueueCoordinator;
-extern PrePostProcessor* g_pPrePostProcessor;
-extern DupeCoordinator* g_pDupeCoordinator;
-extern Options* g_pOptions;
-extern DiskState* g_pDiskState;
-
 HistoryCoordinator::HistoryCoordinator()
 {
 	debug("Creating HistoryCoordinator");

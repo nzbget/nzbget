@@ -51,9 +51,6 @@
 #include "Util.h"
 #include "StatMeter.h"
 
-extern Options* g_pOptions;
-extern StatMeter* g_pStatMeter;
-
 Frontend::Frontend()
 {
 	debug("Creating Frontend");

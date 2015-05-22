@@ -53,12 +53,6 @@
 #include "Decoder.h"
 #include "StatMeter.h"
 
-extern Options* g_pOptions;
-extern ServerPool* g_pServerPool;
-extern DiskState* g_pDiskState;
-extern StatMeter* g_pStatMeter;
-extern ArticleCache* g_pArticleCache;
-
 bool QueueCoordinator::CoordinatorDownloadQueue::EditEntry(
 	int ID, EEditAction eAction, int iOffset, const char* szText)
 {

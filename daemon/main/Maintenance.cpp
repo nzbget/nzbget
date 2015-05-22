@@ -47,9 +47,6 @@
 #include "Options.h"
 #include "CommandLineParser.h"
 
-extern Options* g_pOptions;
-extern CommandLineParser* g_pCommandLineParser;
-extern Maintenance* g_pMaintenance;
 extern void ExitProc();
 extern int g_iArgumentCount;
 extern char* (*g_szArguments)[];

@@ -52,8 +52,6 @@
 #include "Options.h"
 #include "Util.h"
 
-extern Options* g_pOptions;
-
 class ParRenamerRepairer : public Par2Repairer
 {
 public:

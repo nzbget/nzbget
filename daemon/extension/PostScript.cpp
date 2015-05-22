@@ -45,8 +45,6 @@
 #include "Util.h"
 #include "Options.h"
 
-extern Options* g_pOptions;
-
 static const int POSTPROCESS_PARCHECK = 92;
 static const int POSTPROCESS_SUCCESS = 93;
 static const int POSTPROCESS_ERROR = 94;

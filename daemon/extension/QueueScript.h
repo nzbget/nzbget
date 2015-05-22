@@ -73,4 +73,6 @@ public:
 	bool				HasJob(int iNZBID);
 };
 
+extern QueueScriptCoordinator* g_pQueueScriptCoordinator;
+
 #endif

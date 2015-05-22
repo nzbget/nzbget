@@ -58,14 +58,6 @@
 #include "QueueScript.h"
 #include "ParParser.h"
 
-extern HistoryCoordinator* g_pHistoryCoordinator;
-extern DupeCoordinator* g_pDupeCoordinator;
-extern Options* g_pOptions;
-extern Scheduler* g_pScheduler;
-extern Scanner* g_pScanner;
-extern StatMeter* g_pStatMeter;
-extern QueueScriptCoordinator* g_pQueueScriptCoordinator;
-
 PrePostProcessor::PrePostProcessor()
 {
 	debug("Creating PrePostProcessor");

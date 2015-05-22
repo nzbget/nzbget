@@ -47,17 +47,12 @@
 #include "Options.h"
 #include "Util.h"
 
-extern Options* g_pOptions;
-extern ArticleCache* g_pArticleCache;
-extern DiskState* g_pDiskState;
-
 int FileInfo::m_iIDGen = 0;
 int FileInfo::m_iIDMax = 0;
 int NZBInfo::m_iIDGen = 0;
 int NZBInfo::m_iIDMax = 0;
 DownloadQueue* DownloadQueue::g_pDownloadQueue = NULL;
 bool DownloadQueue::g_bLoaded = false;
-
 
 NZBParameter::NZBParameter(const char* szName)
 {

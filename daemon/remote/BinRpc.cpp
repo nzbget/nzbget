@@ -52,9 +52,6 @@
 #include "Scanner.h"
 #include "StatMeter.h"
 
-extern Options* g_pOptions;
-extern Scanner* g_pScanner;
-extern StatMeter* g_pStatMeter;
 extern void ExitProc();
 extern void Reload();
 

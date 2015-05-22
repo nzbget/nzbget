@@ -51,8 +51,6 @@
 #include "Log.h"
 #include "Util.h"
 
-extern Options* g_pOptions;
-
 RemoteClient::RemoteClient()
 {
 	m_pConnection	= NULL;

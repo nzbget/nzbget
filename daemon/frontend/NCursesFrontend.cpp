@@ -73,7 +73,6 @@ void curses_clear()
 #undef clear
 #endif
 
-extern Options* g_pOptions;
 extern void ExitProc();
 
 static const int NCURSES_COLORPAIR_TEXT			= 1;

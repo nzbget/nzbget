@@ -49,10 +49,6 @@
 #include "Scanner.h"
 #include "DiskState.h"
 
-extern Options* g_pOptions;
-extern Scanner* g_pScanner;
-extern DiskState* g_pDiskState;
-
 UrlDownloader::UrlDownloader() : WebDownloader()
 {
 	m_szCategory = NULL;

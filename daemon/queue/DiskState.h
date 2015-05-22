@@ -97,4 +97,6 @@ public:
 	void				LoadNZBMessages(int iNZBID, MessageList* pMessages);
 };
 
+extern DiskState* g_pDiskState;
+
 #endif

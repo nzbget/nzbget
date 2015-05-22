@@ -54,14 +54,7 @@
 #include "HistoryCoordinator.h"
 #include "UrlCoordinator.h"
 
-extern QueueCoordinator* g_pQueueCoordinator;
-extern HistoryCoordinator* g_pHistoryCoordinator;
-extern UrlCoordinator* g_pUrlCoordinator;
-extern PrePostProcessor* g_pPrePostProcessor;
-extern Options* g_pOptions;
-
 const int MAX_ID = 1000000000;
-
 
 class GroupSorter
 {

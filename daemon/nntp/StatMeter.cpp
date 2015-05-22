@@ -42,10 +42,6 @@
 #include "DiskState.h"
 #include "Util.h"
 
-extern ServerPool* g_pServerPool;
-extern Options* g_pOptions;
-extern DiskState* g_pDiskState;
-
 static const int DAYS_UP_TO_2013_JAN_1 = 15706;
 static const int DAYS_IN_TWENTY_YEARS = 366*20;
 

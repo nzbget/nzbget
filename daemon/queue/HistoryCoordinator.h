@@ -53,4 +53,6 @@ public:
 	void				Cleanup();
 };
 
+extern HistoryCoordinator* g_pHistoryCoordinator;
+
 #endif

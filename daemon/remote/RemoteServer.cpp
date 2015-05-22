@@ -2,7 +2,7 @@
  *  This file is part of nzbget
  *
  *  Copyright (C) 2005 Bo Cordes Petersen <placebodk@sourceforge.net>
- *  Copyright (C) 2007-2013 Andrey Prygunkov <hugbug@users.sourceforge.net>
+ *  Copyright (C) 2007-2015 Andrey Prygunkov <hugbug@users.sourceforge.net>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -49,8 +49,6 @@
 #include "Log.h"
 #include "Options.h"
 #include "Util.h"
-
-extern Options* g_pOptions;
 
 //*****************************************************************
 // RemoteServer

@@ -54,9 +54,6 @@ using namespace MSXML;
 #include "DiskState.h"
 #include "Util.h"
 
-extern Options* g_pOptions;
-extern DiskState* g_pDiskState;
-
 NZBFile::NZBFile(const char* szFileName, const char* szCategory)
 {
     debug("Creating NZBFile");

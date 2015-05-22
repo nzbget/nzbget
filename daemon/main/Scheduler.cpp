@@ -1,7 +1,7 @@
 /*
  *  This file is part of nzbget
  *
- *  Copyright (C) 2008-2014 Andrey Prygunkov <hugbug@users.sourceforge.net>
+ *  Copyright (C) 2008-2015 Andrey Prygunkov <hugbug@users.sourceforge.net>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -46,10 +46,6 @@
 #include "FeedInfo.h"
 #include "FeedCoordinator.h"
 #include "SchedulerScript.h"
-
-extern Options* g_pOptions;
-extern ServerPool* g_pServerPool;
-extern FeedCoordinator* g_pFeedCoordinator;
 
 Scheduler::Task::Task(int iID, int iHours, int iMinutes, int iWeekDaysBits, ECommand eCommand, const char* szParam)
 {

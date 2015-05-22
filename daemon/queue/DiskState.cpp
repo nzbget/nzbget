@@ -50,8 +50,6 @@
 #include "Log.h"
 #include "Util.h"
 
-extern Options* g_pOptions;
-
 static const char* FORMATVERSION_SIGNATURE = "nzbget diskstate file version ";
 
 #ifdef WIN32

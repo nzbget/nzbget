@@ -45,8 +45,6 @@
 #include "Options.h"
 #include "Util.h"
 
-extern Options* g_pOptions;
-
 static const char* ERR_HTTP_BAD_REQUEST = "400 Bad Request";
 static const char* ERR_HTTP_NOT_FOUND = "404 Not Found";
 static const char* ERR_HTTP_SERVICE_UNAVAILABLE = "503 Service Unavailable";

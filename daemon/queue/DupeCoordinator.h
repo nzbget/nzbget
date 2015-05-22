@@ -1,7 +1,7 @@
 /*
  *  This file is part of nzbget
  *
- *  Copyright (C) 2007-2014 Andrey Prygunkov <hugbug@users.sourceforge.net>
+ *  Copyright (C) 2007-2015 Andrey Prygunkov <hugbug@users.sourceforge.net>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -52,5 +52,7 @@ public:
 	void				HistoryMark(DownloadQueue* pDownloadQueue, HistoryInfo* pHistoryInfo, NZBInfo::EMarkStatus eMarkStatus);
 	EDupeStatus			GetDupeStatus(DownloadQueue* pDownloadQueue, const char* szName, const char* szDupeKey);
 };
+
+extern DupeCoordinator* g_pDupeCoordinator;
 
 #endif
