@@ -127,6 +127,8 @@ public:
 	Feeds*					GetFeeds() { return &m_Feeds; }
 };
 
+extern FeedCoordinator* g_pFeedCoordinator;
+
 class FeedDownloader : public WebDownloader
 {
 private:

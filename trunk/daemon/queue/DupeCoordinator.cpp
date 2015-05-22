@@ -1,7 +1,7 @@
 /*
  *  This file is part of nzbget
  *
- *  Copyright (C) 2007-2014 Andrey Prygunkov <hugbug@users.sourceforge.net>
+ *  Copyright (C) 2007-2015 Andrey Prygunkov <hugbug@users.sourceforge.net>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -49,9 +49,6 @@
 #include "NZBFile.h"
 #include "HistoryCoordinator.h"
 #include "DupeCoordinator.h"
-
-extern HistoryCoordinator* g_pHistoryCoordinator;
-extern Options* g_pOptions;
 
 bool DupeCoordinator::SameNameOrKey(const char* szName1, const char* szDupeKey1,
 	const char* szName2, const char* szDupeKey2)

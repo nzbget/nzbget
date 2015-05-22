@@ -47,8 +47,6 @@
 #include "ParParser.h"
 #include "Options.h"
 
-extern Options* g_pOptions;
-
 void UnpackController::FileList::Clear()
 {
 	for (iterator it = begin(); it != end(); it++)

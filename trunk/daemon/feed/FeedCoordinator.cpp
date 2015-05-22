@@ -1,7 +1,7 @@
 /*
  *  This file is part of nzbget
  *
- *  Copyright (C) 2013-2014 Andrey Prygunkov <hugbug@users.sourceforge.net>
+ *  Copyright (C) 2013-2015 Andrey Prygunkov <hugbug@users.sourceforge.net>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -49,11 +49,6 @@
 #include "FeedFilter.h"
 #include "DiskState.h"
 #include "DupeCoordinator.h"
-
-extern Options* g_pOptions;
-extern DiskState* g_pDiskState;
-extern DupeCoordinator* g_pDupeCoordinator;
-
 
 FeedCoordinator::FeedCacheItem::FeedCacheItem(const char* szUrl, int iCacheTimeSec,const char* szCacheId,
 	time_t tLastUsage, FeedItemInfos* pFeedItemInfos)

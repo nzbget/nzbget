@@ -62,6 +62,8 @@ public:
 	bool				CheckUpdates(char** pUpdateInfo);
 };
 
+extern Maintenance* g_pMaintenance;
+
 class UpdateScriptController : public Thread, public ScriptController
 {
 private:

@@ -51,11 +51,6 @@
 #include "Log.h"
 #include "Util.h"
 
-extern Options* g_pOptions;
-extern DiskState* g_pDiskState;
-extern ArticleCache* g_pArticleCache;
-
-
 ArticleWriter::ArticleWriter()
 {
 	debug("Creating ArticleWriter");

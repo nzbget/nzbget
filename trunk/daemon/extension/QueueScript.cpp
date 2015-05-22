@@ -47,9 +47,6 @@
 #include "Log.h"
 #include "Util.h"
 
-extern Options* g_pOptions;
-extern QueueScriptCoordinator* g_pQueueScriptCoordinator;
-
 static const char* QUEUE_EVENT_NAMES[] = { "FILE_DOWNLOADED", "NZB_ADDED", "NZB_DOWNLOADED" };
 
 class QueueScriptController : public Thread, public NZBScriptController

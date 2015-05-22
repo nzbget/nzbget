@@ -56,8 +56,6 @@
 
 // System global variable holding environments variables
 extern char** environ;
-
-extern Options* g_pOptions;
 extern char* (*g_szEnvironmentVariables)[];
 
 ScriptController::RunningScripts ScriptController::m_RunningScripts;

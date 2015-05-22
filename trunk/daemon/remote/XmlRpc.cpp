@@ -53,14 +53,6 @@
 #include "DiskState.h"
 #include "ScriptConfig.h"
 
-extern Options* g_pOptions;
-extern Scanner* g_pScanner;
-extern FeedCoordinator* g_pFeedCoordinator;
-extern ServerPool* g_pServerPool;
-extern Maintenance* g_pMaintenance;
-extern StatMeter* g_pStatMeter;
-extern ArticleCache* g_pArticleCache;
-extern DiskState* g_pDiskState;
 extern void ExitProc();
 extern void Reload();
 

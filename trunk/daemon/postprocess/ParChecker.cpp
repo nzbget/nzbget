@@ -55,8 +55,6 @@
 #include "Options.h"
 #include "Util.h"
 
-extern Options* g_pOptions;
-
 const char* Par2CmdLineErrStr[] = { "OK",
 	"data files are damaged and there is enough recovery data available to repair them",
 	"data files are damaged and there is insufficient recovery data available to be able to repair them",

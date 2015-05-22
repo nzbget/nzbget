@@ -1,7 +1,7 @@
 /*
  *  This file is part of nzbget
  *
- *  Copyright (C) 2013-2014 Andrey Prygunkov <hugbug@users.sourceforge.net>
+ *  Copyright (C) 2013-2015 Andrey Prygunkov <hugbug@users.sourceforge.net>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -50,8 +50,6 @@ using namespace MSXML;
 #include "DownloadInfo.h"
 #include "Options.h"
 #include "Util.h"
-
-extern Options* g_pOptions;
 
 FeedFile::FeedFile(const char* szFileName)
 {

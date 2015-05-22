@@ -50,9 +50,6 @@
 #include "Log.h"
 #include "Util.h"
 
-extern Options* g_pOptions;
-extern DiskState* g_pDiskState;
-
 #ifndef DISABLE_PARCHECK
 bool ParCoordinator::PostParChecker::RequestMorePars(int iBlockNeeded, int* pBlockFound)
 {

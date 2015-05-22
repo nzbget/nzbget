@@ -47,10 +47,6 @@
 #include "Log.h"
 #include "Util.h"
 
-
-extern Scanner* g_pScanner;
-
-
 void ScanScriptController::ExecuteScripts(const char* szNZBFilename,
 	const char* szUrl, const char* szDirectory, char** pNZBName, char** pCategory,
 	int* iPriority, NZBParameterList* pParameters, bool* bAddTop, bool* bAddPaused,

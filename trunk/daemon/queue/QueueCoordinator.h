@@ -2,7 +2,7 @@
  *  This file is part of nzbget
  *
  *  Copyright (C) 2004 Sven Henkel <sidddy@users.sourceforge.net>
- *  Copyright (C) 2007-2014 Andrey Prygunkov <hugbug@users.sourceforge.net>
+ *  Copyright (C) 2007-2015 Andrey Prygunkov <hugbug@users.sourceforge.net>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -96,5 +96,7 @@ public:
 	bool					MergeQueueEntries(DownloadQueue* pDownloadQueue, NZBInfo* pDestNZBInfo, NZBInfo* pSrcNZBInfo);
 	bool					SplitQueueEntries(DownloadQueue* pDownloadQueue, FileList* pFileList, const char* szName, NZBInfo** pNewNZBInfo);
 };
+
+extern QueueCoordinator* g_pQueueCoordinator;
 
 #endif
