@@ -326,16 +326,24 @@ for CONFIG in $CONFIGS; do
             DISTTARGETS=`echo "$DISTTARGETS" | xargs`
             sed "s:^DISTARCHS=$:DISTARCHS=\"$DISTTARGETS\":" -i $INSTFILE
 
-            PAYLOAD=`stat -c%s "$INSTFILE.data"`
-            sed "s:^PAYLOAD=$:PAYLOAD=$PAYLOAD:" -i $INSTFILE
-            
             MD5=`md5sum "$INSTFILE.data" | cut -b-32`
             sed "s:^MD5=$:MD5=\"$MD5\":" -i $INSTFILE
 
+            PAYLOAD=`stat -c%s "$INSTFILE.data"`
+            PAYLOADLEN=${#PAYLOAD}
+
             HEADER=`stat -c%s "$INSTFILE"`
-            LEN=${#HEADER}
-            HEADER=`expr $HEADER + $LEN`
+            HEADERLEN=${#HEADER}
+            HEADER=`expr $HEADER + $HEADERLEN + $PAYLOADLEN`
+
+            TOTAL=`expr $HEADER + $PAYLOAD`
+            TOTALLEN=${#TOTAL}
+
+            HEADER=`expr $HEADER - $PAYLOADLEN + $TOTALLEN`
+            TOTAL=`expr $TOTAL - $PAYLOADLEN + $TOTALLEN`
+            
             sed "s:^HEADER=$:HEADER=$HEADER:" -i $INSTFILE
+            sed "s:^TOTAL=$:TOTAL=$TOTAL:" -i $INSTFILE
             
             # attaching payload
             cat $INSTFILE.data >> $INSTFILE
