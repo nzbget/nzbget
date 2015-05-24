@@ -72,6 +72,35 @@ rm -f "$NZBOP_TEMPDIR/$INSTALLER"
 echo "..."
 echo "Update completed"
 
+# Recreating command line used to start NZBGet
+CMDLINE=
+N=1
+while true
+do
+    PARAMNAME="NZBUP_CMDLINE$N"
+    eval PARAM="\$NZBUP_CMDLINE${N}"
+    if test "$PARAM" = ""; then
+        break
+    fi
+    if test "$CMDLINE" != ""; then
+        CMDLINE="$CMDLINE "
+    fi
+    CMDLINE="$CMDLINE\"$PARAM\""
+    # Using "case" to implement expression "N=N+1" to overcome possibly disabled expression support on Busybox
+    case $N in
+        1) N=2 ;; 2) N=3 ;; 3) N=4 ;; 4) N=5 ;; 5) N=6 ;; 6) N=7 ;; 7) N=8 ;; 8) N=9 ;; 9) N=10 ;; 10) N=11 ;;
+        11) N=12 ;; 12) N=13 ;; 13) N=14 ;; 14) N=15 ;; 15) N=16 ;; 16) N=17 ;; 17) N=18 ;; 18) N=19 ;; 19) N=20 ;;
+        21) N=22 ;; 22) N=23 ;; 23) N=24 ;; 24) N=25 ;; 25) N=26 ;; 26) N=27 ;; 27) N=28 ;; 28) N=29 ;; 29) N=30 ;;
+        31) N=32 ;; 32) N=33 ;; 33) N=34 ;; 34) N=35 ;; 35) N=36 ;; 36) N=37 ;; 37) N=38 ;; 38) N=39 ;; 39) N=40 ;;
+        41) N=42 ;; 42) N=43 ;; 43) N=44 ;; 44) N=45 ;; 45) N=46 ;; 46) N=47 ;; 47) N=48 ;; 48) N=49 ;; 49) N=50 ;;
+        *)
+            echo "..."
+            echo "[ERROR] Could not restart NZBGet: cannot recreate command line"
+            echo "[ERROR] Please restart NZBGet manually (reloading via web-interface isn't sufficient)"
+            exit 1
+    esac
+done
+
 echo "Restarting NZBGet..."
 sleep 1
 echo "[NZB] QUIT"
@@ -92,23 +121,6 @@ do
 done
 
 echo "Starting NZBGet..."
-
-# Recreating command line used to start NZBGet
-CMDLINE=
-NUM=1
-while true
-do
-    PARAMNAME="NZBUP_CMDLINE$NUM"
-    eval PARAM="\$NZBUP_CMDLINE${NUM}"
-    if test "$PARAM" = ""; then
-        break
-    fi
-    if test "$CMDLINE" != ""; then
-        CMDLINE="$CMDLINE "
-    fi
-    CMDLINE="$CMDLINE\"$PARAM\""
-    NUM=$((NUM + 1))
-done
 
 # Starting NZBGet
 eval "$NZBOP_APPBIN" $CMDLINE

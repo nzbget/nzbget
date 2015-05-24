@@ -27,8 +27,8 @@ set -o errexit
 TITLE=
 # Size of installer script (package header)
 HEADER=
-# Size of tar.gz archive (package payload)
-PAYLOAD=
+# Size of installer package (header + payload)
+TOTAL=
 # Md5 sum of payload
 MD5=
 # List of included CPU architecture binaries
@@ -89,7 +89,16 @@ PrintHelp()
     PrintArch "ppc6xx"   "    ppc6xx   - PowerPC 6xx (603e series)"
     PrintArch "ppc500"   "    ppc500   - PowerPC e500 (core e500v1/e500v2)"
     Info ""
-    Info "Usage: sh $(basename $0) [options]"
+
+    # Check if command 'basename' is available and fallback to full path if it's not
+    TEST=`eval TEST='$(basename /base/bin)' 2>/dev/null; echo $TEST`
+    if test "$TEST" != ""; then
+        EXENAME=$(basename $0)
+    else
+        EXENAME=$0
+    fi
+
+    Info "Usage: sh $EXENAME [options]"
     Info "    --help            - print this help"
     Info "    --arch <cpu>      - set CPU-architecture"
     Info "    --destdir <path>  - set destination directory"
@@ -102,23 +111,26 @@ PrintHelp()
 
 Verify()
 {
-    REQSIZE=$((HEADER + PAYLOAD))
+    # Checking installer package file size
+    REQSIZE=$TOTAL
+    # Trying to get the size via 'stat' command, fallback to 'ls -l' if 'stat' isn't available
     ACTSIZE=`stat -c%s "$0" 2>/dev/null | cat`
     if test "$ACTSIZE" = ""; then
-        NUM=1
+        NUM=
         for FIELD in `ls -l "$0" 2>/dev/null`
         do
-            if test "$NUM" = 5; then
+            if test "$NUM" = "aaaa"; then
                 ACTSIZE="$FIELD"
                 break
             fi
-            NUM=$((NUM + 1))
+            NUM="a$NUM"
         done
     fi
     if test "$REQSIZE" != "$ACTSIZE"; then
         Error "Corrupted installer package detected: file size mismatch."
     fi
     
+    # Checking checksum (MD5) of package payload, only if command 'md5sum' is available
     ACTMD5=`dd "if=$0" bs=$HEADER skip=1 2>/dev/null | md5sum 2>/dev/null | cut -b-32 2>/dev/null | cat`
     LEN=${#ACTMD5}
     if test "$LEN" = "32" -a "$MD5" != "$ACTMD5"; then
@@ -242,6 +254,7 @@ Unpack()
         cd $OUTDIR;
         rm -f nzbget
         rm -f unrar
+        rm -f 7za
         mv nzbget-$ARCH nzbget
         mv unrar-$ARCH unrar
         mv 7za-$ARCH 7za
@@ -257,6 +270,42 @@ TAR()
     exit $?
 }
 
+# 'Expr' provides two versions of expression evaluations: either using shell
+# built-in syntax $((arith)) or using command 'expr'.
+# If both fail, an empty string is returned (caller must check for this).
+# Currently supporting '+' and '/' operations (can be extended for others if needed).
+Expr()
+{
+    ARG1=$1
+    OP=$2
+    ARG2=$3
+    RET=
+    TEST=`eval TEST='$((1+2))' 2>/dev/null || 1; echo $TEST`
+    if test "$TEST" = "3"; then
+        case "$OP" in
+            "+")
+                eval RET='$((ARG1 + ARG2))'
+                ;;
+            "/")
+                eval RET='$((ARG1 / ARG2))'
+                ;;
+        esac
+    else
+        TEST=`expr 1 + 2 2>/dev/null | cat`
+        if test "$TEST" = "3"; then
+            case "$OP" in
+                "+")
+                    RET=`expr $ARG1 + $ARG2`
+                    ;;
+                "/")
+                    RET=`expr $ARG1 / $ARG2`
+                    ;;
+            esac
+        fi
+    fi
+    echo "$RET"
+}
+
 Configure()
 {
     cd $OUTDIR
@@ -264,20 +313,29 @@ Configure()
 
     if test ! -f nzbget.conf; then
         cp ./webui/nzbget.conf.template nzbget.conf
+        
+        # Adjusting config file to current system
 
         MEMFREE=`cat /proc/meminfo | sed -n 's/^MemFree: *\([0-9]*\).*/\1/p' 2>/dev/null | cat`
         MEMCACHED=`cat /proc/meminfo | sed -n 's/^Cached: *\([0-9]*\).*/\1/p' 2>/dev/null | cat`
         if test "$MEMFREE" != "" -a "$MEMCACHED" != ""; then
-            MEMFREE=$(((MEMFREE + MEMCACHED) / 1024))
-            Info "  Free memory detected: $MEMFREE MB"
-            if test $MEMFREE -gt 250; then
+            TOTALFREE=$(Expr $MEMFREE + $MEMCACHED)
+            # Expression evaluation with "Expr" may fail, check the result
+            TOTALFREE=$(Expr "$TOTALFREE" / 1024)
+            if test "$TOTALFREE" != ""; then
+                Info "  Free memory detected: $TOTALFREE MB"
+            else
+                Info "  Free memory detected: $MEMFREE KB + $MEMCACHED KB"
+                TOTALFREE=0
+            fi
+            if test $TOTALFREE -gt 250000 -o $MEMFREE -gt 250000 -o $MEMCACHED -gt 250000; then
                 Info "  Activating article cache (ArticleCache=100)"
                 sed 's:^ArticleCache=.*:ArticleCache=100:' -i nzbget.conf
                 Info "  Increasing write buffer (WriteBuffer=1024)"
                 sed 's:^WriteBuffer=.*:WriteBuffer=1024:' -i nzbget.conf
                 Info "  Increasing par repair buffer (ParBuffer=100)"
                 sed 's:^ParBuffer=.*:ParBuffer=100:' -i nzbget.conf
-            elif test $MEMFREE -gt 25; then
+            elif test $TOTALFREE -gt 25000 -o $MEMFREE -gt 25000 -o $MEMCACHED -gt 25000; then
                 Info "  Increasing write buffer (WriteBuffer=256)"
                 sed 's:^WriteBuffer=.*:WriteBuffer=256:' -i nzbget.conf
             fi
@@ -288,7 +346,11 @@ Configure()
             BOGOMIPS=0
             for CPU1 in $BOGOLIST
             do
-                BOGOMIPS=$((BOGOMIPS + CPU1))
+                BOGOMIPS=$(Expr $BOGOMIPS + $CPU1)
+                if test "$BOGOMIPS" = ""; then
+                    # Expression evaluation with "Expr" failed, using BogoMIPS for first core
+                    BOGOMIPS=$CPU1
+                fi
             done
             Info "  CPU speed detected: $BOGOMIPS BogoMIPS"
             if test $BOGOMIPS -lt 4000; then
@@ -417,6 +479,8 @@ if test "$JUSTUNPACK" = "no"; then
         Info "   ./nzbget -h        - help screen with all commands"
         Info ""
         Info "Successfully installed into $ABSOUTDIR"
+
+        # Trying to get current IP-address        
         IP=""
         {
             IP=`ifconfig | sed -rn 's/.*r:([^ ]+) .*/\1/p' | head -n 1` || true
@@ -424,6 +488,7 @@ if test "$JUSTUNPACK" = "no"; then
         if test "$IP" = ""; then
             IP="localhost"
         fi
+
         Info "Web-interface runs on http://$IP:6789"
     else
         Info "Successfully installed into $ABSOUTDIR"
