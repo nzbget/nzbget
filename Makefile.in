@@ -105,6 +105,22 @@ bin_PROGRAMS = nzbget$(EXEEXT)
 @WITH_PAR2_TRUE@	lib/par2/verificationpacket.cpp \
 @WITH_PAR2_TRUE@	lib/par2/verificationpacket.h
 
+@WITH_TESTS_TRUE@am__append_2 = \
+@WITH_TESTS_TRUE@	lib/catch/catch.h \
+@WITH_TESTS_TRUE@	tests/suite/TestMain.cpp \
+@WITH_TESTS_TRUE@	tests/suite/TestMain.h \
+@WITH_TESTS_TRUE@	tests/suite/TestUtil.cpp \
+@WITH_TESTS_TRUE@	tests/suite/TestUtil.h \
+@WITH_TESTS_TRUE@	tests/main/CommandLineParserTest.cpp \
+@WITH_TESTS_TRUE@	tests/main/OptionsTest.cpp \
+@WITH_TESTS_TRUE@	tests/feed/FeedFilterTest.cpp \
+@WITH_TESTS_TRUE@	tests/postprocess/ParCheckerTest.cpp \
+@WITH_TESTS_TRUE@	tests/postprocess/ParRenamerTest.cpp
+
+@WITH_TESTS_TRUE@am__append_3 = \
+@WITH_TESTS_TRUE@	-I$(srcdir)/lib/catch \
+@WITH_TESTS_TRUE@	-I$(srcdir)/tests/suite
+
 DIST_COMMON = README $(am__configure_deps) $(dist_doc_DATA) \
 	$(dist_exampleconf_DATA) $(nobase_dist_scripts_SCRIPTS) \
 	$(nobase_dist_webui_DATA) $(srcdir)/Makefile.am \
@@ -213,7 +229,13 @@ am__nzbget_SOURCES_DIST = daemon/connect/Connection.cpp \
 	lib/par2/recoverypacket.h lib/par2/reedsolomon.cpp \
 	lib/par2/reedsolomon.h lib/par2/verificationhashtable.cpp \
 	lib/par2/verificationhashtable.h \
-	lib/par2/verificationpacket.cpp lib/par2/verificationpacket.h
+	lib/par2/verificationpacket.cpp lib/par2/verificationpacket.h \
+	lib/catch/catch.h tests/suite/TestMain.cpp \
+	tests/suite/TestMain.h tests/suite/TestUtil.cpp \
+	tests/suite/TestUtil.h tests/main/CommandLineParserTest.cpp \
+	tests/main/OptionsTest.cpp tests/feed/FeedFilterTest.cpp \
+	tests/postprocess/ParCheckerTest.cpp \
+	tests/postprocess/ParRenamerTest.cpp
 @WITH_PAR2_TRUE@am__objects_1 = commandline.$(OBJEXT) crc.$(OBJEXT) \
 @WITH_PAR2_TRUE@	creatorpacket.$(OBJEXT) \
 @WITH_PAR2_TRUE@	criticalpacket.$(OBJEXT) datablock.$(OBJEXT) \
@@ -228,6 +250,12 @@ am__nzbget_SOURCES_DIST = daemon/connect/Connection.cpp \
 @WITH_PAR2_TRUE@	reedsolomon.$(OBJEXT) \
 @WITH_PAR2_TRUE@	verificationhashtable.$(OBJEXT) \
 @WITH_PAR2_TRUE@	verificationpacket.$(OBJEXT)
+@WITH_TESTS_TRUE@am__objects_2 = TestMain.$(OBJEXT) TestUtil.$(OBJEXT) \
+@WITH_TESTS_TRUE@	CommandLineParserTest.$(OBJEXT) \
+@WITH_TESTS_TRUE@	OptionsTest.$(OBJEXT) \
+@WITH_TESTS_TRUE@	FeedFilterTest.$(OBJEXT) \
+@WITH_TESTS_TRUE@	ParCheckerTest.$(OBJEXT) \
+@WITH_TESTS_TRUE@	ParRenamerTest.$(OBJEXT)
 am_nzbget_OBJECTS = Connection.$(OBJEXT) TLS.$(OBJEXT) \
 	WebDownloader.$(OBJEXT) NzbScript.$(OBJEXT) \
 	PostScript.$(OBJEXT) QueueScript.$(OBJEXT) \
@@ -252,7 +280,8 @@ am_nzbget_OBJECTS = Connection.$(OBJEXT) TLS.$(OBJEXT) \
 	RemoteClient.$(OBJEXT) RemoteServer.$(OBJEXT) \
 	WebServer.$(OBJEXT) XmlRpc.$(OBJEXT) Log.$(OBJEXT) \
 	Observer.$(OBJEXT) Script.$(OBJEXT) Thread.$(OBJEXT) \
-	Util.$(OBJEXT) svn_version.$(OBJEXT) $(am__objects_1)
+	Util.$(OBJEXT) svn_version.$(OBJEXT) $(am__objects_1) \
+	$(am__objects_2)
 nzbget_OBJECTS = $(am_nzbget_OBJECTS)
 nzbget_LDADD = $(LDADD)
 am__vpath_adj_setup = srcdirstrip=`echo "$(srcdir)" | sed 's|.|.|g'`;
@@ -342,6 +371,8 @@ TAR = @TAR@
 VERSION = @VERSION@
 WITH_PAR2_FALSE = @WITH_PAR2_FALSE@
 WITH_PAR2_TRUE = @WITH_PAR2_TRUE@
+WITH_TESTS_FALSE = @WITH_TESTS_FALSE@
+WITH_TESTS_TRUE = @WITH_TESTS_TRUE@
 ac_ct_CXX = @ac_ct_CXX@
 am__fastdepCXX_FALSE = @am__fastdepCXX_FALSE@
 am__fastdepCXX_TRUE = @am__fastdepCXX_TRUE@
@@ -460,25 +491,19 @@ nzbget_SOURCES = daemon/connect/Connection.cpp \
 	daemon/util/Observer.h daemon/util/Script.cpp \
 	daemon/util/Script.h daemon/util/Thread.cpp \
 	daemon/util/Thread.h daemon/util/Util.cpp daemon/util/Util.h \
-	svn_version.cpp $(am__append_1)
-AM_CPPFLAGS = \
-	-I$(srcdir)/daemon/connect \
-	-I$(srcdir)/daemon/extension \
-	-I$(srcdir)/daemon/feed \
-	-I$(srcdir)/daemon/frontend \
-	-I$(srcdir)/daemon/main \
-	-I$(srcdir)/daemon/nntp \
-	-I$(srcdir)/daemon/postprocess \
-	-I$(srcdir)/daemon/queue \
-	-I$(srcdir)/daemon/remote \
-	-I$(srcdir)/daemon/util \
-	-I$(srcdir)/lib/par2
-
+	svn_version.cpp $(am__append_1) $(am__append_2)
+AM_CPPFLAGS = -I$(srcdir)/daemon/connect -I$(srcdir)/daemon/extension \
+	-I$(srcdir)/daemon/feed -I$(srcdir)/daemon/frontend \
+	-I$(srcdir)/daemon/main -I$(srcdir)/daemon/nntp \
+	-I$(srcdir)/daemon/postprocess -I$(srcdir)/daemon/queue \
+	-I$(srcdir)/daemon/remote -I$(srcdir)/daemon/util \
+	-I$(srcdir)/lib/par2 $(am__append_3)
 EXTRA_DIST = \
 	Makefile.cvs \
 	$(windows_FILES) \
 	$(osx_FILES) \
-	$(linux_FILES)
+	$(linux_FILES) \
+	$(testdata_FILES)
 
 windows_FILES = \
 	daemon/windows/NTService.cpp \
@@ -587,6 +612,15 @@ webui_FILES = \
 scripts_FILES = \
 	scripts/EMail.py \
 	scripts/Logger.py
+
+testdata_FILES = \
+	tests/testdata/parchecker/crc.txt \
+	tests/testdata/parchecker/testfile.dat \
+	tests/testdata/parchecker/testfile.nfo \
+	tests/testdata/parchecker/testfile.par2 \
+	tests/testdata/parchecker/testfile.vol00+1.PAR2 \
+	tests/testdata/parchecker/testfile.vol01+2.PAR2 \
+	tests/testdata/parchecker/testfile.vol03+3.PAR2
 
 
 # Install
@@ -721,6 +755,7 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/BinRpc.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/ColoredFrontend.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/CommandLineParser.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/CommandLineParserTest.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/Connection.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/Decoder.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/DiskState.Po@am__quote@
@@ -729,6 +764,7 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/FeedCoordinator.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/FeedFile.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/FeedFilter.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/FeedFilterTest.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/FeedInfo.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/Frontend.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/HistoryCoordinator.Po@am__quote@
@@ -742,10 +778,13 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/NzbScript.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/Observer.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/Options.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/OptionsTest.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/ParChecker.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/ParCheckerTest.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/ParCoordinator.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/ParParser.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/ParRenamer.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/ParRenamerTest.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/PostScript.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/PrePostProcessor.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/QueueCoordinator.Po@am__quote@
@@ -763,6 +802,8 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/StackTrace.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/StatMeter.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/TLS.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/TestMain.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/TestUtil.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/Thread.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/Unpack.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/UrlCoordinator.Po@am__quote@
@@ -1856,6 +1897,104 @@ verificationpacket.obj: lib/par2/verificationpacket.cpp
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='lib/par2/verificationpacket.cpp' object='verificationpacket.obj' libtool=no @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o verificationpacket.obj `if test -f 'lib/par2/verificationpacket.cpp'; then $(CYGPATH_W) 'lib/par2/verificationpacket.cpp'; else $(CYGPATH_W) '$(srcdir)/lib/par2/verificationpacket.cpp'; fi`
+
+TestMain.o: tests/suite/TestMain.cpp
+@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT TestMain.o -MD -MP -MF "$(DEPDIR)/TestMain.Tpo" -c -o TestMain.o `test -f 'tests/suite/TestMain.cpp' || echo '$(srcdir)/'`tests/suite/TestMain.cpp; \
+@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/TestMain.Tpo" "$(DEPDIR)/TestMain.Po"; else rm -f "$(DEPDIR)/TestMain.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='tests/suite/TestMain.cpp' object='TestMain.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o TestMain.o `test -f 'tests/suite/TestMain.cpp' || echo '$(srcdir)/'`tests/suite/TestMain.cpp
+
+TestMain.obj: tests/suite/TestMain.cpp
+@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT TestMain.obj -MD -MP -MF "$(DEPDIR)/TestMain.Tpo" -c -o TestMain.obj `if test -f 'tests/suite/TestMain.cpp'; then $(CYGPATH_W) 'tests/suite/TestMain.cpp'; else $(CYGPATH_W) '$(srcdir)/tests/suite/TestMain.cpp'; fi`; \
+@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/TestMain.Tpo" "$(DEPDIR)/TestMain.Po"; else rm -f "$(DEPDIR)/TestMain.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='tests/suite/TestMain.cpp' object='TestMain.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o TestMain.obj `if test -f 'tests/suite/TestMain.cpp'; then $(CYGPATH_W) 'tests/suite/TestMain.cpp'; else $(CYGPATH_W) '$(srcdir)/tests/suite/TestMain.cpp'; fi`
+
+TestUtil.o: tests/suite/TestUtil.cpp
+@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT TestUtil.o -MD -MP -MF "$(DEPDIR)/TestUtil.Tpo" -c -o TestUtil.o `test -f 'tests/suite/TestUtil.cpp' || echo '$(srcdir)/'`tests/suite/TestUtil.cpp; \
+@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/TestUtil.Tpo" "$(DEPDIR)/TestUtil.Po"; else rm -f "$(DEPDIR)/TestUtil.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='tests/suite/TestUtil.cpp' object='TestUtil.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o TestUtil.o `test -f 'tests/suite/TestUtil.cpp' || echo '$(srcdir)/'`tests/suite/TestUtil.cpp
+
+TestUtil.obj: tests/suite/TestUtil.cpp
+@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT TestUtil.obj -MD -MP -MF "$(DEPDIR)/TestUtil.Tpo" -c -o TestUtil.obj `if test -f 'tests/suite/TestUtil.cpp'; then $(CYGPATH_W) 'tests/suite/TestUtil.cpp'; else $(CYGPATH_W) '$(srcdir)/tests/suite/TestUtil.cpp'; fi`; \
+@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/TestUtil.Tpo" "$(DEPDIR)/TestUtil.Po"; else rm -f "$(DEPDIR)/TestUtil.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='tests/suite/TestUtil.cpp' object='TestUtil.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o TestUtil.obj `if test -f 'tests/suite/TestUtil.cpp'; then $(CYGPATH_W) 'tests/suite/TestUtil.cpp'; else $(CYGPATH_W) '$(srcdir)/tests/suite/TestUtil.cpp'; fi`
+
+CommandLineParserTest.o: tests/main/CommandLineParserTest.cpp
+@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT CommandLineParserTest.o -MD -MP -MF "$(DEPDIR)/CommandLineParserTest.Tpo" -c -o CommandLineParserTest.o `test -f 'tests/main/CommandLineParserTest.cpp' || echo '$(srcdir)/'`tests/main/CommandLineParserTest.cpp; \
+@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/CommandLineParserTest.Tpo" "$(DEPDIR)/CommandLineParserTest.Po"; else rm -f "$(DEPDIR)/CommandLineParserTest.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='tests/main/CommandLineParserTest.cpp' object='CommandLineParserTest.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o CommandLineParserTest.o `test -f 'tests/main/CommandLineParserTest.cpp' || echo '$(srcdir)/'`tests/main/CommandLineParserTest.cpp
+
+CommandLineParserTest.obj: tests/main/CommandLineParserTest.cpp
+@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT CommandLineParserTest.obj -MD -MP -MF "$(DEPDIR)/CommandLineParserTest.Tpo" -c -o CommandLineParserTest.obj `if test -f 'tests/main/CommandLineParserTest.cpp'; then $(CYGPATH_W) 'tests/main/CommandLineParserTest.cpp'; else $(CYGPATH_W) '$(srcdir)/tests/main/CommandLineParserTest.cpp'; fi`; \
+@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/CommandLineParserTest.Tpo" "$(DEPDIR)/CommandLineParserTest.Po"; else rm -f "$(DEPDIR)/CommandLineParserTest.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='tests/main/CommandLineParserTest.cpp' object='CommandLineParserTest.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o CommandLineParserTest.obj `if test -f 'tests/main/CommandLineParserTest.cpp'; then $(CYGPATH_W) 'tests/main/CommandLineParserTest.cpp'; else $(CYGPATH_W) '$(srcdir)/tests/main/CommandLineParserTest.cpp'; fi`
+
+OptionsTest.o: tests/main/OptionsTest.cpp
+@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT OptionsTest.o -MD -MP -MF "$(DEPDIR)/OptionsTest.Tpo" -c -o OptionsTest.o `test -f 'tests/main/OptionsTest.cpp' || echo '$(srcdir)/'`tests/main/OptionsTest.cpp; \
+@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/OptionsTest.Tpo" "$(DEPDIR)/OptionsTest.Po"; else rm -f "$(DEPDIR)/OptionsTest.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='tests/main/OptionsTest.cpp' object='OptionsTest.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o OptionsTest.o `test -f 'tests/main/OptionsTest.cpp' || echo '$(srcdir)/'`tests/main/OptionsTest.cpp
+
+OptionsTest.obj: tests/main/OptionsTest.cpp
+@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT OptionsTest.obj -MD -MP -MF "$(DEPDIR)/OptionsTest.Tpo" -c -o OptionsTest.obj `if test -f 'tests/main/OptionsTest.cpp'; then $(CYGPATH_W) 'tests/main/OptionsTest.cpp'; else $(CYGPATH_W) '$(srcdir)/tests/main/OptionsTest.cpp'; fi`; \
+@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/OptionsTest.Tpo" "$(DEPDIR)/OptionsTest.Po"; else rm -f "$(DEPDIR)/OptionsTest.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='tests/main/OptionsTest.cpp' object='OptionsTest.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o OptionsTest.obj `if test -f 'tests/main/OptionsTest.cpp'; then $(CYGPATH_W) 'tests/main/OptionsTest.cpp'; else $(CYGPATH_W) '$(srcdir)/tests/main/OptionsTest.cpp'; fi`
+
+FeedFilterTest.o: tests/feed/FeedFilterTest.cpp
+@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT FeedFilterTest.o -MD -MP -MF "$(DEPDIR)/FeedFilterTest.Tpo" -c -o FeedFilterTest.o `test -f 'tests/feed/FeedFilterTest.cpp' || echo '$(srcdir)/'`tests/feed/FeedFilterTest.cpp; \
+@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/FeedFilterTest.Tpo" "$(DEPDIR)/FeedFilterTest.Po"; else rm -f "$(DEPDIR)/FeedFilterTest.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='tests/feed/FeedFilterTest.cpp' object='FeedFilterTest.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o FeedFilterTest.o `test -f 'tests/feed/FeedFilterTest.cpp' || echo '$(srcdir)/'`tests/feed/FeedFilterTest.cpp
+
+FeedFilterTest.obj: tests/feed/FeedFilterTest.cpp
+@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT FeedFilterTest.obj -MD -MP -MF "$(DEPDIR)/FeedFilterTest.Tpo" -c -o FeedFilterTest.obj `if test -f 'tests/feed/FeedFilterTest.cpp'; then $(CYGPATH_W) 'tests/feed/FeedFilterTest.cpp'; else $(CYGPATH_W) '$(srcdir)/tests/feed/FeedFilterTest.cpp'; fi`; \
+@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/FeedFilterTest.Tpo" "$(DEPDIR)/FeedFilterTest.Po"; else rm -f "$(DEPDIR)/FeedFilterTest.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='tests/feed/FeedFilterTest.cpp' object='FeedFilterTest.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o FeedFilterTest.obj `if test -f 'tests/feed/FeedFilterTest.cpp'; then $(CYGPATH_W) 'tests/feed/FeedFilterTest.cpp'; else $(CYGPATH_W) '$(srcdir)/tests/feed/FeedFilterTest.cpp'; fi`
+
+ParCheckerTest.o: tests/postprocess/ParCheckerTest.cpp
+@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT ParCheckerTest.o -MD -MP -MF "$(DEPDIR)/ParCheckerTest.Tpo" -c -o ParCheckerTest.o `test -f 'tests/postprocess/ParCheckerTest.cpp' || echo '$(srcdir)/'`tests/postprocess/ParCheckerTest.cpp; \
+@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/ParCheckerTest.Tpo" "$(DEPDIR)/ParCheckerTest.Po"; else rm -f "$(DEPDIR)/ParCheckerTest.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='tests/postprocess/ParCheckerTest.cpp' object='ParCheckerTest.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o ParCheckerTest.o `test -f 'tests/postprocess/ParCheckerTest.cpp' || echo '$(srcdir)/'`tests/postprocess/ParCheckerTest.cpp
+
+ParCheckerTest.obj: tests/postprocess/ParCheckerTest.cpp
+@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT ParCheckerTest.obj -MD -MP -MF "$(DEPDIR)/ParCheckerTest.Tpo" -c -o ParCheckerTest.obj `if test -f 'tests/postprocess/ParCheckerTest.cpp'; then $(CYGPATH_W) 'tests/postprocess/ParCheckerTest.cpp'; else $(CYGPATH_W) '$(srcdir)/tests/postprocess/ParCheckerTest.cpp'; fi`; \
+@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/ParCheckerTest.Tpo" "$(DEPDIR)/ParCheckerTest.Po"; else rm -f "$(DEPDIR)/ParCheckerTest.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='tests/postprocess/ParCheckerTest.cpp' object='ParCheckerTest.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o ParCheckerTest.obj `if test -f 'tests/postprocess/ParCheckerTest.cpp'; then $(CYGPATH_W) 'tests/postprocess/ParCheckerTest.cpp'; else $(CYGPATH_W) '$(srcdir)/tests/postprocess/ParCheckerTest.cpp'; fi`
+
+ParRenamerTest.o: tests/postprocess/ParRenamerTest.cpp
+@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT ParRenamerTest.o -MD -MP -MF "$(DEPDIR)/ParRenamerTest.Tpo" -c -o ParRenamerTest.o `test -f 'tests/postprocess/ParRenamerTest.cpp' || echo '$(srcdir)/'`tests/postprocess/ParRenamerTest.cpp; \
+@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/ParRenamerTest.Tpo" "$(DEPDIR)/ParRenamerTest.Po"; else rm -f "$(DEPDIR)/ParRenamerTest.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='tests/postprocess/ParRenamerTest.cpp' object='ParRenamerTest.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o ParRenamerTest.o `test -f 'tests/postprocess/ParRenamerTest.cpp' || echo '$(srcdir)/'`tests/postprocess/ParRenamerTest.cpp
+
+ParRenamerTest.obj: tests/postprocess/ParRenamerTest.cpp
+@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT ParRenamerTest.obj -MD -MP -MF "$(DEPDIR)/ParRenamerTest.Tpo" -c -o ParRenamerTest.obj `if test -f 'tests/postprocess/ParRenamerTest.cpp'; then $(CYGPATH_W) 'tests/postprocess/ParRenamerTest.cpp'; else $(CYGPATH_W) '$(srcdir)/tests/postprocess/ParRenamerTest.cpp'; fi`; \
+@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/ParRenamerTest.Tpo" "$(DEPDIR)/ParRenamerTest.Po"; else rm -f "$(DEPDIR)/ParRenamerTest.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='tests/postprocess/ParRenamerTest.cpp' object='ParRenamerTest.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o ParRenamerTest.obj `if test -f 'tests/postprocess/ParRenamerTest.cpp'; then $(CYGPATH_W) 'tests/postprocess/ParRenamerTest.cpp'; else $(CYGPATH_W) '$(srcdir)/tests/postprocess/ParRenamerTest.cpp'; fi`
 uninstall-info-am:
 install-dist_docDATA: $(dist_doc_DATA)
 	@$(NORMAL_INSTALL)
@@ -1962,7 +2101,7 @@ distclean-tags:
 distdir: $(DISTFILES)
 	$(am__remove_distdir)
 	mkdir $(distdir)
-	$(mkdir_p) $(distdir)/daemon/windows $(distdir)/lib/par2 $(distdir)/linux $(distdir)/osx $(distdir)/osx/NZBGet.xcodeproj $(distdir)/osx/Resources $(distdir)/osx/Resources/Images $(distdir)/osx/Resources/licenses $(distdir)/scripts $(distdir)/webui $(distdir)/webui/img $(distdir)/webui/lib $(distdir)/windows $(distdir)/windows/resources $(distdir)/windows/setup
+	$(mkdir_p) $(distdir)/daemon/windows $(distdir)/lib/par2 $(distdir)/linux $(distdir)/osx $(distdir)/osx/NZBGet.xcodeproj $(distdir)/osx/Resources $(distdir)/osx/Resources/Images $(distdir)/osx/Resources/licenses $(distdir)/scripts $(distdir)/tests/testdata/parchecker $(distdir)/webui $(distdir)/webui/img $(distdir)/webui/lib $(distdir)/windows $(distdir)/windows/resources $(distdir)/windows/setup
 	@srcdirstrip=`echo "$(srcdir)" | sed 's|.|.|g'`; \
 	topsrcdirstrip=`echo "$(top_srcdir)" | sed 's|.|.|g'`; \
 	list='$(DISTFILES)'; for file in $$list; do \
@@ -2275,6 +2414,7 @@ dist-hook:
 	find $(distdir)/daemon -type f -print -exec chmod -x {} \;
 	find $(distdir)/webui -type f -print -exec chmod -x {} \;
 	find $(distdir)/lib -type f -print -exec chmod -x {} \;
+	find $(distdir)/tests -type f -print -exec chmod -x {} \;
 # Tell versions [3.59,3.63) of GNU make to not export all variables.
 # Otherwise a system limit (for SysV at least) may be exceeded.
 .NOEXPORT:

@@ -19,6 +19,9 @@
 /* Define to 1 to not use TLS/SSL */
 #undef DISABLE_TLS
 
+/* Define to 1 to enable unit and integration tests */
+#undef ENABLE_TESTS
+
 /* Define to the name of macro which returns the name of function being
    compiled */
 #undef FUNCTION_MACRO_NAME

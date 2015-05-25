@@ -457,11 +457,14 @@ Since then the program has been completely rewritten.
 NZBGet distribution archive includes additional components
 written by other authors:
 
-PAR2:
+Par2:
 	Peter Brian Clements <peterbclements@users.sourceforge.net>
 
-PAR2 library API:
+Par2 library API:
 	Francois Lesueur <flesueur@users.sourceforge.net>
+
+Catch:
+	Two Blue Cubes Ltd <https://github.com/philsquared/Catch>
 
 jQuery:
 	John Resig <http://jquery.com>

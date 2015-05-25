@@ -592,5 +592,21 @@ AC_DEFINE([NDEBUG],1,Define to 1 to exclude debug-code)
 fi
 
 
+dnl
+dnl Enable test suite. Deafult: no.
+dnl
+AC_MSG_CHECKING(whether to enable unit and integration tests)
+AC_ARG_ENABLE(tests,
+	[AS_HELP_STRING([--enable-tests], [enable unit and integration tests])],
+	[ ENABLETESTS=$enableval ],
+	[ ENABLETESTS=no] )
+AC_MSG_RESULT($ENABLETESTS)
+if test "$ENABLETESTS" = "yes"; then
+	AC_DEFINE([ENABLE_TESTS],1,[Define to 1 to enable unit and integration tests])
+	AM_CONDITIONAL(WITH_TESTS, true)
+else
+	AM_CONDITIONAL(WITH_TESTS, false)
+fi
+
 AC_CONFIG_FILES([Makefile])
 AC_OUTPUT
