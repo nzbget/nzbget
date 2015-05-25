@@ -39,7 +39,7 @@
 			<Tool
 				Name="VCCLCompilerTool"
 				Optimization="0"
-				AdditionalIncludeDirectories=".\daemon\connect;.\daemon\feed;.\daemon\frontend;.\daemon\main;.\daemon\nntp;.\daemon\postprocess;.\daemon\queue;.\daemon\remote;.\daemon\util;.\daemon\windows;.\lib\par2;.\windows\resources"
+				AdditionalIncludeDirectories=".\daemon\connect;.\daemon\extension;.\daemon\feed;.\daemon\frontend;.\daemon\main;.\daemon\nntp;.\daemon\postprocess;.\daemon\queue;.\daemon\remote;.\daemon\util;.\daemon\windows;.\lib\par2;.\windows\resources"
 				PreprocessorDefinitions="WIN32;_DEBUG;_CONSOLE;DEBUG;_WIN32_WINNT=0x0403"
 				MinimalRebuild="true"
 				BasicRuntimeChecks="3"
@@ -115,7 +115,7 @@
 			/>
 			<Tool
 				Name="VCCLCompilerTool"
-				AdditionalIncludeDirectories=".\daemon\connect;.\daemon\feed;.\daemon\frontend;.\daemon\main;.\daemon\nntp;.\daemon\postprocess;.\daemon\queue;.\daemon\remote;.\daemon\util;.\daemon\windows;.\lib\par2;.\windows\resources"
+				AdditionalIncludeDirectories=".\daemon\connect;.\daemon\extension;.\daemon\feed;.\daemon\frontend;.\daemon\main;.\daemon\nntp;.\daemon\postprocess;.\daemon\queue;.\daemon\remote;.\daemon\util;.\daemon\windows;.\lib\par2;.\windows\resources"
 				PreprocessorDefinitions="WIN32;NDEBUG;_CONSOLE;_WIN32_WINNT=0x0403"
 				ExceptionHandling="1"
 				RuntimeLibrary="0"
