@@ -194,11 +194,30 @@ AM_CPPFLAGS = \
 	-I$(srcdir)/daemon/util \
 	-I$(srcdir)/lib/par2
 
+if WITH_TESTS
+nzbget_SOURCES += \
+	lib/catch/catch.h \
+	tests/suite/TestMain.cpp \
+	tests/suite/TestMain.h \
+	tests/suite/TestUtil.cpp \
+	tests/suite/TestUtil.h \
+	tests/main/CommandLineParserTest.cpp \
+	tests/main/OptionsTest.cpp \
+	tests/feed/FeedFilterTest.cpp \
+	tests/postprocess/ParCheckerTest.cpp \
+	tests/postprocess/ParRenamerTest.cpp
+
+AM_CPPFLAGS += \
+	-I$(srcdir)/lib/catch \
+	-I$(srcdir)/tests/suite
+endif
+
 EXTRA_DIST = \
 	Makefile.cvs \
 	$(windows_FILES) \
 	$(osx_FILES) \
-	$(linux_FILES)
+	$(linux_FILES) \
+	$(testdata_FILES)
 
 windows_FILES = \
 	daemon/windows/NTService.cpp \
@@ -308,6 +327,15 @@ scripts_FILES = \
 	scripts/EMail.py \
 	scripts/Logger.py
 
+testdata_FILES = \
+	tests/testdata/parchecker/crc.txt \
+	tests/testdata/parchecker/testfile.dat \
+	tests/testdata/parchecker/testfile.nfo \
+	tests/testdata/parchecker/testfile.par2 \
+	tests/testdata/parchecker/testfile.vol00+1.PAR2 \
+	tests/testdata/parchecker/testfile.vol01+2.PAR2 \
+	tests/testdata/parchecker/testfile.vol03+3.PAR2
+
 # Install
 dist_doc_DATA = $(doc_FILES)
 exampleconfdir = $(datadir)/nzbget
@@ -397,4 +425,5 @@ dist-hook:
 	find $(distdir)/daemon -type f -print -exec chmod -x {} \;
 	find $(distdir)/webui -type f -print -exec chmod -x {} \;
 	find $(distdir)/lib -type f -print -exec chmod -x {} \;
+	find $(distdir)/tests -type f -print -exec chmod -x {} \;
 

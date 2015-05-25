@@ -714,6 +714,8 @@ WITH_PAR2_TRUE
 WITH_PAR2_FALSE
 openssl_CFLAGS
 openssl_LIBS
+WITH_TESTS_TRUE
+WITH_TESTS_FALSE
 LTLIBOBJS'
 ac_subst_files=''
       ac_precious_vars='build_alias
@@ -1325,6 +1327,7 @@ Optional Features:
                           do not use sigchld-handler (the disabling may be
                           neccessary on 32-Bit BSD)
   --enable-debug          enable debugging
+  --enable-tests          enable unit and integration tests
 
 Optional Packages:
   --with-PACKAGE[=ARG]    use PACKAGE [ARG=yes]
@@ -10325,6 +10328,46 @@ _ACEOF
 fi
 
 
+{ echo "$as_me:$LINENO: checking whether to enable unit and integration tests" >&5
+echo $ECHO_N "checking whether to enable unit and integration tests... $ECHO_C" >&6; }
+# Check whether --enable-tests was given.
+if test "${enable_tests+set}" = set; then
+  enableval=$enable_tests;  ENABLETESTS=$enableval
+else
+   ENABLETESTS=no
+fi
+
+{ echo "$as_me:$LINENO: result: $ENABLETESTS" >&5
+echo "${ECHO_T}$ENABLETESTS" >&6; }
+if test "$ENABLETESTS" = "yes"; then
+
+cat >>confdefs.h <<\_ACEOF
+#define ENABLE_TESTS 1
+_ACEOF
+
+
+
+if true; then
+  WITH_TESTS_TRUE=
+  WITH_TESTS_FALSE='#'
+else
+  WITH_TESTS_TRUE='#'
+  WITH_TESTS_FALSE=
+fi
+
+else
+
+
+if false; then
+  WITH_TESTS_TRUE=
+  WITH_TESTS_FALSE='#'
+else
+  WITH_TESTS_TRUE='#'
+  WITH_TESTS_FALSE=
+fi
+
+fi
+
 ac_config_files="$ac_config_files Makefile"
 
 cat >confcache <<\_ACEOF
@@ -10448,6 +10491,20 @@ if test -z "${WITH_PAR2_TRUE}" && test -z "${WITH_PAR2_FALSE}"; then
   { { echo "$as_me:$LINENO: error: conditional \"WITH_PAR2\" was never defined.
 Usually this means the macro was only invoked conditionally." >&5
 echo "$as_me: error: conditional \"WITH_PAR2\" was never defined.
+Usually this means the macro was only invoked conditionally." >&2;}
+   { (exit 1); exit 1; }; }
+fi
+if test -z "${WITH_TESTS_TRUE}" && test -z "${WITH_TESTS_FALSE}"; then
+  { { echo "$as_me:$LINENO: error: conditional \"WITH_TESTS\" was never defined.
+Usually this means the macro was only invoked conditionally." >&5
+echo "$as_me: error: conditional \"WITH_TESTS\" was never defined.
+Usually this means the macro was only invoked conditionally." >&2;}
+   { (exit 1); exit 1; }; }
+fi
+if test -z "${WITH_TESTS_TRUE}" && test -z "${WITH_TESTS_FALSE}"; then
+  { { echo "$as_me:$LINENO: error: conditional \"WITH_TESTS\" was never defined.
+Usually this means the macro was only invoked conditionally." >&5
+echo "$as_me: error: conditional \"WITH_TESTS\" was never defined.
 Usually this means the macro was only invoked conditionally." >&2;}
    { (exit 1); exit 1; }; }
 fi
@@ -11122,10 +11179,12 @@ for ac_last_try in false false false false false :; do
   cat >conf$$subs.sed <<_ACEOF
 openssl_CFLAGS!$openssl_CFLAGS$ac_delim
 openssl_LIBS!$openssl_LIBS$ac_delim
+WITH_TESTS_TRUE!$WITH_TESTS_TRUE$ac_delim
+WITH_TESTS_FALSE!$WITH_TESTS_FALSE$ac_delim
 LTLIBOBJS!$LTLIBOBJS$ac_delim
 _ACEOF
 
-  if test `sed -n "s/.*$ac_delim\$/X/p" conf$$subs.sed | grep -c X` = 3; then
+  if test `sed -n "s/.*$ac_delim\$/X/p" conf$$subs.sed | grep -c X` = 5; then
     break
   elif $ac_last_try; then
     { { echo "$as_me:$LINENO: error: could not make $CONFIG_STATUS" >&5

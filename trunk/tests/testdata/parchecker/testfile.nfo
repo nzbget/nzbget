@@ -3,14 +3,11 @@ NZBGet:
 	Bo Cordes Petersen <placebodk@users.sourceforge.net>	(versions ? - 0.2.3)
 	Sven Henkel <sidddy@users.sourceforge.net>				(versions 0.1.0 - ?)
 
-Par2:
+PAR2:
 	Peter Brian Clements <peterbclements@users.sourceforge.net>
 
-Par2 library API:
+PAR2 library API:
 	Francois Lesueur <flesueur@users.sourceforge.net>
-
-Catch:
-	Two Blue Cubes Ltd <https://github.com/philsquared/Catch>
 
 jQuery:
 	John Resig <http://jquery.com>

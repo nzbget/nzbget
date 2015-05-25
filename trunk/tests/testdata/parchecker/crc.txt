@@ -1,0 +1,2 @@
+testfile.dat 816ee541
+testfile.nfo 0f294d41

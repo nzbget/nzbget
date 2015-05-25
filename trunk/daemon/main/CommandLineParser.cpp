@@ -172,7 +172,7 @@ void CommandLineParser::InitCommandLine(int argc, const char* const_argv[])
 	}
 
 	// reset getopt
-	optind = 1;
+	optind = 0;
 
 	while (true)
 	{
