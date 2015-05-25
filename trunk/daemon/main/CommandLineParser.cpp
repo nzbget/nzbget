@@ -130,7 +130,7 @@ CommandLineParser::CommandLineParser(int argc, const char* argv[])
 		return;
 	}
 
-	if (!m_bPrintOptions)
+	if (!m_bPrintOptions && !m_bPrintUsage && !m_bPrintVersion)
 	{
 		InitFileArg(argc, argv);
 	}
