@@ -225,33 +225,34 @@ DetectArch()
 
 Unpack()
 {
+    mkdir -p "$OUTDIR"
+
     # Prepare list of files to ignore
     EXARCHS=""
     if test "$JUSTUNPACK" = "no" -a "$ARCH" != "all"; then
-        rm -f /tmp/nzbget-installer.tmp
+        rm -f "$OUTDIR/installer.tmp"
         for TARG in $ALLARCHS
         do
             if test "$TARG" != "$ARCH"; then
-                echo "nzbget-$TARG" >> /tmp/nzbget-installer.tmp
-                echo "unrar-$TARG" >> /tmp/nzbget-installer.tmp
-                echo "7za-$TARG" >> /tmp/nzbget-installer.tmp
-                EXARCHS="-X /tmp/nzbget-installer.tmp"
+                echo "nzbget-$TARG" >> "$OUTDIR/installer.tmp"
+                echo "unrar-$TARG" >> "$OUTDIR/installer.tmp"
+                echo "7za-$TARG" >> "$OUTDIR/installer.tmp"
+                EXARCHS="-X installer.tmp"
             fi
         done
     fi
 
     # Unpack (skip ignorable files)
-    mkdir -p $OUTDIR
-    dd "if=$0" bs=$HEADER skip=1 2> /dev/null | gzip -cd | ( cd $OUTDIR; tar x $EXARCHS 2>&1 ) || { Error "Unpacking failed."; kill -15 $$; }
+    dd "if=$0" bs=$HEADER skip=1 2> /dev/null | gzip -c -d | ( cd "$OUTDIR"; tar x $EXARCHS 2>&1 ) || { Error "Unpacking failed."; rm -f "$OUTDIR/installer.tmp"; kill -15 $$; }
 
     if test "$EXARCHS" != ""; then
-        rm -f /tmp/nzbget-installer.tmp
+        rm -f "$OUTDIR/installer.tmp"
     fi
 
     # Rename unpacked binaries files and store arch selection
     if test "$JUSTUNPACK" = "no" -a "$ARCH" != "all"; then
         OLDDIR=`pwd`
-        cd $OUTDIR;
+        cd "$OUTDIR"
         rm -f nzbget
         rm -f unrar
         rm -f 7za
@@ -260,13 +261,13 @@ Unpack()
         mv 7za-$ARCH 7za
         echo "arch=$ARCH" > "installer.cfg"
         echo "select=$SELECT" >> "installer.cfg"
-        cd $OLDDIR
+        cd "$OLDDIR"
     fi
 }
 
 TAR()
 {
-    dd "if=$0" bs=$HEADER skip=1 2> /dev/null | gzip -cd | tar "$ARG" $@
+    dd "if=$0" bs=$HEADER skip=1 2> /dev/null | gzip -c -d | tar "$ARG" $@
     exit $?
 }
 
@@ -308,7 +309,7 @@ Expr()
 
 Configure()
 {
-    cd $OUTDIR
+    cd "$OUTDIR"
     QUICKHELP=no
 
     if test ! -f nzbget.conf; then
