@@ -1861,7 +1861,7 @@ bool Par2Repairer::ScanDataFile(DiskFile                *diskfile,    // [in]
     }
   }
   sig_done(name,count, sourcefile && sourcefile->GetVerificationPacket() ? sourcefile->GetVerificationPacket()->BlockCount() : 0);
-  sig_progress(1000.0);
+  sig_progress(1000);
   return true;
 }
 

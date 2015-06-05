@@ -97,7 +97,7 @@ private:
 
 protected:
 	virtual void	sig_filename(std::string filename) { m_pOwner->signal_filename(filename); }
-	virtual void	sig_progress(double progress) { m_pOwner->signal_progress(progress); }
+	virtual void	sig_progress(int progress) { m_pOwner->signal_progress(progress); }
 	virtual void	sig_done(std::string filename, int available, int total) { m_pOwner->signal_done(filename, available, total); }
 
 	virtual bool	ScanDataFile(DiskFile *diskfile, Par2RepairerSourceFile* &sourcefile,
@@ -1107,7 +1107,7 @@ void ParChecker::signal_filename(std::string str)
 	UpdateProgress();
 }
 
-void ParChecker::signal_progress(double progress)
+void ParChecker::signal_progress(int progress)
 {
 	m_iFileProgress = (int)progress;
 
@@ -1149,7 +1149,7 @@ void ParChecker::signal_progress(double progress)
 		}
 	}
 
-	debug("Current-progres: %i, Total-progress: %i", m_iFileProgress, m_iStageProgress);
+	debug("Current-progress: %i, Total-progress: %i", m_iFileProgress, m_iStageProgress);
 
 	UpdateProgress();
 }
