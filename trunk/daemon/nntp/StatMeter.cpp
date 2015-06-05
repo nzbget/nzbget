@@ -468,9 +468,9 @@ void StatMeter::ResetSpeedStat()
 void StatMeter::LogDebugInfo()
 {
 	info("   ---------- SpeedMeter");
-	float fSpeed = (float)(CalcCurrentDownloadSpeed() / 1024.0);
+	int iSpeed = CalcCurrentDownloadSpeed() / 1024;
 	int iTimeDiff = (int)time(NULL) - m_iSpeedStartTime * SPEEDMETER_SLOTSIZE;
-	info("      Speed: %f", fSpeed);
+	info("      Speed: %i", iSpeed);
 	info("      SpeedStartTime: %i", m_iSpeedStartTime);
 	info("      SpeedTotalBytes: %i", m_iSpeedTotalBytes);
 	info("      SpeedBytesIndex: %i", m_iSpeedBytesIndex);

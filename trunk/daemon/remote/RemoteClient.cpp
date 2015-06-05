@@ -411,7 +411,7 @@ bool RemoteClient::RequestServerList(bool bFiles, bool bGroups, const char* szPa
 					szCompleted[0] = '\0';
 					if (pFileInfo->GetRemainingSize() < pFileInfo->GetSize())
 					{
-						sprintf(szCompleted, ", %i%s", (int)(100 - Util::Int64ToFloat(pFileInfo->GetRemainingSize()) * 100.0 / Util::Int64ToFloat(pFileInfo->GetSize())), "%");
+						sprintf(szCompleted, ", %i%s", (int)(100 - pFileInfo->GetRemainingSize() * 100 / pFileInfo->GetSize()), "%");
 					}
 
 					char szThreads[100];
@@ -435,9 +435,10 @@ bool RemoteClient::RequestServerList(bool bFiles, bool bGroups, const char* szPa
 
 					if (!szPattern || ((MatchedFileInfo*)pFileInfo)->m_bMatch)
 					{
-						printf("[%i] %s/%s (%.2f MB%s%s)%s\n", pFileInfo->GetID(), pFileInfo->GetNZBInfo()->GetName(),
+						char szSize[20];
+						printf("[%i] %s/%s (%s%s%s)%s\n", pFileInfo->GetID(), pFileInfo->GetNZBInfo()->GetName(),
 							pFileInfo->GetFilename(),
-							(float)(Util::Int64ToFloat(pFileInfo->GetSize()) / 1024.0 / 1024.0), 
+							Util::FormatSize(szSize, sizeof(szSize), pFileInfo->GetSize()),
 							szCompleted, szThreads, szStatus);
 						iMatches++;
 					}
@@ -457,14 +458,19 @@ bool RemoteClient::RequestServerList(bool bFiles, bool bGroups, const char* szPa
 			{
 				printf("Matches: %i\n", iMatches);
 			}
+
 			if (lPaused > 0)
 			{
-				printf("Remaining size: %.2f MB (+%.2f MB paused)\n", (float)(Util::Int64ToFloat(lRemaining) / 1024.0 / 1024.0), 
-					(float)(Util::Int64ToFloat(lPaused) / 1024.0 / 1024.0));
+				char szRemaining[20];
+				char szPausedSize[20];
+				printf("Remaining size: %s (+%s paused)\n",
+					Util::FormatSize(szRemaining, sizeof(szRemaining), lRemaining),
+					Util::FormatSize(szPausedSize, sizeof(szPausedSize), lPaused));
 			}
 			else
 			{
-				printf("Remaining size: %.2f MB\n", (float)(Util::Int64ToFloat(lRemaining) / 1024.0 / 1024.0));
+				char szRemaining[20];
+				printf("Remaining size: %s\n", Util::FormatSize(szRemaining, sizeof(szRemaining), lRemaining));
 			}
 		}
 	}
@@ -498,7 +504,7 @@ bool RemoteClient::RequestServerList(bool bFiles, bool bGroups, const char* szPa
 				lRemaining += lUnpausedRemainingSize;
 
 				char szRemaining[20];
-				Util::FormatFileSize(szRemaining, sizeof(szRemaining), lUnpausedRemainingSize);
+				Util::FormatSize(szRemaining, sizeof(szRemaining), lUnpausedRemainingSize);
 
 				char szPriority[100];
 				szPriority[0] = '\0';
@@ -512,7 +518,7 @@ bool RemoteClient::RequestServerList(bool bFiles, bool bGroups, const char* szPa
 				if (pNZBInfo->GetPausedSize() > 0)
 				{
 					char szPausedSize[20];
-					Util::FormatFileSize(szPausedSize, sizeof(szPausedSize), pNZBInfo->GetPausedSize());
+					Util::FormatSize(szPausedSize, sizeof(szPausedSize), pNZBInfo->GetPausedSize());
 					sprintf(szPaused, " + %s paused", szPausedSize);
 					lPaused += pNZBInfo->GetPausedSize();
 				}
@@ -586,14 +592,20 @@ bool RemoteClient::RequestServerList(bool bFiles, bool bGroups, const char* szPa
 				printf("Matches: %i\n", iMatches);
 			}
 			printf("Files: %i\n", iNrFileEntries);
+
 			if (lPaused > 0)
 			{
-				printf("Remaining size: %.2f MB (+%.2f MB paused)\n", (float)(Util::Int64ToFloat(lRemaining) / 1024.0 / 1024.0), 
-					(float)(Util::Int64ToFloat(lPaused) / 1024.0 / 1024.0));
+				char szRemaining[20];
+				char szPausedSize[20];
+				printf("Remaining size: %s (+%s paused)\n",
+					Util::FormatSize(szRemaining, sizeof(szRemaining), lRemaining),
+					Util::FormatSize(szPausedSize, sizeof(szPausedSize), lPaused));
 			}
 			else
 			{
-				printf("Remaining size: %.2f MB\n", (float)(Util::Int64ToFloat(lRemaining) / 1024.0 / 1024.0));
+				char szRemaining[20];
+				printf("Remaining size: %s\n",
+					Util::FormatSize(szRemaining, sizeof(szRemaining), lRemaining));
 			}
 
 			DownloadQueue::Unlock();
@@ -606,7 +618,8 @@ bool RemoteClient::RequestServerList(bool bFiles, bool bGroups, const char* szPa
 
 	if (!bFiles && !bGroups)
 	{
-		printf("Remaining size: %.2f MB\n", (float)(Util::Int64ToFloat(lRemaining) / 1024.0 / 1024.0));
+		char szRemaining[20];
+		printf("Remaining size: %s\n", Util::FormatSize(szRemaining, sizeof(szRemaining), lRemaining));
 	}
 
     if (ntohl(ListResponse.m_iDownloadRate) > 0 && 
@@ -621,15 +634,18 @@ bool RemoteClient::RequestServerList(bool bFiles, bool bGroups, const char* szPa
 		printf("Remaining time: %.2d:%.2d:%.2d\n", h, m, s);
     }
 
-	printf("Current download rate: %.1f KB/s\n", (float)(ntohl(ListResponse.m_iDownloadRate) / 1024.0));
+	char szSpeed[20];
+	printf("Current download rate: %s\n",
+		Util::FormatSpeed(szSpeed, sizeof(szSpeed), ntohl(ListResponse.m_iDownloadRate)));
 
 	long long iAllBytes = Util::JoinInt64(ntohl(ListResponse.m_iDownloadedBytesHi), ntohl(ListResponse.m_iDownloadedBytesLo));
-	float fAverageSpeed = Util::Int64ToFloat(ntohl(ListResponse.m_iDownloadTimeSec) > 0 ? iAllBytes / ntohl(ListResponse.m_iDownloadTimeSec) : 0);
-	printf("Session download rate: %.1f KB/s\n", (float)(fAverageSpeed / 1024.0));
+	int iAverageSpeed = ntohl(ListResponse.m_iDownloadTimeSec) > 0 ? iAllBytes / ntohl(ListResponse.m_iDownloadTimeSec) : 0;
+	printf("Session download rate: %s\n", Util::FormatSpeed(szSpeed, sizeof(szSpeed), iAverageSpeed));
 
 	if (ntohl(ListResponse.m_iDownloadLimit) > 0)
 	{
-		printf("Speed limit: %.1f KB/s\n", (float)(ntohl(ListResponse.m_iDownloadLimit) / 1024.0));
+		printf("Speed limit: %s\n",
+			Util::FormatSpeed(szSpeed, sizeof(szSpeed), ntohl(ListResponse.m_iDownloadLimit)));
 	}
 
 	int sec = ntohl(ListResponse.m_iUpTimeSec);
@@ -644,7 +660,8 @@ bool RemoteClient::RequestServerList(bool bFiles, bool bGroups, const char* szPa
 	s = sec % 60;
 	printf("Download time: %.2d:%.2d:%.2d\n", h, m, s);
 
-	printf("Downloaded: %.2f MB\n", (float)(Util::Int64ToFloat(iAllBytes) / 1024.0 / 1024.0));
+	char szSize[20];
+	printf("Downloaded: %s\n", Util::FormatSize(szSize, sizeof(szSize), iAllBytes));
 
 	printf("Threads running: %i\n", ntohl(ListResponse.m_iThreadCount));
 
@@ -1182,7 +1199,7 @@ bool RemoteClient::RequestHistory(bool bWithHidden)
 				long long lSize = Util::JoinInt64(ntohl(pListAnswer->m_iSizeHi), ntohl(pListAnswer->m_iSizeLo));
 
 				char szSize[20];
-				Util::FormatFileSize(szSize, sizeof(szSize), lSize);
+				Util::FormatSize(szSize, sizeof(szSize), lSize);
 
 				const char* szParStatusText[] = { "", "", ", Par failed", ", Par successful", ", Repair possible", ", Repair needed" };
 				const char* szScriptStatusText[] = { "", ", Script status unknown", ", Script failed", ", Script successful" };

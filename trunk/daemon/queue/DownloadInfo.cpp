@@ -582,9 +582,8 @@ int NZBInfo::CalcHealth()
 		return 1000;
 	}
 
-	int iHealth = (int)(Util::Int64ToFloat(m_lSize - m_lParSize -
-		(m_lCurrentFailedSize - m_lParCurrentFailedSize)) * 1000.0 /
-		Util::Int64ToFloat(m_lSize - m_lParSize));
+	int iHealth = (int)((m_lSize - m_lParSize -
+		(m_lCurrentFailedSize - m_lParCurrentFailedSize)) * 1000 / (m_lSize - m_lParSize));
 
 	if (iHealth == 1000 && m_lCurrentFailedSize - m_lParCurrentFailedSize > 0)
 	{
@@ -602,8 +601,7 @@ int NZBInfo::CalcCriticalHealth(bool bAllowEstimation)
 	}
 
 	long long lGoodParSize = m_lParSize - m_lParCurrentFailedSize;
-	int iCriticalHealth = (int)(Util::Int64ToFloat(m_lSize - lGoodParSize*2) * 1000.0 /
-		Util::Int64ToFloat(m_lSize - lGoodParSize));
+	int iCriticalHealth = (int)((m_lSize - lGoodParSize*2) * 1000 / (m_lSize - lGoodParSize));
 
 	if (lGoodParSize*2 > m_lSize)
 	{

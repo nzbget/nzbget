@@ -925,7 +925,7 @@ void Options::InitOptions()
 	m_szExtCleanupDisk		= strdup(GetOption(OPTION_EXTCLEANUPDISK));
 	m_szParIgnoreExt		= strdup(GetOption(OPTION_PARIGNOREEXT));
 
-	m_iDownloadRate			= (int)(ParseFloatValue(OPTION_DOWNLOADRATE) * 1024);
+	m_iDownloadRate			= ParseIntValue(OPTION_DOWNLOADRATE, 10);
 	m_iArticleTimeout		= ParseIntValue(OPTION_ARTICLETIMEOUT, 10);
 	m_iUrlTimeout			= ParseIntValue(OPTION_URLTIMEOUT, 10);
 	m_iTerminateTimeout		= ParseIntValue(OPTION_TERMINATETIMEOUT, 10);
@@ -1084,29 +1084,6 @@ int Options::ParseIntValue(const char* OptName, int iBase)
 		ConfigError("Invalid value for option \"%s\": \"%s\"", OptName, pOptEntry->GetValue());
 		pOptEntry->SetValue(pOptEntry->GetDefValue());
 		val = strtol(pOptEntry->GetDefValue(), NULL, iBase);
-	}
-
-	return val;
-}
-
-float Options::ParseFloatValue(const char* OptName)
-{
-	OptEntry* pOptEntry = FindOption(OptName);
-	if (!pOptEntry)
-	{
-		ConfigError("Undefined value for option \"%s\"\n", OptName);
-		return 0;
-	}
-
-	char *endptr;
-	float val = (float)strtod(pOptEntry->GetValue(), &endptr);
-
-	if (endptr && *endptr != '\0')
-	{
-		m_iConfigLine = pOptEntry->GetLineNo();
-		ConfigError("Invalid value for option \"%s\": \"%s\"", OptName, pOptEntry->GetValue());
-		pOptEntry->SetValue(pOptEntry->GetDefValue());
-		val = (float)strtod(pOptEntry->GetDefValue(), NULL);
 	}
 
 	return val;

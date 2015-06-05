@@ -112,11 +112,11 @@ public:
 #endif
 	static void ExpandFileName(const char* szFilename, char* szBuffer, int iBufSize);
 	static void GetExeFileName(const char* argv0, char* szBuffer, int iBufSize);
-	static void FormatFileSize(char* szBuffer, int iBufLen, long long lFileSize);
+	static char* FormatSpeed(char* szBuffer, int iBufSize, int iBytesPerSecond);
+	static char* FormatSize(char* szBuffer, int iBufLen, long long lFileSize);
 	static bool SameFilename(const char* szFilename1, const char* szFilename2);
 	static bool MatchFileExt(const char* szFilename, const char* szExtensionList, const char* szListSeparator);
 	static char* GetLastErrorMessage(char* szBuffer, int iBufLen);
-	static void FormatSpeed(int iBytesPerSecond, char* szBuffer, int iBufSize);
 
 	/*
 	 * Split command line int arguments.
@@ -134,13 +134,6 @@ public:
 
 	static long long JoinInt64(unsigned long Hi, unsigned long Lo);
 	static void SplitInt64(long long Int64, unsigned long* Hi, unsigned long* Lo);
-
-	/**
-	 * Int64ToFloat converts Int64 to float.
-	 * Simple (float)Int64 does not work on all compilers,
-	 * for example on ARM for NSLU2 (unslung).
-	 */
-	static float Int64ToFloat(long long Int64);
 
 	static void TrimRight(char* szStr);
 	static char* Trim(char* szStr);
