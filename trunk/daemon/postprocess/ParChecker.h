@@ -135,7 +135,7 @@ private:
 	void				SaveSourceList();
 	void				DeleteLeftovers();
 	void				signal_filename(std::string str);
-	void				signal_progress(double progress);
+	void				signal_progress(int progress);
 	void				signal_done(std::string str, int available, int total);
 	// declared as void* to prevent the including of libpar2-headers into this header-file
 	// DiskFile* pDiskfile, Par2RepairerSourceFile* pSourcefile

@@ -125,7 +125,7 @@ protected:
 
   // Signals
   virtual void sig_filename(std::string filename) {}
-  virtual void sig_progress(double progress) {}
+  virtual void sig_progress(int progress) {}
   virtual void sig_headers(ParHeaders* headers) {}
   virtual void sig_done(std::string filename, int available, int total) {}
 
