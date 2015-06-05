@@ -85,7 +85,7 @@ private:
 	bool				m_bShowNZBname;
 	bool				m_bShowTimestamp;
 	bool				m_bGroupFiles;
-	float				m_QueueWindowPercentage;
+	int					m_QueueWindowPercentage;
 
 #ifdef WIN32
 	void			init_pair(int iColorNumber, WORD wForeColor, WORD wBackColor);

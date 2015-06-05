@@ -625,13 +625,6 @@ void Util::SplitInt64(long long Int64, unsigned long* Hi, unsigned long* Lo)
 	*Lo = (unsigned long)(Int64 & 0xFFFFFFFF);
 }
 
-float Util::Int64ToFloat(long long Int64)
-{
-	unsigned long Hi, Lo;
-	SplitInt64(Int64, &Hi, &Lo);
-	return ((unsigned long)(1 << 30)) * 4.0f * Hi + Lo;
-}
-
 /* Base64 decryption is taken from 
  *  Article "BASE 64 Decoding and Encoding Class 2003" by Jan Raddatz
  *  http://www.codeguru.com/cpp/cpp/algorithms/article.php/c5099/
@@ -1009,25 +1002,53 @@ void Util::GetExeFileName(const char* argv0, char* szBuffer, int iBufSize)
 #endif
 }
 
-void Util::FormatFileSize(char * szBuffer, int iBufLen, long long lFileSize)
+char* Util::FormatSize(char * szBuffer, int iBufLen, long long lFileSize)
 {
 	if (lFileSize > 1024 * 1024 * 1000)
 	{
-		snprintf(szBuffer, iBufLen, "%.2f GB", (float)(Util::Int64ToFloat(lFileSize) / 1024 / 1024 / 1024));
+		snprintf(szBuffer, iBufLen, "%.2f GB", (float)((float)lFileSize / 1024 / 1024 / 1024));
 	}
 	else if (lFileSize > 1024 * 1000)
 	{
-		snprintf(szBuffer, iBufLen, "%.2f MB", (float)(Util::Int64ToFloat(lFileSize) / 1024 / 1024));
+		snprintf(szBuffer, iBufLen, "%.2f MB", (float)((float)lFileSize / 1024 / 1024));
 	}
 	else if (lFileSize > 1000)
 	{
-		snprintf(szBuffer, iBufLen, "%.2f KB", (float)(Util::Int64ToFloat(lFileSize) / 1024));
+		snprintf(szBuffer, iBufLen, "%.2f KB", (float)((float)lFileSize / 1024));
 	}
-	else 
+	else if (lFileSize == 0)
+	{
+		strncpy(szBuffer, "0 MB", iBufLen);
+	}
+	else
 	{
 		snprintf(szBuffer, iBufLen, "%i B", (int)lFileSize);
 	}
 	szBuffer[iBufLen - 1] = '\0';
+	return szBuffer;
+}
+
+char* Util::FormatSpeed(char* szBuffer, int iBufSize, int iBytesPerSecond)
+{
+	if (iBytesPerSecond >= 100 * 1024 * 1024)
+	{
+		snprintf(szBuffer, iBufSize, "%i MB/s", iBytesPerSecond / 1024 / 1024);
+	}
+	else if (iBytesPerSecond >= 10 * 1024 * 1024)
+	{
+		snprintf(szBuffer, iBufSize, "%0.1f MB/s", (float)iBytesPerSecond / 1024.0 / 1024.0);
+	}
+	else if (iBytesPerSecond >= 1024 * 1000)
+	{
+		snprintf(szBuffer, iBufSize, "%0.2f MB/s", (float)iBytesPerSecond / 1024.0 / 1024.0);
+	}
+	else
+	{
+		snprintf(szBuffer, iBufSize, "%i KB/s", iBytesPerSecond / 1024);
+	}
+
+	szBuffer[iBufSize - 1] = '\0';
+	return szBuffer;
 }
 
 bool Util::SameFilename(const char* szFilename1, const char* szFilename2)
@@ -1083,28 +1104,6 @@ char* Util::GetLastErrorMessage(char* szBuffer, int iBufLen)
 	strerror_r(errno, szBuffer, iBufLen);
 	szBuffer[iBufLen-1] = '\0';
 	return szBuffer;
-}
-
-void Util::FormatSpeed(int iBytesPerSecond, char* szBuffer, int iBufSize)
-{
-	if (iBytesPerSecond >= 100 * 1024 * 1024)
-	{
-		snprintf(szBuffer, iBufSize, "%i MB/s", iBytesPerSecond / 1024 / 1024);
-	}
-	else if (iBytesPerSecond >= 10 * 1024 * 1024)
-	{
-		snprintf(szBuffer, iBufSize, "%0.1f MB/s", (float)iBytesPerSecond / 1024.0 / 1024.0);
-	}
-	else if (iBytesPerSecond >= 1024 * 1000)
-	{
-		snprintf(szBuffer, iBufSize, "%0.2f MB/s", (float)iBytesPerSecond / 1024.0 / 1024.0);
-	}
-	else
-	{
-		snprintf(szBuffer, iBufSize, "%i KB/s", iBytesPerSecond / 1024);
-	}
-
-	szBuffer[iBufSize - 1] = '\0';
 }
 
 void Util::InitVersionRevision()

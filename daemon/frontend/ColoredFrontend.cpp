@@ -88,7 +88,7 @@ void ColoredFrontend::PrintStatus()
 	char szDownloadLimit[128];
 	if (m_iDownloadLimit > 0)
 	{
-		sprintf(szDownloadLimit, ", Limit %.0f KB/s", (float)m_iDownloadLimit / 1024.0);
+		sprintf(szDownloadLimit, ", Limit %i KB/s", m_iDownloadLimit / 1024);
 	}
 	else
 	{
@@ -112,10 +112,12 @@ void ColoredFrontend::PrintStatus()
 	const char* szControlSeq = "\033[K";
 #endif
 
-	snprintf(tmp, 1024, " %d threads, %.*f KB/s, %.2f MB remaining%s%s%s%s%s\n", 
-		m_iThreadCount, (iCurrentDownloadSpeed >= 10*1024 ? 0 : 1), (float)iCurrentDownloadSpeed / 1024.0, 
-		(float)(Util::Int64ToFloat(m_lRemainingSize) / 1024.0 / 1024.0), timeString, szPostStatus, 
-		m_bPauseDownload ? (m_bStandBy ? ", Paused" : ", Pausing") : "",
+	char szFileSize[20];
+	char szCurrendSpeed[20];
+	snprintf(tmp, 1024, " %d threads, %s, %s remaining%s%s%s%s%s\n",
+		m_iThreadCount, Util::FormatSpeed(szCurrendSpeed, sizeof(szCurrendSpeed), iCurrentDownloadSpeed),
+		Util::FormatSize(szFileSize, sizeof(szFileSize), m_lRemainingSize),
+		timeString, szPostStatus, m_bPauseDownload ? (m_bStandBy ? ", Paused" : ", Pausing") : "",
 		szDownloadLimit, szControlSeq);
 	tmp[1024-1] = '\0';
 	printf("%s", tmp);
