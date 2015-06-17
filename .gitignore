@@ -1,0 +1,61 @@
+# Compiled Object files
+*.slo
+*.lo
+*.o
+*.obj
+
+# Precompiled Headers
+*.gch
+*.pch
+
+# Compiled Dynamic libraries
+*.so
+*.dylib
+*.dll
+
+# Compiled Static libraries
+*.lai
+*.la
+*.a
+*.lib
+
+# Executables
+*.exe
+*.out
+
+# GNU Autotools
+.deps/
+config.h
+config.log
+config.status
+Makefile
+stamp-h1
+
+# Visual Studio User-specific files
+*.suo
+*.user
+*.userosscache
+*.sln.docstates
+.vs/
+ipch/
+*.aps
+*.ncb
+*.opensdf
+*.sdf
+*.cachefile
+*.ilk
+*.pch
+*.pdb
+*.pgc
+*.pgd
+*.rsp
+*.sbr
+*.vspscc
+*.vssscc
+*.pidb
+*.svclog
+*.scc
+
+# NZBGet specific
+nzbget
+svn_version.cpp
