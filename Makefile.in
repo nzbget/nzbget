@@ -2378,8 +2378,21 @@ uninstall-conf:
 # 3) If neither directory ".svn" nor file "svn_version.cpp" are available
 #    we create new file "svn_version.c" with empty revision number.
 svn_version.cpp: FORCE
-	@ if test -d ./.svn ; then \
-		V="$(shell svnversion -n .)"; \
+	@ if test -d ./.git ; then \
+		B="$(shell git branch | sed -n -e 's/^\* \(.*\)/\1/p')"; \
+		M="$(shell git status --porcelain)" ; \
+		if test "$$M" != "" ; then \
+			M="M" ; \
+		fi ; \
+		if test "$$B" = "master" ; then \
+			V="$$M" ; \
+		elif test "$$B" = "develop" ; then \
+			V="$(shell git rev-list HEAD | wc -l | xargs)" ; \
+			V="$${V}$$M" ; \
+		else \
+			V="$(shell git rev-list HEAD | wc -l | xargs)" ; \
+			V="$${V}$$M ($$B)" ; \
+		fi ; \
 		H="$(shell test -f ./svn_version.cpp && head -n 1 svn_version.cpp)"; \
 		if test "/* $$V */" != "$$H" ; then \
 			( \
