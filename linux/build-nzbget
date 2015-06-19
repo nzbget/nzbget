@@ -38,8 +38,8 @@ echo "Usage:"
 echo "  $(basename $0) [targets] [output] [revision] [reppath] [configs] [cleanup]"
 echo "    targets   : all (default) $ALLTARGETS"
 echo "    output    : bin installer"
-echo "    revision  : head (default) rXXXX work"
-echo "    reppath   : trunk (default) tags/XXX branches/XXX"
+echo "    revision  : head (default) work <commit-hash>"
+echo "    branch    : develop (default) master tags/XXX branches/XXX"
 echo "    configs   : release debug (default) release-nostrip debug-strip"
 echo "    cleanup   : cleanup output directory before building"
 echo
@@ -51,7 +51,7 @@ BUILD=no
 TARGETS=""
 OUTPUTS=""
 REVISION=""
-REPPATH=""
+BRANCH=""
 CONFIGS=""
 CLEAN=no
 
@@ -62,10 +62,13 @@ do
             # using xargs to trim spaces
             CONFIGS=`echo "$CONFIGS $PARAM" | xargs`
             ;;
-        trunk|tags/*|branches/*)
-            REPPATH="$PARAM"
+        master|develop|tags/*)
+            BRANCH="$PARAM"
             ;;
-        head|work|r[0-9]|r[0-9][0-9]|r[0-9][0-9][0-9]|r[0-9][0-9][0-9][0-9])
+        branches/*)
+            BRANCH="${PARAM:9}"
+            ;;
+        head|work|[0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f]*)
             REVISION="$PARAM"
             ;;
         clean|cleanup)
@@ -107,8 +110,8 @@ if [ "$REVISION" == "" ]; then
     REVISION="head"
 fi
 
-if [ "$REPPATH" == "" ]; then
-    REPPATH="trunk"
+if [ "$BRANCH" == "" ]; then
+    BRANCH="develop"
 fi
 
 if [ "$CONFIGS" == "" ]; then
@@ -119,37 +122,54 @@ echo "Active configuration:"
 echo "  targets  : $TARGETS"
 echo "  outputs  : $OUTPUTS"
 echo "  revision : $REVISION"
-echo "  reppath  : $REPPATH"
+echo "  branch   : $BRANCH"
 echo "  configs  : $CONFIGS"
 echo "  cleanup  : $CLEAN"
 echo 
 
 
-# Checkout and update from svn
+# Checkout and update from git
+
+if [ ! -d nzbget ]; then
+    echo "Initial checkout"
+    git clone https://github.com/nzbget/nzbget.git
+fi
 
 cd nzbget
 
-if [ ! -d $REPPATH ]; then
-    echo "Initial checkout for $REPPATH"
-    svn co https://svn.code.sf.net/p/nzbget/code/$REPPATH $REPPATH
-fi
-
-BUILDDIR=$ROOT/nzbget/$REPPATH
+BUILDDIR=$ROOT/nzbget
 
 cd $BUILDDIR
 
 if [ "$REVISION" != "work" ]; then
     echo "Updating to $REVISION"
-    svn -r $REVISION up
+    git checkout $BRANCH
+	if [ "$REVISION" != "head" ]; then
+	    git checkout $REVISION
+	fi
     touch Makefile.in configure config.h.in
 fi
-
 
 # File name format for output files
 
 VERSION=`grep "AM_INIT_AUTOMAKE(nzbget, " configure.ac`
 VERSION=`expr "$VERSION" : '.*, \(.*\))'`
-REVISION=`svnversion`
+
+# Building revision name
+B=`git branch | sed -n -e 's/^\* \(.*\)/\1/p' | sed 's/ /-/g' | sed 's/(//g' | sed 's/)//g'`
+M=`git status --porcelain`
+if [ "$M" != "" ]; then
+	M="M"
+fi
+if [ "$B" == "master" ]; then
+	REVISION="$M"
+elif [ "$B" == "develop" ]; then
+	REVISION=`git rev-list HEAD | wc -l | xargs`
+	REVISION="${REVISION}$M"
+else
+	REVISION=`git rev-list HEAD | wc -l | xargs`
+	REVISION="${REVISION}$M-($B)"
+fi
 
 BASENAME="nzbget-$VERSION"
 if [ `expr "$VERSION" : ".*-testing"` != 0 ]; then
