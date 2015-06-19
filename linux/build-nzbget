@@ -176,9 +176,6 @@ if [ `expr "$VERSION" : ".*-testing"` != 0 ]; then
     BASENAME="$BASENAME-r$REVISION"
 fi
 
-echo "BASENAME: $BASENAME"
-
-exit
 
 # Building
 
