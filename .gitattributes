@@ -1,0 +1,14 @@
+lib/* linguist-vendored linguist-language=C++
+webui/lib/* linguist-vendored
+
+Makefile.in linguist-vendored
+configure linguist-vendored
+config.sub linguist-vendored
+aclocal.m4 linguist-vendored
+config.guess linguist-vendored
+depcomp linguist-vendored
+install-sh linguist-vendored
+missing linguist-vendored
+
+configure.ac linguist-vendored=false
+Makefile.am linguist-vendored=false
