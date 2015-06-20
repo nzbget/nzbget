@@ -213,7 +213,6 @@ AM_CPPFLAGS += \
 endif
 
 EXTRA_DIST = \
-	Makefile.cvs \
 	$(windows_FILES) \
 	$(osx_FILES) \
 	$(linux_FILES) \
