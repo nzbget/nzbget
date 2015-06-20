@@ -1,3 +1,30 @@
+#######################################
+## Configure line endings
+
+# Set the default behavior, in case people don't have core.autocrlf set.
+* text=auto
+
+# Declare files that will always have CRLF line endings on checkout (Windows stuff).
+*.sln text eol=crlf
+*.nsi text eol=crlf
+*.bat text eol=crlf
+*.vcproj text eol=crlf
+README-WINDOWS.txt text eol=crlf
+
+# Denote all files that are truly binary and should not be modified.
+*.png binary
+*.jpg binary
+*.jpeg binary
+*.gif binary
+*.ico binary
+*.bmp binary
+*.icns binary
+*.rtf binary
+
+
+#######################################
+## Configure GitHub's language detector
+
 lib/* linguist-vendored linguist-language=C++
 webui/lib/* linguist-vendored
 
