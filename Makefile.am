@@ -1,7 +1,7 @@
 #
 #  This file is part of nzbget
 #
-# Copyright (C) 2008-2014 Andrey Prygunkov <hugbug@users.sourceforge.net>
+# Copyright (C) 2008-2015 Andrey Prygunkov <hugbug@users.sourceforge.net>
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -376,12 +376,12 @@ install-conf:
 uninstall-conf:
 	rm -f "$(DESTDIR)$(sysconfdir)/nzbget.conf"
 
-# Determining subversion revision:
-# 1) If directory ".svn" exists we take revision from it using program svnversion (part of subversion package)
+# Determining git revision:
+# 1) If directory ".git" exists we take revision from git log.
 #    File is recreated only if revision number was changed.
-# 2) If directory ".svn" doesn't exists we keep and reuse file "svn_version.cpp",
+# 2) If directory ".git" doesn't exists we keep and reuse file "svn_version.cpp",
 #    which was possibly created early.
-# 3) If neither directory ".svn" nor file "svn_version.cpp" are available
+# 3) If neither directory ".git" nor file "svn_version.cpp" are available
 #    we create new file "svn_version.c" with empty revision number.
 svn_version.cpp: FORCE
 	@ if test -d ./.git ; then \
