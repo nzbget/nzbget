@@ -30,6 +30,7 @@ config.log
 config.status
 Makefile
 stamp-h1
+autom4te.cache/
 
 # Visual Studio User-specific files
 *.suo
