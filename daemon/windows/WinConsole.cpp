@@ -793,7 +793,7 @@ void WinConsole::UpdateTrayIcon()
 	{
 		m_pNidIcon->hIcon = m_hWorkingIcon;
 		char szSpeed[100];
-		Util::FormatSpeed(g_pStatMeter->CalcCurrentDownloadSpeed(), szSpeed, sizeof(szSpeed));
+		Util::FormatSpeed(szSpeed, sizeof(szSpeed), g_pStatMeter->CalcCurrentDownloadSpeed());
 		char szTip[200];
 		snprintf(szTip, sizeof(szTip), "NZBGet - downloading at %s", szSpeed);
 		szTip[200-1] = '\0';
