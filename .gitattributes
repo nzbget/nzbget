@@ -1,15 +1,18 @@
 #######################################
 ## Configure line endings
 
-# Set the default behavior, in case people don't have core.autocrlf set.
-* text=auto
+# Use LF by default.
+* text eol=lf
 
-# Declare files that will always have CRLF line endings on checkout (Windows stuff).
+# Use CRLF for certain Windows files.
+*.vcproj text eol=crlf
 *.sln text eol=crlf
 *.nsi text eol=crlf
 *.bat text eol=crlf
-*.vcproj text eol=crlf
 README-WINDOWS.txt text eol=crlf
+windows/package-info.json text eol=crlf
+windows/resources/resource.h text eol=crlf
+windows/resources/nzbget.rc text eol=crlf
 
 # Denote all files that are truly binary and should not be modified.
 *.png binary
@@ -21,6 +24,8 @@ README-WINDOWS.txt text eol=crlf
 *.icns binary
 *.rtf binary
 
+# Inherited stuff
+lib/par2/README text eol=crlf
 
 #######################################
 ## Configure GitHub's language detector
