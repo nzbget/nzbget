@@ -203,6 +203,12 @@ public:
 	static bool XmlParseTagValue(const char* szXml, const char* szTag, char* szValueBuf, int iValueBufSize, const char** pTagEnd);
 
 	/*
+	 * Replaces all tags with spaces effectively providing the text content only.
+	 * The string is transformed in-place overwriting the previous content.
+	 */
+	static void XmlStripTags(char* szXml);
+
+	/*
 	 * Creates JSON-string by replace the certain characters with escape-sequences.
 	 * Returns new string allocated with malloc, it need to be freed by caller.
 	 */

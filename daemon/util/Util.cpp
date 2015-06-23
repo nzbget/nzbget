@@ -1835,6 +1835,20 @@ bool WebUtil::XmlParseTagValue(const char* szXml, const char* szTag, char* szVal
 	return true;
 }
 
+void WebUtil::XmlStripTags(char* szXml)
+{
+	while (char *start = strchr(szXml, '<'))
+	{
+		char *end = strchr(start, '>');
+		if (!end)
+		{
+			break;
+		}
+		memset(start, ' ', end - start + 1);
+		szXml = end + 1;
+	}
+}
+
 char* WebUtil::JsonEncode(const char* raw)
 {
 	// calculate the required outputstring-size based on number of escape-entities and their sizes
