@@ -1768,9 +1768,10 @@ void WebUtil::XmlDecode(char* raw)
 					}
 					else
 					{
-						// unknown entity
-						*output++ = *(p-1);
-						p++;
+						// unknown entity, replace with a space
+						p = strchr(p+1, ';');
+						if (p) p++;
+						*output++ = ' ';
 					}
 					break;
 				}

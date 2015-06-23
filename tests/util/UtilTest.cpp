@@ -37,3 +37,15 @@ TEST_CASE("WebUtil: XmlStripTags", "[Util][Quick]")
 
 	free(szTestString);
 }
+
+TEST_CASE("WebUtil: XmlDecode", "[Util][Quick]")
+{
+	const char* szXml  = "Poster: Bob &lt;bob@home&gt; bad&mdash;and there&#039;s one thing";
+	const char* szText = "Poster: Bob <bob@home> bad and there's one thing";
+	char* szTestString = strdup(szXml);
+	WebUtil::XmlDecode(szTestString);
+
+	REQUIRE(strcmp(szTestString, szText) == 0);
+
+	free(szTestString);
+}
