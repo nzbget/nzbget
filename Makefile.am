@@ -205,7 +205,8 @@ nzbget_SOURCES += \
 	tests/main/OptionsTest.cpp \
 	tests/feed/FeedFilterTest.cpp \
 	tests/postprocess/ParCheckerTest.cpp \
-	tests/postprocess/ParRenamerTest.cpp
+	tests/postprocess/ParRenamerTest.cpp \
+	tests/util/UtilTest.cpp
 
 AM_CPPFLAGS += \
 	-I$(srcdir)/lib/catch \

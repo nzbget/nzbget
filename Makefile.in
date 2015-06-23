@@ -115,7 +115,8 @@ bin_PROGRAMS = nzbget$(EXEEXT)
 @WITH_TESTS_TRUE@	tests/main/OptionsTest.cpp \
 @WITH_TESTS_TRUE@	tests/feed/FeedFilterTest.cpp \
 @WITH_TESTS_TRUE@	tests/postprocess/ParCheckerTest.cpp \
-@WITH_TESTS_TRUE@	tests/postprocess/ParRenamerTest.cpp
+@WITH_TESTS_TRUE@	tests/postprocess/ParRenamerTest.cpp \
+@WITH_TESTS_TRUE@	tests/util/UtilTest.cpp
 
 @WITH_TESTS_TRUE@am__append_3 = \
 @WITH_TESTS_TRUE@	-I$(srcdir)/lib/catch \
@@ -235,7 +236,7 @@ am__nzbget_SOURCES_DIST = daemon/connect/Connection.cpp \
 	tests/suite/TestUtil.h tests/main/CommandLineParserTest.cpp \
 	tests/main/OptionsTest.cpp tests/feed/FeedFilterTest.cpp \
 	tests/postprocess/ParCheckerTest.cpp \
-	tests/postprocess/ParRenamerTest.cpp
+	tests/postprocess/ParRenamerTest.cpp tests/util/UtilTest.cpp
 @WITH_PAR2_TRUE@am__objects_1 = commandline.$(OBJEXT) crc.$(OBJEXT) \
 @WITH_PAR2_TRUE@	creatorpacket.$(OBJEXT) \
 @WITH_PAR2_TRUE@	criticalpacket.$(OBJEXT) datablock.$(OBJEXT) \
@@ -255,7 +256,7 @@ am__nzbget_SOURCES_DIST = daemon/connect/Connection.cpp \
 @WITH_TESTS_TRUE@	OptionsTest.$(OBJEXT) \
 @WITH_TESTS_TRUE@	FeedFilterTest.$(OBJEXT) \
 @WITH_TESTS_TRUE@	ParCheckerTest.$(OBJEXT) \
-@WITH_TESTS_TRUE@	ParRenamerTest.$(OBJEXT)
+@WITH_TESTS_TRUE@	ParRenamerTest.$(OBJEXT) UtilTest.$(OBJEXT)
 am_nzbget_OBJECTS = Connection.$(OBJEXT) TLS.$(OBJEXT) \
 	WebDownloader.$(OBJEXT) NzbScript.$(OBJEXT) \
 	PostScript.$(OBJEXT) QueueScript.$(OBJEXT) \
@@ -807,6 +808,7 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/Unpack.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/UrlCoordinator.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/Util.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/UtilTest.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/WebDownloader.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/WebServer.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/XmlRpc.Po@am__quote@
@@ -1994,6 +1996,20 @@ ParRenamerTest.obj: tests/postprocess/ParRenamerTest.cpp
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='tests/postprocess/ParRenamerTest.cpp' object='ParRenamerTest.obj' libtool=no @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o ParRenamerTest.obj `if test -f 'tests/postprocess/ParRenamerTest.cpp'; then $(CYGPATH_W) 'tests/postprocess/ParRenamerTest.cpp'; else $(CYGPATH_W) '$(srcdir)/tests/postprocess/ParRenamerTest.cpp'; fi`
+
+UtilTest.o: tests/util/UtilTest.cpp
+@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT UtilTest.o -MD -MP -MF "$(DEPDIR)/UtilTest.Tpo" -c -o UtilTest.o `test -f 'tests/util/UtilTest.cpp' || echo '$(srcdir)/'`tests/util/UtilTest.cpp; \
+@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/UtilTest.Tpo" "$(DEPDIR)/UtilTest.Po"; else rm -f "$(DEPDIR)/UtilTest.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='tests/util/UtilTest.cpp' object='UtilTest.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o UtilTest.o `test -f 'tests/util/UtilTest.cpp' || echo '$(srcdir)/'`tests/util/UtilTest.cpp
+
+UtilTest.obj: tests/util/UtilTest.cpp
+@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT UtilTest.obj -MD -MP -MF "$(DEPDIR)/UtilTest.Tpo" -c -o UtilTest.obj `if test -f 'tests/util/UtilTest.cpp'; then $(CYGPATH_W) 'tests/util/UtilTest.cpp'; else $(CYGPATH_W) '$(srcdir)/tests/util/UtilTest.cpp'; fi`; \
+@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/UtilTest.Tpo" "$(DEPDIR)/UtilTest.Po"; else rm -f "$(DEPDIR)/UtilTest.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='tests/util/UtilTest.cpp' object='UtilTest.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o UtilTest.obj `if test -f 'tests/util/UtilTest.cpp'; then $(CYGPATH_W) 'tests/util/UtilTest.cpp'; else $(CYGPATH_W) '$(srcdir)/tests/util/UtilTest.cpp'; fi`
 uninstall-info-am:
 install-dist_docDATA: $(dist_doc_DATA)
 	@$(NORMAL_INSTALL)
