@@ -160,7 +160,7 @@ public:
 	 */
 	static const char* VersionRevision() { return VersionRevisionBuf; };
 	
-	static char VersionRevisionBuf[40];
+	static char VersionRevisionBuf[100];
 
 	static void InitVersionRevision();
 
