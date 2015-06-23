@@ -26,6 +26,10 @@
 #include "catch.h"
 #include "Util.h"
 
+#include <stdlib.h>
+#include <string.h>
+#include <stdio.h>
+
 TEST_CASE("WebUtil: XmlStripTags", "[Util][Quick]")
 {
 	const char* szXml  = "<div><img style=\"margin-left:10px;margin-bottom:10px;float:right;\" src=\"https://xxx/cover.jpg\"/><ul><li>ID: 12345678</li><li>Name: <a href=\"https://xxx/12344\">Show name</a></li><li>Size: 3.00 GB </li><li>Attributes: Category - <a href=\"https://xxx/2040\">Movies > HD</a></li></li></ul></div>";
