@@ -282,7 +282,7 @@ void StringBuilder::Append(const char* szStr)
 }
 
 
-char Util::VersionRevisionBuf[40];
+char Util::VersionRevisionBuf[100];
 
 char* Util::BaseFileName(const char* filename)
 {
