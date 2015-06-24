@@ -248,6 +248,7 @@ bool FeedFile::ParseFeed(IUnknown* nzb)
 			char* szDescription = strdup((const char*)description);
 			WebUtil::XmlStripTags(szDescription);
 			WebUtil::XmlDecode(szDescription);
+			WebUtil::XmlRemoveEntities(szDescription);
 			pFeedItemInfo->SetDescription(szDescription);
 			free(szDescription);
 		}
@@ -501,6 +502,7 @@ void FeedFile::Parse_EndElement(const char *name)
 		char* szDescription = strdup(m_szTagContent);
 		WebUtil::XmlStripTags(szDescription);
 		WebUtil::XmlDecode(szDescription);
+		WebUtil::XmlRemoveEntities(szDescription);
 		m_pFeedItemInfo->SetDescription(szDescription);
 		free(szDescription);
 		ResetTagContent();

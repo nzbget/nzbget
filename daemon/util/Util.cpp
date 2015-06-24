@@ -1848,6 +1848,40 @@ void WebUtil::XmlStripTags(char* szXml)
 	}
 }
 
+void WebUtil::XmlRemoveEntities(char* raw)
+{
+	char* output = raw;
+	for (char* p = raw;;)
+	{
+		switch (*p)
+		{
+			case '\0':
+				goto BreakLoop;
+			case '&':
+			{
+				char* p2 = p+1;
+				while (isalpha(*p2) || strchr("0123456789#", *p2)) p2++;
+				if (*p2 == ';')
+				{
+					*output++ = ' ';
+					p = p2+1;
+				}
+				else
+				{
+					*output++ = *p++;
+				}
+				break;
+			}
+			default:
+				*output++ = *p++;
+				break;
+		}
+	}
+BreakLoop:
+
+	*output = '\0';
+}
+
 char* WebUtil::JsonEncode(const char* raw)
 {
 	// calculate the required outputstring-size based on number of escape-entities and their sizes

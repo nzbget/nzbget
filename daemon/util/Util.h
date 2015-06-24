@@ -209,6 +209,12 @@ public:
 	static void XmlStripTags(char* szXml);
 
 	/*
+	 * Replaces all entities with spaces.
+	 * The string is transformed in-place overwriting the previous content.
+	 */
+	static void XmlRemoveEntities(char* raw);
+
+	/*
 	 * Creates JSON-string by replace the certain characters with escape-sequences.
 	 * Returns new string allocated with malloc, it need to be freed by caller.
 	 */
