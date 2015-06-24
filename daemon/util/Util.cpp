@@ -1761,17 +1761,15 @@ void WebUtil::XmlDecode(char* raw)
 					}
 					else if (*p == '#')
 					{
-						int code = atoi(p+1);
-						p = strchr(p+1, ';');
-						if (p) p++;
+						int code = atoi((p++)+1);
+						while (strchr("0123456789;", *p)) p++;
 						*output++ = (char)code;
 					}
 					else
 					{
-						// unknown entity, replace with a space
-						p = strchr(p+1, ';');
-						if (p) p++;
-						*output++ = ' ';
+						// unknown entity, keep as is
+						*output++ = *(p-1);
+						*output++ = *p++;
 					}
 					break;
 				}

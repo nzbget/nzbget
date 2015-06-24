@@ -22,13 +22,14 @@
  *
  */
 
-#include "nzbget.h"
-#include "catch.h"
-#include "Util.h"
-
 #include <stdlib.h>
 #include <string.h>
 #include <stdio.h>
+
+#include "catch.h"
+
+#include "nzbget.h"
+#include "Util.h"
 
 TEST_CASE("WebUtil: XmlStripTags", "[Util][Quick]")
 {
@@ -45,10 +46,10 @@ TEST_CASE("WebUtil: XmlStripTags", "[Util][Quick]")
 TEST_CASE("WebUtil: XmlDecode", "[Util][Quick]")
 {
 	const char* szXml  = "Poster: Bob &lt;bob@home&gt; bad&mdash;and there&#039;s one thing";
-	const char* szText = "Poster: Bob <bob@home> bad and there's one thing";
+	const char* szText = "Poster: Bob <bob@home> bad&mdash;and there's one thing";
 	char* szTestString = strdup(szXml);
 	WebUtil::XmlDecode(szTestString);
-
+	INFO(szTestString);
 	REQUIRE(strcmp(szTestString, szText) == 0);
 
 	free(szTestString);
