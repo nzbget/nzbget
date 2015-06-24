@@ -339,7 +339,6 @@ void UrlCoordinator::UrlCompleted(UrlDownloader* pUrlDownloader)
 {
 	debug("URL downloaded");
 
-	bool bRetry = pUrlDownloader->GetStatus() == WebDownloader::adRetry;
 	NZBInfo* pNZBInfo = pUrlDownloader->GetNZBInfo();
 
 	char filename[1024];
@@ -373,6 +372,8 @@ void UrlCoordinator::UrlCompleted(UrlDownloader* pUrlDownloader)
 		}
 	}
 	pNZBInfo->SetActiveDownloads(0);
+
+	bool bRetry = pUrlDownloader->GetStatus() == WebDownloader::adRetry && !pNZBInfo->GetDeleting();
 
 	if (pNZBInfo->GetDeleting())
 	{
