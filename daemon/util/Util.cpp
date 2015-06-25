@@ -1761,16 +1761,15 @@ void WebUtil::XmlDecode(char* raw)
 					}
 					else if (*p == '#')
 					{
-						int code = atoi(p+1);
-						p = strchr(p+1, ';');
-						if (p) p++;
+						int code = atoi((p++)+1);
+						while (strchr("0123456789;", *p)) p++;
 						*output++ = (char)code;
 					}
 					else
 					{
-						// unknown entity
+						// unknown entity, keep as is
 						*output++ = *(p-1);
-						p++;
+						*output++ = *p++;
 					}
 					break;
 				}
@@ -1833,6 +1832,54 @@ bool WebUtil::XmlParseTagValue(const char* szXml, const char* szTag, char* szVal
 		*pTagEnd = szValue + iValueLen;
 	}
 	return true;
+}
+
+void WebUtil::XmlStripTags(char* szXml)
+{
+	while (char *start = strchr(szXml, '<'))
+	{
+		char *end = strchr(start, '>');
+		if (!end)
+		{
+			break;
+		}
+		memset(start, ' ', end - start + 1);
+		szXml = end + 1;
+	}
+}
+
+void WebUtil::XmlRemoveEntities(char* raw)
+{
+	char* output = raw;
+	for (char* p = raw;;)
+	{
+		switch (*p)
+		{
+			case '\0':
+				goto BreakLoop;
+			case '&':
+			{
+				char* p2 = p+1;
+				while (isalpha(*p2) || strchr("0123456789#", *p2)) p2++;
+				if (*p2 == ';')
+				{
+					*output++ = ' ';
+					p = p2+1;
+				}
+				else
+				{
+					*output++ = *p++;
+				}
+				break;
+			}
+			default:
+				*output++ = *p++;
+				break;
+		}
+	}
+BreakLoop:
+
+	*output = '\0';
 }
 
 char* WebUtil::JsonEncode(const char* raw)
