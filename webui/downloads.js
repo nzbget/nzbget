@@ -17,8 +17,8 @@
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  *
- * $Revision$
- * $Date$
+ * $Revision: 1236 $
+ * $Date: 2015-03-20 16:02:44 -0400 (Fri, 20 Mar 2015) $
  *
  */
 
@@ -36,6 +36,7 @@ var Downloads = (new function($)
 
 	// Controls
 	var $DownloadsTable;
+	var $DownloadsShow;
 	var $DownloadsTabBadge;
 	var $DownloadsTabBadgeEmpty;
 	var $DownloadQueueEmpty;
@@ -43,6 +44,7 @@ var Downloads = (new function($)
 	var $DownloadsTable_Name;
 
 	// State
+	var showActive = false;
 	var notification = null;
 	var updateTabInfo;
 	var groups;
@@ -66,6 +68,7 @@ var Downloads = (new function($)
 		'EXECUTING_SCRIPT': { Text: 'PROCESSING', PostProcess: true },
 		'PP_FINISHED': { Text: 'FINISHED', PostProcess: false }
 		};
+
 	this.statusData = statusData;
 
 	this.init = function(options)
@@ -79,8 +82,23 @@ var Downloads = (new function($)
 		$DownloadsRecordsPerPage = $('#DownloadsRecordsPerPage');
 		$DownloadsTable_Name = $('#DownloadsTable_Name');
 
+
+
 		var recordsPerPage = UISettings.read('DownloadsRecordsPerPage', 10);
 		$DownloadsRecordsPerPage.val(recordsPerPage);
+
+		showActive = UISettings.read('DownloadsShowActive', false);
+		// looks like the write saves as string, so translate it back
+		if (showActive == 'true')	
+			showActive = true;
+		else
+			showActive = false;
+
+// no idea why this doesn't work
+//		var DownloadsShowActive = $('#DownloadsShowActive');
+//		DownloadsShowActive.checked = showActive;
+// and this does
+		$("#DownloadsShowActive").prop("checked", showActive);
 
 		$DownloadsTable.fasttable(
 			{
@@ -105,6 +123,7 @@ var Downloads = (new function($)
 		$DownloadsTable.on('click', 'thead div.check',
 			function() { $DownloadsTable.fasttable('titleCheckClick') });
 		$DownloadsTable.on('mousedown', Util.disableShiftMouseDown);
+
 	}
 
 	this.applyTheme = function()
@@ -157,7 +176,9 @@ var Downloads = (new function($)
 
 	function redraw_table()
 	{
-		var data = [];
+		var queued = [];
+		var active = [];
+		console.log('redraw:'+showActive);
 
 		for (var i=0; i < groups.length; i++)
 		{
@@ -171,7 +192,7 @@ var Downloads = (new function($)
 			var size = Util.formatSizeMB(group.FileSizeMB, group.FileSizeLo);
 			var remaining = Util.formatSizeMB(group.RemainingSizeMB-group.PausedSizeMB, group.RemainingSizeLo-group.PausedSizeLo);
 			var dupe = DownloadsUI.buildDupeText(group.DupeKey, group.DupeScore, group.DupeMode);
-			
+
 			var item =
 			{
 				id: group.NZBID,
@@ -180,10 +201,17 @@ var Downloads = (new function($)
 				search: statustext + ' ' + nametext + ' ' + priority + ' ' + dupe + ' ' + group.Category + ' ' + age + ' ' + size + ' ' + remaining + ' ' + estimated
 			};
 
-			data.push(item);
+			if (showActive && statustext != 'QUEUED')
+			{
+				queued.push(item);
+			}
+			else
+			{
+				active.push(item);
+			}
 		}
 
-		$DownloadsTable.fasttable('update', data);
+		$DownloadsTable.fasttable('update', queued.concat(active));
 	}
 
 	function fillFieldsCallback(item)
@@ -305,6 +333,14 @@ var Downloads = (new function($)
 		var val = $DownloadsRecordsPerPage.val();
 		UISettings.write('DownloadsRecordsPerPage', val);
 		$DownloadsTable.fasttable('setPageSize', val);
+	}
+
+	this.showActiveChange = function()
+	{
+		showActive = !showActive
+		UISettings.write('DownloadsShowActive', showActive);
+
+		redraw_table();
 	}
 
 	function updateInfo(stat)
@@ -576,6 +612,7 @@ var DownloadsUI = (new function($)
 		combo.append('<option value="0">normal</option>');
 		combo.append('<option value="-50">low</option>');
 		combo.append('<option value="-100">very low</option>');
+
 	}
 
 	this.fillCategoryCombo = function(combo)
@@ -736,6 +773,8 @@ var DownloadsUI = (new function($)
 			case 50: return 'high priority';
 			case -50: return 'low priority';
 			case -100: return 'very low priority';
+
+
 			default: return 'priority: ' + priority;
 		}
 	}
