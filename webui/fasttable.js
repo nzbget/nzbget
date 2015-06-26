@@ -17,8 +17,8 @@
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  *
- * $Revision$
- * $Date$
+ * $Revision: 778 $
+ * $Date: 2013-08-07 16:09:43 -0400 (Wed, 07 Aug 2013) $
  *
  */
 
@@ -245,15 +245,38 @@
 	function has_words(str, words, caseSensitive)
 	{
 		var text = caseSensitive ? str : str.toLowerCase();
+		var orTest = false;
+		var orFound = false;
 
 		for (var i = 0; i < words.length; i++)
 		{
-			if (text.indexOf(words[i]) === -1)
+			if (words[i][0] == '!')
 			{
-				return false;
+				if (text.indexOf(words[i].substr(1,words[i].length)) >= 0)
+				{
+					return false;
+				}
+			}
+			else if (words[i][0] == '|')
+			{
+				orTest = true;
+				if (text.indexOf(words[i].substr(1,words[i].length)) >= 0)
+				{
+					orFound = true;
+				}
+			}
+			else
+			{
+				if (text.indexOf(words[i]) === -1)
+				{
+					return false;
+				}
 			}
 		}
-
+		if (orTest && !orFound)
+		{
+			return false;
+		}
 		return true;
 	}
 
