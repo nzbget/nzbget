@@ -2175,6 +2175,44 @@ BreakLoop:
 	*output = '\0';
 }
 
+char* WebUtil::URLEncode(const char* raw)
+{
+	// calculate the required outputstring-size based on number of spaces
+	int iReqSize = strlen(raw);
+	for (const char* p = raw; *p; p++)
+	{
+		if (*p == ' ')
+		{
+			iReqSize += 3; // length of "%20"
+		}
+	}
+
+	char* result = (char*)malloc(iReqSize + 1);
+
+	// copy string
+	char* output = result;
+	for (const char* p = raw; ; p++)
+	{
+		unsigned char ch = *p;
+		switch (ch)
+		{
+			case '\0':
+				goto BreakLoop;
+			case ' ':
+				strcpy(output, "%20");
+				output += 3;
+				break;
+			default:
+				*output++ = ch;
+		}
+	}
+BreakLoop:
+
+	*output = '\0';
+
+	return result;
+}
+
 #ifdef WIN32
 bool WebUtil::Utf8ToAnsi(char* szBuffer, int iBufLen)
 {

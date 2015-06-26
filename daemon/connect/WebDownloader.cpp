@@ -88,7 +88,7 @@ void WebDownloader::SetInfoName(const char* v)
 void WebDownloader::SetURL(const char * szURL)
 {
 	free(m_szURL);
-	m_szURL = strdup(szURL);
+	m_szURL = WebUtil::URLEncode(szURL);
 }
 
 void WebDownloader::SetStatus(EStatus eStatus)

@@ -250,6 +250,12 @@ public:
 	 */
 	static void URLDecode(char* raw);
 
+	/*
+	 * Makes valid URL by replacing of spaces with "%20".
+	 * Returns new string allocated with malloc, it need to be freed by caller.
+	 */
+	static char* URLEncode(const char* raw);
+
 #ifdef WIN32
 	static bool Utf8ToAnsi(char* szBuffer, int iBufLen);
 	static bool AnsiToUtf8(char* szBuffer, int iBufLen);
