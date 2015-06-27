@@ -261,7 +261,7 @@
 					<button class="btn dropdown-toggle" data-toggle="dropdown" title="Search"><i class="icon-settings"></i><span class="btn-caption"> Search </span><span class="phone-only inline">&nbsp;</span><span class="caret"></span></button>
 					<ul class="dropdown-menu" id="SearchMenu">
 						<li class="menu-header">Search Terms</li>
-						<li><a href="#" onclick="Downloads.filter('!Queued !Paused')">Active (!Queued !Paused)</a></li>
+						<li><a href="#" onclick="Downloads.filter('|PP-Queued !Queued !Paused')">Active (!Queued !Paused)</a></li>
 						<li><a href="#" onclick="Downloads.filter('Paused')">Paused</a></li>
 						<li class="divider" id="SearchMenu_Divider"></li>
 						<li><a href="#" onclick="Downloads.filter('')">Reset Search</a></li>
