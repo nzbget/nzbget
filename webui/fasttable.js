@@ -245,11 +245,11 @@
 	function has_words(str, words, caseSensitive)
 	{
 		var text = caseSensitive ? str : str.toLowerCase();
-		var orTest = false;
 		var notTest = false;
 		var andTest = false;
 		var notFound = false;
 		var andFound = true;
+		var orFound = true;
 
 		for (var i = 0; i < words.length; i++)
 		{
