@@ -249,7 +249,7 @@
 		var andTest = false;
 		var notFound = false;
 		var andFound = true;
-		var orFound = true;
+		var orFound = false;
 
 		for (var i = 0; i < words.length; i++)
 		{
