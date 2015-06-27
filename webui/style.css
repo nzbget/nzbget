@@ -357,9 +357,9 @@ body.navfixed.scrolled .navbar-fixed-top .navbar-inner {
 .navbar-search .search-query.focused {
 	width: 150px;
 	padding: 3px 9px;
-	-webkit-border-radius: 12px;
-	-moz-border-radius: 12px;
-	border-radius: 12px;
+	-webkit-border-radius: 3px;
+	-moz-border-radius: 3px;
+	border-radius: 3px;
 }
 
 .navbar-search .search-query:focus,
