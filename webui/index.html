@@ -144,18 +144,16 @@
 			<!-- SEARCH -->
 			<div class="btn-toolbar pull-right" id="SearchBlock">
 				<div class="navbar-search" style="display: none;">
-					<div class="btn-group">
-					<div class="btn-toolbar">
+					<div >
 						<button class="btn btn-inverse dropdown-toggle" data-toggle="dropdown"><span class="caret"></span></button>
 						<ul class="dropdown-menu menu-refresh" id="SearchTerms">
 						<li class="menu-header">Search Terms</li>
 						<li><a href="#" onclick="Downloads.filter('|PP-Queued !Queued !Paused')">Active (!Queued !Paused)</a></li>
 						<li><a href="#" onclick="Downloads.filter('Paused')">Paused</a></li>
 						</ul>
-					</div>
-					</div>
 					<input id="DownloadsTable_filter" class="search-query" type="text" placeholder="Search downloads">
 					<i id="DownloadsTable_clearfilter" class="icon-remove-white search-clear" title="Clear"></i>
+					</div>
 
 					<input id="HistoryTable_filter" class="search-query" type="text" placeholder="Search history">
 					<i id="HistoryTable_clearfilter" class="icon-remove-white search-clear" title="Clear"></i>
