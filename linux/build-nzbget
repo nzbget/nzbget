@@ -143,6 +143,7 @@ cd $BUILDDIR
 
 if [ "$REVISION" != "work" ]; then
     echo "Updating to $REVISION"
+    git pull
     git checkout $BRANCH
 	if [ "$REVISION" != "head" ]; then
 	    git checkout $REVISION
