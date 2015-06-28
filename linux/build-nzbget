@@ -254,6 +254,9 @@ for CONFIG in $CONFIGS; do
                             ;;
                     esac
 
+                    # disable spinlocks (they may cause problems)
+                    sed 's:^#define HAVE_SPINLOCK 1$:/* #define HAVE_SPINLOCK 1 */:' -i config.h
+
                     make clean && make
 
                     rm -r -f $OUTPUTDIR/install
