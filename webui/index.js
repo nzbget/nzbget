@@ -273,8 +273,10 @@ var Frontend = (new function($)
 		lastTab = activeTab;
 		activeTab = tabname;
 		
-		$('#SearchBlock .search-query, #SearchBlock .search-clear').hide();
-		$('#' + activeTab + 'Table_filter, #' + activeTab + 'Table_clearfilter').show();
+		$('#SearchBlock .search-terms').hide();
+		$('#' + activeTab + 'Table_filter, #' + 
+			activeTab + 'Table_clearfilter, #' + 
+			activeTab + 'Table_Terms').show()
 
 		switch (activeTab)
 		{

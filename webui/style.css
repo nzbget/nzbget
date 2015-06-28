@@ -375,6 +375,8 @@ body.navfixed.scrolled .navbar-fixed-top .navbar-inner {
 	opacity: 0.65;
 	filter: alpha(opacity=65);
 }
+.search-terms {
+}
 
 /* MENUS */
 #RefreshMenu  {
