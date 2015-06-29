@@ -285,6 +285,14 @@
 				Name="extension"
 				>
 				<File
+					RelativePath=".\daemon\extension\FeedScript.cpp"
+					>
+				</File>
+				<File
+					RelativePath=".\daemon\extension\FeedScript.h"
+					>
+				</File>
+				<File
 					RelativePath=".\daemon\extension\NzbScript.cpp"
 					>
 				</File>
