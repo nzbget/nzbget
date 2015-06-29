@@ -482,19 +482,24 @@ if test "$JUSTUNPACK" = "no"; then
         Info "Successfully installed into $ABSOUTDIR"
 
         # Trying to get current IP-address        
-        Info "After starting nzbget, the web-interface is available on:"
-        Info "http://127.0.0.1:6789/ (local system only, no login needed)"
-        # Now try to get LAN/WLAN IP-address.
-        # First find default interface (ie 'wlan0') with the 'route' command: route -n | sed -rn 's/^0.0.0.0.* ([^ ]+)$/\1/p'
-        INTERFACE=$(route -n | sed -rn 's/^0.0.0.0.* ([^ ]+)$/\1/p')
+        IP=""
+        INTERFACE=""
+        {
+            # First find default interface (ie 'wlan0') with the 'route' command
+            INTERFACE=`route -n | sed -rn 's/^0.0.0.0.* ([^ ]+)$/\1/p'`
+        } > /dev/null 2>&1
         if test "$INTERFACE" != ""; then
             # OK, a default route 0.0.0.0 + corresponding interface was found
-            # Now find the IPv4 address on that interface: ifconfig wlan0 | sed -rn 's/.*r:([^ ]+) .*/\1/p'
-            IP=`ifconfig "$INTERFACE" | sed -rn 's/.*r:([^ ]+) .*/\1/p'`
-            if test "$IP" != ""; then
-                Info "http://$IP:6789/nzbget:tegbzn6789/ (from your LAN, login is needed as shown)"
-            fi
+            # Now find the IPv4 address on that interface:
+            {
+                IP=`ifconfig "$INTERFACE" | sed -rn 's/.*r:([^ ]+) .*/\1/p'`
+            } > /dev/null 2>&1
         fi
+        if test "$IP" = ""; then
+            IP="localhost"
+        fi
+
+        Info "Web-interface is on http://$IP:6789 (login:nzbget, password:tegbzn6789)"
     else
         Info "Successfully installed into $ABSOUTDIR"
     fi
