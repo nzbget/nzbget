@@ -116,6 +116,7 @@ static const char* OPTION_PARTHREADS			= "ParThreads";
 static const char* OPTION_HEALTHCHECK			= "HealthCheck";
 static const char* OPTION_SCANSCRIPT			= "ScanScript";
 static const char* OPTION_QUEUESCRIPT			= "QueueScript";
+static const char* OPTION_FEEDSCRIPT			= "FeedScript";
 static const char* OPTION_UMASK					= "UMask";
 static const char* OPTION_UPDATEINTERVAL		= "UpdateInterval";
 static const char* OPTION_CURSESNZBNAME			= "CursesNzbName";
@@ -438,6 +439,7 @@ void Options::Init(const char* szExeName, const char* szConfigFilename, bool bNo
 	m_szPostScript			= NULL;
 	m_szScanScript			= NULL;
 	m_szQueueScript			= NULL;
+	m_szFeedScript			= NULL;
 	m_iUMask				= 0;
 	m_iUpdateInterval		= 0;
 	m_bCursesNZBName		= false;
@@ -569,6 +571,7 @@ Options::~Options()
 	free(m_szPostScript);
 	free(m_szScanScript);
 	free(m_szQueueScript);
+	free(m_szFeedScript);
 	free(m_szUnrarCmd);
 	free(m_szSevenZipCmd);
 	free(m_szUnpackPassFile);
@@ -696,6 +699,7 @@ void Options::InitDefaults()
 	SetOption(OPTION_POSTSCRIPT, "");
 	SetOption(OPTION_SCANSCRIPT, "");
 	SetOption(OPTION_QUEUESCRIPT, "");
+	SetOption(OPTION_FEEDSCRIPT, "");
 	SetOption(OPTION_DAEMONUSERNAME, "root");
 	SetOption(OPTION_UMASK, "1000");
 	SetOption(OPTION_UPDATEINTERVAL, "200");
@@ -906,6 +910,7 @@ void Options::InitOptions()
 	m_szPostScript			= strdup(GetOption(OPTION_POSTSCRIPT));
 	m_szScanScript			= strdup(GetOption(OPTION_SCANSCRIPT));
 	m_szQueueScript			= strdup(GetOption(OPTION_QUEUESCRIPT));
+	m_szFeedScript			= strdup(GetOption(OPTION_FEEDSCRIPT));
 	m_szControlIP			= strdup(GetOption(OPTION_CONTROLIP));
 	m_szControlUsername		= strdup(GetOption(OPTION_CONTROLUSERNAME));
 	m_szControlPassword		= strdup(GetOption(OPTION_CONTROLPASSWORD));
