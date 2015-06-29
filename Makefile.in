@@ -146,7 +146,8 @@ PROGRAMS = $(bin_PROGRAMS)
 am__nzbget_SOURCES_DIST = daemon/connect/Connection.cpp \
 	daemon/connect/Connection.h daemon/connect/TLS.cpp \
 	daemon/connect/TLS.h daemon/connect/WebDownloader.cpp \
-	daemon/connect/WebDownloader.h daemon/extension/NzbScript.cpp \
+	daemon/connect/WebDownloader.h daemon/extension/FeedScript.cpp \
+	daemon/extension/FeedScript.h daemon/extension/NzbScript.cpp \
 	daemon/extension/NzbScript.h daemon/extension/PostScript.cpp \
 	daemon/extension/PostScript.h daemon/extension/QueueScript.cpp \
 	daemon/extension/QueueScript.h daemon/extension/ScanScript.cpp \
@@ -258,8 +259,8 @@ am__nzbget_SOURCES_DIST = daemon/connect/Connection.cpp \
 @WITH_TESTS_TRUE@	ParCheckerTest.$(OBJEXT) \
 @WITH_TESTS_TRUE@	ParRenamerTest.$(OBJEXT) UtilTest.$(OBJEXT)
 am_nzbget_OBJECTS = Connection.$(OBJEXT) TLS.$(OBJEXT) \
-	WebDownloader.$(OBJEXT) NzbScript.$(OBJEXT) \
-	PostScript.$(OBJEXT) QueueScript.$(OBJEXT) \
+	WebDownloader.$(OBJEXT) FeedScript.$(OBJEXT) \
+	NzbScript.$(OBJEXT) PostScript.$(OBJEXT) QueueScript.$(OBJEXT) \
 	ScanScript.$(OBJEXT) SchedulerScript.$(OBJEXT) \
 	ScriptConfig.$(OBJEXT) FeedCoordinator.$(OBJEXT) \
 	FeedFile.$(OBJEXT) FeedFilter.$(OBJEXT) FeedInfo.$(OBJEXT) \
@@ -428,7 +429,8 @@ target_vendor = @target_vendor@
 nzbget_SOURCES = daemon/connect/Connection.cpp \
 	daemon/connect/Connection.h daemon/connect/TLS.cpp \
 	daemon/connect/TLS.h daemon/connect/WebDownloader.cpp \
-	daemon/connect/WebDownloader.h daemon/extension/NzbScript.cpp \
+	daemon/connect/WebDownloader.h daemon/extension/FeedScript.cpp \
+	daemon/extension/FeedScript.h daemon/extension/NzbScript.cpp \
 	daemon/extension/NzbScript.h daemon/extension/PostScript.cpp \
 	daemon/extension/PostScript.h daemon/extension/QueueScript.cpp \
 	daemon/extension/QueueScript.h daemon/extension/ScanScript.cpp \
@@ -766,6 +768,7 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/FeedFilter.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/FeedFilterTest.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/FeedInfo.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/FeedScript.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/Frontend.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/HistoryCoordinator.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/Log.Po@am__quote@
@@ -890,6 +893,20 @@ WebDownloader.obj: daemon/connect/WebDownloader.cpp
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='daemon/connect/WebDownloader.cpp' object='WebDownloader.obj' libtool=no @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o WebDownloader.obj `if test -f 'daemon/connect/WebDownloader.cpp'; then $(CYGPATH_W) 'daemon/connect/WebDownloader.cpp'; else $(CYGPATH_W) '$(srcdir)/daemon/connect/WebDownloader.cpp'; fi`
+
+FeedScript.o: daemon/extension/FeedScript.cpp
+@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT FeedScript.o -MD -MP -MF "$(DEPDIR)/FeedScript.Tpo" -c -o FeedScript.o `test -f 'daemon/extension/FeedScript.cpp' || echo '$(srcdir)/'`daemon/extension/FeedScript.cpp; \
+@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/FeedScript.Tpo" "$(DEPDIR)/FeedScript.Po"; else rm -f "$(DEPDIR)/FeedScript.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='daemon/extension/FeedScript.cpp' object='FeedScript.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o FeedScript.o `test -f 'daemon/extension/FeedScript.cpp' || echo '$(srcdir)/'`daemon/extension/FeedScript.cpp
+
+FeedScript.obj: daemon/extension/FeedScript.cpp
+@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT FeedScript.obj -MD -MP -MF "$(DEPDIR)/FeedScript.Tpo" -c -o FeedScript.obj `if test -f 'daemon/extension/FeedScript.cpp'; then $(CYGPATH_W) 'daemon/extension/FeedScript.cpp'; else $(CYGPATH_W) '$(srcdir)/daemon/extension/FeedScript.cpp'; fi`; \
+@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/FeedScript.Tpo" "$(DEPDIR)/FeedScript.Po"; else rm -f "$(DEPDIR)/FeedScript.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='daemon/extension/FeedScript.cpp' object='FeedScript.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o FeedScript.obj `if test -f 'daemon/extension/FeedScript.cpp'; then $(CYGPATH_W) 'daemon/extension/FeedScript.cpp'; else $(CYGPATH_W) '$(srcdir)/daemon/extension/FeedScript.cpp'; fi`
 
 NzbScript.o: daemon/extension/NzbScript.cpp
 @am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT NzbScript.o -MD -MP -MF "$(DEPDIR)/NzbScript.Tpo" -c -o NzbScript.o `test -f 'daemon/extension/NzbScript.cpp' || echo '$(srcdir)/'`daemon/extension/NzbScript.cpp; \
