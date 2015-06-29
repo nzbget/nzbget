@@ -2957,6 +2957,7 @@ void ConfigTemplatesXmlCommand::Execute()
 		"<member><name>ScanScript</name><value><boolean>%s</boolean></value></member>\n"
 		"<member><name>QueueScript</name><value><boolean>%s</boolean></value></member>\n"
 		"<member><name>SchedulerScript</name><value><boolean>%s</boolean></value></member>\n"
+		"<member><name>FeedScript</name><value><boolean>%s</boolean></value></member>\n"
 		"<member><name>Template</name><value><string>%s</string></value></member>\n"
 		"</struct></value>\n";
 
@@ -2968,6 +2969,7 @@ void ConfigTemplatesXmlCommand::Execute()
 		"\"ScanScript\" : %s,\n"
 		"\"QueueScript\" : %s,\n"
 		"\"SchedulerScript\" : %s,\n"
+		"\"FeedScript\" : %s,\n"
 		"\"Template\" : \"%s\"\n"
 		"}";
 
@@ -3008,6 +3010,7 @@ void ConfigTemplatesXmlCommand::Execute()
 			BoolToStr(pConfigTemplate->GetScript() && pConfigTemplate->GetScript()->GetScanScript()),
 			BoolToStr(pConfigTemplate->GetScript() && pConfigTemplate->GetScript()->GetQueueScript()),
 			BoolToStr(pConfigTemplate->GetScript() && pConfigTemplate->GetScript()->GetSchedulerScript()),
+			BoolToStr(pConfigTemplate->GetScript() && pConfigTemplate->GetScript()->GetFeedScript()),
 			xmlTemplate);
 		szItemBuf[iItemBufSize-1] = '\0';
 

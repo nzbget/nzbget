@@ -49,6 +49,7 @@ static const char* POST_SCRIPT_SIGNATURE = "POST-PROCESSING";
 static const char* SCAN_SCRIPT_SIGNATURE = "SCAN";
 static const char* QUEUE_SCRIPT_SIGNATURE = "QUEUE";
 static const char* SCHEDULER_SCRIPT_SIGNATURE = "SCHEDULER";
+static const char* FEED_SCRIPT_SIGNATURE = "FEED";
 static const char* END_SCRIPT_SIGNATURE = " SCRIPT";
 static const char* QUEUE_EVENTS_SIGNATURE = "### QUEUE EVENTS:";
 
@@ -85,6 +86,7 @@ ScriptConfig::Script::Script(const char* szName, const char* szLocation)
 	m_bScanScript = false;
 	m_bQueueScript = false;
 	m_bSchedulerScript = false;
+	m_bFeedScript = false;
 	m_szQueueEvents = NULL;
 }
 
@@ -321,7 +323,8 @@ bool ScriptConfig::LoadConfigTemplates(ConfigTemplates* pConfigTemplates)
 				(strstr(buf, POST_SCRIPT_SIGNATURE) ||
 				 strstr(buf, SCAN_SCRIPT_SIGNATURE) ||
 				 strstr(buf, QUEUE_SCRIPT_SIGNATURE) ||
-				 strstr(buf, SCHEDULER_SCRIPT_SIGNATURE)))
+				 strstr(buf, SCHEDULER_SCRIPT_SIGNATURE) ||
+				 strstr(buf, FEED_SCRIPT_SIGNATURE)))
 			{
 				if (bInConfig)
 				{
@@ -441,7 +444,8 @@ void ScriptConfig::LoadScriptDir(Scripts* pScripts, const char* szDirectory, boo
 							bool bScanScript = strstr(szLine, SCAN_SCRIPT_SIGNATURE);
 							bool bQueueScript = strstr(szLine, QUEUE_SCRIPT_SIGNATURE);
 							bool bSchedulerScript = strstr(szLine, SCHEDULER_SCRIPT_SIGNATURE);
-							if (bPostScript || bScanScript || bQueueScript || bSchedulerScript)
+							bool bFeedScript = strstr(szLine, FEED_SCRIPT_SIGNATURE);
+							if (bPostScript || bScanScript || bQueueScript || bSchedulerScript || bFeedScript)
 							{
 								char szScriptName[1024];
 								if (bIsSubDir)
@@ -482,6 +486,7 @@ void ScriptConfig::LoadScriptDir(Scripts* pScripts, const char* szDirectory, boo
 								pScript->SetScanScript(bScanScript);
 								pScript->SetQueueScript(bQueueScript);
 								pScript->SetSchedulerScript(bSchedulerScript);
+								pScript->SetFeedScript(bFeedScript);
 								pScript->SetQueueEvents(szQueueEvents);
 								pScripts->push_back(pScript);
 								break;

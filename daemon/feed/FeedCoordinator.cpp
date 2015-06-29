@@ -47,6 +47,7 @@
 #include "Util.h"
 #include "FeedFile.h"
 #include "FeedFilter.h"
+#include "FeedScript.h"
 #include "DiskState.h"
 #include "DupeCoordinator.h"
 
@@ -395,6 +396,7 @@ void FeedCoordinator::FeedCompleted(FeedDownloader* pFeedDownloader)
 	{
 		if (!pFeedInfo->GetPreview())
 		{
+			FeedScriptController::ExecuteScripts(pFeedInfo->GetOutputFilename(), pFeedInfo->GetID());
 			FeedFile* pFeedFile = FeedFile::Create(pFeedInfo->GetOutputFilename());
 			remove(pFeedInfo->GetOutputFilename());
 
@@ -618,6 +620,7 @@ bool FeedCoordinator::PreviewFeed(const char* szName, const char* szUrl, const c
 
 		if (pFeedInfo->GetStatus() == FeedInfo::fsFinished)
 		{
+			FeedScriptController::ExecuteScripts(pFeedInfo->GetOutputFilename(), pFeedInfo->GetID());
 			pFeedFile = FeedFile::Create(pFeedInfo->GetOutputFilename());
 		}
 
