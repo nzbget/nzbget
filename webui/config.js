@@ -158,6 +158,7 @@ var Options = (new function($)
 			scriptConfig.scan = serverTemplateData[i].ScanScript;
 			scriptConfig.queue = serverTemplateData[i].QueueScript;
 			scriptConfig.scheduler = serverTemplateData[i].SchedulerScript;
+			scriptConfig.feed = serverTemplateData[i].FeedScript;
 			mergeValues(scriptConfig.sections, serverValues);
 			config.push(scriptConfig);
 		}
@@ -1046,6 +1047,10 @@ var Config = (new function($)
 				{
 					option.editor = { caption: 'Choose', click: 'Config.editQueueScript' };
 				}
+				if (optname.indexOf('feedscript') > -1)
+				{
+					option.editor = { caption: 'Choose', click: 'Config.editFeedScript' };
+				}
 				if (optname.indexOf('task') > -1 && optname.indexOf('.param') > -1)
 				{
 					option.editor = { caption: 'Choose', click: 'Config.editSchedulerScript' };
@@ -1418,6 +1423,12 @@ var Config = (new function($)
 	{
 		var option = findOptionById(optFormId);
 		ScriptListDialog.showModal(option, config, 'queue');
+	}
+
+	this.editFeedScript = function(optFormId)
+	{
+		var option = findOptionById(optFormId);
+		ScriptListDialog.showModal(option, config, 'feed');
 	}
 
 	this.editSchedulerScript = function(optFormId)

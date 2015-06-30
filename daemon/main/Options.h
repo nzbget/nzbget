@@ -243,6 +243,7 @@ private:
 	char*				m_szScriptOrder;
 	char*				m_szScanScript;
 	char*				m_szQueueScript;
+	char*				m_szFeedScript;
 	bool				m_bNoConfig;
 	int					m_iUMask;
 	int					m_iUpdateInterval;
@@ -394,6 +395,7 @@ public:
 	const char*			GetPostScript() { return m_szPostScript; }
 	const char*			GetScanScript() { return m_szScanScript; }
 	const char*			GetQueueScript() { return m_szQueueScript; }
+	const char*			GetFeedScript() { return m_szFeedScript; }
 	int					GetUMask() { return m_iUMask; }
 	int					GetUpdateInterval() {return m_iUpdateInterval; }
 	bool				GetCursesNZBName() { return m_bCursesNZBName; }
