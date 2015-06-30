@@ -132,8 +132,8 @@ var FeedDialog = (new function($)
 				renderCellCallback: itemsTableRenderCellCallback
 			});
 
-		$ItemTable.on('click', 'tbody div.check',
-			function(event) { $ItemTable.fasttable('itemCheckClick', this.parentNode.parentNode, event); });
+		$ItemTable.on('click', UISettings.rowSelect ? 'tbody tr' : 'tbody div.check',
+			function(event) { $ItemTable.fasttable('itemCheckClick', UISettings.rowSelect ? this : this.parentNode.parentNode, event); });
 		$ItemTable.on('click', 'thead div.check',
 			function() { $ItemTable.fasttable('titleCheckClick') });
 		$ItemTable.on('mousedown', Util.disableShiftMouseDown);
