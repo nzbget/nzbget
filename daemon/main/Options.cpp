@@ -930,7 +930,7 @@ void Options::InitOptions()
 	m_szExtCleanupDisk		= strdup(GetOption(OPTION_EXTCLEANUPDISK));
 	m_szParIgnoreExt		= strdup(GetOption(OPTION_PARIGNOREEXT));
 
-	m_iDownloadRate			= ParseIntValue(OPTION_DOWNLOADRATE, 10);
+	m_iDownloadRate			= ParseIntValue(OPTION_DOWNLOADRATE, 10) * 1024;
 	m_iArticleTimeout		= ParseIntValue(OPTION_ARTICLETIMEOUT, 10);
 	m_iUrlTimeout			= ParseIntValue(OPTION_URLTIMEOUT, 10);
 	m_iTerminateTimeout		= ParseIntValue(OPTION_TERMINATETIMEOUT, 10);
