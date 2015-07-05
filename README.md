@@ -10,6 +10,6 @@ for Windows, Mac OS X and Linux (compatible with many CPUs and platform variants
 the program can be compiled from sources.
 
 - [Home page (nzbget.net)](http://nzbget.net) - for first time visitors, learn more about NZBGet;
-- [Downloads](http://nzbget.net) - get the binaries and sources;
+- [Downloads](http://nzbget.net/download) - get the binaries and sources;
 - [Documentation](https://github.com/nzbget/nzbget/wiki) - installation manuals, HOW-TOs, API;
 - [Forum](http://forum.nzbget.net) - get support, share your ideas, scripts, add-ons.
