@@ -208,6 +208,7 @@ nzbget_SOURCES += \
 	tests/feed/FeedFilterTest.cpp \
 	tests/postprocess/ParCheckerTest.cpp \
 	tests/postprocess/ParRenamerTest.cpp \
+	tests/queue/NZBFileTest.cpp \
 	tests/util/UtilTest.cpp
 
 AM_CPPFLAGS += \
@@ -330,6 +331,10 @@ scripts_FILES = \
 	scripts/Logger.py
 
 testdata_FILES = \
+	tests/testdata/nzbfile/dotless.nzb \
+	tests/testdata/nzbfile/dotless.txt \
+	tests/testdata/nzbfile/plain.nzb \
+	tests/testdata/nzbfile/plain.txt \
 	tests/testdata/parchecker/crc.txt \
 	tests/testdata/parchecker/testfile.dat \
 	tests/testdata/parchecker/testfile.nfo \

@@ -154,6 +154,11 @@ int main(int argc, char *argv[], char *argp[])
 	if (argc > 1 && (!strcmp(argv[1], "-tests") || !strcmp(argv[1], "--tests")))
 	{
 #ifdef ENABLE_TESTS
+#ifdef WIN32
+#ifdef _DEBUG
+		_CrtSetDbgFlag(0);
+#endif
+#endif
 		return TestMain(argc, argv);
 #else
 		printf("ERROR: Could not start tests, the program was compiled without tests\n");

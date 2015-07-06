@@ -1,0 +1,6 @@
+# number of files
+3
+# file names (one line per file)
+ubuntu-12.04-desktop-i386.nfo
+ubuntu-12.04-desktop-i386.par2
+ubuntu-12.04-desktop-i386.r00

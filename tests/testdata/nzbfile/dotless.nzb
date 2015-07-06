@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE nzb PUBLIC "-//newzBin//DTD NZB 1.1//EN" "http://www.newzbin.com/DTD/nzb/nzb-1.1.dtd">
+<nzb xmlns="http://www.newzbin.com/DTD/2003/nzb">
+<head></head>
+<file poster="yEncBin@Poster.com (yEncBin)" date="1435841472" subject="20155f68b0df03cc9bca2c58d426163ff [2/15] - &#34;20155f68b0df03cc9bca2c58d426163ff&#34; yEnc (62/68)">
+<groups>
+<group>alt.binaries.test</group>
+</groups>
+<segments>
+<segment bytes="768000" number="1">1@ngroups.net</segment>
+</segments>
+</file>
+<file poster="yEncBin@Poster.com (yEncBin)" date="1435841456" subject="2261fa83d164f651d19a7ff923f633e00 [5/5] - &#34;2261fa83d164f651d19a7ff923f633e00&#34; yEnc (63/68)">
+<groups>
+<group>alt.binaries.test</group>
+</groups>
+<segments>
+<segment bytes="768000" number="1">1@ngroups.net</segment>
+</segments>
+</file>
+</nzb>

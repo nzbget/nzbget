@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE nzb PUBLIC "-//newzBin//DTD NZB 1.0//EN" "http://www.newzbin.com/DTD/nzb/nzb-1.0.dtd">
+<nzb xmlns="http://www.newzbin.com/DTD/2003/nzb">
+<file poster="spitch@ratingshell.com (Dless)" date="1335508618" subject="&quot;ubuntu-12.04-desktop-i386.nfo&quot; yEnc (1/1)">
+<groups>
+<group>alt.binaries.boneless</group>
+</groups>
+<segments>
+<segment bytes="830" number="1">4f9a3e8a$0$14349$c3e8da3$33a0879d@news.astraweb.com</segment>
+</segments>
+</file>
+<file poster="spitch@ratingshell.com (Dless)" date="1335500602" subject="&quot;ubuntu-12.04-desktop-i386.par2&quot; yEnc (1/1)">
+<groups>
+<group>alt.binaries.boneless</group>
+</groups>
+<segments>
+<segment bytes="28209" number="1">4f9a1f3a$0$26527$c3e8da3$e3f2c276@news.astraweb.com</segment>
+</segments>
+</file>
+<file poster="spitch@ratingshell.com (Dless)" date="1335500615" subject="&quot;ubuntu-12.04-desktop-i386.r00&quot; yEnc (1/59)">
+<groups>
+<group>alt.binaries.boneless</group>
+</groups>
+<segments>
+<segment bytes="925855" number="1">4f9a1f3a$0$23145$c3e8da3$40cb80c2@news.astraweb.com</segment>
+</segments>
+</file>
+</nzb>
