@@ -40,6 +40,7 @@
 
 #include "catch.h"
 
+#include "nzbget.h"
 #include "Options.h"
 
 class OptionsExtenderMock : public Options::Extender

@@ -36,6 +36,7 @@
 #define CATCH_CONFIG_RUNNER
 #include "catch.h"
 
+#include "nzbget.h"
 #include "Thread.h"
 #include "Log.h"
 #include "Util.h"

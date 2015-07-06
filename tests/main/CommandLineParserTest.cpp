@@ -40,6 +40,7 @@
 
 #include "catch.h"
 
+#include "nzbget.h"
 #include "CommandLineParser.h"
 
 TEST_CASE("Command line parser: initializing without configuration file", "[CommandLineParser][Quick]")
