@@ -169,10 +169,32 @@ void NZBFile::AddFileInfo(FileInfo* pFileInfo)
 
 void NZBFile::ParseSubject(FileInfo* pFileInfo, bool TryQuotes)
 {
+	// Example subject: some garbage "title" yEnc (10/99)
+
+	// strip the "yEnc (10/99)"-suffix
+	char szSubject[1024];
+	strncpy(szSubject, pFileInfo->GetSubject(), sizeof(szSubject));
+	szSubject[1024-1] = '\0';
+	char* end = szSubject + strlen(szSubject) - 1;
+	if (*end == ')')
+	{
+		end--;
+		while (strchr("0123456789", *end) && end > szSubject) end--;
+		if (*end == '/')
+		{
+			end--;
+			while (strchr("0123456789", *end) && end > szSubject) end--;
+			if (end - 6 > szSubject && !strncmp(end - 6, " yEnc (", 7))
+			{
+				end[-6] = '\0';
+			}
+		}
+	}
+
 	if (TryQuotes)
 	{
 		// try to use the filename in quatation marks 
-		char* p = (char*)pFileInfo->GetSubject();
+		char* p = szSubject;
 		char* start = strchr(p, '\"');
 		if (start)
 		{
@@ -204,7 +226,7 @@ void NZBFile::ParseSubject(FileInfo* pFileInfo, bool TryQuotes)
 	tokens.clear();
 
 	// tokenizing
-	char* p = (char*)pFileInfo->GetSubject();
+	char* p = szSubject;
 	char* start = p;
 	bool quot = false;
 	while (true)
