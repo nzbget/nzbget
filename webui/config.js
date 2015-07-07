@@ -2633,26 +2633,32 @@ var UpdateDialog = (new function($)
 		}
 		else
 		{
-			loadSvnVerData();
+			loadGitVerData();
 		}
 	}
 
-	function loadSvnVerData()
+	function loadGitVerData()
 	{
 		// fetching devel version number from svn viewer
-		RPC.call('readurl', ['http://svn.code.sf.net/p/nzbget/code/trunk/', 'svn revision info'], 
-			function(svnRevData)
+		RPC.call('readurl', ['https://github.com/nzbget/nzbget', 'git revision info'], 
+			function(gitRevData)
 			{
-				RPC.call('readurl', ['http://svn.code.sf.net/p/nzbget/code/trunk/configure.ac', 'svn branch info'], 
-					function(svnBranchData)
+				RPC.call('readurl', ['https://raw.githubusercontent.com/nzbget/nzbget/develop/configure.ac', 'git branch info'], 
+					function(gitBranchData)
 					{
-						var rev = svnRevData.match(/.*Revision (\d+).*/);
-						if (rev.length > 1)
+						var html = document.createElement('DIV');
+						html.innerHTML = gitRevData;
+						html = html.textContent || html.innerText || '';
+						html = html.replace(/(?:\r\n|\r|\n)/g, ' ');
+						var rev = html.match(/([0-9\,]*)\s*commits/);
+   
+						if (rev && rev.length > 1)
 						{
-							var ver = svnBranchData.match(/.*AM_INIT_AUTOMAKE\(nzbget, (.*)\).*/);
-							if (ver.length > 1)
+							rev = rev[1].replace(',', '');
+							var ver = gitBranchData.match(/.*AM_INIT_AUTOMAKE\(nzbget, (.*)\).*/);
+							if (ver && ver.length > 1)
 							{
-								VersionInfo['devel-version'] = ver[1] + '-r' + rev[1];
+								VersionInfo['devel-version'] = ver[1] + '-r' + rev;
 							}
 						}
 						
