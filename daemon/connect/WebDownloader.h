@@ -64,7 +64,6 @@ private:
 	bool				m_bForce;
 	bool				m_bRedirecting;
 	bool				m_bRedirected;
-	int					m_iRedirects;
 	bool				m_bGZip;
 	bool				m_bRetry;
 #ifndef DISABLE_GZIP
@@ -93,6 +92,7 @@ public:
 	virtual void		Run();
 	virtual void		Stop();
 	EStatus				Download();
+	EStatus				DownloadWithRedirects(int iMaxRedirects);
 	bool				Terminate();
 	void				SetInfoName(const char* v);
 	const char*			GetInfoName() { return m_szInfoName; }

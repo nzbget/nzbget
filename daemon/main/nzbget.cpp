@@ -682,13 +682,7 @@ void ProcessWebGet()
 	downloader.SetOutputFilename(g_pCommandLineParser->GetWebGetFilename());
 	downloader.SetInfoName("WebGet");
 
-	int iRedirects = 0;
-	WebDownloader::EStatus eStatus = WebDownloader::adRedirect;
-	while (eStatus == WebDownloader::adRedirect && iRedirects < 5)
-	{
-		iRedirects++;
-		eStatus = downloader.Download();
-	}
+	WebDownloader::EStatus eStatus = downloader.DownloadWithRedirects(5);
 	bool bOK = eStatus == WebDownloader::adFinished;
 
 	exit(bOK ? 0 : 1);

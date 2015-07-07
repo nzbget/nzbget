@@ -3305,7 +3305,7 @@ void ReadUrlXmlCommand::Execute()
 	pDownloader->SetInfoName(szInfoName);
 
 	// do sync download
-	WebDownloader::EStatus eStatus = pDownloader->Download();
+	WebDownloader::EStatus eStatus = pDownloader->DownloadWithRedirects(5);
 	bool bOK = eStatus == WebDownloader::adFinished;
 
 	delete pDownloader;

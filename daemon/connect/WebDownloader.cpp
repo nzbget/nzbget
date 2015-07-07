@@ -111,14 +111,13 @@ void WebDownloader::Run()
 		iRemainedConnectRetries = 1;
 	}
 
-	m_iRedirects = 0;
 	EStatus Status = adFailed;
 
 	while (!IsStopped() && iRemainedDownloadRetries > 0 && iRemainedConnectRetries > 0)
 	{
 		SetLastUpdateTimeNow();
 
-		Status = Download();
+		Status = DownloadWithRedirects(5);
 
 		if ((((Status == adFailed) && (iRemainedDownloadRetries > 1)) ||
 			((Status == adConnectError) && (iRemainedConnectRetries > 1)))
@@ -143,17 +142,6 @@ void WebDownloader::Run()
 		if (Status == adFinished || Status == adFatalError || Status == adNotFound)
 		{
 			break;
-		}
-
-		if (Status == adRedirect)
-		{
-			m_iRedirects++;
-			if (m_iRedirects > 5)
-			{
-				warn("Too many redirects for %s", m_szInfoName);
-				Status = adFailed;
-				break;
-			}
 		}
 
 		if (Status != adConnectError)
@@ -244,6 +232,24 @@ WebDownloader::EStatus WebDownloader::Download()
 	return Status;
 }
 
+WebDownloader::EStatus WebDownloader::DownloadWithRedirects(int iMaxRedirects)
+{
+	// do sync download, following redirects
+	EStatus eStatus = adRedirect;
+	while (eStatus == adRedirect && iMaxRedirects >= 0)
+	{
+		iMaxRedirects--;
+		eStatus = Download();
+	}
+
+	if (eStatus == adRedirect && iMaxRedirects < 0)
+	{
+		warn("Too many redirects for %s", m_szInfoName);
+		eStatus = adFailed;
+	}
+
+	return eStatus;
+}
 
 WebDownloader::EStatus WebDownloader::CreateConnection(URL *pUrl)
 {
