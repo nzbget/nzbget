@@ -28,8 +28,6 @@ set PATH=%SystemRoot%\system32;%PATH%
 if "%1"=="/step2" goto STEP2
 if "%1"=="/step3" goto STEP3
    
-set BASE_URL=http://nzbget.net/download
-
 if x%NZBUP_BRANCH%==x (
 	echo This script is executed by NZBGet during update and is not supposed to be started manually by user.
 	echo.
@@ -76,6 +74,7 @@ rem and fetches files from web-servers
 nzbget.exe -B webget "%TEMP%\NZBGET_UPDATE.txt" "%UPDATE_INFO_LINK%"
 if errorlevel 1 goto DOWNLOAD_FAILURE
 
+rem extracting version number from info file
 if %NZBUP_BRANCH%==TESTING set VER_FIELD=testing-version
 if %NZBUP_BRANCH%==STABLE set VER_FIELD=stable-version
 set VER=0
@@ -93,10 +92,29 @@ for /f "delims=" %%a in ('type "%TEMP%\NZBGET_UPDATE.txt"') do (
 	)
 )
 
+rem extracting setup URL from info file
+if %NZBUP_BRANCH%==TESTING set VER_FIELD=testing-download
+if %NZBUP_BRANCH%==STABLE set VER_FIELD=stable-download
+set URL=
+for /f "delims=" %%a in ('type "%TEMP%\NZBGET_UPDATE.txt"') do (
+	set line=%%a
+	set line=!line:%VER_FIELD%=!
+	if not %%a==!line! (
+		set URL=!line!
+		rem deleting tabs, spaces, quotation marks and commas
+		set URL=!URL:	=!
+		set URL=!URL: =!
+		set URL=!URL:"=!
+		set URL=!URL:,=!
+		rem delete first character (colon)
+		set URL=!URL:~1,1000!
+	)
+)
+
 SET SETUP_EXE=nzbget-%VER%-bin-win32-setup.exe
 
 echo Downloading %SETUP_EXE%...
-nzbget.exe -B webget "%TEMP%\%SETUP_EXE%" "%BASE_URL%/%SETUP_EXE%"
+nzbget.exe -B webget "%TEMP%\%SETUP_EXE%" "%URL%"
 if errorlevel 1 goto DOWNLOAD_FAILURE
 echo Downloaded successfully
 rem using ping as wait-command, the third parameter (2) causes ping to wait 1 (one) second
