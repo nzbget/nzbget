@@ -57,9 +57,6 @@ POST_INSTALL = :
 NORMAL_UNINSTALL = :
 PRE_UNINSTALL = :
 POST_UNINSTALL = :
-build_triplet = @build@
-host_triplet = @host@
-target_triplet = @target@
 bin_PROGRAMS = nzbget$(EXEEXT)
 @WITH_PAR2_TRUE@am__append_1 = \
 @WITH_PAR2_TRUE@	lib/par2/commandline.cpp \
@@ -123,13 +120,13 @@ bin_PROGRAMS = nzbget$(EXEEXT)
 @WITH_TESTS_TRUE@	-I$(srcdir)/lib/catch \
 @WITH_TESTS_TRUE@	-I$(srcdir)/tests/suite
 
+subdir = .
 DIST_COMMON = README $(am__configure_deps) $(dist_doc_DATA) \
 	$(dist_exampleconf_DATA) $(nobase_dist_scripts_SCRIPTS) \
 	$(nobase_dist_webui_DATA) $(srcdir)/Makefile.am \
 	$(srcdir)/Makefile.in $(srcdir)/config.h.in \
-	$(top_srcdir)/configure AUTHORS COPYING ChangeLog INSTALL NEWS \
-	config.guess config.sub depcomp install-sh missing
-subdir = .
+	$(top_srcdir)/configure COPYING ChangeLog posix/depcomp \
+	posix/install-sh posix/missing
 ACLOCAL_M4 = $(top_srcdir)/aclocal.m4
 am__aclocal_m4_deps = $(top_srcdir)/configure.ac
 am__configure_deps = $(am__aclocal_m4_deps) $(CONFIGURE_DEPENDENCIES) \
@@ -298,7 +295,7 @@ am__strip_dir = `echo $$p | sed -e 's|^.*/||'`;
 nobase_dist_scriptsSCRIPT_INSTALL = $(install_sh_SCRIPT)
 SCRIPTS = $(nobase_dist_scripts_SCRIPTS)
 DEFAULT_INCLUDES = -I. -I$(srcdir) -I.
-depcomp = $(SHELL) $(top_srcdir)/depcomp
+depcomp = $(SHELL) $(top_srcdir)/posix/depcomp
 am__depfiles_maybe = depfiles
 CXXCOMPILE = $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) \
 	$(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS)
@@ -387,21 +384,13 @@ am__quote = @am__quote@
 am__tar = @am__tar@
 am__untar = @am__untar@
 bindir = @bindir@
-build = @build@
 build_alias = @build_alias@
-build_cpu = @build_cpu@
-build_os = @build_os@
-build_vendor = @build_vendor@
 datadir = @datadir@
 datarootdir = @datarootdir@
 docdir = @docdir@
 dvidir = @dvidir@
 exec_prefix = @exec_prefix@
-host = @host@
 host_alias = @host_alias@
-host_cpu = @host_cpu@
-host_os = @host_os@
-host_vendor = @host_vendor@
 htmldir = @htmldir@
 includedir = @includedir@
 infodir = @infodir@
@@ -424,11 +413,7 @@ psdir = @psdir@
 sbindir = @sbindir@
 sharedstatedir = @sharedstatedir@
 sysconfdir = @sysconfdir@
-target = @target@
 target_alias = @target_alias@
-target_cpu = @target_cpu@
-target_os = @target_os@
-target_vendor = @target_vendor@
 nzbget_SOURCES = daemon/connect/Connection.cpp \
 	daemon/connect/Connection.h daemon/connect/TLS.cpp \
 	daemon/connect/TLS.h daemon/connect/WebDownloader.cpp \
@@ -574,7 +559,6 @@ linux_FILES = \
 doc_FILES = \
 	lib/par2/AUTHORS \
 	lib/par2/README \
-	AUTHORS \
 	README \
 	ChangeLog \
 	COPYING
@@ -657,15 +641,15 @@ $(srcdir)/Makefile.in:  $(srcdir)/Makefile.am  $(am__configure_deps)
 	@for dep in $?; do \
 	  case '$(am__configure_deps)' in \
 	    *$$dep*) \
-	      echo ' cd $(srcdir) && $(AUTOMAKE) --gnu '; \
-	      cd $(srcdir) && $(AUTOMAKE) --gnu  \
+	      echo ' cd $(srcdir) && $(AUTOMAKE) --foreign '; \
+	      cd $(srcdir) && $(AUTOMAKE) --foreign  \
 		&& exit 0; \
 	      exit 1;; \
 	  esac; \
 	done; \
-	echo ' cd $(top_srcdir) && $(AUTOMAKE) --gnu  Makefile'; \
+	echo ' cd $(top_srcdir) && $(AUTOMAKE) --foreign  Makefile'; \
 	cd $(top_srcdir) && \
-	  $(AUTOMAKE) --gnu  Makefile
+	  $(AUTOMAKE) --foreign  Makefile
 .PRECIOUS: Makefile
 Makefile: $(srcdir)/Makefile.in $(top_builddir)/config.status
 	@case '$?' in \
@@ -2155,7 +2139,7 @@ distclean-tags:
 distdir: $(DISTFILES)
 	$(am__remove_distdir)
 	mkdir $(distdir)
-	$(mkdir_p) $(distdir)/daemon/windows $(distdir)/lib/par2 $(distdir)/linux $(distdir)/osx $(distdir)/osx/NZBGet.xcodeproj $(distdir)/osx/Resources $(distdir)/osx/Resources/Images $(distdir)/osx/Resources/licenses $(distdir)/scripts $(distdir)/tests/testdata/nzbfile $(distdir)/tests/testdata/parchecker $(distdir)/webui $(distdir)/webui/img $(distdir)/webui/lib $(distdir)/windows $(distdir)/windows/resources $(distdir)/windows/setup
+	$(mkdir_p) $(distdir)/daemon/windows $(distdir)/lib/par2 $(distdir)/linux $(distdir)/osx $(distdir)/osx/NZBGet.xcodeproj $(distdir)/osx/Resources $(distdir)/osx/Resources/Images $(distdir)/osx/Resources/licenses $(distdir)/posix $(distdir)/scripts $(distdir)/tests/testdata/nzbfile $(distdir)/tests/testdata/parchecker $(distdir)/webui $(distdir)/webui/img $(distdir)/webui/lib $(distdir)/windows $(distdir)/windows/resources $(distdir)/windows/setup
 	@srcdirstrip=`echo "$(srcdir)" | sed 's|.|.|g'`; \
 	topsrcdirstrip=`echo "$(top_srcdir)" | sed 's|.|.|g'`; \
 	list='$(DISTFILES)'; for file in $$list; do \

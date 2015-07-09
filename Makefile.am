@@ -286,7 +286,6 @@ linux_FILES = \
 doc_FILES = \
 	lib/par2/AUTHORS \
 	lib/par2/README \
-	AUTHORS \
 	README \
 	ChangeLog \
 	COPYING
