@@ -228,7 +228,6 @@ windows_FILES = \
 	daemon/windows/win32.h \
 	daemon/windows/WinConsole.cpp \
 	daemon/windows/WinConsole.h \
-	nzbget.sln \
 	nzbget.vcproj \
 	windows/nzbget-command-shell.bat  \
 	windows/install-update.bat  \
@@ -286,7 +285,6 @@ linux_FILES = \
 doc_FILES = \
 	lib/par2/AUTHORS \
 	lib/par2/README \
-	AUTHORS \
 	README \
 	ChangeLog \
 	COPYING
