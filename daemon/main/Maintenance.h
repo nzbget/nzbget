@@ -60,6 +60,7 @@ public:
 	bool				StartUpdate(EBranch eBranch);
 	void				ResetUpdateController();
 	bool				CheckUpdates(char** pUpdateInfo);
+	static bool			VerifySignature(const char* szInFilename, const char* szSigFilename, const char* szPubKeyFilename);
 };
 
 extern Maintenance* g_pMaintenance;
