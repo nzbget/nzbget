@@ -153,8 +153,8 @@ fi
 
 # File name format for output files
 
-VERSION=`grep "AM_INIT_AUTOMAKE(nzbget, " configure.ac`
-VERSION=`expr "$VERSION" : '.*, \(.*\))'`
+VERSION=`grep "AC_INIT(nzbget, " configure.ac`
+VERSION=`expr "$VERSION" : '.*, \(.*\),.*)'`
 
 # Building revision name
 B=`git branch | sed -n -e 's/^\* \(.*\)/\1/p' | sed 's/ /-/g' | sed 's/(//g' | sed 's/)//g'`
