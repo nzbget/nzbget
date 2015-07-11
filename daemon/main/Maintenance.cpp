@@ -439,7 +439,7 @@ bool Signature::ComputeInHash()
 bool Signature::ReadSignature()
 {
 	char szSigTitle[256];
-	snprintf(szSigTitle, sizeof(szSigTitle), "RSA-SHA256(%s)=", Util::BaseFileName(m_szInFilename));
+	snprintf(szSigTitle, sizeof(szSigTitle), "\"RSA-SHA256(%s)\" : \"", Util::BaseFileName(m_szInFilename));
 	szSigTitle[256-1] = '\0';
 
 	FILE* infile = fopen(m_szSigFilename, FOPEN_RB);
@@ -456,7 +456,12 @@ bool Signature::ReadSignature()
 	{
 		if (!strncmp(buf, szSigTitle, iTitLen))
 		{
-			char* szHexSig = Util::Trim(buf + iTitLen);
+			char* szHexSig = buf + iTitLen;
+			int iSigLen = strlen(szHexSig);
+			if (iSigLen > 2)
+			{
+				szHexSig[iSigLen - 2] = '\0'; // trim trailing ",
+			}
 			for (; *szHexSig && *(szHexSig+1);)
 			{
 				unsigned char c1 = *szHexSig++;
