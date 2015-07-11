@@ -511,22 +511,16 @@ bool Util::CreateSparseFile(const char* szFilename, long long iSize)
 	// 1) set file size using function "truncate" (it is fast, if it works)
 	truncate(szFilename, iSize);
 	// check if it worked
-	pFile = fopen(szFilename, FOPEN_AB);
-	if (pFile)
+	bOK = FileSize(szFilename) == iSize;
+	if (!bOK)
 	{
-		fseek(pFile, 0, SEEK_END);
-		bOK = ftell(pFile) == iSize;
-		if (!bOK)
-		{
-			// 2) truncate did not work, expanding the file by writing in it (it is slow)
-			fclose(pFile);
-			truncate(szFilename, 0);
-			pFile = fopen(szFilename, FOPEN_AB);
-			char c = '0';
-			fwrite(&c, 1, iSize, pFile);
-			bOK = ftell(pFile) == iSize;
-		}
+		// 2) truncate did not work, expanding the file by writing in it (it is slow)
+		truncate(szFilename, 0);
+		pFile = fopen(szFilename, FOPEN_AB);
+		char c = '0';
+		fwrite(&c, 1, iSize, pFile);
 		fclose(pFile);
+		bOK = FileSize(szFilename) == iSize;
 	}
 #endif
 	return bOK;
