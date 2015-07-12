@@ -164,7 +164,11 @@ void UnpackController::Run()
 	if (m_pPostInfo->GetUnpackTried() && !m_pPostInfo->GetParRepaired() &&
 		(!Util::EmptyStr(m_szPassword) || Util::EmptyStr(g_pOptions->GetUnpackPassFile()) || m_pPostInfo->GetPassListTried()))
 	{
-		PrintMessage(Message::mkError, "%s failed: second unpack attempt skipped due to par-check not repaired anything", m_szInfoNameUp);
+		PrintMessage(Message::mkInfo, "Second unpack attempt skipped for %s due to par-check not repaired anything", m_szName);
+		PrintMessage(Message::mkError,
+			m_pPostInfo->GetLastUnpackStatus() == (int)NZBInfo::usPassword ?
+				 "%s failed: checksum error in the encrypted file. Corrupt file or wrong password." : "%s failed.",
+			m_szInfoNameUp);
 		m_pPostInfo->GetNZBInfo()->SetUnpackStatus((NZBInfo::EUnpackStatus)m_pPostInfo->GetLastUnpackStatus());
 		m_pPostInfo->SetStage(PostInfo::ptQueued);
 	}

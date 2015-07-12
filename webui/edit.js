@@ -589,11 +589,15 @@ var DownloadsEditDialog = (new function($)
 				file.status = file.Paused ? (file.ActiveDownloads > 0 ? 'pausing' : 'paused') : (file.ActiveDownloads > 0 ? 'downloading' : 'queued');
 			}
 
+			var FileSizeMB = (file.FileSizeHi * 4096) + (file.FileSizeLo / 1024 / 1024);
+			var RemainingSizeMB = (file.RemainingSizeHi * 4096) + (file.RemainingSizeLo / 1024 / 1024);
 			var age = Util.formatAge(file.PostTime + UISettings.timeZoneCorrection*60*60);
-			var size = Util.formatSizeMB(0, file.FileSizeLo);
-			if (file.FileSizeLo !== file.RemainingSizeLo)
+			var size = Util.formatSizeMB(FileSizeMB, file.FileSizeLo);
+			if (FileSizeMB !== RemainingSizeMB || file.FileSizeLo !== file.RemainingSizeLo)
 			{
-				size = '(' + Util.round0(file.RemainingSizeLo / file.FileSizeLo * 100) + '%) ' + size;
+				size = '(' + Util.round0((file.FileSizeHi > 0 ?
+					RemainingSizeMB / FileSizeMB :
+					file.RemainingSizeLo / file.FileSizeLo) * 100) + '%) ' + size;
 			}
 
 			var status;

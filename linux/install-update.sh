@@ -19,8 +19,6 @@
 #  Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 #
 
-BASE_URL="http://nzbget.net/download"
-
 if test "$NZBUP_PROCESSID" = ""; then
     echo "This file is not supposed to be executed directly. To update NZBGet please choose Settings -> SYSTEM -> Check for update in the web-interface."
     exit 1
@@ -42,20 +40,23 @@ fi
 
 if test "$NZBUP_BRANCH" = "TESTING"; then
     VER_FIELD="testing-version"
+    DOWNLOAD_FIELD="testing-download"
 elif test "$NZBUP_BRANCH" = "STABLE"; then
     VER_FIELD="stable-version"
+    DOWNLOAD_FIELD="stable-download"
 else
     echo "[ERROR] Unsupported branch $NZBUP_BRANCH"
     exit 1
 fi
 
 VER=`cat "$NZBOP_TEMPDIR/NZBGET_UPDATE.txt" | sed -n "s/^.*$VER_FIELD.*: \"\(.*\)\".*/\1/p"`
+DOWNLOAD_LINK=`cat "$NZBOP_TEMPDIR/NZBGET_UPDATE.txt" | sed -n "s/^.*$DOWNLOAD_FIELD.*: \"\(.*\)\".*/\1/p"`
 rm -f "$NZBOP_TEMPDIR/NZBGET_UPDATE.txt"
 
 INSTALLER="nzbget-$VER-bin-linux.run"
 echo "Downloading $INSTALLER..."
 rm -f "$NZBOP_TEMPDIR/$INSTALLER"
-"$NZBOP_APPBIN" -B webget "$NZBOP_TEMPDIR/$INSTALLER" "$BASE_URL/$INSTALLER" 2>/dev/null
+"$NZBOP_APPBIN" -B webget "$NZBOP_TEMPDIR/$INSTALLER" "$DOWNLOAD_LINK" 2>/dev/null
 if test "$?" != "0"; then
     echo "[ERROR] Download failed, please try again later"
     exit 1
