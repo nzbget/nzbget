@@ -32,7 +32,7 @@ fi
 
 echo "Downloading version information..."
 UPDATE_INFO_LINK=`cat "$NZBOP_APPDIR/webui/package-info.json" | sed -n 's/^.*update-info-link.*: "\(.*\)".*/\1/p'`
-"$NZBOP_APPBIN" -n -B webget "$NZBOP_TEMPDIR/NZBGET_UPDATE.txt" "$UPDATE_INFO_LINK" 2>/dev/null
+"$NZBOP_APPBIN" -B webget "$NZBOP_TEMPDIR/NZBGET_UPDATE.txt" "$UPDATE_INFO_LINK" 2>/dev/null
 if test "$?" != "0"; then
     echo "[ERROR] Download failed, please try again later"
     exit 1
@@ -59,7 +59,7 @@ rm -f "$NZBOP_TEMPDIR/NZBGET_UPDATE.txt"
 SIGNATURE="nzbget-$VER.sig.txt"
 echo "Downloading verification signature..."
 rm -f "$NZBOP_TEMPDIR/$SIGNATURE"
-"$NZBOP_APPBIN" -n -B webget "$NZBOP_TEMPDIR/$SIGNATURE" "$SIG_LINK" 2>/dev/null
+"$NZBOP_APPBIN" -B webget "$NZBOP_TEMPDIR/$SIGNATURE" "$SIG_LINK" 2>/dev/null
 if test "$?" != "0"; then
     echo "[ERROR] Download failed, please try again later"
     exit 1
@@ -68,14 +68,14 @@ fi
 INSTALLER="nzbget-$VER-bin-linux.run"
 echo "Downloading $INSTALLER..."
 rm -f "$NZBOP_TEMPDIR/$INSTALLER"
-"$NZBOP_APPBIN" -n -B webget "$NZBOP_TEMPDIR/$INSTALLER" "$DNL_LINK" 2>/dev/null
+"$NZBOP_APPBIN" -B webget "$NZBOP_TEMPDIR/$INSTALLER" "$DNL_LINK" 2>/dev/null
 if test "$?" != "0"; then
     echo "[ERROR] Download failed, please try again later"
     exit 1
 fi
 
 echo "Verifying package authenticity..."
-"$NZBOP_APPBIN" -n -B verify "$NZBOP_APPDIR/pubkey.pem" "$NZBOP_TEMPDIR/$SIGNATURE" "$NZBOP_TEMPDIR/$INSTALLER" 2>/dev/null
+"$NZBOP_APPBIN" -B verify "$NZBOP_APPDIR/pubkey.pem" "$NZBOP_TEMPDIR/$SIGNATURE" "$NZBOP_TEMPDIR/$INSTALLER" 2>/dev/null
 if test "$?" != "93"; then
     echo "[ERROR] Package authenticity verification failed"
     rm -f "$NZBOP_TEMPDIR/$INSTALLER"
