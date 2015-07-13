@@ -191,7 +191,7 @@ bool Repairer::ScanDataFile(DiskFile *diskfile, Par2RepairerSourceFile* &sourcef
 			if (eFileStatus != ParChecker::fsUnknown)
 			{
 				sig_done(name, iAvailableBlocks, sourcefile->BlockCount());
-				sig_progress(1000.0);
+				sig_progress(1000);
 				matchtype = eFileStatus == ParChecker::fsSuccess ? eFullMatch :
 					eFileStatus == ParChecker::fsPartial ? ePartialMatch : eNoMatch;
 				m_pOwner->SetParFull(false);
