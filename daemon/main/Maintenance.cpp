@@ -40,6 +40,12 @@
 #endif
 #include <errno.h>
 
+#ifdef HAVE_OPENSSL
+#include <openssl/rsa.h>
+#include <openssl/sha.h>
+#include <openssl/pem.h>
+#endif /* HAVE_OPENSSL */
+
 #include "nzbget.h"
 #include "Log.h"
 #include "Util.h"
@@ -50,6 +56,30 @@
 extern void ExitProc();
 extern int g_iArgumentCount;
 extern char* (*g_szArguments)[];
+
+
+#ifdef HAVE_OPENSSL
+class Signature
+{
+private:
+	const char*			m_szInFilename;
+	const char*			m_szSigFilename;
+	const char*			m_szPubKeyFilename;
+    unsigned char		m_InHash[SHA256_DIGEST_LENGTH];
+    unsigned char		m_Signature[256];
+	RSA*				m_pPubKey;
+
+	bool				ReadSignature();
+	bool				ComputeInHash();
+	bool				ReadPubKey();
+
+public:
+						Signature(const char* szInFilename, const char* szSigFilename, const char* szPubKeyFilename);
+						~Signature();
+	bool				Verify();
+};
+#endif
+
 
 Maintenance::Maintenance()
 {
@@ -233,6 +263,16 @@ bool Maintenance::ReadPackageInfoStr(const char* szKey, char** pValue)
 	return true;
 }
 
+bool Maintenance::VerifySignature(const char* szInFilename, const char* szSigFilename, const char* szPubKeyFilename)
+{
+#ifdef HAVE_OPENSSL
+	Signature signature(szInFilename, szSigFilename, szPubKeyFilename);
+	return signature.Verify();
+#else
+	return false;
+#endif
+}
+
 void UpdateScriptController::Run()
 {
 	// the update-script should not be automatically terminated when the program quits
@@ -358,3 +398,110 @@ void UpdateInfoScriptController::AddMessage(Message::EKind eKind, const char* sz
 		ScriptController::AddMessage(eKind, szText);
 	}
 }
+
+#ifdef HAVE_OPENSSL
+Signature::Signature(const char *szInFilename, const char *szSigFilename, const char *szPubKeyFilename)
+{
+	m_szInFilename = szInFilename;
+	m_szSigFilename = szSigFilename;
+	m_szPubKeyFilename = szPubKeyFilename;
+	m_pPubKey = NULL;
+}
+
+Signature::~Signature()
+{
+	RSA_free(m_pPubKey);
+}
+
+// Calculate SHA-256 for input file (m_szInFilename)
+bool Signature::ComputeInHash()
+{
+    FILE* infile = fopen(m_szInFilename, FOPEN_RB);
+    if (!infile)
+	{
+		return false;
+	}
+    SHA256_CTX sha256;
+	SHA256_Init(&sha256);
+    const int bufSize = 32*1024;
+    char* buffer = (char*)malloc(bufSize);
+    while(int bytesRead = fread(buffer, 1, bufSize, infile))
+    {
+        SHA256_Update(&sha256, buffer, bytesRead);
+    }
+    SHA256_Final(m_InHash, &sha256);
+    free(buffer);
+    fclose(infile);
+	return true;
+}
+
+// Read signature from file (m_szSigFilename) into memory 
+bool Signature::ReadSignature()
+{
+	char szSigTitle[256];
+	snprintf(szSigTitle, sizeof(szSigTitle), "\"RSA-SHA256(%s)\" : \"", Util::BaseFileName(m_szInFilename));
+	szSigTitle[256-1] = '\0';
+
+	FILE* infile = fopen(m_szSigFilename, FOPEN_RB);
+    if (!infile)
+	{
+		return false;
+	}
+
+	bool bOK = false;
+	int iTitLen = strlen(szSigTitle);
+	char buf[1024];
+	unsigned char* output = m_Signature;
+	while (fgets(buf, sizeof(buf) - 1, infile))
+	{
+		if (!strncmp(buf, szSigTitle, iTitLen))
+		{
+			char* szHexSig = buf + iTitLen;
+			int iSigLen = strlen(szHexSig);
+			if (iSigLen > 2)
+			{
+				szHexSig[iSigLen - 2] = '\0'; // trim trailing ",
+			}
+			for (; *szHexSig && *(szHexSig+1);)
+			{
+				unsigned char c1 = *szHexSig++;
+				unsigned char c2 = *szHexSig++;
+				c1 = '0' <= c1 && c1 <= '9' ? c1 - '0' : 'A' <= c1 && c1 <= 'F' ? c1 - 'A' + 10 :
+					'a' <= c1 && c1 <= 'f' ? c1 - 'a' + 10 : 0;
+				c2 = '0' <= c2 && c2 <= '9' ? c2 - '0' : 'A' <= c2 && c2 <= 'F' ? c2 - 'A' + 10 :
+					'a' <= c2 && c2 <= 'f' ? c2 - 'a' + 10 : 0;
+				unsigned char ch = (c1 << 4) + c2;
+				*output++ = (char)ch;
+			}
+			bOK = output == m_Signature + sizeof(m_Signature);
+
+			break;
+		}
+	}
+
+	fclose(infile);
+	return bOK;
+}
+
+// Read public key from file (m_szPubKeyFilename) into memory
+bool Signature::ReadPubKey()
+{
+	char* keybuf;
+	int keybuflen;
+	if (!Util::LoadFileIntoBuffer(m_szPubKeyFilename, &keybuf, &keybuflen))
+	{
+		return false;
+	}
+	BIO* mem = BIO_new_mem_buf(keybuf, keybuflen);
+	m_pPubKey = PEM_read_bio_RSA_PUBKEY(mem, NULL, NULL, NULL);
+	BIO_free(mem);
+	free(keybuf);
+	return m_pPubKey != NULL;
+}
+
+bool Signature::Verify()
+{
+	return ComputeInHash() && ReadSignature() && ReadPubKey() &&
+		RSA_verify(NID_sha256, m_InHash, sizeof(m_InHash), m_Signature, sizeof(m_Signature), m_pPubKey) == 1;
+}
+#endif /* HAVE_OPENSSL */

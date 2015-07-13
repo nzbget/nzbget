@@ -95,28 +95,62 @@ for /f "delims=" %%a in ('type "%TEMP%\NZBGET_UPDATE.txt"') do (
 rem extracting setup URL from info file
 if %NZBUP_BRANCH%==TESTING set VER_FIELD=testing-download
 if %NZBUP_BRANCH%==STABLE set VER_FIELD=stable-download
-set URL=
+set DNL_URL=
 for /f "delims=" %%a in ('type "%TEMP%\NZBGET_UPDATE.txt"') do (
 	set line=%%a
 	set line=!line:%VER_FIELD%=!
 	if not %%a==!line! (
-		set URL=!line!
+		set DNL_URL=!line!
 		rem deleting tabs, spaces, quotation marks and commas
-		set URL=!URL:	=!
-		set URL=!URL: =!
-		set URL=!URL:"=!
-		set URL=!URL:,=!
+		set DNL_URL=!DNL_URL:	=!
+		set DNL_URL=!DNL_URL: =!
+		set DNL_URL=!DNL_URL:"=!
+		set DNL_URL=!DNL_URL:,=!
 		rem delete first character (colon)
-		set URL=!URL:~1,1000!
+		set DNL_URL=!DNL_URL:~1,1000!
 	)
 )
+
+rem extracting signature URL from info file
+if %NZBUP_BRANCH%==TESTING set VER_FIELD=testing-signature
+if %NZBUP_BRANCH%==STABLE set VER_FIELD=stable-signature
+set SIG_URL=
+for /f "delims=" %%a in ('type "%TEMP%\NZBGET_UPDATE.txt"') do (
+	set line=%%a
+	set line=!line:%VER_FIELD%=!
+	if not %%a==!line! (
+		set SIG_URL=!line!
+		rem deleting tabs, spaces, quotation marks and commas
+		set SIG_URL=!SIG_URL:	=!
+		set SIG_URL=!SIG_URL: =!
+		set SIG_URL=!SIG_URL:"=!
+		set SIG_URL=!SIG_URL:,=!
+		rem delete first character (colon)
+		set SIG_URL=!SIG_URL:~1,1000!
+	)
+)
+
+SET SIG_FILE=nzbget-%VER%.sig.txt
+echo Downloading verification signature...
+nzbget.exe -B webget "%TEMP%\%SIG_FILE%" "%SIG_URL%"
+if errorlevel 1 goto DOWNLOAD_FAILURE
 
 SET SETUP_EXE=nzbget-%VER%-bin-win32-setup.exe
 
 echo Downloading %SETUP_EXE%...
-nzbget.exe -B webget "%TEMP%\%SETUP_EXE%" "%URL%"
+nzbget.exe -B webget "%TEMP%\%SETUP_EXE%" "%DNL_URL%"
 if errorlevel 1 goto DOWNLOAD_FAILURE
-echo Downloaded successfully
+
+echo Verifying package authenticity...
+nzbget.exe -B verify "%NZBOP_APPDIR%\pubkey.pem" "%TEMP%\%SIG_FILE%" "%TEMP%\%SETUP_EXE%"
+if not "%ERRORLEVEL%"=="93" (
+	del "%TEMP%\%SIG_FILE%"
+	del "%TEMP%\%SETUP_EXE%"
+	goto VERIFY_FAILURE
+)
+
+del "%TEMP%\%SIG_FILE%"
+
 rem using ping as wait-command, the third parameter (2) causes ping to wait 1 (one) second
 ping 127.0.0.1 -n 2 -w 1000 > nul
 
@@ -215,6 +249,16 @@ echo.
 exit
 
 
+:VERIFY_FAILURE
+rem This is in the first instance, the error is printed to web-interface
+echo.
+echo [ERROR] ***********************************************
+echo [ERROR] Package authenticity verification failed
+echo [ERROR] ***********************************************
+echo.
+exit
+
+
 :COPYSCRIPT_FAILURE
 rem This is in the first instance, the error is printed to web-interface
 echo.
@@ -237,4 +281,3 @@ rem This is in the second instance, the error is printed to console window
 start "Error during update" CMD /c "echo ERROR: Failed to start NZBGet && pause"
 ping 127.0.0.1 -n 11 -w 1000 > nul
 exit
-

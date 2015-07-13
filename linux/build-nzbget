@@ -336,6 +336,7 @@ for CONFIG in $CONFIGS; do
             cp $BUILDDIR/linux/installer.sh $INSTFILE
             cp $BUILDDIR/linux/package-info.json nzbget/webui
             cp $BUILDDIR/linux/install-update.sh nzbget
+            cp $BUILDDIR/pubkey.pem nzbget
             cp ../setup/license-unrar.txt nzbget
             cp ../setup/license-7zip.txt nzbget
 

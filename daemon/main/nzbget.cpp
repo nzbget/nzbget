@@ -98,6 +98,7 @@ void Reload();
 void Cleanup();
 void ProcessClientRequest();
 void ProcessWebGet();
+void ProcessSigVerify();
 #ifndef WIN32
 void Daemonize();
 #endif
@@ -303,6 +304,12 @@ void Run(bool bReload)
 	if (g_pCommandLineParser->GetWebGet())
 	{
 		ProcessWebGet();
+		return;
+	}
+
+	if (g_pCommandLineParser->GetSigVerify())
+	{
+		ProcessSigVerify();
 		return;
 	}
 
@@ -686,6 +693,18 @@ void ProcessWebGet()
 	bool bOK = eStatus == WebDownloader::adFinished;
 
 	exit(bOK ? 0 : 1);
+}
+
+void ProcessSigVerify()
+{
+#ifdef HAVE_OPENSSL
+	bool bOK = Maintenance::VerifySignature(g_pCommandLineParser->GetLastArg(),
+		g_pCommandLineParser->GetSigFilename(), g_pCommandLineParser->GetPubKeyFilename());
+	exit(bOK ? 93 : 1);
+#else
+	printf("ERROR: Could not verify signature, the program was compiled without OpenSSL support\n");
+	exit(1);	
+#endif
 }
 
 void ExitProc()
