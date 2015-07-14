@@ -141,12 +141,12 @@ Verify()
 DetectEndianness()
 {
     # Sixth byte of any executable indicates endianness
-    ENDBYTE=`dd if=/bin/sh bs=1 count=6 2>/dev/null | sed -n 's/ELF.\(.*\)/\1/p'`
+    ENDBYTE=`dd if=/bin/sh bs=1 count=6 2>/dev/null | sed -n 's/.ELF.\(.*\)/\1/p'`
 
     ENDIAN=unknown
-    if test $ENDBYTE="\x01"; then
+    if test "$ENDBYTE" = $'\001'; then
         ENDIAN=little
-    elif test $ENDBYTE="\x02"; then
+    elif test "$ENDBYTE" = $'\002'; then
         ENDIAN=big
     fi
 }
