@@ -91,6 +91,7 @@ static const char* OPTION_AUTHORIZEDIP			= "AuthorizedIP";
 static const char* OPTION_ARTICLETIMEOUT		= "ArticleTimeout";
 static const char* OPTION_URLTIMEOUT			= "UrlTimeout";
 static const char* OPTION_SAVEQUEUE				= "SaveQueue";
+static const char* OPTION_FLUSHQUEUE			= "FlushQueue";
 static const char* OPTION_RELOADQUEUE			= "ReloadQueue";
 static const char* OPTION_BROKENLOG				= "BrokenLog";
 static const char* OPTION_NZBLOG				= "NzbLog";
@@ -402,6 +403,7 @@ void Options::Init(const char* szExeName, const char* szConfigFilename, bool bNo
 	m_bAppendCategoryDir	= false;
 	m_bContinuePartial		= false;
 	m_bSaveQueue			= false;
+	m_bFlushQueue			= false;
 	m_bDupeCheck			= false;
 	m_iRetries				= 0;
 	m_iRetryInterval		= 0;
@@ -672,6 +674,7 @@ void Options::InitDefaults()
 	SetOption(OPTION_ARTICLETIMEOUT, "60");
 	SetOption(OPTION_URLTIMEOUT, "60");
 	SetOption(OPTION_SAVEQUEUE, "yes");
+	SetOption(OPTION_FLUSHQUEUE, "no");
 	SetOption(OPTION_RELOADQUEUE, "yes");
 	SetOption(OPTION_BROKENLOG, "yes");
 	SetOption(OPTION_NZBLOG, "yes");
@@ -969,6 +972,7 @@ void Options::InitOptions()
 	m_bAppendCategoryDir	= (bool)ParseEnumValue(OPTION_APPENDCATEGORYDIR, BoolCount, BoolNames, BoolValues);
 	m_bContinuePartial		= (bool)ParseEnumValue(OPTION_CONTINUEPARTIAL, BoolCount, BoolNames, BoolValues);
 	m_bSaveQueue			= (bool)ParseEnumValue(OPTION_SAVEQUEUE, BoolCount, BoolNames, BoolValues);
+	m_bFlushQueue			= (bool)ParseEnumValue(OPTION_FLUSHQUEUE, BoolCount, BoolNames, BoolValues);
 	m_bDupeCheck			= (bool)ParseEnumValue(OPTION_DUPECHECK, BoolCount, BoolNames, BoolValues);
 	m_bParRepair			= (bool)ParseEnumValue(OPTION_PARREPAIR, BoolCount, BoolNames, BoolValues);
 	m_bParQuick				= (bool)ParseEnumValue(OPTION_PARQUICK, BoolCount, BoolNames, BoolValues);

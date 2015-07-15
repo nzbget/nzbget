@@ -208,6 +208,7 @@ private:
 	int					m_iRetries;
 	int					m_iRetryInterval;
 	bool				m_bSaveQueue;
+	bool				m_bFlushQueue;
 	bool				m_bDupeCheck;
 	char*				m_szControlIP;
 	char*				m_szControlUsername;
@@ -360,6 +361,7 @@ public:
 	int					GetRetries() { return m_iRetries; }
 	int					GetRetryInterval() { return m_iRetryInterval; }
 	bool				GetSaveQueue() { return m_bSaveQueue; }
+	bool				GetFlushQueue() { return m_bFlushQueue; }
 	bool				GetDupeCheck() { return m_bDupeCheck; }
 	const char*			GetControlIP() { return m_szControlIP; }
 	const char*			GetControlUsername() { return m_szControlUsername; }
