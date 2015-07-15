@@ -1555,6 +1555,15 @@ int Util::NumberOfCpuCores()
 	return -1;
 }
 
+bool Util::FlushFileBuffers(int iFileDescriptor, char* szErrBuf, int iBufSize)
+{
+	return true;
+}
+
+bool Util::FlushDirBuffers(const char* szFilename, char* szErrBuf, int iBufSize)
+{
+	return true;
+}
 
 unsigned int WebUtil::DecodeBase64(char* szInputBuffer, int iInputBufferLength, char* szOutputBuffer)
 {
