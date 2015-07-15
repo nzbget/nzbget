@@ -1557,12 +1557,35 @@ int Util::NumberOfCpuCores()
 
 bool Util::FlushFileBuffers(int iFileDescriptor, char* szErrBuf, int iBufSize)
 {
+#ifdef WIN32
+	BOOL bOK = ::FlushFileBuffers((HANDLE)_get_osfhandle(iFileDescriptor));
+	if (!bOK)
+	{
+		FormatMessage(FORMAT_MESSAGE_FROM_SYSTEM | FORMAT_MESSAGE_IGNORE_INSERTS,
+			NULL, GetLastError(), MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT),
+			szErrBuf, iBufSize, NULL);
+	}
+	return bOK;
+#else
 	return true;
+#endif
 }
 
 bool Util::FlushDirBuffers(const char* szFilename, char* szErrBuf, int iBufSize)
 {
+#ifdef WIN32
+	FILE* pFile = fopen(szFilename, FOPEN_WB);
+	if (!pFile)
+	{
+		GetLastErrorMessage(szErrBuf, iBufSize);
+		return false;
+	}
+	bool bOK = FlushFileBuffers(_fileno(pFile), szErrBuf, iBufSize);
+	fclose(pFile);
+	return bOK;
+#else
 	return true;
+#endif
 }
 
 unsigned int WebUtil::DecodeBase64(char* szInputBuffer, int iInputBufferLength, char* szOutputBuffer)
