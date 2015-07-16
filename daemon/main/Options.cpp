@@ -674,7 +674,7 @@ void Options::InitDefaults()
 	SetOption(OPTION_ARTICLETIMEOUT, "60");
 	SetOption(OPTION_URLTIMEOUT, "60");
 	SetOption(OPTION_SAVEQUEUE, "yes");
-	SetOption(OPTION_FLUSHQUEUE, "no");
+	SetOption(OPTION_FLUSHQUEUE, "yes");
 	SetOption(OPTION_RELOADQUEUE, "yes");
 	SetOption(OPTION_BROKENLOG, "yes");
 	SetOption(OPTION_NZBLOG, "yes");
