@@ -155,9 +155,14 @@ bool StateFile::FinishWriteTransaction()
 	char szErrBuf[256];
 
 	// flush file content before renaming
-	if (g_pOptions->GetFlushQueue() && !Util::FlushFileBuffers(fileno(m_pFile), szErrBuf, sizeof(szErrBuf)))
+	if (g_pOptions->GetFlushQueue())
 	{
-		warn("Could not flush file %s into disk: %s", m_szTempFilename, szErrBuf);
+		debug("Flushing data for file %s", Util::BaseFileName(m_szTempFilename));
+		fflush(m_pFile);
+		if (!Util::FlushFileBuffers(fileno(m_pFile), szErrBuf, sizeof(szErrBuf)))
+		{
+			warn("Could not flush file %s into disk: %s", m_szTempFilename, szErrBuf);
+		}
 	}
 
 	fclose(m_pFile);
@@ -174,9 +179,13 @@ bool StateFile::FinishWriteTransaction()
 	}
 
 	// flush directory buffer after renaming
-	if (g_pOptions->GetFlushQueue() && !Util::FlushDirBuffers(m_szDestFilename, szErrBuf, sizeof(szErrBuf)))
+	if (g_pOptions->GetFlushQueue())
 	{
-		warn("Could not flush directory buffers for file %s into disk: %s", m_szDestFilename, szErrBuf);
+		debug("Flushing directory for file %s", Util::BaseFileName(m_szTempFilename));
+		if (!Util::FlushDirBuffers(m_szDestFilename, szErrBuf, sizeof(szErrBuf)))
+		{
+			warn("Could not flush directory buffers for file %s into disk: %s", m_szDestFilename, szErrBuf);
+		}
 	}
 
 	return true;

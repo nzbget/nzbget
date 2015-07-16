@@ -77,6 +77,14 @@ AC_CHECK_FUNC(getopt_long,
 
 
 dnl
+dnl fsync
+dnl
+AC_CHECK_FUNC(fdatasync,
+	[AC_DEFINE([HAVE_FDATASYNC], 1, [Define to 1 if fdatasync is supported])],)
+AC_CHECK_DECL(F_FULLFSYNC,
+	[AC_DEFINE([HAVE_FULLFSYNC], 1, [Define to 1 if F_FULLFSYNC is supported])],,[#include <fcntl.h>])
+
+dnl
 dnl use 64-Bits for file sizes
 dnl
 AC_SYS_LARGEFILE

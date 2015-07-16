@@ -4564,6 +4564,157 @@ fi
 
 
 
+{ echo "$as_me:$LINENO: checking for fdatasync" >&5
+echo $ECHO_N "checking for fdatasync... $ECHO_C" >&6; }
+if test "${ac_cv_func_fdatasync+set}" = set; then
+  echo $ECHO_N "(cached) $ECHO_C" >&6
+else
+  cat >conftest.$ac_ext <<_ACEOF
+/* confdefs.h.  */
+_ACEOF
+cat confdefs.h >>conftest.$ac_ext
+cat >>conftest.$ac_ext <<_ACEOF
+/* end confdefs.h.  */
+/* Define fdatasync to an innocuous variant, in case <limits.h> declares fdatasync.
+   For example, HP-UX 11i <limits.h> declares gettimeofday.  */
+#define fdatasync innocuous_fdatasync
+
+/* System header to define __stub macros and hopefully few prototypes,
+    which can conflict with char fdatasync (); below.
+    Prefer <limits.h> to <assert.h> if __STDC__ is defined, since
+    <limits.h> exists even on freestanding compilers.  */
+
+#ifdef __STDC__
+# include <limits.h>
+#else
+# include <assert.h>
+#endif
+
+#undef fdatasync
+
+/* Override any GCC internal prototype to avoid an error.
+   Use char because int might match the return type of a GCC
+   builtin and then its argument prototype would still apply.  */
+#ifdef __cplusplus
+extern "C"
+#endif
+char fdatasync ();
+/* The GNU C library defines this for functions which it implements
+    to always fail with ENOSYS.  Some functions are actually named
+    something starting with __ and the normal name is an alias.  */
+#if defined __stub_fdatasync || defined __stub___fdatasync
+choke me
+#endif
+
+int
+main ()
+{
+return fdatasync ();
+  ;
+  return 0;
+}
+_ACEOF
+rm -f conftest.$ac_objext conftest$ac_exeext
+if { (ac_try="$ac_link"
+case "(($ac_try" in
+  *\"* | *\`* | *\\*) ac_try_echo=\$ac_try;;
+  *) ac_try_echo=$ac_try;;
+esac
+eval "echo \"\$as_me:$LINENO: $ac_try_echo\"") >&5
+  (eval "$ac_link") 2>conftest.er1
+  ac_status=$?
+  grep -v '^ *+' conftest.er1 >conftest.err
+  rm -f conftest.er1
+  cat conftest.err >&5
+  echo "$as_me:$LINENO: \$? = $ac_status" >&5
+  (exit $ac_status); } && {
+	 test -z "$ac_cxx_werror_flag" ||
+	 test ! -s conftest.err
+       } && test -s conftest$ac_exeext &&
+       $as_test_x conftest$ac_exeext; then
+  ac_cv_func_fdatasync=yes
+else
+  echo "$as_me: failed program was:" >&5
+sed 's/^/| /' conftest.$ac_ext >&5
+
+	ac_cv_func_fdatasync=no
+fi
+
+rm -f core conftest.err conftest.$ac_objext conftest_ipa8_conftest.oo \
+      conftest$ac_exeext conftest.$ac_ext
+fi
+{ echo "$as_me:$LINENO: result: $ac_cv_func_fdatasync" >&5
+echo "${ECHO_T}$ac_cv_func_fdatasync" >&6; }
+if test $ac_cv_func_fdatasync = yes; then
+
+cat >>confdefs.h <<\_ACEOF
+#define HAVE_FDATASYNC 1
+_ACEOF
+
+fi
+
+{ echo "$as_me:$LINENO: checking whether F_FULLFSYNC is declared" >&5
+echo $ECHO_N "checking whether F_FULLFSYNC is declared... $ECHO_C" >&6; }
+if test "${ac_cv_have_decl_F_FULLFSYNC+set}" = set; then
+  echo $ECHO_N "(cached) $ECHO_C" >&6
+else
+  cat >conftest.$ac_ext <<_ACEOF
+/* confdefs.h.  */
+_ACEOF
+cat confdefs.h >>conftest.$ac_ext
+cat >>conftest.$ac_ext <<_ACEOF
+/* end confdefs.h.  */
+#include <fcntl.h>
+
+int
+main ()
+{
+#ifndef F_FULLFSYNC
+  (void) F_FULLFSYNC;
+#endif
+
+  ;
+  return 0;
+}
+_ACEOF
+rm -f conftest.$ac_objext
+if { (ac_try="$ac_compile"
+case "(($ac_try" in
+  *\"* | *\`* | *\\*) ac_try_echo=\$ac_try;;
+  *) ac_try_echo=$ac_try;;
+esac
+eval "echo \"\$as_me:$LINENO: $ac_try_echo\"") >&5
+  (eval "$ac_compile") 2>conftest.er1
+  ac_status=$?
+  grep -v '^ *+' conftest.er1 >conftest.err
+  rm -f conftest.er1
+  cat conftest.err >&5
+  echo "$as_me:$LINENO: \$? = $ac_status" >&5
+  (exit $ac_status); } && {
+	 test -z "$ac_cxx_werror_flag" ||
+	 test ! -s conftest.err
+       } && test -s conftest.$ac_objext; then
+  ac_cv_have_decl_F_FULLFSYNC=yes
+else
+  echo "$as_me: failed program was:" >&5
+sed 's/^/| /' conftest.$ac_ext >&5
+
+	ac_cv_have_decl_F_FULLFSYNC=no
+fi
+
+rm -f core conftest.err conftest.$ac_objext conftest.$ac_ext
+fi
+{ echo "$as_me:$LINENO: result: $ac_cv_have_decl_F_FULLFSYNC" >&5
+echo "${ECHO_T}$ac_cv_have_decl_F_FULLFSYNC" >&6; }
+if test $ac_cv_have_decl_F_FULLFSYNC = yes; then
+
+cat >>confdefs.h <<\_ACEOF
+#define HAVE_FULLFSYNC 1
+_ACEOF
+
+fi
+
+
 # Check whether --enable-largefile was given.
 if test "${enable_largefile+set}" = set; then
   enableval=$enable_largefile;
