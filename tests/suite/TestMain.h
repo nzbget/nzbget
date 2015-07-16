@@ -27,5 +27,6 @@
 #define TESTMAIN_H
 
 int TestMain(int argc, char * argv[]);
+void TestCleanup();
 
 #endif
