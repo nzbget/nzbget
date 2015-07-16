@@ -67,6 +67,170 @@ int vsscanf(const char *s, const char *fmt, va_list ap)
 }
 #endif
 
+/* Parse signature and return format version number
+*/
+int ParseFormatVersion(const char* szFormatSignature)
+{
+	if (strncmp(szFormatSignature, FORMATVERSION_SIGNATURE, strlen(FORMATVERSION_SIGNATURE)))
+	{
+		return 0;
+	}
+
+	return atoi(szFormatSignature + strlen(FORMATVERSION_SIGNATURE));
+}
+
+
+class StateFile
+{
+private:
+	char			m_szDestFilename[1024];
+	char			m_szTempFilename[1024];
+	int				m_iFormatVersion;
+	int				m_iFileVersion;
+	FILE*			m_pFile;
+
+public:
+					StateFile(const char* szFilename, int iFormatVersion);
+					~StateFile();
+	void			Discard();
+	bool			FileExists();
+	FILE*			BeginWriteTransaction();
+	bool			FinishWriteTransaction();
+	FILE*			BeginReadTransaction();
+	int				GetFileVersion() { return m_iFileVersion; }
+	const char*		GetDestFilename() { return m_szDestFilename; }
+};
+
+
+StateFile::StateFile(const char* szFilename, int iFormatVersion)
+{
+	m_pFile = NULL;
+
+	m_iFormatVersion = iFormatVersion;
+
+	snprintf(m_szDestFilename, 1024, "%s%s", g_pOptions->GetQueueDir(), szFilename);
+	m_szDestFilename[1024-1] = '\0';
+
+	snprintf(m_szTempFilename, 1024, "%s%s.new", g_pOptions->GetQueueDir(), szFilename);
+	m_szTempFilename[1024-1] = '\0';
+}
+
+StateFile::~StateFile()
+{
+	if (m_pFile)
+	{
+		fclose(m_pFile);
+	}
+}
+
+void StateFile::Discard()
+{
+	remove(m_szDestFilename);
+}
+
+bool StateFile::FileExists()
+{
+	return Util::FileExists(m_szDestFilename) || Util::FileExists(m_szTempFilename);
+}
+
+FILE* StateFile::BeginWriteTransaction()
+{
+	m_pFile = fopen(m_szTempFilename, FOPEN_WB);
+
+	if (!m_pFile)
+	{
+		char szErrBuf[256];
+		Util::GetLastErrorMessage(szErrBuf, sizeof(szErrBuf));
+		error("Error saving diskstate: Could not create file %s: %s", m_szTempFilename, szErrBuf);
+		return NULL;
+	}
+
+	fprintf(m_pFile, "%s%i\n", FORMATVERSION_SIGNATURE, m_iFormatVersion);
+
+	return m_pFile;
+}
+
+bool StateFile::FinishWriteTransaction()
+{
+	char szErrBuf[256];
+
+	// flush file content before renaming
+	if (g_pOptions->GetFlushQueue())
+	{
+		debug("Flushing data for file %s", Util::BaseFileName(m_szTempFilename));
+		fflush(m_pFile);
+		if (!Util::FlushFileBuffers(fileno(m_pFile), szErrBuf, sizeof(szErrBuf)))
+		{
+			warn("Could not flush file %s into disk: %s", m_szTempFilename, szErrBuf);
+		}
+	}
+
+	fclose(m_pFile);
+	m_pFile = NULL;
+
+	// now rename to dest file name
+	remove(m_szDestFilename);
+	if (rename(m_szTempFilename, m_szDestFilename))
+	{
+		Util::GetLastErrorMessage(szErrBuf, sizeof(szErrBuf));
+		error("Error saving diskstate: Could not rename file %s to %s: %s",
+			m_szTempFilename, m_szDestFilename, szErrBuf);
+		return false;
+	}
+
+	// flush directory buffer after renaming
+	if (g_pOptions->GetFlushQueue())
+	{
+		debug("Flushing directory for file %s", Util::BaseFileName(m_szTempFilename));
+		if (!Util::FlushDirBuffers(m_szDestFilename, szErrBuf, sizeof(szErrBuf)))
+		{
+			warn("Could not flush directory buffers for file %s into disk: %s", m_szDestFilename, szErrBuf);
+		}
+	}
+
+	return true;
+}
+
+FILE* StateFile::BeginReadTransaction()
+{
+	if (!Util::FileExists(m_szDestFilename) && Util::FileExists(m_szTempFilename))
+	{
+		// disaster recovery: temp-file exists but the dest-file doesn't
+		warn("Restoring diskstate file %s from %s", Util::BaseFileName(m_szDestFilename), Util::BaseFileName(m_szTempFilename));
+		if (rename(m_szTempFilename, m_szDestFilename))
+		{
+			char szErrBuf[256];
+			Util::GetLastErrorMessage(szErrBuf, sizeof(szErrBuf));
+			error("Error restoring diskstate: Could not rename file %s to %s: %s",
+				m_szTempFilename, m_szDestFilename, szErrBuf);
+			return NULL;
+		}
+	}
+
+	m_pFile = fopen(m_szDestFilename, FOPEN_RB);
+
+	if (!m_pFile)
+	{
+		char szErrBuf[256];
+		Util::GetLastErrorMessage(szErrBuf, sizeof(szErrBuf));
+		error("Error reading diskstate: could not open file %s: %s", m_szDestFilename, szErrBuf);
+		return NULL;
+	}
+
+	char FileSignatur[128];
+	fgets(FileSignatur, sizeof(FileSignatur), m_pFile);
+	m_iFileVersion = ParseFormatVersion(FileSignatur);
+	if (m_iFileVersion > m_iFormatVersion)
+	{
+		error("Could not load diskstate due to file version mismatch");
+		fclose(m_pFile);
+		m_pFile = NULL;
+		return NULL;
+	}
+
+	return m_pFile;
+}
+
 /*
  * Standard fscanf scans beoynd current line if the next line is empty.
  * This wrapper fixes that.
@@ -87,18 +251,6 @@ int DiskState::fscanf(FILE* infile, const char* Format, ...)
 	return res;
 }
 
-/* Parse signature and return format version number
-*/
-int DiskState::ParseFormatVersion(const char* szFormatSignature)
-{
-	if (strncmp(szFormatSignature, FORMATVERSION_SIGNATURE, strlen(FORMATVERSION_SIGNATURE)))
-	{
-		return 0;
-	}
-
-	return atoi(szFormatSignature + strlen(FORMATVERSION_SIGNATURE));
-}
-
 /* Save Download Queue to Disk.
  * The Disk State consists of file "queue", which contains the order of files,
  * and of one diskstate-file for each file in download queue.
@@ -114,30 +266,20 @@ bool DiskState::SaveDownloadQueue(DownloadQueue* pDownloadQueue)
 {
 	debug("Saving queue to disk");
 
-	char destFilename[1024];
-	snprintf(destFilename, 1024, "%s%s", g_pOptions->GetQueueDir(), "queue");
-	destFilename[1024-1] = '\0';
-
-	char tempFilename[1024];
-	snprintf(tempFilename, 1024, "%s%s", g_pOptions->GetQueueDir(), "queue.new");
-	tempFilename[1024-1] = '\0';
+	StateFile stateFile("queue", 53);
 
 	if (pDownloadQueue->GetQueue()->empty() && 
 		pDownloadQueue->GetHistory()->empty())
 	{
-		remove(destFilename);
+		stateFile.Discard();
 		return true;
 	}
 
-	FILE* outfile = fopen(tempFilename, FOPEN_WB);
-
+	FILE* outfile = stateFile.BeginWriteTransaction();
 	if (!outfile)
 	{
-		error("Error saving diskstate: Could not create file %s", tempFilename);
 		return false;
 	}
-
-	fprintf(outfile, "%s%i\n", FORMATVERSION_SIGNATURE, 53);
 
 	// save nzb-infos
 	SaveNZBQueue(pDownloadQueue, outfile);
@@ -145,47 +287,24 @@ bool DiskState::SaveDownloadQueue(DownloadQueue* pDownloadQueue)
 	// save history
 	SaveHistory(pDownloadQueue, outfile);
 
-	fclose(outfile);
-
 	// now rename to dest file name
-	remove(destFilename);
-	if (rename(tempFilename, destFilename))
-	{
-		error("Error saving diskstate: Could not rename file %s to %s", tempFilename, destFilename);
-		return false;
-	}
-
-	return true;
+	return stateFile.FinishWriteTransaction();
 }
 
 bool DiskState::LoadDownloadQueue(DownloadQueue* pDownloadQueue, Servers* pServers)
 {
 	debug("Loading queue from disk");
 
-	bool bOK = false;
-	int iFormatVersion = 0;
+	StateFile stateFile("queue", 53);
 
-	char fileName[1024];
-	snprintf(fileName, 1024, "%s%s", g_pOptions->GetQueueDir(), "queue");
-	fileName[1024-1] = '\0';
-
-	FILE* infile = fopen(fileName, FOPEN_RB);
-
+	FILE* infile = stateFile.BeginReadTransaction();
 	if (!infile)
 	{
-		error("Error reading diskstate: could not open file %s", fileName);
 		return false;
 	}
 
-	char FileSignatur[128];
-	fgets(FileSignatur, sizeof(FileSignatur), infile);
-	iFormatVersion = ParseFormatVersion(FileSignatur);
-	if (iFormatVersion < 3 || iFormatVersion > 53)
-	{
-		error("Could not load diskstate due to file version mismatch");
-		fclose(infile);
-		return false;
-	}
+	bool bOK = false;
+	int iFormatVersion = stateFile.GetFileVersion();
 
 	NZBList nzbList(false);
 	NZBList sortList(false);
@@ -254,10 +373,9 @@ bool DiskState::LoadDownloadQueue(DownloadQueue* pDownloadQueue, Servers* pServe
 
 error:
 
-	fclose(infile);
 	if (!bOK)
 	{
-		error("Error reading diskstate for file %s", fileName);
+		error("Error reading diskstate for download queue and history");
 	}
 
 	NZBInfo::ResetGenID(true);
@@ -2021,29 +2139,19 @@ bool DiskState::SaveFeeds(Feeds* pFeeds, FeedHistory* pFeedHistory)
 {
 	debug("Saving feeds state to disk");
 
-	char destFilename[1024];
-	snprintf(destFilename, 1024, "%s%s", g_pOptions->GetQueueDir(), "feeds");
-	destFilename[1024-1] = '\0';
-
-	char tempFilename[1024];
-	snprintf(tempFilename, 1024, "%s%s", g_pOptions->GetQueueDir(), "feeds.new");
-	tempFilename[1024-1] = '\0';
+	StateFile stateFile("feeds", 3);
 
 	if (pFeeds->empty() && pFeedHistory->empty())
 	{
-		remove(destFilename);
+		stateFile.Discard();
 		return true;
 	}
 
-	FILE* outfile = fopen(tempFilename, FOPEN_WB);
-
+	FILE* outfile = stateFile.BeginWriteTransaction();
 	if (!outfile)
 	{
-		error("Error saving diskstate: Could not create file %s", tempFilename);
 		return false;
 	}
-
-	fprintf(outfile, "%s%i\n", FORMATVERSION_SIGNATURE, 3);
 
 	// save status
 	SaveFeedStatus(pFeeds, outfile);
@@ -2051,51 +2159,29 @@ bool DiskState::SaveFeeds(Feeds* pFeeds, FeedHistory* pFeedHistory)
 	// save history
 	SaveFeedHistory(pFeedHistory, outfile);
 
-	fclose(outfile);
-
 	// now rename to dest file name
-	remove(destFilename);
-	if (rename(tempFilename, destFilename))
-	{
-		error("Error saving diskstate: Could not rename file %s to %s", tempFilename, destFilename);
-		return false;
-	}
-
-	return true;
+	return stateFile.FinishWriteTransaction();
 }
 
 bool DiskState::LoadFeeds(Feeds* pFeeds, FeedHistory* pFeedHistory)
 {
 	debug("Loading feeds state from disk");
 
-	bool bOK = false;
+	StateFile stateFile("feeds", 3);
 
-	char fileName[1024];
-	snprintf(fileName, 1024, "%s%s", g_pOptions->GetQueueDir(), "feeds");
-	fileName[1024-1] = '\0';
-
-	if (!Util::FileExists(fileName))
+	if (!stateFile.FileExists())
 	{
 		return true;
 	}
 
-	FILE* infile = fopen(fileName, FOPEN_RB);
-
+	FILE* infile = stateFile.BeginReadTransaction();
 	if (!infile)
 	{
-		error("Error reading diskstate: could not open file %s", fileName);
 		return false;
 	}
 
-	char FileSignatur[128];
-	fgets(FileSignatur, sizeof(FileSignatur), infile);
-	int iFormatVersion = ParseFormatVersion(FileSignatur);
-	if (iFormatVersion > 3)
-	{
-		error("Could not load diskstate due to file version mismatch");
-		fclose(infile);
-		return false;
-	}
+	bool bOK = false;
+	int iFormatVersion = stateFile.GetFileVersion();
 
 	// load feed status
 	if (!LoadFeedStatus(pFeeds, infile, iFormatVersion)) goto error;
@@ -2107,10 +2193,9 @@ bool DiskState::LoadFeeds(Feeds* pFeeds, FeedHistory* pFeedHistory)
 
 error:
 
-	fclose(infile);
 	if (!bOK)
 	{
-		error("Error reading diskstate for file %s", fileName);
+		error("Error reading diskstate for feeds");
 	}
 
 	return bOK;
@@ -2408,29 +2493,19 @@ bool DiskState::SaveStats(Servers* pServers, ServerVolumes* pServerVolumes)
 {
 	debug("Saving stats to disk");
 
-	char destFilename[1024];
-	snprintf(destFilename, 1024, "%s%s", g_pOptions->GetQueueDir(), "stats");
-	destFilename[1024-1] = '\0';
-
-	char tempFilename[1024];
-	snprintf(tempFilename, 1024, "%s%s", g_pOptions->GetQueueDir(), "stats.new");
-	tempFilename[1024-1] = '\0';
+	StateFile stateFile("stats", 3);
 
 	if (pServers->empty())
 	{
-		remove(destFilename);
+		stateFile.Discard();
 		return true;
 	}
 
-	FILE* outfile = fopen(tempFilename, FOPEN_WB);
-
+	FILE* outfile = stateFile.BeginWriteTransaction();
 	if (!outfile)
 	{
-		error("Error saving diskstate: Could not create file %s", tempFilename);
 		return false;
 	}
-
-	fprintf(outfile, "%s%i\n", FORMATVERSION_SIGNATURE, 3);
 
 	// save server names
 	SaveServerInfo(pServers, outfile);
@@ -2438,51 +2513,29 @@ bool DiskState::SaveStats(Servers* pServers, ServerVolumes* pServerVolumes)
 	// save stat
 	SaveVolumeStat(pServerVolumes, outfile);
 
-	fclose(outfile);
-
 	// now rename to dest file name
-	remove(destFilename);
-	if (rename(tempFilename, destFilename))
-	{
-		error("Error saving diskstate: Could not rename file %s to %s", tempFilename, destFilename);
-		return false;
-	}
-
-	return true;
+	return stateFile.FinishWriteTransaction();
 }
 
 bool DiskState::LoadStats(Servers* pServers, ServerVolumes* pServerVolumes, bool* pPerfectMatch)
 {
 	debug("Loading stats from disk");
 
-	bool bOK = false;
+	StateFile stateFile("stats", 3);
 
-	char fileName[1024];
-	snprintf(fileName, 1024, "%s%s", g_pOptions->GetQueueDir(), "stats");
-	fileName[1024-1] = '\0';
-
-	if (!Util::FileExists(fileName))
+	if (!stateFile.FileExists())
 	{
 		return true;
 	}
 
-	FILE* infile = fopen(fileName, FOPEN_RB);
-
+	FILE* infile = stateFile.BeginReadTransaction();
 	if (!infile)
 	{
-		error("Error reading diskstate: could not open file %s", fileName);
 		return false;
 	}
 
-	char FileSignatur[128];
-	fgets(FileSignatur, sizeof(FileSignatur), infile);
-	int iFormatVersion = ParseFormatVersion(FileSignatur);
-	if (iFormatVersion > 3)
-	{
-		error("Could not load diskstate due to file version mismatch");
-		fclose(infile);
-		return false;
-	}
+	bool bOK = false;
+	int iFormatVersion = stateFile.GetFileVersion();
 
 	if (!LoadServerInfo(pServers, infile, iFormatVersion, pPerfectMatch)) goto error;
 
@@ -2495,10 +2548,9 @@ bool DiskState::LoadStats(Servers* pServers, ServerVolumes* pServerVolumes, bool
 
 error:
 
-	fclose(infile);
 	if (!bOK)
 	{
-		error("Error reading diskstate for file %s", fileName);
+		error("Error reading diskstate for statistics");
 	}
 
 	return bOK;

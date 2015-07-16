@@ -118,6 +118,12 @@ public:
 	static bool MatchFileExt(const char* szFilename, const char* szExtensionList, const char* szListSeparator);
 	static char* GetLastErrorMessage(char* szBuffer, int iBufLen);
 
+	/* Flush disk buffers for file with given descriptor */
+	static bool FlushFileBuffers(int iFileDescriptor, char* szErrBuf, int iBufSize);
+
+	/* Flush disk buffers for file metadata (after file renaming) */
+	static bool FlushDirBuffers(const char* szFilename, char* szErrBuf, int iBufSize);
+
 	/*
 	 * Split command line int arguments.
 	 * Uses spaces and single quotation marks as separators.

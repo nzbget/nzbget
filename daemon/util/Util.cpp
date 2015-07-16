@@ -46,6 +46,7 @@
 #include <sys/statvfs.h>
 #include <pwd.h>
 #include <dirent.h>
+#include <fcntl.h>
 #endif
 #ifdef HAVE_REGEX_H
 #include <regex.h>
@@ -1555,6 +1556,59 @@ int Util::NumberOfCpuCores()
 	return -1;
 }
 
+bool Util::FlushFileBuffers(int iFileDescriptor, char* szErrBuf, int iBufSize)
+{
+#ifdef WIN32
+	BOOL bOK = ::FlushFileBuffers((HANDLE)_get_osfhandle(iFileDescriptor));
+	if (!bOK)
+	{
+		FormatMessage(FORMAT_MESSAGE_FROM_SYSTEM | FORMAT_MESSAGE_IGNORE_INSERTS,
+			NULL, GetLastError(), MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT),
+			szErrBuf, iBufSize, NULL);
+	}
+	return bOK;
+#else
+#ifdef HAVE_FULLFSYNC    
+	int ret = fcntl(iFileDescriptor, F_FULLFSYNC) == -1 ? 1 : 0;
+#elif HAVE_FDATASYNC
+    int ret = fdatasync(iFileDescriptor);
+#else
+    int ret = fsync(iFileDescriptor);
+#endif    
+    if (ret != 0)
+    {
+		GetLastErrorMessage(szErrBuf, iBufSize);
+    }
+    return ret == 0;
+#endif
+}
+
+bool Util::FlushDirBuffers(const char* szFilename, char* szErrBuf, int iBufSize)
+{
+	char szParentPath[1024];
+	strncpy(szParentPath, szFilename, 1024);
+	szParentPath[1024-1] = '\0';
+	const char* szFileMode = FOPEN_WB;
+
+#ifndef WIN32
+	char* p = (char*)strrchr(szParentPath, PATH_SEPARATOR);
+	if (p)
+	{
+	    *p = '\0';
+	}
+	szFileMode = FOPEN_RB;
+#endif
+
+	FILE* pFile = fopen(szParentPath, szFileMode);
+	if (!pFile)
+	{
+		GetLastErrorMessage(szErrBuf, iBufSize);
+		return false;
+	}
+	bool bOK = FlushFileBuffers(fileno(pFile), szErrBuf, iBufSize);
+	fclose(pFile);
+	return bOK;
+}
 
 unsigned int WebUtil::DecodeBase64(char* szInputBuffer, int iInputBufferLength, char* szOutputBuffer)
 {
