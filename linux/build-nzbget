@@ -254,9 +254,6 @@ for CONFIG in $CONFIGS; do
                             ;;
                     esac
 
-                    # disable spinlocks (they may cause problems)
-                    sed 's:^#define HAVE_SPINLOCK 1$:/* #define HAVE_SPINLOCK 1 */:' -i config.h
-
                     make clean && make
 
                     rm -r -f $OUTPUTDIR/install
@@ -331,7 +328,7 @@ for CONFIG in $CONFIGS; do
             sed 's:^SevenZipCmd=7z:SevenZipCmd=${AppDir}/7za:' -i nzbget/webui/nzbget.conf.template
 
             INSTFILE=$BASENAME-bin-linux$SUFFIX.run
-            
+
             echo "Building installer package..."
             cp $BUILDDIR/linux/installer.sh $INSTFILE
             cp $BUILDDIR/linux/package-info.json nzbget/webui
@@ -366,17 +363,16 @@ for CONFIG in $CONFIGS; do
 
             HEADER=`expr $HEADER - $PAYLOADLEN + $TOTALLEN`
             TOTAL=`expr $TOTAL - $PAYLOADLEN + $TOTALLEN`
-            
+
             sed "s:^HEADER=$:HEADER=$HEADER:" -i $INSTFILE
             sed "s:^TOTAL=$:TOTAL=$TOTAL:" -i $INSTFILE
-            
+
             # attaching payload
             cat $INSTFILE.data >> $INSTFILE
             rm $INSTFILE.data
             chmod +x $INSTFILE
 
-            rm -r nzbget    
+            rm -r nzbget
         fi
     done
 done
-
