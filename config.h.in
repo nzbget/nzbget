@@ -108,9 +108,6 @@
 /* Define to 1 if _SC_NPROCESSORS_ONLN is present in unistd.h */
 #undef HAVE_SC_NPROCESSORS_ONLN
 
-/* Define to 1 if spinlocks are supported */
-#undef HAVE_SPINLOCK
-
 /* Define to 1 if stdbool.h conforms to C99. */
 #undef HAVE_STDBOOL_H
 
