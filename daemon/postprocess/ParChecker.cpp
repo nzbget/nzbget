@@ -84,12 +84,7 @@ private:
 	ParChecker*		m_pOwner;
 	Threads			m_Threads;
 	bool			m_bParallel;
-
-#ifdef HAVE_SPINLOCK
-	SpinLock		progresslock;
-#else
 	Mutex			progresslock;
-#endif
 
 	virtual void	BeginRepair();
 	virtual void	EndRepair();

@@ -384,11 +384,7 @@ void StatMeter::AddSpeedReading(int iBytes)
 
 	if (g_pOptions->GetAccurateRate())
 	{
-#ifdef HAVE_SPINLOCK
-		m_spinlockSpeed.Lock();
-#else
 		m_mutexSpeed.Lock();
-#endif
 	}
 
 	if (tCurTime != m_tCurSecTime)
@@ -441,11 +437,7 @@ void StatMeter::AddSpeedReading(int iBytes)
 
 	if (g_pOptions->GetAccurateRate())
 	{
-#ifdef HAVE_SPINLOCK
-		m_spinlockSpeed.Unlock();
-#else
 		m_mutexSpeed.Unlock();
-#endif
 	}
 }
 

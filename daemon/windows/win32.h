@@ -68,9 +68,6 @@
 /* Define to 1 if you have the <regex.h> header file. */
 #define HAVE_REGEX_H 1
 
-/* Define to 1 if spinlocks are supported */
-#define HAVE_SPINLOCK
-
 #define VERSION "16.0-testing"
 
 /* Suppress warnings */

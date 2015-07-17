@@ -95,11 +95,7 @@ private:
 	int					m_iSpeedBytesIndex;
 	int					m_iCurSecBytes;
 	time_t				m_tCurSecTime;
-#ifdef HAVE_SPINLOCK
-	SpinLock			m_spinlockSpeed;
-#else
 	Mutex				m_mutexSpeed;
-#endif
 
 	// time
 	long long			m_iAllBytes;
