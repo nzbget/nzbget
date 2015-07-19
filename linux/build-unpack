@@ -167,7 +167,7 @@ for TARGET in $TARGETS; do
     CXX=$TOOLCHAIN_ROOT/output/host/usr/bin/$ARCH-linux-g++ \
         CC=$TOOLCHAIN_ROOT/output/host/usr/bin/$ARCH-linux-gcc \
         STRIP=$TOOLCHAIN_ROOT/output/host/usr/bin/$ARCH-linux-strip \
-        CXXFLAGS=-g \
+        CXXFLAGS=-O3 \
         LDFLAGS=-static \
         make $BUILDTARGET
     
