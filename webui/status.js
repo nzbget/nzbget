@@ -1312,9 +1312,20 @@ var LimitDialog = (new function($)
 		});
 	}
 
-	this.showModal = function()
+	this.clicked = function(e)
 	{
-		changed = false;
+		if (e.metaKey)
+		{
+			toggleLimit();
+		}
+		else
+		{
+			showModal();
+		}
+	}
+
+	function showModal()
+	{
 		var rate = Util.round0(Status.status.DownloadLimit / 1024);
 		$LimitDialog_SpeedInput.val(rate > 0 ? rate : '');
 		updateTable();
@@ -1360,6 +1371,41 @@ var LimitDialog = (new function($)
 			}
 		}
 
+		var checkedRows = $ServerTable.fasttable('checkedRows');
+		var servers = [];
+
+		for (var i=0; i < Status.status.NewsServers.length; i++)
+		{
+			var server = Status.status.NewsServers[i];
+			var selected = checkedRows.indexOf(server.ID) > -1;
+			if (server.Active != selected)
+			{
+				servers.push([server.ID, selected]);
+			}
+		}
+
+		saveLimit(rate, servers);
+	}
+
+	function saveLimit(rate, servers)
+	{
+		function saveServers()
+		{
+			if (servers.length > 0)
+			{
+				changed = true;
+				RPC.call('editserver', servers, function()
+				{
+					completed();
+				});
+			}
+			else
+			{
+				completed();
+			}
+		}
+
+		changed = false;
 		var oldRate = Util.round0(Status.status.DownloadLimit / 1024);
 
 		if (rate != oldRate)
@@ -1376,35 +1422,6 @@ var LimitDialog = (new function($)
 		}
 	}
 
-	function saveServers()
-	{
-		var checkedRows = $ServerTable.fasttable('checkedRows');
-		var command = [];
-
-		for (var i=0; i < Status.status.NewsServers.length; i++)
-		{
-			var server = Status.status.NewsServers[i];
-			var selected = checkedRows.indexOf(server.ID) > -1;
-			if (server.Active != selected)
-			{
-				command.push([server.ID, selected]);
-				changed = true;
-			}
-		}
-
-		if (command.length > 0)
-		{
-			RPC.call('editserver', command, function()
-			{
-				completed();
-			});
-		}
-		else
-		{
-			completed();
-		}
-	}
-
 	function completed()
 	{
 		$LimitDialog.modal('hide');
@@ -1413,5 +1430,32 @@ var LimitDialog = (new function($)
 			Notification.show('#Notif_SetSpeedLimit');
 		}
 		Refresher.update();
+	}
+
+	function toggleLimit()
+	{
+		var limited = Status.status.DownloadLimit > 0;
+		for (var i=0; i < Status.status.NewsServers.length; i++)
+		{
+			var server = Status.status.NewsServers[i];
+			limited = limited || !server.Active;
+		}
+
+		var defRate = Options.option('DownloadRate');
+		var rate = limited ? 0 : parseInt(defRate === '' ? 0 : defRate);
+		var servers = [];
+
+		for (var i=0; i < Status.status.NewsServers.length; i++)
+		{
+			var server = Status.status.NewsServers[i];
+			var defActive = Options.option('Server' + (i + 1) + '.Active') === 'yes';
+			var newActive = limited ? true : defActive;
+			if (server.Active != newActive)
+			{
+				servers.push([server.ID, newActive]);
+			}
+		}
+
+		saveLimit(rate, servers);
 	}
 }(jQuery));
