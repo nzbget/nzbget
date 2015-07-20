@@ -1,7 +1,7 @@
 /*
  * This file is part of nzbget
  *
- * Copyright (C) 2012-2014 Andrey Prygunkov <hugbug@users.sourceforge.net>
+ * Copyright (C) 2012-2015 Andrey Prygunkov <hugbug@users.sourceforge.net>
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -1314,7 +1314,7 @@ var LimitDialog = (new function($)
 
 	this.clicked = function(e)
 	{
-		if (e.metaKey)
+		if (e.metaKey || e.ctrlKey)
 		{
 			toggleLimit();
 		}
