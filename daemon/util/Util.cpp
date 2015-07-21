@@ -1588,7 +1588,7 @@ bool Util::FlushDirBuffers(const char* szFilename, char* szErrBuf, int iBufSize)
 	char szParentPath[1024];
 	strncpy(szParentPath, szFilename, 1024);
 	szParentPath[1024-1] = '\0';
-	const char* szFileMode = FOPEN_WB;
+	const char* szFileMode = FOPEN_RBP;
 
 #ifndef WIN32
 	char* p = (char*)strrchr(szParentPath, PATH_SEPARATOR);

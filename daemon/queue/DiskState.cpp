@@ -181,7 +181,7 @@ bool StateFile::FinishWriteTransaction()
 	// flush directory buffer after renaming
 	if (g_pOptions->GetFlushQueue())
 	{
-		debug("Flushing directory for file %s", Util::BaseFileName(m_szTempFilename));
+		debug("Flushing directory for file %s", Util::BaseFileName(m_szDestFilename));
 		if (!Util::FlushDirBuffers(m_szDestFilename, szErrBuf, sizeof(szErrBuf)))
 		{
 			warn("Could not flush directory buffers for file %s into disk: %s", m_szDestFilename, szErrBuf);
