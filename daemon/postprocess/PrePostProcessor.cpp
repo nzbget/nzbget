@@ -261,8 +261,12 @@ void PrePostProcessor::NZBAdded(DownloadQueue* pDownloadQueue, NZBInfo* pNZBInfo
 		m_ParCoordinator.PausePars(pDownloadQueue, pNZBInfo);
 	}
 
-	if (g_pOptions->GetDupeCheck() && pNZBInfo->GetDupeMode() != dmForce &&
-		pNZBInfo->GetDeleteStatus() == NZBInfo::dsDupe)
+	if ((g_pOptions->GetDupeCheck() && pNZBInfo->GetDupeMode() != dmForce &&
+		pNZBInfo->GetDeleteStatus() == NZBInfo::dsDupe) ||
+		pNZBInfo->GetDeleteStatus() == NZBInfo::dsCopy ||
+		pNZBInfo->GetDeleteStatus() == NZBInfo::dsGood ||
+		pNZBInfo->GetDeleteStatus() == NZBInfo::dsSuccess ||
+		pNZBInfo->GetDeleteStatus() == NZBInfo::dsScan )
 	{
 		NZBCompleted(pDownloadQueue, pNZBInfo, false);
 	}
@@ -336,7 +340,8 @@ void PrePostProcessor::NZBCompleted(DownloadQueue* pDownloadQueue, NZBInfo* pNZB
 	if (g_pOptions->GetDupeCheck() && pNZBInfo->GetDupeMode() != dmForce &&
 		(pNZBInfo->GetDeleteStatus() == NZBInfo::dsNone ||
 		 pNZBInfo->GetDeleteStatus() == NZBInfo::dsHealth ||
-		 pNZBInfo->GetDeleteStatus() == NZBInfo::dsBad))
+		 pNZBInfo->GetDeleteStatus() == NZBInfo::dsBad ||
+		 pNZBInfo->GetDeleteStatus() == NZBInfo::dsScan))
 	{
 		g_pDupeCoordinator->NZBCompleted(pDownloadQueue, pNZBInfo);
 		bNeedSave = true;

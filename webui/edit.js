@@ -1587,19 +1587,22 @@ var HistoryEditDialog = (new function()
 
 		curHist = hist;
 
-		var status;
+		var status = '';
 		if (hist.Kind === 'NZB')
 		{
-			status = '<span class="label label-status ' +
-				(hist.Health === 1000 ? 'label-success' : hist.Health >= hist.CriticalHealth ? 'label-warning' : 'label-important') +
-				'">health: ' + Math.floor(hist.Health / 10) + '%</span>';
+			if (hist.DeleteStatus === '' || hist.DeleteStatus === 'HEALTH')
+			{
+				status = '<span class="label label-status ' +
+					(hist.Health === 1000 ? 'label-success' : hist.Health >= hist.CriticalHealth ? 'label-warning' : 'label-important') +
+					'">health: ' + Math.floor(hist.Health / 10) + '%</span>';
+			}
 
 			if (hist.MarkStatus !== 'NONE')
 			{
 				status += ' ' + buildStatus(hist.MarkStatus, 'Mark: ');
 			}
 
-			if (hist.DeleteStatus === 'NONE')
+			else if (hist.DeleteStatus === 'NONE')
 			{
 				status += ' ' + buildStatus(hist.ParStatus, 'Par: ') +
 					' ' + (Options.option('Unpack') == 'yes' || hist.UnpackStatus != 'NONE' ? buildStatus(hist.UnpackStatus, 'Unpack: ') : '')  +
@@ -1773,13 +1776,17 @@ var HistoryEditDialog = (new function()
 			case 'PASSWORD':
 				return '<span class="label label-status label-warning">' + prefix + status + '</span>';
 			case 'DELETED-DUPE':
-				return '<span class="label label-status">' + prefix + 'dupe</span>';
 			case 'DELETED-MANUAL':
-				return '<span class="label label-status">' + prefix + 'manual</span>';
+			case 'DELETED-COPY':
+			case 'DELETED-GOOD':
+			case 'DELETED-SUCCESS':
+				return '<span class="label label-status">' + prefix + status.substr(8).toLowerCase() + '</span>';
 			case 'DELETED-HEALTH':
 				return '<span class="label label-status label-important">' + prefix + 'health</span>';
 			case 'DELETED-BAD':
 				return '<span class="label label-status label-important">' + prefix + 'bad</span>';
+			case 'DELETED-SCAN':
+				return '<span class="label label-status label-important">' + prefix + 'scan</span>';
 			case 'SCAN_SKIPPED':
 				return '<span class="label label-status label-warning"">' + prefix + 'skipped</span>';
 			case 'NONE':

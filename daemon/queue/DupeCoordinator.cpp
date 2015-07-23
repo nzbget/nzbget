@@ -89,18 +89,31 @@ void DupeCoordinator::NZBFound(DownloadQueue* pDownloadQueue, NZBInfo* pNZBInfo)
 		// in queue - the new item is skipped
 		if (pQueuedNZBInfo != pNZBInfo && bSameContent && pNZBInfo->GetKind() == NZBInfo::nkNzb)
 		{
+			char szMessage[1024];
 			if (!strcmp(pNZBInfo->GetName(), pQueuedNZBInfo->GetName()))
 			{
-				warn("Skipping duplicate %s, already queued", pNZBInfo->GetName());
+				snprintf(szMessage, 1024, "Skipping duplicate %s, already queued", pNZBInfo->GetName());
 			}
 			else
 			{
-				warn("Skipping duplicate %s, already queued as %s",
+				snprintf(szMessage, 1024, "Skipping duplicate %s, already queued as %s",
 					pNZBInfo->GetName(), pQueuedNZBInfo->GetName());
 			}
-			// Flag saying QueueCoordinator to skip nzb-file
-			pNZBInfo->SetDeleteStatus(NZBInfo::dsManual);
-			g_pHistoryCoordinator->DeleteDiskFiles(pNZBInfo);
+			szMessage[1024-1] = '\0';
+
+			if (pNZBInfo->GetFeedID())
+			{
+				warn("%s", szMessage);
+				// Flag saying QueueCoordinator to skip nzb-file
+				pNZBInfo->SetDeleteStatus(NZBInfo::dsManual);
+				g_pHistoryCoordinator->DeleteDiskFiles(pNZBInfo);
+			}
+			else
+			{
+				pNZBInfo->SetDeleteStatus(NZBInfo::dsCopy);
+				pNZBInfo->AddMessage(Message::mkWarning, szMessage);
+			}
+
 			return;
 		}
 	}
@@ -241,21 +254,33 @@ void DupeCoordinator::NZBFound(DownloadQueue* pDownloadQueue, NZBInfo* pNZBInfo)
 
 	if (bSkip)
 	{
+		char szMessage[1024];
 		if (!strcmp(pNZBInfo->GetName(), szDupeName))
 		{
-			warn("Skipping duplicate %s, found in history with %s", pNZBInfo->GetName(),
+			snprintf(szMessage, 1024, "Skipping duplicate %s, found in history with %s", pNZBInfo->GetName(),
 				bSameContent ? "exactly same content" : bGood ? "good status" : "success status");
 		}
 		else
 		{
-			warn("Skipping duplicate %s, found in history %s with %s",
+			snprintf(szMessage, 1024, "Skipping duplicate %s, found in history %s with %s",
 				pNZBInfo->GetName(), szDupeName,
 				bSameContent ? "exactly same content" : bGood ? "good status" : "success status");
 		}
+		szMessage[1024-1] = '\0';
 
-		// Flag saying QueueCoordinator to skip nzb-file
-		pNZBInfo->SetDeleteStatus(NZBInfo::dsManual);
-		g_pHistoryCoordinator->DeleteDiskFiles(pNZBInfo);
+		if (pNZBInfo->GetFeedID())
+		{
+			warn("%s", szMessage);
+			// Flag saying QueueCoordinator to skip nzb-file
+			pNZBInfo->SetDeleteStatus(NZBInfo::dsManual);
+			g_pHistoryCoordinator->DeleteDiskFiles(pNZBInfo);
+		}
+		else
+		{
+			pNZBInfo->SetDeleteStatus(bSameContent ? NZBInfo::dsCopy : bGood ? NZBInfo::dsGood : NZBInfo::dsSuccess);
+			pNZBInfo->AddMessage(Message::mkWarning, szMessage);
+		}
+
 		return;
 	}
 

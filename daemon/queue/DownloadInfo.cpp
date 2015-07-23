@@ -342,6 +342,7 @@ NZBInfo::NZBInfo() : m_FileList(true)
 	m_bParFull = false;
 	m_iMessageCount = 0;
 	m_iCachedMessageCount = 0;
+	m_iFeedID = 0;
 }
 
 NZBInfo::~NZBInfo()
@@ -856,6 +857,22 @@ const char* NZBInfo::MakeTextStatus(bool bIgnoreScriptStatus)
 		else if (m_eDeleteStatus == NZBInfo::dsBad)
 		{
 			szStatus = "FAILURE/BAD";
+		}
+		else if (m_eDeleteStatus == NZBInfo::dsGood)
+		{
+			szStatus = "DELETED/GOOD";
+		}
+		else if (m_eDeleteStatus == NZBInfo::dsSuccess)
+		{
+			szStatus = "DELETED/SUCCESS";
+		}
+		else if (m_eDeleteStatus == NZBInfo::dsCopy)
+		{
+			szStatus = "DELETED/COPY";
+		}
+		else if (m_eDeleteStatus == NZBInfo::dsScan)
+		{
+			szStatus = "FAILURE/SCAN";
 		}
 		else if (m_eParStatus == NZBInfo::psFailure)
 		{
