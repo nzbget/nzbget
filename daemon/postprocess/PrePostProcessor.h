@@ -49,6 +49,7 @@ private:
 	int					m_iJobCount;
 	NZBInfo*			m_pCurJob;
 	const char*			m_szPauseReason;
+	bool				m_bWaitingReported;
 
 	bool				IsNZBFileCompleted(NZBInfo* pNZBInfo, bool bIgnorePausedPars, bool bAllowOnlyOneDeleted);
 	bool				IsNZBFileDownloading(NZBInfo* pNZBInfo);
@@ -67,6 +68,7 @@ private:
 	NZBInfo*			GetNextJob(DownloadQueue* pDownloadQueue);
 	void				DownloadQueueUpdate(Subject* Caller, void* Aspect);
 	void				DeleteCleanup(NZBInfo* pNZBInfo);
+	bool				CheckRequiredDir();
 
 public:
 						PrePostProcessor();

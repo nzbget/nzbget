@@ -192,6 +192,7 @@ private:
 	char*				m_szWebDir;
 	char*				m_szConfigTemplate;
 	char*				m_szScriptDir;
+	char*				m_szRequiredDir;
 	EMessageTarget		m_eInfoTarget;
 	EMessageTarget		m_eWarningTarget;
 	EMessageTarget		m_eErrorTarget;
@@ -345,6 +346,7 @@ public:
 	const char*			GetWebDir() { return m_szWebDir; }
 	const char*			GetConfigTemplate() { return m_szConfigTemplate; }
 	const char*			GetScriptDir() { return m_szScriptDir; }
+	const char*			GetRequiredDir() { return m_szRequiredDir; }
 	bool				GetBrokenLog() const { return m_bBrokenLog; }
 	bool				GetNzbLog() const { return m_bNzbLog; }
 	EMessageTarget		GetInfoTarget() const { return m_eInfoTarget; }

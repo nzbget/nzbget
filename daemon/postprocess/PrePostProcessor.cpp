@@ -65,6 +65,7 @@ PrePostProcessor::PrePostProcessor()
 	m_iJobCount = 0;
 	m_pCurJob = NULL;
 	m_szPauseReason = NULL;
+	m_bWaitingReported = false;
 
 	m_DownloadQueueObserver.m_pOwner = this;
 	DownloadQueue* pDownloadQueue = DownloadQueue::Lock();
@@ -99,6 +100,7 @@ void PrePostProcessor::Run()
 	int iSchedulerInterval = 1000;
 	int iHistoryInterval = 600000;
 	const int iStepMSec = 200;
+	bool bWaitingRequiredDir = true;
 
 	while (!IsStopped())
 	{
@@ -115,8 +117,17 @@ void PrePostProcessor::Run()
 		}
 		iDiskSpaceInterval += iStepMSec;
 
-		// check post-queue every 200 msec
-		CheckPostQueue();
+		if (bWaitingRequiredDir)
+		{
+			// check required dirs every 200 msec
+			bWaitingRequiredDir = !CheckRequiredDir();
+		}
+
+		if (!bWaitingRequiredDir)
+		{
+			// check post-queue every 200 msec
+			CheckPostQueue();
+		}
 
 		if (iSchedulerInterval >= 1000)
 		{
@@ -853,4 +864,39 @@ bool PrePostProcessor::PostQueueDelete(DownloadQueue* pDownloadQueue, IDList* pI
 	}
 
 	return bOK;
+}
+
+bool PrePostProcessor::CheckRequiredDir()
+{
+	if (!Util::EmptyStr(g_pOptions->GetRequiredDir()))
+	{
+		bool bAllExist = true;
+		bool bWasWaitingReported = m_bWaitingReported;
+		// split RequiredDir into tokens
+		Tokenizer tok(g_pOptions->GetRequiredDir(), ",;");
+		while (const char* szDir = tok.Next())
+		{
+			if (!Util::FileExists(szDir) && !Util::DirectoryExists(szDir))
+			{
+				if (!bWasWaitingReported)
+				{
+					info("Waiting for required directory %s", szDir);
+					m_bWaitingReported = true;
+				}
+				bAllExist = false;
+			}
+		}
+		if (!bAllExist)
+		{
+			return false;
+		}
+	}
+
+	if (m_bWaitingReported)
+	{
+		info("All required directories available");
+	}
+
+	g_pOptions->SetTempPauseDownload(false);
+	return true;
 }

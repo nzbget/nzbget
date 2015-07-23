@@ -66,6 +66,7 @@ static const char* OPTION_NZBDIR				= "NzbDir";
 static const char* OPTION_WEBDIR				= "WebDir";
 static const char* OPTION_CONFIGTEMPLATE		= "ConfigTemplate";
 static const char* OPTION_SCRIPTDIR				= "ScriptDir";
+static const char* OPTION_REQUIREDDIR			= "RequiredDir";
 static const char* OPTION_LOGFILE				= "LogFile";
 static const char* OPTION_WRITELOG				= "WriteLog";
 static const char* OPTION_ROTATELOG				= "RotateLog";
@@ -384,6 +385,7 @@ void Options::Init(const char* szExeName, const char* szConfigFilename, bool bNo
 	m_szWebDir				= NULL;
 	m_szConfigTemplate		= NULL;
 	m_szScriptDir			= NULL;
+	m_szRequiredDir			= NULL;
 	m_eInfoTarget			= mtScreen;
 	m_eWarningTarget		= mtScreen;
 	m_eErrorTarget			= mtScreen;
@@ -393,7 +395,7 @@ void Options::Init(const char* szExeName, const char* szConfigFilename, bool bNo
 	m_bPauseDownload		= false;
 	m_bPausePostProcess		= false;
 	m_bPauseScan			= false;
-	m_bTempPauseDownload	= false;
+	m_bTempPauseDownload	= true;
 	m_bBrokenLog			= false;
 	m_bNzbLog				= false;
 	m_iDownloadRate			= 0;
@@ -556,6 +558,7 @@ Options::~Options()
 	free(m_szWebDir);
 	free(m_szConfigTemplate);
 	free(m_szScriptDir);
+	free(m_szRequiredDir);
 	free(m_szControlIP);
 	free(m_szControlUsername);
 	free(m_szControlPassword);
@@ -652,6 +655,7 @@ void Options::InitDefaults()
 	SetOption(OPTION_LOCKFILE, "${MainDir}/nzbget.lock");
 	SetOption(OPTION_LOGFILE, "${DestDir}/nzbget.log");
 	SetOption(OPTION_SCRIPTDIR, "${MainDir}/scripts");
+	SetOption(OPTION_REQUIREDDIR, "");
 	SetOption(OPTION_WRITELOG, "append");
 	SetOption(OPTION_ROTATELOG, "3");
 	SetOption(OPTION_APPENDCATEGORYDIR, "yes");
@@ -902,11 +906,14 @@ void Options::InitOptions()
 	const char* szMainDir = GetOption(OPTION_MAINDIR);
 
 	CheckDir(&m_szDestDir, OPTION_DESTDIR, szMainDir, false, false);
-	CheckDir(&m_szInterDir, OPTION_INTERDIR, szMainDir, true, true);
+	CheckDir(&m_szInterDir, OPTION_INTERDIR, szMainDir, true, false);
 	CheckDir(&m_szTempDir, OPTION_TEMPDIR, szMainDir, false, true);
 	CheckDir(&m_szQueueDir, OPTION_QUEUEDIR, szMainDir, false, true);
 	CheckDir(&m_szWebDir, OPTION_WEBDIR, NULL, true, false);
 	CheckDir(&m_szScriptDir, OPTION_SCRIPTDIR, szMainDir, true, false);
+	CheckDir(&m_szNzbDir, OPTION_NZBDIR, szMainDir, false, true);
+
+	m_szRequiredDir = strdup(GetOption(OPTION_REQUIREDDIR));
 
 	m_szConfigTemplate		= strdup(GetOption(OPTION_CONFIGTEMPLATE));
 	m_szScriptOrder			= strdup(GetOption(OPTION_SCRIPTORDER));
@@ -964,8 +971,6 @@ void Options::InitOptions()
 	m_iEventInterval		= ParseIntValue(OPTION_EVENTINTERVAL, 10);
 	m_iParBuffer			= ParseIntValue(OPTION_PARBUFFER, 10);
 	m_iParThreads			= ParseIntValue(OPTION_PARTHREADS, 10);
-
-	CheckDir(&m_szNzbDir, OPTION_NZBDIR, szMainDir, m_iNzbDirInterval == 0, true);
 
 	m_bBrokenLog			= (bool)ParseEnumValue(OPTION_BROKENLOG, BoolCount, BoolNames, BoolValues);
 	m_bNzbLog				= (bool)ParseEnumValue(OPTION_NZBLOG, BoolCount, BoolNames, BoolValues);
