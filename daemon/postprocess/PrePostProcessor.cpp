@@ -261,8 +261,7 @@ void PrePostProcessor::NZBAdded(DownloadQueue* pDownloadQueue, NZBInfo* pNZBInfo
 		m_ParCoordinator.PausePars(pDownloadQueue, pNZBInfo);
 	}
 
-	if ((g_pOptions->GetDupeCheck() && pNZBInfo->GetDupeMode() != dmForce &&
-		pNZBInfo->GetDeleteStatus() == NZBInfo::dsDupe) ||
+	if (pNZBInfo->GetDeleteStatus() == NZBInfo::dsDupe ||
 		pNZBInfo->GetDeleteStatus() == NZBInfo::dsCopy ||
 		pNZBInfo->GetDeleteStatus() == NZBInfo::dsGood ||
 		pNZBInfo->GetDeleteStatus() == NZBInfo::dsScan)
