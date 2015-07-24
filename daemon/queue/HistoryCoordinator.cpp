@@ -248,7 +248,6 @@ void HistoryCoordinator::HistoryHide(DownloadQueue* pDownloadQueue, HistoryInfo*
 		pHistoryInfo->GetNZBInfo()->GetDeleteStatus() == NZBInfo::dsDupe ? DupInfo::dsDupe :
 		pHistoryInfo->GetNZBInfo()->GetDeleteStatus() == NZBInfo::dsManual ||
 		pHistoryInfo->GetNZBInfo()->GetDeleteStatus() == NZBInfo::dsGood ||
-		pHistoryInfo->GetNZBInfo()->GetDeleteStatus() == NZBInfo::dsSuccess ||
 		pHistoryInfo->GetNZBInfo()->GetDeleteStatus() == NZBInfo::dsCopy ? DupInfo::dsDeleted :
 		pHistoryInfo->GetNZBInfo()->IsDupeSuccess() ? DupInfo::dsSuccess :
 		DupInfo::dsFailed);

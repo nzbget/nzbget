@@ -862,10 +862,6 @@ const char* NZBInfo::MakeTextStatus(bool bIgnoreScriptStatus)
 		{
 			szStatus = "DELETED/GOOD";
 		}
-		else if (m_eDeleteStatus == NZBInfo::dsSuccess)
-		{
-			szStatus = "DELETED/SUCCESS";
-		}
 		else if (m_eDeleteStatus == NZBInfo::dsCopy)
 		{
 			szStatus = "DELETED/COPY";

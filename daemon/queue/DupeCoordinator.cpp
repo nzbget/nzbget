@@ -172,9 +172,9 @@ void DupeCoordinator::NZBFound(DownloadQueue* pDownloadQueue, NZBInfo* pNZBInfo)
 	bool bSameContent = false;
 	const char* szDupeName = NULL;
 
-	// find duplicates in queue having exactly same content
+	// find duplicates in history having exactly same content
 	// also: nzb-files having duplicates marked as good are skipped
-	// also (only in score mode): nzb-files having success-duplicates in dup-history but don't having duplicates in recent history are skipped
+	// also (only in score mode): nzb-files having success-duplicates in dup-history but not having duplicates in recent history are skipped
 	for (HistoryList::iterator it = pDownloadQueue->GetHistory()->begin(); it != pDownloadQueue->GetHistory()->end(); it++)
 	{
 		HistoryInfo* pHistoryInfo = *it;
@@ -277,7 +277,7 @@ void DupeCoordinator::NZBFound(DownloadQueue* pDownloadQueue, NZBInfo* pNZBInfo)
 		}
 		else
 		{
-			pNZBInfo->SetDeleteStatus(bSameContent ? NZBInfo::dsCopy : bGood ? NZBInfo::dsGood : NZBInfo::dsSuccess);
+			pNZBInfo->SetDeleteStatus(bSameContent ? NZBInfo::dsCopy : NZBInfo::dsGood);
 			pNZBInfo->AddMessage(Message::mkWarning, szMessage);
 		}
 

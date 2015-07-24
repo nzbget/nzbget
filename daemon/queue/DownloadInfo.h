@@ -393,7 +393,6 @@ public:
 		dsDupe,
 		dsBad,
 		dsGood,
-		dsSuccess,
 		dsCopy,
 		dsScan
 	};

@@ -265,8 +265,7 @@ void PrePostProcessor::NZBAdded(DownloadQueue* pDownloadQueue, NZBInfo* pNZBInfo
 		pNZBInfo->GetDeleteStatus() == NZBInfo::dsDupe) ||
 		pNZBInfo->GetDeleteStatus() == NZBInfo::dsCopy ||
 		pNZBInfo->GetDeleteStatus() == NZBInfo::dsGood ||
-		pNZBInfo->GetDeleteStatus() == NZBInfo::dsSuccess ||
-		pNZBInfo->GetDeleteStatus() == NZBInfo::dsScan )
+		pNZBInfo->GetDeleteStatus() == NZBInfo::dsScan)
 	{
 		NZBCompleted(pDownloadQueue, pNZBInfo, false);
 	}
