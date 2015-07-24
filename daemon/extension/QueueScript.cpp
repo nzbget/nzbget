@@ -47,7 +47,7 @@
 #include "Log.h"
 #include "Util.h"
 
-static const char* QUEUE_EVENT_NAMES[] = { "FILE_DOWNLOADED", "NZB_ADDED", "NZB_DOWNLOADED" };
+static const char* QUEUE_EVENT_NAMES[] = { "FILE_DOWNLOADED", "NZB_ADDED", "NZB_DOWNLOADED", "NZB_DELETED" };
 
 class QueueScriptController : public Thread, public NZBScriptController
 {
@@ -64,6 +64,7 @@ private:
 	ScriptConfig::Script*	m_pScript;
 	QueueScriptCoordinator::EEvent	m_eEvent;
 	bool				m_bMarkBad;
+	NZBInfo::EDeleteStatus m_eDeleteStatus;
 
 	void				PrepareParams(const char* szScriptName);
 
@@ -103,6 +104,7 @@ void QueueScriptController::StartScript(NZBInfo* pNZBInfo, ScriptConfig::Script*
 	pScriptController->m_eEvent = eEvent;
 	pScriptController->m_iPrefixLen = 0;
 	pScriptController->m_bMarkBad = false;
+	pScriptController->m_eDeleteStatus = pNZBInfo->GetDeleteStatus();
 	pScriptController->SetAutoDestroy(true);
 
 	pScriptController->Start();
@@ -165,6 +167,9 @@ void QueueScriptController::PrepareParams(const char* szScriptName)
 	SetIntEnvVar("NZBNA_PRIORITY", m_iPriority);
 	SetIntEnvVar("NZBNA_LASTID", m_iID);	// deprecated
 	SetEnvVar("NZBNA_EVENT", QUEUE_EVENT_NAMES[m_eEvent]);
+
+    const char* szDeleteStatusName[] = { "NONE", "MANUAL", "HEALTH", "DUPE", "BAD", "GOOD", "COPY", "SCAN" };
+	SetEnvVar("NZBNA_DELETESTATUS", szDeleteStatusName[m_eDeleteStatus]);
 
 	PrepareEnvScript(&m_Parameters, szScriptName);
 }
@@ -385,6 +390,24 @@ void QueueScriptCoordinator::EnqueueScript(NZBInfo* pNZBInfo, EEvent eEvent)
 	m_mutexQueue.Unlock();
 }
 
+NZBInfo* QueueScriptCoordinator::FindNZBInfo(DownloadQueue* pDownloadQueue, int iNZBID)
+{
+	NZBInfo* pNZBInfo = pDownloadQueue->GetQueue()->Find(iNZBID);
+	if (!pNZBInfo)
+	{
+		for (HistoryList::iterator it = pDownloadQueue->GetHistory()->begin(); it != pDownloadQueue->GetHistory()->end(); it++)
+		{
+			HistoryInfo* pHistoryInfo = *it;
+			if (pHistoryInfo->GetNZBInfo() && pHistoryInfo->GetNZBInfo()->GetID() == iNZBID)
+			{
+				pNZBInfo = pHistoryInfo->GetNZBInfo();
+				break;
+			}
+		}
+	}
+	return pNZBInfo;
+}
+
 void QueueScriptCoordinator::CheckQueue()
 {
 	DownloadQueue* pDownloadQueue = DownloadQueue::Lock();
@@ -400,10 +423,11 @@ void QueueScriptCoordinator::CheckQueue()
 	{
 		QueueItem* pQueueItem = *it;
 
-		NZBInfo* pNZBInfo = pDownloadQueue->GetQueue()->Find(pQueueItem->GetNZBID());
+		NZBInfo* pNZBInfo = FindNZBInfo(pDownloadQueue, pQueueItem->GetNZBID());
 
 		// in a case this nzb must not be processed further - delete queue script from queue
-		if (!pNZBInfo || pNZBInfo->GetDeleteStatus() != NZBInfo::dsNone ||
+		if (!pNZBInfo ||
+			(pNZBInfo->GetDeleteStatus() != NZBInfo::dsNone && pQueueItem->GetEvent() != qeNzbDeleted) ||
 			pNZBInfo->GetMarkStatus() == NZBInfo::ksBad)
 		{
 			delete pQueueItem;

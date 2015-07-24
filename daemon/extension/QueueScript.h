@@ -38,7 +38,8 @@ public:
 	{
 		qeFileDownloaded,	// lowest priority
 		qeNzbAdded,
-		qeNzbDownloaded		// highest priority
+		qeNzbDownloaded,
+		qeNzbDeleted		// highest priority
 	};
 
 private:
@@ -63,6 +64,7 @@ private:
 	bool				m_bHasQueueScripts;
 
 	void				StartScript(NZBInfo* pNZBInfo, QueueItem* pQueueItem);
+	NZBInfo*			FindNZBInfo(DownloadQueue* pDownloadQueue, int iNZBID);
 
 public:
 						QueueScriptCoordinator();
