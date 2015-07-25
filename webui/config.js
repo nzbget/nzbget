@@ -2655,7 +2655,7 @@ var UpdateDialog = (new function($)
 						if (rev && rev.length > 1)
 						{
 							rev = rev[1].replace(',', '');
-							var ver = gitBranchData.match(/.*AM_INIT_AUTOMAKE\(nzbget, (.*)\).*/);
+							var ver = gitBranchData.match(/AC_INIT\(nzbget, (.*), .*/);
 							if (ver && ver.length > 1)
 							{
 								VersionInfo['devel-version'] = ver[1] + '-r' + rev;
