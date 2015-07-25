@@ -255,7 +255,6 @@ void Run(bool bReload)
 	}
 #endif
 	
-	g_pLog->InitOptions();
 	g_pScanner->InitOptions();
 	g_pQueueScriptCoordinator->InitOptions();
 
@@ -552,6 +551,8 @@ void BootConfig()
 	g_pOptions->SetRemoteClientMode(g_pCommandLineParser->GetRemoteClientMode());
 	g_pOptions->SetServerMode(g_pCommandLineParser->GetServerMode());
 	g_pOptions->SetPauseDownload(g_pCommandLineParser->GetPauseDownload());
+
+	g_pLog->InitOptions();
 
 	if (g_pOptions->GetFatalError())
 	{

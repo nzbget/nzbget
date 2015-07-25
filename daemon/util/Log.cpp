@@ -63,6 +63,7 @@ Log::Log()
 {
 	m_Messages.clear();
 	m_iIDGen = 0;
+	m_bOptInit = false;
 	m_szLogFilename = NULL;
 	m_tLastWritten = 0;
 #ifdef DEBUG
@@ -350,7 +351,7 @@ void Log::AddMessage(Message::EKind eKind, const char * szText)
 	Message* pMessage = new Message(++m_iIDGen, eKind, time(NULL), szText);
 	m_Messages.push_back(pMessage);
 
-	if (g_pOptions)
+	if (m_bOptInit)
 	{
 		while (m_Messages.size() > (unsigned int)g_pOptions->GetLogBufferSize())
 		{
@@ -520,6 +521,8 @@ void Log::InitOptions()
 			i++;
 		}
 	}
+
+	m_bOptInit = true;
 }
 
 void Log::RegisterDebuggable(Debuggable* pDebuggable)
