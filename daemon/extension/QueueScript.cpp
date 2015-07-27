@@ -59,6 +59,9 @@ private:
 	char*				m_szDestDir;
 	int					m_iID;
 	int					m_iPriority;
+	char*				m_szDupeKey;
+	EDupeMode			m_eDupeMode;
+	int					m_iDupeScore;
 	NZBParameterList	m_Parameters;
 	int					m_iPrefixLen;
 	ScriptConfig::Script*	m_pScript;
@@ -86,6 +89,7 @@ QueueScriptController::~QueueScriptController()
 	free(m_szUrl);
 	free(m_szCategory);
 	free(m_szDestDir);
+	free(m_szDupeKey);
 }
 
 void QueueScriptController::StartScript(NZBInfo* pNZBInfo, ScriptConfig::Script* pScript, QueueScriptCoordinator::EEvent eEvent)
@@ -99,6 +103,9 @@ void QueueScriptController::StartScript(NZBInfo* pNZBInfo, ScriptConfig::Script*
 	pScriptController->m_szDestDir = strdup(pNZBInfo->GetDestDir());
 	pScriptController->m_iID = pNZBInfo->GetID();
 	pScriptController->m_iPriority = pNZBInfo->GetPriority();
+	pScriptController->m_szDupeKey = strdup(pNZBInfo->GetDupeKey());
+	pScriptController->m_eDupeMode = pNZBInfo->GetDupeMode();
+	pScriptController->m_iDupeScore = pNZBInfo->GetDupeScore();
 	pScriptController->m_Parameters.CopyFrom(pNZBInfo->GetParameters());
 	pScriptController->m_pScript = pScript;
 	pScriptController->m_eEvent = eEvent;
@@ -166,6 +173,13 @@ void QueueScriptController::PrepareParams(const char* szScriptName)
 	SetEnvVar("NZBNA_CATEGORY", m_szCategory);
 	SetIntEnvVar("NZBNA_PRIORITY", m_iPriority);
 	SetIntEnvVar("NZBNA_LASTID", m_iID);	// deprecated
+
+	SetEnvVar("NZBNA_DUPEKEY", m_szDupeKey);
+	SetIntEnvVar("NZBNA_DUPESCORE", m_iDupeScore);
+
+	const char* szDupeModeName[] = { "SCORE", "ALL", "FORCE" };
+	SetEnvVar("NZBNA_DUPEMODE", szDupeModeName[m_eDupeMode]);
+
 	SetEnvVar("NZBNA_EVENT", QUEUE_EVENT_NAMES[m_eEvent]);
 
     const char* szDeleteStatusName[] = { "NONE", "MANUAL", "HEALTH", "DUPE", "BAD", "GOOD", "COPY", "SCAN" };
