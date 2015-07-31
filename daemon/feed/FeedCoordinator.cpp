@@ -516,6 +516,7 @@ NZBInfo* FeedCoordinator::CreateNZBInfo(FeedInfo* pFeedInfo, FeedItemInfo* pFeed
 
 	NZBInfo* pNZBInfo = new NZBInfo();
 	pNZBInfo->SetKind(NZBInfo::nkUrl);
+	pNZBInfo->SetFeedID(pFeedInfo->GetID());
 	pNZBInfo->SetURL(pFeedItemInfo->GetUrl());
 
 	// add .nzb-extension if not present

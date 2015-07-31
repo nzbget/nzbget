@@ -153,6 +153,12 @@ void PostScriptController::PrepareParams(const char* szScriptName)
 	SetIntEnvVar("NZBPP_HEALTH", m_pPostInfo->GetNZBInfo()->CalcHealth());
 	SetIntEnvVar("NZBPP_CRITICALHEALTH", m_pPostInfo->GetNZBInfo()->CalcCriticalHealth(false));
 
+	SetEnvVar("NZBPP_DUPEKEY", m_pPostInfo->GetNZBInfo()->GetDupeKey());
+	SetIntEnvVar("NZBPP_DUPESCORE", m_pPostInfo->GetNZBInfo()->GetDupeScore());
+
+	const char* szDupeModeName[] = { "SCORE", "ALL", "FORCE" };
+	SetEnvVar("NZBPP_DUPEMODE", szDupeModeName[m_pPostInfo->GetNZBInfo()->GetDupeMode()]);
+
 	char szStatus[256];
 	strncpy(szStatus, m_pPostInfo->GetNZBInfo()->MakeTextStatus(true), sizeof(szStatus));
 	szStatus[256-1] = '\0';

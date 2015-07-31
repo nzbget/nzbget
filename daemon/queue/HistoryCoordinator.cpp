@@ -246,7 +246,9 @@ void HistoryCoordinator::HistoryHide(DownloadQueue* pDownloadQueue, HistoryInfo*
 		pHistoryInfo->GetNZBInfo()->GetMarkStatus() == NZBInfo::ksBad ? DupInfo::dsBad :
 		pHistoryInfo->GetNZBInfo()->GetMarkStatus() == NZBInfo::ksSuccess ? DupInfo::dsSuccess :
 		pHistoryInfo->GetNZBInfo()->GetDeleteStatus() == NZBInfo::dsDupe ? DupInfo::dsDupe :
-		pHistoryInfo->GetNZBInfo()->GetDeleteStatus() == NZBInfo::dsManual ? DupInfo::dsDeleted :
+		pHistoryInfo->GetNZBInfo()->GetDeleteStatus() == NZBInfo::dsManual ||
+		pHistoryInfo->GetNZBInfo()->GetDeleteStatus() == NZBInfo::dsGood ||
+		pHistoryInfo->GetNZBInfo()->GetDeleteStatus() == NZBInfo::dsCopy ? DupInfo::dsDeleted :
 		pHistoryInfo->GetNZBInfo()->IsDupeSuccess() ? DupInfo::dsSuccess :
 		DupInfo::dsFailed);
 
@@ -499,11 +501,12 @@ void HistoryCoordinator::HistoryRedownload(DownloadQueue* pDownloadQueue, Histor
 		return;
 	}
 
-	NZBFile* pNZBFile = NZBFile::Create(pNZBInfo->GetQueuedFilename(), "");
-	if (pNZBFile == NULL)
+	NZBFile* pNZBFile = new NZBFile(pNZBInfo->GetQueuedFilename(), "");
+	if (!pNZBFile->Parse())
 	{
 		error("Could not return %s from history back to queue: could not parse nzb-file",
 			pNZBInfo->GetName());
+		delete pNZBFile;
 		return;
 	}
 

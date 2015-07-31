@@ -46,6 +46,7 @@
 #include "Options.h"
 #include "Log.h"
 #include "QueueCoordinator.h"
+#include "HistoryCoordinator.h"
 #include "ScanScript.h"
 #include "Util.h"
 
@@ -350,7 +351,6 @@ void Scanner::ProcessIncomingFile(const char* szDirectory, const char* szBaseFil
 	int iDupeScore = 0;
 	EDupeMode eDupeMode = dmScore;
 	EAddStatus eAddStatus = asSkipped;
-	bool bAdded = false;
 	QueueData* pQueueData = NULL;
 	NZBInfo* pUrlInfo = NULL;
 	int iNZBID = 0;
@@ -406,8 +406,9 @@ void Scanner::ProcessIncomingFile(const char* szDirectory, const char* szBaseFil
 		bool bRenameOK = Util::RenameBak(szFullFilename, "nzb", true, szRenamedName, 1024);
 		if (bRenameOK)
 		{
-			bAdded = AddFileToQueue(szRenamedName, szNZBName, szNZBCategory, iPriority,
+			bool bAdded = AddFileToQueue(szRenamedName, szNZBName, szNZBCategory, iPriority,
 				szDupeKey, iDupeScore, eDupeMode, pParameters, bAddTop, bAddPaused, pUrlInfo, &iNZBID);
+			eAddStatus = bAdded ? asSuccess : asFailed;
 		}
 		else
 		{
@@ -418,8 +419,9 @@ void Scanner::ProcessIncomingFile(const char* szDirectory, const char* szBaseFil
 	}
 	else if (bExists && !strcasecmp(szExtension, ".nzb"))
 	{
-		bAdded = AddFileToQueue(szFullFilename, szNZBName, szNZBCategory, iPriority,
+		bool bAdded = AddFileToQueue(szFullFilename, szNZBName, szNZBCategory, iPriority,
 			szDupeKey, iDupeScore, eDupeMode, pParameters, bAddTop, bAddPaused, pUrlInfo, &iNZBID);
+		eAddStatus = bAdded ? asSuccess : asFailed;
 	}
 
 	delete pParameters;
@@ -430,7 +432,7 @@ void Scanner::ProcessIncomingFile(const char* szDirectory, const char* szBaseFil
 
 	if (pQueueData)
 	{
-		pQueueData->SetAddStatus(eAddStatus == asFailed ? asFailed : bAdded ? asSuccess : asSkipped);
+		pQueueData->SetAddStatus(eAddStatus);
 		pQueueData->SetNZBID(iNZBID);
 	}
 }
@@ -489,8 +491,8 @@ bool Scanner::AddFileToQueue(const char* szFilename, const char* szNZBName, cons
 
 	info("Adding collection %s to queue", szBasename);
 
-	NZBFile* pNZBFile = NZBFile::Create(szFilename, szCategory);
-	bool bOK = pNZBFile != NULL;
+	NZBFile* pNZBFile = new NZBFile(szFilename, szCategory);
+	bool bOK = pNZBFile->Parse();
 	if (!bOK)
 	{
 		error("Could not add collection %s to queue", szBasename);
@@ -504,54 +506,60 @@ bool Scanner::AddFileToQueue(const char* szFilename, const char* szNZBName, cons
 		error("Could not rename file %s to %s: %s", szFilename, bakname2, Util::GetLastErrorMessage(szSysErrStr, sizeof(szSysErrStr)));
 	}
 
+	NZBInfo* pNZBInfo = pNZBFile->GetNZBInfo();
+	pNZBInfo->SetQueuedFilename(bakname2);
+
+	if (szNZBName && strlen(szNZBName) > 0)
+	{
+		pNZBInfo->SetName(NULL);
+#ifdef WIN32
+		char* szAnsiFilename = strdup(szNZBName);
+		WebUtil::Utf8ToAnsi(szAnsiFilename, strlen(szAnsiFilename) + 1);
+		pNZBInfo->SetFilename(szAnsiFilename);
+		free(szAnsiFilename);
+#else
+		pNZBInfo->SetFilename(szNZBName);
+#endif
+		pNZBInfo->BuildDestDirName();
+	}
+
+	pNZBInfo->SetDupeKey(szDupeKey);
+	pNZBInfo->SetDupeScore(iDupeScore);
+	pNZBInfo->SetDupeMode(eDupeMode);
+	pNZBInfo->SetPriority(iPriority);
+	if (pUrlInfo)
+	{
+		pNZBInfo->SetURL(pUrlInfo->GetURL());
+		pNZBInfo->SetUrlStatus(pUrlInfo->GetUrlStatus());
+		pNZBInfo->SetFeedID(pUrlInfo->GetFeedID());
+	}
+
+	if (pNZBFile->GetPassword())
+	{
+		pNZBInfo->GetParameters()->SetParameter("*Unpack:Password", pNZBFile->GetPassword());
+	}
+
+	pNZBInfo->GetParameters()->CopyFrom(pParameters);
+
+	for (::FileList::iterator it = pNZBInfo->GetFileList()->begin(); it != pNZBInfo->GetFileList()->end(); it++)
+	{
+		FileInfo* pFileInfo = *it;
+		pFileInfo->SetPaused(bAddPaused);
+	}
+
 	if (bOK)
 	{
-		NZBInfo* pNZBInfo = pNZBFile->GetNZBInfo();
-		pNZBInfo->SetQueuedFilename(bakname2);
-
-		if (szNZBName && strlen(szNZBName) > 0)
-		{
-			pNZBInfo->SetName(NULL);
-#ifdef WIN32
-			char* szAnsiFilename = strdup(szNZBName);
-			WebUtil::Utf8ToAnsi(szAnsiFilename, strlen(szAnsiFilename) + 1);
-			pNZBInfo->SetFilename(szAnsiFilename);
-			free(szAnsiFilename);
-#else
-			pNZBInfo->SetFilename(szNZBName);
-#endif
-			pNZBInfo->BuildDestDirName();
-		}
-
-		pNZBInfo->SetDupeKey(szDupeKey);
-		pNZBInfo->SetDupeScore(iDupeScore);
-		pNZBInfo->SetDupeMode(eDupeMode);
-		pNZBInfo->SetPriority(iPriority);
-		if (pUrlInfo)
-		{
-			pNZBInfo->SetURL(pUrlInfo->GetURL());
-			pNZBInfo->SetUrlStatus(pUrlInfo->GetUrlStatus());
-		}
-
-		if (pNZBFile->GetPassword())
-		{
-			pNZBInfo->GetParameters()->SetParameter("*Unpack:Password", pNZBFile->GetPassword());
-		}
-
-		pNZBInfo->GetParameters()->CopyFrom(pParameters);
-
-		for (::FileList::iterator it = pNZBInfo->GetFileList()->begin(); it != pNZBInfo->GetFileList()->end(); it++)
-		{
-			FileInfo* pFileInfo = *it;
-			pFileInfo->SetPaused(bAddPaused);
-		}
-
 		g_pQueueCoordinator->AddNZBFileToQueue(pNZBFile, pUrlInfo, bAddTop);
+	}
+	else if (!pUrlInfo)
+	{
+		pNZBFile->GetNZBInfo()->SetDeleteStatus(NZBInfo::dsScan);
+		g_pQueueCoordinator->AddNZBFileToQueue(pNZBFile, pUrlInfo, bAddTop);
+	}
 
-		if (pNZBID)
-		{
-			*pNZBID = pNZBInfo->GetID();
-		}
+	if (pNZBID)
+	{
+		*pNZBID = pNZBInfo->GetID();
 	}
 
 	delete pNZBFile;

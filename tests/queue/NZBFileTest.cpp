@@ -45,8 +45,9 @@ void TestNzb(std::string TestFilename)
 	std::string NzbFilename(TestUtil::TestDataDir() + "/nzbfile/"+ TestFilename + ".nzb");
 	std::string InfoFilename(TestUtil::TestDataDir() + "/nzbfile/"+ TestFilename + ".txt");
 
-	NZBFile* pNZBFile = NZBFile::Create(NzbFilename.c_str(), "");
-	REQUIRE(pNZBFile != NULL);
+	NZBFile* pNZBFile = new NZBFile(NzbFilename.c_str(), "");
+	bool bParsedOK = pNZBFile->Parse();
+	REQUIRE(bParsedOK == true);
 
 	FILE* infofile = fopen(InfoFilename.c_str(), FOPEN_RB);
 	REQUIRE(infofile != NULL);

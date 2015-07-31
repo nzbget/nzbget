@@ -364,10 +364,11 @@ void Run(bool bReload)
 		if (!g_pCommandLineParser->GetServerMode())
 		{
 			const char* szCategory = g_pCommandLineParser->GetAddCategory() ? g_pCommandLineParser->GetAddCategory() : "";
-			NZBFile* pNZBFile = NZBFile::Create(g_pCommandLineParser->GetArgFilename(), szCategory);
-			if (!pNZBFile)
+			NZBFile* pNZBFile = new NZBFile(g_pCommandLineParser->GetArgFilename(), szCategory);
+			if (!pNZBFile->Parse())
 			{
 				printf("Parsing NZB-document %s failed\n\n", g_pCommandLineParser->GetArgFilename() ? g_pCommandLineParser->GetArgFilename() : "N/A");
+				delete pNZBFile;
 				return;
 			}
 			g_pScanner->InitPPParameters(szCategory, pNZBFile->GetNZBInfo()->GetParameters(), false);

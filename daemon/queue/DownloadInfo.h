@@ -391,7 +391,10 @@ public:
 		dsManual,
 		dsHealth,
 		dsDupe,
-		dsBad
+		dsBad,
+		dsGood,
+		dsCopy,
+		dsScan
 	};
 
 	enum EMarkStatus
@@ -503,6 +506,7 @@ private:
 	bool				m_bParFull;
 	int					m_iMessageCount;
 	int					m_iCachedMessageCount;
+	int					m_iFeedID;
 
 	static int			m_iIDGen;
 	static int			m_iIDMax;
@@ -660,6 +664,8 @@ public:
 	void 				SetQueueScriptTime(time_t tQueueScriptTime) { m_tQueueScriptTime = tQueueScriptTime; }
 	void				SetParFull(bool bParFull) { m_bParFull = bParFull; }
 	bool				GetParFull() { return m_bParFull; }
+	int					GetFeedID() { return m_iFeedID; }
+	void				SetFeedID(int iFeedID) { m_iFeedID = iFeedID; }
 
 	void				CopyFileList(NZBInfo* pSrcNZBInfo);
 	void				UpdateMinMaxTime();

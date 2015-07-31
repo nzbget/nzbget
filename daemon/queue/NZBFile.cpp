@@ -515,7 +515,7 @@ void NZBFile::ReadPassword()
 }
 
 #ifdef WIN32
-NZBFile* NZBFile::Create(const char* szFileName, const char* szCategory)
+bool NZBFile::Parse()
 {
     CoInitialize(NULL);
 
@@ -525,7 +525,7 @@ NZBFile* NZBFile::Create(const char* szFileName, const char* szCategory)
 	hr = doc.CreateInstance(MSXML::CLSID_DOMDocument);
     if (FAILED(hr))
     {
-        return NULL;
+        return false;
     }
 
     // Load the XML document file...
@@ -534,8 +534,8 @@ NZBFile* NZBFile::Create(const char* szFileName, const char* szCategory)
 	doc->put_async(VARIANT_FALSE);
 
 	// filename needs to be properly encoded
-	char* szURL = (char*)malloc(strlen(szFileName)*3 + 1);
-	EncodeURL(szFileName, szURL);
+	char* szURL = (char*)malloc(strlen(m_szFileName)*3 + 1);
+	EncodeURL(m_szFileName, szURL);
 	debug("url=\"%s\"", szURL);
 	_variant_t v(szURL);
 	free(szURL);
@@ -545,28 +545,33 @@ NZBFile* NZBFile::Create(const char* szFileName, const char* szCategory)
 	{
 		_bstr_t r(doc->GetparseError()->reason);
 		const char* szErrMsg = r;
-		error("Error parsing nzb-file %s: %s", Util::BaseFileName(szFileName), szErrMsg);
-		return NULL;
+
+		char szMessageText[1024];
+		snprintf(szMessageText, 1024, "Error parsing nzb-file %s: %s", Util::BaseFileName(m_szFileName), szErrMsg);
+		szMessageText[1024-1] = '\0';
+		m_pNZBInfo->AddMessage(Message::mkError, szMessageText);
+
+		return false;
 	}
 
-    NZBFile* pFile = new NZBFile(szFileName, szCategory);
-
-    if (!pFile->ParseNZB(doc))
+    if (!ParseNZB(doc))
 	{
-		delete pFile;
-		return NULL;
+		return false;
 	}
 
-	if (pFile->GetNZBInfo()->GetFileList()->empty())
+	if (GetNZBInfo()->GetFileList()->empty())
 	{
-		error("Error parsing nzb-file %s: file has no content", Util::BaseFileName(szFileName));
-		delete pFile;
-		return NULL;
+		char szMessageText[1024];
+		snprintf(szMessageText, 1024, "Error parsing nzb-file %s: file has no content", Util::BaseFileName(m_szFileName));
+		szMessageText[1024-1] = '\0';
+		m_pNZBInfo->AddMessage(Message::mkError, szMessageText);
+
+		return false;
 	}
 
-	pFile->ProcessFiles();
+	ProcessFiles();
 
-    return pFile;
+    return true;
 }
 
 void NZBFile::EncodeURL(const char* szFilename, char* szURL)
@@ -664,10 +669,8 @@ bool NZBFile::ParseNZB(IUnknown* nzb)
 
 #else
 
-NZBFile* NZBFile::Create(const char* szFileName, const char* szCategory)
+bool NZBFile::Parse()
 {
-    NZBFile* pFile = new NZBFile(szFileName, szCategory);
-
 	xmlSAXHandler SAX_handler = {0};
 	SAX_handler.startElement = reinterpret_cast<startElementSAXFunc>(SAX_StartElement);
 	SAX_handler.endElement = reinterpret_cast<endElementSAXFunc>(SAX_EndElement);
@@ -675,31 +678,39 @@ NZBFile* NZBFile::Create(const char* szFileName, const char* szCategory)
 	SAX_handler.error = reinterpret_cast<errorSAXFunc>(SAX_error);
 	SAX_handler.getEntity = reinterpret_cast<getEntitySAXFunc>(SAX_getEntity);
 
-	pFile->m_bIgnoreNextError = false;
+	m_bIgnoreNextError = false;
 
-	int ret = xmlSAXUserParseFile(&SAX_handler, pFile, szFileName);
+	int ret = xmlSAXUserParseFile(&SAX_handler, this, m_szFileName);
     
     if (ret != 0)
 	{
-		error("Error parsing nzb-file %s", Util::BaseFileName(szFileName));
-		delete pFile;
-		return NULL;
+		char szMessageText[1024];
+		snprintf(szMessageText, 1024, "Error parsing nzb-file %s", Util::BaseFileName(m_szFileName));
+		szMessageText[1024-1] = '\0';
+		m_pNZBInfo->AddMessage(Message::mkError, szMessageText);
+		return false;
 	}
 
-	if (pFile->GetNZBInfo()->GetFileList()->empty())
+	if (m_pNZBInfo->GetFileList()->empty())
 	{
-		error("Error parsing nzb-file %s: file has no content", Util::BaseFileName(szFileName));
-		delete pFile;
-		return NULL;
+		char szMessageText[1024];
+		snprintf(szMessageText, 1024, "Error parsing nzb-file %s: file has no content", Util::BaseFileName(m_szFileName));
+		szMessageText[1024-1] = '\0';
+		m_pNZBInfo->AddMessage(Message::mkError, szMessageText);
+		return false;
 	}
 
-	pFile->ProcessFiles();
+	ProcessFiles();
 
-	return pFile;
+	return true;
 }
 
 void NZBFile::Parse_StartElement(const char *name, const char **atts)
 {
+	char szTagAttrMessage[1024];
+	snprintf(szTagAttrMessage, 1024, "Malformed nzb-file, tag <%s> must have attributes", name);
+	szTagAttrMessage[1024-1] = '\0';
+
 	if (m_szTagContent)
 	{
 		free(m_szTagContent);
@@ -714,7 +725,7 @@ void NZBFile::Parse_StartElement(const char *name, const char **atts)
 
 		if (!atts)
 		{
-			warn("Malformed nzb-file, tag <%s> must have attributes", name);
+	        m_pNZBInfo->AddMessage(Message::mkWarning, szTagAttrMessage);
 			return;
 		}
 
@@ -736,13 +747,13 @@ void NZBFile::Parse_StartElement(const char *name, const char **atts)
 	{
 		if (!m_pFileInfo)
 		{
-			warn("Malformed nzb-file, tag <segment> without tag <file>");
+			m_pNZBInfo->AddMessage(Message::mkWarning, "Malformed nzb-file, tag <segment> without tag <file>");
 			return;
 		}
 
 		if (!atts)
 		{
-			warn("Malformed nzb-file, tag <%s> must have attributes", name);
+			m_pNZBInfo->AddMessage(Message::mkWarning, szTagAttrMessage);
 			return;
 		}
 
@@ -776,7 +787,7 @@ void NZBFile::Parse_StartElement(const char *name, const char **atts)
 	{
 		if (!atts)
 		{
-			warn("Malformed nzb-file, tag <%s> must have attributes", name);
+			m_pNZBInfo->AddMessage(Message::mkWarning, szTagAttrMessage);
 			return;
 		}
 		m_bPassword = atts[0] && atts[1] && !strcmp("type", atts[0]) && !strcmp("password", atts[1]);
@@ -889,7 +900,7 @@ void* NZBFile::SAX_getEntity(NZBFile* pFile, const char * name)
 	xmlEntityPtr e = xmlGetPredefinedEntity((xmlChar* )name);
 	if (!e)
 	{
-		warn("entity not found");
+		pFile->GetNZBInfo()->AddMessage(Message::mkWarning, "entity not found");
 		pFile->m_bIgnoreNextError = true;
 	}
 
@@ -913,6 +924,10 @@ void NZBFile::SAX_error(NZBFile* pFile, const char *msg, ...)
 
 	// remove trailing CRLF
 	for (char* pend = szErrMsg + strlen(szErrMsg) - 1; pend >= szErrMsg && (*pend == '\n' || *pend == '\r' || *pend == ' '); pend--) *pend = '\0';
-    error("Error parsing nzb-file: %s", szErrMsg);
+
+	char szTextMessage[1024];
+	snprintf(szTextMessage, 1024, "Error parsing nzb-file: %s", szErrMsg);
+	szTextMessage[1024-1] = '\0';
+	pFile->GetNZBInfo()->AddMessage(Message::mkError, szTextMessage);
 }
 #endif

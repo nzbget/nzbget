@@ -266,7 +266,7 @@ bool DiskState::SaveDownloadQueue(DownloadQueue* pDownloadQueue)
 {
 	debug("Saving queue to disk");
 
-	StateFile stateFile("queue", 53);
+	StateFile stateFile("queue", 54);
 
 	if (pDownloadQueue->GetQueue()->empty() && 
 		pDownloadQueue->GetHistory()->empty())
@@ -295,7 +295,7 @@ bool DiskState::LoadDownloadQueue(DownloadQueue* pDownloadQueue, Servers* pServe
 {
 	debug("Loading queue from disk");
 
-	StateFile stateFile("queue", 53);
+	StateFile stateFile("queue", 54);
 
 	FILE* infile = stateFile.BeginReadTransaction();
 	if (!infile)
@@ -472,9 +472,9 @@ void DiskState::SaveNZBInfo(NZBInfo* pNZBInfo, FILE* outfile)
 	fprintf(outfile, "%s\n", pNZBInfo->GetQueuedFilename());
 	fprintf(outfile, "%s\n", pNZBInfo->GetName());
 	fprintf(outfile, "%s\n", pNZBInfo->GetCategory());
-	fprintf(outfile, "%i,%i,%i,%i\n", (int)pNZBInfo->GetPriority(), 
+	fprintf(outfile, "%i,%i,%i,%i,%i\n", (int)pNZBInfo->GetPriority(), 
 		pNZBInfo->GetPostInfo() ? (int)pNZBInfo->GetPostInfo()->GetStage() + 1 : 0,
-		(int)pNZBInfo->GetDeletePaused(), (int)pNZBInfo->GetManyDupeFiles());
+		(int)pNZBInfo->GetDeletePaused(), (int)pNZBInfo->GetManyDupeFiles(), pNZBInfo->GetFeedID());
 	fprintf(outfile, "%i,%i,%i,%i,%i,%i,%i\n", (int)pNZBInfo->GetParStatus(), (int)pNZBInfo->GetUnpackStatus(),
 		(int)pNZBInfo->GetMoveStatus(), (int)pNZBInfo->GetRenameStatus(), (int)pNZBInfo->GetDeleteStatus(),
 		(int)pNZBInfo->GetMarkStatus(), (int)pNZBInfo->GetUrlStatus());
@@ -617,8 +617,12 @@ bool DiskState::LoadNZBInfo(NZBInfo* pNZBInfo, Servers* pServers, FILE* infile, 
 
 	if (true) // clang requires a block for goto to work
 	{
-		int iPriority = 0, iPostProcess = 0, iPostStage = 0, iDeletePaused = 0, iManyDupeFiles = 0;
-		if (iFormatVersion >= 45)
+		int iPriority = 0, iPostProcess = 0, iPostStage = 0, iDeletePaused = 0, iManyDupeFiles = 0, iFeedID = 0;
+		if (iFormatVersion >= 54)
+		{
+			if (fscanf(infile, "%i,%i,%i,%i,%i\n", &iPriority, &iPostStage, &iDeletePaused, &iManyDupeFiles, &iFeedID) != 5) goto error;
+		}
+		else if (iFormatVersion >= 45)
 		{
 			if (fscanf(infile, "%i,%i,%i,%i\n", &iPriority, &iPostStage, &iDeletePaused, &iManyDupeFiles) != 4) goto error;
 		}
@@ -646,6 +650,7 @@ bool DiskState::LoadNZBInfo(NZBInfo* pNZBInfo, Servers* pServers, FILE* infile, 
 			pNZBInfo->EnterPostProcess();
 			pNZBInfo->GetPostInfo()->SetStage((PostInfo::EStage)iPostStage);
 		}
+		pNZBInfo->SetFeedID(iFeedID);
 	}
 
 	if (iFormatVersion >= 8 && iFormatVersion < 18)

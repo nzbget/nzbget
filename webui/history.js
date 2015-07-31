@@ -125,7 +125,8 @@ var History = (new function($)
 		for (var j=0, jl=history.length; j < jl; j++)
 		{
 			var hist = history[j];
-			if (hist.Status === 'DELETED/MANUAL')
+			if (hist.Status === 'DELETED/MANUAL' || hist.Status === 'DELETED/GOOD' ||
+				hist.Status === 'DELETED/SUCCESS' || hist.Status === 'DELETED/COPY')
 			{
 				hist.FilterKind = 'DELETED';
 			}
