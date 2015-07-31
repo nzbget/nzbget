@@ -600,9 +600,9 @@ ParChecker::EStatus ParChecker::RunParCheck(const char* szParFilename)
 	}
 
 	if (!IsStopped() && res == eRepairNotPossible &&
-		g_pOptions->GetParScan() == Options::psBeyond)
+		g_pOptions->GetParScan() == Options::psDupe)
 	{
-		if (AddBeyondFiles())
+		if (AddDupeFiles())
 		{
 			res = pRepairer->Process(false);
 			debug("ParChecker: Process-result=%i", res);
@@ -990,7 +990,7 @@ bool ParChecker::AddMissingFiles()
 	return AddExtraFiles(true, false, szDirectory);
 }
 
-bool ParChecker::AddBeyondFiles()
+bool ParChecker::AddDupeFiles()
 {
 	char szDirectory[1024];
 	strncpy(szDirectory, m_szParFilename, 1024);

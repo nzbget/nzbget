@@ -69,7 +69,7 @@ public:
 		psLimited,
 		psFull,
 		psAuto,
-		psBeyond
+		psDupe
 	};
 	enum EHealthCheck
 	{

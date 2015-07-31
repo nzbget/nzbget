@@ -1012,8 +1012,8 @@ void Options::InitOptions()
 	const int ParCheckCount = 6;
 	m_eParCheck = (EParCheck)ParseEnumValue(OPTION_PARCHECK, ParCheckCount, ParCheckNames, ParCheckValues);
 
-	const char* ParScanNames[] = { "limited", "full", "auto", "beyond" };
-	const int ParScanValues[] = { psLimited, psFull, psAuto, psBeyond };
+	const char* ParScanNames[] = { "limited", "full", "auto", "dupe" };
+	const int ParScanValues[] = { psLimited, psFull, psAuto, psDupe };
 	const int ParScanCount = 4;
 	m_eParScan = (EParScan)ParseEnumValue(OPTION_PARSCAN, ParScanCount, ParScanNames, ParScanValues);
 

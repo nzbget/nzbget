@@ -130,7 +130,7 @@ private:
 	bool				LoadMorePars();
 	bool				AddSplittedFragments();
 	bool				AddMissingFiles();
-	bool				AddBeyondFiles();
+	bool				AddDupeFiles();
 	bool				AddExtraFiles(bool bOnlyMissing, bool bExternalDir, const char* szDirectory);
 	bool				IsProcessedFile(const char* szFilename);
 	void				WriteBrokenLog(EStatus eStatus);
