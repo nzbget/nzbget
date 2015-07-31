@@ -53,6 +53,7 @@
 #include "Scheduler.h"
 #include "Scanner.h"
 #include "Unpack.h"
+#include "Cleanup.h"
 #include "NZBFile.h"
 #include "StatMeter.h"
 #include "QueueScript.h"
