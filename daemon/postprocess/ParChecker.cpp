@@ -599,6 +599,16 @@ ParChecker::EStatus ParChecker::RunParCheck(const char* szParFilename)
 		}
 	}
 
+	if (!IsStopped() && res == eRepairNotPossible &&
+		g_pOptions->GetParScan() == Options::psBeyond)
+	{
+		if (AddBeyondFiles())
+		{
+			res = pRepairer->Process(false);
+			debug("ParChecker: Process-result=%i", res);
+		}
+	}
+
 	if (m_bHasDamagedFiles && !IsStopped() && res == eRepairNotPossible)
 	{
 		res = (Result)ProcessMorePars();
@@ -973,18 +983,51 @@ bool ParChecker::AddSplittedFragments()
 
 bool ParChecker::AddMissingFiles()
 {
-    PrintMessage(Message::mkInfo, "Performing extra par-scan for %s", m_szInfoName);
-
 	char szDirectory[1024];
 	strncpy(szDirectory, m_szParFilename, 1024);
 	szDirectory[1024-1] = '\0';
 
-	char* szBasename = Util::BaseFileName(szDirectory);
-	if (szBasename == szDirectory)
+	return AddExtraFiles(true, false, szDirectory);
+}
+
+bool ParChecker::AddBeyondFiles()
+{
+	char szDirectory[1024];
+	strncpy(szDirectory, m_szParFilename, 1024);
+	szDirectory[1024-1] = '\0';
+
+	bool bAdded = AddExtraFiles(false, false, szDirectory);
+
+	if (((Repairer*)m_pRepairer)->missingblockcount > 0)
 	{
-		return false;
+		// scanning directories of duplicates
+		FileList extraDirs;
+		RequestExtraDirectories(&extraDirs);
+
+		for (FileList::iterator it = extraDirs.begin(); it != extraDirs.end(); it++)
+		{
+			char* szExtraDir = *it;
+			if (((Repairer*)m_pRepairer)->missingblockcount > 0 && Util::DirectoryExists(szExtraDir))
+			{
+				bAdded |= AddExtraFiles(false, true, szExtraDir);
+			}
+			free(szExtraDir);
+		}
 	}
-	szBasename[-1] = '\0';
+
+	return bAdded;
+}
+
+bool ParChecker::AddExtraFiles(bool bOnlyMissing, bool bExternalDir, const char* szDirectory)
+{
+	if (bExternalDir)
+	{
+		PrintMessage(Message::mkInfo, "Performing extra par-scan for %s in %s", m_szInfoName, szDirectory);
+	}
+	else
+	{
+		PrintMessage(Message::mkInfo, "Performing extra par-scan for %s", m_szInfoName);
+	}
 
 	std::list<CommandLine::ExtraFile*> extrafiles;
 
@@ -992,7 +1035,7 @@ bool ParChecker::AddMissingFiles()
 	while (const char* filename = dir.Next())
 	{
 		if (strcmp(filename, ".") && strcmp(filename, "..") && strcmp(filename, "_brokenlog.txt") &&
-			!IsParredFile(filename) && !IsProcessedFile(filename))
+			(bExternalDir || (!IsParredFile(filename) && !IsProcessedFile(filename))))
 		{
 			char fullfilename[1024];
 			snprintf(fullfilename, 1024, "%s%c%s", szDirectory, PATH_SEPARATOR, filename);
@@ -1019,7 +1062,7 @@ bool ParChecker::AddMissingFiles()
 
 		// adding files one by one until all missing files are found
 
-		while (!IsStopped() && !m_bCancelled && extrafiles.size() > 0 && ((Repairer*)m_pRepairer)->missingfilecount > 0)
+		while (!IsStopped() && !m_bCancelled && extrafiles.size() > 0)
 		{
 			CommandLine::ExtraFile* pExtraFile = extrafiles.front();
 			extrafiles.pop_front();
@@ -1027,19 +1070,40 @@ bool ParChecker::AddMissingFiles()
 			extrafiles1.clear();
 			extrafiles1.push_back(*pExtraFile);
 
-			int iWasMissing = ((Repairer*)m_pRepairer)->missingfilecount;
+			int iWasFilesMissing = ((Repairer*)m_pRepairer)->missingfilecount;
+			int iWasBlocksMissing = ((Repairer*)m_pRepairer)->missingblockcount;
+
 			((Repairer*)m_pRepairer)->VerifyExtraFiles(extrafiles1);
-			bool bAdded = iWasMissing > (int)((Repairer*)m_pRepairer)->missingfilecount;
-			if (bAdded)
+			((Repairer*)m_pRepairer)->UpdateVerificationResults();
+
+			bool bFileAdded = iWasFilesMissing > (int)((Repairer*)m_pRepairer)->missingfilecount;
+			bool bBlockAdded = iWasBlocksMissing > (int)((Repairer*)m_pRepairer)->missingblockcount;
+
+			if (bFileAdded && !bExternalDir)
 			{
 				PrintMessage(Message::mkInfo, "Found missing file %s", Util::BaseFileName(pExtraFile->FileName().c_str()));
 				RegisterParredFile(Util::BaseFileName(pExtraFile->FileName().c_str()));
 			}
+			else if (bBlockAdded)
+			{
+				PrintMessage(Message::mkInfo, "Found %i missing blocks", iWasBlocksMissing - (int)((Repairer*)m_pRepairer)->missingblockcount);
+			}
 
-			bFilesAdded |= bAdded;
-			((Repairer*)m_pRepairer)->UpdateVerificationResults();
+			bFilesAdded |= bFileAdded | bBlockAdded;
 
 			delete pExtraFile;
+
+			if (bOnlyMissing && ((Repairer*)m_pRepairer)->missingfilecount == 0)
+			{
+				PrintMessage(Message::mkInfo, "All missing files found");
+				break;
+			}
+
+			if (!bOnlyMissing && ((Repairer*)m_pRepairer)->missingblockcount == 0)
+			{
+				PrintMessage(Message::mkInfo, "All missing blocks found");
+				break;
+			}
 		}
 
 		m_bVerifyingExtraFiles = false;

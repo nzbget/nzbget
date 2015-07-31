@@ -588,3 +588,25 @@ DupeCoordinator::EDupeStatus DupeCoordinator::GetDupeStatus(DownloadQueue* pDown
 
 	return eStatuses;
 }
+
+void DupeCoordinator::ListHistoryDupes(DownloadQueue* pDownloadQueue, NZBInfo* pNZBInfo, NZBList* pDupeList)
+{
+	if (pNZBInfo->GetDupeMode() == dmForce)
+	{
+		return;
+	}
+
+	// find duplicates in history
+	for (HistoryList::iterator it = pDownloadQueue->GetHistory()->begin(); it != pDownloadQueue->GetHistory()->end(); it++)
+	{
+		HistoryInfo* pHistoryInfo = *it;
+
+		if (pHistoryInfo->GetKind() == HistoryInfo::hkNzb &&
+			pHistoryInfo->GetNZBInfo()->GetDupeMode() != dmForce &&
+			SameNameOrKey(pHistoryInfo->GetNZBInfo()->GetName(), pHistoryInfo->GetNZBInfo()->GetDupeKey(),
+				pNZBInfo->GetName(), pNZBInfo->GetDupeKey()))
+		{
+			pDupeList->push_back(pHistoryInfo->GetNZBInfo());
+		}
+	}
+}

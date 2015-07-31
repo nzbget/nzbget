@@ -44,6 +44,7 @@
 
 #include "nzbget.h"
 #include "ParCoordinator.h"
+#include "DupeCoordinator.h"
 #include "ParParser.h"
 #include "Options.h"
 #include "DiskState.h"
@@ -142,6 +143,22 @@ ParChecker::EFileStatus ParCoordinator::PostParChecker::FindFileCrc(const char* 
 		pCompletedFile->GetStatus() == CompletedFile::cfPartial && pSegments->size() > 0 &&
 			!m_pPostInfo->GetNZBInfo()->GetReprocess()? ParChecker::fsPartial :
 		ParChecker::fsUnknown;
+}
+
+void ParCoordinator::PostParChecker::RequestExtraDirectories(FileList* pFileList)
+{
+	DownloadQueue* pDownloadQueue = DownloadQueue::Lock();
+
+	NZBList dupeList;
+	g_pDupeCoordinator->ListHistoryDupes(pDownloadQueue, m_pPostInfo->GetNZBInfo(), &dupeList);
+
+	for (NZBList::iterator it = dupeList.begin(); it != dupeList.end(); it++)
+	{
+		NZBInfo* pDupeNZBInfo = *it;
+		pFileList->push_back(strdup(pDupeNZBInfo->GetDestDir()));
+	}
+
+	DownloadQueue::Unlock();
 }
 
 void ParCoordinator::PostParRenamer::UpdateProgress()

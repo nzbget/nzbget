@@ -51,6 +51,7 @@ public:
 	void				NZBFound(DownloadQueue* pDownloadQueue, NZBInfo* pNZBInfo);
 	void				HistoryMark(DownloadQueue* pDownloadQueue, HistoryInfo* pHistoryInfo, NZBInfo::EMarkStatus eMarkStatus);
 	EDupeStatus			GetDupeStatus(DownloadQueue* pDownloadQueue, const char* szName, const char* szDupeKey);
+	void				ListHistoryDupes(DownloadQueue* pDownloadQueue, NZBInfo* pNZBInfo, NZBList* pDupeList);
 };
 
 extern DupeCoordinator* g_pDupeCoordinator;

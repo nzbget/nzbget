@@ -130,6 +130,8 @@ private:
 	bool				LoadMorePars();
 	bool				AddSplittedFragments();
 	bool				AddMissingFiles();
+	bool				AddBeyondFiles();
+	bool				AddExtraFiles(bool bOnlyMissing, bool bExternalDir, const char* szDirectory);
 	bool				IsProcessedFile(const char* szFilename);
 	void				WriteBrokenLog(EStatus eStatus);
 	void				SaveSourceList();
@@ -160,6 +162,7 @@ protected:
 	virtual void		RegisterParredFile(const char* szFilename) {}
 	virtual bool		IsParredFile(const char* szFilename) { return false; }
 	virtual EFileStatus	FindFileCrc(const char* szFilename, unsigned long* lCrc, SegmentList* pSegments) { return fsUnknown; }
+	virtual void		RequestExtraDirectories(FileList* pFileList) {}
 	EStage				GetStage() { return m_eStage; }
 	const char*			GetProgressLabel() { return m_szProgressLabel; }
 	int					GetFileProgress() { return m_iFileProgress; }

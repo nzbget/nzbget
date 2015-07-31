@@ -56,6 +56,7 @@ private:
 		virtual void	RegisterParredFile(const char* szFilename);
 		virtual bool	IsParredFile(const char* szFilename);
 		virtual EFileStatus	FindFileCrc(const char* szFilename, unsigned long* lCrc, SegmentList* pSegments);
+		virtual void	RequestExtraDirectories(FileList* pFileList);
 	public:
 		PostInfo*		GetPostInfo() { return m_pPostInfo; }
 		void			SetPostInfo(PostInfo* pPostInfo) { m_pPostInfo = pPostInfo; }

@@ -1007,14 +1007,14 @@ void Options::InitOptions()
 	const int OutputModeCount = 7;
 	m_eOutputMode = (EOutputMode)ParseEnumValue(OPTION_OUTPUTMODE, OutputModeCount, OutputModeNames, OutputModeValues);
 
-	const char* ParCheckNames[] = { "auto", "always", "force", "manual", "yes", "no" }; // yes/no for compatibility with older versions
-	const int ParCheckValues[] = { pcAuto, pcAlways, pcForce, pcManual, pcAlways, pcAuto };
+	const char* ParCheckNames[] = { "auto", "always", "force", "manual" };
+	const int ParCheckValues[] = { pcAuto, pcAlways, pcForce, pcManual };
 	const int ParCheckCount = 6;
 	m_eParCheck = (EParCheck)ParseEnumValue(OPTION_PARCHECK, ParCheckCount, ParCheckNames, ParCheckValues);
 
-	const char* ParScanNames[] = { "limited", "full", "auto" };
-	const int ParScanValues[] = { psLimited, psFull, psAuto };
-	const int ParScanCount = 3;
+	const char* ParScanNames[] = { "limited", "full", "auto", "beyond" };
+	const int ParScanValues[] = { psLimited, psFull, psAuto, psBeyond };
+	const int ParScanCount = 4;
 	m_eParScan = (EParScan)ParseEnumValue(OPTION_PARSCAN, ParScanCount, ParScanNames, ParScanValues);
 
 	const char* HealthCheckNames[] = { "pause", "delete", "none" };
