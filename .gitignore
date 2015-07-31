@@ -56,6 +56,7 @@ ipch/
 *.pidb
 *.svclog
 *.scc
+*.sln
 
 # NZBGet specific
 nzbget
