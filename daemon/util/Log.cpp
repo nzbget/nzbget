@@ -351,7 +351,7 @@ void Log::AddMessage(Message::EKind eKind, const char * szText)
 	Message* pMessage = new Message(++m_iIDGen, eKind, time(NULL), szText);
 	m_Messages.push_back(pMessage);
 
-	if (m_bOptInit)
+	if (m_bOptInit && g_pOptions)
 	{
 		while (m_Messages.size() > (unsigned int)g_pOptions->GetLogBufferSize())
 		{
