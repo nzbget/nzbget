@@ -599,7 +599,12 @@ ParChecker::EStatus ParChecker::RunParCheck(const char* szParFilename)
 		}
 	}
 
-	if (!IsStopped() && res == eRepairNotPossible &&
+	if (m_bHasDamagedFiles && !IsStopped() && res == eRepairNotPossible)
+	{
+		res = (Result)ProcessMorePars();
+	}
+
+	if (m_bHasDamagedFiles && !IsStopped() && res == eRepairNotPossible &&
 		g_pOptions->GetParScan() == Options::psDupe)
 	{
 		if (AddDupeFiles())
@@ -607,11 +612,6 @@ ParChecker::EStatus ParChecker::RunParCheck(const char* szParFilename)
 			res = pRepairer->Process(false);
 			debug("ParChecker: Process-result=%i", res);
 		}
-	}
-
-	if (m_bHasDamagedFiles && !IsStopped() && res == eRepairNotPossible)
-	{
-		res = (Result)ProcessMorePars();
 	}
 
 	if (IsStopped())
@@ -1022,7 +1022,7 @@ bool ParChecker::AddExtraFiles(bool bOnlyMissing, bool bExternalDir, const char*
 {
 	if (bExternalDir)
 	{
-		PrintMessage(Message::mkInfo, "Performing extra par-scan for %s in %s", m_szInfoName, szDirectory);
+		PrintMessage(Message::mkInfo, "Performing dupe par-scan for %s in %s", m_szInfoName, szDirectory);
 	}
 	else
 	{
