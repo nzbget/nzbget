@@ -67,8 +67,8 @@ public:
 	enum EParScan
 	{
 		psLimited,
+		psExtended,
 		psFull,
-		psAuto,
 		psDupe
 	};
 	enum EHealthCheck

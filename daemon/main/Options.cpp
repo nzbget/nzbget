@@ -696,7 +696,7 @@ void Options::InitDefaults()
 	SetOption(OPTION_DETAILTARGET, "both");
 	SetOption(OPTION_PARCHECK, "auto");
 	SetOption(OPTION_PARREPAIR, "yes");
-	SetOption(OPTION_PARSCAN, "limited");
+	SetOption(OPTION_PARSCAN, "extended");
 	SetOption(OPTION_PARQUICK, "yes");
 	SetOption(OPTION_PARRENAME, "yes");
 	SetOption(OPTION_PARBUFFER, "16");
@@ -1012,8 +1012,8 @@ void Options::InitOptions()
 	const int ParCheckCount = 6;
 	m_eParCheck = (EParCheck)ParseEnumValue(OPTION_PARCHECK, ParCheckCount, ParCheckNames, ParCheckValues);
 
-	const char* ParScanNames[] = { "limited", "full", "auto", "dupe" };
-	const int ParScanValues[] = { psLimited, psFull, psAuto, psDupe };
+	const char* ParScanNames[] = { "limited", "extended", "full", "dupe" };
+	const int ParScanValues[] = { psLimited, psExtended, psFull, psDupe };
 	const int ParScanCount = 4;
 	m_eParScan = (EParScan)ParseEnumValue(OPTION_PARSCAN, ParScanCount, ParScanNames, ParScanValues);
 
@@ -1952,6 +1952,11 @@ void Options::ConvertOldOption(char *szOption, int iOptionBufLen, char *szValue,
 	if (!strcasecmp(szOption, "ParCheck") && !strcasecmp(szValue, "no"))
 	{
 		strncpy(szValue, "auto", iValueBufLen);
+	}
+
+	if (!strcasecmp(szOption, "ParScan") && !strcasecmp(szValue, "auto"))
+	{
+		strncpy(szValue, "extended", iValueBufLen);
 	}
 
 	if (!strcasecmp(szOption, "DefScript"))
