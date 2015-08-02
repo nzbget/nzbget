@@ -611,6 +611,10 @@ ParChecker::EStatus ParChecker::RunParCheck(const char* szParFilename)
 		{
 			res = pRepairer->Process(false);
 			debug("ParChecker: Process-result=%i", res);
+			if (!IsStopped() && res == eRepairNotPossible)
+			{
+				res = (Result)ProcessMorePars();
+			}
 		}
 	}
 
