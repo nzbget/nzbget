@@ -164,7 +164,9 @@ Result Repairer::PreProcess(const char *szParFilename)
 
 Result Repairer::Process(bool dorepair)
 {
-	return Par2Repairer::Process(commandLine, dorepair);
+	Result res = Par2Repairer::Process(commandLine, dorepair);
+	debug("ParChecker: Process-result=%i", res);
+	return res;
 }
 
 
@@ -570,7 +572,6 @@ ParChecker::EStatus ParChecker::RunParCheck(const char* szParFilename)
 	m_eStage = ptVerifyingSources;
 	Repairer* pRepairer = (Repairer*)m_pRepairer;
 	res = pRepairer->Process(false);
-    debug("ParChecker: Process-result=%i", res);
 
 	if (!m_bParQuick)
 	{
@@ -584,7 +585,6 @@ ParChecker::EStatus ParChecker::RunParCheck(const char* szParFilename)
 		if (bAddedSplittedFragments)
 		{
 			res = pRepairer->Process(false);
-			debug("ParChecker: Process-result=%i", res);
 		}
 	}
 
@@ -595,7 +595,6 @@ ParChecker::EStatus ParChecker::RunParCheck(const char* szParFilename)
 		if (AddMissingFiles())
 		{
 			res = pRepairer->Process(false);
-			debug("ParChecker: Process-result=%i", res);
 		}
 	}
 
@@ -610,7 +609,6 @@ ParChecker::EStatus ParChecker::RunParCheck(const char* szParFilename)
 		if (AddDupeFiles())
 		{
 			res = pRepairer->Process(false);
-			debug("ParChecker: Process-result=%i", res);
 			if (!IsStopped() && res == eRepairNotPossible)
 			{
 				res = (Result)ProcessMorePars();
@@ -649,7 +647,6 @@ ParChecker::EStatus ParChecker::RunParCheck(const char* szParFilename)
 			UpdateProgress();
 
 			res = pRepairer->Process(true);
-    		debug("ParChecker: Process-result=%i", res);
 			if (res == eSuccess)
 			{
     			PrintMessage(Message::mkInfo, "Successfully repaired %s", m_szInfoName);
@@ -868,7 +865,6 @@ int ParChecker::ProcessMorePars()
 		{
 			pRepairer->UpdateVerificationResults();
 			res = pRepairer->Process(false);
-			debug("ParChecker: Process-result=%i", res);
 		}
 	}
 
