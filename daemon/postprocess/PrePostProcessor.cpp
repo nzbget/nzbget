@@ -600,12 +600,17 @@ void PrePostProcessor::StartJob(DownloadQueue* pDownloadQueue, PostInfo* pPostIn
 		return;
 	}
 	else if (pPostInfo->GetNZBInfo()->GetParStatus() == NZBInfo::psSkipped &&
-		pPostInfo->GetNZBInfo()->CalcHealth() < pPostInfo->GetNZBInfo()->CalcCriticalHealth(false) &&
-		pPostInfo->GetNZBInfo()->CalcCriticalHealth(false) < 1000 &&
+		((g_pOptions->GetParScan() != Options::psDupe &&
+		  pPostInfo->GetNZBInfo()->CalcHealth() < pPostInfo->GetNZBInfo()->CalcCriticalHealth(false) &&
+		  pPostInfo->GetNZBInfo()->CalcCriticalHealth(false) < 1000) ||
+		  pPostInfo->GetNZBInfo()->CalcHealth() == 0) &&
 		ParParser::FindMainPars(pPostInfo->GetNZBInfo()->GetDestDir(), NULL))
 	{
 		pPostInfo->GetNZBInfo()->PrintMessage(Message::mkWarning,
-			"Skipping par-check for %s due to health %.1f%% below critical %.1f%%", pPostInfo->GetNZBInfo()->GetName(),
+			pPostInfo->GetNZBInfo()->CalcHealth() == 0 ?
+				"Skipping par-check for %s due to health 0%%" :
+				"Skipping par-check for %s due to health %.1f%% below critical %.1f%%",
+			pPostInfo->GetNZBInfo()->GetName(),
 			pPostInfo->GetNZBInfo()->CalcHealth() / 10.0, pPostInfo->GetNZBInfo()->CalcCriticalHealth(false) / 10.0);
 		pPostInfo->GetNZBInfo()->SetParStatus(NZBInfo::psFailure);
 		return;
