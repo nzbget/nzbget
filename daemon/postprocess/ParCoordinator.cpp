@@ -381,7 +381,9 @@ void ParCoordinator::ParCheckCompleted()
 /**
 * Unpause par2-files
 * returns true, if the files with required number of blocks were unpaused,
-* or false if there are no more files in queue for this collection or not enough blocks
+* or false if there are no more files in queue for this collection or not enough blocks.
+* special case: returns true if there are any unpaused par2-files in the queue regardless
+* of the amount of blocks; this is to keep par-checker wait for download completion.
 */
 bool ParCoordinator::RequestMorePars(NZBInfo* pNZBInfo, const char* szParFilename, int iBlockNeeded, int* pBlockFound)
 {
@@ -459,6 +461,17 @@ bool ParCoordinator::RequestMorePars(NZBInfo* pNZBInfo, const char* szParFilenam
 		}
 	}
 
+	bool bHasUnpausedParFiles = false;
+	for (FileList::iterator it = pNZBInfo->GetFileList()->begin(); it != pNZBInfo->GetFileList()->end(); it++)
+	{
+		FileInfo* pFileInfo = *it;
+		if (pFileInfo->GetParFile() && !pFileInfo->GetPaused())
+		{
+			bHasUnpausedParFiles = true;
+			break;
+		}
+	}
+
 	DownloadQueue::Unlock();
 
 	if (pBlockFound)
@@ -472,7 +485,7 @@ bool ParCoordinator::RequestMorePars(NZBInfo* pNZBInfo, const char* szParFilenam
 	}
 	blocks.clear();
 
-	bool bOK = iBlockNeeded <= 0;
+	bool bOK = iBlockNeeded <= 0 || bHasUnpausedParFiles;
 
 	return bOK;
 }
