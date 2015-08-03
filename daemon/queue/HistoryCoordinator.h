@@ -27,8 +27,9 @@
 #define HISTORYCOORDINATOR_H
 
 #include "DownloadInfo.h"
+#include "Service.h"
 
-class HistoryCoordinator
+class HistoryCoordinator : public Service
 {
 private:
 	void				HistoryDelete(DownloadQueue* pDownloadQueue, HistoryList::iterator itHistory, HistoryInfo* pHistoryInfo, bool bFinal);
@@ -41,6 +42,10 @@ private:
 	void				HistoryTransformToDup(DownloadQueue* pDownloadQueue, HistoryInfo* pHistoryInfo, int rindex);
 	void				SaveQueue(DownloadQueue* pDownloadQueue);
 
+protected:
+	virtual int			ServiceInterval() { return 600000; }
+	virtual void		ServiceWork();
+
 public:
 						HistoryCoordinator();
 	virtual				~HistoryCoordinator();
@@ -49,8 +54,6 @@ public:
 	void				DeleteDiskFiles(NZBInfo* pNZBInfo);
 	void				HistoryHide(DownloadQueue* pDownloadQueue, HistoryInfo* pHistoryInfo, int rindex);
 	void				Redownload(DownloadQueue* pDownloadQueue, HistoryInfo* pHistoryInfo);
-	void				IntervalCheck();
-	void				Cleanup();
 };
 
 extern HistoryCoordinator* g_pHistoryCoordinator;

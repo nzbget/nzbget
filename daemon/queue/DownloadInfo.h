@@ -956,7 +956,7 @@ protected:
 	static void				Loaded() { g_bLoaded = true; }
 
 public:
-	virtual					~DownloadQueue() {}
+	virtual					~DownloadQueue();
 	static bool				IsLoaded() { return g_bLoaded; }
 	static DownloadQueue*	Lock();
 	static void				Unlock();

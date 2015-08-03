@@ -30,8 +30,9 @@
 #include <time.h>
 #include "DownloadInfo.h"
 #include "Thread.h"
+#include "Service.h"
 
-class Scanner
+class Scanner : public Service
 {
 public:
 	enum EAddStatus
@@ -120,12 +121,15 @@ private:
 	void				DropOldFiles();
 	void				ClearQueueList();
 
+protected:
+	virtual int			ServiceInterval() { return 200; }
+	virtual void		ServiceWork();
+
 public:
 						Scanner();
 						~Scanner();
 	void				InitOptions();
 	void				ScanNZBDir(bool bSyncMode);
-	void				Check();
 	EAddStatus			AddExternalFile(const char* szNZBName, const char* szCategory, int iPriority,
 							const char* szDupeKey, int iDupeScore, EDupeMode eDupeMode,
 							NZBParameterList* pParameters, bool bAddTop, bool bAddPaused, NZBInfo* pUrlInfo,

@@ -50,11 +50,8 @@
 #include "DupeCoordinator.h"
 #include "PostScript.h"
 #include "Util.h"
-#include "Scheduler.h"
-#include "Scanner.h"
 #include "Unpack.h"
 #include "NZBFile.h"
-#include "StatMeter.h"
 #include "QueueScript.h"
 #include "ParParser.h"
 
@@ -65,7 +62,6 @@ PrePostProcessor::PrePostProcessor()
 	m_iJobCount = 0;
 	m_pCurJob = NULL;
 	m_szPauseReason = NULL;
-	m_bWaitingReported = false;
 
 	m_DownloadQueueObserver.m_pOwner = this;
 	DownloadQueue* pDownloadQueue = DownloadQueue::Lock();
@@ -94,63 +90,18 @@ void PrePostProcessor::Run()
 		DownloadQueue::Unlock();
 	}
 
-	g_pScheduler->FirstCheck();
-
-	int iDiskSpaceInterval = 1000;
-	int iSchedulerInterval = 1000;
-	int iHistoryInterval = 600000;
-	const int iStepMSec = 200;
-	bool bWaitingRequiredDir = true;
-
 	while (!IsStopped())
 	{
-		// check incoming nzb directory
-		g_pScanner->Check();
-
-		if (!g_pOptions->GetPauseDownload() && 
-			g_pOptions->GetDiskSpace() > 0 && !g_pStatMeter->GetStandBy() && 
-			iDiskSpaceInterval >= 1000)
-		{
-			// check free disk space every 1 second
-			CheckDiskSpace();
-			iDiskSpaceInterval = 0;
-		}
-		iDiskSpaceInterval += iStepMSec;
-
-		if (bWaitingRequiredDir)
-		{
-			// check required dirs every 200 msec
-			bWaitingRequiredDir = !CheckRequiredDir();
-		}
-
-		if (!bWaitingRequiredDir)
+		if (!g_pOptions->GetTempPausePostprocess())
 		{
 			// check post-queue every 200 msec
 			CheckPostQueue();
 		}
 
-		if (iSchedulerInterval >= 1000)
-		{
-			// check scheduler tasks every 1 second
-			g_pScheduler->IntervalCheck();
-			iSchedulerInterval = 0;
-		}
-		iSchedulerInterval += iStepMSec;
-
-		if (iHistoryInterval >= 600000)
-		{
-			// check history (remove old entries) every 10 minutes
-			g_pHistoryCoordinator->IntervalCheck();
-			iHistoryInterval = 0;
-		}
-		iHistoryInterval += iStepMSec;
-
 		Util::SetStandByMode(!m_pCurJob);
 
-		usleep(iStepMSec * 1000);
+		usleep(200 * 1000);
 	}
-
-	g_pHistoryCoordinator->Cleanup();
 
 	debug("Exiting PrePostProcessor-loop");
 }
@@ -413,26 +364,6 @@ void PrePostProcessor::DeleteCleanup(NZBInfo* pNZBInfo)
 		if (Util::DirEmpty(pNZBInfo->GetDestDir()))
 		{
 			rmdir(pNZBInfo->GetDestDir());
-		}
-	}
-}
-
-void PrePostProcessor::CheckDiskSpace()
-{
-	long long lFreeSpace = Util::FreeDiskSize(g_pOptions->GetDestDir());
-	if (lFreeSpace > -1 && lFreeSpace / 1024 / 1024 < g_pOptions->GetDiskSpace())
-	{
-		warn("Low disk space on %s. Pausing download", g_pOptions->GetDestDir());
-		g_pOptions->SetPauseDownload(true);
-	}
-
-	if (!Util::EmptyStr(g_pOptions->GetInterDir()))
-	{
-		lFreeSpace = Util::FreeDiskSize(g_pOptions->GetInterDir());
-		if (lFreeSpace > -1 && lFreeSpace / 1024 / 1024 < g_pOptions->GetDiskSpace())
-		{
-			warn("Low disk space on %s. Pausing download", g_pOptions->GetInterDir());
-			g_pOptions->SetPauseDownload(true);
 		}
 	}
 }
@@ -881,39 +812,4 @@ bool PrePostProcessor::PostQueueDelete(DownloadQueue* pDownloadQueue, IDList* pI
 	}
 
 	return bOK;
-}
-
-bool PrePostProcessor::CheckRequiredDir()
-{
-	if (!Util::EmptyStr(g_pOptions->GetRequiredDir()))
-	{
-		bool bAllExist = true;
-		bool bWasWaitingReported = m_bWaitingReported;
-		// split RequiredDir into tokens
-		Tokenizer tok(g_pOptions->GetRequiredDir(), ",;");
-		while (const char* szDir = tok.Next())
-		{
-			if (!Util::FileExists(szDir) && !Util::DirectoryExists(szDir))
-			{
-				if (!bWasWaitingReported)
-				{
-					info("Waiting for required directory %s", szDir);
-					m_bWaitingReported = true;
-				}
-				bAllExist = false;
-			}
-		}
-		if (!bAllExist)
-		{
-			return false;
-		}
-	}
-
-	if (m_bWaitingReported)
-	{
-		info("All required directories available");
-	}
-
-	g_pOptions->SetTempPauseDownload(false);
-	return true;
 }

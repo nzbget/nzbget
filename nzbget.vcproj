@@ -385,6 +385,14 @@
 					>
 				</File>
 				<File
+					RelativePath=".\daemon\main\DiskService.cpp"
+					>
+				</File>
+				<File
+					RelativePath=".\daemon\main\DiskService.h"
+					>
+				</File>
+				<File
 					RelativePath=".\daemon\main\StackTrace.cpp"
 					>
 				</File>
@@ -766,6 +774,14 @@
 				</File>
 				<File
 					RelativePath=".\daemon\util\Script.h"
+					>
+				</File>
+				<File
+					RelativePath=".\daemon\util\Service.cpp"
+					>
+				</File>
+				<File
+					RelativePath=".\daemon\util\Service.h"
 					>
 				</File>
 				<File

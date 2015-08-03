@@ -1391,6 +1391,14 @@ void HistoryInfo::GetName(char* szBuffer, int iSize)
 	}
 }
 
+DownloadQueue::~DownloadQueue()
+{
+	for (HistoryList::iterator it = m_History.begin(); it != m_History.end(); it++)
+	{
+		delete *it;
+	}
+	m_History.clear();
+}
 
 DownloadQueue* DownloadQueue::Lock()
 {

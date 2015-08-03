@@ -396,6 +396,7 @@ void Options::Init(const char* szExeName, const char* szConfigFilename, bool bNo
 	m_bPausePostProcess		= false;
 	m_bPauseScan			= false;
 	m_bTempPauseDownload	= true;
+	m_bTempPausePostprocess	= true;
 	m_bBrokenLog			= false;
 	m_bNzbLog				= false;
 	m_iDownloadRate			= 0;

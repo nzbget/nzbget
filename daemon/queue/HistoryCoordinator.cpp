@@ -65,25 +65,10 @@ HistoryCoordinator::~HistoryCoordinator()
 	debug("Destroying HistoryCoordinator");
 }
 
-void HistoryCoordinator::Cleanup()
-{
-	debug("Cleaning up HistoryCoordinator");
-
-	DownloadQueue* pDownloadQueue = DownloadQueue::Lock();
-
-	for (HistoryList::iterator it = pDownloadQueue->GetHistory()->begin(); it != pDownloadQueue->GetHistory()->end(); it++)
-	{
-		delete *it;
-	}
-	pDownloadQueue->GetHistory()->clear();
-
-	DownloadQueue::Unlock();
-}
-
 /**
  * Removes old entries from (recent) history
  */
-void HistoryCoordinator::IntervalCheck()
+void HistoryCoordinator::ServiceWork()
 {
 	DownloadQueue* pDownloadQueue = DownloadQueue::Lock();
 

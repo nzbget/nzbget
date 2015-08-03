@@ -76,6 +76,8 @@
 #include "Scheduler.h"
 #include "Scanner.h"
 #include "FeedCoordinator.h"
+#include "Service.h"
+#include "DiskService.h"
 #include "Maintenance.h"
 #include "ArticleWriter.h"
 #include "StatMeter.h"
@@ -125,6 +127,8 @@ FeedCoordinator* g_pFeedCoordinator = NULL;
 Maintenance* g_pMaintenance = NULL;
 ArticleCache* g_pArticleCache = NULL;
 QueueScriptCoordinator* g_pQueueScriptCoordinator = NULL;
+ServiceCoordinator* g_pServiceCoordinator = NULL;
+DiskService* g_pDiskService = NULL;
 int g_iArgumentCount;
 char* (*g_szEnvironmentVariables)[] = NULL;
 char* (*g_szArguments)[] = NULL;
@@ -231,6 +235,7 @@ void Run(bool bReload)
 	g_pWinConsole->InitAppMode();
 #endif
 
+	g_pServiceCoordinator = new ServiceCoordinator();
 	g_pServerPool = new ServerPool();
 	g_pScheduler = new Scheduler();
 	g_pQueueCoordinator = new QueueCoordinator();
@@ -244,6 +249,7 @@ void Run(bool bReload)
 	g_pArticleCache = new ArticleCache();
 	g_pMaintenance = new Maintenance();
 	g_pQueueScriptCoordinator = new QueueScriptCoordinator();
+	g_pDiskService = new DiskService();
 
 	BootConfig();
 
@@ -388,6 +394,7 @@ void Run(bool bReload)
 		g_pUrlCoordinator->Start();
 		g_pPrePostProcessor->Start();
 		g_pFeedCoordinator->Start();
+		g_pServiceCoordinator->Start();
 		if (g_pOptions->GetArticleCache() > 0)
 		{
 			g_pArticleCache->Start();
@@ -398,6 +405,7 @@ void Run(bool bReload)
 			g_pUrlCoordinator->IsRunning() || 
 			g_pPrePostProcessor->IsRunning() ||
 			g_pFeedCoordinator->IsRunning() ||
+			g_pServiceCoordinator->IsRunning() ||
 #ifdef WIN32
 			g_pWinConsole->IsRunning() ||
 #endif
@@ -429,6 +437,10 @@ void Run(bool bReload)
 				{
 					g_pArticleCache->Stop();
 				}
+				if (!g_pServiceCoordinator->IsStopped())
+				{
+					g_pServiceCoordinator->Stop();
+				}
 			}
 			usleep(100 * 1000);
 		}
@@ -438,6 +450,7 @@ void Run(bool bReload)
 		debug("UrlCoordinator stopped");
 		debug("PrePostProcessor stopped");
 		debug("FeedCoordinator stopped");
+		debug("ServiceCoordinator stopped");
 		debug("ArticleCache stopped");
 	}
 
@@ -727,6 +740,7 @@ void ExitProc()
 		if (g_pQueueCoordinator)
 		{
 			debug("Stopping QueueCoordinator");
+			g_pServiceCoordinator->Stop();
 			g_pQueueCoordinator->Stop();
 			g_pUrlCoordinator->Stop();
 			g_pPrePostProcessor->Stop();
@@ -859,6 +873,16 @@ void Cleanup()
 	delete g_pStatMeter;
 	g_pStatMeter = NULL;
 	debug("StatMeter deleted");
+
+	debug("Deleting ServiceCoordinator");
+	delete g_pServiceCoordinator;
+	g_pServiceCoordinator = NULL;
+	debug("ServiceCoordinator deleted");
+
+	debug("Deleting DiskService");
+	delete g_pDiskService;
+	g_pDiskService = NULL;
+	debug("DiskService deleted");
 
 	if (!g_bReloading)
 	{

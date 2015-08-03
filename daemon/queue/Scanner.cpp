@@ -152,8 +152,13 @@ void Scanner::ClearQueueList()
 	m_QueueList.clear();
 }
 
-void Scanner::Check()
+void Scanner::ServiceWork()
 {
+	if (!DownloadQueue::IsLoaded())
+	{
+		return;
+	}
+
 	m_mutexScan.Lock();
 
 	if (m_bRequestedNZBDirScan || 
