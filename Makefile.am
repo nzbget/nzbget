@@ -60,6 +60,8 @@ nzbget_SOURCES = \
 	daemon/frontend/NCursesFrontend.h \
     daemon/main/CommandLineParser.cpp \
     daemon/main/CommandLineParser.h \
+	daemon/main/DiskService.cpp \
+	daemon/main/DiskService.h \
 	daemon/main/Maintenance.cpp \
 	daemon/main/Maintenance.h \
 	daemon/main/nzbget.cpp \
@@ -135,6 +137,8 @@ nzbget_SOURCES = \
 	daemon/util/Script.h \
 	daemon/util/Thread.cpp \
 	daemon/util/Thread.h \
+	daemon/util/Service.cpp \
+	daemon/util/Service.h \
 	daemon/util/Util.cpp \
 	daemon/util/Util.h \
 	svn_version.cpp

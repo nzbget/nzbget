@@ -294,6 +294,7 @@ private:
 	int					m_iDownloadRate;
 	time_t				m_tResumeTime;
 	int					m_iLocalTimeOffset;
+	bool				m_bTempPausePostprocess;
 
 	void				Init(const char* szExeName, const char* szConfigFilename, bool bNoConfig,
 							 CmdOptList* pCommandLineOptions, bool bNoDiskAccess, Extender* pExtender);
@@ -453,6 +454,8 @@ public:
 	bool				GetPauseScan() const { return m_bPauseScan; }
 	void				SetTempPauseDownload(bool bTempPauseDownload) { m_bTempPauseDownload = bTempPauseDownload; }
 	bool				GetTempPauseDownload() const { return m_bTempPauseDownload; }
+	bool				GetTempPausePostprocess() const { return m_bTempPausePostprocess; }
+	void				SetTempPausePostprocess(bool bTempPausePostprocess) { m_bTempPausePostprocess = bTempPausePostprocess; }
 	void				SetDownloadRate(int iRate) { m_iDownloadRate = iRate; }
 	int					GetDownloadRate() const { return m_iDownloadRate; }
 	void				SetResumeTime(time_t tResumeTime) { m_tResumeTime = tResumeTime; }

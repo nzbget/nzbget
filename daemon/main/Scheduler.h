@@ -31,8 +31,9 @@
 #include <time.h>
 
 #include "Thread.h"
+#include "Service.h"
 
-class Scheduler
+class Scheduler : public Service
 {
 public:
 	enum ECommand
@@ -84,6 +85,8 @@ private:
 	bool				m_bPauseScanChanged;
 	bool				m_bServerChanged;
 	ServerStatusList	m_ServerStatusList;
+	bool				m_bFirstChecked;
+
 	void				ExecuteTask(Task* pTask);
 	void				CheckTasks();
 	static bool			CompareTasks(Scheduler::Task* pTask1, Scheduler::Task* pTask2);
@@ -92,13 +95,16 @@ private:
 	void				EditServer(bool bActive, const char* szServerList);
 	void				FetchFeed(const char* szFeedList);
 	void				CheckScheduledResume();
+	void				FirstCheck();
+
+protected:
+	virtual int			ServiceInterval() { return 1000; }
+	virtual void		ServiceWork();
 
 public:
 						Scheduler();
 						~Scheduler();
 	void				AddTask(Task* pTask);
-	void				FirstCheck();
-	void				IntervalCheck();
 };
 
 extern Scheduler* g_pScheduler;

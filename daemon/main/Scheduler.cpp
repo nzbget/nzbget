@@ -68,6 +68,7 @@ Scheduler::Scheduler()
 {
 	debug("Creating Scheduler");
 
+	m_bFirstChecked = false;
 	m_tLastCheck = 0;
 	m_TaskList.clear();
 }
@@ -105,8 +106,20 @@ void Scheduler::FirstCheck()
 	CheckTasks();
 }
 
-void Scheduler::IntervalCheck()
+void Scheduler::ServiceWork()
 {
+	if (!DownloadQueue::IsLoaded())
+	{
+		return;
+	}
+
+	if (!m_bFirstChecked)
+	{
+		FirstCheck();
+		m_bFirstChecked = true;
+		return;
+	}
+
 	m_bExecuteProcess = true;
 	CheckTasks();
 	CheckScheduledResume();
