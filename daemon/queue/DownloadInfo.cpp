@@ -601,6 +601,11 @@ int NZBInfo::CalcCriticalHealth(bool bAllowEstimation)
 		return 1000;
 	}
 
+	if (m_lSize == m_lParSize)
+	{
+		return 0;
+	}
+
 	long long lGoodParSize = m_lParSize - m_lParCurrentFailedSize;
 	int iCriticalHealth = (int)((m_lSize - lGoodParSize*2) * 1000 / (m_lSize - lGoodParSize));
 

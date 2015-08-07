@@ -152,10 +152,29 @@ void ParCoordinator::PostParChecker::RequestExtraDirectories(FileList* pFileList
 	NZBList dupeList;
 	g_pDupeCoordinator->ListHistoryDupes(pDownloadQueue, m_pPostInfo->GetNZBInfo(), &dupeList);
 
-	for (NZBList::iterator it = dupeList.begin(); it != dupeList.end(); it++)
+	if (!dupeList.empty())
 	{
-		NZBInfo* pDupeNZBInfo = *it;
-		pFileList->push_back(strdup(pDupeNZBInfo->GetDestDir()));
+		PostDupeMatcher dupeMatcher(m_pPostInfo);
+		PrintMessage(Message::mkInfo, "Checking %s for dupe scan usability", m_pPostInfo->GetNZBInfo()->GetName());
+		bool bSizeComparisonPossible = dupeMatcher.Prepare();
+		for (NZBList::iterator it = dupeList.begin(); it != dupeList.end(); it++)
+		{
+			NZBInfo* pDupeNZBInfo = *it;
+			if (bSizeComparisonPossible)
+			{
+				PrintMessage(Message::mkInfo, "Checking %s for dupe scan usability", Util::BaseFileName(pDupeNZBInfo->GetDestDir()));
+			}
+			bool bUseDupe = !bSizeComparisonPossible || dupeMatcher.MatchDupeContent(pDupeNZBInfo->GetDestDir());
+			if (bUseDupe)
+			{
+				PrintMessage(Message::mkInfo, "Adding %s to dupe scan sources", Util::BaseFileName(pDupeNZBInfo->GetDestDir()));
+				pFileList->push_back(strdup(pDupeNZBInfo->GetDestDir()));
+			}
+		}
+		if (pFileList->empty())
+		{
+			PrintMessage(Message::mkInfo, "No usable dupe scan sources found");
+		}
 	}
 
 	DownloadQueue::Unlock();
@@ -197,6 +216,18 @@ void ParCoordinator::PostParRenamer::RegisterRenamedFile(const char* szOldFilena
 			break;
 		}
 	}
+}
+
+void ParCoordinator::PostDupeMatcher::PrintMessage(Message::EKind eKind, const char* szFormat, ...)
+{
+	char szText[1024];
+	va_list args;
+	va_start(args, szFormat);
+	vsnprintf(szText, 1024, szFormat, args);
+	va_end(args);
+	szText[1024-1] = '\0';
+
+	m_pPostInfo->GetNZBInfo()->AddMessage(eKind, szText);
 }
 
 #endif

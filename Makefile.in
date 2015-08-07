@@ -180,7 +180,10 @@ am__nzbget_SOURCES_DIST = daemon/connect/Connection.cpp \
 	daemon/nntp/NNTPConnection.h daemon/nntp/ServerPool.cpp \
 	daemon/nntp/ServerPool.h daemon/nntp/StatMeter.cpp \
 	daemon/nntp/StatMeter.h daemon/postprocess/Cleanup.cpp \
-	daemon/postprocess/Cleanup.h daemon/postprocess/ParChecker.cpp \
+	daemon/postprocess/Cleanup.h \
+	daemon/postprocess/DupeMatcher.cpp \
+	daemon/postprocess/DupeMatcher.h \
+	daemon/postprocess/ParChecker.cpp \
 	daemon/postprocess/ParChecker.h \
 	daemon/postprocess/ParCoordinator.cpp \
 	daemon/postprocess/ParCoordinator.h \
@@ -275,10 +278,11 @@ am_nzbget_OBJECTS = Connection.$(OBJEXT) TLS.$(OBJEXT) \
 	ArticleDownloader.$(OBJEXT) ArticleWriter.$(OBJEXT) \
 	Decoder.$(OBJEXT) NewsServer.$(OBJEXT) \
 	NNTPConnection.$(OBJEXT) ServerPool.$(OBJEXT) \
-	StatMeter.$(OBJEXT) Cleanup.$(OBJEXT) ParChecker.$(OBJEXT) \
-	ParCoordinator.$(OBJEXT) ParParser.$(OBJEXT) \
-	ParRenamer.$(OBJEXT) PrePostProcessor.$(OBJEXT) \
-	Unpack.$(OBJEXT) DiskState.$(OBJEXT) DownloadInfo.$(OBJEXT) \
+	StatMeter.$(OBJEXT) Cleanup.$(OBJEXT) DupeMatcher.$(OBJEXT) \
+	ParChecker.$(OBJEXT) ParCoordinator.$(OBJEXT) \
+	ParParser.$(OBJEXT) ParRenamer.$(OBJEXT) \
+	PrePostProcessor.$(OBJEXT) Unpack.$(OBJEXT) \
+	DiskState.$(OBJEXT) DownloadInfo.$(OBJEXT) \
 	DupeCoordinator.$(OBJEXT) HistoryCoordinator.$(OBJEXT) \
 	NZBFile.$(OBJEXT) QueueCoordinator.$(OBJEXT) \
 	QueueEditor.$(OBJEXT) Scanner.$(OBJEXT) \
@@ -457,7 +461,10 @@ nzbget_SOURCES = daemon/connect/Connection.cpp \
 	daemon/nntp/NNTPConnection.h daemon/nntp/ServerPool.cpp \
 	daemon/nntp/ServerPool.h daemon/nntp/StatMeter.cpp \
 	daemon/nntp/StatMeter.h daemon/postprocess/Cleanup.cpp \
-	daemon/postprocess/Cleanup.h daemon/postprocess/ParChecker.cpp \
+	daemon/postprocess/Cleanup.h \
+	daemon/postprocess/DupeMatcher.cpp \
+	daemon/postprocess/DupeMatcher.h \
+	daemon/postprocess/ParChecker.cpp \
 	daemon/postprocess/ParChecker.h \
 	daemon/postprocess/ParCoordinator.cpp \
 	daemon/postprocess/ParCoordinator.h \
@@ -609,6 +616,10 @@ scripts_FILES = \
 	scripts/Logger.py
 
 testdata_FILES = \
+	tests/testdata/dupematcher1/testfile.part01.rar \
+	tests/testdata/dupematcher1/testfile.part24.rar \
+	tests/testdata/dupematcher2/testfile.part04.rar \
+	tests/testdata/dupematcher2/testfile.part43.rar \
 	tests/testdata/nzbfile/dotless.nzb \
 	tests/testdata/nzbfile/dotless.txt \
 	tests/testdata/nzbfile/plain.nzb \
@@ -762,6 +773,7 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/DiskState.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/DownloadInfo.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/DupeCoordinator.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/DupeMatcher.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/FeedCoordinator.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/FeedFile.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/FeedFilter.Po@am__quote@
@@ -1314,6 +1326,20 @@ Cleanup.obj: daemon/postprocess/Cleanup.cpp
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='daemon/postprocess/Cleanup.cpp' object='Cleanup.obj' libtool=no @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o Cleanup.obj `if test -f 'daemon/postprocess/Cleanup.cpp'; then $(CYGPATH_W) 'daemon/postprocess/Cleanup.cpp'; else $(CYGPATH_W) '$(srcdir)/daemon/postprocess/Cleanup.cpp'; fi`
+
+DupeMatcher.o: daemon/postprocess/DupeMatcher.cpp
+@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT DupeMatcher.o -MD -MP -MF "$(DEPDIR)/DupeMatcher.Tpo" -c -o DupeMatcher.o `test -f 'daemon/postprocess/DupeMatcher.cpp' || echo '$(srcdir)/'`daemon/postprocess/DupeMatcher.cpp; \
+@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/DupeMatcher.Tpo" "$(DEPDIR)/DupeMatcher.Po"; else rm -f "$(DEPDIR)/DupeMatcher.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='daemon/postprocess/DupeMatcher.cpp' object='DupeMatcher.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o DupeMatcher.o `test -f 'daemon/postprocess/DupeMatcher.cpp' || echo '$(srcdir)/'`daemon/postprocess/DupeMatcher.cpp
+
+DupeMatcher.obj: daemon/postprocess/DupeMatcher.cpp
+@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT DupeMatcher.obj -MD -MP -MF "$(DEPDIR)/DupeMatcher.Tpo" -c -o DupeMatcher.obj `if test -f 'daemon/postprocess/DupeMatcher.cpp'; then $(CYGPATH_W) 'daemon/postprocess/DupeMatcher.cpp'; else $(CYGPATH_W) '$(srcdir)/daemon/postprocess/DupeMatcher.cpp'; fi`; \
+@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/DupeMatcher.Tpo" "$(DEPDIR)/DupeMatcher.Po"; else rm -f "$(DEPDIR)/DupeMatcher.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='daemon/postprocess/DupeMatcher.cpp' object='DupeMatcher.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o DupeMatcher.obj `if test -f 'daemon/postprocess/DupeMatcher.cpp'; then $(CYGPATH_W) 'daemon/postprocess/DupeMatcher.cpp'; else $(CYGPATH_W) '$(srcdir)/daemon/postprocess/DupeMatcher.cpp'; fi`
 
 ParChecker.o: daemon/postprocess/ParChecker.cpp
 @am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT ParChecker.o -MD -MP -MF "$(DEPDIR)/ParChecker.Tpo" -c -o ParChecker.o `test -f 'daemon/postprocess/ParChecker.cpp' || echo '$(srcdir)/'`daemon/postprocess/ParChecker.cpp; \
@@ -2190,7 +2216,7 @@ distclean-tags:
 distdir: $(DISTFILES)
 	$(am__remove_distdir)
 	mkdir $(distdir)
-	$(mkdir_p) $(distdir)/daemon/windows $(distdir)/lib/par2 $(distdir)/linux $(distdir)/osx $(distdir)/osx/NZBGet.xcodeproj $(distdir)/osx/Resources $(distdir)/osx/Resources/Images $(distdir)/osx/Resources/licenses $(distdir)/posix $(distdir)/scripts $(distdir)/tests/testdata/nzbfile $(distdir)/tests/testdata/parchecker $(distdir)/webui $(distdir)/webui/img $(distdir)/webui/lib $(distdir)/windows $(distdir)/windows/resources $(distdir)/windows/setup
+	$(mkdir_p) $(distdir)/daemon/windows $(distdir)/lib/par2 $(distdir)/linux $(distdir)/osx $(distdir)/osx/NZBGet.xcodeproj $(distdir)/osx/Resources $(distdir)/osx/Resources/Images $(distdir)/osx/Resources/licenses $(distdir)/posix $(distdir)/scripts $(distdir)/tests/testdata/dupematcher1 $(distdir)/tests/testdata/dupematcher2 $(distdir)/tests/testdata/nzbfile $(distdir)/tests/testdata/parchecker $(distdir)/webui $(distdir)/webui/img $(distdir)/webui/lib $(distdir)/windows $(distdir)/windows/resources $(distdir)/windows/setup
 	@srcdirstrip=`echo "$(srcdir)" | sed 's|.|.|g'`; \
 	topsrcdirstrip=`echo "$(top_srcdir)" | sed 's|.|.|g'`; \
 	list='$(DISTFILES)'; for file in $$list; do \

@@ -23,23 +23,33 @@
  */
 
 
-#ifndef TESTUTIL_H
-#define TESTUTIL_H
+#ifndef DUPEMATCHER_H
+#define DUPEMATCHER_H
 
-class TestUtil
+#include "Log.h"
+
+class DupeMatcher
 {
 private:
-	static bool			m_bUsedWorkingDir;
+	char*				m_szDestDir;
+	long long			m_lExpectedSize;
+	long long			m_lMaxSize;
+	bool				m_bCompressed;
+
+	void				FindLargestFile(const char* szDirectory, char* szFilenameBuf, int iBufLen,
+							long long* pMaxSize, bool* pCompressed);
+
+	friend class RarLister;
+
+protected:
+	virtual void		PrintMessage(Message::EKind eKind, const char* szFormat, ...) {}
+
 public:
-	static void			Init(const char* argv0);
-	static void			Final();
-	static const		std::string TestDataDir();
-	static const		std::string WorkingDir();
-	static void			PrepareWorkingDir(const std::string templateDir);
-	static void			CleanupWorkingDir();
-	static void			DisableCout();
-	static void			EnableCout();
-	static void			CopyAllFiles(const std::string destDir, const std::string srcDir);
+						DupeMatcher(const char* szDestDir, long long lExpectedSize);
+						~DupeMatcher();
+	bool				Prepare();
+	bool				MatchDupeContent(const char* szDupeDir);
+	static bool			SizeDiffOK(long long lSize1, long long lSize2, int iMaxDiffPercent);
 };
 
 #endif

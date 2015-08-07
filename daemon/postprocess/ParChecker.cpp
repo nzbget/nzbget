@@ -1004,14 +1004,29 @@ bool ParChecker::AddDupeFiles()
 		FileList extraDirs;
 		RequestExtraDirectories(&extraDirs);
 
-		for (FileList::iterator it = extraDirs.begin(); it != extraDirs.end(); it++)
+		if (!extraDirs.empty())
 		{
-			char* szExtraDir = *it;
-			if (((Repairer*)m_pRepairer)->missingblockcount > 0 && Util::DirectoryExists(szExtraDir))
+			int iWasBlocksMissing = ((Repairer*)m_pRepairer)->missingblockcount;
+
+			for (FileList::iterator it = extraDirs.begin(); it != extraDirs.end(); it++)
 			{
-				bAdded |= AddExtraFiles(false, true, szExtraDir);
+				char* szExtraDir = *it;
+				if (((Repairer*)m_pRepairer)->missingblockcount > 0 && Util::DirectoryExists(szExtraDir))
+				{
+					bAdded |= AddExtraFiles(false, true, szExtraDir);
+				}
+				free(szExtraDir);
 			}
-			free(szExtraDir);
+
+			int iBlocksMissing = ((Repairer*)m_pRepairer)->missingblockcount;
+			if (iBlocksMissing < iWasBlocksMissing)
+			{
+				PrintMessage(Message::mkInfo, "Found extra %i blocks in dupe sources", iWasBlocksMissing - iBlocksMissing);
+			}
+			else
+			{
+				PrintMessage(Message::mkInfo, "No extra blocks found in dupe sources");
+			}
 		}
 	}
 
@@ -1022,7 +1037,7 @@ bool ParChecker::AddExtraFiles(bool bOnlyMissing, bool bExternalDir, const char*
 {
 	if (bExternalDir)
 	{
-		PrintMessage(Message::mkInfo, "Performing dupe par-scan for %s in %s", m_szInfoName, szDirectory);
+		PrintMessage(Message::mkInfo, "Performing dupe par-scan for %s in %s", m_szInfoName, Util::BaseFileName(szDirectory));
 	}
 	else
 	{
@@ -1095,13 +1110,13 @@ bool ParChecker::AddExtraFiles(bool bOnlyMissing, bool bExternalDir, const char*
 
 			if (bOnlyMissing && ((Repairer*)m_pRepairer)->missingfilecount == 0)
 			{
-				PrintMessage(Message::mkInfo, "All missing files found");
+				PrintMessage(Message::mkInfo, "All missing files found, aborting par-scan");
 				break;
 			}
 
 			if (!bOnlyMissing && ((Repairer*)m_pRepairer)->missingblockcount == 0)
 			{
-				PrintMessage(Message::mkInfo, "All missing blocks found");
+				PrintMessage(Message::mkInfo, "All missing blocks found, aborting par-scan");
 				break;
 			}
 		}

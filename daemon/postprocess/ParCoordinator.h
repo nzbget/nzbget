@@ -34,6 +34,7 @@
 #ifndef DISABLE_PARCHECK
 #include "ParChecker.h"
 #include "ParRenamer.h"
+#include "DupeMatcher.h"
 #endif
 
 class ParCoordinator 
@@ -87,7 +88,20 @@ private:
 		
 		friend class ParCoordinator;
 	};
-	
+
+	class PostDupeMatcher: public DupeMatcher
+	{
+	private:
+		PostInfo*		m_pPostInfo;
+	protected:
+		virtual void	PrintMessage(Message::EKind eKind, const char* szFormat, ...);
+	public:
+		PostDupeMatcher(PostInfo* pPostInfo):
+			DupeMatcher(pPostInfo->GetNZBInfo()->GetDestDir(),
+				pPostInfo->GetNZBInfo()->GetSize() - pPostInfo->GetNZBInfo()->GetParSize()),
+				m_pPostInfo(pPostInfo) {}
+	};
+
 	struct BlockInfo
 	{
 		FileInfo*		m_pFileInfo;
