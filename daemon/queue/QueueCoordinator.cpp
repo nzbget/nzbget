@@ -867,7 +867,9 @@ void QueueCoordinator::CheckHealth(DownloadQueue* pDownloadQueue, FileInfo* pFil
 	if (g_pOptions->GetHealthCheck() == Options::hcNone ||
 		pFileInfo->GetNZBInfo()->GetHealthPaused() ||
 		pFileInfo->GetNZBInfo()->GetDeleteStatus() == NZBInfo::dsHealth ||
-		pFileInfo->GetNZBInfo()->CalcHealth() >= pFileInfo->GetNZBInfo()->CalcCriticalHealth(true))
+		pFileInfo->GetNZBInfo()->CalcHealth() >= pFileInfo->GetNZBInfo()->CalcCriticalHealth(true) ||
+		(g_pOptions->GetParScan() == Options::psDupe && g_pOptions->GetHealthCheck() == Options::hcDelete &&
+		 pFileInfo->GetNZBInfo()->GetSuccessArticles() * 100 / pFileInfo->GetNZBInfo()->GetTotalArticles() > 10))
 	{
 		return;
 	}

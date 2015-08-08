@@ -156,6 +156,10 @@ int main(int argc, char *argv[], char *argp[])
 
 	Util::InitVersionRevision();
 
+	g_iArgumentCount = argc;
+	g_szArguments = (char*(*)[])argv;
+	g_szEnvironmentVariables = (char*(*)[])argp;
+
 	if (argc > 1 && (!strcmp(argv[1], "-tests") || !strcmp(argv[1], "--tests")))
 	{
 #ifdef ENABLE_TESTS
@@ -179,10 +183,6 @@ int main(int argc, char *argv[], char *argp[])
 #endif
 
 	srand(time(NULL));
-
-	g_iArgumentCount = argc;
-	g_szArguments = (char*(*)[])argv;
-	g_szEnvironmentVariables = (char*(*)[])argp;
 
 #ifdef WIN32
 	for (int i=0; i < argc; i++)

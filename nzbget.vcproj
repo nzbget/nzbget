@@ -569,6 +569,22 @@
 				Name="postprocess"
 				>
 				<File
+					RelativePath=".\daemon\postprocess\Cleanup.cpp"
+					>
+				</File>
+				<File
+					RelativePath=".\daemon\postprocess\Cleanup.h"
+					>
+				</File>
+				<File
+					RelativePath=".\daemon\postprocess\DupeMatcher.cpp"
+					>
+				</File>
+				<File
+					RelativePath=".\daemon\postprocess\DupeMatcher.h"
+					>
+				</File>
+				<File
 					RelativePath=".\daemon\postprocess\ParChecker.cpp"
 					>
 				</File>

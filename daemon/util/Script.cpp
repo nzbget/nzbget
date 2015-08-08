@@ -599,7 +599,7 @@ int ScriptController::Execute()
 		fclose(m_pReadpipe);
 	}
 
-	if (m_bTerminated)
+	if (m_bTerminated && m_szInfoName)
 	{
 		warn("Interrupted %s", m_szInfoName);
 	}

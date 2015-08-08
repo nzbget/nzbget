@@ -86,6 +86,10 @@ nzbget_SOURCES = \
 	daemon/nntp/ServerPool.h \
 	daemon/nntp/StatMeter.cpp \
 	daemon/nntp/StatMeter.h \
+	daemon/postprocess/Cleanup.cpp \
+	daemon/postprocess/Cleanup.h \
+	daemon/postprocess/DupeMatcher.cpp \
+	daemon/postprocess/DupeMatcher.h \
 	daemon/postprocess/ParChecker.cpp \
 	daemon/postprocess/ParChecker.h \
 	daemon/postprocess/ParCoordinator.cpp \
@@ -333,6 +337,10 @@ scripts_FILES = \
 	scripts/Logger.py
 
 testdata_FILES = \
+	tests/testdata/dupematcher1/testfile.part01.rar \
+	tests/testdata/dupematcher1/testfile.part24.rar \
+	tests/testdata/dupematcher2/testfile.part04.rar \
+	tests/testdata/dupematcher2/testfile.part43.rar \
 	tests/testdata/nzbfile/dotless.nzb \
 	tests/testdata/nzbfile/dotless.txt \
 	tests/testdata/nzbfile/plain.nzb \
