@@ -595,15 +595,46 @@ void WebDownloader::ParseRedirect(const char* szLocation)
 	URL newUrl(szNewURL);
 	if (!newUrl.IsValid())
 	{
-		// relative address
+		// redirect within host
+
+		char szResource[1024];
 		URL oldUrl(m_szURL);
-		if (oldUrl.GetPort() > 0)
+
+		if (*szLocation == '/')
 		{
-			snprintf(szUrlBuf, 1024, "%s://%s:%i%s", oldUrl.GetProtocol(), oldUrl.GetHost(), oldUrl.GetPort(), szNewURL);
+			// absolute path within host
+			strncpy(szResource, szLocation, 1024);
+			szResource[1024-1] = '\0';
 		}
 		else
 		{
-			snprintf(szUrlBuf, 1024, "%s://%s%s", oldUrl.GetProtocol(), oldUrl.GetHost(), szNewURL);
+			// relative path within host
+			strncpy(szResource, oldUrl.GetResource(), 1024);
+			szResource[1024-1] = '\0';
+
+			char* p = strchr(szResource, '?');
+			if (p)
+			{
+				*p = '\0';
+			}
+
+			p = strrchr(szResource, '/');
+			if (p)
+			{
+				p[1] = '\0';
+			}
+
+			strncat(szResource, szLocation, 1024 - strlen(szResource));
+			szResource[1024-1] = '\0';
+		}
+
+		if (oldUrl.GetPort() > 0)
+		{
+			snprintf(szUrlBuf, 1024, "%s://%s:%i%s", oldUrl.GetProtocol(), oldUrl.GetHost(), oldUrl.GetPort(), szResource);
+		}
+		else
+		{
+			snprintf(szUrlBuf, 1024, "%s://%s%s", oldUrl.GetProtocol(), oldUrl.GetHost(), szResource);
 		}
 		szUrlBuf[1024-1] = '\0';
 		szNewURL = szUrlBuf;
