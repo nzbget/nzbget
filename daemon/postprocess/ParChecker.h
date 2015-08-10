@@ -109,6 +109,7 @@ private:
 	int					m_iProcessedFiles;
 	int					m_iFilesToRepair;
 	int					m_iExtraFiles;
+	int					m_iQuickFiles;
 	bool				m_bVerifyingExtraFiles;
 	char*				m_szProgressLabel;
 	int					m_iFileProgress;

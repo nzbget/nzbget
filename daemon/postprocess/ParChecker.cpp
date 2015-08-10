@@ -409,6 +409,7 @@ ParChecker::ParChecker()
 	m_iFileProgress = 0;
 	m_iStageProgress = 0;
 	m_iExtraFiles = 0;
+	m_iQuickFiles = 0;
 	m_bVerifyingExtraFiles = false;
 	m_bCancelled = false;
 	m_eStage = ptLoadingPars;
@@ -548,6 +549,7 @@ ParChecker::EStatus ParChecker::RunParCheck(const char* szParFilename)
 	m_eStage = ptLoadingPars;
 	m_iProcessedFiles = 0;
 	m_iExtraFiles = 0;
+	m_iQuickFiles = 0;
 	m_bVerifyingExtraFiles = false;
 	m_bHasDamagedFiles = false;
 	EStatus eStatus = psFailed;
@@ -1195,6 +1197,7 @@ void ParChecker::signal_progress(int progress)
 		// processing individual files
 
 		int iTotalFiles = 0;
+		int iProcessedFiles = m_iProcessedFiles;
 		if (m_eStage == ptVerifyingRepaired)
 		{
 			// repairing individual files
@@ -1204,17 +1207,25 @@ void ParChecker::signal_progress(int progress)
 		{
 			// verifying individual files
 			iTotalFiles = ((Repairer*)m_pRepairer)->sourcefiles.size() + m_iExtraFiles;
+			if (m_iExtraFiles > 0)
+			{
+				// during extra par scan don't count quickly verified files;
+				// extra files require much more time for verification;
+				// counting only fully scanned files improves estimated time accuracy.
+				iTotalFiles -= m_iQuickFiles;
+				iProcessedFiles -= m_iQuickFiles;
+			}
 		}
 
 		if (iTotalFiles > 0)
 		{
 			if (m_iFileProgress < 1000)
 			{
-				m_iStageProgress = (m_iProcessedFiles * 1000 + m_iFileProgress) / iTotalFiles;
+				m_iStageProgress = (iProcessedFiles * 1000 + m_iFileProgress) / iTotalFiles;
 			}
 			else
 			{
-				m_iStageProgress = m_iProcessedFiles * 1000 / iTotalFiles;
+				m_iStageProgress = iProcessedFiles * 1000 / iTotalFiles;
 			}
 		}
 		else
@@ -1499,6 +1510,7 @@ ParChecker::EFileStatus ParChecker::VerifyDataFile(void* pDiskfile, void* pSourc
 		}
 	}
 
+	m_iQuickFiles++;
 	PrintMessage(Message::mkDetail, "Quickly verified %s file %s",
 		eFileStatus == fsSuccess ? "good" : "damaged", Util::BaseFileName(szFilename));
 
