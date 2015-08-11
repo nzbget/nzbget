@@ -52,6 +52,7 @@
 #include "ArticleWriter.h"
 #include "DiskState.h"
 #include "ScriptConfig.h"
+#include "QueueScript.h"
 
 extern void ExitProc();
 extern void Reload();
@@ -2135,7 +2136,16 @@ const char* ListGroupsXmlCommand::DetectStatus(NZBInfo* pNZBInfo)
 
 	if (pNZBInfo->GetPostInfo())
 	{
-		szStatus = szPostStageName[pNZBInfo->GetPostInfo()->GetStage()];
+		bool bQueueScriptActive = false;
+		if (pNZBInfo->GetPostInfo()->GetStage() == PostInfo::ptQueued &&
+			g_pQueueScriptCoordinator->HasJob(pNZBInfo->GetID(), &bQueueScriptActive))
+		{
+			szStatus = bQueueScriptActive ? "QS_EXECUTING" : "QS_QUEUED";
+		}
+		else
+		{
+			szStatus = szPostStageName[pNZBInfo->GetPostInfo()->GetStage()];
+		}
 	}
 	else if (pNZBInfo->GetActiveDownloads() > 0)
 	{

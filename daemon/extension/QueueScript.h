@@ -73,7 +73,7 @@ public:
 	void				InitOptions();
 	void				EnqueueScript(NZBInfo* pNZBInfo, EEvent eEvent);
 	void				CheckQueue();
-	bool				HasJob(int iNZBID);
+	bool				HasJob(int iNZBID, bool* pActive);
 };
 
 extern QueueScriptCoordinator* g_pQueueScriptCoordinator;

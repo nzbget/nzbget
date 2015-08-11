@@ -453,7 +453,7 @@ NZBInfo* PrePostProcessor::GetNextJob(DownloadQueue* pDownloadQueue)
 	for (NZBList::iterator it = pDownloadQueue->GetQueue()->begin(); it != pDownloadQueue->GetQueue()->end(); it++)
 	{
 		NZBInfo* pNZBInfo1 = *it;
-		if (pNZBInfo1->GetPostInfo() && !g_pQueueScriptCoordinator->HasJob(pNZBInfo1->GetID()) &&
+		if (pNZBInfo1->GetPostInfo() && !g_pQueueScriptCoordinator->HasJob(pNZBInfo1->GetID(), NULL) &&
 			(!pNZBInfo || pNZBInfo1->GetPriority() > pNZBInfo->GetPriority()) &&
 			(!g_pOptions->GetPausePostProcess() || pNZBInfo1->GetForcePriority()))
 		{

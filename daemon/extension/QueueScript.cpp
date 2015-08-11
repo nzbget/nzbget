@@ -480,10 +480,14 @@ void QueueScriptCoordinator::StartScript(NZBInfo* pNZBInfo, QueueItem* pQueueIte
 	QueueScriptController::StartScript(pNZBInfo, pQueueItem->GetScript(), pQueueItem->GetEvent());
 }
 
-bool QueueScriptCoordinator::HasJob(int iNZBID)
+bool QueueScriptCoordinator::HasJob(int iNZBID, bool* pActive)
 {
 	m_mutexQueue.Lock();
 	bool bWorking = m_pCurItem && m_pCurItem->GetNZBID() == iNZBID;
+	if (pActive)
+	{
+		*pActive = bWorking;
+	}
 	if (!bWorking)
 	{
 		for (Queue::iterator it = m_Queue.begin(); it != m_Queue.end(); it++)
