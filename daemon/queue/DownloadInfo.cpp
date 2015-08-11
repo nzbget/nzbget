@@ -768,6 +768,7 @@ void NZBInfo::CopyFileList(NZBInfo* pSrcNZBInfo)
 	SetParFailedSize(pSrcNZBInfo->GetParFailedSize());
 	SetParCurrentFailedSize(pSrcNZBInfo->GetParCurrentFailedSize());
 
+	SetTotalArticles(pSrcNZBInfo->GetTotalArticles());
 	SetSuccessArticles(pSrcNZBInfo->GetSuccessArticles());
 	SetFailedArticles(pSrcNZBInfo->GetFailedArticles());
 	SetCurrentSuccessArticles(pSrcNZBInfo->GetSuccessArticles());
