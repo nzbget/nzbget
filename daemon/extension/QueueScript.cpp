@@ -504,3 +504,16 @@ bool QueueScriptCoordinator::HasJob(int iNZBID, bool* pActive)
 
 	return bWorking;
 }
+
+int QueueScriptCoordinator::GetQueueSize()
+{
+	m_mutexQueue.Lock();
+	int iQueuedCount = m_Queue.size();
+	if (m_pCurItem)
+	{
+		iQueuedCount++;
+	}
+	m_mutexQueue.Unlock();
+
+	return iQueuedCount;
+}

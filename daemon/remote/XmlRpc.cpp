@@ -1267,6 +1267,7 @@ void StatusXmlCommand::Execute()
 		"<member><name>ServerTime</name><value><i4>%i</i4></value></member>\n"
 		"<member><name>ResumeTime</name><value><i4>%i</i4></value></member>\n"
 		"<member><name>FeedActive</name><value><boolean>%s</boolean></value></member>\n"
+		"<member><name>QueueScriptCount</name><value><i4>%i</i4></value></member>\n"
 		"<member><name>NewsServers</name><value><array><data>\n";
 
 	const char* XML_STATUS_END =
@@ -1308,6 +1309,7 @@ void StatusXmlCommand::Execute()
 		"\"ServerTime\" : %i,\n"
 		"\"ResumeTime\" : %i,\n"
 		"\"FeedActive\" : %s,\n"
+		"\"QueueScriptCount\" : %i,\n"
 		"\"NewsServers\" : [\n";
 
 	const char* JSON_STATUS_END = 
@@ -1374,7 +1376,8 @@ void StatusXmlCommand::Execute()
 	int iServerTime = time(NULL);
 	int iResumeTime = g_pOptions->GetResumeTime();
 	bool bFeedActive = g_pFeedCoordinator->HasActiveDownloads();
-	
+	int iQueuedScripts = g_pQueueScriptCoordinator->GetQueueSize();
+
 	char szContent[3072];
 	snprintf(szContent, 3072, IsJson() ? JSON_STATUS_START : XML_STATUS_START, 
 		iRemainingSizeLo, iRemainingSizeHi, iRemainingMBytes, iForcedSizeLo,
@@ -1385,7 +1388,7 @@ void StatusXmlCommand::Execute()
 		BoolToStr(bDownloadPaused), BoolToStr(bDownloadPaused), BoolToStr(bDownloadPaused), 
 		BoolToStr(bServerStandBy), BoolToStr(bPostPaused), BoolToStr(bScanPaused),
 		iFreeDiskSpaceLo, iFreeDiskSpaceHi,	iFreeDiskSpaceMB, iServerTime, iResumeTime,
-		BoolToStr(bFeedActive));
+		BoolToStr(bFeedActive), iQueuedScripts);
 	szContent[3072-1] = '\0';
 
 	AppendResponse(szContent);

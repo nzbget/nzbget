@@ -74,6 +74,7 @@ public:
 	void				EnqueueScript(NZBInfo* pNZBInfo, EEvent eEvent);
 	void				CheckQueue();
 	bool				HasJob(int iNZBID, bool* pActive);
+	int					GetQueueSize();
 };
 
 extern QueueScriptCoordinator* g_pQueueScriptCoordinator;

@@ -229,7 +229,7 @@ var Status = (new function($)
 	function updatePlayAnim()
 	{
 		// Animate if either any downloads or post-processing is in progress
-		var Anim = (!status.ServerStandBy || status.FeedActive ||
+		var Anim = (!status.ServerStandBy || status.FeedActive || status.QueueScriptCount > 0 ||
 			(status.PostJobCount > 0 && !status.PostPaused) ||
 			(status.UrlCount > 0 && (!status.DownloadPaused || Options.option('UrlForce') === 'yes'))) &&
 			(UISettings.refreshInterval !== 0) && !UISettings.connectionError;
@@ -375,6 +375,7 @@ var StatDialog = (new function($)
 	var $StatDialog_DataCurrentSpeed;
 	var $StatDialog_DataSpeedLimit;
 	var $StatDialog_ArticleCache;
+	var $StatDialog_QueueScripts;
 	var $StatDialog_ChartBlock;
 	var $StatDialog_Server;
 	var $StatRangeDialog;
@@ -421,7 +422,8 @@ var StatDialog = (new function($)
 		$StatDialog_DataAverageSpeed = $('#StatDialog_DataAverageSpeed');
 		$StatDialog_DataCurrentSpeed = $('#StatDialog_DataCurrentSpeed');
 		$StatDialog_DataSpeedLimit = $('#StatDialog_DataSpeedLimit');
-		$StatDialog_ArticleCache = $('#StatDialog_ArticleCache');		
+		$StatDialog_ArticleCache = $('#StatDialog_ArticleCache');
+		$StatDialog_QueueScripts = $('#StatDialog_QueueScripts');
 		$StatDialog_ChartBlock = $('#StatDialog_ChartBlock');
 		$StatDialog_Server = $('#StatDialog_Server');
 		$StatRangeDialog = $('#StatRangeDialog');
@@ -498,6 +500,7 @@ var StatDialog = (new function($)
 		$('#StatDialog_BackSpace').show();
 		$('#StatDialog_Title').text('Statistics and Status');
 		Util.show('#StatDialog_ArticleCache_Row', Options.option('ArticleCache') !== '0');
+		Util.show('#StatDialog_QueueScripts_Row', Status.status.QueueScriptCount > 0);
 		$StatDialog.removeClass('modal-large').addClass('modal-mini');
 		monthListInitialized = false;
 		updateServerList();
@@ -546,6 +549,7 @@ var StatDialog = (new function($)
 		$StatDialog_DataCurrentSpeed.html(Util.formatSpeed(status.DownloadRate));
 		$StatDialog_DataSpeedLimit.html(Util.formatSpeed(status.DownloadLimit));
 		$StatDialog_ArticleCache.html(Util.formatSizeMB(status.ArticleCacheMB, status.ArticleCacheLo));
+		$StatDialog_QueueScripts.html(status.QueueScriptCount);
 
 		var content = '';
 		content += '<tr><td>Download</td><td class="text-right">' +
