@@ -713,6 +713,7 @@ bool DiskState::LoadNZBInfo(NZBInfo* pNZBInfo, Servers* pServers, FILE* infile, 
 		pNZBInfo->SetDeleteStatus((NZBInfo::EDeleteStatus)iDeleteStatus);
 		pNZBInfo->SetMarkStatus((NZBInfo::EMarkStatus)iMarkStatus);
 		if (pNZBInfo->GetKind() == NZBInfo::nkNzb ||
+			(NZBInfo::EUrlStatus)iUrlStatus >= NZBInfo::lsFailed ||
 			(NZBInfo::EUrlStatus)iUrlStatus >= NZBInfo::lsScanSkipped)
 		{
 			pNZBInfo->SetUrlStatus((NZBInfo::EUrlStatus)iUrlStatus);
