@@ -48,6 +48,7 @@
 #include "NZBFile.h"
 #include "Scanner.h"
 #include "DiskState.h"
+#include "QueueScript.h"
 
 UrlDownloader::UrlDownloader() : WebDownloader()
 {
@@ -428,6 +429,8 @@ void UrlCoordinator::UrlCompleted(UrlDownloader* pUrlDownloader)
 	}
 
 	// the rest of function is only for failed URLs or for failed scans
+
+	g_pQueueScriptCoordinator->EnqueueScript(pNZBInfo, QueueScriptCoordinator::qeUrlCompleted);
 
 	pDownloadQueue = DownloadQueue::Lock();
 

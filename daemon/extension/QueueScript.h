@@ -37,6 +37,7 @@ public:
 	enum EEvent
 	{
 		qeFileDownloaded,	// lowest priority
+		qeUrlCompleted,
 		qeNzbAdded,
 		qeNzbDownloaded,
 		qeNzbDeleted		// highest priority

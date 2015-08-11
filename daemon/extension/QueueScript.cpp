@@ -47,7 +47,7 @@
 #include "Log.h"
 #include "Util.h"
 
-static const char* QUEUE_EVENT_NAMES[] = { "FILE_DOWNLOADED", "NZB_ADDED", "NZB_DOWNLOADED", "NZB_DELETED" };
+static const char* QUEUE_EVENT_NAMES[] = { "FILE_DOWNLOADED", "URL_COMPLETED", "NZB_ADDED", "NZB_DOWNLOADED", "NZB_DELETED" };
 
 class QueueScriptController : public Thread, public NZBScriptController
 {
@@ -68,6 +68,7 @@ private:
 	QueueScriptCoordinator::EEvent	m_eEvent;
 	bool				m_bMarkBad;
 	NZBInfo::EDeleteStatus m_eDeleteStatus;
+	NZBInfo::EUrlStatus	m_eUrlStatus;
 
 	void				PrepareParams(const char* szScriptName);
 
@@ -112,6 +113,7 @@ void QueueScriptController::StartScript(NZBInfo* pNZBInfo, ScriptConfig::Script*
 	pScriptController->m_iPrefixLen = 0;
 	pScriptController->m_bMarkBad = false;
 	pScriptController->m_eDeleteStatus = pNZBInfo->GetDeleteStatus();
+	pScriptController->m_eUrlStatus = pNZBInfo->GetUrlStatus();
 	pScriptController->SetAutoDestroy(true);
 
 	pScriptController->Start();
@@ -184,6 +186,9 @@ void QueueScriptController::PrepareParams(const char* szScriptName)
 
     const char* szDeleteStatusName[] = { "NONE", "MANUAL", "HEALTH", "DUPE", "BAD", "GOOD", "COPY", "SCAN" };
 	SetEnvVar("NZBNA_DELETESTATUS", szDeleteStatusName[m_eDeleteStatus]);
+
+	const char* szUrlStatusName[] = { "NONE", "UNKNOWN", "SUCCESS", "FAILURE", "UNKNOWN", "SCAN_SKIPPED", "SCAN_FAILURE" };
+	SetEnvVar("NZBNA_URLSTATUS", szUrlStatusName[m_eUrlStatus]);
 
 	PrepareEnvScript(&m_Parameters, szScriptName);
 }
