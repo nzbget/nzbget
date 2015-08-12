@@ -257,12 +257,13 @@ QueueScriptCoordinator::QueueItem::QueueItem(int iNZBID, ScriptConfig::Script* p
 QueueScriptCoordinator::QueueScriptCoordinator()
 {
 	m_pCurItem = NULL;
+	m_bStopped = false;
 }
 
 QueueScriptCoordinator::~QueueScriptCoordinator()
 {
 	delete m_pCurItem;
-	for (Queue::iterator it = m_Queue.begin(); it != m_Queue.end(); )
+	for (Queue::iterator it = m_Queue.begin(); it != m_Queue.end(); it++ )
 	{
 		delete *it;
 	}
@@ -429,6 +430,11 @@ NZBInfo* QueueScriptCoordinator::FindNZBInfo(DownloadQueue* pDownloadQueue, int 
 
 void QueueScriptCoordinator::CheckQueue()
 {
+	if (m_bStopped)
+	{
+		return;
+	}
+
 	DownloadQueue* pDownloadQueue = DownloadQueue::Lock();
 	m_mutexQueue.Lock();
 

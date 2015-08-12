@@ -746,6 +746,7 @@ void ExitProc()
 			g_pPrePostProcessor->Stop();
 			g_pFeedCoordinator->Stop();
 			g_pArticleCache->Stop();
+			g_pQueueScriptCoordinator->Stop();
 #ifdef WIN32
 			g_pWinConsole->Stop();
 #endif

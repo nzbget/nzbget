@@ -63,6 +63,7 @@ private:
 	Mutex				m_mutexQueue;
 	QueueItem*			m_pCurItem;
 	bool				m_bHasQueueScripts;
+	bool				m_bStopped;
 
 	void				StartScript(NZBInfo* pNZBInfo, QueueItem* pQueueItem);
 	NZBInfo*			FindNZBInfo(DownloadQueue* pDownloadQueue, int iNZBID);
@@ -70,6 +71,7 @@ private:
 public:
 						QueueScriptCoordinator();
 						~QueueScriptCoordinator();
+	void				Stop() { m_bStopped = true; }
 	void				InitOptions();
 	void				EnqueueScript(NZBInfo* pNZBInfo, EEvent eEvent);
 	void				CheckQueue();
