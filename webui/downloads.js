@@ -54,8 +54,8 @@ var Downloads = (new function($)
 		'QUEUED': { Text: 'QUEUED', PostProcess: false },
 		'FETCHING': { Text: 'FETCHING', PostProcess: false },
 		'DOWNLOADING': { Text: 'DOWNLOADING', PostProcess: false },
-		'QS_QUEUED': { Text: 'QS-QUEUED', PostProcess: false },
-		'QS_EXECUTING': { Text: 'QUEUE-SCRIPT', PostProcess: false },
+		'QS_QUEUED': { Text: 'QS-QUEUED', PostProcess: true },
+		'QS_EXECUTING': { Text: 'QUEUE-SCRIPT', PostProcess: true },
 		'PP_QUEUED': { Text: 'PP-QUEUED', PostProcess: true },
 		'PAUSED': { Text: 'PAUSED', PostProcess: false },
 		'LOADING_PARS': { Text: 'CHECKING', PostProcess: true },
@@ -606,7 +606,7 @@ var DownloadsUI = (new function($)
 		var statusText = Downloads.statusData[group.Status].Text;
 		var badgeClass = '';
 		
-		if (group.postprocess && group.Status !== 'PP_QUEUED')
+		if (group.postprocess && group.Status !== 'PP_QUEUED' && group.Status !== 'QS_QUEUED')
 		{
 			badgeClass = Status.status.PostPaused && group.MinPriority < 900 ? 'label-warning' : 'label-success';
 		}
