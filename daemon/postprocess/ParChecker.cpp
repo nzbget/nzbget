@@ -1276,6 +1276,11 @@ void ParChecker::signal_done(std::string str, int available, int total)
 				PrintMessage(Message::mkWarning, "File %s with %i block(s) is missing%s",
 					szFilename, total, bIgnore ? ", ignoring" : "");
 			}
+
+			if (!IsProcessedFile(szFilename))
+			{
+				m_ProcessedFiles.push_back(strdup(szFilename));
+			}
 		}
 	}
 }
@@ -1290,11 +1295,13 @@ void ParChecker::CheckEmptyFiles()
 	for (std::vector<Par2RepairerSourceFile*>::iterator it = ((Repairer*)m_pRepairer)->sourcefiles.begin();
 		 it != ((Repairer*)m_pRepairer)->sourcefiles.end(); it++)
 	{
-		Par2RepairerSourceFile *sourcefile = *it;
+		Par2RepairerSourceFile* sourcefile = *it;
 
 		if (sourcefile && sourcefile->GetDescriptionPacket())
 		{
-			const char* szFilename = sourcefile->GetDescriptionPacket()->FileName().c_str();
+			// GetDescriptionPacket()->FileName() returns a temp string object, which we need to hold for a while
+			std::string filename = sourcefile->GetDescriptionPacket()->FileName();
+			const char* szFilename = filename.c_str();
 			if (!Util::EmptyStr(szFilename) && !IsProcessedFile(szFilename))
 			{
 				bool bIgnore = Util::MatchFileExt(szFilename, g_pOptions->GetParIgnoreExt(), ",;") ||
