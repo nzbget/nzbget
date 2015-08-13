@@ -75,6 +75,11 @@
 
 	var methods =
 	{
+		defaults : function()
+		{
+			return defaults;
+		},
+		
 		init : function(options)
 		{
 			return this.each(function()
@@ -100,7 +105,7 @@
 					
 					if (!config.searcher)
 					{
-						config.searcher = new WordsSearcher();
+						config.searcher = defaults.createSearcher();
 					}
 
 					// Create a timer which gets reset upon every keyup event.
@@ -805,6 +810,7 @@
 		fillSearchCallback: undefined,
 		filterCallback: undefined,
 		searcher: undefined,
+		createSearcher: function(){ return new WordsSearcher(); },
 		headerCheck: '#table-header-check'
 	};
 
