@@ -788,7 +788,6 @@
 	{
 		filterInput: '#table-filter',
 		filterClearButton: '#table-clear',
-		filterCaseSensitive: false,
 		pagerContainer: '#table-pager',
 		infoContainer: '#table-info',
 		pageSize: 10,

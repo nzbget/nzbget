@@ -125,7 +125,6 @@ var FeedDialog = (new function($)
 			{
 				filterInput: '#FeedDialog_ItemTable_filter',
 				pagerContainer: '#FeedDialog_ItemTable_pager',
-				filterCaseSensitive: false,
 				headerCheck: '#FeedDialog_ItemTable > thead > tr:first-child',
 				pageSize: pageSize,
 				hasHeader: true,
@@ -460,7 +459,6 @@ var FeedFilterDialog = (new function($)
 			{
 				filterInput: '',
 				pagerContainer: '#FeedFilterDialog_ItemTable_pager',
-				filterCaseSensitive: false,
 				headerCheck: '',
 				pageSize: pageSize,
 				hasHeader: true,

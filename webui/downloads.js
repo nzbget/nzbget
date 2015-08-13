@@ -91,7 +91,6 @@ var Downloads = (new function($)
 				pagerContainer: $('#DownloadsTable_pager'),
 				infoContainer: $('#DownloadsTable_info'),
 				headerCheck: $('#DownloadsTable > thead > tr:first-child'),
-				filterCaseSensitive: false,
 				infoEmpty: '&nbsp;', // this is to disable default message "No records"
 				pageSize: recordsPerPage,
 				maxPages: UISettings.miniTheme ? 1 : 5,

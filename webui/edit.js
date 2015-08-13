@@ -76,7 +76,6 @@ var DownloadsEditDialog = (new function($)
 			{
 				filterInput: '#DownloadsEdit_FileTable_filter',
 				pagerContainer: '#DownloadsEdit_FileTable_pager',
-				filterCaseSensitive: false,
 				headerCheck: '#DownloadsEdit_FileTable > thead > tr:first-child',
 				pageSize: 10000,
 				hasHeader: true,
@@ -1107,7 +1106,6 @@ var LogTab = (new function($)
 			{
 				filterInput: '#' + name + 'Edit_LogTable_filter',
 				pagerContainer: '#' + name + 'Edit_LogTable_pager',
-				filterCaseSensitive: false,
 				pageSize: recordsPerPage,
 				maxPages: 3,
 				hasHeader: true,

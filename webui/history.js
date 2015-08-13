@@ -67,7 +67,6 @@ var History = (new function($)
 				pagerContainer: $('#HistoryTable_pager'),
 				infoContainer: $('#HistoryTable_info'),
 				headerCheck: $('#HistoryTable > thead > tr:first-child'),
-				filterCaseSensitive: false,
 				pageSize: recordsPerPage,
 				maxPages: UISettings.miniTheme ? 1 : 5,
 				pageDots: !UISettings.miniTheme,
