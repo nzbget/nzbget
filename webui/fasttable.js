@@ -1,7 +1,7 @@
 /*
  * This file is part of nzbget
  *
- * Copyright (C) 2012-2013 Andrey Prygunkov <hugbug@users.sourceforge.net>
+ * Copyright (C) 2012-2015 Andrey Prygunkov <hugbug@users.sourceforge.net>
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -97,6 +97,11 @@
 					config.pagerContainer = $(config.pagerContainer);
 					config.infoContainer = $(config.infoContainer);
 					config.headerCheck = $(config.headerCheck);
+					
+					if (!config.searcher)
+					{
+						config.searcher = new WordsSearcher();
+					}
 
 					// Create a timer which gets reset upon every keyup event.
 					// Perform filter only when the timer's wait is reached (user finished typing or paused long enough to elapse the timer).
@@ -120,7 +125,7 @@
 
 						var timerCallback = function()
 						{
-							var value = inputBox.value;
+							var value = inputBox.value.trim();
 							var data = $this.data('fasttable');
 
 							if ((value != data.lastFilter) || (overrideBool))
@@ -129,6 +134,8 @@
 								if (data.content)
 								{
 									data.curPage = 1;
+									data.hasFilter = value !== '';
+									data.config.searcher.compile(value);
 									refresh(data);
 								}
 								if (data.config.filterInputCallback)
@@ -150,6 +157,8 @@
 						var data = $this.data('fasttable');
 						data.lastFilter = '';
 						data.config.filterInput.val('');
+						data.hasFilter = false;
+						data.config.searcher.compile('');
 						if (data.content)
 						{
 							refresh(data);
@@ -242,44 +251,6 @@
 		titleCheckClick : titleCheckClick
 	};
 
-	function has_words(str, words, caseSensitive)
-	{
-		var text = caseSensitive ? str : str.toLowerCase();
-		var orTest = false;
-		var orFound = false;
-
-		for (var i = 0; i < words.length; i++)
-		{
-			if (words[i][0] == '!')
-			{
-				if (text.indexOf(words[i].substr(1,words[i].length)) >= 0)
-				{
-					return false;
-				}
-			}
-			else if (words[i][0] == '|')
-			{
-				orTest = true;
-				if (text.indexOf(words[i].substr(1,words[i].length)) >= 0)
-				{
-					orFound = true;
-				}
-			}
-			else
-			{
-				if (text.indexOf(words[i]) === -1)
-				{
-					return false;
-				}
-			}
-		}
-		if (orTest && !orFound)
-		{
-			return false;
-		}
-		return true;
-	}
-
 	function updateContent(content)
 	{
 		var data = $(this).data('fasttable');
@@ -301,23 +272,17 @@
 
 	function refilter(data)
 	{
-		var filterInput = data.config.filterInput;
-		var phrase = filterInput.length > 0 ? filterInput.val() : '';
-		var caseSensitive = data.config.filterCaseSensitive;
-		var words = caseSensitive ? phrase.split(' ') : phrase.toLowerCase().split(' ');
-		var hasFilter = !(words.length === 1 && words[0] === '');
-
 		data.availableContent = [];
 		data.filteredContent = [];
 		for (var i = 0; i < data.content.length; i++)
 		{
 			var item = data.content[i];
-			if (hasFilter && item.search === undefined && data.config.fillSearchCallback)
+			if (data.hasFilter && item.search === undefined && data.config.fillSearchCallback)
 			{
 				data.config.fillSearchCallback(item);
 			}
 			
-			if (!hasFilter || has_words(item.search, words, caseSensitive))
+			if (!data.hasFilter || data.config.searcher.exec(item.search))
 			{
 				data.availableContent.push(item);
 				if (!data.config.filterCallback || data.config.filterCallback(item))
@@ -792,6 +757,32 @@
 			}
 		}
 	}
+
+	function WordsSearcher()
+	{
+		this.words = [];
+
+		this.compile = function(searchstr) {
+			this.words = searchstr.toLowerCase().split(' ');
+		};
+
+		this.exec = function(text) {
+			return has_words(text, this.words);
+		};
+
+		function has_words(str, words)
+		{
+			var text = str.toLowerCase();
+			for (var i = 0; i < words.length; i++)
+			{
+				if (text.indexOf(words[i]) === -1)
+				{
+					return false;
+				}
+			}
+			return true;
+		}
+	}
 	
 	var defaults =
 	{
@@ -814,6 +805,7 @@
 		filterClearCallback: undefined,
 		fillSearchCallback: undefined,
 		filterCallback: undefined,
+		searcher: undefined,
 		headerCheck: '#table-header-check'
 	};
 
