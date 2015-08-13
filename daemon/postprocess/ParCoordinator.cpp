@@ -145,7 +145,7 @@ ParChecker::EFileStatus ParCoordinator::PostParChecker::FindFileCrc(const char* 
 		ParChecker::fsUnknown;
 }
 
-void ParCoordinator::PostParChecker::RequestExtraDirectories(FileList* pFileList)
+void ParCoordinator::PostParChecker::RequestDupeSources(DupeSourceList* pDupeSourceList)
 {
 	DownloadQueue* pDownloadQueue = DownloadQueue::Lock();
 
@@ -168,14 +168,42 @@ void ParCoordinator::PostParChecker::RequestExtraDirectories(FileList* pFileList
 			if (bUseDupe)
 			{
 				PrintMessage(Message::mkInfo, "Adding %s to dupe scan sources", Util::BaseFileName(pDupeNZBInfo->GetDestDir()));
-				pFileList->push_back(strdup(pDupeNZBInfo->GetDestDir()));
+				pDupeSourceList->push_back(new ParChecker::DupeSource(pDupeNZBInfo->GetID(), pDupeNZBInfo->GetDestDir()));
 			}
 		}
-		if (pFileList->empty())
+		if (pDupeSourceList->empty())
 		{
 			PrintMessage(Message::mkInfo, "No usable dupe scan sources found");
 		}
 	}
+
+	DownloadQueue::Unlock();
+}
+
+void ParCoordinator::PostParChecker::StatDupeSources(DupeSourceList* pDupeSourceList)
+{
+	DownloadQueue* pDownloadQueue = DownloadQueue::Lock();
+
+	int iTotalExtraParBlocks = 0;
+	for (DupeSourceList::iterator it = pDupeSourceList->begin(); it != pDupeSourceList->end(); it++)
+	{
+		DupeSource* pDupeSource = *it;
+		if (pDupeSource->GetUsedBlocks() > 0)
+		{
+			for (HistoryList::iterator it = pDownloadQueue->GetHistory()->begin(); it != pDownloadQueue->GetHistory()->end(); it++)
+			{
+				HistoryInfo* pHistoryInfo = *it;
+				if (pHistoryInfo->GetKind() == HistoryInfo::hkNzb &&
+					pHistoryInfo->GetNZBInfo()->GetID() == pDupeSource->GetID())
+				{
+					pHistoryInfo->GetNZBInfo()->SetExtraParBlocks(pHistoryInfo->GetNZBInfo()->GetExtraParBlocks() - pDupeSource->GetUsedBlocks());
+				}
+			}
+		}
+		iTotalExtraParBlocks += pDupeSource->GetUsedBlocks();
+	}
+
+	m_pPostInfo->GetNZBInfo()->SetExtraParBlocks(m_pPostInfo->GetNZBInfo()->GetExtraParBlocks() + iTotalExtraParBlocks);
 
 	DownloadQueue::Unlock();
 }

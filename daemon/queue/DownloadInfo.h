@@ -469,6 +469,7 @@ private:
 	EDeleteStatus		m_eDeleteStatus;
 	EMarkStatus			m_eMarkStatus;
 	EUrlStatus			m_eUrlStatus;
+	int					m_iExtraParBlocks;
 	bool				m_bAddUrlPaused;
 	bool				m_bDeletePaused;
 	bool				m_bManyDupeFiles;
@@ -606,6 +607,8 @@ public:
 	EMarkStatus			GetMarkStatus() { return m_eMarkStatus; }
 	void				SetMarkStatus(EMarkStatus eMarkStatus) { m_eMarkStatus = eMarkStatus; }
 	EUrlStatus			GetUrlStatus() { return m_eUrlStatus; }
+	int					GetExtraParBlocks() { return m_iExtraParBlocks; }
+	void				SetExtraParBlocks(int iExtraParBlocks) { m_iExtraParBlocks = iExtraParBlocks; }
 	void				SetUrlStatus(EUrlStatus eUrlStatus) { m_eUrlStatus = eUrlStatus; }
 	const char*			GetQueuedFilename() { return m_szQueuedFilename; }
 	void				SetQueuedFilename(const char* szQueuedFilename);

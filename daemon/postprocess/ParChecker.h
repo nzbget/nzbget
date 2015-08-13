@@ -86,6 +86,24 @@ public:
 							~SegmentList();
 	};
 
+	class DupeSource
+	{
+	private:
+		int					m_iID;
+		char*				m_szDirectory;
+		int					m_iUsedBlocks;
+
+	public:
+							DupeSource(int iID, const char* szDirectory);
+							~DupeSource();
+		int					GetID() { return m_iID; }
+		const char*			GetDirectory() { return m_szDirectory; }
+		int					GetUsedBlocks() { return m_iUsedBlocks; }
+		void				SetUsedBlocks(int iUsedBlocks) { m_iUsedBlocks = iUsedBlocks; }
+	};
+
+	typedef std::deque<DupeSource*>	DupeSourceList;
+
 	typedef std::deque<char*>		FileList;
 	typedef std::deque<void*>		SourceList;
 	typedef std::vector<bool>		ValidBlocks;
@@ -121,6 +139,7 @@ private:
 	bool				m_bParQuick;
 	bool				m_bForceRepair;
 	bool				m_bParFull;
+	DupeSourceList		m_DupeSources;
 
 	void				Cleanup();
 	EStatus				RunParCheckAll();
@@ -163,7 +182,8 @@ protected:
 	virtual void		RegisterParredFile(const char* szFilename) {}
 	virtual bool		IsParredFile(const char* szFilename) { return false; }
 	virtual EFileStatus	FindFileCrc(const char* szFilename, unsigned long* lCrc, SegmentList* pSegments) { return fsUnknown; }
-	virtual void		RequestExtraDirectories(FileList* pFileList) {}
+	virtual void		RequestDupeSources(DupeSourceList* pDupeSourceList) {}
+	virtual void		StatDupeSources(DupeSourceList* pDupeSourceList) {}
 	EStage				GetStage() { return m_eStage; }
 	const char*			GetProgressLabel() { return m_szProgressLabel; }
 	int					GetFileProgress() { return m_iFileProgress; }

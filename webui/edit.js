@@ -1604,7 +1604,11 @@ var HistoryEditDialog = (new function()
 
 			else if (hist.DeleteStatus === 'NONE')
 			{
-				status += ' ' + buildStatus(hist.ParStatus, 'Par: ') +
+				var exParStatus = hist.ExtraParBlocks > 0 ? ' ' + '<span title="Repaired using ' + hist.ExtraParBlocks + ' par-block' + 
+						(hist.ExtraParBlocks > 1 ? 's' : '') + ' from other duplicate(s)">' + buildStatus('RECIPIENT', 'Repair: ') + '</span>' :
+					hist.ExtraParBlocks < 0 ? ' ' + '<span title="Donated ' + -hist.ExtraParBlocks + ' par-block' + 
+						(-hist.ExtraParBlocks > 1 ? 's' : '') + ' to repair other duplicate(s)">' + buildStatus('DONOR', 'Repair: ') + '</span>' : '';
+				status += ' ' + buildStatus(hist.ParStatus, 'Par: ') + exParStatus +
 					' ' + (Options.option('Unpack') == 'yes' || hist.UnpackStatus != 'NONE' ? buildStatus(hist.UnpackStatus, 'Unpack: ') : '')  +
 					' ' + (hist.MoveStatus === "FAILURE" ? buildStatus(hist.MoveStatus, 'Move: ') : '');
 			}
@@ -1764,6 +1768,8 @@ var HistoryEditDialog = (new function()
 		{
 			case 'SUCCESS':
 			case 'GOOD':
+			case 'RECIPIENT':
+			case 'DONOR':
 				return '<span class="label label-status label-success">' + prefix + status + '</span>';
 			case 'FAILURE':
 				return '<span class="label label-status label-important">' + prefix + 'failure</span>';
@@ -1809,6 +1815,8 @@ var HistoryEditDialog = (new function()
 		table += '<tr><td>Verification time </td><td class="text-center">' + Util.formatTimeHMS(hist.ParTimeSec - hist.RepairTimeSec) + '</td></tr>';
 		table += '<tr><td>Repair time</td><td class="text-center">' + Util.formatTimeHMS(hist.RepairTimeSec) + '</td></tr>';
 		table += '<tr><td>Unpack time</td><td class="text-center">' + Util.formatTimeHMS(hist.UnpackTimeSec) + '</td></tr>';
+		table += hist.ExtraParBlocks > 0 ? '<tr><td>Received extra par-blocks</td><td class="text-center">' + hist.ExtraParBlocks + '</td></tr>' :
+			hist.ExtraParBlocks < 0 ? '<tr><td>Donated par-blocks</td><td class="text-center">' + - hist.ExtraParBlocks + '</td></tr>' : '';
 
 		$('#HistoryEdit_TimeStatsTable tbody').html(table);
 	}

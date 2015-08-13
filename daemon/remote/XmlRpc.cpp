@@ -1675,6 +1675,7 @@ void NzbInfoXmlCommand::AppendNZBInfoFields(NZBInfo* pNZBInfo)
 		"<member><name>RepairTimeSec</name><value><i4>%i</i4></value></member>\n"
 		"<member><name>UnpackTimeSec</name><value><i4>%i</i4></value></member>\n"
 		"<member><name>MessageCount</name><value><i4>%i</i4></value></member>\n"
+		"<member><name>ExtraParBlocks</name><value><i4>%i</i4></value></member>\n"
 		"<member><name>Parameters</name><value><array><data>\n";
 
 	const char* XML_NZB_ITEM_SCRIPT_START =
@@ -1729,6 +1730,7 @@ void NzbInfoXmlCommand::AppendNZBInfoFields(NZBInfo* pNZBInfo)
 		"\"RepairTimeSec\" : %i,\n"
 		"\"UnpackTimeSec\" : %i,\n"
 		"\"MessageCount\" : %i,\n"
+		"\"ExtraParBlocks\" : %i,\n"
 		"\"Parameters\" : [\n";
 
 	const char* JSON_NZB_ITEM_SCRIPT_START =
@@ -1827,7 +1829,7 @@ void NzbInfoXmlCommand::AppendNZBInfoFields(NZBInfo* pNZBInfo)
 			 BoolToStr(pNZBInfo->GetDeleteStatus() != NZBInfo::dsNone),
 			 iDownloadedSizeLo, iDownloadedSizeHi, iDownloadedSizeMB, pNZBInfo->GetDownloadSec(), 
 			 pNZBInfo->GetPostInfo() && pNZBInfo->GetPostInfo()->GetStartTime() ? time(NULL) - pNZBInfo->GetPostInfo()->GetStartTime() : pNZBInfo->GetPostTotalSec(),
-			 pNZBInfo->GetParSec(), pNZBInfo->GetRepairSec(), pNZBInfo->GetUnpackSec(), iMessageCount);
+			 pNZBInfo->GetParSec(), pNZBInfo->GetRepairSec(), pNZBInfo->GetUnpackSec(), iMessageCount, pNZBInfo->GetExtraParBlocks());
 
 	free(xmlURL);
 	free(xmlNZBNicename);

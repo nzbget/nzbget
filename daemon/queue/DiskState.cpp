@@ -266,7 +266,7 @@ bool DiskState::SaveDownloadQueue(DownloadQueue* pDownloadQueue)
 {
 	debug("Saving queue to disk");
 
-	StateFile stateFile("queue", 54);
+	StateFile stateFile("queue", 55);
 
 	if (pDownloadQueue->GetQueue()->empty() && 
 		pDownloadQueue->GetHistory()->empty())
@@ -295,7 +295,7 @@ bool DiskState::LoadDownloadQueue(DownloadQueue* pDownloadQueue, Servers* pServe
 {
 	debug("Loading queue from disk");
 
-	StateFile stateFile("queue", 54);
+	StateFile stateFile("queue", 55);
 
 	FILE* infile = stateFile.BeginReadTransaction();
 	if (!infile)
@@ -480,11 +480,13 @@ void DiskState::SaveNZBInfo(NZBInfo* pNZBInfo, FILE* outfile)
 		(int)pNZBInfo->GetMarkStatus(), (int)pNZBInfo->GetUrlStatus());
 	fprintf(outfile, "%i,%i,%i\n", (int)pNZBInfo->GetUnpackCleanedUpDisk(), (int)pNZBInfo->GetHealthPaused(),
 		(int)pNZBInfo->GetAddUrlPaused());
-	fprintf(outfile, "%i,%i,%i\n", pNZBInfo->GetFileCount(), pNZBInfo->GetParkedFileCount(), pNZBInfo->GetMessageCount());
+	fprintf(outfile, "%i,%i,%i\n", pNZBInfo->GetFileCount(), pNZBInfo->GetParkedFileCount(),
+		pNZBInfo->GetMessageCount());
 	fprintf(outfile, "%i,%i\n", (int)pNZBInfo->GetMinTime(), (int)pNZBInfo->GetMaxTime());
-	fprintf(outfile, "%i,%i,%i\n", (int)pNZBInfo->GetParFull(), 
+	fprintf(outfile, "%i,%i,%i,%i\n", (int)pNZBInfo->GetParFull(), 
 		pNZBInfo->GetPostInfo() ? (int)pNZBInfo->GetPostInfo()->GetForceParFull() : 0,
-		pNZBInfo->GetPostInfo() ? (int)pNZBInfo->GetPostInfo()->GetForceRepair() : 0);
+		pNZBInfo->GetPostInfo() ? (int)pNZBInfo->GetPostInfo()->GetForceRepair() : 0,
+		pNZBInfo->GetExtraParBlocks());
 
 	fprintf(outfile, "%u,%u\n", pNZBInfo->GetFullContentHash(), pNZBInfo->GetFilteredContentHash());
 
@@ -670,8 +672,8 @@ bool DiskState::LoadNZBInfo(NZBInfo* pNZBInfo, Servers* pServers, FILE* infile, 
 
 	if (iFormatVersion >= 18)
 	{
-		int iParStatus, iUnpackStatus, iScriptStatus, iMoveStatus = 0,
-			iRenameStatus = 0, iDeleteStatus = 0, iMarkStatus = 0, iUrlStatus = 0;
+		int iParStatus, iUnpackStatus, iScriptStatus, iMoveStatus = 0, iRenameStatus = 0,
+			iDeleteStatus = 0, iMarkStatus = 0, iUrlStatus = 0;
 		if (iFormatVersion >= 46)
 		{
 			if (fscanf(infile, "%i,%i,%i,%i,%i,%i,%i\n", &iParStatus, &iUnpackStatus, &iMoveStatus,
@@ -795,9 +797,17 @@ bool DiskState::LoadNZBInfo(NZBInfo* pNZBInfo, Servers* pServers, FILE* infile, 
 
 	if (iFormatVersion >= 51)
 	{
-		int iParFull, iForceParFull, iForceRepair;
-		if (fscanf(infile, "%i,%i,%i\n", &iParFull, &iForceParFull, &iForceRepair) != 3) goto error;
+		int iParFull, iForceParFull, iForceRepair, iExtraParBlocks = 0;
+		if (iFormatVersion >= 55)
+		{
+			if (fscanf(infile, "%i,%i,%i,%i\n", &iParFull, &iForceParFull, &iForceRepair, &iExtraParBlocks) != 4) goto error;
+		}
+		else
+		{
+			if (fscanf(infile, "%i,%i,%i\n", &iParFull, &iForceParFull, &iForceRepair) != 3) goto error;
+		}
 		pNZBInfo->SetParFull((bool)iParFull);
+		pNZBInfo->SetExtraParBlocks(iExtraParBlocks);
 		if (pNZBInfo->GetPostInfo())
 		{
 			pNZBInfo->GetPostInfo()->SetForceParFull((bool)iForceParFull);

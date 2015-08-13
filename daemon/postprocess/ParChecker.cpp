@@ -393,6 +393,18 @@ ParChecker::SegmentList::~SegmentList()
 	}
 }
 
+ParChecker::DupeSource::DupeSource(int iID, const char* szDirectory)
+{
+	m_iID = iID;
+	m_szDirectory = strdup(szDirectory);
+	m_iUsedBlocks = 0;
+}
+
+ParChecker::DupeSource::~DupeSource()
+{
+	free(m_szDirectory);
+}
+
 
 ParChecker::ParChecker()
 {
@@ -448,6 +460,12 @@ void ParChecker::Cleanup()
 	m_ProcessedFiles.clear();
 
 	m_sourceFiles.clear();
+
+	for (DupeSourceList::iterator it = m_DupeSources.begin(); it != m_DupeSources.end() ;it++)
+	{
+		free(*it);
+	}
+	m_DupeSources.clear();
 
 	free(m_szErrMsg);
 	m_szErrMsg = NULL;
@@ -653,6 +671,7 @@ ParChecker::EStatus ParChecker::RunParCheck(const char* szParFilename)
 			{
     			PrintMessage(Message::mkInfo, "Successfully repaired %s", m_szInfoName);
 				eStatus = psRepaired;
+				StatDupeSources(&m_DupeSources);
 				DeleteLeftovers();
 			}
 		}
@@ -1003,21 +1022,23 @@ bool ParChecker::AddDupeFiles()
 	if (((Repairer*)m_pRepairer)->missingblockcount > 0)
 	{
 		// scanning directories of duplicates
-		FileList extraDirs;
-		RequestExtraDirectories(&extraDirs);
+		RequestDupeSources(&m_DupeSources);
 
-		if (!extraDirs.empty())
+		if (!m_DupeSources.empty())
 		{
 			int iWasBlocksMissing = ((Repairer*)m_pRepairer)->missingblockcount;
 
-			for (FileList::iterator it = extraDirs.begin(); it != extraDirs.end(); it++)
+			for (DupeSourceList::iterator it = m_DupeSources.begin(); it != m_DupeSources.end(); it++)
 			{
-				char* szExtraDir = *it;
-				if (((Repairer*)m_pRepairer)->missingblockcount > 0 && Util::DirectoryExists(szExtraDir))
+				DupeSource* pDupeSource = *it;
+				if (((Repairer*)m_pRepairer)->missingblockcount > 0 && Util::DirectoryExists(pDupeSource->GetDirectory()))
 				{
-					bAdded |= AddExtraFiles(false, true, szExtraDir);
+					int iWasBlocksMissing2 = ((Repairer*)m_pRepairer)->missingblockcount;
+					bool bOneAdded = AddExtraFiles(false, true, pDupeSource->GetDirectory());
+					bAdded |= bOneAdded;
+					int iBlocksMissing2 = ((Repairer*)m_pRepairer)->missingblockcount;
+					pDupeSource->SetUsedBlocks(pDupeSource->GetUsedBlocks() + (iWasBlocksMissing2 - iBlocksMissing2));
 				}
-				free(szExtraDir);
 			}
 
 			int iBlocksMissing = ((Repairer*)m_pRepairer)->missingblockcount;

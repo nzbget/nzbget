@@ -303,6 +303,7 @@ NZBInfo::NZBInfo() : m_FileList(true)
 	m_eDeleteStatus = dsNone;
 	m_eMarkStatus = ksNone;
 	m_eUrlStatus = lsNone;
+	m_iExtraParBlocks = 0;
 	m_bAddUrlPaused = false;
 	m_bDeleting = false;
 	m_bDeletePaused = false;
