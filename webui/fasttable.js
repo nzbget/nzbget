@@ -862,6 +862,7 @@ function FastSearcher()
 			while (true)
 			{
 				var token = _this.nextToken();
+				var node2 = null;
 				switch (token)
 				{
 					case null:
@@ -869,21 +870,28 @@ function FastSearcher()
 						return node;
 
 					case '-':
-						node = _this.not(expression(false));
+						node2 = _this.not(expression(false));
 						break;
 
 					case '(':
-						node = expression(true);
+						node2 = expression(true);
 						break;
 
 					case '|':
-						var node2 = expression(false); // suppress errors by trailing | (assume "true")
-						node = node2 ? _this.or(node, node2) : node;
+						node2 = expression(false);
 						break;
 
 					default:
-						var node2 = _this.term(token);
-						node = node ? _this.and(node, node2) : node2;
+						node2 = _this.term(token);
+				}
+
+				if (node && node2)
+				{
+					node = token === '|' ? _this.or(node, node2) : _this.and(node, node2);
+				}
+				else if (node2)
+				{
+					node = node2;
 				}
 
 				if (!greedy && node)
@@ -906,7 +914,7 @@ function FastSearcher()
 		}
 
 		this.text = text;
-		return this.root.eval();
+		return this.root ? this.root.eval() : true;
 	}
 
 	this.and = function(L, R) {
