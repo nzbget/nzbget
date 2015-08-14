@@ -355,8 +355,8 @@ body.navfixed.scrolled .navbar-fixed-top .navbar-inner {
 .navbar-search .search-query,
 .navbar-search .search-query:focus,
 .navbar-search .search-query.focused {
-	width: 150px;
-	padding: 3px 9px;
+	width: 130px;
+	padding: 3px 28px 3px 9px;
 	-webkit-border-radius: 12px;
 	-moz-border-radius: 12px;
 	border-radius: 12px;
@@ -2040,8 +2040,8 @@ body.phone,
 .phone .navbar-search .search-query,
 .phone .navbar-search .search-query:focus,
 .phone .navbar-search .search-query.focused {
-	width: 160px;
-	padding: 4px 9px;
+	width: 140px;
+	padding: 4px 28px 4px 9px;
 	font-size: 16px;
 	-webkit-border-radius: 16px;
 	-moz-border-radius: 16px;
