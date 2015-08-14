@@ -157,8 +157,6 @@ var Frontend = (new function($)
 		switchTheme();
 		windowResized();
 
-		$.fn.fasttable('defaults').createSearcher = function(){ return new FastSearcher(); };
-
 		Options.init();
 		Status.init();
 		Downloads.init({ updateTabInfo: updateTabInfo });

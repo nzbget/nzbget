@@ -103,11 +103,6 @@
 					config.infoContainer = $(config.infoContainer);
 					config.headerCheck = $(config.headerCheck);
 					
-					if (!config.searcher)
-					{
-						config.searcher = defaults.createSearcher();
-					}
-
 					// Create a timer which gets reset upon every keyup event.
 					// Perform filter only when the timer's wait is reached (user finished typing or paused long enough to elapse the timer).
 					// Do not perform the filter is the query has not changed.
@@ -140,7 +135,7 @@
 								{
 									data.curPage = 1;
 									data.hasFilter = value !== '';
-									data.config.searcher.compile(value);
+									data.searcher.compile(value);
 									refresh(data);
 								}
 								if (data.config.filterInputCallback)
@@ -163,7 +158,7 @@
 						data.lastFilter = '';
 						data.config.filterInput.val('');
 						data.hasFilter = false;
-						data.config.searcher.compile('');
+						data.searcher.compile('');
 						if (data.content)
 						{
 							refresh(data);
@@ -206,7 +201,8 @@
 							pageDots : Util.parseBool(config.pageDots),
 							curPage : 1,
 							checkedRows: [],
-							lastClickedRowID: null
+							lastClickedRowID: null,
+							searcher: new FastSearcher()
 						});
 				}
 			});
@@ -287,7 +283,7 @@
 				data.config.fillSearchCallback(item);
 			}
 			
-			if (!data.hasFilter || data.config.searcher.exec(item.search))
+			if (!data.hasFilter || data.searcher.exec(item.search))
 			{
 				data.availableContent.push(item);
 				if (!data.config.filterCallback || data.config.filterCallback(item))
@@ -762,32 +758,6 @@
 			}
 		}
 	}
-
-	function WordsSearcher()
-	{
-		this.words = [];
-
-		this.compile = function(searchstr) {
-			this.words = searchstr.toLowerCase().split(' ');
-		};
-
-		this.exec = function(text) {
-			return has_words(text, this.words);
-		};
-
-		function has_words(str, words)
-		{
-			var text = str.toLowerCase();
-			for (var i = 0; i < words.length; i++)
-			{
-				if (text.indexOf(words[i]) === -1)
-				{
-					return false;
-				}
-			}
-			return true;
-		}
-	}
 	
 	var defaults =
 	{
@@ -809,9 +779,166 @@
 		filterClearCallback: undefined,
 		fillSearchCallback: undefined,
 		filterCallback: undefined,
-		searcher: undefined,
-		createSearcher: function(){ return new WordsSearcher(); },
 		headerCheck: '#table-header-check'
 	};
 
 })(jQuery);
+
+function FastSearcher()
+{
+	'use strict';
+
+	this.source;
+	this.len;
+	this.p;
+
+	this.initLexer = function(source)
+	{
+		this.source = source;
+		this.len = source.length;
+		this.p = 0;
+	}
+	
+	this.nextToken = function()
+	{
+		while (this.p < this.len)
+		{
+			var ch = this.source[this.p++];
+			switch (ch) {
+				case ' ':
+				case '\t':
+					continue;
+
+				case '-':
+				case '(':
+				case ')':
+				case '|':
+					return ch;
+
+				default:
+					this.p--;
+					var token = '';
+					var quote = false;
+					while (this.p < this.len)
+					{
+						var ch = this.source[this.p++];
+						if (quote)
+						{
+							if (ch === '"')
+							{
+								quote = false;
+								ch = '';
+							}
+						}
+						else
+						{
+							if (ch === '"')
+							{
+								quote = true;
+								ch = '';
+							}
+							else if (' \t()|'.indexOf(ch) > -1)
+							{
+								this.p--;
+								return token;
+							}
+						}
+						token += ch;
+					}
+					return token;
+			}
+		}
+		return null;
+	}
+
+	this.compile = function(searchstr)
+	{
+		var _this = this;
+		this.initLexer(searchstr);
+
+		function expression(greedy)
+		{
+			var node = null;
+			while (true)
+			{
+				var token = _this.nextToken();
+				switch (token)
+				{
+					case null:
+					case ')':
+						return node;
+
+					case '-':
+						node = _this.not(expression(false));
+						break;
+
+					case '(':
+						node = expression(true);
+						break;
+
+					case '|':
+						var node2 = expression(false); // suppress errors by trailing | (assume "true")
+						node = node2 ? _this.or(node, node2) : node;
+						break;
+
+					default:
+						var node2 = _this.term(token);
+						node = node ? _this.and(node, node2) : node2;
+				}
+
+				if (!greedy && node)
+				{
+					return node;
+				}
+			}
+		}
+
+		this.root = expression(true);
+	}
+
+	this.root = null;
+	this.text = null;
+	this.error = false;
+
+	this.exec = function(text) {
+		if (this.error) {
+			return null;
+		}
+
+		this.text = text;
+		return this.root.eval();
+	}
+
+	this.and = function(L, R) {
+		return {
+			L: L, R: R,
+			eval: function() { return L.eval() && R.eval(); }
+		};
+	}
+
+	this.or = function(L, R) {
+		return {
+			L: L, R: R,
+			eval: function() { return L.eval() || R.eval(); }
+		};
+	}
+
+	this.not = function(M) {
+		return {
+			M: M,
+			eval: function() { return !M.eval();}
+		};
+	}
+
+	this.term = function(term) {
+		var _this = this;
+		return {
+			term: term,
+			eval: function() { return _this.find(term); }
+		};
+	}
+
+	this.find = function(term) {
+		return this.text.toLowerCase().indexOf(term) > -1;
+	}
+}
