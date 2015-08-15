@@ -2038,7 +2038,6 @@ var ScriptListDialog = (new function($)
 			{
 				id: scriptName,
 				fields: fields,
-				search: {}
 			};
 			data.push(item);
 
@@ -2518,7 +2517,6 @@ var RestoreSettingsDialog = (new function($)
 					{
 						id: section.id,
 						fields: fields,
-						search: {}
 					};
 					data.push(item);
 				}

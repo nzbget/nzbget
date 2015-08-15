@@ -156,6 +156,8 @@ var Downloads = (new function($)
 	
 	/*** TABLE *************************************************************************/
 
+	var SEARCH_FIELDS = ['name', 'status', 'priority', 'category', 'estimated', 'age', 'size', 'remaining'];
+	
 	function redraw_table()
 	{
 		var data = [];
@@ -164,21 +166,22 @@ var Downloads = (new function($)
 		{
 			var group = groups[i];
 
-			var nametext = group.NZBName;
-			var statustext = DownloadsUI.buildStatusText(group);
-			var priority = DownloadsUI.buildPriorityText(group.MaxPriority);
-			var estimated = DownloadsUI.buildEstimated(group);
-			var age = Util.formatAge(group.MinPostTime + UISettings.timeZoneCorrection*60*60);
-			var size = Util.formatSizeMB(group.FileSizeMB, group.FileSizeLo);
-			var remaining = Util.formatSizeMB(group.RemainingSizeMB-group.PausedSizeMB, group.RemainingSizeLo-group.PausedSizeLo);
-			var dupe = DownloadsUI.buildDupeText(group.DupeKey, group.DupeScore, group.DupeMode);
+			group.name = group.NZBName;
+			group.status = DownloadsUI.buildStatusText(group);
+			group.priority = DownloadsUI.buildPriorityText(group.MaxPriority);
+			group.category = group.Category;
+			group.estimated = DownloadsUI.buildEstimated(group);
+			group.age = Util.formatAge(group.MinPostTime + UISettings.timeZoneCorrection*60*60);
+			group.size = Util.formatSizeMB(group.FileSizeMB, group.FileSizeLo);
+			group.remaining = Util.formatSizeMB(group.RemainingSizeMB-group.PausedSizeMB, group.RemainingSizeLo-group.PausedSizeLo);
+			group.dupe = DownloadsUI.buildDupeText(group.DupeKey, group.DupeScore, group.DupeMode);
 			
+			group._search = SEARCH_FIELDS;
+
 			var item =
 			{
 				id: group.NZBID,
-				group: group,
-				data: { age: age, estimated: estimated, size: size, remaining: remaining },
-				search: { status: statustext, name: nametext, priority: priority, category: group.Category, age: age, size: size, remaining: remaining, estimated: estimated }
+				data: group
 			};
 
 			data.push(item);
@@ -189,7 +192,7 @@ var Downloads = (new function($)
 
 	function fillFieldsCallback(item)
 	{
-		var group = item.group;
+		var group = item.data;
 
 		var status = DownloadsUI.buildStatus(group);
 		var priority = DownloadsUI.buildPriority(group.MaxPriority);

@@ -73,7 +73,7 @@ var History = (new function($)
 				fillFieldsCallback: fillFieldsCallback,
 				filterCallback: filterCallback,
 				renderCellCallback: renderCellCallback,
-				updateInfoCallback: updateInfo,
+				updateInfoCallback: updateInfo
 			});
 
 		$HistoryTable.on('click', 'a', editClick);
@@ -144,6 +144,8 @@ var History = (new function($)
 		}
 	}
 
+	var SEARCH_FIELDS = ['name', 'status', 'priority', 'category', 'age', 'size', 'time'];
+
 	this.redraw = function()
 	{
 		var data = [];
@@ -153,39 +155,29 @@ var History = (new function($)
 			var hist = history[i];
 
 			var kind = hist.Kind;
-			var statustext = HistoryUI.buildStatusText(hist);
-			var size = kind === 'URL' ? '' : Util.formatSizeMB(hist.FileSizeMB);
-			var time = Util.formatDateTime(hist.HistoryTime + UISettings.timeZoneCorrection*60*60);
-			var dupe = DownloadsUI.buildDupeText(hist.DupeKey, hist.DupeScore, hist.DupeMode);
-			var category = '';
+			hist.status = HistoryUI.buildStatusText(hist);
+			hist.size = kind === 'URL' ? '' : Util.formatSizeMB(hist.FileSizeMB);
+			hist.time = Util.formatDateTime(hist.HistoryTime + UISettings.timeZoneCorrection*60*60);
+			hist.category = kind !== 'DUP' ? hist.Category : '';
+			hist.dupe = DownloadsUI.buildDupeText(hist.DupeKey, hist.DupeScore, hist.DupeMode);
+			hist.age = kind === 'NZB' ? Util.formatAge(hist.MinPostTime + UISettings.timeZoneCorrection*60*60) : '';
 
-			var textname = hist.Name;
-			var age = '';
-			if (kind === 'NZB')
+			hist.name = hist.Name;
+			if (kind === 'URL')
 			{
-				age = Util.formatAge(hist.MinPostTime + UISettings.timeZoneCorrection*60*60);
-				textname += ' URL';
-			}
-			else if (kind === 'URL')
-			{
-				textname += ' URL';
+				hist.name += ' URL';
 			}
 			else if (kind === 'DUP')
 			{
-				textname += ' hidden';
+				hist.name += ' hidden';
 			}
 
-			if (kind !== 'DUP')
-			{
-				category = hist.Category;
-			}
+			hist._search = SEARCH_FIELDS;
 
 			var item =
 			{
 				id: hist.ID,
-				hist: hist,
-				data: { time: time, age: age, size: size },
-				search: { status: statustext, time: time, name: textname, category: category, age: age, size: size }
+				data: hist,
 			};
 
 			data.push(item);
@@ -199,7 +191,7 @@ var History = (new function($)
 
 	function fillFieldsCallback(item)
 	{
-		var hist = item.hist;
+		var hist = item.data;
 
 		var status = HistoryUI.buildStatus(hist);
 
@@ -399,7 +391,7 @@ var History = (new function($)
 
 	function filterCallback(item)
 	{
-		return !activeTab || curFilter === 'ALL' || item.hist.FilterKind === curFilter;
+		return !activeTab || curFilter === 'ALL' || item.data.FilterKind === curFilter;
 	}
 
 	function initFilterButtons()
@@ -418,7 +410,7 @@ var History = (new function($)
 
 		for (var i=0; i < data.length; i++)
 		{
-			var hist = data[i].hist;
+			var hist = data[i].data;
 			switch (hist.FilterKind)
 			{
 				case 'SUCCESS': countSuccess++; break;

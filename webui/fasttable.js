@@ -104,6 +104,7 @@
 					config.headerCheck = $(config.headerCheck);
 					
 					var searcher = new FastSearcher();
+					
 					// Create a timer which gets reset upon every keyup event.
 					// Perform filter only when the timer's wait is reached (user finished typing or paused long enough to elapse the timer).
 					// Do not perform the filter is the query has not changed.
@@ -284,7 +285,7 @@
 				data.config.fillSearchCallback(item);
 			}
 
-			if (!data.hasFilter || data.searcher.exec(item.search))
+			if (!data.hasFilter || data.searcher.exec(item.data))
 			{
 				data.availableContent.push(item);
 				if (!data.config.filterCallback || data.config.filterCallback(item))
@@ -780,7 +781,6 @@
 		filterClearCallback: undefined,
 		fillSearchCallback: undefined,
 		filterCallback: undefined,
-		searchHiddenFieldCallback: undefined,
 		headerCheck: '#table-header-check'
 	};
 
@@ -918,21 +918,21 @@ function FastSearcher()
 	this.and = function(L, R) {
 		return {
 			L: L, R: R,
-			eval: function() { return L.eval() && R.eval(); }
+			eval: function() { return this.L.eval() && this.R.eval(); }
 		};
 	}
 
 	this.or = function(L, R) {
 		return {
 			L: L, R: R,
-			eval: function() { return L.eval() || R.eval(); }
+			eval: function() { return this.L.eval() || this.R.eval(); }
 		};
 	}
 
 	this.not = function(M) {
 		return {
 			M: M,
-			eval: function() { return !M.eval();}
+			eval: function() { return !this.M.eval();}
 		};
 	}
 
@@ -947,13 +947,13 @@ function FastSearcher()
 		return {
 			term: term.toLowerCase(),
 			field: field,
-			eval: function() { return _this.find(term, field); }
+			eval: function() { return _this.find(this.term, this.field); }
 		};
 	}
 
 	this.find = function(text, field) {
 		var content = this.fieldValue(this.data, field);
-		return content !== undefined ? content.toLowerCase().indexOf(text) > -1 : false;
+		return content !== undefined ? content.toString().toLowerCase().indexOf(text) > -1 : false;
 	}
 
 	this.fieldValue = function(data, field) {
@@ -964,7 +964,20 @@ function FastSearcher()
 		}
 		else
 		{
-			for (var f in data) value += ' ' + data[f];
+			if (data._search === true)
+			{
+				for (var f in data)
+				{
+					value += ' ' + data[f];
+				}
+			}
+			else
+			{
+				for (var i = 0; i < data._search.length; i++)
+				{
+					value += ' ' + data[data._search[i]];
+				}
+			}
 		}
 		return value;
 	}
