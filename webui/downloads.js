@@ -178,7 +178,7 @@ var Downloads = (new function($)
 				id: group.NZBID,
 				group: group,
 				data: { age: age, estimated: estimated, size: size, remaining: remaining },
-				search: statustext + ' ' + nametext + ' ' + priority + ' ' + dupe + ' ' + group.Category + ' ' + age + ' ' + size + ' ' + remaining + ' ' + estimated
+				search: { status: statustext, name: nametext, priority: priority, category: group.Category, age: age, size: size, remaining: remaining, estimated: estimated }
 			};
 
 			data.push(item);

@@ -281,7 +281,7 @@ var FeedDialog = (new function($)
 				id: item.URL,
 				item: item,
 				fields: fields,
-				search: item.Status + ' ' + itemName + ' ' + item.Category  + ' ' + age + ' ' + size
+				search: { status: item.Status, name: itemName, category: item.Category, age: age, size: size }
 			};
 
 			data.push(item);
@@ -670,7 +670,7 @@ var FeedFilterDialog = (new function($)
 				id: item.URL,
 				item: item,
 				fields: fields,
-				search: item.Match + ' ' + itemName + ' ' + item.Category  + ' ' + age + ' ' + size
+				search: { match: item.Match, rule: item.Rule, title: itemName, category: item.Category, age: age, size: size }
 			};
 
 			data.push(dataItem);

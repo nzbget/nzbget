@@ -103,6 +103,7 @@
 					config.infoContainer = $(config.infoContainer);
 					config.headerCheck = $(config.headerCheck);
 					
+					var searcher = new FastSearcher();
 					// Create a timer which gets reset upon every keyup event.
 					// Perform filter only when the timer's wait is reached (user finished typing or paused long enough to elapse the timer).
 					// Do not perform the filter is the query has not changed.
@@ -202,7 +203,7 @@
 							curPage : 1,
 							checkedRows: [],
 							lastClickedRowID: null,
-							searcher: new FastSearcher()
+							searcher: searcher
 						});
 				}
 			});
@@ -282,7 +283,7 @@
 			{
 				data.config.fillSearchCallback(item);
 			}
-			
+
 			if (!data.hasFilter || data.searcher.exec(item.search))
 			{
 				data.availableContent.push(item);
@@ -779,6 +780,7 @@
 		filterClearCallback: undefined,
 		fillSearchCallback: undefined,
 		filterCallback: undefined,
+		searchHiddenFieldCallback: undefined,
 		headerCheck: '#table-header-check'
 	};
 
@@ -906,15 +908,10 @@ function FastSearcher()
 	}
 
 	this.root = null;
-	this.text = null;
-	this.error = false;
+	this.data = null;
 
-	this.exec = function(text) {
-		if (this.error) {
-			return null;
-		}
-
-		this.text = text;
+	this.exec = function(data) {
+		this.data = data;
 		return this.root ? this.root.eval() : true;
 	}
 
@@ -941,13 +938,34 @@ function FastSearcher()
 
 	this.term = function(term) {
 		var _this = this;
+		var field;
+		var colon = term.indexOf(':');
+		if (colon > -1) {
+			field = term.substring(0, colon);
+			term = term.substring(colon + 1);
+		}
 		return {
-			term: term,
-			eval: function() { return _this.find(term); }
+			term: term.toLowerCase(),
+			field: field,
+			eval: function() { return _this.find(term, field); }
 		};
 	}
 
-	this.find = function(term) {
-		return this.text.toLowerCase().indexOf(term) > -1;
+	this.find = function(text, field) {
+		var content = this.fieldValue(this.data, field);
+		return content !== undefined ? content.toLowerCase().indexOf(text) > -1 : false;
+	}
+
+	this.fieldValue = function(data, field) {
+		var value = '';
+		if (field !== undefined)
+		{
+			value = data[field];
+		}
+		else
+		{
+			for (var f in data) value += ' ' + data[f];
+		}
+		return value;
 	}
 }

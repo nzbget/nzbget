@@ -73,7 +73,7 @@ var History = (new function($)
 				fillFieldsCallback: fillFieldsCallback,
 				filterCallback: filterCallback,
 				renderCellCallback: renderCellCallback,
-				updateInfoCallback: updateInfo
+				updateInfoCallback: updateInfo,
 			});
 
 		$HistoryTable.on('click', 'a', editClick);
@@ -185,7 +185,7 @@ var History = (new function($)
 				id: hist.ID,
 				hist: hist,
 				data: { time: time, age: age, size: size },
-				search: statustext + ' ' + time + ' ' + textname + ' ' + dupe + ' ' + category + ' ' +  age + ' ' + size
+				search: { status: statustext, time: time, name: textname, category: category, age: age, size: size }
 			};
 
 			data.push(item);

@@ -630,7 +630,7 @@ var DownloadsEditDialog = (new function($)
 				id: file.ID,
 				file: file,
 				fields: fields,
-				search: file.status + ' ' + file.Filename + ' ' + age + ' ' + size
+				search: { status: file.status, name: file.Filename, age: age, size: size }
 			};
 
 			data.push(item);
@@ -935,7 +935,7 @@ var EditUI = (new function($)
 			{
 				id: server.ID,
 				fields: fields,
-				search: ''
+				search: {}
 			};
 			data.push(item);
 		}
@@ -1161,7 +1161,7 @@ var LogTab = (new function($)
 				{
 					id: message,
 					fields: fields,
-					search: message.Kind + ' ' + time + ' ' + message.Text
+					search: { kind: message.Kind, time: time, text: message.Text }
 				};
 
 				data.unshift(item);

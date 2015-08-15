@@ -1,7 +1,7 @@
 /*
  * This file is part of nzbget
  *
- * Copyright (C) 2012-2013 Andrey Prygunkov <hugbug@users.sourceforge.net>
+ * Copyright (C) 2012-2015 Andrey Prygunkov <hugbug@users.sourceforge.net>
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -198,7 +198,7 @@ var Messages = (new function($)
 			item.time = Util.formatDateTime(item.message.Time + UISettings.timeZoneCorrection*60*60);
 		}
 
-		item.search = item.message.Kind + ' ' + item.time + ' ' + item.message.Text;
+		item.search = { kind: item.message.Kind, time: item.time, text: item.message.Text };
 	}
 
 	function renderCellCallback(cell, index, item)
