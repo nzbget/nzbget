@@ -870,7 +870,8 @@ function FastSearcher()
 						return node;
 
 					case '-':
-						node2 = _this.not(expression(false));
+						node2 = expression(false);
+						node2 = node2 ? _this.not(node2) : node2;
 						break;
 
 					case '(':
