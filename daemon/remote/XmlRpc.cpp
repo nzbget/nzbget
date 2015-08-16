@@ -1645,6 +1645,7 @@ void NzbInfoXmlCommand::AppendNZBInfoFields(NZBInfo* pNZBInfo)
 		"<member><name>FinalDir</name><value><string>%s</string></value></member>\n"
 		"<member><name>Category</name><value><string>%s</string></value></member>\n"
 		"<member><name>ParStatus</name><value><string>%s</string></value></member>\n"
+		"<member><name>ExParStatus</name><value><string>%s</string></value></member>\n"
 		"<member><name>UnpackStatus</name><value><string>%s</string></value></member>\n"
 		"<member><name>MoveStatus</name><value><string>%s</string></value></member>\n"
 		"<member><name>ScriptStatus</name><value><string>%s</string></value></member>\n"
@@ -1700,6 +1701,7 @@ void NzbInfoXmlCommand::AppendNZBInfoFields(NZBInfo* pNZBInfo)
 		"\"FinalDir\" : \"%s\",\n"
 		"\"Category\" : \"%s\",\n"
 		"\"ParStatus\" : \"%s\",\n"
+		"\"ExParStatus\" : \"%s\",\n"
 		"\"UnpackStatus\" : \"%s\",\n"
 		"\"MoveStatus\" : \"%s\",\n"
 		"\"ScriptStatus\" : \"%s\",\n"
@@ -1812,12 +1814,13 @@ void NzbInfoXmlCommand::AppendNZBInfoFields(NZBInfo* pNZBInfo)
 	char* xmlFinalDir = EncodeStr(pNZBInfo->GetFinalDir());
 	char* xmlCategory = EncodeStr(pNZBInfo->GetCategory());
 	char* xmlDupeKey = EncodeStr(pNZBInfo->GetDupeKey());
+	const char* szExParStatus = pNZBInfo->GetExtraParBlocks() > 0 ? "RECIPIENT" : pNZBInfo->GetExtraParBlocks() < 0 ? "DONOR" : "NONE";
 	
 	snprintf(szItemBuf, iItemBufSize, IsJson() ? JSON_NZB_ITEM_START : XML_NZB_ITEM_START,
 			 pNZBInfo->GetID(), xmlNZBNicename, xmlNZBNicename, szKindName[pNZBInfo->GetKind()],
 			 xmlURL, xmlNZBFilename, xmlDestDir, xmlFinalDir, xmlCategory,
-			 szParStatusName[pNZBInfo->GetParStatus()], szUnpackStatusName[pNZBInfo->GetUnpackStatus()],
-			 szMoveStatusName[pNZBInfo->GetMoveStatus()],
+			 szParStatusName[pNZBInfo->GetParStatus()], szExParStatus,
+			 szUnpackStatusName[pNZBInfo->GetUnpackStatus()], szMoveStatusName[pNZBInfo->GetMoveStatus()],
 			 szScriptStatusName[pNZBInfo->GetScriptStatuses()->CalcTotalStatus()],
 			 szDeleteStatusName[pNZBInfo->GetDeleteStatus()], szMarkStatusName[pNZBInfo->GetMarkStatus()],
 			 szUrlStatusName[pNZBInfo->GetUrlStatus()],

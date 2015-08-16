@@ -1604,10 +1604,10 @@ var HistoryEditDialog = (new function()
 
 			else if (hist.DeleteStatus === 'NONE')
 			{
-				var exParStatus = hist.ExtraParBlocks > 0 ? ' ' + '<span title="Repaired using ' + hist.ExtraParBlocks + ' par-block' + 
-						(hist.ExtraParBlocks > 1 ? 's' : '') + ' from other duplicate(s)">' + buildStatus('RECIPIENT', 'Repair: ') + '</span>' :
-					hist.ExtraParBlocks < 0 ? ' ' + '<span title="Donated ' + -hist.ExtraParBlocks + ' par-block' + 
-						(-hist.ExtraParBlocks > 1 ? 's' : '') + ' to repair other duplicate(s)">' + buildStatus('DONOR', 'Repair: ') + '</span>' : '';
+				var exParStatus = hist.ExParStatus === 'RECIPIENT' ? ' ' + '<span title="Repaired using ' + hist.ExtraParBlocks + ' par-block' + 
+						(hist.ExtraParBlocks > 1 ? 's' : '') + ' from other duplicate(s)">' + buildStatus(hist.ExParStatus, 'ExPar: ') + '</span>' :
+					hist.ExParStatus === 'DONOR' ? ' ' + '<span title="Donated ' + -hist.ExtraParBlocks + ' par-block' + 
+						(-hist.ExtraParBlocks > 1 ? 's' : '') + ' to repair other duplicate(s)">' + buildStatus(hist.ExParStatus, 'ExPar: ') + '</span>' : '';
 				status += ' ' + buildStatus(hist.ParStatus, 'Par: ') + exParStatus +
 					' ' + (Options.option('Unpack') == 'yes' || hist.UnpackStatus != 'NONE' ? buildStatus(hist.UnpackStatus, 'Unpack: ') : '')  +
 					' ' + (hist.MoveStatus === "FAILURE" ? buildStatus(hist.MoveStatus, 'Move: ') : '');
