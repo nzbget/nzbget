@@ -245,21 +245,27 @@
 	function has_words(str, words, caseSensitive)
 	{
 		var text = caseSensitive ? str : str.toLowerCase();
-		var orTest = false;
+		var notTest = false;
+		var andTest = false;
+		var notFound = false;
+		var andFound = true;
 		var orFound = false;
 
 		for (var i = 0; i < words.length; i++)
 		{
+			if (words[i].length == 0)
+				continue;
+
 			if (words[i][0] == '!')
 			{
+				notTest = true;
 				if (text.indexOf(words[i].substr(1,words[i].length)) >= 0)
-				{
-					return false;
+				{	
+					notFound = true;
 				}
 			}
 			else if (words[i][0] == '|')
 			{
-				orTest = true;
 				if (text.indexOf(words[i].substr(1,words[i].length)) >= 0)
 				{
 					orFound = true;
@@ -267,17 +273,28 @@
 			}
 			else
 			{
+				andTest = true;
 				if (text.indexOf(words[i]) === -1)
 				{
-					return false;
+					andFound = false;
 				}
 			}
 		}
-		if (orTest && !orFound)
+
+		var rc = true;
+		if (notTest && notFound)
 		{
-			return false;
+			rc = false
 		}
-		return true;
+		if (andTest && !andFound)
+		{
+			rc = false
+		}
+		if (orFound && !rc)
+		{
+			rc = true
+		}
+		return rc;
 	}
 
 	function updateContent(content)

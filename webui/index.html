@@ -144,16 +144,38 @@
 			<!-- SEARCH -->
 			<div class="btn-toolbar pull-right" id="SearchBlock">
 				<div class="navbar-search" style="display: none;">
-					<input id="DownloadsTable_filter" class="search-query" type="text" placeholder="Search downloads">
+					<button class="btn-group btn btn-inverse dropdown-toggle search-terms" data-toggle="dropdown" id="DownloadsTable_Terms">
+						<ul class="dropdown-menu menu-refresh">
+							<li class="menu-header">Search Terms</li>
+							<li><a href="#" onclick="Downloads.filter('|PP-Queued !Queued !Paused')">Active (!Queued !Paused)</a></li>
+							<li><a href="#" onclick="Downloads.filter('Paused')">Paused</a></li>
+						</ul>
+						<input id="DownloadsTable_filter" class="search-query" type="text" placeholder="Search downloads">
+					</button>
 					<i id="DownloadsTable_clearfilter" class="icon-remove-white search-clear" title="Clear"></i>
 
-					<input id="HistoryTable_filter" class="search-query" type="text" placeholder="Search history">
+					<button class="btn-group btn btn-inverse dropdown-toggle search-terms" data-toggle="dropdown" id="HistoryTable_Terms">
+						<ul class="dropdown-menu menu-refresh">
+							<li class="menu-header">Search Terms</li>
+						</ul>
+						<input id="HistoryTable_filter" class="search-query" type="text" placeholder="Search history">
+					</button>
 					<i id="HistoryTable_clearfilter" class="icon-remove-white search-clear" title="Clear"></i>
 
-					<input id="MessagesTable_filter" class="search-query" type="text" placeholder="Search messages">
+					<button class="btn-group btn btn-inverse dropdown-toggle search-terms" data-toggle="dropdown" id="MessagesTable_Terms">
+						<ul class="dropdown-menu menu-refresh">
+							<li class="menu-header">Search Terms</li>
+						</ul>
+						<input id="MessagesTable_filter" class="search-query" type="text" placeholder="Search messages">
+					</button>
 					<i id="MessagesTable_clearfilter" class="icon-remove-white search-clear" title="Clear"></i>
 
-					<input id="ConfigTable_filter" class="search-query" type="text" placeholder="Search settings">
+					<button class="btn-group btn btn-inverse dropdown-toggle search-terms" data-toggle="dropdown" id="ConfigTable_Terms">
+						<ul class="dropdown-menu menu-refresh">
+							<li class="menu-header">Search Terms</li>
+						</ul>
+						<input id="ConfigTable_filter" class="search-query" type="text" placeholder="Search settings">
+					</button>
 					<i id="ConfigTable_clearfilter" class="icon-remove-white search-clear" title="Clear"></i>
 				</div>
 			</div>

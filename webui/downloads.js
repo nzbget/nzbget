@@ -41,6 +41,7 @@ var Downloads = (new function($)
 	var $DownloadQueueEmpty;
 	var $DownloadsRecordsPerPage;
 	var $DownloadsTable_Name;
+	var $DownloadsTable_Filter;
 
 	// State
 	var notification = null;
@@ -80,6 +81,8 @@ var Downloads = (new function($)
 		$DownloadQueueEmpty = $('#DownloadQueueEmpty');
 		$DownloadsRecordsPerPage = $('#DownloadsRecordsPerPage');
 		$DownloadsTable_Name = $('#DownloadsTable_Name');
+		$DownloadsTable_Filter = $('#DownloadsTable_filter'); 
+
 
 		var recordsPerPage = UISettings.read('DownloadsRecordsPerPage', 10);
 		$DownloadsRecordsPerPage.val(recordsPerPage);
@@ -556,6 +559,12 @@ var Downloads = (new function($)
 		notification = '#Notif_Downloads_Sorted';
 		RPC.call('editqueue', ['GroupSort', 0, order, checkedEditIDs], editCompleted);
 	}
+
+	this.filter = function(type)
+	{
+		$DownloadsTable_Filter.val(type);
+	}
+
 }(jQuery));
 
 
