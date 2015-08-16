@@ -961,14 +961,22 @@ function FastSearcher()
 		if (field !== undefined)
 		{
 			value = data[field];
+			if (value === undefined)
+			{
+				if (this.nameMap === undefined)
+				{
+					this.buildNameMap(data);
+				}
+				value = data[this.nameMap[field.toLowerCase()]];
+			}
 		}
 		else
 		{
 			if (data._search === true)
 			{
-				for (var f in data)
+				for (var prop in data)
 				{
-					value += ' ' + data[f];
+					value += ' ' + data[prop];
 				}
 			}
 			else
@@ -980,5 +988,15 @@ function FastSearcher()
 			}
 		}
 		return value;
+	}
+
+	this.nameMap;
+	this.buildNameMap = function(data)
+	{
+		this.nameMap = {};
+		for (var prop in data)
+		{
+			this.nameMap[prop.toLowerCase()] = prop;
+		}
 	}
 }
