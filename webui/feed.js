@@ -125,7 +125,6 @@ var FeedDialog = (new function($)
 			{
 				filterInput: '#FeedDialog_ItemTable_filter',
 				pagerContainer: '#FeedDialog_ItemTable_pager',
-				filterCaseSensitive: false,
 				headerCheck: '#FeedDialog_ItemTable > thead > tr:first-child',
 				pageSize: pageSize,
 				hasHeader: true,
@@ -282,7 +281,7 @@ var FeedDialog = (new function($)
 				id: item.URL,
 				item: item,
 				fields: fields,
-				search: item.Status + ' ' + itemName + ' ' + item.Category  + ' ' + age + ' ' + size
+				data: { status: item.Status, name: itemName, category: item.Category, age: age, size: size, _search: true }
 			};
 
 			data.push(item);
@@ -460,7 +459,6 @@ var FeedFilterDialog = (new function($)
 			{
 				filterInput: '',
 				pagerContainer: '#FeedFilterDialog_ItemTable_pager',
-				filterCaseSensitive: false,
 				headerCheck: '',
 				pageSize: pageSize,
 				hasHeader: true,
@@ -672,7 +670,7 @@ var FeedFilterDialog = (new function($)
 				id: item.URL,
 				item: item,
 				fields: fields,
-				search: item.Match + ' ' + itemName + ' ' + item.Category  + ' ' + age + ' ' + size
+				data: { match: item.Match, rule: item.Rule, title: itemName, category: item.Category, age: age, size: size, _search: true }
 			};
 
 			data.push(dataItem);

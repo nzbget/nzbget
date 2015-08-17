@@ -1348,7 +1348,6 @@ var LimitDialog = (new function($)
 			{
 				id: server.ID,
 				fields: fields,
-				search: ''
 			};
 			data.push(item);
 

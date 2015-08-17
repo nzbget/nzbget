@@ -76,7 +76,6 @@ var DownloadsEditDialog = (new function($)
 			{
 				filterInput: '#DownloadsEdit_FileTable_filter',
 				pagerContainer: '#DownloadsEdit_FileTable_pager',
-				filterCaseSensitive: false,
 				headerCheck: '#DownloadsEdit_FileTable > thead > tr:first-child',
 				pageSize: 10000,
 				hasHeader: true,
@@ -631,7 +630,7 @@ var DownloadsEditDialog = (new function($)
 				id: file.ID,
 				file: file,
 				fields: fields,
-				search: file.status + ' ' + file.Filename + ' ' + age + ' ' + size
+				data: { status: file.status, name: file.Filename, age: age, size: size, _search: true }
 			};
 
 			data.push(item);
@@ -936,7 +935,6 @@ var EditUI = (new function($)
 			{
 				id: server.ID,
 				fields: fields,
-				search: ''
 			};
 			data.push(item);
 		}
@@ -1107,7 +1105,6 @@ var LogTab = (new function($)
 			{
 				filterInput: '#' + name + 'Edit_LogTable_filter',
 				pagerContainer: '#' + name + 'Edit_LogTable_pager',
-				filterCaseSensitive: false,
 				pageSize: recordsPerPage,
 				maxPages: 3,
 				hasHeader: true,
@@ -1163,7 +1160,7 @@ var LogTab = (new function($)
 				{
 					id: message,
 					fields: fields,
-					search: message.Kind + ' ' + time + ' ' + message.Text
+					data: { kind: message.Kind, time: time, text: message.Text, _search: true }
 				};
 
 				data.unshift(item);

@@ -1754,6 +1754,8 @@ var Config = (new function($)
 		$ConfigTabBadgeEmpty.show();
 	}
 
+	var searcher = new FastSearcher();
+
 	function search()
 	{
 		$ConfigTabBadge.show();
@@ -1762,7 +1764,8 @@ var Config = (new function($)
 
 		$ConfigData.children().hide();
 
-		var words = filterText.toLowerCase().split(' ');
+		searcher.compile(filterText);
+		
 		var total = 0;
 		var available = 0;
 
@@ -1780,7 +1783,7 @@ var Config = (new function($)
 						if (!option.template)
 						{
 							total++;
-							if (filterOption(option, words))
+							if (filterOption(option))
 							{
 								available++;
 								var opt = $('#' + option.formId).closest('.control-group');
@@ -1792,7 +1795,7 @@ var Config = (new function($)
 			}
 		}
 
-		filterStaticPages(words);
+		filterStaticPages();
 
 		markLastControlGroup();
 
@@ -1802,33 +1805,20 @@ var Config = (new function($)
 		updateTabInfo($ConfigTabBadge, { filter: true, available: available, total: total});
 	}
 
-	function filterOption(option, words)
+	function filterOption(option)
 	{
-		return filterWords(option.caption + ' ' + option.description + ' ' + (option.value === null ? '' : option.value), words);
+		return searcher.exec({ name: option.caption, description: option.description, value: (option.value === null ? '' : option.value), _search: ['name', 'description', 'value'] });
 	}
 
-	function filterStaticPages(words)
+	function filterStaticPages()
 	{
 		$ConfigData.children().filter('.config-static').each(function(index, element)
 			{
-				var text = $(element).text();
-				Util.show(element, filterWords(text, words));
+				var name = $('.control-label', element).text();
+				var description = $('.controls', element).text();
+				var found = searcher.exec({ name: name, description: description, value: '', _search: ['name', 'description'] });
+				Util.show(element, found);
 			});
-	}
-
-	function filterWords(text, words)
-	{
-		var search = text.toLowerCase();
-
-		for (var i = 0; i < words.length; i++)
-		{
-			if (search.indexOf(words[i]) === -1)
-			{
-				return false;
-			}
-		}
-
-		return true;
 	}
 
 	function markLastControlGroup()
@@ -2038,7 +2028,6 @@ var ScriptListDialog = (new function($)
 			{
 				id: scriptName,
 				fields: fields,
-				search: ''
 			};
 			data.push(item);
 
@@ -2518,7 +2507,6 @@ var RestoreSettingsDialog = (new function($)
 					{
 						id: section.id,
 						fields: fields,
-						search: ''
 					};
 					data.push(item);
 				}

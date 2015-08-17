@@ -67,7 +67,6 @@ var History = (new function($)
 				pagerContainer: $('#HistoryTable_pager'),
 				infoContainer: $('#HistoryTable_info'),
 				headerCheck: $('#HistoryTable > thead > tr:first-child'),
-				filterCaseSensitive: false,
 				pageSize: recordsPerPage,
 				maxPages: UISettings.miniTheme ? 1 : 5,
 				pageDots: !UISettings.miniTheme,
@@ -145,6 +144,8 @@ var History = (new function($)
 		}
 	}
 
+	var SEARCH_FIELDS = ['name', 'status', 'priority', 'category', 'age', 'size', 'time'];
+
 	this.redraw = function()
 	{
 		var data = [];
@@ -154,39 +155,26 @@ var History = (new function($)
 			var hist = history[i];
 
 			var kind = hist.Kind;
-			var statustext = HistoryUI.buildStatusText(hist);
-			var size = kind === 'URL' ? '' : Util.formatSizeMB(hist.FileSizeMB);
-			var time = Util.formatDateTime(hist.HistoryTime + UISettings.timeZoneCorrection*60*60);
-			var dupe = DownloadsUI.buildDupeText(hist.DupeKey, hist.DupeScore, hist.DupeMode);
-			var category = '';
+			hist.status = HistoryUI.buildStatusText(hist);
+			hist.name = hist.Name;
+			hist.size = kind === 'URL' ? '' : Util.formatSizeMB(hist.FileSizeMB);
+			hist.sizemb = hist.FileSizeMB;
+			hist.sizegb = hist.FileSizeMB / 1024;
+			hist.time = Util.formatDateTime(hist.HistoryTime + UISettings.timeZoneCorrection*60*60);
+			hist.category = kind !== 'DUP' ? hist.Category : '';
+			hist.dupe = DownloadsUI.buildDupeText(hist.DupeKey, hist.DupeScore, hist.DupeMode);
+			var age_sec = kind === 'NZB' ? new Date().getTime() / 1000 - (hist.MinPostTime + UISettings.timeZoneCorrection*60*60) : 0;
+			hist.age = kind === 'NZB' ? Util.formatAge(hist.MinPostTime + UISettings.timeZoneCorrection*60*60) : '';
+			hist.agem = Util.round0(age_sec / 60);
+			hist.ageh = Util.round0(age_sec / (60*60));
+			hist.aged = Util.round0(age_sec / (60*60*24));
 
-			var textname = hist.Name;
-			var age = '';
-			if (kind === 'NZB')
-			{
-				age = Util.formatAge(hist.MinPostTime + UISettings.timeZoneCorrection*60*60);
-				textname += ' URL';
-			}
-			else if (kind === 'URL')
-			{
-				textname += ' URL';
-			}
-			else if (kind === 'DUP')
-			{
-				textname += ' hidden';
-			}
-
-			if (kind !== 'DUP')
-			{
-				category = hist.Category;
-			}
+			hist._search = SEARCH_FIELDS;
 
 			var item =
 			{
 				id: hist.ID,
-				hist: hist,
-				data: { time: time, age: age, size: size },
-				search: statustext + ' ' + time + ' ' + textname + ' ' + dupe + ' ' + category + ' ' +  age + ' ' + size
+				data: hist,
 			};
 
 			data.push(item);
@@ -200,7 +188,7 @@ var History = (new function($)
 
 	function fillFieldsCallback(item)
 	{
-		var hist = item.hist;
+		var hist = item.data;
 
 		var status = HistoryUI.buildStatus(hist);
 
@@ -400,7 +388,7 @@ var History = (new function($)
 
 	function filterCallback(item)
 	{
-		return !activeTab || curFilter === 'ALL' || item.hist.FilterKind === curFilter;
+		return !activeTab || curFilter === 'ALL' || item.data.FilterKind === curFilter;
 	}
 
 	function initFilterButtons()
@@ -419,7 +407,7 @@ var History = (new function($)
 
 		for (var i=0; i < data.length; i++)
 		{
-			var hist = data[i].hist;
+			var hist = data[i].data;
 			switch (hist.FilterKind)
 			{
 				case 'SUCCESS': countSuccess++; break;

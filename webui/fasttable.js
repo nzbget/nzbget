@@ -1,7 +1,7 @@
 /*
  * This file is part of nzbget
  *
- * Copyright (C) 2012-2013 Andrey Prygunkov <hugbug@users.sourceforge.net>
+ * Copyright (C) 2012-2015 Andrey Prygunkov <hugbug@users.sourceforge.net>
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -75,6 +75,11 @@
 
 	var methods =
 	{
+		defaults : function()
+		{
+			return defaults;
+		},
+		
 		init : function(options)
 		{
 			return this.each(function()
@@ -97,7 +102,9 @@
 					config.pagerContainer = $(config.pagerContainer);
 					config.infoContainer = $(config.infoContainer);
 					config.headerCheck = $(config.headerCheck);
-
+					
+					var searcher = new FastSearcher();
+					
 					// Create a timer which gets reset upon every keyup event.
 					// Perform filter only when the timer's wait is reached (user finished typing or paused long enough to elapse the timer).
 					// Do not perform the filter is the query has not changed.
@@ -120,7 +127,7 @@
 
 						var timerCallback = function()
 						{
-							var value = inputBox.value;
+							var value = inputBox.value.trim();
 							var data = $this.data('fasttable');
 
 							if ((value != data.lastFilter) || (overrideBool))
@@ -129,6 +136,8 @@
 								if (data.content)
 								{
 									data.curPage = 1;
+									data.hasFilter = value !== '';
+									data.searcher.compile(value);
 									refresh(data);
 								}
 								if (data.config.filterInputCallback)
@@ -150,6 +159,8 @@
 						var data = $this.data('fasttable');
 						data.lastFilter = '';
 						data.config.filterInput.val('');
+						data.hasFilter = false;
+						data.searcher.compile('');
 						if (data.content)
 						{
 							refresh(data);
@@ -192,7 +203,8 @@
 							pageDots : Util.parseBool(config.pageDots),
 							curPage : 1,
 							checkedRows: [],
-							lastClickedRowID: null
+							lastClickedRowID: null,
+							searcher: searcher
 						});
 				}
 			});
@@ -242,44 +254,6 @@
 		titleCheckClick : titleCheckClick
 	};
 
-	function has_words(str, words, caseSensitive)
-	{
-		var text = caseSensitive ? str : str.toLowerCase();
-		var orTest = false;
-		var orFound = false;
-
-		for (var i = 0; i < words.length; i++)
-		{
-			if (words[i][0] == '!')
-			{
-				if (text.indexOf(words[i].substr(1,words[i].length)) >= 0)
-				{
-					return false;
-				}
-			}
-			else if (words[i][0] == '|')
-			{
-				orTest = true;
-				if (text.indexOf(words[i].substr(1,words[i].length)) >= 0)
-				{
-					orFound = true;
-				}
-			}
-			else
-			{
-				if (text.indexOf(words[i]) === -1)
-				{
-					return false;
-				}
-			}
-		}
-		if (orTest && !orFound)
-		{
-			return false;
-		}
-		return true;
-	}
-
 	function updateContent(content)
 	{
 		var data = $(this).data('fasttable');
@@ -301,23 +275,17 @@
 
 	function refilter(data)
 	{
-		var filterInput = data.config.filterInput;
-		var phrase = filterInput.length > 0 ? filterInput.val() : '';
-		var caseSensitive = data.config.filterCaseSensitive;
-		var words = caseSensitive ? phrase.split(' ') : phrase.toLowerCase().split(' ');
-		var hasFilter = !(words.length === 1 && words[0] === '');
-
 		data.availableContent = [];
 		data.filteredContent = [];
 		for (var i = 0; i < data.content.length; i++)
 		{
 			var item = data.content[i];
-			if (hasFilter && item.search === undefined && data.config.fillSearchCallback)
+			if (data.hasFilter && item.search === undefined && data.config.fillSearchCallback)
 			{
 				data.config.fillSearchCallback(item);
 			}
-			
-			if (!hasFilter || has_words(item.search, words, caseSensitive))
+
+			if (!data.hasFilter || data.searcher.exec(item.data))
 			{
 				data.availableContent.push(item);
 				if (!data.config.filterCallback || data.config.filterCallback(item))
@@ -797,7 +765,6 @@
 	{
 		filterInput: '#table-filter',
 		filterClearButton: '#table-clear',
-		filterCaseSensitive: false,
 		pagerContainer: '#table-pager',
 		infoContainer: '#table-info',
 		pageSize: 10,
@@ -818,3 +785,268 @@
 	};
 
 })(jQuery);
+
+function FastSearcher()
+{
+	'use strict';
+
+	this.source;
+	this.len;
+	this.p;
+
+	this.initLexer = function(source)
+	{
+		this.source = source;
+		this.len = source.length;
+		this.p = 0;
+	}
+	
+	this.nextToken = function()
+	{
+		while (this.p < this.len)
+		{
+			var ch = this.source[this.p++];
+			switch (ch) {
+				case ' ':
+				case '\t':
+					continue;
+
+				case '-':
+				case '(':
+				case ')':
+				case '|':
+					return ch;
+
+				default:
+					this.p--;
+					var token = '';
+					var quote = false;
+					while (this.p < this.len)
+					{
+						var ch = this.source[this.p++];
+						if (quote)
+						{
+							if (ch === '"')
+							{
+								quote = false;
+								ch = '';
+							}
+						}
+						else
+						{
+							if (ch === '"')
+							{
+								quote = true;
+								ch = '';
+							}
+							else if (' \t()|'.indexOf(ch) > -1)
+							{
+								this.p--;
+								return token;
+							}
+						}
+						token += ch;
+					}
+					return token;
+			}
+		}
+		return null;
+	}
+
+	this.compile = function(searchstr)
+	{
+		var _this = this;
+		this.initLexer(searchstr);
+
+		function expression(greedy)
+		{
+			var node = null;
+			while (true)
+			{
+				var token = _this.nextToken();
+				var node2 = null;
+				switch (token)
+				{
+					case null:
+					case ')':
+						return node;
+
+					case '-':
+						node2 = expression(false);
+						node2 = node2 ? _this.not(node2) : node2;
+						break;
+
+					case '(':
+						node2 = expression(true);
+						break;
+
+					case '|':
+						node2 = expression(false);
+						break;
+
+					default:
+						node2 = _this.term(token);
+				}
+
+				if (node && node2)
+				{
+					node = token === '|' ? _this.or(node, node2) : _this.and(node, node2);
+				}
+				else if (node2)
+				{
+					node = node2;
+				}
+
+				if (!greedy && node)
+				{
+					return node;
+				}
+			}
+		}
+
+		this.root = expression(true);
+	}
+
+	this.root = null;
+	this.data = null;
+
+	this.exec = function(data) {
+		this.data = data;
+		return this.root ? this.root.eval() : true;
+	}
+
+	this.and = function(L, R) {
+		return {
+			L: L, R: R,
+			eval: function() { return this.L.eval() && this.R.eval(); }
+		};
+	}
+
+	this.or = function(L, R) {
+		return {
+			L: L, R: R,
+			eval: function() { return this.L.eval() || this.R.eval(); }
+		};
+	}
+
+	this.not = function(M) {
+		return {
+			M: M,
+			eval: function() { return !this.M.eval();}
+		};
+	}
+
+	this.term = function(term) {
+		return this.compileTerm(term);
+	}
+
+	var COMMANDS = [ ':', '>=', '<=', '<>', '>', '<', '=' ];
+
+	this.compileTerm = function(term) {
+		var _this = this;
+		var text = term.toLowerCase();
+		var field;
+		
+		var command;
+		var commandIndex;
+		for (var i = 0; i < COMMANDS.length; i++)
+		{
+			var cmd = COMMANDS[i];
+			var p = term.indexOf(cmd);
+			if (p > -1 && (p < commandIndex || commandIndex === undefined))
+			{
+				commandIndex = p;
+				command = cmd;
+			}
+		}
+		
+		if (command !== undefined)
+		{
+			field = term.substring(0, commandIndex);
+			text = text.substring(commandIndex + command.length);
+		}
+
+		return {
+			command: command,
+			text: text,
+			field: field,
+			eval: function() { return _this.evalTerm(this); }
+		};
+	}
+	
+	this.evalTerm = function(term) {
+		var text = term.text;
+		var field = term.field;
+		var content = this.fieldValue(this.data, field);
+
+		if (content === undefined)
+		{
+			return false;
+		}
+
+		switch (term.command)
+		{
+			case undefined:
+			case ':':
+				return content.toString().toLowerCase().indexOf(text) > -1;
+			case '=':
+				return content.toString().toLowerCase() == text;
+			case '<>':
+				return content.toString().toLowerCase() != text;
+			case '>':
+				return parseInt(content) > parseInt(text);
+			case '>=':
+				return parseInt(content) >= parseInt(text);
+			case '<':
+				return parseInt(content) < parseInt(text);
+			case '<=':
+				return parseInt(content) <= parseInt(text);
+			default:
+				return false;
+		}
+	}
+
+	this.fieldValue = function(data, field) {
+		var value = '';
+		if (field !== undefined)
+		{
+			value = data[field];
+			if (value === undefined)
+			{
+				if (this.nameMap === undefined)
+				{
+					this.buildNameMap(data);
+				}
+				value = data[this.nameMap[field.toLowerCase()]];
+			}
+		}
+		else
+		{
+			if (data._search === true)
+			{
+				for (var prop in data)
+				{
+					value += ' ' + data[prop];
+				}
+			}
+			else
+			{
+				for (var i = 0; i < data._search.length; i++)
+				{
+					value += ' ' + data[data._search[i]];
+				}
+			}
+		}
+		return value;
+	}
+
+	this.nameMap;
+	this.buildNameMap = function(data)
+	{
+		this.nameMap = {};
+		for (var prop in data)
+		{
+			this.nameMap[prop.toLowerCase()] = prop;
+		}
+	}
+}

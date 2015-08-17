@@ -1,7 +1,7 @@
 /*
  * This file is part of nzbget
  *
- * Copyright (C) 2012-2013 Andrey Prygunkov <hugbug@users.sourceforge.net>
+ * Copyright (C) 2012-2015 Andrey Prygunkov <hugbug@users.sourceforge.net>
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -148,7 +148,7 @@ var Messages = (new function($)
 			var item =
 			{
 				id: message.ID,
-				message: message
+				data: message
 			};
 
 			data.unshift(item);
@@ -162,7 +162,7 @@ var Messages = (new function($)
 
 	function fillFieldsCallback(item)
 	{
-		var message = item.message;
+		var message = item.data;
 
 		var kind;
 		switch (message.Kind)
@@ -191,14 +191,14 @@ var Messages = (new function($)
 		}
 	}
 
+	var SEARCH_FIELDS = ['kind', 'time', 'text'];
+
 	function fillSearchCallback(item)
 	{
-		if (!item.time)
-		{
-			item.time = Util.formatDateTime(item.message.Time + UISettings.timeZoneCorrection*60*60);
-		}
-
-		item.search = item.message.Kind + ' ' + item.time + ' ' + item.message.Text;
+		item.data.kind = item.data.Kind;
+		item.data.text = item.data.Text;
+		item.data.time = Util.formatDateTime(item.data.Time + UISettings.timeZoneCorrection*60*60);
+		item.data._search = SEARCH_FIELDS;
 	}
 
 	function renderCellCallback(cell, index, item)
@@ -227,7 +227,7 @@ var Messages = (new function($)
 
 	function filterCallback(item)
 	{
-		return !activeTab || curFilter === 'ALL' || item.message.Kind === curFilter;
+		return !activeTab || curFilter === 'ALL' || item.data.Kind === curFilter;
 	}
 
 	function initFilterButtons()
@@ -255,7 +255,7 @@ var Messages = (new function($)
 
 		for (var i=0; i < data.length; i++)
 		{
-			var message = data[i].message;
+			var message = data[i].data;
 			switch (message.Kind)
 			{
 				case 'INFO': countInfo++; break;
