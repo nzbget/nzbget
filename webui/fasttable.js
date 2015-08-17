@@ -937,23 +937,73 @@ function FastSearcher()
 	}
 
 	this.term = function(term) {
-		var _this = this;
-		var field;
-		var colon = term.indexOf(':');
-		if (colon > -1) {
-			field = term.substring(0, colon);
-			term = term.substring(colon + 1);
-		}
-		return {
-			term: term.toLowerCase(),
-			field: field,
-			eval: function() { return _this.find(this.term, this.field); }
-		};
+		return this.compileTerm(term);
 	}
 
-	this.find = function(text, field) {
+	var COMMANDS = [ ':', '>=', '<=', '<>', '>', '<', '=' ];
+
+	this.compileTerm = function(term) {
+		var _this = this;
+		var text = term.toLowerCase();
+		var field;
+		
+		var command;
+		var commandIndex;
+		for (var i = 0; i < COMMANDS.length; i++)
+		{
+			var cmd = COMMANDS[i];
+			var p = term.indexOf(cmd);
+			if (p > -1 && (p < commandIndex || commandIndex === undefined))
+			{
+				commandIndex = p;
+				command = cmd;
+			}
+		}
+		
+		if (command !== undefined)
+		{
+			field = term.substring(0, commandIndex);
+			text = text.substring(commandIndex + command.length);
+		}
+
+		return {
+			command: command,
+			text: text,
+			field: field,
+			eval: function() { return _this.evalTerm(this); }
+		};
+	}
+	
+	this.evalTerm = function(term) {
+		var text = term.text;
+		var field = term.field;
 		var content = this.fieldValue(this.data, field);
-		return content !== undefined ? content.toString().toLowerCase().indexOf(text) > -1 : false;
+
+		if (content === undefined)
+		{
+			return false;
+		}
+
+		switch (term.command)
+		{
+			case undefined:
+			case ':':
+				return content.toString().toLowerCase().indexOf(text) > -1;
+			case '=':
+				return content.toString().toLowerCase() == text;
+			case '<>':
+				return content.toString().toLowerCase() != text;
+			case '>':
+				return parseInt(content) > parseInt(text);
+			case '>=':
+				return parseInt(content) >= parseInt(text);
+			case '<':
+				return parseInt(content) < parseInt(text);
+			case '<=':
+				return parseInt(content) <= parseInt(text);
+			default:
+				return false;
+		}
 	}
 
 	this.fieldValue = function(data, field) {

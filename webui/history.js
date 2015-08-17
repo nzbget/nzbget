@@ -156,21 +156,18 @@ var History = (new function($)
 
 			var kind = hist.Kind;
 			hist.status = HistoryUI.buildStatusText(hist);
+			hist.name = hist.Name;
 			hist.size = kind === 'URL' ? '' : Util.formatSizeMB(hist.FileSizeMB);
+			hist.sizemb = hist.FileSizeMB;
+			hist.sizegb = hist.FileSizeMB / 1024;
 			hist.time = Util.formatDateTime(hist.HistoryTime + UISettings.timeZoneCorrection*60*60);
 			hist.category = kind !== 'DUP' ? hist.Category : '';
 			hist.dupe = DownloadsUI.buildDupeText(hist.DupeKey, hist.DupeScore, hist.DupeMode);
+			var age_sec = kind === 'NZB' ? new Date().getTime() / 1000 - (hist.MinPostTime + UISettings.timeZoneCorrection*60*60) : 0;
 			hist.age = kind === 'NZB' ? Util.formatAge(hist.MinPostTime + UISettings.timeZoneCorrection*60*60) : '';
-
-			hist.name = hist.Name;
-			if (kind === 'URL')
-			{
-				hist.name += ' URL';
-			}
-			else if (kind === 'DUP')
-			{
-				hist.name += ' hidden';
-			}
+			hist.agem = Util.round0(age_sec / 60);
+			hist.ageh = Util.round0(age_sec / (60*60));
+			hist.aged = Util.round0(age_sec / (60*60*24));
 
 			hist._search = SEARCH_FIELDS;
 

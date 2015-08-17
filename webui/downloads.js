@@ -171,11 +171,19 @@ var Downloads = (new function($)
 			group.priority = DownloadsUI.buildPriorityText(group.MaxPriority);
 			group.category = group.Category;
 			group.estimated = DownloadsUI.buildEstimated(group);
-			group.age = Util.formatAge(group.MinPostTime + UISettings.timeZoneCorrection*60*60);
 			group.size = Util.formatSizeMB(group.FileSizeMB, group.FileSizeLo);
-			group.remaining = Util.formatSizeMB(group.RemainingSizeMB-group.PausedSizeMB, group.RemainingSizeLo-group.PausedSizeLo);
+			group.sizemb = group.FileSizeMB;
+			group.sizegb = group.FileSizeMB / 1024;
+			group.left = Util.formatSizeMB(group.RemainingSizeMB-group.PausedSizeMB, group.RemainingSizeLo-group.PausedSizeLo);
+			group.leftmb = group.RemainingSizeMB-group.PausedSizeMB;
+			group.leftgb = group.leftmb / 1024;
 			group.dupe = DownloadsUI.buildDupeText(group.DupeKey, group.DupeScore, group.DupeMode);
-			
+			var age_sec = new Date().getTime() / 1000 - (group.MinPostTime + UISettings.timeZoneCorrection*60*60);
+			group.age = Util.formatAge(group.MinPostTime + UISettings.timeZoneCorrection*60*60);
+			group.agem = Util.round0(age_sec / 60);
+			group.ageh = Util.round0(age_sec / (60*60));
+			group.aged = Util.round0(age_sec / (60*60*24));
+
 			group._search = SEARCH_FIELDS;
 
 			var item =
@@ -197,7 +205,7 @@ var Downloads = (new function($)
 		var status = DownloadsUI.buildStatus(group);
 		var priority = DownloadsUI.buildPriority(group.MaxPriority);
 		var progresslabel = DownloadsUI.buildProgressLabel(group, nameColumnWidth);
-		var progress = DownloadsUI.buildProgress(group, item.data.size, item.data.remaining, item.data.estimated);
+		var progress = DownloadsUI.buildProgress(group, item.data.size, item.data.left, item.data.estimated);
 		var dupe = DownloadsUI.buildDupe(group.DupeKey, group.DupeScore, group.DupeMode);
 		
 		var age = new Date().getTime() / 1000 - (group.MinPostTime + UISettings.timeZoneCorrection*60*60);
