@@ -83,6 +83,7 @@ var Downloads = (new function($)
 
 		var recordsPerPage = UISettings.read('DownloadsRecordsPerPage', 10);
 		$DownloadsRecordsPerPage.val(recordsPerPage);
+		$('#DownloadsTable_filter').val('');
 
 		$DownloadsTable.fasttable(
 			{

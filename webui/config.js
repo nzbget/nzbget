@@ -505,6 +505,7 @@ var Config = (new function($)
 		$ConfigTitle = $('#ConfigTitle');
 		$ViewButton = $('#Config_ViewButton');
 		$LeaveConfigDialog = $('#LeaveConfigDialog');
+		$('#ConfigTable_filter').val('');
 
 		Util.show('#ConfigBackupSafariNote', $.browser.safari);
 		$('#ConfigTable_filter').val('');
