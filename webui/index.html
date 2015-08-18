@@ -144,6 +144,15 @@
 			<!-- SEARCH -->
 			<div class="btn-toolbar pull-right" id="SearchBlock">
 				<div class="navbar-search" style="display: none;">
+					<div id="SearchBlock_Caret" class="search-caret-block pull-right">
+						<button class="dropdown-toggle search-caret-button" data-toggle="dropdown"><span class="caret"></span></button>
+						<ul class="dropdown-menu menu-check" id="FilterMenu">
+							<!-- <li class="menu-header">Recent searches</li>
+							<li class="divider"></li> -->
+							<li><a data-toggle="modal" href="#QuickFilterHelp">Quick Help</a></li>
+						</ul>
+					</div>
+
 					<input id="DownloadsTable_filter" class="search-query" type="text" placeholder="Search downloads">
 					<i id="DownloadsTable_clearfilter" class="icon-remove-white search-clear" title="Clear"></i>
 
@@ -897,6 +906,44 @@
 	<p>With command <strong>Pause download</strong> you can manually pause the download queue.</p>
 	<p>The pausing of <strong>post-processing</strong> depends on how the post-processing-script handles screen output and may not always work.</p>
 	<p>The <strong>Pause/Resume Button</strong> (the round one) pauses or resumes all three activities: download, post-processing and nzb directory scan.</p>
+	</div>
+</div>
+
+<!-- *** QUICK HELP: EXPLAINING QUICK SEARCH ************************************************************ -->
+
+<div class="modal no-footer hide" id="QuickFilterHelp">
+	<div class="modal-header">
+	<a class="close" href='#' data-dismiss="modal"><i class="icon-close"></i></a>
+	<h3>Help: Explaining quick filter</h3>
+	</div>
+	<div class="modal-body">
+		<ul>
+		<li>The simplest filter is a word. The table is searched for the word and only the entries containing the word are shown.</li>
+		<li>To search only in certain column add the column name and colon before search text. For example "name:debian" will search only in column "Name".</li>
+		<li>To search for entries having more than one search word separate the words with a space. For example "debian iso".</li>
+		<li>To search for entries having ANY of the words separate the words with |. For example "debian | ubuntu" shows entries with any of these words.</li>
+		<li>To negate the condition add character - (hyphen) before the search word. For example "-iso" shows entries without word "iso".</li>
+		<li>Use parenthesis to build more complex searches. For example "(debian | ubuntu) iso" or "-(name:debian|name:ubuntu) category:iso".</li>
+		<li>Available operators:
+			<ul>
+			<li>= - exact match;</li>
+			<li>&lt;&gt; - not equal;</li>
+			<li>&gt;, &lt;, &lt;=, &gt;= - integer comparison operators.</li>
+			</ul>
+		</li>
+		<li>Special fields:
+			<ul>
+			<li><strong>sizemb, sizegb, leftmb, leftgb</strong> - initial and remaining size in MB or GB;</li>
+			<li><strong>agem, ageh, aged</strong> - post age in minutes, hours or days;</li>
+			<li><strong>priority</strong> - priority of the download (as integer value). Default priorities are: -100 (very low), -50 (low), 0 (normal), 50 (high), 100 (very high), 900 (force).</li>
+			</ul>
+		</li>
+		<li>Searchable fields in settings: <strong>name, description, value</strong>.</li>
+		</ul>
+
+		<p><span class="label label-warning">NOTE:</span>
+		This is a short documentation. For more info visit
+		<a href="http://nzbget.net/Quick_filter">nzbget.net/Quick_filter</a>.</p>
 	</div>
 </div>
 

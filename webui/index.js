@@ -303,11 +303,13 @@ var Frontend = (new function($)
 		$('.navbar-search .search-query').on('focus', function()
 		{
 			$(this).next().removeClass('icon-remove-white').addClass('icon-remove');
+			$('#SearchBlock_Caret').addClass('focused');
 		});
 
 		$('.navbar-search .search-query').on('blur', function()
 		{
 			$(this).next().removeClass('icon-remove').addClass('icon-remove-white');
+			$('#SearchBlock_Caret').removeClass('focused');
 		});
 
 		$('.navbar-search').show();
