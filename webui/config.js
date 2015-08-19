@@ -516,7 +516,7 @@ var Config = (new function($)
 
 		$ConfigNav.on('click', 'li > a', navClick);
 
-		$ConfigTable = $({});
+		$ConfigTable = $('#ConfigTable');
 		$ConfigTable.fasttable(
 			{
 				filterInput: $('#ConfigTable_filter'),

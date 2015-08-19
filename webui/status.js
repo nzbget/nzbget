@@ -26,7 +26,8 @@
  * In this module:
  *   1) Status Infos on main page (speed, time, paused state etc.);
  *   2) Statistics and Status dialog;
- *   3) Limit dialog (speed and active news servers).
+ *   3) Limit dialog (speed and active news servers);
+ *   4) Filter menu.
  */
 
 /*** STATUS INFOS ON MAIN PAGE AND STATISTICS DIALOG ****************************************/
@@ -100,6 +101,7 @@ var Status = (new function($)
 		$('body > .modal').on('hide', modalHide);
 
 		StatDialog.init();
+		FilterMenu.init();
 	}
 
 	this.update = function()
@@ -1460,5 +1462,150 @@ var LimitDialog = (new function($)
 		}
 
 		saveLimit(rate, servers);
+	}
+}(jQuery));
+
+/*** FILTER MENU *********************************************************/
+
+var FilterMenu = (new function($)
+{
+	'use strict';
+
+	var $SaveFilterDialog;
+	var $SaveFilterInput;
+	var $Table_filter;
+	var ignoreClick = false;
+	var $Table_filter;
+	var tabName;
+	var items;
+	
+	this.init = function()
+	{
+		$SaveFilterDialog = $('#SaveFilterDialog');
+		$SaveFilterInput = $('#SaveFilterInput');
+
+		if (UISettings.setFocus)
+		{
+			$SaveFilterDialog.on('shown', function ()
+			{
+				$SaveFilterInput.focus();
+			});
+		}
+	}
+
+	this.setTab = function(tabname)
+	{
+		tabName = tabname;
+		$Table_filter = $('#' + tabName + 'Table_filter');
+		load();
+	}
+
+	this.redraw = function()
+	{
+		var menu = $('#FilterMenu');
+		var menuItemTemplate = $('.filter-menu-template', menu);
+		var insertPos = $('#FilterMenu_Divider', menu);
+
+		$('.filter-menu', menu).remove();
+
+		for (var i = 0; i < items.length; i++)
+		{
+			var name = items[i].name;
+			var item = menuItemTemplate.clone().removeClass('filter-menu-template').removeClass('hide').addClass('filter-menu');
+			var t = $('span', item);
+			t.text(name);
+			var a = $('a', item);
+			a.click(applyFilter);
+			a.attr('data-id', i);
+			var im = $('button', item);
+			im.click(deleteFilter);
+			im.attr('data-id', i);
+			insertPos.before(item);
+		}
+		
+		Util.show('#FilterMenu_Empty', items.length === 0);
+		
+		if (UISettings.miniTheme)
+		{
+			Frontend.alignPopupMenu('#FilterMenu');
+		}
+	}
+
+	function applyFilter()
+	{
+		if (ignoreClick)
+		{
+			ignoreClick = false;
+			return;
+		}
+		var id = parseInt($(this).attr('data-id'));
+		$Table_filter.val(items[id].filter);
+		$('#' + tabName +'Table').fasttable('applyFilter', $Table_filter.val());
+	}
+
+	function deleteFilter()
+	{
+		ignoreClick = true;
+		var id = parseInt($(this).attr('data-id'));
+		items.splice(id, 1);
+		save();
+	}
+
+	this.saveDialogClick = function()
+	{
+		if ($Table_filter.val() === '')
+		{
+			Notification.show('#Notif_SaveFilterEmpty');
+			return;
+		}
+
+		var filter = $Table_filter.val();
+		var name = filter;
+
+		// reuse the name if the filter already exists
+		for (var i = 0; i < items.length; i++)
+		{
+			if (items[i].filter === filter)
+			{
+				name = items[i].name;
+				break;
+			}
+		}
+
+		$SaveFilterInput.val(name);
+		$SaveFilterDialog.modal();
+	}
+	
+	this.saveClick = function()
+	{
+		$SaveFilterDialog.modal('hide');
+
+		var name = $SaveFilterInput.val();
+		var filter = $Table_filter.val();
+
+		// rename if already exists
+		for (var i = 0; i < items.length; i++)
+		{
+			if (items[i].filter === filter)
+			{
+				items[i].name = name;
+				save();
+				return;
+			}
+		}
+		
+		// doesn't exist - add new
+		items.push({name: name, filter: filter});
+		save();
+	}
+
+	function load()
+	{
+		items = JSON.parse(UISettings.read('Filter_' + tabName, '[]'));
+	}
+
+	function save()
+	{
+		UISettings.write('Filter_' + tabName, JSON.stringify(items));
 	}
 }(jQuery));

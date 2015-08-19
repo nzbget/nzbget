@@ -145,10 +145,14 @@
 			<div class="btn-toolbar pull-right" id="SearchBlock">
 				<div class="navbar-search" style="display: none;">
 					<div id="SearchBlock_Caret" class="search-caret-block pull-right">
-						<button class="dropdown-toggle search-caret-button" data-toggle="dropdown"><span class="caret"></span></button>
-						<ul class="dropdown-menu menu-check" id="FilterMenu">
-							<!-- <li class="menu-header">Recent searches</li>
-							<li class="divider"></li> -->
+						<button class="search-caret-button" data-toggle="dropdown" onclick="FilterMenu.redraw()"><span class="caret"></span></button>
+						<ul class="dropdown-menu menu-with-button" id="FilterMenu">
+							<li class="menu-header">Saved filters</li>
+							<li class="menu-no-items" id="FilterMenu_Empty"><em>No saved filters</em></li>
+							<li class="filter-menu-template hide"><a href="#"><span></span><button class="btn btn-primary">Delete</button></a></li>
+							<li class="divider" id="FilterMenu_Divider"></li>
+							<li><a href="#" id="FilterMenu_Save" onclick="FilterMenu.saveDialogClick()">Save filter</a></li>
+							<li class="divider"></li>
 							<li><a data-toggle="modal" href="#QuickFilterHelp">Quick Help</a></li>
 						</ul>
 					</div>
@@ -259,9 +263,9 @@
 
 				<div class="btn-group" id="RssMenuBlock">
 					<button class="btn dropdown-toggle" data-toggle="dropdown" title="RSS Feeds"><i class="icon-rss"></i><span class="btn-caption"> Feeds </span><span class="phone-only inline">&nbsp;</span><span class="caret"></span></button>
-					<ul class="dropdown-menu" id="RssMenu">
+					<ul class="dropdown-menu menu-with-button" id="RssMenu">
 						<li class="menu-header">RSS Feeds</li>
-						<li class="feed-menu-template hide"><a href="#" title="Show feed"><table><tr><td><span></span></td><td><button class="btn btn-primary" title="Fetch feed">Fetch</button></td></tr></table></a></li>
+						<li class="feed-menu-template hide"><a href="#" title="Show feed"><span></span><button class="btn btn-primary" title="Fetch feed">Fetch</button></a></li>
 						<li class="divider" id="RssMenu_Divider"></li>
 						<li><a href="#" onclick="Feeds.fetchAll()">Fetch All Feeds</a></li>
 					</ul>
@@ -470,6 +474,7 @@
 		<div id="ConfigTab" class="tab-pane fade">
 
 			<div id="ConfigTabData">
+				<div id="ConfigTable" class=hide></div>
 				<div class="alert alert-info alert-block" id="ConfigLoadInfo">
 					<h4 class="alert-heading">Loading configuration...</h4>
 					Please wait.
@@ -892,6 +897,33 @@
 		<div class="dialog-transmit hide" style="position:absolute;margin-left:260px;" id="ScheduledPause_Transmit"><img src="img/transmit.gif"></div>
 		<a href="#" class="btn" data-dismiss="modal">Cancel</a>
 		<a href="#" class="btn btn-primary" onclick="Status.pauseForClick()">Pause</a>
+	</div>
+</div>
+
+<!-- *** SAVE FILTER ***************************************************** -->
+
+<div class="modal modal-mini hide" id="SaveFilterDialog">
+	<div class="modal-header">
+	<a class="close" href='#' data-dismiss="modal"><i class="icon-close"></i></a>
+	<h3>Save Filter</h3>
+	</div>
+	<div class="modal-body">
+		<div class="form-horizontal">
+			<fieldset>
+				<div class="control-group">
+					<label class="control-label" for="SaveFilterGroup">Name</label>
+					<div class="controls" id="SaveFilterInputGroup">
+						<div class="input-append">
+							<input class="input" id="SaveFilterInput" type="text">
+						</div>
+					</div>
+				</div>
+			</fieldset>
+		</div>
+	</div>
+	<div class="modal-footer">
+		<a href="#" class="btn" data-dismiss="modal">Cancel</a>
+		<a href="#" class="btn btn-primary" onclick="FilterMenu.saveClick()">Save</a>
 	</div>
 </div>
 
@@ -2440,8 +2472,8 @@
 
 <!-- ***  ALERT: NOT IMPLEMENTED***************************************************** -->
 
-<div id="Notif_NotImplemented" data-duration="1000" class="alert alert-error alert-center alert-center-small hide">
-    <strong>Not yet implemented</strong>
+<div id="Notif_NotImplemented" data-duration="1000" class="alert alert-error alert-center-small alert-center hide">
+    <strong>Not yet implemented<span id="Notif_NotImplemented_Param"></span></strong>
 </div>
 
 <!-- *** RELOAD DIALOG DATA ***************************************** -->
@@ -2671,6 +2703,10 @@
 
 <div id="Notif_Config_TestConnectionOK" data-duration="1000" class="alert alert-success alert-center alert-center-small hide">
     <strong>Connection successful</strong>
+</div>
+
+<div id="Notif_SaveFilterEmpty" data-duration="2000" class="alert alert-error alert-center alert-center-small hide">
+    <strong>Please type a search string first</strong>
 </div>
 
 </body>

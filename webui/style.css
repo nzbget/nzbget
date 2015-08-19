@@ -434,35 +434,39 @@ body.navfixed.scrolled .navbar-fixed-top .navbar-inner {
 	overflow: hidden;
 }
 
-#RssMenu table {
-	width: 100%;
+.menu-with-button a {
+	padding-right: 70px;
+    overflow: hidden;
 }
 
-#RssMenu table td:nth-child(2) {
-	text-align: right;
-	padding-left: 10px;
-	padding-top: 0;
-	padding-bottom: 0;
-}
-
-#RssMenu a .btn {
+.menu-with-button a .btn,
+.phone .menu-with-button a .btn {
 	visibility: hidden;
 	height: 22px;
 	line-height: 12px;
 	font-size: 8pt;
 	padding: 2px 7px;
+	margin-right: 0px;
 	margin-top: -2px;
 	margin-bottom: -1px;
+	right: 15px;
+	position: absolute;
 }
 
-#RssMenu a:hover .btn {
+.menu-with-button a:hover .btn {
 	visibility: visible;
+}
+
+.menu-with-button .menu-no-items {
+	padding-left: 15px;
 }
 
 #FilterMenu {
 	left: -3px;
 	right: auto;
+	margin-top: 3px;
 	min-width: 170px;
+	max-width: 270px;
 }
 
 #FilterMenu::after {
@@ -2264,6 +2268,13 @@ body.phone,
 
 .phone .dropdown-toggle {
 	position: static;
+}
+
+.phone #FilterMenu {
+	left: inherit;
+	right: inherit;
+	margin-top: inherit;
+	width: inherit;
 }
 
 /* hide arrow */
