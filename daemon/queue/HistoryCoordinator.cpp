@@ -247,9 +247,28 @@ void HistoryCoordinator::HistoryHide(DownloadQueue* pDownloadQueue, HistoryInfo*
 	info("Collection %s removed from history", szNiceName);
 }
 
+void HistoryCoordinator::PrepareEdit(DownloadQueue* pDownloadQueue, IDList* pIDList, DownloadQueue::EEditAction eAction)
+{
+	// First pass: when marking multiple items - mark them bad without performing the mark-logic,
+	// this will later (on second step) avoid moving other items to download queue, if they are marked bad too.
+	if (eAction == DownloadQueue::eaHistoryMarkBad)
+	{
+		for (IDList::iterator itID = pIDList->begin(); itID != pIDList->end(); itID++)
+		{
+			int iID = *itID;
+			HistoryInfo* pHistoryInfo = pDownloadQueue->GetHistory()->Find(iID);
+			if (pHistoryInfo && pHistoryInfo->GetKind() == HistoryInfo::hkNzb)
+			{
+				pHistoryInfo->GetNZBInfo()->SetMarkStatus(NZBInfo::ksBad);
+			}
+		}
+	}
+}
+
 bool HistoryCoordinator::EditList(DownloadQueue* pDownloadQueue, IDList* pIDList, DownloadQueue::EEditAction eAction, int iOffset, const char* szText)
 {
 	bool bOK = false;
+	PrepareEdit(pDownloadQueue, pIDList, eAction);
 
 	for (IDList::iterator itID = pIDList->begin(); itID != pIDList->end(); itID++)
 	{

@@ -864,7 +864,14 @@ public:
 	void				GetName(char* szBuffer, int iSize);		// needs locking (for shared objects)
 };
 
-typedef std::deque<HistoryInfo*> HistoryList;
+typedef std::deque<HistoryInfo*> HistoryListBase;
+
+class HistoryList : public HistoryListBase
+{
+public:
+						~HistoryList();
+	HistoryInfo*		Find(int iID);
+};
 
 class DownloadQueue : public Subject
 {
@@ -959,7 +966,6 @@ protected:
 	static void				Loaded() { g_bLoaded = true; }
 
 public:
-	virtual					~DownloadQueue();
 	static bool				IsLoaded() { return g_bLoaded; }
 	static DownloadQueue*	Lock();
 	static void				Unlock();

@@ -41,6 +41,7 @@ private:
 	bool				HistorySetName(HistoryInfo* pHistoryInfo, const char* szText);
 	void				HistoryTransformToDup(DownloadQueue* pDownloadQueue, HistoryInfo* pHistoryInfo, int rindex);
 	void				SaveQueue(DownloadQueue* pDownloadQueue);
+	void				PrepareEdit(DownloadQueue* pDownloadQueue, IDList* pIDList, DownloadQueue::EEditAction eAction);
 
 protected:
 	virtual int			ServiceInterval() { return 600000; }

@@ -1398,14 +1398,29 @@ void HistoryInfo::GetName(char* szBuffer, int iSize)
 	}
 }
 
-DownloadQueue::~DownloadQueue()
+
+HistoryList::~HistoryList()
 {
-	for (HistoryList::iterator it = m_History.begin(); it != m_History.end(); it++)
+	for (iterator it = begin(); it != end(); it++)
 	{
 		delete *it;
 	}
-	m_History.clear();
 }
+
+HistoryInfo* HistoryList::Find(int iID)
+{
+	for (iterator it = begin(); it != end(); it++)
+	{
+		HistoryInfo* pHistoryInfo = *it;
+		if (pHistoryInfo->GetID() == iID)
+		{
+			return pHistoryInfo;
+		}
+	}
+
+	return NULL;
+}
+
 
 DownloadQueue* DownloadQueue::Lock()
 {
