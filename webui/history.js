@@ -59,6 +59,7 @@ var History = (new function($)
 
 		var recordsPerPage = UISettings.read('HistoryRecordsPerPage', 10);
 		$HistoryRecordsPerPage.val(recordsPerPage);
+		$('#HistoryTable_filter').val('');
 
 		$HistoryTable.fasttable(
 			{

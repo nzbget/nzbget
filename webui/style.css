@@ -356,7 +356,7 @@ body.navfixed.scrolled .navbar-fixed-top .navbar-inner {
 .navbar-search .search-query:focus,
 .navbar-search .search-query.focused {
 	width: 130px;
-	padding: 3px 28px 3px 9px;
+	padding: 3px 28px 3px 25px;
 	-webkit-border-radius: 12px;
 	-moz-border-radius: 12px;
 	border-radius: 12px;
@@ -374,6 +374,42 @@ body.navfixed.scrolled .navbar-fixed-top .navbar-inner {
 	cursor: pointer;
 	opacity: 0.65;
 	filter: alpha(opacity=65);
+}
+
+.search-caret-block {
+	left: -2px;
+	top: 2px;
+	position: absolute;
+}
+
+.search-caret-button {
+	border: 0;
+	background: none;
+	width: 24px;
+	height: 22px;
+	padding: 3px;
+	line-height: 10px;
+	vertical-align: top;
+}
+
+.search-caret-button .caret {
+	margin-top: 3px;
+	margin-left: 9px;
+	border-top-color: #ffffff;
+	border-bottom-color: #ffffff;
+	opacity: 0.75;
+	filter: alpha(opacity=75);
+}
+
+.focused .search-caret-button .caret {
+	margin-left: 5px;
+	border-top-color: #000;
+	border-bottom-color: #000;
+}
+
+.search-caret-button:hover .caret {
+ 	opacity: 1;
+	filter: alpha(opacity=100);
 }
 
 /* MENUS */
@@ -398,29 +434,49 @@ body.navfixed.scrolled .navbar-fixed-top .navbar-inner {
 	overflow: hidden;
 }
 
-#RssMenu table {
-	width: 100%;
+.menu-with-button a {
+	padding-right: 70px;
+    overflow: hidden;
 }
 
-#RssMenu table td:nth-child(2) {
-	text-align: right;
-	padding-left: 10px;
-	padding-top: 0;
-	padding-bottom: 0;
-}
-
-#RssMenu a .btn {
+.menu-with-button a .btn,
+.phone .menu-with-button a .btn {
 	visibility: hidden;
 	height: 22px;
 	line-height: 12px;
 	font-size: 8pt;
 	padding: 2px 7px;
+	margin-right: 0px;
 	margin-top: -2px;
 	margin-bottom: -1px;
+	right: 15px;
+	position: absolute;
 }
 
-#RssMenu a:hover .btn {
+.menu-with-button a:hover .btn {
 	visibility: visible;
+}
+
+.menu-with-button .menu-no-items {
+	padding-left: 15px;
+}
+
+#FilterMenu {
+	left: -3px;
+	right: auto;
+	margin-top: 3px;
+	min-width: 170px;
+	max-width: 270px;
+}
+
+#FilterMenu::after {
+    left: 13px;
+    right: auto;
+}
+
+#FilterMenu::before {
+    left: 12px;
+    right: auto;
 }
 
 #DownloadsEdit_ActionsMenu,
@@ -2041,7 +2097,7 @@ body.phone,
 .phone .navbar-search .search-query:focus,
 .phone .navbar-search .search-query.focused {
 	width: 140px;
-	padding: 4px 28px 4px 9px;
+	padding: 4px 28px 4px 28px;
 	font-size: 16px;
 	-webkit-border-radius: 16px;
 	-moz-border-radius: 16px;
@@ -2212,6 +2268,13 @@ body.phone,
 
 .phone .dropdown-toggle {
 	position: static;
+}
+
+.phone #FilterMenu {
+	left: inherit;
+	right: inherit;
+	margin-top: inherit;
+	width: inherit;
 }
 
 /* hide arrow */
@@ -2492,7 +2555,7 @@ body.phone,
 	}
 }
 
-@media (max-width: 529px) {
+@media (max-width: 549px) {
 	#Logo {
 		display: none;
 	}

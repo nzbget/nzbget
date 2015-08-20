@@ -129,21 +129,9 @@
 						{
 							var value = inputBox.value.trim();
 							var data = $this.data('fasttable');
-
-							if ((value != data.lastFilter) || (overrideBool))
+							if ((value != data.lastFilter) || overrideBool)
 							{
-								data.lastFilter = value;
-								if (data.content)
-								{
-									data.curPage = 1;
-									data.hasFilter = value !== '';
-									data.searcher.compile(value);
-									refresh(data);
-								}
-								if (data.config.filterInputCallback)
-								{
-									data.config.filterInputCallback(value);
-								}								
+								applyFilter(data, value);
 							}
 						};
 
@@ -157,18 +145,8 @@
 					config.filterClearButton.click(function()
 					{
 						var data = $this.data('fasttable');
-						data.lastFilter = '';
 						data.config.filterInput.val('');
-						data.hasFilter = false;
-						data.searcher.compile('');
-						if (data.content)
-						{
-							refresh(data);
-						}
-						if (data.config.filterClearCallback)
-						{
-							data.config.filterClearCallback();
-						}								
+						applyFilter(data, '');
 					});
 						
 					config.pagerContainer.on('click', 'li', function (e)
@@ -229,6 +207,11 @@
 
 		setCurPage : setCurPage,
 		
+		applyFilter : function(filter)
+		{
+			applyFilter($(this).data('fasttable'), filter);
+		},
+
 		filteredContent : function()
 		{
 			return $(this).data('fasttable').filteredContent;
@@ -262,6 +245,26 @@
 			data.content = content;
 		}
 		refresh(data);
+	}
+
+	function applyFilter(data, filter)
+	{
+		data.lastFilter = filter;
+		if (data.content)
+		{
+			data.curPage = 1;
+			data.hasFilter = filter !== '';
+			data.searcher.compile(filter);
+			refresh(data);
+		}
+		if (filter !== '' && data.config.filterInputCallback)
+		{
+			data.config.filterInputCallback(filter);
+		}								
+		if (filter === '' && data.config.filterClearCallback)
+		{
+			data.config.filterClearCallback();
+		}								
 	}
 
 	function refresh(data)

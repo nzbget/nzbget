@@ -59,6 +59,7 @@ var Messages = (new function($)
 
 		var recordsPerPage = UISettings.read('MessagesRecordsPerPage', 10);
 		$MessagesRecordsPerPage.val(recordsPerPage);
+		$('#MessagesTable_filter').val('');
 
 		$MessagesTable.fasttable(
 			{
