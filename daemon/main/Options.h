@@ -166,7 +166,7 @@ public:
 							bool bTLS, const char* szCipher, int iMaxConnections, int iRetention,
 							int iLevel, int iGroup) = 0;
 		virtual void	AddFeed(int iID, const char* szName, const char* szUrl, int iInterval,
-							const char* szFilter, bool bPauseNzb, const char* szCategory, int iPriority) {}
+							const char* szFilter, bool bBacklog, bool bPauseNzb, const char* szCategory, int iPriority) {}
 		virtual void	AddTask(int iID, int iHours, int iMinutes, int iWeekDaysBits, ESchedulerCommand eCommand,
 							const char* szParam) {}
 		virtual void	SetupFirstStart() {}

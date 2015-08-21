@@ -119,7 +119,7 @@ public:
 	void					Update(Subject* pCaller, void* pAspect);
 	void					AddFeed(FeedInfo* pFeedInfo);
 	bool					PreviewFeed(const char* szName, const char* szUrl, const char* szFilter,
-								bool bPauseNzb, const char* szCategory, int iPriority,
+								bool bBacklog, bool bPauseNzb, const char* szCategory, int iPriority,
 								int iCacheTimeSec, const char* szCacheId, FeedItemInfos** ppFeedItemInfos);
 	bool					ViewFeed(int iID, FeedItemInfos** ppFeedItemInfos);
 	void					FetchFeed(int iID);

@@ -1477,6 +1477,7 @@ var Config = (new function($)
 			getOptionValue(findOptionByName('Feed' + multiid + '.Name')),
 			getOptionValue(findOptionByName('Feed' + multiid + '.URL')),
 			getOptionValue(findOptionByName('Feed' + multiid + '.Filter')),
+			getOptionValue(findOptionByName('Feed' + multiid + '.Backlog')),
 			getOptionValue(findOptionByName('Feed' + multiid + '.PauseNzb')),
 			getOptionValue(findOptionByName('Feed' + multiid + '.Category')),
 			getOptionValue(findOptionByName('Feed' + multiid + '.Priority')));

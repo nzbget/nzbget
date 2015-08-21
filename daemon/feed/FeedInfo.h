@@ -60,9 +60,10 @@ private:
 	char*				m_szOutputFilename;
 	bool				m_bFetch;
 	bool				m_bForce;
+	bool				m_bBacklog;
 
 public:
-						FeedInfo(int iID, const char* szName, const char* szUrl, int iInterval,
+						FeedInfo(int iID, const char* szName, const char* szUrl, bool bBacklog, int iInterval,
 							const char* szFilter, bool bPauseNzb, const char* szCategory, int iPriority);
 						~FeedInfo();
 	int					GetID() { return m_iID; }
@@ -86,6 +87,8 @@ public:
 	void				SetFetch(bool bFetch) { m_bFetch = bFetch; }
 	bool				GetForce() { return m_bForce; }
 	void				SetForce(bool bForce) { m_bForce = bForce; }
+	bool				GetBacklog() { return m_bBacklog; }
+	void				SetBacklog(bool bBacklog) { m_bBacklog = bBacklog; }
 };
 
 typedef std::deque<FeedInfo*> Feeds;

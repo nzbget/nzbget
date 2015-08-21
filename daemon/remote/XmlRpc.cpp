@@ -3059,9 +3059,12 @@ ViewFeedXmlCommand::ViewFeedXmlCommand(bool bPreview)
 }
 
 // struct[] viewfeed(int id)
-// struct[] previewfeed(string name, string url, string filter, bool includeNonMatching)
-// struct[] previewfeed(string name, string url, string filter, bool pauseNzb, string category, int priority,
-//		bool includeNonMatching, int cacheTimeSec, string cacheId)
+// v12:
+// struct[] previewfeed(string name, string url, string filter, bool pauseNzb, string category,
+//		int priority, bool includeNonMatching, int cacheTimeSec, string cacheId)
+// v16:
+// struct[] previewfeed(string name, string url, string filter, bool backlog, bool pauseNzb, string category,
+//		int priority, bool includeNonMatching, int cacheTimeSec, string cacheId)
 void ViewFeedXmlCommand::Execute()
 {
 	bool bOK = false;
@@ -3073,15 +3076,29 @@ void ViewFeedXmlCommand::Execute()
 		char* szName;
 		char* szUrl;
 		char* szFilter;
+		bool bBacklog;
 		bool bPauseNzb;
 		char* szCategory;
 		int iPriority;
 		char* szCacheId;
 		int iCacheTimeSec;
 		if (!NextParamAsStr(&szName) || !NextParamAsStr(&szUrl) || !NextParamAsStr(&szFilter) ||
-			!NextParamAsBool(&bPauseNzb) || !NextParamAsStr(&szCategory) || !NextParamAsInt(&iPriority) ||
-			!NextParamAsBool(&bIncludeNonMatching) || !NextParamAsInt(&iCacheTimeSec) ||
-			!NextParamAsStr(&szCacheId))
+			!NextParamAsBool(&bPauseNzb))
+		{
+			BuildErrorResponse(2, "Invalid parameter");
+			return;
+		}
+
+		// parameter "bBacklog" is optional since v16
+		bool b1;
+		if (NextParamAsBool(&b1))
+		{
+			bBacklog = bPauseNzb;
+			bPauseNzb = b1;
+		}
+
+		if (!NextParamAsStr(&szCategory) || !NextParamAsInt(&iPriority) || !NextParamAsBool(&bIncludeNonMatching) ||
+			!NextParamAsInt(&iCacheTimeSec) || !NextParamAsStr(&szCacheId))
 		{
 			BuildErrorResponse(2, "Invalid parameter");
 			return;
@@ -3097,7 +3114,7 @@ void ViewFeedXmlCommand::Execute()
 		debug("Filter=%s", szFilter);
 
 		bOK = g_pFeedCoordinator->PreviewFeed(szName, szUrl, szFilter,
-			bPauseNzb, szCategory, iPriority, iCacheTimeSec, szCacheId, &pFeedItemInfos);
+			bBacklog, bPauseNzb, szCategory, iPriority, iCacheTimeSec, szCacheId, &pFeedItemInfos);
 	}
 	else
 	{

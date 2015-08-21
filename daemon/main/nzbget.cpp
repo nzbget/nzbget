@@ -531,9 +531,9 @@ protected:
 	}
 
 	virtual void		AddFeed(int iID, const char* szName, const char* szUrl, int iInterval,
-							const char* szFilter, bool bPauseNzb, const char* szCategory, int iPriority)
+							const char* szFilter, bool bBacklog, bool bPauseNzb, const char* szCategory, int iPriority)
 	{
-		g_pFeedCoordinator->AddFeed(new FeedInfo(iID, szName, szUrl, iInterval, szFilter, bPauseNzb, szCategory, iPriority));
+		g_pFeedCoordinator->AddFeed(new FeedInfo(iID, szName, szUrl, bBacklog, iInterval, szFilter, bPauseNzb, szCategory, iPriority));
 	}
 
 	virtual void		AddTask(int iID, int iHours, int iMinutes, int iWeekDaysBits,

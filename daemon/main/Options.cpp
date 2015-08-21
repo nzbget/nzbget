@@ -1394,6 +1394,14 @@ void Options::InitFeeds()
 		sprintf(optname, "Feed%i.Category", n);
 		const char* ncategory = GetOption(optname);
 
+		sprintf(optname, "Feed%i.Backlog", n);
+		const char* nbacklog = GetOption(optname);
+		bool bBacklog = true;
+		if (nbacklog)
+		{
+			bBacklog = (bool)ParseEnumValue(optname, BoolCount, BoolNames, BoolValues);
+		}
+
 		sprintf(optname, "Feed%i.PauseNzb", n);
 		const char* npausenzb = GetOption(optname);
 		bool bPauseNzb = false;
@@ -1408,7 +1416,7 @@ void Options::InitFeeds()
 		sprintf(optname, "Feed%i.Priority", n);
 		const char* npriority = GetOption(optname);
 
-		bool definition = nname || nurl || nfilter || ncategory || npausenzb || ninterval || npriority;
+		bool definition = nname || nurl || nfilter || ncategory || nbacklog || npausenzb || ninterval || npriority;
 		bool completed = nurl;
 
 		if (!definition)
@@ -1421,7 +1429,7 @@ void Options::InitFeeds()
 			if (m_pExtender)
 			{
 				m_pExtender->AddFeed(n, nname, nurl, ninterval ? atoi(ninterval) : 0, nfilter,
-					bPauseNzb, ncategory, npriority ? atoi(npriority) : 0);
+					bBacklog, bPauseNzb, ncategory, npriority ? atoi(npriority) : 0);
 			}
 		}
 		else
@@ -1861,8 +1869,8 @@ bool Options::ValidateOptionName(const char* optname, const char* optvalue)
 		char* p = (char*)optname + 4;
 		while (*p >= '0' && *p <= '9') p++;
 		if (p && (!strcasecmp(p, ".name") || !strcasecmp(p, ".url") || !strcasecmp(p, ".interval") ||
-			 !strcasecmp(p, ".filter") || !strcasecmp(p, ".pausenzb") || !strcasecmp(p, ".category") ||
-			 !strcasecmp(p, ".priority")))
+			 !strcasecmp(p, ".filter") || !strcasecmp(p, ".backlog") || !strcasecmp(p, ".pausenzb") ||
+			 !strcasecmp(p, ".category") || !strcasecmp(p, ".priority")))
 		{
 			return true;
 		}

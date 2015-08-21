@@ -156,7 +156,7 @@ var FeedDialog = (new function($)
 		}
 	}
 
-	this.showModal = function(id, name, url, filter, pauseNzb, category, priority)
+	this.showModal = function(id, name, url, filter, backlog, pauseNzb, category, priority)
 	{
 		Refresher.pause();
 
@@ -191,10 +191,11 @@ var FeedDialog = (new function($)
 		else
 		{
 			$('#FeedDialog_Title').text(name !== '' ? name : 'Feed Preview');
+			var feedBacklog = backlog === 'yes';
 			var feedPauseNzb = pauseNzb === 'yes';
 			var feedCategory = category;
 			var feedPriority = parseInt(priority);
-			RPC.call('previewfeed', [name, url, filter, feedPauseNzb, feedCategory, feedPriority, false, 0, ''], itemsLoaded, feedFailure);
+			RPC.call('previewfeed', [name, url, filter, feedBacklog, feedPauseNzb, feedCategory, feedPriority, false, 0, ''], itemsLoaded, feedFailure);
 		}
 	}
 

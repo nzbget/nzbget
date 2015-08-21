@@ -477,7 +477,7 @@ void FeedCoordinator::ProcessFeed(FeedInfo* pFeedInfo, FeedItemInfos* pFeedItemI
 		{
 			FeedHistoryInfo* pFeedHistoryInfo = m_FeedHistory.Find(pFeedItemInfo->GetUrl());
 			FeedHistoryInfo::EStatus eStatus = FeedHistoryInfo::hsUnknown;
-			if (bFirstFetch)
+			if (bFirstFetch && pFeedInfo->GetBacklog())
 			{
 				eStatus = FeedHistoryInfo::hsBacklog;
 			}
@@ -556,17 +556,17 @@ bool FeedCoordinator::ViewFeed(int iID, FeedItemInfos** ppFeedItemInfos)
 	FeedInfo* pFeedInfo = m_Feeds.at(iID - 1);
 
 	return PreviewFeed(pFeedInfo->GetName(), pFeedInfo->GetUrl(), pFeedInfo->GetFilter(), 
-		pFeedInfo->GetPauseNzb(), pFeedInfo->GetCategory(), pFeedInfo->GetPriority(),
-		0, NULL, ppFeedItemInfos);
+		pFeedInfo->GetBacklog(), pFeedInfo->GetPauseNzb(), pFeedInfo->GetCategory(),
+		pFeedInfo->GetPriority(), 0, NULL, ppFeedItemInfos);
 }
 
 bool FeedCoordinator::PreviewFeed(const char* szName, const char* szUrl, const char* szFilter,
-	bool bPauseNzb, const char* szCategory, int iPriority,
+	bool bBacklog, bool bPauseNzb, const char* szCategory, int iPriority,
 	int iCacheTimeSec, const char* szCacheId, FeedItemInfos** ppFeedItemInfos)
 {
 	debug("Preview feed %s", szName);
 
-	FeedInfo* pFeedInfo = new FeedInfo(0, szName, szUrl, 0, szFilter, bPauseNzb, szCategory, iPriority);
+	FeedInfo* pFeedInfo = new FeedInfo(0, szName, szUrl, bBacklog, 0, szFilter, bPauseNzb, szCategory, iPriority);
 	pFeedInfo->SetPreview(true);
 	
 	FeedItemInfos* pFeedItemInfos = NULL;
@@ -640,7 +640,7 @@ bool FeedCoordinator::PreviewFeed(const char* szName, const char* szUrl, const c
 		for (FeedItemInfos::iterator it = pFeedItemInfos->begin(); it != pFeedItemInfos->end(); it++)
 		{
 			FeedItemInfo* pFeedItemInfo = *it;
-			pFeedItemInfo->SetStatus(bFirstFetch ? FeedItemInfo::isBacklog : FeedItemInfo::isNew);
+			pFeedItemInfo->SetStatus(bFirstFetch && pFeedInfo->GetBacklog() ? FeedItemInfo::isBacklog : FeedItemInfo::isNew);
 			FeedHistoryInfo* pFeedHistoryInfo = m_FeedHistory.Find(pFeedItemInfo->GetUrl());
 			if (pFeedHistoryInfo)
 			{

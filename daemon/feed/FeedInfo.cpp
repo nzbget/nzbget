@@ -41,13 +41,14 @@
 #include "FeedInfo.h"
 #include "Util.h"
 
-FeedInfo::FeedInfo(int iID, const char* szName, const char* szUrl, int iInterval,
+FeedInfo::FeedInfo(int iID, const char* szName, const char* szUrl, bool bBacklog, int iInterval,
 	const char* szFilter, bool bPauseNzb, const char* szCategory, int iPriority)
 {
 	m_iID = iID;
 	m_szName = strdup(szName ? szName : "");
 	m_szUrl = strdup(szUrl ? szUrl : "");
 	m_szFilter = strdup(szFilter ? szFilter : "");
+	m_bBacklog = bBacklog;
 	m_iFilterHash = Util::HashBJ96(m_szFilter, strlen(m_szFilter), 0);
 	m_szCategory = strdup(szCategory ? szCategory : "");
 	m_iInterval = iInterval;
