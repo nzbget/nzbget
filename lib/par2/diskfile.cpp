@@ -296,17 +296,14 @@ string DiskFile::GetCanonicalPathname(string filename)
     string wild = longname + current;
     WIN32_FIND_DATA finddata;
     HANDLE hFind = ::FindFirstFile(wild.c_str(), &finddata);
-    if (hFind == INVALID_HANDLE_VALUE)
-    {
-      // If the component was not found then just copy the rest of the path to the
+    if (hFind != INVALID_HANDLE_VALUE)
+      // Copy the component found to the output
+      longname += finddata.cFileName;
+	else
+      // If the component was not found then just copy the component to the
       // output buffer verbatim.
       longname += current;
-      break;
-    }
     ::FindClose(hFind);
-
-    // Copy the component found to the output
-    longname += finddata.cFileName;
 
     current = tail + 1;
 
