@@ -1174,7 +1174,7 @@ var LogTab = (new function($)
 		$('#' + name + 'LogRecordsPerPage').val(recordsPerPage);
 		
 		$('#' + name + 'EditDialog .loading-block').show();
-		RPC.call('loadlog', [item.NZBID, 0, 1000], logLoaded);
+		RPC.call('loadlog', [item.NZBID, 0, 10000], logLoaded);
 	}
 
 	function logTableRenderCellCallback(cell, index, item)
