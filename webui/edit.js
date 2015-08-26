@@ -926,6 +926,8 @@ var EditUI = (new function($)
 						success = '99.9%';
 						failures = '0.1%';
 					}
+					success = '<span title="' + stat.SuccessArticles + ' article' + (stat.SuccessArticles === 1 ? '' : 's') + '">' + success + '</span>';
+					failures = '<span title="' + stat.FailedArticles + ' article' + (stat.FailedArticles === 1 ? '' : 's') + '">' + failures + '</span>';
 					break;
 				}
 			}
