@@ -1,7 +1,7 @@
 /*
  * This file is part of nzbget
  *
- * Copyright (C) 2012-2014 Andrey Prygunkov <hugbug@users.sourceforge.net>
+ * Copyright (C) 2012-2015 Andrey Prygunkov <hugbug@users.sourceforge.net>
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -40,6 +40,7 @@ var Upload = (new function($)
 	// State
 	var dragin = false;
 	var files = [];
+	var infos = [];
 	var filesSuccess = [];
 	var index;
 	var errors = false;
@@ -67,6 +68,7 @@ var Upload = (new function($)
 		{
 			Refresher.resume();
 			files = [];
+			infos = [];
 			filesSuccess = [];
 			if (needRefresh)
 			{
@@ -89,6 +91,8 @@ var Upload = (new function($)
 		$('#AddDialog_Submit').click(submit);
 		$('#AddDialog_Input')[0].addEventListener("change", fileSelectHandler, false);
 		$('#AddDialog_Scan').click(scan);
+		
+		AddParamDialog.init();
 	}
 
 	function bodyDragOver(event)
@@ -199,10 +203,18 @@ var Upload = (new function($)
 		{
 			var file = selectedFiles[i];
 			var filename = file.name.replace(/\.queued$/g, '');
-			var html = '<table><tr><td width="18px" valign="top"><i class="icon-file" style="vertical-align:top;margin-top:2px;"></i><img class="hide" style="vertical-align:top;margin-top:1px;" src="img/transmit-file.gif" width="16px" height="16px"></td><td>' +
-				Util.formatNZBName(filename) + '</td></tr></table>';
+			var html = '<a class="link-black" href="#" onclick="Upload.renameClick(' + files.length + ')" title="Click to rename">'+
+				'<table><tr><td width="18px" valign="top"><i class="icon-file" style="vertical-align:top;margin-top:2px;">'+
+				'</i><img class="hide" style="vertical-align:top;margin-top:1px;" src="img/transmit-file.gif" width="16px" height="16px"></td>'+
+				'<td id="AddDialog_File' + files.length + '">' + Util.formatNZBName(filename) + '</td></tr></table></a>';
 			$('#AddDialog_Files').append(html);
 			files.push(file);
+
+			var p = filename.lastIndexOf('.');
+			var name = p > -1 ? filename.substr(0, p) : filename;
+			var ext = p > -1 ? filename.substr(filename.lastIndexOf('.')) : '';
+			var info = { name: name, ext: ext, password: '', dupekey: '', dupescore: 0 };
+			infos.push(info);
 		}
 		$('#AddDialog_Files').show();
 		$('#AddDialog_FilesHelp').hide();
@@ -213,6 +225,15 @@ var Upload = (new function($)
 		showModal();
 	}
 	
+	this.renameClick = function(no)
+	{
+		var file = files[no];
+		var info = infos[no];
+		AddParamDialog.showModal(info, function() {
+			$('#AddDialog_File' + no).html(Util.formatNZBName(info.name + info.ext));
+		});
+	}
+
 	function showModal(droppedFiles)
 	{
 		Refresher.pause();
@@ -306,6 +327,7 @@ var Upload = (new function($)
 		}
 
 		var file = files[index];
+		var info = infos[index];
 
 		if (filesSuccess.indexOf(file) > -1)
 		{
@@ -332,10 +354,10 @@ var Upload = (new function($)
 			}
 			var category = $('#AddDialog_Category').val();
 			var priority = parseInt($('#AddDialog_Priority').val());
-			var filename = file.name.replace(/\.queued$/g, '');
+			var filename = info.name + info.ext;
 			var addPaused = $('#AddDialog_Paused').is(':checked');
 			var dupeMode = $('#AddDialog_DupeForce').is(':checked') ? "FORCE" : "SCORE";
-			RPC.call('append', [filename, base64str, category, priority, false, addPaused, '', 0, dupeMode], fileCompleted, fileFailure);
+			RPC.call('append', [filename, base64str, category, priority, false, addPaused, info.dupekey, info.dupescore, dupeMode], fileCompleted, fileFailure);
 		};
 
 		if (reader.readAsBinaryString)
@@ -448,5 +470,72 @@ var Upload = (new function($)
 			$AddDialog.modal('hide');
 			Notification.show('#Notif_Scan');
 		});
+	}
+}(jQuery));
+
+/*** ADD FILE PARAM DIALOG *******************************************************/
+
+var AddParamDialog = (new function($)
+{
+	'use strict'
+
+	// Controls
+	var $AddParamDialog;
+	var $AddParamDialog_NZBName;
+	var $AddParamDialog_Password;
+	var $AddParamDialog_DupeKey;
+	var $AddParamDialog_DupeScore;
+	
+	// State
+	var info;
+	var saveCallback;
+
+	this.init = function()
+	{
+		$AddParamDialog = $('#AddParamDialog');
+		$AddParamDialog_NZBName = $('#AddParamDialog_NZBName');
+		$AddParamDialog_Password = $('#AddParamDialog_Password');
+		$AddParamDialog_DupeKey = $('#AddParamDialog_DupeKey');
+		$AddParamDialog_DupeScore = $('#AddParamDialog_DupeScore');
+		
+		$('#AddParamDialog_Save').click(save);
+
+		$AddParamDialog.on('shown', function()
+		{
+			$('.modal-backdrop').last().addClass('modal-2');
+			if (UISettings.setFocus)
+			{
+				$('#AddParamDialog_NZBName').focus();
+			}
+		});
+
+		$AddParamDialog.on('hidden', function()
+		{
+			$('.modal-backdrop').removeClass('modal-2');
+		});
+	}
+
+	this.showModal = function(_info, _saveCallback)
+	{
+		info = _info;
+		saveCallback = _saveCallback;
+
+		$AddParamDialog_NZBName.val(info.name);
+		$AddParamDialog_Password.val(info.password);
+		$AddParamDialog_DupeKey.val(info.dupekey);
+		$AddParamDialog_DupeScore.val(info.dupescore);
+
+		$AddParamDialog.modal({backdrop: 'static'});
+	}
+
+	function save(e)
+	{
+		info.name = $AddParamDialog_NZBName.val();
+		info.password = $AddParamDialog_Password.val();
+		info.dupekey = $AddParamDialog_DupeKey.val();
+		info.dupescore = parseInt($AddParamDialog_DupeScore.val());
+
+		$AddParamDialog.modal('hide');
+		saveCallback(info);
 	}
 }(jQuery));

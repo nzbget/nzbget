@@ -937,6 +937,16 @@ form {
 	margin-bottom: 10px;
 }
 
+.modal-2 {
+	margin-top: -200px;
+	z-index: 1060;
+}
+
+.modal-backdrop.modal-2 {
+	z-index: 1055;
+	opacity: 0.6;
+}
+
 .badge-active {
     background-color: #FFFFFF;
     color: #000000;
@@ -1459,7 +1469,9 @@ ul.help > li {
 }
 
 #StatDialog_Custom a,
-#StatDialog_Custom a:hover {
+#StatDialog_Custom a:hover,
+#AddDialog_Files a,
+#AddDialog_Files a:hover {
 	color: #000000;
 	cursor: pointer;
 }

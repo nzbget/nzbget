@@ -2255,6 +2255,61 @@
 	</div>
 </div>
 
+<!-- *** ADD FILE PARAMS DIALOG ************************************************************ -->
+
+<div class="modal modal-2 hide" id="AddParamDialog">
+	<div class="modal-header">
+		<a class="close" href='#' data-dismiss="modal"><i class="icon-close"></i></a>
+		<h3 id="AddParamDialog_Title">File Properties</h3>
+	</div>
+
+	<div class="modal-body">
+		<div>
+			<div class="modal-tab">
+				<div class="form-horizontal">
+					<fieldset>
+
+						<div class="control-group">
+							<label class="control-label" for="AddParamDialog_NZBNameGroup">Name</label>
+							<div class="controls">
+								<input type="text" class="input-xlarge" id="AddParamDialog_NZBName" />
+							</div>
+						</div>
+
+						<div class="control-group">
+							<label class="control-label" for="AddParamDialog_Password">Password (TODO)</label>
+							<div class="controls">
+								<input type="text" class="input-medium" id="AddParamDialog_Password" />
+							</div>
+						</div>
+
+						<div class="control-group">
+							<label class="control-label" for="AddParamDialog_DupeKey">Duplicate key</label>
+							<div class="controls">
+								<input type="text" class="input-xlarge" id="AddParamDialog_DupeKey" />
+							</div>
+						</div>
+
+						<div class="control-group">
+							<label class="control-label" for="AddParamDialog_DupeScore">Duplicate score</label>
+							<div class="controls">
+								<input type="text" class="input-small" id="AddParamDialog_DupeScore" />
+							</div>
+						</div>
+
+					</fieldset>
+				</div>
+			</div>
+
+		</div>
+	</div>
+
+	<div class="modal-footer">
+		<a href="#" class="btn" data-dismiss="modal" id="AddParamDialog_Close">Cancel</a>
+		<a href="#" class="btn btn-primary" id="AddParamDialog_Save">Save</a>
+	</div>
+</div>
+
 <!-- *** CHOOSE SCRIPT DIALOG ****************************************************** -->
 
 <div class="modal modal-padded hide" id="ScriptListDialog">
