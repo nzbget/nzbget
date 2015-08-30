@@ -357,7 +357,8 @@ var Upload = (new function($)
 			var filename = info.name + info.ext;
 			var addPaused = $('#AddDialog_Paused').is(':checked');
 			var dupeMode = $('#AddDialog_DupeForce').is(':checked') ? "FORCE" : "SCORE";
-			RPC.call('append', [filename, base64str, category, priority, false, addPaused, info.dupekey, info.dupescore, dupeMode], fileCompleted, fileFailure);
+			var params = info.password === '' ? [] : [{'*Unpack:password' : info.password}];
+			RPC.call('append', [filename, base64str, category, priority, false, addPaused, info.dupekey, info.dupescore, dupeMode, params], fileCompleted, fileFailure);
 		};
 
 		if (reader.readAsBinaryString)

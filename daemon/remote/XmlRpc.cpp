@@ -2289,6 +2289,8 @@ void EditQueueXmlCommand::Execute()
 	BuildBoolResponse(bOK);
 }
 
+// v16:
+//   int append(string NZBFilename, string NZBContent, string Category, int Priority, bool AddToTop, bool AddPaused, string DupeKey, int DupeScore, string DupeMode, struct[] Parameters)
 // v13 (new param order and new result type):
 //   int append(string NZBFilename, string NZBContent, string Category, int Priority, bool AddToTop, bool AddPaused, string DupeKey, int DupeScore, string DupeMode)
 // v12 (backward compatible, some params are optional):
@@ -2379,6 +2381,22 @@ void DownloadXmlCommand::Execute()
 		return;
 	}
 
+	NZBParameterList Params;
+	if (bV13)
+	{
+		char* szParamName = NULL;
+		char* szParamValue = NULL;
+		while (NextParamAsStr(&szParamName))
+		{
+			if (!NextParamAsStr(&szParamValue))
+			{
+				BuildErrorResponse(2, "Invalid parameter (Parameters)");
+				return;
+			}
+			Params.SetParameter(szParamName, szParamValue);
+		}
+	}
+
 	if (!strncasecmp(szNZBContent, "http://", 6) || !strncasecmp(szNZBContent, "https://", 7))
 	{
 		// add url
@@ -2392,6 +2410,7 @@ void DownloadXmlCommand::Execute()
 		pNZBInfo->SetDupeKey(szDupeKey ? szDupeKey : "");
 		pNZBInfo->SetDupeScore(iDupeScore);
 		pNZBInfo->SetDupeMode(eDupeMode);
+		pNZBInfo->GetParameters()->CopyFrom(&Params);
 		int iNZBID = pNZBInfo->GetID();
 
 		char szNicename[1024];
@@ -2421,7 +2440,7 @@ void DownloadXmlCommand::Execute()
 
 		int iNZBID = -1;
 		g_pScanner->AddExternalFile(szNZBFilename, szCategory, iPriority,
-			szDupeKey, iDupeScore, eDupeMode, NULL, bAddTop, bAddPaused, NULL,
+			szDupeKey, iDupeScore, eDupeMode, Params.empty() ? NULL : &Params, bAddTop, bAddPaused, NULL,
 			NULL, szNZBContent, iLen, &iNZBID);
 
 		if (bV13)
