@@ -47,14 +47,14 @@
 #include "Util.h"
 
 
-void FeedScriptController::ExecuteScripts(const char* szFeedFile, int iFeedID)
+void FeedScriptController::ExecuteScripts(const char* szFeedScript, const char* szFeedFile, int iFeedID)
 {
 	FeedScriptController* pScriptController = new FeedScriptController();
 
 	pScriptController->m_szFeedFile = szFeedFile;
 	pScriptController->m_iFeedID = iFeedID;
 
-	pScriptController->ExecuteScriptList(g_pOptions->GetFeedScript());
+	pScriptController->ExecuteScriptList(szFeedScript);
 
 	delete pScriptController;
 }

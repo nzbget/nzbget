@@ -818,7 +818,7 @@ var Config = (new function($)
 			htmldescr = htmldescr.replace(/NOTE: do not forget to uncomment the next line.\n/, '');
 
 			// replace option references
-			var exp = /\<([A-Z0-9]*)\>/ig;
+			var exp = /\<([A-Z0-9\.]*)\>/ig;
 			htmldescr = htmldescr.replace(exp, '<a class="option" href="#" onclick="Config.scrollToOption(event, this)">$1</a>');
 
 			htmldescr = htmldescr.replace(/&/g, '&amp;');
@@ -1463,6 +1463,7 @@ var Config = (new function($)
 			getOptionValue(findOptionByName('Feed' + option.multiid + '.PauseNzb')),
 			getOptionValue(findOptionByName('Feed' + option.multiid + '.Category')),
 			getOptionValue(findOptionByName('Feed' + option.multiid + '.Priority')),
+			getOptionValue(findOptionByName('Feed' + option.multiid + '.FeedScript')),
 			function(filter)
 				{
 					var control = $('#' + option.formId);
@@ -1480,7 +1481,8 @@ var Config = (new function($)
 			getOptionValue(findOptionByName('Feed' + multiid + '.Backlog')),
 			getOptionValue(findOptionByName('Feed' + multiid + '.PauseNzb')),
 			getOptionValue(findOptionByName('Feed' + multiid + '.Category')),
-			getOptionValue(findOptionByName('Feed' + multiid + '.Priority')));
+			getOptionValue(findOptionByName('Feed' + multiid + '.Priority')),
+			getOptionValue(findOptionByName('Feed' + multiid + '.FeedScript')));
 	}
 
 	/*** TEST SERVER ********************************************************************/

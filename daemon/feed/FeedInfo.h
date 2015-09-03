@@ -53,6 +53,7 @@ private:
 	unsigned int		m_iFilterHash;
 	bool				m_bPauseNzb;
 	char*				m_szCategory;
+	char*				m_szFeedScript;
 	int					m_iPriority;
 	time_t				m_tLastUpdate;
 	bool				m_bPreview;
@@ -64,7 +65,8 @@ private:
 
 public:
 						FeedInfo(int iID, const char* szName, const char* szUrl, bool bBacklog, int iInterval,
-							const char* szFilter, bool bPauseNzb, const char* szCategory, int iPriority);
+							const char* szFilter, bool bPauseNzb, const char* szCategory, int iPriority,
+							const char* szFeedScript);
 						~FeedInfo();
 	int					GetID() { return m_iID; }
 	const char*			GetName() { return m_szName; }
@@ -75,6 +77,7 @@ public:
 	bool				GetPauseNzb() { return m_bPauseNzb; }
 	const char*			GetCategory() { return m_szCategory; }
 	int					GetPriority() { return m_iPriority; }
+	const char*			GetFeedScript() { return m_szFeedScript; }
 	time_t				GetLastUpdate() { return m_tLastUpdate; }
 	void				SetLastUpdate(time_t tLastUpdate) { m_tLastUpdate = tLastUpdate; }
 	bool				GetPreview() { return m_bPreview; }

@@ -156,7 +156,7 @@ var FeedDialog = (new function($)
 		}
 	}
 
-	this.showModal = function(id, name, url, filter, backlog, pauseNzb, category, priority)
+	this.showModal = function(id, name, url, filter, backlog, pauseNzb, category, priority, feedscript)
 	{
 		Refresher.pause();
 
@@ -195,7 +195,8 @@ var FeedDialog = (new function($)
 			var feedPauseNzb = pauseNzb === 'yes';
 			var feedCategory = category;
 			var feedPriority = parseInt(priority);
-			RPC.call('previewfeed', [name, url, filter, feedBacklog, feedPauseNzb, feedCategory, feedPriority, false, 0, ''], itemsLoaded, feedFailure);
+			var feedScript = feedscript;
+			RPC.call('previewfeed', [name, url, filter, feedBacklog, feedPauseNzb, feedCategory, feedPriority, feedScript, false, 0, ''], itemsLoaded, feedFailure);
 		}
 	}
 
@@ -425,6 +426,7 @@ var FeedFilterDialog = (new function($)
 	var feedPauseNzb;
 	var feedCategory;
 	var feedPriority;
+	var feedScript;
 	var cacheTimeSec;
 	var cacheId;
 	var updating;
@@ -490,7 +492,7 @@ var FeedFilterDialog = (new function($)
 		}
 	}
 
-	this.showModal = function(name, url, filter, pauseNzb, category, priority, _saveCallback)
+	this.showModal = function(name, url, filter, pauseNzb, category, priority, feedscript, _saveCallback)
 	{
 		saveCallback = _saveCallback;
 
@@ -527,12 +529,13 @@ var FeedFilterDialog = (new function($)
 		feedPauseNzb = pauseNzb === 'yes';
 		feedCategory = category;
 		feedPriority = parseInt(priority);
+		feedScript = feedscript;
 		cacheId = '' + Math.random()*10000000;
 		cacheTimeSec = 60*10; // 10 minutes
 
 		if (url !== '')
 		{
-			RPC.call('previewfeed', [name, url, filter, feedPauseNzb, feedCategory, feedPriority, true, cacheTimeSec, cacheId], itemsLoaded, feedFailure);
+			RPC.call('previewfeed', [name, url, filter, feedPauseNzb, feedCategory, feedPriority, feedScript, true, cacheTimeSec, cacheId], itemsLoaded, feedFailure);
 		}
 		else
 		{
@@ -556,7 +559,7 @@ var FeedFilterDialog = (new function($)
 		updating = true;
 
 		var filter = $FilterInput.val().replace(/\n/g, '%');
-		RPC.call('previewfeed', [feedName, feedUrl, filter, feedPauseNzb, feedCategory, feedPriority, true, cacheTimeSec, cacheId], itemsLoaded, feedFailure);
+		RPC.call('previewfeed', [feedName, feedUrl, filter, feedPauseNzb, feedCategory, feedPriority, feedScript, true, cacheTimeSec, cacheId], itemsLoaded, feedFailure);
 
 		setTimeout(function()
 		{

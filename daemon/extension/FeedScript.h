@@ -40,7 +40,7 @@ protected:
 	virtual void		ExecuteScript(ScriptConfig::Script* pScript);
 
 public:
-	static void			ExecuteScripts(const char* szFeedFile, int iFeedID);
+	static void			ExecuteScripts(const char* szFeedScript, const char* szFeedFile, int iFeedID);
 };
 
 #endif

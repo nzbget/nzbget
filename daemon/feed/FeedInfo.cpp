@@ -42,7 +42,7 @@
 #include "Util.h"
 
 FeedInfo::FeedInfo(int iID, const char* szName, const char* szUrl, bool bBacklog, int iInterval,
-	const char* szFilter, bool bPauseNzb, const char* szCategory, int iPriority)
+	const char* szFilter, bool bPauseNzb, const char* szCategory, int iPriority, const char* szFeedScript)
 {
 	m_iID = iID;
 	m_szName = strdup(szName ? szName : "");
@@ -52,6 +52,7 @@ FeedInfo::FeedInfo(int iID, const char* szName, const char* szUrl, bool bBacklog
 	m_iFilterHash = Util::HashBJ96(m_szFilter, strlen(m_szFilter), 0);
 	m_szCategory = strdup(szCategory ? szCategory : "");
 	m_iInterval = iInterval;
+	m_szFeedScript = strdup(szFeedScript ? szFeedScript : "");
 	m_bPauseNzb = bPauseNzb;
 	m_iPriority = iPriority;
 	m_tLastUpdate = 0;
@@ -69,6 +70,7 @@ FeedInfo::~FeedInfo()
 	free(m_szFilter);
 	free(m_szCategory);
 	free(m_szOutputFilename);
+	free(m_szFeedScript);
 }
 
 void FeedInfo::SetOutputFilename(const char* szOutputFilename)

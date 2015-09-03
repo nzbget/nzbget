@@ -396,7 +396,9 @@ void FeedCoordinator::FeedCompleted(FeedDownloader* pFeedDownloader)
 	{
 		if (!pFeedInfo->GetPreview())
 		{
-			FeedScriptController::ExecuteScripts(pFeedInfo->GetOutputFilename(), pFeedInfo->GetID());
+			FeedScriptController::ExecuteScripts(
+				!Util::EmptyStr(pFeedInfo->GetFeedScript()) ? pFeedInfo->GetFeedScript(): g_pOptions->GetFeedScript(),
+				pFeedInfo->GetOutputFilename(), pFeedInfo->GetID());
 			FeedFile* pFeedFile = FeedFile::Create(pFeedInfo->GetOutputFilename());
 			remove(pFeedInfo->GetOutputFilename());
 
@@ -557,16 +559,16 @@ bool FeedCoordinator::ViewFeed(int iID, FeedItemInfos** ppFeedItemInfos)
 
 	return PreviewFeed(pFeedInfo->GetName(), pFeedInfo->GetUrl(), pFeedInfo->GetFilter(), 
 		pFeedInfo->GetBacklog(), pFeedInfo->GetPauseNzb(), pFeedInfo->GetCategory(),
-		pFeedInfo->GetPriority(), 0, NULL, ppFeedItemInfos);
+		pFeedInfo->GetPriority(), pFeedInfo->GetFeedScript(), 0, NULL, ppFeedItemInfos);
 }
 
 bool FeedCoordinator::PreviewFeed(const char* szName, const char* szUrl, const char* szFilter,
-	bool bBacklog, bool bPauseNzb, const char* szCategory, int iPriority,
+	bool bBacklog, bool bPauseNzb, const char* szCategory, int iPriority, const char* szFeedScript,
 	int iCacheTimeSec, const char* szCacheId, FeedItemInfos** ppFeedItemInfos)
 {
 	debug("Preview feed %s", szName);
 
-	FeedInfo* pFeedInfo = new FeedInfo(0, szName, szUrl, bBacklog, 0, szFilter, bPauseNzb, szCategory, iPriority);
+	FeedInfo* pFeedInfo = new FeedInfo(0, szName, szUrl, bBacklog, 0, szFilter, bPauseNzb, szCategory, iPriority, szFeedScript);
 	pFeedInfo->SetPreview(true);
 	
 	FeedItemInfos* pFeedItemInfos = NULL;
@@ -621,7 +623,9 @@ bool FeedCoordinator::PreviewFeed(const char* szName, const char* szUrl, const c
 
 		if (pFeedInfo->GetStatus() == FeedInfo::fsFinished)
 		{
-			FeedScriptController::ExecuteScripts(pFeedInfo->GetOutputFilename(), pFeedInfo->GetID());
+			FeedScriptController::ExecuteScripts(
+				!Util::EmptyStr(pFeedInfo->GetFeedScript()) ? pFeedInfo->GetFeedScript(): g_pOptions->GetFeedScript(),
+				pFeedInfo->GetOutputFilename(), pFeedInfo->GetID());
 			pFeedFile = FeedFile::Create(pFeedInfo->GetOutputFilename());
 		}
 
