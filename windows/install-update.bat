@@ -58,7 +58,7 @@ for /f "delims=" %%a in ('type "%NZBOP_WEBDIR%\package-info.json"') do (
 
 rem "%~dp0" means the location of the current batch file
 set NZBGET_DIR=%~dp0
-cd %NZBGET_DIR%
+cd /D %NZBGET_DIR%
 
 rem Determine if NZBGet is running as a service
 set NZBGET_SERVICE=no
