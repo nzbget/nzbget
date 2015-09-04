@@ -1457,12 +1457,15 @@ var Config = (new function($)
 	{
 		var option = findOptionById(optFormId);
 		FeedFilterDialog.showModal(
+			option.multiid,
 			getOptionValue(findOptionByName('Feed' + option.multiid + '.Name')),
 			getOptionValue(findOptionByName('Feed' + option.multiid + '.URL')),
 			getOptionValue(findOptionByName('Feed' + option.multiid + '.Filter')),
+			getOptionValue(findOptionByName('Feed' + option.multiid + '.Backlog')),
 			getOptionValue(findOptionByName('Feed' + option.multiid + '.PauseNzb')),
 			getOptionValue(findOptionByName('Feed' + option.multiid + '.Category')),
 			getOptionValue(findOptionByName('Feed' + option.multiid + '.Priority')),
+			getOptionValue(findOptionByName('Feed' + option.multiid + '.Interval')),
 			getOptionValue(findOptionByName('Feed' + option.multiid + '.FeedScript')),
 			function(filter)
 				{
@@ -1474,7 +1477,7 @@ var Config = (new function($)
 	this.previewFeed = function(control, setname, sectionId)
 	{
 		var multiid = parseInt($(control).attr('data-multiid'));
-		FeedDialog.showModal(0,
+		FeedDialog.showModal(multiid,
 			getOptionValue(findOptionByName('Feed' + multiid + '.Name')),
 			getOptionValue(findOptionByName('Feed' + multiid + '.URL')),
 			getOptionValue(findOptionByName('Feed' + multiid + '.Filter')),
@@ -1482,6 +1485,7 @@ var Config = (new function($)
 			getOptionValue(findOptionByName('Feed' + multiid + '.PauseNzb')),
 			getOptionValue(findOptionByName('Feed' + multiid + '.Category')),
 			getOptionValue(findOptionByName('Feed' + multiid + '.Priority')),
+			getOptionValue(findOptionByName('Feed' + multiid + '.Interval')),
 			getOptionValue(findOptionByName('Feed' + multiid + '.FeedScript')));
 	}
 

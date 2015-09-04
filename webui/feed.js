@@ -156,7 +156,7 @@ var FeedDialog = (new function($)
 		}
 	}
 
-	this.showModal = function(id, name, url, filter, backlog, pauseNzb, category, priority, feedscript)
+	this.showModal = function(id, name, url, filter, backlog, pauseNzb, category, priority, interval, feedscript)
 	{
 		Refresher.pause();
 
@@ -182,7 +182,7 @@ var FeedDialog = (new function($)
 
 		$('.loading-block', $FeedDialog).show();
 
-		if (id > 0)
+		if (name === undefined)
 		{
 			var name = Options.option('Feed' + id + '.Name');
 			$('#FeedDialog_Title').text(name !== '' ? name : 'Feed');
@@ -195,8 +195,10 @@ var FeedDialog = (new function($)
 			var feedPauseNzb = pauseNzb === 'yes';
 			var feedCategory = category;
 			var feedPriority = parseInt(priority);
+			var feedInterval = parseInt(interval);
 			var feedScript = feedscript;
-			RPC.call('previewfeed', [name, url, filter, feedBacklog, feedPauseNzb, feedCategory, feedPriority, feedScript, false, 0, ''], itemsLoaded, feedFailure);
+			RPC.call('previewfeed', [id, name, url, filter, feedBacklog, feedPauseNzb, feedCategory,
+				feedPriority, feedInterval, feedScript, false, 0, ''], itemsLoaded, feedFailure);
 		}
 	}
 
@@ -420,12 +422,15 @@ var FeedFilterDialog = (new function($)
 	var tableInitialized = false;
 	var saveCallback;
 	var splitStartPos;
+	var feedId;
 	var feedName;
 	var feedUrl;
 	var feedFilter;
+	var feedBacklog;
 	var feedPauseNzb;
 	var feedCategory;
 	var feedPriority;
+	var feedInterval;
 	var feedScript;
 	var cacheTimeSec;
 	var cacheId;
@@ -492,7 +497,7 @@ var FeedFilterDialog = (new function($)
 		}
 	}
 
-	this.showModal = function(name, url, filter, pauseNzb, category, priority, feedscript, _saveCallback)
+	this.showModal = function(id, name, url, filter, backlog, pauseNzb, category, priority, interval, feedscript, _saveCallback)
 	{
 		saveCallback = _saveCallback;
 
@@ -523,19 +528,23 @@ var FeedFilterDialog = (new function($)
 		$LoadingBlock.show();
 
 		$('#FeedFilterDialog_Title').text(name !== '' ? name : 'Feed Preview');
+		feedId = id;
 		feedName = name;
 		feedUrl = url;
 		feedFilter = filter;
+		feedBacklog = backlog === 'yes';
 		feedPauseNzb = pauseNzb === 'yes';
 		feedCategory = category;
 		feedPriority = parseInt(priority);
+		feedInterval = parseInt(interval);
 		feedScript = feedscript;
 		cacheId = '' + Math.random()*10000000;
 		cacheTimeSec = 60*10; // 10 minutes
 
 		if (url !== '')
 		{
-			RPC.call('previewfeed', [name, url, filter, feedPauseNzb, feedCategory, feedPriority, feedScript, true, cacheTimeSec, cacheId], itemsLoaded, feedFailure);
+			RPC.call('previewfeed', [feedId, name, url, filter, feedBacklog, feedPauseNzb, feedCategory, feedPriority,
+				feedInterval, feedScript, true, cacheTimeSec, cacheId], itemsLoaded, feedFailure);
 		}
 		else
 		{
@@ -559,7 +568,8 @@ var FeedFilterDialog = (new function($)
 		updating = true;
 
 		var filter = $FilterInput.val().replace(/\n/g, '%');
-		RPC.call('previewfeed', [feedName, feedUrl, filter, feedPauseNzb, feedCategory, feedPriority, feedScript, true, cacheTimeSec, cacheId], itemsLoaded, feedFailure);
+		RPC.call('previewfeed', [feedId, feedName, feedUrl, filter, feedBacklog, feedPauseNzb, feedCategory, feedPriority,
+			feedInterval, feedScript, true, cacheTimeSec, cacheId], itemsLoaded, feedFailure);
 
 		setTimeout(function()
 		{

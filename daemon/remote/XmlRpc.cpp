@@ -3082,8 +3082,8 @@ ViewFeedXmlCommand::ViewFeedXmlCommand(bool bPreview)
 // struct[] previewfeed(string name, string url, string filter, bool pauseNzb, string category,
 //		int priority, bool includeNonMatching, int cacheTimeSec, string cacheId)
 // v16:
-// struct[] previewfeed(string name, string url, string filter, bool backlog, bool pauseNzb, string category,
-//		int priority, string feedfilter, bool includeNonMatching, int cacheTimeSec, string cacheId)
+// struct[] previewfeed(int id, string name, string url, string filter, bool backlog, bool pauseNzb, string category,
+//		int priority, int interval, string feedfilter, bool includeNonMatching, int cacheTimeSec, string cacheId)
 void ViewFeedXmlCommand::Execute()
 {
 	bool bOK = false;
@@ -3092,42 +3092,28 @@ void ViewFeedXmlCommand::Execute()
 
 	if (m_bPreview)
 	{
+		int iID = 0;
 		char* szName;
 		char* szUrl;
 		char* szFilter;
 		bool bBacklog = true;
 		bool bPauseNzb;
 		char* szCategory;
+		int iInterval = 0;
 		int iPriority;
 		char* szFeedFilter = NULL;
 		char* szCacheId;
 		int iCacheTimeSec;
+
+		// if the first parameter is int then it's the v16 signature
+		bool bV16 = NextParamAsInt(&iID);
+
 		if (!NextParamAsStr(&szName) || !NextParamAsStr(&szUrl) || !NextParamAsStr(&szFilter) ||
-			!NextParamAsBool(&bPauseNzb))
-		{
-			BuildErrorResponse(2, "Invalid parameter");
-			return;
-		}
-
-		// parameter "bBacklog" is optional since v16
-		bool b1;
-		if (NextParamAsBool(&b1))
-		{
-			bBacklog = bPauseNzb;
-			bPauseNzb = b1;
-		}
-
-		if (!NextParamAsStr(&szCategory) || !NextParamAsInt(&iPriority))
-		{
-			BuildErrorResponse(2, "Invalid parameter");
-			return;
-		}
-
-		// parameter "szFeedFilter" is optional since v16
-		NextParamAsStr(&szFeedFilter);
-
-		if (!NextParamAsBool(&bIncludeNonMatching) ||
-			!NextParamAsInt(&iCacheTimeSec) || !NextParamAsStr(&szCacheId))
+			(bV16 && !NextParamAsBool(&bBacklog)) || !NextParamAsBool(&bPauseNzb) ||
+			!NextParamAsStr(&szCategory) || !NextParamAsInt(&iPriority) ||
+			(bV16 && (!NextParamAsInt(&iInterval) || !NextParamAsStr(&szFeedFilter))) ||
+			!NextParamAsBool(&bIncludeNonMatching) || !NextParamAsInt(&iCacheTimeSec) ||
+			!NextParamAsStr(&szCacheId))
 		{
 			BuildErrorResponse(2, "Invalid parameter");
 			return;
@@ -3142,8 +3128,8 @@ void ViewFeedXmlCommand::Execute()
 		debug("Url=%s", szUrl);
 		debug("Filter=%s", szFilter);
 
-		bOK = g_pFeedCoordinator->PreviewFeed(szName, szUrl, szFilter, bBacklog, bPauseNzb,
-			szCategory, iPriority, szFeedFilter, iCacheTimeSec, szCacheId, &pFeedItemInfos);
+		bOK = g_pFeedCoordinator->PreviewFeed(iID, szName, szUrl, szFilter, bBacklog, bPauseNzb,
+			szCategory, iPriority, iInterval, szFeedFilter, iCacheTimeSec, szCacheId, &pFeedItemInfos);
 	}
 	else
 	{

@@ -557,18 +557,19 @@ bool FeedCoordinator::ViewFeed(int iID, FeedItemInfos** ppFeedItemInfos)
 
 	FeedInfo* pFeedInfo = m_Feeds.at(iID - 1);
 
-	return PreviewFeed(pFeedInfo->GetName(), pFeedInfo->GetUrl(), pFeedInfo->GetFilter(), 
+	return PreviewFeed(pFeedInfo->GetID(), pFeedInfo->GetName(), pFeedInfo->GetUrl(), pFeedInfo->GetFilter(), 
 		pFeedInfo->GetBacklog(), pFeedInfo->GetPauseNzb(), pFeedInfo->GetCategory(),
-		pFeedInfo->GetPriority(), pFeedInfo->GetFeedScript(), 0, NULL, ppFeedItemInfos);
+		pFeedInfo->GetPriority(), pFeedInfo->GetInterval(), pFeedInfo->GetFeedScript(), 0, NULL, ppFeedItemInfos);
 }
 
-bool FeedCoordinator::PreviewFeed(const char* szName, const char* szUrl, const char* szFilter,
-	bool bBacklog, bool bPauseNzb, const char* szCategory, int iPriority, const char* szFeedScript,
+bool FeedCoordinator::PreviewFeed(int iID, const char* szName, const char* szUrl, const char* szFilter,
+	bool bBacklog, bool bPauseNzb, const char* szCategory, int iPriority, int iInterval, const char* szFeedScript,
 	int iCacheTimeSec, const char* szCacheId, FeedItemInfos** ppFeedItemInfos)
 {
 	debug("Preview feed %s", szName);
 
-	FeedInfo* pFeedInfo = new FeedInfo(0, szName, szUrl, bBacklog, 0, szFilter, bPauseNzb, szCategory, iPriority, szFeedScript);
+	FeedInfo* pFeedInfo = new FeedInfo(iID, szName, szUrl, bBacklog, iInterval,
+		szFilter, bPauseNzb, szCategory, iPriority, szFeedScript);
 	pFeedInfo->SetPreview(true);
 	
 	FeedItemInfos* pFeedItemInfos = NULL;

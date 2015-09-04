@@ -118,8 +118,8 @@ public:
 	virtual void 			Stop();
 	void					Update(Subject* pCaller, void* pAspect);
 	void					AddFeed(FeedInfo* pFeedInfo);
-	bool					PreviewFeed(const char* szName, const char* szUrl, const char* szFilter, bool bBacklog,
-								bool bPauseNzb, const char* szCategory, int iPriority, const char* szFeedScript,
+	bool					PreviewFeed(int iID, const char* szName, const char* szUrl, const char* szFilter, bool bBacklog,
+								bool bPauseNzb, const char* szCategory, int iPriority, int iInterval, const char* szFeedScript,
 								int iCacheTimeSec, const char* szCacheId, FeedItemInfos** ppFeedItemInfos);
 	bool					ViewFeed(int iID, FeedItemInfos** ppFeedItemInfos);
 	void					FetchFeed(int iID);
