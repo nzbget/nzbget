@@ -610,7 +610,8 @@ ParChecker::EStatus ParChecker::RunParCheck(const char* szParFilename)
 
 	if (m_bHasDamagedFiles && !IsStopped() && pRepairer->missingfilecount > 0 && 
 		!(bAddedSplittedFragments && res == eRepairPossible) &&
-		g_pOptions->GetParScan() == Options::psExtended)
+		(g_pOptions->GetParScan() == Options::psExtended ||
+		 g_pOptions->GetParScan() == Options::psDupe))
 	{
 		if (AddMissingFiles())
 		{
