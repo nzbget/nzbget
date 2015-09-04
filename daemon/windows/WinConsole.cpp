@@ -103,6 +103,7 @@ WinConsole::WinConsole()
 	m_bConsole = false;
 	m_bWebUI = true;
 	m_bAutoParam = false;
+	m_bDoubleClick = false;
 	m_hTrayWindow = 0;
 	m_bRunning = false;
 	m_bRunningService = false;
@@ -317,13 +318,17 @@ LRESULT WinConsole::TrayWndProc(HWND hwndWin, UINT uMsg, WPARAM wParam, LPARAM l
 	switch (uMsg)
 	{
 		case UM_TRAYICON:
-			if (lParam == WM_LBUTTONUP)
+			if (lParam == WM_LBUTTONUP && !m_bDoubleClick)
 			{
 				g_pOptions->SetPauseDownload(!g_pOptions->GetPauseDownload());
 				g_pOptions->SetPausePostProcess(g_pOptions->GetPauseDownload());
 				g_pOptions->SetPauseScan(g_pOptions->GetPauseDownload());
 				g_pOptions->SetResumeTime(0);
 				UpdateTrayIcon();
+			}
+			else if (lParam == WM_LBUTTONDBLCLK && m_bDoubleClick)
+			{
+				ShowWebUI();
 			}
 			else if (lParam == WM_RBUTTONDOWN)
 			{
@@ -578,6 +583,8 @@ BOOL WinConsole::PrefsDialogProc(HWND hwndDlg, UINT uMsg, WPARAM wParam, LPARAM 
 			SendDlgItemMessage(hwndDlg, IDC_PREF_TRAY, BM_SETCHECK, m_bTray, 0);
 			SendDlgItemMessage(hwndDlg, IDC_PREF_CONSOLE, BM_SETCHECK, m_bConsole, 0);
 			SendDlgItemMessage(hwndDlg, IDC_PREF_WEBUI, BM_SETCHECK, m_bWebUI, 0);
+			SendDlgItemMessage(hwndDlg, IDC_PREF_TRAYPAUSE, BM_SETCHECK, !m_bDoubleClick, 0);
+			SendDlgItemMessage(hwndDlg, IDC_PREF_TRAYWEBUI, BM_SETCHECK, m_bDoubleClick, 0);
 
 			return FALSE;
 
@@ -592,6 +599,7 @@ BOOL WinConsole::PrefsDialogProc(HWND hwndDlg, UINT uMsg, WPARAM wParam, LPARAM 
 				m_bTray = SendDlgItemMessage(hwndDlg, IDC_PREF_TRAY, BM_GETCHECK, 0, 0) == BST_CHECKED;
 				m_bConsole = SendDlgItemMessage(hwndDlg, IDC_PREF_CONSOLE, BM_GETCHECK, 0, 0) == BST_CHECKED;
 				m_bWebUI = SendDlgItemMessage(hwndDlg, IDC_PREF_WEBUI, BM_GETCHECK, 0, 0) == BST_CHECKED;
+				m_bDoubleClick = SendDlgItemMessage(hwndDlg, IDC_PREF_TRAYWEBUI, BM_GETCHECK, 0, 0) == BST_CHECKED;
 
 				SavePrefs();
 				if (!m_bRunning)
@@ -626,6 +634,9 @@ void WinConsole::SavePrefs()
 
 	val = m_bWebUI;
 	RegSetValueEx(hKey, "ShowWebUI", 0, REG_DWORD, (BYTE*)&val, sizeof(val));
+
+	val = m_bDoubleClick;
+	RegSetValueEx(hKey, "TrayDoubleClick", 0, REG_DWORD, (BYTE*)&val, sizeof(val));
 
 	RegCloseKey(hKey);
 
@@ -669,6 +680,11 @@ void WinConsole::LoadPrefs()
 		if (RegQueryValueEx(hKey, "ShowWebUI", 0, &typ, (LPBYTE)&val, &cval) == ERROR_SUCCESS)
 		{
 			m_bWebUI = val;
+		}
+
+		if (RegQueryValueEx(hKey, "TrayDoubleClick", 0, &typ, (LPBYTE)&val, &cval) == ERROR_SUCCESS)
+		{
+			m_bDoubleClick = val;
 		}
 
 		RegCloseKey(hKey);

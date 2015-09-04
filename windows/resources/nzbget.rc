@@ -99,20 +99,25 @@ BEGIN
     LTEXT           ".",IDC_STATIC,151,107,8,8,SS_NOTIFY
 END
 
-IDD_PREFDIALOG DIALOGEX 0, 0, 212, 137
+IDD_PREFDIALOG DIALOGEX 0, 0, 243, 174
 STYLE DS_SETFONT | DS_MODALFRAME | DS_CENTER | WS_POPUP | WS_CAPTION | WS_SYSMENU
 CAPTION "NZBGet Preferences"
 FONT 8, "Tahoma", 400, 0, 0x0
 BEGIN
-    DEFPUSHBUTTON   "OK",IDOK,100,116,50,14
-    PUSHBUTTON      "Cancel",IDCANCEL,155,116,50,14
-    LTEXT           "*",IDC_STATIC,13,70,8,9
+    DEFPUSHBUTTON   "OK",IDOK,132,153,50,14
+    PUSHBUTTON      "Cancel",IDCANCEL,186,153,50,14
+    LTEXT           "*",IDC_STATIC,13,109,8,9
     CONTROL         "Start at login *",IDC_PREF_AUTOSTART,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,13,13,58,10
     CONTROL         "Show console window",IDC_PREF_CONSOLE,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,13,37,86,10
     CONTROL         "Show in tray (near clock)",IDC_PREF_TRAY,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,13,25,94,10
     CONTROL         "Show Web-Interface on start",IDC_PREF_WEBUI,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,13,49,108,10
-    LTEXT           "Only Windows-specific options are located here. For all other options see Settings page in Web-Interface.",IDC_STATIC,21,90,175,17
-    LTEXT           "NZBGet can also run as Windows service. See README-WINDOWS.txt for details.",IDC_STATIC,21,68,172,17
+    LTEXT           "Only Windows-specific options are located here. For all other options see Settings page in Web-Interface.",IDC_STATIC,22,128,214,17
+    LTEXT           "NZBGet can also run as Windows service. See README-WINDOWS.txt for details.",IDC_STATIC,21,107,207,16
+    CONTROL         "Single click pauses/resumes, double click does nothing",IDC_PREF_TRAYPAUSE,
+                    "Button",BS_AUTORADIOBUTTON,13,78,207,10
+    CONTROL         "Double click opens web-interface, single click does nothing",IDC_PREF_TRAYWEBUI,
+                    "Button",BS_AUTORADIOBUTTON,13,89,202,10
+    LTEXT           "Tray icon behavior",IDC_STATIC,13,65,60,8
 END
 
 IDD_FACTORYRESETDIALOG DIALOGEX 0, 0, 297, 76
@@ -161,10 +166,10 @@ BEGIN
     IDD_PREFDIALOG, DIALOG
     BEGIN
         LEFTMARGIN, 7
-        RIGHTMARGIN, 205
+        RIGHTMARGIN, 236
         VERTGUIDE, 13
         TOPMARGIN, 7
-        BOTTOMMARGIN, 130
+        BOTTOMMARGIN, 167
     END
 
     IDD_FACTORYRESETDIALOG, DIALOG

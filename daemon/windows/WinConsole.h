@@ -57,6 +57,7 @@ private:
 	bool					m_bAutoParam;
 	bool					m_bRunning;
 	bool					m_bRunningService;
+	bool					m_bDoubleClick;
 
 	void					CreateResources();
 	void					CreateTrayIcon();
