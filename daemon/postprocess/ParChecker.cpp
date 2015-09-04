@@ -935,20 +935,9 @@ void ParChecker::QueueChanged()
 
 bool ParChecker::AddSplittedFragments()
 {
-	char szDirectory[1024];
-	strncpy(szDirectory, m_szParFilename, 1024);
-	szDirectory[1024-1] = '\0';
-
-	char* szBasename = Util::BaseFileName(szDirectory);
-	if (szBasename == szDirectory)
-	{
-		return false;
-	}
-	szBasename[-1] = '\0';
-
 	std::list<CommandLine::ExtraFile> extrafiles;
 
-	DirBrowser dir(szDirectory);
+	DirBrowser dir(m_szDestDir);
 	while (const char* filename = dir.Next())
 	{
 		if (strcmp(filename, ".") && strcmp(filename, "..") && strcmp(filename, "_brokenlog.txt") &&
@@ -975,7 +964,7 @@ bool ParChecker::AddSplittedFragments()
 							debug("Found splitted fragment %s", filename);
 
 							char fullfilename[1024];
-							snprintf(fullfilename, 1024, "%s%c%s", szDirectory, PATH_SEPARATOR, filename);
+							snprintf(fullfilename, 1024, "%s%c%s", m_szDestDir, PATH_SEPARATOR, filename);
 							fullfilename[1024-1] = '\0';
 
 							CommandLine::ExtraFile extrafile(fullfilename, Util::FileSize(fullfilename));
@@ -1004,11 +993,7 @@ bool ParChecker::AddSplittedFragments()
 
 bool ParChecker::AddMissingFiles()
 {
-	char szDirectory[1024];
-	strncpy(szDirectory, m_szParFilename, 1024);
-	szDirectory[1024-1] = '\0';
-
-	return AddExtraFiles(true, false, szDirectory);
+	return AddExtraFiles(true, false, m_szDestDir);
 }
 
 bool ParChecker::AddDupeFiles()
