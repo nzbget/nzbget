@@ -223,6 +223,10 @@ void RequestProcessor::Run()
 			processor.SetUrl(szUrl);
 			processor.SetHttpMethod(eHttpMethod);
 			processor.Execute();
+
+			m_pConnection->SetGracefull(true);
+			m_pConnection->Disconnect();
+
 			bOK = true;
 		}
 	}

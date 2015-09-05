@@ -62,6 +62,7 @@ protected:
 	char				m_szRemoteAddr[20];
 	int					m_iTotalBytesRead;
 	bool				m_bBroken;
+	bool				m_bGracefull;
 
 	struct SockAddr
 	{
@@ -136,6 +137,8 @@ public:
 	void				SetSuppressErrors(bool bSuppressErrors);
 	bool				GetSuppressErrors() { return m_bSuppressErrors; }
 	const char*			GetRemoteAddr();
+	bool				GetGracefull() { return m_bGracefull; }
+	void				SetGracefull(bool bGracefull) { m_bGracefull = bGracefull; }
 #ifndef DISABLE_TLS
 	bool				StartTLS(bool bIsClient, const char* szCertFile, const char* szKeyFile);
 #endif
