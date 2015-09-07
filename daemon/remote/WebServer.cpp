@@ -50,9 +50,41 @@ static const char* ERR_HTTP_NOT_FOUND = "404 Not Found";
 static const char* ERR_HTTP_SERVICE_UNAVAILABLE = "503 Service Unavailable";
 
 static const int MAX_UNCOMPRESSED_SIZE = 500;
+char WebProcessor::m_szServerAuthToken[3][49];
 
 //*****************************************************************
 // WebProcessor
+
+void WebProcessor::Init()
+{
+	if (m_szServerAuthToken[0][0] != 0)
+	{
+		// already initialized
+		return;
+	}
+
+	for (int j = uaControl; j <= uaAdd; j++)
+	{
+		for (int i = 0; i < sizeof(m_szServerAuthToken[j]) - 1; i++)
+		{
+			int ch = rand() % (10 + 26 + 26);
+			if (0 <= ch && ch < 10)
+			{
+				m_szServerAuthToken[j][i] = '0' + ch;
+			}
+			else if (10 <= ch && ch < 10 + 26)
+			{
+				m_szServerAuthToken[j][i] = 'a' + ch - 10;
+			}
+			else
+			{
+				m_szServerAuthToken[j][i] = 'A' + ch - 10 - 26;
+			}
+		}
+		m_szServerAuthToken[j][sizeof(m_szServerAuthToken[j]) - 1] = '\0';
+		debug("X-Auth-Token[%i]: %s", j, m_szServerAuthToken[j]);
+	}
+}
 
 WebProcessor::WebProcessor()
 {
@@ -77,49 +109,13 @@ void WebProcessor::SetUrl(const char* szUrl)
 void WebProcessor::Execute()
 {
 	m_bGZip =false;
-	char szAuthInfo[1024];
-	szAuthInfo[0] = '\0';
 	m_eUserAccess = uaControl;
+	m_szAuthInfo[0] = '\0';
+	m_szAuthToken[0] = '\0';
 
-	// reading http header
-	char szBuffer[1024];
-	int iContentLen = 0;
-	while (char* p = m_pConnection->ReadLine(szBuffer, sizeof(szBuffer), NULL))
-	{
-		if (char* pe = strrchr(p, '\r')) *pe = '\0';
-		debug("header=%s", p);
-		if (!strncasecmp(p, "Content-Length: ", 16))
-		{
-			iContentLen = atoi(p + 16);
-		}
-		if (!strncasecmp(p, "Authorization: Basic ", 21))
-		{
-			char* szAuthInfo64 = p + 21;
-			if (strlen(szAuthInfo64) > sizeof(szAuthInfo))
-			{
-				error("Invalid-request: auth-info too big");
-				return;
-			}
-			szAuthInfo[WebUtil::DecodeBase64(szAuthInfo64, 0, szAuthInfo)] = '\0';
-		}
-		if (!strncasecmp(p, "Accept-Encoding: ", 17))
-		{
-			m_bGZip = strstr(p, "gzip");
-		}
-		if (!strncasecmp(p, "Origin: ", 8))
-		{
-			m_szOrigin = strdup(p + 8);
-		}
-		if (*p == '\0')
-		{
-			break;
-		}
-	}
+	ParseHeaders();
 
-	debug("URL=%s", m_szUrl);
-	debug("Authorization=%s", szAuthInfo);
-
-	if (m_eHttpMethod == hmPost && iContentLen <= 0)
+	if (m_eHttpMethod == hmPost && m_iContentLen <= 0)
 	{
 		error("Invalid-request: content length is 0");
 		return;
@@ -131,6 +127,82 @@ void WebProcessor::Execute()
 		return;
 	}
 
+	ParseURL();
+
+	if (!CheckCredentials())
+	{
+		SendAuthResponse();
+		return;
+	}
+
+	if (m_eHttpMethod == hmPost)
+	{
+		// reading http body (request content)
+		m_szRequest = (char*)malloc(m_iContentLen + 1);
+		m_szRequest[m_iContentLen] = '\0';
+		
+		if (!m_pConnection->Recv(m_szRequest, m_iContentLen))
+		{
+			error("Invalid-request: could not read data");
+			return;
+		}
+		debug("Request=%s", m_szRequest);
+	}
+	
+	debug("request received from %s", m_pConnection->GetRemoteAddr());
+
+	Dispatch();
+}
+
+void WebProcessor::ParseHeaders()
+{
+	// reading http header
+	char szBuffer[256+1];
+	m_iContentLen = 0;
+	while (char* p = m_pConnection->ReadLine(szBuffer, sizeof(szBuffer), NULL))
+	{
+		if (char* pe = strrchr(p, '\r')) *pe = '\0';
+		debug("header=%s", p);
+		if (!strncasecmp(p, "Content-Length: ", 16))
+		{
+			m_iContentLen = atoi(p + 16);
+		}
+		if (!strncasecmp(p, "Authorization: Basic ", 21))
+		{
+			char* szAuthInfo64 = p + 21;
+			if (strlen(szAuthInfo64) > sizeof(m_szAuthInfo))
+			{
+				error("Invalid-request: auth-info too big");
+				return;
+			}
+			m_szAuthInfo[WebUtil::DecodeBase64(szAuthInfo64, 0, m_szAuthInfo)] = '\0';
+		}
+		if (!strncasecmp(p, "Accept-Encoding: ", 17))
+		{
+			m_bGZip = strstr(p, "gzip");
+		}
+		if (!strncasecmp(p, "Origin: ", 8))
+		{
+			m_szOrigin = strdup(p + 8);
+		}
+		if (!strncasecmp(p, "X-Auth-Token: ", 14))
+		{
+			strncpy(m_szAuthToken, p + 14, sizeof(m_szAuthToken)-1);
+			m_szAuthToken[sizeof(m_szAuthToken)-1] = '\0';
+		}
+		if (*p == '\0')
+		{
+			break;
+		}
+	}
+
+	debug("URL=%s", m_szUrl);
+	debug("Authorization=%s", m_szAuthInfo);
+	debug("X-Auth-Token=%s", m_szAuthToken);
+}
+
+void WebProcessor::ParseURL()
+{
 	// remove subfolder "nzbget" from the path (if exists)
 	// http://localhost:6789/nzbget/username:password/jsonrpc -> http://localhost:6789/username:password/jsonrpc
 	if (!strncmp(m_szUrl, "/nzbget/", 8))
@@ -160,48 +232,59 @@ void WebProcessor::Execute()
 		char* pend = strchr(pstart + 1, '/');
 		if (pend) 
 		{
-			iLen = (int)(pend - pstart < (int)sizeof(szAuthInfo) - 1 ? pend - pstart : (int)sizeof(szAuthInfo) - 1);
+			iLen = (int)(pend - pstart < (int)sizeof(m_szAuthInfo) - 1 ? pend - pstart : (int)sizeof(m_szAuthInfo) - 1);
 		}
 		else
 		{
 			iLen = strlen(pstart);
 		}
-		strncpy(szAuthInfo, pstart, iLen);
-		szAuthInfo[iLen] = '\0';
+		strncpy(m_szAuthInfo, pstart, iLen);
+		m_szAuthInfo[iLen] = '\0';
 		char* sz_OldUrl = m_szUrl;
 		m_szUrl = strdup(pend);
 		free(sz_OldUrl);
 	}
 
 	debug("Final URL=%s", m_szUrl);
+}
 
+bool WebProcessor::CheckCredentials()
+{
 	if (!Util::EmptyStr(g_pOptions->GetControlPassword()) &&
 		!(!Util::EmptyStr(g_pOptions->GetAuthorizedIP()) && IsAuthorizedIP(m_pConnection->GetRemoteAddr())))
 	{
-		if (Util::EmptyStr(szAuthInfo))
+		if (Util::EmptyStr(m_szAuthInfo))
 		{
-			SendAuthResponse();
-			return;
+			// Authorization via X-Auth-Token
+			for (int j = uaControl; j <= uaAdd; j++)
+			{
+				if (!strcmp(m_szAuthToken, m_szServerAuthToken[j]))
+				{
+					m_eUserAccess = (EUserAccess)j;
+					return true;
+				}
+			}
+			return false;
 		}
 
-		// Authorization
-		char* pw = strchr(szAuthInfo, ':');
+		// Authorization via username:password
+		char* pw = strchr(m_szAuthInfo, ':');
 		if (pw) *pw++ = '\0';
 
 		if ((Util::EmptyStr(g_pOptions->GetControlUsername()) ||
-			 !strcmp(szAuthInfo, g_pOptions->GetControlUsername())) &&
+			 !strcmp(m_szAuthInfo, g_pOptions->GetControlUsername())) &&
 			pw && !strcmp(pw, g_pOptions->GetControlPassword()))
 		{
 			m_eUserAccess = uaControl;
 		}
 		else if (!Util::EmptyStr(g_pOptions->GetRestrictedUsername()) &&
-			!strcmp(szAuthInfo, g_pOptions->GetRestrictedUsername()) &&
+			!strcmp(m_szAuthInfo, g_pOptions->GetRestrictedUsername()) &&
 			pw && !strcmp(pw, g_pOptions->GetRestrictedPassword()))
 		{
 			m_eUserAccess = uaRestricted;
 		}
 		else if (!Util::EmptyStr(g_pOptions->GetAddUsername()) &&
-			!strcmp(szAuthInfo, g_pOptions->GetAddUsername()) &&
+			!strcmp(m_szAuthInfo, g_pOptions->GetAddUsername()) &&
 			pw && !strcmp(pw, g_pOptions->GetAddPassword()))
 		{
 			m_eUserAccess = uaAdd;
@@ -209,29 +292,12 @@ void WebProcessor::Execute()
 		else
 		{
 			warn("Request received on port %i from %s, but username or password invalid (%s:%s)",
-				g_pOptions->GetControlPort(), m_pConnection->GetRemoteAddr(), szAuthInfo, pw);
-			SendAuthResponse();
-			return;
+				g_pOptions->GetControlPort(), m_pConnection->GetRemoteAddr(), m_szAuthInfo, pw);
+			return false;
 		}
 	}
 
-	if (m_eHttpMethod == hmPost)
-	{
-		// reading http body (request content)
-		m_szRequest = (char*)malloc(iContentLen + 1);
-		m_szRequest[iContentLen] = '\0';
-		
-		if (!m_pConnection->Recv(m_szRequest, iContentLen))
-		{
-			error("Invalid-request: could not read data");
-			return;
-		}
-		debug("Request=%s", m_szRequest);
-	}
-	
-	debug("request received from %s", m_pConnection->GetRemoteAddr());
-
-	Dispatch();
+	return true;
 }
 
 bool WebProcessor::IsAuthorizedIP(const char* szRemoteAddr)
@@ -402,6 +468,7 @@ void WebProcessor::SendBodyResponse(const char* szBody, int iBodyLen, const char
 		"Access-Control-Allow-Credentials: true\r\n"
 		"Access-Control-Max-Age: 86400\r\n"
 		"Access-Control-Allow-Headers: Content-Type, Authorization\r\n"
+		"X-Auth-Token: %s\r\n"
 		"Content-Length: %i\r\n"
 		"%s"					// Content-Type: xxx
 		"%s"					// Content-Encoding: gzip
@@ -445,7 +512,7 @@ void WebProcessor::SendBodyResponse(const char* szBody, int iBodyLen, const char
 	char szResponseHeader[1024];
 	snprintf(szResponseHeader, 1024, RESPONSE_HEADER, 
 		m_szOrigin ? m_szOrigin : "",
-		iBodyLen, szContentTypeHeader,
+		m_szServerAuthToken[m_eUserAccess], iBodyLen, szContentTypeHeader,
 		bGZip ? "Content-Encoding: gzip\r\n" : "",
 		Util::VersionRevision());
 	

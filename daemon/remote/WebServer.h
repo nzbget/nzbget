@@ -53,6 +53,10 @@ private:
 	EUserAccess			m_eUserAccess;
 	bool				m_bGZip;
 	char*				m_szOrigin;
+	int					m_iContentLen;
+	char				m_szAuthInfo[256+1];
+	char				m_szAuthToken[48+1];
+	static char			m_szServerAuthToken[3][48+1];
 
 	void				Dispatch();
 	void				SendAuthResponse();
@@ -63,10 +67,14 @@ private:
 	void				SendRedirectResponse(const char* szURL);
 	const char*			DetectContentType(const char* szFilename);
 	bool				IsAuthorizedIP(const char* szRemoteAddr);
+	void				ParseHeaders();
+	void				ParseURL();
+	bool				CheckCredentials();
 
 public:
 						WebProcessor();
 						~WebProcessor();
+	static void			Init();
 	void				Execute();
 	void				SetConnection(Connection* pConnection) { m_pConnection = pConnection; }
 	void				SetUrl(const char* szUrl);

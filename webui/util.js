@@ -1,7 +1,7 @@
 /*
  * This file is part of nzbget
  *
- * Copyright (C) 2012-2014 Andrey Prygunkov <hugbug@users.sourceforge.net>
+ * Copyright (C) 2012-2015 Andrey Prygunkov <hugbug@users.sourceforge.net>
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -477,6 +477,7 @@ var RPC = (new function($)
 	this.rpcUrl;
 	this.defaultFailureCallback;
 	this.connectErrorMessage = 'Cannot establish connection';
+	var XAuthToken;
 
 	this.call = function(method, params, completed_callback, failure_callback, timeout)
 	{
@@ -486,6 +487,13 @@ var RPC = (new function($)
 		var xhr = new XMLHttpRequest();
 
 		xhr.open('post', this.rpcUrl);
+		
+		if (XAuthToken !== undefined)
+		{
+			xhr.setRequestHeader('X-Auth-Token', XAuthToken);
+			// Remove default authorization header to improve security (some browsers may still send it)
+			xhr.setRequestHeader('Authorization', '');
+		}
 		
 		if (timeout)
 		{
@@ -519,6 +527,7 @@ var RPC = (new function($)
 							{
 								if (result.error == null)
 								{
+									XAuthToken = xhr.getResponseHeader('X-Auth-Token');
 									res = result.result;
 									completed_callback(res);
 									return;

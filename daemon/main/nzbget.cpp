@@ -66,6 +66,7 @@
 #include "QueueCoordinator.h"
 #include "UrlCoordinator.h"
 #include "RemoteServer.h"
+#include "WebServer.h"
 #include "RemoteClient.h"
 #include "MessageBase.h"
 #include "DiskState.h"
@@ -328,6 +329,7 @@ void Run(bool bReload)
 	// Setup the network-server
 	if (g_pOptions->GetServerMode())
 	{
+		WebProcessor::Init();
 		g_pRemoteServer = new RemoteServer(false);
 		g_pRemoteServer->Start();
 
