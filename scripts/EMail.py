@@ -50,7 +50,10 @@
 # SMTP server port (1-65535).
 #Port=25
 
-# Secure communication using TLS/SSL (yes, no).
+# Secure communication using TLS/SSL (yes, no, force).
+#  no    - plain text communication (insecure);
+#  yes   - switch to secure session using StartTLS command;
+#  force - start secure session on encrypted socket.
 #Encryption=yes
 
 # SMTP server user name, if required.
@@ -250,7 +253,10 @@ msg['X-Application'] = 'NZBGet'
 print('[DETAIL] Sending E-Mail')
 sys.stdout.flush()
 try:
-	smtp = smtplib.SMTP(os.environ['NZBPO_SERVER'], os.environ['NZBPO_PORT'])
+	if os.environ['NZBPO_ENCRYPTION'] == 'force':
+		smtp = smtplib.SMTP_SSL(os.environ['NZBPO_SERVER'], os.environ['NZBPO_PORT'])
+	else:
+		smtp = smtplib.SMTP(os.environ['NZBPO_SERVER'], os.environ['NZBPO_PORT'])
 
 	if os.environ['NZBPO_ENCRYPTION'] == 'yes':
 		smtp.starttls()
