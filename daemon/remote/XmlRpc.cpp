@@ -775,6 +775,7 @@ XmlCommand::XmlCommand()
 	m_szCallbackFunc = NULL;
 	m_bFault = false;
 	m_eProtocol = XmlRpcProcessor::rpUndefined;
+	m_StringBuilder.SetGrowSize(1024 * 10);
 }
 
 bool XmlCommand::IsJson()
@@ -785,6 +786,32 @@ bool XmlCommand::IsJson()
 void XmlCommand::AppendResponse(const char* szPart)
 {
 	m_StringBuilder.Append(szPart);
+}
+
+void XmlCommand::AppendFmtResponse(const char* szFormat, ...)
+{
+	va_list args;
+	va_start(args, szFormat);
+	m_StringBuilder.AppendFmtV(szFormat, args);
+	va_end(args);
+}
+
+void XmlCommand::AppendCondResponse(const char* szPart, bool bCond)
+{
+	if (bCond)
+	{
+		m_StringBuilder.Append(szPart);
+	}
+}
+
+void XmlCommand::OptimizeResponse(int iRecordCount)
+{
+	// Reduce the number of memory allocations when building response buffer
+	int iGrowSize = iRecordCount * m_StringBuilder.GetUsedSize() / 10;
+	if (iGrowSize > 1024 * 10)
+	{
+		m_StringBuilder.SetGrowSize(iGrowSize);
+	}
 }
 
 void XmlCommand::BuildErrorResponse(int iErrCode, const char* szErrText, ...)
@@ -1378,8 +1405,7 @@ void StatusXmlCommand::Execute()
 	bool bFeedActive = g_pFeedCoordinator->HasActiveDownloads();
 	int iQueuedScripts = g_pQueueScriptCoordinator->GetQueueSize();
 
-	char szContent[3072];
-	snprintf(szContent, 3072, IsJson() ? JSON_STATUS_START : XML_STATUS_START, 
+	AppendFmtResponse(IsJson() ? JSON_STATUS_START : XML_STATUS_START,
 		iRemainingSizeLo, iRemainingSizeHi, iRemainingMBytes, iForcedSizeLo,
 		iForcedSizeHi, iForcedMBytes, iDownloadedSizeLo, iDownloadedSizeHi,
 		iDownloadedMBytes, iArticleCacheLo, iArticleCacheHi, iArticleCacheMBytes,
@@ -1389,23 +1415,15 @@ void StatusXmlCommand::Execute()
 		BoolToStr(bServerStandBy), BoolToStr(bPostPaused), BoolToStr(bScanPaused),
 		iFreeDiskSpaceLo, iFreeDiskSpaceHi,	iFreeDiskSpaceMB, iServerTime, iResumeTime,
 		BoolToStr(bFeedActive), iQueuedScripts);
-	szContent[3072-1] = '\0';
-
-	AppendResponse(szContent);
 
 	int index = 0;
 	for (Servers::iterator it = g_pServerPool->GetServers()->begin(); it != g_pServerPool->GetServers()->end(); it++)
 	{
 		NewsServer* pServer = *it;
-		snprintf(szContent, sizeof(szContent), IsJson() ? JSON_NEWSSERVER_ITEM : XML_NEWSSERVER_ITEM,
-			pServer->GetID(), BoolToStr(pServer->GetActive()));
-		szContent[3072-1] = '\0';
 
-		if (IsJson() && index++ > 0)
-		{
-			AppendResponse(",\n");
-		}
-		AppendResponse(szContent);
+		AppendCondResponse(",\n", IsJson() && index++ > 0);
+		AppendFmtResponse(IsJson() ? JSON_NEWSSERVER_ITEM : XML_NEWSSERVER_ITEM,
+			pServer->GetID(), BoolToStr(pServer->GetActive()));
 	}
 
 	AppendResponse(IsJson() ? JSON_STATUS_END : XML_STATUS_END);
@@ -1465,27 +1483,20 @@ void LogXmlCommand::Execute()
 
     const char* szMessageType[] = { "INFO", "WARNING", "ERROR", "DEBUG", "DETAIL" };
 
-	int iItemBufSize = 10240;
-	char* szItemBuf = (char*)malloc(iItemBufSize);
 	int index = 0;
 
 	for (unsigned int i = (unsigned int)iStart; i < pMessages->size(); i++)
 	{
 		Message* pMessage = (*pMessages)[i];
+
 		char* xmltext = EncodeStr(pMessage->GetText());
-		snprintf(szItemBuf, iItemBufSize, IsJson() ? JSON_LOG_ITEM : XML_LOG_ITEM,
+
+		AppendCondResponse(",\n", IsJson() && index++ > 0);
+		AppendFmtResponse(IsJson() ? JSON_LOG_ITEM : XML_LOG_ITEM,
 			pMessage->GetID(), szMessageType[pMessage->GetKind()], pMessage->GetTime(), xmltext);
-		szItemBuf[iItemBufSize-1] = '\0';
+
 		free(xmltext);
-
-		if (IsJson() && index++ > 0)
-		{
-			AppendResponse(",\n");
-		}
-		AppendResponse(szItemBuf);
 	}
-
-	free(szItemBuf);
 
 	UnlockMessages();
 	AppendResponse(IsJson() ? "\n]" : "</data></array>\n");
@@ -1575,8 +1586,6 @@ void ListFilesXmlCommand::Execute()
 		"\"Progress\" : %i\n"
 		"}";
 
-	int iItemBufSize = 10240;
-	char* szItemBuf = (char*)malloc(iItemBufSize);
 	int index = 0;
 
 	for (NZBList::iterator it = pDownloadQueue->GetQueue()->begin(); it != pDownloadQueue->GetQueue()->end(); it++)
@@ -1603,13 +1612,13 @@ void ListFilesXmlCommand::Execute()
 				int iProgress = pFileInfo->GetFailedSize() == 0 && pFileInfo->GetSuccessSize() == 0 ? 0 :
 					(int)(1000 - pFileInfo->GetRemainingSize() * 1000 / (pFileInfo->GetSize() - pFileInfo->GetMissedSize()));
 
-				snprintf(szItemBuf, iItemBufSize, IsJson() ? JSON_LIST_ITEM : XML_LIST_ITEM,
+				AppendCondResponse(",\n", IsJson() && index++ > 0);
+				AppendFmtResponse(IsJson() ? JSON_LIST_ITEM : XML_LIST_ITEM,
 					pFileInfo->GetID(), iFileSizeLo, iFileSizeHi, iRemainingSizeLo, iRemainingSizeHi, 
 					pFileInfo->GetTime(), BoolToStr(pFileInfo->GetFilenameConfirmed()), 
 					BoolToStr(pFileInfo->GetPaused()), pFileInfo->GetNZBInfo()->GetID(), xmlNZBNicename,
 					xmlNZBNicename, xmlNZBFilename, xmlSubject, xmlFilename, xmlDestDir, xmlCategory,
 					pFileInfo->GetNZBInfo()->GetPriority(), pFileInfo->GetActiveDownloads(), iProgress);
-				szItemBuf[iItemBufSize-1] = '\0';
 
 				free(xmlNZBFilename);
 				free(xmlSubject);
@@ -1617,16 +1626,9 @@ void ListFilesXmlCommand::Execute()
 				free(xmlDestDir);
 				free(xmlCategory);
 				free(xmlNZBNicename);
-
-				if (IsJson() && index++ > 0)
-				{
-					AppendResponse(",\n");
-				}
-				AppendResponse(szItemBuf);
 			}
 		}
 	}
-	free(szItemBuf);
 
 	DownloadQueue::Unlock();
 	AppendResponse(IsJson() ? "\n]" : "</data></array>\n");
@@ -1794,9 +1796,6 @@ void NzbInfoXmlCommand::AppendNZBInfoFields(NZBInfo* pNZBInfo)
 	const char* szUrlStatusName[] = { "NONE", "UNKNOWN", "SUCCESS", "FAILURE", "UNKNOWN", "SCAN_SKIPPED", "SCAN_FAILURE" };
     const char* szDupeModeName[] = { "SCORE", "ALL", "FORCE" };
 	
-	int iItemBufSize = 10240;
-	char* szItemBuf = (char*)malloc(iItemBufSize);
-	
 	unsigned long iFileSizeHi, iFileSizeLo, iFileSizeMB;
 	Util::SplitInt64(pNZBInfo->GetSize(), &iFileSizeHi, &iFileSizeLo);
 	iFileSizeMB = (int)(pNZBInfo->GetSize() / 1024 / 1024);
@@ -1816,7 +1815,7 @@ void NzbInfoXmlCommand::AppendNZBInfoFields(NZBInfo* pNZBInfo)
 	char* xmlDupeKey = EncodeStr(pNZBInfo->GetDupeKey());
 	const char* szExParStatus = pNZBInfo->GetExtraParBlocks() > 0 ? "RECIPIENT" : pNZBInfo->GetExtraParBlocks() < 0 ? "DONOR" : "NONE";
 	
-	snprintf(szItemBuf, iItemBufSize, IsJson() ? JSON_NZB_ITEM_START : XML_NZB_ITEM_START,
+	AppendFmtResponse(IsJson() ? JSON_NZB_ITEM_START : XML_NZB_ITEM_START,
 			 pNZBInfo->GetID(), xmlNZBNicename, xmlNZBNicename, szKindName[pNZBInfo->GetKind()],
 			 xmlURL, xmlNZBFilename, xmlDestDir, xmlFinalDir, xmlCategory,
 			 szParStatusName[pNZBInfo->GetParStatus()], szExParStatus,
@@ -1842,30 +1841,20 @@ void NzbInfoXmlCommand::AppendNZBInfoFields(NZBInfo* pNZBInfo)
 	free(xmlFinalDir);
 	free(xmlDupeKey);
 		
-	szItemBuf[iItemBufSize-1] = '\0';
-
-	AppendResponse(szItemBuf);
-	
 	// Post-processing parameters
 	int iParamIndex = 0;
 	for (NZBParameterList::iterator it = pNZBInfo->GetParameters()->begin(); it != pNZBInfo->GetParameters()->end(); it++)
 	{
 		NZBParameter* pParameter = *it;
-		
+
 		char* xmlName = EncodeStr(pParameter->GetName());
 		char* xmlValue = EncodeStr(pParameter->GetValue());
 		
-		snprintf(szItemBuf, iItemBufSize, IsJson() ? JSON_PARAMETER_ITEM : XML_PARAMETER_ITEM, xmlName, xmlValue);
-		szItemBuf[iItemBufSize-1] = '\0';
+		AppendCondResponse(",\n", IsJson() && iParamIndex++ > 0);
+		AppendFmtResponse(IsJson() ? JSON_PARAMETER_ITEM : XML_PARAMETER_ITEM, xmlName, xmlValue);
 		
 		free(xmlName);
 		free(xmlValue);
-		
-		if (IsJson() && iParamIndex++ > 0)
-		{
-			AppendResponse(",\n");
-		}
-		AppendResponse(szItemBuf);
 	}
 	
 	AppendResponse(IsJson() ? JSON_NZB_ITEM_SCRIPT_START : XML_NZB_ITEM_SCRIPT_START);
@@ -1879,17 +1868,11 @@ void NzbInfoXmlCommand::AppendNZBInfoFields(NZBInfo* pNZBInfo)
 		char* xmlName = EncodeStr(pScriptStatus->GetName());
 		char* xmlStatus = EncodeStr(szScriptStatusName[pScriptStatus->GetStatus()]);
 		
-		snprintf(szItemBuf, iItemBufSize, IsJson() ? JSON_SCRIPT_ITEM : XML_SCRIPT_ITEM, xmlName, xmlStatus);
-		szItemBuf[iItemBufSize-1] = '\0';
+		AppendCondResponse(",\n", IsJson() && iScriptIndex++ > 0);
+		AppendFmtResponse(IsJson() ? JSON_SCRIPT_ITEM : XML_SCRIPT_ITEM, xmlName, xmlStatus);
 		
 		free(xmlName);
 		free(xmlStatus);
-		
-		if (IsJson() && iScriptIndex++ > 0)
-		{
-			AppendResponse(",\n");
-		}
-		AppendResponse(szItemBuf);
 	}
 	
 	AppendResponse(IsJson() ? JSON_NZB_ITEM_STATS_START : XML_NZB_ITEM_STATS_START);
@@ -1900,20 +1883,12 @@ void NzbInfoXmlCommand::AppendNZBInfoFields(NZBInfo* pNZBInfo)
 	{
 		ServerStat* pServerStat = *it;
 		
-		snprintf(szItemBuf, iItemBufSize, IsJson() ? JSON_STAT_ITEM : XML_STAT_ITEM,
+		AppendCondResponse(",\n", IsJson() && iStatIndex++ > 0);
+		AppendFmtResponse(IsJson() ? JSON_STAT_ITEM : XML_STAT_ITEM,
 				 pServerStat->GetServerID(), pServerStat->GetSuccessArticles(), pServerStat->GetFailedArticles());
-		szItemBuf[iItemBufSize-1] = '\0';
-		
-		if (IsJson() && iStatIndex++ > 0)
-		{
-			AppendResponse(",\n");
-		}
-		AppendResponse(szItemBuf);
 	}
 	
 	AppendResponse(IsJson() ? JSON_NZB_ITEM_END : XML_NZB_ITEM_END);
-
-	free(szItemBuf);
 }
 
 void NzbInfoXmlCommand::AppendPostInfoFields(PostInfo* pPostInfo, int iLogEntries, bool bPostQueue)
@@ -1971,19 +1946,15 @@ void NzbInfoXmlCommand::AppendPostInfoFields(PostInfo* pPostInfo, int iLogEntrie
 	
 	const char* szMessageType[] = { "INFO", "WARNING", "ERROR", "DEBUG", "DETAIL"};
 
-	time_t tCurTime = time(NULL);
-	int iItemBufSize = 10240;
-	char* szItemBuf = (char*)malloc(iItemBufSize);
-	int index = 0;
-
 	const char* szItemStart = bPostQueue ? IsJson() ? JSON_POSTQUEUE_ITEM_START : XML_POSTQUEUE_ITEM_START :
 		IsJson() ? JSON_GROUPQUEUE_ITEM_START : XML_GROUPQUEUE_ITEM_START;
 
 	if (pPostInfo)
 	{
+		time_t tCurTime = time(NULL);
 		char* xmlProgressLabel = EncodeStr(pPostInfo->GetProgressLabel());
 
-		snprintf(szItemBuf, iItemBufSize,  szItemStart, xmlProgressLabel, pPostInfo->GetStageProgress(),
+		AppendFmtResponse(szItemStart, xmlProgressLabel, pPostInfo->GetStageProgress(),
 			pPostInfo->GetStageTime() ? tCurTime - pPostInfo->GetStageTime() : 0,
 			pPostInfo->GetStartTime() ? tCurTime - pPostInfo->GetStartTime() : 0);
 
@@ -1991,16 +1962,8 @@ void NzbInfoXmlCommand::AppendPostInfoFields(PostInfo* pPostInfo, int iLogEntrie
 	}
 	else
 	{
-		snprintf(szItemBuf, iItemBufSize,  szItemStart, "NONE", "", 0, 0, 0, 0);
+		AppendFmtResponse(szItemStart, "NONE", "", 0, 0, 0, 0);
 	}
-
-	szItemBuf[iItemBufSize-1] = '\0';
-
-	if (IsJson() && index++ > 0)
-	{
-		AppendResponse(",\n");
-	}
-	AppendResponse(szItemBuf);
 	
 	AppendResponse(IsJson() ? JSON_LOG_START : XML_LOG_START);
 
@@ -2019,25 +1982,20 @@ void NzbInfoXmlCommand::AppendPostInfoFields(PostInfo* pPostInfo, int iLogEntrie
 			for (unsigned int i = (unsigned int)iStart; i < pMessages->size(); i++)
 			{
 				Message* pMessage = (*pMessages)[i];
-				char* xmltext = EncodeStr(pMessage->GetText());
-				snprintf(szItemBuf, iItemBufSize, IsJson() ? JSON_LOG_ITEM : XML_LOG_ITEM,
-					pMessage->GetID(), szMessageType[pMessage->GetKind()], pMessage->GetTime(), xmltext);
-				szItemBuf[iItemBufSize-1] = '\0';
-				free(xmltext);
 
-				if (IsJson() && index++ > 0)
-				{
-					AppendResponse(",\n");
-				}
-				AppendResponse(szItemBuf);
+				char* xmltext = EncodeStr(pMessage->GetText());
+
+				AppendCondResponse(",\n", IsJson() && index++ > 0);
+				AppendFmtResponse(IsJson() ? JSON_LOG_ITEM : XML_LOG_ITEM,
+					pMessage->GetID(), szMessageType[pMessage->GetKind()], pMessage->GetTime(), xmltext);
+
+				free(xmltext);
 			}
 		}
 		pPostInfo->GetNZBInfo()->UnlockCachedMessages();
 	}
 
 	AppendResponse(IsJson() ? JSON_POSTQUEUE_ITEM_END : XML_POSTQUEUE_ITEM_END);
-
-	free(szItemBuf);
 }
 
 // struct[] listgroups(int NumberOfLogEntries)
@@ -2088,8 +2046,6 @@ void ListGroupsXmlCommand::Execute()
 	const char* JSON_LIST_ITEM_END =
 		"}";
 
-	int iItemBufSize = 10240;
-	char* szItemBuf = (char*)malloc(iItemBufSize);
 	int index = 0;
 
 	DownloadQueue* pDownloadQueue = DownloadQueue::Lock();
@@ -2106,32 +2062,26 @@ void ListGroupsXmlCommand::Execute()
 		iPausedSizeMB = (int)(pNZBInfo->GetPausedSize() / 1024 / 1024);
 		const char* szStatus = DetectStatus(pNZBInfo);
 
-		snprintf(szItemBuf, iItemBufSize, IsJson() ? JSON_LIST_ITEM_START : XML_LIST_ITEM_START,
+		AppendCondResponse(",\n", IsJson() && index++ > 0);
+		AppendFmtResponse(IsJson() ? JSON_LIST_ITEM_START : XML_LIST_ITEM_START,
 			pNZBInfo->GetID(), pNZBInfo->GetID(), iRemainingSizeLo, iRemainingSizeHi, iRemainingSizeMB,
 			iPausedSizeLo, iPausedSizeHi, iPausedSizeMB, (int)pNZBInfo->GetFileList()->size(),
 			pNZBInfo->GetRemainingParCount(), pNZBInfo->GetPriority(), pNZBInfo->GetPriority(),
 			pNZBInfo->GetActiveDownloads(), szStatus);
-		szItemBuf[iItemBufSize-1] = '\0';
 
-		if (IsJson() && index++ > 0)
-		{
-			AppendResponse(",\n");
-		}
-		AppendResponse(szItemBuf);
-		
 		AppendNZBInfoFields(pNZBInfo);
-		if (IsJson())
-		{
-			AppendResponse(",\n");
-		}
+		AppendCondResponse(",\n", IsJson());
 		AppendPostInfoFields(pNZBInfo->GetPostInfo(), iNrEntries, false);
 
 		AppendResponse(IsJson() ? JSON_LIST_ITEM_END : XML_LIST_ITEM_END);
+
+		if (it == pDownloadQueue->GetQueue()->begin())
+		{
+			OptimizeResponse(pDownloadQueue->GetQueue()->size());
+		}
 	}
 
 	DownloadQueue::Unlock();
-
-	free(szItemBuf);
 
 	AppendResponse(IsJson() ? "\n]" : "</data></array>\n");
 }
@@ -2488,8 +2438,6 @@ void PostQueueXmlCommand::Execute()
 
 	NZBList* pNZBList = DownloadQueue::Lock()->GetQueue();
 
-	int iItemBufSize = 10240;
-	char* szItemBuf = (char*)malloc(iItemBufSize);
 	int index = 0;
 
 	for (NZBList::iterator it = pNZBList->begin(); it != pNZBList->end(); it++)
@@ -2503,28 +2451,18 @@ void PostQueueXmlCommand::Execute()
 
 		char* xmlInfoName = EncodeStr(pPostInfo->GetNZBInfo()->GetName());
 
-		snprintf(szItemBuf, iItemBufSize, IsJson() ? JSON_POSTQUEUE_ITEM_START : XML_POSTQUEUE_ITEM_START,
+		AppendCondResponse(",\n", IsJson() && index++ > 0);
+		AppendFmtResponse(IsJson() ? JSON_POSTQUEUE_ITEM_START : XML_POSTQUEUE_ITEM_START,
 			pNZBInfo->GetID(), xmlInfoName, szPostStageName[pPostInfo->GetStage()], pPostInfo->GetFileProgress());
-		szItemBuf[iItemBufSize-1] = '\0';
 
 		free(xmlInfoName);
 
-		if (IsJson() && index++ > 0)
-		{
-			AppendResponse(",\n");
-		}
-		AppendResponse(szItemBuf);
-
 		AppendNZBInfoFields(pPostInfo->GetNZBInfo());
-		if (IsJson())
-		{
-			AppendResponse(",\n");
-		}
+		AppendCondResponse(",\n", IsJson());
 		AppendPostInfoFields(pPostInfo, iNrEntries, true);
 
 		AppendResponse(IsJson() ? JSON_POSTQUEUE_ITEM_END : XML_POSTQUEUE_ITEM_END);
 	}
-	free(szItemBuf);
 
 	DownloadQueue::Unlock();
 
@@ -2676,8 +2614,6 @@ void HistoryXmlCommand::Execute()
 
 	DownloadQueue* pDownloadQueue = DownloadQueue::Lock();
 
-	int iItemBufSize = 10240;
-	char* szItemBuf = (char*)malloc(iItemBufSize);
 	int index = 0;
 
 	for (HistoryList::iterator it = pDownloadQueue->GetHistory()->begin(); it != pDownloadQueue->GetHistory()->end(); it++)
@@ -2696,12 +2632,14 @@ void HistoryXmlCommand::Execute()
 		char *xmlNicename = EncodeStr(szNicename);
 		const char* szStatus = DetectStatus(pHistoryInfo);
 
+		AppendCondResponse(",\n", IsJson() && index++ > 0);
+
 		if (pHistoryInfo->GetKind() == HistoryInfo::hkNzb ||
 			pHistoryInfo->GetKind() == HistoryInfo::hkUrl)
 		{
 			pNZBInfo = pHistoryInfo->GetNZBInfo();
 
-			snprintf(szItemBuf, iItemBufSize, IsJson() ? JSON_HISTORY_ITEM_START : XML_HISTORY_ITEM_START,
+			AppendFmtResponse(IsJson() ? JSON_HISTORY_ITEM_START : XML_HISTORY_ITEM_START,
 				pHistoryInfo->GetID(), xmlNicename, pNZBInfo->GetParkedFileCount(),
 				pHistoryInfo->GetTime(), szStatus);
 		}
@@ -2715,7 +2653,7 @@ void HistoryXmlCommand::Execute()
 
 			char* xmlDupeKey = EncodeStr(pDupInfo->GetDupeKey());
 
-			snprintf(szItemBuf, iItemBufSize, IsJson() ? JSON_HISTORY_DUP_ITEM : XML_HISTORY_DUP_ITEM,
+			AppendFmtResponse(IsJson() ? JSON_HISTORY_DUP_ITEM : XML_HISTORY_DUP_ITEM,
 				pHistoryInfo->GetID(), pHistoryInfo->GetID(), "DUP", xmlNicename, pHistoryInfo->GetTime(),
 				iFileSizeLo, iFileSizeHi, iFileSizeMB, xmlDupeKey, pDupInfo->GetDupeScore(),
 				szDupeModeName[pDupInfo->GetDupeMode()], szDupStatusName[pDupInfo->GetStatus()],
@@ -2724,15 +2662,7 @@ void HistoryXmlCommand::Execute()
 			free(xmlDupeKey);
 		}
 
-		szItemBuf[iItemBufSize-1] = '\0';
-
 		free(xmlNicename);
-
-		if (IsJson() && index++ > 0)
-		{
-			AppendResponse(",\n");
-		}
-		AppendResponse(szItemBuf);
 
 		if (pNZBInfo)
 		{
@@ -2740,8 +2670,12 @@ void HistoryXmlCommand::Execute()
 		}
 		
 		AppendResponse(IsJson() ? JSON_HISTORY_ITEM_END : XML_HISTORY_ITEM_END);
+
+		if (it == pDownloadQueue->GetHistory()->begin())
+		{
+			OptimizeResponse(pDownloadQueue->GetHistory()->size());
+		}
 	}
-	free(szItemBuf);
 
 	AppendResponse(IsJson() ? "\n]" : "</data></array>\n");
 
@@ -2795,8 +2729,6 @@ void UrlQueueXmlCommand::Execute()
 
 	DownloadQueue* pDownloadQueue = DownloadQueue::Lock();
 
-	int iItemBufSize = 10240;
-	char* szItemBuf = (char*)malloc(iItemBufSize);
 	int index = 0;
 
 	for (NZBList::iterator it = pDownloadQueue->GetQueue()->begin(); it != pDownloadQueue->GetQueue()->end(); it++)
@@ -2810,23 +2742,16 @@ void UrlQueueXmlCommand::Execute()
 			char* xmlURL = EncodeStr(pNZBInfo->GetURL());
 			char* xmlCategory = EncodeStr(pNZBInfo->GetCategory());
 
-			snprintf(szItemBuf, iItemBufSize, IsJson() ? JSON_URLQUEUE_ITEM : XML_URLQUEUE_ITEM,
+			AppendCondResponse(",\n", IsJson() && index++ > 0);
+			AppendFmtResponse(IsJson() ? JSON_URLQUEUE_ITEM : XML_URLQUEUE_ITEM,
 				pNZBInfo->GetID(), xmlNZBFilename, xmlURL, xmlNicename, xmlCategory, pNZBInfo->GetPriority());
-			szItemBuf[iItemBufSize-1] = '\0';
 
 			free(xmlNicename);
 			free(xmlNZBFilename);
 			free(xmlURL);
 			free(xmlCategory);
-
-			if (IsJson() && index++ > 0)
-			{
-				AppendResponse(",\n");
-			}
-			AppendResponse(szItemBuf);
 		}
 	}
-	free(szItemBuf);
 
 	DownloadQueue::Unlock();
 
@@ -2850,8 +2775,6 @@ void ConfigXmlCommand::Execute()
 
 	AppendResponse(IsJson() ? "[\n" : "<array><data>\n");
 
-	int iItemBufSize = 1024;
-	char* szItemBuf = (char*)malloc(iItemBufSize);
 	int index = 0;
 
 	Options::OptEntries* pOptEntries = g_pOptions->LockOptEntries();
@@ -2864,30 +2787,14 @@ void ConfigXmlCommand::Execute()
 		char* xmlValue = EncodeStr(m_eUserAccess == XmlRpcProcessor::uaRestricted &&
 			pOptEntry->Restricted() ? "***" : pOptEntry->GetValue());
 
-		// option values can sometimes have unlimited length
-		int iValLen = strlen(xmlValue);
-		if (iValLen > iItemBufSize - 500)
-		{
-			iItemBufSize = iValLen + 500;
-			szItemBuf = (char*)realloc(szItemBuf, iItemBufSize);
-		}
-
-		snprintf(szItemBuf, iItemBufSize, IsJson() ? JSON_CONFIG_ITEM : XML_CONFIG_ITEM, xmlName, xmlValue);
-		szItemBuf[iItemBufSize-1] = '\0';
+		AppendCondResponse(",\n", IsJson() && index++ > 0);
+		AppendFmtResponse(IsJson() ? JSON_CONFIG_ITEM : XML_CONFIG_ITEM, xmlName, xmlValue);
 
 		free(xmlName);
 		free(xmlValue);
-
-		if (IsJson() && index++ > 0)
-		{
-			AppendResponse(",\n");
-		}
-		AppendResponse(szItemBuf);
 	}
 
 	g_pOptions->UnlockOptEntries();
-
-	free(szItemBuf);
 
 	AppendResponse(IsJson() ? "\n]" : "</data></array>\n");
 }
@@ -2917,8 +2824,6 @@ void LoadConfigXmlCommand::Execute()
 
 	AppendResponse(IsJson() ? "[\n" : "<array><data>\n");
 
-	int iItemBufSize = 1024;
-	char* szItemBuf = (char*)malloc(iItemBufSize);
 	int index = 0;
 
 	for (Options::OptEntries::iterator it = pOptEntries->begin(); it != pOptEntries->end(); it++)
@@ -2929,30 +2834,14 @@ void LoadConfigXmlCommand::Execute()
 		char* xmlValue = EncodeStr(m_eUserAccess == XmlRpcProcessor::uaRestricted &&
 			pOptEntry->Restricted() ? "***" : pOptEntry->GetValue());
 
-		// option values can sometimes have unlimited length
-		int iValLen = strlen(xmlValue);
-		if (iValLen > iItemBufSize - 500)
-		{
-			iItemBufSize = iValLen + 500;
-			szItemBuf = (char*)realloc(szItemBuf, iItemBufSize);
-		}
-
-		snprintf(szItemBuf, iItemBufSize, IsJson() ? JSON_CONFIG_ITEM : XML_CONFIG_ITEM, xmlName, xmlValue);
-		szItemBuf[iItemBufSize-1] = '\0';
+		AppendCondResponse(",\n", IsJson() && index++ > 0);
+		AppendFmtResponse(IsJson() ? JSON_CONFIG_ITEM : XML_CONFIG_ITEM, xmlName, xmlValue);
 
 		free(xmlName);
 		free(xmlValue);
-
-		if (IsJson() && index++ > 0)
-		{
-			AppendResponse(",\n");
-		}
-		AppendResponse(szItemBuf);
 	}
 
 	delete pOptEntries;
-
-	free(szItemBuf);
 
 	AppendResponse(IsJson() ? "\n]" : "</data></array>\n");
 }
@@ -3038,10 +2927,8 @@ void ConfigTemplatesXmlCommand::Execute()
 		char* xmlDisplayName = EncodeStr(pConfigTemplate->GetScript() ? pConfigTemplate->GetScript()->GetDisplayName() : "");
 		char* xmlTemplate = EncodeStr(pConfigTemplate->GetTemplate());
 
-		int iItemBufSize = strlen(xmlName) + strlen(xmlTemplate) + 1024;
-		char* szItemBuf = (char*)malloc(iItemBufSize);
-
-		snprintf(szItemBuf, iItemBufSize, IsJson() ? JSON_CONFIG_ITEM : XML_CONFIG_ITEM,
+		AppendCondResponse(",\n", IsJson() && index++ > 0);
+		AppendFmtResponse(IsJson() ? JSON_CONFIG_ITEM : XML_CONFIG_ITEM,
 			xmlName, xmlDisplayName,
 			BoolToStr(pConfigTemplate->GetScript() && pConfigTemplate->GetScript()->GetPostScript()),
 			BoolToStr(pConfigTemplate->GetScript() && pConfigTemplate->GetScript()->GetScanScript()),
@@ -3049,19 +2936,10 @@ void ConfigTemplatesXmlCommand::Execute()
 			BoolToStr(pConfigTemplate->GetScript() && pConfigTemplate->GetScript()->GetSchedulerScript()),
 			BoolToStr(pConfigTemplate->GetScript() && pConfigTemplate->GetScript()->GetFeedScript()),
 			xmlTemplate);
-		szItemBuf[iItemBufSize-1] = '\0';
 
 		free(xmlName);
 		free(xmlDisplayName);
 		free(xmlTemplate);
-
-		if (IsJson() && index++ > 0)
-		{
-			AppendResponse(",\n");
-		}
-		AppendResponse(szItemBuf);
-
-		free(szItemBuf);
 	}
 
 	if (bLoadFromDisk)
@@ -3197,9 +3075,6 @@ void ViewFeedXmlCommand::Execute()
     const char* szMatchStatusType[] = { "IGNORED", "ACCEPTED", "REJECTED" };
     const char* szDupeModeType[] = { "SCORE", "ALL", "FORCE" };
 
-	int iItemBufSize = 10240;
-	char* szItemBuf = (char*)malloc(iItemBufSize);
-
 	AppendResponse(IsJson() ? "[\n" : "<array><data>\n");
 	int index = 0;
 
@@ -3220,13 +3095,13 @@ void ViewFeedXmlCommand::Execute()
 			char* xmladdcategory = EncodeStr(pFeedItemInfo->GetAddCategory());
 			char* xmldupekey = EncodeStr(pFeedItemInfo->GetDupeKey());
 
-			snprintf(szItemBuf, iItemBufSize, IsJson() ? JSON_FEED_ITEM : XML_FEED_ITEM,
+			AppendCondResponse(",\n", IsJson() && index++ > 0);
+			AppendFmtResponse(IsJson() ? JSON_FEED_ITEM : XML_FEED_ITEM,
 				xmltitle, xmlfilename, xmlurl, iSizeLo, iSizeHi, iSizeMB, xmlcategory, xmladdcategory,
 				BoolToStr(pFeedItemInfo->GetPauseNzb()), pFeedItemInfo->GetPriority(), pFeedItemInfo->GetTime(),
 				szMatchStatusType[pFeedItemInfo->GetMatchStatus()], pFeedItemInfo->GetMatchRule(),
 				xmldupekey, pFeedItemInfo->GetDupeScore(), szDupeModeType[pFeedItemInfo->GetDupeMode()],
 				szStatusType[pFeedItemInfo->GetStatus()]);
-			szItemBuf[iItemBufSize-1] = '\0';
 
 			free(xmltitle);
 			free(xmlfilename);
@@ -3234,16 +3109,8 @@ void ViewFeedXmlCommand::Execute()
 			free(xmlcategory);
 			free(xmladdcategory);
 			free(xmldupekey);
-
-			if (IsJson() && index++ > 0)
-			{
-				AppendResponse(",\n");
-			}
-			AppendResponse(szItemBuf);
 		}
     }
-
-	free(szItemBuf);
 
 	pFeedItemInfos->Release();
 
@@ -3525,18 +3392,11 @@ void ServerVolumesXmlCommand::Execute()
 
 	ServerVolumes* pServerVolumes = g_pStatMeter->LockServerVolumes();
 
-	const int iItemBufSize = 1024;
-	char szItemBuf[iItemBufSize];
 	int index = 0;
 
 	for (ServerVolumes::iterator it = pServerVolumes->begin(); it != pServerVolumes->end(); it++, index++)
 	{
 		ServerVolume* pServerVolume = *it;
-
-		if (IsJson() && index > 0)
-		{
-			AppendResponse(",\n");
-		}
 
 		unsigned long iTotalSizeHi, iTotalSizeLo, iTotalSizeMB;
 		Util::SplitInt64(pServerVolume->GetTotalBytes(), &iTotalSizeHi, &iTotalSizeLo);
@@ -3546,13 +3406,12 @@ void ServerVolumesXmlCommand::Execute()
 		Util::SplitInt64(pServerVolume->GetCustomBytes(), &iCustomSizeHi, &iCustomSizeLo);
 		iCustomSizeMB = (int)(pServerVolume->GetCustomBytes() / 1024 / 1024);
 
-		snprintf(szItemBuf, iItemBufSize, IsJson() ? JSON_VOLUME_ITEM_START : XML_VOLUME_ITEM_START,
+		AppendCondResponse(",\n", IsJson() && index > 0);
+		AppendFmtResponse(IsJson() ? JSON_VOLUME_ITEM_START : XML_VOLUME_ITEM_START,
 				 index, (int)pServerVolume->GetDataTime(), pServerVolume->GetFirstDay(),
 				 iTotalSizeLo, iTotalSizeHi, iTotalSizeMB, iCustomSizeLo, iCustomSizeHi, iCustomSizeMB, 
 				 (int)pServerVolume->GetCustomTime(), pServerVolume->GetSecSlot(),
 				 pServerVolume->GetMinSlot(), pServerVolume->GetHourSlot(), pServerVolume->GetDaySlot());
-		szItemBuf[iItemBufSize-1] = '\0';
-		AppendResponse(szItemBuf);
 
 		ServerVolume::VolumeArray* VolumeArrays[] = { pServerVolume->BytesPerSeconds(),
 			pServerVolume->BytesPerMinutes(), pServerVolume->BytesPerHours(), pServerVolume->BytesPerDays() };
@@ -3563,9 +3422,7 @@ void ServerVolumesXmlCommand::Execute()
 			ServerVolume::VolumeArray* pVolumeArray = VolumeArrays[i];
 			const char* szArrayName = VolumeNames[i];
 
-			snprintf(szItemBuf, iItemBufSize, IsJson() ? JSON_BYTES_ARRAY_START : XML_BYTES_ARRAY_START, szArrayName);
-			szItemBuf[iItemBufSize-1] = '\0';
-			AppendResponse(szItemBuf);
+			AppendFmtResponse(IsJson() ? JSON_BYTES_ARRAY_START : XML_BYTES_ARRAY_START, szArrayName);
 
 			int index2 = 0;
 			for (ServerVolume::VolumeArray::iterator it2 = pVolumeArray->begin(); it2 != pVolumeArray->end(); it2++)
@@ -3575,22 +3432,13 @@ void ServerVolumesXmlCommand::Execute()
 				Util::SplitInt64(lBytes, &iSizeHi, &iSizeLo);
 				iSizeMB = (int)(lBytes / 1024 / 1024);
 
-				snprintf(szItemBuf, iItemBufSize, IsJson() ? JSON_BYTES_ARRAY_ITEM : XML_BYTES_ARRAY_ITEM,
+				AppendCondResponse(",\n", IsJson() && index2++ > 0);
+				AppendFmtResponse(IsJson() ? JSON_BYTES_ARRAY_ITEM : XML_BYTES_ARRAY_ITEM,
 						 iSizeLo, iSizeHi, iSizeMB);
-				szItemBuf[iItemBufSize-1] = '\0';
-
-				if (IsJson() && index2++ > 0)
-				{
-					AppendResponse(",\n");
-				}
-				AppendResponse(szItemBuf);
 			}
 
 			AppendResponse(IsJson() ? JSON_BYTES_ARRAY_END : XML_BYTES_ARRAY_END);
-			if (IsJson() && i < 3)
-			{
-				AppendResponse(",\n");
-			}
+			AppendCondResponse(",\n", IsJson() && i < 3);
 		}
 		AppendResponse(IsJson() ? JSON_VOLUME_ITEM_END : XML_VOLUME_ITEM_END);
 	}

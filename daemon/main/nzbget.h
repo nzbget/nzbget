@@ -60,6 +60,9 @@
 #define atoll _atoi64
 #define fseek _fseeki64
 #define ftell _ftelli64
+#if _MSC_VER < 1800 // va_copy is available in vc2013 and onwards
+#define va_copy(d,s) ((d) = (s))
+#endif
 #ifndef FSCTL_SET_SPARSE
 #define FSCTL_SET_SPARSE 590020
 #endif

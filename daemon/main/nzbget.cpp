@@ -155,7 +155,7 @@ int main(int argc, char *argv[], char *argp[])
 #endif
 #endif
 
-	Util::InitVersionRevision();
+	Util::Init();
 
 	g_iArgumentCount = argc;
 	g_szArguments = (char*(*)[])argv;

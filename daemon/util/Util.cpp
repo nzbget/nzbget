@@ -37,6 +37,7 @@
 #include <stdio.h>
 #include <errno.h>
 #include <ctype.h>
+#include <stdarg.h>
 #ifdef WIN32
 #include <io.h>
 #include <direct.h>
@@ -44,6 +45,7 @@
 #else
 #include <unistd.h>
 #include <sys/statvfs.h>
+#include <sys/time.h>
 #include <pwd.h>
 #include <dirent.h>
 #include <fcntl.h>
@@ -254,6 +256,7 @@ StringBuilder::StringBuilder()
 	m_szBuffer = NULL;
 	m_iBufferSize = 0;
 	m_iUsedSize = 0;
+	m_iGrowSize = 10240;
 }
 
 StringBuilder::~StringBuilder()
@@ -272,14 +275,54 @@ void StringBuilder::Clear()
 void StringBuilder::Append(const char* szStr)
 {
 	int iPartLen = strlen(szStr);
-	if (m_iUsedSize + iPartLen + 1 > m_iBufferSize)
-	{
-		m_iBufferSize += iPartLen + 10240;
-		m_szBuffer = (char*)realloc(m_szBuffer, m_iBufferSize);
-	}
+	Reserve(iPartLen + 1);
 	strcpy(m_szBuffer + m_iUsedSize, szStr);
 	m_iUsedSize += iPartLen;
 	m_szBuffer[m_iUsedSize] = '\0';
+}
+
+void StringBuilder::AppendFmt(const char* szFormat, ...)
+{
+	va_list args;
+	va_start(args, szFormat);
+	AppendFmtV(szFormat, args);
+	va_end(args);
+}
+
+void StringBuilder::AppendFmtV(const char* szFormat, va_list ap)
+{
+	va_list ap2;
+	va_copy(ap2, ap);
+
+	int iRemainingSize = m_iBufferSize - m_iUsedSize;
+	int m = vsnprintf(m_szBuffer + m_iUsedSize, iRemainingSize, szFormat, ap);
+#ifdef WIN32
+	if (m == -1)
+	{
+        m = _vscprintf(szFormat, ap);
+	}
+#endif
+	if (m + 1 > iRemainingSize)
+	{
+		Reserve(m - iRemainingSize + m_iGrowSize);
+		iRemainingSize = m_iBufferSize - m_iUsedSize;
+		m = vsnprintf(m_szBuffer + m_iUsedSize, iRemainingSize, szFormat, ap2);
+	}
+	if (m >= 0)
+	{
+		m_szBuffer[m_iUsedSize += m] = '\0';
+	}
+
+	va_end(ap2);
+}
+
+void StringBuilder::Reserve(int iSize)
+{
+	if (m_iUsedSize + iSize > m_iBufferSize)
+	{
+		m_iBufferSize += iSize + m_iGrowSize;
+		m_szBuffer = (char*)realloc(m_szBuffer, m_iBufferSize);
+	}
 }
 
 
@@ -1101,7 +1144,7 @@ char* Util::GetLastErrorMessage(char* szBuffer, int iBufLen)
 	return szBuffer;
 }
 
-void Util::InitVersionRevision()
+void Util::Init()
 {
 #ifndef WIN32
 	if ((strlen(svn_version()) > 0) && strstr(VERSION, "testing"))
@@ -1113,6 +1156,9 @@ void Util::InitVersionRevision()
 	{
 		snprintf(VersionRevisionBuf, sizeof(VersionRevisionBuf), "%s", VERSION);
 	}
+
+	// init static vars there
+	GetCurrentTicks();
 }
 
 bool Util::SplitCommandLine(const char* szCommandLine, char*** argv)
@@ -1608,6 +1654,25 @@ bool Util::FlushDirBuffers(const char* szFilename, char* szErrBuf, int iBufSize)
 	bool bOK = FlushFileBuffers(fileno(pFile), szErrBuf, iBufSize);
 	fclose(pFile);
 	return bOK;
+}
+
+long long Util::GetCurrentTicks()
+{
+#ifdef WIN32
+	static long long hz=0, hzo=0;
+	if (!hz)
+	{
+		QueryPerformanceFrequency((LARGE_INTEGER*)&hz);
+		QueryPerformanceCounter((LARGE_INTEGER*)&hzo);
+	}
+	long long t;
+	QueryPerformanceCounter((LARGE_INTEGER*)&t);
+	return ((t-hzo)*1000000)/hz;
+#else
+	timeval t;
+	gettimeofday(&t, NULL);
+	return (long long)(t.tv_sec) * 1000000ll + (long long)(t.tv_usec);
+#endif
 }
 
 unsigned int WebUtil::DecodeBase64(char* szInputBuffer, int iInputBufferLength, char* szOutputBuffer)
