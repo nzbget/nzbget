@@ -62,15 +62,30 @@ bool QueueCoordinator::CoordinatorDownloadQueue::EditEntry(
 bool QueueCoordinator::CoordinatorDownloadQueue::EditList(
 	IDList* pIDList, NameList* pNameList, EMatchMode eMatchMode, EEditAction eAction, int iOffset, const char* szText)
 {
-	return m_pOwner->m_QueueEditor.EditList(&m_pOwner->m_DownloadQueue, pIDList, pNameList, eMatchMode, eAction, iOffset, szText);
+	m_bMassEdit = true;
+	bool bRet = m_pOwner->m_QueueEditor.EditList(&m_pOwner->m_DownloadQueue, pIDList, pNameList, eMatchMode, eAction, iOffset, szText);
+	m_bMassEdit = false;
+	if (m_bWantSave)
+	{
+		Save();
+	}
+	return bRet;
 }
 
 void QueueCoordinator::CoordinatorDownloadQueue::Save()
 {
+	if (m_bMassEdit)
+	{
+		m_bWantSave = true;
+		return;
+	}
+
 	if (g_pOptions->GetSaveQueue() && g_pOptions->GetServerMode())
 	{
 		g_pDiskState->SaveDownloadQueue(this);
 	}
+
+	m_bWantSave = false;
 }
 
 QueueCoordinator::QueueCoordinator()

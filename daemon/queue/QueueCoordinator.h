@@ -49,8 +49,11 @@ private:
 	{
 	private:
 		QueueCoordinator*	m_pOwner;
+		bool				m_bMassEdit;
+		bool				m_bWantSave;
 		friend class QueueCoordinator;
 	public:
+							CoordinatorDownloadQueue(): m_bMassEdit(false), m_bWantSave(false) {}
 		virtual bool		EditEntry(int ID, EEditAction eAction, int iOffset, const char* szText);
 		virtual bool		EditList(IDList* pIDList, NameList* pNameList, EMatchMode eMatchMode, EEditAction eAction, int iOffset, const char* szText);
 		virtual void		Save();
