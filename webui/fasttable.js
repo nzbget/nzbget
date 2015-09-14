@@ -180,7 +180,8 @@
 							maxPages : parseInt(config.maxPages),
 							pageDots : Util.parseBool(config.pageDots),
 							curPage : 1,
-							checkedRows: [],
+							checkedRows: {},
+							checkedCount: 0,
 							lastClickedRowID: null,
 							searcher: searcher
 						});
@@ -227,6 +228,11 @@
 			return $(this).data('fasttable').checkedRows;
 		},
 		
+		checkedCount : function()
+		{
+			return $(this).data('fasttable').checkedCount;
+		},
+
 		checkRow : function(id, checked)
 		{
 			checkRow($(this).data('fasttable'), id, checked);
@@ -316,7 +322,7 @@
 			var row = table.insertRow(table.rows.length);
 
 			row.fasttableID = item.id;
-			if (data.checkedRows.indexOf(item.id) > -1)
+			if (data.checkedRows[item.id])
 			{
 				row.className = 'checked';
 			}
@@ -595,13 +601,13 @@
 		var hasUnselectedItems = false;
 		for (var i = 0; i < filteredContent.length; i++)
 		{
-			if (checkedRows.indexOf(filteredContent[i].id) === -1)
+			if (checkedRows[filteredContent[i].id])
 			{
-				hasUnselectedItems = true;
+				hasSelectedItems = true;
 			}
 			else
 			{
-				hasSelectedItems = true;
+				hasUnselectedItems = true;
 			}
 		}
 		
@@ -629,7 +635,7 @@
 
 		if (event.shiftKey && data.lastClickedRowID != null)
 		{
-			var checked = checkedRows.indexOf(id) > -1;
+			var checked = checkedRows[id];
 			doToggle = !checkRange(data, id, data.lastClickedRowID, !checked);
 		}
 
@@ -652,7 +658,7 @@
 		var hasSelectedItems = false;
 		for (var i = 0; i < filteredContent.length; i++)
 		{
-			if (checkedRows.indexOf(filteredContent[i].id) > -1)
+			if (checkedRows[filteredContent[i].id])
 			{
 				hasSelectedItems = true;
 				break;
@@ -666,14 +672,16 @@
 	function toggleCheck(data, id)
 	{
 		var checkedRows = data.checkedRows;
-		var index = checkedRows.indexOf(id);
-		if (index > -1)
+		var index = checkedRows[id];
+		if (checkedRows[id])
 		{
-			checkedRows.splice(index, 1);
+			checkedRows[id] = undefined;
+			data.checkedCount--;
 		}
 		else
 		{
-			checkedRows.push(id);
+			checkedRows[id] = true;
+			data.checkedCount++;
 		}
 	}
 	
@@ -716,18 +724,19 @@
 	{
 		if (checked)
 		{
-			if (data.checkedRows.indexOf(id) === -1)
+			if (!data.checkedRows[id])
 			{
-				data.checkedRows.push(id);
+				data.checkedCount++;
 			}
+			data.checkedRows[id] = true;
 		}
 		else
 		{
-			var index = data.checkedRows.indexOf(id);
-			if (index > -1)
+			if (data.checkedRows[id])
 			{
-				data.checkedRows.splice(index, 1);
+				data.checkedCount--;
 			}
+			data.checkedRows[id] = undefined;
 		}
 	}
 	
@@ -747,19 +756,14 @@
 	{
 		var filteredContent = data.filteredContent;
 		var checkedRows = data.checkedRows;
-
-		var ids = [];
+		data.checkedRows = {}
+		data.checkedCount = 0;
 		for (var i = 0; i < data.content.length; i++)
 		{
-			ids.push(data.content[i].id);
-		}
-
-		for (var i = 0; i < checkedRows.length; i++)
-		{
-			if (ids.indexOf(checkedRows[i]) === -1)
+			if (checkedRows[data.content[i].id])
 			{
-				checkedRows.splice(i, 1);
-				i--;
+				data.checkedRows[data.content[i].id] = true;
+				data.checkedCount++;
 			}
 		}
 	}

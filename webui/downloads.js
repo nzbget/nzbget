@@ -375,7 +375,7 @@ var Downloads = (new function($)
 		for (var i = 0; i < groups.length; i++)
 		{
 			var group = groups[i];
-			if (checkedRows.indexOf(group.NZBID) > -1)
+			if (checkedRows[group.NZBID])
 			{
 				if (group.postprocess && !allowPostProcess)
 				{
@@ -480,7 +480,7 @@ var Downloads = (new function($)
 		for (var i = 0; i < groups.length; i++)
 		{
 			var group = groups[i];
-			if (checkedRows.indexOf(group.NZBID) > -1)
+			if (checkedRows[group.NZBID])
 			{
 				if (group.postprocess)
 				{

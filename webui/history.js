@@ -262,7 +262,8 @@ var History = (new function($)
 	this.actionClick = function(action)
 	{
 		var checkedRows = $HistoryTable.fasttable('checkedRows');
-		if (checkedRows.length == 0)
+		var checkedCount = $HistoryTable.fasttable('checkedCount');
+		if (checkedCount === 0)
 		{
 			Notification.show('#Notif_History_Select');
 			return;
@@ -275,7 +276,7 @@ var History = (new function($)
 		for (var i = 0; i < history.length; i++)
 		{
 			var hist = history[i];
-			if (checkedRows.indexOf(hist.ID) > -1)
+			if (checkedRows[hist.ID])
 			{
 				hasNzb |= hist.Kind === 'NZB';
 				hasUrl |= hist.Kind === 'URL';
@@ -310,7 +311,7 @@ var History = (new function($)
 				notification = '#Notif_History_Returned';
 				ConfirmDialog.showModal('HistoryEditRedownloadConfirmDialog',
 					function () { historyAction('HistoryRedownload') },
-					function () { HistoryUI.confirmMulti(checkedRows.length > 1); });
+					function () { HistoryUI.confirmMulti(checkedCount > 1); });
 				break;
 
 			case 'MARKSUCCESS':
@@ -332,7 +333,7 @@ var History = (new function($)
 					},
 					function (_dialog) // init
 					{
-						HistoryUI.confirmMulti(checkedRows.length > 1);
+						HistoryUI.confirmMulti(checkedCount > 1);
 					}
 				);
 				break;
@@ -342,8 +343,15 @@ var History = (new function($)
 	function historyAction(command)
 	{
 		Refresher.pause();
-		var IDs = $HistoryTable.fasttable('checkedRows');
-		RPC.call('editqueue', [command, 0, '', [IDs]], function()
+
+		var ids = [];
+		var checkedRows = $HistoryTable.fasttable('checkedRows');
+		for (var id in checkedRows)
+		{
+			ids.push(parseInt(id));
+		}		
+		
+		RPC.call('editqueue', [command, 0, '', ids], function()
 		{
 			editCompleted();
 		});

@@ -2116,7 +2116,7 @@ var ScriptListDialog = (new function($)
 			for (var i=0; i < scriptList.length; i++)
 			{
 				var scriptName = scriptList[i];
-				if (checkedRows.indexOf(scriptName) > -1)
+				if (checkedRows[scriptName])
 				{
 					selectedList += (selectedList == '' ? '' : ', ') + scriptName;
 				}
@@ -2434,7 +2434,7 @@ var ConfigBackupRestore = (new function($)
 			for (var i=0; i < conf.sections.length; i++)
 			{
 				var section = conf.sections[i];
-				if (!section.hidden && selectedSections.indexOf(section.id) > -1)
+				if (!section.hidden && selectedSections[section.id])
 				{
 					for (var m=0; m < section.options.length; m++)
 					{
@@ -2529,13 +2529,14 @@ var RestoreSettingsDialog = (new function($)
 
 		var	 selectedSections = [];
 		var checkedRows = $SectionTable.fasttable('checkedRows');
-		if (checkedRows.length === 0)
+		var checkedCount = $SectionTable.fasttable('checkedCount');
+		if (checkedCount === 0)
 		{
 			Notification.show('#Notif_Config_RestoreSections');
 			return;
 		}
 
-		checkedRows = $.extend([], checkedRows); // clone
+		checkedRows = $.extend({}, checkedRows); // clone
 		$RestoreSettingsDialog.modal('hide');
 
 		setTimeout(function() { restoreClick(checkedRows); }, 0);

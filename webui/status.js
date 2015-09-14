@@ -1382,7 +1382,7 @@ var LimitDialog = (new function($)
 		for (var i=0; i < Status.status.NewsServers.length; i++)
 		{
 			var server = Status.status.NewsServers[i];
-			var selected = checkedRows.indexOf(server.ID) > -1;
+			var selected = checkedRows[server.ID] !== undefined;
 			if (server.Active != selected)
 			{
 				servers.push([server.ID, selected]);

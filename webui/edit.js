@@ -656,7 +656,8 @@ var DownloadsEditDialog = (new function($)
 		}
 
 		var checkedRows = $DownloadsFileTable.fasttable('checkedRows');
-		if (checkedRows.length == 0)
+		var checkedCount = $DownloadsFileTable.fasttable('checkedCount');
+		if (checkedCount === 0)
 		{
 			Notification.show('#Notif_Edit_Select');
 			return;
@@ -681,7 +682,7 @@ var DownloadsEditDialog = (new function($)
 			}
 			var file = files[n];
 
-			if (checkedRows.indexOf(file.ID) > -1)
+			if (checkedRows[file.ID])
 			{
 				editIDList.push(file.ID);
 

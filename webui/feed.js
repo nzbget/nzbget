@@ -335,7 +335,8 @@ var FeedDialog = (new function($)
 	this.fetch = function()
 	{
 		var checkedRows = $ItemTable.fasttable('checkedRows');
-		if (checkedRows.length == 0)
+		var checkedCount = $ItemTable.fasttable('checkedCount');
+		if (checkedCount === 0)
 		{
 			Notification.show('#Notif_FeedDialog_Select');
 			return;
@@ -347,7 +348,7 @@ var FeedDialog = (new function($)
 		for (var i = 0; i < items.length; i++)
 		{
 			var item = items[i];
-			if (checkedRows.indexOf(item.URL) > -1)
+			if (checkedRows[item.URL])
 			{
 				fetchItems.push(item);
 			}
