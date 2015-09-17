@@ -60,4 +60,4 @@ ipch/
 
 # NZBGet specific
 nzbget
-svn_version.cpp
+code_revision.cpp

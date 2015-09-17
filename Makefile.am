@@ -143,7 +143,7 @@ nzbget_SOURCES = \
 	daemon/util/Service.h \
 	daemon/util/Util.cpp \
 	daemon/util/Util.h \
-	svn_version.cpp
+	code_revision.cpp
 
 if WITH_PAR2
 nzbget_SOURCES += \
@@ -396,11 +396,11 @@ uninstall-conf:
 # Determining git revision:
 # 1) If directory ".git" exists we take revision from git log.
 #    File is recreated only if revision number was changed.
-# 2) If directory ".git" doesn't exists we keep and reuse file "svn_version.cpp",
+# 2) If directory ".git" doesn't exists we keep and reuse file "code_revision.cpp",
 #    which was possibly created early.
-# 3) If neither directory ".git" nor file "svn_version.cpp" are available
-#    we create new file "svn_version.c" with empty revision number.
-svn_version.cpp: FORCE
+# 3) If neither directory ".git" nor file "code_revision.cpp" are available
+#    we create new file "code_revision.c" with empty revision number.
+code_revision.cpp: FORCE
 	@ if test -d ./.git ; then \
 		B="$(shell git branch | sed -n -e 's/^\* \(.*\)/\1/p')"; \
 		M="$(shell git status --porcelain)" ; \
@@ -416,34 +416,34 @@ svn_version.cpp: FORCE
 			V="$(shell git rev-list HEAD | wc -l | xargs)" ; \
 			V="$${V}$$M ($$B)" ; \
 		fi ; \
-		H="$(shell test -f ./svn_version.cpp && head -n 1 svn_version.cpp)"; \
+		H="$(shell test -f ./code_revision.cpp && head -n 1 code_revision.cpp)"; \
 		if test "/* $$V */" != "$$H" ; then \
 			( \
 			echo "/* $$V */" ;\
 			echo "/* This file is automatically regenerated on each build. Do not edit it. */" ;\
-			echo "const char* svn_version(void)" ;\
+			echo "const char* code_revision(void)" ;\
 			echo "{" ;\
-			echo "	const char* SVN_Version = \"$$V\";" ;\
-			echo "	return SVN_Version;" ;\
+			echo "	const char* revision = \"$$V\";" ;\
+			echo "	return revision;" ;\
 			echo "}" ;\
-			) > svn_version.cpp ; \
+			) > code_revision.cpp ; \
 		fi \
-	elif test -f ./svn_version.cpp ; then \
+	elif test -f ./code_revision.cpp ; then \
 		test "ok, reuse existing file"; \
 	else \
 		( \
 		echo "/*  */" ;\
 		echo "/* This file is automatically regenerated on each build. Do not edit it. */" ;\
-		echo "const char* svn_version(void)" ;\
+		echo "const char* code_revision(void)" ;\
 		echo "{" ;\
-		echo "	const char* SVN_Version = \"\";" ;\
-		echo "	return SVN_Version;" ;\
+		echo "	const char* revision = \"\";" ;\
+		echo "	return revision;" ;\
 		echo "}" ;\
-		) > svn_version.cpp ; \
+		) > code_revision.cpp ; \
 	fi
 FORCE:
 
-# Ignore "svn_version.cpp" in distcleancheck
+# Ignore "code_revision.cpp" in distcleancheck
 distcleancheck_listfiles = \
 	find . -type f -exec sh -c 'test -f $(srcdir)/$$1 || echo $$1' \
 	sh '{}' ';'

@@ -62,8 +62,8 @@
 #include "Util.h"
 
 #ifndef WIN32
-// function "svn_version" is automatically generated in file "svn_version.cpp" on each build
-const char* svn_version(void);
+// function "code_revision" is automatically generated in file "code_revision.cpp" on each build
+const char* code_revision(void);
 #endif
 
 #ifdef WIN32
@@ -1147,9 +1147,9 @@ char* Util::GetLastErrorMessage(char* szBuffer, int iBufLen)
 void Util::Init()
 {
 #ifndef WIN32
-	if ((strlen(svn_version()) > 0) && strstr(VERSION, "testing"))
+	if ((strlen(code_revision()) > 0) && strstr(VERSION, "testing"))
 	{
-		snprintf(VersionRevisionBuf, sizeof(VersionRevisionBuf), "%s-r%s", VERSION, svn_version());
+		snprintf(VersionRevisionBuf, sizeof(VersionRevisionBuf), "%s-r%s", VERSION, code_revision());
 	}
 	else
 #endif
