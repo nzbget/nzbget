@@ -278,6 +278,8 @@ var DownloadsEditDialog = (new function($)
 		$DownloadsEditDialog.restoreTab();
 
 		$('#DownloadsEdit_FileTable_filter').val('');
+		$DownloadsFileTable.fasttable('setCurPage', 1);
+		$DownloadsFileTable.fasttable('applyFilter', '');
 
 		LogTab.reset('Downloads');
 
@@ -637,7 +639,6 @@ var DownloadsEditDialog = (new function($)
 		}
 
 		$DownloadsFileTable.fasttable('update', data);
-		$DownloadsFileTable.fasttable('setCurPage', 1);
 	}
 
 	function fileTableRenderCellCallback(cell, index, item)
@@ -1119,6 +1120,8 @@ var LogTab = (new function($)
 	{
 		var $LogTable = $('#' + name + 'Edit_LogTable');
 		$LogTable.fasttable('update', []);
+		$LogTable.fasttable('setCurPage', 1);
+		$LogTable.fasttable('applyFilter', '');
 
 		$('#' + name + 'Edit_LogTable_filter').val('');
 	}
@@ -1170,7 +1173,6 @@ var LogTab = (new function($)
 			}
 
 			$LogTable.fasttable('update', data);
-			$LogTable.fasttable('setCurPage', 1);
 		}
 		
 		var recordsPerPage = UISettings.read('ItemLogRecordsPerPage', 10);
