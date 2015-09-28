@@ -52,8 +52,8 @@
 
 static const char* FORMATVERSION_SIGNATURE = "nzbget diskstate file version ";
 
-#ifdef WIN32
-// Windows doesn't have standard "vsscanf"
+#if (defined(WIN32) && _MSC_VER < 1800)
+// Visual Studio prior 2013 doesn't have standard "vsscanf"
 // Hack from http://stackoverflow.com/questions/2457331/replacement-for-vsscanf-on-msvc
 int vsscanf(const char *s, const char *fmt, va_list ap)
 {

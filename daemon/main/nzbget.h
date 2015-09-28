@@ -1,7 +1,7 @@
 /*
  *  This file is part of nzbget
  *
- *  Copyright (C) 2007-2013 Andrey Prygunkov <hugbug@users.sourceforge.net>
+ *  Copyright (C) 2007-2015 Andrey Prygunkov <hugbug@users.sourceforge.net>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -39,7 +39,9 @@
 #define gmtime_r(time, tm) gmtime_s(tm, time)
 #define strtok_r(str, delim, saveptr) strtok_s(str, delim, saveptr)
 #define strerror_r(errnum, buffer, size) strerror_s(buffer, size, errnum)
+#if (_MSC_VER < 1600)
 #define int32_t __int32
+#endif
 #define mkdir(dir, flags) _mkdir(dir)
 #define rmdir _rmdir
 #define strcasecmp(a, b) _stricmp(a, b)

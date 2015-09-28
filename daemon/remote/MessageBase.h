@@ -27,7 +27,7 @@
 #ifndef MESSAGEBASE_H
 #define MESSAGEBASE_H
 
-#ifndef WIN32
+#if (!(defined(WIN32) && _MSC_VER < 1600))
 #include <stdint.h>
 #endif
 
