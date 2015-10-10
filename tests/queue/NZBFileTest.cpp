@@ -31,6 +31,8 @@
 #include "win32.h"
 #endif
 
+#include <stdio.h>
+
 #include "catch.h"
 
 #include "nzbget.h"
