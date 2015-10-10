@@ -48,6 +48,7 @@
 #include "NZBFile.h"
 #include "Scanner.h"
 #include "DiskState.h"
+#include "QueueScript.h"
 
 UrlDownloader::UrlDownloader() : WebDownloader()
 {
@@ -339,7 +340,6 @@ void UrlCoordinator::UrlCompleted(UrlDownloader* pUrlDownloader)
 {
 	debug("URL downloaded");
 
-	bool bRetry = pUrlDownloader->GetStatus() == WebDownloader::adRetry;
 	NZBInfo* pNZBInfo = pUrlDownloader->GetNZBInfo();
 
 	char filename[1024];
@@ -373,6 +373,8 @@ void UrlCoordinator::UrlCompleted(UrlDownloader* pUrlDownloader)
 		}
 	}
 	pNZBInfo->SetActiveDownloads(0);
+
+	bool bRetry = pUrlDownloader->GetStatus() == WebDownloader::adRetry && !pNZBInfo->GetDeleting();
 
 	if (pNZBInfo->GetDeleting())
 	{
@@ -427,6 +429,8 @@ void UrlCoordinator::UrlCompleted(UrlDownloader* pUrlDownloader)
 	}
 
 	// the rest of function is only for failed URLs or for failed scans
+
+	g_pQueueScriptCoordinator->EnqueueScript(pNZBInfo, QueueScriptCoordinator::qeUrlCompleted);
 
 	pDownloadQueue = DownloadQueue::Lock();
 

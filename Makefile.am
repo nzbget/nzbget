@@ -1,7 +1,7 @@
 #
 #  This file is part of nzbget
 #
-# Copyright (C) 2008-2014 Andrey Prygunkov <hugbug@users.sourceforge.net>
+# Copyright (C) 2008-2015 Andrey Prygunkov <hugbug@users.sourceforge.net>
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -28,6 +28,8 @@ nzbget_SOURCES = \
 	daemon/connect/TLS.h \
 	daemon/connect/WebDownloader.cpp \
 	daemon/connect/WebDownloader.h \
+	daemon/extension/FeedScript.cpp \
+	daemon/extension/FeedScript.h \
 	daemon/extension/NzbScript.cpp \
 	daemon/extension/NzbScript.h \
 	daemon/extension/PostScript.cpp \
@@ -58,6 +60,8 @@ nzbget_SOURCES = \
 	daemon/frontend/NCursesFrontend.h \
     daemon/main/CommandLineParser.cpp \
     daemon/main/CommandLineParser.h \
+	daemon/main/DiskService.cpp \
+	daemon/main/DiskService.h \
 	daemon/main/Maintenance.cpp \
 	daemon/main/Maintenance.h \
 	daemon/main/nzbget.cpp \
@@ -82,6 +86,10 @@ nzbget_SOURCES = \
 	daemon/nntp/ServerPool.h \
 	daemon/nntp/StatMeter.cpp \
 	daemon/nntp/StatMeter.h \
+	daemon/postprocess/Cleanup.cpp \
+	daemon/postprocess/Cleanup.h \
+	daemon/postprocess/DupeMatcher.cpp \
+	daemon/postprocess/DupeMatcher.h \
 	daemon/postprocess/ParChecker.cpp \
 	daemon/postprocess/ParChecker.h \
 	daemon/postprocess/ParCoordinator.cpp \
@@ -131,9 +139,11 @@ nzbget_SOURCES = \
 	daemon/util/Script.h \
 	daemon/util/Thread.cpp \
 	daemon/util/Thread.h \
+	daemon/util/Service.cpp \
+	daemon/util/Service.h \
 	daemon/util/Util.cpp \
 	daemon/util/Util.h \
-	svn_version.cpp
+	code_revision.cpp
 
 if WITH_PAR2
 nzbget_SOURCES += \
@@ -205,7 +215,9 @@ nzbget_SOURCES += \
 	tests/main/OptionsTest.cpp \
 	tests/feed/FeedFilterTest.cpp \
 	tests/postprocess/ParCheckerTest.cpp \
-	tests/postprocess/ParRenamerTest.cpp
+	tests/postprocess/ParRenamerTest.cpp \
+	tests/queue/NZBFileTest.cpp \
+	tests/util/UtilTest.cpp
 
 AM_CPPFLAGS += \
 	-I$(srcdir)/lib/catch \
@@ -213,7 +225,6 @@ AM_CPPFLAGS += \
 endif
 
 EXTRA_DIST = \
-	Makefile.cvs \
 	$(windows_FILES) \
 	$(osx_FILES) \
 	$(linux_FILES) \
@@ -225,7 +236,6 @@ windows_FILES = \
 	daemon/windows/win32.h \
 	daemon/windows/WinConsole.cpp \
 	daemon/windows/WinConsole.h \
-	nzbget.sln \
 	nzbget.vcproj \
 	windows/nzbget-command-shell.bat  \
 	windows/install-update.bat  \
@@ -283,7 +293,6 @@ linux_FILES = \
 doc_FILES = \
 	lib/par2/AUTHORS \
 	lib/par2/README \
-	AUTHORS \
 	README \
 	ChangeLog \
 	COPYING
@@ -328,6 +337,14 @@ scripts_FILES = \
 	scripts/Logger.py
 
 testdata_FILES = \
+	tests/testdata/dupematcher1/testfile.part01.rar \
+	tests/testdata/dupematcher1/testfile.part24.rar \
+	tests/testdata/dupematcher2/testfile.part04.rar \
+	tests/testdata/dupematcher2/testfile.part43.rar \
+	tests/testdata/nzbfile/dotless.nzb \
+	tests/testdata/nzbfile/dotless.txt \
+	tests/testdata/nzbfile/plain.nzb \
+	tests/testdata/nzbfile/plain.txt \
 	tests/testdata/parchecker/crc.txt \
 	tests/testdata/parchecker/testfile.dat \
 	tests/testdata/parchecker/testfile.nfo \
@@ -376,44 +393,57 @@ install-conf:
 uninstall-conf:
 	rm -f "$(DESTDIR)$(sysconfdir)/nzbget.conf"
 
-# Determining subversion revision:
-# 1) If directory ".svn" exists we take revision from it using program svnversion (part of subversion package)
+# Determining git revision:
+# 1) If directory ".git" exists we take revision from git log.
 #    File is recreated only if revision number was changed.
-# 2) If directory ".svn" doesn't exists we keep and reuse file "svn_version.cpp",
+# 2) If directory ".git" doesn't exists we keep and reuse file "code_revision.cpp",
 #    which was possibly created early.
-# 3) If neither directory ".svn" nor file "svn_version.cpp" are available
-#    we create new file "svn_version.c" with empty revision number.
-svn_version.cpp: FORCE
-	@ if test -d ./.svn ; then \
-		V="$(shell svnversion -n .)"; \
-		H="$(shell test -f ./svn_version.cpp && head -n 1 svn_version.cpp)"; \
+# 3) If neither directory ".git" nor file "code_revision.cpp" are available
+#    we create new file "code_revision.c" with empty revision number.
+code_revision.cpp: FORCE
+	@ if test -d ./.git ; then \
+		B="$(shell git branch | sed -n -e 's/^\* \(.*\)/\1/p')"; \
+		M="$(shell git status --porcelain)" ; \
+		if test "$$M" != "" ; then \
+			M="M" ; \
+		fi ; \
+		if test "$$B" = "master" ; then \
+			V="$$M" ; \
+		elif test "$$B" = "develop" ; then \
+			V="$(shell git rev-list HEAD | wc -l | xargs)" ; \
+			V="$${V}$$M" ; \
+		else \
+			V="$(shell git rev-list HEAD | wc -l | xargs)" ; \
+			V="$${V}$$M ($$B)" ; \
+		fi ; \
+		H="$(shell test -f ./code_revision.cpp && head -n 1 code_revision.cpp)"; \
 		if test "/* $$V */" != "$$H" ; then \
 			( \
 			echo "/* $$V */" ;\
 			echo "/* This file is automatically regenerated on each build. Do not edit it. */" ;\
-			echo "const char* svn_version(void)" ;\
+			echo "const char* code_revision(void)" ;\
 			echo "{" ;\
-			echo "	const char* SVN_Version = \"$$V\";" ;\
-			echo "	return SVN_Version;" ;\
+			echo "	const char* revision = \"$$V\";" ;\
+			echo "	return revision;" ;\
 			echo "}" ;\
-			) > svn_version.cpp ; \
+			) > code_revision.cpp ; \
 		fi \
-	elif test -f ./svn_version.cpp ; then \
+	elif test -f ./code_revision.cpp ; then \
 		test "ok, reuse existing file"; \
 	else \
 		( \
 		echo "/*  */" ;\
 		echo "/* This file is automatically regenerated on each build. Do not edit it. */" ;\
-		echo "const char* svn_version(void)" ;\
+		echo "const char* code_revision(void)" ;\
 		echo "{" ;\
-		echo "	const char* SVN_Version = \"\";" ;\
-		echo "	return SVN_Version;" ;\
+		echo "	const char* revision = \"\";" ;\
+		echo "	return revision;" ;\
 		echo "}" ;\
-		) > svn_version.cpp ; \
+		) > code_revision.cpp ; \
 	fi
 FORCE:
 
-# Ignore "svn_version.cpp" in distcleancheck
+# Ignore "code_revision.cpp" in distcleancheck
 distcleancheck_listfiles = \
 	find . -type f -exec sh -c 'test -f $(srcdir)/$$1 || echo $$1' \
 	sh '{}' ';'

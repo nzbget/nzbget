@@ -84,12 +84,7 @@ private:
 	ParChecker*		m_pOwner;
 	Threads			m_Threads;
 	bool			m_bParallel;
-
-#ifdef HAVE_SPINLOCK
-	SpinLock		progresslock;
-#else
 	Mutex			progresslock;
-#endif
 
 	virtual void	BeginRepair();
 	virtual void	EndRepair();
@@ -169,7 +164,9 @@ Result Repairer::PreProcess(const char *szParFilename)
 
 Result Repairer::Process(bool dorepair)
 {
-	return Par2Repairer::Process(commandLine, dorepair);
+	Result res = Par2Repairer::Process(commandLine, dorepair);
+	debug("ParChecker: Process-result=%i", res);
+	return res;
 }
 
 
@@ -191,7 +188,7 @@ bool Repairer::ScanDataFile(DiskFile *diskfile, Par2RepairerSourceFile* &sourcef
 			if (eFileStatus != ParChecker::fsUnknown)
 			{
 				sig_done(name, iAvailableBlocks, sourcefile->BlockCount());
-				sig_progress(1000.0);
+				sig_progress(1000);
 				matchtype = eFileStatus == ParChecker::fsSuccess ? eFullMatch :
 					eFileStatus == ParChecker::fsPartial ? ePartialMatch : eNoMatch;
 				m_pOwner->SetParFull(false);
@@ -396,6 +393,18 @@ ParChecker::SegmentList::~SegmentList()
 	}
 }
 
+ParChecker::DupeSource::DupeSource(int iID, const char* szDirectory)
+{
+	m_iID = iID;
+	m_szDirectory = strdup(szDirectory);
+	m_iUsedBlocks = 0;
+}
+
+ParChecker::DupeSource::~DupeSource()
+{
+	free(m_szDirectory);
+}
+
 
 ParChecker::ParChecker()
 {
@@ -412,6 +421,7 @@ ParChecker::ParChecker()
 	m_iFileProgress = 0;
 	m_iStageProgress = 0;
 	m_iExtraFiles = 0;
+	m_iQuickFiles = 0;
 	m_bVerifyingExtraFiles = false;
 	m_bCancelled = false;
 	m_eStage = ptLoadingPars;
@@ -450,6 +460,12 @@ void ParChecker::Cleanup()
 	m_ProcessedFiles.clear();
 
 	m_sourceFiles.clear();
+
+	for (DupeSourceList::iterator it = m_DupeSources.begin(); it != m_DupeSources.end() ;it++)
+	{
+		free(*it);
+	}
+	m_DupeSources.clear();
 
 	free(m_szErrMsg);
 	m_szErrMsg = NULL;
@@ -551,6 +567,7 @@ ParChecker::EStatus ParChecker::RunParCheck(const char* szParFilename)
 	m_eStage = ptLoadingPars;
 	m_iProcessedFiles = 0;
 	m_iExtraFiles = 0;
+	m_iQuickFiles = 0;
 	m_bVerifyingExtraFiles = false;
 	m_bHasDamagedFiles = false;
 	EStatus eStatus = psFailed;
@@ -575,7 +592,6 @@ ParChecker::EStatus ParChecker::RunParCheck(const char* szParFilename)
 	m_eStage = ptVerifyingSources;
 	Repairer* pRepairer = (Repairer*)m_pRepairer;
 	res = pRepairer->Process(false);
-    debug("ParChecker: Process-result=%i", res);
 
 	if (!m_bParQuick)
 	{
@@ -589,24 +605,36 @@ ParChecker::EStatus ParChecker::RunParCheck(const char* szParFilename)
 		if (bAddedSplittedFragments)
 		{
 			res = pRepairer->Process(false);
-			debug("ParChecker: Process-result=%i", res);
 		}
 	}
 
 	if (m_bHasDamagedFiles && !IsStopped() && pRepairer->missingfilecount > 0 && 
 		!(bAddedSplittedFragments && res == eRepairPossible) &&
-		g_pOptions->GetParScan() == Options::psAuto)
+		(g_pOptions->GetParScan() == Options::psExtended ||
+		 g_pOptions->GetParScan() == Options::psDupe))
 	{
 		if (AddMissingFiles())
 		{
 			res = pRepairer->Process(false);
-			debug("ParChecker: Process-result=%i", res);
 		}
 	}
 
 	if (m_bHasDamagedFiles && !IsStopped() && res == eRepairNotPossible)
 	{
 		res = (Result)ProcessMorePars();
+	}
+
+	if (m_bHasDamagedFiles && !IsStopped() && res == eRepairNotPossible &&
+		g_pOptions->GetParScan() == Options::psDupe)
+	{
+		if (AddDupeFiles())
+		{
+			res = pRepairer->Process(false);
+			if (!IsStopped() && res == eRepairNotPossible)
+			{
+				res = (Result)ProcessMorePars();
+			}
+		}
 	}
 
 	if (IsStopped())
@@ -640,11 +668,11 @@ ParChecker::EStatus ParChecker::RunParCheck(const char* szParFilename)
 			UpdateProgress();
 
 			res = pRepairer->Process(true);
-    		debug("ParChecker: Process-result=%i", res);
 			if (res == eSuccess)
 			{
     			PrintMessage(Message::mkInfo, "Successfully repaired %s", m_szInfoName);
 				eStatus = psRepaired;
+				StatDupeSources(&m_DupeSources);
 				DeleteLeftovers();
 			}
 		}
@@ -859,7 +887,6 @@ int ParChecker::ProcessMorePars()
 		{
 			pRepairer->UpdateVerificationResults();
 			res = pRepairer->Process(false);
-			debug("ParChecker: Process-result=%i", res);
 		}
 	}
 
@@ -909,20 +936,9 @@ void ParChecker::QueueChanged()
 
 bool ParChecker::AddSplittedFragments()
 {
-	char szDirectory[1024];
-	strncpy(szDirectory, m_szParFilename, 1024);
-	szDirectory[1024-1] = '\0';
-
-	char* szBasename = Util::BaseFileName(szDirectory);
-	if (szBasename == szDirectory)
-	{
-		return false;
-	}
-	szBasename[-1] = '\0';
-
 	std::list<CommandLine::ExtraFile> extrafiles;
 
-	DirBrowser dir(szDirectory);
+	DirBrowser dir(m_szDestDir);
 	while (const char* filename = dir.Next())
 	{
 		if (strcmp(filename, ".") && strcmp(filename, "..") && strcmp(filename, "_brokenlog.txt") &&
@@ -949,7 +965,7 @@ bool ParChecker::AddSplittedFragments()
 							debug("Found splitted fragment %s", filename);
 
 							char fullfilename[1024];
-							snprintf(fullfilename, 1024, "%s%c%s", szDirectory, PATH_SEPARATOR, filename);
+							snprintf(fullfilename, 1024, "%s%c%s", m_szDestDir, PATH_SEPARATOR, filename);
 							fullfilename[1024-1] = '\0';
 
 							CommandLine::ExtraFile extrafile(fullfilename, Util::FileSize(fullfilename));
@@ -978,18 +994,64 @@ bool ParChecker::AddSplittedFragments()
 
 bool ParChecker::AddMissingFiles()
 {
-    PrintMessage(Message::mkInfo, "Performing extra par-scan for %s", m_szInfoName);
+	return AddExtraFiles(true, false, m_szDestDir);
+}
 
+bool ParChecker::AddDupeFiles()
+{
 	char szDirectory[1024];
 	strncpy(szDirectory, m_szParFilename, 1024);
 	szDirectory[1024-1] = '\0';
 
-	char* szBasename = Util::BaseFileName(szDirectory);
-	if (szBasename == szDirectory)
+	bool bAdded = AddExtraFiles(false, false, szDirectory);
+
+	if (((Repairer*)m_pRepairer)->missingblockcount > 0)
 	{
-		return false;
+		// scanning directories of duplicates
+		RequestDupeSources(&m_DupeSources);
+
+		if (!m_DupeSources.empty())
+		{
+			int iWasBlocksMissing = ((Repairer*)m_pRepairer)->missingblockcount;
+
+			for (DupeSourceList::iterator it = m_DupeSources.begin(); it != m_DupeSources.end(); it++)
+			{
+				DupeSource* pDupeSource = *it;
+				if (((Repairer*)m_pRepairer)->missingblockcount > 0 && Util::DirectoryExists(pDupeSource->GetDirectory()))
+				{
+					int iWasBlocksMissing2 = ((Repairer*)m_pRepairer)->missingblockcount;
+					bool bOneAdded = AddExtraFiles(false, true, pDupeSource->GetDirectory());
+					bAdded |= bOneAdded;
+					int iBlocksMissing2 = ((Repairer*)m_pRepairer)->missingblockcount;
+					pDupeSource->SetUsedBlocks(pDupeSource->GetUsedBlocks() + (iWasBlocksMissing2 - iBlocksMissing2));
+				}
+			}
+
+			int iBlocksMissing = ((Repairer*)m_pRepairer)->missingblockcount;
+			if (iBlocksMissing < iWasBlocksMissing)
+			{
+				PrintMessage(Message::mkInfo, "Found extra %i blocks in dupe sources", iWasBlocksMissing - iBlocksMissing);
+			}
+			else
+			{
+				PrintMessage(Message::mkInfo, "No extra blocks found in dupe sources");
+			}
+		}
 	}
-	szBasename[-1] = '\0';
+
+	return bAdded;
+}
+
+bool ParChecker::AddExtraFiles(bool bOnlyMissing, bool bExternalDir, const char* szDirectory)
+{
+	if (bExternalDir)
+	{
+		PrintMessage(Message::mkInfo, "Performing dupe par-scan for %s in %s", m_szInfoName, Util::BaseFileName(szDirectory));
+	}
+	else
+	{
+		PrintMessage(Message::mkInfo, "Performing extra par-scan for %s", m_szInfoName);
+	}
 
 	std::list<CommandLine::ExtraFile*> extrafiles;
 
@@ -997,7 +1059,7 @@ bool ParChecker::AddMissingFiles()
 	while (const char* filename = dir.Next())
 	{
 		if (strcmp(filename, ".") && strcmp(filename, "..") && strcmp(filename, "_brokenlog.txt") &&
-			!IsParredFile(filename) && !IsProcessedFile(filename))
+			(bExternalDir || (!IsParredFile(filename) && !IsProcessedFile(filename))))
 		{
 			char fullfilename[1024];
 			snprintf(fullfilename, 1024, "%s%c%s", szDirectory, PATH_SEPARATOR, filename);
@@ -1024,7 +1086,7 @@ bool ParChecker::AddMissingFiles()
 
 		// adding files one by one until all missing files are found
 
-		while (!IsStopped() && !m_bCancelled && extrafiles.size() > 0 && ((Repairer*)m_pRepairer)->missingfilecount > 0)
+		while (!IsStopped() && !m_bCancelled && extrafiles.size() > 0)
 		{
 			CommandLine::ExtraFile* pExtraFile = extrafiles.front();
 			extrafiles.pop_front();
@@ -1032,19 +1094,40 @@ bool ParChecker::AddMissingFiles()
 			extrafiles1.clear();
 			extrafiles1.push_back(*pExtraFile);
 
-			int iWasMissing = ((Repairer*)m_pRepairer)->missingfilecount;
+			int iWasFilesMissing = ((Repairer*)m_pRepairer)->missingfilecount;
+			int iWasBlocksMissing = ((Repairer*)m_pRepairer)->missingblockcount;
+
 			((Repairer*)m_pRepairer)->VerifyExtraFiles(extrafiles1);
-			bool bAdded = iWasMissing > (int)((Repairer*)m_pRepairer)->missingfilecount;
-			if (bAdded)
+			((Repairer*)m_pRepairer)->UpdateVerificationResults();
+
+			bool bFileAdded = iWasFilesMissing > (int)((Repairer*)m_pRepairer)->missingfilecount;
+			bool bBlockAdded = iWasBlocksMissing > (int)((Repairer*)m_pRepairer)->missingblockcount;
+
+			if (bFileAdded && !bExternalDir)
 			{
 				PrintMessage(Message::mkInfo, "Found missing file %s", Util::BaseFileName(pExtraFile->FileName().c_str()));
 				RegisterParredFile(Util::BaseFileName(pExtraFile->FileName().c_str()));
 			}
+			else if (bBlockAdded)
+			{
+				PrintMessage(Message::mkInfo, "Found %i missing blocks", iWasBlocksMissing - (int)((Repairer*)m_pRepairer)->missingblockcount);
+			}
 
-			bFilesAdded |= bAdded;
-			((Repairer*)m_pRepairer)->UpdateVerificationResults();
+			bFilesAdded |= bFileAdded | bBlockAdded;
 
 			delete pExtraFile;
+
+			if (bOnlyMissing && ((Repairer*)m_pRepairer)->missingfilecount == 0)
+			{
+				PrintMessage(Message::mkInfo, "All missing files found, aborting par-scan");
+				break;
+			}
+
+			if (!bOnlyMissing && ((Repairer*)m_pRepairer)->missingblockcount == 0)
+			{
+				PrintMessage(Message::mkInfo, "All missing blocks found, aborting par-scan");
+				break;
+			}
 		}
 
 		m_bVerifyingExtraFiles = false;
@@ -1121,6 +1204,7 @@ void ParChecker::signal_progress(int progress)
 		// processing individual files
 
 		int iTotalFiles = 0;
+		int iProcessedFiles = m_iProcessedFiles;
 		if (m_eStage == ptVerifyingRepaired)
 		{
 			// repairing individual files
@@ -1130,17 +1214,25 @@ void ParChecker::signal_progress(int progress)
 		{
 			// verifying individual files
 			iTotalFiles = ((Repairer*)m_pRepairer)->sourcefiles.size() + m_iExtraFiles;
+			if (m_iExtraFiles > 0)
+			{
+				// during extra par scan don't count quickly verified files;
+				// extra files require much more time for verification;
+				// counting only fully scanned files improves estimated time accuracy.
+				iTotalFiles -= m_iQuickFiles;
+				iProcessedFiles -= m_iQuickFiles;
+			}
 		}
 
 		if (iTotalFiles > 0)
 		{
 			if (m_iFileProgress < 1000)
 			{
-				m_iStageProgress = (m_iProcessedFiles * 1000 + m_iFileProgress) / iTotalFiles;
+				m_iStageProgress = (iProcessedFiles * 1000 + m_iFileProgress) / iTotalFiles;
 			}
 			else
 			{
-				m_iStageProgress = m_iProcessedFiles * 1000 / iTotalFiles;
+				m_iStageProgress = iProcessedFiles * 1000 / iTotalFiles;
 			}
 		}
 		else
@@ -1191,6 +1283,11 @@ void ParChecker::signal_done(std::string str, int available, int total)
 				PrintMessage(Message::mkWarning, "File %s with %i block(s) is missing%s",
 					szFilename, total, bIgnore ? ", ignoring" : "");
 			}
+
+			if (!IsProcessedFile(szFilename))
+			{
+				m_ProcessedFiles.push_back(strdup(szFilename));
+			}
 		}
 	}
 }
@@ -1205,11 +1302,13 @@ void ParChecker::CheckEmptyFiles()
 	for (std::vector<Par2RepairerSourceFile*>::iterator it = ((Repairer*)m_pRepairer)->sourcefiles.begin();
 		 it != ((Repairer*)m_pRepairer)->sourcefiles.end(); it++)
 	{
-		Par2RepairerSourceFile *sourcefile = *it;
+		Par2RepairerSourceFile* sourcefile = *it;
 
 		if (sourcefile && sourcefile->GetDescriptionPacket())
 		{
-			const char* szFilename = sourcefile->GetDescriptionPacket()->FileName().c_str();
+			// GetDescriptionPacket()->FileName() returns a temp string object, which we need to hold for a while
+			std::string filename = sourcefile->GetDescriptionPacket()->FileName();
+			const char* szFilename = filename.c_str();
 			if (!Util::EmptyStr(szFilename) && !IsProcessedFile(szFilename))
 			{
 				bool bIgnore = Util::MatchFileExt(szFilename, g_pOptions->GetParIgnoreExt(), ",;") ||
@@ -1425,6 +1524,7 @@ ParChecker::EFileStatus ParChecker::VerifyDataFile(void* pDiskfile, void* pSourc
 		}
 	}
 
+	m_iQuickFiles++;
 	PrintMessage(Message::mkDetail, "Quickly verified %s file %s",
 		eFileStatus == fsSuccess ? "good" : "damaged", Util::BaseFileName(szFilename));
 

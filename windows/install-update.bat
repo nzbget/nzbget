@@ -28,8 +28,6 @@ set PATH=%SystemRoot%\system32;%PATH%
 if "%1"=="/step2" goto STEP2
 if "%1"=="/step3" goto STEP3
    
-set BASE_URL=http://nzbget.net/download
-
 if x%NZBUP_BRANCH%==x (
 	echo This script is executed by NZBGet during update and is not supposed to be started manually by user.
 	echo.
@@ -60,7 +58,7 @@ for /f "delims=" %%a in ('type "%NZBOP_WEBDIR%\package-info.json"') do (
 
 rem "%~dp0" means the location of the current batch file
 set NZBGET_DIR=%~dp0
-cd %NZBGET_DIR%
+cd /D %NZBGET_DIR%
 
 rem Determine if NZBGet is running as a service
 set NZBGET_SERVICE=no
@@ -76,6 +74,7 @@ rem and fetches files from web-servers
 nzbget.exe -B webget "%TEMP%\NZBGET_UPDATE.txt" "%UPDATE_INFO_LINK%"
 if errorlevel 1 goto DOWNLOAD_FAILURE
 
+rem extracting version number from info file
 if %NZBUP_BRANCH%==TESTING set VER_FIELD=testing-version
 if %NZBUP_BRANCH%==STABLE set VER_FIELD=stable-version
 set VER=0
@@ -93,12 +92,65 @@ for /f "delims=" %%a in ('type "%TEMP%\NZBGET_UPDATE.txt"') do (
 	)
 )
 
+rem extracting setup URL from info file
+if %NZBUP_BRANCH%==TESTING set VER_FIELD=testing-download
+if %NZBUP_BRANCH%==STABLE set VER_FIELD=stable-download
+set DNL_URL=
+for /f "delims=" %%a in ('type "%TEMP%\NZBGET_UPDATE.txt"') do (
+	set line=%%a
+	set line=!line:%VER_FIELD%=!
+	if not %%a==!line! (
+		set DNL_URL=!line!
+		rem deleting tabs, spaces, quotation marks and commas
+		set DNL_URL=!DNL_URL:	=!
+		set DNL_URL=!DNL_URL: =!
+		set DNL_URL=!DNL_URL:"=!
+		set DNL_URL=!DNL_URL:,=!
+		rem delete first character (colon)
+		set DNL_URL=!DNL_URL:~1,1000!
+	)
+)
+
+rem extracting signature URL from info file
+if %NZBUP_BRANCH%==TESTING set VER_FIELD=testing-signature
+if %NZBUP_BRANCH%==STABLE set VER_FIELD=stable-signature
+set SIG_URL=
+for /f "delims=" %%a in ('type "%TEMP%\NZBGET_UPDATE.txt"') do (
+	set line=%%a
+	set line=!line:%VER_FIELD%=!
+	if not %%a==!line! (
+		set SIG_URL=!line!
+		rem deleting tabs, spaces, quotation marks and commas
+		set SIG_URL=!SIG_URL:	=!
+		set SIG_URL=!SIG_URL: =!
+		set SIG_URL=!SIG_URL:"=!
+		set SIG_URL=!SIG_URL:,=!
+		rem delete first character (colon)
+		set SIG_URL=!SIG_URL:~1,1000!
+	)
+)
+
+SET SIG_FILE=nzbget-%VER%.sig.txt
+echo Downloading verification signature...
+nzbget.exe -B webget "%TEMP%\%SIG_FILE%" "%SIG_URL%"
+if errorlevel 1 goto DOWNLOAD_FAILURE
+
 SET SETUP_EXE=nzbget-%VER%-bin-win32-setup.exe
 
 echo Downloading %SETUP_EXE%...
-nzbget.exe -B webget "%TEMP%\%SETUP_EXE%" "%BASE_URL%/%SETUP_EXE%"
+nzbget.exe -B webget "%TEMP%\%SETUP_EXE%" "%DNL_URL%"
 if errorlevel 1 goto DOWNLOAD_FAILURE
-echo Downloaded successfully
+
+echo Verifying package authenticity...
+nzbget.exe -B verify "%NZBOP_APPDIR%\pubkey.pem" "%TEMP%\%SIG_FILE%" "%TEMP%\%SETUP_EXE%"
+if not "%ERRORLEVEL%"=="93" (
+	del "%TEMP%\%SIG_FILE%"
+	del "%TEMP%\%SETUP_EXE%"
+	goto VERIFY_FAILURE
+)
+
+del "%TEMP%\%SIG_FILE%"
+
 rem using ping as wait-command, the third parameter (2) causes ping to wait 1 (one) second
 ping 127.0.0.1 -n 2 -w 1000 > nul
 
@@ -197,6 +249,16 @@ echo.
 exit
 
 
+:VERIFY_FAILURE
+rem This is in the first instance, the error is printed to web-interface
+echo.
+echo [ERROR] ***********************************************
+echo [ERROR] Package authenticity verification failed
+echo [ERROR] ***********************************************
+echo.
+exit
+
+
 :COPYSCRIPT_FAILURE
 rem This is in the first instance, the error is printed to web-interface
 echo.
@@ -219,4 +281,3 @@ rem This is in the second instance, the error is printed to console window
 start "Error during update" CMD /c "echo ERROR: Failed to start NZBGet && pause"
 ping 127.0.0.1 -n 11 -w 1000 > nul
 exit
-

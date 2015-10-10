@@ -652,18 +652,6 @@ LIBS
 build_alias
 host_alias
 target_alias
-build
-build_cpu
-build_vendor
-build_os
-host
-host_cpu
-host_vendor
-host_os
-target
-target_cpu
-target_vendor
-target_os
 INSTALL_PROGRAM
 INSTALL_SCRIPT
 INSTALL_DATA
@@ -1296,11 +1284,6 @@ Program names:
   --program-prefix=PREFIX            prepend PREFIX to installed program names
   --program-suffix=SUFFIX            append SUFFIX to installed program names
   --program-transform-name=PROGRAM   run sed PROGRAM on installed program names
-
-System types:
-  --build=BUILD     configure for building on BUILD [guessed]
-  --host=HOST       cross-compile to build programs to run on HOST [BUILD]
-  --target=TARGET   configure for building compilers for TARGET [HOST]
 _ACEOF
 fi
 
@@ -1806,7 +1789,7 @@ ac_compiler_gnu=$ac_cv_c_compiler_gnu
 
 
 ac_aux_dir=
-for ac_dir in "$srcdir" "$srcdir/.." "$srcdir/../.."; do
+for ac_dir in posix "$srcdir"/posix; do
   if test -f "$ac_dir/install-sh"; then
     ac_aux_dir=$ac_dir
     ac_install_sh="$ac_aux_dir/install-sh -c"
@@ -1822,8 +1805,8 @@ for ac_dir in "$srcdir" "$srcdir/.." "$srcdir/../.."; do
   fi
 done
 if test -z "$ac_aux_dir"; then
-  { { echo "$as_me:$LINENO: error: cannot find install-sh or install.sh in \"$srcdir\" \"$srcdir/..\" \"$srcdir/../..\"" >&5
-echo "$as_me: error: cannot find install-sh or install.sh in \"$srcdir\" \"$srcdir/..\" \"$srcdir/../..\"" >&2;}
+  { { echo "$as_me:$LINENO: error: cannot find install-sh or install.sh in posix \"$srcdir\"/posix" >&5
+echo "$as_me: error: cannot find install-sh or install.sh in posix \"$srcdir\"/posix" >&2;}
    { (exit 1); exit 1; }; }
 fi
 
@@ -1836,132 +1819,6 @@ ac_config_sub="$SHELL $ac_aux_dir/config.sub"  # Please don't use this var.
 ac_configure="$SHELL $ac_aux_dir/configure"  # Please don't use this var.
 
 
-# Make sure we can run config.sub.
-$SHELL "$ac_aux_dir/config.sub" sun4 >/dev/null 2>&1 ||
-  { { echo "$as_me:$LINENO: error: cannot run $SHELL $ac_aux_dir/config.sub" >&5
-echo "$as_me: error: cannot run $SHELL $ac_aux_dir/config.sub" >&2;}
-   { (exit 1); exit 1; }; }
-
-{ echo "$as_me:$LINENO: checking build system type" >&5
-echo $ECHO_N "checking build system type... $ECHO_C" >&6; }
-if test "${ac_cv_build+set}" = set; then
-  echo $ECHO_N "(cached) $ECHO_C" >&6
-else
-  ac_build_alias=$build_alias
-test "x$ac_build_alias" = x &&
-  ac_build_alias=`$SHELL "$ac_aux_dir/config.guess"`
-test "x$ac_build_alias" = x &&
-  { { echo "$as_me:$LINENO: error: cannot guess build type; you must specify one" >&5
-echo "$as_me: error: cannot guess build type; you must specify one" >&2;}
-   { (exit 1); exit 1; }; }
-ac_cv_build=`$SHELL "$ac_aux_dir/config.sub" $ac_build_alias` ||
-  { { echo "$as_me:$LINENO: error: $SHELL $ac_aux_dir/config.sub $ac_build_alias failed" >&5
-echo "$as_me: error: $SHELL $ac_aux_dir/config.sub $ac_build_alias failed" >&2;}
-   { (exit 1); exit 1; }; }
-
-fi
-{ echo "$as_me:$LINENO: result: $ac_cv_build" >&5
-echo "${ECHO_T}$ac_cv_build" >&6; }
-case $ac_cv_build in
-*-*-*) ;;
-*) { { echo "$as_me:$LINENO: error: invalid value of canonical build" >&5
-echo "$as_me: error: invalid value of canonical build" >&2;}
-   { (exit 1); exit 1; }; };;
-esac
-build=$ac_cv_build
-ac_save_IFS=$IFS; IFS='-'
-set x $ac_cv_build
-shift
-build_cpu=$1
-build_vendor=$2
-shift; shift
-# Remember, the first character of IFS is used to create $*,
-# except with old shells:
-build_os=$*
-IFS=$ac_save_IFS
-case $build_os in *\ *) build_os=`echo "$build_os" | sed 's/ /-/g'`;; esac
-
-
-{ echo "$as_me:$LINENO: checking host system type" >&5
-echo $ECHO_N "checking host system type... $ECHO_C" >&6; }
-if test "${ac_cv_host+set}" = set; then
-  echo $ECHO_N "(cached) $ECHO_C" >&6
-else
-  if test "x$host_alias" = x; then
-  ac_cv_host=$ac_cv_build
-else
-  ac_cv_host=`$SHELL "$ac_aux_dir/config.sub" $host_alias` ||
-    { { echo "$as_me:$LINENO: error: $SHELL $ac_aux_dir/config.sub $host_alias failed" >&5
-echo "$as_me: error: $SHELL $ac_aux_dir/config.sub $host_alias failed" >&2;}
-   { (exit 1); exit 1; }; }
-fi
-
-fi
-{ echo "$as_me:$LINENO: result: $ac_cv_host" >&5
-echo "${ECHO_T}$ac_cv_host" >&6; }
-case $ac_cv_host in
-*-*-*) ;;
-*) { { echo "$as_me:$LINENO: error: invalid value of canonical host" >&5
-echo "$as_me: error: invalid value of canonical host" >&2;}
-   { (exit 1); exit 1; }; };;
-esac
-host=$ac_cv_host
-ac_save_IFS=$IFS; IFS='-'
-set x $ac_cv_host
-shift
-host_cpu=$1
-host_vendor=$2
-shift; shift
-# Remember, the first character of IFS is used to create $*,
-# except with old shells:
-host_os=$*
-IFS=$ac_save_IFS
-case $host_os in *\ *) host_os=`echo "$host_os" | sed 's/ /-/g'`;; esac
-
-
-{ echo "$as_me:$LINENO: checking target system type" >&5
-echo $ECHO_N "checking target system type... $ECHO_C" >&6; }
-if test "${ac_cv_target+set}" = set; then
-  echo $ECHO_N "(cached) $ECHO_C" >&6
-else
-  if test "x$target_alias" = x; then
-  ac_cv_target=$ac_cv_host
-else
-  ac_cv_target=`$SHELL "$ac_aux_dir/config.sub" $target_alias` ||
-    { { echo "$as_me:$LINENO: error: $SHELL $ac_aux_dir/config.sub $target_alias failed" >&5
-echo "$as_me: error: $SHELL $ac_aux_dir/config.sub $target_alias failed" >&2;}
-   { (exit 1); exit 1; }; }
-fi
-
-fi
-{ echo "$as_me:$LINENO: result: $ac_cv_target" >&5
-echo "${ECHO_T}$ac_cv_target" >&6; }
-case $ac_cv_target in
-*-*-*) ;;
-*) { { echo "$as_me:$LINENO: error: invalid value of canonical target" >&5
-echo "$as_me: error: invalid value of canonical target" >&2;}
-   { (exit 1); exit 1; }; };;
-esac
-target=$ac_cv_target
-ac_save_IFS=$IFS; IFS='-'
-set x $ac_cv_target
-shift
-target_cpu=$1
-target_vendor=$2
-shift; shift
-# Remember, the first character of IFS is used to create $*,
-# except with old shells:
-target_os=$*
-IFS=$ac_save_IFS
-case $target_os in *\ *) target_os=`echo "$target_os" | sed 's/ /-/g'`;; esac
-
-
-# The aliases save the names the user supplied, while $host etc.
-# will get canonicalized.
-test -n "$target_alias" &&
-  test "$program_prefix$program_suffix$program_transform_name" = \
-    NONENONEs,x,x, &&
-  program_prefix=${target_alias}-
 am__api_version="1.9"
 # Find a good install program.  We prefer a C program (faster),
 # so one script is as good as another.  But avoid the broken or
@@ -2247,8 +2104,8 @@ fi
 
 
 # Define the identity of the package.
- PACKAGE=nzbget
- VERSION=16.0-testing
+ PACKAGE='nzbget'
+ VERSION='16.0-testing'
 
 
 cat >>confdefs.h <<_ACEOF
@@ -4707,6 +4564,157 @@ fi
 
 
 
+{ echo "$as_me:$LINENO: checking for fdatasync" >&5
+echo $ECHO_N "checking for fdatasync... $ECHO_C" >&6; }
+if test "${ac_cv_func_fdatasync+set}" = set; then
+  echo $ECHO_N "(cached) $ECHO_C" >&6
+else
+  cat >conftest.$ac_ext <<_ACEOF
+/* confdefs.h.  */
+_ACEOF
+cat confdefs.h >>conftest.$ac_ext
+cat >>conftest.$ac_ext <<_ACEOF
+/* end confdefs.h.  */
+/* Define fdatasync to an innocuous variant, in case <limits.h> declares fdatasync.
+   For example, HP-UX 11i <limits.h> declares gettimeofday.  */
+#define fdatasync innocuous_fdatasync
+
+/* System header to define __stub macros and hopefully few prototypes,
+    which can conflict with char fdatasync (); below.
+    Prefer <limits.h> to <assert.h> if __STDC__ is defined, since
+    <limits.h> exists even on freestanding compilers.  */
+
+#ifdef __STDC__
+# include <limits.h>
+#else
+# include <assert.h>
+#endif
+
+#undef fdatasync
+
+/* Override any GCC internal prototype to avoid an error.
+   Use char because int might match the return type of a GCC
+   builtin and then its argument prototype would still apply.  */
+#ifdef __cplusplus
+extern "C"
+#endif
+char fdatasync ();
+/* The GNU C library defines this for functions which it implements
+    to always fail with ENOSYS.  Some functions are actually named
+    something starting with __ and the normal name is an alias.  */
+#if defined __stub_fdatasync || defined __stub___fdatasync
+choke me
+#endif
+
+int
+main ()
+{
+return fdatasync ();
+  ;
+  return 0;
+}
+_ACEOF
+rm -f conftest.$ac_objext conftest$ac_exeext
+if { (ac_try="$ac_link"
+case "(($ac_try" in
+  *\"* | *\`* | *\\*) ac_try_echo=\$ac_try;;
+  *) ac_try_echo=$ac_try;;
+esac
+eval "echo \"\$as_me:$LINENO: $ac_try_echo\"") >&5
+  (eval "$ac_link") 2>conftest.er1
+  ac_status=$?
+  grep -v '^ *+' conftest.er1 >conftest.err
+  rm -f conftest.er1
+  cat conftest.err >&5
+  echo "$as_me:$LINENO: \$? = $ac_status" >&5
+  (exit $ac_status); } && {
+	 test -z "$ac_cxx_werror_flag" ||
+	 test ! -s conftest.err
+       } && test -s conftest$ac_exeext &&
+       $as_test_x conftest$ac_exeext; then
+  ac_cv_func_fdatasync=yes
+else
+  echo "$as_me: failed program was:" >&5
+sed 's/^/| /' conftest.$ac_ext >&5
+
+	ac_cv_func_fdatasync=no
+fi
+
+rm -f core conftest.err conftest.$ac_objext conftest_ipa8_conftest.oo \
+      conftest$ac_exeext conftest.$ac_ext
+fi
+{ echo "$as_me:$LINENO: result: $ac_cv_func_fdatasync" >&5
+echo "${ECHO_T}$ac_cv_func_fdatasync" >&6; }
+if test $ac_cv_func_fdatasync = yes; then
+
+cat >>confdefs.h <<\_ACEOF
+#define HAVE_FDATASYNC 1
+_ACEOF
+
+fi
+
+{ echo "$as_me:$LINENO: checking whether F_FULLFSYNC is declared" >&5
+echo $ECHO_N "checking whether F_FULLFSYNC is declared... $ECHO_C" >&6; }
+if test "${ac_cv_have_decl_F_FULLFSYNC+set}" = set; then
+  echo $ECHO_N "(cached) $ECHO_C" >&6
+else
+  cat >conftest.$ac_ext <<_ACEOF
+/* confdefs.h.  */
+_ACEOF
+cat confdefs.h >>conftest.$ac_ext
+cat >>conftest.$ac_ext <<_ACEOF
+/* end confdefs.h.  */
+#include <fcntl.h>
+
+int
+main ()
+{
+#ifndef F_FULLFSYNC
+  (void) F_FULLFSYNC;
+#endif
+
+  ;
+  return 0;
+}
+_ACEOF
+rm -f conftest.$ac_objext
+if { (ac_try="$ac_compile"
+case "(($ac_try" in
+  *\"* | *\`* | *\\*) ac_try_echo=\$ac_try;;
+  *) ac_try_echo=$ac_try;;
+esac
+eval "echo \"\$as_me:$LINENO: $ac_try_echo\"") >&5
+  (eval "$ac_compile") 2>conftest.er1
+  ac_status=$?
+  grep -v '^ *+' conftest.er1 >conftest.err
+  rm -f conftest.er1
+  cat conftest.err >&5
+  echo "$as_me:$LINENO: \$? = $ac_status" >&5
+  (exit $ac_status); } && {
+	 test -z "$ac_cxx_werror_flag" ||
+	 test ! -s conftest.err
+       } && test -s conftest.$ac_objext; then
+  ac_cv_have_decl_F_FULLFSYNC=yes
+else
+  echo "$as_me: failed program was:" >&5
+sed 's/^/| /' conftest.$ac_ext >&5
+
+	ac_cv_have_decl_F_FULLFSYNC=no
+fi
+
+rm -f core conftest.err conftest.$ac_objext conftest.$ac_ext
+fi
+{ echo "$as_me:$LINENO: result: $ac_cv_have_decl_F_FULLFSYNC" >&5
+echo "${ECHO_T}$ac_cv_have_decl_F_FULLFSYNC" >&6; }
+if test $ac_cv_have_decl_F_FULLFSYNC = yes; then
+
+cat >>confdefs.h <<\_ACEOF
+#define HAVE_FULLFSYNC 1
+_ACEOF
+
+fi
+
+
 # Check whether --enable-largefile was given.
 if test "${enable_largefile+set}" = set; then
   enableval=$enable_largefile;
@@ -5596,180 +5604,6 @@ fi
 
 	fi
 fi
-
-
-{ echo "$as_me:$LINENO: checking for pthread_spin_init" >&5
-echo $ECHO_N "checking for pthread_spin_init... $ECHO_C" >&6; }
-if test "${ac_cv_func_pthread_spin_init+set}" = set; then
-  echo $ECHO_N "(cached) $ECHO_C" >&6
-else
-  cat >conftest.$ac_ext <<_ACEOF
-/* confdefs.h.  */
-_ACEOF
-cat confdefs.h >>conftest.$ac_ext
-cat >>conftest.$ac_ext <<_ACEOF
-/* end confdefs.h.  */
-/* Define pthread_spin_init to an innocuous variant, in case <limits.h> declares pthread_spin_init.
-   For example, HP-UX 11i <limits.h> declares gettimeofday.  */
-#define pthread_spin_init innocuous_pthread_spin_init
-
-/* System header to define __stub macros and hopefully few prototypes,
-    which can conflict with char pthread_spin_init (); below.
-    Prefer <limits.h> to <assert.h> if __STDC__ is defined, since
-    <limits.h> exists even on freestanding compilers.  */
-
-#ifdef __STDC__
-# include <limits.h>
-#else
-# include <assert.h>
-#endif
-
-#undef pthread_spin_init
-
-/* Override any GCC internal prototype to avoid an error.
-   Use char because int might match the return type of a GCC
-   builtin and then its argument prototype would still apply.  */
-#ifdef __cplusplus
-extern "C"
-#endif
-char pthread_spin_init ();
-/* The GNU C library defines this for functions which it implements
-    to always fail with ENOSYS.  Some functions are actually named
-    something starting with __ and the normal name is an alias.  */
-#if defined __stub_pthread_spin_init || defined __stub___pthread_spin_init
-choke me
-#endif
-
-int
-main ()
-{
-return pthread_spin_init ();
-  ;
-  return 0;
-}
-_ACEOF
-rm -f conftest.$ac_objext conftest$ac_exeext
-if { (ac_try="$ac_link"
-case "(($ac_try" in
-  *\"* | *\`* | *\\*) ac_try_echo=\$ac_try;;
-  *) ac_try_echo=$ac_try;;
-esac
-eval "echo \"\$as_me:$LINENO: $ac_try_echo\"") >&5
-  (eval "$ac_link") 2>conftest.er1
-  ac_status=$?
-  grep -v '^ *+' conftest.er1 >conftest.err
-  rm -f conftest.er1
-  cat conftest.err >&5
-  echo "$as_me:$LINENO: \$? = $ac_status" >&5
-  (exit $ac_status); } && {
-	 test -z "$ac_cxx_werror_flag" ||
-	 test ! -s conftest.err
-       } && test -s conftest$ac_exeext &&
-       $as_test_x conftest$ac_exeext; then
-  ac_cv_func_pthread_spin_init=yes
-else
-  echo "$as_me: failed program was:" >&5
-sed 's/^/| /' conftest.$ac_ext >&5
-
-	ac_cv_func_pthread_spin_init=no
-fi
-
-rm -f core conftest.err conftest.$ac_objext conftest_ipa8_conftest.oo \
-      conftest$ac_exeext conftest.$ac_ext
-fi
-{ echo "$as_me:$LINENO: result: $ac_cv_func_pthread_spin_init" >&5
-echo "${ECHO_T}$ac_cv_func_pthread_spin_init" >&6; }
-if test $ac_cv_func_pthread_spin_init = yes; then
-
-cat >>confdefs.h <<\_ACEOF
-#define HAVE_SPINLOCK 1
-_ACEOF
-
-	{ echo "$as_me:$LINENO: checking for library containing pthread_spin_init" >&5
-echo $ECHO_N "checking for library containing pthread_spin_init... $ECHO_C" >&6; }
-if test "${ac_cv_search_pthread_spin_init+set}" = set; then
-  echo $ECHO_N "(cached) $ECHO_C" >&6
-else
-  ac_func_search_save_LIBS=$LIBS
-cat >conftest.$ac_ext <<_ACEOF
-/* confdefs.h.  */
-_ACEOF
-cat confdefs.h >>conftest.$ac_ext
-cat >>conftest.$ac_ext <<_ACEOF
-/* end confdefs.h.  */
-
-/* Override any GCC internal prototype to avoid an error.
-   Use char because int might match the return type of a GCC
-   builtin and then its argument prototype would still apply.  */
-#ifdef __cplusplus
-extern "C"
-#endif
-char pthread_spin_init ();
-int
-main ()
-{
-return pthread_spin_init ();
-  ;
-  return 0;
-}
-_ACEOF
-for ac_lib in '' pthread; do
-  if test -z "$ac_lib"; then
-    ac_res="none required"
-  else
-    ac_res=-l$ac_lib
-    LIBS="-l$ac_lib  $ac_func_search_save_LIBS"
-  fi
-  rm -f conftest.$ac_objext conftest$ac_exeext
-if { (ac_try="$ac_link"
-case "(($ac_try" in
-  *\"* | *\`* | *\\*) ac_try_echo=\$ac_try;;
-  *) ac_try_echo=$ac_try;;
-esac
-eval "echo \"\$as_me:$LINENO: $ac_try_echo\"") >&5
-  (eval "$ac_link") 2>conftest.er1
-  ac_status=$?
-  grep -v '^ *+' conftest.er1 >conftest.err
-  rm -f conftest.er1
-  cat conftest.err >&5
-  echo "$as_me:$LINENO: \$? = $ac_status" >&5
-  (exit $ac_status); } && {
-	 test -z "$ac_cxx_werror_flag" ||
-	 test ! -s conftest.err
-       } && test -s conftest$ac_exeext &&
-       $as_test_x conftest$ac_exeext; then
-  ac_cv_search_pthread_spin_init=$ac_res
-else
-  echo "$as_me: failed program was:" >&5
-sed 's/^/| /' conftest.$ac_ext >&5
-
-
-fi
-
-rm -f core conftest.err conftest.$ac_objext conftest_ipa8_conftest.oo \
-      conftest$ac_exeext
-  if test "${ac_cv_search_pthread_spin_init+set}" = set; then
-  break
-fi
-done
-if test "${ac_cv_search_pthread_spin_init+set}" = set; then
-  :
-else
-  ac_cv_search_pthread_spin_init=no
-fi
-rm conftest.$ac_ext
-LIBS=$ac_func_search_save_LIBS
-fi
-{ echo "$as_me:$LINENO: result: $ac_cv_search_pthread_spin_init" >&5
-echo "${ECHO_T}$ac_cv_search_pthread_spin_init" >&6; }
-ac_res=$ac_cv_search_pthread_spin_init
-if test "$ac_res" != no; then
-  test "$ac_res" = "none required" || LIBS="$ac_res $LIBS"
-
-fi
-
-fi
-
 
 
 { echo "$as_me:$LINENO: checking for type of socket length (socklen_t)" >&5
@@ -11076,18 +10910,6 @@ LIBS!$LIBS$ac_delim
 build_alias!$build_alias$ac_delim
 host_alias!$host_alias$ac_delim
 target_alias!$target_alias$ac_delim
-build!$build$ac_delim
-build_cpu!$build_cpu$ac_delim
-build_vendor!$build_vendor$ac_delim
-build_os!$build_os$ac_delim
-host!$host$ac_delim
-host_cpu!$host_cpu$ac_delim
-host_vendor!$host_vendor$ac_delim
-host_os!$host_os$ac_delim
-target!$target$ac_delim
-target_cpu!$target_cpu$ac_delim
-target_vendor!$target_vendor$ac_delim
-target_os!$target_os$ac_delim
 INSTALL_PROGRAM!$INSTALL_PROGRAM$ac_delim
 INSTALL_SCRIPT!$INSTALL_SCRIPT$ac_delim
 INSTALL_DATA!$INSTALL_DATA$ac_delim
@@ -11136,9 +10958,14 @@ libxml2_LIBS!$libxml2_LIBS$ac_delim
 LIBOBJS!$LIBOBJS$ac_delim
 WITH_PAR2_TRUE!$WITH_PAR2_TRUE$ac_delim
 WITH_PAR2_FALSE!$WITH_PAR2_FALSE$ac_delim
+openssl_CFLAGS!$openssl_CFLAGS$ac_delim
+openssl_LIBS!$openssl_LIBS$ac_delim
+WITH_TESTS_TRUE!$WITH_TESTS_TRUE$ac_delim
+WITH_TESTS_FALSE!$WITH_TESTS_FALSE$ac_delim
+LTLIBOBJS!$LTLIBOBJS$ac_delim
 _ACEOF
 
-  if test `sed -n "s/.*$ac_delim\$/X/p" conf$$subs.sed | grep -c X` = 97; then
+  if test `sed -n "s/.*$ac_delim\$/X/p" conf$$subs.sed | grep -c X` = 90; then
     break
   elif $ac_last_try; then
     { { echo "$as_me:$LINENO: error: could not make $CONFIG_STATUS" >&5
@@ -11157,52 +10984,6 @@ fi
 
 cat >>$CONFIG_STATUS <<_ACEOF
 cat >"\$tmp/subs-1.sed" <<\CEOF$ac_eof
-/@[a-zA-Z_][a-zA-Z_0-9]*@/!b
-_ACEOF
-sed '
-s/[,\\&]/\\&/g; s/@/@|#_!!_#|/g
-s/^/s,@/; s/!/@,|#_!!_#|/
-:n
-t n
-s/'"$ac_delim"'$/,g/; t
-s/$/\\/; p
-N; s/^.*\n//; s/[,\\&]/\\&/g; s/@/@|#_!!_#|/g; b n
-' >>$CONFIG_STATUS <conf$$subs.sed
-rm -f conf$$subs.sed
-cat >>$CONFIG_STATUS <<_ACEOF
-CEOF$ac_eof
-_ACEOF
-
-
-ac_delim='%!_!# '
-for ac_last_try in false false false false false :; do
-  cat >conf$$subs.sed <<_ACEOF
-openssl_CFLAGS!$openssl_CFLAGS$ac_delim
-openssl_LIBS!$openssl_LIBS$ac_delim
-WITH_TESTS_TRUE!$WITH_TESTS_TRUE$ac_delim
-WITH_TESTS_FALSE!$WITH_TESTS_FALSE$ac_delim
-LTLIBOBJS!$LTLIBOBJS$ac_delim
-_ACEOF
-
-  if test `sed -n "s/.*$ac_delim\$/X/p" conf$$subs.sed | grep -c X` = 5; then
-    break
-  elif $ac_last_try; then
-    { { echo "$as_me:$LINENO: error: could not make $CONFIG_STATUS" >&5
-echo "$as_me: error: could not make $CONFIG_STATUS" >&2;}
-   { (exit 1); exit 1; }; }
-  else
-    ac_delim="$ac_delim!$ac_delim _$ac_delim!! "
-  fi
-done
-
-ac_eof=`sed -n '/^CEOF[0-9]*$/s/CEOF/0/p' conf$$subs.sed`
-if test -n "$ac_eof"; then
-  ac_eof=`echo "$ac_eof" | sort -nru | sed 1q`
-  ac_eof=`expr $ac_eof + 1`
-fi
-
-cat >>$CONFIG_STATUS <<_ACEOF
-cat >"\$tmp/subs-2.sed" <<\CEOF$ac_eof
 /@[a-zA-Z_][a-zA-Z_0-9]*@/!b end
 _ACEOF
 sed '
@@ -11465,7 +11246,7 @@ s&@abs_builddir@&$ac_abs_builddir&;t t
 s&@abs_top_builddir@&$ac_abs_top_builddir&;t t
 s&@INSTALL@&$ac_INSTALL&;t t
 $ac_datarootdir_hack
-" $ac_file_inputs | sed -f "$tmp/subs-1.sed" | sed -f "$tmp/subs-2.sed" >$tmp/out
+" $ac_file_inputs | sed -f "$tmp/subs-1.sed" >$tmp/out
 
 test -z "$ac_datarootdir_hack$ac_datarootdir_seen" &&
   { ac_out=`sed -n '/\${datarootdir}/p' "$tmp/out"`; test -n "$ac_out"; } &&

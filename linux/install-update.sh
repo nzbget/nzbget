@@ -19,8 +19,6 @@
 #  Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 #
 
-BASE_URL="http://nzbget.net/download"
-
 if test "$NZBUP_PROCESSID" = ""; then
     echo "This file is not supposed to be executed directly. To update NZBGet please choose Settings -> SYSTEM -> Check for update in the web-interface."
     exit 1
@@ -42,24 +40,49 @@ fi
 
 if test "$NZBUP_BRANCH" = "TESTING"; then
     VER_FIELD="testing-version"
+    DNL_FIELD="testing-download"
+    SIG_FIELD="testing-signature"
 elif test "$NZBUP_BRANCH" = "STABLE"; then
     VER_FIELD="stable-version"
+    DNL_FIELD="stable-download"
+    SIG_FIELD="stable-signature"
 else
     echo "[ERROR] Unsupported branch $NZBUP_BRANCH"
     exit 1
 fi
 
 VER=`cat "$NZBOP_TEMPDIR/NZBGET_UPDATE.txt" | sed -n "s/^.*$VER_FIELD.*: \"\(.*\)\".*/\1/p"`
+DNL_LINK=`cat "$NZBOP_TEMPDIR/NZBGET_UPDATE.txt" | sed -n "s/^.*$DNL_FIELD.*: \"\(.*\)\".*/\1/p"`
+SIG_LINK=`cat "$NZBOP_TEMPDIR/NZBGET_UPDATE.txt" | sed -n "s/^.*$SIG_FIELD.*: \"\(.*\)\".*/\1/p"`
 rm -f "$NZBOP_TEMPDIR/NZBGET_UPDATE.txt"
 
-INSTALLER="nzbget-$VER-bin-linux.run"
-echo "Downloading $INSTALLER..."
-rm -f "$NZBOP_TEMPDIR/$INSTALLER"
-"$NZBOP_APPBIN" -B webget "$NZBOP_TEMPDIR/$INSTALLER" "$BASE_URL/$INSTALLER" 2>/dev/null
+SIGNATURE="nzbget-$VER.sig.txt"
+echo "Downloading verification signature..."
+rm -f "$NZBOP_TEMPDIR/$SIGNATURE"
+"$NZBOP_APPBIN" -B webget "$NZBOP_TEMPDIR/$SIGNATURE" "$SIG_LINK" 2>/dev/null
 if test "$?" != "0"; then
     echo "[ERROR] Download failed, please try again later"
     exit 1
 fi
+
+INSTALLER="nzbget-$VER-bin-linux.run"
+echo "Downloading $INSTALLER..."
+rm -f "$NZBOP_TEMPDIR/$INSTALLER"
+"$NZBOP_APPBIN" -B webget "$NZBOP_TEMPDIR/$INSTALLER" "$DNL_LINK" 2>/dev/null
+if test "$?" != "0"; then
+    echo "[ERROR] Download failed, please try again later"
+    exit 1
+fi
+
+echo "Verifying package authenticity..."
+"$NZBOP_APPBIN" -B verify "$NZBOP_APPDIR/pubkey.pem" "$NZBOP_TEMPDIR/$SIGNATURE" "$NZBOP_TEMPDIR/$INSTALLER" 2>/dev/null
+if test "$?" != "93"; then
+    echo "[ERROR] Package authenticity verification failed"
+    rm -f "$NZBOP_TEMPDIR/$INSTALLER"
+    rm -f "$NZBOP_TEMPDIR/$SIGNATURE"
+    exit 1
+fi
+rm -f "$NZBOP_TEMPDIR/$SIGNATURE"
 
 echo "Updating NZBGet..."
 echo "..."

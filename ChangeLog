@@ -1,6 +1,160 @@
 nzbget-16.0:
-  - please see subversion log at
-    http://sourceforge.net/p/nzbget/code/HEAD/log/?path=/trunk
+  - moved project hosting to GitHub:
+        - moved source code repository from subversion to git;
+        - updated POSIX makefile to generate revision number for testing
+          releases;
+        - updated Linux installer build script to work with git;
+        - adjusted function "check for updates" in web-interface;
+        - update-scripts for Linux installer and Windows setup fetch new
+          versions from GitHub releases area;
+        - cleaned up project root directory, removed many unneeded files which
+          were required by GNU build tools;
+  - added verification for setup authenticity during update on Linux and Windows;
+  - improvements in Linux installer:
+        - improved compatibility with android;
+        - added support for paths with spaces in parameter "--destdir";
+        - auto-selecting "armhf"-architecture on ARM 64 bit systems (aarch64);
+  - ignored nzbs are now added to history and processed by queue scripts:
+	  - when an nzb-file isn’t added to queue, for some reason, the file is now
+	    also added to history (in addition to messages printed to log);
+	  - on one hand that makes it easier to see errors (as history items instead
+	    of error log messages), on the other hand that provides more info for
+	    extension scripts and third-party programs;
+	  - for malformed nzb-files which cannot be parsed the status in history is
+	    "DELETE: SCAN";
+	  - for duplicate files with exactly same content status "DELETE: COPY";
+	  - for duplicate files having history items with status "GOOD" and for
+	    duplicate files having hidden history items with status "SUCCESS" which
+	    do not have any visible duplicates - status "DELETE: GOOD";
+	  - new values for field "DeleteStatus" of API-Method "history": "GOOD",
+	   "COPY", "SCAN";
+	  - new values for field "Status" of API-Method "history": "FAILURE/SCAN",
+	    "DELETED/COPY", "DELETED/GOOD" (they will also be passed to pp-scripts
+	    as NZBPP_STATUS);
+	  - new queue-script event "NZB_DELETED";
+	  - new queue event "URL_COMPLETED", with possible details: "FAILURE",
+	    "SCAN_SKIPPED", "SCAN_FAILURE";
+  - improved quick filter (the search box at the top of the page):
+	  - now supporting OR, AND, NOT, parenthesis;
+	  - can search in specific fields;
+	  - can search in API-fields which are not shown in the table;
+	  - filters can be saved and loaded using new drop down menu;
+  - new advanced duplicate par-check mode:
+	  - can be activated via option "ParScan=Dupe";
+	  - the new mode is based on the fact that the same releases are posted to
+	    Usenet multiple times;
+	  - when an item requires repair but doesn't have enough par-blocks the
+	    par-checker can reuse parts downloaded in other duplicates of the same
+	    title;
+	  - that makes it sometimes possible to repair downloads which would fail
+	    if tried to repair individually;
+	  - the downloads must be identifiable as duplicates (same nzb name or same
+	    duplicate key);
+	  - when par-checker needs more par-blocks it goes through the history and
+	    scans the download directories of duplicates until it finds missing
+	    blocks; it's smart enough to abort the scanning if the files come from
+	    different releases (based on video file size);
+	  - adjusted option "HealthCheck"; when set to "Delete" and duplicate
+	    par-scan is active, the download is aborted only if the completion is
+	    below 10%; that's to avoid deletion of damaged downloads which can be
+	    potentially repaired using new par-check mode;
+	  - downloads which were repaired using the new mode or which have donated
+	    their blocks to repair other downloads are distinguishable in the
+	    history details dialog with new status "EXPAR: RECIPIENT" or "EXPAR: 
+	    DONOR"; a tooltip on the status shows amount of par-blocks
+	    received/donated;
+	  - new field "ExParStatus" returned by API-method "history";
+	  - to quickly find related history items use quick filter
+	    "-exparstatus:none" in history list;
+  - when adding nzb-files via web-interface it's now possible to change name and
+    other properties:
+        - nzb-files in the upload-list are now clickable;
+        - the click opens properties dialog where the name, password, duplicate
+          key and duplicate score can be changed;
+  - queue script activity is now indicated in web-interface:
+	  - items in download list may have new statuses "QS-QUEUED" (gray) or
+	    "QUEUE-SCRIPT" (green);
+	  - new values for field "Status" in API-method "listgroups": "QS_QUEUED",
+	    "QS_EXECUTING";
+	  - the number of active (and queued) scripts are shown in the status dialog
+	    in web-interface; this new row is hidden if no scripts are queued;
+	  - active queue scripts account for activity indicator in web-interface
+	    (rotating button);
+	  - new field "QueueScriptCount" in API-method "status" indicates number of
+	    queue-scripts queued for execution including the currently running;
+  - added scripting support to RSS Feeds:
+	  - new option "FeedScript" to set global rss feed scripts;
+	  - new option "FeedX.FeedScript" to define per rss feed scripts;
+  - new option "FeedX.Backlog" to control the RSS feed behavior when fetched for
+    the first time or after changing of URL or filter;
+  - implemented cleanup for field "description" in RSS feeds to remove HTML
+    formatting;
+  - new option "FlushQueue" ("yes" by default) to force disk cache flush when
+    saving queue;
+  - quick toggle of speed limit; "Command/Control + click-on-speed-icon" toggles
+    between "all servers active and speed-limit=none" and "servers and speed
+    limit as in the config file";
+  - new option "RequiredDir" to wait for external drives mount on boot;
+  - hidden webui option "rowSelect" now works for feed view too;
+  - improved error message for password protected archives;
+  - increased limit for log-entries in history dialog from 1000 to 10000;
+  - completion tab of download details dialog (and history details dialog)
+    shows per server article completion in percents; now there are also
+    tooltips to show article counts;
+  - do not reporting bad blocks for missing files (which are already reported as
+    missing);
+  - new setting to set tray icon behavior on Windows;
+  - improvements in built-in web-server to fix communication errors which may
+    occur on certain systems, in particular on OS X Safari:
+        - implemented graceful disconnect strategy in web-server;
+        - added authorization via X-Auth-Token to overcome Safari’s bug, where
+          it may stop sending HTTP Basic Auth header when executing ajax
+          requests;
+  - pp-script EMail.py now supports new TLS/SSL mode "Force". When active the
+    secure communication with SMTP server is built using secure socket on
+    connection level instead of plain connection and following switch into
+    secure mode using SMTP-command "STARTLS". This new mode is in particular
+    required when using GMail on port 465;
+  - speed improvement in built-in web-server on Windows when serving API
+    requests (web-interface) for very large queue or history (with thousands
+    items);
+  - better performance when deleting many items from queue at once (hundreds or
+    thousands);
+  - improved performance in web-interface when working with very large queue or
+    history (thousands of items);
+  - integrated unit testing framework, created few first unit tests:
+        - new configure parameter "--enable-tests" to build the program with
+          tests;
+        - use "nzbget --tests" to execute all tests or "nzbget --tests -h" for
+          more options;
+  - fixes in Linux installer:
+        - fixed: installer may show wrong IP-address in the quick help message
+          printed after installation (thanks to @sanderjo);
+        - fixed: installation failed on certain WD NAS models due to Busybox
+          limitations;
+        - fixed: not working endianness detection on mipseb architecture;
+        - fixed: unrar too slow on x86_64 architecture;
+  - fixed: reporting of bad blocks for empty files could print garbage file
+    names;
+  - fixed: par-check did not work on UNC paths (Windows only);
+  - fixed: config error messages were not printed to log or screen but only to
+    stdout, where users typically don’t see them;
+  - fixed: incorrect reading of UrlStatus from disk state;
+  - fixed: total articles wasn't reset when downloading again;
+  - fixed: crash on reload if a queue-script is running;
+  - fixed: mark as bad may return items to queue if used on multiple items
+    simultaneously;
+  - fixed: updating may fail if NZBGet was not installed on the system
+    drive (Windows only);
+  - fixed: the program may hang during multithreading par-repair, only certain
+    Linux system affected;
+  - fixed: active URL download could not be deleted;
+  - fixed: par-verification of repaired files were sometimes not skipped in
+    quick verification mode (option "ParQuick=yes");
+  - fixed: when parsing nzb-files filenames may be incorrectly detected causing
+    certain downloads to fail;
+  - fixed: nzb-files containing very large individual files (many GB) may cause
+    program to crash or print error "Could not create file ...".
 
 nzbget-15.0:
   - improved application for Windows:
@@ -2276,10 +2430,10 @@ nzbget-0.3.0:
     install/remove nzbget-Service. Servers and clients can run on diferrent
     operating systems;
   - Improved compatibility with POSIX systems; Tested on:
-	  - Linux Debian 3.1 on x86;
-	  - Linux BusyBox with uClibc on MIPSEL;
-	  - PC-BSD 1.4 (based on FreeBSD 6.2) on x86;
-	  - Solaris 10 on x86;
+        - Linux Debian 3.1 on x86;
+        - Linux BusyBox with uClibc on MIPSEL;
+        - PC-BSD 1.4 (based on FreeBSD 6.2) on x86;
+        - Solaris 10 on x86;
   - Many memory-leaks and thread issues were fixed;
   - The program was thoroughly worked over. Almost every line of code was
     revised.

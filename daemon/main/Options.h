@@ -67,8 +67,9 @@ public:
 	enum EParScan
 	{
 		psLimited,
+		psExtended,
 		psFull,
-		psAuto
+		psDupe
 	};
 	enum EHealthCheck
 	{
@@ -165,7 +166,8 @@ public:
 							bool bTLS, const char* szCipher, int iMaxConnections, int iRetention,
 							int iLevel, int iGroup) = 0;
 		virtual void	AddFeed(int iID, const char* szName, const char* szUrl, int iInterval,
-							const char* szFilter, bool bPauseNzb, const char* szCategory, int iPriority) {}
+							const char* szFilter, bool bBacklog, bool bPauseNzb, const char* szCategory,
+							int iPriority, const char* szFeedScript) {}
 		virtual void	AddTask(int iID, int iHours, int iMinutes, int iWeekDaysBits, ESchedulerCommand eCommand,
 							const char* szParam) {}
 		virtual void	SetupFirstStart() {}
@@ -192,6 +194,7 @@ private:
 	char*				m_szWebDir;
 	char*				m_szConfigTemplate;
 	char*				m_szScriptDir;
+	char*				m_szRequiredDir;
 	EMessageTarget		m_eInfoTarget;
 	EMessageTarget		m_eWarningTarget;
 	EMessageTarget		m_eErrorTarget;
@@ -208,6 +211,7 @@ private:
 	int					m_iRetries;
 	int					m_iRetryInterval;
 	bool				m_bSaveQueue;
+	bool				m_bFlushQueue;
 	bool				m_bDupeCheck;
 	char*				m_szControlIP;
 	char*				m_szControlUsername;
@@ -243,6 +247,7 @@ private:
 	char*				m_szScriptOrder;
 	char*				m_szScanScript;
 	char*				m_szQueueScript;
+	char*				m_szFeedScript;
 	bool				m_bNoConfig;
 	int					m_iUMask;
 	int					m_iUpdateInterval;
@@ -290,6 +295,7 @@ private:
 	int					m_iDownloadRate;
 	time_t				m_tResumeTime;
 	int					m_iLocalTimeOffset;
+	bool				m_bTempPausePostprocess;
 
 	void				Init(const char* szExeName, const char* szConfigFilename, bool bNoConfig,
 							 CmdOptList* pCommandLineOptions, bool bNoDiskAccess, Extender* pExtender);
@@ -343,6 +349,7 @@ public:
 	const char*			GetWebDir() { return m_szWebDir; }
 	const char*			GetConfigTemplate() { return m_szConfigTemplate; }
 	const char*			GetScriptDir() { return m_szScriptDir; }
+	const char*			GetRequiredDir() { return m_szRequiredDir; }
 	bool				GetBrokenLog() const { return m_bBrokenLog; }
 	bool				GetNzbLog() const { return m_bNzbLog; }
 	EMessageTarget		GetInfoTarget() const { return m_eInfoTarget; }
@@ -359,6 +366,7 @@ public:
 	int					GetRetries() { return m_iRetries; }
 	int					GetRetryInterval() { return m_iRetryInterval; }
 	bool				GetSaveQueue() { return m_bSaveQueue; }
+	bool				GetFlushQueue() { return m_bFlushQueue; }
 	bool				GetDupeCheck() { return m_bDupeCheck; }
 	const char*			GetControlIP() { return m_szControlIP; }
 	const char*			GetControlUsername() { return m_szControlUsername; }
@@ -394,6 +402,7 @@ public:
 	const char*			GetPostScript() { return m_szPostScript; }
 	const char*			GetScanScript() { return m_szScanScript; }
 	const char*			GetQueueScript() { return m_szQueueScript; }
+	const char*			GetFeedScript() { return m_szFeedScript; }
 	int					GetUMask() { return m_iUMask; }
 	int					GetUpdateInterval() {return m_iUpdateInterval; }
 	bool				GetCursesNZBName() { return m_bCursesNZBName; }
@@ -446,6 +455,8 @@ public:
 	bool				GetPauseScan() const { return m_bPauseScan; }
 	void				SetTempPauseDownload(bool bTempPauseDownload) { m_bTempPauseDownload = bTempPauseDownload; }
 	bool				GetTempPauseDownload() const { return m_bTempPauseDownload; }
+	bool				GetTempPausePostprocess() const { return m_bTempPausePostprocess; }
+	void				SetTempPausePostprocess(bool bTempPausePostprocess) { m_bTempPausePostprocess = bTempPausePostprocess; }
 	void				SetDownloadRate(int iRate) { m_iDownloadRate = iRate; }
 	int					GetDownloadRate() const { return m_iDownloadRate; }
 	void				SetResumeTime(time_t tResumeTime) { m_tResumeTime = tResumeTime; }

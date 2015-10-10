@@ -36,7 +36,6 @@ class DiskState
 {
 private:
 	int					fscanf(FILE* infile, const char* Format, ...);
-	int					ParseFormatVersion(const char* szFormatSignature);
 	bool				SaveFileInfo(FileInfo* pFileInfo, const char* szFilename);
 	bool				LoadFileInfo(FileInfo* pFileInfo, const char* szFilename, bool bFileSummary, bool bArticles);
 	void				SaveNZBQueue(DownloadQueue* pDownloadQueue, FILE* outfile);
@@ -62,6 +61,7 @@ private:
 	bool				LoadAllFileStates(DownloadQueue* pDownloadQueue, Servers* pServers);
 	void				SaveServerStats(ServerStatList* pServerStatList, FILE* outfile);
 	bool				LoadServerStats(ServerStatList* pServerStatList, Servers* pServers, FILE* infile);
+	bool				FinishWriteTransaction(const char* szNewFileName, const char* szDestFileName);
 
 	// backward compatibility functions (conversions from older formats)
 	bool				LoadPostQueue12(DownloadQueue* pDownloadQueue, NZBList* pNZBList, FILE* infile, int iFormatVersion);

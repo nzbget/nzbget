@@ -45,6 +45,7 @@ public:
 		bool			m_bScanScript;
 		bool			m_bQueueScript;
 		bool			m_bSchedulerScript;
+		bool			m_bFeedScript;
 		char*			m_szQueueEvents;
 
 	public:
@@ -62,6 +63,8 @@ public:
 		void			SetQueueScript(bool bQueueScript) { m_bQueueScript = bQueueScript; }
 		bool			GetSchedulerScript() { return m_bSchedulerScript; }
 		void			SetSchedulerScript(bool bSchedulerScript) { m_bSchedulerScript = bSchedulerScript; }
+		bool			GetFeedScript() { return m_bFeedScript; }
+		void			SetFeedScript(bool bFeedScript) { m_bFeedScript = bFeedScript; }
 		void			SetQueueEvents(const char* szQueueEvents);
 		const char*		GetQueueEvents() { return m_szQueueEvents; }
 	};

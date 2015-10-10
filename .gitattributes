@@ -1,0 +1,25 @@
+* text=auto
+
+# Use CRLF for certain Windows files.
+*.vcproj                        eol=crlf
+*.sln                           eol=crlf
+*.bat                           eol=crlf
+README-WINDOWS.txt              eol=crlf
+nzbget-setup.nsi                eol=crlf
+windows/package-info.json       eol=crlf
+windows/resources/resource.h    eol=crlf
+windows/resources/nzbget.rc     eol=crlf
+
+# Configure GitHub's language detector
+lib/*               linguist-vendored linguist-language=C++
+webui/lib/*         linguist-vendored
+Makefile.in         linguist-vendored
+configure           linguist-vendored
+config.sub          linguist-vendored
+aclocal.m4          linguist-vendored
+config.guess        linguist-vendored
+depcomp             linguist-vendored
+install-sh          linguist-vendored
+missing             linguist-vendored
+configure.ac        linguist-vendored=false
+Makefile.am         linguist-vendored=false

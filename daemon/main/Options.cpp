@@ -66,6 +66,7 @@ static const char* OPTION_NZBDIR				= "NzbDir";
 static const char* OPTION_WEBDIR				= "WebDir";
 static const char* OPTION_CONFIGTEMPLATE		= "ConfigTemplate";
 static const char* OPTION_SCRIPTDIR				= "ScriptDir";
+static const char* OPTION_REQUIREDDIR			= "RequiredDir";
 static const char* OPTION_LOGFILE				= "LogFile";
 static const char* OPTION_WRITELOG				= "WriteLog";
 static const char* OPTION_ROTATELOG				= "RotateLog";
@@ -91,6 +92,7 @@ static const char* OPTION_AUTHORIZEDIP			= "AuthorizedIP";
 static const char* OPTION_ARTICLETIMEOUT		= "ArticleTimeout";
 static const char* OPTION_URLTIMEOUT			= "UrlTimeout";
 static const char* OPTION_SAVEQUEUE				= "SaveQueue";
+static const char* OPTION_FLUSHQUEUE			= "FlushQueue";
 static const char* OPTION_RELOADQUEUE			= "ReloadQueue";
 static const char* OPTION_BROKENLOG				= "BrokenLog";
 static const char* OPTION_NZBLOG				= "NzbLog";
@@ -116,6 +118,7 @@ static const char* OPTION_PARTHREADS			= "ParThreads";
 static const char* OPTION_HEALTHCHECK			= "HealthCheck";
 static const char* OPTION_SCANSCRIPT			= "ScanScript";
 static const char* OPTION_QUEUESCRIPT			= "QueueScript";
+static const char* OPTION_FEEDSCRIPT			= "FeedScript";
 static const char* OPTION_UMASK					= "UMask";
 static const char* OPTION_UPDATEINTERVAL		= "UpdateInterval";
 static const char* OPTION_CURSESNZBNAME			= "CursesNzbName";
@@ -382,6 +385,7 @@ void Options::Init(const char* szExeName, const char* szConfigFilename, bool bNo
 	m_szWebDir				= NULL;
 	m_szConfigTemplate		= NULL;
 	m_szScriptDir			= NULL;
+	m_szRequiredDir			= NULL;
 	m_eInfoTarget			= mtScreen;
 	m_eWarningTarget		= mtScreen;
 	m_eErrorTarget			= mtScreen;
@@ -391,7 +395,8 @@ void Options::Init(const char* szExeName, const char* szConfigFilename, bool bNo
 	m_bPauseDownload		= false;
 	m_bPausePostProcess		= false;
 	m_bPauseScan			= false;
-	m_bTempPauseDownload	= false;
+	m_bTempPauseDownload	= true;
+	m_bTempPausePostprocess	= true;
 	m_bBrokenLog			= false;
 	m_bNzbLog				= false;
 	m_iDownloadRate			= 0;
@@ -401,6 +406,7 @@ void Options::Init(const char* szExeName, const char* szConfigFilename, bool bNo
 	m_bAppendCategoryDir	= false;
 	m_bContinuePartial		= false;
 	m_bSaveQueue			= false;
+	m_bFlushQueue			= false;
 	m_bDupeCheck			= false;
 	m_iRetries				= 0;
 	m_iRetryInterval		= 0;
@@ -438,6 +444,7 @@ void Options::Init(const char* szExeName, const char* szConfigFilename, bool bNo
 	m_szPostScript			= NULL;
 	m_szScanScript			= NULL;
 	m_szQueueScript			= NULL;
+	m_szFeedScript			= NULL;
 	m_iUMask				= 0;
 	m_iUpdateInterval		= 0;
 	m_bCursesNZBName		= false;
@@ -552,6 +559,7 @@ Options::~Options()
 	free(m_szWebDir);
 	free(m_szConfigTemplate);
 	free(m_szScriptDir);
+	free(m_szRequiredDir);
 	free(m_szControlIP);
 	free(m_szControlUsername);
 	free(m_szControlPassword);
@@ -569,6 +577,7 @@ Options::~Options()
 	free(m_szPostScript);
 	free(m_szScanScript);
 	free(m_szQueueScript);
+	free(m_szFeedScript);
 	free(m_szUnrarCmd);
 	free(m_szSevenZipCmd);
 	free(m_szUnpackPassFile);
@@ -647,6 +656,7 @@ void Options::InitDefaults()
 	SetOption(OPTION_LOCKFILE, "${MainDir}/nzbget.lock");
 	SetOption(OPTION_LOGFILE, "${DestDir}/nzbget.log");
 	SetOption(OPTION_SCRIPTDIR, "${MainDir}/scripts");
+	SetOption(OPTION_REQUIREDDIR, "");
 	SetOption(OPTION_WRITELOG, "append");
 	SetOption(OPTION_ROTATELOG, "3");
 	SetOption(OPTION_APPENDCATEGORYDIR, "yes");
@@ -669,6 +679,7 @@ void Options::InitDefaults()
 	SetOption(OPTION_ARTICLETIMEOUT, "60");
 	SetOption(OPTION_URLTIMEOUT, "60");
 	SetOption(OPTION_SAVEQUEUE, "yes");
+	SetOption(OPTION_FLUSHQUEUE, "yes");
 	SetOption(OPTION_RELOADQUEUE, "yes");
 	SetOption(OPTION_BROKENLOG, "yes");
 	SetOption(OPTION_NZBLOG, "yes");
@@ -686,7 +697,7 @@ void Options::InitDefaults()
 	SetOption(OPTION_DETAILTARGET, "both");
 	SetOption(OPTION_PARCHECK, "auto");
 	SetOption(OPTION_PARREPAIR, "yes");
-	SetOption(OPTION_PARSCAN, "limited");
+	SetOption(OPTION_PARSCAN, "extended");
 	SetOption(OPTION_PARQUICK, "yes");
 	SetOption(OPTION_PARRENAME, "yes");
 	SetOption(OPTION_PARBUFFER, "16");
@@ -696,6 +707,7 @@ void Options::InitDefaults()
 	SetOption(OPTION_POSTSCRIPT, "");
 	SetOption(OPTION_SCANSCRIPT, "");
 	SetOption(OPTION_QUEUESCRIPT, "");
+	SetOption(OPTION_FEEDSCRIPT, "");
 	SetOption(OPTION_DAEMONUSERNAME, "root");
 	SetOption(OPTION_UMASK, "1000");
 	SetOption(OPTION_UPDATEINTERVAL, "200");
@@ -895,17 +907,21 @@ void Options::InitOptions()
 	const char* szMainDir = GetOption(OPTION_MAINDIR);
 
 	CheckDir(&m_szDestDir, OPTION_DESTDIR, szMainDir, false, false);
-	CheckDir(&m_szInterDir, OPTION_INTERDIR, szMainDir, true, true);
+	CheckDir(&m_szInterDir, OPTION_INTERDIR, szMainDir, true, false);
 	CheckDir(&m_szTempDir, OPTION_TEMPDIR, szMainDir, false, true);
 	CheckDir(&m_szQueueDir, OPTION_QUEUEDIR, szMainDir, false, true);
 	CheckDir(&m_szWebDir, OPTION_WEBDIR, NULL, true, false);
 	CheckDir(&m_szScriptDir, OPTION_SCRIPTDIR, szMainDir, true, false);
+	CheckDir(&m_szNzbDir, OPTION_NZBDIR, szMainDir, false, true);
+
+	m_szRequiredDir = strdup(GetOption(OPTION_REQUIREDDIR));
 
 	m_szConfigTemplate		= strdup(GetOption(OPTION_CONFIGTEMPLATE));
 	m_szScriptOrder			= strdup(GetOption(OPTION_SCRIPTORDER));
 	m_szPostScript			= strdup(GetOption(OPTION_POSTSCRIPT));
 	m_szScanScript			= strdup(GetOption(OPTION_SCANSCRIPT));
 	m_szQueueScript			= strdup(GetOption(OPTION_QUEUESCRIPT));
+	m_szFeedScript			= strdup(GetOption(OPTION_FEEDSCRIPT));
 	m_szControlIP			= strdup(GetOption(OPTION_CONTROLIP));
 	m_szControlUsername		= strdup(GetOption(OPTION_CONTROLUSERNAME));
 	m_szControlPassword		= strdup(GetOption(OPTION_CONTROLPASSWORD));
@@ -925,7 +941,7 @@ void Options::InitOptions()
 	m_szExtCleanupDisk		= strdup(GetOption(OPTION_EXTCLEANUPDISK));
 	m_szParIgnoreExt		= strdup(GetOption(OPTION_PARIGNOREEXT));
 
-	m_iDownloadRate			= ParseIntValue(OPTION_DOWNLOADRATE, 10);
+	m_iDownloadRate			= ParseIntValue(OPTION_DOWNLOADRATE, 10) * 1024;
 	m_iArticleTimeout		= ParseIntValue(OPTION_ARTICLETIMEOUT, 10);
 	m_iUrlTimeout			= ParseIntValue(OPTION_URLTIMEOUT, 10);
 	m_iTerminateTimeout		= ParseIntValue(OPTION_TERMINATETIMEOUT, 10);
@@ -957,13 +973,12 @@ void Options::InitOptions()
 	m_iParBuffer			= ParseIntValue(OPTION_PARBUFFER, 10);
 	m_iParThreads			= ParseIntValue(OPTION_PARTHREADS, 10);
 
-	CheckDir(&m_szNzbDir, OPTION_NZBDIR, szMainDir, m_iNzbDirInterval == 0, true);
-
 	m_bBrokenLog			= (bool)ParseEnumValue(OPTION_BROKENLOG, BoolCount, BoolNames, BoolValues);
 	m_bNzbLog				= (bool)ParseEnumValue(OPTION_NZBLOG, BoolCount, BoolNames, BoolValues);
 	m_bAppendCategoryDir	= (bool)ParseEnumValue(OPTION_APPENDCATEGORYDIR, BoolCount, BoolNames, BoolValues);
 	m_bContinuePartial		= (bool)ParseEnumValue(OPTION_CONTINUEPARTIAL, BoolCount, BoolNames, BoolValues);
 	m_bSaveQueue			= (bool)ParseEnumValue(OPTION_SAVEQUEUE, BoolCount, BoolNames, BoolValues);
+	m_bFlushQueue			= (bool)ParseEnumValue(OPTION_FLUSHQUEUE, BoolCount, BoolNames, BoolValues);
 	m_bDupeCheck			= (bool)ParseEnumValue(OPTION_DUPECHECK, BoolCount, BoolNames, BoolValues);
 	m_bParRepair			= (bool)ParseEnumValue(OPTION_PARREPAIR, BoolCount, BoolNames, BoolValues);
 	m_bParQuick				= (bool)ParseEnumValue(OPTION_PARQUICK, BoolCount, BoolNames, BoolValues);
@@ -993,14 +1008,14 @@ void Options::InitOptions()
 	const int OutputModeCount = 7;
 	m_eOutputMode = (EOutputMode)ParseEnumValue(OPTION_OUTPUTMODE, OutputModeCount, OutputModeNames, OutputModeValues);
 
-	const char* ParCheckNames[] = { "auto", "always", "force", "manual", "yes", "no" }; // yes/no for compatibility with older versions
-	const int ParCheckValues[] = { pcAuto, pcAlways, pcForce, pcManual, pcAlways, pcAuto };
+	const char* ParCheckNames[] = { "auto", "always", "force", "manual" };
+	const int ParCheckValues[] = { pcAuto, pcAlways, pcForce, pcManual };
 	const int ParCheckCount = 6;
 	m_eParCheck = (EParCheck)ParseEnumValue(OPTION_PARCHECK, ParCheckCount, ParCheckNames, ParCheckValues);
 
-	const char* ParScanNames[] = { "limited", "full", "auto" };
-	const int ParScanValues[] = { psLimited, psFull, psAuto };
-	const int ParScanCount = 3;
+	const char* ParScanNames[] = { "limited", "extended", "full", "dupe" };
+	const int ParScanValues[] = { psLimited, psExtended, psFull, psDupe };
+	const int ParScanCount = 4;
 	m_eParScan = (EParScan)ParseEnumValue(OPTION_PARSCAN, ParScanCount, ParScanNames, ParScanValues);
 
 	const char* HealthCheckNames[] = { "pause", "delete", "none" };
@@ -1379,6 +1394,17 @@ void Options::InitFeeds()
 		sprintf(optname, "Feed%i.Category", n);
 		const char* ncategory = GetOption(optname);
 
+		sprintf(optname, "Feed%i.FeedScript", n);
+		const char* nfeedscript = GetOption(optname);
+
+		sprintf(optname, "Feed%i.Backlog", n);
+		const char* nbacklog = GetOption(optname);
+		bool bBacklog = true;
+		if (nbacklog)
+		{
+			bBacklog = (bool)ParseEnumValue(optname, BoolCount, BoolNames, BoolValues);
+		}
+
 		sprintf(optname, "Feed%i.PauseNzb", n);
 		const char* npausenzb = GetOption(optname);
 		bool bPauseNzb = false;
@@ -1393,7 +1419,8 @@ void Options::InitFeeds()
 		sprintf(optname, "Feed%i.Priority", n);
 		const char* npriority = GetOption(optname);
 
-		bool definition = nname || nurl || nfilter || ncategory || npausenzb || ninterval || npriority;
+		bool definition = nname || nurl || nfilter || ncategory || nbacklog || npausenzb ||
+			ninterval || npriority || nfeedscript;
 		bool completed = nurl;
 
 		if (!definition)
@@ -1406,7 +1433,7 @@ void Options::InitFeeds()
 			if (m_pExtender)
 			{
 				m_pExtender->AddFeed(n, nname, nurl, ninterval ? atoi(ninterval) : 0, nfilter,
-					bPauseNzb, ncategory, npriority ? atoi(npriority) : 0);
+					bBacklog, bPauseNzb, ncategory, npriority ? atoi(npriority) : 0, nfeedscript);
 			}
 		}
 		else
@@ -1846,8 +1873,8 @@ bool Options::ValidateOptionName(const char* optname, const char* optvalue)
 		char* p = (char*)optname + 4;
 		while (*p >= '0' && *p <= '9') p++;
 		if (p && (!strcasecmp(p, ".name") || !strcasecmp(p, ".url") || !strcasecmp(p, ".interval") ||
-			 !strcasecmp(p, ".filter") || !strcasecmp(p, ".pausenzb") || !strcasecmp(p, ".category") ||
-			 !strcasecmp(p, ".priority")))
+			 !strcasecmp(p, ".filter") || !strcasecmp(p, ".backlog") || !strcasecmp(p, ".pausenzb") ||
+			 !strcasecmp(p, ".category") || !strcasecmp(p, ".priority") || !strcasecmp(p, ".feedscript")))
 		{
 			return true;
 		}
@@ -1938,6 +1965,11 @@ void Options::ConvertOldOption(char *szOption, int iOptionBufLen, char *szValue,
 	if (!strcasecmp(szOption, "ParCheck") && !strcasecmp(szValue, "no"))
 	{
 		strncpy(szValue, "auto", iValueBufLen);
+	}
+
+	if (!strcasecmp(szOption, "ParScan") && !strcasecmp(szValue, "auto"))
+	{
+		strncpy(szValue, "extended", iValueBufLen);
 	}
 
 	if (!strcasecmp(szOption, "DefScript"))

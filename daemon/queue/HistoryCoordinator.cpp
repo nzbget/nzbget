@@ -65,25 +65,10 @@ HistoryCoordinator::~HistoryCoordinator()
 	debug("Destroying HistoryCoordinator");
 }
 
-void HistoryCoordinator::Cleanup()
-{
-	debug("Cleaning up HistoryCoordinator");
-
-	DownloadQueue* pDownloadQueue = DownloadQueue::Lock();
-
-	for (HistoryList::iterator it = pDownloadQueue->GetHistory()->begin(); it != pDownloadQueue->GetHistory()->end(); it++)
-	{
-		delete *it;
-	}
-	pDownloadQueue->GetHistory()->clear();
-
-	DownloadQueue::Unlock();
-}
-
 /**
  * Removes old entries from (recent) history
  */
-void HistoryCoordinator::IntervalCheck()
+void HistoryCoordinator::ServiceWork()
 {
 	DownloadQueue* pDownloadQueue = DownloadQueue::Lock();
 
@@ -246,7 +231,9 @@ void HistoryCoordinator::HistoryHide(DownloadQueue* pDownloadQueue, HistoryInfo*
 		pHistoryInfo->GetNZBInfo()->GetMarkStatus() == NZBInfo::ksBad ? DupInfo::dsBad :
 		pHistoryInfo->GetNZBInfo()->GetMarkStatus() == NZBInfo::ksSuccess ? DupInfo::dsSuccess :
 		pHistoryInfo->GetNZBInfo()->GetDeleteStatus() == NZBInfo::dsDupe ? DupInfo::dsDupe :
-		pHistoryInfo->GetNZBInfo()->GetDeleteStatus() == NZBInfo::dsManual ? DupInfo::dsDeleted :
+		pHistoryInfo->GetNZBInfo()->GetDeleteStatus() == NZBInfo::dsManual ||
+		pHistoryInfo->GetNZBInfo()->GetDeleteStatus() == NZBInfo::dsGood ||
+		pHistoryInfo->GetNZBInfo()->GetDeleteStatus() == NZBInfo::dsCopy ? DupInfo::dsDeleted :
 		pHistoryInfo->GetNZBInfo()->IsDupeSuccess() ? DupInfo::dsSuccess :
 		DupInfo::dsFailed);
 
@@ -260,9 +247,28 @@ void HistoryCoordinator::HistoryHide(DownloadQueue* pDownloadQueue, HistoryInfo*
 	info("Collection %s removed from history", szNiceName);
 }
 
+void HistoryCoordinator::PrepareEdit(DownloadQueue* pDownloadQueue, IDList* pIDList, DownloadQueue::EEditAction eAction)
+{
+	// First pass: when marking multiple items - mark them bad without performing the mark-logic,
+	// this will later (on second step) avoid moving other items to download queue, if they are marked bad too.
+	if (eAction == DownloadQueue::eaHistoryMarkBad)
+	{
+		for (IDList::iterator itID = pIDList->begin(); itID != pIDList->end(); itID++)
+		{
+			int iID = *itID;
+			HistoryInfo* pHistoryInfo = pDownloadQueue->GetHistory()->Find(iID);
+			if (pHistoryInfo && pHistoryInfo->GetKind() == HistoryInfo::hkNzb)
+			{
+				pHistoryInfo->GetNZBInfo()->SetMarkStatus(NZBInfo::ksBad);
+			}
+		}
+	}
+}
+
 bool HistoryCoordinator::EditList(DownloadQueue* pDownloadQueue, IDList* pIDList, DownloadQueue::EEditAction eAction, int iOffset, const char* szText)
 {
 	bool bOK = false;
+	PrepareEdit(pDownloadQueue, pIDList, eAction);
 
 	for (IDList::iterator itID = pIDList->begin(); itID != pIDList->end(); itID++)
 	{
@@ -499,11 +505,12 @@ void HistoryCoordinator::HistoryRedownload(DownloadQueue* pDownloadQueue, Histor
 		return;
 	}
 
-	NZBFile* pNZBFile = NZBFile::Create(pNZBInfo->GetQueuedFilename(), "");
-	if (pNZBFile == NULL)
+	NZBFile* pNZBFile = new NZBFile(pNZBInfo->GetQueuedFilename(), "");
+	if (!pNZBFile->Parse())
 	{
 		error("Could not return %s from history back to queue: could not parse nzb-file",
 			pNZBInfo->GetName());
+		delete pNZBFile;
 		return;
 	}
 
@@ -549,6 +556,7 @@ void HistoryCoordinator::HistoryRedownload(DownloadQueue* pDownloadQueue, Histor
 	pNZBInfo->SetParSec(0);
 	pNZBInfo->SetRepairSec(0);
 	pNZBInfo->SetUnpackSec(0);
+	pNZBInfo->SetExtraParBlocks(0);
 	pNZBInfo->ClearCompletedFiles();
 	pNZBInfo->GetServerStats()->Clear();
 	pNZBInfo->GetCurrentServerStats()->Clear();

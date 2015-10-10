@@ -54,6 +54,8 @@ var Downloads = (new function($)
 		'QUEUED': { Text: 'QUEUED', PostProcess: false },
 		'FETCHING': { Text: 'FETCHING', PostProcess: false },
 		'DOWNLOADING': { Text: 'DOWNLOADING', PostProcess: false },
+		'QS_QUEUED': { Text: 'QS-QUEUED', PostProcess: true },
+		'QS_EXECUTING': { Text: 'QUEUE-SCRIPT', PostProcess: true },
 		'PP_QUEUED': { Text: 'PP-QUEUED', PostProcess: true },
 		'PAUSED': { Text: 'PAUSED', PostProcess: false },
 		'LOADING_PARS': { Text: 'CHECKING', PostProcess: true },
@@ -81,6 +83,7 @@ var Downloads = (new function($)
 
 		var recordsPerPage = UISettings.read('DownloadsRecordsPerPage', 10);
 		$DownloadsRecordsPerPage.val(recordsPerPage);
+		$('#DownloadsTable_filter').val('');
 
 		$DownloadsTable.fasttable(
 			{
@@ -89,7 +92,6 @@ var Downloads = (new function($)
 				pagerContainer: $('#DownloadsTable_pager'),
 				infoContainer: $('#DownloadsTable_info'),
 				headerCheck: $('#DownloadsTable > thead > tr:first-child'),
-				filterCaseSensitive: false,
 				infoEmpty: '&nbsp;', // this is to disable default message "No records"
 				pageSize: recordsPerPage,
 				maxPages: UISettings.miniTheme ? 1 : 5,
@@ -155,6 +157,8 @@ var Downloads = (new function($)
 	
 	/*** TABLE *************************************************************************/
 
+	var SEARCH_FIELDS = ['name', 'status', 'priority', 'category', 'estimated', 'age', 'size', 'remaining'];
+	
 	function redraw_table()
 	{
 		var data = [];
@@ -163,21 +167,30 @@ var Downloads = (new function($)
 		{
 			var group = groups[i];
 
-			var nametext = group.NZBName;
-			var statustext = DownloadsUI.buildStatusText(group);
-			var priority = DownloadsUI.buildPriorityText(group.MaxPriority);
-			var estimated = DownloadsUI.buildEstimated(group);
-			var age = Util.formatAge(group.MinPostTime + UISettings.timeZoneCorrection*60*60);
-			var size = Util.formatSizeMB(group.FileSizeMB, group.FileSizeLo);
-			var remaining = Util.formatSizeMB(group.RemainingSizeMB-group.PausedSizeMB, group.RemainingSizeLo-group.PausedSizeLo);
-			var dupe = DownloadsUI.buildDupeText(group.DupeKey, group.DupeScore, group.DupeMode);
-			
+			group.name = group.NZBName;
+			group.status = DownloadsUI.buildStatusText(group);
+			group.priority = DownloadsUI.buildPriorityText(group.MaxPriority);
+			group.category = group.Category;
+			group.estimated = DownloadsUI.buildEstimated(group);
+			group.size = Util.formatSizeMB(group.FileSizeMB, group.FileSizeLo);
+			group.sizemb = group.FileSizeMB;
+			group.sizegb = group.FileSizeMB / 1024;
+			group.left = Util.formatSizeMB(group.RemainingSizeMB-group.PausedSizeMB, group.RemainingSizeLo-group.PausedSizeLo);
+			group.leftmb = group.RemainingSizeMB-group.PausedSizeMB;
+			group.leftgb = group.leftmb / 1024;
+			group.dupe = DownloadsUI.buildDupeText(group.DupeKey, group.DupeScore, group.DupeMode);
+			var age_sec = new Date().getTime() / 1000 - (group.MinPostTime + UISettings.timeZoneCorrection*60*60);
+			group.age = Util.formatAge(group.MinPostTime + UISettings.timeZoneCorrection*60*60);
+			group.agem = Util.round0(age_sec / 60);
+			group.ageh = Util.round0(age_sec / (60*60));
+			group.aged = Util.round0(age_sec / (60*60*24));
+
+			group._search = SEARCH_FIELDS;
+
 			var item =
 			{
 				id: group.NZBID,
-				group: group,
-				data: { age: age, estimated: estimated, size: size, remaining: remaining },
-				search: statustext + ' ' + nametext + ' ' + priority + ' ' + dupe + ' ' + group.Category + ' ' + age + ' ' + size + ' ' + remaining + ' ' + estimated
+				data: group
 			};
 
 			data.push(item);
@@ -188,12 +201,12 @@ var Downloads = (new function($)
 
 	function fillFieldsCallback(item)
 	{
-		var group = item.group;
+		var group = item.data;
 
 		var status = DownloadsUI.buildStatus(group);
 		var priority = DownloadsUI.buildPriority(group.MaxPriority);
 		var progresslabel = DownloadsUI.buildProgressLabel(group, nameColumnWidth);
-		var progress = DownloadsUI.buildProgress(group, item.data.size, item.data.remaining, item.data.estimated);
+		var progress = DownloadsUI.buildProgress(group, item.data.size, item.data.left, item.data.estimated);
 		var dupe = DownloadsUI.buildDupe(group.DupeKey, group.DupeScore, group.DupeMode);
 		
 		var age = new Date().getTime() / 1000 - (group.MinPostTime + UISettings.timeZoneCorrection*60*60);
@@ -362,7 +375,7 @@ var Downloads = (new function($)
 		for (var i = 0; i < groups.length; i++)
 		{
 			var group = groups[i];
-			if (checkedRows.indexOf(group.NZBID) > -1)
+			if (checkedRows[group.NZBID])
 			{
 				if (group.postprocess && !allowPostProcess)
 				{
@@ -467,7 +480,7 @@ var Downloads = (new function($)
 		for (var i = 0; i < groups.length; i++)
 		{
 			var group = groups[i];
-			if (checkedRows.indexOf(group.NZBID) > -1)
+			if (checkedRows[group.NZBID])
 			{
 				if (group.postprocess)
 				{
@@ -604,11 +617,11 @@ var DownloadsUI = (new function($)
 		var statusText = Downloads.statusData[group.Status].Text;
 		var badgeClass = '';
 		
-		if (group.postprocess && group.Status !== 'PP_QUEUED')
+		if (group.postprocess && group.Status !== 'PP_QUEUED' && group.Status !== 'QS_QUEUED')
 		{
 			badgeClass = Status.status.PostPaused && group.MinPriority < 900 ? 'label-warning' : 'label-success';
 		}
-		else if (group.Status === 'DOWNLOADING' || group.Status === 'FETCHING')
+		else if (group.Status === 'DOWNLOADING' || group.Status === 'FETCHING' || group.Status === 'QS_EXECUTING')
 		{
 			badgeClass = 'label-success';
 		}

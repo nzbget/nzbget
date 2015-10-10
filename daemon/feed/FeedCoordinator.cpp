@@ -47,6 +47,7 @@
 #include "Util.h"
 #include "FeedFile.h"
 #include "FeedFilter.h"
+#include "FeedScript.h"
 #include "DiskState.h"
 #include "DupeCoordinator.h"
 
@@ -395,6 +396,9 @@ void FeedCoordinator::FeedCompleted(FeedDownloader* pFeedDownloader)
 	{
 		if (!pFeedInfo->GetPreview())
 		{
+			FeedScriptController::ExecuteScripts(
+				!Util::EmptyStr(pFeedInfo->GetFeedScript()) ? pFeedInfo->GetFeedScript(): g_pOptions->GetFeedScript(),
+				pFeedInfo->GetOutputFilename(), pFeedInfo->GetID());
 			FeedFile* pFeedFile = FeedFile::Create(pFeedInfo->GetOutputFilename());
 			remove(pFeedInfo->GetOutputFilename());
 
@@ -475,7 +479,7 @@ void FeedCoordinator::ProcessFeed(FeedInfo* pFeedInfo, FeedItemInfos* pFeedItemI
 		{
 			FeedHistoryInfo* pFeedHistoryInfo = m_FeedHistory.Find(pFeedItemInfo->GetUrl());
 			FeedHistoryInfo::EStatus eStatus = FeedHistoryInfo::hsUnknown;
-			if (bFirstFetch)
+			if (bFirstFetch && pFeedInfo->GetBacklog())
 			{
 				eStatus = FeedHistoryInfo::hsBacklog;
 			}
@@ -514,6 +518,7 @@ NZBInfo* FeedCoordinator::CreateNZBInfo(FeedInfo* pFeedInfo, FeedItemInfo* pFeed
 
 	NZBInfo* pNZBInfo = new NZBInfo();
 	pNZBInfo->SetKind(NZBInfo::nkUrl);
+	pNZBInfo->SetFeedID(pFeedInfo->GetID());
 	pNZBInfo->SetURL(pFeedItemInfo->GetUrl());
 
 	// add .nzb-extension if not present
@@ -552,18 +557,19 @@ bool FeedCoordinator::ViewFeed(int iID, FeedItemInfos** ppFeedItemInfos)
 
 	FeedInfo* pFeedInfo = m_Feeds.at(iID - 1);
 
-	return PreviewFeed(pFeedInfo->GetName(), pFeedInfo->GetUrl(), pFeedInfo->GetFilter(), 
-		pFeedInfo->GetPauseNzb(), pFeedInfo->GetCategory(), pFeedInfo->GetPriority(),
-		0, NULL, ppFeedItemInfos);
+	return PreviewFeed(pFeedInfo->GetID(), pFeedInfo->GetName(), pFeedInfo->GetUrl(), pFeedInfo->GetFilter(), 
+		pFeedInfo->GetBacklog(), pFeedInfo->GetPauseNzb(), pFeedInfo->GetCategory(),
+		pFeedInfo->GetPriority(), pFeedInfo->GetInterval(), pFeedInfo->GetFeedScript(), 0, NULL, ppFeedItemInfos);
 }
 
-bool FeedCoordinator::PreviewFeed(const char* szName, const char* szUrl, const char* szFilter,
-	bool bPauseNzb, const char* szCategory, int iPriority,
+bool FeedCoordinator::PreviewFeed(int iID, const char* szName, const char* szUrl, const char* szFilter,
+	bool bBacklog, bool bPauseNzb, const char* szCategory, int iPriority, int iInterval, const char* szFeedScript,
 	int iCacheTimeSec, const char* szCacheId, FeedItemInfos** ppFeedItemInfos)
 {
 	debug("Preview feed %s", szName);
 
-	FeedInfo* pFeedInfo = new FeedInfo(0, szName, szUrl, 0, szFilter, bPauseNzb, szCategory, iPriority);
+	FeedInfo* pFeedInfo = new FeedInfo(iID, szName, szUrl, bBacklog, iInterval,
+		szFilter, bPauseNzb, szCategory, iPriority, szFeedScript);
 	pFeedInfo->SetPreview(true);
 	
 	FeedItemInfos* pFeedItemInfos = NULL;
@@ -618,6 +624,9 @@ bool FeedCoordinator::PreviewFeed(const char* szName, const char* szUrl, const c
 
 		if (pFeedInfo->GetStatus() == FeedInfo::fsFinished)
 		{
+			FeedScriptController::ExecuteScripts(
+				!Util::EmptyStr(pFeedInfo->GetFeedScript()) ? pFeedInfo->GetFeedScript(): g_pOptions->GetFeedScript(),
+				pFeedInfo->GetOutputFilename(), pFeedInfo->GetID());
 			pFeedFile = FeedFile::Create(pFeedInfo->GetOutputFilename());
 		}
 
@@ -636,7 +645,7 @@ bool FeedCoordinator::PreviewFeed(const char* szName, const char* szUrl, const c
 		for (FeedItemInfos::iterator it = pFeedItemInfos->begin(); it != pFeedItemInfos->end(); it++)
 		{
 			FeedItemInfo* pFeedItemInfo = *it;
-			pFeedItemInfo->SetStatus(bFirstFetch ? FeedItemInfo::isBacklog : FeedItemInfo::isNew);
+			pFeedItemInfo->SetStatus(bFirstFetch && pFeedInfo->GetBacklog() ? FeedItemInfo::isBacklog : FeedItemInfo::isNew);
 			FeedHistoryInfo* pFeedHistoryInfo = m_FeedHistory.Find(pFeedItemInfo->GetUrl());
 			if (pFeedHistoryInfo)
 			{

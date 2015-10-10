@@ -645,7 +645,7 @@ void NCursesFrontend::PrintStatus()
 	char szCurrentSpeed[20];
 	char szAverageSpeed[20];
 	char szRemainingSize[20];
-	int iAverageSpeed = m_iDnTimeSec > 0 ? m_iAllBytes / m_iDnTimeSec : 0;
+	int iAverageSpeed = (int)(m_iDnTimeSec > 0 ? m_iAllBytes / m_iDnTimeSec : 0);
 
 	snprintf(tmp, MAX_SCREEN_WIDTH, " %d threads, %s, %s remaining%s%s%s%s, Avg. %s",
 		m_iThreadCount, Util::FormatSpeed(szCurrentSpeed, sizeof(szCurrentSpeed), iCurrentDownloadSpeed),

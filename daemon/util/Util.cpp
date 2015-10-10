@@ -37,6 +37,7 @@
 #include <stdio.h>
 #include <errno.h>
 #include <ctype.h>
+#include <stdarg.h>
 #ifdef WIN32
 #include <io.h>
 #include <direct.h>
@@ -44,8 +45,10 @@
 #else
 #include <unistd.h>
 #include <sys/statvfs.h>
+#include <sys/time.h>
 #include <pwd.h>
 #include <dirent.h>
+#include <fcntl.h>
 #endif
 #ifdef HAVE_REGEX_H
 #include <regex.h>
@@ -59,8 +62,8 @@
 #include "Util.h"
 
 #ifndef WIN32
-// function "svn_version" is automatically generated in file "svn_version.cpp" on each build
-const char* svn_version(void);
+// function "code_revision" is automatically generated in file "code_revision.cpp" on each build
+const char* code_revision(void);
 #endif
 
 #ifdef WIN32
@@ -253,6 +256,7 @@ StringBuilder::StringBuilder()
 	m_szBuffer = NULL;
 	m_iBufferSize = 0;
 	m_iUsedSize = 0;
+	m_iGrowSize = 10240;
 }
 
 StringBuilder::~StringBuilder()
@@ -271,18 +275,58 @@ void StringBuilder::Clear()
 void StringBuilder::Append(const char* szStr)
 {
 	int iPartLen = strlen(szStr);
-	if (m_iUsedSize + iPartLen + 1 > m_iBufferSize)
-	{
-		m_iBufferSize += iPartLen + 10240;
-		m_szBuffer = (char*)realloc(m_szBuffer, m_iBufferSize);
-	}
+	Reserve(iPartLen + 1);
 	strcpy(m_szBuffer + m_iUsedSize, szStr);
 	m_iUsedSize += iPartLen;
 	m_szBuffer[m_iUsedSize] = '\0';
 }
 
+void StringBuilder::AppendFmt(const char* szFormat, ...)
+{
+	va_list args;
+	va_start(args, szFormat);
+	AppendFmtV(szFormat, args);
+	va_end(args);
+}
 
-char Util::VersionRevisionBuf[40];
+void StringBuilder::AppendFmtV(const char* szFormat, va_list ap)
+{
+	va_list ap2;
+	va_copy(ap2, ap);
+
+	int iRemainingSize = m_iBufferSize - m_iUsedSize;
+	int m = vsnprintf(m_szBuffer + m_iUsedSize, iRemainingSize, szFormat, ap);
+#ifdef WIN32
+	if (m == -1)
+	{
+        m = _vscprintf(szFormat, ap);
+	}
+#endif
+	if (m + 1 > iRemainingSize)
+	{
+		Reserve(m - iRemainingSize + m_iGrowSize);
+		iRemainingSize = m_iBufferSize - m_iUsedSize;
+		m = vsnprintf(m_szBuffer + m_iUsedSize, iRemainingSize, szFormat, ap2);
+	}
+	if (m >= 0)
+	{
+		m_szBuffer[m_iUsedSize += m] = '\0';
+	}
+
+	va_end(ap2);
+}
+
+void StringBuilder::Reserve(int iSize)
+{
+	if (m_iUsedSize + iSize > m_iBufferSize)
+	{
+		m_iBufferSize += iSize + m_iGrowSize;
+		m_szBuffer = (char*)realloc(m_szBuffer, m_iBufferSize);
+	}
+}
+
+
+char Util::VersionRevisionBuf[100];
 
 char* Util::BaseFileName(const char* filename)
 {
@@ -511,22 +555,16 @@ bool Util::CreateSparseFile(const char* szFilename, long long iSize)
 	// 1) set file size using function "truncate" (it is fast, if it works)
 	truncate(szFilename, iSize);
 	// check if it worked
-	pFile = fopen(szFilename, FOPEN_AB);
-	if (pFile)
+	bOK = FileSize(szFilename) == iSize;
+	if (!bOK)
 	{
-		fseek(pFile, 0, SEEK_END);
-		bOK = ftell(pFile) == iSize;
-		if (!bOK)
-		{
-			// 2) truncate did not work, expanding the file by writing in it (it is slow)
-			fclose(pFile);
-			truncate(szFilename, 0);
-			pFile = fopen(szFilename, FOPEN_AB);
-			char c = '0';
-			fwrite(&c, 1, iSize, pFile);
-			bOK = ftell(pFile) == iSize;
-		}
+		// 2) truncate did not work, expanding the file by writing in it (it is slow)
+		truncate(szFilename, 0);
+		pFile = fopen(szFilename, FOPEN_AB);
+		char c = '0';
+		fwrite(&c, 1, iSize, pFile);
 		fclose(pFile);
+		bOK = FileSize(szFilename) == iSize;
 	}
 #endif
 	return bOK;
@@ -1106,18 +1144,21 @@ char* Util::GetLastErrorMessage(char* szBuffer, int iBufLen)
 	return szBuffer;
 }
 
-void Util::InitVersionRevision()
+void Util::Init()
 {
 #ifndef WIN32
-	if ((strlen(svn_version()) > 0) && strstr(VERSION, "testing"))
+	if ((strlen(code_revision()) > 0) && strstr(VERSION, "testing"))
 	{
-		snprintf(VersionRevisionBuf, sizeof(VersionRevisionBuf), "%s-r%s", VERSION, svn_version());
+		snprintf(VersionRevisionBuf, sizeof(VersionRevisionBuf), "%s-r%s", VERSION, code_revision());
 	}
 	else
 #endif
 	{
 		snprintf(VersionRevisionBuf, sizeof(VersionRevisionBuf), "%s", VERSION);
 	}
+
+	// init static vars there
+	GetCurrentTicks();
 }
 
 bool Util::SplitCommandLine(const char* szCommandLine, char*** argv)
@@ -1561,6 +1602,78 @@ int Util::NumberOfCpuCores()
 	return -1;
 }
 
+bool Util::FlushFileBuffers(int iFileDescriptor, char* szErrBuf, int iBufSize)
+{
+#ifdef WIN32
+	BOOL bOK = ::FlushFileBuffers((HANDLE)_get_osfhandle(iFileDescriptor));
+	if (!bOK)
+	{
+		FormatMessage(FORMAT_MESSAGE_FROM_SYSTEM | FORMAT_MESSAGE_IGNORE_INSERTS,
+			NULL, GetLastError(), MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT),
+			szErrBuf, iBufSize, NULL);
+	}
+	return bOK;
+#else
+#ifdef HAVE_FULLFSYNC    
+	int ret = fcntl(iFileDescriptor, F_FULLFSYNC) == -1 ? 1 : 0;
+#elif HAVE_FDATASYNC
+    int ret = fdatasync(iFileDescriptor);
+#else
+    int ret = fsync(iFileDescriptor);
+#endif    
+    if (ret != 0)
+    {
+		GetLastErrorMessage(szErrBuf, iBufSize);
+    }
+    return ret == 0;
+#endif
+}
+
+bool Util::FlushDirBuffers(const char* szFilename, char* szErrBuf, int iBufSize)
+{
+	char szParentPath[1024];
+	strncpy(szParentPath, szFilename, 1024);
+	szParentPath[1024-1] = '\0';
+	const char* szFileMode = FOPEN_RBP;
+
+#ifndef WIN32
+	char* p = (char*)strrchr(szParentPath, PATH_SEPARATOR);
+	if (p)
+	{
+	    *p = '\0';
+	}
+	szFileMode = FOPEN_RB;
+#endif
+
+	FILE* pFile = fopen(szParentPath, szFileMode);
+	if (!pFile)
+	{
+		GetLastErrorMessage(szErrBuf, iBufSize);
+		return false;
+	}
+	bool bOK = FlushFileBuffers(fileno(pFile), szErrBuf, iBufSize);
+	fclose(pFile);
+	return bOK;
+}
+
+long long Util::GetCurrentTicks()
+{
+#ifdef WIN32
+	static long long hz=0, hzo=0;
+	if (!hz)
+	{
+		QueryPerformanceFrequency((LARGE_INTEGER*)&hz);
+		QueryPerformanceCounter((LARGE_INTEGER*)&hzo);
+	}
+	long long t;
+	QueryPerformanceCounter((LARGE_INTEGER*)&t);
+	return ((t-hzo)*1000000)/hz;
+#else
+	timeval t;
+	gettimeofday(&t, NULL);
+	return (long long)(t.tv_sec) * 1000000ll + (long long)(t.tv_usec);
+#endif
+}
 
 unsigned int WebUtil::DecodeBase64(char* szInputBuffer, int iInputBufferLength, char* szOutputBuffer)
 {
@@ -1761,16 +1874,15 @@ void WebUtil::XmlDecode(char* raw)
 					}
 					else if (*p == '#')
 					{
-						int code = atoi(p+1);
-						p = strchr(p+1, ';');
-						if (p) p++;
+						int code = atoi((p++)+1);
+						while (strchr("0123456789;", *p)) p++;
 						*output++ = (char)code;
 					}
 					else
 					{
-						// unknown entity
+						// unknown entity, keep as is
 						*output++ = *(p-1);
-						p++;
+						*output++ = *p++;
 					}
 					break;
 				}
@@ -1833,6 +1945,54 @@ bool WebUtil::XmlParseTagValue(const char* szXml, const char* szTag, char* szVal
 		*pTagEnd = szValue + iValueLen;
 	}
 	return true;
+}
+
+void WebUtil::XmlStripTags(char* szXml)
+{
+	while (char *start = strchr(szXml, '<'))
+	{
+		char *end = strchr(start, '>');
+		if (!end)
+		{
+			break;
+		}
+		memset(start, ' ', end - start + 1);
+		szXml = end + 1;
+	}
+}
+
+void WebUtil::XmlRemoveEntities(char* raw)
+{
+	char* output = raw;
+	for (char* p = raw;;)
+	{
+		switch (*p)
+		{
+			case '\0':
+				goto BreakLoop;
+			case '&':
+			{
+				char* p2 = p+1;
+				while (isalpha(*p2) || strchr("0123456789#", *p2)) p2++;
+				if (*p2 == ';')
+				{
+					*output++ = ' ';
+					p = p2+1;
+				}
+				else
+				{
+					*output++ = *p++;
+				}
+				break;
+			}
+			default:
+				*output++ = *p++;
+				break;
+		}
+	}
+BreakLoop:
+
+	*output = '\0';
 }
 
 char* WebUtil::JsonEncode(const char* raw)
@@ -2126,6 +2286,44 @@ void WebUtil::URLDecode(char* raw)
 BreakLoop:
 
 	*output = '\0';
+}
+
+char* WebUtil::URLEncode(const char* raw)
+{
+	// calculate the required outputstring-size based on number of spaces
+	int iReqSize = strlen(raw);
+	for (const char* p = raw; *p; p++)
+	{
+		if (*p == ' ')
+		{
+			iReqSize += 3; // length of "%20"
+		}
+	}
+
+	char* result = (char*)malloc(iReqSize + 1);
+
+	// copy string
+	char* output = result;
+	for (const char* p = raw; ; p++)
+	{
+		unsigned char ch = *p;
+		switch (ch)
+		{
+			case '\0':
+				goto BreakLoop;
+			case ' ':
+				strcpy(output, "%20");
+				output += 3;
+				break;
+			default:
+				*output++ = ch;
+		}
+	}
+BreakLoop:
+
+	*output = '\0';
+
+	return result;
 }
 
 #ifdef WIN32

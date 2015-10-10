@@ -62,15 +62,30 @@ bool QueueCoordinator::CoordinatorDownloadQueue::EditEntry(
 bool QueueCoordinator::CoordinatorDownloadQueue::EditList(
 	IDList* pIDList, NameList* pNameList, EMatchMode eMatchMode, EEditAction eAction, int iOffset, const char* szText)
 {
-	return m_pOwner->m_QueueEditor.EditList(&m_pOwner->m_DownloadQueue, pIDList, pNameList, eMatchMode, eAction, iOffset, szText);
+	m_bMassEdit = true;
+	bool bRet = m_pOwner->m_QueueEditor.EditList(&m_pOwner->m_DownloadQueue, pIDList, pNameList, eMatchMode, eAction, iOffset, szText);
+	m_bMassEdit = false;
+	if (m_bWantSave)
+	{
+		Save();
+	}
+	return bRet;
 }
 
 void QueueCoordinator::CoordinatorDownloadQueue::Save()
 {
+	if (m_bMassEdit)
+	{
+		m_bWantSave = true;
+		return;
+	}
+
 	if (g_pOptions->GetSaveQueue() && g_pOptions->GetServerMode())
 	{
 		g_pDiskState->SaveDownloadQueue(this);
 	}
+
+	m_bWantSave = false;
 }
 
 QueueCoordinator::QueueCoordinator()
@@ -867,7 +882,9 @@ void QueueCoordinator::CheckHealth(DownloadQueue* pDownloadQueue, FileInfo* pFil
 	if (g_pOptions->GetHealthCheck() == Options::hcNone ||
 		pFileInfo->GetNZBInfo()->GetHealthPaused() ||
 		pFileInfo->GetNZBInfo()->GetDeleteStatus() == NZBInfo::dsHealth ||
-		pFileInfo->GetNZBInfo()->CalcHealth() >= pFileInfo->GetNZBInfo()->CalcCriticalHealth(true))
+		pFileInfo->GetNZBInfo()->CalcHealth() >= pFileInfo->GetNZBInfo()->CalcCriticalHealth(true) ||
+		(g_pOptions->GetParScan() == Options::psDupe && g_pOptions->GetHealthCheck() == Options::hcDelete &&
+		 pFileInfo->GetNZBInfo()->GetSuccessArticles() * 100 / pFileInfo->GetNZBInfo()->GetTotalArticles() > 10))
 	{
 		return;
 	}

@@ -39,6 +39,7 @@ public:
 	static void			CleanupWorkingDir();
 	static void			DisableCout();
 	static void			EnableCout();
+	static void			CopyAllFiles(const std::string destDir, const std::string srcDir);
 };
 
 #endif

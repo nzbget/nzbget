@@ -86,6 +86,24 @@ public:
 							~SegmentList();
 	};
 
+	class DupeSource
+	{
+	private:
+		int					m_iID;
+		char*				m_szDirectory;
+		int					m_iUsedBlocks;
+
+	public:
+							DupeSource(int iID, const char* szDirectory);
+							~DupeSource();
+		int					GetID() { return m_iID; }
+		const char*			GetDirectory() { return m_szDirectory; }
+		int					GetUsedBlocks() { return m_iUsedBlocks; }
+		void				SetUsedBlocks(int iUsedBlocks) { m_iUsedBlocks = iUsedBlocks; }
+	};
+
+	typedef std::deque<DupeSource*>	DupeSourceList;
+
 	typedef std::deque<char*>		FileList;
 	typedef std::deque<void*>		SourceList;
 	typedef std::vector<bool>		ValidBlocks;
@@ -109,6 +127,7 @@ private:
 	int					m_iProcessedFiles;
 	int					m_iFilesToRepair;
 	int					m_iExtraFiles;
+	int					m_iQuickFiles;
 	bool				m_bVerifyingExtraFiles;
 	char*				m_szProgressLabel;
 	int					m_iFileProgress;
@@ -120,6 +139,7 @@ private:
 	bool				m_bParQuick;
 	bool				m_bForceRepair;
 	bool				m_bParFull;
+	DupeSourceList		m_DupeSources;
 
 	void				Cleanup();
 	EStatus				RunParCheckAll();
@@ -130,6 +150,8 @@ private:
 	bool				LoadMorePars();
 	bool				AddSplittedFragments();
 	bool				AddMissingFiles();
+	bool				AddDupeFiles();
+	bool				AddExtraFiles(bool bOnlyMissing, bool bExternalDir, const char* szDirectory);
 	bool				IsProcessedFile(const char* szFilename);
 	void				WriteBrokenLog(EStatus eStatus);
 	void				SaveSourceList();
@@ -160,6 +182,8 @@ protected:
 	virtual void		RegisterParredFile(const char* szFilename) {}
 	virtual bool		IsParredFile(const char* szFilename) { return false; }
 	virtual EFileStatus	FindFileCrc(const char* szFilename, unsigned long* lCrc, SegmentList* pSegments) { return fsUnknown; }
+	virtual void		RequestDupeSources(DupeSourceList* pDupeSourceList) {}
+	virtual void		StatDupeSources(DupeSourceList* pDupeSourceList) {}
 	EStage				GetStage() { return m_eStage; }
 	const char*			GetProgressLabel() { return m_szProgressLabel; }
 	int					GetFileProgress() { return m_iFileProgress; }

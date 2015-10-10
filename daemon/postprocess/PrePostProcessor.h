@@ -57,7 +57,6 @@ private:
 	void				StartJob(DownloadQueue* pDownloadQueue, PostInfo* pPostInfo);
 	void				SaveQueue(DownloadQueue* pDownloadQueue);
 	void				SanitisePostQueue(DownloadQueue* pDownloadQueue);
-	void				CheckDiskSpace();
 	void				UpdatePauseState(bool bNeedPause, const char* szReason);
 	void				NZBFound(DownloadQueue* pDownloadQueue, NZBInfo* pNZBInfo);
 	void				NZBDeleted(DownloadQueue* pDownloadQueue, NZBInfo* pNZBInfo);

@@ -119,6 +119,9 @@ CommandLineParser::CommandLineParser(int argc, const char* argv[])
 	m_bTestBacktrace		= false;
 	m_bWebGet				= false;
 	m_szWebGetFilename		= NULL;
+	m_bSigVerify			= false;
+	m_szPubKeyFilename		= NULL;
+	m_szSigFilename			= NULL;
 	m_EMatchMode			= mmID;
 	m_bPauseDownload		= false;
 
@@ -147,6 +150,8 @@ CommandLineParser::~CommandLineParser()
 	free(m_szAddNZBFilename);
 	free(m_szAddDupeKey);
 	free(m_szWebGetFilename);
+	free(m_szPubKeyFilename);
+	free(m_szSigFilename);
 
 	for (NameList::iterator it = m_EditQueueNameList.begin(); it != m_EditQueueNameList.end(); it++)
 	{
@@ -419,11 +424,32 @@ void CommandLineParser::InitCommandLine(int argc, const char* const_argv[])
 					optind++;
 					if (optind > argc)
 					{
-						ReportError("Could not parse value of option 'E'");
+						ReportError("Could not parse value of option 'B'");
 						return;
 					}
 					optarg = argv[optind-1];
 					m_szWebGetFilename = strdup(optarg);
+				}
+				else if (!strcasecmp(optarg, "verify"))
+				{
+					m_bSigVerify = true;
+					optind++;
+					if (optind > argc)
+					{
+						ReportError("Could not parse value of option 'B'");
+						return;
+					}
+					optarg = argv[optind-1];
+					m_szPubKeyFilename = strdup(optarg);
+
+					optind++;
+					if (optind > argc)
+					{
+						ReportError("Could not parse value of option 'B'");
+						return;
+					}
+					optarg = argv[optind-1];
+					m_szSigFilename = strdup(optarg);
 				}
 				else
 				{

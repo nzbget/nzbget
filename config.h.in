@@ -45,8 +45,14 @@
 /* Define to 1 if you have the <endian.h> header file. */
 #undef HAVE_ENDIAN_H
 
+/* Define to 1 if fdatasync is supported */
+#undef HAVE_FDATASYNC
+
 /* Define to 1 if fseeko (and presumably ftello) exists and is declared. */
 #undef HAVE_FSEEKO
+
+/* Define to 1 if F_FULLFSYNC is supported */
+#undef HAVE_FULLFSYNC
 
 /* Define to 1 if getaddrinfo is supported */
 #undef HAVE_GETADDRINFO
@@ -101,9 +107,6 @@
 
 /* Define to 1 if _SC_NPROCESSORS_ONLN is present in unistd.h */
 #undef HAVE_SC_NPROCESSORS_ONLN
-
-/* Define to 1 if spinlocks are supported */
-#undef HAVE_SPINLOCK
 
 /* Define to 1 if stdbool.h conforms to C99. */
 #undef HAVE_STDBOOL_H

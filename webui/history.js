@@ -59,6 +59,7 @@ var History = (new function($)
 
 		var recordsPerPage = UISettings.read('HistoryRecordsPerPage', 10);
 		$HistoryRecordsPerPage.val(recordsPerPage);
+		$('#HistoryTable_filter').val('');
 
 		$HistoryTable.fasttable(
 			{
@@ -67,7 +68,6 @@ var History = (new function($)
 				pagerContainer: $('#HistoryTable_pager'),
 				infoContainer: $('#HistoryTable_info'),
 				headerCheck: $('#HistoryTable > thead > tr:first-child'),
-				filterCaseSensitive: false,
 				pageSize: recordsPerPage,
 				maxPages: UISettings.miniTheme ? 1 : 5,
 				pageDots: !UISettings.miniTheme,
@@ -125,7 +125,8 @@ var History = (new function($)
 		for (var j=0, jl=history.length; j < jl; j++)
 		{
 			var hist = history[j];
-			if (hist.Status === 'DELETED/MANUAL')
+			if (hist.Status === 'DELETED/MANUAL' || hist.Status === 'DELETED/GOOD' ||
+				hist.Status === 'DELETED/SUCCESS' || hist.Status === 'DELETED/COPY')
 			{
 				hist.FilterKind = 'DELETED';
 			}
@@ -144,6 +145,8 @@ var History = (new function($)
 		}
 	}
 
+	var SEARCH_FIELDS = ['name', 'status', 'priority', 'category', 'age', 'size', 'time'];
+
 	this.redraw = function()
 	{
 		var data = [];
@@ -153,39 +156,26 @@ var History = (new function($)
 			var hist = history[i];
 
 			var kind = hist.Kind;
-			var statustext = HistoryUI.buildStatusText(hist);
-			var size = kind === 'URL' ? '' : Util.formatSizeMB(hist.FileSizeMB);
-			var time = Util.formatDateTime(hist.HistoryTime + UISettings.timeZoneCorrection*60*60);
-			var dupe = DownloadsUI.buildDupeText(hist.DupeKey, hist.DupeScore, hist.DupeMode);
-			var category = '';
+			hist.status = HistoryUI.buildStatusText(hist);
+			hist.name = hist.Name;
+			hist.size = kind === 'URL' ? '' : Util.formatSizeMB(hist.FileSizeMB);
+			hist.sizemb = hist.FileSizeMB;
+			hist.sizegb = hist.FileSizeMB / 1024;
+			hist.time = Util.formatDateTime(hist.HistoryTime + UISettings.timeZoneCorrection*60*60);
+			hist.category = kind !== 'DUP' ? hist.Category : '';
+			hist.dupe = DownloadsUI.buildDupeText(hist.DupeKey, hist.DupeScore, hist.DupeMode);
+			var age_sec = kind === 'NZB' ? new Date().getTime() / 1000 - (hist.MinPostTime + UISettings.timeZoneCorrection*60*60) : 0;
+			hist.age = kind === 'NZB' ? Util.formatAge(hist.MinPostTime + UISettings.timeZoneCorrection*60*60) : '';
+			hist.agem = Util.round0(age_sec / 60);
+			hist.ageh = Util.round0(age_sec / (60*60));
+			hist.aged = Util.round0(age_sec / (60*60*24));
 
-			var textname = hist.Name;
-			var age = '';
-			if (kind === 'NZB')
-			{
-				age = Util.formatAge(hist.MinPostTime + UISettings.timeZoneCorrection*60*60);
-				textname += ' URL';
-			}
-			else if (kind === 'URL')
-			{
-				textname += ' URL';
-			}
-			else if (kind === 'DUP')
-			{
-				textname += ' hidden';
-			}
-
-			if (kind !== 'DUP')
-			{
-				category = hist.Category;
-			}
+			hist._search = SEARCH_FIELDS;
 
 			var item =
 			{
 				id: hist.ID,
-				hist: hist,
-				data: { time: time, age: age, size: size },
-				search: statustext + ' ' + time + ' ' + textname + ' ' + dupe + ' ' + category + ' ' +  age + ' ' + size
+				data: hist,
 			};
 
 			data.push(item);
@@ -199,7 +189,7 @@ var History = (new function($)
 
 	function fillFieldsCallback(item)
 	{
-		var hist = item.hist;
+		var hist = item.data;
 
 		var status = HistoryUI.buildStatus(hist);
 
@@ -272,7 +262,8 @@ var History = (new function($)
 	this.actionClick = function(action)
 	{
 		var checkedRows = $HistoryTable.fasttable('checkedRows');
-		if (checkedRows.length == 0)
+		var checkedCount = $HistoryTable.fasttable('checkedCount');
+		if (checkedCount === 0)
 		{
 			Notification.show('#Notif_History_Select');
 			return;
@@ -285,7 +276,7 @@ var History = (new function($)
 		for (var i = 0; i < history.length; i++)
 		{
 			var hist = history[i];
-			if (checkedRows.indexOf(hist.ID) > -1)
+			if (checkedRows[hist.ID])
 			{
 				hasNzb |= hist.Kind === 'NZB';
 				hasUrl |= hist.Kind === 'URL';
@@ -320,7 +311,7 @@ var History = (new function($)
 				notification = '#Notif_History_Returned';
 				ConfirmDialog.showModal('HistoryEditRedownloadConfirmDialog',
 					function () { historyAction('HistoryRedownload') },
-					function () { HistoryUI.confirmMulti(checkedRows.length > 1); });
+					function () { HistoryUI.confirmMulti(checkedCount > 1); });
 				break;
 
 			case 'MARKSUCCESS':
@@ -342,7 +333,7 @@ var History = (new function($)
 					},
 					function (_dialog) // init
 					{
-						HistoryUI.confirmMulti(checkedRows.length > 1);
+						HistoryUI.confirmMulti(checkedCount > 1);
 					}
 				);
 				break;
@@ -352,8 +343,15 @@ var History = (new function($)
 	function historyAction(command)
 	{
 		Refresher.pause();
-		var IDs = $HistoryTable.fasttable('checkedRows');
-		RPC.call('editqueue', [command, 0, '', [IDs]], function()
+
+		var ids = [];
+		var checkedRows = $HistoryTable.fasttable('checkedRows');
+		for (var id in checkedRows)
+		{
+			ids.push(parseInt(id));
+		}		
+		
+		RPC.call('editqueue', [command, 0, '', ids], function()
 		{
 			editCompleted();
 		});
@@ -399,7 +397,7 @@ var History = (new function($)
 
 	function filterCallback(item)
 	{
-		return !activeTab || curFilter === 'ALL' || item.hist.FilterKind === curFilter;
+		return !activeTab || curFilter === 'ALL' || item.data.FilterKind === curFilter;
 	}
 
 	function initFilterButtons()
@@ -418,7 +416,7 @@ var History = (new function($)
 
 		for (var i=0; i < data.length; i++)
 		{
-			var hist = data[i].hist;
+			var hist = data[i].data;
 			switch (hist.FilterKind)
 			{
 				case 'SUCCESS': countSuccess++; break;

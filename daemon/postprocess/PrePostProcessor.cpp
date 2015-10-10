@@ -50,11 +50,9 @@
 #include "DupeCoordinator.h"
 #include "PostScript.h"
 #include "Util.h"
-#include "Scheduler.h"
-#include "Scanner.h"
 #include "Unpack.h"
+#include "Cleanup.h"
 #include "NZBFile.h"
-#include "StatMeter.h"
 #include "QueueScript.h"
 #include "ParParser.h"
 
@@ -93,53 +91,18 @@ void PrePostProcessor::Run()
 		DownloadQueue::Unlock();
 	}
 
-	g_pScheduler->FirstCheck();
-
-	int iDiskSpaceInterval = 1000;
-	int iSchedulerInterval = 1000;
-	int iHistoryInterval = 600000;
-	const int iStepMSec = 200;
-
 	while (!IsStopped())
 	{
-		// check incoming nzb directory
-		g_pScanner->Check();
-
-		if (!g_pOptions->GetPauseDownload() && 
-			g_pOptions->GetDiskSpace() > 0 && !g_pStatMeter->GetStandBy() && 
-			iDiskSpaceInterval >= 1000)
+		if (!g_pOptions->GetTempPausePostprocess())
 		{
-			// check free disk space every 1 second
-			CheckDiskSpace();
-			iDiskSpaceInterval = 0;
+			// check post-queue every 200 msec
+			CheckPostQueue();
 		}
-		iDiskSpaceInterval += iStepMSec;
-
-		// check post-queue every 200 msec
-		CheckPostQueue();
-
-		if (iSchedulerInterval >= 1000)
-		{
-			// check scheduler tasks every 1 second
-			g_pScheduler->IntervalCheck();
-			iSchedulerInterval = 0;
-		}
-		iSchedulerInterval += iStepMSec;
-
-		if (iHistoryInterval >= 600000)
-		{
-			// check history (remove old entries) every 10 minutes
-			g_pHistoryCoordinator->IntervalCheck();
-			iHistoryInterval = 0;
-		}
-		iHistoryInterval += iStepMSec;
 
 		Util::SetStandByMode(!m_pCurJob);
 
-		usleep(iStepMSec * 1000);
+		usleep(200 * 1000);
 	}
-
-	g_pHistoryCoordinator->Cleanup();
 
 	debug("Exiting PrePostProcessor-loop");
 }
@@ -250,8 +213,10 @@ void PrePostProcessor::NZBAdded(DownloadQueue* pDownloadQueue, NZBInfo* pNZBInfo
 		m_ParCoordinator.PausePars(pDownloadQueue, pNZBInfo);
 	}
 
-	if (g_pOptions->GetDupeCheck() && pNZBInfo->GetDupeMode() != dmForce &&
-		pNZBInfo->GetDeleteStatus() == NZBInfo::dsDupe)
+	if (pNZBInfo->GetDeleteStatus() == NZBInfo::dsDupe ||
+		pNZBInfo->GetDeleteStatus() == NZBInfo::dsCopy ||
+		pNZBInfo->GetDeleteStatus() == NZBInfo::dsGood ||
+		pNZBInfo->GetDeleteStatus() == NZBInfo::dsScan)
 	{
 		NZBCompleted(pDownloadQueue, pNZBInfo, false);
 	}
@@ -263,6 +228,12 @@ void PrePostProcessor::NZBAdded(DownloadQueue* pDownloadQueue, NZBInfo* pNZBInfo
 
 void PrePostProcessor::NZBDownloaded(DownloadQueue* pDownloadQueue, NZBInfo* pNZBInfo)
 {
+	if (pNZBInfo->GetDeleteStatus() == NZBInfo::dsHealth ||
+		pNZBInfo->GetDeleteStatus() == NZBInfo::dsBad)
+	{
+		g_pQueueScriptCoordinator->EnqueueScript(pNZBInfo, QueueScriptCoordinator::qeNzbDeleted);
+	}
+
 	if (!pNZBInfo->GetPostInfo() && g_pOptions->GetDecode())
 	{
 		pNZBInfo->PrintMessage(Message::mkInfo, "Queueing %s for post-processing", pNZBInfo->GetName());
@@ -325,10 +296,19 @@ void PrePostProcessor::NZBCompleted(DownloadQueue* pDownloadQueue, NZBInfo* pNZB
 	if (g_pOptions->GetDupeCheck() && pNZBInfo->GetDupeMode() != dmForce &&
 		(pNZBInfo->GetDeleteStatus() == NZBInfo::dsNone ||
 		 pNZBInfo->GetDeleteStatus() == NZBInfo::dsHealth ||
-		 pNZBInfo->GetDeleteStatus() == NZBInfo::dsBad))
+		 pNZBInfo->GetDeleteStatus() == NZBInfo::dsBad ||
+		 pNZBInfo->GetDeleteStatus() == NZBInfo::dsScan))
 	{
 		g_pDupeCoordinator->NZBCompleted(pDownloadQueue, pNZBInfo);
 		bNeedSave = true;
+	}
+
+	if (pNZBInfo->GetDeleteStatus() > NZBInfo::dsNone &&
+		pNZBInfo->GetDeleteStatus() != NZBInfo::dsHealth &&
+		pNZBInfo->GetDeleteStatus() != NZBInfo::dsBad)
+		// nzbs deleted by health check or marked as bad are processed as downloaded with failure status
+	{
+		g_pQueueScriptCoordinator->EnqueueScript(pNZBInfo, QueueScriptCoordinator::qeNzbDeleted);
 	}
 
 	if (!bAddToHistory)
@@ -385,26 +365,6 @@ void PrePostProcessor::DeleteCleanup(NZBInfo* pNZBInfo)
 		if (Util::DirEmpty(pNZBInfo->GetDestDir()))
 		{
 			rmdir(pNZBInfo->GetDestDir());
-		}
-	}
-}
-
-void PrePostProcessor::CheckDiskSpace()
-{
-	long long lFreeSpace = Util::FreeDiskSize(g_pOptions->GetDestDir());
-	if (lFreeSpace > -1 && lFreeSpace / 1024 / 1024 < g_pOptions->GetDiskSpace())
-	{
-		warn("Low disk space on %s. Pausing download", g_pOptions->GetDestDir());
-		g_pOptions->SetPauseDownload(true);
-	}
-
-	if (!Util::EmptyStr(g_pOptions->GetInterDir()))
-	{
-		lFreeSpace = Util::FreeDiskSize(g_pOptions->GetInterDir());
-		if (lFreeSpace > -1 && lFreeSpace / 1024 / 1024 < g_pOptions->GetDiskSpace())
-		{
-			warn("Low disk space on %s. Pausing download", g_pOptions->GetInterDir());
-			g_pOptions->SetPauseDownload(true);
 		}
 	}
 }
@@ -493,7 +453,7 @@ NZBInfo* PrePostProcessor::GetNextJob(DownloadQueue* pDownloadQueue)
 	for (NZBList::iterator it = pDownloadQueue->GetQueue()->begin(); it != pDownloadQueue->GetQueue()->end(); it++)
 	{
 		NZBInfo* pNZBInfo1 = *it;
-		if (pNZBInfo1->GetPostInfo() && !g_pQueueScriptCoordinator->HasJob(pNZBInfo1->GetID()) &&
+		if (pNZBInfo1->GetPostInfo() && !g_pQueueScriptCoordinator->HasJob(pNZBInfo1->GetID(), NULL) &&
 			(!pNZBInfo || pNZBInfo1->GetPriority() > pNZBInfo->GetPriority()) &&
 			(!g_pOptions->GetPausePostProcess() || pNZBInfo1->GetForcePriority()))
 		{
@@ -571,12 +531,17 @@ void PrePostProcessor::StartJob(DownloadQueue* pDownloadQueue, PostInfo* pPostIn
 		return;
 	}
 	else if (pPostInfo->GetNZBInfo()->GetParStatus() == NZBInfo::psSkipped &&
-		pPostInfo->GetNZBInfo()->CalcHealth() < pPostInfo->GetNZBInfo()->CalcCriticalHealth(false) &&
-		pPostInfo->GetNZBInfo()->CalcCriticalHealth(false) < 1000 &&
+		((g_pOptions->GetParScan() != Options::psDupe &&
+		  pPostInfo->GetNZBInfo()->CalcHealth() < pPostInfo->GetNZBInfo()->CalcCriticalHealth(false) &&
+		  pPostInfo->GetNZBInfo()->CalcCriticalHealth(false) < 1000) ||
+		  pPostInfo->GetNZBInfo()->CalcHealth() == 0) &&
 		ParParser::FindMainPars(pPostInfo->GetNZBInfo()->GetDestDir(), NULL))
 	{
 		pPostInfo->GetNZBInfo()->PrintMessage(Message::mkWarning,
-			"Skipping par-check for %s due to health %.1f%% below critical %.1f%%", pPostInfo->GetNZBInfo()->GetName(),
+			pPostInfo->GetNZBInfo()->CalcHealth() == 0 ?
+				"Skipping par-check for %s due to health 0%%" :
+				"Skipping par-check for %s due to health %.1f%% below critical %.1f%%",
+			pPostInfo->GetNZBInfo()->GetName(),
 			pPostInfo->GetNZBInfo()->CalcHealth() / 10.0, pPostInfo->GetNZBInfo()->CalcCriticalHealth(false) / 10.0);
 		pPostInfo->GetNZBInfo()->SetParStatus(NZBInfo::psFailure);
 		return;

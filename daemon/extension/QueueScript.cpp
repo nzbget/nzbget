@@ -47,7 +47,7 @@
 #include "Log.h"
 #include "Util.h"
 
-static const char* QUEUE_EVENT_NAMES[] = { "FILE_DOWNLOADED", "NZB_ADDED", "NZB_DOWNLOADED" };
+static const char* QUEUE_EVENT_NAMES[] = { "FILE_DOWNLOADED", "URL_COMPLETED", "NZB_ADDED", "NZB_DOWNLOADED", "NZB_DELETED" };
 
 class QueueScriptController : public Thread, public NZBScriptController
 {
@@ -59,11 +59,16 @@ private:
 	char*				m_szDestDir;
 	int					m_iID;
 	int					m_iPriority;
+	char*				m_szDupeKey;
+	EDupeMode			m_eDupeMode;
+	int					m_iDupeScore;
 	NZBParameterList	m_Parameters;
 	int					m_iPrefixLen;
 	ScriptConfig::Script*	m_pScript;
 	QueueScriptCoordinator::EEvent	m_eEvent;
 	bool				m_bMarkBad;
+	NZBInfo::EDeleteStatus m_eDeleteStatus;
+	NZBInfo::EUrlStatus	m_eUrlStatus;
 
 	void				PrepareParams(const char* szScriptName);
 
@@ -85,6 +90,7 @@ QueueScriptController::~QueueScriptController()
 	free(m_szUrl);
 	free(m_szCategory);
 	free(m_szDestDir);
+	free(m_szDupeKey);
 }
 
 void QueueScriptController::StartScript(NZBInfo* pNZBInfo, ScriptConfig::Script* pScript, QueueScriptCoordinator::EEvent eEvent)
@@ -98,11 +104,16 @@ void QueueScriptController::StartScript(NZBInfo* pNZBInfo, ScriptConfig::Script*
 	pScriptController->m_szDestDir = strdup(pNZBInfo->GetDestDir());
 	pScriptController->m_iID = pNZBInfo->GetID();
 	pScriptController->m_iPriority = pNZBInfo->GetPriority();
+	pScriptController->m_szDupeKey = strdup(pNZBInfo->GetDupeKey());
+	pScriptController->m_eDupeMode = pNZBInfo->GetDupeMode();
+	pScriptController->m_iDupeScore = pNZBInfo->GetDupeScore();
 	pScriptController->m_Parameters.CopyFrom(pNZBInfo->GetParameters());
 	pScriptController->m_pScript = pScript;
 	pScriptController->m_eEvent = eEvent;
 	pScriptController->m_iPrefixLen = 0;
 	pScriptController->m_bMarkBad = false;
+	pScriptController->m_eDeleteStatus = pNZBInfo->GetDeleteStatus();
+	pScriptController->m_eUrlStatus = pNZBInfo->GetUrlStatus();
 	pScriptController->SetAutoDestroy(true);
 
 	pScriptController->Start();
@@ -164,7 +175,20 @@ void QueueScriptController::PrepareParams(const char* szScriptName)
 	SetEnvVar("NZBNA_CATEGORY", m_szCategory);
 	SetIntEnvVar("NZBNA_PRIORITY", m_iPriority);
 	SetIntEnvVar("NZBNA_LASTID", m_iID);	// deprecated
+
+	SetEnvVar("NZBNA_DUPEKEY", m_szDupeKey);
+	SetIntEnvVar("NZBNA_DUPESCORE", m_iDupeScore);
+
+	const char* szDupeModeName[] = { "SCORE", "ALL", "FORCE" };
+	SetEnvVar("NZBNA_DUPEMODE", szDupeModeName[m_eDupeMode]);
+
 	SetEnvVar("NZBNA_EVENT", QUEUE_EVENT_NAMES[m_eEvent]);
+
+    const char* szDeleteStatusName[] = { "NONE", "MANUAL", "HEALTH", "DUPE", "BAD", "GOOD", "COPY", "SCAN" };
+	SetEnvVar("NZBNA_DELETESTATUS", szDeleteStatusName[m_eDeleteStatus]);
+
+	const char* szUrlStatusName[] = { "NONE", "UNKNOWN", "SUCCESS", "FAILURE", "UNKNOWN", "SCAN_SKIPPED", "SCAN_FAILURE" };
+	SetEnvVar("NZBNA_URLSTATUS", szUrlStatusName[m_eUrlStatus]);
 
 	PrepareEnvScript(&m_Parameters, szScriptName);
 }
@@ -233,12 +257,13 @@ QueueScriptCoordinator::QueueItem::QueueItem(int iNZBID, ScriptConfig::Script* p
 QueueScriptCoordinator::QueueScriptCoordinator()
 {
 	m_pCurItem = NULL;
+	m_bStopped = false;
 }
 
 QueueScriptCoordinator::~QueueScriptCoordinator()
 {
 	delete m_pCurItem;
-	for (Queue::iterator it = m_Queue.begin(); it != m_Queue.end(); )
+	for (Queue::iterator it = m_Queue.begin(); it != m_Queue.end(); it++ )
 	{
 		delete *it;
 	}
@@ -385,8 +410,31 @@ void QueueScriptCoordinator::EnqueueScript(NZBInfo* pNZBInfo, EEvent eEvent)
 	m_mutexQueue.Unlock();
 }
 
+NZBInfo* QueueScriptCoordinator::FindNZBInfo(DownloadQueue* pDownloadQueue, int iNZBID)
+{
+	NZBInfo* pNZBInfo = pDownloadQueue->GetQueue()->Find(iNZBID);
+	if (!pNZBInfo)
+	{
+		for (HistoryList::iterator it = pDownloadQueue->GetHistory()->begin(); it != pDownloadQueue->GetHistory()->end(); it++)
+		{
+			HistoryInfo* pHistoryInfo = *it;
+			if (pHistoryInfo->GetNZBInfo() && pHistoryInfo->GetNZBInfo()->GetID() == iNZBID)
+			{
+				pNZBInfo = pHistoryInfo->GetNZBInfo();
+				break;
+			}
+		}
+	}
+	return pNZBInfo;
+}
+
 void QueueScriptCoordinator::CheckQueue()
 {
+	if (m_bStopped)
+	{
+		return;
+	}
+
 	DownloadQueue* pDownloadQueue = DownloadQueue::Lock();
 	m_mutexQueue.Lock();
 
@@ -400,10 +448,11 @@ void QueueScriptCoordinator::CheckQueue()
 	{
 		QueueItem* pQueueItem = *it;
 
-		NZBInfo* pNZBInfo = pDownloadQueue->GetQueue()->Find(pQueueItem->GetNZBID());
+		NZBInfo* pNZBInfo = FindNZBInfo(pDownloadQueue, pQueueItem->GetNZBID());
 
 		// in a case this nzb must not be processed further - delete queue script from queue
-		if (!pNZBInfo || pNZBInfo->GetDeleteStatus() != NZBInfo::dsNone ||
+		if (!pNZBInfo ||
+			(pNZBInfo->GetDeleteStatus() != NZBInfo::dsNone && pQueueItem->GetEvent() != qeNzbDeleted) ||
 			pNZBInfo->GetMarkStatus() == NZBInfo::ksBad)
 		{
 			delete pQueueItem;
@@ -437,10 +486,14 @@ void QueueScriptCoordinator::StartScript(NZBInfo* pNZBInfo, QueueItem* pQueueIte
 	QueueScriptController::StartScript(pNZBInfo, pQueueItem->GetScript(), pQueueItem->GetEvent());
 }
 
-bool QueueScriptCoordinator::HasJob(int iNZBID)
+bool QueueScriptCoordinator::HasJob(int iNZBID, bool* pActive)
 {
 	m_mutexQueue.Lock();
 	bool bWorking = m_pCurItem && m_pCurItem->GetNZBID() == iNZBID;
+	if (pActive)
+	{
+		*pActive = bWorking;
+	}
 	if (!bWorking)
 	{
 		for (Queue::iterator it = m_Queue.begin(); it != m_Queue.end(); it++)
@@ -456,4 +509,17 @@ bool QueueScriptCoordinator::HasJob(int iNZBID)
 	m_mutexQueue.Unlock();
 
 	return bWorking;
+}
+
+int QueueScriptCoordinator::GetQueueSize()
+{
+	m_mutexQueue.Lock();
+	int iQueuedCount = m_Queue.size();
+	if (m_pCurItem)
+	{
+		iQueuedCount++;
+	}
+	m_mutexQueue.Unlock();
+
+	return iQueuedCount;
 }

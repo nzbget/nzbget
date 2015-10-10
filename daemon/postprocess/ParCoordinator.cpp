@@ -44,6 +44,7 @@
 
 #include "nzbget.h"
 #include "ParCoordinator.h"
+#include "DupeCoordinator.h"
 #include "ParParser.h"
 #include "Options.h"
 #include "DiskState.h"
@@ -144,6 +145,69 @@ ParChecker::EFileStatus ParCoordinator::PostParChecker::FindFileCrc(const char* 
 		ParChecker::fsUnknown;
 }
 
+void ParCoordinator::PostParChecker::RequestDupeSources(DupeSourceList* pDupeSourceList)
+{
+	DownloadQueue* pDownloadQueue = DownloadQueue::Lock();
+
+	NZBList dupeList;
+	g_pDupeCoordinator->ListHistoryDupes(pDownloadQueue, m_pPostInfo->GetNZBInfo(), &dupeList);
+
+	if (!dupeList.empty())
+	{
+		PostDupeMatcher dupeMatcher(m_pPostInfo);
+		PrintMessage(Message::mkInfo, "Checking %s for dupe scan usability", m_pPostInfo->GetNZBInfo()->GetName());
+		bool bSizeComparisonPossible = dupeMatcher.Prepare();
+		for (NZBList::iterator it = dupeList.begin(); it != dupeList.end(); it++)
+		{
+			NZBInfo* pDupeNZBInfo = *it;
+			if (bSizeComparisonPossible)
+			{
+				PrintMessage(Message::mkInfo, "Checking %s for dupe scan usability", Util::BaseFileName(pDupeNZBInfo->GetDestDir()));
+			}
+			bool bUseDupe = !bSizeComparisonPossible || dupeMatcher.MatchDupeContent(pDupeNZBInfo->GetDestDir());
+			if (bUseDupe)
+			{
+				PrintMessage(Message::mkInfo, "Adding %s to dupe scan sources", Util::BaseFileName(pDupeNZBInfo->GetDestDir()));
+				pDupeSourceList->push_back(new ParChecker::DupeSource(pDupeNZBInfo->GetID(), pDupeNZBInfo->GetDestDir()));
+			}
+		}
+		if (pDupeSourceList->empty())
+		{
+			PrintMessage(Message::mkInfo, "No usable dupe scan sources found");
+		}
+	}
+
+	DownloadQueue::Unlock();
+}
+
+void ParCoordinator::PostParChecker::StatDupeSources(DupeSourceList* pDupeSourceList)
+{
+	DownloadQueue* pDownloadQueue = DownloadQueue::Lock();
+
+	int iTotalExtraParBlocks = 0;
+	for (DupeSourceList::iterator it = pDupeSourceList->begin(); it != pDupeSourceList->end(); it++)
+	{
+		DupeSource* pDupeSource = *it;
+		if (pDupeSource->GetUsedBlocks() > 0)
+		{
+			for (HistoryList::iterator it = pDownloadQueue->GetHistory()->begin(); it != pDownloadQueue->GetHistory()->end(); it++)
+			{
+				HistoryInfo* pHistoryInfo = *it;
+				if (pHistoryInfo->GetKind() == HistoryInfo::hkNzb &&
+					pHistoryInfo->GetNZBInfo()->GetID() == pDupeSource->GetID())
+				{
+					pHistoryInfo->GetNZBInfo()->SetExtraParBlocks(pHistoryInfo->GetNZBInfo()->GetExtraParBlocks() - pDupeSource->GetUsedBlocks());
+				}
+			}
+		}
+		iTotalExtraParBlocks += pDupeSource->GetUsedBlocks();
+	}
+
+	m_pPostInfo->GetNZBInfo()->SetExtraParBlocks(m_pPostInfo->GetNZBInfo()->GetExtraParBlocks() + iTotalExtraParBlocks);
+
+	DownloadQueue::Unlock();
+}
+
 void ParCoordinator::PostParRenamer::UpdateProgress()
 {
 	m_pOwner->UpdateParRenameProgress();
@@ -180,6 +244,18 @@ void ParCoordinator::PostParRenamer::RegisterRenamedFile(const char* szOldFilena
 			break;
 		}
 	}
+}
+
+void ParCoordinator::PostDupeMatcher::PrintMessage(Message::EKind eKind, const char* szFormat, ...)
+{
+	char szText[1024];
+	va_list args;
+	va_start(args, szFormat);
+	vsnprintf(szText, 1024, szFormat, args);
+	va_end(args);
+	szText[1024-1] = '\0';
+
+	m_pPostInfo->GetNZBInfo()->AddMessage(eKind, szText);
 }
 
 #endif
@@ -364,7 +440,9 @@ void ParCoordinator::ParCheckCompleted()
 /**
 * Unpause par2-files
 * returns true, if the files with required number of blocks were unpaused,
-* or false if there are no more files in queue for this collection or not enough blocks
+* or false if there are no more files in queue for this collection or not enough blocks.
+* special case: returns true if there are any unpaused par2-files in the queue regardless
+* of the amount of blocks; this is to keep par-checker wait for download completion.
 */
 bool ParCoordinator::RequestMorePars(NZBInfo* pNZBInfo, const char* szParFilename, int iBlockNeeded, int* pBlockFound)
 {
@@ -442,6 +520,17 @@ bool ParCoordinator::RequestMorePars(NZBInfo* pNZBInfo, const char* szParFilenam
 		}
 	}
 
+	bool bHasUnpausedParFiles = false;
+	for (FileList::iterator it = pNZBInfo->GetFileList()->begin(); it != pNZBInfo->GetFileList()->end(); it++)
+	{
+		FileInfo* pFileInfo = *it;
+		if (pFileInfo->GetParFile() && !pFileInfo->GetPaused())
+		{
+			bHasUnpausedParFiles = true;
+			break;
+		}
+	}
+
 	DownloadQueue::Unlock();
 
 	if (pBlockFound)
@@ -455,7 +544,7 @@ bool ParCoordinator::RequestMorePars(NZBInfo* pNZBInfo, const char* szParFilenam
 	}
 	blocks.clear();
 
-	bool bOK = iBlockNeeded <= 0;
+	bool bOK = iBlockNeeded <= 0 || bHasUnpausedParFiles;
 
 	return bOK;
 }

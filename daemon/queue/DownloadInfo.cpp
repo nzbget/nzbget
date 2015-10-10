@@ -303,6 +303,7 @@ NZBInfo::NZBInfo() : m_FileList(true)
 	m_eDeleteStatus = dsNone;
 	m_eMarkStatus = ksNone;
 	m_eUrlStatus = lsNone;
+	m_iExtraParBlocks = 0;
 	m_bAddUrlPaused = false;
 	m_bDeleting = false;
 	m_bDeletePaused = false;
@@ -342,6 +343,7 @@ NZBInfo::NZBInfo() : m_FileList(true)
 	m_bParFull = false;
 	m_iMessageCount = 0;
 	m_iCachedMessageCount = 0;
+	m_iFeedID = 0;
 }
 
 NZBInfo::~NZBInfo()
@@ -600,6 +602,11 @@ int NZBInfo::CalcCriticalHealth(bool bAllowEstimation)
 		return 1000;
 	}
 
+	if (m_lSize == m_lParSize)
+	{
+		return 0;
+	}
+
 	long long lGoodParSize = m_lParSize - m_lParCurrentFailedSize;
 	int iCriticalHealth = (int)((m_lSize - lGoodParSize*2) * 1000 / (m_lSize - lGoodParSize));
 
@@ -762,6 +769,7 @@ void NZBInfo::CopyFileList(NZBInfo* pSrcNZBInfo)
 	SetParFailedSize(pSrcNZBInfo->GetParFailedSize());
 	SetParCurrentFailedSize(pSrcNZBInfo->GetParCurrentFailedSize());
 
+	SetTotalArticles(pSrcNZBInfo->GetTotalArticles());
 	SetSuccessArticles(pSrcNZBInfo->GetSuccessArticles());
 	SetFailedArticles(pSrcNZBInfo->GetFailedArticles());
 	SetCurrentSuccessArticles(pSrcNZBInfo->GetSuccessArticles());
@@ -856,6 +864,18 @@ const char* NZBInfo::MakeTextStatus(bool bIgnoreScriptStatus)
 		else if (m_eDeleteStatus == NZBInfo::dsBad)
 		{
 			szStatus = "FAILURE/BAD";
+		}
+		else if (m_eDeleteStatus == NZBInfo::dsGood)
+		{
+			szStatus = "DELETED/GOOD";
+		}
+		else if (m_eDeleteStatus == NZBInfo::dsCopy)
+		{
+			szStatus = "DELETED/COPY";
+		}
+		else if (m_eDeleteStatus == NZBInfo::dsScan)
+		{
+			szStatus = "FAILURE/SCAN";
 		}
 		else if (m_eParStatus == NZBInfo::psFailure)
 		{
@@ -1376,6 +1396,29 @@ void HistoryInfo::GetName(char* szBuffer, int iSize)
 	{
 		strncpy(szBuffer, "<unknown>", iSize);
 	}
+}
+
+
+HistoryList::~HistoryList()
+{
+	for (iterator it = begin(); it != end(); it++)
+	{
+		delete *it;
+	}
+}
+
+HistoryInfo* HistoryList::Find(int iID)
+{
+	for (iterator it = begin(); it != end(); it++)
+	{
+		HistoryInfo* pHistoryInfo = *it;
+		if (pHistoryInfo->GetID() == iID)
+		{
+			return pHistoryInfo;
+		}
+	}
+
+	return NULL;
 }
 
 

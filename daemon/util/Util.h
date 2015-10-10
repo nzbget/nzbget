@@ -30,6 +30,7 @@
 #include <deque>
 #endif
 #include <time.h>
+#include <stdarg.h>
 
 #ifdef WIN32
 extern int optind, opterr;
@@ -72,11 +73,19 @@ private:
 	char*				m_szBuffer;
 	int					m_iBufferSize;
 	int					m_iUsedSize;
+	int					m_iGrowSize;
+
+	void				Reserve(int iSize);
+
 public:
 						StringBuilder();
 						~StringBuilder();
 	void				Append(const char* szStr);
+	void				AppendFmt(const char* szFormat, ...);
+	void				AppendFmtV(const char* szFormat, va_list ap);
 	const char*			GetBuffer() { return m_szBuffer; }
+	void				SetGrowSize(int iGrowSize) { m_iGrowSize = iGrowSize; }
+	int					GetUsedSize() { return m_iUsedSize; }
 	void				Clear();
 };
 
@@ -117,6 +126,13 @@ public:
 	static bool SameFilename(const char* szFilename1, const char* szFilename2);
 	static bool MatchFileExt(const char* szFilename, const char* szExtensionList, const char* szListSeparator);
 	static char* GetLastErrorMessage(char* szBuffer, int iBufLen);
+	static long long GetCurrentTicks();
+
+	/* Flush disk buffers for file with given descriptor */
+	static bool FlushFileBuffers(int iFileDescriptor, char* szErrBuf, int iBufSize);
+
+	/* Flush disk buffers for file metadata (after file renaming) */
+	static bool FlushDirBuffers(const char* szFilename, char* szErrBuf, int iBufSize);
 
 	/*
 	 * Split command line int arguments.
@@ -160,9 +176,9 @@ public:
 	 */
 	static const char* VersionRevision() { return VersionRevisionBuf; };
 	
-	static char VersionRevisionBuf[40];
+	static char VersionRevisionBuf[100];
 
-	static void InitVersionRevision();
+	static void Init();
 
 	static unsigned long Crc32(unsigned char *block, unsigned long length);
 	static unsigned long Crc32m(unsigned long startCrc, unsigned char *block, unsigned long length);
@@ -203,6 +219,18 @@ public:
 	static bool XmlParseTagValue(const char* szXml, const char* szTag, char* szValueBuf, int iValueBufSize, const char** pTagEnd);
 
 	/*
+	 * Replaces all tags with spaces effectively providing the text content only.
+	 * The string is transformed in-place overwriting the previous content.
+	 */
+	static void XmlStripTags(char* szXml);
+
+	/*
+	 * Replaces all entities with spaces.
+	 * The string is transformed in-place overwriting the previous content.
+	 */
+	static void XmlRemoveEntities(char* raw);
+
+	/*
 	 * Creates JSON-string by replace the certain characters with escape-sequences.
 	 * Returns new string allocated with malloc, it need to be freed by caller.
 	 */
@@ -237,6 +265,12 @@ public:
 	 * The string is decoded on the place overwriting the content of raw-data.
 	 */
 	static void URLDecode(char* raw);
+
+	/*
+	 * Makes valid URL by replacing of spaces with "%20".
+	 * Returns new string allocated with malloc, it need to be freed by caller.
+	 */
+	static char* URLEncode(const char* raw);
 
 #ifdef WIN32
 	static bool Utf8ToAnsi(char* szBuffer, int iBufLen);

@@ -24,8 +24,8 @@
 
 AC_PREREQ(2.59)
 AC_INIT(nzbget, 16.0-testing, hugbug@users.sourceforge.net)
-AC_CANONICAL_SYSTEM
-AM_INIT_AUTOMAKE(nzbget, 16.0-testing)
+AC_CONFIG_AUX_DIR(posix)
+AM_INIT_AUTOMAKE([foreign])
 AC_CONFIG_SRCDIR([daemon/main/nzbget.cpp])
 AC_CONFIG_HEADERS([config.h])
 
@@ -75,6 +75,14 @@ dnl
 AC_CHECK_FUNC(getopt_long,
 	[AC_DEFINE([HAVE_GETOPT_LONG], 1, [Define to 1 if getopt_long is supported])],)
 
+
+dnl
+dnl fsync
+dnl
+AC_CHECK_FUNC(fdatasync,
+	[AC_DEFINE([HAVE_FDATASYNC], 1, [Define to 1 if fdatasync is supported])],)
+AC_CHECK_DECL(F_FULLFSYNC,
+	[AC_DEFINE([HAVE_FULLFSYNC], 1, [Define to 1 if F_FULLFSYNC is supported])],,[#include <fcntl.h>])
 
 dnl
 dnl use 64-Bits for file sizes
@@ -161,14 +169,6 @@ if test "$FOUND" = "no"; then
 		AC_SEARCH_LIBS([gethostbyname_r], [nsl])
 	fi
 fi
-
-
-dnl
-dnl Check if spinlocks are available
-dnl
-AC_CHECK_FUNC(pthread_spin_init,
-	[AC_DEFINE([HAVE_SPINLOCK], 1, [Define to 1 if spinlocks are supported])]
-	AC_SEARCH_LIBS([pthread_spin_init], [pthread]),)
 
 
 dnl

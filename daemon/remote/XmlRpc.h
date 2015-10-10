@@ -98,6 +98,9 @@ protected:
 	void				BuildBoolResponse(bool bOK);
 	void				BuildIntResponse(int iValue);
 	void				AppendResponse(const char* szPart);
+	void				AppendFmtResponse(const char* szFormat, ...);
+	void				AppendCondResponse(const char* szPart, bool bCond);
+	void				OptimizeResponse(int iRecordCount);
 	bool				IsJson();
 	bool				CheckSafeMethod();
 	bool				NextParamAsInt(int* iValue);

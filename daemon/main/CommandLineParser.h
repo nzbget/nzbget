@@ -106,6 +106,9 @@ private:
 	bool				m_bTestBacktrace;
 	bool				m_bWebGet;
 	char*				m_szWebGetFilename;
+	bool				m_bSigVerify;
+	char*				m_szPubKeyFilename;
+	char*				m_szSigFilename;
 	bool				m_bPauseDownload;
 
 	void				InitCommandLine(int argc, const char* argv[]);
@@ -152,6 +155,9 @@ public:
 	bool				GetTestBacktrace() { return m_bTestBacktrace; }
 	bool				GetWebGet() { return m_bWebGet; }
 	const char*			GetWebGetFilename() { return m_szWebGetFilename; }
+	bool				GetSigVerify() { return m_bSigVerify; }
+	const char*			GetPubKeyFilename() { return m_szPubKeyFilename; }
+	const char*			GetSigFilename() { return m_szSigFilename; }
 	bool				GetPrintOptions() { return m_bPrintOptions; }
 	bool				GetPrintVersion() { return m_bPrintVersion; }
 	bool				GetPrintUsage() { return m_bPrintUsage; }

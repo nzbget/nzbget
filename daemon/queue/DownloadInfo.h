@@ -391,7 +391,10 @@ public:
 		dsManual,
 		dsHealth,
 		dsDupe,
-		dsBad
+		dsBad,
+		dsGood,
+		dsCopy,
+		dsScan
 	};
 
 	enum EMarkStatus
@@ -466,6 +469,7 @@ private:
 	EDeleteStatus		m_eDeleteStatus;
 	EMarkStatus			m_eMarkStatus;
 	EUrlStatus			m_eUrlStatus;
+	int					m_iExtraParBlocks;
 	bool				m_bAddUrlPaused;
 	bool				m_bDeletePaused;
 	bool				m_bManyDupeFiles;
@@ -503,6 +507,7 @@ private:
 	bool				m_bParFull;
 	int					m_iMessageCount;
 	int					m_iCachedMessageCount;
+	int					m_iFeedID;
 
 	static int			m_iIDGen;
 	static int			m_iIDMax;
@@ -602,6 +607,8 @@ public:
 	EMarkStatus			GetMarkStatus() { return m_eMarkStatus; }
 	void				SetMarkStatus(EMarkStatus eMarkStatus) { m_eMarkStatus = eMarkStatus; }
 	EUrlStatus			GetUrlStatus() { return m_eUrlStatus; }
+	int					GetExtraParBlocks() { return m_iExtraParBlocks; }
+	void				SetExtraParBlocks(int iExtraParBlocks) { m_iExtraParBlocks = iExtraParBlocks; }
 	void				SetUrlStatus(EUrlStatus eUrlStatus) { m_eUrlStatus = eUrlStatus; }
 	const char*			GetQueuedFilename() { return m_szQueuedFilename; }
 	void				SetQueuedFilename(const char* szQueuedFilename);
@@ -660,6 +667,8 @@ public:
 	void 				SetQueueScriptTime(time_t tQueueScriptTime) { m_tQueueScriptTime = tQueueScriptTime; }
 	void				SetParFull(bool bParFull) { m_bParFull = bParFull; }
 	bool				GetParFull() { return m_bParFull; }
+	int					GetFeedID() { return m_iFeedID; }
+	void				SetFeedID(int iFeedID) { m_iFeedID = iFeedID; }
 
 	void				CopyFileList(NZBInfo* pSrcNZBInfo);
 	void				UpdateMinMaxTime();
@@ -855,7 +864,14 @@ public:
 	void				GetName(char* szBuffer, int iSize);		// needs locking (for shared objects)
 };
 
-typedef std::deque<HistoryInfo*> HistoryList;
+typedef std::deque<HistoryInfo*> HistoryListBase;
+
+class HistoryList : public HistoryListBase
+{
+public:
+						~HistoryList();
+	HistoryInfo*		Find(int iID);
+};
 
 class DownloadQueue : public Subject
 {
@@ -950,7 +966,6 @@ protected:
 	static void				Loaded() { g_bLoaded = true; }
 
 public:
-	virtual					~DownloadQueue() {}
 	static bool				IsLoaded() { return g_bLoaded; }
 	static DownloadQueue*	Lock();
 	static void				Unlock();

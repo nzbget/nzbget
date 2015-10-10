@@ -104,6 +104,7 @@ private:
 	char*				m_szLogFilename;
 	unsigned int		m_iIDGen;
 	time_t				m_tLastWritten;
+	bool				m_bOptInit;
 #ifdef DEBUG
 	bool				m_bExtraDebug;
 #endif

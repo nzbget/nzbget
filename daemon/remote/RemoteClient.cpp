@@ -639,7 +639,7 @@ bool RemoteClient::RequestServerList(bool bFiles, bool bGroups, const char* szPa
 		Util::FormatSpeed(szSpeed, sizeof(szSpeed), ntohl(ListResponse.m_iDownloadRate)));
 
 	long long iAllBytes = Util::JoinInt64(ntohl(ListResponse.m_iDownloadedBytesHi), ntohl(ListResponse.m_iDownloadedBytesLo));
-	int iAverageSpeed = ntohl(ListResponse.m_iDownloadTimeSec) > 0 ? iAllBytes / ntohl(ListResponse.m_iDownloadTimeSec) : 0;
+	int iAverageSpeed = (int)(ntohl(ListResponse.m_iDownloadTimeSec) > 0 ? iAllBytes / ntohl(ListResponse.m_iDownloadTimeSec) : 0);
 	printf("Session download rate: %s\n", Util::FormatSpeed(szSpeed, sizeof(szSpeed), iAverageSpeed));
 
 	if (ntohl(ListResponse.m_iDownloadLimit) > 0)

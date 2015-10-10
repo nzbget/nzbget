@@ -158,6 +158,7 @@ var Options = (new function($)
 			scriptConfig.scan = serverTemplateData[i].ScanScript;
 			scriptConfig.queue = serverTemplateData[i].QueueScript;
 			scriptConfig.scheduler = serverTemplateData[i].SchedulerScript;
+			scriptConfig.feed = serverTemplateData[i].FeedScript;
 			mergeValues(scriptConfig.sections, serverValues);
 			config.push(scriptConfig);
 		}
@@ -504,6 +505,7 @@ var Config = (new function($)
 		$ConfigTitle = $('#ConfigTitle');
 		$ViewButton = $('#Config_ViewButton');
 		$LeaveConfigDialog = $('#LeaveConfigDialog');
+		$('#ConfigTable_filter').val('');
 
 		Util.show('#ConfigBackupSafariNote', $.browser.safari);
 		$('#ConfigTable_filter').val('');
@@ -514,7 +516,7 @@ var Config = (new function($)
 
 		$ConfigNav.on('click', 'li > a', navClick);
 
-		$ConfigTable = $({});
+		$ConfigTable = $('#ConfigTable');
 		$ConfigTable.fasttable(
 			{
 				filterInput: $('#ConfigTable_filter'),
@@ -816,7 +818,7 @@ var Config = (new function($)
 			htmldescr = htmldescr.replace(/NOTE: do not forget to uncomment the next line.\n/, '');
 
 			// replace option references
-			var exp = /\<([A-Z0-9]*)\>/ig;
+			var exp = /\<([A-Z0-9\.]*)\>/ig;
 			htmldescr = htmldescr.replace(exp, '<a class="option" href="#" onclick="Config.scrollToOption(event, this)">$1</a>');
 
 			htmldescr = htmldescr.replace(/&/g, '&amp;');
@@ -1045,6 +1047,10 @@ var Config = (new function($)
 				if (optname.indexOf('queuescript') > -1)
 				{
 					option.editor = { caption: 'Choose', click: 'Config.editQueueScript' };
+				}
+				if (optname.indexOf('feedscript') > -1)
+				{
+					option.editor = { caption: 'Choose', click: 'Config.editFeedScript' };
 				}
 				if (optname.indexOf('task') > -1 && optname.indexOf('.param') > -1)
 				{
@@ -1420,6 +1426,12 @@ var Config = (new function($)
 		ScriptListDialog.showModal(option, config, 'queue');
 	}
 
+	this.editFeedScript = function(optFormId)
+	{
+		var option = findOptionById(optFormId);
+		ScriptListDialog.showModal(option, config, 'feed');
+	}
+
 	this.editSchedulerScript = function(optFormId)
 	{
 		var option = findOptionById(optFormId);
@@ -1445,12 +1457,16 @@ var Config = (new function($)
 	{
 		var option = findOptionById(optFormId);
 		FeedFilterDialog.showModal(
+			option.multiid,
 			getOptionValue(findOptionByName('Feed' + option.multiid + '.Name')),
 			getOptionValue(findOptionByName('Feed' + option.multiid + '.URL')),
 			getOptionValue(findOptionByName('Feed' + option.multiid + '.Filter')),
+			getOptionValue(findOptionByName('Feed' + option.multiid + '.Backlog')),
 			getOptionValue(findOptionByName('Feed' + option.multiid + '.PauseNzb')),
 			getOptionValue(findOptionByName('Feed' + option.multiid + '.Category')),
 			getOptionValue(findOptionByName('Feed' + option.multiid + '.Priority')),
+			getOptionValue(findOptionByName('Feed' + option.multiid + '.Interval')),
+			getOptionValue(findOptionByName('Feed' + option.multiid + '.FeedScript')),
 			function(filter)
 				{
 					var control = $('#' + option.formId);
@@ -1461,13 +1477,16 @@ var Config = (new function($)
 	this.previewFeed = function(control, setname, sectionId)
 	{
 		var multiid = parseInt($(control).attr('data-multiid'));
-		FeedDialog.showModal(0,
+		FeedDialog.showModal(multiid,
 			getOptionValue(findOptionByName('Feed' + multiid + '.Name')),
 			getOptionValue(findOptionByName('Feed' + multiid + '.URL')),
 			getOptionValue(findOptionByName('Feed' + multiid + '.Filter')),
+			getOptionValue(findOptionByName('Feed' + multiid + '.Backlog')),
 			getOptionValue(findOptionByName('Feed' + multiid + '.PauseNzb')),
 			getOptionValue(findOptionByName('Feed' + multiid + '.Category')),
-			getOptionValue(findOptionByName('Feed' + multiid + '.Priority')));
+			getOptionValue(findOptionByName('Feed' + multiid + '.Priority')),
+			getOptionValue(findOptionByName('Feed' + multiid + '.Interval')),
+			getOptionValue(findOptionByName('Feed' + multiid + '.FeedScript')));
 	}
 
 	/*** TEST SERVER ********************************************************************/
@@ -1743,6 +1762,8 @@ var Config = (new function($)
 		$ConfigTabBadgeEmpty.show();
 	}
 
+	var searcher = new FastSearcher();
+
 	function search()
 	{
 		$ConfigTabBadge.show();
@@ -1751,7 +1772,8 @@ var Config = (new function($)
 
 		$ConfigData.children().hide();
 
-		var words = filterText.toLowerCase().split(' ');
+		searcher.compile(filterText);
+		
 		var total = 0;
 		var available = 0;
 
@@ -1769,7 +1791,7 @@ var Config = (new function($)
 						if (!option.template)
 						{
 							total++;
-							if (filterOption(option, words))
+							if (filterOption(option))
 							{
 								available++;
 								var opt = $('#' + option.formId).closest('.control-group');
@@ -1781,7 +1803,7 @@ var Config = (new function($)
 			}
 		}
 
-		filterStaticPages(words);
+		filterStaticPages();
 
 		markLastControlGroup();
 
@@ -1791,33 +1813,20 @@ var Config = (new function($)
 		updateTabInfo($ConfigTabBadge, { filter: true, available: available, total: total});
 	}
 
-	function filterOption(option, words)
+	function filterOption(option)
 	{
-		return filterWords(option.caption + ' ' + option.description + ' ' + (option.value === null ? '' : option.value), words);
+		return searcher.exec({ name: option.caption, description: option.description, value: (option.value === null ? '' : option.value), _search: ['name', 'description', 'value'] });
 	}
 
-	function filterStaticPages(words)
+	function filterStaticPages()
 	{
 		$ConfigData.children().filter('.config-static').each(function(index, element)
 			{
-				var text = $(element).text();
-				Util.show(element, filterWords(text, words));
+				var name = $('.control-label', element).text();
+				var description = $('.controls', element).text();
+				var found = searcher.exec({ name: name, description: description, value: '', _search: ['name', 'description'] });
+				Util.show(element, found);
 			});
-	}
-
-	function filterWords(text, words)
-	{
-		var search = text.toLowerCase();
-
-		for (var i = 0; i < words.length; i++)
-		{
-			if (search.indexOf(words[i]) === -1)
-			{
-				return false;
-			}
-		}
-
-		return true;
 	}
 
 	function markLastControlGroup()
@@ -2027,7 +2036,6 @@ var ScriptListDialog = (new function($)
 			{
 				id: scriptName,
 				fields: fields,
-				search: ''
 			};
 			data.push(item);
 
@@ -2108,7 +2116,7 @@ var ScriptListDialog = (new function($)
 			for (var i=0; i < scriptList.length; i++)
 			{
 				var scriptName = scriptList[i];
-				if (checkedRows.indexOf(scriptName) > -1)
+				if (checkedRows[scriptName])
 				{
 					selectedList += (selectedList == '' ? '' : ', ') + scriptName;
 				}
@@ -2426,7 +2434,7 @@ var ConfigBackupRestore = (new function($)
 			for (var i=0; i < conf.sections.length; i++)
 			{
 				var section = conf.sections[i];
-				if (!section.hidden && selectedSections.indexOf(section.id) > -1)
+				if (!section.hidden && selectedSections[section.id])
 				{
 					for (var m=0; m < section.options.length; m++)
 					{
@@ -2507,7 +2515,6 @@ var RestoreSettingsDialog = (new function($)
 					{
 						id: section.id,
 						fields: fields,
-						search: ''
 					};
 					data.push(item);
 				}
@@ -2522,13 +2529,14 @@ var RestoreSettingsDialog = (new function($)
 
 		var	 selectedSections = [];
 		var checkedRows = $SectionTable.fasttable('checkedRows');
-		if (checkedRows.length === 0)
+		var checkedCount = $SectionTable.fasttable('checkedCount');
+		if (checkedCount === 0)
 		{
 			Notification.show('#Notif_Config_RestoreSections');
 			return;
 		}
 
-		checkedRows = $.extend([], checkedRows); // clone
+		checkedRows = $.extend({}, checkedRows); // clone
 		$RestoreSettingsDialog.modal('hide');
 
 		setTimeout(function() { restoreClick(checkedRows); }, 0);
@@ -2622,26 +2630,32 @@ var UpdateDialog = (new function($)
 		}
 		else
 		{
-			loadSvnVerData();
+			loadGitVerData();
 		}
 	}
 
-	function loadSvnVerData()
+	function loadGitVerData()
 	{
 		// fetching devel version number from svn viewer
-		RPC.call('readurl', ['http://svn.code.sf.net/p/nzbget/code/trunk/', 'svn revision info'], 
-			function(svnRevData)
+		RPC.call('readurl', ['https://github.com/nzbget/nzbget', 'git revision info'], 
+			function(gitRevData)
 			{
-				RPC.call('readurl', ['http://svn.code.sf.net/p/nzbget/code/trunk/configure.ac', 'svn branch info'], 
-					function(svnBranchData)
+				RPC.call('readurl', ['https://raw.githubusercontent.com/nzbget/nzbget/develop/configure.ac', 'git branch info'], 
+					function(gitBranchData)
 					{
-						var rev = svnRevData.match(/.*Revision (\d+).*/);
-						if (rev.length > 1)
+						var html = document.createElement('DIV');
+						html.innerHTML = gitRevData;
+						html = html.textContent || html.innerText || '';
+						html = html.replace(/(?:\r\n|\r|\n)/g, ' ');
+						var rev = html.match(/([0-9\,]*)\s*commits/);
+   
+						if (rev && rev.length > 1)
 						{
-							var ver = svnBranchData.match(/.*AM_INIT_AUTOMAKE\(nzbget, (.*)\).*/);
-							if (ver.length > 1)
+							rev = rev[1].replace(',', '');
+							var ver = gitBranchData.match(/AC_INIT\(nzbget, (.*), .*/);
+							if (ver && ver.length > 1)
 							{
-								VersionInfo['devel-version'] = ver[1] + '-r' + rev[1];
+								VersionInfo['devel-version'] = ver[1] + '-r' + rev;
 							}
 						}
 						

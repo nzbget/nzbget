@@ -2,7 +2,7 @@
  *  This file is part of nzbget
  *
  *  Copyright (C) 2004 Sven Henkel <sidddy@users.sourceforge.net>
- *  Copyright (C) 2007-2013 Andrey Prygunkov <hugbug@users.sourceforge.net>
+ *  Copyright (C) 2007-2015 Andrey Prygunkov <hugbug@users.sourceforge.net>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -41,7 +41,6 @@ private:
 	char*				m_szFileName;
 	char*				m_szPassword;
 
-						NZBFile(const char* szFileName, const char* szCategory);
 	void				AddArticle(FileInfo* pFileInfo, ArticleInfo* pArticleInfo);
 	void				AddFileInfo(FileInfo* pFileInfo);
 	void				ParseSubject(FileInfo* pFileInfo, bool TryQuotes);
@@ -72,8 +71,9 @@ private:
 #endif
 
 public:
-	virtual 			~NZBFile();
-	static NZBFile*		Create(const char* szFileName, const char* szCategory);
+						NZBFile(const char* szFileName, const char* szCategory);
+						~NZBFile();
+	bool				Parse();
 	const char* 		GetFileName() const { return m_szFileName; }
 	NZBInfo*			GetNZBInfo() { return m_pNZBInfo; }
 	const char*			GetPassword() { return m_szPassword; }

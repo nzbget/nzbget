@@ -115,38 +115,4 @@ public:
 	static void			StartJob(PostInfo* pPostInfo);
 };
 
-class MoveController : public Thread, public ScriptController
-{
-private:
-	PostInfo*			m_pPostInfo;
-	char				m_szInterDir[1024];
-	char				m_szDestDir[1024];
-
-	bool				MoveFiles();
-
-protected:
-	virtual void		AddMessage(Message::EKind eKind, const char* szText);
-
-public:
-	virtual void		Run();
-	static void			StartJob(PostInfo* pPostInfo);
-};
-
-class CleanupController : public Thread, public ScriptController
-{
-private:
-	PostInfo*			m_pPostInfo;
-	char				m_szDestDir[1024];
-	char				m_szFinalDir[1024];
-
-	bool				Cleanup(const char* szDestDir, bool *bDeleted);
-
-protected:
-	virtual void		AddMessage(Message::EKind eKind, const char* szText);
-
-public:
-	virtual void		Run();
-	static void			StartJob(PostInfo* pPostInfo);
-};
-
 #endif

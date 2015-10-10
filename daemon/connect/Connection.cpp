@@ -66,6 +66,44 @@ Mutex* Connection::m_pMutexGetHostByName = NULL;
 #endif
 #endif
 
+void closesocket_gracefully(SOCKET iSocket)
+{
+	char buf[1024];
+	struct linger linger;
+
+	// Set linger option to avoid socket hanging out after close. This prevent
+	// ephemeral port exhaust problem under high QPS.
+	linger.l_onoff = 1;
+	linger.l_linger = 1;
+	setsockopt(iSocket, SOL_SOCKET, SO_LINGER, (char *) &linger, sizeof(linger));
+
+	// Send FIN to the client
+	shutdown(iSocket, SHUT_WR);
+
+	// Set non-blocking mode
+#ifdef WIN32
+	unsigned long on = 1;
+	ioctlsocket(iSocket, FIONBIO, &on);
+#else
+	int flags;
+	flags = fcntl(iSocket, F_GETFL, 0);
+	fcntl(iSocket, F_SETFL, flags | O_NONBLOCK);
+#endif
+
+	// Read and discard pending incoming data. If we do not do that and close the
+	// socket, the data in the send buffer may be discarded. This
+	// behaviour is seen on Windows, when client keeps sending data
+	// when server decides to close the connection; then when client
+	// does recv() it gets no data back.
+	int n;
+	do {
+		n = recv(iSocket, buf, sizeof(buf), 0);
+	} while (n > 0);
+
+	// Now we know that our FIN is ACK-ed, safe to close
+	closesocket(iSocket);
+}
+
 void Connection::Init()
 {
 	debug("Initializing global connection data");
@@ -132,6 +170,7 @@ Connection::Connection(const char* szHost, int iPort, bool bTLS)
 	m_szReadBuf = (char*)malloc(CONNECTION_READBUFFER_SIZE + 1);
 	m_iTotalBytesRead = 0;
 	m_bBroken = false;
+	m_bGracefull = false;
 #ifndef DISABLE_TLS
 	m_pTLSSocket = NULL;
 	m_bTLSError = false;
@@ -805,7 +844,14 @@ bool Connection::DoDisconnect()
 #ifndef DISABLE_TLS
 		CloseTLS();
 #endif
-		closesocket(m_iSocket);
+		if (m_bGracefull)
+		{
+			closesocket_gracefully(m_iSocket);
+		}
+		else
+		{
+			closesocket(m_iSocket);
+		}
 		m_iSocket = INVALID_SOCKET;
 	}
 

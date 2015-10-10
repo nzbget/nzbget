@@ -282,6 +282,8 @@ var Frontend = (new function($)
 			case 'Messages': Messages.show(); break;
 			case 'History': History.show(); break;
 		}
+		
+		FilterMenu.setTab(activeTab);
 	}
 
 	function afterTabShow(e)
@@ -303,11 +305,13 @@ var Frontend = (new function($)
 		$('.navbar-search .search-query').on('focus', function()
 		{
 			$(this).next().removeClass('icon-remove-white').addClass('icon-remove');
+			$('#SearchBlock_Caret').addClass('focused');
 		});
 
 		$('.navbar-search .search-query').on('blur', function()
 		{
 			$(this).next().removeClass('icon-remove').addClass('icon-remove-white');
+			$('#SearchBlock_Caret').removeClass('focused');
 		});
 
 		$('.navbar-search').show();
@@ -761,8 +765,9 @@ var Refresher = (new function($)
 }(jQuery));
 
 
-function TODO()
+function TODO(text)
 {
+	$('#Notif_NotImplemented_Param').html(text === undefined ? '' : ': ' + text);
 	Notification.show('#Notif_NotImplemented');
 }
 

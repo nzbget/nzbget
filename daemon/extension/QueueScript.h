@@ -37,8 +37,10 @@ public:
 	enum EEvent
 	{
 		qeFileDownloaded,	// lowest priority
+		qeUrlCompleted,
 		qeNzbAdded,
-		qeNzbDownloaded		// highest priority
+		qeNzbDownloaded,
+		qeNzbDeleted		// highest priority
 	};
 
 private:
@@ -61,16 +63,20 @@ private:
 	Mutex				m_mutexQueue;
 	QueueItem*			m_pCurItem;
 	bool				m_bHasQueueScripts;
+	bool				m_bStopped;
 
 	void				StartScript(NZBInfo* pNZBInfo, QueueItem* pQueueItem);
+	NZBInfo*			FindNZBInfo(DownloadQueue* pDownloadQueue, int iNZBID);
 
 public:
 						QueueScriptCoordinator();
 						~QueueScriptCoordinator();
+	void				Stop() { m_bStopped = true; }
 	void				InitOptions();
 	void				EnqueueScript(NZBInfo* pNZBInfo, EEvent eEvent);
 	void				CheckQueue();
-	bool				HasJob(int iNZBID);
+	bool				HasJob(int iNZBID, bool* pActive);
+	int					GetQueueSize();
 };
 
 extern QueueScriptCoordinator* g_pQueueScriptCoordinator;

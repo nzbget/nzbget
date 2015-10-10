@@ -83,7 +83,7 @@ PrintHelp()
     PrintArch "i686"     "    i686     - x86, 32 or 64 Bit"
     PrintArch "x86_64"   "    x86_64   - x86, 64 Bit"
     PrintArch "armel"    "    armel    - ARMv5/v6 (ARM9 and ARM11 families)"
-    PrintArch "armhf"    "    armhf    - ARMv7 (Cortex family)"
+    PrintArch "armhf"    "    armhf    - ARMv7/v8 (Cortex family)"
     PrintArch "mipsel"   "    mipsel   - MIPS (little endian)"
     PrintArch "mipseb"   "    mipseb   - MIPS (big endian)"
     PrintArch "ppc6xx"   "    ppc6xx   - PowerPC 6xx (603e series)"
@@ -141,12 +141,12 @@ Verify()
 DetectEndianness()
 {
     # Sixth byte of any executable indicates endianness
-    ENDBYTE=`dd if=/bin/sh bs=1 count=6 2>/dev/null | sed -n 's/ELF.\(.*\)/\1/p'`
+    ENDBYTE=`dd if=/bin/sh bs=1 count=6 2>/dev/null | sed -n 's/.ELF.\(.*\)/\1/p'`
 
     ENDIAN=unknown
-    if test $ENDBYTE="\x01"; then
+    if test "$ENDBYTE" = $'\001'; then
         ENDIAN=little
-    elif test $ENDBYTE="\x02"; then
+    elif test "$ENDBYTE" = $'\002'; then
         ENDIAN=big
     fi
 }
@@ -179,7 +179,7 @@ DetectArch()
             armv5*|armv6*|armel)
                 ARCH=armel
                 ;;
-            armv7*|armv8*)
+            armv7*|armv8*|aarch64)
                 ARCH=armhf
                 ;;
             ppc)
@@ -483,14 +483,23 @@ if test "$JUSTUNPACK" = "no"; then
 
         # Trying to get current IP-address        
         IP=""
+        INTERFACE=""
         {
-            IP=`ifconfig | sed -rn 's/.*r:([^ ]+) .*/\1/p' | head -n 1` || true
+            # First find default interface (ie 'wlan0') with the 'route' command
+            INTERFACE=`route -n | sed -rn 's/^0.0.0.0.* ([^ ]+)$/\1/p'`
         } > /dev/null 2>&1
+        if test "$INTERFACE" != ""; then
+            # OK, a default route 0.0.0.0 + corresponding interface was found
+            # Now find the IPv4 address on that interface:
+            {
+                IP=`ifconfig "$INTERFACE" | sed -rn 's/.*r:([^ ]+) .*/\1/p'`
+            } > /dev/null 2>&1
+        fi
         if test "$IP" = ""; then
             IP="localhost"
         fi
 
-        Info "Web-interface runs on http://$IP:6789"
+        Info "Web-interface is on http://$IP:6789 (login:nzbget, password:tegbzn6789)"
     else
         Info "Successfully installed into $ABSOUTDIR"
     fi

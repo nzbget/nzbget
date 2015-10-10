@@ -88,7 +88,7 @@ void WebDownloader::SetInfoName(const char* v)
 void WebDownloader::SetURL(const char * szURL)
 {
 	free(m_szURL);
-	m_szURL = strdup(szURL);
+	m_szURL = WebUtil::URLEncode(szURL);
 }
 
 void WebDownloader::SetStatus(EStatus eStatus)
@@ -111,14 +111,13 @@ void WebDownloader::Run()
 		iRemainedConnectRetries = 1;
 	}
 
-	m_iRedirects = 0;
 	EStatus Status = adFailed;
 
 	while (!IsStopped() && iRemainedDownloadRetries > 0 && iRemainedConnectRetries > 0)
 	{
 		SetLastUpdateTimeNow();
 
-		Status = Download();
+		Status = DownloadWithRedirects(5);
 
 		if ((((Status == adFailed) && (iRemainedDownloadRetries > 1)) ||
 			((Status == adConnectError) && (iRemainedConnectRetries > 1)))
@@ -143,17 +142,6 @@ void WebDownloader::Run()
 		if (Status == adFinished || Status == adFatalError || Status == adNotFound)
 		{
 			break;
-		}
-
-		if (Status == adRedirect)
-		{
-			m_iRedirects++;
-			if (m_iRedirects > 5)
-			{
-				warn("Too many redirects for %s", m_szInfoName);
-				Status = adFailed;
-				break;
-			}
 		}
 
 		if (Status != adConnectError)
@@ -244,6 +232,24 @@ WebDownloader::EStatus WebDownloader::Download()
 	return Status;
 }
 
+WebDownloader::EStatus WebDownloader::DownloadWithRedirects(int iMaxRedirects)
+{
+	// do sync download, following redirects
+	EStatus eStatus = adRedirect;
+	while (eStatus == adRedirect && iMaxRedirects >= 0)
+	{
+		iMaxRedirects--;
+		eStatus = Download();
+	}
+
+	if (eStatus == adRedirect && iMaxRedirects < 0)
+	{
+		warn("Too many redirects for %s", m_szInfoName);
+		eStatus = adFailed;
+	}
+
+	return eStatus;
+}
 
 WebDownloader::EStatus WebDownloader::CreateConnection(URL *pUrl)
 {
@@ -589,15 +595,46 @@ void WebDownloader::ParseRedirect(const char* szLocation)
 	URL newUrl(szNewURL);
 	if (!newUrl.IsValid())
 	{
-		// relative address
+		// redirect within host
+
+		char szResource[1024];
 		URL oldUrl(m_szURL);
-		if (oldUrl.GetPort() > 0)
+
+		if (*szLocation == '/')
 		{
-			snprintf(szUrlBuf, 1024, "%s://%s:%i%s", oldUrl.GetProtocol(), oldUrl.GetHost(), oldUrl.GetPort(), szNewURL);
+			// absolute path within host
+			strncpy(szResource, szLocation, 1024);
+			szResource[1024-1] = '\0';
 		}
 		else
 		{
-			snprintf(szUrlBuf, 1024, "%s://%s%s", oldUrl.GetProtocol(), oldUrl.GetHost(), szNewURL);
+			// relative path within host
+			strncpy(szResource, oldUrl.GetResource(), 1024);
+			szResource[1024-1] = '\0';
+
+			char* p = strchr(szResource, '?');
+			if (p)
+			{
+				*p = '\0';
+			}
+
+			p = strrchr(szResource, '/');
+			if (p)
+			{
+				p[1] = '\0';
+			}
+
+			strncat(szResource, szLocation, 1024 - strlen(szResource));
+			szResource[1024-1] = '\0';
+		}
+
+		if (oldUrl.GetPort() > 0)
+		{
+			snprintf(szUrlBuf, 1024, "%s://%s:%i%s", oldUrl.GetProtocol(), oldUrl.GetHost(), oldUrl.GetPort(), szResource);
+		}
+		else
+		{
+			snprintf(szUrlBuf, 1024, "%s://%s%s", oldUrl.GetProtocol(), oldUrl.GetHost(), szResource);
 		}
 		szUrlBuf[1024-1] = '\0';
 		szNewURL = szUrlBuf;

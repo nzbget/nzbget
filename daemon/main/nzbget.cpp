@@ -66,6 +66,7 @@
 #include "QueueCoordinator.h"
 #include "UrlCoordinator.h"
 #include "RemoteServer.h"
+#include "WebServer.h"
 #include "RemoteClient.h"
 #include "MessageBase.h"
 #include "DiskState.h"
@@ -76,6 +77,8 @@
 #include "Scheduler.h"
 #include "Scanner.h"
 #include "FeedCoordinator.h"
+#include "Service.h"
+#include "DiskService.h"
 #include "Maintenance.h"
 #include "ArticleWriter.h"
 #include "StatMeter.h"
@@ -98,6 +101,7 @@ void Reload();
 void Cleanup();
 void ProcessClientRequest();
 void ProcessWebGet();
+void ProcessSigVerify();
 #ifndef WIN32
 void Daemonize();
 #endif
@@ -124,6 +128,8 @@ FeedCoordinator* g_pFeedCoordinator = NULL;
 Maintenance* g_pMaintenance = NULL;
 ArticleCache* g_pArticleCache = NULL;
 QueueScriptCoordinator* g_pQueueScriptCoordinator = NULL;
+ServiceCoordinator* g_pServiceCoordinator = NULL;
+DiskService* g_pDiskService = NULL;
 int g_iArgumentCount;
 char* (*g_szEnvironmentVariables)[] = NULL;
 char* (*g_szArguments)[] = NULL;
@@ -149,7 +155,11 @@ int main(int argc, char *argv[], char *argp[])
 #endif
 #endif
 
-	Util::InitVersionRevision();
+	Util::Init();
+
+	g_iArgumentCount = argc;
+	g_szArguments = (char*(*)[])argv;
+	g_szEnvironmentVariables = (char*(*)[])argp;
 
 	if (argc > 1 && (!strcmp(argv[1], "-tests") || !strcmp(argv[1], "--tests")))
 	{
@@ -160,7 +170,11 @@ int main(int argc, char *argv[], char *argp[])
 		return 1;
 #endif
 	}
-	
+
+#ifdef ENABLE_TESTS
+	TestCleanup();
+#endif
+
 #ifdef WIN32
 	InstallUninstallServiceCheck(argc, argv);
 #endif
@@ -170,10 +184,6 @@ int main(int argc, char *argv[], char *argp[])
 #endif
 
 	srand(time(NULL));
-
-	g_iArgumentCount = argc;
-	g_szArguments = (char*(*)[])argv;
-	g_szEnvironmentVariables = (char*(*)[])argp;
 
 #ifdef WIN32
 	for (int i=0; i < argc; i++)
@@ -226,6 +236,7 @@ void Run(bool bReload)
 	g_pWinConsole->InitAppMode();
 #endif
 
+	g_pServiceCoordinator = new ServiceCoordinator();
 	g_pServerPool = new ServerPool();
 	g_pScheduler = new Scheduler();
 	g_pQueueCoordinator = new QueueCoordinator();
@@ -239,6 +250,7 @@ void Run(bool bReload)
 	g_pArticleCache = new ArticleCache();
 	g_pMaintenance = new Maintenance();
 	g_pQueueScriptCoordinator = new QueueScriptCoordinator();
+	g_pDiskService = new DiskService();
 
 	BootConfig();
 
@@ -250,7 +262,6 @@ void Run(bool bReload)
 	}
 #endif
 	
-	g_pLog->InitOptions();
 	g_pScanner->InitOptions();
 	g_pQueueScriptCoordinator->InitOptions();
 
@@ -301,6 +312,12 @@ void Run(bool bReload)
 		return;
 	}
 
+	if (g_pCommandLineParser->GetSigVerify())
+	{
+		ProcessSigVerify();
+		return;
+	}
+
 	// client request
 	if (g_pCommandLineParser->GetClientOperation() != CommandLineParser::opClientNoOperation)
 	{
@@ -312,6 +329,7 @@ void Run(bool bReload)
 	// Setup the network-server
 	if (g_pOptions->GetServerMode())
 	{
+		WebProcessor::Init();
 		g_pRemoteServer = new RemoteServer(false);
 		g_pRemoteServer->Start();
 
@@ -354,10 +372,11 @@ void Run(bool bReload)
 		if (!g_pCommandLineParser->GetServerMode())
 		{
 			const char* szCategory = g_pCommandLineParser->GetAddCategory() ? g_pCommandLineParser->GetAddCategory() : "";
-			NZBFile* pNZBFile = NZBFile::Create(g_pCommandLineParser->GetArgFilename(), szCategory);
-			if (!pNZBFile)
+			NZBFile* pNZBFile = new NZBFile(g_pCommandLineParser->GetArgFilename(), szCategory);
+			if (!pNZBFile->Parse())
 			{
 				printf("Parsing NZB-document %s failed\n\n", g_pCommandLineParser->GetArgFilename() ? g_pCommandLineParser->GetArgFilename() : "N/A");
+				delete pNZBFile;
 				return;
 			}
 			g_pScanner->InitPPParameters(szCategory, pNZBFile->GetNZBInfo()->GetParameters(), false);
@@ -377,6 +396,7 @@ void Run(bool bReload)
 		g_pUrlCoordinator->Start();
 		g_pPrePostProcessor->Start();
 		g_pFeedCoordinator->Start();
+		g_pServiceCoordinator->Start();
 		if (g_pOptions->GetArticleCache() > 0)
 		{
 			g_pArticleCache->Start();
@@ -387,6 +407,7 @@ void Run(bool bReload)
 			g_pUrlCoordinator->IsRunning() || 
 			g_pPrePostProcessor->IsRunning() ||
 			g_pFeedCoordinator->IsRunning() ||
+			g_pServiceCoordinator->IsRunning() ||
 #ifdef WIN32
 			g_pWinConsole->IsRunning() ||
 #endif
@@ -418,6 +439,10 @@ void Run(bool bReload)
 				{
 					g_pArticleCache->Stop();
 				}
+				if (!g_pServiceCoordinator->IsStopped())
+				{
+					g_pServiceCoordinator->Stop();
+				}
 			}
 			usleep(100 * 1000);
 		}
@@ -427,6 +452,7 @@ void Run(bool bReload)
 		debug("UrlCoordinator stopped");
 		debug("PrePostProcessor stopped");
 		debug("FeedCoordinator stopped");
+		debug("ServiceCoordinator stopped");
 		debug("ArticleCache stopped");
 	}
 
@@ -507,9 +533,10 @@ protected:
 	}
 
 	virtual void		AddFeed(int iID, const char* szName, const char* szUrl, int iInterval,
-							const char* szFilter, bool bPauseNzb, const char* szCategory, int iPriority)
+							const char* szFilter, bool bBacklog, bool bPauseNzb, const char* szCategory,
+							int iPriority, const char* szFeedScript)
 	{
-		g_pFeedCoordinator->AddFeed(new FeedInfo(iID, szName, szUrl, iInterval, szFilter, bPauseNzb, szCategory, iPriority));
+		g_pFeedCoordinator->AddFeed(new FeedInfo(iID, szName, szUrl, bBacklog, iInterval, szFilter, bPauseNzb, szCategory, iPriority, szFeedScript));
 	}
 
 	virtual void		AddTask(int iID, int iHours, int iMinutes, int iWeekDaysBits,
@@ -541,6 +568,8 @@ void BootConfig()
 	g_pOptions->SetRemoteClientMode(g_pCommandLineParser->GetRemoteClientMode());
 	g_pOptions->SetServerMode(g_pCommandLineParser->GetServerMode());
 	g_pOptions->SetPauseDownload(g_pCommandLineParser->GetPauseDownload());
+
+	g_pLog->InitOptions();
 
 	if (g_pOptions->GetFatalError())
 	{
@@ -677,16 +706,22 @@ void ProcessWebGet()
 	downloader.SetOutputFilename(g_pCommandLineParser->GetWebGetFilename());
 	downloader.SetInfoName("WebGet");
 
-	int iRedirects = 0;
-	WebDownloader::EStatus eStatus = WebDownloader::adRedirect;
-	while (eStatus == WebDownloader::adRedirect && iRedirects < 5)
-	{
-		iRedirects++;
-		eStatus = downloader.Download();
-	}
+	WebDownloader::EStatus eStatus = downloader.DownloadWithRedirects(5);
 	bool bOK = eStatus == WebDownloader::adFinished;
 
 	exit(bOK ? 0 : 1);
+}
+
+void ProcessSigVerify()
+{
+#ifdef HAVE_OPENSSL
+	bool bOK = Maintenance::VerifySignature(g_pCommandLineParser->GetLastArg(),
+		g_pCommandLineParser->GetSigFilename(), g_pCommandLineParser->GetPubKeyFilename());
+	exit(bOK ? 93 : 1);
+#else
+	printf("ERROR: Could not verify signature, the program was compiled without OpenSSL support\n");
+	exit(1);	
+#endif
 }
 
 void ExitProc()
@@ -708,11 +743,13 @@ void ExitProc()
 		if (g_pQueueCoordinator)
 		{
 			debug("Stopping QueueCoordinator");
+			g_pServiceCoordinator->Stop();
 			g_pQueueCoordinator->Stop();
 			g_pUrlCoordinator->Stop();
 			g_pPrePostProcessor->Stop();
 			g_pFeedCoordinator->Stop();
 			g_pArticleCache->Stop();
+			g_pQueueScriptCoordinator->Stop();
 #ifdef WIN32
 			g_pWinConsole->Stop();
 #endif
@@ -840,6 +877,16 @@ void Cleanup()
 	delete g_pStatMeter;
 	g_pStatMeter = NULL;
 	debug("StatMeter deleted");
+
+	debug("Deleting ServiceCoordinator");
+	delete g_pServiceCoordinator;
+	g_pServiceCoordinator = NULL;
+	debug("ServiceCoordinator deleted");
+
+	debug("Deleting DiskService");
+	delete g_pDiskService;
+	g_pDiskService = NULL;
+	debug("DiskService deleted");
 
 	if (!g_bReloading)
 	{

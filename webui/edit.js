@@ -76,7 +76,6 @@ var DownloadsEditDialog = (new function($)
 			{
 				filterInput: '#DownloadsEdit_FileTable_filter',
 				pagerContainer: '#DownloadsEdit_FileTable_pager',
-				filterCaseSensitive: false,
 				headerCheck: '#DownloadsEdit_FileTable > thead > tr:first-child',
 				pageSize: 10000,
 				hasHeader: true,
@@ -279,6 +278,8 @@ var DownloadsEditDialog = (new function($)
 		$DownloadsEditDialog.restoreTab();
 
 		$('#DownloadsEdit_FileTable_filter').val('');
+		$DownloadsFileTable.fasttable('setCurPage', 1);
+		$DownloadsFileTable.fasttable('applyFilter', '');
 
 		LogTab.reset('Downloads');
 
@@ -589,11 +590,15 @@ var DownloadsEditDialog = (new function($)
 				file.status = file.Paused ? (file.ActiveDownloads > 0 ? 'pausing' : 'paused') : (file.ActiveDownloads > 0 ? 'downloading' : 'queued');
 			}
 
+			var FileSizeMB = (file.FileSizeHi * 4096) + (file.FileSizeLo / 1024 / 1024);
+			var RemainingSizeMB = (file.RemainingSizeHi * 4096) + (file.RemainingSizeLo / 1024 / 1024);
 			var age = Util.formatAge(file.PostTime + UISettings.timeZoneCorrection*60*60);
-			var size = Util.formatSizeMB(0, file.FileSizeLo);
-			if (file.FileSizeLo !== file.RemainingSizeLo)
+			var size = Util.formatSizeMB(FileSizeMB, file.FileSizeLo);
+			if (FileSizeMB !== RemainingSizeMB || file.FileSizeLo !== file.RemainingSizeLo)
 			{
-				size = '(' + Util.round0(file.RemainingSizeLo / file.FileSizeLo * 100) + '%) ' + size;
+				size = '(' + Util.round0((file.FileSizeHi > 0 ?
+					RemainingSizeMB / FileSizeMB :
+					file.RemainingSizeLo / file.FileSizeLo) * 100) + '%) ' + size;
 			}
 
 			var status;
@@ -627,14 +632,13 @@ var DownloadsEditDialog = (new function($)
 				id: file.ID,
 				file: file,
 				fields: fields,
-				search: file.status + ' ' + file.Filename + ' ' + age + ' ' + size
+				data: { status: file.status, name: file.Filename, age: age, size: size, _search: true }
 			};
 
 			data.push(item);
 		}
 
 		$DownloadsFileTable.fasttable('update', data);
-		$DownloadsFileTable.fasttable('setCurPage', 1);
 	}
 
 	function fileTableRenderCellCallback(cell, index, item)
@@ -653,7 +657,8 @@ var DownloadsEditDialog = (new function($)
 		}
 
 		var checkedRows = $DownloadsFileTable.fasttable('checkedRows');
-		if (checkedRows.length == 0)
+		var checkedCount = $DownloadsFileTable.fasttable('checkedCount');
+		if (checkedCount === 0)
 		{
 			Notification.show('#Notif_Edit_Select');
 			return;
@@ -678,7 +683,7 @@ var DownloadsEditDialog = (new function($)
 			}
 			var file = files[n];
 
-			if (checkedRows.indexOf(file.ID) > -1)
+			if (checkedRows[file.ID])
 			{
 				editIDList.push(file.ID);
 
@@ -923,6 +928,8 @@ var EditUI = (new function($)
 						success = '99.9%';
 						failures = '0.1%';
 					}
+					success = '<span title="' + stat.SuccessArticles + ' article' + (stat.SuccessArticles === 1 ? '' : 's') + '">' + success + '</span>';
+					failures = '<span title="' + stat.FailedArticles + ' article' + (stat.FailedArticles === 1 ? '' : 's') + '">' + failures + '</span>';
 					break;
 				}
 			}
@@ -932,7 +939,6 @@ var EditUI = (new function($)
 			{
 				id: server.ID,
 				fields: fields,
-				search: ''
 			};
 			data.push(item);
 		}
@@ -1103,7 +1109,6 @@ var LogTab = (new function($)
 			{
 				filterInput: '#' + name + 'Edit_LogTable_filter',
 				pagerContainer: '#' + name + 'Edit_LogTable_pager',
-				filterCaseSensitive: false,
 				pageSize: recordsPerPage,
 				maxPages: 3,
 				hasHeader: true,
@@ -1115,6 +1120,8 @@ var LogTab = (new function($)
 	{
 		var $LogTable = $('#' + name + 'Edit_LogTable');
 		$LogTable.fasttable('update', []);
+		$LogTable.fasttable('setCurPage', 1);
+		$LogTable.fasttable('applyFilter', '');
 
 		$('#' + name + 'Edit_LogTable_filter').val('');
 	}
@@ -1159,21 +1166,20 @@ var LogTab = (new function($)
 				{
 					id: message,
 					fields: fields,
-					search: message.Kind + ' ' + time + ' ' + message.Text
+					data: { kind: message.Kind, time: time, text: message.Text, _search: true }
 				};
 
 				data.unshift(item);
 			}
 
 			$LogTable.fasttable('update', data);
-			$LogTable.fasttable('setCurPage', 1);
 		}
 		
 		var recordsPerPage = UISettings.read('ItemLogRecordsPerPage', 10);
 		$('#' + name + 'LogRecordsPerPage').val(recordsPerPage);
 		
 		$('#' + name + 'EditDialog .loading-block').show();
-		RPC.call('loadlog', [item.NZBID, 0, 1000], logLoaded);
+		RPC.call('loadlog', [item.NZBID, 0, 10000], logLoaded);
 	}
 
 	function logTableRenderCellCallback(cell, index, item)
@@ -1583,21 +1589,28 @@ var HistoryEditDialog = (new function()
 
 		curHist = hist;
 
-		var status;
+		var status = '';
 		if (hist.Kind === 'NZB')
 		{
-			status = '<span class="label label-status ' +
-				(hist.Health === 1000 ? 'label-success' : hist.Health >= hist.CriticalHealth ? 'label-warning' : 'label-important') +
-				'">health: ' + Math.floor(hist.Health / 10) + '%</span>';
+			if (hist.DeleteStatus === '' || hist.DeleteStatus === 'HEALTH')
+			{
+				status = '<span class="label label-status ' +
+					(hist.Health === 1000 ? 'label-success' : hist.Health >= hist.CriticalHealth ? 'label-warning' : 'label-important') +
+					'">health: ' + Math.floor(hist.Health / 10) + '%</span>';
+			}
 
 			if (hist.MarkStatus !== 'NONE')
 			{
 				status += ' ' + buildStatus(hist.MarkStatus, 'Mark: ');
 			}
 
-			if (hist.DeleteStatus === 'NONE')
+			else if (hist.DeleteStatus === 'NONE')
 			{
-				status += ' ' + buildStatus(hist.ParStatus, 'Par: ') +
+				var exParStatus = hist.ExParStatus === 'RECIPIENT' ? ' ' + '<span title="Repaired using ' + hist.ExtraParBlocks + ' par-block' + 
+						(hist.ExtraParBlocks > 1 ? 's' : '') + ' from other duplicate(s)">' + buildStatus(hist.ExParStatus, 'ExPar: ') + '</span>' :
+					hist.ExParStatus === 'DONOR' ? ' ' + '<span title="Donated ' + -hist.ExtraParBlocks + ' par-block' + 
+						(-hist.ExtraParBlocks > 1 ? 's' : '') + ' to repair other duplicate(s)">' + buildStatus(hist.ExParStatus, 'ExPar: ') + '</span>' : '';
+				status += ' ' + buildStatus(hist.ParStatus, 'Par: ') + exParStatus +
 					' ' + (Options.option('Unpack') == 'yes' || hist.UnpackStatus != 'NONE' ? buildStatus(hist.UnpackStatus, 'Unpack: ') : '')  +
 					' ' + (hist.MoveStatus === "FAILURE" ? buildStatus(hist.MoveStatus, 'Move: ') : '');
 			}
@@ -1757,6 +1770,8 @@ var HistoryEditDialog = (new function()
 		{
 			case 'SUCCESS':
 			case 'GOOD':
+			case 'RECIPIENT':
+			case 'DONOR':
 				return '<span class="label label-status label-success">' + prefix + status + '</span>';
 			case 'FAILURE':
 				return '<span class="label label-status label-important">' + prefix + 'failure</span>';
@@ -1769,13 +1784,17 @@ var HistoryEditDialog = (new function()
 			case 'PASSWORD':
 				return '<span class="label label-status label-warning">' + prefix + status + '</span>';
 			case 'DELETED-DUPE':
-				return '<span class="label label-status">' + prefix + 'dupe</span>';
 			case 'DELETED-MANUAL':
-				return '<span class="label label-status">' + prefix + 'manual</span>';
+			case 'DELETED-COPY':
+			case 'DELETED-GOOD':
+			case 'DELETED-SUCCESS':
+				return '<span class="label label-status">' + prefix + status.substr(8).toLowerCase() + '</span>';
 			case 'DELETED-HEALTH':
 				return '<span class="label label-status label-important">' + prefix + 'health</span>';
 			case 'DELETED-BAD':
 				return '<span class="label label-status label-important">' + prefix + 'bad</span>';
+			case 'DELETED-SCAN':
+				return '<span class="label label-status label-important">' + prefix + 'scan</span>';
 			case 'SCAN_SKIPPED':
 				return '<span class="label label-status label-warning"">' + prefix + 'skipped</span>';
 			case 'NONE':
@@ -1798,6 +1817,8 @@ var HistoryEditDialog = (new function()
 		table += '<tr><td>Verification time </td><td class="text-center">' + Util.formatTimeHMS(hist.ParTimeSec - hist.RepairTimeSec) + '</td></tr>';
 		table += '<tr><td>Repair time</td><td class="text-center">' + Util.formatTimeHMS(hist.RepairTimeSec) + '</td></tr>';
 		table += '<tr><td>Unpack time</td><td class="text-center">' + Util.formatTimeHMS(hist.UnpackTimeSec) + '</td></tr>';
+		table += hist.ExtraParBlocks > 0 ? '<tr><td>Received extra par-blocks</td><td class="text-center">' + hist.ExtraParBlocks + '</td></tr>' :
+			hist.ExtraParBlocks < 0 ? '<tr><td>Donated par-blocks</td><td class="text-center">' + - hist.ExtraParBlocks + '</td></tr>' : '';
 
 		$('#HistoryEdit_TimeStatsTable tbody').html(table);
 	}

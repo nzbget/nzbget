@@ -98,48 +98,6 @@ void Mutex::Unlock()
 }
 
 
-#ifdef HAVE_SPINLOCK
-SpinLock::SpinLock()
-{
-#ifdef WIN32
-	m_pSpinLockObj = (CRITICAL_SECTION *)malloc(sizeof(CRITICAL_SECTION));
-	InitializeCriticalSectionAndSpinCount((CRITICAL_SECTION *)m_pSpinLockObj, 0x00FFFFFF);
-#else
-	m_pSpinLockObj = (pthread_spinlock_t *)malloc(sizeof(pthread_spinlock_t));
-	pthread_spin_init((pthread_spinlock_t *)m_pSpinLockObj, PTHREAD_PROCESS_PRIVATE);
-#endif
-}
-
-SpinLock::~SpinLock()
-{
-#ifdef WIN32
-	DeleteCriticalSection((CRITICAL_SECTION *)m_pSpinLockObj);
-#else
-	pthread_spin_destroy((pthread_spinlock_t *)m_pSpinLockObj);
-#endif
-	free((void*)m_pSpinLockObj);
-}
-
-void SpinLock::Lock()
-{
-#ifdef WIN32
-	EnterCriticalSection((CRITICAL_SECTION *)m_pSpinLockObj);
-#else
-	pthread_spin_lock((pthread_spinlock_t *)m_pSpinLockObj);
-#endif
-}
-
-void SpinLock::Unlock()
-{
-#ifdef WIN32
-	LeaveCriticalSection((CRITICAL_SECTION *)m_pSpinLockObj);
-#else
-	pthread_spin_unlock((pthread_spinlock_t *)m_pSpinLockObj);
-#endif
-}
-#endif
-
-
 void Thread::Init()
 {
 	debug("Initializing global thread data");

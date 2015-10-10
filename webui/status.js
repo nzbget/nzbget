@@ -1,7 +1,7 @@
 /*
  * This file is part of nzbget
  *
- * Copyright (C) 2012-2014 Andrey Prygunkov <hugbug@users.sourceforge.net>
+ * Copyright (C) 2012-2015 Andrey Prygunkov <hugbug@users.sourceforge.net>
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -26,7 +26,8 @@
  * In this module:
  *   1) Status Infos on main page (speed, time, paused state etc.);
  *   2) Statistics and Status dialog;
- *   3) Limit dialog (speed and active news servers).
+ *   3) Limit dialog (speed and active news servers);
+ *   4) Filter menu.
  */
 
 /*** STATUS INFOS ON MAIN PAGE AND STATISTICS DIALOG ****************************************/
@@ -100,6 +101,7 @@ var Status = (new function($)
 		$('body > .modal').on('hide', modalHide);
 
 		StatDialog.init();
+		FilterMenu.init();
 	}
 
 	this.update = function()
@@ -229,7 +231,7 @@ var Status = (new function($)
 	function updatePlayAnim()
 	{
 		// Animate if either any downloads or post-processing is in progress
-		var Anim = (!status.ServerStandBy || status.FeedActive ||
+		var Anim = (!status.ServerStandBy || status.FeedActive || status.QueueScriptCount > 0 ||
 			(status.PostJobCount > 0 && !status.PostPaused) ||
 			(status.UrlCount > 0 && (!status.DownloadPaused || Options.option('UrlForce') === 'yes'))) &&
 			(UISettings.refreshInterval !== 0) && !UISettings.connectionError;
@@ -375,6 +377,7 @@ var StatDialog = (new function($)
 	var $StatDialog_DataCurrentSpeed;
 	var $StatDialog_DataSpeedLimit;
 	var $StatDialog_ArticleCache;
+	var $StatDialog_QueueScripts;
 	var $StatDialog_ChartBlock;
 	var $StatDialog_Server;
 	var $StatRangeDialog;
@@ -421,7 +424,8 @@ var StatDialog = (new function($)
 		$StatDialog_DataAverageSpeed = $('#StatDialog_DataAverageSpeed');
 		$StatDialog_DataCurrentSpeed = $('#StatDialog_DataCurrentSpeed');
 		$StatDialog_DataSpeedLimit = $('#StatDialog_DataSpeedLimit');
-		$StatDialog_ArticleCache = $('#StatDialog_ArticleCache');		
+		$StatDialog_ArticleCache = $('#StatDialog_ArticleCache');
+		$StatDialog_QueueScripts = $('#StatDialog_QueueScripts');
 		$StatDialog_ChartBlock = $('#StatDialog_ChartBlock');
 		$StatDialog_Server = $('#StatDialog_Server');
 		$StatRangeDialog = $('#StatRangeDialog');
@@ -498,6 +502,7 @@ var StatDialog = (new function($)
 		$('#StatDialog_BackSpace').show();
 		$('#StatDialog_Title').text('Statistics and Status');
 		Util.show('#StatDialog_ArticleCache_Row', Options.option('ArticleCache') !== '0');
+		Util.show('#StatDialog_QueueScripts_Row', Status.status.QueueScriptCount > 0);
 		$StatDialog.removeClass('modal-large').addClass('modal-mini');
 		monthListInitialized = false;
 		updateServerList();
@@ -546,6 +551,7 @@ var StatDialog = (new function($)
 		$StatDialog_DataCurrentSpeed.html(Util.formatSpeed(status.DownloadRate));
 		$StatDialog_DataSpeedLimit.html(Util.formatSpeed(status.DownloadLimit));
 		$StatDialog_ArticleCache.html(Util.formatSizeMB(status.ArticleCacheMB, status.ArticleCacheLo));
+		$StatDialog_QueueScripts.html(status.QueueScriptCount);
 
 		var content = '';
 		content += '<tr><td>Download</td><td class="text-right">' +
@@ -1312,9 +1318,20 @@ var LimitDialog = (new function($)
 		});
 	}
 
-	this.showModal = function()
+	this.clicked = function(e)
 	{
-		changed = false;
+		if (e.metaKey || e.ctrlKey)
+		{
+			toggleLimit();
+		}
+		else
+		{
+			showModal();
+		}
+	}
+
+	function showModal()
+	{
 		var rate = Util.round0(Status.status.DownloadLimit / 1024);
 		$LimitDialog_SpeedInput.val(rate > 0 ? rate : '');
 		updateTable();
@@ -1333,7 +1350,6 @@ var LimitDialog = (new function($)
 			{
 				id: server.ID,
 				fields: fields,
-				search: ''
 			};
 			data.push(item);
 
@@ -1360,6 +1376,41 @@ var LimitDialog = (new function($)
 			}
 		}
 
+		var checkedRows = $ServerTable.fasttable('checkedRows');
+		var servers = [];
+
+		for (var i=0; i < Status.status.NewsServers.length; i++)
+		{
+			var server = Status.status.NewsServers[i];
+			var selected = checkedRows[server.ID] !== undefined;
+			if (server.Active != selected)
+			{
+				servers.push([server.ID, selected]);
+			}
+		}
+
+		saveLimit(rate, servers);
+	}
+
+	function saveLimit(rate, servers)
+	{
+		function saveServers()
+		{
+			if (servers.length > 0)
+			{
+				changed = true;
+				RPC.call('editserver', servers, function()
+				{
+					completed();
+				});
+			}
+			else
+			{
+				completed();
+			}
+		}
+
+		changed = false;
 		var oldRate = Util.round0(Status.status.DownloadLimit / 1024);
 
 		if (rate != oldRate)
@@ -1376,35 +1427,6 @@ var LimitDialog = (new function($)
 		}
 	}
 
-	function saveServers()
-	{
-		var checkedRows = $ServerTable.fasttable('checkedRows');
-		var command = [];
-
-		for (var i=0; i < Status.status.NewsServers.length; i++)
-		{
-			var server = Status.status.NewsServers[i];
-			var selected = checkedRows.indexOf(server.ID) > -1;
-			if (server.Active != selected)
-			{
-				command.push([server.ID, selected]);
-				changed = true;
-			}
-		}
-
-		if (command.length > 0)
-		{
-			RPC.call('editserver', command, function()
-			{
-				completed();
-			});
-		}
-		else
-		{
-			completed();
-		}
-	}
-
 	function completed()
 	{
 		$LimitDialog.modal('hide');
@@ -1413,5 +1435,177 @@ var LimitDialog = (new function($)
 			Notification.show('#Notif_SetSpeedLimit');
 		}
 		Refresher.update();
+	}
+
+	function toggleLimit()
+	{
+		var limited = Status.status.DownloadLimit > 0;
+		for (var i=0; i < Status.status.NewsServers.length; i++)
+		{
+			var server = Status.status.NewsServers[i];
+			limited = limited || !server.Active;
+		}
+
+		var defRate = Options.option('DownloadRate');
+		var rate = limited ? 0 : parseInt(defRate === '' ? 0 : defRate);
+		var servers = [];
+
+		for (var i=0; i < Status.status.NewsServers.length; i++)
+		{
+			var server = Status.status.NewsServers[i];
+			var defActive = Options.option('Server' + (i + 1) + '.Active') === 'yes';
+			var newActive = limited ? true : defActive;
+			if (server.Active != newActive)
+			{
+				servers.push([server.ID, newActive]);
+			}
+		}
+
+		saveLimit(rate, servers);
+	}
+}(jQuery));
+
+/*** FILTER MENU *********************************************************/
+
+var FilterMenu = (new function($)
+{
+	'use strict';
+
+	var $SaveFilterDialog;
+	var $SaveFilterInput;
+	var $Table_filter;
+	var ignoreClick = false;
+	var $Table_filter;
+	var tabName;
+	var items;
+	
+	this.init = function()
+	{
+		$SaveFilterDialog = $('#SaveFilterDialog');
+		$SaveFilterInput = $('#SaveFilterInput');
+
+		if (UISettings.setFocus)
+		{
+			$SaveFilterDialog.on('shown', function ()
+			{
+				$SaveFilterInput.focus();
+			});
+		}
+	}
+
+	this.setTab = function(tabname)
+	{
+		tabName = tabname;
+		$Table_filter = $('#' + tabName + 'Table_filter');
+		load();
+	}
+
+	this.redraw = function()
+	{
+		var menu = $('#FilterMenu');
+		var menuItemTemplate = $('.filter-menu-template', menu);
+		var insertPos = $('#FilterMenu_Divider', menu);
+
+		$('.filter-menu', menu).remove();
+
+		for (var i = 0; i < items.length; i++)
+		{
+			var name = items[i].name;
+			var item = menuItemTemplate.clone().removeClass('filter-menu-template').removeClass('hide').addClass('filter-menu');
+			var t = $('span', item);
+			t.text(name);
+			var a = $('a', item);
+			a.click(applyFilter);
+			a.attr('data-id', i);
+			var im = $('button', item);
+			im.click(deleteFilter);
+			im.attr('data-id', i);
+			insertPos.before(item);
+		}
+		
+		Util.show('#FilterMenu_Empty', items.length === 0);
+		
+		if (UISettings.miniTheme)
+		{
+			Frontend.alignPopupMenu('#FilterMenu');
+		}
+	}
+
+	function applyFilter()
+	{
+		if (ignoreClick)
+		{
+			ignoreClick = false;
+			return;
+		}
+		var id = parseInt($(this).attr('data-id'));
+		$Table_filter.val(items[id].filter);
+		$('#' + tabName +'Table').fasttable('applyFilter', $Table_filter.val());
+	}
+
+	function deleteFilter()
+	{
+		ignoreClick = true;
+		var id = parseInt($(this).attr('data-id'));
+		items.splice(id, 1);
+		save();
+	}
+
+	this.saveDialogClick = function()
+	{
+		if ($Table_filter.val() === '')
+		{
+			Notification.show('#Notif_SaveFilterEmpty');
+			return;
+		}
+
+		var filter = $Table_filter.val();
+		var name = filter;
+
+		// reuse the name if the filter already exists
+		for (var i = 0; i < items.length; i++)
+		{
+			if (items[i].filter === filter)
+			{
+				name = items[i].name;
+				break;
+			}
+		}
+
+		$SaveFilterInput.val(name);
+		$SaveFilterDialog.modal();
+	}
+	
+	this.saveClick = function()
+	{
+		$SaveFilterDialog.modal('hide');
+
+		var name = $SaveFilterInput.val();
+		var filter = $Table_filter.val();
+
+		// rename if already exists
+		for (var i = 0; i < items.length; i++)
+		{
+			if (items[i].filter === filter)
+			{
+				items[i].name = name;
+				save();
+				return;
+			}
+		}
+		
+		// doesn't exist - add new
+		items.push({name: name, filter: filter});
+		save();
+	}
+
+	function load()
+	{
+		items = JSON.parse(UISettings.read('Filter_' + tabName, '[]'));
+	}
+
+	function save()
+	{
+		UISettings.write('Filter_' + tabName, JSON.stringify(items));
 	}
 }(jQuery));
