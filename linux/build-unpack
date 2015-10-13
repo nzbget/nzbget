@@ -167,10 +167,10 @@ for TARGET in $TARGETS; do
     CXX=$TOOLCHAIN_ROOT/output/host/usr/bin/$ARCH-linux-g++ \
         CC=$TOOLCHAIN_ROOT/output/host/usr/bin/$ARCH-linux-gcc \
         STRIP=$TOOLCHAIN_ROOT/output/host/usr/bin/$ARCH-linux-strip \
-        CXXFLAGS=-O3 \
+        CXXFLAGS=-O2 \
         LDFLAGS=-static \
         make $BUILDTARGET
-    
+
     cp $EXEDIR$EXENAME ../../setup/$EXENAME-$TARGET
     cp $LICENSE ../../setup/license-$UNPACKER.txt
 
