@@ -1,3 +1,7 @@
+nzbget-17.0:
+  - please see repository change log at
+    https://github.com/nzbget/nzbget/commits/develop
+
 nzbget-16.0:
   - moved project hosting to GitHub:
         - moved source code repository from subversion to git;
