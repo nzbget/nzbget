@@ -490,7 +490,7 @@ var RPC = (new function($)
 		
 		if (XAuthToken !== undefined)
 		{
-			xhr.setRequestHeader('X-Auth-Token', XAuthToken);
+			xhr.setRequestHeader('X-Private-Auth-Token', XAuthToken);
 			// Remove default authorization header to improve security (some browsers may still send it)
 			xhr.setRequestHeader('Authorization', '');
 		}
@@ -527,7 +527,7 @@ var RPC = (new function($)
 							{
 								if (result.error == null)
 								{
-									XAuthToken = xhr.getResponseHeader('X-Auth-Token');
+									XAuthToken = xhr.getResponseHeader('X-Private-Auth-Token');
 									res = result.result;
 									completed_callback(res);
 									return;

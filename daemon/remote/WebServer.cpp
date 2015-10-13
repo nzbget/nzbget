@@ -82,7 +82,7 @@ void WebProcessor::Init()
 			}
 		}
 		m_szServerAuthToken[j][sizeof(m_szServerAuthToken[j]) - 1] = '\0';
-		debug("X-Auth-Token[%i]: %s", j, m_szServerAuthToken[j]);
+		debug("X-Private-Auth-Token[%i]: %s", j, m_szServerAuthToken[j]);
 	}
 }
 
@@ -185,7 +185,7 @@ void WebProcessor::ParseHeaders()
 		{
 			m_szOrigin = strdup(p + 8);
 		}
-		if (!strncasecmp(p, "X-Auth-Token: ", 14))
+		if (!strncasecmp(p, "X-Private-Auth-Token: ", 14))
 		{
 			strncpy(m_szAuthToken, p + 14, sizeof(m_szAuthToken)-1);
 			m_szAuthToken[sizeof(m_szAuthToken)-1] = '\0';
@@ -198,7 +198,7 @@ void WebProcessor::ParseHeaders()
 
 	debug("URL=%s", m_szUrl);
 	debug("Authorization=%s", m_szAuthInfo);
-	debug("X-Auth-Token=%s", m_szAuthToken);
+	debug("X-Private-Auth-Token=%s", m_szAuthToken);
 }
 
 void WebProcessor::ParseURL()
@@ -255,7 +255,7 @@ bool WebProcessor::CheckCredentials()
 	{
 		if (Util::EmptyStr(m_szAuthInfo))
 		{
-			// Authorization via X-Auth-Token
+			// Authorization via X-Private-Auth-Token
 			for (int j = uaControl; j <= uaAdd; j++)
 			{
 				if (!strcmp(m_szAuthToken, m_szServerAuthToken[j]))
@@ -468,7 +468,7 @@ void WebProcessor::SendBodyResponse(const char* szBody, int iBodyLen, const char
 		"Access-Control-Allow-Credentials: true\r\n"
 		"Access-Control-Max-Age: 86400\r\n"
 		"Access-Control-Allow-Headers: Content-Type, Authorization\r\n"
-		"X-Auth-Token: %s\r\n"
+		"X-Private-Auth-Token: %s\r\n"
 		"Content-Length: %i\r\n"
 		"%s"					// Content-Type: xxx
 		"%s"					// Content-Encoding: gzip
