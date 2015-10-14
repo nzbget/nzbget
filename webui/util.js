@@ -491,8 +491,6 @@ var RPC = (new function($)
 		if (XAuthToken !== undefined)
 		{
 			xhr.setRequestHeader('X-Private-Auth-Token', XAuthToken);
-			// Remove default authorization header to improve security (some browsers may still send it)
-			xhr.setRequestHeader('Authorization', '');
 		}
 		
 		if (timeout)
