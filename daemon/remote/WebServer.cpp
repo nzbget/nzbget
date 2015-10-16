@@ -157,7 +157,7 @@ void WebProcessor::Execute()
 void WebProcessor::ParseHeaders()
 {
 	// reading http header
-	char szBuffer[256+1];
+	char szBuffer[1024];
 	m_iContentLen = 0;
 	while (char* p = m_pConnection->ReadLine(szBuffer, sizeof(szBuffer), NULL))
 	{
