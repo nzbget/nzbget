@@ -490,7 +490,7 @@ var RPC = (new function($)
 		
 		if (XAuthToken !== undefined)
 		{
-			xhr.setRequestHeader('X-Private-Auth-Token', XAuthToken);
+			xhr.setRequestHeader('X-Auth-Token', XAuthToken);
 		}
 		
 		if (timeout)
@@ -525,7 +525,7 @@ var RPC = (new function($)
 							{
 								if (result.error == null)
 								{
-									XAuthToken = xhr.getResponseHeader('X-Private-Auth-Token');
+									XAuthToken = xhr.getResponseHeader('X-Auth-Token');
 									res = result.result;
 									completed_callback(res);
 									return;
