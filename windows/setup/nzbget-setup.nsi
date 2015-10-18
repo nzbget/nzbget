@@ -36,6 +36,7 @@
 !include "MUI2.nsh"
 !include "FileFunc.nsh"
 !include "LogicLib.nsh"
+!include "WinVer.nsh"
 
 ;--------------------------------
 ;General
@@ -65,7 +66,8 @@ RequestExecutionLevel admin
 !define MUI_WELCOMEFINISHPAGE_BITMAP "install.bmp"
 !define MUI_UNWELCOMEFINISHPAGE_BITMAP "uninstall.bmp"
 
-!define MUI_FINISHPAGE_RUN "$INSTDIR\nzbget.exe"
+!define MUI_FINISHPAGE_RUN
+!define MUI_FINISHPAGE_RUN_FUNCTION RunAction
 !define MUI_FINISHPAGE_SHOWREADME ""
 !define MUI_FINISHPAGE_SHOWREADME_NOTCHECKED
 !define MUI_FINISHPAGE_SHOWREADME_TEXT "Create Desktop Shortcut"
@@ -163,6 +165,19 @@ CreateShortcut "$DESKTOP\NZBGet.lnk" "$INSTDIR\nzbget.exe"
 
 ; Refresh desktop window
 System::Call 'Shell32::SHChangeNotify(i 0x8000000, i 0, i 0, i 0)'
+
+FunctionEnd
+
+
+Function RunAction
+
+${If} ${AtLeastWinVista}
+  ; Starting NZBGet with standard user privileges
+  Exec "runas /trustlevel:0x20000 $\"$INSTDIR\nzbget.exe$\""
+${Else}
+  ; Starting NZBGet with current privileges
+  Exec "$INSTDIR\nzbget.exe"
+${EndIf}
 
 FunctionEnd
 
