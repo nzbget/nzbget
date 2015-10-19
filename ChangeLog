@@ -1,3 +1,10 @@
+nzbget-16.1:
+  - fixed issues with reverse proxies;
+  - fixed unpack failure on older AMD CPUs, when installed via
+    universal Linux installer;
+  - fixed: when the program was started from setup the default directories
+    were created with wrong permission (Windows only).
+
 nzbget-16.0:
   - moved project hosting to GitHub:
         - moved source code repository from subversion to git;
