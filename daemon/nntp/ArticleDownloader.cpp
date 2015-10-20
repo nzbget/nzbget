@@ -452,9 +452,16 @@ ArticleDownloader::EStatus ArticleDownloader::Download()
 				}
 			}
 		}
-		else if (m_eFormat == Decoder::efUnknown && g_pOptions->GetDecode())
+
+		if (m_eFormat == Decoder::efUnknown && g_pOptions->GetDecode())
 		{
 			m_eFormat = Decoder::DetectFormat(line, iLen);
+			if (m_eFormat != Decoder::efUnknown)
+			{
+				// sometimes news servers misbehave and send article body without new line separator between headers and body
+				// if we found decoder signature we know the body is already arrived
+				bBody = true;
+			}
 		}
 
 		// write to output file
