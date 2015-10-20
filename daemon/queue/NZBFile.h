@@ -51,7 +51,7 @@ private:
 	void				ReadPassword();
 #ifdef WIN32
     bool 				ParseNZB(IUnknown* nzb);
-	static void			EncodeURL(const char* szFilename, char* szURL);
+	static void			EncodeURL(const char* szFilename, char* szURL, int iBufLen);
 #else
 	FileInfo*			m_pFileInfo;
 	ArticleInfo*		m_pArticle;

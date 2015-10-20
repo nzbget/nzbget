@@ -533,14 +533,21 @@ bool NZBFile::Parse()
 	doc->put_validateOnParse(VARIANT_FALSE);
 	doc->put_async(VARIANT_FALSE);
 
-	// filename needs to be properly encoded
-	char* szURL = (char*)malloc(strlen(m_szFileName)*3 + 1);
-	EncodeURL(m_szFileName, szURL);
-	debug("url=\"%s\"", szURL);
-	_variant_t v(szURL);
-	free(szURL);
+	_variant_t vFilename(m_szFileName);
 
-	VARIANT_BOOL success = doc->load(v);
+	// 1. first trying to load via filename without URL-encoding (certain charaters doesn't work when encoded)
+	VARIANT_BOOL success = doc->load(vFilename);
+	if (success == VARIANT_FALSE)
+	{
+		// 2. now trying filename encoded as URL
+		char szURL[2048];
+		EncodeURL(m_szFileName, szURL, 2048);
+		debug("url=\"%s\"", szURL);
+		_variant_t vURL(szURL);
+
+		success = doc->load(vURL);
+	}
+
 	if (success == VARIANT_FALSE)
 	{
 		_bstr_t r(doc->GetparseError()->reason);
@@ -574,13 +581,21 @@ bool NZBFile::Parse()
     return true;
 }
 
-void NZBFile::EncodeURL(const char* szFilename, char* szURL)
+void NZBFile::EncodeURL(const char* szFilename, char* szURL, int iBufLen)
 {
-	while (char ch = *szFilename++)
+	char szUtfFilename[2048];
+	strncpy(szUtfFilename, szFilename, 2048);
+	szUtfFilename[2048-1] = '\0';
+	WebUtil::AnsiToUtf8(szUtfFilename, 2048);
+
+	char* szEnd = szURL + iBufLen;
+	for (char* p = szUtfFilename; *p && szURL < szEnd - 3; p++)
 	{
+		char ch = *p;
 		if (('0' <= ch && ch <= '9') ||
 			('a' <= ch && ch <= 'z') ||
-			('A' <= ch && ch <= 'Z') )
+			('A' <= ch && ch <= 'Z') ||
+			ch == '-' || ch == '.' || ch == '_' || ch == '~')
 		{
 			*szURL++ = ch;
 		}
@@ -588,9 +603,9 @@ void NZBFile::EncodeURL(const char* szFilename, char* szURL)
 		{
 			*szURL++ = '%';
 			int a = (unsigned char)ch >> 4;
-			*szURL++ = a > 9 ? a - 10 + 'a' : a + '0';
+			*szURL++ = a > 9 ? a - 10 + 'A' : a + '0';
 			a = ch & 0xF;
-			*szURL++ = a > 9 ? a - 10 + 'a' : a + '0';
+			*szURL++ = a > 9 ? a - 10 + 'A' : a + '0';
 		}
 	}
 	*szURL = NULL;
