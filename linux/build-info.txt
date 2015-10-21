@@ -26,7 +26,7 @@ This script was written to work with toolchain from uClibc's Buildroot-project.
 
 4. Build toolchain for one CPU-architecture (see below);
 	4.1. Download Buildroot distribution archive from http://buildroot.uclibc.org/download.html
-	     (tested with version "buildroot-2015.02");
+	     (currently using version "buildroot-2015.08.01");
 	4.2. Unpack the tarball into 'toolchain'-directory;
 	4.3. Rename the buildroot-directory according to the target CPU-architecture name;
 	     Be careful here, after the toolchain is built the directory cannot be renamed
@@ -39,12 +39,13 @@ This script was written to work with toolchain from uClibc's Buildroot-project.
              - libraries (both static and shared);
          - Toolchain:
              - Kernel Headers (Manually specified Linux version);
-             - (2.6.30) linux version;
+             - (2.6.32) linux version;
              - Custom kernel headers series (2.6.x);
+             - uClibc C library Version (uClibc-ng);
              - Enable large file (files > 2 GB) support;
              - Enable IPv6 support;
              - Enable toolchain locale/i18n support;
-             - GCC compiler Version (gcc 4.9.x);
+             - GCC compiler Version (gcc 5.x);
              - Enable C++ support;
              - Build cross gdb for the host;
          - Target packages:
@@ -68,7 +69,7 @@ This script was written to work with toolchain from uClibc's Buildroot-project.
    test it.
     5.1. Change to the ROOTBUILD-directory and run the build script:
 
-         ./nzbget-build release bin <CPU-Architecture>
+         ./build-nzbget release bin <CPU-Architecture>
 
     5.2. The script creates subdirectory 'nzbget/trunk' and checkouts the source
          code of NZBGet from subversion repository;
@@ -90,7 +91,7 @@ This script was written to work with toolchain from uClibc's Buildroot-project.
          add the architecture name into variable 'ALLTARGETS';
     7.2. Run the build script with:
 
-         ./nzbget-build release installer <CPU-Architecture>
+         ./build-nzbget release installer <CPU-Architecture>
 
     7.3. The created installer supports only one CPU-Architecture;
     7.8. Run the installer on the target machine (with target CPU-Architecture);
@@ -100,7 +101,7 @@ This script was written to work with toolchain from uClibc's Buildroot-project.
 9. To build installer for all CPU-Architectures listed in variable 'ALLTARGETS'
    of the script run the script without choosing CPU-Architecture:
 
-       ./nzbget-build release installer
+       ./build-nzbget release installer
 
 10. When the script is run without any parameters:
    10.1. NZBGet is compiled twice for each CPU-Architecture listed in
@@ -109,16 +110,16 @@ This script was written to work with toolchain from uClibc's Buildroot-project.
 
 Special functions
 -----------------
-By default the script builds from trunk/HEAD. To specify another tag or branch
-pass it to the script, for example to build a tagged version 14.2:
+By default the script builds from HEAD of develop branch. To specify another
+tag or branch pass it to the script, for example to build a tagged version 14.2:
 
-       ./nzbget-build release bin tags/14.2
+       ./build-nzbget release bin tags/v16.0
 
-Installers can built only for version 15.0 (starting from revision r1279).
-Distribution archives can be built for older versions too.
+Installers can be built only for version 15.0 and newer. Distribution archives
+can be built for older versions too.
 
-To build certain revision pass it to the script, for example
+To build on certain history point pass commit SHA to the script, for example
 
-       ./nzbget-build release bin r1279
+       ./build-nzbget release bin 13f5ab738880671a8d8381ef0fabc625e269eeef
 
 To cleanup the output directory before building pass parameter 'cleanup'.
