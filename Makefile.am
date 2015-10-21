@@ -236,7 +236,7 @@ windows_FILES = \
 	daemon/windows/win32.h \
 	daemon/windows/WinConsole.cpp \
 	daemon/windows/WinConsole.h \
-	nzbget.vcproj \
+	nzbget.vcxproj \
 	windows/nzbget-command-shell.bat  \
 	windows/install-update.bat  \
 	windows/README-WINDOWS.txt  \
