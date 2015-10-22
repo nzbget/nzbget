@@ -524,43 +524,54 @@ bool Util::SaveBufferIntoFile(const char* szFileName, const char* szBuffer, int 
 	return iWrittenBytes == iBufLen;
 }
 
-bool Util::CreateSparseFile(const char* szFilename, long long iSize)
+bool Util::CreateSparseFile(const char* szFilename, long long iSize, char* szErrBuf, int iBufSize)
 {
+	*szErrBuf = '\0';
 	bool bOK = false;
 #ifdef WIN32
 	HANDLE hFile = CreateFile(szFilename, GENERIC_WRITE, FILE_SHARE_READ, 0, CREATE_NEW, 0, NULL);
-	if (hFile != INVALID_HANDLE_VALUE)
+	if (hFile == INVALID_HANDLE_VALUE)
 	{
-		// first try to create sparse file (supported only on NTFS partitions),
-		// it may fail but that's OK.
-		DWORD dwBytesReturned;
-		DeviceIoControl(hFile, FSCTL_SET_SPARSE, NULL, 0, NULL, 0, &dwBytesReturned, NULL);
-
-		LARGE_INTEGER iSize64;
-		iSize64.QuadPart = iSize;
-		SetFilePointerEx(hFile, iSize64, NULL, FILE_END);
-		SetEndOfFile(hFile);
-		CloseHandle(hFile);
-		bOK = true;
+		GetLastErrorMessage(szErrBuf, sizeof(iBufSize));
+		return false;
 	}
+	// first try to create sparse file (supported only on NTFS partitions),
+	// it may fail but that's OK.
+	DWORD dwBytesReturned;
+	DeviceIoControl(hFile, FSCTL_SET_SPARSE, NULL, 0, NULL, 0, &dwBytesReturned, NULL);
+
+	LARGE_INTEGER iSize64;
+	iSize64.QuadPart = iSize;
+	SetFilePointerEx(hFile, iSize64, NULL, FILE_END);
+	SetEndOfFile(hFile);
+	CloseHandle(hFile);
+	bOK = true;
 #else
 	// create file
 	FILE* pFile = fopen(szFilename, FOPEN_AB);
-	if (pFile)
+	if (!pFile)
 	{
-		fclose(pFile);
+		GetLastErrorMessage(szErrBuf, sizeof(iBufSize));
+		return false;
 	}
+	fclose(pFile);
+
 	// there are no reliable function to expand file on POSIX, so we must try different approaches,
 	// starting with the fastest one and hoping it will work
-	// 1) set file size using function "truncate" (it is fast, if it works)
+	// 1) set file size using function "truncate" (this is fast, if it works)
 	truncate(szFilename, iSize);
 	// check if it worked
 	bOK = FileSize(szFilename) == iSize;
 	if (!bOK)
 	{
-		// 2) truncate did not work, expanding the file by writing in it (it is slow)
+		// 2) truncate did not work, expanding the file by writing to it (that's slow)
 		truncate(szFilename, 0);
 		pFile = fopen(szFilename, FOPEN_AB);
+		if (!pFile)
+		{
+			GetLastErrorMessage(szErrBuf, sizeof(iBufSize));
+			return false;
+		}
 		char c = '0';
 		fwrite(&c, 1, iSize, pFile);
 		fclose(pFile);

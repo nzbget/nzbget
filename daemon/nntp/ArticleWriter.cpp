@@ -313,10 +313,10 @@ bool ArticleWriter::CreateOutputFile(long long iSize)
 		return false;
 	}
 
-	if (!Util::CreateSparseFile(m_szOutputFilename, iSize))
+	if (!Util::CreateSparseFile(m_szOutputFilename, iSize, szErrBuf, sizeof(szErrBuf)))
 	{
 		m_pFileInfo->GetNZBInfo()->PrintMessage(Message::mkError,
-			"Could not create file %s", m_szOutputFilename);
+			"Could not create file %s: %s", m_szOutputFilename, szErrBuf);
 		return false;
 	}
 
