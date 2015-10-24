@@ -68,7 +68,7 @@
 /* Define to 1 if you have the <regex.h> header file. */
 #define HAVE_REGEX_H 1
 
-#define VERSION "16.1"
+#define VERSION "16.2"
 
 /* Suppress warnings */
 #define _CRT_SECURE_NO_DEPRECATE

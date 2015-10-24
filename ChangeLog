@@ -1,3 +1,7 @@
+nzbget-16.2:
+  - implemented workaround to deal with malformed news server responses,
+    which may still contain useful data.
+
 nzbget-16.1:
   - fixed issues with reverse proxies;
   - fixed unpack failure on older AMD CPUs, when installed via
