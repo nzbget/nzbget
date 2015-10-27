@@ -38,35 +38,35 @@ public:
 	class Script
 	{
 	private:
-		char*			m_szName;
-		char*			m_szLocation;
-		char*			m_szDisplayName;
-		bool			m_bPostScript;
-		bool			m_bScanScript;
-		bool			m_bQueueScript;
-		bool			m_bSchedulerScript;
-		bool			m_bFeedScript;
-		char*			m_szQueueEvents;
+		char*			m_name;
+		char*			m_location;
+		char*			m_displayName;
+		bool			m_postScript;
+		bool			m_scanScript;
+		bool			m_queueScript;
+		bool			m_schedulerScript;
+		bool			m_feedScript;
+		char*			m_queueEvents;
 
 	public:
-						Script(const char* szName, const char* szLocation);
+						Script(const char* name, const char* location);
 						~Script();
-		const char*		GetName() { return m_szName; }
-		const char*		GetLocation() { return m_szLocation; }
-		void			SetDisplayName(const char* szDisplayName);
-		const char*		GetDisplayName() { return m_szDisplayName; }
-		bool			GetPostScript() { return m_bPostScript; }
-		void			SetPostScript(bool bPostScript) { m_bPostScript = bPostScript; }
-		bool			GetScanScript() { return m_bScanScript; }
-		void			SetScanScript(bool bScanScript) { m_bScanScript = bScanScript; }
-		bool			GetQueueScript() { return m_bQueueScript; }
-		void			SetQueueScript(bool bQueueScript) { m_bQueueScript = bQueueScript; }
-		bool			GetSchedulerScript() { return m_bSchedulerScript; }
-		void			SetSchedulerScript(bool bSchedulerScript) { m_bSchedulerScript = bSchedulerScript; }
-		bool			GetFeedScript() { return m_bFeedScript; }
-		void			SetFeedScript(bool bFeedScript) { m_bFeedScript = bFeedScript; }
-		void			SetQueueEvents(const char* szQueueEvents);
-		const char*		GetQueueEvents() { return m_szQueueEvents; }
+		const char*		GetName() { return m_name; }
+		const char*		GetLocation() { return m_location; }
+		void			SetDisplayName(const char* displayName);
+		const char*		GetDisplayName() { return m_displayName; }
+		bool			GetPostScript() { return m_postScript; }
+		void			SetPostScript(bool postScript) { m_postScript = postScript; }
+		bool			GetScanScript() { return m_scanScript; }
+		void			SetScanScript(bool scanScript) { m_scanScript = scanScript; }
+		bool			GetQueueScript() { return m_queueScript; }
+		void			SetQueueScript(bool queueScript) { m_queueScript = queueScript; }
+		bool			GetSchedulerScript() { return m_schedulerScript; }
+		void			SetSchedulerScript(bool schedulerScript) { m_schedulerScript = schedulerScript; }
+		bool			GetFeedScript() { return m_feedScript; }
+		void			SetFeedScript(bool feedScript) { m_feedScript = feedScript; }
+		void			SetQueueEvents(const char* queueEvents);
+		const char*		GetQueueEvents() { return m_queueEvents; }
 	};
 
 	typedef std::list<Script*>  ScriptsBase;
@@ -76,22 +76,22 @@ public:
 	public:
 						~Scripts();
 		void			Clear();
-		Script*			Find(const char* szName);	
+		Script*			Find(const char* name);	
 	};
 
 	class ConfigTemplate
 	{
 	private:
-		Script*			m_pScript;
-		char*			m_szTemplate;
+		Script*			m_script;
+		char*			m_template;
 
 		friend class Options;
 
 	public:
-						ConfigTemplate(Script* pScript, const char* szTemplate);
+						ConfigTemplate(Script* script, const char* templ);
 						~ConfigTemplate();
-		Script*			GetScript() { return m_pScript; }
-		const char*		GetTemplate() { return m_szTemplate; }
+		Script*			GetScript() { return m_script; }
+		const char*		GetTemplate() { return m_template; }
 	};
 	
 	typedef std::vector<ConfigTemplate*>  ConfigTemplatesBase;
@@ -103,24 +103,24 @@ public:
 	};
 
 private:
-	Scripts				m_Scripts;
-	ConfigTemplates		m_ConfigTemplates;
+	Scripts				m_scripts;
+	ConfigTemplates		m_configTemplates;
 
 	void				InitScripts();
 	void				InitConfigTemplates();
-	static bool			CompareScripts(Script* pScript1, Script* pScript2);
-	void				LoadScriptDir(Scripts* pScripts, const char* szDirectory, bool bIsSubDir);
-	void				BuildScriptDisplayNames(Scripts* pScripts);
-	void				LoadScripts(Scripts* pScripts);
+	static bool			CompareScripts(Script* script1, Script* script2);
+	void				LoadScriptDir(Scripts* scripts, const char* directory, bool isSubDir);
+	void				BuildScriptDisplayNames(Scripts* scripts);
+	void				LoadScripts(Scripts* scripts);
 
 public:
 						ScriptConfig();
 						~ScriptConfig();
-	Scripts*			GetScripts() { return &m_Scripts; }
-	bool				LoadConfig(Options::OptEntries* pOptEntries);
-	bool				SaveConfig(Options::OptEntries* pOptEntries);
-	bool				LoadConfigTemplates(ConfigTemplates* pConfigTemplates);
-	ConfigTemplates*	GetConfigTemplates() { return &m_ConfigTemplates; }
+	Scripts*			GetScripts() { return &m_scripts; }
+	bool				LoadConfig(Options::OptEntries* optEntries);
+	bool				SaveConfig(Options::OptEntries* optEntries);
+	bool				LoadConfigTemplates(ConfigTemplates* configTemplates);
+	ConfigTemplates*	GetConfigTemplates() { return &m_configTemplates; }
 };
 
 extern ScriptConfig* g_pScriptConfig;

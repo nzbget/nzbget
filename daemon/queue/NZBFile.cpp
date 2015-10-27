@@ -54,23 +54,23 @@ using namespace MSXML;
 #include "DiskState.h"
 #include "Util.h"
 
-NZBFile::NZBFile(const char* szFileName, const char* szCategory)
+NZBFile::NZBFile(const char* fileName, const char* category)
 {
     debug("Creating NZBFile");
 
-    m_szFileName = strdup(szFileName);
-	m_szPassword = NULL;
-	m_pNZBInfo = new NZBInfo();
-	m_pNZBInfo->SetFilename(szFileName);
-	m_pNZBInfo->SetCategory(szCategory);
-	m_pNZBInfo->BuildDestDirName();
+    m_fileName = strdup(fileName);
+	m_password = NULL;
+	m_nzbInfo = new NZBInfo();
+	m_nzbInfo->SetFilename(fileName);
+	m_nzbInfo->SetCategory(category);
+	m_nzbInfo->BuildDestDirName();
 
 #ifndef WIN32
-	m_bPassword = false;
-	m_pFileInfo = NULL;
-	m_pArticle = NULL;
-	m_szTagContent = NULL;
-	m_iTagContentLen = 0;
+	m_hasPassword = false;
+	m_fileInfo = NULL;
+	m_article = NULL;
+	m_tagContent = NULL;
+	m_tagContentLen = 0;
 #endif
 }
 
@@ -79,112 +79,112 @@ NZBFile::~NZBFile()
     debug("Destroying NZBFile");
 
     // Cleanup
-    free(m_szFileName);
-    free(m_szPassword);
+    free(m_fileName);
+    free(m_password);
 
 #ifndef WIN32
-	delete m_pFileInfo;
-	free(m_szTagContent);
+	delete m_fileInfo;
+	free(m_tagContent);
 #endif
 
-	delete m_pNZBInfo;
+	delete m_nzbInfo;
 }
 
 void NZBFile::LogDebugInfo()
 {
-    info(" NZBFile %s", m_szFileName);
+    info(" NZBFile %s", m_fileName);
 }
 
-void NZBFile::AddArticle(FileInfo* pFileInfo, ArticleInfo* pArticleInfo)
+void NZBFile::AddArticle(FileInfo* fileInfo, ArticleInfo* articleInfo)
 {
 	// make Article-List big enough
-	while ((int)pFileInfo->GetArticles()->size() < pArticleInfo->GetPartNumber())
-		pFileInfo->GetArticles()->push_back(NULL);
+	while ((int)fileInfo->GetArticles()->size() < articleInfo->GetPartNumber())
+		fileInfo->GetArticles()->push_back(NULL);
 
-	int index = pArticleInfo->GetPartNumber() - 1;
-	if ((*pFileInfo->GetArticles())[index])
+	int index = articleInfo->GetPartNumber() - 1;
+	if ((*fileInfo->GetArticles())[index])
 	{
-		delete (*pFileInfo->GetArticles())[index];
+		delete (*fileInfo->GetArticles())[index];
 	}
-	(*pFileInfo->GetArticles())[index] = pArticleInfo;
+	(*fileInfo->GetArticles())[index] = articleInfo;
 }
 
-void NZBFile::AddFileInfo(FileInfo* pFileInfo)
+void NZBFile::AddFileInfo(FileInfo* fileInfo)
 {
 	// calculate file size and delete empty articles
 
-	long long lSize = 0;
-	long long lMissedSize = 0;
-	long long lOneSize = 0;
-	int iUncountedArticles = 0;
-	int iMissedArticles = 0;
-	FileInfo::Articles* pArticles = pFileInfo->GetArticles();
-	int iTotalArticles = (int)pArticles->size();
+	long long size = 0;
+	long long missedSize = 0;
+	long long oneSize = 0;
+	int uncountedArticles = 0;
+	int missedArticles = 0;
+	FileInfo::Articles* articles = fileInfo->GetArticles();
+	int totalArticles = (int)articles->size();
 	int i = 0;
-	for (FileInfo::Articles::iterator it = pArticles->begin(); it != pArticles->end(); )
+	for (FileInfo::Articles::iterator it = articles->begin(); it != articles->end(); )
 	{
-		ArticleInfo* pArticle = *it;
-		if (!pArticle)
+		ArticleInfo* article = *it;
+		if (!article)
 		{
-			pArticles->erase(it);
-			it = pArticles->begin() + i;
-			iMissedArticles++;
-			if (lOneSize > 0)
+			articles->erase(it);
+			it = articles->begin() + i;
+			missedArticles++;
+			if (oneSize > 0)
 			{
-				lMissedSize += lOneSize;
+				missedSize += oneSize;
 			}
 			else
 			{
-				iUncountedArticles++;
+				uncountedArticles++;
 			}
 		}
 		else
 		{
-			lSize += pArticle->GetSize();
-			if (lOneSize == 0)
+			size += article->GetSize();
+			if (oneSize == 0)
 			{
-				lOneSize = pArticle->GetSize();
+				oneSize = article->GetSize();
 			}
 			it++;
 			i++;
 		}
 	}
 
-	if (pArticles->empty())
+	if (articles->empty())
 	{
-		delete pFileInfo;
+		delete fileInfo;
 		return;
 	}
 
-	lMissedSize += iUncountedArticles * lOneSize;
-	lSize += lMissedSize;
-	m_pNZBInfo->GetFileList()->push_back(pFileInfo);
-	pFileInfo->SetNZBInfo(m_pNZBInfo);
-	pFileInfo->SetSize(lSize);
-	pFileInfo->SetRemainingSize(lSize - lMissedSize);
-	pFileInfo->SetMissedSize(lMissedSize);
-	pFileInfo->SetTotalArticles(iTotalArticles);
-	pFileInfo->SetMissedArticles(iMissedArticles);
+	missedSize += uncountedArticles * oneSize;
+	size += missedSize;
+	m_nzbInfo->GetFileList()->push_back(fileInfo);
+	fileInfo->SetNZBInfo(m_nzbInfo);
+	fileInfo->SetSize(size);
+	fileInfo->SetRemainingSize(size - missedSize);
+	fileInfo->SetMissedSize(missedSize);
+	fileInfo->SetTotalArticles(totalArticles);
+	fileInfo->SetMissedArticles(missedArticles);
 }
 
-void NZBFile::ParseSubject(FileInfo* pFileInfo, bool TryQuotes)
+void NZBFile::ParseSubject(FileInfo* fileInfo, bool TryQuotes)
 {
 	// Example subject: some garbage "title" yEnc (10/99)
 
 	// strip the "yEnc (10/99)"-suffix
-	char szSubject[1024];
-	strncpy(szSubject, pFileInfo->GetSubject(), sizeof(szSubject));
-	szSubject[1024-1] = '\0';
-	char* end = szSubject + strlen(szSubject) - 1;
+	char subject[1024];
+	strncpy(subject, fileInfo->GetSubject(), sizeof(subject));
+	subject[1024-1] = '\0';
+	char* end = subject + strlen(subject) - 1;
 	if (*end == ')')
 	{
 		end--;
-		while (strchr("0123456789", *end) && end > szSubject) end--;
+		while (strchr("0123456789", *end) && end > subject) end--;
 		if (*end == '/')
 		{
 			end--;
-			while (strchr("0123456789", *end) && end > szSubject) end--;
-			if (end - 6 > szSubject && !strncmp(end - 6, " yEnc (", 7))
+			while (strchr("0123456789", *end) && end > subject) end--;
+			if (end - 6 > subject && !strncmp(end - 6, " yEnc (", 7))
 			{
 				end[-6] = '\0';
 			}
@@ -194,7 +194,7 @@ void NZBFile::ParseSubject(FileInfo* pFileInfo, bool TryQuotes)
 	if (TryQuotes)
 	{
 		// try to use the filename in quatation marks 
-		char* p = szSubject;
+		char* p = subject;
 		char* start = strchr(p, '\"');
 		if (start)
 		{
@@ -209,7 +209,7 @@ void NZBFile::ParseSubject(FileInfo* pFileInfo, bool TryQuotes)
 					char* filename = (char*)malloc(len + 1);
 					strncpy(filename, start, len);
 					filename[len] = '\0';
-					pFileInfo->SetFilename(filename);
+					fileInfo->SetFilename(filename);
 					free(filename);
 					return;
 				}
@@ -226,7 +226,7 @@ void NZBFile::ParseSubject(FileInfo* pFileInfo, bool TryQuotes)
 	tokens.clear();
 
 	// tokenizing
-	char* p = szSubject;
+	char* p = subject;
 	char* start = p;
 	bool quot = false;
 	while (true)
@@ -285,7 +285,7 @@ void NZBFile::ParseSubject(FileInfo* pFileInfo, bool TryQuotes)
 				break;
 			}
 		}
-		pFileInfo->SetFilename(besttoken);
+		fileInfo->SetFilename(besttoken);
 
 		// free mem
 		for (TokenList::iterator it = tokens.begin(); it != tokens.end(); it++)
@@ -296,24 +296,24 @@ void NZBFile::ParseSubject(FileInfo* pFileInfo, bool TryQuotes)
 	else
 	{
 		// subject is empty or contains only separators?
-		debug("Could not extract Filename from Subject: %s. Using Subject as Filename", pFileInfo->GetSubject());
-		pFileInfo->SetFilename(pFileInfo->GetSubject());
+		debug("Could not extract Filename from Subject: %s. Using Subject as Filename", fileInfo->GetSubject());
+		fileInfo->SetFilename(fileInfo->GetSubject());
 	}
 }
 
 bool NZBFile::HasDuplicateFilenames()
 {
-	for (FileList::iterator it = m_pNZBInfo->GetFileList()->begin(); it != m_pNZBInfo->GetFileList()->end(); it++)
+	for (FileList::iterator it = m_nzbInfo->GetFileList()->begin(); it != m_nzbInfo->GetFileList()->end(); it++)
     {
-        FileInfo* pFileInfo1 = *it;
-		int iDupe = 1;
-		for (FileList::iterator it2 = it + 1; it2 != m_pNZBInfo->GetFileList()->end(); it2++)
+        FileInfo* fileInfo1 = *it;
+		int dupe = 1;
+		for (FileList::iterator it2 = it + 1; it2 != m_nzbInfo->GetFileList()->end(); it2++)
 		{
-			FileInfo* pFileInfo2 = *it2;
-			if (!strcmp(pFileInfo1->GetFilename(), pFileInfo2->GetFilename()) &&
-				strcmp(pFileInfo1->GetSubject(), pFileInfo2->GetSubject()))
+			FileInfo* fileInfo2 = *it2;
+			if (!strcmp(fileInfo1->GetFilename(), fileInfo2->GetFilename()) &&
+				strcmp(fileInfo1->GetSubject(), fileInfo2->GetSubject()))
 			{
-				iDupe++;
+				dupe++;
 			}
 		}
 
@@ -323,7 +323,7 @@ bool NZBFile::HasDuplicateFilenames()
 		// false "duplicate files"-alarm.
 		// It's Ok for just two files to have the same filename, this is 
 		// an often case by posting-errors to repost bad files
-		if (iDupe > 2 || (iDupe == 2 && m_pNZBInfo->GetFileList()->size() == 2))
+		if (dupe > 2 || (dupe == 2 && m_nzbInfo->GetFileList()->size() == 2))
 		{
 			return true;
 		}
@@ -337,130 +337,130 @@ bool NZBFile::HasDuplicateFilenames()
  */
 void NZBFile::BuildFilenames()
 {
-	for (FileList::iterator it = m_pNZBInfo->GetFileList()->begin(); it != m_pNZBInfo->GetFileList()->end(); it++)
+	for (FileList::iterator it = m_nzbInfo->GetFileList()->begin(); it != m_nzbInfo->GetFileList()->end(); it++)
     {
-        FileInfo* pFileInfo = *it;
-		ParseSubject(pFileInfo, true);
+        FileInfo* fileInfo = *it;
+		ParseSubject(fileInfo, true);
 	}
 
 	if (HasDuplicateFilenames())
     {
-		for (FileList::iterator it = m_pNZBInfo->GetFileList()->begin(); it != m_pNZBInfo->GetFileList()->end(); it++)
+		for (FileList::iterator it = m_nzbInfo->GetFileList()->begin(); it != m_nzbInfo->GetFileList()->end(); it++)
 		{
-			FileInfo* pFileInfo = *it;
-			ParseSubject(pFileInfo, false);
+			FileInfo* fileInfo = *it;
+			ParseSubject(fileInfo, false);
 		}
 	}
 
 	if (HasDuplicateFilenames())
     {
-		m_pNZBInfo->SetManyDupeFiles(true);
-		for (FileList::iterator it = m_pNZBInfo->GetFileList()->begin(); it != m_pNZBInfo->GetFileList()->end(); it++)
+		m_nzbInfo->SetManyDupeFiles(true);
+		for (FileList::iterator it = m_nzbInfo->GetFileList()->begin(); it != m_nzbInfo->GetFileList()->end(); it++)
 		{
-			FileInfo* pFileInfo = *it;
-			pFileInfo->SetFilename(pFileInfo->GetSubject());
+			FileInfo* fileInfo = *it;
+			fileInfo->SetFilename(fileInfo->GetSubject());
 		}
     }
 }
 
-bool CompareFileInfo(FileInfo* pFirst, FileInfo* pSecond)
+bool CompareFileInfo(FileInfo* first, FileInfo* second)
 {
-	return strcmp(pFirst->GetFilename(), pSecond->GetFilename()) > 0;
+	return strcmp(first->GetFilename(), second->GetFilename()) > 0;
 }
 
 void NZBFile::CalcHashes()
 {
 	TempFileList fileList;
 
-	for (FileList::iterator it = m_pNZBInfo->GetFileList()->begin(); it != m_pNZBInfo->GetFileList()->end(); it++)
+	for (FileList::iterator it = m_nzbInfo->GetFileList()->begin(); it != m_nzbInfo->GetFileList()->end(); it++)
 	{
 		fileList.push_back(*it);
 	}
 
 	fileList.sort(CompareFileInfo);
 
-	unsigned int iFullContentHash = 0;
-	unsigned int iFilteredContentHash = 0;
-	int iUseForFilteredCount = 0;
+	unsigned int fullContentHash = 0;
+	unsigned int filteredContentHash = 0;
+	int useForFilteredCount = 0;
 
 	for (TempFileList::iterator it = fileList.begin(); it != fileList.end(); it++)
 	{
-		FileInfo* pFileInfo = *it;
+		FileInfo* fileInfo = *it;
 
 		// check file extension
-		bool bSkip = !pFileInfo->GetParFile() &&
-			Util::MatchFileExt(pFileInfo->GetFilename(), g_pOptions->GetExtCleanupDisk(), ",;");
+		bool skip = !fileInfo->GetParFile() &&
+			Util::MatchFileExt(fileInfo->GetFilename(), g_pOptions->GetExtCleanupDisk(), ",;");
 
-		for (FileInfo::Articles::iterator it = pFileInfo->GetArticles()->begin(); it != pFileInfo->GetArticles()->end(); it++)
+		for (FileInfo::Articles::iterator it = fileInfo->GetArticles()->begin(); it != fileInfo->GetArticles()->end(); it++)
 		{
-			ArticleInfo* pArticle = *it;
-			int iLen = strlen(pArticle->GetMessageID());
-			iFullContentHash = Util::HashBJ96(pArticle->GetMessageID(), iLen, iFullContentHash);
-			if (!bSkip)
+			ArticleInfo* article = *it;
+			int len = strlen(article->GetMessageID());
+			fullContentHash = Util::HashBJ96(article->GetMessageID(), len, fullContentHash);
+			if (!skip)
 			{
-				iFilteredContentHash = Util::HashBJ96(pArticle->GetMessageID(), iLen, iFilteredContentHash);
-				iUseForFilteredCount++;
+				filteredContentHash = Util::HashBJ96(article->GetMessageID(), len, filteredContentHash);
+				useForFilteredCount++;
 			}
 		}
 	}
 
 	// if filtered hash is based on less than a half of files - do not use filtered hash at all
-	if (iUseForFilteredCount < (int)fileList.size() / 2)
+	if (useForFilteredCount < (int)fileList.size() / 2)
 	{
-		iFilteredContentHash = 0;
+		filteredContentHash = 0;
 	}
 
-	m_pNZBInfo->SetFullContentHash(iFullContentHash);
-	m_pNZBInfo->SetFilteredContentHash(iFilteredContentHash);
+	m_nzbInfo->SetFullContentHash(fullContentHash);
+	m_nzbInfo->SetFilteredContentHash(filteredContentHash);
 }
 
 void NZBFile::ProcessFiles()
 {
 	BuildFilenames();
 
-	for (FileList::iterator it = m_pNZBInfo->GetFileList()->begin(); it != m_pNZBInfo->GetFileList()->end(); it++)
+	for (FileList::iterator it = m_nzbInfo->GetFileList()->begin(); it != m_nzbInfo->GetFileList()->end(); it++)
 	{
-		FileInfo* pFileInfo = *it;
-		pFileInfo->MakeValidFilename();
+		FileInfo* fileInfo = *it;
+		fileInfo->MakeValidFilename();
 
-		char szLoFileName[1024];
-		strncpy(szLoFileName, pFileInfo->GetFilename(), 1024);
-		szLoFileName[1024-1] = '\0';
-		for (char* p = szLoFileName; *p; p++) *p = tolower(*p); // convert string to lowercase
-		bool bParFile = strstr(szLoFileName, ".par2");
+		char loFileName[1024];
+		strncpy(loFileName, fileInfo->GetFilename(), 1024);
+		loFileName[1024-1] = '\0';
+		for (char* p = loFileName; *p; p++) *p = tolower(*p); // convert string to lowercase
+		bool parFile = strstr(loFileName, ".par2");
 
-		m_pNZBInfo->SetFileCount(m_pNZBInfo->GetFileCount() + 1);
-		m_pNZBInfo->SetTotalArticles(m_pNZBInfo->GetTotalArticles() + pFileInfo->GetTotalArticles());
-		m_pNZBInfo->SetSize(m_pNZBInfo->GetSize() + pFileInfo->GetSize());
-		m_pNZBInfo->SetRemainingSize(m_pNZBInfo->GetRemainingSize() + pFileInfo->GetRemainingSize());
-		m_pNZBInfo->SetFailedSize(m_pNZBInfo->GetFailedSize() + pFileInfo->GetMissedSize());
-		m_pNZBInfo->SetCurrentFailedSize(m_pNZBInfo->GetFailedSize());
+		m_nzbInfo->SetFileCount(m_nzbInfo->GetFileCount() + 1);
+		m_nzbInfo->SetTotalArticles(m_nzbInfo->GetTotalArticles() + fileInfo->GetTotalArticles());
+		m_nzbInfo->SetSize(m_nzbInfo->GetSize() + fileInfo->GetSize());
+		m_nzbInfo->SetRemainingSize(m_nzbInfo->GetRemainingSize() + fileInfo->GetRemainingSize());
+		m_nzbInfo->SetFailedSize(m_nzbInfo->GetFailedSize() + fileInfo->GetMissedSize());
+		m_nzbInfo->SetCurrentFailedSize(m_nzbInfo->GetFailedSize());
 
-		pFileInfo->SetParFile(bParFile);
-		if (bParFile)
+		fileInfo->SetParFile(parFile);
+		if (parFile)
 		{
-			m_pNZBInfo->SetParSize(m_pNZBInfo->GetParSize() + pFileInfo->GetSize());
-			m_pNZBInfo->SetParFailedSize(m_pNZBInfo->GetParFailedSize() + pFileInfo->GetMissedSize());
-			m_pNZBInfo->SetParCurrentFailedSize(m_pNZBInfo->GetParFailedSize());
-			m_pNZBInfo->SetRemainingParCount(m_pNZBInfo->GetRemainingParCount() + 1);
+			m_nzbInfo->SetParSize(m_nzbInfo->GetParSize() + fileInfo->GetSize());
+			m_nzbInfo->SetParFailedSize(m_nzbInfo->GetParFailedSize() + fileInfo->GetMissedSize());
+			m_nzbInfo->SetParCurrentFailedSize(m_nzbInfo->GetParFailedSize());
+			m_nzbInfo->SetRemainingParCount(m_nzbInfo->GetRemainingParCount() + 1);
 		}
 	}
 
-	m_pNZBInfo->UpdateMinMaxTime();
+	m_nzbInfo->UpdateMinMaxTime();
 
 	CalcHashes();
 
 	if (g_pOptions->GetSaveQueue() && g_pOptions->GetServerMode())
 	{
-		for (FileList::iterator it = m_pNZBInfo->GetFileList()->begin(); it != m_pNZBInfo->GetFileList()->end(); it++)
+		for (FileList::iterator it = m_nzbInfo->GetFileList()->begin(); it != m_nzbInfo->GetFileList()->end(); it++)
 		{
-			FileInfo* pFileInfo = *it;
-			g_pDiskState->SaveFile(pFileInfo);
-			pFileInfo->ClearArticles();
+			FileInfo* fileInfo = *it;
+			g_pDiskState->SaveFile(fileInfo);
+			fileInfo->ClearArticles();
 		}
 	}
 
-	if (m_szPassword)
+	if (m_password)
 	{
 		ReadPassword();
 	}
@@ -472,42 +472,42 @@ void NZBFile::ProcessFiles()
  */
 void NZBFile::ReadPassword()
 {
-    FILE* pFile = fopen(m_szFileName, FOPEN_RB);
-    if (!pFile)
+    FILE* file = fopen(m_fileName, FOPEN_RB);
+    if (!file)
     {
         return;
     }
 
     // obtain file size.
-    fseek(pFile , 0 , SEEK_END);
-    int iSize  = (int)ftell(pFile);
-    rewind(pFile);
+    fseek(file , 0 , SEEK_END);
+    int size  = (int)ftell(file);
+    rewind(file);
 
 	// reading first 4KB of the file
 
     // allocate memory to contain the whole file.
     char* buf = (char*)malloc(4096);
 
-	iSize = iSize < 4096 ? iSize : 4096;
+	size = size < 4096 ? size : 4096;
 
     // copy the file into the buffer.
-    fread(buf, 1, iSize, pFile);
+    fread(buf, 1, size, file);
 
-    fclose(pFile);
+    fclose(file);
 
-    buf[iSize-1] = '\0';
+    buf[size-1] = '\0';
 
-	char* szMetaPassword = strstr(buf, "<meta type=\"password\">");
-	if (szMetaPassword)
+	char* metaPassword = strstr(buf, "<meta type=\"password\">");
+	if (metaPassword)
 	{
-		szMetaPassword += 22; // length of '<meta type="password">'
-		char* szEnd = strstr(szMetaPassword, "</meta>");
-		if (szEnd)
+		metaPassword += 22; // length of '<meta type="password">'
+		char* end = strstr(metaPassword, "</meta>");
+		if (end)
 		{
-			*szEnd = '\0';
-			WebUtil::XmlDecode(szMetaPassword);
-			free(m_szPassword);
-			m_szPassword = strdup(szMetaPassword);
+			*end = '\0';
+			WebUtil::XmlDecode(metaPassword);
+			free(m_password);
+			m_password = strdup(metaPassword);
 		}
 	}
 
@@ -533,17 +533,17 @@ bool NZBFile::Parse()
 	doc->put_validateOnParse(VARIANT_FALSE);
 	doc->put_async(VARIANT_FALSE);
 
-	_variant_t vFilename(m_szFileName);
+	_variant_t vFilename(m_fileName);
 
 	// 1. first trying to load via filename without URL-encoding (certain charaters doesn't work when encoded)
 	VARIANT_BOOL success = doc->load(vFilename);
 	if (success == VARIANT_FALSE)
 	{
 		// 2. now trying filename encoded as URL
-		char szURL[2048];
-		EncodeURL(m_szFileName, szURL, 2048);
-		debug("url=\"%s\"", szURL);
-		_variant_t vURL(szURL);
+		char url[2048];
+		EncodeURL(m_fileName, url, 2048);
+		debug("url=\"%s\"", url);
+		_variant_t vURL(url);
 
 		success = doc->load(vURL);
 	}
@@ -551,12 +551,12 @@ bool NZBFile::Parse()
 	if (success == VARIANT_FALSE)
 	{
 		_bstr_t r(doc->GetparseError()->reason);
-		const char* szErrMsg = r;
+		const char* errMsg = r;
 
-		char szMessageText[1024];
-		snprintf(szMessageText, 1024, "Error parsing nzb-file %s: %s", Util::BaseFileName(m_szFileName), szErrMsg);
-		szMessageText[1024-1] = '\0';
-		m_pNZBInfo->AddMessage(Message::mkError, szMessageText);
+		char messageText[1024];
+		snprintf(messageText, 1024, "Error parsing nzb-file %s: %s", Util::BaseFileName(m_fileName), errMsg);
+		messageText[1024-1] = '\0';
+		m_nzbInfo->AddMessage(Message::mkError, messageText);
 
 		return false;
 	}
@@ -568,10 +568,10 @@ bool NZBFile::Parse()
 
 	if (GetNZBInfo()->GetFileList()->empty())
 	{
-		char szMessageText[1024];
-		snprintf(szMessageText, 1024, "Error parsing nzb-file %s: file has no content", Util::BaseFileName(m_szFileName));
-		szMessageText[1024-1] = '\0';
-		m_pNZBInfo->AddMessage(Message::mkError, szMessageText);
+		char messageText[1024];
+		snprintf(messageText, 1024, "Error parsing nzb-file %s: file has no content", Util::BaseFileName(m_fileName));
+		messageText[1024-1] = '\0';
+		m_nzbInfo->AddMessage(Message::mkError, messageText);
 
 		return false;
 	}
@@ -581,15 +581,15 @@ bool NZBFile::Parse()
     return true;
 }
 
-void NZBFile::EncodeURL(const char* szFilename, char* szURL, int iBufLen)
+void NZBFile::EncodeURL(const char* filename, char* url, int bufLen)
 {
-	char szUtfFilename[2048];
-	strncpy(szUtfFilename, szFilename, 2048);
-	szUtfFilename[2048-1] = '\0';
-	WebUtil::AnsiToUtf8(szUtfFilename, 2048);
+	char utfFilename[2048];
+	strncpy(utfFilename, filename, 2048);
+	utfFilename[2048-1] = '\0';
+	WebUtil::AnsiToUtf8(utfFilename, 2048);
 
-	char* szEnd = szURL + iBufLen;
-	for (char* p = szUtfFilename; *p && szURL < szEnd - 3; p++)
+	char* end = url + bufLen;
+	for (char* p = utfFilename; *p && url < end - 3; p++)
 	{
 		char ch = *p;
 		if (('0' <= ch && ch <= '9') ||
@@ -597,18 +597,18 @@ void NZBFile::EncodeURL(const char* szFilename, char* szURL, int iBufLen)
 			('A' <= ch && ch <= 'Z') ||
 			ch == '-' || ch == '.' || ch == '_' || ch == '~')
 		{
-			*szURL++ = ch;
+			*url++ = ch;
 		}
 		else
 		{
-			*szURL++ = '%';
+			*url++ = '%';
 			int a = (unsigned char)ch >> 4;
-			*szURL++ = a > 9 ? a - 10 + 'A' : a + '0';
+			*url++ = a > 9 ? a - 10 + 'A' : a + '0';
 			a = ch & 0xF;
-			*szURL++ = a > 9 ? a - 10 + 'A' : a + '0';
+			*url++ = a > 9 ? a - 10 + 'A' : a + '0';
 		}
 	}
-	*szURL = NULL;
+	*url = NULL;
 }
 
 bool NZBFile::ParseNZB(IUnknown* nzb)
@@ -620,7 +620,7 @@ bool NZBFile::ParseNZB(IUnknown* nzb)
 	if (node)
 	{
 		_bstr_t password(node->Gettext());
-		m_szPassword = strdup(password);
+		m_password = strdup(password);
 	}
 
 	MSXML::IXMLDOMNodeListPtr fileList = root->selectNodes("/nzb/file");
@@ -630,14 +630,14 @@ bool NZBFile::ParseNZB(IUnknown* nzb)
 		MSXML::IXMLDOMNodePtr attribute = node->Getattributes()->getNamedItem("subject");
 		if (!attribute) return false;
 		_bstr_t subject(attribute->Gettext());
-        FileInfo* pFileInfo = new FileInfo();
-		pFileInfo->SetSubject(subject);
+        FileInfo* fileInfo = new FileInfo();
+		fileInfo->SetSubject(subject);
 
 		attribute = node->Getattributes()->getNamedItem("date");
 		if (attribute)
 		{
 			_bstr_t date(attribute->Gettext());
-			pFileInfo->SetTime(atoi(date));
+			fileInfo->SetTime(atoi(date));
 		}
 
 		MSXML::IXMLDOMNodeListPtr groupList = node->selectNodes("groups/group");
@@ -645,16 +645,16 @@ bool NZBFile::ParseNZB(IUnknown* nzb)
 		{
 			MSXML::IXMLDOMNodePtr node = groupList->Getitem(g);
 			_bstr_t group = node->Gettext();
-			pFileInfo->GetGroups()->push_back(strdup((const char*)group));
+			fileInfo->GetGroups()->push_back(strdup((const char*)group));
 		}
 
 		MSXML::IXMLDOMNodeListPtr segmentList = node->selectNodes("segments/segment");
 		for (int g = 0; g < segmentList->Getlength(); g++)
 		{
 			MSXML::IXMLDOMNodePtr node = segmentList->Getitem(g);
-			_bstr_t id = node->Gettext();
-            char szId[2048];
-            snprintf(szId, 2048, "<%s>", (const char*)id);
+			_bstr_t bid = node->Gettext();
+            char id[2048];
+            snprintf(id, 2048, "<%s>", (const char*)bid);
 
 			MSXML::IXMLDOMNodePtr attribute = node->Getattributes()->getNamedItem("number");
 			if (!attribute) return false;
@@ -669,15 +669,15 @@ bool NZBFile::ParseNZB(IUnknown* nzb)
 
 			if (partNumber > 0)
 			{
-				ArticleInfo* pArticle = new ArticleInfo();
-				pArticle->SetPartNumber(partNumber);
-				pArticle->SetMessageID(szId);
-				pArticle->SetSize(lsize);
-				AddArticle(pFileInfo, pArticle);
+				ArticleInfo* article = new ArticleInfo();
+				article->SetPartNumber(partNumber);
+				article->SetMessageID(id);
+				article->SetSize(lsize);
+				AddArticle(fileInfo, article);
 			}
 		}
 
-		AddFileInfo(pFileInfo);
+		AddFileInfo(fileInfo);
 	}
 	return true;
 }
@@ -693,25 +693,25 @@ bool NZBFile::Parse()
 	SAX_handler.error = reinterpret_cast<errorSAXFunc>(SAX_error);
 	SAX_handler.getEntity = reinterpret_cast<getEntitySAXFunc>(SAX_getEntity);
 
-	m_bIgnoreNextError = false;
+	m_ignoreNextError = false;
 
-	int ret = xmlSAXUserParseFile(&SAX_handler, this, m_szFileName);
+	int ret = xmlSAXUserParseFile(&SAX_handler, this, m_fileName);
     
     if (ret != 0)
 	{
-		char szMessageText[1024];
-		snprintf(szMessageText, 1024, "Error parsing nzb-file %s", Util::BaseFileName(m_szFileName));
-		szMessageText[1024-1] = '\0';
-		m_pNZBInfo->AddMessage(Message::mkError, szMessageText);
+		char messageText[1024];
+		snprintf(messageText, 1024, "Error parsing nzb-file %s", Util::BaseFileName(m_fileName));
+		messageText[1024-1] = '\0';
+		m_nzbInfo->AddMessage(Message::mkError, messageText);
 		return false;
 	}
 
-	if (m_pNZBInfo->GetFileList()->empty())
+	if (m_nzbInfo->GetFileList()->empty())
 	{
-		char szMessageText[1024];
-		snprintf(szMessageText, 1024, "Error parsing nzb-file %s: file has no content", Util::BaseFileName(m_szFileName));
-		szMessageText[1024-1] = '\0';
-		m_pNZBInfo->AddMessage(Message::mkError, szMessageText);
+		char messageText[1024];
+		snprintf(messageText, 1024, "Error parsing nzb-file %s: file has no content", Util::BaseFileName(m_fileName));
+		messageText[1024-1] = '\0';
+		m_nzbInfo->AddMessage(Message::mkError, messageText);
 		return false;
 	}
 
@@ -722,25 +722,25 @@ bool NZBFile::Parse()
 
 void NZBFile::Parse_StartElement(const char *name, const char **atts)
 {
-	char szTagAttrMessage[1024];
-	snprintf(szTagAttrMessage, 1024, "Malformed nzb-file, tag <%s> must have attributes", name);
-	szTagAttrMessage[1024-1] = '\0';
+	char tagAttrMessage[1024];
+	snprintf(tagAttrMessage, 1024, "Malformed nzb-file, tag <%s> must have attributes", name);
+	tagAttrMessage[1024-1] = '\0';
 
-	if (m_szTagContent)
+	if (m_tagContent)
 	{
-		free(m_szTagContent);
-		m_szTagContent = NULL;
-		m_iTagContentLen = 0;
+		free(m_tagContent);
+		m_tagContent = NULL;
+		m_tagContentLen = 0;
 	}
 	
 	if (!strcmp("file", name))
 	{
-		m_pFileInfo = new FileInfo();
-		m_pFileInfo->SetFilename(m_szFileName);
+		m_fileInfo = new FileInfo();
+		m_fileInfo->SetFilename(m_fileName);
 
 		if (!atts)
 		{
-	        m_pNZBInfo->AddMessage(Message::mkWarning, szTagAttrMessage);
+	        m_nzbInfo->AddMessage(Message::mkWarning, tagAttrMessage);
 			return;
 		}
 
@@ -750,25 +750,25 @@ void NZBFile::Parse_StartElement(const char *name, const char **atts)
     		const char* attrvalue = atts[i + 1];
 			if (!strcmp("subject", attrname))
 			{
-				m_pFileInfo->SetSubject(attrvalue);
+				m_fileInfo->SetSubject(attrvalue);
 			}
 			if (!strcmp("date", attrname))
 			{
-				m_pFileInfo->SetTime(atoi(attrvalue));
+				m_fileInfo->SetTime(atoi(attrvalue));
 			}
 		}
 	}
 	else if (!strcmp("segment", name))
 	{
-		if (!m_pFileInfo)
+		if (!m_fileInfo)
 		{
-			m_pNZBInfo->AddMessage(Message::mkWarning, "Malformed nzb-file, tag <segment> without tag <file>");
+			m_nzbInfo->AddMessage(Message::mkWarning, "Malformed nzb-file, tag <segment> without tag <file>");
 			return;
 		}
 
 		if (!atts)
 		{
-			m_pNZBInfo->AddMessage(Message::mkWarning, szTagAttrMessage);
+			m_nzbInfo->AddMessage(Message::mkWarning, tagAttrMessage);
 			return;
 		}
 
@@ -792,20 +792,20 @@ void NZBFile::Parse_StartElement(const char *name, const char **atts)
 		if (partNumber > 0)
 		{
 			// new segment, add it!
-			m_pArticle = new ArticleInfo();
-			m_pArticle->SetPartNumber(partNumber);
-			m_pArticle->SetSize(lsize);
-			AddArticle(m_pFileInfo, m_pArticle);
+			m_article = new ArticleInfo();
+			m_article->SetPartNumber(partNumber);
+			m_article->SetSize(lsize);
+			AddArticle(m_fileInfo, m_article);
 		}
 	}
 	else if (!strcmp("meta", name))
 	{
 		if (!atts)
 		{
-			m_pNZBInfo->AddMessage(Message::mkWarning, szTagAttrMessage);
+			m_nzbInfo->AddMessage(Message::mkWarning, tagAttrMessage);
 			return;
 		}
-		m_bPassword = atts[0] && atts[1] && !strcmp("type", atts[0]) && !strcmp("password", atts[1]);
+		m_hasPassword = atts[0] && atts[1] && !strcmp("type", atts[0]) && !strcmp("password", atts[1]);
 	}
 }
 
@@ -814,25 +814,25 @@ void NZBFile::Parse_EndElement(const char *name)
 	if (!strcmp("file", name))
 	{
 		// Close the file element, add the new file to file-list
-		AddFileInfo(m_pFileInfo);
-		m_pFileInfo = NULL;
-		m_pArticle = NULL;
+		AddFileInfo(m_fileInfo);
+		m_fileInfo = NULL;
+		m_article = NULL;
 	}
 	else if (!strcmp("group", name))
 	{
-		if (!m_pFileInfo)
+		if (!m_fileInfo)
 		{
 			// error: bad nzb-file
 			return;
 		}
 		
-		m_pFileInfo->GetGroups()->push_back(m_szTagContent);
-		m_szTagContent = NULL;
-		m_iTagContentLen = 0;
+		m_fileInfo->GetGroups()->push_back(m_tagContent);
+		m_tagContent = NULL;
+		m_tagContentLen = 0;
 	}
 	else if (!strcmp("segment", name))
 	{
-		if (!m_pFileInfo || !m_pArticle)
+		if (!m_fileInfo || !m_article)
 		{
 			// error: bad nzb-file
 			return;
@@ -840,35 +840,35 @@ void NZBFile::Parse_EndElement(const char *name)
 
 		// Get the #text part
 		char ID[2048];
-		snprintf(ID, 2048, "<%s>", m_szTagContent);
-		m_pArticle->SetMessageID(ID);
-		m_pArticle = NULL;
+		snprintf(ID, 2048, "<%s>", m_tagContent);
+		m_article->SetMessageID(ID);
+		m_article = NULL;
 	}
-	else if (!strcmp("meta", name) && m_bPassword)
+	else if (!strcmp("meta", name) && m_hasPassword)
 	{
-		m_szPassword = strdup(m_szTagContent);
+		m_password = strdup(m_tagContent);
 	}
 }
 
 void NZBFile::Parse_Content(const char *buf, int len)
 {
-	m_szTagContent = (char*)realloc(m_szTagContent, m_iTagContentLen + len + 1);
-	strncpy(m_szTagContent + m_iTagContentLen, buf, len);
-	m_iTagContentLen += len;
-	m_szTagContent[m_iTagContentLen] = '\0';
+	m_tagContent = (char*)realloc(m_tagContent, m_tagContentLen + len + 1);
+	strncpy(m_tagContent + m_tagContentLen, buf, len);
+	m_tagContentLen += len;
+	m_tagContent[m_tagContentLen] = '\0';
 }
 
-void NZBFile::SAX_StartElement(NZBFile* pFile, const char *name, const char **atts)
+void NZBFile::SAX_StartElement(NZBFile* file, const char *name, const char **atts)
 {
-	pFile->Parse_StartElement(name, atts);
+	file->Parse_StartElement(name, atts);
 }
 
-void NZBFile::SAX_EndElement(NZBFile* pFile, const char *name)
+void NZBFile::SAX_EndElement(NZBFile* file, const char *name)
 {
-	pFile->Parse_EndElement(name);
+	file->Parse_EndElement(name);
 }
 
-void NZBFile::SAX_characters(NZBFile* pFile, const char * xmlstr, int len)
+void NZBFile::SAX_characters(NZBFile* file, const char * xmlstr, int len)
 {
 	char* str = (char*)xmlstr;
 	
@@ -906,43 +906,43 @@ void NZBFile::SAX_characters(NZBFile* pFile, const char * xmlstr, int len)
 	if (newlen > 0)
 	{
 		// interpret tag content
-		pFile->Parse_Content(str + off, newlen);
+		file->Parse_Content(str + off, newlen);
 	}
 }
 
-void* NZBFile::SAX_getEntity(NZBFile* pFile, const char * name)
+void* NZBFile::SAX_getEntity(NZBFile* file, const char * name)
 {
 	xmlEntityPtr e = xmlGetPredefinedEntity((xmlChar* )name);
 	if (!e)
 	{
-		pFile->GetNZBInfo()->AddMessage(Message::mkWarning, "entity not found");
-		pFile->m_bIgnoreNextError = true;
+		file->GetNZBInfo()->AddMessage(Message::mkWarning, "entity not found");
+		file->m_ignoreNextError = true;
 	}
 
 	return e;
 }
 
-void NZBFile::SAX_error(NZBFile* pFile, const char *msg, ...)
+void NZBFile::SAX_error(NZBFile* file, const char *msg, ...)
 {
-	if (pFile->m_bIgnoreNextError)
+	if (file->m_ignoreNextError)
 	{
-		pFile->m_bIgnoreNextError = false;
+		file->m_ignoreNextError = false;
 		return;
 	}
 	
     va_list argp;
     va_start(argp, msg);
-    char szErrMsg[1024];
-    vsnprintf(szErrMsg, sizeof(szErrMsg), msg, argp);
-    szErrMsg[1024-1] = '\0';
+    char errMsg[1024];
+    vsnprintf(errMsg, sizeof(errMsg), msg, argp);
+    errMsg[1024-1] = '\0';
     va_end(argp);
 
 	// remove trailing CRLF
-	for (char* pend = szErrMsg + strlen(szErrMsg) - 1; pend >= szErrMsg && (*pend == '\n' || *pend == '\r' || *pend == ' '); pend--) *pend = '\0';
+	for (char* pend = errMsg + strlen(errMsg) - 1; pend >= errMsg && (*pend == '\n' || *pend == '\r' || *pend == ' '); pend--) *pend = '\0';
 
-	char szTextMessage[1024];
-	snprintf(szTextMessage, 1024, "Error parsing nzb-file: %s", szErrMsg);
-	szTextMessage[1024-1] = '\0';
-	pFile->GetNZBInfo()->AddMessage(Message::mkError, szTextMessage);
+	char textMessage[1024];
+	snprintf(textMessage, 1024, "Error parsing nzb-file: %s", errMsg);
+	textMessage[1024-1] = '\0';
+	file->GetNZBInfo()->AddMessage(Message::mkError, textMessage);
 }
 #endif

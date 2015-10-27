@@ -30,35 +30,35 @@
 class TLSSocket
 {
 private:
-	bool				m_bIsClient;
-	char*				m_szCertFile;
-	char*				m_szKeyFile;
-	char*				m_szCipher;
-	SOCKET				m_iSocket;
-	bool				m_bSuppressErrors;
-	int					m_iRetCode;
-	bool				m_bInitialized;
-	bool				m_bConnected;
+	bool				m_isClient;
+	char*				m_certFile;
+	char*				m_keyFile;
+	char*				m_cipher;
+	SOCKET				m_socket;
+	bool				m_suppressErrors;
+	int					m_retCode;
+	bool				m_initialized;
+	bool				m_connected;
 
 	// using "void*" to prevent the including of GnuTLS/OpenSSL header files into TLS.h
-	void*				m_pContext;
-	void*				m_pSession;
+	void*				m_context;
+	void*				m_session;
 
-	void				ReportError(const char* szErrMsg);
+	void				ReportError(const char* errMsg);
 
 protected:
-	virtual void		PrintError(const char* szErrMsg);
+	virtual void		PrintError(const char* errMsg);
 
 public:
-						TLSSocket(SOCKET iSocket, bool bIsClient, const char* szCertFile, const char* szKeyFile, const char* szCipher);
+						TLSSocket(SOCKET socket, bool isClient, const char* certFile, const char* keyFile, const char* cipher);
 	virtual				~TLSSocket();
 	static void			Init();
 	static void			Final();
 	bool				Start();
 	void				Close();
-	int					Send(const char* pBuffer, int iSize);
-	int					Recv(char* pBuffer, int iSize);
-	void				SetSuppressErrors(bool bSuppressErrors) { m_bSuppressErrors = bSuppressErrors; }
+	int					Send(const char* buffer, int size);
+	int					Recv(char* buffer, int size);
+	void				SetSuppressErrors(bool suppressErrors) { m_suppressErrors = suppressErrors; }
 };
 
 #endif

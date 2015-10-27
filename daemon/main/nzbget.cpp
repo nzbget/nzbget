@@ -96,7 +96,7 @@
 
 // Prototypes
 void RunMain();
-void Run(bool bReload);
+void Run(bool reload);
 void Reload();
 void Cleanup();
 void ProcessClientRequest();
@@ -207,26 +207,26 @@ void RunMain()
 	// the program is reloaded (RPC-Method "reload") in order for
 	// config to properly load in a case relative paths are used 
 	// in command line
-	char szCurDir[MAX_PATH + 1];
-	Util::GetCurrentDirectory(szCurDir, sizeof(szCurDir));
+	char curDir[MAX_PATH + 1];
+	Util::GetCurrentDirectory(curDir, sizeof(curDir));
 	
-	bool bReload = false;
+	bool reload = false;
 	while (g_bReloading)
 	{
 		g_bReloading = false;
-		Util::SetCurrentDirectory(szCurDir);
-		Run(bReload);
-		bReload = true;
+		Util::SetCurrentDirectory(curDir);
+		Run(reload);
+		reload = true;
 	}
 }
 
-void Run(bool bReload)
+void Run(bool reload)
 {
 	Log::Init();
 
 	debug("nzbget %s", Util::VersionRevision());
 
-	if (!bReload)
+	if (!reload)
 	{
 		Thread::Init();
 	}
@@ -270,7 +270,7 @@ void Run(bool bReload)
 #ifdef WIN32
 		info("nzbget %s service-mode", Util::VersionRevision());
 #else
-		if (!bReload)
+		if (!reload)
 		{
 			Daemonize();
 		}
@@ -286,7 +286,7 @@ void Run(bool bReload)
 		info("nzbget %s remote-mode", Util::VersionRevision());
 	}
 
-	if (!bReload)
+	if (!reload)
 	{
 		Connection::Init();
 	}
@@ -371,17 +371,17 @@ void Run(bool bReload)
 		// Standalone-mode
 		if (!g_pCommandLineParser->GetServerMode())
 		{
-			const char* szCategory = g_pCommandLineParser->GetAddCategory() ? g_pCommandLineParser->GetAddCategory() : "";
-			NZBFile* pNZBFile = new NZBFile(g_pCommandLineParser->GetArgFilename(), szCategory);
-			if (!pNZBFile->Parse())
+			const char* category = g_pCommandLineParser->GetAddCategory() ? g_pCommandLineParser->GetAddCategory() : "";
+			NZBFile* nzbFile = new NZBFile(g_pCommandLineParser->GetArgFilename(), category);
+			if (!nzbFile->Parse())
 			{
 				printf("Parsing NZB-document %s failed\n\n", g_pCommandLineParser->GetArgFilename() ? g_pCommandLineParser->GetArgFilename() : "N/A");
-				delete pNZBFile;
+				delete nzbFile;
 				return;
 			}
-			g_pScanner->InitPPParameters(szCategory, pNZBFile->GetNZBInfo()->GetParameters(), false);
-			g_pQueueCoordinator->AddNZBFileToQueue(pNZBFile, NULL, false);
-			delete pNZBFile;
+			g_pScanner->InitPPParameters(category, nzbFile->GetNZBInfo()->GetParameters(), false);
+			g_pQueueCoordinator->AddNZBFileToQueue(nzbFile, NULL, false);
+			delete nzbFile;
 		}
 
 		if (g_pOptions->GetSaveQueue() && g_pOptions->GetServerMode())
@@ -463,11 +463,11 @@ void Run(bool bReload)
 	{
 		debug("stopping RemoteServer");
 		g_pRemoteServer->Stop();
-		int iMaxWaitMSec = 1000;
-		while (g_pRemoteServer->IsRunning() && iMaxWaitMSec > 0)
+		int maxWaitMSec = 1000;
+		while (g_pRemoteServer->IsRunning() && maxWaitMSec > 0)
 		{
 			usleep(100 * 1000);
-			iMaxWaitMSec -= 100;
+			maxWaitMSec -= 100;
 		}
 		if (g_pRemoteServer->IsRunning())
 		{
@@ -481,11 +481,11 @@ void Run(bool bReload)
 	{
 		debug("stopping RemoteSecureServer");
 		g_pRemoteSecureServer->Stop();
-		int iMaxWaitMSec = 1000;
-		while (g_pRemoteSecureServer->IsRunning() && iMaxWaitMSec > 0)
+		int maxWaitMSec = 1000;
+		while (g_pRemoteSecureServer->IsRunning() && maxWaitMSec > 0)
 		{
 			usleep(100 * 1000);
-			iMaxWaitMSec -= 100;
+			maxWaitMSec -= 100;
 		}
 		if (g_pRemoteSecureServer->IsRunning())
 		{
@@ -523,26 +523,26 @@ protected:
 	}
 #endif
 
-	virtual void		AddNewsServer(int iID, bool bActive, const char* szName, const char* szHost,
-							int iPort, const char* szUser, const char* szPass, bool bJoinGroup,
-							bool bTLS, const char* szCipher, int iMaxConnections, int iRetention,
-							int iLevel, int iGroup)
+	virtual void		AddNewsServer(int id, bool active, const char* name, const char* host,
+							int port, const char* user, const char* pass, bool joinGroup,
+							bool tLS, const char* cipher, int maxConnections, int retention,
+							int level, int group)
 	{
-		g_pServerPool->AddServer(new NewsServer(iID, bActive, szName, szHost, iPort, szUser, szPass, bJoinGroup,
-							bTLS, szCipher, iMaxConnections, iRetention, iLevel, iGroup));
+		g_pServerPool->AddServer(new NewsServer(id, active, name, host, port, user, pass, joinGroup,
+							tLS, cipher, maxConnections, retention, level, group));
 	}
 
-	virtual void		AddFeed(int iID, const char* szName, const char* szUrl, int iInterval,
-							const char* szFilter, bool bBacklog, bool bPauseNzb, const char* szCategory,
-							int iPriority, const char* szFeedScript)
+	virtual void		AddFeed(int id, const char* name, const char* url, int interval,
+							const char* filter, bool backlog, bool pauseNzb, const char* category,
+							int priority, const char* feedScript)
 	{
-		g_pFeedCoordinator->AddFeed(new FeedInfo(iID, szName, szUrl, bBacklog, iInterval, szFilter, bPauseNzb, szCategory, iPriority, szFeedScript));
+		g_pFeedCoordinator->AddFeed(new FeedInfo(id, name, url, backlog, interval, filter, pauseNzb, category, priority, feedScript));
 	}
 
-	virtual void		AddTask(int iID, int iHours, int iMinutes, int iWeekDaysBits,
-							Options::ESchedulerCommand eCommand, const char* szParam)
+	virtual void		AddTask(int id, int hours, int minutes, int weekDaysBits,
+							Options::ESchedulerCommand command, const char* param)
 	{
-		g_pScheduler->AddTask(new Scheduler::Task(iID, iHours, iMinutes, iWeekDaysBits, (Scheduler::ECommand)eCommand, szParam));
+		g_pScheduler->AddTask(new Scheduler::Task(id, hours, minutes, weekDaysBits, (Scheduler::ECommand)command, param));
 	}
 } g_OptionsExtender;
 
@@ -609,11 +609,11 @@ void ProcessClientRequest()
 			break;
 
 		case CommandLineParser::opClientRequestDownloadPause:
-			Client->RequestServerPauseUnpause(true, eRemotePauseUnpauseActionDownload);
+			Client->RequestServerPauseUnpause(true, remotePauseUnpauseActionDownload);
 			break;
 
 		case CommandLineParser::opClientRequestDownloadUnpause:
-			Client->RequestServerPauseUnpause(false, eRemotePauseUnpauseActionDownload);
+			Client->RequestServerPauseUnpause(false, remotePauseUnpauseActionDownload);
 			break;
 
 		case CommandLineParser::opClientRequestSetRate:
@@ -628,7 +628,7 @@ void ProcessClientRequest()
 			Client->RequestServerEditQueue((DownloadQueue::EEditAction)g_pCommandLineParser->GetEditQueueAction(),
 				g_pCommandLineParser->GetEditQueueOffset(), g_pCommandLineParser->GetEditQueueText(),
 				g_pCommandLineParser->GetEditQueueIDList(), g_pCommandLineParser->GetEditQueueIDCount(),
-				g_pCommandLineParser->GetEditQueueNameList(), (eRemoteMatchMode)g_pCommandLineParser->GetMatchMode());
+				g_pCommandLineParser->GetEditQueueNameList(), (remoteMatchMode)g_pCommandLineParser->GetMatchMode());
 			break;
 
 		case CommandLineParser::opClientRequestLog:
@@ -670,19 +670,19 @@ void ProcessClientRequest()
 			break;
 
 		case CommandLineParser::opClientRequestPostPause:
-			Client->RequestServerPauseUnpause(true, eRemotePauseUnpauseActionPostProcess);
+			Client->RequestServerPauseUnpause(true, remotePauseUnpauseActionPostProcess);
 			break;
 
 		case CommandLineParser::opClientRequestPostUnpause:
-			Client->RequestServerPauseUnpause(false, eRemotePauseUnpauseActionPostProcess);
+			Client->RequestServerPauseUnpause(false, remotePauseUnpauseActionPostProcess);
 			break;
 
 		case CommandLineParser::opClientRequestScanPause:
-			Client->RequestServerPauseUnpause(true, eRemotePauseUnpauseActionScan);
+			Client->RequestServerPauseUnpause(true, remotePauseUnpauseActionScan);
 			break;
 
 		case CommandLineParser::opClientRequestScanUnpause:
-			Client->RequestServerPauseUnpause(false, eRemotePauseUnpauseActionScan);
+			Client->RequestServerPauseUnpause(false, remotePauseUnpauseActionScan);
 			break;
 
 		case CommandLineParser::opClientRequestHistory:
@@ -706,18 +706,18 @@ void ProcessWebGet()
 	downloader.SetOutputFilename(g_pCommandLineParser->GetWebGetFilename());
 	downloader.SetInfoName("WebGet");
 
-	WebDownloader::EStatus eStatus = downloader.DownloadWithRedirects(5);
-	bool bOK = eStatus == WebDownloader::adFinished;
+	WebDownloader::EStatus status = downloader.DownloadWithRedirects(5);
+	bool ok = status == WebDownloader::adFinished;
 
-	exit(bOK ? 0 : 1);
+	exit(ok ? 0 : 1);
 }
 
 void ProcessSigVerify()
 {
 #ifdef HAVE_OPENSSL
-	bool bOK = Maintenance::VerifySignature(g_pCommandLineParser->GetLastArg(),
+	bool ok = Maintenance::VerifySignature(g_pCommandLineParser->GetLastArg(),
 		g_pCommandLineParser->GetSigFilename(), g_pCommandLineParser->GetPubKeyFilename());
-	exit(bOK ? 93 : 1);
+	exit(ok ? 93 : 1);
 #else
 	printf("ERROR: Could not verify signature, the program was compiled without OpenSSL support\n");
 	exit(1);	

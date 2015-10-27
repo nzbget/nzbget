@@ -31,12 +31,12 @@ class Decoder
 public:
 	enum EStatus
 	{
-		eUnknownError,
-		eFinished,
-		eArticleIncomplete,
-		eCrcError,
-		eInvalidSize,
-		eNoBinaryData
+		dsUnknownError,
+		dsFinished,
+		dsArticleIncomplete,
+		dsCrcError,
+		dsInvalidSize,
+		dsNoBinaryData
 	};
 
 	enum EFormat
@@ -49,7 +49,7 @@ public:
 	static const char* FormatNames[];
 
 protected:
-	char*					m_szArticleFilename;
+	char*					m_articleFilename;
 
 public:
 							Decoder();
@@ -57,44 +57,44 @@ public:
 	virtual EStatus			Check() = 0;
 	virtual void			Clear();
 	virtual int				DecodeBuffer(char* buffer, int len) = 0;
-	const char*				GetArticleFilename() { return m_szArticleFilename; }
+	const char*				GetArticleFilename() { return m_articleFilename; }
 	static EFormat			DetectFormat(const char* buffer, int len);
 };
 
 class YDecoder: public Decoder
 {
 protected:
-	bool					m_bBegin;
-	bool					m_bPart;
-	bool					m_bBody;
-	bool					m_bEnd;
-	bool					m_bCrc;
-	unsigned long			m_lExpectedCRC;
-	unsigned long			m_lCalculatedCRC;
-	long long				m_iBegin;
-	long long				m_iEnd;
-	long long				m_iSize;
-	long long				m_iEndSize;
-	bool					m_bCrcCheck;
+	bool					m_begin;
+	bool					m_part;
+	bool					m_body;
+	bool					m_end;
+	bool					m_crc;
+	unsigned long			m_expectedCRC;
+	unsigned long			m_calculatedCRC;
+	long long				m_beginPos;
+	long long				m_endPos;
+	long long				m_size;
+	long long				m_endSize;
+	bool					m_crcCheck;
 
 public:
 							YDecoder();
 	virtual EStatus			Check();
 	virtual void			Clear();
 	virtual int				DecodeBuffer(char* buffer, int len);
-	void					SetCrcCheck(bool bCrcCheck) { m_bCrcCheck = bCrcCheck; }
-	long long				GetBegin() { return m_iBegin; }
-	long long				GetEnd() { return m_iEnd; }
-	long long				GetSize() { return m_iSize; }
-	unsigned long			GetExpectedCrc() { return m_lExpectedCRC; }
-	unsigned long			GetCalculatedCrc() { return m_lCalculatedCRC; }
+	void					SetCrcCheck(bool crcCheck) { m_crcCheck = crcCheck; }
+	long long				GetBegin() { return m_beginPos; }
+	long long				GetEnd() { return m_endPos; }
+	long long				GetSize() { return m_size; }
+	unsigned long			GetExpectedCrc() { return m_expectedCRC; }
+	unsigned long			GetCalculatedCrc() { return m_calculatedCRC; }
 };
 
 class UDecoder: public Decoder
 {
 private:
-	bool					m_bBody;
-	bool					m_bEnd;
+	bool					m_body;
+	bool					m_end;
 
 public:
 							UDecoder();

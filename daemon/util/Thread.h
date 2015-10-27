@@ -30,7 +30,7 @@
 class Mutex
 {
 private:
-	void*					m_pMutexObj;
+	void*					m_mutexObj;
 	
 public:
 							Mutex();
@@ -42,17 +42,17 @@ public:
 class Thread
 {
 private:
-	static Mutex*			m_pMutexThread;
-	static int				m_iThreadCount;
-	void*	 				m_pThreadObj;
-	bool 					m_bRunning;
-	bool					m_bStopped;
-	bool					m_bAutoDestroy;
+	static Mutex*			m_mutexThread;
+	static int				m_threadCount;
+	void*	 				m_threadObj;
+	bool 					m_running;
+	bool					m_stopped;
+	bool					m_autoDestroy;
 
 #ifdef WIN32
-	static void __cdecl 	thread_handler(void* pObject);
+	static void __cdecl 	thread_handler(void* object);
 #else
-	static void				*thread_handler(void* pObject);
+	static void				*thread_handler(void* object);
 #endif
 
 public:
@@ -66,11 +66,11 @@ public:
 	virtual void 			Resume();
 	bool					Kill();
 
-	bool 					IsStopped() { return m_bStopped; };
-	bool 					IsRunning()	const { return m_bRunning; }
-	void 					SetRunning(bool bOnOff) { m_bRunning = bOnOff; }
-	bool					GetAutoDestroy() { return m_bAutoDestroy; }
-	void					SetAutoDestroy(bool bAutoDestroy) { m_bAutoDestroy = bAutoDestroy; }
+	bool 					IsStopped() { return m_stopped; };
+	bool 					IsRunning()	const { return m_running; }
+	void 					SetRunning(bool onOff) { m_running = onOff; }
+	bool					GetAutoDestroy() { return m_autoDestroy; }
+	void					SetAutoDestroy(bool autoDestroy) { m_autoDestroy = autoDestroy; }
 	static int				GetThreadCount();
 
 protected:

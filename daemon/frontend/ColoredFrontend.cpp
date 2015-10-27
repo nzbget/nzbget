@@ -45,8 +45,8 @@
 
 ColoredFrontend::ColoredFrontend()
 {
-	m_bSummary = true;
-	m_bNeedGoBack = false;
+	m_summary = true;
+	m_needGoBack = false;
 #ifdef WIN32
 	m_hConsole = GetStdHandle(STD_OUTPUT_HANDLE);
 #endif
@@ -54,7 +54,7 @@ ColoredFrontend::ColoredFrontend()
 
 void ColoredFrontend::BeforePrint()
 {
-	if (m_bNeedGoBack)
+	if (m_needGoBack)
 	{
 		// go back one line
 #ifdef WIN32
@@ -65,7 +65,7 @@ void ColoredFrontend::BeforePrint()
 #else
 		printf("\r\033[1A");
 #endif
-		m_bNeedGoBack = false;
+		m_needGoBack = false;
 	}
 }
 
@@ -74,60 +74,60 @@ void ColoredFrontend::PrintStatus()
 	char tmp[1024];
 	char timeString[100];
 	timeString[0] = '\0';
-	int iCurrentDownloadSpeed = m_bStandBy ? 0 : m_iCurrentDownloadSpeed;
+	int currentDownloadSpeed = m_standBy ? 0 : m_currentDownloadSpeed;
 
-	if (iCurrentDownloadSpeed > 0 && !m_bPauseDownload)
+	if (currentDownloadSpeed > 0 && !m_pauseDownload)
 	{
-		long long remain_sec = (long long)(m_lRemainingSize / iCurrentDownloadSpeed);
+		long long remain_sec = (long long)(m_remainingSize / currentDownloadSpeed);
 		int h = (int)(remain_sec / 3600);
 		int m = (int)((remain_sec % 3600) / 60);
 		int s = (int)(remain_sec % 60);
 		sprintf(timeString, " (~ %.2d:%.2d:%.2d)", h, m, s);
 	}
 
-	char szDownloadLimit[128];
-	if (m_iDownloadLimit > 0)
+	char downloadLimit[128];
+	if (m_downloadLimit > 0)
 	{
-		sprintf(szDownloadLimit, ", Limit %i KB/s", m_iDownloadLimit / 1024);
+		sprintf(downloadLimit, ", Limit %i KB/s", m_downloadLimit / 1024);
 	}
 	else
 	{
-		szDownloadLimit[0] = 0;
+		downloadLimit[0] = 0;
 	}
 
-    char szPostStatus[128];
-    if (m_iPostJobCount > 0)
+    char postStatus[128];
+    if (m_postJobCount > 0)
     {
-        sprintf(szPostStatus, ", %i post-job%s", m_iPostJobCount, m_iPostJobCount > 1 ? "s" : "");
+        sprintf(postStatus, ", %i post-job%s", m_postJobCount, m_postJobCount > 1 ? "s" : "");
     }
     else
     {
-        szPostStatus[0] = 0;
+        postStatus[0] = 0;
     }
 
 #ifdef WIN32
-	char* szControlSeq = "";
+	char* controlSeq = "";
 #else
 	printf("\033[s");
-	const char* szControlSeq = "\033[K";
+	const char* controlSeq = "\033[K";
 #endif
 
-	char szFileSize[20];
-	char szCurrendSpeed[20];
+	char fileSize[20];
+	char currendSpeed[20];
 	snprintf(tmp, 1024, " %d threads, %s, %s remaining%s%s%s%s%s\n",
-		m_iThreadCount, Util::FormatSpeed(szCurrendSpeed, sizeof(szCurrendSpeed), iCurrentDownloadSpeed),
-		Util::FormatSize(szFileSize, sizeof(szFileSize), m_lRemainingSize),
-		timeString, szPostStatus, m_bPauseDownload ? (m_bStandBy ? ", Paused" : ", Pausing") : "",
-		szDownloadLimit, szControlSeq);
+		m_threadCount, Util::FormatSpeed(currendSpeed, sizeof(currendSpeed), currentDownloadSpeed),
+		Util::FormatSize(fileSize, sizeof(fileSize), m_remainingSize),
+		timeString, postStatus, m_pauseDownload ? (m_standBy ? ", Paused" : ", Pausing") : "",
+		downloadLimit, controlSeq);
 	tmp[1024-1] = '\0';
 	printf("%s", tmp);
-	m_bNeedGoBack = true;
+	m_needGoBack = true;
 } 
 
-void ColoredFrontend::PrintMessage(Message * pMessage)
+void ColoredFrontend::PrintMessage(Message * message)
 {
 #ifdef WIN32
-	switch (pMessage->GetKind())
+	switch (message->GetKind())
 	{
 		case Message::mkDebug:
 			SetConsoleTextAttribute(m_hConsole, 8);
@@ -151,13 +151,13 @@ void ColoredFrontend::PrintMessage(Message * pMessage)
 			break;
 	}
 	SetConsoleTextAttribute(m_hConsole, 7);
-	char* msg = strdup(pMessage->GetText());
+	char* msg = strdup(message->GetText());
 	CharToOem(msg, msg);
 	printf(" %s\n", msg);
 	free(msg);
 #else
-	const char* msg = pMessage->GetText();
-	switch (pMessage->GetKind())
+	const char* msg = message->GetText();
+	switch (message->GetKind())
 	{
 		case Message::mkDebug:
 			printf("[DEBUG] %s\033[K\n", msg);

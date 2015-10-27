@@ -68,7 +68,7 @@ extern StatMeter* g_pStatMeter;
   "name='Microsoft.Windows.Common-Controls' version='6.0.0.0' "\
   "processorArchitecture='*' publicKeyToken='6595b64144ccf1df' language='*'\"")
 
-bool bMayStartBrowser = true;
+bool mayStartBrowser = true;
 
 BOOL WINAPI WinConsole::ConsoleCtrlHandler(DWORD dwCtrlType)
 {
@@ -93,31 +93,31 @@ BOOL WINAPI WinConsole::ConsoleCtrlHandler(DWORD dwCtrlType)
 
 WinConsole::WinConsole()
 {
-	m_pInitialArguments = NULL;
-	m_iInitialArgumentCount = 0;
-	m_pDefaultArguments = NULL;
-	m_pNidIcon = NULL;
-	m_bModal = false;
-	m_bAutostart = false;
-	m_bTray = true;
-	m_bConsole = false;
-	m_bWebUI = true;
-	m_bAutoParam = false;
-	m_bDoubleClick = false;
+	m_initialArguments = NULL;
+	m_initialArgumentCount = 0;
+	m_defaultArguments = NULL;
+	m_nidIcon = NULL;
+	m_modal = false;
+	m_autostart = false;
+	m_tray = true;
+	m_console = false;
+	m_webUI = true;
+	m_autoParam = false;
+	m_doubleClick = false;
 	m_hTrayWindow = 0;
-	m_bRunning = false;
-	m_bRunningService = false;
+	m_running = false;
+	m_runningService = false;
 }
 
 WinConsole::~WinConsole()
 {
-	if (m_pInitialArguments)
+	if (m_initialArguments)
 	{
-		g_szArguments =	(char*(*)[])m_pInitialArguments;
-		g_iArgumentCount = m_iInitialArgumentCount;
+		g_szArguments =	(char*(*)[])m_initialArguments;
+		g_iArgumentCount = m_initialArgumentCount;
 	}
-	free(m_pDefaultArguments);
-	delete m_pNidIcon;
+	free(m_defaultArguments);
+	delete m_nidIcon;
 }
 
 void WinConsole::InitAppMode()
@@ -127,21 +127,21 @@ void WinConsole::InitAppMode()
 	m_hInstance = (HINSTANCE)GetModuleHandle(0);
     DWORD dwProcessId;
     GetWindowThreadProcessId(GetConsoleWindow(), &dwProcessId);
-    m_bAppMode = false;
+    m_appMode = false;
 
 	if (GetCurrentProcessId() == dwProcessId && g_iArgumentCount == 1)
 	{
-		m_pInitialArguments = (char**)g_szArguments;
-		m_iInitialArgumentCount = g_iArgumentCount;
+		m_initialArguments = (char**)g_szArguments;
+		m_initialArgumentCount = g_iArgumentCount;
 
 		// make command line to start in server mode
-		m_pDefaultArguments = (char**)malloc(sizeof(char*) * 3);
-		m_pDefaultArguments[0] = (*g_szArguments)[0];
-		m_pDefaultArguments[1] = "-s";
-		m_pDefaultArguments[2] = NULL;
-		g_szArguments = (char*(*)[])m_pDefaultArguments;
+		m_defaultArguments = (char**)malloc(sizeof(char*) * 3);
+		m_defaultArguments[0] = (*g_szArguments)[0];
+		m_defaultArguments[1] = "-s";
+		m_defaultArguments[2] = NULL;
+		g_szArguments = (char*(*)[])m_defaultArguments;
 		g_iArgumentCount = 2;
-		m_bAppMode = true;
+		m_appMode = true;
 	}
 	else if (GetCurrentProcessId() == dwProcessId && g_iArgumentCount > 1)
 	{
@@ -153,23 +153,23 @@ void WinConsole::InitAppMode()
 			}
 			if (!strcmp((*g_szArguments)[i], "-app"))
 			{
-				m_bAppMode = true;
+				m_appMode = true;
 			}
 
 			if (!strcmp((*g_szArguments)[i], "-auto"))
 			{
-				m_bAutoParam = true;
+				m_autoParam = true;
 			}
 		}
 
-		if (m_bAppMode)
+		if (m_appMode)
 		{
-			m_pInitialArguments = (char**)g_szArguments;
-			m_iInitialArgumentCount = g_iArgumentCount;
+			m_initialArguments = (char**)g_szArguments;
+			m_initialArgumentCount = g_iArgumentCount;
 
 			// remove "-app" from command line
-			int argc = g_iArgumentCount - 1 - (m_bAutoParam ? 1 : 0);
-			m_pDefaultArguments = (char**)malloc(sizeof(char*) * (argc + 2));
+			int argc = g_iArgumentCount - 1 - (m_autoParam ? 1 : 0);
+			m_defaultArguments = (char**)malloc(sizeof(char*) * (argc + 2));
 
 			int p = 0;
 			for (int i = 0; i < g_iArgumentCount; i++)
@@ -177,11 +177,11 @@ void WinConsole::InitAppMode()
 				if (strcmp((*g_szArguments)[i], "-app") &&
 					strcmp((*g_szArguments)[i], "-auto"))
 				{
-					m_pDefaultArguments[p++] = (*g_szArguments)[i];
+					m_defaultArguments[p++] = (*g_szArguments)[i];
 				}
 			}
-			m_pDefaultArguments[p] = NULL;
-			g_szArguments = (char*(*)[])m_pDefaultArguments;
+			m_defaultArguments[p] = NULL;
+			g_szArguments = (char*(*)[])m_defaultArguments;
 			g_iArgumentCount = p;
 		}
 	}
@@ -190,7 +190,7 @@ void WinConsole::InitAppMode()
 	// (not from a dos box window). In that case we hide the console window,
 	// show the tray icon and start in server mode
 
-	if (m_bAppMode)
+	if (m_appMode)
 	{
 		CreateResources();
 		CheckRunning();
@@ -199,7 +199,7 @@ void WinConsole::InitAppMode()
 
 void WinConsole::Run()
 {
-	if (!m_bAppMode)
+	if (!m_appMode)
 	{
 		return;
 	}
@@ -211,13 +211,13 @@ void WinConsole::Run()
 
 	BuildMenu();
 
-	if (m_bWebUI && !m_bAutoParam && bMayStartBrowser)
+	if (m_webUI && !m_autoParam && mayStartBrowser)
 	{
 		ShowWebUI();
 	}
-	bMayStartBrowser = false;
+	mayStartBrowser = false;
 
-	int iCounter = 0;
+	int counter = 0;
 	while (!IsStopped())
 	{
 		MSG msg;
@@ -229,21 +229,21 @@ void WinConsole::Run()
 		else
 		{
 			usleep(20 * 1000);
-			iCounter += 20;
-			if (iCounter >= 200)
+			counter += 20;
+			if (counter >= 200)
 			{
 				UpdateTrayIcon();
-				iCounter = 0;
+				counter = 0;
 			}
 		}
 	}
 
-	Shell_NotifyIcon(NIM_DELETE, m_pNidIcon);
+	Shell_NotifyIcon(NIM_DELETE, m_nidIcon);
 }
 
 void WinConsole::Stop()
 {
-	if (m_bAppMode)
+	if (m_appMode)
 	{
 		PostMessage(m_hTrayWindow, WM_QUIT, 0, 0);
 	}
@@ -291,23 +291,23 @@ void WinConsole::CreateTrayIcon()
 	m_hTrayWindow = CreateWindowEx(0, className, "NZBGet", WS_OVERLAPPEDWINDOW, CW_USEDEFAULT, CW_USEDEFAULT,
 		CW_USEDEFAULT, CW_USEDEFAULT, NULL, NULL, m_hInstance, NULL);
 
-	m_pNidIcon = new NOTIFYICONDATA;
-	memset(m_pNidIcon, 0, sizeof(NOTIFYICONDATA));
-	m_pNidIcon->cbSize = sizeof(NOTIFYICONDATA);
-	m_pNidIcon->hWnd = m_hTrayWindow;
-	m_pNidIcon->uID = 100;
-	m_pNidIcon->uCallbackMessage = UM_TRAYICON;
-	m_pNidIcon->hIcon = m_hWorkingIcon;
-	strncpy(m_pNidIcon->szTip, "NZBGet", sizeof(m_pNidIcon->szTip));
-	m_pNidIcon->uFlags = NIF_MESSAGE | NIF_ICON | NIF_TIP;
+	m_nidIcon = new NOTIFYICONDATA;
+	memset(m_nidIcon, 0, sizeof(NOTIFYICONDATA));
+	m_nidIcon->cbSize = sizeof(NOTIFYICONDATA);
+	m_nidIcon->hWnd = m_hTrayWindow;
+	m_nidIcon->uID = 100;
+	m_nidIcon->uCallbackMessage = UM_TRAYICON;
+	m_nidIcon->hIcon = m_hWorkingIcon;
+	strncpy(m_nidIcon->szTip, "NZBGet", sizeof(m_nidIcon->szTip));
+	m_nidIcon->uFlags = NIF_MESSAGE | NIF_ICON | NIF_TIP;
 }
 
-LRESULT CALLBACK WinConsole::TrayWndProcStat(HWND hwndWin, UINT uMsg, WPARAM wParam, LPARAM lParam)
+LRESULT CALLBACK WinConsole::TrayWndProcStat(HWND hwndWin, UINT uMsg, WPARAM wParam, LPARAM param)
 {
-	return g_pWinConsole->TrayWndProc(hwndWin, uMsg, wParam, lParam);
+	return g_pWinConsole->TrayWndProc(hwndWin, uMsg, wParam, param);
 }
 
-LRESULT WinConsole::TrayWndProc(HWND hwndWin, UINT uMsg, WPARAM wParam, LPARAM lParam)
+LRESULT WinConsole::TrayWndProc(HWND hwndWin, UINT uMsg, WPARAM wParam, LPARAM param)
 {
 	if (uMsg == UM_TASKBARCREATED)
 	{
@@ -318,7 +318,7 @@ LRESULT WinConsole::TrayWndProc(HWND hwndWin, UINT uMsg, WPARAM wParam, LPARAM l
 	switch (uMsg)
 	{
 		case UM_TRAYICON:
-			if (lParam == WM_LBUTTONUP && !m_bDoubleClick)
+			if (param == WM_LBUTTONUP && !m_doubleClick)
 			{
 				g_pOptions->SetPauseDownload(!g_pOptions->GetPauseDownload());
 				g_pOptions->SetPausePostProcess(g_pOptions->GetPauseDownload());
@@ -326,11 +326,11 @@ LRESULT WinConsole::TrayWndProc(HWND hwndWin, UINT uMsg, WPARAM wParam, LPARAM l
 				g_pOptions->SetResumeTime(0);
 				UpdateTrayIcon();
 			}
-			else if (lParam == WM_LBUTTONDBLCLK && m_bDoubleClick)
+			else if (param == WM_LBUTTONDBLCLK && m_doubleClick)
 			{
 				ShowWebUI();
 			}
-			else if (lParam == WM_RBUTTONDOWN)
+			else if (param == WM_RBUTTONDOWN)
 			{
 				ShowMenu();
 			}
@@ -350,7 +350,7 @@ LRESULT WinConsole::TrayWndProc(HWND hwndWin, UINT uMsg, WPARAM wParam, LPARAM l
 			return 0;
 
 		default:
-			return DefWindowProc(hwndWin, uMsg, wParam, lParam);
+			return DefWindowProc(hwndWin, uMsg, wParam, param);
 	}
 }
 
@@ -360,9 +360,9 @@ void WinConsole::ShowMenu()
 	GetCursorPos(&curPoint);
 	SetForegroundWindow(m_hTrayWindow); 
 
-	UINT iItemID = TrackPopupMenu(m_hMenu, TPM_RETURNCMD | TPM_NONOTIFY, curPoint.x, curPoint.y, 0, m_hTrayWindow, NULL);
+	UINT itemId = TrackPopupMenu(m_hMenu, TPM_RETURNCMD | TPM_NONOTIFY, curPoint.x, curPoint.y, 0, m_hTrayWindow, NULL);
 
-	switch(iItemID)
+	switch(itemId)
 	{
 		case ID_SHOWWEBUI:
 			ShowWebUI();
@@ -417,7 +417,7 @@ void WinConsole::ShowMenu()
 			break;
 
 		case ID_TROUBLESHOOTING_RESTART:
-			bMayStartBrowser = true;
+			mayStartBrowser = true;
 			Reload();
 			break;
 
@@ -430,46 +430,46 @@ void WinConsole::ShowMenu()
 			break;
 	}
 
-	if (iItemID >= ID_SHOW_DESTDIR + 1000 && iItemID < ID_SHOW_DESTDIR + 2000)
+	if (itemId >= ID_SHOW_DESTDIR + 1000 && itemId < ID_SHOW_DESTDIR + 2000)
 	{
-		ShowCategoryDir(iItemID - (ID_SHOW_DESTDIR + 1000));
+		ShowCategoryDir(itemId - (ID_SHOW_DESTDIR + 1000));
 	}
 }
 
 void WinConsole::ShowWebUI()
 {
-	const char* szIP = g_pOptions->GetControlIP();
+	const char* iP = g_pOptions->GetControlIP();
 	if (!strcmp(g_pOptions->GetControlIP(), "localhost") ||
 		!strcmp(g_pOptions->GetControlIP(), "0.0.0.0"))
 	{
-		szIP = "127.0.0.1";
+		iP = "127.0.0.1";
 	}
 
-	char szURL[1024];
-	snprintf(szURL, 1024, "http://%s:%i", szIP, g_pOptions->GetControlPort());
-	szURL[1024-1] = '\0';
-	ShellExecute(0, "open", szURL, NULL, NULL, SW_SHOWNORMAL);
+	char url[1024];
+	snprintf(url, 1024, "http://%s:%i", iP, g_pOptions->GetControlPort());
+	url[1024-1] = '\0';
+	ShellExecute(0, "open", url, NULL, NULL, SW_SHOWNORMAL);
 }
 
-void WinConsole::ShowInExplorer(const char* szFileName)
+void WinConsole::ShowInExplorer(const char* fileName)
 {
-	char szFileName2[MAX_PATH + 1];
-	strncpy(szFileName2, szFileName, MAX_PATH);
-	szFileName2[MAX_PATH] = '\0';
-	Util::NormalizePathSeparators(szFileName2);
-	if (*szFileName2 && szFileName2[strlen(szFileName2) - 1] == PATH_SEPARATOR) szFileName2[strlen(szFileName2) - 1] = '\0'; // trim slash
+	char fileName2[MAX_PATH + 1];
+	strncpy(fileName2, fileName, MAX_PATH);
+	fileName2[MAX_PATH] = '\0';
+	Util::NormalizePathSeparators(fileName2);
+	if (*fileName2 && fileName2[strlen(fileName2) - 1] == PATH_SEPARATOR) fileName2[strlen(fileName2) - 1] = '\0'; // trim slash
 
-	if (!Util::FileExists(szFileName2) && !Util::DirectoryExists(szFileName2))
+	if (!Util::FileExists(fileName2) && !Util::DirectoryExists(fileName2))
 	{
-		char szMessage[400];
-		snprintf(szMessage, 400, "Directory or file %s doesn't exist (yet).", szFileName2);
-		szMessage[400-1] = '\0';
-		MessageBox(m_hTrayWindow, szMessage, "Information", MB_ICONINFORMATION);
+		char message[400];
+		snprintf(message, 400, "Directory or file %s doesn't exist (yet).", fileName2);
+		message[400-1] = '\0';
+		MessageBox(m_hTrayWindow, message, "Information", MB_ICONINFORMATION);
 		return;
 	}
 
 	WCHAR wszFileName2[MAX_PATH + 1];
-	MultiByteToWideChar(0, 0, szFileName2, strlen(szFileName2) + 1, wszFileName2, MAX_PATH);
+	MultiByteToWideChar(0, 0, fileName2, strlen(fileName2) + 1, wszFileName2, MAX_PATH);
 	CoInitialize(NULL);
 	LPITEMIDLIST pidl;
 	HRESULT H = SHParseDisplayName(wszFileName2, NULL, &pidl, 0, NULL);
@@ -478,31 +478,31 @@ void WinConsole::ShowInExplorer(const char* szFileName)
 
 void WinConsole::ShowAboutBox()
 {
-	if (m_bModal)
+	if (m_modal)
 	{
 		return;
 	}
 
-	m_bModal = true;
+	m_modal = true;
 	DialogBox(m_hInstance, MAKEINTRESOURCE(IDD_ABOUTBOX), m_hTrayWindow, AboutDialogProcStat);
-	m_bModal = false;
+	m_modal = false;
 }
 
-BOOL CALLBACK WinConsole::AboutDialogProcStat(HWND hwndDlg, UINT uMsg, WPARAM wParam, LPARAM lParam)
+BOOL CALLBACK WinConsole::AboutDialogProcStat(HWND hwndDlg, UINT uMsg, WPARAM wParam, LPARAM param)
 {
-	return g_pWinConsole->AboutDialogProc(hwndDlg, uMsg, wParam, lParam);
+	return g_pWinConsole->AboutDialogProc(hwndDlg, uMsg, wParam, param);
 }
 
-BOOL WinConsole::AboutDialogProc(HWND hwndDlg, UINT uMsg, WPARAM wParam, LPARAM lParam)
+BOOL WinConsole::AboutDialogProc(HWND hwndDlg, UINT uMsg, WPARAM wParam, LPARAM param)
 {
 	switch(uMsg)
 	{
 		case WM_INITDIALOG:
 			SendDlgItemMessage(hwndDlg, IDC_ABOUT_NAME, WM_SETFONT, (WPARAM)m_hNameFont, 0);
 
-			char szVersion[100];
-			snprintf(szVersion, 100, "Version %s", Util::VersionRevision());
-			SetDlgItemText(hwndDlg, IDC_ABOUT_VERSION, szVersion);
+			char version[100];
+			snprintf(version, 100, "Version %s", Util::VersionRevision());
+			SetDlgItemText(hwndDlg, IDC_ABOUT_VERSION, version);
 
 			SendDlgItemMessage(hwndDlg, IDC_ABOUT_ICON, STM_SETICON, (WPARAM)m_hAboutIcon, 0);
 
@@ -531,8 +531,8 @@ BOOL WinConsole::AboutDialogProc(HWND hwndDlg, UINT uMsg, WPARAM wParam, LPARAM 
 			return TRUE;
 
 		case WM_CTLCOLORSTATIC:
-			if ((HWND)lParam == GetDlgItem(hwndDlg, IDC_ABOUT_HOMEPAGE) ||
-				(HWND)lParam == GetDlgItem(hwndDlg, IDC_ABOUT_GPL))
+			if ((HWND)param == GetDlgItem(hwndDlg, IDC_ABOUT_HOMEPAGE) ||
+				(HWND)param == GetDlgItem(hwndDlg, IDC_ABOUT_GPL))
 			{
 				SetTextColor((HDC)wParam, RGB(0, 0, 255));
 				SetBkColor((HDC)wParam, GetSysColor(COLOR_BTNFACE));
@@ -557,34 +557,34 @@ BOOL WinConsole::AboutDialogProc(HWND hwndDlg, UINT uMsg, WPARAM wParam, LPARAM 
 
 void WinConsole::ShowPrefsDialog()
 {
-	if (m_bModal)
+	if (m_modal)
 	{
 		return;
 	}
 
-	m_bModal = true;
+	m_modal = true;
 	DialogBox(m_hInstance, MAKEINTRESOURCE(IDD_PREFDIALOG), m_hTrayWindow, PrefsDialogProcStat);
-	m_bModal = false;
+	m_modal = false;
 }
 
-BOOL CALLBACK WinConsole::PrefsDialogProcStat(HWND hwndDlg, UINT uMsg, WPARAM wParam, LPARAM lParam)
+BOOL CALLBACK WinConsole::PrefsDialogProcStat(HWND hwndDlg, UINT uMsg, WPARAM wParam, LPARAM param)
 {
-	return g_pWinConsole->PrefsDialogProc(hwndDlg, uMsg, wParam, lParam);
+	return g_pWinConsole->PrefsDialogProc(hwndDlg, uMsg, wParam, param);
 }
 
-BOOL WinConsole::PrefsDialogProc(HWND hwndDlg, UINT uMsg, WPARAM wParam, LPARAM lParam)
+BOOL WinConsole::PrefsDialogProc(HWND hwndDlg, UINT uMsg, WPARAM wParam, LPARAM param)
 {
 	switch(uMsg)
 	{
 		case WM_INITDIALOG:
 			LoadPrefs();
 
-			SendDlgItemMessage(hwndDlg, IDC_PREF_AUTOSTART, BM_SETCHECK, m_bAutostart, 0);
-			SendDlgItemMessage(hwndDlg, IDC_PREF_TRAY, BM_SETCHECK, m_bTray, 0);
-			SendDlgItemMessage(hwndDlg, IDC_PREF_CONSOLE, BM_SETCHECK, m_bConsole, 0);
-			SendDlgItemMessage(hwndDlg, IDC_PREF_WEBUI, BM_SETCHECK, m_bWebUI, 0);
-			SendDlgItemMessage(hwndDlg, IDC_PREF_TRAYPAUSE, BM_SETCHECK, !m_bDoubleClick, 0);
-			SendDlgItemMessage(hwndDlg, IDC_PREF_TRAYWEBUI, BM_SETCHECK, m_bDoubleClick, 0);
+			SendDlgItemMessage(hwndDlg, IDC_PREF_AUTOSTART, BM_SETCHECK, m_autostart, 0);
+			SendDlgItemMessage(hwndDlg, IDC_PREF_TRAY, BM_SETCHECK, m_tray, 0);
+			SendDlgItemMessage(hwndDlg, IDC_PREF_CONSOLE, BM_SETCHECK, m_console, 0);
+			SendDlgItemMessage(hwndDlg, IDC_PREF_WEBUI, BM_SETCHECK, m_webUI, 0);
+			SendDlgItemMessage(hwndDlg, IDC_PREF_TRAYPAUSE, BM_SETCHECK, !m_doubleClick, 0);
+			SendDlgItemMessage(hwndDlg, IDC_PREF_TRAYWEBUI, BM_SETCHECK, m_doubleClick, 0);
 
 			return FALSE;
 
@@ -595,14 +595,14 @@ BOOL WinConsole::PrefsDialogProc(HWND hwndDlg, UINT uMsg, WPARAM wParam, LPARAM 
 		case WM_COMMAND:
 			if (LOWORD(wParam) == IDOK)
 			{
-				m_bAutostart = SendDlgItemMessage(hwndDlg, IDC_PREF_AUTOSTART, BM_GETCHECK, 0, 0) == BST_CHECKED;
-				m_bTray = SendDlgItemMessage(hwndDlg, IDC_PREF_TRAY, BM_GETCHECK, 0, 0) == BST_CHECKED;
-				m_bConsole = SendDlgItemMessage(hwndDlg, IDC_PREF_CONSOLE, BM_GETCHECK, 0, 0) == BST_CHECKED;
-				m_bWebUI = SendDlgItemMessage(hwndDlg, IDC_PREF_WEBUI, BM_GETCHECK, 0, 0) == BST_CHECKED;
-				m_bDoubleClick = SendDlgItemMessage(hwndDlg, IDC_PREF_TRAYWEBUI, BM_GETCHECK, 0, 0) == BST_CHECKED;
+				m_autostart = SendDlgItemMessage(hwndDlg, IDC_PREF_AUTOSTART, BM_GETCHECK, 0, 0) == BST_CHECKED;
+				m_tray = SendDlgItemMessage(hwndDlg, IDC_PREF_TRAY, BM_GETCHECK, 0, 0) == BST_CHECKED;
+				m_console = SendDlgItemMessage(hwndDlg, IDC_PREF_CONSOLE, BM_GETCHECK, 0, 0) == BST_CHECKED;
+				m_webUI = SendDlgItemMessage(hwndDlg, IDC_PREF_WEBUI, BM_GETCHECK, 0, 0) == BST_CHECKED;
+				m_doubleClick = SendDlgItemMessage(hwndDlg, IDC_PREF_TRAYWEBUI, BM_GETCHECK, 0, 0) == BST_CHECKED;
 
 				SavePrefs();
-				if (!m_bRunning)
+				if (!m_running)
 				{
 					ApplyPrefs();
 				}
@@ -626,30 +626,30 @@ void WinConsole::SavePrefs()
 	HKEY hKey;
 	RegCreateKey(HKEY_CURRENT_USER, "Software\\NZBGet", &hKey);
 
-	val = m_bTray;
+	val = m_tray;
 	RegSetValueEx(hKey, "ShowTrayIcon", 0, REG_DWORD, (BYTE*)&val, sizeof(val));
 
-	val = m_bConsole;
+	val = m_console;
 	RegSetValueEx(hKey, "ShowConsole", 0, REG_DWORD, (BYTE*)&val, sizeof(val));
 
-	val = m_bWebUI;
+	val = m_webUI;
 	RegSetValueEx(hKey, "ShowWebUI", 0, REG_DWORD, (BYTE*)&val, sizeof(val));
 
-	val = m_bDoubleClick;
+	val = m_doubleClick;
 	RegSetValueEx(hKey, "TrayDoubleClick", 0, REG_DWORD, (BYTE*)&val, sizeof(val));
 
 	RegCloseKey(hKey);
 
 	// Autostart-setting
 	RegCreateKey(HKEY_CURRENT_USER, "Software\\Microsoft\\Windows\\CurrentVersion\\Run", &hKey);
-	if (m_bAutostart)
+	if (m_autostart)
 	{
-		char szFilename[MAX_PATH + 1];
-		GetModuleFileName(NULL, szFilename, sizeof(szFilename));
-		char szStartCommand[1024];
-		snprintf(szStartCommand, sizeof(szStartCommand), "\"%s\" -s -app -auto", szFilename);
-		szStartCommand[1024-1] = '\0';
-		RegSetValueEx(hKey, "NZBGet", 0, REG_SZ, (BYTE*)szStartCommand, strlen(szStartCommand) + 1);
+		char filename[MAX_PATH + 1];
+		GetModuleFileName(NULL, filename, sizeof(filename));
+		char startCommand[1024];
+		snprintf(startCommand, sizeof(startCommand), "\"%s\" -s -app -auto", filename);
+		startCommand[1024-1] = '\0';
+		RegSetValueEx(hKey, "NZBGet", 0, REG_SZ, (BYTE*)startCommand, strlen(startCommand) + 1);
 	}
 	else
 	{
@@ -669,22 +669,22 @@ void WinConsole::LoadPrefs()
 	{
 		if (RegQueryValueEx(hKey, "ShowTrayIcon", 0, &typ, (LPBYTE)&val, &cval) == ERROR_SUCCESS)
 		{
-			m_bTray = val;
+			m_tray = val;
 		}
 
 		if (RegQueryValueEx(hKey, "ShowConsole", 0, &typ, (LPBYTE)&val, &cval) == ERROR_SUCCESS)
 		{
-			m_bConsole = val;
+			m_console = val;
 		}
 
 		if (RegQueryValueEx(hKey, "ShowWebUI", 0, &typ, (LPBYTE)&val, &cval) == ERROR_SUCCESS)
 		{
-			m_bWebUI = val;
+			m_webUI = val;
 		}
 
 		if (RegQueryValueEx(hKey, "TrayDoubleClick", 0, &typ, (LPBYTE)&val, &cval) == ERROR_SUCCESS)
 		{
-			m_bDoubleClick = val;
+			m_doubleClick = val;
 		}
 
 		RegCloseKey(hKey);
@@ -693,19 +693,19 @@ void WinConsole::LoadPrefs()
 	// Autostart-setting
 	if (RegOpenKey(HKEY_CURRENT_USER, "Software\\Microsoft\\Windows\\CurrentVersion\\Run", &hKey) == ERROR_SUCCESS)
 	{
-		m_bAutostart = RegQueryValueEx(hKey, "NZBGet", 0, &typ, NULL, NULL) == ERROR_SUCCESS;
+		m_autostart = RegQueryValueEx(hKey, "NZBGet", 0, &typ, NULL, NULL) == ERROR_SUCCESS;
 		RegCloseKey(hKey);
 	}
 }
 
 void WinConsole::ApplyPrefs()
 {
-	ShowWindow(GetConsoleWindow(), m_bConsole ? SW_SHOW : SW_HIDE);
-	if (m_bTray)
+	ShowWindow(GetConsoleWindow(), m_console ? SW_SHOW : SW_HIDE);
+	if (m_tray)
 	{
 		UpdateTrayIcon();
 	}
-	Shell_NotifyIcon(m_bTray ? NIM_ADD : NIM_DELETE, m_pNidIcon);
+	Shell_NotifyIcon(m_tray ? NIM_ADD : NIM_DELETE, m_nidIcon);
 }
 
 void WinConsole::CheckRunning()
@@ -719,7 +719,7 @@ void WinConsole::CheckRunning()
 
 	if (IsServiceRunning())
 	{
-		m_bRunningService = true;
+		m_runningService = true;
 		ShowRunningDialog();
 		ExitProcess(1);
 	}
@@ -727,13 +727,13 @@ void WinConsole::CheckRunning()
 
 void WinConsole::ShowRunningDialog()
 {
-	ShowWindow(GetConsoleWindow(), m_bConsole ? SW_SHOW : SW_HIDE);
+	ShowWindow(GetConsoleWindow(), m_console ? SW_SHOW : SW_HIDE);
 	HWND hTrayWindow = FindWindow("NZBGet tray window", NULL);
-	m_bRunning = true;
+	m_running = true;
 
-	int iResult = DialogBox(m_hInstance, MAKEINTRESOURCE(IDD_RUNNINGDIALOG), m_hTrayWindow, RunningDialogProcStat);
+	int result = DialogBox(m_hInstance, MAKEINTRESOURCE(IDD_RUNNINGDIALOG), m_hTrayWindow, RunningDialogProcStat);
 
-	switch (iResult)
+	switch (result)
 	{
 		case IDC_RUNNING_WEBUI:
 			PostMessage(hTrayWindow, UM_SHOWWEBUI, 0, 0);
@@ -750,12 +750,12 @@ void WinConsole::ShowRunningDialog()
 	}
 }
 
-BOOL CALLBACK WinConsole::RunningDialogProcStat(HWND hwndDlg, UINT uMsg, WPARAM wParam, LPARAM lParam)
+BOOL CALLBACK WinConsole::RunningDialogProcStat(HWND hwndDlg, UINT uMsg, WPARAM wParam, LPARAM param)
 {
-	return g_pWinConsole->RunningDialogProc(hwndDlg, uMsg, wParam, lParam);
+	return g_pWinConsole->RunningDialogProc(hwndDlg, uMsg, wParam, param);
 }
 
-BOOL WinConsole::RunningDialogProc(HWND hwndDlg, UINT uMsg, WPARAM wParam, LPARAM lParam)
+BOOL WinConsole::RunningDialogProc(HWND hwndDlg, UINT uMsg, WPARAM wParam, LPARAM param)
 {
 	switch(uMsg)
 	{
@@ -763,7 +763,7 @@ BOOL WinConsole::RunningDialogProc(HWND hwndDlg, UINT uMsg, WPARAM wParam, LPARA
 			SendDlgItemMessage(hwndDlg, IDC_RUNNING_ICON, STM_SETICON, (WPARAM)m_hRunningIcon, 0);
 			SendDlgItemMessage(hwndDlg, IDC_RUNNING_TITLE, WM_SETFONT, (WPARAM)m_hTitleFont, 0);
 
-			if (m_bRunningService)
+			if (m_runningService)
 			{
 				SetDlgItemText(hwndDlg, IDC_RUNNING_TEXT, "Another instance of NZBGet is running as Windows Service. Please use Management Console to control the service.");
 				ShowWindow(GetDlgItem(hwndDlg, IDC_RUNNING_WEBUI), SW_HIDE);
@@ -789,83 +789,83 @@ BOOL WinConsole::RunningDialogProc(HWND hwndDlg, UINT uMsg, WPARAM wParam, LPARA
 
 void WinConsole::UpdateTrayIcon()
 {
-	if (!m_bTray)
+	if (!m_tray)
 	{
 		return;
 	}
 
-	HICON hOldIcon = m_pNidIcon->hIcon;
+	HICON hOldIcon = m_nidIcon->hIcon;
 
-	char szOldTip[200];
-	strncpy(szOldTip, m_pNidIcon->szTip, sizeof(m_pNidIcon->szTip));
-	szOldTip[200-1] = '\0';
+	char oldTip[200];
+	strncpy(oldTip, m_nidIcon->szTip, sizeof(m_nidIcon->szTip));
+	oldTip[200-1] = '\0';
 
 	if (g_pOptions->GetPauseDownload())
 	{
-		m_pNidIcon->hIcon = m_hPausedIcon;
-		strncpy(m_pNidIcon->szTip, "NZBGet - paused", sizeof(m_pNidIcon->szTip));
+		m_nidIcon->hIcon = m_hPausedIcon;
+		strncpy(m_nidIcon->szTip, "NZBGet - paused", sizeof(m_nidIcon->szTip));
 	}
 	else if (!g_pStatMeter->GetStandBy())
 	{
-		m_pNidIcon->hIcon = m_hWorkingIcon;
-		char szSpeed[100];
-		Util::FormatSpeed(szSpeed, sizeof(szSpeed), g_pStatMeter->CalcCurrentDownloadSpeed());
-		char szTip[200];
-		snprintf(szTip, sizeof(szTip), "NZBGet - downloading at %s", szSpeed);
-		szTip[200-1] = '\0';
-		strncpy(m_pNidIcon->szTip, szTip, sizeof(m_pNidIcon->szTip));
+		m_nidIcon->hIcon = m_hWorkingIcon;
+		char speed[100];
+		Util::FormatSpeed(speed, sizeof(speed), g_pStatMeter->CalcCurrentDownloadSpeed());
+		char tip[200];
+		snprintf(tip, sizeof(tip), "NZBGet - downloading at %s", speed);
+		tip[200-1] = '\0';
+		strncpy(m_nidIcon->szTip, tip, sizeof(m_nidIcon->szTip));
 	}
 	else
 	{
-		DownloadQueue *pDownloadQueue = DownloadQueue::Lock();
-		int iPostJobCount = 0;
-		int iUrlCount = 0;
-		for (NZBList::iterator it = pDownloadQueue->GetQueue()->begin(); it != pDownloadQueue->GetQueue()->end(); it++)
+		DownloadQueue *downloadQueue = DownloadQueue::Lock();
+		int postJobCount = 0;
+		int urlCount = 0;
+		for (NZBList::iterator it = downloadQueue->GetQueue()->begin(); it != downloadQueue->GetQueue()->end(); it++)
 		{
-			NZBInfo* pNZBInfo = *it;
-			iPostJobCount += pNZBInfo->GetPostInfo() ? 1 : 0;
-			iUrlCount += pNZBInfo->GetKind() == NZBInfo::nkUrl ? 1 : 0;
+			NZBInfo* nzbInfo = *it;
+			postJobCount += nzbInfo->GetPostInfo() ? 1 : 0;
+			urlCount += nzbInfo->GetKind() == NZBInfo::nkUrl ? 1 : 0;
 		}
 		DownloadQueue::Unlock();
 
-		if (iPostJobCount > 0)
+		if (postJobCount > 0)
 		{
-			m_pNidIcon->hIcon = m_hWorkingIcon;
-			strncpy(m_pNidIcon->szTip, "NZBGet - post-processing", sizeof(m_pNidIcon->szTip));
+			m_nidIcon->hIcon = m_hWorkingIcon;
+			strncpy(m_nidIcon->szTip, "NZBGet - post-processing", sizeof(m_nidIcon->szTip));
 		}
-		else if (iUrlCount > 0)
+		else if (urlCount > 0)
 		{
-			m_pNidIcon->hIcon = m_hWorkingIcon;
-			strncpy(m_pNidIcon->szTip, "NZBGet - fetching URLs", sizeof(m_pNidIcon->szTip));
+			m_nidIcon->hIcon = m_hWorkingIcon;
+			strncpy(m_nidIcon->szTip, "NZBGet - fetching URLs", sizeof(m_nidIcon->szTip));
 		}
 		else if (g_pFeedCoordinator->HasActiveDownloads())
 		{
-			m_pNidIcon->hIcon = m_hWorkingIcon;
-			strncpy(m_pNidIcon->szTip, "NZBGet - fetching feeds", sizeof(m_pNidIcon->szTip));
+			m_nidIcon->hIcon = m_hWorkingIcon;
+			strncpy(m_nidIcon->szTip, "NZBGet - fetching feeds", sizeof(m_nidIcon->szTip));
 		}
 		else
 		{
-			m_pNidIcon->hIcon = m_hIdleIcon;
-			strncpy(m_pNidIcon->szTip, "NZBGet - idle", sizeof(m_pNidIcon->szTip));
+			m_nidIcon->hIcon = m_hIdleIcon;
+			strncpy(m_nidIcon->szTip, "NZBGet - idle", sizeof(m_nidIcon->szTip));
 		}
 	}
 
-	if (m_pNidIcon->hIcon != hOldIcon || strcmp(szOldTip, m_pNidIcon->szTip))
+	if (m_nidIcon->hIcon != hOldIcon || strcmp(oldTip, m_nidIcon->szTip))
 	{
-		Shell_NotifyIcon(NIM_MODIFY, m_pNidIcon);
+		Shell_NotifyIcon(NIM_MODIFY, m_nidIcon);
 	}
 }
 
 void WinConsole::BuildMenu()
 {
-	int iIndex = 0;
-	for (Options::Categories::iterator it = g_pOptions->GetCategories()->begin(); it != g_pOptions->GetCategories()->end(); it++, iIndex++)
+	int index = 0;
+	for (Options::Categories::iterator it = g_pOptions->GetCategories()->begin(); it != g_pOptions->GetCategories()->end(); it++, index++)
 	{
-		Options::Category* pCategory = *it;
+		Options::Category* category = *it;
 
-		char szCaption[250];
-		snprintf(szCaption, 250, "Category %i: %s", iIndex + 1, pCategory->GetName());
-		szCaption[250 - 1] = '\0';
+		char caption[250];
+		snprintf(caption, 250, "Category %i: %s", index + 1, category->GetName());
+		caption[250 - 1] = '\0';
 
 		MENUITEMINFO item;
 		ZeroMemory(&item, sizeof(MENUITEMINFO));
@@ -873,9 +873,9 @@ void WinConsole::BuildMenu()
 		item.fMask = MIIM_ID | MIIM_STRING;
 		item.fType = MFT_STRING;
 		item.fState = MFS_DEFAULT;
-		item.wID = ID_SHOW_DESTDIR + 1000 + iIndex;
-		item.dwTypeData = szCaption;
-		InsertMenuItem(GetSubMenu(m_hMenu, 1), 2 + iIndex, TRUE, &item);
+		item.wID = ID_SHOW_DESTDIR + 1000 + index;
+		item.dwTypeData = caption;
+		InsertMenuItem(GetSubMenu(m_hMenu, 1), 2 + index, TRUE, &item);
 	}
 
 /*
@@ -888,37 +888,37 @@ BOOL DeleteMenu(
 */
 }
 
-void WinConsole::ShowCategoryDir(int iCatIndex)
+void WinConsole::ShowCategoryDir(int catIndex)
 {
-	Options::Category* pCategory = g_pOptions->GetCategories()->at(iCatIndex);
+	Options::Category* category = g_pOptions->GetCategories()->at(catIndex);
 
-	char szDestDir[1024];
+	char destDir[1024];
 
-	if (!Util::EmptyStr(pCategory->GetDestDir()))
+	if (!Util::EmptyStr(category->GetDestDir()))
 	{
-		snprintf(szDestDir, 1024, "%s", pCategory->GetDestDir());
-		szDestDir[1024-1] = '\0';
+		snprintf(destDir, 1024, "%s", category->GetDestDir());
+		destDir[1024-1] = '\0';
 	}
 	else
 	{
-		char szCategoryDir[1024];
-		strncpy(szCategoryDir, pCategory->GetName(), 1024);
-		szCategoryDir[1024 - 1] = '\0';
-		Util::MakeValidFilename(szCategoryDir, '_', true);
+		char categoryDir[1024];
+		strncpy(categoryDir, category->GetName(), 1024);
+		categoryDir[1024 - 1] = '\0';
+		Util::MakeValidFilename(categoryDir, '_', true);
 
-		snprintf(szDestDir, 1024, "%s%s", g_pOptions->GetDestDir(), szCategoryDir);
-		szDestDir[1024-1] = '\0';
+		snprintf(destDir, 1024, "%s%s", g_pOptions->GetDestDir(), categoryDir);
+		destDir[1024-1] = '\0';
 	}
 
-	ShowInExplorer(szDestDir);
+	ShowInExplorer(destDir);
 }
 
 void WinConsole::OpenConfigFileInTextEdit()
 {
-	char szParam[MAX_PATH + 3];
-	snprintf(szParam, sizeof(szParam), "\"%s\"", g_pOptions->GetConfigFilename());
-	szParam[sizeof(szParam)-1] = '\0';
-	ShellExecute(0, "open", "notepad.exe", szParam, NULL, SW_SHOWNORMAL);
+	char param[MAX_PATH + 3];
+	snprintf(param, sizeof(param), "\"%s\"", g_pOptions->GetConfigFilename());
+	param[sizeof(param)-1] = '\0';
+	ShellExecute(0, "open", "notepad.exe", param, NULL, SW_SHOWNORMAL);
 }
 
 void WinConsole::SetupFirstStart()
@@ -931,84 +931,84 @@ void WinConsole::SetupConfigFile()
 {
 	// create new config-file from config template
 
-	char szFilename[MAX_PATH + 30];
+	char filename[MAX_PATH + 30];
 
-	char szCommonAppDataPath[MAX_PATH];
-	SHGetFolderPath(NULL, CSIDL_COMMON_APPDATA, NULL, 0, szCommonAppDataPath);
+	char commonAppDataPath[MAX_PATH];
+	SHGetFolderPath(NULL, CSIDL_COMMON_APPDATA, NULL, 0, commonAppDataPath);
 
-	snprintf(szFilename, sizeof(szFilename), "%s\\NZBGet\\nzbget.conf", szCommonAppDataPath);
-	szFilename[sizeof(szFilename)-1] = '\0';
+	snprintf(filename, sizeof(filename), "%s\\NZBGet\\nzbget.conf", commonAppDataPath);
+	filename[sizeof(filename)-1] = '\0';
 
-	char szAppDataPath[MAX_PATH + 1];
-	snprintf(szAppDataPath, sizeof(szAppDataPath), "%s\\NZBGet", szCommonAppDataPath);
-	szAppDataPath[sizeof(szAppDataPath)-1] = '\0';
-	Util::CreateDirectory(szAppDataPath);
+	char appDataPath[MAX_PATH + 1];
+	snprintf(appDataPath, sizeof(appDataPath), "%s\\NZBGet", commonAppDataPath);
+	appDataPath[sizeof(appDataPath)-1] = '\0';
+	Util::CreateDirectory(appDataPath);
 
-	char szConfTemplateFilename[MAX_PATH + 30];
-	snprintf(szConfTemplateFilename, sizeof(szConfTemplateFilename), "%s\\nzbget.conf.template", g_pOptions->GetAppDir());
-	szConfTemplateFilename[sizeof(szConfTemplateFilename)-1] = '\0';
+	char confTemplateFilename[MAX_PATH + 30];
+	snprintf(confTemplateFilename, sizeof(confTemplateFilename), "%s\\nzbget.conf.template", g_pOptions->GetAppDir());
+	confTemplateFilename[sizeof(confTemplateFilename)-1] = '\0';
 
-	CopyFile(szConfTemplateFilename, szFilename, FALSE);
+	CopyFile(confTemplateFilename, filename, FALSE);
 
 	// set MainDir in the config-file
-	int iSize = 0;
-	char* szConfig = NULL;
-	if (Util::LoadFileIntoBuffer(szFilename, &szConfig, &iSize))
+	int size = 0;
+	char* config = NULL;
+	if (Util::LoadFileIntoBuffer(filename, &config, &size))
 	{
 		const char* SIGNATURE = "MainDir=${AppDir}\\downloads";
-		char* p = strstr(szConfig, SIGNATURE);
+		char* p = strstr(config, SIGNATURE);
 		if (p)
 		{
-			FILE* outfile = fopen(szFilename, FOPEN_WBP);
+			FILE* outfile = fopen(filename, FOPEN_WBP);
 			if (outfile)
 			{
-				fwrite(szConfig, 1, p - szConfig, outfile);
+				fwrite(config, 1, p - config, outfile);
 				fwrite("MainDir=", 1, 8, outfile);
-				fwrite(szAppDataPath, 1, strlen(szAppDataPath), outfile);
+				fwrite(appDataPath, 1, strlen(appDataPath), outfile);
 				
-				fwrite(p + strlen(SIGNATURE), 1, iSize - (p + strlen(SIGNATURE) - szConfig) - 1, outfile);
+				fwrite(p + strlen(SIGNATURE), 1, size - (p + strlen(SIGNATURE) - config) - 1, outfile);
 				fclose(outfile);
 			}
 		}
-		free(szConfig);
+		free(config);
 	}
 
 	// create default destination directory (which is not created on start automatically)
-	snprintf(szFilename, sizeof(szFilename), "%s\\NZBGet\\complete", szCommonAppDataPath);
-	szFilename[sizeof(szFilename)-1] = '\0';
-	Util::CreateDirectory(szFilename);
+	snprintf(filename, sizeof(filename), "%s\\NZBGet\\complete", commonAppDataPath);
+	filename[sizeof(filename)-1] = '\0';
+	Util::CreateDirectory(filename);
 }
 
 void WinConsole::SetupScripts()
 {
 	// copy default scripts
 
-	char szAppDataPath[MAX_PATH];
-	SHGetFolderPath(NULL, CSIDL_COMMON_APPDATA, NULL, 0, szAppDataPath);
+	char appDataPath[MAX_PATH];
+	SHGetFolderPath(NULL, CSIDL_COMMON_APPDATA, NULL, 0, appDataPath);
 
-	char szDestDir[MAX_PATH + 1];
-	snprintf(szDestDir, sizeof(szDestDir), "%s\\NZBGet\\scripts", szAppDataPath);
-	szDestDir[sizeof(szDestDir)-1] = '\0';
-	Util::CreateDirectory(szDestDir);
+	char destDir[MAX_PATH + 1];
+	snprintf(destDir, sizeof(destDir), "%s\\NZBGet\\scripts", appDataPath);
+	destDir[sizeof(destDir)-1] = '\0';
+	Util::CreateDirectory(destDir);
 
-	char szSrcDir[MAX_PATH + 30];
-	snprintf(szSrcDir, sizeof(szSrcDir), "%s\\scripts", g_pOptions->GetAppDir());
-	szSrcDir[sizeof(szSrcDir)-1] = '\0';
+	char srcDir[MAX_PATH + 30];
+	snprintf(srcDir, sizeof(srcDir), "%s\\scripts", g_pOptions->GetAppDir());
+	srcDir[sizeof(srcDir)-1] = '\0';
 
-	DirBrowser dir(szSrcDir);
-	while (const char* szFilename = dir.Next())
+	DirBrowser dir(srcDir);
+	while (const char* filename = dir.Next())
 	{
-		if (strcmp(szFilename, ".") && strcmp(szFilename, ".."))
+		if (strcmp(filename, ".") && strcmp(filename, ".."))
 		{
-			char szSrcFullFilename[1024];
-			snprintf(szSrcFullFilename, 1024, "%s\\%s", szSrcDir, szFilename);
-			szSrcFullFilename[1024-1] = '\0';
+			char srcFullFilename[1024];
+			snprintf(srcFullFilename, 1024, "%s\\%s", srcDir, filename);
+			srcFullFilename[1024-1] = '\0';
 
-			char szDstFullFilename[1024];
-			snprintf(szDstFullFilename, 1024, "%s\\%s", szDestDir, szFilename);
-			szDstFullFilename[1024-1] = '\0';
+			char dstFullFilename[1024];
+			snprintf(dstFullFilename, 1024, "%s\\%s", destDir, filename);
+			dstFullFilename[1024-1] = '\0';
 
-			CopyFile(szSrcFullFilename, szDstFullFilename, FALSE);
+			CopyFile(srcFullFilename, dstFullFilename, FALSE);
 		}
 	}
 }
@@ -1016,11 +1016,11 @@ void WinConsole::SetupScripts()
 void WinConsole::ShowFactoryResetDialog()
 {
 	HWND hTrayWindow = FindWindow("NZBGet tray window", NULL);
-	m_bRunning = true;
+	m_running = true;
 
-	int iResult = DialogBox(m_hInstance, MAKEINTRESOURCE(IDD_FACTORYRESETDIALOG), m_hTrayWindow, FactoryResetDialogProcStat);
+	int result = DialogBox(m_hInstance, MAKEINTRESOURCE(IDD_FACTORYRESETDIALOG), m_hTrayWindow, FactoryResetDialogProcStat);
 
-	switch (iResult)
+	switch (result)
 	{
 		case IDC_FACTORYRESET_RESET:
 			ResetFactoryDefaults();
@@ -1028,12 +1028,12 @@ void WinConsole::ShowFactoryResetDialog()
 	}
 }
 
-BOOL CALLBACK WinConsole::FactoryResetDialogProcStat(HWND hwndDlg, UINT uMsg, WPARAM wParam, LPARAM lParam)
+BOOL CALLBACK WinConsole::FactoryResetDialogProcStat(HWND hwndDlg, UINT uMsg, WPARAM wParam, LPARAM param)
 {
-	return g_pWinConsole->FactoryResetDialogProc(hwndDlg, uMsg, wParam, lParam);
+	return g_pWinConsole->FactoryResetDialogProc(hwndDlg, uMsg, wParam, param);
 }
 
-BOOL WinConsole::FactoryResetDialogProc(HWND hwndDlg, UINT uMsg, WPARAM wParam, LPARAM lParam)
+BOOL WinConsole::FactoryResetDialogProc(HWND hwndDlg, UINT uMsg, WPARAM wParam, LPARAM param)
 {
 	switch(uMsg)
 	{
@@ -1057,85 +1057,85 @@ BOOL WinConsole::FactoryResetDialogProc(HWND hwndDlg, UINT uMsg, WPARAM wParam, 
 
 void WinConsole::ResetFactoryDefaults()
 {
-	char szPath[MAX_PATH + 100];
-	char szMessage[1024];
-	char szErrBuf[200];
+	char path[MAX_PATH + 100];
+	char message[1024];
+	char errBuf[200];
 
 	g_pOptions->SetPauseDownload(true);
 	g_pOptions->SetPausePostProcess(true);
 
-	char szCommonAppDataPath[MAX_PATH];
-	SHGetFolderPath(NULL, CSIDL_COMMON_APPDATA, NULL, 0, szCommonAppDataPath);
+	char commonAppDataPath[MAX_PATH];
+	SHGetFolderPath(NULL, CSIDL_COMMON_APPDATA, NULL, 0, commonAppDataPath);
 
 	// delete default directories
 	const char* DefDirs[] = {"nzb", "tmp", "queue", "scripts"};
 	for (int i=0; i < 4; i++)
 	{
-		snprintf(szPath, sizeof(szPath), "%s\\NZBGet\\%s", szCommonAppDataPath, DefDirs[i]);
-		szPath[sizeof(szPath)-1] = '\0';
+		snprintf(path, sizeof(path), "%s\\NZBGet\\%s", commonAppDataPath, DefDirs[i]);
+		path[sizeof(path)-1] = '\0';
 
 		// try to delete the directory
-		int iRetry = 10;
-		while (iRetry > 0 && Util::DirectoryExists(szPath) &&
-			!Util::DeleteDirectoryWithContent(szPath, szErrBuf, sizeof(szErrBuf)))
+		int retry = 10;
+		while (retry > 0 && Util::DirectoryExists(path) &&
+			!Util::DeleteDirectoryWithContent(path, errBuf, sizeof(errBuf)))
 		{
 			usleep(200 * 1000);
-			iRetry--;
+			retry--;
 		}
 
-		if (Util::DirectoryExists(szPath))
+		if (Util::DirectoryExists(path))
 		{
-			snprintf(szMessage, 1024, "Could not delete directory %s:\n%s.\nPlease delete the directory manually and try again.", szPath, szErrBuf);
-			szMessage[1024-1] = '\0';
-			MessageBox(m_hTrayWindow, szMessage, "NZBGet", MB_ICONERROR);
+			snprintf(message, 1024, "Could not delete directory %s:\n%s.\nPlease delete the directory manually and try again.", path, errBuf);
+			message[1024-1] = '\0';
+			MessageBox(m_hTrayWindow, message, "NZBGet", MB_ICONERROR);
 			return;
 		}
 	}
 
 	// delete old config file in the program's directory
-	snprintf(szPath, sizeof(szPath), "%s\\nzbget.conf", g_pOptions->GetAppDir());
+	snprintf(path, sizeof(path), "%s\\nzbget.conf", g_pOptions->GetAppDir());
 
-	remove(szPath);
-	Util::GetLastErrorMessage(szErrBuf, sizeof(szErrBuf));
+	remove(path);
+	Util::GetLastErrorMessage(errBuf, sizeof(errBuf));
 
-	if (Util::FileExists(szPath))
+	if (Util::FileExists(path))
 	{
-		snprintf(szMessage, 1024, "Could not delete file %s:\n%s.\nPlease delete the file manually and try again.", szPath, szErrBuf);
-		szMessage[1024-1] = '\0';
-		MessageBox(m_hTrayWindow, szMessage, "NZBGet", MB_ICONERROR);
+		snprintf(message, 1024, "Could not delete file %s:\n%s.\nPlease delete the file manually and try again.", path, errBuf);
+		message[1024-1] = '\0';
+		MessageBox(m_hTrayWindow, message, "NZBGet", MB_ICONERROR);
 		return;
 	}
 
 	// delete config file in default directory
-	snprintf(szPath, sizeof(szPath), "%s\\NZBGet\\nzbget.conf", szCommonAppDataPath);
-	szPath[sizeof(szPath)-1] = '\0';
+	snprintf(path, sizeof(path), "%s\\NZBGet\\nzbget.conf", commonAppDataPath);
+	path[sizeof(path)-1] = '\0';
 
-	remove(szPath);
-	Util::GetLastErrorMessage(szErrBuf, sizeof(szErrBuf));
+	remove(path);
+	Util::GetLastErrorMessage(errBuf, sizeof(errBuf));
 
 
-	if (Util::FileExists(szPath))
+	if (Util::FileExists(path))
 	{
-		snprintf(szMessage, 1024, "Could not delete file %s:\n%s.\nPlease delete the file manually and try again.", szPath, szErrBuf);
-		szMessage[1024-1] = '\0';
-		MessageBox(m_hTrayWindow, szMessage, "NZBGet", MB_ICONERROR);
+		snprintf(message, 1024, "Could not delete file %s:\n%s.\nPlease delete the file manually and try again.", path, errBuf);
+		message[1024-1] = '\0';
+		MessageBox(m_hTrayWindow, message, "NZBGet", MB_ICONERROR);
 		return;
 	}
 
 	// delete log files in default directory
-	snprintf(szPath, sizeof(szPath), "%s\\NZBGet", szCommonAppDataPath);
-	szPath[sizeof(szPath)-1] = '\0';
+	snprintf(path, sizeof(path), "%s\\NZBGet", commonAppDataPath);
+	path[sizeof(path)-1] = '\0';
 
-	DirBrowser dir(szPath);
-	while (const char* szFilename = dir.Next())
+	DirBrowser dir(path);
+	while (const char* filename = dir.Next())
 	{
-		if (Util::MatchFileExt(szFilename, ".log", ","))
+		if (Util::MatchFileExt(filename, ".log", ","))
 		{
-			char szFullFilename[1024];
-			snprintf(szFullFilename, 1024, "%s%c%s", szPath, PATH_SEPARATOR, szFilename);
-			szFullFilename[1024-1] = '\0';
+			char fullFilename[1024];
+			snprintf(fullFilename, 1024, "%s%c%s", path, PATH_SEPARATOR, filename);
+			fullFilename[1024-1] = '\0';
 
-			remove(szFullFilename);
+			remove(fullFilename);
 
 			// ignore errors
 		}
@@ -1144,6 +1144,6 @@ void WinConsole::ResetFactoryDefaults()
 	MessageBox(m_hTrayWindow, "The program has been reset to factory defaults.",
 		"NZBGet", MB_ICONINFORMATION);
 
-	bMayStartBrowser = true;
+	mayStartBrowser = true;
 	Reload();
 }

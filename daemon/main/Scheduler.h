@@ -55,17 +55,17 @@ public:
 	class Task
 	{
 	private:
-		int				m_iID;
-		int				m_iHours;
-		int				m_iMinutes;
-		int				m_iWeekDaysBits;
-		ECommand		m_eCommand;
-		char*			m_szParam;
-		time_t			m_tLastExecuted;
+		int				m_id;
+		int				m_hours;
+		int				m_minutes;
+		int				m_weekDaysBits;
+		ECommand		m_command;
+		char*			m_param;
+		time_t			m_lastExecuted;
 
 	public:
-						Task(int iID, int iHours, int iMinutes, int iWeekDaysBits, ECommand eCommand, 
-							const char* szParam);
+						Task(int id, int hours, int minutes, int weekDaysBits, ECommand command, 
+							const char* param);
 						~Task();
 		friend class	Scheduler;
 	};
@@ -75,25 +75,25 @@ private:
 	typedef std::list<Task*>		TaskList;
 	typedef std::vector<bool>		ServerStatusList;
 
-	TaskList			m_TaskList;
-	Mutex				m_mutexTaskList;
-	time_t				m_tLastCheck;
-	bool				m_bDownloadRateChanged;
-	bool				m_bExecuteProcess;
-	bool				m_bPauseDownloadChanged;
-	bool				m_bPausePostProcessChanged;
-	bool				m_bPauseScanChanged;
-	bool				m_bServerChanged;
-	ServerStatusList	m_ServerStatusList;
-	bool				m_bFirstChecked;
+	TaskList			m_taskList;
+	Mutex				m_taskListMutex;
+	time_t				m_lastCheck;
+	bool				m_downloadRateChanged;
+	bool				m_executeProcess;
+	bool				m_pauseDownloadChanged;
+	bool				m_pausePostProcessChanged;
+	bool				m_pauseScanChanged;
+	bool				m_serverChanged;
+	ServerStatusList	m_serverStatusList;
+	bool				m_firstChecked;
 
-	void				ExecuteTask(Task* pTask);
+	void				ExecuteTask(Task* task);
 	void				CheckTasks();
-	static bool			CompareTasks(Scheduler::Task* pTask1, Scheduler::Task* pTask2);
+	static bool			CompareTasks(Scheduler::Task* task1, Scheduler::Task* task2);
 	void				PrepareLog();
 	void				PrintLog();
-	void				EditServer(bool bActive, const char* szServerList);
-	void				FetchFeed(const char* szFeedList);
+	void				EditServer(bool active, const char* serverList);
+	void				FetchFeed(const char* feedList);
 	void				CheckScheduledResume();
 	void				FirstCheck();
 
@@ -104,7 +104,7 @@ protected:
 public:
 						Scheduler();
 						~Scheduler();
-	void				AddTask(Task* pTask);
+	void				AddTask(Task* task);
 };
 
 extern Scheduler* g_pScheduler;

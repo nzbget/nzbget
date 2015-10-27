@@ -31,16 +31,16 @@
 class FeedScriptController : public NZBScriptController
 {
 private:
-	const char*			m_szFeedFile;
-	int					m_iFeedID;
+	const char*			m_feedFile;
+	int					m_feedId;
 
-	void				PrepareParams(const char* szScriptName);
+	void				PrepareParams(const char* scriptName);
 
 protected:
-	virtual void		ExecuteScript(ScriptConfig::Script* pScript);
+	virtual void		ExecuteScript(ScriptConfig::Script* script);
 
 public:
-	static void			ExecuteScripts(const char* szFeedScript, const char* szFeedFile, int iFeedID);
+	static void			ExecuteScripts(const char* feedScript, const char* feedFile, int feedId);
 };
 
 #endif

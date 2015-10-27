@@ -33,26 +33,26 @@
 class FeedFile
 {
 private:
-	FeedItemInfos*		m_pFeedItemInfos;
-	char*				m_szFileName;
+	FeedItemInfos*		m_feedItemInfos;
+	char*				m_fileName;
 
-						FeedFile(const char* szFileName);
-	void				AddItem(FeedItemInfo* pFeedItemInfo);
-	void				ParseSubject(FeedItemInfo* pFeedItemInfo);
+						FeedFile(const char* fileName);
+	void				AddItem(FeedItemInfo* feedItemInfo);
+	void				ParseSubject(FeedItemInfo* feedItemInfo);
 #ifdef WIN32
     bool 				ParseFeed(IUnknown* nzb);
-	static void			EncodeURL(const char* szFilename, char* szURL);
+	static void			EncodeURL(const char* filename, char* url);
 #else
-	FeedItemInfo*		m_pFeedItemInfo;
-	char*				m_szTagContent;
-	int					m_iTagContentLen;
-	bool				m_bIgnoreNextError;
+	FeedItemInfo*		m_feedItemInfo;
+	char*				m_tagContent;
+	int					m_tagContentLen;
+	bool				m_ignoreNextError;
 
-	static void			SAX_StartElement(FeedFile* pFile, const char *name, const char **atts);
-	static void			SAX_EndElement(FeedFile* pFile, const char *name);
-	static void			SAX_characters(FeedFile* pFile, const char * xmlstr, int len);
-	static void*		SAX_getEntity(FeedFile* pFile, const char * name);
-	static void			SAX_error(FeedFile* pFile, const char *msg, ...);
+	static void			SAX_StartElement(FeedFile* file, const char *name, const char **atts);
+	static void			SAX_EndElement(FeedFile* file, const char *name);
+	static void			SAX_characters(FeedFile* file, const char * xmlstr, int len);
+	static void*		SAX_getEntity(FeedFile* file, const char * name);
+	static void			SAX_error(FeedFile* file, const char *msg, ...);
 	void				Parse_StartElement(const char *name, const char **atts);
 	void				Parse_EndElement(const char *name);
 	void				Parse_Content(const char *buf, int len);
@@ -61,8 +61,8 @@ private:
 
 public:
 	virtual 			~FeedFile();
-	static FeedFile*	Create(const char* szFileName);
-	FeedItemInfos*		GetFeedItemInfos() { return m_pFeedItemInfos; }
+	static FeedFile*	Create(const char* fileName);
+	FeedItemInfos*		GetFeedItemInfos() { return m_feedItemInfos; }
 
 	void				LogDebugInfo();
 };

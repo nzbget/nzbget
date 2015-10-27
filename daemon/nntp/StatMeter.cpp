@@ -47,121 +47,121 @@ static const int DAYS_IN_TWENTY_YEARS = 366*20;
 
 ServerVolume::ServerVolume()
 {
-	m_BytesPerSeconds.resize(60);
-	m_BytesPerMinutes.resize(60);
-	m_BytesPerHours.resize(24);
-	m_BytesPerDays.resize(0);
-	m_iFirstDay = 0;
-	m_tDataTime = 0;
-	m_lTotalBytes = 0;
-	m_lCustomBytes = 0;
-	m_tCustomTime = time(NULL);
-	m_iSecSlot = 0;
-	m_iMinSlot = 0;
-	m_iHourSlot = 0;
-	m_iDaySlot = 0;
+	m_bytesPerSeconds.resize(60);
+	m_bytesPerMinutes.resize(60);
+	m_bytesPerHours.resize(24);
+	m_bytesPerDays.resize(0);
+	m_firstDay = 0;
+	m_dataTime = 0;
+	m_totalBytes = 0;
+	m_customBytes = 0;
+	m_customTime = time(NULL);
+	m_secSlot = 0;
+	m_minSlot = 0;
+	m_hourSlot = 0;
+	m_daySlot = 0;
 }
 
-void ServerVolume::CalcSlots(time_t tLocCurTime)
+void ServerVolume::CalcSlots(time_t locCurTime)
 {
-	m_iSecSlot = (int)tLocCurTime % 60;
-	m_iMinSlot = ((int)tLocCurTime / 60) % 60;
-	m_iHourSlot = ((int)tLocCurTime % 86400) / 3600;
-	int iDaysSince1970 = (int)tLocCurTime / 86400;
-	m_iDaySlot = iDaysSince1970 - DAYS_UP_TO_2013_JAN_1 + 1;
-	if (0 <= m_iDaySlot && m_iDaySlot < DAYS_IN_TWENTY_YEARS)
+	m_secSlot = (int)locCurTime % 60;
+	m_minSlot = ((int)locCurTime / 60) % 60;
+	m_hourSlot = ((int)locCurTime % 86400) / 3600;
+	int daysSince1970 = (int)locCurTime / 86400;
+	m_daySlot = daysSince1970 - DAYS_UP_TO_2013_JAN_1 + 1;
+	if (0 <= m_daySlot && m_daySlot < DAYS_IN_TWENTY_YEARS)
 	{
-		int iCurDay = iDaysSince1970;
-		if (m_iFirstDay == 0 || m_iFirstDay > iCurDay)
+		int curDay = daysSince1970;
+		if (m_firstDay == 0 || m_firstDay > curDay)
 		{
-			m_iFirstDay = iCurDay;
+			m_firstDay = curDay;
 		}
-		m_iDaySlot = iCurDay - m_iFirstDay;
-		if (m_iDaySlot + 1 > (int)m_BytesPerDays.size())
+		m_daySlot = curDay - m_firstDay;
+		if (m_daySlot + 1 > (int)m_bytesPerDays.size())
 		{
-			m_BytesPerDays.resize(m_iDaySlot + 1);
+			m_bytesPerDays.resize(m_daySlot + 1);
 		}
 	}
 	else
 	{
-		m_iDaySlot = -1;
+		m_daySlot = -1;
 	}
 }
 
-void ServerVolume::AddData(int iBytes)
+void ServerVolume::AddData(int bytes)
 {
-	time_t tCurTime = time(NULL);
-	time_t tLocCurTime = tCurTime + g_pOptions->GetLocalTimeOffset();
-	time_t tLocDataTime = m_tDataTime + g_pOptions->GetLocalTimeOffset();
+	time_t curTime = time(NULL);
+	time_t locCurTime = curTime + g_pOptions->GetLocalTimeOffset();
+	time_t locDataTime = m_dataTime + g_pOptions->GetLocalTimeOffset();
 
-	int iLastMinSlot = m_iMinSlot;
-	int iLastHourSlot = m_iHourSlot;
+	int lastMinSlot = m_minSlot;
+	int lastHourSlot = m_hourSlot;
 
-	CalcSlots(tLocCurTime);
+	CalcSlots(locCurTime);
 
-	if (tLocCurTime != tLocDataTime)
+	if (locCurTime != locDataTime)
 	{
 		// clear seconds/minutes/hours slots if necessary
 		// also handle the backwards changes of system clock
 
-		int iTotalDelta = (int)(tLocCurTime - tLocDataTime);
-		int iDeltaSign = iTotalDelta >= 0 ? 1 : -1;
-		iTotalDelta = abs(iTotalDelta);
+		int totalDelta = (int)(locCurTime - locDataTime);
+		int deltaSign = totalDelta >= 0 ? 1 : -1;
+		totalDelta = abs(totalDelta);
 
-		int iSecDelta = iTotalDelta;
-		if (iDeltaSign < 0) iSecDelta++;
-		if (iSecDelta >= 60) iSecDelta = 60;
-		for (int i = 0; i < iSecDelta; i++)
+		int secDelta = totalDelta;
+		if (deltaSign < 0) secDelta++;
+		if (secDelta >= 60) secDelta = 60;
+		for (int i = 0; i < secDelta; i++)
 		{
-			int iNulSlot = m_iSecSlot - i * iDeltaSign;
-			if (iNulSlot < 0) iNulSlot += 60;
-			if (iNulSlot >= 60) iNulSlot -= 60;
-			m_BytesPerSeconds[iNulSlot] = 0;
+			int nulSlot = m_secSlot - i * deltaSign;
+			if (nulSlot < 0) nulSlot += 60;
+			if (nulSlot >= 60) nulSlot -= 60;
+			m_bytesPerSeconds[nulSlot] = 0;
 		}
 
-		int iMinDelta = iTotalDelta / 60;
-		if (iDeltaSign < 0) iMinDelta++;
-		if (abs(iMinDelta) >= 60) iMinDelta = 60;
-		if (iMinDelta == 0 && m_iMinSlot != iLastMinSlot) iMinDelta = 1;
-		for (int i = 0; i < iMinDelta; i++)
+		int minDelta = totalDelta / 60;
+		if (deltaSign < 0) minDelta++;
+		if (abs(minDelta) >= 60) minDelta = 60;
+		if (minDelta == 0 && m_minSlot != lastMinSlot) minDelta = 1;
+		for (int i = 0; i < minDelta; i++)
 		{
-			int iNulSlot = m_iMinSlot - i * iDeltaSign;
-			if (iNulSlot < 0) iNulSlot += 60;
-			if (iNulSlot >= 60) iNulSlot -= 60;
-			m_BytesPerMinutes[iNulSlot] = 0;
+			int nulSlot = m_minSlot - i * deltaSign;
+			if (nulSlot < 0) nulSlot += 60;
+			if (nulSlot >= 60) nulSlot -= 60;
+			m_bytesPerMinutes[nulSlot] = 0;
 		}
 
-		int iHourDelta = iTotalDelta / (60 * 60);
-		if (iDeltaSign < 0) iHourDelta++;
-		if (iHourDelta >= 24) iHourDelta = 24;
-		if (iHourDelta == 0 && m_iHourSlot != iLastHourSlot) iHourDelta = 1;
-		for (int i = 0; i < iHourDelta; i++)
+		int hourDelta = totalDelta / (60 * 60);
+		if (deltaSign < 0) hourDelta++;
+		if (hourDelta >= 24) hourDelta = 24;
+		if (hourDelta == 0 && m_hourSlot != lastHourSlot) hourDelta = 1;
+		for (int i = 0; i < hourDelta; i++)
 		{
-			int iNulSlot = m_iHourSlot - i * iDeltaSign;
-			if (iNulSlot < 0) iNulSlot += 24;
-			if (iNulSlot >= 24) iNulSlot -= 24;
-			m_BytesPerHours[iNulSlot] = 0;
+			int nulSlot = m_hourSlot - i * deltaSign;
+			if (nulSlot < 0) nulSlot += 24;
+			if (nulSlot >= 24) nulSlot -= 24;
+			m_bytesPerHours[nulSlot] = 0;
 		}
 	}
 
 	// add bytes to every slot
-	m_BytesPerSeconds[m_iSecSlot] += iBytes;
-	m_BytesPerMinutes[m_iMinSlot] += iBytes;
-	m_BytesPerHours[m_iHourSlot] += iBytes;
-	if (m_iDaySlot >= 0)
+	m_bytesPerSeconds[m_secSlot] += bytes;
+	m_bytesPerMinutes[m_minSlot] += bytes;
+	m_bytesPerHours[m_hourSlot] += bytes;
+	if (m_daySlot >= 0)
 	{
-		m_BytesPerDays[m_iDaySlot] += iBytes;
+		m_bytesPerDays[m_daySlot] += bytes;
 	}
-	m_lTotalBytes += iBytes;
-	m_lCustomBytes += iBytes;
+	m_totalBytes += bytes;
+	m_customBytes += bytes;
 
-	m_tDataTime = tCurTime;
+	m_dataTime = curTime;
 }
 
 void ServerVolume::ResetCustom()
 {
-	m_lCustomBytes = 0;
-	m_tCustomTime = time(NULL);
+	m_customBytes = 0;
+	m_customTime = time(NULL);
 }
 
 void ServerVolume::LogDebugInfo()
@@ -172,36 +172,36 @@ void ServerVolume::LogDebugInfo()
 
 	for (int i = 0; i < 60; i++)
 	{
-		char szNum[30];
-		snprintf(szNum, 30, "[%i]=%lli ", i, m_BytesPerSeconds[i]);
-		msg.Append(szNum);
+		char num[30];
+		snprintf(num, 30, "[%i]=%lli ", i, m_bytesPerSeconds[i]);
+		msg.Append(num);
 	}
 	info("Secs: %s", msg.GetBuffer());
 
 	msg.Clear();
 	for (int i = 0; i < 60; i++)
 	{
-		char szNum[30];
-		snprintf(szNum, 30, "[%i]=%lli ", i, m_BytesPerMinutes[i]);
-		msg.Append(szNum);
+		char num[30];
+		snprintf(num, 30, "[%i]=%lli ", i, m_bytesPerMinutes[i]);
+		msg.Append(num);
 	}
 	info("Mins: %s", msg.GetBuffer());
 
 	msg.Clear();
 	for (int i = 0; i < 24; i++)
 	{
-		char szNum[30];
-		snprintf(szNum, 30, "[%i]=%lli ", i, m_BytesPerHours[i]);
-		msg.Append(szNum);
+		char num[30];
+		snprintf(num, 30, "[%i]=%lli ", i, m_bytesPerHours[i]);
+		msg.Append(num);
 	}
 	info("Hours: %s", msg.GetBuffer());
 
 	msg.Clear();
-	for (int i = 0; i < (int)m_BytesPerDays.size(); i++)
+	for (int i = 0; i < (int)m_bytesPerDays.size(); i++)
 	{
-		char szNum[30];
-		snprintf(szNum, 30, "[%i]=%lli ", m_iFirstDay + i, m_BytesPerDays[i]);
-		msg.Append(szNum);
+		char num[30];
+		snprintf(num, 30, "[%i]=%lli ", m_firstDay + i, m_bytesPerDays[i]);
+		msg.Append(num);
 	}
 	info("Days: %s", msg.GetBuffer());
 }
@@ -212,14 +212,14 @@ StatMeter::StatMeter()
 
 	ResetSpeedStat();
 
-	m_iAllBytes = 0;
-	m_tStartDownload = 0;
-	m_tPausedFrom = 0;
-	m_bStandBy = true;
-	m_tStartServer = 0;
-	m_tLastCheck = 0;
-	m_tLastTimeOffset = 0;
-	m_bStatChanged = false;
+	m_allBytes = 0;
+	m_startDownload = 0;
+	m_pausedFrom = 0;
+	m_standBy = true;
+	m_startServer = 0;
+	m_lastCheck = 0;
+	m_lastTimeOffset = 0;
+	m_statChanged = false;
 
 	g_pLog->RegisterDebuggable(this);
 }
@@ -231,7 +231,7 @@ StatMeter::~StatMeter()
 
 	g_pLog->UnregisterDebuggable(this);
 
-	for (ServerVolumes::iterator it = m_ServerVolumes.begin(); it != m_ServerVolumes.end(); it++)
+	for (ServerVolumes::iterator it = m_serverVolumes.begin(); it != m_serverVolumes.end(); it++)
 	{
 		delete *it;
 	}
@@ -241,31 +241,31 @@ StatMeter::~StatMeter()
 
 void StatMeter::Init()
 {
-	m_tStartServer = time(NULL);
-	m_tLastCheck = m_tStartServer;
+	m_startServer = time(NULL);
+	m_lastCheck = m_startServer;
 	AdjustTimeOffset();
 
-	m_ServerVolumes.resize(1 + g_pServerPool->GetServers()->size());
-	m_ServerVolumes[0] = new ServerVolume();
+	m_serverVolumes.resize(1 + g_pServerPool->GetServers()->size());
+	m_serverVolumes[0] = new ServerVolume();
 	for (Servers::iterator it = g_pServerPool->GetServers()->begin(); it != g_pServerPool->GetServers()->end(); it++)
 	{
-		NewsServer* pServer = *it;
-		m_ServerVolumes[pServer->GetID()] = new ServerVolume();
+		NewsServer* server = *it;
+		m_serverVolumes[server->GetID()] = new ServerVolume();
 	}
 }
 
 void StatMeter::AdjustTimeOffset()
 {
-	time_t tUtcTime = time(NULL);
+	time_t utcTime = time(NULL);
 	tm tmSplittedTime;
-	gmtime_r(&tUtcTime, &tmSplittedTime);
+	gmtime_r(&utcTime, &tmSplittedTime);
 	tmSplittedTime.tm_isdst = -1;
-	time_t tLocTime = mktime(&tmSplittedTime);
-	time_t tLocalTimeDelta = tUtcTime - tLocTime;
-	g_pOptions->SetLocalTimeOffset((int)tLocalTimeDelta + g_pOptions->GetTimeCorrection());
-	m_tLastTimeOffset = tUtcTime;
+	time_t locTime = mktime(&tmSplittedTime);
+	time_t localTimeDelta = utcTime - locTime;
+	g_pOptions->SetLocalTimeOffset((int)localTimeDelta + g_pOptions->GetTimeCorrection());
+	m_lastTimeOffset = utcTime;
 
-	debug("UTC delta: %i (%i+%i)", g_pOptions->GetLocalTimeOffset(), (int)tLocalTimeDelta, g_pOptions->GetTimeCorrection());
+	debug("UTC delta: %i (%i+%i)", g_pOptions->GetLocalTimeOffset(), (int)localTimeDelta, g_pOptions->GetTimeCorrection());
 }
 
 /*
@@ -275,20 +275,20 @@ void StatMeter::AdjustTimeOffset()
  */
 void StatMeter::IntervalCheck()
 {
-	time_t m_tCurTime = time(NULL);
-	time_t tDiff = m_tCurTime - m_tLastCheck;
-	if (tDiff > 60 || tDiff < 0)
+	time_t m_curTime = time(NULL);
+	time_t diff = m_curTime - m_lastCheck;
+	if (diff > 60 || diff < 0)
 	{
-		m_tStartServer += tDiff + 1; // "1" because the method is called once per second
-		if (m_tStartDownload != 0 && !m_bStandBy)
+		m_startServer += diff + 1; // "1" because the method is called once per second
+		if (m_startDownload != 0 && !m_standBy)
 		{
-			m_tStartDownload += tDiff + 1;
+			m_startDownload += diff + 1;
 		}
 		AdjustTimeOffset();
 	}
-	else if (m_tLastTimeOffset > m_tCurTime ||
-		m_tCurTime - m_tLastTimeOffset > 60 * 60 * 3 ||
-		(m_tCurTime - m_tLastTimeOffset > 60 && !m_bStandBy))
+	else if (m_lastTimeOffset > m_curTime ||
+		m_curTime - m_lastTimeOffset > 60 * 60 * 3 ||
+		(m_curTime - m_lastTimeOffset > 60 && !m_standBy))
 	{
 		// checking time zone settings may prevent the device from entering sleep/hibernate mode
 		// check every minute if not in standby
@@ -296,226 +296,226 @@ void StatMeter::IntervalCheck()
 		AdjustTimeOffset();
 	}
 
-	m_tLastCheck = m_tCurTime;
+	m_lastCheck = m_curTime;
 
-	if (m_bStatChanged)
+	if (m_statChanged)
 	{
 		Save();
 	}
 }
 
-void StatMeter::EnterLeaveStandBy(bool bEnter)
+void StatMeter::EnterLeaveStandBy(bool enter)
 {
-	m_mutexStat.Lock();
-	m_bStandBy = bEnter;
-	if (bEnter)
+	m_statMutex.Lock();
+	m_standBy = enter;
+	if (enter)
 	{
-		m_tPausedFrom = time(NULL);
+		m_pausedFrom = time(NULL);
 	}
 	else
 	{
-		if (m_tStartDownload == 0)
+		if (m_startDownload == 0)
 		{
-			m_tStartDownload = time(NULL);
+			m_startDownload = time(NULL);
 		}
 		else
 		{
-			m_tStartDownload += time(NULL) - m_tPausedFrom;
+			m_startDownload += time(NULL) - m_pausedFrom;
 		}
-		m_tPausedFrom = 0;
+		m_pausedFrom = 0;
 		ResetSpeedStat();
 	}
-	m_mutexStat.Unlock();
+	m_statMutex.Unlock();
 }
 
-void StatMeter::CalcTotalStat(int* iUpTimeSec, int* iDnTimeSec, long long* iAllBytes, bool* bStandBy)
+void StatMeter::CalcTotalStat(int* upTimeSec, int* dnTimeSec, long long* allBytes, bool* standBy)
 {
-	m_mutexStat.Lock();
-	if (m_tStartServer > 0)
+	m_statMutex.Lock();
+	if (m_startServer > 0)
 	{
-		*iUpTimeSec = (int)(time(NULL) - m_tStartServer);
+		*upTimeSec = (int)(time(NULL) - m_startServer);
 	}
 	else
 	{
-		*iUpTimeSec = 0;
+		*upTimeSec = 0;
 	}
-	*bStandBy = m_bStandBy;
-	if (m_bStandBy)
+	*standBy = m_standBy;
+	if (m_standBy)
 	{
-		*iDnTimeSec = (int)(m_tPausedFrom - m_tStartDownload);
+		*dnTimeSec = (int)(m_pausedFrom - m_startDownload);
 	}
 	else
 	{
-		*iDnTimeSec = (int)(time(NULL) - m_tStartDownload);
+		*dnTimeSec = (int)(time(NULL) - m_startDownload);
 	}
-	*iAllBytes = m_iAllBytes;
-	m_mutexStat.Unlock();
+	*allBytes = m_allBytes;
+	m_statMutex.Unlock();
 }
 
 // Average speed in last 30 seconds
 int StatMeter::CalcCurrentDownloadSpeed()
 {
-	if (m_bStandBy)
+	if (m_standBy)
 	{
 		return 0;
 	}
 
-	int iTimeDiff = (int)time(NULL) - m_iSpeedStartTime * SPEEDMETER_SLOTSIZE;
-	if (iTimeDiff == 0)
+	int timeDiff = (int)time(NULL) - m_speedStartTime * SPEEDMETER_SLOTSIZE;
+	if (timeDiff == 0)
 	{
 		return 0;
 	}
 
-	return (int)(m_iSpeedTotalBytes / iTimeDiff);
+	return (int)(m_speedTotalBytes / timeDiff);
 }
 
 // Amount of data downloaded in current second
 int StatMeter::CalcMomentaryDownloadSpeed()
 {
-	time_t tCurTime = time(NULL);
-	int iSpeed = tCurTime == m_tCurSecTime ? m_iCurSecBytes : 0;
-	return iSpeed;
+	time_t curTime = time(NULL);
+	int speed = curTime == m_curSecTime ? m_curSecBytes : 0;
+	return speed;
 }
 
-void StatMeter::AddSpeedReading(int iBytes)
+void StatMeter::AddSpeedReading(int bytes)
 {
-	time_t tCurTime = time(NULL);
-	int iNowSlot = (int)tCurTime / SPEEDMETER_SLOTSIZE;
+	time_t curTime = time(NULL);
+	int nowSlot = (int)curTime / SPEEDMETER_SLOTSIZE;
 
 	if (g_pOptions->GetAccurateRate())
 	{
-		m_mutexSpeed.Lock();
+		m_speedMutex.Lock();
 	}
 
-	if (tCurTime != m_tCurSecTime)
+	if (curTime != m_curSecTime)
 	{
-		m_tCurSecTime =	tCurTime;
-		m_iCurSecBytes = 0;
+		m_curSecTime =	curTime;
+		m_curSecBytes = 0;
 	}
-	m_iCurSecBytes += iBytes;
+	m_curSecBytes += bytes;
 
-	while (iNowSlot > m_iSpeedTime[m_iSpeedBytesIndex])
+	while (nowSlot > m_speedTime[m_speedBytesIndex])
 	{
 		//record bytes in next slot
-		m_iSpeedBytesIndex++;
-		if (m_iSpeedBytesIndex >= SPEEDMETER_SLOTS)
+		m_speedBytesIndex++;
+		if (m_speedBytesIndex >= SPEEDMETER_SLOTS)
 		{
-			m_iSpeedBytesIndex = 0;
+			m_speedBytesIndex = 0;
 		}
 		//Adjust counters with outgoing information.
-		m_iSpeedTotalBytes = m_iSpeedTotalBytes - (long long)m_iSpeedBytes[m_iSpeedBytesIndex];
+		m_speedTotalBytes = m_speedTotalBytes - (long long)m_speedBytes[m_speedBytesIndex];
 
 		//Note we should really use the start time of the next slot
 		//but its easier to just use the outgoing slot time. This
 		//will result in a small error.
-		m_iSpeedStartTime = m_iSpeedTime[m_iSpeedBytesIndex];
+		m_speedStartTime = m_speedTime[m_speedBytesIndex];
 
 		//Now reset.
-		m_iSpeedBytes[m_iSpeedBytesIndex] = 0;
-		m_iSpeedTime[m_iSpeedBytesIndex] = iNowSlot;
+		m_speedBytes[m_speedBytesIndex] = 0;
+		m_speedTime[m_speedBytesIndex] = nowSlot;
 	}
 
 	// Once per second recalculate summary field "m_iSpeedTotalBytes" to recover from possible synchronisation errors
-	if (tCurTime > m_tSpeedCorrection)
+	if (curTime > m_speedCorrection)
 	{
-		long long iSpeedTotalBytes = 0;
+		long long speedTotalBytes = 0;
 		for (int i = 0; i < SPEEDMETER_SLOTS; i++)
 		{
-			iSpeedTotalBytes += m_iSpeedBytes[i];
+			speedTotalBytes += m_speedBytes[i];
 		}
-		m_iSpeedTotalBytes = iSpeedTotalBytes;
-		m_tSpeedCorrection = tCurTime;
+		m_speedTotalBytes = speedTotalBytes;
+		m_speedCorrection = curTime;
 	}
 
-	if (m_iSpeedTotalBytes == 0)
+	if (m_speedTotalBytes == 0)
 	{
-		m_iSpeedStartTime = iNowSlot;
+		m_speedStartTime = nowSlot;
 	}
-	m_iSpeedBytes[m_iSpeedBytesIndex] += iBytes;
-	m_iSpeedTotalBytes += iBytes;
-	m_iAllBytes += iBytes;
+	m_speedBytes[m_speedBytesIndex] += bytes;
+	m_speedTotalBytes += bytes;
+	m_allBytes += bytes;
 
 	if (g_pOptions->GetAccurateRate())
 	{
-		m_mutexSpeed.Unlock();
+		m_speedMutex.Unlock();
 	}
 }
 
 void StatMeter::ResetSpeedStat()
 {
-	time_t tCurTime = time(NULL);
-	m_iSpeedStartTime = (int)tCurTime / SPEEDMETER_SLOTSIZE;
+	time_t curTime = time(NULL);
+	m_speedStartTime = (int)curTime / SPEEDMETER_SLOTSIZE;
 	for (int i = 0; i < SPEEDMETER_SLOTS; i++)
 	{
-		m_iSpeedBytes[i] = 0;
-		m_iSpeedTime[i] = m_iSpeedStartTime;
+		m_speedBytes[i] = 0;
+		m_speedTime[i] = m_speedStartTime;
 	}
-	m_iSpeedBytesIndex = 0;
-	m_iSpeedTotalBytes = 0;
-	m_tSpeedCorrection = tCurTime;
-	m_tCurSecTime =	0;
-	m_iCurSecBytes = 0;
+	m_speedBytesIndex = 0;
+	m_speedTotalBytes = 0;
+	m_speedCorrection = curTime;
+	m_curSecTime =	0;
+	m_curSecBytes = 0;
 }
 
 void StatMeter::LogDebugInfo()
 {
 	info("   ---------- SpeedMeter");
-	int iSpeed = CalcCurrentDownloadSpeed() / 1024;
-	int iTimeDiff = (int)time(NULL) - m_iSpeedStartTime * SPEEDMETER_SLOTSIZE;
-	info("      Speed: %i", iSpeed);
-	info("      SpeedStartTime: %i", m_iSpeedStartTime);
-	info("      SpeedTotalBytes: %i", m_iSpeedTotalBytes);
-	info("      SpeedBytesIndex: %i", m_iSpeedBytesIndex);
-	info("      AllBytes: %i", m_iAllBytes);
+	int speed = CalcCurrentDownloadSpeed() / 1024;
+	int timeDiff = (int)time(NULL) - m_speedStartTime * SPEEDMETER_SLOTSIZE;
+	info("      Speed: %i", speed);
+	info("      SpeedStartTime: %i", m_speedStartTime);
+	info("      SpeedTotalBytes: %i", m_speedTotalBytes);
+	info("      SpeedBytesIndex: %i", m_speedBytesIndex);
+	info("      AllBytes: %i", m_allBytes);
 	info("      Time: %i", (int)time(NULL));
-	info("      TimeDiff: %i", iTimeDiff);
+	info("      TimeDiff: %i", timeDiff);
 	for (int i=0; i < SPEEDMETER_SLOTS; i++)
 	{
-		info("      Bytes[%i]: %i, Time[%i]: %i", i, m_iSpeedBytes[i], i, m_iSpeedTime[i]);
+		info("      Bytes[%i]: %i, Time[%i]: %i", i, m_speedBytes[i], i, m_speedTime[i]);
 	}
 
-	m_mutexVolume.Lock();
+	m_volumeMutex.Lock();
 	int index = 0;
-	for (ServerVolumes::iterator it = m_ServerVolumes.begin(); it != m_ServerVolumes.end(); it++, index++)
+	for (ServerVolumes::iterator it = m_serverVolumes.begin(); it != m_serverVolumes.end(); it++, index++)
 	{
-		ServerVolume* pServerVolume = *it;
+		ServerVolume* serverVolume = *it;
 		info("      ServerVolume %i", index);
-		pServerVolume->LogDebugInfo();
+		serverVolume->LogDebugInfo();
 	}
-	m_mutexVolume.Unlock();
+	m_volumeMutex.Unlock();
 }
 
-void StatMeter::AddServerData(int iBytes, int iServerID)
+void StatMeter::AddServerData(int bytes, int serverId)
 {
-	if (iBytes == 0)
+	if (bytes == 0)
 	{
 		return;
 	}
 
-	m_mutexVolume.Lock();
-	m_ServerVolumes[0]->AddData(iBytes);
-	m_ServerVolumes[iServerID]->AddData(iBytes);
-	m_bStatChanged = true;
-	m_mutexVolume.Unlock();
+	m_volumeMutex.Lock();
+	m_serverVolumes[0]->AddData(bytes);
+	m_serverVolumes[serverId]->AddData(bytes);
+	m_statChanged = true;
+	m_volumeMutex.Unlock();
 }
 
 ServerVolumes* StatMeter::LockServerVolumes()
 {
-	m_mutexVolume.Lock();
+	m_volumeMutex.Lock();
 
 	// update slots
-	for (ServerVolumes::iterator it = m_ServerVolumes.begin(); it != m_ServerVolumes.end(); it++)
+	for (ServerVolumes::iterator it = m_serverVolumes.begin(); it != m_serverVolumes.end(); it++)
 	{
-		ServerVolume* pServerVolume = *it;
-		pServerVolume->AddData(0);
+		ServerVolume* serverVolume = *it;
+		serverVolume->AddData(0);
 	}
 
-	return &m_ServerVolumes;
+	return &m_serverVolumes;
 }
 
 void StatMeter::UnlockServerVolumes()
 {
-	m_mutexVolume.Unlock();
+	m_volumeMutex.Unlock();
 }
 
 void StatMeter::Save()
@@ -525,25 +525,25 @@ void StatMeter::Save()
 		return;
 	}
 
-	m_mutexVolume.Lock();
-	g_pDiskState->SaveStats(g_pServerPool->GetServers(), &m_ServerVolumes);
-	m_bStatChanged = false;
-	m_mutexVolume.Unlock();
+	m_volumeMutex.Lock();
+	g_pDiskState->SaveStats(g_pServerPool->GetServers(), &m_serverVolumes);
+	m_statChanged = false;
+	m_volumeMutex.Unlock();
 }
 
-bool StatMeter::Load(bool* pPerfectServerMatch)
+bool StatMeter::Load(bool* perfectServerMatch)
 {
-	m_mutexVolume.Lock();
+	m_volumeMutex.Lock();
 
-	bool bOK = g_pDiskState->LoadStats(g_pServerPool->GetServers(), &m_ServerVolumes, pPerfectServerMatch);
+	bool ok = g_pDiskState->LoadStats(g_pServerPool->GetServers(), &m_serverVolumes, perfectServerMatch);
 
-	for (ServerVolumes::iterator it = m_ServerVolumes.begin(); it != m_ServerVolumes.end(); it++)
+	for (ServerVolumes::iterator it = m_serverVolumes.begin(); it != m_serverVolumes.end(); it++)
 	{
-		ServerVolume* pServerVolume = *it;
-		pServerVolume->CalcSlots(pServerVolume->GetDataTime() + g_pOptions->GetLocalTimeOffset());
+		ServerVolume* serverVolume = *it;
+		serverVolume->CalcSlots(serverVolume->GetDataTime() + g_pOptions->GetLocalTimeOffset());
 	}
 
-	m_mutexVolume.Unlock();
+	m_volumeMutex.Unlock();
 
-	return bOK;
+	return ok;
 }

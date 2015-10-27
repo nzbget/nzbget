@@ -38,7 +38,7 @@ protected:
 	virtual void 	Update();
 	virtual void	BeforePrint() {};
 	virtual void	BeforeExit() {};
-	virtual void	PrintMessage(Message* pMessage);
+	virtual void	PrintMessage(Message* message);
 	virtual void 	PrintStatus() {};
 	virtual void 	PrintSkip();
 public:

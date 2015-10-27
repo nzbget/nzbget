@@ -56,73 +56,73 @@ public:
 	};
 
 private:
-	char*				m_szRequest;
-	const char*			m_szContentType;
-	ERpcProtocol		m_eProtocol;
-	EHttpMethod			m_eHttpMethod;
-	EUserAccess			m_eUserAccess;
-	char*				m_szUrl;
+	char*				m_request;
+	const char*			m_contentType;
+	ERpcProtocol		m_protocol;
+	EHttpMethod			m_httpMethod;
+	EUserAccess			m_userAccess;
+	char*				m_url;
 	StringBuilder		m_cResponse;
 
 	void				Dispatch();
-	XmlCommand*			CreateCommand(const char* szMethodName);
+	XmlCommand*			CreateCommand(const char* methodName);
 	void				MutliCall();
-	void				BuildResponse(const char* szResponse, const char* szCallbackFunc, bool bFault, const char* szRequestId);
+	void				BuildResponse(const char* response, const char* callbackFunc, bool fault, const char* requestId);
 
 public:
 						XmlRpcProcessor();
 						~XmlRpcProcessor();
 	void				Execute();
-	void				SetHttpMethod(EHttpMethod eHttpMethod) { m_eHttpMethod = eHttpMethod; }
-	void				SetUserAccess(EUserAccess eUserAccess) { m_eUserAccess = eUserAccess; }
-	void				SetUrl(const char* szUrl);
-	void				SetRequest(char* szRequest) { m_szRequest = szRequest; }
+	void				SetHttpMethod(EHttpMethod httpMethod) { m_httpMethod = httpMethod; }
+	void				SetUserAccess(EUserAccess userAccess) { m_userAccess = userAccess; }
+	void				SetUrl(const char* url);
+	void				SetRequest(char* request) { m_request = request; }
 	const char*			GetResponse() { return m_cResponse.GetBuffer(); }
-	const char*			GetContentType() { return m_szContentType; }
-	static bool			IsRpcRequest(const char* szUrl);
+	const char*			GetContentType() { return m_contentType; }
+	static bool			IsRpcRequest(const char* url);
 };
 
 class XmlCommand
 {
 protected:
-	char*				m_szRequest;
-	char*				m_szRequestPtr;
-	char*				m_szCallbackFunc;
-	StringBuilder		m_StringBuilder;
-	bool				m_bFault;
-	XmlRpcProcessor::ERpcProtocol	m_eProtocol;
-	XmlRpcProcessor::EHttpMethod	m_eHttpMethod;
-	XmlRpcProcessor::EUserAccess	m_eUserAccess;
+	char*				m_request;
+	char*				m_requestPtr;
+	char*				m_callbackFunc;
+	StringBuilder		m_stringBuilder;
+	bool				m_fault;
+	XmlRpcProcessor::ERpcProtocol	m_protocol;
+	XmlRpcProcessor::EHttpMethod	m_httpMethod;
+	XmlRpcProcessor::EUserAccess	m_userAccess;
 
-	void				BuildErrorResponse(int iErrCode, const char* szErrText, ...);
-	void				BuildBoolResponse(bool bOK);
-	void				BuildIntResponse(int iValue);
-	void				AppendResponse(const char* szPart);
-	void				AppendFmtResponse(const char* szFormat, ...);
-	void				AppendCondResponse(const char* szPart, bool bCond);
-	void				OptimizeResponse(int iRecordCount);
+	void				BuildErrorResponse(int errCode, const char* errText, ...);
+	void				BuildBoolResponse(bool ok);
+	void				BuildIntResponse(int value);
+	void				AppendResponse(const char* part);
+	void				AppendFmtResponse(const char* format, ...);
+	void				AppendCondResponse(const char* part, bool cond);
+	void				OptimizeResponse(int recordCount);
 	bool				IsJson();
 	bool				CheckSafeMethod();
-	bool				NextParamAsInt(int* iValue);
-	bool				NextParamAsBool(bool* bValue);
-	bool				NextParamAsStr(char** szValueBuf);
-	char*				XmlNextValue(char* szXml, const char* szTag, int* pValueLength);
-	const char*			BoolToStr(bool bValue);
-	char*				EncodeStr(const char* szStr);
-	void				DecodeStr(char* szStr);
+	bool				NextParamAsInt(int* value);
+	bool				NextParamAsBool(bool* value);
+	bool				NextParamAsStr(char** valueBuf);
+	char*				XmlNextValue(char* xml, const char* tag, int* valueLength);
+	const char*			BoolToStr(bool value);
+	char*				EncodeStr(const char* str);
+	void				DecodeStr(char* str);
 
 public:
 						XmlCommand();
 	virtual 			~XmlCommand() {}
 	virtual void		Execute() = 0;
 	void				PrepareParams();
-	void				SetRequest(char* szRequest) { m_szRequest = szRequest; m_szRequestPtr = m_szRequest; }
-	void				SetProtocol(XmlRpcProcessor::ERpcProtocol eProtocol) { m_eProtocol = eProtocol; }
-	void				SetHttpMethod(XmlRpcProcessor::EHttpMethod eHttpMethod) { m_eHttpMethod = eHttpMethod; }
-	void				SetUserAccess(XmlRpcProcessor::EUserAccess eUserAccess) { m_eUserAccess = eUserAccess; }
-	const char*			GetResponse() { return m_StringBuilder.GetBuffer(); }
-	const char*			GetCallbackFunc() { return m_szCallbackFunc; }
-	bool				GetFault() { return m_bFault; }
+	void				SetRequest(char* request) { m_request = request; m_requestPtr = m_request; }
+	void				SetProtocol(XmlRpcProcessor::ERpcProtocol protocol) { m_protocol = protocol; }
+	void				SetHttpMethod(XmlRpcProcessor::EHttpMethod httpMethod) { m_httpMethod = httpMethod; }
+	void				SetUserAccess(XmlRpcProcessor::EUserAccess userAccess) { m_userAccess = userAccess; }
+	const char*			GetResponse() { return m_stringBuilder.GetBuffer(); }
+	const char*			GetCallbackFunc() { return m_callbackFunc; }
+	bool				GetFault() { return m_fault; }
 };
 
 #endif

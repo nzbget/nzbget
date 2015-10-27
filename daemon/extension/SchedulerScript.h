@@ -31,20 +31,20 @@
 class SchedulerScriptController : public Thread, public NZBScriptController
 {
 private:
-	char*				m_szScript;
-	bool				m_bExternalProcess;
-	int					m_iTaskID;
+	char*				m_script;
+	bool				m_externalProcess;
+	int					m_taskId;
 
-	void				PrepareParams(const char* szScriptName);
+	void				PrepareParams(const char* scriptName);
 	void				ExecuteExternalProcess();
 
 protected:
-	virtual void		ExecuteScript(ScriptConfig::Script* pScript);
+	virtual void		ExecuteScript(ScriptConfig::Script* script);
 
 public:
 	virtual				~SchedulerScriptController();
 	virtual void		Run();
-	static void			StartScript(const char* szParam, bool bExternalProcess, int iTaskID);
+	static void			StartScript(const char* param, bool externalProcess, int taskId);
 };
 
 #endif

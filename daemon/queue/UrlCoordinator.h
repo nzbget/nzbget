@@ -44,13 +44,13 @@ private:
 	typedef std::list<UrlDownloader*>	ActiveDownloads;
 
 private:
-	ActiveDownloads			m_ActiveDownloads;
-	bool					m_bHasMoreJobs;
-	bool					m_bForce;
+	ActiveDownloads			m_activeDownloads;
+	bool					m_hasMoreJobs;
+	bool					m_force;
 
-	NZBInfo*				GetNextUrl(DownloadQueue* pDownloadQueue);
-	void					StartUrlDownload(NZBInfo* pNZBInfo);
-	void					UrlCompleted(UrlDownloader* pUrlDownloader);
+	NZBInfo*				GetNextUrl(DownloadQueue* downloadQueue);
+	void					StartUrlDownload(NZBInfo* nzbInfo);
+	void					UrlCompleted(UrlDownloader* urlDownloader);
 	void					ResetHangingDownloads();
 
 protected:
@@ -61,12 +61,12 @@ public:
 	virtual					~UrlCoordinator();
 	virtual void			Run();
 	virtual void 			Stop();
-	void					Update(Subject* pCaller, void* pAspect);
+	void					Update(Subject* caller, void* aspect);
 
 	// Editing the queue
-	void					AddUrlToQueue(NZBInfo* pNZBInfo, bool bAddTop);
-	bool					HasMoreJobs() { return m_bHasMoreJobs; }
-	bool					DeleteQueueEntry(DownloadQueue* pDownloadQueue, NZBInfo* pNZBInfo, bool bAvoidHistory);
+	void					AddUrlToQueue(NZBInfo* nzbInfo, bool addTop);
+	bool					HasMoreJobs() { return m_hasMoreJobs; }
+	bool					DeleteQueueEntry(DownloadQueue* downloadQueue, NZBInfo* nzbInfo, bool avoidHistory);
 };
 
 extern UrlCoordinator* g_pUrlCoordinator;
@@ -74,18 +74,18 @@ extern UrlCoordinator* g_pUrlCoordinator;
 class UrlDownloader : public WebDownloader
 {
 private:
-	NZBInfo*				m_pNZBInfo;
-	char*					m_szCategory;
+	NZBInfo*				m_nzbInfo;
+	char*					m_category;
 
 protected:
-	virtual void			ProcessHeader(const char* szLine);
+	virtual void			ProcessHeader(const char* line);
 
 public:
 							UrlDownloader();
 							~UrlDownloader();
-	void					SetNZBInfo(NZBInfo* pNZBInfo) { m_pNZBInfo = pNZBInfo; }
-	NZBInfo*				GetNZBInfo() { return m_pNZBInfo; }
-	const char*				GetCategory() { return m_szCategory; }
+	void					SetNZBInfo(NZBInfo* nzbInfo) { m_nzbInfo = nzbInfo; }
+	NZBInfo*				GetNZBInfo() { return m_nzbInfo; }
+	const char*				GetCategory() { return m_category; }
 };
 
 #endif

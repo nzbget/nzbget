@@ -42,26 +42,26 @@ class DirBrowser
 {
 private:
 #ifdef WIN32
-	WIN32_FIND_DATA		m_FindData;
+	WIN32_FIND_DATA		m_findData;
 	HANDLE				m_hFile;
-	bool				m_bFirst;
+	bool				m_first;
 #else
-	void*				m_pDir;    // DIR*, declared as void* to avoid including of <dirent>
-	struct dirent*		m_pFindData;
+	void*				m_dir;    // DIR*, declared as void* to avoid including of <dirent>
+	struct dirent*		m_findData;
 #endif
 
 #ifdef DIRBROWSER_SNAPSHOT
-	bool				m_bSnapshot;
+	bool				m_snapshot;
 	typedef std::deque<char*>	FileList;
-	FileList			m_Snapshot;
+	FileList			m_snapshot;
 	FileList::iterator	m_itSnapshot;
 #endif
 
 public:
 #ifdef DIRBROWSER_SNAPSHOT
-						DirBrowser(const char* szPath, bool bSnapshot = true);
+						DirBrowser(const char* path, bool snapshot = true);
 #else
-						DirBrowser(const char* szPath);
+						DirBrowser(const char* path);
 #endif
 						~DirBrowser();
 	const char*			Next();
@@ -70,22 +70,22 @@ public:
 class StringBuilder
 {
 private:
-	char*				m_szBuffer;
-	int					m_iBufferSize;
-	int					m_iUsedSize;
-	int					m_iGrowSize;
+	char*				m_buffer;
+	int					m_bufferSize;
+	int					m_usedSize;
+	int					m_growSize;
 
-	void				Reserve(int iSize);
+	void				Reserve(int size);
 
 public:
 						StringBuilder();
 						~StringBuilder();
-	void				Append(const char* szStr);
-	void				AppendFmt(const char* szFormat, ...);
-	void				AppendFmtV(const char* szFormat, va_list ap);
-	const char*			GetBuffer() { return m_szBuffer; }
-	void				SetGrowSize(int iGrowSize) { m_iGrowSize = iGrowSize; }
-	int					GetUsedSize() { return m_iUsedSize; }
+	void				Append(const char* str);
+	void				AppendFmt(const char* format, ...);
+	void				AppendFmtV(const char* format, va_list ap);
+	const char*			GetBuffer() { return m_buffer; }
+	void				SetGrowSize(int growSize) { m_growSize = growSize; }
+	int					GetUsedSize() { return m_usedSize; }
 	void				Clear();
 };
 
@@ -93,46 +93,46 @@ class Util
 {
 public:
 	static char* BaseFileName(const char* filename);
-	static void NormalizePathSeparators(char* szPath);
-	static bool LoadFileIntoBuffer(const char* szFileName, char** pBuffer, int* pBufferLength);
-	static bool SaveBufferIntoFile(const char* szFileName, const char* szBuffer, int iBufLen);
-	static bool CreateSparseFile(const char* szFilename, long long iSize, char* szErrBuf, int iBufSize);
-	static bool TruncateFile(const char* szFilename, int iSize);
-	static void MakeValidFilename(char* szFilename, char cReplaceChar, bool bAllowSlashes);
-	static bool MakeUniqueFilename(char* szDestBufFilename, int iDestBufSize, const char* szDestDir, const char* szBasename);
-	static bool MoveFile(const char* szSrcFilename, const char* szDstFilename);
-	static bool CopyFile(const char* szSrcFilename, const char* szDstFilename);
-	static bool FileExists(const char* szFilename);
-	static bool FileExists(const char* szPath, const char* szFilenameWithoutPath);
-	static bool DirectoryExists(const char* szDirFilename);
-	static bool CreateDirectory(const char* szDirFilename);
-	static bool RemoveDirectory(const char* szDirFilename);
-	static bool DeleteDirectoryWithContent(const char* szDirFilename, char* szErrBuf, int iBufSize);
-	static bool ForceDirectories(const char* szPath, char* szErrBuf, int iBufSize);
-	static bool GetCurrentDirectory(char* szBuffer, int iBufSize);
-	static bool SetCurrentDirectory(const char* szDirFilename);
-	static long long FileSize(const char* szFilename);
-	static long long FreeDiskSize(const char* szPath);
-	static bool DirEmpty(const char* szDirFilename);
-	static bool RenameBak(const char* szFilename, const char* szBakPart, bool bRemoveOldExtension, char* szNewNameBuf, int iNewNameBufSize);
+	static void NormalizePathSeparators(char* path);
+	static bool LoadFileIntoBuffer(const char* fileName, char** buffer, int* bufferLength);
+	static bool SaveBufferIntoFile(const char* fileName, const char* buffer, int bufLen);
+	static bool CreateSparseFile(const char* filename, long long size, char* errBuf, int bufSize);
+	static bool TruncateFile(const char* filename, int size);
+	static void MakeValidFilename(char* filename, char cReplaceChar, bool allowSlashes);
+	static bool MakeUniqueFilename(char* destBufFilename, int destBufSize, const char* destDir, const char* basename);
+	static bool MoveFile(const char* srcFilename, const char* dstFilename);
+	static bool CopyFile(const char* srcFilename, const char* dstFilename);
+	static bool FileExists(const char* filename);
+	static bool FileExists(const char* path, const char* filenameWithoutPath);
+	static bool DirectoryExists(const char* dirFilename);
+	static bool CreateDirectory(const char* dirFilename);
+	static bool RemoveDirectory(const char* dirFilename);
+	static bool DeleteDirectoryWithContent(const char* dirFilename, char* errBuf, int bufSize);
+	static bool ForceDirectories(const char* path, char* errBuf, int bufSize);
+	static bool GetCurrentDirectory(char* buffer, int bufSize);
+	static bool SetCurrentDirectory(const char* dirFilename);
+	static long long FileSize(const char* filename);
+	static long long FreeDiskSize(const char* path);
+	static bool DirEmpty(const char* dirFilename);
+	static bool RenameBak(const char* filename, const char* bakPart, bool removeOldExtension, char* newNameBuf, int newNameBufSize);
 #ifndef WIN32
-	static bool ExpandHomePath(const char* szFilename, char* szBuffer, int iBufSize);
-	static void FixExecPermission(const char* szFilename);
+	static bool ExpandHomePath(const char* filename, char* buffer, int bufSize);
+	static void FixExecPermission(const char* filename);
 #endif
-	static void ExpandFileName(const char* szFilename, char* szBuffer, int iBufSize);
-	static void GetExeFileName(const char* argv0, char* szBuffer, int iBufSize);
-	static char* FormatSpeed(char* szBuffer, int iBufSize, int iBytesPerSecond);
-	static char* FormatSize(char* szBuffer, int iBufLen, long long lFileSize);
-	static bool SameFilename(const char* szFilename1, const char* szFilename2);
-	static bool MatchFileExt(const char* szFilename, const char* szExtensionList, const char* szListSeparator);
-	static char* GetLastErrorMessage(char* szBuffer, int iBufLen);
+	static void ExpandFileName(const char* filename, char* buffer, int bufSize);
+	static void GetExeFileName(const char* argv0, char* buffer, int bufSize);
+	static char* FormatSpeed(char* buffer, int bufSize, int bytesPerSecond);
+	static char* FormatSize(char* buffer, int bufLen, long long fileSize);
+	static bool SameFilename(const char* filename1, const char* filename2);
+	static bool MatchFileExt(const char* filename, const char* extensionList, const char* listSeparator);
+	static char* GetLastErrorMessage(char* buffer, int bufLen);
 	static long long GetCurrentTicks();
 
 	/* Flush disk buffers for file with given descriptor */
-	static bool FlushFileBuffers(int iFileDescriptor, char* szErrBuf, int iBufSize);
+	static bool FlushFileBuffers(int fileDescriptor, char* errBuf, int bufSize);
 
 	/* Flush disk buffers for file metadata (after file renaming) */
-	static bool FlushDirBuffers(const char* szFilename, char* szErrBuf, int iBufSize);
+	static bool FlushDirBuffers(const char* filename, char* errBuf, int bufSize);
 
 	/*
 	 * Split command line int arguments.
@@ -146,26 +146,26 @@ public:
 	 * If these restrictions are exceeded, only first 100 arguments and only first 1024
 	 * for each argument are returned (the functions still returns "true").
 	 */
-	static bool SplitCommandLine(const char* szCommandLine, char*** argv);
+	static bool SplitCommandLine(const char* commandLine, char*** argv);
 
 	static long long JoinInt64(unsigned long Hi, unsigned long Lo);
 	static void SplitInt64(long long Int64, unsigned long* Hi, unsigned long* Lo);
 
-	static void TrimRight(char* szStr);
-	static char* Trim(char* szStr);
-	static bool EmptyStr(const char* szStr) { return !szStr || !*szStr; }
+	static void TrimRight(char* str);
+	static char* Trim(char* str);
+	static bool EmptyStr(const char* str) { return !str || !*str; }
 
 	/* replace all occurences of szFrom to szTo in string szStr with a limitation that szTo must be shorter than szFrom */
-	static char* ReduceStr(char* szStr, const char* szFrom, const char* szTo);
+	static char* ReduceStr(char* str, const char* from, const char* to);
 
 	/* Calculate Hash using Bob Jenkins (1996) algorithm */
-	static unsigned int HashBJ96(const char* szBuffer, int iBufSize, unsigned int iInitValue);
+	static unsigned int HashBJ96(const char* buffer, int bufSize, unsigned int initValue);
 
 #ifdef WIN32
-	static bool RegReadStr(HKEY hKey, const char* szKeyName, const char* szValueName, char* szBuffer, int* iBufLen);
+	static bool RegReadStr(HKEY hKey, const char* keyName, const char* valueName, char* buffer, int* bufLen);
 #endif
 
-	static void SetStandByMode(bool bStandBy);
+	static void SetStandByMode(bool standBy);
 
 	/* cross platform version of GNU timegm, which is similar to mktime but takes an UTC time as parameter */
 	static time_t Timegm(tm const *t);
@@ -193,7 +193,7 @@ public:
 class WebUtil
 {
 public:
-	static unsigned int DecodeBase64(char* szInputBuffer, int iInputBufferLength, char* szOutputBuffer);
+	static unsigned int DecodeBase64(char* inputBuffer, int inputBufferLength, char* outputBuffer);
 
 	/*
 	 * Encodes string to be used as content of xml-tag.
@@ -211,18 +211,18 @@ public:
 	 * Returns pointer to tag-content and length of content in iValueLength
 	 * The returned pointer points to the part of source-string, no additional strings are allocated.
 	 */
-	static const char* XmlFindTag(const char* szXml, const char* szTag, int* pValueLength);
+	static const char* XmlFindTag(const char* xml, const char* tag, int* valueLength);
 
 	/*
 	 * Parses tag-content into szValueBuf.
 	 */
-	static bool XmlParseTagValue(const char* szXml, const char* szTag, char* szValueBuf, int iValueBufSize, const char** pTagEnd);
+	static bool XmlParseTagValue(const char* xml, const char* tag, char* valueBuf, int valueBufSize, const char** tagEnd);
 
 	/*
 	 * Replaces all tags with spaces effectively providing the text content only.
 	 * The string is transformed in-place overwriting the previous content.
 	 */
-	static void XmlStripTags(char* szXml);
+	static void XmlStripTags(char* xml);
 
 	/*
 	 * Replaces all entities with spaces.
@@ -246,13 +246,13 @@ public:
 	 * Returns pointer to field-content and length of content in iValueLength
 	 * The returned pointer points to the part of source-string, no additional strings are allocated.
 	 */
-	static const char* JsonFindField(const char* szJsonText, const char* szFieldName, int* pValueLength);
+	static const char* JsonFindField(const char* jsonText, const char* fieldName, int* valueLength);
 
 	/*
 	 * Returns pointer to field-content and length of content in iValueLength
 	 * The returned pointer points to the part of source-string, no additional strings are allocated.
 	 */
-	static const char* JsonNextValue(const char* szJsonText, int* pValueLength);
+	static const char* JsonNextValue(const char* jsonText, int* valueLength);
 
 	/*
 	 * Unquote http quoted string.
@@ -273,60 +273,60 @@ public:
 	static char* URLEncode(const char* raw);
 
 #ifdef WIN32
-	static bool Utf8ToAnsi(char* szBuffer, int iBufLen);
-	static bool AnsiToUtf8(char* szBuffer, int iBufLen);
+	static bool Utf8ToAnsi(char* buffer, int bufLen);
+	static bool AnsiToUtf8(char* buffer, int bufLen);
 #endif
 
 	/*
 	 * Converts ISO-8859-1 (aka Latin-1) into UTF-8.
 	 * Returns new string allocated with malloc, it needs to be freed by caller.
 	 */
-	static char* Latin1ToUtf8(const char* szStr);
+	static char* Latin1ToUtf8(const char* str);
 
-	static time_t ParseRfc822DateTime(const char* szDateTimeStr);
+	static time_t ParseRfc822DateTime(const char* dateTimeStr);
 };
 
 class URL
 {
 private:
-	char*				m_szAddress;
-	char*				m_szProtocol;
-	char*				m_szUser;
-	char*				m_szPassword;
-	char*				m_szHost;
-	char*				m_szResource;
-	int					m_iPort;
-	bool				m_bTLS;
-	bool				m_bValid;
+	char*				m_address;
+	char*				m_protocol;
+	char*				m_user;
+	char*				m_password;
+	char*				m_host;
+	char*				m_resource;
+	int					m_port;
+	bool				m_tLS;
+	bool				m_valid;
 	void				ParseURL();
 
 public:
-	 					URL(const char* szAddress);
+	 					URL(const char* address);
 						~URL();
-	bool				IsValid() { return m_bValid; }
-	const char*			GetAddress() { return m_szAddress; }
-	const char*			GetProtocol() { return m_szProtocol; }
-	const char*			GetUser() { return m_szUser; }
-	const char*			GetPassword() { return m_szPassword; }
-	const char*			GetHost() { return m_szHost; }
-	const char*			GetResource() { return m_szResource; }
-	int					GetPort() { return m_iPort; }
-	bool				GetTLS() { return m_bTLS; }
+	bool				IsValid() { return m_valid; }
+	const char*			GetAddress() { return m_address; }
+	const char*			GetProtocol() { return m_protocol; }
+	const char*			GetUser() { return m_user; }
+	const char*			GetPassword() { return m_password; }
+	const char*			GetHost() { return m_host; }
+	const char*			GetResource() { return m_resource; }
+	int					GetPort() { return m_port; }
+	bool				GetTLS() { return m_tLS; }
 };
 
 class RegEx
 {
 private:
-	void*				m_pContext;
-	bool				m_bValid;
-	void*				m_pMatches;
-	int					m_iMatchBufSize;
+	void*				m_context;
+	bool				m_valid;
+	void*				m_matches;
+	int					m_matchBufSize;
 
 public:
-						RegEx(const char *szPattern, int iMatchBufSize = 100);
+						RegEx(const char *pattern, int matchBufSize = 100);
 						~RegEx();
-	bool				IsValid() { return m_bValid; }
-	bool				Match(const char *szStr);
+	bool				IsValid() { return m_valid; }
+	bool				Match(const char *str);
 	int					GetMatchCount();
 	int					GetMatchStart(int index);
 	int					GetMatchLen(int index);
@@ -335,22 +335,22 @@ public:
 class WildMask
 {
 private:
-	char*				m_szPattern;
-	bool				m_bWantsPositions;
-	int					m_iWildCount;
-	int*				m_WildStart;
-	int*				m_WildLen;
-	int					m_iArrLen;
+	char*				m_pattern;
+	bool				m_wantsPositions;
+	int					m_wildCount;
+	int*				m_wildStart;
+	int*				m_wildLen;
+	int					m_arrLen;
 
 	void				ExpandArray();
 
 public:
-						WildMask(const char *szPattern, bool bWantsPositions = false);
+						WildMask(const char* pattern, bool wantsPositions = false);
 						~WildMask();
-	bool				Match(const char *szStr);
-	int					GetMatchCount() { return m_iWildCount; }
-	int					GetMatchStart(int index) { return m_WildStart[index]; }
-	int					GetMatchLen(int index) { return m_WildLen[index]; }
+	bool				Match(const char* text);
+	int					GetMatchCount() { return m_wildCount; }
+	int					GetMatchStart(int index) { return m_wildStart[index]; }
+	int					GetMatchLen(int index) { return m_wildLen[index]; }
 };
 
 #ifndef DISABLE_GZIP
@@ -360,12 +360,12 @@ public:
 	/*
 	 * calculates the size required for output buffer
 	 */
-	static unsigned int GZipLen(int iInputBufferLength);
+	static unsigned int GZipLen(int inputBufferLength);
 	
 	/*
 	 * returns the size of bytes written to szOutputBuffer or 0 if the buffer is too small or an error occured.
 	 */
-	static unsigned int GZip(const void* szInputBuffer, int iInputBufferLength, void* szOutputBuffer, int iOutputBufferLength);
+	static unsigned int GZip(const void* inputBuffer, int inputBufferLength, void* outputBuffer, int outputBufferLength);
 };
 
 class GUnzipStream
@@ -379,9 +379,9 @@ public:
 	};
 
 private:
-	void*				m_pZStream;
-	void*				m_pOutputBuffer;
-	int					m_iBufferSize;
+	void*				m_zStream;
+	void*				m_outputBuffer;
+	int					m_bufferSize;
 
 public:
 						GUnzipStream(int BufferSize);
@@ -390,29 +390,29 @@ public:
 	/*
 	 * set next memory block for uncompression
 	 */
-	void				Write(const void *pInputBuffer, int iInputBufferLength);
+	void				Write(const void *inputBuffer, int inputBufferLength);
 
 	/*
 	 * get next uncompressed memory block.
 	 * iOutputBufferLength - the size of uncompressed block. if it is "0" the next compressed block must be provided via "Write".
 	 */
-	EStatus				Read(const void **pOutputBuffer, int *iOutputBufferLength);
+	EStatus				Read(const void **outputBuffer, int *outputBufferLength);
 };
 #endif
 
 class Tokenizer
 {
 private:
-	char				m_szDefaultBuf[2014];
-	char*				m_szDataString;
-	bool				m_bInplaceBuf;
-	const char*			m_szSeparators;
-	char*				m_szSavePtr;
-	bool				m_bWorking;
+	char				m_defaultBuf[2014];
+	char*				m_dataString;
+	bool				m_inplaceBuf;
+	const char*			m_separators;
+	char*				m_savePtr;
+	bool				m_working;
 
 public:
-						Tokenizer(const char* szDataString, const char* szSeparators);
-						Tokenizer(char* szDataString, const char* szSeparators, bool bInplaceBuf);
+						Tokenizer(const char* dataString, const char* separators);
+						Tokenizer(char* dataString, const char* separators, bool inplaceBuf);
 						~Tokenizer();
 	char*				Next();
 };

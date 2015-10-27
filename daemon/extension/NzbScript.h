@@ -33,10 +33,10 @@
 class NZBScriptController : public ScriptController
 {
 protected:
-	void				PrepareEnvParameters(NZBParameterList* pParameters, const char* szStripPrefix);
-	void				PrepareEnvScript(NZBParameterList* pParameters, const char* szScriptName);
-	void				ExecuteScriptList(const char* szScriptList);
-	virtual void		ExecuteScript(ScriptConfig::Script* pScript) = 0;
+	void				PrepareEnvParameters(NZBParameterList* parameters, const char* stripPrefix);
+	void				PrepareEnvScript(NZBParameterList* parameters, const char* scriptName);
+	void				ExecuteScriptList(const char* scriptList);
+	virtual void		ExecuteScript(ScriptConfig::Script* script) = 0;
 };
 
 #endif

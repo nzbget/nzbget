@@ -36,47 +36,47 @@ public:
 	class EditItem
 	{
 	public:
-		int			m_iOffset;
-		FileInfo*	m_pFileInfo;
-		NZBInfo*	m_pNZBInfo;
+		int			m_offset;
+		FileInfo*	m_fileInfo;
+		NZBInfo*	m_nzbInfo;
 
-		EditItem(FileInfo* pFileInfo, NZBInfo* pNZBInfo, int iOffset);
+		EditItem(FileInfo* fileInfo, NZBInfo* nzbInfo, int offset);
 	};
 
 	typedef std::vector<EditItem*> ItemList;
 
 private:
-	DownloadQueue*			m_pDownloadQueue;
+	DownloadQueue*			m_downloadQueue;
 
 private:
-	FileInfo*				FindFileInfo(int iID);
-	bool					InternEditList(ItemList* pItemList, IDList* pIDList, DownloadQueue::EEditAction eAction, int iOffset, const char* szText);
-	void					PrepareList(ItemList* pItemList, IDList* pIDList, DownloadQueue::EEditAction eAction, int iOffset);
-	bool					BuildIDListFromNameList(IDList* pIDList, NameList* pNameList, DownloadQueue::EMatchMode eMatchMode, DownloadQueue::EEditAction eAction);
-	bool					EditGroup(NZBInfo* pNZBInfo, DownloadQueue::EEditAction eAction, int iOffset, const char* szText);
-	void					PauseParsInGroups(ItemList* pItemList, bool bExtraParsOnly);
-	void					PausePars(FileList* pFileList, bool bExtraParsOnly);
-	void					SetNZBPriority(NZBInfo* pNZBInfo, const char* szPriority);
-	void					SetNZBCategory(NZBInfo* pNZBInfo, const char* szCategory, bool bApplyParams);
-	void					SetNZBName(NZBInfo* pNZBInfo, const char* szName);
-	bool					CanCleanupDisk(NZBInfo* pNZBInfo);
-	bool					MergeGroups(ItemList* pItemList);
-	bool					SortGroups(ItemList* pItemList, const char* szSort);
-	bool					SplitGroup(ItemList* pItemList, const char* szName);
-	bool					DeleteUrl(NZBInfo* pNZBInfo, DownloadQueue::EEditAction eAction);
-	void					ReorderFiles(ItemList* pItemList);
-	void					SetNZBParameter(NZBInfo* pNZBInfo, const char* szParamString);
-	void					SetNZBDupeParam(NZBInfo* pNZBInfo, DownloadQueue::EEditAction eAction, const char* szText);
-	void					PauseUnpauseEntry(FileInfo* pFileInfo, bool bPause);
-	void					DeleteEntry(FileInfo* pFileInfo);
-	void					MoveEntry(FileInfo* pFileInfo, int iOffset);
-	void					MoveGroup(NZBInfo* pNZBInfo, int iOffset);
+	FileInfo*				FindFileInfo(int id);
+	bool					InternEditList(ItemList* itemList, IDList* idList, DownloadQueue::EEditAction action, int offset, const char* text);
+	void					PrepareList(ItemList* itemList, IDList* idList, DownloadQueue::EEditAction action, int offset);
+	bool					BuildIDListFromNameList(IDList* idList, NameList* nameList, DownloadQueue::EMatchMode matchMode, DownloadQueue::EEditAction action);
+	bool					EditGroup(NZBInfo* nzbInfo, DownloadQueue::EEditAction action, int offset, const char* text);
+	void					PauseParsInGroups(ItemList* itemList, bool extraParsOnly);
+	void					PausePars(FileList* fileList, bool extraParsOnly);
+	void					SetNZBPriority(NZBInfo* nzbInfo, const char* priority);
+	void					SetNZBCategory(NZBInfo* nzbInfo, const char* category, bool applyParams);
+	void					SetNZBName(NZBInfo* nzbInfo, const char* name);
+	bool					CanCleanupDisk(NZBInfo* nzbInfo);
+	bool					MergeGroups(ItemList* itemList);
+	bool					SortGroups(ItemList* itemList, const char* sort);
+	bool					SplitGroup(ItemList* itemList, const char* name);
+	bool					DeleteUrl(NZBInfo* nzbInfo, DownloadQueue::EEditAction action);
+	void					ReorderFiles(ItemList* itemList);
+	void					SetNZBParameter(NZBInfo* nzbInfo, const char* paramString);
+	void					SetNZBDupeParam(NZBInfo* nzbInfo, DownloadQueue::EEditAction action, const char* text);
+	void					PauseUnpauseEntry(FileInfo* fileInfo, bool pause);
+	void					DeleteEntry(FileInfo* fileInfo);
+	void					MoveEntry(FileInfo* fileInfo, int offset);
+	void					MoveGroup(NZBInfo* nzbInfo, int offset);
 
 public:
 							QueueEditor();                
 							~QueueEditor();
-	bool					EditEntry(DownloadQueue* pDownloadQueue, int ID, DownloadQueue::EEditAction eAction, int iOffset, const char* szText);
-	bool					EditList(DownloadQueue* pDownloadQueue, IDList* pIDList, NameList* pNameList, DownloadQueue::EMatchMode eMatchMode, DownloadQueue::EEditAction eAction, int iOffset, const char* szText);
+	bool					EditEntry(DownloadQueue* downloadQueue, int ID, DownloadQueue::EEditAction action, int offset, const char* text);
+	bool					EditList(DownloadQueue* downloadQueue, IDList* idList, NameList* nameList, DownloadQueue::EMatchMode matchMode, DownloadQueue::EEditAction action, int offset, const char* text);
 };
 
 #endif

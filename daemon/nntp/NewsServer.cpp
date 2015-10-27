@@ -39,44 +39,44 @@
 #include "nzbget.h"
 #include "NewsServer.h"
 
-NewsServer::NewsServer(int iID, bool bActive, const char* szName, const char* szHost, int iPort,
-	const char* szUser, const char* szPass, bool bJoinGroup, bool bTLS,
-	const char* szCipher, int iMaxConnections, int iRetention, int iLevel, int iGroup)
+NewsServer::NewsServer(int id, bool active, const char* name, const char* host, int port,
+	const char* user, const char* pass, bool joinGroup, bool tLS,
+	const char* cipher, int maxConnections, int retention, int level, int group)
 {
-	m_iID = iID;
-	m_iStateID = 0;
-	m_bActive = bActive;
-	m_iPort = iPort;
-	m_iLevel = iLevel;
-	m_iNormLevel = iLevel;
-	m_iGroup = iGroup;
-	m_iMaxConnections = iMaxConnections;
-	m_bJoinGroup = bJoinGroup;
-	m_bTLS = bTLS;
-	m_szHost = strdup(szHost ? szHost : "");
-	m_szUser = strdup(szUser ? szUser : "");
-	m_szPassword = strdup(szPass ? szPass : "");
-	m_szCipher = strdup(szCipher ? szCipher : "");
-	m_iRetention = iRetention;
-	m_tBlockTime = 0;
+	m_id = id;
+	m_stateId = 0;
+	m_active = active;
+	m_port = port;
+	m_level = level;
+	m_normLevel = level;
+	m_group = group;
+	m_maxConnections = maxConnections;
+	m_joinGroup = joinGroup;
+	m_tLS = tLS;
+	m_host = strdup(host ? host : "");
+	m_user = strdup(user ? user : "");
+	m_password = strdup(pass ? pass : "");
+	m_cipher = strdup(cipher ? cipher : "");
+	m_retention = retention;
+	m_blockTime = 0;
 
-	if (szName && strlen(szName) > 0)
+	if (name && strlen(name) > 0)
 	{
-		m_szName = strdup(szName);
+		m_name = strdup(name);
 	}
 	else
 	{
-		m_szName = (char*)malloc(20);
-		snprintf(m_szName, 20, "server%i", iID);
-		m_szName[20-1] = '\0';
+		m_name = (char*)malloc(20);
+		snprintf(m_name, 20, "server%i", id);
+		m_name[20-1] = '\0';
 	}
 }
 
 NewsServer::~NewsServer()
 {
-	free(m_szName);
-	free(m_szHost);
-	free(m_szUser);
-	free(m_szPassword);
-	free(m_szCipher);
+	free(m_name);
+	free(m_host);
+	free(m_user);
+	free(m_password);
+	free(m_cipher);
 }

@@ -33,15 +33,15 @@
 class BinRpcProcessor
 {
 private:
-	SNZBRequestBase		m_MessageBase;
-	Connection*			m_pConnection;
+	SNZBRequestBase		m_messageBase;
+	Connection*			m_connection;
 
 	void				Dispatch();
 
 public:
 						BinRpcProcessor();
 	void				Execute();
-	void				SetConnection(Connection* pConnection) { m_pConnection = pConnection; }
+	void				SetConnection(Connection* connection) { m_connection = connection; }
 };
 
 #endif

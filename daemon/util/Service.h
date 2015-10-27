@@ -33,7 +33,7 @@
 class Service
 {
 private:
-	int					m_iLastTick;
+	int					m_lastTick;
 
 protected:
 	virtual int			ServiceInterval() = 0;
@@ -51,9 +51,9 @@ public:
 	typedef std::vector<Service*> ServiceList;
 
 private:
-	ServiceList	m_Services;
+	ServiceList	m_services;
 
-	void				RegisterService(Service* pService);
+	void				RegisterService(Service* service);
 
 	friend class Service;
 

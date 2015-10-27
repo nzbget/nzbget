@@ -62,19 +62,19 @@ extern char* (*g_szArguments)[];
 class Signature
 {
 private:
-	const char*			m_szInFilename;
-	const char*			m_szSigFilename;
-	const char*			m_szPubKeyFilename;
-    unsigned char		m_InHash[SHA256_DIGEST_LENGTH];
-    unsigned char		m_Signature[256];
-	RSA*				m_pPubKey;
+	const char*			m_inFilename;
+	const char*			m_sigFilename;
+	const char*			m_pubKeyFilename;
+    unsigned char		m_inHash[SHA256_DIGEST_LENGTH];
+    unsigned char		m_signature[256];
+	RSA*				m_pubKey;
 
 	bool				ReadSignature();
 	bool				ComputeInHash();
 	bool				ReadPubKey();
 
 public:
-						Signature(const char* szInFilename, const char* szSigFilename, const char* szPubKeyFilename);
+						Signature(const char* inFilename, const char* sigFilename, const char* pubKeyFilename);
 						~Signature();
 	bool				Verify();
 };
@@ -83,155 +83,155 @@ public:
 
 Maintenance::Maintenance()
 {
-	m_iIDMessageGen = 0;
-	m_UpdateScriptController = NULL;
-	m_szUpdateScript = NULL;
+	m_idMessageGen = 0;
+	m_updateScriptController = NULL;
+	m_updateScript = NULL;
 }
 
 Maintenance::~Maintenance()
 {
-	m_mutexController.Lock();
-	if (m_UpdateScriptController)
+	m_controllerMutex.Lock();
+	if (m_updateScriptController)
 	{
-		m_UpdateScriptController->Detach();
-		m_mutexController.Unlock();
-		while (m_UpdateScriptController)
+		m_updateScriptController->Detach();
+		m_controllerMutex.Unlock();
+		while (m_updateScriptController)
 		{
 			usleep(20*1000);
 		}
 	}
 
-	m_Messages.Clear();
+	m_messages.Clear();
 
-	free(m_szUpdateScript);
+	free(m_updateScript);
 }
 
 void Maintenance::ResetUpdateController()
 {
-	m_mutexController.Lock();
-	m_UpdateScriptController = NULL;
-	m_mutexController.Unlock();
+	m_controllerMutex.Lock();
+	m_updateScriptController = NULL;
+	m_controllerMutex.Unlock();
 }
 
 MessageList* Maintenance::LockMessages()
 {
-	m_mutexLog.Lock();
-	return &m_Messages;
+	m_logMutex.Lock();
+	return &m_messages;
 }
 
 void Maintenance::UnlockMessages()
 {
-	m_mutexLog.Unlock();
+	m_logMutex.Unlock();
 }
 
-void Maintenance::AddMessage(Message::EKind eKind, time_t tTime, const char * szText)
+void Maintenance::AddMessage(Message::EKind kind, time_t time, const char * text)
 {
-	if (tTime == 0)
+	if (time == 0)
 	{
-		tTime = time(NULL);
+		time = ::time(NULL);
 	}
 
-	m_mutexLog.Lock();
-	Message* pMessage = new Message(++m_iIDMessageGen, eKind, tTime, szText);
-	m_Messages.push_back(pMessage);
-	m_mutexLog.Unlock();
+	m_logMutex.Lock();
+	Message* message = new Message(++m_idMessageGen, kind, time, text);
+	m_messages.push_back(message);
+	m_logMutex.Unlock();
 }
 
-bool Maintenance::StartUpdate(EBranch eBranch)
+bool Maintenance::StartUpdate(EBranch branch)
 {
-	m_mutexController.Lock();
-	bool bAlreadyUpdating = m_UpdateScriptController != NULL;
-	m_mutexController.Unlock();
+	m_controllerMutex.Lock();
+	bool alreadyUpdating = m_updateScriptController != NULL;
+	m_controllerMutex.Unlock();
 
-	if (bAlreadyUpdating)
+	if (alreadyUpdating)
 	{
 		error("Could not start update-script: update-script is already running");
 		return false;
 	}
 
-	if (m_szUpdateScript)
+	if (m_updateScript)
 	{
-		free(m_szUpdateScript);
-		m_szUpdateScript = NULL;
+		free(m_updateScript);
+		m_updateScript = NULL;
 	}
 
-	if (!ReadPackageInfoStr("install-script", &m_szUpdateScript))
+	if (!ReadPackageInfoStr("install-script", &m_updateScript))
 	{
 		return false;
 	}
 
 	// make absolute path
-	if (m_szUpdateScript[0] != PATH_SEPARATOR
+	if (m_updateScript[0] != PATH_SEPARATOR
 #ifdef WIN32
-		&& !(strlen(m_szUpdateScript) > 2 && m_szUpdateScript[1] == ':')
+		&& !(strlen(m_updateScript) > 2 && m_updateScript[1] == ':')
 #endif
 		)
 	{
-		char szFilename[MAX_PATH + 100];
-		snprintf(szFilename, sizeof(szFilename), "%s%c%s", g_pOptions->GetAppDir(), PATH_SEPARATOR, m_szUpdateScript);
-		free(m_szUpdateScript);
-		m_szUpdateScript = strdup(szFilename);
+		char filename[MAX_PATH + 100];
+		snprintf(filename, sizeof(filename), "%s%c%s", g_pOptions->GetAppDir(), PATH_SEPARATOR, m_updateScript);
+		free(m_updateScript);
+		m_updateScript = strdup(filename);
 	}
 
-	m_Messages.Clear();
+	m_messages.Clear();
 
-	m_UpdateScriptController = new UpdateScriptController();
-	m_UpdateScriptController->SetScript(m_szUpdateScript);
-	m_UpdateScriptController->SetBranch(eBranch);
-	m_UpdateScriptController->SetAutoDestroy(true);
+	m_updateScriptController = new UpdateScriptController();
+	m_updateScriptController->SetScript(m_updateScript);
+	m_updateScriptController->SetBranch(branch);
+	m_updateScriptController->SetAutoDestroy(true);
 
-	m_UpdateScriptController->Start();
+	m_updateScriptController->Start();
 
 	return true;
 }
 
-bool Maintenance::CheckUpdates(char** pUpdateInfo)
+bool Maintenance::CheckUpdates(char** updateInfo)
 {
-	char* szUpdateInfoScript;
-	if (!ReadPackageInfoStr("update-info-script", &szUpdateInfoScript))
+	char* updateInfoScript;
+	if (!ReadPackageInfoStr("update-info-script", &updateInfoScript))
 	{
 		return false;
 	}
 
-	*pUpdateInfo = NULL;
-	UpdateInfoScriptController::ExecuteScript(szUpdateInfoScript, pUpdateInfo);
+	*updateInfo = NULL;
+	UpdateInfoScriptController::ExecuteScript(updateInfoScript, updateInfo);
 
-	free(szUpdateInfoScript);
+	free(updateInfoScript);
 
-	return *pUpdateInfo;
+	return *updateInfo;
 }
 
-bool Maintenance::ReadPackageInfoStr(const char* szKey, char** pValue)
+bool Maintenance::ReadPackageInfoStr(const char* key, char** value)
 {
-	char szFileName[1024];
-	snprintf(szFileName, 1024, "%s%cpackage-info.json", g_pOptions->GetWebDir(), PATH_SEPARATOR);
-	szFileName[1024-1] = '\0';
+	char fileName[1024];
+	snprintf(fileName, 1024, "%s%cpackage-info.json", g_pOptions->GetWebDir(), PATH_SEPARATOR);
+	fileName[1024-1] = '\0';
 
-	char* szPackageInfo;
-	int iPackageInfoLen;
-	if (!Util::LoadFileIntoBuffer(szFileName, &szPackageInfo, &iPackageInfoLen))
+	char* packageInfo;
+	int packageInfoLen;
+	if (!Util::LoadFileIntoBuffer(fileName, &packageInfo, &packageInfoLen))
 	{
-		error("Could not load file %s", szFileName);
+		error("Could not load file %s", fileName);
 		return false;
 	}
 
-	char szKeyStr[100];
-	snprintf(szKeyStr, 100, "\"%s\"", szKey);
-	szKeyStr[100-1] = '\0';
+	char keyStr[100];
+	snprintf(keyStr, 100, "\"%s\"", key);
+	keyStr[100-1] = '\0';
 
-	char* p = strstr(szPackageInfo, szKeyStr);
+	char* p = strstr(packageInfo, keyStr);
 	if (!p)
 	{
-		error("Could not parse file %s", szFileName);
-		free(szPackageInfo);
+		error("Could not parse file %s", fileName);
+		free(packageInfo);
 		return false;
 	}
 
-	p = strchr(p + strlen(szKeyStr), '"');
+	p = strchr(p + strlen(keyStr), '"');
 	if (!p)
 	{
-		error("Could not parse file %s", szFileName);
-		free(szPackageInfo);
+		error("Could not parse file %s", fileName);
+		free(packageInfo);
 		return false;
 	}
 
@@ -239,34 +239,34 @@ bool Maintenance::ReadPackageInfoStr(const char* szKey, char** pValue)
 	char* pend = strchr(p, '"');
 	if (!pend)
 	{
-		error("Could not parse file %s", szFileName);
-		free(szPackageInfo);
+		error("Could not parse file %s", fileName);
+		free(packageInfo);
 		return false;
 	}
 
-	int iLen = pend - p;
-	if (iLen >= sizeof(szFileName))
+	int len = pend - p;
+	if (len >= sizeof(fileName))
 	{
-		error("Could not parse file %s", szFileName);
-		free(szPackageInfo);
+		error("Could not parse file %s", fileName);
+		free(packageInfo);
 		return false;
 	}
 
-	*pValue = (char*)malloc(iLen+1);
-	strncpy(*pValue, p, iLen);
-	(*pValue)[iLen] = '\0';
+	*value = (char*)malloc(len+1);
+	strncpy(*value, p, len);
+	(*value)[len] = '\0';
 
-	WebUtil::JsonDecode(*pValue);
+	WebUtil::JsonDecode(*value);
 
-	free(szPackageInfo);
+	free(packageInfo);
 
 	return true;
 }
 
-bool Maintenance::VerifySignature(const char* szInFilename, const char* szSigFilename, const char* szPubKeyFilename)
+bool Maintenance::VerifySignature(const char* inFilename, const char* sigFilename, const char* pubKeyFilename)
 {
 #ifdef HAVE_OPENSSL
-	Signature signature(szInFilename, szSigFilename, szPubKeyFilename);
+	Signature signature(inFilename, sigFilename, pubKeyFilename);
 	return signature.Verify();
 #else
 	return false;
@@ -278,145 +278,145 @@ void UpdateScriptController::Run()
 	// the update-script should not be automatically terminated when the program quits
 	UnregisterRunningScript();
 
-	m_iPrefixLen = 0;
+	m_prefixLen = 0;
 	PrintMessage(Message::mkInfo, "Executing update-script %s", GetScript());
 
-	char szInfoName[1024];
-	snprintf(szInfoName, 1024, "update-script %s", Util::BaseFileName(GetScript()));
-	szInfoName[1024-1] = '\0';
-	SetInfoName(szInfoName);
+	char infoName[1024];
+	snprintf(infoName, 1024, "update-script %s", Util::BaseFileName(GetScript()));
+	infoName[1024-1] = '\0';
+	SetInfoName(infoName);
 
-    const char* szBranchName[] = { "STABLE", "TESTING", "DEVEL" };
-	SetEnvVar("NZBUP_BRANCH", szBranchName[m_eBranch]);
+    const char* branchName[] = { "STABLE", "TESTING", "DEVEL" };
+	SetEnvVar("NZBUP_BRANCH", branchName[m_branch]);
 
 	SetEnvVar("NZBUP_RUNMODE", g_pCommandLineParser->GetDaemonMode() ? "DAEMON" : "SERVER");
 
 	for (int i = 0; i < g_iArgumentCount; i++)
 	{
-		char szEnvName[40];
-		snprintf(szEnvName, 40, "NZBUP_CMDLINE%i", i);
-		szInfoName[40-1] = '\0';
-		SetEnvVar(szEnvName, (*g_szArguments)[i]);
+		char envName[40];
+		snprintf(envName, 40, "NZBUP_CMDLINE%i", i);
+		infoName[40-1] = '\0';
+		SetEnvVar(envName, (*g_szArguments)[i]);
 	}
 
-	char szProcessID[20];
+	char processId[20];
 #ifdef WIN32
 	int pid = (int)GetCurrentProcessId();
 #else
 	int pid = (int)getpid();
 #endif
-	snprintf(szProcessID, 20, "%i", pid);
-	szProcessID[20-1] = '\0';
-	SetEnvVar("NZBUP_PROCESSID", szProcessID);
+	snprintf(processId, 20, "%i", pid);
+	processId[20-1] = '\0';
+	SetEnvVar("NZBUP_PROCESSID", processId);
 
-	char szLogPrefix[100];
-	strncpy(szLogPrefix, Util::BaseFileName(GetScript()), 100);
-	szLogPrefix[100-1] = '\0';
-	if (char* ext = strrchr(szLogPrefix, '.')) *ext = '\0'; // strip file extension
-	SetLogPrefix(szLogPrefix);
-	m_iPrefixLen = strlen(szLogPrefix) + 2; // 2 = strlen(": ");
+	char logPrefix[100];
+	strncpy(logPrefix, Util::BaseFileName(GetScript()), 100);
+	logPrefix[100-1] = '\0';
+	if (char* ext = strrchr(logPrefix, '.')) *ext = '\0'; // strip file extension
+	SetLogPrefix(logPrefix);
+	m_prefixLen = strlen(logPrefix) + 2; // 2 = strlen(": ");
 
 	Execute();
 
 	g_pMaintenance->ResetUpdateController();
 }
 
-void UpdateScriptController::AddMessage(Message::EKind eKind, const char* szText)
+void UpdateScriptController::AddMessage(Message::EKind kind, const char* text)
 {
-	szText = szText + m_iPrefixLen;
+	text = text + m_prefixLen;
 
-	if (!strncmp(szText, "[NZB] ", 6))
+	if (!strncmp(text, "[NZB] ", 6))
 	{
-		debug("Command %s detected", szText + 6);
-		if (!strcmp(szText + 6, "QUIT"))
+		debug("Command %s detected", text + 6);
+		if (!strcmp(text + 6, "QUIT"))
 		{
 			Detach();
 			ExitProc();
 		}
 		else
 		{
-			error("Invalid command \"%s\" received", szText);
+			error("Invalid command \"%s\" received", text);
 		}
 	}
 	else
 	{
-		g_pMaintenance->AddMessage(eKind, time(NULL), szText);
-		ScriptController::AddMessage(eKind, szText);
+		g_pMaintenance->AddMessage(kind, time(NULL), text);
+		ScriptController::AddMessage(kind, text);
 	}
 }
 
-void UpdateInfoScriptController::ExecuteScript(const char* szScript, char** pUpdateInfo)
+void UpdateInfoScriptController::ExecuteScript(const char* script, char** updateInfo)
 {
-	detail("Executing update-info-script %s", Util::BaseFileName(szScript));
+	detail("Executing update-info-script %s", Util::BaseFileName(script));
 
-	UpdateInfoScriptController* pScriptController = new UpdateInfoScriptController();
-	pScriptController->SetScript(szScript);
+	UpdateInfoScriptController* scriptController = new UpdateInfoScriptController();
+	scriptController->SetScript(script);
 
-	char szInfoName[1024];
-	snprintf(szInfoName, 1024, "update-info-script %s", Util::BaseFileName(szScript));
-	szInfoName[1024-1] = '\0';
-	pScriptController->SetInfoName(szInfoName);
+	char infoName[1024];
+	snprintf(infoName, 1024, "update-info-script %s", Util::BaseFileName(script));
+	infoName[1024-1] = '\0';
+	scriptController->SetInfoName(infoName);
 
-	char szLogPrefix[1024];
-	strncpy(szLogPrefix, Util::BaseFileName(szScript), 1024);
-	szLogPrefix[1024-1] = '\0';
-	if (char* ext = strrchr(szLogPrefix, '.')) *ext = '\0'; // strip file extension
-	pScriptController->SetLogPrefix(szLogPrefix);
-	pScriptController->m_iPrefixLen = strlen(szLogPrefix) + 2; // 2 = strlen(": ");
+	char logPrefix[1024];
+	strncpy(logPrefix, Util::BaseFileName(script), 1024);
+	logPrefix[1024-1] = '\0';
+	if (char* ext = strrchr(logPrefix, '.')) *ext = '\0'; // strip file extension
+	scriptController->SetLogPrefix(logPrefix);
+	scriptController->m_prefixLen = strlen(logPrefix) + 2; // 2 = strlen(": ");
 
-	pScriptController->Execute();
+	scriptController->Execute();
 
-	if (pScriptController->m_UpdateInfo.GetBuffer())
+	if (scriptController->m_updateInfo.GetBuffer())
 	{
-		int iLen = strlen(pScriptController->m_UpdateInfo.GetBuffer());
-		*pUpdateInfo = (char*)malloc(iLen + 1);
-		strncpy(*pUpdateInfo, pScriptController->m_UpdateInfo.GetBuffer(), iLen);
-		(*pUpdateInfo)[iLen] = '\0';
+		int len = strlen(scriptController->m_updateInfo.GetBuffer());
+		*updateInfo = (char*)malloc(len + 1);
+		strncpy(*updateInfo, scriptController->m_updateInfo.GetBuffer(), len);
+		(*updateInfo)[len] = '\0';
 	}
 
-	delete pScriptController;
+	delete scriptController;
 }
 
-void UpdateInfoScriptController::AddMessage(Message::EKind eKind, const char* szText)
+void UpdateInfoScriptController::AddMessage(Message::EKind kind, const char* text)
 {
-	szText = szText + m_iPrefixLen;
+	text = text + m_prefixLen;
 
-	if (!strncmp(szText, "[NZB] ", 6))
+	if (!strncmp(text, "[NZB] ", 6))
 	{
-		debug("Command %s detected", szText + 6);
-		if (!strncmp(szText + 6, "[UPDATEINFO]", 12))
+		debug("Command %s detected", text + 6);
+		if (!strncmp(text + 6, "[UPDATEINFO]", 12))
 		{
-			m_UpdateInfo.Append(szText + 6 + 12);
+			m_updateInfo.Append(text + 6 + 12);
 		}
 		else
 		{
-			error("Invalid command \"%s\" received from %s", szText, GetInfoName());
+			error("Invalid command \"%s\" received from %s", text, GetInfoName());
 		}
 	}
 	else
 	{
-		ScriptController::AddMessage(eKind, szText);
+		ScriptController::AddMessage(kind, text);
 	}
 }
 
 #ifdef HAVE_OPENSSL
-Signature::Signature(const char *szInFilename, const char *szSigFilename, const char *szPubKeyFilename)
+Signature::Signature(const char *inFilename, const char *sigFilename, const char *pubKeyFilename)
 {
-	m_szInFilename = szInFilename;
-	m_szSigFilename = szSigFilename;
-	m_szPubKeyFilename = szPubKeyFilename;
-	m_pPubKey = NULL;
+	m_inFilename = inFilename;
+	m_sigFilename = sigFilename;
+	m_pubKeyFilename = pubKeyFilename;
+	m_pubKey = NULL;
 }
 
 Signature::~Signature()
 {
-	RSA_free(m_pPubKey);
+	RSA_free(m_pubKey);
 }
 
 // Calculate SHA-256 for input file (m_szInFilename)
 bool Signature::ComputeInHash()
 {
-    FILE* infile = fopen(m_szInFilename, FOPEN_RB);
+    FILE* infile = fopen(m_inFilename, FOPEN_RB);
     if (!infile)
 	{
 		return false;
@@ -429,7 +429,7 @@ bool Signature::ComputeInHash()
     {
         SHA256_Update(&sha256, buffer, bytesRead);
     }
-    SHA256_Final(m_InHash, &sha256);
+    SHA256_Final(m_inHash, &sha256);
     free(buffer);
     fclose(infile);
 	return true;
@@ -438,34 +438,34 @@ bool Signature::ComputeInHash()
 // Read signature from file (m_szSigFilename) into memory 
 bool Signature::ReadSignature()
 {
-	char szSigTitle[256];
-	snprintf(szSigTitle, sizeof(szSigTitle), "\"RSA-SHA256(%s)\" : \"", Util::BaseFileName(m_szInFilename));
-	szSigTitle[256-1] = '\0';
+	char sigTitle[256];
+	snprintf(sigTitle, sizeof(sigTitle), "\"RSA-SHA256(%s)\" : \"", Util::BaseFileName(m_inFilename));
+	sigTitle[256-1] = '\0';
 
-	FILE* infile = fopen(m_szSigFilename, FOPEN_RB);
+	FILE* infile = fopen(m_sigFilename, FOPEN_RB);
     if (!infile)
 	{
 		return false;
 	}
 
-	bool bOK = false;
-	int iTitLen = strlen(szSigTitle);
+	bool ok = false;
+	int titLen = strlen(sigTitle);
 	char buf[1024];
-	unsigned char* output = m_Signature;
+	unsigned char* output = m_signature;
 	while (fgets(buf, sizeof(buf) - 1, infile))
 	{
-		if (!strncmp(buf, szSigTitle, iTitLen))
+		if (!strncmp(buf, sigTitle, titLen))
 		{
-			char* szHexSig = buf + iTitLen;
-			int iSigLen = strlen(szHexSig);
-			if (iSigLen > 2)
+			char* hexSig = buf + titLen;
+			int sigLen = strlen(hexSig);
+			if (sigLen > 2)
 			{
-				szHexSig[iSigLen - 2] = '\0'; // trim trailing ",
+				hexSig[sigLen - 2] = '\0'; // trim trailing ",
 			}
-			for (; *szHexSig && *(szHexSig+1);)
+			for (; *hexSig && *(hexSig+1);)
 			{
-				unsigned char c1 = *szHexSig++;
-				unsigned char c2 = *szHexSig++;
+				unsigned char c1 = *hexSig++;
+				unsigned char c2 = *hexSig++;
 				c1 = '0' <= c1 && c1 <= '9' ? c1 - '0' : 'A' <= c1 && c1 <= 'F' ? c1 - 'A' + 10 :
 					'a' <= c1 && c1 <= 'f' ? c1 - 'a' + 10 : 0;
 				c2 = '0' <= c2 && c2 <= '9' ? c2 - '0' : 'A' <= c2 && c2 <= 'F' ? c2 - 'A' + 10 :
@@ -473,14 +473,14 @@ bool Signature::ReadSignature()
 				unsigned char ch = (c1 << 4) + c2;
 				*output++ = (char)ch;
 			}
-			bOK = output == m_Signature + sizeof(m_Signature);
+			ok = output == m_signature + sizeof(m_signature);
 
 			break;
 		}
 	}
 
 	fclose(infile);
-	return bOK;
+	return ok;
 }
 
 // Read public key from file (m_szPubKeyFilename) into memory
@@ -488,20 +488,20 @@ bool Signature::ReadPubKey()
 {
 	char* keybuf;
 	int keybuflen;
-	if (!Util::LoadFileIntoBuffer(m_szPubKeyFilename, &keybuf, &keybuflen))
+	if (!Util::LoadFileIntoBuffer(m_pubKeyFilename, &keybuf, &keybuflen))
 	{
 		return false;
 	}
 	BIO* mem = BIO_new_mem_buf(keybuf, keybuflen);
-	m_pPubKey = PEM_read_bio_RSA_PUBKEY(mem, NULL, NULL, NULL);
+	m_pubKey = PEM_read_bio_RSA_PUBKEY(mem, NULL, NULL, NULL);
 	BIO_free(mem);
 	free(keybuf);
-	return m_pPubKey != NULL;
+	return m_pubKey != NULL;
 }
 
 bool Signature::Verify()
 {
 	return ComputeInHash() && ReadSignature() && ReadPubKey() &&
-		RSA_verify(NID_sha256, m_InHash, sizeof(m_InHash), m_Signature, sizeof(m_Signature), m_pPubKey) == 1;
+		RSA_verify(NID_sha256, m_inHash, sizeof(m_inHash), m_signature, sizeof(m_signature), m_pubKey) == 1;
 }
 #endif /* HAVE_OPENSSL */

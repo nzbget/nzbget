@@ -49,15 +49,15 @@
 
 DiskService::DiskService()
 {
-	m_iInterval = 0;
-	m_bWaitingReported = false;
-	m_bWaitingRequiredDir = true;
+	m_interval = 0;
+	m_waitingReported = false;
+	m_waitingRequiredDir = true;
 }
 
 void DiskService::ServiceWork()
 {
-	m_iInterval++;
-	if (m_iInterval == 5)
+	m_interval++;
+	if (m_interval == 5)
 	{
 		if (!g_pOptions->GetPauseDownload() && 
 			g_pOptions->GetDiskSpace() > 0 && !g_pStatMeter->GetStandBy())
@@ -65,10 +65,10 @@ void DiskService::ServiceWork()
 			// check free disk space every 1 second
 			CheckDiskSpace();
 		}
-		m_iInterval = 0;
+		m_interval = 0;
 	}
 
-	if (m_bWaitingRequiredDir)
+	if (m_waitingRequiredDir)
 	{
 		CheckRequiredDir();
 	}
@@ -76,8 +76,8 @@ void DiskService::ServiceWork()
 
 void DiskService::CheckDiskSpace()
 {
-	long long lFreeSpace = Util::FreeDiskSize(g_pOptions->GetDestDir());
-	if (lFreeSpace > -1 && lFreeSpace / 1024 / 1024 < g_pOptions->GetDiskSpace())
+	long long freeSpace = Util::FreeDiskSize(g_pOptions->GetDestDir());
+	if (freeSpace > -1 && freeSpace / 1024 / 1024 < g_pOptions->GetDiskSpace())
 	{
 		warn("Low disk space on %s. Pausing download", g_pOptions->GetDestDir());
 		g_pOptions->SetPauseDownload(true);
@@ -85,8 +85,8 @@ void DiskService::CheckDiskSpace()
 
 	if (!Util::EmptyStr(g_pOptions->GetInterDir()))
 	{
-		lFreeSpace = Util::FreeDiskSize(g_pOptions->GetInterDir());
-		if (lFreeSpace > -1 && lFreeSpace / 1024 / 1024 < g_pOptions->GetDiskSpace())
+		freeSpace = Util::FreeDiskSize(g_pOptions->GetInterDir());
+		if (freeSpace > -1 && freeSpace / 1024 / 1024 < g_pOptions->GetDiskSpace())
 		{
 			warn("Low disk space on %s. Pausing download", g_pOptions->GetInterDir());
 			g_pOptions->SetPauseDownload(true);
@@ -98,34 +98,34 @@ void DiskService::CheckRequiredDir()
 {
 	if (!Util::EmptyStr(g_pOptions->GetRequiredDir()))
 	{
-		bool bAllExist = true;
-		bool bWasWaitingReported = m_bWaitingReported;
+		bool allExist = true;
+		bool wasWaitingReported = m_waitingReported;
 		// split RequiredDir into tokens
 		Tokenizer tok(g_pOptions->GetRequiredDir(), ",;");
-		while (const char* szDir = tok.Next())
+		while (const char* dir = tok.Next())
 		{
-			if (!Util::FileExists(szDir) && !Util::DirectoryExists(szDir))
+			if (!Util::FileExists(dir) && !Util::DirectoryExists(dir))
 			{
-				if (!bWasWaitingReported)
+				if (!wasWaitingReported)
 				{
-					info("Waiting for required directory %s", szDir);
-					m_bWaitingReported = true;
+					info("Waiting for required directory %s", dir);
+					m_waitingReported = true;
 				}
-				bAllExist = false;
+				allExist = false;
 			}
 		}
-		if (!bAllExist)
+		if (!allExist)
 		{
 			return;
 		}
 	}
 
-	if (m_bWaitingReported)
+	if (m_waitingReported)
 	{
 		info("All required directories available");
 	}
 
 	g_pOptions->SetTempPauseDownload(false);
 	g_pOptions->SetTempPausePostprocess(false);
-	m_bWaitingRequiredDir = false;
+	m_waitingRequiredDir = false;
 }

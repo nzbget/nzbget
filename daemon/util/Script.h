@@ -43,7 +43,7 @@ public:
 						~EnvironmentStrings();
 	void				Clear();
 	void				InitFromCurrentProcess();
-	void				Append(char* szString);
+	void				Append(char* string);
 #ifdef WIN32
 	char*				GetStrings();
 #else	
@@ -54,36 +54,36 @@ public:
 class ScriptController
 {
 private:
-	const char*			m_szScript;
-	const char*			m_szWorkingDir;
-	const char**		m_szArgs;
-	bool				m_bFreeArgs;
-	const char*			m_szStdArgs[2];
-	const char*			m_szInfoName;
-	const char*			m_szLogPrefix;
+	const char*			m_script;
+	const char*			m_workingDir;
+	const char**		m_args;
+	bool				m_freeArgs;
+	const char*			m_stdArgs[2];
+	const char*			m_infoName;
+	const char*			m_logPrefix;
 	EnvironmentStrings	m_environmentStrings;
-	bool				m_bTerminated;
-	bool				m_bDetached;
-	FILE*				m_pReadpipe;
+	bool				m_terminated;
+	bool				m_detached;
+	FILE*				m_readpipe;
 #ifdef WIN32
 	HANDLE				m_hProcess;
-	char				m_szCmdLine[2048];
+	char				m_cmdLine[2048];
 #else
 	pid_t				m_hProcess;
 #endif
 
 	typedef std::vector<ScriptController*>	RunningScripts;
-	static RunningScripts	m_RunningScripts;
-	static Mutex			m_mutexRunning;
+	static RunningScripts	m_runningScripts;
+	static Mutex			m_runningMutex;
 
 protected:
-	void				ProcessOutput(char* szText);
-	virtual bool		ReadLine(char* szBuf, int iBufSize, FILE* pStream);
-	void				PrintMessage(Message::EKind eKind, const char* szFormat, ...);
-	virtual void		AddMessage(Message::EKind eKind, const char* szText);
-	bool				GetTerminated() { return m_bTerminated; }
+	void				ProcessOutput(char* text);
+	virtual bool		ReadLine(char* buf, int bufSize, FILE* stream);
+	void				PrintMessage(Message::EKind kind, const char* format, ...);
+	virtual void		AddMessage(Message::EKind kind, const char* text);
+	bool				GetTerminated() { return m_terminated; }
 	void				ResetEnv();
-	void				PrepareEnvOptions(const char* szStripPrefix);
+	void				PrepareEnvOptions(const char* stripPrefix);
 	void				PrepareArgs();
 	void				UnregisterRunningScript();
 
@@ -96,16 +96,16 @@ public:
 	void				Detach();
 	static void			TerminateAll();
 
-	void				SetScript(const char* szScript) { m_szScript = szScript; }
-	const char*			GetScript() { return m_szScript; }
-	void				SetWorkingDir(const char* szWorkingDir) { m_szWorkingDir = szWorkingDir; }
-	void				SetArgs(const char** szArgs, bool bFreeArgs) { m_szArgs = szArgs; m_bFreeArgs = bFreeArgs; }
-	void				SetInfoName(const char* szInfoName) { m_szInfoName = szInfoName; }
-	const char*			GetInfoName() { return m_szInfoName; }
-	void				SetLogPrefix(const char* szLogPrefix) { m_szLogPrefix = szLogPrefix; }
-	void				SetEnvVar(const char* szName, const char* szValue);
-	void				SetEnvVarSpecial(const char* szPrefix, const char* szName, const char* szValue);
-	void				SetIntEnvVar(const char* szName, int iValue);
+	void				SetScript(const char* script) { m_script = script; }
+	const char*			GetScript() { return m_script; }
+	void				SetWorkingDir(const char* workingDir) { m_workingDir = workingDir; }
+	void				SetArgs(const char** args, bool freeArgs) { m_args = args; m_freeArgs = freeArgs; }
+	void				SetInfoName(const char* infoName) { m_infoName = infoName; }
+	const char*			GetInfoName() { return m_infoName; }
+	void				SetLogPrefix(const char* logPrefix) { m_logPrefix = logPrefix; }
+	void				SetEnvVar(const char* name, const char* value);
+	void				SetEnvVarSpecial(const char* prefix, const char* name, const char* value);
+	void				SetIntEnvVar(const char* name, int value);
 };
 
 #endif

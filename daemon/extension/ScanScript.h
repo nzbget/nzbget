@@ -31,31 +31,31 @@
 class ScanScriptController : public NZBScriptController
 {
 private:
-	const char*			m_szNZBFilename;
-	const char*			m_szUrl;
-	const char*			m_szDirectory;
-	char**				m_pNZBName;
-	char**				m_pCategory;
-	int*				m_iPriority;
-	NZBParameterList*	m_pParameters;
-	bool*				m_bAddTop;
-	bool*				m_bAddPaused;
-	char**				m_pDupeKey;
-	int*				m_iDupeScore;
-	EDupeMode*			m_eDupeMode;
-	int					m_iPrefixLen;
+	const char*			m_nzbFilename;
+	const char*			m_url;
+	const char*			m_directory;
+	char**				m_nzbName;
+	char**				m_category;
+	int*				m_priority;
+	NZBParameterList*	m_parameters;
+	bool*				m_addTop;
+	bool*				m_addPaused;
+	char**				m_dupeKey;
+	int*				m_dupeScore;
+	EDupeMode*			m_dupeMode;
+	int					m_prefixLen;
 
-	void				PrepareParams(const char* szScriptName);
+	void				PrepareParams(const char* scriptName);
 
 protected:
-	virtual void		ExecuteScript(ScriptConfig::Script* pScript);
-	virtual void		AddMessage(Message::EKind eKind, const char* szText);
+	virtual void		ExecuteScript(ScriptConfig::Script* script);
+	virtual void		AddMessage(Message::EKind kind, const char* text);
 
 public:
-	static void			ExecuteScripts(const char* szNZBFilename, const char* szUrl,
-							const char* szDirectory, char** pNZBName, char** pCategory, int* iPriority,
-							NZBParameterList* pParameters, bool* bAddTop, bool* bAddPaused,
-							char** pDupeKey, int* iDupeScore, EDupeMode* eDupeMode);
+	static void			ExecuteScripts(const char* nzbFilename, const char* url,
+							const char* directory, char** nzbName, char** category, int* priority,
+							NZBParameterList* parameters, bool* addTop, bool* addPaused,
+							char** dupeKey, int* dupeScore, EDupeMode* dupeMode);
 };
 
 #endif

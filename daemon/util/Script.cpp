@@ -58,8 +58,8 @@
 extern char** environ;
 extern char* (*g_szEnvironmentVariables)[];
 
-ScriptController::RunningScripts ScriptController::m_RunningScripts;
-Mutex ScriptController::m_mutexRunning;
+ScriptController::RunningScripts ScriptController::m_runningScripts;
+Mutex ScriptController::m_runningMutex;
 
 #ifndef WIN32
 #define CHILD_WATCHDOG 1
@@ -92,8 +92,8 @@ public:
 void ChildWatchDog::Run()
 {
 	static const int WAIT_SECONDS = 60;
-	time_t tStart = time(NULL);
-	while (!IsStopped() && (time(NULL) - tStart) < WAIT_SECONDS)
+	time_t start = time(NULL);
+	while (!IsStopped() && (time(NULL) - start) < WAIT_SECONDS)
 	{
 		usleep(10 * 1000);
 	}
@@ -129,21 +129,21 @@ void EnvironmentStrings::InitFromCurrentProcess()
 {
 	for (int i = 0; (*g_szEnvironmentVariables)[i]; i++)
 	{
-		char* szVar = (*g_szEnvironmentVariables)[i];
+		char* var = (*g_szEnvironmentVariables)[i];
 		// Ignore all env vars set by NZBGet.
 		// This is to avoid the passing of env vars after program update (when NZBGet is
 		// started from a script which was started by a previous instance of NZBGet).
 		// Format: NZBXX_YYYY (XX are any two characters, YYYY are any number of any characters).
-		if (!(!strncmp(szVar, "NZB", 3) && strlen(szVar) > 5 && szVar[5] == '_'))
+		if (!(!strncmp(var, "NZB", 3) && strlen(var) > 5 && var[5] == '_'))
 		{
-			Append(strdup(szVar));
+			Append(strdup(var));
 		}
 	}
 }
 
-void EnvironmentStrings::Append(char* szString)
+void EnvironmentStrings::Append(char* string)
 {
-	m_strings.push_back(szString);
+	m_strings.push_back(string);
 }
 
 #ifdef WIN32
@@ -153,24 +153,24 @@ void EnvironmentStrings::Append(char* szString)
  */
 char* EnvironmentStrings::GetStrings()
 {
-	int iSize = 1;
+	int size = 1;
 	for (Strings::iterator it = m_strings.begin(); it != m_strings.end(); it++)
 	{
-		char* szVar = *it;
-		iSize += strlen(szVar) + 1;
+		char* var = *it;
+		size += strlen(var) + 1;
 	}
 
-	char* szStrings = (char*)malloc(iSize);
-	char* szPtr = szStrings;
+	char* strings = (char*)malloc(size);
+	char* ptr = strings;
 	for (Strings::iterator it = m_strings.begin(); it != m_strings.end(); it++)
 	{
-		char* szVar = *it;
-		strcpy(szPtr, szVar);
-		szPtr += strlen(szVar) + 1;
+		char* var = *it;
+		strcpy(ptr, var);
+		ptr += strlen(var) + 1;
 	}
-	*szPtr = '\0';
+	*ptr = '\0';
 
-	return szStrings;
+	return strings;
 }
 
 #else
@@ -181,48 +181,48 @@ char* EnvironmentStrings::GetStrings()
  */
 char** EnvironmentStrings::GetStrings()
 {
-	char** pStrings = (char**)malloc((m_strings.size() + 1) * sizeof(char*));
-	char** pPtr = pStrings;
+	char** strings = (char**)malloc((m_strings.size() + 1) * sizeof(char*));
+	char** ptr = strings;
 	for (Strings::iterator it = m_strings.begin(); it != m_strings.end(); it++)
 	{
-		char* szVar = *it;
-		*pPtr = szVar;
-		pPtr++;
+		char* var = *it;
+		*ptr = var;
+		ptr++;
 	}
-	*pPtr = NULL;
+	*ptr = NULL;
 
-	return pStrings;
+	return strings;
 }
 #endif
 
 
 ScriptController::ScriptController()
 {
-	m_szScript = NULL;
-	m_szWorkingDir = NULL;
-	m_szArgs = NULL;
-	m_bFreeArgs = false;
-	m_szInfoName = NULL;
-	m_szLogPrefix = NULL;
-	m_bTerminated = false;
-	m_bDetached = false;
+	m_script = NULL;
+	m_workingDir = NULL;
+	m_args = NULL;
+	m_freeArgs = false;
+	m_infoName = NULL;
+	m_logPrefix = NULL;
+	m_terminated = false;
+	m_detached = false;
 	m_hProcess = 0;
 	ResetEnv();
 
-	m_mutexRunning.Lock();
-	m_RunningScripts.push_back(this);
-	m_mutexRunning.Unlock();
+	m_runningMutex.Lock();
+	m_runningScripts.push_back(this);
+	m_runningMutex.Unlock();
 }
 
 ScriptController::~ScriptController()
 {
-	if (m_bFreeArgs)
+	if (m_freeArgs)
 	{
-		for (const char** szArgPtr = m_szArgs; *szArgPtr; szArgPtr++)
+		for (const char** argPtr = m_args; *argPtr; argPtr++)
 		{
-			free((char*)*szArgPtr);
+			free((char*)*argPtr);
 		}
-		free(m_szArgs);
+		free(m_args);
 	}
 
 	UnregisterRunningScript();
@@ -230,13 +230,13 @@ ScriptController::~ScriptController()
 
 void ScriptController::UnregisterRunningScript()
 {
-    m_mutexRunning.Lock();
-    RunningScripts::iterator it = std::find(m_RunningScripts.begin(), m_RunningScripts.end(), this);
-    if (it != m_RunningScripts.end())
+    m_runningMutex.Lock();
+    RunningScripts::iterator it = std::find(m_runningScripts.begin(), m_runningScripts.end(), this);
+    if (it != m_runningScripts.end())
     {
-        m_RunningScripts.erase(it);
+        m_runningScripts.erase(it);
     }
-    m_mutexRunning.Unlock();
+    m_runningMutex.Unlock();
 }
 
 void ScriptController::ResetEnv()
@@ -245,20 +245,20 @@ void ScriptController::ResetEnv()
 	m_environmentStrings.InitFromCurrentProcess();
 }
 
-void ScriptController::SetEnvVar(const char* szName, const char* szValue)
+void ScriptController::SetEnvVar(const char* name, const char* value)
 {
-	int iLen = strlen(szName) + strlen(szValue) + 2;
-	char* szVar = (char*)malloc(iLen);
-	snprintf(szVar, iLen, "%s=%s", szName, szValue);
-	m_environmentStrings.Append(szVar);
+	int len = strlen(name) + strlen(value) + 2;
+	char* var = (char*)malloc(len);
+	snprintf(var, len, "%s=%s", name, value);
+	m_environmentStrings.Append(var);
 }
 
-void ScriptController::SetIntEnvVar(const char* szName, int iValue)
+void ScriptController::SetIntEnvVar(const char* name, int value)
 {
-	char szValue[1024];
-	snprintf(szValue, 10, "%i", iValue);
-	szValue[1024-1] = '\0';
-	SetEnvVar(szName, szValue);
+	char strValue[1024];
+	snprintf(strValue, 10, "%i", value);
+	strValue[1024-1] = '\0';
+	SetEnvVar(name, strValue);
 }
 
 /**
@@ -266,103 +266,103 @@ void ScriptController::SetIntEnvVar(const char* szName, int iValue)
  * are processed. The prefix is then stripped from the names.
  * If szStripPrefix is NULL, all options are processed; without stripping.
  */
-void ScriptController::PrepareEnvOptions(const char* szStripPrefix)
+void ScriptController::PrepareEnvOptions(const char* stripPrefix)
 {
-	int iPrefixLen = szStripPrefix ? strlen(szStripPrefix) : 0;
+	int prefixLen = stripPrefix ? strlen(stripPrefix) : 0;
 
-	Options::OptEntries* pOptEntries = g_pOptions->LockOptEntries();
+	Options::OptEntries* optEntries = g_pOptions->LockOptEntries();
 
-	for (Options::OptEntries::iterator it = pOptEntries->begin(); it != pOptEntries->end(); it++)
+	for (Options::OptEntries::iterator it = optEntries->begin(); it != optEntries->end(); it++)
 	{
-		Options::OptEntry* pOptEntry = *it;
+		Options::OptEntry* optEntry = *it;
 		
-		if (szStripPrefix && !strncmp(pOptEntry->GetName(), szStripPrefix, iPrefixLen) && (int)strlen(pOptEntry->GetName()) > iPrefixLen)
+		if (stripPrefix && !strncmp(optEntry->GetName(), stripPrefix, prefixLen) && (int)strlen(optEntry->GetName()) > prefixLen)
 		{
-			SetEnvVarSpecial("NZBPO", pOptEntry->GetName() + iPrefixLen, pOptEntry->GetValue());
+			SetEnvVarSpecial("NZBPO", optEntry->GetName() + prefixLen, optEntry->GetValue());
 		}
-		else if (!szStripPrefix)
+		else if (!stripPrefix)
 		{
-			SetEnvVarSpecial("NZBOP", pOptEntry->GetName(), pOptEntry->GetValue());
+			SetEnvVarSpecial("NZBOP", optEntry->GetName(), optEntry->GetValue());
 		}
 	}
 
 	g_pOptions->UnlockOptEntries();
 }
 
-void ScriptController::SetEnvVarSpecial(const char* szPrefix, const char* szName, const char* szValue)
+void ScriptController::SetEnvVarSpecial(const char* prefix, const char* name, const char* value)
 {
-	char szVarname[1024];
-	snprintf(szVarname, sizeof(szVarname), "%s_%s", szPrefix, szName);
-	szVarname[1024-1] = '\0';
+	char varname[1024];
+	snprintf(varname, sizeof(varname), "%s_%s", prefix, name);
+	varname[1024-1] = '\0';
 	
 	// Original name
-	SetEnvVar(szVarname, szValue);
+	SetEnvVar(varname, value);
 	
-	char szNormVarname[1024];
-	strncpy(szNormVarname, szVarname, sizeof(szVarname));
-	szNormVarname[1024-1] = '\0';
+	char normVarname[1024];
+	strncpy(normVarname, varname, sizeof(varname));
+	normVarname[1024-1] = '\0';
 	
 	// Replace special characters  with "_" and convert to upper case
-	for (char* szPtr = szNormVarname; *szPtr; szPtr++)
+	for (char* ptr = normVarname; *ptr; ptr++)
 	{
-		if (strchr(".:*!\"$%&/()=`+~#'{}[]@- ", *szPtr)) *szPtr = '_';
-		*szPtr = toupper(*szPtr);
+		if (strchr(".:*!\"$%&/()=`+~#'{}[]@- ", *ptr)) *ptr = '_';
+		*ptr = toupper(*ptr);
 	}
 	
 	// Another env var with normalized name (replaced special chars and converted to upper case)
-	if (strcmp(szVarname, szNormVarname))
+	if (strcmp(varname, normVarname))
 	{
-		SetEnvVar(szNormVarname, szValue);
+		SetEnvVar(normVarname, value);
 	}
 }
 
 void ScriptController::PrepareArgs()
 {
 #ifdef WIN32
-	if (!m_szArgs)
+	if (!m_args)
 	{
 		// Special support for script languages:
 		// automatically find the app registered for this extension and run it
-		const char* szExtension = strrchr(GetScript(), '.');
-		if (szExtension && strcasecmp(szExtension, ".exe") && strcasecmp(szExtension, ".bat") && strcasecmp(szExtension, ".cmd"))
+		const char* extension = strrchr(GetScript(), '.');
+		if (extension && strcasecmp(extension, ".exe") && strcasecmp(extension, ".bat") && strcasecmp(extension, ".cmd"))
 		{
-			debug("Looking for associated program for %s", szExtension);
-			char szCommand[512];
-			int iBufLen = 512-1;
-			if (Util::RegReadStr(HKEY_CLASSES_ROOT, szExtension, NULL, szCommand, &iBufLen))
+			debug("Looking for associated program for %s", extension);
+			char command[512];
+			int bufLen = 512-1;
+			if (Util::RegReadStr(HKEY_CLASSES_ROOT, extension, NULL, command, &bufLen))
 			{
-				szCommand[iBufLen] = '\0';
-				debug("Extension: %s", szCommand);
+				command[bufLen] = '\0';
+				debug("Extension: %s", command);
 				
-				char szRegPath[512];
-				snprintf(szRegPath, 512, "%s\\shell\\open\\command", szCommand);
-				szRegPath[512-1] = '\0';
+				char regPath[512];
+				snprintf(regPath, 512, "%s\\shell\\open\\command", command);
+				regPath[512-1] = '\0';
 				
-				iBufLen = 512-1;
-				if (Util::RegReadStr(HKEY_CLASSES_ROOT, szRegPath, NULL, szCommand, &iBufLen))
+				bufLen = 512-1;
+				if (Util::RegReadStr(HKEY_CLASSES_ROOT, regPath, NULL, command, &bufLen))
 				{
-					szCommand[iBufLen] = '\0';
-					debug("Command: %s", szCommand);
+					command[bufLen] = '\0';
+					debug("Command: %s", command);
 					
-					DWORD_PTR pArgs[] = { (DWORD_PTR)GetScript(), (DWORD_PTR)0 };
-					if (FormatMessage(FORMAT_MESSAGE_FROM_STRING | FORMAT_MESSAGE_ARGUMENT_ARRAY, szCommand, 0, 0,
-									  m_szCmdLine, sizeof(m_szCmdLine), (va_list*)pArgs))
+					DWORD_PTR args[] = { (DWORD_PTR)GetScript(), (DWORD_PTR)0 };
+					if (FormatMessage(FORMAT_MESSAGE_FROM_STRING | FORMAT_MESSAGE_ARGUMENT_ARRAY, command, 0, 0,
+									  m_cmdLine, sizeof(m_cmdLine), (va_list*)args))
 					{
-						debug("CmdLine: %s", m_szCmdLine);
+						debug("CmdLine: %s", m_cmdLine);
 						return;
 					}
 				}
 			}
-			warn("Could not found associated program for %s. Trying to execute %s directly", szExtension, Util::BaseFileName(GetScript()));
+			warn("Could not found associated program for %s. Trying to execute %s directly", extension, Util::BaseFileName(GetScript()));
 		}
 	}
 #endif
 
-	if (!m_szArgs)
+	if (!m_args)
 	{
-		m_szStdArgs[0] = GetScript();
-		m_szStdArgs[1] = NULL;
-		SetArgs(m_szStdArgs, false);
+		m_stdArgs[0] = GetScript();
+		m_stdArgs[1] = NULL;
+		SetArgs(m_stdArgs, false);
 	}
 }
 
@@ -371,34 +371,34 @@ int ScriptController::Execute()
 	PrepareEnvOptions(NULL);
 	PrepareArgs();
 
-	int iExitCode = 0;
+	int exitCode = 0;
 	int pipein;
 
 #ifdef CHILD_WATCHDOG
-	bool bChildConfirmed = false;
-	while (!bChildConfirmed && !m_bTerminated)
+	bool childConfirmed = false;
+	while (!childConfirmed && !m_terminated)
 	{
 #endif
 
 #ifdef WIN32
 	// build command line
 
-	char* szCmdLine = NULL;
-	if (m_szArgs)
+	char* cmdLine = NULL;
+	if (m_args)
 	{
-		char szCmdLineBuf[2048];
-		int iUsedLen = 0;
-		for (const char** szArgPtr = m_szArgs; *szArgPtr; szArgPtr++)
+		char cmdLineBuf[2048];
+		int usedLen = 0;
+		for (const char** argPtr = m_args; *argPtr; argPtr++)
 		{
-			snprintf(szCmdLineBuf + iUsedLen, 2048 - iUsedLen, "\"%s\" ", *szArgPtr);
-			iUsedLen += strlen(*szArgPtr) + 3;
+			snprintf(cmdLineBuf + usedLen, 2048 - usedLen, "\"%s\" ", *argPtr);
+			usedLen += strlen(*argPtr) + 3;
 		}
-		szCmdLineBuf[iUsedLen < 2048 ? iUsedLen - 1 : 2048 - 1] = '\0';
-		szCmdLine = szCmdLineBuf;
+		cmdLineBuf[usedLen < 2048 ? usedLen - 1 : 2048 - 1] = '\0';
+		cmdLine = cmdLineBuf;
 	}
 	else
 	{
-		szCmdLine = m_szCmdLine;
+		cmdLine = m_cmdLine;
 	}
 	
 	// create pipes to write and read data
@@ -423,31 +423,31 @@ int ScriptController::Execute()
 	PROCESS_INFORMATION ProcessInfo;
 	memset(&ProcessInfo, 0, sizeof(ProcessInfo));
 
-	char* szEnvironmentStrings = m_environmentStrings.GetStrings();
+	char* environmentStrings = m_environmentStrings.GetStrings();
 
-	BOOL bOK = CreateProcess(NULL, szCmdLine, NULL, NULL, TRUE, NORMAL_PRIORITY_CLASS | CREATE_NO_WINDOW, szEnvironmentStrings, m_szWorkingDir, &StartupInfo, &ProcessInfo);
-	if (!bOK)
+	BOOL ok = CreateProcess(NULL, cmdLine, NULL, NULL, TRUE, NORMAL_PRIORITY_CLASS | CREATE_NO_WINDOW, environmentStrings, m_workingDir, &StartupInfo, &ProcessInfo);
+	if (!ok)
 	{
 		DWORD dwErrCode = GetLastError();
-		char szErrMsg[255];
-		szErrMsg[255-1] = '\0';
-		if (FormatMessage(FORMAT_MESSAGE_FROM_SYSTEM, NULL, dwErrCode, 0, szErrMsg, 255, NULL))
+		char errMsg[255];
+		errMsg[255-1] = '\0';
+		if (FormatMessage(FORMAT_MESSAGE_FROM_SYSTEM, NULL, dwErrCode, 0, errMsg, 255, NULL))
 		{
-			PrintMessage(Message::mkError, "Could not start %s: %s", m_szInfoName, szErrMsg);
+			PrintMessage(Message::mkError, "Could not start %s: %s", m_infoName, errMsg);
 		}
 		else
 		{
-			PrintMessage(Message::mkError, "Could not start %s: error %i", m_szInfoName, dwErrCode);
+			PrintMessage(Message::mkError, "Could not start %s: error %i", m_infoName, dwErrCode);
 		}
-		if (!Util::FileExists(m_szScript))
+		if (!Util::FileExists(m_script))
 		{
-			PrintMessage(Message::mkError, "Could not find file %s", m_szScript);
+			PrintMessage(Message::mkError, "Could not find file %s", m_script);
 		}
-		free(szEnvironmentStrings);
+		free(environmentStrings);
 		return -1;
 	}
 
-	free(szEnvironmentStrings);
+	free(environmentStrings);
 
 	debug("Child Process-ID: %i", (int)ProcessInfo.dwProcessId);
 
@@ -470,7 +470,7 @@ int ScriptController::Execute()
 		return -1;
 	}
 
-	char** pEnvironmentStrings = m_environmentStrings.GetStrings();
+	char** environmentStrings = m_environmentStrings.GetStrings();
 
 	pipein = p[0];
 	pipeout = p[1];
@@ -480,8 +480,8 @@ int ScriptController::Execute()
 
 	if (pid == -1)
 	{
-		PrintMessage(Message::mkError, "Could not start %s: errno %i", m_szInfoName, errno);
-		free(pEnvironmentStrings);
+		PrintMessage(Message::mkError, "Could not start %s: errno %i", m_infoName, errno);
+		free(environmentStrings);
 		return -1;
 	}
 	else if (pid == 0)
@@ -505,21 +505,21 @@ int ScriptController::Execute()
 		fflush(stdout);
 #endif
 
-		chdir(m_szWorkingDir);
-		environ = pEnvironmentStrings;
-		execvp(m_szScript, (char* const*)m_szArgs);
+		chdir(m_workingDir);
+		environ = environmentStrings;
+		execvp(m_script, (char* const*)m_args);
 
 		if (errno == EACCES)
 		{
-			fprintf(stdout, "[WARNING] Fixing permissions for %s\n", m_szScript);
+			fprintf(stdout, "[WARNING] Fixing permissions for %s\n", m_script);
 			fflush(stdout);
-			Util::FixExecPermission(m_szScript);
-			execvp(m_szScript, (char* const*)m_szArgs);
+			Util::FixExecPermission(m_script);
+			execvp(m_script, (char* const*)m_args);
 		}
 
 		// NOTE: the text "[ERROR] Could not start " is checked later,
 		// by changing adjust the dependent code below.
-		fprintf(stdout, "[ERROR] Could not start %s: %s", m_szScript, strerror(errno));
+		fprintf(stdout, "[ERROR] Could not start %s: %s", m_script, strerror(errno));
 		fflush(stdout);
 		_exit(254);
 	}
@@ -528,7 +528,7 @@ int ScriptController::Execute()
 	debug("forked");
 	debug("Child Process-ID: %i", (int)pid);
 
-	free(pEnvironmentStrings);
+	free(environmentStrings);
 
 	m_hProcess = pid;
 
@@ -537,91 +537,91 @@ int ScriptController::Execute()
 #endif
 
 	// open the read end
-	m_pReadpipe = fdopen(pipein, "r");
-	if (!m_pReadpipe)
+	m_readpipe = fdopen(pipein, "r");
+	if (!m_readpipe)
 	{
-		PrintMessage(Message::mkError, "Could not open pipe to %s", m_szInfoName);
+		PrintMessage(Message::mkError, "Could not open pipe to %s", m_infoName);
 		return -1;
 	}
 	
 #ifdef CHILD_WATCHDOG
 	debug("Creating child watchdog");
-	ChildWatchDog* pWatchDog = new ChildWatchDog();
-	pWatchDog->SetAutoDestroy(false);
-	pWatchDog->SetProcessID(pid);
-	pWatchDog->Start();
+	ChildWatchDog* watchDog = new ChildWatchDog();
+	watchDog->SetAutoDestroy(false);
+	watchDog->SetProcessID(pid);
+	watchDog->Start();
 #endif
 	
 	char* buf = (char*)malloc(10240);
 
 	debug("Entering pipe-loop");
-	bool bFirstLine = true;
-	bool bStartError = false;
-	while (!m_bTerminated && !m_bDetached && !feof(m_pReadpipe))
+	bool firstLine = true;
+	bool startError = false;
+	while (!m_terminated && !m_detached && !feof(m_readpipe))
 	{
-		if (ReadLine(buf, 10240, m_pReadpipe) && m_pReadpipe)
+		if (ReadLine(buf, 10240, m_readpipe) && m_readpipe)
 		{
 #ifdef CHILD_WATCHDOG
-			if (!bChildConfirmed)
+			if (!childConfirmed)
 			{
-				bChildConfirmed = true;
-				pWatchDog->Stop();
+				childConfirmed = true;
+				watchDog->Stop();
 				debug("Child confirmed");
 				continue;
 			}
 #endif
-			if (bFirstLine && !strncmp(buf, "[ERROR] Could not start ", 24))
+			if (firstLine && !strncmp(buf, "[ERROR] Could not start ", 24))
 			{
-				bStartError = true;
+				startError = true;
 			}
 			ProcessOutput(buf);
-			bFirstLine = false;
+			firstLine = false;
 		}
 	}
 	debug("Exited pipe-loop");
 
 #ifdef CHILD_WATCHDOG
 	debug("Destroying WatchDog");
-	if (!bChildConfirmed)
+	if (!childConfirmed)
 	{
-		pWatchDog->Stop();
+		watchDog->Stop();
 	}
-	while (pWatchDog->IsRunning())
+	while (watchDog->IsRunning())
 	{
 		usleep(5 * 1000);
 	}
-	delete pWatchDog;
+	delete watchDog;
 #endif
 	
 	free(buf);
-	if (m_pReadpipe)
+	if (m_readpipe)
 	{
-		fclose(m_pReadpipe);
+		fclose(m_readpipe);
 	}
 
-	if (m_bTerminated && m_szInfoName)
+	if (m_terminated && m_infoName)
 	{
-		warn("Interrupted %s", m_szInfoName);
+		warn("Interrupted %s", m_infoName);
 	}
 
-	iExitCode = 0;
+	exitCode = 0;
 
-	if (!m_bTerminated && !m_bDetached)
+	if (!m_terminated && !m_detached)
 	{
 #ifdef WIN32
 	WaitForSingleObject(m_hProcess, INFINITE);
 	DWORD dExitCode = 0;
 	GetExitCodeProcess(m_hProcess, &dExitCode);
-	iExitCode = dExitCode;
+	exitCode = dExitCode;
 #else
-	int iStatus = 0;
-	waitpid(m_hProcess, &iStatus, 0);
-	if (WIFEXITED(iStatus))
+	int status = 0;
+	waitpid(m_hProcess, &status, 0);
+	if (WIFEXITED(status))
 	{
-		iExitCode = WEXITSTATUS(iStatus);
-		if (iExitCode == 254 && bStartError)
+		exitCode = WEXITSTATUS(status);
+		if (exitCode == 254 && startError)
 		{
-			iExitCode = -1;
+			exitCode = -1;
 		}
 	}
 #endif
@@ -631,19 +631,19 @@ int ScriptController::Execute()
 	}	// while (!bChildConfirmed && !m_bTerminated)
 #endif
 	
-	debug("Exit code %i", iExitCode);
+	debug("Exit code %i", exitCode);
 
-	return iExitCode;
+	return exitCode;
 }
 
 void ScriptController::Terminate()
 {
-	debug("Stopping %s", m_szInfoName);
-	m_bTerminated = true;
+	debug("Stopping %s", m_infoName);
+	m_terminated = true;
 
 #ifdef WIN32
-	BOOL bOK = TerminateProcess(m_hProcess, -1);
-	if (bOK)
+	BOOL ok = TerminateProcess(m_hProcess, -1);
+	if (ok)
 	{
 		// wait 60 seconds for process to terminate
 		WaitForSingleObject(m_hProcess, 60 * 1000);
@@ -652,7 +652,7 @@ void ScriptController::Terminate()
 	{
 		DWORD dExitCode = 0;
 		GetExitCodeProcess(m_hProcess, &dExitCode);
-		bOK = dExitCode != STILL_ACTIVE;
+		ok = dExitCode != STILL_ACTIVE;
 	}
 #else
 	pid_t hKillProcess = m_hProcess;
@@ -661,136 +661,136 @@ void ScriptController::Terminate()
 		// if the child process has its own group (setsid() was successful), kill the whole group
 		hKillProcess = -hKillProcess;
 	}
-	bool bOK = hKillProcess && kill(hKillProcess, SIGKILL) == 0;
+	bool ok = hKillProcess && kill(hKillProcess, SIGKILL) == 0;
 #endif
 
-	if (bOK)
+	if (ok)
 	{
-		debug("Terminated %s", m_szInfoName);
+		debug("Terminated %s", m_infoName);
 	}
 	else
 	{
-		error("Could not terminate %s", m_szInfoName);
+		error("Could not terminate %s", m_infoName);
 	}
 
-	debug("Stopped %s", m_szInfoName);
+	debug("Stopped %s", m_infoName);
 }
 
 void ScriptController::TerminateAll()
 {
-	m_mutexRunning.Lock();
-	for (RunningScripts::iterator it = m_RunningScripts.begin(); it != m_RunningScripts.end(); it++)
+	m_runningMutex.Lock();
+	for (RunningScripts::iterator it = m_runningScripts.begin(); it != m_runningScripts.end(); it++)
 	{
-		ScriptController* pScript = *it;
-		if (pScript->m_hProcess && !pScript->m_bDetached)
+		ScriptController* script = *it;
+		if (script->m_hProcess && !script->m_detached)
 		{
-			pScript->Terminate();
+			script->Terminate();
 		}
 	}
-	m_mutexRunning.Unlock();
+	m_runningMutex.Unlock();
 }
 
 void ScriptController::Detach()
 {
-	debug("Detaching %s", m_szInfoName);
-	m_bDetached = true;
-	FILE* pReadpipe = m_pReadpipe;
-	m_pReadpipe = NULL;
-	fclose(pReadpipe);
+	debug("Detaching %s", m_infoName);
+	m_detached = true;
+	FILE* readpipe = m_readpipe;
+	m_readpipe = NULL;
+	fclose(readpipe);
 }
 	
 void ScriptController::Resume()
 {
-	m_bTerminated = false;
-	m_bDetached = false;
+	m_terminated = false;
+	m_detached = false;
 	m_hProcess = 0;
 }
 
-bool ScriptController::ReadLine(char* szBuf, int iBufSize, FILE* pStream)
+bool ScriptController::ReadLine(char* buf, int bufSize, FILE* stream)
 {
-	return fgets(szBuf, iBufSize, pStream);
+	return fgets(buf, bufSize, stream);
 }
 
-void ScriptController::ProcessOutput(char* szText)
+void ScriptController::ProcessOutput(char* text)
 {
 	debug("Processing output received from script");
 
-	for (char* pend = szText + strlen(szText) - 1; pend >= szText && (*pend == '\n' || *pend == '\r' || *pend == ' '); pend--) *pend = '\0';
+	for (char* pend = text + strlen(text) - 1; pend >= text && (*pend == '\n' || *pend == '\r' || *pend == ' '); pend--) *pend = '\0';
 
-	if (szText[0] == '\0')
+	if (text[0] == '\0')
 	{
 		// skip empty lines
 		return;
 	}
 
-	if (!strncmp(szText, "[INFO] ", 7))
+	if (!strncmp(text, "[INFO] ", 7))
 	{
-		PrintMessage(Message::mkInfo, "%s", szText + 7);
+		PrintMessage(Message::mkInfo, "%s", text + 7);
 	}
-	else if (!strncmp(szText, "[WARNING] ", 10))
+	else if (!strncmp(text, "[WARNING] ", 10))
 	{
-		PrintMessage(Message::mkWarning, "%s", szText + 10);
+		PrintMessage(Message::mkWarning, "%s", text + 10);
 	}
-	else if (!strncmp(szText, "[ERROR] ", 8))
+	else if (!strncmp(text, "[ERROR] ", 8))
 	{
-		PrintMessage(Message::mkError, "%s", szText + 8);
+		PrintMessage(Message::mkError, "%s", text + 8);
 	}
-	else if (!strncmp(szText, "[DETAIL] ", 9))
+	else if (!strncmp(text, "[DETAIL] ", 9))
 	{
-		PrintMessage(Message::mkDetail, "%s", szText + 9);
+		PrintMessage(Message::mkDetail, "%s", text + 9);
 	}
-	else if (!strncmp(szText, "[DEBUG] ", 8))
+	else if (!strncmp(text, "[DEBUG] ", 8))
 	{
-		PrintMessage(Message::mkDebug, "%s", szText + 8);
+		PrintMessage(Message::mkDebug, "%s", text + 8);
 	}
 	else 
 	{
-		PrintMessage(Message::mkInfo, "%s", szText);
+		PrintMessage(Message::mkInfo, "%s", text);
 	}
 
 	debug("Processing output received from script - completed");
 }
 
-void ScriptController::AddMessage(Message::EKind eKind, const char* szText)
+void ScriptController::AddMessage(Message::EKind kind, const char* text)
 {
-	switch (eKind)
+	switch (kind)
 	{
 		case Message::mkDetail:
-			detail("%s", szText);
+			detail("%s", text);
 			break;
 
 		case Message::mkInfo:
-			info("%s", szText);
+			info("%s", text);
 			break;
 
 		case Message::mkWarning:
-			warn("%s", szText);
+			warn("%s", text);
 			break;
 
 		case Message::mkError:
-			error("%s", szText);
+			error("%s", text);
 			break;
 
 		case Message::mkDebug:
-			debug("%s", szText);
+			debug("%s", text);
 			break;
 	}
 }
 
-void ScriptController::PrintMessage(Message::EKind eKind, const char* szFormat, ...)
+void ScriptController::PrintMessage(Message::EKind kind, const char* format, ...)
 {
 	char tmp2[1024];
 
 	va_list ap;
-	va_start(ap, szFormat);
-	vsnprintf(tmp2, 1024, szFormat, ap);
+	va_start(ap, format);
+	vsnprintf(tmp2, 1024, format, ap);
 	tmp2[1024-1] = '\0';
 	va_end(ap);
 
 	char tmp3[1024];
-	if (m_szLogPrefix)
+	if (m_logPrefix)
 	{
-		snprintf(tmp3, 1024, "%s: %s", m_szLogPrefix, tmp2);
+		snprintf(tmp3, 1024, "%s: %s", m_logPrefix, tmp2);
 	}
 	else
 	{
@@ -798,5 +798,5 @@ void ScriptController::PrintMessage(Message::EKind eKind, const char* szFormat, 
 	}
 	tmp3[1024-1] = '\0';
 
-	AddMessage(eKind, tmp3);
+	AddMessage(kind, tmp3);
 }

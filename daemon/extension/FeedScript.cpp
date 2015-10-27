@@ -47,49 +47,49 @@
 #include "Util.h"
 
 
-void FeedScriptController::ExecuteScripts(const char* szFeedScript, const char* szFeedFile, int iFeedID)
+void FeedScriptController::ExecuteScripts(const char* feedScript, const char* feedFile, int feedId)
 {
-	FeedScriptController* pScriptController = new FeedScriptController();
+	FeedScriptController* scriptController = new FeedScriptController();
 
-	pScriptController->m_szFeedFile = szFeedFile;
-	pScriptController->m_iFeedID = iFeedID;
+	scriptController->m_feedFile = feedFile;
+	scriptController->m_feedId = feedId;
 
-	pScriptController->ExecuteScriptList(szFeedScript);
+	scriptController->ExecuteScriptList(feedScript);
 
-	delete pScriptController;
+	delete scriptController;
 }
 
-void FeedScriptController::ExecuteScript(ScriptConfig::Script* pScript)
+void FeedScriptController::ExecuteScript(ScriptConfig::Script* script)
 {
-	if (!pScript->GetFeedScript())
+	if (!script->GetFeedScript())
 	{
 		return;
 	}
 
-	PrintMessage(Message::mkInfo, "Executing feed-script %s for Feed%i", pScript->GetName(), m_iFeedID);
+	PrintMessage(Message::mkInfo, "Executing feed-script %s for Feed%i", script->GetName(), m_feedId);
 
-	SetScript(pScript->GetLocation());
+	SetScript(script->GetLocation());
 	SetArgs(NULL, false);
 
-	char szInfoName[1024];
-	snprintf(szInfoName, 1024, "feed-script %s for Feed%i", pScript->GetName(), m_iFeedID);
-	szInfoName[1024-1] = '\0';
-	SetInfoName(szInfoName);
+	char infoName[1024];
+	snprintf(infoName, 1024, "feed-script %s for Feed%i", script->GetName(), m_feedId);
+	infoName[1024-1] = '\0';
+	SetInfoName(infoName);
 
-	SetLogPrefix(pScript->GetDisplayName());
-	PrepareParams(pScript->GetName());
+	SetLogPrefix(script->GetDisplayName());
+	PrepareParams(script->GetName());
 
 	Execute();
 
 	SetLogPrefix(NULL);
 }
 
-void FeedScriptController::PrepareParams(const char* szScriptName)
+void FeedScriptController::PrepareParams(const char* scriptName)
 {
 	ResetEnv();
 
-	SetEnvVar("NZBFP_FILENAME", m_szFeedFile);
-	SetIntEnvVar("NZBFP_FEEDID", m_iFeedID);
+	SetEnvVar("NZBFP_FILENAME", m_feedFile);
+	SetIntEnvVar("NZBFP_FEEDID", m_feedId);
 
-	PrepareEnvScript(NULL, szScriptName);
+	PrepareEnvScript(NULL, scriptName);
 }

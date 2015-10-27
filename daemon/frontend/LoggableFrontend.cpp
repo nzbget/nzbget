@@ -47,9 +47,9 @@ LoggableFrontend::LoggableFrontend()
 {
 	debug("Creating LoggableFrontend");
 
-	m_iNeededLogEntries = 0;
-	m_bSummary = false;
-	m_bFileList = false;
+	m_neededLogEntries = 0;
+	m_summary = false;
+	m_fileList = false;
 }
 
 void LoggableFrontend::Run()
@@ -59,7 +59,7 @@ void LoggableFrontend::Run()
 	while (!IsStopped())
 	{
 		Update();
-		usleep(m_iUpdateInterval * 1000);
+		usleep(m_updateInterval * 1000);
 	}
 	// Printing the last messages
 	Update();
@@ -79,20 +79,20 @@ void LoggableFrontend::Update()
 
 	BeforePrint();
 
-	MessageList* pMessages = LockMessages();
-	if (!pMessages->empty())
+	MessageList* messages = LockMessages();
+	if (!messages->empty())
 	{
-		Message* pFirstMessage = pMessages->front();
-		int iStart = m_iNeededLogFirstID - pFirstMessage->GetID() + 1;
-		if (iStart < 0)
+		Message* firstMessage = messages->front();
+		int start = m_neededLogFirstId - firstMessage->GetID() + 1;
+		if (start < 0)
 		{
 			PrintSkip();
-			iStart = 0;
+			start = 0;
 		}
-		for (unsigned int i = (unsigned int)iStart; i < pMessages->size(); i++)
+		for (unsigned int i = (unsigned int)start; i < messages->size(); i++)
 		{
-			PrintMessage((*pMessages)[i]);
-			m_iNeededLogFirstID = (*pMessages)[i]->GetID();
+			PrintMessage((*messages)[i]);
+			m_neededLogFirstId = (*messages)[i]->GetID();
 		}
 	}
 	UnlockMessages();
@@ -104,15 +104,15 @@ void LoggableFrontend::Update()
 	fflush(stdout);
 }
 
-void LoggableFrontend::PrintMessage(Message * pMessage)
+void LoggableFrontend::PrintMessage(Message * message)
 {
 #ifdef WIN32
-	char* msg = strdup(pMessage->GetText());
+	char* msg = strdup(message->GetText());
 	CharToOem(msg, msg);
 #else
-	const char* msg = pMessage->GetText();
+	const char* msg = message->GetText();
 #endif
-	switch (pMessage->GetKind())
+	switch (message->GetKind())
 	{
 		case Message::mkDebug:
 			printf("[DEBUG] %s\n", msg);

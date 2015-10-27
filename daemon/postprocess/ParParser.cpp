@@ -46,27 +46,27 @@
 #include "Util.h"
 #include "ParParser.h"
 
-bool ParParser::FindMainPars(const char* szPath, ParFileList* pFileList)
+bool ParParser::FindMainPars(const char* path, ParFileList* fileList)
 {
-	if (pFileList)
+	if (fileList)
 	{
-		pFileList->clear();
+		fileList->clear();
 	}
 
-	DirBrowser dir(szPath);
+	DirBrowser dir(path);
 	while (const char* filename = dir.Next())
 	{
-		int iBaseLen = 0;
-		if (ParseParFilename(filename, &iBaseLen, NULL))
+		int baseLen = 0;
+		if (ParseParFilename(filename, &baseLen, NULL))
 		{
-			if (!pFileList)
+			if (!fileList)
 			{
 				return true;
 			}
 
 			// check if the base file already added to list
 			bool exists = false;
-			for (ParFileList::iterator it = pFileList->begin(); it != pFileList->end(); it++)
+			for (ParFileList::iterator it = fileList->begin(); it != fileList->end(); it++)
 			{
 				const char* filename2 = *it;
 				exists = SameParCollection(filename, filename2);
@@ -77,54 +77,54 @@ bool ParParser::FindMainPars(const char* szPath, ParFileList* pFileList)
 			}
 			if (!exists)
 			{
-				pFileList->push_back(strdup(filename));
+				fileList->push_back(strdup(filename));
 			}
 		}
 	}
-	return pFileList && !pFileList->empty();
+	return fileList && !fileList->empty();
 }
 
-bool ParParser::SameParCollection(const char* szFilename1, const char* szFilename2)
+bool ParParser::SameParCollection(const char* filename1, const char* filename2)
 {
-	int iBaseLen1 = 0, iBaseLen2 = 0;
-	return ParseParFilename(szFilename1, &iBaseLen1, NULL) &&
-		ParseParFilename(szFilename2, &iBaseLen2, NULL) &&
-		iBaseLen1 == iBaseLen2 &&
-		!strncasecmp(szFilename1, szFilename2, iBaseLen1);
+	int baseLen1 = 0, baseLen2 = 0;
+	return ParseParFilename(filename1, &baseLen1, NULL) &&
+		ParseParFilename(filename2, &baseLen2, NULL) &&
+		baseLen1 == baseLen2 &&
+		!strncasecmp(filename1, filename2, baseLen1);
 }
 
-bool ParParser::ParseParFilename(const char* szParFilename, int* iBaseNameLen, int* iBlocks)
+bool ParParser::ParseParFilename(const char* parFilename, int* baseNameLen, int* blocks)
 {
-	char szFilename[1024];
-	strncpy(szFilename, szParFilename, 1024);
-	szFilename[1024-1] = '\0';
-	for (char* p = szFilename; *p; p++) *p = tolower(*p); // convert string to lowercase
+	char filename[1024];
+	strncpy(filename, parFilename, 1024);
+	filename[1024-1] = '\0';
+	for (char* p = filename; *p; p++) *p = tolower(*p); // convert string to lowercase
 
-	int iLen = strlen(szFilename);
-	if (iLen < 6)
+	int len = strlen(filename);
+	if (len < 6)
 	{
 		return false;
 	}
 
 	// find last occurence of ".par2" and trim filename after it
-	char* szEnd = szFilename;
-	while (char* p = strstr(szEnd, ".par2")) szEnd = p + 5;
-	*szEnd = '\0';
+	char* end = filename;
+	while (char* p = strstr(end, ".par2")) end = p + 5;
+	*end = '\0';
 
-	iLen = strlen(szFilename);
-	if (iLen < 6)
+	len = strlen(filename);
+	if (len < 6)
 	{
 		return false;
 	}
 
-	if (strcasecmp(szFilename + iLen - 5, ".par2"))
+	if (strcasecmp(filename + len - 5, ".par2"))
 	{
 		return false;
 	}
-	*(szFilename + iLen - 5) = '\0';
+	*(filename + len - 5) = '\0';
 
 	int blockcnt = 0;
-	char* p = strrchr(szFilename, '.');
+	char* p = strrchr(filename, '.');
 	if (p && !strncasecmp(p, ".vol", 4))
 	{
 		char* b = strchr(p, '+');
@@ -139,13 +139,13 @@ bool ParParser::ParseParFilename(const char* szParFilename, int* iBaseNameLen, i
 		}
 	}
 
-	if (iBaseNameLen)
+	if (baseNameLen)
 	{
-		*iBaseNameLen = strlen(szFilename);
+		*baseNameLen = strlen(filename);
 	}
-	if (iBlocks)
+	if (blocks)
 	{
-		*iBlocks = blockcnt;
+		*blocks = blockcnt;
 	}
 	
 	return true;

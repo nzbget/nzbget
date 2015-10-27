@@ -60,11 +60,11 @@ extern void Reload();
 class ErrorXmlCommand: public XmlCommand
 {
 private:
-	int					m_iErrCode;
-	const char*			m_szErrText;
+	int					m_errCode;
+	const char*			m_errText;
 
 public:
-						ErrorXmlCommand(int iErrCode, const char* szErrText);
+						ErrorXmlCommand(int errCode, const char* errText);
 	virtual void		Execute();
 };
 
@@ -79,11 +79,11 @@ public:
 	};
 
 private:
-	bool			m_bPause;
-	EPauseAction	m_eEPauseAction;
+	bool			m_pause;
+	EPauseAction	m_ePauseAction;
 
 public:
-						PauseUnpauseXmlCommand(bool bPause, EPauseAction eEPauseAction);
+						PauseUnpauseXmlCommand(bool pause, EPauseAction ePauseAction);
 	virtual void		Execute();
 };
 
@@ -132,8 +132,8 @@ public:
 class LogXmlCommand: public XmlCommand
 {
 protected:
-	int						m_iIDFrom;
-	int						m_iNrEntries;
+	int						m_idFrom;
+	int						m_nrEntries;
 	virtual MessageList*	LockMessages();
 	virtual void			UnlockMessages();
 public:
@@ -143,8 +143,8 @@ public:
 class NzbInfoXmlCommand: public XmlCommand
 {
 protected:
-	void				AppendNZBInfoFields(NZBInfo* pNZBInfo);
-	void				AppendPostInfoFields(PostInfo* pPostInfo, int iLogEntries, bool bPostQueue);
+	void				AppendNZBInfoFields(NZBInfo* nzbInfo);
+	void				AppendPostInfoFields(PostInfo* postInfo, int logEntries, bool postQueue);
 };
 
 class ListFilesXmlCommand: public XmlCommand
@@ -156,7 +156,7 @@ public:
 class ListGroupsXmlCommand: public NzbInfoXmlCommand
 {
 private:
-	const char*			DetectStatus(NZBInfo* pNZBInfo);
+	const char*			DetectStatus(NZBInfo* nzbInfo);
 public:
 	virtual void		Execute();
 };
@@ -200,7 +200,7 @@ public:
 class HistoryXmlCommand: public NzbInfoXmlCommand
 {
 private:
-	const char*			DetectStatus(HistoryInfo* pHistoryInfo);
+	const char*			DetectStatus(HistoryInfo* historyInfo);
 public:
 	virtual void		Execute();
 };
@@ -238,10 +238,10 @@ public:
 class ViewFeedXmlCommand: public XmlCommand
 {
 private:
-	bool				m_bPreview;
+	bool				m_preview;
 
 public:
-						ViewFeedXmlCommand(bool bPreview);
+						ViewFeedXmlCommand(bool preview);
 	virtual void		Execute();
 };
 
@@ -298,8 +298,8 @@ class LoadLogXmlCommand: public LogXmlCommand
 {
 private:
 	MessageList				m_messages;
-	int						m_iNZBID;
-	NZBInfo*				m_pNZBInfo;
+	int						m_nzbId;
+	NZBInfo*				m_nzbInfo;
 protected:
 	virtual void			Execute();
 	virtual MessageList*	LockMessages();
@@ -309,19 +309,19 @@ protected:
 class TestServerXmlCommand: public XmlCommand
 {
 private:
-	char*				m_szErrText;
+	char*				m_errText;
 
 	class TestConnection : public NNTPConnection
 	{
 	protected:
-		TestServerXmlCommand* m_pOwner;
-		virtual void	PrintError(const char* szErrMsg) { m_pOwner->PrintError(szErrMsg); }
+		TestServerXmlCommand* m_owner;
+		virtual void	PrintError(const char* errMsg) { m_owner->PrintError(errMsg); }
 	public:
-						TestConnection(NewsServer* pNewsServer, TestServerXmlCommand* pOwner):
-							NNTPConnection(pNewsServer), m_pOwner(pOwner) {}
+						TestConnection(NewsServer* newsServer, TestServerXmlCommand* owner):
+							NNTPConnection(newsServer), m_owner(owner) {}
 	};
 
-	void				PrintError(const char* szErrMsg);
+	void				PrintError(const char* errMsg);
 public:
 	virtual void		Execute();
 };
@@ -332,50 +332,50 @@ public:
 
 XmlRpcProcessor::XmlRpcProcessor()
 {
-	m_szRequest = NULL;
-	m_eProtocol = rpUndefined;
-	m_eHttpMethod = hmPost;
-	m_szUrl = NULL;
-	m_szContentType = NULL;
+	m_request = NULL;
+	m_protocol = rpUndefined;
+	m_httpMethod = hmPost;
+	m_url = NULL;
+	m_contentType = NULL;
 }
 
 XmlRpcProcessor::~XmlRpcProcessor()
 {
-	free(m_szUrl);
+	free(m_url);
 }
 
-void XmlRpcProcessor::SetUrl(const char* szUrl)
+void XmlRpcProcessor::SetUrl(const char* url)
 {
-	m_szUrl = strdup(szUrl);
-	WebUtil::URLDecode(m_szUrl);
+	m_url = strdup(url);
+	WebUtil::URLDecode(m_url);
 }
 
 
-bool XmlRpcProcessor::IsRpcRequest(const char* szUrl)
+bool XmlRpcProcessor::IsRpcRequest(const char* url)
 {
-	return !strcmp(szUrl, "/xmlrpc") || !strncmp(szUrl, "/xmlrpc/", 8) ||
-		!strcmp(szUrl, "/jsonrpc") || !strncmp(szUrl, "/jsonrpc/", 9) ||
-		!strcmp(szUrl, "/jsonprpc") || !strncmp(szUrl, "/jsonprpc/", 10);
+	return !strcmp(url, "/xmlrpc") || !strncmp(url, "/xmlrpc/", 8) ||
+		!strcmp(url, "/jsonrpc") || !strncmp(url, "/jsonrpc/", 9) ||
+		!strcmp(url, "/jsonprpc") || !strncmp(url, "/jsonprpc/", 10);
 }
 
 void XmlRpcProcessor::Execute()
 {
-	m_eProtocol = rpUndefined;
-	if (!strcmp(m_szUrl, "/xmlrpc") || !strncmp(m_szUrl, "/xmlrpc/", 8))
+	m_protocol = rpUndefined;
+	if (!strcmp(m_url, "/xmlrpc") || !strncmp(m_url, "/xmlrpc/", 8))
 	{
-		m_eProtocol = XmlRpcProcessor::rpXmlRpc;
+		m_protocol = XmlRpcProcessor::rpXmlRpc;
 	}
-	else if (!strcmp(m_szUrl, "/jsonrpc") || !strncmp(m_szUrl, "/jsonrpc/", 9))
+	else if (!strcmp(m_url, "/jsonrpc") || !strncmp(m_url, "/jsonrpc/", 9))
 	{
-		m_eProtocol = rpJsonRpc;
+		m_protocol = rpJsonRpc;
 	}
-	else if (!strcmp(m_szUrl, "/jsonprpc") || !strncmp(m_szUrl, "/jsonprpc/", 10))
+	else if (!strcmp(m_url, "/jsonprpc") || !strncmp(m_url, "/jsonprpc/", 10))
 	{
-		m_eProtocol = rpJsonPRpc;
+		m_protocol = rpJsonPRpc;
 	}
 	else
 	{
-		error("internal error: invalid rpc-request: %s", m_szUrl);
+		error("internal error: invalid rpc-request: %s", m_url);
 		return;
 	}
 
@@ -384,133 +384,133 @@ void XmlRpcProcessor::Execute()
 
 void XmlRpcProcessor::Dispatch()
 {
-	char* szRequest = m_szRequest;
+	char* request = m_request;
 
-	char szMethodName[100];
-	szMethodName[0] = '\0';
+	char methodName[100];
+	methodName[0] = '\0';
 
-	char szRequestId[100];
-	szRequestId[0] = '\0';
+	char requestId[100];
+	requestId[0] = '\0';
 
-	if (m_eHttpMethod == hmGet)
+	if (m_httpMethod == hmGet)
 	{
-		szRequest = m_szUrl + 1;
-		char* pstart = strchr(szRequest, '/');
+		request = m_url + 1;
+		char* pstart = strchr(request, '/');
 		if (pstart)
 		{
 			char* pend = strchr(pstart + 1, '?');
 			if (pend) 
 			{
-				int iLen = (int)(pend - pstart - 1 < (int)sizeof(szMethodName) - 1 ? pend - pstart - 1 : (int)sizeof(szMethodName) - 1);
-				iLen = iLen >= sizeof(szMethodName) ? sizeof(szMethodName) - 1 : iLen;
-				strncpy(szMethodName, pstart + 1, iLen);
-				szMethodName[iLen] = '\0';
-				szRequest = pend + 1;
+				int len = (int)(pend - pstart - 1 < (int)sizeof(methodName) - 1 ? pend - pstart - 1 : (int)sizeof(methodName) - 1);
+				len = len >= sizeof(methodName) ? sizeof(methodName) - 1 : len;
+				strncpy(methodName, pstart + 1, len);
+				methodName[len] = '\0';
+				request = pend + 1;
 			}
 			else
 			{
-				strncpy(szMethodName, pstart + 1, sizeof(szMethodName));
-				szMethodName[sizeof(szMethodName) - 1] = '\0';
-				szRequest = szRequest + strlen(szRequest);
+				strncpy(methodName, pstart + 1, sizeof(methodName));
+				methodName[sizeof(methodName) - 1] = '\0';
+				request = request + strlen(request);
 			}
 		}
 	}
-	else if (m_eProtocol == rpXmlRpc)
+	else if (m_protocol == rpXmlRpc)
 	{
-		WebUtil::XmlParseTagValue(m_szRequest, "methodName", szMethodName, sizeof(szMethodName), NULL);
+		WebUtil::XmlParseTagValue(m_request, "methodName", methodName, sizeof(methodName), NULL);
 	} 
-	else if (m_eProtocol == rpJsonRpc) 
+	else if (m_protocol == rpJsonRpc) 
 	{
-		int iValueLen = 0;
-		if (const char* szMethodPtr = WebUtil::JsonFindField(m_szRequest, "method", &iValueLen))
+		int valueLen = 0;
+		if (const char* methodPtr = WebUtil::JsonFindField(m_request, "method", &valueLen))
 		{
-			iValueLen = iValueLen >= sizeof(szMethodName) ? sizeof(szMethodName) - 1 : iValueLen;
-			strncpy(szMethodName, szMethodPtr + 1, iValueLen - 2);
-			szMethodName[iValueLen - 2] = '\0';
+			valueLen = valueLen >= sizeof(methodName) ? sizeof(methodName) - 1 : valueLen;
+			strncpy(methodName, methodPtr + 1, valueLen - 2);
+			methodName[valueLen - 2] = '\0';
 		}
-		if (const char* szRequestIdPtr = WebUtil::JsonFindField(m_szRequest, "id", &iValueLen))
+		if (const char* requestIdPtr = WebUtil::JsonFindField(m_request, "id", &valueLen))
 		{
-			iValueLen = iValueLen >= sizeof(szRequestId) ? sizeof(szRequestId) - 1 : iValueLen;
-			strncpy(szRequestId, szRequestIdPtr, iValueLen);
-			szRequestId[iValueLen] = '\0';
+			valueLen = valueLen >= sizeof(requestId) ? sizeof(requestId) - 1 : valueLen;
+			strncpy(requestId, requestIdPtr, valueLen);
+			requestId[valueLen] = '\0';
 		}
 	}
 
-	debug("MethodName=%s", szMethodName);
+	debug("MethodName=%s", methodName);
 
-	if (!strcasecmp(szMethodName, "system.multicall") && m_eProtocol == rpXmlRpc && m_eHttpMethod == hmPost)
+	if (!strcasecmp(methodName, "system.multicall") && m_protocol == rpXmlRpc && m_httpMethod == hmPost)
 	{
 		MutliCall();
 	}
 	else
 	{
-		XmlCommand* command = CreateCommand(szMethodName);
-		command->SetRequest(szRequest);
-		command->SetProtocol(m_eProtocol);
-		command->SetHttpMethod(m_eHttpMethod);
-		command->SetUserAccess(m_eUserAccess);
+		XmlCommand* command = CreateCommand(methodName);
+		command->SetRequest(request);
+		command->SetProtocol(m_protocol);
+		command->SetHttpMethod(m_httpMethod);
+		command->SetUserAccess(m_userAccess);
 		command->PrepareParams();
 		command->Execute();
-		BuildResponse(command->GetResponse(), command->GetCallbackFunc(), command->GetFault(), szRequestId);
+		BuildResponse(command->GetResponse(), command->GetCallbackFunc(), command->GetFault(), requestId);
 		delete command;
 	}
 }
 
 void XmlRpcProcessor::MutliCall()
 {
-	bool bError = false;
+	bool error = false;
 	StringBuilder cStringBuilder;
 
 	cStringBuilder.Append("<array><data>");
 
-	char* szRequestPtr = m_szRequest;
-	char* szCallEnd = strstr(szRequestPtr, "</struct>");
-	while (szCallEnd)
+	char* requestPtr = m_request;
+	char* callEnd = strstr(requestPtr, "</struct>");
+	while (callEnd)
 	{
-		*szCallEnd = '\0';
-		debug("MutliCall, request=%s", szRequestPtr);
-		char* szNameEnd = strstr(szRequestPtr, "</name>");
-		if (!szNameEnd)
+		*callEnd = '\0';
+		debug("MutliCall, request=%s", requestPtr);
+		char* nameEnd = strstr(requestPtr, "</name>");
+		if (!nameEnd)
 		{
-			bError = true;
+			error = true;
 			break;
 		}
 
-		char szMethodName[100];
-		szMethodName[0] = '\0';
-		WebUtil::XmlParseTagValue(szNameEnd, "string", szMethodName, sizeof(szMethodName), NULL);
-		debug("MutliCall, MethodName=%s", szMethodName);
+		char methodName[100];
+		methodName[0] = '\0';
+		WebUtil::XmlParseTagValue(nameEnd, "string", methodName, sizeof(methodName), NULL);
+		debug("MutliCall, MethodName=%s", methodName);
 
-		XmlCommand* command = CreateCommand(szMethodName);
-		command->SetRequest(szRequestPtr);
+		XmlCommand* command = CreateCommand(methodName);
+		command->SetRequest(requestPtr);
 		command->Execute();
 
 		debug("MutliCall, Response=%s", command->GetResponse());
 
-		bool bFault = !strncmp(command->GetResponse(), "<fault>", 7);
-		bool bArray = !bFault && !strncmp(command->GetResponse(), "<array>", 7);
-		if (!bFault && !bArray)
+		bool fault = !strncmp(command->GetResponse(), "<fault>", 7);
+		bool array = !fault && !strncmp(command->GetResponse(), "<array>", 7);
+		if (!fault && !array)
 		{
 			cStringBuilder.Append("<array><data>");
 		}
 		cStringBuilder.Append("<value>");
 		cStringBuilder.Append(command->GetResponse());
 		cStringBuilder.Append("</value>");
-		if (!bFault && !bArray)
+		if (!fault && !array)
 		{
 			cStringBuilder.Append("</data></array>");
 		}
 
 		delete command;
 
-		szRequestPtr = szCallEnd + 9; //strlen("</struct>")
-		szCallEnd = strstr(szRequestPtr, "</struct>");
+		requestPtr = callEnd + 9; //strlen("</struct>")
+		callEnd = strstr(requestPtr, "</struct>");
 	}
 
-	if (bError)
+	if (error)
 	{
 		XmlCommand* command = new ErrorXmlCommand(4, "Parse error");
-		command->SetRequest(m_szRequest);
+		command->SetRequest(m_request);
 		command->SetProtocol(rpXmlRpc);
 		command->PrepareParams();
 		command->Execute();
@@ -524,8 +524,8 @@ void XmlRpcProcessor::MutliCall()
 	}
 }
 
-void XmlRpcProcessor::BuildResponse(const char* szResponse, const char* szCallbackFunc,
-	bool bFault, const char* szRequestId)
+void XmlRpcProcessor::BuildResponse(const char* response, const char* callbackFunc,
+	bool fault, const char* requestId)
 {
 	const char XML_HEADER[] = "<?xml version=\"1.0\"?>\n<methodResponse>\n";
 	const char XML_FOOTER[] = "</methodResponse>";
@@ -546,213 +546,213 @@ void XmlRpcProcessor::BuildResponse(const char* szResponse, const char* szCallba
 	const char JSONP_CALLBACK_HEADER[] = "(";
 	const char JSONP_CALLBACK_FOOTER[] = ")";
 
-	bool bXmlRpc = m_eProtocol == rpXmlRpc;
+	bool xmlRpc = m_protocol == rpXmlRpc;
 
-	const char* szCallbackHeader = m_eProtocol == rpJsonPRpc ? JSONP_CALLBACK_HEADER : "";
-	const char* szHeader = bXmlRpc ? XML_HEADER : JSON_HEADER;
-	const char* szFooter = bXmlRpc ? XML_FOOTER : JSON_FOOTER;
-	const char* szOpenTag = bFault ? (bXmlRpc ? XML_FAULT_OPEN : JSON_FAULT_OPEN) : (bXmlRpc ? XML_OK_OPEN : JSON_OK_OPEN);
-	const char* szCloseTag = bFault ? (bXmlRpc ? XML_FAULT_CLOSE : JSON_FAULT_CLOSE ) : (bXmlRpc ? XML_OK_CLOSE : JSON_OK_CLOSE);
-	const char* szCallbackFooter = m_eProtocol == rpJsonPRpc ? JSONP_CALLBACK_FOOTER : "";
+	const char* callbackHeader = m_protocol == rpJsonPRpc ? JSONP_CALLBACK_HEADER : "";
+	const char* header = xmlRpc ? XML_HEADER : JSON_HEADER;
+	const char* footer = xmlRpc ? XML_FOOTER : JSON_FOOTER;
+	const char* openTag = fault ? (xmlRpc ? XML_FAULT_OPEN : JSON_FAULT_OPEN) : (xmlRpc ? XML_OK_OPEN : JSON_OK_OPEN);
+	const char* closeTag = fault ? (xmlRpc ? XML_FAULT_CLOSE : JSON_FAULT_CLOSE ) : (xmlRpc ? XML_OK_CLOSE : JSON_OK_CLOSE);
+	const char* callbackFooter = m_protocol == rpJsonPRpc ? JSONP_CALLBACK_FOOTER : "";
 
-	debug("Response=%s", szResponse);
+	debug("Response=%s", response);
 
-	if (szCallbackFunc)
+	if (callbackFunc)
 	{
-		m_cResponse.Append(szCallbackFunc);
+		m_cResponse.Append(callbackFunc);
 	}
-	m_cResponse.Append(szCallbackHeader);
-	m_cResponse.Append(szHeader);
-	if (!bXmlRpc && szRequestId && *szRequestId)
+	m_cResponse.Append(callbackHeader);
+	m_cResponse.Append(header);
+	if (!xmlRpc && requestId && *requestId)
 	{
 		m_cResponse.Append(JSON_ID_OPEN);
-		m_cResponse.Append(szRequestId);
+		m_cResponse.Append(requestId);
 		m_cResponse.Append(JSON_ID_CLOSE);
 	}
-	m_cResponse.Append(szOpenTag);
-	m_cResponse.Append(szResponse);
-	m_cResponse.Append(szCloseTag);
-	m_cResponse.Append(szFooter);
-	m_cResponse.Append(szCallbackFooter);
+	m_cResponse.Append(openTag);
+	m_cResponse.Append(response);
+	m_cResponse.Append(closeTag);
+	m_cResponse.Append(footer);
+	m_cResponse.Append(callbackFooter);
 	
-	m_szContentType = bXmlRpc ? "text/xml" : "application/json";
+	m_contentType = xmlRpc ? "text/xml" : "application/json";
 }
 
-XmlCommand* XmlRpcProcessor::CreateCommand(const char* szMethodName)
+XmlCommand* XmlRpcProcessor::CreateCommand(const char* methodName)
 {
 	XmlCommand* command = NULL;
 
-	if (m_eUserAccess == uaAdd && 
-		!(!strcasecmp(szMethodName, "append") || !strcasecmp(szMethodName, "appendurl") ||
-		 !strcasecmp(szMethodName, "version")))
+	if (m_userAccess == uaAdd && 
+		!(!strcasecmp(methodName, "append") || !strcasecmp(methodName, "appendurl") ||
+		 !strcasecmp(methodName, "version")))
 	{
 		command = new ErrorXmlCommand(401, "Access denied");
-		warn("Received request \"%s\" from add-user, access denied", szMethodName);
+		warn("Received request \"%s\" from add-user, access denied", methodName);
 	}
-	else if (m_eUserAccess == uaRestricted && !strcasecmp(szMethodName, "saveconfig"))
+	else if (m_userAccess == uaRestricted && !strcasecmp(methodName, "saveconfig"))
 	{
 		command = new ErrorXmlCommand(401, "Access denied");
-		warn("Received request \"%s\" from restricted user, access denied", szMethodName);
+		warn("Received request \"%s\" from restricted user, access denied", methodName);
 	}
-	else if (!strcasecmp(szMethodName, "pause") || !strcasecmp(szMethodName, "pausedownload") ||
-		!strcasecmp(szMethodName, "pausedownload2"))
+	else if (!strcasecmp(methodName, "pause") || !strcasecmp(methodName, "pausedownload") ||
+		!strcasecmp(methodName, "pausedownload2"))
 	{
 		command = new PauseUnpauseXmlCommand(true, PauseUnpauseXmlCommand::paDownload);
 	}
-	else if (!strcasecmp(szMethodName, "resume") || !strcasecmp(szMethodName, "resumedownload") ||
-		!strcasecmp(szMethodName, "resumedownload2"))
+	else if (!strcasecmp(methodName, "resume") || !strcasecmp(methodName, "resumedownload") ||
+		!strcasecmp(methodName, "resumedownload2"))
 	{
 		command = new PauseUnpauseXmlCommand(false, PauseUnpauseXmlCommand::paDownload);
 	}
-	else if (!strcasecmp(szMethodName, "shutdown"))
+	else if (!strcasecmp(methodName, "shutdown"))
 	{
 		command = new ShutdownXmlCommand();
 	}
-	else if (!strcasecmp(szMethodName, "reload"))
+	else if (!strcasecmp(methodName, "reload"))
 	{
 		command = new ReloadXmlCommand();
 	}
-	else if (!strcasecmp(szMethodName, "version"))
+	else if (!strcasecmp(methodName, "version"))
 	{
 		command = new VersionXmlCommand();
 	}
-	else if (!strcasecmp(szMethodName, "dump"))
+	else if (!strcasecmp(methodName, "dump"))
 	{
 		command = new DumpDebugXmlCommand();
 	}
-	else if (!strcasecmp(szMethodName, "rate"))
+	else if (!strcasecmp(methodName, "rate"))
 	{
 		command = new SetDownloadRateXmlCommand();
 	}
-	else if (!strcasecmp(szMethodName, "status"))
+	else if (!strcasecmp(methodName, "status"))
 	{
 		command = new StatusXmlCommand();
 	}
-	else if (!strcasecmp(szMethodName, "log"))
+	else if (!strcasecmp(methodName, "log"))
 	{
 		command = new LogXmlCommand();
 	}
-	else if (!strcasecmp(szMethodName, "listfiles"))
+	else if (!strcasecmp(methodName, "listfiles"))
 	{
 		command = new ListFilesXmlCommand();
 	}
-	else if (!strcasecmp(szMethodName, "listgroups"))
+	else if (!strcasecmp(methodName, "listgroups"))
 	{
 		command = new ListGroupsXmlCommand();
 	}
-	else if (!strcasecmp(szMethodName, "editqueue"))
+	else if (!strcasecmp(methodName, "editqueue"))
 	{
 		command = new EditQueueXmlCommand();
 	}
-	else if (!strcasecmp(szMethodName, "append") || !strcasecmp(szMethodName, "appendurl"))
+	else if (!strcasecmp(methodName, "append") || !strcasecmp(methodName, "appendurl"))
 	{
 		command = new DownloadXmlCommand();
 	}
-	else if (!strcasecmp(szMethodName, "postqueue"))
+	else if (!strcasecmp(methodName, "postqueue"))
 	{
 		command = new PostQueueXmlCommand();
 	}
-	else if (!strcasecmp(szMethodName, "writelog"))
+	else if (!strcasecmp(methodName, "writelog"))
 	{
 		command = new WriteLogXmlCommand();
 	}
-	else if (!strcasecmp(szMethodName, "clearlog"))
+	else if (!strcasecmp(methodName, "clearlog"))
 	{
 		command = new ClearLogXmlCommand();
 	}
-	else if (!strcasecmp(szMethodName, "loadlog"))
+	else if (!strcasecmp(methodName, "loadlog"))
 	{
 		command = new LoadLogXmlCommand();
 	}
-	else if (!strcasecmp(szMethodName, "scan"))
+	else if (!strcasecmp(methodName, "scan"))
 	{
 		command = new ScanXmlCommand();
 	}
-	else if (!strcasecmp(szMethodName, "pausepost"))
+	else if (!strcasecmp(methodName, "pausepost"))
 	{
 		command = new PauseUnpauseXmlCommand(true, PauseUnpauseXmlCommand::paPostProcess);
 	}
-	else if (!strcasecmp(szMethodName, "resumepost"))
+	else if (!strcasecmp(methodName, "resumepost"))
 	{
 		command = new PauseUnpauseXmlCommand(false, PauseUnpauseXmlCommand::paPostProcess);
 	}
-	else if (!strcasecmp(szMethodName, "pausescan"))
+	else if (!strcasecmp(methodName, "pausescan"))
 	{
 		command = new PauseUnpauseXmlCommand(true, PauseUnpauseXmlCommand::paScan);
 	}
-	else if (!strcasecmp(szMethodName, "resumescan"))
+	else if (!strcasecmp(methodName, "resumescan"))
 	{
 		command = new PauseUnpauseXmlCommand(false, PauseUnpauseXmlCommand::paScan);
 	}
-	else if (!strcasecmp(szMethodName, "scheduleresume"))
+	else if (!strcasecmp(methodName, "scheduleresume"))
 	{
 		command = new ScheduleResumeXmlCommand();
 	}
-	else if (!strcasecmp(szMethodName, "history"))
+	else if (!strcasecmp(methodName, "history"))
 	{
 		command = new HistoryXmlCommand();
 	}
-	else if (!strcasecmp(szMethodName, "urlqueue"))
+	else if (!strcasecmp(methodName, "urlqueue"))
 	{
 		command = new UrlQueueXmlCommand();
 	}
-	else if (!strcasecmp(szMethodName, "config"))
+	else if (!strcasecmp(methodName, "config"))
 	{
 		command = new ConfigXmlCommand();
 	}
-	else if (!strcasecmp(szMethodName, "loadconfig"))
+	else if (!strcasecmp(methodName, "loadconfig"))
 	{
 		command = new LoadConfigXmlCommand();
 	}
-	else if (!strcasecmp(szMethodName, "saveconfig"))
+	else if (!strcasecmp(methodName, "saveconfig"))
 	{
 		command = new SaveConfigXmlCommand();
 	}
-	else if (!strcasecmp(szMethodName, "configtemplates"))
+	else if (!strcasecmp(methodName, "configtemplates"))
 	{
 		command = new ConfigTemplatesXmlCommand();
 	}
-	else if (!strcasecmp(szMethodName, "viewfeed"))
+	else if (!strcasecmp(methodName, "viewfeed"))
 	{
 		command = new ViewFeedXmlCommand(false);
 	}
-	else if (!strcasecmp(szMethodName, "previewfeed"))
+	else if (!strcasecmp(methodName, "previewfeed"))
 	{
 		command = new ViewFeedXmlCommand(true);
 	}
-	else if (!strcasecmp(szMethodName, "fetchfeed"))
+	else if (!strcasecmp(methodName, "fetchfeed"))
 	{
 		command = new FetchFeedXmlCommand();
 	}
-	else if (!strcasecmp(szMethodName, "editserver"))
+	else if (!strcasecmp(methodName, "editserver"))
 	{
 		command = new EditServerXmlCommand();
 	}
-	else if (!strcasecmp(szMethodName, "readurl"))
+	else if (!strcasecmp(methodName, "readurl"))
 	{
 		command = new ReadUrlXmlCommand();
 	}
-	else if (!strcasecmp(szMethodName, "checkupdates"))
+	else if (!strcasecmp(methodName, "checkupdates"))
 	{
 		command = new CheckUpdatesXmlCommand();
 	}
-	else if (!strcasecmp(szMethodName, "startupdate"))
+	else if (!strcasecmp(methodName, "startupdate"))
 	{
 		command = new StartUpdateXmlCommand();
 	}
-	else if (!strcasecmp(szMethodName, "logupdate"))
+	else if (!strcasecmp(methodName, "logupdate"))
 	{
 		command = new LogUpdateXmlCommand();
 	}
-	else if (!strcasecmp(szMethodName, "servervolumes"))
+	else if (!strcasecmp(methodName, "servervolumes"))
 	{
 		command = new ServerVolumesXmlCommand();
 	}
-	else if (!strcasecmp(szMethodName, "resetservervolume"))
+	else if (!strcasecmp(methodName, "resetservervolume"))
 	{
 		command = new ResetServerVolumeXmlCommand();
 	}
-	else if (!strcasecmp(szMethodName, "testserver"))
+	else if (!strcasecmp(methodName, "testserver"))
 	{
 		command = new TestServerXmlCommand();
 	}
@@ -770,51 +770,51 @@ XmlCommand* XmlRpcProcessor::CreateCommand(const char* szMethodName)
 
 XmlCommand::XmlCommand()
 {
-	m_szRequest = NULL;
-	m_szRequestPtr = NULL;
-	m_szCallbackFunc = NULL;
-	m_bFault = false;
-	m_eProtocol = XmlRpcProcessor::rpUndefined;
-	m_StringBuilder.SetGrowSize(1024 * 10);
+	m_request = NULL;
+	m_requestPtr = NULL;
+	m_callbackFunc = NULL;
+	m_fault = false;
+	m_protocol = XmlRpcProcessor::rpUndefined;
+	m_stringBuilder.SetGrowSize(1024 * 10);
 }
 
 bool XmlCommand::IsJson()
 { 
-	return m_eProtocol == XmlRpcProcessor::rpJsonRpc || m_eProtocol == XmlRpcProcessor::rpJsonPRpc;
+	return m_protocol == XmlRpcProcessor::rpJsonRpc || m_protocol == XmlRpcProcessor::rpJsonPRpc;
 }
 
-void XmlCommand::AppendResponse(const char* szPart)
+void XmlCommand::AppendResponse(const char* part)
 {
-	m_StringBuilder.Append(szPart);
+	m_stringBuilder.Append(part);
 }
 
-void XmlCommand::AppendFmtResponse(const char* szFormat, ...)
+void XmlCommand::AppendFmtResponse(const char* format, ...)
 {
 	va_list args;
-	va_start(args, szFormat);
-	m_StringBuilder.AppendFmtV(szFormat, args);
+	va_start(args, format);
+	m_stringBuilder.AppendFmtV(format, args);
 	va_end(args);
 }
 
-void XmlCommand::AppendCondResponse(const char* szPart, bool bCond)
+void XmlCommand::AppendCondResponse(const char* part, bool cond)
 {
-	if (bCond)
+	if (cond)
 	{
-		m_StringBuilder.Append(szPart);
+		m_stringBuilder.Append(part);
 	}
 }
 
-void XmlCommand::OptimizeResponse(int iRecordCount)
+void XmlCommand::OptimizeResponse(int recordCount)
 {
 	// Reduce the number of memory allocations when building response buffer
-	int iGrowSize = iRecordCount * m_StringBuilder.GetUsedSize() / 10;
-	if (iGrowSize > 1024 * 10)
+	int growSize = recordCount * m_stringBuilder.GetUsedSize() / 10;
+	if (growSize > 1024 * 10)
 	{
-		m_StringBuilder.SetGrowSize(iGrowSize);
+		m_stringBuilder.SetGrowSize(growSize);
 	}
 }
 
-void XmlCommand::BuildErrorResponse(int iErrCode, const char* szErrText, ...)
+void XmlCommand::BuildErrorResponse(int errCode, const char* errText, ...)
 {
 	const char* XML_RESPONSE_ERROR_BODY = 
 		"<struct>\n"
@@ -829,183 +829,183 @@ void XmlCommand::BuildErrorResponse(int iErrCode, const char* szErrText, ...)
         "\"message\" : \"%s\"\n"
         "}";
 
-	char szFullText[1024];
+	char fullText[1024];
 
 	va_list ap;
-	va_start(ap, szErrText);
-	vsnprintf(szFullText, 1024, szErrText, ap);
-	szFullText[1024-1] = '\0';
+	va_start(ap, errText);
+	vsnprintf(fullText, 1024, errText, ap);
+	fullText[1024-1] = '\0';
 	va_end(ap);
 
-	char* xmlText = EncodeStr(szFullText);
+	char* xmlText = EncodeStr(fullText);
 
-	char szContent[1024];
-	snprintf(szContent, 1024, IsJson() ? JSON_RESPONSE_ERROR_BODY : XML_RESPONSE_ERROR_BODY, iErrCode, xmlText);
-	szContent[1024-1] = '\0';
+	char content[1024];
+	snprintf(content, 1024, IsJson() ? JSON_RESPONSE_ERROR_BODY : XML_RESPONSE_ERROR_BODY, errCode, xmlText);
+	content[1024-1] = '\0';
 
 	free(xmlText);
 
-	AppendResponse(szContent);
+	AppendResponse(content);
 
-	m_bFault = true;
+	m_fault = true;
 }
 
-void XmlCommand::BuildBoolResponse(bool bOK)
+void XmlCommand::BuildBoolResponse(bool ok)
 {
 	const char* XML_RESPONSE_BOOL_BODY = "<boolean>%s</boolean>";
 	const char* JSON_RESPONSE_BOOL_BODY = "%s";
 
-	char szContent[1024];
-	snprintf(szContent, 1024, IsJson() ? JSON_RESPONSE_BOOL_BODY : XML_RESPONSE_BOOL_BODY,
-		BoolToStr(bOK));
-	szContent[1024-1] = '\0';
+	char content[1024];
+	snprintf(content, 1024, IsJson() ? JSON_RESPONSE_BOOL_BODY : XML_RESPONSE_BOOL_BODY,
+		BoolToStr(ok));
+	content[1024-1] = '\0';
 
-	AppendResponse(szContent);
+	AppendResponse(content);
 }
 
-void XmlCommand::BuildIntResponse(int iValue)
+void XmlCommand::BuildIntResponse(int value)
 {
 	const char* XML_RESPONSE_INT_BODY = "<i4>%i</i4>";
 	const char* JSON_RESPONSE_INT_BODY = "%i";
 
-	char szContent[1024];
-	snprintf(szContent, 1024, IsJson() ? JSON_RESPONSE_INT_BODY : XML_RESPONSE_INT_BODY, iValue);
-	szContent[1024-1] = '\0';
+	char content[1024];
+	snprintf(content, 1024, IsJson() ? JSON_RESPONSE_INT_BODY : XML_RESPONSE_INT_BODY, value);
+	content[1024-1] = '\0';
 
-	AppendResponse(szContent);
+	AppendResponse(content);
 }
 
 void XmlCommand::PrepareParams()
 {
-	if (IsJson() && m_eHttpMethod == XmlRpcProcessor::hmPost)
+	if (IsJson() && m_httpMethod == XmlRpcProcessor::hmPost)
 	{
-		char* szParams = strstr(m_szRequestPtr, "\"params\"");
-		if (!szParams)
+		char* params = strstr(m_requestPtr, "\"params\"");
+		if (!params)
 		{
-			m_szRequestPtr[0] = '\0';
+			m_requestPtr[0] = '\0';
 			return;
 		}
-		m_szRequestPtr = szParams + 8; // strlen("\"params\"")
+		m_requestPtr = params + 8; // strlen("\"params\"")
 	}
 
-	if (m_eProtocol == XmlRpcProcessor::rpJsonPRpc)
+	if (m_protocol == XmlRpcProcessor::rpJsonPRpc)
 	{
-		NextParamAsStr(&m_szCallbackFunc);
+		NextParamAsStr(&m_callbackFunc);
 	}
 }
 
-char* XmlCommand::XmlNextValue(char* szXml, const char* szTag, int* pValueLength)
+char* XmlCommand::XmlNextValue(char* xml, const char* tag, int* valueLength)
 {
-	int iValueLen;
-	const char* szValue = WebUtil::XmlFindTag(szXml, "value", &iValueLen);
-	if (szValue)
+	int valueLen;
+	const char* value = WebUtil::XmlFindTag(xml, "value", &valueLen);
+	if (value)
 	{
-		char* szTagContent = (char*)WebUtil::XmlFindTag(szValue, szTag, pValueLength);
-		if (szTagContent <= szValue + iValueLen)
+		char* tagContent = (char*)WebUtil::XmlFindTag(value, tag, valueLength);
+		if (tagContent <= value + valueLen)
 		{
-			return szTagContent;
+			return tagContent;
 		}
 	}
 	return NULL;
 }
 
-bool XmlCommand::NextParamAsInt(int* iValue)
+bool XmlCommand::NextParamAsInt(int* value)
 {
-	if (m_eHttpMethod == XmlRpcProcessor::hmGet)
+	if (m_httpMethod == XmlRpcProcessor::hmGet)
 	{
-		char* szParam = strchr(m_szRequestPtr, '=');
-		if (!szParam)
+		char* param = strchr(m_requestPtr, '=');
+		if (!param)
 		{
 			return false;
 		}
-		*iValue = atoi(szParam + 1);
-		m_szRequestPtr = szParam + 1;
-		while (strchr("-+0123456789&", *m_szRequestPtr))
+		*value = atoi(param + 1);
+		m_requestPtr = param + 1;
+		while (strchr("-+0123456789&", *m_requestPtr))
 		{
-			m_szRequestPtr++;
+			m_requestPtr++;
 		}
 		return true;
 	}
 	else if (IsJson())
 	{
-		int iLen = 0;
-		char* szParam = (char*)WebUtil::JsonNextValue(m_szRequestPtr, &iLen);
-		if (!szParam || !strchr("-+0123456789", *szParam))
+		int len = 0;
+		char* param = (char*)WebUtil::JsonNextValue(m_requestPtr, &len);
+		if (!param || !strchr("-+0123456789", *param))
 		{
 			return false;
 		}
-		*iValue = atoi(szParam);
-		m_szRequestPtr = szParam + iLen + 1;
+		*value = atoi(param);
+		m_requestPtr = param + len + 1;
 		return true;
 	}
 	else
 	{
-		int iLen = 0;
-		int iTagLen = 4; //strlen("<i4>");
-		char* szParam = XmlNextValue(m_szRequestPtr, "i4", &iLen);
-		if (!szParam)
+		int len = 0;
+		int tagLen = 4; //strlen("<i4>");
+		char* param = XmlNextValue(m_requestPtr, "i4", &len);
+		if (!param)
 		{
-			szParam = XmlNextValue(m_szRequestPtr, "int", &iLen);
-			iTagLen = 5; //strlen("<int>");
+			param = XmlNextValue(m_requestPtr, "int", &len);
+			tagLen = 5; //strlen("<int>");
 		}
-		if (!szParam || !strchr("-+0123456789", *szParam))
+		if (!param || !strchr("-+0123456789", *param))
 		{
 			return false;
 		}
-		*iValue = atoi(szParam);
-		m_szRequestPtr = szParam + iLen + iTagLen;
+		*value = atoi(param);
+		m_requestPtr = param + len + tagLen;
 		return true;
 	}
 }
 
-bool XmlCommand::NextParamAsBool(bool* bValue)
+bool XmlCommand::NextParamAsBool(bool* value)
 {
-	if (m_eHttpMethod == XmlRpcProcessor::hmGet)
+	if (m_httpMethod == XmlRpcProcessor::hmGet)
 	{
-		char* szParam;
-		if (!NextParamAsStr(&szParam))
+		char* param;
+		if (!NextParamAsStr(&param))
 		{
 			return false;
 		}
 
 		if (IsJson())
 		{
-			if (!strncmp(szParam, "true", 4))
+			if (!strncmp(param, "true", 4))
 			{
-				*bValue = true;
+				*value = true;
 				return true;
 			}
-			else if (!strncmp(szParam, "false", 5))
+			else if (!strncmp(param, "false", 5))
 			{
-				*bValue = false;
+				*value = false;
 				return true;
 			}
 		}
 		else
 		{
-			*bValue = szParam[0] == '1';
+			*value = param[0] == '1';
 			return true;
 		}
 		return false;
 	}
 	else if (IsJson())
 	{
-		int iLen = 0;
-		char* szParam = (char*)WebUtil::JsonNextValue(m_szRequestPtr, &iLen);
-		if (!szParam)
+		int len = 0;
+		char* param = (char*)WebUtil::JsonNextValue(m_requestPtr, &len);
+		if (!param)
 		{
 			return false;
 		}
-		if (iLen == 4 && !strncmp(szParam, "true", 4))
+		if (len == 4 && !strncmp(param, "true", 4))
 		{
-			*bValue = true;
-			m_szRequestPtr = szParam + iLen + 1;
+			*value = true;
+			m_requestPtr = param + len + 1;
 			return true;
 		}
-		else if (iLen == 5 && !strncmp(szParam, "false", 5))
+		else if (len == 5 && !strncmp(param, "false", 5))
 		{
-			*bValue = false;
-			m_szRequestPtr = szParam + iLen + 1;
+			*value = false;
+			m_requestPtr = param + len + 1;
 			return true;
 		}
 		else
@@ -1015,134 +1015,134 @@ bool XmlCommand::NextParamAsBool(bool* bValue)
 	}
 	else
 	{
-		int iLen = 0;
-		char* szParam = XmlNextValue(m_szRequestPtr, "boolean", &iLen);
-		if (!szParam)
+		int len = 0;
+		char* param = XmlNextValue(m_requestPtr, "boolean", &len);
+		if (!param)
 		{
 			return false;
 		}
-		*bValue = szParam[0] == '1';
-		m_szRequestPtr = szParam + iLen + 9; //strlen("<boolean>");
+		*value = param[0] == '1';
+		m_requestPtr = param + len + 9; //strlen("<boolean>");
 		return true;
 	}
 }
 
-bool XmlCommand::NextParamAsStr(char** szValue)
+bool XmlCommand::NextParamAsStr(char** value)
 {
-	if (m_eHttpMethod == XmlRpcProcessor::hmGet)
+	if (m_httpMethod == XmlRpcProcessor::hmGet)
 	{
-		char* szParam = strchr(m_szRequestPtr, '=');
-		if (!szParam)
+		char* param = strchr(m_requestPtr, '=');
+		if (!param)
 		{
 			return false;
 		}
-		szParam++; // skip '='
-		int iLen = 0;
-		char* szParamEnd = strchr(szParam, '&');
-		if (szParamEnd)
+		param++; // skip '='
+		int len = 0;
+		char* paramEnd = strchr(param, '&');
+		if (paramEnd)
 		{
-			iLen = (int)(szParamEnd - szParam);
-			szParam[iLen] = '\0';
+			len = (int)(paramEnd - param);
+			param[len] = '\0';
 		}
 		else
 		{
-			iLen = strlen(szParam) - 1;
+			len = strlen(param) - 1;
 		}
-		m_szRequestPtr = szParam + iLen + 1;
-		*szValue = szParam;
+		m_requestPtr = param + len + 1;
+		*value = param;
 		return true;
 	}
 	else if (IsJson())
 	{
-		int iLen = 0;
-		char* szParam = (char*)WebUtil::JsonNextValue(m_szRequestPtr, &iLen);
-		if (!szParam || iLen < 2 || szParam[0] != '"' || szParam[iLen - 1] != '"')
+		int len = 0;
+		char* param = (char*)WebUtil::JsonNextValue(m_requestPtr, &len);
+		if (!param || len < 2 || param[0] != '"' || param[len - 1] != '"')
 		{
 			return false;
 		}
-		szParam++; // skip first '"'
-		szParam[iLen - 2] = '\0'; // skip last '"'
-		m_szRequestPtr = szParam + iLen;
-		*szValue = szParam;
+		param++; // skip first '"'
+		param[len - 2] = '\0'; // skip last '"'
+		m_requestPtr = param + len;
+		*value = param;
 		return true;
 	}
 	else
 	{
-		int iLen = 0;
-		char* szParam = XmlNextValue(m_szRequestPtr, "string", &iLen);
-		if (!szParam)
+		int len = 0;
+		char* param = XmlNextValue(m_requestPtr, "string", &len);
+		if (!param)
 		{
 			return false;
 		}
-		szParam[iLen] = '\0';
-		m_szRequestPtr = szParam + iLen + 8; //strlen("<string>")
-		*szValue = szParam;
+		param[len] = '\0';
+		m_requestPtr = param + len + 8; //strlen("<string>")
+		*value = param;
 		return true;
 	}
 }
 
-const char* XmlCommand::BoolToStr(bool bValue)
+const char* XmlCommand::BoolToStr(bool value)
 {
-	return IsJson() ? (bValue ? "true" : "false") : (bValue ? "1" : "0");
+	return IsJson() ? (value ? "true" : "false") : (value ? "1" : "0");
 }
 
-char* XmlCommand::EncodeStr(const char* szStr)
+char* XmlCommand::EncodeStr(const char* str)
 {
-	if (!szStr)
+	if (!str)
 	{
 		return strdup("");
 	}
 
 	if (IsJson()) 
 	{
-		return WebUtil::JsonEncode(szStr);
+		return WebUtil::JsonEncode(str);
 	}
 	else
 	{
-		return WebUtil::XmlEncode(szStr);
+		return WebUtil::XmlEncode(str);
 	}
 }
 
-void XmlCommand::DecodeStr(char* szStr)
+void XmlCommand::DecodeStr(char* str)
 {
 	if (IsJson())
 	{
-		WebUtil::JsonDecode(szStr);
+		WebUtil::JsonDecode(str);
 	}
 	else
 	{
-		WebUtil::XmlDecode(szStr);
+		WebUtil::XmlDecode(str);
 	}
 }
 
 bool XmlCommand::CheckSafeMethod()
 {
-	bool bSafe = m_eHttpMethod == XmlRpcProcessor::hmPost || m_eProtocol == XmlRpcProcessor::rpJsonPRpc;
-	if (!bSafe)
+	bool safe = m_httpMethod == XmlRpcProcessor::hmPost || m_protocol == XmlRpcProcessor::rpJsonPRpc;
+	if (!safe)
 	{
 		BuildErrorResponse(4, "Not safe procedure for HTTP-Method GET. Use Method POST instead");
 	}
-	return bSafe;
+	return safe;
 }
 
 //*****************************************************************
 // Commands
 
-ErrorXmlCommand::ErrorXmlCommand(int iErrCode, const char* szErrText)
+ErrorXmlCommand::ErrorXmlCommand(int errCode, const char* errText)
 {
-	m_iErrCode = iErrCode;
-	m_szErrText = szErrText;
+	m_errCode = errCode;
+	m_errText = errText;
 }
 
 void ErrorXmlCommand::Execute()
 {
-	BuildErrorResponse(m_iErrCode, m_szErrText);
+	BuildErrorResponse(m_errCode, m_errText);
 }
 
-PauseUnpauseXmlCommand::PauseUnpauseXmlCommand(bool bPause, EPauseAction eEPauseAction)
+PauseUnpauseXmlCommand::PauseUnpauseXmlCommand(bool pause, EPauseAction ePauseAction)
 {
-	m_bPause = bPause;
-	m_eEPauseAction = eEPauseAction;
+	m_pause = pause;
+	m_ePauseAction = ePauseAction;
 }
 
 void PauseUnpauseXmlCommand::Execute()
@@ -1152,29 +1152,29 @@ void PauseUnpauseXmlCommand::Execute()
 		return;
 	}
 
-	bool bOK = true;
+	bool ok = true;
 
 	g_pOptions->SetResumeTime(0);
 
-	switch (m_eEPauseAction)
+	switch (m_ePauseAction)
 	{
 		case paDownload:
-			g_pOptions->SetPauseDownload(m_bPause);
+			g_pOptions->SetPauseDownload(m_pause);
 			break;
 
 		case paPostProcess:
-			g_pOptions->SetPausePostProcess(m_bPause);
+			g_pOptions->SetPausePostProcess(m_pause);
 			break;
 
 		case paScan:
-			g_pOptions->SetPauseScan(m_bPause);
+			g_pOptions->SetPauseScan(m_pause);
 			break;
 
 		default:
-			bOK = false;
+			ok = false;
 	}
 
-	BuildBoolResponse(bOK);
+	BuildBoolResponse(ok);
 }
 
 // bool scheduleresume(int Seconds) 
@@ -1185,16 +1185,16 @@ void ScheduleResumeXmlCommand::Execute()
 		return;
 	}
 
-	int iSeconds = 0;
-	if (!NextParamAsInt(&iSeconds) || iSeconds < 0)
+	int seconds = 0;
+	if (!NextParamAsInt(&seconds) || seconds < 0)
 	{
 		BuildErrorResponse(2, "Invalid parameter");
 		return;
 	}
 
-	time_t tCurTime = time(NULL);
+	time_t curTime = time(NULL);
 
-	g_pOptions->SetResumeTime(tCurTime + iSeconds);
+	g_pOptions->SetResumeTime(curTime + seconds);
 
 	BuildBoolResponse(true);
 }
@@ -1226,11 +1226,11 @@ void VersionXmlCommand::Execute()
 	const char* XML_RESPONSE_STRING_BODY = "<string>%s</string>";
 	const char* JSON_RESPONSE_STRING_BODY = "\"%s\"";
 
-	char szContent[1024];
-	snprintf(szContent, 1024, IsJson() ? JSON_RESPONSE_STRING_BODY : XML_RESPONSE_STRING_BODY, Util::VersionRevision());
-	szContent[1024-1] = '\0';
+	char content[1024];
+	snprintf(content, 1024, IsJson() ? JSON_RESPONSE_STRING_BODY : XML_RESPONSE_STRING_BODY, Util::VersionRevision());
+	content[1024-1] = '\0';
 
-	AppendResponse(szContent);
+	AppendResponse(content);
 }
 
 void DumpDebugXmlCommand::Execute()
@@ -1246,14 +1246,14 @@ void SetDownloadRateXmlCommand::Execute()
 		return;
 	}
 
-	int iRate = 0;
-	if (!NextParamAsInt(&iRate) || iRate < 0)
+	int rate = 0;
+	if (!NextParamAsInt(&rate) || rate < 0)
 	{
 		BuildErrorResponse(2, "Invalid parameter");
 		return;
 	}
 
-	g_pOptions->SetDownloadRate(iRate * 1024);
+	g_pOptions->SetDownloadRate(rate * 1024);
 	BuildBoolResponse(true);
 }
 
@@ -1355,75 +1355,75 @@ void StatusXmlCommand::Execute()
 		"\"Active\" : %s\n"
 		"}";
 
-	DownloadQueue *pDownloadQueue = DownloadQueue::Lock();
-	int iPostJobCount = 0;
-	int iUrlCount = 0;
-	for (NZBList::iterator it = pDownloadQueue->GetQueue()->begin(); it != pDownloadQueue->GetQueue()->end(); it++)
+	DownloadQueue *downloadQueue = DownloadQueue::Lock();
+	int postJobCount = 0;
+	int urlCount = 0;
+	for (NZBList::iterator it = downloadQueue->GetQueue()->begin(); it != downloadQueue->GetQueue()->end(); it++)
 	{
-		NZBInfo* pNZBInfo = *it;
-		iPostJobCount += pNZBInfo->GetPostInfo() ? 1 : 0;
-		iUrlCount += pNZBInfo->GetKind() == NZBInfo::nkUrl ? 1 : 0;
+		NZBInfo* nzbInfo = *it;
+		postJobCount += nzbInfo->GetPostInfo() ? 1 : 0;
+		urlCount += nzbInfo->GetKind() == NZBInfo::nkUrl ? 1 : 0;
 	}
-	long long iRemainingSize, iForcedSize;
-	pDownloadQueue->CalcRemainingSize(&iRemainingSize, &iForcedSize);
+	long long remainingSize, forcedSize;
+	downloadQueue->CalcRemainingSize(&remainingSize, &forcedSize);
 	DownloadQueue::Unlock();
 
-	unsigned long iRemainingSizeHi, iRemainingSizeLo;
-	Util::SplitInt64(iRemainingSize, &iRemainingSizeHi, &iRemainingSizeLo);
-	int iRemainingMBytes = (int)(iRemainingSize / 1024 / 1024);
+	unsigned long remainingSizeHi, remainingSizeLo;
+	Util::SplitInt64(remainingSize, &remainingSizeHi, &remainingSizeLo);
+	int remainingMBytes = (int)(remainingSize / 1024 / 1024);
 
-	unsigned long iForcedSizeHi, iForcedSizeLo;
-	Util::SplitInt64(iForcedSize, &iForcedSizeHi, &iForcedSizeLo);
-	int iForcedMBytes = (int)(iForcedSize / 1024 / 1024);
+	unsigned long forcedSizeHi, forcedSizeLo;
+	Util::SplitInt64(forcedSize, &forcedSizeHi, &forcedSizeLo);
+	int forcedMBytes = (int)(forcedSize / 1024 / 1024);
 
-	long long iArticleCache = g_pArticleCache->GetAllocated();
-	unsigned long iArticleCacheHi, iArticleCacheLo;
-	Util::SplitInt64(iArticleCache, &iArticleCacheHi, &iArticleCacheLo);
-	int iArticleCacheMBytes = (int)(iArticleCache / 1024 / 1024);
+	long long articleCache = g_pArticleCache->GetAllocated();
+	unsigned long articleCacheHi, articleCacheLo;
+	Util::SplitInt64(articleCache, &articleCacheHi, &articleCacheLo);
+	int articleCacheMBytes = (int)(articleCache / 1024 / 1024);
 
-	int iDownloadRate = (int)(g_pStatMeter->CalcCurrentDownloadSpeed());
-	int iDownloadLimit = (int)(g_pOptions->GetDownloadRate());
-	bool bDownloadPaused = g_pOptions->GetPauseDownload();
-	bool bPostPaused = g_pOptions->GetPausePostProcess();
-	bool bScanPaused = g_pOptions->GetPauseScan();
-	int iThreadCount = Thread::GetThreadCount() - 1; // not counting itself
+	int downloadRate = (int)(g_pStatMeter->CalcCurrentDownloadSpeed());
+	int downloadLimit = (int)(g_pOptions->GetDownloadRate());
+	bool downloadPaused = g_pOptions->GetPauseDownload();
+	bool postPaused = g_pOptions->GetPausePostProcess();
+	bool scanPaused = g_pOptions->GetPauseScan();
+	int threadCount = Thread::GetThreadCount() - 1; // not counting itself
 
-	unsigned long iDownloadedSizeHi, iDownloadedSizeLo;
-	int iUpTimeSec, iDownloadTimeSec;
-	long long iAllBytes;
-	bool bServerStandBy;
-	g_pStatMeter->CalcTotalStat(&iUpTimeSec, &iDownloadTimeSec, &iAllBytes, &bServerStandBy);
-	int iDownloadedMBytes = (int)(iAllBytes / 1024 / 1024);
-	Util::SplitInt64(iAllBytes, &iDownloadedSizeHi, &iDownloadedSizeLo);
-	int iAverageDownloadRate = (int)(iDownloadTimeSec > 0 ? iAllBytes / iDownloadTimeSec : 0);
-	unsigned long iFreeDiskSpaceHi, iFreeDiskSpaceLo;
-	long long iFreeDiskSpace = Util::FreeDiskSize(g_pOptions->GetDestDir());
-	Util::SplitInt64(iFreeDiskSpace, &iFreeDiskSpaceHi, &iFreeDiskSpaceLo);
-	int iFreeDiskSpaceMB = (int)(iFreeDiskSpace / 1024 / 1024);
-	int iServerTime = time(NULL);
-	int iResumeTime = g_pOptions->GetResumeTime();
-	bool bFeedActive = g_pFeedCoordinator->HasActiveDownloads();
-	int iQueuedScripts = g_pQueueScriptCoordinator->GetQueueSize();
+	unsigned long downloadedSizeHi, downloadedSizeLo;
+	int upTimeSec, downloadTimeSec;
+	long long allBytes;
+	bool serverStandBy;
+	g_pStatMeter->CalcTotalStat(&upTimeSec, &downloadTimeSec, &allBytes, &serverStandBy);
+	int downloadedMBytes = (int)(allBytes / 1024 / 1024);
+	Util::SplitInt64(allBytes, &downloadedSizeHi, &downloadedSizeLo);
+	int averageDownloadRate = (int)(downloadTimeSec > 0 ? allBytes / downloadTimeSec : 0);
+	unsigned long freeDiskSpaceHi, freeDiskSpaceLo;
+	long long freeDiskSpace = Util::FreeDiskSize(g_pOptions->GetDestDir());
+	Util::SplitInt64(freeDiskSpace, &freeDiskSpaceHi, &freeDiskSpaceLo);
+	int freeDiskSpaceMB = (int)(freeDiskSpace / 1024 / 1024);
+	int serverTime = time(NULL);
+	int resumeTime = g_pOptions->GetResumeTime();
+	bool feedActive = g_pFeedCoordinator->HasActiveDownloads();
+	int queuedScripts = g_pQueueScriptCoordinator->GetQueueSize();
 
 	AppendFmtResponse(IsJson() ? JSON_STATUS_START : XML_STATUS_START,
-		iRemainingSizeLo, iRemainingSizeHi, iRemainingMBytes, iForcedSizeLo,
-		iForcedSizeHi, iForcedMBytes, iDownloadedSizeLo, iDownloadedSizeHi,
-		iDownloadedMBytes, iArticleCacheLo, iArticleCacheHi, iArticleCacheMBytes,
-		iDownloadRate, iAverageDownloadRate, iDownloadLimit, iThreadCount, 
-		iPostJobCount, iPostJobCount, iUrlCount, iUpTimeSec, iDownloadTimeSec, 
-		BoolToStr(bDownloadPaused), BoolToStr(bDownloadPaused), BoolToStr(bDownloadPaused), 
-		BoolToStr(bServerStandBy), BoolToStr(bPostPaused), BoolToStr(bScanPaused),
-		iFreeDiskSpaceLo, iFreeDiskSpaceHi,	iFreeDiskSpaceMB, iServerTime, iResumeTime,
-		BoolToStr(bFeedActive), iQueuedScripts);
+		remainingSizeLo, remainingSizeHi, remainingMBytes, forcedSizeLo,
+		forcedSizeHi, forcedMBytes, downloadedSizeLo, downloadedSizeHi,
+		downloadedMBytes, articleCacheLo, articleCacheHi, articleCacheMBytes,
+		downloadRate, averageDownloadRate, downloadLimit, threadCount, 
+		postJobCount, postJobCount, urlCount, upTimeSec, downloadTimeSec, 
+		BoolToStr(downloadPaused), BoolToStr(downloadPaused), BoolToStr(downloadPaused), 
+		BoolToStr(serverStandBy), BoolToStr(postPaused), BoolToStr(scanPaused),
+		freeDiskSpaceLo, freeDiskSpaceHi,	freeDiskSpaceMB, serverTime, resumeTime,
+		BoolToStr(feedActive), queuedScripts);
 
 	int index = 0;
 	for (Servers::iterator it = g_pServerPool->GetServers()->begin(); it != g_pServerPool->GetServers()->end(); it++)
 	{
-		NewsServer* pServer = *it;
+		NewsServer* server = *it;
 
 		AppendCondResponse(",\n", IsJson() && index++ > 0);
 		AppendFmtResponse(IsJson() ? JSON_NEWSSERVER_ITEM : XML_NEWSSERVER_ITEM,
-			pServer->GetID(), BoolToStr(pServer->GetActive()));
+			server->GetID(), BoolToStr(server->GetActive()));
 	}
 
 	AppendResponse(IsJson() ? JSON_STATUS_END : XML_STATUS_END);
@@ -1432,36 +1432,36 @@ void StatusXmlCommand::Execute()
 // struct[] log(idfrom, entries)
 void LogXmlCommand::Execute()
 {
-	m_iIDFrom = 0;
-	m_iNrEntries = 0;
-	if (!NextParamAsInt(&m_iIDFrom) || !NextParamAsInt(&m_iNrEntries) || (m_iNrEntries > 0 && m_iIDFrom > 0))
+	m_idFrom = 0;
+	m_nrEntries = 0;
+	if (!NextParamAsInt(&m_idFrom) || !NextParamAsInt(&m_nrEntries) || (m_nrEntries > 0 && m_idFrom > 0))
 	{
 		BuildErrorResponse(2, "Invalid parameter");
 		return;
 	}
 
-	debug("iIDFrom=%i", m_iIDFrom);
-	debug("iNrEntries=%i", m_iNrEntries);
+	debug("iIDFrom=%i", m_idFrom);
+	debug("iNrEntries=%i", m_nrEntries);
 
 	AppendResponse(IsJson() ? "[\n" : "<array><data>\n");
-	MessageList* pMessages = LockMessages();
+	MessageList* messages = LockMessages();
 
-	int iStart = pMessages->size();
-	if (m_iNrEntries > 0)
+	int start = messages->size();
+	if (m_nrEntries > 0)
 	{
-		if (m_iNrEntries > (int)pMessages->size())
+		if (m_nrEntries > (int)messages->size())
 		{
-			m_iNrEntries = pMessages->size();
+			m_nrEntries = messages->size();
 		}
-		iStart = pMessages->size() - m_iNrEntries;
+		start = messages->size() - m_nrEntries;
 	}
-	if (m_iIDFrom > 0 && !pMessages->empty())
+	if (m_idFrom > 0 && !messages->empty())
 	{
-		m_iNrEntries = pMessages->size();
-		iStart = m_iIDFrom - pMessages->front()->GetID();
-		if (iStart < 0)
+		m_nrEntries = messages->size();
+		start = m_idFrom - messages->front()->GetID();
+		if (start < 0)
 		{
-			iStart = 0;
+			start = 0;
 		}
 	}
 
@@ -1481,19 +1481,19 @@ void LogXmlCommand::Execute()
 		"\"Text\" : \"%s\"\n"
 		"}";
 
-    const char* szMessageType[] = { "INFO", "WARNING", "ERROR", "DEBUG", "DETAIL" };
+    const char* messageType[] = { "INFO", "WARNING", "ERROR", "DEBUG", "DETAIL" };
 
 	int index = 0;
 
-	for (unsigned int i = (unsigned int)iStart; i < pMessages->size(); i++)
+	for (unsigned int i = (unsigned int)start; i < messages->size(); i++)
 	{
-		Message* pMessage = (*pMessages)[i];
+		Message* message = (*messages)[i];
 
-		char* xmltext = EncodeStr(pMessage->GetText());
+		char* xmltext = EncodeStr(message->GetText());
 
 		AppendCondResponse(",\n", IsJson() && index++ > 0);
 		AppendFmtResponse(IsJson() ? JSON_LOG_ITEM : XML_LOG_ITEM,
-			pMessage->GetID(), szMessageType[pMessage->GetKind()], pMessage->GetTime(), xmltext);
+			message->GetID(), messageType[message->GetKind()], message->GetTime(), xmltext);
 
 		free(xmltext);
 	}
@@ -1516,29 +1516,29 @@ void LogXmlCommand::UnlockMessages()
 // For backward compatibility with 0.8 parameter "NZBID" is optional
 void ListFilesXmlCommand::Execute()
 {
-	int iIDStart = 0;
-	int iIDEnd = 0;
-	if (NextParamAsInt(&iIDStart) && (!NextParamAsInt(&iIDEnd) || iIDEnd < iIDStart))
+	int idStart = 0;
+	int idEnd = 0;
+	if (NextParamAsInt(&idStart) && (!NextParamAsInt(&idEnd) || idEnd < idStart))
 	{
 		BuildErrorResponse(2, "Invalid parameter");
 		return;
 	}
 
 	// For backward compatibility with 0.8 parameter "NZBID" is optional (error checking omitted)
-	int iNZBID = 0;
-	NextParamAsInt(&iNZBID);
+	int nzbId = 0;
+	NextParamAsInt(&nzbId);
 
-	if (iNZBID > 0 && (iIDStart != 0 || iIDEnd != 0))
+	if (nzbId > 0 && (idStart != 0 || idEnd != 0))
 	{
 		BuildErrorResponse(2, "Invalid parameter");
 		return;
 	}
 
-	debug("iIDStart=%i", iIDStart);
-	debug("iIDEnd=%i", iIDEnd);
+	debug("iIDStart=%i", idStart);
+	debug("iIDEnd=%i", idEnd);
 
 	AppendResponse(IsJson() ? "[\n" : "<array><data>\n");
-	DownloadQueue* pDownloadQueue = DownloadQueue::Lock();
+	DownloadQueue* downloadQueue = DownloadQueue::Lock();
 
 	const char* XML_LIST_ITEM = 
 		"<value><struct>\n"
@@ -1588,37 +1588,37 @@ void ListFilesXmlCommand::Execute()
 
 	int index = 0;
 
-	for (NZBList::iterator it = pDownloadQueue->GetQueue()->begin(); it != pDownloadQueue->GetQueue()->end(); it++)
+	for (NZBList::iterator it = downloadQueue->GetQueue()->begin(); it != downloadQueue->GetQueue()->end(); it++)
 	{
-		NZBInfo* pNZBInfo = *it;
-		for (FileList::iterator it2 = pNZBInfo->GetFileList()->begin(); it2 != pNZBInfo->GetFileList()->end(); it2++)
+		NZBInfo* nzbInfo = *it;
+		for (FileList::iterator it2 = nzbInfo->GetFileList()->begin(); it2 != nzbInfo->GetFileList()->end(); it2++)
 		{
-			FileInfo* pFileInfo = *it2;
+			FileInfo* fileInfo = *it2;
 
-			if ((iNZBID > 0 && iNZBID == pFileInfo->GetNZBInfo()->GetID()) ||
-				(iNZBID == 0 && (iIDStart == 0 || (iIDStart <= pFileInfo->GetID() && pFileInfo->GetID() <= iIDEnd))))
+			if ((nzbId > 0 && nzbId == fileInfo->GetNZBInfo()->GetID()) ||
+				(nzbId == 0 && (idStart == 0 || (idStart <= fileInfo->GetID() && fileInfo->GetID() <= idEnd))))
 			{
-				unsigned long iFileSizeHi, iFileSizeLo;
-				unsigned long iRemainingSizeLo, iRemainingSizeHi;
-				Util::SplitInt64(pFileInfo->GetSize(), &iFileSizeHi, &iFileSizeLo);
-				Util::SplitInt64(pFileInfo->GetRemainingSize(), &iRemainingSizeHi, &iRemainingSizeLo);
-				char* xmlNZBFilename = EncodeStr(pFileInfo->GetNZBInfo()->GetFilename());
-				char* xmlSubject = EncodeStr(pFileInfo->GetSubject());
-				char* xmlFilename = EncodeStr(pFileInfo->GetFilename());
-				char* xmlDestDir = EncodeStr(pFileInfo->GetNZBInfo()->GetDestDir());
-				char* xmlCategory = EncodeStr(pFileInfo->GetNZBInfo()->GetCategory());
-				char* xmlNZBNicename = EncodeStr(pFileInfo->GetNZBInfo()->GetName());
+				unsigned long fileSizeHi, fileSizeLo;
+				unsigned long remainingSizeLo, remainingSizeHi;
+				Util::SplitInt64(fileInfo->GetSize(), &fileSizeHi, &fileSizeLo);
+				Util::SplitInt64(fileInfo->GetRemainingSize(), &remainingSizeHi, &remainingSizeLo);
+				char* xmlNZBFilename = EncodeStr(fileInfo->GetNZBInfo()->GetFilename());
+				char* xmlSubject = EncodeStr(fileInfo->GetSubject());
+				char* xmlFilename = EncodeStr(fileInfo->GetFilename());
+				char* xmlDestDir = EncodeStr(fileInfo->GetNZBInfo()->GetDestDir());
+				char* xmlCategory = EncodeStr(fileInfo->GetNZBInfo()->GetCategory());
+				char* xmlNZBNicename = EncodeStr(fileInfo->GetNZBInfo()->GetName());
 
-				int iProgress = pFileInfo->GetFailedSize() == 0 && pFileInfo->GetSuccessSize() == 0 ? 0 :
-					(int)(1000 - pFileInfo->GetRemainingSize() * 1000 / (pFileInfo->GetSize() - pFileInfo->GetMissedSize()));
+				int progress = fileInfo->GetFailedSize() == 0 && fileInfo->GetSuccessSize() == 0 ? 0 :
+					(int)(1000 - fileInfo->GetRemainingSize() * 1000 / (fileInfo->GetSize() - fileInfo->GetMissedSize()));
 
 				AppendCondResponse(",\n", IsJson() && index++ > 0);
 				AppendFmtResponse(IsJson() ? JSON_LIST_ITEM : XML_LIST_ITEM,
-					pFileInfo->GetID(), iFileSizeLo, iFileSizeHi, iRemainingSizeLo, iRemainingSizeHi, 
-					pFileInfo->GetTime(), BoolToStr(pFileInfo->GetFilenameConfirmed()), 
-					BoolToStr(pFileInfo->GetPaused()), pFileInfo->GetNZBInfo()->GetID(), xmlNZBNicename,
+					fileInfo->GetID(), fileSizeLo, fileSizeHi, remainingSizeLo, remainingSizeHi, 
+					fileInfo->GetTime(), BoolToStr(fileInfo->GetFilenameConfirmed()), 
+					BoolToStr(fileInfo->GetPaused()), fileInfo->GetNZBInfo()->GetID(), xmlNZBNicename,
 					xmlNZBNicename, xmlNZBFilename, xmlSubject, xmlFilename, xmlDestDir, xmlCategory,
-					pFileInfo->GetNZBInfo()->GetPriority(), pFileInfo->GetActiveDownloads(), iProgress);
+					fileInfo->GetNZBInfo()->GetPriority(), fileInfo->GetActiveDownloads(), progress);
 
 				free(xmlNZBFilename);
 				free(xmlSubject);
@@ -1634,7 +1634,7 @@ void ListFilesXmlCommand::Execute()
 	AppendResponse(IsJson() ? "\n]" : "</data></array>\n");
 }
 
-void NzbInfoXmlCommand::AppendNZBInfoFields(NZBInfo* pNZBInfo)
+void NzbInfoXmlCommand::AppendNZBInfoFields(NZBInfo* nzbInfo)
 {
 	const char* XML_NZB_ITEM_START =
 		"<member><name>NZBID</name><value><i4>%i</i4></value></member>\n"
@@ -1786,52 +1786,52 @@ void NzbInfoXmlCommand::AppendNZBInfoFields(NZBInfo* pNZBInfo)
 		"\"FailedArticles\" : %i\n"
 		"}";
 	
-    const char* szKindName[] = { "NZB", "URL" };
-    const char* szParStatusName[] = { "NONE", "NONE", "FAILURE", "SUCCESS", "REPAIR_POSSIBLE", "MANUAL" };
-    const char* szUnpackStatusName[] = { "NONE", "NONE", "FAILURE", "SUCCESS", "SPACE", "PASSWORD" };
-    const char* szMoveStatusName[] = { "NONE", "FAILURE", "SUCCESS" };
-    const char* szScriptStatusName[] = { "NONE", "FAILURE", "SUCCESS" };
-    const char* szDeleteStatusName[] = { "NONE", "MANUAL", "HEALTH", "DUPE", "BAD", "GOOD", "COPY", "SCAN" };
-    const char* szMarkStatusName[] = { "NONE", "BAD", "GOOD", "SUCCESS" };
-	const char* szUrlStatusName[] = { "NONE", "UNKNOWN", "SUCCESS", "FAILURE", "UNKNOWN", "SCAN_SKIPPED", "SCAN_FAILURE" };
-    const char* szDupeModeName[] = { "SCORE", "ALL", "FORCE" };
+    const char* kindName[] = { "NZB", "URL" };
+    const char* parStatusName[] = { "NONE", "NONE", "FAILURE", "SUCCESS", "REPAIR_POSSIBLE", "MANUAL" };
+    const char* unpackStatusName[] = { "NONE", "NONE", "FAILURE", "SUCCESS", "SPACE", "PASSWORD" };
+    const char* moveStatusName[] = { "NONE", "FAILURE", "SUCCESS" };
+    const char* scriptStatusName[] = { "NONE", "FAILURE", "SUCCESS" };
+    const char* deleteStatusName[] = { "NONE", "MANUAL", "HEALTH", "DUPE", "BAD", "GOOD", "COPY", "SCAN" };
+    const char* markStatusName[] = { "NONE", "BAD", "GOOD", "SUCCESS" };
+	const char* urlStatusName[] = { "NONE", "UNKNOWN", "SUCCESS", "FAILURE", "UNKNOWN", "SCAN_SKIPPED", "SCAN_FAILURE" };
+    const char* dupeModeName[] = { "SCORE", "ALL", "FORCE" };
 	
-	unsigned long iFileSizeHi, iFileSizeLo, iFileSizeMB;
-	Util::SplitInt64(pNZBInfo->GetSize(), &iFileSizeHi, &iFileSizeLo);
-	iFileSizeMB = (int)(pNZBInfo->GetSize() / 1024 / 1024);
+	unsigned long fileSizeHi, fileSizeLo, fileSizeMB;
+	Util::SplitInt64(nzbInfo->GetSize(), &fileSizeHi, &fileSizeLo);
+	fileSizeMB = (int)(nzbInfo->GetSize() / 1024 / 1024);
 
-	unsigned long iDownloadedSizeHi, iDownloadedSizeLo, iDownloadedSizeMB;
-	Util::SplitInt64(pNZBInfo->GetDownloadedSize(), &iDownloadedSizeHi, &iDownloadedSizeLo);
-	iDownloadedSizeMB = (int)(pNZBInfo->GetDownloadedSize() / 1024 / 1024);
+	unsigned long downloadedSizeHi, downloadedSizeLo, downloadedSizeMB;
+	Util::SplitInt64(nzbInfo->GetDownloadedSize(), &downloadedSizeHi, &downloadedSizeLo);
+	downloadedSizeMB = (int)(nzbInfo->GetDownloadedSize() / 1024 / 1024);
 
-	int iMessageCount = pNZBInfo->GetMessageCount() > 0 ? pNZBInfo->GetMessageCount() : pNZBInfo->GetCachedMessageCount();
+	int messageCount = nzbInfo->GetMessageCount() > 0 ? nzbInfo->GetMessageCount() : nzbInfo->GetCachedMessageCount();
 
-	char* xmlURL = EncodeStr(pNZBInfo->GetURL());
-	char* xmlNZBFilename = EncodeStr(pNZBInfo->GetFilename());
-	char* xmlNZBNicename = EncodeStr(pNZBInfo->GetName());
-	char* xmlDestDir = EncodeStr(pNZBInfo->GetDestDir());
-	char* xmlFinalDir = EncodeStr(pNZBInfo->GetFinalDir());
-	char* xmlCategory = EncodeStr(pNZBInfo->GetCategory());
-	char* xmlDupeKey = EncodeStr(pNZBInfo->GetDupeKey());
-	const char* szExParStatus = pNZBInfo->GetExtraParBlocks() > 0 ? "RECIPIENT" : pNZBInfo->GetExtraParBlocks() < 0 ? "DONOR" : "NONE";
+	char* xmlURL = EncodeStr(nzbInfo->GetURL());
+	char* xmlNZBFilename = EncodeStr(nzbInfo->GetFilename());
+	char* xmlNZBNicename = EncodeStr(nzbInfo->GetName());
+	char* xmlDestDir = EncodeStr(nzbInfo->GetDestDir());
+	char* xmlFinalDir = EncodeStr(nzbInfo->GetFinalDir());
+	char* xmlCategory = EncodeStr(nzbInfo->GetCategory());
+	char* xmlDupeKey = EncodeStr(nzbInfo->GetDupeKey());
+	const char* exParStatus = nzbInfo->GetExtraParBlocks() > 0 ? "RECIPIENT" : nzbInfo->GetExtraParBlocks() < 0 ? "DONOR" : "NONE";
 	
 	AppendFmtResponse(IsJson() ? JSON_NZB_ITEM_START : XML_NZB_ITEM_START,
-			 pNZBInfo->GetID(), xmlNZBNicename, xmlNZBNicename, szKindName[pNZBInfo->GetKind()],
+			 nzbInfo->GetID(), xmlNZBNicename, xmlNZBNicename, kindName[nzbInfo->GetKind()],
 			 xmlURL, xmlNZBFilename, xmlDestDir, xmlFinalDir, xmlCategory,
-			 szParStatusName[pNZBInfo->GetParStatus()], szExParStatus,
-			 szUnpackStatusName[pNZBInfo->GetUnpackStatus()], szMoveStatusName[pNZBInfo->GetMoveStatus()],
-			 szScriptStatusName[pNZBInfo->GetScriptStatuses()->CalcTotalStatus()],
-			 szDeleteStatusName[pNZBInfo->GetDeleteStatus()], szMarkStatusName[pNZBInfo->GetMarkStatus()],
-			 szUrlStatusName[pNZBInfo->GetUrlStatus()],
-			 iFileSizeLo, iFileSizeHi, iFileSizeMB, pNZBInfo->GetFileCount(),
-			 pNZBInfo->GetMinTime(), pNZBInfo->GetMaxTime(),
-			 pNZBInfo->GetTotalArticles(), pNZBInfo->GetCurrentSuccessArticles(), pNZBInfo->GetCurrentFailedArticles(),
-			 pNZBInfo->CalcHealth(), pNZBInfo->CalcCriticalHealth(false),
-			 xmlDupeKey, pNZBInfo->GetDupeScore(), szDupeModeName[pNZBInfo->GetDupeMode()],
-			 BoolToStr(pNZBInfo->GetDeleteStatus() != NZBInfo::dsNone),
-			 iDownloadedSizeLo, iDownloadedSizeHi, iDownloadedSizeMB, pNZBInfo->GetDownloadSec(), 
-			 pNZBInfo->GetPostInfo() && pNZBInfo->GetPostInfo()->GetStartTime() ? time(NULL) - pNZBInfo->GetPostInfo()->GetStartTime() : pNZBInfo->GetPostTotalSec(),
-			 pNZBInfo->GetParSec(), pNZBInfo->GetRepairSec(), pNZBInfo->GetUnpackSec(), iMessageCount, pNZBInfo->GetExtraParBlocks());
+			 parStatusName[nzbInfo->GetParStatus()], exParStatus,
+			 unpackStatusName[nzbInfo->GetUnpackStatus()], moveStatusName[nzbInfo->GetMoveStatus()],
+			 scriptStatusName[nzbInfo->GetScriptStatuses()->CalcTotalStatus()],
+			 deleteStatusName[nzbInfo->GetDeleteStatus()], markStatusName[nzbInfo->GetMarkStatus()],
+			 urlStatusName[nzbInfo->GetUrlStatus()],
+			 fileSizeLo, fileSizeHi, fileSizeMB, nzbInfo->GetFileCount(),
+			 nzbInfo->GetMinTime(), nzbInfo->GetMaxTime(),
+			 nzbInfo->GetTotalArticles(), nzbInfo->GetCurrentSuccessArticles(), nzbInfo->GetCurrentFailedArticles(),
+			 nzbInfo->CalcHealth(), nzbInfo->CalcCriticalHealth(false),
+			 xmlDupeKey, nzbInfo->GetDupeScore(), dupeModeName[nzbInfo->GetDupeMode()],
+			 BoolToStr(nzbInfo->GetDeleteStatus() != NZBInfo::dsNone),
+			 downloadedSizeLo, downloadedSizeHi, downloadedSizeMB, nzbInfo->GetDownloadSec(), 
+			 nzbInfo->GetPostInfo() && nzbInfo->GetPostInfo()->GetStartTime() ? time(NULL) - nzbInfo->GetPostInfo()->GetStartTime() : nzbInfo->GetPostTotalSec(),
+			 nzbInfo->GetParSec(), nzbInfo->GetRepairSec(), nzbInfo->GetUnpackSec(), messageCount, nzbInfo->GetExtraParBlocks());
 
 	free(xmlURL);
 	free(xmlNZBNicename);
@@ -1842,15 +1842,15 @@ void NzbInfoXmlCommand::AppendNZBInfoFields(NZBInfo* pNZBInfo)
 	free(xmlDupeKey);
 		
 	// Post-processing parameters
-	int iParamIndex = 0;
-	for (NZBParameterList::iterator it = pNZBInfo->GetParameters()->begin(); it != pNZBInfo->GetParameters()->end(); it++)
+	int paramIndex = 0;
+	for (NZBParameterList::iterator it = nzbInfo->GetParameters()->begin(); it != nzbInfo->GetParameters()->end(); it++)
 	{
-		NZBParameter* pParameter = *it;
+		NZBParameter* parameter = *it;
 
-		char* xmlName = EncodeStr(pParameter->GetName());
-		char* xmlValue = EncodeStr(pParameter->GetValue());
+		char* xmlName = EncodeStr(parameter->GetName());
+		char* xmlValue = EncodeStr(parameter->GetValue());
 		
-		AppendCondResponse(",\n", IsJson() && iParamIndex++ > 0);
+		AppendCondResponse(",\n", IsJson() && paramIndex++ > 0);
 		AppendFmtResponse(IsJson() ? JSON_PARAMETER_ITEM : XML_PARAMETER_ITEM, xmlName, xmlValue);
 		
 		free(xmlName);
@@ -1860,15 +1860,15 @@ void NzbInfoXmlCommand::AppendNZBInfoFields(NZBInfo* pNZBInfo)
 	AppendResponse(IsJson() ? JSON_NZB_ITEM_SCRIPT_START : XML_NZB_ITEM_SCRIPT_START);
 	
 	// Script statuses
-	int iScriptIndex = 0;
-	for (ScriptStatusList::iterator it = pNZBInfo->GetScriptStatuses()->begin(); it != pNZBInfo->GetScriptStatuses()->end(); it++)
+	int scriptIndex = 0;
+	for (ScriptStatusList::iterator it = nzbInfo->GetScriptStatuses()->begin(); it != nzbInfo->GetScriptStatuses()->end(); it++)
 	{
-		ScriptStatus* pScriptStatus = *it;
+		ScriptStatus* scriptStatus = *it;
 		
-		char* xmlName = EncodeStr(pScriptStatus->GetName());
-		char* xmlStatus = EncodeStr(szScriptStatusName[pScriptStatus->GetStatus()]);
+		char* xmlName = EncodeStr(scriptStatus->GetName());
+		char* xmlStatus = EncodeStr(scriptStatusName[scriptStatus->GetStatus()]);
 		
-		AppendCondResponse(",\n", IsJson() && iScriptIndex++ > 0);
+		AppendCondResponse(",\n", IsJson() && scriptIndex++ > 0);
 		AppendFmtResponse(IsJson() ? JSON_SCRIPT_ITEM : XML_SCRIPT_ITEM, xmlName, xmlStatus);
 		
 		free(xmlName);
@@ -1878,20 +1878,20 @@ void NzbInfoXmlCommand::AppendNZBInfoFields(NZBInfo* pNZBInfo)
 	AppendResponse(IsJson() ? JSON_NZB_ITEM_STATS_START : XML_NZB_ITEM_STATS_START);
 	
 	// Server stats
-	int iStatIndex = 0;
-	for (ServerStatList::iterator it = pNZBInfo->GetCurrentServerStats()->begin(); it != pNZBInfo->GetCurrentServerStats()->end(); it++)
+	int statIndex = 0;
+	for (ServerStatList::iterator it = nzbInfo->GetCurrentServerStats()->begin(); it != nzbInfo->GetCurrentServerStats()->end(); it++)
 	{
-		ServerStat* pServerStat = *it;
+		ServerStat* serverStat = *it;
 		
-		AppendCondResponse(",\n", IsJson() && iStatIndex++ > 0);
+		AppendCondResponse(",\n", IsJson() && statIndex++ > 0);
 		AppendFmtResponse(IsJson() ? JSON_STAT_ITEM : XML_STAT_ITEM,
-				 pServerStat->GetServerID(), pServerStat->GetSuccessArticles(), pServerStat->GetFailedArticles());
+				 serverStat->GetServerID(), serverStat->GetSuccessArticles(), serverStat->GetFailedArticles());
 	}
 	
 	AppendResponse(IsJson() ? JSON_NZB_ITEM_END : XML_NZB_ITEM_END);
 }
 
-void NzbInfoXmlCommand::AppendPostInfoFields(PostInfo* pPostInfo, int iLogEntries, bool bPostQueue)
+void NzbInfoXmlCommand::AppendPostInfoFields(PostInfo* postInfo, int logEntries, bool postQueue)
 {
 	const char* XML_GROUPQUEUE_ITEM_START = 
 		"<member><name>PostInfoText</name><value><string>%s</string></value></member>\n"
@@ -1944,55 +1944,55 @@ void NzbInfoXmlCommand::AppendPostInfoFields(PostInfo* pPostInfo, int iLogEntrie
 		"\"Text\" : \"%s\"\n"
 		"}";
 	
-	const char* szMessageType[] = { "INFO", "WARNING", "ERROR", "DEBUG", "DETAIL"};
+	const char* messageType[] = { "INFO", "WARNING", "ERROR", "DEBUG", "DETAIL"};
 
-	const char* szItemStart = bPostQueue ? IsJson() ? JSON_POSTQUEUE_ITEM_START : XML_POSTQUEUE_ITEM_START :
+	const char* itemStart = postQueue ? IsJson() ? JSON_POSTQUEUE_ITEM_START : XML_POSTQUEUE_ITEM_START :
 		IsJson() ? JSON_GROUPQUEUE_ITEM_START : XML_GROUPQUEUE_ITEM_START;
 
-	if (pPostInfo)
+	if (postInfo)
 	{
-		time_t tCurTime = time(NULL);
-		char* xmlProgressLabel = EncodeStr(pPostInfo->GetProgressLabel());
+		time_t curTime = time(NULL);
+		char* xmlProgressLabel = EncodeStr(postInfo->GetProgressLabel());
 
-		AppendFmtResponse(szItemStart, xmlProgressLabel, pPostInfo->GetStageProgress(),
-			pPostInfo->GetStageTime() ? tCurTime - pPostInfo->GetStageTime() : 0,
-			pPostInfo->GetStartTime() ? tCurTime - pPostInfo->GetStartTime() : 0);
+		AppendFmtResponse(itemStart, xmlProgressLabel, postInfo->GetStageProgress(),
+			postInfo->GetStageTime() ? curTime - postInfo->GetStageTime() : 0,
+			postInfo->GetStartTime() ? curTime - postInfo->GetStartTime() : 0);
 
 		free(xmlProgressLabel);
 	}
 	else
 	{
-		AppendFmtResponse(szItemStart, "NONE", "", 0, 0, 0, 0);
+		AppendFmtResponse(itemStart, "NONE", "", 0, 0, 0, 0);
 	}
 	
 	AppendResponse(IsJson() ? JSON_LOG_START : XML_LOG_START);
 
-	if (iLogEntries > 0 && pPostInfo)
+	if (logEntries > 0 && postInfo)
 	{
-		MessageList* pMessages = pPostInfo->GetNZBInfo()->LockCachedMessages();
-		if (!pMessages->empty())
+		MessageList* messages = postInfo->GetNZBInfo()->LockCachedMessages();
+		if (!messages->empty())
 		{
-			if (iLogEntries > (int)pMessages->size())
+			if (logEntries > (int)messages->size())
 			{
-				iLogEntries = pMessages->size();
+				logEntries = messages->size();
 			}
-			int iStart = pMessages->size() - iLogEntries;
+			int start = messages->size() - logEntries;
 
 			int index = 0;
-			for (unsigned int i = (unsigned int)iStart; i < pMessages->size(); i++)
+			for (unsigned int i = (unsigned int)start; i < messages->size(); i++)
 			{
-				Message* pMessage = (*pMessages)[i];
+				Message* message = (*messages)[i];
 
-				char* xmltext = EncodeStr(pMessage->GetText());
+				char* xmltext = EncodeStr(message->GetText());
 
 				AppendCondResponse(",\n", IsJson() && index++ > 0);
 				AppendFmtResponse(IsJson() ? JSON_LOG_ITEM : XML_LOG_ITEM,
-					pMessage->GetID(), szMessageType[pMessage->GetKind()], pMessage->GetTime(), xmltext);
+					message->GetID(), messageType[message->GetKind()], message->GetTime(), xmltext);
 
 				free(xmltext);
 			}
 		}
-		pPostInfo->GetNZBInfo()->UnlockCachedMessages();
+		postInfo->GetNZBInfo()->UnlockCachedMessages();
 	}
 
 	AppendResponse(IsJson() ? JSON_POSTQUEUE_ITEM_END : XML_POSTQUEUE_ITEM_END);
@@ -2001,8 +2001,8 @@ void NzbInfoXmlCommand::AppendPostInfoFields(PostInfo* pPostInfo, int iLogEntrie
 // struct[] listgroups(int NumberOfLogEntries)
 void ListGroupsXmlCommand::Execute()
 {
-	int iNrEntries = 0;
-	NextParamAsInt(&iNrEntries);
+	int nrEntries = 0;
+	NextParamAsInt(&nrEntries);
 
 	AppendResponse(IsJson() ? "[\n" : "<array><data>\n");
 
@@ -2048,36 +2048,36 @@ void ListGroupsXmlCommand::Execute()
 
 	int index = 0;
 
-	DownloadQueue* pDownloadQueue = DownloadQueue::Lock();
+	DownloadQueue* downloadQueue = DownloadQueue::Lock();
 
-	for (NZBList::iterator it = pDownloadQueue->GetQueue()->begin(); it != pDownloadQueue->GetQueue()->end(); it++)
+	for (NZBList::iterator it = downloadQueue->GetQueue()->begin(); it != downloadQueue->GetQueue()->end(); it++)
 	{
-		NZBInfo* pNZBInfo = *it;
+		NZBInfo* nzbInfo = *it;
 
-		unsigned long iRemainingSizeLo, iRemainingSizeHi, iRemainingSizeMB;
-		unsigned long iPausedSizeLo, iPausedSizeHi, iPausedSizeMB;
-		Util::SplitInt64(pNZBInfo->GetRemainingSize(), &iRemainingSizeHi, &iRemainingSizeLo);
-		iRemainingSizeMB = (int)(pNZBInfo->GetRemainingSize() / 1024 / 1024);
-		Util::SplitInt64(pNZBInfo->GetPausedSize(), &iPausedSizeHi, &iPausedSizeLo);
-		iPausedSizeMB = (int)(pNZBInfo->GetPausedSize() / 1024 / 1024);
-		const char* szStatus = DetectStatus(pNZBInfo);
+		unsigned long remainingSizeLo, remainingSizeHi, remainingSizeMB;
+		unsigned long pausedSizeLo, pausedSizeHi, pausedSizeMB;
+		Util::SplitInt64(nzbInfo->GetRemainingSize(), &remainingSizeHi, &remainingSizeLo);
+		remainingSizeMB = (int)(nzbInfo->GetRemainingSize() / 1024 / 1024);
+		Util::SplitInt64(nzbInfo->GetPausedSize(), &pausedSizeHi, &pausedSizeLo);
+		pausedSizeMB = (int)(nzbInfo->GetPausedSize() / 1024 / 1024);
+		const char* status = DetectStatus(nzbInfo);
 
 		AppendCondResponse(",\n", IsJson() && index++ > 0);
 		AppendFmtResponse(IsJson() ? JSON_LIST_ITEM_START : XML_LIST_ITEM_START,
-			pNZBInfo->GetID(), pNZBInfo->GetID(), iRemainingSizeLo, iRemainingSizeHi, iRemainingSizeMB,
-			iPausedSizeLo, iPausedSizeHi, iPausedSizeMB, (int)pNZBInfo->GetFileList()->size(),
-			pNZBInfo->GetRemainingParCount(), pNZBInfo->GetPriority(), pNZBInfo->GetPriority(),
-			pNZBInfo->GetActiveDownloads(), szStatus);
+			nzbInfo->GetID(), nzbInfo->GetID(), remainingSizeLo, remainingSizeHi, remainingSizeMB,
+			pausedSizeLo, pausedSizeHi, pausedSizeMB, (int)nzbInfo->GetFileList()->size(),
+			nzbInfo->GetRemainingParCount(), nzbInfo->GetPriority(), nzbInfo->GetPriority(),
+			nzbInfo->GetActiveDownloads(), status);
 
-		AppendNZBInfoFields(pNZBInfo);
+		AppendNZBInfoFields(nzbInfo);
 		AppendCondResponse(",\n", IsJson());
-		AppendPostInfoFields(pNZBInfo->GetPostInfo(), iNrEntries, false);
+		AppendPostInfoFields(nzbInfo->GetPostInfo(), nrEntries, false);
 
 		AppendResponse(IsJson() ? JSON_LIST_ITEM_END : XML_LIST_ITEM_END);
 
-		if (it == pDownloadQueue->GetQueue()->begin())
+		if (it == downloadQueue->GetQueue()->begin())
 		{
-			OptimizeResponse(pDownloadQueue->GetQueue()->size());
+			OptimizeResponse(downloadQueue->GetQueue()->size());
 		}
 	}
 
@@ -2086,45 +2086,45 @@ void ListGroupsXmlCommand::Execute()
 	AppendResponse(IsJson() ? "\n]" : "</data></array>\n");
 }
 
-const char* ListGroupsXmlCommand::DetectStatus(NZBInfo* pNZBInfo)
+const char* ListGroupsXmlCommand::DetectStatus(NZBInfo* nzbInfo)
 {
-    const char* szPostStageName[] = { "PP_QUEUED", "LOADING_PARS", "VERIFYING_SOURCES", "REPAIRING", "VERIFYING_REPAIRED", "RENAMING", "UNPACKING", "MOVING", "EXECUTING_SCRIPT", "PP_FINISHED" };
+    const char* postStageName[] = { "PP_QUEUED", "LOADING_PARS", "VERIFYING_SOURCES", "REPAIRING", "VERIFYING_REPAIRED", "RENAMING", "UNPACKING", "MOVING", "EXECUTING_SCRIPT", "PP_FINISHED" };
 
-	const char* szStatus = NULL;
+	const char* status = NULL;
 
-	if (pNZBInfo->GetPostInfo())
+	if (nzbInfo->GetPostInfo())
 	{
-		bool bQueueScriptActive = false;
-		if (pNZBInfo->GetPostInfo()->GetStage() == PostInfo::ptQueued &&
-			g_pQueueScriptCoordinator->HasJob(pNZBInfo->GetID(), &bQueueScriptActive))
+		bool queueScriptActive = false;
+		if (nzbInfo->GetPostInfo()->GetStage() == PostInfo::ptQueued &&
+			g_pQueueScriptCoordinator->HasJob(nzbInfo->GetID(), &queueScriptActive))
 		{
-			szStatus = bQueueScriptActive ? "QS_EXECUTING" : "QS_QUEUED";
+			status = queueScriptActive ? "QS_EXECUTING" : "QS_QUEUED";
 		}
 		else
 		{
-			szStatus = szPostStageName[pNZBInfo->GetPostInfo()->GetStage()];
+			status = postStageName[nzbInfo->GetPostInfo()->GetStage()];
 		}
 	}
-	else if (pNZBInfo->GetActiveDownloads() > 0)
+	else if (nzbInfo->GetActiveDownloads() > 0)
 	{
-		szStatus = pNZBInfo->GetKind() == NZBInfo::nkUrl ? "FETCHING" : "DOWNLOADING";
+		status = nzbInfo->GetKind() == NZBInfo::nkUrl ? "FETCHING" : "DOWNLOADING";
 	}
-	else if ((pNZBInfo->GetPausedSize() > 0) && (pNZBInfo->GetRemainingSize() == pNZBInfo->GetPausedSize()))
+	else if ((nzbInfo->GetPausedSize() > 0) && (nzbInfo->GetRemainingSize() == nzbInfo->GetPausedSize()))
 	{
-		szStatus = "PAUSED";
+		status = "PAUSED";
 	}
 	else
 	{
-		szStatus = "QUEUED";
+		status = "QUEUED";
 	}
 
-	return szStatus;
+	return status;
 }
 
 typedef struct 
 {
-	int				iActionID;
-	const char*		szActionName;
+	int				actionId;
+	const char*		actionName;
 } EditCommandEntry;
 
 EditCommandEntry EditCommandNameMap[] = { 
@@ -2184,59 +2184,59 @@ void EditQueueXmlCommand::Execute()
 		return;
 	}
 
-	char* szEditCommand;
-	if (!NextParamAsStr(&szEditCommand))
+	char* editCommand;
+	if (!NextParamAsStr(&editCommand))
 	{
 		BuildErrorResponse(2, "Invalid parameter");
 		return;
 	}
-	debug("EditCommand=%s", szEditCommand);
+	debug("EditCommand=%s", editCommand);
 
-	int iAction = -1;
-	for (int i = 0; const char* szName = EditCommandNameMap[i].szActionName; i++)
+	int action = -1;
+	for (int i = 0; const char* name = EditCommandNameMap[i].actionName; i++)
 	{
-		if (!strcasecmp(szEditCommand, szName))
+		if (!strcasecmp(editCommand, name))
 		{
-			iAction = EditCommandNameMap[i].iActionID;
+			action = EditCommandNameMap[i].actionId;
 			break;
 		}
 	}
 
-	if (iAction == -1)
+	if (action == -1)
 	{
 		BuildErrorResponse(3, "Invalid action");
 		return;
 	}
 
-	int iOffset = 0;
-	if (!NextParamAsInt(&iOffset))
+	int offset = 0;
+	if (!NextParamAsInt(&offset))
 	{
 		BuildErrorResponse(2, "Invalid parameter");
 		return;
 	}
 
-	char* szEditText;
-	if (!NextParamAsStr(&szEditText))
+	char* editText;
+	if (!NextParamAsStr(&editText))
 	{
 		BuildErrorResponse(2, "Invalid parameter");
 		return;
 	}
-	debug("EditText=%s", szEditText);
+	debug("EditText=%s", editText);
 
-	DecodeStr(szEditText);
+	DecodeStr(editText);
 
 	IDList cIDList;
-	int iID = 0;
-	while (NextParamAsInt(&iID))
+	int id = 0;
+	while (NextParamAsInt(&id))
 	{
-		cIDList.push_back(iID);
+		cIDList.push_back(id);
 	}
 
-	DownloadQueue* pDownloadQueue = DownloadQueue::Lock();
-	bool bOK = pDownloadQueue->EditList(&cIDList, NULL, DownloadQueue::mmID, (DownloadQueue::EEditAction)iAction, iOffset, szEditText);
+	DownloadQueue* downloadQueue = DownloadQueue::Lock();
+	bool ok = downloadQueue->EditList(&cIDList, NULL, DownloadQueue::mmID, (DownloadQueue::EEditAction)action, offset, editText);
 	DownloadQueue::Unlock();
 
-	BuildBoolResponse(bOK);
+	BuildBoolResponse(ok);
 }
 
 // v16:
@@ -2252,129 +2252,129 @@ void DownloadXmlCommand::Execute()
 		return;
 	}
 
-	bool bV13 = true;
+	bool v13 = true;
 
-	char* szNZBFilename;
-	if (!NextParamAsStr(&szNZBFilename))
+	char* nzbFilename;
+	if (!NextParamAsStr(&nzbFilename))
 	{
 		BuildErrorResponse(2, "Invalid parameter (NZBFileName)");
 		return;
 	}
 
-	char* szNZBContent;
-	if (!NextParamAsStr(&szNZBContent))
+	char* nzbContent;
+	if (!NextParamAsStr(&nzbContent))
 	{
 		BuildErrorResponse(2, "Invalid parameter (NZBContent)");
 		return;
 	}
 
-	char* szCategory;
-	if (!NextParamAsStr(&szCategory))
+	char* category;
+	if (!NextParamAsStr(&category))
 	{
-		bV13 = false;
-		szCategory = szNZBContent;
+		v13 = false;
+		category = nzbContent;
 	}
 
-	DecodeStr(szNZBFilename);
-	DecodeStr(szCategory);
+	DecodeStr(nzbFilename);
+	DecodeStr(category);
 
-	debug("FileName=%s", szNZBFilename);
+	debug("FileName=%s", nzbFilename);
 
 	// For backward compatibility with 0.8 parameter "Priority" is optional (error checking omitted)
-	int iPriority = 0;
-	NextParamAsInt(&iPriority);
+	int priority = 0;
+	NextParamAsInt(&priority);
 
-	bool bAddTop;
-	if (!NextParamAsBool(&bAddTop))
+	bool addTop;
+	if (!NextParamAsBool(&addTop))
 	{
 		BuildErrorResponse(2, "Invalid parameter (AddTop)");
 		return;
 	}
 
-	if (!bV13 && !NextParamAsStr(&szNZBContent))
+	if (!v13 && !NextParamAsStr(&nzbContent))
 	{
 		BuildErrorResponse(2, "Invalid parameter (FileContent)");
 		return;
 	}
-	DecodeStr(szNZBContent);
+	DecodeStr(nzbContent);
 
-	bool bAddPaused = false;
-	char* szDupeKey = NULL;
-	int iDupeScore = 0;
-	EDupeMode eDupeMode = dmScore;
-	if (NextParamAsBool(&bAddPaused))
+	bool addPaused = false;
+	char* dupeKey = NULL;
+	int dupeScore = 0;
+	EDupeMode dupeMode = dmScore;
+	if (NextParamAsBool(&addPaused))
 	{
-		if (!NextParamAsStr(&szDupeKey))
+		if (!NextParamAsStr(&dupeKey))
 		{
 			BuildErrorResponse(2, "Invalid parameter (DupeKey)");
 			return;
 		}
-		DecodeStr(szDupeKey);
-		if (!NextParamAsInt(&iDupeScore))
+		DecodeStr(dupeKey);
+		if (!NextParamAsInt(&dupeScore))
 		{
 			BuildErrorResponse(2, "Invalid parameter (DupeScore)");
 			return;
 		}
-		char* szDupeMode = NULL;
-		if (!NextParamAsStr(&szDupeMode) ||
-			(strcasecmp(szDupeMode, "score") && strcasecmp(szDupeMode, "all") && strcasecmp(szDupeMode, "force")))
+		char* dupeModeStr = NULL;
+		if (!NextParamAsStr(&dupeModeStr) ||
+			(strcasecmp(dupeModeStr, "score") && strcasecmp(dupeModeStr, "all") && strcasecmp(dupeModeStr, "force")))
 		{
 			BuildErrorResponse(2, "Invalid parameter (DupeMode)");
 			return;
 		}
-		eDupeMode = !strcasecmp(szDupeMode, "all") ? dmAll :
-			!strcasecmp(szDupeMode, "force") ? dmForce : dmScore;
+		dupeMode = !strcasecmp(dupeModeStr, "all") ? dmAll :
+			!strcasecmp(dupeModeStr, "force") ? dmForce : dmScore;
 	}
-	else if (bV13)
+	else if (v13)
 	{
 		BuildErrorResponse(2, "Invalid parameter (AddPaused)");
 		return;
 	}
 
 	NZBParameterList Params;
-	if (bV13)
+	if (v13)
 	{
-		char* szParamName = NULL;
-		char* szParamValue = NULL;
-		while (NextParamAsStr(&szParamName))
+		char* paramName = NULL;
+		char* paramValue = NULL;
+		while (NextParamAsStr(&paramName))
 		{
-			if (!NextParamAsStr(&szParamValue))
+			if (!NextParamAsStr(&paramValue))
 			{
 				BuildErrorResponse(2, "Invalid parameter (Parameters)");
 				return;
 			}
-			Params.SetParameter(szParamName, szParamValue);
+			Params.SetParameter(paramName, paramValue);
 		}
 	}
 
-	if (!strncasecmp(szNZBContent, "http://", 6) || !strncasecmp(szNZBContent, "https://", 7))
+	if (!strncasecmp(nzbContent, "http://", 6) || !strncasecmp(nzbContent, "https://", 7))
 	{
 		// add url
-		NZBInfo* pNZBInfo = new NZBInfo();
-		pNZBInfo->SetKind(NZBInfo::nkUrl);
-		pNZBInfo->SetURL(szNZBContent);
-		pNZBInfo->SetFilename(szNZBFilename);
-		pNZBInfo->SetCategory(szCategory);
-		pNZBInfo->SetPriority(iPriority);
-		pNZBInfo->SetAddUrlPaused(bAddPaused);
-		pNZBInfo->SetDupeKey(szDupeKey ? szDupeKey : "");
-		pNZBInfo->SetDupeScore(iDupeScore);
-		pNZBInfo->SetDupeMode(eDupeMode);
-		pNZBInfo->GetParameters()->CopyFrom(&Params);
-		int iNZBID = pNZBInfo->GetID();
+		NZBInfo* nzbInfo = new NZBInfo();
+		nzbInfo->SetKind(NZBInfo::nkUrl);
+		nzbInfo->SetURL(nzbContent);
+		nzbInfo->SetFilename(nzbFilename);
+		nzbInfo->SetCategory(category);
+		nzbInfo->SetPriority(priority);
+		nzbInfo->SetAddUrlPaused(addPaused);
+		nzbInfo->SetDupeKey(dupeKey ? dupeKey : "");
+		nzbInfo->SetDupeScore(dupeScore);
+		nzbInfo->SetDupeMode(dupeMode);
+		nzbInfo->GetParameters()->CopyFrom(&Params);
+		int nzbId = nzbInfo->GetID();
 
-		char szNicename[1024];
-		pNZBInfo->MakeNiceUrlName(szNZBContent, szNZBFilename, szNicename, sizeof(szNicename));
-		info("Queue %s", szNicename);
+		char nicename[1024];
+		nzbInfo->MakeNiceUrlName(nzbContent, nzbFilename, nicename, sizeof(nicename));
+		info("Queue %s", nicename);
 
-		DownloadQueue* pDownloadQueue = DownloadQueue::Lock();
-		pDownloadQueue->GetQueue()->Add(pNZBInfo, bAddTop);
-		pDownloadQueue->Save();
+		DownloadQueue* downloadQueue = DownloadQueue::Lock();
+		downloadQueue->GetQueue()->Add(nzbInfo, addTop);
+		downloadQueue->Save();
 		DownloadQueue::Unlock();
 
-		if (bV13)
+		if (v13)
 		{
-			BuildIntResponse(iNZBID);
+			BuildIntResponse(nzbId);
 		}
 		else
 		{
@@ -2384,22 +2384,22 @@ void DownloadXmlCommand::Execute()
 	else
 	{
 		// add file content
-		int iLen = WebUtil::DecodeBase64(szNZBContent, 0, szNZBContent);
-		szNZBContent[iLen] = '\0';
+		int len = WebUtil::DecodeBase64(nzbContent, 0, nzbContent);
+		nzbContent[len] = '\0';
 		//debug("FileContent=%s", szFileContent);
 
-		int iNZBID = -1;
-		g_pScanner->AddExternalFile(szNZBFilename, szCategory, iPriority,
-			szDupeKey, iDupeScore, eDupeMode, Params.empty() ? NULL : &Params, bAddTop, bAddPaused, NULL,
-			NULL, szNZBContent, iLen, &iNZBID);
+		int nzbId = -1;
+		g_pScanner->AddExternalFile(nzbFilename, category, priority,
+			dupeKey, dupeScore, dupeMode, Params.empty() ? NULL : &Params, addTop, addPaused, NULL,
+			NULL, nzbContent, len, &nzbId);
 
-		if (bV13)
+		if (v13)
 		{
-			BuildIntResponse(iNZBID);
+			BuildIntResponse(nzbId);
 		}
 		else
 		{
-			BuildBoolResponse(iNZBID > 0);
+			BuildBoolResponse(nzbId > 0);
 		}
 	}
 }
@@ -2407,8 +2407,8 @@ void DownloadXmlCommand::Execute()
 // deprecated
 void PostQueueXmlCommand::Execute()
 {
-	int iNrEntries = 0;
-	NextParamAsInt(&iNrEntries);
+	int nrEntries = 0;
+	NextParamAsInt(&nrEntries);
 
 	AppendResponse(IsJson() ? "[\n" : "<array><data>\n");
 
@@ -2434,32 +2434,32 @@ void PostQueueXmlCommand::Execute()
 	const char* JSON_POSTQUEUE_ITEM_END =
 		"}";
 
-    const char* szPostStageName[] = { "QUEUED", "LOADING_PARS", "VERIFYING_SOURCES", "REPAIRING", "VERIFYING_REPAIRED", "RENAMING", "UNPACKING", "MOVING", "EXECUTING_SCRIPT", "FINISHED" };
+    const char* postStageName[] = { "QUEUED", "LOADING_PARS", "VERIFYING_SOURCES", "REPAIRING", "VERIFYING_REPAIRED", "RENAMING", "UNPACKING", "MOVING", "EXECUTING_SCRIPT", "FINISHED" };
 
-	NZBList* pNZBList = DownloadQueue::Lock()->GetQueue();
+	NZBList* nzbList = DownloadQueue::Lock()->GetQueue();
 
 	int index = 0;
 
-	for (NZBList::iterator it = pNZBList->begin(); it != pNZBList->end(); it++)
+	for (NZBList::iterator it = nzbList->begin(); it != nzbList->end(); it++)
 	{
-		NZBInfo* pNZBInfo = *it;
-		PostInfo* pPostInfo = pNZBInfo->GetPostInfo();
-		if (!pPostInfo)
+		NZBInfo* nzbInfo = *it;
+		PostInfo* postInfo = nzbInfo->GetPostInfo();
+		if (!postInfo)
 		{
 			continue;
 		}
 
-		char* xmlInfoName = EncodeStr(pPostInfo->GetNZBInfo()->GetName());
+		char* xmlInfoName = EncodeStr(postInfo->GetNZBInfo()->GetName());
 
 		AppendCondResponse(",\n", IsJson() && index++ > 0);
 		AppendFmtResponse(IsJson() ? JSON_POSTQUEUE_ITEM_START : XML_POSTQUEUE_ITEM_START,
-			pNZBInfo->GetID(), xmlInfoName, szPostStageName[pPostInfo->GetStage()], pPostInfo->GetFileProgress());
+			nzbInfo->GetID(), xmlInfoName, postStageName[postInfo->GetStage()], postInfo->GetFileProgress());
 
 		free(xmlInfoName);
 
-		AppendNZBInfoFields(pPostInfo->GetNZBInfo());
+		AppendNZBInfoFields(postInfo->GetNZBInfo());
 		AppendCondResponse(",\n", IsJson());
-		AppendPostInfoFields(pPostInfo, iNrEntries, true);
+		AppendPostInfoFields(postInfo, nrEntries, true);
 
 		AppendResponse(IsJson() ? JSON_POSTQUEUE_ITEM_END : XML_POSTQUEUE_ITEM_END);
 	}
@@ -2476,37 +2476,37 @@ void WriteLogXmlCommand::Execute()
 		return;
 	}
 
-	char* szKind;
-	char* szText;
-	if (!NextParamAsStr(&szKind) || !NextParamAsStr(&szText))
+	char* kind;
+	char* text;
+	if (!NextParamAsStr(&kind) || !NextParamAsStr(&text))
 	{
 		BuildErrorResponse(2, "Invalid parameter");
 		return;
 	}
 
-	DecodeStr(szText);
+	DecodeStr(text);
 
-	debug("Kind=%s, Text=%s", szKind, szText);
+	debug("Kind=%s, Text=%s", kind, text);
 
-	if (!strcmp(szKind, "INFO"))
+	if (!strcmp(kind, "INFO"))
 	{
-		info(szText);
+		info(text);
 	}
-	else if (!strcmp(szKind, "WARNING"))
+	else if (!strcmp(kind, "WARNING"))
 	{
-		warn(szText);
+		warn(text);
 	}
-	else if (!strcmp(szKind, "ERROR"))
+	else if (!strcmp(kind, "ERROR"))
 	{
-		error(szText);
+		error(text);
 	}
-	else if (!strcmp(szKind, "DETAIL"))
+	else if (!strcmp(kind, "DETAIL"))
 	{
-		detail(szText);
+		detail(text);
 	}
-	else if (!strcmp(szKind, "DEBUG"))
+	else if (!strcmp(kind, "DEBUG"))
 	{
-		debug(szText);
+		debug(text);
 	} 
 	else
 	{
@@ -2536,11 +2536,11 @@ void ScanXmlCommand::Execute()
 		return;
 	}
 
-	bool bSyncMode = false;
+	bool syncMode = false;
 	// optional parameter "SyncMode"
-	NextParamAsBool(&bSyncMode);
+	NextParamAsBool(&syncMode);
 
-	g_pScanner->ScanNZBDir(bSyncMode);
+	g_pScanner->ScanNZBDir(syncMode);
 	BuildBoolResponse(true);
 }
 
@@ -2606,74 +2606,74 @@ void HistoryXmlCommand::Execute()
 		"\"DupStatus\" : \"%s\",\n"
 		"\"Status\" : \"%s\"\n";
 
-	const char* szDupStatusName[] = { "UNKNOWN", "SUCCESS", "FAILURE", "DELETED", "DUPE", "BAD", "GOOD" };
-    const char* szDupeModeName[] = { "SCORE", "ALL", "FORCE" };
+	const char* dupStatusName[] = { "UNKNOWN", "SUCCESS", "FAILURE", "DELETED", "DUPE", "BAD", "GOOD" };
+    const char* dupeModeName[] = { "SCORE", "ALL", "FORCE" };
 
-	bool bDup = false;
-	NextParamAsBool(&bDup);
+	bool dup = false;
+	NextParamAsBool(&dup);
 
-	DownloadQueue* pDownloadQueue = DownloadQueue::Lock();
+	DownloadQueue* downloadQueue = DownloadQueue::Lock();
 
 	int index = 0;
 
-	for (HistoryList::iterator it = pDownloadQueue->GetHistory()->begin(); it != pDownloadQueue->GetHistory()->end(); it++)
+	for (HistoryList::iterator it = downloadQueue->GetHistory()->begin(); it != downloadQueue->GetHistory()->end(); it++)
 	{
-		HistoryInfo* pHistoryInfo = *it;
+		HistoryInfo* historyInfo = *it;
 
-		if (pHistoryInfo->GetKind() == HistoryInfo::hkDup && !bDup)
+		if (historyInfo->GetKind() == HistoryInfo::hkDup && !dup)
 		{
 			continue;
 		}
 
-		NZBInfo* pNZBInfo = NULL;
-		char szNicename[1024];
-		pHistoryInfo->GetName(szNicename, sizeof(szNicename));
+		NZBInfo* nzbInfo = NULL;
+		char nicename[1024];
+		historyInfo->GetName(nicename, sizeof(nicename));
 
-		char *xmlNicename = EncodeStr(szNicename);
-		const char* szStatus = DetectStatus(pHistoryInfo);
+		char *xmlNicename = EncodeStr(nicename);
+		const char* status = DetectStatus(historyInfo);
 
 		AppendCondResponse(",\n", IsJson() && index++ > 0);
 
-		if (pHistoryInfo->GetKind() == HistoryInfo::hkNzb ||
-			pHistoryInfo->GetKind() == HistoryInfo::hkUrl)
+		if (historyInfo->GetKind() == HistoryInfo::hkNzb ||
+			historyInfo->GetKind() == HistoryInfo::hkUrl)
 		{
-			pNZBInfo = pHistoryInfo->GetNZBInfo();
+			nzbInfo = historyInfo->GetNZBInfo();
 
 			AppendFmtResponse(IsJson() ? JSON_HISTORY_ITEM_START : XML_HISTORY_ITEM_START,
-				pHistoryInfo->GetID(), xmlNicename, pNZBInfo->GetParkedFileCount(),
-				pHistoryInfo->GetTime(), szStatus);
+				historyInfo->GetID(), xmlNicename, nzbInfo->GetParkedFileCount(),
+				historyInfo->GetTime(), status);
 		}
-		else if (pHistoryInfo->GetKind() == HistoryInfo::hkDup)
+		else if (historyInfo->GetKind() == HistoryInfo::hkDup)
 		{
-			DupInfo* pDupInfo = pHistoryInfo->GetDupInfo();
+			DupInfo* dupInfo = historyInfo->GetDupInfo();
 
-			unsigned long iFileSizeHi, iFileSizeLo, iFileSizeMB;
-			Util::SplitInt64(pDupInfo->GetSize(), &iFileSizeHi, &iFileSizeLo);
-			iFileSizeMB = (int)(pDupInfo->GetSize() / 1024 / 1024);
+			unsigned long fileSizeHi, fileSizeLo, fileSizeMB;
+			Util::SplitInt64(dupInfo->GetSize(), &fileSizeHi, &fileSizeLo);
+			fileSizeMB = (int)(dupInfo->GetSize() / 1024 / 1024);
 
-			char* xmlDupeKey = EncodeStr(pDupInfo->GetDupeKey());
+			char* xmlDupeKey = EncodeStr(dupInfo->GetDupeKey());
 
 			AppendFmtResponse(IsJson() ? JSON_HISTORY_DUP_ITEM : XML_HISTORY_DUP_ITEM,
-				pHistoryInfo->GetID(), pHistoryInfo->GetID(), "DUP", xmlNicename, pHistoryInfo->GetTime(),
-				iFileSizeLo, iFileSizeHi, iFileSizeMB, xmlDupeKey, pDupInfo->GetDupeScore(),
-				szDupeModeName[pDupInfo->GetDupeMode()], szDupStatusName[pDupInfo->GetStatus()],
-				szStatus);
+				historyInfo->GetID(), historyInfo->GetID(), "DUP", xmlNicename, historyInfo->GetTime(),
+				fileSizeLo, fileSizeHi, fileSizeMB, xmlDupeKey, dupInfo->GetDupeScore(),
+				dupeModeName[dupInfo->GetDupeMode()], dupStatusName[dupInfo->GetStatus()],
+				status);
 
 			free(xmlDupeKey);
 		}
 
 		free(xmlNicename);
 
-		if (pNZBInfo)
+		if (nzbInfo)
 		{
-			AppendNZBInfoFields(pNZBInfo);
+			AppendNZBInfoFields(nzbInfo);
 		}
 		
 		AppendResponse(IsJson() ? JSON_HISTORY_ITEM_END : XML_HISTORY_ITEM_END);
 
-		if (it == pDownloadQueue->GetHistory()->begin())
+		if (it == downloadQueue->GetHistory()->begin())
 		{
-			OptimizeResponse(pDownloadQueue->GetHistory()->size());
+			OptimizeResponse(downloadQueue->GetHistory()->size());
 		}
 	}
 
@@ -2682,24 +2682,24 @@ void HistoryXmlCommand::Execute()
 	DownloadQueue::Unlock();
 }
 
-const char* HistoryXmlCommand::DetectStatus(HistoryInfo* pHistoryInfo)
+const char* HistoryXmlCommand::DetectStatus(HistoryInfo* historyInfo)
 {
-	const char* szStatus = "FAILURE/INTERNAL_ERROR";
+	const char* status = "FAILURE/INTERNAL_ERROR";
 
-	if (pHistoryInfo->GetKind() == HistoryInfo::hkNzb || pHistoryInfo->GetKind() == HistoryInfo::hkUrl)
+	if (historyInfo->GetKind() == HistoryInfo::hkNzb || historyInfo->GetKind() == HistoryInfo::hkUrl)
 	{
-		NZBInfo* pNZBInfo = pHistoryInfo->GetNZBInfo();
-		szStatus = pNZBInfo->MakeTextStatus(false);
+		NZBInfo* nzbInfo = historyInfo->GetNZBInfo();
+		status = nzbInfo->MakeTextStatus(false);
 	}
-	else if (pHistoryInfo->GetKind() == HistoryInfo::hkDup)
+	else if (historyInfo->GetKind() == HistoryInfo::hkDup)
 	{
-		DupInfo* pDupInfo = pHistoryInfo->GetDupInfo();
-		const char* szDupStatusName[] = { "FAILURE/INTERNAL_ERROR", "SUCCESS/HIDDEN", "FAILURE/HIDDEN",
+		DupInfo* dupInfo = historyInfo->GetDupInfo();
+		const char* dupStatusName[] = { "FAILURE/INTERNAL_ERROR", "SUCCESS/HIDDEN", "FAILURE/HIDDEN",
 			"DELETED/MANUAL", "DELETED/DUPE", "FAILURE/BAD", "SUCCESS/GOOD" };
-		szStatus = szDupStatusName[pDupInfo->GetStatus()];
+		status = dupStatusName[dupInfo->GetStatus()];
 	}
 
-	return szStatus;
+	return status;
 }
 
 // Deprecated in v13
@@ -2727,24 +2727,24 @@ void UrlQueueXmlCommand::Execute()
 		"\"Priority\" : %i\n"
 		"}";
 
-	DownloadQueue* pDownloadQueue = DownloadQueue::Lock();
+	DownloadQueue* downloadQueue = DownloadQueue::Lock();
 
 	int index = 0;
 
-	for (NZBList::iterator it = pDownloadQueue->GetQueue()->begin(); it != pDownloadQueue->GetQueue()->end(); it++)
+	for (NZBList::iterator it = downloadQueue->GetQueue()->begin(); it != downloadQueue->GetQueue()->end(); it++)
 	{
-		NZBInfo* pNZBInfo = *it;
+		NZBInfo* nzbInfo = *it;
 
-		if (pNZBInfo->GetKind() == NZBInfo::nkUrl)
+		if (nzbInfo->GetKind() == NZBInfo::nkUrl)
 		{
-			char* xmlNicename = EncodeStr(pNZBInfo->GetName());
-			char* xmlNZBFilename = EncodeStr(pNZBInfo->GetFilename());
-			char* xmlURL = EncodeStr(pNZBInfo->GetURL());
-			char* xmlCategory = EncodeStr(pNZBInfo->GetCategory());
+			char* xmlNicename = EncodeStr(nzbInfo->GetName());
+			char* xmlNZBFilename = EncodeStr(nzbInfo->GetFilename());
+			char* xmlURL = EncodeStr(nzbInfo->GetURL());
+			char* xmlCategory = EncodeStr(nzbInfo->GetCategory());
 
 			AppendCondResponse(",\n", IsJson() && index++ > 0);
 			AppendFmtResponse(IsJson() ? JSON_URLQUEUE_ITEM : XML_URLQUEUE_ITEM,
-				pNZBInfo->GetID(), xmlNZBFilename, xmlURL, xmlNicename, xmlCategory, pNZBInfo->GetPriority());
+				nzbInfo->GetID(), xmlNZBFilename, xmlURL, xmlNicename, xmlCategory, nzbInfo->GetPriority());
 
 			free(xmlNicename);
 			free(xmlNZBFilename);
@@ -2777,15 +2777,15 @@ void ConfigXmlCommand::Execute()
 
 	int index = 0;
 
-	Options::OptEntries* pOptEntries = g_pOptions->LockOptEntries();
+	Options::OptEntries* optEntries = g_pOptions->LockOptEntries();
 
-	for (Options::OptEntries::iterator it = pOptEntries->begin(); it != pOptEntries->end(); it++)
+	for (Options::OptEntries::iterator it = optEntries->begin(); it != optEntries->end(); it++)
 	{
-		Options::OptEntry* pOptEntry = *it;
+		Options::OptEntry* optEntry = *it;
 
-		char* xmlName = EncodeStr(pOptEntry->GetName());
-		char* xmlValue = EncodeStr(m_eUserAccess == XmlRpcProcessor::uaRestricted &&
-			pOptEntry->Restricted() ? "***" : pOptEntry->GetValue());
+		char* xmlName = EncodeStr(optEntry->GetName());
+		char* xmlValue = EncodeStr(m_userAccess == XmlRpcProcessor::uaRestricted &&
+			optEntry->Restricted() ? "***" : optEntry->GetValue());
 
 		AppendCondResponse(",\n", IsJson() && index++ > 0);
 		AppendFmtResponse(IsJson() ? JSON_CONFIG_ITEM : XML_CONFIG_ITEM, xmlName, xmlValue);
@@ -2814,11 +2814,11 @@ void LoadConfigXmlCommand::Execute()
 		"\"Value\" : \"%s\"\n"
 		"}";
 
-	Options::OptEntries* pOptEntries = new Options::OptEntries();
-	if (!g_pScriptConfig->LoadConfig(pOptEntries))
+	Options::OptEntries* optEntries = new Options::OptEntries();
+	if (!g_pScriptConfig->LoadConfig(optEntries))
 	{
 		BuildErrorResponse(3, "Could not read configuration file");
-		delete pOptEntries;
+		delete optEntries;
 		return;
 	}
 
@@ -2826,13 +2826,13 @@ void LoadConfigXmlCommand::Execute()
 
 	int index = 0;
 
-	for (Options::OptEntries::iterator it = pOptEntries->begin(); it != pOptEntries->end(); it++)
+	for (Options::OptEntries::iterator it = optEntries->begin(); it != optEntries->end(); it++)
 	{
-		Options::OptEntry* pOptEntry = *it;
+		Options::OptEntry* optEntry = *it;
 
-		char* xmlName = EncodeStr(pOptEntry->GetName());
-		char* xmlValue = EncodeStr(m_eUserAccess == XmlRpcProcessor::uaRestricted &&
-			pOptEntry->Restricted() ? "***" : pOptEntry->GetValue());
+		char* xmlName = EncodeStr(optEntry->GetName());
+		char* xmlValue = EncodeStr(m_userAccess == XmlRpcProcessor::uaRestricted &&
+			optEntry->Restricted() ? "***" : optEntry->GetValue());
 
 		AppendCondResponse(",\n", IsJson() && index++ > 0);
 		AppendFmtResponse(IsJson() ? JSON_CONFIG_ITEM : XML_CONFIG_ITEM, xmlName, xmlValue);
@@ -2841,7 +2841,7 @@ void LoadConfigXmlCommand::Execute()
 		free(xmlValue);
 	}
 
-	delete pOptEntries;
+	delete optEntries;
 
 	AppendResponse(IsJson() ? "\n]" : "</data></array>\n");
 }
@@ -2849,26 +2849,26 @@ void LoadConfigXmlCommand::Execute()
 // bool saveconfig(struct[] data)
 void SaveConfigXmlCommand::Execute()
 {
-	Options::OptEntries* pOptEntries = new Options::OptEntries();
+	Options::OptEntries* optEntries = new Options::OptEntries();
 
-	char* szName;
-	char* szValue;
-	char* szDummy;
-	while ((IsJson() && NextParamAsStr(&szDummy) && NextParamAsStr(&szName) &&
-			NextParamAsStr(&szDummy) && NextParamAsStr(&szValue)) ||
-		   (!IsJson() && NextParamAsStr(&szName) && NextParamAsStr(&szValue)))
+	char* name;
+	char* value;
+	char* dummy;
+	while ((IsJson() && NextParamAsStr(&dummy) && NextParamAsStr(&name) &&
+			NextParamAsStr(&dummy) && NextParamAsStr(&value)) ||
+		   (!IsJson() && NextParamAsStr(&name) && NextParamAsStr(&value)))
 	{
-		DecodeStr(szName);
-		DecodeStr(szValue);
-		pOptEntries->push_back(new Options::OptEntry(szName, szValue));
+		DecodeStr(name);
+		DecodeStr(value);
+		optEntries->push_back(new Options::OptEntry(name, value));
 	}
 
 	// save to config file
-	bool bOK = g_pScriptConfig->SaveConfig(pOptEntries);
+	bool ok = g_pScriptConfig->SaveConfig(optEntries);
 
-	delete pOptEntries;
+	delete optEntries;
 
-	BuildBoolResponse(bOK);
+	BuildBoolResponse(ok);
 }
 
 // struct[] configtemplates(bool loadFromDisk)
@@ -2899,18 +2899,18 @@ void ConfigTemplatesXmlCommand::Execute()
 		"\"Template\" : \"%s\"\n"
 		"}";
 
-	bool bLoadFromDisk = false;
-	NextParamAsBool(&bLoadFromDisk);
+	bool loadFromDisk = false;
+	NextParamAsBool(&loadFromDisk);
 
-	ScriptConfig::ConfigTemplates* pConfigTemplates = g_pScriptConfig->GetConfigTemplates();
+	ScriptConfig::ConfigTemplates* configTemplates = g_pScriptConfig->GetConfigTemplates();
 	
-	if (bLoadFromDisk)
+	if (loadFromDisk)
 	{
-		pConfigTemplates = new ScriptConfig::ConfigTemplates();
-		if (!g_pScriptConfig->LoadConfigTemplates(pConfigTemplates))
+		configTemplates = new ScriptConfig::ConfigTemplates();
+		if (!g_pScriptConfig->LoadConfigTemplates(configTemplates))
 		{
 			BuildErrorResponse(3, "Could not read configuration templates");
-			delete pConfigTemplates;
+			delete configTemplates;
 			return;
 		}
 	}
@@ -2919,22 +2919,22 @@ void ConfigTemplatesXmlCommand::Execute()
 
 	int index = 0;
 
-	for (ScriptConfig::ConfigTemplates::iterator it = pConfigTemplates->begin(); it != pConfigTemplates->end(); it++)
+	for (ScriptConfig::ConfigTemplates::iterator it = configTemplates->begin(); it != configTemplates->end(); it++)
 	{
-		ScriptConfig::ConfigTemplate* pConfigTemplate = *it;
+		ScriptConfig::ConfigTemplate* configTemplate = *it;
 
-		char* xmlName = EncodeStr(pConfigTemplate->GetScript() ? pConfigTemplate->GetScript()->GetName() : "");
-		char* xmlDisplayName = EncodeStr(pConfigTemplate->GetScript() ? pConfigTemplate->GetScript()->GetDisplayName() : "");
-		char* xmlTemplate = EncodeStr(pConfigTemplate->GetTemplate());
+		char* xmlName = EncodeStr(configTemplate->GetScript() ? configTemplate->GetScript()->GetName() : "");
+		char* xmlDisplayName = EncodeStr(configTemplate->GetScript() ? configTemplate->GetScript()->GetDisplayName() : "");
+		char* xmlTemplate = EncodeStr(configTemplate->GetTemplate());
 
 		AppendCondResponse(",\n", IsJson() && index++ > 0);
 		AppendFmtResponse(IsJson() ? JSON_CONFIG_ITEM : XML_CONFIG_ITEM,
 			xmlName, xmlDisplayName,
-			BoolToStr(pConfigTemplate->GetScript() && pConfigTemplate->GetScript()->GetPostScript()),
-			BoolToStr(pConfigTemplate->GetScript() && pConfigTemplate->GetScript()->GetScanScript()),
-			BoolToStr(pConfigTemplate->GetScript() && pConfigTemplate->GetScript()->GetQueueScript()),
-			BoolToStr(pConfigTemplate->GetScript() && pConfigTemplate->GetScript()->GetSchedulerScript()),
-			BoolToStr(pConfigTemplate->GetScript() && pConfigTemplate->GetScript()->GetFeedScript()),
+			BoolToStr(configTemplate->GetScript() && configTemplate->GetScript()->GetPostScript()),
+			BoolToStr(configTemplate->GetScript() && configTemplate->GetScript()->GetScanScript()),
+			BoolToStr(configTemplate->GetScript() && configTemplate->GetScript()->GetQueueScript()),
+			BoolToStr(configTemplate->GetScript() && configTemplate->GetScript()->GetSchedulerScript()),
+			BoolToStr(configTemplate->GetScript() && configTemplate->GetScript()->GetFeedScript()),
 			xmlTemplate);
 
 		free(xmlName);
@@ -2942,17 +2942,17 @@ void ConfigTemplatesXmlCommand::Execute()
 		free(xmlTemplate);
 	}
 
-	if (bLoadFromDisk)
+	if (loadFromDisk)
 	{
-		delete pConfigTemplates;
+		delete configTemplates;
 	}
 
 	AppendResponse(IsJson() ? "\n]" : "</data></array>\n");
 }
 
-ViewFeedXmlCommand::ViewFeedXmlCommand(bool bPreview)
+ViewFeedXmlCommand::ViewFeedXmlCommand(bool preview)
 {
-	m_bPreview = bPreview;
+	m_preview = preview;
 }
 
 // struct[] viewfeed(int id)
@@ -2964,66 +2964,66 @@ ViewFeedXmlCommand::ViewFeedXmlCommand(bool bPreview)
 //		int priority, int interval, string feedfilter, bool includeNonMatching, int cacheTimeSec, string cacheId)
 void ViewFeedXmlCommand::Execute()
 {
-	bool bOK = false;
-	bool bIncludeNonMatching = false;
-	FeedItemInfos* pFeedItemInfos = NULL;
+	bool ok = false;
+	bool includeNonMatching = false;
+	FeedItemInfos* feedItemInfos = NULL;
 
-	if (m_bPreview)
+	if (m_preview)
 	{
-		int iID = 0;
-		char* szName;
-		char* szUrl;
-		char* szFilter;
-		bool bBacklog = true;
-		bool bPauseNzb;
-		char* szCategory;
-		int iInterval = 0;
-		int iPriority;
-		char* szFeedFilter = NULL;
-		char* szCacheId;
-		int iCacheTimeSec;
+		int id = 0;
+		char* name;
+		char* url;
+		char* filter;
+		bool backlog = true;
+		bool pauseNzb;
+		char* category;
+		int interval = 0;
+		int priority;
+		char* feedFilter = NULL;
+		char* cacheId;
+		int cacheTimeSec;
 
 		// if the first parameter is int then it's the v16 signature
-		bool bV16 = NextParamAsInt(&iID);
+		bool v16 = NextParamAsInt(&id);
 
-		if (!NextParamAsStr(&szName) || !NextParamAsStr(&szUrl) || !NextParamAsStr(&szFilter) ||
-			(bV16 && !NextParamAsBool(&bBacklog)) || !NextParamAsBool(&bPauseNzb) ||
-			!NextParamAsStr(&szCategory) || !NextParamAsInt(&iPriority) ||
-			(bV16 && (!NextParamAsInt(&iInterval) || !NextParamAsStr(&szFeedFilter))) ||
-			!NextParamAsBool(&bIncludeNonMatching) || !NextParamAsInt(&iCacheTimeSec) ||
-			!NextParamAsStr(&szCacheId))
+		if (!NextParamAsStr(&name) || !NextParamAsStr(&url) || !NextParamAsStr(&filter) ||
+			(v16 && !NextParamAsBool(&backlog)) || !NextParamAsBool(&pauseNzb) ||
+			!NextParamAsStr(&category) || !NextParamAsInt(&priority) ||
+			(v16 && (!NextParamAsInt(&interval) || !NextParamAsStr(&feedFilter))) ||
+			!NextParamAsBool(&includeNonMatching) || !NextParamAsInt(&cacheTimeSec) ||
+			!NextParamAsStr(&cacheId))
 		{
 			BuildErrorResponse(2, "Invalid parameter");
 			return;
 		}
 
-		DecodeStr(szName);
-		DecodeStr(szUrl);
-		DecodeStr(szFilter);
-		DecodeStr(szCacheId);
-		DecodeStr(szCategory);
+		DecodeStr(name);
+		DecodeStr(url);
+		DecodeStr(filter);
+		DecodeStr(cacheId);
+		DecodeStr(category);
 
-		debug("Url=%s", szUrl);
-		debug("Filter=%s", szFilter);
+		debug("Url=%s", url);
+		debug("Filter=%s", filter);
 
-		bOK = g_pFeedCoordinator->PreviewFeed(iID, szName, szUrl, szFilter, bBacklog, bPauseNzb,
-			szCategory, iPriority, iInterval, szFeedFilter, iCacheTimeSec, szCacheId, &pFeedItemInfos);
+		ok = g_pFeedCoordinator->PreviewFeed(id, name, url, filter, backlog, pauseNzb,
+			category, priority, interval, feedFilter, cacheTimeSec, cacheId, &feedItemInfos);
 	}
 	else
 	{
-		int iID = 0;
-		if (!NextParamAsInt(&iID) || !NextParamAsBool(&bIncludeNonMatching))
+		int id = 0;
+		if (!NextParamAsInt(&id) || !NextParamAsBool(&includeNonMatching))
 		{
 			BuildErrorResponse(2, "Invalid parameter");
 			return;
 		}
 
-		debug("ID=%i", iID);
+		debug("ID=%i", id);
 
-		bOK = g_pFeedCoordinator->ViewFeed(iID, &pFeedItemInfos);
+		ok = g_pFeedCoordinator->ViewFeed(id, &feedItemInfos);
 	}
 
-	if (!bOK)
+	if (!ok)
 	{
 		BuildErrorResponse(3, "Could not read feed");
 		return;
@@ -3071,37 +3071,37 @@ void ViewFeedXmlCommand::Execute()
 		"\"Status\" : \"%s\"\n"
 		"}";
 
-    const char* szStatusType[] = { "UNKNOWN", "BACKLOG", "FETCHED", "NEW" };
-    const char* szMatchStatusType[] = { "IGNORED", "ACCEPTED", "REJECTED" };
-    const char* szDupeModeType[] = { "SCORE", "ALL", "FORCE" };
+    const char* statusType[] = { "UNKNOWN", "BACKLOG", "FETCHED", "NEW" };
+    const char* matchStatusType[] = { "IGNORED", "ACCEPTED", "REJECTED" };
+    const char* dupeModeType[] = { "SCORE", "ALL", "FORCE" };
 
 	AppendResponse(IsJson() ? "[\n" : "<array><data>\n");
 	int index = 0;
 
-    for (FeedItemInfos::iterator it = pFeedItemInfos->begin(); it != pFeedItemInfos->end(); it++)
+    for (FeedItemInfos::iterator it = feedItemInfos->begin(); it != feedItemInfos->end(); it++)
     {
-        FeedItemInfo* pFeedItemInfo = *it;
+        FeedItemInfo* feedItemInfo = *it;
 
-		if (bIncludeNonMatching || pFeedItemInfo->GetMatchStatus() == FeedItemInfo::msAccepted)
+		if (includeNonMatching || feedItemInfo->GetMatchStatus() == FeedItemInfo::msAccepted)
 		{
-			unsigned long iSizeHi, iSizeLo;
-			Util::SplitInt64(pFeedItemInfo->GetSize(), &iSizeHi, &iSizeLo);
-			int iSizeMB = (int)(pFeedItemInfo->GetSize() / 1024 / 1024);
+			unsigned long sizeHi, sizeLo;
+			Util::SplitInt64(feedItemInfo->GetSize(), &sizeHi, &sizeLo);
+			int sizeMB = (int)(feedItemInfo->GetSize() / 1024 / 1024);
 
-			char* xmltitle = EncodeStr(pFeedItemInfo->GetTitle());
-			char* xmlfilename = EncodeStr(pFeedItemInfo->GetFilename());
-			char* xmlurl = EncodeStr(pFeedItemInfo->GetUrl());
-			char* xmlcategory = EncodeStr(pFeedItemInfo->GetCategory());
-			char* xmladdcategory = EncodeStr(pFeedItemInfo->GetAddCategory());
-			char* xmldupekey = EncodeStr(pFeedItemInfo->GetDupeKey());
+			char* xmltitle = EncodeStr(feedItemInfo->GetTitle());
+			char* xmlfilename = EncodeStr(feedItemInfo->GetFilename());
+			char* xmlurl = EncodeStr(feedItemInfo->GetUrl());
+			char* xmlcategory = EncodeStr(feedItemInfo->GetCategory());
+			char* xmladdcategory = EncodeStr(feedItemInfo->GetAddCategory());
+			char* xmldupekey = EncodeStr(feedItemInfo->GetDupeKey());
 
 			AppendCondResponse(",\n", IsJson() && index++ > 0);
 			AppendFmtResponse(IsJson() ? JSON_FEED_ITEM : XML_FEED_ITEM,
-				xmltitle, xmlfilename, xmlurl, iSizeLo, iSizeHi, iSizeMB, xmlcategory, xmladdcategory,
-				BoolToStr(pFeedItemInfo->GetPauseNzb()), pFeedItemInfo->GetPriority(), pFeedItemInfo->GetTime(),
-				szMatchStatusType[pFeedItemInfo->GetMatchStatus()], pFeedItemInfo->GetMatchRule(),
-				xmldupekey, pFeedItemInfo->GetDupeScore(), szDupeModeType[pFeedItemInfo->GetDupeMode()],
-				szStatusType[pFeedItemInfo->GetStatus()]);
+				xmltitle, xmlfilename, xmlurl, sizeLo, sizeHi, sizeMB, xmlcategory, xmladdcategory,
+				BoolToStr(feedItemInfo->GetPauseNzb()), feedItemInfo->GetPriority(), feedItemInfo->GetTime(),
+				matchStatusType[feedItemInfo->GetMatchStatus()], feedItemInfo->GetMatchRule(),
+				xmldupekey, feedItemInfo->GetDupeScore(), dupeModeType[feedItemInfo->GetDupeMode()],
+				statusType[feedItemInfo->GetStatus()]);
 
 			free(xmltitle);
 			free(xmlfilename);
@@ -3112,7 +3112,7 @@ void ViewFeedXmlCommand::Execute()
 		}
     }
 
-	pFeedItemInfos->Release();
+	feedItemInfos->Release();
 
 	AppendResponse(IsJson() ? "\n]" : "</data></array>\n");
 }
@@ -3125,14 +3125,14 @@ void FetchFeedXmlCommand::Execute()
 		return;
 	}
 
-	int iID;
-	if (!NextParamAsInt(&iID))
+	int id;
+	if (!NextParamAsInt(&id))
 	{
 		BuildErrorResponse(2, "Invalid parameter (ID)");
 		return;
 	}
 
-	g_pFeedCoordinator->FetchFeed(iID);
+	g_pFeedCoordinator->FetchFeed(id);
 
 	BuildBoolResponse(true);
 }
@@ -3145,16 +3145,16 @@ void EditServerXmlCommand::Execute()
 		return;
 	}
 
-	bool bOK = false;
-	int bFirst = true;
+	bool ok = false;
+	int first = true;
 
-	int iID;
-	while (NextParamAsInt(&iID))
+	int id;
+	while (NextParamAsInt(&id))
 	{
-		bFirst = false;
+		first = false;
 
-		bool bActive;
-		if (!NextParamAsBool(&bActive))
+		bool active;
+		if (!NextParamAsBool(&active))
 		{
 			BuildErrorResponse(2, "Invalid parameter");
 			return;
@@ -3162,78 +3162,78 @@ void EditServerXmlCommand::Execute()
 
 		for (Servers::iterator it = g_pServerPool->GetServers()->begin(); it != g_pServerPool->GetServers()->end(); it++)
 		{
-			NewsServer* pServer = *it;
-			if (pServer->GetID() == iID)
+			NewsServer* server = *it;
+			if (server->GetID() == id)
 			{
-				pServer->SetActive(bActive);
-				bOK = true;
+				server->SetActive(active);
+				ok = true;
 			}
 		}
 	}
 
-	if (bFirst)
+	if (first)
 	{
 		BuildErrorResponse(2, "Invalid parameter");
 		return;
 	}
 
-	if (bOK)
+	if (ok)
 	{
 		g_pServerPool->Changed();
 	}
 
-	BuildBoolResponse(bOK);
+	BuildBoolResponse(ok);
 }
 
 // string readurl(string url, string infoname)
 void ReadUrlXmlCommand::Execute()
 {
-	char* szURL;
-	if (!NextParamAsStr(&szURL))
+	char* url;
+	if (!NextParamAsStr(&url))
 	{
 		BuildErrorResponse(2, "Invalid parameter (URL)");
 		return;
 	}
-	DecodeStr(szURL);
+	DecodeStr(url);
 
-	char* szInfoName;
-	if (!NextParamAsStr(&szInfoName))
+	char* infoName;
+	if (!NextParamAsStr(&infoName))
 	{
 		BuildErrorResponse(2, "Invalid parameter (InfoName)");
 		return;
 	}
-	DecodeStr(szInfoName);
+	DecodeStr(infoName);
 
 	// generate temp file name
-	char szTempFileName[1024];
-	int iNum = 1;
-	while (iNum == 1 || Util::FileExists(szTempFileName))
+	char tempFileName[1024];
+	int num = 1;
+	while (num == 1 || Util::FileExists(tempFileName))
 	{
-		snprintf(szTempFileName, 1024, "%sreadurl-%i.tmp", g_pOptions->GetTempDir(), iNum);
-		szTempFileName[1024-1] = '\0';
-		iNum++;
+		snprintf(tempFileName, 1024, "%sreadurl-%i.tmp", g_pOptions->GetTempDir(), num);
+		tempFileName[1024-1] = '\0';
+		num++;
 	}
 
-	WebDownloader* pDownloader = new WebDownloader();
-	pDownloader->SetURL(szURL);
-	pDownloader->SetForce(true);
-	pDownloader->SetRetry(false);
-	pDownloader->SetOutputFilename(szTempFileName);
-	pDownloader->SetInfoName(szInfoName);
+	WebDownloader* downloader = new WebDownloader();
+	downloader->SetURL(url);
+	downloader->SetForce(true);
+	downloader->SetRetry(false);
+	downloader->SetOutputFilename(tempFileName);
+	downloader->SetInfoName(infoName);
 
 	// do sync download
-	WebDownloader::EStatus eStatus = pDownloader->DownloadWithRedirects(5);
-	bool bOK = eStatus == WebDownloader::adFinished;
+	WebDownloader::EStatus status = downloader->DownloadWithRedirects(5);
+	bool ok = status == WebDownloader::adFinished;
 
-	delete pDownloader;
+	delete downloader;
 
-	if (bOK)
+	if (ok)
 	{
-		char* szFileContent = NULL;
-		int iFileContentLen = 0;
-		Util::LoadFileIntoBuffer(szTempFileName, &szFileContent, &iFileContentLen);
-		char* xmlContent = EncodeStr(szFileContent);
-		free(szFileContent);
+		char* fileContent = NULL;
+		int fileContentLen = 0;
+		Util::LoadFileIntoBuffer(tempFileName, &fileContent, &fileContentLen);
+		char* xmlContent = EncodeStr(fileContent);
+		free(fileContent);
 		AppendResponse(IsJson() ? "\"" : "<string>");
 		AppendResponse(xmlContent);
 		AppendResponse(IsJson() ? "\"" : "</string>");
@@ -3244,19 +3244,19 @@ void ReadUrlXmlCommand::Execute()
 		BuildErrorResponse(3, "Could not read url");
 	}
 
-	remove(szTempFileName);
+	remove(tempFileName);
 }
 
 // string checkupdates()
 void CheckUpdatesXmlCommand::Execute()
 {
-	char* szUpdateInfo = NULL;
-	bool bOK = g_pMaintenance->CheckUpdates(&szUpdateInfo);
+	char* updateInfo = NULL;
+	bool ok = g_pMaintenance->CheckUpdates(&updateInfo);
 
-	if (bOK)
+	if (ok)
 	{
-		char* xmlContent = EncodeStr(szUpdateInfo);
-		free(szUpdateInfo);
+		char* xmlContent = EncodeStr(updateInfo);
+		free(updateInfo);
 		AppendResponse(IsJson() ? "\"" : "<string>");
 		AppendResponse(xmlContent);
 		AppendResponse(IsJson() ? "\"" : "</string>");
@@ -3276,26 +3276,26 @@ void StartUpdateXmlCommand::Execute()
 		return;
 	}
 
-	char* szBranch;
-	if (!NextParamAsStr(&szBranch))
+	char* branchName;
+	if (!NextParamAsStr(&branchName))
 	{
 		BuildErrorResponse(2, "Invalid parameter (Branch)");
 		return;
 	}
-	DecodeStr(szBranch);
+	DecodeStr(branchName);
 
-	Maintenance::EBranch eBranch;
-	if (!strcasecmp(szBranch, "stable"))
+	Maintenance::EBranch branch;
+	if (!strcasecmp(branchName, "stable"))
 	{
-		eBranch = Maintenance::brStable;
+		branch = Maintenance::brStable;
 	}
-	else if (!strcasecmp(szBranch, "testing"))
+	else if (!strcasecmp(branchName, "testing"))
 	{
-		eBranch = Maintenance::brTesting;
+		branch = Maintenance::brTesting;
 	}
-	else if (!strcasecmp(szBranch, "devel"))
+	else if (!strcasecmp(branchName, "devel"))
 	{
-		eBranch = Maintenance::brDevel;
+		branch = Maintenance::brDevel;
 	}
 	else
 	{
@@ -3303,9 +3303,9 @@ void StartUpdateXmlCommand::Execute()
 		return;
 	}
 
-	bool bOK = g_pMaintenance->StartUpdate(eBranch);
+	bool ok = g_pMaintenance->StartUpdate(branch);
 
-	BuildBoolResponse(bOK);
+	BuildBoolResponse(ok);
 }
 
 // struct[] logupdate(idfrom, entries)
@@ -3390,51 +3390,51 @@ void ServerVolumesXmlCommand::Execute()
 
 	AppendResponse(IsJson() ? "[\n" : "<array><data>\n");
 
-	ServerVolumes* pServerVolumes = g_pStatMeter->LockServerVolumes();
+	ServerVolumes* serverVolumes = g_pStatMeter->LockServerVolumes();
 
 	int index = 0;
 
-	for (ServerVolumes::iterator it = pServerVolumes->begin(); it != pServerVolumes->end(); it++, index++)
+	for (ServerVolumes::iterator it = serverVolumes->begin(); it != serverVolumes->end(); it++, index++)
 	{
-		ServerVolume* pServerVolume = *it;
+		ServerVolume* serverVolume = *it;
 
-		unsigned long iTotalSizeHi, iTotalSizeLo, iTotalSizeMB;
-		Util::SplitInt64(pServerVolume->GetTotalBytes(), &iTotalSizeHi, &iTotalSizeLo);
-		iTotalSizeMB = (int)(pServerVolume->GetTotalBytes() / 1024 / 1024);
+		unsigned long totalSizeHi, totalSizeLo, totalSizeMB;
+		Util::SplitInt64(serverVolume->GetTotalBytes(), &totalSizeHi, &totalSizeLo);
+		totalSizeMB = (int)(serverVolume->GetTotalBytes() / 1024 / 1024);
 
-		unsigned long iCustomSizeHi, iCustomSizeLo, iCustomSizeMB;
-		Util::SplitInt64(pServerVolume->GetCustomBytes(), &iCustomSizeHi, &iCustomSizeLo);
-		iCustomSizeMB = (int)(pServerVolume->GetCustomBytes() / 1024 / 1024);
+		unsigned long customSizeHi, customSizeLo, customSizeMB;
+		Util::SplitInt64(serverVolume->GetCustomBytes(), &customSizeHi, &customSizeLo);
+		customSizeMB = (int)(serverVolume->GetCustomBytes() / 1024 / 1024);
 
 		AppendCondResponse(",\n", IsJson() && index > 0);
 		AppendFmtResponse(IsJson() ? JSON_VOLUME_ITEM_START : XML_VOLUME_ITEM_START,
-				 index, (int)pServerVolume->GetDataTime(), pServerVolume->GetFirstDay(),
-				 iTotalSizeLo, iTotalSizeHi, iTotalSizeMB, iCustomSizeLo, iCustomSizeHi, iCustomSizeMB, 
-				 (int)pServerVolume->GetCustomTime(), pServerVolume->GetSecSlot(),
-				 pServerVolume->GetMinSlot(), pServerVolume->GetHourSlot(), pServerVolume->GetDaySlot());
+				 index, (int)serverVolume->GetDataTime(), serverVolume->GetFirstDay(),
+				 totalSizeLo, totalSizeHi, totalSizeMB, customSizeLo, customSizeHi, customSizeMB, 
+				 (int)serverVolume->GetCustomTime(), serverVolume->GetSecSlot(),
+				 serverVolume->GetMinSlot(), serverVolume->GetHourSlot(), serverVolume->GetDaySlot());
 
-		ServerVolume::VolumeArray* VolumeArrays[] = { pServerVolume->BytesPerSeconds(),
-			pServerVolume->BytesPerMinutes(), pServerVolume->BytesPerHours(), pServerVolume->BytesPerDays() };
+		ServerVolume::VolumeArray* VolumeArrays[] = { serverVolume->BytesPerSeconds(),
+			serverVolume->BytesPerMinutes(), serverVolume->BytesPerHours(), serverVolume->BytesPerDays() };
 		const char* VolumeNames[] = { "BytesPerSeconds", "BytesPerMinutes", "BytesPerHours", "BytesPerDays" };
 
 		for (int i=0; i<4; i++)
 		{
-			ServerVolume::VolumeArray* pVolumeArray = VolumeArrays[i];
-			const char* szArrayName = VolumeNames[i];
+			ServerVolume::VolumeArray* volumeArray = VolumeArrays[i];
+			const char* arrayName = VolumeNames[i];
 
-			AppendFmtResponse(IsJson() ? JSON_BYTES_ARRAY_START : XML_BYTES_ARRAY_START, szArrayName);
+			AppendFmtResponse(IsJson() ? JSON_BYTES_ARRAY_START : XML_BYTES_ARRAY_START, arrayName);
 
 			int index2 = 0;
-			for (ServerVolume::VolumeArray::iterator it2 = pVolumeArray->begin(); it2 != pVolumeArray->end(); it2++)
+			for (ServerVolume::VolumeArray::iterator it2 = volumeArray->begin(); it2 != volumeArray->end(); it2++)
 			{
-				long long lBytes = *it2;
-				unsigned long iSizeHi, iSizeLo, iSizeMB;
-				Util::SplitInt64(lBytes, &iSizeHi, &iSizeLo);
-				iSizeMB = (int)(lBytes / 1024 / 1024);
+				long long bytes = *it2;
+				unsigned long sizeHi, sizeLo, sizeMB;
+				Util::SplitInt64(bytes, &sizeHi, &sizeLo);
+				sizeMB = (int)(bytes / 1024 / 1024);
 
 				AppendCondResponse(",\n", IsJson() && index2++ > 0);
 				AppendFmtResponse(IsJson() ? JSON_BYTES_ARRAY_ITEM : XML_BYTES_ARRAY_ITEM,
-						 iSizeLo, iSizeHi, iSizeMB);
+						 sizeLo, sizeHi, sizeMB);
 			}
 
 			AppendResponse(IsJson() ? JSON_BYTES_ARRAY_END : XML_BYTES_ARRAY_END);
@@ -3456,43 +3456,43 @@ void ResetServerVolumeXmlCommand::Execute()
 		return;
 	}
 
-	int iServerId;
-	char* szCounter;
-	if (!NextParamAsInt(&iServerId) || !NextParamAsStr(&szCounter))
+	int serverId;
+	char* counter;
+	if (!NextParamAsInt(&serverId) || !NextParamAsStr(&counter))
 	{
 		BuildErrorResponse(2, "Invalid parameter");
 		return;
 	}
 
-	if (strcmp(szCounter, "CUSTOM"))
+	if (strcmp(counter, "CUSTOM"))
 	{
 		BuildErrorResponse(3, "Invalid Counter");
 		return;
 	}
 
-	bool bOK = false;
-	ServerVolumes* pServerVolumes = g_pStatMeter->LockServerVolumes();
+	bool ok = false;
+	ServerVolumes* serverVolumes = g_pStatMeter->LockServerVolumes();
 	int index = 0;
-	for (ServerVolumes::iterator it = pServerVolumes->begin(); it != pServerVolumes->end(); it++, index++)
+	for (ServerVolumes::iterator it = serverVolumes->begin(); it != serverVolumes->end(); it++, index++)
 	{
-		ServerVolume* pServerVolume = *it;
-		if (index == iServerId || iServerId == -1)
+		ServerVolume* serverVolume = *it;
+		if (index == serverId || serverId == -1)
 		{
-			pServerVolume->ResetCustom();
-			bOK = true;
+			serverVolume->ResetCustom();
+			ok = true;
 		}
 	}
 	g_pStatMeter->UnlockServerVolumes();
 
-	BuildBoolResponse(bOK);
+	BuildBoolResponse(ok);
 }
 
 // struct[] loadlog(nzbid, logidfrom, logentries)
 void LoadLogXmlCommand::Execute()
 {
-	m_pNZBInfo = NULL;
-	m_iNZBID = 0;
-	if (!NextParamAsInt(&m_iNZBID))
+	m_nzbInfo = NULL;
+	m_nzbId = 0;
+	if (!NextParamAsInt(&m_nzbId))
 	{
 		BuildErrorResponse(2, "Invalid parameter");
 		return;
@@ -3504,15 +3504,15 @@ void LoadLogXmlCommand::Execute()
 MessageList* LoadLogXmlCommand::LockMessages()
 {
 	// TODO: optimize for m_iIDFrom and m_iNrEntries
-	g_pDiskState->LoadNZBMessages(m_iNZBID, &m_messages);
+	g_pDiskState->LoadNZBMessages(m_nzbId, &m_messages);
 
 	if (m_messages.empty())
 	{
-		DownloadQueue* pDownloadQueue = DownloadQueue::Lock();
-		m_pNZBInfo = pDownloadQueue->GetQueue()->Find(m_iNZBID);
-		if (m_pNZBInfo)
+		DownloadQueue* downloadQueue = DownloadQueue::Lock();
+		m_nzbInfo = downloadQueue->GetQueue()->Find(m_nzbId);
+		if (m_nzbInfo)
 		{
-			return m_pNZBInfo->LockCachedMessages();
+			return m_nzbInfo->LockCachedMessages();
 		}
 		else
 		{
@@ -3525,9 +3525,9 @@ MessageList* LoadLogXmlCommand::LockMessages()
 
 void LoadLogXmlCommand::UnlockMessages()
 {
-	if (m_pNZBInfo)
+	if (m_nzbInfo)
 	{
-		m_pNZBInfo->UnlockCachedMessages();
+		m_nzbInfo->UnlockCachedMessages();
 		DownloadQueue::Unlock();
 	}
 }
@@ -3543,44 +3543,44 @@ void TestServerXmlCommand::Execute()
 		return;
 	}
 
-	char* szHost;
-	int iPort;
-	char* szUsername;
-	char* szPassword;
-	bool bEncryption;
-	char* szCipher;
-	int iTimeout;
+	char* host;
+	int port;
+	char* username;
+	char* password;
+	bool encryption;
+	char* cipher;
+	int timeout;
 
-	if (!NextParamAsStr(&szHost) || !NextParamAsInt(&iPort) || !NextParamAsStr(&szUsername) ||
-		!NextParamAsStr(&szPassword) || !NextParamAsBool(&bEncryption) ||
-		!NextParamAsStr(&szCipher) || !NextParamAsInt(&iTimeout))
+	if (!NextParamAsStr(&host) || !NextParamAsInt(&port) || !NextParamAsStr(&username) ||
+		!NextParamAsStr(&password) || !NextParamAsBool(&encryption) ||
+		!NextParamAsStr(&cipher) || !NextParamAsInt(&timeout))
 	{
 		BuildErrorResponse(2, "Invalid parameter");
 		return;
 	}
 
-	NewsServer server(0, true, "test server", szHost, iPort, szUsername, szPassword, false, bEncryption, szCipher, 1, 0, 0, 0);
-	TestConnection* pConnection = new TestConnection(&server, this);
-	pConnection->SetTimeout(iTimeout == 0 ? g_pOptions->GetArticleTimeout() : iTimeout);
-	pConnection->SetSuppressErrors(false);
-	m_szErrText = NULL;
+	NewsServer server(0, true, "test server", host, port, username, password, false, encryption, cipher, 1, 0, 0, 0);
+	TestConnection* connection = new TestConnection(&server, this);
+	connection->SetTimeout(timeout == 0 ? g_pOptions->GetArticleTimeout() : timeout);
+	connection->SetSuppressErrors(false);
+	m_errText = NULL;
 
-	bool bOK = pConnection->Connect();
+	bool ok = connection->Connect();
 
-	char szContent[1024];
-	snprintf(szContent, 1024, IsJson() ? JSON_RESPONSE_STR_BODY : XML_RESPONSE_STR_BODY,
-		bOK ? "" : Util::EmptyStr(m_szErrText) ? "Unknown error" : m_szErrText);
-	szContent[1024-1] = '\0';
+	char content[1024];
+	snprintf(content, 1024, IsJson() ? JSON_RESPONSE_STR_BODY : XML_RESPONSE_STR_BODY,
+		ok ? "" : Util::EmptyStr(m_errText) ? "Unknown error" : m_errText);
+	content[1024-1] = '\0';
 
-	AppendResponse(szContent);
+	AppendResponse(content);
 
-	delete pConnection;
+	delete connection;
 }
 
-void TestServerXmlCommand::PrintError(const char* szErrMsg)
+void TestServerXmlCommand::PrintError(const char* errMsg)
 {
-	if (!m_szErrText)
+	if (!m_errText)
 	{
-		m_szErrText = EncodeStr(szErrMsg);
+		m_errText = EncodeStr(errMsg);
 	}
 }

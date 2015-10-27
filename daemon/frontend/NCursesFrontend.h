@@ -42,77 +42,77 @@ private:
 
 	enum EInputMode
 	{
-	    eNormal,
-	    eEditQueue,
-	    eDownloadRate
+	    normal,
+	    editQueue,
+	    downloadRate
 	};
 
-	bool				m_bUseColor;
-	int					m_iDataUpdatePos;
-    bool				m_bUpdateNextTime;
-	int					m_iScreenHeight;
-	int					m_iScreenWidth;
-	int					m_iQueueWinTop;
-	int					m_iQueueWinHeight;
-	int					m_iQueueWinClientHeight;
-	int					m_iMessagesWinTop;
-	int					m_iMessagesWinHeight;
-	int					m_iMessagesWinClientHeight;
-	int					m_iSelectedQueueEntry;
-	int					m_iLastEditEntry;
-	bool				m_bLastPausePars;
-	int					m_iQueueScrollOffset;
-	char*				m_szHint;
-	time_t				m_tStartHint;
-	int					m_iColWidthFiles;
-	int					m_iColWidthTotal;
-	int					m_iColWidthLeft;
+	bool				m_useColor;
+	int					m_dataUpdatePos;
+    bool				m_updateNextTime;
+	int					m_screenHeight;
+	int					m_screenWidth;
+	int					m_queueWinTop;
+	int					m_queueWinHeight;
+	int					m_queueWinClientHeight;
+	int					m_messagesWinTop;
+	int					m_messagesWinHeight;
+	int					m_messagesWinClientHeight;
+	int					m_selectedQueueEntry;
+	int					m_lastEditEntry;
+	bool				m_lastPausePars;
+	int					m_queueScrollOffset;
+	char*				m_hint;
+	time_t				m_startHint;
+	int					m_colWidthFiles;
+	int					m_colWidthTotal;
+	int					m_colWidthLeft;
 
 	// Inputting numbers
-	int					m_iInputNumberIndex;
-	int					m_iInputValue;
+	int					m_inputNumberIndex;
+	int					m_inputValue;
 
 #ifdef WIN32
-	CHAR_INFO*			m_pScreenBuffer;
-	CHAR_INFO*			m_pOldScreenBuffer;
-	int					m_iScreenBufferSize;
-	std::vector<WORD>	m_ColorAttr;
+	CHAR_INFO*			m_screenBuffer;
+	CHAR_INFO*			m_oldScreenBuffer;
+	int					m_screenBufferSize;
+	std::vector<WORD>	m_colorAttr;
 #else
-	void* 				m_pWindow;  //  WINDOW*
+	void* 				m_window;  //  WINDOW*
 #endif
 
-	EInputMode			m_eInputMode;
-	bool				m_bShowNZBname;
-	bool				m_bShowTimestamp;
-	bool				m_bGroupFiles;
-	int					m_QueueWindowPercentage;
+	EInputMode			m_inputMode;
+	bool				m_showNzbname;
+	bool				m_showTimestamp;
+	bool				m_groupFiles;
+	int					m_queueWindowPercentage;
 
 #ifdef WIN32
-	void			init_pair(int iColorNumber, WORD wForeColor, WORD wBackColor);
+	void			init_pair(int colorNumber, WORD wForeColor, WORD wBackColor);
 #endif
-	void			PlotLine(const char * szString, int iRow, int iPos, int iColorPair);
-	void			PlotText(const char * szString, int iRow, int iPos, int iColorPair, bool bBlink);
+	void			PlotLine(const char * string, int row, int pos, int colorPair);
+	void			PlotText(const char * string, int row, int pos, int colorPair, bool blink);
 	void			PrintMessages();
 	void			PrintQueue();
 	void			PrintFileQueue();
-	void			PrintFilename(FileInfo* pFileInfo, int iRow, bool bSelected);
+	void			PrintFilename(FileInfo* fileInfo, int row, bool selected);
 	void			PrintGroupQueue();
 	void			ResetColWidths();
-	void			PrintGroupname(NZBInfo* pNZBInfo, int iRow, bool bSelected, bool bCalcColWidth);
-	void			PrintTopHeader(char* szHeader, int iLineNr, bool bUpTime);
-	int				PrintMessage(Message* Msg, int iRow, int iMaxLines);
+	void			PrintGroupname(NZBInfo* nzbInfo, int row, bool selected, bool calcColWidth);
+	void			PrintTopHeader(char* header, int lineNr, bool upTime);
+	int				PrintMessage(Message* Msg, int row, int maxLines);
 	void			PrintKeyInputBar();
 	void 			PrintStatus();
 	void			UpdateInput(int initialKey);
-	void			Update(int iKey);
-	void			SetCurrentQueueEntry(int iEntry);
+	void			Update(int key);
+	void			SetCurrentQueueEntry(int entry);
 	void			CalcWindowSizes();
 	void			RefreshScreen();
 	int				ReadConsoleKey();
 	int				CalcQueueSize();
 	void			NeedUpdateData();
-	bool			EditQueue(DownloadQueue::EEditAction eAction, int iOffset);
-	void			SetHint(const char* szHint);
+	bool			EditQueue(DownloadQueue::EEditAction action, int offset);
+	void			SetHint(const char* hint);
 
 protected:
 	virtual void 	Run();

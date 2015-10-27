@@ -47,20 +47,20 @@
 #include "FeedCoordinator.h"
 #include "SchedulerScript.h"
 
-Scheduler::Task::Task(int iID, int iHours, int iMinutes, int iWeekDaysBits, ECommand eCommand, const char* szParam)
+Scheduler::Task::Task(int id, int hours, int minutes, int weekDaysBits, ECommand command, const char* param)
 {
-	m_iID = iID;
-	m_iHours = iHours;
-	m_iMinutes = iMinutes;
-	m_iWeekDaysBits = iWeekDaysBits;
-	m_eCommand = eCommand;
-	m_szParam = szParam ? strdup(szParam) : NULL;
-	m_tLastExecuted = 0;
+	m_id = id;
+	m_hours = hours;
+	m_minutes = minutes;
+	m_weekDaysBits = weekDaysBits;
+	m_command = command;
+	m_param = param ? strdup(param) : NULL;
+	m_lastExecuted = 0;
 }
 
 Scheduler::Task::~Task()
 {
-	free(m_szParam);
+	free(m_param);
 }
 
 
@@ -68,39 +68,39 @@ Scheduler::Scheduler()
 {
 	debug("Creating Scheduler");
 
-	m_bFirstChecked = false;
-	m_tLastCheck = 0;
-	m_TaskList.clear();
+	m_firstChecked = false;
+	m_lastCheck = 0;
+	m_taskList.clear();
 }
 
 Scheduler::~Scheduler()
 {
 	debug("Destroying Scheduler");
 	
-	for (TaskList::iterator it = m_TaskList.begin(); it != m_TaskList.end(); it++)
+	for (TaskList::iterator it = m_taskList.begin(); it != m_taskList.end(); it++)
 	{
 		delete *it;
 	}
 }
 
-void Scheduler::AddTask(Task* pTask)
+void Scheduler::AddTask(Task* task)
 {
-	m_mutexTaskList.Lock();
-	m_TaskList.push_back(pTask);
-	m_mutexTaskList.Unlock();
+	m_taskListMutex.Lock();
+	m_taskList.push_back(task);
+	m_taskListMutex.Unlock();
 }
 
-bool Scheduler::CompareTasks(Scheduler::Task* pTask1, Scheduler::Task* pTask2)
+bool Scheduler::CompareTasks(Scheduler::Task* task1, Scheduler::Task* task2)
 {
-	return (pTask1->m_iHours < pTask2->m_iHours) || 
-		((pTask1->m_iHours == pTask2->m_iHours) && (pTask1->m_iMinutes < pTask2->m_iMinutes));
+	return (task1->m_hours < task2->m_hours) || 
+		((task1->m_hours == task2->m_hours) && (task1->m_minutes < task2->m_minutes));
 }
 
 void Scheduler::FirstCheck()
 {
-	m_mutexTaskList.Lock();
-	m_TaskList.sort(CompareTasks);
-	m_mutexTaskList.Unlock();
+	m_taskListMutex.Lock();
+	m_taskList.sort(CompareTasks);
+	m_taskListMutex.Unlock();
 
 	// check all tasks for the last week
 	CheckTasks();
@@ -113,14 +113,14 @@ void Scheduler::ServiceWork()
 		return;
 	}
 
-	if (!m_bFirstChecked)
+	if (!m_firstChecked)
 	{
 		FirstCheck();
-		m_bFirstChecked = true;
+		m_firstChecked = true;
 		return;
 	}
 
-	m_bExecuteProcess = true;
+	m_executeProcess = true;
 	CheckTasks();
 	CheckScheduledResume();
 }
@@ -129,141 +129,141 @@ void Scheduler::CheckTasks()
 {
 	PrepareLog();
 
-	m_mutexTaskList.Lock();
+	m_taskListMutex.Lock();
 
-	time_t tCurrent = time(NULL);
+	time_t current = time(NULL);
 
-	if (!m_TaskList.empty())
+	if (!m_taskList.empty())
 	{
 		// Detect large step changes of system time 
-		time_t tDiff = tCurrent - m_tLastCheck;
-		if (tDiff > 60*90 || tDiff < 0)
+		time_t diff = current - m_lastCheck;
+		if (diff > 60*90 || diff < 0)
 		{
 			debug("Reset scheduled tasks (detected clock change greater than 90 minutes or negative)");
 
 			// check all tasks for the last week
-			m_tLastCheck = tCurrent - 60*60*24*7;
-			m_bExecuteProcess = false;
+			m_lastCheck = current - 60*60*24*7;
+			m_executeProcess = false;
 
-			for (TaskList::iterator it = m_TaskList.begin(); it != m_TaskList.end(); it++)
+			for (TaskList::iterator it = m_taskList.begin(); it != m_taskList.end(); it++)
 			{
-				Task* pTask = *it;
-				pTask->m_tLastExecuted = 0;
+				Task* task = *it;
+				task->m_lastExecuted = 0;
 			}
 		}
 
-		time_t tLocalCurrent = tCurrent + g_pOptions->GetLocalTimeOffset();
-		time_t tLocalLastCheck = m_tLastCheck + g_pOptions->GetLocalTimeOffset();
+		time_t localCurrent = current + g_pOptions->GetLocalTimeOffset();
+		time_t localLastCheck = m_lastCheck + g_pOptions->GetLocalTimeOffset();
 
 		tm tmCurrent;
-		gmtime_r(&tLocalCurrent, &tmCurrent);
+		gmtime_r(&localCurrent, &tmCurrent);
 		tm tmLastCheck;
-		gmtime_r(&tLocalLastCheck, &tmLastCheck);
+		gmtime_r(&localLastCheck, &tmLastCheck);
 
 		tm tmLoop;
 		memcpy(&tmLoop, &tmLastCheck, sizeof(tmLastCheck));
 		tmLoop.tm_hour = tmCurrent.tm_hour;
 		tmLoop.tm_min = tmCurrent.tm_min;
 		tmLoop.tm_sec = tmCurrent.tm_sec;
-		time_t tLoop = Util::Timegm(&tmLoop);
+		time_t loop = Util::Timegm(&tmLoop);
 
-		while (tLoop <= tLocalCurrent)
+		while (loop <= localCurrent)
 		{
-			for (TaskList::iterator it = m_TaskList.begin(); it != m_TaskList.end(); it++)
+			for (TaskList::iterator it = m_taskList.begin(); it != m_taskList.end(); it++)
 			{
-				Task* pTask = *it;
-				if (pTask->m_tLastExecuted != tLoop)
+				Task* task = *it;
+				if (task->m_lastExecuted != loop)
 				{
 					tm tmAppoint;
 					memcpy(&tmAppoint, &tmLoop, sizeof(tmLoop));
-					tmAppoint.tm_hour = pTask->m_iHours;
-					tmAppoint.tm_min = pTask->m_iMinutes;
+					tmAppoint.tm_hour = task->m_hours;
+					tmAppoint.tm_min = task->m_minutes;
 					tmAppoint.tm_sec = 0;
 
-					time_t tAppoint = Util::Timegm(&tmAppoint);
+					time_t appoint = Util::Timegm(&tmAppoint);
 
-					int iWeekDay = tmAppoint.tm_wday;
-					if (iWeekDay == 0)
+					int weekDay = tmAppoint.tm_wday;
+					if (weekDay == 0)
 					{
-						iWeekDay = 7;
+						weekDay = 7;
 					}
 
-					bool bWeekDayOK = pTask->m_iWeekDaysBits == 0 || (pTask->m_iWeekDaysBits & (1 << (iWeekDay - 1)));
-					bool bDoTask = bWeekDayOK && tLocalLastCheck < tAppoint && tAppoint <= tLocalCurrent;
+					bool weekDayOK = task->m_weekDaysBits == 0 || (task->m_weekDaysBits & (1 << (weekDay - 1)));
+					bool doTask = weekDayOK && localLastCheck < appoint && appoint <= localCurrent;
 
 					//debug("TEMP: 1) m_tLastCheck=%i, tLocalCurrent=%i, tLoop=%i, tAppoint=%i, bWeekDayOK=%i, bDoTask=%i", m_tLastCheck, tLocalCurrent, tLoop, tAppoint, (int)bWeekDayOK, (int)bDoTask);
 
-					if (bDoTask)
+					if (doTask)
 					{
-						ExecuteTask(pTask);
-						pTask->m_tLastExecuted = tLoop;
+						ExecuteTask(task);
+						task->m_lastExecuted = loop;
 					}
 				}
 			}
-			tLoop += 60*60*24; // inc day
-			gmtime_r(&tLoop, &tmLoop);
+			loop += 60*60*24; // inc day
+			gmtime_r(&loop, &tmLoop);
 		}
 	}
 
-	m_tLastCheck = tCurrent;
+	m_lastCheck = current;
 
-	m_mutexTaskList.Unlock();
+	m_taskListMutex.Unlock();
 
 	PrintLog();
 }
 
-void Scheduler::ExecuteTask(Task* pTask)
+void Scheduler::ExecuteTask(Task* task)
 {
-	const char* szCommandName[] = { "Pause", "Unpause", "Pause Post-processing", "Unpause Post-processing",
+	const char* commandName[] = { "Pause", "Unpause", "Pause Post-processing", "Unpause Post-processing",
 		"Set download rate", "Execute process", "Execute script",
 		"Pause Scan", "Unpause Scan", "Enable Server", "Disable Server", "Fetch Feed" };
-	debug("Executing scheduled command: %s", szCommandName[pTask->m_eCommand]);
+	debug("Executing scheduled command: %s", commandName[task->m_command]);
 
-	switch (pTask->m_eCommand)
+	switch (task->m_command)
 	{
 		case scDownloadRate:
-			if (!Util::EmptyStr(pTask->m_szParam))
+			if (!Util::EmptyStr(task->m_param))
 			{
-				g_pOptions->SetDownloadRate(atoi(pTask->m_szParam) * 1024);
-				m_bDownloadRateChanged = true;
+				g_pOptions->SetDownloadRate(atoi(task->m_param) * 1024);
+				m_downloadRateChanged = true;
 			}
 			break;
 
 		case scPauseDownload:
 		case scUnpauseDownload:
-			g_pOptions->SetPauseDownload(pTask->m_eCommand == scPauseDownload);
-			m_bPauseDownloadChanged = true;
+			g_pOptions->SetPauseDownload(task->m_command == scPauseDownload);
+			m_pauseDownloadChanged = true;
 			break;
 
 		case scPausePostProcess:
 		case scUnpausePostProcess:
-			g_pOptions->SetPausePostProcess(pTask->m_eCommand == scPausePostProcess);
-			m_bPausePostProcessChanged = true;
+			g_pOptions->SetPausePostProcess(task->m_command == scPausePostProcess);
+			m_pausePostProcessChanged = true;
 			break;
 
 		case scPauseScan:
 		case scUnpauseScan:
-			g_pOptions->SetPauseScan(pTask->m_eCommand == scPauseScan);
-			m_bPauseScanChanged = true;
+			g_pOptions->SetPauseScan(task->m_command == scPauseScan);
+			m_pauseScanChanged = true;
 			break;
 
 		case scScript:
 		case scProcess:
-			if (m_bExecuteProcess)
+			if (m_executeProcess)
 			{
-				SchedulerScriptController::StartScript(pTask->m_szParam, pTask->m_eCommand == scProcess, pTask->m_iID);
+				SchedulerScriptController::StartScript(task->m_param, task->m_command == scProcess, task->m_id);
 			}
 			break;
 
 		case scActivateServer:
 		case scDeactivateServer:
-			EditServer(pTask->m_eCommand == scActivateServer, pTask->m_szParam);
+			EditServer(task->m_command == scActivateServer, task->m_param);
 			break;
 
 		case scFetchFeed:
-			if (m_bExecuteProcess)
+			if (m_executeProcess)
 			{
-				FetchFeed(pTask->m_szParam);
+				FetchFeed(task->m_param);
 				break;
 			}
 	}
@@ -271,91 +271,91 @@ void Scheduler::ExecuteTask(Task* pTask)
 
 void Scheduler::PrepareLog()
 {
-	m_bDownloadRateChanged = false;
-	m_bPauseDownloadChanged = false;
-	m_bPausePostProcessChanged = false;
-	m_bPauseScanChanged = false;
-	m_bServerChanged = false;
+	m_downloadRateChanged = false;
+	m_pauseDownloadChanged = false;
+	m_pausePostProcessChanged = false;
+	m_pauseScanChanged = false;
+	m_serverChanged = false;
 }
 
 void Scheduler::PrintLog()
 {
-	if (m_bDownloadRateChanged)
+	if (m_downloadRateChanged)
 	{
 		info("Scheduler: setting download rate to %i KB/s", g_pOptions->GetDownloadRate() / 1024);
 	}
-	if (m_bPauseDownloadChanged)
+	if (m_pauseDownloadChanged)
 	{
 		info("Scheduler: %s download", g_pOptions->GetPauseDownload() ? "pausing" : "unpausing");
 	}
-	if (m_bPausePostProcessChanged)
+	if (m_pausePostProcessChanged)
 	{
 		info("Scheduler: %s post-processing", g_pOptions->GetPausePostProcess() ? "pausing" : "unpausing");
 	}
-	if (m_bPauseScanChanged)
+	if (m_pauseScanChanged)
 	{
 		info("Scheduler: %s scan", g_pOptions->GetPauseScan() ? "pausing" : "unpausing");
 	}
-	if (m_bServerChanged)
+	if (m_serverChanged)
 	{
 		int index = 0;
 		for (Servers::iterator it = g_pServerPool->GetServers()->begin(); it != g_pServerPool->GetServers()->end(); it++, index++)
 		{
-			NewsServer* pServer = *it;
-			if (pServer->GetActive() != m_ServerStatusList[index])
+			NewsServer* server = *it;
+			if (server->GetActive() != m_serverStatusList[index])
 			{
-				info("Scheduler: %s %s", pServer->GetActive() ? "activating" : "deactivating", pServer->GetName());
+				info("Scheduler: %s %s", server->GetActive() ? "activating" : "deactivating", server->GetName());
 			}
 		}
 		g_pServerPool->Changed();
 	}
 }
 
-void Scheduler::EditServer(bool bActive, const char* szServerList)
+void Scheduler::EditServer(bool active, const char* serverList)
 {
-	Tokenizer tok(szServerList, ",;");
-	while (const char* szServer = tok.Next())
+	Tokenizer tok(serverList, ",;");
+	while (const char* serverRef = tok.Next())
 	{
-		int iID = atoi(szServer);
+		int id = atoi(serverRef);
 		for (Servers::iterator it = g_pServerPool->GetServers()->begin(); it != g_pServerPool->GetServers()->end(); it++)
 		{
-			NewsServer* pServer = *it;
-			if ((iID > 0 && pServer->GetID() == iID) ||
-				!strcasecmp(pServer->GetName(), szServer))
+			NewsServer* server = *it;
+			if ((id > 0 && server->GetID() == id) ||
+				!strcasecmp(server->GetName(), serverRef))
 			{
-				if (!m_bServerChanged)
+				if (!m_serverChanged)
 				{
 					// store old server status for logging
-					m_ServerStatusList.clear();
-					m_ServerStatusList.reserve(g_pServerPool->GetServers()->size());
+					m_serverStatusList.clear();
+					m_serverStatusList.reserve(g_pServerPool->GetServers()->size());
 					for (Servers::iterator it2 = g_pServerPool->GetServers()->begin(); it2 != g_pServerPool->GetServers()->end(); it2++)
 					{
-						NewsServer* pServer2 = *it2;
-						m_ServerStatusList.push_back(pServer2->GetActive());
+						NewsServer* server2 = *it2;
+						m_serverStatusList.push_back(server2->GetActive());
 					}
 				}
-				m_bServerChanged = true;
-				pServer->SetActive(bActive);
+				m_serverChanged = true;
+				server->SetActive(active);
 				break;
 			}
 		}
 	}
 }
 
-void Scheduler::FetchFeed(const char* szFeedList)
+void Scheduler::FetchFeed(const char* feedList)
 {
-	Tokenizer tok(szFeedList, ",;");
-	while (const char* szFeed = tok.Next())
+	Tokenizer tok(feedList, ",;");
+	while (const char* feedRef = tok.Next())
 	{
-		int iID = atoi(szFeed);
+		int id = atoi(feedRef);
 		for (Feeds::iterator it = g_pFeedCoordinator->GetFeeds()->begin(); it != g_pFeedCoordinator->GetFeeds()->end(); it++)
 		{
-			FeedInfo* pFeed = *it;
-			if (pFeed->GetID() == iID ||
-				!strcasecmp(pFeed->GetName(), szFeed) ||
-				!strcasecmp("0", szFeed))
+			FeedInfo* feed = *it;
+			if (feed->GetID() == id ||
+				!strcasecmp(feed->GetName(), feedRef) ||
+				!strcasecmp("0", feedRef))
 			{
-				g_pFeedCoordinator->FetchFeed(!strcasecmp("0", szFeed) ? 0 : pFeed->GetID());
+				g_pFeedCoordinator->FetchFeed(!strcasecmp("0", feedRef) ? 0 : feed->GetID());
 				break;
 			}
 		}
@@ -364,9 +364,9 @@ void Scheduler::FetchFeed(const char* szFeedList)
 
 void Scheduler::CheckScheduledResume()
 {
-	time_t tResumeTime = g_pOptions->GetResumeTime();
-	time_t tCurrentTime = time(NULL);
-	if (tResumeTime > 0 && tCurrentTime >= tResumeTime)
+	time_t resumeTime = g_pOptions->GetResumeTime();
+	time_t currentTime = time(NULL);
+	if (resumeTime > 0 && currentTime >= resumeTime)
 	{
 		info("Autoresume");
 		g_pOptions->SetResumeTime(0);

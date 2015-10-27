@@ -60,29 +60,29 @@ extern void ExitProc();
 
 #ifdef DEBUG
 
-void PrintBacktrace(PCONTEXT pContext)
+void PrintBacktrace(PCONTEXT context)
 {
 	HANDLE hProcess = GetCurrentProcess();
 	HANDLE hThread = GetCurrentThread();
 
-	char szAppDir[MAX_PATH + 1];
-	GetModuleFileName(NULL, szAppDir, sizeof(szAppDir));
-	char* end = strrchr(szAppDir, PATH_SEPARATOR);
+	char appDir[MAX_PATH + 1];
+	GetModuleFileName(NULL, appDir, sizeof(appDir));
+	char* end = strrchr(appDir, PATH_SEPARATOR);
 	if (end) *end = '\0';
 
 	SymSetOptions(SymGetOptions() | SYMOPT_LOAD_LINES | SYMOPT_FAIL_CRITICAL_ERRORS);
 
-	if (!SymInitialize(hProcess, szAppDir, TRUE))
+	if (!SymInitialize(hProcess, appDir, TRUE))
 	{
 		warn("Could not obtain detailed exception information: SymInitialize failed");
 		return;
 	}
 
 	const int MAX_NAMELEN = 1024;
-	IMAGEHLP_SYMBOL64* pSym = (IMAGEHLP_SYMBOL64 *) malloc(sizeof(IMAGEHLP_SYMBOL64) + MAX_NAMELEN);
-	memset(pSym, 0, sizeof(IMAGEHLP_SYMBOL64) + MAX_NAMELEN);
-	pSym->SizeOfStruct = sizeof(IMAGEHLP_SYMBOL64);
-	pSym->MaxNameLength = MAX_NAMELEN;
+	IMAGEHLP_SYMBOL64* sym = (IMAGEHLP_SYMBOL64 *) malloc(sizeof(IMAGEHLP_SYMBOL64) + MAX_NAMELEN);
+	memset(sym, 0, sizeof(IMAGEHLP_SYMBOL64) + MAX_NAMELEN);
+	sym->SizeOfStruct = sizeof(IMAGEHLP_SYMBOL64);
+	sym->MaxNameLength = MAX_NAMELEN;
 
 	IMAGEHLP_LINE64 ilLine;
 	memset(&ilLine, 0, sizeof(ilLine));
@@ -93,19 +93,19 @@ void PrintBacktrace(PCONTEXT pContext)
 	DWORD imageType;
 #ifdef _M_IX86
 	imageType = IMAGE_FILE_MACHINE_I386;
-	sfStackFrame.AddrPC.Offset = pContext->Eip;
+	sfStackFrame.AddrPC.Offset = context->Eip;
 	sfStackFrame.AddrPC.Mode = AddrModeFlat;
-	sfStackFrame.AddrFrame.Offset = pContext->Ebp;
+	sfStackFrame.AddrFrame.Offset = context->Ebp;
 	sfStackFrame.AddrFrame.Mode = AddrModeFlat;
-	sfStackFrame.AddrStack.Offset = pContext->Esp;
+	sfStackFrame.AddrStack.Offset = context->Esp;
 	sfStackFrame.AddrStack.Mode = AddrModeFlat;
 #elif _M_X64
 	imageType = IMAGE_FILE_MACHINE_AMD64;
-	sfStackFrame.AddrPC.Offset = pContext->Rip;
+	sfStackFrame.AddrPC.Offset = context->Rip;
 	sfStackFrame.AddrPC.Mode = AddrModeFlat;
-	sfStackFrame.AddrFrame.Offset = pContext->Rsp;
+	sfStackFrame.AddrFrame.Offset = context->Rsp;
 	sfStackFrame.AddrFrame.Mode = AddrModeFlat;
-	sfStackFrame.AddrStack.Offset = pContext->Rsp;
+	sfStackFrame.AddrStack.Offset = context->Rsp;
 	sfStackFrame.AddrStack.Mode = AddrModeFlat;
 #else
 	warn("Could not obtain detailed exception information: platform not supported");
@@ -120,47 +120,47 @@ void PrintBacktrace(PCONTEXT pContext)
 			return;
 		}
 
-		if (!StackWalk64(imageType, hProcess, hThread, &sfStackFrame, pContext, NULL, SymFunctionTableAccess64, SymGetModuleBase64, NULL))
+		if (!StackWalk64(imageType, hProcess, hThread, &sfStackFrame, context, NULL, SymFunctionTableAccess64, SymGetModuleBase64, NULL))
 		{
 			warn("Could not obtain detailed exception information: StackWalk64 failed");
 			return;
 		}
 
 		DWORD64 dwAddr = sfStackFrame.AddrPC.Offset;
-		char szSymName[1024];
-		char szSrcFileName[1024];
-		int iLineNumber = 0;
+		char symName[1024];
+		char srcFileName[1024];
+		int lineNumber = 0;
 
 		DWORD64 dwSymbolDisplacement;
-		if (SymGetSymFromAddr64(hProcess, dwAddr, &dwSymbolDisplacement, pSym))
+		if (SymGetSymFromAddr64(hProcess, dwAddr, &dwSymbolDisplacement, sym))
 		{
-			UnDecorateSymbolName(pSym->Name, szSymName, sizeof(szSymName), UNDNAME_COMPLETE);
-			szSymName[sizeof(szSymName) - 1] = '\0';
+			UnDecorateSymbolName(sym->Name, symName, sizeof(symName), UNDNAME_COMPLETE);
+			symName[sizeof(symName) - 1] = '\0';
 		}
 		else
 		{
-			strncpy(szSymName, "<symbol not available>", sizeof(szSymName));
+			strncpy(symName, "<symbol not available>", sizeof(symName));
 		}
 
 		DWORD dwLineDisplacement;
 		if (SymGetLineFromAddr64(hProcess, dwAddr, &dwLineDisplacement, &ilLine))
 		{
-			iLineNumber = ilLine.LineNumber;
-			char* szUseFileName = ilLine.FileName;
-			char* szRoot = strstr(szUseFileName, "\\daemon\\");
-			if (szRoot)
+			lineNumber = ilLine.LineNumber;
+			char* useFileName = ilLine.FileName;
+			char* root = strstr(useFileName, "\\daemon\\");
+			if (root)
 			{
-				szUseFileName = szRoot;
+				useFileName = root;
 			}
-			strncpy(szSrcFileName, szUseFileName, sizeof(szSrcFileName));
-			szSrcFileName[sizeof(szSrcFileName) - 1] = '\0';
+			strncpy(srcFileName, useFileName, sizeof(srcFileName));
+			srcFileName[sizeof(srcFileName) - 1] = '\0';
 		}
 		else
 		{
-			strncpy(szSrcFileName, "<filename not available>", sizeof(szSymName));
+			strncpy(srcFileName, "<filename not available>", sizeof(symName));
 		}
 
-		info("%s (%i) : %s", szSrcFileName, iLineNumber, szSymName);
+		info("%s (%i) : %s", srcFileName, lineNumber, symName);
 
 		if (sfStackFrame.AddrReturn.Offset == 0)
 		{
@@ -170,15 +170,15 @@ void PrintBacktrace(PCONTEXT pContext)
 }
 #endif
 
-LONG __stdcall ExceptionFilter(EXCEPTION_POINTERS* pExPtrs)
+LONG __stdcall ExceptionFilter(EXCEPTION_POINTERS* exPtrs)
 {
 	error("Unhandled Exception: code: 0x%8.8X, flags: %d, address: 0x%8.8X",
-		pExPtrs->ExceptionRecord->ExceptionCode,
-		pExPtrs->ExceptionRecord->ExceptionFlags,
-		pExPtrs->ExceptionRecord->ExceptionAddress);
+		exPtrs->ExceptionRecord->ExceptionCode,
+		exPtrs->ExceptionRecord->ExceptionFlags,
+		exPtrs->ExceptionRecord->ExceptionAddress);
 
 #ifdef DEBUG
-	PrintBacktrace(pExPtrs->ContextRecord);
+	PrintBacktrace(exPtrs->ContextRecord);
 #else
 	 info("Detailed exception information can be printed by debug version of NZBGet (available from download page)");
 #endif
@@ -250,9 +250,9 @@ void PrintBacktrace()
 /*
  * Signal handler
  */
-void SignalProc(int iSignal)
+void SignalProc(int signum)
 {
-	switch (iSignal)
+	switch (signum)
 	{
 		case SIGINT:
 			signal(SIGINT, SIG_DFL);   // Reset the signal handler

@@ -49,95 +49,95 @@
 
 SchedulerScriptController::~SchedulerScriptController()
 {
-	free(m_szScript);
+	free(m_script);
 }
 
-void SchedulerScriptController::StartScript(const char* szParam, bool bExternalProcess, int iTaskID)
+void SchedulerScriptController::StartScript(const char* param, bool externalProcess, int taskId)
 {
 	char** argv = NULL;
-	if (bExternalProcess && !Util::SplitCommandLine(szParam, &argv))
+	if (externalProcess && !Util::SplitCommandLine(param, &argv))
 	{
-		error("Could not execute scheduled process-script, failed to parse command line: %s", szParam);
+		error("Could not execute scheduled process-script, failed to parse command line: %s", param);
 		return;
 	}
 
-	SchedulerScriptController* pScriptController = new SchedulerScriptController();
+	SchedulerScriptController* scriptController = new SchedulerScriptController();
 
-	pScriptController->m_bExternalProcess = bExternalProcess;
-	pScriptController->m_szScript = strdup(szParam);
-	pScriptController->m_iTaskID = iTaskID;
+	scriptController->m_externalProcess = externalProcess;
+	scriptController->m_script = strdup(param);
+	scriptController->m_taskId = taskId;
 
-	if (bExternalProcess)
+	if (externalProcess)
 	{
-		pScriptController->SetScript(argv[0]);
-		pScriptController->SetArgs((const char**)argv, true);
+		scriptController->SetScript(argv[0]);
+		scriptController->SetArgs((const char**)argv, true);
 	}
 
-	pScriptController->SetAutoDestroy(true);
+	scriptController->SetAutoDestroy(true);
 
-	pScriptController->Start();
+	scriptController->Start();
 }
 
 void SchedulerScriptController::Run()
 {
-	if (m_bExternalProcess)
+	if (m_externalProcess)
 	{
 		ExecuteExternalProcess();
 	}
 	else
 	{
-		ExecuteScriptList(m_szScript);
+		ExecuteScriptList(m_script);
 	}
 }
 
-void SchedulerScriptController::ExecuteScript(ScriptConfig::Script* pScript)
+void SchedulerScriptController::ExecuteScript(ScriptConfig::Script* script)
 {
-	if (!pScript->GetSchedulerScript())
+	if (!script->GetSchedulerScript())
 	{
 		return;
 	}
 
-	PrintMessage(Message::mkInfo, "Executing scheduler-script %s for Task%i", pScript->GetName(), m_iTaskID);
+	PrintMessage(Message::mkInfo, "Executing scheduler-script %s for Task%i", script->GetName(), m_taskId);
 
-	SetScript(pScript->GetLocation());
+	SetScript(script->GetLocation());
 	SetArgs(NULL, false);
 
-	char szInfoName[1024];
-	snprintf(szInfoName, 1024, "scheduler-script %s for Task%i", pScript->GetName(), m_iTaskID);
-	szInfoName[1024-1] = '\0';
-	SetInfoName(szInfoName);
+	char infoName[1024];
+	snprintf(infoName, 1024, "scheduler-script %s for Task%i", script->GetName(), m_taskId);
+	infoName[1024-1] = '\0';
+	SetInfoName(infoName);
 
-	SetLogPrefix(pScript->GetDisplayName());
-	PrepareParams(pScript->GetName());
+	SetLogPrefix(script->GetDisplayName());
+	PrepareParams(script->GetName());
 
 	Execute();
 
 	SetLogPrefix(NULL);
 }
 
-void SchedulerScriptController::PrepareParams(const char* szScriptName)
+void SchedulerScriptController::PrepareParams(const char* scriptName)
 {
 	ResetEnv();
 
-	SetIntEnvVar("NZBSP_TASKID", m_iTaskID);
+	SetIntEnvVar("NZBSP_TASKID", m_taskId);
 
-	PrepareEnvScript(NULL, szScriptName);
+	PrepareEnvScript(NULL, scriptName);
 }
 
 void SchedulerScriptController::ExecuteExternalProcess()
 {
-	info("Executing scheduled process-script %s for Task%i", Util::BaseFileName(GetScript()), m_iTaskID);
+	info("Executing scheduled process-script %s for Task%i", Util::BaseFileName(GetScript()), m_taskId);
 
-	char szInfoName[1024];
-	snprintf(szInfoName, 1024, "scheduled process-script %s for Task%i", Util::BaseFileName(GetScript()), m_iTaskID);
-	szInfoName[1024-1] = '\0';
-	SetInfoName(szInfoName);
+	char infoName[1024];
+	snprintf(infoName, 1024, "scheduled process-script %s for Task%i", Util::BaseFileName(GetScript()), m_taskId);
+	infoName[1024-1] = '\0';
+	SetInfoName(infoName);
 
-	char szLogPrefix[1024];
-	strncpy(szLogPrefix, Util::BaseFileName(GetScript()), 1024);
-	szLogPrefix[1024-1] = '\0';
-	if (char* ext = strrchr(szLogPrefix, '.')) *ext = '\0'; // strip file extension
-	SetLogPrefix(szLogPrefix);
+	char logPrefix[1024];
+	strncpy(logPrefix, Util::BaseFileName(GetScript()), 1024);
+	logPrefix[1024-1] = '\0';
+	if (char* ext = strrchr(logPrefix, '.')) *ext = '\0'; // strip file extension
+	SetLogPrefix(logPrefix);
 
 	Execute();
 }

@@ -47,18 +47,18 @@ static const int CONNECTION_HOLD_SECODNS = 5;
 
 ServerPool::PooledConnection::PooledConnection(NewsServer* server) : NNTPConnection(server)
 {
-	m_bInUse = false;
-	m_tFreeTime = 0;
+	m_inUse = false;
+	m_freeTime = 0;
 }
 
 ServerPool::ServerPool()
 {
 	debug("Creating ServerPool");
 
-	m_iMaxNormLevel = 0;
-	m_iTimeout = 60;
-	m_iGeneration = 0;
-	m_iRetryInterval = 0;
+	m_maxNormLevel = 0;
+	m_timeout = 60;
+	m_generation = 0;
+	m_retryInterval = 0;
 
 	g_pLog->RegisterDebuggable(this);
 }
@@ -69,28 +69,28 @@ ServerPool::~ ServerPool()
 
 	g_pLog->UnregisterDebuggable(this);
 
-	m_Levels.clear();
+	m_levels.clear();
 
-	for (Servers::iterator it = m_Servers.begin(); it != m_Servers.end(); it++)
+	for (Servers::iterator it = m_servers.begin(); it != m_servers.end(); it++)
 	{
 		delete *it;
 	}
-	m_Servers.clear();
-	m_SortedServers.clear();
+	m_servers.clear();
+	m_sortedServers.clear();
 
-	for (Connections::iterator it = m_Connections.begin(); it != m_Connections.end(); it++)
+	for (Connections::iterator it = m_connections.begin(); it != m_connections.end(); it++)
 	{
 		delete *it;
 	}
-	m_Connections.clear();
+	m_connections.clear();
 }
 
-void ServerPool::AddServer(NewsServer* pNewsServer)
+void ServerPool::AddServer(NewsServer* newsServer)
 {
 	debug("Adding server to ServerPool");
 
-	m_Servers.push_back(pNewsServer);
-	m_SortedServers.push_back(pNewsServer);
+	m_servers.push_back(newsServer);
+	m_sortedServers.push_back(newsServer);
 }
 
 /*
@@ -101,150 +101,150 @@ void ServerPool::AddServer(NewsServer* pNewsServer)
 **/
 void ServerPool::NormalizeLevels()
 {
-	if (m_Servers.empty())
+	if (m_servers.empty())
 	{
 		return;
 	}
 
-	std::sort(m_SortedServers.begin(), m_SortedServers.end(), CompareServers);
+	std::sort(m_sortedServers.begin(), m_sortedServers.end(), CompareServers);
 
 	// find minimum level
-	int iMinLevel = m_SortedServers.front()->GetLevel();
-	for (Servers::iterator it = m_SortedServers.begin(); it != m_SortedServers.end(); it++)
+	int minLevel = m_sortedServers.front()->GetLevel();
+	for (Servers::iterator it = m_sortedServers.begin(); it != m_sortedServers.end(); it++)
 	{
-		NewsServer* pNewsServer = *it;
-		if (pNewsServer->GetLevel() < iMinLevel)
+		NewsServer* newsServer = *it;
+		if (newsServer->GetLevel() < minLevel)
 		{
-			iMinLevel = pNewsServer->GetLevel();
+			minLevel = newsServer->GetLevel();
 		}
 	}
 
-	m_iMaxNormLevel = 0;
-	int iLastLevel = iMinLevel;
-	for (Servers::iterator it = m_SortedServers.begin(); it != m_SortedServers.end(); it++)
+	m_maxNormLevel = 0;
+	int lastLevel = minLevel;
+	for (Servers::iterator it = m_sortedServers.begin(); it != m_sortedServers.end(); it++)
 	{
-		NewsServer* pNewsServer = *it;
-		if ((pNewsServer->GetActive() && pNewsServer->GetMaxConnections() > 0) ||
-			(pNewsServer->GetLevel() == iMinLevel))
+		NewsServer* newsServer = *it;
+		if ((newsServer->GetActive() && newsServer->GetMaxConnections() > 0) ||
+			(newsServer->GetLevel() == minLevel))
 		{
-			if (pNewsServer->GetLevel() != iLastLevel)
+			if (newsServer->GetLevel() != lastLevel)
 			{
-				m_iMaxNormLevel++;
+				m_maxNormLevel++;
 			}
-			pNewsServer->SetNormLevel(m_iMaxNormLevel);
-			iLastLevel = pNewsServer->GetLevel();
+			newsServer->SetNormLevel(m_maxNormLevel);
+			lastLevel = newsServer->GetLevel();
 		}
 		else
 		{
-			pNewsServer->SetNormLevel(-1);
+			newsServer->SetNormLevel(-1);
 		}
 	}
 }
 
-bool ServerPool::CompareServers(NewsServer* pServer1, NewsServer* pServer2)
+bool ServerPool::CompareServers(NewsServer* server1, NewsServer* server2)
 {
-	return pServer1->GetLevel() < pServer2->GetLevel();
+	return server1->GetLevel() < server2->GetLevel();
 }
 
 void ServerPool::InitConnections()
 {
 	debug("Initializing connections in ServerPool");
 
-	m_mutexConnections.Lock();
+	m_connectionsMutex.Lock();
 
 	NormalizeLevels();
-	m_Levels.clear();
+	m_levels.clear();
 
-	for (Servers::iterator it = m_SortedServers.begin(); it != m_SortedServers.end(); it++)
+	for (Servers::iterator it = m_sortedServers.begin(); it != m_sortedServers.end(); it++)
 	{
-		NewsServer* pNewsServer = *it;
-		pNewsServer->SetBlockTime(0);
-		int iNormLevel = pNewsServer->GetNormLevel();
-		if (pNewsServer->GetNormLevel() > -1)
+		NewsServer* newsServer = *it;
+		newsServer->SetBlockTime(0);
+		int normLevel = newsServer->GetNormLevel();
+		if (newsServer->GetNormLevel() > -1)
 		{
-			if ((int)m_Levels.size() <= iNormLevel)
+			if ((int)m_levels.size() <= normLevel)
 			{
-				m_Levels.push_back(0);
+				m_levels.push_back(0);
 			}
 
-			if (pNewsServer->GetActive())
+			if (newsServer->GetActive())
 			{
-				int iConnections = 0;
+				int connections = 0;
 				
-				for (Connections::iterator it = m_Connections.begin(); it != m_Connections.end(); it++)
+				for (Connections::iterator it = m_connections.begin(); it != m_connections.end(); it++)
 				{
-					PooledConnection* pConnection = *it;
-					if (pConnection->GetNewsServer() == pNewsServer)
+					PooledConnection* connection = *it;
+					if (connection->GetNewsServer() == newsServer)
 					{
-						iConnections++;
+						connections++;
 					}
 				}
 				
-				for (int i = iConnections; i < pNewsServer->GetMaxConnections(); i++)
+				for (int i = connections; i < newsServer->GetMaxConnections(); i++)
 				{
-					PooledConnection* pConnection = new PooledConnection(pNewsServer);
-					pConnection->SetTimeout(m_iTimeout);
-					m_Connections.push_back(pConnection);
-					iConnections++;
+					PooledConnection* connection = new PooledConnection(newsServer);
+					connection->SetTimeout(m_timeout);
+					m_connections.push_back(connection);
+					connections++;
 				}
 
-				m_Levels[iNormLevel] += iConnections;
+				m_levels[normLevel] += connections;
 			}
 		}
 	}
 
-	m_iGeneration++;
+	m_generation++;
 
-	m_mutexConnections.Unlock();
+	m_connectionsMutex.Unlock();
 }
 
-NNTPConnection* ServerPool::GetConnection(int iLevel, NewsServer* pWantServer, Servers* pIgnoreServers)
+NNTPConnection* ServerPool::GetConnection(int level, NewsServer* wantServer, Servers* ignoreServers)
 {
-	PooledConnection* pConnection = NULL;
-	m_mutexConnections.Lock();
+	PooledConnection* connection = NULL;
+	m_connectionsMutex.Lock();
 
-	time_t tCurTime = time(NULL);
+	time_t curTime = time(NULL);
 
-	if (iLevel < (int)m_Levels.size() && m_Levels[iLevel] > 0)
+	if (level < (int)m_levels.size() && m_levels[level] > 0)
 	{
 		Connections candidates;
-		candidates.reserve(m_Connections.size());
+		candidates.reserve(m_connections.size());
 
-		for (Connections::iterator it = m_Connections.begin(); it != m_Connections.end(); it++)
+		for (Connections::iterator it = m_connections.begin(); it != m_connections.end(); it++)
 		{
-			PooledConnection* pCandidateConnection = *it;
-			NewsServer* pCandidateServer = pCandidateConnection->GetNewsServer();
-			if (!pCandidateConnection->GetInUse() && pCandidateServer->GetActive() &&
-				pCandidateServer->GetNormLevel() == iLevel && 
-				(!pWantServer || pCandidateServer == pWantServer ||
-				 (pWantServer->GetGroup() > 0 && pWantServer->GetGroup() == pCandidateServer->GetGroup())) &&
-				(pCandidateConnection->GetStatus() == Connection::csConnected ||
-				 !pCandidateServer->GetBlockTime() ||
-				 pCandidateServer->GetBlockTime() + m_iRetryInterval <= tCurTime ||
-				 pCandidateServer->GetBlockTime() > tCurTime))
+			PooledConnection* candidateConnection = *it;
+			NewsServer* candidateServer = candidateConnection->GetNewsServer();
+			if (!candidateConnection->GetInUse() && candidateServer->GetActive() &&
+				candidateServer->GetNormLevel() == level && 
+				(!wantServer || candidateServer == wantServer ||
+				 (wantServer->GetGroup() > 0 && wantServer->GetGroup() == candidateServer->GetGroup())) &&
+				(candidateConnection->GetStatus() == Connection::csConnected ||
+				 !candidateServer->GetBlockTime() ||
+				 candidateServer->GetBlockTime() + m_retryInterval <= curTime ||
+				 candidateServer->GetBlockTime() > curTime))
 			{
 				// free connection found, check if it's not from the server which should be ignored
-				bool bUseConnection = true;
-				if (pIgnoreServers && !pWantServer)
+				bool useConnection = true;
+				if (ignoreServers && !wantServer)
 				{
-					for (Servers::iterator it = pIgnoreServers->begin(); it != pIgnoreServers->end(); it++)
+					for (Servers::iterator it = ignoreServers->begin(); it != ignoreServers->end(); it++)
 					{
-						NewsServer* pIgnoreServer = *it;
-						if (pIgnoreServer == pCandidateServer ||
-							(pIgnoreServer->GetGroup() > 0 && pIgnoreServer->GetGroup() == pCandidateServer->GetGroup() &&
-							 pIgnoreServer->GetNormLevel() == pCandidateServer->GetNormLevel()))
+						NewsServer* ignoreServer = *it;
+						if (ignoreServer == candidateServer ||
+							(ignoreServer->GetGroup() > 0 && ignoreServer->GetGroup() == candidateServer->GetGroup() &&
+							 ignoreServer->GetNormLevel() == candidateServer->GetNormLevel()))
 						{
-							bUseConnection = false;
+							useConnection = false;
 							break;
 						}
 					}
 				}
 
-				pCandidateServer->SetBlockTime(0);
+				candidateServer->SetBlockTime(0);
 
-				if (bUseConnection)
+				if (useConnection)
 				{
-					candidates.push_back(pCandidateConnection);
+					candidates.push_back(candidateConnection);
 				}
 			}
 		}
@@ -254,88 +254,88 @@ NNTPConnection* ServerPool::GetConnection(int iLevel, NewsServer* pWantServer, S
 			// Peeking a random free connection. This is better than taking the first
 			// available connection because provides better distribution across news servers,
 			// especially when one of servers becomes unavailable or doesn't have requested articles.
-			int iRandomIndex = rand() % candidates.size();
-			pConnection = candidates[iRandomIndex];
-			pConnection->SetInUse(true);
+			int randomIndex = rand() % candidates.size();
+			connection = candidates[randomIndex];
+			connection->SetInUse(true);
 		}
 
-		if (pConnection)
+		if (connection)
 		{
-			m_Levels[iLevel]--;
+			m_levels[level]--;
 		}
 	}
 
-	m_mutexConnections.Unlock();
+	m_connectionsMutex.Unlock();
 
-	return pConnection;
+	return connection;
 }
 
-void ServerPool::FreeConnection(NNTPConnection* pConnection, bool bUsed)
+void ServerPool::FreeConnection(NNTPConnection* connection, bool used)
 {
-	if (bUsed)
+	if (used)
 	{
 		debug("Freeing used connection");
 	}
 
-	m_mutexConnections.Lock();
+	m_connectionsMutex.Lock();
 
-	((PooledConnection*)pConnection)->SetInUse(false);
-	if (bUsed)
+	((PooledConnection*)connection)->SetInUse(false);
+	if (used)
 	{
-		((PooledConnection*)pConnection)->SetFreeTimeNow();
+		((PooledConnection*)connection)->SetFreeTimeNow();
 	}
 
-	if (pConnection->GetNewsServer()->GetNormLevel() > -1 && pConnection->GetNewsServer()->GetActive())
+	if (connection->GetNewsServer()->GetNormLevel() > -1 && connection->GetNewsServer()->GetActive())
 	{
-		m_Levels[pConnection->GetNewsServer()->GetNormLevel()]++;
+		m_levels[connection->GetNewsServer()->GetNormLevel()]++;
 	}
 
-	m_mutexConnections.Unlock();
+	m_connectionsMutex.Unlock();
 }
 
-void ServerPool::BlockServer(NewsServer* pNewsServer)
+void ServerPool::BlockServer(NewsServer* newsServer)
 {
-	m_mutexConnections.Lock();
-	time_t tCurTime = time(NULL);
-	bool bNewBlock = pNewsServer->GetBlockTime() != tCurTime;
-	pNewsServer->SetBlockTime(tCurTime);
-	m_mutexConnections.Unlock();
+	m_connectionsMutex.Lock();
+	time_t curTime = time(NULL);
+	bool newBlock = newsServer->GetBlockTime() != curTime;
+	newsServer->SetBlockTime(curTime);
+	m_connectionsMutex.Unlock();
 
-	if (bNewBlock && m_iRetryInterval > 0)
+	if (newBlock && m_retryInterval > 0)
 	{
-		warn("Blocking %s (%s) for %i sec", pNewsServer->GetName(), pNewsServer->GetHost(), m_iRetryInterval);
+		warn("Blocking %s (%s) for %i sec", newsServer->GetName(), newsServer->GetHost(), m_retryInterval);
 	}
 }
 
 void ServerPool::CloseUnusedConnections()
 {
-	m_mutexConnections.Lock();
+	m_connectionsMutex.Lock();
 
 	time_t curtime = ::time(NULL);
 
 	// close and free all connections of servers which were disabled since the last check
 	int i = 0;
-	for (Connections::iterator it = m_Connections.begin(); it != m_Connections.end(); )
+	for (Connections::iterator it = m_connections.begin(); it != m_connections.end(); )
 	{
-		PooledConnection* pConnection = *it;
-		bool bDeleted = false;
+		PooledConnection* connection = *it;
+		bool deleted = false;
 
-		if (!pConnection->GetInUse() &&
-			(pConnection->GetNewsServer()->GetNormLevel() == -1 ||
-			 !pConnection->GetNewsServer()->GetActive()))
+		if (!connection->GetInUse() &&
+			(connection->GetNewsServer()->GetNormLevel() == -1 ||
+			 !connection->GetNewsServer()->GetActive()))
 		{
-			debug("Closing (and deleting) unused connection to server%i", pConnection->GetNewsServer()->GetID());
-			if (pConnection->GetStatus() == Connection::csConnected)
+			debug("Closing (and deleting) unused connection to server%i", connection->GetNewsServer()->GetID());
+			if (connection->GetStatus() == Connection::csConnected)
 			{
-				pConnection->Disconnect();
+				connection->Disconnect();
 			}
-			delete pConnection;
-			m_Connections.erase(it);
-			it = m_Connections.begin() + i;
-			bDeleted = true;
+			delete connection;
+			m_connections.erase(it);
+			it = m_connections.begin() + i;
+			deleted = true;
 		}
 
-		if (!bDeleted)
+		if (!deleted)
 		{
 			it++;
 			i++;
@@ -343,27 +343,27 @@ void ServerPool::CloseUnusedConnections()
 	}
 
 	// close all opened connections on levels not having any in-use connections
-	for (int iLevel = 0; iLevel <= m_iMaxNormLevel; iLevel++)
+	for (int level = 0; level <= m_maxNormLevel; level++)
 	{
 		// check if we have in-use connections on the level
-		bool bHasInUseConnections = false;
-		int iInactiveTime = 0;
-		for (Connections::iterator it = m_Connections.begin(); it != m_Connections.end(); it++)
+		bool hasInUseConnections = false;
+		int inactiveTime = 0;
+		for (Connections::iterator it = m_connections.begin(); it != m_connections.end(); it++)
 		{
-			PooledConnection* pConnection = *it;
-			if (pConnection->GetNewsServer()->GetNormLevel() == iLevel)
+			PooledConnection* connection = *it;
+			if (connection->GetNewsServer()->GetNormLevel() == level)
 			{
-				if (pConnection->GetInUse())
+				if (connection->GetInUse())
 				{
-					bHasInUseConnections = true;
+					hasInUseConnections = true;
 					break;
 				}
 				else
 				{
-					int tdiff = (int)(curtime - pConnection->GetFreeTime());
-					if (tdiff > iInactiveTime)
+					int tdiff = (int)(curtime - connection->GetFreeTime());
+					if (tdiff > inactiveTime)
 					{
-						iInactiveTime = tdiff;
+						inactiveTime = tdiff;
 					}
 				}
 			}
@@ -371,22 +371,22 @@ void ServerPool::CloseUnusedConnections()
 
 		// if there are no in-use connections on the level and the hold time out has
 		// expired - close all connections of the level.
-		if (!bHasInUseConnections && iInactiveTime > CONNECTION_HOLD_SECODNS)
+		if (!hasInUseConnections && inactiveTime > CONNECTION_HOLD_SECODNS)
 		{
-			for (Connections::iterator it = m_Connections.begin(); it != m_Connections.end(); it++)
+			for (Connections::iterator it = m_connections.begin(); it != m_connections.end(); it++)
 			{
-				PooledConnection* pConnection = *it;
-				if (pConnection->GetNewsServer()->GetNormLevel() == iLevel &&
-					pConnection->GetStatus() == Connection::csConnected)
+				PooledConnection* connection = *it;
+				if (connection->GetNewsServer()->GetNormLevel() == level &&
+					connection->GetStatus() == Connection::csConnected)
 				{
-					debug("Closing (and keeping) unused connection to server%i", pConnection->GetNewsServer()->GetID());
-					pConnection->Disconnect();
+					debug("Closing (and keeping) unused connection to server%i", connection->GetNewsServer()->GetID());
+					connection->Disconnect();
 				}
 			}
 		}
 	}
 
-	m_mutexConnections.Unlock();
+	m_connectionsMutex.Unlock();
 }
 
 void ServerPool::Changed()
@@ -401,39 +401,39 @@ void ServerPool::LogDebugInfo()
 {
 	info("   ---------- ServerPool");
 
-	info("    Max-Level: %i", m_iMaxNormLevel);
+	info("    Max-Level: %i", m_maxNormLevel);
 
-	m_mutexConnections.Lock();
+	m_connectionsMutex.Lock();
 
-	time_t tCurTime = time(NULL);
+	time_t curTime = time(NULL);
 
-	info("    Servers: %i", m_Servers.size());
-	for (Servers::iterator it = m_Servers.begin(); it != m_Servers.end(); it++)
+	info("    Servers: %i", m_servers.size());
+	for (Servers::iterator it = m_servers.begin(); it != m_servers.end(); it++)
 	{
-		NewsServer*  pNewsServer = *it;
-		info("      %i) %s (%s): Level=%i, NormLevel=%i, BlockSec=%i", pNewsServer->GetID(), pNewsServer->GetName(),
-			pNewsServer->GetHost(), pNewsServer->GetLevel(), pNewsServer->GetNormLevel(),
-			pNewsServer->GetBlockTime() && pNewsServer->GetBlockTime() + m_iRetryInterval > tCurTime ?
-				pNewsServer->GetBlockTime() + m_iRetryInterval - tCurTime : 0);
+		NewsServer*  newsServer = *it;
+		info("      %i) %s (%s): Level=%i, NormLevel=%i, BlockSec=%i", newsServer->GetID(), newsServer->GetName(),
+			newsServer->GetHost(), newsServer->GetLevel(), newsServer->GetNormLevel(),
+			newsServer->GetBlockTime() && newsServer->GetBlockTime() + m_retryInterval > curTime ?
+				newsServer->GetBlockTime() + m_retryInterval - curTime : 0);
 	}
 
-	info("    Levels: %i", m_Levels.size());
+	info("    Levels: %i", m_levels.size());
 	int index = 0;
-	for (Levels::iterator it = m_Levels.begin(); it != m_Levels.end(); it++, index++)
+	for (Levels::iterator it = m_levels.begin(); it != m_levels.end(); it++, index++)
 	{
-		int  iSize = *it;
-		info("      %i: Free connections=%i", index, iSize);
+		int  size = *it;
+		info("      %i: Free connections=%i", index, size);
 	}
 
-	info("    Connections: %i", m_Connections.size());
-	for (Connections::iterator it = m_Connections.begin(); it != m_Connections.end(); it++)
+	info("    Connections: %i", m_connections.size());
+	for (Connections::iterator it = m_connections.begin(); it != m_connections.end(); it++)
 	{
-		PooledConnection*  pConnection = *it;
-		info("      %i) %s (%s): Level=%i, NormLevel=%i, InUse:%i", pConnection->GetNewsServer()->GetID(),
-			pConnection->GetNewsServer()->GetName(), pConnection->GetNewsServer()->GetHost(),
-			pConnection->GetNewsServer()->GetLevel(), pConnection->GetNewsServer()->GetNormLevel(),
-			(int)pConnection->GetInUse());
+		PooledConnection*  connection = *it;
+		info("      %i) %s (%s): Level=%i, NormLevel=%i, InUse:%i", connection->GetNewsServer()->GetID(),
+			connection->GetNewsServer()->GetName(), connection->GetNewsServer()->GetHost(),
+			connection->GetNewsServer()->GetLevel(), connection->GetNewsServer()->GetNormLevel(),
+			(int)connection->GetInUse());
 	}
 
-	m_mutexConnections.Unlock();
+	m_connectionsMutex.Unlock();
 }

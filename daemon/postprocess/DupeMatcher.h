@@ -31,25 +31,25 @@
 class DupeMatcher
 {
 private:
-	char*				m_szDestDir;
-	long long			m_lExpectedSize;
-	long long			m_lMaxSize;
-	bool				m_bCompressed;
+	char*				m_destDir;
+	long long			m_expectedSize;
+	long long			m_maxSize;
+	bool				m_compressed;
 
-	void				FindLargestFile(const char* szDirectory, char* szFilenameBuf, int iBufLen,
-							long long* pMaxSize, bool* pCompressed);
+	void				FindLargestFile(const char* directory, char* filenameBuf, int bufLen,
+							long long* maxSize, bool* compressed);
 
 	friend class RarLister;
 
 protected:
-	virtual void		PrintMessage(Message::EKind eKind, const char* szFormat, ...) {}
+	virtual void		PrintMessage(Message::EKind kind, const char* format, ...) {}
 
 public:
-						DupeMatcher(const char* szDestDir, long long lExpectedSize);
+						DupeMatcher(const char* destDir, long long expectedSize);
 						~DupeMatcher();
 	bool				Prepare();
-	bool				MatchDupeContent(const char* szDupeDir);
-	static bool			SizeDiffOK(long long lSize1, long long lSize2, int iMaxDiffPercent);
+	bool				MatchDupeContent(const char* dupeDir);
+	static bool			SizeDiffOK(long long size1, long long size2, int maxDiffPercent);
 };
 
 #endif

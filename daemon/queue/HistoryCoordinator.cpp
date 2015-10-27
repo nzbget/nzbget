@@ -70,43 +70,43 @@ HistoryCoordinator::~HistoryCoordinator()
  */
 void HistoryCoordinator::ServiceWork()
 {
-	DownloadQueue* pDownloadQueue = DownloadQueue::Lock();
+	DownloadQueue* downloadQueue = DownloadQueue::Lock();
 
-	time_t tMinTime = time(NULL) - g_pOptions->GetKeepHistory() * 60*60*24;
-	bool bChanged = false;
+	time_t minTime = time(NULL) - g_pOptions->GetKeepHistory() * 60*60*24;
+	bool changed = false;
 	int index = 0;
 
 	// traversing in a reverse order to delete items in order they were added to history
 	// (just to produce the log-messages in a more logical order)
-	for (HistoryList::reverse_iterator it = pDownloadQueue->GetHistory()->rbegin(); it != pDownloadQueue->GetHistory()->rend(); )
+	for (HistoryList::reverse_iterator it = downloadQueue->GetHistory()->rbegin(); it != downloadQueue->GetHistory()->rend(); )
 	{
-		HistoryInfo* pHistoryInfo = *it;
-		if (pHistoryInfo->GetKind() != HistoryInfo::hkDup && pHistoryInfo->GetTime() < tMinTime)
+		HistoryInfo* historyInfo = *it;
+		if (historyInfo->GetKind() != HistoryInfo::hkDup && historyInfo->GetTime() < minTime)
 		{
-			if (g_pOptions->GetDupeCheck() && pHistoryInfo->GetKind() == HistoryInfo::hkNzb)
+			if (g_pOptions->GetDupeCheck() && historyInfo->GetKind() == HistoryInfo::hkNzb)
 			{
 				// replace history element
-				HistoryHide(pDownloadQueue, pHistoryInfo, index);
+				HistoryHide(downloadQueue, historyInfo, index);
 				index++;
 			}
 			else
 			{
-				char szNiceName[1024];
-				pHistoryInfo->GetName(szNiceName, 1024);
+				char niceName[1024];
+				historyInfo->GetName(niceName, 1024);
 
-				pDownloadQueue->GetHistory()->erase(pDownloadQueue->GetHistory()->end() - 1 - index);
+				downloadQueue->GetHistory()->erase(downloadQueue->GetHistory()->end() - 1 - index);
 				
-				if (pHistoryInfo->GetKind() == HistoryInfo::hkNzb)
+				if (historyInfo->GetKind() == HistoryInfo::hkNzb)
 				{
-					DeleteDiskFiles(pHistoryInfo->GetNZBInfo());
+					DeleteDiskFiles(historyInfo->GetNZBInfo());
 				}
-				info("Collection %s removed from history", szNiceName);
+				info("Collection %s removed from history", niceName);
 
-				delete pHistoryInfo;
+				delete historyInfo;
 			}
 
-			it = pDownloadQueue->GetHistory()->rbegin() + index;
-			bChanged = true;
+			it = downloadQueue->GetHistory()->rbegin() + index;
+			changed = true;
 		}
 		else
 		{
@@ -115,22 +115,22 @@ void HistoryCoordinator::ServiceWork()
 		}
 	}
 
-	if (bChanged)
+	if (changed)
 	{
-		pDownloadQueue->Save();
+		downloadQueue->Save();
 	}
 
 	DownloadQueue::Unlock();
 }
 
-void HistoryCoordinator::DeleteDiskFiles(NZBInfo* pNZBInfo)
+void HistoryCoordinator::DeleteDiskFiles(NZBInfo* nzbInfo)
 {
 	if (g_pOptions->GetSaveQueue() && g_pOptions->GetServerMode())
 	{
 		// delete parked files
-		g_pDiskState->DiscardFiles(pNZBInfo);
+		g_pDiskState->DiscardFiles(nzbInfo);
 	}
-	pNZBInfo->GetFileList()->Clear();
+	nzbInfo->GetFileList()->Clear();
 
 	// delete nzb-file
 	if (!g_pOptions->GetNzbCleanupDisk())
@@ -140,191 +140,191 @@ void HistoryCoordinator::DeleteDiskFiles(NZBInfo* pNZBInfo)
 
 	// QueuedFile may contain one filename or several filenames separated
 	// with "|"-character (for merged groups)
-	char* szFilename = strdup(pNZBInfo->GetQueuedFilename());
-	char* szEnd = szFilename - 1;
+	char* filename = strdup(nzbInfo->GetQueuedFilename());
+	char* end = filename - 1;
 	
-	while (szEnd)
+	while (end)
 	{
-		char* szName1 = szEnd + 1;
-		szEnd = strchr(szName1, '|');
-		if (szEnd) *szEnd = '\0';
+		char* name1 = end + 1;
+		end = strchr(name1, '|');
+		if (end) *end = '\0';
 
-		if (Util::FileExists(szName1))
+		if (Util::FileExists(name1))
 		{
-			info("Deleting file %s", szName1);
-			remove(szName1);
+			info("Deleting file %s", name1);
+			remove(name1);
 		}
 	}
 
-	free(szFilename);
+	free(filename);
 }
 
-void HistoryCoordinator::AddToHistory(DownloadQueue* pDownloadQueue, NZBInfo* pNZBInfo)
+void HistoryCoordinator::AddToHistory(DownloadQueue* downloadQueue, NZBInfo* nzbInfo)
 {
 	//remove old item for the same NZB
-	for (HistoryList::iterator it = pDownloadQueue->GetHistory()->begin(); it != pDownloadQueue->GetHistory()->end(); it++)
+	for (HistoryList::iterator it = downloadQueue->GetHistory()->begin(); it != downloadQueue->GetHistory()->end(); it++)
 	{
-		HistoryInfo* pHistoryInfo = *it;
-		if (pHistoryInfo->GetNZBInfo() == pNZBInfo)
+		HistoryInfo* historyInfo = *it;
+		if (historyInfo->GetNZBInfo() == nzbInfo)
 		{
-			delete pHistoryInfo;
-			pDownloadQueue->GetHistory()->erase(it);
+			delete historyInfo;
+			downloadQueue->GetHistory()->erase(it);
 			break;
 		}
 	}
 
-	HistoryInfo* pHistoryInfo = new HistoryInfo(pNZBInfo);
-	pHistoryInfo->SetTime(time(NULL));
-	pDownloadQueue->GetHistory()->push_front(pHistoryInfo);
-	pDownloadQueue->GetQueue()->Remove(pNZBInfo);
+	HistoryInfo* historyInfo = new HistoryInfo(nzbInfo);
+	historyInfo->SetTime(time(NULL));
+	downloadQueue->GetHistory()->push_front(historyInfo);
+	downloadQueue->GetQueue()->Remove(nzbInfo);
 
-	if (pNZBInfo->GetDeleteStatus() == NZBInfo::dsNone)
+	if (nzbInfo->GetDeleteStatus() == NZBInfo::dsNone)
 	{
 		// park files and delete files marked for deletion
-		int iParkedFiles = 0;
-		for (FileList::iterator it = pNZBInfo->GetFileList()->begin(); it != pNZBInfo->GetFileList()->end(); )
+		int parkedFiles = 0;
+		for (FileList::iterator it = nzbInfo->GetFileList()->begin(); it != nzbInfo->GetFileList()->end(); )
 		{
-			FileInfo* pFileInfo = *it;
-			if (!pFileInfo->GetDeleted())
+			FileInfo* fileInfo = *it;
+			if (!fileInfo->GetDeleted())
 			{
-				detail("Parking file %s", pFileInfo->GetFilename());
-				g_pQueueCoordinator->DiscardDiskFile(pFileInfo);
-				iParkedFiles++;
+				detail("Parking file %s", fileInfo->GetFilename());
+				g_pQueueCoordinator->DiscardDiskFile(fileInfo);
+				parkedFiles++;
 				it++;
 			}
 			else
 			{
 				// since we removed pNZBInfo from queue we need to take care of removing file infos marked for deletion
-				pNZBInfo->GetFileList()->erase(it);
-				delete pFileInfo;
-				it = pNZBInfo->GetFileList()->begin() + iParkedFiles;
+				nzbInfo->GetFileList()->erase(it);
+				delete fileInfo;
+				it = nzbInfo->GetFileList()->begin() + parkedFiles;
 			}
 		}
-		pNZBInfo->SetParkedFileCount(iParkedFiles);
+		nzbInfo->SetParkedFileCount(parkedFiles);
 	}
 	else
 	{
-		pNZBInfo->GetFileList()->Clear();
+		nzbInfo->GetFileList()->Clear();
 	}
 
-	pNZBInfo->PrintMessage(Message::mkInfo, "Collection %s added to history", pNZBInfo->GetName());
+	nzbInfo->PrintMessage(Message::mkInfo, "Collection %s added to history", nzbInfo->GetName());
 }
 
-void HistoryCoordinator::HistoryHide(DownloadQueue* pDownloadQueue, HistoryInfo* pHistoryInfo, int rindex)
+void HistoryCoordinator::HistoryHide(DownloadQueue* downloadQueue, HistoryInfo* historyInfo, int rindex)
 {
-	char szNiceName[1024];
-	pHistoryInfo->GetName(szNiceName, 1024);
+	char niceName[1024];
+	historyInfo->GetName(niceName, 1024);
 
 	// replace history element
-	DupInfo* pDupInfo = new DupInfo();
-	pDupInfo->SetID(pHistoryInfo->GetNZBInfo()->GetID());
-	pDupInfo->SetName(pHistoryInfo->GetNZBInfo()->GetName());
-	pDupInfo->SetDupeKey(pHistoryInfo->GetNZBInfo()->GetDupeKey());
-	pDupInfo->SetDupeScore(pHistoryInfo->GetNZBInfo()->GetDupeScore());
-	pDupInfo->SetDupeMode(pHistoryInfo->GetNZBInfo()->GetDupeMode());
-	pDupInfo->SetSize(pHistoryInfo->GetNZBInfo()->GetSize());
-	pDupInfo->SetFullContentHash(pHistoryInfo->GetNZBInfo()->GetFullContentHash());
-	pDupInfo->SetFilteredContentHash(pHistoryInfo->GetNZBInfo()->GetFilteredContentHash());
+	DupInfo* dupInfo = new DupInfo();
+	dupInfo->SetID(historyInfo->GetNZBInfo()->GetID());
+	dupInfo->SetName(historyInfo->GetNZBInfo()->GetName());
+	dupInfo->SetDupeKey(historyInfo->GetNZBInfo()->GetDupeKey());
+	dupInfo->SetDupeScore(historyInfo->GetNZBInfo()->GetDupeScore());
+	dupInfo->SetDupeMode(historyInfo->GetNZBInfo()->GetDupeMode());
+	dupInfo->SetSize(historyInfo->GetNZBInfo()->GetSize());
+	dupInfo->SetFullContentHash(historyInfo->GetNZBInfo()->GetFullContentHash());
+	dupInfo->SetFilteredContentHash(historyInfo->GetNZBInfo()->GetFilteredContentHash());
 
-	pDupInfo->SetStatus(
-		pHistoryInfo->GetNZBInfo()->GetMarkStatus() == NZBInfo::ksGood ? DupInfo::dsGood :
-		pHistoryInfo->GetNZBInfo()->GetMarkStatus() == NZBInfo::ksBad ? DupInfo::dsBad :
-		pHistoryInfo->GetNZBInfo()->GetMarkStatus() == NZBInfo::ksSuccess ? DupInfo::dsSuccess :
-		pHistoryInfo->GetNZBInfo()->GetDeleteStatus() == NZBInfo::dsDupe ? DupInfo::dsDupe :
-		pHistoryInfo->GetNZBInfo()->GetDeleteStatus() == NZBInfo::dsManual ||
-		pHistoryInfo->GetNZBInfo()->GetDeleteStatus() == NZBInfo::dsGood ||
-		pHistoryInfo->GetNZBInfo()->GetDeleteStatus() == NZBInfo::dsCopy ? DupInfo::dsDeleted :
-		pHistoryInfo->GetNZBInfo()->IsDupeSuccess() ? DupInfo::dsSuccess :
+	dupInfo->SetStatus(
+		historyInfo->GetNZBInfo()->GetMarkStatus() == NZBInfo::ksGood ? DupInfo::dsGood :
+		historyInfo->GetNZBInfo()->GetMarkStatus() == NZBInfo::ksBad ? DupInfo::dsBad :
+		historyInfo->GetNZBInfo()->GetMarkStatus() == NZBInfo::ksSuccess ? DupInfo::dsSuccess :
+		historyInfo->GetNZBInfo()->GetDeleteStatus() == NZBInfo::dsDupe ? DupInfo::dsDupe :
+		historyInfo->GetNZBInfo()->GetDeleteStatus() == NZBInfo::dsManual ||
+		historyInfo->GetNZBInfo()->GetDeleteStatus() == NZBInfo::dsGood ||
+		historyInfo->GetNZBInfo()->GetDeleteStatus() == NZBInfo::dsCopy ? DupInfo::dsDeleted :
+		historyInfo->GetNZBInfo()->IsDupeSuccess() ? DupInfo::dsSuccess :
 		DupInfo::dsFailed);
 
-	HistoryInfo* pNewHistoryInfo = new HistoryInfo(pDupInfo);
-	pNewHistoryInfo->SetTime(pHistoryInfo->GetTime());
-	(*pDownloadQueue->GetHistory())[pDownloadQueue->GetHistory()->size() - 1 - rindex] = pNewHistoryInfo;
+	HistoryInfo* newHistoryInfo = new HistoryInfo(dupInfo);
+	newHistoryInfo->SetTime(historyInfo->GetTime());
+	(*downloadQueue->GetHistory())[downloadQueue->GetHistory()->size() - 1 - rindex] = newHistoryInfo;
 
-	DeleteDiskFiles(pHistoryInfo->GetNZBInfo());
+	DeleteDiskFiles(historyInfo->GetNZBInfo());
 
-	delete pHistoryInfo;
-	info("Collection %s removed from history", szNiceName);
+	delete historyInfo;
+	info("Collection %s removed from history", niceName);
 }
 
-void HistoryCoordinator::PrepareEdit(DownloadQueue* pDownloadQueue, IDList* pIDList, DownloadQueue::EEditAction eAction)
+void HistoryCoordinator::PrepareEdit(DownloadQueue* downloadQueue, IDList* idList, DownloadQueue::EEditAction action)
 {
 	// First pass: when marking multiple items - mark them bad without performing the mark-logic,
 	// this will later (on second step) avoid moving other items to download queue, if they are marked bad too.
-	if (eAction == DownloadQueue::eaHistoryMarkBad)
+	if (action == DownloadQueue::eaHistoryMarkBad)
 	{
-		for (IDList::iterator itID = pIDList->begin(); itID != pIDList->end(); itID++)
+		for (IDList::iterator itID = idList->begin(); itID != idList->end(); itID++)
 		{
-			int iID = *itID;
-			HistoryInfo* pHistoryInfo = pDownloadQueue->GetHistory()->Find(iID);
-			if (pHistoryInfo && pHistoryInfo->GetKind() == HistoryInfo::hkNzb)
+			int id = *itID;
+			HistoryInfo* historyInfo = downloadQueue->GetHistory()->Find(id);
+			if (historyInfo && historyInfo->GetKind() == HistoryInfo::hkNzb)
 			{
-				pHistoryInfo->GetNZBInfo()->SetMarkStatus(NZBInfo::ksBad);
+				historyInfo->GetNZBInfo()->SetMarkStatus(NZBInfo::ksBad);
 			}
 		}
 	}
 }
 
-bool HistoryCoordinator::EditList(DownloadQueue* pDownloadQueue, IDList* pIDList, DownloadQueue::EEditAction eAction, int iOffset, const char* szText)
+bool HistoryCoordinator::EditList(DownloadQueue* downloadQueue, IDList* idList, DownloadQueue::EEditAction action, int offset, const char* text)
 {
-	bool bOK = false;
-	PrepareEdit(pDownloadQueue, pIDList, eAction);
+	bool ok = false;
+	PrepareEdit(downloadQueue, idList, action);
 
-	for (IDList::iterator itID = pIDList->begin(); itID != pIDList->end(); itID++)
+	for (IDList::iterator itID = idList->begin(); itID != idList->end(); itID++)
 	{
-		int iID = *itID;
-		for (HistoryList::iterator itHistory = pDownloadQueue->GetHistory()->begin(); itHistory != pDownloadQueue->GetHistory()->end(); itHistory++)
+		int id = *itID;
+		for (HistoryList::iterator itHistory = downloadQueue->GetHistory()->begin(); itHistory != downloadQueue->GetHistory()->end(); itHistory++)
 		{
-			HistoryInfo* pHistoryInfo = *itHistory;
-			if (pHistoryInfo->GetID() == iID)
+			HistoryInfo* historyInfo = *itHistory;
+			if (historyInfo->GetID() == id)
 			{
-				bOK = true;
+				ok = true;
 
-				switch (eAction)
+				switch (action)
 				{
 					case DownloadQueue::eaHistoryDelete:
 					case DownloadQueue::eaHistoryFinalDelete:
-						HistoryDelete(pDownloadQueue, itHistory, pHistoryInfo, eAction == DownloadQueue::eaHistoryFinalDelete);
+						HistoryDelete(downloadQueue, itHistory, historyInfo, action == DownloadQueue::eaHistoryFinalDelete);
 						break;
 
 					case DownloadQueue::eaHistoryReturn:
 					case DownloadQueue::eaHistoryProcess:
-						HistoryReturn(pDownloadQueue, itHistory, pHistoryInfo, eAction == DownloadQueue::eaHistoryProcess);
+						HistoryReturn(downloadQueue, itHistory, historyInfo, action == DownloadQueue::eaHistoryProcess);
 						break;
 
 					case DownloadQueue::eaHistoryRedownload:
-						HistoryRedownload(pDownloadQueue, itHistory, pHistoryInfo, false);
+						HistoryRedownload(downloadQueue, itHistory, historyInfo, false);
 						break;
 
  					case DownloadQueue::eaHistorySetParameter:
-						bOK = HistorySetParameter(pHistoryInfo, szText);
+						ok = HistorySetParameter(historyInfo, text);
 						break;
 
  					case DownloadQueue::eaHistorySetCategory:
-						bOK = HistorySetCategory(pHistoryInfo, szText);
+						ok = HistorySetCategory(historyInfo, text);
 						break;
 
  					case DownloadQueue::eaHistorySetName:
-						bOK = HistorySetName(pHistoryInfo, szText);
+						ok = HistorySetName(historyInfo, text);
 						break;
 
 					case DownloadQueue::eaHistorySetDupeKey:
 					case DownloadQueue::eaHistorySetDupeScore:
 					case DownloadQueue::eaHistorySetDupeMode:
 					case DownloadQueue::eaHistorySetDupeBackup:
-						HistorySetDupeParam(pHistoryInfo, eAction, szText);
+						HistorySetDupeParam(historyInfo, action, text);
 						break;
 
 					case DownloadQueue::eaHistoryMarkBad:
-						g_pDupeCoordinator->HistoryMark(pDownloadQueue, pHistoryInfo, NZBInfo::ksBad);
+						g_pDupeCoordinator->HistoryMark(downloadQueue, historyInfo, NZBInfo::ksBad);
 						break;
 
 					case DownloadQueue::eaHistoryMarkGood:
-						g_pDupeCoordinator->HistoryMark(pDownloadQueue, pHistoryInfo, NZBInfo::ksGood);
+						g_pDupeCoordinator->HistoryMark(downloadQueue, historyInfo, NZBInfo::ksGood);
 						break;
 
 					case DownloadQueue::eaHistoryMarkSuccess:
-						g_pDupeCoordinator->HistoryMark(pDownloadQueue, pHistoryInfo, NZBInfo::ksSuccess);
+						g_pDupeCoordinator->HistoryMark(downloadQueue, historyInfo, NZBInfo::ksSuccess);
 						break;
 
 					default:
@@ -337,370 +337,370 @@ bool HistoryCoordinator::EditList(DownloadQueue* pDownloadQueue, IDList* pIDList
 		}
 	}
 
-	if (bOK)
+	if (ok)
 	{
-		pDownloadQueue->Save();
+		downloadQueue->Save();
 	}
 
-	return bOK;
+	return ok;
 }
 
-void HistoryCoordinator::HistoryDelete(DownloadQueue* pDownloadQueue, HistoryList::iterator itHistory,
-	HistoryInfo* pHistoryInfo, bool bFinal)
+void HistoryCoordinator::HistoryDelete(DownloadQueue* downloadQueue, HistoryList::iterator itHistory,
+	HistoryInfo* historyInfo, bool final)
 {
-	char szNiceName[1024];
-	pHistoryInfo->GetName(szNiceName, 1024);
-	info("Deleting %s from history", szNiceName);
+	char niceName[1024];
+	historyInfo->GetName(niceName, 1024);
+	info("Deleting %s from history", niceName);
 
-	if (pHistoryInfo->GetKind() == HistoryInfo::hkNzb)
+	if (historyInfo->GetKind() == HistoryInfo::hkNzb)
 	{
-		DeleteDiskFiles(pHistoryInfo->GetNZBInfo());
+		DeleteDiskFiles(historyInfo->GetNZBInfo());
 	}
 
-	if (pHistoryInfo->GetKind() == HistoryInfo::hkNzb &&
+	if (historyInfo->GetKind() == HistoryInfo::hkNzb &&
 		g_pOptions->GetDeleteCleanupDisk() &&
-		(pHistoryInfo->GetNZBInfo()->GetDeleteStatus() != NZBInfo::dsNone ||
-		pHistoryInfo->GetNZBInfo()->GetParStatus() == NZBInfo::psFailure ||
-		pHistoryInfo->GetNZBInfo()->GetUnpackStatus() == NZBInfo::usFailure ||
-		pHistoryInfo->GetNZBInfo()->GetUnpackStatus() == NZBInfo::usPassword) &&
-		Util::DirectoryExists(pHistoryInfo->GetNZBInfo()->GetDestDir()))
+		(historyInfo->GetNZBInfo()->GetDeleteStatus() != NZBInfo::dsNone ||
+		historyInfo->GetNZBInfo()->GetParStatus() == NZBInfo::psFailure ||
+		historyInfo->GetNZBInfo()->GetUnpackStatus() == NZBInfo::usFailure ||
+		historyInfo->GetNZBInfo()->GetUnpackStatus() == NZBInfo::usPassword) &&
+		Util::DirectoryExists(historyInfo->GetNZBInfo()->GetDestDir()))
 	{
-		info("Deleting %s", pHistoryInfo->GetNZBInfo()->GetDestDir());
-		char szErrBuf[256];
-		if (!Util::DeleteDirectoryWithContent(pHistoryInfo->GetNZBInfo()->GetDestDir(), szErrBuf, sizeof(szErrBuf)))
+		info("Deleting %s", historyInfo->GetNZBInfo()->GetDestDir());
+		char errBuf[256];
+		if (!Util::DeleteDirectoryWithContent(historyInfo->GetNZBInfo()->GetDestDir(), errBuf, sizeof(errBuf)))
 		{
-			error("Could not delete directory %s: %s", pHistoryInfo->GetNZBInfo()->GetDestDir(), szErrBuf);
+			error("Could not delete directory %s: %s", historyInfo->GetNZBInfo()->GetDestDir(), errBuf);
 		}
 	}
 
-	if (bFinal || !g_pOptions->GetDupeCheck() || pHistoryInfo->GetKind() == HistoryInfo::hkUrl)
+	if (final || !g_pOptions->GetDupeCheck() || historyInfo->GetKind() == HistoryInfo::hkUrl)
 	{
-		pDownloadQueue->GetHistory()->erase(itHistory);
-		delete pHistoryInfo;
+		downloadQueue->GetHistory()->erase(itHistory);
+		delete historyInfo;
 	}
 	else
 	{
-		if (pHistoryInfo->GetKind() == HistoryInfo::hkNzb)
+		if (historyInfo->GetKind() == HistoryInfo::hkNzb)
 		{
 			// replace history element
-			int rindex = pDownloadQueue->GetHistory()->size() - 1 - (itHistory - pDownloadQueue->GetHistory()->begin());
-			HistoryHide(pDownloadQueue, pHistoryInfo, rindex);
+			int rindex = downloadQueue->GetHistory()->size() - 1 - (itHistory - downloadQueue->GetHistory()->begin());
+			HistoryHide(downloadQueue, historyInfo, rindex);
 		}
 	}
 }
 
-void HistoryCoordinator::HistoryReturn(DownloadQueue* pDownloadQueue, HistoryList::iterator itHistory, HistoryInfo* pHistoryInfo, bool bReprocess)
+void HistoryCoordinator::HistoryReturn(DownloadQueue* downloadQueue, HistoryList::iterator itHistory, HistoryInfo* historyInfo, bool reprocess)
 {
-	char szNiceName[1024];
-	pHistoryInfo->GetName(szNiceName, 1024);
-	debug("Returning %s from history back to download queue", szNiceName);
-	NZBInfo* pNZBInfo = NULL;
+	char niceName[1024];
+	historyInfo->GetName(niceName, 1024);
+	debug("Returning %s from history back to download queue", niceName);
+	NZBInfo* nzbInfo = NULL;
 
-	if (bReprocess && pHistoryInfo->GetKind() != HistoryInfo::hkNzb)
+	if (reprocess && historyInfo->GetKind() != HistoryInfo::hkNzb)
 	{
-		error("Could not restart postprocessing for %s: history item has wrong type", szNiceName);
+		error("Could not restart postprocessing for %s: history item has wrong type", niceName);
 		return;
 	}
 
-	if (pHistoryInfo->GetKind() == HistoryInfo::hkNzb)
+	if (historyInfo->GetKind() == HistoryInfo::hkNzb)
 	{
-		pNZBInfo = pHistoryInfo->GetNZBInfo();
+		nzbInfo = historyInfo->GetNZBInfo();
 
 		// unpark files
-		bool bUnparked = false;
-		for (FileList::iterator it = pNZBInfo->GetFileList()->begin(); it != pNZBInfo->GetFileList()->end(); it++)
+		bool unparked = false;
+		for (FileList::iterator it = nzbInfo->GetFileList()->begin(); it != nzbInfo->GetFileList()->end(); it++)
 		{
-			FileInfo* pFileInfo = *it;
-			detail("Unpark file %s", pFileInfo->GetFilename());
-			bUnparked = true;
+			FileInfo* fileInfo = *it;
+			detail("Unpark file %s", fileInfo->GetFilename());
+			unparked = true;
 		}
 
-		if (!(bUnparked || bReprocess))
+		if (!(unparked || reprocess))
 		{
-			warn("Could not return %s back from history to download queue: history item does not have any files left for download", szNiceName);
+			warn("Could not return %s back from history to download queue: history item does not have any files left for download", niceName);
 			return;
 		}
 
-		pDownloadQueue->GetQueue()->push_front(pNZBInfo);
-		pHistoryInfo->DiscardNZBInfo();
+		downloadQueue->GetQueue()->push_front(nzbInfo);
+		historyInfo->DiscardNZBInfo();
 
 		// reset postprocessing status variables
-		pNZBInfo->SetParCleanup(false);
-		if (!pNZBInfo->GetUnpackCleanedUpDisk())
+		nzbInfo->SetParCleanup(false);
+		if (!nzbInfo->GetUnpackCleanedUpDisk())
 		{
-			pNZBInfo->SetUnpackStatus(NZBInfo::usNone);
-			pNZBInfo->SetCleanupStatus(NZBInfo::csNone);
-			pNZBInfo->SetRenameStatus(NZBInfo::rsNone);
-			pNZBInfo->SetPostTotalSec(pNZBInfo->GetPostTotalSec() - pNZBInfo->GetUnpackSec());
-			pNZBInfo->SetUnpackSec(0);
+			nzbInfo->SetUnpackStatus(NZBInfo::usNone);
+			nzbInfo->SetCleanupStatus(NZBInfo::csNone);
+			nzbInfo->SetRenameStatus(NZBInfo::rsNone);
+			nzbInfo->SetPostTotalSec(nzbInfo->GetPostTotalSec() - nzbInfo->GetUnpackSec());
+			nzbInfo->SetUnpackSec(0);
 
-			if (ParParser::FindMainPars(pNZBInfo->GetDestDir(), NULL))
+			if (ParParser::FindMainPars(nzbInfo->GetDestDir(), NULL))
 			{
-				pNZBInfo->SetParStatus(NZBInfo::psNone);
-				pNZBInfo->SetPostTotalSec(pNZBInfo->GetPostTotalSec() - pNZBInfo->GetParSec());
-				pNZBInfo->SetParSec(0);
-				pNZBInfo->SetRepairSec(0);
-				pNZBInfo->SetParFull(false);
+				nzbInfo->SetParStatus(NZBInfo::psNone);
+				nzbInfo->SetPostTotalSec(nzbInfo->GetPostTotalSec() - nzbInfo->GetParSec());
+				nzbInfo->SetParSec(0);
+				nzbInfo->SetRepairSec(0);
+				nzbInfo->SetParFull(false);
 			}
 		}
-		pNZBInfo->SetDeleteStatus(NZBInfo::dsNone);
-		pNZBInfo->SetDeletePaused(false);
-		pNZBInfo->SetMarkStatus(NZBInfo::ksNone);
-		pNZBInfo->GetScriptStatuses()->Clear();
-		pNZBInfo->SetParkedFileCount(0);
-		if (pNZBInfo->GetMoveStatus() == NZBInfo::msFailure)
+		nzbInfo->SetDeleteStatus(NZBInfo::dsNone);
+		nzbInfo->SetDeletePaused(false);
+		nzbInfo->SetMarkStatus(NZBInfo::ksNone);
+		nzbInfo->GetScriptStatuses()->Clear();
+		nzbInfo->SetParkedFileCount(0);
+		if (nzbInfo->GetMoveStatus() == NZBInfo::msFailure)
 		{
-			pNZBInfo->SetMoveStatus(NZBInfo::msNone);
+			nzbInfo->SetMoveStatus(NZBInfo::msNone);
 		}
-		pNZBInfo->SetReprocess(bReprocess);
+		nzbInfo->SetReprocess(reprocess);
 	}
 
-	if (pHistoryInfo->GetKind() == HistoryInfo::hkUrl)
+	if (historyInfo->GetKind() == HistoryInfo::hkUrl)
 	{
-		pNZBInfo = pHistoryInfo->GetNZBInfo();
-		pHistoryInfo->DiscardNZBInfo();
-		pNZBInfo->SetUrlStatus(NZBInfo::lsNone);
-		pNZBInfo->SetDeleteStatus(NZBInfo::dsNone);
-		pDownloadQueue->GetQueue()->push_front(pNZBInfo);
+		nzbInfo = historyInfo->GetNZBInfo();
+		historyInfo->DiscardNZBInfo();
+		nzbInfo->SetUrlStatus(NZBInfo::lsNone);
+		nzbInfo->SetDeleteStatus(NZBInfo::dsNone);
+		downloadQueue->GetQueue()->push_front(nzbInfo);
 	}
 
-	pDownloadQueue->GetHistory()->erase(itHistory);
+	downloadQueue->GetHistory()->erase(itHistory);
 	// the object "pHistoryInfo" is released few lines later, after the call to "NZBDownloaded"
-	pNZBInfo->PrintMessage(Message::mkInfo, "%s returned from history back to download queue", szNiceName);
+	nzbInfo->PrintMessage(Message::mkInfo, "%s returned from history back to download queue", niceName);
 
-	if (bReprocess)
+	if (reprocess)
 	{
 		// start postprocessing
-		debug("Restarting postprocessing for %s", szNiceName);
-		g_pPrePostProcessor->NZBDownloaded(pDownloadQueue, pNZBInfo);
+		debug("Restarting postprocessing for %s", niceName);
+		g_pPrePostProcessor->NZBDownloaded(downloadQueue, nzbInfo);
 	}
 
-	delete pHistoryInfo;
+	delete historyInfo;
 }
 
-void HistoryCoordinator::HistoryRedownload(DownloadQueue* pDownloadQueue, HistoryList::iterator itHistory,
-	HistoryInfo* pHistoryInfo, bool bRestorePauseState)
+void HistoryCoordinator::HistoryRedownload(DownloadQueue* downloadQueue, HistoryList::iterator itHistory,
+	HistoryInfo* historyInfo, bool restorePauseState)
 {
-	if (pHistoryInfo->GetKind() == HistoryInfo::hkUrl)
+	if (historyInfo->GetKind() == HistoryInfo::hkUrl)
 	{
-		HistoryReturn(pDownloadQueue, itHistory, pHistoryInfo, false);
+		HistoryReturn(downloadQueue, itHistory, historyInfo, false);
 		return;
 	}
 
-	if (pHistoryInfo->GetKind() != HistoryInfo::hkNzb)
+	if (historyInfo->GetKind() != HistoryInfo::hkNzb)
 	{
-		char szNiceName[1024];
-		pHistoryInfo->GetName(szNiceName, 1024);
-		error("Could not return %s from history back to queue: history item has wrong type", szNiceName);
+		char niceName[1024];
+		historyInfo->GetName(niceName, 1024);
+		error("Could not return %s from history back to queue: history item has wrong type", niceName);
 		return;
 	}
 
-	NZBInfo* pNZBInfo = pHistoryInfo->GetNZBInfo();
-	bool bPaused = bRestorePauseState && pNZBInfo->GetDeletePaused();
+	NZBInfo* nzbInfo = historyInfo->GetNZBInfo();
+	bool paused = restorePauseState && nzbInfo->GetDeletePaused();
 
-	if (!Util::FileExists(pNZBInfo->GetQueuedFilename()))
+	if (!Util::FileExists(nzbInfo->GetQueuedFilename()))
 	{
 		error("Could not return %s from history back to queue: could not find source nzb-file %s",
-			pNZBInfo->GetName(), pNZBInfo->GetQueuedFilename());
+			nzbInfo->GetName(), nzbInfo->GetQueuedFilename());
 		return;
 	}
 
-	NZBFile* pNZBFile = new NZBFile(pNZBInfo->GetQueuedFilename(), "");
-	if (!pNZBFile->Parse())
+	NZBFile* nzbFile = new NZBFile(nzbInfo->GetQueuedFilename(), "");
+	if (!nzbFile->Parse())
 	{
 		error("Could not return %s from history back to queue: could not parse nzb-file",
-			pNZBInfo->GetName());
-		delete pNZBFile;
+			nzbInfo->GetName());
+		delete nzbFile;
 		return;
 	}
 
-	info("Returning %s from history back to queue", pNZBInfo->GetName());
+	info("Returning %s from history back to queue", nzbInfo->GetName());
 
-	for (FileList::iterator it = pNZBFile->GetNZBInfo()->GetFileList()->begin(); it != pNZBFile->GetNZBInfo()->GetFileList()->end(); it++)
+	for (FileList::iterator it = nzbFile->GetNZBInfo()->GetFileList()->begin(); it != nzbFile->GetNZBInfo()->GetFileList()->end(); it++)
 	{
-		FileInfo* pFileInfo = *it;
-		pFileInfo->SetPaused(bPaused);
+		FileInfo* fileInfo = *it;
+		fileInfo->SetPaused(paused);
 	}
 
-	if (Util::DirectoryExists(pNZBInfo->GetDestDir()))
+	if (Util::DirectoryExists(nzbInfo->GetDestDir()))
 	{
-		detail("Deleting %s", pNZBInfo->GetDestDir());
-		char szErrBuf[256];
-		if (!Util::DeleteDirectoryWithContent(pNZBInfo->GetDestDir(), szErrBuf, sizeof(szErrBuf)))
+		detail("Deleting %s", nzbInfo->GetDestDir());
+		char errBuf[256];
+		if (!Util::DeleteDirectoryWithContent(nzbInfo->GetDestDir(), errBuf, sizeof(errBuf)))
 		{
-			error("Could not delete directory %s: %s", pNZBInfo->GetDestDir(), szErrBuf);
+			error("Could not delete directory %s: %s", nzbInfo->GetDestDir(), errBuf);
 		}
 	}
 
-	pNZBInfo->BuildDestDirName();
-	if (Util::DirectoryExists(pNZBInfo->GetDestDir()))
+	nzbInfo->BuildDestDirName();
+	if (Util::DirectoryExists(nzbInfo->GetDestDir()))
 	{
-		detail("Deleting %s", pNZBInfo->GetDestDir());
-		char szErrBuf[256];
-		if (!Util::DeleteDirectoryWithContent(pNZBInfo->GetDestDir(), szErrBuf, sizeof(szErrBuf)))
+		detail("Deleting %s", nzbInfo->GetDestDir());
+		char errBuf[256];
+		if (!Util::DeleteDirectoryWithContent(nzbInfo->GetDestDir(), errBuf, sizeof(errBuf)))
 		{
-			error("Could not delete directory %s: %s", pNZBInfo->GetDestDir(), szErrBuf);
+			error("Could not delete directory %s: %s", nzbInfo->GetDestDir(), errBuf);
 		}
 	}
 
-	g_pDiskState->DiscardFiles(pNZBInfo);
+	g_pDiskState->DiscardFiles(nzbInfo);
 
 	// reset status fields (which are not reset by "HistoryReturn")
-	pNZBInfo->SetMoveStatus(NZBInfo::msNone);
-	pNZBInfo->SetUnpackCleanedUpDisk(false);
-	pNZBInfo->SetParStatus(NZBInfo::psNone);
-	pNZBInfo->SetRenameStatus(NZBInfo::rsNone);
-	pNZBInfo->SetDownloadedSize(0);
-	pNZBInfo->SetDownloadSec(0);
-	pNZBInfo->SetPostTotalSec(0);
-	pNZBInfo->SetParSec(0);
-	pNZBInfo->SetRepairSec(0);
-	pNZBInfo->SetUnpackSec(0);
-	pNZBInfo->SetExtraParBlocks(0);
-	pNZBInfo->ClearCompletedFiles();
-	pNZBInfo->GetServerStats()->Clear();
-	pNZBInfo->GetCurrentServerStats()->Clear();
+	nzbInfo->SetMoveStatus(NZBInfo::msNone);
+	nzbInfo->SetUnpackCleanedUpDisk(false);
+	nzbInfo->SetParStatus(NZBInfo::psNone);
+	nzbInfo->SetRenameStatus(NZBInfo::rsNone);
+	nzbInfo->SetDownloadedSize(0);
+	nzbInfo->SetDownloadSec(0);
+	nzbInfo->SetPostTotalSec(0);
+	nzbInfo->SetParSec(0);
+	nzbInfo->SetRepairSec(0);
+	nzbInfo->SetUnpackSec(0);
+	nzbInfo->SetExtraParBlocks(0);
+	nzbInfo->ClearCompletedFiles();
+	nzbInfo->GetServerStats()->Clear();
+	nzbInfo->GetCurrentServerStats()->Clear();
 
-	pNZBInfo->CopyFileList(pNZBFile->GetNZBInfo());
+	nzbInfo->CopyFileList(nzbFile->GetNZBInfo());
 
-	g_pQueueCoordinator->CheckDupeFileInfos(pNZBInfo);
-	delete pNZBFile;
+	g_pQueueCoordinator->CheckDupeFileInfos(nzbInfo);
+	delete nzbFile;
 
-	HistoryReturn(pDownloadQueue, itHistory, pHistoryInfo, false);
+	HistoryReturn(downloadQueue, itHistory, historyInfo, false);
 
-	g_pPrePostProcessor->NZBAdded(pDownloadQueue, pNZBInfo);
+	g_pPrePostProcessor->NZBAdded(downloadQueue, nzbInfo);
 }
 
-bool HistoryCoordinator::HistorySetParameter(HistoryInfo* pHistoryInfo, const char* szText)
+bool HistoryCoordinator::HistorySetParameter(HistoryInfo* historyInfo, const char* text)
 {
-	char szNiceName[1024];
-	pHistoryInfo->GetName(szNiceName, 1024);
-	debug("Setting post-process-parameter '%s' for '%s'", szText, szNiceName);
+	char niceName[1024];
+	historyInfo->GetName(niceName, 1024);
+	debug("Setting post-process-parameter '%s' for '%s'", text, niceName);
 
-	if (!(pHistoryInfo->GetKind() == HistoryInfo::hkNzb || pHistoryInfo->GetKind() == HistoryInfo::hkUrl))
+	if (!(historyInfo->GetKind() == HistoryInfo::hkNzb || historyInfo->GetKind() == HistoryInfo::hkUrl))
 	{
-		error("Could not set post-process-parameter for %s: history item has wrong type", szNiceName);
+		error("Could not set post-process-parameter for %s: history item has wrong type", niceName);
 		return false;
 	}
 
-	char* szStr = strdup(szText);
+	char* str = strdup(text);
 
-	char* szValue = strchr(szStr, '=');
-	if (szValue)
+	char* value = strchr(str, '=');
+	if (value)
 	{
-		*szValue = '\0';
-		szValue++;
-		pHistoryInfo->GetNZBInfo()->GetParameters()->SetParameter(szStr, szValue);
+		*value = '\0';
+		value++;
+		historyInfo->GetNZBInfo()->GetParameters()->SetParameter(str, value);
 	}
 	else
 	{
-		error("Could not set post-process-parameter for %s: invalid argument: %s", pHistoryInfo->GetNZBInfo()->GetName(), szText);
+		error("Could not set post-process-parameter for %s: invalid argument: %s", historyInfo->GetNZBInfo()->GetName(), text);
 	}
 
-	free(szStr);
+	free(str);
 
 	return true;
 }
 
-bool HistoryCoordinator::HistorySetCategory(HistoryInfo* pHistoryInfo, const char* szText)
+bool HistoryCoordinator::HistorySetCategory(HistoryInfo* historyInfo, const char* text)
 {
-	char szNiceName[1024];
-	pHistoryInfo->GetName(szNiceName, 1024);
-	debug("Setting category '%s' for '%s'", szText, szNiceName);
+	char niceName[1024];
+	historyInfo->GetName(niceName, 1024);
+	debug("Setting category '%s' for '%s'", text, niceName);
 
-	if (!(pHistoryInfo->GetKind() == HistoryInfo::hkNzb || pHistoryInfo->GetKind() == HistoryInfo::hkUrl))
+	if (!(historyInfo->GetKind() == HistoryInfo::hkNzb || historyInfo->GetKind() == HistoryInfo::hkUrl))
 	{
-		error("Could not set category for %s: history item has wrong type", szNiceName);
+		error("Could not set category for %s: history item has wrong type", niceName);
 		return false;
 	}
 
-	pHistoryInfo->GetNZBInfo()->SetCategory(szText);
+	historyInfo->GetNZBInfo()->SetCategory(text);
 
 	return true;
 }
 
-bool HistoryCoordinator::HistorySetName(HistoryInfo* pHistoryInfo, const char* szText)
+bool HistoryCoordinator::HistorySetName(HistoryInfo* historyInfo, const char* text)
 {
-	char szNiceName[1024];
-	pHistoryInfo->GetName(szNiceName, 1024);
-	debug("Setting name '%s' for '%s'", szText, szNiceName);
+	char niceName[1024];
+	historyInfo->GetName(niceName, 1024);
+	debug("Setting name '%s' for '%s'", text, niceName);
 
-	if (Util::EmptyStr(szText))
+	if (Util::EmptyStr(text))
 	{
-		error("Could not rename %s. The new name cannot be empty", szNiceName);
+		error("Could not rename %s. The new name cannot be empty", niceName);
 		return false;
 	}
 
-	if (pHistoryInfo->GetKind() == HistoryInfo::hkNzb || pHistoryInfo->GetKind() == HistoryInfo::hkUrl)
+	if (historyInfo->GetKind() == HistoryInfo::hkNzb || historyInfo->GetKind() == HistoryInfo::hkUrl)
 	{
-		pHistoryInfo->GetNZBInfo()->SetName(szText);
+		historyInfo->GetNZBInfo()->SetName(text);
 	}
-	else if (pHistoryInfo->GetKind() == HistoryInfo::hkDup)
+	else if (historyInfo->GetKind() == HistoryInfo::hkDup)
 	{
-		pHistoryInfo->GetDupInfo()->SetName(szText);
+		historyInfo->GetDupInfo()->SetName(text);
 	}
 
 	return true;
 }
 
-void HistoryCoordinator::HistorySetDupeParam(HistoryInfo* pHistoryInfo, DownloadQueue::EEditAction eAction, const char* szText)
+void HistoryCoordinator::HistorySetDupeParam(HistoryInfo* historyInfo, DownloadQueue::EEditAction action, const char* text)
 {
-	char szNiceName[1024];
-	pHistoryInfo->GetName(szNiceName, 1024);
-	debug("Setting dupe-parameter '%i'='%s' for '%s'", (int)eAction, szText, szNiceName);
+	char niceName[1024];
+	historyInfo->GetName(niceName, 1024);
+	debug("Setting dupe-parameter '%i'='%s' for '%s'", (int)action, text, niceName);
 
-	EDupeMode eMode = dmScore;
-	if (eAction == DownloadQueue::eaHistorySetDupeMode)
+	EDupeMode mode = dmScore;
+	if (action == DownloadQueue::eaHistorySetDupeMode)
 	{
-		if (!strcasecmp(szText, "SCORE"))
+		if (!strcasecmp(text, "SCORE"))
 		{
-			eMode = dmScore;
+			mode = dmScore;
 		}
-		else if (!strcasecmp(szText, "ALL"))
+		else if (!strcasecmp(text, "ALL"))
 		{
-			eMode = dmAll;
+			mode = dmAll;
 		}
-		else if (!strcasecmp(szText, "FORCE"))
+		else if (!strcasecmp(text, "FORCE"))
 		{
-			eMode = dmForce;
+			mode = dmForce;
 		}
 		else
 		{
-			error("Could not set duplicate mode for %s: incorrect mode (%s)", szNiceName, szText);
+			error("Could not set duplicate mode for %s: incorrect mode (%s)", niceName, text);
 			return;
 		}
 	}
 
-	if (pHistoryInfo->GetKind() == HistoryInfo::hkNzb || pHistoryInfo->GetKind() == HistoryInfo::hkUrl)
+	if (historyInfo->GetKind() == HistoryInfo::hkNzb || historyInfo->GetKind() == HistoryInfo::hkUrl)
 	{
-		switch (eAction) 
+		switch (action) 
 		{
 			case DownloadQueue::eaHistorySetDupeKey:
-				pHistoryInfo->GetNZBInfo()->SetDupeKey(szText);
+				historyInfo->GetNZBInfo()->SetDupeKey(text);
 				break;
 
 			case DownloadQueue::eaHistorySetDupeScore:
-				pHistoryInfo->GetNZBInfo()->SetDupeScore(atoi(szText));
+				historyInfo->GetNZBInfo()->SetDupeScore(atoi(text));
 				break;
 
 			case DownloadQueue::eaHistorySetDupeMode:
-				pHistoryInfo->GetNZBInfo()->SetDupeMode(eMode);
+				historyInfo->GetNZBInfo()->SetDupeMode(mode);
 				break;
 
 			case DownloadQueue::eaHistorySetDupeBackup:
-				if (pHistoryInfo->GetKind() == HistoryInfo::hkUrl)
+				if (historyInfo->GetKind() == HistoryInfo::hkUrl)
 				{
-					error("Could not set duplicate parameter for %s: history item has wrong type", szNiceName);
+					error("Could not set duplicate parameter for %s: history item has wrong type", niceName);
 					return;
 				}
-				else if (pHistoryInfo->GetNZBInfo()->GetDeleteStatus() != NZBInfo::dsDupe &&
-					pHistoryInfo->GetNZBInfo()->GetDeleteStatus() != NZBInfo::dsManual)
+				else if (historyInfo->GetNZBInfo()->GetDeleteStatus() != NZBInfo::dsDupe &&
+					historyInfo->GetNZBInfo()->GetDeleteStatus() != NZBInfo::dsManual)
 				{
-					error("Could not set duplicate parameter for %s: history item has wrong delete status", szNiceName);
+					error("Could not set duplicate parameter for %s: history item has wrong delete status", niceName);
 					return;
 				}
-				pHistoryInfo->GetNZBInfo()->SetDeleteStatus(!strcasecmp(szText, "YES") ||
-					!strcasecmp(szText, "TRUE") || !strcasecmp(szText, "1") ? NZBInfo::dsDupe : NZBInfo::dsManual);
+				historyInfo->GetNZBInfo()->SetDeleteStatus(!strcasecmp(text, "YES") ||
+					!strcasecmp(text, "TRUE") || !strcasecmp(text, "1") ? NZBInfo::dsDupe : NZBInfo::dsManual);
 				break;
 
 			default:
@@ -708,24 +708,24 @@ void HistoryCoordinator::HistorySetDupeParam(HistoryInfo* pHistoryInfo, Download
 				break;
 		}
 	}
-	else if (pHistoryInfo->GetKind() == HistoryInfo::hkDup)
+	else if (historyInfo->GetKind() == HistoryInfo::hkDup)
 	{
-		switch (eAction) 
+		switch (action) 
 		{
 			case DownloadQueue::eaHistorySetDupeKey:
-				pHistoryInfo->GetDupInfo()->SetDupeKey(szText);
+				historyInfo->GetDupInfo()->SetDupeKey(text);
 				break;
 
 			case DownloadQueue::eaHistorySetDupeScore:
-				pHistoryInfo->GetDupInfo()->SetDupeScore(atoi(szText));
+				historyInfo->GetDupInfo()->SetDupeScore(atoi(text));
 				break;
 
 			case DownloadQueue::eaHistorySetDupeMode:
-				pHistoryInfo->GetDupInfo()->SetDupeMode(eMode);
+				historyInfo->GetDupInfo()->SetDupeMode(mode);
 				break;
 
 			case DownloadQueue::eaHistorySetDupeBackup:
-				error("Could not set duplicate parameter for %s: history item has wrong type", szNiceName);
+				error("Could not set duplicate parameter for %s: history item has wrong type", niceName);
 				return;
 
 			default:
@@ -735,9 +735,9 @@ void HistoryCoordinator::HistorySetDupeParam(HistoryInfo* pHistoryInfo, Download
 	}
 }
 
-void HistoryCoordinator::Redownload(DownloadQueue* pDownloadQueue, HistoryInfo* pHistoryInfo)
+void HistoryCoordinator::Redownload(DownloadQueue* downloadQueue, HistoryInfo* historyInfo)
 {
-	HistoryList::iterator it = std::find(pDownloadQueue->GetHistory()->begin(),
-		pDownloadQueue->GetHistory()->end(), pHistoryInfo);
-	HistoryRedownload(pDownloadQueue, it, pHistoryInfo, true);
+	HistoryList::iterator it = std::find(downloadQueue->GetHistory()->begin(),
+		downloadQueue->GetHistory()->end(), historyInfo);
+	HistoryRedownload(downloadQueue, it, historyInfo, true);
 }

@@ -38,20 +38,20 @@ private:
 	class MatchedNZBInfo: public NZBInfo
 	{
 	public:
-		bool		m_bMatch;
+		bool		m_match;
 	};
 
 	class MatchedFileInfo: public FileInfo
 	{
 	public:
-		bool		m_bMatch;
+		bool		m_match;
 	};
 
-	Connection* 	m_pConnection;
-	bool			m_bVerbose;
+	Connection* 	m_connection;
+	bool			m_verbose;
 
 	bool			InitConnection();
-	void			InitMessageBase(SNZBRequestBase* pMessageBase, int iRequest, int iSize);
+	void			InitMessageBase(SNZBRequestBase* messageBase, int request, int size);
 	bool			ReceiveBoolResponse();
 	void			printf(const char* msg, ...);
 	void			perror(const char* msg);
@@ -59,25 +59,25 @@ private:
 public:
 					RemoteClient();
 					~RemoteClient();
-	void			SetVerbose(bool bVerbose) { m_bVerbose = bVerbose; };
-	bool 			RequestServerDownload(const char* szNZBFilename, const char* szNZBContent, const char* szCategory,
-						bool bAddFirst, bool bAddPaused, int iPriority,
-						const char* szDupeKey, int iDupeMode, int iDupeScore);
-	bool			RequestServerList(bool bFiles, bool bGroups, const char* szPattern);
-	bool			RequestServerPauseUnpause(bool bPause, eRemotePauseUnpauseAction iAction);
-	bool			RequestServerSetDownloadRate(int iRate);
+	void			SetVerbose(bool verbose) { m_verbose = verbose; };
+	bool 			RequestServerDownload(const char* nzbFilename, const char* nzbContent, const char* category,
+						bool addFirst, bool addPaused, int priority,
+						const char* dupeKey, int dupeMode, int dupeScore);
+	bool			RequestServerList(bool files, bool groups, const char* pattern);
+	bool			RequestServerPauseUnpause(bool pause, remotePauseUnpauseAction action);
+	bool			RequestServerSetDownloadRate(int rate);
 	bool			RequestServerDumpDebug();
-	bool 			RequestServerEditQueue(DownloadQueue::EEditAction eAction, int iOffset, const char* szText,
-						int* pIDList, int iIDCount, NameList* pNameList, eRemoteMatchMode iMatchMode);
-	bool			RequestServerLog(int iLines);
+	bool 			RequestServerEditQueue(DownloadQueue::EEditAction action, int offset, const char* text,
+						int* idList, int idCount, NameList* nameList, remoteMatchMode matchMode);
+	bool			RequestServerLog(int lines);
 	bool			RequestServerShutdown();
 	bool			RequestServerReload();
 	bool			RequestServerVersion();
 	bool			RequestPostQueue();
-	bool 			RequestWriteLog(int iKind, const char* szText);
-	bool			RequestScan(bool bSyncMode);
-	bool			RequestHistory(bool bWithHidden);
-	void			BuildFileList(SNZBListResponse* pListResponse, const char* pTrailingData, DownloadQueue* pDownloadQueue);
+	bool 			RequestWriteLog(int kind, const char* text);
+	bool			RequestScan(bool syncMode);
+	bool			RequestHistory(bool withHidden);
+	void			BuildFileList(SNZBListResponse* listResponse, const char* trailingData, DownloadQueue* downloadQueue);
 };
 
 #endif

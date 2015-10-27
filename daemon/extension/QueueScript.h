@@ -47,35 +47,35 @@ private:
 	class QueueItem
 	{
 	private:
-		int					m_iNZBID;
-		ScriptConfig::Script*	m_pScript;
-		EEvent				m_eEvent;
+		int					m_nzbId;
+		ScriptConfig::Script*	m_script;
+		EEvent				m_event;
 	public:
-							QueueItem(int iNZBID, ScriptConfig::Script* pScript, EEvent eEvent);
-		int					GetNZBID() { return m_iNZBID; }
-		ScriptConfig::Script*	GetScript() { return m_pScript; }
-		EEvent				GetEvent() { return m_eEvent; }
+							QueueItem(int nzbId, ScriptConfig::Script* script, EEvent event);
+		int					GetNZBID() { return m_nzbId; }
+		ScriptConfig::Script*	GetScript() { return m_script; }
+		EEvent				GetEvent() { return m_event; }
 	};
 
 	typedef std::list<QueueItem*> Queue;
 	
-	Queue				m_Queue;
-	Mutex				m_mutexQueue;
-	QueueItem*			m_pCurItem;
-	bool				m_bHasQueueScripts;
-	bool				m_bStopped;
+	Queue				m_queue;
+	Mutex				m_queueMutex;
+	QueueItem*			m_curItem;
+	bool				m_hasQueueScripts;
+	bool				m_stopped;
 
-	void				StartScript(NZBInfo* pNZBInfo, QueueItem* pQueueItem);
-	NZBInfo*			FindNZBInfo(DownloadQueue* pDownloadQueue, int iNZBID);
+	void				StartScript(NZBInfo* nzbInfo, QueueItem* queueItem);
+	NZBInfo*			FindNZBInfo(DownloadQueue* downloadQueue, int nzbId);
 
 public:
 						QueueScriptCoordinator();
 						~QueueScriptCoordinator();
-	void				Stop() { m_bStopped = true; }
+	void				Stop() { m_stopped = true; }
 	void				InitOptions();
-	void				EnqueueScript(NZBInfo* pNZBInfo, EEvent eEvent);
+	void				EnqueueScript(NZBInfo* nzbInfo, EEvent event);
 	void				CheckQueue();
-	bool				HasJob(int iNZBID, bool* pActive);
+	bool				HasJob(int nzbId, bool* active);
 	int					GetQueueSize();
 };
 

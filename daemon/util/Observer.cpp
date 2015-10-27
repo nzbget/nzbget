@@ -37,26 +37,26 @@
 
 Subject::Subject()
 {
-	m_Observers.clear();
+	m_observers.clear();
 }
 
-void Subject::Attach(Observer* pObserver)
+void Subject::Attach(Observer* observer)
 {
-	m_Observers.push_back(pObserver);
+	m_observers.push_back(observer);
 }
 
-void Subject::Detach(Observer* pObserver)
+void Subject::Detach(Observer* observer)
 {
-	m_Observers.remove(pObserver);
+	m_observers.remove(observer);
 }
 
-void Subject::Notify(void* pAspect)
+void Subject::Notify(void* aspect)
 {
 	debug("Notifying observers");
 	
-	for (std::list<Observer*>::iterator it = m_Observers.begin(); it != m_Observers.end(); it++)
+	for (std::list<Observer*>::iterator it = m_observers.begin(); it != m_observers.end(); it++)
 	{
         Observer* Observer = *it;
-		Observer->Update(this, pAspect);
+		Observer->Update(this, aspect);
 	}
 }

@@ -33,26 +33,26 @@
 class NNTPConnection : public Connection
 {
 private:
-	NewsServer*			m_pNewsServer;
-	char* 				m_szActiveGroup;
-	char*				m_szLineBuf;
-	bool				m_bAuthError;
+	NewsServer*			m_newsServer;
+	char* 				m_activeGroup;
+	char*				m_lineBuf;
+	bool				m_authError;
 
 	void				Clear();
-	void				ReportErrorAnswer(const char* szMsgPrefix, const char* szAnswer);
+	void				ReportErrorAnswer(const char* msgPrefix, const char* answer);
 	bool 				Authenticate();
-	bool 				AuthInfoUser(int iRecur);
-	bool 				AuthInfoPass(int iRecur);
+	bool 				AuthInfoUser(int recur);
+	bool 				AuthInfoPass(int recur);
 
 public:
-						NNTPConnection(NewsServer* pNewsServer);
+						NNTPConnection(NewsServer* newsServer);
 	virtual				~NNTPConnection();
 	virtual bool 		Connect();
 	virtual bool		Disconnect();
-	NewsServer*			GetNewsServer() { return m_pNewsServer; }
+	NewsServer*			GetNewsServer() { return m_newsServer; }
 	const char* 		Request(const char* req);
 	const char*			JoinGroup(const char* grp);
-	bool				GetAuthError() { return m_bAuthError; }
+	bool				GetAuthError() { return m_authError; }
 
 };
 

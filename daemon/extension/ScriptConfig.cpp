@@ -56,16 +56,16 @@ static const char* QUEUE_EVENTS_SIGNATURE = "### QUEUE EVENTS:";
 ScriptConfig* g_pScriptConfig = NULL;
 
 
-ScriptConfig::ConfigTemplate::ConfigTemplate(Script* pScript, const char* szTemplate)
+ScriptConfig::ConfigTemplate::ConfigTemplate(Script* script, const char* templ)
 {
-	m_pScript = pScript;
-	m_szTemplate = strdup(szTemplate ? szTemplate : "");
+	m_script = script;
+	m_template = strdup(templ ? templ : "");
 }
 
 ScriptConfig::ConfigTemplate::~ConfigTemplate()
 {
-	delete m_pScript;
-	free(m_szTemplate);
+	delete m_script;
+	free(m_template);
 }
 
 ScriptConfig::ConfigTemplates::~ConfigTemplates()
@@ -77,37 +77,37 @@ ScriptConfig::ConfigTemplates::~ConfigTemplates()
 }
 
 
-ScriptConfig::Script::Script(const char* szName, const char* szLocation)
+ScriptConfig::Script::Script(const char* name, const char* location)
 {
-	m_szName = strdup(szName);
-	m_szLocation = strdup(szLocation);
-	m_szDisplayName = strdup(szName);
-	m_bPostScript = false;
-	m_bScanScript = false;
-	m_bQueueScript = false;
-	m_bSchedulerScript = false;
-	m_bFeedScript = false;
-	m_szQueueEvents = NULL;
+	m_name = strdup(name);
+	m_location = strdup(location);
+	m_displayName = strdup(name);
+	m_postScript = false;
+	m_scanScript = false;
+	m_queueScript = false;
+	m_schedulerScript = false;
+	m_feedScript = false;
+	m_queueEvents = NULL;
 }
 
 ScriptConfig::Script::~Script()
 {
-	free(m_szName);
-	free(m_szLocation);
-	free(m_szDisplayName);
-	free(m_szQueueEvents);
+	free(m_name);
+	free(m_location);
+	free(m_displayName);
+	free(m_queueEvents);
 }
 
-void ScriptConfig::Script::SetDisplayName(const char* szDisplayName)
+void ScriptConfig::Script::SetDisplayName(const char* displayName)
 {
-	free(m_szDisplayName);
-	m_szDisplayName = strdup(szDisplayName);
+	free(m_displayName);
+	m_displayName = strdup(displayName);
 }
 
-void ScriptConfig::Script::SetQueueEvents(const char* szQueueEvents)
+void ScriptConfig::Script::SetQueueEvents(const char* queueEvents)
 {
-	free(m_szQueueEvents);
-	m_szQueueEvents = szQueueEvents ? strdup(szQueueEvents) : NULL;
+	free(m_queueEvents);
+	m_queueEvents = queueEvents ? strdup(queueEvents) : NULL;
 }
 
 
@@ -125,14 +125,14 @@ void ScriptConfig::Scripts::Clear()
 	clear();
 }
 
-ScriptConfig::Script* ScriptConfig::Scripts::Find(const char* szName)
+ScriptConfig::Script* ScriptConfig::Scripts::Find(const char* name)
 {
 	for (iterator it = begin(); it != end(); it++)
 	{
-		Script* pScript = *it;
-		if (!strcmp(pScript->GetName(), szName))
+		Script* script = *it;
+		if (!strcmp(script->GetName(), name))
 		{
-			return pScript;
+			return script;
 		}
 	}
 
@@ -150,7 +150,7 @@ ScriptConfig::~ScriptConfig()
 {
 }
 
-bool ScriptConfig::LoadConfig(Options::OptEntries* pOptEntries)
+bool ScriptConfig::LoadConfig(Options::OptEntries* optEntries)
 {
 	// read config file
 	FILE* infile = fopen(g_pOptions->GetConfigFilename(), FOPEN_RB);
@@ -160,10 +160,10 @@ bool ScriptConfig::LoadConfig(Options::OptEntries* pOptEntries)
 		return false;
 	}
 
-	int iBufLen = (int)Util::FileSize(g_pOptions->GetConfigFilename()) + 1;
-	char* buf = (char*)malloc(iBufLen);
+	int bufLen = (int)Util::FileSize(g_pOptions->GetConfigFilename()) + 1;
+	char* buf = (char*)malloc(bufLen);
 
-	while (fgets(buf, iBufLen - 1, infile))
+	while (fgets(buf, bufLen - 1, infile))
 	{
 		// remove trailing '\n' and '\r' and spaces
 		Util::TrimRight(buf);
@@ -178,10 +178,10 @@ bool ScriptConfig::LoadConfig(Options::OptEntries* pOptEntries)
 		char* optvalue;
 		if (g_pOptions->SplitOptionString(buf, &optname, &optvalue))
 		{
-			Options::OptEntry* pOptEntry = new Options::OptEntry();
-			pOptEntry->SetName(optname);
-			pOptEntry->SetValue(optvalue);
-			pOptEntries->push_back(pOptEntry);
+			Options::OptEntry* optEntry = new Options::OptEntry();
+			optEntry->SetName(optname);
+			optEntry->SetValue(optvalue);
+			optEntries->push_back(optEntry);
 
 			free(optname);
 			free(optvalue);
@@ -194,7 +194,7 @@ bool ScriptConfig::LoadConfig(Options::OptEntries* pOptEntries)
 	return true;
 }
 
-bool ScriptConfig::SaveConfig(Options::OptEntries* pOptEntries)
+bool ScriptConfig::SaveConfig(Options::OptEntries* optEntries)
 {
 	// save to config file
 	FILE* infile = fopen(g_pOptions->GetConfigFilename(), FOPEN_RBP);
@@ -208,9 +208,9 @@ bool ScriptConfig::SaveConfig(Options::OptEntries* pOptEntries)
 	std::set<Options::OptEntry*> writtenOptions;
 
 	// read config file into memory array
-	int iBufLen = (int)Util::FileSize(g_pOptions->GetConfigFilename()) + 1;
-	char* buf = (char*)malloc(iBufLen);
-	while (fgets(buf, iBufLen - 1, infile))
+	int bufLen = (int)Util::FileSize(g_pOptions->GetConfigFilename()) + 1;
+	char* buf = (char*)malloc(bufLen);
+	while (fgets(buf, bufLen - 1, infile))
 	{
 		config.push_back(strdup(buf));
 	}
@@ -232,14 +232,14 @@ bool ScriptConfig::SaveConfig(Options::OptEntries* pOptEntries)
 			char* optvalue;
 			if (g_pOptions->SplitOptionString(buf, &optname, &optvalue))
 			{
-				Options::OptEntry *pOptEntry = pOptEntries->FindOption(optname);
-				if (pOptEntry)
+				Options::OptEntry *optEntry = optEntries->FindOption(optname);
+				if (optEntry)
 				{
-					fputs(pOptEntry->GetName(), infile);
+					fputs(optEntry->GetName(), infile);
 					fputs("=", infile);
-					fputs(pOptEntry->GetValue(), infile);
+					fputs(optEntry->GetValue(), infile);
 					fputs("\n", infile);
-					writtenOptions.insert(pOptEntry);
+					writtenOptions.insert(optEntry);
 				}
 
 				free(optname);
@@ -255,15 +255,15 @@ bool ScriptConfig::SaveConfig(Options::OptEntries* pOptEntries)
 	}
 
 	// write new options
-	for (Options::OptEntries::iterator it = pOptEntries->begin(); it != pOptEntries->end(); it++)
+	for (Options::OptEntries::iterator it = optEntries->begin(); it != optEntries->end(); it++)
 	{
-		Options::OptEntry* pOptEntry = *it;
-		std::set<Options::OptEntry*>::iterator fit = writtenOptions.find(pOptEntry);
+		Options::OptEntry* optEntry = *it;
+		std::set<Options::OptEntry*>::iterator fit = writtenOptions.find(optEntry);
 		if (fit == writtenOptions.end())
 		{
-			fputs(pOptEntry->GetName(), infile);
+			fputs(optEntry->GetName(), infile);
 			fputs("=", infile);
-			fputs(pOptEntry->GetValue(), infile);
+			fputs(optEntry->GetValue(), infile);
 			fputs("\n", infile);
 		}
 	}
@@ -277,17 +277,17 @@ bool ScriptConfig::SaveConfig(Options::OptEntries* pOptEntries)
 	return true;
 }
 
-bool ScriptConfig::LoadConfigTemplates(ConfigTemplates* pConfigTemplates)
+bool ScriptConfig::LoadConfigTemplates(ConfigTemplates* configTemplates)
 {
-	char* szBuffer;
-	int iLength;
-	if (!Util::LoadFileIntoBuffer(g_pOptions->GetConfigTemplate(), &szBuffer, &iLength))
+	char* buffer;
+	int length;
+	if (!Util::LoadFileIntoBuffer(g_pOptions->GetConfigTemplate(), &buffer, &length))
 	{
 		return false;
 	}
-	ConfigTemplate* pConfigTemplate = new ConfigTemplate(NULL, szBuffer);
-	pConfigTemplates->push_back(pConfigTemplate);
-	free(szBuffer);
+	ConfigTemplate* configTemplate = new ConfigTemplate(NULL, buffer);
+	configTemplates->push_back(configTemplate);
+	free(buffer);
 
 	if (!g_pOptions->GetScriptDir())
 	{
@@ -297,28 +297,28 @@ bool ScriptConfig::LoadConfigTemplates(ConfigTemplates* pConfigTemplates)
 	Scripts scriptList;
 	LoadScripts(&scriptList);
 
-	const int iBeginSignatureLen = strlen(BEGIN_SCRIPT_SIGNATURE);
-	const int iQueueEventsSignatureLen = strlen(QUEUE_EVENTS_SIGNATURE);
+	const int beginSignatureLen = strlen(BEGIN_SCRIPT_SIGNATURE);
+	const int queueEventsSignatureLen = strlen(QUEUE_EVENTS_SIGNATURE);
 
 	for (Scripts::iterator it = scriptList.begin(); it != scriptList.end(); it++)
 	{
-		Script* pScript = *it;
+		Script* script = *it;
 
-		FILE* infile = fopen(pScript->GetLocation(), FOPEN_RB);
+		FILE* infile = fopen(script->GetLocation(), FOPEN_RB);
 		if (!infile)
 		{
-			ConfigTemplate* pConfigTemplate = new ConfigTemplate(pScript, "");
-			pConfigTemplates->push_back(pConfigTemplate);
+			ConfigTemplate* configTemplate = new ConfigTemplate(script, "");
+			configTemplates->push_back(configTemplate);
 			continue;
 		}
 
 		StringBuilder stringBuilder;
 		char buf[1024];
-		bool bInConfig = false;
+		bool inConfig = false;
 
 		while (fgets(buf, sizeof(buf) - 1, infile))
 		{
-			if (!strncmp(buf, BEGIN_SCRIPT_SIGNATURE, iBeginSignatureLen) &&
+			if (!strncmp(buf, BEGIN_SCRIPT_SIGNATURE, beginSignatureLen) &&
 				strstr(buf, END_SCRIPT_SIGNATURE) &&
 				(strstr(buf, POST_SCRIPT_SIGNATURE) ||
 				 strstr(buf, SCAN_SCRIPT_SIGNATURE) ||
@@ -326,17 +326,17 @@ bool ScriptConfig::LoadConfigTemplates(ConfigTemplates* pConfigTemplates)
 				 strstr(buf, SCHEDULER_SCRIPT_SIGNATURE) ||
 				 strstr(buf, FEED_SCRIPT_SIGNATURE)))
 			{
-				if (bInConfig)
+				if (inConfig)
 				{
 					break;
 				}
-				bInConfig = true;
+				inConfig = true;
 				continue;
 			}
 
-			bool bSkip = !strncmp(buf, QUEUE_EVENTS_SIGNATURE, iQueueEventsSignatureLen);
+			bool skip = !strncmp(buf, QUEUE_EVENTS_SIGNATURE, queueEventsSignatureLen);
 
-			if (bInConfig && !bSkip)
+			if (inConfig && !skip)
 			{
 				stringBuilder.Append(buf);
 			}
@@ -344,8 +344,8 @@ bool ScriptConfig::LoadConfigTemplates(ConfigTemplates* pConfigTemplates)
 
 		fclose(infile);
 
-		ConfigTemplate* pConfigTemplate = new ConfigTemplate(pScript, stringBuilder.GetBuffer());
-		pConfigTemplates->push_back(pConfigTemplate);
+		ConfigTemplate* configTemplate = new ConfigTemplate(script, stringBuilder.GetBuffer());
+		configTemplates->push_back(configTemplate);
 	}
 
 	// clearing the list without deleting of objects, which are in pConfigTemplates now 
@@ -356,7 +356,7 @@ bool ScriptConfig::LoadConfigTemplates(ConfigTemplates* pConfigTemplates)
 
 void ScriptConfig::InitConfigTemplates()
 {
-	if (!LoadConfigTemplates(&m_ConfigTemplates))
+	if (!LoadConfigTemplates(&m_configTemplates))
 	{
 		error("Could not read configuration templates");
 	}
@@ -364,10 +364,10 @@ void ScriptConfig::InitConfigTemplates()
 
 void ScriptConfig::InitScripts()
 {
-	LoadScripts(&m_Scripts);
+	LoadScripts(&m_scripts);
 }
 
-void ScriptConfig::LoadScripts(Scripts* pScripts)
+void ScriptConfig::LoadScripts(Scripts* scripts)
 {
 	if (strlen(g_pOptions->GetScriptDir()) == 0)
 	{
@@ -380,180 +380,180 @@ void ScriptConfig::LoadScripts(Scripts* pScripts)
 
 	// first add all scripts from m_szScriptOrder
 	Tokenizer tok(g_pOptions->GetScriptOrder(), ",;");
-	while (const char* szScriptName = tok.Next())
+	while (const char* scriptName = tok.Next())
 	{
-		Script* pScript = tmpScripts.Find(szScriptName);
-		if (pScript)
+		Script* script = tmpScripts.Find(scriptName);
+		if (script)
 		{
-			tmpScripts.remove(pScript);
-			pScripts->push_back(pScript);
+			tmpScripts.remove(script);
+			scripts->push_back(script);
 		}
 	}
 
 	// second add all other scripts from scripts directory
 	for (Scripts::iterator it = tmpScripts.begin(); it != tmpScripts.end(); it++)
 	{
-		Script* pScript = *it;
-		if (!pScripts->Find(pScript->GetName()))
+		Script* script = *it;
+		if (!scripts->Find(script->GetName()))
 		{
-			pScripts->push_back(pScript);
+			scripts->push_back(script);
 		}
 	}
 
 	tmpScripts.clear();
 
-	BuildScriptDisplayNames(pScripts);
+	BuildScriptDisplayNames(scripts);
 }
 
-void ScriptConfig::LoadScriptDir(Scripts* pScripts, const char* szDirectory, bool bIsSubDir)
+void ScriptConfig::LoadScriptDir(Scripts* scripts, const char* directory, bool isSubDir)
 {
-	int iBufSize = 1024*10;
-	char* szBuffer = (char*)malloc(iBufSize+1);
+	int bufSize = 1024*10;
+	char* buffer = (char*)malloc(bufSize+1);
 
-	const int iBeginSignatureLen = strlen(BEGIN_SCRIPT_SIGNATURE);
-	const int iQueueEventsSignatureLen = strlen(QUEUE_EVENTS_SIGNATURE);
+	const int beginSignatureLen = strlen(BEGIN_SCRIPT_SIGNATURE);
+	const int queueEventsSignatureLen = strlen(QUEUE_EVENTS_SIGNATURE);
 
-	DirBrowser dir(szDirectory);
-	while (const char* szFilename = dir.Next())
+	DirBrowser dir(directory);
+	while (const char* filename = dir.Next())
 	{
-		if (szFilename[0] != '.' && szFilename[0] != '_')
+		if (filename[0] != '.' && filename[0] != '_')
 		{
-			char szFullFilename[1024];
-			snprintf(szFullFilename, 1024, "%s%s", szDirectory, szFilename);
-			szFullFilename[1024-1] = '\0';
+			char fullFilename[1024];
+			snprintf(fullFilename, 1024, "%s%s", directory, filename);
+			fullFilename[1024-1] = '\0';
 
-			if (!Util::DirectoryExists(szFullFilename))
+			if (!Util::DirectoryExists(fullFilename))
 			{
 				// check if the file contains pp-script-signature
-				FILE* infile = fopen(szFullFilename, FOPEN_RB);
+				FILE* infile = fopen(fullFilename, FOPEN_RB);
 				if (infile)
 				{
 					// read first 10KB of the file and look for signature
-					int iReadBytes = fread(szBuffer, 1, iBufSize, infile);
+					int readBytes = fread(buffer, 1, bufSize, infile);
 					fclose(infile);
-					szBuffer[iReadBytes] = 0;
+					buffer[readBytes] = 0;
 
 					// split buffer into lines
-					Tokenizer tok(szBuffer, "\n\r", true);
-					while (char* szLine = tok.Next())
+					Tokenizer tok(buffer, "\n\r", true);
+					while (char* line = tok.Next())
 					{
-						if (!strncmp(szLine, BEGIN_SCRIPT_SIGNATURE, iBeginSignatureLen) &&
-							strstr(szLine, END_SCRIPT_SIGNATURE))
+						if (!strncmp(line, BEGIN_SCRIPT_SIGNATURE, beginSignatureLen) &&
+							strstr(line, END_SCRIPT_SIGNATURE))
 						{
-							bool bPostScript = strstr(szLine, POST_SCRIPT_SIGNATURE);
-							bool bScanScript = strstr(szLine, SCAN_SCRIPT_SIGNATURE);
-							bool bQueueScript = strstr(szLine, QUEUE_SCRIPT_SIGNATURE);
-							bool bSchedulerScript = strstr(szLine, SCHEDULER_SCRIPT_SIGNATURE);
-							bool bFeedScript = strstr(szLine, FEED_SCRIPT_SIGNATURE);
-							if (bPostScript || bScanScript || bQueueScript || bSchedulerScript || bFeedScript)
+							bool postScript = strstr(line, POST_SCRIPT_SIGNATURE);
+							bool scanScript = strstr(line, SCAN_SCRIPT_SIGNATURE);
+							bool queueScript = strstr(line, QUEUE_SCRIPT_SIGNATURE);
+							bool schedulerScript = strstr(line, SCHEDULER_SCRIPT_SIGNATURE);
+							bool feedScript = strstr(line, FEED_SCRIPT_SIGNATURE);
+							if (postScript || scanScript || queueScript || schedulerScript || feedScript)
 							{
-								char szScriptName[1024];
-								if (bIsSubDir)
+								char scriptName[1024];
+								if (isSubDir)
 								{
-									char szDirectory2[1024];
-									snprintf(szDirectory2, 1024, "%s", szDirectory);
-									szDirectory2[1024-1] = '\0';
-									int iLen = strlen(szDirectory2);
-									if (szDirectory2[iLen-1] == PATH_SEPARATOR || szDirectory2[iLen-1] == ALT_PATH_SEPARATOR)
+									char directory2[1024];
+									snprintf(directory2, 1024, "%s", directory);
+									directory2[1024-1] = '\0';
+									int len = strlen(directory2);
+									if (directory2[len-1] == PATH_SEPARATOR || directory2[len-1] == ALT_PATH_SEPARATOR)
 									{
 										// trim last path-separator
-										szDirectory2[iLen-1] = '\0';
+										directory2[len-1] = '\0';
 									}
 
-									snprintf(szScriptName, 1024, "%s%c%s", Util::BaseFileName(szDirectory2), PATH_SEPARATOR, szFilename);
+									snprintf(scriptName, 1024, "%s%c%s", Util::BaseFileName(directory2), PATH_SEPARATOR, filename);
 								}
 								else
 								{
-									snprintf(szScriptName, 1024, "%s", szFilename);
+									snprintf(scriptName, 1024, "%s", filename);
 								}
-								szScriptName[1024-1] = '\0';
+								scriptName[1024-1] = '\0';
 
-								char* szQueueEvents = NULL;
-								if (bQueueScript)
+								char* queueEvents = NULL;
+								if (queueScript)
 								{
-									while (char* szLine = tok.Next())
+									while (char* line = tok.Next())
 									{
-										if (!strncmp(szLine, QUEUE_EVENTS_SIGNATURE, iQueueEventsSignatureLen))
+										if (!strncmp(line, QUEUE_EVENTS_SIGNATURE, queueEventsSignatureLen))
 										{
-											szQueueEvents = szLine + iQueueEventsSignatureLen;
+											queueEvents = line + queueEventsSignatureLen;
 											break;
 										}
 									}
 								}
 
-								Script* pScript = new Script(szScriptName, szFullFilename);
-								pScript->SetPostScript(bPostScript);
-								pScript->SetScanScript(bScanScript);
-								pScript->SetQueueScript(bQueueScript);
-								pScript->SetSchedulerScript(bSchedulerScript);
-								pScript->SetFeedScript(bFeedScript);
-								pScript->SetQueueEvents(szQueueEvents);
-								pScripts->push_back(pScript);
+								Script* script = new Script(scriptName, fullFilename);
+								script->SetPostScript(postScript);
+								script->SetScanScript(scanScript);
+								script->SetQueueScript(queueScript);
+								script->SetSchedulerScript(schedulerScript);
+								script->SetFeedScript(feedScript);
+								script->SetQueueEvents(queueEvents);
+								scripts->push_back(script);
 								break;
 							}
 						}
 					}
 				}
 			}
-			else if (!bIsSubDir)
+			else if (!isSubDir)
 			{
-				snprintf(szFullFilename, 1024, "%s%s%c", szDirectory, szFilename, PATH_SEPARATOR);
-				szFullFilename[1024-1] = '\0';
+				snprintf(fullFilename, 1024, "%s%s%c", directory, filename, PATH_SEPARATOR);
+				fullFilename[1024-1] = '\0';
 
-				LoadScriptDir(pScripts, szFullFilename, true);
+				LoadScriptDir(scripts, fullFilename, true);
 			}
 		}
 	}
 
-	free(szBuffer);
+	free(buffer);
 }
 
-bool ScriptConfig::CompareScripts(Script* pScript1, Script* pScript2)
+bool ScriptConfig::CompareScripts(Script* script1, Script* script2)
 {
-	return strcmp(pScript1->GetName(), pScript2->GetName()) < 0;
+	return strcmp(script1->GetName(), script2->GetName()) < 0;
 }
 
-void ScriptConfig::BuildScriptDisplayNames(Scripts* pScripts)
+void ScriptConfig::BuildScriptDisplayNames(Scripts* scripts)
 {
 	// trying to use short name without path and extension.
 	// if there are other scripts with the same short name - using a longer name instead (with ot without extension)
 
-	for (Scripts::iterator it = pScripts->begin(); it != pScripts->end(); it++)
+	for (Scripts::iterator it = scripts->begin(); it != scripts->end(); it++)
 	{
-		Script* pScript = *it;
+		Script* script = *it;
 
-		char szShortName[256];
-		strncpy(szShortName, pScript->GetName(), 256);
-		szShortName[256-1] = '\0';
-		if (char* ext = strrchr(szShortName, '.')) *ext = '\0'; // strip file extension
+		char shortName[256];
+		strncpy(shortName, script->GetName(), 256);
+		shortName[256-1] = '\0';
+		if (char* ext = strrchr(shortName, '.')) *ext = '\0'; // strip file extension
 
-		const char* szDisplayName = Util::BaseFileName(szShortName);
+		const char* displayName = Util::BaseFileName(shortName);
 
-		for (Scripts::iterator it2 = pScripts->begin(); it2 != pScripts->end(); it2++)
+		for (Scripts::iterator it2 = scripts->begin(); it2 != scripts->end(); it2++)
 		{
-			Script* pScript2 = *it2;
+			Script* script2 = *it2;
 
-			char szShortName2[256];
-			strncpy(szShortName2, pScript2->GetName(), 256);
-			szShortName2[256-1] = '\0';
-			if (char* ext = strrchr(szShortName2, '.')) *ext = '\0'; // strip file extension
+			char shortName2[256];
+			strncpy(shortName2, script2->GetName(), 256);
+			shortName2[256-1] = '\0';
+			if (char* ext = strrchr(shortName2, '.')) *ext = '\0'; // strip file extension
 
-			const char* szDisplayName2 = Util::BaseFileName(szShortName2);
+			const char* displayName2 = Util::BaseFileName(shortName2);
 
-			if (!strcmp(szDisplayName, szDisplayName2) && pScript->GetName() != pScript2->GetName())
+			if (!strcmp(displayName, displayName2) && script->GetName() != script2->GetName())
 			{
-				if (!strcmp(szShortName, szShortName2))
+				if (!strcmp(shortName, shortName2))
 				{
-					szDisplayName =	pScript->GetName();
+					displayName =	script->GetName();
 				}
 				else
 				{
-					szDisplayName =	szShortName;
+					displayName =	shortName;
 				}
 				break;
 			}
 		}
 
-		pScript->SetDisplayName(szDisplayName);
+		script->SetDisplayName(displayName);
 	}
 }

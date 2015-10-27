@@ -144,13 +144,13 @@ int getopt(int argc, char *argv[], char *optstring)
 	return c;
 }
 
-DirBrowser::DirBrowser(const char* szPath)
+DirBrowser::DirBrowser(const char* path)
 {
-	char szMask[MAX_PATH + 1];
-	snprintf(szMask, MAX_PATH + 1, "%s%c*.*", szPath, (int)PATH_SEPARATOR);
-	szMask[MAX_PATH] = '\0';
-	m_hFile = FindFirstFile(szMask, &m_FindData);
-	m_bFirst = true;
+	char mask[MAX_PATH + 1];
+	snprintf(mask, MAX_PATH + 1, "%s%c*.*", path, (int)PATH_SEPARATOR);
+	mask[MAX_PATH] = '\0';
+	m_hFile = FindFirstFile(mask, &m_findData);
+	m_first = true;
 }
 
 DirBrowser::~DirBrowser()
@@ -163,19 +163,19 @@ DirBrowser::~DirBrowser()
 
 const char* DirBrowser::Next()
 {
-	bool bOK = false;
-	if (m_bFirst)
+	bool ok = false;
+	if (m_first)
 	{
-		bOK = m_hFile != INVALID_HANDLE_VALUE;
-		m_bFirst = false;
+		ok = m_hFile != INVALID_HANDLE_VALUE;
+		m_first = false;
 	}
 	else
 	{
-		bOK = FindNextFile(m_hFile, &m_FindData) != 0;
+		ok = FindNextFile(m_hFile, &m_findData) != 0;
 	}
-	if (bOK)
+	if (ok)
 	{
-		return m_FindData.cFileName;
+		return m_findData.cFileName;
 	}
 	return NULL;
 }
@@ -183,35 +183,35 @@ const char* DirBrowser::Next()
 #else
 
 #ifdef DIRBROWSER_SNAPSHOT
-DirBrowser::DirBrowser(const char* szPath, bool bSnapshot)
+DirBrowser::DirBrowser(const char* path, bool snapshot)
 #else
-DirBrowser::DirBrowser(const char* szPath)
+DirBrowser::DirBrowser(const char* path)
 #endif
 {
 #ifdef DIRBROWSER_SNAPSHOT
-	m_bSnapshot = bSnapshot;
-	if (m_bSnapshot)
+	m_snapshot = snapshot;
+	if (m_snapshot)
 	{
-		DirBrowser dir(szPath, false);
+		DirBrowser dir(path, false);
 		while (const char* filename = dir.Next())
 		{
-			m_Snapshot.push_back(strdup(filename));
+			m_snapshot.push_back(strdup(filename));
 		}
-		m_itSnapshot = m_Snapshot.begin();
+		m_itSnapshot = m_snapshot.begin();
 	}
 	else
 #endif
 	{
-		m_pDir = opendir(szPath);
+		m_dir = opendir(path);
 	}
 }
 
 DirBrowser::~DirBrowser()
 {
 #ifdef DIRBROWSER_SNAPSHOT
-	if (m_bSnapshot)
+	if (m_snapshot)
 	{
-		for (FileList::iterator it = m_Snapshot.begin(); it != m_Snapshot.end(); it++)
+		for (FileList::iterator it = m_snapshot.begin(); it != m_snapshot.end(); it++)
 		{
 			delete *it;
 		}
@@ -219,9 +219,9 @@ DirBrowser::~DirBrowser()
 	else
 #endif
 	{
-		if (m_pDir)
+		if (m_dir)
 		{
-			closedir((DIR*)m_pDir);
+			closedir((DIR*)m_dir);
 		}
 	}
 }
@@ -229,19 +229,19 @@ DirBrowser::~DirBrowser()
 const char* DirBrowser::Next()
 {
 #ifdef DIRBROWSER_SNAPSHOT
-	if (m_bSnapshot)
+	if (m_snapshot)
 	{
-		return m_itSnapshot == m_Snapshot.end() ? NULL : *m_itSnapshot++;
+		return m_itSnapshot == m_snapshot.end() ? NULL : *m_itSnapshot++;
 	}
 	else
 #endif
 	{
-		if (m_pDir)
+		if (m_dir)
 		{
-			m_pFindData = readdir((DIR*)m_pDir);
-			if (m_pFindData)
+			m_findData = readdir((DIR*)m_dir);
+			if (m_findData)
 			{
-				return m_pFindData->d_name;
+				return m_findData->d_name;
 			}
 		}
 		return NULL;
@@ -253,75 +253,75 @@ const char* DirBrowser::Next()
 
 StringBuilder::StringBuilder()
 {
-	m_szBuffer = NULL;
-	m_iBufferSize = 0;
-	m_iUsedSize = 0;
-	m_iGrowSize = 10240;
+	m_buffer = NULL;
+	m_bufferSize = 0;
+	m_usedSize = 0;
+	m_growSize = 10240;
 }
 
 StringBuilder::~StringBuilder()
 {
-	free(m_szBuffer);
+	free(m_buffer);
 }
 
 void StringBuilder::Clear()
 {
-	free(m_szBuffer);
-	m_szBuffer = NULL;
-	m_iBufferSize = 0;
-	m_iUsedSize = 0;
+	free(m_buffer);
+	m_buffer = NULL;
+	m_bufferSize = 0;
+	m_usedSize = 0;
 }
 
-void StringBuilder::Append(const char* szStr)
+void StringBuilder::Append(const char* str)
 {
-	int iPartLen = strlen(szStr);
-	Reserve(iPartLen + 1);
-	strcpy(m_szBuffer + m_iUsedSize, szStr);
-	m_iUsedSize += iPartLen;
-	m_szBuffer[m_iUsedSize] = '\0';
+	int partLen = strlen(str);
+	Reserve(partLen + 1);
+	strcpy(m_buffer + m_usedSize, str);
+	m_usedSize += partLen;
+	m_buffer[m_usedSize] = '\0';
 }
 
-void StringBuilder::AppendFmt(const char* szFormat, ...)
+void StringBuilder::AppendFmt(const char* format, ...)
 {
 	va_list args;
-	va_start(args, szFormat);
-	AppendFmtV(szFormat, args);
+	va_start(args, format);
+	AppendFmtV(format, args);
 	va_end(args);
 }
 
-void StringBuilder::AppendFmtV(const char* szFormat, va_list ap)
+void StringBuilder::AppendFmtV(const char* format, va_list ap)
 {
 	va_list ap2;
 	va_copy(ap2, ap);
 
-	int iRemainingSize = m_iBufferSize - m_iUsedSize;
-	int m = vsnprintf(m_szBuffer + m_iUsedSize, iRemainingSize, szFormat, ap);
+	int remainingSize = m_bufferSize - m_usedSize;
+	int m = vsnprintf(m_buffer + m_usedSize, remainingSize, format, ap);
 #ifdef WIN32
 	if (m == -1)
 	{
-        m = _vscprintf(szFormat, ap);
+        m = _vscprintf(format, ap);
 	}
 #endif
-	if (m + 1 > iRemainingSize)
+	if (m + 1 > remainingSize)
 	{
-		Reserve(m - iRemainingSize + m_iGrowSize);
-		iRemainingSize = m_iBufferSize - m_iUsedSize;
-		m = vsnprintf(m_szBuffer + m_iUsedSize, iRemainingSize, szFormat, ap2);
+		Reserve(m - remainingSize + m_growSize);
+		remainingSize = m_bufferSize - m_usedSize;
+		m = vsnprintf(m_buffer + m_usedSize, remainingSize, format, ap2);
 	}
 	if (m >= 0)
 	{
-		m_szBuffer[m_iUsedSize += m] = '\0';
+		m_buffer[m_usedSize += m] = '\0';
 	}
 
 	va_end(ap2);
 }
 
-void StringBuilder::Reserve(int iSize)
+void StringBuilder::Reserve(int size)
 {
-	if (m_iUsedSize + iSize > m_iBufferSize)
+	if (m_usedSize + size > m_bufferSize)
 	{
-		m_iBufferSize += iSize + m_iGrowSize;
-		m_szBuffer = (char*)realloc(m_szBuffer, m_iBufferSize);
+		m_bufferSize += size + m_growSize;
+		m_buffer = (char*)realloc(m_buffer, m_bufferSize);
 	}
 }
 
@@ -349,9 +349,9 @@ char* Util::BaseFileName(const char* filename)
 	}
 }
 
-void Util::NormalizePathSeparators(char* szPath)
+void Util::NormalizePathSeparators(char* path)
 {
-	for (char* p = szPath; *p; p++) 
+	for (char* p = path; *p; p++) 
 	{
 		if (*p == ALT_PATH_SEPARATOR) 
 		{
@@ -360,86 +360,86 @@ void Util::NormalizePathSeparators(char* szPath)
 	}
 }
 
-bool Util::ForceDirectories(const char* szPath, char* szErrBuf, int iBufSize)
+bool Util::ForceDirectories(const char* path, char* errBuf, int bufSize)
 {
-	*szErrBuf = '\0';
-	char szSysErrStr[256];
-	char szNormPath[1024];
-	strncpy(szNormPath, szPath, 1024);
-	szNormPath[1024-1] = '\0';
-	NormalizePathSeparators(szNormPath);
-	int iLen = strlen(szNormPath);
-	if ((iLen > 0) && szNormPath[iLen-1] == PATH_SEPARATOR
+	*errBuf = '\0';
+	char sysErrStr[256];
+	char normPath[1024];
+	strncpy(normPath, path, 1024);
+	normPath[1024-1] = '\0';
+	NormalizePathSeparators(normPath);
+	int len = strlen(normPath);
+	if ((len > 0) && normPath[len-1] == PATH_SEPARATOR
 #ifdef WIN32
-		&& iLen > 3
+		&& len > 3
 #endif
 		)
 	{
-		szNormPath[iLen-1] = '\0';
+		normPath[len-1] = '\0';
 	}
 
 	struct stat buffer;
-	bool bOK = !stat(szNormPath, &buffer);
-	if (!bOK && errno != ENOENT)
+	bool ok = !stat(normPath, &buffer);
+	if (!ok && errno != ENOENT)
 	{
-		snprintf(szErrBuf, iBufSize, "could not read information for directory %s: errno %i, %s", szNormPath, errno, GetLastErrorMessage(szSysErrStr, sizeof(szSysErrStr)));
-		szErrBuf[iBufSize-1] = 0;
+		snprintf(errBuf, bufSize, "could not read information for directory %s: errno %i, %s", normPath, errno, GetLastErrorMessage(sysErrStr, sizeof(sysErrStr)));
+		errBuf[bufSize-1] = 0;
 		return false;
 	}
 	
-	if (bOK && !S_ISDIR(buffer.st_mode))
+	if (ok && !S_ISDIR(buffer.st_mode))
 	{
-		snprintf(szErrBuf, iBufSize, "path %s is not a directory", szNormPath);
-		szErrBuf[iBufSize-1] = 0;
+		snprintf(errBuf, bufSize, "path %s is not a directory", normPath);
+		errBuf[bufSize-1] = 0;
 		return false;
 	}
 	
-	if (!bOK
+	if (!ok
 #ifdef WIN32
-		&& strlen(szNormPath) > 2
+		&& strlen(normPath) > 2
 #endif
 		)
 	{
-		char szParentPath[1024];
-		strncpy(szParentPath, szNormPath, 1024);
-		szParentPath[1024-1] = '\0';
-		char* p = (char*)strrchr(szParentPath, PATH_SEPARATOR);
+		char parentPath[1024];
+		strncpy(parentPath, normPath, 1024);
+		parentPath[1024-1] = '\0';
+		char* p = (char*)strrchr(parentPath, PATH_SEPARATOR);
 		if (p)
 		{
 #ifdef WIN32
-			if (p - szParentPath == 2 && szParentPath[1] == ':' && strlen(szParentPath) > 2)
+			if (p - parentPath == 2 && parentPath[1] == ':' && strlen(parentPath) > 2)
 			{
-				szParentPath[3] = '\0';
+				parentPath[3] = '\0';
 			}
 			else
 #endif
 			{
 				*p = '\0';
 			}
-			if (strlen(szParentPath) != strlen(szPath) && !ForceDirectories(szParentPath, szErrBuf, iBufSize))
+			if (strlen(parentPath) != strlen(path) && !ForceDirectories(parentPath, errBuf, bufSize))
 			{
 				return false;
 			}
 		}
 		
-		if (mkdir(szNormPath, S_DIRMODE) != 0 && errno != EEXIST)
+		if (mkdir(normPath, S_DIRMODE) != 0 && errno != EEXIST)
 		{
-			snprintf(szErrBuf, iBufSize, "could not create directory %s: %s", szNormPath, GetLastErrorMessage(szSysErrStr, sizeof(szSysErrStr)));
-			szErrBuf[iBufSize-1] = 0;
+			snprintf(errBuf, bufSize, "could not create directory %s: %s", normPath, GetLastErrorMessage(sysErrStr, sizeof(sysErrStr)));
+			errBuf[bufSize-1] = 0;
 			return false;
 		}
 			
-		if (stat(szNormPath, &buffer) != 0)
+		if (stat(normPath, &buffer) != 0)
 		{
-			snprintf(szErrBuf, iBufSize, "could not read information for directory %s: %s", szNormPath, GetLastErrorMessage(szSysErrStr, sizeof(szSysErrStr)));
-			szErrBuf[iBufSize-1] = 0;
+			snprintf(errBuf, bufSize, "could not read information for directory %s: %s", normPath, GetLastErrorMessage(sysErrStr, sizeof(sysErrStr)));
+			errBuf[bufSize-1] = 0;
 			return false;
 		}
 		
 		if (!S_ISDIR(buffer.st_mode))
 		{
-			snprintf(szErrBuf, iBufSize, "path %s is not a directory", szNormPath);
-			szErrBuf[iBufSize-1] = 0;
+			snprintf(errBuf, bufSize, "path %s is not a directory", normPath);
+			errBuf[bufSize-1] = 0;
 			return false;
 		}
 	}
@@ -447,27 +447,27 @@ bool Util::ForceDirectories(const char* szPath, char* szErrBuf, int iBufSize)
 	return true;
 }
 
-bool Util::GetCurrentDirectory(char* szBuffer, int iBufSize)
+bool Util::GetCurrentDirectory(char* buffer, int bufSize)
 {
 #ifdef WIN32
-	return ::GetCurrentDirectory(iBufSize, szBuffer) != NULL;
+	return ::GetCurrentDirectory(bufSize, buffer) != NULL;
 #else
-	return getcwd(szBuffer, iBufSize) != NULL;
+	return getcwd(buffer, bufSize) != NULL;
 #endif
 }
 
-bool Util::SetCurrentDirectory(const char* szDirFilename)
+bool Util::SetCurrentDirectory(const char* dirFilename)
 {
 #ifdef WIN32
-	return ::SetCurrentDirectory(szDirFilename);
+	return ::SetCurrentDirectory(dirFilename);
 #else
-	return chdir(szDirFilename) == 0;
+	return chdir(dirFilename) == 0;
 #endif
 }
 
-bool Util::DirEmpty(const char* szDirFilename)
+bool Util::DirEmpty(const char* dirFilename)
 {
-	DirBrowser dir(szDirFilename);
+	DirBrowser dir(dirFilename);
 	while (const char* filename = dir.Next())
 	{
 		if (strcmp(filename, ".") && strcmp(filename, ".."))
@@ -478,61 +478,61 @@ bool Util::DirEmpty(const char* szDirFilename)
 	return true;
 }
 
-bool Util::LoadFileIntoBuffer(const char* szFileName, char** pBuffer, int* pBufferLength)
+bool Util::LoadFileIntoBuffer(const char* fileName, char** buffer, int* bufferLength)
 {
-    FILE* pFile = fopen(szFileName, FOPEN_RB);
-    if (!pFile)
+    FILE* file = fopen(fileName, FOPEN_RB);
+    if (!file)
     {
         return false;
     }
 
     // obtain file size.
-    fseek(pFile , 0 , SEEK_END);
-    int iSize  = (int)ftell(pFile);
-    rewind(pFile);
+    fseek(file , 0 , SEEK_END);
+    int size  = (int)ftell(file);
+    rewind(file);
 
     // allocate memory to contain the whole file.
-    *pBuffer = (char*) malloc(iSize + 1);
-    if (!*pBuffer)
+    *buffer = (char*) malloc(size + 1);
+    if (!*buffer)
     {
         return false;
     }
 
     // copy the file into the buffer.
-    fread(*pBuffer, 1, iSize, pFile);
+    fread(*buffer, 1, size, file);
 
-    fclose(pFile);
+    fclose(file);
 
-    (*pBuffer)[iSize] = 0;
+    (*buffer)[size] = 0;
 
-    *pBufferLength = iSize + 1;
+    *bufferLength = size + 1;
 
     return true;
 }
 
-bool Util::SaveBufferIntoFile(const char* szFileName, const char* szBuffer, int iBufLen)
+bool Util::SaveBufferIntoFile(const char* fileName, const char* buffer, int bufLen)
 {
-    FILE* pFile = fopen(szFileName, FOPEN_WB);
-    if (!pFile)
+    FILE* file = fopen(fileName, FOPEN_WB);
+    if (!file)
     {
         return false;
     }
 
-	int iWrittenBytes = fwrite(szBuffer, 1, iBufLen, pFile);
-    fclose(pFile);
+	int writtenBytes = fwrite(buffer, 1, bufLen, file);
+    fclose(file);
 
-	return iWrittenBytes == iBufLen;
+	return writtenBytes == bufLen;
 }
 
-bool Util::CreateSparseFile(const char* szFilename, long long iSize, char* szErrBuf, int iBufSize)
+bool Util::CreateSparseFile(const char* filename, long long size, char* errBuf, int bufSize)
 {
-	*szErrBuf = '\0';
-	bool bOK = false;
+	*errBuf = '\0';
+	bool ok = false;
 #ifdef WIN32
-	HANDLE hFile = CreateFile(szFilename, GENERIC_WRITE, FILE_SHARE_READ, 0, CREATE_NEW, 0, NULL);
+	HANDLE hFile = CreateFile(filename, GENERIC_WRITE, FILE_SHARE_READ, 0, CREATE_NEW, 0, NULL);
 	if (hFile == INVALID_HANDLE_VALUE)
 	{
-		GetLastErrorMessage(szErrBuf, sizeof(iBufSize));
+		GetLastErrorMessage(errBuf, sizeof(bufSize));
 		return false;
 	}
 	// first try to create sparse file (supported only on NTFS partitions),
@@ -540,73 +540,73 @@ bool Util::CreateSparseFile(const char* szFilename, long long iSize, char* szErr
 	DWORD dwBytesReturned;
 	DeviceIoControl(hFile, FSCTL_SET_SPARSE, NULL, 0, NULL, 0, &dwBytesReturned, NULL);
 
-	LARGE_INTEGER iSize64;
-	iSize64.QuadPart = iSize;
-	SetFilePointerEx(hFile, iSize64, NULL, FILE_END);
+	LARGE_INTEGER size64;
+	size64.QuadPart = size;
+	SetFilePointerEx(hFile, size64, NULL, FILE_END);
 	SetEndOfFile(hFile);
 	CloseHandle(hFile);
-	bOK = true;
+	ok = true;
 #else
 	// create file
-	FILE* pFile = fopen(szFilename, FOPEN_AB);
-	if (!pFile)
+	FILE* file = fopen(filename, FOPEN_AB);
+	if (!file)
 	{
-		GetLastErrorMessage(szErrBuf, sizeof(iBufSize));
+		GetLastErrorMessage(errBuf, sizeof(bufSize));
 		return false;
 	}
-	fclose(pFile);
+	fclose(file);
 
 	// there are no reliable function to expand file on POSIX, so we must try different approaches,
 	// starting with the fastest one and hoping it will work
 	// 1) set file size using function "truncate" (this is fast, if it works)
-	truncate(szFilename, iSize);
+	truncate(filename, size);
 	// check if it worked
-	bOK = FileSize(szFilename) == iSize;
-	if (!bOK)
+	ok = FileSize(filename) == size;
+	if (!ok)
 	{
 		// 2) truncate did not work, expanding the file by writing to it (that's slow)
-		truncate(szFilename, 0);
-		pFile = fopen(szFilename, FOPEN_AB);
-		if (!pFile)
+		truncate(filename, 0);
+		file = fopen(filename, FOPEN_AB);
+		if (!file)
 		{
-			GetLastErrorMessage(szErrBuf, sizeof(iBufSize));
+			GetLastErrorMessage(errBuf, sizeof(bufSize));
 			return false;
 		}
 		char c = '0';
-		fwrite(&c, 1, iSize, pFile);
-		fclose(pFile);
-		bOK = FileSize(szFilename) == iSize;
+		fwrite(&c, 1, size, file);
+		fclose(file);
+		ok = FileSize(filename) == size;
 	}
 #endif
-	return bOK;
+	return ok;
 }
 
-bool Util::TruncateFile(const char* szFilename, int iSize)
+bool Util::TruncateFile(const char* filename, int size)
 {
-	bool bOK = false;
+	bool ok = false;
 #ifdef WIN32
-	FILE *file = fopen(szFilename, FOPEN_RBP);
-	fseek(file, iSize, SEEK_SET);
-	bOK = SetEndOfFile((HANDLE)_get_osfhandle(_fileno(file))) != 0;
+	FILE *file = fopen(filename, FOPEN_RBP);
+	fseek(file, size, SEEK_SET);
+	ok = SetEndOfFile((HANDLE)_get_osfhandle(_fileno(file))) != 0;
 	fclose(file);
 #else
-	bOK = truncate(szFilename, iSize) == 0;
+	ok = truncate(filename, size) == 0;
 #endif
-	return bOK;
+	return ok;
 }
 
 //replace bad chars in filename
-void Util::MakeValidFilename(char* szFilename, char cReplaceChar, bool bAllowSlashes)
+void Util::MakeValidFilename(char* filename, char cReplaceChar, bool allowSlashes)
 {
-	const char* szReplaceChars = bAllowSlashes ? ":*?\"><\n\r\t" : "\\/:*?\"><\n\r\t";
-	char* p = szFilename;
+	const char* replaceChars = allowSlashes ? ":*?\"><\n\r\t" : "\\/:*?\"><\n\r\t";
+	char* p = filename;
 	while (*p)
 	{
-		if (strchr(szReplaceChars, *p))
+		if (strchr(replaceChars, *p))
 		{
 			*p = cReplaceChar;
 		}
-		if (bAllowSlashes && *p == ALT_PATH_SEPARATOR)
+		if (allowSlashes && *p == ALT_PATH_SEPARATOR)
 		{
 			*p = PATH_SEPARATOR;
 		}
@@ -615,52 +615,52 @@ void Util::MakeValidFilename(char* szFilename, char cReplaceChar, bool bAllowSla
 
 	// remove trailing dots and spaces. they are not allowed in directory names on windows,
 	// but we remove them on posix also, in a case the directory is accessed from windows via samba.
-	for (int iLen = strlen(szFilename); iLen > 0 && (szFilename[iLen - 1] == '.' || szFilename[iLen - 1] == ' '); iLen--) 
+	for (int len = strlen(filename); len > 0 && (filename[len - 1] == '.' || filename[len - 1] == ' '); len--) 
 	{
-		szFilename[iLen - 1] = '\0';
+		filename[len - 1] = '\0';
 	}
 }
 
 // returns TRUE if the name was changed by adding duplicate-suffix
-bool Util::MakeUniqueFilename(char* szDestBufFilename, int iDestBufSize, const char* szDestDir, const char* szBasename)
+bool Util::MakeUniqueFilename(char* destBufFilename, int destBufSize, const char* destDir, const char* basename)
 {
-	snprintf(szDestBufFilename, iDestBufSize, "%s%c%s", szDestDir, (int)PATH_SEPARATOR, szBasename);
-	szDestBufFilename[iDestBufSize-1] = '\0';
+	snprintf(destBufFilename, destBufSize, "%s%c%s", destDir, (int)PATH_SEPARATOR, basename);
+	destBufFilename[destBufSize-1] = '\0';
 
-	int iDupeNumber = 0;
-	while (FileExists(szDestBufFilename))
+	int dupeNumber = 0;
+	while (FileExists(destBufFilename))
 	{
-		iDupeNumber++;
+		dupeNumber++;
 
-		const char* szExtension = strrchr(szBasename, '.');
-		if (szExtension && szExtension != szBasename)
+		const char* extension = strrchr(basename, '.');
+		if (extension && extension != basename)
 		{
-			char szFilenameWithoutExt[1024];
-			strncpy(szFilenameWithoutExt, szBasename, 1024);
-			int iEnd = szExtension - szBasename;
-			szFilenameWithoutExt[iEnd < 1024 ? iEnd : 1024-1] = '\0';
+			char filenameWithoutExt[1024];
+			strncpy(filenameWithoutExt, basename, 1024);
+			int end = extension - basename;
+			filenameWithoutExt[end < 1024 ? end : 1024-1] = '\0';
 
-			if (!strcasecmp(szExtension, ".par2"))
+			if (!strcasecmp(extension, ".par2"))
 			{
-				char* szVolExtension = strrchr(szFilenameWithoutExt, '.');
-				if (szVolExtension && szVolExtension != szFilenameWithoutExt && !strncasecmp(szVolExtension, ".vol", 4))
+				char* volExtension = strrchr(filenameWithoutExt, '.');
+				if (volExtension && volExtension != filenameWithoutExt && !strncasecmp(volExtension, ".vol", 4))
 				{
-					*szVolExtension = '\0';
-					szExtension = szBasename + (szVolExtension - szFilenameWithoutExt);
+					*volExtension = '\0';
+					extension = basename + (volExtension - filenameWithoutExt);
 				}
 			}
 
-			snprintf(szDestBufFilename, iDestBufSize, "%s%c%s.duplicate%d%s", szDestDir, (int)PATH_SEPARATOR, szFilenameWithoutExt, iDupeNumber, szExtension);
+			snprintf(destBufFilename, destBufSize, "%s%c%s.duplicate%d%s", destDir, (int)PATH_SEPARATOR, filenameWithoutExt, dupeNumber, extension);
 		}
 		else
 		{
-			snprintf(szDestBufFilename, iDestBufSize, "%s%c%s.duplicate%d", szDestDir, (int)PATH_SEPARATOR, szBasename, iDupeNumber);
+			snprintf(destBufFilename, destBufSize, "%s%c%s.duplicate%d", destDir, (int)PATH_SEPARATOR, basename, dupeNumber);
 		}
 
-		szDestBufFilename[iDestBufSize-1] = '\0';
+		destBufFilename[destBufSize-1] = '\0';
 	}
 
-	return iDupeNumber > 0;
+	return dupeNumber > 0;
 }
 
 long long Util::JoinInt64(unsigned long Hi, unsigned long Lo)
@@ -696,46 +696,46 @@ const static char BASE64_DEALPHABET [128] =
 	49, 50, 51,  0,  0,  0,  0,  0			// 120 - 127
 	};
 
-unsigned int DecodeByteQuartet(char* szInputBuffer, char* szOutputBuffer)
+unsigned int DecodeByteQuartet(char* inputBuffer, char* outputBuffer)
 {
 	unsigned int buffer = 0;
 
-	if (szInputBuffer[3] == '=')
+	if (inputBuffer[3] == '=')
 	{
-		if (szInputBuffer[2] == '=')
+		if (inputBuffer[2] == '=')
 		{
-			buffer = (buffer | BASE64_DEALPHABET [(int)szInputBuffer[0]]) << 6;
-			buffer = (buffer | BASE64_DEALPHABET [(int)szInputBuffer[1]]) << 6;
+			buffer = (buffer | BASE64_DEALPHABET [(int)inputBuffer[0]]) << 6;
+			buffer = (buffer | BASE64_DEALPHABET [(int)inputBuffer[1]]) << 6;
 			buffer = buffer << 14;
 
-			szOutputBuffer [0] = (char)(buffer >> 24);
+			outputBuffer [0] = (char)(buffer >> 24);
 			
 			return 1;
 		}
 		else
 		{
-			buffer = (buffer | BASE64_DEALPHABET [(int)szInputBuffer[0]]) << 6;
-			buffer = (buffer | BASE64_DEALPHABET [(int)szInputBuffer[1]]) << 6;
-			buffer = (buffer | BASE64_DEALPHABET [(int)szInputBuffer[2]]) << 6;
+			buffer = (buffer | BASE64_DEALPHABET [(int)inputBuffer[0]]) << 6;
+			buffer = (buffer | BASE64_DEALPHABET [(int)inputBuffer[1]]) << 6;
+			buffer = (buffer | BASE64_DEALPHABET [(int)inputBuffer[2]]) << 6;
 			buffer = buffer << 8;
 
-			szOutputBuffer [0] = (char)(buffer >> 24);
-			szOutputBuffer [1] = (char)(buffer >> 16);
+			outputBuffer [0] = (char)(buffer >> 24);
+			outputBuffer [1] = (char)(buffer >> 16);
 			
 			return 2;
 		}
 	}
 	else
 	{
-		buffer = (buffer | BASE64_DEALPHABET [(int)szInputBuffer[0]]) << 6;
-		buffer = (buffer | BASE64_DEALPHABET [(int)szInputBuffer[1]]) << 6;
-		buffer = (buffer | BASE64_DEALPHABET [(int)szInputBuffer[2]]) << 6;
-		buffer = (buffer | BASE64_DEALPHABET [(int)szInputBuffer[3]]) << 6; 
+		buffer = (buffer | BASE64_DEALPHABET [(int)inputBuffer[0]]) << 6;
+		buffer = (buffer | BASE64_DEALPHABET [(int)inputBuffer[1]]) << 6;
+		buffer = (buffer | BASE64_DEALPHABET [(int)inputBuffer[2]]) << 6;
+		buffer = (buffer | BASE64_DEALPHABET [(int)inputBuffer[3]]) << 6; 
 		buffer = buffer << 2;
 
-		szOutputBuffer [0] = (char)(buffer >> 24);
-		szOutputBuffer [1] = (char)(buffer >> 16);
-		szOutputBuffer [2] = (char)(buffer >> 8);
+		outputBuffer [0] = (char)(buffer >> 24);
+		outputBuffer [1] = (char)(buffer >> 16);
+		outputBuffer [2] = (char)(buffer >> 8);
 
 		return 3;
 	}
@@ -743,29 +743,29 @@ unsigned int DecodeByteQuartet(char* szInputBuffer, char* szOutputBuffer)
 	return 0;
 }
 
-bool Util::MoveFile(const char* szSrcFilename, const char* szDstFilename)
+bool Util::MoveFile(const char* srcFilename, const char* dstFilename)
 {
-	bool bOK = rename(szSrcFilename, szDstFilename) == 0;
+	bool ok = rename(srcFilename, dstFilename) == 0;
 
 #ifndef WIN32
-	if (!bOK && errno == EXDEV)
+	if (!ok && errno == EXDEV)
 	{
-		bOK = CopyFile(szSrcFilename, szDstFilename) && remove(szSrcFilename) == 0;
+		ok = CopyFile(srcFilename, dstFilename) && remove(srcFilename) == 0;
 	}
 #endif
 
-	return bOK;
+	return ok;
 }
 
-bool Util::CopyFile(const char* szSrcFilename, const char* szDstFilename)
+bool Util::CopyFile(const char* srcFilename, const char* dstFilename)
 {
-	FILE* infile = fopen(szSrcFilename, FOPEN_RB);
+	FILE* infile = fopen(srcFilename, FOPEN_RB);
 	if (!infile)
 	{
 		return false;
 	}
 
-	FILE* outfile = fopen(szDstFilename, FOPEN_WBP);
+	FILE* outfile = fopen(dstFilename, FOPEN_WBP);
 	if (!outfile)
 	{
 		fclose(infile);
@@ -789,135 +789,135 @@ bool Util::CopyFile(const char* szSrcFilename, const char* szDstFilename)
 	return true;
 }
 
-bool Util::FileExists(const char* szFilename)
+bool Util::FileExists(const char* filename)
 {
 #ifdef WIN32
 	// we use a native windows call because c-lib function "stat" fails on windows if file date is invalid
 	WIN32_FIND_DATA findData;
-	HANDLE handle = FindFirstFile(szFilename, &findData);
+	HANDLE handle = FindFirstFile(filename, &findData);
 	if (handle != INVALID_HANDLE_VALUE)
 	{
-		bool bExists = (findData.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY) == 0;
+		bool exists = (findData.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY) == 0;
 		FindClose(handle);
-		return bExists;
+		return exists;
 	}
 	return false;
 #else
 	struct stat buffer;
-	bool bExists = !stat(szFilename, &buffer) && S_ISREG(buffer.st_mode);
-	return bExists;
+	bool exists = !stat(filename, &buffer) && S_ISREG(buffer.st_mode);
+	return exists;
 #endif
 }
 
-bool Util::FileExists(const char* szPath, const char* szFilenameWithoutPath)
+bool Util::FileExists(const char* path, const char* filenameWithoutPath)
 {
 	char fullFilename[1024];
-	snprintf(fullFilename, 1024, "%s%c%s", szPath, (int)PATH_SEPARATOR, szFilenameWithoutPath);
+	snprintf(fullFilename, 1024, "%s%c%s", path, (int)PATH_SEPARATOR, filenameWithoutPath);
 	fullFilename[1024-1] = '\0';
-	bool bExists = Util::FileExists(fullFilename);
-	return bExists;
+	bool exists = Util::FileExists(fullFilename);
+	return exists;
 }
 
-bool Util::DirectoryExists(const char* szDirFilename)
+bool Util::DirectoryExists(const char* dirFilename)
 {
 #ifdef WIN32
 	// we use a native windows call because c-lib function "stat" fails on windows if file date is invalid
 	WIN32_FIND_DATA findData;
-	HANDLE handle = FindFirstFile(szDirFilename, &findData);
+	HANDLE handle = FindFirstFile(dirFilename, &findData);
 	if (handle != INVALID_HANDLE_VALUE)
 	{
-		bool bExists = (findData.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY) != 0;
+		bool exists = (findData.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY) != 0;
 		FindClose(handle);
-		return bExists;
+		return exists;
 	}
 	return false;
 #else
 	struct stat buffer;
-	bool bExists = !stat(szDirFilename, &buffer) && S_ISDIR(buffer.st_mode);
-	return bExists;
+	bool exists = !stat(dirFilename, &buffer) && S_ISDIR(buffer.st_mode);
+	return exists;
 #endif
 }
 
-bool Util::CreateDirectory(const char* szDirFilename)
+bool Util::CreateDirectory(const char* dirFilename)
 {
-	mkdir(szDirFilename, S_DIRMODE);
-	return DirectoryExists(szDirFilename);
+	mkdir(dirFilename, S_DIRMODE);
+	return DirectoryExists(dirFilename);
 }
 
-bool Util::RemoveDirectory(const char* szDirFilename)
+bool Util::RemoveDirectory(const char* dirFilename)
 {
 #ifdef WIN32
-	return _rmdir(szDirFilename) == 0;
+	return _rmdir(dirFilename) == 0;
 #else
-	return remove(szDirFilename) == 0;
+	return remove(dirFilename) == 0;
 #endif
 }
 
-bool Util::DeleteDirectoryWithContent(const char* szDirFilename, char* szErrBuf, int iBufSize)
+bool Util::DeleteDirectoryWithContent(const char* dirFilename, char* errBuf, int bufSize)
 {
-	*szErrBuf = '\0';
-	char szSysErrStr[256];
+	*errBuf = '\0';
+	char sysErrStr[256];
 
-	bool bDel = false;
-	bool bOK = true;
+	bool del = false;
+	bool ok = true;
 
-	DirBrowser dir(szDirFilename);
+	DirBrowser dir(dirFilename);
 	while (const char* filename = dir.Next())
 	{
-		char szFullFilename[1024];
-		snprintf(szFullFilename, 1024, "%s%c%s", szDirFilename, PATH_SEPARATOR, filename);
-		szFullFilename[1024-1] = '\0';
+		char fullFilename[1024];
+		snprintf(fullFilename, 1024, "%s%c%s", dirFilename, PATH_SEPARATOR, filename);
+		fullFilename[1024-1] = '\0';
 
 		if (strcmp(filename, ".") && strcmp(filename, ".."))
 		{
-			if (Util::DirectoryExists(szFullFilename))
+			if (Util::DirectoryExists(fullFilename))
 			{
-				bDel = DeleteDirectoryWithContent(szFullFilename, szSysErrStr, sizeof(szSysErrStr));
+				del = DeleteDirectoryWithContent(fullFilename, sysErrStr, sizeof(sysErrStr));
 			}
 			else
 			{
-				bDel = remove(szFullFilename) == 0;
+				del = remove(fullFilename) == 0;
 			}
-			bOK &= bDel;
-			if (!bDel && !*szErrBuf)
+			ok &= del;
+			if (!del && !*errBuf)
 			{
-				snprintf(szErrBuf, iBufSize, "could not delete %s: %s", szFullFilename, GetLastErrorMessage(szSysErrStr, sizeof(szSysErrStr)));
+				snprintf(errBuf, bufSize, "could not delete %s: %s", fullFilename, GetLastErrorMessage(sysErrStr, sizeof(sysErrStr)));
 			}
 		}
 	}
 
-	bDel = RemoveDirectory(szDirFilename);
-	bOK &= bDel;
-	if (!bDel && !*szErrBuf)
+	del = RemoveDirectory(dirFilename);
+	ok &= del;
+	if (!del && !*errBuf)
 	{
-		GetLastErrorMessage(szErrBuf, iBufSize);
+		GetLastErrorMessage(errBuf, bufSize);
 	}
-	return bOK;
+	return ok;
 }
 
-long long Util::FileSize(const char* szFilename)
+long long Util::FileSize(const char* filename)
 {
 #ifdef WIN32
 	struct _stat32i64 buffer;
-	_stat32i64(szFilename, &buffer);
+	_stat32i64(filename, &buffer);
 #else
 	struct stat buffer;
-	stat(szFilename, &buffer);
+	stat(filename, &buffer);
 #endif
 	return buffer.st_size;
 }
 
-long long Util::FreeDiskSize(const char* szPath)
+long long Util::FreeDiskSize(const char* path)
 {
 #ifdef WIN32
-	ULARGE_INTEGER lFree, lDummy;
-	if (GetDiskFreeSpaceEx(szPath, &lFree, &lDummy, &lDummy))
+	ULARGE_INTEGER free, dummy;
+	if (GetDiskFreeSpaceEx(path, &free, &dummy, &dummy))
 	{
-		return lFree.QuadPart;
+		return free.QuadPart;
 	}
 #else
 	struct statvfs diskdata;
-	if (!statvfs(szPath, &diskdata)) 
+	if (!statvfs(path, &diskdata)) 
 	{
 		return (long long)diskdata.f_frsize * (long long)diskdata.f_bavail;
 	}
@@ -925,46 +925,46 @@ long long Util::FreeDiskSize(const char* szPath)
 	return -1;
 }
 
-bool Util::RenameBak(const char* szFilename, const char* szBakPart, bool bRemoveOldExtension, char* szNewNameBuf, int iNewNameBufSize)
+bool Util::RenameBak(const char* filename, const char* bakPart, bool removeOldExtension, char* newNameBuf, int newNameBufSize)
 {
-	char szChangedFilename[1024];
+	char changedFilename[1024];
 
-	if (bRemoveOldExtension)
+	if (removeOldExtension)
 	{
-		strncpy(szChangedFilename, szFilename, 1024);
-		szChangedFilename[1024-1] = '\0';
-		char* szExtension = strrchr(szChangedFilename, '.');
-		if (szExtension)
+		strncpy(changedFilename, filename, 1024);
+		changedFilename[1024-1] = '\0';
+		char* extension = strrchr(changedFilename, '.');
+		if (extension)
 		{
-			*szExtension = '\0';
+			*extension = '\0';
 		}
 	}
 
 	char bakname[1024];
-	snprintf(bakname, 1024, "%s.%s", bRemoveOldExtension ? szChangedFilename : szFilename, szBakPart);
+	snprintf(bakname, 1024, "%s.%s", removeOldExtension ? changedFilename : filename, bakPart);
 	bakname[1024-1] = '\0';
 
 	int i = 2;
 	struct stat buffer;
 	while (!stat(bakname, &buffer))
 	{
-		snprintf(bakname, 1024, "%s.%i.%s", bRemoveOldExtension ? szChangedFilename : szFilename, i++, szBakPart);
+		snprintf(bakname, 1024, "%s.%i.%s", removeOldExtension ? changedFilename : filename, i++, bakPart);
 		bakname[1024-1] = '\0';
 	}
 
-	if (szNewNameBuf)
+	if (newNameBuf)
 	{
-		strncpy(szNewNameBuf, bakname, iNewNameBufSize);
+		strncpy(newNameBuf, bakname, newNameBufSize);
 	}
 
-	bool bOK = !rename(szFilename, bakname);
-	return bOK;
+	bool ok = !rename(filename, bakname);
+	return ok;
 }
 
 #ifndef WIN32
-bool Util::ExpandHomePath(const char* szFilename, char* szBuffer, int iBufSize)
+bool Util::ExpandHomePath(const char* filename, char* buffer, int bufSize)
 {
-	if (szFilename && (szFilename[0] == '~') && (szFilename[1] == '/'))
+	if (filename && (filename[0] == '~') && (filename[1] == '/'))
 	{
 		// expand home-dir
 
@@ -985,146 +985,146 @@ bool Util::ExpandHomePath(const char* szFilename, char* szBuffer, int iBufSize)
 
 		if (home[strlen(home)-1] == '/')
 		{
-			snprintf(szBuffer, iBufSize, "%s%s", home, szFilename + 2);
+			snprintf(buffer, bufSize, "%s%s", home, filename + 2);
 		}
 		else
 		{
-			snprintf(szBuffer, iBufSize, "%s/%s", home, szFilename + 2);
+			snprintf(buffer, bufSize, "%s/%s", home, filename + 2);
 		}
-		szBuffer[iBufSize - 1] = '\0';
+		buffer[bufSize - 1] = '\0';
 	}
 	else
 	{
-		strncpy(szBuffer, szFilename ? szFilename : "", iBufSize);
-		szBuffer[iBufSize - 1] = '\0';
+		strncpy(buffer, filename ? filename : "", bufSize);
+		buffer[bufSize - 1] = '\0';
 	}
 	
 	return true;
 }
 #endif
 
-void Util::ExpandFileName(const char* szFilename, char* szBuffer, int iBufSize)
+void Util::ExpandFileName(const char* filename, char* buffer, int bufSize)
 {
 #ifdef WIN32
-	_fullpath(szBuffer, szFilename, iBufSize);
+	_fullpath(buffer, filename, bufSize);
 #else
-	if (szFilename[0] != '\0' && szFilename[0] != '/')
+	if (filename[0] != '\0' && filename[0] != '/')
 	{
-		char szCurDir[MAX_PATH + 1];
-		getcwd(szCurDir, sizeof(szCurDir) - 1); // 1 char reserved for adding backslash
-		int iOffset = 0;
-		if (szFilename[0] == '.' && szFilename[1] == '/')
+		char curDir[MAX_PATH + 1];
+		getcwd(curDir, sizeof(curDir) - 1); // 1 char reserved for adding backslash
+		int offset = 0;
+		if (filename[0] == '.' && filename[1] == '/')
 		{
-			iOffset += 2;
+			offset += 2;
 		}
-		snprintf(szBuffer, iBufSize, "%s/%s", szCurDir, szFilename + iOffset);
+		snprintf(buffer, bufSize, "%s/%s", curDir, filename + offset);
 	}
 	else
 	{
-		strncpy(szBuffer, szFilename, iBufSize);
-		szBuffer[iBufSize - 1] = '\0';
+		strncpy(buffer, filename, bufSize);
+		buffer[bufSize - 1] = '\0';
 	}
 #endif
 }
 
-void Util::GetExeFileName(const char* argv0, char* szBuffer, int iBufSize)
+void Util::GetExeFileName(const char* argv0, char* buffer, int bufSize)
 {
 #ifdef WIN32
-	GetModuleFileName(NULL, szBuffer, iBufSize);
+	GetModuleFileName(NULL, buffer, bufSize);
 #else
 	// Linux
-	int r = readlink("/proc/self/exe", szBuffer, iBufSize-1);
+	int r = readlink("/proc/self/exe", buffer, bufSize-1);
 	if (r > 0)
 	{
-		szBuffer[r] = '\0';
+		buffer[r] = '\0';
 		return;
 	}
 	// FreeBSD
-	r = readlink("/proc/curproc/file", szBuffer, iBufSize-1);
+	r = readlink("/proc/curproc/file", buffer, bufSize-1);
 	if (r > 0)
 	{
-		szBuffer[r] = '\0';
+		buffer[r] = '\0';
 		return;
 	}
 
-	ExpandFileName(argv0, szBuffer, iBufSize);
+	ExpandFileName(argv0, buffer, bufSize);
 #endif
 }
 
-char* Util::FormatSize(char * szBuffer, int iBufLen, long long lFileSize)
+char* Util::FormatSize(char * buffer, int bufLen, long long fileSize)
 {
-	if (lFileSize > 1024 * 1024 * 1000)
+	if (fileSize > 1024 * 1024 * 1000)
 	{
-		snprintf(szBuffer, iBufLen, "%.2f GB", (float)((float)lFileSize / 1024 / 1024 / 1024));
+		snprintf(buffer, bufLen, "%.2f GB", (float)((float)fileSize / 1024 / 1024 / 1024));
 	}
-	else if (lFileSize > 1024 * 1000)
+	else if (fileSize > 1024 * 1000)
 	{
-		snprintf(szBuffer, iBufLen, "%.2f MB", (float)((float)lFileSize / 1024 / 1024));
+		snprintf(buffer, bufLen, "%.2f MB", (float)((float)fileSize / 1024 / 1024));
 	}
-	else if (lFileSize > 1000)
+	else if (fileSize > 1000)
 	{
-		snprintf(szBuffer, iBufLen, "%.2f KB", (float)((float)lFileSize / 1024));
+		snprintf(buffer, bufLen, "%.2f KB", (float)((float)fileSize / 1024));
 	}
-	else if (lFileSize == 0)
+	else if (fileSize == 0)
 	{
-		strncpy(szBuffer, "0 MB", iBufLen);
+		strncpy(buffer, "0 MB", bufLen);
 	}
 	else
 	{
-		snprintf(szBuffer, iBufLen, "%i B", (int)lFileSize);
+		snprintf(buffer, bufLen, "%i B", (int)fileSize);
 	}
-	szBuffer[iBufLen - 1] = '\0';
-	return szBuffer;
+	buffer[bufLen - 1] = '\0';
+	return buffer;
 }
 
-char* Util::FormatSpeed(char* szBuffer, int iBufSize, int iBytesPerSecond)
+char* Util::FormatSpeed(char* buffer, int bufSize, int bytesPerSecond)
 {
-	if (iBytesPerSecond >= 100 * 1024 * 1024)
+	if (bytesPerSecond >= 100 * 1024 * 1024)
 	{
-		snprintf(szBuffer, iBufSize, "%i MB/s", iBytesPerSecond / 1024 / 1024);
+		snprintf(buffer, bufSize, "%i MB/s", bytesPerSecond / 1024 / 1024);
 	}
-	else if (iBytesPerSecond >= 10 * 1024 * 1024)
+	else if (bytesPerSecond >= 10 * 1024 * 1024)
 	{
-		snprintf(szBuffer, iBufSize, "%0.1f MB/s", (float)iBytesPerSecond / 1024.0 / 1024.0);
+		snprintf(buffer, bufSize, "%0.1f MB/s", (float)bytesPerSecond / 1024.0 / 1024.0);
 	}
-	else if (iBytesPerSecond >= 1024 * 1000)
+	else if (bytesPerSecond >= 1024 * 1000)
 	{
-		snprintf(szBuffer, iBufSize, "%0.2f MB/s", (float)iBytesPerSecond / 1024.0 / 1024.0);
+		snprintf(buffer, bufSize, "%0.2f MB/s", (float)bytesPerSecond / 1024.0 / 1024.0);
 	}
 	else
 	{
-		snprintf(szBuffer, iBufSize, "%i KB/s", iBytesPerSecond / 1024);
+		snprintf(buffer, bufSize, "%i KB/s", bytesPerSecond / 1024);
 	}
 
-	szBuffer[iBufSize - 1] = '\0';
-	return szBuffer;
+	buffer[bufSize - 1] = '\0';
+	return buffer;
 }
 
-bool Util::SameFilename(const char* szFilename1, const char* szFilename2)
+bool Util::SameFilename(const char* filename1, const char* filename2)
 {
 #ifdef WIN32
-	return strcasecmp(szFilename1, szFilename2) == 0;
+	return strcasecmp(filename1, filename2) == 0;
 #else
-	return strcmp(szFilename1, szFilename2) == 0;
+	return strcmp(filename1, filename2) == 0;
 #endif
 }
 
-bool Util::MatchFileExt(const char* szFilename, const char* szExtensionList, const char* szListSeparator)
+bool Util::MatchFileExt(const char* filename, const char* extensionList, const char* listSeparator)
 {
-	int iFilenameLen = strlen(szFilename);
+	int filenameLen = strlen(filename);
 
-	Tokenizer tok(szExtensionList, szListSeparator);
-	while (const char* szExt = tok.Next())
+	Tokenizer tok(extensionList, listSeparator);
+	while (const char* ext = tok.Next())
 	{
-		int iExtLen = strlen(szExt);
-		if (iFilenameLen >= iExtLen && !strcasecmp(szExt, szFilename + iFilenameLen - iExtLen))
+		int extLen = strlen(ext);
+		if (filenameLen >= extLen && !strcasecmp(ext, filename + filenameLen - extLen))
 		{
 			return true;
 		}
-		if (strchr(szExt, '*') || strchr(szExt, '?'))
+		if (strchr(ext, '*') || strchr(ext, '?'))
 		{
-			WildMask mask(szExt);
-			if (mask.Match(szFilename))
+			WildMask mask(ext);
+			if (mask.Match(filename))
 			{
 				return true;
 			}
@@ -1135,24 +1135,24 @@ bool Util::MatchFileExt(const char* szFilename, const char* szExtensionList, con
 }
 
 #ifndef WIN32
-void Util::FixExecPermission(const char* szFilename)
+void Util::FixExecPermission(const char* filename)
 {
 	struct stat buffer;
-	bool bOK = !stat(szFilename, &buffer);
-	if (bOK)
+	bool ok = !stat(filename, &buffer);
+	if (ok)
 	{
 		buffer.st_mode = buffer.st_mode | S_IXUSR | S_IXGRP | S_IXOTH;
-		chmod(szFilename, buffer.st_mode);
+		chmod(filename, buffer.st_mode);
 	}
 }
 #endif
 
-char* Util::GetLastErrorMessage(char* szBuffer, int iBufLen)
+char* Util::GetLastErrorMessage(char* buffer, int bufLen)
 {
-	szBuffer[0] = '\0';
-	strerror_r(errno, szBuffer, iBufLen);
-	szBuffer[iBufLen-1] = '\0';
-	return szBuffer;
+	buffer[0] = '\0';
+	strerror_r(errno, buffer, bufLen);
+	buffer[bufLen-1] = '\0';
+	return buffer;
 }
 
 void Util::Init()
@@ -1172,68 +1172,68 @@ void Util::Init()
 	GetCurrentTicks();
 }
 
-bool Util::SplitCommandLine(const char* szCommandLine, char*** argv)
+bool Util::SplitCommandLine(const char* commandLine, char*** argv)
 {
-	int iArgCount = 0;
-	char szBuf[1024];
+	int argCount = 0;
+	char buf[1024];
 	char* pszArgList[100];
-	unsigned int iLen = 0;
-	bool bEscaping = false;
-	bool bSpace = true;
-	for (const char* p = szCommandLine; ; p++)
+	unsigned int len = 0;
+	bool escaping = false;
+	bool space = true;
+	for (const char* p = commandLine; ; p++)
 	{
 		if (*p)
 		{
 			const char c = *p;
-			if (bEscaping)
+			if (escaping)
 			{
 				if (c == '\'')
 				{
-					if (p[1] == '\'' && iLen < sizeof(szBuf) - 1)
+					if (p[1] == '\'' && len < sizeof(buf) - 1)
 					{
-						szBuf[iLen++] = c;
+						buf[len++] = c;
 						p++;
 					}
 					else
 					{
-						bEscaping = false;
-						bSpace = true;
+						escaping = false;
+						space = true;
 					}
 				}
-				else if (iLen < sizeof(szBuf) - 1)
+				else if (len < sizeof(buf) - 1)
 				{
-					szBuf[iLen++] = c;
+					buf[len++] = c;
 				}
 			}
 			else
 			{
 				if (c == ' ')
 				{
-					bSpace = true;
+					space = true;
 				}
-				else if (c == '\'' && bSpace)
+				else if (c == '\'' && space)
 				{
-					bEscaping = true;
-					bSpace = false;
+					escaping = true;
+					space = false;
 				}
-				else if (iLen < sizeof(szBuf) - 1)
+				else if (len < sizeof(buf) - 1)
 				{
-					szBuf[iLen++] = c;
-					bSpace = false;
+					buf[len++] = c;
+					space = false;
 				}
 			}
 		}
 
-		if ((bSpace || !*p) && iLen > 0 && iArgCount < 100)
+		if ((space || !*p) && len > 0 && argCount < 100)
 		{
 			//add token
-			szBuf[iLen] = '\0';
+			buf[len] = '\0';
 			if (argv)
 			{
-				pszArgList[iArgCount] = strdup(szBuf);
+				pszArgList[argCount] = strdup(buf);
 			}
-			(iArgCount)++;
-			iLen = 0;
+			(argCount)++;
+			len = 0;
 		}
 
 		if (!*p)
@@ -1244,50 +1244,50 @@ bool Util::SplitCommandLine(const char* szCommandLine, char*** argv)
 
 	if (argv)
 	{
-		pszArgList[iArgCount] = NULL;
-		*argv = (char**)malloc((iArgCount + 1) * sizeof(char*));
-		memcpy(*argv, pszArgList, sizeof(char*) * (iArgCount + 1));
+		pszArgList[argCount] = NULL;
+		*argv = (char**)malloc((argCount + 1) * sizeof(char*));
+		memcpy(*argv, pszArgList, sizeof(char*) * (argCount + 1));
 	}
 
-	return iArgCount > 0;
+	return argCount > 0;
 }
 
-void Util::TrimRight(char* szStr)
+void Util::TrimRight(char* str)
 {
-	char* szEnd = szStr + strlen(szStr) - 1;
-	while (szEnd >= szStr && (*szEnd == '\n' || *szEnd == '\r' || *szEnd == ' ' || *szEnd == '\t'))
+	char* end = str + strlen(str) - 1;
+	while (end >= str && (*end == '\n' || *end == '\r' || *end == ' ' || *end == '\t'))
 	{
-		*szEnd = '\0';
-		szEnd--;
+		*end = '\0';
+		end--;
 	}
 }
 
-char* Util::Trim(char* szStr)
+char* Util::Trim(char* str)
 {
-	TrimRight(szStr);
-	while (*szStr == '\n' || *szStr == '\r' || *szStr == ' ' || *szStr == '\t')
+	TrimRight(str);
+	while (*str == '\n' || *str == '\r' || *str == ' ' || *str == '\t')
 	{
-		szStr++;
+		str++;
 	}
-	return szStr;
+	return str;
 }
 
-char* Util::ReduceStr(char* szStr, const char* szFrom, const char* szTo)
+char* Util::ReduceStr(char* str, const char* from, const char* to)
 {
-	int iLenFrom = strlen(szFrom);
-	int iLenTo = strlen(szTo);
+	int lenFrom = strlen(from);
+	int lenTo = strlen(to);
 	// assert(iLenTo < iLenFrom);
 
-	while (char* p = strstr(szStr, szFrom))
+	while (char* p = strstr(str, from))
 	{
-		const char* src = szTo;
+		const char* src = to;
 		while ((*p++ = *src++)) ;
 
-		src = --p - iLenTo + iLenFrom;
+		src = --p - lenTo + lenFrom;
 		while ((*p++ = *src++)) ;
 	}
 
-	return szStr;
+	return str;
 }
 
 /* Calculate Hash using Bob Jenkins (1996) algorithm
@@ -1357,22 +1357,22 @@ ub4 hash(register ub1 *k, register ub4  length, register ub4  initval)
 	return c;
 }
 
-unsigned int Util::HashBJ96(const char* szBuffer, int iBufSize, unsigned int iInitValue)
+unsigned int Util::HashBJ96(const char* buffer, int bufSize, unsigned int initValue)
 {
-	return (unsigned int)hash((ub1*)szBuffer, (ub4)iBufSize, (ub4)iInitValue);
+	return (unsigned int)hash((ub1*)buffer, (ub4)bufSize, (ub4)initValue);
 }
 
 #ifdef WIN32
-bool Util::RegReadStr(HKEY hKey, const char* szKeyName, const char* szValueName, char* szBuffer, int* iBufLen)
+bool Util::RegReadStr(HKEY hKey, const char* keyName, const char* valueName, char* buffer, int* bufLen)
 {
 	HKEY hSubKey;
-	if (!RegOpenKeyEx(hKey, szKeyName, 0, KEY_READ, &hSubKey))
+	if (!RegOpenKeyEx(hKey, keyName, 0, KEY_READ, &hSubKey))
 	{
-		DWORD iRetBytes = *iBufLen;
-		LONG iRet = RegQueryValueEx(hSubKey, szValueName, NULL, NULL, (LPBYTE)szBuffer, &iRetBytes);
-		*iBufLen = iRetBytes;
+		DWORD retBytes = *bufLen;
+		LONG ret = RegQueryValueEx(hSubKey, valueName, NULL, NULL, (LPBYTE)buffer, &retBytes);
+		*bufLen = retBytes;
 		RegCloseKey(hSubKey);
-		return iRet == 0;
+		return ret == 0;
 	}
 	return false;
 }
@@ -1442,10 +1442,10 @@ time_t Util::Timegm(tm const *t)
 }
 
 // prevent PC from going to sleep
-void Util::SetStandByMode(bool bStandBy)
+void Util::SetStandByMode(bool standBy)
 {
 #ifdef WIN32
-	SetThreadExecutionState((bStandBy ? 0 : ES_SYSTEM_REQUIRED) | ES_CONTINUOUS);
+	SetThreadExecutionState((standBy ? 0 : ES_SYSTEM_REQUIRED) | ES_CONTINUOUS);
 #endif
 }
 
@@ -1613,58 +1613,58 @@ int Util::NumberOfCpuCores()
 	return -1;
 }
 
-bool Util::FlushFileBuffers(int iFileDescriptor, char* szErrBuf, int iBufSize)
+bool Util::FlushFileBuffers(int fileDescriptor, char* errBuf, int bufSize)
 {
 #ifdef WIN32
-	BOOL bOK = ::FlushFileBuffers((HANDLE)_get_osfhandle(iFileDescriptor));
-	if (!bOK)
+	BOOL ok = ::FlushFileBuffers((HANDLE)_get_osfhandle(fileDescriptor));
+	if (!ok)
 	{
 		FormatMessage(FORMAT_MESSAGE_FROM_SYSTEM | FORMAT_MESSAGE_IGNORE_INSERTS,
 			NULL, GetLastError(), MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT),
-			szErrBuf, iBufSize, NULL);
+			errBuf, bufSize, NULL);
 	}
-	return bOK;
+	return ok;
 #else
 #ifdef HAVE_FULLFSYNC    
-	int ret = fcntl(iFileDescriptor, F_FULLFSYNC) == -1 ? 1 : 0;
+	int ret = fcntl(fileDescriptor, F_FULLFSYNC) == -1 ? 1 : 0;
 #elif HAVE_FDATASYNC
-    int ret = fdatasync(iFileDescriptor);
+    int ret = fdatasync(fileDescriptor);
 #else
-    int ret = fsync(iFileDescriptor);
+    int ret = fsync(fileDescriptor);
 #endif    
     if (ret != 0)
     {
-		GetLastErrorMessage(szErrBuf, iBufSize);
+		GetLastErrorMessage(errBuf, bufSize);
     }
     return ret == 0;
 #endif
 }
 
-bool Util::FlushDirBuffers(const char* szFilename, char* szErrBuf, int iBufSize)
+bool Util::FlushDirBuffers(const char* filename, char* errBuf, int bufSize)
 {
-	char szParentPath[1024];
-	strncpy(szParentPath, szFilename, 1024);
-	szParentPath[1024-1] = '\0';
-	const char* szFileMode = FOPEN_RBP;
+	char parentPath[1024];
+	strncpy(parentPath, filename, 1024);
+	parentPath[1024-1] = '\0';
+	const char* fileMode = FOPEN_RBP;
 
 #ifndef WIN32
-	char* p = (char*)strrchr(szParentPath, PATH_SEPARATOR);
+	char* p = (char*)strrchr(parentPath, PATH_SEPARATOR);
 	if (p)
 	{
 	    *p = '\0';
 	}
-	szFileMode = FOPEN_RB;
+	fileMode = FOPEN_RB;
 #endif
 
-	FILE* pFile = fopen(szParentPath, szFileMode);
-	if (!pFile)
+	FILE* file = fopen(parentPath, fileMode);
+	if (!file)
 	{
-		GetLastErrorMessage(szErrBuf, iBufSize);
+		GetLastErrorMessage(errBuf, bufSize);
 		return false;
 	}
-	bool bOK = FlushFileBuffers(fileno(pFile), szErrBuf, iBufSize);
-	fclose(pFile);
-	return bOK;
+	bool ok = FlushFileBuffers(fileno(file), errBuf, bufSize);
+	fclose(file);
+	return ok;
 }
 
 long long Util::GetCurrentTicks()
@@ -1686,32 +1686,32 @@ long long Util::GetCurrentTicks()
 #endif
 }
 
-unsigned int WebUtil::DecodeBase64(char* szInputBuffer, int iInputBufferLength, char* szOutputBuffer)
+unsigned int WebUtil::DecodeBase64(char* inputBuffer, int inputBufferLength, char* outputBuffer)
 {
 	unsigned int InputBufferIndex  = 0;
 	unsigned int OutputBufferIndex = 0;
-	unsigned int InputBufferLength = iInputBufferLength > 0 ? iInputBufferLength : strlen(szInputBuffer);
+	unsigned int InputBufferLength = inputBufferLength > 0 ? inputBufferLength : strlen(inputBuffer);
 
 	char ByteQuartet [4];
 	int i = 0;
 	while (InputBufferIndex < InputBufferLength)
 	{
 		// Ignore all characters except the ones in BASE64_ALPHABET
-		if ((szInputBuffer [InputBufferIndex] >= 48 && szInputBuffer [InputBufferIndex] <=  57) ||
-			(szInputBuffer [InputBufferIndex] >= 65 && szInputBuffer [InputBufferIndex] <=  90) ||
-			(szInputBuffer [InputBufferIndex] >= 97 && szInputBuffer [InputBufferIndex] <= 122) ||
-			szInputBuffer [InputBufferIndex] == '+' || 
-			szInputBuffer [InputBufferIndex] == '/' || 
-			szInputBuffer [InputBufferIndex] == '=')
+		if ((inputBuffer [InputBufferIndex] >= 48 && inputBuffer [InputBufferIndex] <=  57) ||
+			(inputBuffer [InputBufferIndex] >= 65 && inputBuffer [InputBufferIndex] <=  90) ||
+			(inputBuffer [InputBufferIndex] >= 97 && inputBuffer [InputBufferIndex] <= 122) ||
+			inputBuffer [InputBufferIndex] == '+' || 
+			inputBuffer [InputBufferIndex] == '/' || 
+			inputBuffer [InputBufferIndex] == '=')
 		{
-			ByteQuartet [i] = szInputBuffer [InputBufferIndex];
+			ByteQuartet [i] = inputBuffer [InputBufferIndex];
 			i++;
 		}
 		
 		InputBufferIndex++;
 		
 		if (i == 4) {
-			OutputBufferIndex += DecodeByteQuartet(ByteQuartet, szOutputBuffer + OutputBufferIndex);
+			OutputBufferIndex += DecodeByteQuartet(ByteQuartet, outputBuffer + OutputBufferIndex);
 			i = 0;
 		}
 	}
@@ -1728,7 +1728,7 @@ unsigned int WebUtil::DecodeBase64(char* szInputBuffer, int iInputBufferLength, 
 char* WebUtil::XmlEncode(const char* raw)
 {
 	// calculate the required outputstring-size based on number of xml-entities and their sizes
-	int iReqSize = strlen(raw);
+	int reqSize = strlen(raw);
 	for (const char* p = raw; *p; p++)
 	{
 		unsigned char ch = *p;
@@ -1736,25 +1736,25 @@ char* WebUtil::XmlEncode(const char* raw)
 		{
 			case '>':
 			case '<':
-				iReqSize += 4;
+				reqSize += 4;
 				break;
 			case '&':
-				iReqSize += 5;
+				reqSize += 5;
 				break;
 			case '\'':
 			case '\"':
-				iReqSize += 6;
+				reqSize += 6;
 				break;
 			default:
 				if (ch < 0x20 || ch >= 0x80)
 				{
-					iReqSize += 10;
+					reqSize += 10;
 					break;
 				}
 		}
 	}
 
-	char* result = (char*)malloc(iReqSize + 1);
+	char* result = (char*)malloc(reqSize + 1);
 
 	// copy string
 	char* output = result;
@@ -1907,60 +1907,60 @@ BreakLoop:
 	*output = '\0';
 }
 
-const char* WebUtil::XmlFindTag(const char* szXml, const char* szTag, int* pValueLength)
+const char* WebUtil::XmlFindTag(const char* xml, const char* tag, int* valueLength)
 {
-	char szOpenTag[100];
-	snprintf(szOpenTag, 100, "<%s>", szTag);
-	szOpenTag[100-1] = '\0';
+	char openTag[100];
+	snprintf(openTag, 100, "<%s>", tag);
+	openTag[100-1] = '\0';
 
-	char szCloseTag[100];
-	snprintf(szCloseTag, 100, "</%s>", szTag);
-	szCloseTag[100-1] = '\0';
+	char closeTag[100];
+	snprintf(closeTag, 100, "</%s>", tag);
+	closeTag[100-1] = '\0';
 
-	char szOpenCloseTag[100];
-	snprintf(szOpenCloseTag, 100, "<%s/>", szTag);
-	szOpenCloseTag[100-1] = '\0';
+	char openCloseTag[100];
+	snprintf(openCloseTag, 100, "<%s/>", tag);
+	openCloseTag[100-1] = '\0';
 
-	const char* pstart = strstr(szXml, szOpenTag);
-	const char* pstartend = strstr(szXml, szOpenCloseTag);
+	const char* pstart = strstr(xml, openTag);
+	const char* pstartend = strstr(xml, openCloseTag);
 	if (!pstart && !pstartend) return NULL;
 
 	if (pstartend && (!pstart || pstartend < pstart))
 	{
-		*pValueLength = 0;
+		*valueLength = 0;
 		return pstartend;
 	}
 
-	const char* pend = strstr(pstart, szCloseTag);
+	const char* pend = strstr(pstart, closeTag);
 	if (!pend) return NULL;
 
-	int iTagLen = strlen(szOpenTag);
-	*pValueLength = (int)(pend - pstart - iTagLen);
+	int tagLen = strlen(openTag);
+	*valueLength = (int)(pend - pstart - tagLen);
 
-	return pstart + iTagLen;
+	return pstart + tagLen;
 }
 
-bool WebUtil::XmlParseTagValue(const char* szXml, const char* szTag, char* szValueBuf, int iValueBufSize, const char** pTagEnd)
+bool WebUtil::XmlParseTagValue(const char* xml, const char* tag, char* valueBuf, int valueBufSize, const char** tagEnd)
 {
-	int iValueLen = 0;
-	const char* szValue = XmlFindTag(szXml, szTag, &iValueLen);
-	if (!szValue)
+	int valueLen = 0;
+	const char* value = XmlFindTag(xml, tag, &valueLen);
+	if (!value)
 	{
 		return false;
 	}
-	int iLen = iValueLen < iValueBufSize ? iValueLen : iValueBufSize - 1;
-	strncpy(szValueBuf, szValue, iLen);
-	szValueBuf[iLen] = '\0';
-	if (pTagEnd)
+	int len = valueLen < valueBufSize ? valueLen : valueBufSize - 1;
+	strncpy(valueBuf, value, len);
+	valueBuf[len] = '\0';
+	if (tagEnd)
 	{
-		*pTagEnd = szValue + iValueLen;
+		*tagEnd = value + valueLen;
 	}
 	return true;
 }
 
-void WebUtil::XmlStripTags(char* szXml)
+void WebUtil::XmlStripTags(char* xml)
 {
-	while (char *start = strchr(szXml, '<'))
+	while (char *start = strchr(xml, '<'))
 	{
 		char *end = strchr(start, '>');
 		if (!end)
@@ -1968,7 +1968,7 @@ void WebUtil::XmlStripTags(char* szXml)
 			break;
 		}
 		memset(start, ' ', end - start + 1);
-		szXml = end + 1;
+		xml = end + 1;
 	}
 }
 
@@ -2009,7 +2009,7 @@ BreakLoop:
 char* WebUtil::JsonEncode(const char* raw)
 {
 	// calculate the required outputstring-size based on number of escape-entities and their sizes
-	int iReqSize = strlen(raw);
+	int reqSize = strlen(raw);
 	for (const char* p = raw; *p; p++)
 	{
 		unsigned char ch = *p;
@@ -2023,18 +2023,18 @@ char* WebUtil::JsonEncode(const char* raw)
 			case '\n':
 			case '\r':
 			case '\t':
-				iReqSize++;
+				reqSize++;
                 break;
 			default:
 				if (ch < 0x20 || ch >= 0x80)
 				{
-					iReqSize += 6;
+					reqSize += 6;
 					break;
 				}
 		}
 	}
 
-	char* result = (char*)malloc(iReqSize + 1);
+	char* result = (char*)malloc(reqSize + 1);
 
 	// copy string
 	char* output = result;
@@ -2186,23 +2186,23 @@ BreakLoop:
 	*output = '\0';
 }
 
-const char* WebUtil::JsonFindField(const char* szJsonText, const char* szFieldName, int* pValueLength)
+const char* WebUtil::JsonFindField(const char* jsonText, const char* fieldName, int* valueLength)
 {
-	char szOpenTag[100];
-	snprintf(szOpenTag, 100, "\"%s\"", szFieldName);
-	szOpenTag[100-1] = '\0';
+	char openTag[100];
+	snprintf(openTag, 100, "\"%s\"", fieldName);
+	openTag[100-1] = '\0';
 
-	const char* pstart = strstr(szJsonText, szOpenTag);
+	const char* pstart = strstr(jsonText, openTag);
 	if (!pstart) return NULL;
 
-	pstart += strlen(szOpenTag);
+	pstart += strlen(openTag);
 
-	return JsonNextValue(pstart, pValueLength);
+	return JsonNextValue(pstart, valueLength);
 }
 
-const char* WebUtil::JsonNextValue(const char* szJsonText, int* pValueLength)
+const char* WebUtil::JsonNextValue(const char* jsonText, int* valueLength)
 {
-	const char* pstart = szJsonText;
+	const char* pstart = jsonText;
 
 	while (*pstart && strchr(" ,[{:\r\n\t\f", *pstart)) pstart++;
 	if (!*pstart) return NULL;
@@ -2210,8 +2210,8 @@ const char* WebUtil::JsonNextValue(const char* szJsonText, int* pValueLength)
 	const char* pend = pstart;
 
 	char ch = *pend;
-	bool bStr = ch == '"';
-	if (bStr)
+	bool str = ch == '"';
+	if (str)
 	{
 		ch = *++pend;
 	}
@@ -2222,19 +2222,19 @@ const char* WebUtil::JsonNextValue(const char* szJsonText, int* pValueLength)
 			if (!*++pend || !*++pend) return NULL;
 			ch = *pend;
 		}
-		if (bStr && ch == '"')
+		if (str && ch == '"')
 		{
 			pend++;
 			break;
 		}
-		else if (!bStr && strchr(" ,]}\r\n\t\f", ch))
+		else if (!str && strchr(" ,]}\r\n\t\f", ch))
 		{
 			break;
 		}
 		ch = *++pend;
 	}
 
-	*pValueLength = (int)(pend - pstart);
+	*valueLength = (int)(pend - pstart);
 	return pstart;
 }
 
@@ -2302,16 +2302,16 @@ BreakLoop:
 char* WebUtil::URLEncode(const char* raw)
 {
 	// calculate the required outputstring-size based on number of spaces
-	int iReqSize = strlen(raw);
+	int reqSize = strlen(raw);
 	for (const char* p = raw; *p; p++)
 	{
 		if (*p == ' ')
 		{
-			iReqSize += 3; // length of "%20"
+			reqSize += 3; // length of "%20"
 		}
 	}
 
-	char* result = (char*)malloc(iReqSize + 1);
+	char* result = (char*)malloc(reqSize + 1);
 
 	// copy string
 	char* output = result;
@@ -2338,35 +2338,35 @@ BreakLoop:
 }
 
 #ifdef WIN32
-bool WebUtil::Utf8ToAnsi(char* szBuffer, int iBufLen)
+bool WebUtil::Utf8ToAnsi(char* buffer, int bufLen)
 {
-	WCHAR* wstr = (WCHAR*)malloc(iBufLen * 2);
-	int errcode = MultiByteToWideChar(CP_UTF8, 0, szBuffer, -1, wstr, iBufLen);
+	WCHAR* wstr = (WCHAR*)malloc(bufLen * 2);
+	int errcode = MultiByteToWideChar(CP_UTF8, 0, buffer, -1, wstr, bufLen);
 	if (errcode > 0)
 	{
-		errcode = WideCharToMultiByte(CP_ACP, 0, wstr, -1, szBuffer, iBufLen, "_", NULL);
+		errcode = WideCharToMultiByte(CP_ACP, 0, wstr, -1, buffer, bufLen, "_", NULL);
 	}
 	free(wstr);
 	return errcode > 0;
 }
 
-bool WebUtil::AnsiToUtf8(char* szBuffer, int iBufLen)
+bool WebUtil::AnsiToUtf8(char* buffer, int bufLen)
 {
-	WCHAR* wstr = (WCHAR*)malloc(iBufLen * 2);
-	int errcode = MultiByteToWideChar(CP_ACP, 0, szBuffer, -1, wstr, iBufLen);
+	WCHAR* wstr = (WCHAR*)malloc(bufLen * 2);
+	int errcode = MultiByteToWideChar(CP_ACP, 0, buffer, -1, wstr, bufLen);
 	if (errcode > 0)
 	{
-		errcode = WideCharToMultiByte(CP_UTF8, 0, wstr, -1, szBuffer, iBufLen, NULL, NULL);
+		errcode = WideCharToMultiByte(CP_UTF8, 0, wstr, -1, buffer, bufLen, NULL, NULL);
 	}
 	free(wstr);
 	return errcode > 0;
 }
 #endif
 
-char* WebUtil::Latin1ToUtf8(const char* szStr)
+char* WebUtil::Latin1ToUtf8(const char* str)
 {
-	char *res = (char*)malloc(strlen(szStr) * 2 + 1);
-	const unsigned char *in = (const unsigned char*)szStr;
+	char *res = (char*)malloc(strlen(str) * 2 + 1);
+	const unsigned char *in = (const unsigned char*)str;
 	unsigned char *out = (unsigned char*)res;
 	while (*in)
 	{
@@ -2393,11 +2393,11 @@ char* WebUtil::Latin1ToUtf8(const char* szStr)
    26 Jun 2013 01:02 A
  This function however supports only the first format!
 */
-time_t WebUtil::ParseRfc822DateTime(const char* szDateTimeStr)
+time_t WebUtil::ParseRfc822DateTime(const char* dateTimeStr)
 {
 	char month[4];
 	int day, year, hours, minutes, seconds, zonehours, zoneminutes;
-	int r = sscanf(szDateTimeStr, "%*s %d %3s %d %d:%d:%d %3d %2d", &day, &month[0], &year, &hours, &minutes, &seconds, &zonehours, &zoneminutes);
+	int r = sscanf(dateTimeStr, "%*s %d %3s %d %d:%d:%d %3d %2d", &day, &month[0], &year, &hours, &minutes, &seconds, &zonehours, &zoneminutes);
 	if (r != 8)
 	{
 		return 0;
@@ -2434,33 +2434,33 @@ time_t WebUtil::ParseRfc822DateTime(const char* szDateTimeStr)
 }
 
 
-URL::URL(const char* szAddress)
+URL::URL(const char* address)
 {
-	m_szAddress = NULL;
-	m_szProtocol = NULL;
-	m_szUser = NULL;
-	m_szPassword = NULL;
-	m_szHost = NULL;
-	m_szResource = NULL;
-	m_iPort = 0;
-	m_bTLS = false;
-	m_bValid = false;
+	m_address = NULL;
+	m_protocol = NULL;
+	m_user = NULL;
+	m_password = NULL;
+	m_host = NULL;
+	m_resource = NULL;
+	m_port = 0;
+	m_tLS = false;
+	m_valid = false;
 
-	if (szAddress)
+	if (address)
 	{
-		m_szAddress = strdup(szAddress);
+		m_address = strdup(address);
 		ParseURL();
 	}
 }
 
 URL::~URL()
 {
-	free(m_szAddress);
-	free(m_szProtocol);
-	free(m_szUser);
-	free(m_szPassword);
-	free(m_szHost);
-	free(m_szResource);
+	free(m_address);
+	free(m_protocol);
+	free(m_user);
+	free(m_password);
+	free(m_host);
+	free(m_resource);
 }
 
 void URL::ParseURL()
@@ -2472,16 +2472,16 @@ void URL::ParseURL()
 	// http://host/path/to/resource?param
 	// http://host
 
-	char* protEnd = strstr(m_szAddress, "://");
+	char* protEnd = strstr(m_address, "://");
 	if (!protEnd)
 	{
 		// Bad URL
 		return;
 	}
 
-	m_szProtocol = (char*)malloc(protEnd - m_szAddress + 1);
-	strncpy(m_szProtocol, m_szAddress, protEnd - m_szAddress);
-	m_szProtocol[protEnd - m_szAddress] = 0;
+	m_protocol = (char*)malloc(protEnd - m_address + 1);
+	strncpy(m_protocol, m_address, protEnd - m_address);
+	m_protocol[protEnd - m_address] = 0;
 
 	char* hostStart = protEnd + 3;
 	char* slash = strchr(hostStart, '/');
@@ -2495,22 +2495,22 @@ void URL::ParseURL()
 		char* pass = strchr(hostStart, ':');
 		if (pass && pass < amp)
 		{
-			int iLen = (int)(amp - pass - 1);
-			if (iLen > 0)
+			int len = (int)(amp - pass - 1);
+			if (len > 0)
 			{
-				m_szPassword = (char*)malloc(iLen + 1);
-				strncpy(m_szPassword, pass + 1, iLen);
-				m_szPassword[iLen] = 0;
+				m_password = (char*)malloc(len + 1);
+				strncpy(m_password, pass + 1, len);
+				m_password[len] = 0;
 			}
 			userend = pass - 1;
 		}
 
-		int iLen = (int)(userend - hostStart + 1);
-		if (iLen > 0)
+		int len = (int)(userend - hostStart + 1);
+		if (len > 0)
 		{
-			m_szUser = (char*)malloc(iLen + 1);
-			strncpy(m_szUser, hostStart, iLen);
-			m_szUser[iLen] = 0;
+			m_user = (char*)malloc(len + 1);
+			strncpy(m_user, hostStart, len);
+			m_user[len] = 0;
 		}
 
 		hostStart = amp + 1;
@@ -2518,66 +2518,66 @@ void URL::ParseURL()
 
 	if (slash)
 	{
-		char* resEnd = m_szAddress + strlen(m_szAddress);
-		m_szResource = (char*)malloc(resEnd - slash + 1 + 1);
-		strncpy(m_szResource, slash, resEnd - slash + 1);
-		m_szResource[resEnd - slash + 1] = 0;
+		char* resEnd = m_address + strlen(m_address);
+		m_resource = (char*)malloc(resEnd - slash + 1 + 1);
+		strncpy(m_resource, slash, resEnd - slash + 1);
+		m_resource[resEnd - slash + 1] = 0;
 
 		hostEnd = slash - 1;
 	}
 	else
 	{
-		m_szResource = strdup("/");
+		m_resource = strdup("/");
 
-		hostEnd = m_szAddress + strlen(m_szAddress);
+		hostEnd = m_address + strlen(m_address);
 	}
 
 	char* colon = strchr(hostStart, ':');
 	if (colon && colon < hostEnd)
 	{
 		hostEnd = colon - 1;
-		m_iPort = atoi(colon + 1);
+		m_port = atoi(colon + 1);
 	}
 
-	m_szHost = (char*)malloc(hostEnd - hostStart + 1 + 1);
-	strncpy(m_szHost, hostStart, hostEnd - hostStart + 1);
-	m_szHost[hostEnd - hostStart + 1] = 0;
+	m_host = (char*)malloc(hostEnd - hostStart + 1 + 1);
+	strncpy(m_host, hostStart, hostEnd - hostStart + 1);
+	m_host[hostEnd - hostStart + 1] = 0;
 
-	m_bValid = true;
+	m_valid = true;
 }
 
-RegEx::RegEx(const char *szPattern, int iMatchBufSize)
+RegEx::RegEx(const char *pattern, int matchBufSize)
 {
 #ifdef HAVE_REGEX_H
-	m_pContext = malloc(sizeof(regex_t));
-	m_bValid = regcomp((regex_t*)m_pContext, szPattern, REG_EXTENDED | REG_ICASE | (iMatchBufSize > 0 ? 0 : REG_NOSUB)) == 0;
-	m_iMatchBufSize = iMatchBufSize;
-	if (iMatchBufSize > 0)
+	m_context = malloc(sizeof(regex_t));
+	m_valid = regcomp((regex_t*)m_context, pattern, REG_EXTENDED | REG_ICASE | (matchBufSize > 0 ? 0 : REG_NOSUB)) == 0;
+	m_matchBufSize = matchBufSize;
+	if (matchBufSize > 0)
 	{
-		m_pMatches = malloc(sizeof(regmatch_t) * iMatchBufSize);
+		m_matches = malloc(sizeof(regmatch_t) * matchBufSize);
 	}
 	else
 	{
-		m_pMatches = NULL;
+		m_matches = NULL;
 	}
 #else
-	m_bValid = false;
+	m_valid = false;
 #endif
 }
 
 RegEx::~RegEx()
 {
 #ifdef HAVE_REGEX_H
-	regfree((regex_t*)m_pContext);
-	free(m_pContext);
-	free(m_pMatches);
+	regfree((regex_t*)m_context);
+	free(m_context);
+	free(m_matches);
 #endif
 }
 
-bool RegEx::Match(const char *szStr)
+bool RegEx::Match(const char *str)
 {
 #ifdef HAVE_REGEX_H
-	return m_bValid ? regexec((regex_t*)m_pContext, szStr, m_iMatchBufSize, (regmatch_t*)m_pMatches, 0) == 0 : false;
+	return m_valid ? regexec((regex_t*)m_context, str, m_matchBufSize, (regmatch_t*)m_matches, 0) == 0 : false;
 #else
 	return false;
 #endif
@@ -2586,16 +2586,16 @@ bool RegEx::Match(const char *szStr)
 int RegEx::GetMatchCount()
 {
 #ifdef HAVE_REGEX_H
-	int iCount = 0;
-	if (m_pMatches)
+	int count = 0;
+	if (m_matches)
 	{
-		regmatch_t* pMatches = (regmatch_t*)m_pMatches;
-		while (iCount < m_iMatchBufSize && pMatches[iCount].rm_so > -1)
+		regmatch_t* matches = (regmatch_t*)m_matches;
+		while (count < m_matchBufSize && matches[count].rm_so > -1)
 		{
-			iCount++;
+			count++;
 		}
 	}
-	return iCount;
+	return count;
 #else
 	return 0;
 #endif
@@ -2604,8 +2604,8 @@ int RegEx::GetMatchCount()
 int RegEx::GetMatchStart(int index)
 {
 #ifdef HAVE_REGEX_H
-	regmatch_t* pMatches = (regmatch_t*)m_pMatches;
-	return pMatches[index].rm_so;
+	regmatch_t* matches = (regmatch_t*)m_matches;
+	return matches[index].rm_so;
 #else
 	return NULL;
 #endif
@@ -2614,68 +2614,68 @@ int RegEx::GetMatchStart(int index)
 int RegEx::GetMatchLen(int index)
 {
 #ifdef HAVE_REGEX_H
-	regmatch_t* pMatches = (regmatch_t*)m_pMatches;
-	return pMatches[index].rm_eo - pMatches[index].rm_so;
+	regmatch_t* matches = (regmatch_t*)m_matches;
+	return matches[index].rm_eo - matches[index].rm_so;
 #else
 	return 0;
 #endif
 }
 
 
-WildMask::WildMask(const char *szPattern, bool bWantsPositions)
+WildMask::WildMask(const char *pattern, bool wantsPositions)
 {
-	m_szPattern = strdup(szPattern);
-	m_bWantsPositions = bWantsPositions;
-	m_WildStart = NULL;
-	m_WildLen = NULL;
-	m_iArrLen = 0;
+	m_pattern = strdup(pattern);
+	m_wantsPositions = wantsPositions;
+	m_wildStart = NULL;
+	m_wildLen = NULL;
+	m_arrLen = 0;
 }
 
 WildMask::~WildMask()
 {
-	free(m_szPattern);
-	free(m_WildStart);
-	free(m_WildLen);
+	free(m_pattern);
+	free(m_wildStart);
+	free(m_wildLen);
 }
 
 void WildMask::ExpandArray()
 {
-	m_iWildCount++;
-	if (m_iWildCount > m_iArrLen)
+	m_wildCount++;
+	if (m_wildCount > m_arrLen)
 	{
-		m_iArrLen += 100;
-		m_WildStart = (int*)realloc(m_WildStart, sizeof(*m_WildStart) * m_iArrLen);
-		m_WildLen = (int*)realloc(m_WildLen, sizeof(*m_WildLen) * m_iArrLen);
+		m_arrLen += 100;
+		m_wildStart = (int*)realloc(m_wildStart, sizeof(*m_wildStart) * m_arrLen);
+		m_wildLen = (int*)realloc(m_wildLen, sizeof(*m_wildLen) * m_arrLen);
 	}
 }
 
 // Based on code from http://bytes.com/topic/c/answers/212179-string-matching
 // Extended to save positions of matches.
-bool WildMask::Match(const char *szStr)
+bool WildMask::Match(const char* text)
 {
-	const char* pat = m_szPattern;
-	const char* str = szStr;
+	const char* pat = m_pattern;
+	const char* str = text;
 	const char *spos, *wpos;
-	m_iWildCount = 0;
+	m_wildCount = 0;
 	bool qmark = false;
 	bool star = false;
 
 	spos = wpos = str;
 	while (*str && *pat != '*')
 	{
-		if (m_bWantsPositions && (*pat == '?' || *pat == '#'))
+		if (m_wantsPositions && (*pat == '?' || *pat == '#'))
 		{
 			if (!qmark)
 			{
 				ExpandArray();
-				m_WildStart[m_iWildCount-1] = str - szStr;
-				m_WildLen[m_iWildCount-1] = 0;
+				m_wildStart[m_wildCount-1] = str - text;
+				m_wildLen[m_wildCount-1] = 0;
 				qmark = true;
 			}
 		}
-		else if (m_bWantsPositions && qmark)
+		else if (m_wantsPositions && qmark)
 		{
-			m_WildLen[m_iWildCount-1] = str - (szStr + m_WildStart[m_iWildCount-1]);
+			m_wildLen[m_wildCount-1] = str - (text + m_wildStart[m_wildCount-1]);
 			qmark = false;
 		}
 
@@ -2688,9 +2688,9 @@ bool WildMask::Match(const char *szStr)
 		pat++;
 	}
 
-	if (m_bWantsPositions && qmark)
+	if (m_wantsPositions && qmark)
 	{
-		m_WildLen[m_iWildCount-1] = str - (szStr + m_WildStart[m_iWildCount-1]);
+		m_wildLen[m_wildCount-1] = str - (text + m_wildStart[m_wildCount-1]);
 		qmark = false;
 	}
 
@@ -2698,24 +2698,24 @@ bool WildMask::Match(const char *szStr)
 	{
 		if (*pat == '*')
 		{
-			if (m_bWantsPositions && qmark)
+			if (m_wantsPositions && qmark)
 			{
-				m_WildLen[m_iWildCount-1] = str - (szStr + m_WildStart[m_iWildCount-1]);
+				m_wildLen[m_wildCount-1] = str - (text + m_wildStart[m_wildCount-1]);
 				qmark = false;
 			}
-			if (m_bWantsPositions && !star)
+			if (m_wantsPositions && !star)
 			{
 				ExpandArray();
-				m_WildStart[m_iWildCount-1] = str - szStr;
-				m_WildLen[m_iWildCount-1] = 0;
+				m_wildStart[m_wildCount-1] = str - text;
+				m_wildLen[m_wildCount-1] = 0;
 				star = true;
 			}
 
 			if (*++pat == '\0')
 			{
-				if (m_bWantsPositions && star)
+				if (m_wantsPositions && star)
 				{
-					m_WildLen[m_iWildCount-1] = strlen(str);
+					m_wildLen[m_wildCount-1] = strlen(str);
 				}
 
 				return true;
@@ -2725,11 +2725,11 @@ bool WildMask::Match(const char *szStr)
 		}
 		else if (*pat == '?' || (*pat == '#' && strchr("0123456789", *str)))
 		{
-			if (m_bWantsPositions && !qmark)
+			if (m_wantsPositions && !qmark)
 			{
 				ExpandArray();
-				m_WildStart[m_iWildCount-1] = str - szStr;
-				m_WildLen[m_iWildCount-1] = 0;
+				m_wildStart[m_wildCount-1] = str - text;
+				m_wildLen[m_wildCount-1] = 0;
 				qmark = true;
 			}
 
@@ -2738,14 +2738,14 @@ bool WildMask::Match(const char *szStr)
 		}
 		else if (tolower(*pat) == tolower(*str))
 		{
-			if (m_bWantsPositions && qmark)
+			if (m_wantsPositions && qmark)
 			{
-				m_WildLen[m_iWildCount-1] = str - (szStr + m_WildStart[m_iWildCount-1]);
+				m_wildLen[m_wildCount-1] = str - (text + m_wildStart[m_wildCount-1]);
 				qmark = false;
 			}
-			else if (m_bWantsPositions && star)
+			else if (m_wantsPositions && star)
 			{
-				m_WildLen[m_iWildCount-1] = str - (szStr + m_WildStart[m_iWildCount-1]);
+				m_wildLen[m_wildCount-1] = str - (text + m_wildStart[m_wildCount-1]);
 				star = false;
 			}
 
@@ -2754,9 +2754,9 @@ bool WildMask::Match(const char *szStr)
 		}
 		else
 		{
-			if (m_bWantsPositions && qmark)
+			if (m_wantsPositions && qmark)
 			{
-				m_iWildCount--;
+				m_wildCount--;
 				qmark = false;
 			}
 
@@ -2766,16 +2766,16 @@ bool WildMask::Match(const char *szStr)
 		}
 	}
 
-	if (m_bWantsPositions && qmark)
+	if (m_wantsPositions && qmark)
 	{
-		m_WildLen[m_iWildCount-1] = str - (szStr + m_WildStart[m_iWildCount-1]);
+		m_wildLen[m_wildCount-1] = str - (text + m_wildStart[m_wildCount-1]);
 	}
 
-	if (*pat == '*' && m_bWantsPositions && !star)
+	if (*pat == '*' && m_wantsPositions && !star)
 	{
 		ExpandArray();
-		m_WildStart[m_iWildCount-1] = str - szStr;
-		m_WildLen[m_iWildCount-1] = strlen(str);
+		m_wildStart[m_wildCount-1] = str - text;
+		m_wildLen[m_wildCount-1] = strlen(str);
 	}
 
 	while (*pat == '*')
@@ -2788,23 +2788,23 @@ bool WildMask::Match(const char *szStr)
 
 
 #ifndef DISABLE_GZIP
-unsigned int ZLib::GZipLen(int iInputBufferLength)
+unsigned int ZLib::GZipLen(int inputBufferLength)
 {
 	z_stream zstr;
 	memset(&zstr, 0, sizeof(zstr));
-	return (unsigned int)deflateBound(&zstr, iInputBufferLength);
+	return (unsigned int)deflateBound(&zstr, inputBufferLength);
 }
 
-unsigned int ZLib::GZip(const void* szInputBuffer, int iInputBufferLength, void* szOutputBuffer, int iOutputBufferLength)
+unsigned int ZLib::GZip(const void* inputBuffer, int inputBufferLength, void* outputBuffer, int outputBufferLength)
 {
 	z_stream zstr;
 	zstr.zalloc = Z_NULL;
 	zstr.zfree = Z_NULL;
 	zstr.opaque = Z_NULL;
-	zstr.next_in = (Bytef*)szInputBuffer;
-	zstr.avail_in = iInputBufferLength;
-	zstr.next_out = (Bytef*)szOutputBuffer;
-	zstr.avail_out = iOutputBufferLength;
+	zstr.next_in = (Bytef*)inputBuffer;
+	zstr.avail_in = inputBufferLength;
+	zstr.next_out = (Bytef*)outputBuffer;
+	zstr.avail_out = outputBufferLength;
 	
 	/* add 16 to MAX_WBITS to enforce gzip format */
 	if (Z_OK != deflateInit2(&zstr, Z_DEFAULT_COMPRESSION, Z_DEFLATED, MAX_WBITS + 16, MAX_MEM_LEVEL, Z_DEFAULT_STRATEGY))
@@ -2825,57 +2825,57 @@ unsigned int ZLib::GZip(const void* szInputBuffer, int iInputBufferLength, void*
 
 GUnzipStream::GUnzipStream(int BufferSize)
 {
-	m_iBufferSize = BufferSize;
-	m_pZStream = malloc(sizeof(z_stream));
-	m_pOutputBuffer = malloc(BufferSize);
+	m_bufferSize = BufferSize;
+	m_zStream = malloc(sizeof(z_stream));
+	m_outputBuffer = malloc(BufferSize);
 
-	memset(m_pZStream, 0, sizeof(z_stream));
+	memset(m_zStream, 0, sizeof(z_stream));
 
 	/* add 16 to MAX_WBITS to enforce gzip format */
-	int ret = inflateInit2(((z_stream*)m_pZStream), MAX_WBITS + 16);
+	int ret = inflateInit2(((z_stream*)m_zStream), MAX_WBITS + 16);
 	if (ret != Z_OK)
 	{
-		free(m_pZStream);
-		m_pZStream = NULL;
+		free(m_zStream);
+		m_zStream = NULL;
 	}
 }
 
 GUnzipStream::~GUnzipStream()
 {
-	if (m_pZStream)
+	if (m_zStream)
 	{
-		inflateEnd(((z_stream*)m_pZStream));
-		free(m_pZStream);
+		inflateEnd(((z_stream*)m_zStream));
+		free(m_zStream);
 	}
-	free(m_pOutputBuffer);
+	free(m_outputBuffer);
 }
 
-void GUnzipStream::Write(const void *pInputBuffer, int iInputBufferLength)
+void GUnzipStream::Write(const void *inputBuffer, int inputBufferLength)
 {
-	((z_stream*)m_pZStream)->next_in = (Bytef*)pInputBuffer;
-	((z_stream*)m_pZStream)->avail_in = iInputBufferLength;
+	((z_stream*)m_zStream)->next_in = (Bytef*)inputBuffer;
+	((z_stream*)m_zStream)->avail_in = inputBufferLength;
 }
 
-GUnzipStream::EStatus GUnzipStream::Read(const void **pOutputBuffer, int *iOutputBufferLength)
+GUnzipStream::EStatus GUnzipStream::Read(const void **outputBuffer, int *outputBufferLength)
 {
-	((z_stream*)m_pZStream)->next_out = (Bytef*)m_pOutputBuffer;
-	((z_stream*)m_pZStream)->avail_out = m_iBufferSize;
+	((z_stream*)m_zStream)->next_out = (Bytef*)m_outputBuffer;
+	((z_stream*)m_zStream)->avail_out = m_bufferSize;
 
-	*iOutputBufferLength = 0;
+	*outputBufferLength = 0;
 
-	if (!m_pZStream)
+	if (!m_zStream)
 	{
 		return zlError;
 	}
 
-	int ret = inflate(((z_stream*)m_pZStream), Z_NO_FLUSH);
+	int ret = inflate(((z_stream*)m_zStream), Z_NO_FLUSH);
 
 	switch (ret)
 	{
 		case Z_STREAM_END:
 		case Z_OK:
-			*iOutputBufferLength = m_iBufferSize - ((z_stream*)m_pZStream)->avail_out;
-			*pOutputBuffer = m_pOutputBuffer;
+			*outputBufferLength = m_bufferSize - ((z_stream*)m_zStream)->avail_out;
+			*outputBuffer = m_outputBuffer;
 			return ret == Z_STREAM_END ? zlFinished : zlOK;
 
 		case Z_BUF_ERROR:
@@ -2887,57 +2887,57 @@ GUnzipStream::EStatus GUnzipStream::Read(const void **pOutputBuffer, int *iOutpu
 
 #endif
 
-Tokenizer::Tokenizer(const char* szDataString, const char* szSeparators)
+Tokenizer::Tokenizer(const char* dataString, const char* separators)
 {
 	// an optimization to avoid memory allocation for short data string (shorten than 1024 chars)
-	int iLen = strlen(szDataString);
-	if (iLen < sizeof(m_szDefaultBuf) - 1)
+	int len = strlen(dataString);
+	if (len < sizeof(m_defaultBuf) - 1)
 	{
-		strncpy(m_szDefaultBuf, szDataString, sizeof(m_szDefaultBuf));
-		m_szDefaultBuf[1024- 1] = '\0';
-		m_szDataString = m_szDefaultBuf;
-		m_bInplaceBuf = true;
+		strncpy(m_defaultBuf, dataString, sizeof(m_defaultBuf));
+		m_defaultBuf[1024- 1] = '\0';
+		m_dataString = m_defaultBuf;
+		m_inplaceBuf = true;
 	}
 	else
 	{
-		m_szDataString = strdup(szDataString);
-		m_bInplaceBuf = false;
+		m_dataString = strdup(dataString);
+		m_inplaceBuf = false;
 	}
 
-	m_szSeparators = szSeparators;
-	m_szSavePtr = NULL;
-	m_bWorking = false;
+	m_separators = separators;
+	m_savePtr = NULL;
+	m_working = false;
 }
 
-Tokenizer::Tokenizer(char* szDataString, const char* szSeparators, bool bInplaceBuf)
+Tokenizer::Tokenizer(char* dataString, const char* separators, bool inplaceBuf)
 {
-	m_szDataString = bInplaceBuf ? szDataString : strdup(szDataString);
-	m_szSeparators = szSeparators;
-	m_szSavePtr = NULL;
-	m_bWorking = false;
-	m_bInplaceBuf = bInplaceBuf;
+	m_dataString = inplaceBuf ? dataString : strdup(dataString);
+	m_separators = separators;
+	m_savePtr = NULL;
+	m_working = false;
+	m_inplaceBuf = inplaceBuf;
 }
 
 Tokenizer::~Tokenizer()
 {
-	if (!m_bInplaceBuf)
+	if (!m_inplaceBuf)
 	{
-		free(m_szDataString);
+		free(m_dataString);
 	}
 }
 
 char* Tokenizer::Next()
 {
-	char* szToken = NULL;
-	while (!szToken || !*szToken)
+	char* token = NULL;
+	while (!token || !*token)
 	{
-		szToken = strtok_r(m_bWorking ? NULL : m_szDataString, m_szSeparators, &m_szSavePtr);
-		m_bWorking = true;
-		if (!szToken)
+		token = strtok_r(m_working ? NULL : m_dataString, m_separators, &m_savePtr);
+		m_working = true;
+		if (!token)
 		{
 			return NULL;
 		}
-		szToken = Util::Trim(szToken);
+		token = Util::Trim(token);
 	}
-	return szToken;
+	return token;
 }

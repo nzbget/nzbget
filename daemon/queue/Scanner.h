@@ -46,18 +46,18 @@ private:
 	class FileData
 	{
 	private:
-		char*			m_szFilename;
-		long long		m_iSize;
-		time_t			m_tLastChange;
+		char*			m_filename;
+		long long		m_size;
+		time_t			m_lastChange;
 
 	public:
-						FileData(const char* szFilename);
+						FileData(const char* filename);
 						~FileData();
-		const char*		GetFilename() { return m_szFilename; }
-		long long		GetSize() { return m_iSize; }
-		void			SetSize(long long lSize) { m_iSize = lSize; }
-		time_t			GetLastChange() { return m_tLastChange; }
-		void			SetLastChange(time_t tLastChange) { m_tLastChange = tLastChange; }
+		const char*		GetFilename() { return m_filename; }
+		long long		GetSize() { return m_size; }
+		void			SetSize(long long size) { m_size = size; }
+		time_t			GetLastChange() { return m_lastChange; }
+		void			SetLastChange(time_t lastChange) { m_lastChange = lastChange; }
 	};
 
 	typedef std::deque<FileData*>		FileList;
@@ -65,59 +65,59 @@ private:
 	class QueueData
 	{
 	private:
-		char*				m_szFilename;
-		char*				m_szNZBName;
-		char*				m_szCategory;
-		int					m_iPriority;
-		char*				m_szDupeKey;
-		int					m_iDupeScore;
-		EDupeMode			m_eDupeMode;
-		NZBParameterList	m_Parameters;
-		bool				m_bAddTop;
-		bool				m_bAddPaused;
-		NZBInfo*			m_pUrlInfo;
-		EAddStatus*			m_pAddStatus;
-		int*				m_pNZBID;
+		char*				m_filename;
+		char*				m_nzbName;
+		char*				m_category;
+		int					m_priority;
+		char*				m_dupeKey;
+		int					m_dupeScore;
+		EDupeMode			m_dupeMode;
+		NZBParameterList	m_parameters;
+		bool				m_addTop;
+		bool				m_addPaused;
+		NZBInfo*			m_urlInfo;
+		EAddStatus*			m_addStatus;
+		int*				m_nzbId;
 
 	public:
-							QueueData(const char* szFilename, const char* szNZBName, const char* szCategory,
-								int iPriority, const char* szDupeKey, int iDupeScore, EDupeMode eDupeMode,
-								NZBParameterList* pParameters, bool bAddTop, bool bAddPaused, NZBInfo* pUrlInfo, 
-								EAddStatus* pAddStatus, int* pNZBID);
+							QueueData(const char* filename, const char* nzbName, const char* category,
+								int priority, const char* dupeKey, int dupeScore, EDupeMode dupeMode,
+								NZBParameterList* parameters, bool addTop, bool addPaused, NZBInfo* urlInfo, 
+								EAddStatus* addStatus, int* nzbId);
 							~QueueData();
-		const char*			GetFilename() { return m_szFilename; }
-		const char*			GetNZBName() { return m_szNZBName; }
-		const char*			GetCategory() { return m_szCategory; }
-		int					GetPriority() { return m_iPriority; }
-		const char*			GetDupeKey() { return m_szDupeKey; }
-		int					GetDupeScore() { return m_iDupeScore; }
-		EDupeMode			GetDupeMode() { return m_eDupeMode; }
-		NZBParameterList*	GetParameters() { return &m_Parameters; }
-		bool				GetAddTop() { return m_bAddTop; }
-		bool				GetAddPaused() { return m_bAddPaused; }
-		NZBInfo*			GetUrlInfo() { return m_pUrlInfo; }
-		void				SetAddStatus(EAddStatus eAddStatus);
-		void				SetNZBID(int iNZBID);
+		const char*			GetFilename() { return m_filename; }
+		const char*			GetNZBName() { return m_nzbName; }
+		const char*			GetCategory() { return m_category; }
+		int					GetPriority() { return m_priority; }
+		const char*			GetDupeKey() { return m_dupeKey; }
+		int					GetDupeScore() { return m_dupeScore; }
+		EDupeMode			GetDupeMode() { return m_dupeMode; }
+		NZBParameterList*	GetParameters() { return &m_parameters; }
+		bool				GetAddTop() { return m_addTop; }
+		bool				GetAddPaused() { return m_addPaused; }
+		NZBInfo*			GetUrlInfo() { return m_urlInfo; }
+		void				SetAddStatus(EAddStatus addStatus);
+		void				SetNZBID(int nzbId);
 	};
 
 	typedef std::deque<QueueData*>		QueueList;
 
-	bool				m_bRequestedNZBDirScan;
-	int					m_iNZBDirInterval;
-	bool				m_bScanScript;
-	int					m_iPass;
-	FileList			m_FileList;
-	QueueList			m_QueueList;
-	bool				m_bScanning;
-	Mutex				m_mutexScan;
+	bool				m_requestedNzbDirScan;
+	int					m_nzbDirInterval;
+	bool				m_scanScript;
+	int					m_pass;
+	FileList			m_fileList;
+	QueueList			m_queueList;
+	bool				m_scanning;
+	Mutex				m_scanMutex;
 
-	void				CheckIncomingNZBs(const char* szDirectory, const char* szCategory, bool bCheckStat);
-	bool				AddFileToQueue(const char* szFilename, const char* szNZBName, const char* szCategory,
-							int iPriority, const char* szDupeKey, int iDupeScore, EDupeMode eDupeMode,
-							NZBParameterList* pParameters, bool bAddTop, bool bAddPaused, NZBInfo* pUrlInfo, int* pNZBID);
-	void				ProcessIncomingFile(const char* szDirectory, const char* szBaseFilename,
-							const char* szFullFilename, const char* szCategory);
-	bool				CanProcessFile(const char* szFullFilename, bool bCheckStat);
+	void				CheckIncomingNZBs(const char* directory, const char* category, bool checkStat);
+	bool				AddFileToQueue(const char* filename, const char* nzbName, const char* category,
+							int priority, const char* dupeKey, int dupeScore, EDupeMode dupeMode,
+							NZBParameterList* parameters, bool addTop, bool addPaused, NZBInfo* urlInfo, int* nzbId);
+	void				ProcessIncomingFile(const char* directory, const char* baseFilename,
+							const char* fullFilename, const char* category);
+	bool				CanProcessFile(const char* fullFilename, bool checkStat);
 	void				DropOldFiles();
 	void				ClearQueueList();
 
@@ -129,12 +129,12 @@ public:
 						Scanner();
 						~Scanner();
 	void				InitOptions();
-	void				ScanNZBDir(bool bSyncMode);
-	EAddStatus			AddExternalFile(const char* szNZBName, const char* szCategory, int iPriority,
-							const char* szDupeKey, int iDupeScore, EDupeMode eDupeMode,
-							NZBParameterList* pParameters, bool bAddTop, bool bAddPaused, NZBInfo* pUrlInfo,
-							const char* szFileName, const char* szBuffer, int iBufSize, int* pNZBID);
-	void				InitPPParameters(const char* szCategory, NZBParameterList* pParameters, bool bReset);
+	void				ScanNZBDir(bool syncMode);
+	EAddStatus			AddExternalFile(const char* nzbName, const char* category, int priority,
+							const char* dupeKey, int dupeScore, EDupeMode dupeMode,
+							NZBParameterList* parameters, bool addTop, bool addPaused, NZBInfo* urlInfo,
+							const char* fileName, const char* buffer, int bufSize, int* nzbId);
+	void				InitPPParameters(const char* category, NZBParameterList* parameters, bool reset);
 };
 
 extern Scanner* g_pScanner;

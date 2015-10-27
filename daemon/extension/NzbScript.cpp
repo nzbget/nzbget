@@ -53,70 +53,70 @@
  * are processed. The prefix is then stripped from the names.
  * If szStripPrefix is NULL, all pp-parameters are processed; without stripping.
  */
-void NZBScriptController::PrepareEnvParameters(NZBParameterList* pParameters, const char* szStripPrefix)
+void NZBScriptController::PrepareEnvParameters(NZBParameterList* parameters, const char* stripPrefix)
 {
-	int iPrefixLen = szStripPrefix ? strlen(szStripPrefix) : 0;
+	int prefixLen = stripPrefix ? strlen(stripPrefix) : 0;
 
-	for (NZBParameterList::iterator it = pParameters->begin(); it != pParameters->end(); it++)
+	for (NZBParameterList::iterator it = parameters->begin(); it != parameters->end(); it++)
 	{
-		NZBParameter* pParameter = *it;
-		const char* szValue = pParameter->GetValue();
+		NZBParameter* parameter = *it;
+		const char* value = parameter->GetValue();
 		
 #ifdef WIN32
-		char* szAnsiValue = strdup(szValue);
-		WebUtil::Utf8ToAnsi(szAnsiValue, strlen(szAnsiValue) + 1);
-		szValue = szAnsiValue;
+		char* ansiValue = strdup(value);
+		WebUtil::Utf8ToAnsi(ansiValue, strlen(ansiValue) + 1);
+		value = ansiValue;
 #endif
 
-		if (szStripPrefix && !strncmp(pParameter->GetName(), szStripPrefix, iPrefixLen) && (int)strlen(pParameter->GetName()) > iPrefixLen)
+		if (stripPrefix && !strncmp(parameter->GetName(), stripPrefix, prefixLen) && (int)strlen(parameter->GetName()) > prefixLen)
 		{
-			SetEnvVarSpecial("NZBPR", pParameter->GetName() + iPrefixLen, szValue);
+			SetEnvVarSpecial("NZBPR", parameter->GetName() + prefixLen, value);
 		}
-		else if (!szStripPrefix)
+		else if (!stripPrefix)
 		{
-			SetEnvVarSpecial("NZBPR", pParameter->GetName(), szValue);
+			SetEnvVarSpecial("NZBPR", parameter->GetName(), value);
 		}
 
 #ifdef WIN32
-		free(szAnsiValue);
+		free(ansiValue);
 #endif
 	}
 }
 
-void NZBScriptController::PrepareEnvScript(NZBParameterList* pParameters, const char* szScriptName)
+void NZBScriptController::PrepareEnvScript(NZBParameterList* parameters, const char* scriptName)
 {
-	if (pParameters)
+	if (parameters)
 	{
-		PrepareEnvParameters(pParameters, NULL);
+		PrepareEnvParameters(parameters, NULL);
 	}
 
-	char szParamPrefix[1024];
-	snprintf(szParamPrefix, 1024, "%s:", szScriptName);
-	szParamPrefix[1024-1] = '\0';
+	char paramPrefix[1024];
+	snprintf(paramPrefix, 1024, "%s:", scriptName);
+	paramPrefix[1024-1] = '\0';
 
-	if (pParameters)
+	if (parameters)
 	{
-		PrepareEnvParameters(pParameters, szParamPrefix);
+		PrepareEnvParameters(parameters, paramPrefix);
 	}
 
-	PrepareEnvOptions(szParamPrefix);
+	PrepareEnvOptions(paramPrefix);
 }
 
-void NZBScriptController::ExecuteScriptList(const char* szScriptList)
+void NZBScriptController::ExecuteScriptList(const char* scriptList)
 {
 	for (ScriptConfig::Scripts::iterator it = g_pScriptConfig->GetScripts()->begin(); it != g_pScriptConfig->GetScripts()->end(); it++)
 	{
-		ScriptConfig::Script* pScript = *it;
+		ScriptConfig::Script* script = *it;
 
-		if (szScriptList && *szScriptList)
+		if (scriptList && *scriptList)
 		{
 			// split szScriptList into tokens
-			Tokenizer tok(szScriptList, ",;");
-			while (const char* szScriptName = tok.Next())
+			Tokenizer tok(scriptList, ",;");
+			while (const char* scriptName = tok.Next())
 			{
-				if (Util::SameFilename(szScriptName, pScript->GetName()))
+				if (Util::SameFilename(scriptName, script->GetName()))
 				{
-					ExecuteScript(pScript);
+					ExecuteScript(script);
 					break;
 				}
 			}

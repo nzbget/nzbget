@@ -31,9 +31,9 @@
 class DiskService : public Service
 {
 private:
-	int					m_iInterval;
-	bool				m_bWaitingRequiredDir;
-	bool				m_bWaitingReported;
+	int					m_interval;
+	bool				m_waitingRequiredDir;
+	bool				m_waitingReported;
 
 	void				CheckDiskSpace();
 	void				CheckRequiredDir();

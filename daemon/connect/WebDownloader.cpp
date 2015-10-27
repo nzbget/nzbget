@@ -53,15 +53,15 @@ WebDownloader::WebDownloader()
 {
 	debug("Creating WebDownloader");
 
-	m_szURL	= NULL;
-	m_szOutputFilename	= NULL;
-	m_pConnection = NULL;
-	m_szInfoName = NULL;
-	m_bConfirmedLength = false;
-	m_eStatus = adUndefined;
-	m_szOriginalFilename = NULL;
-	m_bForce = false;
-	m_bRetry = true;
+	m_url	= NULL;
+	m_outputFilename	= NULL;
+	m_connection = NULL;
+	m_infoName = NULL;
+	m_confirmedLength = false;
+	m_status = adUndefined;
+	m_originalFilename = NULL;
+	m_force = false;
+	m_retry = true;
 	SetLastUpdateTimeNow();
 }
 
@@ -69,31 +69,31 @@ WebDownloader::~WebDownloader()
 {
 	debug("Destroying WebDownloader");
 
-	free(m_szURL);
-	free(m_szInfoName);
-	free(m_szOutputFilename);
-	free(m_szOriginalFilename);
+	free(m_url);
+	free(m_infoName);
+	free(m_outputFilename);
+	free(m_originalFilename);
 }
 
 void WebDownloader::SetOutputFilename(const char* v)
 {
-	m_szOutputFilename = strdup(v);
+	m_outputFilename = strdup(v);
 }
 
 void WebDownloader::SetInfoName(const char* v)
 {
-	m_szInfoName = strdup(v);
+	m_infoName = strdup(v);
 }
 
-void WebDownloader::SetURL(const char * szURL)
+void WebDownloader::SetURL(const char * url)
 {
-	free(m_szURL);
-	m_szURL = WebUtil::URLEncode(szURL);
+	free(m_url);
+	m_url = WebUtil::URLEncode(url);
 }
 
-void WebDownloader::SetStatus(EStatus eStatus)
+void WebDownloader::SetStatus(EStatus status)
 {
-	m_eStatus = eStatus;
+	m_status = status;
 	Notify(NULL);
 }
 
@@ -103,37 +103,37 @@ void WebDownloader::Run()
 
 	SetStatus(adRunning);
 
-	int iRemainedDownloadRetries = g_pOptions->GetRetries() > 0 ? g_pOptions->GetRetries() : 1;
-	int iRemainedConnectRetries = iRemainedDownloadRetries > 10 ? iRemainedDownloadRetries : 10;
-	if (!m_bRetry)
+	int remainedDownloadRetries = g_pOptions->GetRetries() > 0 ? g_pOptions->GetRetries() : 1;
+	int remainedConnectRetries = remainedDownloadRetries > 10 ? remainedDownloadRetries : 10;
+	if (!m_retry)
 	{
-		iRemainedDownloadRetries = 1;
-		iRemainedConnectRetries = 1;
+		remainedDownloadRetries = 1;
+		remainedConnectRetries = 1;
 	}
 
 	EStatus Status = adFailed;
 
-	while (!IsStopped() && iRemainedDownloadRetries > 0 && iRemainedConnectRetries > 0)
+	while (!IsStopped() && remainedDownloadRetries > 0 && remainedConnectRetries > 0)
 	{
 		SetLastUpdateTimeNow();
 
 		Status = DownloadWithRedirects(5);
 
-		if ((((Status == adFailed) && (iRemainedDownloadRetries > 1)) ||
-			((Status == adConnectError) && (iRemainedConnectRetries > 1)))
-			&& !IsStopped() && !(!m_bForce && g_pOptions->GetPauseDownload()))
+		if ((((Status == adFailed) && (remainedDownloadRetries > 1)) ||
+			((Status == adConnectError) && (remainedConnectRetries > 1)))
+			&& !IsStopped() && !(!m_force && g_pOptions->GetPauseDownload()))
 		{
 			detail("Waiting %i sec to retry", g_pOptions->GetRetryInterval());
 			int msec = 0;
 			while (!IsStopped() && (msec < g_pOptions->GetRetryInterval() * 1000) && 
-				!(!m_bForce && g_pOptions->GetPauseDownload()))
+				!(!m_force && g_pOptions->GetPauseDownload()))
 			{
 				usleep(100 * 1000);
 				msec += 100;
 			}
 		}
 
-		if (IsStopped() || (!m_bForce && g_pOptions->GetPauseDownload()))
+		if (IsStopped() || (!m_force && g_pOptions->GetPauseDownload()))
 		{
 			Status = adRetry;
 			break;
@@ -146,11 +146,11 @@ void WebDownloader::Run()
 
 		if (Status != adConnectError)
 		{
-			iRemainedDownloadRetries--;
+			remainedDownloadRetries--;
 		}
 		else
 		{
-			iRemainedConnectRetries--;
+			remainedConnectRetries--;
 		}
 	}
 
@@ -163,17 +163,17 @@ void WebDownloader::Run()
 	{
 		if (IsStopped())
 		{
-			detail("Download %s cancelled", m_szInfoName);
+			detail("Download %s cancelled", m_infoName);
 		}
 		else
 		{
-			error("Download %s failed", m_szInfoName);
+			error("Download %s failed", m_infoName);
 		}
 	}
 
 	if (Status == adFinished)
 	{
-		detail("Download %s completed", m_szInfoName);
+		detail("Download %s completed", m_infoName);
 	}
 
 	SetStatus(Status);
@@ -185,7 +185,7 @@ WebDownloader::EStatus WebDownloader::Download()
 {
 	EStatus Status = adRunning;
 
-	URL url(m_szURL);
+	URL url(m_url);
 
 	Status = CreateConnection(&url);
 	if (Status != adRunning)
@@ -193,19 +193,19 @@ WebDownloader::EStatus WebDownloader::Download()
 		return Status;
 	}
 
-	m_pConnection->SetTimeout(g_pOptions->GetUrlTimeout());
-	m_pConnection->SetSuppressErrors(false);
+	m_connection->SetTimeout(g_pOptions->GetUrlTimeout());
+	m_connection->SetSuppressErrors(false);
 
 	// connection
-	bool bConnected = m_pConnection->Connect();
-	if (!bConnected || IsStopped())
+	bool connected = m_connection->Connect();
+	if (!connected || IsStopped())
 	{
 		FreeConnection();
 		return adConnectError;
 	}
 
 	// Okay, we got a Connection. Now start downloading.
-	detail("Downloading %s", m_szInfoName);
+	detail("Downloading %s", m_infoName);
 
 	SendHeaders(&url);
 
@@ -226,132 +226,132 @@ WebDownloader::EStatus WebDownloader::Download()
 	if (Status != adFinished)
 	{
 		// Download failed, delete broken output file
-		remove(m_szOutputFilename);
+		remove(m_outputFilename);
 	}
 
 	return Status;
 }
 
-WebDownloader::EStatus WebDownloader::DownloadWithRedirects(int iMaxRedirects)
+WebDownloader::EStatus WebDownloader::DownloadWithRedirects(int maxRedirects)
 {
 	// do sync download, following redirects
-	EStatus eStatus = adRedirect;
-	while (eStatus == adRedirect && iMaxRedirects >= 0)
+	EStatus status = adRedirect;
+	while (status == adRedirect && maxRedirects >= 0)
 	{
-		iMaxRedirects--;
-		eStatus = Download();
+		maxRedirects--;
+		status = Download();
 	}
 
-	if (eStatus == adRedirect && iMaxRedirects < 0)
+	if (status == adRedirect && maxRedirects < 0)
 	{
-		warn("Too many redirects for %s", m_szInfoName);
-		eStatus = adFailed;
+		warn("Too many redirects for %s", m_infoName);
+		status = adFailed;
 	}
 
-	return eStatus;
+	return status;
 }
 
-WebDownloader::EStatus WebDownloader::CreateConnection(URL *pUrl)
+WebDownloader::EStatus WebDownloader::CreateConnection(URL *url)
 {
-	if (!pUrl->IsValid())
+	if (!url->IsValid())
 	{
-		error("URL is not valid: %s", pUrl->GetAddress());
+		error("URL is not valid: %s", url->GetAddress());
 		return adFatalError;
 	}
 
-	int iPort = pUrl->GetPort();
-	if (iPort == 0 && !strcasecmp(pUrl->GetProtocol(), "http"))
+	int port = url->GetPort();
+	if (port == 0 && !strcasecmp(url->GetProtocol(), "http"))
 	{
-		iPort = 80;
+		port = 80;
 	}
-	if (iPort == 0 && !strcasecmp(pUrl->GetProtocol(), "https"))
+	if (port == 0 && !strcasecmp(url->GetProtocol(), "https"))
 	{
-		iPort = 443;
+		port = 443;
 	}
 
-	if (strcasecmp(pUrl->GetProtocol(), "http") && strcasecmp(pUrl->GetProtocol(), "https"))
+	if (strcasecmp(url->GetProtocol(), "http") && strcasecmp(url->GetProtocol(), "https"))
 	{
-		error("Unsupported protocol in URL: %s", pUrl->GetAddress());
+		error("Unsupported protocol in URL: %s", url->GetAddress());
 		return adFatalError;
 	}
 
 #ifdef DISABLE_TLS
-	if (!strcasecmp(pUrl->GetProtocol(), "https"))
+	if (!strcasecmp(url->GetProtocol(), "https"))
 	{
-		error("Program was compiled without TLS/SSL-support. Cannot download using https protocol. URL: %s", pUrl->GetAddress());
+		error("Program was compiled without TLS/SSL-support. Cannot download using https protocol. URL: %s", url->GetAddress());
 		return adFatalError;
 	}
 #endif
 
-	bool bTLS = !strcasecmp(pUrl->GetProtocol(), "https");
+	bool tLS = !strcasecmp(url->GetProtocol(), "https");
 
-	m_pConnection = new Connection(pUrl->GetHost(), iPort, bTLS);
+	m_connection = new Connection(url->GetHost(), port, tLS);
 
 	return adRunning;
 }
 
-void WebDownloader::SendHeaders(URL *pUrl)
+void WebDownloader::SendHeaders(URL *url)
 {
 	char tmp[1024];
 
 	// retrieve file
-	snprintf(tmp, 1024, "GET %s HTTP/1.0\r\n", pUrl->GetResource());
+	snprintf(tmp, 1024, "GET %s HTTP/1.0\r\n", url->GetResource());
 	tmp[1024-1] = '\0';
-	m_pConnection->WriteLine(tmp);
+	m_connection->WriteLine(tmp);
 
 	snprintf(tmp, 1024, "User-Agent: nzbget/%s\r\n", Util::VersionRevision());
 	tmp[1024-1] = '\0';
-	m_pConnection->WriteLine(tmp);
+	m_connection->WriteLine(tmp);
 
-	if ((!strcasecmp(pUrl->GetProtocol(), "http") && (pUrl->GetPort() == 80 || pUrl->GetPort() == 0)) ||
-		(!strcasecmp(pUrl->GetProtocol(), "https") && (pUrl->GetPort() == 443 || pUrl->GetPort() == 0)))
+	if ((!strcasecmp(url->GetProtocol(), "http") && (url->GetPort() == 80 || url->GetPort() == 0)) ||
+		(!strcasecmp(url->GetProtocol(), "https") && (url->GetPort() == 443 || url->GetPort() == 0)))
 	{
-		snprintf(tmp, 1024, "Host: %s\r\n", pUrl->GetHost());
+		snprintf(tmp, 1024, "Host: %s\r\n", url->GetHost());
 	}
 	else
 	{
-		snprintf(tmp, 1024, "Host: %s:%i\r\n", pUrl->GetHost(), pUrl->GetPort());
+		snprintf(tmp, 1024, "Host: %s:%i\r\n", url->GetHost(), url->GetPort());
 	}
 	tmp[1024-1] = '\0';
-	m_pConnection->WriteLine(tmp);
+	m_connection->WriteLine(tmp);
 
-	m_pConnection->WriteLine("Accept: */*\r\n");
+	m_connection->WriteLine("Accept: */*\r\n");
 #ifndef DISABLE_GZIP
-	m_pConnection->WriteLine("Accept-Encoding: gzip\r\n");
+	m_connection->WriteLine("Accept-Encoding: gzip\r\n");
 #endif
-	m_pConnection->WriteLine("Connection: close\r\n");
-	m_pConnection->WriteLine("\r\n");
+	m_connection->WriteLine("Connection: close\r\n");
+	m_connection->WriteLine("\r\n");
 }
 
 WebDownloader::EStatus WebDownloader::DownloadHeaders()
 {
 	EStatus Status = adRunning;
 
-	m_bConfirmedLength = false;
+	m_confirmedLength = false;
 	const int LineBufSize = 1024*10;
-	char* szLineBuf = (char*)malloc(LineBufSize);
-	m_iContentLen = -1;
-	bool bFirstLine = true;
-	m_bGZip = false;
-	m_bRedirecting = false;
-	m_bRedirected = false;
+	char* lineBuf = (char*)malloc(LineBufSize);
+	m_contentLen = -1;
+	bool firstLine = true;
+	m_gZip = false;
+	m_redirecting = false;
+	m_redirected = false;
 
 	// Headers
 	while (!IsStopped())
 	{
 		SetLastUpdateTimeNow();
 
-		int iLen = 0;
-		char* line = m_pConnection->ReadLine(szLineBuf, LineBufSize, &iLen);
+		int len = 0;
+		char* line = m_connection->ReadLine(lineBuf, LineBufSize, &len);
 
-		if (bFirstLine)
+		if (firstLine)
 		{
-			Status = CheckResponse(szLineBuf);
+			Status = CheckResponse(lineBuf);
 			if (Status != adRunning)
 			{
 				break;
 			}
-			bFirstLine = false;
+			firstLine = false;
 		}
 
 		// Have we encountered a timeout?
@@ -359,7 +359,7 @@ WebDownloader::EStatus WebDownloader::DownloadHeaders()
 		{
 			if (!IsStopped())
 			{
-				warn("URL %s failed: Unexpected end of file", m_szInfoName);
+				warn("URL %s failed: Unexpected end of file", m_infoName);
 			}
 			Status = adFailed;
 			break;
@@ -376,14 +376,14 @@ WebDownloader::EStatus WebDownloader::DownloadHeaders()
 		Util::TrimRight(line);
 		ProcessHeader(line);
 
-		if (m_bRedirected)
+		if (m_redirected)
 		{
 			Status = adRedirect;
 			break;
 		}
 	}
 
-	free(szLineBuf);
+	free(lineBuf);
 
 	return Status;
 }
@@ -392,17 +392,17 @@ WebDownloader::EStatus WebDownloader::DownloadBody()
 {
 	EStatus Status = adRunning;
 
-	m_pOutFile = NULL;
-	bool bEnd = false;
+	m_outFile = NULL;
+	bool end = false;
 	const int LineBufSize = 1024*10;
-	char* szLineBuf = (char*)malloc(LineBufSize);
-	int iWrittenLen = 0;
+	char* lineBuf = (char*)malloc(LineBufSize);
+	int writtenLen = 0;
 
 #ifndef DISABLE_GZIP
-	m_pGUnzipStream = NULL;
-	if (m_bGZip)
+	m_gUnzipStream = NULL;
+	if (m_gZip)
 	{
-		m_pGUnzipStream = new GUnzipStream(1024*10);
+		m_gUnzipStream = new GUnzipStream(1024*10);
 	}
 #endif
 
@@ -411,66 +411,66 @@ WebDownloader::EStatus WebDownloader::DownloadBody()
 	{
 		SetLastUpdateTimeNow();
 
-		char* szBuffer;
-		int iLen;
-		m_pConnection->ReadBuffer(&szBuffer, &iLen);
-		if (iLen == 0)
+		char* buffer;
+		int len;
+		m_connection->ReadBuffer(&buffer, &len);
+		if (len == 0)
 		{
-			iLen = m_pConnection->TryRecv(szLineBuf, LineBufSize);
-			szBuffer = szLineBuf;
+			len = m_connection->TryRecv(lineBuf, LineBufSize);
+			buffer = lineBuf;
 		}
 
 		// Connection closed or timeout?
-		if (iLen <= 0)
+		if (len <= 0)
 		{
-			if (iLen == 0 && m_iContentLen == -1 && iWrittenLen > 0)
+			if (len == 0 && m_contentLen == -1 && writtenLen > 0)
 			{
-				bEnd = true;
+				end = true;
 				break;
 			}
 
 			if (!IsStopped())
 			{
-				warn("URL %s failed: Unexpected end of file", m_szInfoName);
+				warn("URL %s failed: Unexpected end of file", m_infoName);
 			}
 			Status = adFailed;
 			break;
 		}
 
 		// write to output file
-		if (!Write(szBuffer, iLen))
+		if (!Write(buffer, len))
 		{
 			Status = adFatalError;
 			break;
 		}
-		iWrittenLen += iLen;
+		writtenLen += len;
 
 		//detect end of file
-		if (iWrittenLen == m_iContentLen || (m_iContentLen == -1 && m_bGZip && m_bConfirmedLength))
+		if (writtenLen == m_contentLen || (m_contentLen == -1 && m_gZip && m_confirmedLength))
 		{
-			bEnd = true;
+			end = true;
 			break;
 		}
 	}
 
-	free(szLineBuf);
+	free(lineBuf);
 
 #ifndef DISABLE_GZIP
-	delete m_pGUnzipStream;
+	delete m_gUnzipStream;
 #endif
 
-	if (m_pOutFile)
+	if (m_outFile)
 	{
-		fclose(m_pOutFile);
+		fclose(m_outFile);
 	}
 
-	if (!bEnd && Status == adRunning && !IsStopped())
+	if (!end && Status == adRunning && !IsStopped())
 	{
-		warn("URL %s failed: file incomplete", m_szInfoName);
+		warn("URL %s failed: file incomplete", m_infoName);
 		Status = adFailed;
 	}
 
-	if (bEnd)
+	if (end)
 	{
 		Status = adFinished;
 	}
@@ -478,42 +478,42 @@ WebDownloader::EStatus WebDownloader::DownloadBody()
 	return Status;
 }
 
-WebDownloader::EStatus WebDownloader::CheckResponse(const char* szResponse)
+WebDownloader::EStatus WebDownloader::CheckResponse(const char* response)
 {
-	if (!szResponse)
+	if (!response)
 	{
 		if (!IsStopped())
 		{
-			warn("URL %s: Connection closed by remote host", m_szInfoName);
+			warn("URL %s: Connection closed by remote host", m_infoName);
 		}
 		return adConnectError;
 	}
 
-	const char* szHTTPResponse = strchr(szResponse, ' ');
-	if (strncmp(szResponse, "HTTP", 4) || !szHTTPResponse)
+	const char* hTTPResponse = strchr(response, ' ');
+	if (strncmp(response, "HTTP", 4) || !hTTPResponse)
 	{
-		warn("URL %s failed: %s", m_szInfoName, szResponse);
+		warn("URL %s failed: %s", m_infoName, response);
 		return adFailed;
 	}
 
-	szHTTPResponse++;
+	hTTPResponse++;
 
-	if (!strncmp(szHTTPResponse, "400", 3) || !strncmp(szHTTPResponse, "499", 3))
+	if (!strncmp(hTTPResponse, "400", 3) || !strncmp(hTTPResponse, "499", 3))
 	{
-		warn("URL %s failed: %s", m_szInfoName, szHTTPResponse);
+		warn("URL %s failed: %s", m_infoName, hTTPResponse);
 		return adConnectError;
 	}
-	else if (!strncmp(szHTTPResponse, "404", 3))
+	else if (!strncmp(hTTPResponse, "404", 3))
 	{
-		warn("URL %s failed: %s", m_szInfoName, szHTTPResponse);
+		warn("URL %s failed: %s", m_infoName, hTTPResponse);
 		return adNotFound;
 	}
-	else if (!strncmp(szHTTPResponse, "301", 3) || !strncmp(szHTTPResponse, "302", 3))
+	else if (!strncmp(hTTPResponse, "301", 3) || !strncmp(hTTPResponse, "302", 3))
 	{
-		m_bRedirecting = true;
+		m_redirecting = true;
 		return adRunning;
 	}
-	else if (!strncmp(szHTTPResponse, "200", 3))
+	else if (!strncmp(hTTPResponse, "200", 3))
 	{
 		// OK
 		return adRunning;
@@ -521,40 +521,40 @@ WebDownloader::EStatus WebDownloader::CheckResponse(const char* szResponse)
 	else 
 	{
 		// unknown error, no special handling
-		warn("URL %s failed: %s", m_szInfoName, szResponse);
+		warn("URL %s failed: %s", m_infoName, response);
 		return adFailed;
 	}
 }
 
-void WebDownloader::ProcessHeader(const char* szLine)
+void WebDownloader::ProcessHeader(const char* line)
 {
-	if (!strncasecmp(szLine, "Content-Length: ", 16))
+	if (!strncasecmp(line, "Content-Length: ", 16))
 	{
-		m_iContentLen = atoi(szLine + 16);
-		m_bConfirmedLength = true;
+		m_contentLen = atoi(line + 16);
+		m_confirmedLength = true;
 	}
-	else if (!strncasecmp(szLine, "Content-Encoding: gzip", 22))
+	else if (!strncasecmp(line, "Content-Encoding: gzip", 22))
 	{
-		m_bGZip = true;
+		m_gZip = true;
 	}
-	else if (!strncasecmp(szLine, "Content-Disposition: ", 21))
+	else if (!strncasecmp(line, "Content-Disposition: ", 21))
 	{
-		ParseFilename(szLine);
+		ParseFilename(line);
 	}
-	else if (m_bRedirecting && !strncasecmp(szLine, "Location: ", 10))
+	else if (m_redirecting && !strncasecmp(line, "Location: ", 10))
 	{
-		ParseRedirect(szLine + 10);
-		m_bRedirected = true;
+		ParseRedirect(line + 10);
+		m_redirected = true;
 	}
 }
 
-void WebDownloader::ParseFilename(const char* szContentDisposition)
+void WebDownloader::ParseFilename(const char* contentDisposition)
 {
 	// Examples:
 	// Content-Disposition: attachment; filename="fname.ext"
 	// Content-Disposition: attachement;filename=fname.ext
 	// Content-Disposition: attachement;filename=fname.ext;
-	const char *p = strstr(szContentDisposition, "filename");
+	const char *p = strstr(contentDisposition, "filename");
 	if (!p)
 	{
 		return;
@@ -582,98 +582,98 @@ void WebDownloader::ParseFilename(const char* szContentDisposition)
 
 	WebUtil::HttpUnquote(fname);
 
-	free(m_szOriginalFilename);
-	m_szOriginalFilename = strdup(Util::BaseFileName(fname));
+	free(m_originalFilename);
+	m_originalFilename = strdup(Util::BaseFileName(fname));
 
-	debug("OriginalFilename: %s", m_szOriginalFilename);
+	debug("OriginalFilename: %s", m_originalFilename);
 }
 
-void WebDownloader::ParseRedirect(const char* szLocation)
+void WebDownloader::ParseRedirect(const char* location)
 {
-	const char* szNewURL = szLocation;
-	char szUrlBuf[1024];
-	URL newUrl(szNewURL);
+	const char* newLocation = location;
+	char urlBuf[1024];
+	URL newUrl(newLocation);
 	if (!newUrl.IsValid())
 	{
 		// redirect within host
 
-		char szResource[1024];
-		URL oldUrl(m_szURL);
+		char resource[1024];
+		URL oldUrl(m_url);
 
-		if (*szLocation == '/')
+		if (*location == '/')
 		{
 			// absolute path within host
-			strncpy(szResource, szLocation, 1024);
-			szResource[1024-1] = '\0';
+			strncpy(resource, location, 1024);
+			resource[1024-1] = '\0';
 		}
 		else
 		{
 			// relative path within host
-			strncpy(szResource, oldUrl.GetResource(), 1024);
-			szResource[1024-1] = '\0';
+			strncpy(resource, oldUrl.GetResource(), 1024);
+			resource[1024-1] = '\0';
 
-			char* p = strchr(szResource, '?');
+			char* p = strchr(resource, '?');
 			if (p)
 			{
 				*p = '\0';
 			}
 
-			p = strrchr(szResource, '/');
+			p = strrchr(resource, '/');
 			if (p)
 			{
 				p[1] = '\0';
 			}
 
-			strncat(szResource, szLocation, 1024 - strlen(szResource));
-			szResource[1024-1] = '\0';
+			strncat(resource, location, 1024 - strlen(resource));
+			resource[1024-1] = '\0';
 		}
 
 		if (oldUrl.GetPort() > 0)
 		{
-			snprintf(szUrlBuf, 1024, "%s://%s:%i%s", oldUrl.GetProtocol(), oldUrl.GetHost(), oldUrl.GetPort(), szResource);
+			snprintf(urlBuf, 1024, "%s://%s:%i%s", oldUrl.GetProtocol(), oldUrl.GetHost(), oldUrl.GetPort(), resource);
 		}
 		else
 		{
-			snprintf(szUrlBuf, 1024, "%s://%s%s", oldUrl.GetProtocol(), oldUrl.GetHost(), szResource);
+			snprintf(urlBuf, 1024, "%s://%s%s", oldUrl.GetProtocol(), oldUrl.GetHost(), resource);
 		}
-		szUrlBuf[1024-1] = '\0';
-		szNewURL = szUrlBuf;
+		urlBuf[1024-1] = '\0';
+		newLocation = urlBuf;
 	}
-	detail("URL %s redirected to %s", m_szURL, szNewURL);
-	SetURL(szNewURL);
+	detail("URL %s redirected to %s", m_url, newLocation);
+	SetURL(newLocation);
 }
 
-bool WebDownloader::Write(void* pBuffer, int iLen)
+bool WebDownloader::Write(void* buffer, int len)
 {
-	if (!m_pOutFile && !PrepareFile())
+	if (!m_outFile && !PrepareFile())
 	{
 		return false;
 	}
 
 #ifndef DISABLE_GZIP
-	if (m_bGZip)
+	if (m_gZip)
 	{
-		m_pGUnzipStream->Write(pBuffer, iLen);
-		const void *pOutBuf;
-		int iOutLen = 1;
-		while (iOutLen > 0)
+		m_gUnzipStream->Write(buffer, len);
+		const void *outBuf;
+		int outLen = 1;
+		while (outLen > 0)
 		{
-			GUnzipStream::EStatus eGZStatus = m_pGUnzipStream->Read(&pOutBuf, &iOutLen);
+			GUnzipStream::EStatus gZStatus = m_gUnzipStream->Read(&outBuf, &outLen);
 
-			if (eGZStatus == GUnzipStream::zlError)
+			if (gZStatus == GUnzipStream::zlError)
 			{
-				error("URL %s: GUnzip failed", m_szInfoName);
+				error("URL %s: GUnzip failed", m_infoName);
 				return false;
 			}
 
-			if (iOutLen > 0 && fwrite(pOutBuf, 1, iOutLen, m_pOutFile) <= 0)
+			if (outLen > 0 && fwrite(outBuf, 1, outLen, m_outFile) <= 0)
 			{
 				return false;
 			}
 
-			if (eGZStatus == GUnzipStream::zlFinished)
+			if (gZStatus == GUnzipStream::zlFinished)
 			{
-				m_bConfirmedLength = true;
+				m_confirmedLength = true;
 				return true;
 			}
 		}
@@ -682,23 +682,23 @@ bool WebDownloader::Write(void* pBuffer, int iLen)
 	else
 #endif
 
-	return fwrite(pBuffer, 1, iLen, m_pOutFile) > 0;
+	return fwrite(buffer, 1, len, m_outFile) > 0;
 }
 
 bool WebDownloader::PrepareFile()
 {
 	// prepare file for writing
 
-	const char* szFilename = m_szOutputFilename;
-	m_pOutFile = fopen(szFilename, FOPEN_WB);
-	if (!m_pOutFile)
+	const char* filename = m_outputFilename;
+	m_outFile = fopen(filename, FOPEN_WB);
+	if (!m_outFile)
 	{
-		error("Could not %s file %s", "create", szFilename);
+		error("Could not %s file %s", "create", filename);
 		return false;
 	}
 	if (g_pOptions->GetWriteBuffer() > 0)
 	{
-		setvbuf(m_pOutFile, NULL, _IOFBF, g_pOptions->GetWriteBuffer() * 1024);
+		setvbuf(m_outFile, NULL, _IOFBF, g_pOptions->GetWriteBuffer() * 1024);
 	}
 
 	return true;
@@ -706,57 +706,57 @@ bool WebDownloader::PrepareFile()
 
 void WebDownloader::LogDebugInfo()
 {
-	char szTime[50];
+	char time[50];
 #ifdef HAVE_CTIME_R_3
-		ctime_r(&m_tLastUpdateTime, szTime, 50);
+		ctime_r(&m_lastUpdateTime, time, 50);
 #else
-		ctime_r(&m_tLastUpdateTime, szTime);
+		ctime_r(&m_lastUpdateTime, time);
 #endif
 
-	info("      Web-Download: status=%i, LastUpdateTime=%s, filename=%s", m_eStatus, szTime, Util::BaseFileName(m_szOutputFilename));
+	info("      Web-Download: status=%i, LastUpdateTime=%s, filename=%s", m_status, time, Util::BaseFileName(m_outputFilename));
 }
 
 void WebDownloader::Stop()
 {
 	debug("Trying to stop WebDownloader");
 	Thread::Stop();
-	m_mutexConnection.Lock();
-	if (m_pConnection)
+	m_connectionMutex.Lock();
+	if (m_connection)
 	{
-		m_pConnection->SetSuppressErrors(true);
-		m_pConnection->Cancel();
+		m_connection->SetSuppressErrors(true);
+		m_connection->Cancel();
 	}
-	m_mutexConnection.Unlock();
+	m_connectionMutex.Unlock();
 	debug("WebDownloader stopped successfully");
 }
 
 bool WebDownloader::Terminate()
 {
-	Connection* pConnection = m_pConnection;
+	Connection* connection = m_connection;
 	bool terminated = Kill();
-	if (terminated && pConnection)
+	if (terminated && connection)
 	{
 		debug("Terminating connection");
-		pConnection->SetSuppressErrors(true);
-		pConnection->Cancel();
-		pConnection->Disconnect();
-		delete pConnection;
+		connection->SetSuppressErrors(true);
+		connection->Cancel();
+		connection->Disconnect();
+		delete connection;
 	}
 	return terminated;
 }
 
 void WebDownloader::FreeConnection()
 {
-	if (m_pConnection)							
+	if (m_connection)							
 	{
 		debug("Releasing connection");
-		m_mutexConnection.Lock();
-		if (m_pConnection->GetStatus() == Connection::csCancelled)
+		m_connectionMutex.Lock();
+		if (m_connection->GetStatus() == Connection::csCancelled)
 		{
-			m_pConnection->Disconnect();
+			m_connection->Disconnect();
 		}
-		delete m_pConnection;
-		m_pConnection = NULL;
-		m_mutexConnection.Unlock();
+		delete m_connection;
+		m_connection = NULL;
+		m_connectionMutex.Unlock();
 	}
 }

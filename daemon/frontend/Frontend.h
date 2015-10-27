@@ -36,29 +36,29 @@
 class Frontend : public Thread
 {
 private:
-	MessageList			m_RemoteMessages;
+	MessageList			m_remoteMessages;
 
 	bool				RequestMessages();
 	bool				RequestFileList();
 
 protected:
-	bool				m_bSummary;
-	bool				m_bFileList;
-	unsigned int		m_iNeededLogEntries;
-	unsigned int		m_iNeededLogFirstID;
-	int					m_iUpdateInterval;
+	bool				m_summary;
+	bool				m_fileList;
+	unsigned int		m_neededLogEntries;
+	unsigned int		m_neededLogFirstId;
+	int					m_updateInterval;
 
 	// summary
-	int					m_iCurrentDownloadSpeed;
-	long long 			m_lRemainingSize;
-	bool				m_bPauseDownload;
-	int					m_iDownloadLimit;
-	int					m_iThreadCount;
-	int					m_iPostJobCount;
-	int					m_iUpTimeSec;
-	int					m_iDnTimeSec;
-	long long			m_iAllBytes;
-	bool				m_bStandBy;
+	int					m_currentDownloadSpeed;
+	long long 			m_remainingSize;
+	bool				m_pauseDownload;
+	int					m_downloadLimit;
+	int					m_threadCount;
+	int					m_postJobCount;
+	int					m_upTimeSec;
+	int					m_dnTimeSec;
+	long long			m_allBytes;
+	bool				m_standBy;
 
 	bool				PrepareData();
 	void				FreeData();
@@ -67,13 +67,13 @@ protected:
 	DownloadQueue*		LockQueue();
 	void				UnlockQueue();
 	bool				IsRemoteMode();
-	void				InitMessageBase(SNZBRequestBase* pMessageBase, int iRequest, int iSize);
-	void				ServerPauseUnpause(bool bPause);
-	bool				RequestPauseUnpause(bool bPause);
-	void				ServerSetDownloadRate(int iRate);
-	bool				RequestSetDownloadRate(int iRate);
-	bool 				ServerEditQueue(DownloadQueue::EEditAction eAction, int iOffset, int iEntry);
-	bool 				RequestEditQueue(DownloadQueue::EEditAction eAction, int iOffset, int iID);
+	void				InitMessageBase(SNZBRequestBase* messageBase, int request, int size);
+	void				ServerPauseUnpause(bool pause);
+	bool				RequestPauseUnpause(bool pause);
+	void				ServerSetDownloadRate(int rate);
+	bool				RequestSetDownloadRate(int rate);
+	bool 				ServerEditQueue(DownloadQueue::EEditAction action, int offset, int entry);
+	bool 				RequestEditQueue(DownloadQueue::EEditAction action, int offset, int id);
 
 public:
 						Frontend();

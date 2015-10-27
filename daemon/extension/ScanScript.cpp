@@ -47,161 +47,161 @@
 #include "Log.h"
 #include "Util.h"
 
-void ScanScriptController::ExecuteScripts(const char* szNZBFilename,
-	const char* szUrl, const char* szDirectory, char** pNZBName, char** pCategory,
-	int* iPriority, NZBParameterList* pParameters, bool* bAddTop, bool* bAddPaused,
-	char** pDupeKey, int* iDupeScore, EDupeMode* eDupeMode)
+void ScanScriptController::ExecuteScripts(const char* nzbFilename,
+	const char* url, const char* directory, char** nzbName, char** category,
+	int* priority, NZBParameterList* parameters, bool* addTop, bool* addPaused,
+	char** dupeKey, int* dupeScore, EDupeMode* dupeMode)
 {
-	ScanScriptController* pScriptController = new ScanScriptController();
+	ScanScriptController* scriptController = new ScanScriptController();
 
-	pScriptController->m_szNZBFilename = szNZBFilename;
-	pScriptController->m_szUrl = szUrl;
-	pScriptController->m_szDirectory = szDirectory;
-	pScriptController->m_pNZBName = pNZBName;
-	pScriptController->m_pCategory = pCategory;
-	pScriptController->m_pParameters = pParameters;
-	pScriptController->m_iPriority = iPriority;
-	pScriptController->m_bAddTop = bAddTop;
-	pScriptController->m_bAddPaused = bAddPaused;
-	pScriptController->m_pDupeKey = pDupeKey;
-	pScriptController->m_iDupeScore = iDupeScore;
-	pScriptController->m_eDupeMode = eDupeMode;
-	pScriptController->m_iPrefixLen = 0;
+	scriptController->m_nzbFilename = nzbFilename;
+	scriptController->m_url = url;
+	scriptController->m_directory = directory;
+	scriptController->m_nzbName = nzbName;
+	scriptController->m_category = category;
+	scriptController->m_parameters = parameters;
+	scriptController->m_priority = priority;
+	scriptController->m_addTop = addTop;
+	scriptController->m_addPaused = addPaused;
+	scriptController->m_dupeKey = dupeKey;
+	scriptController->m_dupeScore = dupeScore;
+	scriptController->m_dupeMode = dupeMode;
+	scriptController->m_prefixLen = 0;
 
-	pScriptController->ExecuteScriptList(g_pOptions->GetScanScript());
+	scriptController->ExecuteScriptList(g_pOptions->GetScanScript());
 
-	delete pScriptController;
+	delete scriptController;
 }
 
-void ScanScriptController::ExecuteScript(ScriptConfig::Script* pScript)
+void ScanScriptController::ExecuteScript(ScriptConfig::Script* script)
 {
-	if (!pScript->GetScanScript() || !Util::FileExists(m_szNZBFilename))
+	if (!script->GetScanScript() || !Util::FileExists(m_nzbFilename))
 	{
 		return;
 	}
 
-	PrintMessage(Message::mkInfo, "Executing scan-script %s for %s", pScript->GetName(), Util::BaseFileName(m_szNZBFilename));
+	PrintMessage(Message::mkInfo, "Executing scan-script %s for %s", script->GetName(), Util::BaseFileName(m_nzbFilename));
 
-	SetScript(pScript->GetLocation());
+	SetScript(script->GetLocation());
 	SetArgs(NULL, false);
 
-	char szInfoName[1024];
-	snprintf(szInfoName, 1024, "scan-script %s for %s", pScript->GetName(), Util::BaseFileName(m_szNZBFilename));
-	szInfoName[1024-1] = '\0';
-	SetInfoName(szInfoName);
+	char infoName[1024];
+	snprintf(infoName, 1024, "scan-script %s for %s", script->GetName(), Util::BaseFileName(m_nzbFilename));
+	infoName[1024-1] = '\0';
+	SetInfoName(infoName);
 
-	SetLogPrefix(pScript->GetDisplayName());
-	m_iPrefixLen = strlen(pScript->GetDisplayName()) + 2; // 2 = strlen(": ");
-	PrepareParams(pScript->GetName());
+	SetLogPrefix(script->GetDisplayName());
+	m_prefixLen = strlen(script->GetDisplayName()) + 2; // 2 = strlen(": ");
+	PrepareParams(script->GetName());
 
 	Execute();
 
 	SetLogPrefix(NULL);
 }
 
-void ScanScriptController::PrepareParams(const char* szScriptName)
+void ScanScriptController::PrepareParams(const char* scriptName)
 {
 	ResetEnv();
 
-	SetEnvVar("NZBNP_FILENAME", m_szNZBFilename);
-	SetEnvVar("NZBNP_URL", m_szUrl);
-	SetEnvVar("NZBNP_NZBNAME", strlen(*m_pNZBName) > 0 ? *m_pNZBName : Util::BaseFileName(m_szNZBFilename));
-	SetEnvVar("NZBNP_CATEGORY", *m_pCategory);
-	SetIntEnvVar("NZBNP_PRIORITY", *m_iPriority);
-	SetIntEnvVar("NZBNP_TOP", *m_bAddTop ? 1 : 0);
-	SetIntEnvVar("NZBNP_PAUSED", *m_bAddPaused ? 1 : 0);
-	SetEnvVar("NZBNP_DUPEKEY", *m_pDupeKey);
-	SetIntEnvVar("NZBNP_DUPESCORE", *m_iDupeScore);
+	SetEnvVar("NZBNP_FILENAME", m_nzbFilename);
+	SetEnvVar("NZBNP_URL", m_url);
+	SetEnvVar("NZBNP_NZBNAME", strlen(*m_nzbName) > 0 ? *m_nzbName : Util::BaseFileName(m_nzbFilename));
+	SetEnvVar("NZBNP_CATEGORY", *m_category);
+	SetIntEnvVar("NZBNP_PRIORITY", *m_priority);
+	SetIntEnvVar("NZBNP_TOP", *m_addTop ? 1 : 0);
+	SetIntEnvVar("NZBNP_PAUSED", *m_addPaused ? 1 : 0);
+	SetEnvVar("NZBNP_DUPEKEY", *m_dupeKey);
+	SetIntEnvVar("NZBNP_DUPESCORE", *m_dupeScore);
 
-	const char* szDupeModeName[] = { "SCORE", "ALL", "FORCE" };
-	SetEnvVar("NZBNP_DUPEMODE", szDupeModeName[*m_eDupeMode]);
+	const char* dupeModeName[] = { "SCORE", "ALL", "FORCE" };
+	SetEnvVar("NZBNP_DUPEMODE", dupeModeName[*m_dupeMode]);
 
 	// remove trailing slash
-	char szDir[1024];
-	strncpy(szDir, m_szDirectory, 1024);
-	szDir[1024-1] = '\0';
-	int iLen = strlen(szDir);
-	if (szDir[iLen-1] == PATH_SEPARATOR)
+	char dir[1024];
+	strncpy(dir, m_directory, 1024);
+	dir[1024-1] = '\0';
+	int len = strlen(dir);
+	if (dir[len-1] == PATH_SEPARATOR)
 	{
-		szDir[iLen-1] = '\0';
+		dir[len-1] = '\0';
 	}
-	SetEnvVar("NZBNP_DIRECTORY", szDir);
+	SetEnvVar("NZBNP_DIRECTORY", dir);
 
-	PrepareEnvScript(m_pParameters, szScriptName);
+	PrepareEnvScript(m_parameters, scriptName);
 }
 
-void ScanScriptController::AddMessage(Message::EKind eKind, const char* szText)
+void ScanScriptController::AddMessage(Message::EKind kind, const char* text)
 {
-	const char* szMsgText = szText + m_iPrefixLen;
+	const char* msgText = text + m_prefixLen;
 
-	if (!strncmp(szMsgText, "[NZB] ", 6))
+	if (!strncmp(msgText, "[NZB] ", 6))
 	{
-		debug("Command %s detected", szMsgText + 6);
-		if (!strncmp(szMsgText + 6, "NZBNAME=", 8))
+		debug("Command %s detected", msgText + 6);
+		if (!strncmp(msgText + 6, "NZBNAME=", 8))
 		{
-			free(*m_pNZBName);
-			*m_pNZBName = strdup(szMsgText + 6 + 8);
+			free(*m_nzbName);
+			*m_nzbName = strdup(msgText + 6 + 8);
 		}
-		else if (!strncmp(szMsgText + 6, "CATEGORY=", 9))
+		else if (!strncmp(msgText + 6, "CATEGORY=", 9))
 		{
-			free(*m_pCategory);
-			*m_pCategory = strdup(szMsgText + 6 + 9);
-			g_pScanner->InitPPParameters(*m_pCategory, m_pParameters, true);
+			free(*m_category);
+			*m_category = strdup(msgText + 6 + 9);
+			g_pScanner->InitPPParameters(*m_category, m_parameters, true);
 		}
-		else if (!strncmp(szMsgText + 6, "NZBPR_", 6))
+		else if (!strncmp(msgText + 6, "NZBPR_", 6))
 		{
-			char* szParam = strdup(szMsgText + 6 + 6);
-			char* szValue = strchr(szParam, '=');
-			if (szValue)
+			char* param = strdup(msgText + 6 + 6);
+			char* value = strchr(param, '=');
+			if (value)
 			{
-				*szValue = '\0';
-				m_pParameters->SetParameter(szParam, szValue + 1);
+				*value = '\0';
+				m_parameters->SetParameter(param, value + 1);
 			}
 			else
 			{
-				error("Invalid command \"%s\" received from %s", szMsgText, GetInfoName());
+				error("Invalid command \"%s\" received from %s", msgText, GetInfoName());
 			}
-			free(szParam);
+			free(param);
 		}
-		else if (!strncmp(szMsgText + 6, "PRIORITY=", 9))
+		else if (!strncmp(msgText + 6, "PRIORITY=", 9))
 		{
-			*m_iPriority = atoi(szMsgText + 6 + 9);
+			*m_priority = atoi(msgText + 6 + 9);
 		}
-		else if (!strncmp(szMsgText + 6, "TOP=", 4))
+		else if (!strncmp(msgText + 6, "TOP=", 4))
 		{
-			*m_bAddTop = atoi(szMsgText + 6 + 4) != 0;
+			*m_addTop = atoi(msgText + 6 + 4) != 0;
 		}
-		else if (!strncmp(szMsgText + 6, "PAUSED=", 7))
+		else if (!strncmp(msgText + 6, "PAUSED=", 7))
 		{
-			*m_bAddPaused = atoi(szMsgText + 6 + 7) != 0;
+			*m_addPaused = atoi(msgText + 6 + 7) != 0;
 		}
-		else if (!strncmp(szMsgText + 6, "DUPEKEY=", 8))
+		else if (!strncmp(msgText + 6, "DUPEKEY=", 8))
 		{
-			free(*m_pDupeKey);
-			*m_pDupeKey = strdup(szMsgText + 6 + 8);
+			free(*m_dupeKey);
+			*m_dupeKey = strdup(msgText + 6 + 8);
 		}
-		else if (!strncmp(szMsgText + 6, "DUPESCORE=", 10))
+		else if (!strncmp(msgText + 6, "DUPESCORE=", 10))
 		{
-			*m_iDupeScore = atoi(szMsgText + 6 + 10);
+			*m_dupeScore = atoi(msgText + 6 + 10);
 		}
-		else if (!strncmp(szMsgText + 6, "DUPEMODE=", 9))
+		else if (!strncmp(msgText + 6, "DUPEMODE=", 9))
 		{
-			const char* szDupeMode = szMsgText + 6 + 9;
-			if (strcasecmp(szDupeMode, "score") && strcasecmp(szDupeMode, "all") && strcasecmp(szDupeMode, "force"))
+			const char* dupeMode = msgText + 6 + 9;
+			if (strcasecmp(dupeMode, "score") && strcasecmp(dupeMode, "all") && strcasecmp(dupeMode, "force"))
 			{
-				error("Invalid value \"%s\" for command \"DUPEMODE\" received from %s", szDupeMode, GetInfoName());
+				error("Invalid value \"%s\" for command \"DUPEMODE\" received from %s", dupeMode, GetInfoName());
 				return;
 			}
-			*m_eDupeMode = !strcasecmp(szDupeMode, "all") ? dmAll :
-				!strcasecmp(szDupeMode, "force") ? dmForce : dmScore;
+			*m_dupeMode = !strcasecmp(dupeMode, "all") ? dmAll :
+				!strcasecmp(dupeMode, "force") ? dmForce : dmScore;
 		}
 		else
 		{
-			error("Invalid command \"%s\" received from %s", szMsgText, GetInfoName());
+			error("Invalid command \"%s\" received from %s", msgText, GetInfoName());
 		}
 	}
 	else
 	{
-		ScriptController::AddMessage(eKind, szText);
+		ScriptController::AddMessage(kind, text);
 	}
 }

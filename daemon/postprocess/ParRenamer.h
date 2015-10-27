@@ -45,72 +45,72 @@ public:
 	class FileHash
 	{
 	private:
-		char*			m_szFilename;
-		char*			m_szHash;
-		bool			m_bFileExists;
+		char*			m_filename;
+		char*			m_hash;
+		bool			m_fileExists;
 
 	public:
-						FileHash(const char* szFilename, const char* szHash);
+						FileHash(const char* filename, const char* hash);
 						~FileHash();
-		const char*		GetFilename() { return m_szFilename; }
-		const char*		GetHash() { return m_szHash; }
-		bool			GetFileExists() { return m_bFileExists; }
-		void			SetFileExists(bool bFileExists) { m_bFileExists = bFileExists; }
+		const char*		GetFilename() { return m_filename; }
+		const char*		GetHash() { return m_hash; }
+		bool			GetFileExists() { return m_fileExists; }
+		void			SetFileExists(bool fileExists) { m_fileExists = fileExists; }
 	};
 
 	typedef std::deque<FileHash*>		FileHashList;
 	typedef std::deque<char*>			DirList;
 	
 private:
-	char*				m_szInfoName;
-	char*				m_szDestDir;
-	EStatus				m_eStatus;
-	char*				m_szProgressLabel;
-	int					m_iStageProgress;
-	bool				m_bCancelled;
-	DirList				m_DirList;
-	FileHashList		m_FileHashList;
-	int					m_iFileCount;
-	int					m_iCurFile;
-	int					m_iRenamedCount;
-	bool				m_bHasMissedFiles;
-	bool				m_bDetectMissing;
+	char*				m_infoName;
+	char*				m_destDir;
+	EStatus				m_status;
+	char*				m_progressLabel;
+	int					m_stageProgress;
+	bool				m_cancelled;
+	DirList				m_dirList;
+	FileHashList		m_fileHashList;
+	int					m_fileCount;
+	int					m_curFile;
+	int					m_renamedCount;
+	bool				m_hasMissedFiles;
+	bool				m_detectMissing;
 
 	void				Cleanup();
 	void				ClearHashList();
-	void				BuildDirList(const char* szDestDir);
-	void				CheckDir(const char* szDestDir);
-	void				LoadParFiles(const char* szDestDir);
-	void				LoadParFile(const char* szParFilename);
-	void				CheckFiles(const char* szDestDir, bool bRenamePars);
-	void				CheckRegularFile(const char* szDestDir, const char* szFilename);
-	void				CheckParFile(const char* szDestDir, const char* szFilename);
-	bool				IsSplittedFragment(const char* szFilename, const char* szCorrectName);
+	void				BuildDirList(const char* destDir);
+	void				CheckDir(const char* destDir);
+	void				LoadParFiles(const char* destDir);
+	void				LoadParFile(const char* parFilename);
+	void				CheckFiles(const char* destDir, bool renamePars);
+	void				CheckRegularFile(const char* destDir, const char* filename);
+	void				CheckParFile(const char* destDir, const char* filename);
+	bool				IsSplittedFragment(const char* filename, const char* correctName);
 	void				CheckMissing();
-	void				RenameFile(const char* szSrcFilename, const char* szDestFileName);
+	void				RenameFile(const char* srcFilename, const char* destFileName);
 
 protected:
 	virtual void		UpdateProgress() {}
 	virtual void		Completed() {}
-	virtual void		PrintMessage(Message::EKind eKind, const char* szFormat, ...) {}
-	virtual void		RegisterParredFile(const char* szFilename) {}
-	virtual void		RegisterRenamedFile(const char* szOldFilename, const char* szNewFileName) {}
-	const char*			GetProgressLabel() { return m_szProgressLabel; }
-	int					GetStageProgress() { return m_iStageProgress; }
+	virtual void		PrintMessage(Message::EKind kind, const char* format, ...) {}
+	virtual void		RegisterParredFile(const char* filename) {}
+	virtual void		RegisterRenamedFile(const char* oldFilename, const char* newFileName) {}
+	const char*			GetProgressLabel() { return m_progressLabel; }
+	int					GetStageProgress() { return m_stageProgress; }
 
 public:
 						ParRenamer();
 	virtual				~ParRenamer();
 	virtual void		Run();
-	void				SetDestDir(const char* szDestDir);
-	const char*			GetInfoName() { return m_szInfoName; }
-	void				SetInfoName(const char* szInfoName);
-	void				SetStatus(EStatus eStatus);
-	EStatus				GetStatus() { return m_eStatus; }
+	void				SetDestDir(const char* destDir);
+	const char*			GetInfoName() { return m_infoName; }
+	void				SetInfoName(const char* infoName);
+	void				SetStatus(EStatus status);
+	EStatus				GetStatus() { return m_status; }
 	void				Cancel();
-	bool				GetCancelled() { return m_bCancelled; }
-	bool				HasMissedFiles() { return m_bHasMissedFiles; }
-	void				SetDetectMissing(bool bDetectMissing) { m_bDetectMissing = bDetectMissing; }
+	bool				GetCancelled() { return m_cancelled; }
+	bool				HasMissedFiles() { return m_hasMissedFiles; }
+	void				SetDetectMissing(bool detectMissing) { m_detectMissing = detectMissing; }
 };
 
 #endif

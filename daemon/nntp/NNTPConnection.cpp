@@ -45,19 +45,19 @@
 
 static const int CONNECTION_LINEBUFFER_SIZE = 1024*10;
 
-NNTPConnection::NNTPConnection(NewsServer* pNewsServer) : Connection(pNewsServer->GetHost(), pNewsServer->GetPort(), pNewsServer->GetTLS())
+NNTPConnection::NNTPConnection(NewsServer* newsServer) : Connection(newsServer->GetHost(), newsServer->GetPort(), newsServer->GetTLS())
 {
-	m_pNewsServer = pNewsServer;
-	m_szActiveGroup = NULL;
-	m_szLineBuf = (char*)malloc(CONNECTION_LINEBUFFER_SIZE);
-	m_bAuthError = false;
-	SetCipher(pNewsServer->GetCipher());
+	m_newsServer = newsServer;
+	m_activeGroup = NULL;
+	m_lineBuf = (char*)malloc(CONNECTION_LINEBUFFER_SIZE);
+	m_authError = false;
+	SetCipher(newsServer->GetCipher());
 }
 
 NNTPConnection::~NNTPConnection()
 {
-	free(m_szActiveGroup);
-	free(m_szLineBuf);
+	free(m_activeGroup);
+	free(m_lineBuf);
 }
 
 const char* NNTPConnection::Request(const char* req)
@@ -67,11 +67,11 @@ const char* NNTPConnection::Request(const char* req)
 		return NULL;
 	}
 
-	m_bAuthError = false;
+	m_authError = false;
 
 	WriteLine(req);
 
-	char* answer = ReadLine(m_szLineBuf, CONNECTION_LINEBUFFER_SIZE, NULL);
+	char* answer = ReadLine(m_lineBuf, CONNECTION_LINEBUFFER_SIZE, NULL);
 
 	if (!answer)
 	{
@@ -89,7 +89,7 @@ const char* NNTPConnection::Request(const char* req)
 
 		//try again
 		WriteLine(req);
-		answer = ReadLine(m_szLineBuf, CONNECTION_LINEBUFFER_SIZE, NULL);
+		answer = ReadLine(m_lineBuf, CONNECTION_LINEBUFFER_SIZE, NULL);
 	}
 
 	return answer;
@@ -97,32 +97,32 @@ const char* NNTPConnection::Request(const char* req)
 
 bool NNTPConnection::Authenticate()
 {
-	if (strlen(m_pNewsServer->GetUser()) == 0 || strlen(m_pNewsServer->GetPassword()) == 0)
+	if (strlen(m_newsServer->GetUser()) == 0 || strlen(m_newsServer->GetPassword()) == 0)
 	{
 		ReportError("Could not connect to %s: server requested authorization but username/password are not set in settings",
-			m_pNewsServer->GetHost(), false, 0);
-		m_bAuthError = true;
+			m_newsServer->GetHost(), false, 0);
+		m_authError = true;
 		return false;
 	}
 
-	m_bAuthError = !AuthInfoUser(0);
-	return !m_bAuthError;
+	m_authError = !AuthInfoUser(0);
+	return !m_authError;
 }
 
-bool NNTPConnection::AuthInfoUser(int iRecur)
+bool NNTPConnection::AuthInfoUser(int recur)
 {
-	if (iRecur > 10)
+	if (recur > 10)
 	{
 		return false;
 	}
 
 	char tmp[1024];
-	snprintf(tmp, 1024, "AUTHINFO USER %s\r\n", m_pNewsServer->GetUser());
+	snprintf(tmp, 1024, "AUTHINFO USER %s\r\n", m_newsServer->GetUser());
 	tmp[1024-1] = '\0';
 
 	WriteLine(tmp);
 
-	char* answer = ReadLine(m_szLineBuf, CONNECTION_LINEBUFFER_SIZE, NULL);
+	char* answer = ReadLine(m_lineBuf, CONNECTION_LINEBUFFER_SIZE, NULL);
 	if (!answer)
 	{
 		ReportErrorAnswer("Authorization for %s (%s) failed: Connection closed by remote host", NULL);
@@ -136,11 +136,11 @@ bool NNTPConnection::AuthInfoUser(int iRecur)
 	}
 	else if (!strncmp(answer, "381", 3))
 	{
-		return AuthInfoPass(++iRecur);
+		return AuthInfoPass(++recur);
 	}
 	else if (!strncmp(answer, "480", 3))
 	{
-		return AuthInfoUser(++iRecur);
+		return AuthInfoUser(++recur);
 	}
 
 	if (char* p = strrchr(answer, '\r')) *p = '\0'; // remove last CRLF from error message
@@ -152,20 +152,20 @@ bool NNTPConnection::AuthInfoUser(int iRecur)
 	return false;
 }
 
-bool NNTPConnection::AuthInfoPass(int iRecur)
+bool NNTPConnection::AuthInfoPass(int recur)
 {
-	if (iRecur > 10)
+	if (recur > 10)
 	{
 		return false;
 	}
 
 	char tmp[1024];
-	snprintf(tmp, 1024, "AUTHINFO PASS %s\r\n", m_pNewsServer->GetPassword());
+	snprintf(tmp, 1024, "AUTHINFO PASS %s\r\n", m_newsServer->GetPassword());
 	tmp[1024-1] = '\0';
 
 	WriteLine(tmp);
 
-	char* answer = ReadLine(m_szLineBuf, CONNECTION_LINEBUFFER_SIZE, NULL);
+	char* answer = ReadLine(m_lineBuf, CONNECTION_LINEBUFFER_SIZE, NULL);
 	if (!answer)
 	{
 		ReportErrorAnswer("Authorization failed for %s (%s): Connection closed by remote host", NULL);
@@ -178,7 +178,7 @@ bool NNTPConnection::AuthInfoPass(int iRecur)
 	}
 	else if (!strncmp(answer, "381", 3))
 	{
-		return AuthInfoPass(++iRecur);
+		return AuthInfoPass(++recur);
 	}
 
 	if (char* p = strrchr(answer, '\r')) *p = '\0'; // remove last CRLF from error message
@@ -192,11 +192,11 @@ bool NNTPConnection::AuthInfoPass(int iRecur)
 
 const char* NNTPConnection::JoinGroup(const char* grp)
 {
-	if (m_szActiveGroup && !strcmp(m_szActiveGroup, grp))
+	if (m_activeGroup && !strcmp(m_activeGroup, grp))
 	{
 		// already in group
-		strcpy(m_szLineBuf, "211 ");
-		return m_szLineBuf;
+		strcpy(m_lineBuf, "211 ");
+		return m_lineBuf;
 	}
 
 	char tmp[1024];
@@ -208,8 +208,8 @@ const char* NNTPConnection::JoinGroup(const char* grp)
 	if (answer && !strncmp(answer, "2", 1))
 	{
 		debug("Changed group to %s on %s", grp, GetHost());
-		free(m_szActiveGroup);
-		m_szActiveGroup = strdup(grp);
+		free(m_activeGroup);
+		m_activeGroup = strdup(grp);
 	}
 	else
 	{
@@ -223,7 +223,7 @@ bool NNTPConnection::Connect()
 {
 	debug("Opening connection to %s", GetHost());
 
-	if (m_eStatus == csConnected)
+	if (m_status == csConnected)
 	{
 		return true;
 	}
@@ -233,7 +233,7 @@ bool NNTPConnection::Connect()
 		return false;
 	}
 
-	char* answer = ReadLine(m_szLineBuf, CONNECTION_LINEBUFFER_SIZE, NULL);
+	char* answer = ReadLine(m_lineBuf, CONNECTION_LINEBUFFER_SIZE, NULL);
 
 	if (!answer)
 	{
@@ -249,7 +249,7 @@ bool NNTPConnection::Connect()
 		return false;
 	}
 
-	if ((strlen(m_pNewsServer->GetUser()) > 0 && strlen(m_pNewsServer->GetPassword()) > 0) &&
+	if ((strlen(m_newsServer->GetUser()) > 0 && strlen(m_newsServer->GetPassword()) > 0) &&
 		!Authenticate())
 	{
 		return false;
@@ -262,23 +262,23 @@ bool NNTPConnection::Connect()
 
 bool NNTPConnection::Disconnect()
 {
-	if (m_eStatus == csConnected)
+	if (m_status == csConnected)
 	{
-		if (!m_bBroken)
+		if (!m_broken)
 		{
 			Request("quit\r\n");
 		}
-		free(m_szActiveGroup);
-		m_szActiveGroup = NULL;
+		free(m_activeGroup);
+		m_activeGroup = NULL;
 	}
 	return Connection::Disconnect();
 }
 
-void NNTPConnection::ReportErrorAnswer(const char* szMsgPrefix, const char* szAnswer)
+void NNTPConnection::ReportErrorAnswer(const char* msgPrefix, const char* answer)
 {
-	char szErrStr[1024];
-	snprintf(szErrStr, 1024, szMsgPrefix, m_pNewsServer->GetName(), m_pNewsServer->GetHost(), szAnswer);
-	szErrStr[1024-1] = '\0';
+	char errStr[1024];
+	snprintf(errStr, 1024, msgPrefix, m_newsServer->GetName(), m_newsServer->GetHost(), answer);
+	errStr[1024-1] = '\0';
 	
-	ReportError(szErrStr, NULL, false, 0);
+	ReportError(errStr, NULL, false, 0);
 }

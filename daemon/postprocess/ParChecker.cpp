@@ -81,9 +81,9 @@ private:
 	typedef vector<Thread*> Threads;
 
 	CommandLine		commandLine;
-	ParChecker*		m_pOwner;
-	Threads			m_Threads;
-	bool			m_bParallel;
+	ParChecker*		m_owner;
+	Threads			m_threads;
+	bool			m_parallel;
 	Mutex			progresslock;
 
 	virtual void	BeginRepair();
@@ -91,17 +91,17 @@ private:
 	void			RepairBlock(u32 inputindex, u32 outputindex, size_t blocklength);
 
 protected:
-	virtual void	sig_filename(std::string filename) { m_pOwner->signal_filename(filename); }
-	virtual void	sig_progress(int progress) { m_pOwner->signal_progress(progress); }
-	virtual void	sig_done(std::string filename, int available, int total) { m_pOwner->signal_done(filename, available, total); }
+	virtual void	sig_filename(std::string filename) { m_owner->signal_filename(filename); }
+	virtual void	sig_progress(int progress) { m_owner->signal_progress(progress); }
+	virtual void	sig_done(std::string filename, int available, int total) { m_owner->signal_done(filename, available, total); }
 
 	virtual bool	ScanDataFile(DiskFile *diskfile, Par2RepairerSourceFile* &sourcefile,
 		MatchType &matchtype, MD5Hash &hashfull, MD5Hash &hash16k, u32 &count);
 	virtual bool	RepairData(u32 inputindex, size_t blocklength);
 
 public:
-					Repairer(ParChecker* pOwner) { m_pOwner = pOwner; }
-	Result			PreProcess(const char *szParFilename);
+					Repairer(ParChecker* owner) { m_owner = owner; }
+	Result			PreProcess(const char *parFilename);
 	Result			Process(bool dorepair);
 
 	friend class ParChecker;
@@ -111,40 +111,40 @@ public:
 class RepairThread : public Thread
 {
 private:
-	Repairer*		m_pOwner;
+	Repairer*		m_owner;
 	u32				m_inputindex;
 	u32				m_outputindex;
 	size_t			m_blocklength;
-	volatile bool	m_bWorking;
+	volatile bool	m_working;
 
 protected:
 	virtual void	Run();
 
 public:
-					RepairThread(Repairer* pOwner) { this->m_pOwner = pOwner; m_bWorking = false; }
+					RepairThread(Repairer* owner) { this->m_owner = owner; m_working = false; }
 	void			RepairBlock(u32 inputindex, u32 outputindex, size_t blocklength);
-	bool			IsWorking() { return m_bWorking; }
+	bool			IsWorking() { return m_working; }
 };
 
-Result Repairer::PreProcess(const char *szParFilename)
+Result Repairer::PreProcess(const char *parFilename)
 {
-	char szMemParam[20];
-	snprintf(szMemParam, 20, "-m%i", g_pOptions->GetParBuffer());
-	szMemParam[20-1] = '\0';
+	char memParam[20];
+	snprintf(memParam, 20, "-m%i", g_pOptions->GetParBuffer());
+	memParam[20-1] = '\0';
 
 	if (g_pOptions->GetParScan() == Options::psFull)
 	{
-		char szWildcardParam[1024];
-		strncpy(szWildcardParam, szParFilename, 1024);
-		szWildcardParam[1024-1] = '\0';
-		char* szBasename = Util::BaseFileName(szWildcardParam);
-		if (szBasename != szWildcardParam && strlen(szBasename) > 0)
+		char wildcardParam[1024];
+		strncpy(wildcardParam, parFilename, 1024);
+		wildcardParam[1024-1] = '\0';
+		char* basename = Util::BaseFileName(wildcardParam);
+		if (basename != wildcardParam && strlen(basename) > 0)
 		{
-			szBasename[0] = '*';
-			szBasename[1] = '\0';
+			basename[0] = '*';
+			basename[1] = '\0';
 		}
 
-		const char* argv[] = { "par2", "r", "-v", "-v", szMemParam, szParFilename, szWildcardParam };
+		const char* argv[] = { "par2", "r", "-v", "-v", memParam, parFilename, wildcardParam };
 		if (!commandLine.Parse(7, (char**)argv))
 		{
 			return eInvalidCommandLineArguments;
@@ -152,7 +152,7 @@ Result Repairer::PreProcess(const char *szParFilename)
 	}
 	else
 	{
-		const char* argv[] = { "par2", "r", "-v", "-v", szMemParam, szParFilename };
+		const char* argv[] = { "par2", "r", "-v", "-v", memParam, parFilename };
 		if (!commandLine.Parse(6, (char**)argv))
 		{
 			return eInvalidCommandLineArguments;
@@ -173,7 +173,7 @@ Result Repairer::Process(bool dorepair)
 bool Repairer::ScanDataFile(DiskFile *diskfile, Par2RepairerSourceFile* &sourcefile,
 	MatchType &matchtype, MD5Hash &hashfull, MD5Hash &hash16k, u32 &count)
 {
-	if (m_pOwner->GetParQuick() && sourcefile)
+	if (m_owner->GetParQuick() && sourcefile)
 	{
 		string path;
 		string name;
@@ -181,17 +181,17 @@ bool Repairer::ScanDataFile(DiskFile *diskfile, Par2RepairerSourceFile* &sourcef
 
 		sig_filename(name);
 
-		if (!(m_pOwner->GetStage() == ParChecker::ptVerifyingRepaired && m_pOwner->GetParFull()))
+		if (!(m_owner->GetStage() == ParChecker::ptVerifyingRepaired && m_owner->GetParFull()))
 		{
-			int iAvailableBlocks = sourcefile->BlockCount();
-			ParChecker::EFileStatus eFileStatus = m_pOwner->VerifyDataFile(diskfile, sourcefile, &iAvailableBlocks);
-			if (eFileStatus != ParChecker::fsUnknown)
+			int availableBlocks = sourcefile->BlockCount();
+			ParChecker::EFileStatus fileStatus = m_owner->VerifyDataFile(diskfile, sourcefile, &availableBlocks);
+			if (fileStatus != ParChecker::fsUnknown)
 			{
-				sig_done(name, iAvailableBlocks, sourcefile->BlockCount());
+				sig_done(name, availableBlocks, sourcefile->BlockCount());
 				sig_progress(1000);
-				matchtype = eFileStatus == ParChecker::fsSuccess ? eFullMatch :
-					eFileStatus == ParChecker::fsPartial ? ePartialMatch : eNoMatch;
-				m_pOwner->SetParFull(false);
+				matchtype = fileStatus == ParChecker::fsSuccess ? eFullMatch :
+					fileStatus == ParChecker::fsPartial ? ePartialMatch : eNoMatch;
+				m_owner->SetParFull(false);
 				return true;
 			}
 		}
@@ -202,24 +202,24 @@ bool Repairer::ScanDataFile(DiskFile *diskfile, Par2RepairerSourceFile* &sourcef
 
 void Repairer::BeginRepair()
 {
-	int iMaxThreads = g_pOptions->GetParThreads() > 0 ? g_pOptions->GetParThreads() : Util::NumberOfCpuCores();
-	iMaxThreads = iMaxThreads > 0 ? iMaxThreads : 1;
+	int maxThreads = g_pOptions->GetParThreads() > 0 ? g_pOptions->GetParThreads() : Util::NumberOfCpuCores();
+	maxThreads = maxThreads > 0 ? maxThreads : 1;
 
-	int iThreads = iMaxThreads > (int)missingblockcount ? (int)missingblockcount : iMaxThreads;
+	int threads = maxThreads > (int)missingblockcount ? (int)missingblockcount : maxThreads;
 
-	m_pOwner->PrintMessage(Message::mkInfo, "Using %i of max %i thread(s) to repair %i block(s) for %s",
-		iThreads, iMaxThreads, (int)missingblockcount, m_pOwner->m_szNZBName);
+	m_owner->PrintMessage(Message::mkInfo, "Using %i of max %i thread(s) to repair %i block(s) for %s",
+		threads, maxThreads, (int)missingblockcount, m_owner->m_nzbName);
 
-	m_bParallel = iThreads > 1;
+	m_parallel = threads > 1;
 
-	if (m_bParallel)
+	if (m_parallel)
 	{
-		for (int i = 0; i < iThreads; i++)
+		for (int i = 0; i < threads; i++)
 		{
-			RepairThread* pRepairThread = new RepairThread(this);
-			m_Threads.push_back(pRepairThread);
-			pRepairThread->SetAutoDestroy(true);
-			pRepairThread->Start();
+			RepairThread* repairThread = new RepairThread(this);
+			m_threads.push_back(repairThread);
+			repairThread->SetAutoDestroy(true);
+			repairThread->Start();
 		}
 
 #ifdef WIN32
@@ -230,12 +230,12 @@ void Repairer::BeginRepair()
 
 void Repairer::EndRepair()
 {
-	if (m_bParallel)
+	if (m_parallel)
 	{
-		for (Threads::iterator it = m_Threads.begin(); it != m_Threads.end(); it++)
+		for (Threads::iterator it = m_threads.begin(); it != m_threads.end(); it++)
 		{
-			RepairThread* pRepairThread = (RepairThread*)*it;
-			pRepairThread->Stop();
+			RepairThread* repairThread = (RepairThread*)*it;
+			repairThread->Stop();
 		}
 
 #ifdef WIN32
@@ -246,22 +246,22 @@ void Repairer::EndRepair()
 
 bool Repairer::RepairData(u32 inputindex, size_t blocklength)
 {
-	if (!m_bParallel)
+	if (!m_parallel)
 	{
 		return false;
 	}
 
 	for (u32 outputindex = 0; outputindex < missingblockcount; )
 	{
-		bool bJobAdded = false;
-		for (Threads::iterator it = m_Threads.begin(); it != m_Threads.end(); it++)
+		bool jobAdded = false;
+		for (Threads::iterator it = m_threads.begin(); it != m_threads.end(); it++)
 		{
-			RepairThread* pRepairThread = (RepairThread*)*it;
-			if (!pRepairThread->IsWorking())
+			RepairThread* repairThread = (RepairThread*)*it;
+			if (!repairThread->IsWorking())
 			{
-				pRepairThread->RepairBlock(inputindex, outputindex, blocklength);
+				repairThread->RepairBlock(inputindex, outputindex, blocklength);
 				outputindex++;
-				bJobAdded = true;
+				jobAdded = true;
 				break;
 			}
 		}
@@ -271,23 +271,23 @@ bool Repairer::RepairData(u32 inputindex, size_t blocklength)
 			break;
 		}
 
-		if (!bJobAdded)
+		if (!jobAdded)
 		{
 			usleep(SYNC_SLEEP_INTERVAL);
 		}
 	}
 
 	// Wait until all m_Threads complete their jobs
-	bool bWorking = true;
-	while (bWorking)
+	bool working = true;
+	while (working)
 	{
-		bWorking = false;
-		for (Threads::iterator it = m_Threads.begin(); it != m_Threads.end(); it++)
+		working = false;
+		for (Threads::iterator it = m_threads.begin(); it != m_threads.end(); it++)
 		{
-			RepairThread* pRepairThread = (RepairThread*)*it;
-			if (pRepairThread->IsWorking())
+			RepairThread* repairThread = (RepairThread*)*it;
+			if (repairThread->IsWorking())
 			{
-				bWorking = true;
+				working = true;
 				usleep(SYNC_SLEEP_INTERVAL);
 				break;
 			}
@@ -325,10 +325,10 @@ void RepairThread::Run()
 {
 	while (!IsStopped())
 	{
-		if (m_bWorking)
+		if (m_working)
 		{
-			m_pOwner->RepairBlock(m_inputindex, m_outputindex, m_blocklength);
-			m_bWorking = false;
+			m_owner->RepairBlock(m_inputindex, m_outputindex, m_blocklength);
+			m_working = false;
 		}
 		else
 		{
@@ -342,17 +342,17 @@ void RepairThread::RepairBlock(u32 inputindex, u32 outputindex, size_t blockleng
 	m_inputindex = inputindex;
 	m_outputindex = outputindex;
 	m_blocklength = blocklength;
-	m_bWorking = true;
+	m_working = true;
 }
 
 
 class MissingFilesComparator
 {
 private:
-	const char* m_szBaseParFilename;
+	const char* m_baseParFilename;
 public:
-	MissingFilesComparator(const char* szBaseParFilename) : m_szBaseParFilename(szBaseParFilename) {}
-	bool operator()(CommandLine::ExtraFile* pFirst, CommandLine::ExtraFile* pSecond) const;
+	MissingFilesComparator(const char* baseParFilename) : m_baseParFilename(baseParFilename) {}
+	bool operator()(CommandLine::ExtraFile* first, CommandLine::ExtraFile* second) const;
 };
 
 
@@ -360,28 +360,28 @@ public:
  * Files with the same name as in par-file (and a differnt extension) are
  * placed at the top of the list to be scanned first.
  */
-bool MissingFilesComparator::operator()(CommandLine::ExtraFile* pFile1, CommandLine::ExtraFile* pFile2) const
+bool MissingFilesComparator::operator()(CommandLine::ExtraFile* file1, CommandLine::ExtraFile* file2) const
 {
 	char name1[1024];
-	strncpy(name1, Util::BaseFileName(pFile1->FileName().c_str()), 1024);
+	strncpy(name1, Util::BaseFileName(file1->FileName().c_str()), 1024);
 	name1[1024-1] = '\0';
 	if (char* ext = strrchr(name1, '.')) *ext = '\0'; // trim extension
 
 	char name2[1024];
-	strncpy(name2, Util::BaseFileName(pFile2->FileName().c_str()), 1024);
+	strncpy(name2, Util::BaseFileName(file2->FileName().c_str()), 1024);
 	name2[1024-1] = '\0';
 	if (char* ext = strrchr(name2, '.')) *ext = '\0'; // trim extension
 
-	return strcmp(name1, m_szBaseParFilename) == 0 && strcmp(name1, name2) != 0;
+	return strcmp(name1, m_baseParFilename) == 0 && strcmp(name1, name2) != 0;
 }
 
 
-ParChecker::Segment::Segment(bool bSuccess, long long iOffset, int iSize, unsigned long lCrc)
+ParChecker::Segment::Segment(bool success, long long offset, int size, unsigned long crc)
 {
-	m_bSuccess = bSuccess;
-	m_iOffset = iOffset;
-	m_iSize = iSize;
-	m_lCrc = lCrc;
+	m_success = success;
+	m_offset = offset;
+	m_size = size;
+	m_crc = crc;
 }
 
 
@@ -393,16 +393,16 @@ ParChecker::SegmentList::~SegmentList()
 	}
 }
 
-ParChecker::DupeSource::DupeSource(int iID, const char* szDirectory)
+ParChecker::DupeSource::DupeSource(int id, const char* directory)
 {
-	m_iID = iID;
-	m_szDirectory = strdup(szDirectory);
-	m_iUsedBlocks = 0;
+	m_id = id;
+	m_directory = strdup(directory);
+	m_usedBlocks = 0;
 }
 
 ParChecker::DupeSource::~DupeSource()
 {
-	free(m_szDirectory);
+	free(m_directory);
 }
 
 
@@ -410,94 +410,94 @@ ParChecker::ParChecker()
 {
     debug("Creating ParChecker");
 
-	m_eStatus = psFailed;
-	m_szDestDir = NULL;
-	m_szNZBName = NULL;
-	m_szParFilename = NULL;
-	m_szInfoName = NULL;
-	m_szErrMsg = NULL;
-	m_szProgressLabel = (char*)malloc(1024);
-	m_pRepairer = NULL;
-	m_iFileProgress = 0;
-	m_iStageProgress = 0;
-	m_iExtraFiles = 0;
-	m_iQuickFiles = 0;
-	m_bVerifyingExtraFiles = false;
-	m_bCancelled = false;
-	m_eStage = ptLoadingPars;
-	m_bParQuick = false;
-	m_bForceRepair = false;
-	m_bParFull = false;
+	m_status = psFailed;
+	m_destDir = NULL;
+	m_nzbName = NULL;
+	m_parFilename = NULL;
+	m_infoName = NULL;
+	m_errMsg = NULL;
+	m_progressLabel = (char*)malloc(1024);
+	m_repairer = NULL;
+	m_fileProgress = 0;
+	m_stageProgress = 0;
+	m_extraFiles = 0;
+	m_quickFiles = 0;
+	m_verifyingExtraFiles = false;
+	m_cancelled = false;
+	m_stage = ptLoadingPars;
+	m_parQuick = false;
+	m_forceRepair = false;
+	m_parFull = false;
 }
 
 ParChecker::~ParChecker()
 {
     debug("Destroying ParChecker");
 
-	free(m_szDestDir);
-	free(m_szNZBName);
-	free(m_szInfoName);
-	free(m_szProgressLabel);
+	free(m_destDir);
+	free(m_nzbName);
+	free(m_infoName);
+	free(m_progressLabel);
 
 	Cleanup();
 }
 
 void ParChecker::Cleanup()
 {
-	delete (Repairer*)m_pRepairer;
-	m_pRepairer = NULL;
+	delete (Repairer*)m_repairer;
+	m_repairer = NULL;
 
-	for (FileList::iterator it = m_QueuedParFiles.begin(); it != m_QueuedParFiles.end() ;it++)
+	for (FileList::iterator it = m_queuedParFiles.begin(); it != m_queuedParFiles.end() ;it++)
 	{
 		free(*it);
 	}
-	m_QueuedParFiles.clear();
+	m_queuedParFiles.clear();
 
-	for (FileList::iterator it = m_ProcessedFiles.begin(); it != m_ProcessedFiles.end() ;it++)
+	for (FileList::iterator it = m_processedFiles.begin(); it != m_processedFiles.end() ;it++)
 	{
 		free(*it);
 	}
-	m_ProcessedFiles.clear();
+	m_processedFiles.clear();
 
 	m_sourceFiles.clear();
 
-	for (DupeSourceList::iterator it = m_DupeSources.begin(); it != m_DupeSources.end() ;it++)
+	for (DupeSourceList::iterator it = m_dupeSources.begin(); it != m_dupeSources.end() ;it++)
 	{
 		free(*it);
 	}
-	m_DupeSources.clear();
+	m_dupeSources.clear();
 
-	free(m_szErrMsg);
-	m_szErrMsg = NULL;
+	free(m_errMsg);
+	m_errMsg = NULL;
 }
 
-void ParChecker::SetDestDir(const char * szDestDir)
+void ParChecker::SetDestDir(const char * destDir)
 {
-	free(m_szDestDir);
-	m_szDestDir = strdup(szDestDir);
+	free(m_destDir);
+	m_destDir = strdup(destDir);
 }
 
-void ParChecker::SetNZBName(const char * szNZBName)
+void ParChecker::SetNZBName(const char * nzbName)
 {
-	free(m_szNZBName);
-	m_szNZBName = strdup(szNZBName);
+	free(m_nzbName);
+	m_nzbName = strdup(nzbName);
 }
 
-void ParChecker::SetInfoName(const char * szInfoName)
+void ParChecker::SetInfoName(const char * infoName)
 {
-	free(m_szInfoName);
-	m_szInfoName = strdup(szInfoName);
+	free(m_infoName);
+	m_infoName = strdup(infoName);
 }
 
 void ParChecker::Run()
 {
-	m_eStatus = RunParCheckAll();
+	m_status = RunParCheckAll();
 
-	if (m_eStatus == psRepairNotNeeded && m_bParQuick && m_bForceRepair && !m_bCancelled)
+	if (m_status == psRepairNotNeeded && m_parQuick && m_forceRepair && !m_cancelled)
 	{
-		PrintMessage(Message::mkInfo, "Performing full par-check for %s", m_szNZBName);
-		m_bParQuick = false;
-		m_eStatus = RunParCheckAll();
+		PrintMessage(Message::mkInfo, "Performing full par-check for %s", m_nzbName);
+		m_parQuick = false;
+		m_status = RunParCheckAll();
 	}
 
 	Completed();
@@ -506,80 +506,80 @@ void ParChecker::Run()
 ParChecker::EStatus ParChecker::RunParCheckAll()
 {
 	ParParser::ParFileList fileList;
-	if (!ParParser::FindMainPars(m_szDestDir, &fileList))
+	if (!ParParser::FindMainPars(m_destDir, &fileList))
 	{
-		PrintMessage(Message::mkError, "Could not start par-check for %s. Could not find any par-files", m_szNZBName);
+		PrintMessage(Message::mkError, "Could not start par-check for %s. Could not find any par-files", m_nzbName);
 		return psFailed;
 	}
 
-	EStatus eAllStatus = psRepairNotNeeded;
-	m_bCancelled = false;
-	m_bParFull = true;
+	EStatus allStatus = psRepairNotNeeded;
+	m_cancelled = false;
+	m_parFull = true;
 
 	for (ParParser::ParFileList::iterator it = fileList.begin(); it != fileList.end(); it++)
 	{
-		char* szParFilename = *it;
-		debug("Found par: %s", szParFilename);
+		char* parFilename = *it;
+		debug("Found par: %s", parFilename);
 
-		if (!IsStopped() && !m_bCancelled)
+		if (!IsStopped() && !m_cancelled)
 		{
-			char szFullParFilename[1024];
-			snprintf(szFullParFilename, 1024, "%s%c%s", m_szDestDir, (int)PATH_SEPARATOR, szParFilename);
-			szFullParFilename[1024-1] = '\0';
+			char fullParFilename[1024];
+			snprintf(fullParFilename, 1024, "%s%c%s", m_destDir, (int)PATH_SEPARATOR, parFilename);
+			fullParFilename[1024-1] = '\0';
 
-			char szInfoName[1024];
-			int iBaseLen = 0;
-			ParParser::ParseParFilename(szParFilename, &iBaseLen, NULL);
-			int maxlen = iBaseLen < 1024 ? iBaseLen : 1024 - 1;
-			strncpy(szInfoName, szParFilename, maxlen);
-			szInfoName[maxlen] = '\0';
+			char infoName[1024];
+			int baseLen = 0;
+			ParParser::ParseParFilename(parFilename, &baseLen, NULL);
+			int maxlen = baseLen < 1024 ? baseLen : 1024 - 1;
+			strncpy(infoName, parFilename, maxlen);
+			infoName[maxlen] = '\0';
 			
-			char szParInfoName[1024];
-			snprintf(szParInfoName, 1024, "%s%c%s", m_szNZBName, (int)PATH_SEPARATOR, szInfoName);
-			szParInfoName[1024-1] = '\0';
+			char parInfoName[1024];
+			snprintf(parInfoName, 1024, "%s%c%s", m_nzbName, (int)PATH_SEPARATOR, infoName);
+			parInfoName[1024-1] = '\0';
 
-			SetInfoName(szParInfoName);
+			SetInfoName(parInfoName);
 
-			EStatus eStatus = RunParCheck(szFullParFilename);
+			EStatus status = RunParCheck(fullParFilename);
 
 			// accumulate total status, the worst status has priority
-			if (eAllStatus > eStatus)
+			if (allStatus > status)
 			{
-				eAllStatus = eStatus;
+				allStatus = status;
 			}
 
 			if (g_pOptions->GetBrokenLog())
 			{
-				WriteBrokenLog(eStatus);
+				WriteBrokenLog(status);
 			}
 		}
 
-		free(szParFilename);
+		free(parFilename);
 	}
 
-	return eAllStatus;
+	return allStatus;
 }
 
-ParChecker::EStatus ParChecker::RunParCheck(const char* szParFilename)
+ParChecker::EStatus ParChecker::RunParCheck(const char* parFilename)
 {
 	Cleanup();
-	m_szParFilename = szParFilename;
-	m_eStage = ptLoadingPars;
-	m_iProcessedFiles = 0;
-	m_iExtraFiles = 0;
-	m_iQuickFiles = 0;
-	m_bVerifyingExtraFiles = false;
-	m_bHasDamagedFiles = false;
-	EStatus eStatus = psFailed;
+	m_parFilename = parFilename;
+	m_stage = ptLoadingPars;
+	m_processedCount = 0;
+	m_extraFiles = 0;
+	m_quickFiles = 0;
+	m_verifyingExtraFiles = false;
+	m_hasDamagedFiles = false;
+	EStatus status = psFailed;
 
-	PrintMessage(Message::mkInfo, "Verifying %s", m_szInfoName);
+	PrintMessage(Message::mkInfo, "Verifying %s", m_infoName);
 
-    debug("par: %s", m_szParFilename);
+    debug("par: %s", m_parFilename);
 	
-	snprintf(m_szProgressLabel, 1024, "Verifying %s", m_szInfoName);
-	m_szProgressLabel[1024-1] = '\0';
-	m_iFileProgress = 0;
-	m_iStageProgress = 0;
+	snprintf(m_progressLabel, 1024, "Verifying %s", m_infoName);
+	m_progressLabel[1024-1] = '\0';
+	m_fileProgress = 0;
+	m_stageProgress = 0;
 	UpdateProgress();
 
     Result res = (Result)PreProcessPar();
@@ -589,47 +589,47 @@ ParChecker::EStatus ParChecker::RunParCheck(const char* szParFilename)
 		return psFailed;
 	}
 	
-	m_eStage = ptVerifyingSources;
-	Repairer* pRepairer = (Repairer*)m_pRepairer;
-	res = pRepairer->Process(false);
+	m_stage = ptVerifyingSources;
+	Repairer* repairer = (Repairer*)m_repairer;
+	res = repairer->Process(false);
 
-	if (!m_bParQuick)
+	if (!m_parQuick)
 	{
 		CheckEmptyFiles();
 	}
 
-	bool bAddedSplittedFragments = false;
-	if (m_bHasDamagedFiles && !IsStopped() && res == eRepairNotPossible)
+	bool addedSplittedFragments = false;
+	if (m_hasDamagedFiles && !IsStopped() && res == eRepairNotPossible)
 	{
-		bAddedSplittedFragments = AddSplittedFragments();
-		if (bAddedSplittedFragments)
+		addedSplittedFragments = AddSplittedFragments();
+		if (addedSplittedFragments)
 		{
-			res = pRepairer->Process(false);
+			res = repairer->Process(false);
 		}
 	}
 
-	if (m_bHasDamagedFiles && !IsStopped() && pRepairer->missingfilecount > 0 && 
-		!(bAddedSplittedFragments && res == eRepairPossible) &&
+	if (m_hasDamagedFiles && !IsStopped() && repairer->missingfilecount > 0 && 
+		!(addedSplittedFragments && res == eRepairPossible) &&
 		(g_pOptions->GetParScan() == Options::psExtended ||
 		 g_pOptions->GetParScan() == Options::psDupe))
 	{
 		if (AddMissingFiles())
 		{
-			res = pRepairer->Process(false);
+			res = repairer->Process(false);
 		}
 	}
 
-	if (m_bHasDamagedFiles && !IsStopped() && res == eRepairNotPossible)
+	if (m_hasDamagedFiles && !IsStopped() && res == eRepairNotPossible)
 	{
 		res = (Result)ProcessMorePars();
 	}
 
-	if (m_bHasDamagedFiles && !IsStopped() && res == eRepairNotPossible &&
+	if (m_hasDamagedFiles && !IsStopped() && res == eRepairNotPossible &&
 		g_pOptions->GetParScan() == Options::psDupe)
 	{
 		if (AddDupeFiles())
 		{
-			res = pRepairer->Process(false);
+			res = repairer->Process(false);
 			if (!IsStopped() && res == eRepairNotPossible)
 			{
 				res = (Result)ProcessMorePars();
@@ -643,71 +643,71 @@ ParChecker::EStatus ParChecker::RunParCheck(const char* szParFilename)
 		return psFailed;
 	}
 	
-	eStatus = psFailed;
+	status = psFailed;
 	
-	if (res == eSuccess || !m_bHasDamagedFiles)
+	if (res == eSuccess || !m_hasDamagedFiles)
 	{
-    	PrintMessage(Message::mkInfo, "Repair not needed for %s", m_szInfoName);
-		eStatus = psRepairNotNeeded;
+    	PrintMessage(Message::mkInfo, "Repair not needed for %s", m_infoName);
+		status = psRepairNotNeeded;
 	}
 	else if (res == eRepairPossible)
 	{
-		eStatus = psRepairPossible;
+		status = psRepairPossible;
 		if (g_pOptions->GetParRepair())
 		{
-			PrintMessage(Message::mkInfo, "Repairing %s", m_szInfoName);
+			PrintMessage(Message::mkInfo, "Repairing %s", m_infoName);
 
 			SaveSourceList();
-			snprintf(m_szProgressLabel, 1024, "Repairing %s", m_szInfoName);
-			m_szProgressLabel[1024-1] = '\0';
-			m_iFileProgress = 0;
-			m_iStageProgress = 0;
-			m_iProcessedFiles = 0;
-			m_eStage = ptRepairing;
-			m_iFilesToRepair = pRepairer->damagedfilecount + pRepairer->missingfilecount;
+			snprintf(m_progressLabel, 1024, "Repairing %s", m_infoName);
+			m_progressLabel[1024-1] = '\0';
+			m_fileProgress = 0;
+			m_stageProgress = 0;
+			m_processedCount = 0;
+			m_stage = ptRepairing;
+			m_filesToRepair = repairer->damagedfilecount + repairer->missingfilecount;
 			UpdateProgress();
 
-			res = pRepairer->Process(true);
+			res = repairer->Process(true);
 			if (res == eSuccess)
 			{
-    			PrintMessage(Message::mkInfo, "Successfully repaired %s", m_szInfoName);
-				eStatus = psRepaired;
-				StatDupeSources(&m_DupeSources);
+    			PrintMessage(Message::mkInfo, "Successfully repaired %s", m_infoName);
+				status = psRepaired;
+				StatDupeSources(&m_dupeSources);
 				DeleteLeftovers();
 			}
 		}
 		else
 		{
-    		PrintMessage(Message::mkInfo, "Repair possible for %s", m_szInfoName);
+    		PrintMessage(Message::mkInfo, "Repair possible for %s", m_infoName);
 		}
 	}
 	
-	if (m_bCancelled)
+	if (m_cancelled)
 	{
-		if (m_eStage >= ptRepairing)
+		if (m_stage >= ptRepairing)
 		{
-			PrintMessage(Message::mkWarning, "Repair cancelled for %s", m_szInfoName);
-			m_szErrMsg = strdup("repair cancelled");
-			eStatus = psRepairPossible;
+			PrintMessage(Message::mkWarning, "Repair cancelled for %s", m_infoName);
+			m_errMsg = strdup("repair cancelled");
+			status = psRepairPossible;
 		}
 		else
 		{
-			PrintMessage(Message::mkWarning, "Par-check cancelled for %s", m_szInfoName);
-			m_szErrMsg = strdup("par-check cancelled");
-			eStatus = psFailed;
+			PrintMessage(Message::mkWarning, "Par-check cancelled for %s", m_infoName);
+			m_errMsg = strdup("par-check cancelled");
+			status = psFailed;
 		}
 	}
-	else if (eStatus == psFailed)
+	else if (status == psFailed)
 	{
-		if (!m_szErrMsg && (int)res >= 0 && (int)res <= 8)
+		if (!m_errMsg && (int)res >= 0 && (int)res <= 8)
 		{
-			m_szErrMsg = strdup(Par2CmdLineErrStr[res]);
+			m_errMsg = strdup(Par2CmdLineErrStr[res]);
 		}
-		PrintMessage(Message::mkError, "Repair failed for %s: %s", m_szInfoName, m_szErrMsg ? m_szErrMsg : "");
+		PrintMessage(Message::mkError, "Repair failed for %s: %s", m_infoName, m_errMsg ? m_errMsg : "");
 	}
 	
 	Cleanup();
-	return eStatus;
+	return status;
 }
 
 int ParChecker::PreProcessPar()
@@ -717,32 +717,32 @@ int ParChecker::PreProcessPar()
 	{
 		Cleanup();
 
-		Repairer* pRepairer = new Repairer(this);
-		m_pRepairer = pRepairer;
+		Repairer* repairer = new Repairer(this);
+		m_repairer = repairer;
 
-		res = pRepairer->PreProcess(m_szParFilename);
+		res = repairer->PreProcess(m_parFilename);
 		debug("ParChecker: PreProcess-result=%i", res);
 
 		if (IsStopped())
 		{
-			PrintMessage(Message::mkError, "Could not verify %s: stopping", m_szInfoName);
-			m_szErrMsg = strdup("par-check was stopped");
+			PrintMessage(Message::mkError, "Could not verify %s: stopping", m_infoName);
+			m_errMsg = strdup("par-check was stopped");
 			return eRepairFailed;
 		}
 
 		if (res == eInvalidCommandLineArguments)
 		{
-			PrintMessage(Message::mkError, "Could not start par-check for %s. Par-file: %s", m_szInfoName, m_szParFilename);
-			m_szErrMsg = strdup("Command line could not be parsed");
+			PrintMessage(Message::mkError, "Could not start par-check for %s. Par-file: %s", m_infoName, m_parFilename);
+			m_errMsg = strdup("Command line could not be parsed");
 			return res;
 		}
 
 		if (res != eSuccess)
 		{
-			PrintMessage(Message::mkWarning, "Could not verify %s: par2-file could not be processed", m_szInfoName);
-			PrintMessage(Message::mkInfo, "Requesting more par2-files for %s", m_szInfoName);
-			bool bHasMorePars = LoadMainParBak();
-			if (!bHasMorePars)
+			PrintMessage(Message::mkWarning, "Could not verify %s: par2-file could not be processed", m_infoName);
+			PrintMessage(Message::mkInfo, "Requesting more par2-files for %s", m_infoName);
+			bool hasMorePars = LoadMainParBak();
+			if (!hasMorePars)
 			{
 				PrintMessage(Message::mkWarning, "No more par2-files found");
 				break;
@@ -752,8 +752,8 @@ int ParChecker::PreProcessPar()
 
 	if (res != eSuccess)
 	{
-		PrintMessage(Message::mkError, "Could not verify %s: par2-file could not be processed", m_szInfoName);
-		m_szErrMsg = strdup("par2-file could not be processed");
+		PrintMessage(Message::mkError, "Could not verify %s: par2-file could not be processed", m_infoName);
+		m_errMsg = strdup("par2-file could not be processed");
 		return res;
 	}
 
@@ -764,34 +764,34 @@ bool ParChecker::LoadMainParBak()
 {
 	while (!IsStopped())
 	{
-		m_mutexQueuedParFiles.Lock();
-        bool hasMorePars = !m_QueuedParFiles.empty();
-		for (FileList::iterator it = m_QueuedParFiles.begin(); it != m_QueuedParFiles.end() ;it++)
+		m_queuedParFilesMutex.Lock();
+        bool hasMorePars = !m_queuedParFiles.empty();
+		for (FileList::iterator it = m_queuedParFiles.begin(); it != m_queuedParFiles.end() ;it++)
 		{
 			free(*it);
 		}
-		m_QueuedParFiles.clear();
-		m_mutexQueuedParFiles.Unlock();
+		m_queuedParFiles.clear();
+		m_queuedParFilesMutex.Unlock();
 
 		if (hasMorePars)
 		{
 			return true;
 		}
 
-		int iBlockFound = 0;
-		bool requested = RequestMorePars(1, &iBlockFound);
+		int blockFound = 0;
+		bool requested = RequestMorePars(1, &blockFound);
 		if (requested)
 		{
-			strncpy(m_szProgressLabel, "Awaiting additional par-files", 1024);
-			m_szProgressLabel[1024-1] = '\0';
-			m_iFileProgress = 0;
+			strncpy(m_progressLabel, "Awaiting additional par-files", 1024);
+			m_progressLabel[1024-1] = '\0';
+			m_fileProgress = 0;
 			UpdateProgress();
 		}
 
-		m_mutexQueuedParFiles.Lock();
-		hasMorePars = !m_QueuedParFiles.empty();
-		m_bQueuedParFilesChanged = false;
-		m_mutexQueuedParFiles.Unlock();
+		m_queuedParFilesMutex.Lock();
+		hasMorePars = !m_queuedParFiles.empty();
+		m_queuedParFilesChanged = false;
+		m_queuedParFilesMutex.Unlock();
 
 		if (!requested && !hasMorePars)
 		{
@@ -801,12 +801,12 @@ bool ParChecker::LoadMainParBak()
 		if (!hasMorePars)
 		{
 			// wait until new files are added by "AddParFile" or a change is signaled by "QueueChanged"
-			bool bQueuedParFilesChanged = false;
-			while (!bQueuedParFilesChanged && !IsStopped() && !m_bCancelled)
+			bool queuedParFilesChanged = false;
+			while (!queuedParFilesChanged && !IsStopped() && !m_cancelled)
 			{
-				m_mutexQueuedParFiles.Lock();
-				bQueuedParFilesChanged = m_bQueuedParFilesChanged;
-				m_mutexQueuedParFiles.Unlock();
+				m_queuedParFilesMutex.Lock();
+				queuedParFilesChanged = m_queuedParFilesChanged;
+				m_queuedParFilesMutex.Unlock();
 				usleep(100 * 1000);
 			}
 		}
@@ -818,75 +818,75 @@ bool ParChecker::LoadMainParBak()
 int ParChecker::ProcessMorePars()
 {
 	Result res = eRepairNotPossible;
-	Repairer* pRepairer = (Repairer*)m_pRepairer;
+	Repairer* repairer = (Repairer*)m_repairer;
 
-	bool bMoreFilesLoaded = true;
+	bool moreFilesLoaded = true;
 	while (!IsStopped() && res == eRepairNotPossible)
 	{
-		int missingblockcount = pRepairer->missingblockcount - pRepairer->recoverypacketmap.size();
+		int missingblockcount = repairer->missingblockcount - repairer->recoverypacketmap.size();
 		if (missingblockcount <= 0)
 		{
 			return eRepairPossible;
 		}
 
-		if (bMoreFilesLoaded)
+		if (moreFilesLoaded)
 		{
-			PrintMessage(Message::mkInfo, "Need more %i par-block(s) for %s", missingblockcount, m_szInfoName);
+			PrintMessage(Message::mkInfo, "Need more %i par-block(s) for %s", missingblockcount, m_infoName);
 		}
 		
-		m_mutexQueuedParFiles.Lock();
-        bool hasMorePars = !m_QueuedParFiles.empty();
-		m_mutexQueuedParFiles.Unlock();
+		m_queuedParFilesMutex.Lock();
+        bool hasMorePars = !m_queuedParFiles.empty();
+		m_queuedParFilesMutex.Unlock();
 		
 		if (!hasMorePars)
 		{
-			int iBlockFound = 0;
-			bool requested = RequestMorePars(missingblockcount, &iBlockFound);
+			int blockFound = 0;
+			bool requested = RequestMorePars(missingblockcount, &blockFound);
 			if (requested)
 			{
-				strncpy(m_szProgressLabel, "Awaiting additional par-files", 1024);
-				m_szProgressLabel[1024-1] = '\0';
-				m_iFileProgress = 0;
+				strncpy(m_progressLabel, "Awaiting additional par-files", 1024);
+				m_progressLabel[1024-1] = '\0';
+				m_fileProgress = 0;
 				UpdateProgress();
 			}
 			
-			m_mutexQueuedParFiles.Lock();
-			hasMorePars = !m_QueuedParFiles.empty();
-			m_bQueuedParFilesChanged = false;
-			m_mutexQueuedParFiles.Unlock();
+			m_queuedParFilesMutex.Lock();
+			hasMorePars = !m_queuedParFiles.empty();
+			m_queuedParFilesChanged = false;
+			m_queuedParFilesMutex.Unlock();
 			
 			if (!requested && !hasMorePars)
 			{
-				m_szErrMsg = (char*)malloc(1024);
-				snprintf(m_szErrMsg, 1024, "not enough par-blocks, %i block(s) needed, but %i block(s) available", missingblockcount, iBlockFound);
-                m_szErrMsg[1024-1] = '\0';
+				m_errMsg = (char*)malloc(1024);
+				snprintf(m_errMsg, 1024, "not enough par-blocks, %i block(s) needed, but %i block(s) available", missingblockcount, blockFound);
+                m_errMsg[1024-1] = '\0';
 				break;
 			}
 			
 			if (!hasMorePars)
 			{
 				// wait until new files are added by "AddParFile" or a change is signaled by "QueueChanged"
-				bool bQueuedParFilesChanged = false;
-				while (!bQueuedParFilesChanged && !IsStopped() && !m_bCancelled)
+				bool queuedParFilesChanged = false;
+				while (!queuedParFilesChanged && !IsStopped() && !m_cancelled)
 				{
-					m_mutexQueuedParFiles.Lock();
-					bQueuedParFilesChanged = m_bQueuedParFilesChanged;
-					m_mutexQueuedParFiles.Unlock();
+					m_queuedParFilesMutex.Lock();
+					queuedParFilesChanged = m_queuedParFilesChanged;
+					m_queuedParFilesMutex.Unlock();
 					usleep(100 * 1000);
 				}
 			}
 		}
 
-		if (IsStopped() || m_bCancelled)
+		if (IsStopped() || m_cancelled)
 		{
 			break;
 		}
 
-		bMoreFilesLoaded = LoadMorePars();
-		if (bMoreFilesLoaded)
+		moreFilesLoaded = LoadMorePars();
+		if (moreFilesLoaded)
 		{
-			pRepairer->UpdateVerificationResults();
-			res = pRepairer->Process(false);
+			repairer->UpdateVerificationResults();
+			res = repairer->Process(false);
 		}
 	}
 
@@ -895,68 +895,68 @@ int ParChecker::ProcessMorePars()
 
 bool ParChecker::LoadMorePars()
 {
-	m_mutexQueuedParFiles.Lock();
+	m_queuedParFilesMutex.Lock();
 	FileList moreFiles;
-	moreFiles.assign(m_QueuedParFiles.begin(), m_QueuedParFiles.end());
-	m_QueuedParFiles.clear();
-	m_mutexQueuedParFiles.Unlock();
+	moreFiles.assign(m_queuedParFiles.begin(), m_queuedParFiles.end());
+	m_queuedParFiles.clear();
+	m_queuedParFilesMutex.Unlock();
 	
 	for (FileList::iterator it = moreFiles.begin(); it != moreFiles.end() ;it++)
 	{
-		char* szParFilename = *it;
-		bool loadedOK = ((Repairer*)m_pRepairer)->LoadPacketsFromFile(szParFilename);
+		char* parFilename = *it;
+		bool loadedOK = ((Repairer*)m_repairer)->LoadPacketsFromFile(parFilename);
 		if (loadedOK)
 		{
-			PrintMessage(Message::mkInfo, "File %s successfully loaded for par-check", Util::BaseFileName(szParFilename), m_szInfoName);
+			PrintMessage(Message::mkInfo, "File %s successfully loaded for par-check", Util::BaseFileName(parFilename), m_infoName);
 		}
 		else
 		{
-			PrintMessage(Message::mkInfo, "Could not load file %s for par-check", Util::BaseFileName(szParFilename), m_szInfoName);
+			PrintMessage(Message::mkInfo, "Could not load file %s for par-check", Util::BaseFileName(parFilename), m_infoName);
 		}
-		free(szParFilename);
+		free(parFilename);
 	}
 
 	return !moreFiles.empty();
 }
 
-void ParChecker::AddParFile(const char * szParFilename)
+void ParChecker::AddParFile(const char * parFilename)
 {
-	m_mutexQueuedParFiles.Lock();
-	m_QueuedParFiles.push_back(strdup(szParFilename));
-	m_bQueuedParFilesChanged = true;
-	m_mutexQueuedParFiles.Unlock();
+	m_queuedParFilesMutex.Lock();
+	m_queuedParFiles.push_back(strdup(parFilename));
+	m_queuedParFilesChanged = true;
+	m_queuedParFilesMutex.Unlock();
 }
 
 void ParChecker::QueueChanged()
 {
-	m_mutexQueuedParFiles.Lock();
-	m_bQueuedParFilesChanged = true;
-	m_mutexQueuedParFiles.Unlock();
+	m_queuedParFilesMutex.Lock();
+	m_queuedParFilesChanged = true;
+	m_queuedParFilesMutex.Unlock();
 }
 
 bool ParChecker::AddSplittedFragments()
 {
 	std::list<CommandLine::ExtraFile> extrafiles;
 
-	DirBrowser dir(m_szDestDir);
+	DirBrowser dir(m_destDir);
 	while (const char* filename = dir.Next())
 	{
 		if (strcmp(filename, ".") && strcmp(filename, "..") && strcmp(filename, "_brokenlog.txt") &&
 			!IsParredFile(filename) && !IsProcessedFile(filename))
 		{
-			for (std::vector<Par2RepairerSourceFile*>::iterator it = ((Repairer*)m_pRepairer)->sourcefiles.begin();
-				it != ((Repairer*)m_pRepairer)->sourcefiles.end(); it++)
+			for (std::vector<Par2RepairerSourceFile*>::iterator it = ((Repairer*)m_repairer)->sourcefiles.begin();
+				it != ((Repairer*)m_repairer)->sourcefiles.end(); it++)
 			{
 				Par2RepairerSourceFile *sourcefile = *it;
 
 				std::string target = sourcefile->TargetFileName();
-				const char* szFilename2 = target.c_str();
-				const char* szBasename2 = Util::BaseFileName(szFilename2);
-				int iBaseLen = strlen(szBasename2);
+				const char* filename2 = target.c_str();
+				const char* basename2 = Util::BaseFileName(filename2);
+				int baseLen = strlen(basename2);
 
-				if (!strncasecmp(filename, szBasename2, iBaseLen))
+				if (!strncasecmp(filename, basename2, baseLen))
 				{
-					const char* p = filename + iBaseLen;
+					const char* p = filename + baseLen;
 					if (*p == '.')
 					{
 						for (p++; *p && strchr("0123456789", *p); p++) ;
@@ -965,7 +965,7 @@ bool ParChecker::AddSplittedFragments()
 							debug("Found splitted fragment %s", filename);
 
 							char fullfilename[1024];
-							snprintf(fullfilename, 1024, "%s%c%s", m_szDestDir, PATH_SEPARATOR, filename);
+							snprintf(fullfilename, 1024, "%s%c%s", m_destDir, PATH_SEPARATOR, filename);
 							fullfilename[1024-1] = '\0';
 
 							CommandLine::ExtraFile extrafile(fullfilename, Util::FileSize(fullfilename));
@@ -977,60 +977,60 @@ bool ParChecker::AddSplittedFragments()
 		}
 	}
 
-	bool bFragmentsAdded = false;
+	bool fragmentsAdded = false;
 
 	if (!extrafiles.empty())
 	{
-		m_iExtraFiles += extrafiles.size();
-		m_bVerifyingExtraFiles = true;
-		PrintMessage(Message::mkInfo, "Found %i splitted fragments for %s", (int)extrafiles.size(), m_szInfoName);
-		bFragmentsAdded = ((Repairer*)m_pRepairer)->VerifyExtraFiles(extrafiles);
-		((Repairer*)m_pRepairer)->UpdateVerificationResults();
-		m_bVerifyingExtraFiles = false;
+		m_extraFiles += extrafiles.size();
+		m_verifyingExtraFiles = true;
+		PrintMessage(Message::mkInfo, "Found %i splitted fragments for %s", (int)extrafiles.size(), m_infoName);
+		fragmentsAdded = ((Repairer*)m_repairer)->VerifyExtraFiles(extrafiles);
+		((Repairer*)m_repairer)->UpdateVerificationResults();
+		m_verifyingExtraFiles = false;
 	}
 
-	return bFragmentsAdded;
+	return fragmentsAdded;
 }
 
 bool ParChecker::AddMissingFiles()
 {
-	return AddExtraFiles(true, false, m_szDestDir);
+	return AddExtraFiles(true, false, m_destDir);
 }
 
 bool ParChecker::AddDupeFiles()
 {
-	char szDirectory[1024];
-	strncpy(szDirectory, m_szParFilename, 1024);
-	szDirectory[1024-1] = '\0';
+	char directory[1024];
+	strncpy(directory, m_parFilename, 1024);
+	directory[1024-1] = '\0';
 
-	bool bAdded = AddExtraFiles(false, false, szDirectory);
+	bool added = AddExtraFiles(false, false, directory);
 
-	if (((Repairer*)m_pRepairer)->missingblockcount > 0)
+	if (((Repairer*)m_repairer)->missingblockcount > 0)
 	{
 		// scanning directories of duplicates
-		RequestDupeSources(&m_DupeSources);
+		RequestDupeSources(&m_dupeSources);
 
-		if (!m_DupeSources.empty())
+		if (!m_dupeSources.empty())
 		{
-			int iWasBlocksMissing = ((Repairer*)m_pRepairer)->missingblockcount;
+			int wasBlocksMissing = ((Repairer*)m_repairer)->missingblockcount;
 
-			for (DupeSourceList::iterator it = m_DupeSources.begin(); it != m_DupeSources.end(); it++)
+			for (DupeSourceList::iterator it = m_dupeSources.begin(); it != m_dupeSources.end(); it++)
 			{
-				DupeSource* pDupeSource = *it;
-				if (((Repairer*)m_pRepairer)->missingblockcount > 0 && Util::DirectoryExists(pDupeSource->GetDirectory()))
+				DupeSource* dupeSource = *it;
+				if (((Repairer*)m_repairer)->missingblockcount > 0 && Util::DirectoryExists(dupeSource->GetDirectory()))
 				{
-					int iWasBlocksMissing2 = ((Repairer*)m_pRepairer)->missingblockcount;
-					bool bOneAdded = AddExtraFiles(false, true, pDupeSource->GetDirectory());
-					bAdded |= bOneAdded;
-					int iBlocksMissing2 = ((Repairer*)m_pRepairer)->missingblockcount;
-					pDupeSource->SetUsedBlocks(pDupeSource->GetUsedBlocks() + (iWasBlocksMissing2 - iBlocksMissing2));
+					int wasBlocksMissing2 = ((Repairer*)m_repairer)->missingblockcount;
+					bool oneAdded = AddExtraFiles(false, true, dupeSource->GetDirectory());
+					added |= oneAdded;
+					int blocksMissing2 = ((Repairer*)m_repairer)->missingblockcount;
+					dupeSource->SetUsedBlocks(dupeSource->GetUsedBlocks() + (wasBlocksMissing2 - blocksMissing2));
 				}
 			}
 
-			int iBlocksMissing = ((Repairer*)m_pRepairer)->missingblockcount;
-			if (iBlocksMissing < iWasBlocksMissing)
+			int blocksMissing = ((Repairer*)m_repairer)->missingblockcount;
+			if (blocksMissing < wasBlocksMissing)
 			{
-				PrintMessage(Message::mkInfo, "Found extra %i blocks in dupe sources", iWasBlocksMissing - iBlocksMissing);
+				PrintMessage(Message::mkInfo, "Found extra %i blocks in dupe sources", wasBlocksMissing - blocksMissing);
 			}
 			else
 			{
@@ -1039,30 +1039,30 @@ bool ParChecker::AddDupeFiles()
 		}
 	}
 
-	return bAdded;
+	return added;
 }
 
-bool ParChecker::AddExtraFiles(bool bOnlyMissing, bool bExternalDir, const char* szDirectory)
+bool ParChecker::AddExtraFiles(bool onlyMissing, bool externalDir, const char* directory)
 {
-	if (bExternalDir)
+	if (externalDir)
 	{
-		PrintMessage(Message::mkInfo, "Performing dupe par-scan for %s in %s", m_szInfoName, Util::BaseFileName(szDirectory));
+		PrintMessage(Message::mkInfo, "Performing dupe par-scan for %s in %s", m_infoName, Util::BaseFileName(directory));
 	}
 	else
 	{
-		PrintMessage(Message::mkInfo, "Performing extra par-scan for %s", m_szInfoName);
+		PrintMessage(Message::mkInfo, "Performing extra par-scan for %s", m_infoName);
 	}
 
 	std::list<CommandLine::ExtraFile*> extrafiles;
 
-	DirBrowser dir(szDirectory);
+	DirBrowser dir(directory);
 	while (const char* filename = dir.Next())
 	{
 		if (strcmp(filename, ".") && strcmp(filename, "..") && strcmp(filename, "_brokenlog.txt") &&
-			(bExternalDir || (!IsParredFile(filename) && !IsProcessedFile(filename))))
+			(externalDir || (!IsParredFile(filename) && !IsProcessedFile(filename))))
 		{
 			char fullfilename[1024];
-			snprintf(fullfilename, 1024, "%s%c%s", szDirectory, PATH_SEPARATOR, filename);
+			snprintf(fullfilename, 1024, "%s%c%s", directory, PATH_SEPARATOR, filename);
 			fullfilename[1024-1] = '\0';
 
 			extrafiles.push_back(new CommandLine::ExtraFile(fullfilename, Util::FileSize(fullfilename)));
@@ -1070,67 +1070,67 @@ bool ParChecker::AddExtraFiles(bool bOnlyMissing, bool bExternalDir, const char*
 	}
 
 	// Sort the list
-	char* szBaseParFilename = strdup(Util::BaseFileName(m_szParFilename));
-	if (char* ext = strrchr(szBaseParFilename, '.')) *ext = '\0'; // trim extension
-	extrafiles.sort(MissingFilesComparator(szBaseParFilename));
-	free(szBaseParFilename);
+	char* baseParFilename = strdup(Util::BaseFileName(m_parFilename));
+	if (char* ext = strrchr(baseParFilename, '.')) *ext = '\0'; // trim extension
+	extrafiles.sort(MissingFilesComparator(baseParFilename));
+	free(baseParFilename);
 
 	// Scan files
-	bool bFilesAdded = false;
+	bool filesAdded = false;
 	if (!extrafiles.empty())
 	{
-		m_iExtraFiles += extrafiles.size();
-		m_bVerifyingExtraFiles = true;
+		m_extraFiles += extrafiles.size();
+		m_verifyingExtraFiles = true;
 
 		std::list<CommandLine::ExtraFile> extrafiles1;
 
 		// adding files one by one until all missing files are found
 
-		while (!IsStopped() && !m_bCancelled && extrafiles.size() > 0)
+		while (!IsStopped() && !m_cancelled && extrafiles.size() > 0)
 		{
-			CommandLine::ExtraFile* pExtraFile = extrafiles.front();
+			CommandLine::ExtraFile* extraFile = extrafiles.front();
 			extrafiles.pop_front();
 
 			extrafiles1.clear();
-			extrafiles1.push_back(*pExtraFile);
+			extrafiles1.push_back(*extraFile);
 
-			int iWasFilesMissing = ((Repairer*)m_pRepairer)->missingfilecount;
-			int iWasBlocksMissing = ((Repairer*)m_pRepairer)->missingblockcount;
+			int wasFilesMissing = ((Repairer*)m_repairer)->missingfilecount;
+			int wasBlocksMissing = ((Repairer*)m_repairer)->missingblockcount;
 
-			((Repairer*)m_pRepairer)->VerifyExtraFiles(extrafiles1);
-			((Repairer*)m_pRepairer)->UpdateVerificationResults();
+			((Repairer*)m_repairer)->VerifyExtraFiles(extrafiles1);
+			((Repairer*)m_repairer)->UpdateVerificationResults();
 
-			bool bFileAdded = iWasFilesMissing > (int)((Repairer*)m_pRepairer)->missingfilecount;
-			bool bBlockAdded = iWasBlocksMissing > (int)((Repairer*)m_pRepairer)->missingblockcount;
+			bool fileAdded = wasFilesMissing > (int)((Repairer*)m_repairer)->missingfilecount;
+			bool blockAdded = wasBlocksMissing > (int)((Repairer*)m_repairer)->missingblockcount;
 
-			if (bFileAdded && !bExternalDir)
+			if (fileAdded && !externalDir)
 			{
-				PrintMessage(Message::mkInfo, "Found missing file %s", Util::BaseFileName(pExtraFile->FileName().c_str()));
-				RegisterParredFile(Util::BaseFileName(pExtraFile->FileName().c_str()));
+				PrintMessage(Message::mkInfo, "Found missing file %s", Util::BaseFileName(extraFile->FileName().c_str()));
+				RegisterParredFile(Util::BaseFileName(extraFile->FileName().c_str()));
 			}
-			else if (bBlockAdded)
+			else if (blockAdded)
 			{
-				PrintMessage(Message::mkInfo, "Found %i missing blocks", iWasBlocksMissing - (int)((Repairer*)m_pRepairer)->missingblockcount);
+				PrintMessage(Message::mkInfo, "Found %i missing blocks", wasBlocksMissing - (int)((Repairer*)m_repairer)->missingblockcount);
 			}
 
-			bFilesAdded |= bFileAdded | bBlockAdded;
+			filesAdded |= fileAdded | blockAdded;
 
-			delete pExtraFile;
+			delete extraFile;
 
-			if (bOnlyMissing && ((Repairer*)m_pRepairer)->missingfilecount == 0)
+			if (onlyMissing && ((Repairer*)m_repairer)->missingfilecount == 0)
 			{
 				PrintMessage(Message::mkInfo, "All missing files found, aborting par-scan");
 				break;
 			}
 
-			if (!bOnlyMissing && ((Repairer*)m_pRepairer)->missingblockcount == 0)
+			if (!onlyMissing && ((Repairer*)m_repairer)->missingblockcount == 0)
 			{
 				PrintMessage(Message::mkInfo, "All missing blocks found, aborting par-scan");
 				break;
 			}
 		}
 
-		m_bVerifyingExtraFiles = false;
+		m_verifyingExtraFiles = false;
 
 		// free any remaining objects
 		for (std::list<CommandLine::ExtraFile*>::iterator it = extrafiles.begin(); it != extrafiles.end() ;it++)
@@ -1139,15 +1139,15 @@ bool ParChecker::AddExtraFiles(bool bOnlyMissing, bool bExternalDir, const char*
 		}
 	}
 
-	return bFilesAdded;
+	return filesAdded;
 }
 
-bool ParChecker::IsProcessedFile(const char* szFilename)
+bool ParChecker::IsProcessedFile(const char* filename)
 {
-	for (FileList::iterator it = m_ProcessedFiles.begin(); it != m_ProcessedFiles.end(); it++)
+	for (FileList::iterator it = m_processedFiles.begin(); it != m_processedFiles.end(); it++)
 	{
-		const char* szProcessedFilename = *it;
-		if (!strcasecmp(Util::BaseFileName(szProcessedFilename), szFilename))
+		const char* processedFilename = *it;
+		if (!strcasecmp(Util::BaseFileName(processedFilename), filename))
 		{
 			return true;
 		}
@@ -1165,128 +1165,128 @@ void ParChecker::signal_filename(std::string str)
 
 	m_lastFilename = str;
 
-	const char* szStageMessage[] = { "Loading file", "Verifying file", "Repairing file", "Verifying repaired file" };
+	const char* stageMessage[] = { "Loading file", "Verifying file", "Repairing file", "Verifying repaired file" };
 
-	if (m_eStage == ptRepairing)
+	if (m_stage == ptRepairing)
 	{
-		m_eStage = ptVerifyingRepaired;
+		m_stage = ptVerifyingRepaired;
 	}
 
 	// don't print progress messages when verifying repaired files in quick verification mode,
 	// because repaired files are not verified in this mode
-	if (!(m_eStage == ptVerifyingRepaired && m_bParQuick))
+	if (!(m_stage == ptVerifyingRepaired && m_parQuick))
 	{
-		PrintMessage(Message::mkInfo, "%s %s", szStageMessage[m_eStage], str.c_str());
+		PrintMessage(Message::mkInfo, "%s %s", stageMessage[m_stage], str.c_str());
 	}
 
-	if (m_eStage == ptLoadingPars || m_eStage == ptVerifyingSources)
+	if (m_stage == ptLoadingPars || m_stage == ptVerifyingSources)
 	{
-		m_ProcessedFiles.push_back(strdup(str.c_str()));
+		m_processedFiles.push_back(strdup(str.c_str()));
 	}
 
-	snprintf(m_szProgressLabel, 1024, "%s %s", szStageMessage[m_eStage], str.c_str());
-	m_szProgressLabel[1024-1] = '\0';
-	m_iFileProgress = 0;
+	snprintf(m_progressLabel, 1024, "%s %s", stageMessage[m_stage], str.c_str());
+	m_progressLabel[1024-1] = '\0';
+	m_fileProgress = 0;
 	UpdateProgress();
 }
 
 void ParChecker::signal_progress(int progress)
 {
-	m_iFileProgress = (int)progress;
+	m_fileProgress = (int)progress;
 
-	if (m_eStage == ptRepairing)
+	if (m_stage == ptRepairing)
 	{
 		// calculating repair-data for all files
-		m_iStageProgress = m_iFileProgress;
+		m_stageProgress = m_fileProgress;
 	}
 	else
 	{
 		// processing individual files
 
-		int iTotalFiles = 0;
-		int iProcessedFiles = m_iProcessedFiles;
-		if (m_eStage == ptVerifyingRepaired)
+		int totalFiles = 0;
+		int processedFiles = m_processedCount;
+		if (m_stage == ptVerifyingRepaired)
 		{
 			// repairing individual files
-			iTotalFiles = m_iFilesToRepair;
+			totalFiles = m_filesToRepair;
 		}
 		else
 		{
 			// verifying individual files
-			iTotalFiles = ((Repairer*)m_pRepairer)->sourcefiles.size() + m_iExtraFiles;
-			if (m_iExtraFiles > 0)
+			totalFiles = ((Repairer*)m_repairer)->sourcefiles.size() + m_extraFiles;
+			if (m_extraFiles > 0)
 			{
 				// during extra par scan don't count quickly verified files;
 				// extra files require much more time for verification;
 				// counting only fully scanned files improves estimated time accuracy.
-				iTotalFiles -= m_iQuickFiles;
-				iProcessedFiles -= m_iQuickFiles;
+				totalFiles -= m_quickFiles;
+				processedFiles -= m_quickFiles;
 			}
 		}
 
-		if (iTotalFiles > 0)
+		if (totalFiles > 0)
 		{
-			if (m_iFileProgress < 1000)
+			if (m_fileProgress < 1000)
 			{
-				m_iStageProgress = (iProcessedFiles * 1000 + m_iFileProgress) / iTotalFiles;
+				m_stageProgress = (processedFiles * 1000 + m_fileProgress) / totalFiles;
 			}
 			else
 			{
-				m_iStageProgress = iProcessedFiles * 1000 / iTotalFiles;
+				m_stageProgress = processedFiles * 1000 / totalFiles;
 			}
 		}
 		else
 		{
-			m_iStageProgress = 0;
+			m_stageProgress = 0;
 		}
 	}
 
-	debug("Current-progress: %i, Total-progress: %i", m_iFileProgress, m_iStageProgress);
+	debug("Current-progress: %i, Total-progress: %i", m_fileProgress, m_stageProgress);
 
 	UpdateProgress();
 }
 
 void ParChecker::signal_done(std::string str, int available, int total)
 {
-	m_iProcessedFiles++;
+	m_processedCount++;
 
-	if (m_eStage == ptVerifyingSources)
+	if (m_stage == ptVerifyingSources)
 	{
-		if (available < total && !m_bVerifyingExtraFiles)
+		if (available < total && !m_verifyingExtraFiles)
 		{
-			const char* szFilename = str.c_str();
+			const char* filename = str.c_str();
 
-			bool bFileExists = true;
-			for (std::vector<Par2RepairerSourceFile*>::iterator it = ((Repairer*)m_pRepairer)->sourcefiles.begin();
-				it != ((Repairer*)m_pRepairer)->sourcefiles.end(); it++)
+			bool fileExists = true;
+			for (std::vector<Par2RepairerSourceFile*>::iterator it = ((Repairer*)m_repairer)->sourcefiles.begin();
+				it != ((Repairer*)m_repairer)->sourcefiles.end(); it++)
 			{
 				Par2RepairerSourceFile *sourcefile = *it;
-				if (sourcefile && !strcmp(szFilename, Util::BaseFileName(sourcefile->TargetFileName().c_str())) &&
+				if (sourcefile && !strcmp(filename, Util::BaseFileName(sourcefile->TargetFileName().c_str())) &&
 					!sourcefile->GetTargetExists())
 				{
-					bFileExists = false;
+					fileExists = false;
 					break;
 				}
 			}
 
-			bool bIgnore = Util::MatchFileExt(szFilename, g_pOptions->GetParIgnoreExt(), ",;") ||
-				Util::MatchFileExt(szFilename, g_pOptions->GetExtCleanupDisk(), ",;");
-			m_bHasDamagedFiles |= !bIgnore;
+			bool ignore = Util::MatchFileExt(filename, g_pOptions->GetParIgnoreExt(), ",;") ||
+				Util::MatchFileExt(filename, g_pOptions->GetExtCleanupDisk(), ",;");
+			m_hasDamagedFiles |= !ignore;
 
-			if (bFileExists)
+			if (fileExists)
 			{
 				PrintMessage(Message::mkWarning, "File %s has %i bad block(s) of total %i block(s)%s",
-					szFilename, total - available, total, bIgnore ? ", ignoring" : "");
+					filename, total - available, total, ignore ? ", ignoring" : "");
 			}
 			else
 			{
 				PrintMessage(Message::mkWarning, "File %s with %i block(s) is missing%s",
-					szFilename, total, bIgnore ? ", ignoring" : "");
+					filename, total, ignore ? ", ignoring" : "");
 			}
 
-			if (!IsProcessedFile(szFilename))
+			if (!IsProcessedFile(filename))
 			{
-				m_ProcessedFiles.push_back(strdup(szFilename));
+				m_processedFiles.push_back(strdup(filename));
 			}
 		}
 	}
@@ -1299,80 +1299,80 @@ void ParChecker::signal_done(std::string str, int available, int total)
  */
 void ParChecker::CheckEmptyFiles()
 {
-	for (std::vector<Par2RepairerSourceFile*>::iterator it = ((Repairer*)m_pRepairer)->sourcefiles.begin();
-		 it != ((Repairer*)m_pRepairer)->sourcefiles.end(); it++)
+	for (std::vector<Par2RepairerSourceFile*>::iterator it = ((Repairer*)m_repairer)->sourcefiles.begin();
+		 it != ((Repairer*)m_repairer)->sourcefiles.end(); it++)
 	{
 		Par2RepairerSourceFile* sourcefile = *it;
 
 		if (sourcefile && sourcefile->GetDescriptionPacket())
 		{
 			// GetDescriptionPacket()->FileName() returns a temp string object, which we need to hold for a while
-			std::string filename = sourcefile->GetDescriptionPacket()->FileName();
-			const char* szFilename = filename.c_str();
-			if (!Util::EmptyStr(szFilename) && !IsProcessedFile(szFilename))
+			std::string filenameObj = sourcefile->GetDescriptionPacket()->FileName();
+			const char* filename = filenameObj.c_str();
+			if (!Util::EmptyStr(filename) && !IsProcessedFile(filename))
 			{
-				bool bIgnore = Util::MatchFileExt(szFilename, g_pOptions->GetParIgnoreExt(), ",;") ||
-					Util::MatchFileExt(szFilename, g_pOptions->GetExtCleanupDisk(), ",;");
-				m_bHasDamagedFiles |= !bIgnore;
+				bool ignore = Util::MatchFileExt(filename, g_pOptions->GetParIgnoreExt(), ",;") ||
+					Util::MatchFileExt(filename, g_pOptions->GetExtCleanupDisk(), ",;");
+				m_hasDamagedFiles |= !ignore;
 
 				int total = sourcefile->GetVerificationPacket() ? sourcefile->GetVerificationPacket()->BlockCount() : 0;
 				PrintMessage(Message::mkWarning, "File %s has %i bad block(s) of total %i block(s)%s",
-					szFilename, total, total, bIgnore ? ", ignoring" : "");
+					filename, total, total, ignore ? ", ignoring" : "");
 			}
 		}
 		else
 		{
-			m_bHasDamagedFiles = true;
+			m_hasDamagedFiles = true;
 		}
 	}
 }
 
 void ParChecker::Cancel()
 {
-	((Repairer*)m_pRepairer)->cancelled = true;
-	m_bCancelled = true;
+	((Repairer*)m_repairer)->cancelled = true;
+	m_cancelled = true;
 	QueueChanged();
 }
 
-void ParChecker::WriteBrokenLog(EStatus eStatus)
+void ParChecker::WriteBrokenLog(EStatus status)
 {
-	char szBrokenLogName[1024];
-	snprintf(szBrokenLogName, 1024, "%s%c_brokenlog.txt", m_szDestDir, (int)PATH_SEPARATOR);
-	szBrokenLogName[1024-1] = '\0';
+	char brokenLogName[1024];
+	snprintf(brokenLogName, 1024, "%s%c_brokenlog.txt", m_destDir, (int)PATH_SEPARATOR);
+	brokenLogName[1024-1] = '\0';
 	
-	if (eStatus != psRepairNotNeeded || Util::FileExists(szBrokenLogName))
+	if (status != psRepairNotNeeded || Util::FileExists(brokenLogName))
 	{
-		FILE* file = fopen(szBrokenLogName, FOPEN_AB);
+		FILE* file = fopen(brokenLogName, FOPEN_AB);
 		if (file)
 		{
-			if (eStatus == psFailed)
+			if (status == psFailed)
 			{
-				if (m_bCancelled)
+				if (m_cancelled)
 				{
-					fprintf(file, "Repair cancelled for %s\n", m_szInfoName);
+					fprintf(file, "Repair cancelled for %s\n", m_infoName);
 				}
 				else
 				{
-					fprintf(file, "Repair failed for %s: %s\n", m_szInfoName, m_szErrMsg ? m_szErrMsg : "");
+					fprintf(file, "Repair failed for %s: %s\n", m_infoName, m_errMsg ? m_errMsg : "");
 				}
 			}
-			else if (eStatus == psRepairPossible)
+			else if (status == psRepairPossible)
 			{
-				fprintf(file, "Repair possible for %s\n", m_szInfoName);
+				fprintf(file, "Repair possible for %s\n", m_infoName);
 			}
-			else if (eStatus == psRepaired)
+			else if (status == psRepaired)
 			{
-				fprintf(file, "Successfully repaired %s\n", m_szInfoName);
+				fprintf(file, "Successfully repaired %s\n", m_infoName);
 			}
-			else if (eStatus == psRepairNotNeeded)
+			else if (status == psRepairNotNeeded)
 			{
-				fprintf(file, "Repair not needed for %s\n", m_szInfoName);
+				fprintf(file, "Repair not needed for %s\n", m_infoName);
 			}
 			fclose(file);
 		}
 		else
 		{
-			PrintMessage(Message::mkError, "Could not open file %s", szBrokenLogName);
+			PrintMessage(Message::mkError, "Could not open file %s", brokenLogName);
 		}
 	}
 }
@@ -1381,19 +1381,19 @@ void ParChecker::SaveSourceList()
 {
 	// Buliding a list of DiskFile-objects, marked as source-files
 	
-	for (std::vector<Par2RepairerSourceFile*>::iterator it = ((Repairer*)m_pRepairer)->sourcefiles.begin();
-		it != ((Repairer*)m_pRepairer)->sourcefiles.end(); it++)
+	for (std::vector<Par2RepairerSourceFile*>::iterator it = ((Repairer*)m_repairer)->sourcefiles.begin();
+		it != ((Repairer*)m_repairer)->sourcefiles.end(); it++)
 	{
 		Par2RepairerSourceFile* sourcefile = (Par2RepairerSourceFile*)*it;
 		vector<DataBlock>::iterator it2 = sourcefile->SourceBlocks();
 		for (int i = 0; i < (int)sourcefile->BlockCount(); i++, it2++)
 		{
 			DataBlock block = *it2;
-			DiskFile* pSourceFile = block.GetDiskFile();
-			if (pSourceFile &&
-				std::find(m_sourceFiles.begin(), m_sourceFiles.end(), pSourceFile) == m_sourceFiles.end())
+			DiskFile* sourceFile = block.GetDiskFile();
+			if (sourceFile &&
+				std::find(m_sourceFiles.begin(), m_sourceFiles.end(), sourceFile) == m_sourceFiles.end())
 			{
-				m_sourceFiles.push_back(pSourceFile);
+				m_sourceFiles.push_back(sourceFile);
 			}
 		}
 	}
@@ -1407,24 +1407,24 @@ void ParChecker::DeleteLeftovers()
 	
 	for (SourceList::iterator it = m_sourceFiles.begin(); it != m_sourceFiles.end(); it++)
 	{
-		DiskFile* pSourceFile = (DiskFile*)*it;
+		DiskFile* sourceFile = (DiskFile*)*it;
 
-		bool bFound = false;
-		for (std::vector<Par2RepairerSourceFile*>::iterator it2 = ((Repairer*)m_pRepairer)->sourcefiles.begin();
-			it2 != ((Repairer*)m_pRepairer)->sourcefiles.end(); it2++)
+		bool found = false;
+		for (std::vector<Par2RepairerSourceFile*>::iterator it2 = ((Repairer*)m_repairer)->sourcefiles.begin();
+			it2 != ((Repairer*)m_repairer)->sourcefiles.end(); it2++)
 		{
 			Par2RepairerSourceFile* sourcefile = *it2;
-			if (sourcefile->GetTargetFile() == pSourceFile)
+			if (sourcefile->GetTargetFile() == sourceFile)
 			{
-				bFound = true;
+				found = true;
 				break;
 			}
 		}
 
-		if (!bFound)
+		if (!found)
 		{
-			PrintMessage(Message::mkInfo, "Deleting file %s", Util::BaseFileName(pSourceFile->FileName().c_str()));
-			remove(pSourceFile->FileName().c_str());
+			PrintMessage(Message::mkInfo, "Deleting file %s", Util::BaseFileName(sourceFile->FileName().c_str()));
+			remove(sourceFile->FileName().c_str());
 		}
 	}
 }
@@ -1444,9 +1444,9 @@ void ParChecker::DeleteLeftovers()
  * The limitation can be avoided by using something more smart than "verificationhashtable.Lookup"
  * but in the real life all blocks have unique CRCs and the simple "Lookup" works good enough.
  */
-ParChecker::EFileStatus ParChecker::VerifyDataFile(void* pDiskfile, void* pSourcefile, int* pAvailableBlocks)
+ParChecker::EFileStatus ParChecker::VerifyDataFile(void* diskfile, void* sourcefile, int* availableBlocks)
 {
-	if (m_eStage != ptVerifyingSources)
+	if (m_stage != ptVerifyingSources)
 	{
 		// skipping verification for repaired files, assuming the files were correctly repaired,
 		// the only reason for incorrect files after repair are hardware errors (memory, disk),
@@ -1454,160 +1454,160 @@ ParChecker::EFileStatus ParChecker::VerifyDataFile(void* pDiskfile, void* pSourc
 		return fsSuccess;
 	}
 
-	DiskFile* pDiskFile = (DiskFile*)pDiskfile;
-	Par2RepairerSourceFile* pSourceFile = (Par2RepairerSourceFile*)pSourcefile;
-	if (!pSourcefile || !pSourceFile->GetTargetExists())
+	DiskFile* diskFile = (DiskFile*)diskfile;
+	Par2RepairerSourceFile* sourceFile = (Par2RepairerSourceFile*)sourcefile;
+	if (!sourcefile || !sourceFile->GetTargetExists())
 	{
 		return fsUnknown;
 	}
 
-	VerificationPacket* packet = pSourceFile->GetVerificationPacket();
+	VerificationPacket* packet = sourceFile->GetVerificationPacket();
 	if (!packet)
 	{
 		return fsUnknown;
 	}
 
-	std::string filename = pSourceFile->GetTargetFile()->FileName();
-	const char* szFilename = filename.c_str();
+	std::string filenameObj = sourceFile->GetTargetFile()->FileName();
+	const char* filename = filenameObj.c_str();
 
-	if (Util::FileSize(szFilename) == 0 && pSourceFile->BlockCount() > 0)
+	if (Util::FileSize(filename) == 0 && sourceFile->BlockCount() > 0)
 	{
-		*pAvailableBlocks = 0;
+		*availableBlocks = 0;
 		return fsFailure;
 	}
 
 	// find file status and CRC computed during download
-	unsigned long lDownloadCrc;
+	unsigned long downloadCrc;
 	SegmentList segments;
-	EFileStatus	eFileStatus = FindFileCrc(Util::BaseFileName(szFilename), &lDownloadCrc, &segments);
+	EFileStatus	fileStatus = FindFileCrc(Util::BaseFileName(filename), &downloadCrc, &segments);
 	ValidBlocks validBlocks;
 
-	if (eFileStatus == fsFailure || eFileStatus == fsUnknown)
+	if (fileStatus == fsFailure || fileStatus == fsUnknown)
 	{
-		return eFileStatus;
+		return fileStatus;
 	}
-	else if ((eFileStatus == fsSuccess && !VerifySuccessDataFile(pDiskfile, pSourcefile, lDownloadCrc)) ||
-		(eFileStatus == fsPartial && !VerifyPartialDataFile(pDiskfile, pSourcefile, &segments, &validBlocks)))
+	else if ((fileStatus == fsSuccess && !VerifySuccessDataFile(diskfile, sourcefile, downloadCrc)) ||
+		(fileStatus == fsPartial && !VerifyPartialDataFile(diskfile, sourcefile, &segments, &validBlocks)))
 	{
 		PrintMessage(Message::mkWarning, "Quick verification failed for %s file %s, performing full verification instead",
-			eFileStatus == fsSuccess ? "good" : "damaged", Util::BaseFileName(szFilename));
+			fileStatus == fsSuccess ? "good" : "damaged", Util::BaseFileName(filename));
 		return fsUnknown; // let libpar2 do the full verification of the file
 	}
 
 	// attach verification blocks to the file
-	*pAvailableBlocks = 0;
-	u64 blocksize = ((Repairer*)m_pRepairer)->mainpacket->BlockSize();
+	*availableBlocks = 0;
+	u64 blocksize = ((Repairer*)m_repairer)->mainpacket->BlockSize();
 	std::deque<const VerificationHashEntry*> undoList;
 	for (unsigned int i = 0; i < packet->BlockCount(); i++)
 	{
-		if (eFileStatus == fsSuccess || validBlocks.at(i))
+		if (fileStatus == fsSuccess || validBlocks.at(i))
 		{
 			const FILEVERIFICATIONENTRY* entry = packet->VerificationEntry(i);
 			u32 blockCrc = entry->crc;
 
 			// Look for a match
-			const VerificationHashEntry* pHashEntry = ((Repairer*)m_pRepairer)->verificationhashtable.Lookup(blockCrc);
-			if (!pHashEntry || pHashEntry->SourceFile() != pSourceFile || pHashEntry->IsSet())
+			const VerificationHashEntry* hashEntry = ((Repairer*)m_repairer)->verificationhashtable.Lookup(blockCrc);
+			if (!hashEntry || hashEntry->SourceFile() != sourceFile || hashEntry->IsSet())
 			{
 				// no match found, revert back the changes made by "pHashEntry->SetBlock"
 				for (std::deque<const VerificationHashEntry*>::iterator it = undoList.begin(); it != undoList.end(); it++)
 				{
-					const VerificationHashEntry* pUndoEntry = *it;
-					pUndoEntry->SetBlock(NULL, 0);
+					const VerificationHashEntry* undoEntry = *it;
+					undoEntry->SetBlock(NULL, 0);
 				}
 				return fsUnknown;
 			}
 
-			undoList.push_back(pHashEntry);
-			pHashEntry->SetBlock(pDiskFile, i*blocksize);
-			(*pAvailableBlocks)++;
+			undoList.push_back(hashEntry);
+			hashEntry->SetBlock(diskFile, i*blocksize);
+			(*availableBlocks)++;
 		}
 	}
 
-	m_iQuickFiles++;
+	m_quickFiles++;
 	PrintMessage(Message::mkDetail, "Quickly verified %s file %s",
-		eFileStatus == fsSuccess ? "good" : "damaged", Util::BaseFileName(szFilename));
+		fileStatus == fsSuccess ? "good" : "damaged", Util::BaseFileName(filename));
 
-	return eFileStatus;
+	return fileStatus;
 }
 
-bool ParChecker::VerifySuccessDataFile(void* pDiskfile, void* pSourcefile, unsigned long lDownloadCrc)
+bool ParChecker::VerifySuccessDataFile(void* diskfile, void* sourcefile, unsigned long downloadCrc)
 {
-	Par2RepairerSourceFile* pSourceFile = (Par2RepairerSourceFile*)pSourcefile;
-	u64 blocksize = ((Repairer*)m_pRepairer)->mainpacket->BlockSize();
-	VerificationPacket* packet = pSourceFile->GetVerificationPacket();
+	Par2RepairerSourceFile* sourceFile = (Par2RepairerSourceFile*)sourcefile;
+	u64 blocksize = ((Repairer*)m_repairer)->mainpacket->BlockSize();
+	VerificationPacket* packet = sourceFile->GetVerificationPacket();
 
 	// extend lDownloadCrc to block size
-	lDownloadCrc = CRCUpdateBlock(lDownloadCrc ^ 0xFFFFFFFF,
-		(size_t)(blocksize * packet->BlockCount() > pSourceFile->GetTargetFile()->FileSize() ?
-			blocksize * packet->BlockCount() - pSourceFile->GetTargetFile()->FileSize() : 0)
+	downloadCrc = CRCUpdateBlock(downloadCrc ^ 0xFFFFFFFF,
+		(size_t)(blocksize * packet->BlockCount() > sourceFile->GetTargetFile()->FileSize() ?
+			blocksize * packet->BlockCount() - sourceFile->GetTargetFile()->FileSize() : 0)
 		) ^ 0xFFFFFFFF;
-	debug("Download-CRC: %.8x", lDownloadCrc);
+	debug("Download-CRC: %.8x", downloadCrc);
 
 	// compute file CRC using CRCs of blocks
-	unsigned long lParCrc = 0;
+	unsigned long parCrc = 0;
 	for (unsigned int i = 0; i < packet->BlockCount(); i++)
 	{
 		const FILEVERIFICATIONENTRY* entry = packet->VerificationEntry(i);
 		u32 blockCrc = entry->crc;
-		lParCrc = i == 0 ? blockCrc : Util::Crc32Combine(lParCrc, blockCrc, (unsigned long)blocksize);
+		parCrc = i == 0 ? blockCrc : Util::Crc32Combine(parCrc, blockCrc, (unsigned long)blocksize);
 	}
-	debug("Block-CRC: %x, filename: %s", lParCrc, Util::BaseFileName(pSourceFile->GetTargetFile()->FileName().c_str()));
+	debug("Block-CRC: %x, filename: %s", parCrc, Util::BaseFileName(sourceFile->GetTargetFile()->FileName().c_str()));
 
-	return lParCrc == lDownloadCrc;
+	return parCrc == downloadCrc;
 }
 
-bool ParChecker::VerifyPartialDataFile(void* pDiskfile, void* pSourcefile, SegmentList* pSegments, ValidBlocks* pValidBlocks)
+bool ParChecker::VerifyPartialDataFile(void* diskfile, void* sourcefile, SegmentList* segments, ValidBlocks* validBlocks)
 {
-	Par2RepairerSourceFile* pSourceFile = (Par2RepairerSourceFile*)pSourcefile;
-	VerificationPacket* packet = pSourceFile->GetVerificationPacket();
-	long long blocksize = ((Repairer*)m_pRepairer)->mainpacket->BlockSize();
-	std::string filename = pSourceFile->GetTargetFile()->FileName();
-	const char* szFilename = filename.c_str();
-	long long iFileSize = pSourceFile->GetTargetFile()->FileSize();
+	Par2RepairerSourceFile* sourceFile = (Par2RepairerSourceFile*)sourcefile;
+	VerificationPacket* packet = sourceFile->GetVerificationPacket();
+	long long blocksize = ((Repairer*)m_repairer)->mainpacket->BlockSize();
+	std::string filenameObj = sourceFile->GetTargetFile()->FileName();
+	const char* filename = filenameObj.c_str();
+	long long fileSize = sourceFile->GetTargetFile()->FileSize();
 
 	// determine presumably valid and bad blocks based on article download status
-	pValidBlocks->resize(packet->BlockCount(), false);
-	for (int i = 0; i < (int)pValidBlocks->size(); i++)
+	validBlocks->resize(packet->BlockCount(), false);
+	for (int i = 0; i < (int)validBlocks->size(); i++)
 	{
 		long long blockStart = i * blocksize;
-		long long blockEnd = blockStart + blocksize < iFileSize - 1 ? blockStart + blocksize : iFileSize - 1;
-		bool bBlockOK = false;
-		bool bBlockEnd = false;
-		u64 iCurOffset = 0;
-		for (SegmentList::iterator it = pSegments->begin(); it != pSegments->end(); it++)
+		long long blockEnd = blockStart + blocksize < fileSize - 1 ? blockStart + blocksize : fileSize - 1;
+		bool blockOK = false;
+		bool blockEndFound = false;
+		u64 curOffset = 0;
+		for (SegmentList::iterator it = segments->begin(); it != segments->end(); it++)
 		{
-			Segment* pSegment = *it;
-			if (!bBlockOK && pSegment->GetSuccess() && pSegment->GetOffset() <= blockStart &&
-				pSegment->GetOffset() + pSegment->GetSize() >= blockStart)
+			Segment* segment = *it;
+			if (!blockOK && segment->GetSuccess() && segment->GetOffset() <= blockStart &&
+				segment->GetOffset() + segment->GetSize() >= blockStart)
 			{
-				bBlockOK = true;
-				iCurOffset = pSegment->GetOffset();
+				blockOK = true;
+				curOffset = segment->GetOffset();
 			}
-			if (bBlockOK)
+			if (blockOK)
 			{
-				if (!(pSegment->GetSuccess() && pSegment->GetOffset() == iCurOffset))
+				if (!(segment->GetSuccess() && segment->GetOffset() == curOffset))
 				{
-					bBlockOK = false;
+					blockOK = false;
 					break;
 				}
-				if (pSegment->GetOffset() + pSegment->GetSize() >= blockEnd)
+				if (segment->GetOffset() + segment->GetSize() >= blockEnd)
 				{
-					bBlockEnd = true;
+					blockEndFound = true;
 					break;
 				}
-				iCurOffset = pSegment->GetOffset() + pSegment->GetSize();
+				curOffset = segment->GetOffset() + segment->GetSize();
 			}
 		}
-		pValidBlocks->at(i) = bBlockOK && bBlockEnd;
+		validBlocks->at(i) = blockOK && blockEndFound;
 	}
 
-	char szErrBuf[256];
-	FILE* infile = fopen(szFilename, FOPEN_RB);
+	char errBuf[256];
+	FILE* infile = fopen(filename, FOPEN_RB);
 	if (!infile)
 	{
 		PrintMessage(Message::mkError, "Could not open file %s: %s",
-			szFilename, Util::GetLastErrorMessage(szErrBuf, sizeof(szErrBuf)));
+			filename, Util::GetLastErrorMessage(errBuf, sizeof(errBuf)));
 	}
 
 	// For each sequential range of presumably valid blocks:
@@ -1616,45 +1616,45 @@ bool ParChecker::VerifyPartialDataFile(void* pDiskfile, void* pSourcefile, Segme
 	//   overlap - read a little bit of data from the file and calculate its CRC;
 	// - compare two CRCs - they must match; if not - the file is more damaged than we thought -
 	//   let libpar2 do the full verification of the file in this case.
-	unsigned long lParCrc = 0;
-	int iBlockStart = -1;
-	pValidBlocks->push_back(false); // end marker
-	for (int i = 0; i < (int)pValidBlocks->size(); i++)
+	unsigned long parCrc = 0;
+	int blockStart = -1;
+	validBlocks->push_back(false); // end marker
+	for (int i = 0; i < (int)validBlocks->size(); i++)
 	{
-		bool bValidBlock = pValidBlocks->at(i);
-		if (bValidBlock)
+		bool validBlock = validBlocks->at(i);
+		if (validBlock)
 		{
-			if (iBlockStart == -1)
+			if (blockStart == -1)
 			{
-				iBlockStart = i;
+				blockStart = i;
 			}
 			const FILEVERIFICATIONENTRY* entry = packet->VerificationEntry(i);
 			u32 blockCrc = entry->crc;
-			lParCrc = iBlockStart == i ? blockCrc : Util::Crc32Combine(lParCrc, blockCrc, (unsigned long)blocksize);
+			parCrc = blockStart == i ? blockCrc : Util::Crc32Combine(parCrc, blockCrc, (unsigned long)blocksize);
 		}
 		else
 		{
-			if (iBlockStart > -1)
+			if (blockStart > -1)
 			{
-				int iBlockEnd = i - 1;
-				long long iBytesStart = iBlockStart * blocksize;
-				long long iBytesEnd = iBlockEnd * blocksize + blocksize - 1;
-				unsigned long lDownloadCrc = 0;
-				bool bOK = SmartCalcFileRangeCrc(infile, iBytesStart,
-					iBytesEnd < iFileSize - 1 ? iBytesEnd : iFileSize - 1, pSegments, &lDownloadCrc);
-				if (bOK && iBytesEnd > iFileSize - 1)
+				int blockEnd = i - 1;
+				long long bytesStart = blockStart * blocksize;
+				long long bytesEnd = blockEnd * blocksize + blocksize - 1;
+				unsigned long downloadCrc = 0;
+				bool ok = SmartCalcFileRangeCrc(infile, bytesStart,
+					bytesEnd < fileSize - 1 ? bytesEnd : fileSize - 1, segments, &downloadCrc);
+				if (ok && bytesEnd > fileSize - 1)
 				{
 					// for the last block: extend lDownloadCrc to block size
-					lDownloadCrc = CRCUpdateBlock(lDownloadCrc ^ 0xFFFFFFFF, (size_t)(iBytesEnd - (iFileSize - 1))) ^ 0xFFFFFFFF;
+					downloadCrc = CRCUpdateBlock(downloadCrc ^ 0xFFFFFFFF, (size_t)(bytesEnd - (fileSize - 1))) ^ 0xFFFFFFFF;
 				}
 
-				if (!bOK || lDownloadCrc != lParCrc)
+				if (!ok || downloadCrc != parCrc)
 				{
 					fclose(infile);
 					return false;
 				}
 			}
-			iBlockStart = -1;
+			blockStart = -1;
 		}
 	}
 
@@ -1667,87 +1667,87 @@ bool ParChecker::VerifyPartialDataFile(void* pDiskfile, void* pSourcefile, Segme
  * Compute CRC of bytes range of file using CRCs of segments and reading some data directly
  * from file if necessary
  */
-bool ParChecker::SmartCalcFileRangeCrc(FILE* pFile, long long lStart, long long lEnd, SegmentList* pSegments,
-	unsigned long* pDownloadCrc)
+bool ParChecker::SmartCalcFileRangeCrc(FILE* file, long long start, long long end, SegmentList* segments,
+	unsigned long* downloadCrcOut)
 {
-	unsigned long lDownloadCrc = 0;
-	bool bStarted = false;
-	for (SegmentList::iterator it = pSegments->begin(); it != pSegments->end(); it++)
+	unsigned long downloadCrc = 0;
+	bool started = false;
+	for (SegmentList::iterator it = segments->begin(); it != segments->end(); it++)
 	{
-		Segment* pSegment = *it;
+		Segment* segment = *it;
 
-		if (!bStarted && pSegment->GetOffset() > lStart)
+		if (!started && segment->GetOffset() > start)
 		{
 			// read start of range from file
-			if (!DumbCalcFileRangeCrc(pFile, lStart, pSegment->GetOffset() - 1, &lDownloadCrc))
+			if (!DumbCalcFileRangeCrc(file, start, segment->GetOffset() - 1, &downloadCrc))
 			{
 				return false;
 			}
-			if (pSegment->GetOffset() + pSegment->GetSize() >= lEnd)
+			if (segment->GetOffset() + segment->GetSize() >= end)
 			{
 				break;
 			}
-			bStarted = true;
+			started = true;
 		}
 
-		if (pSegment->GetOffset() >= lStart && pSegment->GetOffset() + pSegment->GetSize() <= lEnd)
+		if (segment->GetOffset() >= start && segment->GetOffset() + segment->GetSize() <= end)
 		{
-			lDownloadCrc = !bStarted ? pSegment->GetCrc() : Util::Crc32Combine(lDownloadCrc, pSegment->GetCrc(), (unsigned long)pSegment->GetSize());
-			bStarted = true;
+			downloadCrc = !started ? segment->GetCrc() : Util::Crc32Combine(downloadCrc, segment->GetCrc(), (unsigned long)segment->GetSize());
+			started = true;
 		}
 
-		if (pSegment->GetOffset() + pSegment->GetSize() == lEnd)
+		if (segment->GetOffset() + segment->GetSize() == end)
 		{
 			break;
 		}
 
-		if (pSegment->GetOffset() + pSegment->GetSize() > lEnd)
+		if (segment->GetOffset() + segment->GetSize() > end)
 		{
 			// read end of range from file
-			unsigned long lPartialCrc = 0;
-			if (!DumbCalcFileRangeCrc(pFile, pSegment->GetOffset(), lEnd, &lPartialCrc))
+			unsigned long partialCrc = 0;
+			if (!DumbCalcFileRangeCrc(file, segment->GetOffset(), end, &partialCrc))
 			{
 				return false;
 			}
 
-			lDownloadCrc = Util::Crc32Combine(lDownloadCrc, (unsigned long)lPartialCrc, (unsigned long)(lEnd - pSegment->GetOffset() + 1));
+			downloadCrc = Util::Crc32Combine(downloadCrc, (unsigned long)partialCrc, (unsigned long)(end - segment->GetOffset() + 1));
 
 			break;
 		}
 	}
 
-	*pDownloadCrc = lDownloadCrc;
+	*downloadCrcOut = downloadCrc;
 	return true;
 }
 
 /*
  * Compute CRC of bytes range of file reading the data directly from file
  */
-bool ParChecker::DumbCalcFileRangeCrc(FILE* pFile, long long lStart, long long lEnd, unsigned long* pDownloadCrc)
+bool ParChecker::DumbCalcFileRangeCrc(FILE* file, long long start, long long end, unsigned long* downloadCrcOut)
 {
-	if (fseek(pFile, lStart, SEEK_SET))
+	if (fseek(file, start, SEEK_SET))
 	{
 		return false;
 	}
 
 	static const int BUFFER_SIZE = 1024 * 64;
 	unsigned char* buffer = (unsigned char*)malloc(BUFFER_SIZE);
-	unsigned long lDownloadCrc = 0xFFFFFFFF;
+	unsigned long downloadCrc = 0xFFFFFFFF;
 
 	int cnt = BUFFER_SIZE;
-	while (cnt == BUFFER_SIZE && lStart < lEnd)
+	while (cnt == BUFFER_SIZE && start < end)
 	{
-		int iNeedBytes = lEnd - lStart + 1 > BUFFER_SIZE ? BUFFER_SIZE : (int)(lEnd - lStart + 1);
-		cnt = (int)fread(buffer, 1, iNeedBytes, pFile);
-		lDownloadCrc = Util::Crc32m(lDownloadCrc, buffer, cnt);
-		lStart += cnt;
+		int needBytes = end - start + 1 > BUFFER_SIZE ? BUFFER_SIZE : (int)(end - start + 1);
+		cnt = (int)fread(buffer, 1, needBytes, file);
+		downloadCrc = Util::Crc32m(downloadCrc, buffer, cnt);
+		start += cnt;
 	}
 
 	free(buffer);
 
-	lDownloadCrc ^= 0xFFFFFFFF;
+	downloadCrc ^= 0xFFFFFFFF;
 
-	*pDownloadCrc = lDownloadCrc;
+	*downloadCrcOut = downloadCrc;
 	return true;
 }
 

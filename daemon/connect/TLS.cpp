@@ -87,17 +87,17 @@ Mutexes* g_pGCryptLibMutexes;
 
 static int gcry_mutex_init(void **priv)
 {
-	Mutex* pMutex = new Mutex();
-	g_pGCryptLibMutexes->push_back(pMutex);
-	*priv = pMutex;
+	Mutex* mutex = new Mutex();
+	g_pGCryptLibMutexes->push_back(mutex);
+	*priv = mutex;
 	return 0;
 }
 
 static int gcry_mutex_destroy(void **lock)
 {
-	Mutex* pMutex = ((Mutex*)*lock);
-	g_pGCryptLibMutexes->remove(pMutex);
-	delete pMutex;
+	Mutex* mutex = ((Mutex*)*lock);
+	g_pGCryptLibMutexes->remove(mutex);
+	delete mutex;
 	return 0;
 }
 
@@ -213,9 +213,9 @@ void TLSSocket::Init()
 #endif /* HAVE_LIBGNUTLS */
 
 #ifdef HAVE_OPENSSL
-	int iMaxMutexes = CRYPTO_num_locks();
-	g_pOpenSSLMutexes = (Mutex**)malloc(sizeof(Mutex*)*iMaxMutexes);
-	for (int i=0; i < iMaxMutexes; i++)
+	int maxMutexes = CRYPTO_num_locks();
+	g_pOpenSSLMutexes = (Mutex**)malloc(sizeof(Mutex*)*maxMutexes);
+	for (int i=0; i < maxMutexes; i++)
 	{
 		g_pOpenSSLMutexes[i] = new Mutex();
 	}
@@ -251,8 +251,8 @@ void TLSSocket::Final()
 #endif /* HAVE_LIBGNUTLS */
 
 #ifdef HAVE_OPENSSL
-	int iMaxMutexes = CRYPTO_num_locks();
-	for (int i=0; i < iMaxMutexes; i++)
+	int maxMutexes = CRYPTO_num_locks();
+	for (int i=0; i < maxMutexes; i++)
 	{
 		delete g_pOpenSSLMutexes[i];
 	}
@@ -260,43 +260,43 @@ void TLSSocket::Final()
 #endif /* HAVE_OPENSSL */
 }
 
-TLSSocket::TLSSocket(SOCKET iSocket, bool bIsClient, const char* szCertFile, const char* szKeyFile, const char* szCipher)
+TLSSocket::TLSSocket(SOCKET socket, bool isClient, const char* certFile, const char* keyFile, const char* cipher)
 {
-	m_iSocket = iSocket;
-	m_bIsClient = bIsClient;
-	m_szCertFile = szCertFile ? strdup(szCertFile) : NULL;
-	m_szKeyFile = szKeyFile ? strdup(szKeyFile) : NULL;
-	m_szCipher = szCipher && strlen(szCipher) > 0 ? strdup(szCipher) : NULL;
-	m_pContext = NULL;
-	m_pSession = NULL;
-	m_bSuppressErrors = false;
-	m_bInitialized = false;
-	m_bConnected = false;
+	m_socket = socket;
+	m_isClient = isClient;
+	m_certFile = certFile ? strdup(certFile) : NULL;
+	m_keyFile = keyFile ? strdup(keyFile) : NULL;
+	m_cipher = cipher && strlen(cipher) > 0 ? strdup(cipher) : NULL;
+	m_context = NULL;
+	m_session = NULL;
+	m_suppressErrors = false;
+	m_initialized = false;
+	m_connected = false;
 }
 
 TLSSocket::~TLSSocket()
 {
-	free(m_szCertFile);
-	free(m_szKeyFile);
-	free(m_szCipher);
+	free(m_certFile);
+	free(m_keyFile);
+	free(m_cipher);
 	Close();
 }
 
-void TLSSocket::ReportError(const char* szErrMsg)
+void TLSSocket::ReportError(const char* errMsg)
 {
-	char szMessage[1024];
+	char message[1024];
 
 #ifdef HAVE_LIBGNUTLS
-	const char* errstr = gnutls_strerror(m_iRetCode);
-	if (m_bSuppressErrors)
+	const char* errstr = gnutls_strerror(m_retCode);
+	if (m_suppressErrors)
 	{
-		debug("%s: %s", szErrMsg, errstr);
+		debug("%s: %s", errMsg, errstr);
 	}
 	else
 	{
-		snprintf(szMessage, sizeof(szMessage), "%s: %s", szErrMsg, errstr);
-		szMessage[sizeof(szMessage) - 1] = '\0';
-		PrintError(szMessage);
+		snprintf(message, sizeof(message), "%s: %s", errMsg, errstr);
+		message[sizeof(message) - 1] = '\0';
+		PrintError(message);
 	}
 #endif /* HAVE_LIBGNUTLS */
 
@@ -310,47 +310,47 @@ void TLSSocket::ReportError(const char* szErrMsg)
 		ERR_error_string_n(errcode, errstr, sizeof(errstr));
 		errstr[1024-1] = '\0';
 		
-		if (m_bSuppressErrors)
+		if (m_suppressErrors)
 		{
-			debug("%s: %s", szErrMsg, errstr);
+			debug("%s: %s", errMsg, errstr);
 		}
 		else if (errcode != 0)
 		{
-			snprintf(szMessage, sizeof(szMessage), "%s: %s", szErrMsg, errstr);
-			szMessage[sizeof(szMessage) - 1] = '\0';
-			PrintError(szMessage);
+			snprintf(message, sizeof(message), "%s: %s", errMsg, errstr);
+			message[sizeof(message) - 1] = '\0';
+			PrintError(message);
 		}
 		else
 		{
-			PrintError(szErrMsg);
+			PrintError(errMsg);
 		}
 	} while (errcode);
 #endif /* HAVE_OPENSSL */
 }
 
-void TLSSocket::PrintError(const char* szErrMsg)
+void TLSSocket::PrintError(const char* errMsg)
 {
-	error("%s", szErrMsg);
+	error("%s", errMsg);
 }
 
 bool TLSSocket::Start()
 {
 #ifdef HAVE_LIBGNUTLS
 	gnutls_certificate_credentials_t cred;
-	m_iRetCode = gnutls_certificate_allocate_credentials(&cred);
-	if (m_iRetCode != 0)
+	m_retCode = gnutls_certificate_allocate_credentials(&cred);
+	if (m_retCode != 0)
 	{
 		ReportError("Could not create TLS context");
 		return false;
 	}
 
-	m_pContext = cred;
+	m_context = cred;
 
-	if (m_szCertFile && m_szKeyFile)
+	if (m_certFile && m_keyFile)
 	{
-		m_iRetCode = gnutls_certificate_set_x509_key_file((gnutls_certificate_credentials_t)m_pContext,
-			m_szCertFile, m_szKeyFile, GNUTLS_X509_FMT_PEM);
-		if (m_iRetCode != 0)
+		m_retCode = gnutls_certificate_set_x509_key_file((gnutls_certificate_credentials_t)m_context,
+			m_certFile, m_keyFile, GNUTLS_X509_FMT_PEM);
+		if (m_retCode != 0)
 		{
 			ReportError("Could not load certificate or key file");
 			Close();
@@ -359,69 +359,69 @@ bool TLSSocket::Start()
 	}
 
 	gnutls_session_t sess;
-	m_iRetCode = gnutls_init(&sess, m_bIsClient ? GNUTLS_CLIENT : GNUTLS_SERVER);
-	if (m_iRetCode != 0)
+	m_retCode = gnutls_init(&sess, m_isClient ? GNUTLS_CLIENT : GNUTLS_SERVER);
+	if (m_retCode != 0)
 	{
 		ReportError("Could not create TLS session");
 		Close();
 		return false;
 	}
 
-	m_pSession = sess;
+	m_session = sess;
 
-	m_bInitialized = true;
+	m_initialized = true;
 
-	const char* szPriority = m_szCipher ? m_szCipher : "NORMAL";
+	const char* priority = m_cipher ? m_cipher : "NORMAL";
 
-	m_iRetCode = gnutls_priority_set_direct((gnutls_session_t)m_pSession, szPriority, NULL);
-	if (m_iRetCode != 0)
+	m_retCode = gnutls_priority_set_direct((gnutls_session_t)m_session, priority, NULL);
+	if (m_retCode != 0)
 	{
 		ReportError("Could not select cipher for TLS session");
 		Close();
 		return false;
 	}
 
-	m_iRetCode = gnutls_credentials_set((gnutls_session_t)m_pSession, GNUTLS_CRD_CERTIFICATE, 
-		(gnutls_certificate_credentials_t*)m_pContext);
-	if (m_iRetCode != 0)
+	m_retCode = gnutls_credentials_set((gnutls_session_t)m_session, GNUTLS_CRD_CERTIFICATE, 
+		(gnutls_certificate_credentials_t*)m_context);
+	if (m_retCode != 0)
 	{
 		ReportError("Could not initialize TLS session");
 		Close();
 		return false;
 	}
 
-	gnutls_transport_set_ptr((gnutls_session_t)m_pSession, (gnutls_transport_ptr_t)(size_t)m_iSocket);
+	gnutls_transport_set_ptr((gnutls_session_t)m_session, (gnutls_transport_ptr_t)(size_t)m_socket);
 
-	m_iRetCode = gnutls_handshake((gnutls_session_t)m_pSession);
-	if (m_iRetCode != 0)
+	m_retCode = gnutls_handshake((gnutls_session_t)m_session);
+	if (m_retCode != 0)
 	{
 		ReportError("TLS handshake failed");
 		Close();
 		return false;
 	}
 
-	m_bConnected = true;
+	m_connected = true;
 	return true;
 #endif /* HAVE_LIBGNUTLS */
 
 #ifdef HAVE_OPENSSL
-	m_pContext = SSL_CTX_new(SSLv23_method());
+	m_context = SSL_CTX_new(SSLv23_method());
 
-	if (!m_pContext)
+	if (!m_context)
 	{
 		ReportError("Could not create TLS context");
 		return false;
 	}
 
-	if (m_szCertFile && m_szKeyFile)
+	if (m_certFile && m_keyFile)
 	{
-		if (SSL_CTX_use_certificate_file((SSL_CTX*)m_pContext, m_szCertFile, SSL_FILETYPE_PEM) != 1)
+		if (SSL_CTX_use_certificate_file((SSL_CTX*)m_context, m_certFile, SSL_FILETYPE_PEM) != 1)
 		{
 			ReportError("Could not load certificate file");
 			Close();
 			return false;
 		}
-		if (SSL_CTX_use_PrivateKey_file((SSL_CTX*)m_pContext, m_szKeyFile, SSL_FILETYPE_PEM) != 1)
+		if (SSL_CTX_use_PrivateKey_file((SSL_CTX*)m_context, m_keyFile, SSL_FILETYPE_PEM) != 1)
 		{
 			ReportError("Could not load key file");
 			Close();
@@ -429,29 +429,29 @@ bool TLSSocket::Start()
 		}
 	}
 	
-	m_pSession = SSL_new((SSL_CTX*)m_pContext);
-	if (!m_pSession)
+	m_session = SSL_new((SSL_CTX*)m_context);
+	if (!m_session)
 	{
 		ReportError("Could not create TLS session");
 		Close();
 		return false;
 	}
 
-	if (m_szCipher && !SSL_set_cipher_list((SSL*)m_pSession, m_szCipher))
+	if (m_cipher && !SSL_set_cipher_list((SSL*)m_session, m_cipher))
 	{
 		ReportError("Could not select cipher for TLS");
 		Close();
 		return false;
 	}
 
-	if (!SSL_set_fd((SSL*)m_pSession, m_iSocket))
+	if (!SSL_set_fd((SSL*)m_session, m_socket))
 	{
 		ReportError("Could not set the file descriptor for TLS");
 		Close();
 		return false;
 	}
 
-	int error_code = m_bIsClient ? SSL_connect((SSL*)m_pSession) : SSL_accept((SSL*)m_pSession);
+	int error_code = m_isClient ? SSL_connect((SSL*)m_session) : SSL_accept((SSL*)m_session);
 	if (error_code < 1)
 	{
 		ReportError("TLS handshake failed");
@@ -459,61 +459,61 @@ bool TLSSocket::Start()
 		return false;
 	}
 
-	m_bConnected = true;
+	m_connected = true;
 	return true;
 #endif /* HAVE_OPENSSL */
 }
 
 void TLSSocket::Close()
 {
-	if (m_pSession)
+	if (m_session)
 	{
 #ifdef HAVE_LIBGNUTLS
-		if (m_bConnected)
+		if (m_connected)
 		{
-			gnutls_bye((gnutls_session_t)m_pSession, GNUTLS_SHUT_WR);
+			gnutls_bye((gnutls_session_t)m_session, GNUTLS_SHUT_WR);
 		}
-		if (m_bInitialized)
+		if (m_initialized)
 		{
-			gnutls_deinit((gnutls_session_t)m_pSession);
+			gnutls_deinit((gnutls_session_t)m_session);
 		}
 #endif /* HAVE_LIBGNUTLS */
 
 #ifdef HAVE_OPENSSL
-		if (m_bConnected)
+		if (m_connected)
 		{
-			SSL_shutdown((SSL*)m_pSession);
+			SSL_shutdown((SSL*)m_session);
 		}
-		SSL_free((SSL*)m_pSession);
+		SSL_free((SSL*)m_session);
 #endif /* HAVE_OPENSSL */
 
-		m_pSession = NULL;
+		m_session = NULL;
 	}
 
-	if (m_pContext)
+	if (m_context)
 	{
 #ifdef HAVE_LIBGNUTLS
-		gnutls_certificate_free_credentials((gnutls_certificate_credentials_t)m_pContext);
+		gnutls_certificate_free_credentials((gnutls_certificate_credentials_t)m_context);
 #endif /* HAVE_LIBGNUTLS */
 
 #ifdef HAVE_OPENSSL
-		SSL_CTX_free((SSL_CTX*)m_pContext);
+		SSL_CTX_free((SSL_CTX*)m_context);
 #endif /* HAVE_OPENSSL */
 
-		m_pContext = NULL;
+		m_context = NULL;
 	}
 }
 
-int TLSSocket::Send(const char* pBuffer, int iSize)
+int TLSSocket::Send(const char* buffer, int size)
 {
 	int ret;
 
 #ifdef HAVE_LIBGNUTLS
-	ret = gnutls_record_send((gnutls_session_t)m_pSession, pBuffer, iSize);
+	ret = gnutls_record_send((gnutls_session_t)m_session, buffer, size);
 #endif /* HAVE_LIBGNUTLS */
 
 #ifdef HAVE_OPENSSL
-	ret = SSL_write((SSL*)m_pSession, pBuffer, iSize);
+	ret = SSL_write((SSL*)m_session, buffer, size);
 #endif /* HAVE_OPENSSL */
 
 	if (ret < 0)
@@ -532,16 +532,16 @@ int TLSSocket::Send(const char* pBuffer, int iSize)
 	return ret;
 }
 
-int TLSSocket::Recv(char* pBuffer, int iSize)
+int TLSSocket::Recv(char* buffer, int size)
 {
 	int ret;
 
 #ifdef HAVE_LIBGNUTLS
-	ret = gnutls_record_recv((gnutls_session_t)m_pSession, pBuffer, iSize);
+	ret = gnutls_record_recv((gnutls_session_t)m_session, buffer, size);
 #endif /* HAVE_LIBGNUTLS */
 
 #ifdef HAVE_OPENSSL
-	ret = SSL_read((SSL*)m_pSession, pBuffer, iSize);
+	ret = SSL_read((SSL*)m_session, buffer, size);
 #endif /* HAVE_OPENSSL */
 
 	if (ret < 0)

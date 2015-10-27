@@ -32,21 +32,21 @@
 class PostScriptController : public Thread, public NZBScriptController
 {
 private:
-	PostInfo*			m_pPostInfo;
- 	int					m_iPrefixLen;
-	ScriptConfig::Script*	m_pScript;
+	PostInfo*			m_postInfo;
+ 	int					m_prefixLen;
+	ScriptConfig::Script*	m_script;
 
-	void				PrepareParams(const char* szScriptName);
-	ScriptStatus::EStatus	AnalyseExitCode(int iExitCode);
+	void				PrepareParams(const char* scriptName);
+	ScriptStatus::EStatus	AnalyseExitCode(int exitCode);
 
 protected:
-	virtual void		ExecuteScript(ScriptConfig::Script* pScript);
-	virtual void		AddMessage(Message::EKind eKind, const char* szText);
+	virtual void		ExecuteScript(ScriptConfig::Script* script);
+	virtual void		AddMessage(Message::EKind kind, const char* text);
 
 public:
 	virtual void		Run();
 	virtual void		Stop();
-	static void			StartJob(PostInfo* pPostInfo);
+	static void			StartJob(PostInfo* postInfo);
 };
 
 #endif

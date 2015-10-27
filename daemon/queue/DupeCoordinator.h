@@ -42,16 +42,16 @@ public:
 	};
 
 private:
-	void				ReturnBestDupe(DownloadQueue* pDownloadQueue, NZBInfo* pNZBInfo, const char* szNZBName, const char* szDupeKey);
-	void				HistoryCleanup(DownloadQueue* pDownloadQueue, HistoryInfo* pMarkHistoryInfo);
-	bool				SameNameOrKey(const char* szName1, const char* szDupeKey1, const char* szName2, const char* szDupeKey2);
+	void				ReturnBestDupe(DownloadQueue* downloadQueue, NZBInfo* nzbInfo, const char* nzbName, const char* dupeKey);
+	void				HistoryCleanup(DownloadQueue* downloadQueue, HistoryInfo* markHistoryInfo);
+	bool				SameNameOrKey(const char* name1, const char* dupeKey1, const char* name2, const char* dupeKey2);
 
 public:
-	void				NZBCompleted(DownloadQueue* pDownloadQueue, NZBInfo* pNZBInfo);
-	void				NZBFound(DownloadQueue* pDownloadQueue, NZBInfo* pNZBInfo);
-	void				HistoryMark(DownloadQueue* pDownloadQueue, HistoryInfo* pHistoryInfo, NZBInfo::EMarkStatus eMarkStatus);
-	EDupeStatus			GetDupeStatus(DownloadQueue* pDownloadQueue, const char* szName, const char* szDupeKey);
-	void				ListHistoryDupes(DownloadQueue* pDownloadQueue, NZBInfo* pNZBInfo, NZBList* pDupeList);
+	void				NZBCompleted(DownloadQueue* downloadQueue, NZBInfo* nzbInfo);
+	void				NZBFound(DownloadQueue* downloadQueue, NZBInfo* nzbInfo);
+	void				HistoryMark(DownloadQueue* downloadQueue, HistoryInfo* historyInfo, NZBInfo::EMarkStatus markStatus);
+	EDupeStatus			GetDupeStatus(DownloadQueue* downloadQueue, const char* name, const char* dupeKey);
+	void				ListHistoryDupes(DownloadQueue* downloadQueue, NZBInfo* nzbInfo, NZBList* dupeList);
 };
 
 extern DupeCoordinator* g_pDupeCoordinator;

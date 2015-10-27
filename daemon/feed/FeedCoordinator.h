@@ -47,63 +47,63 @@ private:
 	class DownloadQueueObserver: public Observer
 	{
 	public:
-		FeedCoordinator*	m_pOwner;
-		virtual void		Update(Subject* pCaller, void* pAspect) { m_pOwner->DownloadQueueUpdate(pCaller, pAspect); }
+		FeedCoordinator*	m_owner;
+		virtual void		Update(Subject* caller, void* aspect) { m_owner->DownloadQueueUpdate(caller, aspect); }
 	};
 
 	class FeedCacheItem
 	{
 	private:
-		char*				m_szUrl;
-		int					m_iCacheTimeSec;
-		char*				m_szCacheId;
-		time_t				m_tLastUsage;
-		FeedItemInfos*		m_pFeedItemInfos;
+		char*				m_url;
+		int					m_cacheTimeSec;
+		char*				m_cacheId;
+		time_t				m_lastUsage;
+		FeedItemInfos*		m_feedItemInfos;
 
 	public:
-							FeedCacheItem(const char* szUrl, int iCacheTimeSec,const char* szCacheId,
-								time_t tLastUsage, FeedItemInfos* pFeedItemInfos);
+							FeedCacheItem(const char* url, int cacheTimeSec,const char* cacheId,
+								time_t lastUsage, FeedItemInfos* feedItemInfos);
 							~FeedCacheItem();
-		const char*			GetUrl() { return m_szUrl; }
-		int					GetCacheTimeSec() { return m_iCacheTimeSec; }
-		const char*			GetCacheId() { return m_szCacheId; }
-		time_t				GetLastUsage() { return m_tLastUsage; }
-		void				SetLastUsage(time_t tLastUsage) { m_tLastUsage = tLastUsage; }
-		FeedItemInfos*		GetFeedItemInfos() { return m_pFeedItemInfos; }
+		const char*			GetUrl() { return m_url; }
+		int					GetCacheTimeSec() { return m_cacheTimeSec; }
+		const char*			GetCacheId() { return m_cacheId; }
+		time_t				GetLastUsage() { return m_lastUsage; }
+		void				SetLastUsage(time_t lastUsage) { m_lastUsage = lastUsage; }
+		FeedItemInfos*		GetFeedItemInfos() { return m_feedItemInfos; }
 	};
 
 	class FilterHelper : public FeedFilterHelper
 	{
 	private:
-		RegEx*				m_pSeasonEpisodeRegEx;
+		RegEx*				m_seasonEpisodeRegEx;
 	public:
 							FilterHelper();
 							~FilterHelper();
-		virtual RegEx**		GetSeasonEpisodeRegEx() { return &m_pSeasonEpisodeRegEx; };
-		virtual void		CalcDupeStatus(const char* szTitle, const char* szDupeKey, char* szStatusBuf, int iBufLen);
+		virtual RegEx**		GetSeasonEpisodeRegEx() { return &m_seasonEpisodeRegEx; };
+		virtual void		CalcDupeStatus(const char* title, const char* dupeKey, char* statusBuf, int bufLen);
 	};
 
 	typedef std::deque<FeedCacheItem*>	FeedCache;
 	typedef std::list<FeedDownloader*>	ActiveDownloads;
 
 private:
-	Feeds					m_Feeds;
-	ActiveDownloads			m_ActiveDownloads;
-	FeedHistory				m_FeedHistory;
-	Mutex					m_mutexDownloads;
-	DownloadQueueObserver	m_DownloadQueueObserver;
-	bool					m_bForce;
-	bool					m_bSave;
-	FeedCache				m_FeedCache;
-	FilterHelper			m_FilterHelper;
+	Feeds					m_feeds;
+	ActiveDownloads			m_activeDownloads;
+	FeedHistory				m_feedHistory;
+	Mutex					m_downloadsMutex;
+	DownloadQueueObserver	m_downloadQueueObserver;
+	bool					m_force;
+	bool					m_save;
+	FeedCache				m_feedCache;
+	FilterHelper			m_filterHelper;
 
-	void					StartFeedDownload(FeedInfo* pFeedInfo, bool bForce);
-	void					FeedCompleted(FeedDownloader* pFeedDownloader);
-	void					FilterFeed(FeedInfo* pFeedInfo, FeedItemInfos* pFeedItemInfos);
-	void					ProcessFeed(FeedInfo* pFeedInfo, FeedItemInfos* pFeedItemInfos, NZBList* pAddedNZBs);
-	NZBInfo*				CreateNZBInfo(FeedInfo* pFeedInfo, FeedItemInfo* pFeedItemInfo);
+	void					StartFeedDownload(FeedInfo* feedInfo, bool force);
+	void					FeedCompleted(FeedDownloader* feedDownloader);
+	void					FilterFeed(FeedInfo* feedInfo, FeedItemInfos* feedItemInfos);
+	void					ProcessFeed(FeedInfo* feedInfo, FeedItemInfos* feedItemInfos, NZBList* addedNzbs);
+	NZBInfo*				CreateNZBInfo(FeedInfo* feedInfo, FeedItemInfo* feedItemInfo);
 	void					ResetHangingDownloads();
-	void					DownloadQueueUpdate(Subject* pCaller, void* pAspect);
+	void					DownloadQueueUpdate(Subject* caller, void* aspect);
 	void					CleanupHistory();
 	void					CleanupCache();
 	void					CheckSaveFeeds();
@@ -116,15 +116,15 @@ public:
 	virtual					~FeedCoordinator();
 	virtual void			Run();
 	virtual void 			Stop();
-	void					Update(Subject* pCaller, void* pAspect);
-	void					AddFeed(FeedInfo* pFeedInfo);
-	bool					PreviewFeed(int iID, const char* szName, const char* szUrl, const char* szFilter, bool bBacklog,
-								bool bPauseNzb, const char* szCategory, int iPriority, int iInterval, const char* szFeedScript,
-								int iCacheTimeSec, const char* szCacheId, FeedItemInfos** ppFeedItemInfos);
-	bool					ViewFeed(int iID, FeedItemInfos** ppFeedItemInfos);
-	void					FetchFeed(int iID);
+	void					Update(Subject* caller, void* aspect);
+	void					AddFeed(FeedInfo* feedInfo);
+	bool					PreviewFeed(int id, const char* name, const char* url, const char* filter, bool backlog,
+								bool pauseNzb, const char* category, int priority, int interval, const char* feedScript,
+								int cacheTimeSec, const char* cacheId, FeedItemInfos** ppFeedItemInfos);
+	bool					ViewFeed(int id, FeedItemInfos** ppFeedItemInfos);
+	void					FetchFeed(int id);
 	bool					HasActiveDownloads();
-	Feeds*					GetFeeds() { return &m_Feeds; }
+	Feeds*					GetFeeds() { return &m_feeds; }
 };
 
 extern FeedCoordinator* g_pFeedCoordinator;
@@ -132,11 +132,11 @@ extern FeedCoordinator* g_pFeedCoordinator;
 class FeedDownloader : public WebDownloader
 {
 private:
-	FeedInfo*				m_pFeedInfo;
+	FeedInfo*				m_feedInfo;
 
 public:
-	void					SetFeedInfo(FeedInfo* pFeedInfo) { m_pFeedInfo = pFeedInfo; }
-	FeedInfo*				GetFeedInfo() { return m_pFeedInfo; }
+	void					SetFeedInfo(FeedInfo* feedInfo) { m_feedInfo = feedInfo; }
+	FeedInfo*				GetFeedInfo() { return m_feedInfo; }
 };
 
 #endif

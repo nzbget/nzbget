@@ -46,27 +46,27 @@ public:
 	};
 
 private:
-	Connection*			m_pConnection;
-	char*				m_szRequest;
-	char*				m_szUrl;
-	EHttpMethod			m_eHttpMethod;
-	EUserAccess			m_eUserAccess;
-	bool				m_bGZip;
-	char*				m_szOrigin;
-	int					m_iContentLen;
-	char				m_szAuthInfo[256+1];
-	char				m_szAuthToken[48+1];
-	static char			m_szServerAuthToken[3][48+1];
+	Connection*			m_connection;
+	char*				m_request;
+	char*				m_url;
+	EHttpMethod			m_httpMethod;
+	EUserAccess			m_userAccess;
+	bool				m_gZip;
+	char*				m_origin;
+	int					m_contentLen;
+	char				m_authInfo[256+1];
+	char				m_authToken[48+1];
+	static char			m_serverAuthToken[3][48+1];
 
 	void				Dispatch();
 	void				SendAuthResponse();
 	void				SendOptionsResponse();
-	void				SendErrorResponse(const char* szErrCode);
-	void				SendFileResponse(const char* szFilename);
-	void				SendBodyResponse(const char* szBody, int iBodyLen, const char* szContentType);
-	void				SendRedirectResponse(const char* szURL);
-	const char*			DetectContentType(const char* szFilename);
-	bool				IsAuthorizedIP(const char* szRemoteAddr);
+	void				SendErrorResponse(const char* errCode);
+	void				SendFileResponse(const char* filename);
+	void				SendBodyResponse(const char* body, int bodyLen, const char* contentType);
+	void				SendRedirectResponse(const char* url);
+	const char*			DetectContentType(const char* filename);
+	bool				IsAuthorizedIP(const char* remoteAddr);
 	void				ParseHeaders();
 	void				ParseURL();
 	bool				CheckCredentials();
@@ -76,9 +76,9 @@ public:
 						~WebProcessor();
 	static void			Init();
 	void				Execute();
-	void				SetConnection(Connection* pConnection) { m_pConnection = pConnection; }
-	void				SetUrl(const char* szUrl);
-	void				SetHttpMethod(EHttpMethod eHttpMethod) { m_eHttpMethod = eHttpMethod; }
+	void				SetConnection(Connection* connection) { m_connection = connection; }
+	void				SetUrl(const char* url);
+	void				SetHttpMethod(EHttpMethod httpMethod) { m_httpMethod = httpMethod; }
 };
 
 #endif

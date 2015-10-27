@@ -50,61 +50,61 @@ public:
 	};
 			
 private:
-	char*				m_szURL;
-	char*				m_szOutputFilename;
-	Connection* 		m_pConnection;
-	Mutex			 	m_mutexConnection;
-	EStatus				m_eStatus;
-	time_t				m_tLastUpdateTime;
-	char*				m_szInfoName;
-	FILE*				m_pOutFile;
-	int					m_iContentLen;
-	bool				m_bConfirmedLength;
-	char*				m_szOriginalFilename;
-	bool				m_bForce;
-	bool				m_bRedirecting;
-	bool				m_bRedirected;
-	bool				m_bGZip;
-	bool				m_bRetry;
+	char*				m_url;
+	char*				m_outputFilename;
+	Connection* 		m_connection;
+	Mutex			 	m_connectionMutex;
+	EStatus				m_status;
+	time_t				m_lastUpdateTime;
+	char*				m_infoName;
+	FILE*				m_outFile;
+	int					m_contentLen;
+	bool				m_confirmedLength;
+	char*				m_originalFilename;
+	bool				m_force;
+	bool				m_redirecting;
+	bool				m_redirected;
+	bool				m_gZip;
+	bool				m_retry;
 #ifndef DISABLE_GZIP
-	GUnzipStream*		m_pGUnzipStream;
+	GUnzipStream*		m_gUnzipStream;
 #endif
 
-	void				SetStatus(EStatus eStatus);
-	bool				Write(void* pBuffer, int iLen);
+	void				SetStatus(EStatus status);
+	bool				Write(void* buffer, int len);
 	bool				PrepareFile();
 	void				FreeConnection();
-	EStatus				CheckResponse(const char* szResponse);
-	EStatus				CreateConnection(URL *pUrl);
-	void				ParseFilename(const char* szContentDisposition);
-	void				SendHeaders(URL *pUrl);
+	EStatus				CheckResponse(const char* response);
+	EStatus				CreateConnection(URL *url);
+	void				ParseFilename(const char* contentDisposition);
+	void				SendHeaders(URL *url);
 	EStatus				DownloadHeaders();
 	EStatus				DownloadBody();
-	void				ParseRedirect(const char* szLocation); 
+	void				ParseRedirect(const char* location); 
 
 protected:
-	virtual void		ProcessHeader(const char* szLine);
+	virtual void		ProcessHeader(const char* line);
 
 public:
 						WebDownloader();
 	virtual				~WebDownloader();
-	EStatus				GetStatus() { return m_eStatus; }
+	EStatus				GetStatus() { return m_status; }
 	virtual void		Run();
 	virtual void		Stop();
 	EStatus				Download();
-	EStatus				DownloadWithRedirects(int iMaxRedirects);
+	EStatus				DownloadWithRedirects(int maxRedirects);
 	bool				Terminate();
 	void				SetInfoName(const char* v);
-	const char*			GetInfoName() { return m_szInfoName; }
-	void 				SetURL(const char* szURL);
-	const char*			GetOutputFilename() { return m_szOutputFilename; }
+	const char*			GetInfoName() { return m_infoName; }
+	void 				SetURL(const char* url);
+	const char*			GetOutputFilename() { return m_outputFilename; }
 	void 				SetOutputFilename(const char* v);
-	time_t				GetLastUpdateTime() { return m_tLastUpdateTime; }
-	void				SetLastUpdateTimeNow() { m_tLastUpdateTime = ::time(NULL); }
-	bool				GetConfirmedLength() { return m_bConfirmedLength; }
-	const char*			GetOriginalFilename() { return m_szOriginalFilename; }
-	void				SetForce(bool bForce) { m_bForce = bForce; }
-	void				SetRetry(bool bRetry) { m_bRetry = bRetry; }
+	time_t				GetLastUpdateTime() { return m_lastUpdateTime; }
+	void				SetLastUpdateTimeNow() { m_lastUpdateTime = ::time(NULL); }
+	bool				GetConfirmedLength() { return m_confirmedLength; }
+	const char*			GetOriginalFilename() { return m_originalFilename; }
+	void				SetForce(bool force) { m_force = force; }
+	void				SetRetry(bool retry) { m_retry = retry; }
 
 	void				LogDebugInfo();
 };

@@ -40,7 +40,7 @@ void detail(const char* msg, ...);
 
 #ifdef DEBUG
 #ifdef HAVE_VARIADIC_MACROS
-	void debug(const char* szFilename, const char* szFuncname, int iLineNr, const char* msg, ...);
+	void debug(const char* filename, const char* funcname, int lineNr, const char* msg, ...);
 #else
 	void debug(const char* msg, ...);
 #endif
@@ -59,20 +59,20 @@ public:
 	};
 
 private:
-	unsigned int		m_iID;
-	EKind				m_eKind;
-	time_t				m_tTime;
-	char*				m_szText;
+	unsigned int		m_id;
+	EKind				m_kind;
+	time_t				m_time;
+	char*				m_text;
 
 	friend class Log;
 
 public:
-						Message(unsigned int iID, EKind eKind, time_t tTime, const char* szText);
+						Message(unsigned int id, EKind kind, time_t time, const char* text);
 						~Message();
-	unsigned int		GetID() { return m_iID; }
-	EKind				GetKind() { return m_eKind; }
-	time_t				GetTime() { return m_tTime; }
-	const char*			GetText() { return m_szText; }
+	unsigned int		GetID() { return m_id; }
+	EKind				GetKind() { return m_kind; }
+	time_t				GetTime() { return m_time; }
+	const char*			GetText() { return m_text; }
 };
 
 typedef std::deque<Message*> MessageListBase;
@@ -97,22 +97,22 @@ public:
 	typedef std::list<Debuggable*>	Debuggables;
 
 private:
-	Mutex				m_mutexLog;
-	MessageList			m_Messages;
-	Debuggables			m_Debuggables;
-	Mutex				m_mutexDebug;
-	char*				m_szLogFilename;
-	unsigned int		m_iIDGen;
-	time_t				m_tLastWritten;
-	bool				m_bOptInit;
+	Mutex				m_logMutex;
+	MessageList			m_messages;
+	Debuggables			m_debuggables;
+	Mutex				m_debugMutex;
+	char*				m_logFilename;
+	unsigned int		m_idGen;
+	time_t				m_lastWritten;
+	bool				m_optInit;
 #ifdef DEBUG
-	bool				m_bExtraDebug;
+	bool				m_extraDebug;
 #endif
 
 						Log();
 						~Log();
 	void				Filelog(const char* msg, ...);
-	void				AddMessage(Message::EKind eKind, const char* szText);
+	void				AddMessage(Message::EKind kind, const char* text);
 	void				RotateLog();
 
 	friend void error(const char* msg, ...);
@@ -121,7 +121,7 @@ private:
 	friend void detail(const char* msg, ...);
 #ifdef DEBUG
 #ifdef HAVE_VARIADIC_MACROS
-	friend void debug(const char* szFilename, const char* szFuncname, int iLineNr, const char* msg, ...);
+	friend void debug(const char* filename, const char* funcname, int lineNr, const char* msg, ...);
 #else	
 	friend void debug(const char* msg, ...);
 #endif
@@ -135,8 +135,8 @@ public:
 	void				Clear();
 	void				ResetLog();
 	void				InitOptions();
-	void				RegisterDebuggable(Debuggable* pDebuggable);
-	void				UnregisterDebuggable(Debuggable* pDebuggable);
+	void				RegisterDebuggable(Debuggable* debuggable);
+	void				UnregisterDebuggable(Debuggable* debuggable);
 	void				LogDebugInfo();
 };
 

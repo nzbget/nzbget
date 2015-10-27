@@ -34,35 +34,35 @@
 class MoveController : public Thread, public ScriptController
 {
 private:
-	PostInfo*			m_pPostInfo;
-	char				m_szInterDir[1024];
-	char				m_szDestDir[1024];
+	PostInfo*			m_postInfo;
+	char				m_interDir[1024];
+	char				m_destDir[1024];
 
 	bool				MoveFiles();
 
 protected:
-	virtual void		AddMessage(Message::EKind eKind, const char* szText);
+	virtual void		AddMessage(Message::EKind kind, const char* text);
 
 public:
 	virtual void		Run();
-	static void			StartJob(PostInfo* pPostInfo);
+	static void			StartJob(PostInfo* postInfo);
 };
 
 class CleanupController : public Thread, public ScriptController
 {
 private:
-	PostInfo*			m_pPostInfo;
-	char				m_szDestDir[1024];
-	char				m_szFinalDir[1024];
+	PostInfo*			m_postInfo;
+	char				m_destDir[1024];
+	char				m_finalDir[1024];
 
-	bool				Cleanup(const char* szDestDir, bool *bDeleted);
+	bool				Cleanup(const char* destDir, bool *deleted);
 
 protected:
-	virtual void		AddMessage(Message::EKind eKind, const char* szText);
+	virtual void		AddMessage(Message::EKind kind, const char* text);
 
 public:
 	virtual void		Run();
-	static void			StartJob(PostInfo* pPostInfo);
+	static void			StartJob(PostInfo* postInfo);
 };
 
 #endif

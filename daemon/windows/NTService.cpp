@@ -134,19 +134,19 @@ void InstallService(int argc, char *argv[])
 		return;
 	}
 	
-	char szExeName[1024];
-	GetModuleFileName(NULL, szExeName, 1024);
-	szExeName[1024-1] = '\0';
+	char exeName[1024];
+	GetModuleFileName(NULL, exeName, 1024);
+	exeName[1024-1] = '\0';
 
-	char szCmdLine[1024];
-	snprintf(szCmdLine, 1024, "%s -D", szExeName);
-	szCmdLine[1024-1] = '\0';
+	char cmdLine[1024];
+	snprintf(cmdLine, 1024, "%s -D", exeName);
+	cmdLine[1024-1] = '\0';
 
 	SC_HANDLE hService = CreateService(scm, strServiceName,
 		strServiceName,
 		SERVICE_ALL_ACCESS,SERVICE_WIN32_OWN_PROCESS,SERVICE_DEMAND_START,
 		SERVICE_ERROR_NORMAL,
-		szCmdLine,
+		cmdLine,
 		0,0,0,0,0);
 	if(!hService)
 	{
@@ -212,13 +212,13 @@ bool IsServiceRunning()
 
 	SC_HANDLE hService = OpenService(scm, "NZBGet", SERVICE_QUERY_STATUS);
 	SERVICE_STATUS ServiceStatus;
-	bool bRunning = false;
+	bool running = false;
 	if (hService && QueryServiceStatus(hService, &ServiceStatus))
 	{
-		bRunning = ServiceStatus.dwCurrentState != SERVICE_STOPPED;
+		running = ServiceStatus.dwCurrentState != SERVICE_STOPPED;
 	}
 
 	CloseServiceHandle(scm);
 
-	return bRunning;
+	return running;
 }

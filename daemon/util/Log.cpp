@@ -61,20 +61,20 @@ void Log::Final()
 
 Log::Log()
 {
-	m_Messages.clear();
-	m_iIDGen = 0;
-	m_bOptInit = false;
-	m_szLogFilename = NULL;
-	m_tLastWritten = 0;
+	m_messages.clear();
+	m_idGen = 0;
+	m_optInit = false;
+	m_logFilename = NULL;
+	m_lastWritten = 0;
 #ifdef DEBUG
-	m_bExtraDebug = Util::FileExists("extradebug");
+	m_extraDebug = Util::FileExists("extradebug");
 #endif
 }
 
 Log::~Log()
 {
 	Clear();
-	free(m_szLogFilename);
+	free(m_logFilename);
 }
 
 void Log::LogDebugInfo()
@@ -83,20 +83,20 @@ void Log::LogDebugInfo()
 	info("Dumping debug info to log");
 	info("--------------------------------------------");
 	
-	m_mutexDebug.Lock();
-	for (Debuggables::iterator it = m_Debuggables.begin(); it != m_Debuggables.end(); it++)
+	m_debugMutex.Lock();
+	for (Debuggables::iterator it = m_debuggables.begin(); it != m_debuggables.end(); it++)
 	{
-        Debuggable* pDebuggable = *it;
-		pDebuggable->LogDebugInfo();
+        Debuggable* debuggable = *it;
+		debuggable->LogDebugInfo();
 	}
-	m_mutexDebug.Unlock();
+	m_debugMutex.Unlock();
 
 	info("--------------------------------------------");
 }
 
 void Log::Filelog(const char* msg, ...)
 {
-	if (!m_szLogFilename)
+	if (!m_logFilename)
 	{
 		return;
 	}
@@ -111,49 +111,49 @@ void Log::Filelog(const char* msg, ...)
 
 	time_t rawtime = time(NULL) + g_pOptions->GetTimeCorrection();
 	
-	char szTime[50];
+	char time[50];
 #ifdef HAVE_CTIME_R_3
-	ctime_r(&rawtime, szTime, 50);
+	ctime_r(&rawtime, time, 50);
 #else
-	ctime_r(&rawtime, szTime);
+	ctime_r(&rawtime, time);
 #endif
-	szTime[50-1] = '\0';
-	szTime[strlen(szTime) - 1] = '\0'; // trim LF
+	time[50-1] = '\0';
+	time[strlen(time) - 1] = '\0'; // trim LF
 
-	if ((int)rawtime/86400 != (int)m_tLastWritten/86400 && g_pOptions->GetWriteLog() == Options::wlRotate)
+	if ((int)rawtime/86400 != (int)m_lastWritten/86400 && g_pOptions->GetWriteLog() == Options::wlRotate)
 	{
 		RotateLog();
 	}
 
-	m_tLastWritten = rawtime;
+	m_lastWritten = rawtime;
 
-	FILE* file = fopen(m_szLogFilename, FOPEN_ABP);
+	FILE* file = fopen(m_logFilename, FOPEN_ABP);
 	if (file)
 	{
 #ifdef WIN32
-		unsigned long iProcessId = GetCurrentProcessId();
-		unsigned long iThreadId = GetCurrentThreadId();
+		unsigned long processId = GetCurrentProcessId();
+		unsigned long threadId = GetCurrentThreadId();
 #else
-		unsigned long iProcessId = (unsigned long)getpid();
-		unsigned long iThreadId = (unsigned long)pthread_self();
+		unsigned long processId = (unsigned long)getpid();
+		unsigned long threadId = (unsigned long)pthread_self();
 #endif
 #ifdef DEBUG
-		fprintf(file, "%s\t%lu\t%lu\t%s%s", szTime, iProcessId, iThreadId, tmp2, LINE_ENDING);
+		fprintf(file, "%s\t%lu\t%lu\t%s%s", time, processId, threadId, tmp2, LINE_ENDING);
 #else
-		fprintf(file, "%s\t%s%s", szTime, tmp2, LINE_ENDING);
+		fprintf(file, "%s\t%s%s", time, tmp2, LINE_ENDING);
 #endif
 		fclose(file);
 	}
 	else
 	{
-		perror(m_szLogFilename);
+		perror(m_logFilename);
 	}
 }
 
 #ifdef DEBUG
 #undef debug
 #ifdef HAVE_VARIADIC_MACROS
-void debug(const char* szFilename, const char* szFuncname, int iLineNr, const char* msg, ...)
+void debug(const char* filename, const char* funcname, int lineNr, const char* msg, ...)
 #else
 void debug(const char* msg, ...)
 #endif
@@ -168,37 +168,37 @@ void debug(const char* msg, ...)
 
 	char tmp2[1024];
 #ifdef HAVE_VARIADIC_MACROS
-	if (szFuncname)
+	if (funcname)
 	{
-		snprintf(tmp2, 1024, "%s (%s:%i:%s)", tmp1, Util::BaseFileName(szFilename), iLineNr, szFuncname);
+		snprintf(tmp2, 1024, "%s (%s:%i:%s)", tmp1, Util::BaseFileName(filename), lineNr, funcname);
 	}
 	else
 	{
-		snprintf(tmp2, 1024, "%s (%s:%i)", tmp1, Util::BaseFileName(szFilename), iLineNr);
+		snprintf(tmp2, 1024, "%s (%s:%i)", tmp1, Util::BaseFileName(filename), lineNr);
 	}
 #else
 	snprintf(tmp2, 1024, "%s", tmp1);
 #endif
 	tmp2[1024-1] = '\0';
 
-	g_pLog->m_mutexLog.Lock();
+	g_pLog->m_logMutex.Lock();
 
-	if (!g_pOptions && g_pLog->m_bExtraDebug)
+	if (!g_pOptions && g_pLog->m_extraDebug)
 	{
 		printf("%s\n", tmp2);
 	}
 
-	Options::EMessageTarget eMessageTarget = g_pOptions ? g_pOptions->GetDebugTarget() : Options::mtScreen;
-	if (eMessageTarget == Options::mtScreen || eMessageTarget == Options::mtBoth)
+	Options::EMessageTarget messageTarget = g_pOptions ? g_pOptions->GetDebugTarget() : Options::mtScreen;
+	if (messageTarget == Options::mtScreen || messageTarget == Options::mtBoth)
 	{
 		g_pLog->AddMessage(Message::mkDebug, tmp2);
 	}
-	if (eMessageTarget == Options::mtLog || eMessageTarget == Options::mtBoth)
+	if (messageTarget == Options::mtLog || messageTarget == Options::mtBoth)
 	{
 		g_pLog->Filelog("DEBUG\t%s", tmp2);
 	}
 
-	g_pLog->m_mutexLog.Unlock();
+	g_pLog->m_logMutex.Unlock();
 }
 #endif
 
@@ -212,19 +212,19 @@ void error(const char* msg, ...)
 	tmp2[1024-1] = '\0';
 	va_end(ap);
 
-	g_pLog->m_mutexLog.Lock();
+	g_pLog->m_logMutex.Lock();
 
-	Options::EMessageTarget eMessageTarget = g_pOptions ? g_pOptions->GetErrorTarget() : Options::mtBoth;
-	if (eMessageTarget == Options::mtScreen || eMessageTarget == Options::mtBoth)
+	Options::EMessageTarget messageTarget = g_pOptions ? g_pOptions->GetErrorTarget() : Options::mtBoth;
+	if (messageTarget == Options::mtScreen || messageTarget == Options::mtBoth)
 	{
 		g_pLog->AddMessage(Message::mkError, tmp2);
 	}
-	if (eMessageTarget == Options::mtLog || eMessageTarget == Options::mtBoth)
+	if (messageTarget == Options::mtLog || messageTarget == Options::mtBoth)
 	{
 		g_pLog->Filelog("ERROR\t%s", tmp2);
 	}
 
-	g_pLog->m_mutexLog.Unlock();
+	g_pLog->m_logMutex.Unlock();
 }
 
 void warn(const char* msg, ...)
@@ -237,19 +237,19 @@ void warn(const char* msg, ...)
 	tmp2[1024-1] = '\0';
 	va_end(ap);
 
-	g_pLog->m_mutexLog.Lock();
+	g_pLog->m_logMutex.Lock();
 
-	Options::EMessageTarget eMessageTarget = g_pOptions ? g_pOptions->GetWarningTarget() : Options::mtScreen;
-	if (eMessageTarget == Options::mtScreen || eMessageTarget == Options::mtBoth)
+	Options::EMessageTarget messageTarget = g_pOptions ? g_pOptions->GetWarningTarget() : Options::mtScreen;
+	if (messageTarget == Options::mtScreen || messageTarget == Options::mtBoth)
 	{
 		g_pLog->AddMessage(Message::mkWarning, tmp2);
 	}
-	if (eMessageTarget == Options::mtLog || eMessageTarget == Options::mtBoth)
+	if (messageTarget == Options::mtLog || messageTarget == Options::mtBoth)
 	{
 		g_pLog->Filelog("WARNING\t%s", tmp2);
 	}
 
-	g_pLog->m_mutexLog.Unlock();
+	g_pLog->m_logMutex.Unlock();
 }
 
 void info(const char* msg, ...)
@@ -262,19 +262,19 @@ void info(const char* msg, ...)
 	tmp2[1024-1] = '\0';
 	va_end(ap);
 
-	g_pLog->m_mutexLog.Lock();
+	g_pLog->m_logMutex.Lock();
 
-	Options::EMessageTarget eMessageTarget = g_pOptions ? g_pOptions->GetInfoTarget() : Options::mtScreen;
-	if (eMessageTarget == Options::mtScreen || eMessageTarget == Options::mtBoth)
+	Options::EMessageTarget messageTarget = g_pOptions ? g_pOptions->GetInfoTarget() : Options::mtScreen;
+	if (messageTarget == Options::mtScreen || messageTarget == Options::mtBoth)
 	{
 		g_pLog->AddMessage(Message::mkInfo, tmp2);
 	}
-	if (eMessageTarget == Options::mtLog || eMessageTarget == Options::mtBoth)
+	if (messageTarget == Options::mtLog || messageTarget == Options::mtBoth)
 	{
 		g_pLog->Filelog("INFO\t%s", tmp2);
 	}
 
-	g_pLog->m_mutexLog.Unlock();
+	g_pLog->m_logMutex.Unlock();
 }
 
 void detail(const char* msg, ...)
@@ -287,42 +287,42 @@ void detail(const char* msg, ...)
 	tmp2[1024-1] = '\0';
 	va_end(ap);
 
-	g_pLog->m_mutexLog.Lock();
+	g_pLog->m_logMutex.Lock();
 
-	Options::EMessageTarget eMessageTarget = g_pOptions ? g_pOptions->GetDetailTarget() : Options::mtScreen;
-	if (eMessageTarget == Options::mtScreen || eMessageTarget == Options::mtBoth)
+	Options::EMessageTarget messageTarget = g_pOptions ? g_pOptions->GetDetailTarget() : Options::mtScreen;
+	if (messageTarget == Options::mtScreen || messageTarget == Options::mtBoth)
 	{
 		g_pLog->AddMessage(Message::mkDetail, tmp2);
 	}
-	if (eMessageTarget == Options::mtLog || eMessageTarget == Options::mtBoth)
+	if (messageTarget == Options::mtLog || messageTarget == Options::mtBoth)
 	{
 		g_pLog->Filelog("DETAIL\t%s", tmp2);
 	}
 
-	g_pLog->m_mutexLog.Unlock();
+	g_pLog->m_logMutex.Unlock();
 }
 
 //************************************************************
 // Message
 
-Message::Message(unsigned int iID, EKind eKind, time_t tTime, const char* szText)
+Message::Message(unsigned int id, EKind kind, time_t time, const char* text)
 {
-	m_iID = iID;
-	m_eKind = eKind;
-	m_tTime = tTime;
-	if (szText)
+	m_id = id;
+	m_kind = kind;
+	m_time = time;
+	if (text)
 	{
-		m_szText = strdup(szText);
+		m_text = strdup(text);
 	}
 	else
 	{
-		m_szText = NULL;
+		m_text = NULL;
 	}
 }
 
 Message::~ Message()
 {
-	free(m_szText);
+	free(m_text);
 }
 
 MessageList::~MessageList()
@@ -341,36 +341,36 @@ void MessageList::Clear()
 
 void Log::Clear()
 {
-	m_mutexLog.Lock();
-	m_Messages.Clear();
-	m_mutexLog.Unlock();
+	m_logMutex.Lock();
+	m_messages.Clear();
+	m_logMutex.Unlock();
 }
 
-void Log::AddMessage(Message::EKind eKind, const char * szText)
+void Log::AddMessage(Message::EKind kind, const char * text)
 {
-	Message* pMessage = new Message(++m_iIDGen, eKind, time(NULL), szText);
-	m_Messages.push_back(pMessage);
+	Message* message = new Message(++m_idGen, kind, time(NULL), text);
+	m_messages.push_back(message);
 
-	if (m_bOptInit && g_pOptions)
+	if (m_optInit && g_pOptions)
 	{
-		while (m_Messages.size() > (unsigned int)g_pOptions->GetLogBufferSize())
+		while (m_messages.size() > (unsigned int)g_pOptions->GetLogBufferSize())
 		{
-			Message* pMessage = m_Messages.front();
-			delete pMessage;
-			m_Messages.pop_front();
+			Message* message = m_messages.front();
+			delete message;
+			m_messages.pop_front();
 		}
 	}
 }
 
 MessageList* Log::LockMessages()
 {
-	m_mutexLog.Lock();
-	return &m_Messages;
+	m_logMutex.Lock();
+	return &m_messages;
 }
 
 void Log::UnlockMessages()
 {
-	m_mutexLog.Unlock();
+	m_logMutex.Unlock();
 }
 
 void Log::ResetLog()
@@ -380,77 +380,77 @@ void Log::ResetLog()
 
 void Log::RotateLog()
 {
-	char szDirectory[1024];
-	strncpy(szDirectory, g_pOptions->GetLogFile(), 1024);
-	szDirectory[1024-1] = '\0';
+	char directory[1024];
+	strncpy(directory, g_pOptions->GetLogFile(), 1024);
+	directory[1024-1] = '\0';
 
 	// split the full filename into path, basename and extension
-	char* szBaseName = Util::BaseFileName(szDirectory);
-	if (szBaseName > szDirectory)
+	char* baseName = Util::BaseFileName(directory);
+	if (baseName > directory)
 	{
-		szBaseName[-1] = '\0';
+		baseName[-1] = '\0';
 	}
 
-	char szBaseExt[250];
-	char* szExt = strrchr(szBaseName, '.');
-	if (szExt && szExt > szBaseName)
+	char baseExt[250];
+	char* ext = strrchr(baseName, '.');
+	if (ext && ext > baseName)
 	{
-		strncpy(szBaseExt, szExt, 250);
-		szBaseExt[250-1] = '\0';
-		szExt[0] = '\0';
+		strncpy(baseExt, ext, 250);
+		baseExt[250-1] = '\0';
+		ext[0] = '\0';
 	}
 	else
 	{
-		szBaseExt[0] = '\0';
+		baseExt[0] = '\0';
 	}
 
-	char szFileMask[1024];
-	snprintf(szFileMask, 1024, "%s-####-##-##%s", szBaseName, szBaseExt);
-	szFileMask[1024-1] = '\0';
+	char fileMask[1024];
+	snprintf(fileMask, 1024, "%s-####-##-##%s", baseName, baseExt);
+	fileMask[1024-1] = '\0';
 
-	time_t tCurTime = time(NULL) + g_pOptions->GetTimeCorrection();
-	int iCurDay = (int)tCurTime / 86400;
-	char szFullFilename[1024];
+	time_t curTime = time(NULL) + g_pOptions->GetTimeCorrection();
+	int curDay = (int)curTime / 86400;
+	char fullFilename[1024];
 
-	WildMask mask(szFileMask, true);
-	DirBrowser dir(szDirectory);
+	WildMask mask(fileMask, true);
+	DirBrowser dir(directory);
 	while (const char* filename = dir.Next())
 	{
 		if (mask.Match(filename))
 		{
-			snprintf(szFullFilename, 1024, "%s%c%s", szDirectory, PATH_SEPARATOR, filename);
-			szFullFilename[1024-1] = '\0';
+			snprintf(fullFilename, 1024, "%s%c%s", directory, PATH_SEPARATOR, filename);
+			fullFilename[1024-1] = '\0';
 
 			struct tm tm;
 			memset(&tm, 0, sizeof(tm));
 			tm.tm_year = atoi(filename + mask.GetMatchStart(0)) - 1900;
 			tm.tm_mon = atoi(filename + mask.GetMatchStart(1)) - 1;
 			tm.tm_mday = atoi(filename + mask.GetMatchStart(2));
-			time_t tFileTime = Util::Timegm(&tm);
-			int iFileDay = (int)tFileTime / 86400;
+			time_t fileTime = Util::Timegm(&tm);
+			int fileDay = (int)fileTime / 86400;
 
-			if (iFileDay <= iCurDay - g_pOptions->GetRotateLog())
+			if (fileDay <= curDay - g_pOptions->GetRotateLog())
 			{
-				char szMessage[1024];
-				snprintf(szMessage, 1024, "Deleting old log-file %s\n", filename);
-				szMessage[1024-1] = '\0';
-				g_pLog->AddMessage(Message::mkInfo, szMessage);
+				char message[1024];
+				snprintf(message, 1024, "Deleting old log-file %s\n", filename);
+				message[1024-1] = '\0';
+				g_pLog->AddMessage(Message::mkInfo, message);
 
-				remove(szFullFilename);
+				remove(fullFilename);
 			}
 		}
 	}
 
 	struct tm tm;
-	gmtime_r(&tCurTime, &tm);
-	snprintf(szFullFilename, 1024, "%s%c%s-%i-%.2i-%.2i%s", szDirectory, PATH_SEPARATOR,
-		szBaseName, tm.tm_year + 1900, tm.tm_mon + 1, tm.tm_mday, szBaseExt);
-	szFullFilename[1024-1] = '\0';
+	gmtime_r(&curTime, &tm);
+	snprintf(fullFilename, 1024, "%s%c%s-%i-%.2i-%.2i%s", directory, PATH_SEPARATOR,
+		baseName, tm.tm_year + 1900, tm.tm_mon + 1, tm.tm_mday, baseExt);
+	fullFilename[1024-1] = '\0';
 
-	free(m_szLogFilename);
-	m_szLogFilename = strdup(szFullFilename);
+	free(m_logFilename);
+	m_logFilename = strdup(fullFilename);
 #ifdef WIN32
-	WebUtil::Utf8ToAnsi(m_szLogFilename, strlen(m_szLogFilename) + 1);
+	WebUtil::Utf8ToAnsi(m_logFilename, strlen(m_logFilename) + 1);
 #endif
 }
 
@@ -465,13 +465,13 @@ void Log::RotateLog()
 */
 void Log::InitOptions()
 {
-	const char* szMessageType[] = { "INFO", "WARNING", "ERROR", "DEBUG", "DETAIL"};
+	const char* messageType[] = { "INFO", "WARNING", "ERROR", "DEBUG", "DETAIL"};
 
 	if (g_pOptions->GetWriteLog() != Options::wlNone && g_pOptions->GetLogFile())
 	{
-		m_szLogFilename = strdup(g_pOptions->GetLogFile());
+		m_logFilename = strdup(g_pOptions->GetLogFile());
 #ifdef WIN32
-		WebUtil::Utf8ToAnsi(m_szLogFilename, strlen(m_szLogFilename) + 1);
+		WebUtil::Utf8ToAnsi(m_logFilename, strlen(m_logFilename) + 1);
 #endif
 
 		if (g_pOptions->GetServerMode() && g_pOptions->GetWriteLog() == Options::wlReset)
@@ -480,61 +480,61 @@ void Log::InitOptions()
 		}
 	}
 
-	m_iIDGen = 0;
+	m_idGen = 0;
 
-	for (unsigned int i = 0; i < m_Messages.size(); )
+	for (unsigned int i = 0; i < m_messages.size(); )
 	{
-		Message* pMessage = m_Messages.at(i);
-		Options::EMessageTarget eTarget = Options::mtNone;
-		switch (pMessage->GetKind())
+		Message* message = m_messages.at(i);
+		Options::EMessageTarget target = Options::mtNone;
+		switch (message->GetKind())
 		{
 			case Message::mkDebug:
-				eTarget = g_pOptions->GetDebugTarget();
+				target = g_pOptions->GetDebugTarget();
 				break;
 			case Message::mkDetail:
-				eTarget = g_pOptions->GetDetailTarget();
+				target = g_pOptions->GetDetailTarget();
 				break;
 			case Message::mkInfo:
-				eTarget = g_pOptions->GetInfoTarget();
+				target = g_pOptions->GetInfoTarget();
 				break;
 			case Message::mkWarning:
-				eTarget = g_pOptions->GetWarningTarget();
+				target = g_pOptions->GetWarningTarget();
 				break;
 			case Message::mkError:
-				eTarget = g_pOptions->GetErrorTarget();
+				target = g_pOptions->GetErrorTarget();
 				break;
 		}
 
-		if (eTarget == Options::mtLog || eTarget == Options::mtBoth)
+		if (target == Options::mtLog || target == Options::mtBoth)
 		{
-			Filelog("%s\t%s", szMessageType[pMessage->GetKind()], pMessage->GetText());
+			Filelog("%s\t%s", messageType[message->GetKind()], message->GetText());
 		}
 
-		if (eTarget == Options::mtLog || eTarget == Options::mtNone)
+		if (target == Options::mtLog || target == Options::mtNone)
 		{
-			delete pMessage;
-			m_Messages.erase(m_Messages.begin() + i);
+			delete message;
+			m_messages.erase(m_messages.begin() + i);
 		}
 		else
 		{
-			pMessage->m_iID = ++m_iIDGen;
+			message->m_id = ++m_idGen;
 			i++;
 		}
 	}
 
-	m_bOptInit = true;
+	m_optInit = true;
 }
 
-void Log::RegisterDebuggable(Debuggable* pDebuggable)
+void Log::RegisterDebuggable(Debuggable* debuggable)
 {
-	m_mutexDebug.Lock();
-	m_Debuggables.push_back(pDebuggable);
-	m_mutexDebug.Unlock();
+	m_debugMutex.Lock();
+	m_debuggables.push_back(debuggable);
+	m_debugMutex.Unlock();
 }
 
-void Log::UnregisterDebuggable(Debuggable* pDebuggable)
+void Log::UnregisterDebuggable(Debuggable* debuggable)
 {
-	m_mutexDebug.Lock();
-	m_Debuggables.remove(pDebuggable);
-	m_mutexDebug.Unlock();
+	m_debugMutex.Lock();
+	m_debuggables.remove(debuggable);
+	m_debugMutex.Unlock();
 }

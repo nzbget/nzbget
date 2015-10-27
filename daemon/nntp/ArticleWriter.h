@@ -32,26 +32,26 @@
 class ArticleWriter
 {
 private:
-	FileInfo*			m_pFileInfo;
-	ArticleInfo*		m_pArticleInfo;
-	FILE*				m_pOutFile;
-	char*				m_szTempFilename;
-	char*				m_szOutputFilename;
-	const char*			m_szResultFilename;
-	Decoder::EFormat	m_eFormat;
-	char*				m_pArticleData;
-	long long			m_iArticleOffset;
-	int					m_iArticleSize;
-	int					m_iArticlePtr;
-	bool				m_bFlushing;
-	bool				m_bDuplicate;
-	char*				m_szInfoName;
+	FileInfo*			m_fileInfo;
+	ArticleInfo*		m_articleInfo;
+	FILE*				m_outFile;
+	char*				m_tempFilename;
+	char*				m_outputFilename;
+	const char*			m_resultFilename;
+	Decoder::EFormat	m_format;
+	char*				m_articleData;
+	long long			m_articleOffset;
+	int					m_articleSize;
+	int					m_articlePtr;
+	bool				m_flushing;
+	bool				m_duplicate;
+	char*				m_infoName;
 
-	bool				PrepareFile(char* szLine);
-	bool				CreateOutputFile(long long iSize);
+	bool				PrepareFile(char* line);
+	bool				CreateOutputFile(long long size);
 	void				BuildOutputFilename();
 	bool				IsFileCached();
-	void				SetWriteBuffer(FILE* pOutFile, int iRecSize);
+	void				SetWriteBuffer(FILE* outFile, int recSize);
 
 protected:
 	virtual void		SetLastUpdateTimeNow() {}
@@ -59,44 +59,44 @@ protected:
 public:
 						ArticleWriter();
 						~ArticleWriter();
-	void				SetInfoName(const char* szInfoName);
-	void				SetFileInfo(FileInfo* pFileInfo) { m_pFileInfo = pFileInfo; }
-	void				SetArticleInfo(ArticleInfo* pArticleInfo) { m_pArticleInfo = pArticleInfo; }
+	void				SetInfoName(const char* infoName);
+	void				SetFileInfo(FileInfo* fileInfo) { m_fileInfo = fileInfo; }
+	void				SetArticleInfo(ArticleInfo* articleInfo) { m_articleInfo = articleInfo; }
 	void				Prepare();
-	bool				Start(Decoder::EFormat eFormat, const char* szFilename, long long iFileSize, long long iArticleOffset, int iArticleSize);
-	bool				Write(char* szBufffer, int iLen);
-	void				Finish(bool bSuccess);
-	bool				GetDuplicate() { return m_bDuplicate; }
+	bool				Start(Decoder::EFormat format, const char* filename, long long fileSize, long long articleOffset, int articleSize);
+	bool				Write(char* bufffer, int len);
+	void				Finish(bool success);
+	bool				GetDuplicate() { return m_duplicate; }
 	void				CompleteFileParts();
-	static bool			MoveCompletedFiles(NZBInfo* pNZBInfo, const char* szOldDestDir);
+	static bool			MoveCompletedFiles(NZBInfo* nzbInfo, const char* oldDestDir);
 	void				FlushCache();
 };
 
 class ArticleCache : public Thread
 {
 private:
-	size_t				m_iAllocated;
-	bool				m_bFlushing;
-	Mutex				m_mutexAlloc;
-	Mutex				m_mutexFlush;
-	Mutex				m_mutexContent;
-	FileInfo*			m_pFileInfo;
+	size_t				m_allocated;
+	bool				m_flushing;
+	Mutex				m_allocMutex;
+	Mutex				m_flushMutex;
+	Mutex				m_contentMutex;
+	FileInfo*			m_fileInfo;
 
-	bool				CheckFlush(bool bFlushEverything);
+	bool				CheckFlush(bool flushEverything);
 
 public:
 						ArticleCache();
 	virtual void		Run();
-	void*				Alloc(int iSize);
-	void*				Realloc(void* buf, int iOldSize, int iNewSize);
-	void				Free(int iSize);
+	void*				Alloc(int size);
+	void*				Realloc(void* buf, int oldSize, int newSize);
+	void				Free(int size);
 	void				LockFlush();
 	void				UnlockFlush();
-	void				LockContent() { m_mutexContent.Lock(); }
-	void				UnlockContent() { m_mutexContent.Unlock(); }
-	bool				GetFlushing() { return m_bFlushing; }
-	size_t				GetAllocated() { return m_iAllocated; }
-	bool				FileBusy(FileInfo* pFileInfo) { return pFileInfo == m_pFileInfo; }
+	void				LockContent() { m_contentMutex.Lock(); }
+	void				UnlockContent() { m_contentMutex.Unlock(); }
+	bool				GetFlushing() { return m_flushing; }
+	size_t				GetAllocated() { return m_allocated; }
+	bool				FileBusy(FileInfo* fileInfo) { return fileInfo == m_fileInfo; }
 };
 
 extern ArticleCache* g_pArticleCache;

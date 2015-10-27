@@ -37,13 +37,13 @@ public:
 	typedef std::list<FileInfo*>	TempFileList;
 
 private:
-	NZBInfo*			m_pNZBInfo;
-	char*				m_szFileName;
-	char*				m_szPassword;
+	NZBInfo*			m_nzbInfo;
+	char*				m_fileName;
+	char*				m_password;
 
-	void				AddArticle(FileInfo* pFileInfo, ArticleInfo* pArticleInfo);
-	void				AddFileInfo(FileInfo* pFileInfo);
-	void				ParseSubject(FileInfo* pFileInfo, bool TryQuotes);
+	void				AddArticle(FileInfo* fileInfo, ArticleInfo* articleInfo);
+	void				AddFileInfo(FileInfo* fileInfo);
+	void				ParseSubject(FileInfo* fileInfo, bool TryQuotes);
 	void				BuildFilenames();
 	void				ProcessFiles();
 	void				CalcHashes();
@@ -51,33 +51,33 @@ private:
 	void				ReadPassword();
 #ifdef WIN32
     bool 				ParseNZB(IUnknown* nzb);
-	static void			EncodeURL(const char* szFilename, char* szURL, int iBufLen);
+	static void			EncodeURL(const char* filename, char* url, int bufLen);
 #else
-	FileInfo*			m_pFileInfo;
-	ArticleInfo*		m_pArticle;
-	char*				m_szTagContent;
-	int					m_iTagContentLen;
-	bool				m_bIgnoreNextError;
-	bool				m_bPassword;
+	FileInfo*			m_fileInfo;
+	ArticleInfo*		m_article;
+	char*				m_tagContent;
+	int					m_tagContentLen;
+	bool				m_ignoreNextError;
+	bool				m_hasPassword;
 
-	static void			SAX_StartElement(NZBFile* pFile, const char *name, const char **atts);
-	static void			SAX_EndElement(NZBFile* pFile, const char *name);
-	static void			SAX_characters(NZBFile* pFile, const char * xmlstr, int len);
-	static void*		SAX_getEntity(NZBFile* pFile, const char * name);
-	static void			SAX_error(NZBFile* pFile, const char *msg, ...);
+	static void			SAX_StartElement(NZBFile* file, const char *name, const char **atts);
+	static void			SAX_EndElement(NZBFile* file, const char *name);
+	static void			SAX_characters(NZBFile* file, const char * xmlstr, int len);
+	static void*		SAX_getEntity(NZBFile* file, const char * name);
+	static void			SAX_error(NZBFile* file, const char *msg, ...);
 	void				Parse_StartElement(const char *name, const char **atts);
 	void				Parse_EndElement(const char *name);
 	void				Parse_Content(const char *buf, int len);
 #endif
 
 public:
-						NZBFile(const char* szFileName, const char* szCategory);
+						NZBFile(const char* fileName, const char* category);
 						~NZBFile();
 	bool				Parse();
-	const char* 		GetFileName() const { return m_szFileName; }
-	NZBInfo*			GetNZBInfo() { return m_pNZBInfo; }
-	const char*			GetPassword() { return m_szPassword; }
-	void				DetachNZBInfo() { m_pNZBInfo = NULL; }
+	const char* 		GetFileName() const { return m_fileName; }
+	NZBInfo*			GetNZBInfo() { return m_nzbInfo; }
+	const char*			GetPassword() { return m_password; }
+	void				DetachNZBInfo() { m_nzbInfo = NULL; }
 
 	void				LogDebugInfo();
 };

@@ -49,7 +49,7 @@
 
 Service::Service()
 {
-	m_iLastTick = 0;
+	m_lastTick = 0;
 	g_pServiceCoordinator->RegisterService(this);
 }
 
@@ -69,31 +69,31 @@ void ServiceCoordinator::Run()
 {
 	debug("Entering ServiceCoordinator-loop");
 
-	const int iStepMSec = 100;
-	int iCurTick = 0;
+	const int stepMSec = 100;
+	int curTick = 0;
 
 	while (!IsStopped())
 	{
-		for (ServiceList::iterator it = m_Services.begin(); it != m_Services.end(); it++)
+		for (ServiceList::iterator it = m_services.begin(); it != m_services.end(); it++)
 		{
-			Service* pService = *it;
-			if (iCurTick >= pService->m_iLastTick + pService->ServiceInterval() ||	// interval expired
-				iCurTick == 0 ||													// first start
-				iCurTick + 10000 < pService->m_iLastTick)							// int overflow
+			Service* service = *it;
+			if (curTick >= service->m_lastTick + service->ServiceInterval() ||	// interval expired
+				curTick == 0 ||													// first start
+				curTick + 10000 < service->m_lastTick)							// int overflow
 			{
-				pService->ServiceWork();
-				pService->m_iLastTick = iCurTick;
+				service->ServiceWork();
+				service->m_lastTick = curTick;
 			}
 		}
 
-		iCurTick += iStepMSec;
-		usleep(iStepMSec * 1000);
+		curTick += stepMSec;
+		usleep(stepMSec * 1000);
 	}
 
 	debug("Exiting ServiceCoordinator-loop");
 }
 
-void ServiceCoordinator::RegisterService(Service* pService)
+void ServiceCoordinator::RegisterService(Service* service)
 {
-	m_Services.push_back(pService);
+	m_services.push_back(service);
 }

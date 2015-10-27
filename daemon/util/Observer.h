@@ -34,19 +34,19 @@ class Observer;
 class Subject
 {
 private:
-	std::list<Observer*> 	m_Observers;
+	std::list<Observer*> 	m_observers;
 
 public:
 					Subject();
-	void 			Attach(Observer* pObserver);
-	void 			Detach(Observer* pObserver);
-	void 			Notify(void* pAspect);
+	void 			Attach(Observer* observer);
+	void 			Detach(Observer* observer);
+	void 			Notify(void* aspect);
 };
 
 class Observer
 {
 protected:
-	virtual void	Update(Subject* pCaller, void* pAspect) = 0;
+	virtual void	Update(Subject* caller, void* aspect) = 0;
 	friend class Subject;
 };
 

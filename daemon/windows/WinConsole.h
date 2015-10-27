@@ -31,16 +31,16 @@
 class WinConsole : public Thread
 {
 private:
-	bool					m_bAppMode;
-	char**					m_pDefaultArguments;
-	char**					m_pInitialArguments;
-	int						m_iInitialArgumentCount;
+	bool					m_appMode;
+	char**					m_defaultArguments;
+	char**					m_initialArguments;
+	int						m_initialArgumentCount;
 	HWND					m_hTrayWindow;
-	NOTIFYICONDATA*			m_pNidIcon;
+	NOTIFYICONDATA*			m_nidIcon;
 	UINT					UM_TASKBARCREATED;
 	HMENU					m_hMenu;
 	HINSTANCE				m_hInstance;
-	bool					m_bModal;
+	bool					m_modal;
 	HFONT					m_hLinkFont;
 	HFONT					m_hNameFont;
 	HFONT					m_hTitleFont;
@@ -50,20 +50,20 @@ private:
 	HICON					m_hIdleIcon;
 	HICON					m_hWorkingIcon;
 	HICON					m_hPausedIcon;
-	bool					m_bAutostart;
-	bool					m_bTray;
-	bool					m_bConsole;
-	bool					m_bWebUI;
-	bool					m_bAutoParam;
-	bool					m_bRunning;
-	bool					m_bRunningService;
-	bool					m_bDoubleClick;
+	bool					m_autostart;
+	bool					m_tray;
+	bool					m_console;
+	bool					m_webUI;
+	bool					m_autoParam;
+	bool					m_running;
+	bool					m_runningService;
+	bool					m_doubleClick;
 
 	void					CreateResources();
 	void					CreateTrayIcon();
 	void					ShowWebUI();
 	void					ShowMenu();
-	void					ShowInExplorer(const char* szFileName);
+	void					ShowInExplorer(const char* fileName);
 	void					ShowAboutBox();
 	void					OpenConfigFileInTextEdit();
 	void					ShowPrefsDialog();
@@ -74,23 +74,23 @@ private:
 	void					CheckRunning();
 	void					UpdateTrayIcon();
 	void					BuildMenu();
-	void					ShowCategoryDir(int iCatIndex);
+	void					ShowCategoryDir(int catIndex);
 	void					SetupConfigFile();
 	void					SetupScripts();
 	void					ShowFactoryResetDialog();
 	void					ResetFactoryDefaults();
 
 	static BOOL WINAPI		ConsoleCtrlHandler(DWORD dwCtrlType);
-	static LRESULT CALLBACK	TrayWndProcStat(HWND hwndWin, UINT uMsg, WPARAM wParam, LPARAM lParam);
-	LRESULT					TrayWndProc(HWND hwndWin, UINT uMsg, WPARAM wParam, LPARAM lParam);
-	static BOOL CALLBACK	AboutDialogProcStat(HWND hwndDlg, UINT uMsg, WPARAM wParam, LPARAM lParam);
-	BOOL					AboutDialogProc(HWND hwndDlg, UINT uMsg, WPARAM wParam, LPARAM lParam);
-	static BOOL CALLBACK	PrefsDialogProcStat(HWND hwndDlg, UINT uMsg, WPARAM wParam, LPARAM lParam);
-	BOOL					PrefsDialogProc(HWND hwndDlg, UINT uMsg, WPARAM wParam, LPARAM lParam);
-	static BOOL CALLBACK	RunningDialogProcStat(HWND hwndDlg, UINT uMsg, WPARAM wParam, LPARAM lParam);
-	BOOL					RunningDialogProc(HWND hwndDlg, UINT uMsg, WPARAM wParam, LPARAM lParam);
-	static BOOL CALLBACK	FactoryResetDialogProcStat(HWND hwndDlg, UINT uMsg, WPARAM wParam, LPARAM lParam);
-	BOOL					FactoryResetDialogProc(HWND hwndDlg, UINT uMsg, WPARAM wParam, LPARAM lParam);
+	static LRESULT CALLBACK	TrayWndProcStat(HWND hwndWin, UINT uMsg, WPARAM wParam, LPARAM param);
+	LRESULT					TrayWndProc(HWND hwndWin, UINT uMsg, WPARAM wParam, LPARAM param);
+	static BOOL CALLBACK	AboutDialogProcStat(HWND hwndDlg, UINT uMsg, WPARAM wParam, LPARAM param);
+	BOOL					AboutDialogProc(HWND hwndDlg, UINT uMsg, WPARAM wParam, LPARAM param);
+	static BOOL CALLBACK	PrefsDialogProcStat(HWND hwndDlg, UINT uMsg, WPARAM wParam, LPARAM param);
+	BOOL					PrefsDialogProc(HWND hwndDlg, UINT uMsg, WPARAM wParam, LPARAM param);
+	static BOOL CALLBACK	RunningDialogProcStat(HWND hwndDlg, UINT uMsg, WPARAM wParam, LPARAM param);
+	BOOL					RunningDialogProc(HWND hwndDlg, UINT uMsg, WPARAM wParam, LPARAM param);
+	static BOOL CALLBACK	FactoryResetDialogProcStat(HWND hwndDlg, UINT uMsg, WPARAM wParam, LPARAM param);
+	BOOL					FactoryResetDialogProc(HWND hwndDlg, UINT uMsg, WPARAM wParam, LPARAM param);
 
 protected:
 	virtual void			Run();
@@ -100,7 +100,7 @@ public:
 							~WinConsole();
 	virtual void			Stop();
 	void					InitAppMode();
-	bool					GetAppMode() { return m_bAppMode; }
+	bool					GetAppMode() { return m_appMode; }
 	void					SetupFirstStart();
 };
 
