@@ -65,14 +65,14 @@ void Decoder::Clear()
 	m_szArticleFilename = NULL;
 }
 
-Decoder::EFormat Decoder::DetectFormat(const char* buffer, int len)
+Decoder::EFormat Decoder::DetectFormat(const char* buffer, int len, bool inBody)
 {
 	if (!strncmp(buffer, "=ybegin ", 8))
 	{
 		return efYenc;
 	}
 	
-	if ((len == 62 || len == 63) && (buffer[62] == '\n' || buffer[62] == '\r') && *buffer == 'M')
+	if (inBody && (len == 62 || len == 63) && (buffer[62] == '\n' || buffer[62] == '\r') && *buffer == 'M')
 	{
 		return efUx;
 	}

@@ -58,7 +58,7 @@ public:
 	virtual void			Clear();
 	virtual int				DecodeBuffer(char* buffer, int len) = 0;
 	const char*				GetArticleFilename() { return m_szArticleFilename; }
-	static EFormat			DetectFormat(const char* buffer, int len);
+	static EFormat			DetectFormat(const char* buffer, int len, bool inBody);
 };
 
 class YDecoder: public Decoder
