@@ -1,3 +1,7 @@
+nzbget-16.3:
+  - fixed: certain downloads may fail due to a bug in the workaround
+    implemented in v16.2.
+
 nzbget-16.2:
   - implemented workaround to deal with malformed news server responses,
     which may still contain useful data.
