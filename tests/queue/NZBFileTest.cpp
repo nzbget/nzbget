@@ -40,39 +40,39 @@
 #include "Options.h"
 #include "TestUtil.h"
 
-void TestNzb(std::string TestFilename)
+void TestNzb(std::string testFilename)
 {
-	INFO(std::string("Filename: ") + TestFilename);
+	INFO(std::string("Filename: ") + testFilename);
 
-	std::string NzbFilename(TestUtil::TestDataDir() + "/nzbfile/"+ TestFilename + ".nzb");
-	std::string InfoFilename(TestUtil::TestDataDir() + "/nzbfile/"+ TestFilename + ".txt");
+	std::string nzbFilename(TestUtil::TestDataDir() + "/nzbfile/"+ testFilename + ".nzb");
+	std::string infoFilename(TestUtil::TestDataDir() + "/nzbfile/"+ testFilename + ".txt");
 
-	NZBFile* pNZBFile = new NZBFile(NzbFilename.c_str(), "");
-	bool bParsedOK = pNZBFile->Parse();
-	REQUIRE(bParsedOK == true);
+	NZBFile* nzbFile = new NZBFile(nzbFilename.c_str(), "");
+	bool parsedOK = nzbFile->Parse();
+	REQUIRE(parsedOK == true);
 
-	FILE* infofile = fopen(InfoFilename.c_str(), FOPEN_RB);
+	FILE* infofile = fopen(infoFilename.c_str(), FOPEN_RB);
 	REQUIRE(infofile != NULL);
 	char buffer[1024];
 
 	while (fgets(buffer, sizeof(buffer), infofile) && *buffer == '#') ;
 	REQUIRE(*buffer);
 
-	int iFileCount = atoi(buffer);
-	REQUIRE(pNZBFile->GetNZBInfo()->GetFileCount() == iFileCount);
+	int fileCount = atoi(buffer);
+	REQUIRE(nzbFile->GetNZBInfo()->GetFileCount() == fileCount);
 
-	for (int i = 0; i < iFileCount; i++)
+	for (int i = 0; i < fileCount; i++)
 	{
 		while (fgets(buffer, sizeof(buffer), infofile) && *buffer == '#') ;
 		REQUIRE(*buffer);
-		FileInfo* pFileInfo = pNZBFile->GetNZBInfo()->GetFileList()->at(i);
-		REQUIRE(pFileInfo != NULL);
+		FileInfo* fileInfo = nzbFile->GetNZBInfo()->GetFileList()->at(i);
+		REQUIRE(fileInfo != NULL);
 		Util::TrimRight(buffer);
-		REQUIRE(std::string(pFileInfo->GetFilename()) == std::string(buffer));
+		REQUIRE(std::string(fileInfo->GetFilename()) == std::string(buffer));
 	}
 
 	fclose(infofile);
-	delete pNZBFile;
+	delete nzbFile;
 }
 
 TEST_CASE("Nzb parser", "[NZBFile][TestData]")

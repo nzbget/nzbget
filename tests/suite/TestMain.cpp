@@ -56,10 +56,10 @@ int TestMain(int argc, char * argv[])
 
 	// shift arguments for catch to not see the parameter "-tests"
 	char** testsargv = (char**)malloc(sizeof(char*) * (argc + 1));
-	char szFirstArg[1024];
-	snprintf(szFirstArg, 1024, "%s %s", argv[0], argv[1]);
-	szFirstArg[1024-1] = '\0';
-	testsargv[0] = szFirstArg;
+	char firstArg[1024];
+	snprintf(firstArg, 1024, "%s %s", argv[0], argv[1]);
+	firstArg[1024-1] = '\0';
+	testsargv[0] = firstArg;
 	for (int i = 2; i < argc; i++)
 	{
 		testsargv[i-1] = argv[i];

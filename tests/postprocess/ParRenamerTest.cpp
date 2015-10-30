@@ -50,13 +50,13 @@
 class ParRenamerMock: public ParRenamer
 {
 private:
-	int				m_iRenamed;
+	int				m_renamed;
 protected:
-	virtual void	RegisterRenamedFile(const char* szOldFilename, const char* szNewFileName) { m_iRenamed++; }
+	virtual void	RegisterRenamedFile(const char* oldFilename, const char* newFileName) { m_renamed++; }
 public:
 					ParRenamerMock();
 	void			Execute();
-	int				GetRenamedCount() { return m_iRenamed; }
+	int				GetRenamedCount() { return m_renamed; }
 };
 
 ParRenamerMock::ParRenamerMock()
@@ -68,7 +68,7 @@ ParRenamerMock::ParRenamerMock()
 void ParRenamerMock::Execute()
 {
 	TestUtil::DisableCout();
-	m_iRenamed = 0;
+	m_renamed = 0;
 	Start();
 	while (IsRunning())
 	{

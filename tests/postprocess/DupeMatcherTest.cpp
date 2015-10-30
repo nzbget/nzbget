@@ -53,16 +53,16 @@ TEST_CASE("Disk matcher", "[Par][DupeMatcher][Slow][TestData]")
 
 	TestUtil::PrepareWorkingDir("DupeMatcher");
 
-	char szErrBuf[256];
+	char errBuf[256];
 
 	// prepare directories
 
 	std::string dupe1(TestUtil::WorkingDir() + "/dupe1");
-	REQUIRE(Util::ForceDirectories(dupe1.c_str(), szErrBuf, sizeof(szErrBuf)));
+	REQUIRE(Util::ForceDirectories(dupe1.c_str(), errBuf, sizeof(errBuf)));
 	TestUtil::CopyAllFiles(dupe1, TestUtil::TestDataDir() + "/parchecker");
 
 	std::string dupe2(TestUtil::WorkingDir() + "/dupe2");
-	REQUIRE(Util::ForceDirectories(dupe2.c_str(), szErrBuf, sizeof(szErrBuf)));
+	REQUIRE(Util::ForceDirectories(dupe2.c_str(), errBuf, sizeof(errBuf)));
 	TestUtil::CopyAllFiles(dupe2, TestUtil::TestDataDir() + "/parchecker");
 	remove((dupe2 + "/testfile.nfo").c_str());
 
@@ -70,42 +70,42 @@ TEST_CASE("Disk matcher", "[Par][DupeMatcher][Slow][TestData]")
 	std::string rardupe2(TestUtil::TestDataDir() + "/dupematcher2");
 
 	std::string nondupe(TestUtil::WorkingDir() + "/nondupe");
-	REQUIRE(Util::ForceDirectories(nondupe.c_str(), szErrBuf, sizeof(szErrBuf)));
+	REQUIRE(Util::ForceDirectories(nondupe.c_str(), errBuf, sizeof(errBuf)));
 	TestUtil::CopyAllFiles(nondupe, TestUtil::TestDataDir() + "/parchecker");
 	remove((nondupe + "/testfile.dat").c_str());
 
 	// now test
-	long long lExpectedSize = Util::FileSize((dupe1 + "/testfile.dat").c_str());
+	long long expectedSize = Util::FileSize((dupe1 + "/testfile.dat").c_str());
 
-	DupeMatcher dupe1Matcher(dupe1.c_str(), lExpectedSize);
+	DupeMatcher dupe1Matcher(dupe1.c_str(), expectedSize);
 	CHECK(dupe1Matcher.Prepare());
 	CHECK(dupe1Matcher.MatchDupeContent(dupe2.c_str()));
 	CHECK(dupe1Matcher.MatchDupeContent(rardupe1.c_str()));
 	CHECK(dupe1Matcher.MatchDupeContent(rardupe2.c_str()));
 	CHECK_FALSE(dupe1Matcher.MatchDupeContent(nondupe.c_str()));
 	
-	DupeMatcher dupe2Matcher(dupe2.c_str(), lExpectedSize);
+	DupeMatcher dupe2Matcher(dupe2.c_str(), expectedSize);
 	CHECK(dupe2Matcher.Prepare());
 	CHECK(dupe2Matcher.MatchDupeContent(dupe1.c_str()));
 	CHECK(dupe2Matcher.MatchDupeContent(rardupe1.c_str()));
 	CHECK(dupe2Matcher.MatchDupeContent(rardupe2.c_str()));
 	CHECK_FALSE(dupe2Matcher.MatchDupeContent(nondupe.c_str()));
 
-	DupeMatcher nonDupeMatcher(nondupe.c_str(), lExpectedSize);
+	DupeMatcher nonDupeMatcher(nondupe.c_str(), expectedSize);
 	CHECK_FALSE(nonDupeMatcher.Prepare());
 	CHECK_FALSE(nonDupeMatcher.MatchDupeContent(dupe1.c_str()));
 	CHECK_FALSE(nonDupeMatcher.MatchDupeContent(dupe2.c_str()));
 	CHECK_FALSE(nonDupeMatcher.MatchDupeContent(rardupe1.c_str()));
 	CHECK_FALSE(nonDupeMatcher.MatchDupeContent(rardupe2.c_str()));
 
-	DupeMatcher rardupe1matcher(rardupe1.c_str(), lExpectedSize);
+	DupeMatcher rardupe1matcher(rardupe1.c_str(), expectedSize);
 	CHECK(rardupe1matcher.Prepare());
 	CHECK(rardupe1matcher.MatchDupeContent(dupe1.c_str()));
 	CHECK(rardupe1matcher.MatchDupeContent(dupe2.c_str()));		    
 	CHECK(rardupe1matcher.MatchDupeContent(rardupe2.c_str()));
 	CHECK_FALSE(rardupe1matcher.MatchDupeContent(nondupe.c_str()));
 
-	DupeMatcher rardupe2matcher(rardupe2.c_str(), lExpectedSize);
+	DupeMatcher rardupe2matcher(rardupe2.c_str(), expectedSize);
 	CHECK(rardupe2matcher.Prepare());
 	CHECK(rardupe2matcher.MatchDupeContent(rardupe1.c_str()));
 	CHECK(rardupe2matcher.MatchDupeContent(dupe1.c_str()));

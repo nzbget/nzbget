@@ -36,16 +36,16 @@
 #include "nzbget.h"
 #include "FeedFilter.h"
 
-void TestFilter(FeedItemInfo* pFeedItemInfo, const char* szFilter, FeedItemInfo::EMatchStatus eExpectedMatch)
+void TestFilter(FeedItemInfo* feedItemInfo, const char* filterDef, FeedItemInfo::EMatchStatus expectedMatch)
 {
-	pFeedItemInfo->SetMatchStatus(FeedItemInfo::msIgnored);
-	pFeedItemInfo->SetMatchRule(0);
+	feedItemInfo->SetMatchStatus(FeedItemInfo::msIgnored);
+	feedItemInfo->SetMatchRule(0);
 
-	FeedFilter filter(szFilter);
-	filter.Match(pFeedItemInfo);
+	FeedFilter filter(filterDef);
+	filter.Match(feedItemInfo);
 
-	INFO(szFilter);
-	REQUIRE(pFeedItemInfo->GetMatchStatus() == eExpectedMatch);
+	INFO(filterDef);
+	REQUIRE(feedItemInfo->GetMatchStatus() == expectedMatch);
 }
 
 TEST_CASE("Feed filter: one liners", "[FeedFilter][Quick]")

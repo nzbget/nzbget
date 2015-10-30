@@ -46,8 +46,8 @@
 #include "Util.h"
 #include "TestUtil.h"
 
-bool TestUtil::m_bUsedWorkingDir = false;
-std::string DataDir;
+bool TestUtil::m_usedWorkingDir = false;
+std::string dataDir;
 
 class NullStreamBuf : public std::streambuf
 {
@@ -59,29 +59,29 @@ std::streambuf* oldcoutbuf;
 
 void TestUtil::Init(const char* argv0)
 {
-	m_bUsedWorkingDir = false;
+	m_usedWorkingDir = false;
 
-	char szFilename[MAX_PATH + 1];
-	Util::GetExeFileName(argv0, szFilename, sizeof(szFilename));
-	Util::NormalizePathSeparators(szFilename);
-	char* end = strrchr(szFilename, PATH_SEPARATOR);
+	char filename[MAX_PATH + 1];
+	Util::GetExeFileName(argv0, filename, sizeof(filename));
+	Util::NormalizePathSeparators(filename);
+	char* end = strrchr(filename, PATH_SEPARATOR);
 	if (end) *end = '\0';
-	DataDir = szFilename;
-	DataDir += "/testdata";
-	if (!Util::DirectoryExists(DataDir.c_str()))
+	dataDir = filename;
+	dataDir += "/testdata";
+	if (!Util::DirectoryExists(dataDir.c_str()))
 	{
-		DataDir = szFilename;
-		DataDir += "/tests/testdata";
+		dataDir = filename;
+		dataDir += "/tests/testdata";
 	}
-	if (!Util::DirectoryExists(DataDir.c_str()))
+	if (!Util::DirectoryExists(dataDir.c_str()))
 	{
-		DataDir = "";
+		dataDir = "";
 	}
 }
 
 void TestUtil::Final()
 {
-	if (m_bUsedWorkingDir)
+	if (m_usedWorkingDir)
 	{
 		CleanupWorkingDir();
 	}
@@ -89,12 +89,12 @@ void TestUtil::Final()
 
 const std::string TestUtil::TestDataDir()
 {
-	if (DataDir == "")
+	if (dataDir == "")
 	{
 		printf("ERROR: Directory \"testdata\" not found.\n");
 		exit(1);
 	}
-	return DataDir;
+	return dataDir;
 }
 
 const std::string TestUtil::WorkingDir()
@@ -104,20 +104,20 @@ const std::string TestUtil::WorkingDir()
 
 void TestUtil::PrepareWorkingDir(const std::string templateDir)
 {
-	m_bUsedWorkingDir = true;
+	m_usedWorkingDir = true;
 
 	std::string workDir = WorkingDir();
 	std::string srcDir(TestDataDir() + "/" + templateDir);
 
-	char szErrStr[256];
+	char errStr[256];
 	int retries = 20;
 
-	Util::DeleteDirectoryWithContent(workDir.c_str(), szErrStr, sizeof(szErrStr));
+	Util::DeleteDirectoryWithContent(workDir.c_str(), errStr, sizeof(errStr));
 	while (Util::DirectoryExists(workDir.c_str()) && retries > 0)
 	{
 		usleep(1000 * 100);
 		retries--;
-		Util::DeleteDirectoryWithContent(workDir.c_str(), szErrStr, sizeof(szErrStr));
+		Util::DeleteDirectoryWithContent(workDir.c_str(), errStr, sizeof(errStr));
 	}
 	REQUIRE_FALSE(Util::DirectoryExists(workDir.c_str()));
 	Util::CreateDirectory(workDir.c_str());
@@ -142,8 +142,8 @@ void TestUtil::CopyAllFiles(const std::string destDir, const std::string srcDir)
 
 void TestUtil::CleanupWorkingDir()
 {
-	char szErrStr[256];
-	Util::DeleteDirectoryWithContent(WorkingDir().c_str(), szErrStr, sizeof(szErrStr));
+	char errStr[256];
+	Util::DeleteDirectoryWithContent(WorkingDir().c_str(), errStr, sizeof(errStr));
 }
 
 void TestUtil::DisableCout()

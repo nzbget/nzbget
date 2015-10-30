@@ -46,32 +46,32 @@
 class OptionsExtenderMock : public Options::Extender
 {
 public:
-	int					m_iNewsServers;
-	int					m_iFeeds;
-	int					m_iTasks;
+	int					m_newsServers;
+	int					m_feeds;
+	int					m_tasks;
 
 protected:
-	virtual void		AddNewsServer(int iID, bool bActive, const char* szName, const char* szHost,
-							int iPort, const char* szUser, const char* szPass, bool bJoinGroup,
-							bool bTLS, const char* szCipher, int iMaxConnections, int iRetention,
-							int iLevel, int iGroup)
+	virtual void		AddNewsServer(int id, bool active, const char* name, const char* host,
+							int port, const char* user, const char* pass, bool joinGroup,
+							bool tLS, const char* cipher, int maxConnections, int retention,
+							int level, int group)
 	{
-		m_iNewsServers++;
+		m_newsServers++;
 	}
 
-	virtual void		AddFeed(int iID, const char* szName, const char* szUrl, int iInterval,
-							const char* szFilter, bool bBacklog, bool bPauseNzb, const char* szCategory, int iPriority, const char* szFeedScript)
+	virtual void		AddFeed(int id, const char* name, const char* url, int interval,
+							const char* filter, bool backlog, bool pauseNzb, const char* category, int priority, const char* feedScript)
 	{
-		m_iFeeds++;
+		m_feeds++;
 	}
 
-	virtual void		AddTask(int iID, int iHours, int iMinutes, int iWeekDaysBits, Options::ESchedulerCommand eCommand, const char* szParam)
+	virtual void		AddTask(int id, int hours, int minutes, int weekDaysBits, Options::ESchedulerCommand command, const char* param)
 	{
-		m_iTasks++;
+		m_tasks++;
 	}
 
 public:
-						OptionsExtenderMock() : m_iNewsServers(0), m_iFeeds(0), m_iTasks(0) {}
+						OptionsExtenderMock() : m_newsServers(0), m_feeds(0), m_tasks(0) {}
 };
 
 TEST_CASE("Options: initializing without configuration file", "[Options][Quick]")
@@ -118,7 +118,7 @@ TEST_CASE("Options: calling extender", "[Options][Quick]")
 	OptionsExtenderMock extender;
 	Options options(&cmdOpts, &extender);
 
-	REQUIRE(extender.m_iNewsServers == 2);
-	REQUIRE(extender.m_iFeeds == 1);
-	REQUIRE(extender.m_iTasks == 24);
+	REQUIRE(extender.m_newsServers == 2);
+	REQUIRE(extender.m_feeds == 1);
+	REQUIRE(extender.m_tasks == 24);
 }

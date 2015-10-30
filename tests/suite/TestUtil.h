@@ -29,7 +29,7 @@
 class TestUtil
 {
 private:
-	static bool			m_bUsedWorkingDir;
+	static bool			m_usedWorkingDir;
 public:
 	static void			Init(const char* argv0);
 	static void			Final();

@@ -49,14 +49,14 @@
 class ParCheckerMock: public ParChecker
 {
 private:
-	unsigned long	CalcFileCrc(const char* szFilename);
+	unsigned long	CalcFileCrc(const char* filename);
 protected:
-	virtual bool	RequestMorePars(int iBlockNeeded, int* pBlockFound) { return false; }
-	virtual EFileStatus	FindFileCrc(const char* szFilename, unsigned long* lCrc, SegmentList* pSegments);
+	virtual bool	RequestMorePars(int blockNeeded, int* blockFound) { return false; }
+	virtual EFileStatus	FindFileCrc(const char* filename, unsigned long* crc, SegmentList* segments);
 public:
 					ParCheckerMock();
 	void			Execute();
-	void			CorruptFile(const char* szFilename, int iOffset);
+	void			CorruptFile(const char* filename, int offset);
 };
 
 ParCheckerMock::ParCheckerMock()
@@ -76,59 +76,59 @@ void ParCheckerMock::Execute()
 	TestUtil::EnableCout();
 }
 
-void ParCheckerMock::CorruptFile(const char* szFilename, int iOffset)
+void ParCheckerMock::CorruptFile(const char* filename, int offset)
 {
-	std::string fullfilename(TestUtil::WorkingDir() + "/" + szFilename);
+	std::string fullfilename(TestUtil::WorkingDir() + "/" + filename);
 
-	FILE* pFile = fopen(fullfilename.c_str(), FOPEN_RBP);
-	REQUIRE(pFile != NULL);
+	FILE* file = fopen(fullfilename.c_str(), FOPEN_RBP);
+	REQUIRE(file != NULL);
 
-	fseek(pFile, iOffset, SEEK_SET);
+	fseek(file, offset, SEEK_SET);
 	char b = 0;
-	int written = fwrite(&b, 1, 1, pFile);
+	int written = fwrite(&b, 1, 1, file);
 	REQUIRE(written == 1);
 
-	fclose(pFile);
+	fclose(file);
 }
 
-ParCheckerMock::EFileStatus ParCheckerMock::FindFileCrc(const char* szFilename, unsigned long* lCrc, SegmentList* pSegments)
+ParCheckerMock::EFileStatus ParCheckerMock::FindFileCrc(const char* filename, unsigned long* crc, SegmentList* segments)
 {
 	std::ifstream sm((TestUtil::WorkingDir() + "/crc.txt").c_str());
-	std::string filename, crc;
+	std::string smfilename, smcrc;
 	while (!sm.eof())
 	{
-		sm >> filename >> crc;
-		if (filename == szFilename)
+		sm >> smfilename >> smcrc;
+		if (smfilename == filename)
 		{
-			*lCrc = strtoul(crc.c_str(), NULL, 16);
-			unsigned long lRealCrc = CalcFileCrc((TestUtil::WorkingDir() + "/" + filename).c_str());
-			return *lCrc == lRealCrc ? ParChecker::fsSuccess : ParChecker::fsUnknown;
+			*crc = strtoul(smcrc.c_str(), NULL, 16);
+			unsigned long realCrc = CalcFileCrc((TestUtil::WorkingDir() + "/" + filename).c_str());
+			return *crc == realCrc ? ParChecker::fsSuccess : ParChecker::fsUnknown;
 		}
 	}
 	return ParChecker::fsUnknown;
 }
 
-unsigned long ParCheckerMock::CalcFileCrc(const char* szFilename)
+unsigned long ParCheckerMock::CalcFileCrc(const char* filename)
 {
-	FILE* infile = fopen(szFilename, FOPEN_RB);
+	FILE* infile = fopen(filename, FOPEN_RB);
 	REQUIRE(infile);
 
 	static const int BUFFER_SIZE = 1024 * 64;
 	unsigned char* buffer = (unsigned char*)malloc(BUFFER_SIZE);
-	unsigned long lDownloadCrc = 0xFFFFFFFF;
+	unsigned long downloadCrc = 0xFFFFFFFF;
 
 	int cnt = BUFFER_SIZE;
 	while (cnt == BUFFER_SIZE)
 	{
 		cnt = (int)fread(buffer, 1, BUFFER_SIZE, infile);
-		lDownloadCrc = Util::Crc32m(lDownloadCrc, buffer, cnt);
+		downloadCrc = Util::Crc32m(downloadCrc, buffer, cnt);
 	}
 
 	free(buffer);
 	fclose(infile);
 
-	lDownloadCrc ^= 0xFFFFFFFF;
-	return lDownloadCrc;
+	downloadCrc ^= 0xFFFFFFFF;
+	return downloadCrc;
 }
 
 TEST_CASE("Par-checker: repair not needed", "[Par][ParChecker][Slow][TestData]")

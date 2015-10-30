@@ -42,47 +42,47 @@
 
 TEST_CASE("WebUtil: XmlStripTags", "[Util][Quick]")
 {
-	const char* szXml  = "<div><img style=\"margin-left:10px;margin-bottom:10px;float:right;\" src=\"https://xxx/cover.jpg\"/><ul><li>ID: 12345678</li><li>Name: <a href=\"https://xxx/12344\">Show name</a></li><li>Size: 3.00 GB </li><li>Attributes: Category - <a href=\"https://xxx/2040\">Movies > HD</a></li></li></ul></div>";
-	const char* szText = "                                                                                                        ID: 12345678         Name:                             Show name             Size: 3.00 GB          Attributes: Category -                            Movies > HD                         ";
-	char* szTestString = strdup(szXml);
-	WebUtil::XmlStripTags(szTestString);
+	const char* xml  = "<div><img style=\"margin-left:10px;margin-bottom:10px;float:right;\" src=\"https://xxx/cover.jpg\"/><ul><li>ID: 12345678</li><li>Name: <a href=\"https://xxx/12344\">Show name</a></li><li>Size: 3.00 GB </li><li>Attributes: Category - <a href=\"https://xxx/2040\">Movies > HD</a></li></li></ul></div>";
+	const char* text = "                                                                                                        ID: 12345678         Name:                             Show name             Size: 3.00 GB          Attributes: Category -                            Movies > HD                         ";
+	char* testString = strdup(xml);
+	WebUtil::XmlStripTags(testString);
 
-	REQUIRE(strcmp(szTestString, szText) == 0);
+	REQUIRE(strcmp(testString, text) == 0);
 
-	free(szTestString);
+	free(testString);
 }
 
 TEST_CASE("WebUtil: XmlDecode", "[Util][Quick]")
 {
-	const char* szXml  = "Poster: Bob &lt;bob@home&gt; bad&mdash;and there&#039;s one thing";
-	const char* szText = "Poster: Bob <bob@home> bad&mdash;and there's one thing";
-	char* szTestString = strdup(szXml);
-	WebUtil::XmlDecode(szTestString);
+	const char* xml  = "Poster: Bob &lt;bob@home&gt; bad&mdash;and there&#039;s one thing";
+	const char* text = "Poster: Bob <bob@home> bad&mdash;and there's one thing";
+	char* testString = strdup(xml);
+	WebUtil::XmlDecode(testString);
 
-	REQUIRE(strcmp(szTestString, szText) == 0);
+	REQUIRE(strcmp(testString, text) == 0);
 
-	free(szTestString);
+	free(testString);
 }
 
 TEST_CASE("WebUtil: XmlRemoveEntities", "[Util][Quick]")
 {
-	const char* szXml  = "Poster: Bob &lt;bob@home&gt; bad&mdash;and there&#039;s one thing";
-	const char* szText = "Poster: Bob  bob@home  bad and there s one thing";
-	char* szTestString = strdup(szXml);
-	WebUtil::XmlRemoveEntities(szTestString);
+	const char* xml  = "Poster: Bob &lt;bob@home&gt; bad&mdash;and there&#039;s one thing";
+	const char* text = "Poster: Bob  bob@home  bad and there s one thing";
+	char* testString = strdup(xml);
+	WebUtil::XmlRemoveEntities(testString);
 
-	REQUIRE(strcmp(szTestString, szText) == 0);
+	REQUIRE(strcmp(testString, text) == 0);
 
-	free(szTestString);
+	free(testString);
 }
 
 TEST_CASE("WebUtil: URLEncode", "[Util][Quick]")
 {
-	const char* szBadURL = "http://www.example.com/nzb_get/12344/Debian V7 6 64 bit OS.nzb";
-	const char* szCorrectedURL = "http://www.example.com/nzb_get/12344/Debian%20V7%206%2064%20bit%20OS.nzb";
-	char* szTestString = WebUtil::URLEncode(szBadURL);
+	const char* badUrl = "http://www.example.com/nzb_get/12344/Debian V7 6 64 bit OS.nzb";
+	const char* correctedUrl = "http://www.example.com/nzb_get/12344/Debian%20V7%206%2064%20bit%20OS.nzb";
+	char* testString = WebUtil::URLEncode(badUrl);
 
-	REQUIRE(strcmp(szTestString, szCorrectedURL) == 0);
+	REQUIRE(strcmp(testString, correctedUrl) == 0);
 
-	free(szTestString);
+	free(testString);
 }
