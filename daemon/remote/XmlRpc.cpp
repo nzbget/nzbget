@@ -79,11 +79,11 @@ public:
 	};
 
 private:
-	bool			m_pause;
-	EPauseAction	m_ePauseAction;
+	bool				m_pause;
+	EPauseAction		m_pauseAction;
 
 public:
-						PauseUnpauseXmlCommand(bool pause, EPauseAction ePauseAction);
+						PauseUnpauseXmlCommand(bool pause, EPauseAction pauseAction);
 	virtual void		Execute();
 };
 
@@ -459,9 +459,9 @@ void XmlRpcProcessor::Dispatch()
 void XmlRpcProcessor::MutliCall()
 {
 	bool error = false;
-	StringBuilder cStringBuilder;
+	StringBuilder stringBuilder;
 
-	cStringBuilder.Append("<array><data>");
+	stringBuilder.Append("<array><data>");
 
 	char* requestPtr = m_request;
 	char* callEnd = strstr(requestPtr, "</struct>");
@@ -491,14 +491,14 @@ void XmlRpcProcessor::MutliCall()
 		bool array = !fault && !strncmp(command->GetResponse(), "<array>", 7);
 		if (!fault && !array)
 		{
-			cStringBuilder.Append("<array><data>");
+			stringBuilder.Append("<array><data>");
 		}
-		cStringBuilder.Append("<value>");
-		cStringBuilder.Append(command->GetResponse());
-		cStringBuilder.Append("</value>");
+		stringBuilder.Append("<value>");
+		stringBuilder.Append(command->GetResponse());
+		stringBuilder.Append("</value>");
 		if (!fault && !array)
 		{
-			cStringBuilder.Append("</data></array>");
+			stringBuilder.Append("</data></array>");
 		}
 
 		delete command;
@@ -519,8 +519,8 @@ void XmlRpcProcessor::MutliCall()
 	}
 	else
 	{
-		cStringBuilder.Append("</data></array>");
-		BuildResponse(cStringBuilder.GetBuffer(), "", false, NULL);
+		stringBuilder.Append("</data></array>");
+		BuildResponse(stringBuilder.GetBuffer(), "", false, NULL);
 	}
 }
 
@@ -559,21 +559,21 @@ void XmlRpcProcessor::BuildResponse(const char* response, const char* callbackFu
 
 	if (callbackFunc)
 	{
-		m_cResponse.Append(callbackFunc);
+		m_response.Append(callbackFunc);
 	}
-	m_cResponse.Append(callbackHeader);
-	m_cResponse.Append(header);
+	m_response.Append(callbackHeader);
+	m_response.Append(header);
 	if (!xmlRpc && requestId && *requestId)
 	{
-		m_cResponse.Append(JSON_ID_OPEN);
-		m_cResponse.Append(requestId);
-		m_cResponse.Append(JSON_ID_CLOSE);
+		m_response.Append(JSON_ID_OPEN);
+		m_response.Append(requestId);
+		m_response.Append(JSON_ID_CLOSE);
 	}
-	m_cResponse.Append(openTag);
-	m_cResponse.Append(response);
-	m_cResponse.Append(closeTag);
-	m_cResponse.Append(footer);
-	m_cResponse.Append(callbackFooter);
+	m_response.Append(openTag);
+	m_response.Append(response);
+	m_response.Append(closeTag);
+	m_response.Append(footer);
+	m_response.Append(callbackFooter);
 	
 	m_contentType = xmlRpc ? "text/xml" : "application/json";
 }
@@ -1139,10 +1139,10 @@ void ErrorXmlCommand::Execute()
 	BuildErrorResponse(m_errCode, m_errText);
 }
 
-PauseUnpauseXmlCommand::PauseUnpauseXmlCommand(bool pause, EPauseAction ePauseAction)
+PauseUnpauseXmlCommand::PauseUnpauseXmlCommand(bool pause, EPauseAction pauseAction)
 {
 	m_pause = pause;
-	m_ePauseAction = ePauseAction;
+	m_pauseAction = pauseAction;
 }
 
 void PauseUnpauseXmlCommand::Execute()
@@ -1156,7 +1156,7 @@ void PauseUnpauseXmlCommand::Execute()
 
 	g_pOptions->SetResumeTime(0);
 
-	switch (m_ePauseAction)
+	switch (m_pauseAction)
 	{
 		case paDownload:
 			g_pOptions->SetPauseDownload(m_pause);
@@ -1355,7 +1355,7 @@ void StatusXmlCommand::Execute()
 		"\"Active\" : %s\n"
 		"}";
 
-	DownloadQueue *downloadQueue = DownloadQueue::Lock();
+	DownloadQueue* downloadQueue = DownloadQueue::Lock();
 	int postJobCount = 0;
 	int urlCount = 0;
 	for (NZBList::iterator it = downloadQueue->GetQueue()->begin(); it != downloadQueue->GetQueue()->end(); it++)
@@ -2124,7 +2124,7 @@ const char* ListGroupsXmlCommand::DetectStatus(NZBInfo* nzbInfo)
 typedef struct 
 {
 	int				actionId;
-	const char*		actionName;
+	const char*	actionName;
 } EditCommandEntry;
 
 EditCommandEntry EditCommandNameMap[] = { 

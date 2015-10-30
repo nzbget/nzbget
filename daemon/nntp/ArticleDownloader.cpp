@@ -114,7 +114,7 @@ void ArticleDownloader::Run()
 	m_articleWriter.SetArticleInfo(m_articleInfo);
 	m_articleWriter.Prepare();
 
-	EStatus Status = adFailed;
+	EStatus status = adFailed;
 	int retries = g_pOptions->GetRetries() > 0 ? g_pOptions->GetRetries() : 1;
 	int remainedRetries = retries;
 	Servers failedServers;
@@ -127,7 +127,7 @@ void ArticleDownloader::Run()
 
 	while (!IsStopped())
 	{
-		Status = adFailed;
+		status = adFailed;
 
 		SetStatus(adWaiting);
 		while (!m_connection && !(IsStopped() || serverConfigGeneration != g_pServerPool->GetGeneration()))
@@ -142,7 +142,7 @@ void ArticleDownloader::Run()
 			(g_pOptions->GetTempPauseDownload() && !m_fileInfo->GetExtraPriority()) ||
 			serverConfigGeneration != g_pServerPool->GetGeneration())
 		{
-			Status = adRetry;
+			status = adRetry;
 			break;
 		}
 
@@ -163,7 +163,7 @@ void ArticleDownloader::Run()
 				m_infoName, m_connectionName,
 				(time(NULL) - m_fileInfo->GetTime()) / 86400,
 				m_connection->GetNewsServer()->GetRetention());
-			Status = adFailed;
+			status = adFailed;
 			FreeConnection(true);
 		}
 
@@ -179,11 +179,11 @@ void ArticleDownloader::Run()
 			NewsServer* newsServer = m_connection->GetNewsServer();
 
 			// Download article
-			Status = Download();
+			status = Download();
 
-			if (Status == adFinished || Status == adFailed || Status == adNotFound || Status == adCrcError)
+			if (status == adFinished || status == adFailed || status == adNotFound || status == adCrcError)
 			{
-				m_serverStats.StatOp(newsServer->GetID(), Status == adFinished ? 1 : 0, Status == adFinished ? 0 : 1, ServerStatList::soSet);
+				m_serverStats.StatOp(newsServer->GetID(), status == adFinished ? 1 : 0, status == adFinished ? 0 : 1, ServerStatList::soSet);
 			}
 		}
 
@@ -197,13 +197,13 @@ void ArticleDownloader::Run()
 			detail("Article %s @ %s failed: could not establish connection", m_infoName, m_connectionName);
 		}
 
-		if (Status == adConnectError)
+		if (status == adConnectError)
 		{
 			connected = false;
-			Status = adFailed;
+			status = adFailed;
 		}
 
-		if (connected && Status == adFailed)
+		if (connected && status == adFailed)
 		{
 			remainedRetries--;
 		}
@@ -214,16 +214,16 @@ void ArticleDownloader::Run()
 		}
 
 		wantServer = NULL;
-		if (connected && Status == adFailed && remainedRetries > 0 && !retentionFailure)
+		if (connected && status == adFailed && remainedRetries > 0 && !retentionFailure)
 		{
 			wantServer = lastServer;
 		}
 		else
 		{
-			FreeConnection(Status == adFinished || Status == adNotFound);
+			FreeConnection(status == adFinished || status == adNotFound);
 		}
 
-		if (Status == adFinished || Status == adFatalError)
+		if (status == adFinished || status == adFatalError)
 		{
 			break;
 		}
@@ -232,7 +232,7 @@ void ArticleDownloader::Run()
 			(g_pOptions->GetTempPauseDownload() && !m_fileInfo->GetExtraPriority()) ||
 			serverConfigGeneration != g_pServerPool->GetGeneration())
 		{
-			Status = adRetry;
+			status = adRetry;
 			break;
 		}
 
@@ -282,7 +282,7 @@ void ArticleDownloader::Run()
 				else
 				{
 					detail("Article %s @ all servers failed", m_infoName);
-					Status = adFailed;
+					status = adFailed;
 					break;
 				}
 			}
@@ -291,30 +291,30 @@ void ArticleDownloader::Run()
 		}
 	}
 
-	FreeConnection(Status == adFinished);
+	FreeConnection(status == adFinished);
 
 	if (m_articleWriter.GetDuplicate())
 	{
-		Status = adFinished;
+		status = adFinished;
 	}
 
-	if (Status != adFinished && Status != adRetry)
+	if (status != adFinished && status != adRetry)
 	{
-		Status = adFailed;
+		status = adFailed;
 	}
 
 	if (IsStopped())
 	{
 		detail("Download %s cancelled", m_infoName);
-		Status = adRetry;
+		status = adRetry;
 	}
 
-	if (Status == adFailed)
+	if (status == adFailed)
 	{
 		detail("Download %s failed", m_infoName);
 	}
 
-	SetStatus(Status);
+	SetStatus(status);
 	Notify(NULL);
 
 	debug("Exiting ArticleDownloader-loop");
@@ -323,7 +323,7 @@ void ArticleDownloader::Run()
 ArticleDownloader::EStatus ArticleDownloader::Download()
 {
 	const char* response = NULL;
-	EStatus Status = adRunning;
+	EStatus status = adRunning;
 	m_writingStarted = false;
 	m_articleInfo->SetCrc(0);
 
@@ -339,10 +339,10 @@ ArticleDownloader::EStatus ArticleDownloader::Download()
 			}
 		}
 
-		Status = CheckResponse(response, "could not join group");
-		if (Status != adFinished)
+		status = CheckResponse(response, "could not join group");
+		if (status != adFinished)
 		{
-			return Status;
+			return status;
 		}
 	}
 
@@ -360,10 +360,10 @@ ArticleDownloader::EStatus ArticleDownloader::Download()
 		}
 	}
 
-	Status = CheckResponse(response, "could not fetch article");
-	if (Status != adFinished)
+	status = CheckResponse(response, "could not fetch article");
+	if (status != adFinished)
 	{
-		return Status;
+		return status;
 	}
 
 	if (g_pOptions->GetDecode())
@@ -377,7 +377,7 @@ ArticleDownloader::EStatus ArticleDownloader::Download()
 	bool end = false;
 	const int LineBufSize = 1024*10;
 	char* lineBuf = (char*)malloc(LineBufSize);
-	Status = adRunning;
+	status = adRunning;
 
 	while (!IsStopped())
 	{
@@ -413,7 +413,7 @@ ArticleDownloader::EStatus ArticleDownloader::Download()
 			{
 				detail("Article %s @ %s failed: Unexpected end of article", m_infoName, m_connectionName);
 			}
-			Status = adFailed;
+			status = adFailed;
 			break;
 		}
 
@@ -447,7 +447,7 @@ ArticleDownloader::EStatus ArticleDownloader::Download()
 					if (char* e = strrchr(p, '\r')) *e = '\0'; // remove trailing CR-character
 					detail("Article %s @ %s failed: Wrong message-id, expected %s, returned %s", m_infoName,
 						m_connectionName, m_articleInfo->GetMessageID(), p);
-					Status = adFailed;
+					status = adFailed;
 					break;
 				}
 			}
@@ -467,41 +467,41 @@ ArticleDownloader::EStatus ArticleDownloader::Download()
 		// write to output file
 		if (((body && m_format != Decoder::efUnknown) || !g_pOptions->GetDecode()) && !Write(line, len))
 		{
-			Status = adFatalError;
+			status = adFatalError;
 			break;
 		}
 	}
 
 	free(lineBuf);
 
-	if (!end && Status == adRunning && !IsStopped())
+	if (!end && status == adRunning && !IsStopped())
 	{
 		detail("Article %s @ %s failed: article incomplete", m_infoName, m_connectionName);
-		Status = adFailed;
+		status = adFailed;
 	}
 
 	if (IsStopped())
 	{
-		Status = adFailed;
+		status = adFailed;
 	}
 
-	if (Status == adRunning)
+	if (status == adRunning)
 	{
 		FreeConnection(true);
-		Status = DecodeCheck();
+		status = DecodeCheck();
 	}
 
 	if (m_writingStarted)
 	{
-		m_articleWriter.Finish(Status == adFinished);
+		m_articleWriter.Finish(status == adFinished);
 	}
 
-	if (Status == adFinished)
+	if (status == adFinished)
 	{
 		detail("Successfully downloaded %s", m_infoName);
 	}
 
-	return Status;
+	return status;
 }
 
 ArticleDownloader::EStatus ArticleDownloader::CheckResponse(const char* response, const char* comment)
@@ -666,7 +666,7 @@ void ArticleDownloader::LogDebugInfo()
 #else
 		ctime_r(&m_lastUpdateTime, time);
 #endif
-	info("      Download: Status=%i, LastUpdateTime=%s, InfoName=%s", m_status, time, m_infoName);
+	info("      Download: status=%i, LastUpdateTime=%s, InfoName=%s", m_status, time, m_infoName);
 }
 
 void ArticleDownloader::Stop()

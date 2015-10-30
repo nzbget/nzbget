@@ -62,7 +62,7 @@ private:
 	EHttpMethod			m_httpMethod;
 	EUserAccess			m_userAccess;
 	char*				m_url;
-	StringBuilder		m_cResponse;
+	StringBuilder		m_response;
 
 	void				Dispatch();
 	XmlCommand*			CreateCommand(const char* methodName);
@@ -77,7 +77,7 @@ public:
 	void				SetUserAccess(EUserAccess userAccess) { m_userAccess = userAccess; }
 	void				SetUrl(const char* url);
 	void				SetRequest(char* request) { m_request = request; }
-	const char*			GetResponse() { return m_cResponse.GetBuffer(); }
+	const char*			GetResponse() { return m_response.GetBuffer(); }
 	const char*			GetContentType() { return m_contentType; }
 	static bool			IsRpcRequest(const char* url);
 };
